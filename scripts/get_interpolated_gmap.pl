@@ -7,7 +7,7 @@
 # This script calculates interpolated genetic map positions for CDS, Transcripts 
 # and Pseudogenes lying between and outside genetic markers.
 #
-# Last updated on: $Date: 2003-12-17 10:14:49 $
+# Last updated on: $Date: 2004-01-28 15:28:37 $
 # Last updated by: $Author: ck1 $
 
 use strict;
@@ -34,9 +34,6 @@ GetOptions ("diff"          => \$diff,
            );
 
 
-
-print "Script started at ",&runtime,"\n";
-
 my $gff_dir    = "/wormsrv2/autoace/GFF_SPLITS/";
 my $curr_db    = "/nfs/disk100/wormpub/DATABASES/current_DB/"; 
 my $output     = "/wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP";
@@ -52,7 +49,6 @@ if (!defined @ARGV){system ("perldoc /wormsrv2/scripts/get_interpolated_gmap.pl"
 # set WS version number
 my $current = `grep "NAME WS" $curr_db/wspec/database.wrm`; $current =~ s/NAME WS//; chomp $current;
 my $version = $current+1;  
-
 
 
 # Use specified database for path but default to using autoace if -database not specified
@@ -173,8 +169,7 @@ my $rna_count=0;
 my $pseudogene_count=0;
 my $variants=0;
 
-
-print "Finding CDSes in gff files . . .\n" if ($verbose); 
+print "\nParsing CDS coords from gff files . . .\n"; 
   
 foreach (@gff_files_cds){
   @data = `less $_ | cut -f 1,4,5,9`;
@@ -186,47 +181,49 @@ foreach (@gff_files_cds){
       $chrom =~ s/CHROMOSOME_//;
       $CDS =~ s/\"//g;
       my $ori = $CDS;
+
       if ($CDS =~ /(.+\.\d+)\D+/){
         $CDS = $1;
 	$variants++;
         push(@{$CDS_variants{$CDS}}, $ori); #parent of isoforms
-        push(@{$CDS_isoforms_mapping{$CDS}}, $chrom, $left, $right, "DNA");
+        push(@{$CDS_isoforms_mapping{$CDS}}, $chrom, $left, $right, "CDS");
       }
       else {
-        push(@{$CDS_mapping{$CDS}}, $chrom, $left, $right, "DNA");
+        push(@{$CDS_mapping{$CDS}}, $chrom, $left, $right, "CDS");
       }
     }
   }
 }
 
-print "Finding transcripts in gff files . . .\n" if ($verbose); 
+print "\nParsing transcript coords from gff files . . .\n"; 
 
 foreach (@gff_files_rna){
-  @data = `egrep "RNA.+(Transcript|Sequence).+" $_ | cut -f 1,2,4,5,9`;
-  #@data = `egrep ".+(Transcript|Sequence).+" $_ | cut -f 1,2,4,5,9`;
+  @data = `egrep "RNA.+(Transcript).+" $_ | cut -f 1,3,4,5,9`;
   foreach (@data){
     chomp;
     if ($_ !~ /\[.+\].+/ && $_ !~ /mRNA.+/){
+
       $rna_count++;
       my ($chrom, $type, $left, $right, $junk, $RNA)= split(/\s+/,$_);
       $RNA =~ s/(.+):.+/$1/;
       $RNA =~ s/\"//g;
       my $ori = $RNA;  
       $chrom =~ s/CHROMOSOME_//;
-      if ($RNA =~ /(.+\.\d+)\D+/){
-	$RNA = $1;
-	$variants++;
-	push(@{$CDS_variants{$RNA}}, $ori); #parent of isoforms
-        push(@{$CDS_isoforms_mapping{$RNA}}, $chrom, $left, $right, "RNA");
-      }
-      else {
-	push(@{$CDS_mapping{$RNA}}, $chrom, $left, $right, "RNA");
-      }	
-    }      
+      if ($type eq "Transcript"){
+	if ($RNA =~ /(.+\.\d+)\D+/){
+	  $RNA = $1;
+	  $variants++;
+	  push(@{$CDS_variants{$RNA}}, $ori); #parent of isoforms
+	  push(@{$CDS_isoforms_mapping{$RNA}}, $chrom, $left, $right, "RNA");
+	}
+	else {
+	  push(@{$CDS_mapping{$RNA}}, $chrom, $left, $right, "RNA");
+	}	
+      }      
+    }
   }
 }
-
-print "\nFinding pseudogenes in gff files . . .\n" if ($verbose); 
+print "\nParsing pseudogene coords from gff files . . .\n"; 
 
 foreach (@gff_files_pseudogene){
   @data = `less $_ | cut -f 1,4,5,9`;
@@ -251,8 +248,8 @@ foreach (@gff_files_pseudogene){
   }
 }
 
-print "Processing gmap positions and coordinates\n";
-     
+print "\nProcessing gmap positions and corresponding physical coordinates . . .\n";
+
 ###########################################################################################
 # get mean value of chrom coords of each CDS/Transcript from GFF files (genes|rna|rest.gff)
 # mean of isoforms is the mean of the left and right coords of the longest variant
@@ -267,7 +264,7 @@ my $chromo;
 foreach (sort keys %CDS_mapping){
   
   $mean_coords = ($CDS_mapping{$_}->[1] + $CDS_mapping{$_}->[2]) / 2;
-  push(@{$cds_mean{$_}}, $mean_coords, $CDS_mapping{$_}->[3]); # key: cds(w/0 isoform) value: mean coords, "DNA" or "RNA" or "pseudogene"
+  push(@{$cds_mean{$_}}, $mean_coords, $CDS_mapping{$_}->[3]); # key: cds(w/0 isoform) value: mean coords, "CDS" or "RNA" or "pseudogene"
   $chromo = $CDS_mapping{$_}->[0];
   push (@{$chrom_mean_coord_cds{$chromo}}, $mean_coords, $_);
 
@@ -309,47 +306,63 @@ if ($reverse) {
 }
 
 open (FH, "echo '$marker_gmap_of_each_chrom' | tace $database |") || die "Couldn't access $database\n";
+
+my %unique_locus;
 while (<FH>){
   chomp($_);
   # $4=cds/transcript/pseudogene, $2=chrom, $1=locus, $3=gmap position
-  if ($_ =~ /^\"(.+)\"\s+\"(.+)\"\s+(-\d+\.\d+|\d+\.\d+|\d+|-\d+)\s+\"(.+)\"\s+.+/){
-#  if ($_ =~ /^\"(.+)\"\s+\"(.+)\"\s+(-\d+\.\d+|\d+\.\d+|\d+|-\d+)\s+\"(.+)\"/ || 
-#      $_ =~ /^\"(.+)\"\s+\"(.+)\"\s+(-\d+\.\d+|\d+\.\d+|\d+|-\d+)\s+\"(.+)\"\s+\"(.+)\"$/ || 
-#      $_ =~ /^\"(.+)\"\s+\"(.+)\"\s+(-\d+\.\d+|\d+\.\d+|\d+|-\d+)\s+\"(.+)\"\s+\"(.+)\"\s+\"(.+)\"$/ ){   # 0 & postive & negative values
+
+  # sequence from same class and sequence from diff. classes (eg. CDS, Pseudogene)  
+  if ( ($_ =~ /^\"(.+-.+)\"\s+\"(.+)\"\s+(-\d+\.\d+|\d+\.\d+|\d+|-\d+)\s+\"(.+\.[a-z0-9]+)\"\s+\"(.+\.[a-z0-9]+)\"/) || 
+       ($_ =~ /^\"(.+-.+)\"\s+\"(.+)\"\s+(-\d+\.\d+|\d+\.\d+|\d+|-\d+)\s+\"(.+\.[a-z0-9]+)\"/) ){ 
 
     my $locus = $1;
     my $chrom = $2;
     my $gmap = $3;
     my $cds = $4;
-      
-    ##################
-    # CDS has isoforms
-    ##################
-   
-    if ($cds =~ /(.+\.\d+)\D+/){ 
-      my $cds = $1;
-      $mean_coord=$cds_mean{$cds}->[0];
-      if (defined $mean_coord){push(@{$genetics_mapping{$cds}}, $chrom, $locus, $gmap, $mean_coord)}
-      else {push(@{$genetics_mapping{$cds}}, $chrom, $locus, $gmap, "NA")}
-      if (defined $mean_coord){push(@{$chrom_pos{$chrom}}, $gmap, $mean_coord, $locus, $cds)}   
-      else {push(@{$chrom_pos{$chrom}}, $gmap, "NA", $locus, $cds)}
-    }
-  
-    #####################
-    # CDS has no isoforms
-    #####################
+    my $cds_2 ;
 
-    else {
-      $mean_coord=$cds_mean{$cds}->[0];
-      if (defined $mean_coord){push(@{$genetics_mapping{$cds}}, $chrom, $locus, $gmap, $mean_coord)}
-      else {push(@{$genetics_mapping{$cds}}, $chrom, $locus, $gmap, "NA")}
-      if (defined $mean_coord){push(@{$chrom_pos{$chrom}}, $gmap, $mean_coord, $locus, $cds)}
-      else {push(@{$chrom_pos{$chrom}}, $gmap, "NA", $locus, $cds)}	    
+    if (!$5){$cds_2 = "NA"}
+    else{$cds_2 = $5}
+
+    my @CDSES = (); push(@CDSES, $cds, $cds_2);
+   
+    foreach my $cds (@CDSES){
+      if (!exists $unique_locus{$locus}){ # get rid of duplication from isoforms
+	$unique_locus{$locus} = $locus; 
+
+	##################
+	# CDS has isoforms
+	##################
+	
+	if ($cds eq "NA"){}
+	elsif ($cds =~ /(.+\.\d+)\D/){  
+	  my $cds = $1;
+	  $mean_coord=$cds_mean{$cds}->[0];
+	  if (defined $mean_coord){push(@{$genetics_mapping{$cds}}, $chrom, $locus, $gmap, $mean_coord)}
+	  else {push(@{$genetics_mapping{$cds}}, $chrom, $locus, $gmap, "NA")}
+	  if (defined $mean_coord){push(@{$chrom_pos{$chrom}}, $gmap, $mean_coord, $locus, $cds)}   
+	  else {push(@{$chrom_pos{$chrom}}, $gmap, "NA", $locus, $cds)}
+	}
+	
+	#####################
+	# CDS has no isoforms
+	#####################
+	
+	else {			# blah.t1 (tRNA eg. goes here)
+	  $mean_coord=$cds_mean{$cds}->[0];
+	  if (defined $mean_coord){push(@{$genetics_mapping{$cds}}, $chrom, $locus, $gmap, $mean_coord)}
+	  else {push(@{$genetics_mapping{$cds}}, $chrom, $locus, $gmap, "NA")}
+	  if (defined $mean_coord){push(@{$chrom_pos{$chrom}}, $gmap, $mean_coord, $locus, $cds)}
+	  else {push(@{$chrom_pos{$chrom}}, $gmap, "NA", $locus, $cds)}	    
+	}
+      }
     }
-  }
+  }  
 }
 
 close(FH);
+%unique_locus =();
 
 if ($diff){
   my $count = 0;
@@ -377,9 +390,9 @@ if ($diff){
   exit(0);
 }
 
-#############################################################################
-# get chrom length - as slight changes still occurs: just try to be "precise"
-#############################################################################
+###################################################
+# get chrom length - as slight changes still occurs
+###################################################
 
 my @dna_file = glob("/wormsrv2/autoace/CHROMOSOMES/CHROMOSOME_*.dna");
 
@@ -411,7 +424,6 @@ my $all_pseudogenes=<<EOF;
   Table-maker -p "/wormsrv1/geneace/wquery/get_all_pseudogenes.def" quit
 EOF
 
-
 open (FH1, "echo '$all_CDS' | tace $curr_db | ") || die "Couldn't access $curr_db\n";
 open (FH2, "echo '$all_transcripts' | tace $curr_db | ") || die "Couldn't access $curr_db\n";
 open (FH3, "echo '$all_pseudogenes' | tace $curr_db | ") || die "Couldn't access $curr_db\n";
@@ -420,7 +432,7 @@ my %class;
 @FHS = qw(*FH1 *FH2 *FH3);
 foreach my $e (@FHS){
   my $type;
-  $type = "DNA"    if $e eq "*FH1";
+  $type = "CDS"    if $e eq "*FH1";
   $type = "RNA"    if $e eq "*FH2";
   $type = "pseudo" if $e eq "*FH3";
   while (<$e>){
@@ -438,13 +450,13 @@ close FH1; close FH2; close FH3;
 if ($debug){
   open (CL, ">/wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/type");
   foreach (sort keys %class){
-    print CL "$_ -> $class{$_}\n";
+    print CL "$_ -> $class{$_}  (1)\n";
   }
   foreach (keys %CDS_isoforms_mapping){
-    print CL "$_ -> $CDS_isoforms_mapping{$_}->[3] PARENT\n";
+    print CL "$_ -> $CDS_isoforms_mapping{$_}->[3] PARENT (1)\n"; # [3] is type (DNA, RNA or psdudo)
   }
   foreach (keys %CDS_variants){
-    print CL "$_ -> $CDS_variants{$_} ISO\n";
+    print CL "$_ -> $CDS_variants{$_} ISO (1)\n";
   }
 }
 
@@ -452,7 +464,7 @@ if ($debug){
 # sorting gmap positions of marker loci from left tip to right tip 
 ##################################################################
 
-print "Generating ace files\n";
+print "\nGenerating ace files . . .\n";
 
 my (@chroms, $chrom, $ea, @pos_order, $part, @unique_pos_order, %pos_order_to_mean_coord_locus_cds, 
     @mean_coords_order, $units, $bp_length_per_unit, @all_mean_of_each_chrom, @unique_all_mean_of_each_chrom,
@@ -468,25 +480,28 @@ my $count_rev = 0;
 foreach $chrom (@chroms){
   $parts=scalar @{$chrom_pos{$chrom}};
   for (my $i=0; $i< $parts; $i=$i+4){
-    push(@pos_order, $chrom_pos{$chrom}->[$i]);  # $i=gmap, duplication due to isoforms
+    push(@pos_order, $chrom_pos{$chrom}->[$i]);  # $i=gmap, has duplication if isoforms
     my $pos = $chrom_pos{$chrom}->[$i];          
     my $mean_coord = $chrom_pos{$chrom}->[$i+1]; 
-    my $locus = $chrom_pos{$chrom}->[$i+2];      
+    my $locus = $chrom_pos{$chrom}->[$i+2];
+     
     $cds = $chrom_pos{$chrom}->[$i+3];           
-    push(@{$pos_order_to_mean_coord_locus_cds{$pos}}, $mean_coord, $locus, $cds) 
-      
-    if !exists $pos_order_to_mean_coord_locus_cds{$pos} && $mean_coord ne ""; # key is gmap
+
+    # multiple loci may have same gmap before correction 
+    push(@{$pos_order_to_mean_coord_locus_cds{$pos}}, $mean_coord, $locus, $cds); 
+
     push(@all_mean_of_each_chrom, $mean_coord); # duplication due to isoforms
   }
 
-  @pos_order = sort {$a <=>$b} @pos_order;  # sorting gmap positions of markers from left tip to right tip      
+  @pos_order = sort {$a <=>$b} @pos_order;  # sorting gmap positions of markers from left tip (-) to right tip (+)      
   
+  # remove duplicated mean coord or gmap positions from isoforms
   my %seen=();
   foreach (@pos_order){push(@unique_pos_order, $_) unless $seen{$_}++}
   foreach (@all_mean_of_each_chrom){push(@unique_all_mean_of_each_chrom, $_) unless $seen{$_}++}
-  foreach (@unique_all_mean_of_each_chrom){$all_mean_of_each_chrom{$_}++}
+  foreach (@unique_all_mean_of_each_chrom){$all_mean_of_each_chrom{$_}++} # hash for quick lookup of all mean coords
 
-  print INFO "\nUnique markers $chrom: ", scalar @unique_pos_order,"\n";
+  print INFO "\nUnique markers $chrom: ", scalar @unique_pos_order,"\n";   # only gmap positions
 
   ###########################################
   # Left/Right tip gmap
@@ -533,7 +548,7 @@ foreach $chrom (@chroms){
   }
   for (my $i=0; $i< scalar @all_values; $i=$i+2){push(@all_cds_each_chrom, $all_values[$i+1])}
 
-  @all_coords = sort {$a <=>$b} @all_coords; # all coords of CDS/transcript/pseudogene on each chrom
+  @all_coords = sort {$a <=>$b} @all_coords; # all mean coords of CDS/transcript/pseudogene on each chrom
   my $L_end = $all_coords[0];  # shortes mean coord of CDS/transcript/pseudogene on each chrom
   my $R_end = $all_coords[-1]; # longest mean coord of CDS/transcript/pseudogene on each chrom
 
@@ -541,7 +556,7 @@ foreach $chrom (@chroms){
 
   foreach (@all_coords){
     
-    # get interpolated map if mean coord is not that of marker loci 
+    # get interpolated map if mean coord is not that of a marker loci 
     if (!$all_mean_of_each_chrom{$_}){ 
 
       my $feature = $cds_mean{$mean_coord_cds{$_}}->[1];
@@ -637,38 +652,44 @@ foreach $chrom (@chroms){
       my $gmdn =  $gmap_down;
       $gmdn = sprintf("%8.4f", $gmdn);
       $gmap_up =   $unique_pos_order[$i+1];
-      my $locus1 = $pos_order_to_mean_coord_locus_cds{$gmap_down}->[1];
-      $locusf = $locus1;
-      $locusf = sprintf("%10s", $locusf);
-      $down_mean_coord = $pos_order_to_mean_coord_locus_cds{$gmap_down}->[0];
 
-      my $dnmcoord =  $down_mean_coord;
-      $dnmcoord = sprintf("%12.1f", $dnmcoord);
-      $up_mean_coord = $pos_order_to_mean_coord_locus_cds{$gmap_up}->[0];
-      $cds = $pos_order_to_mean_coord_locus_cds{$gmap_down}->[2];
-      my $cdsf = $cds;
-      $cdsf = sprintf("%-15s", $cdsf);
+      # multiple loci may have a same gmap position before correction
+      foreach (my $i = 0; $i < scalar @{ $pos_order_to_mean_coord_locus_cds{$gmap_down}}; $i=$i+3){
+	
+	my $locus1 = $pos_order_to_mean_coord_locus_cds{$gmap_down}->[$i+1];
+	$locusf = $locus1;
+	$locusf = sprintf("%10s", $locusf);
+	$down_mean_coord = $pos_order_to_mean_coord_locus_cds{$gmap_down}->[$i];
+	
+	my $dnmcoord =  $down_mean_coord;
+	$dnmcoord = sprintf("%12.1f", $dnmcoord);
+	$up_mean_coord = $pos_order_to_mean_coord_locus_cds{$gmap_up}->[$i];
+	$cds = $pos_order_to_mean_coord_locus_cds{$gmap_down}->[$i+2];
+	my $cdsf = $cds;
+	$cdsf = sprintf("%-15s", $cdsf);
 
-      print CMP "$chrom\t$gmdn\t$locusf\t$cdsf\t$dnmcoord\n";
-
-      if ($down_mean_coord eq "NA") {
-	print REV "\n** Gmap marker $cds ($locus1) on $chrom has no coordinate **\n";
-      }
-
-      if ($down_mean_coord ne "NA" && $up_mean_coord ne "NA" && ($down_mean_coord > $up_mean_coord)){
-	if (exists $CDS_variants{$cds}){
-	  $rev_phys++;
-	  $error_check = 1;
-	  if ($reverse) {print REV "Reverse physical: $chrom\t$gmap_down\t$locus1\t$cds\[@{$CDS_variants{$cds}}\]\t$down_mean_coord\n"}
+	print CMP "$chrom\t$gmdn\t$locusf\t$cdsf\t$dnmcoord\n";
+	
+	if ($down_mean_coord eq "NA") {
+	  print REV "\n** Gmap marker $cds ($locus1) on $chrom has no coordinate **\n";
 	}
-	else {
-	  $rev_phys++;
-	  $error_check = 1;
-	  if ($reverse) {print REV "Reverse physical: $chrom\t$gmap_down\t$locus1\t$cds\t$down_mean_coord\n"}
-	}
+
+	if ($down_mean_coord ne "NA" && $up_mean_coord ne "NA" && ($down_mean_coord > $up_mean_coord)){
+          print "$down_mean_coord > $up_mean_coord\n"; 
+	  if (exists $CDS_variants{$cds}){
+	    $rev_phys++;
+	    $error_check = 1;
+	    if ($reverse) {print REV "Reverse physical: $chrom\t$gmap_down\t$locus1\t$cds\[@{$CDS_variants{$cds}}\]\t$down_mean_coord\n"}
+	  }
+	  else {
+	    $rev_phys++;
+	    $error_check = 1;
+	    if ($reverse) {print REV "Reverse physical: $chrom\t$gmap_down\t$locus1\t$cds\t$down_mean_coord\n"}
+	  }
+	}  
       }  
     }  
-  }  
+  }
   if ($reverse){
     print REV "--->$rev_phys reverse physical(s) on Chromosome $chrom\n\n";
     my $gmap = $unique_pos_order[-1];
@@ -693,7 +714,6 @@ foreach $chrom (@chroms){
   $count_rev += $rev_phys;
   $rev_phys=(); @all_mean_of_each_chrom=(); @unique_all_mean_of_each_chrom=(); %all_mean_of_each_chrom=();
 }
-
 
 # no upload of map data to DB if in debug mode
 if (!$debug){
@@ -720,7 +740,7 @@ pparse $acefile
 save
 quit
 END
-
+  my $database = "/nfs/disk100/wormpub/DATABASES/TEST_DBs/CK1TEST";
   open (LOAD_A,"| $tace -tsuser \"genetic_map\" $database/ >> $log") || die "Failed to upload to Geneace";
   print LOAD_A $command;
   close LOAD_A;
@@ -733,17 +753,17 @@ END
 
 # Finish and exit
 if($error_check == 1){
-  print "\nERROR: $count_rev reverse physicals were found, you cannot proceed with the build until these are fixed\n\n";
+  print "\nERROR: $count_rev reverse physical(s) were found and need you to do some corrections.\n";
   system("perl5.6.1 $script_dir\/update_rev_physicals.pl -panel $count_rev -rev $revfile -comp $cmp_file -v $version");
+ # system("perl5.6.1 \/nfs\/team71\/worm\/ck1\/WORMBASE_CVS\/scripts\/update_rev_physicals.pl -panel $count_rev -rev $revfile -comp $cmp_file -v $version -d");
 }
 else {
 
   my ($jah, $recipients);
- # my $existfile = glob("$output/rev_physical_CGC_WS$version");
-  my $existfile = $revfile;
-  if ($existfile){
-    $jah = $existfile;
-    my @CGC = `cat $jah`;
+  my $rev_update = glob("$output/rev_physical_CGC_WS$version");
+  if ($rev_update){
+    $jah = $revfile;
+    my @CGC = `cat $rev_update`;
     open(JAH, ">$jah") || die $!;
     
     print JAH "get_interpolated_map.pl started  at $start\n","                        finished at ", &runtime,"\n\n";
@@ -806,7 +826,6 @@ sub dataset {
 ############################################################################################################
 
 
-
 #########################################################
 # write acefile for all CDSes with gmap/interpolated gmap
 # also write Map position to locus objects
@@ -832,12 +851,12 @@ sub ace_output {
     foreach (@{$CDS_variants{$cds}}){
       $type = $class{$_};
 
-      print CL "$_ -> $type\n" if $debug;
+      print CL "$_ -> $type (2)\n" if $debug;
  
       my $cdsf = $_;
       $cdsf = sprintf ("%-15s", "$cdsf");
       
-      if ($type eq "DNA"){print ACE "\nCDS : \"$_\"\n";	print CDSes "$cdsf\t";}
+      if ($type eq "CDS"){print ACE "\nCDS : \"$_\"\n";	print CDSes "$cdsf\t";}
       if ($type eq "RNA"){print ACE "\nTranscript : \"$_\"\n"; print CDSes "$cdsf\t"}
       if ($type eq "pseudo"){print ACE "\nPseudogene : \"$_\"\n"; print PSEUDO "$cdsf\t"}
       print ACE "Interpolated_map_position\t\"$chrom\"\t$gmap\t\/\/$mean_coord (iso)\n";
@@ -864,7 +883,7 @@ sub ace_output {
     }
   }  
   else {
-    if ($feature eq "DNA"){
+    if ($feature eq "CDS"){
       print ACE "\nCDS : \"$cds\"\n" if !$clone;
       print ACE "\nSequence : \"$cds\"\n" if $clone;
       print CDSes "$cdsf\t" if !$clone; 

@@ -2,7 +2,7 @@
 
 # Author: Chao-Kung Chen
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-01-23 16:15:40 $ 
+# Last updated on: $Date: 2004-01-28 15:28:37 $ 
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'}; 
@@ -89,6 +89,8 @@ sub make_inferred_multi_pt_obj {
   my $last_multi = $multi_objs[-1];
   my $multi = $last_multi -1; $multi++;
 
+  print  "@multi_objs : $last_multi : $multi ############\n";
+
   # check autoace version
   my $version = get_wormbase_version_name(); # return WSXX
 
@@ -108,7 +110,7 @@ sub make_inferred_multi_pt_obj {
   }
  
   # write inferred multi_obj acefile
-  open(NEW, ">/tmp/temp1") || die $!;
+  open(NEW, ">/tmp/multi_flanks_to_check") || die $!;
 
   foreach (keys %locus_allele){ 
     $multi++;
@@ -132,8 +134,8 @@ sub update_inferred_multi_pt {
   my $query  = "find Multi_pt_data * where remark AND NEXT AND NEXT = \"inferred_automatically\"";
   push( my @inferred_multi_objs, $db->find($query) );
   
-  my @Error_multi;
-  open(UPDATE, ">/tmp/temp2") || die $!;
+
+  open(UPDATE, ">/tmp/updated_multi_flanks") || die $!;
   my (@center_locus, $locus);
 
   foreach (@inferred_multi_objs){
@@ -155,24 +157,26 @@ sub update_inferred_multi_pt {
       print UPDATE "Remark \"Data inferred from $allele, sequence of $center_locus and interpolated map position (which became genetics map)\" Inferred_automatically\n";	
     }
     else {
-      push(@Error_multi, $_);
+      $L_locus = "NA" if !$L_locus;
+      $R_locus = "NA" if !$R_locus;
+      print LOG "\nObj $_ has incomplete flanking loci information: (L) $L_locus (R) $R_locus\n";
     }
   }
 
+  print LOG "\n\n";
+
   # output a updated multi-pt temp file and upload it to database specified
- 
-  print LOG "\nERROR: Check Multi_pt_data object(s) @Error_multi\nfor incomplete flanking loci information\n\n";
   
   my $command=<<END;
-pparse /tmp/temp1
-pparse /tmp/temp2
+pparse /tmp/multi_flanks_to_check
+pparse /tmp/updated_multi_flanks
 save
 quit
 END
 
   my $ga = init Geneace();
   $ga->upload_database("/nfs/disk100/wormpub/DATABASES/TEST_DBs/CK1TEST", $command, "Inferred_multi_pt_data", $log);
-  
+  $ga->upload_database($database, $command, "Inferred_multi_pt_data", $log);
 }
 
 

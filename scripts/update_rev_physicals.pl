@@ -2,7 +2,7 @@
 
 # Author: Chao-Kung Chen
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2003-11-19 16:51:11 $ 
+# Last updated on: $Date: 2004-01-28 15:28:37 $ 
 
 use strict;
 use lib "/wormsrv2/scripts";
@@ -49,10 +49,10 @@ $example_frm -> Label(text => "All changes made will be mailed to CGC", bg => "b
 my $button_frm = $mw ->Frame(relief => 'groove', borderwidth => 2)
                     ->pack(side => 'top', anchor => 'n', expand => 1, fill => 'x');
 
-$button_frm->Button(text => "See rev. physicals",  activebackground => "white", activeforeground => "blue", command => \&view_rev_physicals)
+$button_frm->Button(text => "View rev. physicals",  activebackground => "white", activeforeground => "blue", command => \&view_rev_physicals)
            -> pack(side => "left",  fill => "x", expand => 1);
 
-$button_frm->Button(text => "See genetics map",  activebackground => "white", activeforeground => "blue", command => \&view_gmap)
+$button_frm->Button(text => "View genetics map",  activebackground => "white", activeforeground => "blue", command => \&view_gmap)
            -> pack(side => "left",  fill => "x", expand => 1);
 
 my $add_btn = $button_frm->Button(text => "Add row",  activebackground => "white", activeforeground => "blue", command => \&add_panel)
@@ -101,7 +101,7 @@ sub view_rev_physicals {
 sub view_gmap {
  
   my $mw2 = MainWindow -> new();
-  $mw2 -> geometry("520x260+610+290");
+  $mw2 -> geometry("520x300+610+290");
   $mw2 -> configure(title => "Comparison of genetics map and reverse physicals");
   open(IN, $comp);
   my $text;
@@ -133,18 +133,19 @@ sub loci_map_panel {
   $chrom = $block -> Entry(textvariable => \$param_chrom, bg => "white", fg => "black", width => 3)
                   ->pack(side =>"left");
 
-  $block -> Label(text => "New Map", fg => "black")
-         ->pack(side => "left", anchor => "n", fill => "x", expand => 1);
-
-  $map = $block -> Entry(textvariable => \$param_map, bg => "white", fg => "black", width => 10)
-                ->pack(side =>"left");
-
   $block -> Label(text => "Old Map", fg => "black")
          ->pack(side => "left", anchor => "n", fill => "x", expand => 1);
 
   $oldmap = $block -> Entry(textvariable => \$param_oldmap, bg => "white", fg => "black", width => 10)
                    ->pack(side =>"left");
 
+  $block -> Label(text => "New Map", fg => "black")
+         ->pack(side => "left", anchor => "n", fill => "x", expand => 1);
+
+  $map = $block -> Entry(textvariable => \$param_map, bg => "white", fg => "black", width => 10)
+                ->pack(side =>"left");
+
+ 
   # put all objs in an array for later cget query
   push(@objs, $locus, $chrom, $map, $oldmap);
 
