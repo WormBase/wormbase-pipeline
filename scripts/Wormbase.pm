@@ -569,7 +569,7 @@ sub release_composition
     }
     close NEW;
 
-    #now check the differences
+    # Now check the differences
     my %change_data;
     my $compositionFile = "/wormsrv2/autoace/REPORTS/composition";
     open (COMP_ANALYSIS, ">$compositionFile") || die "cant open $compositionFile";
@@ -588,17 +588,25 @@ sub release_composition
       printf COMP_ANALYSIS ("%-5s\t%-8d\t%-8d\t%+4d\n", $_, $new_data{$_}, $old_data{$_}, $change_data{$_});
     }
 
+    # Report file/email
+
+    my $name = "BUILD REPORT: Sequence composition";
+    my $maintainer = "All";
+
     if ($change_data{"-"} > 0){
-      print COMP_ANALYSIS "Number of gaps has increased - please investigate ! \n";
+	print COMP_ANALYSIS "Number of gaps has increased - please investigate ! \n";
+	$name = $name . " : Introduced a gap";
     }
-    
     if ($change_data{"Total"} < 0) {
-      print COMP_ANALYSIS "Total number of bases has decreased - please investigate ! \n";
+	print COMP_ANALYSIS "Total number of bases has decreased - please investigate ! \n";
+	$name = $name . " : Lost sequence";
+    }
+    if ($change_data{"Total"} > 0) {
+	print COMP_ANALYSIS "Total number of bases has increased - please investigate ! \n";
+	$name = $name . " : Gained sequence";
     }
     close COMP_ANALYSIS;
 
-    my $name = "Sequence composition report";
-    my $maintainer = "All";
     &mail_maintainer($name,$maintainer,$compositionFile);
     
     return 1;
