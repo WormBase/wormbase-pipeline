@@ -12,11 +12,60 @@
 
 $|=1;
 use IO::Handle;
-use Getopt::Std;
+use Getopt::Long;
 use lib "/wormsrv2/scripts/";
 use Wormbase;
 use strict;
-use vars qw ($opt_a $opt_w $opt_b $opt_1 $opt_2 $opt_3 $opt_c $opt_p $opt_q $opt_f $opt_z $opt_n $opt_d $opt_s $opt_x $opt_h $opt_g $opt_m $opt_i $opt_u $opt_y );
+use vars;
+
+ ##############################
+ # command-line options       #
+ ##############################
+
+my $initial;		# Start the build process 
+my $unpack;			# unpack primaries	
+my $gff;			# chromosome_dump.pl -g
+my $agp;			# make agp files for the yellow brick road
+my $buildpep;		# Build wormpep
+my $addpep; 		# prepare pepace and then dump from pepace into autoace
+my $blat;			# map similarities (BLAT jobs)
+my $addblat;		# parse blat files
+my $map;			# map PCR, RNAi and WTP
+my $full;			# Full release (used to do all the following)
+my $acefile;		# Write .acefiles
+my $build;			# Build autoace 
+my $builddb;		# Build autoace : DB only
+my $buildchrom;		# Build autoace : CHROMOSOMES directory	
+my $buildrelease;	# Build autoace : Release directory
+my $secure;			# copy autoace before blatting
+my $check;			# Check DB consistency
+my $ftp;			# Public release to FTP site
+my $debug;			# Verbose debug mode
+my $help;			# Help/Usage page
+
+GetOptions (
+	    "initial"      => \$initial,
+	    "unpack"       => \$unpack,
+	    "gff"          => \$gff,
+	    "agp"          => \$agp,
+	    "buildpep"     => \$buildpep,
+	    "addpep"       => \$addpep,
+	    "blat"         => \$blat,
+	    "addblat"      => \$addblat,
+	    "map"          => \$map,
+	    "full"         => \$full,
+	    "acefile"      => \$acefile,
+	    "build"        => \$build,
+	    "builddb"      => \$builddb,
+	    "buildchrom"   => \$buildchrom,
+	    "buildrelease" => \$buildrelease,
+	    "secure"       => \$secure,
+	    "check"        => \$check,
+	    "ftp"          => \$ftp,
+	    "debug"        => \$debug,
+	    "help"         => \$help,
+		"h"	           => \$help
+);
 
  ##############################
  # Script variables (run)     #
@@ -30,39 +79,10 @@ my $version     = &get_cvs_version("$0");
 # specify location of scripts
 my $scriptdir   = "/wormsrv2/scripts";
 
- ##############################
- # command-line options       #
- ##############################
+&usage(0) if ($help);
 
-# $opt_i="";   # Start the build process 
-# $opt_u="";   # unpack primaries
-# $opt_a="";   # Full release (does all the following)
-# $opt_w="";   # Write .acefiles
-# $opt_b="";   # Build autoace 
-# $opt_1="";   # Build autoace : DB only
-# $opt_2="";   # Build autoace : CHROMOSOMES directory
-# $opt_3="";   # Build autoace : Release directory
-# $opt_c="";   # Check DB consistency
-# $opt_p="";   # Build wormpep
-# $opt_q="";   # prepare pepace and then dump from pepace into autoace
-# $opt_f="";   # Wormbase release to FTP site
-# $opt_z="";   # Public release to FTP site
-# $opt_d="";   # Verbose debug mode
-# $opt_h="";   # Help/Usage page
-# $opt_g="";   # chromosome_dump.pl -g
-# $opt_m="";   # map PCR, RNAi and WTP
-
-# $opt_n="";   # copy autoace before blatting
-# $opt_s="";   # map similarities (BLAT jobs)
-# $opt_x="";   # parse blat files
-
-# $opt_y="";   # make agp files for the yellow brick road
-
-getopts ('awbchipqfzdrsguymn123x');
-&usage(0) if ($opt_h);
-
-# -d debug mode modifies $maintainers to reduce e-mail load
-($maintainers = "dl1\@sanger.ac.uk") if ($opt_d);
+# debug mode modifies $maintainers to reduce e-mail load
+($maintainers = "dl1\@sanger.ac.uk") if ($debug);
 
 # build flag path
 our $logdir     = "/wormsrv2/autoace/logs";
@@ -75,7 +95,7 @@ our $tace =  "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
 
 
 # are you building a new database?
-&initiate_build if ($opt_i);
+&initiate_build if ($initial);
 
  #######################################
  # fetch WS version number             #
@@ -109,8 +129,8 @@ LOG->autoflush();
  # if all then set all flags            #
  ########################################
 
-if ($opt_a) {
-    $opt_w = 1; $opt_b = 1; $opt_c = 1; $opt_p = 1; $opt_q = 1; $opt_g = 1; $opt_m = 1; $opt_y = 1;
+if ($full) {
+    $acefile = 1; $build = 1; $check = 1; $buildpep = 1; $addpep = 1; $gff = 1; $map = 1; $agp = 1;
 }
 
 #################################################################################
@@ -118,34 +138,34 @@ if ($opt_a) {
 #################################################################################
 
 # prepare
-&prepare_primaries     if ($opt_u);
+&prepare_primaries     if ($unpack);
 
 # build
-&make_acefiles         if ($opt_w);
-&make_autoace          if ($opt_b);
+&make_acefiles         if ($acefile);
+&make_autoace          if ($build);
 
 # sub list to do fine work within build
- &make_DB               if ($opt_1);
- &make_DNA              if ($opt_2);
- &make_release          if ($opt_3);
+ &make_DB               if ($builddb);
+ &make_DNA              if ($buildchrom);
+ &make_release          if ($buildrelease);
 
 # checks
-&check_release          if ($opt_c);
+&check_release          if ($check);
 
 # similarity matches
-&pre_blat_copy          if ($opt_n);
-&blat_jobs              if ($opt_s);
-&parse_blat_files       if ($opt_s || $opt_x);
+&pre_blat_copy          if ($secure);
+&blat_jobs              if ($blat);
+&parse_blat_files       if ($blat || $addblat);
 
 # wormpep and protein work
-&make_wormpep          if ($opt_p);
-&pepace_stuff          if ($opt_q);
+&make_wormpep          if ($buildpep);
+&pepace_stuff          if ($addpep);
 
-&make_FTP_wormbase     if ($opt_f);
-&make_anonymous_FTP    if ($opt_z);
-&dump_GFFs             if ($opt_g);
-&map_PCR_RNAi_and_WTP  if ($opt_m);
-&make_agp              if ($opt_y);
+# &make_FTP_wormbase     if ($opt_f); deprecated 19.02.02 kj
+&make_anonymous_FTP    if ($ftp);
+&dump_GFFs             if ($gff);
+&map_PCR_RNAi_and_WTP  if ($map);
+&make_agp              if ($agp);
 
  ##############################
  # mail $maintainer report    #
@@ -602,11 +622,12 @@ sub make_agp {
 # make_FTP_wormbase                                                             #
 #################################################################################
 
-sub make_FTP_wormbase {
-    system ("$scriptdir/make_FTP_wormbase") && die "Couldn't run make_FTP_wormbase\n";
-    print LOG " Move version to ftp-wormbase\n";
-    print LOG " => 'make_FTP_wormbase\n\n";
-}
+# deprecated 19.02.02 kj
+#sub make_FTP_wormbase {
+#    system ("$scriptdir/make_FTP_wormbase") && die "Couldn't run make_FTP_wormbase\n";
+#    print LOG " Move version to ftp-wormbase\n";
+#    print LOG " => 'make_FTP_wormbase\n\n";
+#}
 
 #################################################################################
 # make_anonymous_FTP
@@ -631,22 +652,22 @@ print LOG "WormBase version : WS${WS_version}\n";
 print LOG "Wormpep version  : wormpep${WS_version}\n\n";
 
 print LOG "======================================================================\n";
-print LOG "  -a : Full WS release (executes all of the following -wbcp)\n"               if ($opt_a);
-print LOG "  -i : Start an autoace build\n"                                              if ($opt_i);
-print LOG "  -w : Write .acefiles from WormBase copies of the databases\n"               if ($opt_w);
-print LOG "  -b : Build autoace\n"                                                       if ($opt_b);
-print LOG "  -1 : Build autoace : DB only\n"                                             if ($opt_1);
-print LOG "  -2 : Build autoace : DNA data\n"                                            if ($opt_2);
-print LOG "  -3 : Build autoace : Release directory\n"                                   if ($opt_3);
-print LOG "  -c : Check DB consistency and diffs from previous version\n"                if ($opt_c);
-print LOG "  -p : Build wormpep database\n"                                              if ($opt_p);
-print LOG "  -q : Running patch_pepace.pl and pepace2autoace\n"                          if ($opt_p);
-print LOG "  -f : Move WS release to the ftp-wormbase site (WormBase private release)\n" if ($opt_f);
-print LOG "  -z : Move WS release to the external FTP site (Full public release)\n"      if ($opt_z);
-print LOG "  -d : Verbose/Debug mode\n"                                                  if ($opt_d);
-print LOG "  -g : chromosome_dump.pl -g\n"                                               if ($opt_g);
-print LOG "  -m : map PCR, RNAi and WTP\n"                                               if ($opt_m);
-print LOG "  -y : make agp files for yellow brick road\n"                                if ($opt_y);
+print LOG "  -full         : Full WS release (executes all of the following -wbcp)\n"               if ($full);
+print LOG "  -initial      : Start an autoace build\n"                                              if ($initial);
+print LOG "  -acefile      : Write .acefiles from WormBase copies of the databases\n"               if ($acefile);
+print LOG "  -build        : Build autoace\n"                                                       if ($build);
+print LOG "  -builddb      : Build autoace : DB only\n"                                             if ($builddb);
+print LOG "  -buildchrom   : Build autoace : DNA data\n"                                            if ($buildchrom);
+print LOG "  -buildrelease : Build autoace : Release directory\n"                                   if ($buildrelease);
+print LOG "  -check        : Check DB consistency and diffs from previous version\n"                if ($check);
+print LOG "  -buildpep     : Build wormpep database\n"                                              if ($buildpep);
+print LOG "  -addpep       : Running patch_pepace.pl and pepace2autoace\n"                          if ($addpep);
+#print LOG "  -f : Move WS release to the ftp-wormbase site (WormBase private release)\n" if ($opt_f);
+print LOG "  -ftp          : Move WS release to the external FTP site (Full public release)\n"      if ($ftp);
+print LOG "  -debug        : Verbose/Debug mode\n"                                                  if ($debug);
+print LOG "  -gff          : chromosome_dump.pl -g\n"                                               if ($gff);
+print LOG "  -map          : map PCR, RNAi and WTP\n"                                               if ($map);
+print LOG "  -agp          : make agp files for yellow brick road\n"                                if ($agp);
 print LOG "======================================================================\n";
 print LOG "\n";
 
@@ -664,20 +685,20 @@ sub run_details {
     print "WormBase version : WS${WS_version}\n";
     print "Wormpep version  : wormpep${WS_version}\n";
     print "\n";
-    print "  -a : Full WS release (executes all of the following -wbcp)\n" if ($opt_a);
-    print "  -w : Write .acefiles from WormBase copies of the databases\n" if ($opt_w);
-    print "  -b : Build autoace\n" if ($opt_b);
-    print "  -1 : Build autoace : DB only\n" if ($opt_1);
-    print "  -2 : Build autoace : DNA data\n" if ($opt_2);
-    print "  -3 : Build autoace : Release directory\n" if ($opt_3);
-    print "  -c : Check DB consistency and diffs from previous version\n" if ($opt_c);
-    print "  -p : Build wormpep database\n" if ($opt_p);
-    print "  -f : Move WS release to the ftp-wormbase site (WormBase private release)\n" if ($opt_f);
-    print "  -z : Move WS release to the external FTP site (Full public release)\n" if ($opt_z);
-    print "  -d : Verbose/Debug mode\n" if ($opt_d);
-    print "  -g : chromosome_dump.pl -g\n" if ($opt_g);
-    print "  -m : map PCR, RNAi and WTP\n" if ($opt_m);
-    print "  -y : make agp file for yellow brick road\n" if ($opt_y);
+    print "  -full         : Full WS release (executes all of the following -wbcp)\n" if ($full);
+    print "  -acefile      : Write .acefiles from WormBase copies of the databases\n" if ($acefile);
+    print "  -build        : Build autoace\n" if ($build);
+    print "  -builddb      : Build autoace : DB only\n" if ($builddb);
+    print "  -buildchrom   : Build autoace : DNA data\n" if ($buildchrom);
+    print "  -buildrelease : Build autoace : Release directory\n" if ($buildrelease);
+    print "  -check        : Check DB consistency and diffs from previous version\n" if ($check);
+    print "  -buildpep     : Build wormpep database\n" if ($buildpep);
+#    print "  -f : Move WS release to the ftp-wormbase site (WormBase private release)\n" if ($opt_f);
+    print "  -ftp          : Move WS release to the external FTP site (Full public release)\n" if ($ftp);
+    print "  -debug        : Verbose/Debug mode\n" if ($debug);
+    print "  -gff          : chromosome_dump.pl -g\n" if ($gff);
+    print "  -map          : map PCR, RNAi and WTP\n" if ($map);
+    print "  -agp          : make agp file for yellow brick road\n" if ($agp);
     print "\n\n";
 }
 
@@ -785,32 +806,36 @@ autoace_minder OPTIONAL arguments:
 
 =over 4
 
-=item -a, Full WS release (executes all of the following -wbcp)
+=item -full, Full WS release (executes all of the following -wbcp)
 
-=item -w, Write .acefiles from WormBase copies of the databases
+=item -acefile, Write .acefiles from WormBase copies of the databases
 
-=item -b, Build autoace : (performs options 1 & 2 below)
+=item -build, Build autoace : (performs options 1 & 2 below)
 
-=item -1, Build autoace : Database only
+=item -builddb, Build autoace : Database only
 
-=item -2, Build autoace : Dump DNA
+=item -buildchrom, Build autoace : Dump DNA
 
-=item -3, Build autoace : release directory
+=item -buildrelease, Build autoace : release directory
 
-=item -c, Check DB consistency and diffs from previous version
+=item -check, Check DB consistency and diffs from previous version
 
-=item -p, Build wormpep database
+=item -buildpep, Build wormpep database
 
-=item -f, Move WS release to the ftp-wormbase site (WormBase private release)
+=item -addpep, prepare pepace and then dump from pepace into autoace
 
-=item -z, Move WS release to the external FTP site (Full public release)
+=item -ftp, Move WS release to the external FTP site (Full public release)
 
-=item -d, Verbose/Debug mode
+=item -debug, Verbose/Debug mode
 
-=item -g, dump GFF files
+=item -gff, dump GFF files
 
-=item -m, map PCR, RNAi and WTP
+=item -map, map PCR, RNAi and WTP
 
+=item -blat, map similarities (BLAT jobs)
+
+=item -addblat, parse BLAT files
+ 
 =back
 
 =cut
