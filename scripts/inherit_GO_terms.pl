@@ -93,7 +93,7 @@ save
 quit
 END
 
-open (TACE,"| $tace -tsuser map_GO_terms $dbpath") || die "Couldn't open tace connection to $dbdir\n";
+open (TACE,"| $tace -tsuser map_GO_terms $dbpath") || die "Couldn't open tace connection to $dbpath\n";
 print TACE $command;
 close (TACE);
 
