@@ -139,7 +139,7 @@ $db->disconnect;
 #$fasta = new_entries.WS$WS_versio
 my $version = $fasta =~ /new_entries\.WS(\d+)/;
 my $wp_file = "/wormsrv2/WORMPEP/wormpep$version/wp.fasta$version";
-system("perl ~/scripts/BLAST_scripts/mysql_vs_db_protein_compare.pl -fasta $wp_file");
+system("perl5.8.0 ~/scripts/BLAST_scripts/mysql_vs_db_protein_compare.pl -fasta $wp_file");
 
 
 
