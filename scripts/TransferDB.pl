@@ -4,8 +4,8 @@
 #
 # by ag3 [991221]
 #
-# Last updated on: $Date: 2003-12-01 11:18:28 $
-# Last updated by: $Author: krb $
+# Last updated on: $Date: 2004-05-06 09:01:04 $
+# Last updated by: $Author: pad $
 
 # transferdb moves acedb database files across filesystems.
 # Creates a temporary database.BCK 
@@ -49,7 +49,7 @@ my $S_all;             # -all: all of the above
 my $file;              # ???
 my $retry = 5;         # for making repeat attempts to copy a file
 my $test;              # test mode, logs go to ~wormpub/TEST_BUILD/logs
-
+my $split;             # -split: changes cp function for models.wrm if splitting camace
 
 GetOptions (
 	    "start=s"     => \$srcdir,
@@ -72,7 +72,9 @@ GetOptions (
 	    "debug=s"     => \$debug,
 	    "mail"        => \$mail,
 	    "retry=i"     => \$retry,
-	    "test"        => \$test);
+	    "test"        => \$test,
+            "split"       => \$split
+);
 
 ##################################
 #set up log files and debug mode
@@ -347,8 +349,9 @@ sub process_file {
       for(my $i = 1; $i <= $retry ; $i++) {
 	my $cp_chk = "0";
 	my $cp_val;
-	if($filename =~ m/models\.wrm$/){
-	  $cp_val = system("\/usr/bin/cp -R $s_file $e_file");
+
+	if( ($filename =~ m/models\.wrm$/) && (!$split) ){
+	  $cp_val = system("\/usr/bin/cp -R $s_file $e_file") 
 	}
 	else{
 	  $cp_val = system("\/usr/apps/bin/scp $s_file $e_file");
