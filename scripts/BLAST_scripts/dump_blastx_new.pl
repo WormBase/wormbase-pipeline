@@ -59,8 +59,10 @@ sub now {
 }
 
 # create output files
-open (LOG, ">$$.log") || die "cannot create log file";
-open (ACE, ">$$.ace") || die "cannot create ace file";
+open (LOG, ">/nfs/acari/wormpipe/ace_files/blastx_ensembl.log") || die "cannot create log
+file";
+open (ACE, ">/nfs/acari/wormpipe/ace_files/blastx_ensembl.ace") || die "cannot create ace
+file";
 #*LOG = *STDOUT;
 
 # make ACE and LOG un-buffered
@@ -593,5 +595,7 @@ $dbh->disconnect;
 
 close LOG;
 close ACE;
+
+print "\nEnd of dump\n";
 
 exit 0;
