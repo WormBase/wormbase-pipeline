@@ -58,7 +58,7 @@ else {
 }
 
 while (my $line = <>) {
-    if ($line =~ /^ID\s+(\S+)/) {
+    if ($line =~ /^AC\s+(\S+)/) {
         $id = $1;
         $switch = 1;
     }
@@ -79,7 +79,7 @@ while (my $line = <>) {
         # this gets rid of the tremblnew entries that are
         # in the same file with the swissprot entries
         # (currently, swall-1 = swissprot + tremblnew, swall-2 = trembl)
-        if (($opt_s && $id =~ /_/) || ($opt_t)) {
+        if (($opt_s) || ($opt_t)) {
             #
             $total_org =~ s/\n/ /g;
             $total_org =~ s/\.//g;
