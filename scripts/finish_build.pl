@@ -13,7 +13,7 @@
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-12-02 10:33:26 $
+# Last updated on: $Date: 2003-12-02 13:29:24 $
 
 
 use strict;
@@ -116,8 +116,10 @@ system("/nfs/intweb/cgi-bin/wormpub/confirmed_introns/parse_gff.pl") && warn "Co
 print LOG "Transferring autoace to ~wormpub/DATABASES/current_DB\n";
 print LOG "First removing ~wormpub/DATABASES/current_DB/database/ and ~wormpub/DATABASES/current_DB/database/CHROMOSOMES/\n";
 
-rmdir("/nfs/disk100/wormpub/DATABASES/current_DB/database") && die "Couldn't remove current_DB/database dir\n";
-rmdir("/nfs/disk100/wormpub/DATABASES/current_DB/CHROMOSOMES") && die "Couldn't remove current_DB/CHROMOSOMES dir\n";
+unlink("/nfs/disk100/wormpub/DATABASES/current_DB/database/*") || die "Couldn't remove current_DB/database dir\n";
+unlink("/nfs/disk100/wormpub/DATABASES/current_DB/CHROMOSOMES/*") || die "Couldn't remove current_DB/CHROMOSOMES dir\n";
+rmdir("/nfs/disk100/wormpub/DATABASES/current_DB/database") || die "Couldn't remove current_DB/database dir\n";
+rmdir("/nfs/disk100/wormpub/DATABASES/current_DB/CHROMOSOMES") || die "Couldn't remove current_DB/CHROMOSOMES dir\n";
 system("TransferDB.pl -start $basedir/autoace -end /nfs/disk100/wormpub/DATABASES/current_DB -database -chromosomes -wspec -name $WS_name")  && die "couldn't run TransferDB for wormpub\n";
 system("/bin/gunzip /nfs/disk100/wormpub/DATABASES/current_DB/CHROMOSOMES/*.gz") && die "Couldn't gunzip CHROMOSOMES/*.gz\n";
 
@@ -170,7 +172,8 @@ sub archive_old_releases{
   if (-d "$WS_old_path"){
     if (-d "$WS_old_path/database"){
       print LOG "Removing $WS_old_path/database\n";
-      rmdir("$WS_old_path/database") && die "Couldn't remove $WS_old_path/database\n";
+      unlink("$WS_old_path/database/*") || die "Couldn't remove $WS_old_path/database\n";
+      rmdir("$WS_old_path/database") || die "Couldn't remove $WS_old_path/database\n";
     }
     # remove wspec, wgf etc.
     my @files = glob("$WS_old_path/w*");
@@ -180,7 +183,8 @@ sub archive_old_releases{
     }
     if (-d "$WS_old_path/pictures"){
       print LOG "Removing $WS_old_path/pictures\n";
-      rmdir("$WS_old_path/pictures") && die "Couldn't remove $WS_old_path/pictures\n";
+      unlink("$WS_old_path/pictures/*") || die "Couldn't remove $WS_old_path/pictures\n";
+      rmdir("$WS_old_path/pictures") || die "Couldn't remove $WS_old_path/pictures\n";
     }    
   }
 
@@ -190,14 +194,16 @@ sub archive_old_releases{
   system ("gzip $WS_old_path.tar") && die "Couldn't create gzip file\n";
   print LOG "Moving archive to /nfs/wormarchive and removing $WS_old_path\n";
   system ("mv $WS_old_path.tar.gz /nfs/wormarchive/") && die "Couldn't move to /nfs/wormarchive\n";
-  rmdir("$WS_old_path") && die "Couldn't remove old directory\n";
+  unlink("$WS_old_path/*") || die "Couldn't remove old directory\n";
+  rmdir("$WS_old_path") || die "Couldn't remove old directory\n";
   
   # archive old wormpep version
   if(-d $old_wormpep){
     print LOG "\nCreating $old_wormpep archive\n";
     system ("tar -P /$basedir/ -cvf $old_wormpep.tar $old_wormpep") && die "Couldn't create wormpep tar file\n";
     system ("gzip $old_wormpep.tar") && die "Couldn't create gzip wormpep tar file\n";
-    rmdir("$old_wormpep") && die "Couldn't remove old directory\n";
+    unlink("$old_wormpep/*") || die "Couldn't remove old directory\n";
+    rmdir("$old_wormpep") || die "Couldn't remove old directory\n";
   }
 
 }
