@@ -13,15 +13,13 @@
 # 3)  Improper end codon with no 'End_not_found' tag present
 # 4)  Internal stop codons
 # 5)  Non ATCG characters in the sequence
-# 6)  Subsequence exon coordinates that exceed the length of the parent sequence (this also
-#     finds subsequences whose parent is also a subsequence)
-# 7)  Sequences which don't have a 'Species = Caenorhabditis elegans' tag-value pair
-# 8)  Subsequences which belong to superlink objects
-# 9)  Subsequences which have 'Method = hand_built'
-# 10) Presence of 'Source' tag
-# 11) Inconsistencies in exon coordinates, i.e. where adjacent exons might have overlapping 
+# 6)  Sequences which don't have a 'Species = Caenorhabditis elegans' tag-value pair
+# 7)  Subsequences which belong to superlink objects
+# 8)  Subsequences which have 'Method = hand_built'
+# 9) Presence of 'Source' tag
+# 10) Inconsistencies in exon coordinates, i.e. where adjacent exons might have overlapping 
 #     coordinates
-# 12) Checks for presence of 'From_laboratory' tag
+# 11) Checks for presence of 'From_laboratory' tag
 
 use Ace;
 use IO::Handle;
@@ -104,10 +102,8 @@ print "\nChecking $gene_count predicted genes in '$db_path'\n\n";
 
 CHECK_GENE:
 foreach my $gene (@predicted_genes){
-
   # get gene
   my $gene_object = $db->fetch(Sequence=>$gene);
-
   
   # check that 'Source' tag is present and if so then grab parent sequence details
   my $source = $gene_object->Source;
@@ -122,29 +118,17 @@ foreach my $gene (@predicted_genes){
     print "Gene error - $gene: belongs to a superlink object ($parent)\n";
   }
 
-  # check coordinate system of both subsequence in relation to parent and exons in relation
-  # to subsequence
+
+  # check coordinate system exons in relation to each other
   if ($parent !~ m/LINK/){    
     my ($parent_length) = $parent->DNA(2);
     $parent_length = 0 if (!defined($parent_length));
-
-    # fetch subsequence coordinates from source
-    my @subseq_coord1 = $parent->get('Subsequence',2);
-    my @subseq_coord2 = $parent->get('Subsequence',3);
-
-    # check subsequence coordinates against parent length
-    my $i;
-    for($i=0; $i<@subseq_coord1; $i++){
-      if (($subseq_coord1[$i] > $parent_length) || ($subseq_coord2[$i] > $parent_length)){
-	print "Gene error - $gene: subsequence coordinates exceed length of parent \n" 
-      }
-    }
-    $i = 0;
+    my $i = 0;
     my $max_coordinate = 0;
-    # fetch exon coordinates
+
     my @exon_coord1 = $gene_object->get('Source_Exons',1);
     my @exon_coord2 = $gene_object->get('Source_Exons',2);
-    # check that largest exon coordinate does not exceed range of parent sequence?    
+
     for($i=0; $i<@exon_coord1; $i++){
       $max_coordinate = $exon_coord1[$i] if ($exon_coord1[$i] > $max_coordinate);
       $max_coordinate = $exon_coord2[$i] if ($exon_coord2[$i] > $max_coordinate);
