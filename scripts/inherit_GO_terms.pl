@@ -65,7 +65,7 @@ print LOG "# run details    : $rundate $runtime\n";
 print LOG "\n";
 
 
-my $out="/wormsrv2/wormbasr/misc/misc_inherit_GO_term.ace";
+my $out="/wormsrv2/wormbase/misc/misc_inherit_GO_term.ace";
 open (OUT,">$out");
 OUT->autoflush();
 
