@@ -109,7 +109,7 @@ if ( $update_databases )
 
 
 
-@updated_DBs = qw(ensembl gadfly yeast slimswissprot slimtrembl);
+#@updated_DBs = qw(ensembl gadfly yeast slimswissprot slimtrembl);
 
 #generate distribution request based on updated databases
 my $letter = "/wormsrv2/logs/distribute_on_farm_mail";
@@ -117,7 +117,7 @@ open (LETTER,">$letter");
 print LETTER "This is a script generated email from the wormpipe Blast analysis pipeline.\nAny problems should be addessed to worm\@sanger.ac.uk.\n
 =====================================================
 \n";
-print LETTER "The following can be removed from /data/blastdb/Worms. . . \n\n";
+print LETTER "The following can be removed from /data/blastdb/Worms.\n\n";
 foreach (@updated_DBs){
   print LETTER "$_*\n";
 }
@@ -284,17 +284,44 @@ if( $setup_mySQL )
 
 if( $run_pipeline )
   {   
-    #make wormprot connection
-    $dbname = "wormprot";
-    my $wormprot =  DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
-      || die "cannot connect to db, $DBI::errstr";
+#    #make wormprot connection
+#    $dbname = "wormprot";
+#    my $wormprot =  DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
+#      || die "cannot connect to db, $DBI::errstr";
     
-    #make worm01 connection
-    $worm01 = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
-      || die "cannot connect to db, $DBI::errstr";
+#    #make worm01 connection
+#    $worm01 = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
+#      || die "cannot connect to db, $DBI::errstr";
 
-    $worm01->disconnect;
-    $wormprot->disconnect;
+
+
+    #run worm01 stuff
+    my $bdir = "/nfs/farm/Worms/EnsEMBL/branch-ensembl-121/ensembl-pipeline/modules/Bio/EnsEMBL/Pipeline";
+    `cp -f $bdir/pipeConf.pl.worm01 $bdir/pipeConf.pl` and die "cant copy pipeConf worm01 file\n";
+
+    `perl RuleManager3.pl -once -flushsize 3 -analysis 23`;# - wormpep
+    #anything updated
+    foreach (@updated_DBs)
+      {
+	my $analysis = $worm01processIDs{$database};
+	`perl RuleManager3.pl -once -flushsize 5 -analysis $analysis`;
+      }
+    
+    #run wormpep stuff
+    `cp -f $bdir/pipeConf.pl.wormprot $bdir/pipeConf.pl` and die "cant copy pipeCon fwormprot file\n";
+    `perl RuleManager3.pl -once -flushsize 5 -analysis $wormprotprocessIDs{wormpep}`;# - wormpep
+    
+    `perl RuleManager3.pl -once -flushsize 5`;  #finish off anything that didn't work
+    #anything updated
+    foreach (@updated_DBs)
+      {
+	my $analysis = $wormprotprocessIDs{$database};
+	`perl RuleManager3Prot.pl -once -flushsize 5 -analysis $analysis`;
+      }
+    `perl RuleManager3prot.pl -once -flushsize 5`; # finish off anything that didn't work + PFams and low complexity, signalp, ncoils, transmembrane
+    
+#    $worm01->disconnect;
+#    $wormprot->disconnect;
   }
 
 exit(0);
