@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.79 2002-08-28 08:26:51 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.80 2002-08-29 15:35:20 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -798,7 +798,7 @@
 		     Clone_left_end ?Clone XREF Clone_left_end UNIQUE Int
 		     Clone_right_end ?Clone XREF Clone_right_end UNIQUE Int
 		     Flipped
-	  DB_info	Database ?Database Text ?Accession_number XREF Primary_for_sequence UNIQUE Int 
+	  DB_info	Database ?Database ?Text ?Accession_number XREF Primary_for_sequence UNIQUE Int 
 				  // ID  Accession_number & sequence version [dl 2000-07-27]
                         AC_number Text
 			Secondary_accession ?Accession_number XREF Secondary_for_sequence
@@ -1066,7 +1066,7 @@
 	  Peptide UNIQUE ?Peptide UNIQUE Int UNIQUE Int // Length + checksum
 	  Display  View ?View
 		   Default_view UNIQUE ?View
-	  DB_info	Database ?Database Text ?Accession_number XREF Protein // ID  Accession_number
+	  DB_info	Database ?Database ?Text ?Accession_number XREF Protein // ID  Accession_number
 		  	DB_remark ?Text		// Swissprot CC entries
 			Keyword ?Keyword	// Swissprot
 	  		DB_searched ?Database Int // Int = version - should this be here?
