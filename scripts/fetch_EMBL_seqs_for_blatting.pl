@@ -7,7 +7,7 @@
 # Attempt to unify all of the diverse scripts to fetch ESTs, OSTs, mRNAs etc. used by blat 
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-09-22 09:05:09 $
+# Last edited on: $Date: 2003-10-01 09:49:21 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -40,7 +40,7 @@ GetOptions (
 	    "blastdb"  => \$blastdb,
 	    "ace"      => \$ace,
 	    "ftp"      => \$ftp,
-	    "debug"    => \$debug,
+	    "debug=s"  => \$debug,
             "help"     => \$help
 	    );
 
