@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2003-11-03 10:45:10 $
+# Last updated on: $Date: 2003-11-03 11:39:24 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -63,7 +63,7 @@ if ($debug) {
 
 &create_log_file;
 
-&copy_release_files if ($norelease);    # make a new directory for the WS release and copy across release files
+&copy_release_files unless ($norelease);    # make a new directory for the WS release and copy across release files
 
 &copy_chromosome_files; # make a new /CHROMOSOMES directory for the DNA, GFF, and agp files and copy files across
 
