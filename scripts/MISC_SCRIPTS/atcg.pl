@@ -7,7 +7,7 @@
 # Usage: atcg.pl - options
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-08-01 10:36:36 $
+# Last updated on: $Date: 2004-08-02 16:12:51 $
 #
 ##############################
 

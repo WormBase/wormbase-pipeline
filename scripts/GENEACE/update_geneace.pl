@@ -355,9 +355,8 @@ sub geneclass_loci_other_name {
       $num_parts = scalar @parts;
       if ($num_parts == 1){
 	$seq = uc($seq);
-	push(@Update, "CDS\t\"$seq\"\n");
 	push(@Update, "Sequence_name\t\"$seq\"\n");
-	print "CDS\t\"$seq\"\n";  
+	print "Sequence_name\t\"$seq\"\n";  
       }
       if ($num_parts > 1){
 	$head = $seq;
@@ -383,15 +382,12 @@ sub geneclass_loci_other_name {
 		  $pmid =~ s/\]//;	$pmid =~ s/\s+//;	
 		  print $pmid, "\n";
 		  push(@Update, "Sequence_name\t\"$seq\"\n");
-		  push(@Update, "CDS\t\"$seq\"\tPMID_evidence\t\"$pmid\"\n");
 		  push(@Update, "Evidence\tPMID_evidence\t\"$pmid\"\n");
-		  #print "CDS\t\"$seq\"\t$1\t\"$pmid\"\n";	
 		}
 		else {
 		  $cgc_paper=$2;
                   $cgc_paper =~ s/\[|\]//g;
 		  push(@Update, "Sequence_name\t\"$seq\"\n");
-		  push(@Update, "CDS\t\"$seq\"\tPaper_evidence\t\"[$cgc_paper]\"\n");
 		  push(@Update, "Evidence\tPaper_evidence\t\"[$cgc_paper]\"\n");
 		}
 	      }
@@ -404,9 +400,7 @@ sub geneclass_loci_other_name {
 		foreach (@persons){
 		  $_ =~ s/^\s//;
 		  push(@Update, "Sequence_name\t\"$seq\"\n");   
-		  push(@Update, "CDS\t\"$seq\"\tAuthor_evidence\t\"$_\"\n");
 		  push(@Update, "Evidence\tAuthor_evidence\t\"$_\"\n");
-		  #print "CDS\t\"$seq\"\tAuthor_evidence\t\"$_\"\n";
                 }
 	      }
 	    }
@@ -422,15 +416,12 @@ sub geneclass_loci_other_name {
 		  $pmid =~ s/\]//;		
 		  print $pmid, "\n";
 		  push(@Update, "Sequence_name\t\"$seq\"\n");
-		  push(@Update, "CDS\t\"$seq\"\tPMID_evidence\t\"$pmid\"\n");
 		  push(@Update, "Evidence\tPMID_evidence\t\"$pmid\"\n");
-		  #print "CDS\t\"$seq\"\t$1\t\"$pmid\"\n";	
 	      }
 	      else {
 		$cgc_paper=$2;
                 $cgc_paper =~ s/\[|\]//g;
 		push(@Update, "Sequence_name\t\"$seq\"\n");
-		push(@Update, "CDS\t\"$seq\"\tPaper_evidence\t\"[$cgc_paper]\"\n");
 		push(@Update, "Evidence\tPaper_evidence\t\"[$cgc_paper]\"\n");
 	      }
 	    }
@@ -442,9 +433,7 @@ sub geneclass_loci_other_name {
 	      foreach (@persons){
 		$_ =~ s/^\s//;
 		push(@Update, "Sequence_name\t\"$seq\"\n");
-		push(@Update, "CDS\t\"$seq\"\tAuthor_evidence\t\"$_\"\n");
 		push(@Update, "Evidence\tAuthor_evidence\t\"$_\"\n");
-		#print "CDS\t\"$seq\"\tAuthor_evidence\t\"$_\"\n";
               }
 	    }
 	  }
@@ -698,16 +687,6 @@ sub gene_mapping {
       @providers = split(/,|and/, $3);
     }
 
-    # this has become part of Caltech functional annotation. The CGC update should CC Caltech for this bit
-
-   # if ($_ =~ /^Locus_[dD]escription(:|\s:)\s+(.+)/){
-#      my $des = $2;
-#      foreach $person (@providers){
-#	$person =~ s/^\s|\s$//;
-#	print "Description", "$des\tAuthor_evidence\t\"$person\"\n";
-#	write_ace($locus, "Description", "$des\"\tAuthor_evidence\t\"$person");
-#      }
-#    }
 
     if ($_ =~ /^Locus_[cC]hromosome(:|\s:)\s+(.+)/){write_ace($locus, "Map", $2)}
 
@@ -719,8 +698,6 @@ sub gene_mapping {
 	write_ace($locus, "Allele", $allele);
       }
     }
-     # this has become part of Caltech functional annotation. The CGC update should CC Caltech for this bit
-   # if ($_ =~ /^Locus_[gG]ene_[pP]roduct(:|\s:)\s+(.+)/){write_ace($locus, "Product", $2)}
 
     ###############################
     # parse breakpt (rearrangement)
@@ -818,11 +795,6 @@ sub gene_mapping {
     elsif ($tag eq "CGC_approved"){
       push(@{$obj_info{$obj}}, "$tag");
     }
-
-    # this has become part of Caltech functional annotation. The CGC update should CC Caltech for this bit
-   # elsif ($tag eq "Description"){
-#      push(@{$obj_info{$obj}}, "$tag\t\"$value\"");
-#    }
 
     else {
       push(@{$obj_info{$obj}}, "$tag\t\"$value\""); # quotation different

@@ -7,7 +7,7 @@
 # A script to convert ?Locus objects into the new ?Gene object
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-04-07 13:47:30 $   
+# Last updated on: $Date: 2004-08-02 16:12:51 $   
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};

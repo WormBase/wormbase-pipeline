@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-07-26 13:04:41 $
+# Last updated on: $Date: 2004-08-02 16:12:51 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -118,7 +118,6 @@ foreach $class (@classes){
   if ($class =~ m/strain/i)        {&process_strain_class}
   if ($class =~ m/rearrangement/i) {&process_rearrangement}
   if ($class =~ m/mapping/i)       {&check_genetics_coords_mapping}
-  if ($class =~ m/xref/i)          {&check_bogus_XREF}
   if ($class =~ m/multipoint/i)    {&check_dubious_multipt_gene_connections}
 
   # this will not fire off even if no class is specified see also http://intweb.sanger.ac.uk/Projects/C_elegans/DOCS/geneace_duties.shtml
@@ -207,9 +206,9 @@ sub process_gene_class{
   }
 
   # checks Genes that do not have a map position nor an interpolated_map_position but has sequence info
-  my $query = "Find Gene WHERE !(Map | Interpolated_map_position) & (CS|Transcript|Pseudogene) & Species=\"*elegans\" & !Sequence_name=\"MTCE*\"";
+  my $query = "Find Gene WHERE !(Map | Interpolated_map_position) & Sequence_name & Species=\"*elegans\" & !Sequence_name=\"MTCE*\"";
   foreach my $gene ($db->fetch(-query=>"$query")){
-    print LOG "ERROR 5: $gene ($Gene_info{$gene}{'Public_name'}) has neither Map nor Interpolated_map_position info\n";
+    print LOG "ERROR 5: $gene ($Gene_info{$gene}{'Public_name'}) has neither Map nor Interpolated_map_position info but has Sequence_name\n";
   }
 
   # test for Map tag and !NEXT
@@ -371,7 +370,7 @@ sub test_locus_for_errors{
 
 
 
-  # check that live gene id should not have wpxxx appended to its Sequence_name or CDS/Transcript/Pseudogene
+  # check that live gene id should not have wpxxx appended to its Sequence_name
   foreach my $tag ("Sequence_name", "Public_name"){
     if ( defined $gene_id->$tag && $gene_id->at('Identity.Live') ){
       my $history = $gene_id->$tag;
@@ -1165,117 +1164,6 @@ sub process_rearrangement {
   print LOG "No errors found\n" if $count == 0;
 }
 
-                          ###########################################################
-                          #         SUBROUTINES FOR -class xref option              #
-                          ###########################################################
-
-
-sub check_bogus_XREF {
-
-  # Does two things:
-  #  A: finding deleted parent CDS name after isoforms are created
-  #  B: finding bogus XREF from CDS names that are typos
-
-  print "\nChecking bogus XREF debris of deleted CDS / Transcript / Pseudogene / Gene_name from Gene obj. . . .\n";
-  print LOG "\nChecking bogus XREF debris of deleted CDS / Transcript / Pseudogene / Gene_name from Gene obj. . . .\n";
-  print LOG "-----------------------------------------------------------------------------------------------------\n";
-
-  my $query_cds        = "Find CDS * where !(yk*) & *.*; Gene";
-  my $query_transcript = "Find Transcript * ; Gene";
-  my $query_pseudo     = "Find Pseudogene * ; Gene";
-  my $query_gname      = "Find Gene_name *.*"; 
-  my $query_gene      = "Find Gene * where (CDS|transcript|pseudogene)";
-
-  push(my @CDS,   $db->find($query_cds));
-  push(my @TRANS, $db->find($query_transcript));
-  push(my @PSEUDO,$db->find($query_pseudo));
-  push(my @GNAME, $db->find($query_gname));
-  push(my @gene_ids,  $db->find($query_gene));
-
-  my $error = 0;
-
-  # A: finding phantom deleted seq name after isoforms are created for a Gene id
-  $error = find_bogus(\@CDS, "CDS");
-  $error = find_bogus(\@TRANS, "Transcripts");
-  $error = find_bogus(\@PSEUDO, "Pseudogene");
-  $error = find_bogus(\@GNAME, "Gene_name");
-
-  # B: finding bogus XREF from CDS/Transcrpt/Pseudogene tag of a Gene id to Gene tag of a Sequence obj.
-  my (%gene_id_seq_A, %gene_id_seq_B); # hash A, gene_id linked to seq. in seq objs, hash B, gene_id linked to seq. in gene obj.
-
-  my @all = (\@CDS, \@TRANS, \@PSEUDO);
-  foreach my $e (@all){
-    foreach (@{$e}){
-      if(defined $_ -> Gene ) {push(@{$gene_id_seq_A{$_ -> Gene}}, $_)} # key is gene_id, value is seq. name
-    }
-  }
-
-  foreach (@gene_ids){
-    if( defined $_ -> CDS ){push(@{$gene_id_seq_B{$_}}, $_ -> CDS) }    # key is gene_id, value is seq. name
-    if( defined $_ -> Transcript ){push (@{$gene_id_seq_B{$_}}, $_ -> Transcript) }
-    if( defined $_ -> Pseudogene ){push (@{$gene_id_seq_B{$_}}, $_ -> Pseudogene) }
-  }
-
-  foreach (keys %gene_id_seq_A){ 
-    if (exists $gene_id_seq_B{$_}){
-
-      # compare seq. obj. in a Gene class with seq. obj linked to same Gene in seq. classes
-      # extra obj means bogus obj
-
-      my @diff = $ga->array_comp(\@{$gene_id_seq_A{$_}},  \@{$gene_id_seq_B{$_}}, "diff");
-      if (scalar @diff > 1){
-	print LOG "ERROR: Found bogus @diff linked to $Gene_info{$_}{'Public_name'}: check ?Gene or ?CDS/?Transcript/?Pseudo\n";
-	$error = 1;
-      }
-    }
-  }
-
-  print LOG "No bogus XREF link found\n" if $error == 0;
-
-  #################################################################################################
-  # HOW this routine works: 
-  # split a sequence eg. Y110A7A.10a, into "Y110A7A.10" (left: as key) and "a" (right: as value)
-  # if a sequence has no right part (ie, not an isoform), then "NA" is assigned.
-  # and if a key's value has "NA", other than a/b/c/d..etc, then the one without isoform is invalid
-  #
-  # This routine checks only deleted bogus parent seq. names when isoforms are created
-  # it cannot check bogus seq. names created by typos
-  ##################################################################################################
-
-  sub find_bogus {
-    my ($class, $cat) = @_;
-    my %Seqs;
-    my @class = @{$class};
-
-    foreach (@class){
-      my ($left, $right); # eg, for B0034.1a, left is "B0034.1" and right is "a"
-
-      if ($_ =~ /^(.+\.\d+)(\D)$/){$left = $1; $right = $2}
-      if ($_ =~ /^(.+\.\d+)$/){$left = $1; $right = "NA"}
-      push(@{$Seqs{$left}}, $right) if defined $left;
-      $left =();
-    }
-
-    my $error=0;
-
-    foreach (keys %Seqs){
-      my $counter_NA = 0; my $counter_iso = 0;
-      foreach my $e (@{$Seqs{$_}}){
-	if ($e eq "NA"){	# ie, has somthing like XX.1 , XX.1a and XX.1b
-	  $counter_NA++;
-	}
-	else {
-	  $counter_iso++;
-	}
-      }
-      if ($counter_iso != 0 && $counter_NA != 0){
-	print LOG "ERROR: Found bogus $_ in $cat class\n";
-	$error = 1;
-      }
-    }
-    return $error;
-  }
-}
                           ############################################################
                           #         SUBROUTINES FOR -class mapping option            #
                           ############################################################
@@ -1288,7 +1176,7 @@ sub check_genetics_coords_mapping {
   print LOG "--------------------------------------------------\n";
   print JAHLOG "\nChecking discrepancies in genetics/coords mapping:\n";
   print JAHLOG "--------------------------------------------------\n";
-  system ("/wormsrv2/scripts/get_interpolated_gmap.pl -db /wormsrv1/geneace -diff");
+  system ("/wormsrv2/scripts/get_interpolated_gmap.pl -database /wormsrv1/geneace -diff");
   my $map_diff = "/wormsrv2/logs/mapping_diff.".$rundate;
   open(IN, $map_diff) || die $!;
   while(<IN>){
@@ -1464,7 +1352,6 @@ B<-class:>
                rearrangement
                evidence
                mapping
-               xref
                gmap
                multipoint
 
@@ -1490,21 +1377,6 @@ B<-verbose:>
             For the locus class it will display each locus name as it is processes it and show
             (next to the locus name) a dot for each error it had found in that locus
 
-B<-xref:>
-            This option is used to check mysterious two-way XREF problem 
-            in AceDB for Geneace, ie, when a sequence under Genomic_
-            sequence tag is deleted from a locus object, that sequence obj.
-            in Sequence class is still linked to that locus.
-
-            This has caused problem when dumping out the whole database 
-            and back in again, because old data made their way back again due
-            to XREF, which should have been gone.
-
-            The check also looks for bogus XREF links from Pseudogene 
-            and Transcript classes. For instance, when a Pseudogene seq is
-            connected to a locus, which later became a CDS, the locus - seq
-            link from that Pseudogene obj. in Pseudogene class is still there,
-            causing the same problem.
 
 =head3 <RUN geneace_check.pl>
 

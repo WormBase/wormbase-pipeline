@@ -7,7 +7,7 @@
 # Script to parse columns of predicted tRNA by tRNASCAN-SE
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-12-01 11:54:27 $
+# Last updated on: $Date: 2004-08-02 16:12:51 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 

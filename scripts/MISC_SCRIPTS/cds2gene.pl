@@ -8,7 +8,7 @@
 # linked to an existing ?Gene object
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-05-28 12:44:05 $   
+# Last updated on: $Date: 2004-08-02 16:12:51 $   
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};

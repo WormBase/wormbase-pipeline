@@ -7,7 +7,7 @@
 # simple script for creating new (sequence based) Gene objects 
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-07-22 13:43:53 $
+# Last edited on: $Date: 2004-08-02 16:12:51 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -82,7 +82,6 @@ E.g.
 
 newgene.pl -seq AH6.24 -who 1971 -id 23428 -load
 
-The 'C:' prefix indicates it is a CDS, use 'P' for Pseudogenes and 'T' for Transcripts
 
 This would produce the following acefile:
 

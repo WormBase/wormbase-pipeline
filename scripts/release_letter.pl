@@ -5,7 +5,7 @@
 # by Anthony Rogers                             
 #
 # Last updated by: $Author: krb $               
-# Last updated on: $Date: 2004-06-15 14:33:20 $         
+# Last updated on: $Date: 2004-08-02 16:12:51 $         
 
 # Generates a release letter at the end of build.
 #
@@ -111,7 +111,7 @@ if( defined($opt_l)) {
   my $tace = &tace;
   my $db = Ace->connect(-path  => "/wormsrv2/autoace",
                         -program =>$tace) || do { print LOG "Connection failure: ",Ace->error; die();};
-  my $query = "Find Gene WHERE (CDS OR Transcript OR Pseudogene) AND CGC_name";
+  my $query = "Find Gene WHERE (Corresponding_CDS OR Corresponding_transcript OR Corresponding_pseudogene) AND CGC_name";
   my $gene_seq_count = $db->fetch(-query=> "$query");
   $db->close;
 

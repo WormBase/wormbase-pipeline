@@ -7,7 +7,7 @@
 # A script to take ?Sequence objects and make ?CDS objects
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-11-17 14:55:08 $     
+# Last updated on: $Date: 2004-08-02 16:12:51 $     
 
 use strict;
 use Getopt::Long;

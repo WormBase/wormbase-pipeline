@@ -8,7 +8,7 @@
 # to look for bogus sequence entries
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-06-16 21:42:13 $
+# Last updated on: $Date: 2004-08-02 16:12:51 $
 
 
 use strict;
@@ -95,7 +95,7 @@ my $all_counter = 0;
 
 
 
-# Checks for CDSs connected to multiple loci
+# Checks for CDS connected to multiple loci
 print "\nChecking for CDSs connected to multiple loci\n" if ($verbose);
 &find_multiple_loci;
 
@@ -580,7 +580,7 @@ sub get_timestamp{
     ($class = "Sequence", $tag = "Matching_CDS")          if ($tag eq "Matching_cDNA");
     ($class = "Allele", $tag = "Predicted_gene")          if ($tag eq "Alleles");
     ($class = "Operon", $tag = "Contains_CDS")            if ($tag eq "Contained_in_operon");
-    ($class = "Gene", $tag = "CDS")                       if ($tag eq "Gene");
+    ($class = "Gene", $tag = "Corresponding_CDS")         if ($tag eq "Gene");
     ($class = "RNAi", $tag = "CDS")                       if ($tag eq "RNAi_result");
     ($class = "Clone", $tag = "Sequence")                 if ($tag eq "Clone");
     ($class = "Allele", $tag = "CDS")                     if ($tag eq "Allele");
@@ -623,21 +623,21 @@ sub splice_variant_check{
 sub find_multiple_loci {
 
   my $get_seqs_with_multiple_loci=<<EOF;
-  Table-maker -p "/wormsrv1/geneace/wquery/get_seq_has_multiple_loci.def" quit 
+  Table-maker -p "/wormsrv2/autoace/wquery/CDSs_with_multiple_genes.def" quit 
 EOF
 
-  my ($cds, $locus);
+  my ($cds, $gene);
 
   open (FH, "echo '$get_seqs_with_multiple_loci' | tace $database | ") || die "Couldn't access $database\n";
   while (<FH>){
     chomp($_);
     if ($_ =~ /^\"/){
       $_ =~ s/\"//g;
-      ($cds, $locus)=split(/\s+/, $_);
+      ($cds, $gene)=split(/\s+/, $_);
 
       # Don't know how to get timestamps for each value next to Gene tag but can
-      # get the timestamp from the Gene tag itself
-      my $aql_query = "select s,s->Gene.node_session from s in object(\"CDS\",\"$cds\")";
+      # get the timestamp from the Corresponding_CDS tag itself
+      my $aql_query = "select s,s->Gene.node_session from s in object(\"Corresponding_CDS\",\"$cds\")";
 
       my @aql = $db->aql($aql_query);
       my $timestamp = "$aql[0]->[1]";

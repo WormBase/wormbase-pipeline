@@ -7,8 +7,8 @@
 # This script calculates interpolated genetic map positions for CDS, Transcripts 
 # and Pseudogenes lying between and outside genetic markers.
 #
-# Last updated on: $Date: 2004-06-09 12:51:32 $
-# Last updated by: $Author: ck1 $
+# Last updated on: $Date: 2004-08-02 16:12:51 $
+# Last updated by: $Author: krb $
 
 
 use strict;
@@ -26,7 +26,7 @@ my ($diff, $reverse, $database, $gff_location, $help, $debug, $map, $comp, $verb
 
 GetOptions ("diff"          => \$diff,
             "rev|reverse"   => \$reverse,
-	    "db|database=s" => \$database,
+	    "database=s" => \$database,
 	    "map"           => \$map,
 	    "comp"          => \$comp,
 	    "h|help"        => \$help,
@@ -36,24 +36,23 @@ GetOptions ("diff"          => \$diff,
 
 
 my $gff_dir    = "/wormsrv2/autoace/GFF_SPLITS/";
-my $curr_db    = "/nfs/disk100/wormpub/DATABASES/current_DB/";
 my $output     = "/wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP";
 
-my $rundate    = `date +%y%m%d`; chomp $rundate;
-my $start      = `date +%H:%M:%S`; chomp $start;
+my $rundate    = &rundate;
+my $start      = &runtime;
 my $script_dir = "/wormsrv2/scripts/";
 my $tace = glob("~wormpub/ACEDB/bin_ALPHA/tace");
 
 if (!defined @ARGV){system ("perldoc /wormsrv2/scripts/get_interpolated_gmap.pl"); exit(0)}
 
 # set WS version number
-my $current = `grep "NAME WS" $curr_db/wspec/database.wrm`; $current =~ s/NAME WS//; chomp $current;
-my $version = $current+1;
+my $version = &get_wormbase_version;
 
 
 # Use specified database for path but default to using autoace if -database not specified
 if($database){
-  $gff_location = "/wormsrv2/autoace/GFF_SPLITS/WS"."$current";
+  my $prev_version = $version -1;
+  $gff_location = "/wormsrv2/autoace/GFF_SPLITS/WS"."$prev_version";
 }
 else{
   $gff_location = "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS";
@@ -122,20 +121,20 @@ my %Gene_info = $ga -> gene_info($database);
 
 
 my $CDS_linked_to_gene=<<EOF;
-  Table-maker -p "/wormsrv1/geneace/wquery/get_CDS_to_gene.def" quit
+  Table-maker -p "$database/wquery/get_CDS_to_gene.def" quit
 EOF
 
 my $transcript_linked_to_gene=<<EOF;
-  Table-maker -p "/wormsrv1/geneace/wquery/get_transcript_to_gene.def" quit
+  Table-maker -p "$database/wquery/get_transcript_to_gene.def" quit
 EOF
 
 my $pseudogene_linked_to_gene=<<EOF;
-  Table-maker -p "/wormsrv1/geneace/wquery/get_pseudogene_to_gene.def" quit
+  Table-maker -p "$database/wquery/get_pseudogene_to_gene.def" quit
 EOF
 
-open (FH1, "echo '$CDS_linked_to_gene' | $tace $database |") || die "Couldn't access $curr_db\n";
-open (FH2, "echo '$transcript_linked_to_gene' | $tace $database |") || die "Couldn't access $curr_db\n";
-open (FH3, "echo '$pseudogene_linked_to_gene' | $tace $database |") || die "Couldn't access $curr_db\n";
+open (FH1, "echo '$CDS_linked_to_gene'        | $tace $database |") || die "Couldn't access $database\n";
+open (FH2, "echo '$transcript_linked_to_gene' | $tace $database |") || die "Couldn't access $database\n";
+open (FH3, "echo '$pseudogene_linked_to_gene' | $tace $database |") || die "Couldn't access $database\n";
 
 my %sequence_linked_to_gene;
 
@@ -440,37 +439,27 @@ foreach (sort keys %chrom_length){print INFO "$_ -> $chrom_length{$_} bp\n"}
 # to distinguish later on which of these classes a seq variant belongs to
 #########################################################################
 
-my $all_CDS=<<EOF;
-  Table-maker -p "/wormsrv1/geneace/wquery/get_all_predicted_genes.def" quit
-EOF
-my $all_transcripts=<<EOF;
-  Table-maker -p "/wormsrv1/geneace/wquery/get_all_transcripts.def" quit
-EOF
-my $all_pseudogenes=<<EOF;
-  Table-maker -p "/wormsrv1/geneace/wquery/get_all_pseudogenes.def" quit
-EOF
+my $db = Ace->connect(-path=>$database,
+                      -program =>$tace) || do { print "Connection failure: ",Ace->error; die();}; 
 
-open (FH1, "echo '$all_CDS' | $tace $database | ") || die "Couldn't access $curr_db\n";
-open (FH2, "echo '$all_transcripts' | $tace $database | ") || die "Couldn't access $curr_db\n";
-open (FH3, "echo '$all_pseudogenes' | $tace $database | ") || die "Couldn't access $curr_db\n";
+
+my @genes= $db->fetch(-query=>'find worm_genes');
 
 my %class;
-@FHS = qw(*FH1 *FH2 *FH3);
-foreach my $e (@FHS){
-  my $type;
-  $type = "CDS"    if $e eq "*FH1";
-  $type = "RNA"    if $e eq "*FH2";
-  $type = "pseudo" if $e eq "*FH3";
-  while (<$e>){
-    chomp($_);
-    if ($_ =~ /^\"(.+)\"$/){
-      my $seq = $1;
-      $class{$seq} = $type;
-    }
+
+foreach my $gene (@genes){
+  if (defined $gene->at('Properties.Coding.CDS')){
+    $class{$gene} = "CDS";
+  }
+  elsif (defined $gene->at('Properties.Transcript')){
+    $class{$gene} = "RNA";
+  }
+  elsif (defined $gene->at('Type.Coding_pseudogene') || defined $gene->at('Type.RNA_pseudogene')){
+    $class{$gene} = "pseudo";
   }
 }
+$db->close;
 
-close FH1; close FH2; close FH3;
 
 # for debugging only
 if ($debug){
