@@ -180,46 +180,29 @@ if ($opt_s) {
 
     # assign contigs to laboratory
     %homedb = &which_db;
+    
+    
 
     if ($opt_e) {
+
+	# map BEST hits for whole genome
 	print "Mapping blat data to autoace\n";
 	system("$bin/blat2ace.pl -ei") && die "Mapping failed\n"; 
-
-	print "Mapping blat data to camace\n";
-	system("$bin/blat2ace.pl -eic") && die "Mapping failed\n"; 
-
-	print "Mapping blat data to stlace\n";	
-	system("$bin/blat2ace.pl -eis") && die "Mapping failed\n"; 
     }
+
     if ($opt_m) {
 	print "Mapping blat data to autoace\n";
 	system("$bin/blat2ace.pl -mi") && die "Mapping failed\n"; 
-
-	print "Mapping blat data to camace\n";
-	system("$bin/blat2ace.pl -mic") && die "Mapping failed\n"; 
-
-	print "Mapping blat data to stlace\n";	
-	system("$bin/blat2ace.pl -mis")  && die "Mapping failed\n"; 
     }
+
     if ($opt_o) {
 	print "Mapping blat data to autoace\n";
 	system("$bin/blat2ace.pl -oi") && die "Mapping failed\n"; 
-
-	print "Mapping blat data to camace\n";
-	system("$bin/blat2ace.pl -oic") && die "Mapping failed\n"; 
-
-	print "Mapping blat data to stlace\n";	
-	system("$bin/blat2ace.pl -ois")  && die "Mapping failed\n"; 
     }
+
     if ($opt_x) {
 	print "Mapping blat data to autoace\n";
 	system("$bin/blat2ace.pl -x") && die "Mapping failed\n"; 
-
-	print "Mapping blat data to camace\n";
-	system("$bin/blat2ace.pl -xc") && die "Mapping failed\n"; 
-
-	print "Mapping blat data to stlace\n";	
-	system("$bin/blat2ace.pl -xs")  && die "Mapping failed\n"; 
     }
 
     # produce confirmed introns #
