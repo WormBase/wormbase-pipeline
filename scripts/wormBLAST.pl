@@ -30,6 +30,7 @@ my $prep_dump;
 my $cleanup;
 my $errors = 0; # for tracking global error - needs to be initialised to 0
 my $debug;
+my $test;
 my $log;
 my $WS_version;
 my $maintainers = "All"; # email recipients
@@ -50,7 +51,8 @@ GetOptions("chromosomes" => \$chromosomes,
 	   "blastp"      => \$blastp,
 	   "blastx"      => \$blastx,
 	   "cleanup"     => \$cleanup,
-	   "debug=s"     => \$debug
+	   "debug=s"     => \$debug,
+	   "test"        => \$test,
 	  );
 
 
@@ -500,6 +502,36 @@ if( $dump_data )
     &run_command("$scripts_dir/write_ipi_info.pl");
   }
 
+# this step amalgamates all the individual files ready for transfer to wormsrv2
+if( $finalise ) {
+  my @databases = qw( worm_pep worm_brigpep );
+  my $wormpipe_dir = "/acari/work2a/wormpipe"; $wormpipe_dir .= "/test" if $test;
+  my $ready_dir = "$wormpipe_dir"."/dumps";
+
+  #blastp data from each database
+  foreach ( @database ) {
+    
+    my $output_dir   = "$wormpipe_dir/dumps/$database/blastp/ACE";
+    my $best_hit_dir = "$wormpipe_dir/dumps/$database/HITS";
+    my $ipi_file     = "$wormpipe_dir/dumps/$database/blastp_ipi";
+
+    system("cat $output_dir/*.ace $ready_dir/${_}_blastp.ace");
+
+    #best hits files ( stored as individual analyses )
+  }
+
+  # blastx data from worm_dna
+  system("cat $wormpipe_dir/blastx/*.ace $ready_dir/worm_dna_blastx.ace");
+
+  #motif info dump straight there
+
+  # write best blastp files for worm_pep and worm_brigpep
+  system("$scripts_dir/write_best_blastp.pl -database worm_pep,worm_brigpep"):
+
+
+}
+
+
 if( $cleanup ) {
   print "clearing up files generated in this build\n";
 # files to move to ~wormpub/last-build/
@@ -706,7 +738,7 @@ sub run_RuleManager
     $script = "$bdir/RuleManager3Prot.pl" if $moltype eq "pep";
 
     die "invalid or no moltype passed to run_RuleManager : $moltype\n" unless $script;
-    &run_command("perl5.6.1 $script -dbhost $dbhost -dbname $dbname -dbpass $dbpass -dbuser $dbuser");
+    &run_command("perl $script -dbhost $dbhost -dbname $dbname -dbpass $dbpass -dbuser $dbuser");
 
   }
 
