@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam aged 12 and a half
 #
-# Last updated on: $Date: 2004-05-06 09:57:22 $
+# Last updated on: $Date: 2004-05-07 15:21:39 $
 # Last updated by: $Author: krb $
 #
 # see pod documentation at end of file for more information about this script
@@ -108,14 +108,13 @@ foreach my $cds (@CDSs){
   my $i;
   my $j;
 
-  unless ( $basic ) {
-    for($i=1; $i<@exon_coord2;$i++){
-      my $intron_size = ($exon_coord1[$i] - $exon_coord2[$i-1] -1);
-      print "ERROR: $cds has a small intron ($intron_size bp)\n" if (($intron_size < 34)  && $verbose);
-      push(@error2,"ERROR: $cds has a very small intron ($intron_size bp)\n") if ($intron_size < 34);
-      push(@error4,"WARNING: $cds has a small intron ($intron_size bp)\n") if ($intron_size > 33 && $intron_size < 39);
-    }
+  for($i=1; $i<@exon_coord2;$i++){
+    my $intron_size = ($exon_coord1[$i] - $exon_coord2[$i-1] -1);
+    print "ERROR: $cds has a small intron ($intron_size bp)\n" if (($intron_size < 34)  && $verbose);
+    push(@error2,"ERROR: $cds has a very small intron ($intron_size bp)\n") if ($intron_size < 34);
+    push(@error4,"WARNING: $cds has a small intron ($intron_size bp)\n") if ($intron_size > 33 && $intron_size < 39) unless ($basic);
   }
+  
 
   for($i=0; $i<@exon_coord1; $i++){
     my $start = $exon_coord1[$i];
@@ -136,20 +135,14 @@ foreach my $cds (@CDSs){
 
   if ($cds_object->get('Start_not_found')){
     $start_tag = "present";
-    push(@error2,"WARNING: $cds Start_not_found tag present\n");
+    push(@error2,"WARNING: $cds Start_not_found tag present\n") unless ($basic);
     print "WARNING: $cds Start_not_found tag present\n" if $verbose;
   }
   
   if ($cds_object->get('End_not_found')){
     $end_tag = "present";
-    push(@error2,"WARNING: $cds End_not_found tag present\n");
+    push(@error2,"WARNING: $cds End_not_found tag present\n") unless ($basic);
     print "WARNING: $cds End_not_found tag present\n" if $verbose;
-  }
-
-  # Check that Transcript tag not present
-  if ($cds_object->get('Transcript')){
-    push(@error2,"WARNING: $cds has CDS tag plus Transcript tag\n");
-    print "WARNING: $cds has CDS tag plus Transcript tag\n" if $verbose;
   }
 
   # check species is correct
@@ -254,7 +247,7 @@ sub test_gene_sequence_for_errors{
       $warning .= "gene is Predicted\n";
       print "gene is predicted\n" if $verbose;
     }
-    push(@error3, $warning);
+    push(@error3, $warning) unless ($basic);
   }
   elsif($cds_length < 150){
     if (defined($cds_object->at('Properties.Coding.Confirmed_by'))){
@@ -269,7 +262,7 @@ sub test_gene_sequence_for_errors{
       $warning .= "WARNING: $cds is short ($cds_length bp) and is Predicted\n";
       print "WARNING: $cds is short ($cds_length bp) and is Predicted\n" if $verbose;
     }
-    push(@error4, $warning);
+    push(@error4, $warning) unless ($basic);
   }
 
   if ($remainder != 0){
