@@ -4,8 +4,8 @@
 #
 # by Keith Bradnam aged 12 and a half
 #
-# Last updated on: $Date: 2002-11-22 09:19:50 $
-# Last updated by: $Author: krb $
+# Last updated on: $Date: 2002-12-05 10:55:10 $
+# Last updated by: $Author: ar2 $
 #
 # see pod documentation at end of file for more information about this script
 
@@ -18,10 +18,11 @@ use Getopt::Long;
 
 $|=1;
 
-our($verbose,$db_path,$log);
+our($verbose,$db_path,$log, $basic);
 
 GetOptions ("verbose"    => \$verbose,
-	    "database=s" => \$db_path,    
+	    "database=s" => \$db_path, 
+	    "basic"      => \$basic,
 	    "log=s"        => \$log);
 
 # verbose mode
@@ -109,12 +110,13 @@ foreach my $gene (@predicted_genes){
   my $i;
   my $j;
 
-  for($i=1; $i<@exon_coord2;$i++){
-    my $intron_size = ($exon_coord1[$i] - $exon_coord2[$i-1] -1);
-    print "Gene warning - $gene has a small intron ($intron_size bp)\n" if (($intron_size < 31)  && $verbose);
-    push(@error3,"Gene warning - $gene has a very small intron ($intron_size bp)\n") if ($intron_size > 20 && $intron_size < 26);
-    push(@error4,"Gene warning - $gene has a small intron ($intron_size bp)\n") if ($intron_size > 25 && $intron_size < 31);
-
+  unless ( $basic ) {
+    for($i=1; $i<@exon_coord2;$i++){
+      my $intron_size = ($exon_coord1[$i] - $exon_coord2[$i-1] -1);
+      print "Gene warning - $gene has a small intron ($intron_size bp)\n" if (($intron_size < 31)  && $verbose);
+      push(@error3,"Gene warning - $gene has a very small intron ($intron_size bp)\n") if ($intron_size > 20 && $intron_size < 26);
+      push(@error4,"Gene warning - $gene has a small intron ($intron_size bp)\n") if ($intron_size > 25 && $intron_size < 31);
+    }
   }
 
   for($i=0; $i<@exon_coord1; $i++){

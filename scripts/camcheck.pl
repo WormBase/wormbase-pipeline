@@ -6,8 +6,8 @@
 #
 # Usage: camcheck.pl
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-11-21 10:23:44 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2002-12-05 10:55:10 $
 #
 # see pod documentation (i.e. 'perldoc camcheck.pl') for more information.
 #
@@ -39,10 +39,18 @@ my $runtime = `date +%H:%M:%S`; chomp $runtime;
 ##############################
 # command-line options       #
 ##############################
-use vars qw/ $opt_d $opt_h $opt_w $opt_m/;
-getopts ("hdwm");
+use vars qw/ $opt_d $opt_h $opt_w $opt_m $opt_s $opt_l $opt_e/;
+getopts ('hdwms:le:');
 &usage(0) if ($opt_h);
 my $debug = $opt_d;
+
+#  -h, Help
+#  -d, Debug/Verbose mode
+#  -w, Weekly checks are active
+#  -m, Montly checks are active
+#  -s, select which database to run against
+#  -l, low level checks - not all the small intron gubbins in check_predicted_genes.pl
+#  -e, Specifiy a mail recepient so that only the person responsible for a spilt database will be notified
 
 ##############################
 # Paths etc                  #
@@ -53,16 +61,23 @@ my $clonefile = "$clonepath"."/current.versions";
 my $tace      = &tace;   # tace executable path
 my $dbpath    = "/wormsrv1/camace";                           # Database path
 
+if( $opt_s ){
+  $dbpath = $opt_s;
+  die "cant find $dbpath" unless (-e "$dbpath/database/ACEDB.wrm");
+}
 
-# only tell Dan if running debug mode
-$maintainers = "dl1\@sanger.ac.uk" if ($debug);
+# only email a specific person responsible for a database
+$maintainers = $opt_e if $opt_e;
+
+# only tell one person if running debug mode (overrides database owner email)
+$maintainers = "ar2\@sanger.ac.uk" if ($debug);
 
 
 ########################################
 # Open logfile                         #
 ########################################
-
-my $log="/wormsrv2/logs/camcheck.$rundate.$$";
+my $dbname = $dbpath =~ /\/\w+$/;
+my $log="/wormsrv2/logs/camcheck$dbname.$rundate.$$";
 
 
 open (LOG,">$log");
@@ -225,7 +240,9 @@ close(CLONEFILE);
 
 close(LOG);
 
-system("/wormsrv2/scripts/check_predicted_genes.pl -database $dbpath -log $log");
+my $cpg_call = "/wormsrv2/scripts/check_predicted_genes.pl -database $dbpath -log $log";
+$cpg_call .= " -basic" if $opt_l;
+system("$cpg_call");
 warn "check_predicted_genes.pl did not run correctly: $?" if ($?);
 
 # now opened in append mode
@@ -754,6 +771,12 @@ all Genome_sequences and SUPERLINK* objects.
 =item -w, Weekly checks are active
 
 =item -m, Montly checks are active
+
+=item -s, Select a specific database to test eg -s ~wormpub/camace_ar2
+
+=item -l, Doesnt do all the small intron checking stuff in check_predicted_genes.pl
+
+=item -e, Only emails person responsible for specific split database
 
 =back
 
