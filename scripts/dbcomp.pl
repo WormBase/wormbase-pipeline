@@ -6,7 +6,7 @@
 # Compares this number to those from a second database.
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-07-07 08:24:03 $      
+# Last updated on: $Date: 2004-10-25 07:19:47 $      
 
 
 use strict;
@@ -366,6 +366,7 @@ Genome_Sequence
 GO_term
 Homology_group
 Homol_data
+Interaction
 Journal
 Keyword
 Laboratory
