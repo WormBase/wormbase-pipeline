@@ -257,6 +257,15 @@ sub mknewacefiles {
 	    &strip_sequence("$outfile","Genomic_canonical");
 	}
 	
+	# process camace and geneace dumps to add database names into time stamps
+	# rather than keeping the existing 'wormpub' name
+
+	&process_ace_file($filename,$dbname) if ($filename =~ m/geneace/);
+	&process_ace_file($filename,$dbname) if ($filename =~ m/camace/);
+
+	# when we dump timestamps from everything we can just use the following line:
+	# &process_ace_file($filename,$dbname);
+
 	next;
     }
     close CONFIG;
@@ -484,6 +493,34 @@ END
 }
 
 
+########################################################################
+# Process ace files to change 'wormpub' in timestamps to database name #
+########################################################################
+
+sub process_ace_file{
+  my $filename = shift;
+  my $database = shift;
+
+  print LOG "Replacing 'wormpub' in timestamps with database name\n\n";
+
+  open (INPUT, "<$filename") || die "Couldn't open $filename for reading\n";
+  open (OUTPUT, ">${filename}.tmpfile") || die "Couldn't write to tmpfile\n";
+
+    
+  while (<INPUT>) {
+    if (/_wormpub/) {
+      s/_wormpub/_$database/g;
+      print OUT "$_";
+    }
+    else {
+      print OUT "$_";
+    } 
+  }
+  close(INPUT);
+  close(OUTPUT);
+  system ("mv -f ${filename}.tmpfile $filename");
+}
+
 
 #######################################################################
 # Help and error trap outputs                                         #
@@ -503,6 +540,7 @@ sub run_details {
     print "======================================================================\n";
     print "\n\n";
 }
+
 
 sub usage {
     my $error = shift;
