@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-06-11 10:41:09 $
+# Last updated on: $Date: 2003-06-11 11:24:23 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -1302,7 +1302,7 @@ sub loci_as_other_name {
 
       if ($other_name){
 	if ($exceptions{$main}){
-	  print LOG "WARNING: $main has $other_name as Other_name...$other_name is still a separate Locus object (exception)\n";
+	  print LOG "INFO: $main has $other_name as Other_name...$other_name is still a separate Locus object (exception)\n";
         }
         else {
 	  $locus_errors++;
