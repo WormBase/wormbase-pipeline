@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-08-23 10:55:19 $
+# Last updated on: $Date: 2004-08-31 16:11:46 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -22,10 +22,9 @@ use GENEACE::Geneace;
 # Miscellaneous important variables               # 
 ###################################################
 
-my $tace = glob("~wormpub/ACEDB/bin_ALPHA/tace");          # tace executable path
+my $tace = &tace;          # tace executable path
 my $curr_db = "/nfs/disk100/wormpub/DATABASES/current_DB"; # Used for some cross checking with geneace
 my $def_dir = "/wormsrv1/geneace/wquery";                  # where lots of table-maker definitions are kept
-my $test_def_dir ="/nfs/disk100/wormpub/ck1";              # where lots of table-maker definitions are kept for running this script not on wormsrv2
 my $machine = ();
 $machine = "+" if `ls /wormsrv1/`;                         # if sees wormsrv1 then $machine is defined, else it remains undef: for running on cbi1, eg
 
@@ -232,9 +231,13 @@ sub process_gene_class{
   # The query is to find sequences (CDS/Transcript/Pseudogene) that have more than one Sequence_name_for values
   # this tells you if a gene id is linked to > 1 sequences
   foreach my $gene_name ($db->fetch(-query=>"Find Gene_name WHERE COUNT Sequence_name_for > 1")){
-    my @gid = $gene_name->Sequence_name_for;
-    print LOG "ERROR 11: $gene_name is connected to multiple gene IDs: @gid\n";
-    print JAHLOG "ERROR 11: $gene_name is connected to multiple gene IDs: @gid\n";
+
+    # skip hard-coded exceptions for eat-18/lev-10 & cha-1/unc-17
+    next if ($gene_name eq "Y105E8A.7" || $gene_name eq "ZC416.8");
+
+    my @gene_ids = $gene_name->Sequence_name_for;
+    print LOG "ERROR 11: $gene_name is connected to multiple gene IDs: @gene_ids\n";
+    print JAHLOG "ERROR 11: $gene_name is connected to multiple gene IDs: @gene_ids\n";
     $jah_errors++;
   }
 
