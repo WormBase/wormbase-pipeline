@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2004-08-03 13:31:57 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2004-08-06 09:42:09 $
 
 
 
@@ -71,7 +71,6 @@ my $tsuser;             # tsuser setting to go with -load
 my $am_option;          # track which option has been used (for logging purposes)
 my $errors = 0;         # keep track of errors in each step (from bad system calls), use in subject line of email 
 my $remarks;
-my $postblatgff;        # dump and split GFF files post BLAT load.
 
 GetOptions (
 	    "agp"	     => \$agp,
@@ -112,7 +111,6 @@ GetOptions (
 	    "test"           => \$test,
 	    "quicktest"      => \$quicktest,
 	    "remarks"        => \$remarks,
-	    "postblatgff"    => \$postblatgff,
 );
 
 # Help pod if needed
@@ -299,8 +297,6 @@ if ($addblat){
 # Requires: A1,A4,A5,B1
 &confirm_gene_models   if ($confirm);
 
-# Post BLAT GFF steps
-&postblatgff if ($postblatgff);
 
 #__ ANCILLIARY DATA SECTION __#
 
@@ -1303,9 +1299,6 @@ sub map_features {
 
   my $file;
 
-  # make GFF split files as they are needed for the RNAi and PCR mapping
-  &run_command("$scriptdir/GFFsplitter.pl");
-
   # features
   &run_command("$scriptdir/map_features.pl -all");
 
@@ -1343,20 +1336,6 @@ sub map_features {
 }
 #__ end map_features __#
 
-#################################################################################
-# Post BLAT GFF issues                                                          #
-#################################################################################
-
-sub postblatgff {
-  $am_option = "-postblatgff";
-
-  # GFF files need to be dumped again (will now have blat data)
-  # also needs GFF files to be split again
-  &dump_GFFs;
-  &split_GFFs;
-}
-
-#__ end postblatgff __#
 
 #################################################################################
 # confirm_gene models                                                           #
@@ -1465,7 +1444,6 @@ sub logfile_details {
   print LOG "#  -verbose      : Verbose mode\n"                                                        if ($verbose);
   print LOG "#  -gffdump      : Dump GFF files\n"                                                      if ($gffdump);
   print LOG "#  -gffsplit     : Split GFF files\n"                                                     if ($gffsplit);
-
   print LOG "#  -map          : map PCR and RNAi\n"                                                    if ($map);
   print LOG "#  -test         : running in test mode\n"                                                if ($test);
   print LOG "======================================================================\n\n";
