@@ -2,7 +2,7 @@
 
 # Author: Chao-Kung Chen
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-04-30 10:51:02 $ 
+# Last updated on: $Date: 2004-04-30 11:09:01 $ 
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -140,7 +140,6 @@ foreach(@NBP){
 my $acefile = $input;
 $acefile =~ /.+\/(.+)\.txt/;
 $acefile = $1.".ace";
-print $acefile, "~~~~~~~~~~~~~~~~~~~~~\n";
 
 open(ACE, ">$allele_dir/$acefile") || die $!;
 
@@ -163,7 +162,7 @@ quit
 END
 
 print LOG "\n\n";
-$ga->upload_database($ga->geneace, $command, "NBP_allele", $log);
+$ga->upload_database($ga->geneace, $command, "NBP_allele", $log) if !$debug;
 $ga->upload_database($ga->test_geneace, $command, "NBP_allele", $log) if $debug;
 
 # ----- mail notice
@@ -246,8 +245,7 @@ sub get_30_bp_flanks {
       print ACE "Location \"FX\"\n";
       print ACE "MAP \"$chrom\"\n"; 
       print ACE "Remark \"Mutations at cosmid coordinates: $indel_info[6]\"\n";
-      print ACE "Remark \"<A href='http:\\/\/www.grs.nig.ac.jp\/c.elegans\/MutantsDetails\?lang=english&seq=$allele_id' target=_new> more on $allele...<\/A>\"\n";
-
+      print ACE "Remark \"<A href='http:\\/\/www.shigen.nig.ac.jp\/c.elegans\/mutants/DetailsSearch?lang=english&seq=$allele_id' target=_new> more on $allele...<\/A>\"\n";
 
       # ----- only for those tm allele having primer information
       if (scalar @{$NBP_info{$allele}->[4]} != 1){
