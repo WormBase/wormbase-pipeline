@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder [-options]
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2003-03-11 13:01:38 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2003-04-22 09:40:57 $
 
 
 #################################################################################
@@ -1319,6 +1319,9 @@ sub make_wormpep {
     $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "\nRunning new_wormpep_entries.pl at $runtime\n";
     system ("$scriptdir/new_wormpep_entries.pl") and die "Couldn't run new_wormpep_entries.pl\n";
     $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Finished running new_wormpep_entries.pl at $runtime\n";
+    print "Updating CE2gene COMMON_DATA : ",&runtime,"\n";
+    system ("$scriptdir/update_Common_data.pl -update -in_build -ce") and carp "Update of COMMON_DATA CE2gene failed.\n";
+    print "DONE : ",&runtime,"\n\n";
 
     system ("touch $logdir/D1A:Build_wormpep_initial");
   }
@@ -1345,6 +1348,12 @@ sub make_wormpep {
     print LOG &runtime," : Running build_pepace.pl\n";
     system ("$scriptdir/build_pepace.pl") && die "Couldn't run build_pepace.pl\n";
     print LOG &runtime," : Finished running build_pepace.pl\n";
+
+    print "Updating gene2pid COMMON_DATA : ",&runtime,"\n";
+    system ("$scriptdir/update_Common_data.pl -update -in_build -pid") and carp "Update of COMMON_DATA gene2pid failed.\n";
+    print "DONE : ",&runtime,"\n\n";
+
+    system ("touch $logdir/D1A:Build_wormpep_initial");
    
     
     # make a make_autoace log file in /logs
@@ -1445,6 +1454,10 @@ END
   
   # make dumped_GFF_file in /logs
   system ("touch $logdir/C4:Confirm_gene_models");
+
+    print "Updating predicted_CDS COMMON_DATA : ",&runtime,"\n";
+    system ("$scriptdir/update_Common_data.pl -update -in_build -predicted_CDS") and carp "Update of COMMON_DATA predicted CDSs failed.\n";
+    print "DONE : ",&runtime,"\n\n";
 
 }
 #__ end confirm_gene_models __#
