@@ -909,12 +909,12 @@
 		gene_from_name   
 
 
-#Splice_confirmation cDNA
-                     EST
+#Splice_confirmation cDNA ?Sequence // to highlight what sequence is confirming/falsifying  intron
+                     EST ?Sequence // added [031121 krb]
 		     Homology
-		     UTR	
-		     False
-		     Inconsistent
+		     UTR ?Sequence
+		     False ?Sequence 
+		     Inconsistent ?Sequence
 		 
 #Gene_confirmation cDNA
                    EST
