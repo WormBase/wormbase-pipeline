@@ -17,7 +17,7 @@ GetOptions ("debug"   => \$debug,
            );
 
 
-my $dump_dir = "/wormsrv2/wormbase/ensembl_dumps";
+my $dump_dir = "/acari/work2a/wormpipe/dumps";
 $dump_dir = glob("~wormpub/TEST_BUILD/") if $test;
 my $acedb_database;
 my $output = "$dump_dir/repeat_homologies.ace";
