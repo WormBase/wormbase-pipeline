@@ -246,7 +246,7 @@
 			 Concise_description ?Text #Evidence  // added for Erich [020523 krb]
 	Species UNIQUE ?Species // added by krb 15/02/02
 	Type	Gene	Reference_Allele ?Allele Text
-                        Phenotype ?Text
+                        Phenotype ?Text #Evidence
                         RNAi_result   ?RNAi XREF Locus                       //RL [010327]
 			Complementation_data Text
                         Controlled_phenotype ?Phenotype XREF Locus          // added for Lincoln RNAi [001213 dl]
