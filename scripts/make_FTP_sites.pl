@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-05-13 14:25:27 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2003-05-30 08:49:53 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -281,7 +281,7 @@ sub copy_wormpep_files{
   print LOG "\tmove & rename wormpep.table$wormpep => wormpep.table\n";
   
   system("cp $wp_source_dir/wormpep${wormpep} $wp_ftp_dir/wormpep${wormpep}");
-  &CheckSize("$wp_source_dir/wormpep${wormpep}","$wp_ftp_dir/wormpep${release}");
+  &CheckSize("$wp_source_dir/wormpep${wormpep}","$wp_ftp_dir/wormpep${wormpep}");
   print LOG "\tmove wormpep$wormpep =>  wormpep$wormpep\n";
   
   system("cp $wp_source_dir/wp.fasta$wormpep $wp_ftp_dir/wp.fasta");
