@@ -418,7 +418,7 @@ sub createdirs {
 		die(0);
 	} 
  }
- system ("/bin/ln -s /nfs/disk67/sylvia/geneace/pictures $pictures") && die "Couldn't make symbolic link\n";
+ system ("/bin/ln -s /wormsrv2/geneace/pictures $pictures") && die "Couldn't make symbolic link\n";
  return;
 }
 
