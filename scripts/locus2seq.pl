@@ -5,7 +5,7 @@
 # written by Anthony Rogers (ar2@sanger.ac.uk)
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2002-11-13 17:48:01 $
+# Last updated on: $Date: 2002-12-23 13:35:01 $
 
 
 use strict;
@@ -71,7 +71,13 @@ while (<GENEACE>)
     @entry = split(/\s+/,$_);
     $locus = $entry[0];
     $seq = $entry[1];
-    print "$entry[0]\t$entry[1]\n";
+    if( $entry[0] && $entry[1]) {
+      print "$entry[0]\t$entry[1]\n";
+    }
+    else {
+      print "ERROR in line $_\n";
+    }
+      
 
     #this statement is to take in to account the acedb> prompt that is included in the GENEACE data
     if (scalar(@entry) > 2){
