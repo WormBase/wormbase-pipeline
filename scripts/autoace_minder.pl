@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-12-02 10:53:42 $
+# Last edited on: $Date: 2003-12-02 13:47:34 $
 
 
 #################################################################################
@@ -519,20 +519,17 @@ sub prepare_primaries {
   
   # make a unpack_db.pl log file in /logs
   system("touch $logdir/$flag{'A3'}");
-  
-  # transfer /wormsrv1/camace to $basedir/camace 
-#  &run_command("$scriptdir/TransferDB.pl -start /wormsrv1/camace -end $basedir/camace -database -wspec -name camace -test");
-  # transfer /wormsrv1/geneace to $basedir/geneace 
-#  &run_command("$scriptdir/TransferDB.pl -start /wormsrv1/geneace -end $basedir/geneace -database -wspec -name geneace -test");
 
-  # hacking this just to work for the test, these paths need to be removed at some point and the above two paths restored
-  my $newpath = "/nfs/disk100/wormpub/DATABASES/TEST_DBs";
-  my $command = "$scriptdir/TransferDB.pl -start $newpath/camace_CDS -end $basedir/camace -database -wspec -name camace";
-  $command .= " -test" if ($test);
-  &run_command("$command");
-  $command = "$scriptdir/TransferDB.pl -start $newpath/geneace_CDS -end $basedir/geneace -database -wspec -name geneace";
-  $command .= " -test" if ($test);
-  &run_command("$command");
+  if($test){
+    print LOG "WARNING: Can't transfer geneace and camace from /wormsrv1.  You will have to do that by hand!\n";  
+  }
+  else{
+    # transfer /wormsrv1/camace to $basedir/camace 
+    &run_command("$scriptdir/TransferDB.pl -start /wormsrv1/camace -end $basedir/camace -database -name camace -test");
+    # transfer /wormsrv1/geneace to $basedir/geneace 
+    &run_command("$scriptdir/TransferDB.pl -start /wormsrv1/geneace -end $basedir/geneace -database -name geneace -test");
+  }
+
   
   #################################################
   # Check that the database have unpack correctly #
