@@ -1,0 +1,147 @@
+#!/usr/local/bin/perl5.6.1
+#
+# getProteinID
+#
+# Parses the weekly mail from Nadeem to get the Protein_ID and
+# SWALL accession for C.elegans entries in EMBL 
+#
+# dl
+#
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2003-03-11 10:56:51 $
+
+use lib "/wormsrv2/scripts/";
+use Wormbase;
+use Getopt::Long;
+use strict;
+
+my %acc2clone = &FetchData('acc2clone');
+our %databases = (
+		  'SW' => 'SWISSPROT',
+		  'TR' => 'TREMBL',
+		  'TN' => 'TREMBLNEW'
+		  );
+
+######################################
+# variables and command-line options # 
+######################################
+
+my ($help, $file);
+
+GetOptions (
+	    "help"      => \$help, 
+            "file=s"    => \$file
+	    );
+
+# Display help if required
+&usage("Help") if ($help);
+
+&usage("Help") if (! defined $file);
+
+open (OUT, ">/wormsrv2/autoace/wormpep_ace/WormpepACandIDs.ace");
+
+my @f = "";
+my ($dbxref_ac,$dbxref_id,$dbxref_db);
+
+open (FILE, "<$file");
+while (<FILE>) {
+    chomp;
+    next if ($_ eq "");
+    next if ( (/^From/) || (/^Date/) || (/To/) || (/^Subject/) );
+
+    @f = split /\t/;
+
+    # discard non genome_sequence entries
+    next unless (defined $acc2clone{$f[0]});
+
+    ($dbxref_ac,$dbxref_id,$dbxref_db) = &get_from_protein_id($f[2]);
+    
+    print OUT "\nSequence : \"$f[6]\"\n";
+    print OUT "Database $databases{$dbxref_db} $dbxref_id $dbxref_ac\n";
+    print OUT "Protein_id \"$acc2clone{$f[0]}\" $f[2] $f[3]\n";
+    
+} 
+close FILE;
+close OUT;
+exit(0);
+
+##############################################################
+# Subroutines
+##############################################################
+
+sub get_from_protein_id {
+    
+    my $protein_id = shift;
+    my $acc; 
+    my $id; 
+    my $db;
+    
+    open (LOOK, "/usr/local/pubseq/bin/pfetch -F $protein_id |");
+    while (<LOOK>) {
+	($acc = $1) if (/^AC\s+(\S+);/);
+	($id  = $1) if (/^ID\s+(\S+)/);
+    }
+    close LOOK;
+    
+    # assign database based on length of accession and SWISSPROT species
+    if ((length ($acc)) == 8) {	$db = "TN"; }
+    elsif ($id =~ /_CAEEL/)   { $db = "SW"; }
+    else                      {	$db = "TR"; }
+    return ($acc,$id,$db);
+}
+
+
+##########################################
+
+sub usage {
+  my $error = shift;
+
+  if ($error eq "Help") {
+    # Normal help menu
+    system ('perldoc',$0);
+    exit (0);
+  }
+}
+
+
+__END__
+
+=pod
+
+=head2 NAME - getProteinID
+
+=head1 USAGE
+
+=over 4
+
+=item getProteinID [-options]
+
+=back
+
+script_template.pl MANDATORY arguments:
+
+=over 4
+
+=item none, (but it won't do anything)
+
+=back
+
+script_template.pl  OPTIONAL arguments:
+
+=over 4
+
+=item -file <file>, Extracted e-mail from EBI containing the Protein_ID data
+
+=item -help, Help
+
+=back
+
+=head1 AUTHOR
+
+=over 4
+
+=item Dan Lawson (dl1@sanger.ac.uk)
+
+=back
+
+=cut
