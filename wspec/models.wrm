@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: krb $
-// Last edited on: $Date: 2004-09-15 10:17:12 $
+// Last edited on: $Date: 2004-09-17 14:25:12 $
  
 
 
@@ -354,6 +354,7 @@
                   In_cluster ?Locus XREF Contains // new way of linking to Clusters in locus class
                   GO_term ?GO_term XREF Gene ?GO_code #Evidence
 		  Contained_in_operon ?Operon XREF Contains_gene
+		  Ortholog ?Gene XREF Ortholog ?Species #Evidence
         Molecular_info Corresponding_CDS ?CDS XREF Gene #Evidence             // to link to live CDSs
                        Corresponding_CDS_history ?CDS XREF Gene_history       // to link to history CDSs
                        Corresponding_transcript ?Transcript XREF Gene #Evidence
@@ -1125,7 +1126,6 @@
 		Corresponding_PCR_product ?PCR_product XREF Overlaps_CDS // added for PCR mappings [010419 dl]
 		Corresponding_oligo_set ?Oligo_set XREF Overlaps_CDS
 		Matching_cDNA ?Sequence XREF Matching_CDS #Evidence
-		Orthologue ?CDS XREF Orthologue ?Species #Evidence  // dl 030304
 		Expr_pattern ?Expr_pattern XREF CDS
                 RNAi_result ?RNAi XREF Predicted_gene // added for Lincoln RNAi [001213 dl]
 		GO_term ?GO_term XREF CDS ?GO_code #Evidence
@@ -1175,7 +1175,6 @@
                 Visible Gene ?Gene XREF Corresponding_transcript // for live transcripts
 			Gene_history UNIQUE ?Gene XREF Corresponding_transcript_history // when Transcript is dead
 			Alleles ?Allele XREF Transcript // added to fit two alleles of RNA genes [021127 krb]
-			Orthologue ?Transcript XREF Orthologue ?Species #Evidence  // [030310 krb]
                         Matching_cDNA ?Sequence XREF Matching_transcript #Evidence // to attach non-coding RNA genes to matching ESTs
 			Corresponding_CDS UNIQUE ?CDS XREF Corresponding_transcript // new tag for 1-2-1 relationships with coding genes
                         Corresponding_PCR_product ?PCR_product XREF Overlaps_transcript
