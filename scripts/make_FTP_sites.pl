@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-04-03 15:47:30 $
+# Last updated by: $Author: ck1 $
+# Last updated on: $Date: 2003-05-13 14:25:27 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -369,16 +369,19 @@ sub copy_homol_data{
   system("rm -f $private_ftp/*gz");
   
   system("cp $blat_dir/stlace.blat.EST.ace                  $private_ftp/${release}_stlace.blat.EST.ace");
+  system("cp $blat_dir/stlace.blat.OST.ace                  $private_ftp/${release}_stlace.blat.OST.ace");
   system("cp $blat_dir/stlace.blat.mRNA.ace                 $private_ftp/${release}_stlace.blat.mRNA.ace");
   system("cp $blat_dir/stlace.good_introns.EST.ace          $private_ftp/${release}_stlace.blat.good_introns.EST.ace");
+  system("cp $blat_dir/stlace.good_introns.OST.ace          $private_ftp/${release}_stlace.blat.good_introns.OST.ace");
   system("cp $blat_dir/stlace.good_introns.mRNA.ace         $private_ftp/${release}_stlace.blat.good_introns.mRNA.ace");
   
   system("cp $blat_dir/virtual_objects.stlace.BLAT_EST.ace  $private_ftp/${release}_virtual_objects.stlace.BLAT_EST.ace");
+  system("cp $blat_dir/virtual_objects.stlace.BLAT_OST.ace  $private_ftp/${release}_virtual_objects.stlace.BLAT_OST.ace");
   system("cp $blat_dir/virtual_objects.stlace.BLAT_mRNA.ace $private_ftp/${release}_virtual_objects.stlace.BLAT_mRNA.ace");
   system("cp $blat_dir/virtual_objects.stlace.ci.EST.ace    $private_ftp/${release}_virtual_objects.stlace.ci.EST.ace");
+  system("cp $blat_dir/virtual_objects.stlace.ci.OST.ace    $private_ftp/${release}_virtual_objects.stlace.ci.OST.ace");
   system("cp $blat_dir/virtual_objects.stlace.ci.mRNA.ace   $private_ftp/${release}_virtual_objects.stlace.ci.mRNA.ace");
   
-
   system("cp $blast_dir/blastp_ensembl.ace          $private_ftp/${release}_blastp_data.ace");
   system("cp $blast_dir/blastx_ensembl.ace          $private_ftp/${release}_blastx_data.ace");
   system("cp $blast_dir/ensembl_motif_info.ace      $private_ftp/${release}_protein_motif_data.ace");
