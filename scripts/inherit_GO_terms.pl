@@ -1,18 +1,21 @@
-#!/usr/local/bin/perl5.6.0 -w
+#!/usr/local/bin/perl5.6.1 -w
 #
 # inherit_GO_terms.pl
 #
 # map GO_terms to ?Sequence objects from ?Motif and ?Phenotype
 #
+# Last updated by: $Author: krb $     
+# Last updated on: $Date: 2002-12-23 10:43:05 $      
 
-
-$|=1;
-use IO::Handle;
-use Getopt::Std;
-use Ace;
 use strict;
 use lib "/wormsrv2/scripts/";
 use Wormbase;
+use IO::Handle;
+use Getopt::Long;
+use Ace;
+
+
+$|=1;
 
 ##############################
 # Script variables (run)     #
@@ -21,25 +24,31 @@ use Wormbase;
 my $maintainers = "All";
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
+our ($help, $debug, $motif, $phenotype, $log);
 
 
 ##############################
 # command-line options       #
 ##############################
-#
-# -h : help
-# -d : debug
-# -m : ?Motif->?Protein->?Sequence
-# -p : ?Phenotype->?RNAi->?Sequence
-#
 
-use vars qw/ $opt_d $opt_h $opt_m $opt_p/;
-getopts ("hdmp");
-&usage(0) if ($opt_h);
-my $debug = $opt_d;
+GetOptions ("help"      => \$help,
+            "debug=s"   => \$debug,
+	    "phenotype" => \$phenotype,
+	    "motif"     => \$motif);
 
-# only tell Dan if running debug mode
-$maintainers = "dl1\@sanger.ac.uk" if ($debug);
+
+# Display help if required
+&usage("Help") if ($help);
+
+# Use debug mode?
+if($debug){
+  print "DEBUG = \"$debug\"\n\n";
+  ($maintainers = $debug . '\@sanger.ac.uk');
+}
+
+&create_log_files;
+
+
 
 ##############################
 # Paths etc                  #
@@ -47,19 +56,6 @@ $maintainers = "dl1\@sanger.ac.uk" if ($debug);
 
 my $tace      = &tace;      # tace executable path
 my $dbpath    = "/wormsrv2/autoace";                                      # Database path
-
-########################################
-# Open logfile                         #
-########################################
-
-my $log="/wormsrv2/logs/inherit_GO_terms.$rundate";
-
-open (LOG,">$log");
-LOG->autoflush();
-
-print LOG "# inherit_GO_terms\n";     
-print LOG "# run details    : $rundate $runtime\n";
-print LOG "\n";
 
 
 my $out="/wormsrv2/wormbase/misc/misc_inherit_GO_term.ace";
@@ -76,8 +72,8 @@ my $db = Ace->connect(-path=>$dbpath,
 
 print LOG "inherit_GO_terms run STARTED at $runtime\n\n";
 
-&motif($db) if ($opt_m);
-&phenotype if ($opt_p);
+&motif($db) if ($motif);
+&phenotype if ($phenotype);
 
 ##############################
 # read acefiles into autoace #
@@ -89,7 +85,7 @@ save
 quit
 END
 
-open (TACE,"| $tace -tsuser map_GO_terms $dbpath") || die "Couldn't open tace connection to $dbpath\n";
+open (TACE,"| $tace -tsuser inherit_GO_terms.pl $dbpath") || die "Couldn't open tace connection to $dbpath\n";
 print TACE $command;
 close (TACE);
 
@@ -105,7 +101,7 @@ close OUT;
 # mail $maintainer report    #
 ##############################
 
-&mail_maintainer("inherit_GO_terms Report:",$maintainers,$log);
+&mail_maintainer("inherit_GO_terms.pl Report:",$maintainers,$log);
 
 ##############################
 # hasta luego                #
@@ -114,9 +110,13 @@ close OUT;
 $db->close;
 exit(0);
 
+
+
+
 ########################################################################################
 ####################################   Subroutines   ###################################
 ########################################################################################
+
 
 ########################################################################################
 # motif to sequence mappings                                                           #
@@ -146,7 +146,7 @@ sub motif {
 		
 		foreach $match (@CDS) {
 		    print "== $match\n" if ($debug);
-		    print OUT "\nSequence : \"$match\"\nGO_term $term\n";
+		    print OUT "\nSequence : \"$match\"\nGO_term $term GO_inference_type IEA\n";
 		} # Sequence
 	    }     # Protein
 	}         # GO_term
@@ -160,6 +160,40 @@ sub motif {
 ########################################################################################
 
 sub phenotype {
+}
+
+
+######################################################################
+
+sub create_log_files{
+
+  # Create history logfile for script activity analysis
+  $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
+
+  # create main log file using script name for
+  my $script_name = $1;
+  $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
+  my $rundate     = `date +%y%m%d`; chomp $rundate;
+  $log        = "/wormsrv2/logs/$script_name.$rundate.$$";
+
+  open (LOG, ">$log") or die "cant open $log";
+  print LOG "$script_name\n";
+  print LOG "started at ",`date`,"\n";
+  print LOG "=============================================\n";
+  print LOG "\n";
+
+}
+
+##########################################
+
+sub usage {
+  my $error = shift;
+
+  if ($error eq "Help") {
+    # Normal help menu
+    system ('perldoc',$0);
+    exit (0);
+  }
 }
 
 
@@ -194,13 +228,13 @@ inherit_GO_terms.pl OPTIONAL arguments:
 
 =over 4
 
-=item -m, parse Interpro motif data
+=item -motif, parse Interpro motif data
 
-=item -p, parse phenotype data
+=item -phenotype, parse phenotype data
 
-=item -d, debug
+=item -debug, debug
 
-=item -h, help
+=item -help, help
 
 =back
 
