@@ -192,7 +192,7 @@
 		Qualifier Text	    // sd, sm, ts etc.  Not systematic just now
 		Rearrangement ?Rearrangement XREF Allele
 	Gene_class ?Gene_Class XREF Allele
-	Sequence_details SMap S_Parent Sequence UNIQUE ?Sequence XREF Allele // Allele becomes SMapped now [krb 021216]
+	Sequence_details SMap S_Parent UNIQUE Sequence UNIQUE ?Sequence XREF Allele // Allele becomes SMapped now [krb 021216]
                          Flanking_sequences UNIQUE Text UNIQUE Text
 			 Flanking_PCR_product ?PCR_product XREF Flanks_deletion // KO data has PCR info
 			 // What is the nature of the Allele, based on sequence data?
