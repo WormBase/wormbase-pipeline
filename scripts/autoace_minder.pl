@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2005-03-07 10:01:56 $
+# Last edited on: $Date: 2005-03-09 11:17:38 $
 
 
 
@@ -326,6 +326,11 @@ if ($addblat){
 # close log file and mail $maintainer report #
 ##############################################
 
+# 050309 dl : Added label to code block so that deprecated exit statements in the &usage sub are 
+#             diverted to still send a mail
+
+MAIL: {
+
 $rundate = &rundate;
 print LOG "\n# autoace_minder finished at: $rundate ",&runtime,"\n";
 close LOG;
@@ -342,6 +347,8 @@ elsif($errors > 1){
   $subject_line .= " : $errors ERRORS!!!";
 }
 &mail_maintainer("$subject_line",$maintainers,$log);
+
+} #_ end of MAIL label
 
 ##############################
 # hasta luego                #
@@ -824,7 +831,7 @@ sub check_make_autoace {
   print LOG "\n", &runtime, ": Looking for CDSs, Transcripts, Pseudogenes with no Gene tag\n";
   my $db = Ace->connect(-path=>$db_path, -program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
 
-  my @genes= $db->fetch(-query=>'find worm_genes NOT Gene');
+  my @genes= $db->fetch(-query=>'find worm_genes where Method != "Transposon" AND NOT Gene');
   if(@genes){
     foreach (@genes){
       print LOG "ERROR: $_ has no Gene tag, please add valid Gene ID from geneace\n";
@@ -1515,7 +1522,7 @@ sub usage {
 	# Errors in loaded acefiles, check log file
 	print "There were errors in the loaded acefiles.\n";
 	print "Check the logfile and correct before continuing.\n\n";
-	exit(0);
+	goto MAIL;
     }
     elsif ($error == 9) {
 	# Check blat run
@@ -1558,7 +1565,7 @@ sub usage {
 	exit(0);
     }
     elsif ($error == 16) {
-      # DEPRECATED - dont copt to midway anymore
+      # DEPRECATED - dont copy to midway anymore
 
     }
     elsif ($error == 17) {
