@@ -4,8 +4,8 @@
 #
 # written by Anthony Rogers (ar2@sanger.ac.uk)
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-12-01 11:27:06 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2004-01-07 14:09:46 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -201,7 +201,7 @@ sub get_gene_connections{
   # get locus with confirmed CGC names and the corresponding CDSs, transcripts
   # and Pseudogenes.  This uses 3 table_maker queries exported from xace
 
-  my $command1 = "Table-maker -p \"${geneace_dir}/wquery/locus_seq.def\"\nquit\n";
+  my $command1 = "Table-maker -p \"${geneace_dir}/wquery/locus_cds.def\"\nquit\n";
   my $command2 = "Table-maker -p \"${geneace_dir}/wquery/locus_transcript.def\"\nquit\n";
   my $command3 = "Table-maker -p \"${geneace_dir}/wquery/locus_pseudogene.def\"\nquit\n";
 
