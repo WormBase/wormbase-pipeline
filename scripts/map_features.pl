@@ -9,7 +9,7 @@
 #
 #
 # Last updated by: $Author: krb $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2004-10-14 14:23:21 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2004-10-14 14:57:35 $        # quickly see when script was last changed and by whom
 
 
 $|=1;
@@ -164,7 +164,7 @@ foreach my $query (@features2map) {
 	}
       }
       else {
-	$log->write_to("$feature maps to $clone $start -> $stop, feature span is $span bp\n");
+	$log->write_to("ERROR: $feature maps to $clone $start -> $stop, feature span is $span bp\n");
       }
     } #_ if match line
   }
@@ -177,7 +177,7 @@ foreach my $query (@features2map) {
  
     my $status = system($command);
     if(($status >>8) != 0){
-      $log->write_to("Loading failed \$\? = $status\n");
+      $log->write_to("ERROR: loading failed \$\? = $status\n");
     } 
   }
 }
