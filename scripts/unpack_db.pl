@@ -10,6 +10,7 @@
 # the C. briggsae database (brigace)
 # the St. Louis database (stlace)
 # the Cold Spring Harbor Laboratory database (cshace)
+# the Caltech database (citace)
 
 
 #################################################################################
@@ -46,15 +47,15 @@ my $giface = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/giface";
 # command-line options       #
 ##############################
 
-our ($opt_h,$opt_b,$opt_c,$opt_s);
+our ($opt_h,$opt_b,$opt_c,$opt_s,$opt_i);
 
 #options with arguments
-getopt("bcs");
+getopt("bcsi");
 #boolean options
 getopts("h");
 
 &usage if ($opt_h);
-&usage if (!defined($opt_b) && !defined($opt_c) && !defined($opt_s));
+&usage if (!defined($opt_b) && !defined($opt_c) && !defined($opt_s) && !defined($opt_i));
 
 ##############################################################
 # loop through main routine for each database to be unpacked #
@@ -64,6 +65,7 @@ getopts("h");
 &unpack_stuff("brigace",$opt_b) if ($opt_b);
 &unpack_stuff("cshace",$opt_c) if ($opt_c);
 &unpack_stuff("stlace",$opt_s) if ($opt_s);
+&unpack_stuff("citace",$opt_i) if ($opt_i);
 
 sub unpack_stuff{
   my $database = shift;
@@ -93,6 +95,13 @@ sub unpack_stuff{
     $dbname = "stlace";
   }
 
+
+  if ($database eq "citace"){
+    $ftp    = "/nfs/privateftp/ftp-wormbase/pub/incoming/caltech";
+    $dbdir  = "/wormsrv2/citace";
+    $logfile = "/wormsrv2/logs/unpack_stlace.$rundate.$$";
+    $dbname = "citace_dump";
+  }
 
   ##############################
   # open logfile               #
@@ -313,7 +322,7 @@ __END__
 
 unpack_db.pl is an all-in-one replacement for what was previously
 performed by three separate scripts (unpack_briggsae, unpack_cshace,
-and unpack stlace). 
+and unpack stlace). It also unpacks the new citace dump.
 
 This script can be used to replace any or all of the aforementioned
 scripts.  For each of the databases that the user specifies it will
@@ -353,14 +362,22 @@ unpack_db.pl arguments:
 
 =item *
 
+-i <date> unpack Caltech data and read into citace
+
+=back
+
+=over 4
+
+=item *
+
 -h help page (what you are reading now).
 
 =back
 
--b, -c, and -s options each require a 6-figure datestamp (e.g. 001106).  You can 
+-b, -c, -s, and -i options each require a 6-figure datestamp (e.g. 001106).  You can 
 work with individual databases or work with all three in one go (note though that
 the script will always process each database in the following order: brigace, cshace, 
-stlace).
+stlace, citace).
 
 Example usage:
 
