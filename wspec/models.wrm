@@ -181,6 +181,7 @@
 	Sequence_details Sequence ?Sequence XREF Allele #Evidence
                          Flanking_sequences UNIQUE Text UNIQUE Text
                          Allelic_difference UNIQUE ?Text #Evidence
+			 Knocks_out ?Sequence XREF Knock_out_allele // new to handle KO alleles krb [021114]
         Reference_Allele
 	Isolation	Author	Text	// Isolator - should be ?Author
 			Date	DateType
@@ -333,12 +334,13 @@
 	 Contains  Gene	 ?Locus XREF Strain
 	  	   Allele  ?Allele XREF Strain 
 		   Rearrangement	 ?Rearrangement XREF Strain
-                   Clone ?Clone XREF In_strain
+                   Clone ?Clone XREF In_strain		  
 	 Properties  Males Text
 		     Reference_strain Text
 		     Outcrossed
 		     Mutagen Text
 		     CGC_received DateType
+	 Knocks_out ?Sequence XREF ?Knock_out_strain // new for KO allele data, krb [021114]
          Location ?Laboratory #Lab_Location
 	 Made_by Text
 	 Remark	?Text
@@ -866,6 +868,8 @@
 		// by containing non ACTG letters), and (n, n+1) = T A, so indicates 
 		// direction (if known).
 		// if a deletion, put '-' as the replacement sequence
+	  Knock_out_allele ?Allele XREF Knocks_out // new for KO alleles krb [021114]
+	  Knock_out_strain ?Strain XREF Knocks_out //
 	  EMBL_feature  CAAT_signal	Int Int Text #EMBL_info
 			GC_signal	Int Int Text #EMBL_info
 			TATA_signal	Int Int Text #EMBL_info
