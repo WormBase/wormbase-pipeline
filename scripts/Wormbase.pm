@@ -190,11 +190,12 @@ sub dbfetch {
 
 sub clones_in_database {
 
-    my $handle   = @{$_[0]};
+    my $handle   = ${$_[0]};
     my %count    = ();
     my @output   = ();
-    my $db;
+    my ($db,$switch);
     if ($handle eq 'cam') {
+        $switch = 1;
         $db       = Ace->connect(-path => '/wormsrv2/camace') || die "Couldn't connect to $name\n", Ace->error;
     }
     elsif ($handle eq 'stl') {
@@ -206,7 +207,7 @@ sub clones_in_database {
     my @dbclones = $db->fetch(-query => 'FIND Genome_Sequence');
     
     foreach my $clone (@dbclones) {
-	if ($name eq 'cam') {
+	if ($switch == 1) {
             my $string = $clone->Confidential_remark(1);
 	    if ((defined $string) && (($string =~ /Louis/) || ($string =~ /not in Cambridge/))) {
 		    next;
