@@ -2,19 +2,9 @@
 
 my $db = "/nfs/disk100/wormpub/DATABASES/current_DB";
 
-open (DISPLAY, 'printenv HOST |');
-while (<DISPLAY>) {
-    chomp;
-    $host = $_;
-}
-close DISPLAY;
+# commented out as the database path does not require wormsrv2
 
-if ($host ne "wormsrv2") {
-    print "You can only access cgcace from wormsrv2\nLog into that machine to run this database\n\n";   
-    exit(0);
-}
-
-system ("/nfs/disk100/wormpub/ACEDB/bin.ALPHA/xace $db");
+system ("/nfs/disk100/wormpub/ACEDB/bin_ALPHA/xace $db");
 
 exit (0);
 
@@ -42,8 +32,6 @@ __END__
 
 autoace is a PERL wrapper which opens an xace session to the cgcace 
 database.
-
-!! You must run this script from wormsrv2 !!
 
 update_totals mandatory arguments:
 
