@@ -2,8 +2,8 @@
 #
 # map_operons.pl
 
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-03-09 10:54:36 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2004-04-29 10:20:41 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -85,7 +85,7 @@ exit(0);
 my $status = copy($output1, $output2);
 
 if ($status == 0) {
-    print "// Failed to copy file to $output2\n"; 
+    print  "// Failed to copy file to $output2\n"; 
     print LOG "Failed to copy file: $!\n";   
     $errors++;
 }
@@ -150,7 +150,7 @@ sub acedump_operons {
 	    if ($gene_count == 1) {
 #		print "// searching for start\n";
 		$operon_start = 0;
-		open (GFF_1, "grep -w '$gene_lookup' $gff/CHROMOSOME_${operon{$operon_lookup}->{CHROMOSOME}}.genes.gff |");
+		open (GFF_1, "grep -w '$gene_lookup' $gff/CHROMOSOME_${operon{$operon_lookup}->{CHROMOSOME}}.worm_genes.gff |");
 		while (<GFF_1>) {
 		    @f = split /\t/;
 		    if ($f[6] eq "+") {$operon_start = $f[3];}
@@ -163,7 +163,7 @@ sub acedump_operons {
 	    elsif ($gene_count == $operon{$operon_lookup}->{NO_GENES}) {
 #		print "// searching for stop\n";
 		$operon_stop = 0;
-		open (GFF_2, "grep -w '$gene_lookup' $gff/CHROMOSOME_${operon{$operon_lookup}->{CHROMOSOME}}.genes.gff |");
+		open (GFF_2, "grep -w '$gene_lookup' $gff/CHROMOSOME_${operon{$operon_lookup}->{CHROMOSOME}}.worm_genes.gff |");
 		while (<GFF_2>) {
 		    @f = split /\t/;
 		    ($operon_stop = $f[4]) if ($f[6] eq "+");
