@@ -1,13 +1,21 @@
 #!/usr/local/bin/perl5.6.0 -w                    # perl5.6.0 and -w flag
 #
-# script_template.pl                             # insert name of script
+# release_letter.pl                            
 # 
-# by Keith Bradnam                               # original author
-#
-# This is a example of a good script template    # Brief description of script
+# by Keith Bradnam                              
 #
 # Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2002-07-05 15:44:44 $                        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2002-07-05 16:12:20 $         
+#
+#Generates a release letter at the end of build.
+#Three subroutines are called during the build - 
+#release_wormpep by make_wormpep
+#release_composition by dump_chromosomes.pl
+#release_databases by dbcomp
+#These write to a file in autoace/RELEASE_LETTER and are incorperated in to the letter at the end. 
+#This allows for overwriting during the build when errors are fixed and scripts rerun
+
+
 
 
 #test the subs#############################
@@ -268,7 +276,7 @@ sub release_composition
       chomp;
 	if ($_ =~ m/(\d+)\s+total$/){
 	  #my $tot = $1;$tot =~ s/,//g; # get rid of commas
-	  $old_data{tot} = $1;
+	  $old_data{Total} = $1;
 	}
 	elsif ($_ =~ m/^\s+([\w-]{1})\s+(\d+)/){
 	  print "adding to old_data $1  $2\n";
@@ -287,8 +295,7 @@ sub release_composition
     while (<NEW>) {
       chomp;
       if ($_ =~ m/(\d+)\s+total$/){
-	#my $tot = $1;$tot =~ s/,//g; # get rid of commas
-	$new_data{tot} = $1;
+	$new_data{Total} = $1;
       }
       elsif ($_ =~ m/^\s+([\w-]{1})\s+(\d+)/){
 	print "adding to new_data $1  $2\n";
@@ -308,10 +315,12 @@ sub release_composition
 	$change_data{$key} = $new_data{$key} - $old_data{$key};
       }
    
-    my @order = ("tot","a","c","g","t","n","-");
+    my @order = ("a","c","g","t","n","-","Total");
     foreach(@order){
-     # printf COMP_ANALYSIS "$_     \t $new_data{$_}       \t$old_data{$_}         \t$change_data{$_}\n";
-      printf COMP_ANALYSIS ("%-3s\t%-8d\t%-8d\t%+4d\n", $_, $new_data{$_}, $old_data{$_}, $change_data{$_});
+      if ("$_" eq "Total"){
+	print COMP_ANALYSIS "\n";
+      }
+      printf COMP_ANALYSIS ("%-5s\t%-8d\t%-8d\t%+4d\n", $_, $new_data{$_}, $old_data{$_}, $change_data{$_});
     }
 
     if ($change_data{"-"} > 0){
@@ -324,7 +333,7 @@ sub release_composition
     close COMP_ANALYSIS;
 
     my $name = "Sequence composition report";
-    my $maintainer = "All";
+    my $maintainer = "ar2\@sanger.ac.uk";#"All";
     &mail_maintainer($name,$maintainer,$compositionFile);
   }
 
@@ -361,7 +370,7 @@ sub release_wormpep       #($number_cds $number_total $number_alternate )
 
 
     print LETTER "\n\nWormpep data set:\n----------------------------\n";
-    print LETTER"\nThere are $number_cds CDS in autoace, $number_total when counting $number_alternate altenate splice forms.\n
+    print LETTER"\nThere are $number_cds CDS in autoace, $number_total when counting $number_alternate alternate splice forms.\n
 The $number_total sequences contain $codingDNA base pairs in total.\n\n";
    
     print LETTER "Modified entries      $changed";
