@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-09-26 13:03:32 $
+# Last edited on: $Date: 2003-10-02 14:22:33 $
 
 
 #################################################################################
@@ -660,7 +660,7 @@ sub make_autoace {
     
     local (*MD5SUM_IN,*MD5SUM_OUT);
     
-    &run_comand("$scriptdir/make_autoace -database /wormsrv2/autoace --buildrelease"); 
+    &run_command("$scriptdir/make_autoace -database /wormsrv2/autoace --buildrelease"); 
     print LOG "Finished running make_autoace at ",&runtime,"\n";
 
     
