@@ -32,8 +32,8 @@
 # 02.02.21 dl: typos in the naming of the confirmed_intron virtual objects
 # 02.04.08 dl: old style logging for autoace.fa check, prevented complete run of subs
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-04-01 14:18:12 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2003-04-25 15:13:44 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -177,9 +177,6 @@ if ($opt_b) {
     if ($opt_x) {
 	system("$blatex $seq $query -t=dnax -q=dnax $blat/${data}_out.psl") && die "Blat failed\n";
     }
-    elsif ($opt_o) {
-	system("$blatex $seq $query -q=dnax -t=dnax $blat/${data}_out.psl") && die "Blat failed\n";
-    }
     else {
 	system("$blatex $seq $query $blat/${data}_out.psl") && die "Blat failed\n";
     }
@@ -197,8 +194,7 @@ if ($opt_s) {
 	    system("$bin/blat2ace.pl -ei") && die "Mapping failed\n"; 
 	}
 	else {
-	    system("$bin/blat2ace.pl -eiz") && die "Mapping failed\n"; 
-	}
+	    system("$bin/blat2ace.pl -eiz") && die "Mapping failed\n"; 	}
     }
 
     if ($opt_m) {
@@ -484,7 +480,7 @@ sub confirm_introns {
     ($tag = "EST")  if ($opt_e);
     
     $/ = "";
-    open(CI,  "<$blat/${db}.ci.${data}.ace")      or die "Cannot open $blat/$db.ci.$data.ace $!\n";
+    open (CI, "<$blat/${db}.ci.${data}.ace")      or die "Cannot open $blat/$db.ci.$data.ace $!\n";
     while (<CI>) {
 	next unless /^\S/;
 	if (/Sequence : \"(\S+)\"/) {
@@ -568,12 +564,14 @@ sub confirm_introns {
 		    }
 		    
 		    if ($startvirt == $endvirt) { 
-			$virtual = "Confirmed_intron_EST:" .$link."_".$startvirt unless ($opt_m);
+			$virtual = "Confirmed_intron_EST:" .$link."_".$startvirt     if ($opt_e);
 			$virtual = "Confirmed_intron_mRNA:".$link."_".$startvirt     if ($opt_m);
+			$virtual = "Confirmed_intron_EMBL:".$link."_".$startvirt     if ($opt_o);
 		    }
 		    elsif (($startvirt == ($endvirt - 1)) && (($last%100000) <= 50000)) {
-			$virtual = "Confirmed_intron_EST:" .$link."_".$startvirt unless ($opt_m);
+			$virtual = "Confirmed_intron_EST:" .$link."_".$startvirt     if ($opt_e);
 			$virtual = "Confirmed_intron_mRNA:".$link."_".$startvirt     if ($opt_m);
+			$virtual = "Confirmed_intron_EMBL:".$link."_".$startvirt     if ($opt_o);
 		    }
 		
 		    #################
