@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-01-24 09:52:10 $
+# Last updated on: $Date: 2005-02-11 15:48:29 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -495,8 +495,8 @@ my $command=<<END;
 Find Gene * 
 show -a -T -f $dump_dir/gene_dump.ace
 
-Find allele *
-show -a -T -f $dump_dir/allele_dump.ace
+Find Variation *
+show -a -T -f $dump_dir/variation_dump.ace
 
 Find strain *
 show -a -T -f $dump_dir/strain_dump.ace
@@ -523,7 +523,7 @@ END
   print DUMP $command;
   close DUMP;
 
-  `cat $dump_dir/gene_dump.ace $dump_dir/allele_dump.ace $dump_dir/strain_dump.ace $dump_dir/2_pt_dump.ace $dump_dir/multi_pt_dump.ace $dump_dir/posneg_dump.ace $dump_dir/geneclass_dump.ace $dump_dir/lab_dump.ace > $dump_dir/class_dump.ace`;
+  `cat $dump_dir/gene_dump.ace $dump_dir/variation_dump.ace $dump_dir/strain_dump.ace $dump_dir/2_pt_dump.ace $dump_dir/multi_pt_dump.ace $dump_dir/posneg_dump.ace $dump_dir/geneclass_dump.ace $dump_dir/lab_dump.ace > $dump_dir/class_dump.ace`;
 
   my @dumps = qw (gene_dump.ace allele_dump.ace strain_dump.ace geneclass_dump.ace 2_pt_dump.ace multi_pt_dump.ace posneg_dump.ace class_dump.ace lab_dump.ace);
 
@@ -541,7 +541,7 @@ END
   while (<IN>){
     chomp;
     if ($_ =~ /^(Gene) : \"(.+)\" -O .+/){$class = $1; $obj = $2}
-    if ($_ =~ /^(Allele) : \"(.+)\" -O .+/){$class = $1; $obj = $2}
+    if ($_ =~ /^(Variation) : \"(.+)\" -O .+/){$class = $1; $obj = $2}
     if ($_ =~ /^(Strain) : \"(.+)\" -O .+/){$class = $1; $obj = $2}
     if ($_ =~ /^(Gene_class) : \"(.+)\" -O .+/){$class = $1; $obj = $2}
     if ($_ =~ /^(2_point_data) : \"(.+)\" -O .+/){$class = $1; $obj = $2}
@@ -829,7 +829,7 @@ sub process_allele_class{
   print LOG "---------------------------------\n";
 
 
-  my @alleles = $db->fetch(-class => 'Allele',
+  my @alleles = $db->fetch(-class => 'Variation',
                  	   -name  => '*');
 
 
@@ -838,36 +838,35 @@ sub process_allele_class{
   my $def="Table-maker -p \"$def_dir/allele_designation_to_LAB.def\"\nquit\n";
 
   open (FH, "echo '$def' | $tace $default_db | ") || die "Couldn't access $db\n";
-  while (<FH>){
+  while (<FH>) {
     print;
     chomp;
-    if ($_ =~ /^\"(.+)\"\s+\"(.+)\"/){
-      $allele2lab{$2} = $1  # $2 is allele_designation $1 is lab designation	
+    if ($_ =~ /^\"(.+)\"\s+\"(.+)\"/) {
+      $allele2lab{$2} = $1	# $2 is allele_designation $1 is lab designation	
     }
   }
 
   # now loop through all alleles looking for problems
-  foreach my $allele (@alleles){
+  foreach my $allele (@alleles) {
 
     print "$allele\n" if ($verbose);
 
     # check allele has no location tag
-    if(!defined $allele->Location ){
+    if (!defined $allele->Laboratory ) {
       
-      if(!$ace){
+      if (!$ace) {
 	print LOG "ERROR: $allele has no Location tag\n";
-      }
-      else{
+      } else {
 	print LOG "ERROR(a): $allele has no Location tag\n";
 
 	# try to find lab designation for alleles with CGC-names (1 or 2 letters and then numbers)
-	if ($allele =~ /^([a-z]{1,2})\d+$/){
+	if ($allele =~ /^([a-z]{1,2})\d+$/) {
 	  my $allele_name = $1;	  
 
-	  print ACE "\nAllele : \"$allele\"\n";
-	  print ACE "-D Location\n";
-	  print ACE "\nAllele : \"$allele\"\n";
-	  print ACE "Location \"$allele2lab{$allele_name}\"\n";
+	  print ACE "\nVariation : \"$allele\"\n";
+	  print ACE "-D Laboratory\n";
+	  print ACE "\nVariation : \"$allele\"\n";
+	  print ACE "Laboratory \"$allele2lab{$allele_name}\"\n";
 	  next;
 	}	
       }
@@ -875,11 +874,11 @@ sub process_allele_class{
   
   
     # check that Lab designation (when present) is correct (for CGC named alleles)
-    if (defined $allele->Location) {
-      my $lab = $allele->Location;
-      if ($allele =~ m/^([a-z]{1,2})\d+$/){
+    if (defined $allele->Laboratory) {
+      my $lab = $allele->Laboratory;
+      if ($allele =~ m/^([a-z]{1,2})\d+$/) {
 	my $allele_prefix = $1;
-	if ( $allele2lab{$allele_prefix} ne $lab ){
+	if ( $allele2lab{$allele_prefix} ne $lab ) {
 	  print LOG "ERROR: $allele is connected to $lab lab which is incorrect according to $allele2lab{$allele_prefix} lab info\n";
 	}
       }
@@ -887,10 +886,10 @@ sub process_allele_class{
 
 
     # warn about alleles linked to more than one Gene (might be valid for deletion alleles so ignore them)
-    unless($allele->at('Sequence_details.Allele_type.Deletion') || $allele->at('Sequence_details.Allele_type.Deletion_with_insertion')){
-      if($allele->Gene){
-	my @geneids=$allele->Gene;       
-	if (scalar @geneids > 1){
+    unless($allele->at('Sequence_details.Type_of_mutation.Deletion')){
+      if ($allele->Gene) {
+	my @geneids=$allele->Gene;
+	if (scalar @geneids > 1) {
 	  print LOG "CHECK: $allele is connected to more than one gene ids: @geneids\n";
 	}
       }
@@ -898,87 +897,90 @@ sub process_allele_class{
 
 
     # All substitution alleles with flanking sequences should be connected to a gene
-    if($allele->Flanking_sequences && !defined $allele->Gene){
-      if($allele->at('Sequence_details.Allele_type.Substitution')){
+    if ($allele->Flanking_sequences && !defined $allele->Gene) {
+      if ($allele->at('Sequence_details.Type_of_mutation.Substitution')) {
 	print LOG "ERROR: substitution allele $allele has flanking sequences but is not connected to a Gene object\n";
       }
     }
 
     # check for Missense tag but no value
-    if(!defined $allele->Missense){
+    if (!defined $allele->Missense) {
       my $missense = $allele->at('Description.Missense');
-      if(defined($missense)){
+      if (defined($missense)) {
 	print LOG "ERROR: $allele has a missense tag but does not have an associated value\n";
       }
     }
     # now check for structure of Missense field
-    else{
+    else {
       my $missense = $allele->Missense;
-      if($missense !~ m/^[A-Z]\(\d+\) to [A-Z]$/){
+      if ($missense !~ m/^[A-Z]\(\d+\) to [A-Z]$/) {
 	print LOG "ERROR: $allele has an incorrect Missense value ($missense)\n";
       }
     }
 
   
     # Check for method tag missing
-    if(!defined($allele->Method)){
+    if (!defined($allele->Method)) {
       print LOG "ERROR: $allele has no Method tag\n";
     }
 
     # check for Method tag which has no value
-    if(!defined $allele->Method){
+    if (!defined $allele->Method) {
       my $method = $allele->at('Method');
-      if(defined($method)){
+      if (defined($method)) {
 	print LOG "ERROR: $allele has a Method tag but not associated value\n";
       }
     }
 
     # check that Allele_type is set for all alleles with flanking sequences
-    if(defined($allele->Flanking_sequences) && !defined($allele->Allele_type)){
-      print LOG "ERROR: $allele has flanking sequences but no 'Allele_type' tag\n";  
+    if (defined($allele->Flanking_sequences) && !defined($allele->Type_of_mutation)) {
+      print LOG "ERROR: $allele has flanking sequences but no 'Type_of_mutation' tag\n";  
     }
     
 
     # test allele has method that matches Allele_type, eg, Deletion tag -> Deletion_allele
-    if(defined $allele->Allele_type){
+    if (defined $allele->Type_of_mutation) {
       my $expected_method; 
       my $observed_method;
 
-      if($allele->Allele_type eq "Insertion" && !defined $allele->Transposon_insertion ){
-	$expected_method = "Insertion_allele";
-      }
-      elsif($allele->at('Isolation.Transposon_insertion') && $allele->at('Sequence_details.Allele_type.Insertion')){
-	$expected_method = "Transposon_insertion";
-      }
-      elsif ($allele->Allele_type eq "Deletion" )                {$expected_method = "Deletion_allele"}
-      elsif ($allele->Allele_type eq "Deletion_with_insertion")  {$expected_method = "Deletion_and_insertion_allele"}
-      elsif ($allele->Allele_type eq "Substitution" )            {$expected_method = "Substitution_allele"}
-      
-      ($observed_method = $allele->Method) if (defined $allele->Method);
-      
-      # does $observed method tag agree with expected method tag (based on Allele_type tag)?
-      if ($expected_method ne $observed_method){
-	if ($ace){
-	  print LOG "ERROR(a): $allele has wrong method ($observed_method): change to $expected_method\n";
-	  print ACE "\nAllele : \"$allele\"\n";
-	  print ACE "-D Method\n";
-	  print ACE "\nAllele : \"$allele\"\n";
-	  print ACE "Method \"$expected_method\"\n";
-	}
-	else{
-	  print LOG "ERROR: $allele has method $observed_method which might need to be $expected_method\n";
-	}
-      }
-    }
 
-    # find alleles that have flanking_seqs but no SMAPPED sequence
-    if ( $allele ->Flanking_sequences && ! defined $allele ->Sequence ){
-      print LOG "ERROR: Allele $allele has Flanking_sequences tag but has no Sequence tag\n";
-    }
-  }  
+      my @mut_type = $allele->Type_of_mutation;
+      if ( scalar @mut_type == 1 ) {
+	if ($mut_type[0] eq "Deletion" ) {
+	  $expected_method = "Deletion_allele";
+	} elsif ($mut_type[0] eq "Insertion" && !defined $allele->Transposon_insertion ) {
+	  $expected_method = "Insertion_allele";
+	} elsif ($allele->at('Transposon_insertion') && $allele->at('Sequence_details.Type_of_mutation.Insertion')) {
+	  $expected_method = "Transposon_insertion";
+	} elsif ($allele->Type_of_mutation eq "Substitution" ) {
+	  $expected_method = "Substitution_allele";
+	} elsif ( grep(/Deletion/, @mut_type) and grep(/Insertion/, @mut_type) ) {
+	  $expected_method = "Deletion_and_insertion_allele";
+	}
+
+	($observed_method = $allele->Method) if (defined $allele->Method);
+ 
+	# does $observed method tag agree with expected method tag (based on Type_of_mutation tag)?
+	if ($expected_method ne $observed_method) {
+	  if ($ace) {
+	    print LOG "ERROR(a): $allele has wrong method ($observed_method): change to $expected_method\n";
+	    print ACE "\nAllele : \"$allele\"\n";
+	    print ACE "-D Method\n";
+	    print ACE "\nAllele : \"$allele\"\n";
+	    print ACE "Method \"$expected_method\"\n";
+	  } else {
+	    print LOG "ERROR: $allele has method $observed_method which might need to be $expected_method\n";
+	  }
+	}
+      }
+
+      # find alleles that have flanking_seqs but no SMAPPED sequence
+      if ( $allele ->Flanking_sequences && ! defined $allele ->Sequence ) {
+	print LOG "ERROR: Allele $allele has Flanking_sequences tag but has no Sequence tag\n";
+      }
+    }  
+  }
 }
-
-
                           ###########################################################
                           #         SUBROUTINES FOR -class strain option            #
                           ###########################################################
