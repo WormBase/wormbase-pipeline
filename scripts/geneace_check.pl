@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-01-16 16:52:55 $
+# Last updated on: $Date: 2003-01-21 17:52:35 $
 
 
 use strict;
@@ -122,7 +122,7 @@ sub process_locus_class{
   Table-maker -p "/wormsrv1/geneace/wquery/get_all_seq_with_pseudogene_and_locus.def" quit
 EOF
  
-  &find_new_loci_in_current_DB($db, $get_seg_with_pseudogene_locus);
+  &find_new_loci_in_current_DB($get_seg_with_pseudogene_locus, $db);
    
   #Look for loci that are other_names and still are obj of ?Locus -> candidate for merging
   my $locus_has_other_name=<<EOF;
@@ -131,12 +131,28 @@ EOF
   
   loci_as_other_name($locus_has_other_name, $ga_dir, $db);
 
-  my $locus_has_genomic_seq=<<EOF;
-  Table-maker -p "/wormsrv1/geneace/wquery/locus_has_genomic_seq.def" quit
+  my $locus_to_CDS=<<EOF;
+  Table-maker -p "/wormsrv1/geneace/wquery/locus_to_CDS.def" quit
 EOF
 
-  loci_point_to_same_CDS($locus_has_genomic_seq, $ga_dir, $db);
+  loci_point_to_same_CDS($locus_to_CDS, $ga_dir);
 
+  # check CGC_approved loci is XREF to existing Gene_Class   
+  # check locus in geneace that are connected to CDS but not CGC_approved
+  
+  
+  my $cgc_loci_not_linked_to_geneclass=<<EOF;
+  Table-maker -p "/wormsrv1/geneace/wquery/CGC_loci_not_linked_to_geneclass.def" quit
+EOF
+  my $get_all_gene_class=<<EOF;
+  Table-maker -p "/wormsrv1/geneace/wquery/get_all_gene_class.def" quit
+EOF
+  my $locus_to_CDS_but_not_CGC_approved=<<EOF;
+  Table-maker -p "/wormsrv1/geneace/wquery/locus_to_CDS_but_not_CGC_approved.def" quit
+EOF
+    
+  locus_CGC($cgc_loci_not_linked_to_geneclass, $get_all_gene_class, $locus_to_CDS_but_not_CGC_approved, $ga_dir);
+  
   print LOG "\nThere are $locus_errors errors in $size loci.\n";
 
 }
@@ -376,7 +392,7 @@ EOF
 ##############################
 
 sub find_new_loci_in_current_DB{
-  my ($db, $def) = @_;
+  my ($def, $db) = @_;
   my $warnings;
   my @genes=();
   my $dir="/wormsrv2/current_DB";
@@ -465,12 +481,54 @@ sub loci_point_to_same_CDS {
    foreach (keys %CDS_loci){
      if (scalar @{$CDS_loci{$_}} > 1){
        $locus_errors++;
-       print LOG "WARNING: $_ is connected to @{$CDS_loci{$_}}: case of merging?\n";
+       print LOG "ERROR: $_ is connected to @{$CDS_loci{$_}}: case of merging?\n";
      }
    }
 
 } 
   
+##############################
+
+sub locus_CGC {
+  
+  my ($def1, $def2, $def3, $dir) = @_;
+  my (@gc, %gc, $gc);
+
+  open (FH, "echo '$def2' | tace $dir | ") || die "Couldn't access geneace\n"; 
+  while (<FH>){
+    chomp($_);
+    if ($_ =~ /^\"/){
+      $_ =~ s/\"//g;
+      push(@gc, $_);
+    }
+  }
+  foreach(@gc){$gc{$_}++}
+  
+  
+  open (FH, "echo '$def1' | tace $dir | ") || die "Couldn't access geneace\n";
+  while (<FH>){
+    chomp($_);
+    if ($_ =~ /^\"/){
+      $_ =~ s/\"//g;
+      $gc = $_;
+      $gc =~ s/-\d+//;
+      if ($gc{$gc}){ 
+	print LOG "WARNING: $_ is CGC_approved but not XREF to existing $gc Gene_Class\n"; 
+	$locus_errors++; 
+      }
+    }
+  }
+  open (FH, "echo '$def3' | tace $dir | ") || die "Couldn't access geneace\n";
+  while (<FH>){
+    chomp($_);
+    if ($_ =~ /^\"/){
+      $_ =~ s/\"//g;
+      print LOG "WARNING: $_ is linked to coding sequence but not CGC_approved\n"; 
+      $locus_errors++; 
+    }
+  }
+}
+
 ##############################
 
 sub test_locus_for_errors{
@@ -720,4 +778,5 @@ EOF
     }
   return @names;
 }
+
 
