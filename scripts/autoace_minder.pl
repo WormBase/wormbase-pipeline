@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-12-02 14:38:58 $
+# Last edited on: $Date: 2003-12-02 15:23:53 $
 
 
 #################################################################################
@@ -525,9 +525,9 @@ sub prepare_primaries {
   }
   else{
     # transfer /wormsrv1/camace to $basedir/camace 
-    &run_command("$scriptdir/TransferDB.pl -start /wormsrv1/camace -end $basedir/camace -database -test");
+    &run_command("$scriptdir/TransferDB.pl -start /wormsrv1/camace -end $basedir/camace -database");
     # transfer /wormsrv1/geneace to $basedir/geneace 
-    &run_command("$scriptdir/TransferDB.pl -start /wormsrv1/geneace -end $basedir/geneace -database -test");
+    &run_command("$scriptdir/TransferDB.pl -start /wormsrv1/geneace -end $basedir/geneace -database");
   }
 
   
