@@ -6,8 +6,8 @@
 #
 # Makes CDS status information by looking at transcript to exon mappings
 #
-# Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-10-20 09:46:00 $      
+# Last updated by: $Author: dl1 $     
+# Last updated on: $Date: 2005-03-24 14:10:11 $      
 
 
 use strict;
@@ -39,8 +39,8 @@ GetOptions (
 my $log = Log_files->make_build_log();
 my $maintainers = "All";
 
-my @chromosomes  = qw( I II III IV V X );                    # all chromosomes
-@chromosomes     = qw( III ) if $quicktest;
+my @chromosomes  = qw( I II III IV V X MtDNA);                    # all chromosomes
+@chromosomes     = qw( MtDNA ) if $quicktest;
 
 &printhelp() if ($help);
 

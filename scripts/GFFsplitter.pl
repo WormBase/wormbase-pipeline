@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-02-09 13:04:54 $
+# Last updated by: $Author: dl1 $
+# Last updated on: $Date: 2005-03-24 14:09:17 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -67,6 +67,7 @@ our @files = (
 	      'CHROMOSOME_IV',
 	      'CHROMOSOME_V',
 	      'CHROMOSOME_X',
+	      'CHROMOSOME_MtDNA'
 	      );
 
 our @gff_files = sort @files; 
