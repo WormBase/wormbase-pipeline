@@ -164,7 +164,7 @@ if( $mail )
     
     #generate distribution request based on updated databases
     my $letter = "$wormpipe_dir/distribute_on_farm_mail";
-    open (LETTER,">$letter");
+    open (LETTER,">$letter") or die "cant open $letter to write new distribution request\n";
     print LETTER "This is a script generated email from the wormpipe Blast analysis pipeline.\nAny problems should be addessed to worm\@sanger.ac.uk.\n
 =====================================================
 \n";
