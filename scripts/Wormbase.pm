@@ -50,7 +50,7 @@ sub get_wormbase_release_date{
 
   my $format = shift;
   
-  $format = "long" if(($format eq "") || ($format ne "long") || ($format ne "short") || ($format ne "both"))
+  $format = "long" if(($format eq "") || ($format ne "long") || ($format ne "short") || ($format ne "both"));
   
   my $line = `ls -l /nfs/disk69/ftp/pub/wormbase/current_release/letter.WS??`;
   my @split = split(/\s+/,$line);
