@@ -5,7 +5,7 @@
 # completely rewritten by Keith Bradnam from list_loci_designations
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-04-14 15:29:49 $      
+# Last updated on: $Date: 2004-04-14 16:19:07 $      
 #
 # This script should be run under a cron job and simply update the webpages that show
 # current gene names and sequence connections.  Gets info from geneace.  
@@ -32,137 +32,135 @@ my $www = "/nfs/WWWdev/htdocs/Projects/C_elegans/LOCI"; # where output will be g
 my $db = Ace->connect(-path  => "/wormsrv1/geneace",
                       -program =>$tace) || do { print "Connection failure: ",Ace->error; croak();};
 
-# Get all Loci
-my @genes = $db->fetch(-query=>"Find Gene_name WHERE CGC_name_for; Follow CGC_name_For; \(Species = \"Caenorhabditis elegans\"\)");
 
-
-# Need to open first file in series to make this all work
-open (HTML, ">$www/loci_designations_a.shtml") || croak "Couldn't open file for writing to\n";
-# Text file for simpler handling
+# open text file which will contain all genes
 open (TEXT, ">$www/loci_all.txt") || croak "Couldn't open text file for writing to\n";
-print TEXT "Locus, sequence name, transcript name, pseudogene name, other names, cgc approved?\n";
-my $prev_initial = "a";
+print TEXT "CGC gene name, WormBase gene ID, CDS name, transcript name, pseudogene name, other names, cgc approved?\n";
 
 
-my $line = 0;
 
-# cycle through each locus in database
-foreach my $gene (@genes){
+foreach my $letter ("a".."z"){
+  # Get all Loci
+  my @genes = $db->fetch(-query=>"Find Gene_name $letter\* WHERE CGC_name_for; Follow CGC_name_for; \(Species = \"Caenorhabditis elegans\"\)");
+
+  # loop through each file (one for each letter a-z)
+  open (HTML, ">$www/loci_designations_${letter}.shtml") || croak "Couldn't open file for writing to\n";
+  # Text file for simpler handling
+
+  my $line = 0;
+
+  # cycle through each locus in database
+  foreach my $gene (@genes){
   
-  my $cgc_name = $gene->CGC_name;
-  print "$gene -> $cgc_name\n";
-  my $initial = substr($cgc_name,0,1);
-  $initial = lc($initial);
-  if ($initial ne $prev_initial){
-    close(HTML);
-    open (HTML, ">$www/loci_designations_$initial.shtml") || croak "Couldn't open file for writing to\n";
-    $prev_initial = $initial;
+    my $cgc_name = $gene->CGC_name;
+
+    # Set alternating colours for each row of (HTML) output 
+    if (($line % 2) == 0) { 
+      print HTML "<TR BGCOLOR=\"lightblue\">\n";
+    }
+    else {
+      print HTML "<TR BGCOLOR=\"white\">\n";
+    }
+    
+    # Column 1 - ?Gene name
+    print HTML "<TD><A HREF=\"http://www.wormbase.org/db/gene/gene?name=${cgc_name}\">${cgc_name}</a></TD>";
+    print TEXT "$cgc_name,";
+
+
+    # Column 2 - Gene ID
+    print HTML "<TD>$gene</TD>";
+    print TEXT "$gene,";
+
+
+    # Column 3 - ?CDS connections
+    if(defined($gene->at('Molecular_info.CDS'))){
+      my @CDSs = $gene->CDS;
+      print HTML "<TD>";
+      foreach my $i (@CDSs){
+	print HTML "<A HREF=\"http://www.wormbase.org/db/seq/sequence?name=${i}\">${i}</a> ";
+	print TEXT "$i ";
+      }
+      print TEXT ",,,";
+      print HTML "</TD><TD>&nbsp</TD><TD>&nbsp</TD>";
+    }
+
+
+    # Column 4 -  ?Transcript connections
+    elsif(defined($gene->at('Molecular_info.Transcript'))){
+      print HTML "<TD>&nbsp</TD>";
+      my @transcripts = $gene->Transcript;
+      print HTML "<TD>";
+      print TEXT ",";
+      foreach my $i (@transcripts){
+	print HTML "<A HREF=\"http://www.wormbase.org/db/seq/sequence?name=${i}\">${i}</a> ";
+	print TEXT "$i ";
+      }
+      print TEXT ",,";
+      print HTML "</TD><TD>&nbsp</TD>";
+    }
+    
+    # Column 5 - ?Pseudogene connections
+    elsif(defined($gene->at('Molecular_info.Pseudogene'))){
+      my @pseudogenes = $gene->Pseudogene;
+      print HTML "<TD>&nbsp</TD><TD>&nbsp</TD><TD>";
+      print TEXT ",,";
+      foreach my $i (@pseudogenes){
+	print HTML "<A HREF=\"http://www.wormbase.org/db/seq/sequence?name=${i}\">${i}</a> ";
+	print TEXT "$i ";
+      }
+      print HTML "</TD>";
+      print TEXT ",";
+    }
+    
+    # Blank columns if no ?Sequence, ?Transcript, or ?Pseudogene
+    else{
+      print HTML "<TD>&nbsp</TD><TD>&nbsp</TD><TD>&nbsp</TD>";
+      print TEXT ",,,";
+    }
+    
+    
+    # Column 6 - Other names for ?Gene
+    if(defined($gene->at('Identity.Name.Other_name'))){
+      my @other_names = $gene->Other_name;
+      print HTML "<TD>";
+      foreach my $i (@other_names){
+	print HTML "${i} ";
+	print TEXT "$i ";
+      }
+      print HTML "</TD>";
+    }
+    else{
+      print HTML "<TD>&nbsp</TD>";
+    }
+    print TEXT ",";
+    
+    
+    # Column 7 CGC approved?
+    if(defined($gene->at('Identity.Name.CGC_name'))){
+      print HTML "<TD>CGC approved</TD>\n";
+      print TEXT "CGC approved"
+	}
+    else{
+      print HTML"<TD>&nbsp<TD>\n";
+    }
+    
+    $line++;
+    print HTML "</TR>\n";
+    print TEXT "\n";
+    $gene->DESTROY();
   }
 
-  # Set alternating colours for each row of (HTML) output 
-  if (($line % 2) == 0) { 
-    print HTML "<TR BGCOLOR=\"lightblue\">\n";
-  }
-  else {
-    print HTML "<TR BGCOLOR=\"white\">\n";
-  }
   
-  # Column 1 - ?Locus name
-  print HTML "<TD><A HREF=\"http://www.wormbase.org/db/gene/gene?name=${cgc_name}\">${cgc_name}</a></TD>";
-  print TEXT "$gene,";
-
-
-  # Column 2 - Gene ID
-  print HTML "<TD>$gene</TD>";
-  print TEXT "$gene,";
-
-
-  # Column 3 - ?CDS connections
-  if(defined($gene->at('Molecular_info.CDS'))){
-    my @CDSs = $gene->CDS;
-    print HTML "<TD>";
-    foreach my $i (@CDSs){
-      print HTML "<A HREF=\"http://www.wormbase.org/db/seq/sequence?name=${i}\">${i}</a> ";
-      print TEXT "$i ";
-    }
-    print TEXT ",,,";
-    print HTML "</TD><TD>&nbsp</TD><TD>&nbsp</TD>";
-  }
-
-
-  # Column 4 -  ?Transcript connections
-  elsif(defined($gene->at('Molecular_info.Transcript'))){
-    print HTML "<TD>&nbsp</TD>";
-    my @transcripts = $gene->Transcript;
-    print HTML "<TD>";
-    print TEXT ",";
-    foreach my $i (@transcripts){
-      print HTML "<A HREF=\"http://www.wormbase.org/db/seq/sequence?name=${i}\">${i}</a> ";
-      print TEXT "$i ";
-    }
-    print TEXT ",,";
-    print HTML "</TD><TD>&nbsp</TD>";
-  }
-
-  # Column 5 - ?Pseudogene connections
-  elsif(defined($gene->at('Molecular_info.Pseudogene'))){
-    my @pseudogenes = $gene->Pseudogene;
-    print HTML "<TD>&nbsp</TD><TD>&nbsp</TD><TD>";
-    print TEXT ",,";
-    foreach my $i (@pseudogenes){
-      print HTML "<A HREF=\"http://www.wormbase.org/db/seq/sequence?name=${i}\">${i}</a> ";
-      print TEXT "$i ";
-    }
-    print HTML "</TD>";
-    print TEXT ",";
-  }
-
-  # Blank columns if no ?Sequence, ?Transcript, or ?Pseudogene
-  else{
-    print HTML "<TD>&nbsp</TD><TD>&nbsp</TD><TD>&nbsp</TD>";
-    print TEXT ",,,";
-  }
-
-
-  # Column 6 - Other names for ?Locus
-  if(defined($gene->at('Identity.Name.Other_name'))){
-    my @other_names = $gene->Other_name;
-    print HTML "<TD>";
-    foreach my $i (@other_names){
-      print HTML "${i} ";
-      print TEXT "$i ";
-    }
-    print HTML "</TD>";
-  }
-  else{
-    print HTML "<TD>&nbsp</TD>";
-  }
-  print TEXT ",";
-
-
-  # Column 7 CGC approved?
-  if(defined($gene->at('Identity.Name.CGC_name'))){
-    print HTML "<TD>CGC approved</TD>\n";
-    print TEXT "CGC approved"
-  }
-  else{
-    print HTML"<TD>&nbsp<TD>\n";
-  }
-
-  $line++;
-  print HTML "</TR>\n";
-  print TEXT "\n";
-  $gene->DESTROY();
+  ###################################################
+  # Tidy up - close things, mail log, run webpublish
+  ###################################################
+  
+  close(HTML);  
+  
 }
 
-
-###################################################
-# Tidy up - close things, mail log, run webpublish
-###################################################
-
-close(HTML);  
-
 $db->close;
+close(TEXT);
 
 my $rundate = &rundate;
 my $log = "/tmp/update_web_gene_names";
@@ -174,8 +172,8 @@ print LOG "Running update_web_gene_names.pl on $rundate\n\n";
 # now update pages using webpublish
 chdir($www) || print LOG "Couldn't run chdir\n";
 
-#system("/usr/local/bin/webpublish -f -q *.shtml") && print LOG "Couldn't run webpublish on html files\n";
-#system("/usr/local/bin/webpublish -f -q *.txt") && print LOG "Couldn't run webpublish on text file\n";
+system("/usr/local/bin/webpublish -f -q *.shtml") && print LOG "Couldn't run webpublish on html files\n";
+system("/usr/local/bin/webpublish -f -q *.txt") && print LOG "Couldn't run webpublish on text file\n";
 
 &mail_maintainer("update_web_gene_names.pl","krb\@sanger.ac.uk","$log");
 
