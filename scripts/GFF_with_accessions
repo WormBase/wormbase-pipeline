@@ -1,4 +1,9 @@
 #!/usr/local/bin/perl
+#
+# GFF_with_accessions
+#
+
+# 010620 :  dl : Removed execeptions
 
 use Ace;
 
@@ -28,9 +33,6 @@ while (<GFF>) {
 
     # exceptions WS32
     if ($gen_can eq "ZK1236R") {print "$_ acc=n/a\n"; next;}
-    if ($gen_can eq "Y66A7AL") {print "$_ acc=n/a\n"; next;}
-    if ($gen_can eq "Y66D12A") {print "$_ acc=n/a\n"; next;}
-    if ($gen_can eq "Y66A7AR") {print "$_ acc=n/a\n"; next;}
 
     @acc = $obj->DB_info->row();
     
