@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers                             
 #
-# Last updated by: $Author: krb $               
-# Last updated on: $Date: 2003-12-01 11:54:24 $         
+# Last updated by: $Author: dl1 $               
+# Last updated on: $Date: 2004-03-16 12:46:12 $         
 
 #################################################################################
 # Initialise variables                                                          #
@@ -21,13 +21,15 @@ use Getopt::Long;
 # command-line options       #
 ##############################
 
-use vars qw($update $build $a2c $c2g $g2p $all $predicted_CDS $test);
+use vars qw($update $build $a2c $c2g $g2p $cloneseq $clonesize $all $predicted_CDS $test);
 
 GetOptions("update"        => \$update,
 	   "in_build"      => \$build,
 	   "accession"     => \$a2c,
 	   "ce"            => \$c2g,
 	   "pid"           => \$g2p,
+	   "cloneseq"      => \$cloneseq,
+	   "clonesize"     => \$clonesize,
 	   "all"           => \$all,
 	   "predicted_CDS" => \$predicted_CDS,
 	   "test"          => \$test
@@ -54,6 +56,8 @@ our %sub2file = ( 'gene2CE'   => "$data_dir/gene2CE.dat",
 		  'clone2acc' => "$data_dir/clone2acc.dat",
 		  'acc2clone' => "$data_dir/acc2clone.dat",
 		  'gene2pid'  => "$data_dir/gene2pid.dat",
+		  'cloneseq'  => "$data_dir/clone2seq.dat",
+		  'clonesize' => "$data_dir/clonesize.dat",
 		  'CDSlist'   => "$data_dir/CDSlist.dat",
 		  'pid2gene'  => "$data_dir/pid2gene.dat"
 		);
@@ -99,7 +103,11 @@ sub Common_data_update {
     &write_clone2acc if $a2c;
     &write_gene2CE   if $c2g;
     &write_CDSlist   if $predicted_CDS;
+    &write_cloneseq  if $cloneseq;
+    &write_clonesize if $clonesize;
+
 }
+
 
 #######################################################################
 # Data writing routines - actually create and dump the data           #
@@ -234,6 +242,53 @@ sub write_CDSlist  {
     print CDS Data::Dumper->Dump([\%CDSlist]);
     close CDS;
 }
+
+sub write_cloneseq  {   
+
+    my %clone2seq;
+    my $seq; my $newname; my $seqname;
+
+    ####################################################################
+    # connect to AceDB using tace
+    ####################################################################
+
+    my $command = "query find Genome_sequence\nDNA\nquit\n";
+
+    open (TACE, "echo '$command' | $tace $ace_dir | ");
+    while (<TACE>) {
+	chomp;
+	next if ($_ eq "");
+	next if (/\/\//);
+	
+	if (/^>(\S+)/) {
+	    
+	    $newname = $1;
+	    unless (defined $seqname) {
+		$seqname = $newname;
+		next;
+	    }
+	    
+	    # assign sequence
+	    $clone2seq{$seqname} = $seq;
+	    
+	    # reset vars
+	    $seqname = $newname;
+	    $seq = "";
+	    next;
+	    
+	}
+	$seq .= $_;
+    }
+    close TACE;
+    $clone2seq{$seqname} = $seq;
+    
+    #now dump data to file
+    open (CDS, ">$sub2file{'cloneseq'}") or die "Can't open file: $sub2file{'cloneseq'}";
+    print CDS Data::Dumper->Dump([\%clone2seq]);
+    close CDS;
+}
+
+
 
 ####################################################################################
 
