@@ -7,7 +7,7 @@
 # Script to make ?Transcript objects
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-02-24 10:44:36 $
+# Last updated on: $Date: 2005-03-15 12:10:27 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -225,7 +225,8 @@ foreach my $chrom ( @chromosomes ) {
     #check for and remove ESTs with internal SL's 
     if( $cdna->SL ) {
       if( $cdna->start < $cdna->SL->[0] ) {
-	$log->write_to($cdna->name." has internal SL ".$cdna->SL->[2]."\n");
+	my $gap = $cdna->SL->[0] - $cdna->start;
+	$log->write_to($cdna->name." has internal SL ".$cdna->SL->[2]."gap = $gap\n");
 	next;
       }
     }
