@@ -8,7 +8,7 @@
 # RUN this script anytime during the build or after the build when get_interpolated_map 
 # and update_inferred multi-pt data are done
 #
-# Last updated on: $Date: 2004-10-01 15:34:52 $
+# Last updated on: $Date: 2004-11-26 13:13:14 $
 # Last updated by: $Author: krb $
 
 
@@ -115,9 +115,6 @@ edit -D Comment
 edit -D Tracking
 edit -D Lineage
 edit -D Publication
-
-find Person_name *
-edit -D Name
 save
 quit
 END
