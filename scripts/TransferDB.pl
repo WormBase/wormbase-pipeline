@@ -4,8 +4,8 @@
 
 # by ag3 [991221]
 #
-# Last updated on: $Date: 2002-12-09 16:23:19 $
-# Last updated by: $Author: ck1 $
+# Last updated on: $Date: 2003-01-13 09:21:59 $
+# Last updated by: $Author: krb $
 
 
 # transferdb moves acedb database files across filesystems.
@@ -163,14 +163,15 @@ if ($DB==1) {
 find (\&process_file,@TOBEMOVED);
 
 # Remove the backup database directory, unless bck switch specified
-if ((length($backup)==0)&&(-d $bck_subdir)) {
+if ((!$backup)&&(-d $bck_subdir)) {
   print LOGFILE "REMOVING BACKUP TREE $bck_subdir\n";
   rmtree ($bck_subdir) if !$DEBUG;
   print LOGFILE "$0 ended SUCCESSFULLY\n";
   close LOGFILE;
-} elsif ((length($backup)!=0)&&(-d $bck_subdir)) {
+} elsif ($backup &&(-d $bck_subdir)) {
   print LOGFILE "Backup database directory is in $bck_subdir\n";
 }
+
 
 my $body = "SUCCESS: Your transferdb process $$ has ended succesfully.\n";
 &SendMail($body);
