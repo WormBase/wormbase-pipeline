@@ -2,12 +2,11 @@
 use strict;
 use Wormbase;
 use Ace;
-use utf8;
 
 my $maintainer = "All";
 my $rundate    = `date +%y%m%d`; chomp $rundate;
 
-my $log = "/wormsrv2/logs/locus2seq.log";
+my $log = "/wormsrv2/logs/locus2seq.log.$rundate";
 open(LOG,">$log")|| die "cant open $log";
 print LOG "$0\n";
 print LOG "$rundate\n";
@@ -171,6 +170,10 @@ ALL should equal sum of others ie $sum and no put into hash - $count \n
 \n\n
 wrote output ACE files to $autoace_acefiles_dir"; 
 
+
+
+my $interested = "Jean TM, John Spieth, Darin Blasair\n";
+print LOG "$interested would like to be informed of this update\n\n";
 
 $autoace->close;
 close CAMOUT;
