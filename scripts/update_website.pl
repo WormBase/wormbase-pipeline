@@ -7,8 +7,8 @@
 # A script to finish the last part of the weekly build by updating all of the
 # relevant WormBase and Wormpep web pages.
 #
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2004-05-10 10:06:03 $      
+# Last updated by: $Author: krb $     
+# Last updated on: $Date: 2004-06-18 14:49:15 $      
 
 
 #################################################################################
@@ -144,6 +144,12 @@ unless (defined $ARGV[0]) {
 #########################
 # final bit of tidying up
 #########################
+
+# update 'current' symlink on dev site
+print LOG "\nChanging 'current symbolic link to point to new release\n"; 	
+chdir("$www") || print LOG "Couldn't chdir to $www\n";
+system("rm -f $www/current") && croak "Couldn't remove 'current' symlink\n"; 	 
+system("ln -s $WS_name current") && croak "Couldn't create new symlink\n";
 
 print LOG "\n\nC'est finis\n\n";
 
