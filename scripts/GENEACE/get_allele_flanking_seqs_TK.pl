@@ -4,7 +4,7 @@
 
 # by Chao-Kung Chen [030625]
 
-# Last updated on: $Date: 2004-07-09 13:30:02 $
+# Last updated on: $Date: 2004-07-26 13:32:15 $
 # Last updated by: $Author: krb $
 
 use Tk;
@@ -1015,7 +1015,6 @@ sub write_ace {
   $ace_window->insert('end', "\/\/Deletion_with_insertion\n");
   $ace_window->insert('end', "Flanking_sequences \"$Lf\" \"$Rf\"\n");
   $ace_window->insert('end', "Gene  \"$Gene_info{$locus}{'Gene'}\"  \/\/$locus\n");
-  $ace_window->insert('end', "Predicted_gene  \"$cds\"\n");
   $ace_window->insert('end', "Species \"Caenorhabditis elegans\"\n");
   if ($info[0] eq "X"){
     $ace_window->insert('end', "\/\/Nonsense \"Amber_UAG\" \"$info[2] to stop\"\n");
