@@ -4,7 +4,7 @@
 #
 # by ag3 [991221]
 #
-# Last updated on: $Date: 2003-09-22 17:01:02 $
+# Last updated on: $Date: 2003-09-22 17:06:27 $
 # Last updated by: $Author: krb $
 
 
@@ -298,8 +298,8 @@ sub process_file {
     print LOG " .. SKIPPING file $filename \n";
   } 
   else {
-    # if you are copying displays.wrm and -dbname was specified, you can update
-    # the contents of the file itself to add the new name
+    # if you are copying displays.wrm and -name was specified, you can update
+    # the contents of the file itself to ad6~d the new name
     if (($filename =~ m/displays.wrm$/) && $dbname){
       print LOG "Updating displays.wrm ...\n";
       open (INFILE,"cat $s_file|");
@@ -366,7 +366,7 @@ sub usage {
     exit(1);
   }
   elsif($error == 2){
-    print "If -all is specified you must also specify -dbname\n";
+    print "If -all is specified you must also specify -name\n";
     print LOG "-all specified but -dbname not specified\n";
     print LOG "TransferDB prematurely quitting at",&runtime,"\n";
     close(LOG);
