@@ -639,8 +639,8 @@
 
 #Evidence Paper_evidence ?Paper
 	  PMID_evidence Text // Text field should just store PubMed ID number
-	  Published_as Gene UNIQUE ?Gene_name // for tracking how things first appeared in 
-                                              // literature [krb 031024]
+	  Published_as Gene UNIQUE ?Gene_name #Evidence // for tracking how things first appeared in 
+                                                        // literature [krb 031024]
 	  Person_evidence ?Person
 	  Author_evidence ?Author UNIQUE Text
 	  Accession_evidence ?Database ?Accession_number // added for and by krb 020422
