@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-11-07 14:14:58 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2003-11-10 10:32:42 $
 
 
 #################################################################################
@@ -1170,6 +1170,11 @@ sub map_features {
 
   # alleles
   &run_command("$scriptdir/map_Alleles.pl");
+
+  # microarray connections
+  &run_command("$scriptdir/map_microarray.pl");
+  my $file = "/wormsrv2/wormbase/misc/misc_microarrays.ace";
+  &load($file,"microarray_connections");
 
 }
 #__ end map_features __#
