@@ -7,7 +7,7 @@
 # This script calculates interpolated genetic map positions for CDS, Transcripts 
 # and Pseudogenes lying between and outside genetic markers.
 #
-# Last updated on: $Date: 2004-05-21 15:53:08 $
+# Last updated on: $Date: 2004-06-08 13:00:26 $
 # Last updated by: $Author: ck1 $
 
 
@@ -491,7 +491,8 @@ if ($debug){
 # hash for checking a gene_id is live: use for writing interpolated_map_position only to live gene ids
 ######################################################################################################
 
-my %gene_id_is_live = $ga -> gene_id_is_live();
+my @id_status = $ga -> gene_id_status();  # array of 2 hash refs
+my %gene_id_is_live = %{$id_status[0]};      # first one is about gene_id_is_live
 
 ##################################################################
 # sorting gmap positions of marker loci from left tip to right tip

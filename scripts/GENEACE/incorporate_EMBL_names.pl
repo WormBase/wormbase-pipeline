@@ -5,7 +5,7 @@
 
 # Author: Chao-Kung Chen
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-05-27 13:16:35 $ 
+# Last updated on: $Date: 2004-06-08 13:00:27 $ 
 
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
@@ -32,8 +32,7 @@ if (!$version){
 my $start = &runtime;
 
 # directory, files used for EMBL update
-#my $script_dir = "/wormsrv2/scripts/GENEACE/";
-my $script_dir = "/nfs/team71/worm/ck1/WORMBASE_CVS/scripts/GENEACE/";
+my $script_dir = "/wormsrv2/scripts/GENEACE/";
 
 my $output_dir = "/wormsrv1/geneace/EMBL_GENE_NAMES/";
 my $temp_dir   = "/wormsrv1/geneace/EMBL_GENE_NAMES/TEMP/";

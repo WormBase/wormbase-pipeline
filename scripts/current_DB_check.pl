@@ -8,7 +8,7 @@
 # to look for bogus sequence entries
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2004-06-07 16:11:29 $
+# Last updated on: $Date: 2004-06-08 13:00:26 $
 
 
 use strict;
@@ -16,7 +16,6 @@ use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
 use Wormbase;
 use Ace;
 use Getopt::Long;
-use lib "/nfs/team71/worm/ck1/WORMBASE_CVS/scripts/";
 use GENEACE::Geneace;
 
 
@@ -464,7 +463,7 @@ sub find_out_of_date_gene_id {
 
   # ----- get latest live gene id / non_live gene id from geneace
   my $ga = init Geneace();
-  my ($Live_gene_id, $Non_Live_gene_id) = $ga -> gene_id_is_live(); # hash ref
+  my ($Live_gene_id, $Non_Live_gene_id) = $ga -> gene_id_status(); # hash ref
 
   # ----- loop through each acefile of all groups subdir of at /wormsrv2/wormbase and
   #       see if there is WBGxxxxxxx. If yes, check if gene id is up-to-date

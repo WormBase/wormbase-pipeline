@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-05-26 12:16:11 $
+# Last updated on: $Date: 2004-06-08 13:00:27 $
 
 package Geneace;
 
@@ -19,7 +19,8 @@ $machine = "+" if `ls /wormsrv1/`;                  # if sees wormsrv1 then $mac
 my $curr_db = "/nfs/disk100/wormpub/DATABASES/current_DB";
 my $geneace_dir = "/wormsrv1/geneace";
 #my $tace = &tace;
-my $tace = glob("~wormpub/ACEDB/bin_ALPHA/tace");
+my $tace = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_5/tace";
+#my $tace = glob("~wormpub/ACEDB/bin_ALPHA/tace");
 
 
 sub init {
@@ -338,14 +339,18 @@ sub allele_to_gene_id {
 
 }
 
-sub gene_id_is_live {
+sub gene_id_status {
   my ($this)=shift;
-  my (%gene_id_is_live, @live);
+  my (%gene_id_is_live, @live, %gene_id_is_not_live, @non_live);
   my $db = get_geneace_db_handle();
 
   push(@live, $db->find("Find Gene * where Live") );
+  push(@non_live, $db->find("Find Gene * where !Live") );
   foreach (@live){$gene_id_is_live{$_}++};
-  return %gene_id_is_live;
+  foreach (@non_live){
+    $gene_id_is_not_live{$_} = $_ -> Merged_into;
+  }
+  return \%gene_id_is_live, \%gene_id_is_not_live;
 }
 
 sub get_last_gene_id {

@@ -4,7 +4,7 @@
 
 # by Chao-Kung Chen [030625]
 
-# Last updated on: $Date: 2004-05-26 12:16:11 $
+# Last updated on: $Date: 2004-06-08 13:00:27 $
 # Last updated by: $Author: ck1 $
 
 use Tk;
@@ -1057,8 +1057,13 @@ DESCRIPTION
   This script can output 30 bp flanking DNA seqs on two sides of any mutated site of a triplet of a defined gene (including the
   first and last codon, although such alleles rarely occur).
 
-  You need to supply a CDS/Transcript name (case-insensitive) and amino acid coordinate (or nucleotide coordinate) followed by
-  a mutation in single- or three-letter code (case-insensitive) as arguments (see USAGE) to retrieve the flanking sequences.
+  INPUT:
+
+  You need to supply a CDS/Transcript name (case-insensitive) and amino acid coordinate by -aa option 
+  (or nucleotide coordinate by -dna opti  on) followed by a mutation in single- or three-letter code (case-insensitive) 
+  as arguments (see USAGE) to retrieve the flanking sequences.
+
+  Eg, 4R79.1 -aa 324y ok12 abc-1 pmid/[cgcxxx]   OR   4R79.1 -dna 1324t ok12 abc-1 pmid/[cgcxxx]
 
 SCENARIO A: DNA coordinate
 
