@@ -4,8 +4,8 @@
 # 
 # A script to make multiple copies of camace for curation, and merge them back again
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-07-26 10:38:42 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2004-08-02 09:24:14 $
 
 
 use strict;
@@ -44,7 +44,7 @@ print "WS_version : $WS_version\tWS_previous : $WS_previous\n" if ($debug);
 my @databases; #array to store what splits are to be merged.
 my $path_new = ();
 my $path_ref = ();
-my @classes = ('Transposon', 'Transcript', 'Sequence', 'CDS', 'Feature', 'Pseudogene');
+my @classes = ('Transposon', 'Transcript', 'Sequence', 'CDS', 'Feature', 'Feature_data', 'Pseudogene');
 
 # load @databases array with user database names.
 push(@databases,"orig");
