@@ -7,7 +7,7 @@
 # Usage : autoace_minder [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2002-09-05 10:08:13 $
+# Last edited on: $Date: 2002-09-05 13:37:43 $
 
 
 #################################################################################
@@ -1247,6 +1247,26 @@ sub generate_utrs {
 
 sub make_wormpep {
   $am_option = "-buildpep";
+  # make wormpep database but also perform all the other related protein steps in the build
+
+  # Get protein IDs (this step writes to ~wormpub/analysis/SWALL
+  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Started getSwissTrembldata.pl at $runtime\n";
+  system("getSwissTrembldata.pl") && die "Couldn't run getSwissTrembldata.pl";
+  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Finished getSwissTrembldata.pl at $runtime\n";
+
+  # Now process this information to get...protein IDs ????
+  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Started GetIDandAC.pl at $runtime\n";
+  system("GetIDandAC.pl") && die "Couldn't run GetIDandAC.pl";
+  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Finished GetIDandAC.pl at $runtime\n";
+  # load into autoace
+  $command = "pparse /wormsrv2/autoace/wormpep_ace/WormpepACandIDs.ace\nsave\nquit\n"; 
+  open (WRITEDB, "| $tace -tsuser utr_data /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
+  print WRITEDB $command;
+  close WRITEDB;
+  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Finished loading proteinID info into autoace at $runtime\n";
+
+
+  # make wormpep
   $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Running make_wormpep -r at $runtime\n";
   system ("$scriptdir/make_wormpep -r $WS_version") && die "Couldn't run make_wormpep -r\n";
   $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Finished running make_wormpep -r at $runtime\n";
