@@ -5,7 +5,7 @@ use Ace;
 
 my $maintainer = "All";
 my $rundate    = `date +%y%m%d`; chomp $rundate;
-my $wmpep_ver = &get_wormbase_version();$wmpep_ver = 78;#while wormpep.table broken
+my $wmpep_ver = &get_wormbase_version();
 my $wormpepdir = "/wormsrv2/WORMPEP/wormpep$wmpep_ver";
 my $log = "/wormsrv2/logs/GetSwissIDandInterpro.WB$wmpep_ver.$rundate";#"$wormpepdir/error_report";#error log (email to All)
 my $temp_acefile = "$wormpepdir/SwissprotIDs.ace";
