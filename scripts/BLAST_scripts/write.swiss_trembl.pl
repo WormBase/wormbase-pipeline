@@ -155,7 +155,7 @@ sub output_list
 	close DB;
 	$seq =~ s/\n//g;
 	
-	$header =~ /^\S+\s+(\S+)/;
+	$header =~ /^>(\S+)/;
 	my $accession = $1;
 	
 	if ($seq) {
@@ -165,7 +165,7 @@ sub output_list
 	  unless( $old ) {
 	    print ACE "Description \"$DES{$accession}\"\n";
 	    if ("$prefix" eq "SW" ) {
-	      print ACE "Database SwissProt SwissProt_ID $id\n";
+	      #print ACE "Database SwissProt SwissProt_ID $id\n";
 	      print ACE "Database SwissProt SwissProt_AC $accession\n";
 	    }
 	    else {
