@@ -8,15 +8,17 @@
 # dl
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2003-04-22 09:44:33 $
+# Last edited on: $Date: 2003-04-22 13:49:40 $
 
 use lib "/wormsrv2/scripts/";
 use Wormbase;
 use Getopt::Long;
 use strict;
+use Data::Dumper;
 
 my %acc2clone = &FetchData('acc2clone');
 my %gene2CE = &FetchData('gene2CE');
+my %Ip2Go = &FetchData('interpro2go');    # get the InterPro => GOterm mapping ( space separated ie 'IPR004794' => 'GO:0008703 GO:0008835 GO:0009231 ')
 
 our %databases = (
 		  'SW' => 'SWISSPROT',
@@ -42,6 +44,9 @@ GetOptions (
 if (! defined $file) {
     $file = "/nfs/disk100/wormpub/protein_ID.mail";
 }
+
+
+
 my $ace_file = "/wormsrv2/autoace/wormpep_ace/WormpepACandIDs.ace";
 $ace_file = "/tmp/WormpepACandIDs.ace" if ($debug);
 
@@ -63,10 +68,6 @@ while (<FILE>) {
 
     my @interpro = "";
     ($dbxref_ac,$dbxref_id,$dbxref_db,@interpro) = &get_from_protein_id($f[2]);
-    
-    print OUT "\nSequence : \"$f[6]\"\n";
-    print OUT "Database $databases{$dbxref_db} $dbxref_id $dbxref_ac\n";
-    print OUT "Protein_id \"$acc2clone{$f[0]}\" $f[2] $f[3]\n";
 
     if( $interpro[0] ) {
       my $protein = $gene2CE{$f[6]};
@@ -78,7 +79,20 @@ while (<FILE>) {
       }
       else {print "gene $f[6] has no protein (has common_data been updated ?)\n";}
     }
-} 
+
+    print OUT "\nSequence : \"$f[6]\"\n";
+    print OUT "Database $databases{$dbxref_db} $dbxref_id $dbxref_ac\n";
+    print OUT "Protein_id \"$acc2clone{$f[0]}\" $f[2] $f[3]\n";
+
+    # assign GO terms based on InterPro Motifs
+    foreach my $ip (@interpro) {
+      my @GOterms = split(/\s/,$Ip2Go{$ip});
+      foreach my $go (@GOterms) {
+	print OUT "GO_term\t\"$go\" GO_inference_type IEA\n"
+      }
+    }
+}
+
 close FILE;
 close OUT;
 exit(0);
