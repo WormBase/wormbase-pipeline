@@ -115,25 +115,22 @@ Table-maker -p "/wormsrv2/autoace/wquery/roughcheck.def"
 quit
 EOF
     
-    $skip = 15;
 open (TACE, "echo '$command' | $tace | ");
 while (<TACE>) {
-    $skip--;
-    next if ($skip > 0);
-#    next if (/acedb\>/);
     next if (/\/\//);
     s/acedb\> //g;
     chomp;
+    next if  ($_ eq "");
     undef ($confirmed);
     s/\"//g;
     next if (/^gaze/);
     @f = split (/\t/);
     
     if ($f[5] eq "Confirmed_by") {
-	$confirmed = "Y";
+	$confirmed = "Confirmed";
     }
     elsif ($f[6] > 0) {
-	$confirmed = "S";
+	$confirmed = "Supported";
     }
     write;
 
