@@ -7,7 +7,7 @@
 # Usage: camcheck.pl
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-12-19 17:16:18 $
+# Last updated on: $Date: 2004-05-05 10:05:02 $
 #
 # see pod documentation (i.e. 'perldoc camcheck.pl') for more information.
 #
@@ -22,7 +22,7 @@ use IO::Handle;
 use Getopt::Std;
 use Ace;
 use strict;
-use lib "/wormsrv2/scripts/";
+use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
 use Socket;
 
