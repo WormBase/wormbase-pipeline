@@ -8,7 +8,7 @@
 # to look for bogus sequence entries
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-10-22 15:43:22 $
+# Last updated on: $Date: 2005-01-11 14:59:30 $
 
 
 use strict;
@@ -177,10 +177,10 @@ close(STLOUIS_LOG);
 
 my $all = "wormbase-dev\@wormbase.org";
 
-my $caltech = "wormbase\@its.caltech.edu, krb\@sanger.ac.uk";
+my $caltech = "wormbase\@its.caltech.edu";
 my $sanger  = "wormbase\@sanger.ac.uk";
-my $cshl    = "stein\@cshl.org, harris\@cshl.org, chenn\@cshl.edu, krb\@sanger.ac.uk";
-my $stlouis = "dblasiar\@watson.wustl.edu, jspieth\@watson.wustl.edu, krb\@sanger.ac.uk";
+my $cshl    = "stein\@cshl.org, harris\@cshl.org, chenn\@cshl.edu";
+my $stlouis = "dblasiar\@watson.wustl.edu, jspieth\@watson.wustl.edu";
 
 if($debug){
   $caltech = $sanger = $cshl = $stlouis = $debug;
