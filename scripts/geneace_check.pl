@@ -2,39 +2,62 @@
 # 
 # geneace_check.pl
 #
-# by Anthony Rogers based on a script by Keith Bradnam
+# by Keith Bradnam
 #
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-12-23 13:35:40 $
+# Last updated on: $Date: 2002-12-24 12:34:05 $
 
-use Ace;
+
+use strict;
 use lib "/wormsrv2/scripts/"; 
 use Wormbase;
-use strict;
+use Ace;
 use Getopt::Long;
 
-my $debug;            # debug mode, email sends only to the script tester
-GetOptions ("debug"  => \$debug);
+######################################
+# variables and command-line options # 
+######################################
+
+my ($help, $debug);
+my $maintainers = "All";
+our $tace = &tace;   # tace executable path
+our ($log, $erichlog);
+
+GetOptions ("help"      => \$help,
+            "debug=s"   => \$debug);
 
 
-our $log;
-our $erichlog;
+# Display help if required
+&usage("Help") if ($help);
+
+# Use debug mode?
+if($debug){
+  print "DEBUG = \"$debug\"\n\n";
+  ($maintainers = $debug . '\@sanger.ac.uk');
+}
+
 &create_log_files;
+
+# open a connection to geneace
+my $db = Ace->connect(-path  => '/wormsrv1/geneace/',
+		      -program =>$tace) || do { print LOG "Connection failure: ",Ace->error; die();};
+
+
+
+###########################
+# MAIN LOOP
+###########################
 
 # track errors in each class
 our $locus_errors = 0;
 our $lab_errors = 0;
 our $allele_errors = 0;
-our $strain_update = 0;
+our $strain_errors = 0;
+our $rearrangement_errors = 0;
+our $sequence_errors = 0;
 
-# open a connection to geneace
-
-our $tace = &tace;   # tace executable path
-
-my $db = Ace->connect(-path  => '/wormsrv1/geneace/',
-		      -program =>$tace) || do { print LOG "Connection failure: ",Ace->error; die();};
 
 
 # Process various classes looking for errors
@@ -42,8 +65,9 @@ my $db = Ace->connect(-path  => '/wormsrv1/geneace/',
 &process_laboratory_class;
 &process_allele_class;
 &process_strain_class;
-&Process_rearrangement;
-&Process_sequence;
+&process_rearrangement;
+&process_sequence;
+
 
 
 #######################################
@@ -54,17 +78,13 @@ $db->close;
 close(LOG);
 close(ERICHLOG);
 
-if ($debug){
-  chomp(my $who=`whoami`);
-  script_tester ($0,$who,$log); 
-}
-else {
-  my $maintainer = "All";
-  &mail_maintainer($0,$maintainer,$log);
+# Alway mail to $maintainers (which might be a single user under debug mode)
+&mail_maintainer($0,$maintainers,$log);
 
-  my $interested ="krb\@sanger.ac.uk, emsch\@its.caltech.edu, ck1\@sanger.ac.uk";
-  &mail_maintainer($0,"$interested",$erichlog);
-}
+# Also mail to Erich unless in debug mode
+my $interested ="krb\@sanger.ac.uk, emsch\@its.caltech.edu, ck1\@sanger.ac.uk";
+&mail_maintainer($0,"$interested",$erichlog) unless $debug;
+
 
 exit(0);
 
@@ -82,7 +102,9 @@ sub process_locus_class{
   
   # Loop through loci checking for various potential errors in the Locus object
   print "\nChecking loci for errors:\n";
-  print LOG "\nChecking Locus class for errors\n";
+  print LOG "\nChecking Locus class for errors:\n";
+  print LOG "--------------------------------\n";
+
   foreach my $locus (@loci){
     #print "$locus\n";
     my $warnings;
@@ -102,7 +124,7 @@ sub process_locus_class{
 EOF
 
   &find_new_loci_in_current_DB($db, $get_seg_with_pseudogene_locus);
-  print LOG "\nThere were $locus_errors errors in $size loci.\n";
+  print LOG "\nThere are $locus_errors errors in $size loci.\n";
 }
 
 ############################
@@ -113,6 +135,7 @@ sub process_laboratory_class{
 
   print "\n\nChecking Laboratory class for errors:\n";
   print LOG "\n\nChecking Laboratory class for errors:\n";
+  print LOG "-------------------------------------\n";
   #grab lab details
   my @labs = $db->fetch(-class => 'Laboratory',
 		        -name  => '*');
@@ -120,18 +143,15 @@ sub process_laboratory_class{
   # test for Allele_designation and Representative tags
   foreach my $lab (@labs){
     if(!defined($lab->at('CGC.Allele_designation')) && $lab ne "CGC"){  
-      print LOG "$lab has no Allele_designation tag present\n";
-      #print  "$lab has no Allele_designation tag present\n"; 
+      print LOG "WARNING: $lab has no Allele_designation tag present\n";
       $lab_errors++;
     }    
     if(!defined($lab->at('CGC.Representative')) && $lab ne "CGC"){  
-      print LOG "$lab has no Representative tag present\n";
-      #print  "$lab has no Representative tag present\n";
+      print LOG "WARNING: $lab has no Representative tag present\n";
       $lab_errors++;
     }  
   }
-  print LOG "\nThere were $lab_errors errors in Laboratory class\n";
-  #print "\nThere were $lab_errors errors in Laboratory class\n";
+  print LOG "\nThere are $lab_errors errors in Laboratory class\n";
 }
  
 ########################
@@ -142,9 +162,9 @@ sub process_allele_class{
  
   print"\n\nChecking Allele class for errors:\n";
   print LOG "\n\nChecking Allele class for errors:\n";
+  print LOG "---------------------------------\n";
 
   my @alleles = $db->fetch('Allele','*');
-  print scalar @alleles, "\n";
   my ($allele, %allele_gene, $gene, $seq_name, @seq1, @seq2, @seqs, $cdb);
 
   $cdb = Ace->connect(-path  => '/wormsrv2/current_DB/',
@@ -162,7 +182,7 @@ sub process_allele_class{
 
   foreach $allele (@alleles){
     if(!defined($allele->at('Location'))){  
-      print LOG "$allele has no Location tag present\n";
+      print LOG "ERROR: $allele has no Location tag present\n";
       $allele_errors++;
     }
    
@@ -176,7 +196,7 @@ sub process_allele_class{
 	  my $seq = $cdb->fetch('Sequence', $gene);
 	  if ($seq->Locus_genomic_seq){
 	    my @LOCI=$seq->Locus_genomic_seq(1);
-	    print LOG "Sequence tag of Allele $allele points to $seq, which can now become @LOCI.\n";
+	    print LOG "WARNING: Sequence tag of Allele $allele points to $seq, which can now become @LOCI.\n";
 	    $allele_errors++;   
 	  }
 	}
@@ -186,11 +206,11 @@ sub process_allele_class{
 
   foreach (keys %allele_gene){
     if ((scalar @{$allele_gene{$_}}) > 1){
-      print LOG "$_ is connected to more than one Loci: @{$allele_gene{$_}}\n";
+      print LOG "ERROR: $_ is connected to more than one Loci: @{$allele_gene{$_}}\n";
       $allele_errors++; 
     }
   }
-  print LOG "\nThere were $allele_errors errors in Allele class\n";
+  print LOG "\nThere are $allele_errors errors in Allele class\n";
 }
 
 ########################
@@ -205,6 +225,8 @@ sub process_strain_class {
 
   print"\n\nChecking Strain class for errors:\n";
   print LOG "\n\nChecking Strain class for errors:\n";
+  print LOG "---------------------------------\n";
+
   @strains = $db->fetch('Strain','*');
   @seqs = $db->fetch('Sequence','*');
 
@@ -227,53 +249,57 @@ sub process_strain_class {
 	  my $seq = $db->fetch('Sequence', $_);
 	  if ($seq->Locus_genomic_seq){
 	    my @loci=$seq->Locus_genomic_seq(1);
-	    print LOG "Strain $strain has sequence_name $_ in Genotype, which can now become @loci.\n";
-	    $strain_update++; 
+	    print LOG "WARNING: Strain $strain has sequence_name $_ in Genotype, which can now become @loci.\n";
+	    $strain_errors++; 
 	  }  
 	}
       }
     }
   }
-  print LOG "\nThere are $strain_update genotypes to be updated in Strain class.\n";
-  #print "\nThere are $strain_update genotypes to be updated in Strain class.\n";
+  print LOG "\nThere are $strain_errors errors in Strain class.\n";
 } 
 
 ###############################
 # Process Rearrangement class #
 ###############################
 
-sub Process_rearrangement {
+sub process_rearrangement {
  
   print"\n\nChecking Rearrangement class for errors:\n";
   print LOG "\n\nChecking Rearrangement class for errors:\n";
+  print LOG "----------------------------------------\n";
   # checks presence of non-rearrangement object 
   # as objects of Rearrangement class
 
-  my (@rearr, $count);
+  my @rearr;
  
   @rearr = $db -> fetch('Rearrangement','*'); 
   foreach (@rearr){
     if ($_ !~/\w+(Df|Dp|Ex|T|In|C|D)\d*/){
-      $count++;
-      print LOG "$_ is NOT an object of Rearrangement\n";
+      $rearrangement_errors++;
+      print LOG "WARNING: $_ is NOT an object of Rearrangement\n";
     }
   }  
-  print LOG "\n\nThere are $count error(s) in Rearrangement class.\n";
+  print LOG "\n\nThere are $rearrangement_errors errors in Rearrangement class.\n";
 } 
 
 ##########################
 # Process Sequence class #
 ##########################
 
-sub Process_sequence {
+sub process_sequence {
+
+  print"\n\nSequence class for errors:\n";
+  print LOG "\n\nChecking sequence class for errors:\n";
+  print LOG "----------------------------------------\n";
 
   my $get_seqs_with_multiple_loci=<<EOF;
   Table-maker -p "/wormsrv1/geneace/wquery/get_seq_has_multiple_loci.def" quit 
 EOF
 
-  my (%Seq_loci, $seq_count, $seq, $locus);
+  my (%Seq_loci, $seq, $locus);
   my $dir = "/wormsrv1/geneace";
-
+  
   open (FH, "echo '$get_seqs_with_multiple_loci' | tace $dir | ") || die "Couldn't access geneace\n";
   while (<FH>){
     chomp($_);
@@ -283,11 +309,11 @@ EOF
       $Seq_loci{$seq}=$locus;
     }
   }
- foreach (keys %Seq_loci){
-    $seq_count++;
-    print LOG "$_ has multiple loci attached.\n";
+  foreach (keys %Seq_loci){
+    $sequence_errors++;
+    print LOG "ERROR: $_ has multiple loci attached.\n";
   }
- print LOG "\n\nThere are $seq_count errors in Sequence class\n";
+  print LOG "\n\nThere are $sequence_errors errors in Sequence class\n";
 }   
 
 ################################################
@@ -415,7 +441,6 @@ sub test_locus_for_errors{
 	 defined($newseq->at('Visible.Concise_description')) ||
 	 defined($newseq->at('Visible.Detailed_description'))){  
 	$erich_warnings .= "$seq has attached functional annotation which should now be attached to $locus\n";
-	$locus_errors++;
       }
     }
   }
@@ -457,6 +482,7 @@ sub test_locus_for_errors{
 #  }
 
 =start  
+
   # Test for Polymorphisms with no P in their title
   if(defined($locus->at('Type.Polymorphism'))){
     if($locus !~ /P/){
@@ -465,6 +491,7 @@ sub test_locus_for_errors{
     }
   }
 =end
+
 =cut
   # Look for Gene_class tag in non-gene objects 
   if(!defined($locus->at('Type.Gene'))){
@@ -503,6 +530,7 @@ sub test_locus_for_errors{
     $locus_errors++;
   }
 
+  
   return($warnings, $erich_warnings);
 
 }
@@ -510,19 +538,46 @@ sub test_locus_for_errors{
 #####################################################################
 
 sub create_log_files{
-  my $rundate    = `date +%y%m%d`; chomp $rundate;
-  $log = "/wormsrv2/logs/geneace_check.log.$rundate.$$";
-  $erichlog = "/wormsrv2/logs/geneace_check.erichlog.$rundate.$$";
-  open(LOG,">$log") || die "cant open $log";
-  print LOG "$0 started at ",`date`,"\n";
-  print LOG "=============================================\n";
 
+  # Create history logfile for script activity analysis
+  $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
+
+  # create main log file using script name for
+  my $script_name = $1;
+  $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
+  my $rundate     = `date +%y%m%d`; chomp $rundate;
+  $log        = "/wormsrv2/logs/$script_name.$rundate.$$";
+
+  open (LOG, ">$log") or die "cant open $log";
+  print LOG "$script_name\n";
+  print LOG "started at ",`date`,"\n";
+  print LOG "=============================================\n";
+  print LOG "\n";
+
+
+  # create separate log with errors for Erich
+  $erichlog = "/wormsrv2/logs/geneace_check.erichlog.$rundate.$$";
   open(ERICHLOG,">$erichlog") || die "cant open $erichlog";
   print ERICHLOG "$0 started at ",`date`,"\n";
   print ERICHLOG "=============================================\n";
   print ERICHLOG "This mail is generated automatically.\n";
   print ERICHLOG "If you have any queries please email ar2\@sanger.ac.uk or krb\@sanger.ac.uk\n\n";
 }
+
+##########################################
+
+sub usage {
+  my $error = shift;
+
+  if ($error eq "Help") {
+    # Normal help menu
+    system ('perldoc',$0);
+    exit (0);
+  }
+}
+
+
+##################################################################
 
 sub Table_maker {
 
@@ -558,20 +613,3 @@ EOF
   return @names;
 }
 
-sub script_tester {
-  
-  my ($name,$tester,$logfile) = @_;
-    $tester = "$tester\@sanger.ac.uk";
-    open (OUTLOG,  "|/bin/mailx -s \"$name\" $tester");
-    if ( $logfile ){
-      open (READLOG, "<$logfile");
-      while (<READLOG>){
-	print OUTLOG "$_";
-      }
-      close READLOG;
-    }
-    else {
-      print OUTLOG "$name";
-    }
-    close OUTLOG;
-} 
