@@ -1,17 +1,21 @@
 #!/usr/local/bin/perl5.6.0 -w
 #
-# prepare_build.pl
+# finish_build.pl
 # 
 # by Keith Bradnam aged 12 and a half
 #
-# Usage : prepare_build.pl [-options]
+# Usage : finish_build.pl [-options]
 #
-# This script replaces archive_dbs.pl, the script that would be run at the start of build.
-# It does what that script used to do, i.e.
 # 1) checks to see if there are three existing (and unpacked) WS releases in /wormsrv2
 #    If there are, then it archives the oldest release away into /wormsrv2/wormbase_archive
 # 2) Does a similar thing with Wormpep releases in /wormsrv2/WORMPEP
-# but it also does a few more things that have to be done before the build proper can start.
+# 3) Archives old GFF_SPLITS directory
+# 4) Makes wormsrv2/current_DB point at latest release
+#
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2002-04-26 15:24:19 $
+
+
 
 $| = 1;
 use strict;
@@ -28,8 +32,7 @@ use vars qw($opt_h);
 my $maintainers = "dl1\@sanger.ac.uk krb\@sanger.ac.uk kj2\@sanger.ac.uk";
 my $rundate     = `date +%y%m%d`; chomp $rundate;
 my $runtime     = `date +%H:%M:%S`; chomp $runtime;
-our $log        = "/wormsrv2/logs/prepare_build.$rundate";
-my $cvs_version = &get_cvs_version("$0");
+our $log        = "/wormsrv2/logs/finish_build.$rundate";
 
 my $db_path     = "/wormsrv2";
 my $WS_name     = &get_wormbase_version_name;
@@ -66,23 +69,10 @@ system("rm -f $db_path/autoace/release/*") && die "Couldn't remove old release f
 print LOG "Removing old files in /wormsrv2/autoace/CHROMOSOMES/\n";
 system("rm -f $db_path/autoace/CHROMOSOMES/*") && die "Couldn't remove old CHROMOSOME files\n";
 
-# Transfer /wormsrv1/camace to /wormsrv2/camace
-print LOG "Transferring /wormsrv1/camace into /wormsrv2/camace\n";
-system("TransferDB -start /wormsrv1/camace -end /wormsrv2/camace -database -wspec -name camace")
-  && die "Couldn't run TransferDB for camace\n";
-
 # update symbolic link for 'current_DB'
 print LOG "Updating symbolic link to point to current_DB\n\n";
 system("rm -f $db_path/current_DB") && die "Couldn't remove 'current_DB' symlink\n";
 system("ln -s $db_path/$WS_name/ $db_path/current_DB") && die "Couldn't create new 'Current_DB' symlink\n";
-
-# update database.wrm using cvs
-my $cvs_file = "$db_path/autoace/wspec/database.wrm";
-print LOG "Updating $cvs_file to include new WS number - using CVS\n\n";
-system("cvs -d '/nfs/ensembl/cvsroot/' edit $cvs_file") && die "Couldn't 'cvs edit' $cvs_file\n";
-system("sed 's/$WS_name/$WS_new_name/' < $cvs_file > ${cvs_file}.new") && die "Couldn't edit $cvs_file\n";
-system("mv /wormsrv2/autoace/wspec/database.wrm.new $cvs_file") && die "Couldn't update $cvs_file\n";
-system("cvs -d '/nfs/ensembl/cvsroot/' commit -m 'updating $cvs_file to $WS_new_name' $cvs_file") && die "Couldn't 'cvs commit' $cvs_file\n";
 
 
 ##################
@@ -91,7 +81,7 @@ system("cvs -d '/nfs/ensembl/cvsroot/' commit -m 'updating $cvs_file to $WS_new_
 
 print LOG "C'est finis.\n";
 close(LOG);
-&mail_maintainer("WormBase Report: prepare_build.pl",$maintainers,$log);
+&mail_maintainer("WormBase Report: finish_build.pl",$maintainers,$log);
 
 
 exit(0);
@@ -108,10 +98,9 @@ sub create_log_file{
   open (LOG,">$log") || die "Cannot open logfile $!\n";
   LOG->autoflush();
   
-  print LOG "# prepare_build.pl\n\n";     
+  print LOG "# finish_build.pl\n\n";     
   print LOG "# run details    : $rundate $runtime\n";
   print LOG "# WormBase version : $WS_name\n";
-  print LOG "# cvs version      : $cvs_version\n";
   print LOG "\n\n";
 
 }
@@ -172,13 +161,13 @@ __END__
 
 =pod
 
-=head2 NAME - prepare_build.pl
+=head2 NAME - finish_build.pl
 
 =head1 USAGE
 
 =over 4
 
-=item prepare_build.pl  [-options]
+=item finish_build.pl  [-options]
 
 =back
 
@@ -194,7 +183,7 @@ start of the build.
  but it also does a few more things that have to be done before the build 
  proper can start.
 
-prepare_build.pl MANDATORY arguments:
+finish_build.pl MANDATORY arguments:
 
 =over 4
 
@@ -202,7 +191,7 @@ prepare_build.pl MANDATORY arguments:
 
 =back
 
-prepare_build.pl  OPTIONAL arguments:
+finish_build.pl  OPTIONAL arguments:
 
 =over 4
 
