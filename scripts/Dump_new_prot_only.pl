@@ -87,7 +87,8 @@ our %org_prefix = ( 'wublastp_worm' => 'WP',
 		    'wublastp_yeast' => 'SGD',
 		    'wublastp_slimswissprot' => 'SW',
 		    'wublastp_slimtrembl' => 'TR',
-		    'wublastp_briggsae'  => 'BP'
+		    'wublastp_briggsae'  => 'BP',
+		    'wublastp_ipi_human' => 'IP'      # should never actually get included
 		  );
 # gene CE info from COMMON_DATA files copied to ~wormpipe/dumps in prep_dump
 undef $/;
@@ -189,7 +190,6 @@ else {
 				     -log10(evalue), cigar
 				       FROM protein_feature
 					 WHERE proteinId = ? and -log10(evalue) > 1
-					   AND analysis != 15 
 					   ORDER BY hId
 					 } );
 }
@@ -201,7 +201,7 @@ open (OUT,">$output") or die "cant open $output\n";
 
 open (RECIP,">$recip_file") or die "cant open recip file\n";
 
-dbmopen my %ACC2DB, "$wormpipe_dir/dumps/acc2db.dbm", 0666 or die "cannot open acc2db \n";
+dbmopen our %ACC2DB, "$wormpipe_dir/dumps/acc2db.dbm", 0666 or die "cannot open acc2db \n";
 my $count;
 
 
@@ -354,9 +354,9 @@ sub dumpData
 	    }
 	    
 	    # sort out prefix - mainly for ipi_human where it can be ENS, SW, TR, LL etc
-	  #  elsif ( "$$data[1]" eq "wublastp_ipi_human" ) {
-#	      $prefix = &getPrefix("$$data[4]");
-#	    }
+	    elsif ( "$$data[1]" eq "wublastp_ipi_human" ) {
+	      $prefix = &getPrefix("$$data[4]");
+	    }
 	
 	    foreach (@cigar){
 	      #print OUT "Pep_homol \"$homolID\" $processIds2prot_analysis{$analysis} $e $myHomolStart $myHomolEnd $pepHomolStart $pepHomolEnd Align ";
@@ -514,7 +514,7 @@ sub getPrefix
       return $org_prefix{'wublastp_ensembl'};
     }
     else {
-      if (length $name > 5 ) {
+      if (length $name > 6 ) {
       return $org_prefix{'wublastp_slimswissprot'};
       }
       else {
