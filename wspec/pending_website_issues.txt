@@ -1,5 +1,8 @@
+2nd June, 2004
+Added Species tag to RNAi model. We might have briggsae RNAi info in future
 
-
+1st June, 2004
+Fixed bug in PCR product model, which was not linking to Transcript class properly
 
 14th April, 2004
 ?3d_data - new class, not picked up on website at all
