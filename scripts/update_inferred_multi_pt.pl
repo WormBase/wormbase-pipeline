@@ -1,8 +1,8 @@
 #!/usr/local/bin/perl5.8.0 -w
 
 # Author: Chao-Kung Chen
-# Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-02-06 12:15:04 $ 
+# Last updated by $Author: krb $
+# Last updated on: $Date: 2004-02-23 13:29:44 $ 
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'}; 
@@ -198,7 +198,7 @@ END
 }
 
 print LOG "Make sure that all file parsings are OK . . . . .\n\n";
-mail_maintainer("Update inferred multi-pt objects", "ALL", $log) if !$debug;
+mail_maintainer("Update inferred multi-pt objects", "all", $log) if !$debug;
 mail_maintainer("Update inferred multi-pt objects", "ck1\@sanger.ac.uk", $log) if $debug;
 
 print LOG "\n$0 finished at ", runtime(), "\n\n";
