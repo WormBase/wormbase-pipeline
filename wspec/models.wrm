@@ -985,12 +985,13 @@
 
 ?Genetic_code   Other_name ?Text
                 NCBI_id   UNIQUE        Int
-                Translation  UNIQUE     Text
-                Start  UNIQUE   Text
-                Base1 UNIQUE    Text
-                Base2 UNIQUE    Text
-                Base3 UNIQUE    Text
-		Selenocysteine // new to allow Selenocysteine residues [krb 030604]
+                Translation  UNIQUE Text
+                Start UNIQUE Text
+		Stop  UNIQUE Text 
+                Base1 UNIQUE Text
+                Base2 UNIQUE Text
+                Base3 UNIQUE Text
+		Remark ?Text
 
 
 
