@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-12-01 11:54:25 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2004-01-15 11:14:41 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -67,7 +67,10 @@ if (! -e "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS"){
   system("mkdir /wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS") && die "Couldn't create directory\n";
 }
 
-
+# check to see if full chromosome gff dump files exist
+if (! -e "/wormsrv2/autoace/CHROMOSOMES/CHROMOSOME_I.gff"){
+  print "chromosome_dump.pl may have failed/n";
+}
 
 
 
@@ -134,7 +137,7 @@ foreach $file (@gff_files) {
   my ($chromosome,$source,$feature,$start,$stop,$score,$strand,$other,$name);
   my @header = "";
   
-  open (GFF, "</wormsrv2/autoace/CHROMOSOMES/$file.gff");
+  open (GFF, "</wormsrv2/autoace/CHROMOSOMES/$file.gff")  || die "Cannot open /wormsrv2/autoace/CHROMOSOMES/$file.gff\n";
   while (<GFF>) {
     chomp;
     $line_count++;
