@@ -8,7 +8,7 @@
 # relevant WormBase and Wormpep web pages.
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-12-22 08:56:23 $      
+# Last updated on: $Date: 2003-12-22 10:54:16 $      
 
 
 #################################################################################
@@ -581,7 +581,7 @@ sub create_wormpep_page{
   
   # get details from last wormpep log file
   my $wp_alt;
-  my @possible_logs = `ls -t /wormsrv2/logs/make_wormpep.final.${WS_current}*`; # added new logfile name 
+  my @possible_logs = `ls -t /wormsrv2/logs/make_wormpep.final.WS${WS_current}*`; # added new logfile name 
   my $wormpeplog  = "$possible_logs[0]";
   open (WP_2, "<$wormpeplog") || croak "Failed to open wormpep.log\n";
   while (<WP_2>) {
