@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-08-13 16:00:39 $
+# Last updated by: $Author: wormpub $
+# Last updated on: $Date: 2004-09-07 12:07:21 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -79,23 +79,23 @@ if ($debug) {
 
 &create_log_file;
 
-#&copy_release_files unless ($norelease);    # make a new directory for the WS release and copy across release files
+&copy_release_files unless ($norelease);    # make a new directory for the WS release and copy across release files
 
-#&copy_chromosome_files unless ($nochroms);  # make a new /CHROMOSOMES directory for the DNA, GFF, and agp files and copy files across
+&copy_chromosome_files unless ($nochroms);  # make a new /CHROMOSOMES directory for the DNA, GFF, and agp files and copy files across
 
-#&copy_misc_files unless ($nomisc);          # copy across models.wrm and other misc. files, e.g. wormRNA
+&copy_misc_files unless ($nomisc);          # copy across models.wrm and other misc. files, e.g. wormRNA
 
-#&copy_wormpep_files unless ($nowormpep);    # copied from ~wormpub/WORMPEP
+&copy_wormpep_files unless ($nowormpep);    # copied from ~wormpub/WORMPEP
 
-#&extract_confirmed_genes unless ($nogenes); # make file of confirmed genes from autoace and copy across
+&extract_confirmed_genes unless ($nogenes); # make file of confirmed genes from autoace and copy across
 
-#&make_yk2ORF_list unless ($noyk);           # make file of yk EST -> ORF connections and add to FTP site
+&make_yk2ORF_list unless ($noyk);           # make file of yk EST -> ORF connections and add to FTP site
 
-#&make_geneID_list unless ($nogeneIDs);      # make file of WBGene IDs -> CGC name & Sequence name and add to FTP site
+&make_geneID_list unless ($nogeneIDs);      # make file of WBGene IDs -> CGC name & Sequence name and add to FTP site
 
 &make_pcr_list unless ($nopcr);             # make file of PCR products -> WBGene IDs, CDS, CGC name
 
-#&copy_homol_data;                           # copies best blast hits files across
+&copy_homol_data;                           # copies best blast hits files across
 
 
 
