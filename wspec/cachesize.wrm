@@ -27,7 +27,7 @@
 
 
 CACHE1 = 16000     // Size of first cache, as used in w5/blocksubs.c
-CACHE2 = 2000000     // Size of second cache, as used in w5/objcache.c
+CACHE2 = 1000000     // Size of second cache, as used in w5/objcache.c
 DISK =  4000     // Initial size of database on disk at creation
 
 //  end of the cachesize.wrm file
