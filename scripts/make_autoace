@@ -33,9 +33,6 @@ my $WS_current    = &get_wormbase_version;
 my $WS_previous   = $WS_current - 1;
 our $WS_version   = &get_wormbase_version_name;
 
-# grab version number from cvs
-my $cvs_version = &get_cvs_version($0);
-
 my $CWD = cwd;
 
  ##################################################
@@ -117,7 +114,6 @@ open (LOGFILE,">>$logfile");
 LOGFILE->autoflush;
 
 print LOGFILE "# make_autoace\n\n";     
-print LOGFILE "# version        : $cvs_version\n";
 print LOGFILE "# run details    : $rundate $runtime\n";
 print LOGFILE "\n";
 print LOGFILE "WormBase version : ${WS_version}\n";
@@ -272,7 +268,6 @@ sub sendmails {
     
     print MAIL "=============================================\n";
     print MAIL "# make_autoace\n\n";     
-    print MAIL "# version        : $cvs_version\n";
     print MAIL "# run details    : $rundate $runtime\n";
     print MAIL "\n";
     print MAIL "WormBase version : ${WS_version}\n";
