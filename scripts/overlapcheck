@@ -45,9 +45,17 @@ foreach my $stlclone (@stlclones) {
 foreach my $chrom (@chrom) {
 
     open (GFF, "/wormsrv2/autoace/CHROMOSOMES/CHROMOSOME_$chrom.gff"); 
-    open (OUTCAM, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.check_overlap_cam") 
+    open (CAMOL, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.overlapping_genes.cam") 
 	|| die "Cannot open output file $chrom $!\n"; 
-    open (OUTSTL, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.check_overlap_stl") 
+    open (CAMEST, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.EST_in_intron.cam") 
+	|| die "Cannot open output file $chrom $!\n"; 
+    open (CAMREP, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.repeat_in_exon.cam") 
+	|| die "Cannot open output file $chrom $!\n"; 
+    open (STLOL, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.overlapping_genes.stl") 
+	|| die "Cannot open output file $chrom $!\n"; 
+    open (STLEST, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.EST_in_intron.stl") 
+	|| die "Cannot open output file $chrom $!\n"; 
+    open (STLREP, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.repeat_in_exon.stl") 
 	|| die "Cannot open output file $chrom $!\n"; 
 	
     %exon  = %est = %genes = %intron = (); 
@@ -164,18 +172,16 @@ foreach my $chrom (@chrom) {
     warn "problem with genematch  reference\n" if ref(\@camgenes) ne 'ARRAY';
     foreach my $pair (sort keys %finalgenescamace) {
         my @single = split (/:/, $pair); 
-        print OUTCAM "Gene $single[1]\toverlaps with gene $single[0]\n";
+        print CAMOL "Gene $single[1]\toverlaps with gene $single[0]\n";
     } 
-    print OUTCAM "\n";  
 	
     my @stlgenes         = find_database(\@geneoutput,\%stlace);
     my %finalgenesstlace = sort_by_gene(\@stlgenes);
     warn "problem with genematch  reference\n" if ref(\@stlgenes) ne 'ARRAY';
     foreach my $pair (sort keys %finalgenesstlace) {
        my @single = split (/:/, $pair); 
-       print OUTSTL "Gene $single[1]\toverlaps with gene $single[0]\n";
+       print STLOL "Gene $single[1]\toverlaps with gene $single[0]\n";
     } 
-    print OUTSTL "\n";  
 
 
 
@@ -189,17 +195,15 @@ foreach my $chrom (@chrom) {
     my %finalintroncamace = sort_by_gene(\@camintrons); 
     foreach my $pair (sort keys %finalintroncamace) {
         my @single = split (/:/, $pair);
-        print OUTCAM "EST $single[1]\tmatches intron of gene $single[0]\n";
+        print CAMEST "EST $single[1]\tmatches intron of gene $single[0]\n";
     }    
-    print OUTCAM "\n";
 	
     my @stlintrons        = find_database(\@intronoutput,\%stlace);
     my %finalintronstlace = sort_by_gene(\@stlintrons); 
     foreach my $pair (sort keys %finalintronstlace) {
         my @single = split (/:/, $pair);
-        print OUTSTL "EST $single[1]\tmatches intron of gene $single[0]\n";
+        print STLEST "EST $single[1]\tmatches intron of gene $single[0]\n";
     }    
-    print OUTSTL "\n";
 
 
 
@@ -213,18 +217,15 @@ foreach my $chrom (@chrom) {
     my %finalrepcamace  = sort_by_gene(\@camrepeats);
     foreach my $pair (sort keys %finalrepcamace) {
         my @single = split (/:/, $pair); 
-        print OUTCAM "$single[1]\tmatches gene $single[0]\n";
+        print CAMREP "$single[1]\tmatches gene $single[0]\n";
     }
-    print OUTCAM "\n"; 
 
     my @stlrepeats      = find_database(\@repeatoutput,\%stlace);
     my %finalrepstlace  = sort_by_gene(\@stlrepeats);
     foreach my $pair (sort keys %finalrepstlace) {
         my @single = split (/:/, $pair); 
-        print OUTSTL "$single[1]\tmatches gene $single[0]\n";
+        print STLREP "$single[1]\tmatches gene $single[0]\n";
     }
-    print OUTSTL "\n"; 
-
 }
 
 
