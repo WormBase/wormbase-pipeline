@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl
+#!/usr/local/bin/perl -w
 #
 # list_loci_designations
 # v 0.1
@@ -12,7 +12,6 @@
 # 010104 : dl  : PP version
 
 
-
 #################################################################################
 # Initialise variables                                                          #
 #################################################################################
@@ -20,30 +19,18 @@
 $|=1;
 use IO::Handle;
 use Getopt::Std;
-require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
+use lib '/wormsrv2/scripts/';
+use Wormbase;
 
 
- ##############################
- # Script variables (run)     #
- ##############################
+##############################
+# Script variables (run)     #
+##############################
 
-my $maintainer = "dl1\@sanger.ac.uk";
+my $maintainers = "dl1\@sanger.ac.uk krb\@sanger.ac.uk";
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
-my $version = &get_script_version(list_loci_designations);
-
-
-######
-# 
-###################
-
-$letter = shift ;
-$search = $letter . "*";
-$line = 0;
-$html = 1;
-
-
-print "Searching db with 'Locus $search'\n";
+my $cvs_version = &get_cvs_version($0);
 
 $dbdir = "/wormsrv2/autoace";
 $tace  = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
@@ -51,52 +38,71 @@ $exec = $tace;
 $ENV{'ACEDB'}="$dbdir";
 $www = "/nfs/WWW/htdocs/Projects/C_elegans/Info/LOCI";
 
-$command=<<EOF;
-find Locus $search where Gene
-show -a $filename
-quit
-EOF
 
-    if ($html) {
-	open (HTML, ">$www/loci_designations_$letter.shtml");
-	print HTML "<TABLE CELLPADDING=0 CELLSPACING=1 BORDER=0><TR class=\"violet3\"><TH WIDTH=\"10%\">Locus</TH><TH>Genomic_sequence</TH><TH>Other_sequence</TH></TR><TR><TD>&nbsp</TD><TD>&nbsp</TD>\n";
-    }
-
-open (textace, "echo '$command' | $exec  | ");
-while (<textace>) {
-    chomp;
-
-    if (/^Locus\s+\:\s+\"(\S+)\"/) {
-	$locus = $1;
-	&report_loci;
-	print "\nLocus $locus\n";
-	if ($html) {
-	    print HTML "</TR>\n";
-	    if (($line % 2) == 0) { 
-		print HTML "<TR BGCOLOR=\"lightblue\">\n" if ($html);
-	    }
-	    else {
-		print HTML "<TR BGCOLOR=\"white\">\n" if ($html);
-	    }
-	    $line++;
-	    print HTML "<TD>$locus</TD>";
-	}
-
-    }
-
-    if (/^Genomic_sequence\s+\"(\S+)\"/) {push (@genomic,$1);}
-    if (/^Other_sequence\s+\"(\S+)\"/)   {push (@other,$1);}
-
+foreach $char (a..z){
+  &find_loci($char);
 }
-close textace;
-
-&report_loci;
-print HTML "</TR>\n</TABLE>\n" if ($html);
-
-
 exit(0);
 
 
+###################
+
+sub find_loci{
+  $letter = shift ;
+  $search = $letter . "*";
+  $line = 0;
+  # control whether HTML output is printed
+  $html = 1;
+
+  print "Searching db with 'Locus $search'\n";
+  
+  $command=<<EOF;
+find Locus $search where Gene
+show -a
+quit
+EOF
+
+  if ($html) {
+    open (HTML, ">$www/loci_designations_$letter.shtml") || die "Couldn't open file for writing to\n";
+    print HTML "<TABLE CELLPADDING=0 CELLSPACING=1 BORDER=0><TR class=\"violet3\"><TH WIDTH=\"10%\">Locus</TH><TH>Genomic_sequence</TH><TH>Other_sequence</TH></TR><TR><TD>&nbsp</TD><TD>&nbsp</TD>\n";
+  }
+  
+  open (TEXT_ACE, "echo '$command' | $exec  | ") || die "Couldn't connect to tace\n";
+  while (<TEXT_ACE>) {
+    chomp;
+    
+    if (/^Locus\s+\:\s+\"(\S+)\"/) {
+      $locus = $1;
+      &report_loci;
+      print "\nLocus $locus\n";
+      if ($html) {
+	print HTML "</TR>\n";
+	if (($line % 2) == 0) { 
+	  print HTML "<TR BGCOLOR=\"lightblue\">\n" if ($html);
+	}
+	else {
+	  print HTML "<TR BGCOLOR=\"white\">\n" if ($html);
+	}
+	$line++;
+	print HTML "<TD>$locus</TD>";
+      }
+      
+    }
+    
+    if (/^Genomic_sequence\s+\"(\S+)\"/) {push (@genomic,$1);}
+    if (/^Other_sequence\s+\"(\S+)\"/)   {push (@other,$1);}
+    
+  }
+  close (TEXT_ACE);
+  
+  &report_loci;
+  print HTML "</TR>\n</TABLE>\n" if ($html);
+  
+}
+
+
+
+#############################################################################
 
 sub report_loci {
 
