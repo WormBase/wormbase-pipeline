@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-08-11 14:50:07 $
+# Last updated on: $Date: 2003-08-12 08:38:57 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -341,7 +341,7 @@ END
   sub process_WBPerson_names {
     my ($def, $db)=@_;
     my ($WBPerson, $F_name, $M_name, $L_name, $F_char, $M_char);
-    open (FH, "echo '$def' | tace $db | ") || die "Couldn't access current_DB\n";
+    open (FH, "echo '$def' | $tace $db | ") || die "Couldn't access current_DB\n";
     while (<FH>){
       chomp($_);
       if ($_ =~ /^\"(WBPerson\d+)\"\s+\"(\w+)\"\s+\"(\w+|\w+.)\"\s+\"(\w+|\w+-\w+)\"$/){ 
@@ -710,7 +710,7 @@ EOF
 sub add_remark_for_merged_loci_in_geneclass {
   my ($def, $db)=@_;
   my ($locus, $other, $gc);
-  open (FH, "echo '$def' | tace $db | ") || die "Couldn't access $db\n";
+  open (FH, "echo '$def' | $tace $db | ") || die "Couldn't access $db\n";
   while (<FH>){
     chomp $_;
     if ($_ =~ /^\"(.+)\"\s+\"(.+)\"\s+\"(.+)\"/){
@@ -736,8 +736,8 @@ sub add_remark_for_merged_loci_in_geneclass {
 sub gene_name_class {
   my ($def1, $def2, $db) = @_;
   my $locus;
-  open (FH1, "echo '$def1' | tace $db | ") || die "Couldn't access $db\n"; 
-  open (FH2, "echo '$def2' | tace $db | ") || die "Couldn't access $db\n";
+  open (FH1, "echo '$def1' | $tace $db | ") || die "Couldn't access $db\n"; 
+  open (FH2, "echo '$def2' | $tace $db | ") || die "Couldn't access $db\n";
   
   while (<FH1>){
     chomp $_;
@@ -772,8 +772,8 @@ sub cds_name_to_seq_name {
 
   my ($def1, $def2, $db) = @_;
   my ($locus, $cds, %locus_cds, %locus_seq_name);
-  open (FH1, "echo '$def1' | tace $db | ") || die "Couldn't access $db\n";
-  open (FH2, "echo '$def2' | tace $db | ") || die "Couldn't access $db\n";
+  open (FH1, "echo '$def1' | $tace $db | ") || die "Couldn't access $db\n";
+  open (FH2, "echo '$def2' | $tace $db | ") || die "Couldn't access $db\n";
   
   while (<FH1>){
     chomp($_);
@@ -972,7 +972,7 @@ EOF
 sub allele_location {
   my ($def, $dir)=@_;
   my %location_desig;
-  open (FH, "echo '$def' | tace $dir | ") || die "Couldn't access geneace\n";
+  open (FH, "echo '$def' | $tace $dir | ") || die "Couldn't access geneace\n";
   while (<FH>){
     chomp($_);
     if ($_ =~ /^\"(.+)\"\s+\"(.+)\"/){
@@ -987,7 +987,7 @@ sub allele_location {
 sub allele_has_flankSeq_and_no_seq {
       
   my ($def, $dir) = @_;
-  open (FH, "echo '$def' | tace $dir | ") || die "Couldn't access geneace\n";
+  open (FH, "echo '$def' | $tace $dir | ") || die "Couldn't access geneace\n";
   while (<FH>){
     chomp($_);
     if ($_ =~ /^\"/){
@@ -1006,7 +1006,7 @@ sub allele_has_predicted_gene_and_no_seq {
   my ($def, $dir) = @_;
   my ($allele, $seq, $parent, $cds);
       
-  open (FH, "echo '$def' | tace $dir | ") || die "Couldn't access geneace\n";
+  open (FH, "echo '$def' | $tace $dir | ") || die "Couldn't access geneace\n";
   while (<FH>){
     chomp($_);
     if ($_ =~ /^\"(.+)\"\s+\"(.+)\"\s$/) {
@@ -1065,7 +1065,7 @@ sub check_missing_allele_method {
   my ($def, $dir) = @_;
   my ($allele, $tag);
       
-  open (FH, "echo '$def' | tace $dir | ") || die "Couldn't access geneace\n";
+  open (FH, "echo '$def' | $tace $dir | ") || die "Couldn't access geneace\n";
   while (<FH>){
     chomp($_);
     print $_, "\n";
@@ -1226,7 +1226,7 @@ EOF
 sub cgc_loci {
   my ($def, $db) = @_;
   my (@cgc_loci, %cgc_loci);
-  open (FH, "echo '$def' | tace $db | ") || die "Couldn't access $db\n"; 
+  open (FH, "echo '$def' | $tace $db | ") || die "Couldn't access $db\n"; 
    
   while (<FH>){
     chomp $_;
@@ -1280,7 +1280,7 @@ EOF
   my (%Seq_loci, $seq, $locus);
   my $dir = "/wormsrv1/geneace";
   
-  open (FH, "echo '$get_seqs_with_multiple_loci' | tace $dir | ") || die "Couldn't access geneace\n";
+  open (FH, "echo '$get_seqs_with_multiple_loci' | $tace $dir | ") || die "Couldn't access geneace\n";
   while (<FH>){
     chomp($_);
     if ($_ =~ /^\"/){
@@ -1327,7 +1327,7 @@ sub find_new_loci_in_current_DB{
 		    -program =>$tace) || do { print LOG "Connection failure: ",Ace->error; die();};
   my @current_DB_loci = $db->fetch(-query=>'Find Locus;!Polymorphism');
 
-  open (FH, "echo '$def' | tace $dir | ") || die "Couldn't access geneace\n";
+  open (FH, "echo '$def' | $tace $dir | ") || die "Couldn't access geneace\n";
   while (<FH>){
     chomp($_);
     if ($_ =~ /^\"/){
@@ -1360,7 +1360,7 @@ sub loci_as_other_name {
   my ($def, $dir, $db) = @_;
   my ($main, $other_name, @exceptions, %exceptions);
 
-  open (FH, "echo '$def' | tace $dir | ") || die "Couldn't access geneace\n";
+  open (FH, "echo '$def' | $tace $dir | ") || die "Couldn't access geneace\n";
   while (<FH>){
     chomp $_;
     if ($_ =~ /^\"/){
@@ -1408,7 +1408,7 @@ sub loci_point_to_same_CDS {
    my ($def, $dir) = @_;
    my %CDS_loci;
 
-   open (FH, "echo '$def' | tace $dir |") || die "Couldn't access geneace\n";
+   open (FH, "echo '$def' | $tace $dir |") || die "Couldn't access geneace\n";
    while (<FH>){
      chomp $_;
      if ($_ =~ /\"(.+)\"\s+\"(.+)\"/){
@@ -1434,7 +1434,7 @@ sub locus_CGC {
   my ($def1, $def2, $def3, $dir) = @_;
   my (@gc, %gc, $gc);
 
-  open (FH, "echo '$def2' | tace $dir | ") || die "Couldn't access geneace\n"; 
+  open (FH, "echo '$def2' | $tace $dir | ") || die "Couldn't access geneace\n"; 
   while (<FH>){
     chomp($_);
     if ($_ =~ /^\"/){
@@ -1445,7 +1445,7 @@ sub locus_CGC {
   foreach(@gc){$gc{$_}++}
   
   
-  open (FH, "echo '$def1' | tace $dir | ") || die "Couldn't access geneace\n";
+  open (FH, "echo '$def1' | $tace $dir | ") || die "Couldn't access geneace\n";
   while (<FH>){
     chomp($_);
     if ($_ =~ /^\"/){
@@ -1462,7 +1462,7 @@ sub locus_CGC {
       }
     }
   }
-  open (FH, "echo '$def3' | tace $dir | ") || die "Couldn't access geneace\n";
+  open (FH, "echo '$def3' | $tace $dir | ") || die "Couldn't access geneace\n";
   while (<FH>){
     chomp($_);
     if ($_ =~ /^\"/){
@@ -1735,8 +1735,8 @@ EOF
   my $dir="/nfs/disk100/wormpub/DATABASES/current_DB";
   
   my @names=();
-  open (FH1, "echo '$get_predicted_genes' | tace $dir | ") || die "Couldn't access current_DB\n";
-  open (FH2, "echo '$get_genome_seqs' | tace $dir | ") || die "Couldn't access current_DB\n";
+  open (FH1, "echo '$get_predicted_genes' | $tace $dir | ") || die "Couldn't access current_DB\n";
+  open (FH2, "echo '$get_genome_seqs' | $tace $dir | ") || die "Couldn't access current_DB\n";
   
     while (<FH1>){
       chomp($_);
