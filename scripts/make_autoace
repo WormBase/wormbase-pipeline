@@ -518,7 +518,13 @@ END
     if (-e $filename) {
 	$now = `date +%H:%M:%S`; chomp $now;
 	print LOGFILE "* Reinitdb: reading in new database  $filename at $now\n";
-	&DbWrite($command,$tace,$autodir,"ParseFile");
+	if ($filename =~ /misc/){
+	  &DbWrite($command,"$tace -tsuser misc_files",$autodir,"ParseFile");
+	}
+	else{
+	  &DbWrite($command,$tace,$autodir,"ParseFile");
+	}
+
     } else {
 	print LOGFILE "* Reinitdb: $filename is not existent - skipping ..\n";
 	next;
