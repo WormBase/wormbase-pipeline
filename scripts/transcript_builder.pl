@@ -7,7 +7,7 @@
 # Script to make ?Transcript objects
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2004-02-05 10:25:32 $
+# Last updated on: $Date: 2004-02-05 12:41:33 $
 
 use strict;
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
@@ -143,7 +143,7 @@ foreach my $chrom ( @chromosomes ) {
   &checkData(\$gff); # this just checks that there is some BLAT and gene data in the GFF file
 
   &eradicateSingleBaseDiff;
-  &getESTpairs;
+#  &getESTpairs;
 
   # generate ordered array of genes to use as keys in sub findOverlappingGenes
   foreach ( sort { $genes_span{$a}[0]<=>$genes_span{$b}[0]  } keys %genes_span ) {
