@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl5.8.0 -w
 
-# get_EMBL_longtext.pl 
+# get_EMBL_longtext.pl
 
 # Usage: perl5.8.0 this_script -i input -o output
 
@@ -8,7 +8,7 @@
 # Author: Chao-Kung Chen Jan 24 2003
 
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-03-19 11:19:40 $ 
+# Last updated on: $Date: 2004-05-25 12:49:00 $ 
 
 use strict;
 use Getopt::Long;
@@ -35,7 +35,7 @@ if ($input){
   while (<IN>){
     chomp;
     # $1 = AC
-    # $2 = locus
+    # $2 = gene id
     # $3 = ID
     # $4 = SV
     # $5 = Prot_id (prefix.suffix)
@@ -45,27 +45,22 @@ if ($input){
     if ($_ =~ /^(.+)\t(.+)\t(.+)\t(.+)\t(.+)\t(.+)\t(.+)/){
       push(@ACs, $1);
       push(@{$AC_info{$1}}, $2, $3, $4, $5, $6, $7);
-    #  print "$1\t$2\t$3\t$4\t$5\t$6\n";
+      #print "$1\t$2\t$3\t$4\t$5\t$6====\n";
     }
-  } 
+  }
 
   ############################
   # fetch EMBL entry in one go
   ############################
-  
+
   print "Fetching all EMBL accessions for longtext in one go via getz.....\n\n";
   foreach (@ACs){
-  #  push(@all_longtext, `getz -e "[embl-acc:$_]"`); 
-    push(@all_longtext, `pfetch -F $_`); 
-  } 
+  #  push(@all_longtext, `getz -e "[embl-acc:$_]"`);
+    push(@all_longtext, `pfetch -F $_`);
+  }
 }
 else {
   push(@all_longtext, `getz -e "[embl-acc:$ac]"`);
-}
-
-open(OUT, ">longtext") || die $!;
-foreach(@all_longtext){
-  print OUT $_, "\n";
 }
 
 
@@ -87,13 +82,13 @@ foreach (@all_longtext){
   if ($_ =~ /^SV\s+(\w+\.(\d+))/ ){$sv = $1; $version = $2}
 
   if ($_ !~ /^SQ.+|^\s+/ && $_ !~ /^\/\// && $_ !~ /^no match\n/){
-    push(@{$ac_longtext{$ACs[$num]}}, $_) if !$ac; 
-    push(@{$ac_longtext{$ac}}, $_) if $ac; 
+    push(@{$ac_longtext{$ACs[$num]}}, $_) if !$ac;
+    push(@{$ac_longtext{$ac}}, $_) if $ac;
     next;
-  } 
- 
+  }
+
   if ($_ =~ /^\/\//){$num++}
-}   
+}
 
 #############################
 # output acefile for longtext
@@ -104,12 +99,12 @@ print "\nWriting longtext ace file .....\n\n";
 open(FH, ">$output") || die $!;
 
 foreach (keys %ac_longtext){
- 
+
   if ($ac){
     my $de = `pfetch -D $ac`;
     $de =~ s/$id|$ac|\.\d+|\n|\"//g; $de =~ s/^\s+//g;
 
-    print FH "\n\nLocus : \"$locus\"\n";
+    print FH "\n\nGene : \"$locus\"\n";
     print FH "Other_sequence \"$ac\"\n";
     print FH "\nSequence : \"$ac\"\n";
     print FH "Database  \"EMBL\" \"NDB_ID\" \"$id\"\n";
@@ -118,7 +113,7 @@ foreach (keys %ac_longtext){
     print FH "DB_annotation  \"EMBL\" \"$ac\"\n";
     print FH "Species  \"Caenorhabditis elegans\"\n";
     print FH "Title \"$de\"\n";
-    print FH "Locus_other_seq  \"$locus\"\n";
+    print FH "Gene \"$locus\"\n";
   }
   else {
    # print $pid = $AC_info{$_}->[3], "\n";
@@ -126,8 +121,8 @@ foreach (keys %ac_longtext){
     $pid =~ /(.+)\.(\d+)/;
     $pid = $1; $version = $2;
     my $species = $AC_info{$_}->[5];
-    
-    print FH "\n\nLocus : \"$AC_info{$_}->[0]\"\n";
+
+    print FH "\n\nGene : \"$AC_info{$_}->[0]\"\n";
     print FH "Other_sequence \"$_\"\n";
     print FH "\nSequence : \"$_\"\n";
     print FH "Database  \"EMBL\" \"NDB_ID\" \"$AC_info{$_}->[1]\"\n";
@@ -137,10 +132,10 @@ foreach (keys %ac_longtext){
     print FH "DB_annotation  \"EMBL\" \"$_\"\n";
     print FH "Species  \"$species\"\n";
     print FH "Title \"$AC_info{$_}->[4]\"\n";
-    print FH "Locus_other_seq  \"$AC_info{$_}->[0]\"\n";
+    print FH "Gene \"$AC_info{$_}->[0]\"\n";
   }
 
-  $lt = join('',@{$ac_longtext{$_}});  	
+  $lt = join('',@{$ac_longtext{$_}});
   if($lt ne "NA"){	
     print FH "\nLongText : \"$_\"\n";
     print FH "$lt\/\/\n";
@@ -155,6 +150,7 @@ $end = `date +%H:%M:%S`; chomp $end;
 print "\n$0 started at $start, finished at $end\n";
 
 print "\n########## You need to manually enter Protein_id info ##########\n\n" if $ac;
+
 __END__
 
 

@@ -2,16 +2,10 @@
 
 # incorporate_EMBL_names.pl
 
-# What it does: Parse EMBL entry with /gene tags to 
-#   1. Make EMBL gene name an other-name of an existing CGC locus, if different from CGC locus
-#   2. OR, if EMBL name has corresponding protein (100% match), but not linked to a CGC locus, submit to CGC
-#      for approving names 
-#   3. Make the AC becomes an other-sequence of corresponding locus
-
 
 # Author: Chao-Kung Chen
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-03-19 15:27:03 $ 
+# Last updated on: $Date: 2004-05-25 12:49:00 $ 
 
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
@@ -20,15 +14,14 @@ use strict;
 use Getopt::Long;
 use GENEACE::Geneace;
 
-my ($version, $verbose, $debug);
-
-GetOptions ("version|v=s"  => \$version,
-            "verbose|vb"   => \$verbose, 
-	    "debug|d"      => \$debug,
-           );
+my $version;
+GetOptions ("version|v=s"  => \$version);
 
 # warning
-print "You need to specify version like -v R75 to proceed!\n" if !$version;
+if (!$version){
+  print "You need to specify version like -v R75 to proceed!\n";
+  exit(0);
+}
 
 #################
 
@@ -37,12 +30,16 @@ print "You need to specify version like -v R75 to proceed!\n" if !$version;
 #################
 
 my $start = &runtime;
-my $script_dir = "/wormsrv2/scripts/GENEACE/";
 
 # directory, files used for EMBL update
-my $output_dir = "/nfs/team71/worm/ck1/EMBL";
-my $download = "$output_dir/embl";
-my $flatfile= "$output_dir/$version"."_EMBL_entry_no_seqs";
+#my $script_dir = "/wormsrv2/scripts/GENEACE/";
+my $script_dir = "/nfs/team71/worm/ck1/WORMBASE_CVS/scripts/GENEACE/";
+
+my $output_dir = "/wormsrv1/geneace/EMBL_GENE_NAMES/";
+my $temp_dir   = "/wormsrv1/geneace/EMBL_GENE_NAMES/TEMP/";
+
+my $download = "$temp_dir/embl";
+my $flatfile= "$temp_dir/$version"."_EMBL_entry_no_seqs";
 
 print "\nDownloading EMBL Release $version . . .\n";
 
@@ -61,12 +58,12 @@ while(<IN>){
     print EMBL $_,"\n";
   } 
   if (($_ =~ /^FT[\w\W.]+/)&&($_ !~ /^FT\s+\/translation[\w\W.]+/) &&($_ !~ /^FT\s+[A-Z]+/)){
-    print EMBL $_,"\n"; 
+    print EMBL $_,"\n";
   }
 }
 print "Done\n";
 
-close EMBL; 
+close EMBL;
 close IN;
 
 system("rm -f $download");
@@ -75,7 +72,7 @@ system("rm -f $download");
 
 # Processing EMBL entry data
 
-############################       
+############################
 
 ##################
 # global variables
@@ -85,15 +82,15 @@ my (%AC_SV_ID_DE, %AC_ID_Protid_DE, %Non_cgc_style_name_Protid_AC_OS, %Non_cgc_s
     %ProtID_AC_SV_Pver_OS_Gene, %ProtID_AC_SV_Pver_OS_Gene_Chksum);
 
 my ($AC, $ID, $DE, $DEs, $seq_version, $OS, $cgc_style_name, $non_cgc_style_name, $product, $proteinid);
-my $AC_line = 0; my $omit = 0; 
+my $AC_line = 0; my $omit = 0;
 
-open(IN, $flatfile) || die "Can't open the file!"; 
+open(IN, $flatfile) || die "Can't open the file!";
 
 while(<IN>){
 
   chomp;
   my $each_line = $_;
- 
+
   #############################################################
   # get AC:  get only 1st accession of each AC line if multiple
   #############################################################
@@ -132,7 +129,7 @@ while(<IN>){
   # get organism name
   ###################
   if ($each_line =~ /^OS\s{3}(.+)/){
-    $OS = $1;
+    $OS = $1 if $1 eq "Caenorhabditis elegans"; # do only C. elegans for now
     next;
   }
 
@@ -159,17 +156,17 @@ while(<IN>){
       }
       else {
 	$non_cgc_style_name = $name;
-      } 
+      }
       next;
     }
   }
 
   #############
-  # get product 
+  # get product
   #############
   if ($each_line =~ /^FT\s+\/product=\"(^\w{3,3}-\d+$)\"/ && $omit == 0){
     $product =();
-    # grep only 3-letter style product name  
+    # grep only 3-letter style product name
     $product = $1;
     next;
   }
@@ -206,7 +203,7 @@ while(<IN>){
   ############################################
   # creating further hashes at end of an entry
   ############################################
-  if ($each_line =~ /^\/\//){   
+  if ($each_line =~ /^\/\//){
 
     $proteinid = "NA" if !$proteinid;
     push(@{$AC_ID_Protid_DE{$AC}}, $ID, $proteinid, $DEs);
@@ -225,9 +222,11 @@ close IN;
 # output swall entries to a file, parse it and prepare a hash: key(prot_id), value (checksum)
 # for now fetch only C. elegans entries
 
-`getz -e "[swall-org:Caenorhabditis elegans]" > $output_dir/SWALL.$version`;
+print "\nDownloading SWALL flatfile via getz . . .";
+`getz -e "[swall-org:Caenorhabditis elegans]" > $temp_dir/SWALL.$version`;
+print "Done\n";
 
-open(SWALL, "$output_dir/SWALL.$version") || die $!;
+open(SWALL, "$temp_dir/SWALL.$version") || die $!;
 my (%pid_ver, $protid, $pid_ver, %ProtID_Chksum_Ver, $checksum);
 while (<SWALL>){
   chomp;
@@ -245,7 +244,7 @@ while (<SWALL>){
 }
 
 # remove temp swall file
-#system("rm -f $output_dir/SWALL.$version");
+#system("rm -f $temp_dir/SWALL.$version");
 
 # key: prot_id, values: gene name, AC, SV, OS and Gene, checksum (appended)
 # checksum is for C.elegans only, for the time being
@@ -271,7 +270,7 @@ foreach (keys %Non_cgc_style_name_Protid_AC_OS_SV){  # EMBL
     my $os = $Non_cgc_style_name_Protid_AC_OS_SV{$_}->[$i+2];
     my $sv = $Non_cgc_style_name_Protid_AC_OS_SV{$_}->[$i+3];
 
-    if ( exists $ProtID_Chksum_Ver{$pid} ){	            # SWALL
+    if ( exists $ProtID_Chksum_Ver{$pid} ){	 # SWALL
       push(@{$Non_cgc_style_name_Protid_AC_OS_SV_Chksum{$_}}, $pid, $ac, $os, $sv, $ProtID_Chksum_Ver{$pid}->[0]);
     }
     else {
@@ -281,27 +280,16 @@ foreach (keys %Non_cgc_style_name_Protid_AC_OS_SV){  # EMBL
 }
 
 %ProtID_AC_SV_Pver_OS_Gene_Chksum = %ProtID_AC_SV_Pver_OS_Gene; # rename
-%ProtID_AC_SV_Pver_OS_Gene = ();                                # undef 
-%Non_cgc_style_name_Protid_AC_OS_SV = ();                       # undef 
+%ProtID_AC_SV_Pver_OS_Gene = ();                                # undef
+%Non_cgc_style_name_Protid_AC_OS_SV = ();                       # undef
 
-##############################################################
-#  in verbose mode, output list of EMBL /gene infos
-##############################################################
-
-if ($verbose){
-  open(GN, ">$output_dir/EMBL_cgc_style_name_dataset.$version") || die $!;
-  open(GN_CHK, ">$output_dir/EMBL_cgc_style_name_Non_elegans.$version") || die $!;
-  foreach (sort keys %ProtID_AC_SV_Pver_OS_Gene_Chksum){
-    print GN "$_ -> @{$ProtID_AC_SV_Pver_OS_Gene_Chksum{$_}}\n";
-    print  GN_CHK "$_ -> @{$ProtID_AC_SV_Pver_OS_Gene_Chksum{$_}}\n" if $ProtID_AC_SV_Pver_OS_Gene_Chksum{$_}->[5] eq "NA";
-  }
+open(GN, ">$temp_dir/EMBL_cgc_style_name_dataset.$version") || die $!;
+foreach (sort keys %ProtID_AC_SV_Pver_OS_Gene_Chksum){
+  print GN "$_ -> @{$ProtID_AC_SV_Pver_OS_Gene_Chksum{$_}}\n";
 }
-
-if ($verbose){
-  open(OUT, ">$output_dir/EMBL_non_cgc_style_name_dataset.$version") || die $!;
-  foreach (keys %Non_cgc_style_name_Protid_AC_OS_SV_Chksum){
-    print OUT "$_\t@{$Non_cgc_style_name_Protid_AC_OS_SV_Chksum{$_}}\n";
-  }
+open(OUT, ">$temp_dir/EMBL_non_cgc_style_name_dataset.$version") || die $!;
+foreach (keys %Non_cgc_style_name_Protid_AC_OS_SV_Chksum){
+  print OUT "$_\t@{$Non_cgc_style_name_Protid_AC_OS_SV_Chksum{$_}}\n";
 }
 
 ##############################
@@ -318,49 +306,60 @@ my $db = Ace->connect(-path =>$ga_dir) || die "Connection failure: ",Ace->error;
 
 my (@wormpep_tbl, %GA_info);
 
-if (!$debug){
-  my $wormpep_ver = get_wormbase_version() - 1;
-  @wormpep_tbl = `cut -f 1,3,7 /wormsrv2/WORMPEP/wormpep$wormpep_ver/wormpep.table$wormpep_ver`;
+my $wormpep_ver = get_wormbase_version() - 1;
+@wormpep_tbl = `cut -f 1,3,7 /wormsrv2/WORMPEP/wormpep$wormpep_ver/wormpep.table$wormpep_ver`;
+if (!@wormpep_tbl){
+  print "wormpep.table$wormpep_ver not available . . . cannot proceed, script ends!!\n";
+  exit(0)
 }
 
-if ($debug){
-  @wormpep_tbl = `cut -f 1,3,7 $output_dir/wormpep.table120`;
-}
+my %wormpep_seqs; # keys are all the valid seq. in wormpep (without isoforms suffixes)
 
 foreach (@wormpep_tbl){
   chomp;
-  my($seq, $locus, $prot_id);
-  my @items = split(/\t/, $_);
-  if (scalar @items == 3){
-    ($seq, $locus, $prot_id) = split(/\t/, $_);
-    $prot_id =~ s/\..+//; # drop suffix
-  }
-  else {
-    ($seq, $prot_id) = split(/\t/, $_);
-    $locus = "NA";
-    $prot_id =~ s/\..+//; # drop suffix
-  }
+  my($seq, $locus, $prot_id) = split(/\t/, $_);
+
+  $seq =~ s/>//;
+  if ( $seq =~ /(.+\.\d+)\w+/ ){$seq = $1};  # make all isoforms the format of Sequence_name, ie, B0034.1a becomes B0034.1
+  $wormpep_seqs{$seq}++;
+
+  $locus = "NA" if !$locus;
+  $prot_id =~ s/\.\d+$//; # drop suffix
+
   if (exists $ProtID_Chksum_Ver{$prot_id}) {
-    push(@{$GA_info{$ProtID_Chksum_Ver{$prot_id}->[0]}}, $locus, $seq); # key is checksum 
+    push(@{$GA_info{$ProtID_Chksum_Ver{$prot_id}->[0]}}, $locus, $seq); # key is checksum, $locus is the CGC name and sequence name (no isoforms) in wormpep.table
+                                                                        # the values maybe several CGC name and seq. name 
   }
 }
 
-open(DEBUG, ">$output_dir/Debug_info.$version") || die $!;
+open(DEBUG, ">$temp_dir/Debug_info.$version") || die $!;
 foreach (keys %GA_info){
-  print DEBUG "$_ -> @{$GA_info{$_}}\n";
+  print DEBUG "\n(1) $_ -> @{$GA_info{$_}}\n";
 }
 
-# -- here code for fetch other_names of a cgc name
+# -- hash of CGC_name->Other_name
 my %main_other = $ga->other_name($db,"main_other");
+my @other_names = $ga->other_name($db,"other");
 
-# get SV of existing other_sequence in Geneace
+my %other;
+foreach (@other_names){$other{$_}++};  # put all other_names as keys of %other
+
+
+# -- hash for Gene id <-> CGC name conversion
+# eg, $Gene_info{'WBG0000001'}{'CGC_name'} returns CGC name of the gene id , similar syntax for Sequence name / Other_name / Public_name
+#     $Gene_info{'CGC_name'}{'Gene'} to get gene id, eg, WBG0000001 of a CGC_name
+
+my %Gene_info = $ga -> gene_info();
+
+
+# get SV of existing other_sequence in Geneace from ?Accession_number
 my %AC_SV;
 my $SV_query = "find Accession_number *.*";
 my @AC_SV_in_GA = $db->find($SV_query);
 
 foreach (@AC_SV_in_GA){
   $_  =~ /(.+)\.(\d+)/;   #eg. AF03445.1
-  $AC_SV{$1} = $2;
+  $AC_SV{$1} = $2;        # AF03445 is key, 1 is version
 }
 
 $db->close;
@@ -369,11 +368,15 @@ $db->close;
 # compare checksum of EMBL /gene and Geneace info : look only for identical checksums
 #######################################################################################
 
-open(CGC, ">$output_dir/EMBL_name_to_submit_to_CGC.$version") || die $!;
-open(PARSE, ">$output_dir/EMBL_to_Geneace_pre_longtext.$version") || die $!;
-open(NOMATCH, ">$output_dir/EMBL_cgc_style_name_with_diff_chksum.$version") || die $!;
+open(PARSE, ">$temp_dir/EMBL_to_Geneace_pre_longtext.$version") || die $!;
+# cols of the file EMBL_to_Geneace_pre_longtext.$version:
+#     AC       gene id     ID       SV prot_id    DE                                                      OS
+#--------------------------------------------------------------------------------------------------------------------------------
+# eg: AB112928 WBG0000001  AB112928 1  BAD07033.1 Caenorhabditis elegans rab3 mRNA for Rab3, complete cds.Caenorhabditis elegans
+
+open(NOMATCH, ">$temp_dir/EMBL_names_with_diff_chksum_to_wormpep.$version") || die $!;
 open(UPDT, ">$output_dir/EMBL_update.$version.ace") || die $!; # load this before longtext
-open(INFO, ">$output_dir/EMBL_name_incorporation_stats.$version") || die $!; 
+open(INFO, ">$output_dir/EMBL_name_incorporation_stats.$version") || die $!;
 
 my ($pepace_chksum, $ga_name, $ga_cds);
 
@@ -381,6 +384,15 @@ my ($pepace_chksum, $ga_name, $ga_cds);
 my $new_other_name =0;
 my $updated_AC = 0;
 my $new_AC = 0;
+my @new_ACs = (); my @updated_ACs = ();
+my @new_Other_names = ();
+my @new_ACs1 = ();
+my @new_Other_names1 = ();
+my %new_AC = ();
+my %updated_AC = ();
+my %new_other_name = ();
+my $no_match = 0;
+
 
 #--- deal with standard names from EMBL /gene tag
 
@@ -395,120 +407,207 @@ foreach (keys %ProtID_AC_SV_Pver_OS_Gene_Chksum){ # EMBL dataset: key is prefix 
   my $embl_chksum = $ProtID_AC_SV_Pver_OS_Gene_Chksum{$_}->[5];
   my $prot_id = $_.".".$pver;
 
-  #--- identical Chksum: EMBL /gene tag = GA CGC name 
-  if ( exists $GA_info{$embl_chksum} && $embl_name eq $GA_info{$embl_chksum}->[0] ){
-    print DEBUG "EMBL $embl_ac ($embl_name) : $prot_prefix -> other_sequence\n";
-    check_other_name_and_seq_ver("CGC", $embl_name, $embl_ac, $embl_sv, $OS);
+  #--- EMBL prot chksum and wormpep chksum is identical
+  if ( exists $GA_info{$embl_chksum} ){
+    for ( my $i = 0; $i < scalar @{$GA_info{$embl_chksum}}; $i = $i+2 ){	
+      check_other_name_and_seq_ver($GA_info{$embl_chksum}->[$i], $embl_name, $embl_ac, $embl_sv, $OS, $GA_info{$embl_chksum}->[$i+1]);
+    }
   }
-
-  #--- identical Chksum: EMBL /gene tag != GA CGC name : 
-  #    check if EMBL /gene is alreayd a CGC other_name or if to make it an other-name
-  if ( exists $GA_info{$embl_chksum} && $embl_name ne $GA_info{$embl_chksum}->[0] && $GA_info{$embl_chksum}->[0] ne "NA" ){
-
-    check_other_name_and_seq_ver($GA_info{$embl_chksum}->[0], $embl_name, $embl_ac, $embl_sv, $OS);
-  }
-  
-  #--- identical Chksum: GA has no CGC name 
-  #    ask CGC if EMBL name should be made as CGC name
-  if ( exists $GA_info{$embl_chksum} && $GA_info{$embl_chksum}->[0] eq "NA" ){
-    print CGC "$embl_name has identical chksum to $GA_info{$embl_chksum}->[1]: Make it CGC name?\n";
-  }
-
-  #--- requires hand check
-  if ( !exists $GA_info{$embl_chksum} ) {
-    print NOMATCH "DIFF chksum:  ($embl_name) : $prot_prefix : $embl_ac : $embl_chksum\n";
+  #--- EMBL prot chksum and wormpep chksum is different: requires hand check
+  else {
+    $no_match++;
+    print NOMATCH "DIFF chksum: EMBL: $embl_ac ($embl_name) : Prot_id ($prot_prefix) : chksum: $embl_chksum\n";
   }
 }
 
 #--- deal with non-standard names from EMBL /gene tag
 
-foreach (keys %Non_cgc_style_name_Protid_AC_OS_SV_Chksum){  # EMBL
-#  print "$_ => @{$Non_cgc_style_name_Protid_AC_OS_SV_Chksum{$_}}##########\n";
+foreach (keys %Non_cgc_style_name_Protid_AC_OS_SV_Chksum){  # key is non_CGC style name from EMBL
 
   for (my $i = 0; $i < scalar @{$Non_cgc_style_name_Protid_AC_OS_SV_Chksum{$_}}; $i=$i+5 ){
+    my $embl_name = $_;
     my $pid = $Non_cgc_style_name_Protid_AC_OS_SV_Chksum{$_}->[$i]; # prefix only
-    
-    my $ac = $Non_cgc_style_name_Protid_AC_OS_SV_Chksum{$_}->[$i+1];
-    my $os = $Non_cgc_style_name_Protid_AC_OS_SV_Chksum{$_}->[$i+2];
+    my $embl_ac = $Non_cgc_style_name_Protid_AC_OS_SV_Chksum{$_}->[$i+1];
+    my $OS = $Non_cgc_style_name_Protid_AC_OS_SV_Chksum{$_}->[$i+2];
     my $embl_sv = $Non_cgc_style_name_Protid_AC_OS_SV_Chksum{$_}->[$i+3];
-    my $chksum = $Non_cgc_style_name_Protid_AC_OS_SV_Chksum{$_}->[$i+4];
+    my $embl_chksum = $Non_cgc_style_name_Protid_AC_OS_SV_Chksum{$_}->[$i+4];
 
-    # check chksum of non-standard name equals a SWALL checksum
-    if ( exists $ProtID_Chksum_Ver{$pid} && $ProtID_Chksum_Ver{$pid}->[0] eq $chksum){
-      # is the chksum linked to a GA CGC name?
-      if ( exists $GA_info{$chksum}->[0] && exists $main_other{$GA_info{$chksum}->[0]} ){ 
-	check_other_name_and_seq_ver($GA_info{$chksum}->[0], $_, $ac, $embl_sv, $OS);
+    # --- EMBL prot chksum and wormpep chksum is identical
+  #  if ( exists $ProtID_Chksum_Ver{$pid} && $ProtID_Chksum_Ver{$pid}->[0] eq $chksum){
+    if ( exists $GA_info{$embl_chksum} ){
+      for ( my $i = 0; $i < scalar @{$GA_info{$embl_chksum}}; $i = $i+2 ){	
+	check_other_name_and_seq_ver($GA_info{$embl_chksum}->[$i], $embl_name, $embl_ac, $embl_sv, $OS, $GA_info{$embl_chksum}->[$i+1]);
       }
-      else {
-	print NOMATCH "DIFF chksum: cannot associate EMBL $_ ($ac) with a CGC_name\n"; 
-      }
+    }
+    #--- EMBL prot chksum and wormpep chksum is different: requires hand check
+    else {
+      $no_match++;
+      print NOMATCH "DIFF chksum: EMBL: $embl_ac ($embl_name) : Prot_id ($pid) : chksum: $embl_chksum\n";
     }
   }
-} 
+}
 
-print INFO "\nNew Other_name: $new_other_name\nUpdated AC based on SV: $updated_AC\nNew AC: $new_AC\n";
+# --- print out update stats
+print INFO "Incorporating /gene names from EMBL Release $version\n\n";
+print INFO "Update overview:\n";
+print INFO "----------------\n";
+print INFO "Updated AC due to version change: ", scalar @updated_ACs, "\n\n";
+print INFO "New Other_name found: ", scalar @new_Other_names1 + scalar @new_Other_names, "\n";
+print INFO "New Other_name to add: ", scalar @new_Other_names, "\n";
+print INFO "New AC found as Other_sequence: ", scalar @new_ACs1 + scalar @new_ACs, "\n";
+print INFO "New AC to add as Other_sequence: ", scalar @new_ACs, "\n";
+print INFO "EMBL /gene name cannot be linked to a CGC name due to different protein checksum: $no_match\n";
+
+print INFO "\nUpdate details:\n";
+print INFO "---------------\n";
+print INFO "\nUpdated AC based on SV: ", scalar @updated_ACs, "\n@updated_ACs";
+print INFO "\nNew Other_names to add: ", scalar @new_Other_names,"\n@new_Other_names";
+print INFO "\nNew Other_names that cannot be added: ", scalar @new_Other_names1,"\n@new_Other_names1";
+print INFO "\nNew AC to add: ", scalar @new_ACs,"\n@new_ACs";
+print INFO "\nNew AC that cannot be added: ", scalar @new_ACs1,"\n@new_ACs1";
+
 
 sub check_other_name_and_seq_ver {
-  my ($locus, $embl_name, $embl_ac, $embl_sv, $OS) = @_;
-  my %other;
+  my ($locus, $embl_name, $embl_ac, $embl_sv, $OS, $seq_name) = @_;
 
-  #  print "$locus(1), $embl_name(2), $embl_ac(3) ======\n";
+  #--- EMBL prot chksum and wormpep chksum is identical and EMBL /gene tag = CGC_name
+  if ( $locus eq $embl_name || $locus eq lc($embl_name) ) {
 
-  if ( exists $main_other{$locus} ){
-    my @other_names = @{$main_other{$locus}};
-    
-    foreach (@other_names){$other{$_}++};
-    
-    if (!exists $other{$embl_name} ){
-      $new_other_name++; $new_AC++;
-      print DEBUG "EMBL $embl_name as an Other_name & $embl_ac as an Other_sequence for CGC $locus\n";
-      print PARSE "\/\/EMBL $embl_name as an Other_name & $embl_ac as an Other_sequence for CGC $locus\n";
-      print UPDT "\nLocus : \"$locus\"\n";
-      print UPDT "Other_name \"$embl_name\" Accession_evidence \"EMBL\" $embl_ac\"\n";
-      print PARSE "$embl_ac\t$locus\t$AC_ID_Protid_DE{$embl_ac}->[0]\t$embl_sv\t$AC_ID_Protid_DE{$embl_ac}->[1]\t$AC_ID_Protid_DE{$embl_ac}->[2]\t$OS\n";
-    }
-    if (exists $other{$embl_name} or $locus eq "CGC") {
-      #--- check if AC version needs to be updated
-      if ( exists $AC_SV{$embl_ac} && $embl_sv != $AC_SV{$embl_ac} ){
-        $updated_AC++;
-	print DEBUG "Update this EMBL AC $embl_ac for CGC $locus\n";
-        print PARSE "\/\/Update this EMBL AC $embl_ac for CGC $locus\n";
+    #--- check if AC version needs to be updated
+    if ( exists $AC_SV{$embl_ac} && $embl_sv != $AC_SV{$embl_ac} ){
+
+      # for use as stats in the EMBL_name_incorporation_stats.$version file
+      # $updated_AC{$embl_ac}++;
+      #remove duplicates, eg, AF320903 have multiple /gene
+      if ( $updated_AC{$embl_ac}++ == 1 ){
+        push (@updated_ACs, $embl_ac." to $locus ($Gene_info{$locus}{'Gene'})\n");
+
+        print DEBUG "\n(A) Update this EMBL AC $embl_ac ($embl_name, SV: $embl_sv) for CGC $locus ($Gene_info{$locus}{'Gene'}, SV: $AC_SV{$embl_ac})\n"; # prints gene id as well
+        print PARSE "\n\/\/Update this EMBL AC $embl_ac ($embl_name) for CGC $locus ($Gene_info{$locus}{'Gene'})\n";
         print UPDT "-D Sequence : \"$embl_ac\"\n";
-        print PARSE "$embl_ac\t$locus\t$AC_ID_Protid_DE{$embl_ac}->[0]\t$embl_sv\t$AC_ID_Protid_DE{$embl_ac}->[1]\t$AC_ID_Protid_DE{$embl_ac}->[2]\t$OS\n";
+        # cols:      EMBL_AC   gene id                     EMBL_ID                          SV        prot_id                          DE                               OS
+        print PARSE "$embl_ac\t$Gene_info{$locus}{'Gene'}\t$AC_ID_Protid_DE{$embl_ac}->[0]\t$embl_sv\t$AC_ID_Protid_DE{$embl_ac}->[1]\t$AC_ID_Protid_DE{$embl_ac}->[2]\t$OS\n";
       }
-      #--- add EMBL AC as Other_sequence
-      if ( !exists $AC_SV{$embl_ac} ){
-        $new_AC++;
-     	print DEBUG "Make EMBL $embl_name an other_name and $embl_ac an other_sequence for CGC $locus\n";
-        print PARSE "\/\/Make EMBL $embl_name an other_name and $embl_ac an other_sequence of CGC $locus\n";
-        print PARSE "$embl_ac\t$locus\t$AC_ID_Protid_DE{$embl_ac}->[0]\t$embl_sv\t$AC_ID_Protid_DE{$embl_ac}->[1]\t$AC_ID_Protid_DE{$embl_ac}->[2]\t$OS\n";
-      }
-      #--- EMBL AC already in Geneace and SV is up-to-date: do nothing
-      if ( exists $AC_SV{$embl_ac} && $embl_sv == $AC_SV{$embl_ac} ){
-	print DEBUG "EMBL name and AC already exists as an other_sequence with same version\n";
+    }
+    #--- add EMBL AC as Other_sequence if not yet linked to a CGC_name in geneace
+    if ( !exists $AC_SV{$embl_ac} ){
+
+      $new_AC{$embl_ac}++;
+      # for use as stats in the EMBL_name_incorporation_stats.$version file
+      # remove duplicates, eg, AF320903 have multiple /gene
+       if ( $new_AC{$embl_ac} == 1 ){
+	 push (@new_ACs, $embl_ac." ($embl_name) to $locus ($Gene_info{$locus}{'Gene'})\n");
+	 print DEBUG "\n(B) Add this EMBL AC $embl_ac ($embl_name) as an other_sequence for $locus ($Gene_info{$locus}{'Gene'})\n";
+	 print PARSE "\n\/\/Add this EMBL AC $embl_ac ($embl_name) as an other_sequence for $locus ($Gene_info{$locus}{'Gene'})\n";
+	 # cols:      EMBL_AC   gene id                     EMBL_ID                          SV        prot_id                          DE                               OS
+	 print PARSE "$embl_ac\t$Gene_info{$locus}{'Gene'}\t$AC_ID_Protid_DE{$embl_ac}->[0]\t$embl_sv\t$AC_ID_Protid_DE{$embl_ac}->[1]\t$AC_ID_Protid_DE{$embl_ac}->[2]\t$OS\n";
+       }
+    }
+
+    #--- EMBL AC already in Geneace and SV is up-to-date: do nothing
+    if ( exists $AC_SV{$embl_ac} && $embl_sv == $AC_SV{$embl_ac} ){
+      print DEBUG "\n(C) DO nothing: this EMBL $embl_name is same as a CGC_name and its AC $embl_ac already exists as an other_sequence (same version) in geneace\n";
+    }
+  }
+
+  #--- EMBL prot chksum and wormpep chksum is identical but EMBL /gene tag != GA CGC name
+  #    check if EMBL /gene exists as an Other_name of a CGC_name, if yes, check if AC already is an Other_sequence and if SV needs update
+  #                                                               if no, make this /gene an Other_name and AC an Other_sequence
+  if ( $locus ne lc($embl_name) && $locus ne "NA" ) {
+    &assign_other_name_other_sequence($locus, $embl_name, $embl_ac, $embl_sv, $OS);
+  }
+
+  if ( ($locus ne lc($embl_name) || $locus ne $embl_name) && $locus eq "NA") {
+    &assign_other_name_other_sequence($locus, $embl_name, $embl_ac, $embl_sv, $OS, $seq_name);
+  }
+
+  sub assign_other_name_other_sequence {
+
+    my ($locus, $embl_name, $embl_ac, $embl_sv, $OS, $seq_name) = @_;
+
+    $locus = $seq_name if $locus eq "NA"; # use sequence name if no CGC_name is available for a gene id
+
+    if ( !exists $other{lc($embl_name)} && !exists $other{$embl_name} ) {
+      # make this EMBL /gene as an Other_name, and this AC an Other_sequence
+
+      # for use as stats in the EMBL_name_incorporation_stats.$version file
+      # remove duplicates, eg, AF320903 have multiple /gene and EMBL /gene which is same as Wormpep sequence name
+      $new_AC{$embl_ac}++;
+
+      if ( $new_AC{$embl_ac} == 1 && ( !exists $wormpep_seqs{$embl_name} || exists $main_other{$locus} ) ){
+	if ( !exists $Gene_info{$locus}{'Gene'} ){
+	  push (@new_ACs1, $embl_ac." ($embl_name) to $locus (Gene id not available: NO Other_sequence assignment)\n");
+	  push (@new_Other_names1, $embl_name." ($embl_ac) to $locus (Gene id not available: NO Other_name assignment)\n");
+	}
+	else {
+	  print DEBUG "\n(D) Add EMBL $embl_name as an Other_name & the AC $embl_ac as an Other_sequence for $locus ($Gene_info{$locus}{'Gene'})\n";
+	
+	  print UPDT "\nGene : \"$Gene_info{$locus}{'Gene'}\"\n";
+	  print UPDT "Other_name \"$embl_name\" Accession_evidence \"EMBL\" $embl_ac\"\n";
+	  push (@new_ACs, $embl_ac." ($embl_name) to $locus ($Gene_info{$locus}{'Gene'})\n");
+	  push (@new_Other_names, $embl_name." ($embl_ac) to $locus ($Gene_info{$locus}{'Gene'})\n");
+	
+	  print PARSE "\/\/Add EMBL $embl_name as an Other_name & $embl_ac as an Other_sequence for $locus ($Gene_info{$locus}{'Gene'})\n";
+	  # cols:      EMBL_AC   gene id                     EMBL_ID                          SV        prot_id                          DE                               OS
+	  print PARSE "$embl_ac\t$Gene_info{$locus}{'Gene'}\t$AC_ID_Protid_DE{$embl_ac}->[0]\t$embl_sv\t$AC_ID_Protid_DE{$embl_ac}->[1]\t$AC_ID_Protid_DE{$embl_ac}->[2]\t$OS\n";
+	}
+      }	
+    }
+
+    if ( exists $other{$embl_name} ||  exists $other{lc($embl_name)} ) {
+	
+      #--- check if AC version needs to be updated
+      if ( exists $AC_SV{$embl_ac} && $embl_sv != $AC_SV{$embl_ac} ) {
+	
+	# for use as stats in the EMBL_name_incorporation_stats.$version file
+	# remove duplicates, eg, AF320903 have multiple /gene and EMBL /gene which is same as Wormpep sequence name
+	$updated_AC{$embl_ac}++;
+
+	if ( $updated_AC{$embl_ac} == 1 ){
+	  push (@updated_ACs, $embl_ac." ($embl_name) to $locus ($Gene_info{$locus}{'Gene'})\n");
+	  print DEBUG "\n(E) Update this EMBL AC $embl_ac ($embl_name, SV: $embl_sv) for $locus ($Gene_info{$locus}{'Gene'}, SV: $AC_SV{$embl_ac})\n"; # prints gene id as well
+	  print PARSE "\n\/\/Update this EMBL AC $embl_ac ($embl_name) for $locus ($Gene_info{$locus}{'Gene'})\n";
+	  print UPDT "\nGene : \"$Gene_info{$locus}{'Gene'}\"\n";
+	  print UPDT "-D Sequence : \"$embl_ac\"\n";
+	  # cols:      EMBL_AC   gene id                     EMBL_ID                          SV        prot_id                          DE                               OS
+	  print PARSE "$embl_ac\t$Gene_info{$locus}{'Gene'}\t$AC_ID_Protid_DE{$embl_ac}->[0]\t$embl_sv\t$AC_ID_Protid_DE{$embl_ac}->[1]\t$AC_ID_Protid_DE{$embl_ac}->[2]\t$OS\n";
+	}
       }
     }
   }
 }
 
-
-# write longtext 
-system("perl $script_dir/get_EMBL_longtext.pl -i $output_dir/EMBL_to_Geneace_pre_longtext.$version -o $output_dir/EMBL_to_Geneace_longtext.$version.ace");
+# write longtext
+system("perl $script_dir/get_EMBL_longtext.pl -i $temp_dir/EMBL_to_Geneace_pre_longtext.$version -o $output_dir/EMBL_to_Geneace_longtext.$version.ace");
 
 my $end = &runtime;
-
 print "\n$0 started at $start, finished at $end\n";
 
 
 
 __END__
 
-In verbose mode, the script writes two EMBL datasets file:
-  EMBL_cgc_style_name: fetch EMBL locus name info
-  EMBL_non_cgc_style_name_dataset:  if an EMBL sequence name matches 
-                          the sequence of a geneace locus, 
-                          that locus gets assigned EMBL AC 
-                          as an Other_name
-  
-and one Wormpep dataset file:
-  Wormpep_dataset: assign SWALL checksum to Wormpep seq, protid, locus
+NOTE; gene names are lower-cases for string comparison
+
+Deal with standard names from EMBL /gene tag
+
+  (1) EMBL prot checksum and wormpep checksum is identical
+      (A) EMBL /gene tag is the SAME as geneace CGC_name
+          => check if AC version needs to be updated
+          => add EMBL AC as Other_sequence if not yet linked to a CGC_name in geneace
+
+      (B) EMBL /gene tag is NOT the SAME as geneace CGC name
+          => check if EMBL /gene exists as an Other_name of a CGC_name,
+          => if yes, check if AC already is an Other_sequence and if SV needs update
+          => if no, make this /gene an Other_name and AC an Other_sequencet of the CGC locus
+
+   (2) EMBL Checksum and wormpep checksum is different: requires hand check
+
+Deal with non-standard names from EMBL /gene tag
+
+   (1) EMBL prot checksum and wormpep checksum is identical
+       (A)check if EMBL /gene exists as an Other_name of a CGC_name,
+          => if yes, (a) check if AC version needs to be updated
+                     (b) add EMBL AC as Other_sequence if not yet linked to a CGC_name in geneace
+
+          => if no, make this /gene an Other_name and AC an Other_sequencet of the CGC locus

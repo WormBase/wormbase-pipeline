@@ -2,7 +2,7 @@
 
 # Author: Chao-Kung Chen
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-04-30 11:09:01 $ 
+# Last updated on: $Date: 2004-05-25 12:49:00 $ 
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -133,17 +133,28 @@ foreach(@NBP){
   push(@indel_info, $site_L, $site_R, $remark_1, $insert, $L_clone, $R_clone, $indel);
   push(@{$NBP_info{$allele}}, $locus, $clone, \@indel_info, $pheno, \@primers, $mapper);
   push(@{$chrom_NBP_allele{$clone_info{$clone}->[0]}}, $allele); # key: chromosome letter
+
+  #print "(1) $allele\n(2)$locus\n(3)$clone\n(4)$indel\n(5)$pheno\n(6)$primers\n(7)$mapper\n";# if $allele eq "tm1223";
 }
 
-# ----- acefile name and location
+# ----- acefile names, log file and location
 
 my $acefile = $input;
-$acefile =~ /.+\/(.+)\.txt/;
+$acefile =~ /(.+)\.txt/;
 $acefile = $1.".ace";
 
-open(ACE, ">$allele_dir/$acefile") || die $!;
+open(ACE, ">$acefile") || die $!;
 
-my $log = "/wormsrv2/logs/$acefile.$rundate";
+# last update has the -D lines to delete everything from last update as the NBP sends full updates, not incremental
+my @last_updates = glob("$allele_dir/NBP_last_update.ace.*");
+my $last_update = $last_updates[-1];
+
+open(ACE_del, ">$allele_dir/NBP_last_update.ace.$rundate") || die $!;
+
+my $acelog = $acefile;
+$acelog =~ s/^.+\///;
+
+my $log = "/wormsrv2/logs/$acelog.$rundate";
 `rm -f $log` if -e $log;
 
 open(LOG, ">$log") || die $!;
@@ -155,8 +166,10 @@ get_30_bp_flanks($database);
 
 # ----- upload data to Geneace
 
+# parse in the $last_update file first to remove everthing from last update and then upload new updates
 my $command=<<END;
-pparse $allele_dir/$acefile
+pparse $last_update
+pparse $acefile
 save
 quit
 END
@@ -167,7 +180,8 @@ $ga->upload_database($ga->test_geneace, $command, "NBP_allele", $log) if $debug;
 
 # ----- mail notice
 
-my $recipients = "ck1\@sanger.ac.uk, krb\@sanger.ac.uk";
+#y $recipients = "ck1\@sanger.ac.uk, krb\@sanger.ac.uk";
+my $recipients = "ck1\@sanger.ac.uk";
 $recipients = "ck1\@sanger.ac.uk" if $debug;
 mail_maintainer("Loading NBP_allele", $recipients, $log);
 
@@ -199,7 +213,7 @@ sub get_30_bp_flanks {
     foreach my $allele (@{$chrom_NBP_allele{$chrom}}){
 
       print ACE "\nAllele : \"$allele\"\n";
-
+      print ACE_del "\nAllele : \"$allele\"\n";
       my @indel_info = @{$NBP_info{$allele}->[2]};
       my $L_clone = $indel_info[4];
       my $R_clone = $indel_info[5];
@@ -211,14 +225,17 @@ sub get_30_bp_flanks {
          $DNA_R =substr($line, $clone_info{$R_clone}->[1] + $indel_info[1]-1,     30)                if $R_clone ne "NA";
 
       print ACE "Sequence \"$NBP_info{$allele}->[1]\"\n";
+      print ACE_del "-D Sequence \"$NBP_info{$allele}->[1]\"\n";
 
       if ( $NBP_info{$allele}->[0] =~ /\w{3,3}-.+/ ){
 	my $locus = lc($NBP_info{$allele}->[0]);  # NBP data often use capitalized locus name
 	print ACE "Gene \"$Gene_info{$locus}{'Gene'}\"  \/\/$NBP_info{$allele}->[0]\n" if exists $Gene_info{$locus}{'Gene'};
+	print ACE_del "-D Gene \"$Gene_info{$locus}{'Gene'}\"  \/\/$NBP_info{$allele}->[0]\n" if exists $Gene_info{$locus}{'Gene'};
 	print LOG "$allele is linked to non-existent locus ($locus)\n" if !exists $Gene_info{$locus}{'Gene'};
       }
       else {
 	print ACE "Predicted_gene \"$NBP_info{$allele}->[0]\"\n";
+	print ACE_del "-D Predicted_gene \"$NBP_info{$allele}->[0]\"\n";
       }
 
       # ----- remove tm and use the rest in as allele id to link back to NBP allele webpage
@@ -231,12 +248,21 @@ sub get_30_bp_flanks {
       print ACE "Author \"$NBP_info{$allele}->[5]\"\n" if $NBP_info{$allele}->[5] ne "NA";
       print ACE "Flanking_sequences \"$DNA_L\" \"$DNA_R\"\n";
       print ACE "Deletion\n" if $indel_info[3] eq "NA";
+      print ACE_del "-D Flanking_PCR_product     \"$allele"."_external\"\n";
+      print ACE_del "-D Flanking_PCR_product     \"$allele"."_internal\"\n";
+      print ACE_del "-D Author \"$NBP_info{$allele}->[5]\"\n" if $NBP_info{$allele}->[5] ne "NA";
+      print ACE_del "-D Flanking_sequences \"$DNA_L\" \"$DNA_R\"\n";
+      print ACE_del "-D Deletion\n" if $indel_info[3] eq "NA";
+
       if ($indel_info[3] ne "NA"){
 	print ACE "Deletion_with_insertion \"", lc($indel_info[3]),"\"\n";
 	print ACE "Method \"Deletion_and_insertion_allele\"\n";
+	print ACE_del "-D Deletion_with_insertion \"", lc($indel_info[3]),"\"\n";
+	print ACE_del "-D Method \"Deletion_and_insertion_allele\"\n";
       }
       else {
 	print ACE "Method \"Deletion_allele\"\n";
+	print ACE_del "-D Method \"Deletion_allele\"\n";
       }
       print ACE "NBP_allele\n";
       print ACE "Species \"Caenorhabditis elegans\"\n";
@@ -246,6 +272,15 @@ sub get_30_bp_flanks {
       print ACE "MAP \"$chrom\"\n"; 
       print ACE "Remark \"Mutations at cosmid coordinates: $indel_info[6]\"\n";
       print ACE "Remark \"<A href='http:\\/\/www.shigen.nig.ac.jp\/c.elegans\/mutants/DetailsSearch?lang=english&seq=$allele_id' target=_new> more on $allele...<\/A>\"\n";
+      print ACE_del "-D NBP_allele\n";
+      print ACE_del "-D Species \"Caenorhabditis elegans\"\n";
+      print ACE_del "-D Phenotype \"$NBP_info{$allele}->[3]\"\n";
+      print ACE_del "-D Mutagen \"TMP\/UV\"\n";
+      print ACE_del "-D Location \"FX\"\n";
+      print ACE_del "-D MAP \"$chrom\"\n"; 
+      print ACE_del "-D Remark \"Mutations at cosmid coordinates: $indel_info[6]\"\n";
+      print ACE_del "-D Remark \"<A href='http:\\/\/www.shigen.nig.ac.jp\/c.elegans\/mutants/DetailsSearch?lang=english&seq=$allele_id' target=_new> more on $allele...<\/A>\"\n";
+
 
       # ----- only for those tm allele having primer information
       if (scalar @{$NBP_info{$allele}->[4]} != 1){
@@ -256,12 +291,12 @@ sub get_30_bp_flanks {
 	print ACE "Flanks_deletion \"$allele\"\n";
 	
 	print ACE "\nOligo : \"$allele"."_external_f\"\n";
-	print ACE "Sequence \"$NBP_info{$allele}->[4]->[0]\"\n"; 
+	print ACE "Sequence \"$NBP_info{$allele}->[4]->[0]\"\n";
 	print ACE "Length ", length($NBP_info{$allele}->[4]->[0]), "\n";
         print ACE "PCR_product \"$allele"."_external\"\n";
 
       	print ACE "\nOligo : \"$allele"."_external_b\"\n";
-	print ACE "Sequence \"$NBP_info{$allele}->[4]->[3]\"\n"; 
+	print ACE "Sequence \"$NBP_info{$allele}->[4]->[3]\"\n";
 	print ACE "Length ", length($NBP_info{$allele}->[4]->[3]), "\n";
         print ACE "PCR_product \"$allele"."_external\"\n";
 
@@ -271,14 +306,45 @@ sub get_30_bp_flanks {
         print ACE "Flanks_deletion \"$allele\"\n";
 
         print ACE "\nOligo : \"$allele"."_internal_f\"\n";
-	print ACE "Sequence \"$NBP_info{$allele}->[4]->[1]\"\n"; 
+	print ACE "Sequence \"$NBP_info{$allele}->[4]->[1]\"\n";
 	print ACE "Length ", length($NBP_info{$allele}->[4]->[1]), "\n";
         print ACE "PCR_product \"$allele"."_internal\"\n";
 
       	print ACE "\nOligo : \"$allele"."_internal_b\"\n";
-	print ACE "Sequence \"$NBP_info{$allele}->[4]->[2]\"\n"; 
+	print ACE "Sequence \"$NBP_info{$allele}->[4]->[2]\"\n";
 	print ACE "Length ", length($NBP_info{$allele}->[4]->[2]), "\n";
         print ACE "PCR_product \"$allele"."_internal\"\n";
+
+	print ACE_del "\nPCR_product : $allele"."_external\n";
+	print ACE_del "-D Oligo $allele"."_external_f\n";
+	print ACE_del "-D Oligo $allele"."_external_b\n";
+	print ACE_del "-D Flanks_deletion \"$allele\"\n";
+	
+	print ACE_del "\nOligo : \"$allele"."_external_f\"\n";
+	print ACE_del "-D Sequence \"$NBP_info{$allele}->[4]->[0]\"\n";
+	print ACE_del "-D Length ", length($NBP_info{$allele}->[4]->[0]), "\n";
+        print ACE_del "-D PCR_product \"$allele"."_external\"\n";
+
+      	print ACE_del "\nOligo : \"$allele"."_external_b\"\n";
+	print ACE_del "-D Sequence \"$NBP_info{$allele}->[4]->[3]\"\n";
+	print ACE_del "-D Length ", length($NBP_info{$allele}->[4]->[3]), "\n";
+        print ACE_del "-D PCR_product \"$allele"."_external\"\n";
+
+        print ACE_del "\nPCR_product : $allele"."_internal\n";
+        print ACE_del "-D Oligo $allele"."_internal_f\n";
+        print ACE_del "-D Oligo $allele"."_internal_b\n";
+        print ACE_del "-D Flanks_deletion \"$allele\"\n";
+
+        print ACE_del "\nOligo : \"$allele"."_internal_f\"\n";
+	print ACE_del "-D Sequence \"$NBP_info{$allele}->[4]->[1]\"\n";
+	print ACE_del "-D Length ", length($NBP_info{$allele}->[4]->[1]), "\n";
+        print ACE_del "-D PCR_product \"$allele"."_internal\"\n";
+
+      	print ACE_del "\nOligo : \"$allele"."_internal_b\"\n";
+	print ACE_del "-D Sequence \"$NBP_info{$allele}->[4]->[2]\"\n";
+	print ACE_del "-D Length ", length($NBP_info{$allele}->[4]->[2]), "\n";
+        print ACE_del "-D PCR_product \"$allele"."_internal\"\n";
+
       }
     }
   }
