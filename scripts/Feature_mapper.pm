@@ -211,8 +211,9 @@ sub check_overlapping_CDS
 
 	while (<GFF>) {
 	  # CHROMOSOME_I curated CDS 222722  223159  . + . CDS "Y48G1BM.3" wp_acc=CE26120
-	  my @data = split;
 	  # look for just protein or RNA genes by examining GFF_source and GFF_feature
+	  next unless (/CDS/ or /primary_transcript/);
+	  my @data = split;
 	  if(($data[1] eq "curated"               && $data[2] eq "CDS") ||
 	     ($data[1] eq "miRNA"                 && $data[2] eq "miRNA_primary_transcript") ||
 	     ($data[1] eq "snoRNA"                && $data[2] eq "snoRNA_primary_transcript") ||
