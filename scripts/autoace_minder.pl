@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2004-01-28 10:55:56 $
+# Last edited on: $Date: 2004-01-29 13:49:05 $
 
 
 #################################################################################
@@ -1031,7 +1031,7 @@ sub parse_homol_data {
 		    #BLAST data
 		    "worm_pep_blastp.ace",
 		    "worm_brigpep_blastp.ace",
-		    "blastx_ensembl.ace",
+		    "worm_dna_blastx.ace",
 		    #motif info
 		    "worm_pep_motif_info.ace",
 		    "worm_brigpep_motif_info.ace",
