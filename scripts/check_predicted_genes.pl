@@ -103,7 +103,7 @@ foreach my $gene (@predicted_genes){
   # check that 'Source' tag is present and if so then grab parent sequence details
   my $source = $gene_object->Source;
   if (!defined ($source)){
-    print "$gene: has no Source tag, cannot check DNA\n";
+    print "Gene error - $gene: has no Source tag, cannot check DNA\n";
     next CHECK_GENE;
   }
   my $parent = $db->fetch(Sequence=>$source);
@@ -112,7 +112,7 @@ foreach my $gene (@predicted_genes){
 
   # check to see if any predicted gene belongs to superlink object...they shouldn't
   if ($parent =~ m/SUPERLINK/){
-    print "$gene: belongs to a superlink object ($parent)\n";
+    print "Gene error - $gene: belongs to a superlink object ($parent)\n";
   }
 
   # If subsequence is not from a link object, check that largest exon coordinate 
@@ -130,10 +130,10 @@ foreach my $gene (@predicted_genes){
     for($i=0; $i<@exon_coord1; $i++){
       $max_coordinate = $exon_coord1[$i] if ($exon_coord1[$i] > $max_coordinate);
       $max_coordinate = $exon_coord2[$i] if ($exon_coord2[$i] > $max_coordinate);
-      print "$gene: exon inconsistency, overlapping exons?\n" if (($exon_coord1[$i] < $exon_coord2[$i-1]) && ($i>0));
+      print "Gene error - $gene: exon inconsistency, overlapping exons?\n" if (($exon_coord1[$i] < $exon_coord2[$i-1]) && ($i>0));
     }
     if ($max_coordinate >$parent_length){
-      print "$gene: largest exon coordinate ($max_coordinate) exceeds length of parent ($parent = $parent_length bp)\n" 
+      print "Gene error - $gene: largest exon coordinate ($max_coordinate) exceeds length of parent ($parent = $parent_length bp)\n" 
     }
   }
 
@@ -148,19 +148,19 @@ foreach my $gene (@predicted_genes){
   # check species is correct
   my $species = "";
   ($species) = ($gene_object->get('Species'));
-  print "$gene: species is $species\n" if ($species ne "Caenorhabditis elegans");
+  print "Gene error - $gene: species is $species\n" if ($species ne "Caenorhabditis elegans");
   
 
   # check Method isn't 'hand_built'
   my $method = "";
   ($method) = ($gene_object->get('Method'));
-  print "$gene: method is hand_built\n" if ($method eq 'hand_built');
+  print "Gene error - $gene: method is hand_built\n" if ($method eq 'hand_built');
 
 
   # then run misc. sequence integrity checks
   my $dna = $gene->asDNA();
   if(!$dna){
-    print "$gene: can't find any DNA to analyse\n";
+    print "Gene error - $gene: can't find any DNA to analyse\n";
     next CHECK_GENE;
   }
 
@@ -194,10 +194,10 @@ sub test_gene_sequence_for_errors{
   # check for length errors
   if ($remainder != 0){
     if (($end_tag ne "present") && ($start_tag ne "present")){
-      print "$gene: length ($gene_length bp) not divisible by 3, Start_not_found & End_not_found tags MISSING\n";
+      print "Gene error - $gene: length ($gene_length bp) not divisible by 3, Start_not_found & End_not_found tags MISSING\n";
     }
     elsif($verbose eq 'ON'){
-      print "$gene: length ($gene_length bp) not divisible by 3, Start_not_found and/or End_not_found tag present\n";
+      print "Gene error - $gene: length ($gene_length bp) not divisible by 3, Start_not_found and/or End_not_found tag present\n";
     }   
   }   
 
@@ -205,10 +205,10 @@ sub test_gene_sequence_for_errors{
   # look for incorrect stop codons
   if (($stop_codon ne 'taa') && ($stop_codon ne 'tga') && ($stop_codon ne 'tag')){
     if($end_tag ne "present"){
-      print "$gene: '$stop_codon' is not a valid stop codon. End_not_found tag MISSING\n";
+      print "Gene error - $gene: '$stop_codon' is not a valid stop codon. End_not_found tag MISSING\n";
     }
     elsif($verbose eq 'ON'){
-      print "$gene: '$stop_codon' is not a valid stop codon. End_not_found tag present\n";
+      print "Gene error - $gene: '$stop_codon' is not a valid stop codon. End_not_found tag present\n";
     }
   }
 
@@ -216,10 +216,10 @@ sub test_gene_sequence_for_errors{
   # look for incorrect start codons
   if ($start_codon ne 'atg'){
    if($start_tag ne "present"){
-      print "$gene: '$start_codon' is not a valid start codon. Start_not_found tag MISSING\n";
+      print "Gene error - $gene: '$start_codon' is not a valid start codon. Start_not_found tag MISSING\n";
     }
     elsif($verbose eq 'ON'){
-      print "$gene: '$start_codon' is not a valid start codon. Start_not_found tag present\n";
+      print "Gene error - $gene: '$start_codon' is not a valid start codon. Start_not_found tag present\n";
     }
   }
 
@@ -236,14 +236,14 @@ sub test_gene_sequence_for_errors{
       my $previous_sequence = substr($dna, $j-11,10);
       my $following_sequence = substr($dna, $j+2, 10);
       my $offending_codon = substr($dna, $j-1, 3);
-      print "$gene: contains internal stop codon at position $j ...$previous_sequence $offending_codon $following_sequence...\n";      
+      print "Gene error - $gene: contains internal stop codon at position $j ...$previous_sequence $offending_codon $following_sequence...\n";      
     }
   }			       
 
   # look for non-ACTG characters
   if ($dna =~ /[^acgt]/i){
     $dna =~ s/[acgt]//g;
-    print "$gene: DNA sequence contains the following non-ATCG characters: $dna\n" 
+    print "Gene error - $gene: DNA sequence contains the following non-ATCG characters: $dna\n" 
   }
 
 }
