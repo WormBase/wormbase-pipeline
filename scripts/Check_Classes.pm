@@ -24,7 +24,7 @@ $class,              $f_found,    $s_found,    $diff
 sub check_classes {
    my ($first,$second,$fh) = @_;
    my ($prog,$name);
-   my $name=`/bin/uname -sr`; 
+   $name=`/bin/uname -sr`; 
    if    ($name=~/^SunOS/) {($prog)=<~wormpub/acedb/ace4/bin.SUN_4/tace>;}
    elsif ($name=~/^IRIX/)  {($prog)=<~wormpub/acedb/ace4/bin.SGI_4/tace>;}
    elsif ($name=~/^OSF/)   {($prog)=<~acedb/RELEASE.SUPPORTED/bin.ALPHA_4/tace>;}

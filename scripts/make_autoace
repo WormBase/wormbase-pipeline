@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.0
+#!/usr/local/bin/perl5.6.0 -w
 #
 # make_autoace
 #
@@ -145,7 +145,7 @@ our $WS_version = &get_wormbase_version;
 # Open logfile                                   #
 ##################################################
 
-my $logfile = "/wormsrv2/logs/make_autoace.${WS_version}.$$";
+my $logfile = "/wormsrv2/logs/make_autoace.${WS_version}.${rundate}.$$";
 system ("/bin/touch $logfile");
 open (LOGFILE,">>$logfile");
 LOGFILE->autoflush;
@@ -400,12 +400,12 @@ sub createdirs {
   return;
  }
  push (@args2,@args1);
- $sig = system (@args2);
+ system (@args2) && die "Couldn't run 'system (@args2)'\n";
  foreach (@args1) {
 	$made_dir = $_;
 	if ($made_dir =~ /wspec/) {
 		print "** Copying wspec from $autoacedir .. \n";
-		$sig2 = system ("/bin/cp $autoacedir/wspec/* $wspec/.");
+		system ("/bin/cp $autoacedir/wspec/* $wspec/.") && die "Couldn't cp wspec directory\n";
 	}
 	if (!-d $made_dir) {
 		print " ** mkdir for $basedir failed ** \n\n";
@@ -413,7 +413,7 @@ sub createdirs {
 		die(0);
 	} 
  }
- $sig3 = system ("/bin/ln -s /nfs/disk67/sylvia/geneace/pictures $pictures");
+ system ("/bin/ln -s /nfs/disk67/sylvia/geneace/pictures $pictures") && die "Couldn't make symbolic link\n";
  return;
 }
 
@@ -422,15 +422,16 @@ sub createdirs {
 # Parses the lists from the config files     
 
 sub parseconfig {
-  open(config,"$configfile");
-  while(<config>) {
+  open(CONFIG,"$configfile");
+  while(<CONFIG>) {
     s/^\s+//;s/\s+$//;   
     if (/^#/ || /^$/) {
 	next;
       }	 
     if (/^P\s+(\S+)\s+(\S+)$/) {
       $dbname = $1;
-      $dbdir = $2;
+      # $dbdir not used by anything!
+      # $dbdir = $2;
       $targetdir="$wormbasedir"."/$dbname";
       next;
     }
@@ -459,6 +460,7 @@ sub parseconfig {
       next;
     }
   }
+  close(CONFIG);
 }
 
 
@@ -594,15 +596,15 @@ sub setdate {
   @t = localtime ; while ($t[5] >= 100) { $t[5] -= 100 ; }
   $dat = sprintf "%02d\/%02d\/%02d", $t[3], $t[4]+1, $t[5] ;
   system ("mv $autodir/wspec/displays.wrm $autodir/wspec/displays.old") ;
-  open(file,"$autodir/wspec/displays.old") or do { print LOGFILE "failed to open $autodir/wspec/displays.old\n"; return 1;};
-  open(newfile,">$autodir/wspec/displays.wrm") or do { print LOGFILE "failed to open $autodir/wspec/displays.wrm\n"; return 1;};
-  while (<file>) 
+  open(FILE,"$autodir/wspec/displays.old") or do { print LOGFILE "failed to open $autodir/wspec/displays.old\n"; return 1;};
+  open(NEWFILE,">$autodir/wspec/displays.wrm") or do { print LOGFILE "failed to open $autodir/wspec/displays.wrm\n"; return 1;};
+  while (<FILE>) 
     {if (/^_DDtMain/) {
-      print newfile "_DDtMain -g TEXT_FIT -t \"C.elegans database $dat\"  -w .43 -height .23 -help acedb\n";
-    } else {print newfile $_;}
+      print NEWFILE "_DDtMain -g TEXT_FIT -t \"C.elegans database $dat\"  -w .43 -height .23 -help acedb\n";
+    } else {print NEWFILE $_;}
    }
-  close file;
-  close newfile;
+  close(FILE);
+  close(NEWFILE);
   unlink "$autodir/wspec/displays.old" ;
 }
 
