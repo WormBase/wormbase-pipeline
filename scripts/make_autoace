@@ -6,6 +6,9 @@
 # Usage : make_autoace [-options]
 #
 # This makes the autoace database from its composite sources.
+#
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2002-10-25 14:58:12 $
 
 
 ###########################################################################################
@@ -40,19 +43,22 @@ my $CWD = cwd;
  # and all the run options                        #
  ##################################################
 
-$opt_p="";
+$opt_p = "";
 getopts ('rdcp:');
 
 if ($opt_p =~ /^(\~\w+)\//){
-    $autodir=glob("$1");
+    $autodir = glob("$1");
     $autodir =~ s/\/tmp_mnt//;
-    $FILENAME=$';
-    $autodir="$autodir"."/"."$FILENAME";
-} elsif ($opt_p =~ /^(\w+)/) {
+    $FILENAME = "$'";
+    $autodir = "$autodir"."/"."$FILENAME";
+} 
+elsif ($opt_p =~ /^(\w+)/) {
     $autodir="$CWD"."/"."$opt_p";
-} elsif ($opt_p =~ /\/\w+/) {
+}  
+elsif ($opt_p =~ /\/\w+/) {
     $autodir=$opt_p;
-} else {
+} 
+else {
     &PrintHelp; 
 }
 
@@ -100,7 +106,6 @@ sub REAPER {
 ##################################################
 
 &sendmails("STARTED");
-#$now = &GetTime();
 &createdirs($autodir);	
 
 ##################################################
@@ -264,7 +269,6 @@ sub sendmails {
 
 
     print MAIL "make_autoace $$ has $SUBJ\n\n";
-    
     print MAIL "=============================================\n";
     print MAIL "# make_autoace\n\n";     
     print MAIL "# run details    : $rundate $runtime\n";
@@ -282,10 +286,10 @@ sub sendmails {
 # Subroutine for writing to a given database      
 
 sub DbWrite {
-  my ($command,$exec,$dir,$name)=@_;
-  open (WRITEDB,"| $exec $dir >> $logfile") or do {print LOGFILE "$name DbWrite failed\n";close LOGFILE; die();};
-  print WRITEDB $command;
-  close WRITEDB;
+    my ($command,$exec,$dir,$name)=@_;
+    open (WRITEDB,"| $exec $dir >> $logfile") or do {print LOGFILE "$name DbWrite failed\n";close LOGFILE; die();};
+    print WRITEDB $command;
+    close WRITEDB;
 }
 
 
@@ -293,14 +297,14 @@ sub DbWrite {
 # Get time coordinates                            
 
 sub GetTime {
-  my ($SECS,$MINS,$HOURS,$DAY,$MONTH,$YEAR)=(localtime)[0,1,2,3,4,5];
-  if ($MINS=~/^\d{1,1}$/) {
-    $MINS="0"."$MINS";
-  }
-  my $REALMONTH=$MONTH+1;
-  my $REALYEAR=$YEAR+1900;
-  my $NOW = "$DAY-$REALMONTH-$REALYEAR:$HOURS:$MINS";
-  return $NOW;
+    my ($SECS,$MINS,$HOURS,$DAY,$MONTH,$YEAR)=(localtime)[0,1,2,3,4,5];
+    if ($MINS=~/^\d{1,1}$/) {
+	$MINS="0"."$MINS";
+    }
+    my $REALMONTH=$MONTH+1;
+    my $REALYEAR=$YEAR+1900;
+    my $NOW = "$DAY-$REALMONTH-$REALYEAR:$HOURS:$MINS";
+    return $NOW;
 } 
 
 
@@ -308,24 +312,14 @@ sub GetTime {
 # Remove temp_gene sequences from stlace, camace 
 
 sub rmtempgene {
-  my $camace = "$camacedir";
-  my $stlace = "$stlacedir";
-  my $command=<<END;
-query find sequence method = hand_built
-kill
-save
-quit
-END
-  &DbWrite($command,$tace,$camace,"CamAce");
-  &DbWrite($command,$tace,$stlace,"StlAce");
-  my $command2=<<END;
-query find sequence temp*
-kill
-save
-quit
-END
-  &DbWrite($command2,$tace,$camace,"CamAce");
-  &DbWrite($command2,$tace,$stlace,"StlAce");
+    my $camace  = "$camacedir";
+    my $stlace  = "$stlacedir";
+    my $command = "query find sequence method = hand_built\nkill\nsave\nquit\n";
+    &DbWrite($command,$tace,$camace,"CamAce");
+    &DbWrite($command,$tace,$stlace,"StlAce");
+    my $command = "query find sequence temp*\nkill\nsave\nquit\n";
+    &DbWrite($command2,$tace,$camace,"CamAce");
+    &DbWrite($command2,$tace,$stlace,"StlAce");
 }
 
 
@@ -333,48 +327,50 @@ END
 # Create directories
 
 sub createdirs {
- my $basedir = shift @_;
- my $chromes = "$basedir/CHROMOSOMES";
- my $db = "$basedir/database";		
- my $new = "$db/new";
- my $touch = "$db/touched";
- my $ace = "$basedir/acefiles";
- my $rel = "$basedir/release";
- my $wspec = "$basedir/wspec";
- my $pictures = "$basedir/pictures";
- @dirarray = ("$basedir","$chromes","$db","$new","$touch","$ace","$rel","$wspec");
- @args1 = ();
- @args2 = ("/bin/mkdir");
- foreach (@dirarray) {	
+    my $basedir  = shift @_;
+    my $chromes  = "$basedir/CHROMOSOMES";
+    my $db       = "$basedir/database";		
+    my $new      = "$db/new";
+    my $touch    = "$db/touched";
+    my $ace      = "$basedir/acefiles";
+    my $rel      = "$basedir/release";
+    my $wspec    = "$basedir/wspec";
+    my $pictures = "$basedir/pictures";
+    @dirarray    = ("$basedir","$chromes","$db","$new","$touch","$ace","$rel","$wspec");
+    @args1       = ();
+    @args2       = ("/bin/mkdir");
+    
+    foreach (@dirarray) {	
 	$present_dir = $_;
 	if (-d $present_dir) {
-		print "** Skipping $present_dir - already present\n";
-		next;
-	} else {
-		push (@args1,"$present_dir");
+	    print "** Skipping $present_dir - already present\n";
+ 	    next;
+	}
+	else {
+	    push (@args1,"$present_dir");
 	}			
- }
- $argsize = scalar (@args1);
- if ($argsize == 0) {
-  print "** No new directories to create .. end mkdirectories\n";
-  return;
- }
- push (@args2,@args1);
- system (@args2) && die "Couldn't run 'system (@args2)'\n";
- foreach (@args1) {
+    }
+    $argsize = scalar (@args1);
+    if ($argsize == 0) {
+	print "** No new directories to create .. end mkdirectories\n";
+	return;
+    }
+    push (@args2,@args1);
+    system (@args2) && die "Couldn't run 'system (@args2)'\n";
+    foreach (@args1) {
 	$made_dir = $_;
 	if ($made_dir =~ /wspec/) {
-		print "** Copying wspec from $autoacedir .. \n";
-		system ("/bin/cp $autoacedir/wspec/* $wspec/.") && die "Couldn't cp wspec directory\n";
+	    print "** Copying wspec from $autoacedir .. \n";
+	    system ("/bin/cp $autoacedir/wspec/* $wspec/.") && die "Couldn't cp wspec directory\n";
 	}
 	if (!-d $made_dir) {
-		print " ** mkdir for $basedir failed ** \n\n";
-		&sendmails ("MKDIR FAILED");
-		die(0);
+	    print " ** mkdir for $basedir failed ** \n\n";
+	    &sendmails ("MKDIR FAILED");
+	    die(0);
 	} 
- }
- system ("/bin/ln -s /wormsrv2/geneace/pictures $pictures") && die "Couldn't make symbolic link\n";
- return;
+    }
+    system ("/bin/ln -s /wormsrv2/geneace/pictures $pictures") && die "Couldn't make symbolic link\n";
+    return;
 }
 
 
@@ -430,20 +426,20 @@ sub parseconfig {
 # Remove confidential remarks from certain files  
 
 sub rmconfremark { 
-  @remove_confid=("stlace/stlace_Sequence.ace","camace/camace_Sequence.ace","briggsae/briggsae_Sequence.ace");
-  foreach $confid (@remove_confid) {
-    $this_acefile="$wormbasedir"."/$confid";
-    open(TEMP,">$autodir/acefiles/temp$$");
-    open(ACEFILE,"$this_acefile");
-    while(<ACEFILE>) {
-      if (/^Confidential_remark/)  {$confidential=1;}
-      if ($confidential !=1) {print TEMP $_;}
-      if (/"$/ && !/\\"$/) {$confidential=0;}
+    @remove_confid=("stlace/stlace_Sequence.ace","camace/camace_Sequence.ace","briggsae/briggsae_Sequence.ace");
+    foreach $confid (@remove_confid) {
+	$this_acefile="$wormbasedir"."/$confid";
+	open(TEMP,">$autodir/acefiles/temp$$");
+	open(ACEFILE,"$this_acefile");
+	while(<ACEFILE>) {
+	    if (/^Confidential_remark/)  {$confidential=1;}
+	    if ($confidential !=1) {print TEMP $_;}
+	    if (/"$/ && !/\\"$/) {$confidential=0;}
+	}
+	close ACEFILE;
+	close TEMP;
+	system("\\mv $autodir/acefiles/temp$$ $this_acefile");
     }
-    close ACEFILE;
-    close TEMP;
-    system("\\mv $autodir/acefiles/temp$$ $this_acefile");
-  }
 }
 
 
@@ -455,44 +451,37 @@ sub rmconfremark {
 # 011016 : dl  : Added '-f' option to the rm lines. This will ensure that non 
 #                wormpub owned files within group worm are deleted without the
 #                need for an interactive prompt
+# 021025 : dl  : Added single Dbwrite command which parses the first section of
+#                a filename to assign the timestamp user string. i.e. a file
+#                camace_Sequence.ace will be loaded as camace.
 
 sub reinitdb {
-  system ("\\rm -f $autodir/database/new/*");
-  system ("\\rm -f $autodir/database/touched/*");
-  if (-e "$autodir/database/lock.wrm") {
-    print LOGFILE "*Reinitdb error - lock.wrm file present..\n";
-    close LOGFILE;
-    die();
-  }
-  system ("\\mv $autodir/database/log.wrm $autodir/database/log.old");  
-  system ("\\rm $autodir/database/*.wrm");
-  unlink "$autodir/database/ACEDB.wrm";
-  $command=<<EOF;
-y
-EOF
-  print LOGFILE "* Reinitdb: reinitializing the database ..\n";
-  &DbWrite($command,$tace,$autodir,"ReInitDB");
-  foreach $filename (@filenames) {
-   my $command=<<END;
-pparse $filename
-save 
-quit
-END
-    if (-e $filename) {
-	$now = `date +%H:%M:%S`; chomp $now;
-	print LOGFILE "* Reinitdb: reading in new database  $filename at $now\n";
-	if ($filename =~ /misc/){
-	  &DbWrite($command,"$tace -tsuser misc_files",$autodir,"ParseFile");
-	}
-	else{
-	  &DbWrite($command,$tace,$autodir,"ParseFile");
-	}
-
-    } else {
-	print LOGFILE "* Reinitdb: $filename is not existent - skipping ..\n";
-	next;
+    system ("\\rm -f $autodir/database/new/*");
+    system ("\\rm -f $autodir/database/touched/*");
+    if (-e "$autodir/database/lock.wrm") {
+	print LOGFILE "*Reinitdb error - lock.wrm file present..\n";
+	close LOGFILE;
+	die();
     }
-}
+    system ("\\mv $autodir/database/log.wrm $autodir/database/log.old");  
+    system ("\\rm $autodir/database/*.wrm");
+    unlink "$autodir/database/ACEDB.wrm";
+    $command = "y\n";
+    print LOGFILE "* Reinitdb: reinitializing the database ..\n";
+    &DbWrite($command,$tace,$autodir,"ReInitDB");
+    foreach $filename (@filenames) {
+	$command = "pparse $filename\nsave\nquit\n";
+	if (-e $filename) {
+	    $now = `date +%H:%M:%S`; chomp $now;
+	    print LOGFILE "* Reinitdb: reading in new database  $filename at $now\n";
+	    my ($tsuser) = $filename =~ (/^(\S+)\_/);
+	    &DbWrite($command,"$tace -tsuser $tsuser",$autodir,"ParseFile");
+	}
+	else {
+	    print LOGFILE "* Reinitdb: $filename is not existent - skipping ..\n";
+	    next;
+	}
+    }
 }
 
 
@@ -502,34 +491,15 @@ END
 # edited by dl 020327 to remove GAZE link objects 
 
 sub rmautogenes {
-  my $command=<<END;
-query find sequence method = postwise
-kill
-save    
-quit
-END
-  &DbWrite($command,$tace,$autodir,"RmGeneWise");
-  $command=<<EOF;
-query find sequence method = HALFWISE
-kill
-save    
-quit
-EOF
-  &DbWrite($command,$tace,$autodir,"RmHalfWise");
-  $command=<<EOF;
-query find sequence method = gaze
-kill
-save    
-quit
-EOF
-  &DbWrite($command,$tace,$autodir,"RmGaze");
-  $command=<<EOF;
-query find sequence "GAZE:LINK*"
-kill
-save    
-quit
-EOF
-  &DbWrite($command,$tace,$autodir,"RmGazeLink");
+    my $command;
+    $command = "query find sequence method = postwise\nkill\nsave\nquit\n";
+    &DbWrite($command,$tace,$autodir,"RmGeneWise");
+    $command = "query find sequence method = HALFWISE\nkill\nsave\nquit\n";
+    &DbWrite($command,$tace,$autodir,"RmHalfWise");
+    $command = "query find sequence method = gaze\nkill\nsave\nquit\n";
+    &DbWrite($command,$tace,$autodir,"RmGaze");
+    $command = "query find sequence \"GAZE:LINK*\"\nsave\nquit\n";
+    &DbWrite($command,$tace,$autodir,"RmGazeLink");
 
 }
 
@@ -540,17 +510,9 @@ EOF
 # (makecen2hs.pl nightly cron job on rathbin)
 
 sub contigC {
-  my $command=<<END;
-find clone
-edit -D pMap
-edit -D Fingerprint
-edit -D Contig9
-edit -D Remark
-pparse $autoacedir/physical_map/cen2hs.ace
-save    
-quit
-END
-  &DbWrite($command,"$tace -tsuser Coulson",$autodir,"ContigC");
+    my $command = "find clone\nedit -D pMap\nedit -D Fingerprint\nedit -D Contig9\nedit -D Remark\n";
+    $command .= "pparse $autoacedir/physical_map/cen2hs.ace\nsave\nquit\n";
+    &DbWrite($command,"$tace -tsuser Coulson",$autodir,"ContigC");
 }
 
 
@@ -558,15 +520,9 @@ END
 # Make the maps                                   
 
 sub makemaps {
-  my $command=<<EOF;
-gif makemaps -all
-save
-gif makemaps -seqclonemap $autodir/acefiles/seqclonemap.ace
-pparse $autodir/acefiles/seqclonemap.ace
-save	    
-quit
-EOF
-  &DbWrite($command,$giface,$autodir,"MakeMaps");
+    my $command = "gif makemaps -all\nsave\ngif makemaps -seqclonemap $autodir/acefiles/seqclonemap.ace\n";
+    $command .= "pparse $autodir/acefiles/seqclonemap.ace\nsave\nquit\n";
+    &DbWrite($command,$giface,$autodir,"MakeMaps");
 }
 
 
@@ -574,19 +530,22 @@ EOF
 # Set the date correctly in displays.wrm          
 
 sub setdate {
-  @t = localtime ; while ($t[5] >= 100) { $t[5] -= 100 ; }
-  $dat = sprintf "%02d\/%02d\/%02d", $t[3], $t[4]+1, $t[5] ;
-  system ("mv $autodir/wspec/displays.wrm $autodir/wspec/displays.old") ;
-  open(FILE,"$autodir/wspec/displays.old") or do { print LOGFILE "failed to open $autodir/wspec/displays.old\n"; return 1;};
-  open(NEWFILE,">$autodir/wspec/displays.wrm") or do { print LOGFILE "failed to open $autodir/wspec/displays.wrm\n"; return 1;};
-  while (<FILE>) 
-    {if (/^_DDtMain/) {
-      print NEWFILE "_DDtMain -g TEXT_FIT -t \"C.elegans database $dat\"  -w .43 -height .23 -help acedb\n";
-    } else {print NEWFILE $_;}
-   }
-  close(FILE);
-  close(NEWFILE);
-  unlink "$autodir/wspec/displays.old" ;
+    @t   = localtime ; while ($t[5] >= 100) { $t[5] -= 100 ; }
+    $dat = sprintf "%02d\/%02d\/%02d", $t[3], $t[4]+1, $t[5] ;
+    system ("mv $autodir/wspec/displays.wrm $autodir/wspec/displays.old") ;
+    open(FILE,"$autodir/wspec/displays.old") or do { print LOGFILE "failed to open $autodir/wspec/displays.old\n"; return 1;};
+    open(NEWFILE,">$autodir/wspec/displays.wrm") or do { print LOGFILE "failed to open $autodir/wspec/displays.wrm\n"; return 1;};
+    while (<FILE>) {
+	if (/^_DDtMain/) {
+	    print NEWFILE "_DDtMain -g TEXT_FIT -t \"C.elegans database $dat\"  -w .43 -height .23 -help acedb\n";
+	} 
+	else {
+	    print NEWFILE $_;
+	}
+    }
+    close(FILE);
+    close(NEWFILE);
+    unlink "$autodir/wspec/displays.old" ;
 }
 
 
@@ -598,11 +557,11 @@ sub setdate {
 sub makedistr {
 
   # Remove old release files if present
-  if (-e "$autodir/release/database.WS"."$WS_previous".".4-0.tar.gz"){
-    print LOGFILE "Older WS version files exist, removing them\n";
-    system("rm -f $autodir/release/*WS"."$WS_previous"."*") && die "Can't remove old release files\n";
-  }
-
+    if (-e "$autodir/release/database.WS"."$WS_previous".".4-0.tar.gz"){
+	print LOGFILE "Older WS version files exist, removing them\n";
+	system("rm -f $autodir/release/*WS"."$WS_previous"."*") && die "Can't remove old release files\n";
+    }
+    
 
     open (DBWRM,"<$autodir/wspec/database.wrm");
     while (<DBWRM>) {
@@ -612,11 +571,11 @@ sub makedistr {
     }
     close DBWRM;
     print LOGFILE "makedistr: dbname $dbname\n\n";
-
+    
     system ("/bin/touch $autodir/release/files_in_tar");
     system ("/bin/touch $autodir/release/md5sum.${dbname}");
-
-
+    
+    
     $tarfiles[0] = "wspec/cachesize.wrm  wspec/constraints.wrm wspec/copyright wspec/database.wrm wspec/displays.wrm wspec/help.wrm wspec/layout.wrm wspec/models.wrm wspec/options.wrm wspec/passwd.wrm wspec/psfonts.wrm wspec/subclasses.wrm wspec/xfonts.wrm wgf wquery wscripts  pictures database/log.wrm database/database.map database/ACEDB.wrm" ;
     for ($i = 1 ; -e "$autodir/database/block$i.wrm" ; ++$i) {
 	$tarfiles[($i+4)/5] .= " database/block$i.wrm" ;
@@ -627,11 +586,9 @@ sub makedistr {
     for ($i = 0; $i < @tarfiles; ++$i) {
 	$rs = `cd $autodir; tar -hcf $autodir/release/database.$dbname.4-$i.tar $tarfiles[$i]\"`;
 	print LOGFILE "* Makedistr: made  tar file $autodir/release/database.$dbname.4-$i.tar\n";
-    if ($rs != 0) {
-	print LOGFILE "* Warning: signal $rs\n";
-    }
-
-
+	if ($rs != 0) {
+	    print LOGFILE "* Warning: signal $rs\n";
+	}
 	# list files in the tar archive
 	system ("tar -tf $autodir/release/database.$dbname.4-$i.tar >> $autodir/release/files_in_tar");
 
@@ -643,9 +600,7 @@ sub makedistr {
 
 	# calculate md5sum for the gzip file
 	system ("/nfs/disk100/wormpub/bin.ALPHA/md5sum $autodir/release/database.$dbname.4-$i.tar.gz >> $autodir/release/md5sum.$dbname");
-	
     }
-
 }
 
 
@@ -659,7 +614,6 @@ sub makedistr {
 #
 
 sub makechromlink {
-
     system ("rm -f $wormbasedir/misc/misc_chromlinks.ace");
     system ("$makeChromLinks -a > $wormbasedir/misc/misc_chromlinks.ace"); 
     if (-z "$wormbasedir/misc/misc_chromlinks.ace") {
@@ -667,13 +621,8 @@ sub makechromlink {
 	return;
     } 
     else {
-	
-my $command=<<EOF;
-pparse $wormbasedir/misc/misc_chromlinks.ace
-save     
-quit
-EOF
-    &DbWrite($command,"$tace -tsuser make_autoace",$autodir,"MakeChromLinks");
+	my $command = "pparse $wormbasedir/misc/misc_chromlinks.ace\nsave\nquit\n";
+	&DbWrite($command,"$tace -tsuser make_autoace",$autodir,"MakeChromLinks");
     }
 }
 
@@ -682,13 +631,8 @@ EOF
 # Remove History                                  
 
 sub rmhistory {
-  my $command=<<END;
-query find sequence method = history
-kill
-save    
-quit
-END
-  &DbWrite($command,$tace,$autodir,"RmHistory");
+    my $command = "query find sequence method = history\nkill\nsave\nquit\n";
+    &DbWrite($command,$tace,$autodir,"RmHistory");
 }
 
 
@@ -699,24 +643,24 @@ END
 # end with make_autoace and manually check the log.
 
 sub gffdump {
-  my $dumpdir = shift @_;
-  print LOGFILE "* DNAdump: launching process for making CHROMOSOME_*.dna files\n" ;
-  unless (fork) {
+    my $dumpdir = shift @_;
+    print LOGFILE "* DNAdump: launching process for making CHROMOSOME_*.dna files\n" ;
     unless (fork) {
-      sleep 1 until getppid == 1;
-      $rs = system ("/wormsrv2/scripts/chromosome_dump.pl -dc") ;
-      open(MAIL, "| Mail -s \"make_autoace_log\" $maintainers");
-      open (INLOG,"/bin/cat $logfile |");
-      while (<INLOG>) {
-	print MAIL $_;
-      }
-      close INLOG;
-      close MAIL;
-      exit 0;
-    }
-    exit 0;
-  } 
-  return;
+	unless (fork) {
+	    sleep 1 until getppid == 1;
+	    $rs = system ("/wormsrv2/scripts/chromosome_dump.pl -dc") ;
+	    open(MAIL, "| Mail -s \"make_autoace_log\" $maintainers");
+	    open (INLOG,"/bin/cat $logfile |");
+	    while (<INLOG>) {
+		print MAIL $_;
+	    }
+	    close INLOG;
+	    close MAIL;
+	    exit 0;
+	}
+	exit 0;
+    } 
+    return;
 }
 
 
