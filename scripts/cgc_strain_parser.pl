@@ -5,9 +5,10 @@
 # by Keith Bradnam
 #
 # Script to convert cgc strain file into ace file for geneace
-#
+# Page download and update upload to geneace has been automated [ck1]
+
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-01-27 18:11:26 $
+# Last updated on: $Date: 2003-04-28 14:52:37 $
 
 use strict;
 use Getopt::Std;
@@ -293,7 +294,7 @@ END
 my $tace = &tace;
 
 my $geneace_dir="/wormsrv1/geneace/";
-open (FH,"| $tace $geneace_dir ") || die "Failed to upload to test_Geneace";
+open (FH,"| $tace -tsuser \"CGC_strain_update\" $geneace_dir") || die "Failed to upload to test_Geneace";
 print FH $command;
 close FH;
 
@@ -336,10 +337,6 @@ into geneace, and a second to be archived in /wormsrv1/geneace which will have
 delete instructions for removing all the data you have just added.
 
 =over 4
-
-=item MANDATORY arguments:
-
--i Specify input file (CGC strain file)
 
 =back
 
