@@ -5,7 +5,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-01-17 15:38:37 $
+# Last updated on: $Date: 2003-01-17 15:58:15 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -37,6 +37,7 @@ our $lockdir = "/wormsrv2/autoace/logs/";
 my $help;      # Help/Usage page
 my $archive;   # archive GFF_splits directory into a WSxx directory
 my $debug;     # debug
+our $log;
 
 GetOptions (
 	    "help"      => \$help,
@@ -47,16 +48,13 @@ GetOptions (
 # help 
 &usage("Help") if ($help);
 
-# no debug name
-print "DEBUG = \"$debug\"\n\n" if $debug;
-&usage("Debug") if ((defined $debug) && ($debug eq ""));
+# Use debug mode?
+if($debug){
+  print "DEBUG = \"$debug\"\n\n";
+  ($maintainers = $debug . '\@sanger.ac.uk');
+}
 
-# assign $maintainers if $debug set
-($maintainers = $debug . '\@sanger.ac.uk') if ($debug);
-
-# touch logfile for run details
-$0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
-
+&create_log_files;
 
 
 ##############################
@@ -80,22 +78,10 @@ if (! -e "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS"){
 
 # runs only if -a is specified
 if($archive){
-    print "Renaming $datadir/GFF_SPLITS to $datadir/$WS_version\n";
-    system("mv $datadir/GFF_SPLITS ${datadir}/${WS_version}") && die "Couldn't rename directory\n";
-    exit(0);
+  print "Renaming $datadir/GFF_SPLITS to $datadir/$WS_version\n";
+  system("mv $datadir/GFF_SPLITS ${datadir}/${WS_version}") && die "Couldn't rename directory\n";
+  exit(0);
 }
-
- ########################################
- # Open logfile                         #
- ########################################
-
-my $logfile = "/wormsrv2/logs/GFFsplitter.$rundate.$$";
-open (LOG,">$logfile");
-LOG->autoflush();
-
-print LOG "# GFFsplitter\n\n";     
-print LOG "# run details    : $rundate $runtime\n";
-print LOG "\n";
 
 #################################################################################
 # Main Loop                                                                     #
@@ -293,7 +279,7 @@ foreach $file (@gff_files) {
 
     # GFF genes with wormpep CE accessions
     # Shouldn't do this unless Wormpep has been made else no Corresponding_protein tags in database
-    unless(-e "$lockdir/D1:Build_wormpep_final"){
+    if(-e "$lockdir/D1:Build_wormpep_final"){
       $input_file = "$datadir/GFF_SPLITS/$file.genes.gff";
       $output_file = "$datadir/GFF_SPLITS/$file.genes_acc.gff";
       &GFF_genes_with_accessions("$input_file", "$output_file");
@@ -302,37 +288,51 @@ foreach $file (@gff_files) {
     
     # GFF UTRs with CDS names
     # Shouldn't attempt to do this if UTR data has not been generated
-    unless(-e "$lockdir/B10:Generate_UTR_data" ) {
+    if(-e "$lockdir/B10:Generate_UTR_data" ) {
       my $utr_file = "$datadir/GFF_SPLITS/$file.UTR.gff";
       my $utr_cds_file = "$datadir/GFF_SPLITS/$file.UTR_CDS.gff";
       &GFF_with_UTR("$utr_file","$utr_cds_file");
   }
     
 }
-close LOG;
 
+# Tidy up
+close (LOG);
 
-###############################
-# Mail log to curator         #
-###############################
-
-open (OUTLOG,  "|/usr/bin/mailx -s \"WormBase Report: GFFsplitter\" $maintainers ");
-open (READLOG, "<$logfile");
-while (<READLOG>) {
-    print OUTLOG "$_";
-}
-close READLOG;
-close OUTLOG;
-
-###############################
-# hasta luego                 #
-###############################
+&mail_maintainer("GFFsplitter.pl finished",$maintainers,$log);
 
 exit(0);
+
+
+
+
+
 
 ###############################
 # subroutines                 #
 ###############################
+
+sub create_log_files{
+
+  # Create history logfile for script activity analysis
+  $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
+
+  # create main log file using script name for
+  my $script_name = $1;
+  $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
+  my $rundate     = `date +%y%m%d`; chomp $rundate;
+  $log        = "/wormsrv2/logs/$script_name.$rundate.$$";
+
+  open (LOG, ">$log") or die "cant open $log";
+  print LOG "$script_name\n";
+  print LOG "started at ",`date`,"\n";
+  print LOG "=============================================\n";
+  print LOG "\n";
+
+}
+
+##########################################
+
 
 sub file_size {
     my $file = shift;
