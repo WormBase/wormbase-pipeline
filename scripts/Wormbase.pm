@@ -9,7 +9,7 @@ use Exporter;
 use Carp;
 use Ace;
 @ISA       = qw(Exporter);
-@EXPORT    = qw(get_cvs_version get_wormbase_version get_wormbase_version_name get_wormpep_version copy_check mail_maintainer celeaccession tace gff_sort dbfetch clones_in_database);
+@EXPORT    = qw(get_cvs_version get_wormbase_version get_wormbase_version_name get_wormpep_version get_wormbase_release_date copy_check mail_maintainer celeaccession tace gff_sort dbfetch clones_in_database);
 @EXPORT_OK = qw(get_script_version); 
 
 
@@ -43,6 +43,42 @@ sub get_wormbase_version_name {
     $WS_version_name =~ s/ +$//;
     return($WS_version_name);
 }
+
+###################################################################################
+
+sub get_wormbase_release_date{
+
+  my $line = `ls -l /nfs/disk69/ftp/pub/wormbase/current_release/letter.WS??`;
+  my @split = split(/\s+/,$line);
+
+  my $month = $split[5];
+  ($month = "January")   if ($month eq "Jan");
+  ($month = "February")  if ($month eq "Feb");
+  ($month = "March")     if ($month eq "Mar");
+  ($month = "April")     if ($month eq "Apr");
+  ($month = "May")       if ($month eq "May");
+  ($month = "June")      if ($month eq "Jun");
+  ($month = "July")      if ($month eq "Jul");
+  ($month = "August")    if ($month eq "Aug");
+  ($month = "September") if ($month eq "Sep");
+  ($month = "October")   if ($month eq "Oct");
+  ($month = "November")  if ($month eq "Nov");
+  ($month = "December")  if ($month eq "Dec");
+
+  my $day = $split[6];
+  if    ($day eq "1") {$day .= "st";}
+  elsif ($day eq "2") {$day .= "nd";}
+  elsif ($day eq "3") {$day .= "rd";}
+  elsif ($day eq "21"){$day .= "st";}
+  elsif ($day eq "22"){$day .= "nd";}
+  elsif ($day eq "23"){$day .= "rd";}
+  elsif ($day eq "31"){$day .= "st";}
+  else                {$day .= "th";} 
+
+  my $date = $day." ".$month;
+  return($date);
+}
+
 
 ###################################################################################
 
@@ -277,6 +313,20 @@ get_wormbase_version_name
 As above, but returns the full name, e.g. 'WS47' rather than just '47'
 
 =back
+
+=over 4
+
+=item *
+
+get_wormbase_release_date
+
+Looks at the date stamp on the letter.WSxx file in the wormbase ftp directory.
+Converts this date into a string such as "21st September" which it returns.
+Creation of the letter.WSxx file occurs pretty much at the end of the rebuild
+so it is really an approximate date.
+
+=back
+
 
 =over 4
 
