@@ -326,7 +326,6 @@ dbmclose %ACC2DB;
 
 exit(0);
 
-
 sub dumpData
   {
     my $matches;
@@ -343,6 +342,7 @@ sub dumpData
 	  last HOMOLOGUES if $output_count++ ==  10; # only output the top 10
 
 	  foreach my $data (@$data_array_ref) {
+	    print "@$data\n" if ($debug);
 	    my @cigar = split(/:/,"$$data[8]");  #split in to blocks of homology
 
 	    #need to convert form gene name to CE id for worms (they are stored as genes to compare isoforms)
@@ -354,7 +354,7 @@ sub dumpData
 	    }
 	    
 	    # sort out prefix - mainly for ipi_human where it can be ENS, SW, TR, LL etc
-	    elsif ( "$$data[1]" eq "wublastp_ipi_human" ) {
+	    elsif ( "$$data[1]" eq "wublastp_human" ) {
 	      $prefix = &getPrefix("$$data[4]");
 	    }
 	
