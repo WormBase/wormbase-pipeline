@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2004-07-21 12:06:47 $
+# Last edited on: $Date: 2004-07-22 13:57:12 $
 
 
 
@@ -1301,6 +1301,9 @@ sub map_features {
   
   # PCR products
   &run_command("$scriptdir/map_PCR_products.pl");
+  
+  #Oligo_sets
+  &run_command ("$scriptdir/map_Oligo_set.pl");
   
   # RNAi experiments
   &run_command("$scriptdir/map_RNAi.pl");
