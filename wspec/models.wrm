@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: krb $
-// Last edited on: $Date: 2004-09-17 14:25:12 $
+// Last edited on: $Date: 2004-09-17 14:30:14 $
  
 
 
@@ -1111,7 +1111,9 @@
 		Genetic_code UNIQUE ?Genetic_code // needed for one gene with selenocysteine!
 	Properties Coding CDS UNIQUE Int UNIQUE Int
 			  CDS_predicted_by ?Method Float // score of method
-			  Confirmed_by #Gene_confirmation       // added [011030 krb]
+			  Prediction_status UNIQUE Predicted		// all CDSs must be one of these three things
+						   Partially_confirmed
+						   Confirmed
 		   Isoform #Evidence
 		   Start_not_found Int
 		   End_not_found
@@ -1148,12 +1150,6 @@
 	Drives_transgene  ?Transgene XREF Driven_by_CDS_promoter
 	Transgene_product ?Transgene XREF CDS
         Method UNIQUE ?Method
-
-
-
-#Gene_confirmation cDNA
-                   EST
-		   pers_comm #Evidence		// added 020405 kj	
 
 
 
