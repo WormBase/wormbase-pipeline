@@ -6,8 +6,8 @@
 #
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2003-10-28 11:01:15 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2003-10-29 11:12:56 $
 
 
 use strict;
@@ -682,7 +682,7 @@ sub create_log_files{
   my $script_name = $1;
   $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
   my $WS_version = &get_wormbase_version_name;
-  my $rundate = &runtime;
+  my $rundate = `date +%y%m%d`; chomp $rundate;
   $log        = "/wormsrv2/logs/$script_name.${WS_version}.$rundate.$$";
 
   open (LOG, ">$log") or die "cant open $log";
