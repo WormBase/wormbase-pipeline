@@ -14,7 +14,7 @@ use strict;
 my $ELEGANS_GENES = shift;
 chomp $ELEGANS_GENES;
 
-my $path = shift || '/data_2/acedb/elegans';
+my $path = glob("~wormpub/DATABASES/current_DB");
 my $counter;
 
 # NOTE: THESE MAY SHIFT!
@@ -74,8 +74,8 @@ sub dump_seqs {
     # This section accumulates information that should be propagated
     # from links and superlinks down to the gene level.
     $info{gbk}  = $s->Database(3) if $s->Database;
-    if ($s->Interpolated_gMap) {
-      $info{gmap} = join "\t",$s->Interpolated_gMap(1)->row;
+    if ($s->Interpolated_map_position) {
+      $info{gmap} = join "\t",$s->Interpolated_map_position(1)->row;
     }
     
     $info{cosmid} = $s unless $s =~ /\.\w+$/;
