@@ -17,7 +17,6 @@
 # variables #
 #############
 
-$|=1;
 use strict;
 use lib "/wormsrv2/scripts/";
 use Wormbase;
@@ -41,9 +40,11 @@ my %finaloutput = ();
 
 my $help;       # Help perdoc
 my $test;       # Test mode
-my $debug;      # Debug mode, verbose output to user running script
+my $debug;      # Debug mode, output only goes to one user
+my $verbose;    # verbose mode, more command line outout
 
 GetOptions ("debug=s"   => \$debug,
+	    "verbose"   => \$verbose,
 	    "test"      => \$test,
             "help"      => \$help
 	    );
@@ -87,7 +88,7 @@ print LOG "\n";
 ###########################################        
    
 foreach my $chromosome (@chromosomes) {
-
+    print "\n$chromosome\n" if ($verbose);
     my %exoncount = ();
     my %PCRcount  = ();
     my %genes     = ();
@@ -102,12 +103,15 @@ foreach my $chromosome (@chromosomes) {
         next unless /\S/;
         @f = split /\t/;
 
+	# ignore smd spot data from caltech
+	next if ($f[8] =~ /smd_INTERGENIC_CONTROL/);
+
 	if ($f[1] eq "GenePair_STS") {
 	    my ($name) = ($f[8] =~ /PCR_product \"(.*)\"$/);
             $PCRcount{$name}++;
             my $PCRname = $name.".".$PCRcount{$name};
             $PCR{$PCRname} = [$f[3],$f[4]];
-	    print "GenePair : '$name'\n" if ($debug);
+	    print "GenePair : '$name'\n" if ($verbose);
 	}
 	elsif (($f[2] eq "exon") && (($f[1] eq "curated")    ||
 				     ($f[1] eq "Pseudogene") ||
@@ -120,12 +124,12 @@ foreach my $chromosome (@chromosomes) {
 	    $genetype{$name} = "CDS"        if ($f[1] eq "curated");
 	    $genetype{$name} = "Transcript" if ($f[1] eq "transcript");
 	    $genetype{$name} = "Pseudogene" if ($f[1] eq "Pseudogene");
-	    print "Gene : '$name' [$genetype{$name}] exon $exoncount{$name}\n" if ($debug);
+	    print "Gene : '$name' [$genetype{$name}] exon $exoncount{$name}\n" if ($verbose);
         }
     }
     close GFF_in;
     
-    print "Finished GFF loop\n" if ($debug);
+    print "Finished GFF loop\n" if ($verbose);
 
     #########################   
     # make exons into genes #
