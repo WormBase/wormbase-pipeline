@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam aged 12 and a half
 #
-# Last updated on: $Date: 2004-11-30 17:12:22 $
+# Last updated on: $Date: 2005-02-24 16:50:23 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
@@ -73,7 +73,7 @@ our @error5;
 
 # Check for non-standard methods in CDS class
 my $CDSfilter = "";
-my @CDSfilter = $db->fetch (-query => 'FIND CDS; method != Transposon_CDS; method != curated; method !=history');
+my @CDSfilter = $db->fetch (-query => 'FIND CDS; method != Transposon_CDS; method != curated; method !=history; method !=Genefinder; method !=twinscan');
 foreach $CDSfilter (@CDSfilter) {
   push(@error4, "ERROR! CDS:$CDSfilter contains an invalid method please check\n");
 }
@@ -183,11 +183,13 @@ foreach my $gene_model (@Predictions){
   # check Method isn't 'hand_built'
   push(@error3,"ERROR: $gene_model method is hand_built\n") if ($method_test eq 'hand_built');
   print "ERROR: $gene_model method is hand_built\n" if ($method_test eq 'hand_built' && $verbose);
-
+  
   # check From_laboratory tag is present.
-  my $laboratory = ($gene_model->From_laboratory);
-  push(@error3, "ERROR: $gene_model does not have From_laboratory tag\n") if (!defined($laboratory));
-  print "ERROR: $gene_model does not have From_laboratory tag\n" if (!defined($laboratory) && $verbose);
+  if (($method_test ne 'Genefinder') && ($method_test ne 'twinscan')) {
+my $laboratory = ($gene_model->From_laboratory);
+push(@error3, "ERROR: $gene_model does not have From_laboratory tag\n") if (!defined($laboratory));
+print "ERROR: $gene_model does not have From_laboratory tag\n" if (!defined($laboratory) && $verbose);
+}
 
    # check that history genes have a history method.
   if ($method_test ne "history" && $gene_model->name =~ /\w+\.\w+\:\w+/) {
@@ -203,13 +205,22 @@ foreach my $gene_model (@Predictions){
   my $Genehist_ID = $gene_model->at('Visible.Gene_history.[1]');
 
   if ($gene_model->name =~ (/\w+\d+\.\d+\Z/)) {
-    push(@error2, "ERROR: $gene_model does not have a Gene ID!\n") unless (defined $Gene_ID);
-    push(@error2, "ERROR: The Gene ID '$Gene_ID' in $gene_model is invalid!\n") unless ($Gene_ID =~ /WBGene[0-9]{8}/);
+    if (defined $Gene_ID) {
+      push(@error2, "ERROR: The Gene ID '$Gene_ID' in $gene_model is invalid!\n") unless ($Gene_ID =~ /WBGene[0-9]{8}/);
+    }
+    else {
+      push(@error2, "ERROR: $gene_model does not have a Gene ID!\n");
+    }
   }
   elsif ($gene_model->name =~ (/\w+\.\w+\:\w+/)) {
-    push(@error2, "ERROR: $gene_model does not have the Gene_history populated\n") unless (defined $Genehist_ID);
-    push(@error2, "ERROR: The Gene ID '$Genehist_ID' in $gene_model is invalid!\n") unless ($Genehist_ID =~ /WBGene[0-9]{8}/);
+    if (defined $Genehist_ID) {
+      push(@error2, "ERROR: The Gene ID '$Genehist_ID' in $gene_model is invalid!\n") unless ($Genehist_ID =~ /WBGene[0-9]{8}/);
+    }
+    else {
+      push(@error2, "ERROR: $gene_model does not have the Gene_history populated\n");
+    }
   }
+
   if ((defined $Genehist_ID) && (defined $Gene_ID)) {
     push(@error2, "ERROR: Gene Model $gene_model contains both a Gene and a Gene_history tag, Please fix.\n");
   }
@@ -240,22 +251,22 @@ foreach my $error (@error1){
 foreach my $error (@error2){
   $count_errors++;
   print LOG "$count_errors) $error";
-  last if $count_errors > 19;
+  last if $count_errors > 190;
 }
 foreach my $error (@error3){
   $count_errors++;
   print LOG "$count_errors) $error";
-  last if $count_errors > 19;
+  last if $count_errors > 190;
 }
 foreach my $error (@error4){
   $count_errors++;
   print LOG "$count_errors) $error";
-  last if $count_errors > 19;
+  last if $count_errors > 190;
 }
 foreach my $error (@error5){
   $count_errors++;
   print LOG "$count_errors) $error";
-  last if $count_errors > 19;
+  last if $count_errors > 190;
 }
 
 print LOG "\ncheck_predicted_genes.pl ended at ",`date`,"\n";;
