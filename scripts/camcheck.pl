@@ -6,8 +6,8 @@
 #
 # Usage: camcheck.pl
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2002-12-13 17:08:20 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2003-03-28 09:30:49 $
 #
 # see pod documentation (i.e. 'perldoc camcheck.pl') for more information.
 #
@@ -39,13 +39,14 @@ my $runtime = `date +%H:%M:%S`; chomp $runtime;
 ##############################
 # command-line options       #
 ##############################
-use vars qw/ $opt_d $opt_h $opt_w $opt_m $opt_s $opt_l $opt_e/;
-getopts ('hdwms:le:');
+use vars qw/ $opt_d $opt_h $opt_w $opt_m $opt_s $opt_l $opt_e $opt_v/;
+getopts ('hd:wms:le:v');
 &usage(0) if ($opt_h);
 my $debug = $opt_d;
+my $verbose = $opt_v; # for specifying more output
 
 #  -h, Help
-#  -d, Debug/Verbose mode
+#  -d, Debug, specify user name to receive email
 #  -w, Weekly checks are active
 #  -m, Montly checks are active
 #  -s, select which database to run against
@@ -69,18 +70,26 @@ if( $opt_s ){
 # only email a specific person responsible for a database
 $maintainers = $opt_e if $opt_e;
 
-# only tell one person if running debug mode (overrides database owner email)
-$maintainers = "ar2\@sanger.ac.uk" if ($debug);
+
+# Use debug mode?
+if($debug){
+  print "DEBUG = \"$debug\"\n\n";
+  ($maintainers = $debug . '\@sanger.ac.uk');
+}
+
+# Verbose mode on?
+print "Verbose mode selected\n\n" if ($verbose);
 
 
 ########################################
 # Open logfile                         #
 ########################################
-my $dbname = $dbpath =~ /\/\w+$/;
-my $log="/wormsrv2/logs/camcheck$dbname.$rundate.$$";
+my $dbname = $dbpath;
+$dbname =~ s/.*camace(.*)/camace$1/;
+my $log="/wormsrv2/logs/camcheck.$dbname.$rundate.$$";
 
 
-open (LOG,">$log");
+open (LOG,">$log") || die "Couldn't write to log file\n";
 LOG->autoflush();
 
 print LOG "# camcheck.pl\n";     
@@ -115,7 +124,7 @@ while(defined($line=<CLONEFILE>)){
   my $clone = $1;
   my $dir_date = $2;
   
-  print "[$clone|$dir_date]    \t" if ($debug);
+  print "[$clone|$dir_date]    \t" if ($verbose);
 
   ######################################################################
   # Retrieve the first sequence and date FROM DIRECTORY                #
@@ -180,31 +189,31 @@ while(defined($line=<CLONEFILE>)){
   # ?Sequence is Finished but not annotated                            #
   ######################################################################
     
-  print " [FINISHED/ANNOTATED" if ($debug);
+  print " [FINISHED/ANNOTATED" if ($verbose);
   &finannot($obj);
 
   ######################################################################
   # Check for N's in FINISHED sequences                                #
   ######################################################################
 	
-  print " | N's" if ($debug);
+  print " | N's" if ($verbose);
   &checkchars($obj,$seq_ace);
 
   ######################################################################
   # Compare date and checksum                                          #
   ######################################################################
 
-  print " | DATE" if ($debug);
+  print " | DATE" if ($verbose);
   &dateseq($obj,$dir_date);
 
-  print " | CHKSUM" if ($debug);
+  print " | CHKSUM" if ($verbose);
   &chksum($seq_file,$seq_ace,$clone);
 
   ######################################################################
   # Check correctness of gene structure                                #
   ######################################################################
 
-  print " | CDS_coords" if ($debug);
+  print " | CDS_coords" if ($verbose);
   &checkgenes($obj);
 
   ######################################################################
@@ -212,7 +221,7 @@ while(defined($line=<CLONEFILE>)){
   ######################################################################
 
   if ($opt_w) {
-      print " | Sequence versions" if ($debug);
+      print " | Sequence versions" if ($verbose);
       &check_sequence_version($obj);
   }
   
@@ -220,7 +229,7 @@ while(defined($line=<CLONEFILE>)){
   # last check complete, tidy up                                       #
   ######################################################################
 
-  print "]\n" if ($debug);
+  print "]\n" if ($verbose);
 
   ######################################################################
   # Get rid of this sequence object                                    #
@@ -269,10 +278,10 @@ if (@multimap_clones){
 my $i = $db->fetch_many(-query=> 'find Sequence "SUPERLINK*"');  
 while (my $obj = $i->next) {
   my $link = $obj;
-  print "[$link]    \t" if ($debug);
-  print " | CDS_coords" if ($debug);
+  print "[$link]    \t" if ($verbose);
+  print " | CDS_coords" if ($verbose);
   &checkgenes($obj);
-  print "]\n" if ($debug);
+  print "]\n" if ($verbose);
 }
 
 $runtime = `date +%H:%M:%S`; chomp $runtime;
@@ -766,7 +775,9 @@ all Genome_sequences and SUPERLINK* objects.
 
 =item -h, Help
 
-=item -d, Debug/Verbose mode
+=item -d <username>, debug mode, sends email to user only
+
+=item -v, verbose - writes longer output to screen
 
 =item -w, Weekly checks are active
 
