@@ -1,12 +1,12 @@
 #!/usr/local/bin/perl5.8.0 -w
 
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2003-10-23 09:17:06 $
+# Last updated on: $Date: 2003-10-24 13:45:54 $
 
 package EMBL_feature_parser;
 
 use strict;
-use lib "/wormsrv2/scripts";
+#
 
 # initialize a hash to bless
 sub init {
@@ -24,15 +24,20 @@ sub download_EMBL_release {
   print $version, "\n";
 
   # directory, files used for EMBL update
-  my $output_dir = "/wormsrv1/chaokung/EMBL/OUTPUT";
+  #my $output_dir = "/wormsrv1/chaokung/EMBL/OUTPUT";
+  #my $download = "$output_dir/embl";
+  my $output_dir = "/nfs/team71/worm/ck1/EMBL";
   my $download = "$output_dir/embl";
-  my $flatfile= "$output_dir/S2_".$version."_EMBL_entry_gene_tag_no_seqs";
 
-  print "\nDownloading EMBL Release $version . . .\n";
+
+  #my $flatfile= "$output_dir/S2_".$version."_EMBL_entry_gene_tag_no_seqs";
+  my $flatfile = "acc";
+
+  #print "\nDownloading EMBL Release $version . . .\n";
   $this->{flatfile}=$flatfile;
 
   # query parameters
-  `getz -e "(([emblrelease-Division:inv] & [emblrelease-Organism:caenorhabditis*]) & (([emblrelease-FtKey:polya_site] | [emblrelease-FtKey:polya_signal]|[emblrelease-FtQualifier:gene]) > parent )) " > $download`;
+#  `getz -e "(([emblrelease-Division:inv] & [emblrelease-Organism:caenorhabditis*]) & (([emblrelease-FtKey:polya_site] | [emblrelease-FtKey:polya_signal]|[emblrelease-FtQualifier:gene]) > parent )) " > $download`;
 
   print "\nDeleting protein and DNA sequences from EMBL flatfile...\n";
 
@@ -52,7 +57,7 @@ sub download_EMBL_release {
   }
   close EMBL;
   close IN;
-  system("rm -f $download");
+#  system("rm -f $download");
 }
 
 # generic EMBL entry parser to retrieve any feature and its corresponding qualifier(s)
