@@ -16,15 +16,6 @@ tag which XREFs to a Locus tag in the Allele classs
 28th April, 2004
 Added Gene tag to Balancer hash
 
-29th April, 2004
-GADFLY protein objects replaced by FlyBase protein objects, just change to object name for proteins.
-
-30th April, 2004
-Added 'Library_screened' tag to ?Y2H
-
-14th May, 2004
-Remove two UNIQUE qualifiers after 'Laboratory' and 'CGC_representative_for' tag in the Person class
-
 14th May, 2004
 Added new event option in Gene_history_action hash.  Genes can now have 'Changed_class' tag set should they change from (say) a CDS to a Pseudogene.
 
@@ -32,8 +23,6 @@ Added new event option in Gene_history_action hash.  Genes can now have 'Changed
 Removed UNIQUE qualifer for Corresponding_transcript tag in CDS class, so that CDS objects can now connect to multiple
 transcripts
 
-14th May, 2004
-misc_RNA tag renamed to (SOFA-compliant) ncRNA tag in ?Sequence and ?Transcript models
 
 14th May, 2004
 RNA tag in Sequence class now has new set subtags to categorise what type of RNA it is,
@@ -51,9 +40,6 @@ Fixed bug in PCR product model, which was not linking to Transcript class proper
 2nd June, 2004
 Added Isoform tag to ?Pseudogene model
 
-2nd June, 2004
-Added Species tag to RNAi model. We might have briggsae RNAi info in future
-
 30th June, 2004
 Added SO_term model to handle SOFA terms (a la GO_term) and possibly link
 to Feature objects (as a starting point)
@@ -65,4 +51,10 @@ New gene history action event of 'Made_into_transposon'
 Gene objects now have an SMapped extent on to Sequence objects
 
 
+23rd July
+CDS, Transcript, and Gene tags in Gene class now become Corresponding_XXX tags
 
+New Library class to support new data on nematode EST consensi (from Blaxter group in Edinburgh)
+EST sequence objects (non-C.elegans) will now link to Library class via Library tag, and those
+consensus sequences will have a EST_consensus tag (those part of a consensus will have a 
+Contained_in_cluster tag which XREFs to a Contains_reads tag)

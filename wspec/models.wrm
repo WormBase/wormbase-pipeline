@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: krb $
-// Last edited on: $Date: 2004-07-09 15:00:29 $
+// Last edited on: $Date: 2004-07-23 09:09:56 $
  
 
 
@@ -356,14 +356,12 @@
                   In_cluster ?Locus XREF Contains // new way of linking to Clusters in locus class
                   GO_term ?GO_term XREF Gene ?GO_code #Evidence
 		  Contained_in_operon ?Operon XREF Contains_gene
-        Molecular_info CDS ?CDS XREF Gene #Evidence             // to link to live CDSs
-                       CDS_history ?CDS XREF Gene_history       // to link to history CDSs
-                       Transcript ?Transcript XREF Gene #Evidence
-                       Transcript_history ?Transcript XREF Gene_history
-                       Pseudogene ?Pseudogene XREF Gene #Evidence
-                       Pseudogene_history ?Pseudogene XREF Gene_history
-                       Gene_variant_count UNIQUE Int    // how many isoforms have been made (including Pseudogenes and non coding)
-                                                        // intended for acedb code to look at this when suggesting new gene name
+        Molecular_info Corresponding_CDS ?CDS XREF Gene #Evidence             // to link to live CDSs
+                       Corresponding_CDS_history ?CDS XREF Gene_history       // to link to history CDSs
+                       Corresponding_transcript ?Transcript XREF Gene #Evidence
+                       Corresponding_transcript_history ?Transcript XREF Gene_history
+                       Corresponding_pseudogene ?Pseudogene XREF Gene #Evidence
+                       Corresponding_pseudogene_history ?Pseudogene XREF Gene_history
                        Other_sequence ?Sequence XREF Gene #Evidence  // for linking to mRNAs etc. that correspond to a gene		   
         Experimental_info RNAi_result ?RNAi XREF Gene
                           Expr_pattern ?Expr_pattern XREF Gene
@@ -938,18 +936,19 @@
 		  Date_directory UNIQUE Text	        // date of this version for cosmids, changed sdm 000731 to text
 		  Life_stage UNIQUE ?Life_stage // to capture details of ESTs that are from different libraries
 		  Species UNIQUE ?Species
-	  Visible	Title UNIQUE ?Text
-			Matching_CDS ?CDS XREF Matching_cDNA
-			Matching_transcript ?Transcript XREF Matching_cDNA // to link ESTs/mRNAs to RNA genes
-			Matching_pseudogene ?Pseudogene XREF Matching_cDNA // for ESTs that match Pseudogenes [krb 030801]
-		  	Clone ?Clone XREF Sequence 
-			GO_term ?GO_term XREF Sequence ?GO_code #Evidence
-			Gene ?Gene XREF Other_sequence  // for where mRNAs etc. correspond to a gene
-			Paired_read ?Sequence XREF Paired_read          // dl 020110
-	  		Reference ?Paper XREF Sequence
-			Expr_pattern ?Expr_pattern XREF Sequence
-			Confidential_remark ?Text
-			Remark ?Text #Evidence
+		  Library UNIQUE ?Library
+	  Visible Title UNIQUE ?Text
+		  Matching_CDS ?CDS XREF Matching_cDNA
+		  Matching_transcript ?Transcript XREF Matching_cDNA // to link ESTs/mRNAs to RNA genes
+		  Matching_pseudogene ?Pseudogene XREF Matching_cDNA // for ESTs that match Pseudogenes [krb 030801]
+		  Clone ?Clone XREF Sequence 
+		  GO_term ?GO_term XREF Sequence ?GO_code #Evidence
+		  Gene ?Gene XREF Other_sequence  // for where mRNAs etc. correspond to a gene
+		  Paired_read ?Sequence XREF Paired_read          // dl 020110
+	  	  Reference ?Paper XREF Sequence
+		  Expr_pattern ?Expr_pattern XREF Sequence
+		  Confidential_remark ?Text
+		  Remark ?Text #Evidence
 		// tag2 system: names of all objects following next tag are shown in the 
 		//   general annotation display column as "tag:objname"
 	  Properties    Genomic_canonical Gene_count UNIQUE Int                  // added tag for dot name tracking [020128 dl]
@@ -959,6 +958,7 @@
 			     EST_3
 			     Capped_5	               // Indicates capped 5' end - for Lincoln [06/12/01 krb]
 			     TSL_tag		       // Indicates a short RT-PCR product for TSL detection [030220 dl]
+			EST_consensus		       // Designates this object as a consensus
 			// if RNA tag, acedb outputs U in place of T in sequence output
 			RNA UNIQUE mRNA UNIQUE Processed_mRNA
 					       Unprocessed_mRNA
@@ -993,6 +993,8 @@
 	  Splices	Confirmed_intron  Int Int #Splice_confirmation
 			Predicted_5 ?Method Int Int UNIQUE Float // (x, x+1) or (x, x-1)
 			Predicted_3 ?Method Int Int UNIQUE Float // (x, x+1) or (x, x-1)
+	  Cluster_information Contains_reads       ?Sequence XREF Contained_in_cluster  // Links cluster contig and
+			      Contained_in_cluster ?Sequence XREF Contains_reads        // individual reads
 	  Map ?Map XREF Sequence #Map_position		// use in particular for Genomic_canonical
 	  Interpolated_map_position UNIQUE ?Map UNIQUE Float // new for updated CDS-based interpolated map positions [krb 030502]
           Oligo ?Oligo XREF In_sequence Int UNIQUE Int  // for OSP and human mapping mostly
@@ -1120,8 +1122,8 @@
 	Gene_regulation Trans_regulator ?Gene_regulation XREF Trans_regulator_seq // new for Wen [030804 krb]
                         Trans_target    ?Gene_regulation XREF Trans_regulated_seq // new for Wen
                         Cis_target      ?Gene_regulation XREF Cis_regulated_seq  // new for Wen
-	Visible Gene UNIQUE ?Gene XREF CDS // when live 
-		Gene_history UNIQUE ?Gene XREF CDS_history // when dead
+	Visible Gene UNIQUE ?Gene XREF Corresponding_CDS // when live 
+		Gene_history UNIQUE ?Gene XREF Corresponding_CDS_history // when dead
 		Corresponding_transcript ?Transcript XREF Corresponding_CDS // links CDS' to new-style ?Transcript
                                                                             // objects, 1-to-1 relationship
 		Corresponding_protein UNIQUE ?Protein XREF Corresponding_CDS #Evidence
@@ -1176,8 +1178,8 @@
 			Database ?Database ?Database_field UNIQUE ?Accession_number XREF Transcript
                 Origin  From_laboratory UNIQUE ?Laboratory                         // [020306 kj]
                         Species UNIQUE ?Species                                    // [020306 kj]
-                Visible Gene ?Gene XREF Transcript // for live transcripts
-			Gene_history UNIQUE ?Gene XREF Transcript_history // when Transcript is dead
+                Visible Gene ?Gene XREF Corresponding_transcript // for live transcripts
+			Gene_history UNIQUE ?Gene XREF Corresponding_transcript_history // when Transcript is dead
 			Alleles ?Allele XREF Transcript // added to fit two alleles of RNA genes [021127 krb]
 			Orthologue ?Transcript XREF Orthologue ?Species #Evidence  // [030310 krb]
                         Matching_cDNA ?Sequence XREF Matching_transcript #Evidence // to attach non-coding RNA genes to matching ESTs
@@ -1236,8 +1238,8 @@
                                RNA_pseudogene Text    // Text can store type of RNA (probably tRNA)
                                Transposon
 		Properties Isoform #Evidence
-                Visible Gene         UNIQUE ?Gene XREF Pseudogene         // when Pseudogene is live
-                        Gene_history UNIQUE ?Gene XREF Pseudogene_history // when Pseudogene is dead
+                Visible Gene         UNIQUE ?Gene XREF Corresponding_pseudogene         // when Pseudogene is live
+                        Gene_history UNIQUE ?Gene XREF Corresponding_pseudogene_history // when Pseudogene is dead
                         Matching_cDNA ?Sequence XREF Matching_pseudogene #Evidence
                         Brief_identification UNIQUE ?Text #Evidence
                         Corresponding_PCR_product ?PCR_product XREF Overlaps_pseudogene 
@@ -1273,6 +1275,27 @@
 	    From_laboratory UNIQUE ?Laboratory
             Remark ?Text #Evidence
             Method UNIQUE ?Method
+
+
+
+///////////////////////////////////////////////////////////////////////////
+//
+// New ?Library class [040723 dl1]
+//
+// To represent libraries used for sequencing of nematode ESTs
+// Information to come from Marc Blaxters group in Edinburgh
+//
+///////////////////////////////////////////////////////////////////////////
+
+
+?Library DB_info Database ?Database ?Database_field UNIQUE ?Accession_number
+	 Origin  Species UNIQUE ?Species
+		 Strain UNIQUE ?Strain
+		 Life_stage UNIQUE ?Life_stage
+		 Tissue ?Text
+	 Description ?Text                       // Description lifted from NEMBASE
+	 Vector ?Sequence                        // Should we store vector sequences in the database?
+
 
 
 
