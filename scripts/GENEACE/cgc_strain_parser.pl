@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.0 -w
+#!/usr/local/bin/perl5.8.0 -w
 # 
 # cgc_strain_parser.pl
 #
@@ -8,13 +8,12 @@
 # Page download and update upload to geneace has been automated [ck1]
 
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-11-30 14:39:46 $
+# Last updated on: $Date: 2004-12-03 16:48:28 $
 
 use strict;
-use Getopt::Std;
+use Getopt::Long;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
-use Cwd 'chdir';
 use GENEACE::Geneace;
 
 
@@ -32,23 +31,23 @@ if ($user ne "wormpub"){
 # command-line options
 ######################
 
-my $opt_h = "";      # help
-getopts ('h');
-&usage if ($opt_h);
+my $help;      # help
+my $load;      # whether to load files to geneace or not
+
+GetOptions ("help"   => \$help,
+            "load"   => \$load);
+
+&usage if ($help);
 
 
-###############################
-# touch logfile for run details
-###############################
+#######################
+# misc variables
+#######################
 
-$0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
-
-
+my $path        = "/wormsrv1/geneace/STRAIN_INFO";
+my $geneace_dir = "/wormsrv1/geneace/";
+my $tace = &tace;
 my $rundate = &rundate;
-
-# set main path
-my $path = "/wormsrv1/geneace/STRAIN_INFO";
-
 
 
 ##########################
@@ -56,7 +55,6 @@ my $path = "/wormsrv1/geneace/STRAIN_INFO";
 ##########################
 
 my $input_file = "$path/cgc_strain_list_$rundate";
-
 system("wget -O $input_file http://biosci.umn.edu/CGC/Strains/gophstrnt.txt") && die "Unable to download strain data file from CGC website\n\n";
 
 
@@ -67,7 +65,7 @@ system("wget -O $input_file http://biosci.umn.edu/CGC/Strains/gophstrnt.txt") &&
 my $paper_IDs = "$path/caltech_paper_IDs.$rundate.txt";
 system("wget -O $paper_IDs http://minerva.caltech.edu/~acedb/paper2wbpaper.txt") && die "Unable to download paper ID file from Caltech website\n\n";
 
-# now build hash linking cgc IDs to WBPaper IDs
+# Build hash linking cgc IDs to WBPaper IDs
 my %cgc2paperID;
 
 open(PAPER, "<$paper_IDs") || die "Can't open paper ID input file\n";
@@ -83,229 +81,187 @@ while(<PAPER>){
 close(PAPER);
 
 
-########################################################################
-# extract info of each strain obj and make ace file: cgc_strain_info.ace
-######################################################################## 
 
-chdir ("$path");
 
-open(INPUT, $input_file) || die "Can't open inputfile!"; 
-open(DELETE_STRAIN,">cgc_strain_info_$rundate.delete.ace") || die "can't create output file\n";
-open(STRAIN,">cgc_strain_info_$rundate.ace") || die "cant create output file1\n";
-
-my $current_strain_ace = "cgc_strain_info_$rundate.ace";
-
-# get hash to convert CGC name to Gene id
+############################################
+# get hash to convert CGC name to Gene ID
+############################################
 my $ga = init Geneace();
 my %Gene_info = $ga -> gene_info();
 my $last_gene_id_number = $ga ->get_last_gene_id();
 
 
 
-# Count how many strains to loop through
-my $strain_count = `grep Strain: $input_file | wc -l`;
 
-# loop through input file using following record separator
+########################################################################
+# Set up various output files
+######################################################################## 
+
+my $current_strain_ace      = "$path/cgc_strain_info_$rundate.ace";
+my $delete_strain_ace       = "$path/cgc_strain_info_$rundate.delete.ace";
+my $gene_allele_connections = "$path/gene_allele_connections.$rundate.ace";
+my $potential_new_genes     = "$path/potential_new_genes.$rundate.ace";
+my $backup_file             = "$path/strain_class_backup.$rundate.ace";
+
+open(STRAIN,       ">$current_strain_ace") || die "cant create output file $current_strain_ace\n";
+open(DELETE_STRAIN,">$delete_strain_ace") || die "can't create $delete_strain_ace\n";
+open(GENE2ALLELE,  ">$gene_allele_connections") || die "\nCan't open $gene_allele_connections\n";
+open(NEWGENES,     ">$potential_new_genes") || die "\nCan't open $potential_new_genes\n";
+
+print NEWGENES "// This file should *ONLY* be loaded to geneace when it has been fully checked\n";
+print NEWGENES "// by hand.  If these Gene objects are ok, then they will need Gene IDs added.\n";
+print NEWGENES "// Some of these gene names might already exist if they are from non-elegans species.\n\n";
+
+
+
+############################################
+# loop through strain data making ace files
+############################################
+
+# use following record separator
 $/ = "--------------------";
 
 my $big_counter=0;
 
-my $CGC = "non_CGC_loci_from_CGC_strain_info";
-open(CGC, ">$CGC") || die "\nCan't open $CGC\n";
+# Count how many strains to loop through
+my $strain_count = `grep Strain: $input_file | wc -l`;
 
+open(INPUT, $input_file) || die "Can't open inputfile!"; 
 
 while(<INPUT>){
   # drop out of loop before you reach last line of file
   last if $big_counter == $strain_count;
   $big_counter++;
 
-  my $ace_object;
-  my $delete_ace_object;
-
   #remove carriage returns and new lines
   s/\015//g;
   s/\012//g;
 
-  my $strain;
   m/\s+Strain: (.*?)Species:/;
-  $strain = $1;
+  my $strain = $1;
+
+  # skip object if no strain name
+  next if(!defined($strain));
+
   $strain =~ s/\s+//g;
   if ($strain){
-    $ace_object = "Strain : \"$strain\"\n";
-    $delete_ace_object = "\n\nStrain : \"$strain\"\n";
+    print STRAIN "Strain : \"$strain\"\n";
+    print DELETE_STRAIN "\n\nStrain : \"$strain\"\n";
   }
   my $species;
   m/\s+Species: (.+)Genotype:/;
   $species = $1;
   $species =~ s/\s+$//g;
   if ($strain){
-    $ace_object .= "Species : \"$species\"\n";
-    $delete_ace_object .= "Species : \"$species\"\n";
+    print STRAIN "Species \"$species\"\n";
+    print DELETE_STRAIN  "Species \"$species\"\n";
   }
 
-  my $genotype;
   m/Genotype: (.*?)Description:/;
-  $genotype = $1;
-  my $geno = $1;
+  my $genotype = $1;
+  my $original_genotype = $genotype; # will be used later
   $genotype =~ s/\s{2,}/ /g; # condense whitespace to single gap between words
   $genotype =~ s/\s+$//g; # remove trailing whitespace
-  $ace_object .= "Genotype \"$genotype\"\n" unless ($genotype eq "");
-  $delete_ace_object .= "-D Genotype \"$genotype\"\n" unless ($genotype eq "");
+  print STRAIN "Genotype \"$genotype\"\n" unless ($genotype eq "");
+  print DELETE_STRAIN  "-D Genotype \"$genotype\"\n" unless ($genotype eq "");
 
   my $clone;
-  my @loci;
-  my @loci2;
-  my @loci3;
-  my @alleles;
-  my @alleles2;
-  my @alleles3;
-  my @rearrangements;
-  my @transgenes;
-
-  my $counter =0;
-#  print "BEFORE: $genotype\n";
 
   # find simple locus allele combinations e.g. spt-3(hc184)
   while($genotype =~ m/([Ca-z\-]{3,6}\-\d+)\(([a-z]{1,2}\d+)\)/){
-    $loci[$counter] = $1;
-    $alleles[$counter] = $2;
+    my $gene = $1;
+    my $allele = $2;
+    &check_details($gene,$allele,$strain,$species);   
     $genotype =~ s/[Ca-z\-]{3,6}\-\d+\([a-z]{1,2}\d+\)//;
-    $counter++;
   }
 
   # find chromosomal aberrations e.g. szT1
-  $counter = 0;
   while($genotype =~ m/([a-z]{1,2}(Dp|Df|In|T|C)\d+)/){
-    $rearrangements[$counter] = $1;
+    my $rearrangement = $1;
+    print STRAIN "Rearrangement \"$rearrangement\"\n";
+    print DELETE_STRAIN  "-D Rearrangement \"$rearrangement\"\n";
     $genotype =~ s/[a-z]{1,2}(Dp|Df|In|T|C)\d+//;
-    $counter++;
   }
+
   # find transgenes e.g. zhEx11
-  $counter = 0;
   while($genotype =~ m/([a-z]{1,2}(Ex|Is)\d+)/){
-    $transgenes[$counter] = $1;
+    my $transgene = $1;
+    print STRAIN "Transgene \"$transgene\"\n";
+    print DELETE_STRAIN  "-D Transgene \"$transgene\"\n";
+
     $genotype =~ s/[a-z]{1,2}(Ex|Is)\d+//;
-    $counter++;
   }
+
 
   # find double barrelled alleles (revertants) e.g. daf-12(rh61rh412) 
-  $counter = 0;
   while($genotype =~ m/([Ca-z\-]{3,6}\-\d+)\(([a-z]{1,2}\d+)([a-z]{1,2}\d+)\)/){
-    $loci2[$counter] = $1;
-    $alleles2[$counter] = $2;
-    $counter++;
-    $alleles2[$counter] = $3;
+    my $gene = $1;
+    # need to split up allele name into two fields
+    my $allele1 = $2;
+    my $allele2 = $3;
+
+    &check_details($gene,$allele1,$strain,$species);
+    &check_details($gene,$allele2,$strain,$species);
     $genotype =~ s/[Ca-z\-]{3,6}\-\d+\([a-z]{1,2}\d+[a-z]{1,2}\d+\)//;
-    $counter++;
   }
 
 
-  # find alleles attached to bogus loci e.g. let-?(h661)
-  $counter =0;
-  while($genotype =~ m/\(([a-z]{1,2}\d+)\)/){
-    $alleles3[$counter] = $1;
+  # find alleles attached to non-approved, or unusual gene names e.g. let-?(h661)
+  while($genotype =~ m/(\w+\S*)\(([a-z]{1,2}\d+)\)/){
+    my $gene = $1;
+    my $allele = $2;
+    &check_details($gene,$allele,$strain,$species);
     $genotype =~ s/\([a-z]{1,2}\d+\)//;
-    $counter++;
   }
 
-  # find any skulking loci missed by steps above
-  $counter =0;
-  while($genotype =~ m/[Ca-z\-]{3,6}\-\d+/){
-    $loci3[$counter] = $1;
+
+  # find any skulking gene names missed by steps above, these are often where there is no allele name
+  # or the allele name is wild-type, e.g. unc-24(+)
+  while($genotype =~ m/([a-z]{3,4}\-\d+)/){
+    my $gene = $1;
+    # can't use check_details subroutine as there is no allele name to pass so add Strain->Gene connections here
+    if (exists $Gene_info{$gene}{'Gene'}){
+      print STRAIN "Gene \"$Gene_info{$gene}{'Gene'}\"\n";
+      print DELETE_STRAIN  "-D Gene \"$Gene_info{$gene}{'Gene'}\"\n";
+    }
     $genotype =~ s/[Ca-z\-]{3,6}\-\d+//;
-    $counter++;
   }
 
-  # will not write out Gene tag if the loci from genotype is not a CGC name
-  foreach my $i (@loci) {
-    $ace_object .= "Gene $Gene_info{$i}{'Gene'}\n" if exists $Gene_info{$i}{'Gene'};
-    if (!exists $Gene_info{$i}{'Gene'} && $i !~ /^Cb|Cr|Cv/ ){
-      print CGC "\n\/\/CGC issue: locus $i ($strain: $geno) is not yet linked to a gene id\n";
-      $last_gene_id_number++;
-      my $id = sprintf("%08d", $last_gene_id_number);
 
-      print CGC "Gene : \"WBGene$id\"\n";
-      print CGC "Version  1\n";
-      print CGC "Other_name \"$i\"\n";
-      print CGC "Public_name \"$i\"\n";
-      print CGC "Live\n";
-      print CGC "Species  \"Caenorhabditis elegans\"\n";
-      print CGC "Version_change 1 now \"WBPerson2970\" Created\n";
-      print CGC "Strain \"$strain\"\n";
-      print CGC "Remark \"$i is parsed from CGC strain $strain\"\n";
-    }
-  }
-
-  foreach my $i (@loci2) {
-    $ace_object .= "Gene $Gene_info{$i}{'Gene'}\n" if exists $Gene_info{$i}{'Gene'};
-    if (!exists $Gene_info{$i}{'Gene'} && $i !~ /^Cb|Cr|Cv/ ){
-      print CGC "\n\/\/CGC issue: locus $i ($strain: $geno) is not yet linked to a gene id\n";
-      $last_gene_id_number++;
-      my $id = sprintf("%08d", $last_gene_id_number);
-
-      print CGC "Gene : \"WBGene$id\"\n";
-      print CGC "Version  1\n";
-      print CGC "Other_name \"$i\"\n";
-      print CGC "Public_name \"$i\"\n";
-      print CGC "Live\n";
-      print CGC "Species  \"Caenorhabditis elegans\"\n";
-      print CGC "Version_change 1 now \"WBPerson2970\" Created\n";
-      print CGC "Strain \"$strain\"\n";
-      print CGC "Remark \"$i is parsed from CGC strain $strain\"\n";
-    }
-  }
-
-  foreach my $i (@alleles){$ace_object .= "Allele $i\n";}
-  foreach my $i (@alleles2){$ace_object .= "Allele $i\n";}
-  foreach my $i (@alleles3){$ace_object .= "Allele $i\n";}
-  foreach my $i (@rearrangements){$ace_object .= "Rearrangement $i\n";}
-  foreach my $i (@transgenes){$ace_object .= "Transgene $i\n";}
-
-  # will not write out Gene tag if the loci from genotype is not a CGC name
-  foreach my $i (@loci) {$delete_ace_object .= "-D Gene $Gene_info{$i}{'Gene'}\n" if exists $Gene_info{$i}{'Gene'}}
-  foreach my $i (@loci2) {$delete_ace_object .= "-D Gene $Gene_info{$i}{'Gene'}\n" if exists $Gene_info{$i}{'Gene'}}
-  foreach my $i (@alleles){$delete_ace_object .= "-D Allele $i\n";}
-  foreach my $i (@alleles2){$delete_ace_object .= "-D Allele $i\n";}
-  foreach my $i (@alleles3){$delete_ace_object .= "-D Allele $i\n";}
-  foreach my $i (@rearrangements){$delete_ace_object .= "-D Rearrangement $i\n";}
-  foreach my $i (@transgenes){$delete_ace_object .= "-D Transgene $i\n";}
-#  print "AFTER:  $genotype\n\n";
-
-  my $description;
   m/Description: (.*?)Mutagen:/;
-  $description = $1;
+  my $description = $1;
   $description =~ s/\s{2,}/ /g;
   $description =~ s/\s+$//g;
   # get rid of any quotation marks
   $description =~ s/\"//g; 
   # change any URLs present else the double back slash will be treated as a comment
   $description =~ s/http:\/\//URL: /g;
-  $ace_object .= "Remark \"$description\"\n" unless ($description eq "");
-  $delete_ace_object .= "-D Remark \"$description\"\n" unless ($description eq "");
+  print STRAIN "Remark \"$description\"\n" unless ($description eq "");
+  print DELETE_STRAIN  "-D Remark \"$description\"\n" unless ($description eq "");
 
-  my $mutagen;
+
   m/Mutagen: (.*?)Outcrossed:/;
-  $mutagen = $1;
+  my $mutagen = $1;
   $mutagen =~ s/\s{2,}/ /g;
   $mutagen =~ s/\s+$//g;
-  $ace_object .= "Mutagen \"$mutagen\"\n" unless ($mutagen eq "");
-  $delete_ace_object .= "-D Mutagen \"$mutagen\"\n" unless ($mutagen eq "");
+  print STRAIN "Mutagen \"$mutagen\"\n" unless ($mutagen eq "");
+  print DELETE_STRAIN  "-D Mutagen \"$mutagen\"\n" unless ($mutagen eq "");
 
-  my $outcrossed;
+
   m/Outcrossed: (.*?)Reference:/;
-  $outcrossed = $1;
+  my $outcrossed = $1;
   $outcrossed =~ s/\s{2,}/ /g;
   $outcrossed =~ s/\s+$//g;
-  $ace_object .= "Outcrossed\t\"$outcrossed\"\n" unless ($outcrossed eq "");
-  $delete_ace_object .= "-D Outcrossed\n" unless ($outcrossed eq "");
+  print STRAIN "Outcrossed\t\"$outcrossed\"\n" unless ($outcrossed eq "");
+  print DELETE_STRAIN  "-D Outcrossed\n" unless ($outcrossed eq "");
 
-  my $reference;
+
   if(m/Reference: CGC \#(\d{1,4})\s+/){
-    $reference = $1;
+    my $reference = $1;
     # is there a WBpaper ID for this?
     if (exists $cgc2paperID{$reference}){
-      $ace_object .= "Reference \"$cgc2paperID{$reference}\"\n";
-      $delete_ace_object .= "-D Reference \"$cgc2paperID{$reference}\"\n";
+      print STRAIN "Reference \"$cgc2paperID{$reference}\"\n";
+      print DELETE_STRAIN  "-D Reference \"$cgc2paperID{$reference}\"\n";
     }
   }
 
@@ -314,39 +270,35 @@ while(<INPUT>){
   $made_by = $1;
   $made_by =~ s/\s{2,}/ /g;
   $made_by =~ s/\s+$//g;
-  $ace_object .= "Made_by \"$made_by\"\n" unless ($made_by eq "");
-  $delete_ace_object .= "-D Made_by \"$made_by\"\n" unless ($made_by eq "");
+  print STRAIN "Made_by \"$made_by\"\n" unless ($made_by eq "");
+  print DELETE_STRAIN  "-D Made_by \"$made_by\"\n" unless ($made_by eq "");
 
 
   if (m/Received: (\d+\/\d+\/\d+)/){
     my @dates = split(/\//,$1);
     if($dates[2] > 60){
-      $ace_object .= "CGC_received \"19$dates[2]-$dates[0]-$dates[1]\"\n";
-      $delete_ace_object .= "-D CGC_received \"19$dates[2]-$dates[0]-$dates[1]\"\n";
+      print STRAIN "CGC_received \"19$dates[2]-$dates[0]-$dates[1]\"\n";
+      print DELETE_STRAIN  "-D CGC_received \"19$dates[2]-$dates[0]-$dates[1]\"\n";
     }
     else{
-      $ace_object .= "CGC_received \"20$dates[2]-$dates[0]-$dates[1]\"\n";
-      $delete_ace_object .= "-D CGC_received \"20$dates[2]-$dates[0]-$dates[1]\"\n";
+      print STRAIN "CGC_received \"20$dates[2]-$dates[0]-$dates[1]\"\n";
+      print DELETE_STRAIN  "-D CGC_received \"20$dates[2]-$dates[0]-$dates[1]\"\n";
     }
   }
 
   # always add CGC lab details
   if ($strain){
-    $ace_object .= "Location \"CGC\"\n";
-    $delete_ace_object .= "-D Location \"CGC\"\n";
+    print STRAIN "Location \"CGC\"\n";
+    print DELETE_STRAIN  "-D Location \"CGC\"\n";
   }
-
-  # print final output to two files
-  print STRAIN "$ace_object\n";
-  print DELETE_STRAIN "$delete_ace_object\n";
 
 }
 close(INPUT);
 close(STRAIN);
 close(DELETE_STRAIN);
+close(GENE2ALLELE);
+close(NEWGENES);
 
-
-my $backup_file ="$path/All_strain_TS_dump_$rundate.ace";
 
 ##################################################
 # 1. backup strain class with timestamp
@@ -373,26 +325,88 @@ find strain "*"
 show -a -T -f $backup_file
 pparse $last_delete_ace
 pparse $current_strain_ace
+pparse $gene_allele_connections
 save
 quit
 END
 
-my $tace = &tace;
 
-my $geneace_dir="/wormsrv1/geneace/";
-open (FH,"| $tace -tsuser \"CGC_strain_update\" $geneace_dir") || die "Failed to upload to test_Geneace";
-print FH $command;
-close FH;
+# only load this data if -load specified     
+if($load){
+  open (FH,"| $tace -tsuser \"CGC_strain_update\" $geneace_dir") || die "Failed to upload to test_Geneace";
+  print FH $command;
+  close FH;
+}
 
 
+print "\nThe script is now going to end.  Goodnight\n\n";
 
-############
-# subroutine
-############
+exit(0);
+
+################
+# subroutines
+################
+
+
+###########################################################################################
+# subroutine to do some basic checking of allele and gene details from strain genotype
+# field to determine whether a new Gene object needs to be made or whether a Gene->Allele
+# connection can be made
+###########################################################################################
+
+sub check_details{
+  my $gene = shift;
+  my $allele = shift;
+  my $strain = shift;
+  my $species = shift;
+
+  # First thing is to make Strain->Allele connection (this assumes that the allele name
+  # will link to a valid ?Allele object)
+  print STRAIN "Allele \"$allele\"\n";
+  print DELETE_STRAIN  "-D Allele \"$allele\"\n";  
+
+  # if the gene name corresponds to a valid Gene object, add a Gene->Allele and Strain->Gene connections
+  if(defined($Gene_info{$gene}{'Gene'})){
+    print GENE2ALLELE "Gene : $Gene_info{$gene}{'Gene'}\n";
+    print GENE2ALLELE "Allele $allele Inferred_automatically \"From strain object: $strain\"\n\n";
+
+    print STRAIN "Gene \"$Gene_info{$gene}{'Gene'}\"\n";
+    print DELETE_STRAIN "-D Gene \"$Gene_info{$gene}{'Gene'}\"\n";  
+  }
+
+  # otherwise we might need to make a new Gene object (to be checked by curator)
+  # Only want to consider gene names which look sensible (i.e. can't do much with 'let-?')
+  elsif($gene =~ m/^(\w|\-)+\d+$/){
+
+    print NEWGENES "Gene : WBGene\n";
+    print NEWGENES "Evidence Inferred_autoamatically \"Gene name parsed from strain object: $strain\"\n";
+    print NEWGENES "Version  1\n";
+    print NEWGENES "Version_change 1 now \"WBPerson2970\" Created\n";
+    print NEWGENES "Live\n";
+    print NEWGENES "Species  \"$species\"\n";
+    print NEWGENES "Strain \"$strain\"\n";
+
+    # many of these will probably be tag genes which we know will generally be ok to CGC approve
+    if($gene =~ m/tag\-\d+/){
+      print NEWGENES "CGC_name \"$gene\"\n";
+      print NEWGENES "Public_name \"$gene\"\n";
+      print NEWGENES "Gene_class \"tag\"\n";
+    }
+    # otherwise just set Other_name field for now
+    else{
+      print NEWGENES "Other_name \"$gene\"\n";
+      print NEWGENES "Public_name \"$gene\"\n";
+    }
+    print NEWGENES "Allele \"$allele\" Inferred_automatically \"From strain object: $strain\"\n\n";
+
+  } 
+}
+
+##################################################################################################
 
 sub usage {
-    system ('perldoc',$0);
-    exit;
+  system ('perldoc',$0);
+  exit;
 }
 
 
@@ -409,7 +423,7 @@ __END__
 
 =over 4
 
-=item cgc_strain_parser.pl -i <input file>
+=item cgc_strain_parser.pl
 
 =back
 
@@ -422,6 +436,10 @@ The script will write two ace files to your current directory, one to be loaded
 into geneace, and a second to be archived in /wormsrv1/geneace which will have 
 delete instructions for removing all the data you have just added.
 
+Some files will be loaded automatically (strain objects in one, and Gene->Allele
+connections in another.  A third file (potential_new_genes.ace) needs to be
+checked by hand and modified to add Gene IDs (if data is ok)
+
 =over 4
 
 =back
@@ -430,7 +448,9 @@ delete instructions for removing all the data you have just added.
 
 =item OPTIONAL arguments:
 
--h (this help page)
+-help (this help page)
+
+-load (loads data to geneace, else just writes files)
 
 =head1 AUTHOR - Keith Bradnam
 
