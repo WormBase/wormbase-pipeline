@@ -8,7 +8,7 @@
 # autoace.
 #
 # Last updated by: $Author: krb $                     
-# Last updated on: $Date: 2003-12-04 14:07:00 $       
+# Last updated on: $Date: 2004-03-02 13:34:24 $       
 
 #################################################################################
 # Variables                                                                     #
@@ -95,9 +95,10 @@ if ($db) {
 # tidy up                    #
 ##############################
 
-my $endtime = `date +%H:%M:%S`; chomp $endtime;
-print LOG "Ended make_acefiles.pl @ $endtime\n";
-print "Ended make_acefiles.pl @ $endtime\n" if ($debug);
+
+print LOG &runtime, ": finished running make_acefiles.pl\n\n";
+print LOG "================================================================\n\n";
+
 
 close(STDOUT);
 close(STDERR);
@@ -136,12 +137,11 @@ sub create_log_files{
   open(STDERR,">>$log");
   STDERR->autoflush();
 
-  print LOG "$script_name\n";
-  print LOG "started at ",`date`,"\n";
-  print LOG "=============================================\n";
-  print LOG " Write .ace files\n";                     
-  print LOG " from database $db\n"                           if ($db);
-  print LOG "======================================================================\n";
+  print LOG "# make_acefiles.pl started at: $rundate ",&runtime,"\n";
+  print LOG "# TEST MODE!!! Using $basedir/autoace\n" if ($test);
+  print LOG "# WormBase/Wormpep version: WS${WS_version}\n\n";
+  print LOG "======================================================================\n\n";
+ 
 
   if ($debug) {
     print "# make_acefiles.pl\n\n";
@@ -192,6 +192,7 @@ sub mknewacefiles {
     if (/^P\s+(\S+)\s+(\S+)$/) {
       $dbname    = $1;
       $dbdir     = $2;
+      print LOG "\n\n",&runtime, ": Processing $dbname information in autoace_config\n";
       # need to change dbpath if in test mode
       $dbdir     =~ s/\/wormsrv2/$basedir/ if ($test);
       $targetdir = "$wormbasedir/$dbname";
@@ -217,7 +218,7 @@ sub mknewacefiles {
     # deal with queries requiring tag deletion
     if (/\[(\S+.+)\]$/) { 
       @deletes = split (/\s/,$1);
-      print LOG "add " . scalar (@deletes) . " tags to delete array\n";
+      print LOG "Adding " . scalar (@deletes) . " tags to delete array\n\n";
       my $report = join ' + ', @deletes;
       
       if (/^\S+\s+\S+\s+(\S+)\s+\[/) {  
@@ -318,6 +319,9 @@ sub mknewacefiles {
     # dump out from ACEDB
     print "\nFilename: $filepath\n";
     print "Command : 'find $object $criteria' in $dbname\n";
+
+    print LOG &runtime, ": Dumping class $object from database\n";
+
     open (TACE,"| $exe");
     print TACE $command;
     close TACE;
@@ -352,7 +356,7 @@ sub process_ace_file{
     my $filename = shift;
     my $database = shift;
 
-    print LOG "Changing timestamp information to contain $database\n\n";
+    print LOG &runtime, ": Changing timestamp information to contain $database\n";
     
     open (INPUT, "<$filename")            || die "Couldn't open $filename for reading\n";
     open (OUTPUT, ">${filename}.tmpfile") || die "Couldn't write to tmpfile\n";

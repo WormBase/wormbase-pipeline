@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-03-02 10:17:24 $
+# Last edited on: $Date: 2004-03-02 13:34:24 $
 
 
 #################################################################################
@@ -324,8 +324,8 @@ print LOG "\n# autoace_minder finished at: $rundate ",&runtime,"\n";
 close LOG;
 
 my $subject_line;
-$subject_line = "BUILD_REPORT: $am_option";
-$subject_line = "TEST_BUILD_REPORT: $am_option" if ($test);
+$subject_line = "BUILD REPORT: $am_option";
+$subject_line = "TEST BUILD REPORT: $am_option" if ($test);
 
 # warn about errors in subject line if there were any
 if($errors == 1){

@@ -13,7 +13,7 @@
 # the Caltech database (citace)
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-12-04 14:07:01 $
+# Last updated on: $Date: 2004-03-02 13:34:24 $
 
 
 #################################################################################
@@ -270,8 +270,8 @@ END
   ###############################
   # Mail log to curator         #
   ###############################
-  my $subject_line = "WormBase Report: unpack_$database";
-  $subject_line = "TEST BUILD: WormBase Report: unpack_$database" if ($test);  
+  my $subject_line = "BUILD REPORT: unpack_$database";
+  $subject_line = "TEST BUILD REPORT: WormBase Report: unpack_$database" if ($test);  
   &mail_maintainer("$subject_line",$maintainers,$logfile);
 
 }
