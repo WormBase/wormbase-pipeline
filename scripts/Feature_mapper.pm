@@ -41,8 +41,7 @@ Internal methods are usually preceded with a _
 
 package Feature_mapper;
 
-use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"
-  : glob("~ar2/wormbase/scripts");
+use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 
 use Sequence_extract;
 use Carp;
