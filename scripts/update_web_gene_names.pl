@@ -5,7 +5,7 @@
 # completely rewritten by Keith Bradnam from list_loci_designations
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-07-14 09:52:34 $      
+# Last updated on: $Date: 2004-07-14 13:15:51 $      
 #
 # This script should be run under a cron job and simply update the webpages that show
 # current gene names and sequence connections.  Gets info from geneace.  
@@ -215,9 +215,12 @@ sub make_gene_lists{
   open (TACE, "echo '$command' | $tace /wormsrv1/geneace |") || print LOG "ERROR: Can't open tace connection to /wormsrv1/geneace\n";
   while (<TACE>) {
     chomp;
+    # skip any acedb banner text (table maker output has all fields surrounded by "")
+    next if (m/^\"/);
+    # skip acedb prompts
     next if (/acedb/);
+    # skip empty fields
     next if ($_ eq "");
-    last if (/\/\//);
                                                                                            
     # get rid of quote marks
     s/\"//g;
