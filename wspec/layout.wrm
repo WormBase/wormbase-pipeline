@@ -3,12 +3,12 @@
  Gene_class			    Paper
  Locus          Sequence                 
   Gene           Genome_sequence    Expr_profile                 
-  Other_locus    cDNA_sequence      Expr_pattern
- Rearrangement   Briggsae_genomic   RNAi       
-		 Predicted_gene	     Phenotype
- Allele                              PCR_product
- Strain	        Protein               Oligo
-                  Wormpep           
+  Other_locus    cDNA_sequence      SK_map
+ Rearrangement	 Briggsae_genomic   Expr_pattern
+                 Predicted_gene     RNAi       
+ Allele		               	     Phenotype
+ Strain         Protein              PCR_product
+       	          Wormpep             Oligo
  Cell_group
  Cell		WTP
  Lineage			    Model
