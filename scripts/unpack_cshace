@@ -88,7 +88,7 @@ print LOGFILE "# version             : $version\n";
 print LOGFILE "# run details         : $rundate $runtime\n";
 print LOGFILE "# Source directory    : $ftp\n";
 print LOGFILE "# Target directory    : $dbdir\n#\n";
-print LOGFILE "# Source file         : stlace_$today.tar.gz\n";
+print LOGFILE "# Source file         : cshl_dump_$today.tar.gz\n";
 print LOGFILE "\n";
 
  ##########################################
