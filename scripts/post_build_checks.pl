@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/bin/perl5.8.0 -w
 #
 # wrapper to call introncheck, estcheck and overlapcheck.pl on gff files, 
 # recommended after database rebuilt :o)
@@ -9,13 +9,13 @@
 # N.B. Previously called gffcheck
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-01-24 10:18:20 $
+# Last updated on: $Date: 2004-03-12 11:41:07 $
 
 
 use Getopt::Std;
 use IO::Handle;
 $|=1;
-use lib "/wormsrv2/scripts/";
+use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
 use strict;
 
@@ -40,8 +40,8 @@ if ($opt_a) { $opt_e = 1; $opt_i = 1; $opt_o = 1;}
 #################
 
 my $maintainers = "All";
-my $rundate = `date +%y%m%d`; chomp $rundate;
-my $runtime = `date +%H:%M:%S`; chomp $runtime;
+my $rundate = &rundate;
+my $runtime = &runtime;
 my $WS_version = &get_wormbase_version;
 
 our $log;
@@ -84,12 +84,11 @@ sub create_log_files{
   # create main log file using script name for
   my $script_name = $1;
   $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
-  my $rundate     = `date +%y%m%d`; chomp $rundate;
-  $log        = "/wormsrv2/logs/$script_name.$rundate.$$";
+  my $rundate = &rundate;
+  $log = "/wormsrv2/logs/$script_name.WS${WS_version}.$rundate.$$";
 
   open (LOG, ">$log") or die "cant open $log";
-  print LOG "$script_name\n";
-  print LOG "started at ",`date`,"\n";
+  print LOG &runtime, ": Starting post_build_checks.pl\n";
   print LOG "=============================================\n";
   print LOG "\n";
 
@@ -99,32 +98,26 @@ sub create_log_files{
 
 
 sub runestcheck {
-  my $runtime = `date +%H:%M:%S`; chomp $runtime;
-  print LOG "Starting estcheck at $runtime\n";
+  print LOG &runtime, ": Starting estcheck\n";
   system ("/wormsrv2/scripts/estcheck") && die "Can't run estcheck\n";
-  $runtime = `date +%H:%M:%S`; chomp $runtime;
-  print LOG "Finished running estcheck at $runtime\n\n";
+  print LOG &runtime, ": Finished running\n\n";
 }
 
 sub runintroncheck {
-  my $runtime = `date +%H:%M:%S`; chomp $runtime;
-  print LOG "Starting introncheck at $runtime\n";
+  print LOG &runtime, ": Starting introncheck\n";
   system ("/wormsrv2/scripts/introncheck") && die "cant run /wormsrv2/scripts/introncheck\n";
-  $runtime = `date +%H:%M:%S`; chomp $runtime;
-  print LOG "Finished running introncheck at $runtime\n\n";
+  print LOG &runtime, ": Finished running\n\n";
 }
 
 sub runoverlapcheck {
-  my $runtime = `date +%H:%M:%S`; chomp $runtime;
-  print LOG "Starting overlapcheck.pl at $runtime\n";
+  print LOG &runtime, ": Starting overlapcheck.pl\n";
   system ("/wormsrv2/scripts/overlapcheck.pl") && die "Can't run overlapcheck.pl\n";
-  $runtime = `date +%H:%M:%S`; chomp $runtime;
-  print LOG "Finished running overlapcheck.pl at $runtime\n\n";
+  print LOG "Finished running\n\n";
 }
    
 sub usage {
-    system("perldoc /wormsrv2/scripts/post_build_checks.pl") && die "Cannot help you, sorry $!\n";
-    exit (0);
+  system("perldoc /wormsrv2/scripts/post_build_checks.pl") && die "Cannot help you, sorry $!\n";
+  exit (0);
 }
 
 
