@@ -13,7 +13,7 @@
 # 4) Makes wormsrv2/current_DB point at latest release
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2002-12-06 13:47:07 $
+# Last updated on: $Date: 2002-12-06 16:07:36 $
 
 
 
@@ -89,7 +89,7 @@ system("locus2seq.pl -c ") && die "Couldn't run locus2seq.pl -a\n";
 
 
 # update all Common_data files - see Commom_data.pm
-system("Common_data.pl -update -build -all") && die "Couldn't run Common_data.pl -update -build -all\n";
+system("Common_data.pm -update -build -all") && die "Couldn't run Common_data.pm -update -build -all\n";
 
 # update "Confirmed Introns" webpage (introns to be addressed)
 system("/nfs/intweb/cgi-bin/wormpub/confirmed_introns/parse_gff.pl") && warn "Couldn't run parse_gff.pl\n";
