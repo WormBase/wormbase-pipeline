@@ -36,6 +36,13 @@ sub map_cDNA
     else {
       #this must overlap - check exon matching
       my $match = $self->check_exon_match( $cdna );
+      if( $match == 1 ) {
+	$match = $cdna->check_exon_match( $self );
+	unless ($match == 0) { 
+	  $self->add_matching_cDNA( $cdna );
+	  $match = 1;
+	} 
+      }
       return $match;
     }
   }
@@ -113,8 +120,6 @@ sub report
     }
 
     my @clone_coords = $coords->LocateSpan($self->chromosome, $real_start,$real_end );
-
-    print $fh "\n-D Transcript : ",$self->name,"\n";
 
     # output S_Parent for transcript
     print $fh "\nSequence : $clone_coords[0]\n";
