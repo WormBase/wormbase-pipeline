@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-02-20 13:37:31 $
+# Last updated on: $Date: 2003-02-20 13:54:20 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -174,7 +174,7 @@ sub process_locus_class{
     #print "$locus\n";
     my $warnings;
     my $erich_warnings;
-   ###($warnings, $erich_warnings) = &test_locus_for_errors($locus);
+   ($warnings, $erich_warnings) = &test_locus_for_errors($locus);
     print LOG "$warnings" if(defined($warnings));
     #Erich Schwarz wants some of these - emsch@its.caltech.edu
     print ERICHLOG "$erich_warnings" if(defined($erich_warnings));
@@ -188,7 +188,7 @@ sub process_locus_class{
   Table-maker -p "/wormsrv1/geneace/wquery/get_all_seq_with_pseudogene_and_locus.def" quit
 EOF
  
-  ###find_new_loci_in_current_DB($get_seg_with_pseudogene_locus, $db);
+  find_new_loci_in_current_DB($get_seg_with_pseudogene_locus, $db);
    
   #Look for loci that are other_names and still are obj of ?Locus -> candidate for merging
  
@@ -699,8 +699,7 @@ sub loci_as_other_name {
       $other_name = $db->fetch('Locus', $other_name); 
       
       #######################################################
-      # list of hard coded loci having other_name the same as 
-      # the other locus, which in fact is a different gene   
+      
       #######################################################
       @exceptions = 
       qw (aka-1 cas-1 clh-2 clh-3 ctl-1 ctl-2 egl-13 evl-20 gst-4 mig-1 
