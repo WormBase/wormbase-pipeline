@@ -4,8 +4,8 @@
 # 
 # written by Anthony Rogers
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-04-26 10:36:39 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2004-04-26 15:10:22 $
 
 
 use DBI;
@@ -15,6 +15,7 @@ use lib "/nfs/acari/wormpipe/scripts";
 use lib "/nfs/acari/wormpipe/scripts/BLAST_scripts";
 use Wormbase;
 use Getopt::Long;
+use File::Path;
 
 #######################################
 # command-line options                #
@@ -540,8 +541,14 @@ if( $cleanup ) {
 
   print "\nRemoving the $wormpipe_dir/DUMP_PREP_RUN lock file\n"; system("rm -f $wormpipe_dir/DUMP_PREP_RUN") && warn "cant remove $wormpipe_dir/DUMP_PREP_RUN\n";
 
-  print "\nRemoving farm output and error files from /acari/scatch5/ensembl/Worms/*\n"; system("rm -rf /acari/scratch5/ensembl/Worms/*/*") && warn "cant clear up /acari/scatch5/ensembl/Worms/*\n";
+  print "\nRemoving farm output and error files from /acari/scatch5/ensembl/Worms/*\n"; 
 
+  my $scratch_dir = "/acari/scratch5/ensembl/Worms";
+  my @directories = qw( 0 1 2 3 4 5 6 7 8 9 );
+
+  foreach my $directory ( @directories ) {
+    rmtree("$scratch_dir/$directory", 1, 1);
+  }
   print "\n\nCLEAN UP COMPLETED\n\n";
 }
 
