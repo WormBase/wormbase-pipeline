@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-02-04 09:17:09 $
+# Last updated on: $Date: 2003-02-04 13:48:18 $
 
 
 use strict;
@@ -24,7 +24,7 @@ use Getopt::Long;
 my ($help, $debug, $database, $class, @class, $ace);
 my $maintainers = "All";
 our $tace = &tace;   # tace executable path
-our ($log, $erichlog, $jahlog);
+our ($log, $erichlog, $jahlog, $JAHmsg, $Emsg, $caltech, @CGC, $cgc);
 
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $acefile = "/wormsrv2/logs/geneace_check_ACE.$rundate.$$";
@@ -42,6 +42,10 @@ GetOptions ("h|help"        => \$help,
 
 my $default_db;
 
+# Display help if required
+&usage("Help") if ($help);
+
+# Specify database
 if ($database eq ""){
   $default_db = "/wormsrv1/geneace"; 
   print "\nUsing Geneace as default database\n\n";
@@ -52,8 +56,6 @@ else {
   print "\nUsing $database as default database path\n\n";
 }
 
-# Display help if required
-&usage("Help") if ($help);
 
 # Use debug mode?
 if($debug){
@@ -132,13 +134,26 @@ mail_maintainer($0,$maintainers,$log);
 
 # Also mail to Erich unless in debug mode
 my $interested ="krb\@sanger.ac.uk, emsch\@its.caltech.edu, ck1\@sanger.ac.uk";
-mail_maintainer($0,"$interested",$erichlog) unless $debug; 
 
+open(MAIL1, "$erichlog") || die "Can't read in file $erichlog";
 
-# Email to Jonathan for problematic loci
+my @caltech=<MAIL1>;
+$caltech=join('', @caltech);
+if ($caltech ne $Emsg){      
+  mail_maintainer($0,"$interested",$erichlog) unless $debug; 
+}
+
+# Email to Jonathan for problematic loci 
 my $CGC = "ck1\@sanger.ac.uk, krb\@sanger.ac.uk"; 
-mail_maintainer($0,$CGC,$jahlog) unless $debug;
 
+open(MAIL2, "$jahlog") || die "Can't read in file $erichlog";
+
+my @CGC=<MAIL2>;
+$cgc=join('', @CGC);
+if ($cgc eq $JAHmsg){   
+  mail_maintainer($0,$CGC,$jahlog) unless $debug;
+}
+  
 exit(0);
 
 
@@ -426,8 +441,7 @@ sub allele_has_predicted_gene_and_no_seq {
 	    $cds=get_parent_seq($seq, $allele, $cds);  # $seq is $predict in sub
 	    if ($cds ne $seq){
 	      if ($cds eq ""){$cds = @{$allele_cds_seq{$allele}}[$i-2]}
-	      print LOG "ERROR: Allele $allele has an incorrect parent sequence ($seq) with respect to its predicted gene ($cds)\n";
-	      print "ERROR: Allele $allele has an incorrect sequence ($seq) with respect to its predicted gene ($cds)\n"; 
+	      print LOG "ERROR: Allele $allele has an incorrect parent sequence ($seq) with respect to its predicted gene ($cds)\n";  
 	      $allele_errors++; 
 	    }  
           }
@@ -639,7 +653,7 @@ sub loci_as_other_name {
      # print "$1 -> $2\n";
       $main = $1;
       $other_name = $2;
-      $other_name =~ s/\\//g;
+      $other_name =~ s/\//g;
       $other_name = $db->fetch('Locus', "$other_name"); 
       if ($other_name){
 	$locus_errors++;
@@ -843,18 +857,15 @@ sub test_locus_for_errors{
 #    }
 #  }
 
-=start  
+  
 
   # Test for Polymorphisms with no P in their title
-  if(defined($locus->at('Type.Polymorphism'))){
-    if($locus !~ /P/){
-      $warnings .= "ERROR 14: $locus has no 'P' in title\n";
-      $locus_errors++;
-    }
-  }
-=end
-
-=cut
+  #if(defined($locus->at('Type.Polymorphism'))){
+   # if($locus !~ /P/){
+    #  $warnings .= "ERROR 14: $locus has no 'P' in title\n";
+     # $locus_errors++;
+    #}
+  #}
   # Look for Gene_class tag in non-gene objects 
   if(!defined($locus->at('Type.Gene'))){
     if(defined($locus->at('Name.Gene_class'))){
@@ -917,16 +928,24 @@ sub create_log_files{
 
   $jahlog = "/wormsrv2/logs/$script_name.jahlog.$rundate.$$";
   open(JAHLOG, ">$jahlog") || die "Can't open $jahlog\n";
-  print JAHLOG "Data created on $rundate\n";
-  print JAHLOG "=============================================\n";
+  print JAHLOG "This mail is generated automatically for CGC on $rundate\n"; 
+  $JAHmsg = "This mail is generated automatically for CGC on $rundate\n"; 
+  print JAHLOG "If you have any queries please email ck1\@sanger.ac.uk or krb\@sanger.ac.uk\n\n";
+  $JAHmsg .= "If you have any queries please email ck1\@sanger.ac.uk or krb\@sanger.ac.uk\n\n";
+  print JAHLOG "=========================================================================\n";
+   $JAHmsg .=  "=========================================================================\n";
   
   # create separate log with errors for Erich
   $erichlog = "/wormsrv2/logs/geneace_check.erichlog.$rundate.$$";
   open(ERICHLOG,">$erichlog") || die "cant open $erichlog";
   print ERICHLOG "$0 started at ",`date`,"\n";
-  print ERICHLOG "=============================================\n";
-  print ERICHLOG "This mail is generated automatically.\n";
-  print ERICHLOG "If you have any queries please email ar2\@sanger.ac.uk or krb\@sanger.ac.uk\n\n";
+  $Emsg = "$0 started at ".`date`."\n";
+  print ERICHLOG "=========================================================\n";
+  $Emsg .= "=========================================================\n";
+  print ERICHLOG "This mail is generated automatically for Caltech\n";
+  $Emsg .= "This mail is generated automatically for Caltech\n";
+  print ERICHLOG "If you have any queries please email ar2\@sanger.ac.uk or ck1\@sanger.ac.uk or krb\@sanger.ac.uk\n\n";
+  $Emsg .= "If you have any queries please email ar2\@sanger.ac.uk or ck1\@sanger.ac.uk or krb\@sanger.ac.uk\n\n";   
 }
 
 
@@ -978,3 +997,64 @@ EOF
   return @names;
 }
 
+__END__
+
+=head2 NAME - geneace_check.pl  
+
+=head3 <USAGE> 
+ 
+
+=head2 Options: [h or help] [d or debug] [c or class] [a or ace]
+
+            All options have single letter or wordy aliases 
+
+B<-help:>     
+            Displays usage of the script: surprised?
+
+B<-debug:>   
+            Debug mode, follow by user name, eg. -d ck1 or -debug ck1
+
+            This allows checking results mailed only to the user, 
+            otherwise results would email to the gangs of Sanger 
+            Wormbase group and Caltech (Erich) 
+
+B<-class:>   
+            Allows checking only specified classes in Geneace. 
+            All classes will be checked without this option.
+            Choosing multiple classes is supported. 
+            Class names are case insensitive.
+            Current valid class names: 
+
+               locus
+               allele
+               lab or laboratory
+               strain
+               rearr or rearrangement
+               seq or sequence
+
+            For example: -c allele -c locus OR -class seq -class rearr
+
+B<-databse:> 
+            Allows specifying path to a specific database.
+            Default database path is /wormsrv1/geneace without this option.
+
+            For example: -db /wormsrv2/autoace or -database /wormsrv1/someone/Test_DB
+ 
+
+B<-ace:>     
+            Allows generating ace file for fixing erros spotted by 
+            this checking script.
+            Default location and filename of ace file:
+            /wormsrv2/logs/geneace_check_ACE.rundate.processid
+                      
+            For example: -a or -ace
+
+
+=head3 <RUN geneace_check.pl>
+
+            Geneace check is now set to run on Sundays.
+            To see a list of cron jobs: crontab -l
+            To edit cron job of geneace_check: crontab -e (user: wormpub)
+
+            ##Run Geneace check over weekend
+            20 7 * * 0 /wormsrv2/scripts/geneace_check.pl &
