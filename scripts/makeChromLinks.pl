@@ -22,7 +22,7 @@ use Cwd;
 getopts ('cal:');
 
 my $CWD = cwd;
-$ENV{PATH}="/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4:$ENV{PATH}";
+$ENV{PATH}="/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4:$ENV{PATH}";
 
 if ($opt_c) {
   $db = Ace->connect(-path=>'/nfs/disk100/wormpub/acedb/ace4/cgc') or die ("Could not connect with cgcace\n");

@@ -55,7 +55,7 @@ my $debug = $opt_d;
 # Paths etc #
 #############
 
-my $tace = glob("~acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace");    # tace executable path
+my $tace = glob("~wormpub/ACEDB/bin.ALPHA_4/tace");    # tace executable path
 my $dbdir  = "/wormsrv2/autoace";                                  # Database path
 my $gffdir = "/wormsrv2/autoace/CHROMOSOMES";
 my @chromosomes = qw( I II III IV V X );

@@ -134,9 +134,18 @@ print LOG "Starting blat process .. \n\n";
 # Main loop               #
 ###########################
 
+    
+# CHECK: 
+&usage(11) unless (-e "/wormsrv2/autoace/BLAT/superlinks.ace");
+    
+# assign contigs to laboratory
+%homedb = &which_db;
 
 # Write sequence data from autoace
 if ($opt_n) {
+    
+    # This should check if it needs to (re)dump the DNA.
+    # HOW??? - 
 
     &dump_dna;
 }
@@ -150,11 +159,8 @@ if ($opt_b) {
     
     # CHECK: how old is the autoace.fa file ?
     # exit if autoace.fa file created prior to start of (re)build 
-    &usage(6) if (-M "/wormsrv2/autoace/ace/logs/A1:Build_in_progress" < -M "/wormsrv2/autoace/BLAT/autoace.fa");
+    &usage(6) if (-M "/wormsrv2/autoace/logs/A1:Build_in_progress" < -M "/wormsrv2/autoace/BLAT/autoace.fa");
    
-    # assign contigs to laboratory
-    %homedb = &which_db;
-
     print LOG "running blat and putting the result in $blat/${data}_out.psl\n";
 
     # BLAT system call
@@ -169,11 +175,6 @@ if ($opt_b) {
 
 # map to autoace #
 if ($opt_s) {
-
-    # assign contigs to laboratory
-    %homedb = &which_db;
-    
-    
 
     if ($opt_e) {
 
@@ -239,12 +240,6 @@ if ($opt_s) {
 # produce files for the virtual objects #
 
 if ($opt_v) {
-
-    # CHECK: 
-    &usage(11) unless (-e "/wormsrv2/autoace/BLAT/superlinks.ace");
-    
-    # assign contigs to laboratory
-    %homedb = &which_db;
 
     print LOG "Producing $data files for the virtual objects\n\n";
     &virtual_objects_blat($data);
@@ -449,8 +444,11 @@ sub confirm_introns {
     open (GOOD, ">$blat/$db.good_introns.$data.ace") or die "$!";
     open (BAD,  ">$blat/$db.bad_introns.$data.ace")  or die "$!";
 
-    my ($link,@introns,$dna,$switch);
+    my ($link,@introns,$dna,$switch,$tag);
 
+    ($tag = "cDNA") if ($opt_m || $opt_o);
+    ($tag = "EST")  if ($opt_e);
+    
     $/ = "";
     open(CI,  "<$blat/${db}.ci.${data}.ace")      or die "Cannot open $blat/$db.ci.$data.ace $!\n";
     while (<CI>) {
@@ -571,11 +569,11 @@ sub confirm_introns {
 		    if ( ( (($start eq 'gt') || ($start eq 'gc')) && ($end eq 'ag')) ||
 			 (  ($start eq 'ct') && (($end eq 'ac') || ($end eq 'gc')) ) ) {	 
 			print GOOD "Feature_data : \"$virtual\"\n";
-			print GOOD "Confirmed_intron $one $two EST\n\n";
+			print GOOD "Confirmed_intron $one $two $tag\n\n";
 		    }  	
 		    else {
 			print BAD "Feature_data : \"$virtual\"\n";
-			print BAD "Confirmed_intron $one $two EST\n\n";		
+			print BAD "Confirmed_intron $one $two $tag\n\n";		
 		    }
 		}
 	    }
