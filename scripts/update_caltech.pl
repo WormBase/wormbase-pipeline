@@ -4,7 +4,7 @@
 
 # by Chao-Kung Chen [030113]
 
-# Last updated on: $Date: 2003-02-14 11:40:22 $
+# Last updated on: $Date: 2003-02-18 19:18:09 $
 # Last updated by: $Author: ck1 $
 
 
@@ -21,11 +21,18 @@ use Getopt::Long;
 # variables and command-line options with aliases # 
 ###################################################
 
-my ($debug, $recipients);
+my ($debug, $help, $recipients);
 $recipients ="ck1\@sanger.ac.uk, emsch\@its.caltech.edu, krb\@sanger.ac.uk";
 my $tace = &tace;   # tace executable path
 
-GetOptions ("d|debug=s"  => \$debug);
+GetOptions ("d|debug=s"  => \$debug,
+            "h|help"  => \$help);
+
+if ($help){
+  system("perldoc update_caltech.pl");
+  exit (0);
+}
+
 
 ##################################################
 # check user is wormpub otherwise script won't run
@@ -184,7 +191,7 @@ END
 
 my $geneace_dir="/wormsrv1/geneace";
 
-open (Load_GA,"| $tace -tsuser \"Functional_annotation\" $geneace_dir ") || die "Failed to upload to Geneace";
+open (Load_GA,"| $tace -tsuser \"Functional_annotation\" $geneace_dir > $log") || die "Failed to upload to Geneace";
 print Load_GA $command;
 close Load_GA;
 
@@ -257,7 +264,7 @@ sub loci_as_other_name {
   my ($def1, $def2, $dir) = @_;
   my ($main, @main, $other_name, %other_main, @cgc_loci, $cgc_loci);
   
-  open (FH1, "echo '$def1' | tace $dir | ") || die "Couldn't access geneace\n";
+  open (FH1, "echo '$def1' | tace $dir |") || die "Couldn't access geneace\n";
   while (<FH1>){
     chomp $_;
     if ($_ =~ /\"(.+)\"\s+\"(.+)\"/){
@@ -268,7 +275,7 @@ sub loci_as_other_name {
       push(@main, $main);
     }
   }
-  open (FH2, "echo '$def2' | tace $dir | ") || die "Couldn't access geneace\n";
+  open (FH2, "echo '$def2' | tace $dir |") || die "Couldn't access geneace\n";
   while (<FH2>){
     chomp $_;
     if ($_ =~ /\"(.+)\"/){
@@ -279,9 +286,42 @@ sub loci_as_other_name {
   return \%other_main, \@main, \%cgc_loci;
 }
 
-
-
 __END__
 
+=head2 NAME - update_caltech.pl  
 
+
+            This script automatically checks for available functional annotation update at Caltech FTP site.
+            It emails to ck1 and krb no matter update is available or not.
+            When update is available log messages is also included in the mail notice. 
+            Erich at Caltech will also receive mail notice automatically.
+
+            The script also checks for loci that are other_names in Caltech update file. 
+            If an other_name is still a separate object, it will be listed in the mail message 
+            and need to be looked at by hand.
+            If a locus has been merged to a main name, that locus will be changed to its 
+            main name in the update ace file. 
+
+=head3 <USAGE> 
+ 
+
+=head2 Options: [d or debug] [h or help]
+
+ 
+B<-debug:>   
+            Debug mode, follow by user name, eg. -d ck1 or -debug ck1
+
+            No email will be sent to anyone including the person running the script,
+            because there are too MANY emails already. You just need to look for 
+            "/wormsrv2/logs/update_caltech.rundate.pID" file. 
+
+
+B<-help:>      Quess what!
+
+
+=head3 <RUN update_caltech.pl>
+
+            The script is now set to run on Friday mornings at 007.
+            
+           
 
