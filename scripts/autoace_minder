@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder [-options]
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-01-13 16:22:55 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2003-01-14 10:12:16 $
 
 
 #################################################################################
@@ -607,7 +607,7 @@ sub make_autoace {
     system ("touch $logdir/$flag{'B1'}");
 
     # Update Common_data clone2accession info
-    system ("Common_data.pm -build -update -a2c");
+    system ("Common_data.pm -in_build -update -accession");
     
   }
   
