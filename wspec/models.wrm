@@ -782,7 +782,6 @@
 		       Microarray_aff ?Microarray_aff XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info //added for Wen's Affymetrix model [020614 krb] 
      		       AGP_fragment ?Sequence XREF AGP_parent Int UNIQUE Int #SMap_info // added for Briggsae data [krb 020726]
      		       UTR ?UTR XREF Canonical_parent Int UNIQUE Int #SMap_info // added for new UTR model [krb 020729]
-     		       UTR ?UTR XREF Canonical_parent Int UNIQUE Int #SMap_info // added for new UTR model [krb 020729]
 		       Transcript_child ?Transcript XREF Sequence UNIQUE Int UNIQUE Int #SMap_info // on the way to new gene model krb [021126]
 	  Structure  From	Source UNIQUE ?Sequence XREF Subsequence
 				Source_Exons Int UNIQUE Int // start at 1
