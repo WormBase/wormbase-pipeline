@@ -21,24 +21,36 @@ GetOptions ("debug=s"      => \$debug,
 	    "brigprot"     => \$brigprot
            );
 
+my @sample_peps = @_;
+
 my $maintainers = "All";
 my $rundate    = `date +%y%m%d`; chomp $rundate;
 my $wormpipe_dir = "/acari/work2a/wormpipe";
 my $dbname = "wormprot";
-$dbname = "worm_brigprot" if $brigprot;
 $dbname .= "_dev" if $test;
-my $log = "$wormpipe_dir/Dump_new_prot_only.pl.$dbname.$rundate";
 my $best_hits = "$wormpipe_dir/dumps/best_blastp_hits";
-$best_hits .= "_brigprot" if $brigprot;
+my $ipi_file = "$wormpipe_dir/dumps/ipi_hits_list";
+
+my $wormpipe = glob("~wormpipe");
+my $output = "$wormpipe_dir/dumps/blastp_ensembl.ace";
+my $recip_file = "$wormpipe_dir/dumps/wublastp_recip.ace";
+
+if ($brigprot) {
+  $ipi_file .= "_brigprot";
+  $best_hits .= "_brigprot";
+  $dbname = "worm_brigprot";
+  $output = "$wormpipe_dir/dumps/brigprot_blastp_ensembl.ace";
+  $recip_file = "$wormpipe_dir/dumps/brigprot_wublastp_recip.ace";
+}
 open (BEST, ">$best_hits") or die "cant open $best_hits for writing\n";
 
+my $log = "$wormpipe_dir/Dump_new_prot_only.pl.$dbname.$rundate";
 open ( LOG, ">$log") || die "cant open $log";
 print LOG "Dump_new_prot_only.pl log file $rundate\n";
 print LOG "-----------------------------------------------------\n\n";
 
 # to be able to include only those proteins that have homologies we need to record those that do
 # this file is then used by write_ipi_info.pl
-my $ipi_file = "$wormpipe_dir/dumps/ipi_hits_list";
 open (IPI_HITS,">$ipi_file") or die "cant open $ipi_file\n";
 
 
@@ -52,14 +64,6 @@ print "DEBUG = \"$debug\"\n\n" if $debug;
 # assign $maintainers if $debug set
 ($maintainers = $debug . '\@sanger.ac.uk') if ($debug);
 
-
-my @sample_peps = @_;
-my $wormpipe = glob("~wormpipe");
-my $output = "$wormpipe_dir/dumps/blastp_ensembl.ace";
-$output = "$wormpipe_dir/dumps/brigprot_blastp_ensembl.ace" if $brigprot;
-my $recip_file = "$wormpipe_dir/dumps/wublastp_recip.ace";
- $recip_file = "$wormpipe_dir/dumps/brigprot_wublastp_recip.ace" if $brigprot;
-
 $WPver-- if( $test );
   
 
@@ -70,7 +74,7 @@ $WPver-- if( $test );
 #|         13 | slimswissprot40.pep | 
 #|         14 | slimtrembl21.pep    |
 
-my %wormprotprocessIds = ( wormpep => 11, 
+my %wormprotprocessIds = ( wormpep => 11,
 			   ensembl => 9,
 			   gadfly  => 8,
 			   yeast => 7,
