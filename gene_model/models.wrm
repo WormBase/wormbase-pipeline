@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.11 2001-09-27 09:04:07 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.12 2001-09-28 13:49:55 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -1177,7 +1177,7 @@
 		Expr_pattern ?Expr_pattern XREF Life_stage
 		Remark	?Text
                 Reference ?Paper XREF Life_stage
-
+		Curated_by UNIQUE Text // added for Sylvia [010928 krb]
 
 // Localisation tag removed as it has been superceded by subcellular_localization
 // also added Curated_by line for Sylvia [010927 krb]
