@@ -840,6 +840,7 @@
 			cDNA cDNA_EST
 			     EST_5		       // Indicate whether this is a 5' or 3' read [010423 dl]
 			     EST_3
+			     Capped_5	//indicates capped 5' end - for Lincoln [06/12/01 krb]
 			RNA	// if set then use U in place of T
 			Coding	CDS UNIQUE Int UNIQUE Int
 				CDS_predicted_by ?Method Float // score of method
