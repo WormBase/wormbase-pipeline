@@ -5,7 +5,7 @@ use lib glob("~ar2/wormbase/scripts/");
 use Ace;
 use Getopt::Long;
 
-my ($debug, $verbose, $really_verbose, $est, $count, $report, $gap, $transcript);
+my ($debug, $verbose, $really_verbose, $est, $count, $report, $gap, $transcript, $gff);
 $gap = 1; # $gap is the gap allowed in an EST alignment before it is considered a "real" intron
 
 GetOptions ( "debug" => \$debug,
@@ -15,11 +15,12 @@ GetOptions ( "debug" => \$debug,
 	     "count" => \$count,
 	     "report" => \$report,
 	     "gap:s"  => \$gap,
-	     "transcript" => \$transcript
+	     "transcript" => \$transcript,
+	     "gff:s"    => \$gff
 	   ) ;
 
 my $database = glob("~wormpub/DATABASES/TEST_DBs/ANT_matchingace");
-my $gff = glob("~wormpub/DATABASES/TEST_DBs/ANT_matchingace/dump/T23G11.gff");
+$gff = glob("~wormpub/DATABASES/TEST_DBs/ANT_matchingace/dump/T23G11.gff") unless $gff;
 
 open (GFF,"<$gff") or die "gff\n";
 # C43G2	  curated	  exon         10841   10892   .       +       .       Sequence "C43G2.4"
@@ -87,18 +88,19 @@ foreach my $CDNA (keys %cDNA_span) {
 }
 
 open (ACE,">$database/transcripts.ace") or die "transcripts\n";
-foreach (keys %gene2cdnas) {
-  print "$_ matching cDNAs => @{$gene2cdnas{$_}}\n" if $report;
-  print "$_ matches ",scalar(@{$gene2cdnas{$_}}),"\n" if $count;
+foreach my $gene (keys %gene2cdnas) {
+  print "$_ matching cDNAs => @{$gene2cdnas{$gene}}\n" if $report;
+  print "$_ matches ",scalar(@{$gene2cdnas{$gene}}),"\n" if $count;
   if( $transcript ) {
-    next unless $genes_span{$_}->[2] eq "+"; #just do forward for now
+   # next unless $genes_span{$_}->[2] eq "-"; #just do forward for now
     my %transcript;
-    %transcript = %{$genes_exons{$_}};   # put the gene model in to the transcript
+    %transcript = %{$genes_exons{$gene}};   # put the gene model in to the transcript
 
-    print ACE "\nSequence : \"$_.trans\"\n";
-    print ACE "Source T23G11\n";
+    print ACE "\nSequence : \"$gene.trans\"\n";
+    my $source = $1 if($gene =~ /^(\S+)\./);
+    print ACE "Source $source\n";
     print ACE "method history\n";
-    foreach my $cdna (@{$gene2cdnas{$_}}) { # iterate thru array of cDNAs ( 1 per gene )
+    foreach my $cdna (@{$gene2cdnas{$gene}}) { # iterate thru array of cDNAs ( 1 per gene )
       print ACE "matching_CDNA \"$cdna\"\n";
       foreach my $cExon(keys %{$cDNA{$cdna}} ){ #  then thru exons of the cDNA
 	next if( defined $transcript{$cExon} and  $transcript{$cExon} == $cDNA{$cdna}->{$cExon} ); #skip if the cDNA exon is same as one in transcript
@@ -115,7 +117,7 @@ foreach (keys %gene2cdnas) {
 	    }
 	    delete $transcript{$transExon};
 	  }
-	  elsif( $cExon > $transExon and $cExon < $transcript{$transExon} and $cDNA{$cdna}->{$cExon} >= $transExon ) {
+	  elsif( $cExon > $transExon and $cExon < $transcript{$transExon} and $cDNA{$cdna}->{$cExon} >= $transcript{$transExon} ) {
 	    $transcript{$transExon} = $cDNA{$cdna}->{$cExon};
 	  }
 	}
@@ -124,11 +126,21 @@ foreach (keys %gene2cdnas) {
     
     my @exons = (sort { $transcript{$a} <=> $transcript{$b} } keys %transcript);
     foreach (@exons) {
-      print ACE "source_exons ",$_ - $exons[0] + 1," ",$transcript{$_} - $exons[0]+1," \n";
+      if( $genes_span{$gene}->[2] eq "+"){
+	print ACE "source_exons ",$_ - $exons[0] + 1," ",$transcript{$_} - $exons[0]+1," \n"; # + strand
+      }
+      else {
+	print ACE "source_exons ",$transcript{$exons[-1]} - $transcript{$_} + 1 ," ",$transcript{$exons[-1]} - $_ + 1 ," \n"; # - strand
+      }
     }
 
-    print ACE "\nSequence : T23G11\n";
-    print ACE "Subsequence $_.trans $exons[0] $transcript{$exons[-1]}\n";
+    print ACE "\nSequence : $source\n";
+    if( $genes_span{$gene}->[2] eq "+"){
+      print ACE "Subsequence $gene.trans $exons[0] $transcript{$exons[-1]}\n"; # + strand
+    }
+    else {
+      print ACE "Subsequence $gene.trans $transcript{$exons[-1]} $exons[0]\n"; # - strand
+    }
   }
 }
 close ACE;
@@ -139,6 +151,7 @@ sub findOverlappingGene
     my $cdna = shift;
     my @overlap_genes;
     foreach ( sort { $genes_span{$a}[0]<=>$genes_span{$b}[0]  } keys %genes_span ) {
+      print "testing overlap $_ $$cdna\n";
       if ($cDNA_span{$$cdna}[0] > $genes_span{$_}[1] ) { next; } #
       elsif( ($cDNA_span{$$cdna}[0] < $genes_span{$_}[0]) and ($cDNA_span{$$cdna}[1] > $genes_span{$_}[0]) ) { # cDNA starts B4 gene and ends after gene start
 	# overlaps 
