@@ -62,7 +62,7 @@ $opt_z="";   # Public release to FTP site
 $opt_d="";   # Verbose debug mode
 $opt_h="";   # Help/Usage page
 $opt_g="";   # chromosome_dump.pl -g
-$opt_m="";   # map PCR and RNAi
+$opt_m="";   # map PCR, RNAi and WTP
 $opt_y="";   # make agp files for the yellow brick road
 
 
@@ -124,7 +124,7 @@ print LOG "  -f : Move WS release to the ftp-wormbase site (WormBase private rel
 print LOG "  -z : Move WS release to the external FTP site (Full public release)\n" if ($opt_z);
 print LOG "  -d : Verbose/Debug mode\n" if ($opt_d);
 print LOG "  -g : chromosome_dump.pl -g\n" if ($opt_g);
-print LOG "  -m : map PCR and RNAi\n" if ($opt_m);
+print LOG "  -m : map PCR, RNAi and WTP\n" if ($opt_m);
 print LOG "  -y : make agp files for yellow brick road\n" if ($opt_y);
 print LOG "======================================================================\n";
 print LOG "\n";
@@ -133,19 +133,19 @@ print LOG "\n";
 # Main Loop                                                                     #
 #################################################################################
 
-&make_acefiles      if ($opt_w);
-&make_autoace       if ($opt_b);
-&make_DB            if ($opt_1);
-&make_DNA           if ($opt_2);
-&make_release       if ($opt_3);
-&check_release      if ($opt_c);
-&make_wormpep       if ($opt_p);
-&pepace_stuff       if ($opt_q);
-&make_FTP_wormbase  if ($opt_f);
-&make_anonymous_FTP if ($opt_z);
-&dump_GFFs          if ($opt_g);
-&map_PCR_and_RNAi   if ($opt_m);
-&make_agp           if ($opt_y);
+&make_acefiles         if ($opt_w);
+&make_autoace          if ($opt_b);
+&make_DB               if ($opt_1);
+&make_DNA              if ($opt_2);
+&make_release          if ($opt_3);
+&check_release         if ($opt_c);
+&make_wormpep          if ($opt_p);
+&pepace_stuff          if ($opt_q);
+&make_FTP_wormbase     if ($opt_f);
+&make_anonymous_FTP    if ($opt_z);
+&dump_GFFs             if ($opt_g);
+&map_PCR_RNAi_and_WTP  if ($opt_m);
+&make_agp              if ($opt_y);
 
  ##############################
  # mail $maintainer report    #
@@ -271,16 +271,19 @@ sub dump_GFFs {
 
 
 #################################################################################
-# map PCR and RNAi                                                              #
+# map PCR, RNAi and WTP                                                         #
 #################################################################################
 
-sub map_PCR_and_RNAi {
+sub map_PCR_RNAi_and_WTP {
     system("$scriptdir/map_PCR_products") && die "Couldn't run map_PCR_products\n";
     print LOG " Mapped PCR products for $WS_version\n";
     print LOG " =>'map_PCR_products'\n\n";
     system("$scriptdir/map_RNAi.pl") && die "Couldn't run map_RNAi.pl\n";
     print LOG " Mapped RNAi experiments for $WS_version\n";
     print LOG " =>'map_RNAi.pl'\n\n";
+    system("$scriptdir/map_WTP.pl") && die "Couldn't run map_WTP.pl\n";
+    print LOG " Mapped WTP objects for $WS_version\n";
+    print LOG " =>'map_WTP.pl'\n\n";
 }
 
 
@@ -340,7 +343,7 @@ sub run_details {
     print "  -z : Move WS release to the external FTP site (Full public release)\n" if ($opt_z);
     print "  -d : Verbose/Debug mode\n" if ($opt_d);
     print "  -g : chromosome_dump.pl -g\n" if ($opt_g);
-    print "  -m : map PCR and RNAi\n" if ($opt_m);
+    print "  -m : map PCR, RNAi and WTP\n" if ($opt_m);
     print "  -y : make agp file for yellow brick road\n" if ($opt_y);
     print "\n\n";
 }
@@ -415,7 +418,7 @@ autoace_minder OPTIONAL arguments:
 
 =item -g, dump GFF files
 
-=item -m, map PCR and RNAi
+=item -m, map PCR, RNAi and WTP
 
 =back
 
