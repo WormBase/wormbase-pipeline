@@ -7,7 +7,7 @@
 # Attempt to unify all of the diverse scripts to fetch ESTs, OSTs, mRNAs etc. used by blat 
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-09-11 13:26:18 $
+# Last edited on: $Date: 2003-09-11 13:31:09 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -93,7 +93,7 @@ my $getz   = "/usr/local/pubseq/bin/getzc"; # getz binary
 # Tidy up things and exit
 
 print LOG "finished at ",&runtime,"\n";
-&mail_maintainer("script template",$maintainers,$log);
+&mail_maintainer("script template",$maintainers,$log) if ($debug);
 close(LOG);
 
 exit(0);
