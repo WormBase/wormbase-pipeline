@@ -5,7 +5,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-03-04 14:06:33 $
+# Last updated on: $Date: 2004-03-05 15:22:19 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -26,8 +26,6 @@ use Ace;
 # Script variables and command-line options      #
 ##################################################
 my $maintainers = "All";
-my $rundate = `date +%y%m%d`; chomp $rundate;
-my $runtime = `date +%H:%M:%S`; chomp $runtime;
 my $WS_version = &get_wormbase_version_name;
 our $lockdir = "/wormsrv2/autoace/logs/";
 
@@ -150,51 +148,41 @@ foreach $file (@gff_files) {
     ($chromosome,$source,$feature,$start,$stop,$score,$strand,$other,$name) = split /\t/;
     
     # Clone path
-    if    ( ($source eq "Genomic_canonical") && ($feature eq "region"))      {push (@{$GFF{$file}{clone_path}},$_);}
+    if    ( ($source eq "Genomic_canonical")    && ($feature eq "region"))      {push (@{$GFF{$file}{clone_path}},$_);}
     # Genes (CDSs)  
-    elsif ((($source eq "curated")           && ($feature eq "CDS"))  ||
-	   (($source eq "provisional")       && ($feature eq "CDS")))     {push (@{$GFF{$file}{genes}},$_);}
+    elsif ((($source eq "curated")              && ($feature eq "CDS")))        {push (@{$GFF{$file}{genes}},$_);}
     # Pseudogenes
-    elsif ( ($source eq "Pseudogene")        && ($feature eq "Pseudogene"))      {push (@{$GFF{$file}{pseudogenes}},$_);}
+    elsif ( ($source eq "Pseudogene")           && ($feature eq "Pseudogene"))  {push (@{$GFF{$file}{pseudogenes}},$_);}
     # RNA genes 
-    elsif ((($source eq "RNA")    || ($source eq "tRNAscan-SE-1.23") ||
-	    ($source eq "rRNA")   || ($source eq "scRNA") ||
-	    ($source eq "snRNA")  || ($source eq "snoRNA") || 
-	    ($source eq "miRNA")  || ($source eq "stRNA")) 
-	 && ($feature eq "Transcript"))               {push (@{$GFF{$file}{rna}},$_);}
+    elsif ($feature =~ m/_primary_transcript/)                                  {push (@{$GFF{$file}{rna}},$_);}
+
     # coding_exon (used to be CDS)
-    elsif (($source eq "curated") && ($feature eq "coding_exon"))            {push (@{$GFF{$file}{coding_exon}},$_);}
+    elsif (($source eq "curated")               && ($feature eq "coding_exon")) {push (@{$GFF{$file}{coding_exon}},$_);}
     # Exon      
-    elsif (($source eq "curated") && ($feature eq "exon"))                   {push (@{$GFF{$file}{exon}},$_);}
-    elsif (($source eq "tRNAscan-SE-1.23") 
-	   && ($feature eq "exon"))                   {push (@{$GFF{$file}{exon_tRNA}},$_);}
-    elsif (($source eq "Pseudogene") && ($feature eq "exon")) {push (@{$GFF{$file}{exon_pseudogene}},$_);}
+    elsif (($source eq "curated")               && ($feature eq "exon"))        {push (@{$GFF{$file}{exon}},$_);}
+    elsif (($source eq "Pseudogene")            && ($feature eq "exon"))        {push (@{$GFF{$file}{exon_pseudogene}},$_);}
+    elsif (($source eq "Non_coding_transcript") && ($feature eq "exon"))        {push (@{$GFF{$file}{exon_noncoding}},$_);}
+    elsif (($source eq "tRNAscan-SE-1.23")      && ($feature eq "exon"))        {push (@{$GFF{$file}{exon_tRNA}},$_);}
+
+
     # Intron    
-    elsif (($source eq "curated") && ($feature eq "intron")) {push (@{$GFF{$file}{intron}},$_);}
-    elsif ($feature eq "intron")                      {push (@{$GFF{$file}{intron_all}},$_);}
-    elsif (($source eq "tRNAscan-SE-1.23") 
-	   && ($feature eq "intron"))                 {push (@{$GFF{$file}{intron_tRNA}},$_);}
-    elsif (($source eq "Pseudogene") 
-	   && ($feature eq "intron"))                 {push (@{$GFF{$file}{intron_pseudogene}},$_);}
-    # Intron confirmed by ESTs
-    elsif (/Confirmed_by_EST/)                        {push (@{$GFF{$file}{intron_confirmed_CDS}},$_);}
-    elsif (/Confirmed_by_cDNA/)                       {push (@{$GFF{$file}{intron_confirmed_CDS}},$_);}
-    elsif (/Confirmed_in_UTR/)                        {push (@{$GFF{$file}{intron_confirmed_UTR}},$_);}
+    elsif (($source eq "curated")               && ($feature eq "intron"))      {push (@{$GFF{$file}{intron}},$_);}
+    # all other introns
+    elsif ($feature eq "intron")                                                {push (@{$GFF{$file}{intron_all}},$_);}
+
     # Repeats
-    elsif ((($source eq "tandem_repeat") && ($feature eq "repeat")) ||
-	   (($source eq "inverted") && ($feature eq "inverted_repeat")))          {push (@{$GFF{$file}{repeats}},$_);}
-    # TC1 insertions
-    elsif ($source eq "BLASTN_TC1")                   {push (@{$GFF{$file}{tc_insertions}},$_);}
+    elsif ($feature =~ m/_repeat/)                                              {push (@{$GFF{$file}{repeats}},$_);}
+
     # Assembly tags
-    elsif ($source eq "assembly_tag")                 {push (@{$GFF{$file}{assembly_tags}},$_);}
-    # TS site
-    elsif (/trans-splice_acceptor/)                   {push (@{$GFF{$file}{ts_site}},$_);}
+    elsif ($source eq "assembly_tag")                                           {push (@{$GFF{$file}{assembly_tags}},$_);}
+    # SL1/SL2 acceptor sites
+    elsif ($feature =~ m/_acceptor_site/)                                       {push (@{$GFF{$file}{ts_site}},$_);}
     # Oligo mapping
-    elsif ($feature eq "OLIGO")                       {push (@{$GFF{$file}{oligos}},$_);}
+    elsif ($feature eq "OLIGO")                                                 {push (@{$GFF{$file}{oligos}},$_);}
     # RNAi
     elsif ($feature eq "RNAi_reagent")                         {push (@{$GFF{$file}{RNAi}},$_);}
-    # GENEPAIR
-    elsif ($source eq "GenePair_STS")                 {push (@{$GFF{$file}{genepair}},$_);}
+    # PCR_products
+    elsif ($feature eq "PCR_product")                 {push (@{$GFF{$file}{PCR_products}},$_);}
     # Alleles
     elsif (($source eq "Allele") || ($source eq "Mos_insertion_allele")) {push (@{$GFF{$file}{allele}},$_);}
     # operons
@@ -202,10 +190,7 @@ foreach $file (@gff_files) {
     # Oligo_set
     elsif (($source eq "Oligo_set") && ($feature eq "reagent")) {push (@{$GFF{$file}{Oligo_set}},$_);}
     # Clone ends
-    elsif ((/Clone_left_end/)  
-	   || (/Clone_right_end/))                    {push (@{$GFF{$file}{clone_ends}},$_);}
-    # PCR Products
-    elsif (/PCR_product/)                             {push (@{$GFF{$file}{PCR_products}},$_);}
+    elsif ((/Clone_left_end/) || (/Clone_right_end/)) {push (@{$GFF{$file}{clone_ends}},$_);}
     # cDNA for RNAi
     elsif (/cDNA_for_RNAi/)                           {push (@{$GFF{$file}{cDNA_for_RNAi}},$_);}
     # BLAT_EST
@@ -489,19 +474,14 @@ coding_exon
 exon
 exon_tRNA
 exon_pseudogene
+exon_noncoding
 intron
 intron_all
-intron_tRNA
-intron_pseudogene
-intron_confirmed_CDS
-intron_confirmed_UTR
 repeats
-tc_insertions
 assembly_tags
 ts_site
 oligos
 RNAi
-genepair
 allele
 clone_ends
 PCR_products
