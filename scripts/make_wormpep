@@ -720,7 +720,7 @@ print LOG "patch file made...\n\n";
  # mail $maintainer report    #
  ##############################
 
-chmod (0444 , "$new_wpdir/wp.log$release")    || print LOG "cannot chmod $new_wpdir/wp.log$release\n";
+#chmod (0444 , "$new_wpdir/wp.log$release")    || print LOG "cannot chmod $new_wpdir/wp.log$release\n";
 unlink ("$new_wpdir/wp.fasta_unwrap$release") || print LOG "cannot delete $new_wpdir/wp.fasta_unwrap$release\n";
 unlink ("$new_wpdir/wormpep_unwrap$release")  || print LOG "cannot delete $new_wpdir/wormpep_unwrap$release\n";
 
