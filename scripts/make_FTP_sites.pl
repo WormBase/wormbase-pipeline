@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-09-16 13:35:23 $
+# Last updated by: $Author: dl1 $
+# Last updated on: $Date: 2004-10-08 15:10:10 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -438,7 +438,7 @@ sub make_pcr_list {
   foreach my $pcr (keys %pcr2gene){
     my @genes = split(/,/,$pcr2gene{$pcr});
     my $counter =0;
-    print "$pcr";
+    print OUT "$pcr";
     foreach my $gene (@genes){
 
       # remove next element if it is the same gene ID and start loop again
@@ -447,14 +447,14 @@ sub make_pcr_list {
 	redo;
       }
       $counter++;
-      print "\t$gene";
-      print "($gene2cgc{$gene})" if (exists($gene2cgc{$gene}));
+      print OUT "\t$gene";
+      print OUT "($gene2cgc{$gene})" if (exists($gene2cgc{$gene}));
       
       # now print sequence name
-      print ",$gene2sequence{$gene}";
+      print OUT ",$gene2sequence{$gene}";
       
     }
-    print "\n";
+    print OUT "\n";
   }
 
   close(OUT);
