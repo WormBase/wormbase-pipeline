@@ -503,15 +503,19 @@ sub geneclass_loci_other_name {
 	}
       }
     }
-    if ($_ =~ /(.+)\s+main name\s(.+)\s+other name\s+(.+)/){
+    if($_ =~ /(\w{3,3}-\d+)\s+\(common name\)\s+=\s+(\w{3,3}-\d+)\s+\(other name\)\s+(.+)/){
+      my $main = $1;
       $other_name = $2;
+      print "$main : $other_name : $3\n";
+      my $evidence = $3;
+      push(@Update, "\nLocus : \"$2\"\n");
       push(@Update, "\n-R Locus : \"$2\" \"$1\"\n");
       push(@Update, "\nLocus : \"$1\"\n");
-      @evidence = split(/\s+/, $3);
-
-      if ($evidence[0] eq "Paper_evidence"){
+      #@evidence = split(/\s+/, $evidence);
+       
+      if ($evidence =~ /Paper_evidence\s+(.+)/){
 	#print $evidence[1], "\n";
-	$paper = $evidence[1];
+	$paper = $1;
 	$paper =~ s/\[|://g;
 	if ($paper eq "PMID"){
 	  $pmid = $evidence[2];
@@ -520,12 +524,12 @@ sub geneclass_loci_other_name {
 	  push(@Update, "Other_name\t\"$other_name\"\tPMID_evidence\t\"$pmid\"\n");
 	}
 	else {
-	  $paper = $evidence[1];
+	  $paper = $1;
 	  $paper =~ s/\[|\]//g;
 	  push(@Update, "Other_name\t\"$other_name\"\tPaper_evidence\t\"[$paper]\"\n");
 	}
       }
-      if ($3 =~ /Person__evidence\s+(.+)/){
+      if ($evidence =~ /Person_evidence\s+(.+)/){
 	
 	$person = $1;
 	$person =~ s/\[|\]//g;
