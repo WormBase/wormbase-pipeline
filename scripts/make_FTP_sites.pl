@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-01-23 17:57:22 $
+# Last updated on: $Date: 2003-01-23 18:15:22 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -241,7 +241,7 @@ sub copy_wormpep_files{
   system ("/bin/tar -hcf $wormpub_dir/wormpep${wormpep}.tar $new_wpdir/wormpep${wormpep} $new_wpdir/wormpep.accession${wormpep} $new_wpdir/wormpep.diff${wormpep} $new_wpdir/wormpep.dna${wormpep} $new_wpdir/wormpep.history${wormpep} $new_wpdir/wormpep.table${wormpep} $new_wpdir/wp.fasta${wormpep}") && die "ERROR: Couldn't run tar command\n";
   system ("/bin/gzip $wormpub_dir/wormpep${wormpep}.tar") && die "ERROR: Cannot gzip tar file\n";
 
-  system("mv /wormsrv2/WORMPEP/wormpep${wormpep}/wormpep${wormpep}.tar.gz $targetdir/$release");
+  system("mv $wormpub_dir/wormpep${wormpep}.tar.gz $targetdir/$release") && die "ERROR: Couldn't move wormpep gzip tar file from $wormpub_dir to $targetdir/$release\n";
 
 
   $runtime = &runtime;
