@@ -19,10 +19,7 @@
 #############
 
 $|=1;
-BEGIN {
-  unshift (@INC,"/nfs/disk92/PerlSource/Bioperl/Releases/bioperl-0.05");
-}
-use Bio::Seq;
+
 use IO::Handle;
 use Getopt::Std;
 use Cwd;
