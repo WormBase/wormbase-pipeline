@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder [-options]
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2002-09-06 09:16:53 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2002-09-17 09:54:02 $
 
 
 #################################################################################
@@ -875,9 +875,10 @@ sub blat_jobs {
 
       system ("touch $logdir/$flag{'B7A'}");  
 
-      # dump gff from the database and then split then
+      # dump gff from the database and then split them for the UTR generation 
       &dump_GFFs;
       &split_GFFs;
+      `touch /wormsrv2/autoace/logs/UTR_gff_dump`;
 
       exit 0;
     }
@@ -1227,6 +1228,12 @@ sub generate_utrs {
   print WRITEDB $command;
   close WRITEDB;
   
+  #split GFF prior to UTR generation if not already done by BLAT routine
+  unless ( -e "/$logdir/UTR_gff_dump" ){
+    &dump_GFFs;
+    &split_GFFs;
+  }
+
   # run find_utrs.pl to generate data
   $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Running find_utrs.pl at $runtime\n";
   system("find_utrs.pl -d autoace -r /wormsrv2/autoace/UTR") && die "Couldn't run find_utrs.pl\n";
