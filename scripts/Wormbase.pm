@@ -663,6 +663,7 @@ The $number_total sequences contain $codingDNA base pairs in total.\n\n";
 sub test_user_wormpub
   {
     my $name = `whoami`;
+    chomp $name;
     if( "$name" eq "wormpub" ){
       print "running scripts as user wormpub . . . \n\n";
       return;
