@@ -7,7 +7,7 @@
 # This maps alleles to the genome based on their flanking sequence
 #
 # Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2003-01-16 17:17:31 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2003-01-22 16:27:28 $        # quickly see when script was last changed and by whom
 
 
 use strict;
@@ -29,7 +29,6 @@ my $restart = "go";
 # $debug   -  all output goes to ar/allele_mapping
 
 GetOptions( "debug"     => \$debug,
-	    "update"    => \$update,
 	    "limit=s"   => \$limit,
 	    "database=s"=> \$database,
 	    "WS=s"      => \$ver,
@@ -50,11 +49,6 @@ my $runtime     = `date +%H:%M:%S`; chomp $runtime;
 my $log;
 $ver = &get_wormbase_version unless defined $ver;
 
-my $allele_fa_file;
-my $genome_fa_file;
-my $scan_file;
-my $ace_file;
-my $strain_file;
 
 my (%chromosomeI_clones, %chromosomeII_clones, %chromosomeIII_clones, %chromosomeIV_clones, %chromosomeV_clones, %chromosomeX_clones);
 
@@ -69,47 +63,58 @@ my @chromo_clones_refs = (
 
 my $data_dump_dir;
 
+my $allele_fa_file;
+my $genome_fa_file;
+my $ace_file;
+my $strain_file;
+
 if( $debug )  {
   
   $data_dump_dir = glob("~ar2/allele_mapping");
   $allele_fa_file = "$data_dump_dir/alleles.fa";
   $genome_fa_file = "$data_dump_dir/genome.fa";
-  $scan_file = "$data_dump_dir/alleles.scan";
   $log        = "$data_dump_dir/map_alleles.$rundate";
   $database = "/wormsrv2/current_DB/" unless $database;
   $ver--;
   $ace_file = "$data_dump_dir/mapped_alleles.ace";
-  $ace_file = "$data_dump_dir/mapped_alleles.ace";
-  $strain_file = "$data_dump_dir/strains_seq.ace";
 }
 else { 
-  $log        = "/wormsrv2/logs/map_alleles.$rundate";
-  $scan_file = glob("~ar2/allele_mapping/alleles.scan");
-  $allele_fa_file = "/wormsrv2/autoace/BLATS/alleles.fa";
-  $ace_file = "/wormsrv2/autoace/BLATS/mapped_alleles.ace";
+  $log        = "/wormsrv2/logs/map_allelesWS$ver.$rundate.$$";
+  $allele_fa_file = "/wormsrv2/tmp/alleles.fa";
+  $genome_fa_file = "/wormsrv2/tmp/genome.fa";
+  $ace_file = "/wormsrv2/autoace/MAPPINGS/allele_mapping.WS$ver.ace";
   $database = "/wormsrv2/autoace/" unless $database;
 }
 
-if( $update ){
-  #update clone position hashes
-  &UpdateHashes(\%chromosomeI_clones, "CHROMOSOME_I.clone_path.gff");
-  &UpdateHashes(\%chromosomeII_clones,  "CHROMOSOME_II.clone_path.gff");
-  &UpdateHashes(\%chromosomeIII_clones, "CHROMOSOME_III.clone_path.gff");
-  &UpdateHashes(\%chromosomeIV_clones, "CHROMOSOME_IV.clone_path.gff");
-  &UpdateHashes(\%chromosomeV_clones, "CHROMOSOME_V.clone_path.gff");
-  &UpdateHashes(\%chromosomeX_clones, "CHROMOSOME_X.clone_path.gff");
-}
+#update clone position hashes
+&UpdateHashes(\%chromosomeI_clones, "CHROMOSOME_I.clone_path.gff");
+&UpdateHashes(\%chromosomeII_clones,  "CHROMOSOME_II.clone_path.gff");
+&UpdateHashes(\%chromosomeIII_clones, "CHROMOSOME_III.clone_path.gff");
+&UpdateHashes(\%chromosomeIV_clones, "CHROMOSOME_IV.clone_path.gff");
+&UpdateHashes(\%chromosomeV_clones, "CHROMOSOME_V.clone_path.gff");
+&UpdateHashes(\%chromosomeX_clones, "CHROMOSOME_X.clone_path.gff");
+
+
+##########  File handles etc #############
 open (LOG,">$log") or die "cant open $log\n\n";
 print LOG "$0 start at $runtime on $rundate\n----------------------------------\n\n";
 
+my $geneace_update = "/wormsrv2/autoace/MAPPINGS/map_alleles_geneace_update$ver.ace";
+my $geneace_update_delete = "/wormsrv2/autoace/MAPPINGS/map_alleles_geneace_update_delete$ver.ace";
+open (GENEACE,">$geneace_update") or die "cant open $geneace_update: $!\n";
+open (GEN_DEL,">$geneace_update_delete") or die "cant open $geneace_update_delete\n";
 open (OUT,">$ace_file") or die "cant open $ace_file\n";
-open (STR,">$strain_file") or die "cant open $strain_file\n";
+#open (STR,">$strain_file") or die "cant open $strain_file\n";
+
+
+########### database accesss ####################
 
 #get allele info from database
 my $db = Ace->connect(-path  => $database) || do { print  "$database Connection failure: ",Ace->error; die();};
 my @alleles = $db->fetch(-query =>'Find Allele;flanking_sequences');
 
-#parse GFF to determine where the genes are
+
+########## parse GFF to determine where the genes are ##############
 my (%chromI_genes, %chromII_genes, %chromIII_genes, %chromIV_genes, %chromV_genes, %chromX_genes);
 my @hashrefs = (
 
@@ -175,11 +180,11 @@ my %roman2num = ( I   => '0',
 		  X   => '5' 
 		);
 
-
+####### allele mapping loop ######################
 
 my %allele_data;   #  allele => [ (0)type, (1)5'flank_seq , (2)3'flank_seq, (3)CDS, (4)end of 5'match, (5)start of 3'match , (6)clone, (7)chromosome, (8)strains]
 my $count = 0;
-my $scoreCutoff = 29;  #SCAN score is no of matching bases
+my $scoreCutoff;  #SCAN score is no of matching bases
 my $source;
 my $OLR;
 my $OLL;
@@ -203,7 +208,7 @@ foreach $allele (@alleles)
 
     $name = $allele->name;
 
-    
+    # debug facility - this bit is so that it can restart from given allele name
     unless ("$restart" eq "go"){
       if ("$restart" eq "$name") {
 	$restart = "go";
@@ -213,6 +218,7 @@ foreach $allele (@alleles)
 	next;
       }
     }
+
     # debug facility - after the restart means you can specify where to start and how many to do 
     if( $limit ) {
       last if $count++ > $limit;
@@ -340,7 +346,7 @@ foreach $allele (@alleles)
 		  
 		  if( &MapAllele == 1 ) {
 		    #allele mapped to superlink
-		    $allele_data{$name}[6] = $source->name;
+		    $allele_data{$name}[6] = $superlink->name;
 		    print "Did $allele with superlink\n" ;
 		  }
 		  else {
@@ -355,29 +361,55 @@ foreach $allele (@alleles)
 		next;
 	      }
 	    }
-
-	    &findOverlapGenes($name);
-	    &outputAllele($name);
 	  }
+
+	&findOverlapGenes($name);
+	&outputAllele($name);
       }
     else {
       print LOG "$allele - cant find valid sequence\n";
     }
   }
 
-
-foreach (keys %allele_data )
-  {
-   
-  }
 print "$count alleles\n";
-$db->close;
-$runtime = `date +%H:%M:%S`; chomp $runtime;
-print LOG "$0 end at ",$runtime," \n-------------- END --------------------\n\n";
-close LOG;
 
-# Always good to cleanly exit from your script
+print LOG "Update files for geneace allele mappings are available - \n$geneace_update\n$geneace_update_delete\n\n";
+
+$db->close;
+
+
+close OUT;
+close GEN_DEL;
+close GENEACE;
+
+##############################
+# read acefiles into autoace #
+##############################
+print LOG "\nStart parsing $ace_file in to $database\n\n";
+my $command =<<END;
+pparse $ace_file
+save
+quit
+END
+my $tace = &tace;
+open (TACE,"| $tace -tsuser map_allele $database") || die "Couldn't open tace connection to $database\n";
+print TACE $command;
+close (TACE);
+print LOG "finished parsing\n";
+
+# close LOG and send mail
+close LOG;
+print LOG "$0 end at ",&runtime," \n-------------- END --------------------\n\n";
+&mail_maintainer("map_alleles","$maintainers","$log");
+
 exit(0);
+
+#######################################
+#                                     #
+#          SUB ROUTINES               #
+#                                     #
+#######################################
+
 
 sub findChromosome
   {
@@ -402,7 +434,7 @@ sub outputAllele
     if( $allele_data{$to_dump}[3] and $allele_data{$to_dump}[4] and  $allele_data{$to_dump}[5]) { 
       
       print OUT "\nSequence : \"$allele_data{$to_dump}[6]\"\nAllele $to_dump $allele_data{$to_dump}[4] $allele_data{$to_dump}[5]\n";
-      
+
       if( $allele2gene{$to_dump} ) {
 	my @myStrains;
 	my @affects_genes = split(/\s/,"$allele2gene{$to_dump}");
@@ -414,17 +446,26 @@ sub outputAllele
 
 	# in Allele object
 	print OUT "\nAllele : $to_dump\n";
+	print GEN_DEL "\nAllele : $to_dump\n-D Predicted_gene\n-D Sequence\n";# remove current sequence and predicted genes from Geneace
+
+	print GENEACE "\nAllele : \"$to_dump\"\nSequence \"$allele_data{$to_dump}[6]\"\n";# allele -> sequence
 	if( $allele_data{$to_dump}[8] ) {
 	  @myStrains = split(/\*\*\*/,"$allele_data{$to_dump}[8]");
 	}
 	foreach my $ko (@affects_genes) {
 	  #allele - seq connection
 	  print OUT "Predicted_gene $ko\n";
-	  foreach my $str (@myStrains) {
-	    #strain - seq connection
-	    print STR "Strain : \"$str\"\n";
-	    print STR "Sequence $ko\n\n";
-	  }
+	  print GENEACE "Predicted_gene $ko\n";# update geneace with allele -> Predicted_genes
+
+
+#         NOT DOING THIS ANY MORE
+#	  foreach my $str (@myStrains) {
+#	    #strain - seq connection
+#	    print STR "Strain : \"$str\"\n";
+#	    print STR "Sequence $ko\n\n";
+#	  }
+
+
 	}
       }
       else {
@@ -464,17 +505,12 @@ sub MapAllele
       `revcomp $genome_fa_file > $rev`;
       `mv $rev $genome_fa_file`;
     }
-
+    # SCAN 
     my $scan = "/usr/local/pubseq/bin/scan -f -t";
-    open (SCAN, ">$scan_file") or die "cant write $scan_file\n";
-    print SCAN `$scan $scoreCutoff $genome_fa_file $allele_fa_file` or die "SCAN failed\n";
-    close SCAN;
-
-    #read in the results
     my @data;
     my $end5;
     my $end3;
-    open (SCAN, "<$scan_file") or die "cant read $scan_file\n";
+    open (SCAN, "$scan $scoreCutoff $genome_fa_file $allele_fa_file |") or warn "cant pipe SCAN : $!\n";
     while (<SCAN>)
       {
 	# scan output-  gk2_3       1     30  56424 56453     30  100 % match, 0 copies, 0 gaps
