@@ -777,9 +777,9 @@
 		// if you want to register a length without a DNA sequence, then use
 		// a dummy sequence object, say "-".  This ensures that when a real
 		// sequence appears, its length dominates.
-	  SMap S_Parent Canonical_parent UNIQUE ?Sequence XREF Genomic_non_canonical 
-	                Genomic_parent UNIQUE ?Sequence XREF Nongenomic
-			AGP_parent UNIQUE ?Sequence XREF AGP_fragment // added to hold briggsae data [krb 020726]
+	  SMap S_Parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF Genomic_non_canonical 
+	                       Genomic_parent UNIQUE ?Sequence XREF Nongenomic
+			       AGP_parent UNIQUE ?Sequence XREF AGP_fragment // added to hold briggsae data [krb 020726]
 	       S_Child Homol_data ?Homol_data XREF Sequence UNIQUE Int UNIQUE Int #SMap_info
 		       Feature_data ?Feature_data XREF Sequence UNIQUE Int UNIQUE Int #SMap_info
 		       Genomic_non_canonical ?Sequence XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info
@@ -1085,14 +1085,14 @@
 
 
 
-?Homol_data SMap S_Parent Sequence ?Sequence
+?Homol_data SMap S_Parent Sequence UNIQUE ?Sequence
 	    Homol DNA_homol ?Sequence XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		  Pep_homol ?Protein XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		  Motif_homol ?Motif XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		  Homol_homol ?Homol_data XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 	    // keep the standard model structure, so same code works
 
-?Feature_data SMap S_Parent Sequence ?Sequence
+?Feature_data SMap S_Parent Sequence UNIQUE ?Sequence
 	      Feature ?Method Int Int UNIQUE Float UNIQUE Text #Feature_info
               Method ?Method // added for Lincoln RNAi [001213 dl]
 	      Splices	Confirmed_intron  Int Int #Splice_confirmation
@@ -1497,8 +1497,8 @@
 
 // RNAi from Lincoln Stein 001213
 
-?RNAi   SMap S_Parent Sequence UNIQUE ?Sequence XREF RNAi       // canonical parent (reliable)
- 		      PCR_product UNIQUE ?PCR_product XREF RNAi // primer pair (reliable)
+?RNAi   SMap S_Parent UNIQUE Sequence UNIQUE ?Sequence XREF RNAi       // canonical parent (reliable)
+			     PCR_product UNIQUE ?PCR_product XREF RNAi // primer pair (reliable)
         Method ?Method
         Experiment      Laboratory ?Laboratory
                         Author ?Author
