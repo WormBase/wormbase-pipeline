@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2004-09-29 14:23:45 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2004-12-06 10:05:08 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -80,17 +80,6 @@ if (! -e "$datadir/GFF_SPLITS"){
   system("mkdir /wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS") && die "Couldn't create directory\n";
 }
 
-# check to see if full chromosome gff dump files exist
-foreach my $file (@gff_files) {
-    unless (-e "$gffdir/$file.gff") {
-	&usage("No GFF file");
-    }
-    if (-e -z "$gffdir/$file.gff") {
-	&usage("Zero length GFF file");
-    }
-}
-
-
 ##########################################################
 # Archive the GFF_splits directory into a WSxx directory
 ##########################################################
@@ -101,6 +90,17 @@ if($archive){
   system("mv $datadir/GFF_SPLITS ${datadir}/${WS_version}") && die "Couldn't rename directory\n";
   exit(0);
 }
+
+# check to see if full chromosome gff dump files exist
+foreach my $file (@gff_files) {
+    unless (-e "$gffdir/$file.gff") {
+      die "$gffdir/$file.gff is missing\n";
+    }
+    if (-e -z "$gffdir/$file.gff") {
+      die "$gffdir/$file.gff is zero length\n";
+    }
+}
+
 
 #################################################################################
 # Main Loop                                                                     #
