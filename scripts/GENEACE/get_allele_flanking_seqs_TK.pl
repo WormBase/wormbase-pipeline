@@ -1,10 +1,10 @@
-#!/usr/bin/perl5.6.1 -w
+#!/usr/local/bin/perl5.6.1 -w
 #
 # get_allele_flanking_seqs_TK.pl
 #
 # by Chao-Kung Chen [030625]
 
-# Last updated on: $Date: 2004-09-10 15:21:23 $
+# Last updated on: $Date: 2004-11-22 17:37:27 $
 # Last updated by: $Author: krb $
 
 use Tk;
@@ -21,24 +21,33 @@ use GENEACE::Geneace;
 ##################################################
 # Script variables
 ##################################################
+
 my $paper_name;          # Will store paper object names in form 'WBPaperXXXXXXXX'
 my $tace = &tace;        # gets default path to tace binary
+my $database = "/nfs/disk100/wormpub/DATABASES/current_DB";
+my $WB_version = &get_wormbase_version() -1; # get release number for last release (i.e. not current one)
 
+# check that GFF splits directory exists for the version that you are looking at
+if (! -e "/wormsrv2/autoace/GFF_SPLITS/WS$WB_version/"){
+  die "/wormsrv2/autoace/GFF_SPLITS/WS$WB_version does not exist\n";
+}
+else{
+  print "\nWorking with WS$WB_version data\n";
+}
 
 
 #####################################
 # check for latest exon table version
 #####################################
 
-my $curr_db = "/nfs/disk100/wormpub/DATABASES/current_DB";
 my $exon_tbl = "/wormsrv1/geneace/ALLELE_DATA/EXON_TABLES";
-
-my $current = `grep "NAME WS" $curr_db/wspec/database.wrm`; $current =~ s/NAME //; chomp $current;
 my $archive;
 my @archive = `ls $exon_tbl`; foreach (@archive){chomp; if ($_ =~ /.+(WS\d+)/){$archive = $1}}
 my $top;
 
-if ("$current" ne "$archive") {	
+
+# If there has been a new release, then we first need to update the EXON_TABLES directory under /wormsrv1/geneace
+if ("$WB_version" ne "$archive") {	
   $top = MainWindow->new();
   $top->configure (title => "Updating datasets . . .", background => "white");
 
@@ -47,13 +56,14 @@ if ("$current" ne "$archive") {
   my $message_frame = $top ->Frame(relief => 'groove', borderwidth => 2)
                            ->pack(side => 'top', anchor => 'n',expand => 1, fill => 'x');
 
-  $message_frame -> Label(text=>"\nNew Wormbase release (WS$current) available.\n\n   Need to update exon table of all CDS/Transcripts\nand 6 chromosomal DNA sequencs.\n\nThis usually takes ~45 sec.\nAnother window will then popup for curation\n", fg=>"blue")
+  $message_frame -> Label(text=>"\nNew Wormbase release (WS$WB_version) available.\n\n   Need to update exon table of all CDS/Transcripts\nand 6 chromosomal DNA sequencs.\n\nThis usually takes ~45 sec.\nAnother window will then popup for curation\n", fg=>"blue")
                  -> pack(side => "left");
 
   $message_frame -> Button(text => "Update", activebackground => "green", activeforeground => "black", command => \&update)
                  -> pack(side => "left", expand => 1);
   MainLoop();
 }
+
 
 ###############################################
 # get hash for Gene_name <-> Gene id conversion
@@ -126,7 +136,7 @@ my $param_frame = $mw ->Frame(relief => 'groove', borderwidth => 2)
 $param_frame -> Label(text=>"Query parameters: ", fg=>"blue") # create a horizontal space 
            -> pack(side => "left");
 
-$param_frame -> Label(text => "Eg: 4R79.1 -aa 324y ok12 abc-1 00001232   OR   4R79.1 -dna 1324t ok12 abc-1 00001232", fg => "black")
+$param_frame -> Label(text => "Eg: 4R79.1 -aa 324D ok12 abc-1 1232   OR   4R79.1 -dna 1324t ok12 abc-1 1232", fg => "black")
                 -> pack(side => "left");
 
 #----------- entry box ----------
@@ -204,7 +214,7 @@ $msg_frame_2 -> Label(text => "GREEN", fg => "green")
 my $msg_frame_3 = $mw ->Frame(height => 30)
                     ->pack(side => 'top', anchor => 'n', after => $msg_frame_2, expand => 1, fill => 'x');
 
-$msg_frame_3 -> Label(text => "For DNA query, the mutated nt is in")
+$msg_frame_3 -> Label(text => "For DNA query, the mutated nucleotide is in")
              -> pack(side => "left");
 $msg_frame_3 -> Label(text => "RED", fg => "red")
              -> pack(side => "left");
@@ -244,8 +254,8 @@ MainLoop();
 # global variables
 ##################
 
-my ($cds_or_locus, $aa_or_dna, $mutation, $allele, $locus, $position, $cds,
-    @output, @ace, @out, @DNA, @prot, %code, @CDS_coords, $molecule, $filename);
+my ($cds_or_locus, $aa_or_dna, $mutation, $allele, $cgc_name, $position, $cds,
+    @output, @ace, @out, @DNA, @prot, %aminoacid2codon, @CDS_coords, $molecule, $filename);
 
 
 ######################################################
@@ -254,9 +264,9 @@ my ($cds_or_locus, $aa_or_dna, $mutation, $allele, $locus, $position, $cds,
 
 sub update {
   system ("rm -f $exon_tbl/* ");
-  `echo "table-maker -o $exon_tbl/CDS_table_$current -p /wormsrv1/geneace/wquery/get_elegans_CDS_source_exons.def" | $tace $curr_db`;
-  `echo "table-maker -o $exon_tbl/RNA_table_$current -p /wormsrv1/geneace/wquery/get_elegans_RNA_gene_source_exons.def" | $tace $curr_db`;
-  system ("cat $exon_tbl/CDS_table_$current $exon_tbl/RNA_table_$current > $exon_tbl/ExonTable_$current; rm -f $exon_tbl/*table_$current");
+  `echo "table-maker -o $exon_tbl/CDS_table_$WB_version -p /wormsrv1/geneace/wquery/get_elegans_CDS_source_exons.def" | $tace $database`;
+  `echo "table-maker -o $exon_tbl/RNA_table_$WB_version -p /wormsrv1/geneace/wquery/get_elegans_RNA_gene_source_exons.def" | $tace $database`;
+  system ("cat $exon_tbl/CDS_table_$WB_version $exon_tbl/RNA_table_$WB_version > $exon_tbl/ExonTable_$WB_version; rm -f $exon_tbl/*table_$WB_version");
   system ("chmod 775 $exon_tbl/* ");
   $top->after(1, sub { $top->destroy } );
 }
@@ -285,7 +295,7 @@ sub read_doc{
   }
 
   my $txt=$dialog->Scrolled("Text",  -scrollbars=>"ow", height=>60, width=> 130)->pack(side => "left", anchor => "w");
-  $txt -> insert('end', "USAGE:\n\nQuery parameters are in the order of\n\n(1) CDS/Transcript/Pseudogene\n(2) -aa (amino acid) or (-dna) nucleotide\n(3) nucleotide or amino acid position followed by mutation in single letter (or three-letter code for amino acid)\n(4) allele name \n(5) locus name\n(6) paper info \n\nseparated by space (all parameters are case insensitive)\n\n\n---------------------------------------------------------------------------------------------------------------------------------\n                                            Detailed description of this program\n---------------------------------------------------------------------------------------------------------------------------------\n$doc");
+  $txt -> insert('end', "USAGE:\n\nQuery parameters are in the order of\n\n(1) CDS/Transcript/Pseudogene\n(2) -aa (amino acid) or (-dna) nucleotide\n(3) nucleotide or amino acid position followed by mutation in single letter (or three-letter code for amino acid)\n(4) allele name \n(5) CGC name\n(6) WBPaper ID (trailing significant digits only) \n\nseparated by space (all parameters are case insensitive)\n\n\n---------------------------------------------------------------------------------------------------------------------------------\n                                            Detailed description of this program\n---------------------------------------------------------------------------------------------------------------------------------\n$doc");
 
   $dialog->Show();
 
@@ -385,7 +395,7 @@ sub run {
   my $text = $entry -> cget(-textvariable);
 
   # look up genetic code of aa
-  %code = (
+  %aminoacid2codon = (
 	    'A' => ["gct", "gcc", "gca", "gcg"],
 	    'B' => ["aat", "aac", "gat", "gac"],
 	    'C' => ["tgt", "tgc"],
@@ -411,12 +421,12 @@ sub run {
 	    'X' => ["taa", "tag", "tga"], #stop codons
 	     );
 
-  # inverting %code to %three_ltr_code
-  my %three_ltr_code;
+  # inverting %aminoacid2codon to %codon2aminoacid
+  my %codon2aminoacid;
 
-  foreach my $ea (keys %code){
-    foreach (@{$code{$ea}}){
-      $three_ltr_code{$_} = $ea;
+  foreach my $aminoacid (keys %aminoacid2codon){
+    foreach my $codon (@{$aminoacid2codon{$aminoacid}}){
+      $codon2aminoacid{$codon} = $aminoacid;
     }
   }
 
@@ -431,12 +441,17 @@ sub run {
   else {
     my $ref;
     @info=();
-    ($cds_or_locus, $aa_or_dna, $mutation, $allele, $locus, $ref) = split(/\s+/, $params);
-    $run_window -> insert('end', "$cds_or_locus, $aa_or_dna, $mutation, $allele, $locus, $ref");
+    ($cds_or_locus, $aa_or_dna, $mutation, $allele, $cgc_name, $ref) = split(/\s+/, $params);
+    $run_window -> insert('end', "$cds_or_locus, $aa_or_dna, $mutation, $allele, $cgc_name, $ref");
+
+    # effectively split the $mutation field to store the position of the mutation in $position and the nature of
+    # the mutation in $mutation
     $position = $mutation;
     $position =~ s/\D//g;
     $mutation =~ s/\d+//;
-    if ($mutation =~ /\w{3,4}/){$mutation = $three_ltr_code{lc($mutation)}}
+    # check whether three letters have been specified (in -DNA mode) rather than one, and if so look up correpsonding
+    # amino acid from hash
+    if ($mutation =~ /\w{3,4}/){$mutation = $codon2aminoacid{lc($mutation)}}
     $mutation = uc($mutation);
     push(@info, uc($mutation));
 
@@ -444,6 +459,7 @@ sub run {
     my $id_padded = sprintf "%08d" , $ref;
     $paper_name = "WBPaper$id_padded";
 
+    # Set molecule type
     if ($aa_or_dna eq "-aa" || $aa_or_dna eq "-AA"){$molecule = "aa"} else {$molecule = "DNA"}
 
     if ($cds_or_locus =~ /(.+\.\d+)(\w)/){
@@ -462,7 +478,7 @@ sub run {
 
   my ($DNA, @coords, $chrom, $left, $right, $strand, $CDS);
 
-  chdir "/wormsrv2/autoace/GFF_SPLITS/$current/";
+  chdir "/wormsrv2/autoace/GFF_SPLITS/$WB_version/";
 
   @CDS_coords = `grep $cds *.CDS.gff | cut -f 1,4,5,7,9`;
   if (!@CDS_coords){@CDS_coords = `grep $cds *.rna.gff | cut -f 1,4,5,7,9`} # do this if seq. belongs to Transcript class
@@ -479,7 +495,7 @@ sub run {
   $left = $coords[0] - 30;
   $right = $coords[-1] + 30;
 
-  my $dna_file = "$curr_db/CHROMOSOMES/CHROMOSOME_".$chrom.".dna";
+  my $dna_file = "$database/CHROMOSOMES/CHROMOSOME_".$chrom.".dna";
 
   my @line = `egrep "[atcg]" $dna_file`;
   my $line;
@@ -507,7 +523,7 @@ sub run {
     my $dna_R = join('', @DNA[$position+30..$position+59]);
 
     $run_window -> delete('1.0', 'end');
-    $run_window -> insert('end', "$current\n$cds\n\n");
+    $run_window -> insert('end', "$WB_version\n$cds\n\n");
     $run_window -> insert('end', "$DNA[$position+29] ($position) [Full-length DNA sequence: ");
     my $length = scalar @DNA-60;
     $run_window -> insert('end', "$length]\n\n");
@@ -515,7 +531,7 @@ sub run {
     $run_window -> insert('end', "$red $DNA[$position+29]");
     $run_window -> insert('end', " $dna_R");
 
-    $ace_window->insert('end', "\nGene : \"$Gene_info{$locus}{'Gene'}\"  \/\/$locus\n");
+    $ace_window->insert('end', "\nGene : \"$Gene_info{$cgc_name}{'Gene'}\"  \/\/$cgc_name\n");
     $ace_window->insert('end', "\/\/Allele \"$allele\" Paper_evidence \"$paper_name\"\n");
     $ace_window->insert('end', "\nAllele : \"$allele\"\n");
     $ace_window->insert('end', "\/\/Evidence Paper_evidence \"$paper_name\"\n");
@@ -560,7 +576,7 @@ sub run {
     # retrieving flank seq of a specified codon or mutation site via exons_to_codons routine
     ########################################################################################
 
-    exons_to_codons($cds, \@exons, \@DNA, \@prot, $mutation, $position, $allele, $locus);
+    exons_to_codons($cds, \@exons, \@DNA, \@prot, $mutation, $position, $allele, $cgc_name);
   }
 }
 
@@ -705,9 +721,9 @@ sub exons_to_codons {
 
   push(@output, "-------------------------------------\n");
   push(@output, "   	Codon      ($prot[$position-1]):\t\t$codon\n");
-  for ($i=0; $i < scalar @{$code{$mutation}}; $i++){
-    push(@output, "	Mutated to \($mutation\):\t\t$code{$mutation}->[$i-1]\n") if $mutation ne "X";
-    push(@output, "	Mutated to \(STOP\):\t$code{$mutation}->[$i-1]\n") if $mutation eq "X";
+  for ($i=0; $i < scalar @{$aminoacid2codon{$mutation}}; $i++){
+    push(@output, "	Mutated to \($mutation\):\t\t$aminoacid2codon{$mutation}->[$i-1]\n") if $mutation ne "X";
+    push(@output, "	Mutated to \(STOP\):\t$aminoacid2codon{$mutation}->[$i-1]\n") if $mutation eq "X";
   }
   push(@output, "-------------------------------------");
 
@@ -738,11 +754,24 @@ sub exons_to_codons {
       push(@output, "\n\n# 3rd site mutation:\n") if $i == 3;
       $dna_L = join('', @DNA[$first_bp-32+$i..$first_bp-2]);
       push(@output, "black $dna_L");
-      if ($i == 1){push(@output, "red $first_site"); push(@output, "blue $second_site"); push(@output, "blue $third_site"); $dna_Lf = $dna_L}
-      if ($i == 2){push(@output, "blue $first_site"); push(@output, "red $second_site"); push(@output, "blue $third_site")}
-      if ($i == 3){push(@output, "blue $first_site"); push(@output, "blue $second_site"); push(@output, "red $third_site")}
+      if ($i == 1){
+	push(@output, "red $first_site"); 
+	push(@output, "blue $second_site"); 
+	push(@output, "blue $third_site"); 
+	$dna_Lf = $dna_L;
+      }
+      if ($i == 2){
+	push(@output, "blue $first_site"); 
+	push(@output, "red $second_site"); 
+	push(@output, "blue $third_site");
+      }
+      if ($i == 3){
+	push(@output, "blue $first_site"); 
+	push(@output, "blue $second_site"); 
+	push(@output, "red $third_site");
+      }
       $dna_R = join('', @DNA[$third_bp..$third_bp+26+$i]);
-       push(@output, "black $dna_R");
+      push(@output, "black $dna_R");
       if ($i == 1){push(@ace, "1st $dna_L $second_site$third_site$dna_R\n")}
       if ($i == 2){push(@ace, "2nd $dna_L$first_site $third_site$dna_R\n")}
       if ($i == 3){push(@ace, "3rd $dna_L$first_site$second_site $dna_R\n"); $dna_Rf = $dna_R}
@@ -866,7 +895,7 @@ sub exons_to_codons {
 
    $label_1 -> configure(text => "@ace");
    $label_2 -> configure(text => "$allele");
-   $label_3 -> configure(text => "$locus");
+   $label_3 -> configure(text => "$cgc_name");
 
    $cds =~ /(.+)\..+/;
    my $parent = $1;
@@ -878,38 +907,38 @@ sub exons_to_codons {
 sub get_1_site_flanks{
   my $ace = $label_1->cget("text");
   my $allele = $label_2->cget("text");
-  my $locus = $label_3->cget("text");
+  my $cgc_name = $label_3->cget("text");
   my $seq = $label_4->cget("text");
   my ($first, $Lf1, $Rf1, $second, $Lf2, $Rf2, $third, $Lf3, $Rf3, $fourth, $Lf4, $Rf4,) = split(/\s+/, $ace);
-  write_ace($Lf1, $Rf1, $allele, $locus, $seq);
+  write_ace($Lf1, $Rf1, $allele, $cgc_name, $seq);
 }
 
 sub get_2_site_flanks{
   my $ace = $label_1->cget("text");
   my $allele = $label_2->cget("text");
-  my $locus = $label_3->cget("text");
+  my $cgc_name = $label_3->cget("text");
   my $seq = $label_4->cget("text");
   my ($first, $Lf1, $Rf1, $second, $Lf2, $Rf2, $third, $Lf3, $Rf3, $fourth, $Lf4, $Rf4,) = split(/\s+/, $ace);
-  write_ace($Lf2, $Rf2, $allele, $locus, $seq);
+  write_ace($Lf2, $Rf2, $allele, $cgc_name, $seq);
 
 }
 
 sub get_3_site_flanks{
   my $ace = $label_1->cget("text");
   my $allele = $label_2->cget("text");
-  my $locus = $label_3->cget("text");
+  my $cgc_name = $label_3->cget("text");
   my $seq = $label_4->cget("text");
   my ($first, $Lf1, $Rf1, $second, $Lf2, $Rf2, $third, $Lf3, $Rf3, $fourth, $Lf4, $Rf4,) = split(/\s+/, $ace);
-  write_ace($Lf3, $Rf3, $allele, $locus, $seq);
+  write_ace($Lf3, $Rf3, $allele, $cgc_name, $seq);
 }
 
 sub get_codon_flanks{
   my $ace = $label_1->cget("text");
   my $allele = $label_2->cget("text");
-  my $locus = $label_3->cget("text");
+  my $cgc_name = $label_3->cget("text");
   my $seq = $label_4->cget("text");
   my ($first, $Lf1, $Rf1, $second, $Lf2, $Rf2, $third, $Lf3, $Rf3, $fourth, $Lf4, $Rf4,) = split(/\s+/, $ace);
-  write_ace($Lf4, $Rf4, $allele, $locus, $seq);
+  write_ace($Lf4, $Rf4, $allele, $cgc_name, $seq);
 }
 
 # get DNA triplet of a specified amino acid based on source exons processed in the above routine
@@ -967,9 +996,9 @@ sub codon_to_seq {
 
 sub write_ace {
 
-  my ($Lf, $Rf, $allele, $locus, $seq) = @_;
+  my ($Lf, $Rf, $allele, $cgc_name, $seq) = @_;
 
-  $ace_window->insert('end', "\nGene : \"$Gene_info{$locus}{'Gene'}\"\n");
+  $ace_window->insert('end', "\nGene : \"$Gene_info{$cgc_name}{'Gene'}\"\n");
   $ace_window->insert('end', "Allele \"$allele\" Paper_evidence \"$paper_name\"\n");
   
 
@@ -983,7 +1012,7 @@ sub write_ace {
   $ace_window->insert('end', "\/\/Insertion\n");
   $ace_window->insert('end', "\/\/Deletion_with_insertion\n");
   $ace_window->insert('end', "Flanking_sequences \"$Lf\" \"$Rf\"\n");
-  $ace_window->insert('end', "Gene  \"$Gene_info{$locus}{'Gene'}\"  \/\/$locus\n");
+  $ace_window->insert('end', "Gene  \"$Gene_info{$cgc_name}{'Gene'}\"  \/\/$cgc_name\n");
   $ace_window->insert('end', "Species \"Caenorhabditis elegans\"\n");
   if ($info[0] eq "X"){
     $ace_window->insert('end', "\/\/Nonsense \"Amber_UAG\" \"$info[2] to stop\"\n");
@@ -1024,11 +1053,14 @@ DESCRIPTION
   INPUT:
 
   You need to supply a CDS/Transcript name (case-insensitive) and amino acid coordinate by -aa option 
-  (or nucleotide coordinate by -dna opti  on) followed by a mutation in single- or three-letter code (case-insensitive) 
-  as arguments (see USAGE) to retrieve the flanking sequences.  Finally, incude a numerical WBPaper ID
-  (this will be padded by leading zeros automatically).
+  (or nucleotide coordinate by -dna option) followed by a mutation in single- or three-letter code (case-insensitive) 
+  as arguments (see USAGE) to retrieve the flanking sequences.  Finally, incude an allele name, CGC name (optional)
+  and a WormBase Paper ID (this will be padded by leading zeros automatically).
 
-  Eg, 4R79.1 -aa 324y ok12 abc-1 00001321   OR   4R79.1 -dna 1324t ok12 abc-1 1231
+  E.g. 4R79.1 -aa 324D     ok12 abc-1 1321 // 'D' is the amino acid in the variant allele
+       4R79.1 -dna 1324gag ok12 abc-1 1231 // same as above but using three letter DNA code to specify amino acid
+       4R79.1 -dna 1324t   ok12 abc-1 1231 // Or just specify single nucleotide change
+
 
 SCENARIO A: DNA coordinate
 
@@ -1044,7 +1076,7 @@ SCENARIO A: DNA coordinate
 
   Comments:
 
-    (1) Verification. If the nt specified is identical, then it is a good sign.
+    (1) Verification. If the nucleotide specified is identical, then it is a good sign.
 
     (2) The nucleotide g in the middle separated by spaces is the mutation.
         ace file template with minimal information is generated without clicking on the mutation site buttons in the lower
@@ -1096,10 +1128,11 @@ SCENARIO B: amino acide coordinate
          sequences (4) of a mutated site (the one in between spaces), especially in cases where frame shift occur so that
          the immediate flanking nucleotide maybe in the intron between two sites of a codon.
 
-     (3) As three potential single-site mutation can occur in a codon, (3) gives you genetic codes of the amino acid
+     (3) As three potential single-site mutations can occur in a codon, (3) gives you genetic codes of the amino acid
          resulted in mutation and allows you a quick look up of bp substitution. This table is also fine
          for a dinucleotide mutation.
-         In the scenario, eg, if codon (G) has a missense mutation and changed to E, the codon table conveniently tells you
+
+         In this scenario, e.g., if codon (G) has a missense mutation and changed to E, the codon table conveniently tells you
          that ggg has been mutated to gag. So, this would be a 2nd site mutation or a [g/a] substitution.
          You should then choose the matching flanking sequences in (4).
 
