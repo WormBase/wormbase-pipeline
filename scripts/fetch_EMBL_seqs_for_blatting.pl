@@ -7,7 +7,7 @@
 # Attempt to unify all of the diverse scripts to fetch ESTs, OSTs, mRNAs etc. used by blat 
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2004-05-18 15:14:34 $
+# Last edited on: $Date: 2004-07-20 16:17:04 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -282,7 +282,7 @@ sub make_mrnas{
 		# remove any offending '>' from def line. This is required by transcriptmasker.pl
 		$def =~ s/\>//g;
 
-		print OUT_MRNA ">$acc $id $def\n";
+		print OUT_MRNA "\n>$acc $id $def\n";
 		if ($ace) {
 		  print OUT_ACE "\nSequence : \"$acc\"\n";
 		  print OUT_ACE "Database EMBL NDB_AC $acc\n";
