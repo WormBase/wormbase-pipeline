@@ -137,7 +137,6 @@ sub add_matching_cDNA
   {
     my $self = shift;
     my $cdna = shift;
-    #print STDERR $cdna->name," matches ",$self->name,"\n";
     push( @{$self->{'matching_cdna'}},$cdna);
 
 ###### modify current transcript structure to incorporate new cdna #####
@@ -155,6 +154,8 @@ sub add_matching_cDNA
 # *10 = 5'UTR exon
 # *11 = 3'UTR exon
 #  12 = downstream of existing transcript
+#  13 = single exon gene extends both ends.
+#  14 = spliced 3' UTR exon passed current model
 
 ########################################################################
 
@@ -165,7 +166,8 @@ sub add_matching_cDNA
 
       #extend 3'
       if( $match_code == 2 or $match_code == 9 ) {
-	# cdna overlaps last exon so extend.
+	# cdna overlaps last exon so extend - need to take in to account it may still be spliced past the CDS end.
+
 	my $last_exon_start = $self->last_exon->[0];
 	$self->exon_data->{"$last_exon_start"} = $exon->[1];
       }
@@ -197,6 +199,9 @@ sub add_matching_cDNA
 	  $self->{'exons'}->{"$exon->[0]"} = $exon->[1];
 	}
       }
+      elsif( $match_code == 14 ) {
+	$self->exon_data->{"$exon->[0]"} = $exon->[1];
+      }
       # single exon gene extend both ends
       elsif( $match_code == 13 ) {	
 	# 5' extension
@@ -220,7 +225,7 @@ sub add_matching_cDNA
 
     if( my $SL = $cdna->SL){
       $self->SL( $SL );
-    } 
+    }
     if ( my $polyA_site = $cdna->polyA_site ) {
       $self->polyA_site( $polyA_site )  ;
     }
@@ -265,15 +270,11 @@ sub report
     foreach (@{$self->{'matching_cdna'}}) {
       print $fh "Matching_cDNA \"",$_->name,"\"\n";
 
-#   This bit commented out for WS127 until model change approved
       foreach my $f ( $_->features ) {
 	print $fh "Sequence_features $f\n";
       }
-
     }
     print $fh "Species \"Caenorhabditis elegans\"\n";
-
-    # .. and method
     print $fh "Method Coding_transcript\n";
   }
 

@@ -331,8 +331,16 @@ sub check_exon_match
 	     ($cdna->start < $self->last_exon->[1]) and 
 	     ($cdna->first_exon->[1] > $self->last_exon->[1] )
 	   ) {
-	print "MATCH : final cDNA exon starts in final gene exon and continues past end\n"  if $debug;
-	$exon->[2] = 9;
+	# cdna has intron 3' of CDS end so final exon doesn't overlap. Needs to be added as exon rather than just extending.
+	if( $cExonStart > $self->end ) {
+	  # UTR exon
+	  print "MATCH : final cDNA exon overlaps gene end and cDNA has further splicing\n" if $debug;
+	  $exon->[2] = 14;
+	}
+	else{
+	  print "MATCH : final cDNA exon starts in final gene exon and continues past end\n"  if $debug;
+	  $exon->[2] = 9;
+	}
       }
       # exon lies outside of CDS ( but other parts of cDNA overlap it )
       elsif( $exon->[1] < $self->start ) {

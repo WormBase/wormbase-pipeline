@@ -151,13 +151,14 @@ sub map_cDNA
 	    
 	    my $transcript = Transcript->new( $new_name, $self);
 	    $transcript->chromosome( $self->chromosome );
-	    $transcript->add_matching_cDNA($cdna);
 
+	    # this will add the new cDNA through the correct method, ensuring that exons are extended accordingly.
+	    $transcript->map_cDNA($cdna);
 	    # now recheck cDNAs already matched to CDS to new transcript
-	    my $matched_cDNAs = $self->matching_cDNAs;
-	    foreach my $match ( @{$matched_cDNAs} ) {
-	      $transcript->map_cDNA($match);
-	    }
+#	    my $matched_cDNAs = $self->matching_cDNAs;
+#	    foreach my $match ( @{$matched_cDNAs} ) {
+#	      $transcript->map_cDNA($match);
+#	    }
 
 	    # add new transcript to CDS obj
 	    $self->transcripts($transcript);
