@@ -7,7 +7,7 @@
 # Attempt to unify all of the diverse scripts to fetch ESTs, OSTs, mRNAs etc. used by blat 
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2004-04-27 15:47:10 $
+# Last edited on: $Date: 2004-04-27 16:11:01 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -71,9 +71,9 @@ my %EST_dir;             # EST accession => orientation [5|3]
 
 my $log;                 # for log file
  
-my $dir    = "/nfs/disk100/wormpub/analysis/ESTs"; # path for output files
+my $dir    = "/nfs/disk100/wormpub/analysis/ESTs";          # path for output files
 my $ftpdir = "/nfs/disk69/ftp/pub/wormbase/sequences/ESTS"; # path for ftp site
-my $getz   = "/usr/local/pubseq/bin/getzc"; # getz binary
+my $getz   = "/usr/local/pubseq/bin/getzc";                 # getz binary
 
 
 
@@ -98,10 +98,6 @@ print LOG "finished at ",&runtime,"\n";
 close(LOG);
 
 exit(0);
-
-
-exit(0);
-
 
 ########################################################################
 #
@@ -158,8 +154,8 @@ sub make_ests{
     
     # grab accession, id, sequence version, and description
     ($acc = $1) if (/^AC\s+(\S+);/);
-    ($id = $1) if (/^ID\s+(\S+)/);
-    ($sv = $1) if (/^SV\s+(\S+\.\d+)/);
+    ($id = $1)  if (/^ID\s+(\S+)/);
+    ($sv = $1)  if (/^SV\s+(\S+\.\d+)/);
 
     if (/^DE\s+(.+)/)   {
       $def = $def." ".$1;
@@ -185,7 +181,7 @@ sub make_ests{
 	  # now fill out rest of object
 	  print OUT_ACE "Database EMBL NDB_ID $id\n"; 
 	  print OUT_ACE "Database EMBL NDB_AC $acc\n";
-	  print OUT_ACE "Database EMBL NDB_SV $acc.$sv\n";
+	  print OUT_ACE "Database EMBL NDB_SV $sv\n";
 	  print OUT_ACE "Species \"Caenorhabditis elegans\"\n";
 	  print OUT_ACE "Title \"$def\"\nMethod EST_elegans\n";
 	  
@@ -285,7 +281,7 @@ sub make_mrnas{
 	    }
 	    # grab various details out of EMBL entry
 	    if (/^ID\s+(\S+)/)                         {$id  = $1;}
-	    if (/^SV\s+\S+\.(\d+)/)                    {$sv  = $1;}
+	    if (/^SV\s+(\S+\.\d+)/)                    {$sv  = $1;}
 	    if (/^DE\s+(.+)/)                          {$def = $def." ".$1;}
 	    if (/^FT\s+\/protein_id=\"(\S+)\.(\d+)\"/) {$protid=$1; $protver=$2;}
 	    if (/^SQ/) {
@@ -298,7 +294,7 @@ sub make_mrnas{
 		  print OUT_ACE "\nSequence : \"$acc\"\n";
 		  print OUT_ACE "Database EMBL NDB_ID $id\n";
 		  print OUT_ACE "Database EMBL NDB_AC $acc\n";
-		  print OUT_ACE "Database EMBL NDB_SV $acc.$sv\n";
+		  print OUT_ACE "Database EMBL NDB_SV $sv\n";
 		  print OUT_ACE "Protein_id $acc $protid $protver\n";
 		  print OUT_ACE "Species \"Caenorhabditis elegans\"\n";
 		  print OUT_ACE "Title \"$def\"\nMethod NDB\n";
@@ -362,7 +358,7 @@ sub make_nematode_ests{
     }
     
     if (/^ID\s+(\S+)/)         {$id  = $1;}
-    if (/^SV\s+(\S+)\.(\d+)/)  {$acc = $1; $sv = $2;}
+    if (/^SV\s+(\S+\.\d+)/)    {$sv = $1;}
     if (/^DE\s+(.+)/)          {$def = $def." ".$1;}
     if (/^OS\s+(.+)/)          {$org = $1;}
     if (/^SQ/) {
@@ -371,7 +367,7 @@ sub make_nematode_ests{
 	print OUT_ACE "\nSequence : \"$acc\"\n";
 	print OUT_ACE "Database EMBL NDB_ID $id\n";
 	print OUT_ACE "Database EMBL NDB_AC $acc\n";
-	print OUT_ACE "Database EMBL NDB_SV $acc.$sv\n";
+	print OUT_ACE "Database EMBL NDB_SV $sv\n";
 	print OUT_ACE "Species \"$org\"\n";
 	print OUT_ACE "Title \"$def\"\nMethod EST_nematode\n";
 	print OUT_ACE "\nDNA \"$acc\"\n";
@@ -430,7 +426,7 @@ sub make_embl_cds{
     }
     
     if (/^ID\s+(\S+)/)                         {$id  = $1;}
-    if (/^SV\s+(\S+)\.(\d+)/)                  {$acc = $1; $sv  = $2;}
+    if (/^SV\s+(\S+\.\d+)/)                    {$sv  = $1;}
     if (/^DE\s+(.+)/)                          {$def = $def." ".$1;}
     if (/^FT\s+\/protein_id=\"(\S+)\.(\d+)\"/) {$protid=$1; $protver=$2;}
     if (/^SQ/) {
