@@ -5,7 +5,7 @@
 # A script to make multiple copies of camace for curation, and merge them back again
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2003-12-05 14:03:58 $
+# Last edited on: $Date: 2004-03-18 10:42:08 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -205,25 +205,28 @@ sub update_camace {
 #(3)Data dispersion#
 sub split_databases {
 
-    # it has been decided that it is better to remove the database directory to make transfer db more stable #
+  # it has been decided that it is better to remove the database directory to make transfer db more stable #
 
-    # initialise/copy to camace_orig (always do this)
-    system("rm -rf /nfs/disk100/wormpub/camace_orig/database") && die "Failed to remove camace_orig/database\n";
-    system ("TransferDB.pl -start /wormsrv1/camace -end $camace_orig -database -wspec -name camace_orig_WS$WS_version");
+  # initialise/copy to camace_orig (always do this)
+  system("rm -rf /nfs/disk100/wormpub/camace_orig/database") && die "Failed to remove camace_orig/database\n";
+  system ("TransferDB.pl -start /wormsrv1/camace -end $camace_orig -database -wspec -name camace_orig_WS$WS_version");
 
-    # initialise/copy to camace_ar2 (-ant or -all)
+  # initialise/copy to camace_ar2 (-ant or -all)
+  if ($ant || $all) {
     system("rm -rf /nfs/disk100/wormpub/camace_ar2/database") && die "Failed to remove camace_ar2/database\n";
-    system ("TransferDB.pl -start $camace_orig -end $camace_ar2 -database -wspec -name camace_ar2_WS$WS_version") if ($ant || $all);
-
+    system ("TransferDB.pl -start $camace_orig -end $camace_ar2 -database -wspec -name camace_ar2_WS$WS_version");
+  }
     # initialise/copy to camace_dl1 (-dan or -all)
+  if ($dan || $all) {
     system("rm -rf /nfs/disk100/wormpub/camace_dl1/database") && die "Failed to remove camace_dl1/database\n";
-    system ("TransferDB.pl -start $camace_orig -end $camace_dl1 -database -wspec -name camace_dl1_WS$WS_version") if ($dan || $all);
-
-    # initialise/copy to camace_pad (-paul or -all)
+    system ("TransferDB.pl -start $camace_orig -end $camace_dl1 -database -wspec -name camace_dl1_WS$WS_version");
+  }
+  # initialise/copy to camace_pad (-paul or -all)
+  if ($paul || $all) {
     system("rm -rf /nfs/disk100/wormpub/camace_pad/database") && die "Failed to remove camace_pad/database\n";
-    system ("TransferDB.pl -start $camace_orig -end $camace_pad  -database -wspec -name camace_pad_WS$WS_version") if ($paul || $all);
-
-    print "CAMACE SPLITS UPDATED";
+    system ("TransferDB.pl -start $camace_orig -end $camace_pad  -database -wspec -name camace_pad_WS$WS_version");
+  }
+  print "CAMACE SPLITS UPDATED\n";
 }
 
 sub usage {
