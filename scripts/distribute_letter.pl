@@ -7,7 +7,7 @@
 #                          /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/current/release_notes.txt/
 #
 # Last updated by: $Author: ar2 $                       # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2002-08-23 16:01:20 $                        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2002-08-23 16:12:22 $                        # quickly see when script was last changed and by whom
 
 
 use strict;                                     
@@ -42,7 +42,7 @@ print LOG "copying to autoace/release . . . . ";
 `cp /wormsrv2/autoace/RELEASE_LETTERS/letter.WS$ver /wormsrv2/autoace/release/letter.WS$ver` and die "couldnt copy to autoace/release";
 print LOG "DONE.\n";
 print LOG "copying to intranet . . . . ";
-`cp /wormsrv2/autoace/RELEASE_LETTERS/letter.WS$ver /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/current/release_notes.txt/`
+`cp /wormsrv2/autoace/RELEASE_LETTERS/letter.WS$ver /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/current/release_notes.txt`
   and die "couldnt copy to /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/current/\n";
 print LOG "DONE.\n";
 
