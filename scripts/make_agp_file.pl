@@ -7,20 +7,16 @@
 #
 # Usage : make_agp_file.pl
 
-
-# v0.3
-# 010815 : dl  : PP version
-
 #################################################################################
 # Initialise variables                                                          #
 #################################################################################
 
 
 $|=1;
-use Socket;
 #use strict;
-use vars qw ($debug $seq_len $sv_acc $sv_ver);
-use lib '/wormsrv2/scripts';
+use vars qw ($debug $seq_len $sv_acc $sv_ver $opt_d $opt_h);
+use Getopt::Std;
+use lib '/nfs/griffin2/dl1/wormbase/wormbase/scripts';
 use Wormbase;
 
  ##############################
@@ -33,10 +29,44 @@ my $runtime     = `date +%H:%M:%S`; chomp $runtime;
 my $version     = &get_cvs_version("$0");
 
 my @gff_files = ('I','II','III','IV','V','X');
-my $outdir    = "/wormsrv2/autoace/CHROMOSOMES";
+
+my $outdir    = "/wormsrv2/autoace/yellow_brick_road";
 my $datadir   = "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS";
 
-#$debug = 1;
+ ##############################
+ # command-line options       #
+ ##############################
+
+getopts ('hd');
+&error(0) if ($opt_h);
+
+$debug = 1;
+($maintainers = "dl1\@sanger.ac.uk") if ($debug);
+
+
+ ##############################
+ # getz query to build hashes #
+ ##############################
+
+# ID   AF016448   standard; DNA; INV; 44427 BP.
+# SV   AF016448.1
+
+%seqver = ();
+%seqlen = ();
+
+open (sequences, "getz -f \'id seqversion\' \"([emblnew-org:Caenorhabditis elegans] \& [emblnew-div:INV]) | ([embl-org:Caenorhabditis elegans] \& [embl-div:INV])\" |");
+while (<sequences>) {
+#    print "$_";
+    if (/^ID\s+(\S+)\s+standard\; DNA\; INV\; (\d+)/) {
+	$seqlen{$1} = $2;
+    }
+    if (/^SV\s+(\S+)\.(\d+)/) {
+	$seqver{$1} = $2;
+    }
+}
+close sequences;
+
+print "Finished assigning to hash\n";
 
 #################################################################################
 # Main Loop                                                                     #
@@ -53,7 +83,7 @@ foreach my $chromosome (@gff_files) {
     $file = "$outdir/CHROMOSOME_$chromosome.agp";
     $last_stop = 2;
 
-    &usage(1,$chromosome) unless ("-e $datadir/CHROMOSOME_${chromosome}.clone_acc.gff");
+    &error(1,$chromosome) unless ("-e $datadir/CHROMOSOME_${chromosome}.clone_acc.gff");
 
     # read data from gff file
     open (GFF, "<$datadir/CHROMOSOME_$chromosome.clone_acc.gff");
@@ -78,7 +108,7 @@ foreach my $chromosome (@gff_files) {
 		print "[ " . ($stop{$i-1}+1) . " : " . ($start-1) ."] so insert padding characters over the gap\n" if ($debug);
 		push (@report, "$chromosome\t$stop{$i-1}\t" . ($start - 1) . "\t$i\tN\t$gap_span\n");
 		$start{$i}  = $stop{$i-1} + 1;
-		$stop{$i}   = $start - 1;
+		$stop{$i}   = $start-1;
 		$span{$i}   = $gap_span -1;
 		$acc{$i}    = "gap";
 		$clone{$i}  = "gap";
@@ -100,13 +130,9 @@ foreach my $chromosome (@gff_files) {
 	$acc{$i}   = $acc;
 	$span{$i}  = $stop - $start + 1;
 
-	for ($j=1;$j < 100;$j++) {
-	    unless ($sv_ver ne "") {&getseq($acc,$chromosome);next;}
-	}	
-
 #	printf "%8s [%8d => %8d : %6d] $acc{$i}.$sv_ver\n", $clone{$i}, $start{$i}, $stop{$i}, $span{$i};
-	$ver{$i}    = $sv_ver;
-#	$len{$i}    = $seq_len;
+
+	$ver{$i}    = $seqver{$acc};
 	$last_stop  = $stop;
 	$last_start = $start;
 	$i++;
@@ -134,17 +160,21 @@ foreach my $chromosome (@gff_files) {
 	
 	if ($clone{$i} eq "gap") {
 	    printf LOG "%3d %8s\t[%8d => %8d] [%8d] : Pad with %6d bp of '-'s}\n", $i, $clone{$i}, $start{$i}, $stop{$i}, $start{$i+1},$span2get;
-	    $unique_stop = $start{$i} + $span2get;
+	    $unique_stop = $start{$i} + $span2get -1;
 	    print OUT "$chromosome\t$start{$i}\t$unique_stop\t$i\tN\t$span2get\n";
 	} 
 	else {
 	    printf LOG "%3d %8s\t[%8d => %8d] [%8d] : Extract %6d bp from accession $acc{$i}, version $ver{$i}\n", $i, $clone{$i}, $start{$i}, $stop{$i}, $start{$i+1},$span2get;
-	    $unique_stop = $start{$i} + $span2get ;
+	    $unique_stop = $start{$i} + $span2get -1;
 	    print OUT "$chromosome\t$start{$i}\t$unique_stop\t$i\tF\t$acc{$i}.$ver{$i}\t1\t$span2get\t+\n";
 	}
     }
     close LOG;
     close OUT;
+    
+    # copy agp file to correct directory
+    system ("cp $file /wormsrv2/autoace/CHROMOSOMES/");
+    
 }
 
  ##############################
@@ -159,108 +189,7 @@ exit(0);
 #################################################################################
 
 
-sub getseq {
-
-    my ($acc,$chromosome) = @_;
-    my $absent;
-    
-    my $querycontent1 = "-e+[embl-acc:'$acc']";
-    my $querycontent2 = "-e+[emblnew-acc:'$acc']";
-    
-    my $request1 = "/srs6bin/cgi-bin/wgetz?$querycontent1";
-    my $request2 = "/srs6bin/cgi-bin/wgetz?$querycontent2";
-    
-    my $server = "srs.ebi.ac.uk";
-
-    if (!defined(open_TCP(*F,$server,80))) {
-        print "Error connecting to server \n";
-        exit(-1);
-    }
-
-    # get from emblnew
-    print F "GET $request2 HTTP/1.0\n\n";
-    print F "Accept: */*\n";
-    print F "User-Agent: socketsrs/1.0\n\n";
-    
-    undef ($absent);
-    while (my $return_line=<F>) {
-	if ($return_line =~ /error/) {
-#	    print "Query returned no entry : '$request2'\n";
-	    $absent = 1;
-	    last;
-	}
-    }
-    close F;
-    
-    # else get from embl
-    if ($absent) {
-	if (!defined(open_TCP(*G,$server,80))) {
-	    print "Error connecting to server \n";
-	    exit(-1);
-	} 
-	
-#	print "Query [$j]: '$request1'\n";
-	
-	print G "GET $request1 HTTP/1.0\n\n";
-	print G "Accept: */*\n";
-	print G "User-Agent: socketsrs/1.0\n\n";
-    }
-    else {
-	if (!defined(open_TCP(*G,$server,80))) {
-	    print "Error connecting to server \n";
-	    exit(-1);
-	} 
-
-#	print "Query [$j]: '$request2'\n";
-	
-	print G "GET $request2 HTTP/1.0\n\n";
-	print G "Accept: */*\n";
-	print G "User-Agent: socketsrs/1.0\n\n";
-    }
-
-# Parsing annotation
-    
-    while (my $return_line=<G>) {
-#	print "$return_line";
-	
-    # Sequence version
-    # SV   AL032679.2
-	if ($return_line =~ /^SV\s+(\S+)/) {
-#	    print "parsing SV line : $return_line";
-	    
-	    ($sv_acc,$sv_ver) = split (/\./, $1);
-	}
-    
-    # Sequence
-    # SQ   Sequence 2679 BP; 882 A; 510 C; 415 G; 872 T; 0 other;
-
-	if ($return_line =~ /^SQ\s+Sequence\s(\d+)\sBP/) {
-#	    print "parsing SQ line : $return_line";
-	    $seq_len = $1;
-	    return ($sv_acc,$sv_ver,$seq_len);
-	    last;
-	}
-    }
-    close G;
-}
-
-
- ########################################################
- # Output: successful network connection in file handle #
- ########################################################
-
-sub open_TCP {
-    my ($FS,$dest,$port) = @_;
-    my $proto = getprotobyname ('tcp');
-    socket ($FS,PF_INET,SOCK_STREAM,$proto);
-    my $sin = sockaddr_in($port,inet_aton($dest));
-    connect($FS,$sin) || return undef;
-    my $old_fh = select($FS);
-    $| = 1;
-    select($old_fh);
-}
-
-sub usage {
+sub error {
     my $error = shift;
     my $chromosome = shift;
     if ($error == 1){ 
