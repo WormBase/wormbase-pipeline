@@ -8,8 +8,8 @@
 # 030507 : dl  : Update tace queries to restrict deleted/uploaded Homol_data and Feature data class objects
 # 030507 : dl  : Upload OST data as part of script
 
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2003-11-14 16:47:35 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2004-08-04 15:52:34 $
 
 use strict;
 use Getopt::Long;
@@ -111,7 +111,6 @@ pparse /wormsrv2/autoace/BLAT/virtual_objects.camace.blat.nematode.ace
 pparse /wormsrv2/autoace/BLAT/virtual_objects.camace.ci.est.ace 
 pparse /wormsrv2/autoace/BLAT/virtual_objects.camace.ci.ost.ace 
 pparse /wormsrv2/autoace/BLAT/virtual_objects.camace.ci.mrna.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.camace.ci.embl.ace 
 save
 pparse /wormsrv2/autoace/BLAT/camace.blat.ost.ace            
 pparse /wormsrv2/autoace/BLAT/camace.blat.mrna.ace 
@@ -136,7 +135,6 @@ pparse /wormsrv2/autoace/BLAT/virtual_objects.stlace.blat.nematode.ace
 pparse /wormsrv2/autoace/BLAT/virtual_objects.stlace.ci.est.ace 
 pparse /wormsrv2/autoace/BLAT/virtual_objects.stlace.ci.ost.ace 
 pparse /wormsrv2/autoace/BLAT/virtual_objects.stlace.ci.mrna.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.stlace.ci.embl.ace 
 save
 pparse /wormsrv2/autoace/BLAT/stlace.blat.ost.ace 
 pparse /wormsrv2/autoace/BLAT/stlace.blat.mrna.ace 
