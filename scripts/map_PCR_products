@@ -7,7 +7,9 @@
 #
 # Usage: map_PCR_products [-options]
 #
-# [010717 kj] modified to (hopefully) run faster and produce the final output files in one go
+# 010927 :  dl : modified output print line to include speech marks. this prevents any acefile
+#                parsing problems
+# 010717 :  kj : modified to (hopefully) run faster and produce the final output files in one go
 #
 #############################################################################################
 
@@ -195,8 +197,8 @@ open (OUTACE, ">/wormsrv2/autoace/mappings/PCR_mappings.$db_version.ace");
 foreach my $mapped (sort keys %finaloutput) {
     print OUT "$mapped\t@{$finaloutput{$mapped}}\n";
     for (my $n = 0; $n < (scalar @{$finaloutput{$mapped}}); $n++) {
-        print OUTACE "Sequence : $finaloutput{$mapped}->[$n]\n";
-        print OUTACE "Corresponding_PCR_product $mapped\n\n";
+        print OUTACE "Sequence : \"$finaloutput{$mapped}->[$n]\"\n";
+        print OUTACE "Corresponding_PCR_product \"$mapped\"\n\n";
     }
 } 
 

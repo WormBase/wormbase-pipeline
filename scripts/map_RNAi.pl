@@ -7,7 +7,9 @@
 #
 # Usage: map_RNAi [-options]
 #
-# [060801 kj] 
+# 010927 :  dl : modified output print line to include speech marks. this prevents any acefile
+#                parsing problems
+# 060801 :  kj : original version 
 #
 #############################################################################################
 
@@ -203,8 +205,8 @@ foreach my $mapped (sort keys %finaloutput) {
 foreach my $mapped (sort keys %finaloutput) {
     print OUT "$mapped\t@{$finaloutput{$mapped}}\n";
     for (my $n = 0; $n < (scalar @{$finaloutput{$mapped}}); $n++) {
-        print OUTACE "RNAi : $mapped\n";
-        print OUTACE "Predicted_gene $finaloutput{$mapped}->[$n]\n\n";
+        print OUTACE "RNAi : \"$mapped\"\n";
+        print OUTACE "Predicted_gene \"$finaloutput{$mapped}->[$n]\"\n\n";
     }
 } 
 
