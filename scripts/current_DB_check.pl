@@ -7,8 +7,8 @@
 # Script to run consistency checks on the current_DB database
 # to look for bogus sequence entries
 #
-# Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2002-12-18 10:17:42 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2003-01-27 18:57:21 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -28,7 +28,7 @@ getopts ('d:vht');
 &usage if ($opt_h);
 
 # toggle verbose mode (turns on reporting of errors, but doesn't email people)
-my $verbose;
+our $verbose;
 $verbose = "ON" if ($opt_v);
 my $test;
 $test = "ON" if ($opt_t);
@@ -36,10 +36,10 @@ $test = "ON" if ($opt_t);
 ########################################################
 # Set database details, default is /wormsrv2/current_DB
 ########################################################
-my $database = "/wormsrv2/current_DB/";
+our $database = "/wormsrv2/current_DB/";
 $database = $opt_d if ($opt_d);
 our $tace = &tace;   # tace executable path
-my $db = Ace->connect(-path  => "$database",
+our $db = Ace->connect(-path  => "$database",
 		      -program =>$tace) || do { print ALL_LOG "Connection failure: ",Ace->error; die();};
 
 print "Checking $database\n\n";
@@ -80,185 +80,15 @@ my $all_counter = 0;
 
 print "\nLooking for spurious sequences\n";
 
-my @genome_seqs = $db->fetch(-class => 'Genome_sequence',
-		      -name  => '*');
-my $class = "Sequence";
-
-# loop through each subseq-style name
-
-foreach my $seq (@genome_seqs){
-  my @subseqs = $db->fetch(-class=>'Sequence',-name=>"$seq.*");
-
-  foreach my $subseq (@subseqs){
-    my $category = 0;
-
-    if(!defined($subseq->at('Visible.Corresponding_protein'))){
-	if(defined($subseq->at('Properties.Coding.CDS'))){  
-	   my $tag = "Origin";	
-           my $timestamp = &get_timestamp($class, $subseq, $tag);
-           $problems{$timestamp}{$class.":".$subseq} = ["\"No Corresponding_protein set for this sequence\""];
-           print "$timestamp $class:$subseq \"No Corresponding_protein tag\"\n" if $verbose;
-           $category = 1;
-         }
-    }
-    
-    # only look for some specific errors if no Source tag present
-    if(!defined($subseq->at('Structure.From.Source'))){  
-      if(defined($subseq->at('DB_info.Database'))){
-	my $tag = "Database";
-	my $timestamp = &get_timestamp($class, $subseq, $tag);
-	my $comment = &splice_variant_check($subseq);
-	$problems{$timestamp}{$class.":".$subseq} = ["\"$tag tag is creating this sequence. $comment\""];
-	print "$timestamp $class:$subseq \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
-	$category = 1;
-      }
-      if(defined($subseq->at('Visible.RNAi_result'))){
-	my $tag = "RNAi_result";
-	my $timestamp = &get_timestamp($class, $subseq, $tag);	
-	my $comment = &splice_variant_check($subseq);
-	$problems{$timestamp}{$class.":".$subseq} = ["\"$tag tag is creating this sequence. $comment\""];
-	print "$timestamp $class:$subseq \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
-	$category = 1;
-      }
-      if(defined($subseq->at('Visible.Locus_genomic_seq'))){
-	my $tag = "Locus_genomic_seq";
-	my $timestamp = &get_timestamp($class, $subseq, $tag);
-	my $comment = &splice_variant_check($subseq);
-	$problems{$timestamp}{$class.":".$subseq} = ["\"$tag tag is creating this sequence. $comment\""];
-	print "$timestamp $class:$subseq \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
-	$category = 1;
-      }
-      if(defined($subseq->at('Visible.Contained_in_operon'))){
-	my $tag = "Contained_in_operon";
-	my $timestamp = &get_timestamp($class, $subseq, $tag);
-	my $comment = &splice_variant_check($subseq);
-	$problems{$timestamp}{$class.":".$subseq} = ["\"$tag tag is creating this sequence. $comment\""];
-	print "$timestamp $class:$subseq \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
-	$category = 1;
-      }
-      if(defined($subseq->at('Allele'))){
-	my $tag = "Allele";
-	my $timestamp = &get_timestamp($class, $subseq, $tag);
-	my $comment = &splice_variant_check($subseq);
-	$problems{$timestamp}{$class.":".$subseq} = ["\"$tag tag is creating this sequence. $comment\""];
-	print "$timestamp $class:$subseq \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
-	$category = 1;
-      }
-      if(defined($subseq->at('Visible.Matching_cDNA'))){
-	my $tag = "Matching_cDNA";
-	my $timestamp = &get_timestamp($class, $subseq, $tag);
-	my $comment = &splice_variant_check($subseq);
-	$problems{$timestamp}{$class.":".$subseq} = ["\"$tag tag is creating this sequence. $comment\""];
-	print "$timestamp $class:$subseq \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
-	$category = 1;
-      }
-      if(defined($subseq->at('Visible.Reference'))){
-	my $tag = "Reference";
-	my $timestamp = &get_timestamp($class, $subseq, $tag);
-	my $comment = &splice_variant_check($subseq);
-	$problems{$timestamp}{$class.":".$subseq} = ["\"$tag tag is creating this sequence. $comment\""];
-	print "$timestamp $class:$subseq \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
-	$category = 1;
-      }
-      if(defined($subseq->at('Visible.Paired_read'))){
-	my $tag = "Paired_read";
-	my $timestamp = &get_timestamp($class, $subseq, $tag);
-	my $comment = &splice_variant_check($subseq);
-	$problems{$timestamp}{$class.":".$subseq} = ["\"$tag tag is creating this sequence. $comment\""];
-	print "$timestamp $class:$subseq \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
-	$category = 1;
-      }
-      if(defined($subseq->at('DNA'))){
-	my $tag = "DNA";
-	my $timestamp = &get_timestamp($class, $subseq, $tag);
-	my $comment = &splice_variant_check($subseq);
-	$problems{$timestamp}{$class.":".$subseq} = ["\"$tag tag is creating this sequence. $comment\""];
-	print "$timestamp $class:$subseq \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
-	$category = 1;
-      }
-      if(defined($subseq->at('Visible.Remark'))){
-	my $tag = "Remark";
-	my $timestamp = &get_timestamp($class, $subseq, $tag);
-	my $comment = &splice_variant_check($subseq);
-	$problems{$timestamp}{$class.":".$subseq} = ["\"$tag tag is creating this sequence. $comment\""];
-	print "$timestamp $class:$subseq \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
-	$category = 1;
-      }
-      if(defined($subseq->at('Visible.Expr_pattern'))){
-	my $tag = "Expr_pattern";
-	my $timestamp = &get_timestamp($class, $subseq, $tag);
-	my $comment = &splice_variant_check($subseq);
-	$problems{$timestamp}{$class.":".$subseq} = ["\"$tag tag is creating this sequence. $comment\""];
-	print "$timestamp $class:$subseq \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
-	$category = 1;
-      }
-      if(defined($subseq->at('Visible.Provisional_description'))){
-	my $tag = "Provisional_description";
-	my $timestamp = &get_timestamp($class, $subseq, $tag);
-	my $comment = &splice_variant_check($subseq);
-	$problems{$timestamp}{$class.":".$subseq} = ["\"$tag tag is creating this sequence. $comment\""];
-	print "$timestamp $class:$subseq \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
-	$category = 1;
-      }
-      if(defined($subseq->at('Visible.Detailed_description'))){
-	my $tag = "Detailed_description";
-	my $timestamp = &get_timestamp($class, $subseq, $tag);
-	my $comment = &splice_variant_check($subseq);
-	$problems{$timestamp}{$class.":".$subseq} = ["\"$tag tag is creating this sequence. $comment\""];
-	print "$timestamp $class:$subseq \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
-	$category = 1;
-      }
-      if(defined($subseq->at('Visible.Concise_description'))){
-	my $tag = "Concise_description";
-	my $timestamp = &get_timestamp($class, $subseq, $tag);
-	my $comment = &splice_variant_check($subseq);
-	$problems{$timestamp}{$class.":".$subseq} = ["\"$tag tag is creating this sequence. $comment\""];
-	print "$timestamp $class:$subseq \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
-	$category = 1;
-      }
-      if(defined($subseq->at('Visible.Corresponding_protein'))){
-	my $tag = "Corresponding_protein";
-	my $timestamp = &get_timestamp($class, $subseq, $tag);
-	my $comment = &splice_variant_check($subseq);
-	$problems{$timestamp}{$class.":".$subseq} = ["\"$tag tag is creating this sequence. $comment\""];
-	print "$timestamp $class:$subseq \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
-	$category = 1;
-      }
-      if(defined($subseq->at('Visible.GO_term'))){
-	my $tag = "GO_term";
-	my $timestamp = &get_timestamp($class, $subseq, $tag);
-	my $comment = &splice_variant_check($subseq);
-	$problems{$timestamp}{$class.":".$subseq} = ["\"$tag tag is creating this sequence. $comment\""];
-	print "$timestamp $class:$subseq \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
-	$category = 1;
-      }
-      if(defined($subseq->at('Properties'))){
-	my $tag = "Properties";
-	my $timestamp = &get_timestamp($class, $subseq, $tag);
-	my $comment = &splice_variant_check($subseq);
-	$problems{$timestamp}{$class.":".$subseq} = ["\"$tag tag is creating this sequence. $comment\""];
-	print "$timestamp $class:$subseq \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
-	$category = 1;
-      }
-      if(defined($subseq->at('Visible.Clone'))){
-	my $tag = "Clone";
-	my $timestamp = &get_timestamp($class, $subseq, $tag);
-	my $comment = &splice_variant_check($subseq);
-	$problems{$timestamp}{$class.":".$subseq} = ["\"$tag tag is creating this sequence. $comment\""];
-	print "$timestamp $class:$subseq \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
-	$category = 1;
-      }
-      if ($category == 0){
-	push(@other,$subseq);
-	print "$subseq - Other problem\n" if $verbose;
-      }
-    }    
-  }
-}
 
 # Checks sequences connected to multiple loci
-&Process_sequence;
+&find_multiple_loci;
 
+# Search everything else, one sequence at a time
+&process_sequences;
+
+
+# Count problems and print output
 
 foreach my $i (@other){
   print ALL_LOG "Other - $i\n";
@@ -268,7 +98,7 @@ foreach my $i (@other){
   $sanger_counter++;
 }
 
-
+  
 
 foreach my $j (keys(%problems)){
   foreach my $k (keys(%{$problems{$j}})){
@@ -278,7 +108,7 @@ foreach my $j (keys(%problems)){
       $sanger_counter++;
       $all_counter++;
     }
-
+    
     if ($j eq "csh"){
       print CSHL_LOG "$k @{${$problems{$j}}{$k}}\n";
       $cshl_counter++;
@@ -294,18 +124,21 @@ foreach my $j (keys(%problems)){
       $stlouis_counter++;
       $all_counter++;
     }
-							  
-#    print "$j $k @{${$problems{$j}}{$k}}\n";
+    
+    #    print "$j $k @{${$problems{$j}}{$k}}\n";
   }
 }
 
 print "\n$all_counter problems found\n" if $verbose;
+
+
 
 ##########################################
 # Tidy up and mail relevant log files
 ##########################################
 
 $db->close;
+
 print ALL_LOG "\n$all_counter problems found\n\n$0 ended at ",`date`,"\n";
 print SANGER_LOG "\n$sanger_counter problems found\n\n$0 ended at ",`date`,"\n";
 print CSHL_LOG "\n$cshl_counter problems found\n\n$0 ended at ",`date`,"\n";
@@ -332,8 +165,216 @@ my $stlouis = "dblasiar\@watson.wustl.edu, jspieth\@watson.wustl.edu, krb\@sange
 
 exit(0);
 
-################################################
 
+
+
+
+####################################################################
+#
+#  T H E    S U B R O U T I N E S
+#
+#####################################################################
+
+
+##############################################################
+# Main loop to step through each sequence object which is a
+# child of a genomic clone sequence
+##############################################################
+
+sub process_sequences{
+
+  my @genome_seqs = $db->fetch(-class => 'Genome_sequence',
+			       -name  => '*');
+  my $class = "Sequence";
+
+  # loop through each subseq-style name
+  
+  foreach my $seq (@genome_seqs){
+
+    my @subseqs = $db->fetch(-class=>'Sequence',-name=>"$seq.*");
+    
+    foreach my $subseq (@subseqs){
+      my $category = 0;
+      
+      if(!defined($subseq->at('Visible.Corresponding_protein'))){
+	if(defined($subseq->at('Properties.Coding.CDS'))){  
+	  my $tag = "Origin";	
+	  my $timestamp = &get_timestamp($class, $subseq, $tag);
+	  $problems{$timestamp}{$class.":".$subseq} = ["\"No Corresponding_protein set for this sequence\""];
+	  print "$timestamp $class:$subseq \"No Corresponding_protein tag\"\n" if $verbose;
+	  $category = 1;
+	}
+      }    
+      # only look for some specific errors if no Source tag present
+      if(!defined($subseq->at('Structure.From.Source'))){  
+	if(defined($subseq->at('DB_info.Database'))){
+	  my $tag = "Database";
+	  my $timestamp = &get_timestamp($class, $subseq, $tag);
+	  my $comment = &splice_variant_check($subseq);
+	  $problems{$timestamp}{$class.":".$subseq} = ["\"$tag tag is creating this sequence. $comment\""];
+	  print "$timestamp $class:$subseq \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  $category = 1;
+	}
+	if(defined($subseq->at('Visible.RNAi_result'))){
+	  my $tag = "RNAi_result";
+	  my $timestamp = &get_timestamp($class, $subseq, $tag);	
+	  my $comment = &splice_variant_check($subseq);
+	  $problems{$timestamp}{$class.":".$subseq} = ["\"$tag tag is creating this sequence. $comment\""];
+	  print "$timestamp $class:$subseq \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  $category = 1;
+	}
+	if(defined($subseq->at('Visible.Locus_genomic_seq'))){
+	  my $tag = "Locus_genomic_seq";
+	  my $timestamp = &get_timestamp($class, $subseq, $tag);
+	  my $comment = &splice_variant_check($subseq);
+	  $problems{$timestamp}{$class.":".$subseq} = ["\"$tag tag is creating this sequence. $comment\""];
+	  print "$timestamp $class:$subseq \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  $category = 1;
+	}
+	if(defined($subseq->at('Visible.Contained_in_operon'))){
+	  my $tag = "Contained_in_operon";
+	  my $timestamp = &get_timestamp($class, $subseq, $tag);
+	  my $comment = &splice_variant_check($subseq);
+	  $problems{$timestamp}{$class.":".$subseq} = ["\"$tag tag is creating this sequence. $comment\""];
+	  print "$timestamp $class:$subseq \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  $category = 1;
+	}
+	if(defined($subseq->at('Allele'))){
+	  my $tag = "Allele";
+	  my $timestamp = &get_timestamp($class, $subseq, $tag);
+	  my $comment = &splice_variant_check($subseq);
+	  $problems{$timestamp}{$class.":".$subseq} = ["\"$tag tag is creating this sequence. $comment\""];
+	  print "$timestamp $class:$subseq \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  $category = 1;
+	}
+	if(defined($subseq->at('Visible.Matching_cDNA'))){
+	  my $tag = "Matching_cDNA";
+	  my $timestamp = &get_timestamp($class, $subseq, $tag);
+	  my $comment = &splice_variant_check($subseq);
+	  $problems{$timestamp}{$class.":".$subseq} = ["\"$tag tag is creating this sequence. $comment\""];
+	  print "$timestamp $class:$subseq \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  $category = 1;
+	}
+	if(defined($subseq->at('Visible.Reference'))){
+	  my $tag = "Reference";
+	  my $timestamp = &get_timestamp($class, $subseq, $tag);
+	  my $comment = &splice_variant_check($subseq);
+	  $problems{$timestamp}{$class.":".$subseq} = ["\"$tag tag is creating this sequence. $comment\""];
+	  print "$timestamp $class:$subseq \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  $category = 1;
+	}
+	if(defined($subseq->at('Visible.Paired_read'))){
+	  my $tag = "Paired_read";
+	  my $timestamp = &get_timestamp($class, $subseq, $tag);
+	  my $comment = &splice_variant_check($subseq);
+	  $problems{$timestamp}{$class.":".$subseq} = ["\"$tag tag is creating this sequence. $comment\""];
+	  print "$timestamp $class:$subseq \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	$category = 1;
+	}
+	if(defined($subseq->at('DNA'))){
+	  my $tag = "DNA";
+	  my $timestamp = &get_timestamp($class, $subseq, $tag);
+	  my $comment = &splice_variant_check($subseq);
+	  $problems{$timestamp}{$class.":".$subseq} = ["\"$tag tag is creating this sequence. $comment\""];
+	  print "$timestamp $class:$subseq \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  $category = 1;
+	}
+	if(defined($subseq->at('Visible.Remark'))){
+	  my $tag = "Remark";
+	  my $timestamp = &get_timestamp($class, $subseq, $tag);
+	  my $comment = &splice_variant_check($subseq);
+	  $problems{$timestamp}{$class.":".$subseq} = ["\"$tag tag is creating this sequence. $comment\""];
+	  print "$timestamp $class:$subseq \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  $category = 1;
+	}
+	if(defined($subseq->at('Visible.Expr_pattern'))){
+	  my $tag = "Expr_pattern";
+	  my $timestamp = &get_timestamp($class, $subseq, $tag);
+	  my $comment = &splice_variant_check($subseq);
+	  $problems{$timestamp}{$class.":".$subseq} = ["\"$tag tag is creating this sequence. $comment\""];
+	  print "$timestamp $class:$subseq \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  $category = 1;
+	}
+	if(defined($subseq->at('Visible.Provisional_description'))){
+	  my $tag = "Provisional_description";
+	  my $timestamp = &get_timestamp($class, $subseq, $tag);
+	  my $comment = &splice_variant_check($subseq);
+	  $problems{$timestamp}{$class.":".$subseq} = ["\"$tag tag is creating this sequence. $comment\""];
+	  print "$timestamp $class:$subseq \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  $category = 1;
+	}
+	if(defined($subseq->at('Visible.Detailed_description'))){
+	  my $tag = "Detailed_description";
+	  my $timestamp = &get_timestamp($class, $subseq, $tag);
+	  my $comment = &splice_variant_check($subseq);
+	  $problems{$timestamp}{$class.":".$subseq} = ["\"$tag tag is creating this sequence. $comment\""];
+	  print "$timestamp $class:$subseq \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  $category = 1;
+	}
+	if(defined($subseq->at('Visible.Concise_description'))){
+	  my $tag = "Concise_description";
+	  my $timestamp = &get_timestamp($class, $subseq, $tag);
+	  my $comment = &splice_variant_check($subseq);
+	  $problems{$timestamp}{$class.":".$subseq} = ["\"$tag tag is creating this sequence. $comment\""];
+	  print "$timestamp $class:$subseq \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  $category = 1;
+	}
+	if(defined($subseq->at('Visible.Corresponding_protein'))){
+	  my $tag = "Corresponding_protein";
+	  my $timestamp = &get_timestamp($class, $subseq, $tag);
+	  my $comment = &splice_variant_check($subseq);
+	  $problems{$timestamp}{$class.":".$subseq} = ["\"$tag tag is creating this sequence. $comment\""];
+	  print "$timestamp $class:$subseq \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  $category = 1;
+	}
+	if(defined($subseq->at('Visible.GO_term'))){
+	  my $tag = "GO_term";
+	  my $timestamp = &get_timestamp($class, $subseq, $tag);
+	  my $comment = &splice_variant_check($subseq);
+	  $problems{$timestamp}{$class.":".$subseq} = ["\"$tag tag is creating this sequence. $comment\""];
+	  print "$timestamp $class:$subseq \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  $category = 1;
+	}
+	if(defined($subseq->at('Properties'))){
+	  my $tag = "Properties";
+	  my $timestamp = &get_timestamp($class, $subseq, $tag);
+	  my $comment = &splice_variant_check($subseq);
+	  $problems{$timestamp}{$class.":".$subseq} = ["\"$tag tag is creating this sequence. $comment\""];
+	  print "$timestamp $class:$subseq \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  $category = 1;
+	}
+	if(defined($subseq->at('Visible.Clone'))){
+	  my $tag = "Clone";
+	  my $timestamp = &get_timestamp($class, $subseq, $tag);
+	  my $comment = &splice_variant_check($subseq);
+	  $problems{$timestamp}{$class.":".$subseq} = ["\"$tag tag is creating this sequence. $comment\""];
+	  print "$timestamp $class:$subseq \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  $category = 1;
+	}
+	if(defined($subseq->at('Has_allele'))){
+	  my $tag = "Has_allele";
+#	  my $timestamp = &get_timestamp($class, $subseq, $tag);
+	  # added because AcePerl doesn't like Has_allele tag for some reason?!?
+	  my $timestamp = "geneace_allele";
+	  my $comment = &splice_variant_check($subseq);
+	  $problems{$timestamp}{$class.":".$subseq} = ["\"$tag tag is creating this sequence. $comment\""];
+	  print "$timestamp $class:$subseq \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  $category = 1;
+	}
+	if ($category == 0){
+	  push(@other,$subseq);
+	  print "$subseq - Other problem\n" if $verbose;
+	}
+      }    
+    }
+  }
+
+
+
+  
+}
+
+##########################################################################
 
 sub create_log_files{
   my $database = shift;
@@ -386,6 +427,7 @@ sub create_log_files{
   print CALTECH_LOG "==========================================================================\n\n";
 }
 
+
 ################################################
 # Grab timestamps from each object using aql
 ################################################
@@ -394,7 +436,9 @@ sub get_timestamp{
   my $object = shift;
   my $tag = shift;
   my $value = ""; 
+  
   ($value) = $object->$tag;
+
 
   my $aql_query = "select s,s->$tag.node_session from s in object(\"$class\",\"$object\")";
   my @aql = $db->aql($aql_query);
@@ -404,26 +448,17 @@ sub get_timestamp{
   # if timestamp is wormpub, need to look at the corresponding object to see if that has 
   # more informative timestamp
   if (($timestamp =~ m/wormpub/)&&($class eq "Sequence")){
-    ($class = "Protein")              if ($tag eq "GO_term");
-    ($tag = "Sequence")               if ($tag eq "GO_term");
-    ($class = "Protein")              if ($tag eq "Corresponding_DNA");
-    ($tag = "Corresponding_protein")  if ($tag eq "Corresponding_DNA");
-    ($class = "Expr_pattern")         if ($tag eq "Expr_pattern");
-    ($tag = "Sequence")               if ($tag eq "Expr_pattern");
-    ($class = "Paper")                if ($tag eq "Reference");
-    ($tag = "Sequence")               if ($tag eq "Reference");
-    ($tag = "Matching_genomic")       if ($tag eq "Matching_cDNA");
-    ($class = "Allele")               if ($tag eq "Allele");
-    ($tag = "Sequence")               if ($tag eq "Allele");
-    ($class = "Operon")               if ($tag eq "Contained_in_operon");
-    ($tag = "Contains_CDS")           if ($tag eq "Contained_in_operon");
-    ($class = "Locus")                if ($tag eq "Locus_genomic_seq");
-    ($tag = "Genomic_sequence")       if ($tag eq "Locus_genomic_seq");
-    ($class = "RNAi")                 if ($tag eq "RNAi_result");
-    ($tag = "Predicted_gene")         if ($tag eq "RNAi_result");
-    ($class = "Clone")                if ($tag eq "Clone");
-    ($tag = "Sequence")               if ($tag eq "Clone");
-   
+    ($class = "Protein", $tag = "Sequence")               if ($tag eq "GO_term");
+    ($class = "Protein", $tag = "Corresponding_protein")  if ($tag eq "Corresponding_DNA");
+    ($class = "Expr_pattern", $tag = "Sequence")          if ($tag eq "Expr_pattern");
+    ($class = "Paper", $tag = "Sequence")                 if ($tag eq "Reference");
+    ($class = "Sequence", $tag = "Matching_genomic")      if ($tag eq "Matching_cDNA");
+    ($class = "Allele", $tag = "Sequence")                if ($tag eq "Allele");
+    ($class = "Operon", $tag = "Contains_CDS")            if ($tag eq "Contained_in_operon");
+    ($class = "Locus", $tag = "Genomic_sequence")         if ($tag eq "Locus_genomic_seq");
+    ($class = "RNAi", $tag = "Predicted_gene")            if ($tag eq "RNAi_result");
+    ($class = "Clone", $tag = "Sequence")                 if ($tag eq "Clone");
+    ($class = "Allele", $tag = "Predicted_gene")          if ($tag eq "Has_allele");
 
     my $aql_query = "select s,s->${tag}.node_session from s in object(\"$class\",\"$value\")";
     my @aql = $db->aql($aql_query);
@@ -438,6 +473,9 @@ sub get_timestamp{
 
 }
 
+
+#################################################################
+
 sub splice_variant_check{
   my $object = shift;
   my $splice_variant = $db->fetch(-class => 'Sequence',-name  => "${object}a");
@@ -451,31 +489,32 @@ sub splice_variant_check{
 # Check sequences connected to multiple loci
 ############################################
 
-sub Process_sequence {
+sub find_multiple_loci {
 
+
+  print "\nLooking for sequences attached to multiple loci...\n" if $verbose;
   my $get_seqs_with_multiple_loci=<<EOF;
   Table-maker -p "/wormsrv1/geneace/wquery/get_seq_has_multiple_loci.def" quit 
 EOF
 
-  my (%Seq_loci, $seq_count, $seq, $locus);
-  my $dir = "/wormsrv2/current_DB";
+  my ($seq, $locus);
 
-  open (FH, "echo '$get_seqs_with_multiple_loci' | tace $dir | ") || die "Couldn't access geneace\n";
+  open (FH, "echo '$get_seqs_with_multiple_loci' | tace $database | ") || die "Couldn't access $database\n";
   while (<FH>){
     chomp($_);
     if ($_ =~ /^\"/){
       $_ =~ s/\"//g;
       ($seq, $locus)=split(/\s+/, $_);
-      $Seq_loci{$seq}=$locus;
+
+      # Don't know how to get timestamps for each value next to Locus_genomic_seq tag but can
+      # get the timestamp from the Locus_genomic_seq tag itself
+      my $aql_query = "select s,s->Locus_genomic_seq.node_session from s in object(\"Sequence\",\"$seq\")";
+      my @aql = $db->aql($aql_query);
+      my $timestamp = "$aql[0]->[1]";
+      $timestamp =~ s/\d{4}\-\d{2}\-\d{2}_\d{2}:\d{2}:\d{2}_//;
+      $problems{$timestamp}{"Sequence".":".$seq} = ["\"connected to multiple loci\""];
     }
-  }
- foreach (keys %Seq_loci){
-    $sanger_counter++;
-    print ALL_LOG "$_ is attached to multiple loci: $Seq_loci{$_}.\n";
-    print SANGER_LOG "$_ is attached to multiple loci: $Seq_loci{$_}.\n";
-   print "$_ is attached to multiple loci: $Seq_loci{$_}.\n";
-  }
- 
+  }  
 }
    
 ###########################################
@@ -533,8 +572,8 @@ By default this script will check /wormsrv2/current_DB, but you can use the
 
 =item -t, test
 
-Will run all of the script as normal but will not send any emails.  Separate l
-og files are still written to /wormsrv2/logs
+Will run all of the script as normal but will not send any emails.  Separate 
+log files are still written to /wormsrv2/logs
 
 =item -v, verbose mode
 
