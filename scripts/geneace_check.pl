@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-05-16 14:31:24 $
+# Last updated on: $Date: 2003-05-19 16:44:09 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -543,7 +543,7 @@ sub add_remark_for_merged_loci_in_geneclass {
       print LOG "$locus became an other_name of $other and no remark is added in Gene_class $gc\n";
       if ($ace){
 	print ACE "\n\nGene_Class : \"$gc\"\n";
-	print ACE "Remark \"$locus became an other_name of $other [$rundate ck1]\"\n";
+	print ACE "Remark \"$locus became an other_name of $other\" CGC_data_submission\n";
       }
     }
   }
