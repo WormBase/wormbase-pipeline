@@ -16,7 +16,7 @@
 ##########################################################
 #
 # Last updated by: $Author: dl1 $                     
-# Last updated on: $Date: 2002-12-09 14:56:20 $       
+# Last updated on: $Date: 2002-12-10 18:17:52 $       
 
 $|=1;
 use strict;
@@ -56,22 +56,26 @@ GetOptions (
 # help page
 &usage("Help") if ($help);
 
-# no debug name
-&usage("Debug") if ((defined $debug) && ($debug eq ""));
-
-# assign $maintainers if $debug set
-($maintainers = $debug . '\@sanger.ac.uk') if ($debug);
+# debug
+if($debug){
+  print "// makeChromLinks run $rundate with debug as $debug\n\n";
+  ($maintainers = $debug . '\@sanger.ac.uk');
+}
 
 # where am i
 my $CWD = cwd;
-$ENV{PATH}="/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4:$ENV{PATH}";
 
 if (!defined $database) {
     $database = "/wormsrv2/autoace";
 }
 
+print "// Using $database as source of data for chromosomes\n" if ($debug);
+
 # AcePerl connection to $database
-my $db = Ace->connect(-path=>'$database') or die ("Could not connect with $database\n");
+my $db = Ace->connect(-path=>$database,
+                      -program =>&tace) or die ("Could not connect with $database\n");
+
+print "Connected to database\n" if ($debug);
 
 my ($pos,$i);
 
@@ -157,12 +161,6 @@ sub usage {
          system ('perldoc',$0);
          exit (0);
      }
-     elsif ($error eq "Debug") {
-         # No debug bod named
-         print "You haven't supplied your name\nI won't run in debug mode
-    	 until i know who you are\n";
-        exit (0);
-    }
 }
 
 __END__
