@@ -144,7 +144,7 @@ print "Copying models.wrm\n" if ($debug);
  
 
 # copy the pictures directory to a tarball
-system("cd /nfs/disk67/sylvia/geneace/pictures") && die "Couldn't cd into ~sylvia/pictures\n";
+chdir "/nfs/disk67/sylvia/geneace/pictures" or die "Couldn't cd into ~sylvia/pictures\n";
 system("/bin/tar -c -f $targetdir/$release/pictures.tar [A-Z]*");
 system("/bin/tar -u -f $targetdir/$release/pictures.tar [0-9]*");
 system("/bin/tar -u -f $targetdir/$release/pictures.tar [a-h]*");
@@ -175,7 +175,7 @@ print "make the wormpep FTP release for wormpep${wormpep}\n" if ($debug);
 
 # tar, zip, and copy WormRNA files across from wormsrv2/WORMRNA
 my $dest = "/wormsrv2/WORMRNA/current_WormRNA";
-system("cd $dest") && die "Couldn't cd $dest\n";
+chdir "$dest" or die "Couldn't cd $dest\n";
 system "/bin/tar -cf $targetdir/$release/wormrna${wormrna_release}.tar README wormrna${wormrna_release}.rna";
 system "/bin/gzip $targetdir/$release/wormrna${wormrna_release}.tar";
 print "make the FTP files for WormRNA${wormrna_release}\n" if ($debug);
