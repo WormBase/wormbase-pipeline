@@ -5,6 +5,7 @@ use Ace;
 use Tk;
 use Getopt::Long;
 require Tk::Dialog;
+use Coords_converter;
 
 my $source;
 my $design;
@@ -76,6 +77,7 @@ if ( $chromosome ) {
 						  );
 
 
+  my $coords = Coords_converter->invoke;
 
   my $file = "/nfs/WWWdev/SANGER_docs/htdocs/Projects/C_elegans/WORMBASE/development_release/GFF/CHROMOSOME_${chromosome}.check_intron_cam.gff";
   open (INTRONS, "<$file") or die "$file\n";
@@ -85,8 +87,8 @@ if ( $chromosome ) {
     $seq = $data[0]; 
     $x = $data[3];
     $y = $data[4];
-
-    $intron_list->insert('end',"$seq $x $y");
+    my @clone_coords = $coords->LocateSpan("$seq","$x","$y" );
+    $intron_list->insert('end',"$clone_coords[0] $clone_coords[1] $clone_coords[2]");
     #last if $count++ > 15;
   }
   close INTRONS;
