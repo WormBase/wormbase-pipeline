@@ -8,7 +8,7 @@
 # dl
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2003-04-22 13:49:40 $
+# Last edited on: $Date: 2003-04-22 14:09:31 $
 
 use lib "/wormsrv2/scripts/";
 use Wormbase;
@@ -88,7 +88,7 @@ while (<FILE>) {
     foreach my $ip (@interpro) {
       my @GOterms = split(/\s/,$Ip2Go{$ip});
       foreach my $go (@GOterms) {
-	print OUT "GO_term\t\"$go\" GO_inference_type IEA\n"
+	print OUT "GO_term\t\"$go\" \"IEA\"\n"
       }
     }
 }
