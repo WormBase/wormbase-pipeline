@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2002-12-09 17:13:56 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2003-01-07 13:12:06 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -163,21 +163,19 @@ foreach $file (@gff_files) {
 	if (($method eq "Genomic_canonical") 
 	    && ($feature eq "Sequence"))                  {push ( @{$GFF{$file}{clone_path}},$_);}
 	# Genes     
-	elsif ( (($method eq "curated") 
-		 && ($feature eq "Sequence")) 
-		|| (($method eq "provisional")
-		    && ($feature eq "Sequence")) 
-		|| (($method eq "tRNAscan-SE-1.11")
-		    && ($feature eq "Sequence")) )        {push (@{$GFF{$file}{genes}},$_);}
-	elsif ( ($method eq "Pseudogene") 
-		&& ($feature eq "Sequence"))              {push (@{$GFF{$file}{pseudogenes}},$_);}
+	elsif ( (($method eq "curated") && ($feature eq "Sequence")) ||
+		(($method eq "provisional") && ($feature eq "Sequence")) )
+		{push (@{$GFF{$file}{genes}},$_);}
+	elsif ( ($method eq "Pseudogene")   && ($feature eq "Sequence"))              
+		{push (@{$GFF{$file}{pseudogenes}},$_);}
 	# RNA genes 
-	elsif ((($method eq "RNA") 
-		|| ($method eq "tRNAscan-SE-1.11")) 
-	       && ($feature eq "Sequence"))               {push (@{$GFF{$file}{rna}},$_);}
+	elsif ((($method eq "RNA")    || ($method eq "tRNAscan-SE-1.11") ||
+		($method eq "rRNA")   || ($method eq "scRNA") ||
+		($method eq "snRNA")  || ($method eq "snoRNA") || 
+		($method eq "miRNA")) && ($feature eq "Transcript"))               
+		{push (@{$GFF{$file}{rna}},$_);}
 	# CDS Exon  
-	elsif ( (($method eq "curated") || 
-                 ($method eq "provisional")) 
+	elsif ( (($method eq "curated") || ($method eq "provisional")) 
 		&& ($feature eq "CDS"))                   {push (@{$GFF{$file}{CDS_exon}},$_);}
 	# Exon      
 	elsif ((($method eq "curated") 
