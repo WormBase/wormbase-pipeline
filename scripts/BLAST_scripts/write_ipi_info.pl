@@ -6,9 +6,17 @@ use DB_File;
 
 my $old;
 my $verbose;
+my $list_all;
+my $output;
+my $species;
 
 GetOptions ( "old"     => \$old,
-	     "verbose" => $verbose);
+	     "verbose" => $verbose,
+	     "list=s"  => \$list_all,
+	     "output=s"  => \$output,
+	     "species=s" => \$species
+	   );
+
 
 my $wormpipe_dump = "/acari/work2a/wormpipe/dumps";
 
@@ -18,10 +26,19 @@ my $peptide = "$wormpipe_dump/peptide.dbm";
 my $database = "$wormpipe_dump/databases.dbm";
 my $listx = "$wormpipe_dump/ipi_hits_list_x";
 my $listp = "$wormpipe_dump/ipi_hits_list";
-my $list_all = "$wormpipe_dump/ipi_hits_all";
-my $output = "$wormpipe_dump/ipi_hits.ace";
+$list_all = "$wormpipe_dump/ipi_hits_all" unless $list_all;
+$output = "$wormpipe_dump/ipi_hits.ace" unless $output;
 
-if (-e $listx and -e $listp) {
+if( $species ) {
+  $list_all = "${species}_ipi_hits";
+  $output = "${species}_ipi_hits.ace";
+}
+
+if (defined($species) and -e $list_all) {
+  die "$list_all file doesnt exist\n";
+}
+
+if( !(defined($species)) and (-e $listx and -e $listp) ) {
   system("cat $listx $listp | sort -u > $list_all");
 }
 else {
