@@ -27,6 +27,7 @@ my $wquery="";
 my $wtools="";
 my $whelp="";
 my $wdata="";
+my $chromosomes="";
 
 GetOptions (
 	    "start=s"   => \$srcdir,
@@ -44,6 +45,7 @@ GetOptions (
 	    "wtools"    => \$S_wtools,
 	    "whelp"     => \$S_whelp,
 	    "wdata"     => \$S_wdata,
+	    "chromosomes"     => \$S_chromosomes,
 );
 
 length ($srcdir)==0 && &PrintHelp;
@@ -88,16 +90,17 @@ if ($enddir =~ /^\~/) {
 
 my $new_subdir="$e_dir"."/database";
 my $bck_subdir="$e_dir"."/database.BCK";
-my $database = "$s_dir"."/database";
-my $wspec = "$s_dir"."/wspec";
-my $wgf = "$s_dir"."/wgf";
-my $wscripts = "$s_dir"."/wscripts";
-my $wquery = "$s_dir"."/wquery";
-my $wtools = "$s_dir"."/wtools";
-my $whelp = "$s_dir"."/whelp";
-my $wdata = "$s_dir"."/data";
+$database = "$s_dir"."/database";
+$wspec = "$s_dir"."/wspec";
+$wgf = "$s_dir"."/wgf";
+$wscripts = "$s_dir"."/wscripts";
+$wquery = "$s_dir"."/wquery";
+$wtools = "$s_dir"."/wtools";
+$whelp = "$s_dir"."/whelp";
+$wdata = "$s_dir"."/data";
+$chromosomes = "$s_dir"."/CHROMOSOMES";
 
-$S_all && do {@TOBEMOVED=("$database","$wspec","$wgf","$wscripts","$wtools","$whelp","$wdata");$OK=1;$DB=1;};
+$S_all && do {@TOBEMOVED=("$database","$wspec","$wgf","$wscripts","$wtools","$whelp","$wdata","$chromosomes");$OK=1;$DB=1;};
 $S_database && do {push (@TOBEMOVED,"$database");$OK=1;};
 $S_wspec && do {push (@TOBEMOVED,"$wspec");$OK=1;$DB=1;};
 $S_wgf && do {push (@TOBEMOVED,"$wgf");$OK=1;};
@@ -106,6 +109,7 @@ $S_wquery && do {push (@TOBEMOVED,"$wquery");$OK=1;};
 $S_wtools && do {push (@TOBEMOVED,"$wtools");$OK=1;};
 $S_whelp && do {push (@TOBEMOVED,"$whelp");$OK=1;};
 $S_wdata && do {push (@TOBEMOVED,"$wdata");$OK=1;};
+$S_chromosomes && do {push (@TOBEMOVED,"$chromosomes");$OK=1;};
 if ($OK == "0") {&PrintHelp;};
 
 print LOGFILE "Directories to be copied: @TOBEMOVED \n";
@@ -357,6 +361,9 @@ in alternative to the -all switch:
 =item -whelp     =>  whelp subdir
 
 =item -wdata     =>  wdata subdir 
+
+=item -chromosomes =>  CHROMOSOMES subdir
+
 
 =back
 
