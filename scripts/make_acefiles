@@ -283,7 +283,7 @@ sub make_command {
    my ($object,$dbname,$targetdir,$criteria,$criterianoasterisk) = @_;
    my $filename="$targetdir/".$dbname."_".$object.$criterianoasterisk.".ace";
    my $command;
-   if($dbname eq "camace" || $dbname eq "geneace" || $dbname eq "stlace"){
+   if($dbname eq "camace" || $dbname eq "geneace" || $dbname eq "stlace"|| $dbname eq "briggsae" || $dbname eq "caltech"){
      $command=<<END;
 find $object $criteria
 show -a -T -f $filename
@@ -310,7 +310,7 @@ sub make_command_DNA {
     my $filename = "$targetdir/" . $dbname . "_DNA.ace";
     my $command;
 
-    if($dbname eq "camace" || $dbname eq "stlace"){
+    if($dbname eq "camace" || $dbname eq "stlace" || $dbname eq "briggsae"){
       $command=<<END;
 find $object
 follow DNA
