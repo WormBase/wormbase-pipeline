@@ -20,52 +20,55 @@ my $class;
 my $add;
 my $delete;
 my $debug;
+my $in_block = 0;
+my $line;
 
 # read the acefile data into memory
 open (FILE, "<$file");
 while (<FILE>) {
 
-    chop;
-    next if ($_ eq "");
+    chomp;
     next if (/^\/\//);
+    $line = $_;
 
-    if (/^Sequence \"(\S+)\"/) {
+#    print  "// [$in_block] '$line' \n";
+
+    if (($line =~ /^Sequence \"(\S+)\"/) && ($in_block == 0)) {
 	$class = "Sequence";
 	$name = $1;
-	if ($oldname eq "nill") {$oldname = $name;next;}	
-	&report;
+	&report unless ($oldname eq "nill");
+	$in_block = 1;
 	$oldname = $name;
 	next;
     }    
-    
-    if (/^Feature \"(\S+)\"/) {
+    elsif (($line =~/^Feature \"(\S+)\"/) && ($in_block == 0)) {
 	$class = "Feature";
 	$name = $1;
-	if ($oldname eq "nill") {$oldname = $name;next;}	
-	&report;
+	&report unless ($oldname eq "nill");
+	$in_block = 1;
 	$oldname = $name;
 	next;
     }    
-    
-    if (/^Pseudogene \"(\S+)\"/) {
+    elsif (($line =~/^Pseudogene \"(\S+)\"/) && ($in_block == 0)) {
 	$class = "Pseudogene";
 	$name = $1;
-	if ($oldname eq "nill") {$oldname = $name;next;}	
-	&report;
+	&report unless ($oldname eq "nill");
+	$in_block = 1;
 	$oldname = $name;
 	next;
     }    
-    
-    
-    if (/^Transcript \"(\S+)\"/) {
+    elsif (($line =~/^Transcript \"(\S+)\"/) && ($in_block == 0)) {
 	$class = "Transcript";
 	$name = $1;
-	if ($oldname eq "nill") {$oldname = $name;next;}	
-	&report;
+	&report unless ($oldname eq "nill");
+	$in_block = 1;
 	$oldname = $name;
 	next;
-    }    
-
+    }
+    elsif ($line eq "") {
+	$in_block = 0;
+	next;
+    }
 
     # parse delete/addition lines
     if (/^-D/) {
