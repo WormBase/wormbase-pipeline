@@ -9,7 +9,7 @@ use Exporter;
 use Carp;
 use Ace;
 @ISA       = qw(Exporter);
-@EXPORT    = qw(get_cvs_version get_wormbase_version get_wormbase_version_name get_wormpep_version get_wormrna_version get_wormbase_release_date copy_check mail_maintainer celeaccession tace gff_sort dbfetch clones_in_database);
+@EXPORT    = qw(get_cvs_version get_wormbase_version get_wormbase_version_name get_wormpep_version get_wormrna_version get_wormbase_release_date copy_check mail_maintainer celeaccession tace gff_sort dbfetch clones_in_database open_TCP);
 @EXPORT_OK = qw(get_script_version); 
 
 
