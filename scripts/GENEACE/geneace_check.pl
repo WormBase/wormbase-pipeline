@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-07-22 14:19:08 $
+# Last updated on: $Date: 2004-07-26 13:04:41 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -289,10 +289,6 @@ sub process_gene_class{
   }
 
   
-  # looks for seq. (predicted_gene, transcript) link to an allele, but which gene ids don't => make gene id -> allele connection
-  &link_seq_to_Gene_based_on_allele($db);
-
-
   # check highest gene id number = gene obj. number
   my $last_gene_id = $gene_ids[-1];
   $last_gene_id =~ s/WBGene(0)+//;
@@ -486,37 +482,6 @@ sub get_event {
 }
 
 
-# looks for seq. (predicted_gene, transcript) link to an allele, but which gene ids don't => make gene id -> allele connection
-sub link_seq_to_Gene_based_on_allele {
-
-  my $db = shift;
-  my $query = "Find Allele * where (Predicted_gene|Transcript) & gene";
-
-  push(my @alleles_link_to_Gene_and_seq, $db->find($query));
-  foreach my $allele (@alleles_link_to_Gene_and_seq){
-    my @Genes =(); my @cds =(); my @trans =();
-
-    my (%Genes, %cds, %trans);
-    @Genes = $allele -> Gene; foreach (@Genes){$Genes{$_}++}
-    @cds   = $allele -> Predicted_gene;
-    @trans = $allele -> Transcript;
-
-    my %gene_ids;
-    foreach my $e (@cds, @trans){
-       $gene_ids{$Gene_info{$e}{'Gene'}}++;
-    }
-	
-    foreach my $id (keys %gene_ids){
-      if (!exists $Genes{$id}){
-        print LOG "ERROR 23(a): $id ($Gene_info{$id}{'Public_name'}) is not linked to allele $allele\n";
-        if ($ace){
-          print ACE "\nAllele : \"$allele\"\n";
-          print ACE "Gene \"$id\"\n";
-        }
-      }
-    }
-  }
-}
 
 
 
@@ -896,53 +861,6 @@ sub process_allele_class{
   print LOG "\n\nChecking Allele class for errors:\n";
   print LOG "---------------------------------\n";
 
-  # when an allele is linked to a predicted_gene and not a gene, is that predicted_gene already linked to a gene_id?
-  # if yes, make allele - Gene id connection
-
-  foreach my $tag ("Predicted_gene", "Transcript"){
-    my $query_1 = "Find allele * where $tag & !Gene; > $tag; Gene"; # alleles have no gene but have predicted_gene/transcript which are linked to Gene
-    my $query_2 = "Find allele * where $tag & !Gene";               # alleles have no Gene
-
-    my (@seqs_linked_to_allele_and_gene, %seqs_linked_to_allele_and_gene,
-        @alleles_linked_to_seqs_and_not_gene, %alleles_linked_to_seqs_and_not_gene);
-
-    push( @seqs_linked_to_allele_and_gene, $db->find($query_1) );
-    push( @alleles_linked_to_seqs_and_not_gene, $db->find($query_2) );
-
-    # hash set for quick lookup
-    foreach (@seqs_linked_to_allele_and_gene){$seqs_linked_to_allele_and_gene{$_}++};
-    foreach (@alleles_linked_to_seqs_and_not_gene){$alleles_linked_to_seqs_and_not_gene{$_}++};
-
-    foreach my $seq (@seqs_linked_to_allele_and_gene){
-      my %SEQ =(); $SEQ{$seq}=$seq; # convert ace obj to simple string
-      my @alleles = $seq -> Alleles;
-      foreach my $e (@alleles){
-	if ( exists $alleles_linked_to_seqs_and_not_gene{$e} ){
-
-	  # a seq. maybe linked to > 1 gene ids
-	  my @gene_ids = $ga -> get_unique_from_array( @{$seqs_to_gene_id{$SEQ{$seq}}} );
-	  foreach (@gene_ids){
-
-	    # check this gene id has also a CGC_name / Sequence_name
-	    foreach my $tag ("CDS", "Transcript"){
-	      if ( $Gene_info{$_}{$tag}){
-		if ( $Gene_info{$_}{'CGC_name'} ){
-		  print LOG "ERROR(a): $e should be linked to $_ ($Gene_info{$_}{'CGC_name'}) based on $seq of $e\n";
-		}
-		elsif ( $Gene_info{$_}{'Sequence_name'} ){
-		  print LOG "ERROR(a): $e should be linked to $_ ($Gene_info{$_}{'Sequence_name'}) based on $seq of $e\n";
-		}
-		if ($ace){
-		  print ACE "\nAllele : \"$e\"\n";
-		  print ACE "Gene \"$_\"\n";
-		}
-	      }
-	    }
-	  }
-	}
-      }
-    }
-  }
 
   my @alleles = $db->fetch(-class => 'Allele',
                  	   -name  => '*');
@@ -957,7 +875,7 @@ sub process_allele_class{
 
     # check allele has no location tag
     if( !defined $allele->Location ){
-
+      
       # catch non-standard upper-case allele name
       if ($allele =~ /^[A-Z]+/){
 	print LOG "ERROR: $allele has no Location (no info available)\n";
@@ -1016,6 +934,7 @@ sub process_allele_class{
       print ACE "Location \"$allele_desig_to_LAB{$desig}\"\n";
     }
 
+    # warn about alleles linked to more than one Gene (might be valid for deletion alleles)
     if($allele -> Gene){
       my @geneids=$allele->Gene;
 
@@ -1023,6 +942,14 @@ sub process_allele_class{
 	print LOG "CHECK: $allele is connected to more than one gene ids: @geneids\n";
       }
     }
+
+    # All alleles with flanking sequences should be connected to a gene
+    if($allele->Flanking_sequences && !defined $allele->Gene){
+      print LOG "ERROR: $allele has flanking sequences but is not connected to a Gene object\n";
+
+    }
+
+
 
     # test allele has no method and/or method matches tags about an allele, eg, Deletion tag -> Deletion_allele
     my $method =(); my $method_is =();
