@@ -7,14 +7,13 @@
 # Attempt to unify all of the diverse scripts to fetch ESTs, OSTs, mRNAs etc. used by blat 
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2004-04-27 16:11:01 $
+# Last edited on: $Date: 2004-04-28 10:30:56 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
 use Wormbase;
 use Getopt::Long;
 use Data::Dumper;
-
 
 ##############################
 # command-line options       #
@@ -66,8 +65,8 @@ my $protver;             # EMBL Protein_ID version
 my $org;                 # EMBL species
 
 my $ost_seq;             # tag for OST/EST split
-my %EST_name;            # EST accession => name
-my %EST_dir;             # EST accession => orientation [5|3]
+
+my %NDBaccession2est = &FetchData('NDBaccession2est');            # EST accession => name
 
 my $log;                 # for log file
  
@@ -118,16 +117,6 @@ sub make_ests{
   print LOG "Fetching EST sequences\n" if ($est);
   print LOG "Fetching OST sequences\n" if ($ost);
 
-
-  # read accession->yk name hash for EST names 
-  open (FH, "</wormsrv2/autoace/BLAT/EST.dat") or die "EST.dat : $!\n";
-  undef $/;
-  my $data = <FH>;
-  eval $data;
-  die if $@;
-  $/ = "\n";
-  close(FH);
-
   my $est_file = "elegans_ESTs";
   my $ost_file = "elegans_OSTs";
 
@@ -172,21 +161,21 @@ sub make_ests{
 	print OUT_EST   ">$acc $id $def\n";
 	if ($ace) {
 	  # Can you print a yk name, or is it just an accession?
-	  if (exists $EST_name{$acc}) {
-	    print OUT_ACE "\nSequence : \"$EST_name{$acc}\"\n";
+	  if (exists $NDBaccession2est{$acc}) {
+	    print OUT_ACE "\nSequence : \"$NDBaccession2est{$acc}\"\n";
 	  }
 	  else {	
 	    print OUT_ACE "\nSequence : \"$acc\"\n";
 	  }
 	  # now fill out rest of object
-	  print OUT_ACE "Database EMBL NDB_ID $id\n"; 
 	  print OUT_ACE "Database EMBL NDB_AC $acc\n";
+	  print OUT_ACE "Database EMBL NDB_ID $id\n"; 
 	  print OUT_ACE "Database EMBL NDB_SV $sv\n";
 	  print OUT_ACE "Species \"Caenorhabditis elegans\"\n";
 	  print OUT_ACE "Title \"$def\"\nMethod EST_elegans\n";
 	  
-	  if (exists $EST_name{$acc}) {
-	    print OUT_ACE "\nDNA \"$EST_name{$acc}\"\n" if ($ace);
+	  if (exists $NDBaccession2est{$acc}) {
+	    print OUT_ACE "\nDNA \"$NDBaccession2est{$acc}\"\n" if ($ace);
 	  }
 	  else {	
 	    print OUT_ACE   "\nDNA \"$acc\"\n" if ($ace);
@@ -292,8 +281,8 @@ sub make_mrnas{
 		print OUT_MRNA ">$acc $id $def\n";
 		if ($ace) {
 		  print OUT_ACE "\nSequence : \"$acc\"\n";
-		  print OUT_ACE "Database EMBL NDB_ID $id\n";
 		  print OUT_ACE "Database EMBL NDB_AC $acc\n";
+		  print OUT_ACE "Database EMBL NDB_ID $id\n";
 		  print OUT_ACE "Database EMBL NDB_SV $sv\n";
 		  print OUT_ACE "Protein_id $acc $protid $protver\n";
 		  print OUT_ACE "Species \"Caenorhabditis elegans\"\n";
@@ -365,8 +354,8 @@ sub make_nematode_ests{
       print OUT_NEM ">$acc $id $def\n";
       if ($ace){
 	print OUT_ACE "\nSequence : \"$acc\"\n";
-	print OUT_ACE "Database EMBL NDB_ID $id\n";
 	print OUT_ACE "Database EMBL NDB_AC $acc\n";
+	print OUT_ACE "Database EMBL NDB_ID $id\n";
 	print OUT_ACE "Database EMBL NDB_SV $sv\n";
 	print OUT_ACE "Species \"$org\"\n";
 	print OUT_ACE "Title \"$def\"\nMethod EST_nematode\n";
@@ -420,8 +409,8 @@ sub make_embl_cds{
   while (<SEQUENCES>) {
     chomp;
     if (/^\s/) {                   # matches only the sequence lines
-      s/\s+//g;                  # remove white space
-      s/\d+//g;                  # remove numerals
+      s/\s+//g;                    # remove white space
+      s/\d+//g;                    # remove numerals
       print OUT_ACE "$_\n" if ($ace);   # print to output
     }
     
@@ -441,8 +430,8 @@ sub make_embl_cds{
       # print out the acefile version
       if ($ace){
 	print OUT_ACE "\nSequence : \"$acc\"\n";
-	print OUT_ACE "Database EMBL NDB_ID $id\n";
 	print OUT_ACE "Database EMBL NDB_AC $acc\n";
+	print OUT_ACE "Database EMBL NDB_ID $id\n";
 	print OUT_ACE "Database EMBL NDB_SV $acc.$sv\n";
 	print OUT_ACE "Species \"Caenorhabditis elegans\"\n";
 	print OUT_ACE "Title \"$def\"\nMethod NDB\n";
@@ -496,9 +485,9 @@ sub create_log_files{
 
   # create main log file using script name for
   my $script_name = $1;
-  $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
+  $script_name    =~ s/\.pl//; # don't really need to keep perl extension in log name
   my $rundate     = `date +%y%m%d`; chomp $rundate;
-  $log        = "/wormsrv2/logs/$script_name.$rundate.$$";
+  $log            = "/wormsrv2/logs/$script_name.$rundate.$$";
 
   open (LOG, ">$log") or die "cant open $log";
   print LOG "$script_name\n";
