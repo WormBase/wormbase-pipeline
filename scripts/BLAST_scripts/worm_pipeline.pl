@@ -10,13 +10,14 @@ use Bio::SeqIO;
 use Bio::EnsEMBL::Pipeline::DBSQL::Protein::DBAdaptor;
 #use vars qw($opt_f $opt_o $opt_n $opt_m,);
 
-my ($fasta, $database, $brig );
+my ($fasta, $database, $brig, $dbname );
 
 $|=1;
 
 GetOptions (
 	    'fasta:s'    => \$fasta,
-	     'brig'       => \$brig
+	    'brig'       => \$brig,
+	    'dbname=s'   => \$dbname
 	   );
 
 my $usage = "worm_pipeline.pl\n";
@@ -32,7 +33,7 @@ unless ($fasta) {
 # define some variables
 
 my $host = "ecs1f";
-my $dbname = $brig ? "worm_brigpep" : "worm_pep"; #if -brig opt, use worm_brigprot else use worm_pep
+$dbname = $brig ? "worm_brigpep" : "worm_pep" unless $dbname; #if -brig opt, use worm_brigprot else use worm_pep
 my $user = "wormadmin";
 my $pass = "worms";
 my $species = $brig ? 2 : 1; #assign no based on species
