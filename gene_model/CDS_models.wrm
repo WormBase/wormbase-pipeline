@@ -1250,7 +1250,7 @@
                         Redundant
         Remark ?Text #Evidence
 	Title ?Text
-	DB_info	Database ?Database Text ?Accession_number XREF Motif // ID  Accession_number
+	DB_info	Database ?Database ?Database_field UNIQUE ?Accession_number XREF Motif // ID  Accession_number
 	  	DB_remark ?Text #Evidence
 		DB_text ?LongText
 		Web_location ?WWW_server
