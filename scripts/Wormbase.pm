@@ -25,6 +25,7 @@ sub get_cvs_version{
 sub get_wormbase_version {
 
     my $WS_version = 'grep "NAME WS" /wormsrv2/autoace/wspec/database.wrm';
+    chomp($WS_version);
     $WS_version =~ s/NAME //;    
     return($WS_version);
 }
