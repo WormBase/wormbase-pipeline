@@ -1,10 +1,10 @@
-#! /usr/bin/perl5.6.1 -w
-
+#!/usr/bin/perl5.6.1 -w
+#
 # get_allele_flanking_seqs_TK.pl
-
+#
 # by Chao-Kung Chen [030625]
 
-# Last updated on: $Date: 2004-07-26 13:32:15 $
+# Last updated on: $Date: 2004-08-18 07:18:23 $
 # Last updated by: $Author: krb $
 
 use Tk;
@@ -539,18 +539,15 @@ sub run {
 
     $ace_window->insert('end', "\nGene : \"$Gene_info{$locus}{'Gene'}\"  \/\/$locus\n");
     $ace_window->insert('end', "\/\/Allele \"$allele\" Paper_evidence \"\"\n");
-    $ace_window->insert('end', "\/\/Allele \"$allele\" PMID_evidence \"\"\n");
     $ace_window->insert('end', "\nAllele : \"$allele\"\n");
-    $ace_window->insert('end', "\/\/Evidence Paper_evidence \"\"\n");
-    $ace_window->insert('end', "\/\/Evidence PMID_evidence \"\"\n");
+    $ace_window->insert('end', "\/\/Evidence Paper_evidence \"WBPaper000\"\n");
     $ace_window->insert('end', "Sequence \"$seq\"\n");
     $ace_window->insert('end', "\/\/Substitution \"[\/]\"\n");
     $ace_window->insert('end', "\/\/Deletion \"[\/]\"\n");
     $ace_window->insert('end', "Flanking_sequences \"$dna_L\" \"$dna_R\"\n");
     $ace_window->insert('end', "Species \"Caenorhabditis elegans\"\n");
-    $ace_window->insert('end', "\/\/Remark \"\" Paper_evidence \"\"\n");
-    $ace_window->insert('end', "\/\/Remark \"\" PMID_evidence \"\"\n");
-    $ace_window->insert('end', "\/\/Remark \"\" Curator_confirmed \"WBPerson1845\"\n");
+    $ace_window->insert('end', "\/\/Remark \"\" Paper_evidence \"WBPaper000\"\n");
+    $ace_window->insert('end', "\/\/Remark \"\" Curator_confirmed \"WBPerson2861\"\n");
     $ace_window->insert('end', "\/\/Method \"Substitution_allele\"\n");
     $ace_window->insert('end', "\/\/Method \"Allele\"\n");
     $ace_window->insert('end', "\/\/Method \"Deletion_allele\"\n");
@@ -998,16 +995,12 @@ sub write_ace {
   if ($info[1] =~ /\[.+\]/){ 
     $ace_window->insert('end', "Allele \"$allele\" Paper_evidence \"$info[1]\"\n");
   }
-  else{
-    $ace_window->insert('end', "Allele \"$allele\" PMID_evidence \"$info[1]\"\n");
-  }
+
   $ace_window->insert('end', "\nAllele : \"$allele\"\n");
   if ($info[1] =~ /\[.+\]/){ 
     $ace_window->insert('end', "Evidence Paper_evidence \"$info[1]\"\n");
   }
-  else {
-    $ace_window->insert('end', "Evidence PMID_evidence \"$info[1]\"\n");
-  }
+
   $ace_window->insert('end', "Sequence \"$seq\"\n");
   $ace_window->insert('end', "\/\/Substitution \"[\/]\"\n");
   $ace_window->insert('end', "\/\/Deletion \n");
@@ -1032,7 +1025,7 @@ sub write_ace {
     $info[0] = "stop" if  lc($info[0]) eq "x";
     $ace_window->insert('end', "\/\/Remark \"\"\n");
   }
-  $ace_window->insert('end', "\/\/Remark \"\" Curator_confirmed \"WBPerson1845\"\n");
+  $ace_window->insert('end', "\/\/Remark \"\" Curator_confirmed \"WBPerson2861\"\n");
   $ace_window->insert('end', "\/\/Method \"Allele\"\n");
   $ace_window->insert('end', "\/\/Method \"Substitution_allele\"\n");
   $ace_window->insert('end', "\/\/Method \"Deletion_allele\"\n");
