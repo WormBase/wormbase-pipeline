@@ -31,7 +31,9 @@ my $version     = &get_cvs_version("$0");
 my @gff_files = ('I','II','III','IV','V','X');
 
 my $outdir    = "/wormsrv2/autoace/yellow_brick_road";
-my $datadir   = "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS";
+
+#my $datadir   = "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS";
+my $datadir    = "/wormsrv2/autoace/yellow_brick_road";
 
  ##############################
  # command-line options       #

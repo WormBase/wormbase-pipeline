@@ -26,6 +26,7 @@ my $runtime     = `date +%H:%M:%S`; chomp $runtime;
 
 my $dnadir = "/wormsrv2/autoace/CHROMOSOMES";
 my $logdir = "/wormsrv2/autoace/yellow_brick_road";
+
 my @gff_files = ('I','II','III','IV','V','X');
 
  ########################################
@@ -70,7 +71,7 @@ foreach my $chromosome (@gff_files) {
     my ($wormbase_slice,$wormbase_len,$agp_len);
       
     open (LOG, ">$logdir/CHROMOSOME_$chromosome.agp_seq.log") || &usage(3);
-    open (AGP, "<$dnadir/CHROMOSOME_$chromosome.agp") || &usage(2);
+    open (AGP, "<$logdir/CHROMOSOME_$chromosome.agp") || &usage(2);
     while (<AGP>) {
 	($acc,$sv,$seq_ndb,$from,$to,$span,$start,$new_seq) = "";
 	my @f = split (/\s+/);
@@ -112,7 +113,7 @@ foreach my $chromosome (@gff_files) {
 	    
 	    # Sequence length difference
 	    if (length ($EMBL_slice) != $span) {
-		print LOG "ERROR: Discrepent no. of bases added for $acc [ACEDB:" . length ($EMBL_slice) . " <=> EMBL:$span]\n";
+		print LOG "ERROR: Discrepent no. of bases added for $acc [ACEDB:$span <=> EMBL:" . length ($EMBL_slice) . "\n";
 	    }
 	    
             # Sequence difference
@@ -163,6 +164,7 @@ sub rubbish {
 	chomp;
 	if (/^SV\s+(\S+)\.(\d+)/) {
 	    ($EMBL_acc,$EMBL_sv) = ($1,$2);
+	    $EMBL_seq = "";
 	    next;
 	}
 	next if (/^>/);
