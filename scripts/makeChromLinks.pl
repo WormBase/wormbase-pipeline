@@ -51,45 +51,34 @@ if ($opt_c) {
 
 
 print "\nSequence CHROMOSOME_I\nMethod Link\n" ; $pos = 1 ;
-&add ("cTel33B") ; &overlap ("cTel33B") ;
-&add ("SUPERLINK_RW1") ; &overlap ("C30F12") ;
-&add ("SUPERLINK_CB_I") ; &overlap ("H10E24") ;
-&add ("SUPERLINK_RW1R") ; &overlap ("F49D11") ;
-&add ("SUPERLINK_CB_IR") ;
+&add ("SUPERLINK_RW1");     &overlap ("C30F12") ;
+&add ("SUPERLINK_CB_I");    &overlap ("H10E24") ;
+&add ("SUPERLINK_RW1R");    &overlap ("F49D11") ;
+&add ("SUPERLINK_CB_IR");
 
 print "\nSequence CHROMOSOME_II\nMethod Link\n" ; $pos = 1 ;
-&add ("LINK_cTel52S") ; &overlap ("2L52") ;
-# [010221 dl] Modified to reflect new cTel clone on the left end
-&add ("SUPERLINK_RW2") ; &overlap ("C06A8") ;
-&add ("SUPERLINK_CB_II") ;
+&add ("SUPERLINK_RW2");     &overlap ("C06A8") ;
+&add ("SUPERLINK_CB_II");   &overlap ("Y53F4B");
+&add ("SUPERLINK_RW2R");
 
 print "\nSequence CHROMOSOME_III\nMethod Link\n" ; $pos = 1 ;
-&add ("cTel54X") ; &overlap ("cTel54X") ;
-&add ("SUPERLINK_RW3A") ; &overlap ("Y53G8AR") ;   
-# [000911 dl] Modified to reflect new YAC structure LRM nomenclature 
-&add ("SUPERLINK_CB_IIIL") ; &overlap ("C38D4") ;
-&add ("SUPERLINK_RW3B") ; &overlap ("PAR3") ;
-&add ("SUPERLINK_CB_IIIR") ;
+&add ("SUPERLINK_RW3A");    &overlap ("Y53G8AR") ;   
+&add ("SUPERLINK_CB_IIIL"); &overlap ("C38D4") ;
+&add ("SUPERLINK_RW3B");    &overlap ("PAR3") ;
+&add ("SUPERLINK_CB_IIIR");
 
 print "\nSequence CHROMOSOME_IV\nMethod Link\n" ; $pos = 1 ;
-&add ("cTel4X") ; &overlap ("cTel4X") ;
-# [010221 dl] Unchanged but modified tag in cTel4X should work 
-&add ("SUPERLINK_RW4") ; &overlap ("H23L24") ;
-&add ("SUPERLINK_CB_IV") ;
+&add ("SUPERLINK_RW4");     &overlap ("H23L24") ;
+&add ("SUPERLINK_CB_IV");
 
 print "\nSequence CHROMOSOME_V\nMethod Link\n" ; $pos = 1 ;
-&add ("cTel3X") ; &overlap ("cTel3X") ; 
-# [000509 dl] No longer needed, the Overlap_right tag in cTel3X is sufficient
-#$pos -= 147 ;	# because cTel3X -> B0348 which is at 148
-&add ("SUPERLINK_RW5") ; &overlap ("H24G06") ;
-&add ("SUPERLINK_CB_V") ;
+&add ("SUPERLINK_RW5");     &overlap ("H24G06") ;
+&add ("SUPERLINK_CB_V");
 
 print "\nSequence CHROMOSOME_X\nMethod Link\n" ; $pos = 1 ;
-&add ("cTel7X") ; &overlap ("cTel7X") ;
-&add ("SUPERLINK_RWXL") ; &overlap ("C23F12") ;
-&add ("SUPERLINK_CB_X") ; &overlap ("C11G6") ;
-&add ("SUPERLINK_RWXR") ; &overlap ("H11L12") ;
-&add ("LINK_6R55") ;
+&add ("SUPERLINK_RWXL");    &overlap ("C23F12") ;
+&add ("SUPERLINK_CB_X");    &overlap ("C11G6") ;
+&add ("SUPERLINK_RWXR"); 
 
 exit 0 ;
 
@@ -172,6 +161,8 @@ The database directory can be written in one of the following manners:
 =item directoryname, when it is a subdirectory of the current user directory
 
 =cut
+
+
 
 
 
