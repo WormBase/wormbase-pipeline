@@ -8,7 +8,7 @@ use strict;
 my @chroms = qw( I II III IV V X );
 my $dump_dir;
 my $database;
-my $dumpGFFscript = glob("~ar2/wormbase/scripts/GFF_method_dump.pl");
+my $dumpGFFscript = glob("~wormpub/TEST_BUILD/scripts/GFF_method_dump.pl");
 my $scratch_dir = "/tmp";
 my $methods;
 my $chrom_choice;
