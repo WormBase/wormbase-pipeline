@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-02-12 15:59:36 $
+# Last updated on: $Date: 2004-02-25 12:58:05 $
 
 package Geneace;
 
@@ -13,6 +13,7 @@ use strict;
 
 my $def_dir = "/wormsrv1/geneace/wquery/";
 my $curr_db = "/nfs/disk100/wormpub/DATABASES/current_DB";
+my $geneace_dir = "/wormsrv1/geneace";
 my $tace = &tace;
 
 sub init {
@@ -60,9 +61,37 @@ sub parse_inferred_multi_pt_obj {
 
 
 sub other_name {
-  my ($this, $db) = @_;
+  my ($this, $db, $option) = @_; # $db is db handle
+  my %main_other;
   push( my @result, $db->find("Find Gene_name * where Other_name_for AND !(Cb-* OR Cr-*)") );
-  return @result;
+  if ($option eq "hash"){
+    foreach(@result){
+      push(@{$main_other{$_ -> Other_name_for(1)}}, $_);
+    }
+    return %main_other;
+  }
+  if ($option eq "array"){
+    return @result;
+  }
+  if (!$option){
+    print "You need to specify datatype to resturn: array or hash\n";
+  }
+}
+sub cgc_name_is_also_other_name {
+  my ($this, $db) = @_; # $db is db handle
+  push( my @exceptions, $db->find("Find Gene_name * where CGC_name_for; Other_name_for") );
+  return @exceptions;
+}
+
+sub loci_have_multi_pt {
+  my ($this, $db) = @_;
+  push( my @loci_has_multi, $db->find("Find Locus * where Multi_point") );
+
+  my %loci_2_multi;
+  foreach (@loci_has_multi){
+    push(@{$loci_2_multi{$_}}, $_ -> Multi_point(1) );
+  }
+  return %loci_2_multi;
 }
 
 sub clone_to_lab {
@@ -97,9 +126,9 @@ sub upload_database {
 #     }
 
 sub array_comp {
-  my $this = shift;
+
+  my ($this, $ary1_ref, $ary2_ref, $option)=@_;
   my(@union, @isect, @diff, %union, %isect, %count, $e);
-  my ($ary1_ref, $ary2_ref, $option)=@_;
   @union=@isect=@diff=();
   %union=%isect=();
   %count=();
@@ -132,6 +161,16 @@ sub get_clone_chrom_coords {
   }
   return %clone_info;
 }
+
+sub get_unique_from_array {
+  my ($this, @array) = @_;
+  my %seen=();
+  my @new_array_no_dup;
+  foreach (@array){push(@new_array_no_dup, $_) unless $seen{$_}++}
+  return @new_array_no_dup;
+}
+
+
 
 
 1;
