@@ -8,7 +8,7 @@
 # to look for bogus sequence entries
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-04-26 10:36:39 $
+# Last updated on: $Date: 2004-05-06 16:07:52 $
 
 
 use strict;
@@ -361,16 +361,67 @@ sub process_sequences{
 	  print "$timestamp $class:$CDS \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
 	  $category = 1;
 	}
-	if(defined($CDS->at('Allele'))){
-	  my $tag = "Allele";
-#	  my $timestamp = &get_timestamp($class, $CDS, $tag);
-	  # added because AcePerl doesn't like Allele tag for some reason?!?
-	  my $timestamp = "geneace_allele";
+	if(defined($CDS->at('Visible.Alleles'))){
+	  my $tag = "Alleles";
+	  my $timestamp = &get_timestamp($class, $CDS, $tag);
 	  my $comment = &splice_variant_check($CDS);
 	  $problems{$timestamp}{$class.":".$CDS} = ["\"$tag tag is creating this sequence. $comment\""];
 	  print "$timestamp $class:$CDS \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
 	  $category = 1;
 	}
+	if(defined($CDS->at('Visible.Y2H_target'))){
+	  my $tag = "Y2H_target";
+	  my $timestamp = &get_timestamp($class, $CDS, $tag);
+	  my $comment = &splice_variant_check($CDS);
+	  $problems{$timestamp}{$class.":".$CDS} = ["\"$tag tag is creating this sequence. $comment\""];
+	  print "$timestamp $class:$CDS \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  $category = 1;
+	}
+	
+	if(defined($CDS->at('Visible.Y2H_bait'))){
+	  my $tag = "Y2H_bait";
+	  my $timestamp = &get_timestamp($class, $CDS, $tag);
+	  my $comment = &splice_variant_check($CDS);
+	  $problems{$timestamp}{$class.":".$CDS} = ["\"$tag tag is creating this sequence. $comment\""];
+	  print "$timestamp $class:$CDS \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  $category = 1;
+	}
+	if(defined($CDS->at('Visible.SAGE_transcript'))){
+	  my $tag = "SAGE_transcript";
+	  my $timestamp = &get_timestamp($class, $CDS, $tag);
+	  my $comment = &splice_variant_check($CDS);
+	  $problems{$timestamp}{$class.":".$CDS} = ["\"$tag tag is creating this sequence. $comment\""];
+	  print "$timestamp $class:$CDS \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  $category = 1;
+	}
+
+	if(defined($CDS->at('Visible.Drives_Transgene'))){
+	  my $tag = "Drives_Transgene";
+	  my $timestamp = &get_timestamp($class, $CDS, $tag);
+	  my $comment = &splice_variant_check($CDS);
+	  $problems{$timestamp}{$class.":".$CDS} = ["\"$tag tag is creating this sequence. $comment\""];
+	  print "$timestamp $class:$CDS \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  $category = 1;
+	}
+
+	if(defined($CDS->at('Visible.Transgene_product'))){
+	  my $tag = "Transgene_product";
+	  my $timestamp = &get_timestamp($class, $CDS, $tag);
+	  my $comment = &splice_variant_check($CDS);
+	  $problems{$timestamp}{$class.":".$CDS} = ["\"$tag tag is creating this sequence. $comment\""];
+	  print "$timestamp $class:$CDS \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  $category = 1;
+	}
+	if(defined($CDS->at('Visible.Microarray_results'))){
+	  my $tag = "Microarray_results";
+	  my $timestamp = &get_timestamp($class, $CDS, $tag);
+	  my $comment = &splice_variant_check($CDS);
+	  $problems{$timestamp}{$class.":".$CDS} = ["\"$tag tag is creating this sequence. $comment\""];
+	  print "$timestamp $class:$CDS \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  $category = 1;
+	}
+
+
 	if ($category == 0){
 	  push(@other,$CDS);
 	  print "$CDS - Other problem\n" if $verbose;
@@ -463,12 +514,18 @@ sub get_timestamp{
     ($class = "Expr_pattern", $tag = "CDS")               if ($tag eq "Expr_pattern");
     ($class = "Paper", $tag = "CDS")                      if ($tag eq "Reference");
     ($class = "Sequence", $tag = "Matching_CDS")          if ($tag eq "Matching_cDNA");
-    ($class = "Allele", $tag = "CDS")                     if ($tag eq "Allele");
+    ($class = "Allele", $tag = "Predicted_gene")          if ($tag eq "Alleles");
     ($class = "Operon", $tag = "Contains_CDS")            if ($tag eq "Contained_in_operon");
     ($class = "Gene", $tag = "CDS")                       if ($tag eq "Gene");
     ($class = "RNAi", $tag = "CDS")                       if ($tag eq "RNAi_result");
     ($class = "Clone", $tag = "Sequence")                 if ($tag eq "Clone");
     ($class = "Allele", $tag = "CDS")                     if ($tag eq "Allele");
+    ($class = "Y2H", $tag = "Target_overlapping_CDS")     if ($tag eq "Y2H_target");
+    ($class = "Y2H", $tag = "Bait_overlapping_CDS")       if ($tag eq "Y2H_bait");
+    ($class = "SAGE_transcript", $tag = "Predicted_gene") if ($tag eq "SAGE_transcript");
+    ($class = "Transgene", $tag = "Driven_by_CDS_promoter") if ($tag eq "Drives_transgene");
+    ($class = "Transgene", $tag = "CDS")                  if ($tag eq "Transgene_product");
+    ($class = "Microarray_results", $tag = "CDS")                  if ($tag eq "Microarray_results");
 
     my $aql_query = "select s,s->${tag}.node_session from s in object(\"$class\",\"$value\")";
     my @aql = $db->aql($aql_query);
