@@ -19,8 +19,10 @@ use strict;
 ###########
 # options #
 ###########
+#our($opt_a,$opt_o,$opt_e,$opt_i,$opt_w,$opt_l,$opt_h);
 
-our($opt_a,$opt_o,$opt_e,$opt_i,$opt_w,$opt_l,$opt_h);
+use vars qw / $opt_a $opt_o $opt_e $opt_i $opt_w $opt_l $opt_h /;
+
 $opt_a="";   # does all the following
 $opt_o="";   # performs overlapcheck
 $opt_e="";   # performs estcheck 
@@ -65,8 +67,8 @@ print LOG "  -a : executes all of the following -eio\n" if ($opt_a);
 print LOG "  -e : executes estcheck\n"                  if ($opt_e);
 print LOG "  -i : executes introncheck\n"               if ($opt_i);
 print LOG "  -o : executes overlapcheck\n"              if ($opt_o);
-print LOG "  -w : executes copy2web.pl\n"               if ($opt_w);
 print LOG "  -l : executes list_loci_designations\n"    if ($opt_l);
+print LOG "  -w : executes copy2web.pl\n"               if ($opt_w);
 print LOG "======================================================================\n";
 print LOG "\n";
 
@@ -77,8 +79,9 @@ print LOG "\n";
 &runestcheck     if ($opt_e);
 &runoverlapcheck if ($opt_o);
 &runintroncheck  if ($opt_i);
-&runcopy2web     if ($opt_w);
 &run_list_loci_designations if ($opt_l);
+&runcopy2web     if ($opt_w);
+
 
 ##############################
 # mail $maintainer report    #
