@@ -120,7 +120,7 @@ sub tace {
    $name=`uname -sr`;
     if ($name=~/^SunOS/) {($prog)=</nfs/disk100/acedb/RELEASE.SUPPORTED/bin.SOLARIS_4/tace>;}
     elsif ($name=~/^IRIX/) {($prog)=</nfs/disk100/acedb/RELEASE.SUPPORTED/bin.SGI_4/tace>;}
-    elsif ($name=~/^OSF/)  {($prog)=</nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_4/tace>;}
+    elsif ($name=~/^OSF/)  {($prog)=</nfs/disk100/wormpub/ACEDB/bin_ALPHA/tace>;}
     elsif ($name=~/^Linux/) {($prog)=</nfs/disk100/acedb/RELEASE.SUPPORTED/bin.LINUX_4/tace>;}
     else {print STDERR "No known binary for $uname\n";exit;}
     return $prog;

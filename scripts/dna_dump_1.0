@@ -12,7 +12,7 @@ endsw
 
 cd $1
 
-/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/giface . >! CHROMOSOMES/dna_dump.log <<EOF
+/nfs/disk100/wormpub/ACEDB/bin_ALPHA/giface . >! CHROMOSOMES/dna_dump.log <<EOF
 find sequence CHROMOSOME_I
 dna CHROMOSOMES/CHROMOSOME_I.dna
 find sequence CHROMOSOME_II

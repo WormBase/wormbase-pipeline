@@ -35,7 +35,7 @@ my %clone2acc = "";
 my %clone2id = "";
 my %acc2ver = "";
 
-my $tace = "/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_4/tace"; # tace executable path
+my $tace = "/nfs/disk100/wormpub/ACEDB/bin_ALPHA/tace"; # tace executable path
 my $db = "/wormsrv1/camace";                            # Database path
 my $exec="$tace $db";     
 my $command=<<EOF;

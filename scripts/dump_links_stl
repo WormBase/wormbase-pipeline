@@ -12,7 +12,7 @@ endsw
 
 cd $1
 
-/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_4/giface . >! /tmp/chrom_dump.log <<EOF
+/nfs/disk100/wormpub/ACEDB/bin_ALPHA/giface . >! /tmp/chrom_dump.log <<EOF
 
 find sequence SUPERLINK_RW1
 dna -f /tmp/SUPERLINK_RW1.dna

@@ -7,7 +7,7 @@ switch (`uname`)
 	~wormpub/acedb/ace4/bin.SGI_4/tace $ACEDB
 	breaksw
   case "OSF1":
-	~wormpub/acedb/ace4/bin.ALPHA_4/tace $ACEDB
+	~wormpub/ACEDB/bin.ALPHA/tace $ACEDB
 	breaksw
   case "Linux":
         ~wormpub/acedb/ace4/bin.LINUX/tace $ACEDB

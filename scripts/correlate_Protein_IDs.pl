@@ -16,6 +16,10 @@
 # 000711 : dan : Use getz rather than efetch (to sequentially query EMBLNEW > EMBL
 # 000712 : dan : revamp to do a lot more database calls - makes it's own flatfiles
 
+use lib "/wormsrv2/scripts/";
+use Wormbase;
+
+
 #####################################################################################################
 # get flatfile names from the command line                                                          #
 #####################################################################################################
@@ -28,7 +32,7 @@ my $PID_root = "";                     # Protein_ID root    (e.g. CAB02726)
 my $PID_ver = "";                      # Protein_ID version (e.g. 1)
 my $EMBL_id = "";
 my $EMBL_ac = "";
-my $tace = glob("~acedb/RELEASE.SUPPORTED/bin.ALPHA_4/tace"); # tace executable path
+my $tace = &tace; # tace executable path
 my $db = glob("/wormsrv2/camace");                            # Database path
 my $exec="$tace $db";     
 

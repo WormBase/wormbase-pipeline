@@ -10,7 +10,7 @@ switch ($#argv)
 endsw
 
 
-/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/giface $1 <<EOF > /dev/null
+/nfs/disk100/wormpub/ACEDB/bin_ALPHA/giface $1 <<EOF > /dev/null
 gif seqget $2 ; seqdisplay; seqactions -gf_features; seqfeatures -version 2 -file $3
 EOF
 

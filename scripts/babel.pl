@@ -17,6 +17,9 @@
 #                                                                               #
 #################################################################################
 
+use lib "/wormsrv2/scripts/";
+use Wormbase;
+
 $script_dir = "/wormsrv2/scripts";
 
 #################################################################################
@@ -168,7 +171,7 @@ sub celeaccession {
     local (*text_ace);
     my $seq = shift;
     local($exec);
-    $exec="/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_4/tace";
+    $exec= &tace;
     local($command);
     local($accession);
     $ENV{'ACEDB'}="/wormsrv2/camace";
@@ -194,7 +197,7 @@ sub tace {
    $name=`uname -sr`;
     if ($name=~/^SunOS/)    {($prog)=<~wormpub/acedb/ace4/bin.SUN_4/tace>;}
     elsif ($name=~/^IRIX/)  {($prog)=<~wormpub/acedb/ace4/bin.SGI_4/tace>;}
-    elsif ($name=~/^OSF/)   {($prog)=<~wormpub/ACEDB/bin.ALPHA_4/tace>;}
+    elsif ($name=~/^OSF/)   {($prog)=<~wormpub/ACEDB/bin.ALPHA/tace>;}
     elsif ($name=~/^Linux/) {($prog)=<~wormpub/acedb/ace4/bin.LINUX/tace>;}
     else {print STDERR "No known binary for $uname\n";exit;}
     return $prog;

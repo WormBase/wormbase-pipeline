@@ -4,6 +4,10 @@
 #
 # [ag3] This script makes the unfinished cosmids file make_unfincmid
 
+use lib "/wormsrv2/scripts/";
+use Wormbase;
+
+
 $|=1;
 
 # List of unfinished clones
@@ -171,7 +175,7 @@ sub time2ace {
 sub celeaccession {
     my $seq = shift;
     local($exec);
-    $exec="/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_4/tace";
+    $exec=&tace;
     local($command);
     local($accession);
     $ENV{'ACEDB'}="/nfs/disk100/wormpub/acedb/ace4/cam";

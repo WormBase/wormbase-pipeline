@@ -157,7 +157,7 @@ sub tace {
    $name=`uname -sr`;
     if    ($name=~/^SunOS/) {($prog)=<~wormpub/acedb/ace4/bin.SUN_4/tace>;}
     elsif ($name=~/^IRIX/)  {($prog)=<~wormpub/acedb/ace4/bin.SGI_4/tace>;}
-    elsif ($name=~/^OSF/)   {($prog)=<~acedb/RELEASE.SUPPORTED/bin.ALPHA_4/giface>;}
+    elsif ($name=~/^OSF/)   {($prog)=<~wormpub/ACEDB/bin_ALPHA/giface>;}
     elsif ($name=~/^Linux/) {($prog)=<~wormpub/acedb/ace4/bin.LINUX/tace>;}
     else {print STDERR "No known binary for $uname\n";exit;}
     return $prog;

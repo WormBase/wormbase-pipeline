@@ -50,7 +50,7 @@ sub usage {
 # set path of xace executable           #
 #########################################
 
-$acepath = glob ("~wormpub/acedb/ace4/bin.ALPHA_4");
+$acepath = glob ("~wormpub/ACEDB/bin_ALPHA");
 
 #########################################
 # MainLoop                              #

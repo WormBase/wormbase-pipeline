@@ -4,7 +4,7 @@
 #
 # by Alessandro Guffanti
 #
-# Last updated on: $Date: 2002-12-09 14:16:42 $
+# Last updated on: $Date: 2003-06-03 14:42:12 $
 # Last updated by: $Author: krb $
 #
 # AcePublish.pl will produce a new cgcace version from autoace or will produce diff files 
@@ -42,18 +42,18 @@ sub REAPER {
 }
 
 my $CWD = cwd;
-$ENV{PATH}="/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_4:$ENV{PATH}";
+$ENV{PATH}="/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_5:$ENV{PATH}";
 my $LOG="AcePublish.log.$$";
 my $PRESENT_DIR = cwd;
 $PRESENT_DIR =~ s/\/tmp_mnt//;
 my $LOGFILE = "$PRESENT_DIR"."/"."$LOG";
 
 $tace = &tace; 
-#"/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_4/tace";
+#"/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_5/tace";
 $autoace = "$tace /nfs/disk100/wormpub/autoace";
 $cgcace = "$tace /nfs/disk100/wormpub/acedb/ace4/cgc";
 
-#$aceclient = "/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_4/aceclient";
+#$aceclient = "/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_5/aceclient";
 #$autoace = "$aceclient wormsrv1 -port 210202";
 #$cgcace = "$aceclient wormsrv1 -port 210201";
 
@@ -62,7 +62,7 @@ $cgcace = "$tace /nfs/disk100/wormpub/acedb/ace4/cgc";
 # the relevant classes and acediff
 #
 if (($opt_u)&&(!$opt_n)) {
-  my $acediff = "/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_4/acediff";
+  my $acediff = "/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_5/acediff";
   my $updatedir = "/nfs/disk100/wormpub2/ag3/DIFF";
   my $oldupdatedir = "/nfs/disk100/wormpub2/ag3/DIFF/old";
   my $newupdatedir = "/nfs/disk100/wormpub2/ag3/DIFF/new";

@@ -9,7 +9,7 @@
 # 10/07/01
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-04-04 18:01:42 $
+# Last updated on: $Date: 2003-06-03 14:42:13 $
 
 use strict;
 use Carp;
@@ -22,7 +22,7 @@ my @chrom = qw(I II III IV V X);
 my (%exon, %est, %genes, %repeat, %intron, %camace, %stlace);
 my %EST_name;    # EST accession => name
 my %EST_dir;     # EST accession => orientation [5|3]
-my $tace      = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace /wormsrv2/autoace";
+my $tace      = "/nfs/disk100/wormpub/ACEDB/bin_ALPHA/tace /wormsrv2/autoace";
 
 # set parameters for ESTs and repeats (score threshold, overlap threshold)
 my $ESTth      = '98.0';

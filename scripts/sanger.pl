@@ -21,7 +21,7 @@ sub tace {
     
     if ($name=~/^SunOS/) {($prog)=<~wormpub/acedb/ace4/bin.SUN_4/tace>;}
     elsif ($name=~/^IRIX/) {($prog)=<~wormpub/acedb/ace4/bin.SGI_4/tace>;}
-    elsif ($name=~/^OSF/)  {($prog)=<~wormpub/acedb/ace4/bin.ALPHA_4/tace>;}
+    elsif ($name=~/^OSF/)  {($prog)=<~wormpub/ACEDB/bin_ALPHA/tace>;}
     elsif ($name=~/^Linux/)  {($prog)=<~wormpub/acedb/ace4/bin.LINUX/tace>;}
 
     else {print STDERR "No known binary for $uname\n";exit;}

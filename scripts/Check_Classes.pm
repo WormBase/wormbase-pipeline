@@ -27,8 +27,8 @@ sub check_classes {
    $name=`/bin/uname -sr`; 
    if    ($name=~/^SunOS/) {($prog)=<~wormpub/acedb/ace4/bin.SUN_4/tace>;}
    elsif ($name=~/^IRIX/)  {($prog)=<~wormpub/acedb/ace4/bin.SGI_4/tace>;}
-   elsif ($name=~/^OSF/)   {($prog)=<~acedb/RELEASE.SUPPORTED/bin.ALPHA_4/tace>;}
-   elsif ($name=~/^Linux/) {($prog)=<~wormpub/acedb/ace4/bin.LINUX/tace>;}
+   elsif ($name=~/^OSF/)   {($prog)=<~acedb/RELEASE.SUPPORTED/bin.ALPHA_5/tace>;}
+   elsif ($name=~/^Linux/) {($prog)=<~acedb/RELEASE.SUPPORTED/bin.LINUX_4/tace>;}
    else {print "No known binary for $name\n";exit;}
    my $exec_f = "$prog $first";
    my $exec_s = "$prog $second";

@@ -28,7 +28,7 @@ show -a Protein_id
 quit
 EOF
 
-    open (textace, "echo '$command' | /nfs/disk100/wormpub/acedb/ace4/bin.ALPHA_4/giface $stlacepath |");
+    open (textace, "echo '$command' | /nfs/disk100/wormpub/ACEDB/bin_ALPHA/giface $stlacepath |");
     while (<textace>) {
 	chomp;
 	$|=0;

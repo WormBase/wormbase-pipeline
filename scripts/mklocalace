@@ -16,7 +16,7 @@ switch (`ostype`)
 	set prog = ~wormpub/acedb/ace4/bin.SUN_4/tace
 	breaksw
   case "OSF1":
-	set prog = ~wormpub/acedb/ace4/bin.ALPHA_4/tace
+	set prog = ~wormpub/ACEDB/bin_ALPHA/tace
 	breaksw
 endsw
 

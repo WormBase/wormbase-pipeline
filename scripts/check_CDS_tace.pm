@@ -22,7 +22,7 @@ my $exec="";
 my $name=`uname -sr`;
 if    ($name=~/^SunOS/) {($exec)=<~wormpub/acedb/ace4/bin.SUN_4/tace>;}
 elsif ($name=~/^IRIX/)  {($exec)=<~wormpub/acedb/ace4/bin.SGI_4/tace>;}
-elsif ($name=~/^OSF/)   {($exec)=<~acedb/RELEASE.SUPPORTED/bin.ALPHA_4/giface>;}
+elsif ($name=~/^OSF/)   {($exec)=<~wormpub/ACEDB/bin_ALPHA/giface>;}
 elsif ($name=~/^Linux/) {($exec)=<~wormpub/acedb/ace4/bin.LINUX/tace>;}
 else {print STDERR "check_CDS_tace: No known binary for $name\n";exit;}
 $command=<<EOF;

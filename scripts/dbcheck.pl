@@ -7,8 +7,13 @@
 #
 # Usage: dbcheck [-options]
 #
-# Last updated on: $Date: 2002-12-18 15:46:23 $
-# Last updated by: $Author: ck1 $
+# Last updated on: $Date: 2003-06-03 14:42:12 $
+# Last updated by: $Author: krb $
+
+
+use lib "/wormsrv2/scripts/";
+use Wormbase;
+
 
 # touch logfile for run details
 $0 =~ m/\/*([^\/]+)$/; system("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
@@ -60,7 +65,7 @@ my $debug = $opt_d;
  # Paths etc                  #
  ##############################
 
-my $tace = glob("~wormpub/ACEDB/bin.ALPHA_4/tace");    # tace executable path
+my $tace = &tace;    # tace executable path
 my $dbpath = "/wormsrv2/autoace";                                  # Database path
 
  ########################################

@@ -10,11 +10,13 @@ $seqname,               $seqcomment
                         ^<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<~~
                         $seqcomment
 .
+use lib "/wormsrv2/scripts/";
+use Wormbase;
 
 use Getopt::Std;
 $| = 1;
 getopts ('i:n:d:');
-$tace="/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_4/tace";
+$tace=&tace;
 
 if (!$opt_i) {
   $HELP=<<END;
