@@ -1,40 +1,8 @@
-#!/usr/local/bin/perl -w
+#!/usr/local/bin/perl5.6.0 -w
 #
-# make_acefiles will make all the acefiles for autoace building
+# make_acefiles 
+# dl1
 #
-# v 1.14
-#
-# dl1 et al
-#
-# Usage : make_acefiles [-options]
-#
-
-# v1.14
-# 010829 : dl  : Added stlace and briggsae timestamp parsing lines to subroutine
-#                'process_ace_file'
-
-# v1.3
-# 010717 : dl  : Altered the SRS call for nematode EST sequences
-#                This will now add the Method tag to the object
-#                Object names do not have the EMBL: prefix
-# 010724 : dl  : Fixed bug for local filehandle in sub mknewacefiles
-# 010730 : dl  : Fixed bug regarding logfiles and single database dumping
-# 010731 : dl  : Fixed bug regarding non_elegans est file - getz query did not
-#                return the SV line and hence the parser failed
-
-# v1.2
-# 010102 : dl  : Add alternative config files to generate acefiles from a 
-#                subsets of databases (e.g. camace only)
-# 010102 : dl  : Changed the way in which can be dumped. You can alter the
-#                config file such that the criteria is 'DNA'. This will use
-#                a 'find object; follow DNA' tace command to dump only 
-
-# v1.1
-# 001108 : dl  : Add better logging and general tidy up
-
-# v1.0
-# 000925 ag3 dl1 Fixed problem with wormpep protein names 
-# all assigned to clone names previously !
 
 #################################################################################
 # Variables                                                                     #
@@ -69,30 +37,21 @@ my $estfile        = "$miscdir/misc_nonelegansests.ace";
 my $tace           = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
 my $autodir        = "/wormsrv2/autoace";
 
-
-
  ##############################
  # command-line options       #
  ##############################
 
-$opt_n = "";       # write acefiles from autoace.config file
-$opt_s = "";       # => single database mode
-$opt_e = "";       # write non-elegans EST dataset
-$opt_d = "";       # debug mode (maintainer = dl1)
-$opt_h = "";       # Help/Usage page
-
 getopts ('nedhs:');
+
 # help page
 &usage(0) if ($opt_h);
+
 # no option supplied
 &usage(1) if ((!$opt_n)&&(!$opt_e));
+
 # single database mode
-if ($opt_s) {
-&usage(2) unless (($opt_s eq "camace") || ($opt_s eq "stlace") || ($opt_s eq "briggsae") || ($opt_s eq "geneace"));
-}
+&usage(2) unless (($opt_s eq "camace") || ($opt_s eq "stlace") || ($opt_s eq "briggsae") || ($opt_s eq "geneace")) if ($opt_s);
 
-
-# cheat for quiet debugging
 # set dl1 as only mail recipient if running debug mode
 $maintainer = "dl1\@sanger.ac.uk" if ($opt_d);
 
@@ -151,9 +110,6 @@ close LOG;
 # hasta luego
 exit (0);
 
-
-
-
 #################################################################################
 ### Subroutines                                                               ###
 #################################################################################
@@ -166,7 +122,7 @@ exit (0);
 sub mknewacefiles {
     
     my ($dbname,$dbdir,$targetdir,$exe,$object,$criteria,$criterianoasterisk);
-    my ($filename,$command,$outfile);
+    my ($filename,$command,$outfile,$tag,@deletes);
 
     local (*CONFIG);
 
@@ -174,12 +130,11 @@ sub mknewacefiles {
     while (<CONFIG>) {
 	s/^\s+//;s/\s+$//;    
 	
-	next if (/^\#/  || /^$/);            # comments in file
+	# next if comment line
+	next if (/^\#/  || /^$/);
 
-        # turn off today
-        if ($opt_s) {
-	    next unless (/$opt_s/);              # single database mode
-	}
+        # single database mode
+	next unless (/$opt_s/) if ($opt_s);
 	
 	if (/^P\s+(\S+)\s+(\S+)$/) {
 	    $dbname    = $1;
@@ -195,70 +150,74 @@ sub mknewacefiles {
 	# nuts and bolts of acefile generation
 	# format:  database object criteria
 	
-	if (/^\S+\s+(\S+)$/) {
-	    $object=$1; $criteria="";$criterianoasterisk="";
-	} elsif (/^\S+\s+(\S+)\s+(\S+)$/) {
-	    $object=$1; $criteria=$2;
-	    $criteria=~/(\S+)\*/;
-	    $criterianoasterisk=$1;
-	} 
+	# deal with complete queries
+	unless (/\[(\S+.+)\]$/) { 
+	    if (/^\S+\s+(\S+)$/) {
+		$object=$1; 
+		$criteria=""; 
+		$criterianoasterisk="";
+	    }
+	    elsif (/^\S+\s+(\S+)\s+(\S+.+)$/) {
+		$object   = $1; 
+		$criteria = $2;
+		$criterianoasterisk = $2;
+		chop($criterianoasterisk) if ($criteria =~ /\*$/);
+	    } 
+	}
+	# deal with queries requiring tag deletions
+	else {
+	    (/\[(\S+.+)\]$/);
+	    @deletes = split (/\s/,$1);
+	    print LOG "add " . scalar (@deletes) . " tags to delete array\n";
+	    my $report = join ' + ', @deletes;
+	
+	    if (/^\S+\s+(\S+)\s+\[/) {  
+		$object=$1; 
+		$criteria=""; 
+		$criterianoasterisk="";
+	    } 
+	    elsif (/^\S+\s+(\S+)\s+(\S+.+)\s+\[/) {
+		$object   = $1; 
+		$criteria = $2;
+		$criterianoasterisk = $2;
+		chop($criterianoasterisk) if ($criteria =~ /\*$/);
+	    }
+	}
 
-	# v1.2 - patch for the briggsae-stlace DNA mismatch bug
-	# DNA is now handled in a different way using a 'find & follow' command
-	# The subroutines will set the $command and $filename variables
+	# write tace command for different options:
+	# Simple   :- whole ?Class
+	# Advanced :- ?Class with tag deletions based on @deletes
+	# DNA      :- ?Sequence with Species, follow DNA
 
-	if ($criteria eq "DNA") {
-	    ($command,$filename) = &make_command_DNA($object,$dbname,$targetdir);
+	if ($object eq "DNA") {
+	    ($command,$filename) = &make_command_DNA($object,$dbname,$targetdir,$criteria);
+	}
+	elsif ($criteria ne "") {
+	    ($command,$filename) = &make_command_advanced($object,$dbname,$targetdir,$criteria,$criterianoasterisk);
 	}
 	else {
-	    ($command,$filename) = &make_command($object,$dbname,$targetdir,$criteria,$criterianoasterisk);
+	    ($command,$filename) = &make_command_simple($object,$dbname,$targetdir,$criteria,$criterianoasterisk);
 	}
-
-	print LOG "Filename: $filename\n";
-#	system ("mv -f $filename $filename.OLD");
 	
-        print LOG "Command: 'find $object $criteria' in $dbname\n";
+	# dump out from ACEDB
+	print LOG "Filename: $filename\n";
+        print LOG "Command : 'find $object $criteria' in $dbname\n";
 	open (TACE,"| $exe");
 	print TACE $command;
 	close TACE;
 	print LOG "Made file $filename\n";
+	
+	# delete things
+	if (scalar (@deletes) > 0) {
+	    print "Going to delete some tags ....\n";
+	    &strip_object($filename,@deletes);
+	}
 
-	if ($filename eq "/wormsrv2/wormbase/briggsae/briggsae_Protein.ace") {
-	    $outfile = "$targetdir/".$dbname."_".$object.$criterianoasterisk.".ace";
-	    &strip_protein("$outfile","\"WP:");
-	}
-	
-	if ($filename eq "/wormsrv2/wormbase/stlace/stlace_Sequence.ace") {
-	    $outfile = "$targetdir/".$dbname."_".$object.$criterianoasterisk.".ace";
-	    &strip_sequence("$outfile","\"WP:");
-	    &strip_sequence("$outfile","\"EST_GENOME\"");
-	    &strip_sequence("$outfile","\"mRNA_GENOME\"");
-	    &strip_sequence("$outfile","'(Pep|DNA|Motif)_homol\s\-O\s\"[\d:+\w-\.]+\"$'");
-	}
-	elsif ($filename eq "/wormsrv2/wormbase/camace/camace_Sequence.ace") {
-	    $outfile = "$targetdir/".$dbname."_".$object.$criterianoasterisk.".ace";
-	    &strip_sequence("$outfile","\"WP:");
-	    &strip_sequence('$outfile',"'(Pep|DNA|Motif)_homol\s\-O\s+\"[\d:+\w-\.]+\"$'");
-	}  
-	elsif ($filename eq "/wormsrv2/wormbase/briggsae/briggsae_Sequence.ace") {
-	    $outfile = "$targetdir/".$dbname."_".$object.$criterianoasterisk.".ace";
-	    &strip_sequence("$outfile","\"WP:");
-	}
-	# strip genomic_canonical tags from geneace Sequences
-	elsif ($filename eq "/wormsrv2/wormbase/geneace/geneace_Sequence.ace") {
-	    $outfile = "$targetdir/".$dbname."_".$object.$criterianoasterisk.".ace";
-	    &strip_sequence("$outfile","Genomic_canonical");
-	}
-	# strip BLAT_EST_GENOME from cshl sequences
-	elsif ($filename eq "/wormsrv2/wormbase/csh/csh_Sequence.ace") {
-	    $outfile = "$targetdir/".$dbname."_".$object.$criterianoasterisk.".ace";
-	    &strip_sequence("$outfile","\"BLAT_EST_GENOME\"");
-	    &strip_sequence("$outfile",'(Pep|DNA|Motif)_homol\s\-O\s\"[\d:+\w-\.]+\"\$');
-	}
-	
+	# remove ghost objects
+	&strip_ghosts($filename,$object);
+
 	# process database dumps to add database names into time stamps
 	# rather than keeping the existing 'wormpub', 'lstein' etc.  name
-
 	&process_ace_file($filename,$dbname);
 
 	next;
@@ -266,34 +225,44 @@ sub mknewacefiles {
     close CONFIG;
 }
 
-
-sub make_command {
+sub make_command_simple {
 
    my ($object,$dbname,$targetdir,$criteria,$criterianoasterisk) = @_;
-   my $filename="$targetdir/".$dbname."_".$object.$criterianoasterisk.".ace";
+
+   my $filename="$targetdir/".$dbname."_".$object.".ace";
    my $command;
    $command=<<END;
-find $object $criteria
-show -a -T -f $filename
+query find $object
+show -a -f $filename
 quit
 END
 
- 
    return ($command,$filename);
-
 }
 
+sub make_command_advanced {
 
+   my ($object,$dbname,$targetdir,$criteria,$criterianoasterisk) = @_;
+
+   my $filename="$targetdir/".$dbname."_".$object.".ace";
+   my $command;
+   $command=<<END;
+query find $object where ($criteria)
+show -a -f $filename
+quit
+END
+   return ($command,$filename);
+}
 
 sub make_command_DNA {
 
-    my ($object,$dbname,$targetdir) = @_;    
+    my ($object,$dbname,$targetdir,$criteria) = @_;    
     my $filename = "$targetdir/" . $dbname . "_DNA.ace";
     my $command;
 
     if($dbname eq "camace" || $dbname eq "stlace" || $dbname eq "briggsae"){
       $command=<<END;
-find $object
+query find Sequence where ($criteria)
 follow DNA
 show -a -T -f $filename
 quit
@@ -301,7 +270,7 @@ END
 }
     else{
       $command=<<END;
-find $object
+find Sequence
 follow DNA
 show -a -f $filename
 quit
@@ -316,52 +285,62 @@ END
 # Strip unwanted lines from the acefiles                              #
 #######################################################################
 
-sub strip_protein {
-    my ($filename,$strip) = @_;
+sub strip_object {
+    my ($filename,@deletes) = @_;
+    my $strip = "";
+    local (*OUT,*FILE);
 
-    $/ = "";
-    
+    foreach $strip (@deletes) {
+	print LOG "Remove '$strip' from file $filename\n";
+
+	open (OUT, ">${filename}.rm");
+	open (FILE, "<$filename") || warn "can't do this chappie\n";
+	while (<FILE>) {
+	    next if (/$strip/);
+	    print OUT "$_";
+	}
+	close FILE;
+	close OUT;
+	system ("mv -f ${filename}.rm $filename");
+    }
+}
+
+sub strip_ghosts {
+    my ($filename,$object) = @_;
+    my ($object_header) = "";
+    my $object_look = 0;
+
+    local (*OUT,*FILE);
+
     open (OUT, ">${filename}.rm");
-    open (FILE, "<$filename");
-    
-    while (<FILE>) {
-	
-	if (/$strip/) {
+    open (FILE, "<$filename") || warn "can't do this either chappie\n";
+    while (<FILE>) { 
+	chomp;
+	if (/^$object \: \"\S+.+\"$/) {
+	    $object_header = $_;
+	    $object_look = 1;
 	    next;
 	}
-	else {
-	    print OUT "$_";
-	} 
+	
+	if (($object_look == 1) && ($_ ne "")) {
+	    print OUT "$object_header\n";
+	    print OUT "$_\n";
+	    $object_look = 0;
+	    next;
+	}
+	elsif (($object_look == 1) && ($_ eq "")) {
+	    $object_header = "";
+	    $object_look = 0;
+	    next;
+	}
+
+	print OUT "$_\n";
     }
     close FILE;
     close OUT;
-    $/ = "\n";
     system ("mv -f ${filename}.rm $filename");
 }
 
-sub strip_sequence {
-    my ($filename,$strip) = @_;
-
-    $/ = "";
-
-    open (OUT, ">${filename}.rm");
-    open (FILE, "<$filename");
-    
-    while (<FILE>) {
-	
-	if (/$strip/) {
-	    next;
-	}
-	else {
-	    print OUT "$_";
-	} 
-    }
-    close FILE;
-    close OUT;
-    $/ = "\n";
-    system ("mv -f ${filename}.rm $filename");
-
-}
 
 
 #######################################################################
