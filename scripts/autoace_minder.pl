@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2004-01-29 13:49:05 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2004-03-01 11:10:36 $
 
 
 #################################################################################
@@ -1103,6 +1103,23 @@ sub parse_briggsae_data {
 
   $file = "$basedir/wormbase/briggsae/briggsae_cb25.agp8_rna.ace"; 
   &load($file,"briggsae_rna_genes");
+
+  # briggsae BAC end data
+
+  $file = "/wormsrv1/briggsae/BAC_ENDS/briggsae_BAC_ends.fasta";
+  &load($file,"briggsae_BAC");
+                           
+  $file = "/wormsrv1/briggsae/BAC_ENDS/briggsae_homol_data.ace";
+  &load($file,"briggsae_BAC");
+                           
+  $file = "/wormsrv1/briggsae/BAC_ENDS/briggsae_BAC_ends_data.ace";
+  &load($file,"briggsae_BAC");
+                           
+  $file = "/wormsrv1/briggsae/BAC_ENDS/briggsae_bac_ends_unique.ace";
+  &load($file,"briggsae_BAC");
+
+  $file = "/wormsrv1/briggsae/BAC_ENDS/briggsae_bac_clone_ends.ace";
+  &load($file,"briggsae_BAC");
 
   # upload_homol data log file in /logs
   system("touch $logdir/$flag{'B9'}");
