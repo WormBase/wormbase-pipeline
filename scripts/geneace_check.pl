@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-08-11 09:15:36 $
+# Last updated on: $Date: 2003-08-11 10:30:56 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -649,7 +649,7 @@ EOF
     print LOG "WARNING: $_ has no positive_clone, the derived one $seq can be added to it\n";
     if ($ace){
       print ACE "\n\nLocus\t\"$_\"\n";
-      print ACE "Positive_clone\t\"$seq\"\n";
+      print ACE "Positive_clone\t\"$seq\" \"Inferred_automatically\" \"From Genomic_sequence or Transcript info\"\n";
     }							
   }
     
