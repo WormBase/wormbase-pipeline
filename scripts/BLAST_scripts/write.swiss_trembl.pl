@@ -13,12 +13,13 @@ use Getopt::Long;
 use DB_File;
 use GSI;
 
-my ($swiss, $trembl, $debug, $database);
+my ($swiss, $trembl, $debug, $database, $list);
 
 GetOptions (
 	   "swiss"    => \$swiss,
 	   "trembl"   => \$trembl,
 	   "database:s" => \$database,
+	    "list"    => \$list,
 	   "debug"    => \$debug
 	  );
 
@@ -32,24 +33,29 @@ my $trembl_list_txt = "$wormpipe_dump/trembllist.txt";
 
 
 # extract and write lists of which proteins have matches
-open (SWISS,">$swiss_list_txt");
-open (TREMBL,">$trembl_list_txt");
-open (DATA,"| cat $wormpipe_dump/blastp_ensembl.ace $wormpipe_dump/blastx_ensembl.ace |");
-while (<DATA>) {
-  if (/Pep_homol\s+\"/) {
-    if( /SW:(\S+)\"/ ) {
-      print SWISS "$1\n";
-    }
-    elsif( /Pep_homol\s+\"TR:(\S+)\"/ ) {
-      print TREMBL "$1\n";
+unless ( $list ){
+  open (DATA,"cat $wormpipe_dump/blastp_ensembl.ace $wormpipe_dump/blastx_ensembl.ace |");
+  my (%swisslist, %trembllist);
+  while (<DATA>) {
+    if (/Pep_homol\s+\"/) {
+      if( /SW:(\S+)\"/ ) {
+	$swisslist{$1} = 1;
+      }
+      elsif( /Pep_homol\s+\"TR:(\S+)\"/ ) {
+	$trembllist{$1} = 1;
+      }
     }
   }
+  close DATA;
+  
+  open (SWISS,">$swiss_list_txt");
+  open (TREMBL,">$trembl_list_txt");
+  foreach (keys %swisslist) { print SWISS "$_\n"; }
+  foreach (keys %trembllist) { print TREMBL "$_\n"; }
+  
+  close SWISS;
+  close TREMBL;
 }
-    
-close SWISS;
-close TREMBL;
-close DATA;
-
 # now extract info from dbm files and write ace files
 
 my @lists_to_dump;
@@ -146,7 +152,7 @@ sub output_list
 	  print ACE "Protein : \"$prefix:$id\"\n";
 	  print ACE "Peptide \"$prefix:$id\"\n";
 	  print ACE "Title \"$DES{$id}\"\n";
-	  print ACE "Species \"$ORG{$id}\"\n";
+	  print ACE "Species \"sw\"\n";
 	  print ACE  "Database \"$db\" \"$id\" \"$accession\"\n";
 	  print ACE  "\n";
 	  print ACE  "Peptide : \"$prefix:$id\"\n";
@@ -159,7 +165,7 @@ sub output_list
       }  
     }
     #copy file over to wormsrv2
-    `usr/bin/rcp $outfile /wormsrv2/wormbase/ensembl_dumps/`;
+    `usr/bin/rcp $outfile wormsrv2:/wormsrv2/wormbase/ensembl_dumps/`;
   }
 
 
