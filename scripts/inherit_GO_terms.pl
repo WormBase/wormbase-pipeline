@@ -4,8 +4,8 @@
 #
 # map GO_terms to ?Sequence objects from ?Motif and ?Phenotype
 #
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2004-07-06 15:36:58 $      
+# Last updated by: $Author: krb $     
+# Last updated on: $Date: 2004-08-06 10:10:31 $      
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -18,7 +18,7 @@ use Ace;
 # Script variables (run)     #
 ##############################
 
-our ($help, $debug, $motif, $phenotype);
+my ($help, $debug, $motif, $phenotype);
 my $verbose;             # for toggling extra output
 my $maintainers = "All"; # who receives emails from script
 my $noload;              # generate results but do not load to autoace
@@ -63,10 +63,9 @@ OUT->autoflush();
 my $db = Ace->connect(-path=>$dbpath,
                       -program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
 
-my $runtime = &runtime;                       
-print LOG "inherit_GO_terms run STARTED at $runtime\n\n";
 
-&motif($db) if ($motif);
+
+&motif($db)     if ($motif);
 &phenotype($db) if ($phenotype);
 
 
@@ -90,8 +89,7 @@ unless ($noload || $debug) {
 # tidy up                    #
 ##############################
 
-$runtime = &runtime;
-print LOG "\ninherit_GO_terms run ENDED at $runtime\n\n";
+print LOG &runtime, ": script finished\n";
 close LOG;
 
 close OUT;
@@ -158,7 +156,7 @@ sub motif {
 sub phenotype {
   my $db = shift;
   
-  my ($phenmotype,$obj,$term,$rnai,$match,$rnaiobj) = "";
+  my ($obj,$term,$rnai,$match,$rnaiobj) = "";
   my (@GO_terms,@rnai,@CDS) = "";
   
   my $i = $db->fetch_many(-query=> 'find Phenotype "*"');  
@@ -201,7 +199,7 @@ sub create_log_files{
 
   open (LOG, ">$log") or die "cant open $log";
   print LOG "$script_name\n";
-  print LOG "started at ",`date`,"\n";
+  print LOG &runtime, " : script started\n";
   print LOG "=============================================\n";
   print LOG "\n";
 
