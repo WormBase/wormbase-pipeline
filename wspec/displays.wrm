@@ -41,7 +41,7 @@
   */
 
 
-_DDtMain -g TEXT_FIT -t "C.elegans database"  -w .43 -height .23 -help acedb
+_DDtMain -g TEXT_FIT   -w .43 -height .23 -help acedb
 .23 -help acedb
 
 _DDtChrono -g TEXT_SCROLL -t "Chrono" -x .0125 -y .25 -w 0.6 \
