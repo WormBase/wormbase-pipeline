@@ -864,16 +864,6 @@
 			End_not_found
 			Start_not_found
 			Show_in_reverse_orientation    // Draw 3' reads in reverse orientation [010423 dl]
-			Transcript	UNIQUE	mRNA	UNIQUE  Processed_mRNA
-								Unprocessed_mRNA
-						tRNA UNIQUE Text
-						rRNA UNIQUE Text
-						snRNA UNIQUE Text
-						snoRNA UNIQUE Text // [030102 krb]
-						scRNA UNIQUE Text
-						stRNA UNIQUE Text         // [010723 dl]
-						miRNA UNIQUE Text         // [011129 dl]
-						misc_RNA UNIQUE Text
 			Status	Received UNIQUE DateType
 				Library_construction UNIQUE DateType
 				Shotgun	UNIQUE DateType
