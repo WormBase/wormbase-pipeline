@@ -1077,41 +1077,33 @@
 
 // Protein class
 
-?Protein  Title UNIQUE ?Text
-	  Other_name ?Text	// for repeats
-	  Peptide UNIQUE ?Peptide UNIQUE Int UNIQUE Int // Length + checksum
-	  Display  View ?View
-		   Default_view UNIQUE ?View
-	  DB_info	Database ?Database ?Text ?Accession_number XREF Protein // ID  Accession_number
-		  	DB_remark ?Text	#Evidence	// Swissprot CC entries
-			Keyword ?Keyword	// Swissprot
-	  		DB_searched ?Database Int // Int = version - should this be here?
-	  Origin  From_Database ?Database UNIQUE Int	// release number
-		  Date DateType Text			// Text for comments on operation
-		  Species ?Species               //XREF Protein in geneace
-		  Wormpep History Int Text ?Text //new history logging [020801 krb]
-			  Live	      // new tag to replace use of 'Inactive' krb 06/12/01
-	  Visible	Corresponding_DNA ?Sequence XREF Corresponding_protein
-			Reference ?Paper XREF Protein
-			Expr_pattern ?Expr_pattern XREF Protein
-			Interacts_with_sequence ?Sequence XREF Interacts_with_protein #Evidence // for future interaction data [020704 krb]
-			Interacts_with_protein ?Protein XREF Interacts_with_protein #Evidence // for future interaction data [020704 krb]
-		// tag2 system.  For now I have not populated this column.  For C. elegans
-		// wormpep we want to get the information from the ?Corresponding_DNA 
-		// object.  Because those objects have long term continuity, while wormpep
-		// objects are one per protein sequence.  At least that is the current 
-		// plan.
-	  Swiss_feature	Text Int Int Text // feature name, start, stop, note
-	  Analysis_details Analysis_history ?Method DateType
-	  Homol	DNA_homol ?Sequence XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int  #Homol_info
-		Pep_homol ?Protein XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int  #Homol_info
-		Motif_homol ?Motif XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int  #Homol_info
+?Protein  Peptide UNIQUE ?Peptide UNIQUE Int UNIQUE Int // Length + checksum
+          Display  View ?View
+                   Default_view UNIQUE ?View
+          DB_info  Database ?Database ?Database_field UNIQUE ?Accession_number XREF Protein
+                   Gene_name  ?Text
+                   Description   UNIQUE ?Text
+          Origin   Species ?Species   //XREF Protein in geneace
+                   Wormpep History Int Text ?Text //new history logging [020801 krb]
+                   Live       // new tag to replace use of 'Inactive' krb 06/12/01
+          Visible       Corresponding_DNA ?Sequence XREF Corresponding_protein
+                        Reference ?Paper XREF Protein
+                        Expr_pattern ?Expr_pattern XREF Protein
+                        Interacts_with_sequence ?Sequence XREF Interacts_with_protein #Evidence // for future interaction data [020704 krb]
+                        Interacts_with_protein ?Protein XREF Interacts_with_protein #Evidence // for future interaction data [020704 krb]
+                // tag2 system.  For now I have not populated this column.  For C. elegans
+                // wormpep we want to get the information from the ?Corresponding_DNA 
+                // object.  Because those objects have long term continuity, while wormpep
+                // objects are one per protein sequence.  At least that is the current 
+                // plan.
+          Homol DNA_homol ?Sequence XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int  #Homol_info
+                Pep_homol ?Protein XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int  #Homol_info
+                Motif_homol ?Motif XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int  #Homol_info
                 Align_homol ?Alignment XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
                 Homol_homol ?Homol_data XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
-	  Feature ?Method Int Int UNIQUE Float	// display according to method
-					// double-click shows the method
-          In_alignment ?Alignment XREF Protein Int UNIQUE Int
-          Tree_Node ?TreeNode XREF Protein // Phylogenetic trees
+          Feature ?Method Int Int UNIQUE Float  // display according to method
+                                        // double-click shows the method
+
 
 ?Motif	Match_sequence  UNIQUE Text	// Text is the DNA or protein sequence
 	Num_mismatch UNIQUE Int		// Allowed number of mismatches when matching
