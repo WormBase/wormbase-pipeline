@@ -1324,6 +1324,7 @@
 		Expr_pattern ?Expr_pattern XREF Life_stage
 		Remark	?Text
                 Reference ?Paper XREF Life_stage
+		Curated_by UNIQUE Text // added for Sylvia [010928 krb]
 
 //
 // Alignment models
