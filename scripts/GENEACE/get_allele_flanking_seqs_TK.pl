@@ -4,7 +4,7 @@
 
 # by Chao-Kung Chen [030625]
 
-# Last updated on: $Date: 2004-06-09 12:50:41 $
+# Last updated on: $Date: 2004-06-11 15:47:18 $
 # Last updated by: $Author: ck1 $
 
 use Tk;
@@ -534,7 +534,7 @@ sub run {
     my $length = scalar @DNA-60;
     $run_window -> insert('end', "$length]\n\n");
     $run_window -> insert('end', "$dna_L");
-    $run_window -> insert('end', "$red $DNA[$position-1]");
+    $run_window -> insert('end', "$red $DNA[$position+29]");
     $run_window -> insert('end', " $dna_R");
 
     $ace_window->insert('end', "\nGene : \"$Gene_info{$locus}{'Gene'}\"  \/\/$locus\n");
