@@ -774,12 +774,12 @@ unlink("$wormpub_dir/wp.fasta_current") || print LOG "Cannot delete files in $wo
 
 print LOG "Copying new files to $wormpub_dir\n";
 
-system("cp $new_wpdir/wormpep_current $wormpub_dir/wormpep_current") || print LOG "Cannot copy file to $wormpub_dir\n";
-system("cp $new_wpdir/wormpep.accession$release $wormpub_dir/wormpep.accession_current") || print LOG "Cannot copy file to $wormpub_dir\n";
-system("cp $new_wpdir/wormpep.dna$release $wormpub_dir/wormpep.dna_current") || print LOG "Cannot copy file to $wormpub_dir\n";
-system("cp $new_wpdir/wormpep.history$release $wormpub_dir/wormpep.history_current") || print LOG "Cannot copy file to $wormpub_dir\n";
-system("cp $new_wpdir/wp.fasta$release $wormpub_dir/wp.fasta_current") || print LOG "Cannot copy file to $wormpub_dir\n";
-
+system ("cp $new_wpdir/wormpep_current $wormpub_dir/wormpep_current")                     || print LOG "Cannot copy file to $wormpub_dir\n";
+system ("cp $new_wpdir/wormpep.accession$release $wormpub_dir/wormpep.accession_current") || print LOG "Cannot copy file to $wormpub_dir\n";
+system ("cp $new_wpdir/wormpep.dna$release $wormpub_dir/wormpep.dna_current")             || print LOG "Cannot copy file to $wormpub_dir\n";
+system ("cp $new_wpdir/wormpep.history$release $wormpub_dir/wormpep.history_current")     || print LOG "Cannot copy file to $wormpub_dir\n";
+system ("cp $new_wpdir/wp.fasta$release $wormpub_dir/wp.fasta_current")                   || print LOG "Cannot copy file to $wormpub_dir\n";
+system ("/usr/local/pubseq/bin/setdb $wormpub_dir/wormpep_current")                       || print LOG "Cannot index wormpep file in $wormpub_dir\n";
 
 close LOG;
 
