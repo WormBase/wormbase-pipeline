@@ -9,7 +9,7 @@ use Exporter;
 use Carp;
 use Ace;
 @ISA       = qw(Exporter);
-@EXPORT    = qw(get_cvs_version get_wormbase_version get_wormbase_version_name get_wormpep_version get_wormrna_version get_wormbase_release_date copy_check mail_maintainer celeaccession tace gff_sort dbfetch clones_in_database open_TCP);
+@EXPORT    = qw(get_cvs_version get_wormbase_version get_wormbase_version_name get_wormpep_version get_wormrna_version get_wormbase_release_date copy_check mail_maintainer celeaccession tace gff_sort dbfetch clones_in_database open_TCP DNA_string_reverse DNA_string_composition);
 @EXPORT_OK = qw(get_script_version); 
 
 
@@ -225,6 +225,32 @@ sub tace {
     return $prog;
 }
 
+#################################################################################
+
+sub DNA_string_reverse {
+    my $revseq = reverse shift;
+    $revseq =~ tr/a/x/;
+    $revseq =~ tr/t/a/;
+    $revseq =~ tr/x/t/;
+    $revseq =~ tr/g/x/;
+    $revseq =~ tr/c/g/;
+    $revseq =~ tr/x/c/;
+    return ($revseq);
+}    
+
+#################################################################################
+
+sub DNA_string_composition {
+    my $seq = shift;
+    $seq =~ tr/[A-Z]/[a-z]/;
+    my $A = $seq =~ tr/a/a/;
+    my $C = $seq =~ tr/c/c/;
+    my $G = $seq =~ tr/g/g/;
+    my $T = $seq =~ tr/t/t/;
+    my $N = $seq =~ tr/n/n/;
+    my $P = $seq =~ tr/-/-/;
+    return ($A,$C,$G,$T,$N,$P);
+}    
 
 #################################################################################
 
@@ -334,15 +360,17 @@ sub getseqEMBL {
 #################################################################################
 
 sub open_TCP {
+    use Socket;
     my ($FS,$dest,$port) = @_;
     my $proto = getprotobyname ('tcp');
-    socket ($FS,PF_INET,SOCK_STREAM,$proto);
+    socket ($FS,AF_INET,SOCK_STREAM,$proto);
     my $sin = sockaddr_in($port,inet_aton($dest));
     connect($FS,$sin) || return undef;
     my $old_fh = select($FS);
     $| = 1;
     select($old_fh);
 }
+
 
 #################################################################################
 
