@@ -899,7 +899,7 @@ Generate log file in the logs directory with WS version and processID appended t
     $0 =~ /([^\/]*$)/ ? $filename = $0 : $filename = $1 ; # get filename (sometimes $0 includes full path if not run from its dir )
 	    
     my $path = "/wormsrv2/logs";
-    $path = "/tmp/logs" if $debug;
+    $path = "/tmp" if $debug;
     my $log_file = "$path/$filename".".$ver.".$$;
     my $fh = &make_log("$log_file");
     print $fh "Build script : $filename \n Started at ",&runtime,"\n\n***********************************\n\n";
