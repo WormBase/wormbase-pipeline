@@ -5,13 +5,14 @@
 # dl1
 # 
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2003-06-13 09:28:26 $
+# Last edited on: $Date: 2003-06-13 13:47:58 $
 
 $|=1;
 use lib "/wormsrv2/scripts/";
 use Wormbase;
 use Getopt::Long;
 use strict;
+use Data::Dumper;
 
 ##############################
 # command-line options       #
@@ -37,6 +38,18 @@ my $id;       # EMBL ID
 my $sv;       # EMBL sequence version
 my $def;      # EMBL description
 my $OST;      # tag for OST/EST split
+my %EST_name; # EST accession => name
+my %EST_dir;  # EST accession => orientation [5|3]
+
+# read hash for EST names 
+open (FH, "</wormsrv2/autoace/BLAT/EST.dat") or die "EST.dat : $!\n";
+    undef $/;
+    my $data = <FH>;
+    eval $data;
+    die if $@;
+    $/ = "\n";
+    close FH;
+
 
 open (OUT_EST, ">/nfs/disk100/wormpub/analysis/ESTs/C.elegans_nematode_ESTs");
 open (OUT_OST, ">/nfs/disk100/wormpub/analysis/ESTs/C.elegans_nematode_OSTs");
@@ -44,10 +57,10 @@ open (OUT_OST, ">/nfs/disk100/wormpub/analysis/ESTs/C.elegans_nematode_OSTs");
 if ($ace) {
     open (OUT_ACE, ">/nfs/disk100/wormpub/analysis/ESTs/C.elegans_nematode_ESTs.ace");
 }
-open (SEQUENCES, "/usr/local/pubseq/bin/getzc -sf fasta -f \"id acc des seq\" \'([embl-org:caenorhabditis elegans] \& [embl-div:est])\' |") ;
+open (SEQUENCES, "/usr/local/pubseq/bin/getzc -sf fasta -f \"id acc des seq sv\" \'([embl-org:caenorhabditis elegans] \& [embl-div:est])\' |") ;
 
 while (<SEQUENCES>) {
-    if (/^AC\s+/ || /^DE\s+/ || /^>/ || /^ID\s+/) {
+    if (/^AC\s+/ || /^DE\s+/ || /^>/ || /^ID\s+/ || /^SV\s+/) {
     } 
     else {
 	print OUT_EST  if ($OST == 0);
@@ -80,10 +93,21 @@ while (<SEQUENCES>) {
 	    print OUT_EST ">$acc $id $def\n";
 	    
 	    if ($ace) {
+	       if (exists $EST_name{$acc}) {
+	       		print OUT_ACE "\nSequence : \"$EST_name{$acc}\"\nDatabase EMBL $id $acc $sv\n";
+		}
+		else {	
 		print OUT_ACE "\nSequence : \"$acc\"\nDatabase EMBL $id $acc $sv\n";
+		}
 		print OUT_ACE   "Species \"Caenorhabditis elegans\"\n";
 		print OUT_ACE   "Title \"$def\"\nMethod EST_elegans\n";
-		print OUT_ACE   "\nDNA \"$acc\"\n";
+		
+	       if (exists $EST_name{$acc}) {
+		   print OUT_ACE "\nDNA \"$EST_name{$acc}\"\n";
+	       }
+	       else {	
+		   print OUT_ACE   "\nDNA \"$acc\"\n";
+	       }
 	    }
 
 	    $def = "";
