@@ -2,7 +2,7 @@
 #
 # EMBLDump.pl :  makes EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2005-03-22 11:24:09 $
+#  Last updated on: $Date: 2005-03-24 17:18:35 $
 #  Last updated by: $Author: dl1 $
 
 use strict;
@@ -14,6 +14,7 @@ use File::Copy;
 ##############################
 # command-line options       #
 ##############################
+
 my $test;   # use test environment in ~wormpub/TEST_BUILD/
 
 GetOptions ("test"         => \$test);
@@ -46,15 +47,24 @@ if( $test ) {
 $0 =~ s/^\/.+\///;
 system ("touch $basedir/logs/history/$0.`date +%y%m%d`");
 
+
 #############################################
 # Use giface to dump EMBL files from camace #
 #############################################
 
+my $command;
 
-my $query = "nosave\nquery find CDS where Method = \"Genefinder\"\nkill\nquery find CDS where Method = \"twinscan\"\nkill\nquery find Genome_sequence From_laboratory = HX AND Finished AND DNA\ngif EMBL $outfilename\nquit\nn\n";
-$query = "query find Genome_sequence AH6\ngif EMBL $outfilename\n" if $test;
+$command  = "nosave\n";                                                                                          # Don't reall want to do this
+$command .= "query find CDS where Method = \"Genefinder\"\nkill\n";                                              # remove Genefinder predictions
+$command .= "query find CDS where Method = \"twinscan\"\nkill\n";                                                # remove twinscan predictions
+$command .= "query find Genome_sequence From_laboratory = HX AND Finished AND DNA\ngif EMBL $outfilename\n";     # find genome sequences and EMBL dump
+$command .= "quit\nn\n";                                                                                         # say you don't want to save and exit
 
-open(READ, "echo '$query' | $giface $dbdir |") or die ("Could not open $giface $dbdir\n"); 
+# test mode only works on B0250
+if ($test) {
+    $command    = "query find Genome_sequence B0250\ngif EMBL $outfilename\nquit\n";
+}
+open(READ, "echo '$command' | $giface $dbdir |") or die ("Could not open $giface $dbdir\n"); 
 while (<READ>) {
  next if ($_ =~ /\/\//);
  next if ($_ =~ /acedb/);
@@ -71,7 +81,7 @@ close(READ);
 
 my %clone2sv;
 
-my $command = "Table-maker -p \"$basedir/autoace/wquery/clone2sv.def\"\nquit\n";
+$command = "Table-maker -p \"$basedir/autoace/wquery/clone2sv.def\"\nquit\n";
 
 open (TACE, "echo '$command' | $tace $dbdir | ");
 while (<TACE>) {
