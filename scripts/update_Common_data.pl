@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-04-26 10:36:39 $
+# Last updated by: $Author: dl1 $
+# Last updated on: $Date: 2004-04-28 10:08:51 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -23,15 +23,21 @@ use Getopt::Long;
 
 
 my $build;          # for when you want to query autoace, i.e. you are building.  Otherwise defaults to current_DB
-my $clone2accession;# for a hash of clone names as keys and GenBank/EMBL accessions as values and vice versa
-my $cds2wormpep;    # gets connections between CDS names and Wormpep IDs
-my $cds2protein_id; # gets list of CDSs and associated protein IDs
-my $CDS_list;       # list of all elegans CDSs with confirmed status (1 = confirmed, 0 = not confirmed) 
-my $clone2seq;      # gets DNA sequence for each genomic clone
-my $genes2lab;      # hash of all worm genes (CDS, Transcript, & pseudogene) and the corresponding lab (HX, RW, DRW)
-my $worm_gene2cgc;  # hash of CGC name connecting to Gene ID, plus molecular name (e.g. AH6.1), also a hash of cgc_name2gene
-my $all;            # performs all of the above options
 my $test;           # test mode, uses ~wormpub/TEST_BUILD
+my $all;            # performs all of the below options:
+     
+my $clone2accession;# Hash: %clone2accession     Key: Genomic_canonical                 Value: GenBank/EMBL accession
+                    # Hash: %accession2clone     Key: GenBank/EMBL accession            Value: Genomic_canonical
+my $cds2wormpep;    # Hash: %cds2wormpep         Key: CDS name                          Value: Wormpep ID
+                    # Hash: %wormpep2cds         Key: Wormpep ID                        Value: CDS name
+my $cds2protein_id; # Hash: %cds2protein_id      Key: CDS name                          Value: Protein_ID
+                    # Hash: %protein_id2cds      Key: Protein_ID                        Value: CDS name
+my $CDS_list;       # Hash: %CDSlist             Key: CDS name                          Value: Confirmed status (confirmed = 1, not confirmed = 0) 
+my $clone2seq;      # Hash: %clone2seq           Key: Genomic_canbonical                Value: DNA sequence (lower case)
+my $genes2lab;      # Hash: %worm_gene2lab       Key: Gene (CDS|Transcript|Pseudogene)  Value: From_laboratory (HX, RW, DRW)
+my $worm_gene2cgc;  # Hash: %worm_gene2cgc_name  Key: CGC name                          Value: Gene ID, plus molecular name (e.g. AH6.1), also a hash of cgc_name2gene
+my $estdata;        # Hash: %NDBaccession2est    Key: EST name (WormBase)               Value: GenBank/EMBL accession
+                    # Hash: %estorientation      Key: EST name (WormBase)               Value: EST_5 = 5, EST_3 = 3
 
 
 GetOptions("build"         => \$build,
@@ -42,6 +48,7 @@ GetOptions("build"         => \$build,
 	   "clone2seq"     => \$clone2seq,
 	   "genes2lab"     => \$genes2lab,
 	   "worm_gene2cgc" => \$worm_gene2cgc,
+	   "est"           => \$estdata,
 	   "all"           => \$all,
 	   "test"          => \$test
 	   );
@@ -66,7 +73,6 @@ my $ace_dir = "/nfs/disk100/wormpub/DATABASES/current_DB";
 
 our $tace = &tace;
 
-
 # use autoace if -build specified, else use current_DB
 if($build) {
   $ace_dir = "$basedir/autoace";
@@ -85,8 +91,9 @@ else {
 &write_clones2seq      if ($clone2seq || $all);
 &write_genes2lab       if ($genes2lab || $all);
 &write_worm_gene2cgc   if ($worm_gene2cgc);
+&write_EST             if ($estdata);
 
-
+# hasta luego
 
 exit(0);
 
@@ -103,6 +110,7 @@ sub write_cds2protein_id {
   # connect to AceDB using TableMaker,
   # populating %accession2name (maps embl accession to contig name)
   ####################################################################
+
   my $command="Table-maker -p $wquery_dir/gene2pid.def\nquit\n";
   
   open (TACE, "echo '$command' | $tace $ace_dir |");
@@ -223,6 +231,46 @@ sub write_CDSlist  {
   open (CDS, ">$data_dir/CDS_list.dat") or die "Can't open file: $data_dir/CDS_list.dat";
   print CDS Data::Dumper->Dump([\%CDSlist]);
   close CDS;
+}
+########################################################################################################
+
+
+sub write_EST  {   
+
+  my %NDBaccession2est;
+  my %estorientation;
+  my @f;
+
+  # connect to AceDB using TableMaker,
+  my $command="Table-maker -p $wquery_dir/ESTdata.def\nquit\n";
+  
+  open (TACE, "echo '$command' | $tace $ace_dir |");
+  while (<TACE>) {
+    chomp;
+    next if ($_ eq "");    # shortcut at empty lines
+    last if (/\/\//);      # end when you get to the end
+    s/\"//g;               # remove speech marks
+    @f = split /\t/;
+    
+    # NDB_accession to WormBase name
+    $NDBaccession2est{$f[0]} = $f[1];
+
+    # EST orientation
+    $estorientation{$f[1]} = 5 if ($f[3]);
+    $estorientation{$f[1]} = 3 if ($f[4]);
+
+  }
+  close TACE;
+  
+  # now dump data to file
+  open (EST, ">$data_dir/NDBaccession2est.dat") or die "Can't open file: $data_dir/NDBaccession2est.dat";
+  print EST Data::Dumper->Dump([\%NDBaccession2est]);
+  close EST;
+
+  open (ESTorient, ">$data_dir/estorientation.dat") or die "Can't open file: $data_dir/estorientation.dat";
+  print ESTorient Data::Dumper->Dump([\%estorientation]);
+  close ESTorient;
+
 }
 
 ####################################################################################
@@ -398,6 +446,18 @@ This module updates the following data sets:
 =item *
 
 %cds2wormpep
+
+=back
+
+=item *
+
+%NDBaccession2est - NDB accession is key, WormBase EST name is value
+
+=back
+
+=item *
+
+%estorientation - WormBase EST name is key, EST orientation is value (EST_5 = 5, EST_3 = 3)
 
 =back
 
