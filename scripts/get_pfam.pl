@@ -7,7 +7,7 @@
 # This script interogates an ACEDB database and returns all pfam/Interpro/blastx 
 # data as appropriate and generates a suitable DB_remark
 #
-# Last updated on: $Date: 2004-07-01 09:52:22 $
+# Last updated on: $Date: 2004-07-02 16:18:01 $
 # Last updated by: $Author: krb $
 
 
@@ -344,11 +344,18 @@ PSEUDOGENE: foreach my $pseudogene (@pseudogenes) {
   my $full_string = "";
 
   # grab Gene ID, and use this to look up Gene object to get CGC_name if present
-  $gene_name = $pseudogene->Gene;
-  $gene = $db->fetch(Gene => $gene_name);
-  if(defined($gene->CGC_name)){
-    $cgc_name = $gene->CGC_name;
+  if(!defined($pseudogene->Gene)){
+    $log->write_to("ERROR: $pseudogene does not have a Gene tag.  This is bad!\n");
+    next PSEUDOGENE;
   }
+  else{
+    $gene_name = $pseudogene->Gene;
+    $gene = $db->fetch(Gene => $gene_name);
+    if(defined($gene->CGC_name)){
+      $cgc_name = $gene->CGC_name;
+    }
+  }
+
 
   # get type of pseudogene
   $type = $pseudogene->Coding_pseudogene;
@@ -399,10 +406,17 @@ TRANSCRIPT: foreach my $transcript (@transcripts) {
   my $full_string = "";
 
   # grab Gene ID, and use this to look up Gene object to get CGC_name if present
-  $gene_name = $transcript->Gene;
-  $gene = $db->fetch(Gene => $gene_name);
-  if(defined($gene->CGC_name)){
-    $cgc_name = $gene->CGC_name;
+
+  if(!defined($transcript->Gene)){
+    $log->write_to("ERROR: $transcript does not have a Gene tag.  This is bad!\n");
+    next TRANSCRIPT;
+  }
+  else{
+    $gene_name = $transcript->Gene;
+    $gene = $db->fetch(Gene => $gene_name);
+    if(defined($gene->CGC_name)){
+      $cgc_name = $gene->CGC_name;
+    }
   }
 
   if($transcript->Method(1)){
