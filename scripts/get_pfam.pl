@@ -7,7 +7,7 @@
 # This script interogates an ACEDB database and returns all pfam/Interpro/blastx 
 # data as appropriate and generates a suitable DB_remark
 #
-# Last updated on: $Date: 2004-06-11 14:35:23 $
+# Last updated on: $Date: 2004-07-01 09:52:22 $
 # Last updated by: $Author: krb $
 
 
@@ -165,13 +165,19 @@ SUBSEQUENCE: foreach my $cds (@CDSs) {
   my $full_string = "";
 
   # grab Gene ID, and use this to look up Gene object to get CGC_name if present
-  $gene_name = $cds->Gene;
-  $gene = $db->fetch(Gene => $gene_name);
-  if(defined($gene->CGC_name)){
-    $cgc_name = $gene->CGC_name;
-    $cgc_protein_name = uc($cgc_name);
+  # warn if no Gene tag is present and skip to next CDS
+  if(!defined($cds->Gene)){
+    $log->write_to("ERROR: $cds does not have a Gene tag.  This is bad!\n");
+    next SUBSEQUENCE;
   }
-  
+  else{
+    $gene_name = $cds->Gene;
+    $gene = $db->fetch(Gene => $gene_name);
+    if(defined($gene->CGC_name)){
+      $cgc_name = $gene->CGC_name;
+      $cgc_protein_name = uc($cgc_name);
+    }
+  }
   # Find motifs
   $protein = $cds->Corresponding_protein;
   if ($protein) {
