@@ -6,8 +6,8 @@
 #
 # This maps alleles to the genome based on their flanking sequence
 #
-# Last updated by: $Author: dl1 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2003-10-29 17:22:05 $        # quickly see when script was last changed and by whom
+# Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
+# Last updated on: $Date: 2003-11-26 15:31:52 $        # quickly see when script was last changed and by whom
 
 
 use strict;
@@ -259,10 +259,17 @@ save
 quit
 END
   my $tace = &tace;
-  open (TACE,"| $tace -tsuser map_allele $database") || die "Couldn't open tace connection to $database\n";
-  print TACE $command;
-  close (TACE);
-  print LOG "finished parsing\n";
+  eval {
+    open (TACE,"| $tace -tsuser map_allele $database") || warn "Couldn't open tace connection to $database\n";
+    print TACE $command;
+    close (TACE);
+  }
+    if ( $@ ) {
+      print LOG "parse failure . . \n$@\n";
+    }
+  else {
+    print LOG "successfully finished parsing\n";
+  }
 }
 # close LOG and send mail
 
@@ -278,8 +285,6 @@ exit(0);
 #          SUB ROUTINES               #
 #                                     #
 #######################################
-
-
 
 sub outputAllele
   {
