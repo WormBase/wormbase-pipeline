@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-06-06 17:03:08 $
+# Last updated on: $Date: 2003-06-10 16:12:15 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -154,11 +154,17 @@ open(MAIL2, "$jahlog") || die "Can't read in file $erichlog";
 
 @CGC=<MAIL2>;
 $cgc=join('', @CGC);
+
 if ($cgc ne $JAHmsg){   
   mail_maintainer($0,$CGC,$jahlog) unless $debug;
 }
 
-system("chmod 777 $acefile $log $jahlog $JAHmsg $erichlog $Emsg $reverse_log, $map_diff");
+chdir "/wormsrv2/logs";
+
+my @files = qw ($acefile  $log $jahlog $JAHmsg $erichlog $Emsg $reverse_log $map_diff);
+foreach(@files){
+  system("$_") if $_;
+}
 
 exit(0);
 

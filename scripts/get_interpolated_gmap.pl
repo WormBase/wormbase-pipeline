@@ -8,7 +8,7 @@
 # Output ace file of such information and upload to autoace during each build
 # Output also other files related. See POD
 
-# Last updated on: $Date: 2003-06-05 14:11:18 $
+# Last updated on: $Date: 2003-06-10 16:12:15 $
 # Last updated by: $Author: ck1 $
 
 use strict;
@@ -69,8 +69,8 @@ if ($reverse){
 
 if ($diff){
   $diffile = "/wormsrv2/logs/mapping_diff.".$rundate;
+  system("rm -f $diffile; chmod 777 $diffile");
   open(DIFF, ">$diffile") || die $!;
-  system("chmod 777 $diffile");
 }
 
 chdir $gff_location;
