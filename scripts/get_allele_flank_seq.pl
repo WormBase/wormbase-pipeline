@@ -7,7 +7,7 @@
 # Author: Chao-Kung Chen
 
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-06-10 10:48:19 $
+# Last updated on: $Date: 2003-06-11 13:37:19 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -31,8 +31,54 @@ GetOptions (
 
 if (!$cds || $help){system ("perldoc $0"); exit(0)}
 
-my $mutation = $aa;  $mutation =~ s/\d+//; $mutation = uc($mutation); # aa mutation 
-$aa =~ s/\D//;  
+
+# look up genetic code of aa 
+my %code = (
+	    'A' => ["gct", "gcc", "gca", "gcg"],                     
+	    'B' => ["aat", "aac", "gat", "gac"], 
+	    'C' => ["tgt", "tgc"],
+	    'D' => ["gat", "gac"], 
+	    'E' => ["gaa", "gag"], 
+	    'F' => ["ttt", "ttc"],
+	    'G' => ["ggt", "ggc", "gga", "ggg"],
+	    'H' => ["cat", "cac"],
+	    'I' => ["att", "atc", "ata"],
+	    'K' => ["aaa", "aag"],
+	    'L' => ["tta", "ttg", "ctt", "ctc", "cta", "ctg"], 
+	    'M' => ["atg"],
+	    'N' => ["aat", "aac"], 
+	    'P' => ["cct", "ccc", "cca", "ccg"], 
+	    'Q' => ["caa", "cag"],
+	    'R' => ["cgt", "cgc", "cga", "cgg", "aga", "agg"], 
+	    'S' => ["tct", "tcc", "tca", "tcg", "agt", "agc"],
+	    'T' => ["act", "acc", "aca", "acg"], 
+	    'V' => ["gtt", "gtc", "gta", "gtg"],
+	    'W' => ["tgg"], 
+	    'Y' => ["tat", "tac"], 
+	    'Z' => ["gaa", "gag", "caa", "cag"],
+	    'X' => ["taa", "tag", "tga"], #stop codons
+);
+
+# inverting %code to %three_ltr_code
+my %three_ltr_code;
+
+foreach my $ea (keys %code){
+  foreach (@{$code{$ea}}){
+    $three_ltr_code{$_} = $ea;
+  }
+} 
+
+###############################################
+# get aa mutation as one letter or 3_ltter code
+###############################################
+
+my $mutation = $aa;  $mutation =~ s/\d+//; 
+if ($mutation =~ /\w{3,3}/){$mutation = $three_ltr_code{lc($mutation)}}
+$mutation = uc($mutation);
+
+
+$aa =~ s/\D//g;
+
 if ($cds =~ /(.+\.\d+)(\w)/){
   my $variant = $2; my $seq = uc($1); 
   $cds = $seq.$variant; 
@@ -66,18 +112,23 @@ else {print $archive, "\n";}
 # get DNA sequence (exon/intron) of a CDS/Transcript
 ####################################################
   
-my $DNA;
+my ($DNA, @coords, $chrom, $left, $right, $strand, $CDS);
+
 chdir "/wormsrv2/autoace/GFF_SPLITS/$current/";
 
-my $CDS_coords = `grep $cds *.genes.gff *.rna.gff | cut -f 1,4,5,7,9`; 
-my ($chrom, $left, $right, $strand, $CDS)= split(/\s+/, $CDS_coords);
-$chrom =~ s/.+CHROMOSOME_//;
+my @CDS_coords = `grep $cds *.genes.gff *.rna.gff | cut -f 1,4,5,7,9`; 
+foreach (@CDS_coords){
+  chomp;
+  ($chrom, $left, $right, $strand, $CDS)= split(/\s+/, $_);
+  $chrom =~ s/.+CHROMOSOME_//;
+  push(@coords, $left, $right);
+  @coords = sort {$a <=> $b} @coords;
+}
 
 # 30 bp extension beyond 1st/last nucleotide
-$left -= 30;
-$right += 30;
+$left = $coords[0] - 30;
+$right = $coords[-1] + 30;
 
-#my $dna_file = "/nfs/team71/worm/ck1/DNA/CHROMOSOME_".$chrom.".dna";
 my $dna_file = "$curr_db/CHROMOSOMES/CHROMOSOME_".$chrom.".dna";
 my @line = `egrep "[atcg]" $dna_file`;
 my $line;
@@ -245,33 +296,6 @@ sub exons_to_codons {
   ################################
   # output 30 bp flanks of a codon
   ################################
-
-  # look up genetic code of aa 
-  my %code = (
-	  'A' => ["gct", "gcc", "gca", "gcg"],                     
-	  'B' => ["aat", "aac", "gat", "gac"], 
-	  'C' => ["tgt", "tgc"],
-	  'D' => ["gat", "gac"], 
-	  'E' => ["gaa", "gag"], 
-	  'F' => ["ttt", "ttc"],
-	  'G' => ["ggt", "ggc", "gga", "ggg"],
-	  'H' => ["cat", "cac"],
-	  'I' => ["att", "atc", "ata"],
-	  'K' => ["aaa", "aag"],
-	  'L' => ["tta", "ttg", "ctt", "ctc", "cta", "ctg"], 
-	  'M' => ["atg"],
-	  'N' => ["aat", "aac"], 
-	  'P' => ["cct", "ccc", "cca", "ccg"], 
-	  'Q' => ["caa", "cag"],
-	  'R' => ["cgt", "cgc", "cga", "cgg", "aga", "agg"], 
-	  'S' => ["tct", "tcc", "tca", "tcg", "agt", "agc"],
-	  'T' => ["act", "acc", "aca", "acg"], 
-	  'V' => ["gtt", "gtc", "gta", "gtg"],
-	  'W' => ["tgg"], 
-	  'Y' => ["tat", "tac"], 
-	  'Z' => ["gaa", "gag", "caa", "cag"],
-	  'X' => ["taa", "tag", "tga"], #stop codons
-  );
 
   print "-------------------------------------\n";
   print "   	Codon      ($prot[$aa-1]):\t\t$codon\n";
