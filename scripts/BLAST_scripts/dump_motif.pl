@@ -4,13 +4,20 @@
 #
 # Dumps protein motifs from ensembl mysql (protein) database to an ace file
 #
-# Last updated by: $Author: wormpipe $
-# Last updated on: $Date: 2003-04-28 09:42:39 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2003-06-06 09:45:16 $
 
 
 use strict;
 use DBI;
-use Getopt::Std;
+use Getopt::Long;
+
+my ($debug, $WPver, $database);
+
+GetOptions("debug" => \$debug,
+	   "verison" => \$WPver,
+	   "database" => \$database
+	  );
 
 # define the names of the methods to be dumped
 my @methods = qw(ncoils seg signalp tmhmm hmmpfam);
@@ -19,6 +26,7 @@ my @methods = qw(ncoils seg signalp tmhmm hmmpfam);
 my $dbhost = "ecs1f";
 my $dbuser = "wormro";
 my $dbname = "wormprot";
+$dbname = $database if $database;
 my $dbpass = "";
 
 # to get the current time...
@@ -29,9 +37,9 @@ sub now {
 
 # create output files
 my $dump_dir = "/acari/work2a/wormpipe/dumps";
-open(ACE,">$dump_dir/ensembl_motif_info.ace") || die "cannot create ace file";
+open(ACE,">$dump_dir/".$dbname."_motif_info.ace") || die "cannot create ace file";
 
-open(LOG,">$dump_dir/ensembl_motif_info.log") || die "cannot create log file";
+open(LOG,">$dump_dir/".$dbname."_motif_info.log") || die "cannot create log file";
 
 # make the LOG filehandle line-buffered
 my $old_fh = select(LOG);
@@ -43,7 +51,7 @@ $| = 1;
 select($old_fh);
 
 
-print LOG "DUMPing protein motif data from mysql to ace [".&now."]\n";
+print LOG "DUMPing protein motif data from ".$dbname." to ace [".&now."]\n";
 print LOG "---------------------------------------------------------------\n\n";
 
 # connect to the mysql database
@@ -84,8 +92,6 @@ foreach my $method (@methods) {
         if ($method eq "hmmpfam") {
             my $line = "Motif_homol \"PFAM:$hid\" \"pfam\" $score $start $end $hstart $hend";
             push (@{$motifs{$prot}} , $line);
-           # my $line = "Pep_homol \"WP:prot\" \"pfam\" $score $hstart $hend $start $end";
-           # push (@{$pfams{$hid}} , $line);
 	}
         else {
             my $line = "Feature \"$method\" $start $end $score";
@@ -95,27 +101,26 @@ foreach my $method (@methods) {
 }
 
 # print ace file
+my $prefix = "WP";
+if( "$database" eq "worm_brigprot") {
+  $prefix = "BP";
+}
 foreach my $prot (sort {$a cmp $b} keys %motifs) {
     print ACE "\n";
-    print ACE "Protein : \"WP:$prot\"\n";
+    print ACE "Protein : \"$prefix:$prot\"\n";
     foreach my $line (@{$motifs{$prot}}) {
         print ACE "$line\n";
     }
 }
 
-#foreach my $pfam (sort {$a cmp $b} keys %pfams) {
-#    print ACE "\n";
-#    print ACE "Motif : \"WP:$pfam\"\n";
-#    foreach my $line (@{$motifs{$pfam}}) {
-#        print ACE "$line\n";
-#    }
-#}
     
 $sth->finish;
 $sth_f->finish;
 $dbh->disconnect;
 
+close ACE;
+
 print LOG "\nEnd of Motif dump\n";
 print "\nEnd of Motif dump\n";
-
+close LOG;
 exit(0);
