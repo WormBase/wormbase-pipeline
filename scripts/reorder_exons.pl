@@ -1,13 +1,16 @@
-#!/gsc/bin/perl 
+#!/usr/local/bin/perl5.6.1 -w 
 #
-#########################
-# reorder_exons.pl      #
-#########################
-# 
+# reorder_exons.pl
+#
+# by Darin Blasiar
 #
 # This script checks the exon order and corrects them if needed
 #
-#
+# Last updated by: $Author: ck1 $
+# Last updated on: $Date: 2003-05-14 17:06:18 $
+
+
+
 #############################################
 # USAGE: reorder_exons.pl <database>        #
 #############################################
