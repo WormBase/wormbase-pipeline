@@ -55,7 +55,7 @@ Filter "Method = NDB"
 Class Wormpep
 Visible
 Is_a_subclass_of Protein
-Filter "Wormpep NOT Inactive"
+Filter "Wormpep AND Live"
 
 Class Genetic_map
 Visible
