@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-01-23 17:28:23 $
+# Last updated on: $Date: 2003-01-23 17:44:31 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -122,7 +122,7 @@ sub copy_release_files{
   while (defined($filename = readdir(RELEASE))) {
     if (($filename eq ".")||($filename eq "..")) { next;}
     if (($filename =~ /letter/)||($filename =~ /dbcomp/)) { next;}
-    system "cp $sourcedir/release/$filename $targetdir/$release/$filename" && die "ERROR: can't copy source directory\n";
+    system ("cp $sourcedir/release/$filename $targetdir/$release/$filename") && die "ERROR: can't copy source directory\n";
     my $O_SIZE = (stat("$sourcedir/release/$filename"))[7];
     my $N_SIZE = (stat("$targetdir/$release/$filename"))[7];
     if ($O_SIZE != $N_SIZE) {
