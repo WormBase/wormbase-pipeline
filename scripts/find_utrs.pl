@@ -7,7 +7,7 @@
 # Ashwin Hajarnavis ah3@sanger.ac.uk  August 2002
 #
 # Last updated by: $Author: dl1 $                 
-# Last updated on: $Date: 2002-08-16 10:30:36 $   
+# Last updated on: $Date: 2002-08-21 12:25:07 $   
 
 use strict;
 use Getopt::Std;
@@ -39,7 +39,11 @@ my $best_results_files = $opt_r;
 my $dbdir ="/wormsrv2/$opt_d/";
 if ($opt_d eq "current_DB") {
     my $WS = get_wormbase_version($dbdir);
-    $gff_dir = "/wormsrv2/autoace/GFF_SPLITS/$WS";
+    $gff_dir = "/wormsrv2/autoace/GFF_SPLITS/WS$WS";
+}
+elsif ($opt_d eq "autoace") {
+    my $WS = get_wormbase_version($dbdir);
+    $gff_dir = "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS";
 }
 
 my $tace      = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
