@@ -4,17 +4,18 @@
 
 # by Chao-Kung Chen [030625]
 
-# Last updated on: $Date: 2004-03-29 14:44:54 $
+# Last updated on: $Date: 2004-05-12 11:16:51 $
 # Last updated by: $Author: ck1 $
 
 use Tk;
 use strict;
 use Cwd;
 use Term::ANSIColor;
-use lib "/wormsrv2/scripts";
+use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
 use TextANSIColor;
 use Tk::DialogBox;
+use GENEACE::Geneace;
 
 
 #######################
@@ -23,7 +24,7 @@ use Tk::DialogBox;
 
 #----------- top level frame ----------
 
-my $mw=MainWindow->new();
+my $mw = MainWindow->new();
 $mw->configure (title => "Allele Flanking Sequences Retriever   by Chao-Kung Chen   Version 1.0 (2003/06/20)",
                 background => "white",
                );
@@ -188,12 +189,13 @@ MainLoop();
 
 #----------- END OF WIDGET LAYOUT ----------
 
+
 ##################
 # global variables
 ##################
 
 my ($cds_or_locus, $aa_or_dna, $mutation, $allele, $locus, $position, $cds, $current, @archive, $archive,
-    @output, @ace, @out, @DNA, @prot, %code, @CDS_coords, $molecule, $filename);
+    @output, @ace, @out, @DNA, @prot, %code, @CDS_coords, $molecule, $filename, %Gene_info);
 
 
 ######################################################
@@ -215,16 +217,17 @@ sub read_doc{
   $dialog->geometry("940x400");
   $dialog->resizable(0,0);
 
-  my @doc = `perldoc $0`;
+  my @doc = `perldoc $0`; # reading script POD
   my $doc;
   foreach(@doc){
     if ($_ eq "" ){}
     elsif ($_ =~ /=(.+)/){$doc .= $1}
     else {$doc .= $_}
   }
+
   my $txt=$dialog->Scrolled("Text",  -scrollbars=>"ow", height=>60, width=> 130)->pack(side => "left", anchor => "w");
-  $txt -> insert('end', "USAGE:\n\nQuery parameters are in the order of\n\n(1) CDS/Transcript/Pseudogene\n(2) -aa (amino acid) or (-dna) nucleotide\n(3) nucleotide or amino acid position followed by mutation in single letter (or three-letter code for amino acid)\n(4) allele name \n(5) locus name\n(6) paper info \n\nseparated by space (all parameters are case insensitive)\n\n\n---------------------------------------------------------------------------------------------------------------------------------\n                                            Detailed description of this program\n---------------------------------------------------------------------------------------------------------------------------------");  
-  $txt -> insert('end', "$doc");
+  $txt -> insert('end', "USAGE:\n\nQuery parameters are in the order of\n\n(1) CDS/Transcript/Pseudogene\n(2) -aa (amino acid) or (-dna) nucleotide\n(3) nucleotide or amino acid position followed by mutation in single letter (or three-letter code for amino acid)\n(4) allele name \n(5) locus name\n(6) paper info \n\nseparated by space (all parameters are case insensitive)\n\n\n---------------------------------------------------------------------------------------------------------------------------------\n                                            Detailed description of this program\n---------------------------------------------------------------------------------------------------------------------------------\n$doc");
+
   $dialog->Show();
 
 }
@@ -280,11 +283,7 @@ sub upload_ace_TEST{
   print SAVE @out;
   close SAVE;
 
-  my $command=<<EOF;
-pparse $filename
-save
-quit
-EOF
+  my $command="pparse $filename\nsave\nquit\n";
 
   my $test_db_dir="/nfs/disk100/wormpub/DATABASES/TEST_DBs/CK1TEST/";
   open (Load_testGA,"| tace $test_db_dir > $log") || die "Failed to upload to test_Geneace";
@@ -321,29 +320,24 @@ sub upload_ace_GA{
   if ($user eq "wormpub") {
     my $log = "/wormsrv2/tmp/load_allele.log";
     system("chmod 777 $log");
-    
+
     my @out = $ace_window->get('1.0', 'end');
     my $filename = "/wormsrv2/tmp/tmp.ace";
     system("chmod 777 $filename");
-    
+
     open(SAVE, ">$filename");
     print SAVE @out;
     close SAVE;
 
-    my $command=<<EOF;
-pparse $filename
-save
-quit
-EOF
+    my $command="pparse $filename\nsave\nquit\n";
 
     my $db_dir="/wormsrv1/geneace/";
     open (Load_GA,"| tace $db_dir > $log") || die "Failed to upload to test_Geneace";
     print Load_GA $command;
     close Load_GA;
-    
+
     my $dialog4 =  $mw -> DialogBox(-title   => "Uploading ace file to Geneace . . .",
 				    -buttons => ["Close" ]);
-    
     $dialog4->geometry("800x500");
     #$dialog4->resizable(0,0);
     my $txt=$dialog4->Scrolled("Text",  -scrollbars=>"ow", height=>60, width=> 170)->pack(side => "left", anchor => "w");
@@ -397,6 +391,14 @@ sub run {
     }
   }
 
+  ###############################################
+  # get hash for Gene_name <-> Gene id conversion
+  ###############################################
+
+  my $ga = init Geneace;
+  %Gene_info = $ga -> gene_info();
+
+
   #####################################
   # retrieve info from query parameters
   #####################################
@@ -412,17 +414,17 @@ sub run {
      $run_window -> insert('end', "$cds_or_locus, $aa_or_dna, $mutation, $allele, $locus, $ref");
     $position = $mutation;
     $position =~ s/\D//g;
-  
-    $mutation =~ s/\d+//; 
+
+    $mutation =~ s/\d+//;
     if ($mutation =~ /\w{3,3}/){$mutation = $three_ltr_code{lc($mutation)}}
     $mutation = uc($mutation);
-  
+
     push(@info, uc($mutation), $ref);
 
     if ($aa_or_dna eq "-aa" || $aa_or_dna eq "-AA"){$molecule = "aa"} else {$molecule = "DNA"}
 
     if ($cds_or_locus =~ /(.+\.\d+)(\w)/){
-      my $variant = $2; my $seq = uc($1); 
+      my $variant = $2; my $seq = uc($1);
       $cds = $seq.$variant; 
     }
     else {
@@ -470,12 +472,12 @@ sub run {
     @coords = sort {$a <=> $b} @coords;
   }
 
- # # 30 bp extension beyond 1st/last nucleotide
+  # 30 bp extension beyond 1st/last nucleotide
   $left = $coords[0] - 30;
   $right = $coords[-1] + 30;
 
   my $dna_file = "$curr_db/CHROMOSOMES/CHROMOSOME_".$chrom.".dna";
- 
+
   my @line = `egrep "[atcg]" $dna_file`;
   my $line;
 
@@ -510,7 +512,7 @@ sub run {
     $run_window -> insert('end', "$red $DNA[$position-1]");
     $run_window -> insert('end', " $dna_R");
 
-    $ace_window->insert('end', "\nLocus : \"$locus\"\n");
+    $ace_window->insert('end', "\nGene : \"$Gene_info{$locus}{'Gene'}\"  \/\/$locus\n");
     $ace_window->insert('end', "\/\/Allele \"$allele\" Paper_evidence \"\"\n");
     $ace_window->insert('end', "\/\/Allele \"$allele\" PMID_evidence \"\"\n");
     $ace_window->insert('end', "\nAllele : \"$allele\"\n");
@@ -540,11 +542,11 @@ sub run {
     #############################################################################
 
     open(IN1, "/nfs/disk100/wormpub/WORMPEP/wormpep_current") || die $!;
- 
-    my ($prot_seq, $DNA_seq);  
+
+    my ($prot_seq, $DNA_seq);
 
     $prot_seq = get_seq($cds, *IN1);
-    #print "$cds\n$prot_seq\n\n";   
+    #print "$cds\n$prot_seq\n\n";
     @prot = split(//, $prot_seq);
     #print "aa $position = $prot[$position-1] [length = ", scalar @prot, "]\n";
 
@@ -581,7 +583,7 @@ sub get_seq {
 
 #############################################################################################
 # This chunk does several things:
-# 1. process soruce exon coods to figure out frame shift 
+# 1. process soruce exon coords to figure out frame shift
 # 2. the result of 1 is passed into codon_to_seq routine to retrieves 30 bp flanks of a codon
 #############################################################################################
 
@@ -636,7 +638,7 @@ sub exons_to_codons {
         @return = codon_to_seq($start_bp, $num_bp, \@DNA, "C", $position_codon, $i, @exon_start_end);
         %codon_seq = %{$return[0]}; $position_codon = $return[1];
         push(@all, %codon_seq); next;
-      }   
+      }
     }
     #########################################################################################################################
     if ($remainder == 1){
@@ -687,7 +689,7 @@ sub exons_to_codons {
   for($i=0; $i < scalar @all; $i=$i+2){
     push(@{$codon_seq{$all[$i]}}, ${@{$all[$i+1]}}[0], ${@{$all[$i+1]}}[1], ${@{$all[$i+1]}}[2], ${@{$all[$i+1]}}[3], ${@{$all[$i+1]}}[4], ${@{$all[$i+1]}}[5]);
 #     print "${@{$all[$i+1]}}[0], ${@{$all[$i+1]}}[1], ${@{$all[$i+1]}}[2], ${@{$all[$i+1]}}[3], ${@{$all[$i+1]}}[4], ${@{$all[$i+1]}}[5]\n";
-  }  
+  }
 
 
   push(@output, "\n$prot[$position-1]($position) = "." $codon_seq{$position}->[0] (". ($codon_seq{$position}->[1]-30) .") $codon_seq{$position}->[2] (". ($codon_seq{$position}->[3]-30) . ") $codon_seq{$position}->[4] (". ($codon_seq{$position}->[5]-30) . ") [full-length aa of this gene: ". scalar @prot. "]\n");
@@ -707,7 +709,7 @@ sub exons_to_codons {
     push(@output, "	Mutated to \($mutation\):\t\t$code{$mutation}->[$i-1]\n") if $mutation ne "X";
     push(@output, "	Mutated to \(STOP\):\t$code{$mutation}->[$i-1]\n") if $mutation eq "X";
   }
-  push(@output, "-------------------------------------");    
+  push(@output, "-------------------------------------");
 
   my ($first_bp, $second_bp, $third_bp, $first_site, $second_site, $third_site);
   $first_bp = $codon_seq{$position}->[1];
@@ -845,7 +847,7 @@ sub exons_to_codons {
   $run_window -> insert('end', "$archive\n$cds\n");
 
   foreach (@output){
-    if ($_ =~ /(red) (.+)/ || $_ =~ /(blue) (.+)/ || $_ =~ /(black) (.+)/ || $_ =~ /(magenta) (.+)/ || 
+    if ($_ =~ /(red) (.+)/ || $_ =~ /(blue) (.+)/ || $_ =~ /(black) (.+)/ || $_ =~ /(magenta) (.+)/ ||
 	$_ =~ /(green) (.+)/ || $_ =~ /(magenta_M) (.+)/ || $_ =~ /(green_G) (.+)/){
       my $color = $1; my $nt = $2;
 
@@ -881,7 +883,7 @@ sub get_1_site_flanks{
   my ($first, $Lf1, $Rf1, $second, $Lf2, $Rf2, $third, $Lf3, $Rf3, $fourth, $Lf4, $Rf4,) = split(/\s+/, $ace);
   write_ace($Lf1, $Rf1, $allele, $locus, $seq);
 }
-  
+
 sub get_2_site_flanks{
   my $ace = $label_1->cget("text");
   my $allele = $label_2->cget("text");
@@ -889,9 +891,8 @@ sub get_2_site_flanks{
   my $seq = $label_4->cget("text");
   my ($first, $Lf1, $Rf1, $second, $Lf2, $Rf2, $third, $Lf3, $Rf3, $fourth, $Lf4, $Rf4,) = split(/\s+/, $ace);
   write_ace($Lf2, $Rf2, $allele, $locus, $seq);
-  
+
 }
-  
 
 sub get_3_site_flanks{
   my $ace = $label_1->cget("text");
@@ -901,13 +902,12 @@ sub get_3_site_flanks{
   my ($first, $Lf1, $Rf1, $second, $Lf2, $Rf2, $third, $Lf3, $Rf3, $fourth, $Lf4, $Rf4,) = split(/\s+/, $ace);
   write_ace($Lf3, $Rf3, $allele, $locus, $seq);
 }
-  
 
 sub get_codon_flanks{
   my $ace = $label_1->cget("text");
   my $allele = $label_2->cget("text");
   my $locus = $label_3->cget("text");
-  my $seq = $label_4->cget("text");  
+  my $seq = $label_4->cget("text");
   my ($first, $Lf1, $Rf1, $second, $Lf2, $Rf2, $third, $Lf3, $Rf3, $fourth, $Lf4, $Rf4,) = split(/\s+/, $ace);
   write_ace($Lf4, $Rf4, $allele, $locus, $seq);
 }
@@ -966,9 +966,9 @@ sub codon_to_seq {
 }
 
 sub write_ace {
-  
+
   my ($Lf, $Rf, $allele, $locus, $seq) = @_;
-  
+
   $ace_window->insert('end', "\nLocus : \"$locus\"\n");
   if ($info[1] =~ /\[.+\]/){ 
     $ace_window->insert('end', "Allele \"$allele\" Paper_evidence \"$info[1]\"\n");
@@ -989,7 +989,7 @@ sub write_ace {
   $ace_window->insert('end', "\/\/Insertion\n");
   $ace_window->insert('end', "\/\/Deletion_with_insertion\n");
   $ace_window->insert('end', "Flanking_sequences \"$Lf\" \"$Rf\"\n");
-  $ace_window->insert('end', "Gene  \"$locus\"\n");
+  $ace_window->insert('end', "Gene  \"$Gene_info{$locus}{'Gene'}\"  \/\/$locus\n");
   $ace_window->insert('end', "Predicted_gene  \"$cds\"\n");
   $ace_window->insert('end', "Species \"Caenorhabditis elegans\"\n");
   if ($info[0] eq "X"){
@@ -1015,18 +1015,16 @@ sub write_ace {
   $ace_window->insert('end', "\/\/Method \"Insertion_allele\"\n");
   $ace_window->insert('end', "\/\/Method \"Deletion_and_insertion_allele\"\n");
   $ace_window->insert('end', "\/\/Method \"Transposon_insertion\"\n");
-}      
-
+}
 
 __END__
-  
-  #Output: G(45 )= g (590) g (591) g (640) [full-length aa of this gene = 255]
 
-=head2 NAME - get_allele_flank_seq.pl  
+#Output: G(45 )= g (590) g (591) g (640) [full-length aa of this gene = 255]
+
+=head2 NAME - get_allele_flank_seq.pl
 
 DESCRIPTION
 
-  First thing first: perl path is perl5.6.1, 5.8.0 won't run
 
   This script is suitable for curating allele flanking sequences described in paper such as "
   .... amino acid Q at position 235 is mutated to G ..." or "...nucleotide t in position 1234 of 4R79.1 is mutated  to g ...".
@@ -1096,21 +1094,21 @@ SCENARIO B: amino acide coordinate
 
      Comments on output (generated in the upper window, which is overwritten by a new query result)
 	
-     (1) Verification. This simply tells you that G(45) described in paper (scenario) is the same as current WS dataset. 
-         So should be OK to run script for this allele, . . . usually.  
+     (1) Verification. This simply tells you that G(45) described in paper (scenario) is the same as current WS dataset.
+         So should be OK to run script for this allele, . . . usually.
 
-     (2) Color coding (cannot be seen here, but when you run the script) helps you quickly identify the flanking 
-         sequences (4) of a mutated site (the one in between spaces), especially in cases where frame shift occur so that 
-         the immediate flanking nucleotide maybe in the intron between two sites of a codon.  
+     (2) Color coding (cannot be seen here, but when you run the script) helps you quickly identify the flanking
+         sequences (4) of a mutated site (the one in between spaces), especially in cases where frame shift occur so that
+         the immediate flanking nucleotide maybe in the intron between two sites of a codon.
 
-     (3) As three potential single-site mutation can occur in a codon, (3) gives you genetic codes of the amino acid 
-         resulted in mutation and allows you a quick look up of bp substitution. This table is also fine 
+     (3) As three potential single-site mutation can occur in a codon, (3) gives you genetic codes of the amino acid
+         resulted in mutation and allows you a quick look up of bp substitution. This table is also fine
          for a dinucleotide mutation.
-         In the scenario, eg, if codon (G) has a missense mutation and changed to E, the codon table conveniently tells you 
+         In the scenario, eg, if codon (G) has a missense mutation and changed to E, the codon table conveniently tells you
          that ggg has been mutated to gag. So, this would be a 2nd site mutation or a [g/a] substitution.
-         You should then choose the matching flanking sequences in (4).       
+         You should then choose the matching flanking sequences in (4).
 
-     (4) By clicking on the 1 site mutation, 2 site mutation ...etc, an ace file template with minimal information is 
+     (4) By clicking on the 1 site mutation, 2 site mutation ...etc, an ace file template with minimal information is
          generated in the lower window where you can modify and finish according to some extra information described in paper.
 
 UPLOADING ACE FILE TO GENEACE:
