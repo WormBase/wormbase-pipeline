@@ -815,7 +815,7 @@
 			Corresponding_transcript UNIQUE ?Transcript XREF Corresponding_CDS // to link coding genes to new style 
 											   // ar2 Transcripts, 1-2-1 relationship
 		  	Clone ?Clone XREF Sequence 
-			GO_term ?GO_term XREF Sequence #Evidence
+			GO_term ?GO_term XREF Sequence ?GO_code #Evidence
 			Locus_other_seq ?Locus XREF Other_sequence       // dl 001128
 			Paired_read ?Sequence XREF Paired_read          // dl 020110
 	  		Reference ?Paper XREF Sequence
@@ -993,7 +993,7 @@
 		Expr_pattern ?Expr_pattern XREF CDS
                 RNAi_result ?RNAi XREF CDS // added for Lincoln RNAi [001213 dl]
 		Contained_in_operon ?Operon XREF Contains_CDS
-		GO_term ?GO_term XREF CDS #Evidence
+		GO_term ?GO_term XREF CDS ?GO_code #Evidence
 		Allele ?Allele XREF CDS // replaces Has_allele tag in ?Sequence
 		Microarray_results ?Microarray_results XREF CDS      //added for Microarray_results
 	  	Reference ?Paper XREF CDS // added [011030 krb]
@@ -1626,8 +1626,8 @@
 
 ?Transgene      Evidence #Evidence
 		Summary UNIQUE ?Text //Searchable description of the transgene
-		Driven_by_CDS_promoter   ?CDS   XREF Drives_transgene Text //driving promoter
-		Driven_by_Locus          ?Locus XREF Drives_transgene	
+		Driven_by Driven_by_CDS_promoter   ?CDS   XREF Drives_transgene Text //driving promoter
+			  Driven_by_Locus          ?Locus XREF Drives_transgene	
 		Reporter_product GFP
 				 LacZ
 			         Other_reporter ?Text
