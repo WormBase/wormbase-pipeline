@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.76 2002-08-06 16:07:07 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.77 2002-08-08 13:19:26 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -208,7 +208,7 @@
 			CDS_count UNIQUE Int		   // krb 04/03/02
 			Transcript ?Transcript XREF Gene
 			Protein ?Protein XREF Gene
-                        Other_sequence ?Sequence XREF Gene_other_seq     // dl 001128 // RD 0107 leave for now
+                        Other_sequence ?Sequence XREF Gene_other_seq #Evidence    // dl 001128 // RD 0107 leave for now
 			Product ?Text
 	SMap S_parent Sequence UNIQUE ?Sequence XREF Locus     // changed into S_parent Sequence UNIQUE [020311 kj]
 	Method UNIQUE ?Method
