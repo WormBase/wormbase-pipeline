@@ -19,15 +19,18 @@ GetOptions ("debug=s"   => \$debug,
 
 my $maintainers = "All";
 my $rundate    = `date +%y%m%d`; chomp $rundate;
-my $log = "/acari/work2a/wormpipe/Dump_new_prot_only.pl.$rundate";
+my $wormpipe_dir = "/acari/work2a/wormpipe";
+my $log = "$wormpipe_dir/Dump_new_prot_only.pl.$rundate";
+my $best_hits = "$wormpipe_dir/dumps/best_blastp_hits";
+open (BEST, ">$best_hits") or die "cant open $best_hits for writing\n";
 
-open( LOG, ">$log") || die "cant open $log";
+open ( LOG, ">$log") || die "cant open $log";
 print LOG "Dump_new_prot_only.pl log file $rundate\n";
 print LOG "-----------------------------------------------------\n\n";
 
 # to be able to include only those proteins that have homologies we need to record those that do
 # this file is then used by write_ipi_info.pl
-my $ipi_file = "/acari/work2a/wormpipe/dumps/ipi_hits_list";
+my $ipi_file = "$wormpipe_dir/dumps/ipi_hits_list";
 open (IPI_HITS,">$ipi_file") or die "cant open $ipi_file\n";
 
 
@@ -43,8 +46,6 @@ print "DEBUG = \"$debug\"\n\n" if $debug;
 
 
 my @sample_peps = @_;
-
-my $wormpipe_dir = "/acari/work2a/wormpipe";
 my $wormpipe = glob("~wormpipe");
 my $output = "$wormpipe_dir/dumps/blastp_ensembl.ace";
 my $recip_file = "$wormpipe_dir/dumps/wublastp_recip.ace";
@@ -130,7 +131,7 @@ unless (@peps2dump)  {
   }
   
   else {
-    open( DIFF,"<$wormpipe/dumps/wormpep.diff$WPver") or die "cant opne diff file $wormpipe/dumps/wormpep.diff$WPver\n";
+    open( DIFF,"<$wormpipe/Elegans/wormpep.diff$WPver") or die "cant opne diff file $wormpipe/Elegans/wormpep.diff$WPver\n";
     print LOG " : Dumping updated proteins ( wormpep.diff$WPver )\n";
     while (<DIFF>)
       {
@@ -202,6 +203,7 @@ open (OUT,">$output") or die "cant open $output\n";
 open (RECIP,">$recip_file") or die "cant open recip file\n";
 
 dbmopen our %ACC2DB, "$wormpipe_dir/dumps/acc2db.dbm", 0666 or die "cannot open acc2db \n";
+
 my $count;
 
 
@@ -264,6 +266,7 @@ foreach $pep (@peps2dump)
 
 close OUT;
 close RECIP;
+close BEST;
 close IPI_HITS;
 
 print "sorting ipi_hits file . . ";
@@ -330,10 +333,12 @@ sub dumpData
   {
     my $matches;
     my $pid = shift;
+    my %BEST;
     print OUT "\nProtein : \"WP:$pid\"\n";
     while( $matches = shift) {   #pass reference to the hash to dump
       #write ace info
       my $output_count = 0;
+      my $best = 0; #flag for best matches resets for each analysis
     HOMOLOGUES:
 #Use of uninitialized value in numeric comparison (<=>) at /nfs/team71/worm/ar2/wormbase/scripts/Dump_new_prot_only.pl line 291.
 
@@ -357,7 +362,10 @@ sub dumpData
 	    elsif ( "$$data[1]" eq "wublastp_human" ) {
 	      $prefix = &getPrefix("$$data[4]");
 	    }
-	
+	    if ($best == 0) {
+	      $BEST{$$data[1]} = "$prefix:$$data[4]"."score$$data[7]";
+	      $best = 1;
+	    }
 	    foreach (@cigar){
 	      #print OUT "Pep_homol \"$homolID\" $processIds2prot_analysis{$analysis} $e $myHomolStart $myHomolEnd $pepHomolStart $pepHomolEnd Align ";
 	      print OUT "Pep_homol ";
@@ -395,6 +403,19 @@ sub dumpData
 	}
       }
     }
+    # output best matches
+    my @to_output = qw(wublastp_worm wublastp_human wublastp_briggsae wublastp_fly wublastp_yeast wublastp_slimswissprot wublastp_slimtrembl);
+    print BEST "$pid";
+    foreach my $ana (@to_output) {
+      if ($BEST{$ana}) {
+	my($homol, $score) =  split(/score/,$BEST{$ana});
+	print BEST ",$homol,$score"
+      }
+      else {
+	print BEST ",,";
+      }
+    }
+    print BEST "\n";
   }
 
 
