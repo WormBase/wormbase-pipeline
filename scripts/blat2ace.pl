@@ -52,7 +52,10 @@ our %word = (
 	     NEMATODE => 'BLATX_NEMATODE',
 	     );
 
-open (LOG, ">$dir/blat2ace.log");
+# create log file
+my $rundate    = `date +%y%m%d`; 
+chomp $rundate;
+open (LOG, ">/wormsrv2/logs/blat2ace.log.$rundate.$$") || die "Couldn't write to the blinking log file, innit?\n";
 
  ########################################
  # command-line options & ramifications #
