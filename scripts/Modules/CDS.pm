@@ -113,8 +113,6 @@ sub map_cDNA
     }
     return 0 if $self->strand ne $cdna->strand;
 
-    #this must overlap - check exon matching
-
     my $matches_me = 0;
     foreach my $transcript ( $self->transcripts ) {
       if ($transcript->map_cDNA( $cdna ) == 1) { 
@@ -131,9 +129,9 @@ sub map_cDNA
 	return 0;
       }
       else {
+	return 0 unless ($self->check_features($cdna) == 1);
 	#this must overlap - check exon matching
 	if( $self->check_exon_match( $cdna ) ) {
-
 	  # check reciprocal CDS -> cdna
 	  if( $cdna->check_exon_match( $self )) {
 	    # if this cdna matches the CDS but not the existing transcripts create a new one

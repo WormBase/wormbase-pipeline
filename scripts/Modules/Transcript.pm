@@ -46,65 +46,7 @@ sub map_cDNA
     }
     else {
       #this must overlap - check Splice Leader
-      my $SL;
-      if( $SL = $cdna->SL ){
-	if( $self->SL ) {
-	  unless( $SL->[0] == $self->SL->[0] ) {	    #same SL
-	    print STDERR "Conficting SLs ",$self->name, "\t",$cdna->name,"\n";
-	    return 0;
-	  }
-	}
-	else { 
-	  if( $SL->[1] > $self->start ) {
-	    print STDERR $cdna->name, " Splice Leader within ", $self->name, "\n";
-	    return 0;
-	  }
-	}
-      }
-
-      # reject cdna's that start before transcript SL
-      if( $self->SL and $cdna->start < $self->start ) {
-	return 0;
-      }
-
-      # and polyA_Site
-      my $polyA_site;
-      if( $polyA_site = $cdna->polyA_site ) {
-	if( $self->polyA_site ) {
-	  unless( $polyA_site->[0] == $self->polyA_site->[0] ) {
-	    print STDERR "Conficting polyA_sites ",$self->name, "\t",$cdna->name,"\n";
-	    return 0;
-	  }
-	}
-	else {
-	  if( $polyA_site->[0] < $self->end ) {
-	    print STDERR $cdna->name, " polyA_site within ", $self->name, "\n";
-	    return 0;
-	  }
-	}
-      }
-
-      # . and polyA_signal
-      my $polyA_sig;
-      if( $polyA_sig = $cdna->polyA_signal ) {
-	if( $self->polyA_signal ) {
-	  unless( $cdna->polyA_signal->[0] == $self->polyA_signal->[0] ) {
-	    print STDERR "Conficting polyA_signals ",$self->name, "\t",$cdna->name,"\n";
-	    return 0;
-	  }
-	}
-	else {
-	  if( $cdna->polyA_signal->[0] + 30 > $self->end) {
-	    print STDERR $cdna->name, " polyA_signal within ", $self->name, "\n";
-	    return 0;
-	  }
-	}
-      }	
-
-      # transcript already has polyA and cDNA goes past this
-      if( $self->polyA_site and $cdna->end > $self->end ){
-	return 0;
-      }
+      return 0 unless ($self->check_features($cdna) == 1);
       
       #check exon matching
       my $match = $self->check_exon_match( $cdna );
@@ -169,7 +111,7 @@ sub add_matching_cDNA
 	# cdna overlaps last exon so extend - need to take in to account it may still be spliced past the CDS end.
 
 	my $last_exon_start = $self->last_exon->[0];
-	$self->exon_data->{"$last_exon_start"} = $exon->[1];
+	$self->{'exons'}->{"$last_exon_start"} = $exon->[1];
       }
       #extend 5'
       elsif( $match_code == 4  or $match_code == 5 or $match_code == 8 ) {
@@ -181,11 +123,11 @@ sub add_matching_cDNA
 	my $exon_end = $self->sorted_exons->[0]->[1];
 
 	delete $self->exon_data->{$curr_start};
-	$self->exon_data->{"$exon->[0]"} = $exon_end;
+	$self->{'exons'}->{"$exon->[0]"} = $exon_end;
       }
       elsif( $match_code == 10  or $match_code == 11 ) {
 	#add exon to UTR
-	$self->exon_data->{"$exon->[0]"} = $exon->[1];
+	$self->{'exons'}->{"$exon->[0]"} = $exon->[1];
       }
       #extending 3'UTR with non-overlapping cDNAs
       elsif( $match_code == 12) {
@@ -208,12 +150,12 @@ sub add_matching_cDNA
 	my $curr_start = $self->start;
 	my $exon_end = $self->sorted_exons->[0]->[1];
 
-	delete $self->exon_data->{$curr_start};
-	$self->exon_data->{"$exon->[0]"} = $exon_end;
+	delete $self->{'exons'}->{$curr_start};
+	$self->{'exons'}->{"$exon->[0]"} = $exon->[1];
 	
-	# 3' extension
-	my $last_exon_start = $self->last_exon->[0];
-	$self->exon_data->{"$last_exon_start"} = $exon->[1];
+#	# 3' extension
+#	my $last_exon_start = $self->last_exon->[0];
+#	$self->{'exons'}->{"$last_exon_start"} = $exon->[1];
       }	
     }
     # reset start end etc . . 

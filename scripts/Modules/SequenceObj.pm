@@ -798,5 +798,67 @@ sub paired_read
     return $self->{'paired_read'};
   }
 
+sub check_features
+  {
+    my $self = shift;
+    my $cdna = shift;
+    my $SL;
+    if ( $SL = $cdna->SL ) {
+      if ( $self->SL ) {
+	unless( $SL->[0] == $self->SL->[0] ) { #same SL
+	  print STDERR "Conficting SLs ",$self->name, "\t",$cdna->name,"\n";
+	  return 0;
+	}
+      } else { 
+	if ( $SL->[1] > $self->start ) {
+	  print STDERR $cdna->name, " Splice Leader within ", $self->name, "\n";
+	  return 0;
+	}
+      }
+    }
+
+    # reject cdna's that start before transcript SL
+    if ( $self->SL and $cdna->start < $self->start ) {
+      return 0;
+    }
+
+    # and polyA_Site
+    my $polyA_site;
+    if ( $polyA_site = $cdna->polyA_site ) {
+      if ( $self->polyA_site ) {
+	unless( $polyA_site->[0] == $self->polyA_site->[0] ) {
+	  print STDERR "Conficting polyA_sites ",$self->name, "\t",$cdna->name,"\n";
+	  return 0;
+	}
+      } else {
+	if ( $polyA_site->[0] < $self->end ) {
+	  print STDERR $cdna->name, " polyA_site within ", $self->name, "\n";
+	  return 0;
+	}
+      }
+    }
+
+    # . and polyA_signal
+    my $polyA_sig;
+    if ( $polyA_sig = $cdna->polyA_signal ) {
+      if ( $self->polyA_signal ) {
+	unless( $cdna->polyA_signal->[0] == $self->polyA_signal->[0] ) {
+	  print STDERR "Conficting polyA_signals ",$self->name, "\t",$cdna->name,"\n";
+	  return 0;
+	}
+      } else {
+	if ( $cdna->polyA_signal->[0] + 30 > $self->end) {
+	  print STDERR $cdna->name, " polyA_signal within ", $self->name, "\n";
+	  return 0;
+	}
+      }
+    }	
+
+    # transcript already has polyA and cDNA goes past this
+    if ( $self->polyA_site and $cdna->end > $self->end ) {
+      return 0;
+    }
+    return 1;
+  }
 
 1;
