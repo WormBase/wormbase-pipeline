@@ -6,7 +6,7 @@
 # Compares this number to those from a second database.
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-02-18 16:53:48 $      
+# Last updated on: $Date: 2003-03-07 09:45:16 $      
 
 
 use strict;
@@ -299,6 +299,8 @@ sub diff {
   system ("rm -f /tmp/look-1");
   system ("rm -f /tmp/look-2");
   
+  # Add break symbol to output file to separate classes
+  print ERR "\/\/ -----------------------------\n";
   return($added, $removed);
 }
 
@@ -336,6 +338,8 @@ Display
 DNA
 Expr_pattern
 Expr_profile
+Feature
+Feature_data
 Gene_Class
 Gene_name
 GO_term
