@@ -1,11 +1,11 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/bin/perl5.8.0 -w
 #
 # release_letter.pl                            
 # 
 # by Anthony Rogers                             
 #
 # Last updated by: $Author: krb $               
-# Last updated on: $Date: 2003-05-02 13:51:21 $         
+# Last updated on: $Date: 2003-05-30 10:14:31 $         
 #
 # Generates a release letter at the end of build.
 #
@@ -66,8 +66,8 @@ my $webdir = "/nfs/WWWdev/htdocs/Projects/C_elegans/WORMBASE";
 if( defined($opt_l)) {
   my $release_letter = "/wormsrv2/autoace/RELEASE_LETTERS/letter.WS$ver";
   open (RL,">$release_letter");
-  print RL "New Release of acedb WS$ver, Wormpep$ver and Wormrna$ver $date\n\n";
-  print RL "WSxx was built by \n";
+  print RL "New release of WormBase WS$ver, Wormpep$ver and Wormrna$ver $date\n\n";
+  print RL "WS$ver was built by \n";
   print RL "======================================================================\n\n";
   print RL "This directory includes:\n";
   print RL "i)\tdatabase.WS$ver.*.tar.gz    -   compressed data for new release\n";
