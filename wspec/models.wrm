@@ -3,6 +3,7 @@
 // This file is read only when starting a new database or when you select 
 // "Read Models" or "Add Update File" from the main menu.
 
+// ALL WormBase groups should be in sync with this set of models
 
 
 ////////////////////////
