@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: krb $
-// Last edited on: $Date: 2004-06-02 07:43:53 $
+// Last edited on: $Date: 2004-06-02 07:57:08 $
  
 
 
@@ -1199,6 +1199,7 @@
                 Type    UNIQUE Coding_pseudogene Text // [110803 dl] 
                                RNA_pseudogene Text    // Text can store type of RNA (probably tRNA)
                                Transposon
+		Properties Isoform #Evidence
                 Visible Gene         UNIQUE ?Gene XREF Pseudogene         // when Pseudogene is live
                         Gene_history UNIQUE ?Gene XREF Pseudogene_history // when Pseudogene is dead
 			Contained_in_operon ?Operon XREF Contains_pseudogene

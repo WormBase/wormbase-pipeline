@@ -1,8 +1,3 @@
-2nd June, 2004
-Added Species tag to RNAi model. We might have briggsae RNAi info in future
-
-1st June, 2004
-Fixed bug in PCR product model, which was not linking to Transcript class properly
 
 14th April, 2004
 ?3d_data - new class, not picked up on website at all
@@ -49,3 +44,15 @@ this is for RNA sequences that come in via EMBL/GenBank, not for our own Transcr
 New Method for BLATTING non-coding RNA sequences against genome...previously these were (mistakenly)
 included as part of BLAT_mRNA_BEST and BLAT_mRNA_OTHER, these will now be BLAT_ncRNA_BEST and BLAT_ncRNA_OTHER
 New tracks needed???  These will have GFF_feature 'nucleotide_match'
+
+1st June, 2004
+Fixed bug in PCR product model, which was not linking to Transcript class properly
+
+2nd June, 2004
+Added Isoform tag to ?Pseudogene model
+
+2nd June, 2004
+Added Species tag to RNAi model. We might have briggsae RNAi info in future
+
+
+
