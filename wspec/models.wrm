@@ -198,6 +198,7 @@
 	Sequence_details Sequence ?Sequence XREF Allele #Evidence
                          Flanking_sequences UNIQUE Text UNIQUE Text
                          Allelic_difference UNIQUE ?Text #Evidence
+			 Transcript ?Transcript XREF Allele // added for two cases of RNA genes with alleles [021126 krb]
 			 Knocks_out ?Sequence XREF Knock_out_allele // new to handle KO alleles krb [021114]
         Reference_Allele
 	Isolation	Author	Text	// Isolator - should be ?Author
@@ -1048,6 +1049,7 @@
 			// Gene ?Gene XREF Transcript
                         // CDS ?CDS XREF Transcript 
 			// Not ready for these two yet
+			Allele ?Allele XREF Transcript // added to fit two alleles of RNA genes [021127 krb]
                         Matching_cDNA ?Sequence XREF Matching_transcript
                         Remark ?Text
                         Confidential_remark ?Text
