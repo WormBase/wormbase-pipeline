@@ -45,10 +45,6 @@
 # Variables                                                                               #
 ###########################################################################################
 
-#BEGIN  {
-# unshift (@INC,"/nfs/disk100/wormpub/analysis/scripts");
-#}
-
 $|=1;
 use lib "/wormsrv2/scripts/";
 use Wormbase;
@@ -118,7 +114,7 @@ $wormbasedir = "$basedir/wormbase";
  ################################################
 
 $configfile = "/wormsrv2/autoace_config/autoace.config";
-$makeChromLinks = "/nfs/disk100/wormpub/analysis/scripts/makeChromLinks.pl -l $autodir";
+$makeChromLinks = "/wormsrv2/scripts/makeChromLinks.pl -l $autodir";
 
  ################################################
  # Avoid filling process table with zombies     #
@@ -726,7 +722,7 @@ sub gffdump {
   unless (fork) {
     unless (fork) {
       sleep 1 until getppid == 1;
-      $rs = system ("/nfs/disk100/wormpub/analysis/scripts/chrom_dump_3.0 $dumpdir") ;
+      $rs = system ("/wormsrv2/scripts/chrom_dump_3.0 $dumpdir") ;
       open(MAIL, "| Mail -s \"New_Make_autoace_log\" $maintainers");
       open (INLOG,"/bin/cat $logfile |");
       while (<INLOG>) {
