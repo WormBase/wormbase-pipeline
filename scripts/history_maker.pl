@@ -9,16 +9,19 @@ require Tk::Dialog;
 my $source;
 my $design;
 my $chromosome;
+my $blast;
 my $user;
 
 GetOptions (
 	    "source:s"     => \$source,
 	    "design"       => \$design,
 	    "chromosome:s" => \$chromosome,
+	    "blast=s"      => \$blast,
 	    "user:s"       => \$user,
 	    "help|h"         => sub { system("perldoc $0"); exit(0);}
 	   );
 
+die "$blast doesnt exist !\n" if ($blast and !(-e $blast));
 
 # This is the database used a reference for generating histories NOT the one that will be changed
 my $database = $source ? $source : glob("~wormpub/camace_orig");
@@ -41,6 +44,7 @@ $main_gui->configure(-title => "Curation Tool for WS${version}",
 
 my $gui_height = 300;
 $gui_height += 200 if $chromosome;
+$gui_height += 200 if $blast;
 $main_gui->geometry("500x$gui_height");
 
 
@@ -192,6 +196,48 @@ my $clear_gene = $gene_blesser->Button( -text => "Clear",
 				    );
 
 
+###########################################################
+#blast hit  locator frame
+if ( $blast ) {
+  my $blast_find = $main_gui->Frame( -background => "purple",
+				     -label      => "Blast hit locator",
+				     -relief     => "raised",
+				     -borderwidth => 5,
+				   )->pack( -pady => "20",
+					    -fill => "x"
+					  );
+
+  my $blast_list = $blast_find->Scrolled("Listbox", -scrollbars => "osoe",
+					 -selectmode => "single",
+					 -height     => "5",
+					 -width      => "100"
+					)->pack();
+
+
+  my $go_to_blast = $blast_find->Button ( -text    => "Go to blast hit",
+					  -command => [\&goto_intron,\$blast_list]
+					)->pack ( -side => 'right',
+						  -pady => '2',
+						  -padx => '6',
+						  -anchor => "w"
+						);
+
+
+
+  open (BLASTS, "<$blast") or die "cant open $blast\n";
+  # K09E2   1660    1860    0.577   8659300
+  my @data;
+  while ( <BLASTS> ) {
+    my @input = split;
+    next if ( $input[3] < 10);
+    chomp;
+    push( @data, "$input[0]  $input[1]  $input[2]   $input[3]");
+  }
+  close BLASTS;
+  foreach (sort @data){
+    $blast_list->insert('end',"$_");
+  }
+}
 
 ###########################################################
 
@@ -395,7 +441,7 @@ sub clear
 
 
 #############################################################################
-# intron finder
+# intron finder ( also used by blast hit finder) 
 
 sub goto_intron
   {
