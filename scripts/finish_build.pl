@@ -12,8 +12,8 @@
 # 3) Archives old GFF_SPLITS directory
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
-# Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2004-01-06 17:07:08 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2004-02-02 12:21:25 $
 
 
 use strict;
@@ -24,6 +24,7 @@ use Getopt::Long;
 use Common_data;
 use Cwd;
 use File::Glob ':glob';
+use File::Path;
 
 
 ##############################
@@ -163,19 +164,28 @@ sub create_log_files{
 #################################################################################
 
 sub delete_files_from {
-    my ($directory,$pattern,$folder)  = @_;
-    my @list;
-    my $file;
+  my ($directory,$pattern,$folder)  = @_;
+  my @list;
+  my $file;
 
-    chdir $directory;
-    @list = glob('$pattern');
-    foreach $file (@list) {
+  if ( $folder eq "+" ) {
+    print LOG "Removing entire dir and subdirs of $directory\n" if $verbose;
+    rmtree($directory);
+  } 
+  else {
+    
+    opendir (TO_GO,$directory) or die "cant get listing of $directory\n";;
+    $pattern = "." if $pattern eq "*";
+    while ( $file = readdir(TO_GO)) {
+      next if( $file eq "." or $file eq "..") ;
+      if ( $file =~ /$pattern/ ) {
 	print LOG "Deleting $file\n" if ($verbose);
-	unlink ("$file");
+	unlink ("$directory/$file");
+      } else {
+	print LOG "Leaving $file\n" if $verbose;
+      }
     }
-
-    # remove the directory if told to do so
-    rmdir($directory) if ($folder eq "+");
+  }
 }
 
 sub archive_old_releases{
