@@ -40,10 +40,14 @@ while (<SOURCE>) {
   }
 }
 
+close(SOURCE);
+close(PEP);
+close(ACE);
+
 print "\n\nabout to copy (scp) $acefile to /wormsrv2/wormbase/ensembl_dumps/\n";
 system ("scp -r $acefile wormpub\@wormsrv2:/wormsrv2/wormbase/ensembl_dumps/") and warn "copy $acefile failed\n";
 
-print "\nMaking blast database from peptide file - $pepfile\n";
-system ("setdb $pepfile") and warn "setdb failed\n";
+print "\n$source_file is now converted to $pepfile...now removing $source_file\n";
+system ("rm -f $source_file") and warn "removing $source_file failed\n";
 __END__
 
