@@ -1746,7 +1746,7 @@
         Paper ?Paper
         Sequence ?Sequence XREF From_author
         Keyword ?Keyword
-        Contact_details_confirmed DateType // Added for Juancarlos [020322 krb]
+
 
 
 
