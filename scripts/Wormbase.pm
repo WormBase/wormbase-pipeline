@@ -9,7 +9,7 @@ use Exporter;
 use Carp;
 use Ace;
 @ISA       = qw(Exporter);
-@EXPORT    = qw(get_wormbase_version get_wormbase_version_name get_wormbase_release_date copy_check mail_maintainer celeaccession tace gff_sort dbfetch clones_in_database open_TCP DNA_string_reverse DNA_string_composition release_databases find_file_last_modified release_composition release_wormpep test_user_wormpub);
+@EXPORT    = qw(get_wormbase_version get_wormbase_version_name get_wormbase_release_date copy_check mail_maintainer celeaccession tace gff_sort dbfetch clones_in_database open_TCP DNA_string_reverse DNA_string_composition release_databases find_file_last_modified release_composition release_wormpep test_user_wormpub runtime);
 @EXPORT_OK = qw(get_script_version); 
 
 
@@ -682,6 +682,11 @@ sub test_user_wormpub
     }
   }
 
+#############################################
+sub runtime {
+  my $runtime    = `date +%H:%M:%S`; chomp $runtime;
+  return $runtime;
+}
 ################################################################################
 #Return a true value
 ################################################################################
