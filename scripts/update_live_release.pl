@@ -5,8 +5,8 @@
 # by Anthony Rogers
 #
 # Updates the local webpages in synch with the main website
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2004-05-07 11:28:54 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2004-06-18 15:22:07 $
 
 
 use strict;
@@ -22,29 +22,6 @@ Getoptions ("release:s" => \$release );
 die "you must give a release version ( just numbers eg -release 125 )\n" unless $release;
 
 my $www = "/nfs/WWWdev/htdocs/Projects/C_elegans";
-###################################
-# Make data on FTP site available
-###################################
-
-# FTP site data is there but sym link needs to be updated so people can easily point to it
-
-print LOG "Updating symlink on FTP site\n";
-
-my $targetdir = "/nfs/disk69/ftp/pub/wormbase";  # default directory, can be overidden
-
-# delete the old symbolic link and make the new one
-system "rm -f $targetdir/development_release";
-system "cd $targetdir; ln -s $release development_release";
-
-
-###########################################################################################################
-# Create new symbolic link
-###########################################################################################################
-my $wwwlive          = "/nfs/WWW/htdocs/Projects/C_elegans/WORMBASE";
-print LOG "\nChanging 'current symbolic link to point to new release\n";
-system("rm -f $www/current") && croak "Couldn't remove 'current' symlink\n";
-system("ln -s $wwwlive/$release/ $www/current") && croak "Couldn't create new symlink\n";
-
 
 ############################################
 # update wormpep files
