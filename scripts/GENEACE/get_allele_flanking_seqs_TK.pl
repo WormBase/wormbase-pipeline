@@ -4,8 +4,8 @@
 #
 # by Chao-Kung Chen [030625]
 
-# Last updated on: $Date: 2004-12-10 15:13:48 $
-# Last updated by: $Author: krb $
+# Last updated on: $Date: 2005-02-21 11:53:39 $
+# Last updated by: $Author: ar2 $
 
 use Tk;
 use strict;
@@ -541,7 +541,7 @@ sub run {
     $ace_window->insert('end', "\nGene : \"$Gene_info{$cgc_name}{'Gene'}\"  \/\/$cgc_name\n");
     $ace_window->insert('end', "\/\/Allele \"$allele\" Paper_evidence \"$paper_name\"\n");
 
-    $ace_window->insert('end', "\nAllele : \"$allele\"\n");
+    $ace_window->insert('end', "\nVariation : \"$allele\"\n");
     $ace_window->insert('end', "\/\/Evidence Paper_evidence \"$paper_name\"\n");
     $ace_window->insert('end', "Flanking_sequences \"$dna_L\" \"$dna_R\"\n");
     $ace_window->insert('end', "Sequence \"$seq\"\n");
@@ -1008,9 +1008,9 @@ sub write_ace {
   my ($Lf, $Rf, $allele, $cgc_name, $seq) = @_;
 
   $ace_window->insert('end', "\nGene : \"$Gene_info{$cgc_name}{'Gene'}\"\n");
-  $ace_window->insert('end', "Allele \"$allele\" Paper_evidence \"$paper_name\"\n");
+  $ace_window->insert('end', "Variation \"$allele\" Paper_evidence \"$paper_name\"\n");
   
-  $ace_window->insert('end', "\nAllele : \"$allele\"\n");
+  $ace_window->insert('end', "\nVariation : \"$allele\"\n");
   $ace_window->insert('end', "Evidence Paper_evidence \"$paper_name\"\n");
   $ace_window->insert('end', "Sequence \"$seq\"\n");
   $ace_window->insert('end', "Flanking_sequences \"$Lf\" \"$Rf\"\n");
