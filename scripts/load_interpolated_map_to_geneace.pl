@@ -4,11 +4,13 @@
 
 # by Chao-Kung Chen
 
-# Last updated on: $Date: 2003-08-01 10:41:39 $
+# Last updated on: $Date: 2003-09-04 09:58:35 $
 # Last updated by: $Author: ck1 $
 
 
 # Automatically update Geneace with interpolated map
+# Run this script AFTER the build is released, so that the version is in synch with autoace just released
+
 
 use strict;                    
 use lib "/wormsrv2/scripts/";
