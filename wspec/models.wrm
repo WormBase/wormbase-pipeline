@@ -640,6 +640,8 @@
 
 #Evidence Paper_evidence ?Paper
 	  PMID_evidence Text // Text field should just store PubMed ID number
+	  Published_as Gene UNIQUE ?Gene_name // for tracking how things first appeared in 
+                                              // literature [krb 031024]
 	  Person_evidence ?Person
 	  Author_evidence ?Author UNIQUE Text
 	  Accession_evidence ?Database ?Accession_number // added for and by krb 020422
@@ -648,7 +650,7 @@
 	  CGC_disapproved Text #Evidence // for flagging bad gene names that are in use even as
                                          // 'Other_name' which never had CGC backing [krb 031024]
 	  Curator_confirmed ?Person // new tag to help flag evidence we believe in! [krb 030307]
-	  Inferred_automatically Text
+	  Inferred_automatically Text // used by some scripts for things like gene->cDNA connections
 
 
 //
