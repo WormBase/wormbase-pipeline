@@ -12,8 +12,8 @@
 # 3) Archives old GFF_SPLITS directory
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2004-02-03 11:02:38 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2004-02-17 15:01:13 $
 
 
 use strict;
@@ -84,11 +84,10 @@ print LOG "Transferring autoace into /wormsrv2/$WS_name\n";
 system("TransferDB.pl -start /wormsrv2/autoace -end /wormsrv2/$WS_name -database -release -wspec -chromosomes -name $WS_name") 
   && die "couldn't run TransferDB for autoace\n";
 
-# Remove redundant files from /wormsrv2/autoace/release and /wormsrv2/autoace/CHROMOSOMES
+# Remove redundant files from /wormsrv2/autoace/release
 print LOG "Removing old files in /wormsrv2/autoace/release/\n";
 &delete_files_from("/wormsrv2/autoace/release","*","-");
-print LOG "Removing old files in /wormsrv2/autoace/CHROMOSOMES/\n";
-&delete_files_from("/wormsrv2/autoace/CHROMOSOMES","*","-");
+
 
 
 # Remove redundant files from /wormsrv2/autoace/logs
@@ -112,16 +111,20 @@ system("update_Common_data.pl -update -in_build -all") && die "Couldn't run upda
 system("/nfs/intweb/cgi-bin/wormpub/confirmed_introns/parse_gff.pl") && warn "Couldn't run parse_gff.pl\n";
 
 
-# Transfer autoace to ~wormpub/DATABASES/current_DB
-print LOG "Transferring autoace to ~wormpub/DATABASES/current_DB\n";
-print LOG "First removing ~wormpub/DATABASES/current_DB/database/ and ~wormpub/DATABASES/current_DB/database/CHROMOSOMES/\n";
-
+# Transfer autoace to ~wormpub/DATABASES/current_DB - first remnove existing files
+print LOG "Removing ~wormpub/DATABASES/current_DB/database/ and ~wormpub/DATABASES/current_DB/database/CHROMOSOMES/\n";
 &delete_files_from("/nfs/disk100/wormpub/DATABASES/current_DB/database","*","+");
 &delete_files_from("/nfs/disk100/wormpub/DATABASES/current_DB/CHROMOSOMES","*","+");
+
+# run TransferDB.pl for actual transfer
+print LOG "Running TransferDB.pl to copy autoace to ~wormpub/DATABASES/current_DB\n";
 system("TransferDB.pl -start $basedir/autoace -end /nfs/disk100/wormpub/DATABASES/current_DB -database -chromosomes -wspec -name $WS_name")  && die "couldn't run TransferDB for wormpub\n";
+print LOG "Unzipping any gzipped chromosome files\n";
 system("/bin/gunzip /nfs/disk100/wormpub/DATABASES/current_DB/CHROMOSOMES/*.gz") && die "Couldn't gunzip CHROMOSOMES/*.gz\n";
 
-
+# More tidying up
+print LOG "Removing old CHROMOSOME files in /wormsrv2/autoace/CHROMOSOMES/\n";
+&delete_files_from("/wormsrv2/autoace/CHROMOSOMES","*","-");
 
 ##################
 # End
