@@ -6,8 +6,8 @@
 #
 # Builds a wormrna data set from the current autoace database
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-04-25 10:57:25 $
+# Last updated by: $Author: dl1 $
+# Last updated on: $Date: 2002-05-01 14:42:11 $
 
 
 #################################################################################
@@ -99,7 +99,7 @@ print LOG "# $runtime : connect to primary database\n";
 
 my $db = Ace->connect (-path => $dbdir, -program => $tace) || &error(5);
 my @dotnames_1 = $db->fetch (-query => 'FIND Genome_sequence ; FOLLOW Subsequence ; where (Method = rna) OR (Method=tRNAscan-SE-1.11)');
-my @dotnames_2 = $db->fetch (-query => 'FIND Sequence *LINK* ; FOLLOW Subsequence ; where (Method = rna) OR (Method=tRNAscan-SE-1.11)');
+my @dotnames_2 = $db->fetch (-query => 'FIND Sequence SUPERLINK* ; FOLLOW Subsequence ; where (Method = rna) OR (Method=tRNAscan-SE-1.11)');
 
 push (@dotnames_1 , @dotnames_2);
 @dotnames_1 = sort @dotnames_1;
