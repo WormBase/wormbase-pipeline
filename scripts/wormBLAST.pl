@@ -5,8 +5,7 @@ use strict;
 my $wormpipe_dir = glob("~wormpipe");
 use lib "/nfs/acari/wormpipe/scripts";
 use lib "/nfs/acari/wormpipe/scripts/BLAST_scripts";
-use lib "/wormsrv2/scripts/";
-#use Wormbase;
+use Wormbase;
 use Getopt::Long;
 
 #######################################
@@ -32,7 +31,7 @@ my $cleanup;
 my $errors; # for tracking global error
 my $debug;
 my $log;
-my $WS_version  = &get_WS_version; # e.g. '112'
+my $WS_version;
 my $maintainers = "All"; # email recipients
 
 GetOptions("chromosomes" => \$chromosomes,
@@ -627,13 +626,17 @@ sub wait_for_pipeline_to_finish
 
 sub check_wormsrv2_conflicts
   {
-    if( ($chromosomes || $wormpep  || $update_databases || $update_mySQL || $prep_dump) && ($blastx || $blastp || $dump_data) ) 
+    if( ( -e "/wormsrv2" ) && ($blastx || $blastp || $dump_data) )
       {
-	print "no can do - to run the blast pipeline wormsrv2 can NOT be mounted.  Your options conflict with this.\nthe following options REQUIRE wormsrv2 - \n\t-chromosomes\t-wormpep\t-updatemysql\n\n";
+	print "no can do - to run the blast pipeline wormsrv2 can NOT be mounted.  Your options conflict with this.\nthe following options REQUIRE wormsrv2 to not be mounted \n\t-blastx\t-blastp\t-dump\t-run\t-testpipe\t-run_brig\t-cleanup\n\n";
 	exit (1);
       }
+    elsif( !(-e "/wormsrv2") && ($chromosomes || $wormpep  || $update_databases || $update_mySQL || $prep_dump) ) {
+      print "The following option need access to wormsrv2 and it aint there (rsh wormsrv2 )\n";
+      print "-chromosomes\t-wormpe\t-databases\t-mysql\t-prep_dump\n";
+    }
     else {
-      print "command line options checked and seem OK (in terms of wormsrv2 requirements )\n\n";
+      print "wormsrv2 requirements and command line options checked and seem OK \n";
     }
   }
 
@@ -705,13 +708,10 @@ sub get_updated_database_list
 sub create_log_files{
 
   # create main log file using script name for
-  my $script_name = $1;
-  $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
-  my $rundate     = `date +%y%m%d`; chomp $rundate;
-  $log        = "/nfs/acari/wormpipe/logs/${script_name}.${WS_version}.${rundate}.$$";
+  $log        = "/nfs/acari/wormpipe/logs/wormBLAST.${WS_version}.${rundate}.$$";
 
   open (LOG, ">$log") or die "cant open $log";
-  print LOG "$script_name\n";
+  print LOG "$0\n";
   print LOG "started at ",&runtime,"\n";
   print LOG "=============================================\n";
   print LOG "\n";
