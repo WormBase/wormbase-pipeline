@@ -8,7 +8,7 @@ use DB_File;
 #######################################
 # command-line options                #
 #######################################
-my ($test, $debug, $help, $all, $WPver, $analysisTOdump, $just_matches, $matches);
+my ($test, $debug, $help, $all, $WPver, $analysisTOdump, $just_matches, $matches, $list);
 GetOptions ("debug=s"   => \$debug,
 	    "test"    => \$test,
 	    "help"    => \$help,
@@ -16,7 +16,8 @@ GetOptions ("debug=s"   => \$debug,
 	    "analysis=s" => \$analysisTOdump,
 	    "version=s" =>\$WPver,
 	    "just_matches" => \$just_matches,
-	    "matches"   => \$matches
+	    "matches"   => \$matches,
+	    "dumplist=s"   =>\$list
            );
 
 my $maintainers = "All";
@@ -131,7 +132,13 @@ unless (@peps2dump)  {
       push( @peps2dump, $_ );
     }
   }
-  
+  elsif ($list) {
+    open( LIST,"<$list") or die "cant opne list file $list\n";
+    while (<LIST>) {
+      chomp;
+      push( @peps2dump, $_ );
+    }
+  }
   else {
     open( DIFF,"<$wormpipe/Elegans/wormpep.diff$WPver") or die "cant opne diff file $wormpipe/Elegans/wormpep.diff$WPver\n";
     print LOG " : Dumping updated proteins ( wormpep.diff$WPver )\n";
@@ -234,7 +241,8 @@ foreach $pep (@peps2dump)
     foreach my $result_row (@$ref_results)
       {
 	($proteinId, $analysis,  $myHomolStart, $myHomolEnd, $homolID, $pepHomolStart, $pepHomolEnd, $e, $cigar) = @$result_row;
-	unless( defined $e) { $e = 1000 };# mysql gives -log10(v small no) as NULL 
+	unless( defined $e) 
+	  { $e = 1000 };# mysql gives -log10(v small no) as NULL 
 	my @data = ($proteinId, $processIds2prot_analysis{$analysis},  $myHomolStart, $myHomolEnd, $homolID, $pepHomolStart, $pepHomolEnd, $e, $cigar);
 	if( $analysis == 11 )   #wormpep
 	  {
