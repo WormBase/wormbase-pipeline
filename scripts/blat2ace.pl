@@ -75,12 +75,6 @@ getopts ('csemxoih');
 ($type = 'EMBL')     if ($opt_o);
 ($type = 'NEMATODE') if ($opt_x);
 
-# if no database option given then do both.
-# (i know but oranges are not the only fruit)
-($db = "camace")  if ($opt_c);
-($db = "stlace")  if ($opt_s);
-($db = "autoace") if (!$opt_c && !$opt_s);
-
 ############################################
 # EST data from autoace (name,orientation) #
 ############################################
@@ -124,7 +118,7 @@ foreach my $stlclone (@stlclones) {
 print LOG "Start mapping\n\n";
 
 # output filehandle
-open(ACE,  ">$dir/${db}.$type.ace")  or die "Cannot open $dir/${db}.${type}.ace $!\n";
+open(ACE,  ">$dir/autoace.$type.ace")  or die "Cannot open $dir/autoace.${type}.ace $!\n";
 
 # input filehandle
 open(BLAT, "<$dir/${type}_out.psl")  or die "Cannot open $dir/${type}_out.psl $!\n";
@@ -153,13 +147,11 @@ while (<BLAT>) {
 
 
 #    print "$est maps to $superlink [currentDB: $db => $camace{$superlink} | $stlace{$superlink}]\n";
-
-    # next if LINK is part of camace BUT we want stlace
-    next if ((defined ($camace{$superlink})) && ($opt_s));
-    
-    # next if LINK is part of stlace BUT we want camace
-    next if ((defined ($stlace{$superlink})) && ($opt_c));
-    
+#    # next if LINK is part of camace BUT we want stlace
+#    next if ((defined ($camace{$superlink})) && ($opt_s));
+#    
+#    # next if LINK is part of stlace BUT we want camace
+#    next if ((defined ($stlace{$superlink})) && ($opt_c));
 #    print "$est will be processed\n";
 
 
@@ -304,7 +296,9 @@ close ACE;
 
 &usage(20) if ($opt_x);
 
-open (AUTBEST, ">$dir/$db.best.$type.ace");
+open (AUTBEST, ">$dir/autoace.best.$type.ace");
+open (STLBEST, ">$dir/stlace.best.$type.ace");
+open (CAMBEST, ">$dir/camace.best.$type.ace");
 
 foreach my $found (sort keys %best) {
     if (exists $best{$found}) {
@@ -319,9 +313,20 @@ foreach my $found (sort keys %best) {
 		    my $eststart     = $ex->[2];
 		    my $estend       = $ex->[3];
 		    
-		    # print line
+		    # print line for autoace
 		    print  AUTBEST "Homol_data : \"$virtual\"\n";
 		    printf AUTBEST "DNA_homol\t\"%s\"\t\"$word{$type}_BEST\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$found,$score,$virtualstart,$virtualend,$eststart,$estend;
+		    # camace
+		    if ($camace{$superlink}) {
+			print  CAMBEST "Homol_data : \"$virtual\"\n";
+			printf CAMBEST "DNA_homol\t\"%s\"\t\"$word{$type}_BEST\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$found,$score,$virtualstart,$virtualend,$eststart,$estend;
+		    }
+		    # and stlace
+		    elsif ($stlace{$superlink}) {
+			print  STLBEST "Homol_data : \"$virtual\"\n";
+			printf STLBEST "DNA_homol\t\"%s\"\t\"$word{$type}_BEST\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$found,$score,$virtualstart,$virtualend,$eststart,$estend;
+		    }
+		    
 		}
 		    
 		#############################
@@ -371,6 +376,8 @@ foreach my $found (sort keys %best) {
     }
 }
 close AUTBEST;
+close CAMBEST;
+close STLBEST;
 
 ########################################################
 # produce final BLAT output (including BEST and OTHER) #
@@ -378,34 +385,73 @@ close AUTBEST;
 
 &usage(20) if ($opt_x);
 
-open(AOTHER, "$dir/${db}.$type.ace");
-open(ABEST,  "$dir/${db}.best.$type.ace");
-open(AOUT,  ">$dir/${db}.blat.$type.ace");
+# autoace
+open (OUT_autoace, ">$dir/autoace.blat.$type.ace") or die "$!";
+# camace
+open (OUT_camace,  ">$dir/camace.blat.$type.ace")  or die "$!";
+# stlace
+open (OUT_stlace,  ">$dir/stlace.blat.$type.ace")  or die "$!";
 
+
+#open(AOUT,  ">$dir/autoace.blat.$type.ace");
 
 my (%line);
 my $temp = $/;
 $/ = "";
-while (<ABEST>) {
-#	print $_;
-	if ($_ =~ /^Homol_data/) {
-		$line{$_} = 1;
-		print AOUT $_;
-	}
-}
 
+my $superlink = "";
+
+# assign 
+open(ABEST,  "<$dir/autoace.best.$type.ace");
+while (<ABEST>) {
+#   print $_;
+    if ($_ =~ /^Homol_data/) {
+	$line{$_} = 1;
+	($superlink) = (/\"BLAT\_$type\:(\S+)\_\d+\"/);
+
+#	Homol_data : "BLAT_EST:SUPERLINK_RW5_45"
+
+	print OUT_autoace "// Source $superlink\n\n";
+	print OUT_autoace $_;
+	    
+	# camace
+	if ($camace{$superlink}) {
+	    print OUT_camace $_;
+	}
+	# and stlace
+	elsif ($stlace{$superlink}) {
+	    print OUT_stlace $_;
+	}
+    }
+}
+close ABEST;
+
+
+open(AOTHER, "<$dir/autoace.$type.ace");
 while (<AOTHER>) {
 #	print $_;
-	if ($_ =~ /^Homol_data/) {
-		my $line = $_;
-		s/BLAT_EST_OTHER/BLAT_EST_BEST/g unless ($opt_m || $opt_o || $opt_x);
-		s/BLAT_mRNA_OTHER/BLAT_mRNA_BEST/g   if ($opt_m);
-		s/BLAT_EMBL_OTHER/BLAT_EMBL_BEST/g   if ($opt_o);
-		unless (exists $line{$_}) {
-			print AOUT $line;
-		}	
-	}
+    if ($_ =~ /^Homol_data/) {
+	my $line = $_;
+	s/BLAT_EST_OTHER/BLAT_EST_BEST/g unless ($opt_m || $opt_o || $opt_x);
+	s/BLAT_mRNA_OTHER/BLAT_mRNA_BEST/g   if ($opt_m);
+	s/BLAT_EMBL_OTHER/BLAT_EMBL_BEST/g   if ($opt_o);
+
+	unless (exists $line{$_}) {
+	    print OUT_autoace $line;
+
+	    # camace
+	    if ($camace{$superlink}) {
+		print OUT_camace $line;
+	    }
+	    # and stlace
+	    elsif ($stlace{$superlink}) {
+		print OUT_stlace $line;
+	    }
+	    
+	}	
+    }
 }
+close AOTHER;
 
 $/= $temp;
 
@@ -414,21 +460,45 @@ $/= $temp;
 ###################################
 
 if ($opt_i) {
-    open(ACI,">$dir/${db}.ci.${type}.ace");
+
+    open(CI_auto, ">$dir/autoace.ci.${type}.ace");
+    open(CI_cam,  ">$dir/camace.ci.${type}.ace");
+    open(CI_stl,  ">$dir/stlace.ci.${type}.ace");
+   
     foreach my $superlink (sort keys %ci) {
 	my %double;
-	print ACI "Sequence : \"$superlink\"\n";
+	
+	print CI_auto "\nSequence : \"$superlink\"\n";
+	print CI_stl  "\nSequence : \"$superlink\"\n" if ($stlace{$superlink});
+	print CI_cam  "\nSequence : \"$superlink\"\n" if ($camace{$superlink});
+	
 	for (my $i = 0; $i < @{$ci{$superlink}}; $i++) {
 	    my $merge = $ci{$superlink}->[$i][0].":".$ci{$superlink}->[$i][1];
 	    if (!exists $double{$merge}) {
-		(printf ACI "Confirmed_intron %d %d mRNA\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($opt_m);
-		(printf ACI "Confirmed_intron %d %d Homol\n", $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($opt_o);
-		(printf ACI "Confirmed_intron %d %d EST\n",   $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($opt_e);
+		if ($opt_m) {
+		    printf CI_auto "Confirmed_intron %d %d mRNA\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1];
+		    (printf CI_cam "Confirmed_intron %d %d mRNA\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($camace{$superlink});
+		    (printf CI_stl "Confirmed_intron %d %d mRNA\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($stlace{$superlink});
+		}
+		if ($opt_o) {
+		    printf CI_auto "Confirmed_intron %d %d Homol\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1];
+		    (printf CI_cam "Confirmed_intron %d %d Homol\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($camace{$superlink});
+		    (printf CI_stl "Confirmed_intron %d %d Homol\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($stlace{$superlink});
+		}
+		if ($opt_e) {
+		    printf CI_auto "Confirmed_intron %d %d EST\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1];
+		    (printf CI_cam "Confirmed_intron %d %d EST\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($camace{$superlink});
+		    (printf CI_stl "Confirmed_intron %d %d EST\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($stlace{$superlink});
+		}
 		$double{$merge} = 1;
 	    }
 	}
-	    print ACI "\n";
     }
+    
+    close CI_auto;
+    close CI_cam;
+    close CI_stl;
+
 }
 
 ##############################
