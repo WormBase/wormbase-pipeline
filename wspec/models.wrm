@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: krb $
-// Last edited on: $Date: 2004-09-17 14:30:14 $
+// Last edited on: $Date: 2004-09-17 14:30:52 $
  
 
 
@@ -964,7 +964,6 @@
 				   snRNA UNIQUE Text
 				   snoRNA UNIQUE Text // [030102 krb]
 				   scRNA UNIQUE Text
-				   stRNA UNIQUE Text         // [010723 dl]
 				   miRNA UNIQUE Text         // [020306 kj]
 				   ncRNA UNIQUE Text	     // for everything else that doesn't have a known type
 			Ignore #Evidence // tag to flag problem Sequence objects to avoid certain analysis [031120 krb]
