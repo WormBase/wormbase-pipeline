@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl -w
+#!/usr/local/bin/perl5.6.0 -w
 #
 # patch_wormpep
 # v 0.2
@@ -25,7 +25,7 @@ use Getopt::Std;
 use Cwd;
 use lib '/wormsrv2/scripts';
 use Wormbase;
-
+use Ace;
 
  ##############################
  # command-line options       #
@@ -49,6 +49,7 @@ my $runtime = `date +%H:%M:%S`; chomp $runtime;
 my $cvs_version = &get_cvs_version($0);
 my $log="/wormsrv2/logs/patch_wormpep${release}.${rundate}.$$";
 
+my $db = Ace->connect(-path  =>  '/wormsrv2/pepace') || die "Couldn't connect to pepace\n", Ace->error;
 
 my $dbfile = "/wormsrv2/WORMPEP/wormpep${release}/wp.fasta${release}";
 
@@ -86,12 +87,16 @@ sub changed {
     
     my($CDS,$old_acc,$new_acc)= @_;
 
+    my $sequence = $db->fetch(Protein => 'WP:$old_acc');
+    my @list = $sequence->Corresponding_DNA;
+    my $length = scalar(@list);
+
     # Delete old entry
     print "Protein : \"WP:$old_acc\"\n";
     print "-D Corresponding_DNA $CDS\n";
     print "-D Wormpep\n";
     print "DB_Remark \"[wormpep${release}] Altered GeneModel, new accession is $new_acc\n";
-    print "Replaced_by WP:$new_acc\n";
+    print "Replaced_by WP:$new_acc\n" if ($length > 1); # don't add this tag if there are 2 or more CDS
     print "\n";
 
     # Add new entry
