@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.0 -w
+#!/usr/local/bin/perl5.8.0 -w
 #
 # unpack_db.pl
 # 
@@ -13,28 +13,28 @@
 # the Caltech database (citace)
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-07-14 09:51:40 $
+# Last updated on: $Date: 2003-12-01 11:54:28 $
 
 
 #################################################################################
 # variables                                                                     #
 #################################################################################
 
-$|=1;
 use IO::Handle;
-use Getopt::Std;
+use Getopt::Long;
 use Cwd;
 use strict;
-use lib "/wormsrv2/scripts/";
+use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
+use File::Copy qw(mv cp);
 
 ##############################
 # Script variables (run)     #
 ##############################
 
 my $maintainers = "All";
-my $rundate    = `date +%y%m%d`; chomp $rundate;
-my $runtime    = `date +%H:%M:%S`; chomp $runtime;
+my $rundate    = &rundate;
+my $runtime    = &runtime;
 
 ##############################
 # Paths for I/O files        #
@@ -44,30 +44,45 @@ my $tace   = &tace;
 my $giface = &giface;
 
 
-
 ##############################
 # command-line options       #
 ##############################
 
-our ($opt_h,$opt_b,$opt_c,$opt_s,$opt_i);
+my $help;
+my $brigace;
+my $citace;
+my $cshace;
+my $stlace;
+my $test;
 
-#options with arguments
-getopt("b:c:s:i:");
-#boolean options
-getopts("h");
+GetOptions (
+            "help"      => \$help,
+            "brigace=s" => \$brigace,
+            "citace=s"  => \$citace,
+            "cshace=s"  => \$cshace,
+            "stlace=s"  => \$stlace,
+            "test"      => \$test
+	    );
 
-&usage if ($opt_h);
-&usage if (!defined($opt_b) && !defined($opt_c) && !defined($opt_s) && !defined($opt_i));
+&usage if ($help);
+&usage if (!defined($brigace) && !defined($citace) && !defined($stlace) && !defined($cshace));
+
+# Set top level path for build, different if in test mode
+my $basedir = "/wormsrv2";
+$basedir    = glob("~wormpub")."/TEST_BUILD" if ($test); 
+
+
+
 
 ##############################################################
 # loop through main routine for each database to be unpacked #
 ##############################################################
 
+&unpack_stuff("brigace",$brigace) if ($brigace);
+&unpack_stuff("citace",$citace)   if ($citace);
+&unpack_stuff("cshace",$cshace)   if ($cshace);
+&unpack_stuff("stlace",$stlace)   if ($stlace);
 
-&unpack_stuff("brigace",$opt_b) if ($opt_b);
-&unpack_stuff("cshace",$opt_c)  if ($opt_c);
-&unpack_stuff("stlace",$opt_s)  if ($opt_s);
-&unpack_stuff("citace",$opt_i)  if ($opt_i);
 
 sub unpack_stuff{
   my $database = shift;
@@ -78,30 +93,30 @@ sub unpack_stuff{
   # set up correct locations
   if ($database eq "brigace"){
     $ftp     = "/nfs/privateftp/ftp-wormbase/pub/incoming/stl";
-    $dbdir   = "/wormsrv2/brigace";
-    $logfile = "/wormsrv2/logs/unpack_briggsae.$rundate.$$";
+    $dbdir   = "$basedir/brigace";
+    $logfile = "$basedir/logs/unpack_briggsae.$rundate.$$";
     $dbname  = "brigdb";
   }
 
   if ($database eq "cshace"){
     $ftp     = "/nfs/privateftp/ftp-wormbase/pub/incoming/csh";
-    $dbdir   = "/wormsrv2/cshace";
-    $logfile = "/wormsrv2/logs/unpack_cshace.$rundate.$$";
+    $dbdir   = "$basedir/cshace";
+    $logfile = "$basedir/logs/unpack_cshace.$rundate.$$";
     $dbname  = "cshl_dump";
   }
 
   if ($database eq "stlace"){
     $ftp     = "/nfs/privateftp/ftp-wormbase/pub/incoming/stl";
-    $dbdir   = "/wormsrv2/stlace";
-    $logfile = "/wormsrv2/logs/unpack_stlace.$rundate.$$";
+    $dbdir   = "$basedir/stlace";
+    $logfile = "$basedir/logs/unpack_stlace.$rundate.$$";
     $dbname  = "stlace";
   }
 
 
   if ($database eq "citace"){
     $ftp     = "/nfs/privateftp/ftp-wormbase/pub/incoming/caltech";
-    $dbdir   = "/wormsrv2/citace";
-    $logfile = "/wormsrv2/logs/unpack_citace.$rundate.$$";
+    $dbdir   = "$basedir/citace";
+    $logfile = "$basedir/logs/unpack_citace.$rundate.$$";
     $dbname  = "citace_dump";
   }
 
@@ -137,11 +152,11 @@ sub unpack_stuff{
   print LOGFILE "Move to directory: '$dir'\n";
 
   # copy database.tar.gz file & check size
-  system ("cp -f $ftp/".$dbname."_$today.tar.gz .") && die "Couldn't run cp command\n";
+  cp("$ftp/".$dbname."_$today.tar.gz", ".") or print LOG "ERROR: Couldn't copy file: $!\n";
 
   my $match = &copy_check("$ftp/".$dbname."_$today.tar.gz","$dbdir/".$dbname."_$today.tar.gz");
   print LOGFILE "Copy '".$dbname."_$today.tar.gz' to $dbdir successful\n" if ($match == 1); 
-  print LOGFILE "Copy '".$dbname."_$today.tar.gz' to $dbdir failed\n" if ($match == 0);
+  print LOGFILE "Copy '".$dbname."_$today.tar.gz' to $dbdir failed\n"     if ($match == 0);
 
   system ("/bin/gzip -d ".$dbname."_$today.tar.gz") && die "Couldn't run gzip command\n";
   print LOGFILE "uncompress file\n";
@@ -167,7 +182,7 @@ sub unpack_stuff{
   # modify displays.wrm for rebuild #
   ###################################
 
-  system ("mv $dbdir/wspec/displays.wrm $dbdir/wspec/displays.old") && die "Couldn't run mv command\n";
+  mv("$dbdir/wspec/displays.wrm", "$dbdir/wspec/displays.old") or print LOG "ERROR: Couldn't rename file: $!\n";
 
   open (FILE_OLD,"$dbdir/wspec/displays.old") || do { 
     print LOGFILE "failed to open $dbdir/wspec/displays.old\n"; 
@@ -197,14 +212,12 @@ sub unpack_stuff{
       die();
   }
 
-  system ("\\rm $dbdir/database/new/*")     && warn "Couldn't run rm command\n";
-  system ("\\rm $dbdir/database/touched/*") && warn "Couldn't run rm command\n";
+  unlink glob("$dbdir/database/new/*") or print LOG "ERROR: Couldn't unlink file: $!\n";
+  unlink glob("$dbdir/database/touched/*") or print LOG "ERROR: Couldn't unlink file: $!\n";
 
-  system ("\\mv $dbdir/database/log.wrm $dbdir/database/log.old") && warn "Couldn't run rm command\n";
-  
-  system ("\\rm $dbdir/database/*.wrm") && warn "Couldn't run rm command\n";
-  
-  unlink "$dbdir/database/ACEDB.wrm";
+  mv("$dbdir/database/log.wrm", "$dbdir/database/log.old") or print LOG "Couldn't rename file: $!\n";
+  unlink glob("$dbdir/database/*.wrm") or print LOG "ERROR: Couldn't run rm command: $!\n";
+  unlink "$dbdir/database/ACEDB.wrm" or print LOG "ERROR: Couldn't unlink file: $!\n";
 
   my $command="y\n";
   print LOGFILE "* Reinitdb: reinitializing the database ..\n";
@@ -246,7 +259,7 @@ END
     unlink $filename;
   }
 
-  $runtime = `date +%H:%M:%S`; chomp $runtime;
+  $runtime = &runtime;
   print LOGFILE "\n$database build complete at $rundate $runtime\n";
   close LOGFILE;
 
@@ -317,10 +330,10 @@ and unpack stlace). It also unpacks the new citace dump.
 This script can be used to replace any or all of the aforementioned
 scripts.  For each of the databases that the user specifies it will
 move the database dump files from the appropriate incoming FTP site 
-to the appropriate subdirectory of /wormsrv2.  It then unpacks the 
-tar.gz file and re-initialises the ACEDB database. After uploading 
-the dump files the directory is cleaned of all uploaded .ace files 
-and the .tar file.
+to the appropriate subdirectory of /wormsrv2 (or ~wormpub/TEST_BUILD/
+if in test mode).  It then unpacks the tar.gz file and re-initialises 
+the ACEDB database. After uploading the dump files the directory is 
+cleaned of all uploaded .ace files and the .tar file.
 
 unpack_db.pl arguments:
 
@@ -328,7 +341,7 @@ unpack_db.pl arguments:
 
 =item *
 
--b <date> unpack St. Louis C. briggsae data and read into brigace
+-brigace <date> unpack St. Louis C. briggsae data and read into brigace
 
 =back
 
@@ -336,7 +349,7 @@ unpack_db.pl arguments:
 
 =item *
 
--c <date> unpack CSHL data and read into cshace
+-cshace <date> unpack CSHL data and read into cshace
 
 =back
 
@@ -344,7 +357,7 @@ unpack_db.pl arguments:
 
 =item *
 
--s <date> unpack St. Louis C. elegans data and read into stlace
+-stlace <date> unpack St. Louis C. elegans data and read into stlace
 
 =back
 
@@ -352,7 +365,7 @@ unpack_db.pl arguments:
 
 =item *
 
--i <date> unpack Caltech data and read into citace
+-citace <date> unpack Caltech data and read into citace
 
 =back
 
@@ -360,18 +373,26 @@ unpack_db.pl arguments:
 
 =item *
 
--h help page (what you are reading now).
+-help, help page (what you are reading now).
 
 =back
 
--b, -c, -s, and -i options each require a 6-figure datestamp (e.g. 001106).  You can 
-work with individual databases or work with all three in one go (note though that
-the script will always process each database in the following order: brigace, cshace, 
-stlace, citace).
+=over 4
+
+=item *
+
+-test, run in test mode, outputs to ~wormpub/TEST_BUILD/
+
+=back
+
+-brigace, -citace, -stlace, and -citace options each require a 6-figure datestamp 
+(e.g. 001106).  You can work with individual databases or work with all three in one 
+go (note though that the script will always process each database in the following order: 
+brigace, cshace, stlace, citace).
 
 Example usage:
 
-unpack_db.pl -s 010719 -b 010725
+unpack_db.pl -stlace 010719 -brigace 010725
 
 This will unpack the St. Louis C. elegans data and the St. Louis C. briggsae data and 
 read them into their respective databases (stlace and brigace).  In this example it will 

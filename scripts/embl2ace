@@ -105,9 +105,9 @@ BEGIN { TRUE = "1" ; FALSE = ""
 	print "Pseudogene"
 	print "Source HSP201"
 	base = 115
-	print "Source_Exons", 116-base, 320-base
-	print "Source_Exons", 372-base, 914-base
-	print "Source_Exons", 1100-base, 1331-base
+	print "Source_exons", 116-base, 320-base
+	print "Source_exons", 372-base, 914-base
+	print "Source_exons", 1100-base, 1331-base
 	HSP201 = TRUE
 	next
       }	

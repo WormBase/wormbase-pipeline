@@ -1,56 +1,69 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/bin/perl5.8.0 -w
 #
 # make_agp_file.pl
-# v0.3
 #
-# dl
-#
-# Usage : make_agp_file.pl
+# by Dan Lawson (dl1@sanger.ac.uk)
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-01-14 16:13:41 $
+# Last edited on: $Date: 2003-12-01 11:54:26 $
 
-
-#################################################################################
-# Initialise variables                                                          #
-#################################################################################
-
-
-$|=1;
 use strict;
-use vars qw ($debug $seq_len $sv_acc $sv_ver $opt_d $opt_h);
-use Getopt::Std;
-use lib '/wormsrv2/scripts';
+use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
+use Getopt::Long;
+use File::Copy qw(mv cp);
 
- ##############################
- # Script variables (run)     #
- ##############################
 
+#################################
+# Command-line options          #
+#################################
+
+my $help;
+my $debug;
+my $test;      # uses test environment
+my $quicktest; # same as $test but only runs one chromosome
+
+GetOptions ("help"         => \$help,
+	    "debug"        => \$debug,
+	    "test"         => \$test,
+            "quicktest"    => \$quicktest);
+
+&error(0) if ($help);
+
+# Use debug mode?
 my $maintainers = "All";
-my $rundate     = `date +%y%m%d`;   chomp $rundate;
-my $runtime     = `date +%H:%M:%S`; chomp $runtime;
+if($debug){
+  print "DEBUG = \"$debug\"\n\n";
+  ($maintainers = $debug . '\@sanger.ac.uk');
+}
+
+# check that -test and -quicktest haven't both been set.  Also if -quicktest is specified, 
+# need to make -test true, so that test mode runs for those steps where -quicktest is meaningless
+if($test && $quicktest){
+  die "both -test and -quicktest specified, only one of these is needed\n";
+}
+($test = 1) if ($quicktest);
+
+
+
+##############################
+# Script variables (run)     #
+##############################
+
+# Set up top level base directory which is different if in test mode
+# Make all other directories relative to this
+my $basedir   = "/wormsrv2";
+$basedir      = "/nfs/disk100/wormpub/TEST_BUILD" if ($test); 
+my $outdir    = "$basedir/autoace/yellow_brick_road";
+my $datadir   = "$basedir/autoace/yellow_brick_road";
+
 
 my @gff_files = ('I','II','III','IV','V','X');
-
-my $outdir    = "/wormsrv2/autoace/yellow_brick_road";
-
-#my $datadir   = "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS";
-my $datadir    = "/wormsrv2/autoace/yellow_brick_road";
-
- ##############################
- # command-line options       #
- ##############################
-
-getopts ('hd');
-&error(0) if ($opt_h);
-
-$debug = 1;
-($maintainers = "dl1\@sanger.ac.uk") if ($debug);
+@gff_files = ('III') if ($quicktest);
 
 
- ##############################
- # getz query to build hashes #
+##############################
+# getz query to build hashes #
  ##############################
 
 # ID   AF016448   standard; DNA; INV; 44427 BP.
@@ -76,6 +89,9 @@ print "Finished assigning to hash\n";
 # Main Loop                                                                     #
 #################################################################################
 
+my $seq_len;
+my $sv_acc;
+my $sv_ver;
 
 foreach my $chromosome (@gff_files) {
 
@@ -89,7 +105,6 @@ foreach my $chromosome (@gff_files) {
 
   my $i = 1;
   my ($start,$stop,$clone,$acc,$gap_span,$offset,$span,$gpseq,$gspan,$limit,$span2get,$unique_stop) = "";
-
   my ($last_stop,$last_start);
   $last_start =0;
   $last_stop = 2;
@@ -191,12 +206,12 @@ foreach my $chromosome (@gff_files) {
       print OUT "$chromosome\t$start{$i}\t$unique_stop\t$i\tF\t$acc{$i}.$ver{$i}\t1\t$span2get\t+\n";
     }
   }
+  # copy agp file to correct directory
+  cp("$file", "$basedir/autoace/CHROMOSOMES/") or print LOG "ERROR: Couldn't copy file: $!\n";
+
   close LOG;
   close OUT;
-  
-  # copy agp file to correct directory
-  system ("cp $file /wormsrv2/autoace/CHROMOSOMES/");
-    
+   
 }
 
  ##############################
@@ -212,17 +227,17 @@ exit(0);
 
 
 sub error {
-    my $error = shift;
-    my $chromosome = shift;
-    if ($error == 1){ 
-	# No gff file to work from
-	print "The gff file '$datadir/CHROMOSOME_${chromosome}.clone_acc.gff' doesn't exist.\n";
-	exit(0);
-    }
-    elsif ($error == 0) {
-        # Normal help menu
-	exec ('perldoc',$0);
-    }
+  my $error = shift;
+  my $chromosome = shift;
+  if ($error == 1){ 
+    # No gff file to work from
+    print "The gff file '$datadir/CHROMOSOME_${chromosome}.clone_acc.gff' doesn't exist.\n";
+    exit(0);
+  }
+  elsif ($error == 0) {
+    # Normal help menu
+    exec ('perldoc',$0);
+  }
 }
 
 
@@ -258,6 +273,21 @@ make_agp_file.pl mandatory arguments:
 make_agp_file.pl  OPTIONAL arguments:
 
 =over 4
+
+=item -test
+
+Uses test environment in ~wormpub/TEST_BUILD/
+
+=back
+
+=over 4
+
+=item -quicktest
+
+Will only run against one chromosome (for speed) which is CHROMOSOME_III
+
+=back
+
 
 =back
 

@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/bin/perl5.8.0 -w
 #
 # map_RNAi.pl
 #
@@ -6,8 +6,8 @@
 #
 # by Kerstin Jekosch
 #
-# Last updated by: $Author: dl1 $                      
-# Last updated on: $Date: 2003-08-21 13:44:05 $        
+# Last updated by: $Author: krb $                      
+# Last updated on: $Date: 2003-12-01 11:54:27 $        
 
 
 $|=1;
@@ -307,12 +307,12 @@ foreach my $mapped (sort keys %finaloutput) {
 
 	print OUTACE "\nRNAi : \"$mapped\"\n";
 
-	# Does this sequence have a locus?
+	# Does this CDS have a locus?
 	if ($genetype{$gene} eq "CDS") {
 	    print OUTACE "Predicted_gene \"$gene\"\n";
-	    $seq = $db->fetch(-class=>'Sequence',-name=>" $finaloutput{$mapped}->[$n]");
-	    if (defined($seq->at('Visible.Locus_genomic_seq'))) {
-		($locus) = ($seq->get('Locus_genomic_seq'));
+	    $seq = $db->fetch(-class=>'CDS',-name=>" $finaloutput{$mapped}->[$n]");
+	    if (defined($seq->at('Visible.Locus'))) {
+		($locus) = ($seq->get('Locus'));
 		print OUTACE "Locus \"$locus\"\n";
 	    }
 	    print " which is a CDS\n" if ($debug);
@@ -346,12 +346,12 @@ print OUTACE "\n\n//Expression profiles\n";
 
 # Produce connections for RNAi->Expr_profile
 foreach my $mapped (sort keys %finaloutput2) {
-    print OUT "$mapped\t@{$finaloutput2{$mapped}}\n";
-    for (my $n = 0; $n < (scalar @{$finaloutput2{$mapped}}); $n++) {
-      my ($expr_profile) = (@{$finaloutput2{$mapped}}->[$n] =~ /(\S+)\.\d+$/);
-      print OUTACE "RNAi : $mapped\n";
-      print OUTACE "Expr_profile $expr_profile\n\n";
-    }
+  print OUT "$mapped\t@{$finaloutput2{$mapped}}\n";
+  for (my $n = 0; $n < (scalar @{$finaloutput2{$mapped}}); $n++) {
+    my ($expr_profile) = (@{$finaloutput2{$mapped}}->[$n] =~ /(\S+)\.\d+$/);
+    print OUTACE "RNAi : $mapped\n";
+    print OUTACE "Expr_profile $expr_profile\n\n";
+  }
 } 
 
 

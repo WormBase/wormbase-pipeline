@@ -6,7 +6,7 @@
 # Compares this number to those from a second database.
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-08-01 14:22:14 $      
+# Last updated on: $Date: 2003-12-01 11:54:26 $      
 
 
 use strict;
@@ -330,12 +330,17 @@ __DATA__
 2_point_data
 Accession_number
 Allele
+Anatomy_name
+Anatomy_term
 Author
+CDS
 Cell
 Cell_group
 Class
 Clone
+Cluster
 Comment
+Condition
 Contig
 Database
 Display
@@ -344,8 +349,9 @@ Expr_pattern
 Expr_profile
 Feature
 Feature_data
-Gene_Class
+Gene_class
 Gene_name
+Gene_regulation
 GO_term
 Homol_data
 Journal
@@ -357,11 +363,14 @@ Locus
 Map
 Method
 Microarray_aff
+Microarray_experiment
 Microarray_result
+Microarray_results
 Motif
 Movie
 Multi_pt_data
 Oligo
+Oligo_set
 Operon
 Paper
 PCR_product
@@ -386,7 +395,8 @@ Table
 Tag
 Transgene
 Transcript
-Url
+Transposon
+UTR
 __END__
 
 

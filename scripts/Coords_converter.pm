@@ -74,8 +74,8 @@ sub invoke
       my $clone_coords_file = "$database/clone_coords.ace";
 
       my @command;
-      $command[0] = "find sequence CHROM*\nshow -a subsequence -f ${SL_coords_file}\n";
-      $command[1] = "clear\nfind sequence SUPER*\nshow -a subsequence -f ${clone_coords_file}\n";
+      $command[0] = "find sequence CHROM*\nshow -a Subsequence -f ${SL_coords_file}\n";
+      $command[1] = "clear\nfind sequence SUPER*\nshow -a Subsequence -f ${clone_coords_file}\n";
 
       # temp fix as &tace isn't working in this script
       $tace = "/nfs/disk100/wormpub/ACEDB/bin_ALPHA/tace";

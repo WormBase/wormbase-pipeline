@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/bin/perl5.8.0 -w
 # 
 # parse_predicted_tRNA.pl
 #
@@ -7,7 +7,7 @@
 # Script to parse columns of predicted tRNA by tRNASCAN-SE
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-10-31 15:32:20 $
+# Last updated on: $Date: 2003-12-01 11:54:27 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -524,7 +524,7 @@ sub write_ace {
 
   if ($transcript !~ /^[0-9]{1,}$/){
     $ace .= "\nTranscript : \"$transcript\"\n";
-    $ace .= "-D Source_Exons\n" if !$exon;
+    $ace .= "-D Source_exons\n" if !$exon;
     $ace .= "-D Brief_identification \"tRNA-$type\"\n";
     $ace .= "-D DB_remark\n";
     $ace .= "-D Properties\n";
@@ -550,7 +550,7 @@ sub write_ace {
     #$clone_coords[0]=$parent if ($clone_coords[0] ne $parent);
     $ace .= "\/\/WARN: clone name diff\n" if ($clone_coords[0] ne $parent);
     $ace .= "\nSequence : \"$clone_coords[0]\"\n";
-    $ace .= "Transcript_child $transcript $clone_coords[1] $clone_coords[2]\n";
+    $ace .= "Transcript $transcript $clone_coords[1] $clone_coords[2]\n";
   }
   
   if ($transcript =~ /^[0-9]{1,}$/){
@@ -586,7 +586,7 @@ sub write_ace {
       $clone_last{$clone_coords[0]} = 1;
     }
     $ace .= "\nSequence : \"$clone_coords[0]\"\n";
-    $ace .= "Transcript_child $transcript $clone_coords[1] $clone_coords[2]\n";
+    $ace .= "Transcript $transcript $clone_coords[1] $clone_coords[2]\n";
     $ace .= "\nSequence : \"$transcript\"\n";
     $ace .= "Corresponding_transcript $transcript\n";
   }
@@ -601,15 +601,15 @@ sub write_ace {
   $ace .= "Method \"tRNAscan-SE-1.23\"\n"; 
 
   if (exists $predict_cols_exon{$coord} ){
-    $ace .= "Source_Exons\t${@{$predict_cols_exon{$coord}}}[0]\t${@{$predict_cols_exon{$coord}}}[1] //t1\n";          # if has > 1 exons
+    $ace .= "Source_exons\t${@{$predict_cols_exon{$coord}}}[0]\t${@{$predict_cols_exon{$coord}}}[1] //t1\n";          # if has > 1 exons
   }
   if ($coord < ${@{$predict_cols{$coord}}}[0]){
     my $num = ${@{$predict_cols{$coord}}}[0]-$coord+1;
-    $ace .= "Source_Exons 1 $num // t2\n" if ${@{$predict_cols{$coord}}}[5] == 0;   # if only 1 exon
+    $ace .= "Source_exons 1 $num // t2\n" if ${@{$predict_cols{$coord}}}[5] == 0;   # if only 1 exon
   } 
   else {
     my $num = $coord-${@{$predict_cols{$coord}}}[0]+1;
-    $ace .= "Source_Exons 1 $num // t3\n" if ${@{$predict_cols{$coord}}}[5] == 0;   # if only $
+    $ace .= "Source_exons 1 $num // t3\n" if ${@{$predict_cols{$coord}}}[5] == 0;   # if only $
   }
   
   if ($ace =~ /From_laboratory.+\"HX\"/){print HX $ace}
@@ -701,17 +701,17 @@ sub move_to_pseudo {
   $ace .= "Method \"Pseudogene\"\n";
 
   if (exists $predict_cols_exon{$coord} ){
-    $ace .= "Source_Exons\t${@{$predict_cols_exon{$coord}}}[0]\t${@{$predict_cols_exon{$coord}}}[1] // t4\n";               # if has > 1 exons
+    $ace .= "Source_exons\t${@{$predict_cols_exon{$coord}}}[0]\t${@{$predict_cols_exon{$coord}}}[1] // t4\n";               # if has > 1 exons
   }
   # + strain
   if ($coord < ${@{$predict_cols{$coord}}}[0]){
     my $num = ${@{$predict_cols{$coord}}}[0]-$coord+1;
-    $ace .= "Source_Exons 1 $num // t5\n" if ${@{$predict_cols{$coord}}}[5] == 0;   # if only 1 exon
+    $ace .= "Source_exons 1 $num // t5\n" if ${@{$predict_cols{$coord}}}[5] == 0;   # if only 1 exon
   }
   # - strain
   else {
     my $num = $coord-${@{$predict_cols{$coord}}}[0]+1;
-    $ace .= "Source_Exons 1 $num // t6\n" if ${@{$predict_cols{$coord}}}[5] == 0;   # if only 1 exon
+    $ace .= "Source_exons 1 $num // t6\n" if ${@{$predict_cols{$coord}}}[5] == 0;   # if only 1 exon
   }
   if (exists $tRNA_ace{$transcript}){
     foreach (@{$tRNA_ace{$transcript}}) {

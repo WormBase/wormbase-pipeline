@@ -1,11 +1,11 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/bin/perl5.8.0 -w
 #
 # inherit_GO_terms.pl
 #
 # map GO_terms to ?Sequence objects from ?Motif and ?Phenotype
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-03-14 09:29:03 $      
+# Last updated on: $Date: 2003-12-01 11:54:26 $      
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -142,7 +142,7 @@ sub motif {
 	    foreach $protein (@pep_homols) {
 		print "maps to Protein: $protein " if ($debug);
 		my $pepobj = $db->fetch(Protein=>$protein);
-		@CDS = $pepobj->Corresponding_DNA;
+		@CDS = $pepobj->Corresponding_CDS;
 		
 		foreach $match (@CDS) {
 		    print "== $match\n" if ($debug);

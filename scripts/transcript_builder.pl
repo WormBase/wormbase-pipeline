@@ -7,10 +7,10 @@
 # Script to make ?Transcript objects
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-11-10 16:08:40 $  
+# Last updated on: $Date: 2003-12-01 11:54:28 $  
 
 use strict;
-use lib "/wormsrv2/scripts/"; 
+use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
 use Getopt::Long;
 use Data::Dumper;
 use Coords_converter;
@@ -67,7 +67,7 @@ my %transcript_span;
 my $gff_file;
 my @ordered_genes;
 
-#setup directory for transcript
+#setup directory for +transcript
 my $transcript_dir = "$database/TRANSCRIPTS";
 &run_command("mkdir $transcript_dir") unless -e "$transcript_dir";
 &run_command("rm -f $transcript_dir/*");
@@ -97,19 +97,19 @@ foreach my $chrom ( @chromosomes ) {
 
   open (GFF,"<$gff_file") or die "gff_file\n";
   $log->write_to("reading gff file $gff_file\n");
-  # C43G2	  curated	  exon         10841   10892   .       +       .       Sequence "C43G2.4"
-  # C43G2   curated         CDS          10841   10892   .       +       0       Sequence "C43G2.4"
-  # C43G2   curated         Sequence     10841   13282   .       +       .       Sequence "C43G2.4"
+  # C43G2	  curated	  exon         10841   10892   .       +       .       CDS "C43G2.4"
+  # C43G2   curated         coding_exon          10841   10892   .       +       0       CDS "C43G2.4"
+  # C43G2   curated         CDS     10841   13282   .       +       .       CDS "C43G2.4"
   # C43G2   BLAT_EST_BEST   similarity   8877    9029    100     +       .       Target "Sequence:yk1125e01.5" 37 189
 
-  # parse GFF file to get Sequence, exon and cDNA info
+  # parse GFF file to get CDS, exon and cDNA info
   while (<GFF>) {
     my @data = split;
     
     #  GENE STRUCTURE
     if( $data[1] eq "curated" ) {
       $data[9] =~ s/\"//g;
-      if( $data[2] eq "Sequence" ) {
+      if( $data[2] eq "CDS" ) {
 	# GENE SPAN
 	$genes_span{$data[9]} = [($data[3], $data[4], $data[6])];
       }
@@ -237,14 +237,14 @@ foreach my $chrom ( @chromosomes ) {
       # parent object
       print ACE "\nSequence : \"$source\"\n";
       if( $genes_span{$gene}->[2] eq "+"){
-	print ACE "Transcript_child $gene $x $y\n"; # + strand
+	print ACE "Transcript $gene $x $y\n"; # + strand
       }
       else {
-	print ACE "Transcript_child $gene $y $x\n"; # - strand
+	print ACE "Transcript $gene $y $x\n"; # - strand
       }   
 
-      #link gene to transcript
-      print ACE "\nSequence \"$gene\"\n";
+      #link CDS to transcript
+      print ACE "\nCDS \"$gene\"\n";
       print ACE "Corresponding_transcript $gene\n" 
     }
   }
@@ -258,7 +258,7 @@ foreach my $chrom ( @chromosomes ) {
 
     open (CDNAS, ">$transcript_dir/chromosome${chrom}_matching_cDNA.ace") or die "cant open output ace for chromosome $chrom:$!\n";
     foreach my $gene ( keys %gene2cdnas ) {
-      print CDNAS "\nSequence : \"$gene\"\n";
+      print CDNAS "\nCDS : \"$gene\"\n";
       foreach my $cdna ( @{$gene2cdnas{$gene}} ) {
 	print CDNAS "Matching_cDNA \"$cdna\" Inferred_automatically \"transcript_builder.pl\"\n";
       }

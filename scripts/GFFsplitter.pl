@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2003-10-29 12:35:33 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2003-12-01 11:54:25 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -131,7 +131,7 @@ foreach $file (@gff_files) {
   #########################################################
   
   my $running_total = 0;
-  my ($chromosome,$method,$feature,$start,$stop,$score,$strand,$other,$name);
+  my ($chromosome,$source,$feature,$start,$stop,$score,$strand,$other,$name);
   my @header = "";
   
   open (GFF, "</wormsrv2/autoace/CHROMOSOMES/$file.gff");
@@ -144,66 +144,66 @@ foreach $file (@gff_files) {
     #skip header lines of file
     if (/^\#/) {push (@header,$_); next;}
     
-    ($chromosome,$method,$feature,$start,$stop,$score,$strand,$other,$name) = split /\t/;
+    ($chromosome,$source,$feature,$start,$stop,$score,$strand,$other,$name) = split /\t/;
     
     # Clone path
-    if    ( ($method eq "Genomic_canonical") && ($feature eq "Sequence"))      {push (@{$GFF{$file}{clone_path}},$_);}
-    # Genes     
-    elsif ((($method eq "curated")           && ($feature eq "Sequence"))  ||
-	   (($method eq "provisional")       && ($feature eq "Sequence")))     {push (@{$GFF{$file}{genes}},$_);}
+    if    ( ($source eq "Genomic_canonical") && ($feature eq "Sequence"))      {push (@{$GFF{$file}{clone_path}},$_);}
+    # Genes (CDSs)  
+    elsif ((($source eq "curated")           && ($feature eq "CDS"))  ||
+	   (($source eq "provisional")       && ($feature eq "CDS")))     {push (@{$GFF{$file}{genes}},$_);}
     # Pseudogenes
-    elsif ( ($method eq "Pseudogene")        && (($feature eq "Sequence")  || ($feature eq "Pseudogene")))      {push (@{$GFF{$file}{pseudogenes}},$_);}
+    elsif ( ($source eq "Pseudogene")        && (($feature eq "Sequence")  || ($feature eq "Pseudogene")))      {push (@{$GFF{$file}{pseudogenes}},$_);}
     # RNA genes 
-    elsif ((($method eq "RNA")    || ($method eq "tRNAscan-SE-1.23") ||
-	    ($method eq "rRNA")   || ($method eq "scRNA") ||
-	    ($method eq "snRNA")  || ($method eq "snoRNA") || 
-	    ($method eq "miRNA")  || ($method eq "stRNA")) 
+    elsif ((($source eq "RNA")    || ($source eq "tRNAscan-SE-1.23") ||
+	    ($source eq "rRNA")   || ($source eq "scRNA") ||
+	    ($source eq "snRNA")  || ($source eq "snoRNA") || 
+	    ($source eq "miRNA")  || ($source eq "stRNA")) 
 	 && ($feature eq "Transcript"))               {push (@{$GFF{$file}{rna}},$_);}
-    # CDS Exon  
-    elsif ((($method eq "curated") || ($method eq "provisional")) 
-	   && ($feature eq "CDS"))                   {push (@{$GFF{$file}{CDS_exon}},$_);}
+    # coding_exon (used to be CDS)
+    elsif ((($source eq "curated") || ($source eq "provisional")) 
+	   && ($feature eq "coding_exon"))                   {push (@{$GFF{$file}{coding_exon}},$_);}
     # Exon      
-    elsif ((($method eq "curated") 
-	    || ($method eq "provisional")) 
+    elsif ((($source eq "curated") 
+	    || ($source eq "provisional")) 
 	   && ($feature eq "exon"))                   {push (@{$GFF{$file}{exon}},$_);}
-    elsif (($method eq "tRNAscan-SE-1.23") 
+    elsif (($source eq "tRNAscan-SE-1.23") 
 	   && ($feature eq "exon"))                   {push (@{$GFF{$file}{exon_tRNA}},$_);}
-    elsif (($method eq "Pseudogene") 
+    elsif (($source eq "Pseudogene") 
 	   && ($feature eq "exon"))                   {push (@{$GFF{$file}{exon_pseudogene}},$_);}
     # Intron    
-    elsif ((($method eq "curated") 
-	    || ($method eq "provisional")) 
+    elsif ((($source eq "curated") 
+	    || ($source eq "provisional")) 
 	   && ($feature eq "intron"))                 {push (@{$GFF{$file}{intron}},$_);}
-    elsif (($method eq "tRNAscan-SE-1.23") 
+    elsif (($source eq "tRNAscan-SE-1.23") 
 	   && ($feature eq "intron"))                 {push (@{$GFF{$file}{intron_tRNA}},$_);}
-    elsif (($method eq "Pseudogene") 
+    elsif (($source eq "Pseudogene") 
 	   && ($feature eq "intron"))                 {push (@{$GFF{$file}{intron_pseudogene}},$_);}
     # Intron confirmed by ESTs
     elsif (/Confirmed_by_EST/)                        {push (@{$GFF{$file}{intron_confirmed_CDS}},$_);}
     elsif (/Confirmed_by_cDNA/)                       {push (@{$GFF{$file}{intron_confirmed_CDS}},$_);}
     elsif (/Confirmed_in_UTR/)                        {push (@{$GFF{$file}{intron_confirmed_UTR}},$_);}
     # Repeats
-    elsif (($method eq "tandem") 
-	   || ($method eq "inverted") 
-	   || ($method eq "hmmfs.3") 
-	   || ($method eq "scan") 
+    elsif (($source eq "tandem") 
+	   || ($source eq "inverted") 
+	   || ($source eq "hmmfs.3") 
+	   || ($source eq "scan") 
 	   || ($feature eq "repeat_region"))          {push (@{$GFF{$file}{repeats}},$_);}
     # TC1 insertions
-    elsif ($method eq "BLASTN_TC1")                   {push (@{$GFF{$file}{tc_insertions}},$_);}
+    elsif ($source eq "BLASTN_TC1")                   {push (@{$GFF{$file}{tc_insertions}},$_);}
     # Assembly tags
-    elsif ($method eq "assembly_tag")                 {push (@{$GFF{$file}{assembly_tags}},$_);}
+    elsif ($source eq "assembly_tag")                 {push (@{$GFF{$file}{assembly_tags}},$_);}
     # TS site
     elsif (/trans-splice_acceptor/)                   {push (@{$GFF{$file}{ts_site}},$_);}
     # Oligo mapping
     elsif ($feature eq "OLIGO")                       {push (@{$GFF{$file}{oligos}},$_);}
     # RNAi
-    elsif ($method eq "RNAi")                         {push (@{$GFF{$file}{RNAi}},$_);}
+    elsif ($source eq "RNAi")                         {push (@{$GFF{$file}{RNAi}},$_);}
     # GENEPAIR
-    elsif ($method eq "GenePair_STS")                 {push (@{$GFF{$file}{genepair}},$_);}
+    elsif ($source eq "GenePair_STS")                 {push (@{$GFF{$file}{genepair}},$_);}
     # Alleles
-    elsif ($method eq "Allele")                       {push (@{$GFF{$file}{allele}},$_);}
+    elsif ($source eq "Allele")                       {push (@{$GFF{$file}{allele}},$_);}
     # operons
-    elsif ($method eq "operon")                       {push (@{$GFF{$file}{operon}},$_);}
+    elsif ($source eq "operon")                       {push (@{$GFF{$file}{operon}},$_);}
     # Oligo_set
     elsif ($feature eq "Oligo_set")                   {push (@{$GFF{$file}{Oligo_set}},$_);}
     # Microarray_aff
@@ -420,10 +420,14 @@ sub GFF_clones_with_accessions{
       print "Could not fetch sequence '$gen_can'\n";
       next;
     }
-  
-    my @acc = $obj->DB_info->row();
-    
-    print OUT "$_ acc=$acc[3] ver=$acc[4]\n";
+
+    my ($acc) = $obj->at('DB_info.Database.EMBL.NDB_AC');
+    my ($sv) = $obj->at('DB_info.Database.EMBL.NDB_SV');
+
+    # now just want the numerical suffix of sequence version field
+    $sv =~ s/.*\.//;
+
+     print OUT "$_ acc=$acc ver=$sv\n";
     
     $obj->DESTROY();
     
@@ -486,7 +490,7 @@ clone_path
 genes
 pseudogenes
 rna
-CDS_exon
+coding_exon
 exon
 exon_tRNA
 exon_pseudogene

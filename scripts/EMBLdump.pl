@@ -1,8 +1,8 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/bin/perl5.8.0 -w
 #
 # EMBLDump.pl :  makes EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2003-10-31 15:32:20 $
+#  Last updated on: $Date: 2003-12-01 11:54:24 $
 #  Last updated by: $Author: krb $
 
 
@@ -10,7 +10,7 @@ $0 =~ s/^\/.+\///;
 system ("touch /wormsrv2/logs/history/$0.`date +%y%m%d`");
 
 use strict;
-use lib "/wormsrv2/scripts";
+use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
 use Wormbase;
 
 # variables
@@ -64,39 +64,43 @@ close TACE;
                                                           
 # cycle through the EMBL dump
                                                           
-open (EMBL2, ">/nfs/disk100/wormpub/tmp/EMBLdump.mod") or  die "Can't process new EMBL dump file\n";
+open (OUT, ">/nfs/disk100/wormpub/tmp/EMBLdump.mod") or  die "Can't process new EMBL dump file\n";
 open (EMBL,  "<$outfilename.embl") or die "Can't process EMBL dump file\n";
 while (<EMBL>) {
 
-    # DE   Caenorhabditis elegans cosmid C05G5
-    
-    if (/^DE   Caenorhabditis elegans cosmid (\S+)/) {
-	if ($clone2type{$1} eq "") {
-	    print EMBL2 "DE   Caenorhabditis elegans clone $1\n";
-	    }
-	elsif ($clone2type{$1} eq "other") {
-	    print EMBL2 "DE   Caenorhabditis elegans clone $1\n";
-	}
-	else {
-	    print EMBL2 "DE   Caenorhabditis elegans $clone2type{$1} $1\n";
-	}
-	    next;
-    }
+  # Need to reformat ID line and add accession and sequence version info
+  if(/^ID   EMBL_ID/){
 
-    # species line
-    if (/\/organism/) {
-	print EMBL2 "FT                   /db_xref=\"taxon:6239\"\n";
-	print EMBL2 "$_";
-	print EMBL2 "FT                   /strain=\"Bristol N2\"\n";
-	print EMBL2 "FT                   /mol_type=\"genomic DNA\"\n";
-	next;
-    }
-    
-    print EMBL2;
+  }
 
+  # DE   Caenorhabditis elegans cosmid C05G5    
+  if (/^DE   Caenorhabditis elegans cosmid (\S+)/) {
+    if ($clone2type{$1} eq "") {
+      print OUT "DE   Caenorhabditis elegans clone $1\n";
+    }
+    elsif ($clone2type{$1} eq "other") {
+      print OUT "DE   Caenorhabditis elegans clone $1\n";
+    }
+    else {
+      print OUT "DE   Caenorhabditis elegans $clone2type{$1} $1\n";
+    }
+    next;
+  }
+  
+  # species line
+  if (/\/organism/) {
+    print OUT "FT                   /db_xref=\"taxon:6239\"\n";
+    print OUT "$_";
+    print OUT "FT                   /strain=\"Bristol N2\"\n";
+    print OUT "FT                   /mol_type=\"genomic DNA\"\n";
+    next;
+  }
+  
+  print OUT;
+  
 }
 close EMBL;
-close EMBL2;
+close OUT;
                                                           
 # copy modified copy back onto output file
 system ("mv -f /nfs/disk100/wormpub/tmp/EMBLdump.mod $outfilename.embl");

@@ -1,18 +1,18 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/bin/perl5.8.0 -w
 #
 # Common_data.pm          
 # 
 # by Anthony Rogers                             
 #
 # Last updated by: $Author: krb $               
-# Last updated on: $Date: 2003-04-04 18:01:41 $         
+# Last updated on: $Date: 2003-12-01 11:54:24 $         
 
 #################################################################################
 # Initialise variables                                                          #
 #################################################################################
 
 use strict;                    
-use lib "/wormsrv2/scripts/";
+use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
 use Data::Dumper;
 use Getopt::Long;
@@ -33,18 +33,20 @@ GetOptions("update"        => \$update,
 	   "test"          => \$test
 	   );
 
-# do all of the data sets if -all
-#if ($all) {
-#    $c2g = 1; $a2c = 1; $g2p = 1;
-#}
 
 ##############################
 # database paths             #
 ##############################
 
-my $this_file   = "/wormsrv2/scripts/Common_data.pm";
-our $data_dir   = "/wormsrv2/autoace/COMMON_DATA";
-our $wquery_dir = "/wormsrv2/autoace/wquery";
+# Set up top level base directory which is different if in test mode
+# Make all other directories relative to this
+my $basedir   = "/wormsrv2";
+$basedir      = glob("~wormpub")."/TEST_BUILD" if ($test); 
+my $db_path   = "$basedir/autoace";
+
+my $this_file   = "$basedir/scripts/Common_data.pm";
+our $data_dir   = "$basedir/autoace/COMMON_DATA";
+our $wquery_dir = "$basedir/autoace/wquery";
 our $ace_dir;
 
 our %sub2file = ( 'gene2CE'   => "$data_dir/gene2CE.dat",
@@ -68,31 +70,28 @@ our $tace = &tace;
 
 my $debug = 0;
 
-# Use alternate directory for output if testing (-test)
-$data_dir = "/wormsrv2/tmp" if ($test);
-
 # update mode 
 if( $update ) {
   print "Updating $data_dir data files ";
 
   # AceDB data
   if( $build ) {
-      $ace_dir = "/wormsrv2/autoace";
-      print "during build so using $ace_dir - ensure that the data you are updating is actually in the database.\n";
+    $ace_dir = "$basedir/autoace";
+    print "during build so using $ace_dir - ensure that the data you are updating is actually in the database.\n";
   }
   else {
-      $ace_dir = "/nfs/disk100/wormpub/DATABASES/current_DB";
-      print "- NOT as part of build so using $ace_dir. If this is part of the build data MAY be stale\n";
+    $ace_dir = "/nfs/disk100/wormpub/DATABASES/current_DB";
+    print "- NOT as part of build so using $ace_dir. If this is part of the build data MAY be stale\n";
   }
   &Common_data_update;
 }
 # checks to stop you running the writeable outside update mode
 else {
-    if ( ($g2p) || ($a2c) || ($c2g) ) {
-	print "please update using the script ie Common_data.pm -update -pid\n";
-	`perldoc $this_file`;
-	exit(1);
-    }
+  if ( ($g2p) || ($a2c) || ($c2g) ) {
+    print "please update using the script ie Common_data.pm -update -pid\n";
+    `perldoc $this_file`;
+    exit(1);
+  }
 }
 
 sub Common_data_update {
@@ -179,7 +178,9 @@ sub write_clone2acc  {
 sub write_gene2CE  {   
 
     my $WPver = &get_wormbase_version;
-    open (FH,"</wormsrv2/WORMPEP/wormpep$WPver/wormpep$WPver") or die "cant open wormpep$WPver\n";
+    $WPver = "666" if ($test);
+
+    open (FH,"<$basedir/WORMPEP/wormpep$WPver/wormpep$WPver") or die "cant open wormpep$WPver\n";
     my %gene2CE;
     my %CE2gene;
     while(<FH>) {

@@ -87,7 +87,7 @@ EMBL_dump_info
 EMBL_info
 Enzyme
 Expr_Pattern
-Gene_Class
+Gene_class
 Jade
 Journal
 Keyword

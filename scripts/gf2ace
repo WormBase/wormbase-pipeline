@@ -53,13 +53,13 @@ BEGIN { type = "" ; FS = "[ \t]*|/" ; j = 0 ;
 		   if (start[0] < end[j])
 		     { origin = start[0] - 1
 		       for (k = 0 ; k <= j ; ++k)
-			 printf ("Source_Exons %10d %10d\n", \
+			 printf ("Source_exons %10d %10d\n", \
 				 start[k] - origin, end[k] - origin)
 		     }
 		   else
 		     { origin = start[0] + 1
 		       for (k = 0 ; k <= j ; ++k)
-		         printf ("Source_Exons %10d %10d\n", \
+		         printf ("Source_exons %10d %10d\n", \
 				origin - start[k], origin - end[k])
 		     }
 		   j = 0

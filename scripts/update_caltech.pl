@@ -1,17 +1,16 @@
 #!/usr/local/bin/perl5.8.0 -w
-
+#
 # update_caltech.pl
-
+#
 # by Chao-Kung Chen [030113]
-
-# Last updated on: $Date: 2003-11-14 11:20:33 $
-# Last updated by: $Author: ck1 $
-
-
+#
 # Automatically update Geneace with Erich's functional annotation update
+#
+# Last updated on: $Date: 2003-12-01 11:54:28 $
+# Last updated by: $Author: krb $
 
 use strict;                    
-use lib "/wormsrv2/scripts/";
+use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
 use Cwd 'chdir';
 use Getopt::Long;
@@ -377,7 +376,7 @@ sub main_other_name_assignment {
   }
 
   my $command=<<END;
-find sequence * where concise_description OR detailed_description OR provisional_description
+find elegans_CDS * where concise_description OR detailed_description OR provisional_description
 show -a -T -f /wormsrv1/geneace/ERICHS_DATA/seq_TS_dump.ace
 edit -D Concise_description
 edit -D Detailed_description

@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/bin/perl5.8.0 -w
 # 
 # check_allele_mapping.pl
 #
@@ -6,15 +6,15 @@
 #
 # Script to check if allele sequence from allele mapping script is the same as current 
 #
-# Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-08-20 14:27:26 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2003-12-01 11:54:25 $
 
-# What it does: this script is a small integrity check before loading data generated from map_alleles.pl during the build
-#               it should warn you if mapping result returns a clone different from current one in geneace
-
+# What it does: this script is a small integrity check before loading data generated from 
+# map_alleles.pl during the build it should warn you if mapping result returns a clone different 
+# from current one in geneace
 
 use strict;
-use lib "/wormsrv2/scripts/"; 
+use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
 use Wormbase;
 
 
@@ -23,9 +23,8 @@ my $curr_db = "/nfs/disk100/wormpub/DATABASES/current_DB";
 my $ga_dir = "/wormsrv1/geneace/";
 my (@mapping, $allele, $seq, %allele_seq, %allele_seq_map);
 
-my $current = `grep "NAME WS" $curr_db/wspec/database.wrm`; $current =~ s/NAME WS//; chomp $current;
-$current += 1;
-print $current, "\n";
+my $WS_release = &get_wormbase_version_name();  
+print "Using data from $WS_release\n";
 
 
 @mapping = `echo "table-maker -p /wormsrv1/geneace/wquery/allele_has_seq.def" | $tace $ga_dir`;
@@ -36,13 +35,9 @@ foreach (@mapping){
    $allele_seq{$1} = $2;
   }
 }
-foreach (keys %allele_seq){
- # print "$_ -> $allele_seq{$_}\n";
-}
 
-my $update = "/wormsrv2/autoace/MAPPINGS/map_alleles_geneace_update".$current.".ace";
-
-open(IN, "/wormsrv2/autoace/MAPPINGS/map_alleles_geneace_update".$current.".ace") || die $!;
+#open main input file (output of map_Alleles.pl)
+open(IN, "/wormsrv2/autoace/MAPPINGS/map_alleles_geneace_update.".$WS_release.".ace") || die $!;
 
 while(<IN>){
   if ($_ =~ /^Allele\s+:\s+\"(.+)\"/){

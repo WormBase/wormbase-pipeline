@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2003-11-10 10:32:42 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2003-12-01 11:54:25 $
 
 
 #################################################################################
@@ -15,11 +15,12 @@
 #################################################################################
 
 use strict;
-use lib "/wormsrv2/scripts/";
+use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
 use IO::Handle;
 use Getopt::Long;
 use vars;
+use File::Copy qw(mv cp);
 
 # is this script being run as user wormpub???
 &test_user_wormpub;
@@ -52,13 +53,14 @@ my $builddb;		# Build autoace : DB only
 my $buildchrom;		# Build autoace : CHROMOSOMES directory	
 my $buildrelease;	# Build autoace : Release directory
 my $buildtest;          # Test autoace build
+my $test;               # In test build mode, will write to mirrored copy of autoace in ~wormpub/AUTOACE_TEST
+my $quicktest;          # Same as -test but will only work with just chromosome III (where appropriate)
 my $agp;		# make/check agp files
 my $confirm;            # Confirm gene models (EST|mRNA)
 my $ftp;		# Public release to FTP site
 my $debug;		# debug mode
 my $verbose;            # verbose mode - more output to screen
 my $help;		# Help/Usage page
-my $test;               # Test routine 
 my $dbcomp;		# runs dbcomp script
 my $operon;             # generate operon data
 my $load;               # generic file loading routine
@@ -74,6 +76,7 @@ GetOptions (
 	    "gffdump"        => \$gffdump,
 	    "gffsplit"       => \$gffsplit,
 	    "buildpep"       => \$buildpep,
+	    "buildtest"      => \$buildtest,
 	    "buildrna"       => \$buildrna,
 	    "prepare_blat"   => \$prepare_blat,
 	    "blat_est"       => \$blat_est,
@@ -92,7 +95,6 @@ GetOptions (
 	    "builddb"        => \$builddb,
 	    "buildchrom"     => \$buildchrom,
 	    "buildrelease"   => \$buildrelease,
-            "buildtest"      => \$buildtest,
 	    "confirm"        => \$confirm,
 	    "dbcomp"	     => \$dbcomp,
 	    "debug:s"        => \$debug,
@@ -101,13 +103,22 @@ GetOptions (
 	    "load:s"         => \$load,
 	    "tsuser:s"       => \$tsuser,
 	    "help"           => \$help,
-	    "h"	             => \$help,
-	    "test"           => \$test
+	    "test"           => \$test,
+	    "quicktest"      => \$quicktest,
 );
 
 # Help pod if needed
 &usage(0) if ($help);
 
+
+# check that -test and -quicktest haven't both been set.  Also...
+# if -quicktest is specified, still need to make -test true, so that test mode runs 
+# for those steps where -quicktest is meaningless (can't run on only one chromosome)
+
+if($test && $quicktest){
+  &usage(21);
+}
+($test = 1) if ($quicktest);
 
 
 ##############################
@@ -117,6 +128,7 @@ GetOptions (
 # double check if -tsuser not set
 $tsuser = "assumed_wormpub" if (!$tsuser);
 
+# who will receive log file?
 my $maintainers = "All";
 
 # Use debug mode?
@@ -125,12 +137,15 @@ if($debug){
   ($maintainers = $debug . '\@sanger.ac.uk');
 }
 
+# Set up top level base directory which is different if in test mode
+# Make all other directories relative to this
+my $basedir   = "/wormsrv2";
+$basedir      = glob("~wormpub")."/TEST_BUILD" if ($test); 
+my $db_path   = "$basedir/autoace";
+my $scriptdir = "$basedir/scripts";               
 
-our $rundate    = `date +%y%m%d`; chomp $rundate;
-my $scriptdir   = "/wormsrv2/scripts";                   # specify location of scripts
 
 # build flag path
-
 our %flag = (
 	     'A1'          => 'A1:Build_in_progress',
 	     'A2'          => 'A2:Updated_WS_version',
@@ -168,19 +183,22 @@ our %flag = (
 	     'Z1'          => 'Z1:Make_autoace_complete'
 	     );
 
-our @chrom        = ('I','II','III','IV','V','X');
-our $logdir       = "/wormsrv2/autoace/logs";
-our $WSver_file   = "/wormsrv2/autoace/wspec/database.wrm";
+our @chrom   = ('I','II','III','IV','V','X');
+# logdir for lock files
+our $logdir  = "$db_path/logs";
+
+our $WSver_file   = "$db_path/wspec/database.wrm";
 our $tace         =  &tace;
 our ($WS_version,$WS_previous) = &get_WS_version;
 
-# deal with logfile issues
-$rundate    = `date +%y%m%d`; chomp $rundate;
-our $logfile = "/wormsrv2/logs/autoace_minder.WS${WS_version}.${rundate}.$$";
-open (LOG,">$logfile");
+# Set up logfile
+my $rundate    = &rundate;
+our $log = "$basedir/logs/autoace_minder.WS${WS_version}.${rundate}.$$";
+open (LOG,">$log");
 LOG->autoflush();
 # print logfile header
 &logfile_details;
+
 
 #__ PREPARE SECTION __#
 
@@ -203,7 +221,7 @@ LOG->autoflush();
 # B1:Make_autoace_database & B2:Dump_DNA_files
 # Requires: A1,A4,A5
 &make_autoace           if ($build || $builddb || $buildchrom || $buildrelease);
-&test_build             if ($buildtest);
+&check_make_autoace     if ($buildtest);
 
 
 # B3:Make_agp_files
@@ -295,20 +313,22 @@ if ($addblat){
 # close log file and mail $maintainer report #
 ##############################################
 
-$rundate    = `date +%y%m%d`; chomp $rundate;
+$rundate = &rundate;
 print LOG "\n# autoace_minder finished at: $rundate ",&runtime,"\n";
 close LOG;
 
+my $subject_line;
+$subject_line = "BUILD_REPORT: $am_option";
+$subject_line = "TEST_BUILD_REPORT: $am_option" if ($test);
+
 # warn about errors in subject line if there were any
-if($errors == 0){
-  &mail_maintainer("BUILD REPORT: $am_option",$maintainers,$logfile);
+if($errors == 1){
+  $subject_line .= " : $errors ERROR!";
 }
-elsif ($errors ==1){
-  &mail_maintainer("BUILD REPORT: $am_option : $errors ERROR!",$maintainers,$logfile);
+elsif($errors > 1){
+  $subject_line .= " : $errors ERRORS!!!";
 }
-else{
-  &mail_maintainer("BUILD REPORT: $am_option : $errors ERRORS!!!",$maintainers,$logfile);
-}
+&mail_maintainer("$subject_line",$maintainers,$log);
 
 ##############################
 # hasta luego                #
@@ -337,14 +357,17 @@ sub initiate_build {
   $am_option = "-initial";
 
   local (*FLAG);
-  my $cvs_file = "/wormsrv2/autoace/wspec/database.wrm";
+  my $cvs_file = "$db_path/wspec/database.wrm";
 
   # exit if build_in_progress flag is present
   &usage(1) if (-e "$logdir/$flag{'A1'}");
     
   # get old build version number, exit if no WS version is returned
   # add 1 for new build number
+  # Use '666' if in test mode
   $WS_version = &get_wormbase_version;
+  $WS_version = "666" if ($test);
+
   &usage("No_WormBase_release_number") if (!defined($WS_version));
   my $WS_new_name = $WS_version +1;
  
@@ -359,15 +382,20 @@ sub initiate_build {
 
   # update database.wrm using cvs
   &run_command("sed 's/WS${WS_version}/WS${WS_new_name}/' < $cvs_file > ${cvs_file}.new");
-  &run_command("mv /wormsrv2/autoace/wspec/database.wrm.new $cvs_file");
+  mv("$db_path/wspec/database.wrm.new", "$cvs_file") or print LOG "ERROR: renaming file: $!";
   
-  # make a log file in /wormsrv2/autoace/logs
+  # make a log file in $basedir/autoace/logs
   system("touch $logdir/$flag{'A2'}");
 
+  # check that top doesn't reveal strange processes running
+  my $top = `top`;
+
   # add lines to the logfile
-  print LOG "Updated WormBase version number to WS$WS_new_name\n\n";
-  print LOG "You are ready to build another WormBase release\n\n";
+  print LOG "Updated WormBase version number to WS$WS_new_name\n";
+  print LOG "You are ready to build another WormBase release\n";
   print LOG "Please tell camace and geneace curators to update their database to use the new models!!!\n\n";
+  print LOG "Please also check following 'top' output to see if there are stray processes that should\n";
+  print LOG "be removed:\n$top\n\n";
     
 }
 #__ end initiate_build __#
@@ -385,26 +413,32 @@ sub initiate_build {
 
 sub get_WS_version {
 
+  # force WS release to be 666 if in test mode
+  if($test){
+    $WS_version = "666";
+  }
+  else{
     $WS_version = &get_wormbase_version;
-    
-    # exit if no WS version is returned
-    &usage("No_WormBase_release_number") if (!defined($WS_version));
+  }
 
-    print "$logdir/$flag{'A1'} : " . (-M "$logdir/$flag{'A1'}") . "\n" if ($verbose);
-    print "$WSver_file : "         . (-M "$WSver_file") . "\n" if ($verbose);
-
-
-
-    # exit if WS version (database.wrm) is older than build_in_process flag
-    # i.e. the WS version has been changed since the start of the build
-    # ignore if the A1 flag doesn't exist
-    if (-e "$logdir/$flag{'A1'}") {
-	&usage(11) if (-M "$logdir/$flag{'A1'}" < -M "$WSver_file");
-    }
-
-    # manipulate to assign last WS release version
-    $WS_previous = $WS_version -1;
-    return($WS_version,$WS_previous);
+  # exit if no WS version is returned
+  &usage("No_WormBase_release_number") if (!defined($WS_version));
+  
+  print "$logdir/$flag{'A1'} : " . (-M "$logdir/$flag{'A1'}") . "\n" if ($verbose);
+  print "$WSver_file : "         . (-M "$WSver_file") . "\n" if ($verbose);
+  
+  
+  
+  # exit if WS version (database.wrm) is older than build_in_process flag
+  # i.e. the WS version has been changed since the start of the build
+  # ignore if the A1 flag doesn't exist
+  if (-e "$logdir/$flag{'A1'}") {
+    &usage(11) if (-M "$logdir/$flag{'A1'}" < -M "$WSver_file");
+  }
+  
+  # manipulate to assign last WS release version
+  $WS_previous = $WS_version -1;
+  return($WS_version,$WS_previous);
 }
 #__ end get_WS_version __#
 
@@ -418,7 +452,7 @@ sub get_WS_version {
 #              : [02] - Fail if the Primary_databases_used_in_build file is absent
 #
 # Does         : [01] - checks the Primary_database_used_in_build data
-#              : [03] - writes log file A2:Update_WS_version to /wormsrv2/autoace/logs
+#              : [03] - writes log file A2:Update_WS_version to $basedir/autoace/logs
 
 sub prepare_primaries {
   $am_option = "-unpack";
@@ -433,31 +467,34 @@ sub prepare_primaries {
   my ($stlace_last,$brigdb_last,$citace_last,$cshace_last) = &last_versions;
   my $options = "";
 
+  # use test mode if autoace_minder -test was specified
+  $options .= " -test" if ($test);
+
   # stlace
   print "\nstlace : $stlace_date last_build $stlace_last";
   unless ($stlace_last eq $stlace_date) {
-    $options .= " -s $stlace_date";
+    $options .= " -stlace $stlace_date";
     print "  => Update stlace";
   }
   
   # brigdb
   print "\nbrigdb : $brigdb_date last_build $brigdb_last";
   unless ($brigdb_last eq $brigdb_date) {
-    $options .= " -b $brigdb_date";
+    $options .= " -brigace $brigdb_date";
     print "  => Update brigdb";
   }
   
   # citace
   print "\ncitace : $citace_date last_build $citace_last";
   unless ($citace_last eq $citace_date) {
-    $options .= " -i $citace_date";
+    $options .= " -citace $citace_date";
     print "  => Update citace";
   }
   
   # cshace
   print "\ncshace : $cshace_date last_build $cshace_last";
   unless ($cshace_last eq $cshace_date) {
-    $options .= " -c $cshace_date";
+    $options .= " -cshace $cshace_date";
     print "  => Update cshace";
   }
   
@@ -475,17 +512,25 @@ sub prepare_primaries {
   # make a unpack_db.pl log file in /logs
   system("touch $logdir/$flag{'A3'}");
   
-  # transfer /wormsrv1/camace to /wormsrv2/camace 
-  &run_command("TransferDB.pl -start /wormsrv1/camace -end /wormsrv2/camace -database -wspec -name camace");
+  # transfer /wormsrv1/camace to $basedir/camace 
+#  &run_command("$scriptdir/TransferDB.pl -start /wormsrv1/camace -end $basedir/camace -database -wspec -name camace -test");
+  # transfer /wormsrv1/geneace to $basedir/geneace 
+#  &run_command("$scriptdir/TransferDB.pl -start /wormsrv1/geneace -end $basedir/geneace -database -wspec -name geneace -test");
 
-  # transfer /wormsrv1/geneace to /wormsrv2/geneace 
-  &run_command("TransferDB.pl -start /wormsrv1/geneace -end /wormsrv2/geneace -database -wspec -name geneace");
+  # hacking this just to work for the test, these paths need to be removed at some point and the above two paths restored
+  my $newpath = "/nfs/disk100/wormpub/DATABASES/TEST_DBs";
+  my $command = "$scriptdir/TransferDB.pl -start $newpath/camace_CDS -end $basedir/camace -database -wspec -name camace";
+  $command .= " -test" if ($test);
+  &run_command("$command");
+  $command = "$scriptdir/TransferDB.pl -start $newpath/geneace_CDS -end $basedir/geneace -database -wspec -name geneace";
+  $command .= " -test" if ($test);
+  &run_command("$command");
   
   #################################################
   # Check that the database have unpack correctly #
   #################################################
     
-  # rewrite /wormsrv2/autoace/Primary_databases_used_in_build
+  # rewrite Primary_databases_used_in_build
   open (LAST_VER, ">$logdir/Primary_databases_used_in_build");
   print LAST_VER "stlace : $stlace_date\n"; 
   print LAST_VER "brigdb : $brigdb_date\n"; 
@@ -577,8 +622,10 @@ sub make_acefiles {
   
   # exit unless A4:Primary_databases_on_wormsrv2
   &usage("Build_in_progress_absent") unless (-e "$logdir/$flag{'A4'}");
-  
-  &run_command("$scriptdir/make_acefiles.pl");
+
+  my $command = "$scriptdir/make_acefiles.pl";
+  $command .= " -test" if ($test);
+  &run_command($command);
 
   # make a make_acefiles log file in /logs
   system("touch $logdir/$flag{'A5'}");
@@ -590,14 +637,14 @@ sub make_acefiles {
 #################################################################################
 # make_autoace                                                                  #
 #################################################################################
-# Requirements : [01] acefiles in /wormsrv2/wormbase directories
+# Requirements : [01] acefiles in $basedir/wormbase directories
 #                [02] config file to drive loading of data (autoace.config)
 
 # Checks       : [01] - Fail if the build_in_progess flag is absent.
 #              : [02] - Fail if the Primary_databases_used_in_build file is absent
 
 # Does         : [01] - checks the Primary_database_used_in_build data
-#              : [03] - writes log file A1:Update_WS_version to /wormsrv2/autoace/logs
+#              : [03] - writes log file A1:Update_WS_version to $basedir/autoace/logs
 
 sub make_autoace {
   $am_option = "-build";
@@ -614,10 +661,12 @@ sub make_autoace {
     print EMAIL "Yours sincerely,\nOtto\n";
     close (EMAIL);
 
-    &run_command("$scriptdir/make_autoace --database /wormsrv2/autoace --buildautoace");
+    my $command = "$scriptdir/make_autoace.pl --database $db_path --buildautoace";
+    $command .= " --test" if ($test);
+    &run_command($command);
     
     # test the build for loading errors
-    my $builderrors = &test_build;
+    my $builderrors = &check_make_autoace;
     
     # errors in the make_autoace log file
     if ($builderrors > 1) {
@@ -629,8 +678,9 @@ sub make_autoace {
     system("touch $logdir/$flag{'B1'}");
 
     # Update Common_data clone2accession info
-    &run_command("Common_data.pm -in_build -update -accession");
-
+    $command = "$scriptdir/Common_data.pm --in_build --update --accession";
+    $command .= " --test" if ($test);
+    &run_command($command);
   }
   
   if ($build || $buildchrom) {
@@ -640,8 +690,18 @@ sub make_autoace {
     
     # quit if you have errors in the build
     &usage("Errors_in_loaded_acefiles") if (-e "$logdir/$flag{'B1:ERROR'}");
-    
-    my $status = &run_command("$scriptdir/chromosome_dump.pl --dna --composition");
+
+    my $command = "$scriptdir/chromosome_dump.pl --dna --composition";
+
+    # run in test mode?
+    if($quicktest){
+      $command .= " --quicktest";
+    }
+    elsif($test){
+      $command .= " --test";
+    }
+
+    my $status = &run_command($command);
     if ($status != 0){
       system("touch $logdir/$flag{'B2:ERROR'}");
     }    
@@ -660,87 +720,76 @@ sub make_autoace {
     
     local (*MD5SUM_IN,*MD5SUM_OUT);
     
-    &run_command("$scriptdir/make_autoace -database /wormsrv2/autoace --buildrelease"); 
+    &run_command("$scriptdir/make_autoace.pl -database $basedir/autoace --buildrelease"); 
 
     
     # make a make_autoace log file in /logs
     system("touch $logdir/$flag{'D1'}");
     
     # modify the md5sum output file to remove the Sanger specific path
-    open (MD5SUM_OUT, ">/wormsrv2/autoace/release/md5sum.temp")            || die "Couldn't open md5sum file out\n";
-    open (MD5SUM_IN, "</wormsrv2/autoace/release/md5sum.WS${WS_version}")  || die "Couldn't open md5sum file in\n";
+    open (MD5SUM_OUT, ">$basedir/autoace/release/md5sum.temp")            || die "Couldn't open md5sum file out\n";
+    open (MD5SUM_IN, "<$basedir/autoace/release/md5sum.WS${WS_version}")  || die "Couldn't open md5sum file in\n";
     while (<MD5SUM_IN>) {
-      s/\/wormsrv2\/autoace\/release\///g;
+      s/\$basedir\/autoace\/release\///g;
       print MD5SUM_OUT $_;
     }
     close MD5SUM_IN;
     close MD5SUM_OUT;
-    
-    &run_command("mv -f /wormsrv2/autoace/release/md5sum.temp /wormsrv2/autoace/release/md5sum.WS${WS_version}");
+    mv("$basedir/autoace/release/md5sum.temp", "$basedir/autoace/release/md5sum.WS${WS_version}")
+	or print LOG "ERROR: couldn't rename file: $!\n";
   }
 }
 #__ end make_autoace __#
 
 #########################################################################################################################
 
-sub test_build {
+sub check_make_autoace {
   local (*BUILDLOOK,*BUILDLOG);
-  my $logfile;
+  my $log;
 
-  print LOG "Entering test_build subroutine at ",&runtime,"\n";
+  # set am_option if this is not being run as part of -build
+  $am_option = "-buildtest" if ($buildtest);
 
-  print "Looking at log file: /wormsrv2/logs/make_autoace.WS${WS_version}*\n" if ($verbose);
+  print LOG &runtime, ": Entering check_make_autoace subroutine\n";
+
+  print "Looking at log file: $basedir/logs/make_autoace.WS${WS_version}*\n" if ($verbose);
   
-  open (BUILDLOOK, "ls /wormsrv2/logs/make_autoace.WS${WS_version}* |") || die "Couldn't list logfile out\n";
+  open (BUILDLOOK, "ls $basedir/logs/make_autoace.WS${WS_version}* |") || die "Couldn't list logfile out\n";
   while (<BUILDLOOK>) {
     chomp;
-    $logfile = $_;
+    $log = $_;
   }
   close BUILDLOOK;
   
-  print "Open log file $logfile\n" if ($verbose);
+  print "Open log file $log\n" if ($verbose);
   
   my ($parsefile,$parsefilename);
   my $builderrors = 0;
 
-  open (BUILDLOG, "<$logfile") || die "Couldn't open logfile out\n";
+  open (BUILDLOG, "<$log") || die "Couldn't open logfile out\n";
   while (<BUILDLOG>) {
-    if (/^\* Reinitdb: reading in new database  (\S+)/) {
+    if (/^\* Reinitdb: started parsing (\S+)/) {
       $parsefile = $1;
     }
     if ((/^\/\/ objects processed: (\d+) found, (\d+) parsed ok, (\d+) parse failed/) && ($parsefile ne "")) {
-      (printf "%6s parse failures of %6s objects from file: $parsefile\n", $3,$1) if $verbose;
-      if ($3 > 0) {
-	$parsefilename = substr($parsefile,18);
-	printf LOG "%6s parse failures of %6s objects from file: $parsefilename\n", $3,$1;
+      my $object_count = $1;
+      my $error_count  = $3;
+      (printf "%6s parse failures of %6s objects from file: $parsefile\n", $error_count,$object_count) if $verbose;
+      if ($error_count > 0) {
+	$parsefilename = $parsefile;
+	$parsefilename =~ s/$basedir//;
+	printf LOG "%6s parse failures of %6s objects from file: $parsefilename\n", $error_count,$object_count;
 	$builderrors++;
       }
       ($parsefile,$parsefilename) = "";
     }
   }
   close BUILDLOG;
-  print LOG "Leaving test_build subroutine at ",&runtime,"\n";
+  print LOG &runtime, ": Leaving check_make_autoace subroutine\n\n";
 
   return ($builderrors);
 }
 
-############################################################################################################################
-
-sub test {
-
-  local (*MD5SUM_IN,*MD5SUM_OUT);
-  open (MD5SUM_OUT, ">/wormsrv2/autoace/release/md5sum.temp")             || die "Couldn't open md5sum file out\n";
-  open (MD5SUM_IN,  "</wormsrv2/autoace/release/md5sum.WS${WS_version}")  || die "Couldn't open md5sum file in\n";
-  while (<MD5SUM_IN>) {
-    s/\/wormsrv2\/autoace\/release\///g;
-    print MD5SUM_OUT $_;
-  }
-  close MD5SUM_IN;
-  close MD5SUM_OUT;
-  
-  &run_command("mv -f /wormsrv2/autoace/release/md5sum.temp /wormsrv2/autoace/release/md5sum.WS${WS_version}");
-  
-}
 
 
 #################################################################################
@@ -761,11 +810,22 @@ sub make_agp {
   # have you run GFFsplitter?
   &dump_GFFs unless ((-e "$logdir/$flag{'C2'}") && (-e "$logdir/$flag{'B3'}"));
 
-  &run_command("$scriptdir/check_DNA.pl");
 
-  &run_command("$scriptdir/make_agp_file.pl");
+  # run three agp related scripts
+  my @scripts_to_run = ("check_DNA.pl", "make_agp_file.pl", "agp2dna.pl");
 
-  &run_command("$scriptdir/agp2dna.pl");
+  foreach my $script (@scripts_to_run){
+    my $command = "$scriptdir/$script";
+    # run in test mode?
+    if($quicktest){
+      $command .= " --quicktest";
+    }
+    elsif($test){
+      $command .= " --test";
+    }
+    &run_command("$command");
+  }
+
 
   # make a B3 log file if this is first run of -agp (i.e. no B3 log file there)
   system("touch $logdir/$flag{'B3'}") unless ((-e "$logdir/$flag{'B3'}"));
@@ -775,7 +835,7 @@ sub make_agp {
   my $agp_errors = 0;
   
   foreach my $chrom (@chrom) {
-    open (AGP, "</wormsrv2/autoace/yellow_brick_road/CHROMOSOME_${chrom}.agp_seq.log") or die "Couldn't open agp file : $!";
+    open (AGP, "<$basedir/autoace/yellow_brick_road/CHROMOSOME_${chrom}.agp_seq.log") or die "Couldn't open agp file : $!";
     while (<AGP>) {
       $agp_errors++ if (/ERROR/);
     }
@@ -813,7 +873,7 @@ sub prepare_for_blat{
   &usage(15) if (-e "$logdir/$flag{'B3:ERROR'}");
   
   # TransferDB the current autoace to safe directory 
-  &run_command("TransferDB.pl -start /wormsrv2/autoace -end /wormsrv2/autoace_midway -database -wspec -name autoace_midway");
+  &run_command("$scriptdir/TransferDB.pl -start $basedir/autoace -end $basedir/autoace_midway -database -wspec -name autoace_midway");
 
   # make a copy_autoace_midway log file in /logs
   system("touch $logdir/$flag{'B5'}");  
@@ -836,7 +896,7 @@ sub blat_jobs{
   $am_option = "-blat";
   # Should only be here if there are new sequences to blat with, or genome sequence has changed.
 
-  my $blat_dir = "/wormsrv2/autoace/BLAT";
+  my $blat_dir = "$basedir/autoace/BLAT";
 
   # Also check that autoace has been copied to autoace_midway
   &usage(16) unless (-e "$logdir/$flag{'B5'}");
@@ -877,13 +937,14 @@ sub blat_jobs{
     # slight difference for nematode files as there is no best/other distinction or intron files
     if($job eq "nematode"){
       &run_command("$scriptdir/acecompress.pl -homol ${blat_dir}/autoace.$job.ace > ${blat_dir}/autoace.blat.${job}lite.ace");
-      &run_command("mv -f ${blat_dir}/autoace.blat.${job}lite.ace ${blat_dir}/autoace.blat.$job.ace");
+      mv("${blat_dir}/autoace.blat.${job}lite.ace", "${blat_dir}/autoace.blat.$job.ace") or print LOG "ERROR: Couldn't rename file: $!\n";
     }
     else{
       &run_command("$scriptdir/acecompress.pl -homol ${blat_dir}/autoace.blat.$job.ace > ${blat_dir}/autoace.blat.${job}lite.ace");
-      &run_command("mv -f ${blat_dir}/autoace.blat.${job}lite.ace ${blat_dir}/autoace.blat.$job.ace");
+      mv("${blat_dir}/autoace.blat.${job}lite.ace", "${blat_dir}/autoace.blat.$job.ace") or print LOG "ERROR: Couldn't rename file: $!\n";
       &run_command("$scriptdir/acecompress.pl -feature ${blat_dir}/autoace.good_introns.$job.ace > ${blat_dir}/autoace.good_introns.${job}lite.ace");
-      &run_command("mv -f ${blat_dir}/autoace.good_introns.${job}lite.ace ${blat_dir}/autoace.good_introns.$job.ace");
+      mv("${blat_dir}/autoace.good_introns.${job}lite.ace", "${blat_dir}/autoace.good_introns.$job.ace") 
+	 or print LOG "ERROR: Couldn't rename file: $!\n";
     }
 
     print LOG "Finishing acecompress.pl at ",&runtime,"\n\n";
@@ -919,19 +980,19 @@ sub load_blat_results{
   
   foreach my $type (@blat_types){    
     print LOG "Adding BLAT $type data to autoace at ",&runtime,"\n";
-    my $file =  "/wormsrv2/autoace/BLAT/virtual_objects.autoace.blat.$type.ace";
+    my $file =  "$basedir/autoace/BLAT/virtual_objects.autoace.blat.$type.ace";
     &load($file,"virtual_objects_$type");
 
     # Don't need to add confirmed introns from nematode data (because there are none!)
     unless($type eq "nematode"){
-      $file = "/wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.$type.ace"; 
+      $file = "$basedir/autoace/BLAT/virtual_objects.autoace.ci.$type.ace"; 
       &load($file,"blat_confirmed_introns_$type");
 
-      $file = "/wormsrv2/autoace/BLAT/autoace.good_introns.$type.ace";
+      $file = "$basedir/autoace/BLAT/autoace.good_introns.$type.ace";
       &load($file,"blat_good_introns_$type");
     }
 
-    $file = "/wormsrv2/autoace/BLAT/autoace.blat.$type.ace";           
+    $file = "$basedir/autoace/BLAT/autoace.blat.$type.ace";           
     &load($file,"blat_${type}_data");
 
   }
@@ -964,7 +1025,7 @@ sub parse_homol_data {
 
   foreach my $file ( @files2Load ) {
 
-    my $newfile = "/wormsrv2/wormbase/ensembl_dumps/$file";
+    my $newfile = "$basedir/wormbase/ensembl_dumps/$file";
     &load($newfile,$tsuser);
   }
  
@@ -987,36 +1048,36 @@ sub parse_briggsae_data {
   my $file;
   
   # load raw briggsae data files		   
-  $file = "/wormsrv2/wormbase/briggsae/briggsae_cb25.agp8_DNA.ace";
+  $file = "$basedir/wormbase/briggsae/briggsae_cb25.agp8_DNA.ace";
   &load($file,"briggsae_DNA");
 
-  $file = "/wormsrv2/wormbase/briggsae/briggsae_cb25.agp8_fosmid.ace"; 
+  $file = "$basedir/wormbase/briggsae/briggsae_cb25.agp8_fosmid.ace"; 
   &load($file,"briggsae_fosmids");
   
-  $file = "/wormsrv2/wormbase/briggsae/briggsae_cb25.agp8_agplink.ace"; 
+  $file = "$basedir/wormbase/briggsae/briggsae_cb25.agp8_agplink.ace"; 
   &load($file,"briggsae_links");
 
-  $file = "/wormsrv2/wormbase/briggsae/briggsae_cb25.agp8_sequence.ace"; 
+  $file = "$basedir/wormbase/briggsae/briggsae_cb25.agp8_sequence.ace"; 
   &load($file,"briggsae_sequence");
   
 
   # load gene prediction sets
-  $file = "/wormsrv2/wormbase/briggsae/briggsae_cb25.agp8_genefinder.ace"; 
+  $file = "$basedir/wormbase/briggsae/briggsae_cb25.agp8_genefinder.ace"; 
   &load($file,"briggsae_genefinder_genes");
 
-  $file = "/wormsrv2/wormbase/briggsae/briggsae_cb25.agp8_fgenesh.ace"; 
+  $file = "$basedir/wormbase/briggsae/briggsae_cb25.agp8_fgenesh.ace"; 
   &load($file,"briggsae_fgenesh_genes");
 
-  $file = "/wormsrv2/wormbase/briggsae/briggsae_cb25.agp8_twinscan.ace"; 
+  $file = "$basedir/wormbase/briggsae/briggsae_cb25.agp8_twinscan.ace"; 
   &load($file,"briggsae_twinscan_genes");
 
-  $file = "/wormsrv2/wormbase/briggsae/briggsae_cb25.agp8_ensembl.ace"; 
+  $file = "$basedir/wormbase/briggsae/briggsae_cb25.agp8_ensembl.ace"; 
   &load($file,"briggsae_ensembl_genes");
 
-  $file = "/wormsrv2/wormbase/briggsae/briggsae_cb25.agp8_hybrid.ace"; 
+  $file = "$basedir/wormbase/briggsae/briggsae_cb25.agp8_hybrid.ace"; 
   &load($file,"briggsae_hybrid_genes");
 
-  $file = "/wormsrv2/wormbase/briggsae/briggsae_cb25.agp8_rna.ace"; 
+  $file = "$basedir/wormbase/briggsae/briggsae_cb25.agp8_rna.ace"; 
   &load($file,"briggsae_rna_genes");
 
   # upload_homol data log file in /logs
@@ -1042,10 +1103,10 @@ sub generate_utrs {
   }
 
   # run find_utrs.pl to generate data
-  &run_command("find_utrs.pl -d autoace -r /wormsrv2/autoace/UTR");
+  &run_command("$scriptdir/find_utrs.pl -d autoace -r $basedir/autoace/UTR");
 
   # load data
-  my $file = "/wormsrv2/autoace/UTR/UTRs.ace"; 
+  my $file = "$basedir/autoace/UTR/UTRs.ace"; 
   &load($file,"utrs");
 
   # make a log file in /autoace/logs
@@ -1071,7 +1132,7 @@ sub make_operons {
 
 
   # run find_utrs.pl to generate data
-  &run_command("$scriptdir/operon_wizard -x > /wormsrv2/autoace/OPERONS/operons.WS${WS_version}.ace");
+  &run_command("$scriptdir/operon_wizard -x > $basedir/autoace/OPERONS/operons.WS${WS_version}.ace");
 
   # make a log file in /autoace/logs
   system("touch $logdir/B11:Generate_operon_data");
@@ -1100,7 +1161,7 @@ sub make_wormpep {
     &run_command("$scriptdir/getProteinID");
 
     # load into autoace
-    my $file = "/wormsrv2/autoace/wormpep_ace/WormpepACandIDs.ace"; 
+    my $file = "$basedir/autoace/wormpep_ace/WormpepACandIDs.ace"; 
     &load($file,"wormpep_acs_and_Ids");
     
     # make wormpep
@@ -1135,7 +1196,18 @@ sub make_wormrna {
 
 sub dump_GFFs {
   $am_option .= " -gffdump";
-  &run_command("$scriptdir/chromosome_dump.pl --gff");
+
+  my $command = "$scriptdir/chromosome_dump.pl --gff";
+  
+  # run in test mode?
+  if($quicktest){
+    $command .= " --quicktest";
+  }
+  elsif($test){
+    $command .= " --test";
+  }
+
+  &run_command($command);
 
   &usage(18) if(-e "$logdir/$flag{'C1:ERROR'}");
 
@@ -1173,7 +1245,7 @@ sub map_features {
 
   # microarray connections
   &run_command("$scriptdir/map_microarray.pl");
-  my $file = "/wormsrv2/wormbase/misc/misc_microarrays.ace";
+  my $file = "$basedir/wormbase/misc/misc_microarrays.ace";
   &load($file,"microarray_connections");
 
 }
@@ -1186,16 +1258,14 @@ sub map_features {
 sub confirm_gene_models {
   $am_option = "-confirm";
 
-  # confirm_genes from EST (-e) and mRNA (-m) data sets and OST (-o)
-  &run_command("$scriptdir/confirm_genes.pl -e");
-
-  &run_command("$scriptdir/confirm_genes.pl -m");
+  # confirm_genes from EST&OST (-est) and mRNA (-mrna) data sets
+  &run_command("$scriptdir/confirm_genes.pl --est --mrna");
 
   # load files
-  my $file = "/wormsrv2/wormbase/misc/misc_confirmed_by_EST.ace";
-  &load($file,"genes_confirmed_by_EST");
+  my $file = "$basedir/wormbase/misc/misc_confirmed_by_EST.ace";
+  &load($file,"genes_confirmed_by_EST_and_OST");
 
-  $file = "/wormsrv2/wormbase/misc/misc_confirmed_by_mRNA.ace";
+  $file = "$basedir/wormbase/misc/misc_confirmed_by_mRNA.ace";
   &load($file,"genes_confirmed_by_mrna");
   
   # make dumped_GFF_file in /logs
@@ -1238,7 +1308,7 @@ sub load {
     my $command = "pparse $file\nsave\nquit\n";
     
     print LOG &runtime,": adding $file info to autoace\n";  
-    open (WRITEDB, "| $tace -tsuser $tsuser /wormsrv2/autoace ") || die "Couldn't open pipe to autoace\n";
+    open (WRITEDB, "| $tace -tsuser $tsuser $basedir/autoace ") || die "Couldn't open pipe to autoace\n";
     print WRITEDB $command;
     close (WRITEDB);
   }
@@ -1250,8 +1320,9 @@ sub load {
 #################################################################################
 
 sub logfile_details {
-  $rundate    = `date +%y%m%d`; chomp $rundate;
+  $rundate = &rundate;
   print LOG "# autoace_minder.pl started at: $rundate ",&runtime,"\n";
+  print LOG "# TEST MODE!!! Using $basedir/autoace\n" if ($test);
   print LOG "# WormBase/Wormpep version: WS${WS_version}\n\n";  
   print LOG "#  -initial      : Prepare for a new build, update WSnn version number\n"                 if ($initial);
   print LOG "#  -unpack       : Unpack databases from FTP site and copy Sanger dbs\n"                  if ($unpack);
@@ -1259,7 +1330,7 @@ sub logfile_details {
   print LOG "#  -build        : Build autoace\n"                                                       if ($build);
   print LOG "#  -builddb      : Build autoace : DB only\n"                                             if ($builddb);
   print LOG "#  -buildchrom   : Build autoace : DNA data\n"                                            if ($buildchrom);
-  print LOG "#  -buildtest    : Build autoace : Test for failed .ace object uploads\n"                 if ($buildtest);
+
   print LOG "#  -buildrelease : Build autoace : Release directory\n"                                   if ($buildrelease);
   print LOG "#  -agp          : Make and check agp files\n"		                               if ($agp);
   print LOG "#  -dbcomp       : Check DB consistency and diffs from previous version\n"                if ($dbcomp);
@@ -1280,7 +1351,9 @@ sub logfile_details {
   print LOG "#  -verbose      : Verbose mode\n"                                                        if ($verbose);
   print LOG "#  -gffdump      : Dump GFF files\n"                                                      if ($gffdump);
   print LOG "#  -gffsplit     : Split GFF files\n"                                                     if ($gffsplit);
+
   print LOG "#  -map          : map PCR and RNAi\n"                                                    if ($map);
+  print LOG "#  -test         : running in test mode\n"                                                if ($map);
   print LOG "======================================================================\n\n";
 
 }
@@ -1297,9 +1370,9 @@ sub run_command{
   my $command = shift;
   print LOG &runtime, ": started running $command\n";
   my $status = system($command);
-  if($status != 0){
+  if(($status >>8) != 0){
     $errors++;
-    print LOG "ERROR: $command failed\n";
+    print LOG "ERROR: $command failed. \$\? = $status\n";
   }
   print LOG &runtime, ": finished running\n\n";
 
@@ -1318,7 +1391,7 @@ sub usage {
     if ($error eq "No_WormBase_release_number") {
 	# No WormBase release number file
 	print "The WormBase release number cannot be parsed\n";
-	print "Check File: /wormsrv2/autoace/wspec/database.wrm\n\n";
+	print "Check File: $basedir/autoace/wspec/database.wrm\n\n";
 	exit(0);
     }
     elsif ($error == 1) {
@@ -1461,10 +1534,20 @@ sub usage {
       print "have not been split.  You need split GFF files to make operons.\n\n";
       exit(0);
     }
+    elsif ($error == 21) {
+      # -test and -quicktest specified, only need one
+      print "\nautoace build aborted:\n";
+      print "You have specified -test (full-test mode) AND -quicktest (only test one chromosome where\n";
+      print "appropriate).  You only need to specify one of these options.\n\n";
+      exit(0);
+    }
+
     elsif ($error == 0) {
 	# Normal help menu
 	exec ('perldoc',$0);
     }
+
+
 }
 
 
@@ -1550,6 +1633,13 @@ autoace_minder.pl OPTIONAL arguments:
 =item -load <file>, load filename into autoace...filename should be valid acefile
 
 =item -tsuser <name>, to be used in conjunction with -load (optional)
+
+=item -test, set build to be in test mode, uses ~wormpub/AUTOACE_TEST and ~wormpub/scripts
+
+=item -quicktest, same as -test but where appropriate will only run tests/checks on one chromosome
+(chromosome III), this is meaningless for steps of the build which don't loop through chromosomes,
+and for these steps -quicktest is the same as -test
+
 
 =back
 

@@ -5,7 +5,7 @@
 # completely rewritten by Keith Bradnam from list_loci_designations
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-08-19 09:34:34 $      
+# Last updated on: $Date: 2003-12-01 11:54:28 $      
 #
 # This script should be run under a cron job and simply update the webpages that show
 # current gene names and sequence connections.  Gets info from geneace.  
@@ -69,11 +69,11 @@ foreach my $locus (@loci){
   print TEXT "$locus,";
 
 
-  # Column 2 - ?Sequence connections
-  if(defined($locus->at('Molecular_information.Genomic_sequence'))){
-    my @genomic_sequences = $locus->Genomic_sequence;
+  # Column 2 - ?CDS connections
+  if(defined($locus->at('Molecular_information.CDS'))){
+    my @CDSs = $locus->CDS;
     print HTML "<TD>";
-    foreach my $i (@genomic_sequences){
+    foreach my $i (@CDSs){
       print HTML "<A HREF=\"http://www.wormbase.org/db/seq/sequence?name=${i}\">${i}</a> ";
       print TEXT "$i ";
     }

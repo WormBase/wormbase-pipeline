@@ -206,10 +206,10 @@ sub check_overlapping_CDS
 	my $chromosome = "CHROMOSOME_$_";
 
 	while (<GFF>) {
-	  # CHROMOSOME_I curated Sequence 222722  223159  . + . Sequence "Y48G1BM.3" wp_acc=CE26120
-	  if ( ( /curated/ and /Sequence/) or (/RNA/ and /Transcript/) ) {
+	  # CHROMOSOME_I curated CDS 222722  223159  . + . CDS "Y48G1BM.3" wp_acc=CE26120
+	  if ( ( /curated/ and /CDS/) or (/RNA/ and /Transcript/) ) {
 	    my @data = split;
-	    next unless( "$data[2]" eq "Sequence" ); #using full gff so curated CDS       Sequence XXXX etc will ma
+	    next unless( "$data[2]" eq "CDS" ); #using full gff so only need 'curated' 'CDS'?
 	    $data[9] =~ s/\"//g;
 	    my $gene = $data[9];
 	    my $end5 = $data[3];

@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/bin/perl5.8.0 -w
 #
 # find_utrs.pl
 #
@@ -6,8 +6,8 @@
 #
 # Ashwin Hajarnavis ah3@sanger.ac.uk  August 2002
 #
-# Last updated by: $Author: ck1 $                 
-# Last updated on: $Date: 2003-05-06 15:04:55 $   
+# Last updated by: $Author: krb $                 
+# Last updated on: $Date: 2003-12-01 11:54:26 $   
 
 # touch logfile for run details
 $0 =~ m/\/*([^\/]+)$/; system("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
@@ -69,22 +69,22 @@ my $chrom2parse;
 # Link data
 open (LINK, "</wormsrv2/autoace/BLAT/chromosome.ace") || die "whoops $!";
 while (<LINK>) {
-    if (/^Sequence \: \"CHROMOSOME_(\S+)\"/) {
-	$chrom2parse = $1;
-	next;
-    }
-
-    if (/Subsequence\s+\"(\S+)\"\s+(\d+)\s+(\d+)/) {
-	$link_coordinate_start{$1} = $2;
-	$link_coordinate_end{$1}   = $3;
-	$link_chrom{$1}            = $chrom2parse;
-    }
+  if (/^Sequence \: \"CHROMOSOME_(\S+)\"/) {
+    $chrom2parse = $1;
+    next;
+  }
+  
+  if (/Subsequence\s+\"(\S+)\"\s+(\d+)\s+(\d+)/) {
+    $link_coordinate_start{$1} = $2;
+    $link_coordinate_end{$1}   = $3;
+    $link_chrom{$1}            = $chrom2parse;
+  }
 }
 close LINK;
 
 # checks
 foreach my $link (keys %link_coordinate_start) {
-    print "\n$link\t[$link_chrom{$link} starts at $link_coordinate_start{$link} to $link_coordinate_end{$link}]\n";
+  print "\n$link\t[$link_chrom{$link} starts at $link_coordinate_start{$link} to $link_coordinate_end{$link}]\n";
 }
 
 
@@ -542,7 +542,7 @@ Visible
 Class 
 Class Sequence 
 From 1 
-Tag Matching_Genomic  
+Tag Matching_CDS  
  
 Colonne 3 
 Width 12 

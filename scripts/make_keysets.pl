@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.1
+#!/usr/local/bin/perl5.8.0 -w
 #
 # make_keysets.pl
 #
@@ -7,13 +7,12 @@
 # Usage : make_keysets.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-04-04 18:01:42 $
+# Last edited on: $Date: 2003-12-01 11:54:27 $
 
 #################################################################################
 # variables                                                                     #
 #################################################################################
 
-$|=1;
 use IO::Handle;
 use Getopt::Long;
 use strict;
@@ -66,7 +65,7 @@ my $maintainers = "dl1\@sanger.ac.uk" if ($debug);
 # CDS with RNAi
 if (($rnai) || ($all)) {
     print "Tace query for CDS_with_RNAi\t" if ($debug);
-    my $command ="nosave\nquery find Predicted_gene where RNAi_result\nlist -a\nquit\n";
+    my $command ="nosave\nquery find elegans_CDS where RNAi_result\nlist -a\nquit\n";
     &tace_it($command,'CDS_with_RNAi');
     print "....load into db\t" if ($debug);
     &load_it('CDS_with_RNAi','keyset_lists') unless ($noload);
@@ -76,7 +75,7 @@ if (($rnai) || ($all)) {
 # CDS with Expr_pattern
 if (($expr) || ($all)) {
     print "Tace query for CDS_with_Expr_pattern\t" if ($debug);
-    my $command ="nosave\nquery find Predicted_gene where Expr_pattern\nlist -a\nquit\n";
+    my $command ="nosave\nquery find elegans_CDS where Expr_pattern\nlist -a\nquit\n";
     &tace_it($command,'CDS_with_Expr_pattern');
     print "....load into db\t" if ($debug);
     &load_it('CDS_with_Expr_pattern','keyset_lists') unless ($noload);
@@ -86,7 +85,7 @@ if (($expr) || ($all)) {
 # CDS with PCR_product
 if (($pcr) || ($all)) {
     print "Tace query for CDS_with_PCR_product\t" if ($debug);
-    my $command ="nosave\nquery find Predicted_gene where Corresponding_PCR_product\nlist -a\nquit\n";
+    my $command ="nosave\nquery find elegans_CDS where Corresponding_PCR_product\nlist -a\nquit\n";
     &tace_it($command,'CDS_with_PCR_product');
     print "....load into db\t" if ($debug);
     &load_it('CDS_with_PCR_product','keyset_lists') unless ($noload);
@@ -96,7 +95,7 @@ if (($pcr) || ($all)) {
 # CDS with GO_term
 if (($go) || ($all)) {
     print "Tace query for CDS_with_GO_term\t" if ($debug);
-    my $command ="nosave\nquery find Predicted_gene where GO_term\nlist -a\nquit\n";
+    my $command ="nosave\nquery find elegans_CDS where GO_term\nlist -a\nquit\n";
     &tace_it($command,'CDS_with_GO_term');
     print "....load into db\t" if ($debug);
     &load_it('CDS_with_GO_term','keyset_lists') unless ($noload);
@@ -106,7 +105,7 @@ if (($go) || ($all)) {
 # CDS with transcript_evidence
 if (($touched) || ($all)) {
     print "Tace query for CDS_with_transcript_evidence\t" if ($debug);
-    my $command ="nosave\nquery find Predicted_gene where Matching_cDNA\nlist -a\nquit\n";
+    my $command ="nosave\nquery find elegans_CDS where Matching_cDNA\nlist -a\nquit\n";
     &tace_it($command,'CDS_with_transcript_evidence');
     print "....load into db\t" if ($debug);
     &load_it('CDS_with_transcript_evidence','keyset_lists') unless ($noload);

@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/bin/perl5.8.0 -w
 #
 # make_Interpro2GO_mapping.pl 
 # 
@@ -6,8 +6,8 @@
 #
 # Gets latest Interpro:GO mappings from XXXX and puts info in to ace file
 #
-# Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2003-04-23 16:12:48 $                        # quickly see when script was last changed and by whom
+# Last updated by: $Author: krb $                      # These lines will get filled in by cvs and helps us
+# Last updated on: $Date: 2003-12-01 11:54:26 $                        # quickly see when script was last changed and by whom
 
 
 use strict;
@@ -91,7 +91,7 @@ print LOG "\tabout to write ace file  .  .  \n";
 
 #Motif : "INTERPRO:IPR000018"
 #Title    "P2Y4 purinoceptor"
-#Database         "INTERPRO" "IPR000018" "IPR000018"
+#Database "INTERPRO" "INTERPRO_ID" "IPR000018"
 #GO_term  "GO:0004930"
 #GO_term  "GO:0005624"
 
@@ -99,7 +99,7 @@ open (I2GACE, ">/wormsrv2/tmp/interpro2go.ace") or die "cant write ace file\n";
 foreach my $key (keys %interpro_des)
   {
     print I2GACE "Motif : \"INTERPRO:$key\"\n";
-    print I2GACE "Database \"INTERPRO\" \"$key\" \"$key\"\n";
+    print I2GACE "Database \"INTERPRO\" \"INTERPRO_ID\" \"$key\"\n";
     @data = split(/\s+/,"$interpro_GO{$key}");
     foreach (@data){
       print I2GACE "GO_term \"$_\"\n";
@@ -153,7 +153,7 @@ Motif : "INTERPRO:IPR000018"
 
 Title    "P2Y4 purinoceptor"
 
-Database         "INTERPRO" "IPR000018" "IPR000018"
+Database "INTERPRO" "INTERPRO_ID" "IPR000018"
 
 GO_term  "GO:0004930"
 

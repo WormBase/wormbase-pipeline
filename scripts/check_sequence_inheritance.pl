@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl
+#!/usr/local/bin/perl5.8.0 -w
 
 use Ace;
 
@@ -20,7 +20,7 @@ $db = Ace->connect(-path=>"$campath") ||
 print "Connection successful\n";
 print "Dump CDS objects from camace\n";
 
-$it = $db->fetch_many(-query=>'find Sequence; CDS');
+$it = $db->fetch_many(-query=>'find elegans_CDS');
 while ($obj=$it->next){
 
     # discard genewise predictions
@@ -31,7 +31,7 @@ while ($obj=$it->next){
 
     # extract data
 
-    $source = $obj->Source;
+    $source = $obj->Sequence;
     $method = $obj->Method;
 
     print "$obj\n";
@@ -50,7 +50,7 @@ $db = Ace->connect(-path=>"$autopath") ||
 print "Connection successful\n";
 print "Dump CDS objects from autoace\n";
 
-$it = $db->fetch_many(-query=>'find Sequence; CDS');
+$it = $db->fetch_many(-query=>'find elegans_CDS');
 while ($obj=$it->next){
 
 
@@ -61,7 +61,7 @@ while ($obj=$it->next){
 	next;
     }
 
-    $source = $obj->Source;
+    $source = $obj->Sequence;
 
     print "$obj\n";
     $autoace{$obj}="$method $source";
@@ -83,7 +83,7 @@ while (<MISSING>) {
     chomp;
     $gene = $_;
     ($source,$method) = split (/\s+/, $camace{$gene});
-    print "\nSequence : $gene\nSource\t$source\nMethod\t$method\n";
+    print "\nSequence : $gene\nSequence\t$source\nMethod\t$method\n";
 }
 close (MISSING);
 
@@ -94,7 +94,7 @@ while (<MISSING>) {
     chomp;
     $gene = $_;
     ($source,$method) = split (/\s+/, $camace{$gene});
-    print "\nSequence : $gene\nSource\t$source\nMethod\t$method\n";
+    print "\nSequence : $gene\nSequence\t$source\nMethod\t$method\n";
 }
 close (MISSING);
 

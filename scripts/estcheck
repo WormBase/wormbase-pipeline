@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/bin/perl5.8.0 -w
 #
 # estcheck
 # v 0.1
@@ -21,7 +21,7 @@ use IO::Handle;
 use Getopt::Std;
 use lib '/wormsrv2/scripts';
 use Wormbase;
-#use strict;
+use strict;
 
  ##############################
  # Script variables (run)     #
@@ -34,8 +34,8 @@ my $runtime = `date +%H:%M:%S`; chomp $runtime;
  # command-line options       #
  ##############################
 
-$opt_d="";   # Verbose debug mode
-$opt_h="";   # Help/Usage page
+my $opt_d="";   # Verbose debug mode
+my $opt_h="";   # Help/Usage page
 
 getopts ('hd');
 &usage(0) if ($opt_h);
@@ -47,7 +47,6 @@ my $debug = $opt_d;
 
 my $tace = &tace;    # tace executable path
 my $dbdir  = "/wormsrv2/autoace";                                  # Database path
-my $gffdir = "/wormsrv2/autoace/GFF_SPLITS";
 my $outdir = "/wormsrv2/autoace/CHECKS";
 my $WS_version = &get_wormbase_version_name;
 
@@ -71,7 +70,7 @@ print LOG "\n";
 my (%EST_acc, %EST_len, %EST_match);
 
 $ENV{'ACEDB'} = $dbdir;
-$command=<<EOF;
+my $command=<<EOF;
 Table-maker -p "$dbdir/wquery/EST_match.def"
 quit
 EOF
@@ -86,7 +85,7 @@ while (<TACE>) {
   s/\"//g;
   (/^(\S+)\s/);
   
-  @f = split /\t/;
+  my @f = split /\t/;
   #    print "Processing EST: $f[0]\n";
   
   $EST_acc{$f[0]}   = $f[1];
@@ -120,7 +119,7 @@ while (<TACE>) {
     s/\"//g;
     (/^(\S+)\s/);
 
-    @f = split /\t/;
+    my @f = split /\t/;
     $EST_clone{$f[0]} .= "$f[1] ";
 }
 close TACE;
@@ -152,7 +151,7 @@ foreach my $EST (sort keys %EST_clone) {
   my ($first_match,$first_read);
 
 # print "# $EST  \t  [$EST_clone{$EST}\b]\n";
-  @reads = split (/ /, $EST_clone{$EST});
+  my @reads = split (/ /, $EST_clone{$EST});
   foreach my $read (@reads) {
     next if ($read eq "");
     #	print "$read\t$EST_acc{$read}\t$EST_len{$read}\t$EST_match{$read}\n";

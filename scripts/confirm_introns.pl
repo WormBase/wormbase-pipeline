@@ -134,7 +134,7 @@ while (<CI>) {
 		print "Coords start $f[1] => $start, end $f[2] => $end\n" if ($opt_v);
 				
 		##################
-		# map to S_Child #
+		# map to S_child #
 		##################
 		
 		my $lastvirt = int((scalar @dna)/100000) + 1;

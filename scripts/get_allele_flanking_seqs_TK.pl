@@ -4,8 +4,8 @@
 
 # by Chao-Kung Chen [030625]
 
-# Last updated on: $Date: 2003-09-25 11:16:47 $
-# Last updated by: $Author: ck1 $
+# Last updated on: $Date: 2003-12-01 11:54:26 $
+# Last updated by: $Author: krb $
 
 use Tk;
 use strict;
@@ -982,7 +982,7 @@ sub write_ace {
   $ace_window->insert('end', "\/\/Deletion_with_insertion\n");
   $ace_window->insert('end', "Flanking_sequences \"$Lf\" \"$Rf\"\n");
   $ace_window->insert('end', "Gene  \"$locus\"\n");
-  $ace_window->insert('end', "Predicted_gene  \"$cds\"\n");
+  $ace_window->insert('end', "CDS  \"$cds\"\n");
   $ace_window->insert('end', "Species \"Caenorhabditis elegans\"\n");
   $ace_window->insert('end', "\/\/Reference \"\"\n");
   if ($info[0] eq "X"){
@@ -1124,7 +1124,7 @@ foreach (@ace){
       $ace_window->insert('end', "\/\/Deletion_with_insertion\n");
       $ace_window->insert('end', "Flanking_sequences \"$1\" \"$2\"\n");
       $ace_window->insert('end', "Gene  \"$locus\"\n");
-      $ace_window->insert('end', "Predicted_gene  \"$cds\"\n");
+      $ace_window->insert('end', "CDS  \"$cds\"\n");
       $ace_window->insert('end', "Species \"Caenorhabditis elegans\"\n");
       $ace_window->insert('end', "\/\/Reference \"\"\n");
       if ($info[0] eq "X"){
@@ -1158,7 +1158,7 @@ foreach (@ace){
       $ace_window->insert('end', "\/\/Deletion_with_insertion\n");
       $ace_window->insert('end', "Flanking_sequences \"$1\" \"$2\"\n");
       $ace_window->insert('end', "Gene  \"$locus\"\n");
-      $ace_window->insert('end', "Predicted_gene  \"$cds\"\n");
+      $ace_window->insert('end', "CDS  \"$cds\"\n");
       $ace_window->insert('end', "Species \"Caenorhabditis elegans\"\n");
       $ace_window->insert('end', "\/\/Reference \"\"\n");
       if ($info[0] eq "X"){
@@ -1193,7 +1193,7 @@ foreach (@ace){
       $ace_window->insert('end', "\/\/Deletion_with_insertion\n");
       $ace_window->insert('end', "Flanking_sequences \"$1\" \"$2\"\n");
       $ace_window->insert('end', "Gene  \"$locus\"\n");
-      $ace_window->insert('end', "Predicted_gene  \"$cds\"\n");
+      $ace_window->insert('end', "CDS  \"$cds\"\n");
       $ace_window->insert('end', "Species \"Caenorhabditis elegans\"\n");
       $ace_window->insert('end', "\/\/Reference \"\"\n");
       if ($info[0] eq "X"){

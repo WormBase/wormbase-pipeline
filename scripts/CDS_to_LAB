@@ -43,14 +43,14 @@ if ($opt_g) {
 }
 if ($opt_e) {
     $est_seq = $db->fetch(Sequence=>$opt_e);  
-    ($match_genomic) = $est_seq->at('Visible.Matching_Genomic');
+    ($match_genomic) = $est_seq->at('Visible.Matching_CDS');
     $match_sequence = $db->fetch(Sequence=>$match_genomic);
     ($sourcename) = $match_sequence->at('Structure[3]');
     $sourceseq = $db->fetch(Sequence=>$sourcename);
     ($from_lab)=$sourceseq->at('Origin.From_laboratory[1]');
     if (!$opt_s) {
 	print "Input EST sequence: $est_seq\n";
-	print "Matching_Genomic: $match_genomic\n";
+	print "Matching_CDS: $match_genomic\n";
 	print "From_laboratory: $from_lab\n";
     }
 }

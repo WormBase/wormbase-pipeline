@@ -10,7 +10,7 @@
 # 
 #
 # Last updated by: $Author: krb $                     
-# Last updated on: $Date: 2003-10-01 08:09:41 $     
+# Last updated on: $Date: 2003-12-01 11:54:25 $     
 
 use strict;                                     
 use lib "/wormsrv2/scripts/";                  
@@ -47,7 +47,7 @@ my %CE_history;      # hash of hashes of hashes!  eg CE00100 => 8  => gene1.1 =>
 my %CE_gene;         # hash of arrays eg  CE00100 => (gene1.1  gene3.4 gene2.1)  - contains all genes in history
 my %gene_CE;
 my %CE_live;
-my %CE_corr_DNA;     # hash of arrays eg  CE00100 => (gene1.1   gene2.1)  - contains only genes of Live peptides
+my %CE_corr_CDS;     # hash of arrays eg  CE00100 => (gene1.1   gene2.1)  - contains only genes of Live peptides
 my %CE_sequence;
 
 my $stem;
@@ -174,7 +174,8 @@ close HISTORY;
 # EXAMPLE OF OUTPUT:
 # 
 # Protein : "WP:CE05214"
-# Database "SwissProt" "RR44_CAEEL" "Q17632"
+# Database "SwissProt" "SwissProt_ID" "RR44_CAEEL" 
+# Database "SwissProt" "SwissProt_AC" "Q17632"
 # Motif_homol     "INTERPRO:IPR001900"
 
 # get the sequence from the .fasta file
@@ -201,7 +202,7 @@ open (ACE, ">$acefile") || die "cant write $acefile\n";
 
 
 $CE_live{'CE25872'} = 1; #hard coded as this history is confused. Remove if CE25873 no longer valid
-push( @{ $CE_corr_DNA{'CE25872'} }, "F36D3.1");
+push( @{ $CE_corr_CDS{'CE25872'} }, "F36D3.1");
 
 #ace file for new Protein model (with History)
 foreach my $key(sort keys %CE_history) {
@@ -220,8 +221,8 @@ foreach my $key(sort keys %CE_history) {
     
     if ( $CE_live{$key} == 1 ){
 	print ACE "Live\n";
-	for $ii (0 .. $#{ $CE_corr_DNA{$key} }) {
-	    print ACE "Corresponding_DNA \"$CE_corr_DNA{$key}[$ii]\"\n";
+	for $ii (0 .. $#{ $CE_corr_CDS{$key} }) {
+	    print ACE "Corresponding_CDS \"$CE_corr_CDS{$key}[$ii]\"\n";
 	}
     }
     print ACE "\n";
@@ -289,7 +290,7 @@ sub addNewPeptide {
     # 1st occurance of peptide
     $CE_history{$CE}{$in}{$gene} = "created"; #.= "Created $in\t" ;
     #$CE_gene{$CE} .= "$gene ";
-    push( @{ $CE_corr_DNA{$CE} }, "$gene");
+    push( @{ $CE_corr_CDS{$CE} }, "$gene");
     push( @{ $CE_gene{$CE} }, "$gene");
     $CE_live{$CE} = 1;   #assume live when put in unless explicitly killed
     $gene_CE{$gene} = $CE;
@@ -298,7 +299,7 @@ sub addNewPeptide {
 	  $CE_live{$CE} = 0;
       }
       $CE_history{$CE}{$out}{$gene} = "removed";
-      &removeGeneCorrDNA;
+      &removeGeneCorrCDS;
   } 
     return 1;
 }
@@ -307,7 +308,7 @@ sub replacePeptide {
     if ( &multiCoded($existingCE) == 0){
 	#this is to make sure that Im not killing a peptide coded by another gene
 	if( $CE_live{$existingCE} == 1 ) {
-	    if ("$CE_corr_DNA{$existingCE}[0]" eq "$gene") {
+	    if ("$CE_corr_CDS{$existingCE}[0]" eq "$gene") {
 		$CE_live{$existingCE} = 0;
 	    }
 	}
@@ -326,7 +327,7 @@ sub reappearedPeptide {
 	$CE_history{$CE}{$out}{$gene} = "removed";# .= "$out Removed\t";
     }
     else {
-	push( @{ $CE_corr_DNA{$CE} }, "$gene");
+	push( @{ $CE_corr_CDS{$CE} }, "$gene");
     }
     return 1;
     #gene is same as was previously if this routine called
@@ -356,7 +357,7 @@ sub reappearedAsIsoform {
 	$CE_history{$CE}{$out}{$gene} = "removed";# .= "$out Removed\t";
     }
     else {
-	push( @{ $CE_corr_DNA{$CE} }, "$gene");
+	push( @{ $CE_corr_CDS{$CE} }, "$gene");
     }
     return 1;
 }
@@ -364,7 +365,7 @@ sub reappearedAsIsoform {
 sub becameIsoform {
     $CE_live{$CE} = 1;
     $CE_history{$CE}{$in}{$gene} = "became isoform to $stem";#  .= "$in became isoform to $stem \t"; 
-    &removeGeneCorrDNA($stem);
+    &removeGeneCorrCDS($stem);
     push( @{ $CE_gene{$CE} }, "$gene");
     $gene_CE{$CE} = $CE;
     if( $out ) {
@@ -374,7 +375,7 @@ sub becameIsoform {
 	$CE_history{$CE}{$out}{$gene} = "removed";# .= "$out Removed\t";
     } 
     else {
-	push( @{ $CE_corr_DNA{$CE} }, "$gene");
+	push( @{ $CE_corr_CDS{$CE} }, "$gene");
     }  
     return 1;
 }
@@ -392,7 +393,7 @@ sub changePepGene {
 	$CE_history{$CE}{$out}{$gene} = "removed";# .= "$out Removed\t";
     } 
     else {
-	push( @{ $CE_corr_DNA{$CE} }, "$gene");
+	push( @{ $CE_corr_CDS{$CE} }, "$gene");
     }
     return 1;
 }
@@ -410,10 +411,10 @@ sub oldStyleName {
 sub multiCoded {
     # if the peptide is coded by multiple genes returns 1 else 0
     my $loop = 0;
-    my $mul = $CE_corr_DNA{$CE}[0];
-    while (defined($CE_corr_DNA{$CE}[$loop]) ) {
+    my $mul = $CE_corr_CDS{$CE}[0];
+    while (defined($CE_corr_CDS{$CE}[$loop]) ) {
 	$loop++;
-	$mul = $CE_corr_DNA{$CE}[0];
+	$mul = $CE_corr_CDS{$CE}[0];
     }
     if ($loop > 1){
 	return 1;
@@ -423,15 +424,15 @@ sub multiCoded {
     }
 }
 
-sub removeGeneCorrDNA {
+sub removeGeneCorrCDS {
     my $g;
     my $gene_to_remove = shift;
     unless (defined($gene_to_remove)){
 	$gene_to_remove = $gene;
     }
-    foreach $g (0 .. $#{ $CE_corr_DNA{$CE} }) {
-	if( "$gene_to_remove" eq "$CE_corr_DNA{$CE}[$g]" ) {
-	    splice(@{ $CE_corr_DNA{$CE} } , $g, 1);# remove gene
+    foreach $g (0 .. $#{ $CE_corr_CDS{$CE} }) {
+	if( "$gene_to_remove" eq "$CE_corr_CDS{$CE}[$g]" ) {
+	    splice(@{ $CE_corr_CDS{$CE} } , $g, 1);# remove gene
 	    }
     }
 }

@@ -1,12 +1,12 @@
-#!/usr/local/bin/perl
+#!/usr/local/bin/perl5.8.0 -w
 # 
-# correlate_EMBL_and_camace_protein_ids.pl
+# correlate_Protein_IDs.pl
 # v0.3
 # dl
 #
 # 000619 : dl : PP version
 #
-# Usage : correlate_EMBL_and_camace_protein_ids.pl <file1> <file2>
+# Usage : correlate_Protein_IDs.pl <file1> <file2>
 #
 # where <file1> is the Protein_ID file mailed by the EBI each monday
 # and   <file2> is a tablemaker list from camace 
@@ -18,7 +18,6 @@
 
 use lib "/wormsrv2/scripts/";
 use Wormbase;
-
 
 #####################################################################################################
 # get flatfile names from the command line                                                          #
@@ -49,7 +48,7 @@ my $debug = 1;
 open (OUT, ">update_protein_ID.ace");
 
    ##################################################################################################
-   # make a flatfile relating ACeDB_id, EMBL_id & EMBL_ac                                           #
+   # make a flatfile relating ACeDB_id, NDBL_ID & NDB_AC                                           #
    ##################################################################################################
 
 print "make accession list from camace\n" if ($debug); 
@@ -130,14 +129,14 @@ exit(0);
 sub protein_ID_list_from_camace {
 
     my $command=<<EOF;
-find Predicted_gene
+find elegans_CDS
 show -a Protein_id
 quit
 EOF
 
-    open (output, ">/tmp/protein_ID_list.camace");
-    open(textace, "echo '$command' | $exec -| ");
-    while (<textace>) {
+    open (OUT, ">/tmp/protein_ID_list.camace");
+    open(TACE, "echo '$command' | $exec -| ");
+    while (<TACE>) {
 	chomp;
 	next if ($_ eq "");
 	next if (/acedb/);
@@ -153,11 +152,11 @@ EOF
 	    &get_accession;
 	    select((select(STDOUT),$|=1)[0]);
 	#    print "-> parse Protein_ID's for gene '$CDS' in entry '$sequence'\n" if ($debug);
-	    print output "$EMBL_ac 00 $PID_root $PID_ver 0000000000 $CDS\n";
+	    print OUT "$EMBL_ac 00 $PID_root $PID_ver 0000000000 $CDS\n";
 	}
     }    
-    close (textace);     
-    close (output);
+    close (TACE);     
+    close (OUT);
     
 } 
 
@@ -183,9 +182,9 @@ sub get_EMBL {
 sub get_protein_id {
     
     $next_protein_ID = "";
-    open (getz, "getz -e  \"([{embl emblnew}-acc:$acc_camace]\!EMBL<EMBLNEW)\" |");
+    open (GETZ, "getz -e  \"([{embl emblnew}-acc:$acc_camace]\!EMBL<EMBLNEW)\" |");
 
-    while (<getz>) {
+    while (<GETZ>) {
 	if (/\/gene=\"$gene\"/) {
 	    $next_protein_ID = 1;
 	}
@@ -195,7 +194,7 @@ sub get_protein_id {
 	    last;
 	}
     }
-    close (getz);
+    close (GETZ);
    
     return ($PID_EMBL2,$protein_ID_EMBL2,$protein_version_EMBL2);
 }
@@ -228,8 +227,8 @@ show -a Database
 quit
 EOF
 
-    open(textace2, "echo '$command2' | $exec -| ");
-    while (<textace2>) {
+    open(TACE2, "echo '$command2' | $exec -| ");
+    while (<TACE2>) {
 	chomp;
 	next if ($_ eq "");
 	next if (/acedb/);
@@ -241,7 +240,7 @@ EOF
 	    ($EMBL_id,$EMBL_ac) = ($1,$2);
 	}
     }
-    close (textace2);     
+    close (TACE2);     
     
     return ($EMBL_ac);
 }
@@ -255,9 +254,9 @@ show -a Database
 quit
 EOF
 
-    open (output2, ">/tmp/camace_accessions") || die "failed to open file : '/tmp/camace_accessions'\n\n";
-    open(textace3, "echo '$command3' | $exec -| ");
-    while (<textace3>) {
+    open (OUT2, ">/tmp/camace_accessions") || die "failed to open file : '/tmp/camace_accessions'\n\n";
+    open(TACE3, "echo '$command3' | $exec -| ");
+    while (<TACE3>) {
 	chomp;
 	next if ($_ eq "");
 	next if (/acedb/);
@@ -270,11 +269,11 @@ EOF
 	if (/Database\s+EMBL\s+(\S+)\s+(\S+)/) {
 	    select((select(STDOUT),$|=1)[0]);
 	  #  print "-> Dump accession for $sequence\n" if ($debug);
-	    print output2 "$sequence $1 $2\n";
+	    print OUT2 "$sequence $1 $2\n";
 	}
     }
-    close (textace3);     
-    close (output2);
+    close (TACE3);     
+    close (OUT2);
 }
 
 
@@ -290,13 +289,13 @@ Dan Lawson dl1@sanger.ac.uk
 
 =head2 USAGE
 
-correlate_EMBL_and_camace_protein_ids.pl <file>
+correlate_Protein_IDs.pl <file>
 
-correlate_EMBL_and_camace_protein_ids.pl will query an ACeDB database
+correlate_Protein_IDs.pl will query an ACeDB database
 to produce two flatfiles:
 
-/tmp/camace_accessions        : EMBL_ID & EMBL_ACC for all Genome_Sequences
-/tmp/protein_ID_list.camace   : Protein_IDs for all Predicted Genes
+/tmp/camace_accessions        : NDB_ID & NDBL_AC for all Genome_Sequences
+/tmp/protein_ID_list.camace   : Protein_IDs for all C. elegans CDSs
 
 The list of Protein_IDs is correlated with the input flatfile (weekly dump
 from EBI), and the latest version of the flatfiles via getz. 

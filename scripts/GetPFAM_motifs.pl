@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.1 -w                   
+#!/usr/local/bin/perl5.8.0 -w
 #
 # GetPFAM_motifs.pl 
 # 
@@ -7,7 +7,7 @@
 # Gets latest PFAM motifs from sanger/pub and puts info in to ace file
 #
 # Last updated by: $Author: krb $                      
-# Last updated on: $Date: 2002-12-09 16:53:55 $         
+# Last updated on: $Date: 2003-12-01 11:54:25 $         
 
 
 use strict;                                     
@@ -79,7 +79,7 @@ while (<PFAM>)
 	    print "$pfam went fine\n";
 	    print PFAMOUT "Motif : \"PFAM:$pfam\"\n";
 	    print PFAMOUT "Title \"$text\"\n";
-	    print PFAMOUT "Database \"Pfam\" \"PFAM:$pfam\" \"$pfam\"\n";
+	    print PFAMOUT "Database \"Pfam\" \"Pfam_ID\" \"$pfam\"\n";
 	    print PFAMOUT "\n";
 		undef $pfam;
 	    $text = "";
@@ -174,7 +174,7 @@ Motif : "PFAM:PF00351"
 
 Title "Biopterin-dependent aromatic amino acid hydroxylase"
 
-Database" "Pfam" "PFAM:PF00351" "PF00351"
+Database" "Pfam" "Pfam_ID" "PF00351"
 
 
 writes to /wormsrv2/wormbase/misc/misc_pfam_motifs.ace

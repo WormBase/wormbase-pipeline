@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2003-11-03 12:50:40 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2003-12-01 11:54:26 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -298,7 +298,7 @@ sub extract_confirmed_genes{
 
 
   my $db = Ace->connect(-path  => "/wormsrv2/autoace/");
-  my $query = "Find Sequence; Confirmed_by";
+  my $query = "Find elegans_CDS; Confirmed_by";
   my @confirmed_genes   = $db->fetch(-query=>$query);
 
 

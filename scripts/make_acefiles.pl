@@ -8,34 +8,19 @@
 # autoace.
 #
 # Last updated by: $Author: krb $                     
-# Last updated on: $Date: 2003-05-20 14:43:27 $       
+# Last updated on: $Date: 2003-12-01 11:54:26 $       
 
 #################################################################################
 # Variables                                                                     #
 #################################################################################
 
 use strict;
-use lib "/wormsrv2/scripts/";   
+use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
 use IPC::Open2;
 use IO::Handle;
 use Getopt::Long;
-
-##############################
-# Script variables (run)     #
-##############################
-
-my $maintainers = "All";
-my $rundate     = `date +%y%m%d`;   chomp $rundate;
-my $runtime     = `date +%H:%M:%S`; chomp $runtime;
-my $tace           = &tace;
-my $autoace_config = "/wormsrv2/autoace_config/autoace.config";
-my $basedir        = "/wormsrv2/wormbase";
-my $miscdir        = "$basedir/misc";
-
-our $WS_version  = &get_wormbase_version_name;
-our $log;
-
+use File::Copy qw(mv cp);
 
 ##############################
 # command-line options       #
@@ -44,22 +29,46 @@ our $log;
 our $help;       # Help perdoc
 our $db;         # Database name for single db option
 our $debug;      # Debug mode, verbose output to runner only
-our $dev;        # Write to development stream (/wormsrv1/ not /wormsrv2/)
+my $test;        # If set, script will use TEST_BUILD directory under ~wormpub
 
-GetOptions ("debug:s"   => \$debug,
+GetOptions ("debug=s"   => \$debug,
 	    "help"      => \$help,
 	    "db=s"      => \$db,
-	    "dev"       => \$dev);
+	    "test"      => \$test);
 
 
- ##############################
- # Paths for dev run          #
- ##############################
+##############################
+# Script variables (run)     #
+##############################
 
-if ($dev) {
-    $basedir        = "/nfs/griffin2/dl1/perlscrip/MAKE_ACEFILES";
-    $miscdir        = "$basedir/misc";
+my $maintainers = "All";
+my $rundate     = &rundate;
+my $runtime     = &runtime;
+my $tace           = &tace;
+
+
+# set paths to take account of whether -test is being used
+my $basedir     = "/wormsrv2";
+$basedir        = glob("~wormpub")."/TEST_BUILD" if ($test); 
+
+my $wormbasedir = "$basedir/wormbase";
+my $miscdir     = "$wormbasedir/misc";
+
+my $autoace_config = "$basedir/autoace_config/autoace.config";
+
+
+# set WS version depending on whether in test mode
+my $WS_version;
+if($test){
+  $WS_version  = "WS666";
 }
+else{
+ $WS_version = &get_wormbase_version_name;
+}
+
+
+our $log;
+
 
 # help page
 &usage("Help") if ($help);
@@ -110,13 +119,13 @@ exit (0);
 sub create_log_files{
 
   # Create history logfile for script activity analysis
-  $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
+  $0 =~ m/\/*([^\/]+)$/; system ("touch $basedir/logs/history/$1.`date +%y%m%d`");
 
   # create main log file using script name for
   my $script_name = $1;
   $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
-  my $rundate     = `date +%y%m%d`; chomp $rundate;
-  $log        = "/wormsrv2/logs/$script_name.$WS_version.$rundate.$$";
+  my $rundate  = &rundate;
+  $log         = "$basedir/logs/$script_name.$WS_version.$rundate.$$";
 
   open (LOG, ">$log") or die "cant open $log";
 
@@ -132,7 +141,6 @@ sub create_log_files{
   print LOG "=============================================\n";
   print LOG " Write .ace files\n";                     
   print LOG " from database $db\n"                           if ($db);
-  print LOG " Output to /wormsrv1\n"                         if ($dev);
   print LOG "======================================================================\n";
 
   if ($debug) {
@@ -144,11 +152,10 @@ sub create_log_files{
     print "======================================================================\n";
     print " Write .ace files\n";
     print "  from database $db\n"                           if ($db);
-    print "  Output to /wormsrv1\n"                         if ($dev);
     print "======================================================================\n";
     print "\n";
     print "Starting make_acefiles.pl .. \n\n";
-    print "writing .acefiled to '$basedir'\n";
+    print "writing .acefiled to '$wormbasedir'\n";
   }
 
 
@@ -185,7 +192,9 @@ sub mknewacefiles {
     if (/^P\s+(\S+)\s+(\S+)$/) {
       $dbname    = $1;
       $dbdir     = $2;
-      $targetdir = "$basedir/$dbname";
+      # need to change dbpath if in test mode
+      $dbdir     =~ s/\/wormsrv2/$basedir/ if ($test);
+      $targetdir = "$wormbasedir/$dbname";
       $exe       = "$tace $dbdir";
       next;
     }
@@ -200,8 +209,8 @@ sub mknewacefiles {
     
     # parse filename
     ($filename) = (/^\S+\s+(\S+)/);
-    $filepath   = "$basedir/$dbname/$filename";
-    $extrafile  = "$basedir/$dbname/$filename.extra";
+    $filepath   = "$wormbasedir/$dbname/$filename";
+    $extrafile  = "$wormbasedir/$dbname/$filename.extra";
 
     print "Noting filename:$filename\n" if ($debug);
     
@@ -361,7 +370,7 @@ sub process_ace_file{
     }
     close(INPUT);
     close(OUTPUT);
-    system ("mv -f ${filename}.tmpfile $filename");
+    mv("${filename}.tmpfile", "$filename") or print LOG "ERROR: couldn't rename file: $!\n";
 }
 
 
@@ -427,9 +436,9 @@ make_acefiles.pl OPTIONAL arguments:
 
 =item -debug, verbose report (e-mails dl1 only)
 
-=item -dev, builds new acefiles into /wormsrv1 development area
+=item -test, builds new acefiles into test build area in ~wormpub/TEST_BUILD
 
-=item -help, this help page
+=item -help, this help 
 
 =back
 
@@ -443,7 +452,8 @@ emblace, and geneace.
 
 =back
 
-This script must run on a machine which can see the /wormsrv2 disk.
+This script must run on a machine which can see the /wormsrv2 disk unless in
+test mode.
 
 This script requires the following data files:
 

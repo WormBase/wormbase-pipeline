@@ -7,7 +7,7 @@
 # Builds a wormpep data set from the current autoace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-10-01 08:15:26 $
+# Last updated on: $Date: 2003-12-01 11:54:27 $
 
 #################################################################################
 # variables                                                                     #
@@ -205,22 +205,16 @@ $runtime = `date +%H:%M:%S`; chomp $runtime;
 print LOG "# $runtime : connect to primary database\n";
 print "# $runtime : connect to primary database\n" if ($debug);
 
-my $db = Ace->connect (-path => $dbdir, -program => $tace) 
-    || &error(6); # die "cannot connect to autoace\n";
-my @dotnames_1 = $db->fetch (-query => 'FIND Genome_sequence ; FOLLOW Subsequence ; where (Method = curated) OR (Method=provisional)');
-my @dotnames_2 = $db->fetch (-query => 'FIND Sequence SUPERLINK* ; FOLLOW Subsequence ; where (Method = curated) OR (Method=provisional)');
+my $db = Ace->connect (-path => $dbdir, -program => $tace) || &error(6); # die "cannot connect to autoace\n";
+my @CDSs = $db->fetch (-query => 'FIND elegans_CDS');
 
-push (@dotnames_1 , @dotnames_2);
-@dotnames_1 = sort @dotnames_1;
+@CDSs = sort @CDSs;
 
-$runtime = `date +%H:%M:%S`; chomp $runtime;
-print LOG "=> " . scalar(@dotnames_1) . " CDS sequences\n";
-print LOG "=> " . scalar(@dotnames_2) . " of which are attached to LINK objects\n";
-print LOG "# $runtime : finished connection to database\n\n";
+print LOG "=> " . scalar(@CDSs) . " CDSs\n";
+print LOG &runtime, " : finished connection to database\n\n";
 
-print "=> " . scalar(@dotnames_1) . " CDS sequences\n" if ($debug);
-print "=> " . scalar(@dotnames_2) . " of which are attached to LINK objects\n" if ($debug);
-print "# $runtime : finished connection to database\n\n" if ($debug);
+print "=> " . scalar(@CDSs) . " CDSs\n" if ($debug);
+print &runtime, " : finished connection to database\n\n" if ($debug);
 
  ###########################################################################
  # get the dna and peptide sequence, write a dna.fasta file,
@@ -228,101 +222,100 @@ print "# $runtime : finished connection to database\n\n" if ($debug);
  # and giving a new wpid if necessary, creating %dot2num
  ###########################################################################
  
-$runtime = `date +%H:%M:%S`; chomp $runtime;
-print LOG "# $runtime : write wormpep.dna file\n\n";
+print LOG &runtime, " : write wormpep.dna file\n\n";
 
 #my $obj = "";
 open (DNA , ">$new_wpdir/wormpep.dna$release") || &error(7); # die "cannot create $new_wpdir/wormpep.dna$release\n";
 
 
-my (%dot2num , @dotnames , @c_dotnames);
-foreach my $dot (@dotnames_1) {
+my (%cds2num , @dotnames , @c_dotnames);
+foreach my $cds (@CDSs) {
     
-    print "Processing: '$dot'\n";
+    print "Processing: '$cds'\n";
 
-    if ($dot =~ /temp/) {
-       print LOG "$dot is only a temporary sequence\n";
+    if ($cds =~ /temp/) {
+       print LOG "$cds is only a temporary CDS\n";
        next;
     }
-    unless ($dot =~ /^[A-Z0-9_]+\.[1-9]\d?[A-Za-z]?$/i) {
-        print LOG "the sequence $dot has an incorrect dotname\n";
+    unless ($cds =~ /^[A-Z0-9_]+\.[1-9]\d?[A-Za-z]?$/i) {
+        print LOG "the CDS $cds has an incorrect dotname\n";
     }
     undef (my $dna);
     undef (my $method);
 
 
-##    $method = $dot -> at ('Method.[1]');
+##    $method = $cds -> at ('Method.[1]');
 ##    if ($method !~ /curated/) {
-##	print LOG "the sequence $dot has NON-CURATED method $method\n";
+##	print LOG "the CDS $cds has NON-CURATED method $method\n";
 ##	next;
 ##    }
 
-#    $obj = $db->fetch(Sequence=>"$dot");
+#    $obj = $db->fetch(CDS=>"$cds");
     
 #    $est_match = $obj->Matching_cDNA();
 #    if (defined ($est_match))  {
-#	$est{$dot} = 1;
+#	$est{$cds} = 1;
 #    }
 #    else {
-#	$est{$dot} = 0;
+#	$est{$cds} = 0;
 #    }
 
-    $dna = $dot->asDNA();
+    $dna = $cds->asDNA();
     if ((!defined ($dna)) || ($dna eq "")) {
-        print LOG "cannot extract dna sequence for $dot\n";
+        print LOG "cannot extract dna for CDS $cds\n";
     }
     $dna =~ /^>(\S+)\s+(\w.*)/s ; my $dseq = $2 ; $dseq =~ tr/a-z/A-Z/ ; $dseq =~ s/\s//g;
     if ($dseq =~ /[^ACGT]/) {
 	if ($dseq =~ /\-/) {                                          # - seems to indicate that e.g the subsequence
-	    print LOG "the dna sequence $dot contains a -\n";         # coordinates differ from the last exon coordinate
+	    print LOG "the dna sequence of CDS $cds contains a -\n";         # coordinates differ from the last exon coordinate
 	} elsif ($dseq =~ /N/) {
-            print LOG "the dna sequence $dot contains a N\n";
+            print LOG "the dna sequence of CDS $cds contains a N\n";
 	  } else {                         
-	      print LOG "the dna sequence $dot contains a non ACGT character different from - and N\n";  
+	      print LOG "the dna sequence of CDS $cds contains a non ACGT character different from - and N\n";  
 	    }
     }
     print DNA "$dna";
     undef (my $pep);
-    $pep = $dot->asPeptide();
+    $pep = $cds->asPeptide();
     if ((!defined ($pep)) || ($pep eq "")) {
-       print LOG "cannot extract peptide sequence for $dot\n";
+       print LOG "cannot extract peptide sequence for CDS $cds\n";
        next;
     }
     $pep =~ /^>(\S+)\s+([\w\*].*)/s ; my $pseq = $2 ; $pseq =~ tr/a-z/A-Z/ ; $pseq =~ s/\s//g;
 
 
 #    removed 011210 so that we see these errors in the log
-#    if (($pseq =~ /X/) && ($dot ne "M106\.2") && ($dot ne "B0303\.7") && ($dot ne "B0303\.8") && ($dot ne "M04F3\.2")) {
+#    if (($pseq =~ /X/) && ($cds ne "M106\.2") && ($cds ne "B0303\.7") && ($cds ne "B0303\.8") && ($cds ne "M04F3\.2")) {
 
     if ($pseq =~ /X/) {
-	print LOG "the peptide sequence $dot contains an X\n";             
+	print LOG "the peptide sequence of CDS $cds contains an X\n";             
     #       next;                                       
     # 010124 : dl  : CDS with 'X's will be included in the wormpep release
     }
     if ($pseq =~ /\*/) {
-       print LOG "the peptide sequence $dot contains a *\n";              
+       print LOG "the peptide sequence of CDS $cds contains a *\n";              
        next;
     }
     unless ($pseq =~ /^M/) {
-       print LOG "the peptide sequence $dot does not start with a M\n";
+       print LOG "the peptide sequence of CDS $cds does not start with a M\n";
     } 
-    my $c_dot = $dot;
+    my $c_dot = $cds;
 #   $c_dot =~ tr/a-z/A-Z/;   # commented out to leave isoform systematic names as lower case
     unless (exists ($seq2num{$pseq})) {
         $num2seq[++$wpmax] = $pseq;
         $seq2num{$pseq} = $wpmax;
-        $dot2num{$c_dot} = $wpmax;
+        $cds2num{$c_dot} = $wpmax;
         my $pad = sprintf "%05d" , $wpmax;
         $num2dot[$wpmax] = "CE$pad\t$c_dot";
     } else {
-        $dot2num{$c_dot} = $seq2num{$pseq};
+        $cds2num{$c_dot} = $seq2num{$pseq};
         my $num = $seq2num{$pseq};
         $num2dot[$num] .= "\t$c_dot";
       }             
-    push (@dotnames , $dot);
+    push (@dotnames , $cds);
     push (@c_dotnames , $c_dot);
 
-    $dot->DESTROY();
+    $cds->DESTROY();
 
 }   
 close DNA;
@@ -338,7 +331,7 @@ print LOG "# $runtime : finished writing wormpep.dna file\n\n";
 # if initial phase this writes the wormpepXX file for use in the BLAST analysis
 #open (WP,">$new_wpdir/wormpep$release") or die "cant create wormpep$release file\n";
 #foreach( @dotnames ) {
-#  my $wpid = $dot2num{$_};
+#  my $wpid = $cds2num{$_};
 #  my $wpid_pad = sprintf "%05d" , $wpid;
 #  my $pepseq = $num2seq[$wpid];
   
@@ -482,7 +475,7 @@ foreach (@dotnames) {
     my $cds = $_;
     my $c_dot = $cds;
 #    $c_dot =~ tr/a-z/A-Z/;
-    my $wpid = $dot2num{$c_dot};
+    my $wpid = $cds2num{$c_dot};
     my $wpid_pad = sprintf "%05d" , $wpid;
     my $pepseq = $num2seq[$wpid];
 
@@ -561,8 +554,8 @@ my @end_dotnames;
 open (FILE , "$new_wpdir/wormpep$release") || print LOG  "cannot open the wormpep$release file\n";
 while (<FILE>) {
     if (/^\>(\S+)\s+\S+/) {
-       my $dot = $1;
-       push (@end_dotnames , $dot);
+       my $cds = $1;
+       push (@end_dotnames , $cds);
     }
 }
 close FILE;
@@ -574,11 +567,11 @@ foreach (@end_dotnames) {
     $number_total++;
     /^([A-Z0-9_]+)\.(.*)$/i;
     my $cosmid = $1;
-    my $dot = $2;
-    if ($dot =~ /^[1-9][0-9]?$/) {
+    my $cds = $2;
+    if ($cds =~ /^[1-9][0-9]?$/) {
         $number_cds++;
     }
-    elsif ($dot =~ /(^[1-9][0-9]?)([a-z])/) {
+    elsif ($cds =~ /(^[1-9][0-9]?)([a-z])/) {
 	my $number = $1;
 	my $letter = $2;
         my $new_name = $cosmid."_".$number;
@@ -625,17 +618,17 @@ open (DIFF,       ">$new_wpdir/wormpep.diff$release")    || die "cannot create $
 my %line;
 while (my $line = <OLDHISTORY>) {
     chomp $line;
-    my $dotname = ""; my $wpid = ""; my $start = ""; my $end = "";
-    ($dotname , $wpid , $start , $end) = split (/\t/ , $line);
-    my $c_dot = $dotname;
+    my $cdsname = ""; my $wpid = ""; my $start = ""; my $end = "";
+    ($cdsname , $wpid , $start , $end) = split (/\t/ , $line);
+    my $c_dot = $cdsname;
     $wpid =~ /CE0*([1-9]\d*)/ ; my $num = $1;
     $line{$c_dot} = $line;
-    if ((!exists ($dot2num{$c_dot}) && ($end eq ""))) {
+    if ((!exists ($cds2num{$c_dot}) && ($end eq ""))) {
        print HISTORY "$c_dot\t$wpid\t$start\t$release\n";
        print DIFF "lost:\t$c_dot\t$wpid\n";
-   } elsif (($dot2num{$c_dot} ne $num) && ($end eq "")) {
+   } elsif (($cds2num{$c_dot} ne $num) && ($end eq "")) {
         print HISTORY "$c_dot\t$wpid\t$start\t$release\n";
-        my $new_num = $dot2num{$c_dot};
+        my $new_num = $cds2num{$c_dot};
         my $new_pad = sprintf "%05d" , $new_num;
         print HISTORY "$c_dot\tCE$new_pad\t$release\t$end\n";
         print DIFF "changed:\t$c_dot\t$wpid --> CE$new_pad\n";
@@ -644,20 +637,20 @@ while (my $line = <OLDHISTORY>) {
        }
 }
 
-foreach (keys (%dot2num)) {
+foreach (keys (%cds2num)) {
     my $empty = "";
     my $c_dot = $_;
     if (!exists ($line{$c_dot})) {
-        my $num = $dot2num{$c_dot};
+        my $num = $cds2num{$c_dot};
         my $pad = sprintf "%05d" , $num;
         print HISTORY "$c_dot\tCE$pad\t$release\t$empty\n";
         print DIFF "new:\t$c_dot\tCE$pad\n";
         next;
     }
-    my $dotname = ""; my $wpid = ""; my $start = ""; my $end = "";
-    ($dotname , $wpid , $start , $end) = split (/\t/ , $line{$c_dot});
+    my $cdsname = ""; my $wpid = ""; my $start = ""; my $end = "";
+    ($cdsname , $wpid , $start , $end) = split (/\t/ , $line{$c_dot});
     if ($end ne "") {   
-        my $new_num = $dot2num{$c_dot};
+        my $new_num = $cds2num{$c_dot};
         my $new_pad = sprintf "%05d" , $new_num;
         print HISTORY "$c_dot\tCE$new_pad\t$release\t$empty\n";
         print DIFF "reappeared:\t$c_dot\tCE$new_pad\n";

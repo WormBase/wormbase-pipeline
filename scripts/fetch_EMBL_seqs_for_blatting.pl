@@ -6,8 +6,8 @@
 # 
 # Attempt to unify all of the diverse scripts to fetch ESTs, OSTs, mRNAs etc. used by blat 
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2003-11-03 16:45:27 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2003-12-01 11:54:26 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -159,7 +159,7 @@ sub make_ests{
     # grab accession, id, sequence version, and description
     ($acc = $1) if (/^AC\s+(\S+);/);
     ($id = $1) if (/^ID\s+(\S+)/);
-    ($sv = $1) if (/^SV\s+\S+\.(\d+)/);
+    ($sv = $1) if (/^SV\s+(\S+\.\d+)/);
 
     if (/^DE\s+(.+)/)   {
       $def = $def." ".$1;
@@ -175,14 +175,19 @@ sub make_ests{
       if ($ost_seq == 0) {
 	print OUT_EST   ">$acc $id $def\n";
 	if ($ace) {
+	  # Can you print a yk name, or is it just an accession?
 	  if (exists $EST_name{$acc}) {
-	    print OUT_ACE "\nSequence : \"$EST_name{$acc}\"\nDatabase EMBL $id $acc $sv\n";
+	    print OUT_ACE "\nSequence : \"$EST_name{$acc}\"\n";
 	  }
 	  else {	
-	    print OUT_ACE "\nSequence : \"$acc\"\nDatabase EMBL $id $acc $sv\n";
+	    print OUT_ACE "\nSequence : \"$acc\"\n";
 	  }
-	  print OUT_ACE   "Species \"Caenorhabditis elegans\"\n";
-	  print OUT_ACE   "Title \"$def\"\nMethod EST_elegans\n";
+	  # now fill out rest of object
+	  print OUT_ACE "Database EMBL NDB_ID $id\n"; 
+	  print OUT_ACE "Database EMBL NDB_AC $acc\n";
+	  print OUT_ACE "Database EMBL NDB_SV $sv\n";
+	  print OUT_ACE "Species \"Caenorhabditis elegans\"\n";
+	  print OUT_ACE "Title \"$def\"\nMethod EST_elegans\n";
 	  
 	  if (exists $EST_name{$acc}) {
 	    print OUT_ACE "\nDNA \"$EST_name{$acc}\"\n" if ($ace);
@@ -290,11 +295,14 @@ sub make_mrnas{
 
 		print OUT_MRNA ">$acc $id $def\n";
 		if ($ace) {
-		    print OUT_ACE   "\nSequence : \"$acc\"\nDatabase EMBL $id $acc $sv\n";
-		    print OUT_ACE   "Protein_id $acc $protid $protver\n";
-		    print OUT_ACE   "Species \"Caenorhabditis elegans\"\n";
-		    print OUT_ACE   "Title \"$def\"\nMethod NDB\n";
-		    print OUT_ACE   "\nDNA \"$acc\"\n";
+		  print OUT_ACE "\nSequence : \"$acc\"\n";
+		  print OUT_ACE "Database EMBL NDB_ID $id\n";
+		  print OUT_ACE "Database EMBL NDB_AC $acc\n";
+		  print OUT_ACE "Database EMBL NDB_SV $sv\n";
+		  print OUT_ACE "Protein_id $acc $protid $protver\n";
+		  print OUT_ACE "Species \"Caenorhabditis elegans\"\n";
+		  print OUT_ACE "Title \"$def\"\nMethod NDB\n";
+		  print OUT_ACE "\nDNA \"$acc\"\n";
 		}
 		# reset vars
 		$def = ""; $id = ""; $acc = ""; $sv = ""; $protid = ""; $protver ="";
@@ -360,7 +368,10 @@ sub make_nematode_ests{
     if (/^SQ/) {
       print OUT_NEM ">$acc $id $def\n";
       if ($ace){
-	print OUT_ACE "\nSequence : \"$acc\"\nDatabase EMBL $id $acc $sv\n";
+	print OUT_ACE "\nSequence : \"$acc\"\n";
+	print OUT_ACE "Database EMBL NDB_ID $id\n";
+	print OUT_ACE "Database EMBL NDB_AC $acc\n";
+	print OUT_ACE "Database EMBL NDB_SV $sv\n";
 	print OUT_ACE "Species \"$org\"\n";
 	print OUT_ACE "Title \"$def\"\nMethod EST_nematode\n";
 	print OUT_ACE "\nDNA \"$acc\"\n";
@@ -433,10 +444,13 @@ sub make_embl_cds{
       
       # print out the acefile version
       if ($ace){
-	print OUT_ACE   "\nSequence : \"$acc\"\nDatabase EMBL $id $acc $sv\n";
-	print OUT_ACE   "Species \"Caenorhabditis elegans\"\n";
-	print OUT_ACE   "Title \"$def\"\nMethod NDB\n";
-	print OUT_ACE  "\nDNA \"$acc\"\n";
+	print OUT_ACE "\nSequence : \"$acc\"\n";
+	print OUT_ACE "Database EMBL NDB_ID $id\n";
+	print OUT_ACE "Database EMBL NDB_AC $acc\n";
+	print OUT_ACE "Database EMBL NDB_SV $sv\n";
+	print OUT_ACE "Species \"Caenorhabditis elegans\"\n";
+	print OUT_ACE "Title \"$def\"\nMethod NDB\n";
+	print OUT_ACE "\nDNA \"$acc\"\n";
       }
       # reset vars
       $def = ""; $id = ""; $acc = ""; $sv = ""; $protid = ""; $protver ="";

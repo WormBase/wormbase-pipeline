@@ -7,7 +7,7 @@
 # A script to find (and classify) potentially short, spurious genes (default = <50 aa)
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-10-30 15:39:12 $     
+# Last updated on: $Date: 2003-12-01 11:54:26 $     
 
 
 use strict;
@@ -88,7 +88,7 @@ open(OUT,">$dir/$file") || die "Can't open output file\n";
 
 # open a database connection and grab list of genes
 my $db = Ace->connect(-path  =>  "$database")  || die "Cannot open $database",Ace->error;
-my @genes = $db->fetch(-class => "Predicted_gene");
+my @genes = $db->fetch(-class => "elegans_CDS");
 
 
 # used for testing purposes
@@ -315,7 +315,7 @@ __END__
 
 =head1 DESCRIPTION
 
-This script will check the 'Predicted_gene' subclass in any target database
+This script will check the 'elegans_CDS' subclass in any target database
 and find all genes less than a certain size (defaults to 50 amino acids).
 It will then check each of those genes for the presence/absence of cDNA
 information and also whether there are associated RNAi experiments that give
@@ -335,7 +335,7 @@ Can be run as part of build or not.  If so it will write the output file to
 
 =item -database <path to valid acedb database>
 
-Database will be expected to have a valid 'Predicted_gene' subclass
+Database will be expected to have a valid 'elegans_CDS' subclass
 
 =back
 

@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.1 -w                  
+#!/usr/local/bin/perl5.8.0 -w
 #
 # script_template.pl                           
 # 
@@ -7,10 +7,10 @@
 # This is a example of a good script template   
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-04-04 18:01:42 $      
+# Last updated on: $Date: 2003-12-01 11:54:27 $      
 
 use strict;                                      
-use lib "/wormsrv2/scripts/";                    
+use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
 use Carp;

@@ -119,14 +119,14 @@ while (<ACE>) {
 	    if (($length - $first) < 100000) {
 		$second = $length;
 		if ((exists $camace{$name}) || (exists $stlace{$name})) {
-		    print "S_Child Feature_data $word{$type}:$name"."_$m $first $second\n";
+		    print "S_child Feature_data $word{$type}:$name"."_$m $first $second\n";
 		}
 		last;
 	    }
 	    else { 
 		($second = $length) if ($second >  $length);
 		if ((exists $camace{$name}) || (exists $stlace{$name})) {
-		    print "S_Child Feature_data $word{$type}:$name"."_$m $first $second\n";
+		    print "S_child Feature_data $word{$type}:$name"."_$m $first $second\n";
 		}
 	    }
 	}

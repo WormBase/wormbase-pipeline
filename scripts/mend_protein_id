@@ -23,7 +23,7 @@ while (<>) {
     ($clone,$dot) = split (/\./,$CDS);
 
 $command=<<EOF;
-query find Sequence $CDS
+query find elegans_CDS $CDS
 show -a Protein_id
 quit
 EOF

@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/bin/perl5.8.0 -w
 #
 # introncheck
 #
@@ -7,17 +7,15 @@
 # Usage: introncheck [-options]
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-10-31 15:32:20 $      
+# Last updated on: $Date: 2003-12-01 11:54:26 $      
 
 #################################################################################
 # variables                                                                     #
 #################################################################################
 
-$|=1;
-
 use Getopt::Std;
 use Ace;
-use lib '/wormsrv2/scripts';
+use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
 use Wormbase;
 use strict;
 
@@ -26,7 +24,7 @@ use strict;
 ##############################
 
 my $rundate = `date +%y%m%d`; chomp $rundate;
-my $runtime = `date +%H:%M:%S`; chomp $runtime;
+my $runtime = &runtime;
 
 ##############################
 # command-line options       #
@@ -79,7 +77,6 @@ foreach my $chromosome (@chromosomes) {
     next unless /\S/;
     my @f = split /\t/;
     push (@introns,"$f[3] $f[4] $f[8]");
-    #	print "# $f[3] $f[4] $f[8]\n";
   }	
   close GFF_in;
 

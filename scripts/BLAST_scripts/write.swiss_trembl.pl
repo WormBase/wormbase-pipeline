@@ -173,10 +173,10 @@ sub output_list
 	    print ACE "Description \"$DES{$id}\"\n";
 	    if ("$prefix" eq "SW" ) {
 	      print ACE "Database SwissProt SwissProt_ID $id\n";
-	      print ACE "Database SwissProt SwissProt_Acc $accession\n";
+	      print ACE "Database SwissProt SwissProt_AC $accession\n";
 	    }
 	    else {
-	      print ACE "Database TREMBL TrEMBL_Acc $id\n";
+	      print ACE "Database TREMBL TrEMBL_AC $id\n";
 	    }
 	  }
 	  else {

@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/bin/perl5.8.0 -w
 
 ##########################################################
 #
@@ -15,58 +15,71 @@
 #
 ##########################################################
 #
-# Last updated by: $Author: dl1 $                     
-# Last updated on: $Date: 2002-12-10 18:17:52 $       
+# Last updated by: $Author: krb $                     
+# Last updated on: $Date: 2003-12-01 11:54:26 $       
 
-$|=1;
 use strict;
-use lib "/wormsrv2/scripts/";   
+use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
 use Ace;
 use Getopt::Long;
 use Cwd;
 
- ##############################
- # Script variables (run)     #
- ##############################
-
-my $maintainers = "All";
-my $rundate     = `date +%y%m%d`;   chomp $rundate;
-my $runtime     = `date +%H:%M:%S`; chomp $runtime;
-
-# touch logfile for run details
-$0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
-my $logfile = "/wormsrv2/logs/$1.`date +%y%m%d`.$$";
 
 
- ##############################
- # command-line options       #
- ##############################
+##############################
+# command-line options       #
+##############################
 
 my $help;       # Help perdoc
 my $database;   # Database name for single db option
 my $debug;      # Debug mode, verbose output to runner only
+my $test;       # test mode, uses ~wormpub/TEST_BUILD
 
 GetOptions (
 	    "database:s"  => \$database,
 	    "debug=s"     => \$debug,
-	    "help"        => \$help
+	    "help"        => \$help,
+	    "test"        => \$test
 	    );
 
 # help page
 &usage("Help") if ($help);
 
+
+my $maintainers = "All";
+
 # debug
 if($debug){
-  print "// makeChromLinks run $rundate with debug as $debug\n\n";
+  print "// makeChromLinks run with debug as $debug\n\n";
   ($maintainers = $debug . '\@sanger.ac.uk');
 }
+
+# database/file paths and locations
+my $basedir     = "/wormsrv2";
+$basedir        = glob("~wormpub")."/TEST_BUILD" if ($test); 
+
+
+
+ ##############################
+ # Script variables (run)     #
+ ##############################
+
+
+my $rundate     = &rundate;
+my $runtime     = &runtime;
+
+# touch logfile for run details
+$0 =~ m/\/*([^\/]+)$/; system ("touch $basedir/logs/history/$1.`date +%y%m%d`");
+my $logfile = "$basedir/logs/$1.`date +%y%m%d`.$$";
+
+
 
 # where am i
 my $CWD = cwd;
 
 if (!defined $database) {
-    $database = "/wormsrv2/autoace";
+    $database = "$basedir/autoace";
 }
 
 print "// Using $database as source of data for chromosomes\n" if ($debug);
@@ -183,6 +196,8 @@ objects from autoace or cgcace, depending from the chosen switch.
 =item -debug [name], verbose report 
 
 =item -help, this help page
+
+=item -test, uses test environment in ~wormpub/TEST_BUILD
 
 =back
 

@@ -45,13 +45,13 @@ sub getwormpepacc {
 	$ENV{'ACEDB'}="/nfs/disk100/wormpub/acedb/ace4/cam";     
         $command=<<EOF;
 	find protein WP:CE*
-	show -a Corresponding_DNA
+	show -a Corresponding_CDS
 EOF
 	open(textace, "echo '$command' | $exec |");
 	while (<textace>) {tr/a-z/A-Z/;
                    if (/^$/) {$object=0;}
 		   if (/PROTEIN\s+:\s+\"(\S+)\"/) {$protein=$1;$object=1;}
-		   if (/CORRESPONDING_DNA\s+\"(\S+)\"/ && $object==1) {$wormpep{$1}=$protein;}
+		   if (/CORRESPONDING_CDS\s+\"(\S+)\"/ && $object==1) {$wormpep{$1}=$protein;}
 }
 }
 ############################################################

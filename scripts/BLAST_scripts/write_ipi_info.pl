@@ -92,8 +92,8 @@ while (<LIST>) {
   # this is for new protein model
 
   #SwissProt_ID
-  #SwissProt_Acc
-  #TrEMBL_Acc
+  #SwissProt_AC
+  #TrEMBL_AC
   #FlyBase_gn
   #Gadfly_ID
   #SGD_systematic
@@ -111,12 +111,12 @@ while (<LIST>) {
       }
       elsif( "$DB" eq "SWISS-PROT" ){ 
 	my $othername = $acc2id{$ID} if $acc2id{$ID};
-	print ACE "Database SwissProt SwissProt_Acc $ID\n";
+	print ACE "Database SwissProt SwissProt_AC $ID\n";
 	print ACE "Database SwissProt SwissProt_ID $acc2id{$ID}\n" if $acc2id{$ID};
 	print ACE "Gene_name \"$swiss_id2gene{$othername}\"\n" if $swiss_id2gene{$othername};
       }
       elsif( "$DB" eq "TREMBL" ){
-	print ACE "Database TREMBL TrEMBL_Acc $ID\n";
+	print ACE "Database TREMBL TrEMBL_AC $ID\n";
       }
     }
   }

@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.1 
+#!/usr/local/bin/perl5.8.0 -w
 #
 # operon_wizard
 #
@@ -23,11 +23,16 @@ use Data::Dumper;
 use Getopt::Std;
 use Ace;
 
-%tsl = (
-	'SL2k', 'GGTTTTAACCCAGTTAATTGAG',
-	);
+# This is never being used?
+#%tsl = (
+#	'SL2k', 'GGTTTTAACCCAGTTAATTGAG',
+#	);
 
 &formats;
+
+my ($opt_a,$opt_b,$opt_c,$opt_d,$opt_e,$opt_f,$opt_j,
+   $opt_l,$opt_m,$opt_n,$opt_p,$opt_q,$opt_r,$opt_s,
+   $opt_t,$opt_w,$opt_x,$opt_z);
 
 getopts ('abzqdcjyst:exwfmlr:p:k:n:');
 
@@ -510,7 +515,7 @@ sub list_operons_from_chromosome {
     
   foreach $operon_lookup (@choosen) {
 
-      print "$oprton_lookup \n";
+      print "$operon_lookup \n";
       system ("./parse_flatfile.pl ./CHROMOSOME_${choosen}/${acc}.dat > ./CHROMOSOME_${choosen}/${acc}.shtml");
 
 #    print "+=============+======================================+\n";
@@ -542,7 +547,7 @@ sub check_CDS_names {
 
   foreach my $cds_lookup (keys %cds) {
     printf "%10s : ", $cds_lookup;
-    $obj = $db->fetch(Sequence=>$cds_lookup);
+    $obj = $db->fetch(CDS=>$cds_lookup);
     if (!$obj) {
       print "Object is not present in autoace\n";
       next;
@@ -857,9 +862,10 @@ sub webpages {
 	my $obj;
 	my $whoops;
 	
+	my ($start,$stop,$strand);
 	foreach $gene_lookup (@{$operon{$operon_lookup}{CDS}}) {
 	    
-	    $obj = $db->fetch(Sequence => $gene_lookup);
+	    $obj = $db->fetch(CDS => $gene_lookup);
 
 	    ($whoops = 1) if (!defined $obj);
 
@@ -876,7 +882,7 @@ sub webpages {
 		undef ($whoops);
 	    }
 	    else {
-		$locus = $obj->Locus_genomic_seq(1);
+		$locus = $obj->Locus(1);
 		($locus = "-") if (!defined $locus);
 		print OUT  "LC $locus;\n";
 		
@@ -921,7 +927,7 @@ sub webpages {
 		print OUT  "\n=> ERROR - no entry found in GFF file for $operon_lookup\n";
 	    }
 	    else {
-		my ($start,$stop,$strand) = $gff_data =~ (/(\d+)\-(\d+) \[(\S)\]/);
+		($start,$stop,$strand) = $gff_data =~ (/(\d+)\-(\d+) \[(\S)\]/);
 		print OUT  "RAW_DATA : $start - $stop [$strand] [$gff_data]\n";
 		if ($strand eq "+") {
 #		    print OUT  "NEW_POSITION : $start\n";

@@ -1,28 +1,28 @@
-#!/usr/local/bin/perl5.6.0 
+#!/usr/local/bin/perl5.8.0 -w
 #
 # overlapcheck.pl
+#
+# by Kerstin Jekosch
 #
 # checks whether genes overlap, ESTs match introns and repeats match exons                                   
 # sorts output for stl and cam clones
 #
-# by Kerstin Jekosch
-# 10/07/01
-#
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-06-03 14:42:13 $
+# Last updated on: $Date: 2003-12-01 11:54:27 $
 
 use strict;
+use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
 use Carp;
 use Ace;
 use IO::Handle;
 use Data::Dumper;
-$|=1;
 
 my @chrom = qw(I II III IV V X);
 my (%exon, %est, %genes, %repeat, %intron, %camace, %stlace);
 my %EST_name;    # EST accession => name
 my %EST_dir;     # EST accession => orientation [5|3]
-my $tace      = "/nfs/disk100/wormpub/ACEDB/bin_ALPHA/tace /wormsrv2/autoace";
+my $tace      = &tace;
+my $database  =  "/wormsrv2/autoace";
 
 # set parameters for ESTs and repeats (score threshold, overlap threshold)
 my $ESTth      = '98.0';
@@ -118,7 +118,7 @@ foreach my $chrom (@chrom) {
       
       
       if ($fields[2] =~ /exon/ and $fields[1] =~ /curated/) {
-	$fields[8] =~ /^Sequence \"(\S+)\"/;
+	$fields[8] =~ /^CDS \"(\S+)\"/;
 	$name = $1;
 	$exoncount{$name}++; 
 	my $exonname = $name.".".$exoncount{$name};
@@ -131,7 +131,7 @@ foreach my $chrom (@chrom) {
       ###################
       
       if ($fields[2] =~ /intron/ and $fields[1] =~ /curated/) {
-	$fields[8] =~ /^Sequence \"(\S+)\"/;
+	$fields[8] =~ /^CDS \"(\S+)\"/;
 	$name = $1;
 	$introncount{$name}++; 
 	my $intronname = $name.".".$introncount{$name};
@@ -500,7 +500,7 @@ sub make_EST_hash {
     my %EST_dir  = ();
 
     # get EST names  (-e option only)       #
-    open (TACE, "echo '$command1' | $tace | ");
+    open (TACE, "echo '$command1' | $tace $database | ");
     while (<TACE>) {
         chomp;
         next if ($_ eq "");
@@ -515,7 +515,7 @@ sub make_EST_hash {
     close TACE;
 
     # get EST orientation (5' or 3')    #
-    open (TACE, "echo '$command2' | $tace | ");
+    open (TACE, "echo '$command2' | $tace $database | ");
     while (<TACE>) {
         chomp;
         next if ($_ eq "");

@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/bin/perl5.8.0 -w
 #
 # get_flanking_sequences.pl
 #
@@ -8,7 +8,7 @@
 # and two coordinates
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-04-04 18:01:42 $      
+# Last updated on: $Date: 2003-12-01 11:54:26 $      
 
 use strict;
 use lib "/wormsrv2/scripts/";                    
@@ -16,9 +16,10 @@ use Wormbase;
 use Ace;
 
 
-my $sequence     = shift; # First argument - sequence, clone or CDS
-my $x_coordinate = shift; # Second argument - first (start) coordinate
-my $y_coordinate = shift; # Third argument -  second (end) coordinate
+my $sequence     = shift; # First argument - Sequence or CDS (Transcript or Pseudogene in future?)
+my $class        = shift; # What class should you expect to find this object in
+my $x_coordinate = shift; # Third argument - first (start) coordinate
+my $y_coordinate = shift; # Fourth argument -  second (end) coordinate
 my $flanking_seq_length    = 30;
 
 # if you only provide one coordinate, use the x again (i.e. 1 bp feature)
@@ -33,9 +34,9 @@ my %right;
 my %rightOffset;
 my %left;
 my $seq;
-my $source;
-my $source_start;
-my $source_end;
+my $parent;
+my $parent_start;
+my $parent_end;
 my $clone = 0;
 my $cds = 0;
 
@@ -43,9 +44,9 @@ my $db = Ace->connect(-path=>$dbpath,
                       -program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
 
 
-my $obj = $db->fetch(Sequence=>$sequence);
+my $obj = $db->fetch($class=>$sequence);
 if (!defined ($obj)) {
-  print LOG "Could not fetch sequence $sequence\n";
+  print LOG "Could not fetch $class $sequence\n";
   next;
 }
 
@@ -64,11 +65,11 @@ my $sequence_length   = length ($seq);
 if(defined($obj->at('Properties.Coding.CDS'))){
   $cds = 1;
   # grab coordinates of gene in parent
-  $source = $obj->Source;
+  $parent = $obj->Sequence;
   my $new_obj = $obj;
   $new_obj =~ s/\./\\\./; # Need to escape the dot else AcePerl has kittens
-  ($source_start) = $source->at("Structure.Subsequence.$new_obj");
-  ($source_end) = $source->at("Structure.Subsequence.$new_obj")->right(2);
+  ($parent_start) = $parent->at("SMap.S_child.CDS.$new_obj");
+  ($parent_end) = $parent->at("SMap.S_child.CDS.$new_obj")->right(2);
 }
 
 
@@ -110,14 +111,14 @@ if (($x_coordinate - $flanking_seq_length - 1) < 1) {
 
 
     if($cds){
-      my $left_seq = $source->asDNA();
+      my $left_seq = $parent->asDNA();
       $left_seq =~ s/\>\w+//mg;
       $left_seq =~ tr/a-z/A-Z/;
       $left_seq =~ s/\W+//mg;
       my $diff = $flanking_seq_length - $x_coordinate;
-      my $newseq = substr($left_seq,$source_start,$diff);
+      my $newseq = substr($left_seq,$parent_start,$diff);
       print "diff is $diff\n";
-      print "$source_start\n";
+      print "$parent_start\n";
       print "Newseq\n$newseq\n";
       $seq = $newseq;
     }

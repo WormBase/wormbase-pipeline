@@ -8,16 +8,15 @@
 # see pod for more details
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-09-23 08:15:54 $      
+# Last updated on: $Date: 2003-12-01 11:54:25 $      
 
 
 use strict;
-use lib '/wormsrv2/scripts/';
+use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
 use IO::Handle;
 
-$|=1;
 
 ######################################################
 # Script variables and command-line options          #
@@ -25,8 +24,9 @@ $|=1;
 
 our $tace   = &tace;
 our $giface = &giface;
+#our $giface = "/nfs/team71/acedb/edgrif/TEST/DAN/giface";
 our $maintainers = "All";
-our ($log, $help, $debug, $dna, $gff, $zipdna, $zipgff, $composition, $database, $dump_dir);
+our ($log, $help, $debug, $dna, $gff, $zipdna, $zipgff, $composition, $database, $dump_dir, $test, $quicktest);
 
 GetOptions ("help"        => \$help,
             "debug=s"     => \$debug,
@@ -36,7 +36,9 @@ GetOptions ("help"        => \$help,
 	    "zipgff"      => \$zipgff,
 	    "composition" => \$composition,
 	    "database=s"  => \$database,
-	    "dump_dir=s"  => \$dump_dir
+	    "dump_dir=s"  => \$dump_dir,
+	    "test"        => \$test,
+	    "quicktest"   => \$quicktest
 	   );
 
 
@@ -63,9 +65,21 @@ if(!$gff && !$dna && !$composition && !$zipgff && !$zipdna){
   die "No major option (-dna, -gff, -composition, -zipdna, or -zipgff) has been specified, try again\n";
 }
 
-# revert to defaults if no arguments specified
-$database = "/wormsrv2/autoace"             if (!defined($database));
-$dump_dir = "/wormsrv2/autoace/CHROMOSOMES" if (!defined($dump_dir));
+# check that -test and -quicktest haven't both been set.  Also...
+# if -quicktest is specified, still need to make -test true, so that test mode runs 
+# for those steps where -quicktest is meaningless (can't run on only one chromosome)
+if($test && $quicktest){
+  die "both -test and -quicktest specified, only one of these is needed\n";
+}
+($test = 1) if ($quicktest);
+
+
+# Set up top level base directory which is different if in test mode
+# Make all other directories relative to this
+my $basedir   = "/wormsrv2";
+$basedir      = glob("~wormpub")."/TEST_BUILD" if ($test); 
+$database = "$basedir/autoace"             if (!defined($database));
+$dump_dir = "$basedir/autoace/CHROMOSOMES" if (!defined($dump_dir));
 
 
 #####################################################
@@ -115,6 +129,10 @@ dna -f $dump_dir/CHROMOSOME_MtDNA.dna
 quit
 END
 
+if($quicktest){
+  $command = "find sequence CHROMOSOME_III\ndna -f $dump_dir/CHROMOSOME_III.dna\nquit";
+}
+
   &execute_ace_command($command,$tace,$database);
   print LOG "Finished dumping DNA\n\n";
 }
@@ -137,6 +155,11 @@ gif seqget CHROMOSOME_MtDNA ; seqfeatures -version 2 -file $dump_dir/CHROMOSOME_
 quit
 END
 
+if($quicktest){
+  $command = "gif seqget CHROMOSOME_III ; seqfeatures -version 2 -file $dump_dir/CHROMOSOME_III.gff";
+
+}
+
   &execute_ace_command($command,$giface,$database);
   print LOG "Finished dumping GFF files\n\n";
 }
@@ -151,7 +174,14 @@ sub composition{
   print LOG "Generating composition.all\n";	
 
   chdir $dump_dir;
-  system("/bin/cat CHROMOSOME_I.dna CHROMOSOME_II.dna CHROMOSOME_III.dna CHROMOSOME_IV.dna CHROMOSOME_V.dna CHROMOSOME_X.dna | /nfs/disk100/wormpub/bin.ALPHA/composition > composition.all") && die "Couldn't create composition file\n";
+
+  if($quicktest){
+    system("/bin/cat CHROMOSOME_III.dna | /nfs/disk100/wormpub/bin.ALPHA/composition > composition.all") && die "Couldn't create composition file\n";
+  }
+  else{
+    system("/bin/cat CHROMOSOME_I.dna CHROMOSOME_II.dna CHROMOSOME_III.dna CHROMOSOME_IV.dna CHROMOSOME_V.dna CHROMOSOME_X.dna | /nfs/disk100/wormpub/bin.ALPHA/composition > composition.all") && die "Couldn't create composition file\n";
+  }
+
   print LOG "Generating totals file\n";
   my $total = 0;
   my $final_total = 0;
@@ -171,7 +201,8 @@ sub composition{
   $final_total = $total - $minus;
   system("echo $total $final_total > totals") && die "Couldn't create totals file\n";
   
-  &release_composition;
+  # can't do this in test mode as the Wormbase.pm subroutine looks in /wormsrv2
+  &release_composition unless ($test);
 }
 
 ##########################
@@ -179,7 +210,10 @@ sub composition{
 ###########################
 
 sub zip_files{
-  foreach my $chr ("I", "II", "III", "IV", "V", "X", "MtDNA"){
+  my @chromosomes = ("I", "II", "III", "IV", "V", "X", "MtDNA");
+  @chromosomes = ("III") if ($quicktest);
+
+  foreach my $chr (@chromosomes){
     my $dna_file = "$dump_dir"."/CHROMOSOME_".$chr.".dna";
     my $gff_file = "$dump_dir"."/CHROMOSOME_".$chr.".gff";
     if ($zipdna){
@@ -215,17 +249,17 @@ sub execute_ace_command {
 sub create_log_files{
 
   # Create history logfile for script activity analysis
-  $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
+  $0 =~ m/\/*([^\/]+)$/; system ("touch $basedir/logs/history/$1.`date +%y%m%d`");
 
   # create main log file using script name for
   my $script_name = $1;
   $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
-  my $rundate     = `date +%y%m%d`; chomp $rundate;
-  $log        = "/wormsrv2/logs/$script_name.$rundate.$$";
+  my $rundate = &rundate;
+  $log        = "$basedir/logs/$script_name.$rundate.$$";
 
   open (LOG, ">$log") or die "cant open $log";
   print LOG "$script_name\n";
-  print LOG "started at ",`date`,"\n";
+  print LOG "started at ",&rundate,"\n";
   print LOG "=============================================\n";
   print LOG "\n";
 
@@ -263,9 +297,9 @@ chromosome-length DNA sequences for entire chromsomes in the autoace
 database.  It can additionally generate chromosome GFF files, and
 finally it can compress these files using gzip.
 
-A log file is written to /wormsrv2/logs/
+A log file is written to $basedir/logs/
 
-All dumped files are written to /wormsrv2/autoace/CHROMOSOMES/
+All dumped files are written to $basedir/autoace/CHROMOSOMES/
 
 chromosome_dump.pl arguments:
 
@@ -301,7 +335,7 @@ chromosome.
 =item -database <database>
 
 Specify database that you wish to dump dna/gff files from.  If -database is not specified
-the script will dump from /wormsrv2/autoace by default
+the script will dump from $basedir/autoace by default
 
 =back
 
@@ -311,7 +345,7 @@ the script will dump from /wormsrv2/autoace by default
 =item -dump_dir <destination directory for dump files>
 
 Specify destination of the dna and/or gff dump files generated from the -dna or -gff options.
-If -dump_dir is not specified, dump files will be written to /wormsrv2/autoace/CHROMOSOMES by default
+If -dump_dir is not specified, dump files will be written to $basedir/autoace/CHROMOSOMES by default
 
 =back
 
@@ -347,6 +381,24 @@ Show these help files.
 =item -debug <user>
 
 Only email log file to specified user
+
+=back
+
+
+=over 4
+
+=item -test
+
+Run in test mode and use test environment in ~wormpub/TEST_BUILD
+
+=back
+
+
+=over 4
+
+=item -quicktest
+
+Same as -test but only runs analysis for one chromosome (III)
 
 =back
 

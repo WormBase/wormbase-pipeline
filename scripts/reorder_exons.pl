@@ -6,8 +6,8 @@
 #
 # This script checks the exon order and corrects them if needed
 #
-# Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-09-09 15:28:29 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2003-12-01 11:54:27 $
 
 
 
@@ -16,28 +16,71 @@
 #############################################
 
 use strict;
-use Ace;
-use lib "/wormsrv2/scripts";
+use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
+use Getopt::Long;
+use Ace;
+use Cwd;
 
-# database paths at the Sanger
-my %db_list = (
-	    'autoace',  '/wormsrv2/autoace',
-            'curr_db',  '/nfs/disk100/wormpub/DATABASES/current_DB'  
-	);
 
-open (ACE, ">/wormsrv2/autoace/acefiles/sorted_exons.ace") || die $!;
+#################################
+# Command-line options          #
+#################################
+
+my $database; # which database to test
+my $test;     # use test environment?
+
+GetOptions ("database=s"   => \$database,
+            "test"         => \$test);
+
+
+#################################
+# Set paths                     #
+#################################
+
+# set root level
+my $basedir     = "/wormsrv2";
+$basedir        = glob("~wormpub")."/TEST_BUILD" if ($test); 
+
+
+# check database name and path, default to autoace if -database not specified
+my $dbpath;
+my $CWD = cwd;
+
+if(!$database){
+  print "No database specified, using $basedir/autoace by default\n\n";
+  $dbpath = "$basedir/autoace";
+}
+elsif($database =~ /^(\~\w+)\//){ # do we need to expand path if ~path specified?
+  $dbpath = glob("$1");
+  $dbpath =~ s/\/tmp_mnt//;
+  my $filename = "$'";
+  $dbpath = "$dbpath"."/"."$filename";
+} 
+elsif($database =~ /^(\w+)/) { # for incomplete paths, expand using CWD
+  $dbpath="$CWD"."/"."$database";
+}  
+elsif ($database =~ /\/\w+/) { # else assume path is ok
+  $dbpath=$database;
+} 
+else {
+  die "-database does not specify a valid path to a database\n";
+}
+
+
+# open output file
+open (ACE, ">$dbpath/acefiles/sorted_exons.ace") || die $!;
+
 
 #########################
 # connect to database   #
 #########################
 
 my $tace = &tace;
-my $db_name = $ARGV[0];
-my $db_path = $db_list{$db_name};
-my $db = Ace->connect (-path => "$db_path",
+
+my $db = Ace->connect (-path => "$dbpath",
 		       -program => $tace) || 
-    die "cannot connect to acedb\n";
+    die "cannot connect to $dbpath\n";
 $db->auto_save(0);
 
 
@@ -46,14 +89,7 @@ $db->auto_save(0);
 # get genomic_canonical sequences  #
 ####################################
 
-my @sequences;
-
-if ($db_name eq 'autoace') {
-    @sequences = $db->fetch(-query => 'Find Sequence Properties == Genomic_canonical & Species="Caenorhabditis elegans"');
-}
-if ($db_name eq 'curr_db') {
-    @sequences = $db->fetch(-query => 'Find Sequence Properties == Genomic_canonical & Species="Caenorhabditis elegans"');
-}
+my @sequences = $db->fetch(-query => 'Find Sequence Properties == Genomic_canonical & Species="Caenorhabditis elegans"');
 
 unless($sequences[0]) {
     die print "database contained no genomic_canonical sequences\n";
@@ -73,28 +109,28 @@ my @tranoutoforder;
 foreach (@sequences) {
   my $clone = $_;
   my $obj = $db->fetch(Sequence => $clone);
-  my @subsequences = $obj->Subsequence(1);
-  my @transcripts = $obj->Transcript_child(1);
+  my @CDSs = $obj->CDS;
+  my @transcripts = $obj->Transcript(1);
   
 #######################################
 # check objects of %subsequencehash   #
 #######################################
 
-  foreach(@subsequences) {
-    my $clone = $_;
-    my $obj = $db->fetch(Sequence => $clone);
-    my @exons = $obj->Source_Exons(1);
+  foreach(@CDSs) {
+    my $cds = $_;
+    my $obj = $db->fetch(CDS => $cds);
+    my @exons = $obj->Source_exons(1);
     
     my $oldleft = 0;
     foreach(@exons) {
       my ($a, $b) = $_->row;
       my @ends = ($a, $b);
       if($a < $oldleft) {
-#		print "exons out of order in $clone\n";
-	push(@seqoutoforder, $clone);
+#		print "exons out of order in $cds\n";
+	push(@seqoutoforder, $cds);
       }
       $oldleft = $a;
-      push(@{$subsequencehash{$clone}}, @ends);
+      push(@{$subsequencehash{$cds}}, @ends);
     }
   }
   
@@ -105,20 +141,20 @@ foreach (@sequences) {
   
   foreach(@transcripts) {
     
-    my $clone = $_;
-    my $obj = $db->fetch(Transcript => $clone);
-    my @exons = $obj->Source_Exons(1);
+    my $transcript = $_;
+    my $obj = $db->fetch(Transcript => $transcript);
+    my @exons = $obj->Source_exons(1);
     
     my $oldleft = 0;
     foreach(@exons) {
       my ($a, $b) = $_->row;
       my @ends = ($a, $b);
       if($a < $oldleft) {
-	#	print "exons out of order for $clone\n";
-	push(@tranoutoforder, $clone);
+	#	print "exons out of order for $transcript\n";
+	push(@tranoutoforder, $transcript);
       }
       $oldleft = $a;
-      push(@{$transcripthash{$clone}}, @ends);
+      push(@{$transcripthash{$transcript}}, @ends);
     }
   }
 }
@@ -153,11 +189,11 @@ $db->close;
 close(ACE);
 
 # Only upload if working with autoace
-if($db_name eq "autoace"){
-  my $command = "pparse /wormsrv2/autoace/acefiles/sorted_exons.ace";
+if($dbpath =~ m/autoace$/){
+  my $command = "pparse $dbpath/acefiles/sorted_exons.ace";
   $command .= "\nsave\nquit\n";
   print "\nUploading sorted exon info to autoace\n";
-  open (WRITEDB, "| $tace -tsuser reorder_exons /wormsrv2/autoace |") || die "Couldn't open pipe to autoace\n";
+  open (WRITEDB, "| $tace -tsuser reorder_exons $dbpath |") || die "Couldn't open pipe to autoace\n";
   print WRITEDB $command;
   close WRITEDB;
 
@@ -174,13 +210,13 @@ sub seq_fix_order {
     my ($order_ref, $sub_ref) = @_;
     foreach(@{$order_ref}) {
 	print ACE "\nSequence : \"$_\"\n";
-	print ACE "-D Source_Exons\n\n";
+	print ACE "-D Source_exons\n\n";
 	print ACE "Sequence : \"$_\"\n";
 #	print ACE "$$sub_ref{$_}->[0] $$sub_ref{$_}->[1] $$sub_ref{$_}->[2] $$sub_ref{$_}->[3] \n";
 	my @thisarray = @{$$sub_ref{$_}}; 
 	my @sorted = sort {$a <=> $b} (@thisarray);
 	foreach(my $ii = 0; $ii <= $#sorted; $ii+=2) {
-	    print ACE "Source_Exons $sorted[$ii] $sorted[$ii+1]\n"
+	    print ACE "Source_exons $sorted[$ii] $sorted[$ii+1]\n"
 	}
 
     }
@@ -191,12 +227,12 @@ sub tran_fix_order {
     my ($order_ref, $tran_ref) = @_;
     foreach(@{$order_ref}) {
 	print ACE "\nTranscript : \"$_\"\n";
-	print ACE "-D Source_Exons\n\n";
+	print ACE "-D Source_exons\n\n";
 	print ACE "Transcript : \"$_\"\n";
 	my @thisarray = @{$$tran_ref{$_}}; 
 	my @sorted = sort {$a <=> $b} (@thisarray);
 	foreach(my $ii = 0; $ii <= $#sorted; $ii+=2) {
-	    print ACE "Source_Exons $sorted[$ii] $sorted[$ii+1]\n"
+	    print ACE "Source_exons $sorted[$ii] $sorted[$ii+1]\n"
 	}
 
     }
@@ -206,4 +242,59 @@ sub tran_fix_order {
 
 
 
+
+
+__END__
+
+=pod
+
+=head1 NAME - reorder_exons.pl
+
+=head2 USAGE
+
+=over 4
+
+=item reorder_exons.pl -[options]
+
+=back
+
+=head1 DESCRIPTION
+
+Sorts all exons in an acedb database to be in a linear order.  This is useful when new
+gene curation adds a new 5' exon to a gene but by default acedb adds this to the end
+of the list of exons.
+
+Usually run as part of the build but can be run against any valid acedb database that has
+'Source_exons'
+
+=back
+
+=head1 MANDATORY arguments:
+
+=over 4
+
+=item none
+
+=back
+
+=head1 OPTIONAL arguments: -database, -test
+
+=over 4
+
+=item -database <path to database>
+
+Specifies location of target database, will default to using autoace if not specified
+
+=item -test
+
+Uses test environment in ~wormpub/TEST_BUILD/
+
+=back
+
+
+=head1 AUTHOR Darin Blasiar (dblasiar@watson.wustl.edu) 
+
+=back
+
+=cut
 

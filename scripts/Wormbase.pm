@@ -11,7 +11,7 @@ use Ace;
 use Log_files;
 @ISA       = qw(Exporter);
 
-@EXPORT    = qw(get_wormbase_version get_wormbase_version_name get_wormbase_release_date copy_check mail_maintainer celeaccession tace gff_sort dbfetch clones_in_database open_TCP DNA_string_reverse DNA_string_composition release_databases find_file_last_modified FetchData release_composition release_wormpep test_user_wormpub runtime tace giface check_write_access Map_feature scan MapFeature);
+@EXPORT    = qw(get_wormbase_version get_wormbase_version_name get_wormbase_release_date copy_check mail_maintainer celeaccession tace gff_sort dbfetch clones_in_database open_TCP DNA_string_reverse DNA_string_composition release_databases find_file_last_modified FetchData release_composition release_wormpep test_user_wormpub runtime rundate tace giface check_write_access Map_feature scan MapFeature);
  
 
 
@@ -197,7 +197,7 @@ EOF
 
     open(text_ace, "echo '$command' | $exec  | ");
     while (<text_ace>) {
-        if (/\s+Database\s+\S+\s+\S+\s+(\S+)/) {
+        if (/\s+Database\s+EMBL\s+NDB_AC\s+(\S+)/) {
             $accession=$1;
         }
     }
@@ -693,6 +693,11 @@ sub test_user_wormpub
 sub runtime {
   my $runtime    = `date +%H:%M:%S`; chomp $runtime;
   return $runtime;
+}
+###############################################
+sub rundate{
+  my $rundate = `date +%y%m%d`; chomp $rundate;
+  return $rundate;
 }
 
 ###################################################

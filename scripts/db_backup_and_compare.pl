@@ -5,7 +5,7 @@
 # backup database and compare to last backed up database to look for lost data
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-08-07 08:40:41 $      
+# Last updated on: $Date: 2003-12-01 11:54:25 $      
 
 use strict;
 use lib '/wormsrv2/scripts';
@@ -285,6 +285,7 @@ __DATA__
 Accession_number
 Allele
 Author
+CDS
 Cell
 Cell_group
 Class
@@ -298,7 +299,7 @@ Expr_pattern
 Expr_profile
 Feature
 Feature_data
-Gene_Class
+Gene_class
 Gene_name
 GO_term
 Homol_data
@@ -339,6 +340,7 @@ Table
 Tag
 Transgene
 Transcript
+Transposon
 Url
 __END__
 

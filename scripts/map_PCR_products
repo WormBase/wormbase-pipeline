@@ -222,18 +222,15 @@ foreach my $mess (sort keys %output) {
 open (OUT,    ">/wormsrv2/autoace/MAPPINGS/PCR_mappings.$db_version");
 open (OUTACE, ">/wormsrv2/autoace/MAPPINGS/PCR_mappings.$db_version.ace");
 
-my $gene;
-
 foreach my $mapped (sort keys %finaloutput) {
     
-    my $gene;
     print OUT "$mapped\t@{$finaloutput{$mapped}}\n";
 
     for (my $n = 0; $n < (scalar @{$finaloutput{$mapped}}); $n++) {
-	$gene = $finaloutput{$mapped}->[$n];
+	my $gene = $finaloutput{$mapped}->[$n];
 	
 	if ($genetype{$gene} eq "CDS") {
-	    print OUTACE "Sequence : \"$gene\"\n";
+	    print OUTACE "CDS : \"$gene\"\n";
 	    print OUTACE "Corresponding_PCR_product \"$mapped\"\n\n";
 	}
 	elsif ($genetype{$gene} eq "Pseudogene") {

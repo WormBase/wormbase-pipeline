@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.0 -w                   
+#!/usr/local/bin/perl5.8.0 -w
 #
 # make_Interpro2GO_mapping.pl 
 # 
@@ -6,8 +6,8 @@
 #
 # Gets latest Interpro:GO mappings from XXXX and puts info in to ace file
 #
-# Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2003-03-27 14:17:50 $                        # quickly see when script was last changed and by whom
+# Last updated by: $Author: krb $                      # These lines will get filled in by cvs and helps us
+# Last updated on: $Date: 2003-12-01 11:54:25 $                        # quickly see when script was last changed and by whom
 
 
 use strict;                                     
@@ -50,20 +50,19 @@ my $ip;
 
 # IPR000177 Apple domain
 print LOG "\treading data . . . \n";
-while (<I2G>)
-  {
-    chomp;
-    my @info = split;
-    $ip = shift @info;
-    next if( (!defined $ip) or ("$info[0]" eq "entries") ); # header lines
-    #Motif : "INTERPRO:IPR000006"
-    #Title    "Class I metallothionein"
-    #Database         "INTERPRO" "IPR000006" "IPR000006"
-    print IPDESC "Motif : \"INTERPRO:$ip\"\n";
-    print IPDESC "Title  \"@info\"\n";
-    print IPDESC "Database  \"INTERPRO\" \"$ip\"\n";
-    print IPDESC "\n";
-  }
+while (<I2G>){
+  chomp;
+  my @info = split;
+  $ip = shift @info;
+  next if( (!defined $ip) or ("$info[0]" eq "entries") ); # header lines
+  #Motif : "INTERPRO:IPR000006"
+  #Title    "Class I metallothionein"
+  #Database         "INTERPRO" "INTERPRO_ID" "IPR000006"
+  print IPDESC "Motif : \"INTERPRO:$ip\"\n";
+  print IPDESC "Title  \"@info\"\n";
+  print IPDESC "Database  \"INTERPRO\" \"INTERPRO_ID\" \"$ip\"\n";
+  print IPDESC "\n";
+}
 
 
 print LOG "finsihed at ",`date`,"\n";
@@ -104,7 +103,7 @@ Motif : "INTERPRO:IPR000018"
 
 Title    "P2Y4 purinoceptor"
 
-Database         "INTERPRO" "IPR000018" "IPR000018"
+Database "INTERPRO" "INTERPRO_ID" "IPR000018"
 
 
 =head1 REQUIREMENTS
