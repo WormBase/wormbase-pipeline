@@ -10,7 +10,7 @@ use Carp;
 use Ace;
 @ISA       = qw(Exporter);
 
-@EXPORT    = qw(get_wormbase_version get_wormbase_version_name get_wormbase_release_date copy_check mail_maintainer celeaccession tace gff_sort dbfetch clones_in_database open_TCP DNA_string_reverse DNA_string_composition release_databases find_file_last_modified FetchData release_composition release_wormpep test_user_wormpub runtime tace giface check_write_access Map_feature scan MapFeature);
+@EXPORT    = qw(get_wormbase_version get_wormbase_version_name get_wormbase_release_date copy_check mail_maintainer celeaccession tace gff_sort dbfetch clones_in_database open_TCP DNA_string_reverse DNA_string_composition release_databases find_file_last_modified FetchData release_composition release_wormpep test_user_wormpub runtime tace giface check_write_access Map_feature scan MapFeature make_build_log make_log);
  
 
 
@@ -866,6 +866,34 @@ sub check_write_access{
 
 }
 
+
+#############################################################################
+#   Easy generation of log files
+
+sub make_build_log
+  {
+    my $debug = shift;
+    my $ver = &get_wormbase_version_name;
+    my $filename;
+    $0 =~ /([^\/]*$)/ ? $filename = $0 : $filename = $1 ; # get filename (sometimes $0 includes full path if not run from its dir )
+
+    my $path = "/wormsrv2/logs";
+    $path = "/tmp/logs" if $debug;
+    my $log_file = "$path/$filename".".$ver.".$$;
+    return &make_log("$log_file")
+  }
+# little sub to create any writable file 
+sub make_log
+  {
+    my $file_name = shift;
+    my $log;
+    open($log,">$file_name") or croak "cant open file $file_name : $!";
+    return $log;
+  }
+
+#############################################################################
+
+
 ################################################################################
 #Return a true value
 ################################################################################
@@ -1098,5 +1126,28 @@ my $coord_5 = $$map[0];
 
 my $coord_3 = $$map[1];
 
+=back
+
+=cut
+
+=head2 make_build_log
+
+Generate log file in the logs directory with WS version and processID appended to script name.
+
+  Title   :   make_build_log
+  Usage   :   my $log = &make_build_log("$debug");
+              print $log "This is a log file\n";
+              close $log;
+  Returns :   filehandle ref
+  Args    :   Optional - Debug_status
+
+=head2 make_log
+
+    Title   :   make_log
+    Usage   :   my $log = &make_log("logfile.log");
+                print $log "This is a log file\n";
+                close $log;
+    Returns :   filehandle ref
+    Args    :   filename to use (inlcuding path)
 
 =cut
