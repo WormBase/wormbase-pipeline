@@ -6,8 +6,8 @@
 #
 # Usage: camcheck.pl
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-05-05 10:05:02 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2004-05-05 12:11:50 $
 #
 # see pod documentation (i.e. 'perldoc camcheck.pl') for more information.
 #
@@ -67,7 +67,7 @@ if( $opt_s ){
 
 # only email a specific person responsible for a database
 if($opt_e){
-  if(($opt_e eq "ar2") || ($opt_e eq "pad") || ($opt_e eq "dl1")){ 
+  if(($opt_e eq "ar2") || ($opt_e eq "pad") || ($opt_e eq "dl1") || ($opt_e eq "krb")){ 
      $maintainers = $opt_e;
   }
   else{
