@@ -2,7 +2,7 @@
 #
 # ChangeMethod.pl
 #
-# Last updated on: $Date: 2002-12-09 12:08:49 $
+# Last updated on: $Date: 2002-12-09 14:20:18 $
 # Last updated by: $Author: krb $
 
 # Script to change the method associated with each gene
@@ -19,8 +19,7 @@ $|=1;
 getopts ('d:');
 
 # Create touch file to record script activity
-$0 =~ m/\/([^\/]+)$/;
-system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
+$0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
 
 $HELP=<<END;
 
