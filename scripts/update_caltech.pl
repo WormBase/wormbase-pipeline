@@ -1,10 +1,10 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/bin/perl5.8.0 -w
 
 # update_caltech.pl
 
 # by Chao-Kung Chen [030113]
 
-# Last updated on: $Date: 2003-04-04 16:09:18 $
+# Last updated on: $Date: 2003-06-17 16:17:22 $
 # Last updated by: $Author: ck1 $
 
 
@@ -34,9 +34,11 @@ if ($help){
 }
 
 if ($debug){
+  print "DEBUG : $debug\n";
   $recipients = "$debug\@sanger.ac.uk";
 }
 	
+
 ##################################################
 # check user is wormpub otherwise script won't run
 ##################################################
@@ -131,10 +133,12 @@ foreach (@other_names){$other_names{$_}++}
 
 open (IN, "$updatedir/$ftp_date[1]");
 
-my $modify ="/wormsrv1/geneace/ERICHS_DATA/$ftp_date[1].modified";
+my $modify ="$updatedir/$ftp_date[1].modified";
 
 open(OUT, ">$modify");
 
+print LOG "CURRENT LIST of main name/other name INFORMATION:\n";
+print LOG "-------------------------------------------------\n";
 
 while(<IN>){
   if ($_ =~ /^Locus : \"(.+)\"/){
@@ -145,7 +149,7 @@ while(<IN>){
 
     if ($exceptions{$1}){
       print $1, "\n";
-      $count++;
+      #$count++;
       my $locus = @{$other_main{$1}}->[0];
       my @cds = @{$other_main{$1}}->[1]; 
       if (@{$other_main{$1}}->[1]){
@@ -161,7 +165,7 @@ while(<IN>){
     }
 
     ##################################################################### 
-    # check if locus is should become an other_name of a CGC locus object
+    # check if locus should become an other_name of a CGC locus object
     #####################################################################
 
     elsif ($other_names{$1}){
@@ -190,9 +194,20 @@ while(<IN>){
   }
 }
 
-print LOG "There are $count change(s).\n\n";
-print LOG "These have been changed in $ftp_date[1], but Caltech needs to update on their side.\n";
-print LOG "THANKS.\n\n";
+my $diff_out = `diff $updatedir/$ftp_date[1] $modify`;
+if (!$diff_out){ 
+  print LOG "------------------------------------------\n\n";
+  print LOG "EVERYTHING WENT OK\n\n";
+  print LOG "THANKS.\n\n";
+}
+else {
+  print LOG "------------------------------------------\n\n";
+  print LOG "CHANGES MADE\n\n";  
+  print LOG $diff_out, "\n";
+  print LOG "------------------------------------------\n\n";
+  print LOG "Please update accordingly\n";
+  print LOG "THANKS.\n\n";
+}
 
 my $command=<<END;
 find sequence * where concise_description OR detailed_description OR provisional_description
@@ -215,37 +230,40 @@ END
 
 my $geneace_dir="/wormsrv1/geneace";
 
-open (Load_GA,"| $tace -tsuser \"Functional_annotation\" $geneace_dir >> $log") || die "Failed to upload to Geneace";
-print Load_GA $command;
-close Load_GA;
-
-if($!){
-  print "##########################################\n";
-  print "\nPhenotype annotation is now updated!\n\n";       
-  print "\nIf everthing is OK, REMEMBER to remove\n"; 
-  print "loci_TS_dump.ace and seq_TS_dump.ace\n";
-  print "in /wormsrv1/geneace/ERICHS_DATA\n\n";
-  print "##########################################\n\n"; 
-}
-else{
-  print "######################################\n";
-  print "Mission not 100% successful, Mr. Bond!\n";
-  print "######################################\n\n";
-}
-
-######################################
-# move modified file/last update file to ARCHIVE folder
-######################################
-
-chdir $updatedir;
-system("mv $last_date[1]* ARCHIVE/");
+if (!$debug){
+  open (Load_GA,"| $tace -tsuser \"Functional_annotation\" $geneace_dir >> $log") || die "Failed to upload to Geneace";
+  print Load_GA $command;
+  close Load_GA;
+  
+  if($!){
+    print "##########################################\n";
+    print "\nPhenotype annotation is now updated!\n\n";       
+    print "\nIf everthing is OK, REMEMBER to remove\n"; 
+    print "loci_TS_dump.ace and seq_TS_dump.ace\n";
+    print "in /wormsrv1/geneace/ERICHS_DATA\n\n";
+    print "##########################################\n\n"; 
+  }
+  else{
+    print "######################################\n";
+    print "Mission not 100% successful, Mr. Bond!\n";
+    print "######################################\n\n";
+  }
+  
+  ######################################
+  # move modified file/last update file to ARCHIVE folder
+  ######################################
+  
+  chdir $updatedir;
+  system("mv $last_date[1]* ARCHIVE/");
+}  
 
 ##################################################
 # Mail log file
 # Only mail to person running script in debug mode
 ##################################################
-
+  
 mail_maintainer($script, $recipients, $log);
+#mail_maintainer($script, "$debug\@sanger.ac.uk", $modify);
 exit(0);
 
 
