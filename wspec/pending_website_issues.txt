@@ -28,5 +28,21 @@ Added 'Library_screened' tag to ?Y2H
 Remove two UNIQUE qualifiers after 'Laboratory' and 'CGC_representative_for' tag in the Person class
 
 14th May, 2004
-Added new event option in Gene_history_action hash.  Genes can now have 'Changed_class' tag set should
-they change from (say) a CDS to a Pseudogene.
+Added new event option in Gene_history_action hash.  Genes can now have 'Changed_class' tag set should they change from (say) a CDS to a Pseudogene.
+
+14th May, 2004
+Removed UNIQUE qualifer for Corresponding_transcript tag in CDS class, so that CDS objects can now connect to multiple
+transcripts
+
+14th May, 2004
+misc_RNA tag renamed to (SOFA-compliant) ncRNA tag in ?Sequence and ?Transcript models
+
+14th May, 2004
+RNA tag in Sequence class now has new set subtags to categorise what type of RNA it is,
+this is for RNA sequences that come in via EMBL/GenBank, not for our own Transcript objects
+
+
+14th May, 2004
+New Method for BLATTING non-coding RNA sequences against genome...previously these were (mistakenly)
+included as part of BLAT_mRNA_BEST and BLAT_mRNA_OTHER, these will now be BLAT_ncRNA_BEST and BLAT_ncRNA_OTHER
+New tracks needed???  These will have GFF_feature 'nucleotide_match'

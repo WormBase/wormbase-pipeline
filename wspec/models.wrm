@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: krb $
-// Last edited on: $Date: 2004-05-14 10:52:42 $
+// Last edited on: $Date: 2004-05-14 12:34:22 $
  
 
 
@@ -925,7 +925,18 @@
 			     EST_3
 			     Capped_5	               // Indicates capped 5' end - for Lincoln [06/12/01 krb]
 			     TSL_tag		       // Indicates a short RT-PCR product for TSL detection [030220 dl]
-			RNA	// if set then use U in place of T
+			// if RNA tag, acedb outputs U in place of T in sequence output
+			RNA UNIQUE mRNA UNIQUE Processed_mRNA
+					       Unprocessed_mRNA
+				   tRNA Type UNIQUE Text  // new for ck1 [030926] krb
+					Anticodon UNIQUE Text  // 
+				   rRNA UNIQUE Text
+				   snRNA UNIQUE Text
+				   snoRNA UNIQUE Text // [030102 krb]
+				   scRNA UNIQUE Text
+				   stRNA UNIQUE Text         // [010723 dl]
+				   miRNA UNIQUE Text         // [020306 kj]
+				   ncRNA UNIQUE Text	     // for everything else that doesn't have a known type
 			Ignore #Evidence // tag to flag problem Sequence objects to avoid certain analysis [031120 krb]
 			Show_in_reverse_orientation    // Draw 3' reads in reverse orientation [010423 dl]
 			Status	Received UNIQUE DateType
@@ -1160,7 +1171,7 @@
                                               scRNA UNIQUE Text
                                               stRNA UNIQUE Text         // [010723 dl]
                                               miRNA UNIQUE Text         // [020306 kj]
-                                              misc_RNA UNIQUE Text
+                                              ncRNA UNIQUE Text
 		           Isoform #Evidence
                            Start_not_found                                   // [020306 kj]
                            End_not_found                                     // [020306 kj]
