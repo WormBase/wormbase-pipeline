@@ -55,7 +55,7 @@ _VTranscript	   -V -D FMAP
 _VPseudogene	   -V -D FMAP
 _VTransposon	   -V -D FMAP
 _VProtein	   -V -D PEPMAP
-
+_Vworm_genes	   -V
 
 // other sequence/SMapped related classes
 
