@@ -1677,7 +1677,7 @@
                                         Presence UNIQUE PA                      //present always
                                                         PS                      //present sometimes - marginal call
                                                         NP                      //never present
-                        Cluster         UNIQUE ?Cluster XREF Microarray_results //one way XREF used to populate Cluster class
+                        Cluster         ?Cluster XREF Microarray_results //one way XREF used to populate Cluster class
                         Remark          ?Text   #Evidence
 
 
@@ -1759,7 +1759,7 @@
 // The tag "Reference" refers to the paper performed this clustering analysis
 
 ?Cluster Description   ?Text
-         Algorithm     ?Method
+         Algorithm     ?Text
          Microarray_result  ?Microarray_result XREF Cluster
 	 Microarray_results ?Microarray_results     //added for Microarray_results model
          Reference     ?Paper XREF Cluster 
