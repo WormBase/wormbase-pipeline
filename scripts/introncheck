@@ -6,8 +6,8 @@
 #
 # Usage: introncheck [-options]
 #
-# Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-12-01 11:54:26 $      
+# Last updated by: $Author: dl1 $     
+# Last updated on: $Date: 2004-01-30 12:39:56 $      
 
 #################################################################################
 # variables                                                                     #
@@ -84,90 +84,90 @@ foreach my $chromosome (@chromosomes) {
   ###################################################
   # print "Cycle through introns in .gff file\n\n"; #
   ###################################################
-
+  
   open (GFF, "<$dbdir/CHROMOSOMES/CHROMOSOME_${chromosome}.gff") || die "Failed to open gff file in $dbdir/CHROMOSOMES/CHROMOSOME \n\n";
 
   while (<GFF>) {       	
-    chomp;
-    s/\#.*//;
-    next unless /\S/;
+      chomp;
+      s/\#.*//;
+      next unless /\S/;
     
-    # split the GFF line
-    my @f = split /\t/;
-    
-    # reset match tag
-    my $match = 0;
-    
-    # Store Genomic_canonical coords
-    if ($f[1] eq "Genomic_canonical") {
-      my ($clone) = $f[8] =~ /Sequence \"(\S+)\"/;
-      #	    print "# Clone:\t$clone  \t$f[3] -> $f[4]\n";
-      push (@coords,"$f[3] $f[4] $clone");
-    }
-    
-    # Confirmed_introns not in gene models
-
-    # ignore those marked as false
-    next if (($f[8] =~ /Confirmed_as_FALSE/) || ($f[8] =~ /Confirmed_as_Inconsistent/));
-
-    if ( (($f[2] eq "intron") && ($f[1] eq ".") && (not $f[8] =~ /Confirmed_in_UTR/) ) || ( ($f[1] eq "NDB_CDS") && (($f[8] =~ /Confirmed_by_EST/) || ($f[8] =~ /Confirmed_by_cDNA/))) ) {
-          
-      my $line = $_;      
+      # split the GFF line
+      my @f = split /\t/;
       
-      #	    print "Check through known intron coordinates: $f[3] $f[4]\n";
+      # reset match tag
+      my $match = 0;
       
-      foreach my $look (@introns) {
-	my ($start,$stop,$seq) = split (/ /, $look);
-	#	print "  => $start $stop $seq\n";
-	if (($f[3] == $start) && ($f[4] == $stop) ) {
-	  # found match
-	  $match = 1;
-	  #		    print " !! found match !!\n";
-	  last;
-	}
+      # Store Genomic_canonical coords
+      if ($f[1] eq "Genomic_canonical") {
+	  my ($clone) = $f[8] =~ /Sequence \"(\S+)\"/;
+	  #	    print "# Clone:\t$clone  \t$f[3] -> $f[4]\n";
+	  push (@coords,"$f[3] $f[4] $clone");
       }
       
-      unless ($match == 1){	
-	foreach my $look (@coords) {
-	  my ($start,$stop,$seq) = split (/ /, $look);
-	  if ( ($f[3] > $start) && ($f[4] < $stop) ) {
-	    my $obj = $db->fetch(Sequence=>$seq);
-	    my $lab;
-	    unless (!defined ($obj)) {
-	      $lab=$obj->From_laboratory(1);
-	      $obj->DESTROY();
-	    }
-	    if ($lab eq "HX") {
-	      #			    print "CAM => $line Clone:$seq Lab:$lab\n";
-	      print OUT_CAM "$line\tClone:$seq\tLab:$lab\n";
-	    }
-	    elsif ($lab eq "RW") {
-	      #			    print  "STL => $line Clone:$seq Lab:$lab\n";
-	      print OUT_STL "$line\tClone:$seq\tLab:$lab\n";
-	    }
-	    ($seq,$lab) = "";
-	    $confirmed_intron{$chromosome}++;
-	  }
-	}
-      }  
-    }
+      # Confirmed_introns not in gene models
+      
+      # ignore some marked introns
+      next if ($f[8] =~ /Confirmed_as_false/);                # Bad BLAT mapping
+      next if ($f[8] =~ /Confirmed_as_inconsistent/);         # Can't make a valid CDS prediction from this
+      
+      if ( ( ($f[2] eq "intron") && ($f[1] eq ".") && (not $f[8] =~ /Confirmed_in_UTR/) ) || 
+	   ( ($f[2] eq "intron") && ($f[1] eq "Coding_transcript") ) ||
+	   ( ($f[1] eq "NDB_CDS") && (($f[8] =~ /Confirmed_by_EST/) || ($f[8] =~ /Confirmed_by_cDNA/) ) ) ) {
 	
-    # Short cut 
-    last if ($f[1] eq "tandem");
-    
+	  my $line = $_;      
+      
+	  # print "Check through known intron coordinates: $f[3] $f[4]\n";
+      
+	  foreach my $look (@introns) {
+	      my ($start,$stop,$seq) = split (/ /, $look);
+	      #	print "  => $start $stop $seq\n";
+	      if (($f[3] == $start) && ($f[4] == $stop) ) {
+		  # found match
+		  $match = 1;
+		  # print " !! found match !!\n";
+		  last;
+	      }
+	  }
+      
+	  unless ($match == 1){	
+	      foreach my $look (@coords) {
+		  my ($start,$stop,$seq) = split (/ /, $look);
+		  if ( ($f[3] > $start) && ($f[4] < $stop) ) {
+		      my $obj = $db->fetch(Sequence=>$seq);
+		      my $lab;
+		      unless (!defined ($obj)) {
+			  $lab=$obj->From_laboratory(1);
+			  $obj->DESTROY();
+		      }
+		      if ($lab eq "HX") {
+			  # print "CAM => $line Clone:$seq Lab:$lab\n";
+			  print OUT_CAM "$line\tClone:$seq\tLab:$lab\n";
+		      }
+		      elsif ($lab eq "RW") {
+			  #			    print  "STL => $line Clone:$seq Lab:$lab\n";
+			  print OUT_STL "$line\tClone:$seq\tLab:$lab\n";
+		      }
+		      ($seq,$lab) = "";
+		      $confirmed_intron{$chromosome}++;
+		  }
+	      }
+	  }  
+      }
+      
+      # Short cut 
+      last if ($f[1] eq "tandem");
+      
   }
   close GFF;
   
-  
   print "Completed GFF file: 'CHROMOSOME_${chromosome}'\t: Confirmed_introns not in GeneModel $confirmed_intron{$chromosome}\n";
-
 }
 close OUT_CAM;
 close OUT_STL;
 
 $db->close;
 exit(0);
-
 
 sub numerically {
   my($a, $b);
