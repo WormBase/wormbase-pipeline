@@ -145,8 +145,10 @@ if ( $update_databases ){
     if( /\/(ensembl|gadfly|yeast|slimswissprot|slimtrembl_1|slimtrembl_2|wormpep|ipi_human|brigpep)/ ) {
       my $whole_file = "$1"."$'";  #match + stuff after match.
       if( $1 eq "wormpep" ) {
-	print "updating wormpep to version $WS_version anyway - make sure the data is there !";
+	print "updating wormpep to version $WS_version anyway - make sure the data is there !\nCopying over will take care of setdb 'ing it\n";
 	$whole_file = "wormpep".$WS_version.".pep";
+	$currentDBs{$1} = "$whole_file";
+	next;
       }
       if( "$whole_file" ne "$currentDBs{$1}" ) {
 	#make blastable database
@@ -756,7 +758,7 @@ sub run_command{
     $errors++;
     print LOG "ERROR: $command failed\n";
   }
-  print LOG &runtime, ": finished running\n\n";
+  print LOG &runtime, ": finished running $command\n";
 
   # for optional further testing by calling subroutine
   return($status);
