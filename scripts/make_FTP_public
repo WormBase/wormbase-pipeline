@@ -182,6 +182,23 @@ system "cd $targetdir; ln -s $release current_release";
 print "deleted the old sym_link and create the new one\n" if ($debug);
 
 
+# copy BLAT results to the FTP site
+
+system "rm -f /nfs/privateftp/ftp-wormbase/pub/data/blat/*gz";
+
+system "cp /wormsrv2/autoace/BLAT/stlace.blat.EST.ace                  /nfs/privateftp/ftp-wormbase/pub/data/blat/WS${release}_stlace.blat.EST.ace";
+system "cp /wormsrv2/autoace/BLAT/stlace.blat.mRNA.ace                 /nfs/privateftp/ftp-wormbase/pub/data/blat/WS${release}_stlace.blat.mRNA.ace";
+system "cp /wormsrv2/autoace/BLAT/stlace.blat.good_introns.EST.ace     /nfs/privateftp/ftp-wormbase/pub/data/blat/WS${release}_stlace.blat.good_introns.EST.ace";
+system "cp /wormsrv2/autoace/BLAT/stlace.blat.good_introns.mRNA.ace    /nfs/privateftp/ftp-wormbase/pub/data/blat/WS${release}_stlace.blat.good_introns.mRNA.ace";
+
+system "cp /wormsrv2/autoace/BLAT/virtual_objects.stlace.BLAT_EST.ace  /nfs/privateftp/ftp-wormbase/pub/data/blat/WS${release}_virtual_objects.stlace.BLAT_EST.ace";
+system "cp /wormsrv2/autoace/BLAT/virtual_objects.stlace.BLAT_mRNA.ace /nfs/privateftp/ftp-wormbase/pub/data/blat/WS${release}_virtual_objects.stlace.BLAT_mRNA.ace";
+system "cp /wormsrv2/autoace/BLAT/virtual_objects.stlace.ci.EST.ace    /nfs/privateftp/ftp-wormbase/pub/data/blat/WS${release}_virtual_objects.stlace.ci.EST.ace";
+system "cp /wormsrv2/autoace/BLAT/virtual_objects.stlace.ci.mRNA.ace   /nfs/privateftp/ftp-wormbase/pub/data/blat/WS${release}_virtual_objects.stlace.ci.mRNA.ace";
+
+system "/bin/gzip /nfs/privateftp/ftp-wormbase/pub/data/blat/*ace";
+
+
 # delete the old WS release version
 if ($clean) {
     $old_release_number = $release =~ s/WS//g;
