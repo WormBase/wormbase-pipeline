@@ -1,4 +1,11 @@
 #!/usr/local/bin/perl5.6.1 -w
+#
+# wormBLAST.pl
+# 
+# written by Anthony Rogers
+#
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2004-01-30 13:30:10 $
 
 use DBI;
 use strict;
