@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-05-21 15:56:50 $
+# Last updated on: $Date: 2004-05-26 12:16:11 $
 
 package Geneace;
 
@@ -32,6 +32,12 @@ sub geneace {
   my $this = shift;
   my $geneace_dir = "/wormsrv1/geneace";
   return $geneace_dir;
+}
+
+sub get_geneace_db_handle {
+  my $db = Ace->connect(-path  => $geneace_dir,
+		        -program =>$tace) || die "Connection failure";
+  return $db;
 }
 
 sub curr_db {
@@ -182,6 +188,7 @@ sub other_name {
     print "You need to specify parameters: 'main_other' or 'other_main' or 'other'.  First 2 params. returns hashes (CGC_name->Other_name / Other_name->CGC_name), last one returns an array of all Other_names\n";
   }
 }
+
 sub cgc_name_is_also_other_name {
   my ($this, $db) = @_; # $db is db handle
   push( my @exceptions, $db->find("Find Gene_name * CGC_name_for & Other_name_for") );
@@ -334,18 +341,21 @@ sub allele_to_gene_id {
 sub gene_id_is_live {
   my ($this)=shift;
   my (%gene_id_is_live, @live);
-
-  my $db = Ace->connect(-path  => $geneace_dir,
-		        -program =>$tace) || die "Connection failure";
+  my $db = get_geneace_db_handle();
 
   push(@live, $db->find("Find Gene * where Live") );
   foreach (@live){$gene_id_is_live{$_}++};
   return %gene_id_is_live;
 }
 
-sub convert_2_WBPaper {
+sub get_last_gene_id {
 
-
+  my $db = get_geneace_db_handle();
+  my @gene_ids = $db->fetch('Gene'=>'*');
+  my $last_gene_id_num = $gene_ids[-1];
+  $last_gene_id_num =~ s/WBGene0+//;
+  return $last_gene_id_num;
 }
+
 
 1;

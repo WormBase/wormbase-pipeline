@@ -8,7 +8,7 @@
 # Page download and update upload to geneace has been automated [ck1]
 
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2004-05-25 15:23:37 $
+# Last updated on: $Date: 2004-05-26 12:16:11 $
 
 use strict;
 use Getopt::Std;
@@ -103,16 +103,18 @@ while(<INPUT>){
   m/\s+Strain: (.*?)Species:/;
   $strain = $1;
   $strain =~ s/\s+//g;
-  $ace_object = "Strain : \"$strain\"\n";
-  $delete_ace_object = "\n\nStrain : \"$strain\"\n";
-
+  if ($strain){
+    $ace_object = "Strain : \"$strain\"\n";
+    $delete_ace_object = "\n\nStrain : \"$strain\"\n";
+  }
   my $species;
   m/\s+Species: (.+)Genotype:/;
   $species = $1;
   $species =~ s/\s+$//g;
-  $ace_object .= "Species : \"$species\"\n";
-  $delete_ace_object .= "Species : \"$species\"\n";
-
+  if ($strain){
+    $ace_object .= "Species : \"$species\"\n";
+    $delete_ace_object .= "Species : \"$species\"\n";
+  }
 
   my $genotype;
   m/Genotype: (.*?)Description:/;
@@ -190,7 +192,7 @@ while(<INPUT>){
   # will not write out Gene tag if the loci from genotype is not a CGC name
   foreach my $i (@loci) {
     $ace_object .= "Gene $Gene_info{$i}{'Gene'}\n" if exists $Gene_info{$i}{'Gene'};
-    if (!exists $Gene_info{$i}{'Gene'} && $i !~ /^Cb|Cr|Cv/){
+    if (!exists $Gene_info{$i}{'Gene'} && $i !~ /^Cb|Cr|Cv/ ){
       print CGC "\n\/\/CGC issue: locus $i ($strain: $geno) is not yet linked to a gene id\n";
       $last_gene_id_number++;
       my $id = sprintf("%08d", $last_gene_id_number);
@@ -198,6 +200,8 @@ while(<INPUT>){
       print CGC "Gene : \"WBGene$id\"\n";
       print CGC "Version  1\n";
       print CGC "Other_name \"$i\"\n";
+      print CGC "Public_name \"$i\"\n";
+      print CGC "Live\n";
       print CGC "Species  \"Caenorhabditis elegans\"\n";
       print CGC "Version_change 1 now \"WBPerson1845\" Created\n";
       print CGC "Strain \"$strain\"\n";
@@ -207,7 +211,7 @@ while(<INPUT>){
 
   foreach my $i (@loci2) {
     $ace_object .= "Gene $Gene_info{$i}{'Gene'}\n" if exists $Gene_info{$i}{'Gene'};
-    if (!exists $Gene_info{$i}{'Gene'} && $i !~ /^Cb|Cr|Cv/){
+    if (!exists $Gene_info{$i}{'Gene'} && $i !~ /^Cb|Cr|Cv/ ){
       print CGC "\n\/\/CGC issue: locus $i ($strain: $geno) is not yet linked to a gene id\n";
       $last_gene_id_number++;
       my $id = sprintf("%08d", $last_gene_id_number);
@@ -215,6 +219,8 @@ while(<INPUT>){
       print CGC "Gene : \"WBGene$id\"\n";
       print CGC "Version  1\n";
       print CGC "Other_name \"$i\"\n";
+      print CGC "Public_name \"$i\"\n";
+      print CGC "Live\n";
       print CGC "Species  \"Caenorhabditis elegans\"\n";
       print CGC "Version_change 1 now \"WBPerson1845\" Created\n";
       print CGC "Strain \"$strain\"\n";
@@ -295,8 +301,10 @@ while(<INPUT>){
   }
 
   # always add CGC lab details
-  $ace_object .= "Location \"CGC\"\n";
-  $delete_ace_object .= "-D Location \"CGC\"\n";
+  if ($strain){
+    $ace_object .= "Location \"CGC\"\n";
+    $delete_ace_object .= "-D Location \"CGC\"\n";
+  }
 
   # print final output to two files
   print STRAIN "$ace_object\n";

@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2004-05-21 15:56:50 $
+# Last updated on: $Date: 2004-05-26 12:16:11 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -376,8 +376,8 @@ sub test_locus_for_errors{
              defined $seq_func_annots -> Concise_description(1) || defined $seq_func_annots -> Provisional_description(1) ){
 
 	  # should be commented out
-	  $warnings .= "ERROR 15: $_ functional annotation should now be attached to $gene_id ($Gene_info{$gene_id}{'CGC_name'})\n";
-	  print CALTECHLOG "$_ functional annotation should now be attached to $gene_id ($Gene_info{$gene_id}{'CGC_name'})\n";
+	  $warnings .= "ERROR 15: $_ functional annotation should now be attached to $gene_id ($Gene_info{$gene_id}{'Public_name'})\n";
+	  print CALTECHLOG "$_ functional annotation should now be attached to $gene_id ($Gene_info{$gene_id}{'Public_name'})\n";
 	  $caltech_errors++;
 	}
       }

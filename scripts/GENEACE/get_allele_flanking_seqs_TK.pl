@@ -4,7 +4,7 @@
 
 # by Chao-Kung Chen [030625]
 
-# Last updated on: $Date: 2004-05-13 14:38:04 $
+# Last updated on: $Date: 2004-05-26 12:16:11 $
 # Last updated by: $Author: ck1 $
 
 use Tk;
@@ -16,6 +16,45 @@ use Wormbase;
 use TextANSIColor;
 use Tk::DialogBox;
 use GENEACE::Geneace;
+
+
+
+#####################################
+# check for latest exon table version
+#####################################
+
+my $tace = &tace;
+my $curr_db = "/nfs/disk100/wormpub/DATABASES/current_DB";
+my $exon_tbl = "/wormsrv1/geneace/ALLELE_DATA/EXON_TABLES";
+
+my $current = `grep "NAME WS" $curr_db/wspec/database.wrm`; $current =~ s/NAME //; chomp $current;
+my $archive;
+my @archive = `ls $exon_tbl`; foreach (@archive){chomp; if ($_ =~ /.+(WS\d+)/){$archive = $1}}
+my $top;
+
+if ("$current" ne "$archive") {	
+  $top = MainWindow->new();
+  $top->configure (title => "Updating datasets . . .", background => "white");
+
+  $top->geometry("450x120+350+300");
+
+  my $message_frame = $top ->Frame(relief => 'groove', borderwidth => 2)
+                           ->pack(side => 'top', anchor => 'n',expand => 1, fill => 'x');
+
+  $message_frame -> Label(text=>"\nNew Wormbase release available.\n\n   Need to update exon table of all CDS/Transcripts\nand 6 chromosomal DNA sequencs.\n\nThis usually takes ~45 sec.\nAnother window will then popup for curation\n", fg=>"blue")
+                 -> pack(side => "left");
+
+  $message_frame -> Button(text => "Update", activebackground => "green", activeforeground => "black", command => \&update)
+                 -> pack(side => "left", expand => 1);
+  MainLoop();
+}
+
+###############################################
+# get hash for Gene_name <-> Gene id conversion
+###############################################
+
+my $ga = init Geneace;
+my %Gene_info = $ga -> gene_info();
 
 
 #######################
@@ -199,13 +238,22 @@ MainLoop();
 # global variables
 ##################
 
-my ($cds_or_locus, $aa_or_dna, $mutation, $allele, $locus, $position, $cds, $current, @archive, $archive,
-    @output, @ace, @out, @DNA, @prot, %code, @CDS_coords, $molecule, $filename, %Gene_info);
+my ($cds_or_locus, $aa_or_dna, $mutation, $allele, $locus, $position, $cds,
+    @output, @ace, @out, @DNA, @prot, %code, @CDS_coords, $molecule, $filename);
 
 
 ######################################################
 #              s u b r o u t i n e s
 ######################################################
+
+sub update {
+  system ("rm -f $exon_tbl/* ");
+  `echo "table-maker -o $exon_tbl/CDS_table_$current -p /wormsrv1/geneace/wquery/get_elegans_CDS_source_exons.def" | $tace $curr_db`;
+  `echo "table-maker -o $exon_tbl/RNA_table_$current -p /wormsrv1/geneace/wquery/get_elegans_RNA_gene_source_exons.def" | $tace $curr_db`;
+  system ("cat $exon_tbl/CDS_table_$current $exon_tbl/RNA_table_$current > $exon_tbl/ExonTable_$current; rm -f $exon_tbl/*table_$current");
+  system ("chmod 775 $exon_tbl/* ");
+  $top->after(1, sub { $top->destroy } );
+}
 
 sub clear_up {
   $run_window->delete('1.0', 'end')
@@ -396,14 +444,6 @@ sub run {
     }
   }
 
-  ###############################################
-  # get hash for Gene_name <-> Gene id conversion
-  ###############################################
-
-  my $ga = init Geneace;
-  %Gene_info = $ga -> gene_info();
-
-
   #####################################
   # retrieve info from query parameters
   #####################################
@@ -436,26 +476,6 @@ sub run {
       $cds = uc($cds_or_locus);
     }
 
-  }
-
-  #####################################
-  # check for latest exon table version
-  #####################################
-
-  my $tace = &tace;
-  my $curr_db = "/nfs/disk100/wormpub/DATABASES/current_DB";
-  my $exon_tbl = "/wormsrv1/geneace/ALLELE_DATA/EXON_TABLES";
-
-  $current = `grep "NAME WS" $curr_db/wspec/database.wrm`; $current =~ s/NAME //; chomp $current;
-  @archive = `ls $exon_tbl`; foreach (@archive){chomp; if ($_ =~ /.+(WS\d+)/){$archive = $1}} 
-
-  if ("$current" ne "$archive") {	
-    push(@output, "New WS release available . .\nFetching latest source exons of all CDS/Transcripts and 6 chromosomal DNA sequencs\n\n");
-    system ("rm -f $exon_tbl/* ");
-    `echo "table-maker -o $exon_tbl/CDS_table_$current -p /wormsrv1/geneace/wquery/get_elegans_CDS_source_exons.def" | $tace $curr_db`;
-    `echo "table-maker -o $exon_tbl/RNA_table_$current -p /wormsrv1/geneace/wquery/get_elegans_RNA_gene_source_exons.def" | $tace $curr_db`;
-    system ("cat $exon_tbl/CDS_table_$current $exon_tbl/RNA_table_$current > $exon_tbl/ExonTable_$current; rm -f $exon_tbl/*table_$current");
-    system ("chmod 775 $exon_tbl/* ");
   }
 
   ####################################################
@@ -974,7 +994,7 @@ sub write_ace {
 
   my ($Lf, $Rf, $allele, $locus, $seq) = @_;
 
-  $ace_window->insert('end', "\nLocus : \"$locus\"\n");
+  $ace_window->insert('end', "\nGene : \"$Gene_info{$locus}{'Gene'}\"\n");
   if ($info[1] =~ /\[.+\]/){ 
     $ace_window->insert('end', "Allele \"$allele\" Paper_evidence \"$info[1]\"\n");
   }
@@ -1034,11 +1054,11 @@ DESCRIPTION
   This script is suitable for curating allele flanking sequences described in paper such as "
   .... amino acid Q at position 235 is mutated to G ..." or "...nucleotide t in position 1234 of 4R79.1 is mutated  to g ...".
 
-  This script can output 30 bp flanking DNA seqs on two sides of any mutated site of a triplet of a defined gene (including the 
-  first and last codon, although such alleles rarely occur). 
+  This script can output 30 bp flanking DNA seqs on two sides of any mutated site of a triplet of a defined gene (including the
+  first and last codon, although such alleles rarely occur).
 
-  You need to supply a CDS/Transcript name (case-insensitive) and amino acid coordinate (or nucleotide coordinate) followed by 
-  a mutation in single- or three-letter code (case-insensitive) as arguments (see USAGE) to retrieve the flanking sequences.  
+  You need to supply a CDS/Transcript name (case-insensitive) and amino acid coordinate (or nucleotide coordinate) followed by
+  a mutation in single- or three-letter code (case-insensitive) as arguments (see USAGE) to retrieve the flanking sequences.
 
 SCENARIO A: DNA coordinate
 
@@ -1054,7 +1074,7 @@ SCENARIO A: DNA coordinate
 
   Comments:
 
-    (1) Verification. If the nt specified is identical, then it is a good sign. 
+    (1) Verification. If the nt specified is identical, then it is a good sign.
 
     (2) The nucleotide g in the middle separated by spaces is the mutation.
         ace file template with minimal information is generated without clicking on the mutation site buttons in the lower
