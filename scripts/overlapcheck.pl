@@ -8,10 +8,11 @@
 # sorts output for stl and cam clones
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-12-01 11:54:27 $
+# Last updated on: $Date: 2003-12-21 10:26:11 $
 
 use strict;
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
+use Wormbase;
 use Carp;
 use Ace;
 use IO::Handle;
