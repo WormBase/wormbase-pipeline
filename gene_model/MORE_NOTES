@@ -1,0 +1,65 @@
+NOTES accompanying further changes to new models.wrm file
+=========================================================
+
+Keith Bradnam, 30/10/01
+
+Changes to new CDS class
+------------------------
+
+1) Added 'S_child PCR_product...' to CDS class.  All S_child's had previously not been instated into this
+class, but Marc Vidal PCR_product objects reflect amplification from a cDNA clone and so represent an object
+attached to a Predicted_gene/CDS object rather than to the parent sequence.
+
+
+2) Added 'Confirmed_by #Gene_confirmation' to CDS class as it was missing, presumably CDS objects will
+want to contain this information to indicate whether the object has complete EST/mRNA coverage? I have 
+left this line in the Sequence model, but don't really see that it needed to be left there...if predicted
+genes are moved into the CDS class, what would be left in the Sequence class that would need 'Confirmed_by'
+information?
+
+3) RNAi class had a line which was 'Inhibits Predicted_gene ?Sequence XREF RNAi_result'.  However, as the
+Predicted_gene subclass has now replaced by the CDS class, this should be reflected in the RNAi model,
+i.e.
+
+Inhibits	Predicted_gene ?CDS XREF RNAi_result 
+		Gene ?Gene   XREF RNAi_result
+
+The corresponding line for the CDS class 'RNAi_result ?RNAi XREF Predicted_gene' already existed and
+doesn't need to be added.  I'm not sure if there is still a need to retain the above line in the Sequence
+class (where it originally was before being copied into the CDS class).  Will an RNAi result be attached
+to a Sequence which isn't a CDS/Predicted_gene?
+
+
+4) Added new operon class model from Dan, linked this to CDS class rather than Sequence class though. I.e.
+in the Operon model there is:
+
+Contains_CDS ?CDS XREF Contained_in_operon
+
+This could potentially be expanded to also have something like:
+
+Contains_genes ?Gene XREF Contained_in operon
+
+Not sure if it gets too confusing to have double links from CDS *and* Gene objects to another object though.
+
+
+5) Added the following to CDS class:
+
+DB_info Protein_id ?Sequence UNIQUE Text UNIQUE Int // DB_info tag added [011030 krb]
+	DB_remark ?Text
+
+This seems to be needed for CDS objects as many predicted gene objects currently contain these tags.
+
+
+
+6) Added 'Reference ?Paper XREF CDS' to CDS class (and also added corresponding line in Paper
+class).  This is because many current Predicted_genes refer to Papers.
+
+
+
+7) Added Annotation subtree to CDS class, i.e.	
+
+Annotation SwissProt_DE	UNIQUE	Text
+	   EC_number	Text
+
+Again because this is used by Predicted_genes.  There is no use for the Pfam tag though as it is not currently
+used.
