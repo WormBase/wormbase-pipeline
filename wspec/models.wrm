@@ -789,7 +789,6 @@
 		       PCR_product ?PCR_product XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info      // added for Lincoln RNAi  [010226 dl]
 		       Nongenomic ?Sequence XREF Genomic_parent UNIQUE Int UNIQUE Int #SMap_info            // added for Lincoln RNAi  [010226 dl]
 		       RNAi ?RNAi XREF Sequence UNIQUE Int UNIQUE Int #SMap_info                            // added for Lincoln RNAi  [001213 dl]
-		       WTP ?WTP XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info                      // added for Mieg WTP data [001623 rd]
 		       Operon ?Operon XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info                // added for Operon data   [dl]
 		       Transposon ?Transposon XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info        // added for transposons   [020128 dl]
 		       Microarray_aff ?Microarray_aff XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info //added for Wen's Affymetrix model [020614 krb] 
@@ -854,7 +853,6 @@
 			Expression_construct ?Clone	// archaic
 			Expr_pattern ?Expr_pattern XREF Sequence
 			Corresponding_PCR_product ?PCR_product XREF Overlaps_CDS // added for PCR mappings [010419 dl]
-			Corresponding_WTP ?WTP XREF Overlaps_CDS                 // [010623 rd]
 			RNAi_result ?RNAi XREF Predicted_gene                    // added for Lincoln RNAi [001213 dl]
 			GO_term ?GO_term XREF Sequence ?GO_code #Evidence        // added for Erich [011210 krb]
                         Contained_in_operon ?Operon XREF Contains_CDS            // added for Operons [020128 dl]
@@ -1520,12 +1518,7 @@
 
 ?Phenotype_Assay Description ?Text
 		 
-// New Class to handle WTP data [010623 rd]
 
-?WTP         SMap S_Parent Canonical_parent UNIQUE ?Sequence XREF WTP
- 	     Method ?Method
- 	     Overlaps_CDS ?Sequence XREF Corresponding_WTP  // added for Dan PCR mappings [010419 dl]
-	     Contact_information Text
 
 // New Class to handle operon data [010928 dl]
 
