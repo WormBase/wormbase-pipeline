@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: krb $
-// Last edited on: $Date: 2004-06-30 14:37:30 $
+// Last edited on: $Date: 2004-06-30 16:03:55 $
  
 
 
@@ -786,6 +786,35 @@
 
 
 
+///////////////////////////////////////////////////////////////
+//
+// ?SO_term class 
+// model based on GO_term, initially just storing SOFA terms
+// 
+// Added by krb 30th June 2004
+//
+////////////////////////////////////////////////////////////////
+
+
+?SO_term Term ?Text
+         Located_sequence_feature UNIQUE Junction
+                                         Region
+                                         Sequence_variant
+         Synonym ?Text
+         Definition ?Text
+         Parent Is_a ?SO_term XREF Is
+                Part_of ?SO_term XREF Part
+                Derived_from ?SO_term XREF Derived
+         Child Is ?SO_term XREF Is_a
+               Part ?SO_term XREF Part_of
+               Derived ?SO_term XREF Derived_from
+         Attributes_of Feature ?Feature XREF SO_term
+         Ancestor   ?SO_term XREF Descendent
+         Descendent ?SO_term XREF Ancestor
+         Version SOFA_ontology   UNIQUE Float  // Analogous to GO, the SO version number is only to be attached
+                 SOFA_definition UNIQUE Float  // to three parent SOFA terms under Located_sequence_feature
+
+
 // New AO_code class for evidence codes only relevant to the Anatomy_term class
 // requested by Raymond Lee
 // Class added 040203
@@ -1103,7 +1132,6 @@
 		Orthologue ?CDS XREF Orthologue ?Species #Evidence  // dl 030304
 		Expr_pattern ?Expr_pattern XREF CDS
                 RNAi_result ?RNAi XREF Predicted_gene // added for Lincoln RNAi [001213 dl]
-		Contained_in_operon ?Operon XREF Contains_CDS
 		GO_term ?GO_term XREF CDS ?GO_code #Evidence
 		Alleles ?Allele XREF Predicted_gene // replaces Has_allele tag in ?Sequence
 		Microarray_results ?Microarray_results XREF CDS      //added for Microarray_results
@@ -1209,7 +1237,6 @@
 		Properties Isoform #Evidence
                 Visible Gene         UNIQUE ?Gene XREF Pseudogene         // when Pseudogene is live
                         Gene_history UNIQUE ?Gene XREF Pseudogene_history // when Pseudogene is dead
-			Contained_in_operon ?Operon XREF Contains_pseudogene
                         Matching_cDNA ?Sequence XREF Matching_pseudogene #Evidence
                         Brief_identification UNIQUE ?Text #Evidence
                         Corresponding_PCR_product ?PCR_product XREF Overlaps_pseudogene 
@@ -1327,6 +1354,7 @@
          Flanking_sequences UNIQUE ?Sequence UNIQUE Text UNIQUE Text
          Visible    Description ?Text
 		    Remark ?Text #Evidence
+		    SO_term ?SO_term XREF Feature
 	 Defined_by Defined_by_sequence ?Sequence XREF Defines_feature #Evidence
 		    Defined_by_paper    ?Paper XREF Feature #Evidence
 		    Defined_by_person   ?Person
@@ -1946,7 +1974,7 @@
 
 ?Operon SMap S_parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF Operon
 	Species UNIQUE ?Species
-	Contains_gene ?Gene XREF Contained_in_operson #Trans_splice_leader
+	Contains_gene ?Gene XREF Contained_in_operon #Trans_splice_leader
 	Reference ?Paper XREF Operon
 	Method UNIQUE ?Method
 

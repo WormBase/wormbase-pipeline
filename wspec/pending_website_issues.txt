@@ -54,5 +54,15 @@ Added Isoform tag to ?Pseudogene model
 2nd June, 2004
 Added Species tag to RNAi model. We might have briggsae RNAi info in future
 
+30th June, 2004
+Added SO_term model to handle SOFA terms (a la GO_term) and possibly link
+to Feature objects (as a starting point)
+
+Operon model now contains Genes rather than CDSs
+
+New gene history action event of 'Made_into_transposon'
+
+Gene objects now have an SMapped extent on to Sequence objects
+
 
 
