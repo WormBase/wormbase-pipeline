@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-06-16 10:00:53 $
+# Last edited on: $Date: 2004-06-16 10:26:12 $
 
 
 
@@ -1300,10 +1300,11 @@ sub full_gff_dump {
   &run_command("$scriptdir/TransferDB.pl -start $basedir/autoace -end $targetdir/autoace -database -wspec -name autoace");
   
   # now run the split gff dumping script#
-  print LOG &runtime, ": Running dump_gff_batch.pl";
+  print LOG &runtime, ": Running dump_gff_batch.pl\n";
   &run_command("$scriptdir/dump_gff_batch.pl -database $targetdir/autoace -dump_dir $targetdir/GFF_dumps");
 
-  print "Files in ~wormpub/DATABASES/autoace/GFF_dumps can now be copied to /wormsrv2/autoace/CHROMOSOMES\n\n";
+  print "\n\n\nNOTE: Only when dumping is finished can files in ~wormpub/DATABASES/autoace/GFF_dumps\n";
+  print "be copied to /wormsrv2/autoace/CHROMOSOMES\n\n";
 }
 #__ end dump_GFFs __#
 
