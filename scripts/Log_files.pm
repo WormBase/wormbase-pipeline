@@ -139,8 +139,21 @@ sub DESTROY
     unless( defined $self->{'MAILED'} ) {
       my $fh = $self->{"FH"};
       print $fh "\nTHIS MAIL WAS NOT SENT BY THE SCRIPT THAT WAS RUN\nThe log file object was not \"mailed\", which may mean the script did not finish properly\n";
+      $self->{'SCRIPT'} .= " FAILED";
       $self->mail;
     }
   }
 
+# this sub is to allow an error to be reported to screen and log file prior to script death
+sub log_and_die
+  {
+    my $self = shift;
+    my $report = shift;
+
+    if( $report ) {
+      $self->write_to("$report\n") ;
+      print STDERR "$report\n";
+    }
+    die;
+  }
 1;
