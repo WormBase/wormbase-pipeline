@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-06-01 08:42:17 $
+# Last edited on: $Date: 2004-06-01 14:14:44 $
 
 
 use DBI;
@@ -338,106 +338,130 @@ clones = $clone_count\ncontigs = $contig_count\ndna = $dna_count\n";
   }
 
 
-
+# username and password needed to talk/write to MySQL database
 $dbuser = "wormadmin";
 $dbpass = "worms";
-if( $setup_mySQL )
-  {  
-    print "Setting up mysql ready for Blast run\n";
-    #make wormprot connection
-    $dbname = "worm_pep";
-    my $worm_pep =  DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
+
+
+#####################################################################################################
+#
+# Subroutine to prepare the tables for analysis, i.e. delete previous analyses that have been run
+# for databases that will be updated
+#
+#####################################################################################################
+
+if($setup_mySQL){  
+  print "Setting up mysql ready for Blast run\n";
+  #make wormprot connection
+  $dbname = "worm_pep";
+  my $worm_pep =  DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
       || die "cannot connect to db, $DBI::errstr";
-
-    #make worm_brigprot connection
-    $dbname = "worm_brigpep";
-    my $worm_brigpep =  DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
+  
+  #make worm_brigprot connection
+  $dbname = "worm_brigpep";
+  my $worm_brigpep =  DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
       || die "cannot connect to db, $DBI::errstr";
-
-    #make worm_dna connection
-    $dbname = "worm_dna";
-    $worm_dna = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
+  
+  #make worm_dna connection
+  $dbname = "worm_dna";
+  $worm_dna = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
       || die "cannot connect to db, $DBI::errstr";
-
-    &get_updated_database_list;
-
-    # if the user passes WPversion greater than that in the current file update it anyway
-    # (this means you can update the database before wormpep is made - ie during autoace_minder -build
-    $currentDBs{$1} =~ /wormpep(\d+)/;
-    if( $1 and ( $1<$WS_version ) ) {
-      push (@updated_DBs,"wormpep$WS_version\.pep");
-    }
-
-    #update mysql with which databases need to be run against
-    foreach my $database (@updated_DBs)
-      {
-	my $analysis = $worm_dna_processIDs{$database};
-	my $db_file = $currentDBs{$database};
-	print "________________________________________________________________________________\n";
-	print "doing worm_dna updates . . . \n";
-	$query = "update analysis set db = \"$db_file\" where analysis_id = $analysis";
-	print $query,"\n";
-	&update_database( $query, $worm_dna );
-	
-	$query = "update analysis set db_file = \"/data/blastdb/Worms/$db_file\" where analysis_id = $analysis";
-	print $query,"\n\n";
-	&update_database( $query, $worm_dna );
-	
-	# LOCKing the tables should considerably increase the DELETE speed
-	my $lock_statement = "LOCK TABLES input_id_analysis WRITE, dna_align_feature WRITE;";
-	&update_database("$lock_statement", $worm_dna);
-
-	#delete entries so they get rerun
-	$query = "delete from input_id_analysis where analysis_id = $analysis";
-	print $query,"\n";
-	&update_database( $query, $worm_dna );
-	
-	$query = "delete from dna_align_feature where analysis_id = $analysis";
-	print $query,"\n";
-	&update_database( $query, $worm_dna );
-	
-	#release WRITE LOCKS
-	&update_database("UNLOCK TABLES;", $worm_dna);
-
-	# lock protein tables 
-	$lock_statement = "LOCK TABLES input_id_analysis WRITE, protein_feature WRITE;";
-	&update_database("$lock_statement", $worm_pep);
-	&update_database("$lock_statement", $worm_brigpep);
-	
-	# updates 
-	print "doing worm_pep updates . . . \n";
-	$analysis = $wormprotprocessIds{$database};
-	$query = "update analysis set db = \"$db_file\" where analysis_id = $analysis";
-	print $query,"\n";	
-	&update_database( $query, $worm_pep );
-	&update_database( $query, $worm_brigpep );
-
-	$query = "update analysis set db_file = \"/data/blastdb/Worms/$db_file\" where analysis_id = $analysis";
-	print $query,"\n";
-	&update_database( $query, $worm_pep );
-	&update_database( $query, $worm_brigpep );
-	
-	#delete entries so they get rerun
-	$query = "delete from input_id_analysis where analysis_id = $analysis";
-	print $query,"\n";
-	&update_database( $query, $worm_pep );
-	&update_database( $query, $worm_brigpep );
-	
-	$query = "delete from protein_feature where analysis_id = $analysis";
-	print $query,"\n";
-	&update_database( $query, $worm_pep );
-	&update_database( $query, $worm_brigpep );
-
-	# release WRITE locks
-	&update_database("UNLOCK TABLES;", $worm_brigpep);
-	&update_database("UNLOCK TABLES;", $worm_pep);
-      }
-
-    $worm_dna->disconnect;
-    $worm_pep->disconnect;
-    $worm_brigpep->disconnect;
-
+  
+  &get_updated_database_list;
+  
+  # if the user passes WPversion greater than that in the current file update it anyway
+  # (this means you can update the database before wormpep is made - ie during autoace_minder -build
+  $currentDBs{$1} =~ /wormpep(\d+)/;
+  if( $1 and ( $1<$WS_version ) ) {
+    push (@updated_DBs,"wormpep$WS_version\.pep");
   }
+  
+  # update mysql with which databases need to be run against
+  foreach my $database (@updated_DBs){
+    my $analysis = $worm_dna_processIDs{$database};
+    my $db_file = $currentDBs{$database};
+    print "________________________________________________________________________________\n";
+    
+      
+    ####################
+    # DNA analysis
+    ####################
+    
+    print "Starting worm_dna updates . . . \n";
+    $query = "update analysis set db = \"$db_file\" where analysis_id = $analysis";
+    print $query,"\n";
+    &update_database( $query, $worm_dna );
+    
+    $query = "update analysis set db_file = \"/data/blastdb/Worms/$db_file\" where analysis_id = $analysis";
+    print $query,"\n";
+    &update_database( $query, $worm_dna );
+      
+    # LOCKing the tables should considerably increase the DELETE speed
+    my $lock_statement = "LOCK TABLES input_id_analysis WRITE, dna_align_feature WRITE;";
+    print "Locking DNA tables: $lock_statement\n";
+    &update_database("$lock_statement", $worm_dna);
+      
+    #delete entries so they get rerun
+    $query = "delete from input_id_analysis where analysis_id = $analysis";
+    print $query,"\n";
+    &update_database( $query, $worm_dna );
+    
+    $query = "delete from dna_align_feature where analysis_id = $analysis";
+    print $query,"\n";
+    &update_database( $query, $worm_dna );
+    
+    #release WRITE LOCKS
+    print "Unlocking DNA tables\n\n";
+    &update_database("UNLOCK TABLES;", $worm_dna);
+    
+    
+    ####################
+    # Protein analysis
+    ####################
+    
+    print "Starting worm_pep and worm_brigpep updates . . . \n";
+    $analysis = $wormprotprocessIds{$database};
+    $query = "update analysis set db = \"$db_file\" where analysis_id = $analysis";
+    print $query,"\n";	
+    &update_database( $query, $worm_pep );
+    &update_database( $query, $worm_brigpep );
+    
+    $query = "update analysis set db_file = \"/data/blastdb/Worms/$db_file\" where analysis_id = $analysis";
+    print $query,"\n";
+    &update_database( $query, $worm_pep );
+    &update_database( $query, $worm_brigpep );
+    
+    # lock protein tables 
+    $lock_statement = "LOCK TABLES input_id_analysis WRITE, protein_feature WRITE;";
+    print "Locking protein tables: $lock_statement\n";
+    &update_database("$lock_statement", $worm_pep);
+    &update_database("$lock_statement", $worm_brigpep);
+    
+    #delete entries so they get rerun
+    $query = "delete from input_id_analysis where analysis_id = $analysis";
+    print $query,"\n";
+    &update_database( $query, $worm_pep );
+    &update_database( $query, $worm_brigpep );
+    
+    $query = "delete from protein_feature where analysis_id = $analysis";
+    print $query,"\n";
+    &update_database( $query, $worm_pep );
+    &update_database( $query, $worm_brigpep );
+    
+    # release WRITE locks
+    &update_database("UNLOCK TABLES;", $worm_brigpep);
+    &update_database("UNLOCK TABLES;", $worm_pep);
+  }
+  
+  $worm_dna->disconnect;
+  $worm_pep->disconnect;
+  $worm_brigpep->disconnect;
+
+  print "\nFinished setting up MySQL databases\n\n";
+}
+
+
+
 my $bdir = "/nfs/farm/Worms/Ensembl/ensembl-pipeline/modules/Bio/EnsEMBL/Pipeline";
 
 if( $blastx ) {
