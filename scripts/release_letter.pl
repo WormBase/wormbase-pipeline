@@ -5,7 +5,7 @@
 # by Anthony Rogers                             
 #
 # Last updated by: $Author: krb $               
-# Last updated on: $Date: 2003-01-24 09:48:40 $         
+# Last updated on: $Date: 2003-03-14 11:04:34 $         
 #
 # Generates a release letter at the end of build.
 #
@@ -21,6 +21,7 @@
 use strict;                    
 use lib "/wormsrv2/scripts/";
 use Wormbase;
+use Ace;
 use Getopt::Std;
 
 #######################################
@@ -93,13 +94,22 @@ if( defined($opt_l)) {
     print RL "\n\n";
     $file = shift(@release_files);
   }
-  
+
+
+  # Find out Locus->Sequence connections
+  my $tace = &tace;
+  my $db = Ace->connect(-path  => "/wormsrv2/autoace",
+                        -program =>$tace) || do { print LOG "Connection failure: ",Ace->error; die();};
+  my $query = "Find Locus WHERE (Genomic_sequence OR Transcript) AND CGC_approved";
+  my $locus_seq_count = $db->fetch(-query=> "$query");
+  $db->close;
+
   # wormpep status overview
   my %wp_status;
   $wp_status{Confirmed}  = `grep Confirmed    /wormsrv2/WORMPEP/wormpep$ver/wormpep_current | wc -l`;
   $wp_status{Supported}  = `grep confirmed    /wormsrv2/WORMPEP/wormpep$ver/wormpep_current | wc -l`;
   $wp_status{Predicted}  = `grep Predicted    /wormsrv2/WORMPEP/wormpep$ver/wormpep_current | wc -l`;
-  $wp_status{Locus}      = `grep locus        /wormsrv2/WORMPEP/wormpep$ver/wormpep_current | wc -l`;
+  $wp_status{Locus}      = $locus_seq_count;
   $wp_status{Swissprot}  = `grep 'SW:'        /wormsrv2/WORMPEP/wormpep$ver/wormpep_current | wc -l`;
   $wp_status{Trembl}     = `grep 'TR:'        /wormsrv2/WORMPEP/wormpep$ver/wormpep_current | wc -l`;
   $wp_status{Tremblnew}  = `grep 'TN:'        /wormsrv2/WORMPEP/wormpep$ver/wormpep_current | wc -l`;
