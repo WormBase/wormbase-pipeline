@@ -6,8 +6,8 @@
 #
 # This is a example of a good script template   
 #
-# Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-01-28 10:26:21 $      
+# Last updated by: $Author: ar2 $     
+# Last updated on: $Date: 2003-03-27 14:46:32 $      
 
 use strict;                                      
 use lib "/wormsrv2/scripts/";                    
@@ -25,7 +25,7 @@ our $log;
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
-	    "database=s  => \$database);
+	    "database=s"  => \$database);
 
 
 # Display help if required
