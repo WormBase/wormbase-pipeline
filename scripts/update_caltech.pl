@@ -4,7 +4,7 @@
 
 # by Chao-Kung Chen [030113]
 
-# Last updated on: $Date: 2003-11-12 16:53:58 $
+# Last updated on: $Date: 2003-11-14 11:20:33 $
 # Last updated by: $Author: ck1 $
 
 
@@ -98,8 +98,8 @@ mail_maintainer("New gene name merge notice", $recipients, $nlog) if $found == 1
 
 # when no new gene name merge is found
 if ($merge && $found == 0){
-    $recipients ="ck1\@sanger.ac.uk, krb\@sanger.ac.uk"; # notify ck1 & krb if no update
-    $recipients ="$debug\@sanger.ac.uk" if $debug;  # notify ck1 & krb if no update
+    $recipients ="ck1\@sanger.ac.uk"; # notify ck1 if no update
+    $recipients ="$debug\@sanger.ac.uk" if $debug; 
     mail_maintainer("New gene name merge notice", $recipients, $nlog);
 }
 
@@ -147,7 +147,8 @@ sub process_main_other_name {
   ########################################
   
   my $ga_dir = "/wormsrv1/geneace";
-  
+  #my $ga_dir = "/nfs/disk100/wormpub/DATABASES/BACKUPS/geneace_backup.031107";
+
   my $locus_has_other_name_to_cds=<<EOF;
 Table-maker -p "/wormsrv1/geneace/wquery/locus_has_other_name_to_cds.def" quit
 EOF
@@ -253,8 +254,8 @@ sub check_gene_name_merge {
       print $name, "\n";
       # ensures that the exception name is an other-name of a main name and is by itself a CGC main name
       $found = 1; 
-      push(@merger, "$name became an other_name of the main name $other_main{$name}->[0] ($other_main{$name}->[1]), but another $name also becomes a main name ($locus_cds{$name}->[0])\n");
-      push(@merger, "$name became an other_name of the main name $other_main{$name}->[0] ($other_main{$name}->[1]), but another $name also becomes a main name (not connected to sequence yet)\n") if $locus_cds{$name}->[0] eq "NA";
+      push(@merger, "$name became an other_name of the main name $other_main{$name}->[0] ($other_main{$name}->[1]), this is different from the CGC main name $name ($locus_cds{$name}->[0])\n");
+      push(@merger, "$name became an other_name of the main name $other_main{$name}->[0] ($other_main{$name}->[1]), this is different from the CGC main name $name (not connected to sequence yet)\n") if $locus_cds{$name}->[0] eq "NA";
     }
   }
 
