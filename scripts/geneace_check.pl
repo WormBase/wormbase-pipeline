@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-06-25 16:17:43 $
+# Last updated on: $Date: 2003-07-11 16:43:25 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -42,7 +42,7 @@ GetOptions ("h|help"        => \$help,
 	    "v|verbose"        => \$verbose
            );
 
-
+if ($ace){open(ACE, ">>$acefile") || die  $!}
 
 # Display help if required
 &usage("Help") if ($help);
@@ -137,7 +137,7 @@ close(JAHLOG);
 mail_maintainer($0,$maintainers,$log);
 
 # Also mail to Erich unless in debug mode
-my $interested ="krb\@sanger.ac.uk, emsch\@its.caltech.edu, ck1\@sanger.ac.uk";
+my $interested ="krb\@sanger.ac.uk, emsch\@its.caltech.edu, kimberly\@minerva.caltech.edu, ck1\@sanger.ac.uk";
 
 open(MAIL1, "$erichlog") || die "Can't read in file $erichlog";
 
@@ -288,17 +288,17 @@ END
 	  print ACE "$b4_evi Paper_evidence \"\[$paper$\]\"\n";
         }
       }
-      if ($paper !~ /\[cgc\d+\]/ && $paper =~ /\[pmid(\d+)\]/){
-	$evid_errors++;
-	$paper = $1;
-	print LOG "\nERROR: $class $obj has Paper $paper under main tag $tag\n";
-	if ($ace){
-	  print ACE "\n$class_obj\n";
-	  print ACE "-D $ori\n\n";
-	  print ACE "\n$class_obj\n";
-	  print ACE "$b4_evi PMID_evidence \"\[$paper$\]\"\n"; 
-        }
-      }
+     # if ($paper !~ /\[cgc\d+\]/ && $paper =~ /\[pmid(\d+)\]/){
+#	$evid_errors++;
+#	$paper = $1;
+#	print LOG "\nERROR: $class $obj has Paper $paper under main tag $tag\n";
+#	if ($ace){
+#	  print ACE "\n$class_obj\n";
+#	  print ACE "-D $ori\n\n";
+#	  print ACE "\n$class_obj\n";
+#	  print ACE "$b4_evi PMID_evidence \"\[$paper$\]\"\n"; 
+#        }
+#      }
     }  
 
     if ($_ =~ /((\w+)\s+.+)Author_evidence -O .+\"(.+)\" -O.+/){
@@ -753,9 +753,9 @@ sub process_allele_class{
   print LOG "---------------------------------\n";
 
   my @alleles = $db->fetch('Allele','*');
-  my ($allele, %allele_gene, $gene, $seq_name, @seq1, @seq2, @seqs, $cdb);
+  my ($allele, $desig, $desig2, $desig3, $main_allele, %allele_gene, $gene, $seq_name, @seq1, @seq2, @seqs, $cdb);
 
-  $cdb = Ace->connect(-path  => '/nfs/disk100/wormpub/DATABASES/current_DB/',
+  $cdb = Ace->connect(-path  => $default_db,
 	              -program =>$tace) || do { print LOG "Connection failure: ",Ace->error; die();};
   
   @seqs=Table_maker();
@@ -774,24 +774,47 @@ EOF
   
   my %location;
   if ($ace){%location=allele_location($allele_designation_to_LAB, $default_db)};
- 
+
   foreach $allele (@alleles){
+   
     if(!defined($allele->at('Location'))){
       if ($allele =~ /^[A-Z].+/){
         $allele_errors++;
 	print LOG "ERROR: $allele has no Location tag present (no info available)\n";
       }
       else {
+	$desig=(); $desig2=(); $desig3=();
 	print LOG "ERROR: $allele has no Location tag present\n";
 	$allele_errors++;
+
 	if ($ace){
-	  my $desig = $allele;        
-	  $desig =~ s/\d+//;
+	  if ($allele =~ /^([a-z]{1,})\d+$/){
+	    $desig = $1;
+	  }
+	  elsif ($allele =~ /^([a-z]{1,})\d+([a-z]{1,})\d+$/){
+	    if ("$1" eq "$2"){$desig = $1}
+	    else {$desig = $1; $desig2 = $2}
+	    print "Double allele\n";
+          }
+	  elsif ($allele =~ /^(([a-z]{1,})\d+)[a-z]{1,}$/){
+	    $desig3 = $2;
+	    $main_allele = $1;
+	  }
+
 	  if (exists $location{$desig}){
 	    print  ACE "\n\nAllele : \"$allele\"\n";
 	    print  ACE "Location \"$location{$desig}\"\n";
 	  }
-	}	
+	  if (exists $location{$desig2}){
+	    print  ACE "\n\nAllele : \"$allele\"\n";
+	    print  ACE "Location \"$location{$desig2}\"\n";
+	  }
+	  if (exists $location{$desig3}){
+	    print  ACE "\n\nAllele : \"$main_allele\"\n";
+	    print  ACE "Other_name \"$allele\"\n";  
+	    print  ACE "Location \"$location{$desig3}\"\n";
+	  }
+	}
       }
     }
     # checking if sequence name in Allele has now a locus name 
