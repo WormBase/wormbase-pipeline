@@ -124,3 +124,14 @@ Revamped ?RNAi class, no longer SMapped to sequence or PCR_product but uses Homo
 sure how the website uses RNAi data...but I assume that something will change somewhere as a result
 of this new model
 
+2nd February 2005
+=================
+
+?Variation class is here. Major changes to how SNPs/alleles etc are represented in the database.
+
+Added tags to the #Evidence hash for other types of data.
+
+Added new tags to the ?Gene class for Caltech descriptions. This required the collation of all description
+tags under the Structured_description heading.
+
+Added Title and Description tags to the ?Gene_cluster and ?Transposon_family classes.
