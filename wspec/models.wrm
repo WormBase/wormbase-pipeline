@@ -678,7 +678,8 @@
 		       Index Ancestor   ?GO_term XREF Descendent // added for Lincoln [020709 [krb]
                	             Descendent ?GO_term XREF Ancestor
 		       Locus ?Locus XREF GO_term // added by krb 020905
-
+ 	 Version UNIQUE Text UNIQUE Text // added for Lincoln, to store version number of GO
+					 // only to be attached to three parent GO_terms [krb 031028]
 
 
 // New GO_code class
