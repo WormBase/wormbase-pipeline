@@ -34,17 +34,18 @@ my $dbname = "worm01";
 my $dbpass = "";
 
 # define the organisms we deal with
-my @species = qw(fly human slimSwissProt slimTrEMBL worm yeast ipi_human);
+my @species = qw(fly human slimSwissProt slimTrEMBL worm yeast ipi_human briggsae);
 
 # define the AceDB protein prefixes for the organisms used
 my %org2acedb;
 
 $org2acedb{worm} = "WP:";
 $org2acedb{fly} = "GADFLY:";
-$org2acedb{human} = "ENSEMBL:";
+$org2acedb{ensembl} = "ENSEMBL:";
 $org2acedb{yeast} = "SGD:";
 $org2acedb{slimSwissProt} = "SW:";
 $org2acedb{slimTrEMBL} = "TR:";
+$org2acedb{briggsae} = "BP:";
 
 # set an evalue threshold (as -log base 10)
 my $e_threshold = 6;
@@ -228,7 +229,7 @@ my $sth = $dbh->prepare ( q{ SELECT analysisId, db
 $sth->execute;
 
 while (my @row = $sth->fetchrow_array) {
-    if ($row[1] =~ /(wormpep|gadfly|ensembl|yeast|slimswissprot|slimtrembl|human)/) {
+    if ($row[1] =~ /(wormpep|gadfly|ensembl|yeast|slimswissprot|slimtrembl|human|brigpep)/) {
         my $org;
         if    ($1 =~ /wormpep/)       {$org = "worm";}
         elsif ($1 =~ /gadfly/)        {$org = "fly";}
@@ -236,7 +237,8 @@ while (my @row = $sth->fetchrow_array) {
         elsif ($1 =~ /yeast/)         {$org = "yeast";}
         elsif ($1 =~ /slimswissprot/) {$org = "slimSwissProt";}
         elsif ($1 =~ /slimtrembl/)    {$org = "slimTrEMBL";}
-	elsif ($1 =~ /human/)         {$org = "human";}
+	elsif ($1 =~ /human/)         {$org = "ipi_human";}
+	elsif ($1 =~ /briggsae/)      {$org = "briggsae";}
         $analysis2org{$row[0]} = $org;
     }
 }
@@ -641,7 +643,7 @@ sub getPrefix
     }
     # NOTE this is only the prefix - not the method (it will look like wublastp_ipi_human ENSEMBL:ENS00342342 etc)
     if( $name =~ /ENS\w+/ ) {
-      return $org2acedb{'human'};
+      return $org2acedb{'ensembl'};
     }
     else {
       if (length $name > 6 ) {
