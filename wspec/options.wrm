@@ -134,6 +134,7 @@ _VGO_term	   -V
 
 // Others
 _VHomol_data       -V -D FMAP
+_VFeature_data     -V -D FMAP
 
 // WTP
 _VWTP		   -V -D FMAP
