@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-07-09 09:37:35 $
+# Last updated on: $Date: 2002-07-10 08:37:45 $
 
 use Ace;
 use lib "/wormsrv2/scripts/"; 
@@ -251,8 +251,8 @@ sub test_locus_for_errors{
 
 sub create_log_files{
   my $rundate    = `date +%y%m%d`; chomp $rundate;
-  $log = "/wormsrv2/logs/geneace_check.log.$rundate";
-  $erichlog = "/wormsrv2/logs/geneace_check.erichlog.$rundate";
+  $log = "/wormsrv2/logs/geneace_check.log.$rundate.$$";
+  $erichlog = "/wormsrv2/logs/geneace_check.erichlog.$rundate.$$";
   open(LOG,">$log") || die "cant open $log";
   print LOG "$0 started at ",`date`,"\n";
   print LOG "=============================================\n";
