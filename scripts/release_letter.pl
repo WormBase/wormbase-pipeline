@@ -5,7 +5,7 @@
 # by Anthony Rogers                             
 #
 # Last updated by: $Author: krb $               
-# Last updated on: $Date: 2004-08-02 16:12:51 $         
+# Last updated on: $Date: 2004-08-03 07:28:08 $         
 
 # Generates a release letter at the end of build.
 #
@@ -64,7 +64,7 @@ my $webdir = "/nfs/WWWdev/htdocs/Projects/C_elegans/WORMBASE";
 
 # make the release letter
 if( defined($opt_l)) {
-  my $release_letter = "/wormsrv2/autoace/RELEASE_LETTERS/letter.WS$ver";
+  my $release_letter = "/wormsrv2/autoace/REPORTS/letter.WS$ver";
   open (RL,">$release_letter");
   print RL "New release of WormBase WS$ver, Wormpep$ver and Wormrna$ver $date\n\n";
   print RL "WS$ver was built by \n";
@@ -91,7 +91,7 @@ if( defined($opt_l)) {
   print RL "Release notes on the web:\n-------------------------\n";
   print RL "http://www.sanger.ac.uk/Projects/C_elegans/WORMBASE\n\n\n\n";
   
-  my $release_dir   = ("/wormsrv2/autoace/RELEASE_LETTERS");
+  my $release_dir   = ("/wormsrv2/autoace/REPORTS");
   my @release_files = ("$release_dir/dbases","$release_dir/composition","$release_dir/wormpep");
   
   #include all the pre-generated reports
@@ -231,7 +231,7 @@ if( defined($opt_l)) {
   
   print RL "____________  END _____________\n";
   
-  print "DONT FORGET TO FILL IN THE LAST FEW FIELDS IN THE LETTER\n found at /wormsrv2/autoace/RELEASE_LETTERS/letter.WS$ver\n";
+  print "DONT FORGET TO FILL IN THE LAST FEW FIELDS IN THE LETTER\n found at /wormsrv2/autoace/REPORTS/letter.WS$ver\n";
   
   my $name = "Release Letter for WS$ver";
   #    &mail_maintainer($name,$maintainer,$release_letter);

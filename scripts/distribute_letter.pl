@@ -9,7 +9,7 @@
 #                          /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/current/release_notes.txt/
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-08-02 22:08:20 $
+# Last updated on: $Date: 2004-08-03 07:28:08 $
 
 
 use strict;
@@ -39,13 +39,13 @@ print LOG "about to spread the word . . . \n";
 # copy the letter around
 print LOG "copying to ftp site . . . . ";
 my $ftp_dir = glob("~ftp/pub/wormbase");
-`cp /wormsrv2/autoace/RELEASE_LETTERS/letter.${release} $ftp_dir/${release}/letter.${release}` and die "couldnt copy to $ftp_dir\n";
+`cp /wormsrv2/autoace/REPORTS/letter.${release} $ftp_dir/${release}/letter.${release}` and die "couldnt copy to $ftp_dir\n";
 print LOG "DONE.\n";
 print LOG "copying to autoace/release . . . . ";
-`cp /wormsrv2/autoace/RELEASE_LETTERS/letter.${release} /wormsrv2/autoace/release/letter.${release}` and die "couldnt copy to autoace/release";
+`cp /wormsrv2/autoace/REPORTS/letter.${release} /wormsrv2/autoace/release/letter.${release}` and die "couldnt copy to autoace/release";
 print LOG "DONE.\n";
 print LOG "copying to intranet . . . . ";
-`cp /wormsrv2/autoace/RELEASE_LETTERS/letter.${release} ${www}/WORMBASE/${release}/release_notes.txt`
+`cp /wormsrv2/autoace/REPORTS/letter.${release} ${www}/WORMBASE/${release}/release_notes.txt`
   and die "couldnt copy to ${www}/WORMBASE/${release}/\n";
 print LOG "DONE.\n";
 
@@ -55,7 +55,7 @@ print "\n\nMailing to wormbase-dev . . ";
 
 my $to = "wormbase-dev\@wormbase.org";
 my $name = "Wormbase ${release} release";
-my $release_letter = "/wormsrv2/autoace/RELEASE_LETTERS/letter.${release}";
+my $release_letter = "/wormsrv2/autoace/REPORTS/letter.${release}";
 if( &mail_maintainer($name,$to,$release_letter) == 1 ) {
   print LOG "DONE.\n\n\n  Go and have a cuppa !\n";}
 else {

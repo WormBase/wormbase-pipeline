@@ -463,7 +463,7 @@ sub release_databases
     my %old_dates;
     my $located = 0;
     my $count =0;  #determines how many lines to read = no databases
-    open (OLD_LETTER,"/wormsrv2/autoace/RELEASE_LETTERS/letter.WS$old_ver");
+    open (OLD_LETTER,"/wormsrv2/autoace/REPORTS/letter.WS$old_ver");
     while(<OLD_LETTER>)
       {
 	if( ($located == 1) && ($count <= 6))
@@ -478,7 +478,7 @@ sub release_databases
 	  $located = 1;
 	}
       }  
-    my $dbaseFile = "/wormsrv2/autoace/RELEASE_LETTERS/dbases";
+    my $dbaseFile = "/wormsrv2/autoace/REPORTS/dbases";
     open (WRITE, ">$dbaseFile");
     
     print WRITE "Primary databases used in build WS$ver\n------------------------------------\n";
@@ -567,7 +567,7 @@ sub release_composition
 
     #now check the differences
     my %change_data;
-    my $compositionFile = "/wormsrv2/autoace/RELEASE_LETTERS/composition";
+    my $compositionFile = "/wormsrv2/autoace/REPORTS/composition";
     open (COMP_ANALYSIS, ">$compositionFile") || die "cant open $compositionFile";
     print COMP_ANALYSIS "Genome sequence composition:\n----------------------------\n\n";
     print COMP_ANALYSIS "       \tWS$ver       \tWS$old_ver      \tchange\n";
@@ -628,7 +628,7 @@ sub release_wormpep       #($number_cds $number_total $number_alternate )
       }
 
     #write new letter
-    my $wormpepFile = "/wormsrv2/autoace/RELEASE_LETTERS/wormpep";
+    my $wormpepFile = "/wormsrv2/autoace/REPORTS/wormpep";
     open (LETTER, ">$wormpepFile") || die "cant open $wormpepFile\n";
 
 
