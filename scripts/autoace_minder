@@ -7,7 +7,7 @@
 # Usage : autoace_minder [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2002-12-09 16:00:39 $
+# Last edited on: $Date: 2002-12-16 14:56:08 $
 
 
 #################################################################################
@@ -619,7 +619,7 @@ sub make_autoace {
     # quit if you have errors in the build
     &usage("Errors_in_loaded_acefiles") if (-e "$logdir/$flag{'B1A'}");
     
-    system ("$scriptdir/chromosome_dump.pl -dc") && die "Couldn't run chromosome_dump -dc\n" ;
+    system ("$scriptdir/chromosome_dump.pl --dna --composition") && die "Couldn't run chromosome_dump -dc\n" ;
     $runtime = `date +%H:%M:%S`; chomp $runtime;
     print LOG " Finished running chromosome_dump.pl at $runtime\n";
     
@@ -1339,7 +1339,7 @@ sub make_wormrna {
 sub dump_GFFs {
   $am_option .= " -gffdump";
   $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "chromosome_dump.pl started at $runtime\n";  
-  system ("$scriptdir/chromosome_dump.pl -g") && die "Couldn't make GFF files\n";
+  system ("$scriptdir/chromosome_dump.pl --gff") && die "Couldn't make GFF files\n";
   $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "chromosome_dump.pl finished at $runtime\n";  
 
   # make dumped_GFF_file in /logs

@@ -7,8 +7,8 @@
 #
 # This makes the autoace database from its composite sources.
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2002-12-13 13:15:43 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2002-12-16 14:56:08 $
 
 
 ###########################################################################################
@@ -648,7 +648,7 @@ sub gffdump {
     unless (fork) {
 	unless (fork) {
 	    sleep 1 until getppid == 1;
-	    $rs = system ("/wormsrv2/scripts/chromosome_dump.pl -dc") ;
+	    $rs = system ("/wormsrv2/scripts/chromosome_dump.pl --dna --composition") ;
 	    open(MAIL, "| Mail -s \"make_autoace_log\" $maintainers");
 	    open (INLOG,"/bin/cat $logfile |");
 	    while (<INLOG>) {

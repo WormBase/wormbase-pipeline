@@ -1,105 +1,85 @@
-#!/usr/local/bin/perl5.6.0 -w
-
+#!/usr/local/bin/perl5.6.1 -w
+#
 # chromosome_dump.pl 
-# by Keith Bradnam aged 12 and a half,  10/08/01
+#
+# by Keith Bradnam
 #
 # A script for dumping dna and/or gff files for chromosome objects in autoace
 # see pod for more details
 #
-# v1.13 :  dl : Added a chdir command to the -c option. This ensures that you move to the dump directory
-#               prior to calculating composition/totals
+# Last updated by: $Author: krb $     
+# Last updated on: $Date: 2002-12-16 14:56:08 $      
 
 
 use strict;
-use Getopt::Std;
-use IO::Handle;
 use lib '/wormsrv2/scripts/';
 use Wormbase;
+use Getopt::Long;
+use IO::Handle;
 
 $|=1;
 
-
-##############################
-# Script variables           #
-##############################
+######################################################
+# Script variables and command-line options          #
+######################################################
 
 our $tace   = &tace;
-
-
-# To (mis)quote Bob Marley - 'so much trouble in the world (of acedb)'
-
 our $giface = &giface;
-#our $giface = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/giface";
+our $maintainers = "All";
+our ($log, $help, $debug, $dna, $gff, $zipdna, $zipgff, $composition, $database, $dump_dir);
 
-our ($opt_d,$opt_g,$opt_e,$opt_h,$opt_c, $opt_p, $opt_q, $opt_t);
-getopts("dgehcp:q:t");
-our $database;
-our $dump_dir;
+GetOptions ("help"        => \$help,
+            "debug=s"     => \$debug,
+	    "dna"         => \$dna,
+	    "gff"         => \$gff,
+	    "zipdna"      => \$zipdna,
+	    "zipgff"      => \$zipgff,
+	    "composition" => \$composition,
+	    "database=s"  => \$database,
+	    "dump_dir=s"  => \$dump_dir
+	   );
 
 
-if($opt_p && !$opt_q){
-  die "You have specified a database (-p flag) but not a destination directory\nto dump to (-q flag).\n";
-}
-if(!$opt_p && $opt_q){
-  die "You have specified a destination directory to dump to (-q flag) but not\na source database (-p flag).\n";
-}
+##########################################################
 
+# Display help if required
+&usage("Help") if ($help);
 
-if (defined($opt_p)){
-  $database = $opt_p;
-}
-else{
-  $database = "/wormsrv2/autoace";
-}
-    
-if (defined($opt_q)){
-  $dump_dir = $opt_q;
-}
-else{
-  $dump_dir = "/wormsrv2/autoace/CHROMOSOMES";
+# Use debug mode?
+if($debug){
+  print "DEBUG = \"$debug\"\n\n";
+  ($maintainers = $debug . '\@sanger.ac.uk');
 }
 
 
-#############################
-# display help if required  #
-#############################
+# Sanity checks
+if($database && !$dump_dir){
+  die "You have specified a database (-database flag) but not a destination directory\nto dump to (-dump_dir flag).\n";
+}
+if(!$database && $dump_dir){
+  die "You have specified a destination directory to dump to (-dump_dir flag) but not\na source database (-database flag).\n";
+}
 
-&show_help if ((!$opt_d && !$opt_e && !$opt_g && !$opt_c && !$opt_t) || $opt_h);
-
-
-
-
-##################################################
-# Open logfile                                   #
-##################################################
-
-my $rundate    = `date +%y%m%d`; chomp $rundate;
-my $runtime = `date +%H:%M:%S`; chomp $runtime;
-
-our $logfile = "/wormsrv2/logs/chromosome_dump.${rundate}.$$";
-
-open (LOGFILE,">$logfile") || die "Couldn't create $logfile\n";
-LOGFILE->autoflush();
-print LOGFILE "# chromosome_dump.pl\n\n";     
-print LOGFILE "# run details    : $rundate $runtime\n";
-print LOGFILE "\n\n";
+# revert to defaults if no arguments specified
+$database = "/wormsrv2/autoace"             if (!defined($database));
+$dump_dir = "/wormsrv2/autoace/CHROMOSOMES" if (!defined($dump_dir));
 
 
 #####################################################
-# Main three subroutines
+# Main subroutines
 #####################################################
 
-&dump_dna    if ($opt_d);
-&dump_gff    if ($opt_g);
-&composition if ($opt_c);
-&zip_files   if ($opt_e || $opt_t);
+&create_log_files;
+
+&dump_dna    if ($dna);
+&dump_gff    if ($gff);
+&composition if ($composition);
+&zip_files   if ($zipdna || $zipgff);
 
 # say goodnight Barry
-
-close(LOGFILE);
+close(LOG);
 
 exit(0);
-
 
 
 
@@ -131,7 +111,7 @@ quit
 END
 
   &execute_ace_command($command,$tace,$database);
-  print LOGFILE "Finished dumping DNA\n\n";
+  print LOG "Finished dumping DNA\n\n";
 }
 
 
@@ -152,7 +132,7 @@ quit
 END
 
   &execute_ace_command($command,$giface,$database);
-  print LOGFILE "Finished dumping GFF files\n\n";
+  print LOG "Finished dumping GFF files\n\n";
 }
 
 
@@ -162,11 +142,11 @@ END
 
 sub composition{
 
-  print LOGFILE "Generating composition.all\n";	
+  print LOG "Generating composition.all\n";	
 
   chdir $dump_dir;
   system("/bin/cat *.dna | /nfs/disk100/wormpub/bin.ALPHA/composition > composition.all") && die "Couldn't create composition file\n";
-  print LOGFILE "Generating totals file\n";
+  print LOG "Generating totals file\n";
   my ($total, $minus, $final_total);
   open(IN,"$dump_dir/composition.all") || die "Couldn't open composition.all\n";
   while(<IN>){
@@ -194,13 +174,13 @@ sub zip_files{
   foreach my $chr ("I", "II", "III", "IV", "V", "X"){
     my $dna_file = "$dump_dir"."/CHROMOSOME_".$chr.".dna";
     my $gff_file = "$dump_dir"."/CHROMOSOME_".$chr.".gff";
-    if ($opt_e){
-      print LOGFILE "Compressing $dna_file\n";
-      system ("/bin/gzip -f $dna_file") if ($opt_e);
+    if ($zipdna){
+      print LOG "Compressing $dna_file\n";
+      system ("/bin/gzip -f $dna_file");
     }
-    if ($opt_t){
-      print LOGFILE "Compressing $gff_file\n";
-      system ("/bin/gzip -f $gff_file") if ($opt_t);
+    if ($zipgff){
+      print LOG "Compressing $gff_file\n";
+      system ("/bin/gzip -f $gff_file");
     }
   }	
 }
@@ -212,9 +192,9 @@ sub zip_files{
 
 sub execute_ace_command {
   my ($command,$exec,$dir)=@_;
-  open (WRITEDB,"| $exec $dir >> $logfile") or do {
-    print LOGFILE "execute_ace_command failed\n";
-    close(LOGFILE); 
+  open (WRITEDB,"| $exec $dir >> $log") or do {
+    print LOG "execute_ace_command failed\n";
+    close(LOG);
     die();
   };
   print WRITEDB $command;
@@ -223,10 +203,39 @@ sub execute_ace_command {
 
 ######################################################
 
-sub show_help {
-  system ('perldoc',$0) && die "Couldn't execute perldoc\n";
-  exit(0);
+
+sub create_log_files{
+
+  # Create history logfile for script activity analysis
+  $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
+
+  # create main log file using script name for
+  my $script_name = $1;
+  $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
+  my $rundate     = `date +%y%m%d`; chomp $rundate;
+  $log        = "/wormsrv2/logs/$script_name.$rundate.$$";
+
+  open (LOG, ">$log") or die "cant open $log";
+  print LOG "$script_name\n";
+  print LOG "started at ",`date`,"\n";
+  print LOG "=============================================\n";
+  print LOG "\n";
+
 }
+
+#####################################################
+
+sub usage {
+  my $error = shift;
+
+  if ($error eq "Help") {
+    # Normal help menu
+    system ('perldoc',$0);
+    exit (0);
+  }
+}
+
+
 
 
 
@@ -254,7 +263,7 @@ chromosome_dump.pl arguments:
 
 =over 4
 
-=item -d
+=item -dna
 
 Dump dna files from specified database (see -p flag), dumps one file for each of the six chromosomes.
 
@@ -263,7 +272,7 @@ Dump dna files from specified database (see -p flag), dumps one file for each of
 
 =over 4
 
-=item -c (optional)
+=item -composition (optional)
 
 Calculates composition statistics for any dna files that are generated.
 Use in combination with -d option (see above)
@@ -281,7 +290,7 @@ Show these help files.
 
 =over 4
 
-=item -g
+=item -gff
 
 Dump gff files, dumps one file for each chromosome in the database.
 
@@ -290,9 +299,9 @@ Dump gff files, dumps one file for each chromosome in the database.
 
 =over 4
 
-=item -p <database>
+=item -database <database>
 
-Specify database that you wish to dump dna/gff files from.  If -p is not specified
+Specify database that you wish to dump dna/gff files from.  If -database is not specified
 the script will dump from /wormsrv2/autoace by default
 
 =back
@@ -300,10 +309,10 @@ the script will dump from /wormsrv2/autoace by default
 
 =over 4
 
-=item -q <destination directory for dump files>
+=item -dest <destination directory for dump files>
 
-Specify destination of the dna and/or gff dump files generated from the -d or -g options.
-If -q is not specified, dump files will be written to /wormsrv2/autoace/CHROMOSOMES by default
+Specify destination of the dna and/or gff dump files generated from the -dna or -gff options.
+If -dest is not specified, dump files will be written to /wormsrv2/autoace/CHROMOSOMES by default
 
 =back
 
@@ -311,17 +320,17 @@ If -q is not specified, dump files will be written to /wormsrv2/autoace/CHROMOSO
 
 =over 4
 
-=item -e (optional)
+=item -zipdna (optional)
 
-Compresses any dna files using gzip (will remove any existing files first).  The -c
-option will be run before this stage if -c is specified.
+Compresses any dna files using gzip (will remove any existing files first).  The -composition
+option will be run before this stage if -composition is specified.
 
 =back
 
 
 =over 4
 
-=item -t (optional) 
+=item -zipgff (optional) 
 
 Compresses any gff files using gzip (will remove any existing files first).      
 
