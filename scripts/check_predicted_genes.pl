@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam aged 12 and a half
 #
-# Last updated on: $Date: 2004-05-05 12:10:05 $
+# Last updated on: $Date: 2004-05-06 09:46:21 $
 # Last updated by: $Author: krb $
 #
 # see pod documentation at end of file for more information about this script
@@ -196,12 +196,17 @@ while ($count_errors < 20){
   foreach my $error (@error2){
     $count_errors++;
     print LOG "$count_errors) $error";
-    last if $count_errors > 20;
+    last if $count_errors > 19;
   }
   foreach my $error (@error3){
     $count_errors++;
     print LOG "$count_errors) $error";
-    last if $count_errors > 20;
+    last if $count_errors > 19;
+  }
+  foreach my $error (@error4){
+    $count_errors++;
+    print LOG "$count_errors) $error";
+    last if $count_errors > 19;
   }
 }
 
