@@ -7,7 +7,7 @@
 # Usage : autoace_minder [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-02-12 10:34:30 $
+# Last edited on: $Date: 2003-02-18 16:51:51 $
 
 
 #################################################################################
@@ -767,9 +767,9 @@ sub check_release {
   }
   # if yes then this is about checking the class counts
   else {
-    $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "dbcomp started at $runtime\n";  
-    system ("$scriptdir/dbcomp -f /wormsrv2/WS${WS_previous}") && die "Couldn't run dbcomp -f\n";
-    $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "dbcomp finished at $runtime\n";  
+    $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "dbcomp.pl started at $runtime\n";  
+    system ("$scriptdir/dbcomp.pl") && die "Couldn't run dbcomp.pl\n";
+    $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "dbcomp.pl finished at $runtime\n";  
     }
 }
 #__ end check_release __#
