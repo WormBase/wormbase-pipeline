@@ -7,7 +7,7 @@
 # simple script for creating new (sequence based) Gene objects 
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-08-31 09:07:02 $
+# Last edited on: $Date: 2004-08-31 14:56:57 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -33,6 +33,7 @@ GetOptions ("input=s"   => \$input,
 	    "cgc=s"     => \$cgc,
 	    "who=i"     => \$who,
 	    "id=i"      => \$id,
+	    "email"     => \$email,
 	    "load"      => \$load,
 	    "verbose"   => \$verbose);
 
