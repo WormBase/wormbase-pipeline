@@ -1,13 +1,13 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
-# test2test
+# test2test.pl
 # 
 # by Keith Bradnam, aged 12 and half
 #
 # A script to convert ?Locus objects into the new ?Gene object
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-01-30 13:39:01 $   
+# Last updated on: $Date: 2004-01-30 13:39:49 $   
 
 use strict;
 use lib "/wormsrv2/scripts/";
