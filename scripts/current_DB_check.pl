@@ -7,8 +7,8 @@
 # Script to run consistency checks on the current_DB database
 # to look for bogus sequence entries
 #
-# Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2004-06-08 13:00:26 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2004-06-16 10:34:37 $
 
 
 use strict;
@@ -32,13 +32,11 @@ my $test;                # for running in test mode
 my $maintainers = "All"; # log file recipients
 
 
-GetOptions (
-	    "database=s" => \$database,
+GetOptions ("database=s" => \$database,
             "verbose"    => \$verbose,
             "test"       => \$test,
             "debug=s"    => \$debug,
-            "help"       => \$help
-            );
+            "help"       => \$help);
 
 &usage if ($help);
 
@@ -95,20 +93,18 @@ my $cshl_counter = 0;
 my $stlouis_counter = 0;
 my $all_counter = 0;
 
-############################################################
-# Check ?Sequence class (including predicted genes)
-############################################################
-
-print "\nLooking for spurious sequences\n";
 
 
-# Checks sequences connected to multiple loci
+# Checks for CDSs connected to multiple loci
+print "\nChecking for CDSs connected to multiple loci\n" if ($verbose);
 &find_multiple_loci;
 
 # Search everything else, one sequence at a time
+print "\nChecking CDS objects\n" if ($verbose);
 &process_sequences;
 
 # Check out-of-date gene id
+print "\nChecking for connections to non-live Gene objects\n" if ($verbose);
 &find_out_of_date_gene_id;
 
 # Count problems and print output
@@ -191,10 +187,10 @@ if($debug){
   $caltech = $sanger = $cshl = $stlouis = $debug;
 }
 
-&mail_maintainer("$WS_version integrity checks: Sanger","$sanger",$sanger_log) unless ($test || ($sanger_counter == 0));
-&mail_maintainer("$WS_version integrity checks: CSHL","$cshl",$cshl_log) unless ($test || ($cshl_counter ==0));
-&mail_maintainer("$WS_version integrity checks: Caltech","$caltech",$caltech_log) unless ($test || ($caltech_counter == 0));
-&mail_maintainer("$WS_version integrity checks: St. Louis","$stlouis",$stlouis_log) unless ($test || ($stlouis_counter == 0));
+&mail_maintainer("$WS_version database checks: Sanger","$sanger",$sanger_log)    unless ($test || ($sanger_counter == 0));
+&mail_maintainer("$WS_version database checks: CSHL","$cshl",$cshl_log)          unless ($test || ($cshl_counter ==0));
+&mail_maintainer("$WS_version database checks: Caltech","$caltech",$caltech_log) unless ($test || ($caltech_counter == 0));
+&mail_maintainer("$WS_version database checks: WashU","$stlouis",$stlouis_log)   unless ($test || ($stlouis_counter == 0));
 
 exit(0);
 
@@ -440,8 +436,10 @@ sub process_sequences{
 	}
       }
       undef($CDS);
+      $CDS->DESTROY();
     }
     undef($seq);
+    $seq->DESTROY();
   }
 }
 
@@ -626,7 +624,6 @@ sub splice_variant_check{
 
 sub find_multiple_loci {
 
-  print "\nLooking for sequences attached to multiple loci...\n" if $verbose;
   my $get_seqs_with_multiple_loci=<<EOF;
   Table-maker -p "/wormsrv1/geneace/wquery/get_seq_has_multiple_loci.def" quit 
 EOF
