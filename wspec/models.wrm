@@ -826,7 +826,7 @@
 		     Clone_left_end ?Clone XREF Clone_left_end UNIQUE Int
 		     Clone_right_end ?Clone XREF Clone_right_end UNIQUE Int
 		     Flipped
-	  DB_info	Database ?Database Text ?Accession_number XREF Sequence UNIQUE Int 
+	  DB_info	Database ?Database ?Text ?Accession_number XREF Sequence UNIQUE Int 
 				  // ID  Accession_number & sequence version [dl 2000-07-27]
                         AC_number Text
 			Secondary_accession ?Accession_number XREF Sequence
@@ -1096,7 +1096,7 @@
 	  Peptide UNIQUE ?Peptide UNIQUE Int UNIQUE Int // Length + checksum
 	  Display  View ?View
 		   Default_view UNIQUE ?View
-	  DB_info	Database ?Database Text ?Accession_number XREF Protein // ID  Accession_number
+	  DB_info	Database ?Database ?Text ?Accession_number XREF Protein // ID  Accession_number
 		  	DB_remark ?Text		// Swissprot CC entries
 			Keyword ?Keyword	// Swissprot
 	  		DB_searched ?Database Int // Int = version - should this be here?
