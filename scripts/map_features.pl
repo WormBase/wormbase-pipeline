@@ -8,8 +8,8 @@
 # Uses Ant's Feature_mapper.pm module
 #
 #
-# Last updated by: $Author: krb $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2004-10-14 15:06:32 $        # quickly see when script was last changed and by whom
+# Last updated by: $Author: pad $                      # These lines will get filled in by cvs and helps us
+# Last updated on: $Date: 2004-11-19 12:47:42 $        # quickly see when script was last changed and by whom
 
 
 $|=1;
@@ -31,6 +31,7 @@ my $SL1;                     #  SL1 trans-splice leader acceptors
 my $SL2;                     #  SL2 trans-splice leader acceptors
 my $polyA_site;              #  polyA_site
 my $polyA_signal;            #  polyA_signal
+my $binding_site;            #  binding_site feature data.
 my $adhoc;                   # Run against a file, output to screen
 my $build;                   # specify build mode, will write to acefiles and then load data
 my $start;
@@ -44,6 +45,7 @@ GetOptions ("all"          => \$all,
 	    "SL2"          => \$SL2,
 	    "polyA_site"   => \$polyA_site,
 	    "polyA_signal" => \$polyA_signal,
+	    "binding_site" => \$binding_site,
 	    "adhoc=s"      => \$adhoc,
             "debug=s"      => \$debug,
             "verbose"      => \$verbose,
@@ -52,6 +54,7 @@ GetOptions ("all"          => \$all,
 
 # Help pod if needed
 &usage(0) if ($help);
+
 
 #######################
 # ACEDB and databases #
@@ -80,8 +83,10 @@ my %sanity = (
 	      'SL1'          => 0,
 	      'SL2'          => 0,
 	      'polyA_site'   => 0,
-	      'polyA_signal' => 6
+	      'polyA_signal' => 6,
+	      'binding_site' => -1
 	      );
+
 
 # queue which Feature types you want to map
 
@@ -90,6 +95,7 @@ push (@features2map, "SL1")           if (($SL1) || ($all));
 push (@features2map, "SL2")           if (($SL2) || ($all));
 push (@features2map, "polyA_signal")  if (($polyA_signal) || ($all));
 push (@features2map, "polyA_site")    if (($polyA_site) || ($all));
+push (@features2map, "binding_site")  if (($binding_site) || ($all));
 
 #############
 # main loop #
@@ -152,7 +158,7 @@ foreach my $query (@features2map) {
       
       # check feature span is sane
       
-      if ($span == $sanity{$query}) {
+      if ( ($span == $sanity{$query}) || ($sanity{$query} < 0) ) {
 	
 	if ($adhoc) {
 	  print "$feature maps to $clone $start -> $stop, feature span is $span bp\n";
