@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.33 2002-02-28 09:49:21 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.34 2002-03-04 16:37:26 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -159,10 +159,10 @@
 
 // krb 020125 - Expanded Gene_name class to make cleaner XREFs with Gene class
 
-?Gene_name Gene Public_name ?Gene
-		CGC_name ?Gene
-		Sequence_name ?Gene
-		Other_name ?Gene
+?Gene_name Gene Public_name ?Gene XREF Public_name
+		CGC_name ?Gene XREF CGC_name
+		Sequence_name ?Gene XREF Sequence_name
+		Other_name ?Gene XREF Other_name
 
 
 // Gene class added 5/01/01 Lincoln Stein
@@ -199,6 +199,8 @@
 			CGC_unresolved Text // krb [020128]
 			Pseudogene Text // krb 28/02/02
         Molecular_info	CDS ?CDS XREF Gene
+			CDS_history ?CDS XREF Gene_history // added to agree to rd model change
+			CDS_count UNIQUE Int		   // krb 04/03/02
 			Transcript ?Transcript XREF Gene
 			Protein ?Protein XREF Gene
                         Other_sequence ?Sequence XREF Gene_other_seq     // dl 001128 // RD 0107 leave for now
@@ -254,6 +256,7 @@
 			    Acquires_merge UNIQUE ?Gene
 			    Split_from UNIQUE ?Gene
 			    Split_into UNIQUE ?Gene
+			    Imported Text // added to agree to rd's latest model krb 04/03/02
 		     Name_change CGC_name UNIQUE Text
                                  Sequence_name UNIQUE Text
 		                 Other_name UNIQUE Text
@@ -266,13 +269,10 @@
 // such as Method be UNIQUE
 // I added Similarity targets as Lincoln suggested in the April
 // discussion.
-// krb 020125 - added Initial_transfer as a tag to have some idea of why an object
-// might have no other Source information, e.g. primary creation of object.
 
 #Evidence  Source  UNIQUE  Author  ?Author
-                           Paper   ?Reference
+                           Paper   ?Paper //updated krb 04/03/02
                            Automated_method ?Method ?Database
-			   Initial_transfer
            Curator UNIQUE ?Curator
            Type    UNIQUE Mutant_phenotype	// NB These types map to GO codes
                           Genetic_interaction
@@ -740,7 +740,7 @@
 		       Locus ?Locus XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info                // RD 0107
 		       Allele ?Allele XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info                // RD 0107
 		       Gene ?Allele XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info                // RD 0107
-		       CDS_child ?CDS XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info                // RD 0107
+		       CDS_child ?CDS XREF Sequence_parent UNIQUE Int UNIQUE Int #SMap_info                // RD 0107
 		       Transcript_child ?Transcript XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info                // RD 0107
 		       Operon ?Operon XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info  // added for Operon data
 		       Transposon ?Transposon XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info // added for transposons [020128 dl]
@@ -870,18 +870,19 @@
 #Gene_confirmation cDNA
                    EST  
 
-?CDS	SMap S_parent Canonical_parent ?Sequence XREF CDS_child
-	S_child PCR_product ?PCR_product XREF Canonical_parent Int UNIQUE Int #SMap_info // added [011030 krb]
-                RNAi ?RNAi XREF Expressed_seq UNIQUE Int UNIQUE Int #SMap_info           // added [011210 krb]
+?CDS	SMap S_parent Sequence_parent UNIQUE ?Sequence XREF CDS_child
+	     S_child PCR_product ?PCR_product XREF Canonical_parent Int UNIQUE Int #SMap_info // added [011030 krb]
+                     RNAi ?RNAi XREF Expressed_seq UNIQUE Int UNIQUE Int #SMap_info           // added [011210 krb]
 	Structure Source_exons Int UNIQUE Int
+	Gene_info Gene UNIQUE ?Gene XREF CDS // when live 
+		  Gene_history UNIQUE ?Gene XREF CDS_history // when dead
 	DB_info Protein_id ?Sequence UNIQUE Text UNIQUE Int // DB_info tag added [011030 krb]
 		DB_remark ?Text
 	Annotation SwissProt_DE	UNIQUE Text
 		   EC_number Text
 	Origin	From_laboratory UNIQUE ?Laboratory
 		Species UNIQUE ?Species
-	Visible 	Gene ?Gene XREF CDS
-			Transcript ?Transcript XREF CDS
+	Visible 	Transcript ?Transcript XREF CDS
 			Matching_cDNA ?Sequence XREF Matching_CDS
 			Corresponding_protein UNIQUE ?Protein XREF Corresponding_CDS
 		        Related_CDS ?CDS XREF Related_CDS     // RD 0107 was Related_DNA
