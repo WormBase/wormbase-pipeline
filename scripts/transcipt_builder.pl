@@ -2,12 +2,11 @@
 
 use strict;
 use lib glob("~ar2/wormbase/scripts/");
-use Ace;
 use Getopt::Long;
 use Data::Dumper;
 use Coords_converter;
 
-my ($debug, $verbose, $really_verbose, $est, $count, $report, $gap, $transcript, $gff, $show_matches, $database);
+my ($debug, $verbose, $really_verbose, $est, $count, $report, $gap, $transcript, $gff, $show_matches, $database, $overlap_check);
 $gap = 5; # $gap is the gap allowed in an EST alignment before it is considered a "real" intron
 
 GetOptions ( "debug" => \$debug,
@@ -20,17 +19,20 @@ GetOptions ( "debug" => \$debug,
 	     "transcript" => \$transcript,
 	     "gff:s"    => \$gff,
 	     "show_matches"    => \$show_matches,
-	     "database:s"   => \$database
+	     "database:s"   => \$database,
+	     "overlap"      => \$overlap_check
 	   ) ;
 
-$database = glob("~wormpub/DATABASES/TEST_DBs/ANT_matchingace") unless $database;
+$database = glob("~wormpub/DATABASES/TEST_DBs/transcripts") unless $database;
 
 
 my %genes_exons;
 my %genes_span;
 my %cDNA;
 my %cDNA_span;
+my %transcript_span;
 my $gff_file;
+my @ordered_genes;
 
 $gff_file = $gff if $gff;
 
@@ -42,6 +44,8 @@ foreach my $chrom ( @chromosomes ) {
   %genes_span= ();
   %cDNA = ();
   %cDNA_span = ();
+  %transcript_span = ();
+  @ordered_genes = ();
   
   unless ($gff) {
     $gff_file = "$database/CHROMOSOMES/CHROMOSOME_$chrom.gff";
@@ -89,6 +93,11 @@ foreach my $chrom ( @chromosomes ) {
 
   &eradicateSingleBaseDiff;
 
+  # generate ordered array of genes to use as keys in sub findOverlappingGenes
+  foreach ( sort { $genes_span{$a}[0]<=>$genes_span{$b}[0]  } keys %genes_span ) {
+    push(@ordered_genes,$_);
+  }
+
   my %gene2cdnas;
   foreach my $CDNA (keys %cDNA_span) {
     $CDNA = $est if $est;
@@ -109,7 +118,9 @@ foreach my $chrom ( @chromosomes ) {
   my $coords = Coords_converter->invoke;
 
   # write out the transcript objects
-  open (ACE,">$database/transcripts.ace") or die "transcripts\n";
+  if( $transcript ) {
+    open (ACE,">$database/transcripts_$chrom.ace") or die "transcripts\n";
+  }
   foreach my $gene (keys %gene2cdnas) {
     print  "$gene matching cDNAs => @{$gene2cdnas{$gene}}\n" if $report;
     print "$_ matches ",scalar(@{$gene2cdnas{$gene}}),"\n" if $count;
@@ -117,33 +128,40 @@ foreach my $chrom ( @chromosomes ) {
       # next unless $genes_span{$_}->[2] eq "-"; #just do forward for now
       my %transcript;
       %transcript = %{$genes_exons{$gene}};   # put the gene model in to the transcript
-      
+
       #transcript object
-      print ACE "\nSequence : \"$gene.trans\"\n";
+      print ACE "\nTranscript : \"$gene.trans\"\n";
       foreach my $cdna (@{$gene2cdnas{$gene}}) { # iterate thru array of cDNAs ( 1 per gene )
+
 	print ACE "matching_CDNA \"$cdna\"\n";
 	foreach my $cExon(keys %{$cDNA{$cdna}} ){ #  then thru exons of the cDNA
+
 	  next if( defined $transcript{$cExon} and  $transcript{$cExon} == $cDNA{$cdna}->{$cExon} ); #skip if the cDNA exon is same as one in transcript
-	  
+	
+	  # if exon outside range of gene add it to the transcript UTR
+	  if( $cExon > $genes_span{$gene}->[1] or  $cDNA{$cdna}->{$cExon} < $genes_span{$gene}->[0] ){
+	    $transcript{$cExon} = $cDNA{$cdna}->{$cExon};
+	  }
+
 	  # iterate thru existing transcript exons and check for overlaps
 	  foreach my $transExon (keys %transcript ) {
 	    if( $cExon < $transExon and $cDNA{$cdna}->{$cExon} >= $transExon ) {
-	      
+
 	      if( $cDNA{$cdna}->{$cExon} > $transcript{$transExon} ) {
-		$transcript{$cExon} = $cDNA{$cdna}->{$cExon};
+		$transcript{$cExon} = $cDNA{$cdna}->{$cExon}; # ever possible ?
 	      }
 	      else {
 		$transcript{$cExon} = $transcript{$transExon};
 	      }
 	      delete $transcript{$transExon};
 	    }
-	    elsif( $cExon > $transExon and $cExon < $transcript{$transExon} and $cDNA{$cdna}->{$cExon} >= $transcript{$transExon} ) {
+	    elsif( $cExon >= $transExon and $cExon <= $transcript{$transExon} and $cDNA{$cdna}->{$cExon} > $transcript{$transExon} ) {
 	      $transcript{$transExon} = $cDNA{$cdna}->{$cExon};
 	    }
 	  }
 	}
       }
-      
+
       my @exons = (sort { $transcript{$a} <=> $transcript{$b} } keys %transcript);
       foreach (@exons) {
 	if( $genes_span{$gene}->[2] eq "+"){
@@ -153,29 +171,29 @@ foreach my $chrom ( @chromosomes ) {
 	  print ACE "source_exons ",$transcript{$exons[-1]} - $transcript{$_} + 1 ," ",$transcript{$exons[-1]} - $_ + 1 ," \n"; # - strand
 	}
       }
-      #my $source = $1 if($gene =~ /^(\S+)\./);
 
       my($source, $x, $y ) = $coords->LocateSpan("$chrom",$exons[0],$transcript{$exons[-1]});
-      print ACE "Source $source\n";
-      print ACE "method history\n";
-      
+    #  my($source, $x, $y ) = $coords->LocateSpan("SUPERLINK_CB_I",$exons[0],$transcript{$exons[-1]});
+      $transcript_span{"$gene.trans"} = [ ($exons[0],$transcript{$exons[-1]}) ];
+      print ACE "Sequence $source\n";
+      print ACE "method transcript\n";
+
       # parent object
       print ACE "\nSequence : $source\n";
       if( $genes_span{$gene}->[2] eq "+"){
-	print ACE "Subsequence $gene.trans $x $y\n"; # + strand
+	print ACE "transcript_child $gene.trans $x $y\n"; # + strand
       }
       else {
-	print ACE "Subsequence $gene.trans $y $x\n"; # - strand
+	print ACE "transcript_child $gene.trans $y $x\n"; # - strand
       }   
-#      if( $genes_span{$gene}->[2] eq "+"){
-#	print ACE "Subsequence $gene.trans $exons[0] $transcript{$exons[-1]}\n"; # + strand
-#      }
-#      else {
-#	print ACE "Subsequence $gene.trans $transcript{$exons[-1]} $exons[0]\n"; # - strand
-#      }
+
+      #link gene to transcript
+      print ACE "\nSequence $gene\n";
+      print ACE "Matching_transcript $gene.trans\n" 
     }
   }
-  
+  close ACE if $transcript;
+
   if ($show_matches) { 
     open(MATCHES,">$database/chromosome${chrom}_matching_cDNA.dat");
     print MATCHES Data::Dumper->Dump([\%gene2cdnas]);
@@ -191,7 +209,9 @@ foreach my $chrom ( @chromosomes ) {
     close CDNAS;
   }
 
-  close ACE;
+
+  &checkOverlappingTranscripts($chrom) if $overlap_check;
+
   last if $gff; # if only doing a specified gff file exit after this is complete
 }
 exit(0);
@@ -200,7 +220,7 @@ sub findOverlappingGene
   {
     my $cdna = shift;
     my @overlap_genes;
-    foreach ( sort { $genes_span{$a}[0]<=>$genes_span{$b}[0]  } keys %genes_span ) {
+    foreach ( @ordered_genes ) { # use this ordered array instead of sorting hash for every gene.
       print "testing overlap $_ $$cdna\n" if $verbose;
       if ($cDNA_span{$$cdna}[0] > $genes_span{$_}[1] ) { next; } #
       elsif( ($cDNA_span{$$cdna}[0] < $genes_span{$_}[0]) and ($cDNA_span{$$cdna}[1] > $genes_span{$_}[0]) ) { # cDNA starts B4 gene and ends after gene start
@@ -269,7 +289,7 @@ sub checkExonMatch
 
       # do cDNA and gene share exon end position
       elsif ( ($gExonS = &geneExonThatEndsWith(\$$gene, $cDNA{$$cdna}->{$cExonStart}) ) and ($gExonS != 0) ) {
-#	# shared exon end
+#	# shared exon end$cExonStart > $gene_exon_starts[-1]
 	
 	if( $gExonS == $gene_exon_starts[0] ) {	           #is this the 1st gene exon 
 	  if ( $cExonStart == $cdna_exon_starts[0] ) {      # also cDNA start so always match
@@ -313,7 +333,7 @@ sub checkExonMatch
 	# cDNA exon overlaps 1st gene exon start and terminate therein
 	elsif( ( $cExonStart == $cdna_exon_starts[-1]  ) and #  last exon of cDNA
 	       ( $cExonStart < $genes_span{$$gene}->[0] ) and 
-	       ( $cDNA{$$cdna}->{$cExonStart} > $genes_exons{$$gene}->{$gene_exon_starts[0]} )
+	       ( $cDNA{$$cdna}->{$cExonStart} < $genes_exons{$$gene}->{$gene_exon_starts[0]} )
 	     ) {
 	  print "\tcDNA final exon overlaps first exon of gene and end therein\n" if $verbose;
 	  next;
@@ -402,7 +422,7 @@ sub eradicateSingleBaseDiff
 	print "$exons -> $cDNA{$cdna_hash}->{$exons}\n" if $really_verbose;
 	my $new_last_key = $exons;
 	if( $last_key ) {
-	  if( $cDNA{$cdna_hash}->{$last_key} >= $exons - $gap ) { #allows seq error gaps up to 3 bp
+	  if( $cDNA{$cdna_hash}->{$last_key} >= $exons - $gap ) { #allows seq error gaps up to $gap bp
 	    $cDNA{$cdna_hash}->{$last_key} = $cDNA{$cdna_hash}->{$exons};
 	    delete $cDNA{$cdna_hash}->{$exons};
 	    $check = 1;
@@ -420,6 +440,59 @@ sub eradicateSingleBaseDiff
     }
   }
 
+
+
+
+sub checkOverlappingTranscripts  {
+  my $chrom = shift;
+  my @ordered_transcripts;
+  foreach my $transcript ( sort { $transcript_span{$a}[0]<=>$transcript_span{$b}[0]  } keys %transcript_span) {
+    push (@ordered_transcripts, $transcript);
+  }
+
+  my $trans_count = scalar (@ordered_transcripts);
+
+  open (OLT,">$database/overlapping_transcripts_$chrom") or warn "cant open $database/overlapping_transcripts\n";
+  TRANS:
+    for( my $i = 0;$i < $trans_count; $i++) {
+      for( my $j = 1; $j < 6; $j++ ) {
+	next unless ($i-$j >= 0 and $transcript_span{ $ordered_transcripts[$i-$j] });
+	if ( $transcript_span{ $ordered_transcripts[$i] }->[0] < $transcript_span{ $ordered_transcripts[$i-$j] }->[1] ) {
+	  {
+	    my $gene1 = substr ($ordered_transcripts[($i-$j)] ,0,-6);
+	    my $gene2 = substr ($ordered_transcripts[$i] ,0,-6);
+	    next TRANS if &checkIsos(\$gene1, \$gene2, *OLT) == 1;
+	  }
+	}
+	next unless $transcript_span{ $ordered_transcripts[$i+$j] };
+       if ( $transcript_span{ $ordered_transcripts[$i] }->[1] > $transcript_span{ $ordered_transcripts[$i+$j] }->[0] ) {
+	 {
+	   my $gene1 = substr ($ordered_transcripts[($i+$j)] ,0,-6);
+	   my $gene2 = substr ($ordered_transcripts[$i] ,0,-6);
+	   next TRANS if &checkIsos(\$gene1, \$gene2, *OLT) == 1;	 
+	}
+       }
+      }
+    }
+  sub checkIsos
+    {
+      my $gene1 = shift;
+      my $gene2 = shift;
+      my $file  = shift;
+      if( $genes_span{$$gene1}->[2] eq $genes_span{$$gene2}->[2] ){ # check same strand strand
+	# dismiss isoforms
+	my ($gene1_name) = $$gene1 =~ /(\w+\.\d+)\w?/;
+	my ($gene2_name) = $$gene2 =~ /(\w+\.\d+)\w?/;
+	
+	unless( $gene1_name eq $gene2_name ) {
+	  print $file "overlapping transcripts\t$$gene1\t$$gene2\n";
+	  return 1;
+	}
+      }
+      return 0;
+    }
+  close OLT;
+}
 
 
 __END__
