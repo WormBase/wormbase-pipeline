@@ -77,7 +77,7 @@ my %processIds2prot_analysis = ( 11 => "wublastp_worm",
 				 13 => "wublastp_slimswissprot",
 				 14 => "wublastp_slimtrembl",
 				 16 => "wublastp_slimtrembl",# slimtrembl is too large so is split
-				 15 => "wublastp_ipi_human",
+				 15 => "wublastp_human",
 				 17 => "wublastp_briggsae"
 			       );
 
