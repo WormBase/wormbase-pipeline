@@ -8,7 +8,7 @@
 # to look for bogus sequence entries
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-04-04 18:01:42 $
+# Last updated on: $Date: 2003-05-01 15:18:57 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -205,8 +205,8 @@ sub process_sequences{
 	  $category = 1;
 	}
       }    
-      # only look for some specific errors if no Source tag present
-      if(!defined($subseq->at('Structure.From.Source'))){  
+      # only look for some specific errors if no Source tag present and no Method tag set.
+      if(!defined($subseq->at('Structure.From.Source')) && !defined($subseq->at('Method'))){  
 	if(defined($subseq->at('DB_info.Database'))){
 	  my $tag = "Database";
 	  my $timestamp = &get_timestamp($class, $subseq, $tag);
