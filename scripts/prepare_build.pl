@@ -83,7 +83,7 @@ print LOG "Updating $cvs_file to include new WS number - using CVS\n\n";
 system("cvs -d '/nfs/ensembl/cvsroot/' edit $cvs_file") && die "Couldn't 'cvs edit' $cvs_file\n";
 system("sed 's/$WS_name/$WS_new_name/' < $cvs_file > ${cvs_file}.new") && die "Couldn't edit $cvs_file\n";
 system("mv /wormsrv2/autoace/wspec/database.wrm.new $cvs_file") && die "Couldn't update $cvs_file\n";
-system("cvs -d /nfs/ensembl/cvsroot/' commit -m 'updating $cvs_file to $WS_new_name' $cvs_file") && die "Couldn't 'cvs commit' $cvs_file\n";
+system("cvs -d '/nfs/ensembl/cvsroot/' commit -m 'updating $cvs_file to $WS_new_name' $cvs_file") && die "Couldn't 'cvs commit' $cvs_file\n";
 
 
 ##################
@@ -116,8 +116,6 @@ sub create_log_file{
   print LOG "\n\n";
 
 }
-
-
 #################################################################################
 # remove non-essential files from old database directory                        #
 #################################################################################
@@ -214,6 +212,8 @@ prepare_build.pl  OPTIONAL arguments:
 =back
 
 =head1 REQUIREMENTS
+
+=over 4
 
 =item This script must run on a machine which can see the /wormsrv2 disk.
 
