@@ -1,4 +1,12 @@
 #!/usr/local/bin/perl5.8.0 -w
+#
+# batch_BLAT.pl
+#
+# Anthony Rogers
+#
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2004-12-07 15:32:27 $
+ 
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -28,6 +36,18 @@ GetOptions ("help"       => \$help,
 	    );
 
 if( $help ) { system ('perldoc',$0); exit(0);}
+
+# turn everything on for -all option
+if( $all ) {   
+    $est      = 1;
+    $mrna     = 1;
+    $ncrna    = 1;
+    $ost      = 1;
+    $nematode = 1;
+    $embl     = 1;
+    $tc1      = 1;
+}
+
 
 my $log = Log_files->make_build_log($debug);
 my $wormpub = glob("~wormpub");
