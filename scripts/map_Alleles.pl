@@ -6,8 +6,8 @@
 #
 # This maps alleles to the genome based on their flanking sequences
 #
-# Last updated by: $Author: ar2 $                      
-# Last updated on: $Date: 2004-08-06 09:52:24 $        
+# Last updated by: $Author: krb $                      
+# Last updated on: $Date: 2004-08-06 15:25:27 $        
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -198,7 +198,7 @@ foreach my $allele (@alleles) {
     next ALLELE;
   }
   elsif(!defined $sequence->Source) {
-    printt LOG "ERROR: $name connects to Sequence $sequence which has no Source tag\n";
+    print LOG "ERROR: $name connects to Sequence $sequence which has no Source tag\n";
     $error_count++;
     next ALLELE;
   }
