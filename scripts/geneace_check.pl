@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-03-24 16:58:57 $
+# Last updated on: $Date: 2003-03-24 17:16:41 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -391,58 +391,9 @@ sub process_laboratory_class{
     }  
     undef($lab);
   }
-
-  my $WBPerson_not_linked_to_lab=<<EOF;
-  Table-maker -p "/wormsrv1/geneace/wquery/WBPerson_not_linked_to_lab.def" quit
-EOF
-  my $lab_has_person=<<EOF;            
-  Table-maker -p "/wormsrv1/geneace/wquery/laboratory_has_person.def" quit                
-EOF
-   
-  my $wbperson_errors=WBPerson_no_lab($WBPerson_not_linked_to_lab, $lab_has_person, $default_db);  
-  $lab_errors=$lab_errors + $wbperson_errors;
   print  LOG "\nThere are $lab_errors errors in Laboratory class\n";
 }
  
-#############################################
-# check for WBPerson not linked to Laboratory
-#############################################
-
-sub  WBPerson_no_lab {
-  my($def1, $def2, $dir)=@_;
-  my $lab_errors=0;
-  my (@WBPerson_no_lab, %WBPerson_no_lab, $lab, $id);
-  open (FH1, "echo '$def1' | tace $dir | ") || die "Couldn't access current_DB\n";
-  open (FH2, "echo '$def2' | tace $dir | ") || die "Couldn't access current_DB\n";
-  
-  while (<FH1>){
-    chomp($_);
-    if ($_ =~ /^\"/){
-      $_ =~ s/"//g;
-      push (@WBPerson_no_lab, $_);
-    }
-  }
-  foreach(@WBPerson_no_lab){$WBPerson_no_lab{$_}++}
-  #print keys %WBPerson_no_lab, "\n";
-  while (<FH2>){
-    chomp($_);
-    if ($_ =~ /^\"/){
-      $_ =~ s/"//g;
-      my ($lab, $id)=split(/\s+/, $_);
-      if ($WBPerson_no_lab{$id}){
-        $lab_errors++;
-        print LOG "INFO: $id can now be linked to Laboratory $lab\n";
-      }      
-      else {
-        $lab_errors++; 
-        print LOG "WARNING: $id is not linked to Laboratory\n";
-        print CECILIALOG "$id is not linked to Laboratory\n";
-      }
-    }
-  }
-  return $lab_errors;
-}  
-
 ########################
 # Process Allele class #
 ########################
