@@ -42,7 +42,7 @@ while (<>) {
 				if ((!$opt_c) || (exists $camace{$name})) {
 					print "S_Child Homol_data BLAT_EST:$name"."_$m $first $second\n" unless ($opt_m || $opt_x);  
 					print "S_Child Homol_data BLAT_mRNA:$name"."_$m $first $second\n"    if ($opt_m); 
-					print "S_Child Homol_data BLAT_panem:$name"."_$m $first $second\n"   if ($opt_x); 
+					print "S_Child Homol_data BLATX_NEMATODE:$name"."_$m $first $second\n"   if ($opt_x); 
 				}
 				last;
 			}					
@@ -53,7 +53,7 @@ while (<>) {
 				if ((!$opt_c) || (exists $camace{$name})) {
 					print "S_Child Homol_data BLAT_EST:$name"."_$m $first $second\n" unless ($opt_m || $opt_x);  
 					print "S_Child Homol_data BLAT_mRNA:$name"."_$m $first $second\n"    if ($opt_m);  
-					print "S_Child Homol_data BLAT_panem:$name"."_$m $first $second\n"   if ($opt_x);  
+					print "S_Child Homol_data BLATX_NEMATODE:$name"."_$m $first $second\n"   if ($opt_x);  
 				}
 			}
 		}
