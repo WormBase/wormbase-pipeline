@@ -7,7 +7,7 @@
 # Script to make ?Transcript objects
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-09-29 16:22:35 $  
+# Last updated on: $Date: 2003-09-30 08:10:18 $  
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -283,8 +283,9 @@ if( $load_matches ) {
 
 # Finish and tidy up
 print $log "$0 finished at ",&runtime,"\n";
-close($log);
 &mail_maintainer("BUILD REPORT: $0",$maintainers,$log);
+close($log);
+
 
 
 exit(0);
