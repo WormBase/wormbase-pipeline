@@ -289,6 +289,7 @@
 				Length   Int	// bp
         Molecular_information	Genomic_sequence ?Sequence XREF Locus_genomic_seq #Evidence // Split genomic and other XREFs
                                 Other_sequence ?Sequence XREF Locus_other_seq #Evidence    // dl 001128
+				Transcript ?Transcript XREF Locus #Evidence // en route to new gene model [021126 krb]
 				Product ?Text
 				Canonical_gene ?Gene XREF Locus                   // Lincoln 010518
 	Remark ?Text
@@ -781,6 +782,8 @@
 		       Microarray_aff ?Microarray_aff XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info //added for Wen's Affymetrix model [020614 krb] 
      		       AGP_fragment ?Sequence XREF AGP_parent Int UNIQUE Int #SMap_info // added for Briggsae data [krb 020726]
      		       UTR ?UTR XREF Canonical_parent Int UNIQUE Int #SMap_info // added for new UTR model [krb 020729]
+     		       UTR ?UTR XREF Canonical_parent Int UNIQUE Int #SMap_info // added for new UTR model [krb 020729]
+		       Transcript_child ?Transcript XREF Sequence UNIQUE Int UNIQUE Int #SMap_info // on the way to new gene model krb [021126]
 	  Structure  From	Source UNIQUE ?Sequence XREF Subsequence
 				Source_Exons Int UNIQUE Int // start at 1
 		     Subsequence ?Sequence XREF Source UNIQUE Int UNIQUE Int
@@ -820,6 +823,7 @@
 			Matching_Genomic ?Sequence XREF Matching_cDNA
 		 	Matching_cDNA ?Sequence XREF Matching_Genomic
 			Matching_UTR ?UTR XREF Matching_CDS // added for UTR model [krb 020729]
+			Matching_transcript ?Transcript XREF Matching_cDNA // for new gene model [krb 021126]
                         Spliced_cDNA ?Sequence XREF Component_of Int UNIQUE Int UNIQUE Int UNIQUE Int
                         Component_of ?Sequence XREF Spliced_cDNA
 			Corresponding_protein UNIQUE ?Protein XREF Corresponding_DNA
@@ -1028,6 +1032,47 @@
 			// if just the tag is set without values, then accept mismatches anywhere
 	   Display Max_mag UNIQUE Float	// don't show if more bases per line
 		   Min_mag UNIQUE Float	// don't show if fewer bases per line
+
+
+///////////////////////////////////////////////////////////////////
+//
+// New Transcript class to pave the way to the new gene model
+//
+// Added by krb 021126
+//
+///////////////////////////////////////////////////////////////////
+
+?Transcript     SMap S_parent Sequence UNIQUE ?Sequence XREF Transcript_child      
+                Structure Source_exons Int UNIQUE Int
+		DB_info DB_remark ?Text #Evidence // was missing from first draft of Transcript class krb
+                Visible Locus ?Locus XREF Transcript // new to fit existing Locus class
+			// Gene ?Gene XREF Transcript
+                        // CDS ?CDS XREF Transcript 
+			// Not ready for these two yet
+                        Matching_cDNA ?Sequence XREF Matching_transcript
+                        Remark ?Text
+                        Confidential_remark ?Text
+                        Brief_identification UNIQUE Text                           // [020306 kj]
+                        Reference ?Paper XREF Transcript                           // [020306 kj]
+                Origin  From_laboratory UNIQUE ?Laboratory                         // [020306 kj]
+                        Species UNIQUE ?Species                                    // [020306 kj]
+                Properties      Transcript      UNIQUE  mRNA    UNIQUE  Processed_mRNA
+                                                                        Unprocessed_mRNA
+                                                        tRNA UNIQUE Text
+                                                        rRNA UNIQUE Text
+                                                        snRNA UNIQUE Text
+                                                        scRNA UNIQUE Text
+                                                        stRNA UNIQUE Text         // [010723 dl]
+                                                        misc_RNA UNIQUE Text
+                                                        miRNA UNIQUE Text         // [020306 kj]
+                                Start_not_found                                   // [020306 kj]
+                                End_not_found                                     // [020306 kj]
+                                Pseudogene Text                                   // [020306 kj]
+                Method ?Method                  
+
+
+
+
 
 ?Homol_data SMap S_Parent Sequence ?Sequence
 	    Homol DNA_homol ?Sequence XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
@@ -1675,6 +1720,7 @@
                   Allele ?Allele XREF Reference
                   Rearrangement ?Rearrangement XREF Reference
                   Sequence ?Sequence XREF Reference
+		  Transcript ?Transcript XREF Reference // for new gene model [021126 krb]
                   Strain ?Strain XREF Reference
                   Clone ?Clone XREF Reference
                   Protein ?Protein XREF Reference
