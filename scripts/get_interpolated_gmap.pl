@@ -8,8 +8,8 @@
 # Output ace file of such information and upload to autoace during each build
 # Output also other files related. See POD
 
-# Last updated on: $Date: 2003-06-10 16:12:15 $
-# Last updated by: $Author: ck1 $
+# Last updated on: $Date: 2003-06-11 10:14:42 $
+# Last updated by: $Author: krb $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -38,7 +38,7 @@ GetOptions ("diff"          => \$diff,
 
 $gff_dir = "/wormsrv2/autoace/GFF_SPLITS/";
 $curr_db = "/nfs/disk100/wormpub/DATABASES/current_DB/"; 
-$output = "/wormsrv2/autoace/MAPPINGS/G_MAP";
+$output = "/wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP";
 
 if (!defined @ARGV or $help){system ("perldoc /wormsrv1/chaokung/my-scripts/test_gmap.pl"); exit(0)}
 
@@ -658,12 +658,12 @@ __END__
             This script is run at end of build to calculate interpolated map positions for all CDS and Transcripts.
             It can generate the following files:
 
-            (1) /wormsrv2/autoace/MAPPINGS/G_MAP/reverse_physicals_WSXXX.yymmdd.pid
-            (2) /wormsrv2/autoace/MAPPINGS/G_MAP/cmp_gmap_with_coord_order_WSXXX.yymmdd.pid (list of marker loci with gmap and coords)
+            (1) /wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/reverse_physicals_WSXXX.yymmdd.pid
+            (2) /wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/cmp_gmap_with_coord_order_WSXXX.yymmdd.pid (list of marker loci with gmap and coords)
             (3) /wormsrv2/logs/mapping_diff.yymmdd (not run for the build, but called by geneace_check.pl)  
-            (4) /wormsrv2/autoace/MAPPINGS/G_MAP/interpolated_gmap_WSXXX.yymmdd 
-            (5) /wormsrv2/autoace/MAPPINGS/G_MAP/interpolated_gmap_to_geneace_WSXXX.yymmdd.ace";
-            (6) /wormsrv2/autoace/MAPPINGS/G_MAP/gmap_info_WS*yymmdd (information might be interesting in case data looks strange) 
+            (4) /wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/interpolated_gmap_WSXXX.yymmdd 
+            (5) /wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/interpolated_gmap_to_geneace_WSXXX.yymmdd.ace";
+            (6) /wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/gmap_info_WS*yymmdd (information might be interesting in case data looks strange) 
             
 
 =head3 <USAGE> 
