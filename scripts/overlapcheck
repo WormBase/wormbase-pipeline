@@ -23,7 +23,7 @@ my $camdb     = Ace->connect(-path => '/wormsrv2/camace/') || die "Couldn't conn
 my @camclones = $camdb->fetch(-query => 'FIND Genome_Sequence');
 foreach my $camclone (@camclones) {
 	my $string = $camclone->Confidential_remark(1);
-	if ((defined $string) && (($string =~ /not in Cambridge LINK/) || ($string =~ /Louis/))) {
+	if ((defined $string) && ($string =~ /Louis/)) {
 		next;
 	}
 	else {$camace{$camclone} = 1;}
