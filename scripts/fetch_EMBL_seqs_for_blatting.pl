@@ -7,7 +7,7 @@
 # Attempt to unify all of the diverse scripts to fetch ESTs, OSTs, mRNAs etc. used by blat 
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-09-12 07:42:21 $
+# Last edited on: $Date: 2003-09-12 15:33:29 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -31,7 +31,6 @@ my ($est, $mrna, $ost, $nematode, $embl); # the main options
 
 
 GetOptions (
-	    "ace"      => \$ace,
 	    "est"      => \$est,
 	    "mrna"     => \$mrna,
 	    "ost"      => \$ost,
@@ -39,6 +38,7 @@ GetOptions (
 	    "embl"     => \$embl,
 	    "verbose"  => \$verbose,
 	    "blastdb"  => \$blastdb,
+	    "ace"      => \$ace,
 	    "ftp"      => \$ftp,
 	    "debug"    => \$debug,
             "help"     => \$help
@@ -84,11 +84,13 @@ my $getz   = "/usr/local/pubseq/bin/getzc"; # getz binary
 #########################################
 
 &create_log_files;
-&make_ests          if ($est || $ost);
+#&make_ests          if ($est || $ost);
 &make_mrnas         if ($mrna);
 &make_embl_cds      if ($embl);
 &make_nematode_ests if ($nematode);
 
+my $file = "$dir/elegans_ESTs";
+&clean_file("$file") if ($est);
 
 # Tidy up things and exit
 
@@ -121,6 +123,7 @@ sub make_ests{
   print LOG "Fetching EST sequences\n" if ($est);
   print LOG "Fetching OST sequences\n" if ($ost);
 
+
   # read accession->yk name hash for EST names 
   open (FH, "</wormsrv2/autoace/BLAT/EST.dat") or die "EST.dat : $!\n";
   undef $/;
@@ -130,20 +133,24 @@ sub make_ests{
   $/ = "\n";
   close(FH);
 
+  my $est_file = "elegans_ESTs";
+  my $ost_file = "elegans_OSTs";
+
   # OSTs are actually a subset of ESTs in EMBL, will usually want both
-  open (OUT_EST, ">$dir/elegans_ESTs")     if ($est);
-  open (OUT_OST, ">$dir/elegans_OSTs")     if ($ost);
-  open (OUT_ACE, ">$dir/elegans_ESTs.ace") if ($ace);
+  open (OUT_EST, ">$dir/$est_file")         if ($est);
+  open (OUT_OST, ">$dir/$ost_file")         if ($ost);
+  open (OUT_ACE, ">$dir/$est_file.ace")     if ($ace);
 
   # grab everything which is C. elegans species in EST division of EMBL (=emblrelease + emblnew)
   open (SEQUENCES, "$getz -sf fasta -f \"id acc des seq sv\" \'([embl-org:caenorhabditis elegans] \& [embl-div:est])\' |") ;
+
 
   while (<SEQUENCES>) {
 
     unless (/^AC\s+/ || /^DE\s+/ || /^>/ || /^ID\s+/ || /^SV\s+/) {
       print OUT_EST  if ($ost_seq == 0);
       print OUT_ACE  if (($ost_seq == 0) && ($ace));
-      print OUT_OST  if ($ost_seq == 1);      
+      print OUT_OST  if (($ost_seq == 1) && ($ost));      
     }
     
     # grab accession, id, sequence version, and description
@@ -163,8 +170,7 @@ sub make_ests{
     }
     if (/^>/) {
       if ($ost_seq == 0) {
-	print OUT_EST ">$acc $id $def\n";
-	
+	print OUT_EST   ">$acc $id $def\n";
 	if ($ace) {
 	  if (exists $EST_name{$acc}) {
 	    print OUT_ACE "\nSequence : \"$EST_name{$acc}\"\nDatabase EMBL $id $acc $sv\n";
@@ -190,7 +196,7 @@ sub make_ests{
       } 
       else {
 	# treat OSTs slightly differently, no need for acefile
-	print OUT_OST ">$acc $id $def\n";
+	print OUT_OST ">$acc $id $def\n" if ($ost);
 	$def = "";
 	$id  = "";
 	$sv  = "";
@@ -198,31 +204,34 @@ sub make_ests{
       }
     }
   }
+
+
   # close file handles
   close (SEQUENCES);
-  close (OUT_EST) if ($est);
-  close (OUT_OST) if ($ost);
-  close (OUT_ACE) if ($ace);
+  close (OUT_EST)   if ($est);
+  close (OUT_OST)   if ($ost);
+  close (OUT_ACE)   if ($ace);
+
 
   # make blast database?
   if($blastdb){
     print LOG "Making blast databases\n";
-    system ("/usr/local/pubseq/bin/pressdb $dir/elegans_ESTs > /dev/null") if ($est);
-    system ("/usr/local/pubseq/bin/pressdb $dir/elegans_OSTs > /dev/null") if ($ost);
+    system ("/usr/local/pubseq/bin/pressdb $dir/$est_file > /dev/null") if ($est);
+    system ("/usr/local/pubseq/bin/pressdb $dir/$ost_file > /dev/null") if ($ost);
   }
 
   # push to ftp site?
   if($ftp){
     print LOG "Copying file to FTP site\n";
     if($est){
-      system ("/bin/rm -f $ftpdir/elegans_ESTs.gz");
-      system ("cp $dir/elegans_ESTs $ftpdir/elegans_ESTs");
-      system ("/bin/gzip $ftpdir/elegans_ESTs");
+      system ("/bin/rm -f $ftpdir/$est_file.gz");
+      system ("cp $dir/elegans_ESTs $ftpdir/$est_file");
+      system ("/bin/gzip $ftpdir/$est_file");
     }
     if($ost){
-      system ("/bin/rm -f $ftpdir/elegans_OSTs.gz");
-      system ("cp $dir/elegans_ESTs $ftpdir/elegans_OSTs");
-      system ("/bin/gzip $ftpdir/elegans_OSTs");
+      system ("/bin/rm -f $ftpdir/$ost_file.gz");
+      system ("cp $dir/elegans_ESTs $ftpdir/$ost_file");
+      system ("/bin/gzip $ftpdir/$ost_file");
     }
   }
 
@@ -241,8 +250,9 @@ sub make_mrnas{
   print LOG "Fetching mRNA sequences\n";
 
   # open filehandles for output files 
-  open (OUT_MRNA, ">$dir/elegans_mRNAs");
-  open (OUT_ACE,  ">$dir/elegans_mRNAs.ace") if ($ace);
+  my $file = "elegans_mRNAs";
+  open (OUT_MRNA, ">$dir/$file");
+  open (OUT_ACE,  ">$dir/$file.ace") if ($ace);
 
   # Grab all RNA sequences (mRNA, pre-mRNA, unassigned RNA, and other RNA) from C. elegans sequences which are not in 
   # EST division from EMBL (= emblrelease + emblnew)
@@ -294,15 +304,15 @@ sub make_mrnas{
   # make blast database?
   if($blastdb){
     print LOG "Making blast database\n";
-    system ("/usr/local/pubseq/bin/pressdb $dir/elegans_mRNAs > /dev/null");
+    system ("/usr/local/pubseq/bin/pressdb $dir/$file > /dev/null");
   }
   
   # push to ftp site?
   if($ftp){
     print LOG "Copying to FTP site\n";
-    system ("/bin/rm -f $ftpdir/elegans_mRNAs.gz");
-    system ("cp $dir/elegans_ESTs $ftpdir/elegans_mRNAs");
-    system ("/bin/gzip $ftpdir/elegans_mRNAs");
+    system ("/bin/rm -f $ftpdir/$file.gz");
+    system ("cp $dir/elegans_ESTs $ftpdir/$file");
+    system ("/bin/gzip $ftpdir/$file");
   }
 
 }
@@ -319,9 +329,10 @@ sub make_nematode_ests{
 
   print LOG "Fetching other nematode EST sequences \n";
 
-  # open filehandles for output files 
-  open (OUT_NEM, ">$dir/other_nematode_ESTs");
-  open (OUT_ACE, ">$dir/other_nematode_ESTs.ace") if ($ace);
+  # open filehandles for output files
+  my $file = "other_nematode_ESTs";
+  open (OUT_NEM, ">$dir/$file");
+  open (OUT_ACE, ">$dir/$file.ace") if ($ace);
 
   # Grab all EST sequences (division EST) which have taxon 'Nematoda' but not species C. elegans
   open (SEQUENCES, "$getz -e \'([embl-tax:Nematoda] & [embl-div:est] ! [embl-org:Caenorhabditis elegans])' |") ;
@@ -360,15 +371,15 @@ sub make_nematode_ests{
   # pressdb fasta database
   if($blastdb){
     print LOG "Making blast database\n";
-    system ("/usr/local/pubseq/bin/pressdb $dir/other_nematode_ESTs > /dev/null");
+    system ("/usr/local/pubseq/bin/pressdb $dir/$file > /dev/null");
   }
 
   # push to ftp site?
   if($ftp){
     print LOG "Copying to FTP site\n";
-    system ("/bin/rm -f $ftpdir/other_nematode_ESTs.gz");
-    system ("cp $dir/elegans_ESTs $ftpdir/other_nematode_ESTs");
-    system ("/bin/gzip $ftpdir/other_nematode_ESTs");
+    system ("/bin/rm -f $ftpdir/$file.gz");
+    system ("cp $dir/elegans_ESTs $ftpdir/$file");
+    system ("/bin/gzip $ftpdir/$file");
   }
 
 }
@@ -383,8 +394,9 @@ sub make_embl_cds{
 
   print LOG "Fetching non-WormBase CDS containing EMBL accessions\n";
 
-  open (OUT_EMBL, ">$dir/elegans_embl_cds");
-  open (OUT_ACE, ">$dir/elegans_embl_cds.ace") if ($ace);
+  my $file = "elegans_embl_cds";
+  open (OUT_EMBL, ">$dir/$file");
+  open (OUT_ACE, ">$dir/$file.ace") if ($ace);
   
   # grab sequences in EST and ORG divisions which are genomic dna or unassigned DNA which are C. elegans but HTG sequences 
   #and which have CDS features
@@ -431,15 +443,15 @@ sub make_embl_cds{
   # pressdb fasta database
   if($blastdb){
     print LOG "Creating blast database\n";
-    system ("/usr/local/pubseq/bin/pressdb $dir/elegans_embl_cds > /dev/null");
+    system ("/usr/local/pubseq/bin/pressdb $dir/$file > /dev/null");
   }
 
   # push to ftp site?
   if($ftp){
     print LOG "Copying to FTP site\n";
-    system ("/bin/rm -f $ftpdir/elegans_embl_cds.gz");
-    system ("cp $dir/elegans_ESTs $ftpdir/elegans_embl_cds");
-    system ("/bin/gzip $ftpdir/elegans_embl_cds");
+    system ("/bin/rm -f $ftpdir/$file.gz");
+    system ("cp $dir/elegans_ESTs $ftpdir/$file");
+    system ("/bin/gzip $ftpdir/$file");
   }
 } 
 
@@ -457,9 +469,8 @@ sub usage {
     exec ('perldoc',$0);
   }
 }
-###############################################################################
 
-
+#############################################################################################
 
 sub create_log_files{
 
