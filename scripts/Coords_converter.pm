@@ -30,8 +30,7 @@ Anthony  ar2@sanger.ac.uk
 
 package Coords_converter;
 
-use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"
-  : glob("~ar2/wormbase/scripts");
+use lib -e $ENV{'CVS_DIR'};
 
 use Carp;
 use Wormbase;
