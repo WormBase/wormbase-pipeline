@@ -4,8 +4,8 @@
 #
 # by ag3 [991221]
 #
-# Last updated on: $Date: 2003-09-23 15:22:44 $
-# Last updated by: $Author: krb $
+# Last updated on: $Date: 2003-11-18 14:52:02 $
+# Last updated by: $Author: ar2 $
 
 
 # transferdb moves acedb database files across filesystems.
@@ -14,7 +14,7 @@
 # Updates display.wrm
 
 use strict;
-use lib "/wormsrv2/scripts/";
+use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
 use Wormbase;
 
 use Carp;
@@ -48,6 +48,7 @@ my $S_chromosomes;     # -chromosomes: copies CHROMOSOMES dir
 my $S_release;         # -release 
 my $S_all;             # -all: all of the above
 my $file;              # ???
+my $retry = 5;
 
 GetOptions (
 	    "start=s"     => \$srcdir,
@@ -68,7 +69,8 @@ GetOptions (
 	    "help"        => \$help,
 	    "verbose"     => \$verbose,
 	    "debug=s"     => \$debug,
-	    "mail"        => \$mail
+	    "mail"        => \$mail,
+	    "retry=i"     => \$retry
 	    );
 
 ##################################
@@ -183,6 +185,7 @@ if (($S_database || $S_all) && -d $new_subdir) {
 #################################################################
 # Move the actual acedb tree structure, unless it doesn't exist!
 #################################################################
+my @failed_files;
 foreach my $dir (@TOBEMOVED){
   if (!-d $dir){
     print LOG "$dir doesn't exist, skipping to next category\n";
@@ -208,8 +211,19 @@ elsif ($backup &&(-d $bck_subdir)) {
 ########################
 # Finish script cleanly
 ########################
+
 print LOG "\n=============================================\n";
-print LOG "TransferDB process $$ ended SUCCESSFULLY at ",&runtime,"\n";
+if( @failed_files ) {
+  print LOG "TransferDB process $$ ended in FAILURE  at ",&runtime,"\n\n";
+  print LOG "\n\nThe following ",scalar @failed_files," files were NOT copied correctly \n";
+  foreach ( @failed_files ) {
+    print LOG "\t$_\n";
+  }
+}
+else {
+  print LOG "TransferDB process $$ ended SUCCESSFULLY at ",&runtime,"\n";
+}
+
 close(LOG);
 &mail_maintainer("TransferDB.pl",$maintainers,$log) if ($mail);
 exit 0;
@@ -321,26 +335,34 @@ sub process_file {
       close OUTFILE;
     }
     elsif ($filename !~ /^\./) {
-      my $cp_chk = "0";
-      my $cp_val;
-      if($filename =~ m/models\.wrm$/){
-	$cp_val = system("\/usr/bin/cp -R $s_file $e_file");
-      }
-      else{
-	$cp_val = system("\/usr/apps/bin/scp $s_file $e_file");
-      }
-      $cp_chk = $cp_val >> 8;
-
-      my $S_SIZE = (stat($s_file))[7];
-      my $E_SIZE = (stat($e_file))[7];
-      if (($cp_chk != 0)||($S_SIZE != $E_SIZE)){
-	print LOG "ERROR: COPY of $s_file FAILED\n";
-	croak "ERROR: COPY of $s_file FAILED\n";
-      }
-      else {
-	print LOG "COPIED - $e_file .. \n";
-      }     
-    } 
+      #loop to retry copying on failure
+      my $success = 0;
+    ATTEMPT:
+      for(my $i = 1; $i < $retry ; $i++) {
+	my $cp_chk = "0";
+	my $cp_val;
+	if($filename =~ m/models\.wrm$/){
+	  $cp_val = system("\/usr/bin/cp -R $s_file $e_file");
+	}
+	else{
+	  $cp_val = system("\/usr/apps/bin/scp $s_file $e_file");
+	}
+	$cp_chk = $cp_val >> 8;
+	
+	my $S_SIZE = (stat($s_file))[7];
+	my $E_SIZE = (stat($e_file))[7];
+	if (($cp_chk != 0)||($S_SIZE != $E_SIZE)){
+	  print LOG "ERROR: COPY of $s_file FAILED - attempt $i\n";
+	}
+	else {
+	  print LOG "COPIED - $e_file .. \n";
+	  $success = 1;
+	  last ATTEMPT;
+	}     
+      } 
+      # end retry loop
+      push(@failed_files, $s_file) unless $success == 1;
+    }
     else {
       print LOG "SKIPPING COPY of $s_file .. \n";
     };
@@ -392,13 +414,15 @@ sub usage {
 sub create_log_files{
 
   # Create history logfile for script activity analysis
-  $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
+  $0 =~ m/\/*([^\/]+)$/; 
+  system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`") unless $debug;
 
   # create main log file using script name for
   my $script_name = $1;
   $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
   my $rundate     = `date +%y%m%d`; chomp $rundate;
   $log        = "/wormsrv2/logs/$script_name.$rundate.$$";
+  $log = "/tmp/logs/$script_name.$rundate.$$" if $debug;
 
   open (LOG, ">$log") or die "cant open $log";
   print LOG "$script_name process $$ started at ",&runtime,"\n";
