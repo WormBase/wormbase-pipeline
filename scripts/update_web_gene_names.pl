@@ -5,7 +5,7 @@
 # completely rewritten by Keith Bradnam from list_loci_designations
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-07-14 09:30:36 $      
+# Last updated on: $Date: 2004-07-14 09:52:34 $      
 #
 # This script should be run under a cron job and simply update the webpages that show
 # current gene names and sequence connections.  Gets info from geneace.  
@@ -75,8 +75,6 @@ sub create_loci_pages{
   # query against active geneace database
   my $db = Ace->connect(-path  => "/wormsrv1/geneace",
                       -program =>$tace) || do { print "Connection failure: ",Ace->error; croak();};
-
-
 
   # open text file which will contain all genes
   open (TEXT, ">$www/loci_all.txt") || croak "Couldn't open text file for writing to\n";
@@ -228,7 +226,7 @@ sub make_gene_lists{
     my ($gene,$cds,$transcript,$pseudogene,$public_name) = split(/\t/, $_) ;
 
     $gene2public_name{$gene} = "$public_name";
-                                                                                           
+    print LOG "$public_name\n";
     if($cds){
       $gene2molecular_name{$gene} .= "CDS_$cds ";
       $molecular_name2gene{$cds} = $gene;
@@ -243,12 +241,14 @@ sub make_gene_lists{
     }
   }
   close TACE;
+  
+
+
 
   # set up three output files, two are reverse of each other then one ace file so Darin or Paul
   # can upload to camace/stlace if necessary
-
-  open (ACE, ">$www/genes2molecular_names.ace") || croak "Couldn't open genes2molecular_names.ace\n";
-  open (GENE2MOL, ">$www/genes2molecular_names.txt") || croak "Couldn't open genes2molecular_names.txt\n";
+  open (ACE, ">$www/genes2molecular_names.ace") || print LOG "Couldn't open genes2molecular_names.ace\n";
+  open (GENE2MOL, ">$www/genes2molecular_names.txt") || print LOG "Couldn't open genes2molecular_names.txt\n";
 
   foreach my $key (sort keys %gene2molecular_name){
     print ACE "Gene : $key\n";
