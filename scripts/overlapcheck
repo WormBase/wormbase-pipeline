@@ -278,7 +278,7 @@ foreach my $chrom (@chrom) {
         push @{$stlest{$single[1]}}, $single[0];
     }   
     my %stlout = erase_isoforms(\%camest,\%iso);
-    foreach my $x (sort keys %camout) {
+    foreach my $x (sort keys %stlout) {
         @{$stlout{$x}} = sort @{$stlout{$x}};
         print STLEST "Introns of gene $x match ESTs @{$stlout{$x}}\n"; 
     }           
