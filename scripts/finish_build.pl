@@ -12,8 +12,8 @@
 # 3) Archives old GFF_SPLITS directory
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-09-22 14:15:41 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2003-10-21 11:47:39 $
 
 
 
@@ -73,7 +73,7 @@ system("rm -f $db_path/autoace/CHROMOSOMES/*") && die "Couldn't remove old CHROM
 # Remove redundant files from /wormsrv2/autoace/logs
  print LOG "Removing old files in /wormsrv2/autoace/logs\n";
 system("rm -f $db_path/autoace/logs/*:*") && die "Couldn't remove old log files\n";
-
+system("rm -f $db_path/autoace/logs/UTR_gff_dump");
 
 # archive old GFF splits directory'
 print LOG "Archiving GFFsplits directory using GFFsplitter.pl -a\n\n";
