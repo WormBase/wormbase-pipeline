@@ -191,7 +191,7 @@
 	Name	Other_name ?Text #Evidence
 		Qualifier Text	    // sd, sm, ts etc.  Not systematic just now
 		Rearrangement ?Rearrangement XREF Allele
-	Gene_class ?Gene_Class XREF Allele
+	Gene_class ?Gene_class XREF Allele
 	Sequence_details SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF Allele // Allele becomes SMapped now [krb 021216]
                          Flanking_sequences UNIQUE Text UNIQUE Text
 			 Flanking_PCR_product ?PCR_product XREF Flanks_deletion // KO data has PCR info
@@ -266,14 +266,14 @@
 
 
 
-?Gene_Class     Evidence #Evidence
+?Gene_class     Evidence #Evidence
 		Phenotype ?Text
 		Description ?Text // [krb 020614]
                 Designating_laboratory UNIQUE ?Laboratory XREF Gene_classes
                 Allele ?Allele	XREF Gene_class
-                Loci ?Locus XREF Gene_Class
-                Main_name  ?Gene_Class XREF Other_name
-		Other_name ?Gene_Class XREF Main_name
+                Loci ?Locus XREF Gene_class
+                Main_name  ?Gene_class XREF Other_name
+		Other_name ?Gene_class XREF Main_name
 		CGC_approved // added by krb 24/01/02
 		CGC_unresolved Text // added by krb 28/01/02
                 Remark ?Text #Evidence
@@ -281,7 +281,7 @@
 
 ?Locus  Evidence #Evidence
 	Name    Other_name ?Gene_name XREF Other_name_for #Evidence // now links to ?Gene_name
-                Gene_Class  ?Gene_Class XREF Loci 
+                Gene_class  ?Gene_class XREF Loci 
 		CGC_name ?Gene_name XREF CGC_name_for //new tag
 		Non_CGC_name ?Gene_name XREF Non_CGC_name_for //new tag
 		Sequence_name ?Gene_name XREF Sequence_name_for // new tag
@@ -2029,7 +2029,7 @@
                       Strain_designation UNIQUE Text
                       Allele_designation UNIQUE Text
                       Alleles ?Allele XREF Location
-                      Gene_classes ?Gene_Class XREF Designating_laboratory
+                      Gene_classes ?Gene_class XREF Designating_laboratory
 	      // new tidier staff section by krb 030523
 	      Staff   Registered_lab_members ?Person XREF Laboratory   // for people with WormBase Person IDs
         	      Unregistered_lab_members ?Author XREF Laboratory // for those without IDs
