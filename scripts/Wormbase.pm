@@ -10,7 +10,7 @@ use Carp;
 use Ace;
 @ISA       = qw(Exporter);
 
-@EXPORT    = qw(get_wormbase_version get_wormbase_version_name get_wormbase_release_date copy_check mail_maintainer celeaccession tace gff_sort dbfetch clones_in_database open_TCP DNA_string_reverse DNA_string_composition release_databases find_file_last_modified FetchData release_composition release_wormpep test_user_wormpub runtime tace giface check_write_access Map_feature scan);
+@EXPORT    = qw(get_wormbase_version get_wormbase_version_name get_wormbase_release_date copy_check mail_maintainer celeaccession tace gff_sort dbfetch clones_in_database open_TCP DNA_string_reverse DNA_string_composition release_databases find_file_last_modified FetchData release_composition release_wormpep test_user_wormpub runtime tace giface check_write_access Map_feature scan MapFeature);
  
 
 
@@ -718,6 +718,7 @@ sub giface {
   my $giface = glob("~wormpub/ACEDB/bin_ALPHA/giface");
   return $giface;
 }
+
 ################################################################################
 # Map features to a given sequence
 ################################################################################
@@ -814,6 +815,55 @@ sub scan
     }
     else { return; }
   }
+
+####################################
+# map_features #2 use perl regex 
+####################################
+
+sub MapFeature {
+    
+    my ($rev_left,$rev_right,$clone_length,$offset);
+    my ($match_left,$match_right,$span);
+    my ($feature,$clone,$flanking_left,$flanking_right,$clone_seq) = @_;
+
+    $rev_left     = &DNA_string_reverse($flanking_left);
+    $rev_right    = &DNA_string_reverse($flanking_right);
+    $clone_length = length ($clone_seq);
+
+    # scan forward strand
+    if ($clone_seq =~ /$flanking_left/) {
+        $offset = length ($`);
+        $match_left = $offset + 30;
+    }
+    if ($clone_seq =~ /$flanking_right/) {
+        $offset = length ($`);
+        $match_right = $offset + 1;
+    }
+
+    unless (defined $match_left) { 
+        if ($clone_seq =~ /$rev_left/) {
+            $offset = length ($`);
+            $match_left = $clone_length - $offset + 1;
+        }
+        if ($clone_seq =~ /$rev_right/) {
+            $offset = length ($`);
+	    $match_right = $clone_length - $offset - 30;
+        }
+    }
+    
+    if ($match_left > $match_right) {
+        $span = $match_left - $match_right +1;
+    }
+    else {
+        $span = $match_right - $match_left +1;
+    }
+
+
+#    print "//$feature maps to $clone $match_left -> $match_right, feature span is $span bp\n";
+    return ($match_left,$match_right,$span);
+
+
+}
 
 
 ####################################
