@@ -13,7 +13,7 @@
 
 # v0.2
 # 010418 : dl  : Changed fasta database lookup to use &dbfetch
-
+# 010725 : dl  : Fixed printing bug
 
 #################################################################################
 # variables                                                                     #
@@ -104,7 +104,7 @@ sub changed {
 
     print "Peptide : ";
     &dbfetch($new_acc,$dbfile);
-    print "\n";
+    print "\n\n";
     
     print LOG "Full analysis: $new_acc\n"; 
 
