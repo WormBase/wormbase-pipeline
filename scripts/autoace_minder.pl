@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-12-02 15:23:53 $
+# Last edited on: $Date: 2003-12-04 09:16:03 $
 
 
 #################################################################################
@@ -184,6 +184,7 @@ our %flag = (
 	     );
 
 our @chrom   = ('I','II','III','IV','V','X');
+    @chrom   = ('III') if ($quicktest);
 # logdir for lock files
 our $logdir  = "$db_path/logs";
 
