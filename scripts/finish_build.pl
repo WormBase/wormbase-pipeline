@@ -12,51 +12,72 @@
 # 3) Archives old GFF_SPLITS directory
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
-# Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-11-28 16:56:33 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2003-12-02 10:33:26 $
 
 
-
-$| = 1;
 use strict;
-use lib "/wormsrv2/scripts/";
+use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
 use IO::Handle;
-use Getopt::Std;
-use vars qw($opt_h);
+use Getopt::Long;
 use Common_data;
+
+
+##############################
+# command-line options       #
+##############################
+
+my $help;   # Help/Usage page
+my $test;   # use test environment in ~wormpub/TEST_BUILD/
+
+GetOptions ("help"         => \$help,
+            "test"         => \$test);
+
+
+&usage if ($help);
+
+
 
 #################################################################################
 # variables                                                                     #
 #################################################################################
 
 my $maintainers = "All";
-my $rundate     = `date +%y%m%d`; chomp $rundate;
-my $runtime     = `date +%H:%M:%S`; chomp $runtime;
-our $log        = "/wormsrv2/logs/finish_build.$rundate";
+my $log;
 
-my $db_path     = "/wormsrv2";
-my $WS_name     = &get_wormbase_version_name;
-my $WS_current  = &get_wormbase_version;
+my $basedir     = "/wormsrv2";
+$basedir        = glob("~wormpub")."/TEST_BUILD" if ($test); 
+
+# need to change this if in test mode
+my $WS_name;
+my $WS_current;
+if($test){
+  $WS_current = "666";
+  $WS_name    = "WS666";
+}
+else{
+  $WS_current = &get_wormbase_version;
+  $WS_name    = &get_wormbase_version_name;
+}
 my $WS_new      = $WS_current + 1;
 my $WS_new_name = "WS".$WS_new;
 my $WS_oldest   = $WS_current - 3; # the version that *should* be the oldest in /wormsrv2
 my $WS_old_name = "WS".$WS_oldest;
-my $WS_old_path = "$db_path"."/$WS_old_name";
+my $WS_old_path = "$basedir"."/$WS_old_name";
+my $old_wormpep = "$basedir/WORMPEP/wormpep".($WS_current-3);
 
-my $old_wormpep = "$db_path/WORMPEP/wormpep".($WS_current-3);
 
- ##############################
- # command-line options       #
- ##############################
 
-$opt_h = "";   # Help/Usage page
-getopts ('h');
-&usage if ($opt_h);
+
+
+
+
 
 #####################################################################################
 
-&create_log_file;
+&create_log_files;
+
 &archive_old_releases;
 
 # Transfer autoace to WSxx
@@ -66,14 +87,14 @@ system("TransferDB.pl -start /wormsrv2/autoace -end /wormsrv2/$WS_name -database
 
 # Remove redundant files from /wormsrv2/autoace/release and /wormsrv2/autoace/CHROMOSOMES
 print LOG "Removing old files in /wormsrv2/autoace/release/\n";
-unlink("$db_path/autoace/release/*") && die "Couldn't remove old release files\n";
+unlink glob("$basedir/autoace/release/*") && die "Couldn't remove old release files\n";
 print LOG "Removing old files in /wormsrv2/autoace/CHROMOSOMES/\n";
-unlink("$db_path/autoace/CHROMOSOMES/*") && die "Couldn't remove old CHROMOSOME files\n";
+unlink glob("$basedir/autoace/CHROMOSOMES/*") && die "Couldn't remove old CHROMOSOME files\n";
 
 # Remove redundant files from /wormsrv2/autoace/logs
  print LOG "Removing old files in /wormsrv2/autoace/logs\n";
-unlink("$db_path/autoace/logs/*:*") && die "Couldn't remove old log files\n";
-unlink("$db_path/autoace/logs/UTR_gff_dump");
+unlink glob("$basedir/autoace/logs/*:*") && die "Couldn't remove old log files\n";
+unlink("$basedir/autoace/logs/UTR_gff_dump");
 
 # archive old GFF splits directory'
 print LOG "Archiving GFFsplits directory using GFFsplitter.pl -a\n\n";
@@ -95,9 +116,9 @@ system("/nfs/intweb/cgi-bin/wormpub/confirmed_introns/parse_gff.pl") && warn "Co
 print LOG "Transferring autoace to ~wormpub/DATABASES/current_DB\n";
 print LOG "First removing ~wormpub/DATABASES/current_DB/database/ and ~wormpub/DATABASES/current_DB/database/CHROMOSOMES/\n";
 
-unlink("/nfs/disk100/wormpub/DATABASES/current_DB/database") && die "Couldn't remove current_DB database dir\n";
-unlink("/nfs/disk100/wormpub/DATABASES/current_DB/CHROMOSOMES") && die "Couldn't remove current_DB CHROMOSOMES\n";
-system("TransferDB.pl -start /wormsrv2/autoace -end /nfs/disk100/wormpub/DATABASES/current_DB -database -chromosomes -wspec -name $WS_name")  && die "couldn't run TransferDB for wormpub\n";
+rmdir("/nfs/disk100/wormpub/DATABASES/current_DB/database") && die "Couldn't remove current_DB/database dir\n";
+rmdir("/nfs/disk100/wormpub/DATABASES/current_DB/CHROMOSOMES") && die "Couldn't remove current_DB/CHROMOSOMES dir\n";
+system("TransferDB.pl -start $basedir/autoace -end /nfs/disk100/wormpub/DATABASES/current_DB -database -chromosomes -wspec -name $WS_name")  && die "couldn't run TransferDB for wormpub\n";
 system("/bin/gunzip /nfs/disk100/wormpub/DATABASES/current_DB/CHROMOSOMES/*.gz") && die "Couldn't gunzip CHROMOSOMES/*.gz\n";
 
 
@@ -119,18 +140,25 @@ exit(0);
 #################################################################################
 # set up log file                                                               #
 #################################################################################
+sub create_log_files{
 
-sub create_log_file{
+  # Create history logfile for script activity analysis
+  $0 =~ m/\/*([^\/]+)$/; system ("touch $basedir/logs/history/$1.`date +%y%m%d`");
 
-  open (LOG,">$log") || die "Cannot open logfile $!\n";
-  LOG->autoflush();
-  
-  print LOG "# finish_build.pl\n\n";     
-  print LOG "# run details    : $rundate $runtime\n";
-  print LOG "# WormBase version : $WS_name\n";
-  print LOG "\n\n";
+  # create main log file using script name for
+  my $script_name = $1;
+  $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
+  my $rundate = &rundate;
+  $log        = "$basedir/logs/$script_name.$WS_name.$rundate.$$";
+  open (LOG, ">$log") or die "cant open $log";
+  print LOG "$script_name\n";
+  print LOG "started at ",&rundate,"\n";
+  print LOG "=============================================\n";
+  print LOG "\n";
 
 }
+
+
 #################################################################################
 # remove non-essential files from old database directory                        #
 #################################################################################
@@ -142,7 +170,7 @@ sub archive_old_releases{
   if (-d "$WS_old_path"){
     if (-d "$WS_old_path/database"){
       print LOG "Removing $WS_old_path/database\n";
-      unlink("$WS_old_path/database") && die "Couldn't remove $WS_old_path/database\n";
+      rmdir("$WS_old_path/database") && die "Couldn't remove $WS_old_path/database\n";
     }
     # remove wspec, wgf etc.
     my @files = glob("$WS_old_path/w*");
@@ -152,24 +180,24 @@ sub archive_old_releases{
     }
     if (-d "$WS_old_path/pictures"){
       print LOG "Removing $WS_old_path/pictures\n";
-      unlink("$WS_old_path/pictures") && die "Couldn't remove $WS_old_path/pictures\n";
+      rmdir("$WS_old_path/pictures") && die "Couldn't remove $WS_old_path/pictures\n";
     }    
   }
 
   # turn the old release into a tarball, move into /nfs/wormarchive and remove old directory
   print LOG "\nCreating $WS_old_path.tar.gz\n";
-  system ("tar -P /wormsrv2/ -cvf $WS_old_path.tar $WS_old_path/") && die "Couldn't create tar file\n";
+  system ("tar -P /$basedir/ -cvf $WS_old_path.tar $WS_old_path/") && die "Couldn't create tar file\n";
   system ("gzip $WS_old_path.tar") && die "Couldn't create gzip file\n";
   print LOG "Moving archive to /nfs/wormarchive and removing $WS_old_path\n";
   system ("mv $WS_old_path.tar.gz /nfs/wormarchive/") && die "Couldn't move to /nfs/wormarchive\n";
-  unlink("$WS_old_path") && die "Couldn't remove old directory\n";
+  rmdir("$WS_old_path") && die "Couldn't remove old directory\n";
   
   # archive old wormpep version
   if(-d $old_wormpep){
     print LOG "\nCreating $old_wormpep archive\n";
-    system ("tar -P /wormsrv2/ -cvf $old_wormpep.tar $old_wormpep") && die "Couldn't create wormpep tar file\n";
+    system ("tar -P /$basedir/ -cvf $old_wormpep.tar $old_wormpep") && die "Couldn't create wormpep tar file\n";
     system ("gzip $old_wormpep.tar") && die "Couldn't create gzip wormpep tar file\n";
-    unlink("$old_wormpep") && die "Couldn't remove old directory\n";
+    rmdir("$old_wormpep") && die "Couldn't remove old directory\n";
   }
 
 }
