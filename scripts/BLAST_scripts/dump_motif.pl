@@ -4,8 +4,8 @@
 #
 # Dumps protein motifs from ensembl mysql (protein) database to an ace file
 #
-# Last updated by: $Author: wormpipe $
-# Last updated on: $Date: 2004-01-27 17:15:56 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2004-07-05 13:14:59 $
 
 
 use strict;
@@ -91,8 +91,11 @@ foreach my $method (@methods) {
     foreach my $aref (@$ref) {
         my ($prot, $start, $end, $hid, $hstart, $hend, $score) = @$aref;
         if ($method eq "hmmpfam") {
-            my $line = "Motif_homol \"PFAM:$hid\" \"pfam\" $score $start $end $hstart $hend";
-            push (@{$motifs{$prot}} , $line);
+	  if( $hid =~ /(\w+)\.\d+/ ) {
+	    $hid = $1;
+	  }
+	  my $line = "Motif_homol \"PFAM:$hid\" \"pfam\" $score $start $end $hstart $hend";
+	  push (@{$motifs{$prot}} , $line);
 	}
         else {
             my $line = "Feature \"$method\" $start $end $score";
