@@ -101,13 +101,16 @@ while (<LIST>) {
       my ($DB,$ID) = split(/:/, $_);
       if( "$DB" eq "ENSEMBL" ){
       print ACE "Database ENSEMBL ENSEMBL_proteinID $ID\n";
-      print ACE "Database ENSEMBL ENSEMBL_geneID $ENSpep_gene{$ID}\n" if $ENSpep_gene{$ID};
+# no longer get gene IDs from ensembl due to change in their fasta header
+#     print ACE "Database ENSEMBL ENSEMBL_geneID $ENSpep_gene{$ID}\n" if $ENSpep_gene{$ID};
       }
       elsif( "$DB" eq "SWISS-PROT" ){ 
 	my $othername = $acc2id{$ID} if $acc2id{$ID};
 	print ACE "Database SwissProt SwissProt_AC $ID\n";
 	print ACE "Database SwissProt SwissProt_ID $acc2id{$ID}\n" if $acc2id{$ID};
+
 	print ACE "Gene_name \"$swiss_id2gene{$othername}\"\n" if $swiss_id2gene{$othername};
+	
       }
       elsif( "$DB" eq "TREMBL" ){
 	print ACE "Database TREMBL TrEMBL_AC $ID\n";
