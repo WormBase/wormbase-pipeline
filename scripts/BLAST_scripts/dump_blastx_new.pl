@@ -148,7 +148,7 @@ while (<CDS>) {
   $ary[8] =~ /\"(\S+)\"/;
   my $name = $1;
   if ($name) {
-    $name =~ tr/a-z/A-Z/;
+    #$name =~ tr/a-z/A-Z/;  -  dont know why it was doing this ! !
     $cds{$name} = [$start, $end];
   }
   else {
@@ -542,8 +542,8 @@ foreach my $aref (@$ref) {
       if ($max_ev == 0) {
 	# there were no matches from others at all, keep within 75% of best worm match
 	foreach my $aref (@worm_tmp) {
-	  if ($aref->[2] > 0.75*$worm_tmp[1]->[2]) {
-	    $accepted{worm}->{$aref->[1]}->{$aref->[0]} = 1;
+	  if ( (defined $worm_tmp[1]->[2]) and $aref->[2] > 0.75*$worm_tmp[1]->[2]) {
+	    $accepted{worm}->{$aref->[1]}->{$aref->[0]} = 1 if (defined $aref->[1]);
 	    
 #                        print LOG "\t ACCEPT finally ".$aref->[0]." ".$aref->[1]."\n"; 
 	    
