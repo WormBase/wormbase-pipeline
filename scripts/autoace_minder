@@ -128,6 +128,7 @@ our $logdir     = "/wormsrv2/autoace/logs";
 our $WSver_file = "/wormsrv2/autoace/wspec/database.wrm";
 our $tace      =  "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
 our ($WS_version,$WS_previous);
+$WS_version = &get_WS_version;
 my $scriptdir  = "/wormsrv2/scripts";                                            # specify location of scripts
 
 our $logfile = "/wormsrv2/logs/autoace_minder.WS${WS_version}.${rundate}";
@@ -176,7 +177,7 @@ LOG->autoflush();
 # B2:Dump_DNA_files                   #
 #######################################
 
-&make_autoace      if ($build | $builddb || $buildchrom || $buildrelease);
+&make_autoace      if ($build || $builddb || $buildchrom || $buildrelease);
 
 #######################################
 # B3:Make_agp_files                   #
