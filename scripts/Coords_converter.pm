@@ -191,7 +191,7 @@ sub GetCloneFromCoord
       $chrom = $parent;
       $chrom = "CHROMOSOME_$chrom" unless $chrom =~ /CHROMOSOME/;
 
-      $parent = &GetSuperlinkFromCoord($self,"$parent", $coord);
+      $parent = $self->GetSuperlinkFromCoord("$parent", $coord);
       my $sl_start = $self->{"$chrom"}->{'SUPERLINK'}->{"$parent"}->[0];
       $coord -= $sl_start;
     }
@@ -269,12 +269,12 @@ sub LocateSpan
     }
 
     $chrom = "CHROMOSOME_$chrom" unless $chrom =~ /CHROMOSOME/;
-    my $x_slink = &GetSuperlinkFromCoord( $self, $chrom, $x); # need this whatever
+    my $x_slink = $self->GetSuperlinkFromCoord($chrom, $x); # need this whatever
     my $sl_start = $self->{"$chrom"}->{'SUPERLINK'}->{"$x_slink"}->[0];
 
     # see if the span is within a clone
-    my $x_clone = &GetCloneFromCoord( $self, $chrom, $x);
-    my $y_clone = &GetCloneFromCoord( $self, $chrom, $y);
+    my $x_clone = $self->GetCloneFromCoord( $chrom, $x);
+    my $y_clone = $self->GetCloneFromCoord($chrom, $y);
     if( $x_clone eq $y_clone ) {# span maps within clone
       my $clone_start = $self->{SUPERLINK}->{"$x_slink"}->{"$x_clone"}->[0];
       $rel_x = $x - $sl_start - $clone_start + 2;  # add 2 -  1 for clone, 1 for slink numbering adjustment
@@ -283,7 +283,7 @@ sub LocateSpan
     }
     else {
       # locate on Slink ;
-      my $y_slink = &GetSuperlinkFromCoord( $self, $chrom, $y);
+      my $y_slink = $self->GetSuperlinkFromCoord( $chrom, $y);
  
       if( $x_slink eq $y_slink ) { # span maps within superlink
 	$rel_x = $x - $sl_start + 1;
