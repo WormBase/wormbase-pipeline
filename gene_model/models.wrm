@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.60 2002-07-04 09:02:20 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.61 2002-07-09 10:57:54 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -656,6 +656,8 @@
 		       Motif ?Motif XREF GO_term
 		       Phenotype ?Phenotype XREF GO_term // added for Erich, [020128 dl]
 		       CDS ?CDS XREF GO_term // added to complement existing models [020618 krb]
+		       Index Ancestor ?GO_term XREF Descendent // added for Lincoln [020709 [krb]
+                       Descendent ?GO_term XREF Ancestor
 
 //
 // RD 0107 removed connection to ?Paper - how can a paper have a GO_term
