@@ -6,8 +6,8 @@
 #
 # This maps alleles to the genome based on their flanking sequence
 #
-# Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2004-01-09 17:16:07 $        # quickly see when script was last changed and by whom
+# Last updated by: $Author: krb $                      # These lines will get filled in by cvs and helps us
+# Last updated on: $Date: 2004-03-08 11:55:04 $        # quickly see when script was last changed and by whom
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -249,7 +249,7 @@ unless ( $no_parse ) {
   print LOG "\nStart parsing $ace_file in to $database\n\n";
 
   my $command =<<END;
-#pparse $geneace_update_delete
+pparse $geneace_update_delete
 pparse $ace_file
 save
 quit
@@ -272,8 +272,12 @@ END
 print LOG "ERROR: $error_count alleles failed to map\n" if ($error_count > 0);
 print LOG "$0 end at ",&runtime," \n-------------- END --------------------\n\n";
 close LOG;
-&mail_maintainer("map_alleles","$maintainers","$log");
-
+if($error_count > 0){
+  &mail_maintainer("BUILD REPORT: map_alleles.pl $error_count ERRORS!","$maintainers","$log");
+}
+else{
+  &mail_maintainer("BUILD REPORT: map_alleles.pl","$maintainers","$log");
+}
 exit(0);
 
 #######################################
