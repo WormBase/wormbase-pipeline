@@ -8,7 +8,7 @@
 # Page download and update upload to geneace has been automated [ck1]
 
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-11-30 14:20:35 $
+# Last updated on: $Date: 2004-11-30 14:39:46 $
 
 use strict;
 use Getopt::Std;
@@ -230,7 +230,7 @@ while(<INPUT>){
       print CGC "Public_name \"$i\"\n";
       print CGC "Live\n";
       print CGC "Species  \"Caenorhabditis elegans\"\n";
-      print CGC "Version_change 1 now \"WBPerson1845\" Created\n";
+      print CGC "Version_change 1 now \"WBPerson2970\" Created\n";
       print CGC "Strain \"$strain\"\n";
       print CGC "Remark \"$i is parsed from CGC strain $strain\"\n";
     }
@@ -249,7 +249,7 @@ while(<INPUT>){
       print CGC "Public_name \"$i\"\n";
       print CGC "Live\n";
       print CGC "Species  \"Caenorhabditis elegans\"\n";
-      print CGC "Version_change 1 now \"WBPerson1845\" Created\n";
+      print CGC "Version_change 1 now \"WBPerson2970\" Created\n";
       print CGC "Strain \"$strain\"\n";
       print CGC "Remark \"$i is parsed from CGC strain $strain\"\n";
     }
