@@ -7,8 +7,8 @@
 #
 # Usage : backup_geneace
 #
-# Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2002-08-12 12:35:05 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2002-11-13 17:48:00 $
 
 
 #################################################################################
@@ -37,8 +37,8 @@ my $logfile    = "/wormsrv2/logs/backup_geneace.$rundate.$$";
 
 my $dbpath     = "/wormsrv1/geneace";
 my $backuppath = "/nfs/disk100/wormpub/acedb/ace4/geneace";
-my $tace       = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
-my $giface     = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/giface";
+my $tace       = &tace;
+my $giface     = &giface;
 
  ##############################
  # open logfile               #

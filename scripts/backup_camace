@@ -7,8 +7,8 @@
 
 # Usage : backup_camace
 
-# Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2002-08-12 12:42:10 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2002-11-13 17:48:00 $
 
 #################################################################################
 # variables                                                                     #
@@ -36,8 +36,8 @@ my $logfile = "/wormsrv2/logs/backup_camace.$rundate.$$";
 
 my $campath    = "/wormsrv2/camace";
 my $backuppath = "/nfs/disk100/wormpub/acedb/ace4/cam/dumps";
-my $tace       = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
-my $giface     = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/giface";
+my $tace       = &tace;
+my $giface     = &giface;
 
  ##############################
  # open logfile               #

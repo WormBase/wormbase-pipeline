@@ -31,7 +31,7 @@ $|=1;
  # paths for I/O files        #
  ##############################
 
-$tace                  = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
+$tace                  = &tace;
 $rundate = `date +%y%m%d`; chomp $rundate;
 $runtime = `date +%H:%M:%S`; chomp $runtime;
 $trackacepath          = "/wormsrv2/trackace";

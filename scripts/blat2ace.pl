@@ -19,13 +19,15 @@
 #
 # 010905 by Kerstin Jekosch
 
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2002-08-22 15:28:17 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2002-11-13 17:48:00 $
 
 
 use strict;
 use Data::Dumper;
 use Ace;
+use lib "/wormsrv2/scripts/";
+use Wormbase;
 use Getopt::Std;
 use vars qw($opt_i $opt_h $opt_s $opt_c $opt_e $opt_m $opt_o $opt_x);
 $| = 1;
@@ -36,7 +38,7 @@ $| = 1;
  
 my $dir	      = "/wormsrv2/autoace/BLAT";
 my $dbdir     = "/wormsrv2/autoace";
-my $tace      = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace /wormsrv2/autoace";
+my $tace      = &tace." /wormsrv2/autoace";
 
 my %EST_name;    # EST accession => name
 my %EST_dir;     # EST accession => orientation [5|3]

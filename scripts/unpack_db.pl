@@ -12,8 +12,8 @@
 # the Cold Spring Harbor Laboratory database (cshace)
 # the Caltech database (citace)
 #
-# Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2002-08-19 09:49:12 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2002-11-13 17:48:02 $
 
 
 #################################################################################
@@ -40,8 +40,8 @@ my $runtime    = `date +%H:%M:%S`; chomp $runtime;
 # Paths for I/O files        #
 ##############################
 
-my $tace   = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
-my $giface = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/giface";
+my $tace   = &tace;
+my $giface = &giface;
 
 
 

@@ -4,8 +4,8 @@
 #
 # written by Anthony Rogers (ar2@sanger.ac.uk)
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-11-11 11:37:12 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2002-11-13 17:48:01 $
 
 
 use strict;
@@ -407,7 +407,7 @@ sub update_camace{
   $command .= "pparse /wormsrv2/autoace/acefiles/CAM_locus_seq.ace\n";
   $command .= "save\nquit\n";
 
-  my $tace = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace" ;
+  my $tace = &tace ;
 
   open (WRITEDB, "| $tace -tsuser locus2seq.pl /wormsrv1/camace |") || die "Couldn't open pipe to /wormsrv1/camace\n";
   print WRITEDB $command;

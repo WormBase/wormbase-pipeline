@@ -4,8 +4,8 @@
 #
 # Originally crafted by Dan Lawson
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2002-10-31 13:59:36 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2002-11-13 17:48:01 $
 
 
 use lib "/wormsrv2/scripts/";
@@ -17,7 +17,7 @@ use Ace;
 # Paths and stuff
 ##################
 
-my $tace      = glob("~wormpub/ACEDB/bin.ALPHA_4/tace");   # tace executable path
+my $tace      = &tace;   # tace executable path
 my $dbdir     = "/wormsrv2/autoace";
 $ENV{'ACEDB'} = $dbdir;
 

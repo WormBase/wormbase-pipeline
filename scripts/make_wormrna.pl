@@ -7,7 +7,7 @@
 # Builds a wormrna data set from the current autoace database
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2002-05-24 09:52:13 $
+# Last updated on: $Date: 2002-11-13 17:48:02 $
 
 
 #################################################################################
@@ -63,7 +63,7 @@ if ($debug) {$maintainer = "dl1\@sanger.ac.uk";}
 my $dbdir     = "/wormsrv2/autoace";
 my $wrdir     = "/wormsrv2/WORMRNA/wormrna$old_release";
 my $new_wrdir = "/wormsrv2/WORMRNA/wormrna$release";
-my $tace      = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
+my $tace      = &tace;
 
 $ENV{'ACEDB'} = $dbdir;
 

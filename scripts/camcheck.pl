@@ -6,8 +6,8 @@
 #
 # Usage: camcheck.pl
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-10-15 15:51:38 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2002-11-13 17:48:00 $
 #
 # see pod documentation (i.e. 'perldoc camcheck.pl') for more information.
 #
@@ -50,7 +50,7 @@ my $debug = $opt_d;
 
 my $clonepath = "/nfs/disk100/wormpub/analysis/cosmids";
 my $clonefile = "$clonepath"."/current.versions";
-my $tace      = glob("~wormpub/ACEDB/bin.ALPHA_4/tace");   # tace executable path
+my $tace      = &tace;   # tace executable path
 my $dbpath    = "/wormsrv1/camace";                           # Database path
 
 

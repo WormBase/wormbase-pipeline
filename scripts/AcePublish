@@ -11,6 +11,9 @@ use POSIX qw(:signal_h :errno_h :sys_wait_h);
 use IO::Handle;
 use File::Basename;
 use File::Find;
+use lib "/wormsrv2/scripts/";
+use Wormbase;
+
 $|=1;
 
 getopts ('nuv:');
@@ -30,7 +33,7 @@ my $PRESENT_DIR = cwd;
 $PRESENT_DIR =~ s/\/tmp_mnt//;
 my $LOGFILE = "$PRESENT_DIR"."/"."$LOG";
 
-$tace = "/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_4/tace";
+$tace = &tace;#"/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_4/tace";
 $autoace = "$tace /nfs/disk100/wormpub/autoace";
 $cgcace = "$tace /nfs/disk100/wormpub/acedb/ace4/cgc";
 

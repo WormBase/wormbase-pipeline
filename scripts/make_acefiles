@@ -7,8 +7,8 @@
 # Generates the .acefiles from the primary databases as a prelim for building
 # autoace.
 #
-# Last updated by: $Author: dl1 $                     
-# Last updated on: $Date: 2002-08-16 11:48:42 $       
+# Last updated by: $Author: ar2 $                     
+# Last updated on: $Date: 2002-11-13 17:48:01 $       
 
 #################################################################################
 # Variables                                                                     #
@@ -50,7 +50,7 @@ GetOptions (
  # Paths etc                  #
  ##############################
 
-my $tace           = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
+my $tace           = &tace;
 my $autoace_config = "/wormsrv2/autoace_config/autoace.config";
 my $basedir        = "/wormsrv2/wormbase";
 my $miscdir        = "$basedir/misc";

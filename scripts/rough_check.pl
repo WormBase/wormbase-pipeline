@@ -9,7 +9,7 @@
 $|=1;
 use lib "/wormsrv2/scripts/";   
 #use strict;
-#use Wormbase;
+use Wormbase;
 use IPC::Open2;
 use IO::Handle;
 use Getopt::Std;
@@ -24,7 +24,7 @@ my $maintainer = "All";
 my $rundate = `date +%y%m%d`;   chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
 
-$tace = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
+$tace = &tace;
 
  ##############################
  # command-line options       #

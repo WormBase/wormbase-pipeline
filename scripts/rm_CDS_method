@@ -15,10 +15,12 @@ use File::Find;
 use File::Path;
 use POSIX qw(:signal_h :errno_h :sys_wait_h);
 use IPC::Open2;
+use lib "/wormsrv2/scripts/";
+use Wormbase;
 
 $|=1;
-$tace="/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
-$giface="/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/giface";
+$tace=&tace;
+$giface=&giface;
 $makeChromLinks="/nfs/disk100/wormpub/analysis/scripts/makeChromLinks.pl -a";
 $maintainer = "wormpub\@sanger.ac.uk";
 $autodir = glob("~wormpub/acedb/ace4/autoace") ;

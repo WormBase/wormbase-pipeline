@@ -6,8 +6,8 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2002-10-29 15:53:23 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2002-11-13 17:48:01 $
 
 use Ace;
 use lib "/wormsrv2/scripts/"; 
@@ -25,7 +25,7 @@ our $allele_errors = 0;
 our $strain_update = 0;
 
 # open a connection to geneace
-our $tace = glob("~wormpub/ACEDB/bin.ALPHA_4/tace");   # tace executable path
+our $tace = &tace;   # tace executable path
 my $db = Ace->connect(-path  => '/wormsrv1/geneace/',
 		      -program =>$tace) || do { print LOG "Connection failure: ",Ace->error; die();};
 

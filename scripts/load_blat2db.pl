@@ -7,8 +7,10 @@
 
 use strict;
 use Getopt::Long;
+use lib "/wormsrv2/scripts/";
+use Wormbase;
 
-my $tace =  "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
+my $tace =  &tace;
 
 my ($load,$delete,$dbdir,$help);
 GetOptions (

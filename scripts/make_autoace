@@ -7,8 +7,8 @@
 #
 # This makes the autoace database from its composite sources.
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2002-10-30 11:58:55 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2002-11-13 17:48:01 $
 
 
 ###########################################################################################
@@ -68,8 +68,8 @@ if ((!$opt_r)&&(!$opt_d)&&(!$opt_c)) { &PrintHelp; }
  # ACEDB executables                            #
  ################################################
 
-$tace   = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
-$giface = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/giface";
+$tace   = &tace;
+$giface = &giface;
 
  ################################################
  # database paths                               #

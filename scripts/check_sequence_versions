@@ -32,7 +32,7 @@ my $version    = &get_script_version("check_sequence_versions");
 
 $ENV{'ACEDB'}="/wormsrv2/camace";    
 my $server = "srs.ebi.ac.uk";
-my $tace = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
+my $tace = &tace;
 my $command=<<EOF;
 Table-Maker -f /wormsrv2/camace/wquery/sequence_versions.def 
 quit

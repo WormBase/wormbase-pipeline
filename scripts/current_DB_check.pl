@@ -7,8 +7,8 @@
 # Script to run consistency checks on the current_DB database
 # to look for bogus sequence entries
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-10-16 09:24:50 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2002-11-13 17:48:01 $
 
 use Ace;
 use lib "/wormsrv2/scripts/"; 
@@ -38,7 +38,7 @@ $test = "ON" if ($opt_t);
 ########################################################
 my $database = "/wormsrv2/current_DB/";
 $database = $opt_d if ($opt_d);
-our $tace = glob("~wormpub/ACEDB/bin.ALPHA_4/tace");   # tace executable path
+our $tace = &tace;   # tace executable path
 my $db = Ace->connect(-path  => "$database",
 		      -program =>$tace) || do { print ALL_LOG "Connection failure: ",Ace->error; die();};
 

@@ -14,6 +14,8 @@
 
 use IPC::Open2;
 use Getopt::Std;
+use lib "/wormsrv2/scripts/";
+use Wormbase.pm;
 
 getopts ('n:d:s:');
 
@@ -35,7 +37,7 @@ $opt_d =~ /stlace/  && do {$dbpath = "/wormsrv2/stlace";};
 my $cwd = `/bin/pwd`;
 chomp $cwd;
 print "DBPATH: $dbpath\n";
-my $tace="/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
+my $tace= &tace";
 my $database = "$tace $dbpath";
 
 my $outfile = "$cwd/" ."$opt_s".".ace";

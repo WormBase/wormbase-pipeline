@@ -45,7 +45,7 @@ $maintainers = "dl1\@sanger.ac.uk" if ($debug);
 # Paths etc                  #
 ##############################
 
-my $tace      = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";      # tace executable path
+my $tace      = &tace;      # tace executable path
 my $dbpath    = "/wormsrv2/autoace";                                      # Database path
 
 ########################################
