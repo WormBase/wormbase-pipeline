@@ -7,8 +7,8 @@
 
 # 031023 dl1
 
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-03-16 18:26:24 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2004-05-11 13:02:41 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -19,7 +19,6 @@ use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
 use IO::Handle;
 use Ace;
-use Data::Dumper;
 use Getopt::Long;
 use Carp;
 
@@ -74,9 +73,8 @@ our %datafiles = (
 # !! need to deal with making this .dat file etc 
 #
 
-our %EST_name;
 print "// Reading EST_names.dat hash\n\n" if ($verbose);
-&recreate_hashes("/nfs/disk100/wormpub/analysis/ESTs/EST_names.dat");
+our %EST_name = &FetchData('NDBaccession2est');
 print "// Finished reading EST_names.dat hash\n\n" if ($verbose);
 
 # which database
@@ -114,20 +112,16 @@ exit(0);
 
 sub masksequence {
     my $data = shift;
-    
   
     # connect to database
-
     print  "Opening database for masking $data ..\n" if ($debug);
     my $db = Ace->connect(-path=>$dbdir,
                           -program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
 
     # set input record seperator
-
     $/ = ">";
 
     # assign output file
-
     if ($debug) {
 	open (OUTPUT, ">${data}.testmasked") || die "ERROR: Can't open output file: '${data}.testmasked'";
     }
@@ -136,7 +130,6 @@ sub masksequence {
     }
 
     # input file loop structure
-
     open (INPUT, "<$data")     || die "ERROR: Can't open input file: '$data'";
     while (<INPUT>) {
 	chomp;
@@ -161,7 +154,6 @@ sub masksequence {
 	print "-> Parsing $acc [$id]\n" if ($verbose);
 	
 	# fetch the sequence object from the database. push the feature_data objects to memory
-	
 	my $obj = $db->fetch(Sequence=>$id);
 	if (!defined ($obj)) {
 	    print "ERROR: Could not fetch sequence $id \n" if ($debug);
@@ -206,21 +198,6 @@ sub masksequence {
 
     
     close OUTPUT;
-}
-
-
-###############################################################
-
-sub recreate_hashes {
-    my $hash = shift;
-    
-    open (FH, "<$hash") or die "Can't open file $hash : $!";
-    undef $/;
-    my $data = <FH>;
-    eval $data;
-    die if $@;
-    $/ = "\n";
-    close FH;
 }
 
 
