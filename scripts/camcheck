@@ -228,7 +228,7 @@ close(CLONEFILE);
 # need to close and reopen existing log filehandle either side of system call
 close(LOG);
 
-my $system_return = system("/wormsrv2/scripts/check_predicted_genes.pl $dbpath $log");
+system("/wormsrv2/scripts/check_predicted_genes.pl $dbpath $log");
 warn "check_predicted_genes.pl did not run correctly: $?" if ($?);
 
 # now opened in append mode
