@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.0
+#!/usr/local/bin/perl5.6.1 -w
 #
 # acecompress.pl
 #
@@ -6,8 +6,8 @@
 #
 # Usage : acecompress.pl [-options]
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2002-08-22 14:42:24 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2003-01-28 17:14:17 $
 
 use strict;
 use Getopt::Long;
