@@ -1,2 +1,0 @@
-xhost +
-setenv DISPLAY amidala:0.0
