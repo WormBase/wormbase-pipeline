@@ -7,7 +7,8 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-08-12 11:54:31 $
+# Last updated on: $Date: 2003-08-12 18:01:44 $
+
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -17,41 +18,38 @@ use Carp;
 use Getopt::Long;
 
 
+
 ###################################################
-# variables and command-line options with aliases # 
+# Miscellaneous important variables               # 
 ###################################################
 
-my ($help, $debug, $database, $class, @class, $verbose, $ace);
-my $maintainers = "All";
+my $tace = &tace;                                          # tace executable path
+my $curr_db = "/nfs/disk100/wormpub/DATABASES/current_DB"; # Used for some cross checking with geneace
+my $def_dir = "/wormsrv1/geneace/wquery";                  # where lots of table-maker definitions are kept
+my $rundate = `date +%y%m%d`; chomp $rundate;              # Used by various parts of script for filename creation
+my $maintainers = "All";                                   # Default for emailing everyone logfile
+my $caltech_errors = 0;                                    # counter for tracking errors going into Caltech email
+my $jah_errors = 0;                                        # counter for tracking errors going into Caltech email
+my $log;                                                   # main log file for most output
+my $caltech_log;                                           # Additional log file for problems that need to be sent to Caltech
+my $jah_log;                                               # Additional log file for problems to be sent to Jonathan Hodgkin at CGC
+my (%L_name_F_WBP, %L_name_F_M_WBP);                       # hashes for checking Person and Author merging?
 
-# hashes for checking Person and Author merging?
-my (%L_name_F_WBP, %L_name_F_M_WBP);
 
 
-our $tace = &tace;   # tace executable path
-our ($log, $erichlog, $jahlog, $JAHmsg, $Emsg, $caltech, @CGC, $cgc);
+###################################################
+# command line options                            # 
+###################################################
 
-my $rundate = `date +%y%m%d`; chomp $rundate;
+my ($help, $debug, $class, @classes, $database, $ace, $verbose);
 
-my $curr_db = "/nfs/disk100/wormpub/DATABASES/current_DB"; 
-my $def_dir = "/wormsrv1/geneace/wquery";
-
-GetOptions ("h|help"        => \$help,
-            "d|debug=s"     => \$debug,
-	    "c|class=s"     => \@class,
-	    "db|database=s" => \$database,
-            "a|ace"         => \$ace, 
-	    "v|verbose"     => \$verbose
+GetOptions ("help"        => \$help,
+            "debug=s"     => \$debug,
+	    "class=s"     => \@classes,
+	    "database=s"  => \$database,
+            "ace"         => \$ace, 
+	    "verbose"     => \$verbose
            );
-
-
-
-# Open output file for acefile output?
-if ($ace){
-  my $acefile = "/wormsrv1/geneace/CHECKS/geneace_check.$rundate.$$.ace";
-  open(ACE, ">>$acefile") || croak $!;
-}
-
 
 # Display help if required
 if ($help){&usage("Help")}
@@ -59,79 +57,58 @@ if ($help){&usage("Help")}
 
 # Use debug mode?
 if($debug){
-  print "\nDEBUG = \"$debug\"\n\n";
+  print "\nDEBUG = \"$debug\"\n";
   ($maintainers = "$debug" . '\@sanger.ac.uk');
 }
 
 
-##########################################################
-# choose database to query: default is /wormsrv1/geneace #
-##########################################################
-
+# choose database to query: default is /wormsrv1/geneace 
 my $default_db = "/wormsrv1/geneace";
 ($default_db = $database) if ($database);
 print "\nUsing $default_db as default database.\n\n";
 
 
 
-# Set up other log files
+# Open file for acefile output?
+if ($ace){
+  my $acefile = "/wormsrv1/geneace/CHECKS/geneace_check.$rundate.$$.ace";
+  open(ACE, ">>$acefile") || croak $!;
+}
+
+
+# Set up other log files                         
 &create_log_files;
 
 
 
 
+######################################################################################################
+######################################################################################################
+##                                                                                                  ##
+##                                       MAIN PART OF SCRIPT                                        ##
+##                                                                                                  ##
+######################################################################################################
+######################################################################################################
 
-
-#######################
-# MAIN PART OF SCRIPT #
-#######################
 
 # open a connection to database
 my $db = Ace->connect(-path  => $default_db,
 		      -program =>$tace) || do { print LOG "Connection failure: ",Ace->error; die();};
 
 
+# Process separate classes if specified on the command line else process all classes
+@classes = ("locus","laboratory","allele","strain","rearrangement","sequence","mapping","evidence") if (!@classes);
 
-####################################################
-# Process various classes looking for errors:      #
-# choose class to check - multiple classes allowed #
-####################################################
-
-# track errors in each class
-our $locus_errors = 0;
-our $lab_errors = 0;
-our $allele_errors = 0;
-our $strain_errors = 0;
-our $rearrangement_errors = 0;
-our $sequence_errors = 0;
-
-
-if(!@class){
-  print "Checking all classes in $default_db.....\n\n";
-  &process_locus_class;
-  &process_laboratory_class;
-  &process_allele_class;
-  &process_strain_class;
-  &process_rearrangement;
-  &process_sequence;
-  &check_genetics_coords_mapping;
-  &check_evidence;
- }
- 
-else{
-  foreach $class (@class){
-    $class = lc($class);  # makes command line option case-insensitive
-    if ($class =~ /locus/)                 {&process_locus_class}
-    if ($class =~ /(laboratory|lab)/)      {&process_laboratory_class}
-    if ($class =~ /allele/)                {&process_allele_class}
-    if ($class =~ /strain/)                {&process_strain_class}
-    if ($class =~ /(rearrangement|rearr)/) {&process_rearrangement}
-    if ($class =~ /(sequence|seq)/)        {&process_sequence}
-    if ($class =~ /(mapping|map)/)         {&check_genetics_coords_mapping}
-    if ($class =~ /(reverse|rev)/)         {&chech_reverse_physicals}
-    if ($class =~ /(evidence|evi)/)        {&check_evidence}
-  }  
-}
+foreach $class (@classes){
+  if ($class =~ m/locus/i)           {&process_locus_class}
+  if ($class =~ m/(laboratory)/i)    {&process_laboratory_class}
+  if ($class =~ m/allele/i)          {&process_allele_class}
+  if ($class =~ m/strain/i)          {&process_strain_class}
+  if ($class =~ m/(rearrangement)/i) {&process_rearrangement}
+  if ($class =~ m/(sequence)/i)      {&process_sequence}
+  if ($class =~ m/(mapping)/i)       {&check_genetics_coords_mapping}
+  if ($class =~ m/(evidence)/i)      {&check_evidence}
+}  
 
 
 #######################################
@@ -140,7 +117,7 @@ else{
 
 $db->close;
 close(LOG);
-close(ERICHLOG);
+close(CALTECHLOG);
 close(JAHLOG);
 close(ACE) if ($ace);
 
@@ -149,38 +126,25 @@ close(ACE) if ($ace);
 mail_maintainer($0,$maintainers,$log);
 
 
-# Also mail to Erich unless in debug mode
+# Also mail to Erich unless in debug mode or unless there is no errors
 my $interested ="krb\@sanger.ac.uk, emsch\@its.caltech.edu, kimberly\@minerva.caltech.edu, ck1\@sanger.ac.uk";
-
-open(MAIL1, "$erichlog") || die "Can't read in file $erichlog";
-
-my @caltech=<MAIL1>;
-$caltech=join('', @caltech);
-if ($caltech ne $Emsg){      
-  mail_maintainer($0,"$interested",$erichlog) unless $debug; 
-}
+mail_maintainer($0,"$interested",$caltech_log) unless ($debug || $caltech_errors == 0); 
 
 
-# Email to Jonathan for problematic loci 
-my $CGC = "ck1\@sanger.ac.uk, krb\@sanger.ac.uk"; 
+# Email Jonathan Hodgkin subset of errors that he might be able to help with unless 
+# in debug mode or no errors
+mail_maintainer($0,"cgc\@wormbase.org",$jah_log) unless ($debug || $jah_errors == 0);
 
-open(MAIL2, "$jahlog") || die "Can't read in file $erichlog";
 
-@CGC=<MAIL2>;
-$cgc=join('', @CGC);
-
-if ($cgc ne $JAHmsg){   
-  mail_maintainer($0,$CGC,$jahlog) unless $debug;
-}
-
-chdir "/wormsrv2/logs";
-
-my @files = qw ($acefile  $log $jahlog $JAHmsg $erichlog $Emsg $reverse_log);
-foreach(@files){
-  system("$_") if $_;
-}
+#chdir "/wormsrv2/logs";
+#
+#my @files = qw ($acefile  $log $jahlog $JAHmsg $caltech_log $Emsg $reverse_log);
+#foreach(@files){
+#  system("$_") if $_;
+#}
 
 exit(0);
+
 
 
 ##############################################################################################
@@ -193,6 +157,495 @@ exit(0);
 ##############################################################################################
 
 
+
+sub process_locus_class{
+
+  # get all loci
+  my @loci = $db->fetch(-class => 'Locus',
+		        -name  => '*');
+  
+
+  # Loop through loci checking for various potential errors in the Locus object
+  print "Checking Locus class for errors:\n" if ($verbose);
+  print LOG "\nChecking Locus class for errors:\n--------------------------------\n";
+
+  foreach my $locus (@loci){
+    print "$locus " if ($verbose);  # useful to see where you are in the script if running on command line
+    my $warnings;
+    ($warnings) = &test_locus_for_errors($locus);
+    print "\n" if ($verbose);
+    print LOG "$warnings" if(defined($warnings));
+    undef($locus);
+  }
+
+
+  # Look for loci in current_DB that are not in geneace
+  print "\nLooking for loci in /nfs/disk100/wormpub/DATABASES/current_DB that are not in $default_db\n" if ($verbose);
+  &find_new_loci_in_current_DB($db);
+
+   
+  # Find sequences connected to multiple loci
+  print "Looking for sequences connected to multiple loci\n" if ($verbose);
+  &find_sequences_with_multiple_loci($db);
+
+}
+
+##############################
+
+sub test_locus_for_errors{
+  my $locus = shift;
+  my $warnings;
+
+  #test for Map AND !NEXT
+  if($locus->at('Map')){
+    my $map = $locus->Map;
+    if (!defined($map)){
+      $warnings .= "ERROR 1: $locus has a 'Map' tag but that tag has no map value!\n";
+      print "." if ($verbose);
+    }
+  }
+
+  # test for more than one Map
+  if(defined($locus->at('Map'))){
+    my @maps = $locus->at('Map');
+    if(scalar(@maps) > 1){
+      $warnings .= "ERROR 2: $locus has more than one Map object\n";
+      print "." if ($verbose);
+    }    
+  }
+
+
+  # test for more than one gene class
+  if(defined($locus->at('Name.Gene_class'))){
+    my @gene_classes = $locus->at('Name.Gene_Class');
+    if(scalar(@gene_classes) > 1){
+      $warnings .= "ERROR 3: $locus has more than one Gene_class\n";
+      print "." if ($verbose);
+    }    
+  }
+
+  
+  # test for no Type tag (every valid Locus object should have a Type tag)
+  if(!defined($locus->at('Type'))){  
+
+    # Look for this Locus name in ?Gene_name class
+    my ($gene_name) = $db->fetch(-class=>'Gene_name',-name=>"$locus");
+
+    # Does this exist in ?Gene_name class, and is there an Other_name_for tag?
+    if(($gene_name) && defined($gene_name->at('Gene.Other_name_for'))){
+      my $other_gene = $gene_name->Other_name_for;
+      $warnings .= "ERROR 4: $locus has no 'Type' tag but this Locus is listed as Other_name for $other_gene\n";
+      print "." if ($verbose);
+    }
+    else{
+      $warnings .= "ERROR 5: $locus has no 'Type' tag present and is not an Other_name for something else\n";
+      print "." if ($verbose);
+      if ($ace){
+	# Basic info to promote into a proper 'Gene'
+	print ACE "\n\nLocus : \"$locus\"\n";
+	print ACE "Gene\n";
+	print ACE "Non_CGC_name \"$locus\"\n";
+      }
+    }
+  }
+
+
+  # test for Gene AND !Species 
+  if(defined($locus->at('Type.Gene')) && !defined($locus->at('Species'))){
+    $warnings .= "ERROR 6: $locus has a 'Gene' tag but not a 'Species' tag\n";
+    print "." if ($verbose);
+    if ($ace){
+      print ACE "\n\nLocus : \"$locus\"\n";
+      if ($locus !~ /Cb-|Cr-|Cv-/){
+	print ACE "Species \"Caenorhabditis elegans\"\n";
+      }
+      if ($locus =~/^Cb-.+/){
+	print ACE "Species \"Caenorhabditis briggsae\"\n";
+      }
+      if ($locus =~/^Cr-.+/){
+	print ACE "Species \"Caenorhabditis remanei\"\n";	
+      }
+      if ($locus =~/^Cv-.+/){
+	print ACE "Species \"Caenorhabditis vulgaris\"\n";
+      }	
+    }
+  }
+
+
+  # test for Gene AND !CGC_name AND !Non_CGC_name
+  if(defined($locus->at('Type.Gene')) && !defined($locus->at('Name.CGC_name'))
+     && !defined($locus->at('Name.Non_CGC_name'))){					       
+    $warnings .= "ERROR 7: $locus has a 'Gene' tag but not a 'CGC_name' or 'Non_CGC_name' tag\n";
+    print "." if ($verbose);
+  }
+
+
+  # test for CGC_name AND Non_CGC_name
+  if(defined($locus->at('Name.CGC_name')) && defined($locus->at('Name.Non_CGC_name'))){					       
+    $warnings .= "ERROR 8: $locus has a 'CGC_name' tag *AND* a 'Non_CGC_name' tag\n";
+    print "." if ($verbose);
+  }
+
+
+  # test for CGC_name AND !CGC_approved
+  if(defined($locus->at('Name.CGC_name')) && !defined($locus->at('Type.Gene.CGC_approved'))){		    
+    $warnings .= "ERROR 9: $locus has a 'CGC_name' tag but not a 'CGC_approved' tag\n";
+    print "." if ($verbose);
+  }
+
+
+  # test for Non_CGC_name AND CGC_approved
+  if(defined($locus->at('Name.Non_CGC_name')) && defined($locus->at('Type.Gene.CGC_approved'))){		    
+    $warnings .= "ERROR 10: $locus has a 'Non_CGC_name' tag *AND* a 'CGC_approved' tag\n";
+    print "." if ($verbose);
+  }
+
+
+  # test for CGC_name AND Non_CGC_name
+  if(defined($locus->at('Name.CGC_name')) && defined($locus->at('Name.Non_CGC_name'))){					       
+    $warnings .= "ERROR 11: $locus has a 'CGC_name' tag *AND* a 'Non_CGC_name' tag\n";
+    print "." if ($verbose);
+  }
+
+
+  # test for !Gene AND Gene_class 
+  if(!defined($locus->at('Type.Gene')) && defined($locus->at('Name.Gene_class'))){
+    $warnings .= "ERROR 12: $locus has a 'Gene_class' tag but not a 'Gene' tag\n";
+    print "." if ($verbose);
+    print ACE "\n\nLocus : \"$locus\"\n" if ($ace);
+    print ACE "Gene\n" if ($ace);
+  }
+
+
+  # test for CGC_approved but !Gene_class 
+  if(defined($locus->at('Type.Gene.CGC_approved')) && !defined($locus->at('Name.Gene_class'))){
+    $warnings .= "ERROR 13: $locus has a 'CGC_approved' tag but not a 'Gene_class' tag\n";
+    print "." if ($verbose);
+    my $gene_class = substr ($locus, 0, 3);
+    if($ace){
+      print ACE "\n\nLocus : \"$locus\"\n";
+      print ACE "Gene_class $gene_class\n";
+    }
+  }
+  
+
+  # test for no Gene tag AND Genomic_sequence tag
+  if(!defined($locus->at('Type.Gene')) && defined($locus->at('Molecular_information.Genomic_sequence'))){
+    $warnings .= "ERROR 14: $locus has 'Genomic_sequence' tag but no 'Gene' tag\n";
+    print "." if ($verbose);
+    if ($ace){
+      print ACE "\n\nLocus : \"$locus\"\n";  
+      print ACE "Gene\n";
+    }
+  }
+
+
+  # test for no CGC_approved tag AND Genomic_sequence/Transcript/Pseudogene tag
+  if(!defined($locus->at('Type.Gene.CGC_approved'))){ 
+    if(defined($locus->at('Molecular_information.Genomic_sequence')) || 
+       (defined($locus->at('Molecular_information.Transcript'))) ||
+       (defined($locus->at('Molecular_information.Pseudogene')))){
+      $warnings .= "ERROR 15: $locus has 'Genomic_sequence', 'Transcript', or 'Pseudogene' tag but no 'CGC_approved' tag\n";
+      print JAHLOG "ERROR: $locus has 'Genomic_sequence', 'Transcript', or 'Pseudogene' tag but no 'CGC_approved' tag\n";
+      $jah_errors++;
+      print "." if ($verbose);
+      if ($ace){
+	print ACE "\n\nLocus : \"$locus\"\n";  
+	print ACE "CGC_approved\n";
+      }
+    }
+  }
+
+
+  # test for Genomic_sequence tag but no value   
+  if(defined($locus->at('Molecular_information.Genomic_sequence')) && !defined($locus->Genomic_sequence)){
+    $warnings .= "ERROR 16: $locus has 'Genomic_sequence' tag but no associated value\n";
+    print "." if ($verbose);
+    if ($ace){
+      print ACE "\n\nLocus : \"$locus\"\n"; 
+      print ACE "-D Genomic_sequence\n";
+    } 
+  }
+
+  # test for more than one Genomic_sequence tag, but need to allow for splice variants. A bit tricky this
+  # and I think my RE (which just looks for word.number.letter) might allow some errors to creep through.  
+  if(defined($locus->at('Molecular_information.Genomic_sequence'))){
+    my @genomic_sequences = $locus->Genomic_sequence;
+
+    if(scalar(@genomic_sequences)>1){
+      my @problems = $locus->at('Molecular_information.Genomic_sequence');
+      foreach my $problem (@problems){
+	if ($problem !~ m/[\w\d]+\.\d+[a-z]/){
+	  $warnings .= "ERROR 17: $locus has multiple 'Genomic_sequence' tags (see $problem)\n";
+	  print "." if ($verbose);
+	}
+      }
+    }
+
+    # can also test to see if there are attached annotations to these sequences which Erich should
+    # know about, i.e. they should now be attached to the loci object instead
+    foreach my $seq (@genomic_sequences){
+      my ($newseq) = $db->fetch(-class=>'Sequence',-name=>"$seq");
+      if(defined($newseq->at('Visible.Provisional_description')) || 
+	 defined($newseq->at('Visible.Concise_description')) ||
+	 defined($newseq->at('Visible.Detailed_description'))){  
+	print CALTECHLOG "$seq has attached functional annotation which should now be attached to $locus\n";
+	$caltech_errors++;
+      }
+    }
+  }
+  
+
+  # test for Genomic_sequence AND Transcript tags both present
+  if(defined($locus->at('Molecular_information.Genomic_sequence')) && defined($locus->at('Molecular_information.Transcript'))){  
+    $warnings .= "ERROR 18: $locus has a 'Genomic_sequence' tag AND 'Transcript' tag\n";
+    print "." if ($verbose);
+  }
+
+
+  # test for Genomic_sequence AND Pseudogene tags both present
+  if(defined($locus->at('Molecular_information.Genomic_sequence')) && defined($locus->at('Molecular_information.Pseudogene'))){  
+    $warnings .= "ERROR 19: $locus has a 'Genomic_sequence' tag AND 'Pseudogene' tag\n";
+    print "." if ($verbose);
+  }
+
+
+  # test for Pseudogene AND Transcript tags both present
+  if(defined($locus->at('Molecular_information.Pseudogene')) && defined($locus->at('Molecular_information.Transcript'))){  
+    $warnings .= "ERROR 20: $locus has a 'Pseudogene' tag AND 'Transcript' tag\n";
+    print "." if ($verbose);
+  }
+
+
+  # test for Genomic_sequence AND !Sequence_name
+  if(defined($locus->at('Molecular_information.Genomic_sequence')) && !defined($locus->at('Name.Sequence_name'))){  
+    my $seq = $locus->Genomic_sequence;
+    $warnings .= "ERROR 21: $locus has a 'Genomic_sequence' tag but not a  'Sequence_name' tag\n";
+    print "." if ($verbose);
+    if ($ace){
+      print ACE "\n\nLocus : \"$locus\"\n"; 
+      print ACE "Sequence_name $seq\n";
+    } 
+  }
+
+
+
+ # test for Genomic_sequence = Sequence_name
+  if(defined($locus->at('Molecular_information.Genomic_sequence')) && defined($locus->at('Name.Sequence_name'))){  
+    my $seq = $locus->Genomic_sequence;
+    my $name = $locus->Sequence_name;
+    if($seq ne $name){
+      $warnings .= "ERROR 22: $locus has a 'Genomic_sequence' name different to 'Sequence_name'\n";
+      print "." if ($verbose);
+    }
+  }
+
+
+  # test for Transcript AND !Transcript_name
+  if(defined($locus->at('Molecular_information.Transcript')) && !defined($locus->at('Name.Transcript_name'))){  
+    my $seq = $locus->Transcript;
+    $warnings .= "ERROR 23: $locus has a 'Transcript' tag but not a 'Transcript_name' tag\n";
+    print "." if ($verbose);
+    if ($ace){
+      print ACE "\n\nLocus : \"$locus\"\n"; 
+      print ACE "Transcript_name $seq\n";
+    } 
+  }
+
+
+  # test for Transcript = Transcript_name
+  if(defined($locus->at('Molecular_information.Transcript')) && defined($locus->at('Name.Transcript_name'))){  
+    my $seq = $locus->Transcript;
+    my $name = $locus->Transcript_name;
+    if($seq ne $name){
+      $warnings .= "ERROR 24: $locus has a 'Transcript' name different to 'Transcript_name'\n";
+      print "." if ($verbose);
+    }
+  }
+
+
+
+  # test for Pseudogene AND !Pseudogene_name
+  if(defined($locus->at('Molecular_information.Pseudogene')) && !defined($locus->at('Name.Pseudogene_name'))){  
+    my $seq = $locus->Pseudogene;
+    $warnings .= "ERROR 25: $locus has a 'Pseudogene' tag but not a 'Pseudogene_name' tag\n";
+    print "." if ($verbose);
+    if ($ace){
+      print ACE "\n\nLocus : \"$locus\"\n"; 
+      print ACE "Pseudogene_name $seq\n";
+    } 
+  }
+
+
+  # test for Pseudogene = Pseudogene_name
+  if(defined($locus->at('Molecular_information.Pseudogene')) && defined($locus->at('Name.Pseudogene_name'))){  
+    my $seq = $locus->Pseudogene;
+    my $name = $locus->Pseudogene_name;
+    if($seq ne $name){
+      $warnings .= "ERROR 26: $locus has a 'Pseudogene' name different to 'Pseudogene_name'\n";
+      print "." if ($verbose);
+    }
+  }
+
+
+  # test for Polymorphism AND Gene tags both present
+  if(defined($locus->at('Type.Gene')) && defined($locus->at('Type.Polymorphism'))){  
+    $warnings .= "ERROR 27: $locus has a 'Polymorphism' tag AND 'Gene' tag\n";
+    print "." if ($verbose);
+  }
+
+
+  # Look for Gene_class tag in non-gene objects 
+  if(!defined($locus->at('Type.Gene'))){
+    if(defined($locus->at('Name.Gene_class'))){
+      $warnings .= "ERROR 28: $locus has Gene_class tag but it is not a gene!\n";
+      print "." if ($verbose);
+      if ($ace){
+        print ACE "\n\nLocus : \"$locus\"\n"; 
+        print ACE "Gene\n";
+      } 
+    }
+  }
+  
+
+  # test for Other_name tag but no value   
+  if(defined($locus->at('Name.Other_name')) && !defined($locus->Other_name)){
+    $warnings .= "ERROR 29: $locus has 'Other_name' tag but no associated value\n";
+    print "." if ($verbose);
+  }
+
+
+  # Remind of outstanding CGC_unresolved tags
+  if(defined($locus->CGC_unresolved)){
+    my ($unresolved_details) = $locus->at('Type.Gene.CGC_unresolved');
+    $warnings .= "ERROR 30: $locus has CGC_unresolved tag: \"$unresolved_details\"\n";
+  }
+
+
+  # Look for loci with no Positive_clone info but with information that could be added from
+  # Genomic_sequence, Transcript, or Pseudogene tags
+  if(!defined($locus->at('Positive.Positive_clone'))){
+    my $seq;
+    ($seq = $locus->Genomic_sequence) if(defined($locus->at('Molecular_information.Genomic_sequence')));
+    ($seq = $locus->Transcript) if(defined($locus->at('Molecular_information.Transcript')));
+    ($seq = $locus->Pseudogene) if(defined($locus->at('Molecular_information.Pseudogene')));
+
+    # If there is a sequence/transcript/pseudogene
+    if($seq){
+      # need to chop off the ending to just get clone part
+      $seq =~ s/\..*//;
+      $warnings .= "ERROR 31: $locus has no 'Positive_clone' tag but info is available from Genomic_sequence, Transcript, Pseudogene tag\n";
+      print "." if ($verbose);
+      # must use Inferred_automatically from Evidence hash for this type of info
+      print ACE "\n\nLocus : \"$locus\"\nPositive_clone \"$seq\" Inferred_automatically \"From sequence, transcript, pseudogene data\"\n" if ($ace);
+    }
+  }
+
+
+  # test for Other_name value which is also a Locus name in its own right
+  # Also can test for where a Locus has an other name but this fact hasn't been added to parent Gene_class object
+  # as a Remark
+  if(defined($locus->at('Name.Other_name'))){
+
+    # list of hard-coded loci which are exceptions for main name / other_name merging 
+    my @exceptions = 
+	qw (aka-1 cas-1 clh-2 clh-3 ctl-1 ctl-2 egl-13 evl-20 gst-4 mig-1 sle-1 slo-1 rap-1 rpy-1 dmo-1 mod-1 
+	    old-1 plk-1 ptp-3 rab-18 rsp-1 rsp-2 rsp-4 rsp-5 rsp-6 sca-1 sus-1 twk-1 twk-2 twk-3 twk-4 twk-5 twk-6 twk-7 twk-8
+	    twk-9 twk-10 twk-11 twk-12 twk-13 twk-14 twk-16 twk-17 twk-18 twk-20 twk-21 twk-22 twk-23 twk-24 twk-25 twk-26 
+	    twk-32 unc-58 sup-9
+	    );
+
+    # load exceptions into hash for easy checking
+    my %exceptions;
+    foreach (@exceptions){$exceptions{$_}++};  
+
+    # get other names of locus
+    my @other_names = $locus->Other_name;
+    foreach my $other_name (@other_names){
+      
+      # Does other_name exist as separate loci?
+      if($db->fetch(-class=>'Locus',-name=>"$other_name")){
+	# Is it on exceptions list?
+	if($exceptions{$locus}){
+	  # no need for warning
+	  print LOG "INFO: $locus has $other_name as Other_name...$other_name is still a separate Locus object (exception)\n";
+	}
+	else{
+	  # can warn that this is potential problem
+	  print LOG "WARNING: $locus has $other_name as Other_name...$other_name is still a separate Locus object\n";
+	  print "." if ($verbose);
+	  if ($ace){
+	    print ACE "\n-R Locus : \"$other_name\" \"$locus\"\n";
+	    print ACE "\nLocus : \"$locus\"\n";
+	    print ACE "Other_name \"$other_name\"\n";
+	  }
+	}	
+	# Does the Parent Gene_class have a Remark for this Other_name?
+	my $gene_class = $locus->Gene_class;	
+	my ($obj) = $db->fetch(-class=>'Gene_class',-name=>"$gene_class") if(defined($locus->at('Name.Gene_class')));
+	if(!defined($obj->at('Remark'))){
+	  $warnings .= "ERROR 32: $locus has Other_name but no Remark in Gene_class object\n";
+	  print "." if ($verbose);      
+	  if($ace){
+	    print ACE "\n\nGene_Class : \"$gene_class\"\n";
+	    print ACE "Remark \"$locus is also an unofficial other name of $other_name\" CGC_data_submission\n";
+	    
+	  }         
+	}
+      }
+    }
+  }
+
+
+  return($warnings);
+
+}
+
+
+############################################
+
+sub find_new_loci_in_current_DB{
+  my $db = shift;
+  my $warnings;
+
+  # open a database connection to current_DB and grab all loci names (excluding polymorphisms)
+  my $new_db = Ace->connect(-path  => "$curr_db",
+		    -program =>$tace) || do { print LOG "Connection failure: ",Ace->error; die();};
+  my @current_DB_loci = $db->fetch(-query=>'Find Locus;!Polymorphism');
+  $new_db->close;
+
+
+  #cross reference current_DB loci against those in geneace
+  foreach my $loci(@current_DB_loci){
+    my $new_loci = $db->fetch(-class=>'Locus',-name=>"$loci");
+    unless(defined($new_loci)){
+      $warnings .= "ERROR 33: $new_loci in current_DB is not in $default_db\n";
+    }
+  }
+  print LOG "\n$warnings\n" if $warnings;
+
+}
+
+
+#############################
+
+sub find_sequences_with_multiple_loci {
+  my $db = shift;
+
+  # Find sequences that have more than one locus_genomic_seq tag
+  my @sequences = $db->fetch(-query=>'Find Sequence COUNT Locus_genomic_seq >1');
+  foreach my $seq (@sequences){
+    my @loci = $seq->Locus_genomic_seq;
+
+    print LOG "ERROR 34: Multiple loci (@loci) are connected to the same sequence ($seq)\n";
+    print JAHLOG "ERROR: Multiple loci (@loci) are connected to the same sequence ($seq)\n";
+
+    $jah_errors++;
+  }
+} 
+
+
+##############################################################################################################################
 
 
 #######################################
@@ -525,249 +978,9 @@ END
   }
 }	
 
-#######################
-# Process Locus class #
-#######################
 
-sub process_locus_class{
+##############################################################################################################################
 
-  # get all loci
-  my @loci = $db->fetch(-class => 'Locus',
-		        -name  => '*');
-
-  # how many loci?
-  my $size =scalar(@loci);
-  
-  # Loop through loci checking for various potential errors in the Locus object
-  print "\nChecking loci for errors:\n";
-  print LOG "\nChecking Locus class for errors:\n";
-  print LOG "--------------------------------\n";
-
-
-  foreach my $locus (@loci){
-    #print "$locus\n";
-    my $warnings;
-    my $erich_warnings;
-   ($warnings, $erich_warnings) = &test_locus_for_errors($locus);
-    print LOG "$warnings" if(defined($warnings));
-    #Erich Schwarz wants some of these - emsch@its.caltech.edu
-    print ERICHLOG "$erich_warnings" if(defined($erich_warnings));
-    undef($locus);
-  }
-
-
-
-  # Look for loci in current_DB that are not in geneace
-  print "\nLooking for new loci in /nfs/disk100/wormpub/DATABASES/current_DB:\n\n";
-  &find_new_loci_in_current_DB($db);
-
-  
- 
-  #Look for loci that are other_names and still are obj of ?Locus -> candidate for merging
-  my $locus_has_other_name=<<EOF;
-  Table-maker -p "$def_dir/locus_has_other_name.def" quit
-EOF
-  &loci_as_other_name($locus_has_other_name, $default_db, $db);
-
-
-
-  # Do something unspecified!
-  my $locus_to_CDS=<<EOF;
-  Table-maker -p "$def_dir/locus_to_CDS.def" quit
-EOF
-  &loci_point_to_same_CDS($locus_to_CDS, $default_db);
-
-
-
-  my $cgc_approved_and_non_cgc_name=<<EOF;
-  Table-maker -p "$def_dir/cgc_approved_and_non_cgc_name.def" quit
-EOF
-  my $cgc_approved_has_no_cgc_name=<<EOF;
-  Table-maker -p "$def_dir/cgc_approved_has_no_cgc_name.def" quit
-EOF
-  
-  &gene_name_class($cgc_approved_and_non_cgc_name, $cgc_approved_has_no_cgc_name, $default_db); 
-
-  # check CGC_approved loci is XREF to existing Gene_Class   
-  # check locus in geneace that are connected to CDS but not CGC_approved
-    
-  my $cgc_loci_not_linked_to_geneclass=<<EOF;
-  Table-maker -p "$def_dir/CGC_loci_not_linked_to_geneclass.def" quit
-EOF
-  my $get_all_gene_class=<<EOF;
-  Table-maker -p "$def_dir/get_all_gene_class.def" quit
-EOF
-  my $locus_to_CDS_but_not_CGC_approved=<<EOF;
-  Table-maker -p "$def_dir/locus_to_CDS_but_not_CGC_approved.def" quit
-EOF
-    
-  &locus_CGC($cgc_loci_not_linked_to_geneclass, $get_all_gene_class, $locus_to_CDS_but_not_CGC_approved, $default_db);
-
-  my $cds_of_each_locus=<<EOF;
-  Table-maker -p "$def_dir/cds_of_each_locus.def" quit
-EOF
-  my $seq_name_of_each_locus=<<EOF;
-  Table-maker -p "$def_dir/seq_name_of_each_locus.def" quit
-EOF
-  
-  &cds_name_to_seq_name($cds_of_each_locus, $seq_name_of_each_locus, $default_db);
-
- my $no_remark_in_geneclass_for_merged_loci=<<EOF;
-  Table-maker -p "$def_dir/no_remark_in_geneclass_for_merged_loci.def" quit
-EOF
-
-  &add_remark_for_merged_loci_in_geneclass($no_remark_in_geneclass_for_merged_loci, $default_db);
-
-  my @map_error = `echo "table-maker -p $def_dir/locus_has_multiple_maps.def" | $tace $default_db`;
-  foreach (@map_error){
-    chomp;
-    if ($_ =~ /^\"(.+)\"/){
-      $locus_errors++; 
-      print LOG "ERROR: $1 has multiple maps attached\n";
-    }  
-  }
-
-
-  #################################################################################################
-  # Check if locus has no Positive_clone tag but does have a Genomic_sequence, Transcript,
-  # or Pseudogene tag
-  # if yes: add Positive_clone info using 'Inferred_automatically' in Evidence hash
-  # This check is essential for cloned loci to be appeared as yellow highlighted in gmap
-  #################################################################################################
-
-  print ACE "\n\n\n// Positive_clone info\n\n" if ($ace);
-
-  my $command = "Table-maker -p /wormsrv1/geneace/wquery/loci_with_seq_but_no_pos_clone.def\nquit\n";
-
-  open (FH, "echo '$command' | $tace $default_db | ") || croak "Couldn't access $default_db\n";
-  while (<FH>){
-    if ($_ =~ /^\"(.+)\"\s+\"(.+)\"/){
-      my $locus = $1;
-      my $seq = $2;
-      $seq =~ s/\..*//;
-      # warn about each error and add to ace file
-      print LOG "WARNING: $locus has no Positive_clone tag, can add $seq to it based on attached sequence/transcript/pseudogene\n";
-      print ACE "\nLocus : \"$locus\"\nPositive_clone \"$seq\" Inferred_automatically \"From sequence, transcript, pseudogene data\"\n" if ($ace);
-    }
-  }
-  close(FH);
-
-
-
-  print LOG "\nThere are $locus_errors errors in $size loci.\n";
-
-}
-
-##############################################################
-
-sub add_remark_for_merged_loci_in_geneclass {
-  my ($def, $db)=@_;
-  my ($locus, $other, $gc);
-  open (FH, "echo '$def' | $tace $db | ") || die "Couldn't access $db\n";
-  while (<FH>){
-    chomp $_;
-    if ($_ =~ /^\"(.+)\"\s+\"(.+)\"\s+\"(.+)\"/){
-      $locus_errors++;
-      $locus = $1;
-      $other = $2;
-      $gc = $3;
-      $locus =~ s/\\//g;  # get rid of \ in locus like AAH\/1 from table maker
-      print LOG "$locus became an other_name of $other and no remark is added in Gene_class $gc\n";
-      if ($ace){
-	print ACE "\n\nGene_Class : \"$gc\"\n" if ($ace);
-	print ACE "Remark \"$locus is also an unofficial other name of $other\" CGC_data_submission\n" if ($ace);
-      }
-    }
-  }
-}
-
-
-
-##############################################################
-
-
-sub gene_name_class {
-  my ($def1, $def2, $db) = @_;
-  my $locus;
-  open (FH1, "echo '$def1' | $tace $db | ") || die "Couldn't access $db\n"; 
-  open (FH2, "echo '$def2' | $tace $db | ") || die "Couldn't access $db\n";
-  
-  while (<FH1>){
-    chomp $_;
-    if ($_ =~ /^\"(.+)\"/){
-      $locus = $1;
-      $locus_errors++;
-      print LOG "ERROR: $locus is CGC_approved but still has NON_CGC_name tag\n";
-      if ($ace){
-	print ACE "\n\nLocus : \"$locus\"\n" if ($ace);
-	print ACE "-D Non_CGC_name\n" if ($ace);
-      }	
-    }
-  }
-  
-  while (<FH2>){
-    chomp $_;
-    if ($_ =~ /^\"(.+)\"/){
-      $locus = $1;
-      print LOG "ERROR: $locus is CGC_approved but has no CGC_name tag\n";
-      $locus_errors++;
-      if ($ace){
-	print ACE "\n\nLocus : \"$locus\"\n" if ($ace);
-	print ACE "CGC_name \"$locus\"\n" if ($ace);
-      }	
-    }
-  }    
-}
-
-##############################################################
-
-sub cds_name_to_seq_name {
-
-  my ($def1, $def2, $db) = @_;
-  my ($locus, $cds, %locus_cds, %locus_seq_name);
-  open (FH1, "echo '$def1' | $tace $db | ") || die "Couldn't access $db\n";
-  open (FH2, "echo '$def2' | $tace $db | ") || die "Couldn't access $db\n";
-  
-  while (<FH1>){
-    chomp($_);
-    if ($_ =~ /\"(.+)\"\s+\"(.+)\"/){push (@{$locus_cds{$1}}, $2)}
-  }
-  while (<FH2>){
-    chomp($_);
-    if ($_ =~ /\"(.+)\"\s+\"(.+)\"/){push (@{$locus_seq_name{$1}}, $2)}
-  }
-  
-  my (%ary1, @ary1, %ary2, @ary2, $ea1, $ea2);
-  foreach (keys %locus_cds){
-    my $ary2 = \@{$locus_cds{$_}}; my $ary1 = \@{$locus_seq_name{$_}};
-    foreach (@$ary2){$ary2{$_}++}
-    foreach (@$ary1){$ary1{$_}++}
-    foreach $ea1 (@$ary1){
-      if (!$ary2{$ea1}){	
-        print  LOG "ERROR: Locus $_ has incorrect Sequence_name $ea1\n";
-        $locus_errors++;
-	if ($ace){
-	  print ACE "\n\nLocus : \"$_\"\n" if ($ace);
-          print ACE "-D Sequence_name \"$ea1\"\n" if ($ace);
-        }
-      }
-    }
-    foreach $ea2 (@$ary2){
-      if (!$ary1{$ea2}){
-        print LOG "ERROR: Locus $_ is missing Sequence_name $ea2\n";
-        $locus_errors++;
-        if ($ace){
-	  print ACE "\n\nLocus : \"$_\"\n" if ($ace);   
-          print ACE "Sequence_name \"$ea2\"\n" if ($ace);
-        }
-      }	 	
-    }
-  }  
-} 
-
-############################
-# Process Laboratory class #
-############################
 
 sub process_laboratory_class{
 
@@ -787,17 +1000,15 @@ sub process_laboratory_class{
     if(!defined($lab->at('CGC.Representative')) && $lab ne "CGC"){  
       if ($lab ne "XA"){
 	print LOG "WARNING: $lab has no Representative tag present\n";
-	$lab_errors++;
       }
     }  
     undef($lab);
   }
-  print  LOG "\nThere are $lab_errors errors in Laboratory class\n";
 }
+
+
+##############################################################################################################################
  
-########################
-# Process Allele class #
-########################
 
 sub process_allele_class{
  
@@ -832,13 +1043,11 @@ EOF
    
     if(!defined($allele->at('Location'))){
       if ($allele =~ /^[A-Z].+/){
-        $allele_errors++;
 	print LOG "ERROR: $allele has no Location tag present (no info available)\n";
       }
       else {
 	$desig=(); $desig2=(); $desig3=();
 	print LOG "ERROR: $allele has no Location tag present\n";
-	$allele_errors++;
 
 	if ($ace){
 	  if ($allele =~ /^([a-z]{1,})\d+$/){
@@ -855,17 +1064,17 @@ EOF
 	  }
 
 	  if (exists $location{$desig}){
-	    print  ACE "\n\nAllele : \"$allele\"\n" if ($ace);
-	    print  ACE "Location \"$location{$desig}\"\n" if ($ace);
+	    print  ACE "\n\nAllele : \"$allele\"\n";
+	    print  ACE "Location \"$location{$desig}\"\n";
 	  }
 	  if (exists $location{$desig2}){
-	    print  ACE "\n\nAllele : \"$allele\"\n" if ($ace);
-	    print  ACE "Location \"$location{$desig2}\"\n" if ($ace);
+	    print  ACE "\n\nAllele : \"$allele\"\n";
+	    print  ACE "Location \"$location{$desig2}\"\n";
 	  }
 	  if (exists $location{$desig3}){
-	    print  ACE "\n\nAllele : \"$main_allele\"\n" if ($ace);
-	    print  ACE "Other_name \"$allele\"\n" if ($ace);  
-	    print  ACE "Location \"$location{$desig3}\"\n" if ($ace);
+	    print  ACE "\n\nAllele : \"$main_allele\"\n";
+	    print  ACE "Other_name \"$allele\"\n";  
+	    print  ACE "Location \"$location{$desig3}\"\n";
 	  }
 	}
       }
@@ -881,7 +1090,6 @@ EOF
 	  if ($seq->Locus_genomic_seq){
 	    my @LOCI=$seq->Locus_genomic_seq(1);
 	    print LOG "WARNING: Sequence tag of Allele $allele points to $seq, which can now become @LOCI.\n";
-	    $allele_errors++;   
 	  }
 	}
       }
@@ -894,7 +1102,6 @@ EOF
   foreach (keys %allele_gene){
     if ((scalar @{$allele_gene{$_}}) > 1){
       print LOG "ERROR: $_ is connected to more than one Loci: @{$allele_gene{$_}}\n";
-      $allele_errors++; 
     }
   }
 
@@ -916,11 +1123,10 @@ EOF
 
   check_missing_allele_method($allele_methods, $default_db);
 
-  print LOG "\nThere are $allele_errors errors in Allele class\n";
 }
 
+##############################################################################################################################
 
-#################################################################
 
 sub allele_location {
   my ($def, $dir)=@_;
@@ -946,7 +1152,6 @@ sub allele_has_flankSeq_and_no_seq {
     if ($_ =~ /^\"/){
       $_ =~ s/\"//g;
       print LOG "WARNING: Allele $_ has flanking sequences but is NOT connected to parent sequence\n";
-      $allele_errors++; 
     }
   }
 }
@@ -966,7 +1171,6 @@ sub allele_has_predicted_gene_and_no_seq {
       $allele = $1;
       $cds = $2;
       print LOG  "WARNING: Allele $allele has predicted gene but is NOT connected to parent sequence\n";
-      $allele_errors++;
       if ($ace){
         get_parent_seq($cds, $allele);
       }
@@ -977,10 +1181,9 @@ sub allele_has_predicted_gene_and_no_seq {
       $seq = $3;
       if ($seq eq $cds){
         print LOG "ERROR: Allele $allele has an incorrect parent sequence ($seq) with respect to its predicted gene ($cds)\n";
-        $allele_errors++;
         if ($ace){
-          print ACE "\n\nAllele : \"$allele\"\n" if ($ace);
-          print ACE "-D Sequence \"$seq\"\n" if ($ace);
+          print ACE "\n\nAllele : \"$allele\"\n";
+          print ACE "-D Sequence \"$seq\"\n";
           &get_parent_seq($cds, $allele);
         }
       }
@@ -988,11 +1191,10 @@ sub allele_has_predicted_gene_and_no_seq {
         $parent=get_parent_seq($cds, $allele, "getparent");
         if ($parent ne $seq){
           print LOG "ERROR: Allele $allele has an incorrect parent sequence ($seq) with respect to its predicted gene ($cds)\n";
-          $allele_errors++;
           if ($ace){
-            print ACE "\nAllele : \"$allele\"\n" if ($ace);
-            print ACE "-D Sequence \"$seq\"\n" if ($ace);
-            print ACE "Sequence \"$parent\"\n" if ($ace);
+            print ACE "\nAllele : \"$allele\"\n";
+            print ACE "-D Sequence \"$seq\"\n";
+            print ACE "Sequence \"$parent\"\n";
           }
         } 
       }
@@ -1004,8 +1206,8 @@ sub allele_has_predicted_gene_and_no_seq {
     if ($predict =~ /(.+)\.(\d+)[a-z]/ || $predict =~ /(.+)\.(\d+)/){
       $parent =  $1;
       if (!$get_parent){
-        print ACE "\n\nAllele : \"$allele\"\n" if ($ace);
-        print ACE "Sequence \"$parent\"\n" if ($ace);
+        print ACE "\n\nAllele : \"$allele\"\n";
+        print ACE "Sequence \"$parent\"\n";
       }
     }
     return $parent;
@@ -1023,7 +1225,6 @@ sub check_missing_allele_method {
     chomp($_);
     print $_, "\n";
     if ($_ =~ /^\"(.+)\"\s+\"(.+)\"/){
-      $allele_errors++;
       $allele = $1;
       $tag = $2;
       if ($tag eq "KO_consortium_allele"){$tag = "Knockout_allele"}
@@ -1042,8 +1243,8 @@ sub check_missing_allele_method {
     my ($allele, $tag, $ace) = @_;
     print LOG "ERROR: Allele $allele has no Method $tag\n";
     if ($ace ne ""){
-      print ACE "\n\nAllele : \"$allele\"\n" if ($ace);
-      print ACE "Method \"$tag\"\n" if ($ace);
+      print ACE "\n\nAllele : \"$allele\"\n";
+      print ACE "Method \"$tag\"\n";
     }
   }
 }
@@ -1080,11 +1281,10 @@ EOF
   foreach $strain (@strains){
     if (!$strain->Location){
       print LOG "WARNING: Strain $strain has no location tag\n";
-      $strain_errors++; 
       if ($ace){
 	$strain =~ /([A-Z]+)\d+/;
-	print ACE "\n\nStrain : \"$strain\"\n" if ($ace);
-	print ACE "Location \"$1\"\n" if ($ace);
+	print ACE "\n\nStrain : \"$strain\"\n";
+	print ACE "Location \"$1\"\n";
       }
     }
     else { 
@@ -1107,7 +1307,6 @@ EOF
 		foreach $e (@loci){
 		  if ($cgc_loci{$e}){
 		    print LOG "WARNING: CGC Strain $strain has sequence_name $_ in Genotype, which can now become $e\n";
-		    $strain_errors++; 
 		  }
                 }  
 	      }
@@ -1115,7 +1314,6 @@ EOF
 		foreach $e (@loci){
 		  if ($cgc_loci{$e}){  
 		    print LOG "WARNING: Non_CGC Strain $strain has sequence_name $_ in Genotype, which can now become $e\n";
-		    $strain_errors++; 
                   }
 		}  
 	      }  
@@ -1163,7 +1361,6 @@ EOF
 	if ($_ =~ /(Cb-\w{3,3}-\d+|Cr-\w{3,3}-\d+|\w{3,3}-\d+)\((\w+\d+)\)/){
 	  $locus = $1; $allele = $2; 
 	  if ((defined @{$allele_locus{$allele}}) && ("@{$allele_locus{$allele}}" ne "$locus")){
-	    $strain_errors++;
   	    print LOG "ERROR: Strain $strain has $locus($allele) in genotype: ";
 	    print LOG "change each $locus to @{$allele_locus{$allele}}\n";
           }
@@ -1171,7 +1368,6 @@ EOF
       }
     }
   }
-  print LOG "\nThere are $strain_errors errors in Strain class.\n";
 }
 
 #################################################################
@@ -1209,11 +1405,9 @@ sub process_rearrangement {
   @rearr = $db -> fetch('Rearrangement','*'); 
   foreach (@rearr){
     if ($_ !~/\w+(Df|Dp|Ex|T|In|C|D)\d*/){
-      $rearrangement_errors++;
       print LOG "WARNING: $_ is NOT an object of Rearrangement\n";
     }
   }  
-  print LOG "\n\nThere are $rearrangement_errors errors in Rearrangement class.\n";
 } 
 
 ##########################
@@ -1243,10 +1437,8 @@ EOF
     }
   }
   foreach (keys %Seq_loci){
-    $sequence_errors++;
     print LOG "ERROR: $_ has multiple loci attached.\n";
   }
-  print LOG "\n\nThere are $sequence_errors errors in Sequence class\n";
 }   
 
 
@@ -1266,33 +1458,7 @@ sub check_genetics_coords_mapping {
   }
 }
 
-############################################
 
-sub find_new_loci_in_current_DB{
-  my $db = shift;
-  my $warnings;
-  my $dir="/nfs/disk100/wormpub/DATABASES/current_DB";
-  my $locus_errors=0;
-
-
-  # open a database connection to current_DB and grab all loci names (excluding polymorphisms)
-  my $new_db = Ace->connect(-path  => '/nfs/disk100/wormpub/DATABASES/current_DB',
-		    -program =>$tace) || do { print LOG "Connection failure: ",Ace->error; die();};
-  my @current_DB_loci = $db->fetch(-query=>'Find Locus;!Polymorphism');
-  $new_db->close;
-
-
-  #cross reference current_DB loci against those in geneace
-  foreach my $loci(@current_DB_loci){
-    my $new_loci = $db->fetch(-class=>'Locus',-name=>"$loci");
-    unless(defined($new_loci)){
-      $warnings .= "ERROR 19: $new_loci in current_DB is not in /wormsrv1/geneace\n";
-      $locus_errors++;
-    }
-  }
-  print LOG "\n$warnings\n" if $warnings;
-
-}
 
 #############################
 
@@ -1329,296 +1495,19 @@ sub loci_as_other_name {
 	  print LOG "INFO: $main has $other_name as Other_name...$other_name is still a separate Locus object (exception)\n";
         }
         else {
-	  $locus_errors++;
 	  print LOG "WARNING: $main has $other_name as Other_name...$other_name is still a separate Locus object\n";
         }
 	if ($ace && !$exceptions{$main}){
-	  print ACE "\n-R Locus : \"$other_name\" \"$main\"\n" if ($ace);
-	  print ACE "\nLocus : \"$main\"\n" if ($ace);
-          print ACE "Other_name \"$other_name\"\n" if ($ace);
+	  print ACE "\n-R Locus : \"$other_name\" \"$main\"\n";
+	  print ACE "\nLocus : \"$main\"\n";
+          print ACE "Other_name \"$other_name\"\n";
         }
       }  
     }
   }
 }
 
-#############################
 
-sub loci_point_to_same_CDS {
- 
-   my ($def, $dir) = @_;
-   my %CDS_loci;
-
-   open (FH, "echo '$def' | $tace $dir |") || die "Couldn't access geneace\n";
-   while (<FH>){
-     chomp $_;
-     if ($_ =~ /\"(.+)\"\s+\"(.+)\"/){
-       #$_ =~ s/\"//g;
-       #$_ =~ /(.+)\s(.+)/;
-       push(@{$CDS_loci{$2}}, $1);
-     }
-   }
-   foreach (keys %CDS_loci){
-     if (scalar @{$CDS_loci{$_}} > 1){
-       $locus_errors++;
-       print LOG "ERROR: $_ is connected to @{$CDS_loci{$_}}: case of merging?\n";
-       print JAHLOG "ERROR: $_ is connected to @{$CDS_loci{$_}}: case of merging?\n";
-     }
-   }
-} 
-    
-##############################
-
-sub locus_CGC {
-
-  #if ($ace){open (LC, ">>$acefile") || die "Can't write to file!"}
-  my ($def1, $def2, $def3, $dir) = @_;
-  my (@gc, %gc, $gc);
-
-  open (FH, "echo '$def2' | $tace $dir | ") || die "Couldn't access geneace\n"; 
-  while (<FH>){
-    chomp($_);
-    if ($_ =~ /^\"/){
-      $_ =~ s/\"//g;
-      push(@gc, $_);
-    }
-  }
-  foreach(@gc){$gc{$_}++}
-  
-  
-  open (FH, "echo '$def1' | $tace $dir | ") || die "Couldn't access geneace\n";
-  while (<FH>){
-    chomp($_);
-    if ($_ =~ /^\"/){
-      $_ =~ s/\"//g;
-      $gc = $_;
-      $gc =~ s/-\d+//;
-      if ($gc{$gc}){ 
-	print LOG "ERROR: $_ is CGC_approved but not XREF to existing $gc Gene_Class\n"; 
-	$locus_errors++; 
-        if ($ace){
-	  print ACE "\n\nGene_Class : \"$gc\"\n" if ($ace);
-          print ACE "Loci \"$_\"\n" if ($ace);
-        }
-      }
-    }
-  }
-  open (FH, "echo '$def3' | $tace $dir | ") || die "Couldn't access geneace\n";
-  while (<FH>){
-    chomp($_);
-    if ($_ =~ /^\"/){
-      $_ =~ s/\"//g;
-      if ($_ !~ /^[A-Z]/){
-	print LOG "WARNING: $_ is linked to coding sequence but not CGC_approved\n"; 
-	print JAHLOG "WARNING: $_ is linked to coding sequence but not CGC_approved\n"; 	
-	$locus_errors++; 
-      }
-    }
-  }
-}
-
-##############################
-
-sub test_locus_for_errors{
-  my $locus = shift;
-  my $warnings;
-  my $erich_warnings;
-
-  #test for Map AND !NEXT
-  if($locus->at('Map')){
-    my $map = $locus->Map;
-    if (!defined($map)){
-      $warnings .= "ERROR 1: $locus has a 'Map' tag but that tag has no map value!\n";
-      $locus_errors++;
-    }
-  }
-
-  # test for more than one gene class
-  if(defined($locus->at('Name.Gene_class'))){
-    my @gene_classes = $locus->at('Name.Gene_Class');
-    if(scalar(@gene_classes) > 1){
-      $warnings .= "ERROR 2: $locus has more than one Gene_class\n";
-      $locus_errors++;
-    }    
-  }
-  
-  # test for no Type tag but check to see if it is also an Other_name for another Locus
-  if(!defined($locus->at('Type'))){  
-    $locus_errors++;
-
-    # Is this gene being used as Other_name for something else?
-    # If not then can write acefile output to add basic info
-    my ($gene_name) = $db->fetch(-class=>'Gene_name',-name=>"$locus");
-
-    if(defined($gene_name->at('Gene.Other_name_for'))){
-      my $other_gene = $locus->at('Gene.Other_name_for');
-      $warnings .= "ERROR 3a: $locus has no Type tag but this Locus is listed as Other_name for $other_gene\n";
-    }
-    else{
-      $warnings .= "ERROR 3b: $locus has no Type tag present and is not an Other_name for something else\n";
-      if ($ace){
-	print ACE "\n\nLocus : \"$locus\"\n" if ($ace);
-	print ACE "Gene\n" if ($ace);
-	print ACE "Non_CGC_name \"$locus\"\n" if ($ace);
-      }
-    }
-  }
-
-  # test for Gene AND !Species 
-  if(defined($locus->at('Type.Gene')) && !defined($locus->at('Species'))){
-    $warnings .= "ERROR 4: $locus has a 'Gene' tag but not a 'Species' tag\n";
-    if ($ace){
-      print ACE "\n\nLocus : \"$locus\"\n" if ($ace);
-      if ($locus !~ /Cb-|Cr-|Cv/){
-	print ACE "Species \"Caenorhabditis elegans\"\n" if ($ace);
-      }
-      if ($locus =~/^Cb-.+/){
-	print ACE "Species \"Caenorhabditis briggsae\"\n" if ($ace);
-      }
-      if ($locus =~/^Cr-.+/){
-	print ACE "Species \"Caenorhabditis remanei\"\n" if ($ace);
-	
-      }
-      if ($locus =~/^Cv-.+/){
-	print ACE "Species \"Caenorhabditis vulgaris\"\n" if ($ace);
-      }	
-    }
-    $locus_errors++;
-  }
-
-  # test for Gene AND !CGC_name AND !Non_CGC_name
-  if(defined($locus->at('Type.Gene')) && !defined($locus->at('Name.CGC_name'))
-     && !defined($locus->at('Name.Non_CGC_name'))){					       
-    $warnings .= "ERROR: $locus has a 'Gene' tag but not a 'CGC_name' or 'Non_CGC_name' tag\n";
-    $locus_errors++;
-  }
-
-
-  # test for !Gene AND Gene_class 
-  if(!defined($locus->at('Type.Gene')) && defined($locus->at('Name.Gene_class'))){
-    $warnings .= "ERROR 5: $locus has a 'Gene_class' tag but not a 'Gene' tag\n";
-    print ACE "\n\nLocus : \"$locus\"\n" if ($ace);
-    print ACE "Gene\n" if ($ace);
-    $locus_errors++;
-  }
-  
-  # test for no Gene tag AND Genomic_sequence tag
-  if(!defined($locus->at('Type.Gene')) && defined($locus->at('Molecular_information.Genomic_sequence'))){
-    $warnings .= "ERROR 6: $locus has 'Genomic_sequence' tag but no 'Gene' tag\n";
-    if ($ace){
-      print ACE "\n\nLocus : \"$locus\"\n" if ($ace);  
-      print ACE "Gene\n" if ($ace);
-    }
-    $locus_errors++;
-  }
-
-  # test for Genomic_sequence tag but no value   
-  if(defined($locus->at('Molecular_information.Genomic_sequence')) && !defined($locus->Genomic_sequence)){
-    $warnings .= "ERROR 7: $locus has 'Genomic_sequence' tag but no associated value\n";
-    if ($ace){
-      print ACE "\n\nLocus : \"$locus\"\n" if ($ace); 
-      print ACE "-D Genomic_sequence\n" if ($ace);
-    } 
-    $locus_errors++;
-  }
-
-  # test for more than one Genomic_sequence tag, but need to allow for splice variants. A bit tricky this
-  # and I think my RE (which just looks for word.number.letter) might allow some errors to creep through.  
-  if(defined($locus->at('Molecular_information.Genomic_sequence'))){
-    my @genomic_sequences = $locus->Genomic_sequence;
-
-    if(scalar(@genomic_sequences)>1){
-      my @problems = $locus->at('Molecular_information.Genomic_sequence');
-      foreach my $problem (@problems){
-	if ($problem !~ m/[\w\d]+\.\d+[a-z]/){
-	  $warnings .= "ERROR 8: $locus has multiple 'Genomic_sequence' tags (see $problem)\n";
-	  $locus_errors++;
-	}
-      }
-    }
-
-    # can also test to see if there are attached annotations to these sequences which Erich should
-    # know about, i.e. they should now be attached to the loci object instead
-    foreach my $seq (@genomic_sequences){
-      my ($newseq) = $db->fetch(-class=>'Sequence',-name=>"$seq");
-      if(defined($newseq->at('Visible.Provisional_description')) || 
-	 defined($newseq->at('Visible.Concise_description')) ||
-	 defined($newseq->at('Visible.Detailed_description'))){  
-	$erich_warnings .= "$seq has attached functional annotation which should now be attached to $locus\n";
-      }
-    }
-  }
-  
-  # test for Polymorphism AND Gene tags both present
-  if(defined($locus->at('Type.Gene')) && defined($locus->at('Type.Polymorphism'))){  
-    $warnings .= "ERROR 9: $locus has a 'Polymorphism' tag AND 'Gene' tag\n";
-    $locus_errors++;
-  }
-
-  # test for Enzyme tag (doesn't fit in with new Gene model)
-  if(defined($locus->at('Molecular_information.Enzyme'))){  
-    $warnings .= "ERROR 10: $locus has an 'Enzyme' tag\n";
-    $locus_errors++;
-  }
-
-  # test for Canonical_gene tag present
-  if(defined($locus->at('Molecular_information.Canonical_gene'))){  
-    $warnings .= "ERROR 11: $locus has a 'Canonical_gene' tag\n";
-    $locus_errors++;
-  }
-
-
-  # Test for Polymorphisms with no P in their title
-  #if(defined($locus->at('Type.Polymorphism'))){
-   # if($locus !~ /P/){
-    #  $warnings .= "ERROR 14: $locus has no 'P' in title\n";
-     # $locus_errors++;
-    #}
-  #}
-  # Look for Gene_class tag in non-gene objects 
-  if(!defined($locus->at('Type.Gene'))){
-    if(defined($locus->at('Name.Gene_class'))){
-      $warnings .= "ERROR 15: $locus has Gene_class tag but it is not a gene!\n";
-      $locus_errors++;
-      if ($ace){
-        print ACE "\n\nLocus : \"$locus\"\n" if ($ace); 
-        print ACE "Gene\n" if ($ace);
-      } 
-    }
-  }
-  
-  # test for Other_name tag but no value   
-  if(defined($locus->at('Name.Other_name')) && !defined($locus->Other_name)){
-    $warnings .= "ERROR 16: $locus has 'Other_name' tag but no associated value\n";
-    $locus_errors++;
-  }
-=start
-  # test for Other_name value which is also a Locus name in its own right
-  # N.B. This is not always a bad thing
-  if(defined($locus->at('Name.Other_name'))){
-    my @other_names = $locus->Other_name;
-    foreach my $other_name (@other_names){
-      my ($newloci) = $db->fetch(-class=>'Locus',-name=>"$other_name");
-      if(defined($newloci)){
-	unless($newloci->at('Name.New_name')){
-	  $warnings .= "ERROR 17: $locus has an Other_name: $other_name which is also a separate locus object\n";
-	  $locus_errors++;
-	}   
-      }
-    }
-  }
-=end
-=cut
-  # Remind of outstanding CGC_unresolved tags
-  if(defined($locus->CGC_unresolved)){
-    my ($unresolved_details) = $locus->at('Type.Gene.CGC_unresolved');
-    $warnings .= "ERROR 18: $locus has CGC_unresolved tag: \"$unresolved_details\"\n";
-    $locus_errors++;
-  }
-
-   return($warnings, $erich_warnings);
-
-}
 
 ##############################
 
@@ -1638,26 +1527,20 @@ sub create_log_files{
   print LOG "=============================================\n";
   print LOG "\n";
 
-  $jahlog = "/wormsrv2/logs/$script_name.jahlog.$rundate.$$";
-  open(JAHLOG, ">>$jahlog") || die "Can't open $jahlog\n";
+  $jah_log = "/wormsrv2/logs/$script_name.jahlog.$rundate.$$";
+  open(JAHLOG, ">>$jah_log") || die "Can't open $jah_log\n";
   print JAHLOG "This mail is generated automatically for CGC on $rundate\n"; 
-  $JAHmsg = "This mail is generated automatically for CGC on $rundate\n"; 
   print JAHLOG "If you have any queries please email ck1\@sanger.ac.uk or krb\@sanger.ac.uk\n\n";
-  $JAHmsg .= "If you have any queries please email ck1\@sanger.ac.uk or krb\@sanger.ac.uk\n\n";
   print JAHLOG "=========================================================================\n";
-  $JAHmsg .=  "=========================================================================\n";
   
   # create separate log with errors for Erich
-  $erichlog = "/wormsrv2/logs/geneace_check.erichlog.$rundate.$$";
-  open(ERICHLOG,">$erichlog") || die "cant open $erichlog";
-  print ERICHLOG "$0 started at ",`date`,"\n";
-  $Emsg = "$0 started at ".`date`."\n";
-  print ERICHLOG "This mail is generated automatically for Caltech\n";
-  $Emsg .= "This mail is generated automatically for Caltech\n";
-  print ERICHLOG "If you have any queries please email ck1\@sanger.ac.uk or krb\@sanger.ac.uk\n\n";
-  $Emsg .= "If you have any queries please email ck1\@sanger.ac.uk or krb\@sanger.ac.uk\n\n";   
-  print ERICHLOG "================================================================================================\n";
-  $Emsg .= "================================================================================================\n";
+  $caltech_log = "/wormsrv2/logs/geneace_check.caltech_log.$rundate.$$";
+  open(CALTECHLOG,">$caltech_log") || die "cant open $caltech_log";
+  print CALTECHLOG "$0 started at ",`date`,"\n";
+  print CALTECHLOG "This mail is generated automatically for Caltech\n";
+  print CALTECHLOG "If you have any queries please email ck1\@sanger.ac.uk or krb\@sanger.ac.uk\n\n";
+  print CALTECHLOG "================================================================================================\n";
+
 }
 
 
@@ -1758,12 +1641,14 @@ B<-class:>
 
                locus
                allele
-               lab or laboratory
+               laboratory
                strain
-               rearr or rearrangement
-               seq or sequence
+               rearrangement
+               sequence
+               evidence
+               mapping
 
-            For example: -c allele -c locus OR -class seq -class rearr
+            For example: -c allele -c locus OR -class sequence -class rearrangment
 
 B<-databse:> 
             Allows specifying path to a specific database.
@@ -1779,6 +1664,12 @@ B<-ace:>
             /wormsrv1/geneace/CHECKS/geneace_check.rundate.processid.ace
                       
             For example: -a or -ace
+
+
+B<-verbose:>
+            Toggles on extra output.   Useful when running on command line and not on crob job
+            For the locus class it will display each locus name as it is processes it and show
+            (next to the locus name) a dot for each error it had found in that locus
 
 
 =head3 <RUN geneace_check.pl>
