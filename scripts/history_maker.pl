@@ -19,7 +19,6 @@ GetOptions (
 	    "help|h"         => sub { system("perldoc $0"); exit(0);}
 	   );
 
-$user = &check_user unless $user;
 
 # This is the database used a reference for generating histories NOT the one that will be changed
 my $database = $source ? $source : glob("~wormpub/camace_orig");
@@ -196,6 +195,7 @@ my $clear_gene = $gene_blesser->Button( -text => "Clear",
 
 ###########################################################
 
+$user = &check_user unless $user;
 
 # aceperl connection to reference database
 my $db = Ace->connect(-path => $database) unless $design;
