@@ -522,6 +522,7 @@ save
 quit
 EOF
   &DbWrite($command,$tace,$autodir,"RmGaze");
+  $command=<<EOF;
 query find sequence "GAZE:LINK*"
 kill
 save    
