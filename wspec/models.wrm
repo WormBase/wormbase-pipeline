@@ -900,6 +900,8 @@
 			Predicted_3 ?Method Int Int UNIQUE Float // (x, x+1) or (x, x-1)
           Oligo ?Oligo XREF In_sequence Int UNIQUE Int  // for OSP and human mapping mostly
 	  Has_allele ?Allele XREF Predicted_gene // for linking to KO genes, substitution alleles etc. Used for Predicted_genes only
+	  Defines_feature ?Feature XREF Defined_by #Evidence       // Feature data model [dl 030304]
+	  Sequence_features ?Feature XREF Part_of_gene #Evidence   // Feature data model [dl 030304]
 	  Strain ?Strain XREF Sequence // new for KO data [krb 021219]
 	  Assembly_tags	Text Int Int Text // type, start, stop, comment
 	  Analysis_details Analysis_history ?Method UNIQUE DateType
@@ -1047,8 +1049,10 @@
                // keep the same model as in Sequence, so same code works
 
 ?Feature SMap S_Parent Sequence UNIQUE ?Sequence
-         Flanking_sequences UNIQUE Text UNIQUE Text
-         Description Text #Evidence
+         Flanking_sequences UNIQUE ?Sequence UNIQUE Text UNIQUE Text
+         Visible	    Description ?Text
+	 Defined_by ?Sequence XREF Defines_feature #Evidence
+	 Part_of_gene ?Sequence XREF Sequence_features  #Evidence
 	 Annotation UNIQUE ?LongText		// added for data attribution [030220 dl]
          Method ?Method
 
