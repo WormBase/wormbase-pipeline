@@ -663,7 +663,6 @@
 		Staff   ?Author XREF Laboratory
 
 ?Author Full_name Text
-	EMBL_name Text
         Also_known_as Text
 	Laboratory UNIQUE ?Laboratory XREF Staff
 	Old_lab ?Laboratory
