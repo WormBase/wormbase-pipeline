@@ -7,7 +7,7 @@
 # simple script for creating new (sequence based) Gene objects 
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-08-31 14:56:57 $
+# Last edited on: $Date: 2004-09-08 14:41:50 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -201,7 +201,7 @@ sub process_gene{
       $gene_max++;
       $gene_id = $gene_max;
     }
-    print "$seq does not exist, creating new Gene object WBGene000$gene_id\n" if ($verbose);
+    print "$seq does not exist, creating new Gene object WBGene000$gene_id\n";
     
     print OUT "Gene WBGene000$gene_id\n";
     print OUT "Live\n";
@@ -259,7 +259,7 @@ sub process_gene{
     print MAIL "$email";
     close (MAIL);
 
-    print "$address was emailed regarding gene ID for $seq\n" if ($verbose);
+    print "$address was emailed regarding gene ID for $seq\n";
   }
 }
 
