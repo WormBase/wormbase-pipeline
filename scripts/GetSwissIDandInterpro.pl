@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.0 -w
+#!/usr/local/bin/perl5.6.1 -w
 #
 # GetSwissIdandInterpro.pl
 # 
@@ -14,20 +14,45 @@
 #
 # pfetch is done in batches of 2000, any greater and nothing comes back!
 #
-# Last updated by: $Author: dl1 $                      # These lines will get filled in by cvs 
-# Last updated on: $Date: 2002-08-22 08:30:16 $        # quickly see when script was last changed and by whom
+# Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs 
+# Last updated on: $Date: 2002-08-29 09:52:07 $        # quickly see when script was last changed and by whom
 
 use strict;
 use lib "/wormsrv2/scripts/";                  
 use Wormbase;
 use Ace;
 
-my $maintainer   = "All";
-my $rundate      = `date +%y%m%d`; chomp $rundate;
-my $wmpep_ver    = &get_wormbase_version();#-1 for testing during builds
-my $wormpepdir   = "/wormsrv2/WORMPEP/wormpep$wmpep_ver";
-my $log          = "/wormsrv2/logs/GetSwissIDandInterpro.WB$wmpep_ver.$rundate";#error log (email to All)
-my $temp_acefile = "$wormpepdir/SwissprotIDs.ace";
+
+use Getopt::Std;
+#######################################
+# command-line options                #
+#######################################
+
+use vars qw($opt_d);
+# $opt_d debug   -  redirect output
+
+getopts ('d');
+
+my $maintainer = "All";
+my $rundate    = `date +%y%m%d`; chomp $rundate;
+my $log;
+my $temp_acefile;
+
+my $wmpep_ver = &get_wormbase_version();#-1 for testing during builds
+my $wormpepdir = "/wormsrv2/WORMPEP/wormpep$wmpep_ver";
+
+if( defined($opt_d) )
+  {
+    $log = glob("~ar2/testlogs/GetSwissIDandInterpro.WB$wmpep_ver.$rundate");
+    $temp_acefile = glob("~ar2/testlogs/SwissprotIDs.ace");
+    $wormpepdir = "/wormsrv2/WORMPEP/wormpep$wmpep_ver";
+    $maintainer = "ar2\@sanger.ac.uk";
+  }
+else
+  {
+    $log = "/wormsrv2/logs/GetSwissIDandInterpro.WB$wmpep_ver.$rundate";
+    $temp_acefile = "/wormsrv2/autoace/wormpep_ace/SwissprotIDs.ace";
+  }
 
 my $ace_output = *ACE_OUTPUT;
 
@@ -44,19 +69,11 @@ open (ACE_OUTPUT,">$temp_acefile") || die "cant open $temp_acefile";
 close ACE_OUTPUT;
 open (ACE_OUTPUT,">>$temp_acefile" || die "cant open $temp_acefile");
 
-#create temp ace file to output to open and close to ensure new file (as output of data appends)
-#open (OLD_IP_OUTPUT,">$temp_clearOldInterPro") || die "cant open $temp_clearOldInterPro";
-#close OLD_IP_OUTPUT;
-#open (OLD_IP_OUTPUT,">>$temp_clearOldInterPro" || die "cant open $temp_clearOldInterPro");
-
-
 my @protein;
 my @accession;
 my @proteinID;
 my %idextract;
 my %wormpep_acc;
-my $count;
-$count = 0;
 
 #open file with linking data
 open (INPUT, "$wormpepdir/wormpep.table$wmpep_ver")|| print "$0 cant find file wormpep.table$wmpep_ver";
@@ -65,9 +82,16 @@ my $accn_holder;
 my %noSWALL;   #CEXXXXX => AAMXXXXX.X
 my %noswall_acc;
 
+my $linecount = 0;
+my $noCE_count = 0;
+my $SWTR_count = 0;
+my $AAA_count = 0;
+my $useless_count = 0;
+my $count = 0;
 while (<INPUT>)
   {
     chomp;
+    $linecount++;
     if ($_ =~ m /(CE\d+)/)#find wormpep id
       {
 	$protein[$count] = $1;
@@ -76,6 +100,7 @@ while (<INPUT>)
 	    $accession[$count] = $1;
 	    #build hash of wormpep to accession no.
 	    $wormpep_acc{$protein[$count]} = $accession[$count];
+	    $SWTR_count++;
 	    $count++;
 	  }
 	else
@@ -85,10 +110,11 @@ while (<INPUT>)
 	      {
 		#put the AAA accs into hash to be investigated
 		$noSWALL{$1} = $protein[$count];
+		$AAA_count++;
 		$count++;
 	      }
 	    else{
-	      print LOG "cant find anything useful in $_\n";
+	      print LOG "cant find anything useful in $_\n";$useless_count++;
 	    }
 	  }
 #	if($count == 2000)
@@ -99,7 +125,7 @@ while (<INPUT>)
       }
     else
       {
-	print LOG "no protein in $_\n";
+	print LOG "no protein in $_\n";$noCE_count++;
       }
   }
 #try and get AC for those that have AAM or CAD style protein IDs only
@@ -133,11 +159,15 @@ close ACE_OUTPUT;
 print LOG "Files available -\n $temp_acefile\n";
 print LOG "\nNOTE! - This script no longer parses the outputs to a database\n\n";
 print LOG "SubGetSwissId finished at ",`date`,"\n";
+print LOG "linecount = $linecount\n
+$noCE_count = noCE_count\n
+$SWTR_count = SWTR_count\n
+$AAA_count = AAA_count\n
+$useless_count =useless_count\n";
 
 close LOG;
 #### use Wormbase.pl to mail Log ###########
 my $name = "Update Swiss ID's and Interpro motifs";
-$maintainer = "ar2\@sanger.ac.uk";
 &mail_maintainer ($name,$maintainer,$log);
 #########################################
 
@@ -212,23 +242,24 @@ sub outputToAce #(\%wormpep_acc, \@accession \$ace_output, \$errorLog)
 	my $databaseID = $idextract{$full_accn};
 	my $Database;
 	#catch the new SwissProt entries
-	if( $databaseID =~ /CAEEL/){
-	  $Database = "SwissProt";
-	}
-	else {
-	  if ($databaseID =~ m/[OPQ]\d\w{4}/ ) {
-	    $Database = "TrEMBL";
-	  }
-	  else {
-	    if( $databaseID =~ m/((AA\p{IsUpper})|(CA\p{IsUpper}))\d{5}/ ) {
-	      $Database = "TrEMBLnew";
-	    }
-	    else {print $errorLog $peptide,"\t",$full_accn,"\tfrom unknown database\n";}
-	  }
-	}
-	
 	if(defined($databaseID))
 	  {
+	    if( $databaseID =~ /CAEEL/){
+	      $Database = "SwissProt";
+	    }
+	    else {
+	      if ($databaseID =~ m/[OPQ]\d\w{4}/ ) {
+		$Database = "TrEMBL";
+	      }
+	      else {
+		if( $databaseID =~ m/((AA\p{IsUpper})|(CA\p{IsUpper}))\d{5}/ ) {
+		  $Database = "TrEMBLnew";
+		}
+		else {print $errorLog $peptide,"\t",$full_accn,"\tfrom unknown database\n";}
+	      }
+	    }
+	    
+	    
 	    print $ace_output "Protein : \"WP:$peptide\"\n";
 	    print $ace_output "Database \"$Database\" \"$databaseID\" \"$full_accn\"\n";
 	    
