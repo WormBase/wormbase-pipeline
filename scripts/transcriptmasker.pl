@@ -7,8 +7,8 @@
 
 # 031023 dl1
 
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-08-03 14:16:26 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2004-09-08 10:56:16 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -79,7 +79,7 @@ our %EST_name = &FetchData('NDBaccession2est');
 print "// Finished reading EST_names.dat hash\n\n" if ($verbose);
 
 # which database
-my $dbdir = "/wormsrv2/autoace";
+my $dbdir = "/wormsrv2/WS131";
 my $tace  = &tace;                                    # tace executable path
 
 my $acc;                                              # accession for the entry
@@ -130,7 +130,8 @@ exit(0);
 sub MaskSequence {
     my $data   = shift;
     my $masked = 0;
-  
+    my $ignore ;
+
     # connect to database
     print  "Opening database for masking $data ..\n" if ($debug);
     my $db = Ace->connect(-path=>$dbdir,
@@ -184,7 +185,7 @@ sub MaskSequence {
 	@features = $obj->Feature_data(1);
 	
 	if ( scalar (@features) == 0) {
-	    print "ERROR: No Features to parse \n" if ($debug);
+	    print "ERROR: No Features to parse \n\n" if ($debug);
 	}
 	else {
 	    foreach $feature (@features) {
@@ -213,8 +214,17 @@ sub MaskSequence {
 	    
 	}
 	
-	# output masked sequence
-	print OUTPUT ">$acc $id\n$seqmasked\n";
+	# Is the Ignore tag set?
+
+	my $ignore = $obj->Ignore;        # Ignore tag set?
+	unless (defined $ignore) {
+	    # output masked sequence
+	    print OUTPUT ">$acc $id\n$seqmasked\n";
+	}
+	else {
+	    print "\n// Ignore tag set for $acc $id\n\n" if ($verbose);
+	}	
+	undef $ignore;
 	
 	# close object
 	$obj->DESTROY();
