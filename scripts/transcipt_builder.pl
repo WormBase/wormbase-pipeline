@@ -133,7 +133,8 @@ foreach my $chrom ( @chromosomes ) {
   my $coords;
   # write out the transcript objects
   if( $transcript ) {
-    open (ACE,">$database/transcripts_$chrom.ace") or die "transcripts\n";
+    system("mkdir $database/TRANSCRIPTS") unless -e $database/TRANSCRIPTS;
+    open (ACE,">$database/TRANSCRIPTS/transcripts_$chrom.ace") or die "transcripts\n";
     # get coords obj to return clone and coords from chromosomal coords
     $coords = Coords_converter->invoke($database);
   }
@@ -219,7 +220,8 @@ foreach my $chrom ( @chromosomes ) {
   close ACE if $transcript;
 
   if ($show_matches) { 
-    open(MATCHES,">$database/chromosome${chrom}_matching_cDNA.dat");
+    system("mkdir $database/TRANSCRIPTS") unless -e $database/TRANSCRIPTS;
+    open(MATCHES,">$database/TRANSCRIPTS/chromosome${chrom}_matching_cDNA.dat");
     print MATCHES Data::Dumper->Dump([\%gene2cdnas]);
     close MATCHES;
 
@@ -240,16 +242,16 @@ foreach my $chrom ( @chromosomes ) {
 }
 
 if( $load_transcripts ) {
-  system("cat $database/transcripts_*.ace > $database/transcripts_all.ace");
+  system("cat $database/TRANSCRIPTS/ranscripts_*.ace > $database/TRANSCRIPTS/transcripts_all.ace");
   open(TACE, " | $tace -tsuser transcripts $database |") or warn "could open $database to load transcript file\n";
-  print TACE "pparse $database/transcripts_all.ace\nsave\nquit";
+  print TACE "pparse $database/TRANSCRIPTS/transcripts_all.ace\nsave\nquit";
   close TACE;
 }
 
 if( $load_matches ) {
-  system("cat $database/chromosome*_matching_cDNA.ace > $database/matching_cDNA_all.ace");
+  system("cat $database/TRANSCRIPTS/chromosome*_matching_cDNA.ace > $database/TRANSCRIPTS/matching_cDNA_all.ace");
   open(TACE, " | $tace -tsuser matching_cDNA $database |") or warn "could open $database to load matching_cDNA file\n";
-  print TACE "pparse $database/matching_cDNA_all.ace\nsave\nquit";
+  print TACE "pparse $database/TRANSCRIPTS/matching_cDNA_all.ace\nsave\nquit";
   close TACE;
 }
   
