@@ -8,7 +8,7 @@
 # build to check the current build
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-09-22 08:44:46 $      
+# Last updated on: $Date: 2003-11-28 10:28:44 $      
 
 use strict;
 use lib "/wormsrv2/scripts/";   
@@ -95,6 +95,8 @@ print LOG "5) Open a keyset of all genome sequences and then query them for:\n";
 print LOG " 'Transcript_child AND NEXT AND NOT NEXT'\n";
 print LOG "I.e. tRNAs not attached properly to parent sequence.  This has happened before and you\n";
 print LOG "should notify the responsible group (HX or RW) to fix them for next build\n\n";
+
+print LOG "6) Check all Protein objects have a Species tag set\n\n";
 
 print LOG "\nThat's all...for now!  If you are satisfied the build is ok, please inform the person\n";
 print LOG "building the database. Please continue to add to this list as appropriate\n";
