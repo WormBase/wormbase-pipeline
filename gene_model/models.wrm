@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.32 2002-01-29 11:58:30 dl1 Exp $
+// CVS info:  $Id: models.wrm,v 1.33 2002-02-28 09:49:21 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -197,6 +197,7 @@
 			Transgene_product ?Transgene XREF Worm_gene
 			Rescued_by_transgene ?Transgene
 			CGC_unresolved Text // krb [020128]
+			Pseudogene Text // krb 28/02/02
         Molecular_info	CDS ?CDS XREF Gene
 			Transcript ?Transcript XREF Gene
 			Protein ?Protein XREF Gene
