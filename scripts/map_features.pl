@@ -9,7 +9,7 @@
 #
 #
 # Last updated by: $Author: dl1 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2004-04-29 12:39:53 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2004-08-12 12:23:30 $        # quickly see when script was last changed and by whom
 
 
 $|=1;
@@ -32,6 +32,9 @@ my $SL2;                     #  SL2 trans-splice leader acceptors
 my $polyA_site;              #  polyA_site
 my $polyA_signal;            #  polyA_signal
 my $adhoc;                   # Run against a file, output to screen
+my $start;
+my $stop;
+
 
 GetOptions (
 	    "all"          => \$all,
@@ -112,12 +115,30 @@ foreach my $query (@features2map) {
 
 	    my @coords = $mapper->map_feature($clone,$flanking_left,$flanking_right);
 
+	    $start = $coords[1];
+	    $stop  = $coords[2];
+
 	    # munge returned coordinates to get the span of the mapped feature
-	    if ($coords[1] > $coords[2]) {
-		$span = $coords[1] - $coords[2] -1;
+
+	    # Deal with polyA_signal features
+	    if ($polyA_signal) {
+		if ($start < $stop) {
+		    $start++;
+		    $stop--;
+		    $span = $stop - $start + 1;
+		}
+		else {
+		    $start--;
+		    $stop++;
+		    $span = $start - $stop + 1;
+		}
+	    }
+	    # else deal with butt-ended features (e.g. SL1, SL2 & polyA_site)
+	    elsif ($start > $stop) {
+		$span = $start - $stop - 1;
 	    }
 	    else {
-		$span = $coords[2] - $coords[1] -1;
+		$span = $stop - $start - 1;
 	    }
 
 	    # check feature span is sane
@@ -125,16 +146,16 @@ foreach my $query (@features2map) {
 	    if ($span == $sanity{$query}) {
 		
 		if ($adhoc) {
-		    print "$feature maps to $clone $coords[1] -> $coords[2], feature span is $span bp\n";
+		    print "$feature maps to $clone $start -> $stop, feature span is $span bp\n";
 		}
 		else {
-		    print OUTPUT "//$feature maps to $clone $coords[1] -> $coords[2], feature span is $span bp\n";
+		    print OUTPUT "//$feature maps to $clone $start -> $stop, feature span is $span bp\n";
 		    print OUTPUT "\nSequence : \"$clone\"\n";
-		    print OUTPUT "Feature_object $feature $coords[1]  $coords[2]\n\n";
+		    print OUTPUT "Feature_object $feature $start  $stop\n\n";
 		}
 	    }
 	    else {
-		print ERRORS "// $feature maps to $clone $coords[1] -> $coords[2], feature span is $span bp\n" unless ($adhoc);
+		print ERRORS "// $feature maps to $clone $start -> $stop, feature span is $span bp\n" unless ($adhoc);
 	    }
 	} #_ if match line
     }
