@@ -7,8 +7,8 @@
 #
 # This makes the autoace database from its composite sources.
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2002-10-25 14:58:12 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2002-10-30 11:58:55 $
 
 
 ###########################################################################################
@@ -317,7 +317,7 @@ sub rmtempgene {
     my $command = "query find sequence method = hand_built\nkill\nsave\nquit\n";
     &DbWrite($command,$tace,$camace,"CamAce");
     &DbWrite($command,$tace,$stlace,"StlAce");
-    my $command = "query find sequence temp*\nkill\nsave\nquit\n";
+    $command = "query find sequence temp*\nkill\nsave\nquit\n";
     &DbWrite($command2,$tace,$camace,"CamAce");
     &DbWrite($command2,$tace,$stlace,"StlAce");
 }
