@@ -215,7 +215,7 @@ sub outputToAce #(\%wormpep_acc, \@accession \$ace_output, \$errorLog)
 	    print $old_ip_output "\n";#object separator
 
 	    print $ace_output "Protein : \"WP:$peptide\"\n";
-	    print $ace_output "Database \"$Database\" \"$accn\" \"$databaseID\"\n";
+	    print $ace_output "Database \"$Database\" \"$databaseID\" \"$accn\"\n";
 	    
 	    if (defined($interpro{$databaseID}))
 	      {
