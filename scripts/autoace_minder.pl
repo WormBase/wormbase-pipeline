@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2004-07-22 13:57:12 $
+# Last edited on: $Date: 2004-08-02 10:19:24 $
 
 
 
@@ -1310,6 +1310,11 @@ sub map_features {
 
   # alleles
   &run_command("$scriptdir/map_Alleles.pl");
+
+  # Y2H objects
+  &run_command("$scriptdir/map_Y2H.pl");
+  my $file = "$basedir/wormbase/misc_dynamic/misc_Y2H_connections.ace";
+  &load($file,"Y2H_connections");
 
   # microarray connections
   &run_command("$scriptdir/map_microarray.pl");
