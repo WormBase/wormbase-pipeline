@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-10-31 14:18:18 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2003-11-03 16:48:54 $
 
 
 #################################################################################
@@ -818,11 +818,18 @@ sub prepare_for_blat{
   # make a copy_autoace_midway log file in /logs
   system("touch $logdir/$flag{'B5'}");  
 
+  # transcriptmasker run to mask ?Feature_data from raw sequences
+  # note to krb. This needs bradnamisation to allow a -all flag.
+
+  &run_command("$scriptdir/transcriptmasker.pl -mrna");
+  &run_command("$scriptdir/transcriptmasker.pl -est");
+  &run_command("$scriptdir/transcriptmasker.pl -ost");
+
   # Now make blat target database using autoace (will be needed for all possible blat jobs)
   # Need to run blat_them_all -dump
   &run_command("$scriptdir/blat_them_all.pl -dump");
 
-}
+} 
 
 #################################################################################
 
