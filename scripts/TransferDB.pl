@@ -4,7 +4,7 @@
 #
 # by ag3 [991221]
 #
-# Last updated on: $Date: 2003-09-22 22:43:34 $
+# Last updated on: $Date: 2003-09-23 09:12:14 $
 # Last updated by: $Author: krb $
 
 
@@ -92,7 +92,7 @@ if($debug){
 ##########################################################
 &usage("Help") if ($help);
 &usage("1")    if (!$srcdir || !$enddir);
-&usage("2")    if ($S_all && !$dbname);
+&usage("2")    if ($dbname && (!$S_all || !$S_wspec));
 
 if ($srcdir =~ /^\~/) {
   my $tmp = glob ($srcdir);  $srcdir = $tmp;
@@ -369,8 +369,8 @@ sub usage {
     exit(1);
   }
   elsif($error == 2){
-    print "If -all is specified you must also specify -name\n";
-    print LOG "-all specified but -dbname not specified\n";
+    print "If -name is specified you must also specify -wspec or -all\n";
+    print LOG "-name specified but -wspec or -all not specified\n";
     print LOG "TransferDB prematurely quitting at",&runtime,"\n";
     close(LOG);
     exit(1);
