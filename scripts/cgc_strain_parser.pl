@@ -7,7 +7,7 @@
 # Script to convert cgc strain file into ace file for geneace
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-07-15 12:11:23 $
+# Last updated on: $Date: 2002-07-15 12:15:48 $
 
 use strict;
 use Getopt::Std;
@@ -154,6 +154,8 @@ while(<INPUT>){
   $description = $1;
   $description =~ s/\s{2,}/ /g;
   $description =~ s/\s+$//g;
+  # get rid of any quotation marks
+  $description =~ s/\"//g; 
   $ace_object .= "Remark \"$description\"\n" unless ($description eq "");
   $delete_ace_object .= "-D Remark \"$description\"\n" unless ($description eq "");
 
