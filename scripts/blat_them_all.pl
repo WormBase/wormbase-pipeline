@@ -14,6 +14,7 @@
 # -m : run everything for mRNAs
 # -x : run everything for parasitic nematode ESTs
 # -o : run everything for miscellaneous peptides (worm non RNA division coding sequence, not HTG)
+# -y : run everything for Vidal OST set
 #
 # -n : dump dna/chromosome data from autoace
 # -b : blating (autoace.fa, chromosome.ace already present)
@@ -33,14 +34,14 @@
 # 02.04.08 dl: old style logging for autoace.fa check, prevented complete run of subs
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2003-04-25 15:13:44 $
+# Last edited on: $Date: 2003-04-27 13:19:21 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
 use Wormbase;
 use Getopt::Std;
 use IO::Handle;
-use vars qw($opt_e $opt_m $opt_x $opt_b $opt_s $opt_o $opt_v $opt_n $opt_h $opt_d $opt_c);
+use vars qw($opt_e $opt_m $opt_x $opt_b $opt_s $opt_o $opt_v $opt_n $opt_h $opt_d $opt_c $opt_y);
 $|=1;
 
 
@@ -65,6 +66,7 @@ our %word = (
 	     mRNA     => 'BLAT_mRNA',
 	     EMBL     => 'BLAT_EMBL',
 	     NEMATODE => 'BLATX_NEMATODE',
+	     OST      => 'BLAT_OST',
 	     );
 
 ########################################
@@ -89,20 +91,22 @@ if ($opt_c) {
 # Exit if no option choosen [n|b|s|v]
 &usage(1) unless ($opt_n || $opt_b || $opt_s || $opt_v); 
 
-# Exit if no data type choosen [EST|mRNA|EMBL|NEMATODE]
-&usage(2) unless ($opt_e || $opt_m || $opt_o || $opt_x || $opt_n); 
+# Exit if no data type choosen [EST|mRNA|EMBL|NEMATODE|OST]
+&usage(2) unless ($opt_e || $opt_m || $opt_o || $opt_x || $opt_y || $opt_n); 
 
-# Exit if multiple data types choosen [EST|mRNA|EMBL|NEMATODE]
-&usage(3) if (($opt_e + $opt_m + $opt_o + $opt_x) > 1);
+# Exit if multiple data types choosen [EST|mRNA|EMBL|NEMATODE|OST]
+&usage(3) if (($opt_e + $opt_m + $opt_o + $opt_x + $opt_y) > 1);
 
 # assign type variable
 ($data = 'EST')      if ($opt_e);
+($data = 'OST')      if ($opt_y);
 ($data = 'mRNA')     if ($opt_m);
 ($data = 'EMBL')     if ($opt_o);
 ($data = 'NEMATODE') if ($opt_x);
 
 my $query;
 $query      = '/nfs/disk100/wormpub/analysis/ESTs/C.elegans_nematode_ESTs'     if ($opt_e); # EST data set
+$query      = '/nfs/disk100/wormpub/analysis/ESTs/C.elegans_OSTs'              if ($opt_y); # OST data set
 $query      = '/nfs/disk100/wormpub/analysis/ESTs/C.elegans_nematode_mRNAs'    if ($opt_m); # mRNA data set
 $query      = '/nfs/disk100/wormpub/analysis/ESTs/non_C.elegans_nematode_ESTs' if ($opt_x); # ParaNem EST data set
 $query      = '/nfs/disk100/wormpub/analysis/ESTs/C.elegans_nematode_miscPep'  if ($opt_o); # Other CDS data set
@@ -135,6 +139,7 @@ print LOG "\n";
 print LOG "======================================================================\n";
 print LOG " -e : perform blat for ESTs\n"                     if ($opt_e);
 print LOG " -m : perform blat for mRNAs\n"                    if ($opt_m);
+print LOG " -z : perform blat for OSTs\n"                     if ($opt_y);
 print LOG " -o : perform blat for miscPep\n"                  if ($opt_o);
 print LOG " -x : perform blatx for parasitic nematode ESTs\n" if ($opt_x);
 print LOG "======================================================================\n";
@@ -197,6 +202,18 @@ if ($opt_s) {
 	    system("$bin/blat2ace.pl -eiz") && die "Mapping failed\n"; 	}
     }
 
+    if ($opt_y) {
+
+	# map BEST hits for whole genome
+	print "Mapping blat data to autoace\n";
+	
+	unless ($opt_c) {
+	    system("$bin/blat2ace.pl -yi") && die "Mapping failed\n"; 
+	}
+	else {
+	    system("$bin/blat2ace.pl -yiz") && die "Mapping failed\n"; 	}
+    }
+
     if ($opt_m) {
 	print "Mapping blat data to autoace\n";
 	unless ($opt_c) {
@@ -234,6 +251,18 @@ if ($opt_s) {
 
 	print "Confirm intron data in stlace\n";	
 	&confirm_introns('stlace', 'EST');
+    }
+    if ($opt_y) {
+	print "Producing OST confirmed introns in databases\n\n";
+
+	print "Confirm intron data in autoace\n";
+        &confirm_introns('autoace','OST');
+
+	print "Confirm intron data in camace\n";
+	&confirm_introns('camace', 'OST');
+
+	print "Confirm intron data in stlace\n";	
+	&confirm_introns('stlace', 'OST');
     }
     if ($opt_m) {
 	print "Producing mRNA confirmed introns in databases\n";
@@ -478,6 +507,7 @@ sub confirm_introns {
 
     ($tag = "cDNA") if ($opt_m || $opt_o);
     ($tag = "EST")  if ($opt_e);
+    ($tag = "OST")  if ($opt_y);
     
     $/ = "";
     open (CI, "<$blat/${db}.ci.${data}.ace")      or die "Cannot open $blat/$db.ci.$data.ace $!\n";
@@ -565,11 +595,13 @@ sub confirm_introns {
 		    
 		    if ($startvirt == $endvirt) { 
 			$virtual = "Confirmed_intron_EST:" .$link."_".$startvirt     if ($opt_e);
+			$virtual = "Confirmed_intron_OST:" .$link."_".$startvirt     if ($opt_y);
 			$virtual = "Confirmed_intron_mRNA:".$link."_".$startvirt     if ($opt_m);
 			$virtual = "Confirmed_intron_EMBL:".$link."_".$startvirt     if ($opt_o);
 		    }
 		    elsif (($startvirt == ($endvirt - 1)) && (($last%100000) <= 50000)) {
 			$virtual = "Confirmed_intron_EST:" .$link."_".$startvirt     if ($opt_e);
+			$virtual = "Confirmed_intron_OST:" .$link."_".$startvirt     if ($opt_y);
 			$virtual = "Confirmed_intron_mRNA:".$link."_".$startvirt     if ($opt_m);
 			$virtual = "Confirmed_intron_EMBL:".$link."_".$startvirt     if ($opt_o);
 		    }
@@ -632,13 +664,13 @@ sub usage {
     }
     elsif ($error == 2) {
 	# No data-type choosen
-	print "\nNo data option choosen [-e|m|o|x]\n";
+	print "\nNo data option choosen [-e|m|o|x|y]\n";
 	print "Run with one of the above options\n\n";
 	exit(0);
     }
     elsif ($error == 3) {
 	# 'Multiple data-types choosen
-	print "\nMultiple data option choosen [-e|m|o|x]\n";
+	print "\nMultiple data option choosen [-e|m|o|x|y]\n";
 	print "Run with one of the above options\n\n";
 	exit(0);
     }

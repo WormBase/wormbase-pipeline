@@ -11,6 +11,7 @@
 # -s  : get best matches for stlace
 #
 # -e  : create output for ESTs 
+# -y  : create output for OSTs 
 # -m  : create output for mRNAs 
 # -x  : create output for parasitic nematode ESTs (blatx)
 # -o  : create output for other CDS
@@ -19,8 +20,8 @@
 #
 # 010905 by Kerstin Jekosch
 
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-04-01 13:21:21 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2003-04-27 13:19:21 $
 
 
 use strict;
@@ -28,7 +29,7 @@ use Data::Dumper;
 use lib "/wormsrv2/scripts/";
 use Wormbase;
 use Getopt::Std;
-use vars qw($opt_i $opt_h $opt_s $opt_c $opt_e $opt_m $opt_o $opt_x $opt_z);
+use vars qw($opt_i $opt_h $opt_s $opt_c $opt_e $opt_m $opt_o $opt_x $opt_y $opt_z);
 $| = 1;
 
 #############################
@@ -51,6 +52,7 @@ our %stlace;
 our $type = "";
 our %word = (
 	     EST      => 'BLAT_EST',
+	     OST      => 'BLAT_OST',
 	     mRNA     => 'BLAT_mRNA',
 	     EMBL     => 'BLAT_EMBL',
 	     NEMATODE => 'BLATX_NEMATODE',
@@ -77,14 +79,15 @@ if ($opt_z) {
     $tace      = &tace." /wormsrv1/camace";
 }
 
-# Exit if no data type choosen [EST|mRNA|EMBL|NEMATODE]
-&usage(1) unless ($opt_e || $opt_m || $opt_o || $opt_x); 
+# Exit if no data type choosen [EST|mRNA|EMBL|NEMATODE|OST]
+&usage(1) unless ($opt_e || $opt_m || $opt_o || $opt_x || $opt_y); 
 
-# Exit if multiple data types choosen [EST|mRNA|EMBL|NEMATODE]
-&usage(2) if (($opt_e + $opt_m + $opt_o + $opt_x) > 1);
+# Exit if multiple data types choosen [EST|mRNA|EMBL|NEMATODE|OST]
+&usage(2) if (($opt_e + $opt_m + $opt_o + $opt_x || $opt_y) > 1);
 
 # assign type variable
 ($type = 'EST')      if ($opt_e);
+($type = 'OST')      if ($opt_y);
 ($type = 'mRNA')     if ($opt_m);
 ($type = 'EMBL')     if ($opt_o);
 ($type = 'NEMATODE') if ($opt_x);
@@ -449,7 +452,8 @@ while (<AOTHER>) {
 #	print $_;
     if ($_ =~ /^Homol_data/) {
 	my $line = $_;
-	s/BLAT_EST_OTHER/BLAT_EST_BEST/g unless ($opt_m || $opt_o || $opt_x);
+	s/BLAT_EST_OTHER/BLAT_EST_BEST/g unless ($opt_m || $opt_o || $opt_x || $opt_y);
+	s/BLAT_OST_OTHER/BLAT_OST_BEST/g     if ($opt_y); 
 	s/BLAT_mRNA_OTHER/BLAT_mRNA_BEST/g   if ($opt_m);
 	s/BLAT_EMBL_OTHER/BLAT_EMBL_BEST/g   if ($opt_o);
 
@@ -506,6 +510,11 @@ if ($opt_i) {
 		    printf CI_auto "Confirmed_intron %d %d EST\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1];
 		    (printf CI_cam "Confirmed_intron %d %d EST\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($camace{$superlink});
 		    (printf CI_stl "Confirmed_intron %d %d EST\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($stlace{$superlink});
+		}
+		if ($opt_y) {
+		    printf CI_auto "Confirmed_intron %d %d OST\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1];
+		    (printf CI_cam "Confirmed_intron %d %d OST\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($camace{$superlink});
+		    (printf CI_stl "Confirmed_intron %d %d OST\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($stlace{$superlink});
 		}
 		$double{$merge} = 1;
 	    }
@@ -606,13 +615,13 @@ sub usage {
     
     if ($error == 1) {
 	# No data-type choosen
-	print "\nNo data option choosen [-e|m|o|x]\n";
+	print "\nNo data option choosen [-e|m|o|x|y]\n";
 	print "Run with one of the above options\n\n";
 	exit(0);
     }
     if ($error == 2) {
 	# 'Multiple data-types choosen
-	print "\nMultiple data option choosen [-e|m|o|x]\n";
+	print "\nMultiple data option choosen [-e|m|o|x|y]\n";
 	print "Run with one of the above options\n\n";
 	exit(0);
     }
