@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-09-23 17:24:02 $
+# Last edited on: $Date: 2003-09-24 09:13:12 $
 
 
 #################################################################################
@@ -62,7 +62,6 @@ my $help;		# Help/Usage page
 my $test;               # Test routine 
 my $dbcomp;		# runs dbcomp script
 our $am_option;         # track which option has been used (for logging purposes)
-our $runtime;           # grab runtime to add to logfiles
 
 GetOptions (
 	    "agp"	     => \$agp,
@@ -115,37 +114,38 @@ my $scriptdir   = "/wormsrv2/scripts";                   # specify location of s
 # build flag path
 
 our %flag = (
-	     'A1'  => 'A1:Build_in_progress',
-	     'A2'  => 'A2:Updated_WS_version',
-	     'A3'  => 'A3:Unpack_FTP_databases',
-	     'A4'  => 'A4:Primary_databases_on_wormsrv2',
-	     'A5'  => 'A5:Wrote_acefiles_to_wormbase', 
-	     'B1'  => 'B1:Made_autoace_database',
-	     'B1A' => 'B1a:Errors_in_loaded_acefiles',
-	     'B2'  => 'B2:Dump_DNA_files',
- 	     'B3'  => 'B3:Made_agp_files',
-	     'B4'  => 'B4:Errors_in_agp_files',
-	     'B5'  => 'B5:Copy_to_midway',
-	     'B6'  => 'B6:BLAT_analysis',
+	     'A1'          => 'A1:Build_in_progress',
+	     'A2'          => 'A2:Updated_WS_version',
+	     'A3'          => 'A3:Unpack_FTP_databases',
+	     'A4'          => 'A4:Primary_databases_on_wormsrv2',
+	     'A5'          => 'A5:Wrote_acefiles_to_wormbase', 
+	     'B1'          => 'B1:Made_autoace_database',
+	     'B1:ERROR'    => 'B1:Errors_in_loaded_acefiles',
+	     'B2'          => 'B2:Dump_DNA_files',
+	     'B2:ERROR'    => 'B2:Errors_in_dumping_DNA',
+ 	     'B3'          => 'B3:Made_agp_files',
+	     'B4'          => 'B4:Errors_in_agp_files',
+	     'B5'          => 'B5:Copy_to_midway',
+	     'B6'          => 'B6:BLAT_analysis',
 	     'B6_est'      => 'B6a:BLAT_analysis_EST',
 	     'B6_mrna'     => 'B6b:BLAT_analysis_mRNA',
 	     'B6_embl'     => 'B6c:BLAT_analysis_EMBL',
 	     'B6_ost'      => 'B6d:BLAT_analysis_OST',
 	     'B6_nematode' => 'B6d:BLAT_analysis_NEMATODE',
-	     'B7'  => 'B7:Upload_BLAT_data',
-	     'B8'  => 'B8:Upload_wublast_data',
-	     'B9'  => 'B9:Upload_briggsae_data',
-	     'B10' => 'B10:Generate_UTR_data',
-	     'C1'  => 'C1:Dumped_GFF_files',
-	     'C2'  => 'C2:Split_GFF_files',
-	     'C3'  => 'C3:Map_PCR_products',
-	     'C4'  => 'C4:Confirm_gene_models',
-	     'D1A' => 'D1:Build_wormpep_initial',
-	     'D1'  => 'D1:Build_wormpep_final',
-	     'D2'  => 'D2:Update_pepace',
-	     'D3'  => 'D3:Add_protein_data_to_autoace',
-	     'D4'  => 'D4:Build_wormrna',
-	     'Z1'  => 'Z1:Make_autoace_complete'
+	     'B7'          => 'B7:Upload_BLAT_data',
+	     'B8'          => 'B8:Upload_wublast_data',
+	     'B9'          => 'B9:Upload_briggsae_data',
+	     'B10'         => 'B10:Generate_UTR_data',
+	     'C1'          => 'C1:Dumped_GFF_files',
+	     'C2'          => 'C2:Split_GFF_files',
+	     'C3'          => 'C3:Map_PCR_products',
+	     'C4'          => 'C4:Confirm_gene_models',
+	     'D1A'         => 'D1:Build_wormpep_initial',
+	     'D1'          => 'D1:Build_wormpep_final',
+	     'D2'          => 'D2:Update_pepace',
+	     'D3'          => 'D3:Add_protein_data_to_autoace',
+	     'D4'          => 'D4:Build_wormrna',
+	     'Z1'          => 'Z1:Make_autoace_complete'
 	     );
 
 our @chrom        = ('I','II','III','IV','V','X');
@@ -554,8 +554,7 @@ sub make_acefiles {
   &usage("Build_in_progress_absent") unless (-e "$logdir/$flag{'A4'}");
   
   system ("$scriptdir/make_acefiles.pl") && die "Couldn't run make_acefiles.pl\n";
-  $runtime = &runtime;
-  print LOG "Finished running make_acefiles.pl at $runtime\n";
+  print LOG "Finished running make_acefiles.pl at ",&runtime,"\n";
 
   # make a make_acefiles log file in /logs
   system ("touch $logdir/$flag{'A5'}");
@@ -593,15 +592,14 @@ sub make_autoace {
 
 
     system ("$scriptdir/make_autoace --database /wormsrv2/autoace --buildautoace") && die "Couldn't run make_autoace\n";
-    $runtime = &runtime;
-    print LOG "Finished running make_autoace at $runtime\n";
+    print LOG "Finished running make_autoace at ",&runtime,"\n";
     
     # test the build for loading errors
     my $builderrors = &test_build;
     
     # errors in the make_autoace log file
     if ($builderrors > 1) {
-      system ("touch $logdir/$flag{'B1A'}");
+      system ("touch $logdir/$flag{'B1:ERROR'}");
       &usage("Errors_in_loaded_acefiles");
     }
     
@@ -619,11 +617,15 @@ sub make_autoace {
     &usage(14) unless (-e "$logdir/$flag{'B1'}");
     
     # quit if you have errors in the build
-    &usage("Errors_in_loaded_acefiles") if (-e "$logdir/$flag{'B1A'}");
+    &usage("Errors_in_loaded_acefiles") if (-e "$logdir/$flag{'B1:ERROR'}");
     
-    system ("$scriptdir/chromosome_dump.pl --dna --composition") && die "Couldn't run chromosome_dump -dc\n" ;
-    $runtime = &runtime;
-    print LOG " Finished running chromosome_dump.pl at $runtime\n";
+    my $status = system ("$scriptdir/chromosome_dump.pl --dna --composition");
+    if ($status != 0){
+      print LOG "ERROR: Couldn't run chromsome_dump.pl --dna --composition  : ";
+      print LOG "Check that all chromosome sequences dumped correctly.\n";      
+      system ("touch $logdir/$flag{'B2:ERROR'}");
+    }
+    print LOG " Finished running chromosome_dump.pl at ",&runtime,"\n";
     
     # make a make_autoace log file in /logs
     system ("touch $logdir/$flag{'B2'}");
@@ -635,13 +637,12 @@ sub make_autoace {
     &usage(13) unless (-e "$logdir/$flag{'B1'}");
     
     # quit if you have errors in the build
-    &usage("Errors_in_loaded_acefiles") if (-e "$logdir/$flag{'B1A'}");
+    &usage("Errors_in_loaded_acefiles") if (-e "$logdir/$flag{'B1:ERROR'}");
     
     local (*MD5SUM_IN,*MD5SUM_OUT);
     
     system ("$scriptdir/make_autoace -database /wormsrv2/autoace --buildrelease")  && die "Couldn't run make_autoace\n"; 
-    $runtime = &runtime;
-    print LOG "Finished running make_autoace at $runtime\n";
+    print LOG "Finished running make_autoace at ",&runtime,"\n";
 
     
     # make a make_autoace log file in /logs
@@ -658,8 +659,7 @@ sub make_autoace {
     close MD5SUM_OUT;
     
     system ("mv -f /wormsrv2/autoace/release/md5sum.temp /wormsrv2/autoace/release/md5sum.WS${WS_version}");
-    $runtime = &runtime;
-    print LOG "Finished making md5sum files at $runtime\n";
+    print LOG "Finished making md5sum files at ",&runtime,"\n";
   }
 }
 #__ end make_autoace __#
@@ -670,8 +670,7 @@ sub test_build {
   local (*BUILDLOOK,*BUILDLOG);
   my $logfile;
 
-  $runtime = &runtime;
-  print LOG "Entering test_build subroutine at $runtime\n";
+  print LOG "Entering test_build subroutine at ",&runtime,"\n";
 
   print "Looking at log file: /wormsrv2/logs/make_autoace.WS${WS_version}*\n" if ($debug);
   
@@ -703,8 +702,7 @@ sub test_build {
     }
   }
   close BUILDLOG;
-  $runtime = &runtime;
-  print LOG "Leaving test_build subroutine at $runtime\n";
+  print LOG "Leaving test_build subroutine at ",&runtime,"\n";
 
   return ($builderrors);
 }
@@ -713,18 +711,18 @@ sub test_build {
 
 sub test {
 
-    local (*MD5SUM_IN,*MD5SUM_OUT);
-    open (MD5SUM_OUT, ">/wormsrv2/autoace/release/md5sum.temp")             || die "Couldn't open md5sum file out\n";
-    open (MD5SUM_IN,  "</wormsrv2/autoace/release/md5sum.WS${WS_version}")  || die "Couldn't open md5sum file in\n";
-    while (<MD5SUM_IN>) {
-	s/\/wormsrv2\/autoace\/release\///g;
-	print MD5SUM_OUT $_;
-    }
-    close MD5SUM_IN;
-    close MD5SUM_OUT;
-    
-    system ("mv -f /wormsrv2/autoace/release/md5sum.temp /wormsrv2/autoace/release/md5sum.WS${WS_version}");
-    
+  local (*MD5SUM_IN,*MD5SUM_OUT);
+  open (MD5SUM_OUT, ">/wormsrv2/autoace/release/md5sum.temp")             || die "Couldn't open md5sum file out\n";
+  open (MD5SUM_IN,  "</wormsrv2/autoace/release/md5sum.WS${WS_version}")  || die "Couldn't open md5sum file in\n";
+  while (<MD5SUM_IN>) {
+    s/\/wormsrv2\/autoace\/release\///g;
+    print MD5SUM_OUT $_;
+  }
+  close MD5SUM_IN;
+  close MD5SUM_OUT;
+  
+  system ("mv -f /wormsrv2/autoace/release/md5sum.temp /wormsrv2/autoace/release/md5sum.WS${WS_version}");
+  
 }
 
 
@@ -746,11 +744,11 @@ sub make_agp {
   }   
 
   system ("$scriptdir/check_DNA.pl")     && die "Couldn't run check_DNA.pl\n";
-  $runtime = &runtime;; print LOG "check_DNA.pl finished at $runtime\n";  
+  print LOG "check_DNA.pl finished at ",&runtime,"\n";  
   system ("$scriptdir/make_agp_file.pl") && die "Couldn't run make_agp_file.pl\n";
-  $runtime = &runtime; print LOG "make_agp_file.pl finished at $runtime\n";  
+  print LOG "make_agp_file.pl finished at ",&runtime,"\n";  
   system ("$scriptdir/agp2dna.pl")       && die "Couldn't run agp2dna.pl\n";
-  $runtime = &runtime; print LOG "agp2dna.pl finished at $runtime\n";  
+  print LOG "agp2dna.pl finished at ",&runtime,"\n";  
 
   # make a B3 log file if this is first run of -agp (i.e. no B3 log file there)
   system ("touch $logdir/$flag{'B3'}") unless ((-e "$logdir/$flag{'B3'}"));
@@ -787,9 +785,9 @@ sub dbcomp{
   $am_option = "-dbcomp";	
   # need to perform class by class comparison against previous release
 
-  $runtime = &runtime; print LOG "dbcomp.pl started at $runtime\n";	
+  print LOG "dbcomp.pl started at ",&runtime,"\n";	
   system ("$scriptdir/dbcomp.pl") && die "Couldn't run dbcomp.pl\n";	      
-  $runtime = &runtime; print LOG "dbcomp.pl finished at $runtime\n";      
+  print LOG "dbcomp.pl finished at ",&runtime,"\n";      
 }
 #__ end dbcomp __#
 
@@ -979,16 +977,14 @@ sub parse_homol_data {
 
 
 sub add_nematode_ESTs {
-    my $command;
-    
-    $runtime = &runtime; print LOG "Adding nematode EST data files at $runtime\n";
-    $command = "pparse /wormsrv2/wormbase/misc/misc_other_nematode_ESTs.ace\nsave\nquit\n";
-    open (WRITEDB, "| $tace -tsuser nematode_ESTs /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
-    print WRITEDB $command;
-    close WRITEDB;
-    $runtime = &runtime; print LOG "Finished adding nematode EST data files at $runtime\n";
-
-
+  my $command;
+  
+  print LOG "Adding nematode EST data files at ",&runtime,"\n";
+  $command = "pparse /wormsrv2/wormbase/misc/misc_other_nematode_ESTs.ace\nsave\nquit\n";
+  open (WRITEDB, "| $tace -tsuser nematode_ESTs /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
+  print WRITEDB $command;
+  close WRITEDB;
+  print LOG "Finished adding nematode EST data files at ",&runtime,"\n";
 }
 
 #__ end add_nematode_ESTs_data __#
@@ -1005,7 +1001,7 @@ sub parse_briggsae_data {
   $am_option = "-addbriggsae";
 
   # load four raw briggsae data files		   
-  $runtime = &runtime; print LOG "Adding raw briggsae assembly data files at $runtime\n";
+  print LOG "Adding raw briggsae assembly data files at ",&runtime,"\n";
   $command = "pparse /wormsrv2/wormbase/briggsae/briggsae_cb25.agp8_DNA.ace\nsave\nquit\n"; 
   open (WRITEDB, "| $tace -tsuser briggsae_assembly_data /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
   print WRITEDB $command;
@@ -1025,10 +1021,10 @@ sub parse_briggsae_data {
   open (WRITEDB, "| $tace -tsuser briggsae_assembly_data /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
   print WRITEDB $command;
   close WRITEDB;
-  $runtime = &runtime; print LOG "Finished adding raw briggsae assembly data files at $runtime\n";
+  print LOG "Finished adding raw briggsae assembly data files at ",&runtime,"\n";
   
   # load gene prediction sets
-  $runtime = &runtime;print LOG "Adding briggsae gene prediction data files at $runtime\n";
+  print LOG "Adding briggsae gene prediction data files at ",&runtime,"\n";
   
   $command = "pparse /wormsrv2/wormbase/briggsae/briggsae_cb25.agp8_genefinder.ace\nsave\nquit\n"; 
   open (WRITEDB, "| $tace -tsuser briggsae_gene_prediction_data /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
@@ -1060,7 +1056,7 @@ sub parse_briggsae_data {
   print WRITEDB $command;
   close WRITEDB;
 
-  $runtime = &runtime;print LOG "Finished adding briggsae gene prediction data files at $runtime\n";
+  print LOG "Finished adding briggsae gene prediction data files at ",&runtime,"\n";
   # upload_homol data log file in /logs
   system ("touch $logdir/$flag{'B9'}");
   
@@ -1085,10 +1081,10 @@ sub generate_utrs {
   }
 
   # run find_utrs.pl to generate data
-  $runtime = &runtime; print LOG "Running find_utrs.pl at $runtime\n";
+  print LOG "Running find_utrs.pl at ",&runtime,"\n";
   system("find_utrs.pl -d autoace -r /wormsrv2/autoace/UTR") && die "Couldn't run find_utrs.pl\n";
 
-  $runtime = &runtime; print LOG "Adding UTRs.ace file to autoace at $runtime\n";
+  print LOG "Adding UTRs.ace file to autoace at ",&runtime,"\n";
   $command = "pparse /wormsrv2/autoace/UTR/UTRs.ace\nsave\nquit\n"; 
   open (WRITEDB, "| $tace -tsuser utr_data /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
   print WRITEDB $command;
@@ -1108,14 +1104,14 @@ sub make_wormpep {
   # make wormpep database but also perform all the other related protein steps in the build
   unless( -e "$logdir/D1A:Build_wormpep_initial" ) {
     # make wormpep -i
-    $runtime = &runtime; print LOG "Running make_wormpep -i at $runtime\n";
+    print LOG "Running make_wormpep -i at ",&runtime,"\n";
     system ("$scriptdir/make_wormpep -i") && die "Couldn't run make_wormpep -i\n";
-    $runtime = &runtime; print LOG "Finished running make_wormpep -i at $runtime\n"; 
+    print LOG "Finished running make_wormpep -i at ",&runtime,"\n"; 
    
     #generate file to ad new peptides to mySQL database.
-    $runtime = &runtime; print LOG "\nRunning new_wormpep_entries.pl at $runtime\n";
+    print LOG "\nRunning new_wormpep_entries.pl at ",&runtime,"\n";
     system ("$scriptdir/new_wormpep_entries.pl") and die "Couldn't run new_wormpep_entries.pl\n";
-    $runtime = &runtime; print LOG "Finished running new_wormpep_entries.pl at $runtime\n";
+    print LOG "Finished running new_wormpep_entries.pl at ",&runtime,"\n";
     print "Updating CE2gene COMMON_DATA : ",&runtime,"\n";
     system ("$scriptdir/update_Common_data.pl -update -in_build -ce") and carp "Update of COMMON_DATA CE2gene failed.\n";
     print "DONE : ",&runtime,"\n\n";
@@ -1124,21 +1120,21 @@ sub make_wormpep {
   }
   else {
     # Get protein IDs (this step writes to ~wormpub/analysis/SWALL
-    $runtime = &runtime; print LOG "Started getProteinID at $runtime\n";
+    print LOG "Started getProteinID at ",&runtime,"\n";
     system("getProteinID") && die "Couldn't run getProteinID";
-    $runtime = &runtime; print LOG "Finished getProteinID at $runtime\n";
+    print LOG "Finished getProteinID at ",&runtime,"\n";
     
     # load into autoace
     my $command = "pparse /wormsrv2/autoace/wormpep_ace/WormpepACandIDs.ace\nsave\nquit\n"; 
     open (WRITEDB, "| $tace -tsuser Protein_ID /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
     print WRITEDB $command;
     close WRITEDB;
-    $runtime = &runtime; print LOG "Finished loading proteinID info into autoace at $runtime\n";
+    print LOG "Finished loading proteinID info into autoace at ",&runtime,"\n";
     
     # make wormpep
-    $runtime = &runtime; print LOG "Running make_wormpep -f at $runtime\n";
+    print LOG "Running make_wormpep -f at ",&runtime,"\n";
     system ("$scriptdir/make_wormpep -f") && die "Couldn't run make_wormpep -f\n";
-    $runtime = &runtime; print LOG "Finished running make_wormpep -f at $runtime\n";
+    print LOG "Finished running make_wormpep -f at ",&runtime,"\n";
  
     
     # make acefile of peptides etc to add to autoace (replacement for pepace)
@@ -1166,7 +1162,7 @@ sub make_wormpep {
 sub make_wormrna {
   $am_option = "-buidrna";
   system ("$scriptdir/make_wormrna.pl -release $WS_version") && die "Couldn't run make_wormrna.pl -r\n";
-  $runtime = &runtime; print LOG "Finished running make_wormrna.pl -r at $runtime\n";
+  print LOG "Finished running make_wormrna.pl -r at ",&runtime,"\n";
 }
 #__ end make_wormrna __#
 
@@ -1177,9 +1173,9 @@ sub make_wormrna {
 
 sub dump_GFFs {
   $am_option .= " -gffdump";
-  $runtime = &runtime; print LOG "chromosome_dump.pl started at $runtime\n";  
+  print LOG "chromosome_dump.pl started at ",&runtime,"\n";  
   system ("$scriptdir/chromosome_dump.pl --gff") && die "Couldn't make GFF files\n";
-  $runtime = &runtime; print LOG "chromosome_dump.pl finished at $runtime\n";  
+  print LOG "chromosome_dump.pl finished at ",&runtime,"\n";  
 
   # make dumped_GFF_file in /logs
   system ("touch $logdir/C1:Dumped_GFF_files");
@@ -1190,9 +1186,9 @@ sub dump_GFFs {
 
 sub split_GFFs {
   $am_option .= " -gffsplit";
-  $runtime = &runtime; print LOG "GFFsplitter.pl started at $runtime\n";  
+  print LOG "GFFsplitter.pl started at ",&runtime,"\n";  
   system ("$scriptdir/GFFsplitter.pl") && die "Couldn't split GFF files\n";
-  $runtime = &runtime; print LOG "GFFsplitter finished at $runtime\n";  
+  print LOG "GFFsplitter finished at ",&runtime,"\n";  
   # make GFF_splitter file in /logs
   system ("touch $logdir/C2:Split_GFF_files");
 }
@@ -1206,20 +1202,19 @@ sub split_GFFs {
 sub map_features {
   $am_option = "-map";
   # PCR products
-  $runtime = &runtime; print LOG "map_PCR_products started at $runtime\n";  
+  print LOG "map_PCR_products started at ",&runtime,"\n";  
   system("$scriptdir/map_PCR_products") && die "Couldn't run map_PCR_products\n";
-  $runtime = &runtime; print LOG "map_PCR_products finished at $runtime\n";  
+  print LOG "map_PCR_products finished at ",&runtime,"\n";  
   
   # RNAi experiments
-  $runtime = &runtime; print LOG "map_PCR_RNAi.pl started at $runtime\n";  
+  print LOG "map_PCR_RNAi.pl started at ",&runtime,"\n";  
   system("$scriptdir/map_RNAi.pl") && die "Couldn't run map_RNAi.pl\n";
-  $runtime = &runtime; print LOG "map_PCR_RNAi.pl finished at $runtime\n";  
+  print LOG "map_PCR_RNAi.pl finished at ",&runtime,"\n";  
 
   # alleles
   print LOG "map_alleles.pl started at ",&runtime,"\n";  
   system("$scriptdir/map_alleles.pl") && die "Couldn't run map_alleles.pl\n";
   print LOG "map_alleles.pl finished at ",&runtime,"\n";  
-
 
 }
 #__ end map_features __#
@@ -1232,12 +1227,12 @@ sub confirm_gene_models {
   $am_option = "-confirm";
 
   # confirm_genes from EST (-e) and mRNA (-m) data sets and OST (-o)
-  $runtime = &runtime; print LOG "confirm_genes.pl -e started at $runtime\n";  
+  print LOG "confirm_genes.pl -e started at ",&runtime,"\n";  
   system ("$scriptdir/confirm_genes.pl -e");
-  $runtime = &runtime; print LOG "confirm_genes.pl -e finished at $runtime\n";  
-  $runtime = &runtime; print LOG "confirm_genes.pl -m started at $runtime\n";  
+  print LOG "confirm_genes.pl -e finished at ",&runtime,"\n";  
+  print LOG "confirm_genes.pl -m started at ",&runtime,"\n";  
   system ("$scriptdir/confirm_genes.pl -m");
-  $runtime = &runtime; print LOG "confirm_genes.pl -m finished at $runtime\n";  
+  print LOG "confirm_genes.pl -m finished at ",&runtime,"\n";  
 
 my $command=<<END;
 pparse /wormsrv2/wormbase/misc/misc_confirmed_by_EST.ace
@@ -1245,7 +1240,7 @@ pparse /wormsrv2/wormbase/misc/misc_confirmed_by_mRNA.ace
 save 
 quit
 END
-  $runtime = &runtime; print LOG "Adding confirmed genes info to autoace at $runtime\n";  
+  print LOG "Adding confirmed genes info to autoace at ",&runtime,"\n";  
   open (WRITEDB, "| $tace -tsuser confirmed_genes /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
   print WRITEDB $command;
   close WRITEDB;
