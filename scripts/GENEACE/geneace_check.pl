@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-12-08 10:30:06 $
+# Last updated on: $Date: 2004-12-10 16:48:14 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -925,10 +925,33 @@ sub process_allele_class{
       }
     }
 
+    # check for Missense tag but no value
+    if(!defined $allele->Missense){
+      my $missense = $allele->at('Description.Missense');
+      if(defined($missense)){
+	print LOG "ERROR: $allele has a missense tag but does not have an associated value\n";
+      }
+    }
+    # now check for structure of Missense field
+    else{
+      my $missense = $allele->Missense;
+      if($missense !~ m/^[A-Z]\(\d+\) to [A-Z]$/){
+	print LOG "ERROR: $allele has an incorrect Missense value ($missense)\n";
+      }
+    }
+
   
-    # Check for Method tag
+    # Check for method tag missing
     if(!defined($allele->Method)){
       print LOG "ERROR: $allele has no Method tag\n";
+    }
+
+    # check for Method tag which has no value
+    if(!defined $allele->Method){
+      my $method = $allele->at('Method');
+      if(defined($method)){
+	print LOG "ERROR: $allele has a Method tag but not associated value\n";
+      }
     }
 
     # check that Allele_type is set for all alleles with flanking sequences
