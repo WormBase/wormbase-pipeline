@@ -55,7 +55,7 @@
 
   Todd Harris (harris@cshl.org) 
   DATE : 05 May 2003 
-  VERSION : $Id: best_mutuals.pl,v 1.1 2004-05-21 10:33:38 ar2 Exp $
+  VERSION : $Id: best_mutuals.pl,v 1.2 2004-07-06 14:26:39 ar2 Exp $
 
 =head1 TODO
 
@@ -177,13 +177,14 @@ sub parse_blast {
 
 
 sub parse_line {
+#83268048        CE00003 14      144     86      214     B0041.7 2       91      3.214670        19      14,86,2:121,191,0
   my $line = shift;
   chomp $line;
   my @temp = split(/\s+/,$line);
   
-  my $evalue  = $temp[10];
+  my $evalue  = 10 * exp(-$temp[10]);
   if (substr($evalue,0,1) eq 'e') { $evalue = "1".$evalue;}
-  my $query   = $temp[0];
+  my $query   = $temp[6];
   my $subject = $temp[1];
   return ($query,$subject,$evalue);
 }
