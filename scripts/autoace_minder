@@ -6,7 +6,7 @@
 # Usage : autoace_minder [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2002-07-23 08:25:25 $
+# Last edited on: $Date: 2002-07-25 15:53:34 $
 
 
 #################################################################################
@@ -782,16 +782,20 @@ sub blat_jobs {
     system ("$scriptdir/blat_them_all.pl -n") && die "Couldn't blat_them_all -n\n";
 
     # blat_them_all -e
-    system ("$scriptdir/blat_them_all.pl -bsve") && die "Couldn't blat_them_all -bsve\n";
+    system ("$scriptdir/blat_them_all.pl -bse") && die "Couldn't blat_them_all -bse\n";
+    system ("$scriptdir/blat_them_all.pl -ve") && die "Couldn't blat_them_all -ve\n";
 
     # blat_them_all -m
-    system ("$scriptdir/blat_them_all.pl -bsvm") && die "Couldn't blat_them_all -bsvm\n";
+    system ("$scriptdir/blat_them_all.pl -bsm") && die "Couldn't blat_them_all -bsm\n";
+    system ("$scriptdir/blat_them_all.pl -vm") && die "Couldn't blat_them_all -vm\n";
 
     # blat_them_all -o
-    system ("$scriptdir/blat_them_all.pl -bsvo") && die "Couldn't blat_them_all -bsvo\n";
+    system ("$scriptdir/blat_them_all.pl -bso") && die "Couldn't blat_them_all -bso\n";
+    system ("$scriptdir/blat_them_all.pl -vo") && die "Couldn't blat_them_all -vo\n";
 
     # blat_them_all -x
-    system ("$scriptdir/blat_them_all.pl -bsvx") && die "Couldn't blat_them_all -bsvx\n";
+    system ("$scriptdir/blat_them_all.pl -bsx") && die "Couldn't blat_them_all -bsx\n";
+    system ("$scriptdir/blat_them_all.pl -vx") && die "Couldn't blat_them_all -vx\n";
 
     # make a file in /logs
     system ("touch $logdir/$flag{'B6'}");  
