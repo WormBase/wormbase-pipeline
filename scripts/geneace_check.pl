@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-07-10 08:37:45 $
+# Last updated on: $Date: 2002-07-10 09:35:06 $
 
 use Ace;
 use lib "/wormsrv2/scripts/"; 
@@ -20,7 +20,10 @@ our $errors;
 &create_log_files;
 
 # open a connection to geneace and grab list of loci
-my $db = Ace->connect(-path  => '/wormsrv1/geneace/') || die "Couldn't connect to /wormsrv1/geneace\n";
+my $tace = glob("~wormpub/ACEDB/bin.ALPHA_4/tace");   # tace executable path
+my $db = Ace->connect(-path  => '/wormsrv1/geneace/',
+		      -program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
+
 my @loci = $db->fetch(-class => 'Locus',
 		      -name  => '*');
 
