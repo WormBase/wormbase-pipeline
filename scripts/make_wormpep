@@ -322,12 +322,13 @@ foreach my $dot (@dotnames_1) {
     push (@dotnames , $dot);
     push (@c_dotnames , $c_dot);
 
-#    $obj->DESTROY();
+    $dot->DESTROY();
 
 }   
 close DNA;
-#chmod (0444 , "$new_wpdir/wormpep.dna$release") || print LOG "cannot chmod $new_wpdir/dotnames.dna$release\n";
 
+# close database connection
+$db->close;
 
 $runtime = `date +%H:%M:%S`; chomp $runtime;
 print LOG "# $runtime : finished writing wormpep.dna file\n\n";
@@ -694,7 +695,6 @@ if( $opt_f ) {
  # hasta luego                #
  ##############################
 
-$db->close;
 exit(0);
 
 #################################################################################
