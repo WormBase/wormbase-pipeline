@@ -9,7 +9,7 @@
 # 
 #
 # Last updated by: $Author: ar2 $                     
-# Last updated on: $Date: 2002-07-25 09:54:39 $     
+# Last updated on: $Date: 2002-07-25 13:10:53 $     
 
 
 use strict;                                     
@@ -104,16 +104,16 @@ while(<HISTORY>)
 			  print LOG "$CE temporarily mulitcoded $in - $out\n";
 			}
 			else {
-			  $multicodedPeps{$CE}++;		  
+			  &addMultiCoded;
 			}
 		      }
 		    else
 		      {
 			#peptide was previously coded by a different gene
 			&changePepGene;
-		      }
-
-		  }		
+		      }	
+	
+		  }			
 	      }
 	    else
 	      {
@@ -318,6 +318,14 @@ sub changePepGene
       return 0;
     }
   }
+
+sub addMultiCoded
+  {
+    $multicodedPeps{$CE}++;
+    $CE_gene{$CE} .= " $gene";
+    $gene_CE{$gene} = $CE;
+  }
+
 
 # Add perl documentation in POD format
 # This should expand on your brief description above and add details of any options
