@@ -7,7 +7,7 @@
 # This script calculates interpolated genetic map positions for CDS, Transcripts 
 # and Pseudogenes lying between and outside genetic markers.
 #
-# Last updated on: $Date: 2004-04-29 10:29:14 $
+# Last updated on: $Date: 2004-05-18 10:01:51 $
 # Last updated by: $Author: ck1 $
 
 
@@ -28,8 +28,8 @@ GetOptions ("diff"          => \$diff,
             "rev|reverse"   => \$reverse,
 	    "db|database=s" => \$database,
 	    "map"           => \$map,
-	    "comp"          => \$comp, 
-	    "h|help"        => \$help, 
+	    "comp"          => \$comp,
+	    "h|help"        => \$help,
 	    "d|debug"       => \$debug,
 	    "v|verbose"     => \$verbose,
            );
@@ -145,8 +145,8 @@ foreach my $e (@FHS){
     chomp($_);
     if ($_ =~ /^\"(.+)\"\s+\"(.+)\"$/){
       my $seq = $1; my $gene_id = $2;
-      my $locus = $Gene_info{$gene_id}{'CGC_name'} if exists $Gene_info{$gene_id}{'CGC_name'};
-         $locus = $Gene_info{$gene_id}{'Other_name'} if !exists $Gene_info{$gene_id}{'CGC_name'};
+      my $locus;
+      $locus = $Gene_info{$gene_id}{'Public_name'} if exists $Gene_info{$gene_id}{'Public_name'};
       $predicted_gene_to_locus{$seq} = $locus;
     }
   }
@@ -598,9 +598,9 @@ foreach $chrom (@chroms){
         }	
       }
 
-      if ($_ ne "NA" && $_ > $R_mean_coord){ 
+      if ($_ ne "NA" && $_ > $R_mean_coord){
         $outside_R++;
-        $length_diff = $_ - $R_mean_coord;  
+        $length_diff = $_ - $R_mean_coord;
         $position = $length_diff / $bp_length_per_unit;
         $position = $R_tip + $position;
         if ($map){
@@ -765,7 +765,7 @@ save
 quit
 END
 
-  open (LOAD_A,"| $tace -tsuser \"genetic_map\" $database/ >> $log") || die "Failed to upload to Geneace";
+  open (LOAD_A,"| $tace -tsuser \"genetic_map\" $database/ >> $log") || die "Failed to upload to $database";
   print LOAD_A $command;
   close LOAD_A;
 
@@ -783,7 +783,7 @@ if($error_check == 1){
 else {
 
   my ($jah, $recipients);
-  $recipients = "All";
+  $recipients = "ck1\@sanger.ac.uk, krb\@sanger.ac.uk, jah\@bioch.ox.ac.uk, ar2\@sanger.ac.uk, dl1\@sanger.ac.uk, pad\@sanger.ac.uk";
   $recipients = "ck1\@sanger.ac.uk" if $debug;
 
   my @rev = `cat $revfile`;

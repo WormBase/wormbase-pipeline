@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2004-05-14 16:24:51 $
+# Last updated on: $Date: 2004-05-18 10:01:52 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -83,45 +83,6 @@ if ($ace){
 # Set up other log files
 &create_log_files;
 
-sub create_log_files{
-
-  # Create history logfile for script activity analysis
-  $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`")if $machine;
-
-  # create main log file using script name for
-  my $script_name = $1;
-  $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
-
-  $log = "/wormsrv2/logs/$script_name.$rundate.$$" if $machine;
-  $log = "/nfs/disk100/wormpub/tmp/$script_name.$rundate" if !$machine;
-
-  open (LOG, ">$log") or die "cant open $log";
-  print LOG "$script_name\n";
-  print LOG "started at ",`date`,"\n";
-  print LOG "=============================================\n";
-  print LOG "\n";
-
-  $jah_log = "/wormsrv2/logs/$script_name.jahlog.$rundate.$$" if $machine;
-  $jah_log = "/nfs/disk100/wormpub/tmp/$script_name.jahlog.$rundate" if !$machine;
-
-  open(JAHLOG, ">>$jah_log") || die "Can't open $jah_log\n";
-  print JAHLOG "This mail is generated automatically for CGC on $rundate\n"; 
-  print JAHLOG "If you have any queries please email ck1\@sanger.ac.uk or krb\@sanger.ac.uk\n\n";
-  print JAHLOG "=========================================================================\n";
-
-  # create separate log with errors for Erich
-  $caltech_log = "/wormsrv2/logs/geneace_check.caltech_log.$rundate.$$" if $machine;
-  $caltech_log = "/nfs/disk100/wormpub/tmp/$script_name.caltech_log.$rundate" if !$machine;
-
-  open(CALTECHLOG,">$caltech_log") || die "cant open $caltech_log";
-  print CALTECHLOG "$0 started at ",`date`,"\n";
-  print CALTECHLOG "This mail is generated automatically for Caltech\n";
-  print CALTECHLOG "If you have any queries please email ck1\@sanger.ac.uk or krb\@sanger.ac.uk\n\n";
-  print CALTECHLOG "================================================================================================\n";
-
-  `chmod 777 $log $jah_log $caltech_log`; # so that they can be deleted by script
-
-}
 
 ######################################################################################################
 ######################################################################################################
@@ -141,16 +102,6 @@ my @Gene_info = $ga -> gene_info($default_db, "seq2id"); # hash for converting l
 my %Gene_info = %{$Gene_info[0]};
 my %seqs_to_gene_id = %{$Gene_info[1]};
 
-
-#foreach (keys %seqs_to_gene_id){
-#  print "$_ => @{$seqs_to_gene_id{$_}}\n";
-#}
-foreach (keys %Gene_info){
-#  print "$_ => $Gene_info{$_}{'CGC_name'}===\n";
-  print keys %Gene_info, "\n";
-}
-
-__END__
 
 # get list of loci that are both CGC/Non_CGC loci and other-name(s) of CGC name(s) (exceptions for main name / other_name merging) 
 # @exceptions and %exceptions are made global as they are used for checking both Locus and Strain classes
@@ -252,7 +203,7 @@ sub test_locus_for_errors{
 
   # check existence of Gene version
   if ( !defined $gene_id->Version ){
-    $warnings .= "ERROR 1: $gene_id ($Gene_info{$gene_id}{'CGC_name'}) has no Version number\n";
+    $warnings .= "ERROR 1: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has no Version number\n";
     print "." if ($verbose);
   }
 
@@ -261,32 +212,32 @@ sub test_locus_for_errors{
     my @ver_changes = $gene_id->Version_change;
     my $ver = $gene_id->Version;
     if ( "$ver" ne "$ver_changes[-1]" ){
-      $warnings .= "ERROR 2: $gene_id ($Gene_info{$gene_id}{'CGC_name'}) has Version problem: current ($ver) => history ($ver_changes[-1])\n";
+      $warnings .= "ERROR 2: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has Version problem: current ($ver) => history ($ver_changes[-1])\n";
       print "." if ($verbose);
     }
   }
 
   # test for Other_name tag but no value
-  if( defined($gene_id->at('Name.Other_name')) && !defined $gene_id->Other_name ){
-    $warnings .= "ERROR 3: $gene_id ($Gene_info{$gene_id}{'CGC_name'}) has 'Other_name' tag without value\n";
+  if ( defined($gene_id->at('Name.Other_name')) && !defined $gene_id->Other_name ){
+    $warnings .= "ERROR 3: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has 'Other_name' tag without value\n";
     print "." if ($verbose);
   }
 
   # Remind of outstanding non-CGC_name genes
-  if( !defined $gene_id->CGC_name && $gene_id->Other_name && $gene_id->Species =~ /elegans/ ){
+  if ( !defined $gene_id->CGC_name && $gene_id->Other_name && $gene_id->Species =~ /elegans/ ){
     $non_CGC_count++;
-    $warnings .= "ERROR 4: $gene_id ($Gene_info{$gene_id}{'CGC_name'}) has no CGC_name yet\n" if $verbose;
+    $warnings .= "ERROR 4: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has no CGC_name yet\n" if $verbose;
     print "." if ($verbose);
   }
 
   # test for Public_name is different from CGC_name
-  if( defined $gene_id->CGC_name && defined $gene_id->Public_name ){				
+  if ( defined $gene_id->CGC_name && defined $gene_id->Public_name ){				
     my $cgc_name = $gene_id->CGC_name;
     my $pub_name = $gene_id->Public_name;
     if ( $cgc_name ne $pub_name ){
       $warnings .= "ERROR 5: $gene_id ($Gene_info{$gene_id}{'CGC_name'}) has a Public_name ($pub_name) different from its CGC_name ($cgc_name)\n";
       if ($ace){
-	print ACE "Gene : \"$gene_id\"\n";
+	print ACE "\nGene : \"$gene_id\"\n";
 	print ACE "Public_name \"$Gene_info{$gene_id}{'CGC_name'}\"\n";
       }
     }
@@ -295,7 +246,7 @@ sub test_locus_for_errors{
 
   # test for missing Public_name and assign one if so
   if( !defined $gene_id->Public_name && (defined $gene_id->CGC_name || defined $gene_id->Sequence_name || defined $gene_id->Other_name) ){
-    $warnings .= "ERROR 6: $gene_id ($Gene_info{$gene_id}{'CGC_name'}) has no Public_name\n";
+    $warnings .= "ERROR 6: $gene_id ($Gene_info{$gene_id}{'CGC_name'}) has no Public_name but has CGC/Sequence/Other_name\n";
     if ($ace){
       print ACE "\nGene : \"$gene_id\"\n";
       print ACE "Public_name \"$Gene_info{$gene_id}{'CGC_name'}\"\n" if exists $Gene_info{$gene_id}{'CGC_name'};
@@ -308,8 +259,8 @@ sub test_locus_for_errors{
     print "." if ($verbose);
   }
 
-  if( !defined $gene_id->Public_name && !defined $gene_id->CGC_name && defined $gene_id->Sequence_name && defined $gene_id->Other_name ){
-    $warnings .= "ERROR 6.1: $gene_id ($Gene_info{$gene_id}{'CGC_name'}) has no Public_name as there is no CGC_/Sequence_/Other_name\n";
+  if( !defined $gene_id->Public_name && !defined $gene_id->CGC_name && !defined $gene_id->Sequence_name && !defined $gene_id->Other_name ){
+    $warnings .= "ERROR 6.1: $gene_id (?) has no Public_name as there is no CGC_/Sequence_/Other_name\n";
     print "." if ($verbose);
   }
 
@@ -331,15 +282,15 @@ sub test_locus_for_errors{
   # checks that when a Gene belongs to a Gene_class, it should have a CGC_name
   if ( defined $gene_id->Gene_class && !defined $gene_id->CGC_name ){
     my $gc = $gene_id->Gene_class;
-    $warnings .= "ERROR 8: $gene_id ($Gene_info{$gene_id}{'CGC_name'}) has no CGC_name but links to Gene_class $gc\n";
+    $warnings .= "ERROR 8: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has no CGC_name but links to Gene_class $gc\n";
     print "." if ($verbose);
   }
 
   # checks when a CGC name is linked to a sequence, it should also, ideally, linked to a Gene_class
   if ( !defined $gene_id->CGC_name && defined $gene_id->Sequence_name && $gene_id->Species =~ /elegans/ ){
     my $seq = $gene_id->Sequence_name;
-    $warnings .= "CHECK: $gene_id ($Gene_info{$gene_id}{'CGC_name'}) has seq connection ($seq) but is not linked to a CGC name\n" if $gene_id ne "WBGene00000193"; # hard coded exception
-    print JAHLOG "CHECK: $gene_id ($Gene_info{$gene_id}{'CGC_name'}) has seq connection ($seq) but is not linked to a CGC name\n" if $gene_id ne "WBGene00000193"; # hard coded exception
+    $warnings .= "CHECK: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has seq connection ($seq) but is not linked to a CGC name\n" if $gene_id ne "WBGene00000193"; # hard coded exception
+    print JAHLOG "CHECK: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has seq connection ($seq) but is not linked to a CGC name\n" if $gene_id ne "WBGene00000193"; # hard coded exception
     print "." if ($verbose);
   }
 
@@ -374,11 +325,11 @@ sub test_locus_for_errors{
 
   #test for Map tag and !NEXT
   if ( $gene_id->at('Map_info.Map') && !defined $gene_id->Map ){
-    $warnings .= "ERROR 12: $gene_id ($Gene_info{$gene_id}{'CGC_name'}) has a 'Map' tag without a value\n";
+    $warnings .= "ERROR 12: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has a 'Map' tag without a value\n";
     print "." if ($verbose);
   }
   if ( $gene_id->at('Map_info.Interpolated_map_position') && !defined $gene_id->Interpolated_map_position ){
-    $warnings .= "ERROR 12.1: $gene_id ($Gene_info{$gene_id}{'CGC_name'}) has an 'Interpolated_map_position' tag without a value\n";
+    $warnings .= "ERROR 12.1: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has an 'Interpolated_map_position' tag without a value\n";
     print "." if ($verbose);
   }
 
@@ -386,7 +337,7 @@ sub test_locus_for_errors{
   # test for CDS/Transcript/Pseudogene/Other_sequence tag and no value
   foreach my $tag ("CDS", "Transcript", "Pseudogene", "Other_sequence"){
     if( defined $gene_id->at('Molecular_info.$tag') && !defined $gene_id->$tag ){
-      $warnings .= "ERROR 13: $gene_id ($Gene_info{$gene_id}{'CGC_name'}) has '$tag' tag but no associated value\n";
+      $warnings .= "ERROR 13: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has '$tag' tag but no associated value\n";
       print "." if ($verbose);
       if ($ace){print ACE "\n\nGene : \"$gene_id\"\n"; print ACE "-D $tag\n"}
     }
@@ -405,7 +356,7 @@ sub test_locus_for_errors{
 	}
       }
       my @diff = values %variants;
-      $warnings .= "ERROR 14: $gene_id ($Gene_info{$gene_id}{'CGC_name'}) has '$tag' tag populated with different genes: @diff\n" if scalar @diff > 1;
+      $warnings .= "ERROR 14: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has '$tag' tag populated with different genes: @diff\n" if scalar @diff > 1;
       print "." if ($verbose);
     }
   }
@@ -432,10 +383,10 @@ sub test_locus_for_errors{
   foreach my $tag ("CDS", "Transcript", "Pseudogene"){	
     if( defined $gene_id->$tag && !defined $gene_id->Sequence_name ){
       my $seq = $gene_id->$tag;
-      $warnings .= "ERROR 16: $gene_id ($Gene_info{$gene_id}{'CGC_name'}) has a '$tag' tag but not a 'Sequence_name' tag\n";
+      $warnings .= "ERROR 16: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has a '$tag' tag but not a 'Sequence_name' tag\n";
       print "." if ($verbose);
       if ($ace){
-        print ACE "\n\nGene : \"$gene_id\"\n";
+        print ACE "\nGene : \"$gene_id\"\n";
         if ($seq =~ /(.+\.\d+)\w/){         # ignore splice variants for Sequence_name
 	  $seq = $1;
 	  print ACE "Sequence_name \"$seq\"\n";
@@ -449,7 +400,7 @@ sub test_locus_for_errors{
 
   # test for Sequence_name AND !(CDS or Transcript or Pseudogene)
   if( defined $gene_id->Sequence_name && !defined $gene_id->CDS && !defined $gene_id->Transcript && !defined $gene_id->Pseudogene ){
-    $warnings .= "ERROR 17: $gene_id ($Gene_info{$gene_id}{'CGC_name'}) has a Sequence_name but is not linked to a sequence\n";
+    $warnings .= "ERROR 17: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has a Sequence_name but is not linked to a sequence\n";
     print "." if ($verbose);
   }
 
@@ -463,7 +414,7 @@ sub test_locus_for_errors{
       }
       # compare $seq with $name for difference
       if ($seq ne $seq_name){
-        $warnings .= "ERROR 18: $gene_id ($Gene_info{$gene_id}{'CGC_name'}) has a $tag ($seq) different from its Sequence_name ($seq_name)\n";
+        $warnings .= "ERROR 18: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has a $tag ($seq) different from its Sequence_name ($seq_name)\n";
         print "." if ($verbose);
       }
     }
@@ -488,17 +439,47 @@ sub test_locus_for_errors{
 
       # need to chop off the ending to just get clone part
       $seq =~ s/\..*//;
-      $warnings .= "ERROR 19: $gene_id ($Gene_info{$gene_id}{'CGC_name'}) has no Positive_clone but info is available from '$tag' tag\n";
+      $warnings .= "ERROR 19: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has no Positive_clone but info is available from '$tag' tag\n";
       print "." if ($verbose);
       # must use Inferred_automatically from Evidence hash for this type of info
       print ACE "\n\nGene : \"$gene_id\"\nPositive_clone \"$seq\" Inferred_automatically \"From sequence, transcript, pseudogene data\"\n" if ($ace);
     }
   }
 
-  # checks that a Gene has a live tag
-  if ( !defined $gene_id->at('Identity.Live') ){
-    $warnings .= "ERROR 20: $gene_id ($Gene_info{$gene_id}{'CGC_name'}) has no 'Live' tag\n";
+  # checks that a Gene has a live tag (works together with 'Merged_into' and/or 'Killed' tags)
+  if ( !defined $gene_id->at('Identity.Live') && ($gene_id->Merged_into || $gene_id->History(6)) ){
+    my @merge = $gene_id->Merged_into;
+    $warnings .= "INFO: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has no 'Live' tag as it has been merged into $merge[-1] ($Gene_info{$merge[-1]}{'Public_name'})\n" if @merge;
+    $warnings .= "INFO: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has no 'Live' tag as it has a 'Killed' tag\n" if $gene_id->History(6) eq "Killed";
     print "." if ($verbose);
+  }
+
+  if ( !defined $gene_id->at('Identity.Live') && !defined $gene_id->Merged_into && ! defined  $gene_id->History(6) ){
+    $warnings .= "ERROR 20: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has no 'Live' tag and no 'Merged_into' and 'Killed' tags => Go live\n";
+    print "." if ($verbose);
+    if ($ace){
+      print ACE "\nGene : \"$gene_id\"\n";
+      print ACE "Live\n";
+    }
+  }
+
+  if ( defined $gene_id->at('Identity.Live') && ($gene_id->Merged_into || $gene_id->History(6)) ){
+    my @merge =  $gene_id->Merged_into;
+    if (@merge){
+      $warnings .= "ERROR 20.1: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has 'Live' tag but also has been merged into $merge[-1] ($Gene_info{$merge[-1]}{'Public_name'}) => Lose Live\n";
+      if ($ace){
+	print ACE "\nGene : \"$gene_id\"\n";
+	print ACE "-D Live\n";
+      }
+    }
+    if ( $gene_id->History(6) eq "Killed" ){
+      $warnings .= "ERROR 20.2: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has 'Live' tag but also has 'Killed' tag => Lose Live\n";
+      if ($ace){
+	print ACE "\nGene : \"$gene_id\"  \/\/20.2\n";
+	print ACE "-D Live\n";
+      }
+      print "." if ($verbose);
+    }
   }
 
   # checks that a Gene has both values for Map and Interpolated_map_positions or tags
@@ -506,7 +487,7 @@ sub test_locus_for_errors{
     $warnings .= "ERROR 21: $gene_id ($Gene_info{$gene_id}{'CGC_name'}) has both genetics and interpolated map positions\n";
     print "." if ($verbose);
     if ($ace){
-      print ACE "Gene : \"$Gene_info{$gene_id}{'Gene'}\"\n";
+      print ACE "\nGene : \"$Gene_info{$gene_id}{'Gene'}\"\n";
       print ACE "-D Interpolated_map_position\n";
     }
   }
@@ -530,10 +511,22 @@ sub link_seq_to_Gene_based_on_allele {
 
     foreach my $e (@Genes){
       if ( !exists $Gene_info{$e}{'CDS'} && @cds ){
-	print LOG "ERROR 22: $e ($Gene_info{$e}{'CGC_name'}) should be linked to CDS @cds based on $_\n";
+	print LOG "ERROR 22: $e ($Gene_info{$e}{'Public_name'}) should be linked to CDS @cds based on $_\n";
+	if ($ace){
+	  print ACE "\nGene : \"$e\"\n";
+	  foreach (@cds){
+	    print ACE "CDS \"$_\"\n";
+	  }
+	}
       }
       if ( !exists $Gene_info{$e}{'Transcript'} && @trans ){
-	print LOG "ERROR 22: $e ($Gene_info{$e}{'CGC_name'}) should be linked to Transcript @trans based on $_\n";
+	print LOG "ERROR 22: $e ($Gene_info{$e}{'Public_name'}) should be linked to Transcript @trans based on $_\n";
+	if ($ace){
+	  print ACE "\nGene : \"$e\"\n";
+	  foreach (@trans){
+	    print ACE "CDS \"$_\"\n";
+	  }
+	}
       }
     }
   }
@@ -565,6 +558,7 @@ sub check_evidence {
   my $WBPerson_F_M_L_names="Table-maker -p \"$def_dir/WBperson_first_middle_last_names.def\"\nquit\n";
   my @WBPerson = &process_WBPerson_names($WBPerson_F_M_L_names, $curr_db);
 
+  print "\n\nChecking misuse of Evidence and converting Author to Person / Non-Person to Author:\n\n";
   print LOG "\n\nChecking misuse of Evidence and converting Author to Person / Non-Person to Author:\n";
   print LOG "-----------------------------------------------------------------------------------\n";
 
@@ -963,21 +957,22 @@ sub process_allele_class{
     }
   }
 
-  #my @alleles = $db->fetch('Allele','*');
-  my $allele_query = "Find Allele *";
-  push( my @alleles, $db->find($allele_query) );
+  my @alleles = $db->fetch(-class => 'Allele',
+                 	   -name  => '*');
+
   my (%allele_desig_to_LAB, $allele, $desig, $desig2);
 
   my %overlapped_clones = $ga->get_overlapped_clones();
 
-  %allele_desig_to_LAB = $ga -> allele_desig_to_lab($default_db) if $ace;
+  %allele_desig_to_LAB = $ga -> allele_desig_to_lab($default_db);
 
-  foreach $allele (@alleles){
+  foreach my $allele (@alleles){
 
     # check allele has no location tag
     if( !defined $allele->Location ){
+
       # catch non-standard upper-case allele name
-      if ($allele =~ /^[A-Z].+/){ 
+      if ($allele =~ /^[A-Z]+/){
 	print LOG "ERROR: $allele has no Location (no info available)\n";
       }
       else {
@@ -1006,8 +1001,8 @@ sub process_allele_class{
 	      &lab_assignment(\%allele_desig_to_LAB, $allele, $desig);
 	      &lab_assignment(\%allele_desig_to_LAB, $allele, $desig2);
 	    }
+	    next;
 	  }
-	  next;
 	}
       }
     }
@@ -1017,8 +1012,10 @@ sub process_allele_class{
       my $lab = $allele->Location;
       if ($allele =~ /^([a-z]{1,})\d+$/){
 	$desig = $1;
-	print LOG "ERROR: $allele ($allele_desig_to_LAB{$desig}) is linked to wrong lab ($lab)\n" if $allele_desig_to_LAB{$desig} ne $lab;
-	&lab_assignment(\%allele_desig_to_LAB, $allele, $desig, "correction") if $ace;
+	if ( $allele_desig_to_LAB{$desig} ne $lab ){
+	  print LOG "ERROR: $allele ($allele_desig_to_LAB{$desig}) is linked to wrong lab ($lab)\n";
+	  &lab_assignment(\%allele_desig_to_LAB, $allele, $desig, "correction") if $ace;
+	}
       }
     }
 
@@ -1087,7 +1084,6 @@ sub process_allele_class{
 	if ($ace){
 	  if ( $genes[0] =~ /(.+)\..+/ ) { # only take first seq. if multiple
 	    my $parent =  $1;
-#	    print "$parent => $genes[0]##################(1\n";
 	    print ACE "\n\nAllele : \"$allele\"\n";
 	    print ACE "Sequence \"$parent\"\n";
 	  }
@@ -1104,7 +1100,6 @@ sub process_allele_class{
 	if ($seq !~ /SUPERLINK.+/){
 	  if ( $genes[0] =~ /(.+)\..+/ ){ # only take first seq. if multiple
 	    my $parent =  $1;
-#	    print "$parent => $genes[0]##################(2\n";
 	    if ( $parent ne $seq && exists $overlapped_clones{$seq} ){
 	      foreach my $e (@{$overlapped_clones{$seq}}){$overlaps{$e}++}
 	      if ( exists $overlaps{$seq} ){
@@ -1190,11 +1185,10 @@ sub process_strain_class {
 
   while(<FH1>){
     chomp;
- 
      if ($_ =~ /\"(.+)\"\s+\"(.+)\"/){
       $strain_genotype{$1} = $2;
     }
-  }   
+  }
   close FH1;
 
   while (<FH2>){
@@ -1203,10 +1197,10 @@ sub process_strain_class {
       my $gene_id = $2;
       $gene_id =~ s/\\//;
      # if (!$exceptions{$locus}){
-	push(@{$allele_locus{$1}}, $Gene_info{$gene_id}{'CGC_name'}) if exists $Gene_info{$gene_id}{'CGC_name'}; 
+	push(@{$allele_locus{$1}}, $Gene_info{$gene_id}{'CGC_name'}) if exists $Gene_info{$gene_id}{'CGC_name'};
      # }
     }
-  } 
+  }
   close FH2;
 
   foreach my $strain (keys %strain_genotype){
@@ -1218,11 +1212,11 @@ sub process_strain_class {
 	  $locus = $1; $allele = $2; 
 	  # diff allele->locus link in geneace and allele->locus in strain genotype
 	  # if diff, print error LOG
-	 
+	
 	  if ( defined @{$allele_locus{$allele}} ){
-	    my @LOci = @{$allele_locus{$allele}}; 
+	    my @LOci = @{$allele_locus{$allele}};
 	    my %LOci;
-	    foreach (@LOci){$LOci{$_}++}; 
+	    foreach (@LOci){$LOci{$_}++};
 	    if (!exists $LOci{$locus} ){
 	      print LOG "ERROR: Strain $strain has $locus($allele) in genotype: ";
 	      print LOG "change each $locus to @{$allele_locus{$allele}}\n";
@@ -1237,10 +1231,10 @@ sub process_strain_class {
                           ##################################################################
                           #             SUBROUTINES FOR -c rearrangement option            #
                           ##################################################################
-        
+
 
 sub process_rearrangement {
- 
+
   print"\n\nChecking Rearrangement class for errors:\n";
   print LOG "\n\nChecking Rearrangement class for errors:\n";
   print LOG "----------------------------------------\n";
@@ -1249,15 +1243,15 @@ sub process_rearrangement {
 
   my @rearr;
   my $count = 0;
-  @rearr = $db -> fetch('Rearrangement','*'); 
+  @rearr = $db -> fetch('Rearrangement','*');
   foreach (@rearr){
     if ($_ !~/\w+(Df|Dp|Ex|T|In|C|D)\d*/){
       $count++;
       print LOG "WARNING: $_ is NOT an object of Rearrangement\n";
     }
-  } 
-  print LOG "No errors found\n" if $count == 0; 
-} 
+  }
+  print LOG "No errors found\n" if $count == 0;
+}
 
                           ###########################################################
                           #             SUBROUTINES FOR -c xref option              #
@@ -1273,13 +1267,13 @@ sub check_bogus_XREF {
   print "\nChecking bogus XREF debris of deleted CDS / Transcript / Pseudogene / Gene_name from Gene obj. . . .\n";
   print LOG "\nChecking bogus XREF debris of deleted CDS / Transcript / Pseudogene / Gene_name from Gene obj. . . .\n";
   print LOG "-----------------------------------------------------------------------------------------------------\n";
-  
+
   my $query_cds        = "Find CDS * where !(yk*) & *.*; Gene";
   my $query_transcript = "Find Transcript * ; Gene";
   my $query_pseudo     = "Find Pseudogene * ; Gene";
   my $query_gname      = "Find Gene_name *.*"; 
   my $query_gene      = "Find Gene * where (CDS|transcript|pseudogene)";
-   
+
   push(my @CDS,   $db->find($query_cds));
   push(my @TRANS, $db->find($query_transcript));
   push(my @PSEUDO,$db->find($query_pseudo));
@@ -1302,14 +1296,14 @@ sub check_bogus_XREF {
     foreach (@{$e}){
       if(defined $_ -> Gene ) {push(@{$gene_id_seq_A{$_ -> Gene}}, $_)} # key is gene_id, value is seq. name
     }
-  }  
-    
+  }
+
   foreach (@gene_ids){
     if( defined $_ -> CDS ){push(@{$gene_id_seq_B{$_}}, $_ -> CDS) }    # key is gene_id, value is seq. name
     if( defined $_ -> Transcript ){push (@{$gene_id_seq_B{$_}}, $_ -> Transcript) }
     if( defined $_ -> Pseudogene ){push (@{$gene_id_seq_B{$_}}, $_ -> Pseudogene) }
-  }  
- 
+  }
+
   foreach (keys %gene_id_seq_A){ 
     if (exists $gene_id_seq_B{$_}){
 
@@ -1321,11 +1315,11 @@ sub check_bogus_XREF {
 	print LOG "ERROR: Found bogus @diff linked to $Gene_info{$_}{'Public_name'}: check ?Gene or ?CDS/?Transcript/?Pseudo\n";
 	$error = 1;
       }
-    } 
+    }
   }
-  
+
   print LOG "No bogus XREF link found\n" if $error == 0;
- 
+
   #################################################################################################
   # HOW this routine works: 
   # split a sequence eg. Y110A7A.10a, into "Y110A7A.10" (left: as key) and "a" (right: as value)
@@ -1333,7 +1327,7 @@ sub check_bogus_XREF {
   # and if a key's value has "NA", other than a/b/c/d..etc, then the one without isoform is invalid
   #
   # This routine checks only deleted bogus parent seq. names when isoforms are created
-  # it cannot check bogus seq. names created by typos 
+  # it cannot check bogus seq. names created by typos
   ##################################################################################################
 
   sub find_bogus {
@@ -1342,16 +1336,16 @@ sub check_bogus_XREF {
     my @class = @{$class};
 
     foreach (@class){
-      my ($left, $right); # eg, for B0034.1a, left is "B0034.1" and right is "a"      
+      my ($left, $right); # eg, for B0034.1a, left is "B0034.1" and right is "a"
 
       if ($_ =~ /^(.+\.\d+)(\D)$/){$left = $1; $right = $2}
       if ($_ =~ /^(.+\.\d+)$/){$left = $1; $right = "NA"}
-      push(@{$Seqs{$left}}, $right) if defined $left;  
-      $left =();  
-    }   
-    
+      push(@{$Seqs{$left}}, $right) if defined $left;
+      $left =();
+    }
+
     my $error=0;
-    
+
     foreach (keys %Seqs){
       my $counter_NA = 0; my $counter_iso = 0;
       foreach my $e (@{$Seqs{$_}}){
@@ -1363,7 +1357,7 @@ sub check_bogus_XREF {
 	}
       }
       if ($counter_iso != 0 && $counter_NA != 0){
-	print LOG "ERROR: Found bogus $_ in $cat class\n"; 
+	print LOG "ERROR: Found bogus $_ in $cat class\n";
 	$error = 1;
       }
     }
@@ -1391,9 +1385,9 @@ sub check_genetics_coords_mapping {
   }
 }
 
-                          ############################################################  
-                          #             SUBROUTINES FOR -c multipt option            # 
-                          ############################################################    
+                          ############################################################
+                          #             SUBROUTINES FOR -c multipt option            #
+                          ############################################################
 
 sub int_map_to_map_loci {
 
@@ -1416,7 +1410,7 @@ sub int_map_to_map_loci {
   open(INT_map_TO_MAP, ">/wormsrv1/geneace/JAH_DATA/MULTI_PT_INFERRED/loci_become_genetic_marker_for_WS$autoace_version") || die $!;
 
   push( my @int_loci, $db->find($int_loci) );
-  my %Alleles = $ga->get_non_Transposon_alleles($db); # all Geneace alleles which have no Transposon_insertion tag 
+  my %Alleles = $ga->get_non_Transposon_alleles($db); # all Geneace alleles which have no Transposon_insertion tag
 
   foreach (@int_loci){
     my @alleles = $_ -> Allele(1);
@@ -1444,7 +1438,7 @@ sub int_map_to_map_loci {
   print LOG    "Total: $error to become inferred genetic marker(s)\n\n";
   print JAHLOG "Total: $error to become inferred genetic marker(s)\n\n";
 
-  $header = "\n\nChecking dubious multi-pt obj. linked to locus (ie, checking for wrong association)\n";
+  $header = "\n\nChecking dubious multi-pt <-> Gene association\n";
   $sep = "-----------------------------------------------------------------------------------\n";
   print $header;
   print LOG $header, $sep;
@@ -1465,34 +1459,74 @@ sub usage {
   }
 }
 
+sub create_log_files{
+
+  # Create history logfile for script activity analysis
+  $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`")if $machine;
+
+  # create main log file using script name for
+  my $script_name = $1;
+  $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
+
+  $log = "/wormsrv2/logs/$script_name.$rundate.$$" if $machine;
+  $log = "/nfs/disk100/wormpub/tmp/$script_name.$rundate" if !$machine;
+
+  open (LOG, ">$log") or die "cant open $log";
+  print LOG "$script_name\n";
+  print LOG "started at ",`date`,"\n";
+  print LOG "=============================================\n";
+  print LOG "\n";
+
+  $jah_log = "/wormsrv2/logs/$script_name.jahlog.$rundate.$$" if $machine;
+  $jah_log = "/nfs/disk100/wormpub/tmp/$script_name.jahlog.$rundate" if !$machine;
+
+  open(JAHLOG, ">>$jah_log") || die "Can't open $jah_log\n";
+  print JAHLOG "This mail is generated automatically for CGC on $rundate\n"; 
+  print JAHLOG "If you have any queries please email ck1\@sanger.ac.uk or krb\@sanger.ac.uk\n\n";
+  print JAHLOG "=========================================================================\n";
+
+  # create separate log with errors for Erich
+  $caltech_log = "/wormsrv2/logs/geneace_check.caltech_log.$rundate.$$" if $machine;
+  $caltech_log = "/nfs/disk100/wormpub/tmp/$script_name.caltech_log.$rundate" if !$machine;
+
+  open(CALTECHLOG,">$caltech_log") || die "cant open $caltech_log";
+  print CALTECHLOG "$0 started at ",`date`,"\n";
+  print CALTECHLOG "This mail is generated automatically for Caltech\n";
+  print CALTECHLOG "If you have any queries please email ck1\@sanger.ac.uk or krb\@sanger.ac.uk\n\n";
+  print CALTECHLOG "================================================================================================\n";
+
+  `chmod 777 $log $jah_log $caltech_log`; # so that they can be deleted by script
+
+}
+
 
 __END__
 
-=head2 NAME - geneace_check.pl  
+=head2 NAME - geneace_check.pl
 
-=head3 <USAGE> 
- 
+=head3 <USAGE>
+
 
 =head2 Options: [h or help] [d or debug] [c or class] [a or ace]
 
-            All options have single letter or wordy aliases 
+            All options have single letter or wordy aliases
 
-B<-help:>     
+B<-help:>
             Displays usage of the script: surprised?
 
-B<-debug:>   
+B<-debug:>
             Debug mode, follow by user name, eg. -d ck1 or -debug ck1
 
-            This allows checking results mailed only to the user, 
-            otherwise results would email to the gangs of Sanger 
-            Wormbase group and Caltech (Erich) 
+            This allows checking results mailed only to the user,
+            otherwise results would email to the gangs of Sanger
+            Wormbase group and Caltech (Erich)
 
-B<-class:>   
-            Allows checking only specified classes in Geneace. 
+B<-class:>
+            Allows checking only specified classes in Geneace.
             All classes will be checked without this option.
-            Choosing multiple classes is supported. 
+            Choosing multiple classes is supported.
             Class names are case insensitive.
-            Current valid options to check these classes are: 
+            Current valid options to check these classes are:
 
                gene
                allele
@@ -1503,23 +1537,22 @@ B<-class:>
                mapping
                xref
                gmap
-               multipt 
+               multipt
 
             For example: -c allele -c locus OR -class sequence -class rearrangment
 
-B<-databse:> 
+B<-databse:>
             Allows specifying path to a specific database.
             Default database path is /wormsrv1/geneace without this option.
 
             For example: -db /wormsrv2/autoace or -database /wormsrv1/someone/Test_DB
- 
 
-B<-ace:>     
-            Allows generating ace file for fixing erros spotted by 
+
+B<-ace:>
+            Allows generating ace file for fixing erros spotted by
             this checking script.
             Default location and filename of ace file:
             /wormsrv1/geneace/CHECKS/geneace_check.rundate.processid.ace
-                      
             For example: -a or -ace
 
 
@@ -1528,20 +1561,20 @@ B<-verbose:>
             For the locus class it will display each locus name as it is processes it and show
             (next to the locus name) a dot for each error it had found in that locus
 
-B<-xref:>  
+B<-xref:>
             This option is used to check mysterious two-way XREF problem 
             in AceDB for Geneace, ie, when a sequence under Genomic_
-            sequence tag is deleted from a locus object, that sequence obj. 
+            sequence tag is deleted from a locus object, that sequence obj.
             in Sequence class is still linked to that locus.
 
             This has caused problem when dumping out the whole database 
-            and back in again, because old data made their way back again due 
+            and back in again, because old data made their way back again due
             to XREF, which should have been gone.
 
             The check also looks for bogus XREF links from Pseudogene 
-            and Transcript classes. For instance, when a Pseudogene seq is 
-            connected to a locus, which later became a CDS, the locus - seq 
-            link from that Pseudogene obj. in Pseudogene class is still there, 
+            and Transcript classes. For instance, when a Pseudogene seq is
+            connected to a locus, which later became a CDS, the locus - seq
+            link from that Pseudogene obj. in Pseudogene class is still there,
             causing the same problem.
 
 =head3 <RUN geneace_check.pl>

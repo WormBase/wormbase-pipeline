@@ -2,7 +2,7 @@
 
 # Author: Chao-Kung Chen
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-04-30 10:32:11 $ 
+# Last updated on: $Date: 2004-05-18 10:01:51 $ 
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'}; 
@@ -55,10 +55,12 @@ my (%Gene_info, %gene_id_allele, %locus_order, %order_locus);
 my $new_multi_file = `ls $multi_dir/loci_become_genetic_marker_for_$autoace_version`;
 chomp $new_multi_file;
 
-#-------------------------------------------------------------------------------------
-#   load promoted marker Gene (loci) to geneace
-#   set as a cronjob to run on Friday night: ensures that this gets into the build
-#-------------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------------------------------------
+#   load promoted marker Gene (loci) to geneace for the next build
+#   ENSURES that this gets into the build
+#   NOTE: the version number of the loci_become_genetic_marker_for_WSxxx file should be that of the next build,
+#         and loci in this file should be approved by Jonathan first
+#--------------------------------------------------------------------------------------------------------------
 
 &convert_int_map_to_map_for_promoted_marker_Gene if $version;
 
@@ -77,10 +79,8 @@ if ($update){
   &update_inferred_multi_pt;
 }
 
-print LOG "Make sure that all file parsings are OK . . . . .\n\n";
-mail_maintainer("Update inferred multi-pt objects", "ALL", $log) if !$debug;
-
 print LOG "\n$0 finished at ", runtime(), "\n\n";
+mail_maintainer("Update inferred multi-pt objects", "ALL", $log) if !$debug;
 mail_maintainer("Update inferred multi-pt objects", "$debug\@sanger.ac.uk", $log) if $debug;
 
 
@@ -198,16 +198,14 @@ sub update_inferred_multi_pt {
       @alleles = $gene_id -> Allele(1);
       foreach my $e (@alleles){
 	if (exists $Alleles{$e} ){
-	  $allele = $e; # grep only the allele which has no Transposon_insertion tag 
+	  $allele = $e; # grep only the allele which has no Transposon_insertion tag
 	  last;
 	}
       }
     }
 
-    $L_locus = $order_locus{ $locus_order{ $Gene_info{$gene_id}{'CGC_name'}} -1 } if exists $Gene_info{$gene_id}{'CGC_name'};
-    $L_locus = $order_locus{ $locus_order{ $Gene_info{$gene_id}{'Other_name'}} -1 } if exists $Gene_info{$gene_id}{'Other_name'};
-    $R_locus = $order_locus{ $locus_order{ $Gene_info{$gene_id}{'CGC_name'}} +1 } if exists $Gene_info{$gene_id}{'CGC_name'};
-    $R_locus = $order_locus{ $locus_order{ $Gene_info{$gene_id}{'Other_name'}} +1 } if exists $Gene_info{$gene_id}{'Other_name'};
+    $L_locus = $order_locus{ $locus_order{ $Gene_info{$gene_id}{'Public_name'}} -1 };
+    $R_locus = $order_locus{ $locus_order{ $Gene_info{$gene_id}{'Public_name'}} +1 };
 
     print UPDATE "\nMulti_pt_data : \"$_\"\n";
     print UPDATE "-D Combined\n";
