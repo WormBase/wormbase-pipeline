@@ -1,37 +1,64 @@
-#!/usr/local/bin/perl5.6.0 -w
+#!/usr/local/bin/perl5.6.1 -w
 #
-# GFFsplitter
+# GFFsplitter.pl
 # 
-# Usage GFFsplitter [-options]
-# 
-# dl
+# by Dan Lawson
 #
-# Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2002-12-09 13:15:39 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2002-12-09 15:57:48 $
+#
+# Usage GFFsplitter.pl [-options]
+
 
 #################################################################################
 # variables                                                                     #
 #################################################################################
 
-$|=1;
-use IO::Handle;
-use Getopt::Long;
+use strict;
 use lib '/wormsrv2/scripts';
 use Wormbase;
-use strict;
+use IO::Handle;
+use Getopt::Long;
 
- ##############################
- # Script variables (run)     #
- ##############################
+$|=1;
 
+
+##################################################
+# Script variables and command-line options      #
+##################################################
 my $maintainers = "All";
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
 my $WS_version = &get_wormbase_version_name;
 
- ##############################
- # Paths etc                  #
- ##############################
+my $help;      # Help/Usage page
+my $archive;   # archive GFF_splits directory into a WSxx directory
+my $debug;     # debug
+
+GetOptions (
+	    "help"      => \$help,
+	    "archive"   => \$archive,
+	    "debug:s"   => \$debug
+	    );
+
+# help 
+&usage("Help") if ($help);
+
+# no debug name
+print "DEBUG = \"$debug\"\n\n" if $debug;
+&usage("Debug") if ((defined $debug) && ($debug eq ""));
+
+# assign $maintainers if $debug set
+($maintainers = $debug . '\@sanger.ac.uk') if ($debug);
+
+# touch logfile for run details
+$0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
+
+
+
+##############################
+# Paths etc                  #
+##############################
 
 my $datadir = "/wormsrv2/autoace/GFF_SPLITS";
 
@@ -40,27 +67,9 @@ if (! -e "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS"){
   system("mkdir /wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS") && die "Couldn't create directory\n";
 }
 
- ##############################
- # command-line options       #
- ##############################
 
-my $help;      # Help/Usage page
-my $archive;   # archive GFF_splits directory into a WSxx directory
-my $silent;    # silent running
-my $debug;     # debug
 
-GetOptions (
-	    "help"      => \$help,
-	    "archive"   => \$archive,
-	    "silent"    => \$silent,
-	    "debug"     => \$debug
-	    );
 
-# help 
-&usage if ($help);
-
-# debug mode modifies $maintainers to reduce e-mail load
-($maintainers = "dl1\@sanger.ac.uk") if ($debug);
 
 ##########################################################
 # Archive the GFF_splits directory into a WSxx directory
@@ -248,12 +257,6 @@ foreach $file (@gff_files) {
     }
 
     ########################################
-    # count file lengths for all GFF files #
-    ########################################
-
-    # dropped for the moment
-
-    ########################################
     # write some output                    #
     ########################################
 
@@ -312,7 +315,7 @@ close OUTLOG;
 # hasta luego                 #
 ###############################
 
-exit 0;
+exit(0);
 
 ###############################
 # subroutines                 #
@@ -331,6 +334,25 @@ sub file_size {
     print LOG "Counting No. of lines in file '$file' : $file_length\n" if ($debug);
     return $file_length;
 }
+
+
+##########################################
+sub usage {
+  my $error = shift;
+
+  if ($error eq "Help") {
+    # Normal help menu
+    system ('perldoc',$0);
+    exit (0);
+  }
+  elsif ($error eq "Debug") {
+    # No debug person named
+    print "You haven't supplied your name\nI won't run in debug mode
+         until I know who you are\n";
+    exit (0);
+  }
+}
+
 
 __DATA__
 clone_path
@@ -373,6 +395,47 @@ __END__
 
 
 
+=pod
+
+=head2 NAME - GFFsplitter.pl
+
+=back 
+
+=head1 USAGE
+
+=over 4
+
+=item GFFsplitter.pl <options>
+
+=back
+
+This script splits the large GFF files produced during the build process into
+smaller files based on a named set of database classes to be split into.
+Output written to /wormsrv2/autoace/GFF_SPLITS/WSxx
+
+=over 4
+
+=item MANDATORY arguments: 
+
+None.
+
+=back
+
+=over 4
+
+=item OPTIONAL arguments: -help, this help page.
+
+= item -debug <user>, only email report/logs to <user>
+
+= item -archive, archives (gzips) older versions of GFF_SPLITS directory
 
 
 
+=back
+
+
+=head1 AUTHOR - Daniel Lawson
+
+Email dl1@sanger.ac.uk
+
+=cut
