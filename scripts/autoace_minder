@@ -6,7 +6,7 @@
 # Usage : autoace_minder [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2002-09-04 14:35:14 $
+# Last edited on: $Date: 2002-09-04 14:51:55 $
 
 
 #################################################################################
@@ -1257,12 +1257,12 @@ sub generate_utrs {
   close WRITEDB;
   
   # run find_utrs.pl to generate data
-  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Running find_utrs.pl\n";
-  system("find_utrs.pl -d autoace -r /nfs/disk100/wormpub/analysis/UTR") && die "Couldn't run find_utrs.pl\n";
+  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Running find_utrs.pl at $runtime\n";
+  system("find_utrs.pl -d autoace -r /wormsrv2/autoace/UTR") && die "Couldn't run find_utrs.pl\n";
 
-  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Adding UTRs.ace file to autoace\n";
-  $command = "pparse /nfs/disk100/wormpub/UTR/UTRs.ace\nsave\nquit\n"; 
-  open (WRITEDB, "| $tace -tsuser cds_est_connection_fixfile /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
+  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Adding UTRs.ace file to autoace at $runtime\n";
+  $command = "pparse /wormsrv2/autoace/UTR/UTRs.ace\nsave\nquit\n"; 
+  open (WRITEDB, "| $tace -tsuser utr_data /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
   print WRITEDB $command;
   close WRITEDB;
 
@@ -1434,6 +1434,7 @@ sub logfile_details {
     print LOG "  -buildrna     : Build wormrna database\n"                                              if ($buildrna);
     print LOG "  -addhomol     : Load blast data into autoace\n"                                        if ($addhomol);
     print LOG "  -addbriggsae  : Load briggsae data into autoace\n"                                     if ($addbriggsae);
+    print LOG "  -utrs         : Generated and load UTR data into autoace\n"                            if ($utrs);
     print LOG "  -ftp          : Move WS release to the external FTP site (Full public release)\n"      if ($ftp);
     print LOG "  -debug        : Verbose/Debug mode\n"                                                  if ($debug);
     print LOG "  -time         : Verbose/Timing mode\n"                                                 if ($time);
@@ -1472,6 +1473,7 @@ sub run_details {
     print "  -buildrna     : Build wormrna database\n"                                         if ($buildrna);
     print "  -addhomol     : Load blast data into autoace\n"                                   if ($addhomol);
     print "  -addbriggsae  : Load briggsae data into autoace\n"                                if ($addbriggsae);
+    print "  -utrs         : Generated and load UTR data into autoace\n"                       if ($utrs);
     print "  -ftp          : Move WS release to the external FTP site (Full public release)\n" if ($ftp);
     print "  -debug        : Verbose/Debug mode\n"                                             if ($debug);
     print "  -time         : Verbose/Timing mode\n"                                            if ($time);
@@ -1680,6 +1682,8 @@ autoace_minder OPTIONAL arguments:
 =item -addhomol, parse BLASTX and BLASTP data from pre-build
 
 =item -addbriggsae, parse briggsae assembly data and briggsae gene predictions
+
+=item -utrs, generate UTR datatset and add to autoace
  
 =back
 
