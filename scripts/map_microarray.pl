@@ -6,8 +6,8 @@
 #
 # by Anon
 #
-# Last updated by: $Author: krb $                      
-# Last updated on: $Date: 2004-10-20 12:03:04 $        
+# Last updated by: $Author: ar2 $                      
+# Last updated on: $Date: 2004-11-19 16:33:20 $        
 
 
 use strict;
@@ -180,8 +180,7 @@ $db->close;
 
 if($load){
   $log->write_to("Loading file to autoace\n");
-  my $command = "autoace_minder.pl -load $dbdir/acefiles/microarray_mappings.ace -tsuser
-RNAi_mappings";
+  my $command = "autoace_minder.pl -load $dbdir/acefiles/microarray_mappings.ace -tsuser microarray_mappings";
                                                                                    
   my $status = system($command);
   if(($status >>8) != 0){
