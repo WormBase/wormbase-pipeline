@@ -1631,7 +1631,7 @@
                    Chip_type  UNIQUE Affymetrix
                                      SMD
                    Chip_info  ?Text   //Describes batch number of the chip created the result ... etc.
-                   Reference  ?Paper      XREF        Microarray_result
+                   Reference  ?Paper
                    Remark     ?Text
 
 
@@ -1811,7 +1811,7 @@
                   Transgene ?Transgene XREF Reference
                   GO_term ?GO_term XREF Reference
                   Operon ?Operon XREF Reference      // added for operon data [010928 dl]
-		  Microarray_result ?Microarray_result XREF Reference //added for Microarray_result [030127 krb]
+		  //Microarray_result ?Microarray_result XREF Reference //added for Microarray_result [030127 krb]
                   Cluster ?Cluster XREF Reference //added for SMD_result [030127 krb]
         Keyword ?Keyword
 
