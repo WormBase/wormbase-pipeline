@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.52 2002-04-11 10:48:33 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.53 2002-05-03 08:47:19 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -683,7 +683,7 @@
         Paper ?Paper
 	Sequence ?Sequence XREF From_author
         Keyword ?Keyword
-	Details_confirmed DateType // added for Juancarlos [020322 krb]
+	Contact_details_confirmed DateType // added for Juancarlos [020322 krb]
 
 ?Journal Paper ?Paper XREF Journal
 
