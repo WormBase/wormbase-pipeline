@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-09-16 10:50:54 $
+# Last edited on: $Date: 2003-09-22 18:53:08 $
 
 
 #################################################################################
@@ -913,6 +913,7 @@ sub load_blat_results{
     $command =  "pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.blat.$type.ace\n";
     # Don't need to add confirmed introns from nematode data (because there are none!)
     $command .= "pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.$type.ace\n" unless ($type eq "nematode");
+    $command .= "pparse /wormsrv2/autoace/BLAT/autoace.good_introns.$type.ace\n" unless ($type eq "nematode");
     $command .= "pparse /wormsrv2/autoace/BLAT/autoace.blat.$type.ace\n";           
     $command .= "save\nquit\n";
     open (WRITEDB, "| $tace -tsuser Sanger_BLAT_data /wormsrv2/autoace |") || die "Couldn't open pipe to autoace\n";
