@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-01-15 17:56:09 $
+# Last updated on: $Date: 2003-01-16 16:52:55 $
 
 
 use strict;
@@ -40,10 +40,11 @@ if($debug){
 
 &create_log_files;
 
+my $ga_dir="/wormsrv1/geneace";
+
 # open a connection to geneace
 my $db = Ace->connect(-path  => '/wormsrv1/geneace/',
 		      -program =>$tace) || do { print LOG "Connection failure: ",Ace->error; die();};
-
 
 
 ###########################
@@ -59,7 +60,6 @@ our $rearrangement_errors = 0;
 our $sequence_errors = 0;
 
 
-
 # Process various classes looking for errors
 &process_locus_class;
 &process_laboratory_class;
@@ -67,7 +67,6 @@ our $sequence_errors = 0;
 &process_strain_class;
 &process_rearrangement;
 &process_sequence;
-
 
 
 #######################################
@@ -125,13 +124,18 @@ EOF
  
   &find_new_loci_in_current_DB($db, $get_seg_with_pseudogene_locus);
    
-  # Look for loci that are other_names and still are obj of ?Locus -> candidate for merging
+  #Look for loci that are other_names and still are obj of ?Locus -> candidate for merging
   my $locus_has_other_name=<<EOF;
   Table-maker -p "/wormsrv1/geneace/wquery/locus_has_other_name.def" quit
 EOF
   
-  my $ga_dir="/wormsrv1/geneace";
   loci_as_other_name($locus_has_other_name, $ga_dir, $db);
+
+  my $locus_has_genomic_seq=<<EOF;
+  Table-maker -p "/wormsrv1/geneace/wquery/locus_has_genomic_seq.def" quit
+EOF
+
+  loci_point_to_same_CDS($locus_has_genomic_seq, $ga_dir, $db);
 
   print LOG "\nThere are $locus_errors errors in $size loci.\n";
 
@@ -221,8 +225,50 @@ sub process_allele_class{
       $allele_errors++; 
     }
   }
+
+  my $allele_has_flankSeq_and_no_seq=<<EOF;
+  Table-maker -p "/wormsrv1/geneace/wquery/allele_has_flankSeq_and_no_seq.def" quit
+EOF
+
+  allele_has_flankSeq_and_no_seq($allele_has_flankSeq_and_no_seq, $ga_dir);
+
+  my $allele_has_predicted_gene_and_no_seq=<<EOF;
+  Table-maker -p "/wormsrv1/geneace/wquery/allele_has_predicted_gene_and_no_seq.def" quit
+EOF
+
+  allele_has_predicted_gene_and_no_seq($allele_has_predicted_gene_and_no_seq, $ga_dir);
+
   print LOG "\nThere are $allele_errors errors in Allele class\n";
 }
+
+sub allele_has_flankSeq_and_no_seq {
+  
+  my ($def, $dir, $db) = @_;
+  open (FH, "echo '$def' | tace $dir | ") || die "Couldn't access geneace\n";
+  while (<FH>){
+    chomp($_);
+    if ($_ =~ /^\"/){
+      $_ =~ s/\"//g;
+      print LOG "WARNING: Allele $_ has flanking sequences but is NOT connected to sequence\n"; 
+      $allele_errors++; 
+    }
+  }
+}
+
+sub allele_has_predicted_gene_and_no_seq {
+  
+  my ($def, $dir, $db) = @_;
+  open (FH, "echo '$def' | tace $dir | ") || die "Couldn't access geneace\n";
+  while (<FH>){
+    chomp($_);
+    if ($_ =~ /^\"/){
+      $_ =~ s/\"//g;
+       print LOG "WARNING: Allele $_ has predicted gene but is NOT connected to sequence\n"; 
+      $allele_errors++; 
+    }
+  }
+}
+
 
 ########################
 # Process Strain class #  
@@ -369,7 +415,7 @@ sub find_new_loci_in_current_DB{
     my $gene = $db->fetch('Locus',$_);
     if (!$gene->at('Type.Gene.Pseudogene')){
       $locus_errors++;
-      print LOG "$gene has no Pseudogene tag, but its corresponding seq does.\n";
+      print LOG "WARNING: $gene has no Pseudogene tag, but its corresponding seq does.\n";
     }
   }
 }
@@ -394,12 +440,37 @@ sub loci_as_other_name {
       $other_name = $db->fetch('Locus', "$other_name"); 
       if ($other_name){
 	$locus_errors++;
-	print LOG "$other_name ($main) is still a Locus object: candidate for merging\n";
+	print LOG "WARNING: $main has $other_name as Other_name...$other_name is still a separate Locus object\n";
       }
     }
   }
 }
 
+#############################
+
+sub loci_point_to_same_CDS {
+ 
+   my ($def, $dir) = @_;
+   my (%CDS_loci);
+
+   open (FH, "echo '$def' | tace $dir | ") || die "Couldn't access geneace\n";
+   while (<FH>){
+     chomp($_);
+     if ($_ =~ /^\"/){
+       $_ =~ s/\"//g;
+       $_ =~  /(\w+-\d+|\w+-\d+\.[\d\w]+|.+)\s+(.+)/;
+       push(@{$CDS_loci{$2}}, $1);
+     }
+   }
+   foreach (keys %CDS_loci){
+     if (scalar @{$CDS_loci{$_}} > 1){
+       $locus_errors++;
+       print LOG "WARNING: $_ is connected to @{$CDS_loci{$_}}: case of merging?\n";
+     }
+   }
+
+} 
+  
 ##############################
 
 sub test_locus_for_errors{
