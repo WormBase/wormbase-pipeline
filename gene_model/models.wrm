@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.61 2002-07-09 10:57:54 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.62 2002-07-24 13:24:33 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -173,7 +173,7 @@
 
 ?Gene	Identity  Version UNIQUE Int
 		  Name	Public_name UNIQUE ?Gene_name XREF Public_name // not directly editable
-			CGC_name UNIQUE ?Gene_name XREF CGC_name
+			CGC_name ?Gene_name XREF CGC_name
 			Sequence_name UNIQUE ?Gene_name XREF Sequence_name
 			Other_name ?Gene_name XREF Other_name DateType #Evidence
 		  Species UNIQUE ?Species	// RD 0107
