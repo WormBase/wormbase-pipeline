@@ -1,4 +1,4 @@
-/* @(#)options.wrm	1.17 9/10/96 */
+// CVS info $Id: options.wrm,v 1.2 2001-08-02 01:20:30 rd Exp $
 
   /* wspec/options.wrm
      
@@ -46,65 +46,59 @@
      recompilation.
   */
 
-// use the following for Arun Aggrawal's synmap 
-// but note that they will not work with tace unless you
-// register the -M options in displays.wrm, with dummy values
-//  _VMap              -V -D SYN -M STSMAP
-//  _VAssembly         -V -D SYN -M DOGMAP
-//  _VClone            -V -D SYN -M CloneMAP
-
 _VMap              -V -D GMAP  
-_VSequence         -V -D FMAP
-_VClone            -V -D PMAP
+_VView		   -V
 
 _VAuthor           -V 
 _VJournal          -V
 _VPaper            -V -T Brief_citation
+_VLaboratory       -V
+_VGO_term	   -V
 
-_VGene_Class       -V
+_VGene_class       -V
+_VGene		   -V -D GMAP
+_VGene_name	   -V
 _VLocus            -V -D GMAP 
 _VRearrangement    -V -D GMAP
-
 _VAllele           -V
 _VStrain           -V -T Genotype 
-_VLaboratory       -V
-
-_V2_point_data     -H -T Genotype 
+_VTwo_pt_data     -H -T Genotype 
 _VMulti_pt_data    -H -T Genotype
 _VPos_neg_data     -H -T Results 
 
-_VMotif            -V -D WWW
-
+_VClone            -V -D PMAP
 _VContig           -H -D PMAP
-
-_VProtein	   -V -D PEPMAP
-_VAlignment	   -V
-_VMethod	   -V
-_VWormpep	   -V -D PEPMAP
 _VGrid             -V -D GRID
+
+_VSequence         -V -D FMAP
+_VCDS		   -V -D FMAP
+_VTranscript	   -V -D FMAP
+_VWTP		   -V -D FMAP
+_VHomol_data       -V
+_VFeature_data     -V
+_VOligo		   -V
+_VProtein	   -V -D PEPMAP
+_VMotif            -V -D WWW
+_VMethod	   -V
+_VAccession_number -H -D WWW
+_VDatabase	   -V -D WWW
+
 _VSpecies          -H
 
 _VCell             -V
 _VExpr_pattern	   -V
-
-_VMultiMap	   -H -D DtMULTIMAP
-_VManyMap          -H -D GMAP
-
-_VPathway	   -V -D METAB
-_VEnzyme	   -V
-_VMetabolite	   -H
-
-_VView		   -V
+_VReconstruction   -V
 _VCell_group       -H
 _VLife_stage       -H
 _VPicture	   -H
 
-_VAccession_number -H
+// Richard Bruskiewich tree stuff
+
 _VTree             -V -D DtDendrogram
 _VTreeNode         -H -D DtDendrogram
 
-//added to allow URL objects to call netscape 
-_VUrl		   -V -D WWW
+// added to allow URL objects to call netscape 
+_VWWW_server	   -H -D WWW
 
 // Jade class for Lincoln/Jean added by rd 000307
 _VJade		   -H
@@ -112,35 +106,14 @@ _VJade		   -H
 // RNAi class added by LS 11/18/2000
 _VRNAi             -V
 _VPCR_product      -V
-
-// phenotypes and RNAis
 _VPhenotype        -V
 
 // Transgenes from Wen
 _VTransgene        -V
 
-// GO terms
-_VGO_term	   -V
-
 // Others
-_VHomol_data       -V
 
-// WTP
-_VWTP		   -V -D FMAP
+_VCurator	   -V
+_VAtlas		   -V
 
-
-// The following lines are now obsolete and declared in kernel
-// _VgMap		   -A -H -D GMAP
-// _VvMap		   -A -H -D VMAP
-// _VpMap             -A -H -D PMAP
-// _VDNA              -A -H -D FMAP
-// _VPeptide	      -A -H
- 
-
-
-
-
-
-
-
-
+// end of file

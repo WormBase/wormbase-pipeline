@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.1 2001-07-26 17:25:11 rd Exp $
+// CVS info:  $Id: models.wrm,v 1.2 2001-08-02 01:20:30 rd Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -23,7 +23,7 @@
 			// min, max - else min, max gene/locus
 		Default_view UNIQUE ?View
 		View ?View              // Columns to display
- 	Main_Marker Main_gene ?Gene	// RD 0107 Locus -> Gene
+ 	Main_marker Main_gene ?Gene	// RD 0107 Locus -> Gene
 		// tag2 system for items shown left of locator
 	Contains Gene ?Gene XREF Map	// RD 0107 added
 		 Locus ?Locus XREF Map
@@ -37,8 +37,8 @@
 #Map_position UNIQUE	Position UNIQUE Float #Map_error
 			Ends Left UNIQUE Float #Map_error
 			     Right UNIQUE Float #Map_error
-			Multi_Position  Float #Map_error
-			Multi_Ends Float UNIQUE Float
+			Multi_position  Float #Map_error
+			Multi_ends Float UNIQUE Float
 			With UNIQUE With_locus UNIQUE ?Locus #Map_offset
 				    With_clone UNIQUE ?Clone #Map_offset
 				// tag2 system for "burying"
@@ -123,16 +123,16 @@
 				RH_positive #Colour
 				RH_negative #Colour
 				RH_contradictory #Colour
-                pepSequence	PS_Highlight_residue   // il all needed for colomn display of peptides
-				PS_Residues_per_wrap Int
-				PS_Colours Text #Colour
-		Hydrophobicity	HP_Show_Zero_bar
-				HP_Fixed_Scaling
-				HP_Calculation_window Int
-				HP_Display_width Int
+                pepSequence	PS_highlight_residue   // il all needed for colomn display of peptides
+				PS_residues_per_wrap Int
+				PS_colours Text #Colour
+		Hydrophobicity	HP_show_zero_bar
+				HP_fixed_scaling
+				HP_calculation_window Int
+				HP_display_width Int
                 Homol           HOM_bump
                 pepFeature      FEA_bump
-                                FEA_Query Text
+                                FEA_query Text
                 Homol_Name      HOM_NAME_bump
 				HOM_NAME_width Int
                 pepActiveZone
@@ -171,13 +171,14 @@
 			WTP_name UNIQUE ?Gene_name XREF Gene
 			Other_name ?Gene_name XREF Gene DateType #Evidence
 		  Species UNIQUE ?Species	// RD 0107
-		  History	Version_change Int UNIQUE DateType UNIQUE ?Person #Gene_history_action
+		  History	Version_change Int UNIQUE DateType UNIQUE ?Curator #Gene_history_action
 				Merged_into UNIQUE ?Gene XREF Acquired
 				Acquired ?Gene XREF Merged_into
 				Split_from_parent UNIQUE ?Gene XREF Split_child
 				Split_child ?Gene XREF Split_from_parent
 		  Live  // remove live to make gene "dead"
-	Gene_info	Reference_Allele ?Allele Text
+	Gene_info	Gene_class UNIQUE ?Gene_class XREF Gene
+			Reference_allele ?Allele Text
                         Phenotype ?Text
                         RNAi_result   ?RNAi XREF Gene                       //RL [010327]
 			Complementation_data Text
@@ -191,10 +192,10 @@
 			Rescued_by_transgene ?Transgene XREF Rescue
         Molecular_info	CDS ?CDS XREF Gene
 			Transcript ?Transcript XREF Gene
+			Protein ?Protein XREF Gene
                         Other_sequence ?Sequence XREF Gene_other_seq     // dl 001128 // RD 0107 leave for now
 			Product ?Text
-			Enzyme ?Enzyme XREF Gene
-	SMAP S_Parent UNIQUE Canonical_parent ?Sequence XREF Locus
+	SMAP S_parent UNIQUE Canonical_parent ?Sequence XREF Locus
 	Method UNIQUE ?Method
 	Map_info  Map ?Map XREF Gene #Map_position
 		  Well_ordered		// "on the line"
@@ -227,10 +228,12 @@
 		  Mapping_data	Two_pt ?Two_pt_data
 	                        Multi_point ?Multi_pt_data
 				Pos_neg_data ?Pos_neg_data
-	SMAP S_Parent UNIQUE Canonical_parent ?Sequence XREF Locus
+	SMAP S_parent UNIQUE Canonical_parent ?Sequence XREF Locus
 	Method UNIQUE ?Method
 	Remark ?Text
-	Cluter_contains ?Gene XREF In_cluster // rd 0107 renamed from Contains
+	Reference ?Paper XREF Locus
+	Cluster_contains ?Gene XREF In_cluster // rd 0107 renamed from Contains
+	Strain ?Strain XREF Locus
 
 #Gene_history_action Event  Created
 			    Killed
@@ -256,7 +259,7 @@
 #Evidence  Source  UNIQUE  Author  ?Author
                            Paper   ?Reference
                            Automated_method ?Method ?Database
-           Curator UNIQUE ?Person
+           Curator UNIQUE ?Curator
            Type    UNIQUE Mutant_phenotype	// NB These types map to GO codes
                           Genetic_interaction
                           Physical_interaction
@@ -273,7 +276,7 @@
 ?Allele Name	Rearrangement ?Rearrangement XREF Allele
 	Source	UNIQUE Gene ?Gene XREF Allele // RD 0107 Locus->Gene
 	               Gene_class ?Gene_class XREF Allele
-	SMAP S_Parent Canonical_parent UNIQUE ?Sequence XREF Allele
+	SMAP S_parent Canonical_parent UNIQUE ?Sequence XREF Allele
 	Method UNIQUE ?Method
 	Replacement UNIQUE Text UNIQUE Text	// RD 0107 big change
 		// canonical sequence, replacement sequence
@@ -301,7 +304,7 @@
                                         Multi_point ?Multi_pt_data
 	                                Pos_neg_data ?Pos_neg_data
 				// above three are for mapping on its own behalf
-	                                In_Two_pt ?Two_pt_data
+	                                In_two_pt ?Two_pt_data
                                         In_multi_point ?Multi_pt_data
 	                                In_pos_neg_data ?Pos_neg_data
 				// these are for when the locus is mapped
@@ -421,18 +424,17 @@
 		Gel_length UNIQUE Float			// Kb
 	Location ?Laboratory
 	Gridded ?Grid
-	Grid_data ?Grid_data 
-        FingerPrint     Gel_Number UNIQUE Int
-                        Approximate_Match_to UNIQUE ?Clone XREF Canonical_for
-                        Exact_Match_to UNIQUE ?Clone XREF Canonical_for 
-                        Funny_Match_to UNIQUE ?Clone XREF Canonical_for 
+        FingerPrint     Gel_number UNIQUE Int
+                        Approximate_match_to UNIQUE ?Clone XREF Canonical_for
+                        Exact_match_to UNIQUE ?Clone XREF Canonical_for 
+                        Funny_match_to UNIQUE ?Clone XREF Canonical_for 
                         Canonical_for ?Clone UNIQUE Int UNIQUE Int 
 				// start and stop offsets from self start
                         Bands   UNIQUE Int UNIQUE Int
                         Gel ?Motif  #Lane               // Magic tag2 construct
 	Contig9	Chromosome UNIQUE ?Map 
                 Vaxmap UNIQUE Float
-		In_Situ  UNIQUE Int UNIQUE Int // percent of physical chromosome
+		In_situ  UNIQUE Int UNIQUE Int // percent of physical chromosome
 		Cosmid_grid
                 Canon_for_cosmid
 	        Flag    UNIQUE Int
@@ -473,10 +475,10 @@
 	View ?View
 	Row Int #Grid_row
 
-?Grid_row UNIQUE Clone UNIQUE ?Clone XREF Gridded REPEAT
+#Grid_row UNIQUE Clone UNIQUE ?Clone XREF Gridded REPEAT
 		 Mixed #Mixed_grid_row
 
-?Mixed_grid_row UNIQUE Clone UNIQUE ?Clone XREF Gridded #Mixed_grid_row
+#Mixed_grid_row UNIQUE Clone UNIQUE ?Clone XREF Gridded #Mixed_grid_row
 
 ?Contig Map ?Map XREF Contig #Map_position
         pMap UNIQUE Int UNIQUE Int         // extremities in pMap units
@@ -501,12 +503,12 @@
 				Laboratory ?Laboratory
 				Date  UNIQUE DateType
 				Temperature UNIQUE Text
-		Point_1 UNIQUE Gene_1	UNIQUE ?Gene XREF Two_pt UNIQUE ?Allele XREF In_Two_pt
+		Point_1 UNIQUE Gene_1	UNIQUE ?Gene XREF Two_pt UNIQUE ?Allele XREF In_two_pt
 			       Locus_1	UNIQUE ?Locus XREF Two_pt
 			       Allele_1 UNIQUE ?Allele XREF Two_pt
 			       Rearrangement_1 UNIQUE ?Rearrangement XREF Two_pt
                                Transgene_1 UNIQUE ?Transgene XREF Two_pt
-		Point_2 UNIQUE Gene_2	UNIQUE ?Gene XREF Two_pt UNIQUE ?Allele XREF In_Two_pt
+		Point_2 UNIQUE Gene_2	UNIQUE ?Gene XREF Two_pt UNIQUE ?Allele XREF In_two_pt
 			       Locus_2	UNIQUE ?Locus XREF Two_pt
 			       Allele_2 UNIQUE ?Allele XREF Two_pt
 			       Rearrangement_2 UNIQUE ?Rearrangement XREF Two_pt
@@ -589,34 +591,23 @@
 		Remark ?Text
 	// code uses all the Results subtags, and the #Multi_counts structure
 
-?Multi_counts	UNIQUE Gene UNIQUE ?Gene XREF Multi_point UNIQUE Int #Multi_counts
+#Multi_counts	UNIQUE Gene UNIQUE ?Gene XREF Multi_point UNIQUE Int #Multi_counts
 		       Locus UNIQUE ?Locus XREF Multi_point UNIQUE Int #Multi_counts
 		       Allele UNIQUE ?Allele XREF Multi_point UNIQUE Int #Multi_counts
 		       Rearrangement UNIQUE ?Rearrangement XREF Multi_point UNIQUE Int #Multi_counts
 		       Transgene UNIQUE ?Transgene XREF Multi_point UNIQUE Int #Multi_counts  // dl1 010307 from geneace
 
-?Grid_data	Experiment  Mapper ?Author
-			    Laboratory ?Laboratory
-			    Date  UNIQUE DateType
-		Positive Hybridizes_to ?Clone
-			 Positive_product ?Clone
-		Grid_data Grid UNIQUE ?Grid
-			  Probe	UNIQUE Clone UNIQUE ?Clone XREF Grid_data
-		// tag 2 for probe - REQUIRED
-			  Default_negative
-		// if set then all non-explicit elements on Grid score -ve
-
 //
-// Person class added 5/1/01 Lincoln Stein
+// Curator class added 5/1/01 Lincoln Stein
 // 
 // RD 0107 removed some fields and suggest renaming this (as yet unused) class
 // to "Curator".
 
-?Person Full_name Text
-        Address Mail Text
-                E_mail Text
-                Phone Text
-		Fax   Text
+?Curator Full_name Text
+         Address Mail Text
+                 E_mail Text
+                 Phone Text
+		 Fax   Text
 
 //
 // GO_term class added 5/1/01 Lincoln Stein
@@ -702,76 +693,6 @@
 #Affiliation Affiliation_address UNIQUE Text
 
 //
-// Cell models 
-//
-// Updated from geneace copy [010723 dl]
-
-
-?Cell   Main_name ?Cell                  //Put in for Paul
-	Other_name Text
-        Brief_id ?Text                   //put in for Raymond and Paul, equivalent to old Remark but shorter
-	Fate	 Cell_type  ?Text        // e.g. muscle, neuron,hypodermis, gland
-		 Program ?Text           //division, differentiation, death, and differs between sexes
-		 Syncitial_cell ?Cell_group XREF Nucleus //see Cell_group,
-	Summary Text                     // the whole of old remark plus more to be added by Raymond
-        Embryo_division_time Text
-        Remark        ?Text
-        Lineage Parent  UNIQUE  ?Cell XREF Daughter
-                Daughter      ?Cell XREF Parent
-                Lineage_name    Text
-                Equivalence_fate ?Cell XREF Equivalence_origin
-                Equivalence_origin ?Cell XREF Equivalence_fate
-		Sex_dimorphism Herm_origin ?Cell XREF Herm_fate // Added according to Sylvia 5/06/2000
-			       Herm_fate ?Cell XREF Herm_origin
-			       Male_origin ?Cell XREF Male_fate
-			       Male_fate ?Cell XREF Male_origin
-	Cell_group ?Cell_group XREF Cell
-	Life_stage ?Life_stage XREF Cell
-        Tree_Node ?TreeNode XREF Cell
-        Reference ?Paper XREF Cell
-        GO_term ?GO_term XREF Cell DateType #Evidence	// RD 0107 added #Evidence
-	Data	Expr_pattern ?Expr_pattern XREF Cell
-		Reconstruction ?Reconstruction XREF Cell #ReconCellInfo
-	        Neurodata ?Cell #Neurodata
-        Atlas ?Atlas XREF Cell
-        Link_diagram Text
- 
-// MODEL FOR WORMBASE ATLAS (VIRTUAL WORM)
-// 000824 added for Lincoln
-
-?Atlas  Cell ?Cell XREF Atlas
-	Name UNIQUE Text
- 	Location UNIQUE Text
- 	Title UNIQUE Text
- 	Comments UNIQUE Text
- 	Banner UNIQUE Text
- 	Up_arrow UNIQUE Text
- 	Down_arrow UNIQUE Text
- 	Sx_arrow UNIQUE Text
- 	Dx_arrow UNIQUE Text	
- 	X_position UNIQUE Text
- 	Y_position UNIQUE Text	
-
-?Neurodata      Send    Text    UNIQUE Int              // series count
-                Send_joint      Text    UNIQUE Int      // ditto for the rest
-                Receive Text    UNIQUE Int
-                Receive_joint   Text    UNIQUE Int
-                Gap_junction    Text    UNIQUE Int
-                Contact Text    UNIQUE Int
-
-?Reconstruction Cell ?Cell
-		Author ?Author
-		Date UNIQUE DateType
-		Remark ?Text
-		Description ?LongText
-
-?ReconCellInfo	Birth UNIQUE Float
-	 	Timepoint Float #Timepoint
-
-?Timepoint XYZ UNIQUE Float UNIQUE Float UNIQUE Float
-
-
-//
 // Sequence models 
 //
 
@@ -779,9 +700,9 @@
 		// if you want to register a length without a DNA sequence, then use
 		// a dummy sequence object, say "-".  This ensures that when a real
 		// sequence appears, its length dominates.
-	  SMap S_Parent Canonical_parent UNIQUE ?Sequence XREF Genomic_non_canonical 
+	  SMap S_parent Canonical_parent UNIQUE ?Sequence XREF Genomic_non_canonical 
 	                Genomic_parent UNIQUE ?Sequence XREF Nongenomic
-	       S_Child Homol_data ?Homol_data XREF Sequence UNIQUE Int UNIQUE Int #SMap_info
+	       S_child Homol_data ?Homol_data XREF Sequence UNIQUE Int UNIQUE Int #SMap_info
 		       Feature_data ?Feature_data XREF Sequence UNIQUE Int UNIQUE Int #SMap_info
 		       Genomic_non_canonical ?Sequence XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info
                        PCR_product ?PCR_product XREF Canonical_parent Int UNIQUE Int #SMap_info // added for Lincoln RNAi [010226 dl]
@@ -791,10 +712,10 @@
 		       Locus ?Locus XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info                // RD 0107
 		       Allele ?Allele XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info                // RD 0107
 		       Gene ?Allele XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info                // RD 0107
-		       CDS ?CDS XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info                // RD 0107
-		       Transcript ?Transcript XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info                // RD 0107
+		       CDS_child ?CDS XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info                // RD 0107
+		       Transcript_child ?Transcript XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info                // RD 0107
 	  Structure  From	Source UNIQUE ?Sequence XREF Subsequence
-				Source_Exons Int UNIQUE Int // start at 1
+				Source_exons Int UNIQUE Int // start at 1
 		     Subsequence ?Sequence XREF Source UNIQUE Int UNIQUE Int
 		     Overlap_right UNIQUE ?Sequence XREF Overlap_left UNIQUE Int
 			// potentially use Overlap_right integer for auto-linking
@@ -803,10 +724,10 @@
 		     Clone_left_end ?Clone XREF Clone_left_end UNIQUE Int
 		     Clone_right_end ?Clone XREF Clone_right_end UNIQUE Int
 		     Flipped
-	  DB_info	Database ?Database Text ?Accession_number XREF Sequence UNIQUE Int 
+	  DB_info	Database ?Database Text ?Accession_number XREF Primary_for_sequence UNIQUE Int 
 				  // ID  Accession_number & sequence version [dl 2000-07-27]
                         AC_number Text
-			Secondary_accession ?Accession_number XREF Sequence
+			Secondary_accession ?Accession_number XREF Secondary_for_sequence
                         NI_number UNIQUE Text
 			Protein_id ?Sequence UNIQUE Text UNIQUE Int
 				   // modified to deal with multiple protein_ids [dl 1999-12-22]
@@ -815,22 +736,19 @@
 			DB_annotation ?Database UNIQUE ?LongText
 			EMBL_dump_info #EMBL_dump_info
 	  Annotation	SwissProt_DE	UNIQUE	Text
-			EC_number	?Url
+			EC_number	Text
 			Pfam	UNIQUE	Text
-	  Origin  From_Database UNIQUE ?Database UNIQUE Int	// release number
-		  From_Author ?Author XREF Sequence
-		  From_Laboratory ?Laboratory
-		  Production_group Text
-		  Finishing_group Text
+	  Origin  From_database UNIQUE ?Database UNIQUE Int	// release number
+		  From_author ?Author XREF Sequence
+		  From_laboratory UNIQUE ?Laboratory	// RD 0107 added UNIQUE
 		  Date DateType Text			// Text for comments on operation
 		  Date_directory UNIQUE Text	        // date of this version for cosmids, changed sdm 000731 to text
-		  Species ?Species
+		  Species UNIQUE ?Species		// RD 0107 added UNIQUE
 	  Map ?Map XREF Sequence #Map_position		// use in particular for Genomic_canonical
 	  Interpolated_gMap ?Map UNIQUE Float
 	  Visible	Title UNIQUE ?Text
-	  		Other_name ?Text	// for repeats
 			Matching_CDS ?CDS XREF Matching_cDNA	// switch Matching_genomic to Matching_CDS, Transcript
-			Matching_Transcript ?Transcript XREF Matching_cDNA	// switch Matching_genomic to Matching_CDS, Transcript
+			Matching_transcript ?Transcript XREF Matching_cDNA	// switch Matching_genomic to Matching_CDS, Transcript
 		  	Clone ?Clone XREF Sequence 
 			Gene_other_seq ?Gene XREF Other_sequence       // dl 001128
 			Remark ?Text
@@ -838,6 +756,9 @@
 	  		Reference ?Paper XREF Sequence
 			Expr_pattern ?Expr_pattern XREF Sequence
                         RNAi_result ?RNAi XREF Predicted_gene // added for Lincoln RNAi [001213 dl]
+			Drives_transgene ?Transgene XREF Driven_by_sequence
+			Transgene_product ?Transgene XREF Worm_sequence
+			Tree_node ?TreeNode XREF Sequence
 		// tag2 system: names of all objects following next tag are shown in the 
 		//   general annotation display column as "tag:objname"
 	  Properties    Pseudogene Text		// explanation
@@ -883,9 +804,6 @@
 		Pep_homol ?Protein XREF DNA_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		Motif_homol ?Motif XREF DNA_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		Homol_homol ?Homol_data XREF DNA_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
-			// We will generate a column for each distinct ?Method.  So for
-			// distinct Worm_EST and Worm_genomic columns, use ?Method objects
-			// Worm_EST_Blastn and Worm_genomic_Blastn.
 	  Feature ?Method Int Int UNIQUE Float UNIQUE Text #Feature_info
 		// Float is score
 		// Text is shown on select, and same Text are neighbours
@@ -918,14 +836,15 @@
 		     Homology
 		     UTR	
 
-?CDS	SMAP S_Parent Canonical_parent ?Sequence XREF CDS
+?CDS	SMAP S_parent Canonical_parent ?Sequence XREF CDS_child
+	Origin	From_laboratory UNIQUE ?Laboratory
+		Species UNIQUE ?Species
 	Visible 	Gene ?Gene XREF CDS
 			Transcript ?Transcript XREF CDS
 			Matching_cDNA ?Sequence XREF Matching_CDS
-			Corresponding_protein UNIQUE ?Protein XREF Corresponding_DNA
-			Enzyme ?Enzyme XREF DNA
-		        Related_DNA ?Sequence XREF Related_DNA
-		        Related_protein ?Protein XREF Related_DNA
+			Corresponding_protein UNIQUE ?Protein XREF Corresponding_CDS
+		        Related_CDS ?CDS XREF Related_CDS     // RD 0107 was Related_DNA
+		        Related_protein ?Protein XREF Related_CDS
 			Brief_identification UNIQUE ?Text
 			Corresponding_PCR_product ?PCR_product XREF Overlaps_CDS // added for PCR mappings [010419 dl]
 			Corresponding_WTP ?WTP XREF Overlaps_CDS // [010623 rd]
@@ -940,13 +859,13 @@
 			Start_not_found
 			Pseudogene Text		// explanation
         Method UNIQUE ?Method
-        Drives_Transgene ?Transgene XREF Driven_by_CDS
+        Drives_transgene ?Transgene XREF Driven_by_CDS
 	Transgene_product ?Transgene XREF Worm_CDS
 
-?Transcript	SMAP S_Parent Canonical_parent ?Sequence XREF Transcript
+?Transcript	SMAP S_parent Canonical_parent ?Sequence XREF Transcript_child
 		Visible	Gene ?Gene XREF Transcript
 			CDS ?CDS XREF Transcript
-			Matching_cDNA ?Sequence XREF Matching_Transcript
+			Matching_cDNA ?Sequence XREF Matching_transcript
 			Remark ?Text
 			Confidential_remark ?Text
 		Properties	Transcript	UNIQUE	mRNA	UNIQUE  Processed_mRNA
@@ -957,7 +876,6 @@
 							scRNA UNIQUE Text
 							stRNA UNIQUE Text         // [010723 dl]
 							misc_RNA UNIQUE Text
-				Pseudogene Text		// explanation
 		Method ?Method			
 
 // Homol and Feature info
@@ -981,11 +899,11 @@
 
 // Repeat_info - do we need this?
 
-#Repeat_info	Percent_Identity UNIQUE Int
+#Repeat_info	Percent_identity UNIQUE Int
 		Score ?Method UNIQUE Float
 		N_gaps UNIQUE Int
 		Loop UNIQUE Int UNIQUE Int	// rel start, stop
-		Unit_Length UNIQUE Int
+		Unit_length UNIQUE Int
 
 // SMap stuff
 
@@ -1004,13 +922,13 @@
 	   Display Max_mag UNIQUE Float	// don't show if more bases per line
 		   Min_mag UNIQUE Float	// don't show if fewer bases per line
 
-?Homol_data SMap S_Parent Sequence ?Sequence
+?Homol_data SMap S_parent Sequence ?Sequence
 	    Homol DNA_homol ?Sequence XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		  Pep_homol ?Protein XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		  Motif_homol ?Motif XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 	    // keep the standard model structure, so same code works
 
-?Feature_data SMap S_Parent Sequence ?Sequence
+?Feature_data SMap S_parent Sequence ?Sequence
 	      Feature ?Method Int Int UNIQUE Float UNIQUE Text #Feature_info
               Method ?Method // added for Lincoln RNAi [001213 dl]
 	    // keep the same model as in Sequence, so same code works
@@ -1036,18 +954,17 @@
 		  	DB_remark ?Text		// Swissprot CC entries
 			Keyword ?Keyword	// Swissprot
 	  		DB_searched ?Database Int // Int = version - should this be here?
-	  Origin  From_Database ?Database UNIQUE Int	// release number
+	  Origin  From_database ?Database UNIQUE Int	// release number
 		  Date DateType Text			// Text for comments on operation
-		  Species ?Species               //
+		  Species UNIQUE ?Species               // RD 0107 added UNIQUE
 		  Wormpep Replaces ?Protein XREF Replaced_by
 			  Inactive Replaced_by ?Protein XREF Replaces
 		// inactive wormpep entries won't be output in standard wormpep dumps
-	  Visible	Corresponding_DNA ?Sequence XREF Corresponding_protein
-		        Related_DNA ?Sequence XREF Related_protein
+	  Visible	Corresponding_CDS ?CDS XREF Corresponding_protein // RD 0107 was Corresponding_DNA
+		        Related_CDS ?CDS XREF Related_protein // RD 0107 was Related_DNA
 		        Related_protein ?Protein XREF Related_protein
-			Enzyme ?Enzyme XREF Protein
 			Reference ?Paper XREF Protein
-			Expr_pattern ?Expr_pattern XREF Protein
+			Gene ?Gene XREF Protein
 		// tag2 system.  For now I have not populated this column.  For C. elegans
 		// wormpep we want to get the information from the ?Corresponding_DNA 
 		// object.  Because those objects have long term continuity, while wormpep
@@ -1061,10 +978,10 @@
                 Homol_homol ?Homol_data XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 	  Feature ?Method Int Int UNIQUE Float	// display according to method
 					// double-click shows the method
-          Tree_Node ?TreeNode XREF Protein // Phylogenetic trees
+          Tree_node ?TreeNode XREF Protein // Phylogenetic trees
 
-?Motif	Match_sequence  UNIQUE Text	// Text is the DNA or protein sequence
-	Num_mismatch UNIQUE Int		// Allowed number of mismatches when matching
+?Motif	Simple_pattern  Match_sequence  UNIQUE Text	// Text is the DNA or protein sequence
+			Num_mismatch UNIQUE Int		// Allowed number of mismatches when matching
 					// (default 0)
 	Restriction     Isoschizomer ?Motif XREF Isoschizomer
 		        Offset UNIQUE Int   
@@ -1077,8 +994,6 @@
 	DB_info	Database ?Database Text ?Accession_number XREF Motif // ID  Accession_number
 	  	DB_remark ?Text
 		DB_text ?LongText
-		Template ?Url //old way of making and clling URLs
-		Web_location ?WWW_server
 	Substrate UNIQUE DNA
 			 Peptide
 	Homol	DNA_homol ?Sequence XREF Motif_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
@@ -1087,32 +1002,15 @@
 		Homol_homol ?Homol_data XREF Motif_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 	GO_term ?GO_term XREF Motif DateType #Evidence
 
-?Accession_number  Entry Sequence ?Sequence
+?Accession_number  Entry Primary_for_sequence ?Sequence
+			 Secondary_for_sequence ?Sequence
 			 Protein ?Protein
 			 Motif ?Motif
-		   Web_location ?Database // use for WWW display
-
-// The following is the model supported by wwwDisplay() in w4/display.c
-// UNIQUE URL UNIQUE Text
-//	  Web_location UNIQUE ?<class> // class should have the Build_URL submodel
-//	  Build_URL Reference_tag Text Text // tag class(optional)
-//		        // use Text following tag if exists
-//		        // restricted to class if specified
-//		    Use_name Text // class(optional)
-//		        // applies only if no Reference_tag found
-//		        // restrict to class if specified
-//		      // one of Reference_tag or Use_name must succeed		      
-//		    Rewrite Text UNIQUE Text Text UNIQUE Text
-//		      // prefix_to_add postfix_to_add   prefix_to_remove postfix_to_remove
-//		      // once (optional) prefix and postfix are removed, escape necessary chars
-//		      // then add specified prefix and postfix
+		   Web_location UNIQUE ?WWW_server // use for WWW display
 
 ?Database	Name ?Text // Full name
 		Contents ?Text // Description of material included
-		WWW Reference_tag Text Text // tag class(optional)
-		    Use_name Text // class(optional)
-		    Rewrite Text UNIQUE Text Text UNIQUE Text
-		      // prefix_to_add postfix_to_add   prefix_to_remove postfix_to_remove
+		URL UNIQUE Text
 		
 // Method
 
@@ -1171,80 +1069,111 @@
 		GFF_feature UNIQUE Text
 
 //
-// METABOLIC SECTION - from Stan Letovsky and the Soybase project
+// Cells and related things, including Expr_pattern
 //
 
-?Pathway	Structure Components ?Pathway XREF In_Pathway
-			  In_Pathway ?Pathway XREF Components
-			  Diagram UNIQUE ?PathwayDiagram XREF Pathway
-		Enzyme ?Enzyme XREF Catalyzes #Reference
-		Metabolites 	Major_Reactant ?Metabolite XREF Consumed_by #ReactantInfo
-				Minor_Reactant ?Metabolite XREF Consumed_by #ReactantInfo
-				Major_Product ?Metabolite XREF Produced_by #ReactantInfo
-				Minor_Product ?Metabolite XREF Produced_by #ReactantInfo
-				Cofactor_Reactant ?Metabolite XREF Consumed_by #ReactantInfo
-				Cofactor_Product ?Metabolite XREF Produced_by #ReactantInfo
-				Additional_Cofactor_Reactant ?Metabolite XREF Consumed_by #ReactantInfo
-				Additional_Cofactor_Product ?Metabolite XREF Produced_by #ReactantInfo
-		Ancillary	Anc_reactants ?Metabolite #ReactantInfo
-				Anc_products ?Metabolite #ReactantInfo // e.g. for transport. 
-				Anc_Enzyme ?Enzyme #Reference
-		Activator ?Metabolite XREF Activates #RegulatorInfo
-		Inhibitor ?Metabolite XREF Inhibits #RegulatorInfo
-		Remark ?Text
+// Updated from geneace copy [010723 dl]
 
-?RegulatorInfo	Type UNIQUE Active_site
-		Ki Text  //for inhibitor
-		Remark ?Text
-		Reference ?Paper
+?Cell   Main_name ?Cell                  //Put in for Paul
+	Other_name Text
+        Brief_id ?Text                   //put in for Raymond and Paul, equivalent to old Remark but shorter
+	Fate	 Cell_type  ?Text        // e.g. muscle, neuron,hypodermis, gland
+		 Program ?Text           //division, differentiation, death, and differs between sexes
+		 Syncitial_cell ?Cell_group XREF Nucleus //see Cell_group,
+	Summary Text                     // the whole of old remark plus more to be added by Raymond
+        Embryo_division_time Text
+        Remark        ?Text
+        Lineage Parent  UNIQUE  ?Cell XREF Daughter
+                Daughter      ?Cell XREF Parent
+                Lineage_name    Text
+                Equivalence_fate ?Cell XREF Equivalence_origin
+                Equivalence_origin ?Cell XREF Equivalence_fate
+		Sex_dimorphism Herm_origin ?Cell XREF Herm_fate // Added according to Sylvia 5/06/2000
+			       Herm_fate ?Cell XREF Herm_origin
+			       Male_origin ?Cell XREF Male_fate
+			       Male_fate ?Cell XREF Male_origin
+	Cell_group ?Cell_group XREF Cell
+	Life_stage ?Life_stage XREF Cell
+        Tree_node ?TreeNode XREF Cell
+        Reference ?Paper XREF Cell
+        GO_term ?GO_term XREF Cell DateType #Evidence	// RD 0107 added #Evidence
+	Data	Expr_pattern ?Expr_pattern XREF Cell
+		Reconstruction ?Reconstruction XREF Cell #ReconCellInfo
+	        Neurodata ?Cell #Neurodata
+        Atlas ?Atlas XREF Cell
+        Link_diagram Text
+ 
+// MODEL FOR WORMBASE ATLAS (VIRTUAL WORM)
+// 000824 added for Lincoln
 
-?ReactantInfo	Major_Role
-		Minor_Role
-		Cofactor
-		N Int // etc.
-		Km Text #Reference
-		Vmax Text #Reference
-		Substrate_specificity ?Text #Reference
-		Remark ?Text
-		Reference ?Paper
-	
-?Enzyme		Other_name ?Text
-		EC_Number ?Text #Reference  // probably should be under reaction
-		Corresponds_to	Gene ?Gene XREF Enzyme
-				DNA ?CDS XREF Enzyme
-				Protein ?Protein XREF Enzyme
-		Catalyzes ?Pathway
-		Remark ?Text
-		Reference ?Paper
+?Atlas  Cell ?Cell XREF Atlas
+	Name UNIQUE Text
+ 	Location UNIQUE Text
+ 	Title UNIQUE Text
+ 	Comments UNIQUE Text
+ 	Banner UNIQUE Text
+ 	Up_arrow UNIQUE Text
+ 	Down_arrow UNIQUE Text
+ 	Sx_arrow UNIQUE Text
+ 	Dx_arrow UNIQUE Text	
+ 	X_position UNIQUE Text
+ 	Y_position UNIQUE Text	
 
-?Metabolite	Consumed_by	?Pathway
-		Produced_by	?Pathway
-		Activates	?Pathway
-		Inhibits ?Pathway XREF Inhibitor
+#Neurodata      Send    Text    UNIQUE Int              // series count
+                Send_joint      Text    UNIQUE Int      // ditto for the rest
+                Receive Text    UNIQUE Int
+                Receive_joint   Text    UNIQUE Int
+                Gap_junction    Text    UNIQUE Int
+                Contact Text    UNIQUE Int
+
+?Reconstruction Cell ?Cell
+		Author ?Author
+		Date UNIQUE DateType
 		Remark ?Text
+		Description ?LongText
 
-?PathwayDiagram	Name ?Text
-		Pathway ?Pathway		
-		Node Int Float Float Int ?Metabolite // ID X Y LabelID Metabolite
-		Arc  Int Int Int  Int Int Float  ?Pathway
-		   // ID  Label From To  Curvature Radius Step
-		TangentArc Int Int
-		   // Arc Tangent
-		Label Int Float Float Text // ID X Y Label
+#ReconCellInfo	Birth UNIQUE Float
+	 	Timepoint Float #Timepoint
 
-?Reference	Reference ?Paper
-		Remark ?Text
-		Species ?Species
-		Description ?Text //For trait information
+#Timepoint XYZ UNIQUE Float UNIQUE Float UNIQUE Float
 
-//NEW - one  new tag added by Paul Sternberg and tag order reversed by SDM
+// Updated from geneace copy [010723 dl]
+
+?Cell_group	Other_name ?Text                 //new, put in for Paul, this could become ?Cell_group for pseudo-aliasing
+		Fate ?Text	
+		Remark	?Text
+		Contains	Cell ?Cell XREF Cell_group
+				Nucleus ?Cell XREF Syncitial_cell //new for syncitia like hyp7
+				Sub_group ?Cell_group XREF Contained_in
+		Contained_in ?Cell_group XREF Sub_group
+		Type	UNIQUE  Tissue
+				Organ
+				Region
+                                Lineage //put in for Lilncoln some time ago
+		Expr_pattern ?Expr_pattern XREF Cell_group	
+		Life_stage ?Life_stage XREF Cell_group
+                Reference ?Paper XREF Cell_group
+                Tree_node ?TreeNode XREF Cell_group
+		Group_derivation Expression_experiment          //groups made by experimenters in their reports
+                                 Top_down_modelling             // sylvia's anatomy modelling shown on dendrograms starting with whole animal and working downwards
+                                 Bottom_up_modelling            // for Raymond in the future for cell upwards approach
+
+?Life_stage	Contains Cell ?Cell XREF Life_stage
+			 Cell_group ?Cell_group XREF Life_stage
+                         Sub_stage ?Life_stage XREF Contained_in
+                Contained_in ?Life_stage XREF Sub_stage            // changed for Wen 010516
+                Preceded_by ?Life_stage XREF Followed_by
+		Followed_by ?Life_stage XREF Preceded_by
+		Expr_pattern ?Expr_pattern XREF Life_stage
+		Remark	?Text
+                Reference ?Paper XREF Life_stage
 
 ?Expr_pattern	Expression_of	Sequence ?Sequence XREF Expr_pattern
 				Clone ?Clone XREF Expr_pattern
-				Locus ?Locus XREF Expr_pattern
-				Protein ?Protein XREF Expr_pattern
-                                Protein_description Text   // dl1 010307 from geneace
+//                                Protein_description Text   // dl1 010307 from geneace 
+// RD 0107 commented out previous line - not informative: should find gene
                                 Gene ?Gene XREF Expr_pattern
+// RD 0107 no Locus here any more - the only uses for Other_locus were where there was a New_name
 		Expressed_in	Cell ?Cell XREF Expr_pattern
 				Cell_group ?Cell_group XREF Expr_pattern
 				Life_stage ?Life_stage XREF Expr_pattern
@@ -1267,52 +1196,31 @@
 	 Pick_me_to_call Text Text
 	 Expr_pattern ?Expr_pattern XREF Picture
 
-// Updated from geneace copy [010723 dl]
+//
+// WWW_server
+//
 
-?Cell_group	Other_name ?Text                 //new, put in for Paul, this could become ?Cell_group for pseudo-aliasing
-		Fate ?Text	
-		Remark	?Text
-		Contains	Cell ?Cell XREF Cell_group
-				Nucleus ?Cell XREF Syncitial_cell //new for syncitia like hyp7
-				Sub_group ?Cell_group XREF Contained_in
-		Contained_in ?Cell_group XREF Sub_group
-		Type	UNIQUE  Tissue
-				Organ
-				Region
-                                Lineage //put in for Lilncoln some time ago
-		Expr_pattern ?Expr_pattern XREF Cell_group	
-		Life_stage ?Life_stage XREF Cell_group
-                Reference ?Paper XREF Cell_group
-                Tree_Node ?TreeNode XREF Cell_group
-		Group_derivation Expression_experiment          //groups made by experimenters in their reports
-                                 Top_down_modelling             // sylvia's anatomy modelling shown on dendrograms starting with whole animal and working downwards
-                                 Bottom_up_modelling            // for Raymond in the future for cell upwards approach
+?WWW_server URL Text // Simple hard-wired URL
+	    Build_URL Reference_tag Text Text	   // tag [class]
+		         // use Text following tag if it exists, restricted to class if specified
+			 // search sequentially for first matching class/tag
+		      Use_name Text 		   // [class]
+		         // applies only if no Reference_tag found, restricted to class is specified
+                         // If no simple URL then one of Reference_tag or Use_name must succeed.
+		      Rewrite Text UNIQUE Text Text UNIQUE Text  
+			     // prefix_to_add [postfix_to_add [prefix_to_remove [postfix_to_remove]]]
+		         // Once any removal prefix and postfix are removed, escapes necessary chars
+			 // then adds specified prefix and postfix.
+			 // If there are multiple rules then the first which matches
+			 // prefix_to_remove and postfix_to_remove applies.
 
-?Life_stage	Contains Cell ?Cell XREF Life_stage
-			 Cell_group ?Cell_group XREF Life_stage
-                         Sub_stage ?Life_stage XREF Contained_in
-                Contained_in ?Life_stage XREF Sub_stage            // changed for Wen 010516
-                Preceded_by ?Life_stage XREF Followed_by
-		Followed_by ?Life_stage XREF Preceded_by
-		Expr_pattern ?Expr_pattern XREF Life_stage
-		Remark	?Text
-                Reference ?Paper XREF Life_stage
-
-// URL and WWW
-
-?Url    Url UNIQUE Text // Simple, text of URL
-        Template UNIQUE ?Url // use this object as a generic template
-        Reference_tag UNIQUE Text // look for this tag in the reffing object for url
-        Remove_prefix UNIQUE Text // prefix to remove to make url
-        Remove_postfix UNIQUE Text // postfix to remove to make url
-        Prepend UNIQUE Text // then add this to the beginning
-        Append UNIQUE Text // then add this to the end
-	Web_location UNIQUE ?WWW_server
-
-?WWW_server	Url UNIQUE Text // Simple, text of URL 	
-		Use_name Text // (optional) Classname
-		Rewrite Text UNIQUE Text Text UNIQUE Text 
-		Reference_tag UNIQUE Text // look for this tag in the reffing object for url
+// Classes can display on the web as the default display with -D WWW if either 
+//   (a) they have an explicit URL Text
+//   (b) they contain Web_location ?WWW_server
+//   (c) their object in class Class has Web_location ?WWW_server
+//
+// Any item can contain a ?WWW_server reference which when double-clicked, i.e. display() is called,
+// will display.
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -1323,19 +1231,19 @@
          Type UNIQUE Taxonomy			// Controls semantics of tree display
                      DNA
                      Protein
-                     Cell_Lineage
+                     Cell_lineage
          Root UNIQUE ?TreeNode
-         Display     No_Header			// Suppresses display "header"
-                     Descriptive_Labels		// Show descriptive labels
+         Display     No_header			// Suppresses display "header"
+                     Descriptive_labels		// Show descriptive labels
                      Colour			// Taxon_colouring if present
                      Normalization    UNIQUE Float	// Normalization factor for display (defaults to 1.0)
-                     Bootstrap_Factor UNIQUE Float	// Normalization factor for bootstrap values (defaults to 1.0)
-                     Hide_Bootstraps
+                     Bootstrap_factor UNIQUE Float	// Normalization factor for bootstrap values (defaults to 1.0)
+                     Hide_bootstraps
                      Alignment UNIQUE Top	// How the dendrogram is to be drawn
                                       Middle
                                       Bottom
                                       Unrooted  // Unrooted "star" tree
-	 Embedded_Tree ?Tree			      
+	 Embedded_tree ?Tree			      
 
 ?TreeNode       Label UNIQUE ?Text		// Tree vertex label, e.g. sequence name or taxon   
                 Id    UNIQUE Int		// Node numbering...
@@ -1351,20 +1259,15 @@
                 Display  Hide			// Hide the subtree (children) of this node
                          Colour   UNIQUE #Colour // Fixes the colour of the subtree; 
                                                  // overridden by child node settings
-                         Hide_Bootstraps         // Hide all bootstraps in subtree...
-                         Show_Bootstrap          // ... except those with the "Show_Bootstrap" tag set
-                Contains Taxon                //    UNIQUE ?Taxon    XREF Tree_Node
-			 Sequence UNIQUE ?Sequence XREF Tree_Node
-		         Protein  UNIQUE ?Protein  XREF Tree_Node
-                         Cell     UNIQUE ?Cell     XREF Tree_Node
-                         Cell_group UNIQUE ?Cell_group  XREF Tree_Node     //URL UNIQUE ?Url XREF Tree_Node
+                         Hide_bootstraps         // Hide all bootstraps in subtree...
+                         Show_bootstrap          // ... except those with the "Show_bootstrap" tag set
+                Contains Taxon                //    UNIQUE ?Taxon    XREF Tree_node
+			 Sequence UNIQUE ?Sequence XREF Tree_node
+		         Protein  UNIQUE ?Protein  XREF Tree_node
+                         Cell     UNIQUE ?Cell     XREF Tree_node
+                         Cell_group UNIQUE ?Cell_group  XREF Tree_node
                          Pick_me_to_call UNIQUE Text Text
-                         Embedded_Tree ?Tree
-//              Positive Has_Gene_Function           ?Gene_Function XREF PosTreeNode
-//                       Family_Member               ?Gene_Family XREF PosTreeNode
-//              Negative Does_NOT_Have_Gene_Function ?Gene_Function XREF NegTreeNode
-//                       NOT_Family_Member           ?Gene_Family XREF NegTreeNode
-//              Map ?Map XREF      Tree_Node #Map_Position  // Leaf node ordinate
+                         Embedded_tree ?Tree
 
 // Jade model for Lincoln/Jean added by rd 000307
 
@@ -1374,10 +1277,10 @@
 
 //transgene from Wen Chen 12/00
 
-#Transgene      Summary UNIQUE ?Text //Searchable description of the transgene
-		Driven_by Driven_by_Sequence ?Sequence XREF Drives_Transgene	Text //driving promoter
-			  Driven_by_Gene    ?Gene    XREF Drives_Transgene	Text //driving promoter
-			  Driven_by_CDS    ?CDS    XREF Drives_Transgene	Text //driving promoter
+?Transgene      Summary UNIQUE ?Text //Searchable description of the transgene
+		Driven_by Driven_by_sequence ?Sequence XREF Drives_transgene	Text //driving promoter
+			  Driven_by_gene    ?Gene    XREF Drives_transgene	Text //driving promoter
+			  Driven_by_CDS    ?CDS    XREF Drives_transgene	Text //driving promoter
 		Reporter_product UNIQUE	     GFP
 					     LacZ
 					     Other_reporter ?Text
@@ -1401,7 +1304,7 @@
 		Mapping_data Two_pt ?Two_pt_data 
 			     Multi_point ?Multi_pt_data
 		Phenotype	?Text	//Phenotype should be described as "Unc. With other ..."
-		Rescue ?Gene XREF Rescued_by_Transgene ?Allele XREF Rescued_by_Transgene
+		Rescue ?Gene XREF Rescued_by_transgene ?Allele XREF Rescued_by_transgene
 		Expr_pattern ?Expr_pattern XREF Transgene //Related Expr_pattern
 		Remark ?Text //More comments on the transgene
 		Reference ?Paper XREF Transgene //papers refered to the transgene.
@@ -1409,7 +1312,7 @@
 
 // RNAi from Lincoln Stein 001213
 
-?RNAi   SMap S_Parent Sequence UNIQUE ?Sequence XREF RNAi       // canonical parent (reliable)
+?RNAi   SMap S_parent Sequence UNIQUE ?Sequence XREF RNAi       // canonical parent (reliable)
  		      PCR_product UNIQUE ?PCR_product XREF RNAi // primer pair (reliable)
         Method ?Method
         Experiment      Laboratory ?Laboratory
@@ -1433,10 +1336,10 @@
 
 // New Class from Lincoln [010226]
 
-?PCR_product SMap S_Parent Canonical_parent UNIQUE ?Sequence XREF PCR_product
- 		  S_Child RNAi ?RNAi XREF PCR_product UNIQUE Int UNIQUE Int #SMap_info
+?PCR_product SMap S_parent Canonical_parent UNIQUE ?Sequence XREF PCR_product
+ 		  S_child RNAi ?RNAi XREF PCR_product UNIQUE Int UNIQUE Int #SMap_info
  	     Method ?Method
- 	     Overlaps_CDS ?Sequence XREF Corresponding_PCR_product  // added for Dan PCR mappings [010419 dl]
+ 	     Overlaps_CDS ?CDS XREF Corresponding_PCR_product  // added for Dan PCR mappings [010419 dl]
 	     Oligo ?Oligo UNIQUE Int UNIQUE Int
  	     Assay_conditions ?LongText
 	     Remark ?Text
@@ -1451,11 +1354,9 @@
            Attribute_of       RNAi ?RNAi XREF Phenotype
                               Gene ?Gene XREF Controlled_phenotype
 
-?Phenotype_Assay Description ?Text
-		 
 // New Class to handle WTP data [010623 rd]
 
-?WTP         SMap S_Parent Canonical_parent UNIQUE ?Sequence XREF WTP
+?WTP         SMap S_parent Canonical_parent UNIQUE ?Sequence XREF WTP
  	     Method ?Method
  	     Overlaps_CDS ?CDS XREF Corresponding_WTP  // added for Dan PCR mappings [010419 dl]
 	     Contact_information Text
