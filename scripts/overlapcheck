@@ -57,8 +57,8 @@ foreach my $chrom (@chrom) {
 	|| die "Cannot open output file $chrom $!\n"; 
     open (STLREP, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.repeat_in_exon_stl") 
 	|| die "Cannot open output file $chrom $!\n"; 
-	
-    %exon  = %est = %genes = %intron = (); 
+		
+    %exon  = %est = %genes = %intron = %repeat = (); 
     my (%exoncount, %introncount, %estcount, %repeatcount, $name);
     
     while (<GFF>) {
@@ -111,12 +111,10 @@ foreach my $chrom (@chrom) {
                 my @descr = split (/ /);
                 $descr[1] =~ /\"Motif:(\S+)\"/; 
                 $name = $1;
-                if ($name =~ /^CeRep/) {
-                    $repeatcount{$name}++;
-                    my $repeatname = $name.".".$repeatcount{$name};
-                    $repeat{$repeatname} = [$fields[3],$fields[4]];  
-                }
-            } 
+                $repeatcount{$name}++;
+                my $repeatname = $name.".".$repeatcount{$name};
+                $repeat{$repeatname} = [$fields[3],$fields[4]];  
+			} 
         }
     }        
 		
@@ -163,7 +161,7 @@ foreach my $chrom (@chrom) {
             elsif (${$exon{$name}}[1] >= ${$exon{$other}}[0])  {
                 (my $onename)    = ($name  =~ /(\S.*?\.\S.*?)\./);
                 (my $othername)  = ($other =~ /(\S.*?\.\S.*?)\./);
-                push (@geneoutput, [sort ($onename,$othername,$x)] );
+                push (@geneoutput, [sort ($onename,$othername)] );
             }    
             else {last;}
         }
@@ -197,14 +195,14 @@ foreach my $chrom (@chrom) {
     my %finalintroncamace = sort_by_gene(\@camintrons); 
     foreach my $pair (sort keys %finalintroncamace) {
         my @single = split (/:/, $pair);
-        print CAMEST "EST $single[1]\tmatches intron number $single[2] of gene $single[0]\n";
+        print CAMEST "EST $single[1]\tmatches intron of gene $single[0]\n";
     }    
 	
     my @stlintrons        = find_database(\@intronoutput,\%stlace);
     my %finalintronstlace = sort_by_gene(\@stlintrons); 
     foreach my $pair (sort keys %finalintronstlace) {
         my @single = split (/:/, $pair);
-        print STLEST "EST $single[1]\tmatches intron number $single[2] of gene $single[0]\n";
+        print STLEST "EST $single[1]\tmatches intron of gene $single[0]\n";
     }    
 
 
@@ -219,14 +217,14 @@ foreach my $chrom (@chrom) {
     my %finalrepcamace  = sort_by_gene(\@camrepeats);
     foreach my $pair (sort keys %finalrepcamace) {
         my @single = split (/:/, $pair); 
-        print CAMREP "$single[1]\tmatches exon number $single[2] of gene $single[0]\n";
+        print CAMREP "$single[1]\tmatches gene $single[0]\n";
     }
 
     my @stlrepeats      = find_database(\@repeatoutput,\%stlace);
     my %finalrepstlace  = sort_by_gene(\@stlrepeats);
     foreach my $pair (sort keys %finalrepstlace) {
         my @single = split (/:/, $pair); 
-        print STLREP "$single[1]\tmatches exon number $single[2] of gene $single[0]\n";
+        print STLREP "$single[1]\tmatches gene $single[0]\n";
     }
 }
 
@@ -274,7 +272,7 @@ sub findmatch {
 		    my $slaveend    = $slave{$testslave}->[1];
 		    if ( not (($slavestart > $masterend) || ($slaveend < $masterstart))) {
                         my ($finalslave)  = ($testslave =~ /^(\S+)\.\d+/);  	
-		        push (@output, [$finalslave,$testmaster,$z]);
+		        push (@output, [$finalslave,$testmaster]);
 	            }
                 }
             }
@@ -308,7 +306,7 @@ sub sort_by_gene {
     my %final_output;
 	
     foreach my $out (@output) {
-    	my $both  = $out->[1].":".$out->[0].":".$out->[2];
+    	my $both  = $out->[1].":".$out->[0];
         $final_output{$both}++,
     }
     return %final_output;
