@@ -7,10 +7,10 @@
 # Author: Chao-Kung Chen
 
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2004-03-19 11:59:04 $
+# Last updated on: $Date: 2004-03-24 16:25:49 $
 
 use strict;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'}; 
+use lib "/wormsrv2/scripts/"; 
 use Wormbase;
 use Term::ANSIColor;
 use Getopt::Long;
@@ -19,15 +19,14 @@ use Getopt::Long;
 # variables and command-line options with aliases # 
 ###################################################
 
-my ($aa, $dna, $cds, $help, $verbose, $infile);
+my ($aa, $dna, $cds, $help, $verbose);
 
 GetOptions (
 	    "cds=s"       =>  \$cds,
 	    "aa=s"        =>  \$aa,
             "dna"         =>  \$dna,
             "h|help"      =>  \$help, 
-            "v|verbose"   =>  \$verbose,
-	    "i|input=s"   =>  \$infile,
+            "v|verbose"   =>  \$verbose
            );
 
 if (!$cds || $help){system ("perldoc $0"); exit(0)}
@@ -69,41 +68,16 @@ foreach my $ea (keys %code){
   }
 } 
 
-
 ###############################################
 # get aa mutation as one letter or 3_ltter code
 ###############################################
 
-my ($wt_aa_pos, $mutation, $WT_aa, $MU_codon, $WT_codon, $acefile, $Allele) = split(/-/, $aa);
-print "$wt_aa_pos, $mutation : $WT_aa : $MU_codon : $WT_codon\n" if $verbose;
-
-#my $mutation = $aa;  $mutation =~ s/\d+//; 
+my $mutation = $aa;  $mutation =~ s/\d+//; 
 if ($mutation =~ /\w{3,3}/){$mutation = $three_ltr_code{lc($mutation)}}
 $mutation = uc($mutation);
 
-#$aa =~ s/\D//g;
-$aa = $wt_aa_pos;
 
-# determine the site of mutation in a codon
-my @MU_codon = split(//, $MU_codon);
-my @WT_codon = split(//, $WT_codon);
-
-my $mut_site = ();
-
-$acefile = $acefile."tf";
-open(OUT, ">>$acefile") || die $!;
-#print $acefile, "################\n";
-
-if ($MU_codon[0] ne $WT_codon[0] && $MU_codon[1] eq $WT_codon[1] && $MU_codon[2] eq $WT_codon[2]){
-  $mut_site=1; print OUT "\n\nAllele : \"$Allele\"\nSubstitution \"[", lc($WT_codon[0]),"/", lc($MU_codon[0]), "]\"\n"; 
-}
-if ($MU_codon[0] eq $WT_codon[0] && $MU_codon[1] ne $WT_codon[1] && $MU_codon[2] eq $WT_codon[2]){
-  $mut_site=2; print OUT "\n\nAllele : \"$Allele\"\nSubstitution \"[", lc($WT_codon[1]),"/", lc($MU_codon[1]), "]\"\n"; 
-}
-if ($MU_codon[0] eq $WT_codon[0] && $MU_codon[1] eq $WT_codon[1] && $MU_codon[2] ne $WT_codon[2]){
-  $mut_site=3; print OUT "\n\nAllele : \"$Allele\"\nSubstitution \"[", lc($WT_codon[2]),"/", lc($MU_codon[2]), "]\"\n"; 
-}
-
+$aa =~ s/\D//g;
 
 if ($cds =~ /(.+\.\d+)(\w)/){
   my $variant = $2; my $seq = uc($1); 
@@ -140,7 +114,7 @@ if ("$current" ne "$archive") {
 else {
   print "\n\nUsing WS$current...\n" if $verbose;
 }
-
+  
 ####################################################
 # get DNA sequence (exon/intron) of a CDS/Transcript
 ####################################################
@@ -149,7 +123,8 @@ my ($DNA, @coords, $chrom, $left, $right, $strand, $CDS);
 
 chdir "/wormsrv2/autoace/GFF_SPLITS/WS$current/";
 
-my @CDS_coords = `grep $cds *.genes.gff *.rna.gff | cut -f 1,4,5,7,9`; 
+my @CDS_coords = `grep $cds *.genes.gff | cut -f 1,4,5,7,9`;
+if (!@CDS_coords){@CDS_coords = `grep $cds *.rna.gff | cut -f 1,4,5,7,9`} # do this if seq. belongs to Transcript class
 
 foreach (@CDS_coords){
   chomp;
@@ -195,7 +170,7 @@ $prot_seq = get_seq($cds, *IN1);
 # fetch source exons of a CDS/Transcript
 ########################################
 
-my @exons = `grep $cds $exon_tbl/ExonTable_$current`;
+my @exons = `grep $cds $exon_tbl/ExonTable*`;
 if ($verbose){
   print "Source exon table:\n------------------------------\n@exons------------------------------\n";
 }
@@ -317,139 +292,107 @@ sub exons_to_codons {
     push(@{$codon_seq{$all[$i]}}, ${@{$all[$i+1]}}[0], ${@{$all[$i+1]}}[1], ${@{$all[$i+1]}}[2], ${@{$all[$i+1]}}[3], ${@{$all[$i+1]}}[4], ${@{$all[$i+1]}}[5]);
 #     print "${@{$all[$i+1]}}[0], ${@{$all[$i+1]}}[1], ${@{$all[$i+1]}}[2], ${@{$all[$i+1]}}[3], ${@{$all[$i+1]}}[4], ${@{$all[$i+1]}}[5]\n";
   }  
-  if ($WT_aa eq $prot[$aa-1]){
-    if ($verbose){
-      print "\n$prot[$aa-1]($aa) = "; 
-      print "$codon_seq{$aa}->[0] (", $codon_seq{$aa}->[1]-30, ") $codon_seq{$aa}->[2] (";
-      print $codon_seq{$aa}->[3]-30, ") $codon_seq{$aa}->[4] (", $codon_seq{$aa}->[5]-30, ") [full-length aa of this gene: ", scalar @prot, "]\n\n"; 
-      my $codon = "$codon_seq{$aa}->[0]"."$codon_seq{$aa}->[2]"."$codon_seq{$aa}->[4]";
-      
-      print "Triplet color coding: mutated site in ", color("red"), "RED", color("reset"), ", the other two sites behind or before it in the triplet in ", color("blue"), "BLUE", color("reset"), "\n"; 
-      print "Flanking bp coding when frame shift:  upsteam of mutated site in ", color("magenta"), "MAGENTA", color("reset"), ", downstream in ", color("green"), "GREEN", color("reset"), "\n";
-      print "This color coding does not apply to dinucleotide mutation sites. But flanking seqs are there anyway\n\n"; 
-      
-      ################################
-      # output 30 bp flanks of a codon
-      ################################
-      
-      print "-------------------------------------\n";
-      print "   	Codon      ($prot[$aa-1]):\t\t$codon\n";
-      for ($i=0; $i < scalar @{$code{$mutation}}; $i++){
-	print "	Mutated to \($mutation\):\t\t$code{$mutation}->[$i-1]\n" if $mutation ne "X";
-	print "	Mutated to \(STOP\):\t$code{$mutation}->[$i-1]\n" if $mutation eq "X";
-      }
-      print "-------------------------------------\n";    
-    }
-    my ($first_bp, $second_bp, $third_bp, $first_site, $second_site, $third_site);
-    $first_bp = $codon_seq{$aa}->[1];
-    $second_bp = $codon_seq{$aa}->[3];
-    $third_bp = $codon_seq{$aa}->[5];
-    $first_site = $codon_seq{$aa}->[0];
-    $second_site = $codon_seq{$aa}->[2];
-    $third_site = $codon_seq{$aa}->[4];
-    
-    #######################################################################
-    # output 30 bp flank seq under frame shift or no frame shift situations
-    #######################################################################
-    
-    ################
-    # no frame shift
-    ################
-    
-    
-    if ($first_bp == $second_bp-1 && $second_bp == $third_bp-1){
-      for($i=1; $i<4; $i++){
-	if ($mut_site == 1 && $i == 1){
-	  print "\n\# 1st site mutation:\n";
-	  print @DNA[$first_bp-32+$i..$first_bp-2];
-	  print color("red"), " $first_site ", color("reset"), color("blue"), $second_site.$third_site, color("reset");
-	  print @DNA[$third_bp..$third_bp+26+$i], "\n";
-	  print OUT "Flanking_sequences \"",@DNA[$first_bp-32+$i..$first_bp-2],"\" \"", $second_site.$third_site,@DNA[$third_bp..$third_bp+26+$i],"\"\n";
-	  
-        }
-	if ($mut_site == 2 && $i == 2){
-	  print "\n\# 2nd site mutation:\n";
-	  print @DNA[$first_bp-32+$i..$first_bp-2];
-	  print color ("blue"), $first_site, color("reset"), color("red"), " $second_site ", color("red"), color("reset"), color("blue"), $third_site, color("reset");
-	  print @DNA[$third_bp..$third_bp+26+$i], "\n";
-	  print OUT "Flanking_sequences \"", @DNA[$first_bp-32+$i..$first_bp-2],$first_site, "\" \"", $third_site,@DNA[$third_bp..$third_bp+26+$i], "\"\n";
-        }
-	if ($mut_site == 3 && $i == 3){
-	  print "\n\# 3rd site mutation:\n";
-	  print @DNA[$first_bp-32+$i..$first_bp-2];
-	  print color ("blue"), $first_site.$second_site, color("reset"), color("red"), " $third_site ", color("reset");
-	  print @DNA[$third_bp..$third_bp+26+$i], "\n";
-	  print OUT "Flanking_sequences \"", @DNA[$first_bp-32+$i..$first_bp-2],$first_site.$second_site, "\" \"", @DNA[$third_bp..$third_bp+26+$i],"\"\n";
-	}
-      }
-    }
-    
-    ######################  
-    # second frame shifted
-    ######################
-    
-    if ($first_bp != $second_bp-1 && $second_bp == $third_bp-1){
-      
-      if ($mut_site == 1){
-	print "\n\# 1st site mutation:\n";
-	print color("green"), " $DNA[$first_bp]: ", $first_bp+1-30, color("reset"), "\n";
-	print @DNA[$first_bp-31..$first_bp-2];
-	print color("red"), " $first_site ", color("reset");
-	print color("green"), $DNA[$first_bp], color("reset"), @DNA[$first_bp+1..$first_bp+29], "\n";   
-	print OUT "Flanking_sequences \"", @DNA[$first_bp-31..$first_bp-2], "\" \"", $DNA[$first_bp],@DNA[$first_bp+1..$first_bp+29], "\"\n";
-      }
-      if ($mut_site == 2){
-	print "\n\# 2nd site mutation:\n"; 
-	print color("magenta"), " $DNA[$second_bp-2]: ", $second_bp-1-30, color("reset"), "\n";;
-	print @DNA[$second_bp-31..$second_bp-3], color("magenta"), $DNA[$second_bp-2], color("reset");
-	print color("red"), " $second_site ", color("reset"), color("blue"), $third_site, color("reset"); 
-	print @DNA[$third_bp..$third_bp+28], "\n";  
-	print OUT "Flanking_sequences \"", @DNA[$second_bp-31..$second_bp-3],$DNA[$second_bp-2], "\" \"", $third_site,@DNA[$third_bp..$third_bp+28], "\"\n";   
-      }
-      if ($mut_site == 3){
-	print "\n\# 3rd site mutation:\n";
-	print color("magenta"), " $DNA[$second_bp-2]: ", $second_bp-1-30, color("reset"), "\n";;
-	print @DNA[$second_bp-30..$second_bp-3], color("magenta"), $DNA[$second_bp-2], color("reset");;   
-	print color("blue"), $second_site, color("reset"), color("red"), " $third_site ", color("reset");                                   	
-	print @DNA[$third_bp..$third_bp+29], "\n"; 
-	print OUT "Flanking_sequences \"", @DNA[$second_bp-30..$second_bp-3],$DNA[$second_bp-2],$second_site, "\" \"", @DNA[$third_bp..$third_bp+29], "\"\n";
-      }
-    }
-    
-    ######################
-    # third frame shifted
-    #####################
-    
-    if ($first_bp == $second_bp-1 && $second_bp != $third_bp-1 ){
-      
-      if ($mut_site == 1){
-	print "\n\# 1st site mutation:\n";
-	print color("green"), " $DNA[$second_bp]: ", $second_bp+1-30, color("reset"), "\n";
-	print @DNA[$first_bp-31..$first_bp-2];
-	print color("red"), " $first_site ", color("reset"), color("blue"), $second_site, color("reset");
-	print color("green"), $DNA[$second_bp], color("reset"), @DNA[$second_bp+1..$second_bp+28], "\n";
-	print OUT "Flanking_sequences \"", @DNA[$first_bp-31..$first_bp-2], "\" \"", $second_site,$DNA[$second_bp],@DNA[$second_bp+1..$second_bp+28],"\"\n";
-      }
-      if ($mut_site == 2){
-	print "\n\# 2nd site mutation:\n";
-	print color("green"), " $DNA[$second_bp]: ", $second_bp+1-30, color("reset"), "\n";
-	print @DNA[$first_bp-30..$first_bp-2];
-	print color("blue"), $first_site, color("reset"), color("red"), " $second_site ", color("reset");  
-	print color("green"), $DNA[$second_bp], color("reset"), @DNA[$second_bp+1..$second_bp+29], "\n";
-	print OUT "Flanking_sequences \"", @DNA[$first_bp-30..$first_bp-2],$first_site, "\" \"", $DNA[$second_bp],@DNA[$second_bp+1..$second_bp+29],"\"\n";  
-      }
-      if ($mut_site == 3){
-	print "\n\# 3rd site mutation:\n";
-	print color("magenta"), " $DNA[$third_bp-2]: ", $third_bp-1-30, color("reset"), "\n"; 
-	print @DNA[$third_bp-31..$third_bp-3], color("magenta"), $DNA[$third_bp-2], color("reset");
-	print color("red"), " $third_site ", color("reset");                                             
-	print @DNA[$third_bp..$third_bp+29], "\n";
-	print OUT "Flanking_sequences \"", @DNA[$third_bp-31..$third_bp-3],$DNA[$third_bp-2], "\" \"", @DNA[$third_bp..$third_bp+29], "\"\n";
-      }
-    }
-    print "\n";
+
+  print "\n$prot[$aa-1]($aa) = "; 
+  print "@{$codon_seq{$aa}}->[0] (", @{$codon_seq{$aa}}->[1]-30, ") @{$codon_seq{$aa}}->[2] (";
+  print @{$codon_seq{$aa}}->[3]-30, ") @{$codon_seq{$aa}}->[4] (", @{$codon_seq{$aa}}->[5]-30, ") [full-length aa of this gene: ", scalar @prot, "]\n\n"; 
+  my $codon = "@{$codon_seq{$aa}}->[0]"."@{$codon_seq{$aa}}->[2]"."@{$codon_seq{$aa}}->[4]";
+
+  print "Triplet color coding: mutated site in ", color("red"), "RED", color("reset"), ", the other two sites behind or before it in the triplet in ", color("blue"), "BLUE", color("reset"), "\n"; 
+  print "Flanking bp coding when frame shift:  upsteam of mutated site in ", color("magenta"), "MAGENTA", color("reset"), ", downstream in ", color("green"), "GREEN", color("reset"), "\n";
+  print "This color coding does not apply to dinucleotide mutation sites. But flanking seqs are there anyway\n\n"; 
+
+  ################################
+  # output 30 bp flanks of a codon
+  ################################
+
+  print "-------------------------------------\n";
+  print "   	Codon      ($prot[$aa-1]):\t\t$codon\n";
+  for ($i=0; $i < scalar @{$code{$mutation}}; $i++){
+    print "	Mutated to \($mutation\):\t\t@{$code{$mutation}}->[$i-1]\n" if $mutation ne "X";
+    print "	Mutated to \(STOP\):\t@{$code{$mutation}}->[$i-1]\n" if $mutation eq "X";
   }
+  print "-------------------------------------\n";    
+
+  my ($first_bp, $second_bp, $third_bp, $first_site, $second_site, $third_site);
+  $first_bp = @{$codon_seq{$aa}}->[1];
+  $second_bp = @{$codon_seq{$aa}}->[3];
+  $third_bp = @{$codon_seq{$aa}}->[5];
+  $first_site = @{$codon_seq{$aa}}->[0];
+  $second_site = @{$codon_seq{$aa}}->[2];
+  $third_site = @{$codon_seq{$aa}}->[4];
+
+  #######################################################################
+  # output 30 bp flank seq under frame shift or no frame shift situations
+  #######################################################################
+
+  ################
+  # no frame shift
+  ################
+
+  if ($first_bp == $second_bp-1 && $second_bp == $third_bp-1){
+    for($i=1; $i<4; $i++){
+      print "\n\# 1st site mutation:\n" if $i == 1; print "\n\# 2nd site mutation:\n" if $i == 2; print "\n\# 3rd site mutation:\n" if $i == 3;
+      print @DNA[$first_bp-32+$i..$first_bp-2];
+      print color("red"), " $first_site ", color("reset"), color("blue"), $second_site.$third_site, color("reset") if $i == 1;
+      print color ("blue"), $first_site, color("reset"), color("red"), " $second_site ", color("red"), color("reset"), color("blue"), $third_site, color("reset") if $i == 2;
+      print color ("blue"), $first_site.$second_site, color("reset"), color("red"), " $third_site ", color("reset") if $i == 3;
+      print @DNA[$third_bp..$third_bp+26+$i], "\n";
+    }
+  }
+
+  ######################  
+  # second frame shifted
+  ######################
+
+  if ($first_bp != $second_bp-1 && $second_bp == $third_bp-1){
+
+    print "\n\# 1st site mutation:\n";
+    print color("green"), " $DNA[$first_bp]: ", $first_bp+1-30, color("reset"), "\n";
+    print @DNA[$first_bp-31..$first_bp-2];
+    print color("red"), " $first_site ", color("reset");
+    print color("green"), $DNA[$first_bp], color("reset"), @DNA[$first_bp+1..$first_bp+29], "\n";   
+
+    print "\n\# 2nd site mutation:\n"; 
+    print color("magenta"), " $DNA[$second_bp-2]: ", $second_bp-1-30, color("reset"), "\n";;
+    print @DNA[$second_bp-31..$second_bp-3], color("magenta"), $DNA[$second_bp-2], color("reset");
+    print color("red"), " $second_site ", color("reset"), color("blue"), $third_site, color("reset"); 
+    print @DNA[$third_bp..$third_bp+28], "\n";  
+
+    print "\n\# 3rd site mutation:\n";
+    print color("magenta"), " $DNA[$second_bp-2]: ", $second_bp-1-30, color("reset"), "\n";;
+    print @DNA[$second_bp-30..$second_bp-3], color("magenta"), $DNA[$second_bp-2], color("reset");;   
+    print color("blue"), $second_site, color("reset"), color("red"), " $third_site ", color("reset");                                                      
+    print @DNA[$third_bp..$third_bp+29], "\n"; 
+  }
+ 
+ ######################
+  # third frame shifted
+  #####################
+
+  if ($first_bp == $second_bp-1 && $second_bp != $third_bp-1){
+
+    print "\n\# 1st site mutation:\n";
+    print color("green"), " $DNA[$second_bp]: ", $second_bp+1-30, color("reset"), "\n";
+    print @DNA[$first_bp-31..$first_bp-2];
+    print color("red"), " $first_site ", color("reset"), color("blue"), $second_site, color("reset");
+    print color("green"), $DNA[$second_bp], color("reset"), @DNA[$second_bp+1..$second_bp+28], "\n";
+  
+    print "\n\# 2nd site mutation:\n";
+    print color("green"), " $DNA[$second_bp]: ", $second_bp+1-30, color("reset"), "\n";
+    print @DNA[$first_bp-30..$first_bp-2];
+    print color("blue"), $first_site, color("reset"), color("red"), " $second_site ", color("reset");  
+    print color("green"), $DNA[$second_bp], color("reset"), @DNA[$second_bp+1..$second_bp+29], "\n";
+
+    print "\n\# 3rd site mutation:\n";
+    print color("magenta"), " $DNA[$third_bp-2]: ", $third_bp-1-30, color("reset"), "\n"; 
+    print @DNA[$third_bp-31..$third_bp-3], color("magenta"), $DNA[$third_bp-2], color("reset");
+    print color("red"), " $third_site ", color("reset");                                             
+    print @DNA[$third_bp..$third_bp+29], "\n";
+  }
+  print "\n";
 }
+
 ################################################################################################
 # get DNA triplet of a specified amino acid based on source exons processed in the above routine
 ################################################################################################

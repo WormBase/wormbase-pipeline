@@ -4,7 +4,7 @@
 
 # by Chao-Kung Chen [030625]
 
-# Last updated on: $Date: 2004-03-19 11:59:04 $
+# Last updated on: $Date: 2004-03-24 16:25:49 $
 # Last updated by: $Author: ck1 $
 
 use Tk;
@@ -459,8 +459,9 @@ sub run {
 
   chdir "/wormsrv2/autoace/GFF_SPLITS/$current/";
 
-  @CDS_coords = `grep $cds *.genes.gff *.rna.gff | cut -f 1,4,5,7,9`; 
- 
+  @CDS_coords = `grep $cds *.genes.gff | cut -f 1,4,5,7,9`;
+  if (!@CDS_coords){@CDS_coords = `grep $cds *.rna.gff | cut -f 1,4,5,7,9`} # do this if seq. belongs to Transcript class
+
   foreach (@CDS_coords){
     chomp;
     ($chrom, $left, $right, $strand, $CDS)= split(/\s+/, $_);
@@ -523,16 +524,12 @@ sub run {
     $ace_window->insert('end', "\/\/Remark \"\" Paper_evidence \"\"\n");
     $ace_window->insert('end', "\/\/Remark \"\" PMID_evidence \"\"\n");
     $ace_window->insert('end', "\/\/Remark \"\" Curator_confirmed \"WBPerson1845\"\n");
+    $ace_window->insert('end', "\/\/Method \"Substitution_allele\"\n");
     $ace_window->insert('end', "\/\/Method \"Allele\"\n");
     $ace_window->insert('end', "\/\/Method \"Deletion_allele\"\n");
     $ace_window->insert('end', "\/\/Method \"Insertion_allele\"\n");
     $ace_window->insert('end', "\/\/Method \"Deletion_and_insertion_allele\"\n");
     $ace_window->insert('end', "\/\/Method \"Transposon_insertion\"\n");
-    $ace_window->insert('end', "\/\/Method \"Substitution_allele\"\n");
-
-
-
-
 
   }
 

@@ -7,7 +7,7 @@
 # Author: Chao-Kung Chen
 
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2004-03-19 11:59:04 $
+# Last updated on: $Date: 2004-03-24 16:25:49 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'}; 
@@ -149,7 +149,8 @@ my ($DNA, @coords, $chrom, $left, $right, $strand, $CDS);
 
 chdir "/wormsrv2/autoace/GFF_SPLITS/WS$current/";
 
-my @CDS_coords = `grep $cds *.genes.gff *.rna.gff | cut -f 1,4,5,7,9`; 
+my @CDS_coords = `grep $cds *.genes.gff | cut -f 1,4,5,7,9`;
+if (!@CDS_coords){@CDS_coords = `grep $cds *.rna.gff | cut -f 1,4,5,7,9`} # do this if seq. belongs to Transcript class
 
 foreach (@CDS_coords){
   chomp;
