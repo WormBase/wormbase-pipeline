@@ -5,7 +5,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-01-17 16:28:07 $
+# Last updated on: $Date: 2003-01-17 16:29:25 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -123,7 +123,7 @@ foreach $file (@gff_files) {
     next if ($file eq "");
     
     print LOG "# File $file\n";
-    print     "# File $file\n" if ($debug);
+    print     "# File $file\n";
 
     my $line_count = 0;
 
