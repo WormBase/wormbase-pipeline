@@ -4,7 +4,7 @@
 #
 # by Alessandro Guffanti
 #
-# Last updated on: $Date: 2002-12-09 11:55:05 $
+# Last updated on: $Date: 2002-12-09 12:08:48 $
 # Last updated by: $Author: krb $
 #
 # AcePublish.pl will produce a new cgcace version from autoace or will produce diff files 
@@ -25,8 +25,8 @@ getopts ('nuv:');
 
 
 # Create touch file to record script activity
-$0 =~ m/\/([^\/]+$)/;
-system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d'");
+$0 =~ m/\/([^\/]+)$/;
+system ("touch /wormsrv2/logs/history/$1.'date +%y%m%d'");
 
 
 

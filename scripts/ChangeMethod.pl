@@ -1,13 +1,26 @@
-#!/usr/local/bin/perl
+#!/usr/local/bin/perl5.6.1 -w
+#
+# ChangeMethod.pl
+#
+# Last updated on: $Date: 2002-12-09 12:08:49 $
+# Last updated by: $Author: krb $
+
 # Script to change the method associated with each gene
 # Only two methods will be conserved: provisional and confirmed
 # Skips tRNA genes, etc ..
 
+use strict;
+use lib "/wormsrv2/scripts/";
+use Wormbase;
 use Ace;
 use Getopt::Std;
 $|=1;
 
 getopts ('d:');
+
+# Create touch file to record script activity
+$0 =~ m/\/([^\/]+)$/;
+system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
 
 $HELP=<<END;
 
