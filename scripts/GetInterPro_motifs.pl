@@ -7,7 +7,7 @@
 # Gets latest Interpro:GO mappings from XXXX and puts info in to ace file
 #
 # Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2003-02-10 10:03:00 $                        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2003-03-27 14:17:50 $                        # quickly see when script was last changed and by whom
 
 
 use strict;                                     
@@ -36,7 +36,7 @@ print LOG "=============================================\n";
 print LOG "\n";
 
 #Get the latest version
-my $motifs = "/wormsrv2/tmp/interpro_motifs.html";
+my $motifs = "/tmp/interpro_motifs.html";
 print LOG "Attempting to wget the latest version\n";
 `wget -O $motifs ftp://ftp.ebi.ac.uk/pub/databases/interpro/entry.list` and die "$0 Couldnt get listing.html\n";
 print LOG "...... got it!\n";
@@ -55,7 +55,7 @@ while (<I2G>)
     chomp;
     my @info = split;
     $ip = shift @info;
-    next if( ("$info[0]" eq "entries") or (!defined $ip) ); # header lines
+    next if( (!defined $ip) or ("$info[0]" eq "entries") ); # header lines
     #Motif : "INTERPRO:IPR000006"
     #Title    "Class I metallothionein"
     #Database         "INTERPRO" "IPR000006" "IPR000006"
@@ -65,14 +65,6 @@ while (<I2G>)
     print IPDESC "\n";
   }
 
-############################################################
-print LOG " adding patch for IPR005560 (in the first version, this one was missing the <br> tag in the HTML file so was missed)\n if its no longer picked out above this can be removed from script\n\n";
-# in the first version, this one was missing the <br> tag in the HTML file so was missed
-print IPDESC "Motif : \"INTERPRO:IPR005560\"\n";
-print IPDESC "Title  \"Domain of Unknown Function DUF326\"\n";
-print IPDESC "Database  \"INTERPRO\" \"IPR005560\"\n";
-############################################################
-
 
 print LOG "finsihed at ",`date`,"\n";
 close IPDESC;
@@ -81,7 +73,7 @@ close LOG;
 #### use Wormbase.pl to mail Log ###########
 my $name = "GetInterPro_motifs";
 #$maintainers = "ar2\@sanger.ac.uk";
-&mail_maintainer ($name,$maintainers,$log);
+#&mail_maintainer ($name,$maintainers,$log);
 #########################################
 
 exit(0);
