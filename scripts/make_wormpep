@@ -91,10 +91,10 @@ my $debug = $opt_d;
 my $dbdir = glob "/wormsrv2/autoace";
 my $wpdir = glob "/wormsrv2/WORMPEP/wormpep$old_release";
 my $new_wpdir = glob "/wormsrv2/WORMPEP/wormpep$release";
-#my $tace = "/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_4/tace";
+my $tace = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
 
-#tmp version to use to get around Smap/Schild problems
-my $tace = "/nfs/griffin2/rd/acedb/bin.ALPHA_4/tace";
+# tmp version to use to get around Smap/Schild problems
+# my $tace = "/nfs/griffin2/rd/acedb/bin.ALPHA_4/tace";
 
 $ENV{'ACEDB'} = $dbdir;
 
@@ -456,12 +456,13 @@ my $runtime = `date +%H:%M:%S`; chomp $runtime;
 print LOG "# $runtime : retrieving data from autoace for each CDS\n\n";
 
 
-my %CDS_locus  = ""; 
-my %CDS_id     = ""; 
-my %CDS_source = ""; 
-my %CDS_lab    = "";
-my %laboratory = "";
-my @CDS = "";
+my %CDS_locus      = ""; 
+my %CDS_id         = ""; 
+my %CDS_source     = ""; 
+my %CDS_lab        = "";
+my %laboratory     = "";
+my %CDS_status     = "";
+my @CDS            = "";
 
 
 
@@ -479,10 +480,17 @@ while (<TACE>) {
     next if (/\/\//);
     s/\"//g;
     (/^(\S+)\s/);
-    ($cds,$parent,$loci,$brief_id) = split /\t/;
+    ($cds,$parent,$loci,$brief_id,$confirmed) = split /\t/;
     $CDS_locus{$cds} = $loci;
     $CDS_id{$cds} = $brief_id;
     $CDS_lab{$cds} = $parent;
+    if ($confirmed) {
+	$CDS_status{$cds} = "Confirmed";
+    }
+    else {
+	$CDS_status{$cds} = "Predicted";
+    }
+
 }
 close TACE;
 
@@ -526,7 +534,7 @@ foreach (@dotnames) {
     undef (my $locus);
     undef (my $brief_id);
     undef (my $cosmid);
-    undef (my $lab);
+#    undef (my $lab);
 
     my $cds = $_;
     my $c_dot = $cds;
@@ -537,37 +545,36 @@ foreach (@dotnames) {
 
     if ($CDS_locus{$cds} ne "") {$locus_1 = "locus\:".$CDS_locus{$cds};}
         
-    if ($laboratory{$CDS_lab{$cds}} eq "RW") {$lab = "ST.LOUIS";}
-    if ($laboratory{$CDS_lab{$cds}} eq "HX") {$lab = "HINXTON";}
+#    if ($laboratory{$CDS_lab{$cds}} eq "RW") {$lab = "ST.LOUIS";}
+#    if ($laboratory{$CDS_lab{$cds}} eq "HX") {$lab = "HINXTON";}
     
 #    my $runtime = `date +%H:%M:%S`; chomp $runtime;
 #    print LOG "writing gene $c_dot @ $runtime\n";
     
     if ((defined ($PROTEIN{$cds})) && ($PROTEIN{$cds} ne "")) {
-	
 	if ((defined ($SWISS_PROT{$cds})) && ($SWISS_PROT{$cds} ne "")) {
-	    print USERFASTA ">$c_dot CE$wpid_pad  $locus_1 $CDS_id{$cds} ($lab) SW\:$SWISS_PROT{$cds} protein_id\:$PROTEIN{$cds}\n$pepseq\n";
-	    print USERTABLE "$c_dot\tCE$wpid_pad\t$CDS_locus{$cds}\t$CDS_id{$cds}\t$lab\tSW\:$SWISS_PROT{$cds}\t$PROTEIN{$cds}\n";
+	    print USERFASTA ">$c_dot CE$wpid_pad  $locus_1 $CDS_id{$cds} status\:$CDS_status{$cds} SW\:$SWISS_PROT{$cds} protein_id\:$PROTEIN{$cds}\n$pepseq\n";
+	    print USERTABLE "$c_dot\tCE$wpid_pad\t$CDS_locus{$cds}\t$CDS_id{$cds}\t$CDS_status{$cds}\tSW\:$SWISS_PROT{$cds}\t$PROTEIN{$cds}\n";
 	} else {
 	    if ((defined ($SPTREMBL{$cds})) && ($SPTREMBL{$cds} ne "")) {
-		print USERFASTA ">$c_dot CE$wpid_pad  $locus_1 $CDS_id{$cds} ($lab) TR\:$SPTREMBL{$cds} protein_id\:$PROTEIN{$cds}\n$pepseq\n";
-		print USERTABLE "$c_dot\tCE$wpid_pad\t$CDS_locus{$cds}\t$CDS_id{$cds}\t$lab\tTR\:$SPTREMBL{$cds}\t$PROTEIN{$cds}\n";
+		print USERFASTA ">$c_dot CE$wpid_pad  $locus_1 $CDS_id{$cds} status\:$CDS_status{$cds} TR\:$SPTREMBL{$cds} protein_id\:$PROTEIN{$cds}\n$pepseq\n";
+		print USERTABLE "$c_dot\tCE$wpid_pad\t$CDS_locus{$cds}\t$CDS_id{$cds}\t$CDS_status{$cds}\tTR\:$SPTREMBL{$cds}\t$PROTEIN{$cds}\n";
 	    } else {
-                print USERFASTA ">$c_dot CE$wpid_pad  $locus_1 $CDS_id{$cds} ($lab) protein_id\:$PROTEIN{$cds}\n$pepseq\n";
-                print USERTABLE "$c_dot\tCE$wpid_pad\t$CDS_locus{$cds}\t$CDS_id{$cds}\t$lab\t\t$PROTEIN{$cds}\n";
+                print USERFASTA ">$c_dot CE$wpid_pad  $locus_1 $CDS_id{$cds} status\:$CDS_status{$cds} protein_id\:$PROTEIN{$cds}\n$pepseq\n";
+                print USERTABLE "$c_dot\tCE$wpid_pad\t$CDS_locus{$cds}\t$CDS_id{$cds}\t$CDS_status{$cds}\t$PROTEIN{$cds}\n";
 	    }
 	}
     } else {
 	if ((defined ($SWISS_PROT{$cds})) && ($SWISS_PROT{$cds} ne "")) {
-	    print USERFASTA ">$c_dot CE$wpid_pad  $locus_1 $CDS_id{$cds} ($lab) SW\:$SWISS_PROT{$cds}\n$pepseq\n";
-	    print USERTABLE "$c_dot\tCE$wpid_pad\t$CDS_locus{$cds}\t$CDS_id{$cds}\t$lab\tSW\:$SWISS_PROT{$cds}\n";
+	    print USERFASTA     ">$c_dot CE$wpid_pad  $locus_1 $CDS_id{$cds} status\:$CDS_status{$cds} SW\:$SWISS_PROT{$cds}\n$pepseq\n";
+	    print USERTABLE      "$c_dot\tCE$wpid_pad\t$CDS_locus{$cds}\t$CDS_id{$cds}\t$CDS_status{$cds}\tSW\:$SWISS_PROT{$cds}\n";
 	} else {
 	    if ((defined ($SPTREMBL{$cds})) && ($SPTREMBL{$cds} ne "")) {
-		print USERFASTA ">$c_dot CE$wpid_pad  $locus_1 $CDS_id{$cds} ($lab) TR\:$SPTREMBL{$cds}\n$pepseq\n";
-		print USERTABLE "$c_dot\tCE$wpid_pad\t$CDS_locus{$cds}\t$CDS_id{$cds}\t$lab\tTR\:$SPTREMBL{$cds}\n";
+		print USERFASTA ">$c_dot CE$wpid_pad  $locus_1 $CDS_id{$cds} status\:$CDS_status{$cds} TR\:$SPTREMBL{$cds}\n$pepseq\n";
+		print USERTABLE  "$c_dot\tCE$wpid_pad\t$CDS_locus{$cds}\t$CDS_id{$cds}\t$CDS_status{$cds}\tTR\:$SPTREMBL{$cds}\n";
 	    } else {
-                print USERFASTA ">$c_dot CE$wpid_pad  $locus_1 $CDS_id{$cds} ($lab)\n$pepseq\n";
-                print USERTABLE "$c_dot\tCE$wpid_pad\t$CDS_locus{$cds}\t$CDS_id{$cds}\t$lab\n";
+                print USERFASTA ">$c_dot CE$wpid_pad  $locus_1 $CDS_id{$cds} status\:$CDS_status{$cds}\n$pepseq\n";
+                print USERTABLE  "$c_dot\tCE$wpid_pad\t$CDS_locus{$cds}\t$CDS_id{$cds}\t$CDS_status{$cds}\n";
 	    }
 	}          
     }
