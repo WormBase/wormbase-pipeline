@@ -2,7 +2,7 @@
 #
 # EMBLDump.pl :  makes EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2003-12-03 10:06:15 $
+#  Last updated on: $Date: 2003-12-03 11:11:28 $
 #  Last updated by: $Author: krb $
 
 use strict;
@@ -149,8 +149,6 @@ while (<EMBL>) {
     print OUT "$id\n";
     print OUT "XX\n";
     print OUT "AC   $accession;\n";
-    print OUT "XX\n";
-    print OUT "SV   $clone2sv{$clone};\n";
     print OUT "XX\n";
 
     # can now reset $id
