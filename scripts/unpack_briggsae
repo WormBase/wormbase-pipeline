@@ -82,7 +82,7 @@ my $today = "20" . substr($opt_r,0,2) . "-" . substr($opt_r,2,2) . "-" . substr(
 # open logfile               #
 ##############################
 
-my $system_return = system ("/bin/touch $logfile");
+system ("/bin/touch $logfile");
 warn "Couldn't touch $logfile: $?" if ($?);
 
 open (LOGFILE,">>$logfile") || die "Couldn't append to $logfile";
@@ -105,7 +105,7 @@ my $dir = cwd();
 print LOGFILE "Move to directory: '$dir'\n";
 
 # copy database.tar.gz file & check size
-$system_return = system ("cp -f $ftp/brigdb_$today.tar.gz .");
+system ("cp -f $ftp/brigdb_$today.tar.gz .");
 warn "Couldn't run cp command: $?" if ($?);
 
 my $match = &copy_check("$ftp/brigdb_$today.tar.gz","$dbdir/brigdb_$today.tar.gz");
@@ -113,11 +113,11 @@ print LOGFILE "Copy 'brigdb_$today.tar.gz' to $dbdir successful\n" if ($match ==
 
 print LOGFILE "Copy 'brigdb_$today.tar.gz' to $dbdir failed\n" if ($match == 0);
  
-$system_return = system ("/bin/gzip -d brigdb_$today.tar.gz");
+system ("/bin/gzip -d brigdb_$today.tar.gz");
 warn "Couldn't run gzip command: $?" if ($?);
 print LOGFILE "uncompress file\n";
 
-$system_return = system ("/bin/tar -xvf brigdb_$today.tar");
+system ("/bin/tar -xvf brigdb_$today.tar");
 warn "Couldn't run tar command: $?" if ($?);
 print LOGFILE "untar file\n\n";
 
@@ -135,8 +135,9 @@ print LOGFILE "\n";
  # modify displays.wrm for rebuild #
  ###################################
 
-$system_return = system ("mv $dbdir/wspec/displays.wrm $dbdir/wspec/displays.old") ;
+system ("mv $dbdir/wspec/displays.wrm $dbdir/wspec/displays.old") ;
 warn "Couldn't run mv command: $?" if ($?);
+
 open (FILE_OLD,"$dbdir/wspec/displays.old") || do { 
     print LOGFILE "failed to open $dbdir/wspec/displays.old\n"; 
     die(1);
@@ -159,10 +160,10 @@ unlink "$dbdir/wspec/displays.old" ;
  # Re-initialise the ACEDB database #
  ####################################
 
-$system_return = system ("\\rm $dbdir/database/new/*");
+system ("\\rm $dbdir/database/new/*");
 warn "Couldn't run rm command: $?" if ($?);
 
-$system_return = system ("\\rm $dbdir/database/touched/*");
+system ("\\rm $dbdir/database/touched/*");
 warn "Couldn't run rm command: $?" if ($?);
 
 if (-e "$dbdir/database/lock.wrm") {
@@ -170,10 +171,10 @@ if (-e "$dbdir/database/lock.wrm") {
     close LOGFILE;
     die();
 }
-$system_return = system ("\\mv $dbdir/database/log.wrm $dbdir/database/log.old");  
+system ("\\mv $dbdir/database/log.wrm $dbdir/database/log.old");  
 warn "Couldn't run rm command: $?" if ($?);
 
-$system_return = system ("\\rm $dbdir/database/*.wrm");
+system ("\\rm $dbdir/database/*.wrm");
 warn "Couldn't run rm command: $?" if ($?);
 
 unlink "$dbdir/database/ACEDB.wrm";
@@ -210,7 +211,7 @@ if (-e $filename) {
 # Tidy up old ace files       #
 ###############################
 
-$system_return = system ("/bin/rm -f brigdb_$today.tar");
+system ("/bin/rm -f brigdb_$today.tar");
 warn "Couldn't run rm command: $?" if ($?);
 
 print LOGFILE "\ndelete tar file from current directory\n\n";
