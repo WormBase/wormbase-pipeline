@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2003-07-15 13:36:37 $
+# Last updated on: $Date: 2003-07-15 13:39:19 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -392,7 +392,7 @@ sub copy_homol_data{
   system("cp $blast_dir/worm_brigprot_motif_info.ace    $private_ftp/${release}brig_protein_motif_data.ace");
 
   system("gzip $blast_dir/best_blastp_hits");
-  system("cp $blast_dir/best_blastp_hits.gz    $targetdir/$release/best_blastp_hits.WS$release");
+  system("cp $blast_dir/best_blastp_hits.gz    $targetdir/$release/best_blastp_hits.WS$release.gz");
   
   system("/bin/gzip $private_ftp/*ace");
 
