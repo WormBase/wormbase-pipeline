@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2005-01-11 14:38:29 $
+# Last edited on: $Date: 2005-01-14 17:15:54 $
 
 
 
@@ -253,6 +253,8 @@ if ($addblat){
   # Check that blats were actually run
   &usage(19) unless (-e "$logdir/$flag{'B6'}");  
   &load_blat_results("all");
+  # moved this mapping stage into this option so that Features are available for Transcript_builder.
+  &run_command("$scriptdir/map_features.pl -all -build");
 }
 
 
@@ -1290,9 +1292,6 @@ sub map_features {
   $am_option = "-map";
 
   my $file;
-
-  # features
-  &run_command("$scriptdir/map_features.pl -all -build");
   
   # PCR products
   &run_command("$scriptdir/map_PCR_products.pl");
