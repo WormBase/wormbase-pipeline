@@ -110,7 +110,7 @@ foreach my $chromosome (@chromosomes) {
 #	# ignore smd spot data from caltech
 #	next if ($f[8] =~ /smd_INTERGENIC_CONTROL/);
 
-	if ($f[1] eq "GenePair_STS") {
+	if ($f[1] eq "GenePair_STS" or $f[1] eq "Orfeome_project") {
 	    my ($name) = ($f[8] =~ /PCR_product \"(.*)\"$/);
             $PCRcount{$name}++;
             my $PCRname = $name.".".$PCRcount{$name};
