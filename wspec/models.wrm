@@ -790,12 +790,12 @@
 			Pfam	UNIQUE	Text
 	  Origin  From_Database UNIQUE ?Database UNIQUE Int	// release number
 		  From_Author ?Author XREF Sequence
-		  From_Laboratory ?Laboratory
+		  From_Laboratory UNIQUE ?Laboratory
 		  Production_group Text
 		  Finishing_group Text
 		  Date DateType Text			// Text for comments on operation
 		  Date_directory UNIQUE Text	        // date of this version for cosmids, changed sdm 000731 to text
-		  Species ?Species
+		  Species UNIQUE ?Species
 	  Map ?Map XREF Sequence #Map_position		// use in particular for Genomic_canonical
 	  Interpolated_gMap ?Map UNIQUE Float
 	  Visible	Title UNIQUE ?Text
