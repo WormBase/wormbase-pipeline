@@ -7,7 +7,7 @@
 # Gets latest Interpro:GO mappings from XXXX and puts info in to ace file
 #
 # Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2002-08-07 16:16:39 $                        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2002-08-12 15:47:11 $                        # quickly see when script was last changed and by whom
 
 
 use strict;                                     
@@ -98,7 +98,6 @@ open (I2GACE, ">/wormsrv2/tmp/interpro2go.ace") or die "cant write ace file\n";
 foreach my $key (keys %interpro_des)
   {
     print I2GACE "Motif : \"INTERPRO:$key\"\n";
-    print I2GACE "Title \"$interpro_des{$key}\"\n";
     print I2GACE "Database \"INTERPRO\" \"$key\" \"$key\"\n";
     @data = split(/\s+/,"$interpro_GO{$key}");
     foreach (@data){
@@ -125,43 +124,33 @@ __END__
 
 =pod
 
-=head2 NAME - script_template.pl
+=head2 NAME make_InterproGO_mapping.pl
 
 =head1 USAGE
 
 =over 4
 
-=item script_template.pl  [-options]
+=item make_InterproGO_mapping.p  [-options]
 
 =back
 
 This script:
 
- 1) checks to see if there are three existing (and unpacked) WS releases 
- in /wormsrv2. If there are, then it archives the oldest release away into 
- /wormsrv2/wormbase_archive
- 2) Does a similar thing with Wormpep releases in /wormsrv2/WORMPEP
- but 
- 3) Runs GFFsplitter -a to archive away the last GFF_SPLITS directory
- 4) Copies autoace into a separate WSxx directory
- 5) updates the /wormsrv2/current_DB symlink to point to the directory created
-    in step 4.
+wgets the latest version of ftp://ftp.ebi.ac.uk/pub/databases/interpro/interpro2go
+then parses it to produce an ace file of format
 
-script_template.pl MANDATORY arguments:
 
-=over 4
+Motif : "INTERPRO:IPR000018"
 
-=item none
+Title    "P2Y4 purinoceptor"
 
-=back
+Database         "INTERPRO" "IPR000018" "IPR000018"
 
-script_template.pl  OPTIONAL arguments:
+GO_term  "GO:0004930"
 
-=over 4
+GO_term  "GO:0005624"
 
-=item -h, Help
 
-=back
 
 =head1 REQUIREMENTS
 
@@ -175,7 +164,7 @@ script_template.pl  OPTIONAL arguments:
 
 =over 4
 
-=item Keith Bradnam (krb@sanger.ac.uk)
+=item Anthony Rogers (ar2@sanger.ac.uk)
 
 =back
 
