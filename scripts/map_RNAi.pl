@@ -6,8 +6,8 @@
 #
 # by Kerstin Jekosch
 #
-# Last updated by: $Author: krb $                      
-# Last updated on: $Date: 2004-10-20 12:03:04 $        
+# Last updated by: $Author: dl1 $                      
+# Last updated on: $Date: 2004-12-22 11:19:32 $        
 
 use strict;
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
@@ -22,11 +22,11 @@ use Ace;
 # variables and command-line options #
 ######################################
 
-my $tace        = &tace;                                  # tace executable path
-my $dbdir       = "/wormsrv2/autoace";                    # Database path
+my $tace        = &tace;                                            # tace executable path
+my $dbdir       = "/wormsrv2/autoace";                              # Database path
 my $gffdir      = "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS";        # GFF_SPLITS directory
-my @chromosomes = qw( I II III IV V X );                  # chromosomes
-my $db_version  = &get_wormbase_version_name;             # WS version name
+my @chromosomes = qw( I II III IV V X );                            # chromosomes
+my $db_version  = &get_wormbase_version_name;                       # WS version name
 
 my %output      = (); # for RNAi
 my %output2     = (); # for Expression profiles
@@ -99,7 +99,12 @@ foreach my $chromosome (@chromosomes) {
   my %expression       = ();
   my %expression_count = ();
   
+
   # loop through the split GFF RNAi file  
+  #
+  # New RNAi lines : CHROMOSOME_I    RNAi    RNAi_reagent    1681680 1683527 .       .       .       Target "RNAi:WBRNAi00004820" 1 1848
+
+
   print "Loop through RNAi GFF file CHROMOSOME_${chromosome}\n" if ($verbose);
   open (GFF, "<$gffdir/CHROMOSOME_${chromosome}.RNAi.gff") || die "Failed to open RNAi gff file\n\n";
   while (<GFF>) {
@@ -108,7 +113,7 @@ foreach my $chromosome (@chromosomes) {
     next unless /\S/;
     @line = split /\t/;
     
-    my ($name) = ($line[8] =~ /\"(\S+.+)\"$/);
+    my ($name) = ($line[8] =~ /\"(\S+.+)\"\s+\d+\s+\d+$/);
     $RNAicount{$name}++;
     my $RNAiname = $name.".".$RNAicount{$name};
     $RNAi{$RNAiname} = [$line[3],$line[4]];
@@ -366,7 +371,7 @@ foreach my $mapped (sort keys %finaloutput) {
     $gene = $finaloutput{$mapped}->[$n];
     print "'$mapped' is mapped to $gene\t" if ($verbose);
     
-    print OUTACE "\nRNAi : \"$mapped\"\n";
+#    print OUTACE "\nRNAi : \"$mapped\"\n";  # defunct? This explains the extra copy of each RNAi line
     
     my $seq;
     my $gene;       # e.g. WBGene00001231
