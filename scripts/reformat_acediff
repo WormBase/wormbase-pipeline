@@ -1,0 +1,95 @@
+#!/usr/local/bin/perl5.6.1 -w
+#
+# reformat_acediff
+#
+# splits acediff output into tag deletions and tag insertions
+#
+# dl 
+
+use strict;
+
+my $file = shift;                  # acefile to reformat
+
+our @add;
+our @delete;
+
+my $oldsequence = "nill";
+my $sequence;
+my $add;
+my $delete;
+my $debug;
+
+open (FILE, "<$file");
+while (<FILE>) {
+
+    chop;
+    next if ($_ eq "");
+    next if (/^\/\//);
+
+    if (/^Sequence \"(\S+)\"/) {
+	$sequence = $1;
+
+	if ($oldsequence eq "nill") {
+	    $oldsequence = $sequence;
+	    next;
+	}
+
+	print "// report for sequence $oldsequence\n";
+
+	if (scalar (@add) > 0) {
+	    print "\nSequence \"$oldsequence\"\n";
+	    foreach $add (@add) {
+		print "$add\n";
+	    }
+	    undef @add;
+	}
+	
+	if (scalar (@delete) > 0) {
+	    print "\nSequence \"$oldsequence\"\n";
+	    foreach $delete (@delete) {
+		print "$delete\n";
+	    }
+	    undef @delete;
+	}
+	print "\n";
+	$oldsequence = $sequence;
+
+	next;
+    }    
+    
+    if (/^-D/) {
+	push (@delete,$_);
+	print "- $_\n" if ($debug);
+    }
+    else {
+	push (@add,$_);
+	print "+ $_\n" if ($debug);
+    }
+}
+close FILE;
+
+print "// report for sequence $oldsequence\n";
+
+# VERY IMPORTANT - delete things before putting them back
+
+if (scalar (@delete) > 0) {
+    print "\nSequence \"$oldsequence\"\n";
+    foreach $delete (@delete) {
+	print "$delete\n";
+    }
+    undef @delete;
+}
+
+if (scalar (@add) > 0) {
+    print "\nSequence \"$oldsequence\"\n";
+    foreach $add (@add) {
+	print "$add\n";
+    }
+    undef @add;
+}
+
+print "\n";
+
+
+exit(0);
+
