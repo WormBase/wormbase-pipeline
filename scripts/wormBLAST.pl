@@ -330,7 +330,12 @@ if( $setup_mySQL )
     
     &get_updated_database_list;
     
-    
+    # if the user passes WPversion greater than that in the current file update it anyway
+    # (this means you can update the database before wormpep is made - ie during autoace_minder -build
+    $currentDBs{$1} =~ /wormpep(\d+);
+    if( $1 and ( $1<$WPver ) ) {
+      push (@updated_DBs,"wormpep$WPVer\.pep");
+    }
     #   mysql -h ecs1f -u wormadmin -p worm01
     #   delete from InputIdAnalysis where analysisId = 23; (DNA clones BLASTX'd against wormpep)
     #   delete from feature where analysis = 23;
@@ -431,16 +436,27 @@ if( $blastp )
 if( $dump_data )
   {
     # prepare helper files
-    `cat /wormsrv2/autoace/CHROMOSOMES/*.gff | $scripts_dir/gff2cds.pl > /nfs/acari/wormpipe/Elegans/cds$WPver.gff`;
-    `cat /wormsrv2/autoace/CHROMOSOMES/*.gff | $scripts_dir/gff2cos.pl > /nfs/acari/wormpipe/Elegans/cos$WPver.gff`;
-    `$scripts_dir/prepare_dump_blastx.pl > $wormpipe_dir/dumps/accession2clone.list`;
+    if( -e "/wormsrv2/autoace/CHROMOSOMES/*.gff") {
+      `cat /wormsrv2/autoace/CHROMOSOMES/*.gff | $scripts_dir/gff2cds.pl > /nfs/acari/wormpipe/Elegans/cds$WPver.gff`;
+      `cat /wormsrv2/autoace/CHROMOSOMES/*.gff | $scripts_dir/gff2cos.pl > /nfs/acari/wormpipe/Elegans/cos$WPver.gff`;
+      `$scripts_dir/prepare_dump_blastx.pl > $wormpipe_dir/dumps/accession2clone.list`;
+      
+      # Dump
+      `$scripts_dir/Dump_new_prot_only.pl -all`;
+      `$scripts_dir/dump_blastx_new.pl -w $wormpipe_dir/BlastDB/wormpep$WPver.pep -a ~/Elegans/WS$WPver.agp -g ~/Elegans/cds$WPver.gff -c ~/Elegans/cos$WPver.gff -m`;
+      `$scripts_dir/dump_motif.pl`;
+
+      # Dump extra info for SWALL proteins that have matches. Info retrieved from the dbm databases on /acari/work2a/wormpipe/
+      `$scripts_dir/write.swiss_trembl.pl -swiss -trembl`;
+    }
+    else {
+      print " cant find GFF files at /wormsrv2/autoace/CHROMOSOMES/ \n ";
+      exit(1);
+    }
     
-    `$scripts_dir/dump_blastp.pl -w $wormpipe_dir/BlastDB/wormpep$WPver.pep -s`;
-    `$scripts_dir/dump_blastx_new.pl -w $wormpipe_dir/BlastDB/wormpep$WPver.pep -a ~/Elegans/WS$WPver.agp -g ~/Elegans/cds$WPver.gff -c ~/Elegans/cos$WPver.gff -m`;
-    `$scripts_dir/dump_motif.pl`;
   }
 
-&wait_for_pipeline_to_finish if $test_pipeline;
+&wait_for_pipeline_to_finish if $test_pipeline; # debug stuff
 
 exit(0);
 
