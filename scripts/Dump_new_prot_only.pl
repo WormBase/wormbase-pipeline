@@ -76,11 +76,13 @@ while ( $pep_input ) {
 unless (@peps2dump)  {
   if( $all ) {
     print LOG &runtime," : Dumping all current wormpep proteins ( Wormpep$WPver )\n";
-    open( DIFF,"</wormsrv2/WORMPEP/wormpep$WPver/wormpep.table$WPver") or die "cant opne diff file\n";
+    open( DIFF,"</wormsrv2/WORMPEP/wormpep$WPver/wormpep$WPver") or die "cant open Wormpep$WPver file\n";
     while(<DIFF>) {
-      chomp;
-      my @tabledata = split;
-      push( @peps2dump, $tabledata[1]);
+      if( /^>/ ) {
+	chomp;
+	my @tabledata = split;
+	push( @peps2dump, $tabledata[1]);
+      }
     }
   }
   else {
