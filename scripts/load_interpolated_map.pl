@@ -7,7 +7,7 @@
 
 # by Chao-Kung Chen [030625]
 
-# Last updated on: $Date: 2003-06-26 15:34:51 $
+# Last updated on: $Date: 2003-06-26 16:21:40 $
 # Last updated by: $Author: ck1 $
 
 use strict;
@@ -38,7 +38,7 @@ save
 quit
 END
 
-my $date = `date +%y:%m:%d`; chomp $date;
+my $date = `date +%y%m%d`; chomp $date;
 my $log = "/wormsrv2/logs/load_intp_map_to_geneace_from_WS$current.$date";
 my $tace = &tace;
 
