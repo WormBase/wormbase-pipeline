@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2004-03-19 15:27:03 $
+# Last updated on: $Date: 2004-03-22 11:30:03 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -34,21 +34,6 @@ my $jah_log;                                               # Additional log file
 my (%L_name_F_WBP, %L_name_F_M_WBP);                       # hashes for checking Person and Author merging?
 
 
-# list of hard-coded loci with other-name(s) as valid independent loci (exceptions for main name / other_name merging) 
-# @exceptions and %exceptions are made global as they are used for checking both Locus and Strain classes
-my @exceptions = 
-  qw (aka-1 bar-1 cas-1 clh-2 clh-3 ctl-1 ctl-2 egl-13 evl-20 gst-4 mig-1 sle-1 slo-1 rap-1 rpy-1 dmo-1 mod-1 
-      old-1 plk-1 ptp-3 rab-18 rsp-1 rsp-2 rsp-4 rsp-5 rsp-6 sca-1 sus-1 twk-1 twk-2 twk-3 twk-4 twk-5 twk-6 twk-7 twk-8
-      twk-9 twk-10 twk-11 twk-12 twk-13 twk-14 twk-16 twk-17 twk-18 twk-20 twk-21 twk-22 twk-23 twk-24 twk-25 twk-26 
-      twk-32 unc-58 sup-9 ins-17 ins-18 lin-22
-     );
-
-# load elements of @exceptions into hash for fast checking
-my %exceptions;
-foreach (@exceptions){$exceptions{$_}++}; 
-
-my $ga = init Geneace();
-
 ###################################################
 # command line options                            # 
 ###################################################
@@ -74,12 +59,10 @@ if($debug){
   ($maintainers = "$debug" . '\@sanger.ac.uk');
 }
 
-
 # choose database to query: default is /wormsrv1/geneace 
 my $default_db = "/wormsrv1/geneace";
 ($default_db = $database) if ($database);
 print "\nUsing $default_db as default database.\n\n";
-
 
 
 # Open file for acefile output?
@@ -89,11 +72,8 @@ if ($ace){
   system("chmod 777 $acefile");
 }
 
-
 # Set up other log files                         
 &create_log_files;
-
-
 
 
 ######################################################################################################
@@ -108,6 +88,16 @@ if ($ace){
 my $db = Ace->connect(-path  => $default_db,
 		      -program =>$tace) || do { print LOG "Connection failure: ",Ace->error; die();};
 
+
+my $ga = init Geneace();
+
+# get list of loci that are both CGC/Non_CGC loci and other-name(s) of CGC name(s) (exceptions for main name / other_name merging) 
+# @exceptions and %exceptions are made global as they are used for checking both Locus and Strain classes
+
+my @exceptions = $ga->cgc_name_is_also_other_name($db);
+my %exceptions;
+
+foreach (@exceptions){$exceptions{$_}++}; 
 
 # Process separate classes if specified on the command line else process all classes
 @classes = ("locus","laboratory","allele","strain","rearrangement","sequence","mapping","evidence", "xref", "multipt", ) if (!@classes);
@@ -611,9 +601,10 @@ sub test_locus_for_errors{
   # test for Other_name value which is also a Locus name in its own right
   # Also can test for where a Locus has an other name but this fact hasn't been added to parent Gene_class object
   # as a Remark
+
   if(defined($locus->at('Name.Other_name'))){
     
-    foreach (@exceptions){$exceptions{$_}++};  # @exceptions and %exceptions are defined as global
+    #foreach (@exceptions){$exceptions{$_}++};  # @exceptions and %exceptions are defined as global
 
     # get other names of locus
     my @other_names = $locus->Other_name;
@@ -1786,8 +1777,8 @@ sub int_map_to_map_loci {
   print LOG    "Total: $error to become inferred genetic marker(s)\n\n";
   print JAHLOG "Total: $error to become inferred genetic marker(s)\n\n";
  
-  my $header = "\n\nChecking dubious multi-pt obj. linked to locus (ie, checking for wrong association)\n";
-  my $sep = "-----------------------------------------------------------------------------------\n";
+  $header = "\n\nChecking dubious multi-pt obj. linked to locus (ie, checking for wrong association)\n";
+  $sep = "-----------------------------------------------------------------------------------\n";
   print $header, $sep;
   print LOG $header;
   print LOG $sep;
