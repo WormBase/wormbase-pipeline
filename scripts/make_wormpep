@@ -88,10 +88,10 @@ my $debug = $opt_d;
 my $dbdir = glob "/wormsrv2/autoace";
 my $wpdir = glob "/wormsrv2/WORMPEP/wormpep$old_release";
 my $new_wpdir = glob "/wormsrv2/WORMPEP/wormpep$release";
-my $tace = "/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_4/tace";
+#my $tace = "/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_4/tace";
 
 #tmp version to use to get around Smap/Schild problems
-#my $tace = "/nfs/griffin2/rd/acedb/bin.ALPHA_4/tace";
+my $tace = "/nfs/griffin2/rd/acedb/bin.ALPHA_4/tace";
 
 $ENV{'ACEDB'} = $dbdir;
 
