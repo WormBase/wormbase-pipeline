@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.78 2002-08-08 15:29:40 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.79 2002-08-28 08:26:51 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -702,7 +702,6 @@
 		Staff   ?Author XREF Laboratory
 
 ?Author Full_name Text
-	EMBL_name Text
         Also_known_as Text
 	Laboratory UNIQUE ?Laboratory XREF Staff
 	Old_lab ?Laboratory
