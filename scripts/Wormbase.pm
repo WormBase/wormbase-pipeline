@@ -111,7 +111,7 @@ sub FetchData {
 
     my ($file,$ref) = @_;
     
-    open (FH, "</wormsrv2/autoace/COMMON_DATA/$file.dat") or die "can't open $file.dat";
+    open (FH, "</wormsrv2/autoace/COMMON_DATA/$file.dat") or die "can't open $file.dat\t:$!";
     undef $/;
     my $VAR1;
     my $data = <FH>;
