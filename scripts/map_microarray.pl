@@ -7,12 +7,11 @@
 # by Anon
 #
 # Last updated by: $Author: krb $                      
-# Last updated on: $Date: 2003-11-18 14:15:59 $        
+# Last updated on: $Date: 2003-12-01 11:38:35 $        
 
 
-$|=1;
 use strict;
-use lib "/wormsrv2/scripts/";
+use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
 use IO::Handle;
 use Getopt::Long;
@@ -87,8 +86,8 @@ while (my $obj = $i->next) {
     if (scalar @CDS > 0) {
 	print OUTPUT "\nMicroarray_results : \"$microarray_results\"\n";
 	foreach $gene (@CDS) {
-	    print OUTPUT "Predicted_gene \"$gene\"\n";
-	    $locus   = $obj->Overlaps_CDS->Locus_genomic_seq;
+	    print OUTPUT "CDS \"$gene\"\n";
+	    $locus   = $obj->Overlaps_CDS->Locus;
 	}
 	
 	print OUTPUT "Locus $locus\n" if (defined $locus);

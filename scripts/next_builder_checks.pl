@@ -8,7 +8,8 @@
 # build to check the current build
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-11-28 10:28:44 $      
+# Last updated on: $Date: 2003-12-01 11:39:13 $      
+
 
 use strict;
 use lib "/wormsrv2/scripts/";   
@@ -92,7 +93,7 @@ print LOG "C. briggase protein objects too...these now have their own set of bla
 
 
 print LOG "5) Open a keyset of all genome sequences and then query them for:\n";
-print LOG " 'Transcript_child AND NEXT AND NOT NEXT'\n";
+print LOG " 'Transcript AND NEXT AND NOT NEXT'\n";
 print LOG "I.e. tRNAs not attached properly to parent sequence.  This has happened before and you\n";
 print LOG "should notify the responsible group (HX or RW) to fix them for next build\n\n";
 

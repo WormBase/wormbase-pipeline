@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers                             
 #
-# Last updated by: $Author: ar2 $               
-# Last updated on: $Date: 2003-11-14 16:33:55 $         
+# Last updated by: $Author: krb $               
+# Last updated on: $Date: 2003-12-01 11:40:25 $         
 #
 # Generates a release letter at the end of build.
 #
@@ -19,7 +19,7 @@
 
 
 use strict;                    
-use lib "/wormsrv2/scripts/";
+use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
 use Ace;
 use Getopt::Std;
@@ -105,11 +105,11 @@ if( defined($opt_l)) {
   }
 
 
-  # Find out Locus->Sequence connections
+  # Find out Locus->CDS connections
   my $tace = &tace;
   my $db = Ace->connect(-path  => "/wormsrv2/autoace",
                         -program =>$tace) || do { print LOG "Connection failure: ",Ace->error; die();};
-  my $query = "Find Locus WHERE (Genomic_sequence OR Transcript) AND CGC_approved";
+  my $query = "Find Locus WHERE (CDS OR Transcript OR Pseudogene) AND CGC_approved";
   my $locus_seq_count = $db->fetch(-query=> "$query");
   $db->close;
 
