@@ -161,7 +161,7 @@ print "make the wormpep FTP release for wormpep${wormpep}\n" if ($debug);
 
 
 # tar, zip, and copy WormRNA files across from wormsrv2/WORMRNA
-my $dest = "/wormsrv2/WORMRNA/current_WormRNA";
+my $dest = "/wormsrv2/WORMRNA/wormrna${wormrna_release}";
 chdir "$dest" or die "Couldn't cd $dest\n";
 system "/bin/tar -cf $targetdir/$release/wormrna${wormrna_release}.tar README wormrna${wormrna_release}.rna";
 system "/bin/gzip $targetdir/$release/wormrna${wormrna_release}.tar";
