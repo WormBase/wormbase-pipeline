@@ -8,7 +8,7 @@
 # dl
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-10-01 08:06:05 $
+# Last edited on: $Date: 2003-10-03 11:00:55 $
 
 use lib "/wormsrv2/scripts/";
 use Wormbase;
@@ -39,12 +39,13 @@ my %db_ids_acc = (
 # variables and command-line options # 
 ######################################
 
-my ($help, $file, $debug, $no_go);
+my ($help, $file, $debug, $no_go, $verbose);
 
 GetOptions (
 	    "help"      => \$help,
             "file=s"    => \$file,
-	    "debug"     => \$debug,
+	    "debug=s"   => \$debug,
+	    "verbose"   => \$verbose,
 	    "go"        => \$no_go
 	    );
 
@@ -98,15 +99,15 @@ while (<FILE>) {
     ($dbxref_ac,$dbxref_id,$dbxref_db,@interpro) = &get_from_protein_id($f[2]);
 
     # standard name
-    print "$f[7]\t";
+    print "$f[7]\t" if ($verbose);
     my $protein = $gene2CE{$f[7]};                      # incremented array slice to handle new SWALL column
     
     if ($dbxref_ac ne $f[6]) { 
-	print "// mismatch between getz and EBI for $protein [EBI:$f[6]|GETZ:$dbxref_ac)\n";
+	print "ERROR:  mismatch between getz and EBI for $protein [EBI:$f[6]|GETZ:$dbxref_ac)\n";
     }
 
     if ($protein) {
-	print "$protein";
+	print "$protein" if ($verbose);
 	print OUT "\nProtein : WP:$protein\n";
 	print OUT "Database $databases{$dbxref_db} ",$db_ids_acc{$dbxref_db."_id"}," $dbxref_id\n" if($dbxref_id and(  "$dbxref_id" ne "$dbxref_ac"));
 	print OUT "Database $databases{$dbxref_db} ",$db_ids_acc{$dbxref_db."_ac"}," $dbxref_ac\n";
@@ -115,10 +116,10 @@ while (<FILE>) {
 	    }
     }
     else {
-	print "gene $f[7] has no protein (has common_data been updated ?)\n";
+	print "ERROR: gene $f[7] has no protein (has common_data been updated ?)\n";
     }
 
-    print "\n";
+    print "\n" if ($verbose);
     
     print OUT "\nSequence : \"$f[7]\"\n";
     print OUT "Database $databases{$dbxref_db} $dbxref_id $dbxref_ac\n";
@@ -213,6 +214,8 @@ use this if you dont want to update and include the interpro to GO data
 =item -file <file>, Extracted e-mail from EBI containing the Protein_ID data
 
 =item -help, Help
+
+=item -verbose, extra command line output, shows status of each WormPep protein (slower!)
 
 =back
 
