@@ -237,7 +237,7 @@ sub make_command_simple {
    my $command;
    $command=<<END;
 query find $object
-show -a -f $filename
+show -a -T -f $filename
 quit
 END
 
@@ -252,7 +252,7 @@ sub make_command_advanced {
    my $command;
    $command=<<END;
 query find $object where ($criteria)
-show -a -f $filename
+show -a -T -f $filename
 quit
 END
    return ($command,$filename);
@@ -276,7 +276,7 @@ END
       $command=<<END;
 find Sequence
 follow DNA
-show -a -f $filename
+show -a -T -f $filename
 quit
 END
 
