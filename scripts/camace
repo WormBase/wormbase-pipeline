@@ -14,7 +14,7 @@ if ($host ne "wormsrv2") {
     exit(0);
 }
 
-system ("/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/xace $db");
+system ("/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/xace -nosplash $db");
 
 exit (0);
 
