@@ -15,8 +15,8 @@
 #
 ##########################################################
 #
-# Last updated by: $Author: krb $                     
-# Last updated on: $Date: 2003-12-01 11:54:26 $       
+# Last updated by: $Author: ar2 $                     
+# Last updated on: $Date: 2004-06-28 13:12:17 $       
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -35,12 +35,13 @@ my $help;       # Help perdoc
 my $database;   # Database name for single db option
 my $debug;      # Debug mode, verbose output to runner only
 my $test;       # test mode, uses ~wormpub/TEST_BUILD
-
+my $out;
 GetOptions (
 	    "database:s"  => \$database,
 	    "debug=s"     => \$debug,
 	    "help"        => \$help,
-	    "test"        => \$test
+	    "test"        => \$test,
+	    "out:s"       => \$out
 	    );
 
 # help page
@@ -83,47 +84,51 @@ if (!defined $database) {
 }
 
 print "// Using $database as source of data for chromosomes\n" if ($debug);
-
+print STDERR "\t\tconnecting to $database\n";
 # AcePerl connection to $database
 my $db = Ace->connect(-path=>$database,
                       -program =>&tace) or die ("Could not connect with $database\n");
-
+print STDERR "\t\tConnected\n";
 print "Connected to database\n" if ($debug);
 
 my ($pos,$i);
 
-print "\nSequence CHROMOSOME_I\nMethod Link\n" ; $pos = 1 ;
+our $fh;
+open ($fh, ">$out") or die "$out asfgasdg";
+
+
+print $fh "\nSequence CHROMOSOME_I\nMethod Link\n" ; $pos = 1 ;
 &add ("SUPERLINK_RW1");     &overlap ("C30F12") ;
 &add ("SUPERLINK_CB_I");    &overlap ("H10E24") ;
 &add ("SUPERLINK_RW1R");    &overlap ("F49D11") ;
 &add ("SUPERLINK_CB_IR");
 
-print "\nSequence CHROMOSOME_II\nMethod Link\n" ; $pos = 1 ;
+print $fh "\nSequence CHROMOSOME_II\nMethod Link\n" ; $pos = 1 ;
 &add ("SUPERLINK_RW2");     &overlap ("C06A8") ;
 &add ("SUPERLINK_CB_II");   &overlap ("Y53F4B");
 &add ("SUPERLINK_RW2R");
 
-print "\nSequence CHROMOSOME_III\nMethod Link\n" ; $pos = 1 ;
+print  $fh "\nSequence CHROMOSOME_III\nMethod Link\n" ; $pos = 1 ;
 &add ("SUPERLINK_RW3A");    &overlap ("Y53G8AR") ;   
 &add ("SUPERLINK_CB_IIIL"); &overlap ("C38D4") ;
 &add ("SUPERLINK_RW3B");    &overlap ("PAR3") ;
 &add ("SUPERLINK_CB_IIIR");
-
-print "\nSequence CHROMOSOME_IV\nMethod Link\n" ; $pos = 1 ;
+ 
+print  $fh "\nSequence CHROMOSOME_IV\nMethod Link\n" ; $pos = 1 ;
 &add ("SUPERLINK_RW4");     &overlap ("H23L24") ;
 &add ("SUPERLINK_CB_IV");
 
-print "\nSequence CHROMOSOME_V\nMethod Link\n" ; $pos = 1 ;
+print  $fh "\nSequence CHROMOSOME_V\nMethod Link\n" ; $pos = 1 ;
 &add ("SUPERLINK_RW5");     &overlap ("H24G06") ;
 &add ("SUPERLINK_CB_V");
 
-print "\nSequence CHROMOSOME_X\nMethod Link\n" ; $pos = 1 ;
+print $fh "\nSequence CHROMOSOME_X\nMethod Link\n" ; $pos = 1 ;
 &add ("SUPERLINK_RWXL");    &overlap ("C23F12") ;
 &add ("SUPERLINK_CB_X");    &overlap ("C11G6") ;
 &add ("SUPERLINK_RWXR"); 
 
 $db->close;
-
+print STDERR "\tclosing database\n"; 
  ###############
  # hasta luego #
  ###############
@@ -135,6 +140,8 @@ sub add {
     my ($seq) = @_ ;
     my $obj = $db->fetch(Sequence=>$seq) ;
     my $length = 0 ;
+    print STDERR "\t\t\tadding $seq\n";
+
     $obj || die "can't find $seq\n" ;
     if ($seq =~ /LINK/) {
 	foreach $i ($obj->Subsequence(2)) {
@@ -149,11 +156,12 @@ sub add {
     $length || die "no length for $seq\n" ;
     my $end = $pos + $length - 1 ;
     if ($obj->Flipped(0)) {
-	print "Subsequence $seq $end $pos // Flipped\n" ;
+	print $fh "Subsequence $seq $end $pos // Flipped\n" ;
     } else {
-	print "Subsequence $seq $pos $end\n" ;
+	print $fh "Subsequence $seq $pos $end\n" ;
     }
     $pos = $end + 101 ;		# NB modify global
+    print STDERR "\t\t\tadded $seq\n";
 }
 
 sub overlap {
