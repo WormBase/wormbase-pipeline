@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-10-22 09:18:46 $
+# Last updated by: $Author: dl1 $
+# Last updated on: $Date: 2004-12-22 12:43:38 $
 #
 # Usage GFFmunger.pl [-options]
 
@@ -93,6 +93,8 @@ foreach my $file (@gff_files) {
 }
 
 
+my $addfile;
+my $gffpath;
 
 
 #################################################################################
@@ -103,14 +105,18 @@ foreach my $file (@gff_files) {
 if ($CDS || $all) {
     print LOG "# Overloading CDS lines\n";
     system ("overload_GFF_CDS_lines.pl $WS_version");                     # generate *.CSHL.gff files
+
+    foreach my $file (@gff_files) {
+	next if ($file eq "");              
+	$gffpath = "$gffdir/${file}.gff";
+	system ("mv -f $gffdir/$file.CSHL.gff $gffdir/$file.gff");        # copy *.CSHL.gff files back to *.gff name
+    }
+
 }
 
 ############################################################
 # loop through each GFF file                               #
 ############################################################
-
-my $addfile;
-my $gffpath;
 
 foreach my $file (@gff_files) {
 
@@ -120,7 +126,6 @@ foreach my $file (@gff_files) {
 
   print LOG "# File $file\n";
   
-
   if ($landmark || $all) {
     print LOG "# Adding ${file}.landmarks.gff file\n";
     $addfile = "$datadir/${file}.landmarks.gff";
@@ -132,12 +137,6 @@ foreach my $file (@gff_files) {
     $addfile = "$datadir/${file}.UTR.gff";
     &addtoGFF($addfile,$gffpath);
   }
-
-
-  if ($CDS || $all) {
-    system ("mv -f $gffdir/$file.CSHL.gff $gffdir/$file.gff");        # copy *.CSHL.gff files back to *.gff name
-  }
-  
   
   print LOG "\n";
 }
