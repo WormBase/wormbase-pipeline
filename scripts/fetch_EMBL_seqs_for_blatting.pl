@@ -6,8 +6,8 @@
 # 
 # Attempt to unify all of the diverse scripts to fetch ESTs, OSTs, mRNAs etc. used by blat 
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-12-01 11:54:26 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2004-04-27 15:47:10 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -185,7 +185,7 @@ sub make_ests{
 	  # now fill out rest of object
 	  print OUT_ACE "Database EMBL NDB_ID $id\n"; 
 	  print OUT_ACE "Database EMBL NDB_AC $acc\n";
-	  print OUT_ACE "Database EMBL NDB_SV $sv\n";
+	  print OUT_ACE "Database EMBL NDB_SV $acc.$sv\n";
 	  print OUT_ACE "Species \"Caenorhabditis elegans\"\n";
 	  print OUT_ACE "Title \"$def\"\nMethod EST_elegans\n";
 	  
@@ -298,7 +298,7 @@ sub make_mrnas{
 		  print OUT_ACE "\nSequence : \"$acc\"\n";
 		  print OUT_ACE "Database EMBL NDB_ID $id\n";
 		  print OUT_ACE "Database EMBL NDB_AC $acc\n";
-		  print OUT_ACE "Database EMBL NDB_SV $sv\n";
+		  print OUT_ACE "Database EMBL NDB_SV $acc.$sv\n";
 		  print OUT_ACE "Protein_id $acc $protid $protver\n";
 		  print OUT_ACE "Species \"Caenorhabditis elegans\"\n";
 		  print OUT_ACE "Title \"$def\"\nMethod NDB\n";
@@ -371,7 +371,7 @@ sub make_nematode_ests{
 	print OUT_ACE "\nSequence : \"$acc\"\n";
 	print OUT_ACE "Database EMBL NDB_ID $id\n";
 	print OUT_ACE "Database EMBL NDB_AC $acc\n";
-	print OUT_ACE "Database EMBL NDB_SV $sv\n";
+	print OUT_ACE "Database EMBL NDB_SV $acc.$sv\n";
 	print OUT_ACE "Species \"$org\"\n";
 	print OUT_ACE "Title \"$def\"\nMethod EST_nematode\n";
 	print OUT_ACE "\nDNA \"$acc\"\n";
@@ -447,7 +447,7 @@ sub make_embl_cds{
 	print OUT_ACE "\nSequence : \"$acc\"\n";
 	print OUT_ACE "Database EMBL NDB_ID $id\n";
 	print OUT_ACE "Database EMBL NDB_AC $acc\n";
-	print OUT_ACE "Database EMBL NDB_SV $sv\n";
+	print OUT_ACE "Database EMBL NDB_SV $acc.$sv\n";
 	print OUT_ACE "Species \"Caenorhabditis elegans\"\n";
 	print OUT_ACE "Title \"$def\"\nMethod NDB\n";
 	print OUT_ACE "\nDNA \"$acc\"\n";
