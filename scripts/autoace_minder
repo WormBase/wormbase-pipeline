@@ -484,7 +484,7 @@ sub FTP_versions {
     close STLACE_FTP; 
 
     # brigdb
-    open (BRIGDB_FTP, "/bin/ls -t $brigdb_FTP |");
+    open (BRIGDB_FTP, "/bin/ls -t $brigdb_FTP |") || die "cannot open $brigdb_FTP\n";
     while (<BRIGDB_FTP>) {
 	chomp;
 	(/\_(\d+)\-(\d+)\-(\d+)\./);
@@ -494,7 +494,7 @@ sub FTP_versions {
     close BRIGDB_FTP; 
 
     # citace
-    open (CITACE_FTP, "/bin/ls -t $citace_FTP |");
+    open (CITACE_FTP, "/bin/ls -t $citace_FTP |") || die "cannot open $citace_FTP\n";
     while (<CITACE_FTP>) {
 	chomp;
 	(/\_(\d+)\-(\d+)\-(\d+)\./);
@@ -504,7 +504,7 @@ sub FTP_versions {
     close CITACE_FTP; 
 
     # cshace
-    open (CSHACE_FTP, "/bin/ls -t $cshace_FTP |");
+    open (CSHACE_FTP, "/bin/ls -t $cshace_FTP |") || die "cannot open $cshace_FTP\n";
     while (<CSHACE_FTP>) {
 	chomp;
 	(/\_(\d+)\-(\d+)\-(\d+)\./);
