@@ -2,7 +2,7 @@
 
 # Author: Chao-Kung Chen
 # Last updated by $Author: krb $
-# Last updated on: $Date: 2004-12-22 17:17:14 $ 
+# Last updated on: $Date: 2004-12-24 11:05:41 $ 
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -125,14 +125,18 @@ foreach(@NBP){
       $remark_1 = $4;
     }
   }
-  else {
+  else {    
     print CHECK "$allele -> $indel  \n" if $indel ne "deletion_site";  # this needs hand check as the format is quite versatile
   }
 
   $insert  = "NA" if !$insert;
   $L_clone = "NA" if !$L_clone;
   $R_clone = "NA" if !$R_clone;
-  $clone =~ s/\..+// if $clone ne "cosmis";
+  $site_L  = "NA" if !$site_L;
+  $site_R  = "NA" if !$site_R;
+
+  # convert CDS name to clone name by removing trailing digit
+  $clone =~ s/\..+//;
 
 
   #----- process primers info in $primer (4 primers)
@@ -212,14 +216,35 @@ sub get_30_bp_flanks {
       my $L_clone = $indel_info[4];
       my $R_clone = $indel_info[5];
 
-      # indel info is missing
-      print "$allele) $indel_info[0] $indel_info[1]\n";
+      # depending on information present, determine left and right flanking sequences
+      # initially set to NA, and if they are still 'NA' when you write the ace files
+      # then you can't print any flanking sequences!
+      my $DNA_L = "NA";
+      my $DNA_R = "NA";
 
-      my $DNA_L =substr($line, $clone_info{$NBP_info{$allele}->[2]}->[1] + $indel_info[0]-1 -31, 30) if $L_clone eq "NA";
-         $DNA_L =substr($line, $clone_info{$L_clone}->[1] + $indel_info[0]-1 -31, 30)                if $L_clone ne "NA";
+#      print "indel: $indel_info[0] $indel_info[1] $indel_info[2] $indel_info[3] $L_clone $R_clone\n";
 
-      my $DNA_R =substr($line, $clone_info{$NBP_info{$allele}->[2]}->[1] + $indel_info[1]-1,     30) if $R_clone eq "NA";
-         $DNA_R =substr($line, $clone_info{$R_clone}->[1] + $indel_info[1]-1,     30)                if $R_clone ne "NA";
+      if($indel_info[0] eq "NA" || $indel_info[1] eq "NA"){
+	# this is for when column 5 of input file cannot be parsed by regular expression
+	# these are probably complex deletion + insertion alleles
+	print "CHECK: $allele - flanking sequences need to be determined by hand\n";
+      }
+      else{
+
+	if($L_clone eq "NA"){
+	  $DNA_L =substr($line, $clone_info{$NBP_info{$allele}->[2]}->[1] + $indel_info[0]-1 -31, 30);
+	}
+	else{
+	  $DNA_L =substr($line, $clone_info{$L_clone}->[1] + $indel_info[0]-1 -31, 30);
+	}
+
+	if($R_clone eq "NA"){
+	  $DNA_R =substr($line, $clone_info{$NBP_info{$allele}->[2]}->[1] + $indel_info[1]-1 -31, 30);
+	}
+	else{
+	  $DNA_R =substr($line, $clone_info{$L_clone}->[1] + $indel_info[1]-1 -31, 30);
+	}
+      }
 
       print ACE "Sequence \"$NBP_info{$allele}->[2]\"\n";
       print DELETE "-D Sequence \"$NBP_info{$allele}->[2]\"\n";
@@ -242,12 +267,24 @@ sub get_30_bp_flanks {
       print ACE "Flanking_PCR_product     \"$allele"."_external\"\n";
       print ACE "Flanking_PCR_product     \"$allele"."_internal\"\n";
       print ACE "Author \"$NBP_info{$allele}->[6]\"\n" if $NBP_info{$allele}->[6] ne "NA";
-      print ACE "Flanking_sequences \"$DNA_L\" \"$DNA_R\"\n";
+      if($DNA_L eq "NA" || $DNA_R eq "NA"){
+#	print "ERROR: Can't determine flanking sequences for $allele. Please add by hand\n";
+      }
+      else{
+	print ACE "Flanking_sequences \"$DNA_L\" \"$DNA_R\"\n";
+      }
       print ACE "Deletion\n" if $indel_info[3] eq "NA";
       print DELETE "-D Flanking_PCR_product     \"$allele"."_external\"\n";
       print DELETE "-D Flanking_PCR_product     \"$allele"."_internal\"\n";
       print DELETE "-D Author \"$NBP_info{$allele}->[6]\"\n" if $NBP_info{$allele}->[6] ne "NA";
-      print DELETE "-D Flanking_sequences \"$DNA_L\" \"$DNA_R\"\n";
+ 
+      if($DNA_L eq "NA" || $DNA_R eq "NA"){
+	print DELETE "-D Flanking_sequences\n";
+      }
+      else{
+	print DELETE "-D Flanking_sequences \"$DNA_L\" \"$DNA_R\"\n";
+      }
+
       print DELETE "-D Deletion\n" if $indel_info[3] eq "NA";
 
       if ($indel_info[3] ne "NA"){
