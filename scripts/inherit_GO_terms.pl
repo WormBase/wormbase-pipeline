@@ -5,7 +5,7 @@
 # map GO_terms to ?Sequence objects from ?Motif and ?Phenotype
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2002-12-23 10:43:05 $      
+# Last updated on: $Date: 2003-03-14 09:29:03 $      
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -85,7 +85,7 @@ save
 quit
 END
 
-open (TACE,"| $tace -tsuser inherit_GO_terms.pl $dbpath") || die "Couldn't open tace connection to $dbpath\n";
+open (TACE,"| $tace -tsuser inherit_GO_terms $dbpath") || die "Couldn't open tace connection to $dbpath\n";
 print TACE $command;
 close (TACE);
 

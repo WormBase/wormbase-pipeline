@@ -7,7 +7,7 @@
 # by Kerstin Jekosch
 #
 # Last updated by: $Author: krb $                      
-# Last updated on: $Date: 2003-01-15 09:38:44 $        
+# Last updated on: $Date: 2003-03-14 09:29:03 $        
 
 
 $|=1;
@@ -314,7 +314,7 @@ save
 quit
 END
 
-open (TACE,"| $tace -tsuser map_RNAi.pl $dbdir") || die "Couldn't open tace connection to $dbdir\n";
+open (TACE,"| $tace -tsuser map_RNAi $dbdir") || die "Couldn't open tace connection to $dbdir\n";
 print TACE $command;
 close (TACE);
 

@@ -5,7 +5,7 @@
 # written by Anthony Rogers (ar2@sanger.ac.uk)
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-02-21 13:02:14 $
+# Last updated on: $Date: 2003-03-14 09:29:03 $
 
 
 use strict;
@@ -338,7 +338,7 @@ sub update_camace{
 
   my $tace = &tace ;
 
-  open (WRITEDB, "| $tace -tsuser locus2seq.pl $camace_dir |") || die "Couldn't open pipe to $camace_dir";
+  open (WRITEDB, "| $tace -tsuser locus2seq $camace_dir |") || die "Couldn't open pipe to $camace_dir";
   print WRITEDB $command;
   close WRITEDB;
 
