@@ -7,8 +7,8 @@
 #
 # This makes the autoace database from its composite sources.
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-12-04 14:07:00 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2004-02-04 16:36:44 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -420,8 +420,8 @@ sub parseconfig {
 
 sub reinitdb {
 
-  unlink glob("$dbpath/database/new/*") or print LOG "ERROR: Couldn't unlink files: $!\n";
-  unlink glob("$dbpath/database/touched/*") or print LOG "ERROR: Couldn't unlink files: $!\n";
+  &delete_file_from("$dbpath/database/new","*","-") or print LOG "Problems removing files from $dbpath/database/new\n";
+  &delete_file_from("$dbpath/database/touched","*","-") or print LOG "Problems removing files from $dbpath/database/touched\n";
 
 
   if (-e "$dbpath/database/lock.wrm") {
@@ -432,9 +432,8 @@ sub reinitdb {
   my $status = move("$dbpath/database/log.wrm", "$dbpath/database/log.old");  
   print "ERROR: Couldn't move file: $!\n" if ($status == 0);
 
-
-  unlink glob("$dbpath/database/*.wrm") or print LOG "ERROR: Couldn't unlink files: $!\n";
-
+  &delete_file_from("$dbpath/database",".\.wrm","-") or print LOG "Problems removing files from $dbpath/database\n";
+  
   my $command = "y\n";
   print LOG "* Reinitdb: reinitializing the database ..\n";
   &DbWrite($command,$tace,$dbpath,"ReInitDB");
@@ -573,7 +572,7 @@ sub buildrelease{
 
   if (-e "$dbpath/release/database.WS"."$WS_previous".".4-0.tar.gz"){
     print LOG "Older WS version files exist, removing them\n";
-    unlink glob("$dbpath/release/*WS"."$WS_previous"."*") or print LOG "ERROR: Couldn't unlink files: $!\n";
+    &delete_files_from("$dbpath/release","*WS"."$S_previous"."*") or print LOG "ERROR: Problems removing files from $dbpath/release: $!\n";
   }
   
   my $dbname;
@@ -597,8 +596,8 @@ sub buildrelease{
     $tarfiles[($i+4)/5] .= " database/block$i.wrm" ;
   }
   print LOG "* Makedistr: beginning tar ..\n";
-  unlink "$dbpath/release/database.$dbname.*.tar" or print LOG "ERROR: Couldn't unlink file: $!\n";
-  unlink "$dbpath/release/database.$dbname.*.tar.gz" or print LOG "ERROR: Couldn't unlink file: $!\n";
+  &delete_files_from("$dbpath/release","database\.$dbname\..*\.tar","-") or print LOG "ERROR removing files from $dbpath/release\n";
+
   for (my $i = 0; $i < @tarfiles; ++$i) {
     &run_command("cd $dbpath; tar -hcf $dbpath/release/database.$dbname.4-$i.tar $tarfiles[$i]\"");
     
