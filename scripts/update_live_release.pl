@@ -1,3 +1,4 @@
+
 #!/usr/local/bin/perl5.8.0 -w
 #
 # update_live_release.pl
@@ -6,7 +7,7 @@
 #
 # Updates the local webpages in synch with the main website
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-07-20 15:40:02 $
+# Last updated on: $Date: 2004-07-20 15:55:34 $
 
 
 use strict;
@@ -30,7 +31,8 @@ my $www = "/nfs/WWWdev/htdocs/Projects/C_elegans";
 my $wormpub_dir = "/nfs/disk100/wormpub/WORMPEP";
 my $wormpep_ftp_root = glob("~ftp/pub/databases/wormpep");
 my $wp_ftp_dir = "$wormpep_ftp_root/wormpep${release}";
-my @wormpep_files = &wormpep_files;
+my @wormpep_files = ("wormpep", "wormpep.accession", "wormpep.dna", "wormpep.history", "wp.fasta", "wormpep.table", "wormpep.diff");
+
 my $log  = "/wormsrv2/logs/update_live_release.${release}.$$";
 
 open (LOG, ">$log") || die "Couldn't open log file\n";;
