@@ -49,7 +49,8 @@ GetOptions("chromosomes" => \$chromosomes,
 	   "version=s"   => \$WS_version,
 	   "blastp"      => \$blastp,
 	   "blastx"      => \$blastx,
-	   "cleanup"     => \$cleanup
+	   "cleanup"     => \$cleanup,
+	   "debug=s"     => \$debug
 	  );
 
 
@@ -72,7 +73,7 @@ if( $run_pipeline ) {
 
 die "please give a build version number ie  wormBLAST -version 114\n" unless $WS_version;
 my $WS_old = $WS_version - 1;
-my $scripts_dir = "$wormpipe_dir/scripts/BLAST_scripts";
+my $scripts_dir = "$wormpipe_dir/Ensembl_update/scripts/BLAST_scripts";
 #process Ids
 
 #|         18 | gadfly3.pep         |
@@ -82,33 +83,27 @@ my $scripts_dir = "$wormpipe_dir/scripts/BLAST_scripts";
 #|         24 | slimswissprot40.pep |
 #|         25 | slimtrembl21.pep    |
 
-my %worm01processIDs = ( wormpep       => 23, 
-			 yeast         => 20,
-			 ensembl       => 19,
-			 gadfly        => 18,
-			 slimswissprot => 24,
-			 slimtrembl_1  => 25,
-			 slimtrembl_2  => 27,
-			 ipi_human     => 26,
-			 brigpep       => 28
+my %worm_dna_processIDs = ( 
+			wormpep       => 2,
+			brigpep       => 3, 
+			ipi_human     => 4,
+			yeast         => 5,
+			gadfly        => 6,
+			slimswissprot => 7,
+			slimtrembl_1  => 8,
+			slimtrembl_2  => 9,
 		       );
 
-#|          7 | yeast2.pep          | 
-#|          8 | gadfly3.pep         |
-#|          9 | ensembl7.29a.2.pep  | 
-#|         11 | wormpep87.pep       | 
-#|         13 | slimswissprot40.pep | 
-#|         14 | slimtrembl21.pep    |
 
-my %wormprotprocessIds = ( wormpep       => 11, 
-			   ensembl       => 9,
-			   gadfly        => 8,
-			   yeast         => 7,
-			   slimswissprot => 13,
-			   slimtrembl_1  => 14,
-			   slimtrembl_2  => 16,
-			   ipi_human     => 15,
-			   brigpep       => 17
+my %wormprotprocessIds = ( 
+			  wormpep       => 2,
+			  brigpep       => 3, 
+			  ipi_human     => 4,
+			  yeast         => 5,
+			  gadfly        => 6,
+			  slimswissprot => 7,
+			  slimtrembl_1  => 8,
+			  slimtrembl_2  => 9,
 			 );
 
 #get new chromosomes
@@ -129,7 +124,7 @@ my $database_to_use = "$wormpipe_dir/BlastDB/databases_used_WS$WS_version";
 open (OLD_DB,"<$last_build_DBs") or die "cant find $last_build_DBs";
 while (<OLD_DB>) {
   chomp;
-  if( /(ensembl|gadfly|yeast|slimswissprot|slimtrembl_1|slimtrembl_2|wormpep|ipi_human|brigpep)/ ) {
+  if( /(gadfly|yeast|slimswissprot|slimtrembl_1|slimtrembl_2|wormpep|ipi_human|brigpep)/ ) {
     $currentDBs{$1} = $_;
   }
 }
@@ -142,7 +137,7 @@ if ( $update_databases ){
   while (<DIR>) { 
     #  print;
     chomp;
-    if( /\/(ensembl|gadfly|yeast|slimswissprot|slimtrembl_1|slimtrembl_2|wormpep|ipi_human|brigpep)/ ) {
+    if( /\/(gadfly|yeast|slimswissprot|slimtrembl_1|slimtrembl_2|wormpep|ipi_human|brigpep)/ ) {
       my $whole_file = "$1"."$'";  #match + stuff after match.
       if( $1 eq "wormpep" ) {
 	print "updating wormpep to version $WS_version anyway - make sure the data is there !\nCopying over will take care of setdb 'ing it\n";
@@ -153,7 +148,7 @@ if ( $update_databases ){
       if( "$whole_file" ne "$currentDBs{$1}" ) {
 	#make blastable database
 	print "\tmaking blastable database for $1\n";
-	&run_command("/usr/local/pubseq/bin/setdb $wormpipe_dir/BlastDB/$whole_file");
+	&run_command("setdb $wormpipe_dir/BlastDB/$whole_file");
 	push( @updated_DBs,$1 );
 	#change hash entry ready to rewrite external_dbs
 	$currentDBs{$1} = "$whole_file";
@@ -215,24 +210,23 @@ if( $mail )
 # mysql database parameters
 my $dbhost = "ecs1f";
 my $dbuser = "wormadmin";
-#my $dbuser = "wormro";
-my $dbname = "worm01";
+my $dbname = "worm_dna";
 my $dbpass = "worms";
 
 my @results;
 my $query = "";
-my $worm01;     #worm01 Db handle
-my $wormprot;   #wormprot Db handle
+my $worm_dna;     #worm_dna Db handle
+my $worm_pep;   #wormprot Db handle
 
 # update mySQL database
 if( $update_mySQL )
   {
     print "Updating mysql databases\n";
-    #make worm01 connection
-    $worm01 = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
+    #make worm_dna connection
+    $worm_dna = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
       || die "cannot connect to db, $DBI::errstr";
     
-    #internal_id number of the last clone in the worm01
+    #internal_id number of the last clone in the worm_dna
     #in case this routine is being run twice the clone id is stored and checked
     my $last_clone;
     my $update;
@@ -245,8 +239,8 @@ if( $update_mySQL )
 	last;
       }
       else {
-	$query = "select * from clone order by internal_id desc limit 1";
-	@results = &single_line_query( $query, $worm01 );
+	$query = "select * from clone order by clone_id desc limit 1";
+	@results = &single_line_query( $query, $worm_dna );
 	$last_clone = $results[0];
 	$update = 1;
       }
@@ -264,21 +258,21 @@ if( $update_mySQL )
     &run_command("cat /wormsrv2/autoace/CHROMOSOMES/*.agp > $wormpipe_dir/Elegans/WS$WS_version.agp");
     
     #load information about any new clones
-    print "\tloading information about any new clones\n";
-    &run_command("$scripts_dir/agp2ensembl.pl -dbname worm01 -dbhost ecs1f -dbuser wormadmin -dbpass worms -agp $wormpipe_dir/Elegans/WS$WS_version.agp -write -v -strict");
+    print "\tloading information about any new clones in to $dbname\n";
+    &run_command("$scripts_dir/agp2ensembl.pl -dbname worm_dna -dbhost ecs1f -dbuser wormadmin -dbpass worms -agp $wormpipe_dir/Elegans/WS$WS_version.agp -write -v -strict");
     
     #check that the number of clones in the clone table equals the number of contigs and dna objects
     my ($clone_count, $contig_count, $dna_count);
     $query = "select count(*) from clone";
-    @results = &single_line_query( $query, $worm01 );
+    @results = &single_line_query( $query, $worm_dna );
     $clone_count = $results[0];
     
     $query = "select count(*) from contig";
-    @results = &single_line_query( $query, $worm01 );
+    @results = &single_line_query( $query, $worm_dna );
     $contig_count = $results[0];
     
     $query = "select count(*) from dna";
-    @results = &single_line_query( $query, $worm01);
+    @results = &single_line_query( $query, $worm_dna );
     $dna_count = $results[0];
     
     print "checking clone contig and dna counts . . .";
@@ -291,34 +285,34 @@ clones = $clone_count\ncontigs = $contig_count\ndna = $dna_count\n";
       print "OK\n";
     }
     
-    $query = "select * from clone order by internal_id desc limit 1";
-    @results = &single_line_query( $query, $worm01 );
+    $query = "select * from clone order by clone_id desc limit 1";
+    @results = &single_line_query( $query, $worm_dna );
     my $new_last_clone = $results[0];
     print "\tnew_last_clone = $new_last_clone\n";
     
     if( $last_clone != $new_last_clone )
       {
-	$query = "select id from contig where internal_id > $last_clone into outfile '$wormpipe_dir/Elegans/ids.txt'";
-	print &update_database( $query, $worm01 );
+	$query = "select contig_id from contig where contig_id > $last_clone into outfile '$wormpipe_dir/Elegans/ids.txt'";
+	print &update_database( $query, $worm_dna );
 	
-	&run_command("$scripts_dir/InputIdManager.pl -dbname worm01 -dbhost ecs1f -dbuser wormadmin -dbpass worms -insert -analysis SubmitContig -class contig -file $wormpipe_dir/Elegans/ids.txt");
+	&run_command("$scripts_dir/InputIdManager.pl -dbname worm_dna -dbhost ecs1f -dbuser wormadmin -dbpass worms -insert -analysis SubmitContig -class contig -file $wormpipe_dir/Elegans/ids.txt");
 	
       }
-    $worm01->disconnect;
+    $worm_dna->disconnect;
 
     print "\tchecking for duplicate clones\n";
     &run_command("$scripts_dir/find_duplicate_clones.pl");
 
 
     #add new peptides to MySQL database
-    print "\n\nAdding new peptides to wormprot\n";
-    #make wormprot connection
-    $dbname = "wormprot";
-    $wormprot = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
+    print "\n\nAdding new peptides to $dbname\n";
+    #make protein database connection
+    $dbname = "worm_pep";
+    $worm_pep = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
       || die "cannot connect to db, $DBI::errstr";
 
     $query = "select * from protein order by proteinId desc limit 1";
-    @results = &single_line_query( $query, $wormprot );
+    @results = &single_line_query( $query, $worm_pep );
     my $old_topCE = $results[0];
     if (-e "/wormsrv2/WORMPEP/wormpep$WS_version/new_entries.WS$WS_version"){
       &run_command("$scripts_dir/worm_pipeline.pl -fasta /wormsrv2/WORMPEP/wormpep$WS_version/new_entries.WS$WS_version");
@@ -328,16 +322,16 @@ clones = $clone_count\ncontigs = $contig_count\ndna = $dna_count\n";
     }
 
     #check for updated ids
-    @results = &single_line_query( $query, $wormprot );
+    @results = &single_line_query( $query, $worm_pep );
     my $new_topCE = $results[0];
     if( "$old_topCE" eq "$new_topCE" ) {
-      print "\tNO new peptides were added to the wormprot mysql database\n";
+      print "\tNO new peptides were added to the $dbname mysql database\n";
     }
     else {
       print "\tnew highest proteinId is $new_topCE (old was $old_topCE )\n";
     }
 
-    $wormprot->disconnect;
+    $worm_pep->disconnect;
   }
 
 
@@ -348,18 +342,18 @@ if( $setup_mySQL )
   {  
     print "Setting up mysql ready for Blast run\n";
     #make wormprot connection
-    $dbname = "wormprot";
-    my $wormprot =  DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
+    $dbname = "worm_pep";
+    my $worm_pep =  DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
       || die "cannot connect to db, $DBI::errstr";
 
     #make worm_brigprot connection
-    $dbname = "worm_brigprot";
-    my $worm_brigprot =  DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
+    $dbname = "worm_brigpep";
+    my $worm_brigpep =  DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
       || die "cannot connect to db, $DBI::errstr";
 
-    #make worm01 connection
-    $dbname = "worm01";
-    $worm01 = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
+    #make worm_dna connection
+    $dbname = "worm_dna";
+    $worm_dna = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
       || die "cannot connect to db, $DBI::errstr";
 
     &get_updated_database_list;
@@ -370,122 +364,80 @@ if( $setup_mySQL )
     if( $1 and ( $1<$WS_version ) ) {
       push (@updated_DBs,"wormpep$WS_version\.pep");
     }
-    #   mysql -h ecs1f -u wormadmin -p worm01
-    #   delete from InputIdAnalysis where analysisId = 23; (DNA clones BLASTX'd against wormpep)
-    #   delete from feature where analysis = 23;
-    #   use wormprot;
-    #   delete from InputIdAnalysis where analysisId = 11 (wormpep proteins BLASTP'd against other proteins)
-    #   delete from protein_feature where analysis = 11
 
     #update mysql with which databases need to be run against
     foreach my $database (@updated_DBs)
       {
-	my $analysis = $worm01processIDs{$database};
+	my $analysis = $worm_dna_processIDs{$database};
 	my $db_file = $currentDBs{$database};
 	print "________________________________________________________________________________\n";
-	print "doing worm01 updates . . . \n";
-	$query = "update analysisprocess set db = \"$db_file\" where analysisId = $analysis";
+	print "doing worm_dna updates . . . \n";
+	$query = "update analysis set db = \"$db_file\" where analysis_id = $analysis";
 	print $query,"\n";
-	&update_database( $query, $worm01 );
+	&update_database( $query, $worm_dna );
 	
-	$query = "update analysisprocess set db_file = \"/data/blastdb/Worms/$db_file\" where analysisId = $analysis";
+	$query = "update analysis set db_file = \"/data/blastdb/Worms/$db_file\" where analysis_id = $analysis";
 	print $query,"\n\n";
-	&update_database( $query, $worm01 );
+	&update_database( $query, $worm_dna );
 	
 	#delete entries so they get rerun
-	$query = "delete from InputIdAnalysis where analysisId = $analysis";
+	$query = "delete from input_id_analysis where analysis_id = $analysis";
 	print $query,"\n";
-	&update_database( $query, $worm01 );
+	&update_database( $query, $worm_dna );
 	
-	$query = "delete from feature where analysis = $analysis";
+	$query = "delete from dna_align_feature where analysis_id = $analysis";
 	print $query,"\n";
-	&update_database( $query, $worm01 );
+	&update_database( $query, $worm_dna );
 	
 	
 	
-	print "doing wormprot updates . . . \n";
+	print "doing worm_pep updates . . . \n";
 	$analysis = $wormprotprocessIds{$database};
-	$query = "update analysisprocess set db = \"$db_file\" where analysisId = $analysis";
+	$query = "update analysis set db = \"$db_file\" where analysis_id = $analysis";
 	print $query,"\n";	
-	&update_database( $query, $wormprot );
-	&update_database( $query, $worm_brigprot );
+	&update_database( $query, $worm_pep );
+	&update_database( $query, $worm_brigpep );
 
-	$query = "update analysisprocess set db_file = \"/data/blastdb/Worms/$db_file\" where analysisId = $analysis";
+	$query = "update analysis set db_file = \"/data/blastdb/Worms/$db_file\" where analysis_id = $analysis";
 	print $query,"\n";
-	&update_database( $query, $wormprot );
-	&update_database( $query, $worm_brigprot );
+	&update_database( $query, $worm_pep );
+	&update_database( $query, $worm_brigpep );
 	
 	#delete entries so they get rerun
-	$query = "delete from InputIdAnalysis where analysisId = $analysis";
+	$query = "delete from input_id_analysis where analysis_id = $analysis";
 	print $query,"\n";
-	&update_database( $query, $wormprot );
-	&update_database( $query, $worm_brigprot );
+	&update_database( $query, $worm_pep );
+	&update_database( $query, $worm_brigpep );
 	
-	$query = "delete from protein_feature where analysis = $analysis";
+	$query = "delete from protein_feature where analysis_id = $analysis";
 	print $query,"\n";
-	&update_database( $query, $wormprot );
-	&update_database( $query, $worm_brigprot );
+	&update_database( $query, $worm_pep );
+	&update_database( $query, $worm_brigpep );
       }
 
-    $worm01->disconnect;
-    $wormprot->disconnect;
-    $worm_brigprot->disconnect;
+    $worm_dna->disconnect;
+    $worm_pep->disconnect;
+    $worm_brigpep->disconnect;
 
   }
-my $bdir = "/nfs/farm/Worms/EnsEMBL/branch-ensembl-121/ensembl-pipeline/modules/Bio/EnsEMBL/Pipeline";
+my $bdir = "/nfs/farm/Worms/Ensembl/ensembl-pipeline/modules/Bio/EnsEMBL/Pipeline";
+
 if( $blastx ) {
   die "can't run pipeline whilst wormsrv2 is mounted - please exit and try again\n" if (-e "/wormsrv2");
-  #make sure we have the databases to work on.
-  &get_updated_database_list;
-  #run worm01 stuff
-  
-  &run_command("cp -f $bdir/pipeConf.pl.worm01 $bdir/pipeConf.pl");
-  
-  #any updated databases
-  # worm01 stuff
-  foreach (@updated_DBs){
-    my $analysis = $worm01processIDs{$_};
-    print "Starting submission of analysis $analysis\n";
-    &run_command("perl $bdir/RuleManager3.pl -once -flushsize 5 -analysis $analysis");
-  }
-#finish off anything that didn't work
-  &run_command("perl $bdir/RuleManager3.pl -once -flushsize 5");
-  
+
+  &run_RuleManager('worm_dna','dna');
 }
 
 if( $blastp ){
-  &wait_for_pipeline_to_finish if $blastx;
+
   die "can't run pipeline whilst wormsrv2 is mounted - please exit and try again\n" if (-e "/wormsrv2");
-  #make sure we have the databases to work on.
-  &get_updated_database_list;
 
-    #run wormpep stuff
-    &run_command("cp -f $bdir/pipeConf.pl.wormprot $bdir/pipeConf.pl");
+  &run_RuleManager('worm_pep','pep');
+  &run_RuleManager('worm_brigpep','pep');
 
-    #for anything updated
-    foreach (@updated_DBs){
-      my $analysis = $wormprotprocessIds{$_};
-      &run_command("perl $bdir/RuleManager3Prot.pl -once -flushsize 5 -analysis $analysis");
-    }
-# finish off anything that didn't work + PFams and low complexity, signalp, ncoils,transmembrane
-    &run_command("perl $bdir/RuleManager3Prot.pl -once -flushsize 5"); 
+}
 
 
-    # run worm_brigprot analyses
-    if ($run_brig) {
-      &wait_for_pipeline_to_finish;
-      &run_command("cp -f $bdir/pipeConf.pl.worm_brigprot $bdir/pipeConf.pl");
-
-      #for anything updated
-      foreach (@updated_DBs) {
-	my $analysis = $wormprotprocessIds{$_};
-	&run_command("perl $bdir/RuleManager3Prot.pl -once -flushsize 5 -analysis $analysis");
-      }
-# finish off anything that didn't work + PFams and low complexity, signalp, ncoils,transmembrane
-      &run_command("perl $bdir/RuleManager3Prot.pl -once -flushsize 5"); 
-
-    }
-  }
 
 if( $prep_dump ) {
   # prepare helper files
@@ -495,6 +447,7 @@ if( $prep_dump ) {
     &run_command("cat /wormsrv2/autoace/CHROMOSOMES/*.gff | $scripts_dir/gff2cos.pl > /nfs/acari/wormpipe/Elegans/cos$WS_version.gff");
     &run_command("$scripts_dir/prepare_dump_blastx.pl > $wormpipe_dir/dumps/accession2clone.list");
     &run_command("cp /wormsrv2/WORMPEP/wormpep$WS_version/wormpep.diff$WS_version $wormpipe_dir/dumps/");
+    &run_command("cp /wormsrv2/WORMPEP/wormpep$WS_version/new_entries.WS$WS_version $wormpipe_dir/dumps/");
     &run_command("cp /wormsrv2/autoace/COMMON_DATA/CE2gene.dat $wormpipe_dir/dumps/");
     &run_command("cp /wormsrv2/autoace/COMMON_DATA/gene2CE.dat $wormpipe_dir/dumps/");
     
@@ -512,35 +465,61 @@ if( $dump_data )
       print "Please run wormBLAST.pl -prep_dump version $WS_version    before dumping\n\nTo dump you CAN NOT have wormsrv2 mounted\n\n";
       exit(0);
     }
-    # Dump
+####################################################
 
-    # fork new process to dump x and p at same time !
+###   Forking code attempt
+#    # Dump
 
-    my $dumping_P = "";
-    my $dumping_X = "";
+#    # fork new process to dump x and p at same time !
+
+#    my $dumping_P = "";
+#    my $dumping_X = "";
 
 
-    # fork off child process to dump BLASTP data at the same time
+#    # fork off child process to dump BLASTP data at the same time
 
-    if( my $pid = fork ) {
-      print "Dumping blastp\n";
-      $dumping_P = "start_P";
-      &run_command("$wormpipe_dir/scripts/Dump_new_prot_only.pl -all -version $WS_version -matches");
-      $dumping_P = "finished_P";
-    }
-    else {warn "ERROR : forked dumping of BLASTP failed\n";}
+#    if( my $pid = fork ) {
+#      print "Dumping blastp\n";
+#      $dumping_P = "start_P";
+#      &run_command("$wormpipe_dir/scripts/Dump_new_prot_only.pl -all -version $WS_version -matches");
+#      $dumping_P = "finished_P";
+#    }
+#    else {warn "ERROR : forked dumping of BLASTP failed\n";}
 
-    unless ($dumping_X ) {
-      $dumping_X = "start_X";
-      print "Dumping blastx\n";
-      &run_command("$scripts_dir/dump_blastx_new.pl -version $WS_version");
-      $dumping_X = "finished_X";
-    }
+#    unless ($dumping_X ) {
+#      $dumping_X = "start_X";
+#      print "Dumping blastx\n";
+#      &run_command("$scripts_dir/dump_blastx_new.pl -version $WS_version");
+#      $dumping_X = "finished_X";
+#    }
 
-    # go in to holding routine until both have finished
-    while(! ( ( $dumping_X eq "finished_X" ) and ($dumping_P eq "finished_P") ) ) {
-      sleep 1000;
-    }
+#    # go in to holding routine until both have finished
+#    while(! ( ( $dumping_X eq "finished_X" ) and ($dumping_P eq "finished_P") ) ) {
+#      sleep 1000;
+#    }
+####################################################
+
+    # need this to dump new databases in full
+    &get_updated_database_list;
+    my $anal_list = join(',',@updated_DBs);
+
+    # Dump new pep
+    print "Dumping new peptides for worm_pep\n";
+    &run_command("$wormpipe_dir/scripts/Dump_blastp.pl -all -version $WS_version -matches -database worm_pep -new_peps $wormpipe_dir/dumps/new_entries.WS$WS_version");
+
+    # updated databases
+    print "Dumping all peptides for updated databases for worm_pep\n";
+    &run_command("$wormpipe_dir/scripts/Dump_blastp.pl -all -version $WS_version -matches -database worm_pep -all -analysis $anal_list");
+
+    # . . and brigpep
+    print "Dumping all peptides for updated databases for worm_brig\n";
+    &run_command("$wormpipe_dir/scripts/Dump_blastp.pl -all -version $WS_version -matches -database worm_pep -all -analysis $anal_list");
+    
+
+
+    print "Dumping blastx\n";
+    &run_command("$scripts_dir/dump_blastx_new.pl -version $WS_version");
+
     print "Dumping motifs\n";
     &run_command("$scripts_dir/dump_motif.pl");
 
@@ -661,9 +640,10 @@ sub check_wormsrv2_conflicts
 	print "no can do - to run the blast pipeline wormsrv2 can NOT be mounted.  Your options conflict with this.\nthe following options REQUIRE wormsrv2 to not be mounted \n\t-blastx\t-blastp\t-dump\t-run\t-testpipe\t-run_brig\t-cleanup\n\n";
 	exit (1);
       }
-    elsif( !(-e "/wormsrv2") && ($chromosomes || $wormpep  || $update_databases || $update_mySQL || $prep_dump) ) {
+    elsif( !(-e "/wormsrv2") && ($chromosomes || $wormpep  || $update_mySQL || $prep_dump) ) {
       print "The following option need access to wormsrv2 and it aint there (rsh wormsrv2 )\n";
-      print "-chromosomes\t-wormpe\t-databases\t-mysql\t-prep_dump\n";
+      print "-chromosomes\t-wormpep\t-databases\t-mysql\t-prep_dump\n";
+      exit(1);
     }
     else {
       print "wormsrv2 requirements and command line options checked and seem OK \n";
@@ -748,6 +728,18 @@ sub create_log_files{
 
 }
 
+
+sub run_RuleManager
+  {
+    my ($dbname, $moltype ) = @_;
+    my $script;
+    $script = "$bdir/RuleManager3.pl" if $moltype eq "dna";
+    $script = "$bdir/RuleManager3Prot.pl" if $moltype eq "pep";
+
+    die "invalid or no moltype passed to run_RuleManager : $moltype\n" unless $script;
+    &run_command("perl $script -dbhost $dbhost -dbname $dbname -dbpass $dbpass -dbuser $dbuser");
+
+  }
 
 ##########################################################
 sub run_command{
