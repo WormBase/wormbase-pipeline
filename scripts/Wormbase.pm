@@ -12,7 +12,7 @@ use Log_files;
 use File::Path;
 @ISA       = qw(Exporter);
 
-@EXPORT    = qw(get_wormbase_version get_wormbase_version_name get_wormbase_release_date copy_check mail_maintainer celeaccession tace gff_sort dbfetch clones_in_database open_TCP DNA_string_reverse DNA_string_composition release_databases find_file_last_modified FetchData release_composition release_wormpep test_user_wormpub runtime rundate tace giface check_write_access Map_feature scan MapFeature delete_files_from);
+@EXPORT    = qw(get_wormbase_version get_wormbase_version_name get_wormbase_release_date copy_check mail_maintainer celeaccession tace gff_sort dbfetch clones_in_database open_TCP DNA_string_reverse DNA_string_composition release_databases find_file_last_modified FetchData release_composition release_wormpep test_user_wormpub runtime rundate tace giface check_write_access Map_feature scan MapFeature delete_files_from load_to_database);
  
 
 
@@ -912,6 +912,36 @@ sub delete_files_from {
   return $fail_warn ? $delete_count : $fail_warn ; # undef if failed else no. files removed;
 }
 
+
+
+sub load_to_database {
+
+  my $database = shift;
+  my $file = shift;
+
+  # tsuser is optional but if set, should replace any dots with underscores just in case
+  # if not set im using the filename with dots replaced by '_'
+  my $tsuser = shift; 
+
+  unless ( $tsuser ) { 
+    # remove trailing path of filename
+    $tsuser = $file;
+    $tsuser =~ s/.*\///;
+  }
+
+  $tsuser =~ s/\./_/g;
+
+  unless (-e "$file"){
+    die " Couldn't find file named: $file\n";
+  }
+  my $exe = &tace;
+  my $command = "pparse $file\nsave\nquit\n";
+ 
+  open (WRITEDB, "| $exe -tsuser $tsuser $database ") || die "Couldn't open pipe to database\n";
+  print WRITEDB $command;
+  close (WRITEDB);
+}
+
 ################################################################################
 #Return a true value
 ################################################################################
@@ -1143,6 +1173,25 @@ my $map = &Map_feature($DNAseq, $flank_a, $flank_b);
 my $coord_5 = $$map[0];
 
 my $coord_3 = $$map[1];
+
+=back
+
+=head2 load_to_datase
+
+=head2 SYNOPSIS
+
+=over4
+
+&load_to_database($database, $file, "tsuser" );
+
+=back
+
+=head2 USAGE
+
+=over4
+
+Loads specified file in to specified acedb database with tsuser as specified :)
+If tsuser not set then the file name will be used (no path, and '_' replacing and '.'s )
 
 =back
 
