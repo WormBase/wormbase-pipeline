@@ -102,8 +102,8 @@ foreach my $gene (@predicted_genes){
 
   for($i=1; $i<@exon_coord2;$i++){
     my $intron_size = ($exon_coord1[$i] - $exon_coord2[$i-1] -1);
-    print "Gene warning - $gene has a small intron ($intron_size bp)\n" if (($intron_size < 21)  && $verbose);
-    print LOG "Gene warning - $gene has a small intron ($intron_size bp)\n" if ($intron_size < 21);
+    print "Gene warning - $gene has a small intron ($intron_size bp)\n" if (($intron_size < 31)  && $verbose);
+    print LOG "Gene warning - $gene has a small intron ($intron_size bp)\n" if ($intron_size < 31);
 
   }
 
