@@ -8,7 +8,7 @@
 # This makes the autoace database from its composite sources.
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-02-13 08:57:52 $
+# Last edited on: $Date: 2003-02-13 12:46:15 $
 
 
 $|=1;
@@ -435,9 +435,13 @@ sub reinitdb {
     my $command = "pparse $filename\nsave\nquit\n";
     if (-e $filename) {
       my $now = `date +%H:%M:%S`; chomp $now;
-      print LOG "* Reinitdb: reading in new database  $filename at $now\n";
+      print LOG "* Reinitdb: started parsing $filename at $now\n";
+      LOG->autoflush();
       my ($tsuser) = $filename =~ (/^\S+\/(\S+)\_/);
       &DbWrite($command,"$tace -tsuser $tsuser",$dbpath,"ParseFile");
+      $now = `date +%H:%M:%S`; chomp $now;
+      print LOG "* Reinitdb: finished parsing $filename at $now\n";
+      LOG->autoflush();
     }
     else {
       print LOG "* Reinitdb: $filename is not existent - skipping ..\n";
