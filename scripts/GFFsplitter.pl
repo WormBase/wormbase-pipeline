@@ -5,7 +5,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-08-05 15:35:07 $
+# Last updated on: $Date: 2003-09-17 14:44:50 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -156,7 +156,8 @@ foreach $file (@gff_files) {
     elsif ((($method eq "RNA")    || ($method eq "tRNAscan-SE-1.11") ||
 	    ($method eq "rRNA")   || ($method eq "scRNA") ||
 	    ($method eq "snRNA")  || ($method eq "snoRNA") || 
-	    ($method eq "miRNA")) && ($feature eq "Transcript"))               {push (@{$GFF{$file}{rna}},$_);}
+	    ($method eq "miRNA")  || ($method eq "stRNA")) 
+	 && ($feature eq "Transcript"))               {push (@{$GFF{$file}{rna}},$_);}
     # CDS Exon  
     elsif ((($method eq "curated") || ($method eq "provisional")) 
 	   && ($feature eq "CDS"))                   {push (@{$GFF{$file}{CDS_exon}},$_);}
