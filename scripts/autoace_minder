@@ -6,7 +6,7 @@
 # Usage : autoace_minder [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2002-07-22 13:47:40 $
+# Last edited on: $Date: 2002-07-23 08:25:25 $
 
 
 #################################################################################
@@ -450,12 +450,12 @@ sub prepare_primaries {
 
     # transfer /wormsrv1/camace to /wormsrv2/camace 
     
-    system("TransferDB -start /wormsrv1/camace -end /wormsrv2/camace -database -wspec -name camace")
+    system("TransferDB -start /wormsrv1/camace -end /wormsrv2/camace -database -name camace")
 	&& die "Couldn't run TransferDB for camace\n";
 
     # transfer /wormsrv1/geneace to /wormsrv2/geneace 
     
-    system("TransferDB -start /wormsrv1/geneace -end /wormsrv2/geneace -database -wspec -name geneace")
+    system("TransferDB -start /wormsrv1/geneace -end /wormsrv2/geneace -database -name geneace")
 	&& die "Couldn't run TransferDB for geneace\n";
 
     # check that all databases are present and working
