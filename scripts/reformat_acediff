@@ -36,14 +36,6 @@ while (<FILE>) {
 
 	print "// report for sequence $oldsequence\n";
 
-	if (scalar (@add) > 0) {
-	    print "\nSequence \"$oldsequence\"\n";
-	    foreach $add (@add) {
-		print "$add\n";
-	    }
-	    undef @add;
-	}
-	
 	if (scalar (@delete) > 0) {
 	    print "\nSequence \"$oldsequence\"\n";
 	    foreach $delete (@delete) {
@@ -51,9 +43,17 @@ while (<FILE>) {
 	    }
 	    undef @delete;
 	}
+	
+	if (scalar (@add) > 0) {
+	    print "\nSequence \"$oldsequence\"\n";
+	    foreach $add (@add) {
+		print "$add\n";
+	    }
+	    undef @add;
+	}
+
 	print "\n";
 	$oldsequence = $sequence;
-
 	next;
     }    
     
