@@ -149,6 +149,29 @@ system "cp /wormsrv2/autoace_config/INSTALL $targetdir/$release/";
 print "copying INSTALL script across\n" if ($debug);
 
 
+# move wormpep release from /wormsrv2 to /disk100/wormpub
+
+my $wormpub_dir = "/nfs/disk100/wormpub/WORMPEP";
+
+print "Removing old files in $wormpub_dir\n";
+
+unlink("$wormpub_dir/wormpep_current")           || print "Cannot delete files in $wormpub_dir\n";
+unlink("$wormpub_dir/wormpep.accession_current") || print "Cannot delete files in $wormpub_dir\n";
+unlink("$wormpub_dir/wormpep.dna_current")       || print "Cannot delete files in $wormpub_dir\n";
+unlink("$wormpub_dir/wormpep.history_current")   || print "Cannot delete files in $wormpub_dir\n";
+unlink("$wormpub_dir/wp.fasta_current")          || print "Cannot delete files in $wormpub_dir\n";
+
+print LOG "Copying new files to $wormpub_dir\n";
+
+my $new_wpdir = "/wormsrv2/WORMPEP/wormpep${wormpep}";
+system ("cp $new_wpdir/wormpep_current $wormpub_dir/wormpep_current")                     || print "Cannot copy file to $wormpub_dir\n";
+system ("cp $new_wpdir/wormpep.accession$release $wormpub_dir/wormpep.accession_current") || print "Cannot copy file to $wormpub_dir\n";
+system ("cp $new_wpdir/wormpep.dna$release $wormpub_dir/wormpep.dna_current")             || print "Cannot copy file to $wormpub_dir\n";
+system ("cp $new_wpdir/wormpep.history$release $wormpub_dir/wormpep.history_current")     || print "Cannot copy file to $wormpub_dir\n";
+system ("cp $new_wpdir/wp.fasta$release $wormpub_dir/wp.fasta_current")                   || print "Cannot copy file to $wormpub_dir\n";
+system ("/usr/local/pubseq/bin/setdb $wormpub_dir/wormpep_current")                       || print "Cannot index wormpep file in $wormpub_dir\n";
+system ("chmod +rw $new_wpdir/*");
+
 
 # tar up the latest wormpep release and copy across
 system("/wormsrv2/scripts/tar_wormpep $wormpep");
@@ -156,11 +179,9 @@ system("mv /wormsrv2/WORMPEP/wormpep${wormpep}/wormpep${wormpep}.tar.gz $targetd
 print "running tar_wormpep and copying across to ftp site\n" if ($debug);
 
 
-
 # Create wormpep FTP site
 system "/wormsrv2/scripts/make_FTP_wormpep -r $wormpep";
 print "make the wormpep FTP release for wormpep${wormpep}\n" if ($debug);
-
 
 
 # tar, zip, and copy WormRNA files across from wormsrv2/WORMRNA
