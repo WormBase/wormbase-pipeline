@@ -8,7 +8,7 @@
 # This makes the autoace database from its composite sources.
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-02-11 17:49:01 $
+# Last edited on: $Date: 2003-02-11 18:41:11 $
 
 
 $|=1;
@@ -412,19 +412,16 @@ sub parseconfig {
 sub rmconfremark { 
   my @remove_confid=("stlace/stlace_Sequence.ace","camace/camace_Sequence.ace","briggsae/briggsae_Sequence.ace");
   
-  my $confidential = 0;
   foreach my $confid (@remove_confid) {
     my $this_acefile="$wormbasedir"."/$confid";
     open(TEMP,">$dbpath/acefiles/temp$$");
     open(ACEFILE,"$this_acefile");
     while(<ACEFILE>) {
-      ($confidential = 1) if (/^Confidential_remark/);
-      (print TEMP $_) if ($confidential !=1);
-      ($confidential = 0) if (/"$/ && !/\\"$/);
+      (print TEMP $_) unless (/^Visible.*Confidential_remark/);
     }
     close ACEFILE;
     close TEMP;
-    system("\\mv $dbpath/acefiles/temp$$ $this_acefile") && print LOG "ERROR: can't move acefile\n";
+    system("mv -f $dbpath/acefiles/temp$$ $this_acefile") && print LOG "ERROR: can't overwrite original acefile with stripped-down acefile\n";
   }
 }
 
