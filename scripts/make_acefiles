@@ -8,7 +8,7 @@
 # autoace.
 #
 # Last updated by: $Author: krb $                     
-# Last updated on: $Date: 2003-02-13 11:02:20 $       
+# Last updated on: $Date: 2003-02-13 11:09:21 $       
 
 #################################################################################
 # Variables                                                                     #
@@ -91,6 +91,8 @@ my $endtime = `date +%H:%M:%S`; chomp $endtime;
 print LOG "Ended make_acefiles @ $endtime\n";
 print "Ended make_acefiles @ $endtime\n" if ($debug);
 
+close(STDOUT);
+close(STDERR);
 close(LOG);
 
 &mail_maintainer("WormBase Report: make_acefiles",$maintainers,$log);
@@ -118,6 +120,14 @@ sub create_log_files{
   $log        = "/wormsrv2/logs/$script_name.$WS_version.$rundate.$$";
 
   open (LOG, ">$log") or die "cant open $log";
+
+  # also want to capture STDOUT AND STERR to logfile
+  LOG->autoflush();
+  open(STDOUT,">>$log");
+  STDOUT->autoflush();
+  open(STDERR,">>$log");
+  STDERR->autoflush();
+
   print LOG "$script_name\n";
   print LOG "started at ",`date`,"\n";
   print LOG "=============================================\n";
