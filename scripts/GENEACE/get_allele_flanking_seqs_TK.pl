@@ -4,7 +4,7 @@
 
 # by Chao-Kung Chen [030625]
 
-# Last updated on: $Date: 2004-05-12 11:16:51 $
+# Last updated on: $Date: 2004-05-13 14:38:04 $
 # Last updated by: $Author: ck1 $
 
 use Tk;
@@ -29,7 +29,7 @@ $mw->configure (title => "Allele Flanking Sequences Retriever   by Chao-Kung Che
                 background => "white",
                );
 
-$mw->geometry("750x900+0+0");
+$mw->geometry("760x900+0+0");
 #$mw->resizable(0,0);
 
 ######################################
@@ -97,7 +97,7 @@ my $entry = $entry_frame->Entry(textvariable => \$params, bg => "white", fg => "
 $entry_frame->Button(text => "RUN", command => \&run)
           -> pack(side => "left", fill => "x", expand => 1);
 
-$entry_frame->Button(text => "Reset", command => \&Reset)
+$entry_frame->Button(text => "Reset parameters", command => \&Reset)
           -> pack(side => "left", fill => "x", expand => 1);
 
 
@@ -124,6 +124,11 @@ my $btn_3 = $btn_frame->Button(text => "3rd site mutation", command => \&get_3_s
 my $btn_4 = $btn_frame->Button(text => "Flanking codon", command => \&get_codon_flanks)
                       -> pack(side => "left", fill => "x", expand => 1);
 
+my $btn_5 = $btn_frame->Button(text => "CLR up window", command => \&clear_up)
+                      -> pack(side => "left", fill => "x", expand => 1);
+
+my $btn_6 = $btn_frame->Button(text => "CLR down window", command => \&clear_down)
+                      -> pack(side => "left", fill => "x", expand => 1);
 
 #----------- color coding message frame ----------
 
