@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2004-08-04 15:38:50 $
+# Last edited on: $Date: 2004-09-27 11:15:24 $
 
 
 use DBI;
@@ -587,7 +587,9 @@ if( $cleanup ) {
   my @directories = qw( 0 1 2 3 4 5 6 7 8 9 );
 
   foreach my $directory ( @directories ) {
-    rmtree("$scratch_dir/$directory", 1, 1);
+    rmtree("$scratch_dir/$directory", 1, 1); # this will remove the directory as well
+    mkdir("$scratch_dir/$directory");        # so remake it 
+    system("chgrp worm $scratch_dir/$directory");  # and make it writable by 'worm'
   }
   print "\n\nCLEAN UP COMPLETED\n\n";
 }
