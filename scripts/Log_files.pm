@@ -106,7 +106,8 @@ sub mail
    my ($self, $recipient) = @_;
 
    my $fh = $self->{"FH"};
-   print $fh "\nFinished at ",&Wormbase::runtime,"\n\n***********************************\n\n"; 
+   print $fh "\n\n-----------------------------------\n";
+   print $fh "Finished at ",&Wormbase::runtime,"\n"; 
    close $fh;
 
    $recipient = "All" unless $recipient;
