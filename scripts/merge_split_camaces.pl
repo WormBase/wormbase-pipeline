@@ -5,7 +5,7 @@
 # A script to make multiple copies of camace for curation, and merge them back again
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2004-04-05 15:57:36 $
+# Last edited on: $Date: 2004-04-06 11:11:25 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -206,7 +206,7 @@ sub split_databases {
   #remove all split models.wrm and update since we have started using splits without wormsrv2 linked.
   foreach my $database (@databases) {
     system("rm /nfs/disk100/wormpub/camace_${database}/wspec/models.wrm") && die "failed to remove camace_${database} models.wrm\n";
-    system("cp /wormsrv2/autoace/wspec/models.wrm ~wormpub/camace_${database}/wspec/ .") && die "failed to update camace_${database} models.wrm\n";
+    system("cp /wormsrv2/autoace/wspec/models.wrm ~wormpub/camace_${database}/wspec/") && die "failed to update camace_${database} models.wrm\n";
   }
 
   # it has been decided that it is better to remove the database directory to make transfer db more stable #
