@@ -5,13 +5,14 @@
 # by Keith Bradnam, aged 12 and half
 #
 # A script to create ?Gene objects for CDSs, Pseudogenes, and Transcript objects not yet
-# linked to an existing ?Locus object
+# linked to an existing ?Gene object
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-03-24 16:55:21 $   
+# Last updated on: $Date: 2004-05-26 15:52:38 $   
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use Wormbase;
 use Ace;
 use Getopt::Long;
 
@@ -32,6 +33,9 @@ GetOptions ("cds"        => \$cds,
 	    "database=s" => \$database,
 	    "id_limit=i" => \$id_limit);
 
+
+# grab hash of CDS/Transcript/Pseudogene identifiers to gene IDs
+my %worm_gene2cgc = &FetchData('worm_gene2cgc_name');
 
 
 &process_cds_class if ($cds);
@@ -56,7 +60,7 @@ sub process_cds_class{
   
   # we want all genes, all species??? But what about Ensembl, twinscan etc.
   # could start with just elegans CDS (ignore briggsae and elegans history genes for now?)
-  my $query = "Find CDS WHERE Method = curated AND Species = \"Caenorhabditis elegans\" AND NOT Locus";
+  my $query = "Find CDS WHERE Method = curated AND Species = \"Caenorhabditis elegans\" AND NOT Gene";
   push(my @CDSs, $db->find($query));
 
   # device for tracking multiple isoforms of same gene
@@ -64,6 +68,13 @@ sub process_cds_class{
   my $last_gene = "";
 
   foreach my $gene (@CDSs){
+
+    # check that this CDS doesn't already have a gene ID in geneace
+    if ($worm_gene2cgc{$gene}){
+      print "ERROR: $gene already exists in worm_genes2cgc hash, skipping this gene\n"; 
+      # can now ignore this gene
+      next;
+    }
 
     # set sequence name, i.e. chop off trailing a,b,c etc.
     my $sequence_name = $gene;
@@ -91,9 +102,9 @@ sub process_cds_class{
       print OUT "Gene : \"$name\"\n";
       print OUT "Version 1\n";
       print OUT "Sequence_name $sequence_name\n";
-      print OUT "Public_name $gene\n";
+      print OUT "Public_name $sequence_name\n";
       print OUT "Species \"$species\"\n";
-      print OUT "Version_change 1 now \"WBPerson1971\" Imported \"Initial conversion from CDS class of WS121\"\n";
+      print OUT "Version_change 1 now \"WBPerson1971\" Imported \"Initial conversion from CDS class of WS125\"\n";
       print OUT "Live\n";
       print OUT "CDS $gene\n\n";
 
@@ -106,7 +117,7 @@ sub process_cds_class{
 
 
 ###########################################################################################
-# processes Transcript class to create Gene objects for Transcript not attached to loci
+# processes Transcript class to create Gene objects for Transcript not attached to Genes
 # can only do this *after* CDS class has been processed and loaded to test database
 # this is because a transcript might be an isoform of an existing CDS in which case
 # we must look up the CDS Gene ID first
@@ -124,7 +135,7 @@ sub process_transcript_class{
   
   # we want all genes, all species??? Don't want coding_transcripts
   # leave other species for later
-  my $query = "Find Transcript WHERE NOT Method = coding_transcript AND Species = \"Caenorhabditis elegans\"";
+  my $query = "Find Transcript WHERE NOT Method = coding_transcript AND Species = \"Caenorhabditis elegans\" AND NOT Gene";
   push(my @transcripts, $db->find($query));
 
   # device for tracking multiple isoforms of same gene
@@ -161,7 +172,7 @@ sub process_transcript_class{
       print OUT "Sequence_name $sequence_name\n";
       print OUT "Public_name $gene\n";
       print OUT "Species \"$species\"\n";
-      print OUT "Version_change 1 now \"WBPerson1971\" Imported \"Initial conversion from Transcript class of WS121\"\n";
+      print OUT "Version_change 1 now \"WBPerson1971\" Imported \"Initial conversion from Transcript class of WS125\"\n";
       print OUT "Live\n";
       print OUT "Transcript $gene\n\n";
 
