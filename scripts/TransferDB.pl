@@ -4,7 +4,7 @@
 
 # by ag3 [991221]
 #
-# Last updated on: $Date: 2003-05-08 12:10:25 $
+# Last updated on: $Date: 2003-05-08 12:41:07 $
 # Last updated by: $Author: ck1 $
 
 
@@ -277,7 +277,7 @@ sub process_file {
       my $cp_chk = "0";
       my $cp_val;
       if($filename =~ m/models\.wrm$/){
-	$cp_val = system("\/usr/apps/bin/cp -R $s_file $e_file") if !$DEBUG;
+	$cp_val = system("\/usr/bin/cp -R $s_file $e_file") if !$DEBUG;
       }
       else{
 	$cp_val = system("\/usr/apps/bin/scp $s_file $e_file") if !$DEBUG;
