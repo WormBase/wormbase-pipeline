@@ -225,10 +225,12 @@ my $runtime = `date +%H:%M:%S`; chomp $runtime;
 print LOG "# $runtime : write wormpep.dna file\n\n";
 
 my $obj = "";
+my %est = "";
 
 open (DNA , ">$new_wpdir/wormpep.dna$release") || &error(7); # die "cannot create $new_wpdir/wormpep.dna$release\n";
 my (%dot2num , @dotnames , @c_dotnames);
 foreach my $dot (@dotnames_1) {
+    
     
     if ($dot =~ /temp/) {
        print LOG "$dot is only a temporary sequence\n";
@@ -239,6 +241,7 @@ foreach my $dot (@dotnames_1) {
     }
     undef (my $dna);
     undef (my $method);
+    undef (my $est_match);
 
 
 ##    $method = $dot -> at ('Method.[1]');
@@ -248,6 +251,14 @@ foreach my $dot (@dotnames_1) {
 ##    }
 
     $obj = $db->fetch(Sequence=>"$dot");
+    
+    $est_match = $obj->Matching_cDNA();
+    if (defined ($est_match))  {
+	$est{$dot} = 1;
+    }
+    else {
+	$est{$dot} = 0;
+    }
 
     $dna = $obj->asDNA();
     if ((!defined ($dna)) || ($dna eq "")) {
@@ -271,9 +282,14 @@ foreach my $dot (@dotnames_1) {
        next;
     }
     $pep =~ /^>(\S+)\s+([\w\*].*)/s ; my $pseq = $2 ; $pseq =~ tr/a-z/A-Z/ ; $pseq =~ s/\s//g;
-    if (($pseq =~ /X/) && ($dot ne "M106\.2") && ($dot ne "B0303\.7") && ($dot ne "B0303\.8") && ($dot ne "M04F3\.2")) {
-       print LOG "the peptide sequence $dot contains an X\n";             
- #       next;                                       
+
+
+#    removed 011210 so that we see these errors in the log
+#    if (($pseq =~ /X/) && ($dot ne "M106\.2") && ($dot ne "B0303\.7") && ($dot ne "B0303\.8") && ($dot ne "M04F3\.2")) {
+
+    if ($pseq =~ /X/) {
+	print LOG "the peptide sequence $dot contains an X\n";             
+    #       next;                                       
     # 010124 : dl  : CDS with 'X's will be included in the wormpep release
                                                     
 
@@ -544,6 +560,10 @@ foreach (@dotnames) {
     my $pepseq = $num2seq[$wpid];
 
     if ($CDS_locus{$cds} ne "") {$locus_1 = "locus\:".$CDS_locus{$cds};}
+    
+    if ($est{$cds} == 1) {
+	$CDS_status{$cds} = "Partially_confirmed";
+    }
         
 #    if ($laboratory{$CDS_lab{$cds}} eq "RW") {$lab = "ST.LOUIS";}
 #    if ($laboratory{$CDS_lab{$cds}} eq "HX") {$lab = "HINXTON";}
