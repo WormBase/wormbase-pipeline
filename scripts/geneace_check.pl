@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-02-17 18:29:04 $
+# Last updated on: $Date: 2003-02-20 13:37:31 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -174,7 +174,7 @@ sub process_locus_class{
     #print "$locus\n";
     my $warnings;
     my $erich_warnings;
-   ($warnings, $erich_warnings) = &test_locus_for_errors($locus);
+   ###($warnings, $erich_warnings) = &test_locus_for_errors($locus);
     print LOG "$warnings" if(defined($warnings));
     #Erich Schwarz wants some of these - emsch@its.caltech.edu
     print ERICHLOG "$erich_warnings" if(defined($erich_warnings));
@@ -188,7 +188,7 @@ sub process_locus_class{
   Table-maker -p "/wormsrv1/geneace/wquery/get_all_seq_with_pseudogene_and_locus.def" quit
 EOF
  
-  find_new_loci_in_current_DB($get_seg_with_pseudogene_locus, $db);
+  ###find_new_loci_in_current_DB($get_seg_with_pseudogene_locus, $db);
    
   #Look for loci that are other_names and still are obj of ?Locus -> candidate for merging
  
@@ -203,6 +203,15 @@ EOF
 EOF
 
   loci_point_to_same_CDS($locus_to_CDS, $default_db);
+
+  my $cgc_approved_and_non_cgc_name=<<EOF;
+  Table-maker -p "/wormsrv1/geneace/wquery/cgc_approved_and_non_cgc_name.def" quit
+EOF
+  my $cgc_approved_has_no_cgc_name=<<EOF;
+  Table-maker -p "/wormsrv1/geneace/wquery/cgc_approved_has_no_cgc_name.def" quit
+EOF
+  
+  gene_name_class($cgc_approved_and_non_cgc_name, $cgc_approved_has_no_cgc_name, $default_db); 
 
   # check CGC_approved loci is XREF to existing Gene_Class   
   # check locus in geneace that are connected to CDS but not CGC_approved
@@ -232,8 +241,41 @@ EOF
 
 }
 
+sub gene_name_class {
+  my ($def1, $def2, $db) = @_;
+  my $locus;
+  open (FH1, "echo '$def1' | tace $db | ") || die "Couldn't access $db\n"; 
+  open (FH2, "echo '$def2' | tace $db | ") || die "Couldn't access $db\n";
+  
+  while (<FH1>){
+    chomp $_;
+    if ($_ =~ /^\"(.+)\"/){
+      $locus = $1;
+      $locus_errors++;
+      print LOG "ERROR: $locus is CGC_approved but still has NON_CGC_name tag\n";
+      if ($ace){
+	print ACE "\n\nLocus : \"$locus\"\n";
+	print ACE "-D Non_CGC_name\n";
+      }	
+    }
+  }
+  
+  while (<FH2>){
+    chomp $_;
+    if ($_ =~ /^\"(.+)\"/){
+      $locus = $1;
+      print LOG "ERROR: $locus is CGC_approved but has no CGC_name tag\n";
+      $locus_errors++;
+      if ($ace){
+	print ACE "\n\nLocus : \"$locus\"\n";
+	print ACE "CGC_name \"$locus\"\n";
+      }	
+    }
+  }    
+}
+
 sub cds_name_to_seq_name {
-  #if ($ace){open (CDS, ">>$acefile") || die "Can't write to file!"}	
+
   my ($def1, $def2, $db) = @_;
   my ($locus, $cds, %locus_cds, %locus_seq_name);
   open (FH1, "echo '$def1' | tace $db | ") || die "Couldn't access $db\n";
@@ -643,7 +685,7 @@ sub find_new_loci_in_current_DB{
 sub loci_as_other_name {
 
   my ($def, $dir, $db) = @_;
-  my ($main, $other_name);
+  my ($main, $other_name, @exceptions, %exceptions);
 
   open (FH, "echo '$def' | tace $dir | ") || die "Couldn't access geneace\n";
   while (<FH>){
@@ -655,10 +697,26 @@ sub loci_as_other_name {
       $other_name = $2;
       $other_name =~ s/\\//g;
       $other_name = $db->fetch('Locus', $other_name); 
+      
+      #######################################################
+      # list of hard coded loci having other_name the same as 
+      # the other locus, which in fact is a different gene   
+      #######################################################
+      @exceptions = 
+      qw (aka-1 cas-1 clh-2 clh-3 ctl-1 ctl-2 egl-13 evl-20 gst-4 mig-1 
+          old-1 plk-1 ptp-3 rab-18 rsp-1 rsp-2 rsp-4 rsp-5 rsp-6 sca-1 sus-1);
+
+      foreach (@exceptions){$exceptions{$_}++};  
+
       if ($other_name){
         $locus_errors++;
-        print LOG "WARNING: $main has $other_name as Other_name...$other_name is still a separate Locus object\n";
-	if ($ace){
+	if ($exceptions{$main}){
+	  print LOG "WARNING: $main has $other_name as Other_name...$other_name is still a separate Locus object (exception)\n";
+        }
+        else {
+	  print LOG "WARNING: $main has $other_name as Other_name...$other_name is still a separate Locus object\n";
+        }
+	if ($ace && !$exceptions{$main}){
 	  print ACE "\n-R Locus : \"$other_name\" \"$main\"\n";
 	  print ACE "\nLocus : \"$main\"\n";
           print ACE "Other_name \"$other_name\"\n";
