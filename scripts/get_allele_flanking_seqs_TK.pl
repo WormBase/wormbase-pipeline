@@ -4,7 +4,7 @@
 
 # by Chao-Kung Chen [030625]
 
-# Last updated on: $Date: 2004-03-03 10:56:29 $
+# Last updated on: $Date: 2004-03-05 15:47:41 $
 # Last updated by: $Author: ck1 $
 
 use Tk;
@@ -141,7 +141,7 @@ $msg_frame_1 -> Label(text => "BLUE", fg => "blue")
 my $msg_frame_2 = $mw ->Frame(height => 30)
                     ->pack(side => 'top', anchor => 'n', after => $msg_frame_1, expand => 1, fill => 'x');
 
-$msg_frame_2 -> Label(text => "Flanking bp coding at frame shift:  upsteam of mutated site in")
+$msg_frame_2 -> Label(text => "Flanking bp coding at exon/intron boundary:  upsteam of mutated site in")
              -> pack(side => "left");
 $msg_frame_2 -> Label(text => "MAGENTA", fg => "magenta")
              -> pack(side => "left");
@@ -215,7 +215,7 @@ sub read_doc{
   $dialog->geometry("940x400");
   $dialog->resizable(0,0);
 
-  my @doc = `perldoc /wormsrv1/chaokung/my-scripts/$0`;
+  my @doc = `perldoc $0`;
   my $doc;
   foreach(@doc){
     if ($_ eq "" ){}
@@ -223,7 +223,7 @@ sub read_doc{
     else {$doc .= $_}
   }
   my $txt=$dialog->Scrolled("Text",  -scrollbars=>"ow", height=>60, width=> 130)->pack(side => "left", anchor => "w");
-  $txt -> insert('end', "USAGE:\n\nQuery parameters are in the order of\n\n(1) CDS/Transcript/Pseudogene\n(2) -aa (amino acid) or (-dna) nucleotide\n(3) nucleotide or amino acid position followed by mutation in single letter (or three-letter code for amino acid)\n(4) allele name \n(5) locus name \n\nseparated by space (all parameters are case insensitive)\n\n\n---------------------------------------------------------------------------------------------------------------------------------\n                                            Detailed description of this program\n---------------------------------------------------------------------------------------------------------------------------------");  
+  $txt -> insert('end', "USAGE:\n\nQuery parameters are in the order of\n\n(1) CDS/Transcript/Pseudogene\n(2) -aa (amino acid) or (-dna) nucleotide\n(3) nucleotide or amino acid position followed by mutation in single letter (or three-letter code for amino acid)\n(4) allele name \n(5) locus name\n(6) paper info \n\nseparated by space (all parameters are case insensitive)\n\n\n---------------------------------------------------------------------------------------------------------------------------------\n                                            Detailed description of this program\n---------------------------------------------------------------------------------------------------------------------------------");  
   $txt -> insert('end', "$doc");
   $dialog->Show();
 
