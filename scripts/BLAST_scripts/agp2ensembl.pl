@@ -41,7 +41,7 @@ clone.version and loads clone as a single contig.
 =head1 CONTACT
 
 Simon Potter: scp@sanger.ac.uk
-Kerstin Jekosch : kj2@sanger.ac.uk
+Anthony Rogers: ar2@sanger.ac.uk
 
 =head1 BUGS
 
@@ -53,6 +53,7 @@ Insert list of bugs here!
 use lib '/nfs/farm/Worms/Ensembl/ensembl-pipeline/modules';
 use lib '/nfs/farm/Worms/Ensembl/ensembl/modules';
 use lib '/nfs/disk100/humpub/modules/PerlModules';
+use lib $ENV{'CVS_DIR'};
 
 use strict;
 use Getopt::Long;
@@ -64,6 +65,7 @@ use Bio::EnsEMBL::Clone;
 use Bio::EnsEMBL::RawContig;
 use Hum::NetFetch qw( wwwfetch );
 use Hum::EMBL;
+use Wormbase;
 
 my($id, $acc, $ver, $phase, $contigs);
 my($agp, $single, $seqio, $seq, $fasta, $strict);
@@ -139,6 +141,10 @@ my $sic = $dbobj->get_StateInfoContainer();
 my $analysis_adaptor = $dbobj->get_AnalysisAdaptor();
 my $submitted_analysis = $analysis_adaptor->fetch_by_dbID(1); #1 is dummy analysis to mark addition
 my %seqs;
+my %acc2clone;
+
+&FetchData('accession2clone',\%acc2clone);
+
 if ($fasta) {
     open (FH , "$fasta") || die "cannot open file $fasta";
     %seqs = read_fasta (\*FH);
@@ -161,7 +167,6 @@ while (<AGP>) {
             $ver = 1;
 	}
     }
-
     if (&is_in_db($clone_adaptor, $sv)) {
         print "Found $sv; skipping\n";
         next;
@@ -172,7 +177,7 @@ while (<AGP>) {
     }
 
     if ($fasta) {
-        my $seq_str = $seqs{$acc};
+        my $seq_str = $seqs{ $acc2clone{"$acc"} };
         $seq = Bio::Seq->new(
             -id     => $acc,
             -seq    => $seq_str,
@@ -241,6 +246,9 @@ while (<AGP>) {
 	  if( $@ ) {
 	    print "Error update input_id_analysis table for ",$contig->name,"\n";
 	  }
+	  else {
+	    print "\tadded ",$contig->name,"\n";
+	  }
 	}
     }
 }
@@ -302,7 +310,7 @@ sub update_existing_clone
     if ($clone ) {
       my $old_ver = $clone->embl_version();
 
-      if ($old_ver and ($ver > $old_ver) ) {
+      if (defined $old_ver and ($ver > $old_ver) ) {
 	# update clone in database
 
 	#update the clone version and embl_version
@@ -319,9 +327,9 @@ sub update_existing_clone
 	foreach my $contig ( @{$contigs} ) { 
 	
 	  # update the DNA 
-	  my $dna = $seqs{"$acc"};
+	  my $dna = $seqs{ $acc2clone{"$acc"} };
 	  my $seqstr;
-	  
+ 
 	  unless ($dna) {
 	    $dna  = fetch_seq($acc, $ver);
 	    unless ($dna) {
@@ -385,7 +393,11 @@ sub is_in_db {
       $clone = $dbobj->fetch_by_accession_version($acc, $ver);
     };
     if (defined $clone) {
-        return 1;
+      my $dbseq = lc $clone->get_all_Contigs->[0]->seq;
+      my $fasta_seq = $seqs{$acc};
+
+      print "$acc seq different in worm_dna and fasta\n" unless "$dbseq" eq "$fasta_seq";
+      return 1;
     }
     else {
         return 0;
