@@ -8,7 +8,7 @@
 # Output ace file of such information and upload to autoace during each build
 # Output also other files related. See POD
 
-# Last updated on: $Date: 2003-07-03 14:00:02 $
+# Last updated on: $Date: 2003-07-10 12:20:44 $
 # Last updated by: $Author: ck1 $
 
 use strict;
@@ -82,14 +82,19 @@ my ($cds, $parts, @coords, $i, $mean_coords, %cds_mean, %mean_coord_cds, %chrom_
 my $version = $order[-1]+1; # autoace
 my $acefile = "$output/interpolated_map_"."WS$version.$rundate.ace";
 my $gacefile = "$output/interpolated_map_to_geneace_"."WS$version.$rundate.ace";
-my $download = "$output/"."WS$version"."_interpolated_map.txt";
-
+my $download1 = "$output/"."WS$version"."_CDSes_interpolated_map.txt";
+my $download2 = "$output/"."WS$version"."_Clones_interpolated_map.txt";
 if ($map){
+  if (defined glob("$output/WS*gz")){system("rm -f $output/WS*gz")} # remove zipped map file of last build
   open (ACE, ">$acefile") || die "Can't output file!\n";
   open (GACE, ">$gacefile") || die "Can't output file!\n";
-  open (DNLD, ">$download") || die "Can't output file!\n";
-  system("chmod 777 $acefile $gacefile $download");
+  open (CDSes, ">$download1") || die "Can't output file!\n";
+  open (CLONEs, ">$download2") || die "Can't output file!\n";
+  system("chmod 777 $acefile $gacefile $download1 $download2");
 }
+
+print CDSes "WS$version interpolated map positions for CDSes\n\n";
+print CLONEs "WS$version interpolated map positions for Clones\n\n";
 
 ######################################################
 # get list of predicted CDS/Transcript linked to locus
@@ -648,6 +653,12 @@ sub ace_output {
   my $cdsf = $cds; 
   $cdsf = sprintf ("%-15s", "$cdsf");
 
+  my $clone; 
+  if ($cds !~ /.+\..+/){
+    $clone = $cds;
+    $clone = sprintf ("%-15s", "$clone");
+  }
+
   if (exists $CDS_variants{$cds}){
 
     foreach (@{$CDS_variants{$cds}}){
@@ -655,43 +666,45 @@ sub ace_output {
       my $cdsf = $_;
       $cdsf = sprintf ("%-15s", "$cdsf");
    
-      if ($feature eq "DNA"){print ACE "\nSequence : \"$_\"\n"; print DNLD "$cdsf\t"}
-      if ($feature eq "RNA"){print ACE "\nTranscript : \"$_\"\n"; print DNLD "$cdsf\t"}
+      if ($feature eq "DNA"){print ACE "\nSequence : \"$_\"\n"; print CDSes "$cdsf\t"}
+      if ($feature eq "RNA"){print ACE "\nTranscript : \"$_\"\n"; print CDSes "$cdsf\t"}
       print ACE "Interpolated_map_position\t\"$chrom\"\t$gmap\t\/\/$mean_coord (iso)\n";
-      print DNLD "\t$chrom\t$gmap\t";
+      print CDSes "\t$chrom\t$gmap\t";
       if (exists $predicted_gene_to_locus{$_}){
         print ACE "\nLocus : \"$predicted_gene_to_locus{$_}\"\n";
 	print GACE "\nLocus : \"$predicted_gene_to_locus{$_}\"\n";
-	print DNLD "$predicted_gene_to_locus{$_}\n";
+	print CDSes "$predicted_gene_to_locus{$_}\n";
         print ACE "Interpolated_map_position\t\"$chrom\"\t$gmap\t\/\/$mean_coord (iso)\n";
 	print GACE "Interpolated_map_position\t\"$chrom\"\t$gmap\t\/\/$mean_coord (iso)\n";
 	if ($comp && $locus_map{$predicted_gene_to_locus{$_}}){
 	  print MAPCOMP "$predicted_gene_to_locus{$_}\t\"$chrom\"\tCoords:\t$gmap\tContig:\t$locus_map{$predicted_gene_to_locus{$_}}\n";
 	}
       }
-      else {print DNLD "-\n"}	
+      else {print CDSes "-\n"}	
     }
   }  
   else {
-    if ($feature eq "DNA"){print ACE "\nSequence : \"$cds\"\n"; print DNLD "$cdsf\t"}
-    if ($feature eq "RNA"){print ACE "\nTranscript : \"$cds\"\n"; print DNLD "$cdsf\t"}
+    if ($feature eq "DNA"){print ACE "\nSequence : \"$cds\"\n"; print CDSes "$cdsf\t" if !$clone; print CLONEs "$clone\t" if $clone}
+    if ($feature eq "RNA"){print ACE "\nTranscript : \"$cds\"\n"; print CDSes "$cdsf\t" if !$clone}
     print ACE "Interpolated_map_position\t\"$chrom\"\t$gmap\t\/\/$mean_coord\n";
-    print DNLD "\t$chrom\t$gmap\t";
+    print CDSes"\t$chrom\t$gmap\t" if !$clone;
+    print CLONEs"\t$chrom\t$gmap\t" if $clone;
     if (exists $predicted_gene_to_locus{$cds}){
       print ACE "\nLocus : \"$predicted_gene_to_locus{$cds}\"\n";
       print GACE "\nLocus : \"$predicted_gene_to_locus{$cds}\"\n";
-      print DNLD "$predicted_gene_to_locus{$cds}\n";
+      print CDSes "$predicted_gene_to_locus{$cds}\n";
       print ACE "Interpolated_map_position\t\"$chrom\"\t$gmap\t\/\/$mean_coord\n";
       print GACE "Interpolated_map_position\t\"$chrom\"\t$gmap\t\/\/$mean_coord\n";
       if ($comp && exists $locus_map{$predicted_gene_to_locus{$cds}}){
 	print MAPCOMP "$predicted_gene_to_locus{$cds}\t\"$chrom\"\tCoords:\t$gmap\tContig:\t$locus_map{$predicted_gene_to_locus{$cds}}\n";
       }
     }
-    else {print DNLD "-\n"}
+    else {print CDSes "-\n" if !$clone; print CLONEs "\n" if $clone}
   }
 }
 
 __END__
+
 =head2 NAME - get_interpolated_gmap.pl  
 
 =head3 <SCRIPT DESCRIPTION> 
