@@ -5,7 +5,7 @@
 # completely rewritten by Keith Bradnam from list_loci_designations
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-08-18 09:32:50 $      
+# Last updated on: $Date: 2003-08-18 10:25:59 $      
 #
 # This script should be run under a cron job and simply update the webpages that show
 # current gene names and sequence connections.  Gets info from geneace.  
@@ -80,7 +80,7 @@ foreach my $locus (@loci){
 
   # get transcript connections
   elsif(defined($locus->at('Molecular_information.Transcript'))){
-    print HTML "<TD>&nbsp</TD><TD>";
+    print HTML "<TD>&nbsp</TD>";
     my @transcripts = $locus->Transcript;
     print HTML "<TD>";
     print TEXT ",";
