@@ -496,6 +496,8 @@ if( $cleanup ) {
 #    ipi_hits_list
 #    trembllist.txt
 #    swisslist.txt
+#    best_blastp_hits
+#    best_blastp_hits_brigprot
 
 #  ~wormpipe/Elegans
 #    WS99.agp
@@ -512,9 +514,14 @@ if( $cleanup ) {
   print "\t$clear_dump/*.ace\n";  system("rm -f $clear_dump/*.ace") && warn "cant remove ace files from $clear_dump";
   print "\t$clear_dump/*.log\n";  system("rm -f $clear_dump/*.log") && warn "cant remove log files from $clear_dump";
   
+  print "Removing files currently in $wormpipe_dir/last_build/n";
+  system(" rm -f $wormpipe_dir/last_build/*.gff");
+  system(" rm -f $wormpipe_dir/last_build/*.agp");
+
   print "\nmoving the following to ~wormpipe/last_build . . \n";
   print "\t$clear_dump/*.txt\n"; system("mv -f $clear_dump/*.txt $wormpipe_dir/last_build/") && warn "cant move $clear_dump/*.txt\n";
   print "\t$clear_dump/ipi*\n"; system("mv -f $clear_dump/ipi* $wormpipe_dir/last_build/") && warn "cant move $clear_dump/ipi*\n";
+  print "\t$clear_dump/best_blastp\n"; system("mv -f $clear_dump/best_blastp* $wormpipe_dir/last_build/") && warn "cant move $clear_dump/best_blast*\n";
   print "\t$wormpipe_dir/Elegans/*\n"; system("mv -f $wormpipe_dir/Elegans/* $wormpipe_dir/last_build/") && warn "cant move $wormpipe_dir/Elegans/*\n";
 
   print "\nRemoving the $wormpipe_dir/DUMP_PREP_RUN lock file\n"; system("rm -f $wormpipe_dir/DUMP_PREP_RUN") && warn "cant remove $wormpipe_dir/DUMP_PREP_RUN\n";
