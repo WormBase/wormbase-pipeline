@@ -111,7 +111,6 @@ sub write_to
 sub mail
   {
    my ($self, $recipient) = @_;
-    return if $self->{'end'};
 
    my $fh = $self->{"FH"};
    print $fh "\n\n-----------------------------------\n";
@@ -123,6 +122,7 @@ sub mail
    my $file = $self->{"FILENAME"};
    my $script = $self->{"SCRIPT"};
    &Wormbase::mail_maintainer($script,$recipient,$file);
+   $self->{'MAILED'} = 1;
   }
 
 sub end
@@ -133,5 +133,14 @@ sub end
     $self->{'end'} = 1;
   }
 
+sub DESTROY
+  {
+    my $self = shift;
+    unless( defined $self->{'MAILED'} ) {
+      my $fh = $self->{"FH"};
+      print $fh "\nTHIS MAIL WAS NOT SENT BY THE SCRIPT THAT WAS RUN\nThe log file object was not \"mailed\", which may mean the script did not finish properly\n";
+      $self->mail;
+    }
+  }
 
 1;
