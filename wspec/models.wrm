@@ -615,7 +615,7 @@
                        Cell ?Cell XREF GO_term
 		       Reference ?Paper XREF GO_term
 		       Motif ?Motif XREF GO_term
-
+		       Sequence ?Sequence XREF GO_term // added for Erich, [011210 krb]
 //
 // Laboratory/Bibliography
 //
@@ -772,12 +772,11 @@
                        PCR_product ?PCR_product XREF Canonical_parent Int UNIQUE Int #SMap_info // added for Lincoln RNAi [010226 dl]
 		       Nongenomic ?Sequence XREF Genomic_parent Int UNIQUE Int #SMap_info       // added for Lincoln RNAi [010226 dl]
                        RNAi ?RNAi XREF Sequence UNIQUE Int UNIQUE Int #SMap_info                // added for Lincoln RNAi [001213 dl]
-		       WTP ?WTP XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info                // added for Mieg WTP data [001623 rd]
+		       WTP ?WTP XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info          // added for Mieg WTP data [001623 rd]
 	  Structure  From	Source UNIQUE ?Sequence XREF Subsequence
 				Source_Exons Int UNIQUE Int // start at 1
 		     Subsequence ?Sequence XREF Source UNIQUE Int UNIQUE Int
-		     Overlap_right UNIQUE ?Sequence XREF Overlap_left UNIQUE Int
-			// potentially use Overlap_right integer for auto-linking
+		     Overlap_right UNIQUE ?Sequence XREF Overlap_left UNIQUE Int          // potentially use Overlap_right integer for auto-linking
 		     Overlap_left UNIQUE ?Sequence XREF Overlap_right
 		     Gap_right UNIQUE Int Text            // 000909 dl added to track gap sizes
 		     Clone_left_end ?Clone XREF Clone_left_end UNIQUE Int
@@ -830,6 +829,7 @@
 			Corresponding_WTP ?WTP XREF Overlaps_CDS // [010623 rd]
                         RNAi_result ?RNAi XREF Predicted_gene // added for Lincoln RNAi [001213 dl]
 		        Gene ?Gene XREF Sequence // added by Lincoln 010417
+			GO_term ?GO_term XREF Sequence // added for Erich [011210 krb]
 		// tag2 system: names of all objects following next tag are shown in the 
 		//   general annotation display column as "tag:objname"
 	  Properties    Pseudogene Text		// explanation
