@@ -5,7 +5,7 @@
 # written by Anthony Rogers (ar2@sanger.ac.uk)
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-08-15 12:34:06 $
+# Last updated on: $Date: 2003-08-22 16:08:33 $
 
 
 use strict;
@@ -76,6 +76,11 @@ print "\nUsing $geneace_dir as target geneace database\n";
 # grab Locus->Sequence, Locus->Transcript, and Locus->Pseudogene
 # connections from geneace
 &get_sequence_connections;
+
+# Compare this to current_DB to work out which genes are Sanger / St. Louis
+&compare_with_current_DB;
+
+
 
 # remove existing camace connections and replace with new ones
 # First check for write access to $camace_dir
@@ -238,7 +243,71 @@ sub get_sequence_connections{
 
 ########################################################
 
-
+sub compare_with_current_DB{  
+  print LOG "Getting associated lab info from $currentDB:\n\n";  
+   
+  my $autoace = Ace->connect($currentDB) || die "cant open $currentDB\n";  
+   
+  my $CAMcount = 0;  
+  my $STLcount = 0;  
+  my $PROBcount = 0;  
+   
+  my $count;  
+  foreach my $entry(keys %seq_locus){  
+    
+    # work out what to get (i.e. ?Sequence, ?Transcript, or ?Pseudogene)  
+    my @details = split(/\:/,$entry);  
+    my $class  = $details[0];  
+    my $object = $details[1];  
+    
+    my $seq = $autoace->fetch($class => "$object");  
+    
+    if (defined($seq)){  
+      my @lab = $seq->at('Origin.From_Laboratory');  
+      #extract any cases where a sequence contains two loci  
+      my @loci = split(/\s+/,"$seq_locus{$entry}");  
+      
+      foreach my $locus (@loci){  
+	if(defined($lab[0])){  
+	  my $tag = $class;  
+	  $tag = "Genomic_sequence" if ($class eq "Sequence");  
+	  if($lab[0] eq "HX"){  
+	    print CAMOUT "Locus : \"$locus\"\n$tag\t\"$object\"\n\n";  
+	    $CAMcount++;  
+	    print ALLOUT "Locus : \"$locus\"\n$tag\t\"$object\"\n\n";  
+	  }  
+	  elsif($lab[0] eq "RW"){  
+	    print STLOUT "Locus : \"$locus\"\n$tag\t\"$object\"\n\n";  
+	    $STLcount++;  
+	    print ALLOUT "Locus : \"$locus\"\n$tag\t\"$object\"\n\n";  
+	  }  
+	  else{  
+	    print LOG "ERROR: $class: $object ($locus) has unknown From_Laboratory tag: $lab[0]\n";  
+	    $PROBcount++;  
+	  }  
+	}  
+	else{  
+	  print LOG "ERROR: $class: $object ($locus) has no From_laboratory tag in $currentDB\n";  
+	  $PROBcount++;  
+	}  
+      }  
+    }  
+    else{  
+      print LOG "ERROR: $class: $object ($seq_locus{$entry}) not found in $currentDB\n";  
+      $PROBcount++;  
+    }  
+  }  
+  $autoace->close;  
+  
+  print LOG "\nFound $CAMcount loci on Hinxton sequences/transcripts/pseudogene.\n";  
+  print LOG "Found $STLcount loci on StLouis sequences/transcripts/pseudogene.\n";  
+  print LOG "Found $PROBcount loci that have problems (see above)\n\n";  
+  
+  print LOG "Wrote output ACE files to /wormsrv2/autoace/acefiles\n";  
+  
+}  
+   
+##########################################
 
 sub usage {
   my $error = shift;
