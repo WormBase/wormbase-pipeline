@@ -318,12 +318,12 @@ sub initiate_build {
     close FLAG;
 
     # tidy up the log directory
-    system ("/usr/bin/rm -f $logdir/A*");           # Prepare section
-    system ("/usr/bin/rm -f $logdir/B*");           # Build section
-    system ("/usr/bin/rm -f $logdir/C*");           # Procees section
-    system ("/usr/bin/rm -f $logdir/D*");           # Ancilliary dataset section
-    system ("/usr/bin/rm -f $logdir/E*");           # Check section
-    system ("/usr/bin/rm -f $logdir/F*");           # Release section
+#    system ("/usr/bin/rm -f $logdir/A*");           # Prepare section
+#    system ("/usr/bin/rm -f $logdir/B*");           # Build section
+#    system ("/usr/bin/rm -f $logdir/C*");           # Procees section
+#    system ("/usr/bin/rm -f $logdir/D*");           # Ancilliary dataset section
+#    system ("/usr/bin/rm -f $logdir/E*");           # Check section
+#    system ("/usr/bin/rm -f $logdir/F*");           # Release section
     
     # make sure that the database.wrm file is younger
     sleep 10;
