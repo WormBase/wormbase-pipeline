@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2004-09-29 14:15:30 $
+# Last edited on: $Date: 2004-10-07 09:57:59 $
 
 
 
@@ -1352,21 +1352,13 @@ sub map_features {
 sub confirm_gene_models {
   $am_option = "-confirm";
 
-  # GFF files need to be dumped again (will now have blat data)
-  # also needs GFF files to be split again
-  #&dump_GFFs;
-  #&split_GFFs;
-
   # confirm_genes from EST&OST (-est) and mRNA (-mrna) data sets
-  &run_command("$scriptdir/confirm_genes.pl --est --mrna");
+  &run_command("$scriptdir/confirm_genes.pl");
 
   # load files
-  my $file = "$basedir/wormbase/misc_dynamic/misc_confirmed_by_EST.ace";
-  &load($file,"genes_confirmed_by_EST_and_OST");
+  my $file = "$basedir/wormbase/misc_dynamic/misc_CDS_confirmation.ace";
+  &load($file,"CDS_status");
 
-  $file = "$basedir/wormbase/misc_dynamic/misc_confirmed_by_mRNA.ace";
-  &load($file,"genes_confirmed_by_mrna");
-  
   # make dumped_GFF_file in /logs
   system("touch $logdir/C4:Confirm_gene_models");
 
