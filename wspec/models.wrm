@@ -647,18 +647,6 @@
 	  Protein_id_evidence ?Text // added to cope with protein id's [krb 020726]
 	  CGC_data_submission // new way of flagging information from CGC [krb 030207]
 	  Curator_confirmed ?Person // new tag to help flag evidence we believe in! [krb 030307]
-	  GO_inference_type IC  Text
-			    IDA Text
-			    IEA Text
-			    IEP Text
-			    IGI Text
-			    IMP Text
-			    IPI Text
-			    ISS Text
-			    NAS Text
-			    ND  Text
-			    TAS Text
-
 
 
 
