@@ -13,7 +13,7 @@
 #960906 Changed to make fasta file and put fasta file on ftp site 
 #971110 Added -check worm to mkcon-gap call
 
-set scriptsdir  = ~wormpub/analysis/scripts
+set scriptsdir  = /wormsrv2/scripts
 set datadir     = ~wormpub/analysis/cosmids
 
 set user        = wormpub
@@ -58,7 +58,7 @@ mkdir $dat
 #
 ###########################
 
-set condir = `pfind -q -u $proj`
+set condir = `/usr/local/badger/bin/pfind -q -u $proj`
 
 # Check project directory exists.
 if (! -d  $condir) then
