@@ -4,7 +4,7 @@
 
 # by Chao-Kung Chen [030113]
 
-# Last updated on: $Date: 2003-06-17 16:17:22 $
+# Last updated on: $Date: 2003-06-25 15:51:02 $
 # Last updated by: $Author: ck1 $
 
 
@@ -22,7 +22,7 @@ use Getopt::Long;
 ###################################################
 
 my ($debug, $help, $recipients);
-$recipients ="ck1\@sanger.ac.uk, emsch\@its.caltech.edu, krb\@sanger.ac.uk";
+$recipients ="ck1\@sanger.ac.uk, emsch\@its.caltech.edu, kimberly\@minerva.caltech.edu, krb\@sanger.ac.uk";
 my $tace = &tace;   # tace executable path
 
 GetOptions ("d|debug=s"  => \$debug,
@@ -116,14 +116,22 @@ my %locus_cds=%{$other_main[1]};
 my $count=0;
 my (@exceptions, %exceptions, @other_names, %other_names);
 
+my @info;
+push(@info, "C: FYI - CURRENT LIST OF LOCI THAT ARE BOTH MAIN NAME AND OTHER NAME:\n");
+push(@info, "---------------------------------------------------------------------\n");
+
 foreach (sort keys %other_main){
   my $locus = @{$other_main{$_}}->[0];
   my @cds = @{$other_main{$_}}->[1];
 
   if (exists $locus_cds{$_}){
-     push(@exceptions, $_);
+    push(@info, "$_ (@{$locus_cds{$_}}) is different from $_ which is an other_name of $locus (@cds)\n");
+    push(@info, "Functional annotation needs to be assigned to $_ (@{$locus_cds{$_}})\n\n");
+    push(@exceptions, $_);
   }
   else {
+  #  print LOG "$_ (@cds) is an other_name of $locus (@cds)\n";
+  #  print LOG "Functional annotation needs to be assigned to $locus (@cds)\n\n";
     push(@other_names, $_);
   }
 }
@@ -137,30 +145,36 @@ my $modify ="$updatedir/$ftp_date[1].modified";
 
 open(OUT, ">$modify");
 
-print LOG "CURRENT LIST of main name/other name INFORMATION:\n";
-print LOG "-------------------------------------------------\n";
+my @assignment;
+push (@assignment,"B: FUNCTIONAL ANNOTATION ASSIGNMENT BASED ON YOUR UPDATE\n");
+push (@assignment,"--------------------------------------------------------\n");
 
 while(<IN>){
   if ($_ =~ /^Locus : \"(.+)\"/){
-   
+    
+    my $flag = $1;
     ######################################################### 
     # check if locus is an other_name and also a locus object
     #########################################################
 
-    if ($exceptions{$1}){
-      print $1, "\n";
+    if ($exceptions{$flag}){
+      print $flag, "\n";
       #$count++;
-      my $locus = @{$other_main{$1}}->[0];
-      my @cds = @{$other_main{$1}}->[1]; 
-      if (@{$other_main{$1}}->[1]){
-	print LOG "$1 (@{$locus_cds{$1}}) is different from $1 which is an other_name of $locus (@cds)\n";
-	print LOG "Functional annotation is assigned to $1 (@{$locus_cds{$1}})\n\n";
-	print OUT "Locus : \"$1\"\n";
+      my $locus = @{$other_main{$flag}}->[0];
+      my @cds = @{$other_main{$flag}}->[1] if @{$other_main{$flag}}->[1];
+   
+      # attached to cds
+      if (@{$other_main{$flag}}->[1]){   
+	push (@assignment, "$flag (@{$locus_cds{$1}}) is different from $flag which is an other_name of $locus (@cds)\n");
+	push (@assignment, "Functional annotation is assigned to $flag (@{$locus_cds{$flag}} in geneace)\n\n");
+	print OUT "Locus : \"$flag\"\n";
       }
-      else {
-	print LOG "$1 (@{$locus_cds{$1}}) is different from $1 which is an other_name of $locus (no CDS connection yet)\n";
-	print LOG "Functional annotation is assigned to $1 (@{$locus_cds{$1}})\n\n";
-	print OUT "\nLocus : \"$1\"\n";
+
+      # not attached to cds
+      else {                             
+	push (@assignment, "$flag (@{$locus_cds{$flag}}) is different from $flag which is an other_name of $locus (no CDS connection yet)\n");
+	push (@assignment, "Functional annotation is assigned to $flag (@{$locus_cds{$flag}} in geneace)\n\n");
+	print OUT "\nLocus : \"$flag\"\n";
       }
     }
 
@@ -168,21 +182,25 @@ while(<IN>){
     # check if locus should become an other_name of a CGC locus object
     #####################################################################
 
-    elsif ($other_names{$1}){
+    elsif ($other_names{$flag}){
       $count++;
-      my $locus = @{$other_main{$1}}->[0];
-      my @cds = @{$other_main{$1}}->[1];
-      if (@{$other_main{$1}}->[1]){
-	print LOG "$1 is an other_name of $locus (@cds)\n";
-	print LOG "Functional annotation is assigned to $locus\n\n";
+      my $locus = @{$other_main{$flag}}->[0];
+      my @cds = @{$other_main{$flag}}->[1];
+
+      # attached to cds
+      if (@{$other_main{$flag}}->[1]){
+	push (@assignment, "$flag is an other_name of $locus (@cds)\n");
+	push (@assignment, "Functional annotation is assigned to $locus\n\n");
 	print OUT "\nLocus : \"$locus\"\n";
-	print OUT "Other_name \"$1\"\n";
+	print OUT "Other_name \"$flag\"\n";
       }
+
+      # not attached to cds
       else {
-	print LOG "$1 is an other_name of $locus (no CDS connection yet)\n";
-	print LOG "Functional annotation is assigned to $locus\n\n";
+	push (@assignment, "$flag is an other_name of $locus (no CDS connection yet)\n");
+	push (@assignment, "Functional annotation is assigned to $locus\n\n");
 	print OUT "\nLocus : \"$locus\"\n";
-	print OUT "Other_name \"$1\"\n";
+	print OUT "Other_name \"$flag\"\n";
       }
     }
     else {
@@ -199,14 +217,18 @@ if (!$diff_out){
   print LOG "------------------------------------------\n\n";
   print LOG "EVERYTHING WENT OK\n\n";
   print LOG "THANKS.\n\n";
+  print LOG @info;
 }
 else {
-  print LOG "------------------------------------------\n\n";
-  print LOG "CHANGES MADE\n\n";  
+  print LOG "\n\n";
+  print LOG "A: CHANGES MADE FOR YOUR UPDATE FILE\n\n";  
   print LOG $diff_out, "\n";
   print LOG "------------------------------------------\n\n";
   print LOG "Please update accordingly\n";
-  print LOG "THANKS.\n\n";
+  print LOG "THANKS.\n\n\n";
+  print LOG @assignment;
+  print LOG "\n";
+  print LOG @info;
 }
 
 my $command=<<END;
