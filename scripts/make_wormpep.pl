@@ -7,7 +7,7 @@
 # Builds a wormpep data set from the current autoace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-12-09 13:42:16 $
+# Last updated on: $Date: 2003-12-22 08:56:23 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -774,8 +774,8 @@ sub create_log_files{
   $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
   my $rundate = &rundate;
   # Log name depends on which mode script is being run in: initial/final
-  $log        = "$basedir/logs/$script_name.initial.$rundate.$$" if ($initial);
-  $log        = "$basedir/logs/$script_name.final.$rundate.$$"   if ($final);
+  $log        = "$basedir/logs/$script_name.initial.WS$release.$rundate.$$" if ($initial);
+  $log        = "$basedir/logs/$script_name.final.WS$release.$rundate.$$"   if ($final);
 
   open (LOG, ">$log") or die "cant open $log";
   print LOG "$script_name\n";

@@ -7,8 +7,8 @@
 # A script to finish the last part of the weekly build by updating all of the
 # relevant WormBase and Wormpep web pages.
 #
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2003-11-18 17:22:49 $      
+# Last updated by: $Author: krb $     
+# Last updated on: $Date: 2003-12-22 08:56:23 $      
 
 
 #################################################################################
@@ -581,7 +581,7 @@ sub create_wormpep_page{
   
   # get details from last wormpep log file
   my $wp_alt;
-  my @possible_logs = `ls -t /wormsrv2/logs/make_wormpep_full.${WS_current}*`; # added new logfile name 
+  my @possible_logs = `ls -t /wormsrv2/logs/make_wormpep.final.${WS_current}*`; # added new logfile name 
   my $wormpeplog  = "$possible_logs[0]";
   open (WP_2, "<$wormpeplog") || croak "Failed to open wormpep.log\n";
   while (<WP_2>) {
