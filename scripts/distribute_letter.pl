@@ -9,7 +9,7 @@
 #                          /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/current/release_notes.txt/
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-06-18 15:18:37 $
+# Last updated on: $Date: 2004-06-23 15:37:04 $
 
 
 use strict;
@@ -27,9 +27,11 @@ use Wormbase;
 my $maintainers = "All";
 my $rundate     = `date +%y%m%d`; chomp $rundate;
 my $runtime     = `date +%H:%M:%S`; chomp $runtime;
-our $log        = "/wormsrv2/logs/distribute_letter.$rundate";
 my $release   = &get_wormbase_version_name(); # e.g. WS89
+my $release_number = &get_wormbase_version; # e.g. 89
+my $log        = "/wormsrv2/logs/distribute_letter.${release}.$$";
 my $www = "/nfs/WWWdev/htdocs/Projects/C_elegans";
+my $errors = 0; 
 
 open (LOG, ">$log");
 print LOG "about to spread the word . . . \n";
@@ -47,6 +49,8 @@ print LOG "copying to intranet . . . . ";
   and die "couldnt copy to ${www}/WORMBASE/${release}/\n";
 print LOG "DONE.\n";
 
+
+# Send email
 print "\n\nMailing to wormbase-dev . . ";
 
 my $to = "wormbase-dev\@wormbase.org";
@@ -70,15 +74,81 @@ print LOG "Updating symlink on FTP site\n";
 my $targetdir = "/nfs/disk69/ftp/pub/wormbase";  # default directory, can be overidden 	 
   	 
 # delete the old symbolic link and make the new one 	 
-system "rm -f $targetdir/development_release"; 	 
-system "cd $targetdir; ln -s $release development_release"; 	 
+&run_command("rm -f $targetdir/development_release"); 	 
+&run_command("cd $targetdir; ln -s $release development_release"); 	 
  
 
+# update wormpep_dev symbolic link in wormpep ftp site
+my $wormpep_ftp_root = glob("~ftp/pub/databases/wormpep");
+&run_command("cd $wormpep_ftp_root");
+&run_command("rm -f wormpep_dev");
+&run_command("ln -fs wormpep${release_number}/wormpep${release_number} wormpep_dev");
+
+
+#######################################
+# Webpublish to live site
+#######################################
+
+print LOG "Updating some WormBase webpages to live site\n"; 	 
+
+chdir("$www/WORMBASE") || print LOG "Couldn't run chdir\n";
+
+# update development_release symbolic link 
+&run_command("rm -f development_release");
+&run_command("ln -fs $release development_release");
+
+# Now update WORMBASE pages
+# these won't be seen until current symlink is also updated
+my $webpublish = "/usr/local/bin/webpublish";
+&run_command("$webpublish -f -q -r $release") && print LOG "Couldn't run webpublish on release directory\n";
+&run_command("$webpublish -f -q development_release") && print LOG "Couldn't run webpublish on dev sym link\n";
+
+
+
+# say goodnight Brian
 
 print LOG "$0 finished at ",`date`,"\n\n";
+close(LOG);
+
+
+my $maintainers = "All";
+# warn about errors in subject line if there were any
+if($errors == 0){
+  &mail_maintainer("BUILD REPORT: distribute_letter.pl",$maintainers,$log);
+}
+elsif ($errors ==1){
+  &mail_maintainer("BUILD REPORT: distribute_letter.pl : $errors ERROR!",$maintainers,$log);
+}
+else{
+  &mail_maintainer("BUILD REPORT: distribute_letter.pl : $errors ERRORS!!!",$maintainers,$log);
+}
 
 exit(0);
 
+
+
+
+
+##################################################################################
+#
+# Simple routine which will run commands via system calls but also check the 
+# return status of a system call and complain if non-zero, increments error check 
+# count, and prints a log file error
+#
+##################################################################################
+
+sub run_command{
+  my $command = shift;
+  print LOG &runtime, ": started running $command\n";
+  my $status = system($command);
+  if($status != 0){
+    print LOG "ERROR: $command failed\n";
+    $error++;
+  }
+
+  # for optional further testing by calling subroutine
+  return($status);
+}
 
 
 
@@ -109,8 +179,9 @@ mails release letter to wormbase-dev
 Then, when release letter is emailed it updates the symlink on the FTP
 site to make current_release point to the latest release directory.
 
-Finally, it runs webpublish in a few separate places to update the dev
-site with the live site.
+Finally, it runs webpublish in one place to update the dev site with the live site.
+This is just so that WashU will be able to see the latest database checks
+statistics even when they are not yet live.
 
 script_template.pl MANDATORY arguments:
 

@@ -6,7 +6,7 @@
 #
 # Updates the local webpages in synch with the main website
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-06-18 15:22:07 $
+# Last updated on: $Date: 2004-06-23 15:37:04 $
 
 
 use strict;
@@ -31,6 +31,11 @@ my $wormpub_dir = "/nfs/disk100/wormpub/WORMPEP";
 my $wormpep_ftp_root = glob("~ftp/pub/databases/wormpep");
 my $wp_ftp_dir = "$wormpep_ftp_root/wormpep${release}";
 my @wormpep_files = &wormpep_file;
+my $log  = "/wormsrv2/logs/update_live_release.${release}.$$";
+
+open (LOG, ">$log") || die "Couldn't open log file\n";;
+print LOG &runtime " : starting script\n";
+
 
 # update new live wormpep release from ftp_site to /disk100/wormpub
 foreach my $file ( @wormpep_files ) {
@@ -39,7 +44,7 @@ foreach my $file ( @wormpep_files ) {
 }
 &run_command("/usr/local/pubseq/bin/setdb $wormpub_dir/wormpep_current");
 
-# create a symbolic link from top level wormpep into the release on the live website
+# create a symbolic link from top level wormpep into the release on the wormpep ftp site
 foreach my $file ( @wormpep_files ) {
   &run_command("cd $wormpep_ftp_root; ln -fs $wp_ftp_dir/$file $file");
 }
@@ -60,16 +65,35 @@ my $webpublish = "/usr/local/bin/webpublish";
 
 #First update wormpep subdirectory
 chdir($www) || print LOG "Couldn't run chdir\n";
-system("$webpublish -f -q -r wormpep") && print LOG "Couldn't run webpublish on wormpep files\n";
+&run_command("$webpublish -f -q -r wormpep") && print LOG "Couldn't run webpublish on wormpep files\n";
 
-# Now update WORMBASE pages
+# Now update WORMBASE current link
 chdir("$www/WORMBASE") || print LOG "Couldn't run chdir\n";
-system("$webpublish -f -q -r $release") && print LOG "Couldn't run webpublish on release directory\n";
-system("$webpublish -f -q -r current") && print LOG "Couldn't run webpublish on current symlink files\n";
+&run_command("$webpublish -f -q -r current") && print LOG "Couldn't run webpublish on current symlink files\n";
 
 # Now need to update big dbcomp output in data directory
 chdir("/nfs/WWWdev/SANGER_docs/data/Projects/C_elegans") || print LOG "Couldn't chdir to data directory\n";
-system("$webpublish -f -q WS.dbcomp_output") && print LOG "Couldn't webpublish data directory\n";
+&run_command("$webpublish -f -q WS.dbcomp_output") && print LOG "Couldn't webpublish data directory\n";
+
+
+# The end
+
+print LOG &runtime, " : finished\n";
+close(LOG);
+
+
+my $maintainers = "All";
+# warn about errors in subject line if there were any
+if($errors == 0){
+  &mail_maintainer("BUILD REPORT: update_live_release.pl",$maintainers,$log);
+}
+elsif ($errors ==1){
+  &mail_maintainer("BUILD REPORT: update_live_release.pl : $errors ERROR!",$maintainers,$log);
+}
+else{
+  &mail_maintainer("BUILD REPORT: update_live_release.pl : $errors ERRORS!!!",$maintainers,$log);
+}
+exit(0);
 
 
 ##################################################################################

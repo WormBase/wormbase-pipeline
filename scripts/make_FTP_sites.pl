@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-06-15 14:33:20 $
+# Last updated on: $Date: 2004-06-23 15:37:04 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -147,6 +147,7 @@ sub create_log_file{
 ##########################################################
 
 sub copy_release_files{
+  print LOG &runtime, ": copying release files\n";
 
   &run_command("mkdir $targetdir/$release") unless -e "$targetdir/$release";
 
@@ -166,7 +167,7 @@ sub copy_release_files{
     } 
   }
   closedir RELEASE;
-
+  print LOG &runtime, ": Finished\n\n";
   
 }
 
@@ -176,7 +177,7 @@ sub copy_release_files{
 
 sub copy_chromosome_files{
 
-
+  print LOG &runtime, ": copying chromosome files\n";
   my $filename;
   &run_command("mkdir $targetdir/$release/CHROMOSOMES") unless -e "$targetdir/$release/CHROMOSOMES";
 
@@ -193,7 +194,7 @@ sub copy_chromosome_files{
   }
   closedir DNAGFF;
   
-
+  print LOG &runtime, ": Finished copying\n\n";
 }
 
 ############################################
@@ -202,6 +203,7 @@ sub copy_chromosome_files{
 
 sub copy_misc_files{
 
+  print LOG &runtime, ": copying misc files\n";
 
   # Copy across the models.wrm file
   &run_command("scp $sourcedir/wspec/models.wrm $targetdir/$release/models.wrm.$release");
@@ -223,6 +225,7 @@ sub copy_misc_files{
   &run_command("scp ${release}_CDSes_interpolated_map.txt.gz $targetdir/$release/gene_interpolated_map_positions.${release}.gz");
   &run_command("scp ${release}_Clones_interpolated_map.txt.gz $targetdir/$release/clone_interpolated_map_positions.${release}.gz");
 
+  print LOG &runtime, ": Finished copying\n\n";
 
 }
 
@@ -233,6 +236,7 @@ sub copy_misc_files{
 
 sub copy_wormpep_files{
 
+  print LOG &runtime, ": copying wormpep files\n";
 
   my $wormpub_dir = "/nfs/disk100/wormpub/WORMPEP";
   my $wp_source_dir = "/wormsrv2/WORMPEP/wormpep${wormpep}";
@@ -257,8 +261,9 @@ sub copy_wormpep_files{
   $tgz_file .= ".gz";
   &run_command("mv $tgz_file $targetdir/$release");
 
-  # sym link to dev directory
-  &run_command("cd $wormpep_ftp_root; ln -fs $wp_ftp_dir wormpep_dev");
+
+
+  print LOG &runtime, ": Finished copying\n\n";
 }
 
 
@@ -268,6 +273,7 @@ sub copy_wormpep_files{
 
 sub extract_confirmed_genes{
 
+  print LOG &runtime, ": Extracting confirmed genes\n";
 
   my $db = Ace->connect(-path  => "/wormsrv2/autoace/");
   my $query = "Find elegans_CDS; Confirmed_by";
@@ -294,8 +300,10 @@ sub extract_confirmed_genes{
   &run_command("/bin/gzip ${targetdir}/${release}/confirmed_genes.${release}");
 
   $db->close;
+
+  print LOG &runtime, ": Finished extracting\n\n";
   return(0);
-  
+
 }
 
 ################################################################################
@@ -304,6 +312,7 @@ sub extract_confirmed_genes{
 
 sub make_yk2ORF_list {
 
+  print LOG &runtime, ": making yk2ORF files\n";
   # simple routine to just get yk est names and their correct ORFs and make an FTP site file
   # two columns, second column supports multiple ORF names
 
@@ -337,7 +346,8 @@ EOF
   close(OUT);
 
   &run_command("/bin/gzip $out");
-  
+
+  print LOG &runtime, ": Finished making files\n\n";  
   
 }
 
@@ -347,6 +357,7 @@ EOF
 
 sub make_geneID_list {
 
+  print LOG &runtime, ": making Gene ID list\n";
   # For each 'live' Gene object, extract 'CGC_name' and 'Sequence_name' fields (if present)
 
   my $tace = &tace;
@@ -371,7 +382,7 @@ EOF
 
   &run_command("/bin/gzip $out");
   
-  
+  print LOG &runtime, ": Finished making list\n\n";
 }
 
 ########################
@@ -435,7 +446,7 @@ sub usage {
 
 sub run_command{
   my $command = shift;
-  print LOG &runtime, ": started running $command\n";
+  print LOG &runtime, ": running $command\n";
   my $status = system($command);
   if($status != 0){
     $errors++;
