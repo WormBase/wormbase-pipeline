@@ -12,8 +12,8 @@
 # 3) Archives old GFF_SPLITS directory
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-09-10 15:21:23 $
+# Last updated by: $Author: dl1 $
+# Last updated on: $Date: 2004-10-11 08:48:29 $
 
 
 use strict;
@@ -21,7 +21,6 @@ use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
 use IO::Handle;
 use Getopt::Long;
-use Common_data;
 use Cwd;
 use File::Glob ':glob';
 use File::Path;
