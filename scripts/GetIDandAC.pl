@@ -13,11 +13,11 @@
 #
 # pfetch is done in batches of 2000, any greater and nothing comes back!
 #
-# Last updated by: $Author: dl1 $                  
-# Last updated on: $Date: 2002-08-27 12:09:32 $    
+# Last updated by: $Author: krb $                  
+# Last updated on: $Date: 2002-09-05 15:45:53 $    
 
 use strict;
-use lib="/wormsrv2/scripts/";
+use lib "/wormsrv2/scripts/";
 use Wormbase;
 
 my $maintainer   = "All";
