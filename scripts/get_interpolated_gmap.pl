@@ -7,7 +7,7 @@
 # This script calculates interpolated genetic map positions for CDS, Transcripts 
 # and Pseudogenes lying between and outside genetic markers.
 #
-# Last updated on: $Date: 2004-06-08 13:00:26 $
+# Last updated on: $Date: 2004-06-09 12:51:32 $
 # Last updated by: $Author: ck1 $
 
 
@@ -94,18 +94,18 @@ my $download3 = "$output/"."WS$version"."_Pseudogene_interpolated_map.txt";
 
 if ($map){
   if (defined glob("$output/WS*gz")){system("rm -f $output/WS*gz")} # remove zipped map file of last build
+
   open (ACE, ">$acefile") || die "Can't output file!\n";
   open (GACE, ">$gacefile") || die "Can't output file!\n";
   open (CDSes, ">$download1") || die "Can't output file!\n";
   open (CLONEs, ">$download2") || die "Can't output file!\n";
   open (PSEUDO, ">$download3") || die "Can't output file!\n";
   system("chmod 777 $acefile $gacefile $download1 $download2 $download3");
+
+  print CDSes "WS$version interpolated map positions for CDSes\n\n";
+  print CLONEs "WS$version interpolated map positions for Clones\n\n";
+  print PSEUDO "WS$version interpolated map positions for Pseudogenes\n\n";
 }
-
-print CDSes "WS$version interpolated map positions for CDSes\n\n";
-print CLONEs "WS$version interpolated map positions for Clones\n\n";
-print PSEUDO "WS$version interpolated map positions for Pseudogenes\n\n";
-
 
 ##############################################################
 # hash to retrieve Gene obj info: 
@@ -116,9 +116,9 @@ print PSEUDO "WS$version interpolated map positions for Pseudogenes\n\n";
 my $ga = init Geneace();
 my %Gene_info = $ga -> gene_info($database);
 
-###################################################################################################
-# get list of predicted CDS/Transcript linked to Gene for writing interpolated map to Gene as well
-###################################################################################################
+#####################################################################################################
+# get list of CDS/Transcript/Pseudogene linked to Gene for writing interpolated map to it
+#####################################################################################################
 
 
 my $CDS_linked_to_gene=<<EOF;
@@ -137,7 +137,7 @@ open (FH1, "echo '$CDS_linked_to_gene' | $tace $database |") || die "Couldn't ac
 open (FH2, "echo '$transcript_linked_to_gene' | $tace $database |") || die "Couldn't access $curr_db\n";
 open (FH3, "echo '$pseudogene_linked_to_gene' | $tace $database |") || die "Couldn't access $curr_db\n";
 
-my %predicted_gene_to_locus;
+my %sequence_linked_to_gene;
 
 my @FHS = qw(*FH1 *FH2 *FH3);
 foreach my $e (@FHS){
@@ -146,8 +146,8 @@ foreach my $e (@FHS){
     if ($_ =~ /^\"(.+)\"\s+\"(.+)\"$/){
       my $seq = $1; my $gene_id = $2;
       my $locus;
-      $locus = $Gene_info{$gene_id}{'Public_name'} if exists $Gene_info{$gene_id}{'Public_name'};
-      $predicted_gene_to_locus{$seq} = $locus;
+      $locus = $Gene_info{$gene_id}{'Public_name'} if exists $Gene_info{$gene_id}{'Public_name'}; # make sure no null values
+      $sequence_linked_to_gene{$seq} = $locus;
     }
   }
 }
@@ -343,8 +343,7 @@ while (<FH>){
        ($_ =~ /^\"(WBGene\d+)\"\s+\"(.+)\"\s+(-\d+\.\d+|\d+\.\d+|\d+|-\d+)\s+\"(.+\.[a-z0-9]+)\"/) ){ 
 
     my $gene_id = $1;
-    my $locus = $Gene_info{$gene_id}{'CGC_name'} if exists $Gene_info{$gene_id}{'CGC_name'};
-       $locus = $Gene_info{$gene_id}{'Other_name'} if !exists $Gene_info{$gene_id}{'CGC_name'};
+    my $locus = $Gene_info{$gene_id}{'Public_name'} if exists $Gene_info{$gene_id}{'Public_name'};
     my $chrom = $2;
     my $gmap = $3;
     my $cds = $4;
@@ -356,7 +355,7 @@ while (<FH>){
     my @CDSES = (); push(@CDSES, $cds, $cds_2);
 
     foreach my $cds (@CDSES){
-      if (!exists $unique_locus{$locus}){ # get rid of duplication from isoforms
+      if (!exists $unique_locus{$locus}){ # get rid of duplication of CGC_name from isoforms
 	$unique_locus{$locus} = $locus;
 
 	##################
@@ -565,7 +564,7 @@ foreach $chrom (@chroms){
   my $R_mean_coord = $pos_order_to_mean_coord_locus_cds{$R_tip}->[0];
 
   ########################################################################################
-  ## get end coords of each chromosom -> 
+  ## get end coords of each chromosom ->
   ## for calculating int. gmap of CDSes/transcript/pseudogene lying outside of tip markers
   ########################################################################################
 
@@ -612,7 +611,7 @@ foreach $chrom (@chroms){
         $position = $R_tip + $position;
         if ($map){
 	  &ace_output($mean_coord_cds{$_}, $chrom, $position, $_, $feature);
-	  next; 
+	  next;
         }	
       }
 
@@ -630,7 +629,7 @@ foreach $chrom (@chroms){
           $down_mean_coord = $pos_order_to_mean_coord_locus_cds{$gmap_down}->[0];
           $up_mean_coord = $pos_order_to_mean_coord_locus_cds{$gmap_up}->[0];
 	
-          if (($down_mean_coord ne "NA" && $up_mean_coord ne "NA") && 
+          if (($down_mean_coord ne "NA" && $up_mean_coord ne "NA") &&
 	      ($down_mean_coord < $_ && $_ < $up_mean_coord)){
             $length_diff = $_ - $down_mean_coord;
 	
@@ -895,18 +894,18 @@ sub ace_output {
       print CDSes "\t$chrom\t$gmap\t" if $type ne "pseudo";
       print PSEUDO "\t$chrom\t$gmap\t" if $type eq "pseudo";
 
-      if (exists $predicted_gene_to_locus{$_}){
+      if (exists $sequence_linked_to_gene{$_}){
 	# write interpolated_map to a Gene obj
-        print ACE "\nGene : \"$Gene_info{$predicted_gene_to_locus{$_}}{'Gene'}\"\n";
+        print ACE "\nGene : \"$Gene_info{$sequence_linked_to_gene{$_}}{'Gene'}\"\n";
 
 	# append CGC_name to a sequence
-	print CDSes "$predicted_gene_to_locus{$_}\n" if $type ne "pseudo";
-	print PSEUDO "$predicted_gene_to_locus{$_}\n" if $type eq "pseudo";
+	print CDSes "$sequence_linked_to_gene{$_}\n" if $type ne "pseudo";
+	print PSEUDO "$sequence_linked_to_gene{$_}\n" if $type eq "pseudo";
         print ACE "Interpolated_map_position\t\"$chrom\"\t$gmap\t\/\/$mean_coord (iso)\n";
 
 	# writes updated interpolated_map only to live gene ids
-	if ( exists $gene_id_is_live{$Gene_info{$predicted_gene_to_locus{$_}}{'Gene'}} ){
-	  print GACE "\nGene : \"$Gene_info{$predicted_gene_to_locus{$_}}{'Gene'}\"\n";
+	if ( exists $gene_id_is_live{$Gene_info{$sequence_linked_to_gene{$_}}{'Gene'}} ){
+	  print GACE "\nGene : \"$Gene_info{$sequence_linked_to_gene{$_}}{'Gene'}\"\n";
 	  print GACE "Interpolated_map_position\t\"$chrom\"\t$gmap\t\/\/$mean_coord (iso)\n";
 	}
 	if ($comp && $locus_map{$CDS_to_gene{$_}}){
@@ -937,19 +936,19 @@ sub ace_output {
     print CLONEs"\t$chrom\t$gmap\t" if $clone;
     print PSEUDO"\t$chrom\t$gmap\t" if $feature eq "pseudogene";
 
-    if (exists $predicted_gene_to_locus{$cds}){
+    if (exists $sequence_linked_to_gene{$cds}){
       # write interpolated_map to a Gene obj
 
-      print ACE "\nGene : \"$Gene_info{$predicted_gene_to_locus{$cds}}{'Gene'}\"\n";
+      print ACE "\nGene : \"$Gene_info{$sequence_linked_to_gene{$cds}}{'Gene'}\"\n";
 
       # append CGC_name to a sequence
-      print CDSes "$predicted_gene_to_locus{$cds}\n" if $feature ne "pseudogene";
-      print PSEUDO "$predicted_gene_to_locus{$cds}\n" if $feature eq "pseudogene";
+      print CDSes "$sequence_linked_to_gene{$cds}\n" if $feature ne "pseudogene";
+      print PSEUDO "$sequence_linked_to_gene{$cds}\n" if $feature eq "pseudogene";
       print ACE "Interpolated_map_position\t\"$chrom\"\t$gmap\t\/\/$mean_coord\n";
 
       # writes updated interpolated_map only to live gene ids
-      if ( exists $gene_id_is_live{$Gene_info{$predicted_gene_to_locus{$cds}}{'Gene'}} ){
-	print GACE "\nGene : \"$Gene_info{$predicted_gene_to_locus{$cds}}{'Gene'}\"\n";
+      if ( exists $gene_id_is_live{$Gene_info{$sequence_linked_to_gene{$cds}}{'Gene'}} ){
+	print GACE "\nGene : \"$Gene_info{$sequence_linked_to_gene{$cds}}{'Gene'}\"\n";
 	print GACE "Interpolated_map_position\t\"$chrom\"\t$gmap\t\/\/$mean_coord\n";
       }
       if ($comp && exists $locus_map{$CDS_to_gene{$cds}}){
