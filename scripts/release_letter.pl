@@ -5,7 +5,7 @@
 # by Anthony Rogers                             
 #
 # Last updated by: $Author: krb $               
-# Last updated on: $Date: 2003-05-30 10:14:31 $         
+# Last updated on: $Date: 2003-07-25 11:09:12 $         
 #
 # Generates a release letter at the end of build.
 #
@@ -77,6 +77,12 @@ if( defined($opt_l)) {
   print RL "v)\twormpep$ver.tar.gz          -   full Wormpep distribution corresponding to WS$ver\n";
   print RL "vi)\twormrna$ver.tar.gz          -   latest WormRNA release containing non-coding RNA's in the genome\n";
   print RL "vii)\tconfirmed_genes.WS$ver.gz   -   DNA sequences of all genes confirmed by EST &/or cDNA\n";
+  print RL "viii)\tyk2orf.WS$ver.gz            -    Latest set of ORF connections to each Yuji Kohara EST clone\n";
+  print RL "ix)\tgene_interpolated_map_positions.WS$ver.gz    - Interpolated map positions for each coding/RNA gene\n";
+  print RL "x)\tclone_interpolated_map_positions.WS$ver.gz    - Interpolated map positions for each clone\n";
+  print RL "xi)\tbest_blastp_hits.WS$ver.gz    - for each C. elegans WormPep protein, lists Best blastp match to\n 
+                                        human, fly, yeast, C. briggsae, and SwissProt & Trembl proteins.\n";
+
   print RL "\n\n";
   print RL "Release notes on the web:\n-------------------------\n";
   print RL "http://www.sanger.ac.uk/Projects/C_elegans/WORMBASE\n\n\n\n";
