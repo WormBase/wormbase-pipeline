@@ -1,4 +1,4 @@
-#! /usr/bin/perl5.6.1 -w
+#! /usr/local/bin/perl5.8.0 -w
 
 use Tk;
 use strict;
@@ -344,7 +344,13 @@ sub geneclass_loci_other_name {
   while(<IN>){
     if ($_ =~ ""){}
     #if ($_ =~ /^(\w{3,3})\s{2,}(\w+)\s{2,}(.+)/) {
-    if ($_ =~ /^(\w{3,3})\s+(\w+)\s+(.+)/) {  
+    if ($_ =~ /^(\w{3,3})\s+\[phenotype: (.+)\]/ ) { 
+      push(@Update,"\n\nGene_Class : \"$1\"\n"); 
+      push(@Update,"CGC_approved\n");
+      push(@Update,"Phenotype \"$2\"\n");
+    }
+ 
+    if ($_ =~ /^(\w{3,3})\s+(\w+)\s+(.+)/ && $_ !~ /^New|NEW/ ) {  
       $gene_class = $1;
       push(@Update,"\n\nGene_Class : \"$gene_class\"\n");
       #@parts = split(/\s{2,}/, $2);
@@ -755,6 +761,26 @@ sub gene_mapping {
     }
   }
   
+  sub update_lab {
+    open (IN, $filename) || die "Can't read in file!";
+    
+    my ($gene_class, @Update, $locus, $seq, $rest, @parts, $num_parts,$cgc_paper, $paper,
+	$head, $tail, @variants, $i, $person, $pmid, $other_name, @evidence, $evidence, @persons);
+    
+    while(<IN>){
+      if ($_ =~ ""){}
+      if ($_ =~ /^(\w{2,2})\s+(\w{2,2})\s+(.+,.+)\s+(.+)&/) { 
+	push(@Update,"\n\nGene_Class : \"$1\"\n"); 
+	push(@Update,"CGC_approved\n");
+	push(@Update,"Phenotype \"$2\"\n");
+      }
+    }
+    foreach (@Update){
+      print $_,;
+      $ace_window -> insert('end',"$_");
+    }
+  }
+
   sub write_ace {
     my($obj, $tag, $value)=@_;
     my(%obj_info, $info, $gene);
