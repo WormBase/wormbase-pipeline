@@ -12,9 +12,10 @@ use Getopt::Long;
 my $test;
 my $all;
 
-GetOptions("test"   => \$test,
-	   "all"    => \$all
+GetOptions("test"     => \$test,
+	   "all"      => \$all
 	  );
+my @sample_peps = @_;
 
 my $wormpipe_dir = glob("~wormpipe");
 my $WPver = &get_wormbase_version;
@@ -50,35 +51,39 @@ my $runtime    = `date +%H:%M:%S`; chomp $runtime;
 #get list of wormpeps to dump from wormpep.diffXX or wormpep.tableXX depending on wether u want to dump all or just new
 my @peps2dump;
 my $pep;
-
-if( $all ) {
-  open( DIFF,"</wormsrv2/WORMPEP/wormpep$WPver/wormpep.table$WPver") or die "cant opne diff file\n";
-  while(<DIFF>) {
-    chomp;
-    my @tabledata = split;
-    push( @peps2dump, $tabledata[1]);
-  }
+my $pep_input = shift;
+while ( $pep_input ) {
+  push(@peps2dump, $pep_input);
+  $pep_input = shift;
 }
-else {
-  open( DIFF,"</wormsrv2/WORMPEP/wormpep$WPver/wormpep.diff$WPver") or die "cant opne diff file\n";
-  while (<DIFF>)
-    {
-      if( /new/ ){
-	/CE\d+/;
+unless (@peps2dump)  {
+  if( $all ) {
+    open( DIFF,"</wormsrv2/WORMPEP/wormpep$WPver/wormpep.table$WPver") or die "cant opne diff file\n";
+    while(<DIFF>) {
+      chomp;
+      my @tabledata = split;
+      push( @peps2dump, $tabledata[1]);
+    }
+  }
+  else {
+    open( DIFF,"</wormsrv2/WORMPEP/wormpep$WPver/wormpep.diff$WPver") or die "cant opne diff file\n";
+    while (<DIFF>)
+      {
+	if( /new/ ){
+	  /CE\d+/;
 	$pep = $&;
-      }
-      elsif ( /changed/ ){
-	/-->\s+(CE\d+)/;
-	$pep = $1;
-      }
-      if( $pep ){
+	}
+	elsif ( /changed/ ){
+	  /-->\s+(CE\d+)/;
+	  $pep = $1;
+	}
+	if( $pep ){
 	push( @peps2dump, $pep );
       }
-    }
+      }
+  }
+  close DIFF;
 }
-
-close DIFF;
-  
 
 # mysql database parameters
 my $dbhost = "ecs1f";
@@ -91,18 +96,12 @@ my @results;
 my $query = "";
 my $wormprot;#wormprot Db handle
 
-# set a E-value threshold (used in the sql query)
+# set a E-value threshold ( (not actually ) used in the sql query)
 my $e_threshold = 40;
 $wormprot = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
       || die "cannot connect to db, $DBI::errstr";
 
-#to get all peptides
-#my $sth_p = $wormprot->prepare ( q{ SELECT proteinId, length
-#                                 FROM protein
-#                             ORDER BY proteinId
-#                             } );
-
-# protein_feature table
+# get results from mysql for each specific peptide
 my $sth_f = $wormprot->prepare ( q{ SELECT proteinId,analysis,
                                       start, end,
                                       hId, hstart, hend,  
@@ -113,15 +112,13 @@ my $sth_f = $wormprot->prepare ( q{ SELECT proteinId,analysis,
 	  	  	     } );
 
 open (OUT,">wublastp.ace") or die "cant open out file\n";
+my $recip_file = "wublastp_recip.ace";
+open (RECIP,">$recip_file") or die "cant open recip file\n";
 print OUT "$runtime\n";
 my $count;
 
 our %CE2gene = &CE2gene;
 my %gene2CE = &gene2CE;
-
-my %matched_genes;
-
-
 
 foreach $pep (@peps2dump)
   {
@@ -132,7 +129,6 @@ foreach $pep (@peps2dump)
     my %swiss_matches;
     my %trembl_matches;
 
-    my $gene = &justGeneName($CE2gene{$pep});
 
     #retreive data from mysql
     $sth_f->execute($pep);
@@ -141,11 +137,10 @@ foreach $pep (@peps2dump)
     foreach my $result_row (@$ref_results)
       {
 	($proteinId, $analysis,  $myHomolStart, $myHomolEnd, $homolID, $pepHomolStart, $pepHomolEnd, $e, $cigar) = @$result_row;
-	print "$analysis\n";
 	my @data = ($proteinId, $processIds2prot_analysis{$analysis},  $myHomolStart, $myHomolEnd, $homolID, $pepHomolStart, $pepHomolEnd, $e, $cigar);
 	if( $analysis == 11 )   #wormpep
 	  {
-	    # my $my_gene = &justGeneName( $CE2gene( $data[0] ) ) ;
+	   # my $gene = &justGeneName($CE2gene{$pep});
 	    &addWormData ( \%worm_matches, \@data );
 	  }
 	elsif( $analysis == $wormprotprocessIds{'gadfly'}  ) { #gadfly peptide set also has isoforms
@@ -166,12 +161,46 @@ foreach $pep (@peps2dump)
       }
     
     
-    &dumpData ($proteinId,\%worm_matches,\%human_matches,\%fly_matches,\%yeast_matches,\%swiss_matches,\%trembl_matches);
+    &dumpData ($pep,\%worm_matches,\%human_matches,\%fly_matches,\%yeast_matches,\%swiss_matches,\%trembl_matches) if (%worm_matches or %human_matches or %fly_matches or %yeast_matches or %swiss_matches or %trembl_matches);
   }
 
-my $runtime    = `date +%H:%M:%S`; chomp $runtime;
+$runtime    = `date +%H:%M:%S`; chomp $runtime;
 print OUT "$runtime\n";
 close OUT;
+close RECIP;
+
+#process the recip file so that proteins are grouped
+
+#open(TEST,"ls -l $outdir | grep $clone.dna |");
+
+open (SORT,"sort -t \" \" -k2 $recip_file | ");
+open (RS,">recip_sorted.ace") or die "rs";
+
+
+#Protein : AGO1_ARATH line CE32063 wublastp_slimswissprot 187.468521 633 882 747 1014 Align 694 822
+#Protein : AGO1_ARATH line CE32063 wublastp_slimswissprot 187.468521 633 882 747 1014 Align 773 903
+#Protein : AGO1_ARATH line CE32063 wublastp_slimswissprot 187.468521 633 882 747 1014 Align 870 1002
+
+my $current_pep;
+while (<SORT>) {
+  chomp;
+  my @info = split(/line/,$_);
+  if( $current_pep ) {
+    if( "$current_pep" eq "$info[0]" ){
+      print RS "Pep_homol $info[1]\n";
+    }
+    else {
+      $current_pep = $info[0];
+      print RS "\n$current_pep\n";
+      print RS "Pep_homol $info[1]\n";
+    }
+  }
+  else {
+    $current_pep = $info[0];
+    print RS "\n$current_pep\n";
+  }
+}
+  
 
 exit(0);
 
@@ -179,31 +208,53 @@ exit(0);
 sub dumpData
   {
     my $matches;
-    my $pid = shift;
-    print OUT "\nProtein : $pid\n";
+    my $pid = shift; 
+    print OUT "\nProtein : WP:$pid\n";
     while( $matches = shift) {   #pass reference to the hash to dump
       #write ace info
       my $output_count = 0;
     HOMOLOGUES:
       foreach (sort {$$matches{$b}[0]->[7] <=> $$matches{$a}[0]->[7]} keys %$matches ){
-        foreach my $data (@$matches{$_}) {
+        foreach my $data_array_ref (@$matches{$_}) {
 	  last HOMOLOGUES if $output_count++ ==  10; # only output the top 10
-	  my @cigar = split(/:/,"$$data[0]->[8]");  #split in to blocks of homology
-	  
-	  foreach (@cigar){
-	    #print OUT "Pep_homol \"$homolID\" $processIds2prot_analysis{$analysis} $e $myHomolStart $myHomolEnd $pepHomolStart $pepHomolEnd Align ";
-	    print OUT "Pep_homol ";
-            print OUT "$$data[0]->[4] ";   #  homolID
-            print OUT "$$data[0]->[1] ";   #  analysis
-            print OUT "$$data[0]->[7] ";   #  e value
-            print OUT "$$data[0]->[2] ";   #  HomolStart
-	    print OUT "$$data[0]->[3] ";   #  HomolEnd
-	    print OUT "$$data[0]->[5] ";   #  pepHomolStar
-	    print OUT "$$data[0]->[6] ";   #  pepHomolEnd
-	    print OUT "Align ";
 
-	    my @align = split(/\,/,$_);
-	    print OUT "$align[0] $align[1]\n";
+	  foreach my $data (@$data_array_ref) {
+	    my @cigar = split(/:/,"$$data[8]");  #split in to blocks of homology
+
+	    #need to convert form gene name to CE id for worms (they are stored as genes to compare isoforms)
+	    if( "$$data[1]" eq "wublastp_worm" ) {
+	      my $gene = $$data[4]; 
+	      $$data[4] = $gene2CE{"$gene"};
+	    }
+	    
+	    foreach (@cigar){
+	      #print OUT "Pep_homol \"$homolID\" $processIds2prot_analysis{$analysis} $e $myHomolStart $myHomolEnd $pepHomolStart $pepHomolEnd Align ";
+	      print OUT "Pep_homol ";
+	      print OUT "$$data[4] ";   #  homolID
+	      print OUT "$$data[1] ";   #  analysis
+	      print OUT "$$data[7] ";   #  e value
+	      print OUT "$$data[2] ";   #  HomolStart
+	      print OUT "$$data[3] ";   #  HomolEnd
+	      print OUT "$$data[5] ";   #  pepHomolStar
+	      print OUT "$$data[6] ";   #  pepHomolEnd
+	      print OUT "Align ";
+	      
+	      my @align = split(/\,/,$_);
+	      print OUT "$align[0] $align[1]\n";
+	      
+	      
+	      #and print out the reciprocal homology to different file
+	      print RECIP "Protein : WP:$$data[4] line "; #  matching peptide
+	      print RECIP "$pid ";              #worm protein
+	      print RECIP "$$data[1] ";   #  analysis
+	      print RECIP "$$data[7] ";   #  e value
+	      print RECIP "$$data[2] ";   #  HomolStart
+	      print RECIP "$$data[3] ";   #  HomolEnd
+	      print RECIP "$$data[5] ";   #  pepHomolStar
+	      print RECIP "$$data[6] ";   #  pepHomolEnd
+	      print RECIP "Align ";
+	      print RECIP "$align[0] $align[1]\n";
+	    }
 	  }
 	}
       }
@@ -269,7 +320,7 @@ sub addWormData
 	  $$match{$homol}[0] = [ @$data ];
 	}
 	elsif( $this_e == $existing_e )  {
-	  push( @{$$match{'$_'}},[ @$data ]) if ("$homol" eq "$_"); #if protein matches 2 isoforms with same evalue just keep 1st one.
+	  push( @{$$match{"$_"}},[ @$data ]) ;#if ("$homol" eq "$_"); #if protein matches 2 isoforms with same evalue just keep 1st one.
 	}
 	return; # shouldn't need to check against rest
       } 
