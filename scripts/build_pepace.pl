@@ -10,7 +10,7 @@
 # 
 #
 # Last updated by: $Author: ar2 $                     
-# Last updated on: $Date: 2003-04-16 08:36:39 $     
+# Last updated on: $Date: 2003-06-11 14:25:49 $     
 
 use strict;                                     
 use lib "/wormsrv2/scripts/";                  
@@ -268,17 +268,6 @@ if( -e "/wormsrv2/autoace/wormpep_ace/pepace.ace" ) {
 }
 else {
   print LOG " pepace.ace NOT loaded into autoace . . \n/wormsrv2/autoace/wormpep_ace/pepace.ace does not exist\n";
-}
-
-if ( -e  "/wormsrv2/autoace/wormpep_ace/SwissprotIDs.ace" ) {
-  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Adding SwissprotIDs.ace file to autoace at $runtime\n";
-  $command = "pparse /wormsrv2/autoace/wormpep_ace/SwissprotIDs.ace\nsave\nquit\n"; 
-  open (AUTOACE, "| $tace -tsuser SwissIds  /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
-  print AUTOACE $command;
-  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "finished adding SwissprotIDs.ace file to autoace at $runtime\n";  close AUTOACE;
-}
-else {
-  print LOG "SwissprotIDs.ace NOT loaded into autoace . . \n/wormsrv2/autoace/wormpep_ace/SwissprotIDs.ace does not exist\n";
 }
 
 
