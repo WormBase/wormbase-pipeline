@@ -588,6 +588,7 @@
 #Evidence Paper ?Paper
 	  Person ?Person
 	  Similarity ?Sequence
+	  PMID Text //added for Erich's gene function data krb 02/04/09
 
 ?Gene_name Gene ?Gene
 
