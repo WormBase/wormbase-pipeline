@@ -1,14 +1,14 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/bin/perl5.8.0 -w
 
 # get_EMBL_longtext.pl 
 
-# Usage: perl5.6.1 this_script -i input -o output
+# Usage: perl5.8.0 this_script -i input -o output
 
 
 # Author: Chao-Kung Chen Jan 24 2003
 
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2003-01-27 10:11:42 $ 
+# Last updated on: $Date: 2003-07-18 13:00:56 $ 
 
 use strict;
 use Getopt::Long;
@@ -17,7 +17,7 @@ use Getopt::Long;
 # variables and command line options with aliases
 #################################################
 
-my ($input, $output, $ac, @ACs, @all_longtext, %ac_longtext, $num, $start, $end, $lt);
+my ($input, $output, $ac, @ACs, %AC_locus, @all_longtext, %ac_longtext, $num, $start, $end, $lt);
 
 $start = `date +%H:%M:%S`; chomp $start;
 
@@ -31,7 +31,11 @@ GetOptions ("i|input=s"     => \$input,
 print "\n\nRetrieving EMBL AC numbers .....\n\n";
 
 open(IN, $input) || die "Can't read file $input";
-while (<IN>){if ($_ =~ /^Sequence.+\"(.+)\"/){push(@ACs, $1)}} 
+while (<IN>){
+  if ($_ =~ /^AC\s+(.+);/){
+    push(@ACs, $1);
+  }
+} 
 
 print "\nGot ", scalar @ACs, " EMBL AC numbers\n\n";
 
@@ -39,8 +43,10 @@ print "\nGot ", scalar @ACs, " EMBL AC numbers\n\n";
 # fetch EMBL entry in one go
 ############################
 
-print "Pfetching all EMBL entries for longtext in one go .....\n\n";
-@all_longtext = `pfetch -F @ACs`; 
+print "Fetching all EMBL entries for longtext in one go via getz.....\n\n";
+foreach (@ACs){
+  push(@all_longtext, `getz -e "[embl-acc:$_]"`); 
+} 
 
 ############################################
 # processing EMBL entry without DNA sequence
