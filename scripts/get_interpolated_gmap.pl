@@ -7,7 +7,7 @@
 # This script calculates interpolated gmap for CDS/transcripts lying between as well as outside genetic markers.
 # Output ace file of such information
 
-# Last updated on: $Date: 2003-03-31 10:37:47 $
+# Last updated on: $Date: 2003-04-01 11:56:26 $
 # Last updated by: $Author: ck1 $
 
 use strict;
@@ -47,8 +47,8 @@ my @order = sort {$a <=> $b} @versions;
 
 my $gff_location = "/wormsrv2/autoace/GFF_SPLITS/WS"."$order[-1]";
 
-#my $cmp_file = glob "/wormsrv2/logs/cmp_gmap_with_coord_order.".$rundate;
-my $cmp_file = glob "/wormsrv1/chaokung/DOCS/cmp_gmap_with_coord_order.".$rundate;
+my $cmp_file = glob "/wormsrv2/logs/cmp_gmap_with_coord_order.".$rundate;
+#my $cmp_file = glob "/wormsrv1/chaokung/DOCS/cmp_gmap_with_coord_order.".$rundate;
 if($cmp_file){system("rm -f $cmp_file")}
 
 open(OUT, ">>$cmp_file") || die $!;
@@ -67,8 +67,8 @@ my ($cds, $parts, @coords, $i, $mean_coords, %cds_mean, %mean_coord_cds,
 
 if ($reverse){
   print "\nChecking reverse physicals for genetic markers . . . .\n";
-  #my $logfile="/wormsrv2/logs/reverse_physicals.".$rundate;
-  my $logfile="/wormsrv1/chaokung/DOCS/reverse_physicals.".$rundate;
+  my $logfile="/wormsrv2/logs/reverse_physicals.".$rundate;
+  #my $logfile="/wormsrv1/chaokung/DOCS/reverse_physicals.".$rundate;
   open (LOG, ">$logfile") || die $!;
   system("chmod 755 $logfile");
   print LOG "Checking linearity of gmap markers (reverse physicals) ....\n";
@@ -79,8 +79,8 @@ if ($diff){print "Checking for chrom. mapping discrepancies by genetics / coordi
 
 if(!$diff){
 
-  #my $acefile="/wormsrv2/logs/interpolated_gmap.ace.".$rundate;
-  my $acefile="/wormsrv1/chaokung/DOCS/interpolated_gmap.ace.".$rundate;
+  my $acefile="/wormsrv2/logs/interpolated_gmap.ace.".$rundate;
+  #my $acefile="/wormsrv1/chaokung/DOCS/interpolated_gmap.ace.".$rundate;
   open (ACE, ">$acefile") || die "Can't output file!\n";
   system("chmod 755 $acefile");
 
@@ -255,8 +255,8 @@ close FH;
 
 $count = 0;
 if ($diff){
-  #open(LOG, ">/wormsrv2/logs/mapping_diff.".$rundate) || die $!;
-  open(LOG, ">/wormsrv1/chaokung/DOCS/mapping_diff.".$rundate) || die $!;
+  open(LOG, ">/wormsrv2/logs/mapping_diff.".$rundate) || die $!;
+  #open(LOG, ">/wormsrv1/chaokung/DOCS/mapping_diff.".$rundate) || die $!;
   foreach (sort keys %genetics_mapping){
     
     if (exists ${@{$genetics_mapping{$_}}}[0] && exists ${@{$CDS_isoforms_mapping{$_}}}[0] ){
