@@ -368,6 +368,7 @@
                   Mapping_data  Two_pt ?Two_pt_data
                                 Multi_point ?Multi_pt_data
                                 Pos_neg_data ?Pos_neg_data
+		  Interpolated_map_position UNIQUE ?Map UNIQUE Float // for loci with CDSs but no real Map position
 	Antibody ?Antibody XREF Gene
 	GO_term ?GO_term XREF Gene ?GO_code #Evidence
 	Microarray_results ?Microarray_results XREF Gene
