@@ -6,7 +6,7 @@
 # Usage : autoace_minder [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2002-04-23 16:17:47 $
+# Last edited on: $Date: 2002-04-24 13:09:57 $
 
 
 #################################################################################
@@ -760,8 +760,9 @@ sub blat_jobs {
 
 sub parse_blat_files {
 
-    # quit if blat_them_all has not been run
-    &usage(9) unless (-e "$logdir/$flag{'B6'}");
+# 
+#    # quit if blat_them_all has not been run
+#    &usage(9) unless (-e "$logdir/$flag{'B6'}");
 
 my $command=<<END;
 pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLAT_EST.ace 
@@ -808,9 +809,11 @@ save
 quit
 END
 
-    open (WRITEDB, "| $tace -tsuser wublastp_data /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
+    open (WRITEDB, "| $tace -tsuser ensembl_pipeline_wublastp_data /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
     print WRITEDB $command;
     close WRITEDB;
+
+
 
 $command=<<END;
 pparse /wormsrv2/wormbase/ensembl_dumps/blastx_ensembl.ace 
@@ -818,19 +821,23 @@ save
 quit
 END
 
-    open (WRITEDB, "| $tace -tsuser wublastx_data /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
+    open (WRITEDB, "| $tace -tsuser ensembl_pipeline_wublastx_data /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
     print WRITEDB $command;
     close WRITEDB;
 
+
+
 $command=<<END;
-pparse /wormsrv2/wormbase/ensembl_dumps/blast_ensembl.peptides.ace 
+pparse /wormsrv2/wormbase/ensembl_dumps/ensembl_protein_info.ace 
 save 
 quit
 END
 
-    open (WRITEDB, "| $tace -tsuser wublast_protein_info /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
+    open (WRITEDB, "| $tace -tsuser ensembl_pipeline_protein_info /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
     print WRITEDB $command;
     close WRITEDB;
+
+
 
 $command=<<END;
 pparse /wormsrv2/wormbase/ensembl_dumps/waba.ace
@@ -839,6 +846,18 @@ quit
 END
 
     open (WRITEDB, "| $tace -tsuser waba_data /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
+    print WRITEDB $command;
+    close WRITEDB;
+
+
+
+$command=<<END;
+pparse /wormsrv2/wormbase/ensembl_dumps/ensembl_motif_info.ace
+save 
+quit
+END
+
+    open (WRITEDB, "| $tace -tsuser ensembl_pipeline_motif_info /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
     print WRITEDB $command;
     close WRITEDB;
 
