@@ -74,7 +74,7 @@ if( $run )
     `perl $bdir/RuleManager3Prot.pl -once -flushsize 5`; # just do everything
   }
 
-if( $dump )
+if( $dump or $dump_all )
   {
     unless ( -e "$wormpipe_dir/DUMP_PREP_RUN" ) {
       print "Please run wormBLAST.pl -prep_dump version $WPver    before dumping\n\nTo dump you CAN NOT have wormsrv2 mounted\n\n";
@@ -82,7 +82,8 @@ if( $dump )
     }
     # Dump
     print "Dumping blastp\n";
-    `perl5.6.1 $wormpipe_dir/scripts/Dump_new_prot_only.pl -all -version $WPver -brigprot -analysis 11 -matches`;
+    `perl5.6.1 $wormpipe_dir/scripts/Dump_new_prot_only.pl -all -version $WPver -brigprot -analysis 11 -matches` if $dump;
+    `perl5.6.1 $wormpipe_dir/scripts/Dump_new_prot_only.pl -all -version $WPver -brigprot -matches` if $dump_all;
     print "Dumping motifs\n";
       `perl5.6.1 $wormpipe_dir/scripts/BLAST_scripts/dump_motif.pl -database worm_brigprot`;
   }
