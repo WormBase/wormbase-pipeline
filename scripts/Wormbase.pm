@@ -6,8 +6,9 @@
 package Wormbase;
 
 use Exporter;
+use Carp;
 @ISA       = qw(Exporter);
-@EXPORT    = qw(get_cvs_version get_wormbase_version copy_check mail_maintainer celeaccession tace gff_sort dbfetch);
+@EXPORT    = qw(get_cvs_version get_wormbase_version copy_check mail_maintainer celeaccession tace gff_sort dbfetch find_database);
 @EXPORT_OK = qw(get_script_version); 
 
 
@@ -104,19 +105,21 @@ sub celeaccession {
     $exec="/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_4/tace";
     local($command);
     local($accession);
-    $ENV{'ACEDB'}="/wormsrv2/camace";
+    $ENV{'ACEDB'}="/wormsrv2/autoace";
     $command=<<EOF;
     find sequence $seq
     show DB_info
     quit
 EOF
 
-open(text_ace, "echo '$command' | $exec  | ");
-while (<text_ace>) {
-    if (/\s+Database\s+EMBL\s+\S+\s+(\S+)\n/) {$accession=$1;}
+    open(text_ace, "echo '$command' | $exec  | ");
+    while (<text_ace>) {
+        if (/\s+Database\s+EMBL\s+\S+\s+(\S+)/) {
+            $accession=$1;
+        }
     }
-close text_ace;
-return $accession;
+    close text_ace;
+    return $accession;
 }
 
 
@@ -172,6 +175,45 @@ sub dbfetch {
     $/="\n";
 }
 
+#################################################################################
+
+
+# pass a list of clones and cam or stl
+
+sub find_database {
+
+    my @clones = @{$_[0]};
+    my $handle = @{$_[1]};
+    my @clones = ();
+    my $name   = "";
+    my %count  = ();
+    my @output = ();
+    carp "find_database not called with references\n" if (ref($_[0]) ne 'ARRAY' || ref($_[1]) ne 'HASH');
+
+
+    if ($handle eq 'cam') {
+        my $name = 'camace';
+    }
+    elsif ($handle eq 'stl') {
+        my $name = 'stlace';
+    }           
+
+
+    my $db     = Ace->connect(-path => '/wormsrv2/$name/') || die "Couldn't connect to $name\n", Ace->error;
+    my @clones = $db->fetch(-query => 'FIND Genome_Sequence');
+    foreach my $clone (@clones) {
+	my $string = $clone->Confidential_remark(1);
+	if ((defined $string) && (($string =~ /Louis/) || ($string =~ /not in Cambridge/))) {
+		next;
+	}
+	else {$count{$clone} = 1;}
+    }
+    foreach my $clone (@clones) {
+        push (@output, $clone) if (exists ($count{$clone})); 
+    }    
+    return @output;   
+
+}
 
 ################################################################################
 #Return a true value
@@ -275,6 +317,17 @@ celeaccession
 
 Pass this subroutine the name of a clone and it will return the 
 corresponding accession number
+
+= item *
+find_database
+
+Pass a list of clones and 'cam' or 'stl' and it will return the clones 
+in camace / stlace
+
+=back
+
+=over 4
+
 
 =cut
 
