@@ -2,7 +2,7 @@
 #
 # EMBLDump.pl :  makes EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2004-08-04 15:38:49 $
+#  Last updated on: $Date: 2005-03-07 10:01:15 $
 #  Last updated by: $Author: dl1 $
 
 use strict;
@@ -10,8 +10,6 @@ use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
 use File::Copy;
-
-
 
 ##############################
 # command-line options       #
@@ -22,8 +20,6 @@ GetOptions ("test"         => \$test);
 
 my $basedir     = "/wormsrv2";
 $basedir        = glob("~wormpub")."/TEST_BUILD" if ($test); 
-
-
 
 ###############################
 # misc. variables             #
@@ -50,14 +46,13 @@ if( $test ) {
 $0 =~ s/^\/.+\///;
 system ("touch $basedir/logs/history/$0.`date +%y%m%d`");
 
-
-
 #############################################
 # Use giface to dump EMBL files from camace #
 #############################################
 
-my $query = "Query Find Genome_Sequence From_laboratory = HX AND Finished AND DNA\ngif EMBL $outfilename\n";
-$query = "Find Genome_Sequence AH6\ngif EMBL $outfilename\n" if $test;
+
+my $query = "query find Genome_sequence From_laboratory = HX AND Finished AND DNA\ngif EMBL $outfilename\n";
+$query = "query find Genome_sequence AH6\ngif EMBL $outfilename\n" if $test;
 
 open(READ, "echo '$query' | $giface $dbdir |") or die ("Could not open $giface $dbdir\n"); 
 while (<READ>) {
@@ -93,13 +88,11 @@ while (<TACE>) {
 }
 close TACE;
 
-
- 
 ###############################################
 # make clone2name hash from info in current_DB
 ###############################################
 my %clone2type;
-my ($clone,$type,$processing);
+my ($clone,$type);
 
 $command = "Table-maker -p \"$basedir/autoace/wquery/clone2type.def\"\nquit\n";
 
@@ -123,6 +116,31 @@ while (<TACE>) {
 }
 close TACE;
 
+#############################################
+# make CDS2CGC hash from info in current_DB #
+#############################################
+
+my %cds2cgc;
+my %cds2gene;
+my ($cds,$cgc,$wbgene);
+
+$command = "Table-maker -p \"$basedir/autoace/wquery/cgc2cds.def\"\nquit\n";
+
+open (TACE, "echo '$command' | $tace $current_DB | ");
+while (<TACE>) {
+    chomp;
+    s/acedb\> //g;        # only need this if using 4_9i code
+    next if ($_ eq "");
+    next if (/\/\//);
+    s/\"//g;
+
+    if (/^(\S+)\s+(\S+)\s+(\S+)/) {
+	($wbgene,$cgc,$cds) = ($1,$2,$3);
+	$cds2cgc{$cds} = $cgc;
+	$cds2gene{$cds} = $wbgene;
+    }
+}
+close TACE;
 
 ######################################################################                     
 # cycle through the EMBL dump file, replacing info where appropriate #
@@ -132,6 +150,8 @@ open (OUT, ">$mod_file") or  die "Can't process new EMBL dump file\n";
 open (EMBL, "<$outfilename.embl") or die "Can't process EMBL dump file\n";
 
 my $id = "";
+our $reference_remove = 0;
+our $author_change;
 
 while (<EMBL>) {
 
@@ -176,6 +196,67 @@ while (<EMBL>) {
     print OUT "FT                   /mol_type=\"genomic DNA\"\n";
     next;
   }
+
+  # print OC line and next XX, tag for WormBase inclusion
+  if (/^RP\s+(\S+)/) {
+      $author_change = $1;
+      print OUT "$_";
+      print OUT "RX   MEDLINE; 99069613.\n";
+      print OUT "RX   PUBMED; 9851916.\n";
+      print OUT "RG   WormBase Consortium\n";
+      print OUT "RA   ;\n";
+      print OUT "RT   \"Genome sequence of the nematode C. elegans: a platform for investigating\n";
+      print OUT "RT   biology\";\n";
+      print OUT "RL   Science 282(5396):2012-2018(1998).\n";
+      print OUT "XX\n";
+      print OUT "RN   [2]\n";
+      print OUT "$_";
+      next;
+  }
+
+  if (/^RN   \[2\]/) {
+      $reference_remove = 6;
+      next;
+  }
+
+  if ($reference_remove > 0) {
+      $reference_remove--;
+      next;
+  }
+
+
+  if (/^RL   E-mail: jes/) {
+      next;
+  }
+
+
+  # locus_tag name.....
+  if (/\/gene=\"(\S+)\"/) {
+      $cds = $1;
+      if ($cds2cgc{$cds}) {
+	  print OUT "FT                   /gene=\"" . $cds2cgc{$cds}  ."\"\n";
+	  print OUT "FT                   /locus_tag=\"$cds\"\n";
+	  next;
+      }
+      else {
+	  print OUT "FT                   /gene=\"$cds\"\n";
+	  print OUT "FT                   /locus_tag=\"$cds\"\n";
+	  next;
+      }
+  }	  
+
+  next if (/^CC   For a graphical/);
+  next if (/^CC   see:-/);
+
+  if (/^CC   name=/) {
+      print OUT "CC   For a graphical representation of this sequence and its analysis\n";
+      print OUT "CC   see:- http://www.wormbase.org/perl/ace/elegans/seq/sequence?\n";
+      print OUT "CC   name=$clone;class=Sequence\n";
+      $reference_remove = 1;
+      next;
+  }
+
+  # standard_name......
 
   # don't print out first few lines until they have been converted 
   # can only do this when it gets to DE line
