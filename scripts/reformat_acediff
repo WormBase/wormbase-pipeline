@@ -33,7 +33,15 @@ while (<FILE>) {
 
 #    print  "// [$in_block] '$line' \n";
 
-    if (($line =~ /^Sequence \"(\S+)\"/) && ($in_block == 0)) {
+    if (($line =~/^CDS \"(\S+)\"/) && ($in_block == 0)) {
+	$class = "CDS";
+	$name = $1;
+	&report unless ($oldname eq "nill");
+	$in_block = 1;
+	$oldname = $name;
+	next;
+    }    
+    elsif (($line =~/^Sequence \"(\S+)\"/) && ($in_block == 0)) {
 	$class = "Sequence";
 	$name = $1;
 	&report unless ($oldname eq "nill");
@@ -65,11 +73,18 @@ while (<FILE>) {
 	$oldname = $name;
 	next;
     }
+    elsif (($line =~/^Transposon \"(\S+)\"/) && ($in_block == 0)) {
+	$class = "Transposon";
+	$name = $1;
+	&report unless ($oldname eq "nill");
+	$in_block = 1;
+	$oldname = $name;
+	next;
+    }
     elsif ($line eq "") {
 	$in_block = 0;
 	next;
     }
-
     # parse delete/addition lines
     if (/^-D/) {
 	push (@delete,$_);
@@ -110,5 +125,5 @@ sub report {
     }
 
     print "\n";
-}
+} 
 
