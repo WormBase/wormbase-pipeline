@@ -63,18 +63,18 @@ sub read_fasta {
         if (/^>(\S+)\s+(\S+)/) {
             my $new_id = $1;
 	    my $new_acc = $2;
-            if ($id) {
+            if ($acc) {
                 $seq =~ tr/a-z/A-Z/;
                 my $org;
-	 	if (exists($HASH{$id})){
-		  $org = $HASH{$id};
+	 	if (exists($HASH{$acc})){
+		  $org = $HASH{$acc};
 		  if( (exists $exclude{$org}) || ($org =~ /Human immunodeficiency virus/) ){
                     	$id = $new_id; $acc = $new_acc; $seq = "" ;
                     	next;
 		    }
                     my $count = 0;
                     $seq = reverse $seq;
-                    print OUT ">$id $acc ($org)";
+                    print OUT ">$acc";
                     while (my $base = chop $seq) {
                     	if ($count++ % 50 == 0) {
                         	print OUT "\n";
@@ -87,12 +87,12 @@ sub read_fasta {
 	    $id = $new_id ;$acc = $new_acc; $seq = "" ;
 	} 
         elsif (eof) {
-            if ($id) {
+            if ($acc) {
                 $seq .= $_ ;
                 $seq =~ tr/a-z/A-Z/;
                 my $org;
-	 	if (exists($HASH{$id})){
-	            $org = $HASH{$id};
+	 	if (exists($HASH{$acc})){
+	            $org = $HASH{$acc};
                     if (exists $exclude{$org}) {
                     	next;
 		    }

@@ -26,13 +26,6 @@ my $des;
 my $key;
 my $switch = 0;
 
-
-# don't do SRS query => far too slow......!!!!!
-#my $pid = open (SRS, "getz -f id -f org '[swall-id:*]' |");
-#unless (defined $pid) {
-#    die "couldn't make SRS query";
-#}
-
 my $usage = "cat swissprot/trembl .dat file | swiss_trembl2dmb.pl\n";
 $usage .= "-s for swissprot\n";
 $usage .= "-t for trembl\n";

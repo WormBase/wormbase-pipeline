@@ -38,19 +38,6 @@ my $ensembl_info_file = "$wormpipe_dump/ensembl_protein_info.ace";
 
 my @blastp_databases = qw(worm_pep worm_brigpep);
 my $blast_files = "$wormpipe_dump/*blastp.ace $wormpipe_dump/*blastx.ace ";
-#foreach ( @blastp_databases ) {
-#  $blast_files .= "$wormpipe_dump/$_/blastp/ACE/wublastp_slimtrembl.ace ";
-#  $blast_files .= "$wormpipe_dump/$_/blastp/ACE/wublastp_slimswissprot.ace ";
-#}
-#if ( $species ) {
-#  $output_swiss = "$wormpipe_dump/${species}_swissproteins.ace";
-#  $output_trembl = "$wormpipe_dump/${species}_tremblproteins.ace";
-#  $swiss_list_txt = "$wormpipe_dump/${species}_swisslist.txt";
-#  $trembl_list_txt = "$wormpipe_dump/${species}_trembllist.txt";
-#  $blastx_file = "";#$wormpipe_dump/${species}_blastx_ensembl.ace";
-#  $blastp_file = "$wormpipe_dump/${species}_blastp_ensembl.ace";
-#  $ensembl_info_file = "$wormpipe_dump/${species}_ensembl_protein_info.ace";
-#}
 
 # extract and write lists of which proteins have matches
 unless ( $list ){
@@ -172,11 +159,11 @@ sub output_list
 	my $accession = $1;
 	
 	if ($seq) {
-	  print ACE "Protein : \"$prefix:$id\"\n";
-	  print ACE "Peptide \"$prefix:$id\"\n";
-	  print ACE "Species \"$ORG{$id}\"\n";
+	  print ACE "Protein : \"$prefix:$accession\"\n";
+	  print ACE "Peptide \"$prefix:$accession\"\n";
+	  print ACE "Species \"$ORG{$accession}\"\n";
 	  unless( $old ) {
-	    print ACE "Description \"$DES{$id}\"\n";
+	    print ACE "Description \"$DES{$accession}\"\n";
 	    if ("$prefix" eq "SW" ) {
 	      print ACE "Database SwissProt SwissProt_ID $id\n";
 	      print ACE "Database SwissProt SwissProt_AC $accession\n";
@@ -192,12 +179,12 @@ sub output_list
 	  }
 
 	  print ACE  "\n";
-	  print ACE  "Peptide : \"$prefix:$id\"\n";
+	  print ACE  "Peptide : \"$prefix:$accession\"\n";
 	  print ACE "$seq\n";
 	  print ACE "\n";
 	}
 	else {
-	  print "// Couldn't fetch sequence for $id\n\n";
+	  print "// Couldn't fetch sequence for $accession\n\n";
 	}
       }  
     }
