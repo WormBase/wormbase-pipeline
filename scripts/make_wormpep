@@ -770,6 +770,9 @@ while (<readLOG>) {
 close readLOG;
 close mailLOG;
 
+#write the release letter (also does some checks)
+&release_wormpep($number_cds $number_total $number_alternate );
+
  ##############################
  # hasta luego                #
  ##############################
