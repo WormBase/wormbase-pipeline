@@ -63,7 +63,7 @@ my $debug = $opt_d;
 
 my $clonepath="/nfs/disk100/wormpub/analysis/cosmids";
 my $clonefile="$clonepath"."/current.versions";
-my $tace = glob("~acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace");   # tace executable path
+my $tace = glob("~acedb/RELEASE.SUPPORTED/bin.ALPHA_4/tace");   # tace executable path
 my $dbpath = "/wormsrv2/camace";                                  # Database path
 
  ########################################
@@ -85,7 +85,9 @@ print LOG "\n";
  # Connect with acedb server            #
  ########################################
 
-my $db = Ace->connect(-path=>$dbpath);
+my $db = Ace->connect(-path=>$dbpath,
+		      -program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
+
 
 print LOG "CamCheck run STARTED at $runtime\n\n";
 
@@ -111,6 +113,7 @@ while($line=<CLONEFILE>) {
  ######################################################################
     
     $seqpath = "$clonepath"."/"."$line"."/"."$clone.seq";
+
     open SEQPATH,"<$seqpath" || do {print LOG "$clone  \t:NOT_IN_DIRECTORY $seqpath\n"; next; };
     while ($line1=<SEQPATH>) {  
 	chomp($line1);
@@ -134,7 +137,7 @@ while($line=<CLONEFILE>) {
 	print LOG "Could not fetch sequence $clone\n";
 	next;
     }
-    
+
   #####################################################################
   # skipping the non-canonical genomic sequences                      #
   #####################################################################
@@ -394,9 +397,9 @@ sub checkgenes {
 	    print LOG "The subsequence $child has no method\n";
 	}
 	
-	# NDB_CDS || HALFWISE - don't process
+	# NDB_CDS || HALFWISE || gaze - don't process
  
-	if ( ($method eq  "NDB_CDS") || ($method eq  "HALFWISE") ) {
+	if ( ($method eq  "NDB_CDS") || ($method eq  "HALFWISE") || ($method eq  "gaze") ) {
 	    $subseq->DESTROY();
 	    $child->DESTROY();
 	    $diff="";
