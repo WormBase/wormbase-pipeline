@@ -688,7 +688,7 @@ pparse $wormbasedir/misc/misc_chromlinks.ace
 save     
 quit
 EOF
-    &DbWrite($command,$tace,$autodir,"MakeChromLinks");
+    &DbWrite($command,"$tace -tsuser make_autoace",$autodir,"MakeChromLinks");
     }
 }
 
