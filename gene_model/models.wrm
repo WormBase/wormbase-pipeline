@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.72 2002-08-06 15:48:39 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.73 2002-08-06 15:54:31 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -761,7 +761,7 @@
                        RNAi ?RNAi XREF Sequence UNIQUE Int UNIQUE Int #SMap_info                       // added for Lincoln RNAi [001213 dl]
 		       WTP ?WTP XREF Sequence UNIQUE Int UNIQUE Int #SMap_info                 // added for Mieg WTP data [001623 rd]
 		       Locus ?Locus XREF Sequence UNIQUE Int UNIQUE Int #SMap_info             // RD 0107
-		       Allele ?Allele XREF Sequence UNIQUE Int UNIQUE Int #SMap_info           // RD 0107
+//		       Allele ?Allele XREF Sequence UNIQUE Int UNIQUE Int #SMap_info           // RD 0107
 //		       Gene ?Allele XREF Sequence UNIQUE Int UNIQUE Int #SMap_info             // RD 0107
 		       CDS_child ?CDS XREF Sequence UNIQUE Int UNIQUE Int #SMap_info            // RD 0107
 		       Transcript_child ?Transcript XREF Sequence UNIQUE Int UNIQUE Int #SMap_info                // RD 0107
@@ -858,6 +858,12 @@
 	  Splices	Confirmed_intron  Int Int #Splice_confirmation
 			Predicted_5 ?Method Int Int UNIQUE Float // (x, x+1) or (x, x-1)
 			Predicted_3 ?Method Int Int UNIQUE Float // (x, x+1) or (x, x-1)
+	  Allele ?Allele XREF Sequence UNIQUE Int UNIQUE Int UNIQUE Text
+                // start, stop, replacement sequence
+                // if an insertion point Text is transposon name (distinguished
+                // by containing non ACTG letters), and (n, n+1) = T A, so indicates 
+                // direction (if known).
+                // if a deletion, put '-' as the replacement sequence
           Oligo ?Oligo XREF In_sequence Int UNIQUE Int  // for OSP and human mapping mostly
 	  Assembly_tags	Text Int Int Text // type, start, stop, comment
 	  Analysis_details Analysis_history ?Method UNIQUE DateType
