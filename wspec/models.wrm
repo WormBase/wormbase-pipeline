@@ -1003,6 +1003,7 @@
 	    Homol DNA_homol ?Sequence XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		  Pep_homol ?Protein XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		  Motif_homol ?Motif XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
+		  Homol_homol ?Homol_data XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 	    // keep the standard model structure, so same code works
 
 ?Feature_data SMap S_Parent Sequence ?Sequence
