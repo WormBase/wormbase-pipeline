@@ -5,7 +5,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-01-17 15:58:15 $
+# Last updated on: $Date: 2003-01-17 16:04:31 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -248,7 +248,7 @@ foreach $file (@gff_files) {
     ########################################
 
     foreach my $tag (@gff_classes) {
-	print "# $file $tag\n";
+	print "# $file $tag\n" if ($debug);
 
 	open (OUT, ">$datadir/GFF_SPLITS/$file.$tag.gff") or die "Can't open file\n";
 
