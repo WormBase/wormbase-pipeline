@@ -72,7 +72,7 @@ pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.EMBL.ace
 save
 pparse /wormsrv2/autoace/BLAT/autoace.blat.mRNA.ace 
 pparse /wormsrv2/autoace/BLAT/autoace.blat.EMBL.ace 
-pparse /wormsrv2/autoace/BLAT/autoace.blat.nematode.ace 
+pparse /wormsrv2/autoace/BLAT/autoace.NEMATODE.ace
 pparse /wormsrv2/autoace/BLAT/autoace.good_introns.EST.ace 
 pparse /wormsrv2/autoace/BLAT/autoace.good_introns.mRNA.ace 
 pparse /wormsrv2/autoace/BLAT/autoace.good_introns.EMBL.ace 
@@ -94,7 +94,6 @@ pparse /wormsrv2/autoace/BLAT/virtual_objects.camace.ci.EMBL.ace
 save
 pparse /wormsrv2/autoace/BLAT/camace.blat.mRNA.ace 
 pparse /wormsrv2/autoace/BLAT/camace.blat.EMBL.ace 
-pparse /wormsrv2/autoace/BLAT/camace.blat.nematode.ace 
 pparse /wormsrv2/autoace/BLAT/camace.good_introns.EST.ace 
 pparse /wormsrv2/autoace/BLAT/camace.good_introns.mRNA.ace 
 pparse /wormsrv2/autoace/BLAT/camace.good_introns.EMBL.ace 
@@ -116,7 +115,6 @@ pparse /wormsrv2/autoace/BLAT/virtual_objects.stlace.ci.EMBL.ace
 save
 pparse /wormsrv2/autoace/BLAT/stlace.blat.mRNA.ace 
 pparse /wormsrv2/autoace/BLAT/stlace.blat.EMBL.ace 
-pparse /wormsrv2/autoace/BLAT/stlace.blat.nematode.ace 
 pparse /wormsrv2/autoace/BLAT/stlace.good_introns.EST.ace 
 pparse /wormsrv2/autoace/BLAT/stlace.good_introns.mRNA.ace 
 pparse /wormsrv2/autoace/BLAT/stlace.good_introns.EMBL.ace 
