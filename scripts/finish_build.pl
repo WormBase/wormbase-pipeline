@@ -12,8 +12,8 @@
 # 3) Archives old GFF_SPLITS directory
 # 4) Makes wormsrv2/current_DB point at latest release
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-08-05 10:20:49 $
+# Last updated by: $Author: dl1 $
+# Last updated on: $Date: 2002-08-23 15:44:41 $
 
 
 
@@ -68,6 +68,10 @@ print LOG "Removing old files in /wormsrv2/autoace/release/\n";
 system("rm -f $db_path/autoace/release/*") && die "Couldn't remove old release files\n";
 print LOG "Removing old files in /wormsrv2/autoace/CHROMOSOMES/\n";
 system("rm -f $db_path/autoace/CHROMOSOMES/*") && die "Couldn't remove old CHROMOSOME files\n";
+
+# Remove redundant files from /wormsrv2/autoace/logs
+ print LOG "Removing old files in /wormsrv2/autoace/logs\n";
+system("rm -f $db_path/autoace/logs/*:*") && die "Couldn't remove old log files\n";
 
 # update symbolic link for 'current_DB'
 print LOG "Updating symbolic link to point to current_DB\n\n";
