@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.56 2002-06-07 10:01:24 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.57 2002-06-14 13:38:07 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -351,6 +351,7 @@
         Rescued_by_transgene ?Transgene XREF Rescue
 
 ?Gene_class     Phenotype ?Text
+		Description ?Text // [krb 020614]
                 Designating_laboratory UNIQUE ?Laboratory XREF Gene_classes
                 Allele ?Allele	XREF Gene_class
                 Gene ?Gene XREF Gene_class // RD 0107
