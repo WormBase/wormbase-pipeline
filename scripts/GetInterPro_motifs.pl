@@ -6,8 +6,8 @@
 #
 # Gets latest Interpro:GO mappings from XXXX and puts info in to ace file
 #
-# Last updated by: $Author: krb $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2003-12-01 11:54:25 $                        # quickly see when script was last changed and by whom
+# Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
+# Last updated on: $Date: 2004-02-25 09:46:23 $                        # quickly see when script was last changed and by whom
 
 
 use strict;                                     
@@ -38,7 +38,7 @@ print LOG "\n";
 #Get the latest version
 my $motifs = "/tmp/interpro_motifs.html";
 print LOG "Attempting to wget the latest version\n";
-`wget -O $motifs ftp://ftp.ebi.ac.uk/pub/databases/interpro/entry.list` and die "$0 Couldnt get listing.html\n";
+`/usr/local/bin/wget -O $motifs ftp://ftp.ebi.ac.uk/pub/databases/interpro/entry.list` and die "$0 Couldnt get listing.html\n";
 print LOG "...... got it!\n";
 
 print LOG "\n\nOpening file $motifs . . \n";
