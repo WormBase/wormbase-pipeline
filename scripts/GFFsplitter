@@ -293,8 +293,8 @@ foreach (@gff_files) {
     print GFF_MRNA_GENOME     "##date $rundate\n";
 
     open (BLAT_MRNA_BEST,     ">$datadir/GFF_SPLITS/$gff_BLAT_mRNA_BEST");
-    print BLAT_MRNA_BEST,     "##Version: $cvs_version\n";
-    print BLAT_MRNA_BEST,     "##date $rundate\n";
+    print BLAT_MRNA_BEST     "##Version: $cvs_version\n";
+    print BLAT_MRNA_BEST     "##date $rundate\n";
 
     open (BLAT_MRNA_OTHER,    ">$datadir/GFF_SPLITS/$gff_BLAT_mRNA_OTHER");
     print BLAT_MRNA_OTHER     "##Version: $cvs_version\n";
