@@ -1,16 +1,17 @@
-#!/usr/local/bin/perl5.8.0 -w
+#!/usr/local/bin/perl5.6.1 -w
 #
 # check_predicted_genes.pl
 #
 # by Keith Bradnam aged 12 and a half
 #
-# Last updated on: $Date: 2004-05-11 13:07:40 $
+# Last updated on: $Date: 2004-05-20 14:41:30 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
 
 use strict;
-use lib "/wormsrv2/scripts/";
+#use lib "/wormsrv2/scripts/";
+use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
 use Ace;
 use IO::Handle;
@@ -162,6 +163,16 @@ foreach my $cds (@CDSs){
   push(@error3, "ERROR: $cds does not have From_laboratory tag\n") if (!defined($laboratory));
   print "ERROR: $cds does not have From_laboratory tag\n" if (!defined($laboratory) && $verbose);
 
+  #All Isoforms should have the Isoform tag set.
+  if ($cds_object->name =~ (/\w+\.\d[a-z]$/)) {
+    my $Isoform = $cds_object->at('Properties.Isoform');
+    push(@error3, "ERROR: $cds requires an Isoform\n") if !$Isoform;
+  }
+  #Test for erroneous Isoform tags.
+  if ($cds_object->name =~ (/\b\w+\.[0-9]{1,2}\b/)) {
+    my $Isoform = $cds_object->at('Properties.Isoform');
+    push(@error3, "ERROR: $cds contains an invalid Isoform tag\n") if $Isoform;
+  }
 
   # then run misc. sequence integrity checks
   my $dna = $cds->asDNA();
