@@ -174,7 +174,6 @@ sub mknewacefiles {
     my ($dbname,$dbdir,$targetdir,$exe,$object,$criteria,$criterianoasterisk);
     my ($filename,$command,$outfile);
 
-
     local (*CONFIG);
 
     open (CONFIG, "$autoace_config");
@@ -243,13 +242,16 @@ sub mknewacefiles {
 	    &strip_protein("$outfile","\"WP:");
 	}
 
+
 	if ($filename eq "/wormsrv2/wormbase/stlace/stlace_Sequence.ace") {
 	    $outfile = "$targetdir/".$dbname."_".$object.$criterianoasterisk.".ace";
 	    &strip_sequence("$outfile","\"WP:");
+	    &strip_sequence("$outfile","\"EST_GENOME\"");
 	}
 	elsif ($filename eq "/wormsrv2/wormbase/camace/camace_Sequence.ace") {
 	    $outfile = "$targetdir/".$dbname."_".$object.$criterianoasterisk.".ace";
 	    &strip_sequence("$outfile","\"WP:");
+	    &strip_sequence("$outfile","\"EST_GENOME\"");
 	}
 	elsif ($filename eq "/wormsrv2/wormbase/briggsae/briggsae_Sequence.ace") {
 	    $outfile = "$targetdir/".$dbname."_".$object.$criterianoasterisk.".ace";
@@ -260,17 +262,17 @@ sub mknewacefiles {
 	    $outfile = "$targetdir/".$dbname."_".$object.$criterianoasterisk.".ace";
 	    &strip_sequence("$outfile","Genomic_canonical");
 	}
+	# strip BLAT_EST_GENOME from cshl sequences
+	elsif ($filename eq "/wormsrv2/wormbase/csh/csh_Sequence.ace") {
+	    $outfile = "$targetdir/".$dbname."_".$object.$criterianoasterisk.".ace";
+	    &strip_sequence("$outfile","\"BLAT_EST_GENOME\"");
+	}
 	
-	# process camace and geneace dumps to add database names into time stamps
-	# rather than keeping the existing 'wormpub' name
 
-	&process_ace_file($filename,$dbname) if ($filename =~ m/geneace/);
-	&process_ace_file($filename,$dbname) if ($filename =~ m/camace/);
-	&process_ace_file($filename,$dbname) if ($filename =~ m/briggsae/);
-	&process_ace_file($filename,$dbname) if ($filename =~ m/stlace/);
+	# process database dumps to add database names into time stamps
+	# rather than keeping the existing 'wormpub', 'lstein' etc.  name
 
-	# when we dump timestamps from everything we can just use the following line:
-	# &process_ace_file($filename,$dbname);
+	&process_ace_file($filename,$dbname);
 
 	next;
     }
@@ -283,21 +285,13 @@ sub make_command {
    my ($object,$dbname,$targetdir,$criteria,$criterianoasterisk) = @_;
    my $filename="$targetdir/".$dbname."_".$object.$criterianoasterisk.".ace";
    my $command;
-   if($dbname eq "camace" || $dbname eq "geneace" || $dbname eq "stlace"|| $dbname eq "briggsae" || $dbname eq "caltech"){
-     $command=<<END;
+   $command=<<END;
 find $object $criteria
 show -a -T -f $filename
 quit
 END
-   }
-   else{
-     $command=<<END;
-find $object $criteria
-show -a -f $filename
-quit
-END
 
-}
+ 
    return ($command,$filename);
 
 }
@@ -514,34 +508,14 @@ sub process_ace_file{
 
     
     while (<INPUT>) {
-	# wormpub -> camace
-	if (/_wormpub/) {
-	    s/_wormpub/_$database/g;
-	    print OUTPUT "$_";
-	}
-	# sylvia -> geneace
-	elsif(/_sylvia/){
-	    s/_sylvia/_$database/g;
-	    print OUTPUT "$_";
-	}
-	# analysis -> stlace/briggsae
-	elsif(/_analysis/){
-	    s/_analysis/_$database/g;
-	    print OUTPUT "$_";
-	}
-	# acedb -> citace
-	elsif(/_acedb/){
-	    s/_acedb/_$database/g;
-	    print OUTPUT "$_";
-	}
-	# geneace -> citace (eek - i don't like this one).
-	elsif(/_geneace/){
-	    s/_geneace/_$database/g;
-	    print OUTPUT "$_";
-	}
-	else {
-	    print OUTPUT "$_";
-	} 
+
+      if (/\"\d{4}-\d{2}-\d{2}_\d{2}:\d{2}:.*?_.*?\"/){
+	s/(\"\d{4}-\d{2}-\d{2}_\d{2}:\d{2}:.*?)_.*?\"/$1_$database\"/g;
+	print OUTPUT "$_";
+      }
+      else{
+	print OUTPUT "$_";
+      }
     }
     close(INPUT);
     close(OUTPUT);
