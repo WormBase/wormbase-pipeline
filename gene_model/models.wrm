@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.15 2001-10-04 13:38:21 kj2 Exp $
+// CVS info:  $Id: models.wrm,v 1.16 2001-10-17 12:55:31 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -180,6 +180,7 @@
 	Gene_info	Gene_class UNIQUE ?Gene_class XREF Gene
 			Reference_allele ?Allele Text
                         Phenotype ?Text
+			Description ?Text				// krb [171001]
                         RNAi_result   ?RNAi XREF Gene                       //RL [010327]
 			Complementation_data Text
                         Controlled_phenotype ?Phenotype XREF Gene          // added for Lincoln RNAi [001213 dl]
