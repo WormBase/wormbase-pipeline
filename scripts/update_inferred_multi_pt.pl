@@ -2,7 +2,7 @@
 
 # Author: Chao-Kung Chen
 # Last updated by $Author: krb $
-# Last updated on: $Date: 2004-07-01 11:40:58 $ 
+# Last updated on: $Date: 2004-08-24 09:07:13 $ 
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -17,11 +17,11 @@ use Getopt::Long;
 
 my ($help, $database, $debug, $load, $update);
 
-GetOptions ("h|help"         => \$help,
-	    "db|database=s"  => \$database,   # can specify db for debug purpose (required also when not debug)
-	    "d|debug=s"      => \$debug,
-	    "l|load"         => \$load,       # load CGC approved pseudo map markers
-	    "u|update"       => \$update,
+GetOptions ("help"         => \$help,
+	    "database=s"  => \$database,   # can specify db for debug purpose (required also when not debug)
+	    "debug=s"      => \$debug,
+	    "load"         => \$load,       # load CGC approved pseudo map markers
+	    "update"       => \$update,
            );
 
 my $user = `whoami`; chomp $user;
@@ -55,13 +55,6 @@ my (%Gene_info, %gene_id_allele, %locus_order, %order_locus);
 my $new_multi_file = `ls $multi_dir/loci_become_genetic_marker_for_$autoace_version`;
 chomp $new_multi_file;
 
-#---------------------------------------------------------------------------------------------------------------------
-#   load promoted marker Gene (loci) to geneace for the current build
-#   NOTE: the pseudo marker in loci_become_genetic_marker_for_WSxxx file should already be approved by Jonathan first
-#---------------------------------------------------------------------------------------------------------------------
-
-&load_pseudo_markers_to_geneace if $load;
-
 #--------------------------------------------------------------------
 #   make inferred multi-pt obj for promoted loci during the build
 #   update flanking loci of existing old inferred multi-pt obj
@@ -86,13 +79,6 @@ mail_maintainer("Update inferred multi-pt objects", "$debug\@sanger.ac.uk", $log
 # s u b r o u t i n e s
 #-------------------------
 
- sub load_pseudo_markers_to_geneace {
-
-  # load file with CGC approved promoted pseudo marker loci to Geneace
-  my $upload = "pparse $new_multi_file\nsave\nquit";
-  $ga->upload_database($database, $upload, "pseudo_marker_loci", $log);  # upload to specifed database (in non-debug mode, this should be geneace)
-
-}
 
 sub make_inferred_multi_pt_obj {   # run during the build, when approved pseudo markers are available
 
