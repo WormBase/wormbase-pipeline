@@ -7,7 +7,7 @@
 #                          /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/current/release_notes.txt/
 #
 # Last updated by: $Author: ar2 $                       # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2002-08-23 16:12:22 $                        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2002-10-01 14:41:22 $                        # quickly see when script was last changed and by whom
 
 
 use strict;                                     
@@ -36,7 +36,8 @@ print LOG "about to spread the word . . . \n";
 
 # copy the letter around
 print LOG "copying to ftp site . . . . ";
-`cp /wormsrv2/autoace/RELEASE_LETTERS/letter.WS$ver ~ftp/pub/wormbase/WS$ver/letter.WS$ver` and die "couldnt copy to ftp/pub/wormbase\n";
+my $ftp_dir = glob("~ftp/pub/wormbase");
+`cp /wormsrv2/autoace/RELEASE_LETTERS/letter.WS$ver $ftp_dir/WS$ver/letter.WS$ver` and die "couldnt copy to $ftp_dir\n";
 print LOG "DONE.\n";
 print LOG "copying to autoace/release . . . . ";
 `cp /wormsrv2/autoace/RELEASE_LETTERS/letter.WS$ver /wormsrv2/autoace/release/letter.WS$ver` and die "couldnt copy to autoace/release";
