@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: krb $
-// Last edited on: $Date: 2004-10-21 10:03:37 $
+// Last edited on: $Date: 2004-10-21 14:31:48 $
  
 
 
@@ -377,6 +377,7 @@
 			  Y2H_bait   ?Y2H XREF Bait_overlapping_gene // for yeast two hybrid data
 			  Y2H_target ?Y2H XREF Target_overlapping_gene
 			  3d_data ?3d_data XREF Gene // for NESGC structure information
+			  Interaction ?Interaction XREF Interactor
         Map_info  Map UNIQUE ?Map XREF Gene #Map_position
                   Well_ordered          // "on the line"
                   Hide_under ?Gene XREF Representative_for
@@ -424,7 +425,19 @@
            Other_name_for     ?Gene XREF Other_name // main reason for this class
            Public_name_for    ?Gene XREF Public_name // the main name for a gene
 
-                                                                                
+
+// new Interaction class for Andrei
+// WBInteraction00000001             
+
+?Interaction Evidence #Evidence
+	     Interactor ?Gene XREF Interaction #Interaction_type
+             Paper ?Paper XREF Interaction                 
+	     Remark  ?Text   #Evidence
+                                                                                                            
+#Interaction_type Genetic
+                  Regulation
+                  No_interaction
+                                 
 
 ?Balancer From_left_end
           To_right_end
@@ -2467,6 +2480,7 @@
 		  Antibody ?Antibody XREF Reference #Evidence // added [031120 krb]
 		  SAGE_experiment ?SAGE_experiment XREF Reference
 		  Y2H ?Y2H XREF Reference
+		  Interaction ?Interaction XREF Paper
         Keyword ?Keyword
 
 

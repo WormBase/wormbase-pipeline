@@ -95,3 +95,14 @@ on the website but I guess you never know!  This is taking advantage of a new ac
 
 Expr_pattern class gets new GO_term tag to link to ?GO_term and each tag under the 'Expressed_in' tag make
 use of a new hash.
+
+
+21st October
+------------
+Added History_name tag to ?RNAi model to store old names before we change object names to WBRNAi....
+
+Major update to ?Feature model, some changed tag name (Sequence_features is no more) and lots of new
+tags to take account of.
+
+New Interaction model for Andrei's gene interaction data...Need to ideally pick up the new Interaction tag in 
+the Gene class to see when there is interaction data.
