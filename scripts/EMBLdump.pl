@@ -2,8 +2,8 @@
 #
 # EMBLDump.pl :  makes EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2003-12-04 14:07:00 $
-#  Last updated by: $Author: krb $
+#  Last updated on: $Date: 2004-02-04 16:20:03 $
+#  Last updated by: $Author: ar2 $
 
 use strict;
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
@@ -33,10 +33,14 @@ my $giface      = &giface;
 my $dbdir       = "$basedir/camace";
 my $tace        = &tace;
 my $outfilename = "/nfs/disk100/wormpub/tmp/EMBLdump.$$";
-my $current_DB = "/nfs/disk100/wormpub/DATABASES/current_DB";
+my $current_DB  = "/nfs/disk100/wormpub/DATABASES/current_DB";
+my $mod_file    = "/nfs/disk100/wormpub/tmp/EMBLdump.mod";
 
-
-
+if( $test ) {
+  $giface    = glob("~edgrif/TEST/ANT/giface");
+  $outfilename   = "/nfs/disk100/wormpub/test/EMBLdump.$$";
+  $mod_file  = "/nfs/disk100/wormpub/test/EMBLdump.mod";
+}
 
 #########################
 # make history log item
@@ -51,6 +55,7 @@ system ("touch $basedir/logs/history/$0.`date +%y%m%d`");
 #############################################
 
 my $query = "Query Find Genome_Sequence From_laboratory = HX AND Finished AND DNA\ngif EMBL $outfilename\n";
+$query = "Find Genome_Sequence AH6\ngif EMBL $outfilename\n" if $test;
 
 open(READ, "echo '$query' | $giface $dbdir |") or die ("Could not open $giface $dbdir\n"); 
 while (<READ>) {
@@ -121,35 +126,29 @@ close TACE;
 # cycle through the EMBL dump file, replacing info where appropriate #
 ######################################################################
 
-open (OUT, ">/nfs/disk100/wormpub/tmp/EMBLdump.mod") or  die "Can't process new EMBL dump file\n";
+open (OUT, ">$mod_file") or  die "Can't process new EMBL dump file\n";
 open (EMBL, "<$outfilename.embl") or die "Can't process EMBL dump file\n";
 
 my $id = "";
 
 while (<EMBL>) {
 
-  # store ID line to reformat later
-  if(/^ID   NDB_ID/){
-    $id = $_;
-    chomp($id);
+  # print ID line and next XX. store id
+  if(/^ID\s+CE(\S+)/){
+    $id = $1;
+    print OUT "${_}XX\n";
+    next;
+  }
+
+  # print ID line and next XX
+  if( /^AC/ ) {
+    print OUT "AC   ",substr($clone2sv{$id},0,-2),";\nXX\n";
+    next;
   }
 
   # DE   Caenorhabditis elegans cosmid C05G5    
   if (/^DE   Caenorhabditis elegans cosmid (\S+)/) {
     my $clone = $1;
-
-    # grab accession using sequence version
-    my $accession = $clone2sv{$clone};
-    substr($accession,-2) = "";
-
-    # correct ID line
-    $id =~ s/NDB_ID/CE${clone}/;
-
-    # now print out other lines which have been skipped above
-    print OUT "$id\n";
-    print OUT "XX\n";
-    print OUT "AC   $accession;\n";
-    print OUT "XX\n";
 
     # can now reset $id
     $id = "";
@@ -186,7 +185,7 @@ close OUT;
                                                           
 # copy modified copy back onto output file
 
-my $status = move("/nfs/disk100/wormpub/tmp/EMBLdump.mod","$outfilename.embl");
+my $status = move("$mod_file","$outfilename.embl");
 print "ERROR: Couldn't move file: $!\n" if ($status == 0);
 
 print "\nOutfile is $outfilename\n\n";
