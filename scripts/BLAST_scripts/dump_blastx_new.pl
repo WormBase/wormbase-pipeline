@@ -8,6 +8,7 @@
 use strict;
 use DBI;
 use Getopt::Std;
+use DB_File;
 use vars qw($opt_w $opt_a $opt_g $opt_c $opt_v $opt_o $opt_m);
 
 getopts ("v:w:a:g:c:mo");
@@ -33,7 +34,7 @@ my $dbname = "worm01";
 my $dbpass = "";
 
 # define the organisms we deal with
-my @species = qw(fly human slimSwissProt slimTrEMBL worm yeast);
+my @species = qw(fly human slimSwissProt slimTrEMBL worm yeast ipi_human);
 
 # define the AceDB protein prefixes for the organisms used
 my %org2acedb;
@@ -197,6 +198,13 @@ unless ($opt_m) {
     close ACCESSION;
 }
 
+
+# Open DBM to find out database of HID
+dbmopen my %ACC2DB, "/acari/work2a/wormpipe/dumps/acc2db.dbm", 0666 or die "cannot open acc2db \n";
+open (IPI_LIST, ">/acari/work2a/wormpipe/dumps/ipi_hits_list_x") or die "cant open hitlist\n";
+
+
+
 ####################################################################
 # connect to the Mysql database
 ####################################################################
@@ -220,7 +228,7 @@ my $sth = $dbh->prepare ( q{ SELECT analysisId, db
 $sth->execute;
 
 while (my @row = $sth->fetchrow_array) {
-    if ($row[1] =~ /(wormpep|gadfly|ensembl|yeast|slimswissprot|slimtrembl)/) {
+    if ($row[1] =~ /(wormpep|gadfly|ensembl|yeast|slimswissprot|slimtrembl|SWTRE)/) {
         my $org;
         if    ($1 =~ /wormpep/)       {$org = "worm";}
         elsif ($1 =~ /gadfly/)        {$org = "fly";}
@@ -228,6 +236,7 @@ while (my @row = $sth->fetchrow_array) {
         elsif ($1 =~ /yeast/)         {$org = "yeast";}
         elsif ($1 =~ /slimswissprot/) {$org = "slimSwissProt";}
         elsif ($1 =~ /slimtrembl/)    {$org = "slimTrEMBL";}
+	elsif ($1 =~ /SWTRE/)     {$org = "ipi_human";}
         $analysis2org{$row[0]} = $org;
     }
 }
@@ -242,7 +251,7 @@ print LOG "\n";
 # contig table
 my $sth_c = $dbh->prepare ( q{ SELECT contig.internal_id, contig.id, contig.length, clone.embl_version
                                  FROM contig, clone
-#                                WHERE contig.internal_id = clone.internal_id and contig.internal_id = 3309
+#                                WHERE contig.internal_id = clone.internal_id and contig.internal_id = 1
                                 WHERE contig.internal_id = clone.internal_id
                              ORDER BY internal_id
                              } );
@@ -573,18 +582,25 @@ foreach my $aref (@$ref) {
                     }
                     # write the HSP info to the ACE file
                     my @cigars = split (/:/, $cigar);
+		    my $prefix;
+		    if ("$org" eq "ipi_human") {
+		      $prefix = &getPrefix($hid);
+		    }
+		    else {
+		      $prefix = ${org2acedb{$org}};
+		  }
                     if (@cigars == 1) {
-                        print ACE "Pep_homol\t\"${org2acedb{$org}}$hid\" \"wublastx_$org\" ";
+                        print ACE "Pep_homol\t\"$prefix$hid\" \"wublastx_$org\" ";
                         print ACE "$e $start $end $hstart $hend\n";
                     }
                     else {
-                        print ACE "Pep_homol\t\"${org2acedb{$org}}$hid\" \"wublastx_$org\" ";
+                        print ACE "Pep_homol\t\"$prefix$hid\" \"wublastx_$org\" ";
                         print ACE "$e $start $end $hstart $hend ";
                         print ACE "align $start $hstart\n";
                         shift @cigars;
                         foreach my $string (@cigars) {
                             my ($coor, $hcoor) = split (/,/, $string);
-                            print ACE "Pep_homol\t\"${org2acedb{$org}}$hid\" \"wublastx_$org\" ";
+                            print ACE "Pep_homol\t\"$prefix$hid\" \"wublastx_$org\" ";
                             print ACE "$e $start $end $hstart $hend ";
                             print ACE "align $coor $hcoor\n";
 			}
@@ -605,11 +621,34 @@ $dbh->disconnect;
 
 close LOG;
 close ACE;
+close IPI_LIST;
+
 
 print "\nEnd of dump - moving $ace to /wormsrv2\n";
 
 # Copy resulting file to wormsrv2 - leave in original place for subsequent script write.swiss_trembl
-`/usr/bin/rcp $ace /wormsrv2/wormbase/ensembl_dumps/`;
+# `/usr/bin/rcp $ace /wormsrv2/wormbase/ensembl_dumps/`;
 
 
 exit 0;
+sub getPrefix 
+  {
+    my $name = shift;
+    if( $ACC2DB{$name} ) {
+      print IPI_LIST "$name\n";
+      my $n = $ACC2DB{$name}.":";
+      return $n; 
+    }
+    # NOTE this is only the prefix - not the method (it will look like wublastp_ipi_human ENSEMBL:ENS00342342 etc)
+    if( $name =~ /ENS\w+/ ) {
+      return $org2acedb{'human'};
+    }
+    else {
+      if (length $name > 6 ) {
+      return $org2acedb{'slimSwissProt'};
+      }
+      else {
+      return $org2acedb{'slimTrEMBL'};
+      }
+    }
+  }
