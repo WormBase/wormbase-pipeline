@@ -615,13 +615,13 @@ sub update_wormpep_pages{
 
   # create release_paragraph.shtml
   open (PARAGRAPH, ">$www_root/wormpep/release_paragraph.shtml") || die "Can't open the file: $www/release_paragraph.shtml\n\n";
-  print PARAGRAPH "The current Wormpep database, Wormpep$wormpep_version (released $release_date), contains $letters residues in $count protein sequences (of which $alt_spliced have splice variants). Wormpep$wormpep_version is based on the <A href=\"ftp://ftp.sanger.ac.uk/pub/wormbase/WS$WS_current\">current WS$WS_current release</A> of the <I>C. elegans</I> AceDB database.\n";
+  print PARAGRAPH "The current Wormpep database, wormpep$wormpep_version (released $release_date), contains $letters residues in $count protein sequences (of which $alt_spliced have splice variants) - wormpep$wormpep_version is based on the <A href=\"ftp://ftp.sanger.ac.uk/pub/wormbase/WS$WS_current\">current WS$WS_current release</A> of the <I>C. elegans</I> AceDB database.\n";
   close (PARAGRAPH);
 
   # update the 'current_release.shtml' file
   system("rm -f $www_root/wormpep/current_release.shtml") && die "Couldn't remove current_release.shtml\n";
   open(RELEASE,">$www_root/wormpep/current_release.shtml") || die "Coudn't write to current_release.shtml\n";
-  print RELEASE "The current release is Wormpep$wormpep_version\n";
+  print RELEASE "The current release is wormpep$wormpep_version\n";
   close(RELEASE);
 
   # update the history of wormpep releases, i.e. wormpep_release.txt
