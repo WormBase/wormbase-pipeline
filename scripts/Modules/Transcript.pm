@@ -265,11 +265,13 @@ sub report
       print $fh "Matching_cDNA \"",$_->name,"\"\n";
 
 #   This bit commented out for WS127 until model change approved
-#      foreach my $f ( $_->features ) {
-#	print $fh "Sequence_features $f\n";
-#      }
+      foreach my $f ( $_->features ) {
+	print $fh "Sequence_features $f\n";
+      }
 
     }
+    print $fh "Species \"Caenorhabditis elegans\"\n"
+
     # .. and method
     print $fh "Method Coding_transcript\n";
   }
