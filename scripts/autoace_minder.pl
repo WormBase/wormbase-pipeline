@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-12-08 16:40:33 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2003-12-16 13:57:17 $
 
 
 #################################################################################
@@ -1142,9 +1142,8 @@ sub make_operons {
   # generated (which will make split GFF files
   &usage(20) unless (-e "$logdir/$flag{'B10'}");
 
-
   # run find_utrs.pl to generate data
-  &run_command("$scriptdir/operon_wizard -x > $basedir/autoace/OPERONS/operons.WS${WS_version}.ace");
+  &run_command("$scriptdir/map_operons.pl");
 
   # make a log file in /autoace/logs
   system("touch $logdir/B11:Generate_operon_data");
