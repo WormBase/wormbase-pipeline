@@ -11,14 +11,14 @@
 
 # Author: Chao-Kung Chen
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-03-19 11:19:40 $ 
+# Last updated on: $Date: 2004-03-19 15:27:03 $ 
 
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
 use Ace;
 use strict;
 use Getopt::Long;
-use Geneace;
+use GENEACE::Geneace;
 
 my ($version, $verbose, $debug);
 

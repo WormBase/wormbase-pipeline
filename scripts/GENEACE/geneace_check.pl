@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2004-03-19 11:06:08 $
+# Last updated on: $Date: 2004-03-19 15:27:03 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -15,15 +15,13 @@ use Wormbase;
 use Ace;
 use Carp;
 use Getopt::Long;
-use lib "/nfs/team71/worm/ck1/WORMBASE_CVS/scripts";
-use Geneace;
-
+use GENEACE::Geneace;
 
 ###################################################
 # Miscellaneous important variables               # 
 ###################################################
 
-my $tace = glob("~wormpub/ACEDB/bin_ALPHA/tace"); # tace executable path
+my $tace = glob("~wormpub/ACEDB/bin_ALPHA/tace");          # tace executable path
 my $curr_db = "/nfs/disk100/wormpub/DATABASES/current_DB"; # Used for some cross checking with geneace
 my $def_dir = "/wormsrv1/geneace/wquery";                  # where lots of table-maker definitions are kept
 my $rundate = `date +%y%m%d`; chomp $rundate;              # Used by various parts of script for filename creation
@@ -34,6 +32,7 @@ my $log;                                                   # main log file for m
 my $caltech_log;                                           # Additional log file for problems that need to be sent to Caltech
 my $jah_log;                                               # Additional log file for problems to be sent to Jonathan Hodgkin at CGC
 my (%L_name_F_WBP, %L_name_F_M_WBP);                       # hashes for checking Person and Author merging?
+
 
 # list of hard-coded loci with other-name(s) as valid independent loci (exceptions for main name / other_name merging) 
 # @exceptions and %exceptions are made global as they are used for checking both Locus and Strain classes
@@ -111,7 +110,7 @@ my $db = Ace->connect(-path  => $default_db,
 
 
 # Process separate classes if specified on the command line else process all classes
-@classes = ("locus","laboratory","allele","strain","rearrangement","sequence","mapping","evidence", "xref", "gmap") if (!@classes);
+@classes = ("locus","laboratory","allele","strain","rearrangement","sequence","mapping","evidence", "xref", "multipt", ) if (!@classes);
 
 foreach $class (@classes){
   if ($class =~ m/locus/i)           {&process_locus_class}
@@ -332,7 +331,7 @@ sub test_locus_for_errors{
   }
 
   # test for !Gene AND Gene_class 
-  if(!defined($locus->at('Type.Gene')) && defined($locus->at('Name.Gene_class'))){
+  if(!defined($locus->at('Type.Gene')) && defined($locus->at('Name.Gene_class')) && !defined($locus->at('Type.Gene_cluster'))){
     $warnings .= "ERROR 12: $locus has a 'Gene_class' tag but not a 'Gene' tag\n";
     print "." if ($verbose);
     if ($ace){
@@ -462,8 +461,9 @@ sub test_locus_for_errors{
     my @name = $locus->Sequence_name;
 
     # compare @seq with @name for difference (order does not matter)
-    my @comp_result = array_comp(\@seq, \@name);
-    my @diff = @{$comp_result[0]}; 
+    #my @comp_result = array_comp(\@seq, \@name);
+    my @diff = $ga->array_comp(\@seq, \@name, "diff");
+    #my @diff = @{$comp_result[0]}; 
     
     if (@diff){
       $warnings .= "ERROR 22: $locus has a 'CDS' name different to 'Sequence_name'\n";
@@ -490,8 +490,9 @@ sub test_locus_for_errors{
     my @name = $locus->Transcript_name;
 
     # compare @seq with @name for difference (order does not matter)
-    my @comp_result = array_comp(\@seq, \@name);
-    my @diff = @{$comp_result[0]}; 
+    #my @comp_result = array_comp(\@seq, \@name, "diff");
+    my @diff = $ga->array_comp(\@seq, \@name, "diff");
+    #my @diff = @{$comp_result[0]}; 
     
     if (@diff){ 
       $warnings .= "ERROR 24: $locus has a 'Transcript' name different to 'Transcript_name'\n";
@@ -530,8 +531,9 @@ sub test_locus_for_errors{
     my @name = $locus->Pseudogene_name;
 
     # compare @seq with @name for difference (order does not matter)
-    my @comp_result = array_comp(\@seq, \@name);
-    my @diff = @{$comp_result[0]}; 
+    #my @comp_result = array_comp(\@seq, \@name);#
+    my @diff = $ga->array_comp(\@seq, \@name, "diff");
+    #my @diff = @{$comp_result[0]}; 
     
     if (@diff){
       $warnings .= "ERROR 26: $locus has a 'Pseudogene' name different to 'Pseudogene_name'\n";
@@ -560,7 +562,7 @@ sub test_locus_for_errors{
 
   # Look for Gene_class tag in non-gene objects 
   if(!defined($locus->at('Type.Gene'))){
-    if(defined($locus->at('Name.Gene_class'))){
+    if(defined($locus->at('Name.Gene_class')) && !defined($locus->at('Type.Gene_cluster'))){
       $warnings .= "ERROR 28: $locus has Gene_class tag but it is not a gene!\n";
       print "." if ($verbose);
       if ($ace){
@@ -1255,9 +1257,6 @@ EOF
     my ($def, $dir) = @_;
     my ($allele, $seq, $parent, $cds);
     my %overlapped_clones = $ga->get_overlapped_clones(); 
-    foreach (keys %overlapped_clones){
-      print "$_ -> @{$overlapped_clones{$_}} #\n";
-    }
 
     open (FH, "echo '$def' | $tace $dir | ") || die "Couldn't access geneace\n";
     while (<FH>){
@@ -1590,8 +1589,9 @@ sub check_bogus_XREF {
 
       # compare seq. obj. in a locus class with seq. obj linked to same locus in seq. classes
       # extra obj means bogus obj
-      my @comp_result = array_comp(\@{$locus_seq_A{$_}},  \@{$locus_seq_B{$_}});
-      my @diff = @{$comp_result[0]}; 
+      #my @comp_result = $ga->array_comp(\@{$locus_seq_A{$_}},  \@{$locus_seq_B{$_}}, "diff");
+      my @diff = $ga->array_comp(\@{$locus_seq_A{$_}},  \@{$locus_seq_B{$_}}, "diff");
+      #my @diff = @{$comp_result[0]}; 
       if (@diff){
 	print LOG "ERROR: Found typo bogus @diff linked to $_\n" if @diff;
 	$error = 1;
@@ -1759,7 +1759,7 @@ sub int_map_to_map_loci {
   open(INT_map_TO_MAP, ">/wormsrv1/geneace/JAH_DATA/MULTI_PT_INFERRED/loci_become_genetic_marker_for_WS$autoace_version.$rundate") || die $!;
 
   push( my @int_loci, $db->find($int_loci) );
-  my %Alleles = $ga->get_non_Transposon_alleles($db); # all Geneace alleles which have no Transposon_insertion tag
+  my %Alleles = $ga->get_non_Transposon_alleles($db); # all Geneace alleles which have no Transposon_insertion tag 
 
   foreach (@int_loci){
     if (defined $_ -> Allele(1)){
@@ -1769,8 +1769,8 @@ sub int_map_to_map_loci {
 	  $error++;
 	  my $int_map = $_ -> Interpolated_map_position(1);
 	  my $int_pos = $_ -> Interpolated_map_position(2);
-	  print LOG "$_ has interpolated_map which can now use Map tag at position $int_pos\n";
-	  print JAHLOG "$_ has interpolated_map which can now use Map tag at position $int_pos\n";
+	  print LOG "$_ ($e) has interpolated_map which can now use Map tag at position $int_pos\n";
+	  print JAHLOG "$_ ($e) has interpolated_map which can now use Map tag at position $int_pos\n";
 	  
 	  # keep a copy here
 	  print INT_map_TO_MAP "\nLocus : \"$_\"\n"; 
@@ -1783,10 +1783,9 @@ sub int_map_to_map_loci {
       }
     }
   }
-
-  print LOG    "No such locus found\n\n" if $error == 0;
-  print JAHLOG "No such locus found\n\n" if $error == 0;
-
+  print LOG    "Total: $error to become inferred genetic marker(s)\n\n";
+  print JAHLOG "Total: $error to become inferred genetic marker(s)\n\n";
+ 
   my $header = "\n\nChecking dubious multi-pt obj. linked to locus (ie, checking for wrong association)\n";
   my $sep = "-----------------------------------------------------------------------------------\n";
   print $header, $sep;
@@ -1813,23 +1812,23 @@ sub usage {
   }
 }
 
-sub array_comp{
+#sub array_comp{
 
-  my(@union, @isect, @diff, %union, %isect, %count, $e);
-  my ($ary1_ref, $ary2_ref)=@_;
-  @union=@isect=@diff=();
-  %union=%isect=();
-  %count=();
-  foreach $e(@$ary1_ref, @$ary2_ref){
-    $count{$e}++;
-  }
-  foreach $e (keys %count){
-    push (@union, $e);
-    if ($count{$e}==2){push @isect, $e;}
-    else {push @diff, $e;}
-  } 
-  return \@diff, \@isect, \@union;  # all returned into one array  
-}
+#  my(@union, @isect, @diff, %union, %isect, %count, $e);
+#  my ($ary1_ref, $ary2_ref)=@_;
+#  @union=@isect=@diff=();
+#  %union=%isect=();
+#  %count=();
+#  foreach $e(@$ary1_ref, @$ary2_ref){
+#    $count{$e}++;
+#  }
+#  foreach $e (keys %count){
+#    push (@union, $e);
+#    if ($count{$e}==2){push @isect, $e;}
+#    else {push @diff, $e;}
+#  } 
+#  return \@diff, \@isect, \@union;  # all returned into one array  
+#}
 
 
 __END__
