@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-01-23 16:15:40 $
+# Last updated on: $Date: 2004-02-06 12:15:04 $
 
 package Geneace;
 
@@ -77,7 +77,6 @@ EOF
 
 sub upload_database {
   my($this, $db_dir, $command, $tsuser, $log) = @_;
-  print $log, "####################\n";
   open (Load_GA,"| $tace -tsuser \"$tsuser\" $db_dir >> $log") || die "Failed to upload to Geneace";
   print Load_GA $command;
   close Load_GA;

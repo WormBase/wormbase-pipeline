@@ -2,7 +2,7 @@
 
 # Author: Chao-Kung Chen
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-01-28 15:28:37 $ 
+# Last updated on: $Date: 2004-02-06 12:15:04 $ 
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'}; 
@@ -16,10 +16,11 @@ use Getopt::Long;
 # global variables
 #--------------------
 
-my ($help, $database);
+my ($help, $database, $debug);
 
 GetOptions ("h|help"         => \$help,
 	    "db|database=s"  => \$database,
+	    "d|debug"        => \$debug,
            );
 
 my $user = `whoami`; chomp $user;
@@ -29,20 +30,28 @@ my $tace = &tace;
 my $multi_dir = "/wormsrv1/geneace/JAH_DATA/MULTI_PT_INFERRED";
 my $log = "/wormsrv2/logs/update_inferred_multi_pt.$rundate";
 open(LOG, ">$log") || die $!;
+print LOG "# $0 started at ", runtime(), "\n\n";;
+print LOG "=============================================================================================\n\n";
 
-if (!$database && $user ne "wormpub"){
-  print "\nTarget database for uploading data is $autoace.\n\n";
+#-------------------------------------------------
+# which database to use for gmap and data upload
+#-------------------------------------------------
+my $ckdb ="/nfs/disk100/wormpub/DATABASES/TEST_DBs/CK1TEST";
+
+if (!$database && $user ne "wormpub" && !$debug){
+  print "\nTarget database for genetic map and data uploading is $autoace.\n\n";
   print "You need to be wormpub to do this!\n";
   exit(0);
 }
-
-elsif (!$database && $user eq "wormpub"){
-  print "\nTarget database for uploading data is $autoace.\n\n";
+elsif (!$database && $debug){
+  print "\nUsing genetic maps in $autoace\n\n";
 }
-elsif ($database && $database ne $autoace){print "\nTarget database for uploading data is $database.\n\n"};
+elsif (!$database && $user eq "wormpub" && !$debug){print "\nUsing genetic maps in $autoace.\n\nTarget database for data uploading is $autoace\n\n"}
+elsif ($database && $database ne $autoace){print "\nUsing genetic maps in $database.\n\n"};
+
+print "Target database for data uploading is $ckdb\n\n" if $debug or $database;
 
 if (!$database){$database = $autoace}
-
 
 my $db = Ace->connect(-path  => $database,
                       -program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
@@ -51,12 +60,10 @@ my $db = Ace->connect(-path  => $database,
 # start working
 #-----------------
 
-my %locus_allele = &int_map_to_map_loci;
+my (%locus_allele, %locus_order, %order_locus);
 
-my($locus_order, $order_locus) = &make_inferred_multi_pt_obj; # return 2 hash refs
-my %locus_order = %$locus_order;
-my %order_locus = %$order_locus;
-
+&int_map_to_map_loci;
+&make_inferred_multi_pt_obj; 
 &update_inferred_multi_pt;
 
 #-------------------------
@@ -65,20 +72,34 @@ my %order_locus = %$order_locus;
 
 sub int_map_to_map_loci {
 
+  my $autoace_version = get_wormbase_version();
   # get a list of "promoted" loci from geneace_check output to here
-  my @int_loci = `cat $multi_dir/loci_become_genetic_marker*`;
-  my ($locus, %Locus_allele);
+  my @int_loci = `cat $multi_dir/loci_become_genetic_marker_for_WS$autoace_version*`;
+ 
+  # test file
+  #my @int_loci = `cat $multi_dir/inferred_multi_pt_obj_WS117`;
+
+  my $locus;
 
   foreach (@int_loci){
-    if ($_ =~ /^Locus : \"(.+)\"/){$locus = $1}
-    if ($_ =~ /^-D.+/){
+    chomp;
+    if ($_ =~ /^Locus : \"(.+)\"/){
+      $locus = $1;
       $locus = $db->fetch(-class => 'Locus',
 			  -name  => $locus);
-      my $allele = $locus -> Allele(1); # grep only the first allele
-      $Locus_allele{$locus} = $allele;
+      if ($locus){
+        $locus_allele{$locus} = $locus -> Allele(1) if defined $locus -> Allele(1); # grep only the first allele
+        print LOG "ERROR: $locus has now NO allele attached . . . corresponding multi-pt obj needs update. . .\n" if !defined $locus -> Allele(1); # 
+      }
+      else {
+	$locus = $db->fetch(-class => 'Gene_name',
+                            -name  => $1);
+	if (defined $locus -> Other_name_for(1)){
+	   print LOG "ERROR: $locus has become an Other_name for ", $locus -> Other_name_for(1), " . . . corresponding multi-pt obj needs update. . . \n";  
+        }
+      }
     }
   }
-  return %Locus_allele;
 }
 
 sub make_inferred_multi_pt_obj {
@@ -88,35 +109,34 @@ sub make_inferred_multi_pt_obj {
   my @multi_objs = $db->find($multipt);
   my $last_multi = $multi_objs[-1];
   my $multi = $last_multi -1; $multi++;
-
-  print  "@multi_objs : $last_multi : $multi ############\n";
-
+  
   # check autoace version
-  my $version = get_wormbase_version_name(); # return WSXX
+  my $autoace_version = get_wormbase_version_name(); # return WSXX
 
-  # get loci order from cmp_gmap_with_coord_order_WS117.yymmdd.pid file
-  my @map_file = `ls /wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/cmp_gmap_with_coord_order_$version*`;
+  # get loci order from cmp_gmap_with_coord_order_WSXXX.yymmdd.pid file
+  my @map_file = glob("/wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/cmp_gmap_with_coord_order_$autoace_version*");
   my $count = 0;
-  my (%locus_order, %order_locus);
-
   open(IN, $map_file[-1]) || die $!;
   while(<IN>){
     chomp;
-    my($a, $b, $c, $d, $e) = split(/\s+/, $_); 
-    my $locus = $c;
-    $count++;
-    $locus_order{$locus} = $count if $locus;
-    $order_locus{$count} = $locus if $locus;
+    if ($_ =~ /^(I|V|X)/){
+      my($a, $b, $c, $d, $e) = split(/\s+/, $_); 
+      my $locus = $c;
+      $count++;
+  
+      $locus_order{$locus} = $count if $locus; # print "$locus -> $count  (1)\n";
+      $order_locus{$count} = $locus if $locus; # print "$count->$locus    (2)\n";
+    }
   }
- 
+
   # write inferred multi_obj acefile
-  open(NEW, ">/tmp/multi_flanks_to_check") || die $!;
+  open(NEW, ">/tmp/inferred_multi_pt_obj_to_make") || die $!;
 
   foreach (keys %locus_allele){ 
     $multi++;
     my $L_locus = $order_locus{$locus_order{$_}-1};
     my $R_locus = $order_locus{$locus_order{$_}+1};
-    
+
     print NEW "\n\nLocus : \"$_\"\n";
     print NEW "Multi_point $multi\n";
     print NEW "\n\nMulti_pt_data : $multi\n";
@@ -125,7 +145,6 @@ sub make_inferred_multi_pt_obj {
     print NEW "Combined Locus \"$L_locus\" 1 Locus \"$_\" 1 Locus \"$R_locus\"\n";
     print NEW "Remark \"Data inferred from $locus_allele{$_}, sequence of $_ and interpolated map position (which became genetics map)\" Inferred_automatically\n";
   }
-  return \%locus_order, \%order_locus;
 }
 
 
@@ -133,9 +152,8 @@ sub update_inferred_multi_pt {
   
   my $query  = "find Multi_pt_data * where remark AND NEXT AND NEXT = \"inferred_automatically\"";
   push( my @inferred_multi_objs, $db->find($query) );
-  
 
-  open(UPDATE, ">/tmp/updated_multi_flanks") || die $!;
+  open(UPDATE, ">/tmp/updated_multi_pt_flanking_loci") || die $!;
   my (@center_locus, $locus);
 
   foreach (@inferred_multi_objs){
@@ -159,7 +177,7 @@ sub update_inferred_multi_pt {
     else {
       $L_locus = "NA" if !$L_locus;
       $R_locus = "NA" if !$R_locus;
-      print LOG "\nObj $_ has incomplete flanking loci information: (L) $L_locus (R) $R_locus\n";
+      print LOG "ERROR: Obj $_ has incomplete flanking loci information: (L) $L_locus (R) $R_locus\n";
     }
   }
 
@@ -168,19 +186,25 @@ sub update_inferred_multi_pt {
   # output a updated multi-pt temp file and upload it to database specified
   
   my $command=<<END;
-pparse /tmp/multi_flanks_to_check
-pparse /tmp/updated_multi_flanks
+pparse /tmp/updated_multi_pt_flanking_loci
+pparse /tmp/inferred_multi_pt_obj_to_make
 save
 quit
 END
 
   my $ga = init Geneace();
-  $ga->upload_database("/nfs/disk100/wormpub/DATABASES/TEST_DBs/CK1TEST", $command, "Inferred_multi_pt_data", $log);
-  $ga->upload_database($database, $command, "Inferred_multi_pt_data", $log);
+  $ga->upload_database($ckdb, $command, "Inferred_multi_pt_data", $log) if $debug;
+  $ga->upload_database($database, $command, "Inferred_multi_pt_data", $log) if !$debug;
 }
 
+print LOG "Make sure that all file parsings are OK . . . . .\n\n";
+mail_maintainer("Update inferred multi-pt objects", "ALL", $log) if !$debug;
+mail_maintainer("Update inferred multi-pt objects", "ck1\@sanger.ac.uk", $log) if $debug;
+
+print LOG "\n$0 finished at ", runtime(), "\n\n";
 
 __END__
+
 
 =head2 NAME - update_inferred_multi_pt.pl  
 
@@ -190,6 +214,7 @@ __END__
 
             -h to display this POD
             -db specify db to upload data, if not specify, the default db is autoace
+            - d(debug): use CK1 testdb for data upload, sends email to ck1 only
 
 
 =head3 <DESCRIPTION> 
@@ -205,24 +230,27 @@ B<1.>  Identify loci which
 
 B<2.>  Send loci in step 1 to JAH for approval
 
-B<3.>  Upgrade Interpolated_map_info to Map for approved loci from step 2.
+B<3.>  Check geneace_check.pl generated file(s) "loci_become_genetic_marker_for_WSXXX.yymmdd" at 
+       /wormsrv1/geneace/JAH_DATA/MULTI_PT_INFERRED/ for CGC approved ones from step 2.
+         
    
 ---------------------------------------------------------------------------
 Note: loci created in step 3 need to be already in the build, otherwise 
 the map position will not be up-to-date.
 ---------------------------------------------------------------------------
 
-B<4.>  (a) Create inferred multi_pt object for loci from step 3 with minimal 
-        "combined results" information with the immediate left and right 
-        flanking cloned loci as multi_pt A and B (see eg, multi_pt object
-        4134). 
-    (b) Make sure these loci become yellow-highlighted on the right 
+B<4.>  (a) This script creates inferred multi_pt object for loci from step 3 with minimal 
+        "combined results" information, ie, uses the immediate left and right 
+        flanking cloned loci as multi_pt A and B loci * (see eg, multi_pt object
+        4134).
+    (b) The script also updates all previous inferred multi pt obj for flanking loci 
+    (c) Hand check to make sure these loci become yellow-highlighted on the right 
         of the scale bar in Gmap.
 
-    This info is obtained from cmp_gmap_with_coord_order_WSXXX.yymmdd.pid 
+    * This info is obtained from cmp_gmap_with_coord_order_WSXXX.yymmdd.pid 
     file generated by get_interpolated_map.pl.
 
-    This is best done
+    This is best done: 
          (a) after get_interpolated_gmap.pl during the build is finished AND
          (b) geneace gets updated subsequently.
 
