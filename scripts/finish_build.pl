@@ -13,7 +13,7 @@
 # 4) Makes wormsrv2/current_DB point at latest release
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-04-26 15:24:19 $
+# Last updated on: $Date: 2002-04-26 15:30:20 $
 
 
 
@@ -73,6 +73,10 @@ system("rm -f $db_path/autoace/CHROMOSOMES/*") && die "Couldn't remove old CHROM
 print LOG "Updating symbolic link to point to current_DB\n\n";
 system("rm -f $db_path/current_DB") && die "Couldn't remove 'current_DB' symlink\n";
 system("ln -s $db_path/$WS_name/ $db_path/current_DB") && die "Couldn't create new 'Current_DB' symlink\n";
+
+# archive old GFF splits directory'
+print LOG "Archiving GFFsplits directory using GFFsplitter -a\n\n";
+system("GFFsplitter -a") && die "Couldn't run GFFsplitter -a\n";
 
 
 ##################
@@ -171,17 +175,17 @@ __END__
 
 =back
 
-This script replaces archive_dbs.pl, the script that would be run at the 
-start of the build.
-
- It does what that script used to do, i.e.
+This script:
 
  1) checks to see if there are three existing (and unpacked) WS releases 
  in /wormsrv2. If there are, then it archives the oldest release away into 
  /wormsrv2/wormbase_archive
  2) Does a similar thing with Wormpep releases in /wormsrv2/WORMPEP
- but it also does a few more things that have to be done before the build 
- proper can start.
+ but 
+ 3) Runs GFFsplitter -a to archive away the last GFF_SPLITS directory
+ 4) Copies autoace into a separate WSxx directory
+ 5) updates the /wormsrv2/current_DB symlink to point to the directory created
+    in step 4.
 
 finish_build.pl MANDATORY arguments:
 
