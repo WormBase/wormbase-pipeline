@@ -1105,6 +1105,12 @@
                                         // double-click shows the method
 
 
+// A tiny class to support ?Protein.  The Remark should explain a bit more about what the Database_field object
+// refers to
+
+?Database_field Remark Text
+
+
 ?Motif	Match_sequence  UNIQUE Text	// Text is the DNA or protein sequence
 	Num_mismatch UNIQUE Int		// Allowed number of mismatches when matching
 					// (default 0)
