@@ -5,7 +5,7 @@
 # by Anthony Rogers                             
 #
 # Last updated by: $Author: ar2 $               
-# Last updated on: $Date: 2002-12-13 11:09:37 $         
+# Last updated on: $Date: 2002-12-13 11:17:24 $         
 
 #################################################################################
 # Initialise variables                                                          #
@@ -34,9 +34,9 @@ GetOptions("update"        => \$update,
 	   );
 
 # do all of the data sets if -all
-if ($all) {
-    $c2g = 1; $a2c = 1; $g2p = 1;
-}
+#if ($all) {
+#    $c2g = 1; $a2c = 1; $g2p = 1;
+#}
 
 ##############################
 # database paths             #
