@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: krb $
-// Last edited on: $Date: 2004-06-02 15:05:54 $
+// Last edited on: $Date: 2004-06-04 09:40:41 $
  
 
 
@@ -903,6 +903,7 @@
 		  Genetic_code UNIQUE ?Genetic_code // krb 030506
 		  Date DateType Text			// Text for comments on operation
 		  Date_directory UNIQUE Text	        // date of this version for cosmids, changed sdm 000731 to text
+		  Life_stage UNIQUE ?Life_stage // to capture details of ESTs that are from different libraries
 		  Species UNIQUE ?Species
 	  Visible	Title UNIQUE ?Text
 			Matching_CDS ?CDS XREF Matching_cDNA
