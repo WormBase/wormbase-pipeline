@@ -7,8 +7,8 @@
 #
 # dl
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2003-04-30 16:28:20 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2003-05-01 10:28:06 $
 
 use lib "/wormsrv2/scripts/";
 use Wormbase;
@@ -42,7 +42,7 @@ GetOptions (
 	    );
 unless ($no_go) {
   system("make_Interpro2GO_mapping.pl") and die "cant update the interpro to GO term mappings\n";
-  my %Ip2Go = &FetchData('interpro2go');
+  %Ip2Go = &FetchData('interpro2go');
 }
 # Display help if required
 &usage("Help") if ($help);
