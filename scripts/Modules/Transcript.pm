@@ -33,149 +33,95 @@ sub map_cDNA
     }
     else {
       #this must overlap - check exon matching
-      $self->check_exon_match( $cdna );
-      return 1;
+      my $match = $self->check_exon_match( $cdna );
+      return $match;
     }
   }
 
-
-sub check_exon_match 
-  {
-    my $self = shift;
-    my $cdna = shift;
-
-    #check if cDNA exon fits with gene model
-    foreach my $cExonStart (keys %{$cdna->exon_data}) {
-      my $gExonS;
-      # do cDNA and gene share exon start position
-      if ( $self->{'exons'}->{"$cExonStart"} ) {
-	if ($self->{'exons'}->{"$cExonStart"} == $cdna->{'exons'}->{"$cExonStart"} ) {
-	  #exact match
-	  print "\tExact Match\n" if $verbose;
-	}
-	#is this final gene exon
-	elsif ( $cExonStart == $self->last_exon->[0] ) {
-	  if( $cdna->{'exons'}->{"$cExonStart"} > $self->last_exon->[1] ) {
-	    print "\tMatch - last gene exon\n" if $verbose;
-	  }
-	  else {
-	    print STDERR "MISS : cDNA splices in last gene exon\n" if $verbose;
-	  }
-	}
-	# or final cDNA exon
-	elsif ( $cExonStart == $cdna->last_exon->[0] ) {
-	  # . . must terminate within gene exon
-	  if ( $cdna->{'exons'}->{"$cExonStart"} > $self->{'exons'}->{"$cExonStart"} ) {
-	    print STDERR "\tMISS - ",$cdna->name," $cExonStart => ",$cdna->{'exons'}->{$cExonStart}," extends over gene exon boundary\n" if $verbose;
-	    return 0;
-	  } else {
-	    print "\tMatch - last cDNA exon\n" if $verbose;
-	  }
-	}
-      }
-      # do cDNA and gene share exon end position
-      elsif ( ( $gExonS = $self->_exon_that_ends( $cdna->{'exons'}->{"$cExonStart"} ) and ($gExonS != 0) ) ) {
-	#	# shared exon end
-	
-	if ( $gExonS == $self->first_exon->[0] ) { #is this the 1st gene exon 
-	  if ( $cExonStart == $cdna->first_exon->[0] ) { # also cDNA start so always match
-	    print "\tMatch - 1st exons overlap\n" if $verbose;
-	  }
-	  elsif ( $cExonStart < $self->first_exon->[0] ) { # cDNA exon overlap 1st gene exon
-	    print "\tMatch - cDNA exon covers 1st gene exon\n" if $verbose;
-	  }
-	  else {
-	    print STDERR "\tMISS - cDNA exon splices in gene exon\n" if $verbose;
-	    print STDERR "\t\t",$cdna->name," $cExonStart => ",$cdna{'exons'}->{$cExonStart},"\n" if $verbose;
-	    print STDERR "\t\t",$self->name," $gExonS => ",$self->{'exons'}->{$gExonS},"\n" if $verbose;
-	    return 0;
-	  }
-	}
-	# exon matched is not 1st of gene
-	elsif ( ($cExonStart == $cdna->first_exon->[0] ) and # start of cDNA
-		($cExonStart >$gExonS ) ) { # . . . is in gene exon
-	  print"\tMatch - 1st exon of cDNA starts in exon of gene\n" if $verbose;
-	} 
-	else {
-	  print STDERR "MISS - exon ",$cdna->name," : $cExonStart => ",$cdna{'exons'}->{$cExonStart}," overlaps start of gene exon : $gExonS => ",$self->{'exons'}->{$gExonS},"\n" if $verbose;
-	  return 0;
-	}
-      }# cDNA_wholelyInExon
-      elsif ( $self->_cDNA_wholelyInExon($cdna) ) {
-	print "Match cDNA contained in exon\n" if $verbose;
-      }
-      # cDNA exon overlaps gene 1st exon start and terminate therein
-      elsif( ( $cExonStart == $cdna->last_exon->[0] ) and #  last exon of cDNA
-	     ( $cExonStart < $self->first_exon->[0] ) and 
-	     ( $cdna->last_exon->[1] > $self->first_exon->[0] and $self->first_exon->[0] <$self->first_exon->[1] )
-	   ) {
-	print "\tcDNA final exon overlaps first exon of gene and end therein\n" if $verbose;
-      }
-      # cDNA exon starts in final gene exon and continues past end
-      elsif( ($cdna->start > $self->last_exon->[0]) and 
-	     ($cdna->start < $self->last_exon->[1]) and 
-	     ($cdna->first_exon->[1] > $self->last_exon->[1] )
-	   ) {
-	print "final cDNA exon starts in final gene exon and continues past end\n" if $verbose;
-      }
-      else {
-	# doesnt match
-	print STDERR $cdna->name," doesnt match ",$self->name,"\n";
-	return 0;
-      }
-    }
-    $self->add_matching_cDNA( $cdna );
-  }
-
-sub _cDNA_wholelyInExon
-  {
-    my $self = shift;
-    my $cdna = shift;
-
-    foreach ( keys %{$self->exon_data} ) {
-      if ( $cdna->start > $_ and $cdna->end < $self->{'exons'}->{$_} ) {
-	return 1;
-      }
-    }
-    return 0;
-  }
 
 
 sub add_matching_cDNA
   {
     my $self = shift;
     my $cdna = shift;
-    print STDERR $cdna->name," matches ",$self->name,"\n";
-
+    #print STDERR $cdna->name," matches ",$self->name,"\n";
     push( @{$self->{'matching_cdna'}},$cdna);
+
+###### modify current transcript structure to incorporate new cdna #####
+
+#   match_codes
+#  1 = Exact Match
+# *2 = last SeqObj exon                   ( so may extend past exon end )
+#  3 = last cDNA exon                     ( so may stop within exon )
+# *4 = 1st exons end in same place
+# *5 = cDNA exon covers 1st gene exon
+#  6 = 1st exon of cDNA starts in exon of SeqObj
+#  7 = Match cDNA contained in exon
+# *8 = cDNA final exon overlaps first exon of gene and end therein
+# *9 = final cDNA exon starts in final gene exon and continues past end
+# *10 = 5'UTR exon
+# *11 = 3'UTR exon
+
+########################################################################
+
+    
+    foreach $exon ( @{$cdna->sorted_exons} ) {
+      my $match_code = $exon->[2];
+      next if  ($match_code == 1 or $match_code == 3 or $match_code == 6 or $match_code == 7);
+
+      #extend 3'
+      if( $match_code == 2 or $match_code == 9 ) {
+	# cdna overlaps last exon so extend.
+	$self->exon_data->{"$exon->[0]"} = $cdna->exon_data->{"$exon->[0]"};
+      }
+      #extend 5'
+      elsif( $match_code == 4  or $match_code == 5 or $match_code == 8 ) {
+	# 1st exons overlap so extend 5'
+	my $curr_start = $self->start;
+
+	next if( $curr_start < $exon->[0] );
+
+	my $exon_end = $self->sorted_exons->[0]->[1];
+
+	delete $self->exon_data->{$curr_start};
+	$self->exon_data->{"$exon->[0]"} = $exon_end;
+      }
+      elsif( $match_code == 10  or $match_code == 11 ) {
+	#add exon to UTR
+	$self->exon_data->{"$exon->[0]"} = $exon->[1];
+      }
+    }
+    # reset start end etc . . 
+    $self->sort_exons;
   }
 
 sub report
   {
     my $self = shift;
-    return unless $self->{'matching_cdna'};
-    print STDERR "\nTranscript : \"", $self->name,"\"matches ",scalar @{$self->{'matching_cdna'}}," cDNAs\n";
+    my $fh = shift;
+    my $coords = shift;
 
-    my %transcript = %{$self->exon_data};
-    my @span = [( $self->start, $self->end) ];
+    my @clone_coords = $coords->LocateSpan($self->chromosome, $self->start,$self->end );
 
-    foreach my $cdna ( @{$self->{'matching_cdna'}} ) {
-      print STDERR "Matching_cDNA \"",$cdna->name,"\" \n";
+    # output S_Parent for transcript
+    print $fh "\nSequence : $clone_coords[0]\n";
+    print $fh "Transcript \"",$self->name,"\" $clone_coords[1] $clone_coords[2]\n";
 
-      foreach my $cdna_exon ( keys %{$cdna->exon_data} ) {
-	# same as exists
-	if( $transcript{$cdna_exon} = $cdna->exon_data->{$cdna_exon} ) {
-	  next;
-	}
-	# start before what exists already
-	elsif( $cdna_exon < $span[0] ) {
-	  #. . and end before ie extend 5'UTR
-	  if( $cdna->exon_data->{$cdna_exon} < $span[0] ) {
-	    $transcript{$cdna} = $cdna->exon_data->{$cdna_exon};
-	  }
-	  else 
-	    {
+    # . . and the transcript object
+    print $fh "\nTranscript : \"", $self->name,"\"\n";
+    my $start = $self->start - 1;
+    foreach $exon ( @{$self->sorted_exons} ) {
+      $exon->[0] = $exon->[0] - $start;
+      $exon->[1] = $exon->[1] - $start;
+      print $fh "Source_exons\t$exon->[0]\t$exon->[1]\n";
     }
+
+    # . . and Matching_cDNA
+    foreach (@{$self->{'matching_cdna'}}) {
+      print $fh "Matching_cDNA \"",$_->name,"\"\n";
+    }
+    # .. and method
+    print $fh "Method Coding_transcript\n";
   }
 
 

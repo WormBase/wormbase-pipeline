@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2004-04-26 14:36:08 $
+# Last edited on: $Date: 2004-05-04 09:09:02 $
 
 
 
@@ -1037,7 +1037,7 @@ sub parse_homol_data {
 		    "worm_brigpep_motif_info.ace",
 		    #protein info
 		    "ipi_hits.ace", 
-		    "gadfly.ace",
+		    "flybase.ace",
 		    "yeast.ace",
 		    "swissproteins.ace",
 		    "tremblproteins.ace",

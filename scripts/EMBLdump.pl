@@ -2,7 +2,7 @@
 #
 # EMBLDump.pl :  makes EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2004-02-04 16:20:03 $
+#  Last updated on: $Date: 2004-05-04 09:09:02 $
 #  Last updated by: $Author: ar2 $
 
 use strict;
@@ -145,6 +145,8 @@ while (<EMBL>) {
     print OUT "AC   ",substr($clone2sv{$id},0,-2),";\nXX\n";
     next;
   }
+
+  if( /^CC
 
   # DE   Caenorhabditis elegans cosmid C05G5    
   if (/^DE   Caenorhabditis elegans cosmid (\S+)/) {

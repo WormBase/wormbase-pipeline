@@ -25,7 +25,7 @@ die "$usage" unless (GetOptions("f1=s"    => \$file1,
                                 "c2=s"    => \$condition2,
 			        "sort"    => \$sort));
 
-unless ($file1 && $file2) {
+unless (-e $file1 && -e $file2) {
     die "$usage";
 }
 

@@ -69,7 +69,8 @@ sub make_build_log
     $0 =~ m/([^\/]*$)/ ? $filename = $0 :  $filename = $1 ; # get filename (sometimes $0 includes full path if not run from its dir )
 
     # Create history logfile for script activity analysis
-    $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");     
+    $0 =~ m/\/*([^\/]+)$/; 
+    system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`") unless $debug;
 
     my $path = "/wormsrv2/logs";
     if( defined $debug ) {

@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2004-04-26 15:10:22 $
+# Last edited on: $Date: 2004-05-04 09:09:03 $
 
 
 use DBI;
@@ -448,11 +448,11 @@ if( $prep_dump ) {
   if( -e "/wormsrv2/autoace/CHROMOSOMES/CHROMOSOME_X.gff") {
     &run_command("cat /wormsrv2/autoace/CHROMOSOMES/*.gff | $scripts_dir/gff2cds.pl > /nfs/acari/wormpipe/Elegans/cds$WS_version.gff");
     &run_command("cat /wormsrv2/autoace/CHROMOSOMES/*.gff | $scripts_dir/gff2cos.pl > /nfs/acari/wormpipe/Elegans/cos$WS_version.gff");
-    &run_command("$scripts_dir/prepare_dump_blastx.pl > $wormpipe_dir/dumps/accession2clone.list");
     &run_command("cp /wormsrv2/WORMPEP/wormpep$WS_version/wormpep.diff$WS_version $wormpipe_dir/dumps/");
     &run_command("cp /wormsrv2/WORMPEP/wormpep$WS_version/new_entries.WS$WS_version $wormpipe_dir/dumps/");
     &run_command("cp /wormsrv2/autoace/COMMON_DATA/wormpep2cds.dat $wormpipe_dir/dumps/");
     &run_command("cp /wormsrv2/autoace/COMMON_DATA/cds2wormpep.dat $wormpipe_dir/dumps/");
+    &run_command("cp /wormsrv2/autoace/COMMON_DATA/accession2clone.dat $wormpipe_dir/dumps/");
     
     system("touch $wormpipe_dir/DUMP_PREP_RUN");
   }

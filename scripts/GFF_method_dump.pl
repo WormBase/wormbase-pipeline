@@ -40,7 +40,8 @@ open (WRITEDB,"| $giface $database") or die "failed to open giface connection to
 foreach my $chromosome ( @chromosomes ) {
   if ( @methods ) {
     foreach my $method ( @methods ) {
-      my $command = "gif seqget CHROMOSOME_$chromosome +method $method; seqfeatures -version 2 -file $dump_dir/CHROMOSOME_${chromosome}_${method}.gff";
+      my $command = "gif seqget CHROMOSOME_$chromosome +method $method; seqfeatures -version 2 -file $dump_dir/CHROMOSOME_${chromosome}_${method}.gff\n";
+      print "$command";
       print WRITEDB $command;
     }
   }
@@ -80,7 +81,7 @@ sub check_options {
   if ( $database ){
     if( -e "$database" ) {
       if( -e "$database/wspec/models.wrm" ) {
-	print "$database OK\nDumping ",@methods," for chromosomes ",@chromosomes,"\n";
+	print "$database OK\nDumping @methods for chromosomes @chromosomes\n";
 	return;
       }
     }
