@@ -9,7 +9,7 @@
 # 
 #
 # Last updated by: $Author: ar2 $                     
-# Last updated on: $Date: 2002-07-30 13:45:01 $     
+# Last updated on: $Date: 2002-07-30 14:43:56 $     
 
 
 use strict;                                     
@@ -28,7 +28,7 @@ my $rundate     = `date +%y%m%d`; chomp $rundate;
 my $runtime     = `date +%H:%M:%S`; chomp $runtime;
 our $log        = "/wormsrv2/logs/build_pepace.$rundate";
 
-my $ver = 82;#&get_wormbase_version();
+my $ver = 81;#&get_wormbase_version();
 my $wormpepdir = "/wormsrv2/WORMPEP/wormpep$ver";
 
 open( LOG, ">$log") || die "cant open $log";
@@ -89,29 +89,40 @@ while(<HISTORY>)
 		    
 		  }
 		#is this an isoform of a pre-exisiting gene?
-		elsif( $gene =~ m/((\w+\.\d+)\w*)/)
+		elsif( $gene =~ m/(\w+\.\d+)(\w*)/)
 		  {
-		    $stem = $2;     #eg FK177.8
-		    $isoform = $1;  #eg FK177.8a
+		    $stem = $1;     #eg FK177.8
+		    $isoform = $2;  #eg a
 		    
-		    if( $existingGene =~ m/^($stem)\w*/ )
+		    if( $existingGene =~ m/^($stem)(\w*)/ )
 		      {
 			#$gene is isoform
-			if( $CE_live{$CE} == 1 )
+			my $existingIform = $2;
+			if( defined($existingIform))
 			  {
-			    #Became isoform
-			    # ZK177.8  CE02097 8 
-			    # ZK177.8a CE02097 11
-			    $handled = &becameIsoform; 
-			    last;
+			    # Existing peptide is coded for by isoform of same gene
+			    # This may occur due to curation changes as well actual genes doing this
+			    
+			    # Do nothing! Let this fall thru to multiply coded peptides
 			  }
 			else
 			  {
-			    #Reappeared as isoform to 
-			    # ZK177.8  CE02097 8 11
-			    # ZK177.8a CE02097 12
-			    $handled = &reappearedAsIsoform;
-			    last;
+			    if( $CE_live{$CE} == 1 )
+			      {
+				#Became isoform
+				# ZK177.8  CE02097 8 
+				# ZK177.8a CE02097 11
+				$handled = &becameIsoform; 
+				last;
+			      }
+			    else
+			      {
+				#Reappeared as isoform to 
+				# ZK177.8  CE02097 8 11
+				# ZK177.8a CE02097 12
+				$handled = &reappearedAsIsoform;
+				last;
+			      }
 			  }		    
 		      }
 		  }
