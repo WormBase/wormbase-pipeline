@@ -10,7 +10,7 @@ use DBI;
 use Getopt::Long;
 use DB_File;
 
-my ($version, $map, $worm, $start_clone);
+my ($version, $map, $worm, $start_clone, $modifed);
 my @analysis;
 my @clones;
 GetOptions ("version=s"      => \$version,
@@ -18,7 +18,8 @@ GetOptions ("version=s"      => \$version,
 	    "worm"           => \$worm,
 	    "restart=s"      => \$start_clone,
 	    "analysis=s"     => \@analysis,
-	    "update_clone=s" => \@clones
+	    "clone=s"        => \@clones,
+	    "modified"       => \$modifed
 	   );
 
 @analysis = split(/,/,join(',',@analysis));
@@ -57,11 +58,11 @@ $org2acedb{briggsae} = "BP:";
 $org2acedb{human} = "never_used"; #this should always be done in sub getPrefix. This is here to check for valid analysis selection
 
 
-my %worm_dna_processIds = ( 'worm'       => '2',
+my %worm_dna_processIds = ( 'worm'          => '2',
 			    'briggae'       => '3',
-			    'human'     => '4',
+			    'human'         => '4',
 			    'yeast'         => '5',
-			    'fly'        => '6',
+			    'fly'           => '6',
 			    'slimswissprot' => '7',
 			    'slimtrembl_1'  => '8',
 			    'slimtrembl_2'  => '9',
