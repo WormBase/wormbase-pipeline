@@ -6,8 +6,8 @@
 #
 # Builds a wormrna data set from the current autoace database
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2002-11-13 17:48:02 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2002-11-21 09:19:08 $
 
 
 #################################################################################
@@ -210,6 +210,7 @@ close mailLOG;
  # hasta luego                #
  ##############################
 
+$db->close;
 exit(0);
 
 #################################################################################
