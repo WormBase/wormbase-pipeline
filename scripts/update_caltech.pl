@@ -4,11 +4,11 @@
 
 # by Chao-Kung Chen [030113]
 
-# Last updated on: $Date: 2003-01-13 17:04:13 $
+# Last updated on: $Date: 2003-01-24 11:00:12 $
 # Last updated by: $Author: ck1 $
 
 
-# Automatically update Geneace with Erich's phenotype annotation update
+# Automatically update Geneace with Erich's functional annotation update
 
 use strict;                    
 use lib "/wormsrv2/scripts/";
