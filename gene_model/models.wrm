@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.20 2001-11-15 14:42:38 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.21 2001-11-29 10:15:36 dl1 Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -795,6 +795,7 @@
 						snRNA UNIQUE Text
 						scRNA UNIQUE Text
 						stRNA UNIQUE Text         // [010723 dl]
+						miRNA UNIQUE Text         // [011129 dl]
 						misc_RNA UNIQUE Text
 			Status	Received UNIQUE DateType
 				Library_construction UNIQUE DateType
