@@ -7,7 +7,7 @@
 # Script to convert cgc strain file into ace file for geneace
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-07-15 12:41:29 $
+# Last updated on: $Date: 2002-07-22 11:18:03 $
 
 use strict;
 use Getopt::Std;
@@ -77,10 +77,10 @@ while(<INPUT>){
 #  print "BEFORE: $genotype\n";
 
   # find simple locus allele combinations e.g. spt-3(hc184)
-  while($genotype =~ m/([a-z]{3}\-\d+)\(([a-z]{1,2}\d+)\)/){
+  while($genotype =~ m/([Ca-z\-]{3,6}\-\d+)\(([a-z]{1,2}\d+)\)/){
     $loci[$counter] = $1;
     $alleles[$counter] = $2;
-    $genotype =~ s/[a-z]{3}\-\d+\([a-z]{1,2}\d+\)//;
+    $genotype =~ s/[Ca-z\-]{3,6}\-\d+\([a-z]{1,2}\d+\)//;
     $counter++;
   }
   
@@ -101,12 +101,12 @@ while(<INPUT>){
   
   # find double barrelled alleles (revertants) e.g. daf-12(rh61rh412) 
   $counter = 0;
-  while($genotype =~ m/([a-z]{3}\-\d+)\(([a-z]{1,2}\d+)([a-z]{1,2}\d+)\)/){
+  while($genotype =~ m/([Ca-z\-]{3,6}\-\d+)\(([a-z]{1,2}\d+)([a-z]{1,2}\d+)\)/){
     $loci2[$counter] = $1;
     $alleles2[$counter] = $2;
     $counter++;
     $alleles2[$counter] = $3;
-    $genotype =~ s/[a-z]{3}\-\d+\([a-z]{1,2}\d+[a-z]{1,2}\d+\)//;
+    $genotype =~ s/[Ca-z\-]{3,6}\-\d+\([a-z]{1,2}\d+[a-z]{1,2}\d+\)//;
     $counter++;
   }
 
@@ -121,9 +121,9 @@ while(<INPUT>){
 
   # find any skulking loci missed by steps above
   $counter =0;
-  while($genotype =~ m/[a-z]{3}\-\d+/){
+  while($genotype =~ m/[Ca-z\-]{3,6}\-\d+/){
     $loci3[$counter] = $1;
-    $genotype =~ s/[a-z]{3}\-\d+//;
+    $genotype =~ s/[Ca-z\-]{3,6}\-\d+//;
     $counter++;
   }
   
