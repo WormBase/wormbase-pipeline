@@ -7,7 +7,7 @@
 # Builds a wormpep data set from the current autoace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-08-11 10:44:55 $
+# Last updated on: $Date: 2004-08-15 12:14:02 $
 
 
 use strict;
@@ -500,7 +500,7 @@ sub retrieve_cds_data{
       $cds2protein_db{$cds} = $prot_db;
       
       # confirmed CDS - [EST|mRNA] data
-      if (defined($confirmed)) {
+      if ($confirmed) {
 	$cds_status{$cds} = "Confirmed";
       }
       # supported CDS - [EST] data
