@@ -4,7 +4,7 @@
 
 # by Chao-Kung Chen [030113]
 
-# Last updated on: $Date: 2003-04-04 16:04:58 $
+# Last updated on: $Date: 2003-04-04 16:09:18 $
 # Last updated by: $Author: ck1 $
 
 
@@ -40,14 +40,13 @@ if ($debug){
 ##################################################
 # check user is wormpub otherwise script won't run
 ##################################################
-=start
+
 my $user = `whoami`; chomp $user;
 if ($user ne "wormpub"){
   print "\nYou have to be wormpub to run this script!\n\n";
   exit(0);
 }
-=end
-=cut
+
 ###############################
 # touch logfile for run details
 ###############################
