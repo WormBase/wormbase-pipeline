@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-07-25 10:08:51 $
+# Last updated on: $Date: 2003-07-25 11:02:39 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -195,8 +195,11 @@ sub copy_misc_files{
   # zip and copy interpolated map across from /wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/
 
   chdir "/wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/";
-  system("gzip WS*interpolated_map.txt; cp WS*interpolated_map.txt.gz $targetdir/$release/");
-  
+  system("gzip WS*interpolated_map.txt"); 
+  system("cp ${release}_CDSes_interpolated_map.txt.gz $targetdir/$release/gene_interpolated_map_positions.${release}.gz");
+  system("cp ${release}_Clones_interpolated_map.txt.gz $targetdir/$release/clone_interpolated_map_positions.${release}.gz");
+
+
   $runtime = &runtime;
   print LOG "$runtime: Finished copying misc files\n\n";
 
