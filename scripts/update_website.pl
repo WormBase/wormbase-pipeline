@@ -7,8 +7,8 @@
 # A script to finish the last part of the weekly build by updating all of the
 # relevant WormBase and Wormpep web pages.
 #
-# Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-10-30 17:06:24 $      
+# Last updated by: $Author: ar2 $     
+# Last updated on: $Date: 2003-11-18 17:22:49 $      
 
 
 #################################################################################
@@ -100,7 +100,7 @@ if (defined $test) {
 ($maintainers = $debug . "\@sanger.ac.uk") if ($debug);
 
 # check for command-line options if none given then you do everything
-if (scalar ($ARGV[0]) < 1) {
+unless (defined $ARGV[0]) {
     $all = 1;
 }
 
@@ -571,7 +571,8 @@ sub create_wormpep_page{
   my ($wp_seq,$wp_let);
   open (WP_1, "</wormsrv2/WORMPEP/wormpep$WS_current/wormpep_current.log") || croak "Failed to open wormpep.log\n";
   while (<WP_1>) {
-    if (/==\> (\S+) sequences totalling (\S+) letters/) {
+    # No. of sequences (letters) written:  22,221  (9,696,145)
+    if (/No\. of sequences \(letters\) written:  (\d+,\d+)  \((\d+,\d+,\d+)\)/) {
       ($wp_seq,$wp_let) = ($1,$2);
     }
   }
@@ -681,7 +682,7 @@ sub copy_EST_files{
     print LOG "creating $file.shtml in $www/$WS_name/Checks\n"; 
     open(EST_HTML,">$www/$WS_name/Checks/$file.shtml") || croak "Couldn't create $file.shtml\n";
     
-    print EST_HTML &SangerWeb::header();
+    print EST_HTML &SangerWeb::virtual_header();
     
     print EST_HTML "<TABLE WIDTH=\"100%\" CELLSPACING=\"0\" CELLPADDING=\"0\"><TR VALIGN=\"top\" BGCOLOR=\"darkblue\" ><TD WIDTH=\"100%\"><BR><H2 align=\"center\"><FONT COLOR=\"white\">";
     print EST_HTML "EST analysis: \"$files{$file}\"";
@@ -699,7 +700,7 @@ sub copy_EST_files{
      print EST_HTML "$_";
     }
     print EST_HTML "</PRE></P>";
-    print EST_HTML &SangerWeb::footer();
+    print EST_HTML &SangerWeb::virtual_footer();
     close(EST_TXT);
     close(EST_HTML);
   }
