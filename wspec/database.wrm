@@ -68,6 +68,26 @@ PART :       1   local    ACEDB          block47.wrm  50000    0
 PART :       1   local    ACEDB          block48.wrm  50000    0
 PART :       1   local    ACEDB          block49.wrm  50000    0
 PART :       1   local    ACEDB          block50.wrm  50000    0
+PART :       1   local    ACEDB          block51.wrm  50000    0
+PART :       1   local    ACEDB          block52.wrm  50000    0
+PART :       1   local    ACEDB          block53.wrm  50000    0
+PART :       1   local    ACEDB          block54.wrm  50000    0
+PART :       1   local    ACEDB          block55.wrm  50000    0
+PART :       1   local    ACEDB          block56.wrm  50000    0
+PART :       1   local    ACEDB          block57.wrm  50000    0
+PART :       1   local    ACEDB          block58.wrm  50000    0
+PART :       1   local    ACEDB          block59.wrm  50000    0
+PART :       1   local    ACEDB          block60.wrm  50000    0
+PART :       1   local    ACEDB          block61.wrm  50000    0
+PART :       1   local    ACEDB          block62.wrm  50000    0
+PART :       1   local    ACEDB          block63.wrm  50000    0
+PART :       1   local    ACEDB          block64.wrm  50000    0
+PART :       1   local    ACEDB          block65.wrm  50000    0
+PART :       1   local    ACEDB          block66.wrm  50000    0
+PART :       1   local    ACEDB          block67.wrm  50000    0
+PART :       1   local    ACEDB          block68.wrm  50000    0
+PART :       1   local    ACEDB          block69.wrm  50000    0
+PART :       1   local    ACEDB          block70.wrm  50000    0
 //
 NAME WS58
 TITLE C.elegans database
