@@ -7,7 +7,7 @@
 # This maps alleles to the genome based on their flanking sequence
 #
 # Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2003-01-24 17:20:39 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2003-01-30 11:45:15 $        # quickly see when script was last changed and by whom
 
 
 use strict;
@@ -399,6 +399,7 @@ close GENEACE unless $no_geneace;
 unless ( $debug ) {
   print LOG "\nStart parsing $ace_file in to $database\n\n";
   my $command =<<END;
+pparse $geneace_update_delete
 pparse $ace_file
 save
 quit
@@ -590,27 +591,7 @@ sub FASTAformat
     return $fasta;
   }
 
-#sub UpdateHashes #(hash, file)
-#  {
-#    my $dir = "/wormsrv2/autoace/GFF_SPLITS/WS$ver/";
-#    my $hash = shift;
-#    my $file = shift;
-#    $file = $dir.$file;
-#    my @data;
-#    open (CLONES,"<$file") or die "cant open $file";
-#    while (<CLONES>)
-#      {
-#	if( $_ =~ m/left/ )
-#	  {
-#	    @data = split(/\s+/, $_);
-#	    unless( $data[0] =~m/\#/ )
-#	      {
-#		$data[8] =~ s/\"//g;
-#		$$hash{$data[8]} = $data[2];
-#	      }
-#	  }
-#      }
-#  }
+
 #CHROMOSOME_IV   Genomic_canonical       Sequence        16392472        16417376        .       +       .       Sequence "Y65A5A"
 sub UpdateHashes #(hash, file)
   {
