@@ -7,7 +7,7 @@
 # simple script for changing class of gene objects (e.g. CDS->Pseudogene)
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-09-13 12:57:09 $
+# Last edited on: $Date: 2004-09-13 16:59:05 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -87,8 +87,6 @@ if ($input){
 
     # set CGC to NULL if not specified
     $class = "NULL" if (!$class);
-
-    print "\n\n$seq - $class\n" if ($verbose);
 
     # skip bad looking class fields
     if (!exists ($change{$class})){
@@ -171,9 +169,13 @@ sub process_gene{
 
   # need to handle transposons differently
   if ($new eq "Transposon"){
-    print OUT "History Version_change $new_version now $person Event Made_into_transposon\n";
-    print OUT "-D Live\n";
-    print OUT "WARNING: Extra gene information needs to be removed from $gene\n";
+    print OUT "History Version_change $new_version now $person Event Made_into_transposon\n\n";
+
+    print OUT "Gene $gene\n";
+    print OUT "-D Sequence_name\n";
+    print OUT "-D Map_info\n";
+    print OUT "-D Method\n";
+    print OUT "-D Live\n\n";
   }
   else{
     print OUT "History Version_change $new_version now $person Event Changed_class $old $new\n\n";
@@ -220,7 +222,7 @@ sub seq2gene{
   my ($gene_name) = $db->fetch(-query=>"Find Gene_name $seq");
   if(defined($gene_name) && $gene_name->Sequence_name_for){
     $id = $gene_name->Sequence_name_for->name;
-    print "$seq = $id\n" if ($verbose);
+    print "\n$seq = $id\n" if ($verbose);
     return($id);
   }
   else{
@@ -249,9 +251,16 @@ sub seq2gene{
 A script designed to change the status of genes in geneace.  This is specifically to
 cater for cases where a gene 'changes class', e.g. when a CDS becomes a Pseudogene or 
 a CDS is made into a Transposon.  The result of this is to add one line of history
-information to the gene object and to increment the versio number.  For transposon,
-the Live tag is removed (other data should also be removed from genes which are actually
-transposon encoded CDSs but the script doesn't do this yet).
+information to the gene object and to increment the version number.  For transposons,
+additional changes are needed to 'kill' the gene object, so the following tags are removed:
+
+Live
+Map_info
+Method
+Sequence_name
+
+It is possible that the Gene object has other information attached which may need to be
+removed.
 
 Just like the related script (newgene.pl), the script can process lists of genes if 
 stored in an input file.  The -class option allows for two letters to denote the old and
