@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.18 2001-10-30 15:56:45 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.19 2001-11-15 11:32:11 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -746,6 +746,7 @@
 			Keyword ?Keyword	// EMBL/Genbank
 			DB_annotation ?Database UNIQUE ?LongText
 			EMBL_dump_info #EMBL_dump_info
+	  Web_location  ?Url
 	  Annotation	SwissProt_DE	UNIQUE	Text
 			EC_number	Text
 			Pfam	UNIQUE	Text
