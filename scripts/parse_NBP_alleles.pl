@@ -2,7 +2,7 @@
 
 # Author: Chao-Kung Chen
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-02-12 15:59:36 $ 
+# Last updated on: $Date: 2004-02-27 14:52:17 $ 
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'}; 
@@ -225,7 +225,13 @@ sub get_30_bp_flanks {
       print ACE "Author \"$NBP_info{$allele}->[5]\"\n" if $NBP_info{$allele}->[5] ne "NA";
       print ACE "Flanking_sequences \"$DNA_L\" \"$DNA_R\"\n";
       print ACE "Deletion\n" if $indel_info[3] eq "NA";
-      print ACE "Deletion_with_insertion \"", lc($indel_info[3]),"\"\n" if $indel_info[3] ne "NA";
+      if ($indel_info[3] ne "NA"){
+	print ACE "Deletion_with_insertion \"", lc($indel_info[3]),"\"\n";
+	print ACE "Method \"Deletion_and_insertion_allele\"\n";
+      }
+      else {
+	print ACE "Method \"Deletion_allele\"\n";
+      }
       print ACE "NBP_allele\n";
       print ACE "Species \"Caenorhabditis elegans\"\n";
       print ACE "Phenotype \"$NBP_info{$allele}->[3]\"\n";
@@ -234,7 +240,7 @@ sub get_30_bp_flanks {
       print ACE "MAP \"$chrom\"\n"; 
       print ACE "Remark \"Mutations at cosmid coordinates: $indel_info[6]\"\n";
       print ACE "Remark \"<A href='http:\\/\/www.grs.nig.ac.jp\/c.elegans\/MutantsDetails\?lang=english&seq=$allele_id' target=_new> more on $allele...<\/A>\"\n";
-      print ACE "Method \"Deletion_allele\"\n";
+     
 
       # ----- only for those tm allele having primer information
       if (scalar @{$NBP_info{$allele}->[4]} != 1){
