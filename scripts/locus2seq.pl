@@ -192,7 +192,7 @@ close LOG;
 
 
 #inform any interested parties
-my $notify = "wormbase-dev@wormbase.org";
+my $notify = $maintainer;
     open (OUTLOG,  "|/usr/bin/mailx -s \"new genace updates\" $notify ");
 
         print OUTLOG "updated info linking loci to sequences is available from\n
