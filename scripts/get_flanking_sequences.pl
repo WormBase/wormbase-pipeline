@@ -8,7 +8,7 @@
 # and two coordinates
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-01-10 09:32:57 $      
+# Last updated on: $Date: 2003-04-04 18:01:42 $      
 
 use strict;
 use lib "/wormsrv2/scripts/";                    
@@ -26,7 +26,7 @@ if (!defined $y_coordinate) {$y_coordinate = $x_coordinate;}
 
 print "Looking for flanking sequences to $x_coordinate - $y_coordinate in $sequence\n";
 
-my $dbpath = "/wormsrv2/current_DB";                        # path of ACEDB database
+my $dbpath = "/nfs/disk100/wormpub/DATABASES/current_DB";                        # path of ACEDB database
 my $tace   = &tace;   # path of tace executable
 
 my %right;

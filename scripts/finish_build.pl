@@ -10,10 +10,10 @@
 #    If there are, then it archives the oldest release away into /nfs/wormarchive
 # 2) Does a similar thing with Wormpep releases in /wormsrv2/WORMPEP
 # 3) Archives old GFF_SPLITS directory
-# 4) Makes wormsrv2/current_DB point at latest release
+# 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-04-04 17:28:23 $
+# Last updated on: $Date: 2003-04-04 18:01:42 $
 
 
 

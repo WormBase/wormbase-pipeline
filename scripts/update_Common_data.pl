@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2003-04-01 15:08:18 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2003-04-04 18:01:42 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -75,7 +75,7 @@ if( $update ) {
       print "during build so using $ace_dir - ensure that the data you are updating is actually in the database.\n";
   }
   else {
-      $ace_dir = "/wormsrv2/current_DB";
+      $ace_dir = "/nfs/disk100/wormpub/DATABASES/current_DB";
       print "- NOT as part of build so using $ace_dir. If this is part of the build data MAY be stale\n";
   }
   &Common_data_update;
@@ -299,7 +299,8 @@ However if the build is underway and you want to write out the gene 2 CE info bu
 Common_data.pm -update -ce
 
 
-At the end of the build ( in finish_build.pl) all data will be refreshed to be in synch with the current release ie
+At the end of the build ( in finish_build.pl) all data will be refreshed to be in synch with the current
+ release ie
 
 =item
 

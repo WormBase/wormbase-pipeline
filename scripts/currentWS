@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
 
-my $db = "/wormsrv2/current_DB";
+my $db = "/nfs/disk100/wormpub/DATABASES/current_DB";
 
 open (DISPLAY, 'printenv HOST |');
 while (<DISPLAY>) {

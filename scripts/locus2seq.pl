@@ -5,7 +5,7 @@
 # written by Anthony Rogers (ar2@sanger.ac.uk)
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-04-04 17:31:49 $
+# Last updated on: $Date: 2003-04-04 18:01:42 $
 
 
 use strict;
@@ -240,7 +240,7 @@ EOF
 }
 
 ##########################################
-# Compare data to /wormsrv2/current_DB
+# Compare data to ~wormpub/DATABASES/current_DB
 ##########################################
 sub compare_with_currentDB{
   print LOG "Getting associated lab info from $currentDB:\n\n";
@@ -383,7 +383,7 @@ locus2seq.pl  OPTIONAL arguments:
 
 =item -geneace <path>, location of geneace database
 
-By default this script will compare /wormsrv2/current_DB to /wormsrv2/geneace.  The
+By default this script will compare ~wormpub/DATABASES/current_DB to /wormsrv2/geneace.  The
 -d flag allows you to compare against another copy of geneace (i.e. /wormsrv1/geneace)
 
 =item -camace, update camace

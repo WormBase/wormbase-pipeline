@@ -7,7 +7,7 @@
 # This is a example of a good script template   
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-04-03 13:18:18 $      
+# Last updated on: $Date: 2003-04-04 18:01:42 $      
 
 use strict;                                      
 use lib "/wormsrv2/scripts/";                    
@@ -122,17 +122,7 @@ __END__
 
 =back
 
-This script:
-
- 1) checks to see if there are three existing (and unpacked) WS releases 
- in /wormsrv2. If there are, then it archives the oldest release away into 
- /wormsrv2/wormbase_archive
- 2) Does a similar thing with Wormpep releases in /wormsrv2/WORMPEP
- but 
- 3) Runs GFFsplitter -a to archive away the last GFF_SPLITS directory
- 4) Copies autoace into a separate WSxx directory
- 5) updates the /wormsrv2/current_DB symlink to point to the directory created
-    in step 4.
+This script does...blah blah blah
 
 script_template.pl MANDATORY arguments:
 

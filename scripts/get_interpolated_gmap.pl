@@ -7,8 +7,8 @@
 # This script calculates interpolated gmap for CDS/transcripts lying between as well as outside genetic markers.
 # Output ace file of such information
 
-# Last updated on: $Date: 2003-04-01 11:56:26 $
-# Last updated by: $Author: ck1 $
+# Last updated on: $Date: 2003-04-04 18:01:42 $
+# Last updated by: $Author: krb $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -29,7 +29,7 @@ GetOptions ("diff" => \$diff,
             "rev|reverse" => \$reverse,
            );
 
-my $curr_db_dir = "/wormsrv2/current_DB/";
+my $curr_db_dir = "/nfs/disk100/wormpub/DATABASES/current_DB/";
 #my $autoace_dir = "/wormsrv2/autoace/";
 
 #################################################

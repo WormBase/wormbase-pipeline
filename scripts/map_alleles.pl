@@ -6,8 +6,8 @@
 #
 # This maps alleles to the genome based on their flanking sequence
 #
-# Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2003-03-26 14:10:05 $        # quickly see when script was last changed and by whom
+# Last updated by: $Author: krb $                      # These lines will get filled in by cvs and helps us
+# Last updated on: $Date: 2003-04-04 18:01:42 $        # quickly see when script was last changed and by whom
 
 
 use strict;
@@ -84,7 +84,7 @@ if( $debug )  {
   $allele_fa_file = "$data_dump_dir/alleles.fa";
   $genome_fa_file = "$data_dump_dir/genome.fa";
   $log        = "$data_dump_dir/map_alleles.$rundate";
-  $database = "/wormsrv2/current_DB/" unless $database;
+  $database = "/nfs/disk100/wormpub/DATABASES/current_DB/" unless $database;
   $ver--;
   $ace_file = "$data_dump_dir/mapped_alleles.ace";
   $maintainers = "ar2\@sanger.ac.uk";

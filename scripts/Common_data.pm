@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers                             
 #
-# Last updated by: $Author: dl1 $               
-# Last updated on: $Date: 2003-02-13 13:07:22 $         
+# Last updated by: $Author: krb $               
+# Last updated on: $Date: 2003-04-04 18:01:41 $         
 
 #################################################################################
 # Initialise variables                                                          #
@@ -81,7 +81,7 @@ if( $update ) {
       print "during build so using $ace_dir - ensure that the data you are updating is actually in the database.\n";
   }
   else {
-      $ace_dir = "/wormsrv2/current_DB";
+      $ace_dir = "/nfs/disk100/wormpub/DATABASES/current_DB";
       print "- NOT as part of build so using $ace_dir. If this is part of the build data MAY be stale\n";
   }
   &Common_data_update;

@@ -6,8 +6,8 @@
 #
 # Usage : make_keysets.pl [-options]
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2002-11-13 17:48:02 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2003-04-04 18:01:42 $
 
 #################################################################################
 # variables                                                                     #
@@ -54,7 +54,7 @@ our $tace     = &tace;  # tace executable path
 our $dbpath   = "/wormsrv2/autoace";                      # Database path (live runs)
 
 # Use current_DB if you are testing 
-$dbpath   = "/wormsrv2/current_DB" if ($test);        # Database path (test runs)
+$dbpath   = "/nfs/disk100/wormpub/DATABASES/current_DB" if ($test);        # Database path (test runs)
 
 # only tell Dan if running debug mode
 my $maintainers = "dl1\@sanger.ac.uk" if ($debug);

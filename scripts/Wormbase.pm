@@ -405,7 +405,7 @@ sub clones_in_database {
         $db       = Ace->connect(-path => '/wormsrv2/stlace') || die "Couldn't connect to $name\n", Ace->error;
     }
     else {
-        $db       = Ace->connect(-path => '/wormsrv2/current_DB') || die "Couldn't connect to $name\n", Ace->error;
+        $db       = Ace->connect(-path => '/nfs/disk100/wormpub/DATABASES/current_DB') || die "Couldn't connect to $name\n", Ace->error;
     }
     my @dbclones = $db->fetch(-query => 'FIND Genome_Sequence');
     

@@ -8,7 +8,7 @@
 # to look for bogus sequence entries
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-03-21 15:48:37 $
+# Last updated on: $Date: 2003-04-04 18:01:42 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -33,10 +33,10 @@ $verbose = "ON" if ($opt_v);
 my $test;
 $test = "ON" if ($opt_t);
 
-########################################################
-# Set database details, default is /wormsrv2/current_DB
-########################################################
-our $database = "/wormsrv2/current_DB/";
+#############################################################################
+# Set database details, default is /nfs/disk100/wormpub/DATABASES/current_DB
+##############################################################################
+our $database = "/nfs/disk100/wormpub/DATABASES/current_DB/";
 $database = $opt_d if ($opt_d);
 our $tace = &tace;   # tace executable path
 our $db = Ace->connect(-path  => "$database",
@@ -569,8 +569,8 @@ current_DB_check.pl  OPTIONAL arguments:
 
 =item -d, database
 
-By default this script will check /wormsrv2/current_DB, but you can use the 
--d flag to checkn another database (i.e. /wormsrv2/autoace)
+By default this script will check ~wormpub/DATABASES/current_DB, but you can use the 
+-d flag to check another database (i.e. /wormsrv2/autoace)
 
 =item -t, test
 
