@@ -36,7 +36,7 @@ while (<GFF>) {
 
     @acc = $obj->DB_info->row();
     
-    print "$_ acc=$acc[4]\n";
+    print "$_ acc=$acc[4] ver=$acc[5]\n";
 
     $obj->DESTROY();
 
