@@ -21,7 +21,7 @@
 # 010905 by Kerstin Jekosch
 
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2003-04-27 13:21:30 $
+# Last edited on: $Date: 2003-05-22 08:20:47 $
 
 
 use strict;
@@ -512,9 +512,9 @@ if ($opt_i) {
 		    (printf CI_stl "Confirmed_intron %d %d EST\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($stlace{$superlink});
 		}
 		if ($opt_y) {
-		    printf CI_auto "Confirmed_intron %d %d OST\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1];
-		    (printf CI_cam "Confirmed_intron %d %d OST\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($camace{$superlink});
-		    (printf CI_stl "Confirmed_intron %d %d OST\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($stlace{$superlink});
+		    printf CI_auto "Confirmed_intron %d %d EST\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1];
+		    (printf CI_cam "Confirmed_intron %d %d EST\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($camace{$superlink});
+		    (printf CI_stl "Confirmed_intron %d %d EST\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($stlace{$superlink});
 		}
 		$double{$merge} = 1;
 	    }
