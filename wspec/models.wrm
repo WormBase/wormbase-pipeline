@@ -1141,6 +1141,7 @@
           DB_info  Database ?Database ?Database_field UNIQUE ?Accession_number XREF Protein
                    Gene_name  ?Text
                    Description   UNIQUE ?Text
+		   Molecular_weight Text #Evidence
           Origin   Species ?Species   //XREF Protein in geneace
                    Wormpep History Int Text ?Text //new history logging [020801 krb]
                    Live       // new tag to replace use of 'Inactive' krb 06/12/01
@@ -1161,7 +1162,7 @@
                 Homol_homol ?Homol_data XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
           Feature ?Method Int Int UNIQUE Float  // display according to method
                                         // double-click shows the method
-
+	  Remark ?Text #Evidence
 
 // A tiny class to support ?Protein.  The Remark should explain a bit more about what the Database_field object
 // refers to
