@@ -190,7 +190,7 @@ print "deleted the old sym_link and create the new one\n" if ($debug);
 # delete the old WS release version
 if ($clean) {
     $old_release_number = $release =~ s/WS//g;
-    $old_release_number = $old_release_nubmber - 2;
+    $old_release_number = $old_release_number - 5;
     $old_release = "WS" . $old_release_number;
 
     system "rm -rf $targetdir/$old_release";
