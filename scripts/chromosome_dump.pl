@@ -8,7 +8,7 @@
 # see pod for more details
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-05-23 13:23:32 $      
+# Last updated on: $Date: 2003-09-23 08:15:54 $      
 
 
 use strict;
@@ -58,6 +58,9 @@ if($database && !$dump_dir){
 }
 if(!$database && $dump_dir){
   die "You have specified a destination directory to dump to (-dump_dir flag) but not\na source database (-database flag).\n";
+}
+if(!$gff && !$dna && !$composition && !$zipgff && !$zipdna){
+  die "No major option (-dna, -gff, -composition, -zipdna, or -zipgff) has been specified, try again\n";
 }
 
 # revert to defaults if no arguments specified
@@ -278,25 +281,6 @@ the six nuclear chromosomes, plus one file for the mitochondrial chromosome.
 
 =over 4
 
-=item -composition (optional)
-
-Calculates composition statistics for any dna files that are generated.
-Use in combination with -d option (see above).  Excludes mitochondrial 
-chromosome.
-
-=back
-
-
-=over 4
-
-=item -h
-
-Show these help files.
-
-=back
-
-=over 4
-
 =item -gff
 
 Dump gff files, dumps one file for each chromosome in the database.
@@ -305,6 +289,14 @@ Dump gff files, dumps one file for each chromosome in the database.
 
 
 =over 4
+
+=item -composition (optional)
+
+Calculates composition statistics for any dna files that are generated.
+Use in combination with -d option (see above).  Excludes mitochondrial 
+chromosome.
+
+=back
 
 =item -database <database>
 
@@ -316,13 +308,12 @@ the script will dump from /wormsrv2/autoace by default
 
 =over 4
 
-=item -dest <destination directory for dump files>
+=item -dump_dir <destination directory for dump files>
 
 Specify destination of the dna and/or gff dump files generated from the -dna or -gff options.
-If -dest is not specified, dump files will be written to /wormsrv2/autoace/CHROMOSOMES by default
+If -dump_dir is not specified, dump files will be written to /wormsrv2/autoace/CHROMOSOMES by default
 
 =back
-
 
 
 =over 4
@@ -334,7 +325,6 @@ option will be run before this stage if -composition is specified.
 
 =back
 
-
 =over 4
 
 =item -zipgff (optional) 
@@ -343,6 +333,27 @@ Compresses any gff files using gzip (will remove any existing files first).
 
 =back
 
+=over 4
+
+=item -help
+
+Show these help files.
+
+=back
+
+
+=over 4
+
+=item -debug <user>
+
+Only email log file to specified user
+
+=back
+
+
+=over 4
+
+=over 4
 
 =head1 AUTHOR - Keith Bradnam
 
