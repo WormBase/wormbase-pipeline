@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-07-29 11:54:48 $
+# Last updated on: $Date: 2003-07-30 12:44:50 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -33,6 +33,7 @@ our ($log, $erichlog, $jahlog, $JAHmsg, $Emsg, $caltech, @CGC, $cgc);
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $acefile = "/wormsrv2/logs/geneace_check_ACE.$rundate.$$";
 my $curr_db = "/nfs/disk100/wormpub/DATABASES/current_DB"; 
+my $def_dir = "/wormsrv1/geneace/wquery";
 
 GetOptions ("h|help"        => \$help,
             "d|debug=s"     => \$debug,
@@ -188,7 +189,7 @@ sub check_evidence {
 
 
 my $WBPerson_F_M_L_names=<<EOF;
-Table-maker -p "/wormsrv1/geneace/wquery/WBperson_first_middle_last_names.def" quit
+Table-maker -p "$def_dir/WBperson_first_middle_last_names.def" quit
 EOF
 
   my @WBPerson = &process_WBPerson_names($WBPerson_F_M_L_names, $curr_db);
@@ -541,7 +542,7 @@ sub process_locus_class{
   print "\nLooking for new loci in /nfs/disk100/wormpub/DATABASES/current_DB:\n\n";
 
   my $get_seg_with_pseudogene_locus=<<EOF;
-  Table-maker -p "/wormsrv1/geneace/wquery/get_all_seq_with_pseudogene_and_locus.def" quit
+  Table-maker -p "$def_dir/get_all_seq_with_pseudogene_and_locus.def" quit
 EOF
  
   &find_new_loci_in_current_DB($get_seg_with_pseudogene_locus, $db);
@@ -549,22 +550,22 @@ EOF
   #Look for loci that are other_names and still are obj of ?Locus -> candidate for merging
  
   my $locus_has_other_name=<<EOF;
-  Table-maker -p "/wormsrv1/geneace/wquery/locus_has_other_name.def" quit
+  Table-maker -p "$def_dir/locus_has_other_name.def" quit
 EOF
   
   &loci_as_other_name($locus_has_other_name, $default_db, $db);
 
   my $locus_to_CDS=<<EOF;
-  Table-maker -p "/wormsrv1/geneace/wquery/locus_to_CDS.def" quit
+  Table-maker -p "$def_dir/locus_to_CDS.def" quit
 EOF
 
   &loci_point_to_same_CDS($locus_to_CDS, $default_db);
 
   my $cgc_approved_and_non_cgc_name=<<EOF;
-  Table-maker -p "/wormsrv1/geneace/wquery/cgc_approved_and_non_cgc_name.def" quit
+  Table-maker -p "$def_dir/cgc_approved_and_non_cgc_name.def" quit
 EOF
   my $cgc_approved_has_no_cgc_name=<<EOF;
-  Table-maker -p "/wormsrv1/geneace/wquery/cgc_approved_has_no_cgc_name.def" quit
+  Table-maker -p "$def_dir/cgc_approved_has_no_cgc_name.def" quit
 EOF
   
   &gene_name_class($cgc_approved_and_non_cgc_name, $cgc_approved_has_no_cgc_name, $default_db); 
@@ -573,33 +574,33 @@ EOF
   # check locus in geneace that are connected to CDS but not CGC_approved
     
   my $cgc_loci_not_linked_to_geneclass=<<EOF;
-  Table-maker -p "/wormsrv1/geneace/wquery/CGC_loci_not_linked_to_geneclass.def" quit
+  Table-maker -p "$def_dir/CGC_loci_not_linked_to_geneclass.def" quit
 EOF
   my $get_all_gene_class=<<EOF;
-  Table-maker -p "/wormsrv1/geneace/wquery/get_all_gene_class.def" quit
+  Table-maker -p "$def_dir/get_all_gene_class.def" quit
 EOF
   my $locus_to_CDS_but_not_CGC_approved=<<EOF;
-  Table-maker -p "/wormsrv1/geneace/wquery/locus_to_CDS_but_not_CGC_approved.def" quit
+  Table-maker -p "$def_dir/locus_to_CDS_but_not_CGC_approved.def" quit
 EOF
     
   &locus_CGC($cgc_loci_not_linked_to_geneclass, $get_all_gene_class, $locus_to_CDS_but_not_CGC_approved, $default_db);
 
   my $cds_of_each_locus=<<EOF;
-  Table-maker -p "/wormsrv1/geneace/wquery/cds_of_each_locus.def" quit
+  Table-maker -p "$def_dir/cds_of_each_locus.def" quit
 EOF
   my $seq_name_of_each_locus=<<EOF;
-  Table-maker -p "/wormsrv1/geneace/wquery/seq_name_of_each_locus.def" quit
+  Table-maker -p "$def_dir/seq_name_of_each_locus.def" quit
 EOF
   
   &cds_name_to_seq_name($cds_of_each_locus, $seq_name_of_each_locus, $default_db);
 
  my $no_remark_in_geneclass_for_merged_loci=<<EOF;
-  Table-maker -p "/wormsrv1/geneace/wquery/no_remark_in_geneclass_for_merged_loci.def" quit
+  Table-maker -p "$def_dir/no_remark_in_geneclass_for_merged_loci.def" quit
 EOF
 
   &add_remark_for_merged_loci_in_geneclass($no_remark_in_geneclass_for_merged_loci, $default_db);
 
-  my @map_error = `echo "table-maker -p /wormsrv1/geneace/wquery/locus_has_multiple_maps.def" | $tace $default_db`;
+  my @map_error = `echo "table-maker -p $def_dir/locus_has_multiple_maps.def" | $tace $default_db`;
   foreach (@map_error){
     chomp;
     if ($_ =~ /^\"(.+)\"/){
@@ -607,7 +608,100 @@ EOF
       print LOG "ERROR: $1 has multiple maps attached\n";
     }  
   }
+
+
+  #################################################################################################
+  # checks if locus has positive_clone: 
+  # if yes: checks to see if derived clone from CDS/Transcript already exists, otherwise adds to it
+  # if no: adds derived clone from CDS/Transcript
+  # This check is essential for cloned loci to be appeared as yellow highlighted in gmap
+  #################################################################################################
+
+  # list of loci linked to CDS/Transcript and have/have no positive clone
+  my @loci_pos_clone_seq=`echo "table-maker -p $def_dir/loci_linked-not_linked_2_pos_clone.def" | $tace /wormsrv1/geneace`;
+
+  my (%loci_has_pos_clone, %loci_no_pos_clone, @clone, @parent, %parent);
+  
+  my ($seq, $clone, $locus);
+  my $ace=1;
+  foreach (sort @loci_pos_clone_seq){
+    chomp;
+    if ($_ =~ /^\"(.+)\"\s+\"(.+)\"\s+\"(.+)\"/){
+      my $locus = $1;
+      my $seq = $2;
+      my $clone = $3;
+      $clone =~ s/\..+//;
+      push(@{$loci_has_pos_clone{$locus}}, $seq, $clone);
+    }
+    if ($_ =~ /^\"(.+)\"\s+\"(.+)\"\s+$/){
+      my $locus = $1;
+      my $seq = $2;
+      $loci_no_pos_clone{$locus} = $seq;
+    } 
+  }
+
+  # also write ace file for added derived positive clone to each locus linked to CDS/Transcript
+  
+  foreach (keys %loci_no_pos_clone){
+    $seq = $loci_no_pos_clone{$_};
+    print $seq, "\n";
+    $seq =~ s/\..+//;
+    $locus_errors++;
+    print LOG "WARNING: $_ has no positive_clone, the derived one $seq can be added to it\n";
+    if ($ace){
+      print ACE "\n\nLocus\t\"$_\"\n";
+      print ACE "Positive_clone\t\"$seq\"\n";
+    }							
+  }
     
+  foreach (keys %loci_has_pos_clone){
+    @parent =(); %parent=();
+    if (scalar @{$loci_has_pos_clone{$_}} == 2){
+      $seq = ${@{$loci_has_pos_clone{$_}}}[0];
+      $seq =~ s/\..+//;
+      $clone = ${@{$loci_has_pos_clone{$_}}}[1];
+      if ($seq ne $clone){
+	if ($seq ne $clone){
+	  push(@parent, $seq);
+	}
+      } 
+      foreach my $e (@parent){$parent{$e}++};
+      foreach my $ea (keys %parent){
+	$locus_errors++;
+        print LOG "WARNING: $_ already has positive_clone, the derived clone $ea can be added to it\n";
+	if ($ace){
+	  print ACE "\n\nLocus\t\"$_\"\n";
+	  print ACE "Positive_clone\t\"$ea\"\n";
+	}
+      }	
+    }
+    if (scalar @{$loci_has_pos_clone{$_}} > 2){
+      @clone =();
+      for(my $i=0; $i < scalar @{$loci_has_pos_clone{$_}}; $i = $i+2){
+	$seq = ${@{$loci_has_pos_clone{$_}}}[$i];
+        $seq =~ s/\..+//;
+        $clone = ${@{$loci_has_pos_clone{$_}}}[$i+1];
+        push(@clone, $clone);
+        if ($seq ne $clone){
+	  push(@parent, $seq);
+	}
+      } 
+      foreach my $p (@parent){$parent{$p}++};
+      @parent = keys %parent; 
+      my @comp_result=array_comp(\@parent, \@clone);
+      my @same_clone=@{$comp_result[1]}; 
+      if (!@same_clone){
+	foreach my $ea (@parent){
+	  $locus_errors++;
+	  print LOG "WARNING: $_ already has positive_clone, the derived clone $ea can be added to it\n"; 
+	  if ($ace){
+	    print ACE "\n\nLocus\t\"$_\"\n";
+	    print ACE "Positive_clone\t\"$ea\"\n";
+	  }
+	}
+      } 
+    }
+  }
   print LOG "\nThere are $locus_errors errors in $size loci.\n";
 
 }
@@ -776,7 +870,7 @@ sub process_allele_class{
   #          the sequence tag of an allele has a locus name
 
   my $allele_designation_to_LAB=<<EOF;
-  Table-maker -p "/wormsrv1/geneace/wquery/allele_designation_to_LAB.def" quit
+  Table-maker -p "$def_dir/allele_designation_to_LAB.def" quit
 EOF
   
   my %location;
@@ -853,19 +947,19 @@ EOF
   }
 
   my $allele_has_flankSeq_and_no_seq=<<EOF;
-  Table-maker -p "/wormsrv1/geneace/wquery/allele_has_flankSeq_and_no_seq.def" quit
+  Table-maker -p "$def_dir/allele_has_flankSeq_and_no_seq.def" quit
 EOF
 
   #&allele_has_flankSeq_and_no_seq($allele_has_flankSeq_and_no_seq, $default_db);
 
   my $allele_has_predicted_gene_and_no_seq=<<EOF;
-  Table-maker -p "/wormsrv1/geneace/wquery/allele_has_predicted_gene_and_no_seq.def" quit
+  Table-maker -p "$def_dir/allele_has_predicted_gene_and_no_seq.def" quit
 EOF
 
   #&allele_has_predicted_gene_and_no_seq($allele_has_predicted_gene_and_no_seq, $default_db);
 
   my $allele_methods=<<EOF;
-  Table-maker -p "/wormsrv1/geneace/wquery/allele_methods.def" quit
+  Table-maker -p "$def_dir/allele_methods.def" quit
 EOF
 
   check_missing_allele_method($allele_methods, $default_db);
@@ -1025,7 +1119,7 @@ sub process_strain_class {
   }
 
   my $cgc_approved_loci=<<EOF;
-  Table-maker -p "/wormsrv1/geneace/wquery/cgc_approved_loci.def" quit
+  Table-maker -p "$def_dir/cgc_approved_loci.def" quit
 EOF
   
   my %cgc_loci=cgc_loci($cgc_approved_loci, $default_db);
@@ -1083,10 +1177,10 @@ EOF
   my ($locus, %allele_locus, %strain_genotype, $cds, %locus_cds, $main, $other_name, %other_main, $allele);
 
   my $get_genotype_in_strain=<<EOF;
-  Table-maker -p "/wormsrv1/geneace/wquery/strain_genotype.def" quit 
+  Table-maker -p "$def_dir/strain_genotype.def" quit 
 EOF
   my $allele_to_locus=<<EOF;
-Table-maker -p "/wormsrv1/geneace/wquery/allele_to_locus.def" quit
+Table-maker -p "$def_dir/allele_to_locus.def" quit
 EOF
     
 
@@ -1181,7 +1275,7 @@ sub process_sequence {
   print LOG "-----------------------------------\n";
 
   my $get_seqs_with_multiple_loci=<<EOF;
-  Table-maker -p "/wormsrv1/geneace/wquery/get_seq_has_multiple_loci.def" quit 
+  Table-maker -p "$def_dir/get_seq_has_multiple_loci.def" quit 
 EOF
 
   my (%Seq_loci, $seq, $locus);
@@ -1643,10 +1737,10 @@ sub usage {
 sub Table_maker {
 
   my $get_predicted_genes=<<EOF;
-  Table-maker -p "/wormsrv1/geneace/wquery/get_all_predicted_gene_names.def" quit 
+  Table-maker -p "$def_dir/get_all_predicted_gene_names.def" quit 
 EOF
   my $get_genome_seqs=<<EOF;
-  Table-maker -p "/wormsrv1/geneace/wquery/get_all_genome_sequence_names.def" quit
+  Table-maker -p "$def_dir/get_all_genome_sequence_names.def" quit
 EOF
 
   my $dir="/nfs/disk100/wormpub/DATABASES/current_DB";
@@ -1673,6 +1767,25 @@ EOF
     }
   return @names;
 }
+
+sub array_comp{
+
+  my(@union, @isect, @diff, %union, %isect, %count, $e);
+  my ($ary1_ref, $ary2_ref)=@_;
+  @union=@isect=@diff=();
+  %union=%isect=();
+  %count=();
+  foreach $e(@$ary1_ref, @$ary2_ref){
+    $count{$e}++;
+  }
+  foreach $e (keys %count){
+    push (@union, $e);
+    if ($count{$e}==2){push @isect, $e;}
+    else {push @diff, $e;}
+  } 
+  return \@diff, \@isect, \@union;  # all returned into one array  
+}
+
 
 __END__
 
