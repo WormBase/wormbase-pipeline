@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-02-26 16:00:14 $
+# Last updated on: $Date: 2003-03-10 17:00:14 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -22,6 +22,7 @@ use Getopt::Long;
 
 my ($help, $debug, $database, $class, @class, $ace);
 my $maintainers = "All";
+
 our $tace = &tace;   # tace executable path
 our ($log, $erichlog, $jahlog, $JAHmsg, $Emsg, $caltech, @CGC, $cgc);
 
@@ -96,25 +97,19 @@ if(!@class){
   &process_strain_class;
   &process_rearrangement;
   &process_sequence;
+  &check_genetics_coords_mapping;
  }
  
 else{
   foreach $class (@class){
     $class = lc($class);  # makes command line option case-insensitive
-    if ($class eq "") {
-      &process_locus_class;
-      &process_laboratory_class;
-      &process_allele_class;
-      &process_strain_class;
-      &process_rearrangement;
-      &process_sequence;
-    }
     if ($class =~ /locus/)                 {&process_locus_class}
     if ($class =~ /(laboratory|lab)/)      {&process_laboratory_class}
     if ($class =~ /allele/)                {&process_allele_class}
     if ($class =~ /strain/)                {&process_strain_class}
     if ($class =~ /(rearrangement|rearr)/) {&process_rearrangement}
     if ($class =~ /(sequence|seq)/)        {&process_sequence}
+    if ($class =~ /(mapping|map)/)         {&check_genetics_coords_mapping}
   }  
 }
 
@@ -148,7 +143,7 @@ open(MAIL2, "$jahlog") || die "Can't read in file $erichlog";
 
 @CGC=<MAIL2>;
 $cgc=join('', @CGC);
-if ($cgc eq $JAHmsg){   
+if ($cgc ne $JAHmsg){   
   mail_maintainer($0,$CGC,$jahlog) unless $debug;
 }
   
@@ -744,6 +739,16 @@ EOF
   print LOG "\n\nThere are $sequence_errors errors in Sequence class\n";
 }   
 
+sub check_genetics_coords_mapping {
+  print "\nChecking discrepancies in genetics/coords mapping:\n\n";
+  print LOG "\nChecking discrepancies in genetics/coords mapping:\n\n";
+  system ("perl5.6.1 /nfs/team71/worm/ck1/WORMBASE_CVS/scripts/cmp_gmap_physical_location.pl -diff");
+  open(IN, "/wormsrv2/logs/mapping_diff") || die $!;
+  while(<IN>){
+    print LOG $_;
+  }
+}
+
 ##############################
 
 sub find_new_loci_in_current_DB{
@@ -1135,25 +1140,25 @@ sub create_log_files{
   print LOG "\n";
 
   $jahlog = "/wormsrv2/logs/$script_name.jahlog.$rundate.$$";
-  open(JAHLOG, ">$jahlog") || die "Can't open $jahlog\n";
+  open(JAHLOG, ">>$jahlog") || die "Can't open $jahlog\n";
   print JAHLOG "This mail is generated automatically for CGC on $rundate\n"; 
   $JAHmsg = "This mail is generated automatically for CGC on $rundate\n"; 
   print JAHLOG "If you have any queries please email ck1\@sanger.ac.uk or krb\@sanger.ac.uk\n\n";
   $JAHmsg .= "If you have any queries please email ck1\@sanger.ac.uk or krb\@sanger.ac.uk\n\n";
   print JAHLOG "=========================================================================\n";
-   $JAHmsg .=  "=========================================================================\n";
+  $JAHmsg .=  "=========================================================================\n";
   
   # create separate log with errors for Erich
   $erichlog = "/wormsrv2/logs/geneace_check.erichlog.$rundate.$$";
   open(ERICHLOG,">$erichlog") || die "cant open $erichlog";
   print ERICHLOG "$0 started at ",`date`,"\n";
   $Emsg = "$0 started at ".`date`."\n";
-  print ERICHLOG "=========================================================\n";
-  $Emsg .= "=========================================================\n";
   print ERICHLOG "This mail is generated automatically for Caltech\n";
   $Emsg .= "This mail is generated automatically for Caltech\n";
   print ERICHLOG "If you have any queries please email ar2\@sanger.ac.uk or ck1\@sanger.ac.uk or krb\@sanger.ac.uk\n\n";
   $Emsg .= "If you have any queries please email ar2\@sanger.ac.uk or ck1\@sanger.ac.uk or krb\@sanger.ac.uk\n\n";   
+  print ERICHLOG "================================================================================================\n";
+  $Emsg .= "================================================================================================\n";
 }
 
 
