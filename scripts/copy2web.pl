@@ -1,4 +1,12 @@
 #!/usr/local/bin/perl -w
+#
+# copies overlapcheck output files to /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/$WSversion/Checks
+# calculates the reported mistakes
+# writes new html files and replaces the old ones   
+#
+# by Kerstin Jekosch
+# 01/07/20
+###################################################################################################
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -7,14 +15,14 @@ use IO::Handle;
 $|=1;
 use Symbol 'gensym';
 
-######################
-# variables and logs #
-######################
+#####################
+# variables and log #
+#####################
 
 my @chrom = qw ( I II III IV V X ); 
 my $cvsversion = &get_cvs_version('copy2web');
-my $WSversion  = 'WS46'; #&get_wormbase_version;
-my $maintainers = "kj2\@sanger.ac.uk";
+my $WSversion  = &get_wormbase_version;
+my $maintainers = "dl1\@sanger.ac.uk kj2\@sanger.ac.uk";
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
 
@@ -28,8 +36,8 @@ print LOG "WormBase version : $WSversion\n";
 print LOG "cvs version      : $cvsversion\n";
 print LOG "\n";
 
-my (@camgen,@stlgen,@camest,@stlest,@camrep,@stlrep,@output,@linecounts);
-my @filenames   = qw( overlapping_genes_cam overlapping_genes_stl EST_in_intron_cam EST_in_intron_stl repeat_in_exon_cam repeat_in_exon_stl );
+my @output;
+my @filenames = qw( overlapping_genes_cam overlapping_genes_stl EST_in_intron_cam EST_in_intron_stl repeat_in_exon_cam repeat_in_exon_stl );
  
 ############################################
 # copy overlapcheck files to www directory #
@@ -51,14 +59,13 @@ foreach my $chrom (@chrom) {
 
 print LOG "get number of reports\n";
 
-for (my $n = 0; $n < 6; $n++) {
+for (my $n = 0; $n < @filenames; $n++) {
     foreach my $chrom (@chrom) {
         print LOG "Calculating line nummbers for CHROMOSOME_$chrom.$filenames[$n]\n";
         my $line = `wc -l /wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.$filenames[$n]`;
         my ($new) = ($line =~ /(\d+)/);
         push @{$output[$n]}, $new;
     }
-    print "see: $output[$n][0], $output[$n][1], $output[$n][2], $output[$n][3], $output[$n][4], $output[$n][5]\n"
 }    
  
 ####################### 
@@ -67,8 +74,7 @@ for (my $n = 0; $n < 6; $n++) {
 
 print LOG "Generating new html files in /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/$WSversion/Checks/\n";
 
-for (my $m = 0; $m < 6; $m++) {    
-    my %handles;
+for (my $m = 0; $m < @filenames; $m++) {    
     my $fh     = gensym();
     my $newfh  = gensym();
     my $file   = $filenames[$m];
@@ -85,17 +91,15 @@ for (my $m = 0; $m < 6; $m++) {
         if ((/<TD ALIGN=\"center\" COLSPAN=\"2\"><B>\s*(\d+)\s+\[\s*\d+\]<\/B><\/TD>/) && ($count < 6)) {
             my $old = $1;
             print $newfh "<TD ALIGN=\"center\" COLSPAN=\"2\"><B> ".$output[$m][$count]." [$old]</B></TD>\n";
-            print "was $old is now $output[$m][$count]\n";
             $count++;
         }
         elsif ((/<TD ALIGN=\"center\" COLSPAN=\"2\"><B>\s*(\d+)\s+\[\s*\d+\]<\/B><\/TD>/) && ($count > 5)) {
             my $old = $1;
             my $sum;
-            for (my $l = 0; $l < 6; $l++) {
+            for (my $l = 0; $l < @chrom; $l++) {
                 $sum += $output[$m][$l]; 
             }
             $count++;
-            print "sum was $old is now $sum\n";
             print $newfh "<TD ALIGN=\"center\" COLSPAN=\"2\"><B> ".$sum." [$old]</B></TD>\n";
         }
         else {
@@ -137,4 +141,3 @@ close readLOG || die "Cannot close readLOG $!\n";
 close mailLOG || die "Cannot close mailLOG $!\n";
 
 exit(0);
-
