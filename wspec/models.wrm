@@ -1053,6 +1053,7 @@
                         Confidential_remark ?Text
                         Brief_identification UNIQUE Text                           // [020306 kj]
                         Reference ?Paper XREF Transcript                           // [020306 kj]
+			RNAi_result ?RNAi_result XREF Transcript //was missing from model [021126 krb]
                 Origin  From_laboratory UNIQUE ?Laboratory                         // [020306 kj]
                         Species UNIQUE ?Species                                    // [020306 kj]
                 Properties      Transcript      UNIQUE  mRNA    UNIQUE  Processed_mRNA
@@ -1498,6 +1499,7 @@
                                             Transgene_expression   //RL [010327]
         Inhibits	Predicted_gene ?Sequence XREF RNAi_result  // "gene" parent (unreliable)
 			Locus ?Locus   XREF RNAi_result            //RL [010327]
+			Transcript ?Transcript XREF RNAi_results // krb [021126]
         Supporting_data Movie ?Movie XREF RNAi			   // added for Lincoln, krb [010807]
                         Picture ?Picture XREF RNAi
 	Reference ?Paper XREF RNAi
