@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam aged 12 and a half
 #
-# Last updated on: $Date: 2002-11-21 10:23:44 $
+# Last updated on: $Date: 2002-11-22 09:19:50 $
 # Last updated by: $Author: krb $
 #
 # see pod documentation at end of file for more information about this script
@@ -112,7 +112,7 @@ foreach my $gene (@predicted_genes){
   for($i=1; $i<@exon_coord2;$i++){
     my $intron_size = ($exon_coord1[$i] - $exon_coord2[$i-1] -1);
     print "Gene warning - $gene has a small intron ($intron_size bp)\n" if (($intron_size < 31)  && $verbose);
-    push(@error3,"Gene warning - $gene has a small intron ($intron_size bp)\n") if ($intron_size > 20 && $intron_size < 26);
+    push(@error3,"Gene warning - $gene has a very small intron ($intron_size bp)\n") if ($intron_size > 20 && $intron_size < 26);
     push(@error4,"Gene warning - $gene has a small intron ($intron_size bp)\n") if ($intron_size > 25 && $intron_size < 31);
 
   }
