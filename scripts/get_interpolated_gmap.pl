@@ -7,8 +7,8 @@
 # This script calculates interpolated genetic map positions for CDS, Transcripts 
 # and Pseudogenes lying between and outside genetic markers.
 #
-# Last updated on: $Date: 2004-08-02 16:12:51 $
-# Last updated by: $Author: krb $
+# Last updated on: $Date: 2004-08-19 15:09:59 $
+# Last updated by: $Author: dl1 $
 
 
 use strict;
@@ -175,7 +175,7 @@ system("chmod 777 $output/gmap_info_WS*.$rundate");
 # retrieve data from gff file: CHROMOSOME_number.genes.gff and CHROMOSOME_number.rna.gff
 ########################################################################################
 
-my @gff_files_cds         = &dataset($gff_location, "genes");
+my @gff_files_cds         = &dataset($gff_location, "CDS");
 my @gff_files_rna         = &dataset($gff_location, "rna");
 my @gff_files_pseudogene  = &dataset($gff_location, "pseudogene");
 
@@ -834,7 +834,7 @@ sub dataset {
 
   if ($query eq "folder"){foreach (@dir){if ($_ =~ /^WS(\d+)/){push(@vers, $1)}} return @vers}
 
-  if ($query eq "genes"){foreach (@dir){if ($_ =~ /^CHROMOSOME_(I|II|III|IV|V|X).genes.gff/ ||
+  if ($query eq "genes"){foreach (@dir){if ($_ =~ /^CHROMOSOME_(I|II|III|IV|V|X).CDS.gff/ ||
 					    $_ =~ /^CHROMOSOME_(I|II|III|IV|V|X).clone_path.gff/){push(@files, $&)}} return @files}
 
   if ($query eq "rna"){foreach (@dir){if ($_ =~ /^CHROMOSOME_(I|II|III|IV|V|X).(rna|rest).gff/){push(@files, $&)}} return @files}
