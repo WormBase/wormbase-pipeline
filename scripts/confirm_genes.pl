@@ -7,7 +7,7 @@
 # Makes CDS status information by looking at transcript to exon mappings
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-10-20 09:44:01 $      
+# Last updated on: $Date: 2004-10-20 09:46:00 $      
 
 
 use strict;
@@ -70,6 +70,8 @@ my $output = "$outdir/gene_confirmation_status.ace";                            
 open (ACE,">$output") || die "Cannot open $output\n";
 
 foreach my $chromosome (@chromosomes) {
+
+  $log->write_to("Processing chromosome $chromosome\n");
     
     ###################################################
     # get CDS names (@CDSlist) and coordinates (%CDS) #
