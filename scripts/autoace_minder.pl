@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2004-03-01 11:10:36 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2004-03-02 10:17:24 $
 
 
 #################################################################################
@@ -1420,13 +1420,13 @@ sub logfile_details {
 
 sub run_command{
   my $command = shift;
-  print LOG &runtime, ": started running $command\n";
+  print LOG &runtime, ": Running $command\n";
   my $status = system($command);
   if(($status >>8) != 0){
     $errors++;
     print LOG "ERROR: $command failed. \$\? = $status\n";
   }
-  print LOG &runtime, ": finished running\n\n";
+  print LOG &runtime, ": Finished.\n\n";
 
   # for optional further testing by calling subroutine
   return($status);
