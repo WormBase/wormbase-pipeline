@@ -1,8 +1,8 @@
 #!/usr/local/bin/perl5.8.0 -w
 
 # Author: Chao-Kung Chen
-# Last updated by $Author: krb $
-# Last updated on: $Date: 2004-12-24 11:05:41 $ 
+# Last updated by $Author: ar2 $
+# Last updated on: $Date: 2005-02-09 10:58:44 $ 
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -210,8 +210,10 @@ sub get_30_bp_flanks {
 
     foreach my $allele (@{$chrom_NBP_allele{$chrom}}){
 
-      print ACE "\nAllele : \"$allele\"\n";
-      print DELETE "\nAllele : \"$allele\"\n";
+      print ACE "\nVariation : \"$allele\"\n";
+      print ACE "Allele\n";
+      print DELETE "\nVariation : \"$allele\"\n";
+      
       my @indel_info = @{$NBP_info{$allele}->[3]};
       my $L_clone = $indel_info[4];
       my $R_clone = $indel_info[5];
@@ -264,8 +266,8 @@ sub get_30_bp_flanks {
       $allele_id =~ s/tm//;
 
       # ----- acefile
-      print ACE "Flanking_PCR_product     \"$allele"."_external\"\n";
-      print ACE "Flanking_PCR_product     \"$allele"."_internal\"\n";
+      print ACE "PCR_product     \"$allele"."_external\"\n";
+      print ACE "PCR_product     \"$allele"."_internal\"\n";
       print ACE "Author \"$NBP_info{$allele}->[6]\"\n" if $NBP_info{$allele}->[6] ne "NA";
       if($DNA_L eq "NA" || $DNA_R eq "NA"){
 #	print "ERROR: Can't determine flanking sequences for $allele. Please add by hand\n";
@@ -274,8 +276,8 @@ sub get_30_bp_flanks {
 	print ACE "Flanking_sequences \"$DNA_L\" \"$DNA_R\"\n";
       }
       print ACE "Deletion\n" if $indel_info[3] eq "NA";
-      print DELETE "-D Flanking_PCR_product     \"$allele"."_external\"\n";
-      print DELETE "-D Flanking_PCR_product     \"$allele"."_internal\"\n";
+      print DELETE "-D PCR_product     \"$allele"."_external\"\n";
+      print DELETE "-D PCR_product     \"$allele"."_internal\"\n";
       print DELETE "-D Author \"$NBP_info{$allele}->[6]\"\n" if $NBP_info{$allele}->[6] ne "NA";
  
       if($DNA_L eq "NA" || $DNA_R eq "NA"){
@@ -288,9 +290,11 @@ sub get_30_bp_flanks {
       print DELETE "-D Deletion\n" if $indel_info[3] eq "NA";
 
       if ($indel_info[3] ne "NA"){
-	print ACE "Deletion_with_insertion \"", lc($indel_info[3]),"\"\n";
+	print ACE "Insertion \"", lc($indel_info[3]),"\"\n";
+	print ACE "Deletion\n";
 	print ACE "Method \"Deletion_and_insertion_allele\"\n";
-	print DELETE "-D Deletion_with_insertion \"", lc($indel_info[3]),"\"\n";
+	print DELETE "-D Insertion \"", lc($indel_info[3]),"\"\n";
+	print DELETE "-D Deletion\n";
 	print DELETE "-D Method \"Deletion_and_insertion_allele\"\n";
       }
       else {
@@ -301,7 +305,7 @@ sub get_30_bp_flanks {
       print ACE "Species \"Caenorhabditis elegans\"\n";
       print ACE "Phenotype \"$NBP_info{$allele}->[4]\"\n" unless ($NBP_info{$allele}->[4] eq "NA");
       print ACE "Mutagen \"TMP\/UV\"\n";
-      print ACE "Location \"FX\"\n";
+      print ACE "Laboratory \"FX\"\n";
       print ACE "Map \"$chrom\"\n"; 
       print ACE "Remark \"Mutations at cosmid coordinates: $indel_info[6]\"\n";
       print ACE "Remark \"<A href='http:\\/\/www.shigen.nig.ac.jp\/c.elegans\/mutants/DetailsSearch?lang=english&seq=$allele_id' target=_new> more on $allele...<\/A>\"\n";
@@ -309,7 +313,7 @@ sub get_30_bp_flanks {
       print DELETE "-D Species \"Caenorhabditis elegans\"\n";
       print DELETE "-D Phenotype \"$NBP_info{$allele}->[4]\"\n" unless ($NBP_info{$allele}->[4] eq "NA");
       print DELETE "-D Mutagen \"TMP\/UV\"\n";
-      print DELETE "-D Location \"FX\"\n";
+      print DELETE "-D Laboratory \"FX\"\n";
       print DELETE "-D Map \"$chrom\"\n"; 
       print DELETE "-D Remark \"Mutations at cosmid coordinates: $indel_info[6]\"\n";
       print DELETE "-D Remark \"<A href='http:\\/\/www.shigen.nig.ac.jp\/c.elegans\/mutants/DetailsSearch?lang=english&seq=$allele_id' target=_new> more on $allele...<\/A>\"\n";
@@ -321,7 +325,7 @@ sub get_30_bp_flanks {
 	print ACE "\nPCR_product : $allele"."_external\n";
 	print ACE "Oligo $allele"."_external_f\n";
 	print ACE "Oligo $allele"."_external_b\n";
-	print ACE "Flanks_deletion \"$allele\"\n";
+	print ACE "Variation \"$allele\"\n";
 	
 	print ACE "\nOligo : \"$allele"."_external_f\"\n";
 	print ACE "Sequence \"$NBP_info{$allele}->[5]->[0]\"\n";
@@ -336,7 +340,7 @@ sub get_30_bp_flanks {
         print ACE "\nPCR_product : $allele"."_internal\n";
         print ACE "Oligo $allele"."_internal_f\n";
         print ACE "Oligo $allele"."_internal_b\n";
-        print ACE "Flanks_deletion \"$allele\"\n";
+        print ACE "Variation \"$allele\"\n";
 
         print ACE "\nOligo : \"$allele"."_internal_f\"\n";
 	print ACE "Sequence \"$NBP_info{$allele}->[5]->[1]\"\n";
@@ -351,7 +355,7 @@ sub get_30_bp_flanks {
 	print DELETE "\nPCR_product : $allele"."_external\n";
 	print DELETE "-D Oligo $allele"."_external_f\n";
 	print DELETE "-D Oligo $allele"."_external_b\n";
-	print DELETE "-D Flanks_deletion \"$allele\"\n";
+	print DELETE "-D Variation \"$allele\"\n";
 	
 	print DELETE "\nOligo : \"$allele"."_external_f\"\n";
 	print DELETE "-D Sequence \"$NBP_info{$allele}->[5]->[0]\"\n";
@@ -366,7 +370,7 @@ sub get_30_bp_flanks {
         print DELETE "\nPCR_product : $allele"."_internal\n";
         print DELETE "-D Oligo $allele"."_internal_f\n";
         print DELETE "-D Oligo $allele"."_internal_b\n";
-        print DELETE "-D Flanks_deletion \"$allele\"\n";
+        print DELETE "-D Variation \"$allele\"\n";
 
         print DELETE "\nOligo : \"$allele"."_internal_f\"\n";
 	print DELETE "-D Sequence \"$NBP_info{$allele}->[5]->[1]\"\n";
