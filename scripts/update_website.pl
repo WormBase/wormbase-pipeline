@@ -8,7 +8,7 @@
 # relevant WormBase and Wormpep web pages.
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-08-03 09:47:54 $      
+# Last updated on: $Date: 2004-08-13 17:13:06 $      
 
 
 #################################################################################
@@ -858,7 +858,8 @@ sub update_wormpep_pages{
   close(RELEASE);
 
   # update the history of wormpep releases, i.e. wormpep_release.txt
-  open (TABLE, "<$www/$WS_name/wormpep_release.txt") || croak "Can't read from the file: $www/$WS_name/wormpep_release.txt\n\n";
+  # need to use file from previous release 
+  open (TABLE, "<$www/$WS_previous_name/wormpep_release.txt") || croak "Can't read from the file: $www/$WS_name/wormpep_release.txt\n\n";
   open (TABLE2, ">$www/$WS_name/tmp_table.txt") || croak "Can't create the file: $www/$WS_name/tmp_table.txt\n\n";
   print TABLE2 "${WS_current}\t$release_date2\t$count\n";
   while(<TABLE>){
