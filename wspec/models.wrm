@@ -1525,6 +1525,8 @@
 	     Remark ?Text
 	     SNP_locus ?Locus XREF SNP_assay	                    // added for Todd [171001 krb]
 	     Flanks_deletion ?Allele XREF Flanking_PCR_product // For KO allele data [krb 021217]
+	     SMD_result ?SMD_result XREF PCR_product // added [krb 030127]
+
 
 ?Phenotype Description UNIQUE ?Text
            Assay UNIQUE ?Text
@@ -1573,35 +1575,84 @@
        Remark ?Text
 
 
+/////////////////////////////////////////////////////////////////////
+//
+// Classes for microarray data
+//
+//////////////////////////////////////////////////////////////////////
 
-// New classes for microarray data [krb 020614]
 
-?Microarray_aff        SMap      S_Parent Canonical_parent UNIQUE ?Sequence XREF Microarray_aff
-                       Result    ?Affymetrix_result XREF Microarray_aff
-                       Reference ?Paper //Describes the design of the chip
-                       Remark    ?Text
+?Microarray_aff SMap S_Parent Canonical_parent UNIQUE ?Sequence XREF Microarray_aff
+                Result ?Affymetrix_result XREF Microarray_aff
+                Reference ?Paper //Describes the design of the chip
+                Remark ?Text
 
-?Affymetrix_result     Condition       ?Condition
-                       Frequency       Int
-                       Confidence      P_value                 Float
-                                       Presence        UNIQUE  PA
-                                                               PS
-                                                               NP
-                       Microarray_aff  ?Microarray_aff XREF Result
-                       Chip_info       ?Text   //Describes batch number of the chip created the result ... etc.
-                       Reference       ?Paper  //The paper reported this result.
-                       Remark          ?Text
 
-?Condition             Life_stage      ?Life_stage
-                       Temperature     Int
-                       Genotype        ?Text
-                       Other           ?Text
-                       Relationship    Contains        ?Condition XREF Contained_in
-                                       Contained_in    ?Condition XREF Contains
-                                       Precedes        ?Condition XREF Follows
-                                       Follows         ?Condition XREF Precedes
-                       Reference       ?Paper  //Defines the condition.
-                       Remark          ?Text
+?Affymetrix_result Condition ?Condition
+                   Frequency  Int
+                   Confidence P_value  Float
+                              Presence UNIQUE  PA
+                                               PS
+                                               NP
+                   Microarray_aff  ?Microarray_aff XREF Result
+                   Chip_info       ?Text   //Describes batch number of the chip created the result ... etc.
+                   Reference       ?Paper  //The paper reported this result.
+                   Remark          ?Text
+
+
+// SMD_result data model is created for Data types from Stanford Microarray Database.
+// Each SMD_result object is one spot in one experiment. All experiments performed using the 
+// same PCR_product are under the same SMD_spot, which is mapped to genome dynamically. 
+// The tag "Sample_A" describes what is sample A(Red or Green labelled). The "Condition" object 
+// contains information on life
+// stage, genotype,preparation precedure ... etc. of the sample. The ?Condition model is used for 
+// Affymetrix microarray data, Gene regulaton data and SMD microarray data, so some of the tags 
+// in ?Condition model do not relate to SMD_result. 
+// The tag "Sample_B" describes what is sample B(Green or Red labelled). The "Condition" object 
+// contains information on life stage, genotype, ... etc. of the spot.
+// The tag "R_vs_G_ratio" is the average value of "R/G normalized (mean)" from several chips.
+// The tag "R_vs_G_sd" is the Standard Deviation from averaging from R/G ratio from several chips.
+// The tag "P_value" is the P_value calculated from the paper on the result.
+
+?SMD_result PCR_product ?PCR_product XREF SMD_result      
+            Sample_A UNIQUE ?Condition
+            Sample_B UNIQUE ?Condition
+            Result A_vs_B_log_ratio UNIQUE Float               
+                   A_vs_B_sd        UNIQUE Float               
+                   P_value          UNIQUE Float
+            Cluster    ?Cluster XREF SMD_result
+            Reference  ?Paper   XREF SMD_result
+            Remark     ?Text
+
+
+// Cluster data model is created for microarray data clustering results.
+// The tag "Description" refers to Biological meaning of this cluster group
+// The tag "Algorithm" refers to the algorithm that was used to get this clustering result.
+// The tag "SMD_result" refers to all experimental results included in the cluster.
+// The tag "Reference" refers to the paper performed this clustering analysis
+
+?Cluster Description   ?Text
+         Algorithm     ?Text
+         SMD_result    ?SMD_result     XREF    Cluster
+         Reference     ?Paper          XREF    Cluster 
+         Remark        ?Text
+                  
+
+
+
+?Condition Life_stage      ?Life_stage
+	   Strain	   ?Strain // added for SMD_result [030127 krb]
+	   Preparation	   ?Text // added for SMD_result [030127 krb]
+           Temperature     Int
+           Genotype        ?Text
+           Other           ?Text
+           Relationship    Contains        ?Condition XREF Contained_in
+                           Contained_in    ?Condition XREF Contains
+                           Precedes        ?Condition XREF Follows
+                           Follows         ?Condition XREF Precedes
+           Reference       ?Paper  //Defines the condition.
+           Remark          ?Text
+
 
 
 // New UTR data model for Lincoln's UTR data.  [krb 020729]
@@ -1737,6 +1788,8 @@
                   Transgene ?Transgene XREF Reference
                   GO_term ?GO_term XREF Reference
                   Operon ?Operon XREF Reference      // added for operon data [010928 dl]
+		  SMD_result ?SMD_result XREF Reference //added for SMD_result [030127 krb]
+                  Cluster ?Cluster XREF Reference //added for SMD_result [030127 krb]
         Keyword ?Keyword
 
 
