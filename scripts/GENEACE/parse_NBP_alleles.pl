@@ -2,7 +2,7 @@
 
 # Author: Chao-Kung Chen
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-05-28 09:45:33 $ 
+# Last updated on: $Date: 2004-06-03 16:15:14 $ 
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -13,9 +13,7 @@ use Getopt::Long;
 
 # ----- command line options
 my ($input, $debug);
-GetOptions ("i|input=s"  => \$input,
-	    "d|debug"    => \$debug,
-           );
+GetOptions ("i|input=s"  => \$input);
 
 # ----- warn
 if (!$input){
@@ -49,7 +47,7 @@ my (%NBP_info, %chrom_NBP_allele);
 
 my @NBP = `cut -f 1-5,8,12 $input`;
 
-open(CHECK, ">$allele_dir/NBP_alleles_to_check_by_hand") || die $!;
+open(CHECK, ">$allele_dir/NBP_alleles_to_check_by_hand.$rundate") || die $!;
 
 foreach(@NBP){
   chomp;
@@ -158,8 +156,7 @@ my $log = "/wormsrv2/logs/$acelog.$rundate";
 `rm -f $log` if -e $log;
 
 open(LOG, ">$log") || die $!;
-print LOG "\n\nLoaded $acefile to Geneace . . .\n" if !$debug;
-print LOG "\n\nLoaded $acefile to CK1_testDB . . .\n" if $debug;
+print LOG "\n\nLoaded $acefile to Geneace . . .\n";
 print LOG "--------------------------------------------------\n\n";
 
 get_30_bp_flanks($database);
@@ -167,23 +164,24 @@ get_30_bp_flanks($database);
 # ----- upload data to Geneace
 
 # parse in the $last_update file first to remove everthing from last update and then upload new updates
-my $command=<<END;
-pparse $last_update
-pparse $acefile
-save
-quit
-END
+my $command="pparse $last_update\npparse $acefile\nsave\nquit\n";
 
 print LOG "\n\n";
-$ga->upload_database($ga->geneace, $command, "NBP_allele", $log) if !$debug;
-$ga->upload_database($ga->test_geneace, $command, "NBP_allele", $log) if $debug;
+$ga->upload_database($ga->geneace, $command, "NBP_allele", $log);
 
 # ----- mail notice
 
-#y $recipients = "ck1\@sanger.ac.uk, krb\@sanger.ac.uk";
-my $recipients = "ck1\@sanger.ac.uk";
-$recipients = "ck1\@sanger.ac.uk" if $debug;
+my $recipients = "ck1\@wormbase.org, krb\@sanger.ac.uk";
 mail_maintainer("Loading NBP_allele", $recipients, $log);
+
+# ----- moving old files to ARCHIVE dir
+
+my @old_txt   = glob("$allele_dir/NBP_*txt"); pop @old_txt;
+my @old_ace   = glob("$allele_dir/NBP_*ace"); pop @old_ace;	
+my @old_check = glob("$allele_dir/NBP_alleles_to_check_by_hand*"); pop @old_check;
+my @old_last  = glob("NBP_last_update.ace*"); pop @old_last;
+
+`mv @old_txt @old_ace @old_check @old_last $allele_dir/ARCHIVE/`;
 
 
 # ----- The End
@@ -347,3 +345,48 @@ sub get_30_bp_flanks {
 }
 
 __END__
+
+=head2 NAME - parse_NBP_alleles.pl
+                                                                                                                                                 
+B<USAGE>
+
+	-i input_file
+
+B<Interval of update>
+
+        Normally every 2-3 wks. Shohei Mitani sends out update file (full update) in xls format.
+
+B<get lesion flanks>	
+
+	NBP allele lesions are marked up as clone coordinates and do not supply flanking sequences in the flatfile.
+	Hence, the script takes these coordinates and retrieve 30 bp flanks.
+	How:
+	(1) grep clone info (chrom, start, end, clone_name) from GFF file: /wormsrv2/autoace/GFF_SPLITS/WSXXX/CHROMOSOME_*.clone_acc.gff`;
+            (via get_clone_chrom_coords() of Geneace.pm).
+	(2) fetch flanks from /nfs/disk100/wormpub/DATABASES/current_DB/CHROMOSOMES/CHROMOSOME_*.dna" file using substr()                                                                                                                                  
+
+B<preparing files>
+
+	Remove Mac carriage return in the flatfle from NBP: tr '\r' '\n' < NBP_mutants_file > NBP_alleles.yymmdd, 
+	The processed file should be saved in /wormsrv1/geneace/ALLELE_DATA/ (need to be wormpub for write acess)
+	
+B<script generated files>
+
+	(1) NBP_alleles.yymmdd.ace
+	(2) NBP_last_update.ace.yymmdd
+
+	The script uploads (1) and (2) from last update to geneace. The (2) file contains -D lines which deletes only last update 
+	info from NBP for each tm alleles. Some alleles may have parsing problems due to their format. The script will flag them and 
+	generate a file NBP_alleles_to_check_by_hand. 
+	Typically, the fix-by-hand cases are due to 
+	(1) the free-styled strings embedded in between two lesion coordinates of an 
+	    allele. Eg, the line "tm325 -> 14441/14442- 33 bp addition-14971/14972  (530 bp deletion)" indicates the script has no 
+	    knowledge about the "33 bp addition" and what the 33 bp additions are: so the script only knows it is a deletion allele. 
+	    Basically, you basically need to look at tm325 allele in Geneace and see what info is missing from the output line: ie, 
+	    you should change Deletion tag to Deletion_with_insertion tag and change the Method to Deletion_and_insertion.
+
+B<Contact person>
+
+	 Shohei Mitani (mitani1@research.twmu.ac.jp)
+
+
