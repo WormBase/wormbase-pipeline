@@ -67,36 +67,31 @@ while (<SOURCE>){
 	) {
       $FBgn = $1 if ($_ =~ /(FBgn\d+)/);  #last ditch attemp to grap if from the header
     }
-    
+
     # some old style names still exist eg pp-CT*****.  In these cases
     # we need to use the 1st field of the "from_gene" fields.
-    
+
     if( $gadID ){
       if ("$gadID" =~ /^pp-/) {
 	$gadID = $otherGadID;
       }
-      
-      
+
+
       #print ace file
       print ACE "\n\nProtein : \"GADFLY:$gadID\"\n";
       print ACE "Peptide \"GADFLY:$gadID\"\n";
       print ACE "Species \"Drosophila melanogaster\"\n";
-      
+
       #FlyBase_gn	      #Gadfly_ID
       print ACE "Gene_name \"$FBname\"\n" if $FBname;
-      print ACE "Database \"Flybase\" FlyBase_gn \"$FBgn\"\n" if ($FBgn); 
-      print ACE "Database \"Gadfly\" Gadfly_ID \"$gadID\"\n\n" if $gadID;
-      
+      print ACE "Database \"Flybase\" FlyBase_gn \"$FBgn\"\n" if ($FBgn);
+      print ACE "Database \"Gadfly\" Gadfly_ID \"$gadID\"\n" if $gadID;
       print ACE "DB_remark \"Flybase gene name is $FBname\"\n" if $FBname;
-      print ACE "Database \"Flybase\" \"$FBname\" \"$FBgn\"\n" if ($FBname or $FBgn); 
-      print ACE "Database \"Gadfly\" \"$gadID\" \"$gadID\"\n\n" if $gadID;
-      
       print ACE "Peptide : \"GADFLY:$gadID\"\n";
-      
+
       #write database file
       print PEP ">$gadID\n";
 
-      
     }
     else {
       # report problems?
