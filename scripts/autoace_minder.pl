@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2004-05-07 15:27:50 $
+# Last edited on: $Date: 2004-05-10 14:31:30 $
 
 
 
@@ -39,6 +39,7 @@ my $buildrna;		# Build wormrna
 my $prepare_blat;	# Prepare for blat, copy autoace before blatting, run blat_them_all.pl -dump
 my $blat_est;           # run blat for ests
 my $blat_mrna;          # run blat for mrnas
+my $blat_ncrna;         # run blat for ncrnas
 my $blat_ost;           # run blat for osts
 my $blat_embl;          # run blat for non-Wormbase CDS genes in EMBL
 my $blat_tc1;           # run blat for TC1 insertion sequences
@@ -85,6 +86,7 @@ GetOptions (
 	    "blat_est"       => \$blat_est,
 	    "blat_ost"       => \$blat_ost,
 	    "blat_mrna"      => \$blat_mrna,
+	    "blat_ncrna"     => \$blat_ncrna,
 	    "blat_embl"      => \$blat_embl,
 	    "blat_tc1"       => \$blat_tc1,
 	    "blat_nematode"  => \$blat_nematode,
@@ -167,9 +169,10 @@ our %flag = (
 	     'B6'          => 'B6:BLAT_analysis',
 	     'B6_est'      => 'B6a:BLAT_analysis_EST',
 	     'B6_mrna'     => 'B6b:BLAT_analysis_mRNA',
+	     'B6_ncrna'    => 'B6f:BLAT_analysis_ncRNA',
 	     'B6_embl'     => 'B6c:BLAT_analysis_EMBL',
 	     'B6_ost'      => 'B6d:BLAT_analysis_OST',
-	     'B6_nematode' => 'B6d:BLAT_analysis_NEMATODE',
+	     'B6_nematode' => 'B6e:BLAT_analysis_NEMATODE',
 	     'B7'          => 'B7:Upload_BLAT_data',
 	     'B8'          => 'B8:Upload_wublast_data',
 	     'B9'          => 'B9:Upload_briggsae_data',
@@ -243,7 +246,7 @@ LOG->autoflush();
 
 # B6:Blat_analysis 
 # Requires: A1,A4,A5,B1
-&blat_jobs              if ($blat_est || $blat_ost || $blat_mrna || $blat_embl || $blat_tc1 || $blat_nematode || $blat_all);
+&blat_jobs              if ($blat_est || $blat_ost || $blat_mrna || $blat_ncrna || $blat_embl || $blat_tc1 || $blat_nematode || $blat_all);
 
 
 # B7:Upload_BLAT_data
@@ -923,6 +926,7 @@ sub blat_jobs{
   push(@blat_jobs,"est")      if ( ($blat_est)      || ($blat_all) );
   push(@blat_jobs,"ost")      if ( ($blat_ost)      || ($blat_all) );
   push(@blat_jobs,"mrna")     if ( ($blat_mrna)     || ($blat_all) );
+  push(@blat_jobs,"ncrna")    if ( ($blat_ncrna)    || ($blat_all) );
   push(@blat_jobs,"embl")     if ( ($blat_embl)     || ($blat_all) );
   push(@blat_jobs,"tc1")      if ( ($blat_tc1)      || ($blat_all) );      
   push(@blat_jobs,"nematode") if ( ($blat_nematode) || ($blat_all) );
@@ -936,7 +940,7 @@ sub blat_jobs{
     # If all other blat jobs are finished can load all non-nematode blat data into autoace this allows 
     # gff dump and gff split to be runin later steps, this is because nematode ESTs take a long time to blat/load
     if ($job eq "nematode"){
-      &load_blat_results("est","mrna","embl","ost","tc1");
+      &load_blat_results("est","mrna","ncrna","embl","ost","tc1");
       $nematode_flag = 1;
     }
     
@@ -996,7 +1000,7 @@ sub load_blat_results {
     
     my $first_blat_type = $_[0];
     my @blat_types = @_;
-    @blat_types    = ("est","mrna","ost","embl","nematode","tc1") if ($first_blat_type eq "all");
+    @blat_types    = ("est","mrna","ncrna","ost","embl","nematode","tc1") if ($first_blat_type eq "all");
   
     foreach my $type (@blat_types){    
 	print LOG "Adding BLAT $type data to autoace at ",&runtime,"\n";
@@ -1004,7 +1008,7 @@ sub load_blat_results {
 	&load($file,"virtual_objects_$type");
 
 	# Don't need to add confirmed introns from nematode data (because there are none!)
-	unless ( ($type eq "nematode") || ($type eq "tc1") || ($type eq "embl") ) {
+	unless ( ($type eq "nematode") || ($type eq "tc1") || ($type eq "embl")|| ($type eq "ncRNA") ) {
 	    $file = "$basedir/autoace/BLAT/virtual_objects.autoace.ci.$type.ace"; 
 	    &load($file,"blat_confirmed_introns_$type");
 	    
@@ -1106,7 +1110,7 @@ sub parse_briggsae_data {
   &load($file,"briggsae_hybrid_genes");
 
   $file = "$basedir/wormbase/briggsae/briggsae_cb25.agp8_rna.ace"; 
-  &load($file,"briggsae_rna_genes");
+  &load($file,"briggsae_rna_genes");  
 
   # briggsae BAC end data
   $file = "/wormsrv1/briggsae/BAC_ENDS/briggsae_BAC_ends.fasta";
@@ -1412,6 +1416,7 @@ sub logfile_details {
   print LOG "#  -blat_est     : perform blat analysis on ESTs\n"                                       if ($blat_est);
   print LOG "#  -blat_ost     : perform blat analysis on OSTs\n"                                       if ($blat_ost);
   print LOG "#  -blat_mrna    : perform blat analysis on mRNAs\n"                                      if ($blat_mrna);
+  print LOG "#  -blat_ncrna   : perform blat analysis on ncRNAs\n"                                     if ($blat_ncrna);
   print LOG "#  -blat_embl    : perform blat analysis on non-WormBase CDSs from EMBL\n"                if ($blat_embl);
   print LOG "#  -blat_tc1     : perform blat analysis on TC1 insertions\n"                             if ($blat_tc1);
   print LOG "#  -blat_nematode: perform blat analysis on non-C. elegans ESTs\n"                        if ($blat_nematode);
