@@ -1001,6 +1001,7 @@
 ?Transcript     SMap S_parent Sequence UNIQUE ?Sequence XREF Transcript_child      
                 Structure Source_exons Int UNIQUE Int
 		DB_info DB_remark ?Text #Evidence // was missing from first draft of Transcript class krb
+			Database ?Database ?Text ?Accession_number XREF Transcript UNIQUE Int // added for Lincoln [030228 krb]
                 Visible Locus ?Locus XREF Transcript // new to fit existing Locus class
 			// Gene ?Gene XREF Transcript
                         // CDS ?CDS XREF Transcript 
@@ -1127,6 +1128,7 @@
 ?Accession_number  Entry Sequence ?Sequence
 			 Protein ?Protein
 			 Motif ?Motif
+			 Transcript ?Transcript // added for Lincoln [030228 krb]
 		   Web_location ?Database // use for WWW display
 
 // The following is the model supported by wwwDisplay() in w4/display.c
