@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl
+#!/usr/local/bin/perl -w
 #
 # estcheck
 # v 0.1
@@ -24,16 +24,18 @@ use IO::Handle;
 use Getopt::Std;
 use Cwd;
 use Ace;
-require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
+use lib '/wormsrv2/scripts';
+use Wormbase;
+
 
  ##############################
  # Script variables (run)     #
  ##############################
 
-my $maintainer = "dl1\@sanger.ac.uk";
+my $maintainers = "dl1\@sanger.ac.uk krb\@sanger.ac.uk kj2\@sanger.ac.uk";
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
-my $version = &get_script_version(estcheck);
+my $cvs_version = &get_cvs_version($0);
 
  ##############################
  # command-line options       #
@@ -41,7 +43,7 @@ my $version = &get_script_version(estcheck);
 
 $opt_d="";   # Verbose debug mode
 $opt_h="";   # Help/Usage page
-$opt_s="";   # check Status tags
+#$opt_s="";   # check Status tags
 
 getopts ('hd');
 &usage(0) if ($opt_h);
@@ -66,7 +68,7 @@ open (LOG,">$log");
 LOG->autoflush();
 
 print LOG "# estcheck\n";     
-print LOG "# version        : $verson\n";
+print LOG "# version        : $cvs_version\n";
 print LOG "# run details    : $rundate $runtime\n";
 print LOG "\n";
 
