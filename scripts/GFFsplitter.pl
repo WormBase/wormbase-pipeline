@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-01-23 09:22:56 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2003-02-04 12:19:29 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -374,8 +374,8 @@ sub usage {
 sub GFF_with_UTR{
   my $utr = shift;
   my $utr_cds = shift;
-  open( UTR, "$utr" );
-  open( UTR_CDS, "$utr_cds");
+  open( UTR, "<$utr" );
+  open( UTR_CDS, ">$utr_cds");
   while (<UTR>) {
     
     print UTR_CDS $_ if (/^\#/);
