@@ -346,6 +346,7 @@
 	GO_term ?GO_term XREF Locus ?GO_code #Evidence // Added by krb 020905
 	Microarray_results ?Microarray_results XREF Locus
 	Antibody ?Antibody XREF Locus // added [031120 krb]
+	SAGE_transcript ?SAGE_transcript XREF Locus // new for SAGE data
 	Remark ?Text #Evidence
 
 
@@ -794,23 +795,25 @@
 		       Pseudogene ?Pseudogene XREF Sequence UNIQUE Int UNIQUE Int #SMap_info  // For new ?Pseudogene class [030801 krb]
 		       Transposon ?Transposon XREF Sequence UNIQUE Int UNIQUE Int #SMap_info  // for transposons   [020128 dl]
 		       Genomic_non_canonical ?Sequence XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info
-		       Nongenomic ?Sequence XREF Genomic_parent UNIQUE Int UNIQUE Int #SMap_info            // for Lincoln RNAi  [010226 dl]
-		       PCR_product ?PCR_product XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info      // for Lincoln RNAi  [010226 dl]
-		       RNAi ?RNAi XREF Sequence UNIQUE Int UNIQUE Int #SMap_info                            // for Lincoln RNAi  [001213 dl]
-		       Operon ?Operon XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info                // for Operon data   [dl]
-     		       AGP_fragment ?Sequence XREF AGP_parent Int UNIQUE Int #SMap_info			     // added for Briggsae data [020726 krb]
-     		       UTR ?UTR XREF Canonical_parent Int UNIQUE Int #SMap_info				     // added for new UTR model [020729 krb]
-		       Allele ?Allele XREF Sequence UNIQUE Int UNIQUE Int #SMap_info			     // New SMapped Allele class [021217 krb]
-		       Microarray_aff ?Microarray_aff XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info //for Wen's Affymetrix model [020614 krb] 
-		       Oligo_set ?Oligo_set XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info	     //added for Oligo_set class
-                       Feature_object ?Feature XREF Sequence UNIQUE Int UNIQUE Int #SMap_info		     // dl feature play
+		       Nongenomic ?Sequence XREF Genomic_parent UNIQUE Int UNIQUE Int #SMap_info       // for Lincoln RNAi  [010226 dl]
+		       PCR_product ?PCR_product XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info // for Lincoln RNAi  [010226 dl]
+		       RNAi ?RNAi XREF Sequence UNIQUE Int UNIQUE Int #SMap_info                       // for Lincoln RNAi  [001213 dl]
+		       Operon ?Operon XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info           // for Operon data   [dl]
+     		       AGP_fragment ?Sequence XREF AGP_parent Int UNIQUE Int #SMap_info		       // for Briggsae data [020726 krb]
+     		       UTR ?UTR XREF Canonical_parent Int UNIQUE Int #SMap_info			       // for new UTR model [020729 krb]
+		       Allele ?Allele XREF Sequence UNIQUE Int UNIQUE Int #SMap_info		       // New SMapped Allele class [021217 krb]
+		       Microarray_aff ?Microarray_aff XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info //for Affymetrix model [020614 krb] 
+		       Oligo_set ?Oligo_set XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info     //added for Oligo_set class
+                       Feature_object ?Feature XREF Sequence UNIQUE Int UNIQUE Int #SMap_info	       // dl feature play
 		       Feature_data ?Feature_data XREF Sequence UNIQUE Int UNIQUE Int #SMap_info
 		       Homol_data ?Homol_data XREF Sequence UNIQUE Int UNIQUE Int #SMap_info
+		       SAGE_tag ?SAGE_tag XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info               // both for Igor's new data set 
+		       SAGE_transcript ?SAGE_transcript XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info // [040206 krb]
 	  Structure  From Source UNIQUE ?Sequence XREF Subsequence
 			  Source_exons Int UNIQUE Int // start at 1 
 			  // WARNING: is this still needed when ?CDS class is present???
 		     Subsequence ?Sequence XREF Source UNIQUE Int UNIQUE Int
-		     Overlap_right UNIQUE ?Sequence XREF Overlap_left UNIQUE Int          // potentially use Overlap_right integer for auto-linking
+		     Overlap_right UNIQUE ?Sequence XREF Overlap_left UNIQUE Int // potentially use Overlap_right integer for auto-linking
 		     Overlap_left UNIQUE ?Sequence XREF Overlap_right
 		     Gap_right UNIQUE Int Text            // 000909 dl added to track gap sizes
 		     Clone_left_end ?Clone XREF Clone_left_end UNIQUE Int
@@ -1026,6 +1029,7 @@
                 Concise_description ?Text #Evidence
 		Brief_identification UNIQUE ?Text #Evidence
 		Confidential_remark ?Text
+		SAGE_transcript ?SAGE_transcript XREF CDS // new for SAGE data
 		Remark ?Text #Evidence
 	Sequence_features ?Feature XREF Part_of_gene #Evidence            // Feature data model [dl 030304]
  	Interpolated_map_position UNIQUE ?Map UNIQUE Float 
@@ -1072,22 +1076,23 @@
                         Concise_description ?Text #Evidence
                         Brief_identification UNIQUE Text                           // [020306 kj]
                         Confidential_remark ?Text
+			SAGE_transcript ?SAGE_transcript XREF Transcript // new for SAGE data
                         Remark ?Text #Evidence
 		Interpolated_map_position UNIQUE ?Map UNIQUE Float // new for updated interpolated map positions [krb 030515]
-                Properties      Transcript      UNIQUE  mRNA    UNIQUE  Processed_mRNA
-                                                                        Unprocessed_mRNA
-                                                        tRNA 	Type 	  UNIQUE Text  // new for ck1 [030926] krb
-								Anticodon UNIQUE Text  // 
-                                                        rRNA UNIQUE Text
-                                                        snRNA UNIQUE Text
-							snoRNA UNIQUE Text // [030102 krb]
-                                                        scRNA UNIQUE Text
-                                                        stRNA UNIQUE Text         // [010723 dl]
-                                                        misc_RNA UNIQUE Text
-                                                        miRNA UNIQUE Text         // [020306 kj]
-		                Isoform #Evidence
-                                Start_not_found                                   // [020306 kj]
-                                End_not_found                                     // [020306 kj]
+                Properties Transcript UNIQUE  mRNA UNIQUE Processed_mRNA
+                                                          Unprocessed_mRNA
+                                              tRNA Type UNIQUE Text  // new for ck1 [030926] krb
+						   Anticodon UNIQUE Text  // 
+                                                   rRNA UNIQUE Text
+                                                   snRNA UNIQUE Text
+						   snoRNA UNIQUE Text // [030102 krb]
+                                                   scRNA UNIQUE Text
+                                                   stRNA UNIQUE Text         // [010723 dl]
+                                                   miRNA UNIQUE Text         // [020306 kj]
+                                                   misc_RNA UNIQUE Text
+		           Isoform #Evidence
+                           Start_not_found                                   // [020306 kj]
+                           End_not_found                                     // [020306 kj]
                 Method UNIQUE ?Method                  
 
 
@@ -1128,8 +1133,9 @@
                         Concise_description ?Text #Evidence
                         GO_term ?GO_term XREF Pseudogene ?GO_code #Evidence
                         Reference ?Paper XREF Pseudogene // added [011030 krb]
+			SAGE_transcript ?SAGE_transcript XREF Pseudogene
+			Remark ?Text #Evidence	  
                 Confidential_remark ?Text
-                Remark ?Text #Evidence
                 Method UNIQUE ?Method
 
 
@@ -1991,7 +1997,8 @@
          Microarray_result  ?Microarray_result XREF Cluster
 	 Microarray_results ?Microarray_results     //added for Microarray_results model
          Reference     ?Paper XREF Cluster 
-         Remark        ?Text #Evidence
+	 SAGE_results ?SAGE_results
+         Remark ?Text #Evidence
                   
 
 
@@ -2009,7 +2016,90 @@
            Reference       ?Paper  //Defines the condition.
 	   Cell_type       ?Cell // added for Experiment (Microarray_results)
            Treatment       ?Text // added for Experiment (Microarray_results)
+	   SAGE_experiment ?SAGE_experiment XREF Sample
            Remark          ?Text #Evidence
+
+
+
+
+//////////////////////////////////////////////////////////////////
+//      SAGE_tag model
+//      contains sequence and mapping information for a tag
+//////////////////////////////////////////////////////////////////
+
+?SAGE_tag	Evidence #Evidence
+                SMap S_parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF SAGE_tag // used for tags uniquely mapped 
+							// to the genome, may not correspond to any SAGE_transcript
+                Method                  UNIQUE ?Method  //for GFF dumping
+                Tag_sequence            UNIQUE Text     //tag sequence including the restriction site
+                Anchoring_enzyme        UNIQUE ?Motif   //NlaIII most commonly 
+                Tag_length              UNIQUE Int      //14 most commonly
+                SAGE_transcript         ?SAGE_transcript XREF SAGE_tag #Evidence        //used to map tags to 'conceptual
+							 // transcripts', a tag could be mapped to multiple SAGE transcripts
+                Unambiguously_mapped //boolean; describes whether tag is unambiguously mapped to one SAGE transcript 
+				     // or to splice isoforms of the same gene at the same genomic location
+                Results ?SAGE_experiment UNIQUE #SAGE_data //contains SAGE data for all experiments using the tag
+                Remark  ?Text #Evidence
+
+
+#SAGE_data      Result          Frequency               UNIQUE Int      //tag count
+                                Total_tag_count         UNIQUE Int      //sum of all tag counts in the experiment
+                                Relative_abundance      UNIQUE Float    //Frequency/Total_tag_count
+                                Significance            UNIQUE Float
+                                Confidence_level        UNIQUE Float
+                                Standard_deviation      UNIQUE Float
+                                Number_of_experiments   UNIQUE Int
+                Cluster         ?Cluster XREF SAGE_results                                                      
+                Sequence_quality  UNIQUE Float            //most commonly cumulative phred scores associated with the tag 
+						// sequences; not in ?SAGE_tag since it will vary from experiment to experiment
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+//      SAGE_transcript model                                                                           
+//      necessary due to the fact that SAGE mapping is done on the 'conceptual transcriptome'                           
+//      which contains 3' and 5' UTRs that may not be based on experimental data necesserily
+//      if not used, many tags will not be mapped to any genes
+//      Corresponds_to tags are filled in based on SAGE mapping
+//      SAGE_tag can be associated with multiple SAGE_transcript objects                                                               
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+?SAGE_transcript Evidence #Evidence
+                 SMap S_parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF SAGE_transcript  //for real and conceptual transcripts
+											      // mapped to the genome
+                 Method                 UNIQUE ?Method          //for GFF dumping
+                 Transcript_source      UNIQUE ?Text            //Coding RNA, Mitochondrial, Other...
+                 Position               UNIQUE Int              //the number of the SAGE anchoring enzyme restriction site from the
+								// 3' end of the cDNA molecule
+                 Strand                 UNIQUE Sense            //sense/antisense
+                                               Antisense
+                 SAGE_tag               ?SAGE_tag XREF SAGE_transcript #Evidence
+                 Unique_to_tag     //boolean; describes whether the transcript is unique to the corresponding tag; 
+				   // complements Unambiguously_mapped tag in SAGE_tag model for ease of querying
+                 Corresponds_to Locus           ?Locus XREF SAGE_transcript #Evidence           //these connections are made 
+                                CDS             ?CDS XREF SAGE_transcript #Evidence             //based on SAGE tag mapping
+                                Transcript      ?Transcript XREF SAGE_transcript #Evidence      //
+                                Pseudogene      ?Pseudogene XREF SAGE_transcript #Evidence
+                 Remark ?Text   #Evidence
+
+
+
+
+///////////////////////////////////////////////////////
+//      SAGE_experiment model
+//      connects to condition and paper objects
+///////////////////////////////////////////////////////
+
+?SAGE_experiment Sample  UNIQUE  ?Condition XREF SAGE_experiment
+                 Reference  ?Paper XREF SAGE_experiment
+                 Remark ?Text #Evidence
+
+
+
+
+
+
+
 
 
 
@@ -2191,6 +2281,7 @@
 		  Microarray_experiment ?Microarray_experiment XREF Reference //added for Microarray_experiment model
 		  Anatomy_term ?Anatomy_term XREF Reference #Evidence
 		  Antibody ?Antibody XREF Reference #Evidence // added [031120 krb]
+		  SAGE_experiment ?SAGE_experiment XREF Reference
         Keyword ?Keyword
 
 
