@@ -12,6 +12,7 @@
 # 001110 : dl  : Added 'test_dna_dump' into the DNA dump sub
 #              : This is a fatal exit if any .dna file is zero length
 # 010307 : dl  : Mended system call for wormpep build
+# 010815 : dl  : Added '-y' option to generate yellow brick road agp file
 
 # v0.2 
 # 001109 : dl  : Added 'dbcomp' into the check subroutine
@@ -32,7 +33,6 @@ use IO::Handle;
 use Getopt::Std;
 use lib "/wormsrv2/scripts/";
 use Wormbase;
-
 
  ##############################
  # Script variables (run)     #
@@ -62,7 +62,7 @@ $opt_d="";   # Verbose debug mode
 $opt_h="";   # Help/Usage page
 $opt_g="";   # chromosome_dump.pl -g
 $opt_m="";   # map PCR and RNAi
-
+$opt_y="";   # make agp files for the yellow brick road
 
 getopts ('awbchpfzdrgm123');
 &usage(0) if ($opt_h);
@@ -82,6 +82,7 @@ $Wormbase_release_version = &get_wormbase_version;
 # get just the number
 $WS_version = substr ($Wormbase_release_version,2);
 
+# manipulate to assign last WS release version and this wormpep version
 $WS_previous = $WS_version -1;
 $WP_version = $WS_version + 10;
 
@@ -122,6 +123,7 @@ print LOG "  -z : Move WS release to the external FTP site (Full public release)
 print LOG "  -d : Verbose/Debug mode\n" if ($opt_d);
 print LOG "  -g : chromosome_dump.pl -g\n" if ($opt_g);
 print LOG "  -m : map PCR and RNAi\n" if ($opt_m);
+print LOG "  -y : make agp files for yellow brick road\n" if ($opt_y);
 print LOG "======================================================================\n";
 print LOG "\n";
 
@@ -140,6 +142,7 @@ print LOG "\n";
 &make_anonymous_FTP if ($opt_z);
 &dump_GFFs          if ($opt_g);
 &map_PCR_and_RNAi   if ($opt_m);
+&make_agp           if ($opt_y);
 
  ##############################
  # mail $maintainer report    #
@@ -265,6 +268,17 @@ sub map_PCR_and_RNAi {
 
 
 #################################################################################
+# make agp file for yellow brick road                                           #
+#################################################################################
+
+sub make_agp {
+
+    system("$scriptdir/make_agp_file.pl") && die "Couldn't run make_agp_file\n";
+    print LOG " Make agp files for $WS_version\n";
+    print LOG " =>'make_agp_file.pl'\n\n";
+}
+
+#################################################################################
 # make_FTP_wormbase                                                             #
 #################################################################################
 
@@ -310,6 +324,7 @@ sub run_details {
     print "  -d : Verbose/Debug mode\n" if ($opt_d);
     print "  -g : chromosome_dump.pl -g\n" if ($opt_g);
     print "  -m : map PCR and RNAi\n" if ($opt_m);
+    print "  -y : make agp file for yellow brick road\n" if ($opt_y);
     print "\n\n";
 }
 
@@ -351,7 +366,7 @@ autoace_minder mandatory arguments:
 
 =over 4
 
-=item none, (but it won't do anything)
+=item none, (but it won\'t do anything)
 
 =back
 
