@@ -13,17 +13,17 @@
 #
 # pfetch is done in batches of 2000, any greater and nothing comes back!
 #
-# Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs 
-# Last updated on: $Date: 2002-08-12 15:41:49 $        # quickly see when script was last changed and by whom
+# Last updated by: $Author: dl1 $                  
+# Last updated on: $Date: 2002-08-13 09:25:59 $    
 
 use strict;
 use Wormbase;
 
-my $maintainer = "All";
-my $rundate    = `date +%y%m%d`; chomp $rundate;
-my $wmpep_ver = &get_wormbase_version() -1;# for testing during builds
-my $log = "/wormsrv2/logs/GetIDandAC.$rundate";#error log (email to All)
-my $wormpepdir = "/wormsrv2/WORMPEP/wormpep$wmpep_ver";
+my $maintainer   = "All";
+my $rundate      = `date +%y%m%d`; chomp $rundate;
+my $wmpep_ver    = &get_wormbase_version() -1;# for testing during builds
+my $log          = "/wormsrv2/logs/GetIDandAC.$rundate";#error log (email to All)
+my $wormpepdir   = "/wormsrv2/WORMPEP/wormpep$wmpep_ver";
 my $temp_acefile = "/wormsrv2/autoace/wormpep_ace/WormpepACandIDs.ace";
 
 open(LOG,">$log")|| die "cant open $log";
@@ -39,9 +39,8 @@ close ACE_OUTPUT;
 open (ACE_OUTPUT,">>$temp_acefile" || die "cant open $temp_acefile");
 
 #open file with linking data
-open (INPUT, "/nfs/griffin2/dl1/perlscrip/SWALL/WS84_CDS_protein_id_matches.txt")|| print "$0 cant find file";
-#open (INPUT, "/nfs/disk56/ar2/failingAAA.txt")|| print "$0 cant find file";
-#CAA94865.1      AC3     AC3.1
+open (INPUT, "/nfs/disk100/wormpub/analysis/SWALL/output_autoace")|| print "$0 cant find file";
+
 my %protid_data;    #$protid_data{$protein_id}= @[gene, ver_no,  AC, ID, parent_clone ]
 my @AAAprotein_ids;
 my $protein_id;
@@ -51,7 +50,8 @@ my $parent_clone;
 while (<INPUT>)
   {
     chomp;
-    ($protein_id, $parent_clone, $gene) = split(/\s+/,$_);
+    ($parent_clone) = (/^EMBL \[(\S+)\|\S+\]/);                # modified to unprocessed format
+    ($gene,$protein_id) = (/gene:(\S+)\s+protein_id:(\S+)/);   # (no need for intermediary script)
     $protein_id =~ m/(\w+)\.(\d)/;
     $protein_id = $1;
     my $version = $2;
