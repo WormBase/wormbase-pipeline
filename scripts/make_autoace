@@ -7,8 +7,8 @@
 #
 # This makes the autoace database from its composite sources.
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-01-29 14:52:16 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2003-02-07 10:06:22 $
 
 
 $|=1;
@@ -621,6 +621,7 @@ sub buildrelease{
     
     my @tarfiles;
     $tarfiles[0] = "wspec/cachesize.wrm  wspec/constraints.wrm wspec/copyright wspec/database.wrm wspec/displays.wrm wspec/help.wrm wspec/layout.wrm wspec/models.wrm wspec/options.wrm wspec/passwd.wrm wspec/psfonts.wrm wspec/subclasses.wrm wspec/xfonts.wrm wgf wquery wscripts  pictures database/log.wrm database/database.map database/ACEDB.wrm" ;
+    
     for (my $i = 1 ; -e "$dbpath/database/block$i.wrm" ; ++$i) {
       $tarfiles[($i+4)/5] .= " database/block$i.wrm" ;
     }
@@ -628,8 +629,7 @@ sub buildrelease{
     my $remove1 = `\\rm $dbpath/release/database.$dbname.*.tar 2>/dev/null`;
     my $remove2 = `\\rm $dbpath/release/database.$dbname.*.tar.gz 2>/dev/null`;
     for (my $i = 0; $i < @tarfiles; ++$i) {
-      system("cd $dbpath"); 
-      system("tar -hcf $dbpath/release/database.$dbname.4-$i.tar $tarfiles[$i]\"") && print LOG "Couldn't create tarfile\n";
+      system("cd $dbpath; tar -hcf $dbpath/release/database.$dbname.4-$i.tar $tarfiles[$i]\"") && print LOG "Couldn't create tarfile\n";
 
       # list files in the tar archive
       system ("tar -tf $dbpath/release/database.$dbname.4-$i.tar >> $dbpath/release/files_in_tar");
