@@ -8,7 +8,7 @@
 # Page download and update upload to geneace has been automated [ck1]
 
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2004-05-10 16:04:17 $
+# Last updated on: $Date: 2004-05-11 14:26:32 $
 
 use strict;
 use Getopt::Std;
@@ -81,6 +81,10 @@ $/ = "--------------------";
 
 my $big_counter=0;
 
+my $CGC = "non_CGC_loci_from_CGC_strain_info";
+open(CGC, ">$CGC") || die "\nCan't open $CGC\n";
+
+
 while(<INPUT>){
   # drop out of loop before you reach last line of file
   last if $big_counter == $strain_count;
@@ -111,6 +115,7 @@ while(<INPUT>){
   my $genotype;
   m/Genotype: (.*?)Description:/;
   $genotype = $1;
+  my $geno = $1;
   $genotype =~ s/\s{2,}/ /g; # condense whitespace to single gap between words
   $genotype =~ s/\s+$//g; # remove trailing whitespace
   $ace_object .= "Genotype \"$genotype\"\n" unless ($genotype eq "");
@@ -181,8 +186,14 @@ while(<INPUT>){
   }
 
   # will not write out Gene tag if the loci from genotype is not a CGC name
-  foreach my $i (@loci) {$ace_object .= "Gene $Gene_info{$i}{'Gene'}\n" if exists $Gene_info{$i}{'Gene'}}
-  foreach my $i (@loci2) {$ace_object .= "Gene $Gene_info{$i}{'Gene'}\n" if exists $Gene_info{$i}{'Gene'}}
+  foreach my $i (@loci) {
+    $ace_object .= "Gene $Gene_info{$i}{'Gene'}\n" if exists $Gene_info{$i}{'Gene'};
+    print CGC "CGC issue: locus $i ($strain: $geno) is not yet linked to a gene id\n" if (!exists $Gene_info{$i}{'Gene'} && $i !~ /^Cb|Cr|Cv/);
+  }
+  foreach my $i (@loci2) {
+    $ace_object .= "Gene $Gene_info{$i}{'Gene'}\n" if exists $Gene_info{$i}{'Gene'};
+    print CGC "CGC issue: locus $i ($strain: $geno) is not yet linked to a gene id\n" if (!exists $Gene_info{$i}{'Gene'} && $i !~ /^Cb|Cr|Cv/);
+  }
   foreach my $i (@alleles){$ace_object .= "Allele $i\n";}
   foreach my $i (@alleles2){$ace_object .= "Allele $i\n";}
   foreach my $i (@alleles3){$ace_object .= "Allele $i\n";}
