@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-05-30 09:33:19 $
+# Last updated on: $Date: 2003-06-06 16:48:19 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -1031,6 +1031,82 @@ EOF
       }
     }
   }
+  
+  my ($locus, %locus_strain, $cds, %locus_cds, $main, $other_name, %other_main);
+ 
+  my $get_loci_in_strain=<<EOF;
+  Table-maker -p "/wormsrv1/geneace/wquery/locus_in_strain.def" quit 
+EOF
+
+  my $locus_has_other_name_to_cds=<<EOF;
+Table-maker -p "/wormsrv1/geneace/wquery/locus_has_other_name_to_cds.def" quit
+EOF
+  my $locus_to_CDS=<<EOF;
+Table-maker -p "/wormsrv1/geneace/wquery/locus_to_CDS.def" quit
+EOF
+
+  my $locus_to_trans=<<EOF;
+Table-maker -p "/wormsrv1/geneace/wquery/locus_to_Transcripts.def" quit
+EOF
+  
+  open (FH1, "echo '$get_loci_in_strain' | tace $default_db | ") || die $!;
+  open (FH2, "echo '$locus_has_other_name_to_cds' | tace $default_db | ") || die $!;
+  open (FH3, "echo '$locus_to_CDS' | tace $default_db | ") || die $!;
+  open (FH4, "echo '$locus_to_trans' | tace $default_db | ") || die $!;
+
+  while (<FH1>){
+    chomp;
+    if ($_ =~ /\"(.+)\"\s+\"(.+)\"/){
+      $strain = $1; $locus = $2;
+      push(@{$locus_strain{$locus}}, $strain);
+    }
+  }   
+
+ 
+  while (<FH2>){
+    chomp $_;
+    if ($_ =~ /\"(.+)\"\s+\"(.+)\"\s+\"(.+)\"/){
+      $main = $1;
+      $other_name = $2;
+      $other_name =~ s/\\//;
+      if ($3){
+	$cds = $3;
+	push(@{$other_main{$other_name}}, $main, $cds);
+      }
+      else {
+	push(@{$other_main{$other_name}}, $main);
+      }
+    }
+  }
+
+  while (<FH3>){
+    chomp $_;
+    if ($_ =~ /\"(.+)\"\s+\"(.+)\"/){
+      $locus = $1;
+      $locus =~ s/\\//;
+      $cds = $2;
+      push(@{$locus_cds{$locus}}, $cds);
+    }
+  } 
+  
+  
+  while (<FH4>){
+    chomp $_;
+    if ($_ =~ /\"(.+)\"\s+\"(.+)\"/){
+      $locus = $1;
+      $locus =~ s/\\//;
+      $cds = $2;
+      push(@{$locus_cds{$locus}}, $cds);
+    }
+  } 
+  
+  foreach (keys %locus_strain){
+    if(exists $other_main{$_} ){ 
+      $strain_errors++;
+      print LOG "WARNING: $_ (@{$other_main{$_}}->[1]) of strain @{$locus_strain{$_}} can now be ";
+      print LOG "@{$other_main{$_}}->[0] (@{$locus_cds{@{$other_main{$_}}->[0]}}) -> main name\n";
+    }
+  } 
   print LOG "\nThere are $strain_errors errors in Strain class.\n";
 }
 
@@ -1213,7 +1289,7 @@ sub loci_as_other_name {
       # hard coded loci for no main name / other_name merging 
       #######################################################
       @exceptions = 
-      qw (aka-1 cas-1 clh-2 clh-3 ctl-1 ctl-2 egl-13 evl-20 gst-4 mig-1 sle-1 slo-1 rap-1 
+      qw (aka-1 cas-1 clh-2 clh-3 ctl-1 ctl-2 egl-13 evl-20 gst-4 mig-1 sle-1 slo-1 rap-1 rpy-1
           old-1 plk-1 ptp-3 rab-18 rsp-1 rsp-2 rsp-4 rsp-5 rsp-6 sca-1 sus-1);
 
       foreach (@exceptions){$exceptions{$_}++};  
