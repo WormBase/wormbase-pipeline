@@ -4,8 +4,8 @@
 
 # by ag3 [991221]
 #
-# Last updated on: $Date: 2003-05-06 15:44:00 $
-# Last updated by: $Author: krb $
+# Last updated on: $Date: 2003-05-08 12:10:25 $
+# Last updated by: $Author: ck1 $
 
 
 # transferdb moves acedb database files across filesystems.
@@ -245,6 +245,8 @@ sub process_file {
 
   my $s_file="$File::Find::name";
   my $e_subdir="$e_dir"."$s_subdir";
+  $e_subdir =~ s/\/\//\//;
+
   if (!-d $e_subdir){
     mkdir($e_subdir,07777) or &SendMail ("ERROR: Could not mkdir subdir $e_subdir: $!\n");
     print LOGFILE "CREATED SUBDIR $e_subdir\n";
