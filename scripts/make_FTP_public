@@ -172,7 +172,7 @@ print "make the FTP files for WormRNA${wormrna_release}\n" if ($debug);
 
 
 # make file of confirmed genes from autoace and copy across
-&extract_confirmed_genes($targetdir);
+&extract_confirmed_genes($targetdir,$release);
 
 
 
@@ -218,6 +218,7 @@ sub usage {
 sub extract_confirmed_genes{
 
   my $targetdir = shift;
+  my $release = shift;
 
   print "extracting confirmed genes from autoace\n" if ($debug);
 
@@ -227,7 +228,7 @@ sub extract_confirmed_genes{
   my @confirmed_genes   = $db->fetch(-query=>$query);
 
 
-  open(OUT,">/wormsrv2/tmp/confirmed_genes.dna") || die "Couldn't write to /wormsrv2/tmp/confirmed_genes.dna\n";
+  open(OUT,">/wormsrv2/tmp/confirmed_genes.${release}") || die "Couldn't write to /wormsrv2/tmp/confirmed_genes.${release}\n";
 
   foreach my $seq (@confirmed_genes){
     my $dna = $seq->asDNA();
@@ -245,9 +246,9 @@ sub extract_confirmed_genes{
 
   close(OUT);
 
-  system("/bin/gzip /wormsrv2/tmp/confirmed_genes.dna") && die "Couldn't gzip confirmed_genes.dna file\n";
-  print "gzipping confirmed_genes.dna\n" if ($debug);
-  system("/bin/mv /wormsrv2/tmp/confirmed_genes.dna.gz $targetdir/") && die "Couldn't gzip confirmed_genes.dna file\n";
+  system("/bin/gzip /wormsrv2/tmp/confirmed_genes.${release}") && die "Couldn't gzip confirmed_genes file\n";
+  print "gzipping confirmed_genes.${release}\n" if ($debug);
+  system("/bin/mv /wormsrv2/tmp/confirmed_genes.${release}.gz $targetdir/") && die "Couldn't gzip confirmed_genes file\n";
   
   return(0);
 
