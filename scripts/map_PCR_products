@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/bin/perl5.8.0 -w
 #
 # map_PCR_products
 #
@@ -18,7 +18,7 @@
 #############
 
 use strict;
-use lib "/wormsrv2/scripts/";
+use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
 use IO::Handle;
 use Getopt::Long;
@@ -29,8 +29,8 @@ use Cwd;
 ##########################
 
 my $maintainers = "All";
-my $rundate     = `date +%y%m%d`; chomp $rundate;
-my $runtime     = `date +%H:%M:%S`; chomp $runtime;
+my $rundate     = &rundate;
+my $runtime     = &runtime;
 my %output      = ();
 my %finaloutput = ();
 
@@ -65,7 +65,7 @@ if($debug){
 
 my $tace        = &tace;                                     # tace executable path
 my $dbdir       = "/wormsrv2/autoace";                       # Database path
-my $gffdir      = "/wormsrv2/autoace/CHROMOSOMES";           # GFF directory
+my $gffdir      = "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS"; # GFF splits directory
 my @chromosomes = qw( I II III IV V X );                     # chromosomes to parse 
 my $db_version  = &get_wormbase_version_name;                # WS version number
 our %genetype   = ();                                        # gene type hash
@@ -74,7 +74,7 @@ our %genetype   = ();                                        # gene type hash
 # Open logfile #
 ################
 
-my $log = "/wormsrv2/logs/map_PCR_products.$rundate";
+my $log = "/wormsrv2/logs/map_PCR_products.$rundate.$$";
 
 open (LOG,">$log");
 LOG->autoflush();
@@ -88,32 +88,27 @@ print LOG "\n";
 ###########################################        
    
 foreach my $chromosome (@chromosomes) {
-    print "\n$chromosome\n" if ($verbose);
-    my %exoncount = ();
-    my %PCRcount  = ();
-    my %genes     = ();
-    my %PCR       = ();
-    my %exon      = ();
-    my @f         = ();
+  print "\n$chromosome\n" if ($verbose);
+  my %exoncount = ();
+  my %PCRcount  = ();
+  my %genes     = ();
+  my %PCR       = ();
+  my %exon      = ();
+  my @f         = ();
   
-    open (GFF_in, "<$gffdir/CHROMOSOME_${chromosome}.gff") || die "Failed to open gff file\n\n";
-    while (<GFF_in>) {
-        chomp;
+  # Get PCR_product info from split GFF file
+  open (GFF_in, "<$gffdir/CHROMOSOME_${chromosome}.PCR_products.gff") || die "Failed to open PCR_product gff file\n\n";
+  while (<GFF_in>) {
+	chomp;	     
         s/\#.*//;
         next unless /\S/;
         @f = split /\t/;
 
-# 031029 dl : Molecular biology in action. I can see no evidence for the smd data in the GFF files
-#             anymore and have commented out the line below. This was causing the -w errors when you
-#             run the script but i don't see how. 
-
-#	# ignore smd spot data from caltech
-#	next if ($f[8] =~ /smd_INTERGENIC_CONTROL/);
-
-	if ($f[1] eq "GenePair_STS" or $f[1] eq "Orfeome_project") {
+	# look for PCR_product in GFF_feature field
+	if ($f[2] eq "PCR_product") {
 	    my ($name) = ($f[8] =~ /PCR_product \"(.*)\"$/);
 	    unless ($name) {
-	      print LOG "Cant get name from $f[8]\n";
+	      print LOG "ERROR: Cant get name from $f[8]\n";
 	      next;
 	    }
             $PCRcount{$name}++;
@@ -121,13 +116,14 @@ foreach my $chromosome (@chromosomes) {
             $PCR{$PCRname} = [$f[3],$f[4]];
 	    print "GenePair : '$name'\n" if ($verbose);
 	}
-	elsif ( ($f[2] eq "exon") && ($f[1] =~ /curated|Pseudogene|transcript|provisional/) ) { 
+	# look for 'genes', i.e. CDS, Pseudogene, or non-coding Transcript (which are not rRNA, tRNA etc.)
+	elsif ( ($f[2] eq "exon") && ($f[1] =~ /curated|Pseudogene|nc_primary_transcript/) ) { 
             my ($name) = ($f[8] =~ /\"(\S+)\"/);
             $exoncount{$name}++;
             my $exonname = $name.".".$exoncount{$name};
             $exon{$exonname} = [$f[3],$f[4]];
 	    $genetype{$name} = "CDS"        if ($f[1] eq "curated");
-	    $genetype{$name} = "Transcript" if ($f[1] eq "transcript");
+	    $genetype{$name} = "Transcript" if ($f[1] eq "nc_primary_transcript");
 	    $genetype{$name} = "Pseudogene" if ($f[1] eq "Pseudogene");
 	    print "Gene : '$name' [$genetype{$name}] exon $exoncount{$name}\n" if ($verbose);
         }
