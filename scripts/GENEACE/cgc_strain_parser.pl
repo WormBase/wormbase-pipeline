@@ -8,7 +8,7 @@
 # Page download and update upload to geneace has been automated [ck1]
 
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-12-03 16:57:59 $
+# Last updated on: $Date: 2004-12-03 17:13:18 $
 
 use strict;
 use Getopt::Long;
@@ -379,7 +379,7 @@ sub check_details{
   elsif($gene =~ m/^(\w|\-)+\d+$/){
 
     print NEWGENES "Gene : WBGene\n";
-    print NEWGENES "Evidence Inferred_autoamatically \"Gene name parsed from strain object: $strain\"\n";
+    print NEWGENES "Evidence Inferred_automatically \"Gene name parsed from strain object: $strain\"\n";
     print NEWGENES "Version  1\n";
     print NEWGENES "Version_change 1 now \"WBPerson2970\" Created\n";
     print NEWGENES "Live\n";
