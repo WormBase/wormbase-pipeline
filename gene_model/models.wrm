@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.70 2002-08-02 10:33:10 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.71 2002-08-05 13:35:53 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -854,6 +854,7 @@
 				Submitted UNIQUE DateType
                                 Annotated UNIQUE DateType
 				Archived UNIQUE DateType UNIQUE Text // Date Disk
+			Link // new tag [020805 krb]
 	  Splices	Confirmed_intron  Int Int #Splice_confirmation
 			Predicted_5 ?Method Int Int UNIQUE Float // (x, x+1) or (x, x-1)
 			Predicted_3 ?Method Int Int UNIQUE Float // (x, x+1) or (x, x-1)
