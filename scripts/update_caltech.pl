@@ -4,7 +4,7 @@
 
 # by Chao-Kung Chen [030113]
 
-# Last updated on: $Date: 2003-01-24 13:02:03 $
+# Last updated on: $Date: 2003-02-07 18:26:10 $
 # Last updated by: $Author: ck1 $
 
 
@@ -44,6 +44,9 @@ $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`")
 my $command=<<END;
 find sequence * where concise_description OR detailed_description OR provisional_description
 show -a -T -f /wormsrv1/geneace/ERICHS_DATA/seq_TS_dump.ace
+edit -D Concise_description
+edit -D Detailed_description
+edit -D Provisional_description
 
 find locus * where concise_description OR detailed_description OR provisional_description
 show -a -T -f /wormsrv1/geneace/ERICHS_DATA/loci_TS_dump.ace
@@ -52,24 +55,16 @@ edit -D Concise_description
 edit -D Detailed_description
 edit -D Provisional_description
 
+pparse $update_file
+
 save
 quit
 END
 
 my $tace = &tace;
-
 my $geneace_dir="/wormsrv1/geneace";
 
-open (FH,"| $tace $geneace_dir ") || die "Failed to upload to Geneace";
-print FH $command;
-close FH;
-
-print $update_file, "\n";
-
-
-$command="pparse $update_file\nsave\nquit\n";
-
-open (Load_GA,"| $tace $geneace_dir ") || die "Failed to upload to Geneace";
+open (Load_GA,"| $tace -tsuser \"Functional_annotation\" $geneace_dir ") || die "Failed to upload to Geneace";
 print Load_GA $command;
 close Load_GA;
 
