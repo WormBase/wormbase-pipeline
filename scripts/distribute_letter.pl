@@ -8,8 +8,8 @@
 #                          /wormsrv2/autoace/release/
 #                          /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/current/release_notes.txt/
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2004-05-10 10:06:03 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2004-06-18 15:18:37 $
 
 
 use strict;
@@ -57,6 +57,23 @@ if( &mail_maintainer($name,$to,$release_letter) == 1 ) {
 else {
   print LOG "! mailing failed !\n\n\nIs this divine intervention?  A last chance to fix something?\n
 whatever - something is wrong.\n"; }
+
+	 
+################################### 	 
+# Make data on FTP site available 	 
+################################### 	 
+  	 
+# FTP site data is there but sym link needs to be updated so people can easily point to it 	 
+  	 
+print LOG "Updating symlink on FTP site\n"; 	 
+  	 
+my $targetdir = "/nfs/disk69/ftp/pub/wormbase";  # default directory, can be overidden 	 
+  	 
+# delete the old symbolic link and make the new one 	 
+system "rm -f $targetdir/development_release"; 	 
+system "cd $targetdir; ln -s $release development_release"; 	 
+ 
+
 
 print LOG "$0 finished at ",`date`,"\n\n";
 
