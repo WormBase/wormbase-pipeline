@@ -4,12 +4,13 @@
 # 
 # A script to make multiple copies of camace for curation, and merge them back again
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2004-11-15 12:54:42 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2005-01-21 15:33:41 $
 
 
 use strict;
-use lib "/wormsrv2/scripts/";
+#use lib "/wormsrv2/scripts/";
+use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
 
