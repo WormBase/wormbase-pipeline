@@ -157,6 +157,11 @@ foreach my $gene (@predicted_genes){
   print "Gene error - $gene: method is hand_built\n" if ($method eq 'hand_built');
 
 
+  # check From_laboratory tag is present
+  my $laboratory = ($gene_object->From_laboratory);
+  print "Gene error - $gene: does not have From_laboratory tag\n" if (!defined($laboratory));
+
+
   # then run misc. sequence integrity checks
   my $dna = $gene->asDNA();
   if(!$dna){
