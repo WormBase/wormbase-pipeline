@@ -476,7 +476,7 @@ if( $dump_data )
     print "Dumping blastp\n";
     `$wormpipe_dir/scripts/Dump_new_prot_only.pl -all -version $WPver`;
     print "Dumping blastx\n";
-    `$scripts_dir/dump_blastx_new.pl -w $wormpipe_dir/BlastDB/wormpep$WPver.pep -a ~/Elegans/WS$WPver.agp -g ~/Elegans/cds$WPver.gff -c ~/Elegans/cos$WPver.gff -m`;
+    `$scripts_dir/dump_blastx_new.pl -version $WPver`;
     print "Dumping motifs\n";
       `$scripts_dir/dump_motif.pl`;
     
