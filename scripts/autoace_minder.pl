@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-09-17 15:20:08 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2004-09-27 11:11:04 $
 
 
 
@@ -1127,6 +1127,9 @@ sub parse_briggsae_data {
 
   $file = "/wormsrv1/briggsae/BAC_ENDS/briggsae_bac_clone_ends.ace";
   &load($file,"briggsae_BAC");
+
+  $file = "/wormsrv2/wormbase/misc_static/ortholog_WS131.ace";
+  &load($file,"briggsae_orthologues");
 
   # upload_homol data log file in /logs
   system("touch $logdir/$flag{'B9'}");
