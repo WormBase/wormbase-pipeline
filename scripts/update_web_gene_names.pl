@@ -5,7 +5,7 @@
 # completely rewritten by Keith Bradnam from list_loci_designations
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-08-17 12:20:41 $      
+# Last updated on: $Date: 2004-08-17 12:41:56 $      
 #
 # This script should be run under a cron job and simply update the webpages that show
 # current gene names and sequence connections.  Gets info from geneace.  
@@ -170,7 +170,7 @@ sub create_currentDB_loci_pages{
 	foreach my $cds (@CDSs){
 	  # also get wormpep identifier for each protein
 	  my $protein = $cds->Corresponding_protein;
-	  print HTML "<A HREF=\"http://www.wormbase.org/db/seq/sequence?name=${cds}\">${cds}</a> ";
+	  print HTML "<A HREF=\"http://www.wormbase.org/db/gene/gene?name=${cds};class=CDS\">${cds}</a> ";
 	  print HTML "(<A HREF=\"http://www.wormbase.org/db/seq/protein?name=${protein};class=Protein\">${protein}</a>) ";
 	  print TEXT "$cds ($protein) ";
 	}
