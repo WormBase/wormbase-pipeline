@@ -7,7 +7,7 @@
 # This script calculates interpolated genetic map positions for CDS, Transcripts 
 # and Pseudogenes lying between and outside genetic markers.
 #
-# Last updated on: $Date: 2004-01-28 15:28:37 $
+# Last updated on: $Date: 2004-02-06 12:35:57 $
 # Last updated by: $Author: ck1 $
 
 use strict;
@@ -740,7 +740,7 @@ pparse $acefile
 save
 quit
 END
-  my $database = "/nfs/disk100/wormpub/DATABASES/TEST_DBs/CK1TEST";
+
   open (LOAD_A,"| $tace -tsuser \"genetic_map\" $database/ >> $log") || die "Failed to upload to Geneace";
   print LOAD_A $command;
   close LOAD_A;
