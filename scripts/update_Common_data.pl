@@ -5,7 +5,7 @@
 # by Anthony Rogers
 #
 # Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2004-05-19 09:30:12 $
+# Last updated on: $Date: 2004-05-19 13:26:16 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -250,14 +250,15 @@ sub write_EST  {
     next if ($_ eq "");    # shortcut at empty lines
     last if (/\/\//);      # end when you get to the end
     s/\"//g;               # remove speech marks
-    @f = split /\t/;
+    @f = split (/\t/);
+    
     
     # NDB_accession to WormBase name
     $NDBaccession2est{$f[1]} = $f[0];
 
     # EST orientation
-    $estorientation{$f[0]} = 5 if ($f[3]);
-    $estorientation{$f[0]} = 3 if ($f[4]);
+    $estorientation{$f[0]} = 5 if ($f[2]);
+    $estorientation{$f[0]} = 3 if ($f[3]);
 
 #    print "// Assign $NDBaccession2est{$f[0]} as WormBase name for $f[1]\t\tOrientation $estorientation{$f[1]}\n";
 
