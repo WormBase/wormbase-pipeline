@@ -7,8 +7,8 @@
 #
 # Usage : make_agp_file.pl
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2002-09-04 10:27:07 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2003-01-14 14:48:17 $
 
 
 #################################################################################
@@ -76,7 +76,6 @@ print "Finished assigning to hash\n";
 # Main Loop                                                                     #
 #################################################################################
 
-#my $last_start = 0;
 
 foreach my $chromosome (@gff_files) {
 
@@ -90,7 +89,13 @@ foreach my $chromosome (@gff_files) {
 
 
   my $i = 1;
-  my ($start,$stop,$clone,$acc,$gap_span,$offset,$span,$gpseq,$gspan,$last_stop,$last_start,$limit,$span2get,$unique_stop) = "";
+  my ($start,$stop,$clone,$acc,$gap_span,$offset,$span,$gpseq,$gspan,$limit,$span2get,$unique_stop) = "";
+
+
+  my ($last_stop,$last_start);
+  $last_stop =0;
+  $last_start =0;
+
 
   my $file = "$outdir/CHROMOSOME_$chromosome.agp";
   $last_stop = 2;
