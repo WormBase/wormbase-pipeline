@@ -145,6 +145,9 @@ print "Copying models.wrm\n" if ($debug);
 system "cp /wormsrv2/autoace/COMPARE/WS${old_WS_release}-${release}.dbcomp $targetdir/$release/";
 print "copying dbcomp file across\n" if ($debug);
 
+system "cp /wormsrv2/autoace_config/INSTALL $targetdir/$release/";
+print "copying INSTALL script across\n" if ($debug);
+
 
 
 # tar up the latest wormpep release and copy across
