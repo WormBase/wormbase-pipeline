@@ -7,8 +7,8 @@
 #
 # written by Keith Bradnam (based on locus2seq.pl)
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-04-26 10:36:39 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2004-05-10 10:55:32 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -171,7 +171,7 @@ sub create_log_files{
 sub get_lab_details{  
   print LOG "Getting associated lab info from data hash:\n\n";  
 
-  my %worm_gene2lab = &FetchData('worm_genes2lab');   
+  my %worm_gene2lab = &FetchData('worm_gene2lab');   
    
   open (CAMOUT,">$cam_out") || die "cant open CAMOUT";
   open (STLOUT,">$stl_out") || die "cant open STLOUT";
