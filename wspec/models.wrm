@@ -620,6 +620,7 @@
 		       Motif ?Motif XREF GO_term
 		       Sequence ?Sequence XREF GO_term   // added for Erich, [011210 krb]
 		       Phenotype ?Phenotype XREF GO_term // added for Erich, [020128 dl]
+
 //
 // Laboratory/Bibliography
 //
@@ -666,9 +667,8 @@
         Abstract ?LongText
 	Type UNIQUE Text        //meaning review, article, chapter, monograph, news, book, meeting_abstract
 	Contains ?Paper XREF Contained_in
-        Refers_to Gene ?Gene XREF Reference
-                  Locus ?Locus XREF Reference
-                  Allele ?Allele XREF Reference
+        Refers_to Locus ?Locus XREF Reference
+		  Allele ?Allele XREF Reference
 		  Rearrangement ?Rearrangement XREF Reference
 		  Sequence ?Sequence XREF Reference
 		  Strain ?Strain XREF Reference
@@ -677,12 +677,13 @@
 		  Expr_pattern ?Expr_pattern XREF Reference
 		  Expr_profile ?Expr_profile XREF Reference // Added to fit new Expr_profile class [010912 krb]
 	          Cell ?Cell XREF Reference
-                  Cell_group ?Cell_group XREF Reference
-                  Life_stage ?Life_stage XREF Reference
-                  RNAi ?RNAi XREF Reference  // added for Lincoln RNAi [001213 dl]
-                  Transgene ?Transgene XREF Reference
+		  Cell_group ?Cell_group XREF Reference
+		  Life_stage ?Life_stage XREF Reference
+		  RNAi ?RNAi XREF Reference  // added for Lincoln RNAi [001213 dl]
+		  Transgene ?Transgene XREF Reference
+		  Gene ?Gene XREF Reference
+		  GO_term ?GO_term XREF Reference
 		  Operon ?Operon XREF Reference      // added for operon data [010928 dl]
-                  GO_term ?GO_term XREF Reference
         Keyword ?Keyword
 
 #Affiliation Affiliation_address UNIQUE Text
@@ -774,11 +775,11 @@
 	       S_Child Homol_data ?Homol_data XREF Sequence UNIQUE Int UNIQUE Int #SMap_info
 		       Feature_data ?Feature_data XREF Sequence UNIQUE Int UNIQUE Int #SMap_info
 		       Genomic_non_canonical ?Sequence XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info
-                       PCR_product ?PCR_product XREF Canonical_parent Int UNIQUE Int #SMap_info      // added for Lincoln RNAi [010226 dl]
+		       PCR_product ?PCR_product XREF Canonical_parent Int UNIQUE Int #SMap_info      // added for Lincoln RNAi [010226 dl]
 		       Nongenomic ?Sequence XREF Genomic_parent Int UNIQUE Int #SMap_info            // added for Lincoln RNAi [010226 dl]
-                       RNAi ?RNAi XREF Sequence UNIQUE Int UNIQUE Int #SMap_info                     // added for Lincoln RNAi [001213 dl]
+		       RNAi ?RNAi XREF Sequence UNIQUE Int UNIQUE Int #SMap_info                     // added for Lincoln RNAi [001213 dl]
 		       WTP ?WTP XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info               // added for Mieg WTP data [001623 rd]
-		       Operon ?Operon XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info  // added for Operon data
+		       Operon ?Operon XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info         // added for Operon data
 		       Transposon ?Transposon XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info // added for transposons [020128 dl]
 	  Structure  From	Source UNIQUE ?Sequence XREF Subsequence
 				Source_Exons Int UNIQUE Int // start at 1
@@ -834,20 +835,20 @@
 			Expr_pattern ?Expr_pattern XREF Sequence
 			Corresponding_PCR_product ?PCR_product XREF Overlaps_CDS // added for PCR mappings [010419 dl]
 			Corresponding_WTP ?WTP XREF Overlaps_CDS                 // [010623 rd]
-                        RNAi_result ?RNAi XREF Predicted_gene                    // added for Lincoln RNAi [001213 dl]
-		        Gene ?Gene XREF Sequence                                 // added by Lincoln 010417
+			RNAi_result ?RNAi XREF Predicted_gene                    // added for Lincoln RNAi [001213 dl]
+			Gene ?Gene XREF Sequence                                 // added by Lincoln 010417
 			GO_term ?GO_term XREF Sequence                           // added for Erich [011210 krb]
+                        Contained_in_operon ?Operon XREF Contains_CDS            // added for Operons [020128 dl]
 		// tag2 system: names of all objects following next tag are shown in the 
 		//   general annotation display column as "tag:objname"
 	  Properties    Pseudogene Text		                                 // explanation
-			Transposon Text		                                 // transposon type
 			Genomic_canonical UNIQUE Int                             // added tag for dot name tracking [020128 dl]
                         Briggsae_canonical
 			Wormpep  
 			cDNA cDNA_EST
 			     EST_5		       // Indicate whether this is a 5' or 3' read [010423 dl]
 			     EST_3
-			     Capped_5	               //indicates capped 5' end - for Lincoln [06/12/01 krb]
+			     Capped_5	               // Indicates capped 5' end - for Lincoln [06/12/01 krb]
 			RNA	// if set then use U in place of T
 			Coding	CDS UNIQUE Int UNIQUE Int
 				CDS_predicted_by ?Method Float // score of method
@@ -1484,7 +1485,7 @@
 
 ?Operon SMap S_Parent Canonical_parent UNIQUE ?Sequence XREF Operon
 	Species ?Species
-	Contains_CDS ?CDS XREF Contained_in_operon  #Trans_splice_leader
+	Contains_CDS ?Sequence XREF Contained_in_operon  #Trans_splice_leader
 	Reference ?Paper XREF Operon
 	Method ?Method
 
@@ -1494,7 +1495,7 @@
 // New Class to handle Transposon data [020128 dl]
 
 ?Transposon SMap S_Parent Canonical_parent UNIQUE ?Sequence XREF Transposon
-	    LTR_region UNIQUE Int UNIQUE Int
+            LTR_region UNIQUE Int UNIQUE Int
             Remark ?Text
             Method ?Method
 
