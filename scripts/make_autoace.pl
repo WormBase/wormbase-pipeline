@@ -7,8 +7,8 @@
 #
 # This makes the autoace database from its composite sources.
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2004-02-18 11:22:23 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2004-03-02 15:09:36 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -131,7 +131,6 @@ sub REAPER {
 # Create the directory structure                 #
 ##################################################
 
-  &makechromlink();
 &buildautoace if($buildautoace);
 &buildrelease if($buildrelease);
 
@@ -176,57 +175,28 @@ sub buildautoace{
   #Set up correct database structure if it doesn't exist
   &createdirs;	
 
-  ################################################
+
   # Parse config file                            
-  ################################################
-
   &parseconfig;
-  my $runtime = &runtime;
-  print LOG "* Parsed config file at $runtime\n\n";
   
 
-  ################################################
   # Re-initialize the database                      
-  # Re-initializing database is more complex as the .acefiles 
-  # will be spread over a number of
+  # Re-initializing database is more complex as the .acefiles will be spread over a number of
   # directories - use the config file to find them all
-  ################################################
-
   &reinitdb();
-  $runtime = &runtime;
-  print LOG "* Database re-initialized at $runtime\n\n";
-  
 
+  
   # remove temp genes
   &rmtempgene();
-  $runtime = &runtime;
-  print LOG "* Removed temp_gene sequences at $runtime\n\n";
   
   
-  ################################################
-  # Read in the physical map and make all maps   *
-  ################################################
 
-  &contigC();
-  $runtime = &runtime;
-  print LOG "* Physical map rebuilt $runtime\n\n";
-    
-  ################################################
-  # Make the maps                                *
-  ################################################
+  # Read in the physical map and make all maps   
+  &physical_map_stuff();
 
-  &makemaps();
-  $runtime = &runtime;
-  print LOG "* Maps done at $runtime\n\n";
 
-  ################################################
-  # Make the chromosomal links                   * 
-  ################################################
-
+  # Make the chromosomal links                  
   &makechromlink();
-  $runtime = &runtime;
-  print LOG "* Chromosomal links rebuilt at $runtime\n\n";
-
     
 }
 
@@ -287,14 +257,17 @@ sub GetTime {
 # Remove temp_gene sequences from stlace, camace 
 
 sub rmtempgene {
-    my $camace  = "$camacedir";
-    my $stlace  = "$stlacedir";
-    my $command = "query find elegans_CDS method = hand_built\nkill\nsave\nquit\n";
-    &DbWrite($command,$tace,$camace,"CamAce");
-    &DbWrite($command,$tace,$stlace,"StlAce");
-    my $command2 = "query find elegans_CDS temp*\nkill\nsave\nquit\n";
-    &DbWrite($command2,$tace,$camace,"CamAce");
-    &DbWrite($command2,$tace,$stlace,"StlAce");
+  
+  print LOG &runtime, ": starting rmtempgene subroutine\n";
+  my $camace  = "$camacedir";
+  my $stlace  = "$stlacedir";
+  my $command = "query find elegans_CDS method = hand_built\nkill\nsave\nquit\n";
+  &DbWrite($command,$tace,$camace,"CamAce");
+  &DbWrite($command,$tace,$stlace,"StlAce");
+  my $command2 = "query find elegans_CDS temp*\nkill\nsave\nquit\n";
+  &DbWrite($command2,$tace,$camace,"CamAce");
+  &DbWrite($command2,$tace,$stlace,"StlAce");
+  print LOG &runtime, ": Finished.\n\n";
 }
 
 
@@ -302,6 +275,9 @@ sub rmtempgene {
 # Create directories
 
 sub createdirs {
+
+  print LOG &runtime, ": starting createdirs subroutine\n";
+
   my $chromes  = "$dbpath/CHROMOSOMES";
   my $db       = "$dbpath/database";		
   my $new      = "$db/new";
@@ -335,7 +311,7 @@ sub createdirs {
     if ($made_dir =~ /wspec/) {
       print "** Copying wspec from $autoacedir .. \n";
       my $status = copy("$autoacedir/wspec/*", "$wspec/.");
-      print "ERROR: Couldn't copy file: $!\n" if ($status == 0);
+      print LOG "ERROR: Couldn't copy file: $!\n" if ($status == 0);
     }
     if (!-d $made_dir) {
       print " ** mkdir for $made_dir failed ** \n\n";
@@ -345,6 +321,8 @@ sub createdirs {
     } 
   }
   &run_command("/bin/ln -s $basedir/geneace/pictures $pictures");
+
+  print LOG &runtime, ": Finished.\n\n";
   return;
 }
 
@@ -353,6 +331,8 @@ sub createdirs {
 # Parses the lists from the config files     
 
 sub parseconfig {
+
+  print LOG &runtime, ": starting parseconfig subroutine\n";
   my ($filename,$dbname);
   open(CONFIG,"$configfile");
   while(<CONFIG>) {
@@ -379,7 +359,7 @@ sub parseconfig {
     
     # next if no filename parsed
     if (!defined $filename) {
-      print LOG "* Failed to parse filename ..\n";
+      print LOG "ERROR: Failed to parse filename ..\n";
       next;
     }
     
@@ -391,7 +371,6 @@ sub parseconfig {
       }
       else{
 	push (@filenames,"$wormbasedir"."/$dbname/"."$filename");
-	print LOG "* Parse config file : file $wormbasedir/$dbname/$filename noted ..\n";
       }
     } 
     else {
@@ -402,6 +381,7 @@ sub parseconfig {
     
   }
   close(CONFIG);
+  print LOG &runtime, ": Finished.\n\n";
 }
 
 
@@ -421,8 +401,10 @@ sub parseconfig {
 
 sub reinitdb {
 
-  &delete_files_from("$dbpath/database/new","*","-") or print LOG "Problems removing files from $dbpath/database/new\n";
-  &delete_files_from("$dbpath/database/touched","*","-") or print LOG "Problems removing files from $dbpath/database/touched\n";
+  print LOG &runtime, ": Starting reinitdb subroutine\n";
+
+  &delete_files_from("$dbpath/database/new","*","-") or print LOG "ERROR: Problems removing files from $dbpath/database/new\n";
+  &delete_files_from("$dbpath/database/touched","*","-") or print LOG "ERROR: Problems removing files from $dbpath/database/touched\n";
 
 
   if (-e "$dbpath/database/lock.wrm") {
@@ -430,25 +412,22 @@ sub reinitdb {
     close LOG;
     die();
   }
-  my $status = move("$dbpath/database/log.wrm", "$dbpath/database/log.old");  
-  print "ERROR: Couldn't move file: $!\n" if ($status == 0);
 
-  &delete_files_from("$dbpath/database",".\.wrm","-") or print LOG "Problems removing files from $dbpath/database\n";
+  &delete_files_from("$dbpath/database",".\.wrm","-") or print LOG "ERROR: Problems removing files from $dbpath/database\n";
   
   my $command = "y\n";
-  print LOG "* Reinitdb: reinitializing the database ..\n";
+  print LOG &runtime, ": reinitializing the database\n";
   &DbWrite($command,$tace,$dbpath,"ReInitDB");
  
   foreach my $filename (@filenames) {
     my $command = "pparse $filename\nsave\nquit\n";
     if (-e $filename) {
       my $runtime = &runtime;
-      print LOG "* Reinitdb: started parsing $filename at $runtime\n";
+      print LOG &runtime, ": parsing $filename\n";
       LOG->autoflush();
       my ($tsuser) = $filename =~ (/^\S+\/(\S+)\_/);
       &DbWrite($command,"$tace -tsuser $tsuser",$dbpath,"ParseFile");
       $runtime = &runtime;
-      print LOG "* Reinitdb: finished parsing $filename at $runtime\n";
       LOG->autoflush();
     }
     else {
@@ -456,6 +435,8 @@ sub reinitdb {
       next;
     }
   }
+  print LOG &runtime, ": Finished.\n\n";
+
 }
 
 
@@ -465,20 +446,21 @@ sub reinitdb {
 # This is dumped in file ~cemap/cen2hs.ace 
 # (makecen2hs.pl nightly cron job on rathbin)
 
-sub contigC {
-    my $command = "find clone\nedit -D pMap\nedit -D Fingerprint\nedit -D Contig9\nedit -D Remark\n";
-    $command .= "pparse $autoacedir/physical_map/cen2hs.ace\nsave\nquit\n";
-    &DbWrite($command,"$tace -tsuser Coulson",$dbpath,"ContigC");
-}
+sub physical_map_stuff{
 
+  print LOG &runtime, ": starting physical_map_stuff subroutine\n";
 
-#################################################
-# Make the maps                                   
+  
+  my $command = "find clone\nedit -D pMap\nedit -D Fingerprint\nedit -D Contig9\nedit -D Remark\n";
+  $command .= "pparse $autoacedir/physical_map/cen2hs.ace\nsave\nquit\n";
+  &DbWrite($command,"$tace -tsuser Coulson",$dbpath,"ContigC");
+  
+  # now make the maps
+  $command = "gif makemaps -all\nsave\ngif makemaps -seqclonemap $dbpath/acefiles/seqclonemap.ace\n";
+  $command .= "pparse $dbpath/acefiles/seqclonemap.ace\nsave\nquit\n";
+  &DbWrite($command,$giface,$dbpath,"MakeMaps");
 
-sub makemaps {
-    my $command = "gif makemaps -all\nsave\ngif makemaps -seqclonemap $dbpath/acefiles/seqclonemap.ace\n";
-    $command .= "pparse $dbpath/acefiles/seqclonemap.ace\nsave\nquit\n";
-    &DbWrite($command,$giface,$dbpath,"MakeMaps");
+  print LOG &runtime, ": finished\n\n";
 }
 
 
@@ -518,15 +500,15 @@ sub setdate {
 # 010605 : rd  : removed extra "wormbase/" from paths following $wormbasedir
 # 001218 : dl  : Altered path of file to fit wormbase designations
 # 001307 : dl  : Added call to remove old file and state 'autoace' as the db to query
-#
 
 sub makechromlink {
 
+  print LOG &runtime, ": starting makechromlink subroutine\n";
   unlink "$wormbasedir/misc/misc_chromlinks.ace" or print LOG "ERROR: Couldn't unlink file: $!\n";
   my $command = "$basedir/scripts/makeChromLinks.pl > $wormbasedir/misc/misc_chromlinks.ace";
   $command = "$basedir/scripts/makeChromLinks.pl -test > $wormbasedir/misc/misc_chromlinks.ace" if ($test);
-
   &run_command("$command"); 
+
   if (-z "$wormbasedir/misc/misc_chromlinks.ace") {
     print LOG "*Makechromlink: chromlinks.ace has ZERO size\n";  
     return;
@@ -535,6 +517,8 @@ sub makechromlink {
     my $command = "pparse $wormbasedir/misc/misc_chromlinks.ace\nsave\nquit\n";
     &DbWrite($command,"$tace -tsuser make_autoace",$dbpath,"MakeChromLinks");
   }
+
+  print LOG &runtime, ": Finished.\n\n";
 }
 
 

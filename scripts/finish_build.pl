@@ -13,7 +13,7 @@
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-03-02 10:10:05 $
+# Last updated on: $Date: 2004-03-02 15:09:36 $
 
 
 use strict;
@@ -102,7 +102,8 @@ print LOG "Removing old CHROMOSOME files in /wormsrv2/autoace/CHROMOSOMES/\n";
 &delete_files_from("/wormsrv2/autoace/CHROMOSOMES","*","-");
 
 print LOG "Removing *.wrm files in /wormsrv2/autoace/database/\n";
-&delete_files_from("/wormsrv2/autoace/database","wrm","-");
+&delete_files_from("/wormsrv2/autoace/database",".\.wrm","-") or print LOG "ERROR: Problems removing files from autoace/database\n";
+
 
 print LOG "Removing old files in /wormsrv2/autoace/logs\n";
 &delete_files_from("$basedir/autoace/logs",":","-");
