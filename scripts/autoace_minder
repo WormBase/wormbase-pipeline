@@ -7,7 +7,7 @@
 # Usage : autoace_minder [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-09-03 14:20:32 $
+# Last edited on: $Date: 2003-09-05 14:31:38 $
 
 
 #################################################################################
@@ -866,8 +866,7 @@ sub blat_jobs {
       
       # blat_them_all -mrna
       $runtime = &runtime; print LOG "Starting blat_them_all.pl -blat -process -mrna at $runtime\n\n";
-      # use new -fine option in blat to see if we get better blat results
-      $i = system ("$scriptdir/blat_them_all.pl -blat -process -mrna -fine");
+      $i = system ("$scriptdir/blat_them_all.pl -blat -process -mrna");
       $runtime = &runtime; print LOG "Finishing blat_them_all.pl -blat -process -mrna at $runtime\n\n";
 
       $runtime = &runtime; print LOG "Starting blat_them_all.pl -virtual -mrna at $runtime\n\n";
