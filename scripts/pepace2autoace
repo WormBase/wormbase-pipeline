@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl
+#!/usr/local/bin/perl -w
 #
 # pepace2autoace
 #
@@ -18,75 +18,72 @@
 # Variables                                                                               #
 ###########################################################################################
 
-BEGIN  {
- unshift (@INC,"/nfs/disk100/wormpub/analysis/scripts");
-}
-
 $|=1;
 use IO::Handle;
 use POSIX qw(:signal_h :errno_h :sys_wait_h);
 use Getopt::Std;
 use Cwd;
-require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
+use lib '/wormsrv2/scripts/';
+use Wormbase;
 
 
- ##################################################
- # Script variables (run)                         #
- ##################################################
+##################################################
+# Script variables (run)                         #
+##################################################
 
-my $maintainer = "dl1\@sanger.ac.uk";
+my $maintainers = "dl1\@sanger.ac.uk krb\@sanger.ac.uk kj2\@sanger.ac.uk";
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
-my $version = &get_script_version(pepace2autoace);
+my $cvs_version = &get_cvs_version($0);
 
 my $CWD = cwd;
 
- ##################################################
- # Get the new target database directory          #
- # and all the run options                        #
- ##################################################
+##################################################
+# Get the new target database directory          #
+# and all the run options                        #
+##################################################
 
 $opt_p="";
 getopts ('r');
 
 $release = $opt_r;
 
- ################################################
- # ACEDB executables                            #
- ################################################
+################################################
+# ACEDB executables                            #
+################################################
 
 $tace   = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
 $giface = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/giface";
 
- ################################################
- # database paths                               #
- ################################################
+################################################
+# database paths                               #
+################################################
    
 $basedir     = "/wormsrv2";
 $autoacedir  = "/wormsrv2/autoace";
 $pepacedir   = "/wormsrv2/pepace";
 $wormbasedir = "/wormsrv2/wormbase";
 
- ################################################
- # others                                       #
- ################################################
+################################################
+# others                                       #
+################################################
 
 $configfile = "/wormsrv2/autoace_config/pepace.config";
 
- ################################################
- # Avoid filling process table with zombies     #
- ################################################
+################################################
+# Avoid filling process table with zombies     #
+################################################
 
 $SIG{CHLD} = \&REAPER;
 sub REAPER {
-    my $pid;
-    $pid=waitpid(-1,&WNOHANG);
-    $SIG{CHLD}=\&REAPER;
+  my $pid;
+  $pid=waitpid(-1,&WNOHANG);
+  $SIG{CHLD}=\&REAPER;
 }
 
- ##################################################
- # Open logfile                                   #
- ##################################################
+##################################################
+# Open logfile                                   #
+##################################################
 
 #my $logfile = "$autodir"."/pepace2autoace.$rundate.$$";
 #system ("/bin/touch $logfile");
@@ -94,7 +91,7 @@ sub REAPER {
 #LOGFILE->autoflush;
 
 #print LOGFILE "# make_autoace\n\n";     
-#print LOGFILE "# version        : $version\n";
+#print LOGFILE "# version        : $cvs_version\n";
 #print LOGFILE "# run details    : $rundate $runtime\n";
 #print LOGFILE "\n";
 #print LOGFILE "WormBase version : ${WS_version}\n";
@@ -103,56 +100,32 @@ sub REAPER {
 #my $now = `date +%H:%M:%S`; chomp $now;
 #print LOGFILE "* Directory stucture created for $autodir at $now\n\n";
   
-   ################################################
-   # Parse config file                            
-   ################################################
+################################################
+# Parse config file                            
+################################################
   
 &mknewacefiles;
 
 #$now = `date +%H:%M:%S`; chomp $now;
 #print LOGFILE "* Parsed config file at $now\n\n";
 
- ################################################
- # Send emails to group                         #
- ################################################
+################################################
+# Send emails to group                         #
+################################################
 
 #$now = `date +%H:%M:%S`; chomp $now;
 #print LOGFILE "* Send END mail at $now\n\n";
 #close LOGFILE;
 
- ###############
- # hasta luego #
- ###############
+###############
+# hasta luego #
+###############
  
 exit (0);
 
-   ################################################
-   ################## SUBROUTINES #################
-   ################################################
-
-
-###################################################
-# Email the log file to wormpub                   
-
-sub sendmails {
-    $SUBJ = shift @_;
-    open(MAIL, "| Mail -s \"make_autoace $SUBJ\" $maintainer ");
-
-
-    print MAIL "make_autoace $$ has $SUBJ\n\n";
-    
-    print MAIL "=============================================\n";
-    print MAIL "# make_autoace\n\n";     
-    print MAIL "# version        : $version\n";
-    print MAIL "# run details    : $rundate $runtime\n";
-    print MAIL "\n";
-    print MAIL "WormBase version : ${WS_version}\n";
-    print MAIL "=============================================\n";
-    print MAIL "\n";
-
-    close MAIL;
-    return;
-}
+################################################
+################## SUBROUTINES #################
+################################################
 
 
 ###################################################
@@ -298,7 +271,7 @@ __END__
 
 =pod
 
-=head1 NAME - make_autoace
+=head1 NAME - pepace2autoace
 
 =head2 USAGE
 
