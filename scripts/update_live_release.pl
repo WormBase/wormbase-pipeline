@@ -6,7 +6,7 @@
 #
 # Updates the local webpages in synch with the main website
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-07-20 09:21:50 $
+# Last updated on: $Date: 2004-07-20 09:41:24 $
 
 
 use strict;
@@ -46,7 +46,7 @@ foreach my $file ( @wormpep_files ) {
 
 # create a symbolic link from top level wormpep into the release on the wormpep ftp site
 foreach my $file ( @wormpep_files ) {
-  &run_command("cd $wormpep_ftp_root; ln -fs $wp_ftp_dir/$file $file");
+  &run_command("cd $wormpep_ftp_root; ln -fs $wp_ftp_dir/${file}${release} $file");
 }
 
 # delete the old symbolic link and make the new one to wormpep.prev
