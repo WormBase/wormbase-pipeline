@@ -43,5 +43,7 @@ while (<SOURCE>) {
 print "\n\nabout to copy (scp) $acefile to /wormsrv2/wormbase/ensembl_dumps/\n";
 system ("scp -r $acefile wormpub\@wormsrv2:/wormsrv2/wormbase/ensembl_dumps/") and warn "copy $acefile failed\n";
 
+print "\nMaking blast database from peptide file - $pepfile\n";
+system ("setdb $pepfile") and warn "setdb failed\n";
 __END__
 
