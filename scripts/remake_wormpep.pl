@@ -49,12 +49,13 @@ print NEWLIVE "KeySet : \"new_pepace\"\n";
 foreach my $gene(keys %store)
   {
     my $peptide = $store{$gene}[$protein];
-    print PEPACE "Protein : \"$peptide\"\n";
+    print PEPACE "Protein : \"WP:$peptide\"\n";
     print NEWLIVE "Protein : \"WP:$peptide\"\n";
     
     if (defined($newpep_oldpep{$peptide})) {
       if ($peptide ne $newpep_oldpep{$peptide}) {
-	print PEPACE "Replaces \"$newpep_oldpep{$peptide}\"\n";
+	print PEPACE "Replaces \"WP:$newpep_oldpep{$peptide}\"\n";
+	undef $newpep_oldpep{$peptide};
       }
     }
     unless( defined($store{$gene}[$out]) )#was ever removed
@@ -66,4 +67,14 @@ foreach my $gene(keys %store)
     print PEPACE "\n";
   }
 
+#now throw out those proteins whose replacements were replaced.
+foreach my $CE (keys %newpep_oldpep)
+  {
+    if( defined ($newpep_oldpep{$CE}) ) {
+      print PEPACE "Protein : \"WP:$newpep_oldpep{$CE}\"\n";
+      print PEPACE "Replaced_by \"WP:$CE\"\n\n";
+      print NEWLIVE "Protein : \"WP:$newpep_oldpep{$CE}\"\n";
+      print NEWLIVE "Protein : \"WP:$CE\"\n";
+    }
+  }
 exit(0);
