@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder [-options]
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2002-10-31 14:04:23 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2002-10-31 14:30:15 $
 
 
 #################################################################################
@@ -1206,6 +1206,12 @@ sub parse_briggsae_data {
   open (WRITEDB, "| $tace -tsuser briggsae_gene_prediction_data /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
   print WRITEDB $command;
   close WRITEDB;
+
+  $command = "pparse /wormsrv2/wormbase/briggsae/briggsae_cb25.agp8_rna.ace\nsave\nquit\n"; 
+  open (WRITEDB, "| $tace -tsuser briggsae_gene_prediction_data /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
+  print WRITEDB $command;
+  close WRITEDB;
+
   $runtime = `date +%H:%M:%S`; chomp $runtime;print LOG "Finished adding briggsae gene prediction data files at $runtime\n";
   # upload_homol data log file in /logs
   system ("touch $logdir/$flag{'B9'}");
