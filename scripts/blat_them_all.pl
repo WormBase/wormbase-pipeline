@@ -34,7 +34,7 @@
 # 02.04.08 dl: old style logging for autoace.fa check, prevented complete run of subs
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2003-04-27 13:21:30 $
+# Last edited on: $Date: 2003-06-04 14:13:50 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -106,7 +106,7 @@ if ($opt_c) {
 
 my $query;
 $query      = '/nfs/disk100/wormpub/analysis/ESTs/C.elegans_nematode_ESTs'     if ($opt_e); # EST data set
-$query      = '/nfs/disk100/wormpub/analysis/ESTs/C.elegans_OSTs'              if ($opt_y); # OST data set
+$query      = '/nfs/disk100/wormpub/analysis/ESTs/C.elegans_nematode_OSTs'     if ($opt_y); # OST data set
 $query      = '/nfs/disk100/wormpub/analysis/ESTs/C.elegans_nematode_mRNAs'    if ($opt_m); # mRNA data set
 $query      = '/nfs/disk100/wormpub/analysis/ESTs/non_C.elegans_nematode_ESTs' if ($opt_x); # ParaNem EST data set
 $query      = '/nfs/disk100/wormpub/analysis/ESTs/C.elegans_nematode_miscPep'  if ($opt_o); # Other CDS data set
