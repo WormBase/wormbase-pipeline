@@ -1266,7 +1266,7 @@
 				Strain UNIQUE ?Strain
 		Reference ?Paper XREF Expr_pattern
                 Transgene ?Transgene XREF Expr_pattern
-		Curated_by UNIQUE Text // Hinxton (HX) or Caltech (CT)
+		Curated_by UNIQUE Text // Hinxton (HX) or Caltech (CIT)
 
 
 // NEW Expr_profile and SK_map classes added at request of Raymond [010912 krb]
