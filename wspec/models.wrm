@@ -4,8 +4,8 @@
 // "Read Models" or "Add Update File" from the main menu.
 
 // ALL WormBase groups should be in sync with this set of models
-// Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2005-02-02 10:39:18 $
+// Last edited by: $Author: dl1 $
+// Last edited on: $Date: 2005-02-02 13:13:15 $
  
 
 
@@ -262,15 +262,22 @@
                   Reference_allele ?Variation Text
                   Allele ?Variation XREF Gene #Evidence
                   Phenotype ?Text #Evidence
-                  Provisional_description ?Text #Evidence // added for Erich [020322 krb]
-                  Detailed_description ?Text #Evidence // added for Erich [020322 krb]
-                  Concise_description ?Text #Evidence // added for Erich [020523 krb]
                   Complementation_data Text
                   Strain ?Strain XREF Gene
                   In_cluster ?Gene_cluster XREF Contains_gene // new way of linking to Clusters in locus class
                   GO_term ?GO_term XREF Gene ?GO_code #Evidence
-		  Contained_in_operon ?Operon XREF Contains_gene
-		  Ortholog ?Gene XREF Ortholog ?Species #Evidence
+                  Contained_in_operon ?Operon XREF Contains_gene
+                  Ortholog ?Gene XREF Ortholog ?Species #Evidence
+                  Structured_description Provisional_description ?Text #Evidence         // added for Erich [020322 krb]
+                                         Detailed_description ?Text #Evidence            // added for Erich [020322 krb]
+                                         Concise_description ?Text #Evidence             // added for Erich [020523 krb]
+                                         Other_description ?Text #Evidence               // added for Carol [050202 dl]
+                                         Sequence_features ?Text #Evidence               // added for Carol [050202 dl]
+                                         Functional_pathway ?Text #Evidence              // added for Carol [050202 dl]
+                                         Functional_physical_interaction ?Text #Evidence // added for Carol [050202 dl]
+                                         Biological_process ?Text #Evidence              // added for Carol [050202 dl]
+                                         Molecular_function ?Text #Evidence              // added for Carol [050202 dl]
+                                         Expression ?Text #Evidence                      // added for Carol [050202 dl]
         Molecular_info Corresponding_CDS ?CDS XREF Gene #Evidence             // to link to live CDSs
                        Corresponding_CDS_history ?CDS XREF Gene_history       // to link to history CDSs
                        Corresponding_transcript ?Transcript XREF Gene #Evidence
@@ -659,16 +666,20 @@
 		// if set then all non-explicit elements on Grid score -ve
 
 
-#Evidence Paper_evidence ?Paper
-	  Published_as Gene UNIQUE ?Gene_name #Evidence // for tracking how things first appeared in 
-                                                        // literature [krb 031024]
-	  Person_evidence ?Person
-	  Author_evidence ?Author UNIQUE Text
-	  Accession_evidence ?Database ?Accession_number // added for and by krb 020422
-	  Protein_id_evidence ?Text // added to cope with protein id's [krb 020726]
-	  CGC_data_submission // new way of flagging information from CGC [krb 030207]
-	  Curator_confirmed ?Person // new tag to help flag evidence we believe in! [krb 030307]
-	  Inferred_automatically Text // used by some scripts for things like gene->cDNA connections
+#Evidence Paper_evidence ?Paper                                       // Data from a Paper
+          Published_as Gene UNIQUE ?Gene_name #Evidence               //  .. track other names for the same data
+          Person_evidence ?Person                                     // Data from a Person
+          Author_evidence ?Author UNIQUE Text                         // Data from an Author
+          Accession_evidence ?Database ?Accession_number              // Data from a database (NDB/UNIPROT etc)
+          Protein_id_evidence ?Text                                   // Reference a protein_ID
+          GO_term_evidence ?GO_term                                   // Reference a GO_term
+          Expr_pattern_evidence ?Expr_pattern                         // Reference a Expression pattern  
+          Microarray_results_evidence ?Microarray_results             // Reference a Microarray result
+          RNAi_evidence ?RNAi                                         // Reference a RNAi knockdown
+          Gene_regulation_evidence ?Gene_regulation                   // Reference a Gene_regulation interaction
+          CGC_data_submission                                         // bless the data as comning from CGC
+	  Curator_confirmed ?Person                                   // bless the data manually 
+	  Inferred_automatically Text                                 // bless the data via a script
 
 
 ////////////////////////////////////////////////////////
@@ -1208,7 +1219,7 @@
 // New ?Library class [040723 dl1]
 //
 // To represent libraries used for sequencing of nematode ESTs
-// Information to come from Marc Blaxters group in Edinburgh
+// Information to come from Mark Blaxters group in Edinburgh
 //
 ///////////////////////////////////////////////////////////////////////////
 
@@ -2046,6 +2057,7 @@
 
 //Will eventually replace Microarray_aff class. 
 //Used for Affymetrix and other oligo-based arrays. 
+
 ?Oligo_set      SMap S_parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF Oligo_set
 		Structure Target_exons Int UNIQUE Int
                 Microarray_results ?Microarray_results XREF Oligo_set 
@@ -2644,8 +2656,6 @@
 	   Method UNIQUE ?Method
 
 
-
-
 ?Variation_name CGC_name_for       ?Variation XREF CGC_name
                 Other_name_for     ?Variation XREF Other_name // main reason for this class
                 Public_name_for    ?Variation XREF Public_name // the main name for a gene
@@ -2654,9 +2664,13 @@
 
 
 
-?Gene_cluster Contains_gene ?Gene XREF In_cluster
+?Gene_cluster Title UNIQUE ?Text                                        // Information on the Gene cluster
+              Description ?Text
+              Contains_gene ?Gene XREF In_cluster
 
-?Transposon_family In_variation ?Variation XREF Transposon_insertion
+?Transposon_family Title UNIQUE ?Text                                   // Information on the Transposon family 
+                   Description ?Text
+                   In_variation ?Variation XREF Transposon_insertion
 		   
 ////////////////////////
 //    END OF FILE     //
