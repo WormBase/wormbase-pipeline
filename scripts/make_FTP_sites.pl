@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-11-08 20:30:36 $
+# Last updated on: $Date: 2002-12-16 11:51:12 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -236,9 +236,12 @@ sub copy_wormpep_files{
   system ("chmod +rw $new_wpdir/*");
 
   # tar up the latest wormpep release and copy across
-  system("/wormsrv2/scripts/tar_wormpep $wormpep");
+
+  print LOG "creating tar file and copying across to ftp site\n";
+  system ("/bin/tar -hcf $wormpub_dir/wormpep${wormpep}.tar $new_wpdir/wormpep${wormpep} $new_wpdir/wormpep.accession${wormpep} $new_wpdir/wormpep.diff${wormpep} $new_wpdir/wormpep.dna${wormpep} $new_wpdir/wormpep.history${wormpep} $new_wpdir/wormpep.table${wormpep} $new_wpdir/wp.fasta${wormpep}") && die "Couldn't run tar command\n";
+  system ("/bin/gzip $wormpub_dir/wormpep${wormpep}.tar") || print LOG "Cannot gzip tar file\n";
+
   system("mv /wormsrv2/WORMPEP/wormpep${wormpep}/wormpep${wormpep}.tar.gz $targetdir/$release");
-  print LOG "running tar_wormpep and copying across to ftp site\n";
 
 
   $runtime = &runtime;
