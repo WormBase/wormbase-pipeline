@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-09-26 12:30:23 $
+# Last edited on: $Date: 2003-09-26 13:03:32 $
 
 
 #################################################################################
@@ -301,13 +301,13 @@ close LOG;
 
 # warn about errors in subject line if there were any
 if($errors == 0){
-  &mail_maintainer("WormBase Report: $am_option",$maintainers,$logfile);
+  &mail_maintainer("BUILD REPORT: $am_option",$maintainers,$logfile);
 }
 elsif ($errors ==1){
-  &mail_maintainer("WormBase Report: $am_option : $errors ERROR!",$maintainers,$logfile);
+  &mail_maintainer("BUILD REPORT: $am_option : $errors ERROR!",$maintainers,$logfile);
 }
 else{
-  &mail_maintainer("WormBase Report: $am_option : $errors ERRORS!!!",$maintainers,$logfile);
+  &mail_maintainer("BUILD REPORT: $am_option : $errors ERRORS!!!",$maintainers,$logfile);
 }
 
 ##############################
@@ -1203,9 +1203,15 @@ sub confirm_gene_models {
 #################################################################################
 
 sub load {
-  $am_option = "-load" if ($load);
 
   my $file = shift;
+
+  if ($load){
+    my $temp = $file;
+    # remove trailing path of filename
+    $temp =~ s/.*\///;
+    $am_option = "-load $temp" ;
+  }
   
   # tsuser is optional but if set, should replace any dots with underscores just in case 
   my $tsuser = shift; 
