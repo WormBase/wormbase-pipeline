@@ -20,6 +20,7 @@ sub get_cvs_version{
   return($version);
 }
 
+
 #################################################################################
 
 sub get_wormbase_version {
@@ -29,6 +30,20 @@ sub get_wormbase_version {
     $WS_version =~ s/NAME //;    
     $WS_version =~ s/ +$//;
     return($WS_version);
+}
+
+
+#################################################################################
+
+sub get_old_wormbase_version {
+    my $WS_version = `grep "NAME WS" /wormsrv2/autoace/wspec/database.wrm`;
+    chomp($WS_version);
+    $WS_version =~ s/NAME //;    
+    $WS_version =~ s/ +$//;
+    my ($newnumber) = ($WSversion =~ /(\d+$)/);
+    my $oldnumber = $newnumber -1;
+    my $oldWSversion = "WS".$oldnumber;
+    return($oldWSversion);
 }
 
 
@@ -202,6 +217,16 @@ get_wormbase_version
 
 This subroutine returns the current WormBase release number (read from the 
 file: /wormsrv2/autoace_config/WormBase_release_version.
+
+=back
+
+=over 4
+
+=item *
+
+get_old_wormbase_version
+
+This subroutine returns the previous WormBase release number.
 
 =back
 
