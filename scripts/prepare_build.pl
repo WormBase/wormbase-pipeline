@@ -137,8 +137,8 @@ sub archive_old_releases{
   print LOG "\nCreating $WS_old_path.tar.gz\n";
   system ("tar -cvf $WS_old_path.tar $WS_old_path/") && die "Couldn't create tar file\n";
   system ("gzip $WS_old_path.tar") && die "Couldn't create gzip file\n";
-  print LOG "Moving archive to wormbase_archive and removing $WS_old_path\n";
-  system ("mv $WS_old_path.tar.gz $db_path/wormbase_archive/") && die "Couldn't move to wormbase_archive\n";
+  print LOG "Moving archive to /wormsrv1/WORMBASE_ARCHIVE and removing $WS_old_path\n";
+  system ("mv $WS_old_path.tar.gz /wormsrv1/WORMBASE_ARCHIVE/") && die "Couldn't move to /wormsrv1/WORMBASE_ARCHIVE\n";
   system ("rm -rf $WS_old_path") && die "Couldn't remove old directory\n";
   
   # archive old wormpep version
