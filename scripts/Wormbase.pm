@@ -353,20 +353,22 @@ sub open_TCP {
 #################################################################################
 
 sub dbfetch {
-  local ($file,$database) = @_;
+    local ($file,$database) = @_;
+    my $seq = "";
     $/=">";
-
+  
     open (SHOTGUN, "<$database");
     while (<SHOTGUN>) {
 	chop $_;
 	/^(\S+)\s+/;
 	if ($file eq $1) {
-	    print $_;
+	    $seq = $_;
 	    last;
 	}
     }
     close SHOTGUN;
     $/="\n";
+    return ($seq);
 }
 
 #################################################################################
