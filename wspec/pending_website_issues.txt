@@ -12,3 +12,6 @@ Will go in for WS124.
 26th April, 2004
 New connection between Locus and Allele classes for horrible SNP objects, Locus class has Allele
 tag which XREFs to a Locus tag in the Allele classs
+
+28th April, 2004
+Added Gene tag to Balancer hash
