@@ -2,10 +2,10 @@
 
 # Author: Chao-Kung Chen
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-05-28 12:58:19 $ 
+# Last updated on: $Date: 2004-06-10 16:43:27 $ 
 
 use strict;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'}; 
+use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
 use Ace;
 use GENEACE::Geneace;
@@ -15,12 +15,12 @@ use Getopt::Long;
 # global variables
 #--------------------
 
-my ($help, $database, $debug, $version, $update);
+my ($help, $database, $debug, $load, $update);
 
 GetOptions ("h|help"         => \$help,
-	    "db|database=s"  => \$database,
+	    "db|database=s"  => \$database,   # can specify db for debug purpose (required also when not debug)
 	    "d|debug=s"      => \$debug,
-	    "v|version=s"    => \$version,       # the build number, eg 124
+	    "l|load"         => \$load,       # load CGC approved pseudo map markers
 	    "u|update"       => \$update,
            );
 
@@ -47,31 +47,29 @@ my $db = Ace->connect(-path    => $database,
 my $ga = init Geneace();
 
 my %Alleles = $ga->get_non_Transposon_alleles($db); # all Geneace alleles which have no Transposon_insertion tag
+                                                    # as many of these are silent and convey no info of gene function
 
 my (%Gene_info, %gene_id_allele, %locus_order, %order_locus);
 
-# CGC approved promoted loci
-
+# file with CGC approved promoted loci
 my $new_multi_file = `ls $multi_dir/loci_become_genetic_marker_for_$autoace_version`;
 chomp $new_multi_file;
 
-#--------------------------------------------------------------------------------------------------------------
-#   load promoted marker Gene (loci) to geneace for the next build
-#   ENSURES that this gets into the build
-#   NOTE: the version number of the loci_become_genetic_marker_for_WSxxx file should be that of the next build,
-#         and loci in this file should be approved by Jonathan first
-#--------------------------------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------------------------
+#   load promoted marker Gene (loci) to geneace for the current build
+#   NOTE: the pseudo marker in loci_become_genetic_marker_for_WSxxx file should already be approved by Jonathan first
+#---------------------------------------------------------------------------------------------------------------------
 
-&convert_int_map_to_map_for_promoted_marker_Gene if $version;
+&load_pseudo_markers_to_geneace if $load;
 
 #--------------------------------------------------------------------
 #   make inferred multi-pt obj for promoted loci during the build
-#   update flanking loci of all inferred multi-pt obj
+#   update flanking loci of existing old inferred multi-pt obj
 #--------------------------------------------------------------------
 
 if ($update){
 
-  %Gene_info = $ga -> gene_info($database);   ## spcified db
+  %Gene_info = $ga -> gene_info($database);   # spcified db
 
   &get_flanking_loci;
 
@@ -88,15 +86,15 @@ mail_maintainer("Update inferred multi-pt objects", "$debug\@sanger.ac.uk", $log
 # s u b r o u t i n e s
 #-------------------------
 
- sub convert_int_map_to_map_for_promoted_marker_Gene {
+ sub load_pseudo_markers_to_geneace {
 
-  # load file with CGC approved promoted Gene(loci) to Geneace
+  # load file with CGC approved promoted pseudo marker loci to Geneace
   my $upload = "pparse $new_multi_file\nsave\nquit";
-  $ga->upload_database($ga->geneace(), $upload, "pseudo_marker_loci", $log);  # upload to Geneace before the start of a WS build
- # $ga->upload_database($database, $upload, "pseudo_marker_loci", $log); # only for testing
+  $ga->upload_database($database, $upload, "pseudo_marker_loci", $log);  # upload to specifed database (in non-debug mode, this should be geneace)
+
 }
 
-sub make_inferred_multi_pt_obj {   # run during the build
+sub make_inferred_multi_pt_obj {   # run during the build, when approved pseudo markers are available
 
   open(F, "$new_multi_file") || die $!;
 
@@ -170,7 +168,7 @@ sub make_inferred_multi_pt_obj {   # run during the build
   }
   close NEW;
 
-  print LOG "\nInfo: for incomplete flanking loci: check that they should be the end marker of a chromosome: back to JAH.\n"; 
+  print LOG "\nInfo: for incomplete flanking loci: check that they should be the end marker of a chromosome: back to JAH.\n";
 
   # load $multi_dir/inferred_multi_pt_obj_$autoace_version to autoace
   my $upload = "pparse $multi_dir/inferred_multi_pt_obj_$autoace_version\nsave\nquit\n";
@@ -266,49 +264,77 @@ __END__
 
             -h to display this POD
             -db specify db to upload data
-            -d(debug): send email to debugger only
+            -d(debug) user: send email to debugger only
+            -l upload approved pseudo markers 
 
 
 =head3 <DESCRITION>
 
-B< Flowchart of creating inferred multi_pt_data [all these steps are taken care of by script, except steps 2].>
+Flowchart of creating inferred multi_pt_data [all these steps are taken care of by script, except steps 2].
+All files are created in the directory /wormsrv1/geneace/JAH_DATA/MULTI_PT_INFERRED/
 
-B< There are "before-the-build" and "during-the-build" procedures.>
+There are "before-the-build" and "during-the-build" procedures.
 
-B<   ################### BEFORE THE BUILD ###################>
+   ################### BEFORE THE BUILD ###################
 
-B<1.> identify loci which
+   run the script geneace_check.pl -c ps, which
+
+B<1.>
+ identify loci which
         (a) have Interpolated_map_position (ie, no Map data)
         (b) have allele info (excluding non specified Tc1 insertion alleles, ie, no mutation info)
         (c) have no mapping_data
         (d) belongs to C. elegans
         (e) are linked to sequence (CDS or Transcript or Pseudogene)
-   This should have been generated by geneace_check.pl as a file
-   as /wormsrv1/geneace/JAH_DATA/MULTI_PT_INFERRED/loci_become_genetic_marker_for_WSXXX,
-   where XXX is the release number of the build about to kick off.
-   (this file has already upgraded interpolated_map_positino to Map)
+   And gives CGC roughly 2 weeks time to approve the pseudo markers on the list
+   /wormsrv1/geneace/JAH_DATA/MULTI_PT_INFERRED/loci_become_genetic_marker_for_WSxxx (so the release number is
+   for the NEXT build; this acefile has already upgraded interpolated_map_positino to Map).
 
-B<2.> Send the generated file in step 1 to JAH for approval of promoted loci.
+B<2.>
+ Send the geneace_check output in step 1 (loci_become_genetic_marker_for_WSxxx: next release number) to JAH
+   for approval of promoted loci to be used for the next build.
 
-B<3.> Modified the file of step 1 to include only info for the approved loci from step 2.
-   Load this file to Geneace by
-   update_inferred_multi_pt.pl -db /wormsrv1/geneace/ -n 123 (this is the release number of
-   the build to be started. if it is not available, then there is no promoted loci for that build)
-   ----------------------------------------------------------------------------------------------
-   Note: this file must already be in Geneace before the build begins, otherwise the map position
-   will not be up-to-date.
-   ----------------------------------------------------------------------------------------------
-B< ###################### DURING THE BUILD #####################>
+B<3.>
+ Modified the file of step 1 (loci_become_genetic_marker_for_WSxxx: current release number -
+   created at start of last build) to include only info for the approved loci.
+   Load this file (loci_become_genetic_marker_for_WSxxx; current release number) to Geneace by
+   update_inferred_multi_pt.pl -db /wormsrv1/geneace/ -l
+   -------------------------------------------------------------------------------------------------------
+   Note: this file of step 1 (with only approved ones, loci_become_genetic_marker_for_WSxxx: current release number)
+         must already be loaded into Geneace before the build begins, otherwise autoace will not have new pseudo markers
+         with map positions (appear in /wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/cmp_gmap_with_coord_order_WS120.yymmdd.psid),
+         and later during the build, loci in this approved file will still be picked up and new multip-pt obj generated,
+         since the script looks for loci_become_genetic_marker_for_WSxxx (current release number) which is available.
 
-B<4.> Create inferred multi_pt object for promoted loci from step 3 with minimal "combined results"
-   information with the immediate left and right flanking cloned loci as multi_pt A and B
-   (see eg, multi_pt object 4134).
-   Done by: update_inferred_multi_pt.pl -db /wormsrv1/geneace/ -u
+         Consequence(1): an inferred multi-pt obj will be created accordingly, but the pseudo marker, say abc-1 will have
+                         no left and right flanking loci that Jonathan (CGC) wants, because abc-1 is not yet on the list
+                         of markers without rev. physicals
+                         (/wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/cmp_gmap_with_coord_order_WSxxx.yymmdd.psid).
+         Consequence(2): you will need to remove those inferred multi-pt obj. with incomplete information.
+         TO AVOID this: if CGC has not yet approved any marker from the list, then you need to DELETE the file
+                        (loci_become_genetic_marker_for_WSxxx; current release number) created in step 1 at start of
+                        the last build.
+   -------------------------------------------------------------------------------------------------------
 
-   Step 4 depends on cmp_gmap_with_coord_order_WSXXX.yymmdd.pid file generated by get_interpolated_map.pl.
-B<5.> Update flanking loci of all inferred multi-pt objects.
+   ###################### DURING THE BUILD #####################
 
+B<4.>
+ Create inferred multi_pt object for promoted loci based on loci_become_genetic_marker_for_WSxxx (current release)
+   from step 3 with minimal "combined results" information with the immediate left and right flanking cloned loci
+   as multi_pt A and B (see eg, multi_pt object 4134).
+   This is done by: "update_inferred_multi_pt.pl -db /wormsrv2/autoace/ -u" (if approved pseudo markers are available),
+   which creates the file inferred_multi_pt_obj_WSxxx, otherwise, it is absent.
 
+   Step 4 depends on cmp_gmap_with_coord_order_WSxxx.yymmdd.pid file generated by get_interpolated_map.pl during
+   the build
 
+B<5.>
+ Update flanking loci of all inferred multi-pt objects (also done by "update_inferred_multi_pt.pl -db /wormsrv2/autoace/ -u",
+   which generates updated_multi_pt_flanking_loci_WSxxx file). This is run even no new approved pseudo markers are there for
+   current build.
 
+B<6.>
+ Both inferred_multi_pt_obj_WSxxx and updated_multi_pt_flanking_loci_WSxxx will also be uploaded back to geneace by
+   running /nfs/team71/worm/ck1/WORMBASE_CVS/scripts/GENEACE/load_related_data_from_Build_to_geneace.pl
+   after step "update_inferred_multi_pt.pl -db /wormsrv2/autoace/ -u" of the build guide
 
