@@ -6,8 +6,8 @@
 #
 # Automatically update Geneace with Erich's functional annotation update
 #
-# Last updated on: $Date: 2003-12-01 11:54:28 $
-# Last updated by: $Author: krb $
+# Last updated on: $Date: 2003-12-08 12:58:28 $
+# Last updated by: $Author: ck1 $
 
 use strict;                    
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -84,6 +84,7 @@ my $found = 0;   # counter for found gene name merge
 
 # see POD for -update and -merge options
 my $count = &download if $update;  
+
 &process_main_other_name;                                 # get list of main names, their other name(s) and corresponding seq. names
 
 $found = &check_gene_name_merge if $merge;                # email a notice of new gene name merge
@@ -111,9 +112,8 @@ exit(0);
 
 sub download {  
 
-  #########################################
   # check for new file to upate on FTP site
-  #########################################
+
 
   print LOG "This file is generated automatically. If you have spotted any bug, please contact ck1\@sanger.ac.uk\n";
   print LOG "--------------------------------------------------------------------------------------------------\n\n";
@@ -376,8 +376,20 @@ sub main_other_name_assignment {
   }
 
   my $command=<<END;
-find elegans_CDS * where concise_description OR detailed_description OR provisional_description
-show -a -T -f /wormsrv1/geneace/ERICHS_DATA/seq_TS_dump.ace
+find CDS * where concise_description OR detailed_description OR provisional_description
+show -a -T -f /wormsrv1/geneace/ERICHS_DATA/CDS_TS_dump.ace
+edit -D Concise_description
+edit -D Detailed_description
+edit -D Provisional_description
+
+find Transcript * where concise_description OR detailed_description OR provisional_description
+show -a -T -f /wormsrv1/geneace/ERICHS_DATA/TRANSCRIPT_TS_dump.ace
+edit -D Concise_description
+edit -D Detailed_description
+edit -D Provisional_description
+
+find Pseudogene * where concise_description OR detailed_description OR provisional_description
+show -a -T -f /wormsrv1/geneace/ERICHS_DATA/PSEUDOGENE_TS_dump.ace
 edit -D Concise_description
 edit -D Detailed_description
 edit -D Provisional_description
@@ -393,6 +405,7 @@ pparse $modify
 save
 quit
 END
+
 
   my $geneace_dir="/wormsrv1/geneace";
   
@@ -432,7 +445,7 @@ sub dataset {
   splice(@dir, 0,2);
   closedir (DIR);
   foreach (@dir){
-    if ($_ =~ /^annots-(\d+)(\w{3,3})(\d+)\.ace$/){
+    if ($_ =~ /^annots-(\d+)(\w{3,3})(\d+)_CDS\.ace$/){
       $name = $_;
       my $mon = $2;
       if ($mon eq "jan"){$mon = "01"}
