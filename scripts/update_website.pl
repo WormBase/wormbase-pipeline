@@ -8,7 +8,7 @@
 # relevant WormBase and Wormpep web pages.
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-06-18 15:54:44 $      
+# Last updated on: $Date: 2004-06-23 12:43:18 $      
 
 
 #################################################################################
@@ -49,8 +49,7 @@ my $create_GFF;         # run create_GFF_intron_files
 my $update_wormpep;
 
 
-GetOptions (
-            "all"            => \$all,
+GetOptions ("all"            => \$all,
 	    "header"         => \$header,
 	    "dna"            => \$dna,
 	    "finished"       => \$finished,
@@ -109,10 +108,6 @@ if (defined $test) {
 # debug mode modifies $maintainers to reduce e-mail load
 ($maintainers = $debug . "\@sanger.ac.uk") if ($debug);
 
-# check for command-line options if none given then you do everything
-unless (defined $ARGV[0]) {
-    $all = 1;
-}
 
 ###########################################################################################################
 # Main subroutine calls    
