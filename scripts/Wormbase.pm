@@ -9,7 +9,7 @@ use Exporter;
 use Carp;
 use Ace;
 @ISA       = qw(Exporter);
-@EXPORT    = qw(get_cvs_version get_wormbase_version get_wormbase_version_name get_wormpep_version get_wormrna_version get_wormbase_release_date copy_check mail_maintainer celeaccession tace gff_sort dbfetch clones_in_database open_TCP DNA_string_reverse DNA_string_composition);
+@EXPORT    = qw(get_cvs_version get_wormbase_version get_wormbase_version_name get_wormbase_release_date copy_check mail_maintainer celeaccession tace gff_sort dbfetch clones_in_database open_TCP DNA_string_reverse DNA_string_composition);
 @EXPORT_OK = qw(get_script_version); 
 
 
@@ -114,28 +114,6 @@ sub get_wormbase_release_date{
 
 
 ###################################################################################
-
-sub get_wormpep_version {
-
-    my $wormpep_version = `grep "NAME WS" /wormsrv2/autoace/wspec/database.wrm`;
-    chomp($wormpep_version);
-    $wormpep_version =~ s/.*WS//;    
-    $wormpep_version += 10;
-    return($wormpep_version);
-}
-
-#################################################################################
-
-sub get_wormrna_version {
-
-    my $wormrna_version = `ls /wormsrv2/WORMRNA/current_WormRNA/*.rna`;
-    chomp($wormrna_version);
-    $wormrna_version =~ s/.*wormrna//; 
-    $wormrna_version =~ s/\.rna//; 
-    return($wormrna_version);
-}
-
-#################################################################################
 
 
 sub get_script_version {
