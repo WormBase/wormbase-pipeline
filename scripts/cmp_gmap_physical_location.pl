@@ -4,7 +4,7 @@
 
 # by Chao-Kung Chen [030113]
 
-# Last updated on: $Date: 2003-02-21 12:11:21 $
+# Last updated on: $Date: 2003-03-03 12:42:12 $
 # Last updated by: $Author: ck1 $
 
 use strict;                    
@@ -104,7 +104,7 @@ foreach (sort keys %chrom_pos){
 #}	
 
 #####################################################################
-# hard codes chrom length - 
+# hard coded chrom length - 
 # doesn't make much sense to run script for a "completed" genome, Or?
 #####################################################################
 
@@ -162,12 +162,12 @@ foreach (sort keys %genetics_mapping){
    $mean = (${@{$CDS_mapping{$_}}}[1] + ${@{$CDS_mapping{$_}}}[2]) / 2;
    #create_gmap_position($mean, ${@{$CDS_mapping{$_}}}[0]);
    $chrom =  ${@{$CDS_mapping{$_}}}[0];
-   if ($chrom eq "I")  {$unit = $chr_I_leng_unit; $mean_gmap_CH_I{$mean} = $mean / $unit;}
-   if ($chrom eq "II") {$unit = $chr_II_leng_unit; $mean_gmap_CH_II{$mean} = $mean / $unit;}
-   if ($chrom eq "III"){$unit = $chr_III_leng_unit; $mean_gmap_CH_III{$mean} = $mean / $unit;}
-   if ($chrom eq "IV") {$unit = $chr_IV_leng_unit; $mean_gmap_CH_IV{$mean} = $mean / $unit;}
-   if ($chrom eq "V")  {$unit = $chr_V_leng_unit; $mean_gmap_CH_V{$mean} = $mean / $unit;}
-   if ($chrom eq "X")  {$unit = $chr_X_leng_unit; $mean_gmap_CH_X{$mean} = $mean / $unit;}
+   if ($chrom eq "I")  {$unit = $chr_I_leng_unit; push(@{$mean_gmap_CH_I{$mean}}, ($mean / $unit), ${@{$genetics_mapping{$_}}}[1])}
+   if ($chrom eq "II") {$unit = $chr_II_leng_unit; push(@{$mean_gmap_CH_II{$mean}}, ($mean / $unit), ${@{$genetics_mapping{$_}}}[1])}
+   if ($chrom eq "III"){$unit = $chr_III_leng_unit; push(@{$mean_gmap_CH_III{$mean}}, ($mean / $unit), ${@{$genetics_mapping{$_}}}[1])} 
+   if ($chrom eq "IV") {$unit = $chr_IV_leng_unit; push(@{$mean_gmap_CH_IV{$mean}}, ($mean / $unit), ${@{$genetics_mapping{$_}}}[1])}
+   if ($chrom eq "V")  {$unit = $chr_V_leng_unit; push(@{$mean_gmap_CH_V{$mean}}, ($mean / $unit), ${@{$genetics_mapping{$_}}}[1])}
+   if ($chrom eq "X")  {$unit = $chr_X_leng_unit; push(@{$mean_gmap_CH_X{$mean}}, ($mean / $unit), ${@{$genetics_mapping{$_}}}[1])}
 
    get_gmap_position($mean, ${@{$genetics_mapping{$_}}}[0], ${@{$genetics_mapping{$_}}}[2]);
  }
@@ -177,32 +177,32 @@ my @means;
 @means=keys %mean_gmap_CH_I;
 @means=sort {$a<=>$b} @means;
 foreach (@means){
-  print CH "I\t$_\t$mean_gmap_CH_I{$_}\t$mean_gmap_GA_I{$_}\n";
+  print CH "I\t${@{$mean_gmap_CH_I{$_}}}[1]\t$_\t${@{$mean_gmap_CH_I{$_}}}[0]\t$mean_gmap_GA_I{$_}\n";
 }
 @means=keys %mean_gmap_CH_II;  
 @means=sort {$a<=>$b} @means;
 foreach (@means){
-  print CH "II\t$_\t$mean_gmap_CH_II{$_}\t$mean_gmap_GA_II{$_}\n";  
+  print CH "II\t${@{$mean_gmap_CH_II{$_}}}[1]\t$_\t${@{$mean_gmap_CH_II{$_}}}[0]\t$mean_gmap_GA_II{$_}\n";
 }
 @means=keys %mean_gmap_CH_III;  
 @means=sort {$a<=>$b} @means;
 foreach (@means){
-  print CH "III\t$_\t$mean_gmap_CH_III{$_}\t$mean_gmap_GA_III{$_}\n";  
+  print CH "III\t${@{$mean_gmap_CH_III{$_}}}[1]\t$_\t${@{$mean_gmap_CH_III{$_}}}[0]\t$mean_gmap_GA_III{$_}\n";
 }
 @means=keys %mean_gmap_CH_IV;  
 @means=sort {$a<=>$b} @means;
 foreach (@means){
-  print CH "IV\t$_\t$mean_gmap_CH_IV{$_}\t$mean_gmap_GA_IV{$_}\n";  
+  print CH "IV\t${@{$mean_gmap_CH_IV{$_}}}[1]\t$_\t${@{$mean_gmap_CH_IV{$_}}}[0]\t$mean_gmap_GA_IV{$_}\n";
 }
 @means=keys %mean_gmap_CH_V;  
 @means=sort {$a<=>$b} @means;
 foreach (@means){
-  print CH "V\t$_\t$mean_gmap_CH_V{$_}\t$mean_gmap_GA_V{$_}\n";  
+  print CH "V\t${@{$mean_gmap_CH_V{$_}}}[1]\t$_\t${@{$mean_gmap_CH_V{$_}}}[0]\t$mean_gmap_GA_V{$_}\n";
 }
 @means=keys %mean_gmap_CH_X;  
 @means=sort {$a<=>$b} @means;
 foreach (@means){
-  print CH "X\t$_\t$mean_gmap_CH_X{$_}\t$mean_gmap_GA_X{$_}\n";  
+  print CH "X\t${@{$mean_gmap_CH_X{$_}}}[1]\t$_\t${@{$mean_gmap_CH_X{$_}}}[0]\t$mean_gmap_GA_X{$_}\n";
 }
 
 #################
