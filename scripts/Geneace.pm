@@ -1,13 +1,14 @@
 #!/usr/local/bin/perl5.8.0 -w
 
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-02-06 12:15:04 $
+# Last updated on: $Date: 2004-02-12 15:59:36 $
 
 package Geneace;
 
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Ace;
 use Wormbase;
+use Coords_converter;
 use strict;
 
 my $def_dir = "/wormsrv1/geneace/wquery/";
@@ -24,6 +25,12 @@ sub geneace {
   my $this = shift;
   my $geneace_dir = "/wormsrv1/geneace";
   return $geneace_dir;
+}
+
+sub curr_db {
+  my $this = shift;
+  my $curr_db_dir = "/nfs/disk100/wormpub/DATABASES/current_DB";
+  return $curr_db_dir;
 }
 
 sub test_geneace {
@@ -56,7 +63,7 @@ sub other_name {
   my ($this, $db) = @_;
   push( my @result, $db->find("Find Gene_name * where Other_name_for AND !(Cb-* OR Cr-*)") );
   return @result;
-}     
+}
 
 sub clone_to_lab {
   my $this = shift;
@@ -88,7 +95,7 @@ sub upload_database {
 #  my $db = &database;
 #  push(my @exceptions, $db->
 #     }
-  
+
 sub array_comp {
   my $this = shift;
   my(@union, @isect, @diff, %union, %isect, %count, $e);
@@ -110,6 +117,21 @@ sub array_comp {
   return @union if $option eq "union";
 }
 
+sub get_clone_chrom_coords {
+
+  my %clone_info;
+  my $gff_version = get_wormbase_version() - 1;  # current_DB version
+  my @clone_coords = `cut -f 1,4,5,9 /wormsrv2/autoace/GFF_SPLITS/WS$gff_version/CHROMOSOME_*.clone_acc.gff`;
+  foreach (@clone_coords){
+    chomp;
+    my ($chrom, $start, $end, $ninth) = split(/\t+/, $_);
+    $chrom =~ s/[A-Z]+_//;
+    $ninth =~ /S.+\s+\"(.+)\".+/;
+    my $clone = $1;
+    push(@{$clone_info{$clone}}, $chrom, $start, $end);
+  }
+  return %clone_info;
+}
 
 
 1;
