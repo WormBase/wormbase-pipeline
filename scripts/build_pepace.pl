@@ -9,8 +9,8 @@
 # solely in the wormpep.history file.
 # 
 #
-# Last updated by: $Author: krb $                     
-# Last updated on: $Date: 2003-12-01 11:54:25 $     
+# Last updated by: $Author: pad $                     
+# Last updated on: $Date: 2004-02-09 16:38:34 $     
 
 use strict;                                     
 use lib "/wormsrv2/scripts/";                  
@@ -59,6 +59,31 @@ my %multicodedPeps;
 my $handled = 0;
 my $pepcount;
 my $count;
+
+my %mw = ('A','71.0788','R','156.1876','D','115.0886','N','114.1039','C','103.1448','E','129.1155','Q','128.1308','G','57.0520','H','137.1412','I','113.1595','L','113.1595','K','128.1742','M','131.1986','F','147.1766','P','97.1167','S','87.0782','T','101.1051','W','186.2133','Y','163.1760','V','99.1326','U','150.050');
+
+#Amino acids
+my $A = "";
+my $R = "";
+my $D = "";
+my $N = "";
+my $C = "";
+my $E = "";
+my $Q = "";
+my $G = "";
+my $H = "";
+my $I = "";
+my $L = "";
+my $K = "";
+my $M = "";
+my $F = "";
+my $P = "";
+my $S = "";
+my $T = "";
+my $W = "";
+my $Y = "";
+my $V = "";
+my $U = "";
 
 open (HISTORY, "$wormpepdir/wormpep.history$ver") || die "wormpep.history$ver";
 while(<HISTORY>) {
@@ -216,6 +241,7 @@ foreach my $key(sort keys %CE_history) {
     } 
     
     print ACE "Database \"WORMPEP\" WORMPEP_ID \"WP:$key\"\n";
+    print ACE "Molecular_weight ",&get_mol_weight($CE_sequence{$key})," Inferred_automatically \"build_pepace.pl\"\n";
     print ACE "Species \"Caenorhabditis elegans\"\n";
     print ACE "Wormpep\n";
     
@@ -280,6 +306,36 @@ my $name = "$0";
 &mail_maintainer ($name,$maintainers,$log);
 #########################################
 exit(0);
+
+sub get_mol_weight {
+  my $pep = shift;
+  $A = $pep =~ tr/A/A/; # count the number of each amino acids in peptide.
+  $R = $pep =~ tr/R/R/;
+  $D = $pep =~ tr/D/D/;
+  $N = $pep =~ tr/N/N/;
+  $C = $pep =~ tr/C/C/;
+  $E = $pep =~ tr/E/E/;
+  $Q = $pep =~ tr/Q/Q/;
+  $G = $pep =~ tr/G/G/;
+  $H = $pep =~ tr/H/H/;
+  $I = $pep =~ tr/I/I/;
+  $L = $pep =~ tr/L/L/;
+  $K = $pep =~ tr/K/K/;
+  $M = $pep =~ tr/M/M/;
+  $F = $pep =~ tr/F/F/;
+  $P = $pep =~ tr/P/P/;
+  $S = $pep =~ tr/S/S/;
+  $T = $pep =~ tr/T/T/;
+  $W = $pep =~ tr/W/W/;
+  $Y = $pep =~ tr/Y/Y/;
+  $V = $pep =~ tr/V/V/;
+  $U = $pep =~ tr/U/U/;
+
+  #Calculate the Total Mw of the peptide by summing the subunits.
+  my $sum = (($A * $mw{A}) + ($R * $mw{R}) + ($D * $mw{D}) + ($N * $mw{N}) + ($C * $mw{C}) + ($E * $mw{E}) + ($Q * $mw{Q}) + ($G * $mw{G}) + ($H * $mw{H}) + ($I * $mw{I}) + ($L * $mw{L}) + ($K * $mw{K}) + ($M * $mw{M}) + ($F * $mw{F}) + ($P * $mw{P}) + ($S * $mw{S}) + ($T * $mw{T}) + ($W * $mw{W}) + ($Y * $mw{Y}) + ($V * $mw{V}) + ($U * $mw{U})) / 1000;
+  my $result = sprintf "%.1f", $sum;
+  return $result;
+}
 
 sub byRelease  {
     #used by sort 
