@@ -1,12 +1,12 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/bin/perl5.8.0 -w
 #
 # dbcomp.pl
 #
 # Counts the number of objects in an ACEDB database for each Class stated in the config file
 # Compares this number to those from a second database.
 #
-# Last updated by: $Author: dl1 $     
-# Last updated on: $Date: 2003-05-01 09:39:03 $      
+# Last updated by: $Author: krb $     
+# Last updated on: $Date: 2003-06-10 16:45:10 $      
 
 
 use strict;
@@ -21,7 +21,7 @@ $|=1;
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $database);
+my ($help, $debug, $database, $database2);
 our ($log,$errfile,$outfile); 
 our ($db_1, $db_2, $dbname_1, $dbname_2);
 our $WS_current  = &get_wormbase_version;
@@ -31,7 +31,8 @@ my $exec        = &tace;
 
 GetOptions ("help"          => \$help,
             "debug=s"       => \$debug,
-	    "database=s"    => \$database);
+	    "database=s"    => \$database,
+	    "database2=s"   => \$database2);
 
 
 ############################################
@@ -60,9 +61,17 @@ $db_1        = "/wormsrv2/$dbname_1";
 $dbname_2    = "WS${WS_current}";
 $db_2        = "/wormsrv2/autoace";
 
+
+# First alternative datatbase specified?
 if($database){
   $dbname_1  = "$database";
   $db_1      = "$database"; 
+}
+
+# Second alternative datatbase specified?
+if($database2){
+  $dbname_2  = "$database2";
+  $db_2      = "$database2"; 
 }
 
 
@@ -414,6 +423,9 @@ as necessary when classes are added/removed to the database.
 
 -database allows you to specify the path of a database which will
 then be compared to /wormsrv2/autoace.
+
+-database2 allows you to specify a second database to compare to that specified
+by -database (rather than compare with previous build)
 
 
 =back
