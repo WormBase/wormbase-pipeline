@@ -56,6 +56,7 @@ $opt_2="";   # Build autoace : CHROMOSOMES directory
 $opt_3="";   # Build autoace : Release directory
 $opt_c="";   # Check DB consistency
 $opt_p="";   # Build wormpep
+$opt_q="";   # prepare pepace and then dump from pepace into autoace
 $opt_f="";   # Wormbase release to FTP site
 $opt_z="";   # Public release to FTP site
 $opt_d="";   # Verbose debug mode
@@ -64,7 +65,8 @@ $opt_g="";   # chromosome_dump.pl -g
 $opt_m="";   # map PCR and RNAi
 $opt_y="";   # make agp files for the yellow brick road
 
-getopts ('awbchpfzdrgm123');
+
+getopts ('awbchpqfzdrgm123');
 &usage(0) if ($opt_h);
 
 # specify location of scripts
@@ -92,7 +94,7 @@ $WP_version = $WS_version + 10;
  ########################################
 
 if ($opt_a) {
-    $opt_w = 1; $opt_b = 1; $opt_c = 1; $opt_p = 1; $opt_g = 1; $opt_m = 1;
+    $opt_w = 1; $opt_b = 1; $opt_c = 1; $opt_p = 1; $opt_q = 1; $opt_g = 1; $opt_m = 1; $opt_y = 1;
 }
 
  ########################################
@@ -119,6 +121,7 @@ print LOG "  -2 : Build autoace : DNA data\n" if ($opt_2);
 print LOG "  -3 : Build autoace : Release directory\n" if ($opt_3);
 print LOG "  -c : Check DB consistency and diffs from previous version\n" if ($opt_c);
 print LOG "  -p : Build wormpep database\n" if ($opt_p);
+print LOG "  -q : Running patch_pepace.pl and pepace2autoace\n" if ($opt_p);
 print LOG "  -f : Move WS release to the ftp-wormbase site (WormBase private release)\n" if ($opt_f);
 print LOG "  -z : Move WS release to the external FTP site (Full public release)\n" if ($opt_z);
 print LOG "  -d : Verbose/Debug mode\n" if ($opt_d);
@@ -139,6 +142,7 @@ print LOG "\n";
 &make_release       if ($opt_3);
 &check_release      if ($opt_c);
 &make_wormpep       if ($opt_p);
+&pepace_stuff       if ($opt_q);
 &make_FTP_wormbase  if ($opt_f);
 &make_anonymous_FTP if ($opt_z);
 &dump_GFFs          if ($opt_g);
@@ -243,6 +247,19 @@ sub make_wormpep {
 
 }
 
+#################################################################################
+# pepace stuff - run patch_pepace.pl then pepace2autoace                        #
+#################################################################################
+
+sub pepace_stuff {
+    system ("$scriptdir/patch_pepace.pl") && die "Couldn't run patch_pepace.pl\n";
+    print LOG " Reading patch_pepace files into pepace\n";
+    print LOG " =>'patch_pepace.pl'\n\n";
+
+    system ("$scriptdir/pepace2autoace") && die "Couldn't run pepace2autoace\n";
+    print LOG " Dumping files from pepace and reading into autoace\n";
+    print LOG " =>'pepace2autoace'\n\n";
+}
 #################################################################################
 # dump GFF files                                                                #
 #################################################################################
