@@ -7,7 +7,7 @@
 # A script to convert ?Locus objects into the new ?Gene object
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-04-07 12:54:47 $   
+# Last updated on: $Date: 2004-04-07 13:47:30 $   
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -448,7 +448,7 @@ sub fix_multi_pt_data_class{
       ($rows[$i] = "\n\nMulti_pt_data : \"$multipoint\"\n"."$rows[$i]") if ($rows[$i] eq "B_non_A");
       ($rows[$i] = "\n\nMulti_pt_data : \"$multipoint\"\n"."$rows[$i]") if ($rows[$i] eq "Combined");
 
-      if(($rows[$i] eq "Locus") && ($rows[$i+1] eq "act-123")){
+      if(($rows[$i] eq "Locus") && (($rows[$i+1] eq "act-123") || ($rows[$i+1] =~ m/\w+P\d+/))){
 	$i += 2;
 	next;
       }
