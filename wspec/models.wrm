@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: krb $
-// Last edited on: $Date: 2004-09-17 14:30:52 $
+// Last edited on: $Date: 2004-09-17 15:29:20 $
  
 
 
@@ -1577,7 +1577,7 @@
 	  //   then use the corresponding field of the Feature or Homol line.
 	  // multiple formats will be concatenated until one starts with '/'.
 	GFF	GFF_source UNIQUE Text
-		GFF_feature UNIQUE Text
+		GFF_feature UNIQUE ?SO_term
 
 
 ?Reference	Reference ?Paper
