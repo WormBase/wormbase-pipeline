@@ -805,6 +805,7 @@
 		// sequence appears, its length dominates.
 	  SMap S_Parent Canonical_parent UNIQUE ?Sequence XREF Genomic_non_canonical 
 	                Genomic_parent UNIQUE ?Sequence XREF Nongenomic
+			AGP_parent UNIQUE ?Sequence XREF AGP_fragment // added to hold briggsae data [krb 020726]
 	       S_Child Homol_data ?Homol_data XREF Sequence UNIQUE Int UNIQUE Int #SMap_info
 		       Feature_data ?Feature_data XREF Sequence UNIQUE Int UNIQUE Int #SMap_info
 		       Genomic_non_canonical ?Sequence XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info
@@ -815,6 +816,7 @@
 		       Operon ?Operon XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info                // added for Operon data   [dl]
 		       Transposon ?Transposon XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info        // added for transposons   [020128 dl]
 		       Microarray_aff ?Microarray_aff XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info //added for Wen's Affymetrix model [020614 krb]
+     		       AGP_fragment ?Sequence XREF AGP_parent Int UNIQUE Int #SMap_info // added for Briggsae data [krb 020726]
 	  Structure  From	Source UNIQUE ?Sequence XREF Subsequence
 				Source_Exons Int UNIQUE Int // start at 1
 		     Subsequence ?Sequence XREF Source UNIQUE Int UNIQUE Int
