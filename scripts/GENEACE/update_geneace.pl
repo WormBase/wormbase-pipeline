@@ -132,8 +132,8 @@ my ($input_window_lbl, $input_window, $ace_window_lbl, $ace_window, $scroll, $in
 
 &create_windows_and_lbl;
 
-my $ga = init Geneace();
-my %Gene_info = $ga -> gene_info();
+my $gaobj = init Geneace();
+my %Gene_info = $gaobj -> gene_info();
 
 
 #open (IN, $filename) || die "Can't read in file!";
@@ -771,6 +771,8 @@ sub gene_mapping {
   sub update_lab {
     open (IN, $filename) || die "Can't read in file!";
 
+    my %person_id = $gaobj->get_WBPersonID();
+
     my ($gene_class, @Update, $locus, $seq, $rest, @parts, $num_parts,$cgc_paper, $paper,
 	$head, $tail, @variants, $i, $person, $pmid, $other_name, @evidence, $evidence, @persons);
 
@@ -783,20 +785,20 @@ sub gene_mapping {
      #  if ( $_ =~ /^([A-Z]{2,2})\s+.+/ ) { 	
 	push(@Update,"\n\nLaboratory : \"$1\"\n"); 
 	push(@Update,"Allele_designation \"$2\"\n");
-	push(@Update,"Representative \"$3\"\n");
-	push(@Update, "Mail\t\"$4\"\n");
+	push(@Update,"Representative \"$person_id{$3}\"\n") if $person_id{$3};
+	push(@Update,"Mail\t\"$4\"\n");
       }
       if ( $_ =~ /^([A-Z]{2,2})\s+(\w{2,2}|--)\s+\[(.+)\]\s+\[(.+)\]/){
 	push(@Update,"\n\nLaboratory : \"$1\"\n"); 
 	push(@Update,"Allele_designation \"$2\"\n");
-	push(@Update,"Representative \"$3\"\n");
-	push(@Update, "Mail\t\"$4\"\n");
+	push(@Update,"Representative \"$person_id{$3}\"\n") if $person_id{$3};
+	push(@Update,"Mail\t\"$4\"\n");
       }
       # 3-letter lab 
       if ( $_ =~ /^([A-Z]{3,3})\s+(\w{1,} \w{1,},\s\w{1,}|\w{1,}-\w{1,},\s\w{1,}|\w{1,}-\w{1,},\s\w{1,}-\w{1,}|\w{1,},\s\w{1,}|\w{1,},\s\w{1,}-\w{1,})\s+(.+)$/ ) { 
-	push(@Update,"\n\nLaboratory : \"$1\"\n"); 
-	push(@Update,"Representative \"$2\"\n");
-	push(@Update, "Mail\t\"$3\"\n");
+	push(@Update,"\n\nLaboratory : \"$1\"\n");
+	push(@Update,"Representative \"$person_id{$2}\"\n") if $person_id{$2};
+	push(@Update,"Mail\t\"$3\"\n");
       }
     }
     foreach (@Update){

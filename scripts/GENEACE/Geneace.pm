@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-06-09 14:01:46 $
+# Last updated on: $Date: 2004-06-09 16:22:06 $
 
 package Geneace;
 
@@ -211,8 +211,8 @@ sub clone_to_lab {
   my $this = shift;
   my %clone_lab;
 
-  my $clone_to_lab="Table-maker -p \"/$def_dir/clone_to_lab.def\"\nquit\n" if $machine;
-     $clone_to_lab="Table-maker -p \"/$test_def_dir/clone_to_lab.def\"\nquit\n" if !$machine;
+  my $clone_to_lab="Table-maker -p \"$def_dir/clone_to_lab.def\"\nquit\n" if $machine;
+     $clone_to_lab="Table-maker -p \"$test_def_dir/clone_to_lab.def\"\nquit\n" if !$machine;
 
   open (FH, "echo '$clone_to_lab' | $tace $curr_db |") || die "Couldn't access $curr_db\n";
   while (<FH>){
@@ -362,5 +362,27 @@ sub get_last_gene_id {
   return $last_gene_id_num;
 }
 
+sub get_WBPersonID {
+  # this is just a simple hash and its name look up functionality is only limited to first_name, last_name
+  # and has not yet extended for standard_name, other_name, also_known_as, etc
+  # but enough for now to do Jonathan's lab update.
+  # note that some pi name may not be covnerted to WBPersonID due to this limitation (eg, Dave, David is not 
+  # treated as identical, there for David Someone is not Dave Someone, although it would be in the database
+  # DO THIS BY HAND FOR NOW
+
+  my $person="Table-maker -p \"$def_dir/get_WBPersonID_fn_ln.def\"\nquit\n" if $machine;
+     $person="Table-maker -p \"$test_def_dir/get_WBPersonID_fn_ln.def\"\nquit\n" if !$machine;
+
+  open (FH, "echo '$person' | $tace $geneace_dir |") || die "Couldn't access $geneace_dir\n";
+
+  my %WBPerson_id;
+  while (<FH>){
+    chomp $_;
+    if ($_ =~ /\"(.+)\"\s+\"(.+)\"\s+\"(.+)\"/){  # $1(WBPersonxx), $2(first_name), $3(last_name)
+      $WBPerson_id{$3.", ".$2} = $1;
+    }
+  }
+  return %WBPerson_id;
+}
 
 1;
