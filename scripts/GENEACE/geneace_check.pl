@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-07-22 08:27:42 $
+# Last updated on: $Date: 2004-07-22 14:19:08 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -222,24 +222,6 @@ sub process_gene_class{
     print LOG "ERROR 6: $gene ($Gene_info{$gene}{'Public_name'}) has an 'Interpolated_map_position' tag without a value\n";
   }
 
-  # test for CDS tag and no value
-  foreach my $gene ($db->fetch(-query=>"Find CDS AND NOT NEXT")){
-    print LOG "ERROR 7(a): $gene ($Gene_info{$gene}{'Public_name'}) has CDS tag but no associated value\n";
-    if ($ace){print ACE "\n\nGene : \"$gene\"\n-D CDS\n";}
-  }
-
-  # test for Transcript tag and no value
-  foreach my $gene ($db->fetch(-query=>"Find Transcript AND NOT NEXT")){
-    print LOG "ERROR 8(a): $gene ($Gene_info{$gene}{'Public_name'}) has Transcript tag but no associated value\n";
-    if ($ace){print ACE "\n\nGene : \"$gene\"\n-D Transcript\n";}
-  } 
-
-  # test for Pseudogene tag and no value
-  foreach my $gene ($db->fetch(-query=>"Find Pseudogene AND NOT NEXT")){
-    print LOG "ERROR 9(a): $gene ($Gene_info{$gene}{'Public_name'}) has Pseudogene tag but no associated value\n";
-    if ($ace){print ACE "\n\nGene : \"$gene\"\n-D Pseudogene\n";}
-  }
-  
   # test for Other_sequence tag and no value
   foreach my $gene ($db->fetch(-query=>"Find Other_sequence AND NOT NEXT")){
     print LOG "ERROR 10(a): $gene ($Gene_info{$gene}{'Public_name'}) has Other_sequence tag but no associated value\n";
@@ -296,18 +278,6 @@ sub process_gene_class{
 
 
 
-
-
-
-  # test for CDS AND Pseudogene tags both present
-  foreach my $gene ($db->fetch(-query=>"Find Gene WHERE CDS AND Pseudogene")){
-    print "CHECK 1: $gene has both 'CDS' tag AND 'Pseudogene' tags\n";
-  }
-
-  # test for Pseudogene AND Transcript tags both present
-  foreach my $gene ($db->fetch(-query=>"Find Gene WHERE Pseudogene AND Transcript")){
-    print "CHECK 2: $gene has both 'Pseudogene' tag AND 'Transcript' tags\n";
-  }
 
   foreach my $gene_id (@gene_ids){
     # useful to see where you are in the script if running on command line
@@ -404,27 +374,9 @@ sub test_locus_for_errors{
 
 
 
-  # checks that for each CDS/Transcript/Pseudogene tag, if linked to multiple sequences, they should be splice variants of a same gene
-  foreach my $tag ("CDS", "Transcript", "Pseudogene"){
-    if( defined $gene_id->$tag ){
-      my @iso = $gene_id->$tag;
-      my %variants;
-      if (scalar @iso > 1){
-	foreach (@iso){
-	  if ( $_ =~ /((.+)\..+)/ ){
-	    $variants{$2}=$1 if !exists $variants{$_};
-	  }
-	}
-      }
-      my @diff = values %variants;
-      $warnings .= "ERROR 14: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has '$tag' tag populated with different genes: @diff\n" if scalar @diff > 1;
-      print "." if ($verbose);
-    }
-  }
 
   # check that live gene id should not have wpxxx appended to its Sequence_name or CDS/Transcript/Pseudogene
-  foreach my $tag ("Sequence_name", "CDS", "Transcript", "Pseudogene", "Public_name"){
-    #if ( $gene_id->$tag =~ /.+\:wp\d+/ && defined $gene_id->$tag && $gene_id->at('Identity.Live') ){
+  foreach my $tag ("Sequence_name", "Public_name"){
     if ( defined $gene_id->$tag && $gene_id->at('Identity.Live') ){
       my $history = $gene_id->$tag;
       if ( $history =~ /:wp\d+/ ){
@@ -433,61 +385,17 @@ sub test_locus_for_errors{
       }
     }
   }
-  # test for CDS or Transcript or Pseudogene AND !Sequence_name
-  foreach my $tag ("CDS", "Transcript", "Pseudogene"){	
-    if( defined $gene_id->$tag && !defined $gene_id->Sequence_name ){
-      my $seq = $gene_id->$tag;
-      $warnings .= "ERROR 16(a): $gene_id ($Gene_info{$gene_id}{'Public_name'}) has a '$tag' tag but not a 'Sequence_name' tag\n";
-      print "." if ($verbose);
-      if ($ace){
-        print ACE "\nGene : \"$gene_id\"\n";
-        if ($seq =~ /(.+\.\d+)\w/){         # ignore splice variants for Sequence_name
-	  $seq = $1;
-	  print ACE "Sequence_name \"$seq\"\n";
-        }
-        else {
-	  print ACE "Sequence_name \"$seq\"\n"; # eg, x.t1 or B0334.1
-        }
-      }
-    }
-  }
-
-  # test for Sequence_name AND !(CDS or Transcript or Pseudogene)
-  if( defined $gene_id->Sequence_name && !defined $gene_id->CDS && !defined $gene_id->Transcript && !defined $gene_id->Pseudogene ){
-    $warnings .= "ERROR 17: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has a Sequence_name but is not linked to a sequence\n";
-    print "." if ($verbose);
-  }
-
-  # test for CDS/Transcript/Pseudogene (ignore variants if so) = Sequence_name
-  foreach my $tag ("CDS", "Transcript", "Pseudogene"){
-    if( defined $gene_id->$tag && defined $gene_id->Sequence_name ){
-      my $seq = $gene_id->$tag;
-      my $seq_name = $gene_id->Sequence_name;
-      if ($seq =~ /(.+\.\d+)[a-z]/){         # ignore splice variants for Sequence_name
-        $seq = $1;
-      }
-      # compare $seq with $name for difference
-      if ($seq ne $seq_name){
-        $warnings .= "ERROR 18: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has a $tag ($seq) different from its Sequence_name ($seq_name)\n";
-        print "." if ($verbose);
-      }
-    }
-  }
-
-
 
   # Look for Genes with no Positive_clone info but which can be derived from its sequence info
-  foreach my $tag ("CDS", "Transcript", "Pseudogene"){
-    if( !defined $gene_id->Positive_clone(1) && defined $gene_id->$tag(1) ){
-      my $seq = $gene_id->$tag(1);
-
-      # need to chop off the ending to just get clone part
-      $seq =~ s/\..*//;
-      $warnings .= "ERROR 19(a): $gene_id ($Gene_info{$gene_id}{'Public_name'}) has no Positive_clone but info is available from '$tag' tag\n";
-      print "." if ($verbose);
-      # must use Inferred_automatically from Evidence hash for this type of info
-      print ACE "\n\nGene : \"$gene_id\"\nPositive_clone \"$seq\" Inferred_automatically \"From sequence, transcript, pseudogene data\"\n" if ($ace);
-    }
+  if( !defined $gene_id->Positive_clone(1) && defined $gene_id->Sequence_name ){
+    my $seq = $gene_id->Sequence_name;
+    
+    # need to chop off the ending to just get clone part
+    $seq =~ s/\..*//;
+    $warnings .= "ERROR 19(a): $gene_id ($Gene_info{$gene_id}{'Public_name'}) has no Positive_clone but info is available from Sequence_name $seq\n";
+    print "." if ($verbose);
+    # must use Inferred_automatically from Evidence hash for this type of info
+    print ACE "\n\nGene : \"$gene_id\"\nPositive_clone \"$seq\" Inferred_automatically \"From sequence, transcript, pseudogene data\"\n" if ($ace);
   }
 
 
@@ -1479,7 +1387,7 @@ sub int_map_to_map_loci {
   print LOG $header, $sep;
   print JAHLOG $header, $sep;
 
-  my $int_loci  = "find Gene * where !mapping_data & allele & (CDS|transcript|pseudogene) & interpolated_map_position & species =\"*elegans\"";
+  my $int_loci  = "find Gene * where !mapping_data & allele & Sequence_name & interpolated_map_position & species =\"*elegans\"";
   my %INT_loci;
 
   # need to increment again because this is run before autoace_minder -initial is run so build hasn't actually started
