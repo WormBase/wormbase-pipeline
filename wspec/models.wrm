@@ -1103,8 +1103,7 @@
 	  Origin  From_Database ?Database UNIQUE Int	// release number
 		  Date DateType Text			// Text for comments on operation
 		  Species ?Species               //XREF Protein in geneace
-		  Wormpep Replaces ?Protein XREF Replaced_by
-			  Replaced_by ?Protein XREF Replaces
+		  Wormpep History Int Text ?Text //new history logging [020801 krb]
 			  Live	      // new tag to replace use of 'Inactive' krb 06/12/01
 	  Visible	Corresponding_DNA ?Sequence XREF Corresponding_protein
 			Reference ?Paper XREF Protein
