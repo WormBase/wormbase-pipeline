@@ -1,8 +1,8 @@
 #!/usr/local/bin/perl5.8.0 -w
 
 # Author: Chao-Kung Chen
-# Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-06-10 16:43:27 $ 
+# Last updated by $Author: pad $
+# Last updated on: $Date: 2004-06-25 12:16:48 $ 
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -104,7 +104,7 @@ sub make_inferred_multi_pt_obj {   # run during the build, when approved pseudo 
     #---- first create a hash of gene_id (key) to allele (value)
     #     and also verify that each inferred marker is linked to an allele
 
-    if ($_ =~ /Gene : (.+)/){
+    if ($_ =~ /Gene : \"(.+)\"/){
       my $gene_id = $1;
       $gene_id = $db->fetch(-class => 'Gene',
 			    -name  => $gene_id);
