@@ -15,3 +15,6 @@ tag which XREFs to a Locus tag in the Allele classs
 
 28th April, 2004
 Added Gene tag to Balancer hash
+
+29th April, 2004
+GADFLY protein objects replaced by FlyBase protein objects, just change to object name for proteins.
