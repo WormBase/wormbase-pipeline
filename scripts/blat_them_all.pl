@@ -29,7 +29,8 @@
 # 01.02.02 dl: uncommented report logging & mail routines
 # 01.02.02 dl: routine to convert '-' -> 'N' needs to be within the same BLOCK as the tace command
 #            : else you get a zero length fasta file each time and the confirm intron routines fail
-# 21.02.02 dl: typos in the naming of the confirmed_intron virtual objects
+# 02.02.21 dl: typos in the naming of the confirmed_intron virtual objects
+# 02.04.08 dl: old style logging for autoace.fa check, prevented complete run of subs
 
 use strict;
 use Ace;
@@ -158,7 +159,7 @@ if ($opt_b) {
     
     # CHECK: how old is the autoace.fa file ?
     # exit if autoace.fa file created prior to start of (re)build 
-    &usage(6) if (-M "/wormsrv2/autoace/ace/logs/build_in_progess" < -M "/wormsrv2/autoace/BLAT/autoace.fa");
+    &usage(6) if (-M "/wormsrv2/autoace/ace/logs/A1:Build_in_progress" < -M "/wormsrv2/autoace/BLAT/autoace.fa");
    
     # assign contigs to laboratory
     %homedb = &which_db;
