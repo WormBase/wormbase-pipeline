@@ -104,7 +104,7 @@ $maintainer = "dl1\@sanger.ac.uk" if ($opt_d);
 # Get the WS version number and set the wormpep release number                  #
 #################################################################################
 
-my $WS_version = &get_wormbase_version;
+my $WS_version = &get_wormbase_version_name;
 
  ########################################
  # Open logfile                         #

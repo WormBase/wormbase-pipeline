@@ -21,11 +21,11 @@ use Symbol 'gensym';
 
 my @chrom = qw ( I II III IV V X ); 
 my $cvsversion = &get_cvs_version('/wormsrv2/copy2web.pl');
-my $WSversion  = &get_wormbase_version;
-    my ($newnumber) = ($WSversion =~ /(\d+$)/);
-    my $oldnumber = $newnumber -1;
+my $WSversion  = &get_wormbase_version_name;
+my ($newnumber) = &get_wormbase_version;
+my $oldnumber = $newnumber -1;
 my $oldWSversion = "WS".$oldnumber;
-my $maintainers = "dl1\@sanger.ac.uk kj2\@sanger.ac.uk";
+my $maintainers = "dl1\@sanger.ac.uk kj2\@sanger.ac.uk krb\@sanger.ac.uk";
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
 

@@ -131,7 +131,7 @@ sub REAPER {
 # Get the WS version number and set the wormpep release number    #
 ###################################################################
 
-our $WS_version = &get_wormbase_version;
+our $WS_version = &get_wormbase_version_name;
 
 ##################################################	
 # Create the directory structure                 #

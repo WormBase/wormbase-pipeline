@@ -79,9 +79,8 @@ $targetdir="/nfs/disk100/wormpub/private_ftp" if ($targetdir eq "");
  ##############################
 
 if ($WS_release eq "") {
-  $wormbase_release = &get_wormbase_version;      
-  $WS_release = substr ($wormbase_release,2);
-  $WP_release = $WS_release + 10;
+  $WS_release = &get_wormbase_version;
+  $WP_release = &get_wormpep_version;
 }
  ###############################
  # get date & time             #

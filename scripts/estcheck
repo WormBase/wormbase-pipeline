@@ -50,7 +50,7 @@ my $tace = glob("~acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace");    # tace execut
 my $dbdir  = "/wormsrv2/autoace";                                  # Database path
 my $gffdir = "/wormsrv2/autoace/GFF_SPLITS";
 my $outdir = "/wormsrv2/autoace/CHECKS";
-my $WS_version = &get_wormbase_version;
+my $WS_version = &get_wormbase_version_name;
 
  ########################################
  # Open logfile                         #

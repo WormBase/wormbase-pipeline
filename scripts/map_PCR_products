@@ -58,7 +58,7 @@ my $dbdir  = "/wormsrv2/autoace";                                  # Database pa
 my $gffdir = "/wormsrv2/autoace/CHROMOSOMES";
 my @chromosomes = qw( I II III IV V X );
 my $version = &get_cvs_version($0);
-my $dbnumber = &get_wormbase_version;
+my $db_version = &get_wormbase_version_name;
  
 ################
 # Open logfile #
@@ -189,8 +189,8 @@ foreach my $mess (sort keys %output) {
 # produce output files #
 ########################
 
-open (OUT,    ">/wormsrv2/autoace/mappings/PCR_mappings.$dbnumber");
-open (OUTACE, ">/wormsrv2/autoace/mappings/PCR_mappings.$dbnumber.ace");
+open (OUT,    ">/wormsrv2/autoace/mappings/PCR_mappings.$db_version");
+open (OUTACE, ">/wormsrv2/autoace/mappings/PCR_mappings.$db_version.ace");
 
 foreach my $mapped (sort keys %finaloutput) {
     print OUT "$mapped\t@{$finaloutput{$mapped}}\n";

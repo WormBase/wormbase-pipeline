@@ -62,12 +62,7 @@ $exec=&tace;
 # Get the WS version number and set the wormpep release number                  #
 #################################################################################
 
-
-my $Wormbase_release = &get_wormbase_version;
-$WS_current = substr ($Wormbase_release,2);
-
-# only for test
-#my $WS_current = $WS_current - 1;
+my $WS_current = &get_wormbase_version;
 
 my $WS_previous = $WS_current - 1;
 

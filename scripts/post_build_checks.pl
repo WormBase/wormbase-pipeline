@@ -46,8 +46,7 @@ my $runtime = `date +%H:%M:%S`; chomp $runtime;
 # grab version number from cvs
 my $cvs_version = &get_cvs_version($0);
 
-my $WS_release = get_wormbase_version; 
-my $WS_version = substr ($WS_release,2);
+my $WS_version = &get_wormbase_version;
 
 #################
 # open LOG file #
