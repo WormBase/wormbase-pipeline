@@ -13,7 +13,7 @@
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-03-24 13:52:07 $
+# Last updated on: $Date: 2005-03-29 12:58:46 $
 
 
 use strict;
@@ -130,6 +130,13 @@ unlink("$basedir/autoace/logs/UTR_gff_dump");
 unlink("/wormsrv2/autoace/clone_coords") if -e "/wormsrv2/autoace/clone_coords";
 unlink("/wormsrv2/autoace/SL_coords") if -e "/wormsrv2/autoace/SL_coords";
 
+#remove ace files created at start of build be make_acefiles.
+print LOG "\nRemoving ace files created by make_acefiles from . .\n";
+my @source_dbs = qw( briggsae caltech camace csh geneace stlace );
+foreach my $db (@source_dbs) {
+  print LOG "\t$db\n";
+  &delete_files_from("$basedir/wormbase/$db/","ace\$","-");
+}
 
 
 # archive old GFF splits directory'
