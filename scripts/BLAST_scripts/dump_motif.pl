@@ -1,7 +1,12 @@
-#!/usr/local/bin/perl
+#!/usr/local/bin/perl5.6.1 -w
+#
+# Originally written by Marc Sohrmann (ms2@sanger.ac.uk)
+#
+# Dumps protein motifs from ensembl mysql (protein) database to an ace file
+#
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2002-11-05 13:53:39 $
 
-# Marc Sohrmann (ms2@sanger.ac.uk)
-# dumps protein motifs from ensembl mysql (protein) database to an ace file
 
 use strict;
 use DBI;
@@ -31,7 +36,7 @@ my $old_fh = select(LOG);
 $| = 1;
 select($old_fh);
 
-my $old_fh = select(ACE);
+$old_fh = select(ACE);
 $| = 1;
 select($old_fh);
 
@@ -109,4 +114,4 @@ $sth_f->finish;
 $dbh->disconnect;
 
 print LOG "\nEnd of Motif dump\n";
-print "\n"End of Motif dump\n";
+print "\nEnd of Motif dump\n";
