@@ -7,7 +7,7 @@
 # Usage: camcheck.pl
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-12-19 16:00:32 $
+# Last updated on: $Date: 2003-12-19 16:20:19 $
 #
 # see pod documentation (i.e. 'perldoc camcheck.pl') for more information.
 #
@@ -429,7 +429,7 @@ sub check_sequence_version {
     my $request = "/srsbin/cgi-bin/wgetz?$querycontent";
 
     if (!defined(open_TCP_connection(*F,$server,80))) {
-	print "Error connecting to server at \n";
+	print "Error connecting to srs.ebi.ac.uk server for object $obj\n";
 	exit(-1);
     }
     print F "GET $request HTTP/1.0\n\n";
