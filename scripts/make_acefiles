@@ -268,7 +268,7 @@ sub make_command_DNA {
     my $filename = "$targetdir/" . $dbname . "_DNA.ace";
     my $command;
 
-    if($dbname eq "camace" || $dbname eq "stlace" || $dbname eq "briggsae"){
+    if(($dbname eq "stlace") || ($dbname eq "briggsae")){
       $command=<<END;
 query find Sequence where ($criteria)
 follow DNA
