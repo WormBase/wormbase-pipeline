@@ -7,12 +7,16 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2002-11-29 17:05:01 $
+# Last updated on: $Date: 2002-12-03 16:14:11 $
 
 use Ace;
 use lib "/wormsrv2/scripts/"; 
 use Wormbase;
 use strict;
+use Getopt::Std;
+use vars qw($opt_t);
+
+getopts ("t");
 
 our $log;
 our $erichlog;
@@ -37,7 +41,8 @@ my $db = Ace->connect(-path  => '/wormsrv1/geneace/',
 &process_laboratory_class;
 &process_allele_class;
 &process_strain_class;
-&rearrangement;
+&Process_rearrangement;
+&Process_sequence;
 
 
 #######################################
@@ -48,13 +53,18 @@ $db->close;
 close(LOG);
 close(ERICHLOG);
 
-my $maintainer = "All";
-#&mail_maintainer($0,$maintainer,$log);
+if ($opt_t){
+  chomp(my $who=`whoami`);
+  script_tester ($0,$who,$log); 
+}
+else {
+  my $maintainer = "All";
+  #&mail_maintainer($0,$maintainer,$log);
 
-my $interested ="krb\@sanger.ac.uk, emsch\@its.caltech.edu, ck1\@sanger.ac.uk";
-#&mail_maintainer($0,"$interested",$erichlog);
-exit(0);
-
+  my $interested ="krb\@sanger.ac.uk, emsch\@its.caltech.edu, ck1\@sanger.ac.uk";
+  #&mail_maintainer($0,"$interested",$erichlog);
+  exit(0);
+}
 
 #######################
 # Process Locus class #
@@ -229,7 +239,7 @@ sub process_strain_class {
 # Process Rearrangement class #
 ###############################
 
-sub rearrangement {
+sub Process_rearrangement {
  
   print"\n\nChecking Rearrangement class for errors:\n";
   print LOG "\n\nChecking Rearrangement class for errors:\n";
@@ -247,6 +257,35 @@ sub rearrangement {
   }  
   print LOG "\n\nThere are $count error(s) in Rearrangement class.\n";
 } 
+
+##########################
+# Process Sequence class #
+##########################
+
+sub Process_sequence {
+
+  my $get_seqs_with_multiple_loci=<<EOF;
+  Table-maker -p "/wormsrv1/geneace/wquery/get_seq_has_multiple_loci.def" quit 
+EOF
+
+  my (%Seq_loci, $seq_count, $seq, $locus);
+  my $dir = "/wormsrv1/geneace";
+
+  open (FH, "echo '$get_seqs_with_multiple_loci' | tace $dir | ") || die "Couldn't access geneace\n";
+  while (<FH>){
+    chomp($_);
+    if ($_ =~ /^\"/){
+      $_ =~ s/\"//g;
+      ($seq, $locus)=split(/\s+/, $_);
+      $Seq_loci{$seq}=$locus;
+    }
+  }
+ foreach (keys %Seq_loci){
+    $seq_count++;
+    print LOG "$_ has multiple loci attached.\n";
+  }
+ print LOG "\n\nThere are $seq_count errors in Sequence class\n";
+}   
 
 ################################################
 
@@ -513,3 +552,20 @@ EOF
   return @names;
 }
 
+sub script_tester {
+  
+  my ($name,$tester,$logfile) = @_;
+    $tester = "$tester\@sanger.ac.uk";
+    open (OUTLOG,  "|/bin/mailx -s \"$name\" $tester");
+    if ( $logfile ){
+      open (READLOG, "<$logfile");
+      while (<READLOG>){
+	print OUTLOG "$_";
+      }
+      close READLOG;
+    }
+    else {
+      print OUTLOG "$name";
+    }
+    close OUTLOG;
+} 
