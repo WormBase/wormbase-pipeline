@@ -2,8 +2,8 @@
 #
 # map_operons.pl
 
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2004-02-27 10:30:38 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2004-03-09 10:54:36 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -58,7 +58,7 @@ if ($debug) {
 
 # Set up logfile
 my $rundate    = &rundate;
-our $log = "/wormsrv2/logs/map_operons.pl.WS${WS_version}.${rundate}.$$";
+our $log = "/wormsrv2/logs/map_operons.pl.${WS_version}.${rundate}.$$";
 open (LOG,">$log");
 LOG->autoflush();
 
