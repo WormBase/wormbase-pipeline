@@ -8,7 +8,7 @@
 # to look for bogus sequence entries
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-06-16 10:34:37 $
+# Last updated on: $Date: 2004-06-16 21:42:13 $
 
 
 use strict;
@@ -435,10 +435,8 @@ sub process_sequences{
 	  print "$CDS - Other problem\n" if $verbose;
 	}
       }
-      undef($CDS);
       $CDS->DESTROY();
     }
-    undef($seq);
     $seq->DESTROY();
   }
 }
