@@ -16,8 +16,8 @@ sub REAPER {
   $SIG{CHLD}=\&REAPER;
 }
 
-#my $exec = "/nfs/griffin2/rd/worm/bin.ALPHA_4/giface ";
-my $exec = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/giface ";
+my $exec = "/nfs/griffin2/rd/acedb/bin.ALPHA_4/giface ";
+#my $exec = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/giface ";
 my $dbdir = "/wormsrv2/camace";
 my $giface = "$exec $dbdir";
 my $outfilename = "/nfs/disk100/wormpub/tmp/EMBLdump.$$";
