@@ -7,10 +7,9 @@
 # A script to take ?Sequence objects and make ?CDS objects
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-11-06 18:50:22 $     
+# Last updated on: $Date: 2003-11-07 10:32:34 $     
 
 use strict;
-use Carp;
 use Getopt::Long;
 
 
@@ -18,30 +17,27 @@ use Getopt::Long;
 # variables etc. #
 ##################
 
-my $input; # where input file is located
-my $outdir;   # path to output directory
+my $file; # where input file is located
 
 # pattern to match timestamps
 my $ts = "-O \"(\\d{4}\-\\d{2}\-\\d{2}_\\d{2}:\\d{2}:\\d{2}\.?\\d?_\\S+|original)\"";
 
 
-GetOptions ("input=s"   => \$input,
-	    "outdir=s"  => \$outdir);
+GetOptions ("file=s"   => \$file);
 
-
-if(!$outdir){
-  $outdir = "/nfs/disk100/wormpub/DATABASES/TEST_DBs/cds_ace/acefiles";
-}
 
 # Open output/input streams
-open(IN,"<$input") || carp "Can't open input file\n";
-open(SEQ,">$outdir/camace_new_Sequence.ace") || croak "Couldn't open output file\n";
-open(CDS,">$outdir/camace_CDS.ace") || croak "Couldn't open output file\n";
+open(IN,"<$file") || die "Can't open input file\n";
+open(SEQ,">$file.sequence") || die "Couldn't open output file\n";
+open(CDS,">$file.cds") || die "Couldn't open output file\n";
 
 
 # reset input line separator
 $/ = "";
 
+
+# process input file, changing lines as appropriate and redirecting output
+# to two files
 
 while(<IN>){
 
@@ -66,14 +62,14 @@ while(<IN>){
     # Change Has_allele tag
     s/Has_allele/Allele/;
     
+    # output to ?CDS file
     print CDS;
   }
-
-
   # Make changes in Parent sequence objects that might link to CDS objects
   else{
     s/Structure\s+$ts\s+Subsequence\s+$ts/CDS/g;
     s/Visible\s+$ts\s+Matching_Genomic/Matching_CDS/g;
+    # print to ?Sequence file
     print SEQ;
   }
 
@@ -90,3 +86,45 @@ $/ = "\n";
 
 exit(0);
 
+__END__
+
+=pod
+
+=head2   NAME - sequence2cds.pl
+
+=head1 USAGE
+
+=over 4
+
+=item sequence2cds.pl --file <file>
+
+=back
+
+=head1 DESCRIPTION
+
+This script will process a dumped ace file of ?Sequence objects (containing
+timestamps) and produce two output files, one for the ?Sequence class and
+one for the new ?CDS class.
+
+The script tidies up some tags (e.g. Sourc_Exons => Source_exons) and changes
+other tags to be compliant with the new ?CDS model.
+
+=back
+
+=head1 MANDATORY arguments: --file
+
+=over 4
+
+=item --file <name of valid acefile>
+
+File must be a ?Sequence class dump with timestamps.  Output files will use this
+name and append .sequence and .cds for the two new files.
+
+=back
+
+
+=head1 AUTHOR Keith Bradnam (krb@sanger.ac.uk) 
+
+=back
+
+=cut
