@@ -7,7 +7,7 @@
 # A script to convert ?Locus objects into the new ?Gene object
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-02-04 16:43:50 $   
+# Last updated on: $Date: 2004-02-06 17:44:57 $   
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -45,10 +45,69 @@ while(<IN>){
 
   my $id_padded = sprintf "%08d" , $id;
   my $name = "WBGene$id_padded";  
+  my ($public_name, $cgc_name, $non_cgc_name, $sequence_name, $other_name);
 
-  s/^Locus :.*/Gene : \"$name\"\nLive\nVersion 1\nVersion_change 1 now \"Bradnam KR\" Imported \"Initial conversion from geneace\"\nRemark \"Gene created on $date\"/;
+
+
+  # Change Non_CGC_name field to Other_name
+
+#  s/Non_CGC_name\s+$ts\s+(\"[\w\d]+\.[\d\w:]+\")\s+$ts\s+(\d+)\s+$ts\s+(\d+)\s+$ts/CDS $3 $5 $7/g;
+  if(m/Non_CGC_name/){
+    s/Non_CGC_name\s+$ts\s+(\S+)\s+$ts/Other_name $1 $2 $3/;
+    $non_cgc_name = $2;
+  }
+  # Change Transcript_name or Pseudogene_name to Sequence_name
+  s/Transcript_name/Sequence_name/g if (m/Transcript_name/);
+  s/Pseudogene_name/Sequence_name/g if (m/Pseudogene_name/);
+
+
+
+  # grab other names when present: e.g. cgc_name, sequence_name or other_name
+  if(m/\s+CGC_name\s+$ts\s+(\S+)\s+$ts/){
+    $cgc_name = $2;
+  }
+  if(m/\s+Sequence_name\s+$ts\s+(\S+)\s+$ts/){
+    $sequence_name = $2;
+  }
+  if(m/\s+Other_name\s+$ts\s+(\S+)\s+$ts/){
+    $other_name = $2;
+  }
+
+
+  # Assign a 'public_name' based on a priority CGC_name -> Sequence_name -> Other_name
+  # For non-elegans genes, maybe not use sequence name (where it exists) for public_name
+  if($cgc_name){
+    $public_name = $cgc_name;
+  }
+  elsif($sequence_name){
+    $public_name = $sequence_name;
+  }
+  elsif($non_cgc_name){
+    $public_name = $non_cgc_name;
+  }
+  else{
+    $public_name = $other_name;
+  }
+
+
+  # Main conversion to Gene object with basic history/identity information
+  s/^Locus :.*/Gene : \"$name\"\nLive\nVersion 1\nVersion_change 1 now \"WBPerson1971\" Imported \"Initial conversion from geneace\"\nPublic_name $public_name/;
+
+  # Remove CGC_approved, now assumed if CGC_name is present
+  s/Type\s+$ts\s+Gene\s+$ts\s+CGC_approved\s+$ts//;
+
+  # get rid of Type.Gene part of tree as this is no longer applicable
+  s/Type\s+$ts\s+Gene\s+$ts\s+//g;  
+
+  # change tag names to new shorter formats
+  s/Gene_information\s+/Gene_info /g;
+  s/Molecular_information\s+/Molecular_info /g;
+
+
+  print;
 
   $id++;
+  last if $id>205;
 }
 
 
@@ -58,138 +117,7 @@ close(OUT);
 exit(0);
 
 
-  # Calculate 'Sequence_name' if Genomic_sequence tag is present
-  if(defined($locus->at('Molecular_information.Genomic_sequence'))){
-    @sequence_names = $locus->at('Molecular_information.Genomic_sequence');
-    foreach my $sequence (@sequence_names){
-      $sequence =~ s/[a-z]$// if ($sequence =~ m/\d[a-z]$/);
-      $object .= "Sequence_name \"$sequence\"\n";
-      $sequence_name = "$sequence";
-    }
-  }
-  
-  # Assign a 'public_name' based on a priority CGC_name -> Sequence_name -> Other_name
-  # For non-elegans genes, maybe not use sequence name (where it exists) for public_name
-  if($cgc_name){
-    $public_name = $cgc_name;
-  }
-  elsif($sequence_name){
-    $public_name = $sequence_name;
-    ($public_name = $other_name) if($species ne "Caenorhabditis elegans");
-  }
-  else{
-    $public_name = $other_name;
-  }
-  $object .= "Public_name \"$public_name\"\n\n";
  
-  return($object,$warnings);
-
-}
 
 ###############################################################################
-# Tidy up ace file to remove leading tags and convert tags for new gene model #
-# fetch timestamps for *some* terminal parts of tree object                   #
-###############################################################################
-
-
-sub tidy_object{
-  my $object = shift;
-  my $locus = shift;
-  my $ts;
-
-
-  # modify Name subtree
-  $ts = &ts($locus,"Name.Other_name");
-  $object =~ s/Name\s+Other_name\s+(\S+)/Other_name $1 -O \"$ts\" /g;
-  $ts = &ts($locus,"Name.Gene_class");
-  $object =~ s/Name\s+Gene_class\s+(\"\w+\")/Gene_class $1 -O \"$ts\" /g;
-  $ts = &ts($locus,"Name.Old_name");
-  $object =~ s/Name\s+Old_name\s+(\S+)/Other_name $1 -O \"$ts\" /g;
-
-  # modify Gene_information subtree
-  $object =~ s/Gene_information\s+//g;
-
-
-  # Modify Type subtree
-  $object =~ s/Type\s+Gene\s+Reference_Allele/Reference_allele /g;
-  $object =~ s/Type\s+Gene\s+Phenotype/Phenotype /g;
-  $object =~ s/Type\s+Gene\s+RNAi_result/RNAi_result /g;
-  $object =~ s/Type\s+Gene\s+Complementation_data/Complementation_data /g;
-  $object =~ s/Type\s+Gene\s+Controlled_phenotype/Controlled_phenotype /g;
-  $object =~ s/Type\s+Gene\s+CGC_approved/CGC_approved /g;
-  $object =~ s/Type\s+Gene\s+CGC_unresolved/CGC_unresolved /g;
-  $object =~ s/Type\s+Gene\s+Pseudogene/Pseudogene /g;
-
-  # Replace any remaining single Gene tags
-  $object =~ s/Type\s+Gene\s+//g;
-  $object =~ s/Type\s+Polymorphism\s+SNP/SNP /g;
-  $object =~ s/Type\s+Polymorphism\s+Status/Status /g;
-  $object =~ s/Type\s+Polymorphism\s+SNP_assay/SNP_assay /g;
-  $object =~ s/Type\s+Polymorphism\s+RFLP/RFLP /g;
-  $object =~ s/Type\s+Polymorphism\s+Transposon_insertion/Transposon_insertion /g;
-  $object =~ s/Type\s+Polymorphism\s+Detection_method/Detection_method /g;
-  $object =~ s/Type\s+Polymorphism/Polymorphism /g;
-  $object =~ s/Type\s+PCR_product/PCR_product /g;
-
-  # modify Molecular_information subtree, 
-  # Genomic_sequence becomes CDS but only for non RNA genes.  Otherwise, it becomes a transcript
-
-  if ($object =~ m/\nRNA_gene/){
-    $object =~ s/Molecular_information\s+Genomic_sequence\s+/Transcript /g;
-    $object =~ s/RNA_gene//;
-  }
-  else{
-    $object =~ s/Molecular_information\s+Genomic_sequence\s+/CDS /g;
-  }
-  $object =~ s/Molecular_information\s+Other_sequence\s+/Other_sequence /g;
-  $object =~ s/Molecular_information\s+Product\s+/Product /g;
-  
-  # modify Positive/Negative/Mapping_data subtrees
-  $object =~ s/Positive\s+Positive_clone/Positive_clone /g;
-  $object =~ s/Positive\s+Inside_rearr/Inside_rearr /g;
-  $object =~ s/Negative\s+Negative_clone/Negative_clone /g;
-  $object =~ s/Negative\s+Outside_rearr/Outside_rearr /g;
-  $object =~ s/Mapping_data\s+Well_ordered/Well_ordered /g;
-
-  #new format for 2_point
-  $object =~ s/Mapping_data\s+2_point/Two_pt /g;
-  $object =~ s/Mapping_data\s+Multi_point/Multi_point /g;
-  $object =~ s/Mapping_data\s+Pos_neg_data/Pos_neg_data /g;
-
-  # modify Contains/Contained_in tags to agree with new Gene_model
-  $object =~ s/Contained_in\s+/In_cluster /g;
-
-  # get rid of tags off end of model
-  $object =~ s/(Positive_clone\s+\"[\w\#\.]+\"\s+\"[\w \-\,\'\?]+\")\s+(\"[\w \(\),\?\-\;\[\]\.]+\")/$1 -C $2/g;
-  $object =~ s/(Negative_clone\s+\"[\w\#\.]+\"\s+\"[\w \-\,\'\?]+\")\s+(\"[\w \(\),\?\-\;\[\]\.]+\")/$1 -C $2/g;
-  $object =~ s/(Allele\s+\"[\w\#]+\")\s+(\"[\w \-\,\(\)\@\:\.]+\")/$1 -C $2/g;
-  $object =~ s/(Description\s+\"[\w\#\(\)\[\]\.\, \-\:]+\")\s+(\"[\w \-\,]+\")/$1 -C $2/g;
-  $object =~ s/(Genomic_sequence\s+\"[\w\#\(\)\[\]\.\, \-]+\")\s+(\"[\w \-\,]+\")/$1 -C $2/g;
-  $object =~ s/(Complementation_data\s+\"[\w\#\(\)\[\]\.\, \-]+\")\s+(\"[\w \-\,]+\")/$1 -C $2/g;
-  $object =~ s/(Multi_point\s+\"[\w\#\(\)\[\]\.\, \-]+\")\s+(\"[\w \-\,]+\")/$1 -C $2/g;
-
-
-  # get rid of CGC_approved tag (will become CGC_name in new Gene model)
-  $object =~ s/CGC_approved\s+//;
-
-  # get rid of Representative_for associated value (will be generated by XREF from Hide_under)
-  $object =~ s/Representative_for\s+\".*\"/Representative_for/g;
-
-  # check for other locus names in object using Hide_under tag
-  if ($object =~ m/Hide_under\s+\"(.*)\"/){
-    my $match = $1;
-    if($genes{$match}){
-      $object =~ s/Hide_under\s+\".*\"/Hide_under \"$genes{$match}\"/;
-    }
-    else{
-      # Assign new wormbase ID to linked locus name
-      my $id_padded = sprintf "%08d" , $id;
-      $id++;
-      $object =~ s/Hide_under\s+\".*\"/Hide_under \"WBgn:$id_padded\"/;
-      $genes{$match} = "WBgn:".$id_padded;
-
-    }
-    
-  }
-
 
