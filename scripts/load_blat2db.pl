@@ -8,8 +8,8 @@
 # 030507 : dl  : Update tace queries to restrict deleted/uploaded Homol_data and Feature data class objects
 # 030507 : dl  : Upload OST data as part of script
 
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2003-05-07 15:19:40 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2003-09-10 16:05:27 $
 
 use strict;
 use Getopt::Long;
@@ -76,76 +76,76 @@ sub load {
 my $command;
 if ($dbname =~ /autoace/) {
 $command=<<END;
-pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLAT_EST.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLAT_OST.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLAT_mRNA.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLAT_EMBL.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLATX_NEMATODE.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.EST.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.OST.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.mRNA.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.EMBL.ace 
+pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.blat.est.ace 
+pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.blat.est.ace 
+pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.blat.mrna.ace 
+pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.blat.embl.ace 
+pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.blat.nematode.ace 
+pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.est.ace 
+pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.ost.ace 
+pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.mrna.ace 
+pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.embl.ace 
 save
-pparse /wormsrv2/autoace/BLAT/autoace.blat.OST.ace            
-pparse /wormsrv2/autoace/BLAT/autoace.blat.mRNA.ace 
-pparse /wormsrv2/autoace/BLAT/autoace.blat.EMBL.ace 
-pparse /wormsrv2/autoace/BLAT/autoace.NEMATODE.ace
-pparse /wormsrv2/autoace/BLAT/autoace.good_introns.OST.ace 
-pparse /wormsrv2/autoace/BLAT/autoace.good_introns.EST.ace 
-pparse /wormsrv2/autoace/BLAT/autoace.good_introns.mRNA.ace 
-pparse /wormsrv2/autoace/BLAT/autoace.good_introns.EMBL.ace 
+pparse /wormsrv2/autoace/BLAT/autoace.blat.ost.ace            
+pparse /wormsrv2/autoace/BLAT/autoace.blat.mrna.ace 
+pparse /wormsrv2/autoace/BLAT/autoace.blat.embl.ace 
+pparse /wormsrv2/autoace/BLAT/autoace.nematode.ace
+pparse /wormsrv2/autoace/BLAT/autoace.good_introns.ost.ace 
+pparse /wormsrv2/autoace/BLAT/autoace.good_introns.est.ace 
+pparse /wormsrv2/autoace/BLAT/autoace.good_introns.mrna.ace 
+pparse /wormsrv2/autoace/BLAT/autoace.good_introns.embl.ace 
 save 
-pparse /wormsrv2/autoace/BLAT/autoace.blat.EST.ace            
+pparse /wormsrv2/autoace/BLAT/autoace.blat.est.ace            
 save
 quit
 END
 }
 elsif ($dbname =~ /camace/) {
 $command=<<END;
-pparse /wormsrv2/autoace/BLAT/virtual_objects.camace.BLAT_EST.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.camace.BLAT_OST.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.camace.BLAT_mRNA.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.camace.BLAT_EMBL.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.camace.BLATX_NEMATODE.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.camace.ci.EST.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.camace.ci.OST.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.camace.ci.mRNA.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.camace.ci.EMBL.ace 
+pparse /wormsrv2/autoace/BLAT/virtual_objects.camace.blat.est.ace 
+pparse /wormsrv2/autoace/BLAT/virtual_objects.camace.blat.ost.ace 
+pparse /wormsrv2/autoace/BLAT/virtual_objects.camace.blat.mrna.ace 
+pparse /wormsrv2/autoace/BLAT/virtual_objects.camace.blat.embl.ace 
+pparse /wormsrv2/autoace/BLAT/virtual_objects.camace.blat.nematode.ace 
+pparse /wormsrv2/autoace/BLAT/virtual_objects.camace.ci.est.ace 
+pparse /wormsrv2/autoace/BLAT/virtual_objects.camace.ci.ost.ace 
+pparse /wormsrv2/autoace/BLAT/virtual_objects.camace.ci.mrna.ace 
+pparse /wormsrv2/autoace/BLAT/virtual_objects.camace.ci.embl.ace 
 save
-pparse /wormsrv2/autoace/BLAT/camace.blat.OST.ace            
-pparse /wormsrv2/autoace/BLAT/camace.blat.mRNA.ace 
-pparse /wormsrv2/autoace/BLAT/camace.blat.EMBL.ace 
-pparse /wormsrv2/autoace/BLAT/camace.good_introns.EST.ace 
-pparse /wormsrv2/autoace/BLAT/camace.good_introns.OST.ace 
-pparse /wormsrv2/autoace/BLAT/camace.good_introns.mRNA.ace 
-pparse /wormsrv2/autoace/BLAT/camace.good_introns.EMBL.ace 
+pparse /wormsrv2/autoace/BLAT/camace.blat.ost.ace            
+pparse /wormsrv2/autoace/BLAT/camace.blat.mrna.ace 
+pparse /wormsrv2/autoace/BLAT/camace.blat.embl.ace 
+pparse /wormsrv2/autoace/BLAT/camace.good_introns.est.ace 
+pparse /wormsrv2/autoace/BLAT/camace.good_introns.ost.ace 
+pparse /wormsrv2/autoace/BLAT/camace.good_introns.mrna.ace 
+pparse /wormsrv2/autoace/BLAT/camace.good_introns.embl.ace 
 save 
-pparse /wormsrv2/autoace/BLAT/camace.blat.EST.ace            
+pparse /wormsrv2/autoace/BLAT/camace.blat.est.ace            
 save
 quit
 END
 }
 elsif ($dbname =~ /stlace/) {
 $command=<<END;
-pparse /wormsrv2/autoace/BLAT/virtual_objects.stlace.BLAT_EST.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.stlace.BLAT_OST.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.stlace.BLAT_mRNA.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.stlace.BLAT_EMBL.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.stlace.BLATX_NEMATODE.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.stlace.ci.EST.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.stlace.ci.OST.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.stlace.ci.mRNA.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.stlace.ci.EMBL.ace 
+pparse /wormsrv2/autoace/BLAT/virtual_objects.stlace.blat.est.ace 
+pparse /wormsrv2/autoace/BLAT/virtual_objects.stlace.blat.ost.ace 
+pparse /wormsrv2/autoace/BLAT/virtual_objects.stlace.blat.mrna.ace 
+pparse /wormsrv2/autoace/BLAT/virtual_objects.stlace.blat.embl.ace 
+pparse /wormsrv2/autoace/BLAT/virtual_objects.stlace.blat.nematode.ace 
+pparse /wormsrv2/autoace/BLAT/virtual_objects.stlace.ci.est.ace 
+pparse /wormsrv2/autoace/BLAT/virtual_objects.stlace.ci.ost.ace 
+pparse /wormsrv2/autoace/BLAT/virtual_objects.stlace.ci.mrna.ace 
+pparse /wormsrv2/autoace/BLAT/virtual_objects.stlace.ci.embl.ace 
 save
-pparse /wormsrv2/autoace/BLAT/stlace.blat.OST.ace 
-pparse /wormsrv2/autoace/BLAT/stlace.blat.mRNA.ace 
-pparse /wormsrv2/autoace/BLAT/stlace.blat.EMBL.ace 
-pparse /wormsrv2/autoace/BLAT/stlace.good_introns.EST.ace 
-pparse /wormsrv2/autoace/BLAT/stlace.good_introns.OST.ace 
-pparse /wormsrv2/autoace/BLAT/stlace.good_introns.mRNA.ace 
-pparse /wormsrv2/autoace/BLAT/stlace.good_introns.EMBL.ace 
+pparse /wormsrv2/autoace/BLAT/stlace.blat.ost.ace 
+pparse /wormsrv2/autoace/BLAT/stlace.blat.mrna.ace 
+pparse /wormsrv2/autoace/BLAT/stlace.blat.embl.ace 
+pparse /wormsrv2/autoace/BLAT/stlace.good_introns.est.ace 
+pparse /wormsrv2/autoace/BLAT/stlace.good_introns.ost.ace 
+pparse /wormsrv2/autoace/BLAT/stlace.good_introns.mrna.ace 
+pparse /wormsrv2/autoace/BLAT/stlace.good_introns.embl.ace 
 save 
-pparse /wormsrv2/autoace/BLAT/stlace.blat.EST.ace            
+pparse /wormsrv2/autoace/BLAT/stlace.blat.est.ace            
 save
 quit
 END

@@ -7,7 +7,7 @@
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-09-08 16:55:00 $
+# Last edited on: $Date: 2003-09-10 16:05:26 $
 
 
 use strict;
@@ -412,7 +412,7 @@ while (<ABEST>) {
     # flag each blat hit which is best (all of them) - set $line{$_} to 1
     # %line thus stores keys which are combos of virtual object name + blat hit details
     $line{$_} = 1;
-    ($superlink) = (/\"BLAT\_$type\:(\S+)\_\d+\"/);
+    ($superlink) = (/\"$word{$type}\:(\S+)\_\d+\"/);
 
     # Print blat best hits to final output file
     print OUT_autoace "// Source $superlink\n\n";
