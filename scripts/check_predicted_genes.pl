@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.0 -w
+#!/usr/local/bin/perl5.6.1 -w
 
 # check_predicted_genes.pl
 #
@@ -71,6 +71,7 @@ LOG->autoflush();
 my @predicted_genes = $db->fetch (-query => 'FIND Predicted_gene');
 my $gene_count=@predicted_genes;
 print LOG "\nChecking $gene_count predicted genes in '$db_path'\n\n";
+print "\nChecking $gene_count predicted genes in '$db_path'\n\n" if $verbose;;
 
 
 ################################
@@ -178,10 +179,12 @@ sub test_gene_sequence_for_errors{
   # check for length errors
   if ($remainder != 0){
     if (($end_tag ne "present") && ($start_tag ne "present")){
-      print "Gene error - $gene: length ($gene_length bp) not divisible by 3, Start_not_found & End_not_found tags MISSING\n";
+      print LOG "Gene error - $gene: length ($gene_length bp) not divisible by 3, Start_not_found & End_not_found tags MISSING\n";
+      print "Gene error - $gene: length ($gene_length bp) not divisible by 3, Start_not_found & End_not_found tags MISSING\n" if $verbose;
     }
-    elsif($verbose){
-      print "Gene error - $gene: length ($gene_length bp) not divisible by 3, Start_not_found and/or End_not_found tag present\n";
+    else{
+      print LOG "Gene error - $gene: length ($gene_length bp) not divisible by 3, Start_not_found and/or End_not_found tag present\n";
+      print "Gene error - $gene: length ($gene_length bp) not divisible by 3, Start_not_found and/or End_not_found tag present\n" if $verbose;
     }   
   }   
 
@@ -189,10 +192,12 @@ sub test_gene_sequence_for_errors{
   # look for incorrect stop codons
   if (($stop_codon ne 'taa') && ($stop_codon ne 'tga') && ($stop_codon ne 'tag')){
     if($end_tag ne "present"){
-      print "Gene error - $gene: '$stop_codon' is not a valid stop codon. End_not_found tag MISSING\n";
+      print LOG "Gene error - $gene: '$stop_codon' is not a valid stop codon. End_not_found tag MISSING\n";
+      print "Gene error - $gene: '$stop_codon' is not a valid stop codon. End_not_found tag MISSING\n" if $verbose;
     }
-    elsif($verbose){
-      print "Gene error - $gene: '$stop_codon' is not a valid stop codon. End_not_found tag present\n";
+    else{
+      print LOG "Gene error - $gene: '$stop_codon' is not a valid stop codon. End_not_found tag present\n";
+      print "Gene error - $gene: '$stop_codon' is not a valid stop codon. End_not_found tag present\n" if $verbose;
     }
   }
 
@@ -200,10 +205,12 @@ sub test_gene_sequence_for_errors{
   # look for incorrect start codons
   if ($start_codon ne 'atg'){
    if($start_tag ne "present"){
-      print "Gene error - $gene: '$start_codon' is not a valid start codon. Start_not_found tag MISSING\n";
+      print LOG "Gene error - $gene: '$start_codon' is not a valid start codon. Start_not_found tag MISSING\n";
+      print "Gene error - $gene: '$start_codon' is not a valid start codon. Start_not_found tag MISSING\n" if $verbose;
     }
-    elsif($verbose){
-      print "Gene error - $gene: '$start_codon' is not a valid start codon. Start_not_found tag present\n";
+    else{
+      print LOG "Gene error - $gene: '$start_codon' is not a valid start codon. Start_not_found tag present\n";
+      print "Gene error - $gene: '$start_codon' is not a valid start codon. Start_not_found tag present\n" if $verbose;
     }
   }
 
@@ -220,14 +227,16 @@ sub test_gene_sequence_for_errors{
       my $previous_sequence = substr($dna, $j-11,10);
       my $following_sequence = substr($dna, $j+2, 10);
       my $offending_codon = substr($dna, $j-1, 3);
-      print "Gene error - $gene: internal stop codon at position $j ...$previous_sequence $offending_codon $following_sequence...\n";      
+      print LOG "Gene error - $gene: internal stop codon at position $j ...$previous_sequence $offending_codon $following_sequence...\n";      
+      print "Gene error - $gene: internal stop codon at position $j ...$previous_sequence $offending_codon $following_sequence...\n" if $verbose;   
     }
   }			       
 
   # look for non-ACTG characters
   if ($dna =~ /[^acgt]/i){
     $dna =~ s/[acgt]//g;
-    print "Gene error - $gene: DNA sequence contains the following non-ATCG characters: $dna\n" 
+    print LOG "Gene error - $gene: DNA sequence contains the following non-ATCG characters: $dna\n"; 
+    print "Gene error - $gene: DNA sequence contains the following non-ATCG characters: $dna\n" if $verbose;
   }
 
 }
