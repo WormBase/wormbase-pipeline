@@ -1744,6 +1744,9 @@
                         Old_address DateType #Address   // for history
 			Left_the_field Text
         Comment Text
+ 	Lineage Supervised    ?Person XREF Supervised_by #Role
+                Supervised_by ?Person XREF Supervised #Role
+                Worked_with   ?Person XREF Worked_with #Role
         Publication     Paper ?Paper XREF Person
                         Publishes_as ?Author    // confirmed author names (curated)
                                                 // can't XREF because of paper model
@@ -1764,6 +1767,16 @@
                                           // multiple fax numbers if present (optional)
           Web_page      Text    // web page is part of the address info I think
 
+#Role   Phd
+        Postdoc
+        Masters
+        Undergrad
+        Highschool
+        Sabbatical
+        Lab_visitor
+        Collaborated
+        Research_staff
+        Unknown
 
 
 ///////////////////////
