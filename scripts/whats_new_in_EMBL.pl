@@ -7,7 +7,7 @@
 # checks EMBL for new EST or mRNA entries
 #
 # Last updated by: $Author: krb $                      
-# Last updated on: $Date: 2003-09-10 18:07:35 $        
+# Last updated on: $Date: 2003-09-11 16:43:21 $        
 
 use strict;
 use Getopt::Long;
@@ -22,6 +22,7 @@ use Time::Local;
 my ($help, $debug, $days);
 my $maintainers = "All";
 our $log;
+my $getz   = "/usr/local/pubseq/bin/getzc"; # getz binary
 
 GetOptions ("help"     => \$help,
             "debug=s"  => \$debug,
@@ -56,7 +57,7 @@ my $new_EMBL_CDS     = 0;
 
 
 # Elegans mRNA entries
-open (NEW_SEQUENCES, "/usr/local/pubseq/bin/getz -c \'([emblnew-Division:inv] & [emblnew-Molecule:mrna] & [emblnew-org:caenorhabditis elegans*] & [emblnew-DateCreated#$date:]) | ([emblrelease-Division:inv] & [emblrelease-Molecule:mrna] & [emblrelease-org:caenorhabditis elegans*] & [emblrelease-DateCreated#$date:])\' |");
+open (NEW_SEQUENCES, "$getz -c \'([embl-div:inv] & [embl-mol:*rna] & [embl-org:Caenorhabditis elegans] & [emblnew-DateCreated#$date:])\' |");
 
 while (<NEW_SEQUENCES>){
   chomp;
@@ -69,7 +70,7 @@ print "There are $new_elegans_mRNA new mRNA entries since $date\n" if ($debug);
 
 
 # Elegans EST entries
-open (NEW_SEQUENCES, "/usr/local/pubseq/bin/getz -c \'([emblnew-Division:est] & [emblnew-Molecule:rna] & [emblnew-org:caenorhabditis elegans*] & [emblnew-DateCreated#$date:]) | ([emblrelease-Division:est] & [emblrelease-Molecule:rna] & [emblrelease-org:caenorhabditis elegans*] & [emblrelease-DateCreated#$date:])\' |");
+open (NEW_SEQUENCES, "$getz -c \'([embl-div:est] & [embl-mol:*rna] & [embl-org:Caenorhabditis elegans] & [embl-DateCreated#$date:])\' |");
 while (<NEW_SEQUENCES>){
   chomp;
   $new_elegans_EST = $_;
@@ -81,7 +82,7 @@ print "There are $new_elegans_EST new EST entries since $date\n" if ($debug);
 
 
 # All Nematatode EST entries
-open (NEW_SEQUENCES, "/usr/local/pubseq/bin/getz -c \'([emblnew-Division:est] & [emblnew-Molecule:rna] & [emblnew-Taxon:Nematoda*] & [emblnew-DateCreated#$date:]) | ([emblrelease-Division:est] & [emblrelease-Molecule:rna] & [emblrelease-Taxon:Nematoda*] & [emblrelease-DateCreated#$date:])\' |");
+open (NEW_SEQUENCES, "$getz -c \'([embl-div:est] & [embl-mol:*rna] & [embl-Taxon:Nematoda] & [embl-DateCreated#$date:])\' |");
 while (<NEW_SEQUENCES>){
   chomp;
   $new_nematode_EST = $_;
@@ -96,7 +97,7 @@ print "There are $non_elegans_ESTs non C. elegans ESTs since $date\n" if ($debug
 
 
 # New EMBL CDS entries
-open (NEW_SEQUENCES, "/usr/local/pubseq/bin/getz -c \'(([emblnew-Division:inv] & [emblnew-Molecule:genomic dna*] & [emblnew-DateCreated#$date:] & [emblnew-org:Caenorhabditis elegans*] ! [emblnew-Keywords:HTG*]) & ([emblnew-FtKey:cds] > emblnew)) | (([emblrelease-Division:inv] & [emblrelease-Molecule:genomic dna*] & [emblrelease-DateCreated#$date:] & [emblrelease-org:Caenorhabditis elegans*] ! [emblrelease-Keywords:HTG*]) & ([emblrelease-FtKey:cds] >emblrelease))\' |");
+open (NEW_SEQUENCES, "$getz -c \'([embl-div:inv] & ([embl-mol:genomic dna*] | [embl-mol:unassigned dna]) & [embl-DateCreated#$date:] & [embl-org:Caenorhabditis elegans] ! [embl-Keywords:HTG*]) & ([embl-FtKey:cds] > embl))\' |");
 while(<NEW_SEQUENCES>){
   chomp;
   $new_EMBL_CDS = $_;
