@@ -594,6 +594,17 @@
 	  Similarity_evidence ?Sequence
 	  PMID_evidence Text //added for Erich's gene function data krb 02/04/09
 	  Accession_evidence ?Accession_number // added for and by krb 020422
+	  GO_inference_type IC  Text
+			    IDA Text
+			    IEA Text
+			    IEP Text
+			    IGI Text
+			    IMP Text
+			    IPI Text
+			    ISS Text
+			    NAS Text
+			    ND  Text
+			    TAS Text
 
 
 ?Gene_name Gene ?Gene
