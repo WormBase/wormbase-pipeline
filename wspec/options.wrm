@@ -144,7 +144,7 @@ _VHomol_data       -V -D FMAP
 _VFeature_data     -V -D FMAP
 
 // WTP
-_VWTP		   -V -D FMAP
+// _VWTP		   -V -D FMAP
 
 // Transposons
 _VTransposon       -V -D FMAP
