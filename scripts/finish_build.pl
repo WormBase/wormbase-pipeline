@@ -13,7 +13,7 @@
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-03-18 16:38:47 $
+# Last updated on: $Date: 2005-03-24 13:52:07 $
 
 
 use strict;
@@ -128,7 +128,7 @@ unlink("$basedir/autoace/logs/UTR_gff_dump");
 
 #remove coordinate files for Coords_converter ready for next build.
 unlink("/wormsrv2/autoace/clone_coords") if -e "/wormsrv2/autoace/clone_coords";
-unlink("/wormsrv2/autoace/SL_coords") if -e "SL_coords";
+unlink("/wormsrv2/autoace/SL_coords") if -e "/wormsrv2/autoace/SL_coords";
 
 
 
