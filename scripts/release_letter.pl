@@ -5,7 +5,7 @@
 # by Anthony Rogers                             
 #
 # Last updated by: $Author: krb $               
-# Last updated on: $Date: 2003-12-01 11:40:25 $         
+# Last updated on: $Date: 2004-03-12 15:12:26 $         
 #
 # Generates a release letter at the end of build.
 #
@@ -72,19 +72,19 @@ if( defined($opt_l)) {
   print RL "This directory includes:\n";
   print RL "i)\tdatabase.WS$ver.*.tar.gz    -   compressed data for new release\n";
   print RL "ii)\tmodels.wrm.WS$ver           -   the latest database schema (also in above database files)\n";
-  print RL "iii)\tCHROMOSOMES/subdir        -   contains 3 files (DNA, GFF & AGP per chromosome)\n";
-  print RL "iv)\tWS$ver-WS$old_ver.dbcomp          -   log file reporting difference from last release\n";
+  print RL "iii)\tCHROMOSOMES/subdir         -   contains 3 files (DNA, GFF & AGP per chromosome)\n";
+  print RL "iv)\tWS$ver-WS$old_ver.dbcomp         -   log file reporting difference from last release\n";
   print RL "v)\twormpep$ver.tar.gz          -   full Wormpep distribution corresponding to WS$ver\n";
   print RL "vi)\twormrna$ver.tar.gz          -   latest WormRNA release containing non-coding RNA's in the genome\n";
   print RL "vii)\tconfirmed_genes.WS$ver.gz   -   DNA sequences of all genes confirmed by EST &/or cDNA\n";
   print RL "viii)\tyk2orf.WS$ver.gz            -    Latest set of ORF connections to each Yuji Kohara EST clone\n";
   print RL "ix)\tgene_interpolated_map_positions.WS$ver.gz    - Interpolated map positions for each coding/RNA gene\n";
   print RL "x)\tclone_interpolated_map_positions.WS$ver.gz    - Interpolated map positions for each clone\n";
-  print RL "xi)\tbest_blastp_hits.WS$ver.gz    - for each C. elegans WormPep protein, lists Best blastp match to\n 
-                                        human, fly, yeast, C. briggsae, and SwissProt & Trembl proteins.\n";
+  print RL "xi)\tbest_blastp_hits.WS$ver.gz  - for each C. elegans WormPep protein, lists Best blastp match to\n 
+                                       human, fly, yeast, C. briggsae, and SwissProt & TrEMBL proteins.\n";
 
   print RL "xii)\tbest_blastp_hits_brigprot.WS$ver.gz   - for each C. briggsae protein, lists Best blastp match to\n 
-                                        human, fly, yeast, C. elegans, and SwissProt & Trembl proteins.\n";  
+                                        human, fly, yeast, C. elegans, and SwissProt & TrEMBL proteins.\n";  
   print RL "\n\n";
   print RL "Release notes on the web:\n-------------------------\n";
   print RL "http://www.sanger.ac.uk/Projects/C_elegans/WORMBASE\n\n\n\n";
@@ -128,8 +128,8 @@ if( defined($opt_l)) {
   print  RL "\n\n";
   print  RL "Status of entries: Confidence level of prediction (based on the amount of transcript evidence)\n";
   print  RL "-------------------------------------------------\n";
-  printf RL "Confirmed            %6d (%2.1f%%)\tEvery base has transcription evidence (mRNA, EST etc )\n", $wp_status{Confirmed}, (($wp_status{Confirmed}/$wp_status{Total}) * 100);
-  printf RL "Partially_confirmed  %6d (%2.1f%%)\tSome but not all bases are covered by transcript evidence\n", $wp_status{Supported}, (($wp_status{Supported}/$wp_status{Total}) * 100);
+  printf RL "Confirmed            %6d (%2.1f%%)\tEvery base of every exon has transcription evidence (mRNA, EST etc.)\n", $wp_status{Confirmed}, (($wp_status{Confirmed}/$wp_status{Total}) * 100);
+  printf RL "Partially_confirmed  %6d (%2.1f%%)\tSome, but not all exon bases are covered by transcript evidence\n", $wp_status{Supported}, (($wp_status{Supported}/$wp_status{Total}) * 100);
   printf RL "Predicted            %6d (%2.1f%%)\tNo transcriptional evidence at all\n", $wp_status{Predicted}, (($wp_status{Predicted}/$wp_status{Total}) * 100);
 
   print  RL "\n\n\n";
@@ -160,7 +160,7 @@ if( defined($opt_l)) {
   $stl_introns{change}   = $stl_introns {$ver} - $stl_introns {$old_ver};
   
   print RL "GeneModel correction progress WS$old_ver -\> WS$ver\n-----------------------------------------\n";
-  print RL "Confirmed introns not is a CDS gene model;\n\n\t\t+---------+--------+\n\t\t| Introns | Change |\n\t\t+---------+--------+\n";
+  print RL "Confirmed introns not in a CDS gene model;\n\n\t\t+---------+--------+\n\t\t| Introns | Change |\n\t\t+---------+--------+\n";
   printf RL ("Cambridge\t|  %5d  |  %4d  |\n", $cam_introns{$ver},$cam_introns{change});
   printf RL ("St Louis \t|  %5d  |  %4d  |\n", $stl_introns{$ver},$stl_introns{change});
   print RL "\t\t+---------+--------+\n\n\n";
@@ -177,7 +177,7 @@ if( defined($opt_l)) {
   $stl_repeats{$old_ver} = `grep match $webdir/WS$old_ver/Checks/CHROMOSOME_*.repeat_in_exon_stl | wc -l`;
   $stl_repeats{change}   = $stl_repeats{$ver} - $stl_repeats{$old_ver};
   
-  print RL "Members of known repeat families that overlap predicted exons;\n\n\t\t+---------+--------+\n\t\t| Introns | Change |\n\t\t+---------+--------+\n";
+  print RL "Members of known repeat families that overlap predicted exons;\n\n\t\t+---------+--------+\n\t\t| Repeats | Change |\n\t\t+---------+--------+\n";
   printf RL ("Cambridge\t|  %5d  |  %4d  |\n", $cam_repeats{$ver},$cam_repeats{change});
   printf RL ("St Louis \t|  %5d  |  %4d  |\n", $stl_repeats{$ver},$stl_repeats{change});
   print RL "\t\t+---------+--------+\n\n\n";
