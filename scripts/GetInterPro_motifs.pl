@@ -7,7 +7,7 @@
 # Gets latest Interpro:GO mappings from XXXX and puts info in to ace file
 #
 # Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2002-08-12 15:39:52 $                        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2002-09-16 14:51:49 $                        # quickly see when script was last changed and by whom
 
 
 use strict;                                     
@@ -72,7 +72,7 @@ while (<I2G>)
   }
 
 ############################################################
-print LOG " adding patch for IPR005560\n\n";
+print LOG " adding patch for IPR005560 (in the first version, this one was missing the <br> tag in the HTML file so was missed)\n if its no longer picked out above this can be removed from script\n\n";
 # in the first version, this one was missing the <br> tag in the HTML file so was missed
 print IPDESC "Motif : \"INTERPRO:IPR005560\"\n";
 print IPDESC "Title  \"Domain of Unknown Function DUF326\"\n";
@@ -86,7 +86,7 @@ close I2G;
 close LOG;
 #### use Wormbase.pl to mail Log ###########
 my $name = "GetInterPro_motifs";
-$maintainers = "ar2\@sanger.ac.uk";
+#$maintainers = "ar2\@sanger.ac.uk";
 &mail_maintainer ($name,$maintainers,$log);
 #########################################
 
