@@ -13,15 +13,16 @@ use Getopt::Long;
 use DB_File;
 use GSI;
 
-my ($swiss, $trembl, $debug, $database, $list, $old);
+my ($swiss, $trembl, $debug, $database, $list, $old, $species);
 # $old is for switch back to protein model
 GetOptions (
-	   "swiss"    => \$swiss,
-	   "trembl"   => \$trembl,
-	   "database:s" => \$database,
-	    "list"    => \$list,
-	    "old"     => \$old,
-	   "debug"    => \$debug
+	    "swiss"      => \$swiss,
+	    "trembl"     => \$trembl,
+	    "database:s" => \$database,
+	    "list"       => \$list,
+	    "old"        => \$old,
+	    "debug"      => \$debug,
+	    "species=s"  => \$species
 	  );
 
 my $wormpipe_dump = "/acari/work2a/wormpipe/dumps";
@@ -31,11 +32,21 @@ my $output_trembl = "$wormpipe_dump/tremblproteins.ace";
 my $db_files = "/acari/work2a/wormpipe/swall_data";
 my $swiss_list_txt = "$wormpipe_dump/swisslist.txt";
 my $trembl_list_txt = "$wormpipe_dump/trembllist.txt";
+my  $blastx_file = "$wormpipe_dump/blastx_ensembl.ace";
+my  $blastp_file = "$wormpipe_dump/blastp_ensembl.ace";
 
+if ( $species ) {
+  $output_swiss = "$wormpipe_dump/${species}_swissproteins.ace";
+  $output_trembl = "$wormpipe_dump/${species}_tremblproteins.ace";
+  $swiss_list_txt = "$wormpipe_dump$/{species}_swisslist.txt";
+  $trembl_list_txt = "$wormpipe_dump/${species}_trembllist.txt";
+  $blastx_file = "$wormpipe_dump/${species}_blastx_ensembl.ace";
+  $blastp_file = "$wormpipe_dump/${species}_blastp_ensembl.ace";
+}
 
 # extract and write lists of which proteins have matches
 unless ( $list ){
-  open (DATA,"cat $wormpipe_dump/blastp_ensembl.ace $wormpipe_dump/blastx_ensembl.ace |");
+  open (DATA,"cat $blastx_file $blastp_file |");
   my (%swisslist, %trembllist);
   while (<DATA>) {
     if (/Pep_homol\s+\"/) {
