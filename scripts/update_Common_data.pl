@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2004-08-06 10:53:30 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2004-08-09 15:54:18 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -35,26 +35,29 @@ my $cds2protein_id; # Hash: %cds2protein_id      Key: CDS name                  
 my $CDS_list;       # Hash: %CDSlist             Key: CDS name                          Value: Confirmed status (confirmed = 1, not confirmed = 0) 
 my $clone2seq;      # Hash: %clone2seq           Key: Genomic_canbonical                Value: DNA sequence (lower case)
 my $genes2lab;      # Hash: %worm_gene2lab       Key: Gene (CDS|Transcript|Pseudogene)  Value: From_laboratory (HX, RW, DRW)
+
 my $worm_gene2cgc;  # Hash: %worm_gene2cgc_name  Key: CGC name                          Value: Gene ID, plus molecular name (e.g. AH6.1), also a hash of cgc_name2gene
+my $worm_gene2class; # Hash: %worm_gene2class      Key: CDS/Transcript/Pseudogene name    Value: 'CDS', 'Transcript', or 'Pseudogene'
 my $estdata;        # Hash: %NDBaccession2est    Key: GenBank/EMBL accession            Value: EST name (WormBase)  
                     # Hash: %estorientation      Key: EST name (WormBase)               Value: EST_5 = 5, EST_3 = 3
 my $feature_list;   # Hash: %Featurelist         Key: EST name (WormBase)               Value: Feature name (WormBase)
 my $CDS2gene_id;     # Hash: %CDS2gene_id         Key: CDS name                          Value: WBGene_id
 
 
-GetOptions("build"         => \$build,
-	   "clone2acc"     => \$clone2accession,
-	   "cds2wormpep"   => \$cds2wormpep,
-	   "cds2pid"       => \$cds2protein_id,
-	   "CDS_list"      => \$CDS_list,
-	   "clone2seq"     => \$clone2seq,
-	   "genes2lab"     => \$genes2lab,
-	   "worm_gene2cgc" => \$worm_gene2cgc,
-	   "est"           => \$estdata,
-	   "feature"       => \$feature_list,
-	   "gene_id"       => \$CDS2gene_id,
-	   "all"           => \$all,
-	   "test"          => \$test
+GetOptions("build"           => \$build,
+	   "clone2acc"       => \$clone2accession,
+	   "cds2wormpep"     => \$cds2wormpep,
+	   "cds2pid"         => \$cds2protein_id,
+	   "CDS_list"        => \$CDS_list,
+	   "clone2seq"       => \$clone2seq,
+	   "genes2lab"       => \$genes2lab,
+	   "worm_gene2cgc"   => \$worm_gene2cgc,
+	   "worm_gene2class" => \$worm_gene2class,
+	   "est"             => \$estdata,
+	   "feature"         => \$feature_list,
+	   "gene_id"         => \$CDS2gene_id,
+	   "all"             => \$all,
+	   "test"            => \$test
 	   );
 
 ##########################################
@@ -94,6 +97,7 @@ else {
 &write_CDSlist         if ($CDS_list || $all );
 &write_clones2seq      if ($clone2seq || $all);
 &write_genes2lab       if ($genes2lab || $all);
+&write_worm_gene2class  if ($worm_gene2class || $all);
 &write_worm_gene2cgc   if ($worm_gene2cgc);
 &write_EST             if ($estdata || $all);
 &write_Feature         if ($feature_list || $all);
@@ -458,45 +462,75 @@ sub write_worm_gene2cgc  {
 
 }
 
-sub write_Gene_id
-  {
-    #my $data_dir   = "$basedir/autoace/COMMON_DATA";
-    #my $wquery_dir = "$basedir/autoace/wquery";
-    #my $ace_dir = "/nfs/disk100/wormpub/DATABASES/current_DB";
-    my %CDS2gene;
-    my %gene2CDS;
-
-    my $query = "select CDS, CDS->Gene from CDS in class CDS where CDS->method = \"curated\"";
-    open (TACE, "echo 'select CDS, CDS->Gene from CDS in class CDS where CDS->method = \"curated\"' | $tace $ace_dir |") or die "cant open tace connection :Gene_id\t$!\n";
-    while( <TACE> ) {
-      next if ($_ eq "");
-      next if (/acedb\>/);
-      last if (/\/\//);
-
-      s/\"//g;
-      my ($cds,$gene) = split;
-      if( defined $gene and $gene ne "NULL" ) {
-	$cds =~ s/CDS://;
-	$gene =~ s/Gene://;
-
-	$CDS2gene{$cds} = $gene;
-	push(@{$gene2CDS{$gene}},$cds);
-      }
+sub write_Gene_id{
+  my %CDS2gene;
+  my %gene2CDS;
+  
+  my $query = "select CDS, CDS->Gene from CDS in class CDS where CDS->method = \"curated\"";
+  open (TACE, "echo 'select CDS, CDS->Gene from CDS in class CDS where CDS->method = \"curated\"' | $tace $ace_dir |") or die "cant open tace connection :Gene_id\t$!\n";
+  while( <TACE> ) {
+    next if ($_ eq "");
+    next if (/acedb\>/);
+    last if (/\/\//);
+    
+    s/\"//g;
+    my ($cds,$gene) = split;
+    if( defined $gene and $gene ne "NULL" ) {
+      $cds =~ s/CDS://;
+      $gene =~ s/Gene://;
+      
+      $CDS2gene{$cds} = $gene;
+      push(@{$gene2CDS{$gene}},$cds);
     }
-
-    #now dump data to file
-    open (C2G, ">$data_dir/cds2wbgene_id.dat") or die "cant write $data_dir/cds2wbgene_id.dat :$!";
-    open (G2C, ">$data_dir/wbgene_id2cds.dat") or die "cant write $data_dir/wbgene_id2cds.dat :$! ";
-
-    print C2G Data::Dumper->Dump([\%CDS2gene]);
-    print G2C Data::Dumper->Dump([\%gene2CDS]);
-
-    close C2G;
-    close G2C;
   }
+  
+  #now dump data to file
+  open (C2G, ">$data_dir/cds2wbgene_id.dat") or die "cant write $data_dir/cds2wbgene_id.dat :$!";
+  open (G2C, ">$data_dir/wbgene_id2cds.dat") or die "cant write $data_dir/wbgene_id2cds.dat :$! ";
+  
+  print C2G Data::Dumper->Dump([\%CDS2gene]);
+  print G2C Data::Dumper->Dump([\%gene2CDS]);
+  
+  close C2G;
+  close G2C;
+}
 
 ###########################################################################################################
 
+
+
+sub write_worm_gene2class  {   
+
+  my %worm_gene2class;
+
+  # loop through three subclasses using AQL to get list of objects in that class
+  foreach my $class ("elegans_CDS","elegans_pseudogenes", "elegans_RNA_genes"){
+    my $command = "select i from i in class $class";
+    open (TACE, "echo '$command' | $tace $ace_dir |");
+    while (<TACE>) {
+      chomp;
+      next if ($_ eq "");
+      next if (/acedb\>/);
+      last if (/\/\//);
+      
+      # get rid of quote marks
+      s/\"//g;
+      
+      # populate hash with CDS/Pseudogene/Transcript name as key
+      $worm_gene2class{$_} = "CDS"        if ($class eq "elegans_CDS");
+      $worm_gene2class{$_} = "Pseudogene" if ($class eq "elegans_pseudogenes");
+      $worm_gene2class{$_} = "Transcript" if ($class eq "elegans_RNA_genes");
+    }
+    close TACE;
+  }
+  #now dump data to file
+  open (DAT, ">$data_dir/worm_gene2class.dat") or die "Can't open file: $data_dir/worm_gene2class.dat";
+  print DAT Data::Dumper->Dump([\%worm_gene2class]);
+  close DAT;
+
+}
+
+#################################################################################################################
 
 
 __END__
@@ -565,6 +599,11 @@ This module updates the following data sets:
 =item *
 
 %worm_gene2lab - connections between C. elegans CDS, Transcript, or Pseudogene and corresponding lab designation (RW, HX, DRW)
+
+=back
+
+=itme *
+%worm_gene2class - connections between worm_genes composite class and the actual class of each object (e.g. AH6.1 -> CDS)
 
 =back
 
