@@ -17,7 +17,7 @@ GetOptions (
 	    'worm_brigprot' => \$dump_brigprot,
 	   );
 
-die "I need the password, please - try something like - \nbackup_mysql.pl -pass  xxxxxxxx\n" unless $dbpass;
+die "I need the password, please - try something like - \nbackup_mysql.pl -dbpass  xxxxxxxx\n" unless $dbpass;
 
 unless ( defined $dump_worm01 or defined $dump_wormprot or defined $dump_brigprot ) {
   $dump_worm01 = 1; 
