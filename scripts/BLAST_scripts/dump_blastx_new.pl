@@ -4,11 +4,12 @@
 # with small amendment by Keith Bradnam (krb@sanger.ac.uk)
 # dumps wublastx from ensembl mysql (dna) database to an ace file
 
-
+use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use strict;
 use DBI;
 use Getopt::Long;
 use DB_File;
+use Wormbase;
 
 my ($version, $map, $worm, $start_clone, $modifed);
 my @analysis;
