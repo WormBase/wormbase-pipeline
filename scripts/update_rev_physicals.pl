@@ -2,13 +2,14 @@
 
 # Author: Chao-Kung Chen
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-01-28 15:28:37 $ 
+# Last updated on: $Date: 2004-02-06 12:03:31 $ 
 
 use strict;
 use lib "/wormsrv2/scripts";
 use Wormbase;
 use Ace;
 use Tk;
+use Tk::DialogBox;
 use Getopt::Long;
 
 my $tace = &tace;
