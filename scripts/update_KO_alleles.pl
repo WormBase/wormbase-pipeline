@@ -4,7 +4,7 @@
 
 # by Chao-Kung Chen [030113]
 
-# Last updated on: $Date: 2003-02-21 16:04:12 $
+# Last updated on: $Date: 2003-03-03 11:25:39 $
 # Last updated by: $Author: ck1 $
 
 
@@ -158,15 +158,19 @@ open(OPCR, ">$delpcr") || die "Can't write to in file!";
 
 while(<SEQ>){
   chomp;
-  if ($_ =~ /^Allele :./){print OSEQ "\n$_\n"}
-  if ($_ eq ""){}
-  else {print OSEQ "-D $_\n"}
-}
+  if ($_ =~ /^Allele : .+/){print OSEQ "\n$_\n"}
+  else {
+    if ($_ eq ""){}
+    else {print OSEQ "-D $_\n"}
+  }
+}  
 while(<PCR>){
   chomp;
-  if ($_ =~ /^PCR_product :./){print OPCR "\n$_\n"}
-  if ($_ eq ""){}
-  else {print OPCR "-D $_\n"}
+  if ($_ =~ /^PCR_product : .+/){print OPCR "\n$_\n"}
+  else {
+    if ($_ eq ""){}
+    else {print OPCR "-D $_\n"}
+  }
 }
 
 ######################################
