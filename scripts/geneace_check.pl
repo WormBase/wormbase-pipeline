@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-10-13 13:36:23 $
+# Last updated on: $Date: 2003-10-17 14:35:22 $
 
 
 use strict;
@@ -415,6 +415,25 @@ sub test_locus_for_errors{
     }
   }
   
+  # test for Genomic_sequence AND Transcript tags both present
+  if(defined($locus->at('Molecular_information.Genomic_sequence')) && defined($locus->at('Molecular_information.Transcript'))){
+    $warnings .= "ERROR 18: $locus has a 'Genomic_sequence' tag AND 'Transcript' tag\n";
+    print "." if ($verbose);
+  }
+
+
+  # test for Genomic_sequence AND Pseudogene tags both present
+  if(defined($locus->at('Molecular_information.Genomic_sequence')) && defined($locus->at('Molecular_information.Pseudogene'))){
+    $warnings .= "ERROR 19: $locus has a 'Genomic_sequence' tag AND 'Pseudogene' tag\n";
+    print "." if ($verbose);
+  }
+
+
+  # test for Pseudogene AND Transcript tags both present
+  if(defined($locus->at('Molecular_information.Pseudogene')) && defined($locus->at('Molecular_information.Transcript'))){
+    $warnings .= "ERROR 20: $locus has a 'Pseudogene' tag AND 'Transcript' tag\n";
+    print "." if ($verbose);
+  }
 
   # test for Genomic_sequence AND !Sequence_name
   if(defined($locus->at('Molecular_information.Genomic_sequence')) && !defined($locus->at('Name.Sequence_name'))){  
