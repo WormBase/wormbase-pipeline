@@ -7,8 +7,8 @@
 # checks gene models for EST and cDNA evidence and adds a tag to the sequence object 
 # if the whole model is confirmed
 #
-# Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-12-09 17:02:07 $      
+# Last updated by: $Author: ar2 $     
+# Last updated on: $Date: 2004-02-17 16:19:36 $      
 
 
 #use strict;
@@ -23,13 +23,15 @@ use Getopt::Long;
 # command-line options       #
 ##############################
 
-my ($est, $mrna, $help, $verbose); # the main options
+my ($est, $mrna, $help, $verbose, $test, $quicktest); # the main options
 
 GetOptions (
             "est"          => \$est,
             "mrna"         => \$mrna,
 	    "help"         => \$help,
             "verbose"      => \$verbose,
+	    "test"         => \$test,
+	    "quicktest"    => \$quicktest
             );
 
 ##############################
@@ -37,6 +39,7 @@ GetOptions (
 ##############################
 
 my @chrom  = qw(I II III IV V X);
+@chrom = qw( III ) if $quicktest;
 my (@todo,%unconf);
 
 
@@ -60,8 +63,11 @@ my @tryest  = qw() if ($verbose);
 # directories #
 ###############
 
-my $gffdir = "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS";
-my $outdir = "/wormsrv2/wormbase/misc";
+my $basedir = "/wormsrv2";
+$basedir = glob("~wormpub/TEST_BUILD") if ($test or $quicktest);
+
+my $gffdir = "$basedir/autoace/GFF_SPLITS/GFF_SPLITS";
+my $outdir = "$basedir/wormbase/misc";
 
 
 
@@ -74,6 +80,8 @@ my $outdir = "/wormsrv2/wormbase/misc";
 #############
 
 foreach my $todo (@todo) {
+
+  %unconf = ();
   
   if  ($todo =~ /BLAT_TRANSCRIPT_BEST/) {
     unlink("$outdir/misc_confirmed_by_EST.ace") if (-e "$outdir/misc_confirmed_by_EST.ace");
@@ -86,6 +94,10 @@ foreach my $todo (@todo) {
   
   foreach my $chrom (@chrom) {
 
+    #############
+    # get genes #
+    #############
+    
     print &runtime, " : Getting coordinates of 'coding_exon' features for chromosome $chrom\n" if ($verbose);
     my @refgen  = &read_gff('coding_exon',$chrom);
     my %gen     = %{$refgen[0]}; 
@@ -95,20 +107,20 @@ foreach my $todo (@todo) {
     ########################
     # get EST and/or cDNAs #
     ########################
-    
+
     print &runtime, " : Getting $todo feature coordinates for chromosome $chrom\n"  if ($verbose);
     my @refest  = &read_gff($todo,$chrom);
     my %est     = %{$refest[0]};
     my @estlist = @{$refest[1]};
     print &runtime, " : Finished getting coordinates\n\n"  if ($verbose);
-    
+
     ###############
     # check exons #
     ###############
-    
+
     print &runtime, " : Checking exons\n" if ($verbose);
     my %confirm = %{&find_match($exon,\%est,\@estlist,\%gen,\@genlist)};
-    
+
     #check for exon confirmation
     foreach my $gene (@genlist) {
       my $exons = scalar @{$gen{$gene}};
@@ -128,42 +140,45 @@ foreach my $todo (@todo) {
 	$unconf{$gene} = 1;
 	foreach my $trygene (@trygene) {
 	  print "$gene unconfirmed\n" if (($gene =~ $trygene) && $verbose);
-	}    
+	}
       }
-    }    
+    }
     print &runtime, " : Finished checking\n\n" if ($verbose);
-    
+
     # save space
     foreach my $old (keys %confirm) {
       delete $confirm{$old};
     }
-    
+
     #################
     # check introns #
     #################
-    
+
     my $refig = &make_intron(\%gen);
     my %ingen = %{$refig};
     my $refie = &make_intron(\%est);
     my %inest = %{$refie};
-    
+
     #save space
     undef %gen;
     undef %est;
-    
+
     print &runtime, " : Checking introns\n" if ($verbose);
     %confirm = %{&find_match($intron,\%inest,\@estlist,\%ingen,\@genlist)};
-    
+
     if  (($verbose) && ($todo =~ /BLAT_TRANSCRIPT_BEST/)) {
       print "Checking intron confirmation and putting output for chrom $chrom into $outdir/misc_confirmed_by_EST.ace\n";
     }
     elsif (($verbose) && ($todo =~ /BLAT_mRNA_BEST/)) {
       print "Checking intron confirmation and putting output for chrom $chrom into $outdir/misc_confirmed_by_mRNA.ace\n";
     }
-    
+
     #check for intron confirmation
     foreach my $gene (@genlist) {
       next if $unconf{$gene};
+      unless ( $gen{$gene} ) {
+	print "$gene not in gen hash\n" if $verbose;
+      }
       my $introns = scalar @{$gen{$gene}}-1;
       # check introns
       my $in = 1;
@@ -182,8 +197,8 @@ foreach my $todo (@todo) {
 	print ACE "Confirmed_by EST\n\n"  if ($todo =~ /BLAT_TRANSCRIPT_BEST/);
 	print ACE "Confirmed_by cDNA\n\n" if ($todo =~ /BLAT_mRNA_BEST/);
       }
-    }        
-  }        
+    }
+  }
   close(ACE);
 }
 
@@ -208,7 +223,7 @@ sub read_gff {
     next if /\#/;
     my @f = split /\t/;
     my $name;
-    ($name) = ($f[8] =~ /\"(\S+)\"/)          if ($filename eq 'coding_exon');            
+    ($name) = ($f[8] =~ /\"(\S+)\"/)          if ($filename eq 'coding_exon');
     ($name) = ($f[8] =~ /\"Sequence:(\S+)\"/) if ($filename ne 'coding_exon');
     push @{$hash{$name}} , [$f[3],$f[4]]; 
     # push @{$hash{$name}}, { start => $f[3],end => $f[4] };
@@ -279,40 +294,41 @@ sub find_match {
   ##################
   # loop over ESTs #
   ##################
-  
+
  GENE:for (my $y = 0; $y < @genelist; $y++) {
 
-   my $testgene   = $genelist[$y];
-   next if $unconf{$testgene};
-   
-   my $geneblocks = (scalar @{$genes{$testgene}})-1; # -1 for array pos last exon
-   my $genestart = $genes{$testgene}->[0][0];
-   my $geneend   = $genes{$testgene}->[$geneblocks][1];
-   
- EST:for (my $x = $lastfail; $x < @ESTlist; $x++) {
-   my $testest   = $ESTlist[$x];
-   my $estblocks = (scalar @{$ESTs{$testest}})-1;  # -1 for array pos last exon
-   my $eststart  = $ESTs{$testest}->[0][0];
-   my $estend    = $ESTs{$testest}->[$estblocks][1];
-   
-   if ($verbose) {
-     foreach my $try (@trygene) { 
-       print "Testing $testgene against $testest\n" if ($testgene =~ $try);
-     }
-     foreach my $tryest (@tryest) {
-       if ($testest =~ $tryest) {
-	 print "\nTesting EST $testest now\n"; 
-	 for (my $z = 0; $z <= $estblocks; $z++) {
-	   print "Exon $z: $ESTs{$testest}->[$z][0]:$ESTs{$testest}->[$z][1]\n";
-	 }  
-       }    
-     }
-   }   
-   
-   ##################
-   # loop over ESTs #
-   ##################
-   
+    my $testgene   = $genelist[$y];
+    next if $unconf{$testgene};
+
+    my $geneblocks = (scalar @{$genes{$testgene}})-1; # -1 for array pos last exon
+    my $genestart = $genes{$testgene}->[0][0];
+    my $geneend   = $genes{$testgene}->[$geneblocks][1];
+
+  EST:for (my $x = $lastfail; $x < @ESTlist; $x++) {
+      my $testest   = $ESTlist[$x];
+      next unless $ESTs{$testest};
+      my $estblocks = (scalar @{$ESTs{$testest}})-1; # -1 for array pos last exon
+      my $eststart  = $ESTs{$testest}->[0][0];
+      my $estend    = $ESTs{$testest}->[$estblocks][1];
+
+      if ($verbose) {
+	foreach my $try (@trygene) { 
+	  print "Testing $testgene against $testest\n" if ($testgene =~ $try);
+	}
+	foreach my $tryest (@tryest) {
+	  if ($testest =~ $tryest) {
+	    print "\nTesting EST $testest now\n"; 
+	    for (my $z = 0; $z <= $estblocks; $z++) {
+	      print "Exon $z: $ESTs{$testest}->[$z][0]:$ESTs{$testest}->[$z][1]\n";
+	    }
+	  }
+	}
+      }
+
+      ##################
+      # loop over ESTs #
+      ##################
+
    # next gene if geneend is left of ESTstart 
    if ($eststart > $geneend) {
      if ($verbose) {
