@@ -15,7 +15,7 @@
 # pfetch is done in batches of 2000, any greater and nothing comes back!
 #
 # Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs 
-# Last updated on: $Date: 2002-08-29 09:52:07 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2002-09-06 09:51:13 $        # quickly see when script was last changed and by whom
 
 use strict;
 use lib "/wormsrv2/scripts/";                  
@@ -284,19 +284,32 @@ sub GetNoAccPeps
     my $aaaID;
     my $pep;
     my $CE;
+    my $fasta_output;
     foreach $aaaID (keys %noSWALL)
       {
 	push(@AAAs,$aaaID);
       }
-    print "@AAAs";
-    my $submitString = "pfetch "." @AAAs";
-    my %idextract;
-
     #create the fasta record in /wormsrv2/tmp dir (and remove it after use)
-    my $fasta_output = "/wormsrv2/tmp/fasta_output";
-    open (FASTA,">$fasta_output")||die " cant open fasta_output";# > clears before each use 
-    #this submits request and put results in file
-    print FASTA `$submitString`;
+    $fasta_output = "/wormsrv2/tmp/fasta_output";
+    open (FASTA,">$fasta_output")||die " cant open $fasta_output";# > clears before each use 
+
+    #PUT THIS IN 2000 CHUNK LOOP
+    my $chunky_size = 2000;
+    my $AAAlow = 0; 
+    my $AAAup = $chunky_size - 1;
+    while ( $AAAs[$AAAlow] )
+      {
+	#print "@AAAs";
+	my @AAAchunk = @AAAs[$AAAlow .. $AAAup];
+	my $submitString = "pfetch "." @AAAchunk";
+	my %idextract;
+	
+	#this submits request and put results in file
+	print FASTA `$submitString`;
+	$AAAlow += $chunky_size;
+	$AAAup += $chunky_size;	
+      }
+	
     close FASTA;
     
     my $fasta_output_clean = "$fasta_output"."_clean";
