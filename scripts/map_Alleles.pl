@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.8.0 -w                    
+#!/usr/local/bin/perl5.8.0 -w
 #
 # map_Alleles.pl
 #
@@ -6,8 +6,8 @@
 #
 # This maps alleles to the genome based on their flanking sequences
 #
-# Last updated by: $Author: ar2 $                      
-# Last updated on: $Date: 2005-02-11 16:00:47 $        
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2005-03-02 12:08:41 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -274,8 +274,8 @@ sub map_alleles{
       $affects_genes{$gene} = 1;  
     }
     my @affects_genes = keys(%affects_genes);
-    
-    
+
+
     # now compare both arrays (allele->gene connections already in database and
     # allele->gene connections made by script) to look for differences
     my %count;
@@ -288,6 +288,7 @@ sub map_alleles{
       if ($count{$gene} == 1){
 	if($affects_genes{$gene}){
 	  # not so serious, but source database should be updated with connection
+	  next if ( $allele->SNP );
 	  print "WARNING: $name->$gene was mapped by script only\n" if ($verbose);
 	  $log->write_to("WARNING: $name->$gene was mapped by script only\n");
 	  
@@ -337,7 +338,8 @@ sub outputAllele{
 
 	#allele - WBGene connection
 	my $WBGene = $worm_gene2geneID{$cds};
-	print OUT "Gene $WBGene\n";
+	print OUT "\nGene : $WBGene\n";
+	print OUT "Allele $allele\n\n";
 	
 	# now write relevant acefile output depending on whether allele hits CDS or Transcript
 	if(!defined($worm_gene2class{$cds})){
