@@ -2,8 +2,14 @@
 #
 # EMBLUpdate
 #
+
+
+# [010619 dl] Horrible hack for date stamp - needs rewriting !!!!
 # [ag3 0006] Re-writing of the original Steve Jones script
 #
+
+
+
 # This program will:-
 #	
 #	1) Check to see if the new version is different to before
@@ -112,7 +118,7 @@ while (<>) {
  if ($compare==1) {
     system "cp temp$$ /nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.$year$mon$mday.embl";
     system "ln -fs /nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.$year$mon$mday.embl /nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.current.embl";
-    system "\mv temp$$ /nfs/disk100/wormpub/analysis/TO_SUBMIT/$cosmid.$year$mon$mday.embl";
+    system "\mv temp$$ /nfs/disk100/wormpub/analysis/TO_SUBMIT/$cosmid.0$year$mon$mday.embl";
     print "$cosmid should be resubmitted and is in TO_SUBMIT.\n";
  } else {
     print "Cosmid $cosmid is up to date\n";
