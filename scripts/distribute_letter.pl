@@ -8,8 +8,8 @@
 #                          /wormsrv2/autoace/release/
 #                          /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/current/release_notes.txt/
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-06-23 15:37:04 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2004-07-06 13:10:25 $
 
 
 use strict;
@@ -111,7 +111,6 @@ print LOG "$0 finished at ",`date`,"\n\n";
 close(LOG);
 
 
-my $maintainers = "All";
 # warn about errors in subject line if there were any
 if($errors == 0){
   &mail_maintainer("BUILD REPORT: distribute_letter.pl",$maintainers,$log);
@@ -143,7 +142,7 @@ sub run_command{
   my $status = system($command);
   if($status != 0){
     print LOG "ERROR: $command failed\n";
-    $error++;
+    $errors++;
   }
 
   # for optional further testing by calling subroutine
