@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.38 2002-03-06 11:44:46 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.39 2002-03-06 12:03:15 kj2 Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -704,6 +704,7 @@
 		  Rearrangement ?Rearrangement XREF Reference
 		  Sequence ?Sequence XREF Reference
 		  CDS ?CDS XREF Reference // added [011030 krb]
+		  Transcript ?Transcript XREF Reference // [020306 kj]
 		  Strain ?Strain XREF Reference
 		  Clone ?Clone XREF Reference
 		  Protein ?Protein XREF Reference
@@ -913,6 +914,10 @@
 			Matching_cDNA ?Sequence XREF Matching_transcript
 			Remark ?Text
 			Confidential_remark ?Text
+                        Brief_identification UNIQUE Text			   // [020306 kj]
+                        Reference ?Paper XREF Transcript                           // [020306 kj]
+                Origin	From_laboratory UNIQUE ?Laboratory                         // [020306 kj]
+			Species UNIQUE ?Species                                    // [020306 kj]
 		Properties	Transcript	UNIQUE	mRNA	UNIQUE  Processed_mRNA
 									Unprocessed_mRNA
 							tRNA UNIQUE Text
@@ -921,6 +926,8 @@
 							scRNA UNIQUE Text
 							stRNA UNIQUE Text         // [010723 dl]
 							misc_RNA UNIQUE Text
+                                                        miRNA UNIQUE Text         // [020306 kj]
+				Pseudogene Text                                   // [020306 kj]                      
 		Method ?Method			
 
 // Homol and Feature info
