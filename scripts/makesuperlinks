@@ -1,45 +1,73 @@
-#!/usr/local/bin/perl
+#!/usr/local/bin/perl5.6.1
 #
 # makesuperlinks
 #
 # constructs superlink objects for camace based on Overlap_right tags
 # dl
 #
+
+$!=1;
 use Ace ;
+use strict;
 use Getopt::Long ;
 
-%superinfo = ( "I"    => "H06O01",   # left ends of superlinks
-	       "IR"   => "Y95D11A",
-	       "II"   => "T05A6",
-	       "IIIL" => "F45H7",
-	       "IIIR" => "K01F9",
-	       "IV"   => "F21D5",
-	       "V"    => "F07D3",
-	       "X"    => "B0272"
-	       ) ;
+##############################
+# command-line options       #
+##############################
 
-%clone2super = ("H06O01"  => "I",
-	        "Y95D11A" => "IR",
-	        "T05A6"   => "II",
-	        "F45H7"   => "IIIL",
-	        "K01F9"   => "IIIR",
-	        "F21D5"   => "IV",
-	        "F07D3"   => "V",
-	        "B0272"   => "X",
-		) ;
+my $help;       # Help perdoc
+my $db;         # Database name for databases other than /wormsrv1/camace
+my $debug;      # Debug mode, verbose output to dl1 only
 
-# get data from camace
+GetOptions (
+            "debug"     => \$debug,
+            "help"      => \$help,
+            "db=s"      => \$db
+            );
 
-$campath = "/wormsrv1/camace";
-$camdb   = Ace->connect(-path=>"$campath") || die "failed to connect to database\n";
+# help page
+&usage("Help") if ($help);
+
+# check database path
+&usage("Bad_database_name") unless (-e "$db/database/database.map");
+
+##############################
+# superlink data for camace  #
+##############################
+
+our %clone2super = ("H06O01"  => "I",
+		    "Y95D11A" => "IR",
+		    "T05A6"   => "II",
+		    "F45H7"   => "IIIL",
+		    "K01F9"   => "IIIR",
+		    "F21D5"   => "IV",
+		    "F07D3"   => "V",
+		    "B0272"   => "X",
+		    ) ;
+
+##############################
+# get data from camace       #
+##############################
+
+my $campath = "/wormsrv1/camace";
+($campath = $db) if ($db ne "");
+
+warn "Acessing database $campath\n" if ($debug);
+
+# connect to database
+my $camdb   = Ace->connect(-path=>"$campath") || die "failed to connect to database\n";
 
 # first get lots of info about Genome_sequence objects
+
+my (%isGenomeSequence,%length,%right,%rightOffset,%left,%isLinkCandidate,%isExternal);
+my (%currSource,%currStart,%currEnd);
+my ($it,$obj,$seq,$start,$end);
 
 $it = $camdb->fetch_many(Genome_sequence => '*') ;
 while ($obj = $it->next) {
     $isGenomeSequence{$obj} = 1 ;
     $length{$obj}           = $obj->DNA(2) ;
-    if (!$length{$obj})  { warn "No length for $obj\n" ; }
+    if (!$length{$obj})     { warn "No length for $obj\n" ; }
     $right{$obj}            = $obj->Overlap_right ;
     $rightOffset{$obj}      = $obj->Overlap_right(2) ;
     $left{$obj}             = $obj->Overlap_left ;
@@ -55,45 +83,51 @@ while ($obj = $it->next) {
 $it = $camdb->fetch_many(Sequence => 'SUPERLINK*') ;
 while ($obj = $it->next) {
     foreach $a ($obj->at('Structure.Subsequence')) {
-	($seq, $start, $end) = $a->row ;
-	$currSource{$seq}    = $obj ;
-	$currStart{$seq}     = $start ;
-	$currEnd{$seq}       = $end ;
+	($seq, $start, $end) = $a->row;
+	$currSource{$seq}    = $obj;
+	$currStart{$seq}     = $start;
+	$currEnd{$seq}       = $end;
     }
 }
+
+warn "Stored data to hash\n" if ($debug);
 
 ###########################################
 # make links
 ###########################################
 
+my ($lk,%start,%end,%link,$parent,$startright);
+
 foreach $seq (keys %isGenomeSequence) {
-				# only keep seeds
+    
+    # only keep seeds
     next if (!$isLinkCandidate{$seq} ||
 	     ($left{$seq} && $isLinkCandidate{$left{$seq}} && $rightOffset{$left{$seq}}) ||
 	     !$rightOffset{$seq} ||
-	     !$isLinkCandidate{$right{$seq}}) ;
-
+	     !$isLinkCandidate{$right{$seq}});
 
     # don't make link objects for these clones
     # these should be in St Louis SUPERLINKS
-    next if (($seq eq "6R55") || ($seq eq "F38A1") || ($seq eq "cTel52S"));
+    next if (($seq eq "6R55") || ($seq eq "F38A1") || ($seq eq "cTel52S") || ($seq eq "cTel7X"));
 
+    # print LINK header
+    $lk = "SUPERLINK_CB_$clone2super{$seq}";
+    print "\nSequence $lk\n";
+    print "From_laboratory HX\n";
 
-				# print LINK header
-    $lk = "SUPERLINK_CB_$clone2super{$seq}" ;
-    print "\nSequence $lk\n" ;
-    print "From_laboratory HX\n" ;
-
-				# loop over subsequences
-    $startright=1 ;
+    # loop over subsequences
+    $startright = 1;
     while ($isLinkCandidate{$seq}) {
-	$start{$seq} = $startright ; 
-	$end{$seq} = $startright + $length{$seq} - 1 ;
-	print "Subsequence $seq $start{$seq} $end{$seq}\n" ;
-	$link{$seq} = $lk ;
-	if (!$rightOffset{$seq}) { last ; } # POSS EXIT FROM LOOP
-	$startright = $startright + $rightOffset{$seq} - 1 ;
-	$seq = $right{$seq} ;
+	$start{$seq}  = $startright; 
+	$end{$seq}    = $startright + $length{$seq} - 1;
+	print "Subsequence $seq $start{$seq} $end{$seq}\n";
+	$link{$seq}   = $lk;
+	if (!$rightOffset{$seq}) {
+	    warn "ending loop here because rightOffset{$seq} is not set\n" if ($debug);
+	    last;
+	}     # POSS EXIT FROM LOOP
+	$startright   = $startright + $rightOffset{$seq} - 1;
+	$seq          = $right{$seq};
     }		
 }
 
@@ -102,24 +136,43 @@ foreach $seq (keys %isGenomeSequence) {
 ###########################################
 
 foreach $seq (keys %currStart) {
-    next if ($isGenomeSequence{$seq}) ;
-
-    if ($seq =~ /(\S+)\.\d+/) { $parent = $1 ; }
-    else { warn "no dot in subsequence name $seq\n" ; next ; }
-
+    next if ($isGenomeSequence{$seq});
+    
+    if ($seq =~ /(\S+)\.\d+/) {
+	$parent = $1; 
+    }
+    else { 
+	warn "no dot in subsequence name $seq\n";
+	next; 
+    }
+    
+    # assign parent for problem child
     if ($seq eq "Y66A7A.8") {$parent = "Y66A7AR";}
-
-    if (!$currStart{$parent})                         { warn "no coord in link for parent $parent of $seq\n" ; next ; }
-    if (!($currSource{$seq} eq $currSource{$parent})) { warn "parent $parent and child $seq in different links\n" ; next ; }
-    if (!$link{$parent})                              { warn "no new link for parent $parent of $seq\n" ; next ; }
-
+    
+    # next if no coordinate for parent clone
+    if (!$currStart{$parent}) { 
+	warn "no coord in link for parent $parent of $seq\n";
+	next;
+    }
+    # next if parent and child map to different links
+    if (!($currSource{$seq} eq $currSource{$parent})) { 
+	warn "parent $parent and child $seq in different links\n"; 
+	next;
+    }
+    # next if parent has no home to go to
+    if (!$link{$parent}) {
+	warn "no new link for parent $parent of $seq\n";
+	next;
+    }
+    # next if sequence is a superlink
     next if ($seq =~ /^SUPERLINK/);
 
-    $start{$seq} = $start{$parent} - $currStart{$parent} + $currStart{$seq} ;
-    $end{$seq} = $start{$parent} - $currStart{$parent} + $currEnd{$seq} ;
+    $start{$seq} = $start{$parent} - $currStart{$parent} + $currStart{$seq};
+    $end{$seq}   = $start{$parent} - $currStart{$parent} + $currEnd{$seq};
+    $link{$seq}  = $link{$parent};
+
     print "\nSequence $link{$parent}\n";
-    print "Subsequence $seq $start{$seq} $end{$seq}\n" ;
-    $link{$seq} = $link{$parent} ;
+    print "Subsequence $seq $start{$seq} $end{$seq}\n";
 }
 
 ###########################################
@@ -128,15 +181,82 @@ foreach $seq (keys %currStart) {
 ###########################################
 
 foreach $seq (keys %currSource) {
-    if (!$link{$seq}) { warn "$seq not put back into a link\n" ; }
+    if (!$link{$seq}) { warn "$seq not put back into a link\n"; }
 }
 
 ############# end of file ################
 
 
 
+#######################################################################
+# Help and error trap outputs                                         #
+#######################################################################
+ 
+sub usage {
+    my $error = shift;
+    
+    if ($error eq "Bad_database_name") {
+        # Named database mode: database name not recognised
+        print "\nNo database of this name exists ('$db')\n";
+	exit(0);
+    }
+    elsif ($error eq "Help") {
+        # Normal help menu
+        system ('perldoc',$0);
+        exit (0);
+    }
+}
 
 
 
 
 
+
+__END__
+
+=pod
+
+=head2   NAME - makesuperlinks
+
+=head1 USAGE
+
+=over 4
+
+=item makesuperlinks [-options]
+
+=back
+
+makesuperlinks queries an ACEDB database and generates the SUPERLINK
+objects to an .acefile. This uses the Overlap_right tags within the
+database and a hard-coded hash of starting clones within this
+script
+
+makesuperlinks mandatory arguments:
+
+=over 4
+
+=item none, (standard run using /wormsrv1/camace)
+
+=back
+
+makesuperlinks mOPTIONAL arguments:
+
+=over 4
+
+=item B<-db text>, database mode. Only dumps acefiles for the named database
+
+=item B<-debug>, verbose report
+
+=item B<-help>, this help page
+
+=back
+
+=head1 AUTHOR (& person to blame)
+
+=over 4
+
+=item Dan Lawson dl1@sanger.ac.uk
+
+=back
+
+=cut
