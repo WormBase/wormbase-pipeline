@@ -7,7 +7,7 @@
 # Author: Chao-Kung Chen
 
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-06-03 08:28:43 $
+# Last updated on: $Date: 2003-06-10 08:53:45 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -19,23 +19,30 @@ use Getopt::Long;
 # variables and command-line options with aliases # 
 ###################################################
 
-my ($aa, $dna, $cds, $help);
+my ($aa, $dna, $cds, $help, $debug);
 
 GetOptions (
-	    "cds=s"  =>  \$cds,
-	    "aa=s"   =>  \$aa,
-            "dna"    =>  \$dna,
-            "h|help" =>  \$help 
+	    "cds=s"     =>  \$cds,
+	    "aa=s"      =>  \$aa,
+            "dna"       =>  \$dna,
+            "h|help"    =>  \$help, 
+            "d|debug"   =>  \$debug
            );
 
 if (!$cds || $help){system ("perldoc $0"); exit(0)}
 
-my $mutation = $aa;  
-$mutation =~ s/\d+//; $mutation = uc($mutation); # aa mutation
-$aa =~ s/\D//;         
-$cds = uc($cds);
+my $mutation = $aa;  $mutation =~ s/\d+//; $mutation = uc($mutation); # aa mutation 
+$aa =~ s/\D//;  
+if ($cds =~ /(.+\.\d+)(\w)/){
+  my $variant = $2; my $seq = uc($1); 
+  $cds = $seq.$variant; 
+}
+else {
+  $cds = uc($cds);
+}
+print $cds, "\n";
 
-#####################################
+##################################### 
 # check for latest exon table version
 #####################################
 
@@ -49,12 +56,12 @@ $current = `grep "NAME WS" $curr_db/wspec/database.wrm`; $current =~ s/NAME //; 
 
 if ("$current" ne "$archive") {	
   print "New WS release available . .\nFetching latest source exons of all CDS/Transcripts and 6 chromosomal DNA sequencs\n\n";
-  system ("rm -f $exon_tbl/*");
+  system ("rm -f $exon_tbl/* ");
   `echo "table-maker -o $exon_tbl/CDS_exons_$current -p /wormsrv1/geneace/wquery/get_CDS_source_exons.def" | $tace $curr_db`;  
-   system ("cp -f /nfs/disk69/ftp/pub/wormbase/WS102/CHROMOSOMES/CHR*.dna.gz $exon_tbl/");
-  system ("chmod 775 $exon_tbl/*; gunzip $exon_tbl/CHR*");
+  system ("chmod 775 $exon_tbl/* ");
 }
-
+else {print $archive, "\n";}
+  
 ####################################################
 # get DNA sequence (exon/intron) of a CDS/Transcript
 ####################################################
@@ -71,7 +78,7 @@ $left -= 30;
 $right += 30;
 
 #my $dna_file = "/nfs/team71/worm/ck1/DNA/CHROMOSOME_".$chrom.".dna";
-my $dna_file = "$exon_tbl/CHROMOSOME_".$chrom.".dna";
+my $dna_file = "$curr_db/CHROMOSOMES/CHROMOSOME_".$chrom.".dna";
 my @line = `egrep "[atcg]" $dna_file`;
 my $line;
 foreach (@line){chomp; $line .= $_}
@@ -103,9 +110,10 @@ $prot_seq = get_seq($cds, *IN1);
 # fetch source exons of a CDS/Transcript
 ########################################
 
-my $src_exon = "$exon_tbl/CDS*";
-my @exons = `grep $cds $src_exon`;  
-#print "@exons\n";
+my @exons = `grep $cds $exon_tbl/CDS*`;
+if ($debug){
+  print "@exons\n";
+}
 
 ########################################################################################
 # retrieving flank seq of a specified codon or mutation site via exons_to_codons routine
@@ -190,7 +198,7 @@ sub exons_to_codons {
       }
       if ($i > 0 && $remainder_hash{$i-2} == 2 ){
         my $num_bp = $exon_start_end[$i+1]-$exon_start_end[$i]-1;
-        @return = codon_to_seq($start_bp, $num_bp, \@DNA, "C", $aa_codon, $i, @exon_start_end);
+        @return = codon_to_seq($start_bp, $num_bp, \@DNA, "I", $aa_codon, $i, @exon_start_end);
         %codon_seq = %{$return[0]}; $aa_codon = $return[1];
         push(@all, %codon_seq); next;
       }
@@ -294,8 +302,8 @@ sub exons_to_codons {
       print "\n\# 1st site mutation:\n" if $i == 1; print "\n\# 2nd site mutation:\n" if $i == 2; print "\n\# 3rd site mutation:\n" if $i == 3;
       print @DNA[$first_bp-32+$i..$first_bp-2];
       print color("red"), " $first_site ", color("reset"), color("blue"), $second_site.$third_site, color("reset") if $i == 1;
-      print color("blue"), $first_site, color("reset"), color("red"), " $second_site ", color("red"), color("reset"), color("blue"), $third_site, color("reset") if $i == 2;
-      print color("blue"), $first_site.$second_site, color("reset"), color("red"), " $third_site ", color("reset") if $i == 3;
+      print color ("blue"), $first_site, color("reset"), color("red"), " $second_site ", color("red"), color("reset"), color("blue"), $third_site, color("reset") if $i == 2;
+      print color ("blue"), $first_site.$second_site, color("reset"), color("red"), " $third_site ", color("reset") if $i == 3;
       print @DNA[$third_bp..$third_bp+26+$i], "\n";
     }
   }
@@ -367,15 +375,21 @@ sub codon_to_seq {
     my $pos = $j + $start_bp;
     $aa_codon++;
     if ($option eq "A" || $option eq "D" || $option eq "E"){
-     # print "Codon $aa_codon(ADE): ${@$DNA}[$pos-1] ", $pos, " ${@$DNA}[$pos] ", $pos+1, " ${@$DNA}[$pos+1] ", $pos+2,"\n";
+      if ($debug){ 
+        print "Codon $aa_codon(ADE): ${@$DNA}[$pos-1] ", $pos-30, " ${@$DNA}[$pos] ", $pos-30+1, " ${@$DNA}[$pos+1] ", $pos-30+2,"\n";
+      } 
       push(@{$codon_seq{$aa_codon}}, ${@$DNA}[$pos-1], $pos, ${@$DNA}[$pos], $pos+1, ${@$DNA}[$pos+1], $pos+2);
     }
     if ($option eq "B" || $option eq "H" || $option eq "F"){
-     #  print "Codon $aa_codon(FH): ${@$DNA}[$pos+1] ", $pos+2, " ${@$DNA}[$pos+2] ", $pos+3, " ${@$DNA}[$pos+3] ", $pos+4,"\n";
-       push(@{$codon_seq{$aa_codon}}, ${@$DNA}[$pos+1], $pos+2, ${@$DNA}[$pos+2], $pos+3, ${@$DNA}[$pos+3], $pos+4);
+      if ($debug){
+        print "Codon $aa_codon(FH): ${@$DNA}[$pos+1] ", $pos-30+2, " ${@$DNA}[$pos+2] ", $pos-30+3, " ${@$DNA}[$pos+3] ", $pos-30+4,"\n";
+      }
+      push(@{$codon_seq{$aa_codon}}, ${@$DNA}[$pos+1], $pos+2, ${@$DNA}[$pos+2], $pos+3, ${@$DNA}[$pos+3], $pos+4);
     }
-    if ($option eq "C" || $option eq "G"){
-     #print "Codon $aa_codon(CG): ${@$DNA}[$pos] ", $pos+1, " ${@$DNA}[$pos+1] ", $pos+2, " ${@$DNA}[$pos+2] ", $pos+3,"\n";
+    if ($option eq "C" || $option eq "G" ||  $option eq "I"){
+      if ($debug){ 
+        print "Codon $aa_codon(CG): ${@$DNA}[$pos] ", $pos-30+1, " ${@$DNA}[$pos+1] ", $pos-30+2, " ${@$DNA}[$pos+2] ", $pos-30+3,"\n";
+      }
       push(@{$codon_seq{$aa_codon}}, ${@$DNA}[$pos], $pos+1, ${@$DNA}[$pos+1], $pos+2, ${@$DNA}[$pos+2], $pos+3);
     }  
   }
@@ -385,15 +399,28 @@ sub codon_to_seq {
     my $pos_up = $exon_start_end[$i+1];
     my $pos_down = $exon_start_end[$i+2];
     # print "\$i = $i\n";
-    #print "Codon $aa_codon(CDH): ${@$DNA}[$pos_up-1], ", $pos_up, " ${@$DNA}[$pos_down-1], ", $pos_down, " ${@$DNA}[$pos_down], ", $pos_down+1, "\n";
+    if ($debug){
+      print "Codon $aa_codon(CDH): ${@$DNA}[$pos_up-1], ", $pos_up-30, " ${@$DNA}[$pos_down-1], ", $pos_down-30, " ${@$DNA}[$pos_down], ", $pos_down-30+1, "\n";
+    }
     push(@{$codon_seq{$aa_codon}}, ${@$DNA}[$pos_up-1], $pos_up, ${@$DNA}[$pos_down-1], $pos_down, ${@$DNA}[$pos_down], $pos_down+1);
   }
   if ($option eq "E" || $option eq "F" || $option eq "G"){
     $aa_codon++;
     my $pos_up = $exon_start_end[$i+1];
     my $pos_down = $exon_start_end[$i+2];
-   # print "Codon $aa_codon(EFG): ${@$DNA}[$pos_up-2], ", $pos_up-1, " ${@$DNA}[$pos_up-1], ", $pos_up, " ${@$DNA}[$pos_down-1], ", $pos_down, "\n";
+    if ($debug){
+      print "Codon $aa_codon(EFG): ${@$DNA}[$pos_up-2], ", $pos_up-30-1, " ${@$DNA}[$pos_up-1], ", $pos_up-30, " ${@$DNA}[$pos_down-1], ", $pos_down-30, "\n";
+    }
     push(@{$codon_seq{$aa_codon}}, ${@$DNA}[$pos_up-2], $pos_up-1, ${@$DNA}[$pos_up-1], $pos_up, ${@$DNA}[$pos_down-1], $pos_down);
+  }
+  if ($option eq "I"){
+    $aa_codon++;
+    my $pos_up = $exon_start_end[$i+1];
+    my $pos_down = $exon_start_end[$i+2];
+    if ($debug){
+      print "Codon $aa_codon(I): ${@$DNA}[$pos_up-1] ", $pos_up-30, " ${@$DNA}[$pos_down-1], ", $pos_down-30, " ${@$DNA}[$pos_down], ", #$pos_down-30+1,"\n";
+    }
+    push(@{$codon_seq{$aa_codon}}, ${@$DNA}[$pos_up-1], $pos_up, ${@$DNA}[$pos_down-1], $pos_down, ${@$DNA}[$pos_down], $pos_down+1);
   }
   
   return \%codon_seq, $aa_codon;
@@ -492,7 +519,7 @@ __END__
             Sample query:  perl get_allele_flank_seq.pl -cds 4R79.1 -aa 45E 
 
 
-=head2 Options: [h or help] [cds] [aa]
+=head2 Options: [h or help] [cds] [aa] [d or debug]
              
           
 B<-help:>     
@@ -508,4 +535,5 @@ B<-aa:>
             Type "X" for nonsense mutation, eg. -aa 45X
  
              
-
+B<-debug>   Print each condon and corresponding triplet with coordinates 
+            and source exons of a cds for the purpose of debugging
