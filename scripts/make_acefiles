@@ -8,7 +8,7 @@
 # autoace.
 #
 # Last updated by: $Author: dl1 $                     
-# Last updated on: $Date: 2003-04-23 16:48:54 $       
+# Last updated on: $Date: 2003-04-23 16:54:11 $       
 
 #################################################################################
 # Variables                                                                     #
@@ -201,8 +201,8 @@ sub mknewacefiles {
     
     # parse filename
     ($filename) = (/^\S+\s+(\S+)/);
-    $filepath   = "$basedir/$dbname/$filename.ace";
-    $extrafile  = "$basedir/$dbname/$filename";
+    $filepath   = "$basedir/$dbname/$filename";
+    $extrafile  = "$basedir/$dbname/$filename.extra";
 
     print "Noting filename:$filename\n" if ($debug);
     
@@ -255,7 +255,7 @@ sub mknewacefiles {
 	      $command = "nosave\nquery find $object\n";
 	      $command .= "show -a -T $include -f $filepath\n";
 	      $command .= "follow $include\n";
-	      $command .= "show -a -T -f ${extrafile}_data.ace\nquit\n";
+	      $command .= "show -a -T -f $extrafile\nquit\n";
 	  }
 	  
       } 
@@ -272,7 +272,7 @@ sub mknewacefiles {
 	      $command ="nosave\nquery find $object where ($criteria)\n";
 	      $command .= "show -a -T $include -f $filepath\n";
 	      $command .= "follow $include\n";
-	      $command .= "show -a -T -f ${extrafile}_data.ace\nquit\n";
+	      $command .= "show -a -T -f $extrafile}\nquit\n";
 	  }
       }
   }
@@ -317,8 +317,8 @@ sub mknewacefiles {
     
     # cat extra data into file if needed and clear up
     if ($follow) {
-	system ("cat ${extrafile}_data.ace >> $filepath");
-	system ("rm -f ${extrafile}_data.ace");
+	system ("cat $extrafile>> $filepath");
+	system ("rm -f $extrafile");
 	undef ($follow);
     }
 
