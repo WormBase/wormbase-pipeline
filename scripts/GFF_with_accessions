@@ -1,48 +1,50 @@
-#!/usr/local/bin/perl
+#!/usr/local/bin/perl5.6.1 -w
 #
 # GFF_with_accessions
 #
+# by Dan Lawson
+#
+#
+# Last updated by: $Author: krb $     
+# Last updated on: $Date: 2003-01-14 13:46:35 $      
 
-# 010927 :  dl : Removed final exception
-# 010620 :  dl : Removed execeptions
-
+use strict;                                      
+use lib "/wormsrv2/scripts/";                    
+use Wormbase;
 use Ace;
 
 $|=1;
 
-$file   = shift;
-$wormdb = "/wormsrv2/autoace";
+my $file   = shift;
+my $wormdb = "/wormsrv2/autoace";
 
-$db = Ace->connect(-path=>$wormdb) || do { print "Connection failure: ",Ace->error; die();};
+my $db = Ace->connect(-path=>$wormdb) || do { print "Connection failure: ",Ace->error; die();};
 
 open (GFF, "<$file") || die "Can't open GFF file\n\n";
 while (<GFF>) {
 
-    next if (/^\#/);
+  next if (/^\#/);
+  
+  chomp;
+
+  my @gff = split (/\t/,$_);
+  
+  my ($gen_can) = $gff[8] =~ /Sequence \"(\S+)\"/; 
+  
+  my $obj = $db->fetch(Sequence=>$gen_can);
+  if (!defined ($obj)) {
+    print "Could not fetch sequence '$gen_can'\n";
+    next;
+  }
+  
+  my @acc = $obj->DB_info->row();
     
-    chomp;
+  print "$_ acc=$acc[4] ver=$acc[5]\n";
 
-    @gff = split (/\t/,$_);
-    
-    ($gen_can) = $gff[8] =~ /Sequence \"(\S+)\"/; 
-
-    $obj = $db->fetch(Sequence=>$gen_can);
-    if (!defined ($obj)) {
-        print "Could not fetch sequence '$gen_can'\n";
-        next;
-    }
-
-    # exceptions WS32
-#    if ($gen_can eq "ZK1236R") {print "$_ acc=n/a\n"; next;}  : removed 010927
-
-    @acc = $obj->DB_info->row();
-    
-    print "$_ acc=$acc[4] ver=$acc[5]\n";
-
-    $obj->DESTROY();
+  $obj->DESTROY();
 
 }
-close GFF;
+close(GFF);
 $db->close;
 exit(0);
 
