@@ -453,8 +453,8 @@ if( $prep_dump )
       `cat /wormsrv2/autoace/CHROMOSOMES/*.gff | $scripts_dir/gff2cos.pl > /nfs/acari/wormpipe/Elegans/cos$WPver.gff`;
       `$scripts_dir/prepare_dump_blastx.pl > $wormpipe_dir/dumps/accession2clone.list`;
       `cp /wormsrv2/WORMPEP/wormpep$WPver/wormpep.diff$WPver $wormpipe_dir/dumps/`;
-      `cp /wormsrv2/autoace/COMMOM_DATA/CE2gene.dat $wormpipe_dir/dumps/`;
-      `cp /wormsrv2/autoace/COMMOM_DATA/gene2CE.dat $wormpipe_dir/dumps/`;
+      `cp /wormsrv2/autoace/COMMON_DATA/CE2gene.dat $wormpipe_dir/dumps/`;
+      `cp /wormsrv2/autoace/COMMON_DATA/gene2CE.dat $wormpipe_dir/dumps/`;
 
       `touch $wormpipe_dir/DUMP_PREP_RUN`;
     }     
