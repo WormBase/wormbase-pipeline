@@ -4,8 +4,8 @@
 # 
 # A script to make multiple copies of camace for curation, and merge them back again
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-04-26 10:36:39 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2004-05-05 15:35:38 $
 
 
 use strict;
@@ -18,10 +18,6 @@ use Getopt::Long;
 # command-line options       #
 ##############################
 
-my $all;                   # All
-my $dan;                   # Use Daniel's split
-my $ant;                   # Use Anthony's split
-my $paul;                  # Use Paul's split
 my $merge;                 # Merging databases
 my $split;                 # Splitting databases
 my $update;                # Update current database
@@ -29,10 +25,6 @@ my $debug;                 # Debug option
 my $help;                  # Help menu
 
 GetOptions (
-            "all"        => \$all,
-	    "dan"        => \$dan,
-	    "ant"        => \$ant,
-	    "paul"       => \$paul,
 	    "merge"      => \$merge,
 	    "split"      => \$split,
 	    "update"     => \$update,
@@ -52,24 +44,19 @@ print "WS_version : $WS_version\tWS_previous : $WS_previous\n" if ($debug);
 my @databases; #array to store what splits are to be merged.
 my $path_new = ();
 my $path_ref = ();
+my @classes = ('Transposon', 'Transcript', 'Sequence', 'CDS', 'Feature', 'Pseudogene');
 
 # load @databases array with user database names.
 push(@databases,"orig");
-push(@databases,"ar2") if ($ant || $all);
-push(@databases,"dl1") if ($dan || $all);
-push(@databases,"pad") if ($paul || $all);
+push(@databases,"ar2");
+push(@databases,"dl1");
+push(@databases,"pad");
+push(@databases,"krb");
 
-my @classes = ('Transposon', 'Transcript', 'Sequence', 'CDS', 'Feature', 'Pseudogene');
-
-# directory paths for the split databases
-
+# directory paths
 our $current     = "/wormsrv1/camace";
 our $directory   = "/nfs/disk100/wormpub/camace_orig/WS${WS_previous}-WS${WS_version}";
 our $camace_orig = "/nfs/disk100/wormpub/camace_orig";
-our $camace_dl1  = "/nfs/disk100/wormpub/camace_dl1";
-our $camace_pad  = "/nfs/disk100/wormpub/camace_pad";
-our $camace_ar2  = "/nfs/disk100/wormpub/camace_ar2";
-
 
 ## (1) Merge split databases #1 - do the diffs ##
 if ($merge) {
@@ -89,14 +76,10 @@ if ($merge) {
   #remove 1st element of array
   shift (@databases);
   # run acediff on the files tidy up and reformat the diff files ready to be loaded
-
   foreach my $database (@databases) {
-
     foreach my $class (@classes) {
-
       my $path_new = $directory . "/${class}_${database}.ace";
       my $path_ref = $directory . "/${class}_orig.ace";
-
       system ("acediff $path_ref $path_new > $directory/${class}_diff_${database}.ace") && die "Failed to run acediff for ${path_new}\n";
       system ("reformat_acediff $directory/${class}_diff_${database}.ace   > $directory/update_${class}_${database}.ace") && die "Failed to run reformat ace file for $directory/${class}_diff_${database}.ace\n";
     }
@@ -115,6 +98,7 @@ if ($update) {
 ## (3) TransferDB calls to move /wormsrv1/camace to the split databases ##
 if ($split) {
   print "Removing old split databases and Copying /wormsrv1/database to the split camaces\n";
+  shift (@databases);
   &split_databases;
   print "Phase 3 finished. All ~wormpub split camaces can now be used\n\nCheck all TransferDB log files for \"ended SUCCESSFULLY\"\n";
   exit(0);
@@ -200,43 +184,26 @@ sub update_camace {
   # synchronize the gene -> sequence connections
   print  "Update gene2CDS/Transcript/Pseudogene connections in /wormsrv1/camace\n";
   system ("cgc_names_for_worm_genes.pl -update_camace") && die "Failed to run cgc_names_for_worm_genes.pl\n";
-
 }
 
 #(3)Data dispersion#
 sub split_databases {
-  #remove all split models.wrm and update since we have started using splits without wormsrv2 linked.
-  foreach my $database (@databases) {
-    system("rm /nfs/disk100/wormpub/camace_${database}/wspec/models.wrm") && die "failed to remove camace_${database} models.wrm\n";
-    system("cp /wormsrv2/autoace/wspec/models.wrm ~wormpub/camace_${database}/wspec/") && die "failed to update camace_${database} models.wrm\n";
-  }
-
   # it has been decided that it is better to remove the database directory to make transfer db more stable #
-  # initialise/copy to camace_orig (always do this)
+  # initialise camace_orig and copy data from wormsrv1/camace.
   system("rm -rf /nfs/disk100/wormpub/camace_orig/database") && die "Failed to remove camace_orig/database\n";
   system ("TransferDB.pl -start /wormsrv1/camace -end $camace_orig -database -wspec -name camace_orig_WS$WS_version");
-  
-  # initialise/copy to camace_ar2 (-ant or -all)
-  if ($ant || $all) {
-    system("rm -rf /nfs/disk100/wormpub/camace_ar2/database") && die "Failed to remove camace_ar2/database\n";
-    system ("TransferDB.pl -start $camace_orig -end $camace_ar2 -database -wspec -name camace_ar2_WS$WS_version");
-  }
-  # initialise/copy to camace_dl1 (-dan or -all)
-  if ($dan || $all) {
-    system("rm -rf /nfs/disk100/wormpub/camace_dl1/database") && die "Failed to remove camace_dl1/database\n";
-    system ("TransferDB.pl -start $camace_orig -end $camace_dl1 -database -wspec -name camace_dl1_WS$WS_version");
-  }
-  # initialise/copy to camace_pad (-paul or -all)
-  if ($paul || $all) {
-    system("rm -rf /nfs/disk100/wormpub/camace_pad/database") && die "Failed to remove camace_pad/database\n";
-    system ("TransferDB.pl -start $camace_orig -end $camace_pad  -database -wspec -name camace_pad_WS$WS_version");
+
+  #Do the same for each split database but transfer data from camace_orig.
+  foreach my $database (@databases) {
+    system("rm -rf /nfs/disk100/wormpub/camace_${database}/database") && die "Failed to remove camace_${database}/database\n";
+    system ("TransferDB.pl -start $camace_orig -end ~wormpub/camace_${database} -database -wspec -name camace_${database}_WS$WS_version");
   }
   print "CAMACE SPLITS UPDATED\n";
 }
 
 sub usage {
   my $error = shift;
-  
+
   if ($error eq "Help") {
     # Normal help menu
     system ('perldoc',$0);
@@ -280,14 +247,6 @@ merge_split_camaces optional arguments:
 =item -update, Upload diff files to /wormsrv1/camace and add BLAT, Locus data
 
 =item -split, Transfer /wormsrv1/camace into split camace databases
-
-=item -all, Work on all splits, i.e. ar2,dl1,pad
-
-=item -ant, Work on split ar2 only
-
-=item -dan, Work on split dl1 only
-
-=item -paul, Work on split pad only
 
 =item -help, Help page
 
