@@ -4,7 +4,7 @@
 
 # by Chao-Kung Chen [030113]
 
-# Last updated on: $Date: 2003-06-25 15:51:02 $
+# Last updated on: $Date: 2003-10-15 09:30:58 $
 # Last updated by: $Author: ck1 $
 
 
@@ -22,7 +22,7 @@ use Getopt::Long;
 ###################################################
 
 my ($debug, $help, $recipients);
-$recipients ="ck1\@sanger.ac.uk, emsch\@its.caltech.edu, kimberly\@minerva.caltech.edu, krb\@sanger.ac.uk";
+$recipients ="bastiani\@its.caltech.edu, ck1\@sanger.ac.uk, emsch\@its.caltech.edu, kimberly\@minerva.caltech.edu, krb\@sanger.ac.uk";
 my $tace = &tace;   # tace executable path
 
 GetOptions ("d|debug=s"  => \$debug,
@@ -121,8 +121,8 @@ push(@info, "C: FYI - CURRENT LIST OF LOCI THAT ARE BOTH MAIN NAME AND OTHER NAM
 push(@info, "---------------------------------------------------------------------\n");
 
 foreach (sort keys %other_main){
-  my $locus = @{$other_main{$_}}->[0];
-  my @cds = @{$other_main{$_}}->[1];
+  my $locus = $other_main{$_}->[0];
+  my @cds   = $other_main{$_}->[1];
 
   if (exists $locus_cds{$_}){
     push(@info, "$_ (@{$locus_cds{$_}}) is different from $_ which is an other_name of $locus (@cds)\n");
@@ -160,11 +160,11 @@ while(<IN>){
     if ($exceptions{$flag}){
       print $flag, "\n";
       #$count++;
-      my $locus = @{$other_main{$flag}}->[0];
-      my @cds = @{$other_main{$flag}}->[1] if @{$other_main{$flag}}->[1];
+      my $locus = $other_main{$flag}->[0];
+      my @cds   = $other_main{$flag}->[1] if $other_main{$flag}->[1];
    
       # attached to cds
-      if (@{$other_main{$flag}}->[1]){   
+      if ($other_main{$flag}->[1]){   
 	push (@assignment, "$flag (@{$locus_cds{$1}}) is different from $flag which is an other_name of $locus (@cds)\n");
 	push (@assignment, "Functional annotation is assigned to $flag (@{$locus_cds{$flag}} in geneace)\n\n");
 	print OUT "Locus : \"$flag\"\n";
@@ -184,11 +184,11 @@ while(<IN>){
 
     elsif ($other_names{$flag}){
       $count++;
-      my $locus = @{$other_main{$flag}}->[0];
-      my @cds = @{$other_main{$flag}}->[1];
+      my $locus = $other_main{$flag}->[0];
+      my @cds   = $other_main{$flag}->[1];
 
       # attached to cds
-      if (@{$other_main{$flag}}->[1]){
+      if ($other_main{$flag}->[1]){
 	push (@assignment, "$flag is an other_name of $locus (@cds)\n");
 	push (@assignment, "Functional annotation is assigned to $locus\n\n");
 	print OUT "\nLocus : \"$locus\"\n";
