@@ -114,7 +114,7 @@ EOF
 
     open(text_ace, "echo '$command' | $exec  | ");
     while (<text_ace>) {
-        if (/\s+Database\s+EMBL\s+\S+\s+(\S+)/) {
+        if (/\s+Database\s+\S+\s+\S+\s+(\S+)/) {
             $accession=$1;
         }
     }
