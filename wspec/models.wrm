@@ -1692,7 +1692,7 @@
 // haven't been connected to labs yet
                       Strain_designation UNIQUE Text
                       Allele_designation UNIQUE Text
-                      Alleles ?Allele XREF Laboratory
+                      Alleles ?Allele XREF Location
                       Gene_classes ?Gene_Class XREF Designating_laboratory
               Staff   ?Author XREF Laboratory
 // Put this back in instead of replacing with following line because 
