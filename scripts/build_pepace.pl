@@ -10,7 +10,7 @@
 # 
 #
 # Last updated by: $Author: ar2 $                     
-# Last updated on: $Date: 2002-12-10 15:04:49 $     
+# Last updated on: $Date: 2002-12-17 17:32:28 $     
 
 use strict;                                     
 use lib "/wormsrv2/scripts/";                  
@@ -202,6 +202,7 @@ open (ACE, ">$acefile") || die "cant write $acefile\n";
 
 $CE_live{'CE25872'} = 1; #hard coded as this history is confused. Remove if CE25873 no longer valid
 $CE_corr_DNA{'CE25872'} = "F36D3.1";
+push( @{ $CE_corr_DNA{'CE25872'} }, "F36D3.1");
 
 #ace file for new Protein model (with History)
 foreach my $key(sort keys %CE_history) {
