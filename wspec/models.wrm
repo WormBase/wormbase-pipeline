@@ -340,7 +340,7 @@
 	Transgene_product ?Transgene XREF Worm_gene
 	Rescued_by_Transgene ?Transgene XREF Rescue
 	GO_term ?GO_term XREF Locus ?GO_code #Evidence // Added by krb 020905
-
+	Microarray_results ?Microarray_results XREF Locus
 
 
 
@@ -780,6 +780,7 @@
 		       Operon ?Operon XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info                // added for Operon data   [dl]
 		       Transposon ?Transposon XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info        // added for transposons   [020128 dl]
 		       Microarray_aff ?Microarray_aff XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info //added for Wen's Affymetrix model [020614 krb] 
+		       Oligo_set ?Oligo_set XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info	     //added for Oligo_set class
      		       AGP_fragment ?Sequence XREF AGP_parent Int UNIQUE Int #SMap_info			     // added for Briggsae data [krb 020726]
                        Feature_object ?Feature XREF Sequence UNIQUE Int UNIQUE Int #SMap_info		     // dl feature play
      		       UTR ?UTR XREF Canonical_parent Int UNIQUE Int #SMap_info				     // added for new UTR model [krb 020729]
@@ -849,6 +850,7 @@
 			Concise_description ?Text #Evidence			 // added for Erich [020523 krb]
 			Interacts_with_sequence ?Sequence XREF Interacts_with_sequence #Evidence // for future interaction data [020704 krb]
 			Interacts_with_protein ?Protein XREF Interacts_with_sequence #Evidence // for future interaction data [020704 krb]
+			Microarray_results ?Microarray_results XREF Predicted_gene //added for Microarray_results
 		// tag2 system: names of all objects following next tag are shown in the 
 		//   general annotation display column as "tag:objname"
 	  Properties    Genomic_canonical Gene_count UNIQUE Int                  // added tag for dot name tracking [020128 dl]
@@ -1031,6 +1033,7 @@
                         Reference ?Paper XREF Transcript                           // [020306 kj]
 			RNAi_result ?RNAi XREF Transcript //was missing from model [021126 krb]
 			GO_term ?GO_term XREF Transcript ?GO_code #Evidence // [030411 krb]
+			Microarray_results ?Microarray_results XREF Transcript      //added for Microarray_results
 		Interpolated_map_position UNIQUE ?Map UNIQUE Float // new for updated interpolated map positions [krb 030515]
                 Origin  From_laboratory UNIQUE ?Laboratory                         // [020306 kj]
                         Species UNIQUE ?Species                                    // [020306 kj]
@@ -1566,8 +1569,8 @@
 	     Remark ?Text #Evidence
 	     SNP_locus ?Locus XREF SNP_assay	                    // added for Todd [171001 krb]
 	     Flanks_deletion ?Allele XREF Flanking_PCR_product // For KO allele data [krb 021217]
-	     Microarray_result ?Microarray_result XREF PCR_product // added [krb 030127]
-
+	     Microarray_result  ?Microarray_result  XREF PCR_product 
+	     Microarray_results ?Microarray_results XREF PCR_product //added for Microarray_results class
 
 ?Phenotype Description UNIQUE ?Text
            Assay UNIQUE ?Text
@@ -1617,6 +1620,62 @@
 // Classes for microarray data
 //
 //////////////////////////////////////////////////////////////////////
+
+
+//New class for Igor [030815 krb]
+?Microarray     Chip_type UNIQUE ?Text  //SMD, Affymetrix, etc.
+                Chip_info  ?Text        //Describes batch number of the chip, etc.
+                Reference  ?Paper       //Describes design of the chip
+                Remark     ?Text        #Evidence
+                Microarray_results      ?Microarray_results XREF Microarray
+                Microarray_experiment   ?Microarray_experiment XREF Microarray
+
+
+
+//New class. Contains multiple results for one microarray spot. Used for both SMD and Affymetrix chips as well as for generic chips. 
+?Microarray_results     Sequence_info   UNIQUE  PCR_product     UNIQUE ?PCR_product     XREF Microarray_results
+                                                Oligo_set       UNIQUE ?Oligo_set       XREF Microarray_results
+                        Locus           ?Locus XREF Microarray_results #Evidence        //should be mapped during the build
+                        Predicted_gene  ?Sequence XREF Microarray_results #Evidence     //should be mapped during the build
+                        Transcript      ?Transcript XREF Microarray_results #Evidence   //should be mapped during the build
+                        Microarray      ?Microarray XREF Microarray_results
+                        Remark          ?Text   #Evidence
+                        Results         ?Microarray_experiment UNIQUE #Microarray_data
+
+
+//New class. Used by ?Microarray_results.
+#Microarray_data        Result          A_vs_B_log_ratio        UNIQUE Float    //relative abundance               
+                                        A_vs_B_SD               UNIQUE Float    //standard deviation over a set of experiments
+                                        Frequency               UNIQUE Int      //absolute abundance in ppm
+                                        Number_of_experiments   UNIQUE Int
+                        Confidence      P_value  UNIQUE Float
+                                        Presence UNIQUE PA                      //present always
+                                                        PS                      //present sometimes - marginal call
+                                                        NP                      //never present
+                        Cluster         UNIQUE ?Cluster XREF Microarray_results //one way XREF used to populate Cluster class
+                        Remark          ?Text   #Evidence
+
+
+//New class. Used by ?Microarray_results.
+?Microarray_experiment  Microarray ?Microarray XREF Microarray_experiment
+                        Sample  Sample_A     UNIQUE      ?Condition     //for PCR product-base (SMD-type) chips
+                                Sample_B     UNIQUE      ?Condition     //for PCR product-base (SMD-type) chips
+                                Microarray_sample UNIQUE ?Condition     //for oligo-based (Affymetrix-type) chips
+                        Reference  ?Paper XREF Microarray_experiment
+                        Remark     ?Text        #Evidence
+
+
+//Will eventually replace Microarray_aff class. 
+//Used for Affymetrix and other oligo-based arrays. 
+?Oligo_set      SMap S_Parent Canonical_parent UNIQUE ?Sequence XREF Oligo_set
+                Microarray_results ?Microarray_results XREF Oligo_set 
+                Oligo ?Oligo     //used in case oligos are specified
+                Remark ?Text    #Evidence
+
+
+
+
+
 
 
 ?Microarray_aff SMap S_Parent Canonical_parent UNIQUE ?Sequence XREF Microarray_aff
@@ -1675,9 +1734,10 @@
 // The tag "Reference" refers to the paper performed this clustering analysis
 
 ?Cluster Description   ?Text
-         Algorithm     ?Text
-         Microarray_result    ?Microarray_result     XREF    Cluster
-         Reference     ?Paper          XREF    Cluster 
+         Algorithm     ?Method
+         Microarray_result  ?Microarray_result XREF Cluster
+	 Microarray_results ?Microarray_results     //added for Microarray_results model
+         Reference     ?Paper XREF Cluster 
          Remark        ?Text #Evidence
                   
 
@@ -1694,6 +1754,8 @@
                            Precedes        ?Condition XREF Follows
                            Follows         ?Condition XREF Precedes
            Reference       ?Paper  //Defines the condition.
+	   Cell_type       ?Cell // added for Experiment (Microarray_results)
+           Treatment       ?Text // added for Experiment (Microarray_results)
            Remark          ?Text #Evidence
 
 
@@ -1863,6 +1925,7 @@
                   Cluster ?Cluster XREF Reference #Evidence
 		  Feature ?Feature XREF Defined_by_paper                 // added [030424 dl]
 		  Gene_regulation ?Gene_regulation XREF Reference // added [030804 krb]
+		  Microarray_experiment ?Microarray_experiment XREF Reference //added for Microarray_experiment model
         Keyword ?Keyword
 
 
