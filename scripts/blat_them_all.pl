@@ -32,8 +32,8 @@
 # 02.02.21 dl: typos in the naming of the confirmed_intron virtual objects
 # 02.04.08 dl: old style logging for autoace.fa check, prevented complete run of subs
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2002-11-21 10:23:44 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2003-01-21 16:28:44 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -52,8 +52,6 @@ our $dbdir = "/wormsrv2/autoace";
 our $seq   = "/wormsrv2/autoace/BLAT/autoace.fa";               
 our $chrom = "/wormsrv2/autoace/BLAT/chromosome.ace";
 our $blat  = "/wormsrv2/autoace/BLAT";
-
-
 
 my $bin     = "/wormsrv2/scripts";
 my $db;
@@ -180,9 +178,9 @@ if ($opt_b) {
     if ($opt_x) {
 	system("$blatex $seq $query -t=dnax -q=dnax $blat/${data}_out.psl") && die "Blat failed\n";
     }
-#    elsif ($opt_o) {
-#	system("$blatex $seq $query -q=prot -t=dnax $blat/${data}_out.psl") && die "Blat failed\n";
-#    }
+    elsif ($opt_o) {
+	system("$blatex $seq $query -q=dnax -t=dnax $blat/${data}_out.psl") && die "Blat failed\n";
+    }
     else {
 	system("$blatex $seq $query $blat/${data}_out.psl") && die "Blat failed\n";
     }
