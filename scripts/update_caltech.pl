@@ -4,7 +4,7 @@
 
 # by Chao-Kung Chen [030113]
 
-# Last updated on: $Date: 2003-10-24 16:53:30 $
+# Last updated on: $Date: 2003-11-12 16:53:58 $
 # Last updated by: $Author: ck1 $
 
 
@@ -85,10 +85,12 @@ my $found = 0;   # counter for found gene name merge
 
 # see POD for -update and -merge options
 my $count = &download if $update;  
-&process_main_other_name if ($update || $merge);            # get list of main names, their other name(s) and corresponding seq. names
-$found = &check_gene_name_merge if $merge;                  # email a notice of new gene name merge
-&main_other_name_assignment if ($update && $count != 0);    # update geneace with latest func. annots; assign annots to main name, if not already
-                                                            # email Caltech what needs to be changed 
+&process_main_other_name;                                 # get list of main names, their other name(s) and corresponding seq. names
+
+$found = &check_gene_name_merge if $merge;                # email a notice of new gene name merge
+
+&main_other_name_assignment if ($update && $count != 0);  # update geneace with latest func. annots; assign annots to main name, if not already
+                                                          # email Caltech what needs to be changed 
 
 # Mail to people, but only to person running script in debug mode
 mail_maintainer("Functional annotation update feedback", $recipients, $log) if $update;
@@ -120,14 +122,9 @@ sub download {
   chdir $caltech;
   system("echo '\$ caltech' | ftp -i caltech.wormbase.org") && print LOG "Failed to download file\n";
   
-  @ftp_date=dataset($caltech); # [0] is the date of the file , [1] is the filename
+  @ftp_date=dataset($caltech);    # [0] is the date of the file , [1] is the filename
   @last_date=dataset($updatedir); # [0] is the date of the file , [1] is the filename
-  
-  #print $ftp_date[0], "#\n";
-  #print $ftp_date[1], "#\n";
-  #print $last_date[0], "##\n";
-  #print $last_date[1], "##\n";
-  
+   
   if ($last_date[0] != $ftp_date[0]){
     print LOG "UPDATE file $ftp_date[1] avilable on FTP\n\n";
     system("mv $ftp_date[1] ../");
@@ -136,7 +133,7 @@ sub download {
   if ($last_date[0] == $ftp_date[0]){
     print LOG "No new update on FTP site\n";
     $recipients ="ck1\@sanger.ac.uk, krb\@sanger.ac.uk"; # notify ck1 & krb if no update
-    $recipients ="$debug\@sanger.ac.uk" if $debug;  # notify ck1 & krb if no update
+    $recipients ="$debug\@sanger.ac.uk" if $debug;       # notify ck1 & krb if no update
     mail_maintainer("Functional annotation update feedback", $recipients, $log); 
     exit(0) if !$merge;
     return $count = 0;
@@ -150,7 +147,6 @@ sub process_main_other_name {
   ########################################
   
   my $ga_dir = "/wormsrv1/geneace";
-  #my $ga_dir = "/nfs/disk100/wormpub/DATABASES/TEST_DBs/CK1TEST";
   
   my $locus_has_other_name_to_cds=<<EOF;
 Table-maker -p "/wormsrv1/geneace/wquery/locus_has_other_name_to_cds.def" quit
@@ -224,7 +220,7 @@ sub check_gene_name_merge {
 
   foreach (@name_diff){
     chomp;
-    print $_, "\n";
+    #print $_, "\n";
     if ($_ =~ /^< (.+) -> (.+)/){  # older file
       my $name = $1;
       my @seqs = $2;
@@ -363,7 +359,7 @@ sub main_other_name_assignment {
     print LOG "------------------------------------------\n\n";
     print LOG "EVERYTHING WENT OK\n\n";
     print LOG "THANKS.\n\n";
-    print LOG @info;
+   # print LOG @info;
   }
   else {
     print LOG "\n\n";
