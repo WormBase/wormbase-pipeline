@@ -99,7 +99,7 @@ sub map_feature
 	
 	if ( $left_coord and $right_coord) {
 	  # make coordinate adjsutments for -+ extension
-	  # at this stage they'll be something like AH6 (-+2000), 1500, 37500)  
+	  # at this stage they'll be something like AH6 (-+2000), 1500, 37500)
 
 	  $left_coord -= $extension;
 	  $right_coord -= $extension;
@@ -129,6 +129,10 @@ sub map_feature
                                              ^                           ^ 
   Args    :   dna as string, 2 flanking seqs as strings
 
+
+                        flank_L             vv       flank_R
+              actgtacgtagcgagcaccgatcaggacgagTGACTACGTGCTATGCAGCGAGCAT
+                                            RL
 =cut
 
 sub _check_for_match
@@ -136,6 +140,11 @@ sub _check_for_match
     my ($self, $dna, $flank_L, $flank_R) = @_;
     my ($rev_left,$rev_right,$offset);
     my ($match_left,$match_right,$span);
+
+    # make sure all in same case !
+    $dna = lc($dna);
+    $flank_L = lc($flank_L);
+    $flank_R = lc($flank_R);
 
     my $dna_length = length $dna;
 
