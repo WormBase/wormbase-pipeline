@@ -5,7 +5,7 @@
 # completely rewritten by Keith Bradnam from list_loci_designations
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-08-18 10:25:59 $      
+# Last updated on: $Date: 2003-08-19 09:34:34 $      
 #
 # This script should be run under a cron job and simply update the webpages that show
 # current gene names and sequence connections.  Gets info from geneace.  
@@ -56,6 +56,7 @@ foreach my $locus (@loci){
     $prev_initial = $initial;
   }
 
+  # Set alternating colours for each row of (HTML) output 
   if (($line % 2) == 0) { 
       print HTML "<TR BGCOLOR=\"lightblue\">\n";
   }
@@ -63,10 +64,12 @@ foreach my $locus (@loci){
          print HTML "<TR BGCOLOR=\"white\">\n";
   }
   
+  # Column 1 - ?Locus name
   print HTML "<TD><A HREF=\"http://www.wormbase.org/db/gene/gene?name=${locus}\">${locus}</a></TD>";
   print TEXT "$locus,";
 
-  # Get sequence connections
+
+  # Column 2 - ?Sequence connections
   if(defined($locus->at('Molecular_information.Genomic_sequence'))){
     my @genomic_sequences = $locus->Genomic_sequence;
     print HTML "<TD>";
@@ -78,7 +81,8 @@ foreach my $locus (@loci){
     print HTML "</TD><TD>&nbsp</TD><TD>&nbsp</TD>";
   }
 
-  # get transcript connections
+
+  # Column 3 -  ?Transcript connections
   elsif(defined($locus->at('Molecular_information.Transcript'))){
     print HTML "<TD>&nbsp</TD>";
     my @transcripts = $locus->Transcript;
@@ -91,7 +95,8 @@ foreach my $locus (@loci){
     print TEXT ",,";
     print HTML "</TD><TD>&nbsp</TD>";
   }
-  # get pseudogene connections
+
+  # Column 4 - ?Pseudogene connections
   elsif(defined($locus->at('Molecular_information.Pseudogene'))){
     my @pseudogenes = $locus->Pseudogene;
     print HTML "<TD>&nbsp</TD><TD>&nbsp</TD><TD>";
@@ -101,15 +106,17 @@ foreach my $locus (@loci){
       print TEXT "$i ";
     }
     print HTML "</TD>";
+    print TEXT ",";
   }
 
+  # Blank columns if no ?Sequence, ?Transcript, or ?Pseudogene
   else{
     print HTML "<TD>&nbsp</TD><TD>&nbsp</TD><TD>&nbsp</TD>";
+    print TEXT ",,,";
   }
-  print TEXT ",,,";
 
 
-  #Get other names
+  # Column 5 - Other names for ?Locus
   if(defined($locus->at('Name.Other_name'))){
     my @other_names = $locus->Other_name;
     print HTML "<TD>";
@@ -124,7 +131,8 @@ foreach my $locus (@loci){
   }
   print TEXT ",";
 
-  #CGC approved?
+
+  # Column 6 CGC approved?
   if(defined($locus->at('Type.Gene.CGC_approved'))){
     print HTML "<TD>CGC approved</TD>\n";
     print TEXT "CGC approved"
@@ -138,6 +146,11 @@ foreach my $locus (@loci){
   print TEXT "\n";
   $locus->DESTROY();
 }
+
+
+###################################################
+# Tidy up - close things, mail log, run webpublish
+###################################################
 
 close(HTML);  
 
@@ -156,11 +169,11 @@ chdir($www) || print LOG "Couldn't run chdir\n";
 system("/usr/local/bin/webpublish -f -q *.shtml") && print LOG "Couldn't run webpublish on html files\n";
 system("/usr/local/bin/webpublish -f -q *.txt") && print LOG "Couldn't run webpublish on text file\n";
 
-
 &mail_maintainer("update_web_gene_names.pl","krb\@sanger.ac.uk","$log");
 
 close(LOG);
 exit(0);
+
 
 
 __END__
