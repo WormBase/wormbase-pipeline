@@ -7,8 +7,8 @@
 # A script to finish the last part of the weekly build by updating all of the
 # relevant WormBase and Wormpep web pages.
 #
-# Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-03-12 13:13:30 $      
+# Last updated by: $Author: ar2 $     
+# Last updated on: $Date: 2004-05-10 10:06:03 $      
 
 
 #################################################################################
@@ -42,6 +42,11 @@ my $dbcomp;             # create dbcomp.shtml
 my $wormpep_diff;       # diff log for wormpep releases
 my $copyGFF;            # copy GFF files to WWW site 
 my $test;               # test run (requires a release number)
+my $directories;        # create website directories
+my $overlap;            # run copy_overlapcheck_files
+my $EST_files;          # run copy_EST_files
+my $create_GFF;         # run create_GFF_intron_files
+my $update_wormpep;
 
 
 GetOptions (
@@ -55,8 +60,13 @@ GetOptions (
             "debug"          => \$debug,
 	    "test=s"         => \$test,
             "help"           => \$help,
-            "h"              => \$help
-);
+            "h"              => \$help,
+	    "dirs"           => \$directories,
+	    "overlap"        => \$overlap,
+	    "est"            => \$EST_files,
+	    "create_gff"     => \$create_GFF,
+	    "wormpep"        => \$update_wormpep
+	   );
 
 
 ##############################
@@ -110,7 +120,7 @@ unless (defined $ARGV[0]) {
 
 &create_log_file               if ($all);
 
-&create_web_directories        if ($all);
+&create_web_directories        if ($all || $directories);
 
 &create_release_header         if ($all || $header);    # makes release_header.shtml
 &create_DNA_table              if ($all || $dna);       # makes DNA.shtml
@@ -119,15 +129,15 @@ unless (defined $ARGV[0]) {
 
 &create_wormpep_page           if ($all || $wormpep_diff); # the wormpep page accessible from the main wormbase page
 
-&copy_overlapcheck_files       if ($all); # copies check files/wormsrv2/autoace/CHECKS and converts to HTML etc.
+&copy_overlapcheck_files       if ($all || $overlap); # copies check files/wormsrv2/autoace/CHECKS and converts to HTML etc.
 
-&copy_EST_files                if ($all); # copies EST_analysis.html and then edits this file then copies other EST files
+&copy_EST_files                if ($all || $EST_files); # copies EST_analysis.html and then edits this file then copies other EST files
 
 &copy_GFF_files                if ($all || $copyGFF); # copies some of the GFF files in /wormsrv2/autoace/GFF_SPLITS
 
-&create_GFF_intron_files       if ($all); # copies the GFF_introns_confirmed_CDS* files from previous WS release, updates totals
+&create_GFF_intron_files       if ($all || $create_GFF); # copies the GFF_introns_confirmed_CDS* files from previous WS release, updates totals
 
-&update_wormpep_pages          if ($all); # update the main wormpep web pages
+&update_wormpep_pages          if ($all || $update_wormpep); # update the main wormpep web pages
 
 
 
@@ -135,9 +145,6 @@ unless (defined $ARGV[0]) {
 # final bit of tidying up
 #########################
 
-
-# update 'current' symlink
-&create_sym_link              if ($all);
 print LOG "\n\nC'est finis\n\n";
 
 # mail log
@@ -146,19 +153,6 @@ print LOG "\n\nC'est finis\n\n";
 close(LOG);
 
 exit(0);
-
-
-###########################################################################################################
-# Create new symbolic link    
-###########################################################################################################
-
-sub create_sym_link {
-
-    print LOG "\nChanging 'current symbolic link to point to new release\n";
-    system("rm -f $www/current") && croak "Couldn't remove 'current' symlink\n";
-    system("ln -s $wwwlive/$WS_name/ $www/current") && croak "Couldn't create new symlink\n";
-}
-
 
 
 ###########################################################################################################
@@ -742,7 +736,7 @@ sub copy_GFF_files{
   print LOG "Copying across GFF files from /wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS\n";
 
   #simple double foreach loop to loop through each chromosome and file name
-  my @gff_files = ("clone_ends", "clone_path", "exon","intron_confirmed_CDS", "clone_acc", "genes", "repeats", "intron", "rna", "UTR");
+  my @gff_files = ("clone_ends", "clone_path", "exon","intron_all", "clone_acc", "genes", "repeats", "intron", "rna", "UTR");
   foreach my $chrom (@chrom) {
     foreach my $file (@gff_files){
       system("sort -u $gff/CHROMOSOME_$chrom.$file.gff | gff_sort > $www/$WS_name/GFF/CHROMOSOME_$chrom.$file.gff")
@@ -781,7 +775,7 @@ sub create_GFF_intron_files{
 
    # open old and new files
    open(OLDFILE, "<$www/$WS_previous_name/Checks/GFF_introns_confirmed_CDS_$lab.html") || croak "Couldn't read old $lab GFF intron file\n";
-   open(NEWFILE, ">$www/$WS_name/Checks/GFF_introns_confirmed_CDS_$lab.html") || croak "Couldn't create new $lab GFF intron file\n";
+   open(NEWFILE, ">$www/$WS_name/Checks/GFF_introns_$lab.html") || croak "Couldn't create new $lab GFF intron file\n";
 
    my $count = 0;
    # loop through old file replacing old info with new info from @line_counts 

@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2004-05-07 11:28:54 $
+# Last updated on: $Date: 2004-05-10 10:06:03 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -36,14 +36,20 @@ our $release_number     = &get_wormbase_version();      # e.g.   89
 our $old_release        = $release_number - 1;
 our $wormrna_release    = $release_number;
 our $wormpep            = $release_number;
-our ($help,$debug,$norelease);
 my $maintainers = "All";
 my $errors = 0;    # tracking system call errors
+
+our ($help,$debug,$norelease, $nochroms, $nomisc, $nowormpep, $nogenes, $noyk);
 
 GetOptions (
 	    "help"       => \$help,
 	    "debug=s"    => \$debug,
-	    "norelease"  => \$norelease
+	    "norelease"  => \$norelease,
+	    "nochroms"   => \$nochroms,
+	    "nomisc"     => \$nomisc,
+	    "nowormpep"  => \$nowormpep,
+	    "nogenes"    => \$nogenes,
+	    "noyklist"   => \$noyk
 	   );
 
 # Display help if required
@@ -65,15 +71,15 @@ if ($debug) {
 
 &copy_release_files unless ($norelease);    # make a new directory for the WS release and copy across release files
 
-&copy_chromosome_files; # make a new /CHROMOSOMES directory for the DNA, GFF, and agp files and copy files across
+&copy_chromosome_files unless ($nochroms); # make a new /CHROMOSOMES directory for the DNA, GFF, and agp files and copy files across
 
-&copy_misc_files;       # copy across models.wrm and other misc. files, e.g. wormRNA
+&copy_misc_files unless ($nomisc);       # copy across models.wrm and other misc. files, e.g. wormRNA
 
-&copy_wormpep_files;    # copied from ~wormpub/WORMPEP
+&copy_wormpep_files unless ($nowormpep);    # copied from ~wormpub/WORMPEP
 
-&extract_confirmed_genes; # make file of confirmed genes from autoace and copy across
+&extract_confirmed_genes unless ($nogenes); # make file of confirmed genes from autoace and copy across
 
-&make_yk2ORF_list;       # make file of yk EST -> ORF connections and add to FTP site
+&make_yk2ORF_list unless ($noyk);       # make file of yk EST -> ORF connections and add to FTP site
 
 #&copy_homol_data;        # copy blat and blast data to private ftp site for St. Louis
 
@@ -222,12 +228,24 @@ sub copy_wormpep_files{
   my $wp_ftp_dir = "$wormpep_ftp_root/wormpep${wormpep}";
   mkdir $wp_ftp_dir unless -e $wp_ftp_dir;
 
-  foreach my $file ( &wormpep_files ){
+  foreach my $file ( @{&wormpep_files} ){
   # copy the wormpep release files across
     &run_command("scp $wp_source_dir/$file$wormpep $wp_ftp_dir/$file");
     &CheckSize("$wp_source_dir/$file$wormpep","$wp_ftp_dir/$file");
   }
 
+  # tar up the latest wormpep release and copy across
+  my $tgz_file = "$wp_ftp_dir/wormpep${wormpep}.tar";
+  my $command = "/bin/tar -c -h -P $wp_source_dir -f $tgz_file";
+  foreach my $file ( @{&wormpep_files} ){
+    $command .= " $wp_source_dir/$file$wormpep";
+  }
+  &run_command("$command");
+  &run_command("/bin/gzip $tgz_file");
+  $tgz_file .= ".gz";
+  &run_command("mv $tgz_file $targetdir/$release");
+
+  # sym link to dev directory
   &run_command("cd $wormpep_ftp_root; ln -fs $wp_ftp_dir wormpep_dev");
 }
 
