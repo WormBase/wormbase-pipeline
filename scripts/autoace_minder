@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder [-options]
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2002-10-01 14:38:49 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2002-10-07 09:50:39 $
 
 
 #################################################################################
@@ -1221,12 +1221,17 @@ sub generate_utrs {
   # quit if split GFF files have not been made after BLATTING
 #  &usage(17) unless (-e "$logdir/$flag{'B7'}");
 #
-  # First add CDS-EST connections from fixfile
-  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Adding CDS-EST connections from fixfile at $runtime\n";
-  $command = "pparse /wormsrv2/autoace/fixfiles/CDS-EST_connections.ace\nsave\nquit\n"; 
-  open (WRITEDB, "| $tace -tsuser cds_est_connection_fixfile /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
-  print WRITEDB $command;
-  close WRITEDB;
+
+#  First add CDS-EST connections from fixfile
+#  [071002 dl] Sort this out. this file does not need to be loaded in if we update the primaries.
+#  dump out the connections from WS88 and load into camace/stlace
+
+#
+#  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Adding CDS-EST connections from fixfile at $runtime\n";
+#  $command = "pparse /wormsrv2/autoace/fixfiles/CDS-EST_connections.ace\nsave\nquit\n"; 
+#  open (WRITEDB, "| $tace -tsuser cds_est_connection_fixfile /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
+#  print WRITEDB $command;
+#  close WRITEDB;
   
   #split GFF prior to UTR generation if not already done by BLAT routine
   unless ( -e "/$logdir/UTR_gff_dump" ){
