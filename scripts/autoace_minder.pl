@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2004-05-11 13:31:38 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2004-06-02 10:08:15 $
 
 
 
@@ -978,7 +978,7 @@ sub blat_jobs{
     print LOG "Finishing acecompress.pl at ",&runtime,"\n\n";
       
     # make blat job specific lock file
-    system("touch $logdir/$flag{'B6_$job'}");
+    system("touch $logdir/$flag{"B6_$job"}");
     
   }
   # generic lock file
