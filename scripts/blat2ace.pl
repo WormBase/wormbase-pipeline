@@ -21,7 +21,7 @@
 # 010905 by Kerstin Jekosch
 
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2003-05-22 08:20:47 $
+# Last edited on: $Date: 2003-06-12 16:03:36 $
 
 
 use strict;
@@ -151,7 +151,7 @@ while (<BLAT>) {
   #############################################################
 	
   my $est = $f[9];
-  if (($opt_e)  && (exists $EST_name{$est})) {
+  if (( $opt_e || $opt_y )  && (exists $EST_name{$est})) {
     my $estname  = $EST_name{$est};
     if ($est ne $estname) {
       print LOG "EST name '$est' was replaced by '$estname'\n\n";
