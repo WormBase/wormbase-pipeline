@@ -8,7 +8,7 @@
 # 031023 dl1
 
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2004-09-08 10:58:18 $
+# Last edited on: $Date: 2005-01-20 12:36:26 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -32,7 +32,6 @@ my $maintainers = "All";
 our $log;
 
 my $debug;              # debug mode
-my $verbose;            # verbose mode
 my $help;               # Help/Usage page
 my $mrna;               # mRNA data
 my $ncrna;              # ncRNA data
@@ -47,7 +46,6 @@ GetOptions (
 	    "est"            => \$est,
 	    "ost"            => \$ost,
             "debug:s"        => \$debug,
-	    "verbose"        => \$verbose,
             "help"           => \$help,
             "h"              => \$help
 	    );
@@ -63,7 +61,6 @@ if ($debug) {
 
 &create_log_files;
 
-
 # datafiles for input
 our %datafiles = (
 		  "mrna"  => "/nfs/disk100/wormpub/analysis/ESTs/elegans_mRNAs",
@@ -72,40 +69,57 @@ our %datafiles = (
 		  "ost"   => "/nfs/disk100/wormpub/analysis/ESTs/elegans_OSTs"
 		  );
 
+# valid Feature_data methods
+our @valid_methods = (
+		      "TSL",                                          # TSL data
+		      "polyA",                                        # polyA tail sequences
+		      "poly_nucleotide",                              # poly nucleotide sequences (e.g. 5' AAAAAAA)
+		      "BLAT_discrepency",                             # General method for BLAT problems
+		      "vector"                                        # Vector sequences
+		      );
+
+our $valid_methods = join(' ', @valid_methods);
+
 # transcript accessions to names from a hash in common data
 
-print "// Reading EST_names.dat hash\n\n" if ($verbose);
+print "// Reading EST_names.dat hash\n\n" if ($debug);
 our %EST_name = &FetchData('NDBaccession2est');
-print "// Finished reading EST_names.dat hash\n\n" if ($verbose);
+print "// Finished reading EST_names.dat hash\n\n" if ($debug);
 
 # which database
 my $dbdir = "/wormsrv2/autoace";
 my $tace  = &tace;                                    # tace executable path
-
 my $acc;                                              # accession for the entry
 my $id;                                               # id for the entry
 my $seq;                                              # raw sequence for the entry
 my %sequence;                                         # 
 my @features;                                         # list of feature_data objects for the sequence
 my $feature;                                          #
-my ($type,$start,$stop,$length,$remark);              #
+my $no_features;
+my ($type,$method,$start,$stop,$length,$remark);      #
 my ($cut_to,$cut_from,$cut_length,$newseq);           #
 my $seqmasked;                                        #
 my $seqlength;                                        #
 my $masked;                                           # No of entries masked
+my $ignored;                                          # No of entries ignored
+my $ignore;
 
 # which data file to parse
-$masked = &MaskSequence($datafiles{mrna}) if ($mrna || $all);
-print LOG &runtime, ": masked $masked mRNA sequences\n" if ($mrna || $all);
+$masked = &MaskSequence($datafiles{mrna})  if ($mrna || $all);
+print LOG &runtime, ": masked $masked mRNA sequences\n"   if ($mrna || $all);
+print LOG &runtime, ": ignored $ignored mRNA sequences\n" if ($mrna || $all);
 
 $masked = &MaskSequence($datafiles{ncrna}) if ($ncrna || $all);
-print LOG &runtime, ": masked $masked ncRNA sequences\n" if ($ncrna || $all);
+print LOG &runtime, ": masked $masked ncRNA sequences\n"   if ($ncrna || $all);
+print LOG &runtime, ": ignored $ignored ncRNA sequences\n" if ($ncrna || $all);
 
-$masked = &MaskSequence($datafiles{est})  if ($est || $all);
-print LOG &runtime, ": masked $masked EST sequences\n" if ($est || $all);
+$masked = &MaskSequence($datafiles{est})   if ($est || $all);
+print LOG &runtime, ": masked $masked EST sequences\n"   if ($est || $all);
+print LOG &runtime, ": ignored $ignored EST sequences\n" if ($est || $all);
 
-$masked = &MaskSequence($datafiles{ost})  if ($ost || $all);
-print LOG &runtime, ": masked $masked OST sequences\n" if ($ost || $all);
+$masked = &MaskSequence($datafiles{ost})   if ($ost || $all);
+print LOG &runtime, ": masked $masked OST sequences\n"   if ($ost || $all);
+print LOG &runtime, ": ignored $ignored OST sequences\n" if ($ost || $all);
 
 print LOG "\n";
 print LOG "=============================================\n";
@@ -130,7 +144,7 @@ exit(0);
 sub MaskSequence {
     my $data   = shift;
     my $masked = 0;
-    my $ignore ;
+    my $ignored = 0;
 
     # connect to database
     print  "Opening database for masking $data ..\n" if ($debug);
@@ -155,7 +169,10 @@ sub MaskSequence {
     while (<INPUT>) {
 	chomp;
 	next if ($_ eq "");                 # catch empty lines
-	if ($skip == 1) {$skip--;next;}     # skip first bad entry
+	if ($skip == 1) {                   # skip first bad entry
+	    $skip--;
+	    next;
+	}
 	
 	if (/^(\S+)\s+\S+.+\n/) {           # deal with accessions {$acc} and WormBase internal names {$id}
 	    $acc = $1;
@@ -163,52 +180,58 @@ sub MaskSequence {
 		$id  = $EST_name{$acc};
 	    }
 	    else {
-		print "// ERROR: No accession-id connection for this sequence [$acc]\n" if ($verbose || $debug);
+#		print "// ERROR: No accession-id connection for this sequence [$acc]\n" if ($debug);
 		$EST_name{$acc} = $acc;
 		$id = $acc;
 	    }
 	}
-	$seq = "$'";                        # assign the rest of the string to $seq
-	$seq =~ s/[^gatcn]//g;              # remove non-gatcn characters (i.e. newlines)
-	$seqmasked = $seq;                  # copy sequence to masked file and
-	$seqlength = length ($seq);         # calculate the length of the sequence
-	
-	print "-> Parsing $acc [$id]\n" if ($verbose);	
+	$seq = "$'";                                  # assign the rest of the string to $seq
+	$seq =~ s/[^gatcn]//g;                        # remove non-gatcn characters (i.e. newlines)
+	$seqmasked = $seq;                            # copy sequence to masked file and
+	$seqlength = length ($seq);                   # calculate the length of the sequence
 
 	# fetch the sequence object from the database. push the feature_data objects to memory
 	my $obj = $db->fetch(Sequence=>$id);
 	if (!defined ($obj)) {
-	    print "ERROR: Could not fetch sequence $id \n" if ($debug);
+	    print "ERROR: Could not fetch sequence $id \n\n" if ($debug);
 	    next;
 	}
 	
-	@features = $obj->Feature_data(1);
+	# fetch the feature_data for the database object
+	@features = $obj->Feature_data;                          # ?Method tag (i.e. SL1/SL2/polyA)
+	$no_features = scalar (@features);                       # Number of features to parse
 	
-	if ( scalar (@features) == 0) {
-	    print "ERROR: No Features to parse \n\n" if ($debug);
+	if ($no_features == 0) {
+	    print "WARNING: No Features to parse from $id\n\n" if ($debug);
 	}
 	else {
-	    foreach $feature (@features) {
-		print "\n// parse $feature\n" if ($verbose);
+	    for (my $i=0; $i < $no_features; $i++) {             # loop through each attached ?Feature_data
+		($type) = $features[$i] =~ (/^$id\:(\S+)/);
 		
-		$type  = $obj->Feature_data->Feature(1);         # Feature type (e.g. SL1,SL2,polyA)
-		if (defined($type)) {
-		    $start = $obj->Feature_data->Feature(2);         # start coord
-		    $stop  = $obj->Feature_data->Feature(3);         # stop coord
-		  
-		    $cut_to     = $start - 1;                        # manipulations for clipping 
-		    $cut_from   = $stop;
-		    $cut_length = $stop - $start + 1;
-		    
-		    if ($cut_to < 0 ) {$cut_to = 0;}                 # fudge to ensure non-negative clipping coords
-		    
-		    print "$acc [$id]: '$type' $start -> $stop [$cut_to : $cut_from ($cut_length)]\n" if ($debug);
-		    print "// # $acc [$id] $type:" . (substr($seq,$cut_to,$cut_length)) . " [$start - $stop]\n\n" if ($verbose);
-		    $newseq = (substr($seqmasked,0,$cut_to)) . ('n' x $cut_length)  . (substr($seqmasked,$cut_from));
-		    $seqmasked = $newseq;
-		}
-	    }
+		next unless ($valid_methods =~ /$type/);         # only mask valid Feature_data methods
 
+		$method = $features[$i]->Feature(1);
+		$start  = $features[$i]->Feature(2);
+		$stop   = $features[$i]->Feature(3);
+		
+		unless ((defined $start) && (defined $stop)) {
+		    print LOG "// ERROR: No coordinates for the $method feature in $id\n";
+		    next;
+		}
+
+		print "// Parse $features[$i]\t$start - $stop\n" if ($debug);
+
+		$cut_to     = $start - 1;                        # manipulations for clipping 
+		$cut_from   = $stop;
+		$cut_length = $stop - $start + 1;
+		    
+		if ($cut_to < 0 ) {$cut_to = 0;}                 # fudge to ensure non-negative clipping coords
+		    
+		print "// $acc [$id] $method:" . substr($seq,$cut_to,$cut_length) . " [$start - $stop]\n\n" if ($debug);
+		$newseq = substr($seqmasked,0,$cut_to) . ('n' x $cut_length)  . substr($seqmasked,$cut_from);
+		$seqmasked = $newseq;
+	    }
+	    
 	    # increment count of sequences masked
 	    $masked++;
 	    
@@ -216,13 +239,14 @@ sub MaskSequence {
 	
 	# Is the Ignore tag set?
 
-	my $ignore = $obj->Ignore;        # Ignore tag set?
+	$ignore = $obj->Ignore;        # Ignore tag set?
 	unless (defined $ignore) {
 	    # output masked sequence
-	    print OUTPUT ">$acc $id\n$seqmasked\n";
+	    print OUTPUT "\n>$acc $id\n$seqmasked\n";
 	}
 	else {
-	    print "\n// Ignore tag set for $acc $id\n\n" if ($verbose);
+	    print "\n// Ignore tag set for $acc $id\n\n" if ($debug);
+	    $ignored++;
 	}	
 	undef $ignore;
 	
@@ -235,7 +259,7 @@ sub MaskSequence {
 
     close OUTPUT;
 
-    return ($masked);
+    return ($masked,$ignored);
 }
 #_ end MaskSequence _#
 
@@ -318,8 +342,6 @@ transcriptmasker.pl OPTIONAL arguments:
 =item -mrna, process mRNA datafile 
 
 =item -debug <user>, Debug mode - log file only goes to named user
-
-=item -verbose, Verbose mode toggle on extra command line output
 
 =item -help, these help pages
 
