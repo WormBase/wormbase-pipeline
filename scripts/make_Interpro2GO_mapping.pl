@@ -7,7 +7,7 @@
 # Gets latest Interpro:GO mappings from XXXX and puts info in to ace file
 #
 # Last updated by: $Author: krb $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2003-12-01 11:54:26 $                        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2004-03-10 14:11:59 $                        # quickly see when script was last changed and by whom
 
 
 use strict;
@@ -121,7 +121,7 @@ close LOG;
 
 #### use Wormbase.pl to mail Log ###########
 my $name = "make_Interpro2GO_mapping";
-$maintainers = "ar2\@sanger.ac.uk";
+
 &mail_maintainer ($name,$maintainers,$log);
 #########################################
 
