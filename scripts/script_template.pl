@@ -6,14 +6,14 @@
 #
 # This is a example of a good script template   
 #
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2003-03-27 14:46:32 $      
+# Last updated by: $Author: krb $     
+# Last updated on: $Date: 2003-04-03 13:18:18 $      
 
 use strict;                                      
 use lib "/wormsrv2/scripts/";                    
 use Wormbase;
 use Getopt::Long;
-
+use Carp;
 
 ######################################
 # variables and command-line options # 
