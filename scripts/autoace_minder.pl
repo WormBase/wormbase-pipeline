@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-09-03 09:56:09 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2004-09-15 12:41:53 $
 
 
 
@@ -165,7 +165,6 @@ our %flag = (
 	     'B2:ERROR'    => 'B2:ERROR_in_dumping_DNA',
  	     'B3'          => 'B3:Made_agp_files',
 	     'B3:ERROR'    => 'B3:ERROR_in_agp_files',
-	     'B5'          => 'B5:Copy_to_midway',
 	     'B6'          => 'B6:BLAT_analysis',
 	     'B6_est'      => 'B6a:BLAT_analysis_EST',
 	     'B6_mrna'     => 'B6b:BLAT_analysis_mRNA',
@@ -238,7 +237,6 @@ LOG->autoflush();
 &make_agp		if ($agp);
 
 
-# B5:Copy_to_midway
 # Run blat_them_all.pl -dump
 # Requires: A1,A4,A5,B1
 &prepare_for_blat       if ($prepare_blat);
@@ -917,12 +915,6 @@ sub prepare_for_blat{
   $am_option = "-prepare_blat";
   &usage(15) if (-e "$logdir/$flag{'B3:ERROR'}");
   
-  # TransferDB the current autoace to safe directory 
-  &run_command("$scriptdir/TransferDB.pl -start $basedir/autoace -end $basedir/autoace_midway -database -wspec -name autoace_midway");
-
-  # make a copy_autoace_midway log file in /logs
-  system("touch $logdir/$flag{'B5'}");  
-
   # transcriptmasker run to mask ?Feature_data from raw sequences
   # note to krb. This needs bradnamisation to allow a -all flag.
 
@@ -945,9 +937,6 @@ sub blat_jobs{
 
   my $blat_dir = "$basedir/autoace/BLAT";
 
-  # Also check that autoace has been copied to autoace_midway
-  &usage(16) unless (-e "$logdir/$flag{'B5'}");
-  
   # what blat jobs should I run? Do everything if blat_all selected
   # nematode should always be last job to tackle
 
@@ -1601,11 +1590,8 @@ sub usage {
 	exit(0);
     }
     elsif ($error == 16) {
-	# atempted BLAT analysis without copying to autoace_midway 
-	print "\nautoace build aborted:\n";
-	print "The '$flag{'B5'} flag is absent indicating that the copy of autoace has not been made. \n";
-	print "You must add this file if you want to run the BLAT analysis or run autoace_minder.pl -prepare_blat.\n\n";
-	exit(0);
+      # DEPRECATED - dont copt to midway anymore
+
     }
     elsif ($error == 17) {
 	# atempted agp creation without clearing DNA/composition error file
