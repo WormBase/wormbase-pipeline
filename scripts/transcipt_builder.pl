@@ -153,10 +153,10 @@ foreach my $chrom ( @chromosomes ) {
       my @transcript_span = @{ $genes_span{$gene} };
 
       #transcript object
-      print ACE "\nTranscript : \"$gene\"\n";
+      print ACE "\nTranscript : \"$gene\"\nSpecies \"Caenorhabditis elegans\"\n";
       foreach my $cdna (@{$gene2cdnas{$gene}}) { # iterate thru array of cDNAs ( 1 per gene )
 
-	print ACE "matching_CDNA \"$cdna\"\n";
+	print ACE "Matching_cDNA \"$cdna\"\n";
 	foreach my $cExon(keys %{$cDNA{$cdna}} ){ #  then thru exons of the cDNA
 
 	  next if( defined $transcript{$cExon} and  $transcript{$cExon} == $cDNA{$cdna}->{$cExon} ); #skip if the cDNA exon is same as one in transcript
@@ -193,29 +193,29 @@ foreach my $chrom ( @chromosomes ) {
       my @exons = (sort { $transcript{$a} <=> $transcript{$b} } keys %transcript);
       foreach (@exons) {
 	if( $genes_span{$gene}->[2] eq "+"){
-	  print ACE "source_exons ",$_ - $exons[0] + 1," ",$transcript{$_} - $exons[0]+1," \n"; # + strand
+	  print ACE "Source_exons ",$_ - $exons[0] + 1," ",$transcript{$_} - $exons[0]+1," \n"; # + strand
 	}
 	else {
-	  print ACE "source_exons ",$transcript{$exons[-1]} - $transcript{$_} + 1 ," ",$transcript{$exons[-1]} - $_ + 1 ," \n"; # - strand
+	  print ACE "Source_exons ",$transcript{$exons[-1]} - $transcript{$_} + 1 ," ",$transcript{$exons[-1]} - $_ + 1 ," \n"; # - strand
 	}
       }
       ($chrom) = $gff =~ /.*_(\w+)/ if $gff;
       my($source, $x, $y ) = $coords->LocateSpan("$chrom",$exons[0],$transcript{$exons[-1]});
       $transcript_span{"$gene.trans"} = [ ($exons[0],$transcript{$exons[-1]}) ];
-      print ACE "Sequence $source\n";
-      print ACE "method transcript\n";
+      print ACE "Sequence \"$source\"\n";
+      print ACE "Method \"transcript\"\n";
 
       # parent object
-      print ACE "\nSequence : $source\n";
+      print ACE "\nSequence : \"$source\"\n";
       if( $genes_span{$gene}->[2] eq "+"){
-	print ACE "transcript_child $gene $x $y\n"; # + strand
+	print ACE "Transcript_child $gene $x $y\n"; # + strand
       }
       else {
-	print ACE "transcript_child $gene $y $x\n"; # - strand
+	print ACE "Transcript_child $gene $y $x\n"; # - strand
       }   
 
       #link gene to transcript
-      print ACE "\nSequence $gene\n";
+      print ACE "\nSequence \"$gene\"\n";
       print ACE "Corresponding_transcript $gene\n" 
     }
   }
