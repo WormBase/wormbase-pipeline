@@ -63,7 +63,7 @@ print LOG "# cvs version: $cvs_version\n\n";
 print LOG "WormBase version : WS${WS_version}\n";
 
 print LOG "======================================================================\n";
-print LOG "  -a : executes all of the following -eio\n" if ($opt_a);
+print LOG "  -a : executes all of the following -eiolw\n" if ($opt_a);
 print LOG "  -e : executes estcheck\n"                  if ($opt_e);
 print LOG "  -i : executes introncheck\n"               if ($opt_i);
 print LOG "  -o : executes overlapcheck\n"              if ($opt_o);
@@ -119,12 +119,12 @@ sub runoverlapcheck {
 }
  
 sub runcopy2web {
-    system ("/wormsrv2/scripts/copy2web.pl \&") && die "Cannot execute copy2web.pl $!\n";
+    system ("/wormsrv2/scripts/copy2web.pl") && die "Cannot execute copy2web.pl $!\n";
     print LOG "Run copy2web.pl\n";
 }
 
 sub run_list_loci_designations {
-    system ("/wormsrv2/scripts/list_loci_designations \&") && die "Cannot execute list_loci_desinations $!\n";
+    system ("/wormsrv2/scripts/list_loci_designations") && die "Cannot execute list_loci_desinations $!\n";
     print LOG "Run list_loci_designations\n";
 }
   
