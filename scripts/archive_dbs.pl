@@ -49,8 +49,7 @@ system ("rm -rf $WS_old") && die "Couldn't remove old directory\n";
 
 
 # now do the same thing to archive the old wormpep version
-my $wormpep_ver = &get_wormpep_version;
-my $old_wormpep = "$db_path/WORMPEP/wormpep".($wormpep_ver-3);
+my $old_wormpep = "$db_path/WORMPEP/wormpep".($WS_current-3);
 
 if(-d $old_wormpep){
   print LOG "\nCreating $old_wormpep archive\n";
