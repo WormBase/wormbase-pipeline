@@ -1199,7 +1199,9 @@
                    Description   UNIQUE ?Text
 		   Molecular_weight Text #Evidence
           Origin   Species UNIQUE ?Species   //XREF Protein in geneace
-                   Wormpep History Int Text ?Text //new history logging [020801 krb]
+                   Wormpep
+		   Brigpep // to help flag Brigpep proteins as a subclass
+		   History Int Text ?Text //new history logging [020801 krb]
                    Live       // new tag to replace use of 'Inactive' krb 06/12/01
           Visible       Corresponding_CDS ?CDS XREF Corresponding_protein
                         Reference ?Paper XREF Protein
