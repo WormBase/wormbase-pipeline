@@ -7,7 +7,7 @@
 # Script to make ?Transcript objects
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-09-29 15:34:06 $  
+# Last updated on: $Date: 2003-09-29 16:22:35 $  
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -69,6 +69,12 @@ my @ordered_genes;
 my $transcript_dir = "$database/TRANSCRIPTS";
 &run_command("mkdir $transcript_dir") unless -e "$transcript_dir";
 &run_command("rm -f $transcript_dir/*");
+
+
+my $coords;
+# write out the transcript objects
+# get coords obj to return clone and coords from chromosomal coords
+$coords = Coords_converter->invoke($database);
 
 $gff_file = $gff if $gff;
 
@@ -157,14 +163,11 @@ foreach my $chrom ( @chromosomes ) {
   #This is the place to check for paired reads that dont overlap a gene model
 
 
-  my $coords;
-  # write out the transcript objects
   if( $transcript ) {
-    open (ACE,">$transcript_dir/transcripts_$chrom.ace") or die "transcripts\n";
-    # get coords obj to return clone and coords from chromosomal coords
-    $coords = Coords_converter->invoke($database);
+    open (ACE,">$transcript_dir/transcripts_$chrom.ace") or die "Can't open transcripts_$chrom.ace\n";
   }
-  
+
+
   foreach my $gene (keys %gene2cdnas) {
     print  "$gene matching cDNAs => @{$gene2cdnas{$gene}}\n" if $report;
     print "$gene matches ",scalar(@{$gene2cdnas{$gene}}),"\n" if $count;
@@ -551,6 +554,7 @@ sub checkOverlappingTranscripts  {
 	    next TRANS if &checkIsos(\$gene1, \$gene2, *OLT) == 1;
 	  }
 	}
+	next if (($i+$j)>$trans_count);
 	next unless $transcript_span{ $ordered_transcripts[$i+$j] };
        if ( $transcript_span{ $ordered_transcripts[$i] }->[1] > $transcript_span{ $ordered_transcripts[$i+$j] }->[0] ) {
 	 {
