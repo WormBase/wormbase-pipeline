@@ -990,7 +990,7 @@
 	Visible Locus ?Locus XREF CDS
 		Corresponding_transcript UNIQUE ?Transcript XREF Corresponding_CDS // links CDS' to new-style ?Transcript
                                                                                    // objects, 1-to-1 relationship
-		Corresponding_protein UNIQUE ?Protein XREF Corresponding_CDS
+		Corresponding_protein UNIQUE ?Protein XREF Corresponding_CDS #Evidence
 		Corresponding_PCR_product ?PCR_product XREF Overlaps_CDS // added for PCR mappings [010419 dl]
 		Matching_cDNA ?Sequence XREF Matching_CDS
 		Matching_UTR ?UTR XREF Matching_CDS // added for UTR model [krb 020729]
