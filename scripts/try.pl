@@ -12,9 +12,11 @@ my (%camace, %stlace, %autoace);
 my $camdb     = Ace->connect(-path => '/wormsrv2/camace/') || die "Couldn't connect to  camace\n", Ace->error;
 my @camclones = $camdb->fetch(-query => 'FIND Genome_Sequence');
 foreach my $camclone (@camclones) {
-	$camace{$camclone} = 1;
+	#my @string = $camclone->fetch(-query => 'FOLLOW Confidential_remark');
+	my $string = $camclone->Confidential_remark(1);
+	print "$string", "\n" if (defined $string);
+	$camace{$camclone} = 1 unless (($string =~ /not in Cambridge LINK/) || ($string =~ /Louis/));
 }
-
 
 my $stldb     = Ace->connect(-path => '/wormsrv2/stlace/') || die "Couldn't connect to  stlace\n", Ace->error;
 my @stlclones = $stldb->fetch(-query => 'FIND Genome_Sequence');
@@ -30,6 +32,6 @@ foreach my $autoclone (@autoclones) {
 }
 
 
-foreach my $clone (sort keys %autoace) {
-	print "$clone\n" if ((!exists $stlace{$clone}) && (!exists $camace{$clone})) 	
-}
+#foreach my $clone (sort keys %autoace) {
+#	print "$clone\n" if ((!exists $stlace{$clone}) && (!exists $camace{$clone})) 	
+#}
