@@ -103,7 +103,7 @@ foreach my $chrom (@chrom) {
     # get the ESTs above a certain thresholdthreshold and certain match length #
     ############################################################################
 			
-            elsif (($fields[1] =~ /^EST_GENOME/ && $fields[5] > $ESTth) && (($fields[4] - $fields[3]) > $ESTlength)) {
+            elsif (($fields[1] =~ /^BLAT_EST_BEST/ && $fields[5] > $ESTth) && (($fields[4] - $fields[3]) > $ESTlength)) {
                 $fields[8] =~ /Sequence:(\S+)\"/;
                 $name = $1;
                 $estcount{$name}++;
