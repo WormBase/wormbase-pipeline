@@ -1,0 +1,182 @@
+#!/usr/local/bin/perl5.6.0 -w                   
+#
+# make_Interpro2GO_mapping.pl 
+# 
+# by Anthony Rogers
+#
+# Gets latest Interpro:GO mappings from XXXX and puts info in to ace file
+#
+# Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
+# Last updated on: $Date: 2002-08-07 16:16:39 $                        # quickly see when script was last changed and by whom
+
+
+use strict;                                     
+use lib "/wormsrv2/scripts/";                    
+use Wormbase;
+
+# Try to keep different parts of code cleanly separated using comments...
+
+##############
+# variables  #                                                                   #
+##############
+
+# Most checking scripts should produce a log file that is a) emailed to us all 
+# and b) copied to /wormsrv2/logs
+
+my $maintainers = "All";
+my $rundate     = `date +%y%m%d`; chomp $rundate;
+my $runtime     = `date +%H:%M:%S`; chomp $runtime;
+our $log        = "/wormsrv2/logs/make_Interpro2GO_mapping.$rundate";
+my $latest_version = "/wormsrv2/tmp/newip2gos";
+
+open (LOG, ">$log") or die "cant open $log";
+
+print LOG "$0\n";
+print LOG "started at ",`date`,"\n";
+print LOG "=============================================\n";
+print LOG "\n";
+
+my $get_latest = 1;
+if( $get_latest == 1)
+  {
+    #Get the latest version
+    print LOG "Attempting to FTP the latest version from ebi \n";
+    `wget -O $latest_version ftp://ftp.ebi.ac.uk/pub/databases/interpro/interpro2go`;
+   
+  }
+else {
+  print LOG "Using the existing version of interpro2go mapping file (ie not FTPing latest)\n";
+}
+
+print LOG "\n\nOpening file $latest_version . . \n";
+open (I2G,"<$latest_version") or die "cant open $latest_version\n";
+
+my %interpro_des;   #IPR000018 => "P2Y4 purinoceptor"
+my %interpro_GO;    #GO:0004930 GO:0016020
+my $ip;
+my @data;
+my $description;
+my $i;
+
+
+print LOG "\treading data . . . \n";
+while (<I2G>)
+  {
+    @data = split(/\s+/,$_);
+    $description = "";
+    if( $data[0] =~ m/:(IPR\d{6})/ )
+      {
+	$ip = $1;
+      	unless( defined($interpro_des{$ip}) )
+	  {
+	    $i = 1;
+	    while ($data[$i] ne ">")
+	      {
+		$description .= "$data[$i] ";
+		$i++;
+	      }
+	    $interpro_des{$ip} = $description;
+	  }
+	if( $_ =~ m/(GO:\d{7})/g )
+	  {
+	    $interpro_GO{$ip} .= "$1 ";
+	  }
+      }
+  }
+close I2G;
+print LOG "\tabout to write ace file  .  .  \n";
+
+#now write .ace file
+
+#Motif : "INTERPRO:IPR000018"
+#Title    "P2Y4 purinoceptor"
+#Database         "INTERPRO" "IPR000018" "IPR000018"
+#GO_term  "GO:0004930"
+#GO_term  "GO:0005624"
+
+open (I2GACE, ">/wormsrv2/tmp/interpro2go.ace") or die "cant write ace file\n";
+foreach my $key (keys %interpro_des)
+  {
+    print I2GACE "Motif : \"INTERPRO:$key\"\n";
+    print I2GACE "Title \"$interpro_des{$key}\"\n";
+    print I2GACE "Database \"INTERPRO\" \"$key\" \"$key\"\n";
+    @data = split(/\s+/,"$interpro_GO{$key}");
+    foreach (@data){
+      print I2GACE "GO_term \"$_\"\n";
+    }
+    print I2GACE "\n";
+  }
+close I2GACE;
+
+print LOG "$0 finished at ",`date`,"\n\n";
+close LOG;
+
+#### use Wormbase.pl to mail Log ###########
+my $name = "make_Interpro2GO_mapping";
+$maintainers = "ar2\@sanger.ac.uk";
+&mail_maintainer ($name,$maintainers,$log);
+#########################################
+
+exit(0);
+
+
+
+__END__
+
+=pod
+
+=head2 NAME - script_template.pl
+
+=head1 USAGE
+
+=over 4
+
+=item script_template.pl  [-options]
+
+=back
+
+This script:
+
+ 1) checks to see if there are three existing (and unpacked) WS releases 
+ in /wormsrv2. If there are, then it archives the oldest release away into 
+ /wormsrv2/wormbase_archive
+ 2) Does a similar thing with Wormpep releases in /wormsrv2/WORMPEP
+ but 
+ 3) Runs GFFsplitter -a to archive away the last GFF_SPLITS directory
+ 4) Copies autoace into a separate WSxx directory
+ 5) updates the /wormsrv2/current_DB symlink to point to the directory created
+    in step 4.
+
+script_template.pl MANDATORY arguments:
+
+=over 4
+
+=item none
+
+=back
+
+script_template.pl  OPTIONAL arguments:
+
+=over 4
+
+=item -h, Help
+
+=back
+
+=head1 REQUIREMENTS
+
+=over 4
+
+=item This script must run on a machine which can see the /wormsrv2 disk.
+
+=back
+
+=head1 AUTHOR
+
+=over 4
+
+=item Keith Bradnam (krb@sanger.ac.uk)
+
+=back
+
+=cut
