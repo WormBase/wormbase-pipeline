@@ -8,15 +8,16 @@ use Getopt::Long;
 use Log_files;
 
 my $database = "/wormsrv2/autoace";
-my ($test, $gff, $no_ace);
+my ($test, $gff, $no_ace, $debug);
 GetOptions (
 	    'database:s' => \$database,
 	    'test'       => \$test,
 	    'gff'        => \$gff,
-	    'no_ace'     => \$no_ace
+	    'no_ace'     => \$no_ace,
+	    'debug:s'    => \$debug
 	   );
 
-my $log = Log_files->make_build_log($test);
+my $log = Log_files->make_build_log($debug);
 
 $log->write_to("Generating WBGene spans from database $database\n");
 
@@ -70,7 +71,7 @@ foreach my $chrom ( @chromosomes ) {
 	 ($data[1] eq "snRNA")
        ) {
       next if ( $data[2] eq "exon" or $data[2] eq "coding_exon" or $data[2] eq "intron" );
-      my ($gene) = $data[9] =~ /\"(\S+)\"/;
+      my ($gene) = $data[9] =~ /\"(\w+\.\w+?)/;
       $gene_coords{$gene} = [($data[3], $data[4], $data[6]) ];
     }
   }
