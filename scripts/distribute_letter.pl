@@ -8,8 +8,8 @@
 #                          /wormsrv2/autoace/release/
 #                          /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/current/release_notes.txt/
 #
-# Last updated by: $Author: krb $                       
-# Last updated on: $Date: 2004-03-18 17:43:05 $         
+# Last updated by: $Author: dl1 $                       
+# Last updated on: $Date: 2004-04-26 08:36:52 $         
 
 
 use strict;                                     
@@ -78,7 +78,7 @@ system "cd $targetdir; ln -s $release development_release";
 # Separate webpublish commands (for safety!) on the two top level directories that need updating
 ##############################################
 
-my $webpublish = "/nfs/WWW/bin/webpublish";
+my $webpublish = "/usr/local/bin/webpublish";
 
 #First update wormpep subdirectory
 chdir($www) || print LOG "Couldn't run chdir\n";
