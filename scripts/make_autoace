@@ -8,7 +8,7 @@
 # This makes the autoace database from its composite sources.
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-07-14 15:30:47 $
+# Last edited on: $Date: 2003-07-25 08:04:21 $
 
 
 $|=1;
@@ -611,13 +611,13 @@ sub buildrelease{
     my $remove1 = `\\rm $dbpath/release/database.$dbname.*.tar 2>/dev/null`;
     my $remove2 = `\\rm $dbpath/release/database.$dbname.*.tar.gz 2>/dev/null`;
     for (my $i = 0; $i < @tarfiles; ++$i) {
-      system("cd $dbpath; tar -hcf $dbpath/release/database.$dbname.4-$i.tar $tarfiles[$i]\"") && print LOG "Couldn't create tarfile\n";
+      system("cd $dbpath; tar -hcf $dbpath/release/database.$dbname.4-$i.tar $tarfiles[$i]\"");
 
       # list files in the tar archive
       system ("tar -tf $dbpath/release/database.$dbname.4-$i.tar >> $dbpath/release/files_in_tar");
       
       # gzip the tar archive
-      system ("/bin/gzip $dbpath/release/database.$dbname.4-$i.tar") && print LOG "ERROR: Couldn't create gzip file\n";
+      system ("/bin/gzip $dbpath/release/database.$dbname.4-$i.tar"); 
       
       # check consistency of gzip file
       system ("/bin/gzip -t $dbpath/release/database.$dbname.4-$i.tar.gz >> $dbpath/release/files_in_tar");
