@@ -1,47 +1,65 @@
-#!/usr/local/bin/perl
-###################################################
-##                                               ##
-## update_totals                                 ##
-## v 0.1                                         ##
-##                                               ##
-## dl                                            ##
-##                                               ##
-## Usage : update_totals                         ##
-##                                               ##
-###################################################
+#!/usr/local/bin/perl5.6.1 -w
+#
+# update_totals
+#
+# dl
+#
+# updates the sequencing totals on the external WWW site
+#
+# Usage : update_totals
+#
+# Last updated by: $Author: dl1 $
+# Last updated on: $Date: 2002-11-14 15:05:09 $
+#
+# see pod documentation (i.e. 'perldoc update_totals') for more information.
+#
+#####################################################################################################
 
-###################################################
-## v0.1                                          ##
-## 001103 : dl  : PP version                     ##
-##                                               ##
-###################################################
+
 
 #################################################################################
 # variables                                                                     #
 #################################################################################
 
 $|=1;
-require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
-use Getopt::Std;
+use strict;
+use Getopt::Long;
 
-my $maintainer = "dl1\@sanger.ac.uk";
-my $rundate = `date +%y%m%d`; chomp $rundate;
-my $runtime = `date +%H:%M:%S`; chomp $runtime;
-my $version = &get_script_version(update_totals);
+ ##############################
+ # paths etc                  #
+ ##############################
 
 my $cmid        = "/nfs/disk100/wormpub/analysis/cosmids/cmid";
 my $unfincmid   = "/nfs/disk100/wormpub/analysis/Sequence_Databases/unfincmid";
 my $composition = "/nfs/disk100/wormpub/bin.ALPHA/composition";
 my $count_fin   = "/nfs/disk2/sign/orginfo/celegans.fin";
 my $count_unfin = "/nfs/disk2/sign/orginfo/celegans.unfin";
+my $fin;
+my $unfin;
+
+ ##############################
+ # run time variables         #
+ ##############################
+
+
+my $maintainer = "dl1\@sanger.ac.uk";
+my $rundate = `date +%y%m%d`; chomp $rundate;
+my $runtime = `date +%H:%M:%S`; chomp $runtime;
 
  ##############################
  # command-line options       #
  ##############################
 
-$opt_h = "";   # Help/Usage page
-getopts ('h');
-&usage if ($opt_h);
+my $help;       # Help perdoc
+my $debug;      # Debug mode, verbose output to dl1 only
+
+GetOptions (
+            "debug"     => \$debug,
+            "help"      => \$help
+            );
+
+# help page
+&usage("Help") if ($help);
 
  ##############################
  # calculate finished total   #
@@ -53,6 +71,8 @@ while (<FIN>) {
 }
 close FIN;
 
+print "Finished sequences total $fin bp\n" if ($debug);
+
  ##############################
  # calculate unfinished total #
  ##############################
@@ -62,6 +82,8 @@ while (<UNFIN>) {
     ($unfin = $1) if (/(\d+)\s+total$/);
 }
 close UNFIN;
+
+print "Unfinished sequences total $unfin bp\n" if ($debug);
 
  ##############################
  # update celegans.fin        #
@@ -91,7 +113,6 @@ if (-e $count_unfin) {
 
 open (LOG,  "|/usr/bin/mailx -s \"WormBase Report: update_totals\" $maintainer ");
 print LOG "# update_totals\n";
-print LOG "# version         : $version\n";
 print LOG "# run details     : $rundate $runtime\n";
 print LOG "\n";
 print LOG "Finished sequence   : $fin\n";
@@ -106,22 +127,26 @@ exit(0);
 
 
 ###############################
-# Prints help and disappears
-#
+# Prints help and disappears  #
+###############################
+
 sub usage {
-    exec ('perldoc',$0);
- 
-    print "kkk\n";
-    exit (0);
+    my $error = shift;
+
+    if ($error eq "Help") {
+        # Normal help menu
+        system ('perldoc',$0);
+        exit (0);
+    }
 }
 
 __END__
 
 =pod
 
-=head2   NAME - update_totals
+=head2 NAME - update_totals
 
-=head1 USAGE
+=head2 USAGE
 
 =over 4
 
@@ -145,11 +170,11 @@ update_totals OPTIONAL arguments:
 
 =over 4
 
-=item -h, Help
+=item -help, Help
 
 =back
 
-=head1 CRON
+=head2 CRON
 
 =over 4
 
@@ -157,7 +182,7 @@ update_totals OPTIONAL arguments:
 
 =back
 
-=head1 INPUT
+=head2 INPUT
 
 The following files are required for update_totals to work:
 
@@ -169,7 +194,7 @@ The following files are required for update_totals to work:
 
 =back
 
-=head1 OUTPUT
+=head2 OUTPUT
 
 The following files are produced by update_totals:
 
@@ -181,28 +206,13 @@ The following files are produced by update_totals:
 
 =back
 
-=head1 REPORT LOGGING
+=head2 REPORT LOGGING
 
 The script writes a logfile which is mailed to the maintainer
 
+=head2 AUTHOR
 
-=head1 AUTHOR
-
-=over 4
-
-=item Daniel Lawson (dl1@sanger.ac.uk)
-
-=back
-
-=head1 VERSIONS
-
-=over 4
-
-=item v0.1
-
-=back
-
-PP version
+Dan Lawson (B<dl1@sanger.ac.uk>)
 
 =cut
 
