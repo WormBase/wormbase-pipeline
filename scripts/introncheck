@@ -7,7 +7,7 @@
 # Usage: introncheck [-options]
 #
 # Last updated by: $Author: dl1 $     
-# Last updated on: $Date: 2004-01-30 14:30:20 $      
+# Last updated on: $Date: 2004-01-30 14:33:15 $      
 
 #################################################################################
 # variables                                                                     #
@@ -110,9 +110,9 @@ foreach my $chromosome (@chromosomes) {
     # Confirmed_introns not in gene models
     
     # ignore some marked introns
-    print "discard as false : $line\n" if ($f[8] =~ /Confirmed_as_false/); 
+#    print "discard as false : $line\n" if ($f[8] =~ /Confirmed_as_false/); 
     next if ($f[8] =~ /Confirmed_as_false/);                # Bad BLAT mapping
-    print "discard as inconsistent : $line\n" if ($f[8] =~ /Confirmed_as_inconsistent/); 
+#    print "discard as inconsistent : $line\n" if ($f[8] =~ /Confirmed_as_inconsistent/); 
     next if ($f[8] =~ /Confirmed_as_inconsistent/);         # Can't make a valid CDS prediction from this
 
 #	 ( ($f[2] eq "intron") && ($f[1] eq "Coding_transcript") ) || 
@@ -121,7 +121,7 @@ foreach my $chromosome (@chromosomes) {
     if ( ( ($f[2] eq "intron") && ($f[1] eq ".") && (not $f[8] =~ /Confirmed_in_UTR/) ) || 
 	 ( ($f[1] eq "NDB_CDS") && (($f[8] =~ /Confirmed_by_EST/) || ($f[8] =~ /Confirmed_by_cDNA/) ) ) ) {
 
-      print "Parse : $line\n";
+#      print "Parse : $line\n";
       
       # print "Check through known intron coordinates: $f[3] $f[4]\n";
       
@@ -139,7 +139,7 @@ foreach my $chromosome (@chromosomes) {
       unless ($match == 1){	
 	
 	my @data = $coords->LocateSpan($f[0], $f[3], $f[4]);
-	print "Maps to $data[0] from $data[1] - $data[2]\n";
+#	print "Maps to $data[0] from $data[1] - $data[2]\n";
 
 	my $obj = $db->fetch(Sequence=>$data[0]);
 	my $lab;
@@ -160,13 +160,10 @@ foreach my $chromosome (@chromosomes) {
       }
     # end of parse loop  
     }
-    else {
-      print "discard : $line\n";
-    }
+#    else {
+#      print "discard : $line\n";
+#    }
 
-    # Short cut 
-    last if ($f[1] eq "tandem");
-    
   }
   close GFF;
   
@@ -188,7 +185,7 @@ sub numerically {
 #######################################################################
 
 sub run_details {
-    print "# dbcheck\n";     
+    print "# introncheck\n";     
     print "# run details    : $rundate $runtime\n";
     print "\n";
 }
