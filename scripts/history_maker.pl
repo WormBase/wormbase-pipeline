@@ -578,11 +578,16 @@ presents to the user a simple box with a space to enter a CDS name and a button 
 
 Enter current CDS name eg AC8.gc3 and click "Bless this gene".  This will create a new CDS with the correct name based on the "worm_genes" class.
 
+=item BLAST hit finder
+
+Using passed file, the user is presented with a list of genomic locations where there are strong blastp hits but no current gene.
+Click to go to that location in FMAP.
+
 The input to the acedb database is done immediately using 'xremote' and is visible after recalculating the fmap.  The target database is determined by the operating system as the last one to have been opened using the terminal that this script is run from.
 
 To ensure that the correct database is being used a shell script should be used to launch both simultaneously.
 
-A reference database is hardcoded ( at the moment ) and this is used to extract the relevant info needed to make a history ie source exons, gene_id etc.
+A reference database is used to extract the relevant info needed to make a history ie source exons, gene_id etc.and this is set with the -source option
 
 Some error checking is done so that;
 
