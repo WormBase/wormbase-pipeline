@@ -25,14 +25,17 @@ sub map_feature
   {
     my ($self, $seq, $flank_L, $flank_R) = @_;
     my $dna = $self->Sub_sequence($seq);
+  }
 
+sub _check_for_match
+  {
+    my ($self, $dna, $flank_L, $flank_R) = @_;
     my ($rev_left,$rev_right,$offset);
     my ($match_left,$match_right,$span);
 
     my $dna_length = length $dna;
 
-    print "length of $seq dna is $dna_length\n";
-    # scan forward strand
+    # check forward strand
     if ($dna =~ /$flank_L/) {
       $match_left = length ($`);
     }
@@ -46,22 +49,34 @@ sub map_feature
       $match_left += (length $flank_L) + 1;
     }
 
-    # match to rev strand
+    # check rev strand
     else  { 
       $rev_left     = $self->DNA_revcomp($flank_L);
       $rev_right    = $self->DNA_revcomp($flank_R);
 
       if ($dna =~ /$rev_left/) {
 	$offset = length ($`);
-	$match_left = $dna_length - $offset + 1;
+	$match_left = $offset + (length $flank_L) + 1;
       }
       if ($dna =~ /$rev_right/) {
 	$offset = length ($`);
-	$match_right = $dna_length - $offset - length $flank_R;
+	$match_right = $offset ;
       }
+      $self->swap(\$match_left, \$match_right);
     }
+    
+    if( $seq and $match_left and $match_right ){ 
+      return ($seq,$match_left,$match_right);
+    }
+    else {
+      return 0;
+    }
+  }
 
-    return ($seq,$match_left,$match_right);
-}
+
+
+
+
+
 
 1;

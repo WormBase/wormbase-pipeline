@@ -236,6 +236,9 @@ sub LocateSpan
     my $x = shift;
     my $y = shift;
 
+    #this doesn't handle single letter style chromosome names
+
+
     # if anything other than chromsome or superlink is passed you get back what you put in
     unless( $chrom =~ /CHROMOSOME/ or $chrom =~ /SUPERLINK/ ) { 
       my ($superlink, $chromosome, $seq);

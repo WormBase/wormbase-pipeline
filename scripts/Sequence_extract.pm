@@ -67,10 +67,11 @@ sub Sub_sequence
 #    # to extend past end of a seq obj use "+" and no of bases.
     if( $length and $length =~ /\+/) {
       $extend = substr($length,1);
+      $start -= $extend;
       undef $length;
     }
 
-    carp "no length given for sequence to extract - using full length of $seq\n" unless (defined $length);
+    #carp "no length given for sequence to extract - using full length of $seq\n" unless (defined $length);
 
     #passed seq is a SUPERLINK
     if( $seq =~ /SUPERLINK/ ) {
