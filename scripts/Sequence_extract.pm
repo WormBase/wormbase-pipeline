@@ -170,7 +170,7 @@ sub Sub_sequence
     }
     else {
       $chrom = $seq;
-      $start = 0;.
+      $start = 0;
     }
 
     $length = length($self->{SEQUENCE}->{"$chrom"}) unless $length; #full sequence of object.
