@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder [-options]
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2003-02-03 10:03:53 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2003-02-12 10:34:30 $
 
 
 #################################################################################
@@ -329,7 +329,7 @@ sub initiate_build {
 
   # update database.wrm using cvs
   print "Updating $cvs_file to include new WS number - using sed\n\n";
-  system ("sed 's/$WS_version/$WS_new_name/' < $cvs_file > ${cvs_file}.new");
+  system ("sed 's/WS${WS_version}/WS${WS_new_name}/' < $cvs_file > ${cvs_file}.new");
   system ("mv /wormsrv2/autoace/wspec/database.wrm.new $cvs_file");
   
   # make a log file in /wormsrv2/autoace/logs
