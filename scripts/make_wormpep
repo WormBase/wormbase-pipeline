@@ -40,7 +40,9 @@ use Getopt::Std;
 use IO::Handle;
 use Ace;
 use Socket;
-require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
+use lib '/wormsrv2/scripts/';
+use Wormbase;
+
     
  #######################################
  # Script variables (run)              #
@@ -49,6 +51,7 @@ require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
 my $maintainer = "dl1\@sanger.ac.uk, krb\@sanger.ac.uk, kj2\@sanger.ac.uk";
 my $rundate    = `date +%y%m%d`; chomp $rundate;
 my $runtime    = `date +%H:%M:%S`; chomp $runtime;
+my $version    = get_cvs_version($0);
 
  #######################################
  # command-line options                #
@@ -85,7 +88,11 @@ my $debug = $opt_d;
 my $dbdir = glob "/wormsrv2/autoace";
 my $wpdir = glob "/wormsrv2/WORMPEP/wormpep$old_release";
 my $new_wpdir = glob "/wormsrv2/WORMPEP/wormpep$release";
-my $tace = "/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_4/tace";
+#my $tace = "/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_4/tace";
+
+#tmp version to use to get around Smap/Schild problems
+my $tace = "/nfs/griffin2/rd/acedb/bin.ALPHA_4/tace";
+
 $ENV{'ACEDB'} = $dbdir;
 
 
