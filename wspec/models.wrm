@@ -203,11 +203,11 @@
 					    Deletion_with_insertion UNIQUE Text  #Evidence // for some KO alleles where material
 										 // is deleted and something else is 
 										 // also inserted
-	Affects Gene ?Locus XREF Allele #Allele_details  // New tag structure to handle allele cross-links [krb 021217]
-		Predicted_gene ?Sequence XREF Has_allele #Allele_details // Can't XREF to Allele tag
-		Transcript ?Transcript XREF Allele #Allele_details// added for two cases of RNA genes with alleles [021126 krb]
-		//Gene ?Gene XREF Allele #Allele_details // what this will becomee
-		//CDS ?CDS XREF Allele #Allele_details // awaiting gene model change
+	Affects Gene ?Locus XREF Allele  // New tag structure to handle allele cross-links [krb 021217]
+		Predicted_gene ?Sequence XREF Has_allele // Can't XREF to Allele tag
+		Transcript ?Transcript XREF Allele // added for two cases of RNA genes with alleles [021126 krb]
+		//Gene ?Gene XREF Allele  // what this will becomee
+		//CDS ?CDS XREF Allele  // awaiting gene model change
         Reference_Allele
 	Isolation	Author	Text	// Isolator - should be ?Author
 			Date	DateType
@@ -264,13 +264,6 @@
 	Method UNIQUE ?Method // necessary now that Allele is SMap [030106 krb]
 
 
-// New hash to hold more details of the Allele->Sequence/Gene/CDS connection.  What is the relationship
-// between the Allele and the Sequence/Gene that it overlaps with?
-
-#Allele_details UNIQUE Substitution 
-		       Deletion 
-		       Partial_deletion
-		       Insertion 
 
 ?Gene_Class     Evidence #Evidence
 		Phenotype ?Text
