@@ -323,7 +323,7 @@ sub update_existing_clone
     if ($clone ) {
       my $old_ver = $clone->embl_version();
 
-      if (defined $old_ver and ($ver > $old_ver) ) {
+      if (defined $old_ver and ($ver >= $old_ver) ) {
 	# update clone in database
 
 	#update the clone version and embl_version
@@ -331,7 +331,7 @@ sub update_existing_clone
 	$db_ver++;
 
 	&make_SQL_query($dbobj,"UPDATE clone SET version = $db_ver WHERE name = \"$acc\"");
-	&make_SQL_query($dbobj,"UPDATE clone SET embl_version = $ver WHERE name = \"$acc\"");
+	&make_SQL_query($dbobj,"UPDATE clone SET embl_version = $db_ver WHERE name = \"$acc\"");
 	&make_SQL_query($dbobj,"UPDATE clone SET modified = FROM_UNIXTIME($time) WHERE name = \"$acc\"");
 
 	#update contig
@@ -339,7 +339,7 @@ sub update_existing_clone
 	#each clone has only one contig
 	foreach my $contig ( @{$contigs} ) { 
 	
-	  # update the DNA 
+	  # update the DNA
 	  my $dna = $seqs{ $acc2clone{"$acc"} };
 	  my $seqstr;
  
@@ -358,7 +358,7 @@ sub update_existing_clone
 
 	  # update the contig
 	  my $length = length($seqstr);
-	  my $name = "$acc."."$ver."."1."."$length";
+	  my $name = "$acc."."$db_ver."."1."."$length";
 	  my $contig_id = $contig->dbID;
 	  my $contig_old_name = $contig->name;
 
@@ -396,21 +396,25 @@ sub make_SQL_query
 
 
 sub is_in_db {
-    my ($dbobj, $sv) = @_;
+    my ($clone_adaptor, $sv) = @_;
     my $clone;
 
     eval {
       /(\w+)\.(\d+)/;
       my $acc = $1;
       my $ver = $2;
-      $clone = $dbobj->fetch_by_accession_version($acc, $ver);
+      $clone = $clone_adaptor->fetch_by_accession_version($acc, $ver);
     };
     if (defined $clone) {
       my $dbseq = lc $clone->get_all_Contigs->[0]->seq;
       my $fasta_seq = $seqs{ $acc2clone{$acc} };
 
-      $log->write_to("$acc seq different in worm_dna and fasta\n") unless "$dbseq" eq "$fasta_seq";
-      return 1;
+      unless ("$dbseq" eq "$fasta_seq") {
+	$log->write_to("$acc seq different in worm_dna and fasta\n");
+	print "updating $sv due to sequence difference\n";
+	&update_existing_clone($clone_adaptor,$sv);
+	return 1;
+      }
     }
     else {
         return 0;
