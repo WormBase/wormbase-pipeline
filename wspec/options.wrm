@@ -56,6 +56,7 @@
 _VMap              -V -D GMAP  
 _VSequence         -V -D FMAP
 _VTranscript	   -V -D FMAP
+_VPseudogene	   -V -D FMAP
 _VClone            -V -D PMAP
 _VGenetic_code	   -V 
 
