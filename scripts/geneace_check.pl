@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-04-11 16:56:09 $
+# Last updated on: $Date: 2003-04-15 14:23:31 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -99,6 +99,7 @@ if(!@class){
   &process_sequence;
   &check_genetics_coords_mapping;
   &chech_reverse_physicals;
+  &check_evidence;
  }
  
 else{
@@ -112,6 +113,8 @@ else{
     if ($class =~ /(sequence|seq)/)        {&process_sequence}
     if ($class =~ /(mapping|map)/)         {&check_genetics_coords_mapping}
     if ($class =~ /(reverse|rev)/)         {&chech_reverse_physicals}
+    if ($class =~ /(reverse|rev)/)         {&chech_reverse_physicals}
+    if ($class =~ /(evidence|evi)/)        {&check_evidence}
   }  
 }
 
@@ -150,6 +153,85 @@ if ($cgc ne $JAHmsg){
 }
 
 exit(0);
+
+##########################################
+# Checking misuse of Evidence in 7 classes
+##########################################
+sub check_evidence {
+
+my $command=<<END;
+find locus * 
+show -a -f /tmp/locus_dump.ace
+
+find allele *
+show -a -f /tmp/allele_dump.ace
+
+find strain *
+show -a -f /tmp/strain_dump.ace
+
+find gene_class *
+show -a -f /tmp/geneclass_dump.ace
+
+find 2_point_data *
+show -a -f /tmp/2_pt_dump.ace
+
+find Multi_pt_data *
+show -a -f /tmp/multi_pt_dump.ace
+
+find Pos_neg_data *
+show -a -f /tmp/posneg_dump.ace
+
+save
+quit
+END
+
+  open (DUMP, "| $tace $default_db") || die "Failed to connect to Geneace";
+  print DUMP $command;
+  close DUMP;
+
+  system ("cat /tmp/locus_dump.ace /tmp/allele_dump.ace /tmp/strain_dump.ace /tmp/2_pt_dump.ace /tmp/multi_pt_dump.ace /tmp/posneg_dump.ace /tmp/geneclass_dump.ace > /tmp/class_dump.ace");
+ 
+  open(IN, "/tmp/class_dump.ace") || die $!;
+
+  my $evid_errors = 0;
+  my ($class, $obj, $tag, $name, $paper, $author);
+
+  while (<IN>){
+    if ($_ =~ /^(Locus) : \"(.+)\"/){$class = $1; $obj = $2}
+    if ($_ =~ /^(Allele) : \"(.+)\"/){$class = $1; $obj = $2}
+    if ($_ =~ /^(Strain) : \"(.+)\"/){$class = $1; $obj = $2}
+    if ($_ =~ /^(Gene_Class) : \"(.+)\"/){$class = $1; $obj = $2}
+    if ($_ =~ /^(2_point_data) : \"(.+)\"/){$class = $1; $obj = $2}     
+    if ($_ =~ /^(Multi_pt_data) : \"(.+)\"/){$class = $1; $obj = $2}  
+    if ($_ =~ /^(Pos_neg_data) : \"(.+)\"/){$class = $1; $obj = $2}  
+    
+    if ($_ =~ /(\w+)\s+.+Person_evidence\s+\"(.+)\"/){
+      $tag = $1;
+      $name = $2;
+      if ($name !~ /WBPerson\d+/){
+	$evid_errors++;
+	print "$class $obj has non-Person $name under main tag $tag\n";
+      }  
+    }
+    if ($_ =~ /(\w+)\s+.+Paper_evidence\s+\"(.+)\"/){
+      $tag = $1;
+      $paper = $2;
+      if ($paper !~ /\[.+]/){
+        $evid_errors++;
+	print "$class $obj has Paper $paper under main tag $tag\n";
+      }  
+    }
+    if ($_ =~ /(\w+)\s+.+Author_evidence\s+\"(.+)\"/){
+       $tag = $1;
+       $author = $2;
+      if ($author =~ /\w+\,\w+/ || $author =~ /\w+\,\s+\w+/){
+	$evid_errors++;
+	print "$class $obj has Author $author under main tag $tag\n";
+      }  
+    }
+  }
+  print "There are $evid_errors Evidence errors in 7 classes checked\n";
+}
 
 #######################
 # Process Locus class #
