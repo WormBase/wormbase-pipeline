@@ -5,7 +5,7 @@
 # written by Anthony Rogers (ar2@sanger.ac.uk)
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-07-03 14:32:08 $
+# Last updated on: $Date: 2002-07-03 15:24:11 $
 
 
 use strict;
@@ -202,7 +202,7 @@ close LOG;
 
 #inform any interested parties
 my $notify = $maintainer;
-    open (OUTLOG,  "|/usr/bin/mailx -s \"new genace updates\" $notify ");
+    open (OUTLOG,  "|/usr/bin/mailx -s \"new geneace updates\" $notify ");
 
         print OUTLOG "updated info linking loci to sequences is available from\n
 ftp-wormbase\/pub\/data\/updated_locus2seq\/\n
@@ -225,8 +225,8 @@ sub FindSequenceInfo #($sequence - genomic seq and $locus )
     unless(defined($database)){
       $database = "/wormsrv2/current_DB";
     }
-    my $log = "/wormsrv2/logs/locus2seq.log";
-    open(LOG,">>$log")|| die "cant open $log";
+    my $log = "/wormsrv2/logs/locus2seq.log.$rundate";
+    open(LOG,">>$log")|| die "cant append to $log";
     my $test_seq = $seq;
     my $autoace = Ace->connect($database) || die "cant connect to $database\n";
     my $solved = 0;
