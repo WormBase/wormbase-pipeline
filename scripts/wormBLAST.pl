@@ -4,8 +4,8 @@
 # 
 # written by Anthony Rogers
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2004-05-28 16:19:41 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2004-06-01 08:42:17 $
 
 
 use DBI;
@@ -401,8 +401,8 @@ if( $setup_mySQL )
 
 	# lock protein tables 
 	$lock_statement = "LOCK TABLES input_id_analysis WRITE, protein_feature WRITE;";
-	&single_line_query("$lock_statement", $worm_pep);
-	&single_line_query("$lock_statement", $worm_brigpep);
+	&update_database("$lock_statement", $worm_pep);
+	&update_database("$lock_statement", $worm_brigpep);
 	
 	# updates 
 	print "doing worm_pep updates . . . \n";
