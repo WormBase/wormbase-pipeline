@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: krb $
-// Last edited on: $Date: 2004-11-19 17:17:05 $
+// Last edited on: $Date: 2004-12-09 17:07:35 $
  
 
 
@@ -339,6 +339,7 @@
                           Acquires_merge ?Gene XREF Merged_into
                           Split_from UNIQUE ?Gene XREF Split_into
                           Split_into ?Gene XREF Split_from
+			  Made_into_transposon
                   Live  // remove live to make gene "dead"
         Gene_info Gene_class UNIQUE ?Gene_class XREF Genes
                   Laboratory ?Laboratory
