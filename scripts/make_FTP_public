@@ -145,9 +145,9 @@ print "move the contents of the wspec directory\n" if ($debug);
  
  # make a new pictures directory
 
-system "mkdir $targetdir/$release/pictures" unless -e "$targetdir/$release/pictures";
-print "make a new pictures directory : '$targetdir/$release/pictures'\n" if ($debug);
-system("cp /nfs/disk67/sylvia/geneace/pictures/* $targetdir/$release/pictures");
+#system "mkdir $targetdir/$release/pictures" unless -e "$targetdir/$release/pictures";
+#print "make a new pictures directory : '$targetdir/$release/pictures'\n" if ($debug);
+system("cp -r /nfs/disk67/sylvia/geneace/pictures/ $targetdir/$release/");
 print "copying picture files from ~sylvia/geneace to $targetdir/$release/pictures\n" if ($debug);
 
  # make a tar gzip file of pictures
