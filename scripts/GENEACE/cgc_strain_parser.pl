@@ -8,7 +8,7 @@
 # Page download and update upload to geneace has been automated [ck1]
 
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-12-03 16:53:53 $
+# Last updated on: $Date: 2004-12-03 16:57:59 $
 
 use strict;
 use Getopt::Long;
@@ -236,8 +236,8 @@ while(<INPUT>){
   $description =~ s/\"//g; 
   # change any URLs present else the double back slash will be treated as a comment
   $description =~ s/http:\/\//URL: /g;
-  print STRAIN "Remark \"$description\"\n" unless ($description eq "");
-  print DELETE_STRAIN  "-D Remark \"$description\"\n" unless ($description eq "");
+  print STRAIN "Remark \"$description\" Inferred_automatically \"From CGC strain data\"\n" unless ($description eq "");
+  print DELETE_STRAIN  "-D Remark \"$description\" Inferred_automatically \"From CGC strain data\"\n" unless ($description eq "");
 
 
   m/Mutagen: (.*?)Outcrossed:/;
