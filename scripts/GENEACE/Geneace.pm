@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-06-09 13:58:02 $
+# Last updated on: $Date: 2004-06-09 14:01:46 $
 
 package Geneace;
 
@@ -60,7 +60,7 @@ sub gene_info {
   $db = "/wormsrv1/geneace" if !$db;
   print "----- Doing Gene id <-> Gene_name conversion based on $db ... -----\n\n";
 
-  my $outfile = "geneace_dir/CHECKS/gene_info.tmp"; `chmod 777 $outfile`;
+  my $outfile = "$geneace_dir/CHECKS/gene_info.tmp"; `chmod 777 $outfile`;
   my (%gene_info, %seqs_to_Gene_id);
 
   my $gene_info="Table-maker -o $outfile -p \"$def_dir/geneace_gene_info.def\"\nquit\n" if $machine;
