@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: krb $
-// Last edited on: $Date: 2004-11-19 13:04:00 $
+// Last edited on: $Date: 2004-11-19 17:17:05 $
  
 
 
@@ -914,7 +914,6 @@
 		       Genomic_non_canonical ?Sequence XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info
 		       Nongenomic ?Sequence XREF Genomic_parent UNIQUE Int UNIQUE Int #SMap_info       // for Lincoln RNAi  [010226 dl]
 		       PCR_product ?PCR_product XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info // for Lincoln RNAi  [010226 dl]
-		       RNAi ?RNAi XREF Sequence UNIQUE Int UNIQUE Int #SMap_info                       // for Lincoln RNAi  [001213 dl]
 		       Operon ?Operon XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info           // for Operon data   [dl]
      		       AGP_fragment ?Sequence XREF AGP_parent Int UNIQUE Int #SMap_info		       // for Briggsae data [020726 krb]
 		       Allele ?Allele XREF Sequence UNIQUE Int UNIQUE Int #SMap_info		       // New SMapped Allele class [021217 krb]
@@ -960,7 +959,8 @@
 		  Paired_read ?Sequence XREF Paired_read          // dl 020110
 	  	  Reference ?Paper XREF Sequence
 		  Expr_pattern ?Expr_pattern XREF Sequence
-		  Confidential_remark ?Text
+		  RNAi ?RNAi XREF Sequence
+		  Confidential_remark ?Text		  
 		  Remark ?Text #Evidence
 		// tag2 system: names of all objects following next tag are shown in the 
 		//   general annotation display column as "tag:objname"
@@ -1369,6 +1369,8 @@
 		  Pep_homol ?Protein XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		  Motif_homol ?Motif XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		  Homol_homol ?Homol_data XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
+		  RNAi_homol ?RNAi XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info //added for RNAi mapping
+                                                                                              
 
 
 
@@ -1954,31 +1956,55 @@
 		Remark ?Text #Evidence //More comments on the transgene
 
 
-// RNAi from Lincoln Stein 001213
 
-?RNAi   SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF RNAi       // canonical parent (reliable)
-			     PCR_product UNIQUE ?PCR_product XREF RNAi // primer pair (reliable)
-	History_name UNIQUE ?Text
+//////////////////////////////////////////////////////////////////
+//
+// RNAi class
+// 
+// Initially from Lincoln Stein December, 2000
+//
+// Heavily modified by Igor November, 2004
+//
+//////////////////////////////////////////////////////////////////
+
+
+?RNAi   Evidence #Evidence
+        History_name UNIQUE ?Text
+        Homol Homol_homol ?Homol_data XREF RNAi_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
+        Sequence_info   DNA_text Text UNIQUE Text //stores actual probe sequence for automated mapping
+						  // 1st Text is DNA, 2nd is probe name
+                        Sequence ?Sequence XREF RNAi  //links to a real Sequence object used in the experiment 
+						      // such as yk clone; not UNIQUE anymore
+                        PCR_product ?PCR_product XREF RNAi // links to a PCR_product object used in 
+							   // the experiment; not UNIQUE anymore
+        Uniquely_mapped  //boolean; if present, signifies that ?RNAi object has a unique sequence 
+			// which maps to a single place in the genome
         Experiment      Laboratory ?Laboratory
                         Author ?Author
                         Date UNIQUE DateType
                         Strain UNIQUE ?Strain
+                        Genotype UNIQUE ?Text   //used when no Strain object exists
+                        Treatment UNIQUE ?Text
+                        Life_stage UNIQUE ?Life_stage
+                        Temperature UNIQUE Int
                         Delivered_by UNIQUE Bacterial_feeding      //RL [010327]
                                             Injection              //RL [010327]
                                             Soaking                //RL [010327]
                                             Transgene_expression   //RL [010327]
-        Inhibits	Predicted_gene ?CDS XREF RNAi_result  #Evidence // "gene" parent (unreliable)
-			Gene ?Gene   XREF RNAi_result #Evidence           //RL [010327]
-			Transcript ?Transcript XREF RNAi_result #Evidence // krb [021126]
-			Pseudogene ?Pseudogene XREF RNAi_result #Evidence // new [030801 krb]
-        Supporting_data Movie ?Movie XREF RNAi			   // added for Lincoln, krb [010807]
+        Inhibits        Predicted_gene ?CDS XREF RNAi_result  #Evidence // "gene" parent (unreliable)
+                        Gene ?Gene   XREF RNAi_result #Evidence           //RL [010327]
+                        Transcript ?Transcript XREF RNAi_result #Evidence // krb [021126]
+                        Pseudogene ?Pseudogene XREF RNAi_result #Evidence // new [030801 krb]
+        Supporting_data Movie ?Movie XREF RNAi    // added for Lincoln, krb [010807]
                         Picture ?Picture XREF RNAi
 	Species UNIQUE ?Species
-	Reference ?Paper XREF RNAi
+        Reference ?Paper XREF RNAi
         Phenotype ?Phenotype XREF RNAi #Phenotype_info
-	Expr_profile ?Expr_profile XREF RNAi_result // connection added during build [030106 krb]
+        Expr_profile ?Expr_profile XREF RNAi_result // connection added during build [030106 krb]
         Remark ?Text #Evidence
-        Method UNIQUE ?Method
+	Method UNIQUE ?Method
+
+
 
 
 #Phenotype_info Remark ?Text #Evidence                           // specific remarks about this instance
@@ -1990,8 +2016,7 @@
 // New Class from Lincoln [010226]
 
 ?PCR_product SMap S_parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF PCR_product
- 		  S_child RNAi ?RNAi XREF PCR_product UNIQUE Int UNIQUE Int #SMap_info
-			  Expr_profile ?Expr_profile XREF PCR_product UNIQUE Int UNIQUE Int #SMap_info// added for new Expr_profile class [010912 krb]
+ 		  S_child Expr_profile ?Expr_profile XREF PCR_product UNIQUE Int UNIQUE Int #SMap_info // added for new Expr_profile class [010912 krb]
  	     Overlaps_CDS ?CDS XREF Corresponding_PCR_product  // added for Dan PCR mappings [010419 dl]
  	     Overlaps_transcript ?Transcript XREF Corresponding_PCR_product  
 	     Overlaps_pseudogene ?Pseudogene XREF Corresponding_PCR_product // new [030801 krb]
@@ -2005,6 +2030,7 @@
 	     Clone ?Clone XREF PCR_product  // added [krb 031126]
 	     Y2H_bait   ?Y2H XREF PCR_bait // for yeast two hybrid data
 	     Y2H_target ?Y2H XREF PCR_target
+	     RNAi ?RNAi XREF PCR_product
 	     Remark ?Text #Evidence
  	     Method UNIQUE ?Method
 
