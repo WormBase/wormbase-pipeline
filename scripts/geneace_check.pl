@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2004-03-11 16:50:38 $
+# Last updated on: $Date: 2004-03-15 12:37:43 $
 
 
 use strict;
@@ -16,7 +16,6 @@ use Wormbase;
 use Ace;
 use Carp;
 use Getopt::Long;
-use lib "/nfs/team71/worm/ck1/WORMBASE_CVS/scripts/";
 use Geneace;
 
 
@@ -1089,7 +1088,6 @@ EOF
   if ($ace){%location=allele_location($allele_designation_to_LAB, $default_db)};
   
   my %other_main = $ga->other_name($db, "other_main");
-  
   my @exceptions = $ga ->cgc_name_is_also_other_name($db);
   my %exceptions;
   foreach (@exceptions){$exceptions{$_}++};
@@ -1146,10 +1144,10 @@ EOF
 	print LOG "ERROR: $allele is connected to more than one Loci: @loci\n";
 	foreach my $e (@loci){
 	  if ($exceptions{$e}){
-	    print "WARNING: $e is both CGC_name and Other_name\n";
+	    print LOG "WARNING: $e is both CGC_name and Other_name\n";
 	  }
 	  if ( exists $other_main{$e} && !exists $exceptions{$e} ){
-	    print "WARNING: $allele is connected to $e(other), which should now be $other_main{$e}(main)\n";
+	    print LOG "WARNING: $allele is connected to $e(other), which should now be @{$other_main{$e}}(main)\n";
 	  }
 	}
       }
@@ -1252,6 +1250,7 @@ EOF
       if ($_ =~ /^\"(.+)\"\s+\"(.+)\"\s$/) {
 	$allele = $1;
 	$cds = $2;
+	print $cds, " (1)\n";
 	print LOG  "ERROR: Allele $allele has predicted gene but has no parent sequence\n";
 	if ($ace){
 	  get_parent_seq($cds, $allele);
@@ -1261,12 +1260,13 @@ EOF
 	$allele = $1;  
 	$cds = $2;
 	$seq = $3;
-	if ($seq eq $cds){
+	print $cds, " (2)\n";
+	if ($seq ne $cds){
 	  # temporarily commented out to see if suitable to automate this part
 	  print LOG "ERROR: $allele has a different parent sequence ($seq) based on its predicted gene ($cds) (overlapped clones?)\n";
 	  if ($ace){
-	    #print ACE "\n\nAllele : \"$allele\"\n";
-	    #print ACE "-D Sequence \"$seq\"\n";
+	    print ACE "\n\nAllele : \"$allele\"\n";
+	    print ACE "-D Sequence \"$seq\"\n";
 	    &get_parent_seq($cds, $allele);
 	  }
 	}

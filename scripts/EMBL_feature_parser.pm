@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2003-11-26 16:01:59 $
+# Last updated on: $Date: 2004-03-15 12:37:43 $
 
 package EMBL_feature_parser;
 
@@ -82,7 +82,7 @@ sub get_feature_info {
     
     $feature = $Features_qualifiers[$i];
     my $f_count = 0;
-  
+
     @qualifiers = @{$Features_qualifiers[$i+1]};
     foreach $qualifier (@qualifiers){
 
@@ -104,6 +104,7 @@ sub get_feature_info {
         if ($each_line =~ /^AC\s+(\w+);$/ || $each_line =~ /^AC\s+(\w+);.+$/){
           $AC_line++;
           $AC = $1 if $AC_line == 1; # some AC may have > 1 AC lines, read in only the first AC line
+	  print $AC, "\n";
           next;
         }
     
@@ -112,6 +113,7 @@ sub get_feature_info {
         ###################
         if ($each_line =~ /^SV.+\.(\d)+/){
           $seq_version = $1;
+	  print $seq_version, "\n";
           next;	
         }
     
@@ -148,6 +150,14 @@ sub get_feature_info {
           next;
         }
 
+	if ( $each_line =~ /^FT\s{19,19}\/$qualifier=\"(.+)\"$/ || 
+             $each_line =~ /^FT\s{19,19}\/$qualifier=(\w+)$/ ){
+
+	  push(@{$FEATURE{$AC}}, $seq_version, $qualifier, $1);
+          $one_line = 1;
+          next;
+        }
+
         # fetch qualifier that has multiple lines
         if ($f_count == 1 && $_ =~ /^FT\s+\/$qualifier=\"(.+)$/){
 
@@ -167,6 +177,7 @@ sub get_feature_info {
           $q_info .= $1." ";
 
           push(@{$FEATURE{$AC}}, $seq_version, $chrom, $feature, $coord, $qualifier, $q_info);
+
           $q_info = ();
           $count_q = 0;
           $multi_line = 1;
@@ -188,7 +199,7 @@ sub get_feature_info {
 
           # assign NA to qualifier and its info to feature which has no qualifier info
           if ($multi_line == 0 && $one_line == 0 && defined $coord){
-            push(@{$FEATURE{$AC}}, $seq_version, $chrom, $feature, $coord, "NA", "NA@");
+            push(@{$FEATURE{$AC}}, $seq_version, $chrom, $feature, $coord, "NA", "NA");
           }
 
           # reinitialization at end of each accession or screwed up

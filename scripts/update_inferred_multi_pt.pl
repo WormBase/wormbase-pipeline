@@ -2,7 +2,7 @@
 
 # Author: Chao-Kung Chen
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-02-23 15:27:57 $ 
+# Last updated on: $Date: 2004-03-15 12:37:43 $ 
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'}; 
@@ -65,7 +65,7 @@ my $db = Ace->connect(-path  => $database,
 my (%locus_allele, %locus_order, %order_locus);
 
 my @update = &int_map_to_map_loci;
-
+print @update, "=====\n";
 &make_inferred_multi_pt_obj if @update ne "NA";
 &update_inferred_multi_pt;
 
@@ -80,6 +80,7 @@ sub int_map_to_map_loci {
   @int_loci = `cat $multi_dir/loci_become_genetic_marker_for_$autoace_version*`;
   if (!@int_loci){
     return "NA";
+    print "NA\n";
     last;
   }
 
@@ -216,7 +217,7 @@ END
 }
 
 print LOG "Make sure that all file parsings are OK . . . . .\n\n";
-mail_maintainer("Update inferred multi-pt objects", "all", $log) if !$debug;
+mail_maintainer("Update inferred multi-pt objects", "ALL", $log) if !$debug;
 mail_maintainer("Update inferred multi-pt objects", "ck1\@sanger.ac.uk", $log) if $debug;
 
 print LOG "\n$0 finished at ", runtime(), "\n\n";

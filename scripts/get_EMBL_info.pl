@@ -2,7 +2,7 @@
 
 # Author: Chao-Kung Chen
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2003-11-28 11:32:20 $ 
+# Last updated on: $Date: 2004-03-15 12:37:43 $ 
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'}; 
@@ -61,7 +61,20 @@ $embl->download_EMBL_release();
 
 # do incorporating EMBL gene name stuff
 if ($name) {
-print "To be continued...";
+  my @h = $embl->get_gene_names();
+
+  my %ProtID_AC_SV_OS = %{$h[0]};
+  my %SeqName_Protid  = %{$h[1]};
+
+ # print keys %ProtID_AC_SV_OS;
+ # print keys %SeqName_Protid;
+  foreach (keys %ProtID_AC_SV_OS){
+    print "$_ -> @{$ProtID_AC_SV_OS{$_}}\n";
+  }
+  foreach (keys %SeqName_Protid){
+   # print "$_ -> @{$SeqName_Protid{$_}}\n";
+  }
+
 }
 
 

@@ -2,85 +2,106 @@
 
 # Author: Chao-Kung Chen
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-02-13 17:35:32 $ 
+# Last updated on: $Date: 2004-03-15 12:37:43 $ 
 
 use strict;
 use lib "/wormsrv2/scripts"  ? "/wormsrv2/scripts" : glob("/wormmsrv1/chaokung/my-scripts");
 use Wormbase;
 use Ace;
 use Getopt::Long;
+use lib "/nfs/team71/worm/ck1/WORMBASE_CVS/scripts";
 use Geneace;
 
 my $tace        = &tace;
-my $gobj        = init Geneace();
-my $geneace_dir = $gobj->test_geneace();
+my $ga          = init Geneace();
+my $geneace_dir = $ga->geneace();
 my $db          = Ace->connect(-path => $geneace_dir, -program =>$tace) || print Ace->error; 
 
 push( my @multi_pt, $db->find("Find Multi_pt_data *") );
 
-print scalar @multi_pt;
-push(my @other_names, $db->find("Find Gene_name * where Other_name_for AND !(Cb-* OR Cr-*)") );
-print scalar @other_names;
+my %loci_2_multi = $ga->loci_have_multi_pt($db); # mutipt objs listed in each locus
+my @other_names = $ga->other_name($db, "array");
 
+my %Loci_multiPt; # key: locus, values: all loci found in a multipt obj
 
-__END__
-my%Loci_multiPt;
 
 foreach (@multi_pt){
-  my $locus;
-  if (defined $_ -> Locus_A(1)){
-    # push(@{$multiPt_loci{$_}}, $_ -> Locus_A(1));
-    push( @{$Loci_multiPt{$_ -> Locus_A(1)}}, $_ );
+  my (@checks, $e);
+
+  @checks = qw(Locus_A Locus_B Locus);
+  foreach $e (@checks){
+    if (defined $_ -> $e(1)){
+      push( @{$Loci_multiPt{$_ -> $e(1)}}, $_ );
+    }
   }
-  if (defined $_ -> Locus_B(1)){
-    push(@{$Loci_multiPt{$_ -> Locus_B(1)}}, $_ );
-  }
-  if (defined $_ -> Locus(1)){
-    push(@{$Loci_multiPt{$_ -> Locus(1)}}, $_ );
-  }
-  if (defined $_ -> B_non_A){
-    get_loci($_, "B_non_A");
-  }
-  if (defined $_ -> A_non_B){
-    get_loci($_, "A_non_B");
-  }
-  if (defined $_ -> Combined){
-    get_loci($_, "Combined");
+  
+  @checks = qw(B_non_A A_non_B Combined);
+  foreach $e (@checks){
+    if (defined $_ -> $e){
+      get_loci($_, $e);
+    }
   }
 }
+
+foreach (keys %Loci_multiPt){ # loci grepped from each multi-pt 
+#  print "$_ => @@@@\n"; 
+  my @unique = $ga->get_unique_from_array( @{$Loci_multiPt{$_}} );
+
+  my %unique;
+  foreach (@eunique){$unique{$_}++};  # turn array element to hash key for quick look up
+
+  my @diff = $ga->array_comp(\@unique, \@{$loci_2_multi{$_}}, "diff");
+
+#  print "$_ -> @diff ###DIFFS\n" if @diff;
+  foreach my $e (@diff){
+    if (!exists $unique{$e}){
+      print "$e is linked to $_, OK?\n";
+    }
+    else{
+      print "$e should be linked to $_?\n";
+    }
+  }
+ 
+ # print "   -> @{$loci_2_multi{$_}} ~~~~~~~~~~~~MULTI of each LOCUS\n";
+}
+
+#foreach (@other_names){
+#  if ( exists $Loci_multiPt{$_} ){
+#    print "Check $_ in Multi_Pt object @{$Loci_multiPt{$_}}\n";
+#  }
+#}  
+ 
+
+
+###############################
+#    s u b r o u t i n e s
+###############################
 
 sub get_loci {
   my ($obj, $check_point) = @_;
   
-  if (defined $obj -> $check_point(2)){ 
-    #  push(@{$multiPt_loci{$obj}}, $obj -> $check_point(2));
-    push(@{$Loci_multiPt{$obj -> $check_point(2)}}, $obj );
+  # currently looking for up to 10 tiers of multi point mapping, should be really enough
+  for(my $i=0; $i<10; $i=$i+3){
+    if (defined $obj -> $check_point($i+2)){   
+       push(@{$Loci_multiPt{$obj -> $check_point($i+2)}}, $obj );
+    }
   }
-  if (defined $obj -> $check_point(5)){ 
-    push(@{$Loci_multiPt{$obj -> $check_point(5)}}, $obj ); 
-  }
-  if (defined $obj -> $check_point(8)){ 
-    push(@{$Loci_multiPt{$obj -> $check_point(8)}}, $obj );
-  }
-  if (defined $obj -> $check_point(11)){ 
-    push(@{$Loci_multiPt{$obj -> $check_point(11)}}, $obj );
-  }
-  if (defined $obj -> $check_point(14)){ 
-    push(@{$Loci_multiPt{$obj -> $check_point(14)}}, $obj );
-  }
-} 
-
-my @other_names = $gobj->query($db);
-print scalar @other_names;
-
-
-foreach (@other_names){
-  if ( exists $Loci_multiPt{$_} ){
-    print "Check $_ in Multi_Pt object @{$Loci_multiPt{$_}}\n";
-  }
-}  
- 
+}
 
 
 
+__END__
+
+=head2 NAME - geneace_check.pl  
+
+=head3 <DESCRIPTION> 
+
+B<>%loci_2_multi :  # mutipt objs listed in each locus
+   (key: locus, values: multipt obj)
+
+B<>%Loci_multiPt :  # loci listed in each multipt obj 
+   (key: locus, values: multipt obj)
+
+When values of these two hashes are compared, the differences tell you
+what is wrong.
 
