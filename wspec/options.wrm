@@ -55,12 +55,14 @@
 
 _VMap              -V -D GMAP  
 _VSequence         -V -D FMAP
+_VTranscript	   -V -D FMAP
 _VClone            -V -D PMAP
 
 _VAuthor           -V 
+_VPerson	   -V
 _VJournal          -V
 _VPaper            -V -T Brief_citation
--VDatabase         -V
+_VDatabase         -V
 
 _VGene_Class       -V
 _VLocus            -V -D GMAP 
