@@ -1499,9 +1499,9 @@
                                             Injection              //RL [010327]
                                             Soaking                //RL [010327]
                                             Transgene_expression   //RL [010327]
-        Inhibits	Predicted_gene ?Sequence XREF RNAi_result  // "gene" parent (unreliable)
-			Locus ?Locus   XREF RNAi_result            //RL [010327]
-			Transcript ?Transcript XREF RNAi_result // krb [021126]
+        Inhibits	Predicted_gene ?Sequence XREF RNAi_result  #Evidence // "gene" parent (unreliable)
+			Locus ?Locus   XREF RNAi_result #Evidence           //RL [010327]
+			Transcript ?Transcript XREF RNAi_result #Evidence // krb [021126]
         Supporting_data Movie ?Movie XREF RNAi			   // added for Lincoln, krb [010807]
                         Picture ?Picture XREF RNAi
 	Reference ?Paper XREF RNAi
@@ -1509,7 +1509,7 @@
         Remark ?Text
 
 #Phenotype_info Remark ?Text                            // specific remarks about this instance
-                Penetrance UNIQUE Int                   // estimated percent penetrance (0-100)
+                Penetrance UNIQUE Int UNIQUE Int        // estimated percent penetrance range (0-100)
                 Temperature_sensitive Int UNIQUE Int    // temperature (degrees C), penetrance
                 Quantity UNIQUE Int UNIQUE Int          // for quantitative phenotypes low/high
 
