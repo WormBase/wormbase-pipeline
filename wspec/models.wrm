@@ -853,6 +853,7 @@
 			RNA	// if set then use U in place of T
 			Coding	CDS UNIQUE Int UNIQUE Int
 				Confirmed_by #Gene_confirmation
+			Isoform #Evidence      // Added to track isoform evidence[030718 dl] 
 			End_not_found
 			Start_not_found
 			Show_in_reverse_orientation    // Draw 3' reads in reverse orientation [010423 dl]
@@ -1017,7 +1018,7 @@
                         Reference ?Paper XREF Transcript                           // [020306 kj]
 			RNAi_result ?RNAi XREF Transcript //was missing from model [021126 krb]
 			GO_term ?GO_term XREF Transcript ?GO_code #Evidence // [030411 krb]
-			Interpolated_map_position UNIQUE ?Map UNIQUE Float // new for updated interpolated map positions [krb 030515]
+		Interpolated_map_position UNIQUE ?Map UNIQUE Float // new for updated interpolated map positions [krb 030515]
                 Origin  From_laboratory UNIQUE ?Laboratory                         // [020306 kj]
                         Species UNIQUE ?Species                                    // [020306 kj]
                 Properties      Transcript      UNIQUE  mRNA    UNIQUE  Processed_mRNA
