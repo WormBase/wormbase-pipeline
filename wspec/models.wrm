@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: krb $
-// Last edited on: $Date: 2004-09-17 15:47:59 $
+// Last edited on: $Date: 2004-10-21 09:07:25 $
  
 
 
@@ -1932,6 +1932,7 @@
 
 ?RNAi   SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF RNAi       // canonical parent (reliable)
 			     PCR_product UNIQUE ?PCR_product XREF RNAi // primer pair (reliable)
+	History_name UNIQUE ?Text
         Experiment      Laboratory ?Laboratory
                         Author ?Author
                         Date UNIQUE DateType
