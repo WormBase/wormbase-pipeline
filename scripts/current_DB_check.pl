@@ -8,38 +8,52 @@
 # to look for bogus sequence entries
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-03-11 17:08:46 $
+# Last updated on: $Date: 2004-03-12 17:09:02 $
 
 use strict;
-use lib "/wormsrv2/scripts/"; 
+use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
 use Wormbase;
 use Ace;
-use Getopt::Std;
- 
+use Getopt::Long;
+
 ##############################
 # command-line options       #
 ##############################
-our $opt_d = "";      # specify database to run against
-our $opt_v = "";      # verbose mode
-our $opt_h = "";      # display help
-our $opt_t = "";      # test mode (run script but don't email anyone)
-getopts ('d:vht');
+ 
+my $help;                # Help/Usage page
+my $verbose;             # turn on extra output
+my $database;            # path to database
+my $debug;               # For sending output to just one person
+my $test;                # for running in test mode
+my $maintainers = "All"; # log file recipients
 
-&usage if ($opt_h);
 
-# toggle verbose mode (turns on reporting of errors, but doesn't email people)
-our $verbose;
-$verbose = "ON" if ($opt_v);
-my $test;
-$test = "ON" if ($opt_t);
+GetOptions (
+	    "database=s" => \$database,
+            "verbose"    => \$verbose,
+            "test"       => \$test,
+            "debug=s"    => \$debug,
+            "help"       => \$help
+            );
+
+&usage if ($help);
+
+# Use debug mode?
+if($debug){
+  print "DEBUG = \"$debug\"\n\n";
+  ($maintainers = $debug . '\@sanger.ac.uk');
+}
+
+
 
 #############################################################################
 # Set database details, default is /nfs/disk100/wormpub/DATABASES/current_DB
 ##############################################################################
-our $database = "/nfs/disk100/wormpub/DATABASES/current_DB/";
-$database = $opt_d if ($opt_d);
-our $tace = &tace;   # tace executable path
-our $db = Ace->connect(-path  => "$database",
+
+$database = "/nfs/disk100/wormpub/DATABASES/current_DB/" if (!$database);
+
+my $tace = &tace;   # tace executable path
+my $db = Ace->connect(-path  => "$database",
 		      -program =>$tace) || do { print ALL_LOG "Connection failure: ",Ace->error; die();};
 
 print "Checking $database\n\n";
@@ -53,14 +67,14 @@ my %problems; # store problems in a double hash, first key being timestamp name
 my @other; # store uncategorised problems
 
 # make one global log file but also split for different groups
-our $all_log;
-our $sanger_log;
-our $cshl_log;
-our $stlouis_log;
-our $caltech_log;
-our $WS_version  = &get_wormbase_version_name;
+my $all_log;
+my $sanger_log;
+my $cshl_log;
+my $stlouis_log;
+my $caltech_log;
+my $WS_version  = &get_wormbase_version_name;
 
-&create_log_files($database);
+&create_log_files;
 
 
 ###################################
@@ -158,6 +172,10 @@ my $sanger = "wormbase\@sanger.ac.uk";
 my $cshl = "stein\@cshl.org, harris\@cshl.org, chenn\@cshl.edu, krb\@sanger.ac.uk";
 my $stlouis = "dblasiar\@watson.wustl.edu, jspieth\@watson.wustl.edu, krb\@sanger.ac.uk";
 
+if($debug){
+  $caltech = $sanger = $cshl = $stlouis = $debug;
+}
+
 &mail_maintainer("$WS_version integrity checks: Sanger","$sanger",$sanger_log) unless ($test || ($sanger_counter == 0));
 &mail_maintainer("$WS_version integrity checks: CSHL","$cshl",$cshl_log) unless ($test || ($cshl_counter ==0));
 &mail_maintainer("$WS_version integrity checks: Caltech","$caltech",$caltech_log) unless ($test || ($caltech_counter == 0));
@@ -185,7 +203,7 @@ sub process_sequences{
 
   my @genome_seqs = $db->fetch(-class => 'Genome_sequence',
 			       -name  => '*');
-  my $class = "Sequence";
+  my $class = "CDS";
 
   # loop through each subseq-style name
   
@@ -194,19 +212,10 @@ sub process_sequences{
     my @CDSs = $db->fetch(-class=>'CDS',-name=>"$seq.*");
     
     foreach my $CDS (@CDSs){
-      my $category = 0;
+      our $category = 0;
       
-      if(!defined($CDS->at('Visible.Corresponding_protein'))){
-	if(defined($CDS->at('Properties.Coding.CDS'))){  
-	  my $tag = "Origin";	
-	  my $timestamp = &get_timestamp($class, $CDS, $tag);
-	  $problems{$timestamp}{$class.":".$CDS} = ["\"No Corresponding_protein set for this sequence\""];
-	  print "$timestamp $class:$CDS \"No Corresponding_protein tag\"\n" if $verbose;
-	  $category = 1;
-	}
-      }    
-      # only look for some specific errors if no Sequence tag present and no Method tag set.
-      if(!defined($CDS->Sequence) && !defined($CDS->at('Method'))){  
+      # only look for some errors for CDS objects with no Method (most likely to be errant objects)
+      if(!defined($CDS->at('Method'))){  
 	if(defined($CDS->at('DB_info.Database'))){
 	  my $tag = "Database";
 	  my $timestamp = &get_timestamp($class, $CDS, $tag);
@@ -365,22 +374,20 @@ sub process_sequences{
 	  push(@other,$CDS);
 	  print "$CDS - Other problem\n" if $verbose;
 	}
-      }    
+      }  
       undef($CDS);
     }
     undef($seq);
   }
-
-
-
+ 
   
 }
 
 ##########################################################################
 
 sub create_log_files{
-  my $database = shift;
-  my $rundate    = `date +%y%m%d`; chomp $rundate;
+
+  my $rundate = &rundate;
   $all_log = "/wormsrv2/logs/current_DB_check.all.log.$rundate.$$";
   open(ALL_LOG,">$all_log") || die "can't open $all_log";
   $sanger_log = "/wormsrv2/logs/current_DB_check.sanger.log.$rundate.$$";
@@ -449,7 +456,7 @@ sub get_timestamp{
 
   # if timestamp is wormpub, need to look at the corresponding object to see if that has 
   # more informative timestamp
-  if (($timestamp =~ m/wormpub/)&&($class eq "Sequence")){
+  if (($timestamp =~ m/wormpub/)&&($class eq "CDS")){
     ($class = "Protein", $tag = "Sequence")               if ($tag eq "GO_term");
     ($class = "Protein", $tag = "Corresponding_protein")  if ($tag eq "Corresponding_CDS");
     ($class = "Expr_pattern", $tag = "CDS")               if ($tag eq "Expr_pattern");
@@ -493,28 +500,27 @@ sub splice_variant_check{
 
 sub find_multiple_loci {
 
-
   print "\nLooking for sequences attached to multiple loci...\n" if $verbose;
   my $get_seqs_with_multiple_loci=<<EOF;
   Table-maker -p "/wormsrv1/geneace/wquery/get_seq_has_multiple_loci.def" quit 
 EOF
 
-  my ($seq, $locus);
+  my ($cds, $locus);
 
   open (FH, "echo '$get_seqs_with_multiple_loci' | tace $database | ") || die "Couldn't access $database\n";
   while (<FH>){
     chomp($_);
     if ($_ =~ /^\"/){
       $_ =~ s/\"//g;
-      ($seq, $locus)=split(/\s+/, $_);
+      ($cds, $locus)=split(/\s+/, $_);
 
       # Don't know how to get timestamps for each value next to Locus tag but can
       # get the timestamp from the Locus tag itself
-      my $aql_query = "select s,s->Locus.node_session from s in object(\"Sequence\",\"$seq\")";
+      my $aql_query = "select s,s->Locus.node_session from s in object(\"CDS\",\"$cds\")";
       my @aql = $db->aql($aql_query);
       my $timestamp = "$aql[0]->[1]";
       $timestamp =~ s/\d{4}\-\d{2}\-\d{2}_\d{2}:\d{2}:\d{2}_//;
-      $problems{$timestamp}{"Sequence".":".$seq} = ["\"connected to multiple loci\""];
+      $problems{$timestamp}{"CDS".":".$cds} = ["\"connected to multiple loci\""];
     }
   }  
 }
