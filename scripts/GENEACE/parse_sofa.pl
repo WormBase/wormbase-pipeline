@@ -3,8 +3,8 @@
 # parse_sofa.pl
 
 # Author: Chao-Kung Chen
-# Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-03-19 11:59:03 $
+# Last updated by $Author: krb $
+# Last updated on: $Date: 2004-06-30 15:22:51 $
 
 use strict;
 
@@ -14,12 +14,12 @@ use strict;
 
 my (%id_def, $id, $def_version);
 
-open(IN, "/nfs/team71/worm/ck1/TMP/sofa\.definition") || die $!;
+open(IN, "$ARGV[0]") || die $!;
 
 while(<IN>){
   my $def =();
 
-  if ($_ =~ /version: \$Revision: 1.1 $/){$def_version = $1}
+  if ($_ =~ /version: \$Revision: 1.2 $/){$def_version = $1}
   if ($_ =~ /id: (.+)/){$id = $1}
   if ($_ =~ /definition: (.+)/){
     my @def =();
@@ -49,7 +49,7 @@ while(<IN>){
   chomp;
   my $part_of;
 
-  if ($_ =~ /version: \$Revision: 1.1 $/){
+  if ($_ =~ /version: \$Revision: 1.2 $/){
     $onto_version = $1;
   }
 
