@@ -8,8 +8,8 @@
 # and produce a fasta file of these sequence to load into the wormprot
 # mysql database prior for the pre-build pipeline.
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-08-27 16:10:09 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2002-11-12 09:58:55 $
 
 
 #################################################################################
@@ -45,6 +45,7 @@ our $dbfile = "/wormsrv2/WORMPEP/wormpep${release}/wp.fasta${release}";
 our %wormpep;
 &make_hash;
 
+my %proteins_outputted;
  ###############################
  # Main Loop                   #
  ###############################
@@ -53,14 +54,11 @@ open (LOG,  ">/wormsrv2/WORMPEP/wormpep${release}/new_entries.$release_name") ||
 open (DIFF, "</wormsrv2/WORMPEP/wormpep${release}/wormpep.diff${release}") || die "Couldn't read from diff file\n";
 while (<DIFF>) {    
   my ($new_acc,$seq);
-    if (/changed:\t\S+\s+\S+ --> (\S+)/) {
+    if( (/changed:\t\S+\s+\S+ --> (\S+)/) || (/new:\t\S+\s+(\S+)/) ) {
       $new_acc = $1;
+      next if $proteins_outputted{$new_acc};
       print LOG ">$new_acc\n$wormpep{$new_acc}";
-    }
-    if (/new:\t\S+\s+(\S+)/) {
-      $new_acc = $1;
-      print LOG ">$new_acc\n$wormpep{$new_acc}";
-
+      $proteins_outputted{$new_acc}++;
     }
 }
 close(DIFF);
