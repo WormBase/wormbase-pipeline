@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: krb $
-// Last edited on: $Date: 2004-08-09 09:11:22 $
+// Last edited on: $Date: 2004-08-31 14:11:16 $
  
 
 
@@ -194,7 +194,6 @@
 
 ?Allele Evidence #Evidence
 	Name	Other_name ?Text #Evidence
-		Qualifier Text	    // sd, sm, ts etc.  Not systematic just now
 		Rearrangement ?Rearrangement XREF Allele
 	Gene_class ?Gene_class XREF Allele
 	Sequence_details SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF Allele // Allele becomes SMapped now [krb 021216]
@@ -213,7 +212,6 @@
 		Locus ?Locus XREF Allele  // to accomodate SNP alleles which also have Locus objects
 		Predicted_gene ?CDS XREF Alleles // Replaces linking to Has_allele tag in ?Sequence class
 		Transcript ?Transcript XREF Alleles // added for two cases of RNA genes with alleles [021126 krb]
-        Reference_Allele
 	Isolation	Author	?Author	// use Person when known, else use Author
 			Person  ?Person //
 			Date	DateType
@@ -286,7 +284,6 @@
                 Main_name  ?Gene_class XREF Other_name
 		Other_name ?Gene_class XREF Main_name
 		CGC_approved // added by krb 24/01/02
-		CGC_unresolved Text // added by krb 28/01/02
                 Remark ?Text #Evidence
 
 
@@ -388,6 +385,7 @@
                                 Multi_point ?Multi_pt_data
 				Pos_neg_data ?Pos_neg_data
                   Interpolated_map_position UNIQUE ?Map UNIQUE Float // for loci with CDSs but no real Map position
+		  Landmark_gene // for those genes that will appear in genetic map of Genome Browser
         Reference ?Paper XREF Gene
         Remark ?Text #Evidence
 	Method UNIQUE ?Method
@@ -727,7 +725,6 @@
 
 
 #Evidence Paper_evidence ?Paper
-	  PMID_evidence Text // Text field should just store PubMed ID number
 	  Published_as Gene UNIQUE ?Gene_name #Evidence // for tracking how things first appeared in 
                                                         // literature [krb 031024]
 	  Person_evidence ?Person
@@ -735,8 +732,6 @@
 	  Accession_evidence ?Database ?Accession_number // added for and by krb 020422
 	  Protein_id_evidence ?Text // added to cope with protein id's [krb 020726]
 	  CGC_data_submission // new way of flagging information from CGC [krb 030207]
-	  CGC_disapproved Text #Evidence // for flagging bad gene names that are in use even as
-                                         // 'Other_name' which never had CGC backing [krb 031024]
 	  Curator_confirmed ?Person // new tag to help flag evidence we believe in! [krb 030307]
 	  Inferred_automatically Text // used by some scripts for things like gene->cDNA connections
 
@@ -903,7 +898,6 @@
 		       RNAi ?RNAi XREF Sequence UNIQUE Int UNIQUE Int #SMap_info                       // for Lincoln RNAi  [001213 dl]
 		       Operon ?Operon XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info           // for Operon data   [dl]
      		       AGP_fragment ?Sequence XREF AGP_parent Int UNIQUE Int #SMap_info		       // for Briggsae data [020726 krb]
-     		       UTR ?UTR XREF Canonical_parent Int UNIQUE Int #SMap_info			       // for new UTR model [020729 krb]
 		       Allele ?Allele XREF Sequence UNIQUE Int UNIQUE Int #SMap_info		       // New SMapped Allele class [021217 krb]
 		       Oligo_set ?Oligo_set XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info     //added for Oligo_set class
                        Feature_object ?Feature XREF Sequence UNIQUE Int UNIQUE Int #SMap_info	       // dl feature play
@@ -1130,7 +1124,6 @@
 		Corresponding_PCR_product ?PCR_product XREF Overlaps_CDS // added for PCR mappings [010419 dl]
 		Corresponding_oligo_set ?Oligo_set XREF Overlaps_CDS
 		Matching_cDNA ?Sequence XREF Matching_CDS #Evidence
-		Matching_UTR ?UTR XREF Matching_CDS // added for UTR model [krb 020729]
 		Orthologue ?CDS XREF Orthologue ?Species #Evidence  // dl 030304
 		Expr_pattern ?Expr_pattern XREF CDS
                 RNAi_result ?RNAi XREF Predicted_gene // added for Lincoln RNAi [001213 dl]
@@ -2268,18 +2261,6 @@
                                Last_updated UNIQUE DateType
          Remark                ?Text #Evidence
 
-
-
-
-// New UTR data model for Lincoln's UTR data.  [krb 020729]
-
-?UTR SMap S_parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF UTR
-     Source_exons Int UNIQUE Int // start at 1
-     Matching_CDS ?CDS XREF Matching_UTR
-     Properties 5_UTR #Evidence
-                3_UTR #Evidence
-     Species UNIQUE ?Species
-     Method UNIQUE ?Method
 
 
 

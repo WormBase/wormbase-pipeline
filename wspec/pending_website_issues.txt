@@ -69,3 +69,15 @@ Added 'Particle_bombardment' tag to Transgene class (under Isolation tag)
 
 
 Paper class loses Medline_acc tag and uses PMID tag in a new way (now xrefd to Paper_name class)
+
+
+31st August 2004
+Model clean-up to remove unused tags:
+PMID_evidence tag removed from Evidence hash
+Qualifier tag removed from ?Allele
+Reference_allele tag removed from ?Allele
+
+?UTR class removed
+
+Added 'Landmark_gene' tag to Gene class (under Map tag) to flag those genes which will
+appear on the genetic map dispay part of Genome Browser
