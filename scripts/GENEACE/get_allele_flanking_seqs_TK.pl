@@ -4,7 +4,7 @@
 #
 # by Chao-Kung Chen [030625]
 
-# Last updated on: $Date: 2004-12-08 17:50:43 $
+# Last updated on: $Date: 2004-12-09 17:02:31 $
 # Last updated by: $Author: krb $
 
 use Tk;
@@ -546,7 +546,7 @@ sub run {
     $ace_window->insert('end', "\/\/Deletion \"[\/]\"\n");
     $ace_window->insert('end', "Species \"Caenorhabditis elegans\"\n");
     $ace_window->insert('end', "\/\/Remark \"\" Paper_evidence \"$paper_name\"\n");
-    $ace_window->insert('end', "\/\/Remark \"\" Curator_confirmed \"WBPerson2861\"\n");
+    $ace_window->insert('end', "\/\/Remark \"\" Curator_confirmed \"WBPerson2970\"\n");
     $ace_window->insert('end', "\/\/Method \"Substitution_allele\"\n");
     $ace_window->insert('end', "\/\/Method \"Allele\"\n");
     $ace_window->insert('end', "\/\/Method \"Deletion_allele\"\n");
@@ -915,7 +915,7 @@ sub get_1_site_flanks{
   my $cgc_name = $label_3->cget("text");
   my $seq = $label_4->cget("text");
   my ($first, $Lf1, $Rf1, $second, $Lf2, $Rf2, $third, $Lf3, $Rf3, $fourth, $Lf4, $Rf4,) = split(/\s+/, $ace);
-  write_ace($Lf1, $Rf1, $allele, $cgc_name, $seq);
+  &write_ace($Lf1, $Rf1, $allele, $cgc_name, $seq);
 }
 
 sub get_2_site_flanks{
@@ -924,7 +924,7 @@ sub get_2_site_flanks{
   my $cgc_name = $label_3->cget("text");
   my $seq = $label_4->cget("text");
   my ($first, $Lf1, $Rf1, $second, $Lf2, $Rf2, $third, $Lf3, $Rf3, $fourth, $Lf4, $Rf4,) = split(/\s+/, $ace);
-  write_ace($Lf2, $Rf2, $allele, $cgc_name, $seq);
+  &write_ace($Lf2, $Rf2, $allele, $cgc_name, $seq);
 
 }
 
@@ -934,7 +934,7 @@ sub get_3_site_flanks{
   my $cgc_name = $label_3->cget("text");
   my $seq = $label_4->cget("text");
   my ($first, $Lf1, $Rf1, $second, $Lf2, $Rf2, $third, $Lf3, $Rf3, $fourth, $Lf4, $Rf4,) = split(/\s+/, $ace);
-  write_ace($Lf3, $Rf3, $allele, $cgc_name, $seq);
+  &write_ace($Lf3, $Rf3, $allele, $cgc_name, $seq);
 }
 
 sub get_codon_flanks{
@@ -943,7 +943,7 @@ sub get_codon_flanks{
   my $cgc_name = $label_3->cget("text");
   my $seq = $label_4->cget("text");
   my ($first, $Lf1, $Rf1, $second, $Lf2, $Rf2, $third, $Lf3, $Rf3, $fourth, $Lf4, $Rf4,) = split(/\s+/, $ace);
-  write_ace($Lf4, $Rf4, $allele, $cgc_name, $seq);
+  &write_ace($Lf4, $Rf4, $allele, $cgc_name, $seq);
 }
 
 # get DNA triplet of a specified amino acid based on source exons processed in the above routine
@@ -1030,7 +1030,7 @@ sub write_ace {
   $info[0] = "stop" if  lc($info[0]) eq "x";
 
   $ace_window->insert('end', "\/\/Remark \"\"\n");
-  $ace_window->insert('end', "\/\/Remark \"\" Curator_confirmed \"WBPerson2861\"\n");
+  $ace_window->insert('end', "\/\/Remark \"\" Curator_confirmed \"WBPerson2970\"\n");
   $ace_window->insert('end', "\/\/Method \"Allele\"\n");
   $ace_window->insert('end', "\/\/Method \"Substitution_allele\"\n");
   $ace_window->insert('end', "\/\/Method \"Deletion_allele\"\n");
@@ -1066,7 +1066,7 @@ DESCRIPTION
        4R79.1 -dna 1324t   ok12 abc-1 1231 // Or just specify single nucleotide change
 
 
-SCENARIO A: DNA coordinate
+SCENARIO A: DNA coordinate (for UNSPLICED gene)
 
   Nucleotide 1234 is mutated from t to g. You want to retrieve the 30 bp flanking sequences on two sides of mutation side.
 
