@@ -50,7 +50,9 @@ getopts ('nedhs:');
 &usage(1) if ((!$opt_n)&&(!$opt_e));
 
 # single database mode
-&usage(2) unless (($opt_s eq "camace") || ($opt_s eq "stlace") || ($opt_s eq "briggsae") || ($opt_s eq "geneace")) if ($opt_s);
+if ($opt_s) {
+    &usage(2) unless (($opt_s eq "camace") || ($opt_s eq "stlace") || ($opt_s eq "briggsae") || ($opt_s eq "geneace"));
+}
 
 # set dl1 as only mail recipient if running debug mode
 $maintainer = "dl1\@sanger.ac.uk" if ($opt_d);
@@ -134,8 +136,10 @@ sub mknewacefiles {
 	next if (/^\#/  || /^$/);
 
         # single database mode
-	next unless (/$opt_s/) if ($opt_s);
-	
+	if ($opt_s) {
+	    next unless (/$opt_s/);
+	}
+
 	if (/^P\s+(\S+)\s+(\S+)$/) {
 	    $dbname    = $1;
 	    $dbdir     = $2;
