@@ -189,8 +189,8 @@ foreach my $mess (sort keys %output) {
 # produce output files #
 ########################
 
-open (OUT,    ">/wormsrv2/autoace/dan/PCR_mappings.$dbnumber");
-open (OUTACE, ">/wormsrv2/autoace/dan/PCR_mappings.$dbnumber.ace");
+open (OUT,    ">/wormsrv2/autoace/mappings/PCR_mappings.$dbnumber");
+open (OUTACE, ">/wormsrv2/autoace/mappings/PCR_mappings.$dbnumber.ace");
 
 foreach my $mapped (sort keys %finaloutput) {
     print OUT "$mapped\t@{$finaloutput{$mapped}}\n";
