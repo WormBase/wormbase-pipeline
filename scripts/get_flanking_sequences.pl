@@ -8,7 +8,7 @@
 # and two coordinates
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-12-01 11:54:26 $      
+# Last updated on: $Date: 2004-08-02 10:08:03 $      
 
 use strict;
 use lib "/wormsrv2/scripts/";                    
@@ -68,8 +68,8 @@ if(defined($obj->at('Properties.Coding.CDS'))){
   $parent = $obj->Sequence;
   my $new_obj = $obj;
   $new_obj =~ s/\./\\\./; # Need to escape the dot else AcePerl has kittens
-  ($parent_start) = $parent->at("SMap.S_child.CDS.$new_obj");
-  ($parent_end) = $parent->at("SMap.S_child.CDS.$new_obj")->right(2);
+  ($parent_start) = $parent->at("SMap.S_child.CDS_child.$new_obj");
+  ($parent_end) = $parent->at("SMap.S_child.CDS_child.$new_obj")->right(2);
 }
 
 
