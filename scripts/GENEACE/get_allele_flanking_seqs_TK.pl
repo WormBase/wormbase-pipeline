@@ -4,7 +4,7 @@
 
 # by Chao-Kung Chen [030625]
 
-# Last updated on: $Date: 2004-03-24 16:25:49 $
+# Last updated on: $Date: 2004-03-29 14:44:54 $
 # Last updated by: $Author: ck1 $
 
 use Tk;
@@ -992,30 +992,29 @@ sub write_ace {
   $ace_window->insert('end', "Gene  \"$locus\"\n");
   $ace_window->insert('end', "Predicted_gene  \"$cds\"\n");
   $ace_window->insert('end', "Species \"Caenorhabditis elegans\"\n");
-  $ace_window->insert('end', "\/\/Reference \"\"\n");
   if ($info[0] eq "X"){
-    $ace_window->insert('end', "\/\/Nonsense \"Amber_UAG\"\n");
-    $ace_window->insert('end', "\/\/Nonsense \"Ochre_UAA\"\n");
-    $ace_window->insert('end', "\/\/Nonsense \"Opal_UGA\"\n");
+    $ace_window->insert('end', "\/\/Nonsense \"Amber_UAG\" \"$info[2] to stop\"\n");
+    $ace_window->insert('end', "\/\/Nonsense \"Ochre_UAA\" \"$info[2] to stop\"\n");
+    $ace_window->insert('end', "\/\/Nonsense \"Opal_UGA\"  \"$info[2] to stop\"\n");
   }
   else {
-    $ace_window->insert('end', "Missense\n");
+    $ace_window->insert('end', "Missense \"$info[2] to $info[0]\"\n");
   }
   if ($info[1] =~ /\[.+\]/){ 
     $info[0] = "stop" if  lc($info[0]) eq "x";
-    $ace_window->insert('end', "Remark \"$allele is a $info[2] to $info[0] mutation\" Paper_evidence \"$info[1]\"\n");
+    $ace_window->insert('end', "\/\/Remark \"\"\n");
   }
   else {
     $info[0] = "stop" if  lc($info[0]) eq "x";
-    $ace_window->insert('end', "Remark \"$allele is a $info[2] to $info[0] mutation\" PMID_evidence \"$info[1]\"\n");
+    $ace_window->insert('end', "\/\/Remark \"\"\n");
   }
   $ace_window->insert('end', "\/\/Remark \"\" Curator_confirmed \"WBPerson1845\"\n");
   $ace_window->insert('end', "\/\/Method \"Allele\"\n");
+  $ace_window->insert('end', "\/\/Method \"Substitution_allele\"\n");
   $ace_window->insert('end', "\/\/Method \"Deletion_allele\"\n");
   $ace_window->insert('end', "\/\/Method \"Insertion_allele\"\n");
   $ace_window->insert('end', "\/\/Method \"Deletion_and_insertion_allele\"\n");
   $ace_window->insert('end', "\/\/Method \"Transposon_insertion\"\n");
-  $ace_window->insert('end', "\/\/Method \"Substitution_allele\"\n");
 }      
 
 
@@ -1117,108 +1116,3 @@ SCENARIO B: amino acide coordinate
 UPLOADING ACE FILE TO GENEACE:
 
      This requires write access to the database.
-#####
-
-
-foreach (@ace){
-    if ($_ =~ /2nd (\w+) (\w+)/){
-      $ace_window->insert('end', "\nLocus : \"$locus\"\n");
-      $ace_window->insert('end', "\/\/Allele \"$allele\" Paper_evidence \"\"\n");
-      $ace_window->insert('end', "\/\/Allele \"$allele\" PMID_evidence \"\"\n"); 
-      $ace_window->insert('end', "\nAllele : \"$allele\"\n");
-      $ace_window->insert('end', "\/\/Evidence Paper_evidence \"\"\n");
-      $ace_window->insert('end', "\/\/Evidence PMID_evidence \"\"\n");
-      $ace_window->insert('end', "Sequence \"$seq\"\n");
-      $ace_window->insert('end', "\/\/Substitution \"[\/]\"\n");
-      $ace_window->insert('end', "\/\/Deletion\n");
-      $ace_window->insert('end', "\/\/Insertion\n");
-      $ace_window->insert('end', "\/\/Deletion_with_insertion\n");
-      $ace_window->insert('end', "Flanking_sequences \"$1\" \"$2\"\n");
-      $ace_window->insert('end', "Gene  \"$locus\"\n");
-      $ace_window->insert('end', "CDS  \"$cds\"\n");
-      $ace_window->insert('end', "Species \"Caenorhabditis elegans\"\n");
-      $ace_window->insert('end', "\/\/Reference \"\"\n");
-      if ($info[0] eq "X"){
-	$ace_window->insert('end', "\/\/Nonsense \"Amber_UAG\"\n");
-	$ace_window->insert('end', "\/\/Nonsense \"Ochre_UAA\"\n");
-	$ace_window->insert('end', "\/\/Nonsense \"Opal_UGA\"\n");
-      }
-      $ace_window->insert('end', "Missense\n");
-      $ace_window->insert('end', "\/\/Remark \"$allele is a $info[1] to $info[0] mutation\" Paper_evidence \"\"\n");
-      $ace_window->insert('end', "\/\/Remark \"$allele is a $info[1] to $info[0] mutation\" PMID_evidence \"\"\n");
-      $ace_window->insert('end', "\/\/Remark \"\" Curator_confirmed \"WBPerson1845\"\n");
-      $ace_window->insert('end', "\/\/Method \"Allele\"\n");
-      $ace_window->insert('end', "\/\/Method \"Deletion_allele\"\n");
-      $ace_window->insert('end', "\/\/Method \"Transposon_insertion\"\n");
-    }
-  }
-}
-###
-foreach (@ace){
-    if ($_ =~ /3rd (\w+) (\w+)/){
-      $ace_window->insert('end', "\nLocus : \"$locus\"\n");
-      $ace_window->insert('end', "\/\/Allele \"$allele\" Paper_evidence \"\"\n");
-      $ace_window->insert('end', "\/\/Allele \"$allele\" PMID_evidence \"\"\n"); 
-      $ace_window->insert('end', "\nAllele : \"$allele\"\n");
-      $ace_window->insert('end', "\/\/Evidence Paper_evidence \"\"\n");
-      $ace_window->insert('end', "\/\/Evidence PMID_evidence \"\"\n");
-      $ace_window->insert('end', "Sequence \"$seq\"\n");
-      $ace_window->insert('end', "\/\/Substitution \"[\/]\"\n");
-      $ace_window->insert('end', "\/\/Deletion \n");
-      $ace_window->insert('end', "\/\/Insertion\n");
-      $ace_window->insert('end', "\/\/Deletion_with_insertion\n");
-      $ace_window->insert('end', "Flanking_sequences \"$1\" \"$2\"\n");
-      $ace_window->insert('end', "Gene  \"$locus\"\n");
-      $ace_window->insert('end', "CDS  \"$cds\"\n");
-      $ace_window->insert('end', "Species \"Caenorhabditis elegans\"\n");
-      $ace_window->insert('end', "\/\/Reference \"\"\n");
-      if ($info[0] eq "X"){
-	$ace_window->insert('end', "\/\/Nonsense \"Amber_UAG\"\n");
-	$ace_window->insert('end', "\/\/Nonsense \"Ochre_UAA\"\n");
-	$ace_window->insert('end', "\/\/Nonsense \"Opal_UGA\"\n");
-      }
-      $ace_window->insert('end', "Missense\n");
-      $ace_window->insert('end', "\/\/Remark \"$allele is a $info[1] to $info[0] mutation\" Paper_evidence \"\"\n");
-      $ace_window->insert('end', "\/\/Remark \"$allele is a $info[1] to $info[0] mutation\" PMID_evidence \"\"\n");
-      $ace_window->insert('end', "\/\/Remark \"\" Curator_confirmed \"WBPerson1845\"\n");
-      $ace_window->insert('end', "\/\/Method \"Allele\"\n");
-      $ace_window->insert('end', "\/\/Method \"Deletion_allele\"\n");
-      $ace_window->insert('end', "\/\/Method \"Transposon_insertion\"\n");
-    }
-  }
-}
-##
-
-  foreach (@ace){
-    if ($_ =~ /codon (\w+) (\w+)/){
-      $ace_window->insert('end', "\nLocus : \"$locus\"\n");
-      $ace_window->insert('end', "\/\/Allele \"$allele\" Paper_evidence \"\"\n");
-      $ace_window->insert('end', "\/\/Allele \"$allele\" PMID_evidence \"\"\n");
-      $ace_window->insert('end', "\nAllele : \"$allele\"\n");
-      $ace_window->insert('end', "\/\/Evidence Paper_evidence \"\"\n");
-      $ace_window->insert('end', "\/\/Evidence PMID_evidence \"\"\n");
-      $ace_window->insert('end', "Sequence \"$seq\"\n");
-      $ace_window->insert('end', "\/\/Substitution \"[\/]\"\n");
-      $ace_window->insert('end', "\/\/Deletion \n");
-      $ace_window->insert('end', "\/\/Insertion\n");
-      $ace_window->insert('end', "\/\/Deletion_with_insertion\n");
-      $ace_window->insert('end', "Flanking_sequences \"$1\" \"$2\"\n");
-      $ace_window->insert('end', "Gene  \"$locus\"\n");
-      $ace_window->insert('end', "CDS  \"$cds\"\n");
-      $ace_window->insert('end', "Species \"Caenorhabditis elegans\"\n");
-      $ace_window->insert('end', "\/\/Reference \"\"\n");
-      if ($info[0] eq "X"){
-	$ace_window->insert('end', "\/\/Nonsense \"Amber_UAG\"\n");
-	$ace_window->insert('end', "\/\/Nonsense \"Ochre_UAA\"\n");
-	$ace_window->insert('end', "\/\/Nonsense \"Opal_UGA\"\n");
-      }
-      $ace_window->insert('end', "Missense\n");
-      $ace_window->insert('end', "\/\/Remark \"$allele is a $info[1] to $info[0] mutation\" Paper_evidence \"\"\n");
-      $ace_window->insert('end', "\/\/Remark \"$allele is a $info[1] to $info[0] mutation\" PMID_evidence \"\"\n");
-      $ace_window->insert('end', "\/\/Remark \"\" Curator_confirmed \"WBPerson1845\"\n");
-      $ace_window->insert('end', "\/\/Method \"Allele\"\n");
-      $ace_window->insert('end', "\/\/Method \"Deletion_allele\"\n");
-      $ace_window->insert('end', "\/\/Method \"Transposon_insertion\"\n");
-    }
-  }
-}
