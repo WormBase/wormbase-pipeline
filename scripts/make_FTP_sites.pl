@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2004-11-22 12:44:57 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2004-12-03 09:56:30 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -71,7 +71,7 @@ if ($debug) {
 }
 
 # using -all option?
-($release=$chroms=$misc=$wormpep=$genes=$cDNA=$geneIDs=$pcr=$homols) if ($all);
+($release=$chroms=$misc=$wormpep=$genes=$cDNA=$geneIDs=$pcr=$homols = 1 ) if ($all);
 
 
 #################################################################################
