@@ -1,5 +1,8 @@
 #!/usr/local/bin/perl5.6.0
 #
+# blat_them_all.pl
+# kj2
+#
 # wrapper to generate blat data by
 # - getting sequence out of autoace
 # - blating it against all ESTs/mRNAs
@@ -8,12 +11,14 @@
 # - producing virtual objects to put the data into
 #
 # 16.10.01 Kerstin Jekosch
-# 17.10.01 kj: modified to get everything onto wormsrv2 and to include an mRNA and parasitic nemattode blatx option
+# 17.10.01 kj: modified to get everything onto wormsrv2 and to include an mRNA and parasitic nematode blatx option
 # 26.11.01 kj: runs everything for autoace AND camace now
 # 13.11.01 kj: added some file removers to tidy up at the end
 # 14.11.01 kj: added option to just produce virtual objects
 # 01.02.02 dl: added option to search miscPep file
 # 01.02.02 dl: uncommented report logging & mail routines
+# 01.02.02 dl: routine to convert '-' -> 'N' needs to be within the same BLOCK as the tace command
+#            : else you get a zero length fasta file each time and the confirm intron routines fail
 
 use strict;
 use Ace;
@@ -31,7 +36,7 @@ $opt_o = ""; # run everything for miscellaneous peptides (worm non RNA division 
 $opt_b = ""; # start with blating (autoace.fa, chromosome.ace already present)
 $opt_s = ""; # start later with sorting/mapping (blat2ace.pl)
 $opt_v = ""; # just produce the virtual objects
-getopts('emxbsv');
+getopts('emxbsvo');
 
 ###############
 # directories #
@@ -43,7 +48,7 @@ my $query;
 $query     = '/nfs/disk100/wormpub/analysis/ESTs/C.elegans_nematode_ESTs'    if ($opt_e); # EST data set
 $query     = '/wormsrv2/mRNA_GENOME/NDB_mRNAs.fasta'                         if ($opt_m); # mRNA data set
 $query     = '/wormsrv2/autoace/BLAT/nematode.fa'                            if ($opt_x); # ParaNem EST data set
-$query     = '/nfs/disk100/wormpub/analysis/ESTs/C.elegans_nematode_MiscPep' if ($opt_o); # EST data set
+$query     = '/nfs/disk100/wormpub/analysis/ESTs/C.elegans_nematode_miscPep' if ($opt_o); # Other CDS data set
 my $seq    = '/wormsrv2/autoace/BLAT/autoace.fa';               
 my $chrom  = '/wormsrv2/autoace/BLAT/chromosome.ace';
 my $blatex = '/nfs/disk100/wormpub/blat/blat';
@@ -104,18 +109,18 @@ quit
 EOF
 
     system("echo '$command1' | $giface $dbdir") && die "Cannot open autoace $!\n";;
-}	
-
-# move -'s into n's
-open(CHANGE,'/wormsrv2/autoace/BLAT/autoace.first');
-open(NEW,">$seq");
-while (<CHANGE>) {
-    chomp;
-    my $seq = $_;
-    $seq =~ tr/-/n/;
-    print NEW "$seq\n";
+	
+    # move -'s into n's
+    open(CHANGE,'/wormsrv2/autoace/BLAT/autoace.first');
+    open(NEW,">$seq");
+    while (<CHANGE>) {
+	chomp;
+	my $seq = $_;
+	$seq =~ tr/-/n/;
+	print NEW "$seq\n";
+    }
+    unlink ('/wormsrv2/autoace/BLAT/autoace.first') if (-e '/wormsrv2/autoace/BLAT/autoace.first');
 }
-unlink ('/wormsrv2/autoace/BLAT/autoace.first') if (-e '/wormsrv2/autoace/BLAT/autoace.first');
 
 ############
 # run blat #
@@ -166,8 +171,8 @@ unless ($opt_v) {
     }
     if ($opt_o) {
 	print "Mapping blat data to autoace\n";
-	print "Putting results to $blat/autoace.blat.miscPep.ace\n";
-	print "Putting results to $blat/camace.blat.miscPep.ace\n";
+	print "Putting results to $blat/autoace.blat.miscPep.ace and $blat/autoace.ci.mRNA.ace\n";
+	print "Putting results to $blat/camace.blat.miscPep.ace and $blat/camace.ci.mRNA.ace\n";
 	system("$bin/blat2ace.pl -a -x -c") && die "Mapping failed\n"; 
     }
     if ($opt_x) {
@@ -195,6 +200,12 @@ unless ($opt_v) {
 	print "Producing confirmed introns in $blat/camace.good_introns.mRNA.ace\n";
 	system("$bin/confirm_introns.pl -c -m") && die "Intron confirmation failed\n";
     }
+#    if ($opt_o) {
+#	print "Producing confirmed introns in $blat/autoace.good_introns.miscPep.ace\n";
+#	system("$bin/confirm_introns.pl -a -m") && die "Intron confirmation failed\n";
+#	print "Producing confirmed introns in $blat/camace.good_introns.miscPep.ace\n";
+#	system("$bin/confirm_introns.pl -c -m") && die "Intron confirmation failed\n";
+#    }
 }
 
 #########################################
@@ -243,15 +254,15 @@ if ($opt_m) {
     system("$bin/superlinks.confirmed_introns.pl -m -c $chrom > $blat/virtual_objects.camace.ci.mRNA.ace")
 	&& die "Producing virtual objects for confirmed introns failed\n"; 
 }
-if ($opt_x) {
-    print "Producing files for the virtual objects in autoace: $blat/virtual_objects.autoace.BLATX_miscPep.ace\n";
-    unlink "$blat/virtual_objects.autoace.BLATX_miscPep.ace" if (-e "$blat/virtual_objects.autoace.BLATX_miscPep.ace");
-    system("$bin/superlinks.blat.pl -x $chrom > $blat/virtual_objects.autoace.BLATX_miscPep.ace")
+if ($opt_o) {
+    print "Producing files for the virtual objects in autoace: $blat/virtual_objects.autoace.BLAT_miscPep.ace\n";
+    unlink "$blat/virtual_objects.autoace.BLAT_miscPep.ace" if (-e "$blat/virtual_objects.autoace.BLAT_miscPep.ace");
+    system("$bin/superlinks.blat.pl -x $chrom > $blat/virtual_objects.autoace.BLAT_miscPep.ace")
 	&& die "Producing virtual objects for blat failed\n";
     
-    print "Producing files for the virtual objects in camace: $blat/virtual_objects.camace.BLATX_miscPep.ace\n";
-    unlink "$blat/virtual_objects.camace.BLATX_miscPep.ace" if (-e "$blat/virtual_objects.camace.BLATX_miscPep.ace");
-    system("$bin/superlinks.blat.pl -x -c $chrom > $blat/virtual_objects.camace.BLATX_miscPep.ace")
+    print "Producing files for the virtual objects in camace: $blat/virtual_objects.camace.BLAT_miscPep.ace\n";
+    unlink "$blat/virtual_objects.camace.BLAT_miscPep.ace" if (-e "$blat/virtual_objects.camace.BLAT_miscPep.ace");
+    system("$bin/superlinks.blat.pl -x -c $chrom > $blat/virtual_objects.camace.BLAT_miscPep.ace")
 	&& die "Producing virtual objects for blat failed\n";
 }
 if ($opt_x) {
@@ -294,7 +305,7 @@ unless ($opt_v) {
 	unlink("$blat/autoace.ci.mRNA.ace");
     }
     if ($opt_o) {
-	print "$blat/virtual_objects.autoace.BLATX_miscPep.ace\n";
+	print "$blat/virtual_objects.autoace.BLAT_miscPep.ace\n";
 	print "$blat/autoace.blat.miscPep.ace\n";
     }
     if ($opt_x) {
@@ -323,7 +334,7 @@ unless ($opt_v) {
 	unlink("$blat/camace.ci.mRNA.ace");
     }
     if ($opt_o) {
-	print "$blat/virtual_objects.camace.BLATX_miscPep.ace\n";
+	print "$blat/virtual_objects.camace.BLAT_miscPep.ace\n";
 	print "$blat/camace.blat.miscPep.ace\n";
     }
     if ($opt_x) {
