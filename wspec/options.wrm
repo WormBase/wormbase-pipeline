@@ -88,6 +88,10 @@ _VSpecies          -H
 _VCell             -V
 _VExpr_pattern	   -V
 
+// Added for new data from citace krb 04/10/01
+_VExpr_profile	   -V
+_VSK_map	   -V
+
 _VMultiMap	   -H -D DtMULTIMAP
 _VManyMap          -H -D GMAP
 
@@ -115,6 +119,9 @@ _VJade		   -H
 // RNAi class added by LS 11/18/2000
 _VRNAi             -V
 _VPCR_product      -V
+
+// Added krb 04/10/01
+_VOligo		   -V
 
 // phenotypes and RNAis
 _VPhenotype        -V
