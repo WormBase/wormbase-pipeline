@@ -7,7 +7,7 @@
 # simple script for creating new (sequence based) Gene objects 
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-09-08 14:41:50 $
+# Last edited on: $Date: 2004-09-10 15:34:12 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -255,7 +255,7 @@ sub process_gene{
     else{
       $subject = "WormBase Gene ID request for $seq:  SUCCESSFUL";
     }
-    open (MAIL,  "|/bin/mailx -r \"krb\@sanger.ac.uk\" -s \"$subject\" $address ");
+    open (MAIL,  "|/bin/mailx -r \"krb\@sanger.ac.uk\" -s \"$subject\" $address krb\@sanger.ac.uk");
     print MAIL "$email";
     close (MAIL);
 
