@@ -280,6 +280,7 @@ Expr_pattern
 Expr_profile
 Gene_Class
 GO_term
+Homol_data
 Journal
 Keyword
 Laboratory
@@ -304,6 +305,7 @@ Repeat_Info
 RNAi
 Sequence
 Session
+SK_map
 Species
 Strain
 Table
