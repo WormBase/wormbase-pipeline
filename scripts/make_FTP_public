@@ -45,7 +45,7 @@ my $old_release        = "";    # [Text] Internally generated release number ($r
 my $old_release_number = "";    # [Int]  Internally generated release number 
 my $debug              = "";    #        on/off flag for verbose mode
 my $clean              = "";    #        on/off flag for removing old WS directories from the FTP site
-my $wormrna_release    = get_wormrna_version();
+my $wormrna_release    = get_wormbase_version();
 
 GetOptions (
             "source=s"       => \$sourcedir,
@@ -61,10 +61,7 @@ if (length ($targetdir)==0) {
     $targetdir = "/nfs/disk69/ftp/pub/wormbase";
 }
 
-
-$wormpep = $release;
-$wormpep =~ s/WS//;
-$wormpep+=10;
+$wormpep = &get_wormbase_version();
 
 $old_WS_release = $release;
 $old_WS_release =~ s/WS//;
