@@ -7,7 +7,7 @@
 # Script to convert cgc strain file into ace file for geneace
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-07-15 11:58:12 $
+# Last updated on: $Date: 2002-07-15 12:11:23 $
 
 use strict;
 use Getopt::Std;
@@ -130,16 +130,16 @@ while(<INPUT>){
 
 
 
-  foreach my $i (@loci) {$ace_object .= "Locus $i\n";}
-  foreach my $i (@loci2) {$ace_object .= "Locus $i\n";}
+  foreach my $i (@loci) {$ace_object .= "Gene $i\n";}
+  foreach my $i (@loci2) {$ace_object .= "Gene $i\n";}
   foreach my $i (@alleles){$ace_object .= "Allele $i\n";}
   foreach my $i (@alleles2){$ace_object .= "Allele $i\n";}
   foreach my $i (@alleles3){$ace_object .= "Allele $i\n";}
   foreach my $i (@rearrangements){$ace_object .= "Rearrangement $i\n";}
   foreach my $i (@transgenes){$ace_object .= "Transgene $i\n";}
 
-  foreach my $i (@loci) {$delete_ace_object .= "-D Locus $i\n";}
-  foreach my $i (@loci2) {$delete_ace_object .= "-D Locus $i\n";}
+  foreach my $i (@loci) {$delete_ace_object .= "-D Gene $i\n";}
+  foreach my $i (@loci2) {$delete_ace_object .= "-D Gene $i\n";}
   foreach my $i (@alleles){$delete_ace_object .= "-D Allele $i\n";}
   foreach my $i (@alleles2){$delete_ace_object .= "-D Allele $i\n";}
   foreach my $i (@alleles3){$delete_ace_object .= "-D Allele $i\n";}
