@@ -7,8 +7,8 @@
 # A script for dumping dna and/or gff files for chromosome objects in autoace
 # see pod for more details
 #
-# Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-12-02 09:54:29 $      
+# Last updated by: $Author: wormpub $     
+# Last updated on: $Date: 2004-01-07 10:34:12 $      
 
 
 use strict;
@@ -24,7 +24,7 @@ use IO::Handle;
 
 our $tace   = &tace;
 #our $giface = &giface;
-our $giface = "/nfs/team71/acedb/edgrif/TEST/DAN/giface";
+our $giface = "/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_5/giface";
 our $maintainers = "All";
 our ($log, $help, $debug, $dna, $gff, $zipdna, $zipgff, $composition, $database, $dump_dir, $test, $quicktest);
 
