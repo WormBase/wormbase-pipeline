@@ -73,10 +73,10 @@ if ($debug) {$maintainer = "dl1\@sanger.ac.uk";}
 my $dbdir = glob "/wormsrv2/autoace";
 my $wrdir = glob "/wormsrv2/WORMRNA/wormrna$old_release";
 my $new_wrdir = glob "/wormsrv2/WORMRNA/wormrna$release";
-#my $tace = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
+my $tace = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
 
 # tmp version to use to get around Smap/Schild problems
- my $tace = "/nfs/griffin2/rd/acedb/bin.ALPHA_4/tace";
+# my $tace = "/nfs/griffin2/rd/acedb/bin.ALPHA_4/tace";
 
 $ENV{'ACEDB'} = $dbdir;
 
