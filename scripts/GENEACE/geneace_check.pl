@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-11-25 14:09:07 $
+# Last updated on: $Date: 2004-11-30 17:04:13 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -455,6 +455,13 @@ sub test_locus_for_errors{
 	print "." if ($verbose);
       }
     }
+  }
+
+
+  # checks that a Gene doesn't have both Map and Interpolated_map_position tags
+  if ( defined $gene_id->Map && defined $gene_id->Interpolated_map_position ){
+    $warnings .= "ERROR 23: $gene_id has both Map and Interpolated_map_position tags, are you crazy?\n";
+    print "." if ($verbose);
   }
 
   print LOG "$warnings" if(defined($warnings));
