@@ -6,8 +6,8 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-12-01 11:23:26 $
+# Last updated by: $Author: ck1 $
+# Last updated on: $Date: 2003-12-08 16:04:03 $
 
 
 use strict;
@@ -110,7 +110,7 @@ my $db = Ace->connect(-path  => $default_db,
 
 
 # Process separate classes if specified on the command line else process all classes
-@classes = ("locus","laboratory","allele","strain","rearrangement","sequence","mapping","evidence", "xref") if (!@classes);
+@classes = ("locus","laboratory","allele","strain","rearrangement","sequence","mapping","evidence", "xref", "gmap") if (!@classes);
 
 foreach $class (@classes){
   if ($class =~ m/locus/i)           {&process_locus_class}
@@ -122,6 +122,8 @@ foreach $class (@classes){
   if ($class =~ m/(mapping)/i)       {&check_genetics_coords_mapping}
   if ($class =~ m/(evidence)/i)      {&check_evidence}
   if ($class =~ m/(xref)/i)          {&check_bogus_XREF}
+  if ($class =~ m/(gmap)/i)          {&int_loci}
+  
 }  
 
 
@@ -405,7 +407,7 @@ sub test_locus_for_errors{
     # can also test to see if there are attached annotations to these sequences which Erich should
     # know about, i.e. they should now be attached to the loci object instead
     foreach my $seq (@CDSs){
-      my ($newseq) = $db->fetch(-class=>'elegans_CDS',-name=>"$seq");
+      my ($newseq) = $db->fetch(-class=>'CDS',-name=>"$seq");
       if(defined($newseq->at('Visible.Provisional_description')) || 
 	 defined($newseq->at('Visible.Concise_description')) ||
 	 defined($newseq->at('Visible.Detailed_description'))){  
@@ -482,6 +484,19 @@ sub test_locus_for_errors{
       $warnings .= "ERROR 24: $locus has a 'Transcript' name different to 'Transcript_name'\n";
       print "." if ($verbose);
     }
+
+    # can also test to see if there are attached annotations to these sequences which Erich should
+    # know about, i.e. they should now be attached to the loci object instead
+    foreach my $seq (@seq){
+      my ($newseq) = $db->fetch(-class=>'Transcript',-name=>"$seq");
+      if(defined($newseq->at('Visible.Provisional_description')) || 
+	 defined($newseq->at('Visible.Concise_description')) ||
+	 defined($newseq->at('Visible.Detailed_description'))){  
+	print CALTECHLOG "$seq has attached functional annotation which should now be attached to $locus\n";
+	$caltech_errors++;
+      }
+    }
+
   }
 
 
@@ -510,6 +525,17 @@ sub test_locus_for_errors{
     if (@diff){
       $warnings .= "ERROR 26: $locus has a 'Pseudogene' name different to 'Pseudogene_name'\n";
       print "." if ($verbose);
+    }
+    # can also test to see if there are attached annotations to these sequences which Erich should
+    # know about, i.e. they should now be attached to the loci object instead
+    foreach my $seq (@seq){
+      my ($newseq) = $db->fetch(-class=>'Pseudogene',-name=>"$seq");
+      if(defined($newseq->at('Visible.Provisional_description')) || 
+	 defined($newseq->at('Visible.Concise_description')) ||
+	 defined($newseq->at('Visible.Detailed_description'))){  
+	print CALTECHLOG "$seq has attached functional annotation which should now be attached to $locus\n";
+	$caltech_errors++;
+      }
     }
   }
 
@@ -652,7 +678,7 @@ sub find_CDSs_with_multiple_loci {
   my $db = shift;
 
   # Find CDSs that have more than one Locus tag
-  my @CDSs = $db->fetch(-query=>'Find elegans_CDS COUNT Locus >1');
+  my @CDSs = $db->fetch(-query=>'Find CDS COUNT Locus >1');
   foreach my $cds (@CDSs){
     my @loci = $cds->Locus;
 
@@ -1113,7 +1139,7 @@ EOF
   foreach (@allele_predict_no_gene){$allele_predict_no_gene{$_}++};
   
   my @Allele_gene;
-  my $query_cds_locus_has_allele = "Find elegans_CDS WHERE Locus AND Allele";
+  my $query_cds_locus_has_allele = "Find CDS WHERE Locus AND Allele";
   push(@Allele_gene, $db->find($query_cds_locus_has_allele));
   
   foreach (@Allele_gene){
@@ -1294,7 +1320,7 @@ sub process_strain_class {
   print LOG "---------------------------------\n";
 
   @strains = $db->fetch('Strain','*');
-  @seqs = $db->fetch('elegans_CDS','*');
+  @seqs = $db->fetch('CDS','*');
 
   my %seqs;
   foreach (@seqs){
@@ -1332,7 +1358,7 @@ EOF
 	print @genes, "\n" if ($strain eq "C52E12.2");
 	foreach (@genes){
 	  if($seqs{$_}){
-	    my $seq = $db->fetch('elegans_CDS', $_);
+	    my $seq = $db->fetch('CDS', $_);
 	    if ($seq->Locus){
 	      my @loci=$seq->Locus(1);
 	      if ($cgc eq "CGC"){
@@ -1486,7 +1512,7 @@ sub check_bogus_XREF {
   
   print LOG "\nChecking bogus XREF debris from deleted CDS / Transcript / Pseudogene / Gene_name in Locus obj. . . .\n\n";
   
-  my $query_cds        = "Find elegans_CDS * where !(yk*) & *.*; Locus";
+  my $query_cds        = "Find CDS * where !(yk*) & *.*; Locus";
   my $query_transcript = "Find Transcript * ; locus";
   my $query_pseudo     = "Find Pseudogene * ; locus";
   my $query_gname      = "Find Gene_name *.*"; 
@@ -1588,9 +1614,11 @@ sub check_bogus_XREF {
 
 sub check_genetics_coords_mapping {
 
-  print "\nChecking discrepancies in genetics/coords mapping of each CDS/Transcript:\n\n";
+  print "\nChecking discrepancies in genetics/coords mapping:\n\n";
   print LOG "\nChecking discrepancies in genetics/coords mapping:\n\n";
+  print LOG "--------------------------------------------------\n";
   print JAHLOG "\nChecking discrepancies in genetics/coords mapping:\n\n";
+  print JAHLOG "--------------------------------------------------\n";
   system ("/wormsrv2/scripts/get_interpolated_gmap.pl -db /wormsrv1/geneace -diff");
   my $map_diff = "/wormsrv2/logs/mapping_diff.".$rundate;
   open(IN, $map_diff) || die $!;
@@ -1673,6 +1701,36 @@ sub create_log_files{
 
 }
 
+# Look for loci without map and mapping_data but have allele and seq. connection and interpolated_map_position
+# Convert their Interpolated_map to Map
+# sent to JAH for approval
+
+sub int_loci {
+
+  my $error=0;
+
+  print "\n\nChecking loci without map & mapping_data but have allele & seq. connection & interpolated_map_position\n\n";
+  print LOG "\n\nChecking loci without map & mapping_data but have allele & seq. connection & interpolated_map_position\n";
+  print LOG "------------------------------------------------------------------------------------------------------\n";
+  print JAHLOG "\n\nChecking loci without map & mapping_data but have allele & seq. connection & interpolated_map_position\n";
+  print JAHLOG "------------------------------------------------------------------------------------------------------\n";
+  my $int_loci  = "find Locus * where !map & !mapping_data & allele & (genomic_sequence|transcript|pseudogene) & species =\"*elegans\"";
+  my %INT_loci;
+
+  push( my @int_loci, $db->find($int_loci) );
+  foreach (@int_loci){
+    $error++;
+    my $int_map = $_ -> Interpolated_map_position(1);
+    my $int_pos = $_ -> Interpolated_map_position(2);
+    print LOG "$_ has interpolated_map which can now use Map tag at position $int_pos\n";
+    print JAHLOG "$_ has interpolated_map which can now use Map tag at position $int_pos\n";
+    print ACE "\nLocus : \"$_\"\n"; 
+    print ACE "-D Interpolated_map_position \n";
+    print ACE "\nLocus : \"$_\"\n";
+    print ACE "Map \"$int_map\" Position $int_pos\n";
+  }
+  print "No such locus found\n\n" if $error == 0;
+}
 
 ##############################
 
@@ -1731,7 +1789,7 @@ B<-class:>
             All classes will be checked without this option.
             Choosing multiple classes is supported. 
             Class names are case insensitive.
-            Current valid class names: 
+            Current valid options to check these classes are: 
 
                locus
                allele
@@ -1741,6 +1799,9 @@ B<-class:>
                sequence
                evidence
                mapping
+               xref
+               gmap
+                
 
             For example: -c allele -c locus OR -class sequence -class rearrangment
 
