@@ -327,16 +327,18 @@ sub initiate_build {
     
     # make sure that the database.wrm file is younger
     sleep 10;
-    
+
+#Had to comment out this section for now as cvs repository now requires password
+#access    
     # update database.wrm using cvs
-    print "Updating $cvs_file to include new WS number - using CVS\n\n";
-    system ("cvs -d '/nfs/ensembl/cvsroot/' edit $cvs_file")                                           && die "Couldn't 'cvs edit' $cvs_file\n";
-    system ("sed 's/$WS_version/$WS_new_name/' < $cvs_file > ${cvs_file}.new")                         && die "Couldn't edit $cvs_file\n";
-    system ("mv /wormsrv2/autoace/wspec/database.wrm.new $cvs_file")                                   && die "Couldn't update $cvs_file\n";
-    system ("cvs -d '/nfs/ensembl/cvsroot/' commit -m 'updating $cvs_file to $WS_new_name' $cvs_file") && die "Couldn't 'cvs commit' $cvs_file\n";
+#    print "Updating $cvs_file to include new WS number - using CVS\n\n";
+#    system ("cvs -d '/nfs/ensembl/cvsroot/' edit $cvs_file")                                           && die "Couldn't 'cvs edit' $cvs_file\n";
+#    system ("sed 's/$WS_version/$WS_new_name/' < $cvs_file > ${cvs_file}.new")                         && die "Couldn't edit $cvs_file\n";
+#    system ("mv /wormsrv2/autoace/wspec/database.wrm.new $cvs_file")                                   && die "Couldn't update $cvs_file\n";
+#    system ("cvs -d '/nfs/ensembl/cvsroot/' commit -m 'updating $cvs_file to $WS_new_name' $cvs_file") && die "Couldn't 'cvs commit' $cvs_file\n";
 
     # make a log file in /wormsrv2/autoace/logs
-    system ("touch $logdir/$flag{'A2'}");
+#    system ("touch $logdir/$flag{'A2'}");
 
 }
 #__ end initiate_build __#
