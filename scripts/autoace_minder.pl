@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-03-09 10:38:19 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2004-03-15 14:08:36 $
 
 
 #################################################################################
@@ -40,6 +40,7 @@ my $blat_est;           # run blat for ests
 my $blat_mrna;          # run blat for mrnas
 my $blat_ost;           # run blat for osts
 my $blat_embl;          # run blat for non-Wormbase CDS genes in EMBL
+my $blat_tc1;           # run blat for TC1 insertion sequences
 my $blat_nematode;      # run blat for non-C. elegans nematode ESTs
 my $blat_all;           # run all five types of blat jobs
 my $addblat;		# parse (all) blat files
@@ -84,6 +85,7 @@ GetOptions (
 	    "blat_ost"       => \$blat_ost,
 	    "blat_mrna"      => \$blat_mrna,
 	    "blat_embl"      => \$blat_embl,
+	    "blat_tc1"       => \$blat_tc1,
 	    "blat_nematode"  => \$blat_nematode,
 	    "blat_all"       => \$blat_all,
 	    "addblat"        => \$addblat,
@@ -919,8 +921,9 @@ sub blat_jobs{
   push(@blat_jobs,"ost")      if $blat_ost;
   push(@blat_jobs,"mrna")     if $blat_mrna;
   push(@blat_jobs,"embl")     if $blat_embl;
+  push(@blat_jobs,"tc1")      if $blat_tc1;      
   push(@blat_jobs,"nematode") if $blat_nematode;  # nematode should always be last job to tackle
-  push(@blat_jobs,"est","ost","mrna","embl","nematode") if $blat_all;
+  push(@blat_jobs,"est","ost","mrna","embl","tc1","nematode") if $blat_all;
 
   my $status;
   my $nematode_flag = 0; # have nematode blats been run?
@@ -931,7 +934,7 @@ sub blat_jobs{
     # If all other blat jobs are finished can load all non-nematode blat data into autoace this allows 
     # gff dump and gff split to be runin later steps, this is because nematode ESTs take a long time to blat/load
     if ($job eq "nematode"){
-      &load_blat_results("est","mrna","embl","ost");
+      &load_blat_results("est","mrna","embl","ost","tc1");
       $nematode_flag = 1;
     }
     
@@ -981,34 +984,34 @@ sub blat_jobs{
 ################################################################################
 sub load_blat_results{
 
-  $am_option .= "-addblat";
-  # generic subroutine for loading blat data into autoace
-  # will load all types of blat result if 'all' is passed to the subroutine
-  my $first_blat_type = $_[0];
+    $am_option .= "-addblat";
+    # generic subroutine for loading blat data into autoace
+    # will load all types of blat result if 'all' is passed to the subroutine
+    my $first_blat_type = $_[0];
 
-  my @blat_types = @_;
-  @blat_types = ("est","mrna","ost","embl","nematode") if ($first_blat_type eq "all");
+    my @blat_types = @_;
+    @blat_types = ("est","mrna","ost","embl","nematode","tc1") if ($first_blat_type eq "all");
   
-  foreach my $type (@blat_types){    
-    print LOG "Adding BLAT $type data to autoace at ",&runtime,"\n";
-    my $file =  "$basedir/autoace/BLAT/virtual_objects.autoace.blat.$type.ace";
-    &load($file,"virtual_objects_$type");
+    foreach my $type (@blat_types){    
+	print LOG "Adding BLAT $type data to autoace at ",&runtime,"\n";
+	my $file =  "$basedir/autoace/BLAT/virtual_objects.autoace.blat.$type.ace";
+	&load($file,"virtual_objects_$type");
 
-    # Don't need to add confirmed introns from nematode data (because there are none!)
-    unless($type eq "nematode"){
-      $file = "$basedir/autoace/BLAT/virtual_objects.autoace.ci.$type.ace"; 
-      &load($file,"blat_confirmed_introns_$type");
-
-      $file = "$basedir/autoace/BLAT/autoace.good_introns.$type.ace";
-      &load($file,"blat_good_introns_$type");
+	# Don't need to add confirmed introns from nematode data (because there are none!)
+	unless (($type eq "nematode") || ($type eq "tc1")) {
+	    $file = "$basedir/autoace/BLAT/virtual_objects.autoace.ci.$type.ace"; 
+	    &load($file,"blat_confirmed_introns_$type");
+	    
+	    $file = "$basedir/autoace/BLAT/autoace.good_introns.$type.ace";
+	    &load($file,"blat_good_introns_$type");
+	} 
+	
+	$file = "$basedir/autoace/BLAT/autoace.blat.$type.ace";           
+	&load($file,"blat_${type}_data");
+	
     }
-
-    $file = "$basedir/autoace/BLAT/autoace.blat.$type.ace";           
-    &load($file,"blat_${type}_data");
-
-  }
-  system("touch $logdir/$flag{'B7'}"); 
-
+    system("touch $logdir/$flag{'B7'}"); 
+    
 }
 
 #__ end load_blat_results __#
@@ -1383,6 +1386,7 @@ sub logfile_details {
   print LOG "#  -blat_ost     : perform blat analysis on OSTs\n"                                       if ($blat_ost);
   print LOG "#  -blat_mrna    : perform blat analysis on mRNAs\n"                                      if ($blat_mrna);
   print LOG "#  -blat_embl    : perform blat analysis on non-WormBase CDSs from EMBL\n"                if ($blat_embl);
+  print LOG "#  -blat_tc1     : perform blat analysis on TC1 insertions\n"                             if ($blat_tc1);
   print LOG "#  -blat_nematode: perform blat analysis on non-C. elegans ESTs\n"                        if ($blat_nematode);
   print LOG "#  -blat_all     : perform blat analysis on everything\n"                                 if ($blat_all);
   print LOG "#  -addblat      : Load blat data into autoace\n"                                         if ($addblat);

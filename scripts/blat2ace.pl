@@ -7,7 +7,7 @@
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2003-11-28 09:35:35 $
+# Last edited on: $Date: 2004-03-15 14:08:36 $
 
 
 use strict;
@@ -20,12 +20,13 @@ use Getopt::Long;
 # Command line options  #
 #########################
 
-my ($help, $est, $mrna, $ost, $nematode, $embl, $camace, $intron);
+my ($help, $est, $mrna, $ost, $tc1, $nematode, $embl, $camace, $intron);
 
 GetOptions ("help"       => \$help,
             "est"        => \$est,
             "mrna"       => \$mrna,
             "ost"        => \$ost,
+            "tc1"        => \$tc1,
             "nematode"   => \$nematode,
             "embl"       => \$embl,
             "camace"     => \$camace,
@@ -63,6 +64,7 @@ our %word = (
 	     ost      => 'BLAT_OST',
 	     mrna     => 'BLAT_mRNA',
 	     embl     => 'BLAT_EMBL',
+	     tc1      => 'BLAT_TC1',
 	     nematode => 'BLAT_NEMATODE',
 	     );
 
@@ -78,13 +80,14 @@ our %word = (
 # Exit if no data type choosen [EST|mRNA|EMBL|NEMATODE|OST]
 # or if multiple data types are chosen
 
-&usage(1) unless ($est || $mrna || $ost || $nematode || $embl); 
+&usage(1) unless ($est || $mrna || $ost || $tc1 || $nematode || $embl); 
 
 my $flags = 0;
 $flags++ if $est;
 $flags++ if $ost;
 $flags++ if $mrna;
 $flags++ if $embl;
+$flags++ if $tc1;
 $flags++ if $nematode;
 &usage(2) if ($flags > 1);
 
@@ -93,6 +96,7 @@ $flags++ if $nematode;
 ($type = 'ost')      if ($ost);
 ($type = 'mrna')     if ($mrna);
 ($type = 'embl')     if ($embl);
+($type = 'tc1')      if ($tc1);
 ($type = 'nematode') if ($nematode);
 
 ############################################
@@ -460,10 +464,11 @@ while (<AOTHER>) {
   if ($_ =~ /^Homol_data/) {
     my $line = $_;
     # for comparison to %line hash, need to change OTHER to BEST in $_
-    s/BLAT_EST_OTHER/BLAT_EST_BEST/g unless ($mrna || $embl || $nematode || $ost);
+    s/BLAT_EST_OTHER/BLAT_EST_BEST/g unless ($mrna || $embl || $nematode || $ost || $tc1);
     s/BLAT_OST_OTHER/BLAT_OST_BEST/g     if ($ost); 
     s/BLAT_mRNA_OTHER/BLAT_mRNA_BEST/g   if ($mrna);
     s/BLAT_EMBL_OTHER/BLAT_EMBL_BEST/g   if ($embl);
+    s/BLAT_TC1_OTHER/BLAT_TC1_BEST/g     if ($tc1);
     
     # Only output BLAT_OTHER hits in first output file which we now know NOT to
     # really be BEST hits

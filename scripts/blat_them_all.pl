@@ -7,8 +7,8 @@
 # Gets sequences ready for blatting, blats sequences, processes blat output, makes confirmed introns
 # and virtual objects to hang the data onto
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-12-01 11:19:34 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2004-03-15 14:08:36 $
 
 
 use strict;
@@ -24,7 +24,7 @@ use Carp;
 ##############################
 
 my ($help, $debug, $verbose, $est, $mrna, $ost, $nematode, $embl, 
-    $blat, $process, $virtual, $dump, $camace, $fine);
+    $blat, $tc1, $process, $virtual, $dump, $camace, $fine);
 my $maintainers = "All";
 my $errors = 0;
 my $bin       = "/wormsrv2/scripts";
@@ -40,6 +40,7 @@ our %word = (
 	     embl     => 'BLAT_EMBL',
 	     nematode => 'BLAT_NEMATODE',
 	     ost      => 'BLAT_OST',
+	     tc1      => 'BLAT_TC1',
 	     );
 
 
@@ -55,6 +56,7 @@ GetOptions ("help"       => \$help,
 	    "ost"        => \$ost,
 	    "nematode"   => \$nematode,
 	    "embl"       => \$embl,
+	    "tc1"        => \$tc1,
 	    "dump"       => \$dump,
 	    "blat"       => \$blat,
 	    "process"    => \$process,
@@ -88,7 +90,7 @@ if($debug){
 &usage(1) unless ($dump || $process || $blat || $virtual); 
 
 # Exit if no data type choosen [EST|mRNA|EMBL|NEMATODE|OST] (or -dump not chosen)
-&usage(2) unless ($est || $mrna || $embl || $nematode || $ost || $dump); 
+&usage(2) unless ($est || $mrna || $embl || $tc1 || $nematode || $ost || $dump); 
 
 # Exit if multiple data types choosen [EST|mRNA|EMBL|NEMATODE|OST]
 # ignore if -dump is being run
@@ -98,6 +100,7 @@ unless($dump){
   $flags++ if $ost;
   $flags++ if $mrna;
   $flags++ if $embl;
+  $flags++ if $tc1;
   $flags++ if $nematode;
   &usage(3) if ($flags > 1);
 }
@@ -112,6 +115,7 @@ my $data;
 ($data = 'ost')      if ($ost);
 ($data = 'mrna')     if ($mrna);
 ($data = 'embl')     if ($embl);
+($data = 'tc1')      if ($tc1);
 ($data = 'nematode') if ($nematode);
 
 
@@ -119,10 +123,10 @@ my $data;
 my $query = "/nfs/disk100/wormpub/analysis/ESTs/";
 $query   .= 'elegans_ESTs.masked'  if ($est);      # EST data set
 $query   .= 'elegans_OSTs'         if ($ost);      # OST data set
+$query   .= 'elegans_TC1s'         if ($tc1);      # TC1 data set
 $query   .= 'elegans_mRNAs.masked' if ($mrna);     # mRNA data set
 $query   .= 'other_nematode_ESTs'  if ($nematode); # ParaNem EST data set
 $query   .= 'elegans_embl_cds'     if ($embl);     # Other CDS data set, DNA not peptide!
-
 
 &create_log_files;
 
@@ -177,32 +181,32 @@ if ($blat) {
 
 if ($process) {
 
-  my $runtime = &runtime;
-  print "Mapping blat data to autoace\n" if ($verbose);      
-  print LOG "$runtime: Processing blat ouput file, running blat2ace.pl\n";
-  
-  # treat slightly different for nematode data (no confirmed introns needed)
-  if ($nematode) {
-    &run_command("$bin/blat2ace.pl -$data"); 
-  }
-  elsif($camace){
-    &run_command("/nfs/team71/worm/dl1/wormbase/wormbase/scripts/blat2ace.pl -$data -intron -camace"); 	
-  }
-  else {
-    &run_command("$bin/blat2ace.pl -$data -intron"); 
-  }
+    my $runtime = &runtime;
+    print "Mapping blat data to autoace\n" if ($verbose);      
+    print LOG "$runtime: Processing blat ouput file, running blat2ace.pl\n";
+    
+    # treat slightly different for nematode data (no confirmed introns needed)
+    if ( ($nematode) || ($tc1) ) {
+	&run_command("$bin/blat2ace.pl -$data"); 
+    }
+    elsif($camace){
+	&run_command("/nfs/team71/worm/dl1/wormbase/wormbase/scripts/blat2ace.pl -$data -intron -camace"); 	
+    }
+    else {
+	&run_command("$bin/blat2ace.pl -$data -intron"); 
+    }
 
-  $runtime = &runtime;
-  print "Producing confirmed introns in databases\n\n" if $verbose;
-  print LOG "$runtime: Producing confirmed introns in databases\n";
+    $runtime = &runtime;
+    print "Producing confirmed introns in databases\n\n" if $verbose;
+    print LOG "$runtime: Producing confirmed introns in databases\n";
 
-  # produce confirmed introns for all but nematode data
-  unless($nematode){
-    print "Producing confirmed introns using $data data\n" if $verbose;
-    &confirm_introns('autoace',"$data");
-    &confirm_introns('camace', "$data");
-    &confirm_introns('stlace', "$data");
-  }
+    # produce confirmed introns for all but nematode and tc1 data
+    unless ( ($nematode) || ($tc1) ) {
+	print "Producing confirmed introns using $data data\n" if $verbose;
+	&confirm_introns('autoace',"$data");
+	&confirm_introns('camace', "$data");
+	&confirm_introns('stlace', "$data");
+    }
 }
 
 
@@ -210,14 +214,13 @@ if ($process) {
 # produce files for the virtual objects #
 #########################################
 if ($virtual) {
-  my $runtime = &runtime;
-  print LOG "$runtime: Producing $data files for the virtual objects\n";
-
-  print "// Assign laboratories to superlinks*\n";
-  # First assign laboratories to each superlink object (stores in %homedb)
-  &sequence_to_lab;
-
-  &virtual_objects_blat($data);
+    my $runtime = &runtime;
+    print LOG "$runtime: Producing $data files for the virtual objects\n";
+    
+    print "// Assign laboratories to superlinks*\n";
+    # First assign laboratories to each superlink object (stores in %homedb)
+    &sequence_to_lab;
+    &virtual_objects_blat($data);
 }
 
 
@@ -311,8 +314,6 @@ sub dump_dna {
   # Check that superlinks file created ok
   &usage(11) unless (-e "${blat_dir}/superlinks.ace");
 
-  
-  
   # Change '-'s in chromosome sequences into 'n's because blat excludes '-'
   # Not strictly needed anymore but left in for safety
   my $sequence;
@@ -588,8 +589,11 @@ sub virtual_objects_blat {
   close OUT_stlace_homol;
   close OUT_stlace_feat;
   
-  # clean up if you are dealing with parasitic nematode conensus data
-  if ($data eq "nematode") {
+  # clean up if you are dealing with parasitic nematode conensus or TC1 insertion data
+  # dl 040315 - this is crazy. we make all of the files and then delete the ones we don't want.
+  #             don't rock the boat...
+
+  if ( ($data eq "nematode") || ($data eq "tc1") ) {
     unlink ("$blat_dir/virtual_objects.autoace.ci.$data.ace");
     unlink ("$blat_dir/virtual_objects.camace.ci.$data.ace");
     unlink ("$blat_dir/virtual_objects.stlace.ci.$data.ace");
