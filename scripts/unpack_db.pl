@@ -12,8 +12,8 @@
 # the Cold Spring Harbor Laboratory database (cshace)
 # the Caltech database (citace)
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-03-02 13:34:24 $
+# Last updated by: $Author: ck1 $
+# Last updated on: $Date: 2004-05-10 14:26:41 $
 
 
 #################################################################################
@@ -150,7 +150,7 @@ sub unpack_stuff{
 
   # make temp unpack directory
   my $unpack_dir = "$dbdir"."/temp_unpack_dir";
-  system("/bin/mkdir $unpack_dir") && print LOG "Couldn't make temp unpack directory\n";
+  system("/bin/mkdir $unpack_dir") && print LOGFILE "Couldn't make temp unpack directory\n";
 
   chdir $unpack_dir;
   my $dir = cwd();
@@ -223,12 +223,12 @@ sub unpack_stuff{
       die();
   }
 
-  unlink glob("$dbdir/database/new/*") or print LOG "ERROR: Couldn't unlink file: $!\n";
-  unlink glob("$dbdir/database/touched/*") or print LOG "ERROR: Couldn't unlink file: $!\n";
+  unlink glob("$dbdir/database/new/*") or print LOGFILE "ERROR: Couldn't unlink file: $!\n";
+  unlink glob("$dbdir/database/touched/*") or print LOGFILE "ERROR: Couldn't unlink file: $!\n";
 
   $status = move("$dbdir/database/log.wrm", "$dbdir/database/log.old");
   print "ERROR: Couldn't move file: $!\n" if ($status == 0);
-  unlink glob("$dbdir/database/*.wrm") or print LOG "ERROR: Couldn't run rm command: $!\n";
+  unlink glob("$dbdir/database/*.wrm") or print LOGFILE "ERROR: Couldn't run rm command: $!\n";
 
   my $command="y\n";
   print LOGFILE "* Reinitdb: reinitializing the database ..\n";
@@ -259,8 +259,8 @@ END
   ###############################
   # Tidy up old ace files       #
   ###############################
-  unlink glob("$unpack_dir/*") or print LOG "ERROR: Couldn't remove $unpack_dir/*\n";
-  rmdir("$unpack_dir") or print LOG "ERROR: Could't remove $unpack_dir\n";
+  unlink glob("$unpack_dir/*") or print LOGFILE "ERROR: Couldn't remove $unpack_dir/*\n";
+  rmdir("$unpack_dir") or print LOGFILE "ERROR: Could't remove $unpack_dir\n";
 
   $runtime = &runtime;
   print LOGFILE "\n$database build complete at $rundate $runtime\n";
