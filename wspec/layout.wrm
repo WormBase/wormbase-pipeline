@@ -1,5 +1,5 @@
 
- Genetic_map    Sequence_map        Author
+ Genetic_map    Accession_number    Author
  Gene_class			    Paper
  Locus          Sequence                 
   Gene           Genome_sequence    Expr_profile                 
@@ -10,7 +10,7 @@
  Strain         Protein              PCR_product
        	          Wormpep             Oligo
  Cell_group
- Cell		WTP
+ Cell		UTR
  Lineage			    Model
  Life_stage	Clone		    Method
 		Clone_grid	    Keyset
