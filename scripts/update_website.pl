@@ -614,7 +614,8 @@ sub update_wormpep_pages{
   $alt_spliced =~ s/\s+//g;
 
   # create release_paragraph.shtml
-  open (PARAGRAPH, ">$www_root/wormpep/release_paragraph.shtml") || die "Can't open the file: $www/release_paragraph.shtml\n\n";
+  system("rm -f $www_root/wormpep/release_paragraph.shtml") && die "Couldn't remove old release_paragraph.shtml\n";
+  open (PARAGRAPH, ">$www_root/wormpep/release_paragraph.shtml") || die "Can't create the file: $www_root/wormpep/release_paragraph.shtml\n\n";
   print PARAGRAPH "The current Wormpep database, wormpep$wormpep_version (released $release_date), contains $letters residues in $count protein sequences (of which $alt_spliced have splice variants) - wormpep$wormpep_version is based on the <A href=\"ftp://ftp.sanger.ac.uk/pub/wormbase/WS$WS_current\">current WS$WS_current release</A> of the <I>C. elegans</I> AceDB database.\n";
   close (PARAGRAPH);
 
