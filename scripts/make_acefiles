@@ -218,7 +218,11 @@ sub mknewacefiles {
 	}
 
 	# remove ghost objects
-	&strip_ghosts($filename,$object);
+        # don't run on LongText files as these may look like ghosts
+
+	unless ($filename =~ /LongText/) {
+	    &strip_ghosts($filename,$object);
+	}
 
 	# process database dumps to add database names into time stamps
 	# rather than keeping the existing 'wormpub', 'lstein' etc.  name
