@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-05-29 16:05:24 $
+# Last updated on: $Date: 2003-05-30 09:33:19 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -175,7 +175,7 @@ exit(0);
 
 
 #######################################
-# Check misuse of Evidence in 7 classes 
+# Check misuse of Evidence in 8 classes 
 # Convert Author to Person
 #######################################
 
@@ -190,6 +190,8 @@ EOF
  
   print LOG "\nChecking misuse of Evidence and converting Author to Person / Non-Person to Author:\n";
   print LOG "-----------------------------------------------------------------------------------\n\n";
+
+# dump flat files with time stamps
 
 my $command=<<END;
 find locus * 
@@ -230,6 +232,8 @@ END
   foreach (@dumps){system ("chmod 777 /tmp/$_")}
 
   open(IN, "/tmp/class_dump.ace") || die $!;
+
+# look for person/author names that needs to be converted
 
   my $evid_errors = 0;
   my $updates = 0;
@@ -312,6 +316,9 @@ END
   #################################################################
   # subroutines for checking evidence & converting Author to Person
   #################################################################
+  
+  # make hashes for last name and its corresponding first/middle name and WBPersonID
+  # these hashes are used by get_WBPerson_ID subroutine
 
   sub process_WBPerson_names {
     my ($def, $db)=@_;
@@ -339,6 +346,14 @@ END
     }
     close FH;
   }
+
+  # last name (key) is checked against hashes created from process_WBPerson_names subroutine
+  # the values of the key (first name, middle name) are checked to assign identify
+  
+  # convert authors that have WBPersonID to person 
+  # (or unregistered_lab_members to registered_lab_members for laboratory class)
+  
+  # move names in person_evidence that are not person to author_evidence 
 
   sub get_WBPerson_ID {
     my ($name, $class, $obj, $tag, $ori, $b4_evi, $conversion) = @_;
