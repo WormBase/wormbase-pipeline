@@ -53,7 +53,7 @@ my $debug = $opt_d;
 my $tace = glob("~acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace");    # tace executable path
 my $dbdir  = "/wormsrv2/autoace";                                  # Database path
 my $gffdir = "/wormsrv2/autoace/CHROMOSOMES";
-my @chromosomes = ('I' );
+my @chromosomes = ('I','II','III','IV','V','X' );
 
  ########################################
  # Open logfile                         #
