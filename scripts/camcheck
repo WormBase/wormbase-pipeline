@@ -67,8 +67,8 @@ my $debug = $opt_d;
 
 my $clonepath="/nfs/disk100/wormpub/analysis/cosmids";
 my $clonefile="$clonepath"."/current.versions";
-my $tace = glob("~acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace");   # tace executable path
-my $dbpath = "/wormsrv2/camace";                                  # Database path
+my $tace = glob("~acedb/RELEASE.2001_04_26.BUILD/bin.ALPHA_4/tace");   # tace executable path
+my $dbpath = "/wormsrv2/camace";                                       # Database path
 
  ########################################
  # Open logfile                         #
