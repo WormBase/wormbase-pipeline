@@ -66,7 +66,8 @@ sub read_fasta {
                 $seq =~ tr/a-z/A-Z/;
                 my $org;
 	 	if (exists($HASH{$id})){
-                    if( (exists $exclude{$org}) || ($org =~ /Human immunodeficiency virus/) ){
+		  $org = $HASH{$id};
+		  if( (exists $exclude{$org}) || ($org =~ /Human immunodeficiency virus/) ){
                     	$id = $new_id; $acc = $new_acc; $seq = "" ;
                     	next;
 		    }
