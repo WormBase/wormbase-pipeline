@@ -8,8 +8,8 @@
 # Output ace file of such information and upload to autoace during each build
 # Output also other files related. See POD
 
-# Last updated on: $Date: 2003-06-11 10:14:42 $
-# Last updated by: $Author: krb $
+# Last updated on: $Date: 2003-06-12 12:46:01 $
+# Last updated by: $Author: ck1 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -40,7 +40,7 @@ $gff_dir = "/wormsrv2/autoace/GFF_SPLITS/";
 $curr_db = "/nfs/disk100/wormpub/DATABASES/current_DB/"; 
 $output = "/wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP";
 
-if (!defined @ARGV or $help){system ("perldoc /wormsrv1/chaokung/my-scripts/test_gmap.pl"); exit(0)}
+if (!defined @ARGV or $help){system ("perldoc /wormsrv2/scripts/get_interpolated_gmap.pl"); exit(0)}
 
 my @versions=dataset($gff_dir, "folder");
 
