@@ -1,16 +1,15 @@
 #!/usr/local/bin/perl5.8.0 -w
-
+#
 # load_interpolated_map_to_geneace.pl
-
+#
 # by Chao-Kung Chen
-
-# Last updated on: $Date: 2004-06-09 12:50:41 $
-# Last updated by: $Author: ck1 $
-
-
-# load Geneace related data from Build back to Geneace
-
-# RUN this script anytime during the build or after the build when get_interpolated_map and update_inferred multi-pt data are done
+#
+# loads Geneace related data from Build back to /wormsrv1/geneace
+# RUN this script anytime during the build or after the build when get_interpolated_map 
+# and update_inferred multi-pt data are done
+#
+# Last updated on: $Date: 2004-07-14 09:19:32 $
+# Last updated by: $Author: krb $
 
 
 use strict;
@@ -60,43 +59,13 @@ my $multi_update = glob("/wormsrv1/geneace/JAH_DATA/MULTI_PT_INFERRED/updated_mu
 
 
 # (5) updated geneace with person/person_name data from Caltech
+# can use dumped Person class in /wormsrv2/wormbase/caltech/caltech_Person.ace
 
-######################################################################
-# ----- retrieve  person/person_name datafrin autoace Or curr_db -----
-######################################################################
+# First need to remove person/person_name data from /wormsrv1/geneace
+# Not that the value of "CGC_representative_for" is kept as geneace keeps this record
+# i.e. you can't delete *all* of the Person class from geneace
 
-my $person = "/tmp/new_Person.ace";
-my $person_name = "/tmp/new_Person_name.ace";
-
-my $dump_Person_Person_name_from_caltech=<<END;
-find Person *
-show -a -f $person
-find Person_name *
-show -a -f  $person_name
-quit
-END
-
-# Two possibilities of doing ?Person/?Person_name update from Caltech:
-# (1) duing the build:
-# (2) after the build: retrieved from curr_db as Person/Person_name data will not be in autoace anymore
-
-# doing update during the build
-`echo "$dump_Person_Person_name_from_caltech" | $tace $autoace`;
-`chmod 777 $person $person_name`;
-
-# doing update after the build
-if (! -e ($person && $person_name)){
-  print LOG "Autoace Person and Perosn_name data are now in curr_db .. retrieving them from current_DB (WS$build_ver)...\n\n";
-  `echo "$dump_Person_Person_name_from_caltech" | $tace $curr_db`;
-  print LOG "Got Person and Perosn_name data from current_DB (WS$build_ver)...";
-}
-
-#######################################################################################
-# ----- remove person/person_name data from Geneace : 
-#       the value of "CGC_representative_for" is kept as geneace keeps the record -----
-#######################################################################################
-
-my $remove_Person_Person_name_from_ga=<<END;
+my $remove_Person_data_from_geneace=<<END;
 find Person *
 edit -D PostgreSQL_id
 edit -D Name
@@ -113,8 +82,10 @@ save
 quit
 END
 
-`echo "$remove_Person_Person_name_from_ga" | $tace $geneace_dir`;
+`echo "$remove_Person_data_from_geneace" | $tace $geneace_dir`;
 
+# new Person data will have been dumped from citace
+my $person = "/wormsrv2/wormbase/caltech/caltech_Person.ace";
 
 # (6) allele mapping data from build
 
@@ -127,7 +98,7 @@ my $allele_update = "/wormsrv2/autoace/MAPPINGS/map_alleles_geneace_update.WS$bu
 ################################################
 
 my $msg = <<MSG;
-\n\nNOTE: The following 8 files should have been loaded.\n
+\n\nNOTE: The following 7 files should have been loaded.\n
 (1) $map\n
 (2) $rev_pyhs\n
 (3) $multi\n
@@ -135,7 +106,7 @@ my $msg = <<MSG;
 (5) $allele_delete\n
 (6) $allele_update\n
 (7) $person\n
-(8) $person_name\n
+
 Depending on whether pseudo genetic markers are availabe to the build or if there are reverse physicals, files like (2) or (3) maybe missing. But the rest should always be available\n
 MSG
 
@@ -155,34 +126,23 @@ pparse $multi_update
 pparse $allele_delete
 pparse $allele_update
 pparse $person
-pparse $person_name
-
 save
 quit
 END
 
-my $rundate = &rundate;
-
 # upload when corresponding file exists
-open (Load_GA,"| $tace -tsuser \"autoace_update\" $geneace_dir >> $log") || die "Failed to upload to Geneace";
+open (Load_GA,"| $tace -tsuser \"autoace_update\" $geneace_dir >> $log") || die "Failed to upload to Geneace\n";
 print Load_GA $command;
 close Load_GA;
-
-#######################
-# ----- clean up -----
-#######################
-
-# remove temp. person, person_name data
-`rm -f $person $person_name`;
 
 
 ###########################
 # ----- email notice -----
 ###########################
 
-#mail_maintainer("Loading WS$build_ver Geneace related data to Geneace", "ck1\@sanger.ac.uk, krb\@sanger.ac.uk", $log);
+&mail_maintainer("Loading WS$build_ver Geneace related data to Geneace", "krb\@sanger.ac.uk", $log);
 
-mail_maintainer("Loading WS$build_ver Geneace related data to Geneace", "ck1\@sanger.ac.uk", $log);
+exit(0);
 
 __END__
 
