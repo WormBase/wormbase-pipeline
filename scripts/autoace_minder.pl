@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2004-03-15 14:08:36 $
+# Last edited by: $Author: wormpub $
+# Last edited on: $Date: 2004-03-19 09:59:36 $
 
 
 #################################################################################
@@ -242,7 +242,7 @@ LOG->autoflush();
 
 # B6:Blat_analysis 
 # Requires: A1,A4,A5,B1
-&blat_jobs              if ($blat_est || $blat_ost || $blat_mrna || $blat_embl || $blat_nematode || $blat_all);
+&blat_jobs              if ($blat_est || $blat_ost || $blat_mrna || $blat_embl || $blat_tc1 || $blat_nematode || $blat_all);
 
 
 # B7:Upload_BLAT_data
