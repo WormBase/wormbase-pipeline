@@ -7,8 +7,8 @@
 # Generates the .acefiles from the primary databases as a prelim for building
 # autoace.
 #
-# Last updated by: $Author: dl1 $                     
-# Last updated on: $Date: 2002-07-17 16:33:19 $       
+# Last updated by: $Author: krb $                     
+# Last updated on: $Date: 2002-07-22 15:38:08 $       
 
 #################################################################################
 # Variables                                                                     #
@@ -55,7 +55,7 @@ GetOptions (
 my $tace           = glob ('~edgrif') . "/TEST/DAN/tace";
 
 
-my $autoace_config = "/wormsrv2/autoace_config/autoace_test.config";
+my $autoace_config = "/wormsrv2/autoace_config/autoace.config";
 my $basedir        = "/wormsrv2/wormbase";
 my $miscdir        = "$basedir/misc";
 
