@@ -7,8 +7,8 @@
 #
 # This makes the autoace database from its composite sources.
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2005-01-20 09:54:34 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2005-03-21 13:24:28 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -99,11 +99,11 @@ my @filenames; # for storing contents of autoace_config
 my $basedir     = "/wormsrv2";
 $basedir        = glob("~wormpub")."/TEST_BUILD" if ($test); 
 
-my $wormbasedir = "$basedir/wormbase";
-my $autoacedir  = "$basedir/autoace";
-my $stlacedir   = "$basedir/stlace";
-my $camacedir   = "$basedir/camace";
-my $configfile  = "$basedir/autoace_config/autoace.config";
+our $wormbasedir = "$basedir/wormbase";
+our $autoacedir  = "$basedir/autoace";
+our $stlacedir   = "$basedir/stlace";
+our $camacedir   = "$basedir/camace";
+our $configfile  = "$basedir/autoace_config/autoace.config";
 
 my $tace   = &tace;
 my $giface = &giface;
@@ -174,7 +174,7 @@ sub buildautoace{
   
 
   # remove temp genes
-  &rmtempgene();
+  &remove_pariah_gene();
   
 
   # Read in the physical map and make all maps   
@@ -240,19 +240,21 @@ sub GetTime {
 
 
 ################################################
-# Remove temp_gene sequences from stlace, camace 
+# Remove Bad gene predictions from the database
 
-sub rmtempgene {
+sub remove_pariah_gene {
   
-  print LOG &runtime, ": starting rmtempgene subroutine\n";
-  my $camace  = "$camacedir";
-  my $stlace  = "$stlacedir";
-  my $command = "query find elegans_CDS method = hand_built\nkill\nsave\nquit\n";
-  &DbWrite($command,$tace,$camace,"CamAce");
-  &DbWrite($command,$tace,$stlace,"StlAce");
-  my $command2 = "query find elegans_CDS temp*\nkill\nsave\nquit\n";
-  &DbWrite($command2,$tace,$camace,"CamAce");
-  &DbWrite($command2,$tace,$stlace,"StlAce");
+  print LOG &runtime, ": starting pariah gene subroutine\n";
+
+  my $command  = "query find elegans_CDS method = hand_built\nkill\n";                                  # Any objects with Method "hand_build"
+  $command    .= "query find elegans_CDS temp*\nkill\n";                                                # Any objects "temp*"
+  $command    .= "query find CDS where Method = Genefinder AND Species = \"*elegans\"\nkill\n";         # Any elegans objects with Method "Genefinder"
+  $command    .= "query find CDS where Method = twinscan AND Species = \"*elegans\"\nkill\n";           # Any elegans objects with Method "twinscan"
+  $command    .= "save\nquit\n";
+
+  &DbWrite($command,$tace,$autoacedir,"anon");
+
+
   print LOG &runtime, ": Finished.\n\n";
 }
 
