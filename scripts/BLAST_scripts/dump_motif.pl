@@ -5,22 +5,29 @@
 # Dumps protein motifs from ensembl mysql (protein) database to an ace file
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2004-07-05 13:14:59 $
+# Last updated on: $Date: 2005-03-03 13:00:36 $
 
 
 use strict;
 use DBI;
 use Getopt::Long;
 
-my ($debug, $WPver, $database, $mysql);
+my ($debug, $WPver, $database, $mysql, $method);
 
 GetOptions("debug:s"    => \$debug,
 	   "database:s" => \$database,
-	   "mysql"      => \$mysql
+	   "mysql"      => \$mysql,
+	   "method=s"   => \$method
 	  );
 
 # define the names of the methods to be dumped
-my @methods = qw(ncoils seg signalp tmhmm hmmpfam);
+my @methods;
+if ($method ) {
+  push(@methods,$method)
+}else{
+  @methods= qw(ncoils seg signalp tmhmm hmmpfam);
+}
+
 
 # mysql database parameters
 my $dbhost = "ecs1f";
