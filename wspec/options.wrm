@@ -47,7 +47,6 @@
   */
 
 
-
 // Sequence, protein, domain related classes
 
 _VSequence         -V -D FMAP
@@ -68,6 +67,7 @@ _VOperon           -V
 _VOligo		   -V
 _VUTR		   -V -D FMAP
 
+
 // literature 
 
 _VAuthor           -V 
@@ -75,6 +75,7 @@ _VPerson	   -V -T Standard_name
 _VPerson_name	   -V
 _VJournal          -V
 _VPaper            -V -T Brief_citation
+
 
 
 // genetics / CGC stuff
@@ -101,7 +102,6 @@ _VPos_neg_data     -H -T Results
 _VCell             -V
 _VCell_group       -H
 _VLife_stage       -H
-
 
 
 // database related classes
@@ -153,6 +153,7 @@ _VHomology_group   -V
 _VMovie            -H
 _VGO_term	   -V
 _VGO_code	   -V
+
 
 
 
