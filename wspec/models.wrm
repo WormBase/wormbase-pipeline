@@ -236,6 +236,7 @@
                 Old_name ?Locus XREF New_name
                 New_name ?Locus XREF Old_name
 	Description ?Text
+	Species UNIQUE ?Species // added by krb 15/02/02
 	Type	Gene	Reference_Allele ?Allele Text
                         Phenotype ?Text
                         RNAi_result   ?RNAi XREF Locus                       //RL [010327]
