@@ -7,7 +7,7 @@
 # This script calculates interpolated gmap for CDS/transcripts lying between as well as outside genetic markers.
 # Output ace file of such information
 
-# Last updated on: $Date: 2003-03-11 18:55:35 $
+# Last updated on: $Date: 2003-03-14 18:42:25 $
 # Last updated by: $Author: ck1 $
 
 use strict;                    
@@ -31,19 +31,22 @@ GetOptions ("diff" => \$diff,
 #################################################
 
 my $gff_dir = "/wormsrv2/autoace/GFF_SPLITS/";
-my $ga_dir="/wormsrv1/geneace";
 
+my $ga_dir="/wormsrv1/geneace";
+#my $ga_dir="/wormsrv1/chaokung/wormdata/CK1_GENEACE/";
 my @versions=dataset($gff_dir, "folder");
 
 my @order = sort {$a <=> $b} @versions;
 
 my $gff_location = "/wormsrv2/autoace/GFF_SPLITS/WS"."$order[-1]";
 
+my $file = glob "/wormsrv1/chaokung/DOCS/cmp_gmap_with_coord_order";
+if($file){system("rm -f $file")}
+
 open(OUT, ">>/wormsrv1/chaokung/DOCS/cmp_gmap_with_coord_order") || die $!;
 print OUT "\nGFF file version from $gff_location\n\n";
 
 chdir $gff_location;
-
 
 my (@data, %CDS_mapping, %CDS_isoforms_mapping, %CDS_variants, %RNA_mapping);
 my (%chrom_pos, %genetics_mapping, %I_gmap_cds_locus, %II_gmap_cds_locus, %III_gmap_cds_locus, 
@@ -344,15 +347,15 @@ sub get_gmap_mean_of_each_chrom {
       #print ">$mean_down -> $mean_up\n";
       if ($mean_down > $mean_up){
 	$reverse_physical++;
-	if(exists $CDS_variants{$Mean_coord_cds{$mean_down}}){
-	  print LOG "Reverse physicals found: $Mean_coord_cds{$mean_down} (@{$CDS_variants{$Mean_coord_cds{$mean_down}}}) ($mean_down) on ${@{$CDS_mapping{$Mean_coord_cds{$mean_down}}}}[0]\n"; 
+	if(exists $CDS_variants{$Mean_coord_cds{$mean_up}}){
+	  print LOG "Reverse physicals found: $Mean_coord_cds{$mean_up} (@{$CDS_variants{$Mean_coord_cds{$mean_up}}}) ($mean_up) on ${@{$CDS_mapping{$Mean_coord_cds{$mean_up}}}}[0]\n"; 
 	}
 	else {
-	 print LOG "Reverse physicals found: $Mean_coord_cds{$mean_down} ($mean_down) on ${@{$CDS_mapping{$Mean_coord_cds{$mean_down}}}}[0]\n";
+	 print LOG "Reverse physicals found: $Mean_coord_cds{$mean_up} ($mean_up) on ${@{$CDS_mapping{$Mean_coord_cds{$mean_up}}}}[0]\n";
 	}
       }  
     }
-    print LOG "\nTotal reverse physicals on ${@{$CDS_mapping{$Mean_coord_cds{$mean_down}}}}[0]: $reverse_physical\n\n";
+    print LOG "\nTotal reverse physicals on ${@{$CDS_mapping{$Mean_coord_cds{$mean_up}}}}[0]: $reverse_physical\n\n";
   }
 
   foreach (sort keys %Mean_coord_cds){                    # gff w/o isoforms
@@ -395,10 +398,10 @@ sub get_gmap_mean_of_each_chrom {
         #print $mean_down," ->", $mean_up,">1\n";
         #print $gmap_down," -> ",$gmap_up,">2\n";
         if(exists $CDS_variants{$Mean_coord_cds{$_}}){
-	  #print "### $Mean_coord_cds{$_} (@{$CDS_variants{$Mean_coord_cds{$_}}}) ($_) on ${@{$CDS_mapping{$Mean_coord_cds{$_}}}}[0] -> interpolated: $position ###\n";
+	  print "### $Mean_coord_cds{$_} (@{$CDS_variants{$Mean_coord_cds{$_}}}) ($_) on ${@{$CDS_mapping{$Mean_coord_cds{$_}}}}[0] -> interpolated: $position ###\n";
 	}  
 	else {
-	  #print "### $Mean_coord_cds{$_} ($_) on ${@{$CDS_mapping{$Mean_coord_cds{$_}}}}[0] -> interpolated: $position ###\n";
+	  print "### $Mean_coord_cds{$_} ($_) on ${@{$CDS_mapping{$Mean_coord_cds{$_}}}}[0] -> interpolated: $position ###\n";
 	}
       }
     }
