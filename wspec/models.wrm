@@ -199,7 +199,7 @@
 								     // e.g. [A/T], [AA/GG]
 					    Insertion UNIQUE Text    #Evidence  // when nothing is deleted, Text field optionally
 								     // captures insertion sequence
-					    Deletion #Evidence                
+					    Deletion UNIQUE Text #Evidence  // optionally store deleted sequence, a little pointless maybe? krb 030108
 					    Deletion_with_insertion UNIQUE Text  #Evidence // for some KO alleles where material
 										 // is deleted and something else is 
 										 // also inserted
