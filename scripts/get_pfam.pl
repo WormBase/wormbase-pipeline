@@ -7,8 +7,8 @@
 # This script interogates an ACEDB database and returns all pfam/Interpro/blastx 
 # data as appropriate and generates a suitable DB_remark
 #
-# Last updated on: $Date: 2004-11-09 13:00:52 $
-# Last updated by: $Author: pad $
+# Last updated on: $Date: 2004-11-24 13:38:05 $
+# Last updated by: $Author: ar2 $
 
 
 ### DB_remark is generated as follows:  ###
@@ -160,8 +160,11 @@ SUBSEQUENCE: foreach my $cds (@CDSs) {
 
   my $full_string = "";
 
-  $gene_name = $cds->Gene;
-  $gene = $db->fetch(Gene => $gene_name);
+  $gene = $cds->Gene;
+  unless( defined $gene) {
+    $log->write_to("ERROR :".$cds->name." has no Gene\n");
+    next;
+  }
 
   if(defined($gene->CGC_name)){
     $cgc_name = $gene->CGC_name;
@@ -184,6 +187,9 @@ SUBSEQUENCE: foreach my $cds (@CDSs) {
     }
 
     $protein->DESTROY();
+  }
+  else {
+    $log->write_to("ERROR: ".$cds->name." has no Corresponding_protein\n");
   }
 
 
@@ -210,7 +216,7 @@ SUBSEQUENCE: foreach my $cds (@CDSs) {
 	$interprohits{$interpro_motif} = $title;
       }
       # free up memory
-      $motif->DESTROY();      
+      $motif->DESTROY();
     }
 
     my @pfamelements = %pfamhits;
