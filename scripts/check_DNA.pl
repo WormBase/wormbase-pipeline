@@ -7,7 +7,7 @@
 # processes GFF files to make new files which can be used to make agp files 
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-03-03 13:52:38 $
+# Last updated on: $Date: 2004-03-04 14:07:18 $
 
 
 
@@ -78,7 +78,7 @@ foreach my $file (@gff_files) {
     next if ($_ =~ /^\#/);
     my ($name,$method,$feature,$start,$stop,$score,$strand,$other) = split (/\t/,$_);
     
-    if (($method eq "Genomic_canonical") && ($feature eq "Region")) {
+    if (($method eq "Genomic_canonical") && ($feature eq "region")) {
       print OUT "$_\n";
     }
   }
