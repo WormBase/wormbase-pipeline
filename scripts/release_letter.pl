@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers                             
 #
-# Last updated by: $Author: wormpub $               
-# Last updated on: $Date: 2002-10-25 10:14:00 $         
+# Last updated by: $Author: ar2 $               
+# Last updated on: $Date: 2002-11-22 13:47:38 $         
 #
 # Generates a release letter at the end of build.
 #
@@ -184,23 +184,10 @@ if( defined($opt_l)) {
     
     print RL "\n";
         
-    # Gap summary (hard coded at the moment)   
-    print RL "Remaining gaps:\n";
+    # Gap summary (hard coded at the moment)
+    print RL "There are no gaps remaining in the genome sequence\n";
     print RL "---------------\n";
     print RL "For more info mail worm\@sanger.ac.uk\n";
-    print RL "\n";
-    print RL "# Gap on Chromosome III is covered by a 950Kb SseI fragment \n";
-    print RL "\n";
-    print RL "III     1005794 1028769 37      F       AC087078.1      1       22976   +\n";
-    print RL "III     1028770 1029769 38      N       1000\n";
-    print RL "III     1029770 1055632 39      F       AC092690.1      1       25863   +\n";
-    print RL "\n";
-    print RL "# Gap on Chromosome X is covered by YAC clones in production at St Louis\n";
-    print RL "\n";
-    print RL "X       1       2649    1       F       AL031272.2      1       2649    +\n";
-    print RL "X       2650    3649    2       N       1000\n";
-    print RL "X       3650    14860   3       F       AC087735.3      1       11211   +\n";
-    print RL "\n";
     print RL "-===================================================================================-\n";
 
     # User filled sections
