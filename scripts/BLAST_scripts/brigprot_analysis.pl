@@ -10,11 +10,12 @@ use Getopt::Long;
 #######################################
 
 
-my ($debug, $WPver, $mysql, $run, $dump);
+my ($debug, $WPver, $mysql, $run, $dump, $dump_all);
 GetOptions("debug" => \$debug,
 	   "version" => \$WPver,
 	   "mysql"   => \$mysql,
-	   "dump"    => \$dump
+	   "dump"    => \$dump, 
+	   "dump_all"=> \$dump_all
 	  );
 
 # mysql database parameters

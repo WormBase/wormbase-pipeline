@@ -1,3 +1,4 @@
+
 #!/usr/local/bin/perl5.6.1 -w
 
 use DBI;
@@ -8,7 +9,7 @@ use DB_File;
 #######################################
 # command-line options                #
 #######################################
-my ($test, $debug, $help, $all, $WPver, $analysisTOdump, $just_matches, $matches, $list);
+my ($test, $debug, $help, $all, $WPver, $analysisTOdump, $just_matches, $matches, $list, $brigprot);
 GetOptions ("debug=s"   => \$debug,
 	    "test"    => \$test,
 	    "help"    => \$help,
@@ -17,14 +18,19 @@ GetOptions ("debug=s"   => \$debug,
 	    "version=s" =>\$WPver,
 	    "just_matches" => \$just_matches,
 	    "matches"   => \$matches,
-	    "dumplist=s"   =>\$list
+	    "dumplist=s"   => \$list,
+	    "brigprot" => \$brigprot
            );
 
 my $maintainers = "All";
 my $rundate    = `date +%y%m%d`; chomp $rundate;
 my $wormpipe_dir = "/acari/work2a/wormpipe";
-my $log = "$wormpipe_dir/Dump_new_prot_only.pl.$rundate";
+my $dbname = "wormprot";
+$dbname = "worm_brigprot" if $brigprot;
+$dbname .= "_dev" if $test;
+my $log = "$wormpipe_dir/Dump_new_prot_only.pl.$dbname.$rundate";
 my $best_hits = "$wormpipe_dir/dumps/best_blastp_hits";
+$best_hits .= "_brigprot" if $brigprot;
 open (BEST, ">$best_hits") or die "cant open $best_hits for writing\n";
 
 open ( LOG, ">$log") || die "cant open $log";
@@ -51,7 +57,9 @@ print "DEBUG = \"$debug\"\n\n" if $debug;
 my @sample_peps = @_;
 my $wormpipe = glob("~wormpipe");
 my $output = "$wormpipe_dir/dumps/blastp_ensembl.ace";
+$output = "$wormpipe_dir/dumps/brigprot_blastp_ensembl.ace" if $brigprot;
 my $recip_file = "$wormpipe_dir/dumps/wublastp_recip.ace";
+ $recip_file = "$wormpipe_dir/dumps/brigprot_wublastp_recip.ace" if $brigprot;
 
 $WPver-- if( $test );
   
@@ -126,7 +134,18 @@ while ( $pep_input ) {
   $pep_input = shift;
 }
 unless (@peps2dump)  {
-  if( $all ) {
+  
+  if( $brigprot ) {  # get all the briggsaea proteins
+    print LOG " : Dumping all current brigpep proteins\n";
+    open (BRIGPEP,"<$wormpipe/BlastDB/brigpep1.pep") or die "cant find brigpep1.pep file - has it been updated?\n";
+    while (<BRIGPEP>) {
+      if( />(CBP\d+)/ ) {
+	push( @peps2dump, $1);
+      }
+    }
+  }
+
+  elsif( $all ) {
     print LOG " : Dumping all current wormpep proteins ( Wormpep$WPver )\n";
     foreach (keys %CE2gene) {
       push( @peps2dump, $_ );
@@ -164,8 +183,6 @@ unless (@peps2dump)  {
 # mysql database parameters
 my $dbhost = "ecs1f";
 my $dbuser = "wormro";
-my $dbname = "wormprot";
-$dbname .= "_dev" if $test;
 my $dbpass = "";
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
 print LOG "\n : Connecting to database : $dbname on $dbhost as $dbuser\n";
@@ -208,8 +225,8 @@ open (OUT,">$output") or die "cant open $output\n";
 # reciprocals of matches ie if CE00000 matches XXXX_CAEEL the homology details need to be written for XXXX_CAEEL 
 # as well.  These are put in a separate file and post processed so that all matches for XXXX_CAEEL are loaded 
 # in one go for efficient loading ( cf acecompress.pl )
-
-open (RECIP,">$recip_file") or die "cant open recip file\n";
+print "opening $recip_file";
+open (RECIP,">$recip_file") or die "cant open recip file $recip_file: $!\n";
 
 dbmopen our %ACC2DB, "$wormpipe_dir/dumps/acc2db.dbm", 0666 or die "cannot open acc2db \n";
 
@@ -346,7 +363,9 @@ sub dumpData
     my $matches;
     my $pid = shift;
     my %BEST;
-    print OUT "\nProtein : \"WP:$pid\"\n";
+    my $prot_pref = "WP";
+    $prot_pref = "BP" if $brigprot;
+    print OUT "\nProtein : \"$prot_pref:$pid\"\n";
     while( $matches = shift) {   #pass reference to the hash to dump
       #write ace info
       my $output_count = 0;
@@ -400,7 +419,7 @@ sub dumpData
 		  #prints out on single line. "line" is used to split after sorting
 
 		  print RECIP "Protein : \"$prefix:$$data[4]\" line "; #  matching peptide
-		  print RECIP "\"WP:$pid\" ";              #worm protein
+		  print RECIP "\"$prot_pref:$pid\" ";              #worm protein
 		  print RECIP "$$data[1] ";   #  analysis
 		  print RECIP "$$data[7] ";   #  e value
 		  print RECIP "$$data[5] ";   #  HomolStart
