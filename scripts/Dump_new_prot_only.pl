@@ -204,6 +204,17 @@ if ( $analysisTOdump ) {
 					   ORDER BY hit_id
 				   } );  
 }
+else {
+
+  $sth_f = $wormprot->prepare ( q{ SELECT protein_id,analysis_id,
+				     seq_start, seq_end,
+				     hit_id, hit_start, hit_end,
+				     -log10(evalue), cigar
+				       FROM protein_feature
+					 WHERE protein_id = ? and (evalue >= 0 AND evalue < 0.1)
+				          ORDER BY hit_id
+				   } );  
+}
 
 open (OUT,">$output") or die "cant open $output\n";
 
@@ -246,7 +257,7 @@ foreach $pep (@peps2dump)
 	unless( defined $e) 
 	  { $e = 1000 };# mysql gives -log10(v small no) as NULL 
 	my @data = ($proteinId, $processIds2prot_analysis{$analysis},  $myHomolStart, $myHomolEnd, $homolID, $pepHomolStart, $pepHomolEnd, $e, $cigar);
-	if( $analysis == 11 )   #wormpep
+	if( $analysis == $wormprotprocessIds{'wormpep'} )   #wormpep
 	  {
 	   # my $gene = &justGeneName($CE2gene{$pep});
 	    &addWormData ( \%worm_matches, \@data );
@@ -254,9 +265,9 @@ foreach $pep (@peps2dump)
 	elsif( $analysis == $wormprotprocessIds{'gadfly'}  ) { #gadfly peptide set also has isoforms
 	  &addFlyData ( \%fly_matches, \@data );
 	}
-	elsif( $analysis == $wormprotprocessIds{'ensembl'}  ) { # others dont have isoforms so let adding routine deal with them
-	  #&addData ( \%human_matches, \@data ); superceded by ipi_human
-	}
+#	elsif( $analysis == $wormprotprocessIds{'ensembl'}  ) { # others dont have isoforms so let adding routine deal with them
+#	  #&addData ( \%human_matches, \@data ); superceded by ipi_human
+#	}
 	elsif( $analysis == $wormprotprocessIds{'yeast'}  ) { # others dont have isoforms so let adding routine deal with them
 	  &addData ( \%yeast_matches, \@data );
 	}
