@@ -782,10 +782,11 @@
 		       Operon ?Operon XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info                // added for Operon data   [dl]
 		       Transposon ?Transposon XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info        // added for transposons   [020128 dl]
 		       Microarray_aff ?Microarray_aff XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info //added for Wen's Affymetrix model [020614 krb] 
-     		       AGP_fragment ?Sequence XREF AGP_parent Int UNIQUE Int #SMap_info // added for Briggsae data [krb 020726]
-     		       UTR ?UTR XREF Canonical_parent Int UNIQUE Int #SMap_info // added for new UTR model [krb 020729]
-		       Transcript_child ?Transcript XREF Sequence UNIQUE Int UNIQUE Int #SMap_info // on the way to new gene model krb [021126]
-		       Allele ?Allele XREF Sequence UNIQUE Int UNIQUE Int #SMap_info // New SMapped Allele class [krb 021217]
+     		       AGP_fragment ?Sequence XREF AGP_parent Int UNIQUE Int #SMap_info			     // added for Briggsae data [krb 020726]
+                       Feature_object ?Feature XREF Sequence UNIQUE Int UNIQUE Int #SMap_info		     // dl feature play
+     		       UTR ?UTR XREF Canonical_parent Int UNIQUE Int #SMap_info				     // added for new UTR model [krb 020729]
+		       Transcript_child ?Transcript XREF Sequence UNIQUE Int UNIQUE Int #SMap_info	     // on the way to new gene model krb [021126]
+		       Allele ?Allele XREF Sequence UNIQUE Int UNIQUE Int #SMap_info			     // New SMapped Allele class [krb 021217]
 	  Structure  From	Source UNIQUE ?Sequence XREF Subsequence
 				Source_Exons Int UNIQUE Int // start at 1
 		     Subsequence ?Sequence XREF Source UNIQUE Int UNIQUE Int
@@ -845,9 +846,9 @@
 			RNAi_result ?RNAi XREF Predicted_gene                    // added for Lincoln RNAi [001213 dl]
 			GO_term ?GO_term XREF Sequence #Evidence                 // added for Erich [011210 krb]
                         Contained_in_operon ?Operon XREF Contains_CDS            // added for Operons [020128 dl]
-			Provisional_description ?Text #Evidence // added for Erich [020322 krb]
-			Detailed_description ?Text #Evidence  // added for Erich [020322 krb]
-			Concise_description ?Text #Evidence  // added for Erich [020523 krb]
+			Provisional_description ?Text #Evidence			 // added for Erich [020322 krb]
+			Detailed_description ?Text #Evidence			 // added for Erich [020322 krb]
+			Concise_description ?Text #Evidence			 // added for Erich [020523 krb]
 			Interacts_with_sequence ?Sequence XREF Interacts_with_sequence #Evidence // for future interaction data [020704 krb]
 			Interacts_with_protein ?Protein XREF Interacts_with_sequence #Evidence // for future interaction data [020704 krb]
 		// tag2 system: names of all objects following next tag are shown in the 
@@ -860,6 +861,7 @@
 			     EST_5		       // Indicate whether this is a 5' or 3' read [010423 dl]
 			     EST_3
 			     Capped_5	               // Indicates capped 5' end - for Lincoln [06/12/01 krb]
+			     TSL_tag		       // Indicates a short RT-PCR product for TSL detection [030220 dl]
 			RNA	// if set then use U in place of T
 			Coding	CDS UNIQUE Int UNIQUE Int
 				CDS_predicted_by ?Method Float // score of method
@@ -892,39 +894,6 @@
 	  Has_allele ?Allele XREF Predicted_gene // for linking to KO genes, substitution alleles etc. Used for Predicted_genes only
 	  Strain ?Strain XREF Sequence // new for KO data [krb 021219]
 	  Assembly_tags	Text Int Int Text // type, start, stop, comment
-	  EMBL_feature  CAAT_signal	Int Int Text #EMBL_info
-			GC_signal	Int Int Text #EMBL_info
-			TATA_signal	Int Int Text #EMBL_info
-			allele_seq	Int Int Text #EMBL_info
-			conflict	Int Int Text #EMBL_info
-			mat_peptide	Int Int Text #EMBL_info
-			misc_binding	Int Int Text #EMBL_info
-			misc_feature	Int Int Text #EMBL_info
-			misc_signal	Int Int Text #EMBL_info
-			misc_recomb	Int Int Text #EMBL_info
-			modified_base	Int Int Text #EMBL_info
-			mutation	Int Int Text #EMBL_info
-			old_sequence	Int Int Text #EMBL_info
-			polyA_signal	Int Int Text #EMBL_info
-			polyA_site	Int Int Text #EMBL_info
-			prim_binding	Int Int Text #EMBL_info
-			prim_transcript Int Int Text #EMBL_info
-			promoter	Int Int Text #EMBL_info
-			repeat_region	Int Int Text #EMBL_info
-			repeat_unit	Int Int Text #EMBL_info
-			satellite	Int Int Text #EMBL_info
-			sig_peptide	Int Int Text #EMBL_info
-			variation	Int Int Text #EMBL_info
-			enhancer	Int Int Text #EMBL_info
-			protein_bind	Int Int Text #EMBL_info
-			stem_loop	Int Int Text #EMBL_info
-			primer_bind	Int Int Text #EMBL_info
-			transit_peptide Int Int Text #EMBL_info
-			misc_structure  Int Int Text #EMBL_info
-			precursor_RNA   Int Int Text #EMBL_info
-			LTR             Int Int Text #EMBL_info
-			terminator      Int Int Text #EMBL_info
-		// EMBL_features are for legitimate EMBL feature table entries only
 	  Analysis_details Analysis_history ?Method UNIQUE DateType
 	  Homol	DNA_homol ?Sequence XREF DNA_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		Pep_homol ?Protein XREF DNA_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
@@ -933,13 +902,6 @@
 			// We will generate a column for each distinct ?Method.  So for
 			// distinct Worm_EST and Worm_genomic columns, use ?Method objects
 			// Worm_EST_Blastn and Worm_genomic_Blastn.
-	  Feature ?Method Int Int UNIQUE Float UNIQUE Text #Feature_info
-		// Float is score
-		// Text is shown on select, and same Text are neighbours
-		// again, each method has a column
-		// double-click shows the method
-		// absorb TSL_site, TSL, Inverted, Tandem as features
-		// and probably Assembly_tags (not yet)
           In_alignment ?Alignment XREF Sequence Int UNIQUE Int
           Method UNIQUE ?Method
           Tree_Node ?TreeNode XREF Sequence // Phylogenetic trees
@@ -969,10 +931,11 @@
 		     Homology
 		     UTR	
 		     False
+		     Inconsistent
 		 
 #Gene_confirmation cDNA
                    EST
-		   pers_comm #Evidence // added 020405 kj	
+		   pers_comm #Evidence		// added 020405 kj	
 
 
 // Homol and Feature info
@@ -1059,10 +1022,6 @@
                                 Pseudogene Text                                   // [020306 kj]
                 Method ?Method                  
 
-
-
-
-
 ?Homol_data SMap S_Parent Sequence UNIQUE ?Sequence
 	    Homol DNA_homol ?Sequence XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		  Pep_homol ?Protein XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
@@ -1077,6 +1036,12 @@
 			Predicted_5 ?Method Int Int UNIQUE Float // (x, x+1) or (x, x-1)
 			Predicted_3 ?Method Int Int UNIQUE Float // (x, x+1) or (x, x-1)
                // keep the same model as in Sequence, so same code works
+
+?Feature SMap S_Parent Sequence UNIQUE ?Sequence
+         Flanking_sequences UNIQUE Text UNIQUE Text
+         Description Text #Evidence
+	 Annotation UNIQUE ?LongText		// added for data attribution [030220 dl]
+         Method ?Method
 
 ?Oligo  Sequence UNIQUE Text  // verbatim sequence 
         Length UNIQUE Int
