@@ -10,7 +10,7 @@
 #                after submission and use Perl5.6 with strict
 #
 # Last updated by: $Author: dl1 $                      
-# Last updated on: $Date: 2002-12-13 12:57:41 $        
+# Last updated on: $Date: 2003-07-28 12:33:03 $        
 
 $|=1;
 use strict;
@@ -73,7 +73,7 @@ opendir(DIR,"$submitdir");
 close DIR;
 
 # report number of .embl files in directory
-print scalar(@filenames) . " cosmids found in $submitdir\n";
+print scalar(@filenames) . " clones found in $submitdir\n";
 
 # exit if no valid .embl files are found
 exit if (scalar(@filenames) == 0);
