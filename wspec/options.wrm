@@ -126,7 +126,7 @@ _VGO_term	   -V
 _VHomol_data       -V
 
 // WTP
-_WTP		   -V -D FMAP
+_VWTP		   -V -D FMAP
 
 
 // The following lines are now obsolete and declared in kernel
