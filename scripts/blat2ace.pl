@@ -6,8 +6,8 @@
 #
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-10-29 11:12:56 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2003-11-28 09:35:35 $
 
 
 use strict;
@@ -42,6 +42,7 @@ our $log;
 # set database paths, default to autoace unless -camace
 my $blat_dir  = "/wormsrv2/autoace/BLAT";
 my $tace      = &tace ." /wormsrv2/autoace";
+
 if ($camace) {
     $blat_dir  = "/wormsrv1/camace/BLAT";
     $tace      = &tace." /wormsrv1/camace";
@@ -65,10 +66,7 @@ our %word = (
 	     nematode => 'BLAT_NEMATODE',
 	     );
 
-
-
 &create_log_files;
-
 
 ########################################
 # command-line options & ramifications #
@@ -77,10 +75,11 @@ our %word = (
 # Help pod documentation
 &usage(0) if ($help);
 
-
 # Exit if no data type choosen [EST|mRNA|EMBL|NEMATODE|OST]
 # or if multiple data types are chosen
+
 &usage(1) unless ($est || $mrna || $ost || $nematode || $embl); 
+
 my $flags = 0;
 $flags++ if $est;
 $flags++ if $ost;
@@ -89,14 +88,12 @@ $flags++ if $embl;
 $flags++ if $nematode;
 &usage(2) if ($flags > 1);
 
-
 # assign type variable
 ($type = 'est')      if ($est);
 ($type = 'ost')      if ($ost);
 ($type = 'mrna')     if ($mrna);
 ($type = 'embl')     if ($embl);
 ($type = 'nematode') if ($nematode);
-
 
 ############################################
 # EST data from autoace (name,orientation) #
@@ -122,7 +119,7 @@ else {
 #########################################
 
 # parse links for camace
-my @camclones = qw(cTel3X cTel4X cTel7X cTel33B cTel54X 6R55 SUPERLINK_CB_I SUPERLINK_CB_II SUPERLINK_CB_IIIL SUPERLINK_CB_IIIR SUPERLINK_CB_IR SUPERLINK_CB_IV SUPERLINK_CB_V SUPERLINK_CB_X); 
+my @camclones = qw(SUPERLINK_CB_I SUPERLINK_CB_II SUPERLINK_CB_IIIL SUPERLINK_CB_IIIR SUPERLINK_CB_IR SUPERLINK_CB_IV SUPERLINK_CB_V SUPERLINK_CB_X); 
 foreach my $camclone (@camclones) {
   $camace{$camclone} = 1;
 }
@@ -143,7 +140,7 @@ print LOG "$runtime: Start mapping\n\n";
 
 # open input and output filehandles
 open(ACE,  ">$blat_dir/autoace.$type.ace")  or die "Cannot open $blat_dir/autoace.${type}.ace $!\n";
-open(BLAT, "<$blat_dir/${type}_out.psl")  or die "Cannot open $blat_dir/${type}_out.psl $!\n";
+open(BLAT, "<$blat_dir/${type}_out.psl")    or die "Cannot open $blat_dir/${type}_out.psl $!\n";
 #open(OUTBLAT, ">$blat_dir/${type}_parsed.psl")  or die "Cannot open $blat_dir/${type}_parsed.psl $!\n";
 
 # loop through each blat hit
@@ -165,12 +162,12 @@ while (<BLAT>) {
   my @slink_starts = split (/,/, $f[20]);      # start coordinates of each target (superlink) block
 
   # replace EST name (usually accession number) by yk... name 
-  if (( $est || $ost )  && (exists $EST_name{$query})) {
-    my $estname  = $EST_name{$query};
-    if ($query ne $estname) {
-      print LOG "EST name '$query' was replaced by '$estname'\n\n";
-      $query = $estname;
-    }
+  if ( ($est || $ost) && (exists $EST_name{$query}) ) {
+      my $estname  = $EST_name{$query};
+      if ($query ne $estname) {
+	  print LOG "EST name '$query' was replaced by '$estname'\n\n";
+	  $query = $estname;
+      }
   }
 
   ###############################
@@ -186,22 +183,26 @@ while (<BLAT>) {
       $startvirtual = int($matchstart/100000) +1;
   }  
     
-  if ((int($matchend/100000) +1) > $lastvirt) { $endvirtual = $lastvirt;}
-  else {$endvirtual = int($matchend/100000) +1;}  
+  if ( (int($matchend/100000) +1) > $lastvirt) { 
+      $endvirtual = $lastvirt;
+  }
+  else {
+      $endvirtual = int($matchend/100000) +1;
+  }  
   
   if ($startvirtual == $endvirtual) {
-    $virtual = "$word{$type}:${superlink}_${startvirtual}";
+      $virtual = "$word{$type}:${superlink}_${startvirtual}";
 #    print OUTBLAT "[1 : $startvirtual $endvirtual " . ($matchend%100000) . "] $_";
   }	
   elsif (($startvirtual == ($endvirtual - 1)) && (($matchend%100000) <= 50000)) {
-    $virtual = "$word{$type}:${superlink}_${startvirtual}";
+      $virtual = "$word{$type}:${superlink}_${startvirtual}";
 #    print OUTBLAT "[2 : $startvirtual $endvirtual " . ($matchend%100000) . "] $_";
   }
   else {
-    print LOG "$query wasn't assigned to a virtual object as match size was too big\n";
-    print LOG "Start is $matchstart, end is $matchend on $superlink\n\n";
+      print LOG "$query wasn't assigned to a virtual object as match size was too big\n";
+      print LOG "Start is $matchstart, end is $matchend on $superlink\n\n";
 #    print OUTBLAT "[3] : $startvirtual $endvirtual " . ($matchend%100000) . "] $_";
-    next;
+      next;
   }
 
   # calculate (acedb) score for each blat match
@@ -218,110 +219,105 @@ while (<BLAT>) {
   my $calc = int(($slink_starts[0]+1)/100000);
   
   for (my $x = 0;$x < $block_count; $x++) {
-    my $newcalc = int(($slink_starts[$x]+1)/100000);
-    my $virtualstart;
+      my $newcalc = int(($slink_starts[$x]+1)/100000);
+      my $virtualstart;
 
-    if ($calc == $newcalc) {	
-      $virtualstart =  ($slink_starts[$x] +1)%100000;
-    }
-    elsif ($calc == ($newcalc - 1)) {
-      $virtualstart = (($slink_starts[$x] +1)%100000) + 100000;
-    }
-
-
-    my $virtualend = $virtualstart + $lengths[$x] -1;
-
-    if ($calc != $newcalc) {
-	print LOG "// MISMATCH: $query [$strand] $virtualstart $virtualend :: [virtual slice $calc -> $newcalc, offset ". ($matchend%100000) . "}\n\n";
-    }
-#    else {
-#	print "// VIEW: $query [$strand] $virtualstart $virtualend ::  [virtual slice $calc -> $newcalc, offset ". ($matchend%100000) . "}\n";
-#    }
-
-    ##### Sometimes $calc = $new_calc - 2 !!!!!!
-
-    if (!defined $virtualstart) {
-	print LOG "$query will be discarded as the match is too long\n";
-	print LOG "$query [$strand] $virtualstart $virtualend  [virtual slice $calc -> $newcalc, offset ". ($matchend%100000) . "}\n\n";
-	next;
-    }
-
-    my ($query_start,$query_end);
-    
-        # blatx 6-frame translation v 6-frame translation
-    if ($nematode) {
-	my $temp;
-	if (($strand eq '++') || ($strand eq '-+')) {
-	    $query_start = $query_starts[$x] +1;
-	    $query_end   = $query_start + $lengths[$x] -1;
-	    if ($strand eq '-+') {
-		$temp        = $query_end;
-		$query_end   = $query_start;
-		$query_start = $temp; 
-	    }
-	}
-	elsif (($strand eq '--') || ($strand eq '+-')) {
-	    $temp         = $virtualstart;
-	    $virtualstart = $virtualend;
-	    $virtualend   = $temp;
-	    
-	    $query_start  = $query_size  - $query_starts[$x];
-	    $query_end    = $query_start - $lengths[$x] +1;
-
-	    if ($strand eq '--') {
-		$temp        = $query_end;
-		$query_end   = $query_start;
-		$query_start = $temp; 
-	    }
-	}			
-    }
-    else {
-	if ($strand eq '+'){
-	$query_start   = $query_starts[$x] +1;
-	$query_end     = $query_start + $lengths[$x] -1;
+      if ($calc == $newcalc) {	
+	  $virtualstart =  ($slink_starts[$x] +1)%100000;
       }
-      elsif ($strand eq '-') {
-	$query_start   = $query_size - $query_starts[$x];
-	$query_end     = $query_start - $lengths[$x] +1;
-      }		
-    }		
-    print LOG "$query was mapped to $virtual\n\n";
-    
-    # write to output file
-    print ACE "Homol_data : \"$virtual\"\n";
-    if ($type eq "nematode") {
-      printf ACE "DNA_homol\t\"%s\"\t\"$word{$type}\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$query,$score,$virtualstart,$virtualend,$query_start,$query_end;
+      elsif ($calc == ($newcalc - 1)) {
+	  $virtualstart = (($slink_starts[$x] +1)%100000) + 100000;
+      }
       
+
+      my $virtualend = $virtualstart + $lengths[$x] -1;
+      
+      if ($calc != $newcalc) {
+	  print LOG "// MISMATCH: $query [$strand] $virtualstart $virtualend :: [virtual slice $calc -> $newcalc, offset ". ($matchend%100000) . "}\n\n";
+      }
+
+      if (!defined $virtualstart) {
+	  print LOG "$query will be discarded as the match is too long\n";
+	  print LOG "$query [$strand] $virtualstart $virtualend  [virtual slice $calc -> $newcalc, offset ". ($matchend%100000) . "}\n\n";
+	  next;
+      }
+
+      my ($query_start,$query_end);
+      
+        # blatx 6-frame translation v 6-frame translation
+      if ($nematode) {
+	  my $temp;
+	  if (($strand eq '++') || ($strand eq '-+')) {
+	      $query_start = $query_starts[$x] +1;
+	      $query_end   = $query_start + $lengths[$x] -1;
+	      if ($strand eq '-+') {
+		  $temp        = $query_end;
+		  $query_end   = $query_start;
+		  $query_start = $temp; 
+	      }
+	  }
+	  elsif (($strand eq '--') || ($strand eq '+-')) {
+	      $temp         = $virtualstart;
+	      $virtualstart = $virtualend;
+	      $virtualend   = $temp;
+	      
+	      $query_start  = $query_size  - $query_starts[$x];
+	      $query_end    = $query_start - $lengths[$x] +1;
+
+	      if ($strand eq '--') {
+		  $temp        = $query_end;
+		  $query_end   = $query_start;
+		  $query_start = $temp; 
+	      }
+	  }			
+      }
+      else {
+	  if ($strand eq '+'){
+	      $query_start   = $query_starts[$x] +1;
+	      $query_end     = $query_start + $lengths[$x] -1;
+	  }
+	  elsif ($strand eq '-') {
+	      $query_start   = $query_size - $query_starts[$x];
+	      $query_end     = $query_start - $lengths[$x] +1;
+	  }		
+      }		
+      print LOG "$query was mapped to $virtual\n\n";
+      
+      # write to output file
+      print ACE "Homol_data : \"$virtual\"\n";
+      if ($type eq "nematode") {
+	  printf ACE "DNA_homol\t\"%s\"\t\"$word{$type}\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$query,$score,$virtualstart,$virtualend,$query_start,$query_end;
+	  
 #      print "// ERROR: $query [$strand] $virtualstart $virtualend $query_start $query_end ::: [$debug_start,$debug_end]  $newcalc - $calc {$slink_starts[$x]}\n" unless ((defined $virtualstart) && (defined $virtualend));
-
-    }
-    else {
-      printf ACE "DNA_homol\t\"%s\"\t\"$word{$type}_OTHER\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$query,$score,$virtualstart,$virtualend,$query_start,$query_end;
-    }
-    push @exons, [$virtualstart,$virtualend,$query_start,$query_end];				
+	  
+      }
+      else {
+	  printf ACE "DNA_homol\t\"%s\"\t\"$word{$type}_OTHER\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$query,$score,$virtualstart,$virtualend,$query_start,$query_end;
+      }
+      push @exons, [$virtualstart,$virtualend,$query_start,$query_end];				
   }
-
+  
     
   # collect best hits for each query sequence 
   # Choose hit with highest score (% of query length which are matching bases) 
   # If multiple hits have same scores (also meaning that $match must be same) store 
   # details of extra hits against same primary key in %best
   if (exists $best{$query}) {
-    if (($score > $best{$query}->{'score'})) { 
-      # Add all new details if score is better...
-      $best{$query}->{'score'} = $score;
-      $best{$query}->{'match'} = $match;
-      @{$best{$query}->{'entry'}} = ({'clone' => $virtual,'link' => $superlink,'exons' => \@exons});
-    }
-    elsif($score == $best{$query}->{'score'}){
-      #...only add details (name and coordinates) of extra hits if scores are same
-      push @{$best{$query}->{'entry'}}, {'clone' => $virtual,'link' => $superlink,'exons' => \@exons};
-    }
+      if (($score > $best{$query}->{'score'})) { 
+	  # Add all new details if score is better...
+	  $best{$query}->{'score'} = $score;
+	  $best{$query}->{'match'} = $match;
+	  @{$best{$query}->{'entry'}} = ({'clone' => $virtual,'link' => $superlink,'exons' => \@exons});
+      }
+      elsif($score == $best{$query}->{'score'}){
+	  #...only add details (name and coordinates) of extra hits if scores are same
+	  push @{$best{$query}->{'entry'}}, {'clone' => $virtual,'link' => $superlink,'exons' => \@exons};
+      }
   }
   else {
-    $best{$query}->{'match'} = $match;
-    $best{$query}->{'score'} = $score;
-    @{$best{$query}->{'entry'}} = ({'clone' => $virtual,'link' => $superlink,'exons' => \@exons});
+      $best{$query}->{'match'} = $match;
+      $best{$query}->{'score'} = $score;
+      @{$best{$query}->{'entry'}} = ({'clone' => $virtual,'link' => $superlink,'exons' => \@exons});
   }
 }
 close(BLAT);
@@ -339,73 +335,73 @@ open (STLBEST, ">$blat_dir/stlace.best.$type.ace");
 open (CAMBEST, ">$blat_dir/camace.best.$type.ace");
 
 foreach my $found (sort keys %best) {
-  if (exists $best{$found}) {
-    foreach my $entry (@{$best{$found}->{'entry'}}) {
-      if (@{$best{$found}->{'entry'}} < 2) {
-	my $virtual   = $entry->{'clone'};
-	my $superlink = $entry->{'link'};
-	foreach my $ex (@{$entry->{'exons'}}) {
-	  my $score        = $best{$found}->{'score'};
-	  my $virtualstart = $ex->[0];
-	  my $virtualend   = $ex->[1];
-	  my $query_start  = $ex->[2];
-	  my $query_end    = $ex->[3];
-	  
-	  # print output for autoace, camace, and stlace
-	  print  AUTBEST "Homol_data : \"$virtual\"\n";
-	  printf AUTBEST "DNA_homol\t\"%s\"\t\"$word{$type}_BEST\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$found,$score,$virtualstart,$virtualend,$query_start,$query_end;
-	  if ($camace{$superlink}) {
-	    print  CAMBEST "Homol_data : \"$virtual\"\n";
-	    printf CAMBEST "DNA_homol\t\"%s\"\t\"$word{$type}_BEST\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$found,$score,$virtualstart,$virtualend,$query_start,$query_end;
-	  }
-	  elsif ($stlace{$superlink}) {
-	    print  STLBEST "Homol_data : \"$virtual\"\n";
-	    printf STLBEST "DNA_homol\t\"%s\"\t\"$word{$type}_BEST\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$found,$score,$virtualstart,$virtualend,$query_start,$query_end;
-	  }	  
-	}
-	
+    if (exists $best{$found}) {
+	foreach my $entry (@{$best{$found}->{'entry'}}) {
+	    if (@{$best{$found}->{'entry'}} < 2) {
+		my $virtual   = $entry->{'clone'};
+		my $superlink = $entry->{'link'};
+		foreach my $ex (@{$entry->{'exons'}}) {
+		    my $score        = $best{$found}->{'score'};
+		    my $virtualstart = $ex->[0];
+		    my $virtualend   = $ex->[1];
+		    my $query_start  = $ex->[2];
+		    my $query_end    = $ex->[3];
+		    
+		    # print output for autoace, camace, and stlace
+		    print  AUTBEST "Homol_data : \"$virtual\"\n";
+		    printf AUTBEST "DNA_homol\t\"%s\"\t\"$word{$type}_BEST\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$found,$score,$virtualstart,$virtualend,$query_start,$query_end;
+		    if ($camace{$superlink}) {
+			print  CAMBEST "Homol_data : \"$virtual\"\n";
+			printf CAMBEST "DNA_homol\t\"%s\"\t\"$word{$type}_BEST\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$found,$score,$virtualstart,$virtualend,$query_start,$query_end;
+		    }
+		    elsif ($stlace{$superlink}) {
+			print  STLBEST "Homol_data : \"$virtual\"\n";
+			printf STLBEST "DNA_homol\t\"%s\"\t\"$word{$type}_BEST\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$found,$score,$virtualstart,$virtualend,$query_start,$query_end;
+		    }	  
+		}
+		
 	#############################
 	# produce confirmed introns #
 	#############################
-	if ($intron) {
-	  print LOG "Producing confirmed introns\n";
-	  my ($n) = ($virtual =~ /\S+_(\d+)$/);
-	  for (my $y = 1; $y < @{$entry->{'exons'}}; $y++) {
-	    my $last   = $y - 1;
-	    my $first  =  (${$entry->{"exons"}}[$last][1] + 1) + (($n-1)*100000);
-	    my $second =  (${$entry->{'exons'}}[$y][0]    - 1) + (($n-1)*100000);
-	    $EST_dir{$found} = 5 if ($mrna || $embl);
-	    if (${$entry->{'exons'}}[0][2] < ${$entry->{'exons'}}[0][3]) {
-	      if ((${$entry->{'exons'}}[$y][2] == ${$entry->{'exons'}}[$last][3] + 1) && (($second - $first) > 2)) {
-		if (exists $EST_dir{$found} && $EST_dir{$found} eq '3') {
-		  push @{$ci{$superlink}}, [$second,$first];
+		if ($intron) {
+		    print LOG "Producing confirmed introns\n";
+		    my ($n) = ($virtual =~ /\S+_(\d+)$/);
+		    for (my $y = 1; $y < @{$entry->{'exons'}}; $y++) {
+			my $last   = $y - 1;
+			my $first  =  (${$entry->{"exons"}}[$last][1] + 1) + (($n-1)*100000);
+			my $second =  (${$entry->{'exons'}}[$y][0]    - 1) + (($n-1)*100000);
+			$EST_dir{$found} = 5 if ($mrna || $embl);
+			if (${$entry->{'exons'}}[0][2] < ${$entry->{'exons'}}[0][3]) {
+			    if ((${$entry->{'exons'}}[$y][2] == ${$entry->{'exons'}}[$last][3] + 1) && (($second - $first) > 2)) {
+				if (exists $EST_dir{$found} && $EST_dir{$found} eq '3') {
+				    push @{$ci{$superlink}}, [$second,$first,$found];
+				}
+				elsif (exists $EST_dir{$found} && $EST_dir{$found} eq '5') {
+				    push @{$ci{$superlink}}, [$first,$second,$found];
+				}
+				else {
+				    print LOG "WARNING: Direction not found for $found\n\n";
+				}
+			    }
+			}
+			elsif (${$entry->{'exons'}}[0][2] > ${$entry->{'exons'}}[0][3]) {
+			    if ((${$entry->{'exons'}}[$last][3] == ${$entry->{'exons'}}[$y][2] + 1) && (($second - $first) > 2)) {
+				if (exists $EST_dir{$found} && $EST_dir{$found} eq '3') {
+				    push @{$ci{$superlink}}, [$first,$second,$found];
+				}
+				elsif (exists $EST_dir{$found} && $EST_dir{$found} eq '5') {
+				    push @{$ci{$superlink}}, [$second,$first,$found]; 
+				}
+				else {
+				    print LOG "WARNING: Direction not found for $found\n\n";
+				}
+			    }
+			}
+		    }
 		}
-		elsif (exists $EST_dir{$found} && $EST_dir{$found} eq '5') {
-		  push @{$ci{$superlink}}, [$first,$second];
-		}
-		else {
-		  print LOG "WARNING: Direction not found for $found\n\n";
-		}
-	      }
 	    }
-	    elsif (${$entry->{'exons'}}[0][2] > ${$entry->{'exons'}}[0][3]) {
-	      if ((${$entry->{'exons'}}[$last][3] == ${$entry->{'exons'}}[$y][2] + 1) && (($second - $first) > 2)) {
-		if (exists $EST_dir{$found} && $EST_dir{$found} eq '3') {
-		  push @{$ci{$superlink}}, [$first,$second];
-		}
-		elsif (exists $EST_dir{$found} && $EST_dir{$found} eq '5') {
-		  push @{$ci{$superlink}}, [$second,$first]; 
-		}
-		else {
-		  print LOG "WARNING: Direction not found for $found\n\n";
-		}
-	      }
-	    }
-	  }
 	}
-      }	
     }
-  }
 }
 close(AUTBEST);
 close(CAMBEST);
@@ -422,13 +418,9 @@ open (OUT_autoace, ">$blat_dir/autoace.blat.$type.ace") or die "$!";
 open (OUT_camace,  ">$blat_dir/camace.blat.$type.ace")  or die "$!";
 open (OUT_stlace,  ">$blat_dir/stlace.blat.$type.ace")  or die "$!";
 
-
-
-
-# Change input separator to paragraph mode, but store what it old mode in $temp
-my $temp = $/;
+# Change input separator to paragraph mode, but store what it old mode in $oldlinesep
+my $oldlinesep = $/;
 $/ = "";
-
 
 my (%line);
 my $superlink = "";
@@ -493,57 +485,57 @@ while (<AOTHER>) {
 close AOTHER;
 
 # reset input line separator
-$/= $temp;
+$/= $oldlinesep;
 
 ###################################
 # produce confirmed intron output #
 ###################################
 
 if ($intron) {
-  
-  open(CI_auto, ">$blat_dir/autoace.ci.${type}.ace");
-  open(CI_cam,  ">$blat_dir/camace.ci.${type}.ace");
-  open(CI_stl,  ">$blat_dir/stlace.ci.${type}.ace");
-  
-  foreach my $superlink (sort keys %ci) {
-    my %double;
     
-    print CI_auto "\nSequence : \"$superlink\"\n";
-    print CI_stl  "\nSequence : \"$superlink\"\n" if ($stlace{$superlink});
-    print CI_cam  "\nSequence : \"$superlink\"\n" if ($camace{$superlink});
-    
-    for (my $i = 0; $i < @{$ci{$superlink}}; $i++) {
-      my $merge = $ci{$superlink}->[$i][0].":".$ci{$superlink}->[$i][1];
-      if (!exists $double{$merge}) {
-	if ($mrna) {
-	  printf CI_auto "Confirmed_intron %d %d mRNA\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1];
-	  (printf CI_cam "Confirmed_intron %d %d mRNA\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($camace{$superlink});
-	  (printf CI_stl "Confirmed_intron %d %d mRNA\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($stlace{$superlink});
+    open(CI_auto, ">$blat_dir/autoace.ci.${type}.ace");
+    open(CI_cam,  ">$blat_dir/camace.ci.${type}.ace");
+    open(CI_stl,  ">$blat_dir/stlace.ci.${type}.ace");
+  
+    foreach my $link (sort keys %ci) {
+	my %double;
+	
+	print CI_auto "\nSequence : \"$link\"\n";
+	print CI_stl  "\nSequence : \"$link\"\n" if ($stlace{$link});
+	print CI_cam  "\nSequence : \"$link\"\n" if ($camace{$link});
+	
+	for (my $i = 0; $i < @{$ci{$link}}; $i++) {
+	    my $merge = $ci{$link}->[$i][0].":".$ci{$link}->[$i][1];
+	    if (!exists $double{$merge}) {
+		if ($mrna) {
+		    printf CI_auto "Confirmed_intron %d %d mRNA $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1];
+		    (printf CI_cam "Confirmed_intron %d %d mRNA $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1]) if ($camace{$link});
+		    (printf CI_stl "Confirmed_intron %d %d mRNA $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1]) if ($stlace{$link});
+		}
+		if ($embl) {
+		    printf CI_auto "Confirmed_intron %d %d Homol $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1];
+		    (printf CI_cam "Confirmed_intron %d %d Homol $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1]) if ($camace{$link});
+		    (printf CI_stl "Confirmed_intron %d %d Homol $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1]) if ($stlace{$link});
+		}
+		if ($est) {
+		    printf CI_auto "Confirmed_intron %d %d EST $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1];
+		    (printf CI_cam "Confirmed_intron %d %d EST $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1]) if ($camace{$link});
+		    (printf CI_stl "Confirmed_intron %d %d EST $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1]) if ($stlace{$link});
+		}
+		if ($ost) {
+		    printf CI_auto "Confirmed_intron %d %d EST $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1];
+		    (printf CI_cam "Confirmed_intron %d %d EST $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1]) if ($camace{$link});
+		    (printf CI_stl "Confirmed_intron %d %d EST $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1]) if ($stlace{$link});
+		}
+		$double{$merge} = 1;
+	    }
 	}
-	if ($embl) {
-	  printf CI_auto "Confirmed_intron %d %d Homol\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1];
-	  (printf CI_cam "Confirmed_intron %d %d Homol\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($camace{$superlink});
-	  (printf CI_stl "Confirmed_intron %d %d Homol\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($stlace{$superlink});
-	}
-	if ($est) {
-	  printf CI_auto "Confirmed_intron %d %d EST\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1];
-	  (printf CI_cam "Confirmed_intron %d %d EST\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($camace{$superlink});
-	  (printf CI_stl "Confirmed_intron %d %d EST\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($stlace{$superlink});
-	}
-	if ($ost) {
-	  printf CI_auto "Confirmed_intron %d %d EST\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1];
-	  (printf CI_cam "Confirmed_intron %d %d EST\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($camace{$superlink});
-	  (printf CI_stl "Confirmed_intron %d %d EST\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($stlace{$superlink});
-	}
-	$double{$merge} = 1;
-      }
     }
-  }
-  
-  close CI_auto;
-  close CI_cam;
-  close CI_stl;
-
+    
+    close CI_auto;
+    close CI_cam;
+    close CI_stl;
+    
 }
 
 ##############################

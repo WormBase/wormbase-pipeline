@@ -8,10 +8,10 @@
 # and virtual objects to hang the data onto
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2003-10-27 11:31:00 $
+# Last edited on: $Date: 2003-11-28 09:35:30 $
 
 use strict;
-use lib "/wormsrv2/scripts/";
+use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};           
 use Wormbase;
 use IO::Handle;
 use Getopt::Long;
@@ -60,7 +60,7 @@ GetOptions ("help"       => \$help,
 	    "virtual"    => \$virtual,
 	    "camace"     => \$camace,
 	    "fine"       => \$fine
-);
+	    );
 
 
 ########################################
@@ -185,7 +185,7 @@ if ($process) {
     &run_command("$bin/blat2ace.pl -$data"); 
   }
   elsif($camace){
-    &run_command("$bin/blat2ace.pl -$data -intron -camace"); 	
+    &run_command("/nfs/team71/worm/dl1/wormbase/wormbase/scripts/blat2ace.pl -$data -intron -camace"); 	
   }
   else {
     &run_command("$bin/blat2ace.pl -$data -intron"); 
@@ -399,24 +399,24 @@ sub confirm_introns {
       $/ = "";
       foreach my $test (@introns) {
 	if ($test =~ /Confirmed_intron/) {
-	  my @f = split / /, $test;
+	    my @f = split / /, $test;
 	  
 	  #######################################
 	  # get the donor and acceptor sequence #
 	  #######################################
 	  
-	  my ($first,$last,$start,$end,$pastfirst,$prelast);
-	  if ($f[1] < $f[2]) {
-	    ($first,$last,$pastfirst,$prelast) = ($f[1]-1,$f[2]-1,$f[1],$f[2]-2);
-	  }
-	  else {
-	    ($first,$last,$pastfirst,$prelast) = ($f[2]-1,$f[1]-1,$f[2],$f[1]-2);
-	  }	
+	    my ($first,$last,$start,$end,$pastfirst,$prelast);
+	    if ($f[1] < $f[2]) {
+		($first,$last,$pastfirst,$prelast) = ($f[1]-1,$f[2]-1,$f[1],$f[2]-2);
+	    }
+	    else {
+		($first,$last,$pastfirst,$prelast) = ($f[2]-1,$f[1]-1,$f[2],$f[1]-2);
+	    }	
+	    
+	    $start = substr($dna,$first,2);
+	    $end   = substr($dna,$prelast,2);
 	  
-	  $start = substr($dna,$first,2);
-	  $end   = substr($dna,$prelast,2);
-	  
-#		    print "Coords start $f[1] => $start, end $f[2] => $end\n";
+#	    print "Coords start $f[1] => $start, end $f[2] => $end\n";
 	  
 	  ##################
 	  # map to S_Child #
@@ -477,11 +477,11 @@ sub confirm_introns {
 	  if ( ( (($start eq 'gt') || ($start eq 'gc')) && ($end eq 'ag')) ||
 	       (  ($start eq 'ct') && (($end eq 'ac') || ($end eq 'gc')) ) ) {	 
 	    print GOOD "Feature_data : \"$virtual\"\n";
-	    print GOOD "Confirmed_intron $one $two $tag\n\n";
+	    print GOOD "Confirmed_intron $one $two $tag $f[4]\n\n";
 	  }  	
 	  else {
 	    print BAD "Feature_data : \"$virtual\"\n";
-	    print BAD "Confirmed_intron $one $two $tag\n\n";		
+	    print BAD "Confirmed_intron $one $two $tag $f[4]\n\n";		
 	  }
 	}
       }
