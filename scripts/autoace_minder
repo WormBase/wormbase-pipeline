@@ -6,7 +6,7 @@
 # Usage : autoace_minder [-options]
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2002-07-17 16:17:24 $
+# Last edited on: $Date: 2002-07-22 09:10:08 $
 
 
 #################################################################################
@@ -108,6 +108,7 @@ our %flag = (
 	     'A4'  => 'A4:Primary_databases_on_wormsrv2',
 	     'A5'  => 'A5:Wrote_acefiles_to_wormbase', 
 	     'B1'  => 'B1:Made_autoace_database',
+	     'B1A' => 'B1a:Errors_in_loaded_acefiles',
 	     'B2'  => 'B2:Dump_DNA_files',
 	     'B3'  => 'B3:Made_agp_files',
 	     'B4'  => 'B4:Errors_in_agp_files',
@@ -268,7 +269,7 @@ LOG->autoflush();
 
 close LOG;
 
-&mail_maintainer("WormBase Report: $globaltype",$maintainers,$logfile);
+&mail_maintainer("WormBase Report: $logtype",$maintainers,$logfile);
 
  ##############################
  # hasta luego                #
@@ -583,10 +584,15 @@ sub make_autoace {
 	# test the build for loading errors
 	my $builderrors = &test_build;
 	
-	if (
-	
 	# make a make_autoace log file in /logs
 	system ("touch $logdir/$flag{'B1'}");
+
+
+        # errors in the make_autoace log file
+	if ($builderrors > 1) {
+	    system ("touch $logdir/$flag{'B1A'}");
+	    &usage("Errors_in_loaded_acefiles");
+	}
 
     }
 
@@ -594,6 +600,9 @@ sub make_autoace {
 	
 	# quit if you haven't built a database
 	&usage(14) unless (-e "$logdir/$flag{'B1'}");
+	
+	# quit if you have errors in the build
+	&usage("Errors_in_loaded_acefiles") if (-e "$logdir/$flag{'B1A'}");
 	
 	system ("$scriptdir/chromosome_dump.pl -dc") && die "Couldn't run chromosome_dump -dc\n" ;
 	print LOG " Build autoace (CHROMOSOMES)\n";
@@ -607,6 +616,9 @@ sub make_autoace {
     
 	# quit if the build is not complete
 	&usage(13) unless (-e "$logdir/$flag{'B1'}");
+
+	# quit if you have errors in the build
+	&usage("Errors_in_loaded_acefiles") if (-e "$logdir/$flag{'B1A'}");
 	
 	local (*MD5SUM_IN,*MD5SUM_OUT);
 	
@@ -638,7 +650,7 @@ sub test_build {
     local (*BUILDLOOK,*BUILDLOG);
     my $logfile;
 
-    print "Looking log file /wormsrv2/logs/make_autoace.WS${WS_version}*\n" if ($debug);
+    print "Looking at log file: /wormsrv2/logs/make_autoace.WS${WS_version}*\n" if ($debug);
     
     open (BUILDLOOK, "ls /wormsrv2/logs/make_autoace.WS${WS_version}* |") || die "Couldn't list logfile out\n";
     while (<BUILDLOOK>) {
@@ -1166,6 +1178,12 @@ sub usage {
     elsif ($error == 8) {
 	# Check acefile dump prior to building
 	print "You haven't written up-to-date .acefiles yet!\n";
+	exit(0);
+    }
+    elsif ($error eq "Errors_in_loaded_acefiles") {
+	# Errors in loaded acefiles, check log file
+	print "There were errors in the loaded acefiles.\n";
+	print "Check the logfile and correct before continuing.\n\n";
 	exit(0);
     }
     elsif ($error == 9) {
