@@ -4,7 +4,7 @@
 #
 # by Chao-Kung Chen [030625]
 
-# Last updated on: $Date: 2004-08-18 14:33:34 $
+# Last updated on: $Date: 2004-08-18 14:39:44 $
 # Last updated by: $Author: krb $
 
 use Tk;
@@ -538,7 +538,7 @@ sub run {
     $run_window -> insert('end', " $dna_R");
 
     $ace_window->insert('end', "\nGene : \"$Gene_info{$locus}{'Gene'}\"  \/\/$locus\n");
-    $ace_window->insert('end', "\/\/Allele \"$allele\" Paper_evidence \"\"\n");
+    $ace_window->insert('end', "\/\/Allele \"$allele\" Paper_evidence \"WBPaper${info[1]}\"\n");
     $ace_window->insert('end', "\nAllele : \"$allele\"\n");
     $ace_window->insert('end', "\/\/Evidence Paper_evidence \"WBPaper${info[1]}\"\n");
     $ace_window->insert('end', "Sequence \"$seq\"\n");
