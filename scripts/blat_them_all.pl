@@ -182,47 +182,81 @@ if ($opt_s) {
     %homedb = &which_db;
 
     if ($opt_e) {
-	
 	print "Mapping blat data to autoace\n";
-	system("$bin/blat2ace.pl -ei ") && die "Mapping failed\n"; 
+	system("$bin/blat2ace.pl -ei") && die "Mapping failed\n"; 
 
 	print "Mapping blat data to camace\n";
-	system("$bin/blat2ace.pl -eic ") && die "Mapping failed\n"; 
+	system("$bin/blat2ace.pl -eic") && die "Mapping failed\n"; 
 
 	print "Mapping blat data to stlace\n";	
-	system("$bin/blat2ace.pl -eis ") && die "Mapping failed\n"; 
-
+	system("$bin/blat2ace.pl -eis") && die "Mapping failed\n"; 
     }
     if ($opt_m) {
 	print "Mapping blat data to autoace\n";
 	system("$bin/blat2ace.pl -mi") && die "Mapping failed\n"; 
+
+	print "Mapping blat data to camace\n";
+	system("$bin/blat2ace.pl -mic") && die "Mapping failed\n"; 
+
+	print "Mapping blat data to stlace\n";	
+	system("$bin/blat2ace.pl -mis")  && die "Mapping failed\n"; 
     }
     if ($opt_o) {
 	print "Mapping blat data to autoace\n";
 	system("$bin/blat2ace.pl -oi") && die "Mapping failed\n"; 
+
+	print "Mapping blat data to camace\n";
+	system("$bin/blat2ace.pl -oic") && die "Mapping failed\n"; 
+
+	print "Mapping blat data to stlace\n";	
+	system("$bin/blat2ace.pl -ois")  && die "Mapping failed\n"; 
     }
     if ($opt_x) {
 	print "Mapping blat data to autoace\n";
 	system("$bin/blat2ace.pl -x") && die "Mapping failed\n"; 
+
+	print "Mapping blat data to camace\n";
+	system("$bin/blat2ace.pl -xc") && die "Mapping failed\n"; 
+
+	print "Mapping blat data to stlace\n";	
+	system("$bin/blat2ace.pl -xs")  && die "Mapping failed\n"; 
     }
 
     # produce confirmed introns #
     if ($opt_e) {
-	print "Producing EST confirmed introns in databases\n";
-	&confirm_introns('autoace','EST');
+	print "Producing EST confirmed introns in databases\n\n";
+
+	print "Confirm intron data in autoace\n";
+        &confirm_introns('autoace','EST');
+
+	print "Confirm intron data in camace\n";
 	&confirm_introns('camace', 'EST');
+
+	print "Confirm intron data in stlace\n";	
 	&confirm_introns('stlace', 'EST');
     }
     if ($opt_m) {
 	print "Producing mRNA confirmed introns in databases\n";
-	&confirm_introns('autoace','mRNA');
+
+	print "Confirm intron data in autoace\n";
+        &confirm_introns('autoace','mRNA');
+
+	print "Confirm intron data in camace\n";
 	&confirm_introns('camace', 'mRNA');
+
+	print "Confirm intron data in stlace\n";	
 	&confirm_introns('stlace', 'mRNA');
     }
     if ($opt_o) {
 	print "Producing EMBL confirmed introns in databases\n";
-	&confirm_introns('autoace','EMBL');
+
+	print "Confirm intron data in autoace\n";
+        &confirm_introns('autoace','EMBL');
+
+	print "Confirm intron data in camace\n";
 	&confirm_introns('camace', 'EMBL');
+
+	print "Confirm intron data in stlace\n";	
 	&confirm_introns('stlace', 'EMBL');
     }
 }
@@ -434,15 +468,14 @@ sub virtual_objects_blat {
 sub confirm_introns {
 
     my ($db,$data) = @_;
-    local (*GOOD,*BAD);
+    local (*GOOD,*BAD,*SEQ);
 
     # open the output files
     open (GOOD, ">$blat/$db.good_introns.$data.ace") or die "$!";
     open (BAD,  ">$blat/$db.bad_introns.$data.ace")  or die "$!";
 
-    my ($lala,$link,@introns,$dna,$switch);
+    my ($link,@introns,$dna,$switch);
 
-    $lala = $/;
     $/ = "";
     open(CI,  "<$blat/${db}.ci.${data}.ace")      or die "Cannot open $blat/$db.ci.$data.ace $!\n";
     while (<CI>) {
@@ -458,11 +491,14 @@ sub confirm_introns {
 
 	    open(SEQ, "<$blat/autoace.fa") || &usage(5);
 	    $switch = 0;
-	    $/ = $lala;
+	    $/ = "\n";
 	    
+	    # added shortcuts next & last to speed this section
+
 	    while (<SEQ>) {
 		if (/^\>$link$/) {
 		    $switch = 1;
+		    next;
 		}
 		elsif (/^(\w+)$/) {
 		    if ($switch == 1) {
@@ -470,8 +506,12 @@ sub confirm_introns {
 			$dna .= $1;
 		    }			
 		}
+		elsif ($switch == 1) {
+		    $switch = 0;
+		    last;
+		}
 		else { 
-		    $switch = 0;		
+		    $switch = 0;
 		}
 	    }
 	    close SEQ;
@@ -479,7 +519,6 @@ sub confirm_introns {
 	    print "DNA sequence is " . length($dna) . " bp long.\n";
 
 	    # evaluate introns #
-	    
 	    $/ = "";
 	    foreach my $test (@introns) {
 		if ($test =~ /Confirmed_intron/) {
@@ -499,6 +538,7 @@ sub confirm_introns {
 
 		    $start = substr($dna,$first,2);
 		    $end   = substr($dna,$prelast,2);
+
 #		    print "Coords start $f[1] => $start, end $f[2] => $end\n";
 		    
 		    ##################
@@ -567,6 +607,10 @@ sub confirm_introns {
 	}
     }
     close CI;
+
+    close GOOD;
+    close BAD;
+
 }
 
 
