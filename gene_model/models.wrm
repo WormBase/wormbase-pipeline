@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.58 2002-06-14 13:55:05 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.59 2002-06-18 17:08:07 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -655,6 +655,7 @@
 		       Reference ?Paper XREF GO_term
 		       Motif ?Motif XREF GO_term
 		       Phenotype ?Phenotype XREF GO_term // added for Erich, [020128 dl]
+		       CDS ?CDS XREF GO_term // added to complement existing models [020618 krb]
 
 //
 // RD 0107 removed connection to ?Paper - how can a paper have a GO_term
@@ -911,6 +912,7 @@
                         RNAi_result ?RNAi XREF Predicted_gene // added for Lincoln RNAi [001213 dl]
 			Contained_in_operon ?Operon XREF Contains_CDS
 	  		Reference ?Paper XREF CDS // added [011030 krb]
+			GO_term ?GO_term XREF CDS #Evidence
 	Properties	Coding	CDS UNIQUE Int UNIQUE Int
 				CDS_predicted_by ?Method Float // score of method
 				Confirmed_by #Gene_confirmation       // added [011030 krb]
@@ -1467,7 +1469,7 @@
                               Similar_to ?Phenotype XREF Similar_to
            Attribute_of       RNAi ?RNAi XREF Phenotype
                               Gene ?Gene XREF Controlled_phenotype
-			      GO_term ?GO_term XREF Phenotype   // added for Erich, [020128 dl]
+			      GO_term ?GO_term XREF Phenotype #Evidence  // added for Erich, [020128 dl]
 
 // New Class to handle WTP data [010623 rd]
 
