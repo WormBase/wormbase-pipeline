@@ -8,7 +8,7 @@
 # This makes the autoace database from its composite sources.
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-03-03 12:49:21 $
+# Last edited on: $Date: 2004-03-12 11:22:53 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -551,7 +551,7 @@ sub usage {
 
 sub buildrelease{	
 
-  print LOG &runtime, "Starting to build release files\n\n";
+  print LOG &runtime, " Starting to build release files\n\n";
 
   # Remove old release files if present
   my $WS_previous   = $WS_current - 1;
@@ -561,19 +561,11 @@ sub buildrelease{
     &delete_files_from("$dbpath/release","*WS"."$WS_previous"."*") or print LOG "ERROR: Problems removing files from $dbpath/release: $!\n";
   }
   
-  my $dbname;
-  
-  open (DBWRM,"<$dbpath/wspec/database.wrm");
-  while (<DBWRM>) {
-    if ($_ =~ /^NAME\s+(\S+)/) {
-      $dbname=$1;
-    }
-  }
-  close DBWRM;
-  print LOG "makedistr: dbname $dbname\n\n";
+
+  print LOG "Making distribution files for $WS_version\n\n";
   
   &run_command("/bin/touch $dbpath/release/files_in_tar");
-  &run_command("/bin/touch $dbpath/release/md5sum.${dbname}");
+  &run_command("/bin/touch $dbpath/release/md5sum.${WS_version}");
   
   my @tarfiles;
   $tarfiles[0] = "wspec/cachesize.wrm  wspec/constraints.wrm wspec/copyright wspec/database.wrm wspec/displays.wrm wspec/help.wrm wspec/layout.wrm wspec/models.wrm wspec/options.wrm wspec/passwd.wrm wspec/psfonts.wrm wspec/subclasses.wrm wspec/xfonts.wrm wgf wquery wscripts  pictures database/log.wrm database/database.map database/ACEDB.wrm" ;
@@ -582,22 +574,22 @@ sub buildrelease{
     $tarfiles[($i+4)/5] .= " database/block$i.wrm" ;
   }
   print LOG "* Makedistr: beginning tar ..\n";
-  &delete_files_from("$dbpath/release","database\.$dbname\..*\.tar","-") or print LOG "ERROR removing files from $dbpath/release\n";
+  &delete_files_from("$dbpath/release","database\.$WS_version\..*\.tar","-");
 
   for (my $i = 0; $i < @tarfiles; ++$i) {
-    &run_command("cd $dbpath; tar -hcf $dbpath/release/database.$dbname.4-$i.tar $tarfiles[$i]\"");
+    &run_command("cd $dbpath; tar -hcf $dbpath/release/database.$WS_version.4-$i.tar $tarfiles[$i]\"");
     
     # list files in the tar archive
-    &run_command("tar -tf $dbpath/release/database.$dbname.4-$i.tar >> $dbpath/release/files_in_tar");
+    &run_command("tar -tf $dbpath/release/database.$WS_version.4-$i.tar >> $dbpath/release/files_in_tar");
     
     # gzip the tar archive
-    &run_command("/bin/gzip $dbpath/release/database.$dbname.4-$i.tar"); 
+    &run_command("/bin/gzip $dbpath/release/database.$WS_version.4-$i.tar"); 
     
     # check consistency of gzip file
-    &run_command("/bin/gzip -t $dbpath/release/database.$dbname.4-$i.tar.gz >> $dbpath/release/files_in_tar");
+    &run_command("/bin/gzip -t $dbpath/release/database.$WS_version.4-$i.tar.gz >> $dbpath/release/files_in_tar");
     
     # calculate md5sum for the gzip file
-    &run_command("/nfs/disk100/wormpub/bin.ALPHA/md5sum $dbpath/release/database.$dbname.4-$i.tar.gz >> $dbpath/release/md5sum.$dbname");
+    &run_command("/nfs/disk100/wormpub/bin.ALPHA/md5sum $dbpath/release/database.$WS_version.4-$i.tar.gz >> $dbpath/release/md5sum.$WS_version");
   }
 }
 
@@ -619,7 +611,7 @@ sub run_command{
   my $status = system($command);
  if(($status >>8) != 0){
     $errors++;
-    print LOG "ERROR: $command failed. \$\? = $status\n";
+    print LOG "ERROR: command failed \$\? = $status\n";
   }
   print LOG &runtime, ": finished running\n\n";
 
