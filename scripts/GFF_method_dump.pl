@@ -1,4 +1,14 @@
-#!/usr/bin/perl5.6.1 -w
+#!/usr/local/bin/perl5.8.0 -w
+#
+# GFF_method_dump.pl
+#
+# by Anthony Rogers
+#
+# Selectively dump GFF for certain acedb methods
+#
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2004-08-05 15:12:15 $
+
 
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{CVS_DIR};
 use Wormbase;
