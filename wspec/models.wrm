@@ -1011,6 +1011,7 @@
                         // CDS ?CDS XREF Transcript 
 			// Not ready for these two yet
 			Allele ?Allele XREF Transcript // added to fit two alleles of RNA genes [021127 krb]
+			Orthologue ?Transcript XREF Orthologue ?Species #Evidence  // [030310 krb]
                         Matching_cDNA ?Sequence XREF Matching_transcript
                         Remark ?Text
                         Confidential_remark ?Text
