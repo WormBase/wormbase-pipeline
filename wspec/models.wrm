@@ -314,6 +314,7 @@
 				Product ?Text
 	Remark ?Text #Evidence
 	Map    ?Map XREF Locus #Map_position
+	Interpolated_map_position ?Map UNIQUE Float // new for updated CDS-based interpolated map positions [krb 030502]
         Hide_under ?Locus XREF Representative_for
         Representative_for ?Locus XREF Hide_under
 	Positive Inside_rearr ?Rearrangement XREF Locus_inside ?Author
@@ -808,6 +809,7 @@
 		  Species UNIQUE ?Species
 	  Map ?Map XREF Sequence #Map_position		// use in particular for Genomic_canonical
 	  Interpolated_gMap ?Map UNIQUE Float
+	  Interpolated_map_position ?Map UNIQUE Float // new for updated CDS-based interpolated map positions [krb 030502]
 	  Visible	Title UNIQUE ?Text
 	  		Other_name ?Text	        // for repeats
 			Matching_Genomic ?Sequence XREF Matching_cDNA
