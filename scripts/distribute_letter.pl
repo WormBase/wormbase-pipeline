@@ -9,7 +9,7 @@
 #                          /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/current/release_notes.txt/
 #
 # Last updated by: $Author: krb $                       
-# Last updated on: $Date: 2003-04-04 17:04:33 $         
+# Last updated on: $Date: 2003-04-07 09:12:34 $         
 
 
 use strict;                                     
@@ -86,6 +86,10 @@ chdir("$www/WORMBASE") || print LOG "Couldn't run chdir\n";
 system("/usr/local/bin/webpublish -f -q -r $release") && print LOG "Couldn't run webpublish on release directory\n";
 system("/usr/local/bin/webpublish -f -q -r current") && print LOG "Couldn't run webpublish on current symlink files\n";
 
+# Now need to unpack dbcomp file on live site
+chdir("$www/WORMBASE/${release}") || print LOG "Couldn't chdir to $www/WORMBASE/${release}\n";
+system("/bin/gunzip WS.dbcomp_output.gz") && print LOG "Couldn't gunzip WS.dbcomp_output.gz\n";
+system("rm -f WS.dbcomp_output.gz") && print LOG "Couldn't remove gzip fil\n"; 
 
 print LOG "$0 finished at ",`date`,"\n\n";
 

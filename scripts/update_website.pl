@@ -8,7 +8,7 @@
 # relevant WormBase and Wormpep web pages.
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-04-04 15:46:16 $      
+# Last updated on: $Date: 2003-04-07 09:12:34 $      
 
 
 
@@ -280,6 +280,8 @@ sub create_top_level_web_pages{
   print LOG "Creating $www/$WS_name/dbcomp.shtml\n";
 
   system ("cp /wormsrv2/autoace/COMPARE/current.out $www/$WS_name/WS.dbcomp_output") && croak "Couldn't copy current.out\n";
+  # need to zip this file else webpublish will fail, another script unpacks it on the ilve site
+  system ("/bin/gzip $www/$WS_name/WS.dbcomp_output") && croak "Couldn't zip $www/$WS_name/WS.dbcomp_output\n";
 
   open (DB_comp, ">$www/$WS_name/dbcomp.shtml") || croak "Couldn't create dbcomp.shtml\n\n";
   print DB_comp "<P>\n";
