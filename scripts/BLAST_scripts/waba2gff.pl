@@ -70,7 +70,7 @@ if ($opt_s) {
 			    } );
 }
 else {
-    $sth = $dbh->prepare ( q{ SELECT contig_id, contig_start, contig_end,
+    $sth = $dbh->prepare ( q{ SELECT contig_id, seq_start, seq_end,
                                      hit_name, hit_start, hit_end,
                                      score, perc_ident, strand
                                 FROM waba_fset
