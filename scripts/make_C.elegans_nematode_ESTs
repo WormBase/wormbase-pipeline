@@ -1,24 +1,122 @@
-#!/usr/local/bin/perl5.6.0
+#!/usr/local/bin/perl5.8.0
 #
 # make_C.elegans_nematode_ESTs
 #
 # dl1
 # 
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2003-06-04 14:28:19 $
 
 $|=1;
+use lib "/wormsrv2/scripts/";
+use Wormbase;
+use Getopt::Long;
+use strict;
 
-open (SEQUENCES, "/usr/local/pubseq/bin/getzc -sf fasta -f \"id acc des seq\" \'([emblrelease-org:caenorhabditis elegans] \& [emblrelease-div:est])\' |") ;
+##############################
+# command-line options       #
+##############################
+
+my $help;               # Help/Usage page
+
+GetOptions (
+            "help"           => \$help
+	    );
+
+# Help pod if needed
+&usage(0) if ($help);
+
+##############################
+# Script variables (run)     #
+##############################
+
+my $acc;      # EMBL accession
+my $id;       # EMBL ID   
+my $def;      # EMBL description
+my $OST;      # tag for OST/EST split
+
+open (OUT_EST, ">/nfs/disk100/wormpub/analysis/ESTs/C.elegans_nematode_ESTs");
+open (OUT_OST, ">/nfs/disk100/wormpub/analysis/ESTs/C.elegans_nematode_OSTs");
+
+open (SEQUENCES, "/usr/local/pubseq/bin/getzc -sf fasta -f \"id acc des seq\" \'([embl-org:caenorhabditis elegans] \& [embl-div:est])\' |") ;
 
 while (<SEQUENCES>) {
-	if (/^AC\s+/ || /^DE\s+/ || /^>/ || /^ID\s+/) {} else {print;}
-	if (/^AC\s+(\S+);/) {$acc=$1;}
-	if (/^ID\s+(\S+)/) {$id=$1;}
-	if (/^DE\s+(.+)/) {$def=$def." ".$1;}
-       	if (/^>/) {
-	    print ">$acc $id $def\n";
+    if (/^AC\s+/ || /^DE\s+/ || /^>/ || /^ID\s+/) {
+    } 
+    else {
+	print OUT_EST  if ($OST == 0);
+	print OUT_OST  if ($OST == 1);
+    }
+    
+    if (/^AC\s+(\S+);/) {
+	$acc = $1;
+    }
+    if (/^ID\s+(\S+)/)  {
+	$id = $1;
+    }
+    if (/^DE\s+(.+)/)   {
+	$def = $def." ".$1;
+	
+	if ($def =~ /^ OST/) {
+	    $OST = 1;
+	}
+	else {
+	    $OST = 0;
+	}
+    }
+    if (/^>/) {
+	if ($OST == 0) {
+	    print OUT_EST ">$acc $id $def\n";
 	    $def="";
 	    $id="";
 	    $acc="";
 	} 
+	else {
+	    print OUT_OST ">$acc $id $def\n";
+	    $def="";
+	    $id="";
+	    $acc="";
+	}
+    }
 }
 close SEQUENCES;
+close OUT_EST;
+close OUT_OST;
+
+
+#######################################################################
+# Help and error trap outputs                                         #
+#######################################################################
+
+sub usage {
+    my $error = shift;
+    if ($error == 0) {
+        # Normal help menu
+        exec ('perldoc',$0);
+    }
+}
+
+
+__END__
+
+=pod
+
+=head2   NAME - make_C.elegans_nematode_ESTs
+
+=head1 USAGE
+
+=over 4
+
+=item make_C.elegans_nematode_ESTs
+
+=back
+
+make_C.elegans_nematode_ESTs runs an SRS query on the EMBL database
+to return all C.elegans sequences from the EST division. This set
+is then split using a simple perl regex into the OST set (Marc Vidal's
+Orfeome project 1.1) and everything else. These files are used for the
+BLAT analysis as part of each WormBase build.
+
+=back
+
+=cut
