@@ -2,6 +2,9 @@
 // subclasses.wrm
 // this is in standard ace file format
 
+
+// ?Locus subclasses
+
 Class Gene
 Visible
 Is_a_subclass_of Locus
@@ -16,6 +19,10 @@ Class Briggsae_loci
 Visible
 Is_a_subclass_of Locus
 Filter "Gene AND (Species = C*briggsae)"
+
+
+
+// ?Sequence subclasses
 
 Class Genome_Sequence
 Visible
@@ -57,10 +64,18 @@ Visible
 Is_a_subclass_of Sequence
 Filter "Method = NDB"
 
+
+
+// ?Protein subclasses
+
 Class Wormpep
 Visible
 Is_a_subclass_of Protein
 Filter "Wormpep AND Live"
+
+
+
+// ?Map subclasses
 
 Class Genetic_map
 Visible
@@ -71,6 +86,33 @@ Class Sequence_map
 Visible
 Is_a_subclass_of Map
 Filter "IS *Sequence*"
+
+
+// ?Allele subclasses
+
+Class Deletion_allele
+Visible
+Is_a_subclass_of Allele
+Filter "Deletion"
+
+Class Insertion_allele
+Visible
+Is_a_subclass_of Allele
+Filter "Insertion"
+
+Class Substitution_allele
+Visible
+Is_a_subclass_of Allele
+Filter "Substitution"
+
+Class KO_allele
+Visible
+Is_a_subclass_of Allele
+Filter "KO_consortium_allele"
+
+
+
+// Other Misc. subclasses
 
 Class Clone_Grid
 Visible
@@ -86,6 +128,9 @@ Class Lineage
 Visible
 Is_a_subclass_of Tree
 Filter "Cell_Lineage"
+
+
+
 
 // extra indexing for sequence class
 
