@@ -7,8 +7,8 @@
 # Gets sequences ready for blatting, blats sequences, processes blat output, makes confirmed introns
 # and virtual objects to hang the data onto
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-09-26 12:57:51 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2003-10-24 11:11:16 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -70,8 +70,8 @@ GetOptions ("help"       => \$help,
 
 # set to camace or autoace
 $blat_dir = "/wormsrv1/camace/BLAT" if $camace;
-$dbpath = "/wormsrv1/camace"     if $camace;
-our $seq   = "$blat_dir/autoace.fa";               
+$dbpath   = "/wormsrv1/camace"      if $camace;
+our $seq  = "$blat_dir/autoace.fa";               
 
 # Help pod documentation
 &usage("Help") if ($help);
@@ -116,11 +116,11 @@ my $data;
 
 # Select the correct set of query sequences for blat
 my $query = "/nfs/disk100/wormpub/analysis/ESTs/";
-$query   .= 'elegans_ESTs'        if ($est); # EST data set
-$query   .= 'elegans_OSTs'        if ($ost); # OST data set
-$query   .= 'elegans_mRNAs'       if ($mrna); # mRNA data set
-$query   .= 'other_nematode_ESTs' if ($nematode); # ParaNem EST data set
-$query   .= 'elegans_embl_cds'    if ($embl); # Other CDS data set, DNA not peptide!
+$query   .= 'elegans_ESTs.masked'  if ($est);      # EST data set
+$query   .= 'elegans_OSTs'         if ($ost);      # OST data set
+$query   .= 'elegans_mRNAs.masked' if ($mrna);     # mRNA data set
+$query   .= 'other_nematode_ESTs'  if ($nematode); # ParaNem EST data set
+$query   .= 'elegans_embl_cds'     if ($embl);     # Other CDS data set, DNA not peptide!
 
 
 &create_log_files;
