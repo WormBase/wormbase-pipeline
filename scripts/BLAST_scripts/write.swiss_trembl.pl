@@ -13,14 +13,14 @@ use Getopt::Long;
 use DB_File;
 use GSI;
 
-my ($swiss, $trembl, $debug, $database, $list, $new);
-# $new is for switch to new protein model
+my ($swiss, $trembl, $debug, $database, $list, $old);
+# $old is for switch back to protein model
 GetOptions (
 	   "swiss"    => \$swiss,
 	   "trembl"   => \$trembl,
 	   "database:s" => \$database,
 	    "list"    => \$list,
-	    "new"     => \$new,
+	    "old"     => \$old,
 	   "debug"    => \$debug
 	  );
 
@@ -153,7 +153,7 @@ sub output_list
 	  print ACE "Protein : \"$prefix:$id\"\n";
 	  print ACE "Peptide \"$prefix:$id\"\n";
 	  print ACE "Species \"$ORG{$id}\"\n";
-	  if ( $new ) {
+	  unless( $old ) {
 	    print ACE "Description \"$DES{$id}\"\n";
 	    if ("$prefix" eq "SW" ) {
 	      print ACE "Database SwissProt SwissProt_ID $id\n";
@@ -164,6 +164,7 @@ sub output_list
 	    }
 	  }
 	  else {
+	    # this is the old style - left for safety remove after WS104
 	    print ACE "Title \"$DES{$id}\"\n";
 	    print ACE  "Database \"$db\" \"$id\" \"$accession\"\n";
 	  }
