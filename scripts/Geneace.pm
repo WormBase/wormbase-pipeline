@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-02-25 12:58:05 $
+# Last updated on: $Date: 2004-03-01 17:51:52 $
 
 package Geneace;
 
@@ -170,7 +170,24 @@ sub get_unique_from_array {
   return @new_array_no_dup;
 }
 
+sub get_overlapped_clones {
+  my $this = shift;
+  my %overlapped_clone;
 
+  my $get_overlapped_clones=<<EOF;
+  Table-maker -p "/wormsrv1/geneace/wquery/get_overlapped_clones.def" quit
+EOF
+  open (FH, "echo '$get_overlapped_clones' | $tace $curr_db |") || die "Couldn't access $curr_db\n";
+  while (<FH>){
+    chomp $_;
+    my @clones = split(/\s+/, $_) if $_ =~ /^\".+/;
+    for (my $i = 0; $i < scalar @clones; $i++){
+      $clones[$i] =~ s/\"//g;
+      push(@{$overlapped_clone{$clones[0]}}, $clones[$i]) if $i != 0;
+    }
+  }
+  return %overlapped_clone;
+}
 
 
 1;
