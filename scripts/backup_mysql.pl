@@ -1,5 +1,5 @@
-#!/usr/local/bin/perl5.6.1 -w
-
+#!/usr/local/bin/perl5.8.0 -w
+#
 # Author: Chao-Kung Chen
 # 2001-11-28
 # What it does: (1) Backup MySQL BlastP and BlastX data to ~wormpub/MYSQL_DUMPS
@@ -12,6 +12,8 @@ my $date = `date +%y%m%d`;
 chomp $date;
 
 my $start=`date +%H:%M:%S`; chomp $start;
+
+print "Backup started at $start\n\n";
 
 my $worm01="worm01_$date";
 my $wormprot="wormprot_$date";
@@ -34,7 +36,7 @@ foreach (@files){
 
 my $end=`date +%H:%M:%S`; chomp $end;
 
-print "\nBackup started at $start\n";
-print "Backup finished at $end\n";
+
+print "\nBackup finished at $end\n";
 
 
