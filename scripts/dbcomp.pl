@@ -5,8 +5,8 @@
 # Counts the number of objects in an ACEDB database for each Class stated in the config file
 # Compares this number to those from a second database.
 #
-# Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-03-07 09:45:16 $      
+# Last updated by: $Author: dl1 $     
+# Last updated on: $Date: 2003-05-01 09:39:03 $      
 
 
 use strict;
@@ -144,14 +144,6 @@ system("rm -f /wormsrv2/autoace/COMPARE/current.dbcomp") && die "Couldn't remove
 system("ln -s $errfile /wormsrv2/autoace/COMPARE/current.out") && die "Couldn't create new symlink\n";
 system("ln -s $outfile /wormsrv2/autoace/COMPARE/current.dbcomp") && die "Couldn't create new symlink\n";
 
-
-
-
-##############################
-# tidy up                    #
-##############################
-
-system ("rm -f /tmp/dbcomp*") && warn "Couldn't remove /tmp files\n";
 
 close (OUT);
 close (ERR);
@@ -298,7 +290,10 @@ sub diff {
   close (COMM);
   system ("rm -f /tmp/look-1");
   system ("rm -f /tmp/look-2");
-  
+
+  system ("rm -f /tmp/dbcomp_A_${counter}");
+  system ("rm -f /tmp/dbcomp_B_${counter}");
+ 
   # Add break symbol to output file to separate classes
   print ERR "\/\/ -----------------------------\n";
   return($added, $removed);
