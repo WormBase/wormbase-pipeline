@@ -6,8 +6,8 @@
 #
 # Ashwin Hajarnavis ah3@sanger.ac.uk  August 2002
 #
-# Last updated by: $Author: ar2 $                 
-# Last updated on: $Date: 2003-02-05 17:12:37 $   
+# Last updated by: $Author: ck1 $                 
+# Last updated on: $Date: 2003-02-17 11:18:42 $   
 
 # touch logfile for run details
 $0 =~ m/\/*([^\/]+)$/; system("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
@@ -53,7 +53,7 @@ elsif ($opt_d eq "autoace") {
 
 my $tace      = &tace;
 
-my $query = "/wormsrv2/autoace/wquery/cDNA_CDS_EST5_EST3_METHOD.def";
+my $query_def = "/wormsrv2/autoace/wquery/cDNA_CDS_EST5_EST3_METHOD.def";
 my $genes     = "genes.gff";
 my $est_file  = "BLAT_EST_BEST.gff";
 my $mrna_file = "BLAT_mRNA_BEST.gff";
