@@ -6,8 +6,8 @@
 #
 # Script to make ?Transcript objects
 #
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2003-09-25 10:10:38 $  
+# Last updated by: $Author: krb $     
+# Last updated on: $Date: 2003-09-29 15:25:31 $  
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -22,7 +22,7 @@ my ($debug, $help, $verbose, $really_verbose, $est, $count, $report, $gap, $tran
 
 $gap = 5; # $gap is the gap allowed in an EST alignment before it is considered a "real" intron
 
-GetOptions ( "debug"            => \$debug,
+GetOptions ( "debug:s"          => \$debug,
 	     "help"             => \$help,
 	     "verbose"          => \$verbose,
 	     "really_verbose"   => \$really_verbose,
@@ -40,6 +40,14 @@ GetOptions ( "debug"            => \$debug,
 	     "build"            => \$build
 	   ) ;
 
+# Who will log be emailed to?
+my $maintainers = "All";
+if($debug){
+  print "DEBUG = \"$debug\"\n\n";
+  ($maintainers = $debug . '\@sanger.ac.uk');
+}
+
+
 my $log = &make_build_log($debug);
 &check_opts; # if -build set, this will set all relevant opts to works as if in build. Will NOT overwrite the others (eg -count)
 
@@ -56,8 +64,8 @@ my @ordered_genes;
 
 #setup directory for transcript
 my $transcript_dir = "$database/TRANSCRIPTS";
-system("mkdir $transcript_dir") unless -e "$transcript_dir";
-system("rm -f $transcript_dir/*");
+&run_command("mkdir $transcript_dir") unless -e "$transcript_dir";
+&run_command("rm -f $transcript_dir/*");
 
 $gff_file = $gff if $gff;
 
@@ -257,22 +265,33 @@ foreach my $chrom ( @chromosomes ) {
 }
 
 if( $load_transcripts ) {
-  print $log "loading transcripts file to $database\n";
-  system("cat $transcript_dir/transcripts_*.ace > $transcript_dir/transcripts_all.ace");
-  system("echo \"pparse $transcript_dir/transcripts_all.ace\nsave\nquit\" | $tace -tsuser transcripts $database");
+  &run_command("cat $transcript_dir/transcripts_*.ace > $transcript_dir/transcripts_all.ace");
+  &run_command("echo \"pparse $transcript_dir/transcripts_all.ace\nsave\nquit\" | $tace -tsuser transcripts $database");
 }
 
 if( $load_matches ) {
-  print $log "loading matching_cDNA file to $database\n";
-  system("cat $transcript_dir/chromosome*_matching_cDNA.ace > $transcript_dir/matching_cDNA_all.ace");
-  system("echo \"pparse $transcript_dir/matching_cDNA_all.ace\nsave\nquit\" | $tace -tsuser matching_cDNA $database");
+  &run_command("cat $transcript_dir/chromosome*_matching_cDNA.ace > $transcript_dir/matching_cDNA_all.ace");
+  &run_command("echo \"pparse $transcript_dir/matching_cDNA_all.ace\nsave\nquit\" | $tace -tsuser matching_cDNA $database");
 }
   
+
+# Finish and tidy up
 print $log "$0 finished at ",&runtime,"\n";
-close $log;
+close($log);
+&mail_maintainer("BUILD REPORT: $0",$maintainers,$log);
 
 
 exit(0);
+
+
+######################################################################################################
+#
+#
+#                           T  H  E        S  U  B  R  O  U  T  I  N  E  S
+#
+#
+#######################################################################################################
+
 
 sub findOverlappingGene
   {
@@ -596,7 +615,23 @@ sub checkData
     die "There are no genes in the gff file $$file\n" if scalar keys %genes_span == 0;
   }
 
+###################################################################################
 
+sub run_command{
+  my $command = shift;
+  print $log &runtime, ": started running $command\n";
+  my $status = system($command);
+  if($status != 0){
+    $errors++;
+    print $log "ERROR: $command failed\n";
+  }
+  print $log &runtime, ": finished running $command\n";
+
+  # for optional further testing by calling subroutine
+  return($status);
+}
+
+#####################################################################################
 
 
 __END__
