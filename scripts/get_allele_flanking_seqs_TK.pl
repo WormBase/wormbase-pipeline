@@ -4,7 +4,7 @@
 
 # by Chao-Kung Chen [030625]
 
-# Last updated on: $Date: 2003-07-14 12:04:50 $
+# Last updated on: $Date: 2003-07-24 09:15:13 $
 # Last updated by: $Author: ck1 $
 
 use Tk;
@@ -296,6 +296,7 @@ EOF
 sub upload_ace_GA{
 
   my $user = `whoami`;
+  chomp $user;
   if ($user ne "wormpub"){
     my $dialog3 =  $mw -> DialogBox(-title   => "ERROR loading ace file . . .",
                                     -buttons => ["Close" ]);
