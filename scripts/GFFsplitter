@@ -38,7 +38,7 @@ my $datadir = "/wormsrv2/autoace/GFF_SPLITS";
 
 # create GFF_SPLITS subdirectory if it doesn't already exist
 if (! -e "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS"){
-  system("mkdir /wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS") || die "Couldn't create directory\n";
+  system("mkdir /wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS") && die "Couldn't create directory\n";
 }
 
 
