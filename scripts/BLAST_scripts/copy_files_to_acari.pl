@@ -70,7 +70,7 @@ if( $opt_w )
     my $wp_old  = "wormpep" . ($WS_version - 1) . ".pep";
     
     print LOG "copying wormpep version $WS_version . . ";
-    &test_system_command( system ("scp wormpub\@wormsrv2:/wormsrv2/WORMPEP/wormpep$WS_version/wormpep$WS_version $dir/BlastDB/") );
+    &test_system_command( system ("scp wormpub\@wormsrv2:/wormsrv2/WORMPEP/wormpep$WS_version/wormpep$WS_version $dir/") );
     
     print LOG "and make it blastable. . . ";
     print "making blastable database. . .\n ";
