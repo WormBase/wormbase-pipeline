@@ -696,14 +696,16 @@ sub gene_mapping {
       @providers = split(/,|and/, $3);
     }
 
-    if ($_ =~ /^Locus_[dD]escription(:|\s:)\s+(.+)/){
-      my $des = $2;
-      foreach $person (@providers){
-	$person =~ s/^\s|\s$//;
-	print "Description", "$des\tAuthor_evidence\t\"$person\"\n";
-	write_ace($locus, "Description", "$des\"\tAuthor_evidence\t\"$person");
-      }
-    }
+    # this has become part of Caltech functional annotation. The CGC update should CC Caltech for this bit
+
+   # if ($_ =~ /^Locus_[dD]escription(:|\s:)\s+(.+)/){
+#      my $des = $2;
+#      foreach $person (@providers){
+#	$person =~ s/^\s|\s$//;
+#	print "Description", "$des\tAuthor_evidence\t\"$person\"\n";
+#	write_ace($locus, "Description", "$des\"\tAuthor_evidence\t\"$person");
+#      }
+#    }
 
     if ($_ =~ /^Locus_[cC]hromosome(:|\s:)\s+(.+)/){write_ace($locus, "Map", $2)}
 
@@ -715,7 +717,8 @@ sub gene_mapping {
 	write_ace($locus, "Allele", $allele);
       }
     }
-    if ($_ =~ /^Locus_[gG]ene_[pP]roduct(:|\s:)\s+(.+)/){write_ace($locus, "Product", $2)}
+     # this has become part of Caltech functional annotation. The CGC update should CC Caltech for this bit
+   # if ($_ =~ /^Locus_[gG]ene_[pP]roduct(:|\s:)\s+(.+)/){write_ace($locus, "Product", $2)}
 
     ###############################
     # parse breakpt (rearrangement)
@@ -811,9 +814,12 @@ sub gene_mapping {
     elsif ($tag eq "CGC_approved"){
       push(@{$obj_info{$obj}}, "$tag");
     }
-    elsif ($tag eq "Description"){
-      push(@{$obj_info{$obj}}, "$tag\t\"$value\"");
-    }  
+
+    # this has become part of Caltech functional annotation. The CGC update should CC Caltech for this bit
+   # elsif ($tag eq "Description"){
+#      push(@{$obj_info{$obj}}, "$tag\t\"$value\"");
+#    }
+
     else {
       push(@{$obj_info{$obj}}, "$tag\t\"$value\""); # quotation different
     }
