@@ -7,7 +7,7 @@
 # Usage : autoace_minder [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2002-11-07 12:49:24 $
+# Last edited on: $Date: 2002-11-11 12:01:16 $
 
 
 #################################################################################
@@ -580,6 +580,16 @@ sub make_autoace {
   &usage(8) unless (-e "$logdir/$flag{'A5'}");
   
   if ($build || $builddb) { 
+
+    open (EMAIL,  "|/bin/mailx -s \"WormBase build reminder\" \"All\" ");
+    print EMAIL "Dear builder,\n\n";
+    print EMAIL "You have just run autoace_minder -build.  This will probably take 5-6 hours\n";
+    print EMAIL "to run.  You should therefore start work on the blast pipeline. So put down that\n";
+    print EMAIL "coffee and do some work.\n\n";
+    print EMAIL "Yours sincerely,\nOtto\n";
+    close (EMAIL);
+
+
     system ("$scriptdir/make_autoace -p /wormsrv2/autoace -r") && die "Couldn't run autoace -rc\n";
     $runtime = `date +%H:%M:%S`; chomp $runtime;
     print LOG "Finished running make_autoace at $runtime\n";
