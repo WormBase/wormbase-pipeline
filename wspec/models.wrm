@@ -262,6 +262,7 @@
 	Remark	?Text #Evidence
         Reference ?Paper XREF Allele               // Mary
         Rescued_by_Transgene ?Transgene
+	Pseudogene ?Pseudogene XREF Allele
 	Method UNIQUE ?Method // necessary now that Allele is SMap [030106 krb]
 
 
@@ -298,7 +299,6 @@
                         Controlled_phenotype ?Phenotype XREF Locus          // added for Lincoln RNAi [001213 dl]
 			CGC_approved	     // added by krb 24/01/02
 			CGC_unresolved Text // added by krb 28/01/02
-			Pseudogene Text // added by krb 28/02/02
 			RNA_gene Text // added by krb 11/03/02
 		Gene_cluster	Contains ?Locus XREF Contained_in
 		Polymorphism    SNP  Text		// SNP stuff added for Todd [171001 krb]
@@ -312,6 +312,7 @@
         Molecular_information	Genomic_sequence ?Sequence XREF Locus_genomic_seq #Evidence // Split genomic and other XREFs
                                 Other_sequence ?Sequence XREF Locus_other_seq #Evidence    // dl 001128
 				Transcript ?Transcript XREF Locus #Evidence // en route to new gene model [021126 krb]
+				Pseudogene ?Pseudogene XREF Locus #Evidence // new [030801 krb]
 				Product ?Text
 	Remark ?Text #Evidence
 	Map    ?Map XREF Locus #Map_position
@@ -664,6 +665,7 @@
 		       Motif ?Motif XREF GO_term
 		       Sequence ?Sequence XREF GO_term   // added for Erich, [011210 krb]
 		       Transcript ?Transcript XREF GO_term // new for consistancy [030411 krb]
+		       Pseudogene ?Pseudogene XREF GO_term // new [030801 krb]
 		       Phenotype ?Phenotype XREF GO_term // added for Erich, [020128 dl]
 		       Index Ancestor   ?GO_term XREF Descendent // added for Lincoln [020709 [krb]
                	             Descendent ?GO_term XREF Ancestor
@@ -779,6 +781,7 @@
      		       UTR ?UTR XREF Canonical_parent Int UNIQUE Int #SMap_info				     // added for new UTR model [krb 020729]
 		       Transcript_child ?Transcript XREF Sequence UNIQUE Int UNIQUE Int #SMap_info	     // on the way to new gene model krb [021126]
 		       Allele ?Allele XREF Sequence UNIQUE Int UNIQUE Int #SMap_info			     // New SMapped Allele class [krb 021217]
+		       Pseudogene ?Pseudogene XREF Sequence UNIQUE Int UNIQUE Int #SMap_info			     // New [krb 030801]
 	  Structure  From	Source UNIQUE ?Sequence XREF Subsequence
 				Source_Exons Int UNIQUE Int // start at 1
 		     Subsequence ?Sequence XREF Source UNIQUE Int UNIQUE Int
@@ -817,6 +820,7 @@
 		 	Matching_cDNA ?Sequence XREF Matching_Genomic
 			Matching_UTR ?UTR XREF Matching_CDS // added for UTR model [krb 020729]
 			Matching_transcript ?Transcript XREF Matching_cDNA // for new gene model [krb 021126]
+			Matching_pseudogene ?Pseudogene XREF Matching_cDNA // for ESTs that match Pseudogenes [krb 030801]
                         Spliced_cDNA ?Sequence XREF Component_of Int UNIQUE Int UNIQUE Int UNIQUE Int
                         Component_of ?Sequence XREF Spliced_cDNA
 			Corresponding_protein UNIQUE ?Protein XREF Corresponding_DNA
@@ -843,8 +847,7 @@
 			Interacts_with_protein ?Protein XREF Interacts_with_sequence #Evidence // for future interaction data [020704 krb]
 		// tag2 system: names of all objects following next tag are shown in the 
 		//   general annotation display column as "tag:objname"
-	  Properties    Pseudogene Text		                                 // explanation
-			Genomic_canonical Gene_count UNIQUE Int                  // added tag for dot name tracking [020128 dl]
+	  Properties    Genomic_canonical Gene_count UNIQUE Int                  // added tag for dot name tracking [020128 dl]
                         Briggsae_canonical
 			cDNA cDNA_EST
 			     EST_5		       // Indicate whether this is a 5' or 3' read [010423 dl]
@@ -1037,6 +1040,51 @@
                                 End_not_found                                     // [020306 kj]
                                 Pseudogene Text                                   // [020306 kj]
                 Method UNIQUE ?Method                  
+
+
+
+
+///////////////////////////////////////////////////////////////////
+//
+// New Pseudogene class to pave the way to the new gene model
+//
+// Added by krb 030801
+//
+///////////////////////////////////////////////////////////////////
+
+
+?Pseudogene     Evidence #Evidence
+                SMap S_Parent Sequence UNIQUE ?Sequence XREF Pseudogene      
+                Structure Source_exons Int UNIQUE Int
+                DB_info DB_remark ?Text #Evidence
+                        Database ?Database ?Text ?Accession_number XREF Sequence UNIQUE Int 
+                Origin  From_laboratory UNIQUE ?Laboratory
+                        Species UNIQUE ?Species
+                Type    UNIQUE Coding_pseudogene
+                               RNA_pseudogene Text // Text can store type of RNA (probably tRNA)
+                               Transposon
+                Genetics Locus UNIQUE ?Locus XREF Pseudogene
+                         Allele ?Allele XREF Pseudogene 
+                         Interpolated_map_position ?Map UNIQUE Float 
+                //      Gene_info Gene UNIQUE ?Gene XREF CDS // when live 
+                //                Gene_history UNIQUE ?Gene XREF CDS_history // when dead
+                Visible Contained_in_operon ?Operon XREF Contains_pseudogene
+                        Matching_cDNA ?Sequence XREF Matching_pseudogene
+                        Brief_identification UNIQUE ?Text #Evidence
+                        Corresponding_PCR_product ?PCR_product XREF Overlaps_pseudogene 
+                        RNAi_result ?RNAi XREF Pseudogene
+                        Expr_pattern ?Expr_pattern XREF Pseudogene
+                        Provisional_description ?Text #Evidence
+                        Detailed_description ?Text #Evidence
+                        Concise_description ?Text #Evidence
+                        GO_term ?GO_term XREF Pseudogene ?GO_code #Evidence
+                        Reference ?Paper XREF Pseudogene // added [011030 krb]
+                Confidential_remark ?Text
+                Remark ?Text #Evidence
+                Method UNIQUE ?Method
+
+
+
 
 ?Homol_data SMap S_Parent Sequence UNIQUE ?Sequence
 	    Homol DNA_homol ?Sequence XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
@@ -1233,6 +1281,7 @@
 // Added 'Curated_by' line for Sylvia [010927 krb]
 
 ?Expr_pattern	Expression_of	Sequence ?Sequence XREF Expr_pattern
+				Pseudogene ?Pseudogene XREF Expr_pattern // new [030801 krb]
 				Clone ?Clone XREF Expr_pattern
 				Locus ?Locus XREF Expr_pattern
 				Protein ?Protein XREF Expr_pattern
@@ -1479,6 +1528,7 @@
         Inhibits	Predicted_gene ?Sequence XREF RNAi_result  #Evidence // "gene" parent (unreliable)
 			Locus ?Locus   XREF RNAi_result #Evidence           //RL [010327]
 			Transcript ?Transcript XREF RNAi_result #Evidence // krb [021126]
+			Pseudogene ?Pseudogene XREF RNAi_result #Evidence // new [030801 krb]
         Supporting_data Movie ?Movie XREF RNAi			   // added for Lincoln, krb [010807]
                         Picture ?Picture XREF RNAi
 	Reference ?Paper XREF RNAi
@@ -1499,6 +1549,7 @@
 			  Expr_profile ?Expr_profile XREF PCR_product UNIQUE Int UNIQUE Int #SMap_info// added for new Expr_profile class [010912 krb]
  	     Method UNIQUE ?Method
  	     Overlaps_CDS ?Sequence XREF Corresponding_PCR_product  // added for Dan PCR mappings [010419 dl]
+	     Overlaps_pseudogene ?Pseudogene XREF Corresponding_PCR_product // new [030801 krb]
 	     Oligo ?Oligo XREF PCR_product UNIQUE Int UNIQUE Int
  	     Assay_conditions ?LongText
 	     From_Laboratory ?Laboratory                            // added for Lincoln Orfeome attribution [020304 dl]
@@ -1529,6 +1580,7 @@
 ?Operon SMap S_Parent Canonical_parent UNIQUE ?Sequence XREF Operon
 	Species ?Species
 	Contains_CDS ?Sequence XREF Contained_in_operon  #Trans_splice_leader
+	Contains_pseudogene ?Pseudogene XREF Contained_in_operon  #Trans_splice_leader // new [030801 krb]
 	Reference ?Paper XREF Operon
 	Method UNIQUE ?Method
 
@@ -1770,6 +1822,7 @@
                   Rearrangement ?Rearrangement XREF Reference #Evidence
                   Sequence ?Sequence XREF Reference #Evidence
 		  Transcript ?Transcript XREF Reference #Evidence
+		  Pseudogene ?Pseudogene XREF Reference #Evidence // new [030801 krb]
                   Strain ?Strain XREF Reference #Evidence
                   Clone ?Clone XREF Reference #Evidence
                   Protein ?Protein XREF Reference #Evidence
