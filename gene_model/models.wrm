@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.64 2002-07-26 08:21:42 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.65 2002-07-26 10:35:37 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -298,7 +298,11 @@
 ?Allele Name	Rearrangement ?Rearrangement XREF Allele
 	Source	UNIQUE Gene ?Gene XREF Allele // RD 0107 Locus->Gene
 	               Gene_class ?Gene_class XREF Allele
-	SMap S_parent Sequence UNIQUE ?Sequence XREF Allele     // changed into S_parent Sequence UNIQUE [020311 kj]
+	//SMap S_parent Sequence UNIQUE ?Sequence XREF Allele     // changed into S_parent Sequence UNIQUE [020311 kj]
+	// Do we really need SMap for Alleles? Commented this out for now. krb 020726
+	Sequence_details Sequence ?Sequence XREF Allele #Evidence	
+                         Flanking_sequences UNIQUE Text UNIQUE Text
+                         Allelic_difference UNIQUE ?Text #Evidence
 	Method UNIQUE ?Method
 	Replacement UNIQUE Text UNIQUE Text	// RD 0107 big change
 		// canonical sequence, replacement sequence
@@ -350,7 +354,7 @@
 			Insertion       // Added for Todd [171001 krb]
 	Remark	?Text
         Reference ?Paper XREF Allele               // Mary
-        Rescued_by_transgene ?Transgene XREF Rescue
+        Rescued_by_transgene ?Transgene
 
 ?Gene_class     Phenotype ?Text
 		Description ?Text // [krb 020614]
@@ -756,7 +760,7 @@
                        RNAi ?RNAi XREF Sequence UNIQUE Int UNIQUE Int #SMap_info                       // added for Lincoln RNAi [001213 dl]
 		       WTP ?WTP XREF Sequence UNIQUE Int UNIQUE Int #SMap_info                 // added for Mieg WTP data [001623 rd]
 		       Locus ?Locus XREF Sequence UNIQUE Int UNIQUE Int #SMap_info             // RD 0107
-		       Allele ?Allele XREF Sequence UNIQUE Int UNIQUE Int #SMap_info           // RD 0107
+//		       Allele ?Allele XREF Sequence UNIQUE Int UNIQUE Int #SMap_info           // RD 0107
 		       Gene ?Allele XREF Sequence UNIQUE Int UNIQUE Int #SMap_info             // RD 0107
 		       CDS_child ?CDS XREF Sequence UNIQUE Int UNIQUE Int #SMap_info            // RD 0107
 		       Transcript_child ?Transcript XREF Sequence UNIQUE Int UNIQUE Int #SMap_info                // RD 0107
