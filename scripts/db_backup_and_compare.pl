@@ -5,7 +5,7 @@
 # backup database and compare to last backed up database to look for lost data
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-12-01 11:54:25 $      
+# Last updated on: $Date: 2004-04-14 08:45:00 $      
 
 use strict;
 use lib '/wormsrv2/scripts';
@@ -299,6 +299,7 @@ Expr_pattern
 Expr_profile
 Feature
 Feature_data
+Gene
 Gene_class
 Gene_name
 GO_term
