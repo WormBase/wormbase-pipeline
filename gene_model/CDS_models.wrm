@@ -205,7 +205,7 @@
 										 // is deleted and something else is 
 										 // also inserted
 	Affects Gene ?Locus XREF Allele  // New tag structure to handle allele cross-links [krb 021217]
-		CDS ?CDS XREF Allele // Replaces linking to Has_allele tag in ?Sequence class
+		Predicted_gene ?CDS XREF Allele // Replaces linking to Has_allele tag in ?Sequence class
 		Transcript ?Transcript XREF Allele // added for two cases of RNA genes with alleles [021126 krb]
 		//Gene ?Gene XREF Allele  // what this will becomee
         Reference_Allele
@@ -771,7 +771,7 @@
 	  SMap S_parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF Genomic_non_canonical 
 			       Genomic_parent   UNIQUE ?Sequence XREF Nongenomic
 			       AGP_parent       UNIQUE ?Sequence XREF AGP_fragment // added to hold briggsae data [krb 020726]
-	       S_child CDS        ?CDS        XREF Sequence UNIQUE Int UNIQUE Int #SMap_info  // For new ?CDS class [031104 krb]
+	       S_child CDS_child  ?CDS        XREF Sequence UNIQUE Int UNIQUE Int #SMap_info  // For new ?CDS class [031104 krb]
 		       Transcript ?Transcript XREF Sequence UNIQUE Int UNIQUE Int #SMap_info  // for new ?Transcript class [021126 krb]
 		       Pseudogene ?Pseudogene XREF Sequence UNIQUE Int UNIQUE Int #SMap_info  // For new ?Pseudogene class [030801 krb]
 		       Transposon ?Transposon XREF Sequence UNIQUE Int UNIQUE Int #SMap_info  // for transposons   [020128 dl]
@@ -968,7 +968,7 @@
 
 
 ?CDS	Evidence #Evidence
-	SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF CDS 
+	SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF CDS_child
 	Structure Source_exons Int UNIQUE Int
 	DB_info Database ?Database ?Database_field UNIQUE ?Accession_number XREF CDS
 		Protein_id ?Sequence UNIQUE Text UNIQUE Int // DB_info tag added [011030 krb]
@@ -996,10 +996,10 @@
 		Matching_UTR ?UTR XREF Matching_CDS // added for UTR model [krb 020729]
 		Orthologue ?CDS XREF Orthologue ?Species #Evidence  // dl 030304
 		Expr_pattern ?Expr_pattern XREF CDS
-                RNAi_result ?RNAi XREF CDS // added for Lincoln RNAi [001213 dl]
+                RNAi_result ?RNAi XREF Predicted_gene // added for Lincoln RNAi [001213 dl]
 		Contained_in_operon ?Operon XREF Contains_CDS
 		GO_term ?GO_term XREF CDS ?GO_code #Evidence
-		Allele ?Allele XREF CDS // replaces Has_allele tag in ?Sequence
+		Allele ?Allele XREF Predicted_gene // replaces Has_allele tag in ?Sequence
 		Microarray_results ?Microarray_results XREF CDS      //added for Microarray_results
 		Antibody ?Antibody XREF CDS // added [031120 krb]
 	  	Reference ?Paper XREF CDS // added [011030 krb]
@@ -1771,7 +1771,7 @@
                                             Injection              //RL [010327]
                                             Soaking                //RL [010327]
                                             Transgene_expression   //RL [010327]
-        Inhibits	CDS ?CDS XREF RNAi_result  #Evidence // "gene" parent (unreliable)
+        Inhibits	Predicted_gene ?CDS XREF RNAi_result  #Evidence // "gene" parent (unreliable)
 			Locus ?Locus   XREF RNAi_result #Evidence           //RL [010327]
 			Transcript ?Transcript XREF RNAi_result #Evidence // krb [021126]
 			Pseudogene ?Pseudogene XREF RNAi_result #Evidence // new [030801 krb]
