@@ -1,8 +1,14 @@
 #!/usr/local/bin/perl5.6.0 -w
 #
 # make_acefiles 
+#
 # dl1
 #
+# Generates the .acefiles from the primary databases as a prelim for building
+# autoace.
+#
+# Last updated by: $Author: dl1 $                     
+# Last updated on: $Date: 2002-07-02 11:57:18 $       
 
 #################################################################################
 # Variables                                                                     #
@@ -14,47 +20,60 @@ use strict;
 use Wormbase;
 use IPC::Open2;
 use IO::Handle;
-use Getopt::Std;
-use vars qw( $opt_n $opt_s $opt_e $opt_d $opt_h);
+use Getopt::Long;
 
  ##############################
  # Script variables (run)     #
  ##############################
 
-my $maintainer = "All";
-my $rundate = `date +%y%m%d`;   chomp $rundate;
-my $runtime = `date +%H:%M:%S`; chomp $runtime;
-
- ##############################
- # Paths etc                  #
- ##############################
-
-my $autoace_config = "/wormsrv2/autoace_config/autoace.config";
-my $basedir        = "/wormsrv2/wormbase";
-my $miscdir        = "$basedir/misc";
-my $estfile        = "$miscdir/misc_nonelegansests.ace";
-my $tace           = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
-my $autodir        = "/wormsrv2/autoace";
+my $maintainers = "All";
+my $rundate     = `date +%y%m%d`;   chomp $rundate;
+my $runtime     = `date +%H:%M:%S`; chomp $runtime;
 
  ##############################
  # command-line options       #
  ##############################
 
-getopts ('nedhs:');
+my $help;       # Help perdoc
+my $db;         # Database name for single db option
+my $debug;      # Debug mode, verbose output to dl1 only
+my $dev;        # Write to development stream (/wormsrv1/ not /wormsrv2/)
+
+GetOptions (
+	    "debug"     => \$debug,
+	    "help"      => \$help,
+	    "db=s"      => \$db,
+	    "dev"       => \$dev
+	    );
+
+ ##############################
+ # Paths etc                  #
+ ##############################
+
+my $tace           = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
+my $autoace_config = "/wormsrv2/autoace_config/autoace.config";
+my $basedir        = "/wormsrv2/wormbase";
+my $miscdir        = "$basedir/misc";
+
+ ##############################
+ # Paths for dev run          #
+ ##############################
+
+if ($dev) {
+    $basedir        = "/wormsrv1/wormbase";
+    $miscdir        = "$basedir/misc";
+}
 
 # help page
-&usage(0) if ($opt_h);
-
-# no option supplied
-&usage(1) if ((!$opt_n)&&(!$opt_e));
+&usage("Help") if ($help);
 
 # single database mode
-if ($opt_s) {
-    &usage(2) unless (($opt_s eq "camace") || ($opt_s eq "stlace") || ($opt_s eq "briggsae") || ($opt_s eq "geneace"));
+if ($db) {
+    &usage("Bad_database_name") unless (($db eq "camace") || ($db eq "stlace") || ($db eq "briggsae") || ($db eq "cshace") || ($db eq "citace") || ($db eq "geneace"));
 }
 
 # set dl1 as only mail recipient if running debug mode
-$maintainer = "dl1\@sanger.ac.uk" if ($opt_d);
+$maintainers = "dl1\@sanger.ac.uk" if ($debug);
 
 #################################################################################
 # Get the WS version number and set the wormpep release number                  #
@@ -81,22 +100,38 @@ print LOG "\n";
 print LOG "WormBase version : ${WS_version}\n";
 print LOG "\n";
 print LOG "======================================================================\n";
-print LOG " -n : Write .ace files\n"                            if ($opt_n);
-print LOG "    : from database $opt_s\n"                        if ($opt_s);
-print LOG " -e : Write non-elegans nematode EST data sets\n"    if ($opt_e);
+print LOG " Write .ace files\n";                     
+print LOG "  from database $db\n"                           if ($db);
+print LOG "  Output to /wormsrv1\n"                         if ($dev);
 print LOG "======================================================================\n";
 print LOG "\n";
 print LOG "Starting make_acefiles .. \n\n";
+
+if ($debug) {
+    print "# make_acefiles\n\n";
+    print "# run details    : $rundate $runtime\n";
+    print "\n";
+    print "WormBase version : ${WS_version}\n";
+    print "\n";
+    print "======================================================================\n";
+    print " Write .ace files\n";
+    print "  from database $db\n"                           if ($db);
+    print "  Output to /wormsrv1\n"                         if ($dev);
+    print "======================================================================\n";
+    print "\n";
+    print "Starting make_acefiles .. \n\n";
+    print "writing .acefiled to '$basedir'\n";
+}
 
 #################################################################################
 # Main Loop                                                                     #
 #################################################################################
 
-&mknewacefiles   if ($opt_n);
-&nonelegansests  if ($opt_e);
+&mknewacefiles;
 
 my $endtime = `date +%H:%M:%S`; chomp $endtime;
 print LOG "Ended make_acefiles @ $endtime\n";
+print "Ended make_acefiles @ $endtime\n" if ($debug);
 close STDERR;
 close STDOUT;
 close LOG;
@@ -105,10 +140,14 @@ close LOG;
  # mail $maintainer report    #
  ##############################
 
-&mail_maintainer("WormBase Report: make_acefiles ",$maintainer,$logfile);
+&mail_maintainer("WormBase Report: make_acefiles",$maintainers,$logfile);
 
 # hasta luego
 exit (0);
+
+
+
+
 
 #################################################################################
 ### Subroutines                                                               ###
@@ -134,8 +173,8 @@ sub mknewacefiles {
 	next if (/^\#/  || /^$/);
 
         # single database mode
-	if ($opt_s) {
-	    next unless (/$opt_s/);
+	if ($db) {
+	    next unless (/$db/);
 	}
 
 	if (/^P\s+(\S+)\s+(\S+)$/) {
@@ -147,7 +186,7 @@ sub mknewacefiles {
 	}
 	next if ($dbname =~ /misc/);
 	# single database mode
-	next if (($opt_s) && ($opt_s ne "$dbname"));
+	next if (($db) && ($db ne "$dbname"));
 
 	# nuts and bolts of acefile generation
 	# format:  database object criteria
@@ -350,63 +389,6 @@ sub strip_ghosts {
     system ("mv -f ${filename}.rm $filename");
 }
 
-
-
-#######################################################################
-# Make the non-celegans ESTs                                          #
-#######################################################################
-# 
-# SRS call for ESTs in EMBL which are nematode but not C.elegans
-# makes an .acefile for the object which contains the db info
-# the species and def line. 
-# 
-# These have the method 'EST_nematode" 
-#
-# n.b this breaks the 
-
-sub nonelegansests {
-    
-    my ($id,$def,$ac,$sv,$method);
-
-    system ("/bin/rm $estfile");
-    open (ESTFILE,   ">$estfile");
-    open (SEQUENCES, "/usr/local/pubseq/bin/getz -d  -f \"id acc sv org des\" \'([emblnew-org:nematoda\! caenorhabditis elegans] \& [emblnew-key:est]) | ([embl-org:nematoda\! caenorhabditis elegans] \& [embl-key:est])\' |");
-    while (<SEQUENCES>) {
-	if (/^ID\s+(\S+)/) {
-	    $id=$1;
-	}
-	if (/^SV\s+(.+)/) {
-	    ($ac,$sv) = split (/\./,$1);
-	    print ESTFILE "\nSequence : \"$ac\"\nDatabase EMBL $id $ac $sv\n";
-	}
-	if (/^OS\s+(.+)/) {
-	    print ESTFILE "Species \"$1\"\n";
-	    if ($1 eq "Caenorhabditis briggsae") {
-		$method = "EST_briggsae";
-	    }
-	    else {
-		$method = "EST_nematode";
-	    }
-	}        
-	if (/^DE\s+(.+)/) {
-	    $def=$def." ".$1;
-	}
-	if (/^SQ\s+/) {
-	    $def=~s/^\s+//;
-	    print ESTFILE "Title \"$def\"\ncDNA_EST\nMethod $method\n\n";
-	    $def="";
-	}
-    }
-    close SEQUENCES;
-    close ESTFILE;
-    print LOG "Made $estfile\n";
-    return;
-}
-
-
-
-
-
 ########################################################################
 # Process ace files to change 'wormpub' in timestamps to database name #
 ########################################################################
@@ -441,38 +423,16 @@ sub process_ace_file{
 # Help and error trap outputs                                         #
 #######################################################################
  
-sub run_details {
-    print "# make_acefiles\n#\n";     
-    print "# run details    : $rundate $runtime\n";
-    print "\n";
-    print "WormBase version : ${WS_version}\n";
-    print "\n";
-    print "======================================================================\n";
-    print " -n : Write .ace files\n" if ($opt_n);
-    print " -e : Write non-elegans nematode EST data sets\n" if ($opt_e);
-    print "======================================================================\n";
-    print "\n\n";
-}
-
-
 sub usage {
     my $error = shift;
     
-    if ($error == 1) {
-	# No command-line options
-	print "\nNo command line options given\n\n";
-	print "Usage: make_acefiles [-options]\n";
-	print " -n : Write .ace files\n";
-	print " -e : Write non-elegans nematode EST data sets\n";
-	exit(0);
-    }
-    elsif($error == 2) {
+    if ($error eq "Bad_database_name") {
 	# Single database mode: database name not recognised
-	print "\nNo database of this name exists ('$opt_s')\n";
+	print "\nNo database of this name exists ('$db')\n";
 	print "Check database names in config file\n\n";
 	exit(0);
     }
-    elsif ($error == 0) {
+    elsif ($error eq "Help") {
 	# Normal help menu
 	system ('perldoc',$0);
 	exit (0);
@@ -493,19 +453,17 @@ __END__
 
 =back
 
-make_acefiles is the first step in a WS build. It has 2 functions:
+make_acefiles is the first step in a WS build.
 
 to write a number of .acefiles which are data dumps from the respective
 ACEDB databases which make up the full C.elegans release (i.e. camace,
-stlace, geneace, brigace)
+stlace, geneace, brigace, citace & cshace)
 
-to make a non-elegans nematode EST data set using getz
-
-make_acrefiles mandatory arguments:
+make_acefiles MANDATORY arguments:
 
 =over 4
 
-=item none, (but it will not do anything)
+=item none, 
 
 =back
 
@@ -513,11 +471,51 @@ make_acefiles OPTIONAL arguments:
 
 =over 4
 
-=item -n, make new acefiles
+=item -db text, single database mode. Only dumps acefiles for the named database
 
-=item -s text, single database mode. Only dumps acefiles for the named database
+=item -debug, verbose report (e-mails dl1 only)
 
-=item -e, make non-elegans est files
+=item -dev, builds new acefiles into /wormsrv1 development area
+
+=item -help, this help page
+
+=back
+
+make_acefiles DEFAULT behaviour:
+
+make_acefiles will write .acefiles for each of the primary databases to the
+/wormsrv2/wormbase/ directories camace, stlace, briggsae, caltech, csh,
+emblace, and geneace.
+
+=head1 REQUIREMENTS
+
+=back
+
+This script must run on a machine which can see the /wormsrv2 disk.
+
+This script requires the following data files:
+
+=over 4
+
+=item autoace_config
+
+=back
+
+This script is called by the following scripts:
+
+=over 4
+
+=item autoace_minder
+
+=item dev_minder
+
+=back
+
+=head1 AUTHOR
+
+=over 4
+
+=item Dan Lawson (dl1@sanger.ac.uk)
 
 =back
 
