@@ -164,4 +164,17 @@ sub log_and_die
     }
     die;
   }
+
+sub error
+  {
+    my $self = shift;
+    $self->{'ERRORS'}++;
+    return $self->{'ERRORS'};
+  }
+
+sub report_errors
+  {
+    my $self = shift;
+    return $self->{'ERRORS'};
+  }
 1;
