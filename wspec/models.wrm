@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: krb $
-// Last edited on: $Date: 2004-06-02 07:57:08 $
+// Last edited on: $Date: 2004-06-02 15:05:54 $
  
 
 
@@ -1092,6 +1092,7 @@
                                                                             // objects, 1-to-1 relationship
 		Corresponding_protein UNIQUE ?Protein XREF Corresponding_CDS #Evidence
 		Corresponding_PCR_product ?PCR_product XREF Overlaps_CDS // added for PCR mappings [010419 dl]
+		Corresponding_oligo_set ?Oligo_set XREF Overlaps_CDS
 		Matching_cDNA ?Sequence XREF Matching_CDS #Evidence
 		Matching_UTR ?UTR XREF Matching_CDS // added for UTR model [krb 020729]
 		Orthologue ?CDS XREF Orthologue ?Species #Evidence  // dl 030304
@@ -1149,6 +1150,7 @@
                         Matching_cDNA ?Sequence XREF Matching_transcript #Evidence // to attach non-coding RNA genes to matching ESTs
 			Corresponding_CDS UNIQUE ?CDS XREF Corresponding_transcript // new tag for 1-2-1 relationships with coding genes
                         Corresponding_PCR_product ?PCR_product XREF Overlaps_transcript
+			Corresponding_oligo_set ?Oligo_set XREF Overlaps_transcript
                         Reference ?Paper XREF Transcript                           // [020306 kj]
 			RNAi_result ?RNAi XREF Transcript //was missing from model [021126 krb]
 			GO_term ?GO_term XREF Transcript ?GO_code #Evidence // [030411 krb]
@@ -1206,6 +1208,7 @@
                         Matching_cDNA ?Sequence XREF Matching_pseudogene #Evidence
                         Brief_identification UNIQUE ?Text #Evidence
                         Corresponding_PCR_product ?PCR_product XREF Overlaps_pseudogene 
+			Corresponding_oligo_set ?Oligo_set XREF Overlaps_pseudogene
                         RNAi_result ?RNAi XREF Pseudogene
                         Expr_pattern ?Expr_pattern XREF Pseudogene
                         Provisional_description ?Text #Evidence
@@ -1215,6 +1218,7 @@
                         Reference ?Paper XREF Pseudogene // added [011030 krb]
 			SAGE_transcript ?SAGE_transcript XREF Pseudogene
                         Interpolated_map_position ?Map UNIQUE Float 
+			Microarray_results ?Microarray_results XREF Pseudogene  //added for Microarray_results
 			Remark ?Text #Evidence	  
                 Confidential_remark ?Text
                 Method UNIQUE ?Method
@@ -1975,9 +1979,10 @@
 //New class. Contains multiple results for one microarray spot. Used for both SMD and Affymetrix chips as well as for generic chips. 
 ?Microarray_results     Sequence_info UNIQUE PCR_product     UNIQUE ?PCR_product     XREF Microarray_results
                                              Oligo_set       UNIQUE ?Oligo_set       XREF Microarray_results
-                        Gene          ?Gene XREF Microarray_results #Evidence        //should be mapped during the build
-                        CDS	      ?CDS XREF Microarray_results #Evidence     //should be mapped during the build
-                        Transcript    ?Transcript XREF Microarray_results #Evidence   //should be mapped during the build
+                        Gene          ?Gene 	  XREF Microarray_results #Evidence   // should be mapped during the build
+                        CDS	      ?CDS 	  XREF Microarray_results #Evidence   // should be mapped during the build
+                        Transcript    ?Transcript XREF Microarray_results #Evidence   // should be mapped during the build
+			Pseudogene    ?Transcript XREF Micriarray_results #Evidence   // should be mapped during the build
                         Microarray    ?Microarray XREF Microarray_results
                         Results       ?Microarray_experiment UNIQUE #Microarray_data
                         Remark        ?Text   #Evidence
@@ -2013,6 +2018,9 @@
 		Structure Target_exons Int UNIQUE Int
                 Microarray_results ?Microarray_results XREF Oligo_set 
                 Oligo ?Oligo     //used in case oligos are specified
+		Overlaps_CDS 	    ?CDS 	XREF Corresponding_oligo_set #Evidence
+		Overlaps_transcript ?Transcript XREF Corresponding_oligo_set #Evidence
+		Overlaps_pseudogene ?Pseudogene XREF Corresponding_oligo_set #Evidence
                 Remark ?Text    #Evidence
 		Method UNIQUE ?Method
 
