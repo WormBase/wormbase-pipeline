@@ -2,7 +2,7 @@
 
 # Author: Chao-Kung Chen
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-04-30 10:32:11 $ 
+# Last updated on: $Date: 2004-04-30 10:51:02 $ 
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -140,6 +140,7 @@ foreach(@NBP){
 my $acefile = $input;
 $acefile =~ /.+\/(.+)\.txt/;
 $acefile = $1.".ace";
+print $acefile, "~~~~~~~~~~~~~~~~~~~~~\n";
 
 open(ACE, ">$allele_dir/$acefile") || die $!;
 
@@ -156,7 +157,7 @@ get_30_bp_flanks($database);
 # ----- upload data to Geneace
 
 my $command=<<END;
-pparse $acefile
+pparse $allele_dir/$acefile
 save
 quit
 END
