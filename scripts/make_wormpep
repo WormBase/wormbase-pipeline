@@ -724,6 +724,30 @@ print LOG "patch file made...\n\n";
 unlink ("$new_wpdir/wp.fasta_unwrap$release") || print LOG "cannot delete $new_wpdir/wp.fasta_unwrap$release\n";
 unlink ("$new_wpdir/wormpep_unwrap$release")  || print LOG "cannot delete $new_wpdir/wormpep_unwrap$release\n";
 
+
+#####################################################################
+# copy files to ~wormpub/WORMPEP so that wormpep webpage scripts work
+#####################################################################
+
+my $wormpub_dir = "/nfs/disk100/wormpub/WORMPEP";
+
+print LOG "Removing old files in $wormpub_dir\n";
+
+unlink("$wormpub_dir/wormpep_current") || print LOG "Cannot delete files in $wormpub_dir\n";
+unlink("$wormpub_dir/wormpep.accession_current") || print LOG "Cannot delete files in $wormpub_dir\n";
+unlink("$wormpub_dir/wormpep.dna_current") || print LOG "Cannot delete files in $wormpub_dir\n";
+unlink("$wormpub_dir/wormpep.history_current") || print LOG "Cannot delete files in $wormpub_dir\n";
+unlink("$wormpub_dir/wp.fasta_current") || print LOG "Cannot delete files in $wormpub_dir\n";
+
+print LOG "Copying new files to $wormpub_dir\n";
+
+system("cp $new_wpdir/wormpep_current $wormpub_dir/wormpep_current") || print LOG "Cannot copy file to $wormpub_dir\n";
+system("cp $new_wpdir/wormpep.accession$release $wormpub_dir/wormpep.accession_current") || print LOG "Cannot copy file to $wormpub_dir\n";
+system("cp $new_wpdir/wormpep.dna$release $wormpub_dir/wormpep.dna_current") || print LOG "Cannot copy file to $wormpub_dir\n";
+system("cp $new_wpdir/wormpep.history$release $wormpub_dir/wormpep.history_current") || print LOG "Cannot copy file to $wormpub_dir\n";
+system("cp $new_wpdir/wp.fasta$release $wormpub_dir/wp.fasta_current") || print LOG "Cannot copy file to $wormpub_dir\n";
+
+
 close LOG;
 
 open (mailLOG, "|/usr/bin/mailx -s \"WormBase Report: make_wormpep\" $maintainer ");
