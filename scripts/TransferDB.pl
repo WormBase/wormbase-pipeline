@@ -4,7 +4,7 @@
 #
 # by ag3 [991221]
 #
-# Last updated on: $Date: 2003-09-23 09:12:14 $
+# Last updated on: $Date: 2003-09-23 15:22:44 $
 # Last updated by: $Author: krb $
 
 
@@ -92,7 +92,7 @@ if($debug){
 ##########################################################
 &usage("Help") if ($help);
 &usage("1")    if (!$srcdir || !$enddir);
-&usage("2")    if ($dbname && (!$S_all || !$S_wspec));
+&usage("2")    if (($dbname && !$S_wspec) && ($dbname && !$S_all));
 
 if ($srcdir =~ /^\~/) {
   my $tmp = glob ($srcdir);  $srcdir = $tmp;
