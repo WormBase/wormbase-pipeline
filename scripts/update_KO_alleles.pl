@@ -4,7 +4,7 @@
 
 # by Chao-Kung Chen [030113]
 
-# Last updated on: $Date: 2003-03-10 11:45:04 $
+# Last updated on: $Date: 2003-03-24 12:10:25 $
 # Last updated by: $Author: ck1 $
 
 
@@ -170,7 +170,7 @@ END
 #####################################################################################
 
 if ($seq_update == 0 || $pcr_update == 0){
-  print LOG "\nKnock allele update will not proceed if both updates files are available\n"; 
+  print LOG "\nKnock allele update will not proceed if both updates files are not available\n"; 
   mail_maintainer($0, $allele_carers, $log); # mail notice
   exit(0);
 }
