@@ -469,7 +469,7 @@ sub addFlyData
 	my $this_e = $$data[7];
 
 	if( $this_e > $existing_e ) { #replace what is currently stored for this homology
-	  undef $$match{$_}[0];
+	  delete $$match{$_}[0];
 	  $$match{$homol}[0] = [ @$data ];
 	}
 	elsif( $this_e == $existing_e )  {
@@ -505,7 +505,7 @@ sub addWormData
 	my $this_e = $$data[7];
 
 	if( $this_e > $existing_e ) { #replace what is currently stored for this homology
-	  undef $$match{$_}[0];
+	  delete $$match{$_}[0];
 	  $$match{$homol}[0] = [ @$data ];
 	}
 	elsif( $this_e == $existing_e )  {
