@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2004-01-16 12:19:49 $
+# Last updated by: $Author: dl1 $
+# Last updated on: $Date: 2004-01-30 13:43:56 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -15,7 +15,7 @@
 #################################################################################
 
 use strict;
-use lib '/wormsrv2/scripts';
+use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
 use Wormbase;
 use IO::Handle;
 use Getopt::Long;
@@ -164,7 +164,7 @@ foreach $file (@gff_files) {
 	 && ($feature eq "Transcript"))               {push (@{$GFF{$file}{rna}},$_);}
     # coding_exon (used to be CDS)
     elsif ((($source eq "curated") || ($source eq "provisional")) 
-	   && ($feature eq "coding_exon"))                   {push (@{$GFF{$file}{coding_exon}},$_);}
+	   && ($feature eq "coding_exon"))            {push (@{$GFF{$file}{coding_exon}},$_);}
     # Exon      
     elsif ((($source eq "curated") 
 	    || ($source eq "provisional")) 
@@ -177,6 +177,7 @@ foreach $file (@gff_files) {
     elsif ((($source eq "curated") 
 	    || ($source eq "provisional")) 
 	   && ($feature eq "intron"))                 {push (@{$GFF{$file}{intron}},$_);}
+    elsif ($feature eq "intron")                      {push (@{$GFF{$file}{intron_all}},$_);}
     elsif (($source eq "tRNAscan-SE-1.23") 
 	   && ($feature eq "intron"))                 {push (@{$GFF{$file}{intron_tRNA}},$_);}
     elsif (($source eq "Pseudogene") 
@@ -234,6 +235,8 @@ foreach $file (@gff_files) {
     elsif (/BLAT_EMBL_OTHER/)                         {push (@{$GFF{$file}{BLAT_EMBL_OTHER}},$_);}
     # BLAT_NEMATODE
     elsif (/BLAT_NEMATODE/)                           {push (@{$GFF{$file}{BLAT_NEMATODE}},$_);}
+    # BLAT_TC1_BEST
+    elsif (/BLAT_TC1_BEST/)                           {push (@{$GFF{$file}{BLAT_TC1_BEST}},$_);}
     # Expr_profile
     elsif (/Expr_profile/)                            {push (@{$GFF{$file}{Expr_profile}},$_);}
     # UTR         
@@ -498,6 +501,7 @@ exon
 exon_tRNA
 exon_pseudogene
 intron
+intron_all
 intron_tRNA
 intron_pseudogene
 intron_confirmed_CDS
@@ -523,6 +527,7 @@ BLAT_mRNA_OTHER
 BLAT_EMBL_BEST
 BLAT_EMBL_OTHER
 BLAT_NEMATODE
+BLAT_TC1_BEST
 Expr_profile
 UTR
 BLASTX
