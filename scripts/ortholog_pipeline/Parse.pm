@@ -9,15 +9,14 @@ use vars qw/@ISA/;
 
 
 # Paths to various analysis files
-use constant ELEGANS  => '/Users/todd/projects/briggsae/data/gene_set-current/longest/elegans_positions.out';
-use constant BRIGGSAE => '/Users/todd/projects/briggsae/data/gene_set-current/cb25.hybrid.genes2.00.gff';
+use constant ELEGANS  => "/nfs/team71/worm/ar2/wormbase/scripts/ortholog_pipeline/elegans_positions.out";
+use constant BRIGGSAE => "/nfs/team71/worm/ar2/wormbase/scripts/ortholog_pipeline/cb25.hybrid.genes2.00.gff";
 
-use constant KAKS      => '/Users/todd/projects/briggsae/data/orthologs-2.00/orthologs-kaks-needle-2_00.rnai.dat';
-use constant ORTHOLOGS => '/Users/todd/projects/briggsae/data/orthologs-current';
-use constant ORTHOLOGS_TEMP => '/Users/todd/projects/briggsae/data/orthologs-current/orthologs.all';
+use constant ORTHOLOGS => "/nfs/team71/worm/ar2/wormbase/scripts/ortholog_pipeline/ortholog_genes-current";
+use constant ORTHOLOGS_TEMP => "/nfs/team71/worm/ar2/wormbase/scripts/ortholog_pipeline/orthologs.all";
 
-use constant ELEGANS_BLAST => '/Users/todd/projects/briggsae/data/blastp-current/seg-on/elegans_vs_briggs.out';
-use constant BRIGGSAE_BLAST => '/Users/todd/projects/briggsae/data/blastp-current/seg-on/briggs_vs_elegans.out';
+use constant ELEGANS_BLAST => '/nfs/team71/worm/ar2/wormbase/scripts/ortholog_pipeline/bestgenes_el_brig';
+use constant BRIGGSAE_BLAST => '/nfs/team71/worm/ar2/wormbase/scripts/ortholog_pipeline/bestgenes_brig_el';
 
 use constant SW => '/Users/todd/projects/briggsae/data/blastp-current/SW/split/elegans_vs_briggsae.out';
 
@@ -61,8 +60,7 @@ sub elegans {
     # 11 genome_start genome_stop 
     # 13 gmap source version method
     
-    my ($gene,$protein,$clone,$chrom,$strand,$pep_length,$spliced_length,$start,$stop,$chrom_start,
-	$chrom_stop,$genome_start,$genome_stop,$gmap,$source,$version,$method) 
+    my ($gene,$protein,$clone,$chrom,$strand,$pep_length,$spliced_length,$start,$stop,$chrom_start,$chrom_stop,$genome_start,$genome_stop,$gmap,$source,$version,$method) 
       = split("\t");
     
     if ($flag eq 'chrom') {
@@ -253,9 +251,10 @@ sub blast {
   my $parsed = {};
   while (<IN>) {
     chomp;
-    my @temp = split(/\s+/);
+    s/\w{2}://;
+    my @temp = split(/\,/);
     
-    my $evalue  = $temp[10];
+    my $evalue  = $temp[2];
     if (substr($evalue,0,1) eq 'e') { $evalue = "1".$evalue;}
     my $query   = $temp[0];
     my $subject = $temp[1];

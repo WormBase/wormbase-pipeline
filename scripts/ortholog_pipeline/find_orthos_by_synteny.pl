@@ -39,7 +39,7 @@
 
   Todd Harris (harris@cshl.org) 
   DATE : 05 May 2003 
-  VERSION : $Id: find_orthos_by_synteny.pl,v 1.1 2004-05-21 10:33:38 ar2 Exp $
+  VERSION : $Id: find_orthos_by_synteny.pl,v 1.2 2004-07-06 14:23:18 ar2 Exp $
 
 =head1 TODO
 
@@ -47,7 +47,7 @@
   # 2. check for possible paralogs outside of the interval
 
   Range based queries do not behave properly at the ends of supercontigs or chromosomes.
-  This isn't a huge deal.  It really only affects the statistics.
+  This isnt a huge deal.  It really only affects the statistics.
 
   Should really check spans where there are one to many relationships.  Might be able
   to assign ortholog to these quite easily.
@@ -60,8 +60,6 @@
  a single direction.  USE THESE VALUES WITH SOME CAUTION.
 
 =cut
-
-#'
 
 use Getopt::Long;
 use Pod::Usage;
