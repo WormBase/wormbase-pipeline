@@ -40,6 +40,7 @@ while (<>) {
             }
 
 	}
+	print "// $gene\t$id\t$pid\t$ver\n\n";
         print "Sequence $gene\nProtein_id $id $pid $ver\n\n";
     }
 }
