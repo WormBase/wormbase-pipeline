@@ -7,6 +7,9 @@
 # 13/07/01
 #
 # N.B. Previously called gffcheck
+#
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2002-04-25 13:58:15 $
 
 
 use Getopt::Std;
@@ -97,12 +100,12 @@ exit(0);
 ###############
 
 sub runestcheck {
-    system ("/wormsrv2/scripts/estcheck \&") && die "Cannot execute estcheck $!\n";
+    system ("/wormsrv2/scripts/estcheck") && die "Cannot execute estcheck $!\n";
     print LOG "Run estcheck\n";
 }
 
 sub runintroncheck {
-    system ("/wormsrv2/scripts/introncheck \&") && die "Cannot execute introncheck $!\n";
+    system ("/wormsrv2/scripts/introncheck") && die "Cannot execute introncheck $!\n";
     print LOG "Run introncheck\n";
 }
 
