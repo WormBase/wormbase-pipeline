@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-08-02 17:15:41 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2004-08-03 13:31:57 $
 
 
 
@@ -1082,6 +1082,7 @@ sub parse_homol_data {
 		    #other data
 		    "repeat_homologies.ace",
 		    "waba.ace",
+		    "TRF.ace",
 		   );
 
   foreach my $file ( @files2Load ) {
