@@ -6,8 +6,8 @@
 #
 # This maps alleles to the genome based on their flanking sequence
 #
-# Last updated by: $Author: krb $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2004-03-08 11:55:04 $        # quickly see when script was last changed and by whom
+# Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
+# Last updated on: $Date: 2004-03-11 11:09:13 $        # quickly see when script was last changed and by whom
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -197,8 +197,8 @@ foreach my $allele (@alleles) {
   print "mapping $name\n" if $verbose;
 
   $sequence = $allele->Sequence;
-  unless (defined $sequence->Source) {
-    print LOG "ERROR: $name has an invalid sequence\n";
+  unless (defined $sequence and defined $sequence->Source) {
+    print LOG "ERROR: $name has no sequece or its invalid sequence\n";
     $error_count++;
     next ALLELE;
   }
