@@ -3,57 +3,23 @@
 use DBI;
 use strict;
 use lib "/wormsrv2/scripts/";
-use lib "/nfs/team71/worm/ar2/wormbase_cvs/scripts/";
 use Wormbase;
 use Getopt::Long;
-use Wormpep;
 
 #######################################
 # command-line options                #
 #######################################
 my $test;
 
-my $chromosomes;
-my $wormpep;
-my $update_databases;
-my $update_mySQL;
-my $setup_mySQL;
-my $run_pipeline;
-my $dont_SQL;
-my $dump_data;
 
 
 GetOptions("test"        => \$test,
-	   "chromosomes" => \$chromosomes,
-	   "wormpep"     => \$wormpep,
-	   "databases"   => \$update_databases,
-	   "updatemysql" => \$update_mySQL,
-	   "setup"       => \$setup_mySQL,
-	   "run"         => \$run_pipeline,
-	   "nosql"       => \$dont_SQL,
-	   "dump"        => \$dump_data
 	  );
 
 my $wormpipe_dir = glob("~wormpipe");
 my $WPver = &get_wormbase_version;
 $WPver-- if $test;
 
-#process Ids
-
-#|         18 | gadfly3.pep         |
-#|         19 | ensembl7.29a.2.pep  |
-#|         20 | yeast2.pep          |
-#|         23 | wormpep87.pep       |
-#|         24 | slimswissprot40.pep |
-#|         25 | slimtrembl21.pep    |
-
-my %worm01processIDs = ( wormpep => 23, 
-			 yeast => 20,
-			 ensembl => 19,
-			 gadfly  => 18,
-			 slimswissprot => 24,
-			 slimtrembl =>25
-		       );
 
 #|          7 | yeast2.pep          | 
 #|          8 | gadfly3.pep         |
@@ -83,6 +49,7 @@ my %processIds2prot_analysis = ( 11 => "wublastp_worm",
 
 #get list of wormpeps to dump from wormpep.diffXX
 my @peps2dump;
+my $pep;
 open( DIFF,"</wormsrv2/WORMPEP/wormpep$WPver/wormpep.diff$WPver") or die "cant opne diff file\n";
 while (<DIFF>)
   {
@@ -114,23 +81,23 @@ my $query = "";
 my $wormprot;#wormprot Db handle
 
 # set a E-value threshold (used in the sql query)
-my $e_threshold = 1.e-6;
+my $e_threshold = 40;
 $wormprot = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
       || die "cannot connect to db, $DBI::errstr";
 
-
-my $sth_p = $wormprot->prepare ( q{ SELECT proteinId, length
-                                 FROM protein
-                             ORDER BY proteinId
-                             } );
+#to get all peptides
+#my $sth_p = $wormprot->prepare ( q{ SELECT proteinId, length
+#                                 FROM protein
+#                             ORDER BY proteinId
+#                             } );
 
 # protein_feature table
 my $sth_f = $wormprot->prepare ( q{ SELECT proteinId,analysis,
                                       start, end,
                                       hId, hstart, hend,  
-                                      evalue, cigar
+                                      -log10(evalue), cigar
                                  FROM protein_feature
-                                WHERE proteinId = ? and evalue < ?
+                                WHERE proteinId = ? and -log10(evalue) > 40
                              ORDER BY hId
 	  	  	     } );
 
@@ -142,87 +109,116 @@ my %gene2CE = &gene2CE;
 
 my %matched_genes;
 
-foreach my $pep (@peps2dump)
-  {
-#    print OUT "//\nProtein : \"WP:$pep\"\n";
 
-    #get gene names and create new wormpep obj
+
+foreach $pep (@peps2dump)
+  {
+    my %worm_matches;
+    my %fly_matches;
+    my %human_matches;
+    my %yeast_matches;
+    my %swiss_matches;
+    my %trembl_matches;
+
     my $gene = &justGeneName($CE2gene{$pep});
-    my $pepObj = Wormpep->new($pep, $gene);
 
     #retreive data from mysql
-    $sth_f->execute($pep, $e_threshold);
+    $sth_f->execute($pep);
     my $ref_results = $sth_f->fetchall_arrayref;
     my ($proteinId, $analysis,  $myHomolStart, $myHomolEnd, $homolID, $pepHomolStart, $pepHomolEnd, $e, $cigar);
     foreach my $result_row (@$ref_results)
       {
 	($proteinId, $analysis,  $myHomolStart, $myHomolEnd, $homolID, $pepHomolStart, $pepHomolEnd, $e, $cigar) = @$result_row;
-	
-	
-	# take -log(10) of evalues
-	if ($e != 0) {
-	  $e = sprintf ("%.2f", -(log($e))/log(10));
-	}
-	else {
-	  $e = -1;
-	}
-	if( $e > 40 ) {        # arbitrarilly set to 40 - not sure what should be ar2.
-	  my @data = ($proteinId, $processIds2prot_analysis{$analysis},  $myHomolStart, $myHomolEnd, $homolID, $pepHomolStart, $pepHomolEnd, $e, $cigar);
-	  if( $analysis == 11 )   #wormpep
-	    {
-	      #send the CE id rather than gene name
-	      my $worm_protein = $gene2CE{$homolID};
-	      next if ("$worm_protein" eq "$pep" );
-
-	      my $pepgene = &justGeneName($homolID);
-	      $data[4] = $worm_protein;
-	      $pepObj->add_worm_data($pepgene,@data);
-	    }
-	  else {
-	    $pepObj->add_data(@data);
+	print "$analysis\n";
+	my @data = ($proteinId, $processIds2prot_analysis{$analysis},  $myHomolStart, $myHomolEnd, $homolID, $pepHomolStart, $pepHomolEnd, $e, $cigar);
+	if( $analysis == 11 )   #wormpep
+	  {
+	    #send the CE id rather than gene name
+	    my $worm_protein = $gene2CE{$homolID};
+	    next if ("$worm_protein" eq "$pep" );
+	    
+	    my $pepgene = &justGeneName($homolID);
+	    $data[4] = $worm_protein;
 	  }
+	elsif( $analysis == $wormprotprocessIds{'gadfly'}  ) { #gadfly peptide set also has isoforms
+	  &addData ( \%fly_matches, \@data );
 	}
-	else {
-	  print "irrelevant $e \n";
+	elsif( $analysis == $wormprotprocessIds{'human'}  ) { # others dont have isoforms so let adding routine deal with them
+	  &addData ( \%human_matches, \@data );
+	}
+	elsif( $analysis == $wormprotprocessIds{'yeast'}  ) { # others dont have isoforms so let adding routine deal with them
+	  &addData ( \%yeast_matches, \@data );
+	}
+	elsif( $analysis == $wormprotprocessIds{'slimswissprot'}  ) { # others dont have isoforms so let adding routine deal with them
+	  &addData ( \%swiss_matches, \@data );
+	}
+	elsif( $analysis == $wormprotprocessIds{'slimtrembl'}  ) { # others dont have isoforms so let adding routine deal with them
+	  &addData ( \%trembl_matches, \@data );
 	}
       }
     
-    #write ace info
-    my @cigar = split(/:/,"$cigar");
     
-    foreach (@cigar){
-      print OUT "Pep_homol \"$homolID\" $processIds2prot_analysis{$analysis} $e $myHomolStart $myHomolEnd $pepHomolStart $pepHomolEnd Align ";
-      my @align = split(/\,/,$_);
-      print "@align\n";
-      print OUT "$align[0] $align[1]\n";
-      print OUT "\n";
-    }
-    
-    $count++;    last if( $count > 4);
+    &dumpData ($proteinId,\%worm_matches,\%human_matches,\%fly_matches,\%yeast_matches,\%swiss_matches,\%trembl_matches);
   }
 
 close OUT;
 
 exit(0);
-	 
-	 
-	 sub single_line_query
-	 {
-    if( $dont_SQL ){
-      my @bogus = qw(3 3 3 3 3 3);
-      return @bogus;
-    }
-    else{
-      my $query = shift;
-      my $db = shift;
-      my $sth = $db->prepare( "$query" );
-      $sth->execute();
-      my @results = $sth->fetchrow_array();
-      $sth->finish();
-      return @results;
+
+sub dumpData
+  {
+    my $matches;
+    my $pid = shift;
+    print OUT "\nProtein : $pid\n";
+    while( $matches = shift) {   #pass reference to the hash to dump
+      #write ace info
+      foreach (keys %$matches ){
+        foreach my $data (@$matches{$_}) {
+	  my @cigar = split(/:/,"$$data[0]->[8]");  #split in to blocks of homology
+	  
+	  foreach (@cigar){
+	    #print OUT "Pep_homol \"$homolID\" $processIds2prot_analysis{$analysis} $e $myHomolStart $myHomolEnd $pepHomolStart $pepHomolEnd Align ";
+	    print OUT "Pep_homol ";
+            print OUT "$$data[0]->[4] ";   #  homolID
+            print OUT "$$data[0]->[1] ";   #  analysis
+            print OUT "$$data[0]->[7] ";   #  e value
+            print OUT "$$data[0]->[2] ";   #  HomolStart
+	    print OUT "$$data[0]->[3] ";   #  HomolEnd
+	    print OUT "$$data[0]->[5] ";   #  pepHomolStar
+	    print OUT "$$data[0]->[6] ";   #  pepHomolEnd
+	    print OUT "Align ";
+
+	    my @align = split(/\,/,$_);
+	    print "@align\n";
+	    print OUT "$align[0] $align[1]\n";
+	  }
+	}
+      }
     }
   }
-       
+
+sub addData 
+  {
+    my $match = shift;
+    my $data = shift;
+    my $homol = $$data[4];
+    if ( $$match{$homol} ){
+      my $existing_e = $$match{$homol}[0]->[7];  #1st array - 7th index
+      my $this_e = $$data[7];
+      if( $this_e > $existing_e ) { #replace what is currently stored for this homology
+	$$match{$homol} = ();
+	$$match{$homol}[0] = [ @$data ];
+      }
+      elsif( $this_e == $existing_e )  {
+	push( @{$$match{$homol} },[@$data ]);
+      }
+    }
+    else {
+      $$match{$homol}[0] = [ @$data ];
+    }
+  }
+
+
 sub gene2CE
   {
     my @array;
