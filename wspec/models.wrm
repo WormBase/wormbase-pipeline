@@ -4,8 +4,8 @@
 // "Read Models" or "Add Update File" from the main menu.
 
 // ALL WormBase groups should be in sync with this set of models
-// Last edited by: $Author: wormpub $
-// Last edited on: $Date: 2004-05-10 13:04:50 $
+// Last edited by: $Author: krb $
+// Last edited on: $Date: 2004-05-14 09:15:13 $
  
 
 
@@ -402,6 +402,8 @@
                             Split_from UNIQUE ?Gene
                             Split_into UNIQUE ?Gene
                             Imported Text // added to agree to rd's latest model krb 04/03/02
+			    Changed_class Text Text	// added to capture CDS->Pseudogene changes, two text 
+						  	// fields should list old and new class
                      Name_change CGC_name UNIQUE Text
                                  Sequence_name UNIQUE Text
                                  Other_name UNIQUE Text
@@ -2221,8 +2223,8 @@
                                               // default is "First_name Last_name"
 		Full_name     UNIQUE  ?Person_name XREF Full_name_of // New field for just storing long name [030321 krb]
                 Also_known_as   ?Person_name XREF Other_name_of // new XREF added [030310 krb]
-        CGC_representative_for UNIQUE ?Laboratory XREF Representative
-        Laboratory UNIQUE ?Laboratory XREF Registered_lab_members
+        CGC_representative_for ?Laboratory XREF Representative
+        Laboratory ?Laboratory XREF Registered_lab_members
         Address #Address
         Tracking        Old_laboratory ?Laboratory XREF Past_lab_members
                                 // Lab(s) the person previously worked in
