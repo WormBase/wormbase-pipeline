@@ -5,7 +5,7 @@
 # dl
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2003-08-11 11:44:49 $
+# Last edited on: $Date: 2003-08-11 13:03:43 $
 
 use strict;
 use lib "/wormsrv2/scripts/";   
@@ -148,10 +148,6 @@ if ($merge) {
 
 if ($update) {
     &update_camace;
-}
-
-if ($other) {
-    &update_others;
 }
 
 
