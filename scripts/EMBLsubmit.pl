@@ -4,7 +4,7 @@
 #
 # by Steve Jones, 1995
 #
-# Last updated on: $Date: 2002-12-09 14:33:30 $
+# Last updated on: $Date: 2002-12-09 16:03:07 $
 # Last updated by: $Author: krb $
 #
 # This script will mail the contents of ~wormpub/analysis/TO_SUBMIT
@@ -14,6 +14,8 @@ use strict;
 use lib "/wormsrv2/scripts/";
 use Wormbase;
 
+# touch logfile for run details
+$0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
 
 my $total = 0;
 my $dir = "/nfs/disk100/wormpub/analysis/TO_SUBMIT";
