@@ -206,7 +206,7 @@ print LOG "# $runtime : connect to primary database\n";
 my $db = Ace->connect (-path => $dbdir, -program => $tace) 
     || &error(6); # die "cannot connect to autoace\n";
 my @dotnames_1 = $db->fetch (-query => 'FIND Genome_sequence ; FOLLOW Subsequence ; where (Method = curated) OR (Method=provisional)');
-my @dotnames_2 = $db->fetch (-query => 'FIND Sequence LINK* ; FOLLOW Subsequence ; where (Method = curated) OR (Method=provisional)');
+my @dotnames_2 = $db->fetch (-query => 'FIND Sequence SUPERLINK* ; FOLLOW Subsequence ; where (Method = curated) OR (Method=provisional)');
 
 push (@dotnames_1 , @dotnames_2);
 @dotnames_1 = sort @dotnames_1;
