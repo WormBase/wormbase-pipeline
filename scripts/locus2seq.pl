@@ -5,7 +5,7 @@
 # written by Anthony Rogers (ar2@sanger.ac.uk)
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-03-14 09:29:03 $
+# Last updated on: $Date: 2003-04-04 17:31:49 $
 
 
 use strict;
@@ -47,7 +47,7 @@ our $stlouis_log; # for email to go to St. Louis
 our $cam_out = "/wormsrv2/autoace/acefiles/CAM_locus_seq.ace";
 our $stl_out = "/wormsrv2/autoace/acefiles/STL_locus_seq.ace";
 our $all_out = "/wormsrv2/autoace/acefiles/ALL_locus_seq.ace";
-our $currentDB  = "/wormsrv2/current_DB";
+our $currentDB  = "/nfs/disk100/wormpub/DATABASES/current_DB";
 our $camace_dir = "/wormsrv1/camace";
 my $geneace_dir;
 
@@ -86,7 +86,7 @@ print "\nUsing $geneace_dir as target geneace database\n";
 # First check for write access to $camace_dir
 my $write_access = check_write_access($camace_dir);
 
-&update_camace if (($camace) && ($write_access eq "yes")); 
+#&update_camace if (($camace) && ($write_access eq "yes")); 
 
 
 
