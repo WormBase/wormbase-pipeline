@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-04-15 14:23:31 $
+# Last updated on: $Date: 2003-04-15 14:27:10 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -159,6 +159,8 @@ exit(0);
 ##########################################
 sub check_evidence {
 
+  print LOG "\nChecking misuse of Evidence:\n\n";
+
 my $command=<<END;
 find locus * 
 show -a -f /tmp/locus_dump.ace
@@ -210,7 +212,7 @@ END
       $name = $2;
       if ($name !~ /WBPerson\d+/){
 	$evid_errors++;
-	print "$class $obj has non-Person $name under main tag $tag\n";
+	print LOG "$class $obj has non-Person $name under main tag $tag\n";
       }  
     }
     if ($_ =~ /(\w+)\s+.+Paper_evidence\s+\"(.+)\"/){
@@ -218,7 +220,7 @@ END
       $paper = $2;
       if ($paper !~ /\[.+]/){
         $evid_errors++;
-	print "$class $obj has Paper $paper under main tag $tag\n";
+	print LOG "$class $obj has Paper $paper under main tag $tag\n";
       }  
     }
     if ($_ =~ /(\w+)\s+.+Author_evidence\s+\"(.+)\"/){
@@ -226,11 +228,11 @@ END
        $author = $2;
       if ($author =~ /\w+\,\w+/ || $author =~ /\w+\,\s+\w+/){
 	$evid_errors++;
-	print "$class $obj has Author $author under main tag $tag\n";
+	print LOG "$class $obj has Author $author under main tag $tag\n";
       }  
     }
   }
-  print "There are $evid_errors Evidence errors in 7 classes checked\n";
+  print LOG "There are $evid_errors Evidence errors in 7 classes checked\n";
 }
 
 #######################
