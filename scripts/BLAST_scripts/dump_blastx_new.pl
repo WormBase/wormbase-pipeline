@@ -53,7 +53,7 @@ $org2acedb{fly} = "GADFLY:";
 $org2acedb{ensembl} = "ENSEMBL:";
 $org2acedb{yeast} = "SGD:";
 $org2acedb{slimswissprot} = "SW:";
-$org2acedb{slimTrEMBL} = "TR:";
+$org2acedb{slimtrembl} = "TR:";
 $org2acedb{briggsae} = "BP:";
 $org2acedb{human} = "never_used"; #this should always be done in sub getPrefix. This is here to check for valid analysis selection
 
