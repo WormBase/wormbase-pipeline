@@ -1,4 +1,4 @@
-#! /usr/local/bin/perl5.8.0 -w
+#!/usr/local/bin/perl5.8.0 -w
 
 use Tk;
 use strict;
@@ -75,7 +75,7 @@ $mw->bind('<Control-Key-q>' => sub{exit});
 
 my $menu_GA=$btn_frame->Menubutton(text => 'Correct Geneace_check', relief => 'groove')->pack (side => 'left', anchor => 'n', fill => 'x');
 $menu_GA->AddItems(
-		     ["command" => "Add loci to Gene_Class obj", command => \&add_loci_to_geneclass],
+		     ["command" => "Add loci to Gene_class obj", command => \&add_loci_to_geneclass],
 		     ["command" => "Add location to Allele obj", command => \&add_location_to_allele]
 		  );
 
@@ -149,8 +149,8 @@ sub cds_has_isoforms {
       $type = $4;
       $iso =~ /$seq/;
       if ("$seq" eq "$&"){
-	push(@Update, "Genomic_sequence \"$iso\" Accession_evidence \"$database\" \"$acc\"\n") if $type eq "CDS";
-	push(@Update, "Genomic_sequence \"$iso\" Accession_evidence \"$database\" \"$acc\"\n") if $type eq "Transcript";
+	push(@Update, "CDS \"$iso\" Accession_evidence \"$database\" \"$acc\"\n") if $type eq "CDS";
+	push(@Update, "Transcript \"$iso\" Accession_evidence \"$database\" \"$acc\"\n") if $type eq "Transcript";
       }
     }
   }
@@ -203,7 +203,7 @@ sub add_loci_to_geneclass {
       $locus = $1;
       $gene_class = $1;
       $gene_class =~ s/-\d+//;
-      push(@gc_loci, "\n\nGene_Class : \"$gene_class\"\n");
+      push(@gc_loci, "\n\nGene_class : \"$gene_class\"\n");
       push(@gc_loci, "Loci\t\"$locus\"\n");
     }
     foreach (@gc_loci){
@@ -374,14 +374,14 @@ sub geneclass_loci_other_name {
     if ($_ =~ ""){}
     #if ($_ =~ /^(\w{3,3})\s{2,}(\w+)\s{2,}(.+)/) {
     if ($_ =~ /^(\w{3,3})\s+\[phenotype: (.+)\]/ ) { 
-      push(@Update,"\n\nGene_Class : \"$1\"\n"); 
+      push(@Update,"\n\nGene_class : \"$1\"\n"); 
       push(@Update,"CGC_approved\n");
       push(@Update,"Phenotype \"$2\"\n");
     }
 
     if ($_ =~ /^(\w{3,3})\s+([A-Z]+)\s+(.+)/ && $_ !~ /^New|NEW/ ) {  
       $gene_class = $1;
-      push(@Update,"\n\nGene_Class : \"$gene_class\"\n");
+      push(@Update,"\n\nGene_class : \"$gene_class\"\n");
       #@parts = split(/\s{2,}/, $2);
       #print "Description\t\"$parts[1]\"\n";
       push(@Update,"Description\t\"$3\"\n");
@@ -402,7 +402,7 @@ sub geneclass_loci_other_name {
       push(@Update, "Gene\n");
       push(@Update, "CGC_name\t\"$1\"\n");
       print $2, "\n";
-      push(@Update, "Gene_Class\t\"$2\"\n");
+      push(@Update, "Gene_class\t\"$2\"\n");
       push(@Update, "CGC_approved\n");
       push(@Update, "Species\t\"Caenorhabditis elegans\"\n");
 
@@ -414,9 +414,9 @@ sub geneclass_loci_other_name {
       $num_parts = scalar @parts;
       if ($num_parts == 1){
 	$seq = uc($seq);
-	push(@Update, "Genomic_sequence\t\"$seq\"\n");
+	push(@Update, "CDS\t\"$seq\"\n");
 	push(@Update, "Sequence_name\t\"$seq\"\n");
-	print "Genomic_sequence\t\"$seq\"\n";  
+	print "CDS\t\"$seq\"\n";  
       }
       if ($num_parts > 1){
 	$head = $seq;
@@ -442,15 +442,15 @@ sub geneclass_loci_other_name {
 		  $pmid =~ s/\]//;		
 		  print $pmid, "\n";
 		  push(@Update, "Sequence_name\t\"$seq\"\n");
-		  push(@Update, "Genomic_sequence\t\"$seq\"\tPMID_evidence\t\"$pmid\"\n");
+		  push(@Update, "CDS\t\"$seq\"\tPMID_evidence\t\"$pmid\"\n");
 		  push(@Update, "Evidence\tPMID_evidence\t\"$pmid\"\n");
-		  #print "Genomic_sequence\t\"$seq\"\t$1\t\"$pmid\"\n";	
+		  #print "CDS\t\"$seq\"\t$1\t\"$pmid\"\n";	
 		}
 		else {
 		  $cgc_paper=$2;
                   $cgc_paper =~ s/\[|\]//g;
 		  push(@Update, "Sequence_name\t\"$seq\"\n");
-		  push(@Update, "Genomic_sequence\t\"$seq\"\tPaper_evidence\t\"[$cgc_paper]\"\n");
+		  push(@Update, "CDS\t\"$seq\"\tPaper_evidence\t\"[$cgc_paper]\"\n");
 		  push(@Update, "Evidence\tPaper_evidence\t\"[$cgc_paper]\"\n");
 		}
 	      }
@@ -463,9 +463,9 @@ sub geneclass_loci_other_name {
 		foreach (@persons){
 		  $_ =~ s/^\s//;
 		  push(@Update, "Sequence_name\t\"$seq\"\n");   
-		  push(@Update, "Genomic_sequence\t\"$seq\"\tAuthor_evidence\t\"$_\"\n");
+		  push(@Update, "CDS\t\"$seq\"\tAuthor_evidence\t\"$_\"\n");
 		  push(@Update, "Evidence\tAuthor_evidence\t\"$_\"\n");
-		  #print "Genomic_sequence\t\"$seq\"\tAuthor_evidence\t\"$_\"\n";
+		  #print "CDS\t\"$seq\"\tAuthor_evidence\t\"$_\"\n";
                 }
 	      }
 	    }
@@ -481,15 +481,15 @@ sub geneclass_loci_other_name {
 		  $pmid =~ s/\]//;		
 		  print $pmid, "\n";
 		  push(@Update, "Sequence_name\t\"$seq\"\n");
-		  push(@Update, "Genomic_sequence\t\"$seq\"\tPMID_evidence\t\"$pmid\"\n");
+		  push(@Update, "CDS\t\"$seq\"\tPMID_evidence\t\"$pmid\"\n");
 		  push(@Update, "Evidence\tPMID_evidence\t\"$pmid\"\n");
-		  #print "Genomic_sequence\t\"$seq\"\t$1\t\"$pmid\"\n";	
+		  #print "CDS\t\"$seq\"\t$1\t\"$pmid\"\n";	
 	      }
 	      else {
 		$cgc_paper=$2;
                 $cgc_paper =~ s/\[|\]//g;
 		push(@Update, "Sequence_name\t\"$seq\"\n");
-		push(@Update, "Genomic_sequence\t\"$seq\"\tPaper_evidence\t\"[$cgc_paper]\"\n");
+		push(@Update, "CDS\t\"$seq\"\tPaper_evidence\t\"[$cgc_paper]\"\n");
 		push(@Update, "Evidence\tPaper_evidence\t\"[$cgc_paper]\"\n");
 	      }
 	    }
@@ -501,9 +501,9 @@ sub geneclass_loci_other_name {
 	      foreach (@persons){
 		$_ =~ s/^\s//;
 		push(@Update, "Sequence_name\t\"$seq\"\n");
-		push(@Update, "Genomic_sequence\t\"$seq\"\tAuthor_evidence\t\"$_\"\n");
+		push(@Update, "CDS\t\"$seq\"\tAuthor_evidence\t\"$_\"\n");
 		push(@Update, "Evidence\tAuthor_evidence\t\"$_\"\n");
-		#print "Genomic_sequence\t\"$seq\"\tAuthor_evidence\t\"$_\"\n";
+		#print "CDS\t\"$seq\"\tAuthor_evidence\t\"$_\"\n";
               }
 	    }
 	  }
@@ -723,9 +723,9 @@ sub gene_mapping {
       print "$locus ; $gene_class\n";
       write_ace($locus, "\n\nLocus : ", $locus);
       write_ace($locus, "CGC_approved");
-      write_ace($locus, "Gene_Class", $gene_class);
+      write_ace($locus, "Gene_class", $gene_class);
     }
-    if ($_ =~ /^Locus_[sS]equence(:|\s:)\s+(.+)/){$seq = uc($2); write_ace($locus, "Genomic_sequence", $seq)}
+    if ($_ =~ /^Locus_[sS]equence(:|\s:)\s+(.+)/){$seq = uc($2); write_ace($locus, "CDS", $seq)}
     if ($_ =~ /^Locus_[nN]egative_[mM]ethod(:|\s:)\s+(.+)/){
       $remark = $2;
       $remark = "Negative method is ".$remark;
@@ -817,7 +817,7 @@ sub gene_mapping {
     
     if ($_ =~ /GeneClass_[gG]ene_name(:|\s:)\s+(.+)/){
       $gene_class = $1; 
-      write_ace($1, "\n\nGene_Class : ", $1);
+      write_ace($1, "\n\nGene_class : ", $1);
       write_ace($1, "CGC_approved");
     }
     if ($_ =~ /GeneClass_[pP]henotype(:|\s:)\s+(.+)/){write_ace($gene_class, "Phenotype", $2)}
@@ -836,6 +836,7 @@ sub gene_mapping {
     
     while(<IN>){
       if ($_ =~ ""){}
+
       # 2-letter lab
       if ( $_ =~ /^([A-Z]{2,2})\s+(\w{2,2}|--|\w{1,1})\s+(\w{1,} \w{1,},\s\w{1,}|\w{1,}-\w{1,},\s\w{1,}|\w{1,}-\w{1,},\s\w{1,}-\w{1,}|\w{1,},\s\w{1,}|\w{1,},\s\w{1,}-\w{1,})\s+(.+)$/ ) { 
      
