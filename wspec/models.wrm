@@ -366,7 +366,7 @@
 		     Outcrossed
 		     Mutagen Text
 		     CGC_received DateType
-	 Knocks_out ?Sequence XREF ?Knock_out_strain // new for KO allele data, krb [021114]
+	 Knocks_out ?Sequence XREF Knock_out_strain // new for KO allele data, krb [021114]
          Location ?Laboratory #Lab_Location
 	 Made_by Text
 	 Remark	?Text
