@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl
+#!/usr/local/bin/perl5.6.1 -w
 #
 # EMBLUpdate
 #
@@ -20,21 +20,61 @@
 #       3) Copy the version to ~wormpub/analysis/TO_SUBMIT.  
 #
 
+#use strict;                                     
+use lib "/wormsrv2/scripts/";                  
+use Wormbase;
+use Getopt::Long;
+
+##############
+# variables  #
+##############
+
+my $maintainers = "All";
+my $rundate     = `date +%y%m%d`; chomp $rundate;
+my $name;
+
+# touch logfile for run details
+$0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
+my $logfile = "/wormsrv2/logs/$1.`date +%y%m%d`.$$";
+
+my ( $first, $second ,$debug ,$help);
+GetOptions (
+	    "debug:s"   => \$debug,
+	    "help"      => \$help,
+           );
+
+# help page
+&usage("Help") if ($help);
+
+# no debug name
+&usage("Debug") if ((defined $debug) && ($debug eq ""));
+
+# assign $maintainers if $debug set
+($maintainers = $debug . '\@sanger.ac.uk') if ($debug);
+
+# open logfile
+system ("/bin/touch $logfile");
+open (LOG,">>$logfile") or die ("Could not create logfile\n");
+
+print LOG "EMBLupdate start at ",&runtime,"\n";
+
+
+my ($sec,$min,$hour,$mday,$mon,$year);
 ($sec,$min,$hour,$mday,$mon,$year)=localtime(time);
 $mon++;
 if ($mon < 10) {$mon="0".$mon;}
 if ($mday < 10) {$mday="0".$mday;}
 $year = $year-100;
 
-$datestamp = "0" . $year . $mon . $mday;
+my $datestamp = "0" . $year . $mon . $mday;
 
 if ($ARGV[0] eq "" ) {
-$HELP=<<END;
+my $HELP=<<END;
 Usage: $0 embl_file from EMBLDump
 END
     die ($HELP);
 }
-
+my( $cosmid, $cosnum);
 while (<>) {
 
 # if detect the beginning of an entry start a new file
@@ -58,8 +98,8 @@ while (<>) {
 # Get the current date for the cosmid
 #
 
- open(current, "grep ^$cosmid\/  /nfs/disk100/wormpub/analysis/cosmids/current.versions  |"); 
- while (<current>) {
+ open(CURRENT, "grep ^$cosmid\/  /nfs/disk100/wormpub/analysis/cosmids/current.versions  |"); 
+ while (<CURRENT>) {
     if (/^\S+\/(\d+)/) { 
 	$date=$1; 
     } else  { 
@@ -67,6 +107,7 @@ while (<>) {
 	next;
     }
  }
+close CURRENT;
 
 #------------------------------------------------------------------------
 # If there never has been a cosmid entry so far then may wish to make one
@@ -118,18 +159,23 @@ while (<>) {
 #
 
  if ($compare==1) {
-    system "cp temp$$ /nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.$datestamp.embl";
-    system "ln -fs /nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.$datestamp.embl /nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.current.embl";
-    system "\mv temp$$ /nfs/disk100/wormpub/analysis/TO_SUBMIT/$cosmid.$datestamp.embl";
-    print "$cosmid should be resubmitted and is in TO_SUBMIT.\n";
+   system "cp temp$$ /nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.$datestamp.embl";
+   system "ln -fs /nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.$datestamp.embl /nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.current.embl";
+   system "\mv temp$$ /nfs/disk100/wormpub/analysis/TO_SUBMIT/$cosmid.$datestamp.embl";
+   print "$cosmid should be resubmitted and is in TO_SUBMIT.\n";
  } else {
-    print "Cosmid $cosmid is up to date\n";
-    unlink "temp$$";
+   print "Cosmid $cosmid is up to date\n";
+   unlink "temp$$";
  } 
- next;
-}
-} # end if
+    next;
+  }
 
+}
+print LOG "$0 finished at ",&runtime, "\n";
+close LOG;
+&mail_maintainer("EMBLupdate",$maintainers,"$logfile");
+
+exit(0);
 
 #----------------------------
 # Detect whether the new file 
@@ -148,7 +194,21 @@ sub detectdifference {
     return($difference);					   
 }
 
+sub usage {
+     my $error = shift;
 
+     if ($error eq "Help") {
+         # Normal help menu
+         system ('perldoc',$0);
+         exit (0);
+     }
+     elsif ($error eq "Debug") {
+         # No debug bod named
+         print "You haven't supplied your name\nI won't run in debug mode
+         until i know who you are\n";
+        exit (0);
+    }
+}
 
 
 
