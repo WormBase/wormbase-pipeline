@@ -1,11 +1,14 @@
-#!/usr/local/bin/perl5.6.1
+#!/usr/local/bin/perl5.6.1 -w
 
 use strict;
 use Getopt::Long;
 use DB_File;
 
 my $old;
-GetOptions ( "old" => \$old );
+my $verbose;
+
+GetOptions ( "old"     => \$old,
+	     "verbose" => $verbose);
 
 my $wormpipe_dump = "/acari/work2a/wormpipe/dumps";
 
@@ -63,7 +66,7 @@ while (<LIST>) {
     print ACE "Species \"Homo sapiens\"\n";
   }
   else {
-    print "no prefix for $id\n";
+    print "no prefix for $id\n" if ($verbose);
   }
   
   # write database lines
@@ -148,7 +151,7 @@ sub getSwissGeneName
 	    $$s2g{$id} = $backup_gene;
 	  }
 	  else {
-	    print "cant find a gene for $id\n";
+	    print "Can't find a gene (GN field) for $id\n" if ($verbose);
 	  }
 	}
 	undef $backup_gene;
@@ -173,7 +176,7 @@ sub getSwissGeneName
       }
     }
     foreach (keys %$s2g ) {
-      print "ERROR \t\t$_\n" unless $$s2g{$_};
+      print "ERROR: \t\t$_\n" unless $$s2g{$_};
     }
     foreach (keys %counts) {
       print "$_ $counts{$_}\n";
