@@ -7,7 +7,7 @@
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-09-04 15:32:11 $
+# Last edited on: $Date: 2003-09-04 17:23:49 $
 
 
 use strict;
@@ -134,26 +134,27 @@ foreach my $stlclone (@stlclones) {
 my $runtime = &runtime;
 print LOG "$runtime: Start mapping\n\n";
 
-# output filehandle
+# open input and output filehandles
 open(ACE,  ">$blat_dir/autoace.$type.ace")  or die "Cannot open $blat_dir/autoace.${type}.ace $!\n";
-
-# input filehandle
 open(BLAT, "<$blat_dir/${type}_out.psl")  or die "Cannot open $blat_dir/${type}_out.psl $!\n";
 
+# loop through each blat hit
 while (<BLAT>) {
   next unless (/^\d/);
-  my @f           = split "\t";
-  my $match       = $f[0];                    # number of bases matched by blat
-  my $query       = $f[9];                    # query sequence name
-  my $query_size  = $f[10];                   # query sequence length
-  my $superlink   = $f[13];                   # name of superlink that was used as blat target sequence
-  my $slsize      = $f[14];                   # superlink size
-  my $lastvirt    = int($slsize/100000) + 1;  # for tracking how many virtual sequences have been created???
-  my $matchstart  = $f[15];                   # target (superlink) start coordinate...
-  my $matchend    = $f[16];                   # ...and end coordinate
-  my @lengths     = split (/,/, $f[18]);      # sizes of each blat 'block' in any individual blat match
-  my @querystarts = split (/,/, $f[19]);      # start coordinates of each query block
-  my @slinkstarts = split (/,/, $f[20]);      # start coordinates of each target (superlink) block
+  my @f            = split "\t";
+  my $match        = $f[0];                    # number of bases matched by blat
+  my $strand       = $f[8];                    # strand that match is on
+  my $query        = $f[9];                    # query sequence name
+  my $query_size   = $f[10];                   # query sequence length
+  my $superlink    = $f[13];                   # name of superlink that was used as blat target sequence
+  my $slsize       = $f[14];                   # superlink size
+  my $lastvirt     = int($slsize/100000) + 1;  # for tracking how many virtual sequences have been created???
+  my $matchstart   = $f[15];                   # target (superlink) start coordinate...
+  my $matchend     = $f[16];                   # ...and end coordinate
+  my $block_count  = $f[17];                   # block count
+  my @lengths      = split (/,/, $f[18]);      # sizes of each blat 'block' in any individual blat match
+  my @query_starts = split (/,/, $f[19]);      # start coordinates of each query block
+  my @slink_starts = split (/,/, $f[20]);      # start coordinates of each target (superlink) block
 
 
 
@@ -189,22 +190,12 @@ while (<BLAT>) {
     print LOG "Start is $matchstart, end is $matchend on $superlink\n\n";
     next;
   }
-    
-  ###################
-  # calculate score #
-  ###################
-  
-  my $sum   = 0;
-  foreach my $length (@lengths) {
-    $sum = $sum + $length;
-  }	
 
+    
+  # calculate (acedb) score for each blat match
   # new way of calculating score, divide by query size rather than sum of matching blocks, 
-  # so short 30 bp polyA chunks will get 30/2000 rather than 30/30, should improve things
-  # that are currently assigned OTHER but should be BEST
   my $score = ($match/$query_size)*100;
   
-  my @exons = ();
   
   #########################
   # calculate coordinates #
@@ -212,60 +203,60 @@ while (<BLAT>) {
     
   # need to allow for est exons in the next virtual object, otherwise they get remapped to the start 
   # of the virtual by performing %100000
+  my @exons = ();  
+  my $calc = int(($slink_starts[0]+1)/100000);
   
-  my $calc = int(($slinkstarts[0]+1)/100000);
-  
-  for (my $x = 0;$x < $f[17]; $x++) {
-    my $newcalc      = int(($slinkstarts[$x]+1)/100000);
+  for (my $x = 0;$x < $block_count; $x++) {
+    my $newcalc = int(($slink_starts[$x]+1)/100000);
     my $virtualstart;
     if ($calc == $newcalc) {	
-      $virtualstart = ($slinkstarts[$x] +1)%100000;
+      $virtualstart = ($slink_starts[$x] +1)%100000;
     }
     elsif ($calc == ($newcalc-1)) {
-      $virtualstart = (($slinkstarts[$x] +1)%100000) + 100000;
+      $virtualstart = (($slink_starts[$x] +1)%100000) + 100000;
     }
-    my $virtualend   = $virtualstart + $lengths[$x] -1;
+    my $virtualend = $virtualstart + $lengths[$x] -1;
     my ($query_start,$query_end);
     
     # blatx 6-frame translation v 6-frame translation
     if ($nematode) {
       my $temp;
-      if (($f[8] eq '++') || ($f[8] eq '-+')) {
-	$query_start   = $querystarts[$x] +1;
-	$query_end     = $query_start + $lengths[$x] -1;
-	if ($f[8] eq '-+') {
-	  $temp     = $query_end;
+      if (($strand eq '++') || ($strand eq '-+')) {
+	$query_start = $query_starts[$x] +1;
+	$query_end   = $query_start + $lengths[$x] -1;
+	if ($strand eq '-+') {
+	  $temp        = $query_end;
 	  $query_end   = $query_start;
 	  $query_start = $temp; 
 	}
       }
-      elsif (($f[8] eq '--') || ($f[8] eq '+-')) {
+      elsif (($strand eq '--') || ($strand eq '+-')) {
 	$temp         = $virtualstart;
 	$virtualstart = $virtualend;
 	$virtualend   = $temp;
-	$query_start     = $f[10] - $querystarts[$x];
-	$query_end       = $query_start - $lengths[$x] +1;
-	if ($f[8] eq '--') {
-	  $temp     = $query_end;
+	$query_start  = $query_size - $query_starts[$x];
+	$query_end    = $query_start - $lengths[$x] +1;
+	if ($strand eq '--') {
+	  $temp        = $query_end;
 	  $query_end   = $query_start;
 	  $query_start = $temp; 
 	}
       }			
     }
     else {
-      if ($f[8] eq '+'){
-	$query_start   = $querystarts[$x] +1;
+      if ($strand eq '+'){
+	$query_start   = $query_starts[$x] +1;
 	$query_end     = $query_start + $lengths[$x] -1;
       }
-      elsif ($f[8] eq '-') {
-	$query_start   = $f[10] - $querystarts[$x];
+      elsif ($strand eq '-') {
+	$query_start   = $query_size - $query_starts[$x];
 	$query_end     = $query_start - $lengths[$x] +1;
       }		
     }		
     print LOG "$query was mapped to $virtual\n\n";
     
     # write to output file
-    print  ACE "Homol_data : \"$virtual\"\n";
+    print ACE "Homol_data : \"$virtual\"\n";
     if ($type eq "NEMATODE") {
       printf ACE "DNA_homol\t\"%s\"\t\"$word{$type}\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$query,$score,$virtualstart,$virtualend,$query_start,$query_end;
     }
@@ -274,22 +265,22 @@ while (<BLAT>) {
     }
     push @exons, [$virtualstart,$virtualend,$query_start,$query_end];				
   }
+
     
-  ########################
-  # collect best matches #
-  ########################
-  
+  # collect best hits for each query sequence 
+  # Choose hit with highest score (% of query length which are matching bases) 
+  # If multiple hits have same scores (also meaning that $match must be same) store 
+  # details of extra hits against same primary key in %best
   if (exists $best{$query}) {
-    if ($score >= $best{$query}->{'score'}) {
-      if ( ($score > $best{$query}->{'score'}) || ($match > $best{$query}->{'match'})) { 
-	$best{$query}->{'score'} = $score;
-	$best{$query}->{'match'} = $match;
-	@{$best{$query}->{'entry'}} = ({'clone' => $virtual,'link' => $superlink,'exons' => \@exons});
-      }
-      elsif ($match == $best{$query}->{'match'}) {
-	$best{$query}->{'score'} = $score;
-	push @{$best{$query}->{'entry'}}, {'clone' => $virtual,'link' => $superlink,'exons' => \@exons};
-      }
+    if (($score > $best{$query}->{'score'})) { 
+      # Add all new details if score is better...
+      $best{$query}->{'score'} = $score;
+      $best{$query}->{'match'} = $match;
+      @{$best{$query}->{'entry'}} = ({'clone' => $virtual,'link' => $superlink,'exons' => \@exons});
+    }
+    elsif($score == $best{$query}->{'score'}){
+      #...only add details (name and coordinates) of extra hits if scores are same
+      push @{$best{$query}->{'entry'}}, {'clone' => $virtual,'link' => $superlink,'exons' => \@exons};
     }
   }
   else {
@@ -298,12 +289,8 @@ while (<BLAT>) {
     @{$best{$query}->{'entry'}} = ({'clone' => $virtual,'link' => $superlink,'exons' => \@exons});
   }
 }
-close BLAT;
-close ACE;
-
-#########################################
-# 
-#########################################
+close(BLAT);
+close(ACE);
 
 
 ####################################
@@ -329,27 +316,22 @@ foreach my $found (sort keys %best) {
 	  my $query_start  = $ex->[2];
 	  my $query_end    = $ex->[3];
 	  
-	  # print line for autoace
+	  # print output for autoace, camace, and stlace
 	  print  AUTBEST "Homol_data : \"$virtual\"\n";
 	  printf AUTBEST "DNA_homol\t\"%s\"\t\"$word{$type}_BEST\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$found,$score,$virtualstart,$virtualend,$query_start,$query_end;
-	  # camace
 	  if ($camace{$superlink}) {
 	    print  CAMBEST "Homol_data : \"$virtual\"\n";
 	    printf CAMBEST "DNA_homol\t\"%s\"\t\"$word{$type}_BEST\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$found,$score,$virtualstart,$virtualend,$query_start,$query_end;
 	  }
-	  # and stlace
 	  elsif ($stlace{$superlink}) {
 	    print  STLBEST "Homol_data : \"$virtual\"\n";
 	    printf STLBEST "DNA_homol\t\"%s\"\t\"$word{$type}_BEST\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$found,$score,$virtualstart,$virtualend,$query_start,$query_end;
-	  }
-	  
+	  }	  
 	}
 	
 	#############################
 	# produce confirmed introns #
 	#############################
-	
-	# this section 'produce confirmed introns'
 	if ($intron) {
 	  print LOG "Producing confirmed introns\n";
 	  my ($n) = ($virtual =~ /\S+_(\d+)$/);
@@ -400,11 +382,9 @@ close(STLBEST);
 
 &usage(20) if ($nematode);
 
-# autoace
+# Open new (final) output files for autoace, camace, and stlace
 open (OUT_autoace, ">$blat_dir/autoace.blat.$type.ace") or die "$!";
-# camace
 open (OUT_camace,  ">$blat_dir/camace.blat.$type.ace")  or die "$!";
-# stlace
 open (OUT_stlace,  ">$blat_dir/stlace.blat.$type.ace")  or die "$!";
 
 
@@ -417,22 +397,22 @@ my $superlink = "";
 # assign 
 open(ABEST,  "<$blat_dir/autoace.best.$type.ace");
 while (<ABEST>) {
-    if ($_ =~ /^Homol_data/) {
-	$line{$_} = 1;
-	($superlink) = (/\"BLAT\_$type\:(\S+)\_\d+\"/);
-
-	print OUT_autoace "// Source $superlink\n\n";
-	print OUT_autoace $_;
-	    
-	# camace
-	if ($camace{$superlink}) {
-	    print OUT_camace $_;
-	}
-	# and stlace
-	elsif ($stlace{$superlink}) {
-	    print OUT_stlace $_;
-	}
+  if ($_ =~ /^Homol_data/) {
+    $line{$_} = 1;
+    ($superlink) = (/\"BLAT\_$type\:(\S+)\_\d+\"/);
+    
+    print OUT_autoace "// Source $superlink\n\n";
+    print OUT_autoace $_;
+    
+    # camace
+    if ($camace{$superlink}) {
+      print OUT_camace $_;
     }
+    # and stlace
+    elsif ($stlace{$superlink}) {
+      print OUT_stlace $_;
+    }
+  }
 }
 close ABEST;
 
