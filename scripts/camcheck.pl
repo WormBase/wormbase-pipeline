@@ -7,7 +7,7 @@
 # Usage: camcheck.pl
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-06-19 15:13:06 $
+# Last updated on: $Date: 2002-06-19 16:06:18 $
 #
 # see pod documentation (i.e. 'perldoc camcheck.pl') for more information.
 #
@@ -507,22 +507,19 @@ sub checkgenes {
     # Transcripts
     
     if ($child =~ /\S+\.t\d+/) {
-      my $tag = $subseq->Transcript;
-      if ((!defined ($tag))) {
+      if (!defined ($subseq->at('Transcript'))) {
 	print LOG "The subsequence $child has no Transcript tag\n";
       }
     }
     else {
       
       if ($method eq "Pseudogene") {
-	my $tag = $subseq->Properties('Pseudogene');
-	if (!defined ($tag)) {
+	if (!defined ($subseq->at('Pseudogene'))) {
 	  print LOG "The subsequence $child [$method] has no Pseudogene tag\n";
 	} 
       }
       if ( ($method eq "curated") || ($method eq "provisional") ) {
-	my $tag = $subseq->Properties('CDS');
-	if (!defined ($tag)) {
+	if (!defined ($subseq->at('CDS'))) {
 	  print LOG "The subsequence $child [$method] has no CDS tag\n";
 	}
       }
