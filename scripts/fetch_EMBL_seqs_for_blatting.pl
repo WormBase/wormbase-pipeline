@@ -7,7 +7,7 @@
 # Attempt to unify all of the diverse scripts to fetch ESTs, OSTs, mRNAs etc. used by blat 
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-09-12 15:33:29 $
+# Last edited on: $Date: 2003-09-16 08:31:17 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -90,7 +90,6 @@ my $getz   = "/usr/local/pubseq/bin/getzc"; # getz binary
 &make_nematode_ests if ($nematode);
 
 my $file = "$dir/elegans_ESTs";
-&clean_file("$file") if ($est);
 
 # Tidy up things and exit
 
