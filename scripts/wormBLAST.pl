@@ -64,12 +64,15 @@ my $scripts_dir = "$wormpipe_dir/scripts/BLAST_scripts";
 #|         24 | slimswissprot40.pep |
 #|         25 | slimtrembl21.pep    |
 
-my %worm01processIDs = ( wormpep => 23, 
-			 yeast => 20,
-			 ensembl => 19,
-			 gadfly  => 18,
+my %worm01processIDs = ( wormpep       => 23, 
+			 yeast         => 20,
+			 ensembl       => 19,
+			 gadfly        => 18,
 			 slimswissprot => 24,
-			 slimtrembl =>25
+			 slimtrembl_1  => 25,
+			 slimtrembl_2  => 27,
+			 ipi_human     => 26,
+			 brigpep       => 28
 		       );
 
 #|          7 | yeast2.pep          | 
@@ -79,12 +82,15 @@ my %worm01processIDs = ( wormpep => 23,
 #|         13 | slimswissprot40.pep | 
 #|         14 | slimtrembl21.pep    |
 
-my %wormprotprocessIds = ( wormpep => 11, 
-			   ensembl => 9,
-			   gadfly  => 8,
-			   yeast => 7,
+my %wormprotprocessIds = ( wormpep       => 11, 
+			   ensembl       => 9,
+			   gadfly        => 8,
+			   yeast         => 7,
 			   slimswissprot => 13,
-			   slimtrembl =>14
+			   slimtrembl_1  => 14,
+			   slimtrembl_2  => 16,
+			   ipi_human     => 15,
+			   brigpep       => 17
 			 );
 
 if( $chromosomes ) {
@@ -109,7 +115,7 @@ my $database_to_use = "$wormpipe_dir/BlastDB/databases_used_WS$WPver";
 open (OLD_DB,"<$last_build_DBs") or die "cant find $last_build_DBs";
 while (<OLD_DB>) {
   chomp;
-  if( /(ensembl|gadfly|yeast|slimswissprot|slimtrembl|wormpep)/ ) {
+  if( /(ensembl|gadfly|yeast|slimswissprot|slimtrembl_1|slimtrembl_2|wormpep|ipi_human|brigpep)/ ) {
     $currentDBs{$1} = $_;
   }
 }
@@ -123,7 +129,7 @@ if ( $update_databases )
     while (<DIR>) { 
       #  print;
       chomp;
-      if( /\/(ensembl|gadfly|yeast|slimswissprot|slimtrembl|wormpep)/ ) {
+      if( /\/(ensembl|gadfly|yeast|slimswissprot|slimtrembl_1|slimtrembl_2|wormpep|ipi_human|brigpep)/ ) {
 	my $whole_file = "$1"."$'";  #match + stuff after match.
 	if( "$whole_file" ne "$currentDBs{$1}" ) {
 	  #make blastable database
@@ -560,14 +566,14 @@ sub get_updated_database_list
     #get database file info from databases_used_WS(xx-1) (should have been updated by script if databases changed
     while (<OLD_DB>) {
       chomp;
-      if( /(ensembl|gadfly|yeast|slimswissprot|slimtrembl|wormpep)/ ) {
+      if( /(ensembl|gadfly|yeast|slimswissprot|slimtrembl_1|slimtrembl_2|wormpep|ipi_human|brigpep)/ ) {
 	$prevDBs{$1} = $_;
       }
     }  
     open (CURR_DB,"<$database_to_use") or die "cant find $database_to_use";
     while (<CURR_DB>) {
       chomp;
-      if( /(ensembl|gadfly|yeast|slimswissprot|slimtrembl|wormpep)/ ) {
+      if( /(ensembl|gadfly|yeast|slimswissprot|slimtrembl_1|slimtrembl_2|wormpep|ipi_human|brigpep)/ ) {
 	$currentDBs{$1} = $_;
       }
     }
