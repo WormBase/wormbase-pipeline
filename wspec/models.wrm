@@ -250,7 +250,6 @@
         Molecular_information	Genomic_sequence ?Sequence XREF Locus_genomic_seq // Split genomic and other XREFs
                                 Other_sequence ?Sequence XREF Locus_other_seq     // dl 001128
 				Product ?Text
-				Enzyme ?Enzyme XREF Locus
 				Canonical_gene ?Gene XREF Locus                   // Lincoln 010518
 	Remark ?Text
 	Map    ?Map XREF Locus #Map_position
@@ -817,7 +816,6 @@
 		  	Clone ?Clone XREF Sequence 
           	        Locus_genomic_seq ?Locus XREF Genomic_sequence   // Split genomic and other Locus XREFs
 			Locus_other_seq ?Locus XREF Other_sequence       // dl 001128
-			Enzyme ?Enzyme XREF DNA
 		        Related_DNA ?Sequence XREF Related_DNA
 			Paired_read ?Sequence XREF Paired_read          // dl 020110
 			Remark ?Text
@@ -1054,7 +1052,6 @@
 			  Replaced_by ?Protein XREF Replaces
 			  Live	      // new tag to replace use of 'Inactive' krb 06/12/01
 	  Visible	Corresponding_DNA ?Sequence XREF Corresponding_protein
-			Enzyme ?Enzyme XREF Protein
 			Reference ?Paper XREF Protein
 			Expr_pattern ?Expr_pattern XREF Protein
 		// tag2 system.  For now I have not populated this column.  For C. elegans
@@ -1179,67 +1176,6 @@
 	GFF	GFF_source UNIQUE Text
 		GFF_feature UNIQUE Text
 
-//
-// METABOLIC SECTION - from Stan Letovsky and the Soybase project
-//
-
-?Pathway	Structure Components ?Pathway XREF In_Pathway
-			  In_Pathway ?Pathway XREF Components
-			  Diagram UNIQUE ?PathwayDiagram XREF Pathway
-		Enzyme ?Enzyme XREF Catalyzes #Reference
-		Metabolites 	Major_Reactant ?Metabolite XREF Consumed_by #ReactantInfo
-				Minor_Reactant ?Metabolite XREF Consumed_by #ReactantInfo
-				Major_Product ?Metabolite XREF Produced_by #ReactantInfo
-				Minor_Product ?Metabolite XREF Produced_by #ReactantInfo
-				Cofactor_Reactant ?Metabolite XREF Consumed_by #ReactantInfo
-				Cofactor_Product ?Metabolite XREF Produced_by #ReactantInfo
-				Additional_Cofactor_Reactant ?Metabolite XREF Consumed_by #ReactantInfo
-				Additional_Cofactor_Product ?Metabolite XREF Produced_by #ReactantInfo
-		Ancillary	Anc_reactants ?Metabolite #ReactantInfo
-				Anc_products ?Metabolite #ReactantInfo // e.g. for transport. 
-				Anc_Enzyme ?Enzyme #Reference
-		Activator ?Metabolite XREF Activates #RegulatorInfo
-		Inhibitor ?Metabolite XREF Inhibits #RegulatorInfo
-		Remark ?Text
-
-?RegulatorInfo	Type UNIQUE Active_site
-		Ki Text  //for inhibitor
-		Remark ?Text
-		Reference ?Paper
-
-?ReactantInfo	Major_Role
-		Minor_Role
-		Cofactor
-		N Int // etc.
-		Km Text #Reference
-		Vmax Text #Reference
-		Substrate_specificity ?Text #Reference
-		Remark ?Text
-		Reference ?Paper
-	
-?Enzyme		Other_name ?Text
-		EC_Number ?Text #Reference  // probably should be under reaction
-		Corresponds_to	Locus ?Locus XREF Enzyme
-				DNA ?Sequence XREF Enzyme
-				Protein ?Protein XREF Enzyme
-		Catalyzes ?Pathway
-		Remark ?Text
-		Reference ?Paper
-
-?Metabolite	Consumed_by	?Pathway
-		Produced_by	?Pathway
-		Activates	?Pathway
-		Inhibits ?Pathway XREF Inhibitor
-		Remark ?Text
-
-?PathwayDiagram	Name ?Text
-		Pathway ?Pathway		
-		Node Int Float Float Int ?Metabolite // ID X Y LabelID Metabolite
-		Arc  Int Int Int  Int Int Float  ?Pathway
-		   // ID  Label From To  Curvature Radius Step
-		TangentArc Int Int
-		   // Arc Tangent
-		Label Int Float Float Text // ID X Y Label
 
 ?Reference	Reference ?Paper
 		Remark ?Text
