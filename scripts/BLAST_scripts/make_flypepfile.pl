@@ -8,8 +8,8 @@
 
 use strict;
 use Getopt::Std;
-use vars qw($opt_c $opt_d);
-getopt('cd');
+use vars qw($opt_c $opt_d $opt_n);
+getopt('cdn');
 
 
 
@@ -86,10 +86,17 @@ while (<SOURCE>)
 	    print ACE "\n\nProtein : \"GADFLY:$gadID\"\n";
 	    print ACE "Peptide \"GADFLY:$gadID\"\n";
 	    print ACE "Species \"Drosophila melanogaster\"\n";
-	    print ACE "DB_remark \"Flybase gene name is $FBname\"\n" if $FBname;
-	    print ACE "Database \"Flybase\" \"$FBname\" \"$FBgn\"\n" if ($FBname or $FBgn); 
-	    print ACE "Database \"Gadfly\" \"$gadID\" \"$gadID\"\n\n" if $gadID;
-	    
+	    if ( $opt_n ) {
+	      #FlyBase_gn	      #Gadfly_ID
+	      print ACE "Gene_name \"$FBname\"\n" if $FBname;
+	      print ACE "Database \"Flybase\" FlyBase_gn \"$FBgn\"\n" if ($FBgn); 
+	      print ACE "Database \"Gadfly\" Gadfly_ID \"$gadID\"\n\n" if $gadID;
+	    }
+	    else {
+	      print ACE "DB_remark \"Flybase gene name is $FBname\"\n" if $FBname;
+	      print ACE "Database \"Flybase\" \"$FBname\" \"$FBgn\"\n" if ($FBname or $FBgn); 
+	      print ACE "Database \"Gadfly\" \"$gadID\" \"$gadID\"\n\n" if $gadID;
+	    }
 	    print ACE "Peptide : \"GADFLY:$gadID\"\n";
 	    
 	    #write database file
