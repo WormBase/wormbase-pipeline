@@ -331,6 +331,7 @@
                           Split_into ?Gene XREF Split_from
                   Live  // remove live to make gene "dead"
         Gene_info Gene_class UNIQUE ?Gene_class XREF Genes
+		  RNA_gene // to flag RNA genes where we might not know what the ?Transcript is
 		  Reference_allele ?Allele Text
 		  Allele  ?Allele XREF Gene #Evidence
 		  Phenotype ?Text #Evidence
