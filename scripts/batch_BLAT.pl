@@ -46,7 +46,8 @@ if ( $blat ) {
   }
 
   #ESTs (~2 hours) 
-  &run_bsub("elegans_ESTs.masked", "est_out.psl") if $est;
+  #&run_bsub("elegans_ESTs.masked", "est_out.psl") if $est;
+  &split_run( "est" ) if $est;
 
   #OSTs (5min) 
   &run_bsub("elegans_OSTs.masked", "ost_out.psl") if $ost;
@@ -66,15 +67,7 @@ if ( $blat ) {
   if ( $nematode ) {
 
     # splitting Nematode_ESTs
-    my $shatter_dir = "${wormpub}/analysis/ESTs/shattered";
-    system("shatter ${wormpub}/analysis/ESTs/other_nematode_ESTs 25000 $shatter_dir/nematodeEST") and $log->log_and_die("cant shatter $shatter_dir/nematodeEST\n");
 
-    opendir(DIR,"$shatter_dir");
-
-    while ( my $file = readdir( DIR ) ) {
-      next unless $file =~ /\d+/;
-      &run_bsub("shattered/${file}","$file.psl","-t=dnax -q=dnax");
-    }
   }
 }
 
@@ -146,6 +139,42 @@ sub new_file
     return 1;
 }
 
+sub split_run 
+  {
+    my $type = shift;
+    my $shatter_dir;
+    my $name_stem;
+    my $source_file;
+    my $opts;
+    my $ESTdir = "${wormpub}/analysis/ESTs";
+
+    if( $type eq "est" ) {
+      $shatter_dir = "shatteredEST";
+      $name_stem   = "$shatter_dir/elegansEST";
+      $source_file = "${wormpub}/analysis/ESTs/elegans_ESTs.masked";
+      $opts = "";
+    }
+    elsif ($type eq "ost" ) {
+      $shatter_dir = "shatteredOST";
+      $name_stem   = "$shatter_dir/nematodeEST";
+      $source_file = "${wormpub}/analysis/ESTs/other_nematode_ESTs";
+      $opts        = "-t=dnax -q=dnax"
+    }
+    else {
+      $log->log_and_die("no type passed to split_run\n");
+    }
+
+    mkdir( $shatter_dir ) unless ( -e $shatter_dir );
+
+    system("perl $ENV{'CVS_DIR'}/shatter $source_file 25000 $name_stem") and $log->log_and_die("cant shatter $source_file : $!\n");
+
+    opendir(DIR,"$ESTdir/$shatter_dir");
+
+    while ( my $file = readdir( DIR ) ) {
+      next unless $file =~ /\d+/;
+      &run_bsub("$shatter_dir/${file}","$file.psl","$opts");
+    }
+  }
 
 __END__
 
