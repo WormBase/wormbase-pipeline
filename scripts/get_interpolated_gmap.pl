@@ -7,7 +7,7 @@
 # This script calculates interpolated genetic map positions for CDS, Transcripts 
 # and Pseudogenes lying between and outside genetic markers.
 #
-# Last updated on: $Date: 2004-05-18 10:01:51 $
+# Last updated on: $Date: 2004-05-21 15:53:08 $
 # Last updated by: $Author: ck1 $
 
 
@@ -487,6 +487,12 @@ if ($debug){
   }
 }
 
+######################################################################################################
+# hash for checking a gene_id is live: use for writing interpolated_map_position only to live gene ids
+######################################################################################################
+
+my %gene_id_is_live = $ga -> gene_id_is_live();
+
 ##################################################################
 # sorting gmap positions of marker loci from left tip to right tip
 ##################################################################
@@ -891,13 +897,17 @@ sub ace_output {
       if (exists $predicted_gene_to_locus{$_}){
 	# write interpolated_map to a Gene obj
         print ACE "\nGene : \"$Gene_info{$predicted_gene_to_locus{$_}}{'Gene'}\"\n";
-	print GACE "\nGene : \"$Gene_info{$predicted_gene_to_locus{$_}}{'Gene'}\"\n";
+
 	# append CGC_name to a sequence
 	print CDSes "$predicted_gene_to_locus{$_}\n" if $type ne "pseudo";
 	print PSEUDO "$predicted_gene_to_locus{$_}\n" if $type eq "pseudo";
         print ACE "Interpolated_map_position\t\"$chrom\"\t$gmap\t\/\/$mean_coord (iso)\n";
-	print GACE "Interpolated_map_position\t\"$chrom\"\t$gmap\t\/\/$mean_coord (iso)\n";
-	
+
+	# writes updated interpolated_map only to live gene ids
+	if ( exists $gene_id_is_live{$Gene_info{$predicted_gene_to_locus{$_}}{'Gene'}} ){
+	  print GACE "\nGene : \"$Gene_info{$predicted_gene_to_locus{$_}}{'Gene'}\"\n";
+	  print GACE "Interpolated_map_position\t\"$chrom\"\t$gmap\t\/\/$mean_coord (iso)\n";
+	}
 	if ($comp && $locus_map{$CDS_to_gene{$_}}){
 	  print MAPCOMP "$CDS_to_gene{$_}\t\"$chrom\"\tCoords:\t$gmap\tContig:\t$locus_map{$CDS_to_gene{$_}}\n";
 	}
@@ -928,13 +938,19 @@ sub ace_output {
 
     if (exists $predicted_gene_to_locus{$cds}){
       # write interpolated_map to a Gene obj
+
       print ACE "\nGene : \"$Gene_info{$predicted_gene_to_locus{$cds}}{'Gene'}\"\n";
-      print GACE "\nGene : \"$Gene_info{$predicted_gene_to_locus{$cds}}{'Gene'}\"\n";
+
       # append CGC_name to a sequence
       print CDSes "$predicted_gene_to_locus{$cds}\n" if $feature ne "pseudogene";
       print PSEUDO "$predicted_gene_to_locus{$cds}\n" if $feature eq "pseudogene";
       print ACE "Interpolated_map_position\t\"$chrom\"\t$gmap\t\/\/$mean_coord\n";
-      print GACE "Interpolated_map_position\t\"$chrom\"\t$gmap\t\/\/$mean_coord\n";
+
+      # writes updated interpolated_map only to live gene ids
+      if ( exists $gene_id_is_live{$Gene_info{$predicted_gene_to_locus{$cds}}{'Gene'}} ){
+	print GACE "\nGene : \"$Gene_info{$predicted_gene_to_locus{$cds}}{'Gene'}\"\n";
+	print GACE "Interpolated_map_position\t\"$chrom\"\t$gmap\t\/\/$mean_coord\n";
+      }
       if ($comp && exists $locus_map{$CDS_to_gene{$cds}}){
 	print MAPCOMP "$CDS_to_gene{$cds}\t\"$chrom\"\tCoords:\t$gmap\tContig:\t$locus_map{$CDS_to_gene{$cds}}\n";
       }
