@@ -26,6 +26,7 @@ my $test_pipeline;
 my $WPver;   #  Wormpep version is passed as command line option
 my $blastx;
 my $blastp;
+my $prep_dump;
 
 GetOptions("chromosomes" => \$chromosomes,
 	   "wormpep"     => \$wormpep,
@@ -34,6 +35,7 @@ GetOptions("chromosomes" => \$chromosomes,
 	   "setup"       => \$setup_mySQL,
 	   "run"         => \$run_pipeline,
 	   "nosql"       => \$dont_SQL,
+	   "prep_dump"   => \$prep_dump,
 	   "dump"        => \$dump_data,
 	   "mail"        => \$mail,
 	   "testpipe"    => \$test_pipeline,
@@ -436,28 +438,46 @@ if( $blastp )
     `perl $bdir/RuleManager3Prot.pl -once -flushsize 5`; # finish off anything that didn't work + PFams and low complexity, signalp, ncoils,transmembrane
   }
 
-if( $dump_data )
+if( $prep_dump ) 
   {
-    # prepare helper files
+       # prepare helper files
 
-    if( -e "/wormsrv2/autoace/CHROMOSOMES/*.gff") {
+    if( -e "/wormsrv2/autoace/CHROMOSOMES/CHROMOSOME_X.gff") {
+      print 
       `cat /wormsrv2/autoace/CHROMOSOMES/*.gff | $scripts_dir/gff2cds.pl > /nfs/acari/wormpipe/Elegans/cds$WPver.gff`;
       `cat /wormsrv2/autoace/CHROMOSOMES/*.gff | $scripts_dir/gff2cos.pl > /nfs/acari/wormpipe/Elegans/cos$WPver.gff`;
       `$scripts_dir/prepare_dump_blastx.pl > $wormpipe_dir/dumps/accession2clone.list`;
-      
-      # Dump
-      `$scripts_dir/Dump_new_prot_only.pl -all`;
-      `$scripts_dir/dump_blastx_new.pl -w $wormpipe_dir/BlastDB/wormpep$WPver.pep -a ~/Elegans/WS$WPver.agp -g ~/Elegans/cds$WPver.gff -c ~/Elegans/cos$WPver.gff -m`;
-      `$scripts_dir/dump_motif.pl`;
+      `cp /wormsrv2/WORMPEP/wormpep$WPver/wormpep.diff$WPver $wormpipe_dir/dumps/`;
+      `cp /wormsrv2/autoace/COMMOM_DATA/CE2gene.dat $wormpipe_dir/dumps/`;
+      `cp /wormsrv2/autoace/COMMOM_DATA/gene2CE.dat $wormpipe_dir/dumps/`;
 
-      # Dump extra info for SWALL proteins that have matches. Info retrieved from the dbm databases on /acari/work2a/wormpipe/
-      `$scripts_dir/write.swiss_trembl.pl -swiss -trembl`;
-    }
+      `touch $wormpipe_dir/DUMP_PREP_RUN`;
+    }     
     else {
       print " cant find GFF files at /wormsrv2/autoace/CHROMOSOMES/ \n ";
       exit(1);
     }
   }
+
+if( $dump_data )
+  {
+    unless ( -e "$wormpipe_dir/DUMP_PREP_RUN" ) {
+      print "Please run wormBLAST.pl -prep_dump version $WPver    before dumping\n\nTo dump you CAN NOT have wormsrv2 mounted\n\n";
+      exit(0);
+    }
+    # Dump
+    print "Dumping blastp\n";
+    #`$wormpipe_dir/scripts/Dump_new_prot_only.pl -all -version $WPver`;
+    print "Dumping blastx\n";
+    `$scripts_dir/dump_blastx_new.pl -w $wormpipe_dir/BlastDB/wormpep$WPver.pep -a ~/Elegans/WS$WPver.agp -g ~/Elegans/cds$WPver.gff -c ~/Elegans/cos$WPver.gff -m`;
+    print "Dumping motifs\n";
+      `$scripts_dir/dump_motif.pl`;
+    
+    # Dump extra info for SWALL proteins that have matches. Info retrieved from the dbm databases on /acari/work2a/wormpipe/
+    print "Creating acefile of SWALL proteins with homologies\n";
+    `$scripts_dir/write.swiss_trembl.pl -swiss -trembl`;
+  }
+
 
 &wait_for_pipeline_to_finish if $test_pipeline; # debug stuff
 
@@ -487,9 +507,9 @@ sub wait_for_pipeline_to_finish
 
 sub check_wormsrv2_conflicts
   {
-    if( ($chromosomes || $wormpep ||  $dump_data || $update_databases || $update_mySQL) && ($blastx || $blastp) ) 
+    if( ($chromosomes || $wormpep  || $update_databases || $update_mySQL || $prep_dump) && ($blastx || $blastp || $dump_data) ) 
       {
-	print "no can do - to run the blast pipeline wormsrv2 can NOT be mounted.  Your options conflict with this.\nthe following options REQUIRE wormsrv2 - \n\t-chromosomes\t-wormpep\t-updatemysql\t-dump\n\n";
+	print "no can do - to run the blast pipeline wormsrv2 can NOT be mounted.  Your options conflict with this.\nthe following options REQUIRE wormsrv2 - \n\t-chromosomes\t-wormpep\t-updatemysql\n\n";
 	exit (1);
       }
     else {
