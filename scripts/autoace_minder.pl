@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2004-09-27 11:11:04 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2004-09-29 14:15:30 $
 
 
 
@@ -705,54 +705,56 @@ sub make_autoace {
   
   if ($build || $buildchrom) {
     
-    # quit if you haven't built a database
-    &usage(14) unless (-e "$logdir/$flag{'B1'}");
+      # quit if you haven't built a database
+      &usage(14) unless (-e "$logdir/$flag{'B1'}");
     
-    # quit if you have errors in the build
-    &usage("Errors_in_loaded_acefiles") if (-e "$logdir/$flag{'B1:ERROR'}");
-
-    my $command = "$scriptdir/chromosome_dump.pl --dna --composition";
-
-    # run in test mode?
-    if($quicktest){
-      $command .= " --quicktest";
-    }
-    elsif($test){
-      $command .= " --test";
-    }
-
-    my $status = &run_command($command);
-    if ($status != 0){
-      system("touch $logdir/$flag{'B2:ERROR'}");
-    }    
-    
-    # make a make_autoace log file in /logs
-    system("touch $logdir/$flag{'B2'}");
-    
-    # make the allcmid file needed for the farm
-    
-    $command = "query find genome_sequence\nDNA -f /wormsrv2/autoace/allcmid\nquit\n";
-    open (WRITEDB, "| $tace $basedir/autoace ") || die "Couldn't open pipe to autoace\n";
-    print WRITEDB $command;
-    close (WRITEDB);
-    
+      # quit if you have errors in the build
+      &usage("Errors_in_loaded_acefiles") if (-e "$logdir/$flag{'B1:ERROR'}");
+      
+      my $command = "$scriptdir/chromosome_dump.pl --dna --composition";
+      
+      # run in test mode?
+      if($quicktest){
+	  $command .= " --quicktest";
+      }
+      elsif($test){
+	  $command .= " --test";
+      }
+      
+      my $status = &run_command($command);
+      if ($status != 0){
+	  system("touch $logdir/$flag{'B2:ERROR'}");
+      }    
+      
+      # make a make_autoace log file in /logs
+      system("touch $logdir/$flag{'B2'}");
+      
+      # make the allcmid file needed for the farm
+      
+      $command = "query find genome_sequence\nDNA -f /wormsrv2/autoace/allcmid\nquit\n";
+      open (WRITEDB, "| $tace $basedir/autoace ") || die "Couldn't open pipe to autoace\n";
+      print WRITEDB $command;
+      close (WRITEDB);
+      
+      # reorder the exon coordinates in the database
+      
+      &run_command("$scriptdir/reorder_exons.pl");
   }
   
   if ($buildrelease) {
+      
+      # quit if the build is not complete
+      &usage(13) unless (-e "$logdir/$flag{'B1'}");
     
-    # quit if the build is not complete
-    &usage(13) unless (-e "$logdir/$flag{'B1'}");
-    
-    # quit if you have errors in the build
-    &usage("Errors_in_loaded_acefiles") if (-e "$logdir/$flag{'B1:ERROR'}");
-    
-    local (*MD5SUM_IN,*MD5SUM_OUT);
-    
-    &run_command("$scriptdir/make_autoace.pl -database $basedir/autoace --buildrelease"); 
-
-    
-    # make a make_autoace log file in /logs
-    system("touch $logdir/$flag{'D1'}");
+      # quit if you have errors in the build
+      &usage("Errors_in_loaded_acefiles") if (-e "$logdir/$flag{'B1:ERROR'}");
+      
+      local (*MD5SUM_IN,*MD5SUM_OUT);
+      
+      &run_command("$scriptdir/make_autoace.pl -database $basedir/autoace --buildrelease"); 
+            
+      # make a make_autoace log file in /logs
+      system("touch $logdir/$flag{'D1'}");
     
     # modify the md5sum output file to remove the Sanger specific path
     open (MD5SUM_OUT, ">$basedir/autoace/release/md5sum.temp")            || die "Couldn't open md5sum file out\n";
@@ -969,20 +971,25 @@ sub blat_jobs{
     &run_command("$scriptdir/blat_them_all.pl -virtual -$job");
     
     # Run aceprocess to make cleaner files
-    # slight difference for nematode files as there is no best/other distinction or intron files
-    if($job eq "nematode"){
-      &run_command("$scriptdir/acecompress.pl -homol ${blat_dir}/autoace.$job.ace > ${blat_dir}/autoace.blat.${job}lite.ace");
-      my $status = move("${blat_dir}/autoace.blat.${job}lite.ace", "${blat_dir}/autoace.blat.$job.ace");
-      print "ERROR: Couldn't move file: $!\n" if ($status == 0);      
+    # do the homol compress for all types of data but only invoke the feature compress for good_intron files (i.e. EST/OST/mRNA)
+    
+    # Raw BLAT outputs
+    unless ($job eq "nematode") {
+	&run_command("$scriptdir/acecompress.pl -homol ${blat_dir}/autoace.blat.$job.ace > ${blat_dir}/autoace.blat.${job}lite.ace");
+	my $status = move("${blat_dir}/autoace.blat.${job}lite.ace", "${blat_dir}/autoace.blat.$job.ace");
+	print "ERROR: Couldn't move file: $!\n" if ($status == 0);      
     }
-    else{
-      &run_command("$scriptdir/acecompress.pl -homol ${blat_dir}/autoace.blat.$job.ace > ${blat_dir}/autoace.blat.${job}lite.ace");
-      my $status = move("${blat_dir}/autoace.blat.${job}lite.ace", "${blat_dir}/autoace.blat.$job.ace");
-      print "ERROR: Couldn't move file: $!\n" if ($status == 0);
-      &run_command("$scriptdir/acecompress.pl -feature ${blat_dir}/autoace.good_introns.$job.ace > ${blat_dir}/autoace.good_introns.${job}lite.ace");
-      $status = move("${blat_dir}/autoace.good_introns.${job}lite.ace", "${blat_dir}/autoace.good_introns.$job.ace");
-      print "ERROR: Couldn't move file: $!\n" if ($status == 0);
+    else {
+	&run_command("$scriptdir/acecompress.pl -homol ${blat_dir}/autoace.$job.ace > ${blat_dir}/autoace.blat.${job}lite.ace");
+	my $status = move("${blat_dir}/autoace.blat.${job}lite.ace", "${blat_dir}/autoace.blat.$job.ace");
+	print "ERROR: Couldn't move file: $!\n" if ($status == 0);      
+    }
 
+    # Intron feature data
+    if ( ($job eq "est") || ($job eq "ost") || ($job eq "mrna") ) {
+	&run_command("$scriptdir/acecompress.pl -feature ${blat_dir}/autoace.good_introns.$job.ace > ${blat_dir}/autoace.good_introns.${job}lite.ace");
+	$status = move("${blat_dir}/autoace.good_introns.${job}lite.ace", "${blat_dir}/autoace.good_introns.$job.ace");
+	print "ERROR: Couldn't move file: $!\n" if ($status == 0);
     }
 
     print LOG "Finishing acecompress.pl at ",&runtime,"\n\n";
