@@ -57,7 +57,7 @@ my $tace = glob("~acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace");    # tace execut
 my $dbdir  = "/wormsrv2/autoace";                                  # Database path
 my $gffdir = "/wormsrv2/autoace/CHROMOSOMES";
 my @chromosomes = qw( I II III IV V X );
-my $version = &get_cvs_version('$0');
+my $version = &get_cvs_version($0);
 my $dbnumber = &get_wormbase_version;
  
 ################
