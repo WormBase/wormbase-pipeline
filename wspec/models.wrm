@@ -648,6 +648,7 @@
 			In_book #Paper
 			Contained_in ?Paper XREF Contains	// old form
 			Medline_acc UNIQUE Int
+			PMID UNIQUE Int                         // ADDED FOR JUANCARLOS
         Author ?Author XREF Paper #Affiliation
 	Affiliation Text	// Authors' affiliation if available
         Brief_citation UNIQUE Text
