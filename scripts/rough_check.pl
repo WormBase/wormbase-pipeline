@@ -104,8 +104,8 @@ exit (0);
 sub predicted_genes {
 
 format LIST =
-@<<<<<<<<<<<<<<<<<< @<<<<<<<<<<<<<< [@<] @>> @<<<<<<<<< @<<<<<<<<<<<<<<<<<<<<<< [@<<<<<<<<] 
-$f[0],             $f[1],         $f[3],$f[2],$f[7],     $f[4], $confirmed
+@<<<<<<<<<<<<<<<<<< @<<<<<<<<<<<<<< [@<] @>> @>> @<<<<<<<<< @<<<<<<<<<<<<<<<<<<<<<< [@<<<<<<<<] 
+$f[0],             $f[1],         $f[3],$f[2],$noest,$f[7],     $f[4], $confirmed
 .
 
 $~ = "LIST";
@@ -121,17 +121,29 @@ while (<TACE>) {
     s/acedb\> //g;
     chomp;
     next if  ($_ eq "");
-    undef ($confirmed);
     s/\"//g;
-    next if (/^gaze/);
+
+    undef ($confirmed);
+    $noest = 0;
+
     @f = split (/\t/);
-    
+
+#    print "'$f[0]' '$f[1]' '$f[2]' '$f[3]' '$f[4]' '$f[5]' '$f[6]' '$f[7]'\n"; 
+
+    if ($f[6] eq "") {
+	$noest = 0;
+    } 
+    else {
+	$noest = $f[6];
+    }
+
     if ($f[5] eq "Confirmed_by") {
 	$confirmed = "Confirmed";
     }
-    elsif ($f[6] > 0) {
+    elsif ($noest >= 1) {
 	$confirmed = "Supported";
     }
+    
     write;
 
 
