@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.47 2002-03-11 16:00:52 kj2 Exp $
+// CVS info:  $Id: models.wrm,v 1.48 2002-03-13 09:24:59 kj2 Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -736,17 +736,17 @@
 	       S_child Homol_data ?Homol_data XREF Sequence UNIQUE Int UNIQUE Int #SMap_info
 		       Feature_data ?Feature_data XREF Sequence UNIQUE Int UNIQUE Int #SMap_info
 		       Genomic_non_canonical ?Sequence XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info
-                       PCR_product ?PCR_product XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info // added for Lincoln RNAi [010226 dl]
+                       PCR_product ?PCR_product XREF Sequence UNIQUE Int UNIQUE Int #SMap_info // added for Lincoln RNAi [010226 dl]
 		       Nongenomic ?Sequence XREF Genomic_parent UNIQUE Int UNIQUE Int #SMap_info       // added for Lincoln RNAi [010226 dl]
                        RNAi ?RNAi XREF Sequence UNIQUE Int UNIQUE Int #SMap_info                       // added for Lincoln RNAi [001213 dl]
-		       WTP ?WTP XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info                 // added for Mieg WTP data [001623 rd]
-		       Locus ?Locus XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info             // RD 0107
-		       Allele ?Allele XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info           // RD 0107
-		       Gene ?Allele XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info             // RD 0107
-		       CDS_child ?CDS XREF Sequence_parent UNIQUE Int UNIQUE Int #SMap_info            // RD 0107
-		       Transcript_child ?Transcript XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info                // RD 0107
-		       Operon ?Operon XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info  // added for Operon data
-		       Transposon ?Transposon XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info // added for transposons [020128 dl]
+		       WTP ?WTP XREF Sequence UNIQUE Int UNIQUE Int #SMap_info                 // added for Mieg WTP data [001623 rd]
+		       Locus ?Locus XREF Sequence UNIQUE Int UNIQUE Int #SMap_info             // RD 0107
+		       Allele ?Allele XREF Sequence UNIQUE Int UNIQUE Int #SMap_info           // RD 0107
+		       Gene ?Allele XREF Sequence UNIQUE Int UNIQUE Int #SMap_info             // RD 0107
+		       CDS_child ?CDS XREF Sequence UNIQUE Int UNIQUE Int #SMap_info            // RD 0107
+		       Transcript_child ?Transcript XREF Sequence UNIQUE Int UNIQUE Int #SMap_info                // RD 0107
+		       Operon ?Operon XREF Sequence UNIQUE Int UNIQUE Int #SMap_info  // added for Operon data
+		       Transposon ?Transposon XREF Sequence UNIQUE Int UNIQUE Int #SMap_info // added for transposons [020128 dl]
 	  Structure  From	Source UNIQUE ?Sequence XREF Subsequence
 				Source_exons Int UNIQUE Int // start at 1
 		     Subsequence ?Sequence XREF Source UNIQUE Int UNIQUE Int
@@ -875,7 +875,7 @@
                    EST  
 
 ?CDS	SMap S_parent Sequence UNIQUE ?Sequence XREF CDS_child      // changed into S_parent Sequence UNIQUE [020311 kj]
-	     S_child PCR_product ?PCR_product XREF Canonical_parent Int UNIQUE Int #SMap_info // added [011030 krb]
+	     S_child PCR_product ?PCR_product XREF Sequence Int UNIQUE Int #SMap_info // added [011030 krb]
                      RNAi ?RNAi XREF Expressed_seq UNIQUE Int UNIQUE Int #SMap_info           // added [011210 krb]
 	Structure Source_exons Int UNIQUE Int
 	Gene_info Gene UNIQUE ?Gene XREF CDS // when live 
@@ -1261,7 +1261,7 @@
 // NEW Expr_profile and SK_map classes added at request of Raymond [010912 krb]
 // fixes made [010927 krb]
 
-?Expr_profile SMap S_parent Sequence UNIQUE ?PCR_product XREF Expr_profile     // changed into S_parent Sequence UNIQUE [020311 kj]
+?Expr_profile SMap S_parent PCR_product UNIQUE ?PCR_product XREF Expr_profile     // changed into S_parent PCR_product UNIQUE [020311 kj]
               Method ?Method
               Expr_map ?SK_map ?SK_map XREF Expr_profile
               Reference ?Paper XREF Expr_profile
