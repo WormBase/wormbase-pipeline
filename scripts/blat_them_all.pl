@@ -91,7 +91,7 @@ unless ($opt_b || $opt_s || $opt_v) {
 	my $command1=<<EOF;
 	find sequence "CH*"
 	follow subsequence
-	dna -f /wormsrv2/autoace/BLAT/autoace.fa
+	dna -f /wormsrv2/autoace/BLAT/autoace.first
 	clear
 	find sequence "CH*"
 	show -a -f /wormsrv2/autoace/BLAT/chromosome.ace
@@ -103,6 +103,17 @@ EOF
 #	while (<F>) {
 #	}
 }	
+
+# move -'s into n's
+open(CHANGE,'/wormsrv2/autoace/BLAT/autoace.first');
+open(NEW,">$seq");
+while (<CHANGE>) {
+    chomp;
+    my $seq = $_;
+    $seq =~ tr/-/n/;
+    print NEW "$seq\n";
+}
+unlink ('/wormsrv2/autoace/BLAT/autoace.first') if (-e '/wormsrv2/autoace/BLAT/autoace.first');
 
 ############
 # run blat #
