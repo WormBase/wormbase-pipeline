@@ -197,14 +197,14 @@ foreach my $chrom (@chrom) {
     my %finalintroncamace = sort_by_gene(\@camintrons); 
     foreach my $pair (sort keys %finalintroncamace) {
         my @single = split (/:/, $pair);
-        print CAMEST "EST $single[1]\tmatches intron of gene $single[0]\n";
+        print CAMEST "EST $single[1]\tmatches intron number $single[2] of gene $single[0]\n";
     }    
 	
     my @stlintrons        = find_database(\@intronoutput,\%stlace);
     my %finalintronstlace = sort_by_gene(\@stlintrons); 
     foreach my $pair (sort keys %finalintronstlace) {
         my @single = split (/:/, $pair);
-        print STLEST "EST $single[1]\tmatches intron of gene $single[0]\n";
+        print STLEST "EST $single[1]\tmatches intron number $single[2] of gene $single[0]\n";
     }    
 
 
@@ -219,14 +219,14 @@ foreach my $chrom (@chrom) {
     my %finalrepcamace  = sort_by_gene(\@camrepeats);
     foreach my $pair (sort keys %finalrepcamace) {
         my @single = split (/:/, $pair); 
-        print CAMREP "$single[1]\tmatches gene $single[0]\n";
+        print CAMREP "$single[1]\tmatches exon number $single[2] of gene $single[0]\n";
     }
 
     my @stlrepeats      = find_database(\@repeatoutput,\%stlace);
     my %finalrepstlace  = sort_by_gene(\@stlrepeats);
     foreach my $pair (sort keys %finalrepstlace) {
         my @single = split (/:/, $pair); 
-        print STLREP "$single[1]\tmatches gene $single[0]\n";
+        print STLREP "$single[1]\tmatches exon number $single[2] of gene $single[0]\n";
     }
 }
 
@@ -274,7 +274,7 @@ sub findmatch {
 		    my $slaveend    = $slave{$testslave}->[1];
 		    if ( not (($slavestart > $masterend) || ($slaveend < $masterstart))) {
                         my ($finalslave)  = ($testslave =~ /^(\S+)\.\d+/);  	
-		        push (@output, [$finalslave,$testmaster]);
+		        push (@output, [$finalslave,$testmaster,$z]);
 	            }
                 }
             }
@@ -288,7 +288,7 @@ sub findmatch {
 sub find_database {
     
     my @messy = @{$_[0]};
-    my %ace= %{$_[1]}; 
+    my %ace= %{$_[1]};     
     my @output;
     carp "find_database not called with references\n" if (ref($_[0]) ne 'ARRAY' || ref($_[1]) ne 'HASH');
     
@@ -308,7 +308,7 @@ sub sort_by_gene {
     my %final_output;
 	
     foreach my $out (@output) {
-    	my $both  = $out->[1].":".$out->[0];
+    	my $both  = $out->[1].":".$out->[0].":".$out->[2];
         $final_output{$both}++,
     }
     return %final_output;
