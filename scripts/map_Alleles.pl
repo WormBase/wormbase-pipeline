@@ -6,8 +6,8 @@
 #
 # This maps alleles to the genome based on their flanking sequence
 #
-# Last updated by: $Author: krb $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2003-12-16 16:25:07 $        # quickly see when script was last changed and by whom
+# Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
+# Last updated on: $Date: 2004-01-09 17:16:07 $        # quickly see when script was last changed and by whom
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -62,6 +62,7 @@ my $rundate     = `date +%y%m%d`; chomp $rundate;
 my $runtime     = &runtime;
 my $log;
 $ver = &get_wormbase_version unless defined $ver;
+my $tace = &tace;
 
 my $data_dump_dir;
 my $ace_file;
@@ -248,13 +249,12 @@ unless ( $no_parse ) {
   print LOG "\nStart parsing $ace_file in to $database\n\n";
 
   my $command =<<END;
-pparse $geneace_update_delete
+#pparse $geneace_update_delete
 pparse $ace_file
 save
 quit
 END
 
-  my $tace = &tace;
   eval{
     open (TACE,"| $tace -tsuser map_allele $database") || warn "Couldn't open tace connection to $database\n";
     print TACE $command;
