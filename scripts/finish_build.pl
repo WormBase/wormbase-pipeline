@@ -13,7 +13,7 @@
 # 4) Makes wormsrv2/current_DB point at latest release
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-01-24 15:44:07 $
+# Last updated on: $Date: 2003-01-28 10:23:49 $
 
 
 
@@ -85,7 +85,7 @@ system("GFFsplitter.pl -a") && die "Couldn't run GFFsplitter.pl -a\n";
 
 # run locus2seq.pl
 print LOG "Running locus2seq.pl\n\n";
-system("locus2seq.pl -c ") && die "Couldn't run locus2seq.pl -a\n";
+system("locus2seq.pl -camace ") && die "Couldn't run locus2seq.pl -a\n";
 
 
 # update all Common_data files - see Commom_data.pm
