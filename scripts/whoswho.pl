@@ -5,7 +5,7 @@ use lib "/wormsrv2/scripts/";
 use strict;
 use Wormbase;
 
-my $maintainers = "dl1";
+my $maintainers = "All";
 my $log         = "/tmp/whoswho.log";
 my $line_count  = 0;
 
