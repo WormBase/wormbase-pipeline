@@ -617,54 +617,7 @@
 
 ?Gene_name Gene ?Gene
 
-//
-// Person class added 5/1/01 Lincoln Stein, heavily revised for Juancarlos 021010
-// 
-?Person PostgreSQL_id UNIQUE Text       // for linking to internal RDB
-                                        // Text instead of Int so it
-                                        // say
-                                        // WBperson####
-        Name    First_name    UNIQUE  Text    // prefered first name
-                Middle_name   Text            // middle name(s)
-                Last_name     UNIQUE  Text    // prefered last name
-                Standard_name UNIQUE  ?Text   // name to be used for displays
-                                              // default is
-                                              // "First_name
-                                              // Last_name"
-                Also_known_as   Text
-        Laboratory UNIQUE ?Laboratory XREF Person
-        CGC_representative_for UNIQUE ?Laboratory XREF Representative
-        Address #Address
-        Tracking        Old_laboratory ?Laboratory XREF Past_lab_member
-                                // Lab(s) the person previously worked in
-                        Last_verified UNIQUE DateType
-                                // Last time the name/contact information
-                                // in this record was actively verified
-                        Last_attempt_to_contact UNIQUE DateType UNIQUE Text
-                                // Text is method of attempt to contact
-                        Old_address DateType #Address   // for history
-        Comment Text
-        Publication     Paper ?Paper XREF Person
-                        Publishes_as ?Author    // confirmed author names (curated)
-                                                // can't XREF because of paper model
-                        Possibly_publishes_as ?Author XREF Possible_person
-                                                // scripted automatically for a
-                                                // curator to look at and verify
-                                                // or reject later
 
-
-#Address  Street_address Text
-                // multiple lines including town, state, zip/postcode, whatever
-          Country UNIQUE Text
-          Institution UNIQUE Text       // may be useful?
-          Email Text                    // multiple emails allowed
-          Main_phone    Text            // phone number for the institution, I presume
-          Lab_phone     Text
-          Office_phone  Text
-          Other_phone   Text UNIQUE Text  // second text can be used to indicate type
-          Fax           Text UNIQUE Text  // second text can be used to differentiate
-                                          // multiple fax numbers if present (optional)
-          Web_page      Text    // web page is part of the address info I think
 
 //
 // GO_term class added 5/1/01 Lincoln Stein
@@ -691,93 +644,11 @@
                	             Descendent ?GO_term XREF Ancestor
 		       Locus ?Locus XREF GO_term // added by krb 020905
 
-//
-// Laboratory/Bibliography
-//
-
-?Laboratory   Address #Address
-              CGC     Representative UNIQUE ?Person XREF CGC_representative_for
-                      Strain_designation UNIQUE Text
-                      Allele_designation UNIQUE Text
-		      Alleles ?Allele XREF Location
-                      Gene_classes ?Gene_Class XREF Designating_laboratory
-              Person  ?Person XREF Laboratory
-              Past_lab_member ?Person XREF Old_laboratory 
-                                // I think this is useful and
-                                // anyway, the reverse is tracked.
-	      
-
-// Author class
-// updated for Juancarlos 021029
-
-?Author Full_name Text
-        EMBL_name Text
-        Also_known_as Text
-//      Laboratory UNIQUE ?Laboratory XREF Staff
-//      Old_lab ?Laboratory
-// No longer connecting Authors to Labs.
-        Possible_person ?Person XREF Possibly_publishes_as
-        Paper ?Paper
-        Sequence ?Sequence XREF From_author
-        Keyword ?Keyword
-// The following tags are no longer a part of Author, but maybe they
-// shouldn't be taken out until we have Person to Author connections ?
-        Address Mail Text
-                E_mail Text
-                Phone Text
-                Fax   Text
-        Details_confirmed DateType // Added for Juancarlos [020322 krb]
-
-
-?Journal Paper ?Paper XREF Journal
-	 Full_name ?Text // added for Wen [020607 krb]
-	 Other_name ?Text // added for Wen [020607 krb]
-	 Previous_name ?Text // added for Wen [020607 krb]
 
 
 
-?Paper  Reference       Title UNIQUE ?Text
-                        Journal UNIQUE ?Journal XREF Paper
-                        Publisher UNIQUE Text
-                        Editor ?Text            //used for books put in as whole objects
-                        Page  UNIQUE  Text UNIQUE Text
-                        Volume UNIQUE Text Text
-                        Year UNIQUE Int
-                        In_book #Paper
-                        Contained_in ?Paper XREF Contains       // old form
-                        Medline_acc UNIQUE Int
-                        PMID UNIQUE Int                         // ADDED FOR JUANCARLOS
-        Author ?Author UNIQUE ?Person XREF Paper // new for Juancarlos 021029
-        Person ?Person XREF Paper
-        Affiliation Text        // Authors' affiliation if available
-        Brief_citation UNIQUE Text
-        Abstract ?LongText
-        Type UNIQUE Text        //meaning review, article, chapter,
-                                //monograph, news, book, meeting_abstract
-        Contains ?Paper XREF Contained_in
-        Refers_to Locus ?Locus XREF Reference
-                  Allele ?Allele XREF Reference
-                  Rearrangement ?Rearrangement XREF Reference
-                  Sequence ?Sequence XREF Reference
-                  Strain ?Strain XREF Reference
-                  Clone ?Clone XREF Reference
-                  Protein ?Protein XREF Reference
-                  Expr_pattern ?Expr_pattern XREF Reference
-                  Expr_profile ?Expr_profile XREF Reference
-                                // Added to fit new Expr_profile class
-                                // [010912 krb]
-                  Cell ?Cell XREF Reference
-                  Cell_group ?Cell_group XREF Reference
-                  Life_stage ?Life_stage XREF Reference
-                  RNAi ?RNAi XREF Reference  // added for Lincoln RNAi [001213 dl]
-                  Transgene ?Transgene XREF Reference
-                  Gene ?Gene XREF Reference
-                  GO_term ?GO_term XREF Reference
-                  Operon ?Operon XREF Reference      // added for operon data [010928 dl]
-        Keyword ?Keyword
 
 
-#Affiliation Affiliation_address UNIQUE Text
 
 //Affiliation Text	// Authors' affiliation if available
 //usually comes with wbg abstracts and worm meeting abstracts
@@ -1660,6 +1531,182 @@
 
 
 
+/////////////////////////  PEOPLE, PLACES AND PAPERS //////////////////////////////
+//
+// ?Person, #Address, ?Author, ?Paper, ?Journal, and ?Laboratory
+//
+///////////////////////////////////////////////////////////////////////////////////
 
-// end of file
+
+
+//////////////////
+// Person class //
+//////////////////
+
+?Person PostgreSQL_id UNIQUE Text       // for linking to internal RDB
+                                        // Text instead of Int so it says WBperson####
+        Name    First_name    UNIQUE  Text    // prefered first name
+                Middle_name   Text            // middle name(s)
+                Last_name     UNIQUE  Text    // prefered last name
+                Standard_name UNIQUE  ?Text   // name to be used for displays
+                                              // default is "First_name Last_name"
+                Also_known_as   Text
+        CGC_representative_for UNIQUE ?Laboratory XREF Representative
+        Laboratory UNIQUE ?Laboratory XREF Person
+        Address #Address
+        Tracking        Old_laboratory ?Laboratory XREF Past_lab_member
+                                // Lab(s) the person previously worked in
+                        Last_verified UNIQUE DateType
+                                // Last time the name/contact information
+                                // in this record was actively verified
+                        Last_attempt_to_contact UNIQUE DateType UNIQUE Text
+                                // Text is method of attempt to contact
+                        Old_address DateType #Address   // for history
+        Comment Text
+        Publication     Paper ?Paper XREF Person
+                        Publishes_as ?Author    // confirmed author names (curated)
+                                                // can't XREF because of paper model
+                        Possibly_publishes_as ?Author XREF Possible_person
+                                                // scripted automatically for a
+                                                // curator to look at and verify
+                                                // or reject later
+
+#Address  Street_address Text        // multiple lines including town, state, zip/postcode, whatever
+          Country UNIQUE Text
+          Institution UNIQUE Text    
+          Email Text                 // multiple emails allowed
+          Main_phone    Text         // phone number for the institution, I presume
+          Lab_phone     Text
+          Office_phone  Text
+          Other_phone   Text UNIQUE Text  // second text can be used to indicate type
+          Fax           Text UNIQUE Text  // second text can be used to differentiate
+                                          // multiple fax numbers if present (optional)
+          Web_page      Text    // web page is part of the address info I think
+
+
+
+//////////////////
+// Author class //
+//////////////////
+
+?Author Full_name Text
+        Also_known_as Text
+        Laboratory UNIQUE ?Laboratory XREF Staff
+// Need to keep Laboratory connected to Author since People haven't
+// been connected to Labs yet
+        Old_lab ?Laboratory
+        Possible_person ?Person XREF Possibly_publishes_as
+        Address Mail Text  // this address section for Authors not yet connected to Person
+                E_mail Text
+                Phone Text
+                Fax   Text
+        Paper ?Paper
+        Sequence ?Sequence XREF From_author
+        Keyword ?Keyword
+        Contact_details_confirmed DateType // Added for Juancarlos [020322 krb]
+
+
+
+//////////////////
+// Paper class  //
+//////////////////
+
+?Paper  Reference       Title UNIQUE ?Text
+                        Journal UNIQUE ?Journal XREF Paper
+                        Publisher UNIQUE Text
+                        Editor ?Text            //used for books put in as whole objects
+                        Page  UNIQUE  Text UNIQUE Text
+                        Volume UNIQUE Text Text
+                        Year UNIQUE Int
+                        In_book #Paper
+                        Contained_in ?Paper XREF Contains       // old form
+                        Medline_acc UNIQUE Int
+                        PMID UNIQUE Int                     
+//        Author ?Author XREF Paper #Affiliation        // replaced by:
+        Author ?Author UNIQUE ?Person XREF Paper
+// Eimear wants to replace this line to keep #Affiliation, and test it
+// to see that it doesn't cause problems.
+        Person ?Person XREF Paper
+        Affiliation Text        // Authors' affiliation if available
+        Brief_citation UNIQUE Text
+        Abstract ?LongText
+        Type UNIQUE Text        //meaning review, article, chapter,
+                                //monograph, news, book,
+                                //meeting_abstract
+        Contains ?Paper XREF Contained_in
+        Refers_to Locus ?Locus XREF Reference
+                  Allele ?Allele XREF Reference
+                  Rearrangement ?Rearrangement XREF Reference
+                  Sequence ?Sequence XREF Reference
+                  Strain ?Strain XREF Reference
+                  Clone ?Clone XREF Reference
+                  Protein ?Protein XREF Reference
+                  Expr_pattern ?Expr_pattern XREF Reference
+                  Expr_profile ?Expr_profile XREF Reference
+                                // Added to fit new Expr_profile class
+                                // [010912 krb]
+                  Cell ?Cell XREF Reference
+                  Cell_group ?Cell_group XREF Reference
+                  Life_stage ?Life_stage XREF Reference
+                  RNAi ?RNAi XREF Reference  // added for Lincoln RNAi [001213 dl]
+                  Transgene ?Transgene XREF Reference
+                  Gene ?Gene XREF Reference
+                  GO_term ?GO_term XREF Reference
+                  Operon ?Operon XREF Reference      // added for operon data [010928 dl]
+        Keyword ?Keyword
+
+
+#Affiliation Affiliation_address UNIQUE Text
+
+
+///////////////////////
+// Journal class     //
+///////////////////////
+
+?Journal Paper ?Paper XREF Journal
+	 Full_name ?Text // added for Wen [020607 krb]
+	 Other_name ?Text // added for Wen [020607 krb]
+	 Previous_name ?Text // added for Wen [020607 krb]
+
+
+
+
+
+
+
+///////////////////////
+// Laboratory class  //
+///////////////////////
+
+?Laboratory   Address Mail Text
+                      Phone Text
+                      E_mail Text
+                      Fax Text
+              Clean_address #Address
+// Put back Address instead of #Address because citace doesn't have
+// control of Laboratory data, so anything parsed here won't be read.
+// If Keith or someone with control of Laboratory data wants to parse
+// it into #Address, please do so
+              CGC     Representative  UNIQUE  ?Person XREF CGC_representative_for
+// Added this line instead of replacing the line above because People
+// haven't been connected to labs yet
+                      Strain_designation UNIQUE Text
+                      Allele_designation UNIQUE Text
+                      Alleles ?Allele XREF Laboratory
+                      Gene_classes ?Gene_Class XREF Designating_laboratory
+              Staff   ?Author XREF Laboratory
+// Put this back in instead of replacing with following line because 
+// People haven't been connected to Labs yet
+              Person  ?Person XREF Laboratory
+              Past_lab_member ?Person XREF Old_laboratory // I think this is useful and
+                                                          // anyway, the reverse is track.
+
+
+
+
+
+
+////////////////////////
+//    END OF FILE     //
+////////////////////////
 
