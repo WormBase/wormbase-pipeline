@@ -70,7 +70,8 @@ cd $condir
 
 echo Making consensus for sequence $seq in project $proj version 0 from directory $condir
 
-mkcon-gap -bayesian -gestapo -c 0 -a -M -n $seq -p $proj -o $datadir/$seq/$dat/${seq}_0.ace
+#mkcon-gap -bayesian -gestapo -c 0 -a -M -n $seq -p $proj -o $datadir/$seq/$dat/${seq}_0.ace
+mkcon-gap -bayesian -c 0 -a -M -n $seq -p $proj -o $datadir/$seq/$dat/${seq}_0.ace
 
 if ($status != 0) then 
 	echo "$0 aborted with status $status"
