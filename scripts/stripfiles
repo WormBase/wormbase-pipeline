@@ -34,8 +34,8 @@ my $version    = &get_script_version("stripfiles");
  ##############################
 
 my $dbdir   = "/wormsrv2/stlace";
-my $tace    = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
-my $giface  = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/giface";
+my $tace    = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
+my $giface  = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/giface";
 
 my @filenames = "";
 my $filename  = "";

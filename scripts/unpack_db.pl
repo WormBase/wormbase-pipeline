@@ -38,8 +38,8 @@ my $version = &get_cvs_version("$0");
 # Paths for I/O files        #
 ##############################
 
-my $tace   = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
-my $giface = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/giface";
+my $tace   = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
+my $giface = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/giface";
 
 
 

@@ -25,7 +25,7 @@ my $rundate = `date +%y%m%d`;   chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
 #my $version = &get_cvs_version('/wormsrv2/scripts/make_acefiles');
 
-$tace = "/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_4/tace";
+$tace = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
 
  ##############################
  # command-line options       #

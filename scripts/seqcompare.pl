@@ -23,7 +23,7 @@ $TODAY = "$DAY $REALMONTH $REALYEAR at $HOURS:$MINS";
 
 $seqerror="Job report from SeqCompare run $$ STARTED $TODAY\n\n";
 $acepath="/nfs/disk100/wormpub/acedb/ace4/cam";
-$progrpath="/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_4";
+$progrpath="/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4";
 $clonepath="/nfs/disk100/wormpub/analysis/cosmids";
 $clonefile="$clonepath"."/current.versions";
 $outfile="/tmp/seqcompare.$$";
