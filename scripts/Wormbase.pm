@@ -9,7 +9,7 @@ use Exporter;
 use Carp;
 use Ace;
 @ISA       = qw(Exporter);
-@EXPORT    = qw(get_cvs_version get_wormbase_version get_wormbase_version_name get_wormbase_release_date copy_check mail_maintainer celeaccession tace gff_sort dbfetch clones_in_database open_TCP DNA_string_reverse DNA_string_composition);
+@EXPORT    = qw(get_cvs_version get_wormbase_version get_wormbase_version_name get_wormbase_release_date copy_check mail_maintainer celeaccession tace gff_sort dbfetch clones_in_database open_TCP DNA_string_reverse DNA_string_composition release_databases find_file_last_modified release_composition release_wormpep);
 @EXPORT_OK = qw(get_script_version); 
 
 
@@ -408,6 +408,268 @@ sub clones_in_database {
     return @output;   
 
 }
+
+
+
+##################################################################################
+
+#  Subroutines for generating release letter
+
+
+##################################################################################
+# Databases used in build                                                        #
+##################################################################################
+sub release_databases
+  {
+    #GET THE DATABASES USED IN THIS BUILD
+
+    #get the non_cambridge DB info from file
+    open (DBS,"/wormsrv2/autoace/logs/Primary_databases_used_in_build");
+    my ($stlace,$citace, $brigdb, $cshace);
+    my %dates;
+    while(<DBS>)
+      {
+	chomp;
+	my @info = split(/ : /,$_);
+	$dates{$info[0]} = $info[1];
+      }
+    foreach my $key( keys %dates)
+      {
+	my $oldstyle = $dates{$key};
+	my $newstyle = "20".substr($oldstyle,0,2)."-".substr($oldstyle,2,2)."-".substr($oldstyle,4);
+	$dates{$key} = $newstyle;
+      }
+    
+    #get the Cambridge dates directly from block file 1
+    my @date = &find_file_last_modified("/wormsrv2/camace/database/block1.wrm");
+    $dates{camace} = $date[0];
+    @date = &find_file_last_modified("/wormsrv2/camace/database/block1.wrm");
+    $dates{genace} = $date[0];
+    
+    foreach my $key( keys %dates)
+      {
+	print "$key $dates{$key}\n";
+      }
+
+    #PARSE THE RELEASE LETTER FOR LAST BUILD INFO
+    my $old_ver = &get_wormbase_version -1;
+    my $ver = $old_ver+1;
+    my %old_dates;
+    my $located = 0;
+    my $count =0;  #determines how many lines to read = no databases
+    open (OLD_LETTER,"/wormsrv2/autoace/RELEASE_LETTERS/letter.WS$old_ver");
+    while(<OLD_LETTER>)
+      {
+	if( ($located == 1) && ($count <= 6))
+	  {
+	    chomp;
+	    my @info = split(/ : | - /,$_);
+	    #this will put some crap in the hash from the 1st two line of the section but it no matter
+	    $old_dates{$info[0]} = $info[1];
+	    $count++;
+	  }
+	elsif ($_ =~ m/Primary/){
+	  $located = 1;
+	}
+      }  
+    my $dbaseFile = "/wormsrv2/autoace/RELEASE_LETTERS/dbases";
+    open (WRITE, ">$dbaseFile");
+    
+    print WRITE "Primary databases used in build WS$ver\n------------------------------------\n";
+    foreach my $key(sort keys %dates)
+      {
+	print WRITE "$key : $dates{$key}";
+	if ("$dates{$key}" gt "$old_dates{$key}") {
+	  print WRITE " - updated\n";
+	}
+	elsif ("$dates{$key}" lt "$old_dates{$key}"){
+	  print WRITE "you're using a older version of $key than for WS$old_ver ! ! \n";
+	}
+	else{
+	  print "\n";
+	}
+      }
+    close WRITE;
+
+    my $name = "Database update report";
+    my $maintainer = "All";
+    &mail_maintainer($name,$maintainer,$dbaseFile);
+
+    return 1;
+ }
+
+##################################################################################
+# Returns the date yyyy-mm-dd and time hh:mm:ss file was last modified           #
+##################################################################################
+sub find_file_last_modified
+  { 
+    my $filename = shift;
+    open (FILE,"<$filename") || die "cant open file $filename\n";
+    my @fileinfo = stat FILE;
+    my @date = localtime($fileinfo[9]);
+    close(FILE);
+    my $year = sprintf("%d-%02d-%02d\n",$date[5]+1900,$date[4]+1,$date[3]);
+    my $time = "$date[2]:$date[1]:$date[0]";
+    chomp $year;
+
+    my @last_modified = ($year, $time);
+    return @last_modified;
+  }
+
+
+
+
+##################################################################################
+# DNA Sequence composition                                                       #
+##################################################################################
+sub release_composition
+  {
+    #get the old info from current_DB
+    my $ver = &get_wormbase_version;
+    my $old_ver = $ver -1;
+    my %old_data;
+    my $old_letter ="/wormsrv2/WS$old_ver/CHROMOSOMES/composition.all";
+    open (OLD, "<$old_letter") || die "cant open data file - $old_letter";
+    while (<OLD>) {
+      chomp;
+	if ($_ =~ m/(\d+)\s+total$/){
+	  #my $tot = $1;$tot =~ s/,//g; # get rid of commas
+	  $old_data{Total} = $1;
+	}
+	elsif ($_ =~ m/^\s+([\w-]{1})\s+(\d+)/){
+	  print "adding to old_data $1  $2\n";
+	  $old_data{"$1"} = $2;
+	}
+    }
+    print "keys are ",(keys %old_data),"\n";
+    close (OLD);
+    
+
+    print "\n\n$ver data\n";
+    #now get the new stuff to compare
+    my $new_letter ="/wormsrv2/WS$ver/CHROMOSOMES/composition.all"; #should be autoace ?
+    my %new_data;
+    open (NEW, "<$new_letter") || die "cant open data file - $new_letter";
+    while (<NEW>) {
+      chomp;
+      if ($_ =~ m/(\d+)\s+total$/){
+	$new_data{Total} = $1;
+      }
+      elsif ($_ =~ m/^\s+([\w-]{1})\s+(\d+)/){
+	print "adding to new_data $1  $2\n";
+	$new_data{"$1"} = $2;
+      }1
+    }
+    close NEW;
+
+    #now check the differences
+    my %change_data;
+    my $compositionFile = "/wormsrv2/autoace/RELEASE_LETTERS/composition";
+    open (COMP_ANALYSIS, ">$compositionFile") || die "cant open $compositionFile";
+    print COMP_ANALYSIS "Genome sequence composition:\n----------------------------\n\n";
+    print COMP_ANALYSIS "       \tWS$ver       \tWS$old_ver      \tchange\n";
+    print COMP_ANALYSIS "----------------------------------------------\n";
+    foreach my $key(keys %old_data) {
+	$change_data{$key} = $new_data{$key} - $old_data{$key};
+      }
+   
+    my @order = ("a","c","g","t","n","-","Total");
+    foreach(@order){
+      if ("$_" eq "Total"){
+	print COMP_ANALYSIS "\n";
+      }
+      printf COMP_ANALYSIS ("%-5s\t%-8d\t%-8d\t%+4d\n", $_, $new_data{$_}, $old_data{$_}, $change_data{$_});
+    }
+
+    if ($change_data{"-"} > 0){
+      print COMP_ANALYSIS "Number of gaps has increased - please investigate ! \n";
+    }
+    
+    if ($change_data{"total_length"} < 0) {
+      print COMP_ANALYSIS "Total number of bases has decreased - please investigate ! \n";
+    }
+    close COMP_ANALYSIS;
+
+    my $name = "Sequence composition report";
+    my $maintainer = "ar2\@sanger.ac.uk";#"All";
+    &mail_maintainer($name,$maintainer,$compositionFile);
+    
+    return 1;
+  }
+
+##################################################################################
+#  Wormpep                                                                       #
+##################################################################################
+sub release_wormpep       #($number_cds $number_total $number_alternate )
+  {  
+    my ($number_cds, $number_total, $number_alternate) = @_;
+    my $ver = &get_wormbase_version;
+    my $old_ver = $ver -1;
+    
+    #extract data from new wormpep files
+    my $lost = `more /wormsrv2/WORMPEP/wormpep$ver/wormpep.diff$ver | grep 'lost' | wc -l`;
+    my $new = `more /wormsrv2/WORMPEP/wormpep$ver/wormpep.diff$ver | grep 'new' | wc -l`;
+    my $changed = `more /wormsrv2/WORMPEP/wormpep$ver/wormpep.diff$ver | grep 'changed' | wc -l`;
+    my $appeared = `more /wormsrv2/WORMPEP/wormpep$ver/wormpep.diff$ver | grep 'appear' | wc -l`;
+    my $entries = `cat /wormsrv2/WORMPEP/wormpep$ver/wormpep.diff$ver | wc -l`;
+    my $net = $new + $appeared - $lost;
+    my $codingDNA;
+
+
+
+    #get no of coding bases from log file
+    open (THIS_LOG,"/wormsrv2/WORMPEP/wormpep$ver/wormpep_current.log");
+    while(<THIS_LOG>){
+	if( $_ =~ m/(\d+(,\d+)*)\s+letter/){
+	 $codingDNA = $1;}
+      }
+
+    #write new letter
+    my $wormpepFile = "/wormsrv2/autoace/RELEASE_LETTERS/wormpep";
+    open (LETTER, ">$wormpepFile") || die "cant open $wormpepFile\n";
+
+
+    print LETTER "\n\nWormpep data set:\n----------------------------\n";
+    print LETTER"\nThere are $number_cds CDS in autoace, $number_total when counting $number_alternate alternate splice forms.\n
+The $number_total sequences contain $codingDNA base pairs in total.\n\n";
+   
+    print LETTER "Modified entries      $changed";
+    print LETTER "Deleted entries       $lost";
+    print LETTER "New entries           $new";
+    print LETTER "Reappeared entries    $appeared\n";
+    printf LETTER "Net change  %+d",$net;
+
+    #get the number of CDS's in the previous build
+    open (OLD_LOG,"/wormsrv2/WORMPEP/wormpep$old_ver/wormpep_current.log");
+    my $oldCDS;
+    while(<OLD_LOG>){
+      if( $_ =~ m/(\d+,?\d+)\s+seque/){
+	$oldCDS = $1;
+	$oldCDS =~ s/,//g;
+      }
+    }
+    close OLD_LOG;
+
+    #check
+    my $mail;
+    if ($lost + $new + $changed + $appeared != $entries) {
+	print LETTER "cat of wormpep.diff$ver does not add up to the changes (from $0)";
+      }
+    if ($oldCDS + $net != $number_total){
+      print LETTER"The differnce between the total CDS's of this ($number_total) and the last build ($oldCDS) does not equal the net change $net\nPlease investigate! ! \n";
+    }
+       
+    close LETTER; 
+
+    my $name = "Wormpep release stats";
+    my $maintainer = "All";
+    &mail_maintainer($name,$maintainer,$wormpepFile);
+
+    return 1;
+  }
+#end of release letter generating subs
+#############################################
+
 
 ################################################################################
 #Return a true value
