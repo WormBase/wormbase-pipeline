@@ -5,7 +5,6 @@
 # by Kerstin Jekosch
 # 13/07/01
 
-use strict;
 use Getopt::Std;
 use IO::Handle;
 $|=1;
@@ -15,14 +14,14 @@ require "/wormsrv2/scripts/babel.pl";
 # options #
 ###########
 
-my $opt_a="";   # does all the following
-my $opt_o="";   # performs overlapcheck
-my $opt_e="";   # performs estcheck 
-my $opt_i="";   # performs introncheck
-my $opt_h="";   # Help/Usage page
+$opt_a="";   # does all the following
+$opt_o="";   # performs overlapcheck
+$opt_e="";   # performs estcheck 
+$opt_i="";   # performs introncheck
+$opt_h="";   # Help/Usage page
 
-getopt ('aeioh');
-&usage(0) if ($opt_h);
+getopts ('aeioh');
+&usage if ($opt_h);
 if ($opt_a) { $opt_e = 1; $opt_i = 1; $opt_o = 1; }
 
 #################
@@ -67,8 +66,8 @@ print LOG "\n";
 #########################
 
 &runestcheck     if ($opt_e);
-&runintroncheck  if ($opt_i);
 &runoverlapcheck if ($opt_o);
+&runintroncheck  if ($opt_i);
 
 ##############################
 # mail $maintainer report    #
@@ -96,7 +95,7 @@ sub runestcheck {
 }
 
 sub runintroncheck {
-    system ("/wormsrv2/scripts/introncheck")  && die "Cannot execute introncheck $!\n";
+    system ("/wormsrv2/scripts/introncheck") && die "Cannot execute introncheck $!\n";
     print LOG "Run introncheck\n";
 }
 
@@ -106,12 +105,8 @@ sub runoverlapcheck {
 }
  
 sub usage {
-    my $error = shift;
-    if ($error == 0) {
-	# normal help menu
-	system('perldoc',$0);
-	exit (0);
-    }
+    system("perldoc /wormsrv2/scripts/gffcheck") && die "Cannot help you, sorry $!\n";
+    exit (0);
 }
 __END__
 
