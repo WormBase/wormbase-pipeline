@@ -7,7 +7,7 @@
 # A script to convert ?Locus objects into the new ?Gene object
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-04-07 10:34:08 $   
+# Last updated on: $Date: 2004-04-07 12:54:47 $   
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -344,7 +344,7 @@ sub fix_multi_pt_data_class{
   my $db = Ace->connect(-path  => $db_path) || do { print "Connection failure: ",Ace->error; die();};
 
   # This query gets all Multi_pt_data objects which link to Locus objects using old CGC style names,
-  my $query = "Find Multi_pt_data * WHERE (Locus OR Locus_1 OR Locus_2)";
+  my $query = "Find Multi_pt_data * WHERE (Locus OR Locus_A OR Locus_B)";
   push(my @multipoints, $db->find($query));
   foreach my $multipoint (@multipoints){
     print "$multipoint\n";
