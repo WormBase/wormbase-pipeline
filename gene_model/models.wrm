@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.102 2003-01-06 09:47:51 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.103 2003-01-06 12:06:11 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -1298,6 +1298,7 @@
 ?Expr_profile SMap S_parent PCR_product UNIQUE ?PCR_product XREF Expr_profile     // changed into S_parent PCR_product UNIQUE [020311 kj]
               Method ?Method
               Expr_map ?SK_map ?SK_map XREF Expr_profile
+	      RNAi_result ?RNAi XREF Expr_profile
               Reference ?Paper XREF Expr_profile
               Remark ?Text
 
@@ -1459,6 +1460,7 @@
                         Picture ?Picture XREF RNAi		 // added for Lincoln, krb [010807]
 	Reference ?Paper XREF RNAi
         Phenotype ?Phenotype XREF RNAi #Phenotype_info
+	Expr_profile ?Expr_profile XREF RNAi_result
         Remark ?Text
 
 #Phenotype_info Remark ?Text                            // specific remarks about this instance
