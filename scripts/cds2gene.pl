@@ -8,7 +8,7 @@
 # linked to an existing ?Gene object
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-05-27 13:59:21 $   
+# Last updated on: $Date: 2004-05-27 14:46:40 $   
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -213,6 +213,95 @@ sub process_transcript_class{
   close(OUT);
   $db->close;
 }
+
+
+###########################################################################################
+# processes Pseudogene class to create Gene objects for Pseudogenes not attached to Genes
+# can only do this *after* CDS class has been processed and loaded to test database
+# this is because a Pseudogene might be an isoform of an existing CDS in which case
+# we must look up the CDS Gene ID first
+###########################################################################################
+
+sub process_pseudogene_class{
+  
+  # start from highest ID that was used previously
+  my $id = $id_limit;
+
+  open(OUT,">processed_pseudogene_class.ace") || die "Couldn't open output file\n";
+
+  my $db_path = "$database";
+
+  # connect to source database, but also to geneace for extra checking
+  my $db  = Ace->connect(-path  => $db_path) || do { print "Connection failure: ",Ace->error; die();};
+  my $db2 = Ace->connect(-path  => "/wormsrv1/geneace") || do { print "Connection failure: ",Ace->error; die();};  
+
+  # use subclass to get just elegans pseudogenes
+  my $query = "Find elegans_pseudogenes";
+  push(my @pseudogenes, $db->find($query));
+
+  # device for tracking multiple isoforms of same gene
+  my $last_sequence_name = "";
+  my $last_gene = "";
+
+  foreach my $gene (@pseudogenes){
+
+    # set sequence name, i.e. chop off trailing a,b,c etc.
+    my $sequence_name = $gene;
+    $sequence_name =~ s/[a-z]$//;
+    
+    # first check to see that this name isn't already in geneace, i.e. where an other isoform is a CDS
+    my ($obj) = $db2->fetch(-class=>'Gene_name',-name=>"$sequence_name");
+    if ($obj){
+      my $gene_id = $obj->Sequence_name_for;
+      print "WARNING: Pseudogene $gene ($sequence_name) in camace already exists in geneace under Gene $gene_id\n";
+      print OUT "Gene : \"$gene_id\"\n";
+      print OUT "Pseudogene $gene\n\n";
+      # can now skip to next gene
+      next;
+    }
+    
+
+    # does this isoform belong to the same gene as the last one
+    # if so, we can append the Transcript name to the last gene
+    if($sequence_name eq $last_sequence_name){
+      print OUT "Gene : \"$last_gene\"\n";
+      print OUT "Pseudogene $gene\n\n";
+    }
+    # if not, it's a new gene, write output
+    else{
+
+      $id++;
+      my $id_padded = sprintf "%08d" , $id;
+
+      
+      my $name = "WBGene$id_padded";  
+
+      
+      #grab species info
+      my $species = $gene->Species;
+      
+      $last_sequence_name = $sequence_name;
+      $last_gene = $name;
+      
+      print OUT "Gene : \"$name\"\n";
+      print OUT "Version 1\n";
+      print OUT "Sequence_name $sequence_name\n";
+      print OUT "Public_name $sequence_name\n";
+      print OUT "Species \"$species\"\n";
+      print OUT "Version_change 1 now \"WBPerson1971\" Imported \"Initial conversion from Pseudogene class of WS125\"\n";
+      print OUT "Live\n";
+      print OUT "Pseudogene $gene\n\n";
+
+    }      
+
+  }
+  close(OUT);
+  $db->close;
+}
+
+
+
+
 
 
 exit(0);
