@@ -1087,13 +1087,13 @@
                                                           Unprocessed_mRNA
                                               tRNA Type UNIQUE Text  // new for ck1 [030926] krb
 						   Anticodon UNIQUE Text  // 
-                                                   rRNA UNIQUE Text
-                                                   snRNA UNIQUE Text
-						   snoRNA UNIQUE Text // [030102 krb]
-                                                   scRNA UNIQUE Text
-                                                   stRNA UNIQUE Text         // [010723 dl]
-                                                   miRNA UNIQUE Text         // [020306 kj]
-                                                   misc_RNA UNIQUE Text
+                                              rRNA UNIQUE Text
+                                              snRNA UNIQUE Text
+					      snoRNA UNIQUE Text // [030102 krb]
+                                              scRNA UNIQUE Text
+                                              stRNA UNIQUE Text         // [010723 dl]
+                                              miRNA UNIQUE Text         // [020306 kj]
+                                              misc_RNA UNIQUE Text
 		           Isoform #Evidence
                            Start_not_found                                   // [020306 kj]
                            End_not_found                                     // [020306 kj]
