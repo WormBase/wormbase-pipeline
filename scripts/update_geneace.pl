@@ -1,7 +1,18 @@
-#! /usr/bin/perl -w
+#! /usr/bin/perl5.6.1 -w
 
 use Tk;
 use strict;
+use Cwd;
+use lib "/wormsrv2/scripts";
+use Wormbase;
+
+
+################
+# database paths
+################
+
+my $tace = &tace;
+my $ga_dir = "/wormsrv1/geneace";
 
 #######################
 # Create a main windows
@@ -9,7 +20,7 @@ use strict;
 
 my $mw=MainWindow->new();
 $mw->configure (title => "Geneace Update Accelerator\t\tby Chao-Kung Chen\t\tVersion 1.0 (2003/01)",
-                background => "grey",
+                background => "white",
 	       );
 #$mw->minsize(qw(800 750));#slow
 #$mw->geometry('+620+770');
@@ -44,48 +55,69 @@ my $txt_frame = $mw->Frame(relief => 'groove', borderwidth => 2,
 
 my $menu_File=$btn_frame->Menubutton(text => 'File')->pack (side => 'left', anchor => 'n', fill => 'x');
 $menu_File->AddItems(
-		     ["command" => "Open Update file", command => \&load_file_input],
-		     ["command" => "Save Update file", command => \&save_file_input],
-                     ["command" => "Open ace file", command => \&load_file_ace],
-		     ["command" => "Save ace file", command => \&save_file_ace],
+		     ["command" => "Open Update file", "accelerator" => "Ctrl-u", command => \&open_update_file],
+		     ["command" => "Save Update file", command => \&save_update_file],
+                     ["command" => "Open ace file", "accelerator" => "Ctrl-a", command => \&open_ace_file],
+		     ["command" => "Save ace file", command => \&save_ace_file],
 		     "-",
-		     ["command" => "Load ace file to Geneace", command => \&upload_ace],
+		     ["command" => "Load ace file to Test_DB", "accelerator" => "Ctrl-t", command => \&upload_ace_test],
+		     ["command" => "Load ace file to Geneace", "accelerator" => "Ctrl-g", command => \&upload_ace_GA],
                      "-",
-                     ["command" => "Exit", command => sub{exit}]
+                     ["command" => "View data format this script parses", "accelerator" => "Ctrl-r", command => \&show_format],
+                     "-",
+                     ["command" => "Quit", "accelerator" => "Ctrl-q", command => sub{exit}]
                     );
+
+$mw->bind('<Control-Key-u>' => \&open_update_file);
+$mw->bind('<Control-Key-a>' => \&open_ace_file);
+$mw->bind('<Control-Key-g>' => \&upload_ace);
+$mw->bind('<Control-Key-q>' => sub{exit});
+
+my $menu_GA=$btn_frame->Menubutton(text => 'Correct Geneace_check')->pack (side => 'left', anchor => 'n', fill => 'x');
+$menu_GA->AddItems(
+		     ["command" => "Add loci to Gene_Class obj", command => \&add_loci_to_geneclass],
+		     ["command" => "Add location to Allele obj", command => \&add_location_to_allele]
+		  );
+
+
 my $menu_Option=$btn_frame->Menubutton(text => 'Options')->pack (side => 'left', anchor => 'n', fill => 'x');
 $menu_Option->AddItems(
-		       ["command" => "Gene_class & Other_name -> .ace", command => \&geneclass_loci_other_name],
-		       ["command" => "Gene mapping -> .ace", command => \&gene_mapping],
-                       ["command" => "Laboratory -> .ace", command => \&update_lab],
+		       ["command" => "Gene_class/Gene/Other_name assignment -> .ace", command => \&geneclass_loci_other_name],
+		       ["command" => "Genetics mapping -> .ace", command => \&gene_mapping],
+                       ["command" => "Lab / Allele / PI -> .ace", command => \&update_lab],
 		       "-",
 	               ["command" => "CGC strain -> .ace", command => \&update_strain],
 		       "-",
                        ["command" => "EMBL Release to Geneace -> .ace", command => \&update_EMBL_geneace],
-		       "-",
-                       ["command" => "Caltech function annotation -> .ace", command => \&update_caltech],
-		      
-                      );
+		      );
+
+my $clear = $btn_frame->Photo(-file =>"/wormsrv1/chaokung/DOCS/empty.gif");
 my $btn_ClearBench=$btn_frame->Button(text    => 'Clear_Bench',
+				      image   => $clear,
 				      command => \&clear_bench
 				     )
                              ->pack (side => 'left', anchor => 'n', fill => 'x');
 
-my($filename, $info, $btn_save);
+my($filename, $info, $btn_save, $mesg);
 
 $btn_frame->Label(text => 'Filename')->pack(side => 'left', anchor => 'w');
 $btn_frame->Entry(textvariable => \$filename)->pack(side => 'left', anchor => 'w', fill => 'x', expand => 1);
-$btn_frame->Button(text => 'Load Updt', command => \&load_file_input)->pack(side => 'left', anchor => 'w');
-$btn_frame->Button(text => 'Save Updt', command => \&save_file_input)->pack(side => 'left', anchor => 'w');
-$btn_frame->Button(text => 'Load ace', command => \&load_file_ace)->pack(side => 'left', anchor => 'w');
-$btn_frame->Button(text => 'Save ace', command => \&save_file_ace)->pack(side => 'left', anchor => 'w');
-$mw->Label(textvariable => '\$info', -relief => 'ridge')-> pack(side => 'bottom', fill => 'x');
 
-#my $btn_UpdateFrame=$btn_frame->Button(text => 'Update_Input',
-	#				   command => \&update_input
-		#			  )->pack (side => 'left', anchor => 'n', fill => 'x');
+my $open_update = $btn_frame->Photo(-file =>"/wormsrv1/chaokung/DOCS/open_update.gif");
+$btn_frame->Button(text => 'Open Updt', 
+		   image => $open_update, command => \&type_update_file)->pack(side => 'left', anchor => 'w');
+
+$btn_frame->Button(text => 'Save Updt', command => \&save_update_file)->pack(side => 'left', anchor => 'w');
+
+my $open_ace = $btn_frame->Photo(-file =>"/wormsrv1/chaokung/DOCS/open_ace.gif");
+$btn_frame->Button(text => 'Open ace',
+		   image => $open_ace, command => \&type_ace_file)->pack(side => 'left', anchor => 'w');
+
+$btn_frame->Button(text => 'Save ace', command => \&save_ace_file)->pack(side => 'left', anchor => 'w');
+
 
 my ($input_window_lbl, $input_window, $ace_window_lbl, $ace_window, $scroll, $input, @content, $update);
+
 &create_windows_and_lbl;
 
 
@@ -93,12 +125,63 @@ my ($input_window_lbl, $input_window, $ace_window_lbl, $ace_window, $scroll, $in
 #chomp (@content = <IN>);
 #&geneclass_loci_other_name;
 
-
 MainLoop();
 
 #############
 # subroutines
 #############
+
+sub add_location_to_allele {
+
+  my $allele_designation_to_LAB=<<EOF;
+Table-maker -p "/wormsrv1/geneace/wquery/allele_designation_to_LAB.def" quit
+EOF
+      
+  my ($allele_desig, $lab, %allele_desig_lab, @correction);
+  open (FH, "echo '$allele_designation_to_LAB.def' | $tace $ga_dir | ") || die "Couldn't access geneace\n";
+  while (<FH>){  
+    chomp($_); 
+    if ($_ =~ /^\"/){
+      $_ =~ s/\"//g;
+      ($lab, $allele_desig)=split(/\s+/, $_);
+      $allele_desig_lab{$allele_desig} = $lab;
+    }
+  } 
+  
+  open (IN, $filename) || die "Can't read in $filename";
+  while (<IN>){
+    if ($_ =~ /^ERROR:\s(.+)\shas\s.+/){
+      if ($1 !~ /^[A-Z].+/){
+	my $allele = $1; my $symbol = $1;
+	$symbol =~ s/\d+//;
+	push(@correction, "\n\nAllele : \"$allele\"\n");
+	push(@correction, "Location\t\"$allele_desig_lab{$symbol}\"\n");
+      }  
+    }
+  }
+  foreach (@correction){
+    $ace_window -> insert('end',"$_");  
+  }  
+}
+
+sub add_loci_to_geneclass {
+
+  my($locus, $gene_class, @gc_loci);
+
+  open (IN, $filename) || die "Can't read in $filename";
+  while (<IN>){
+    if ($_ =~ /^ERROR:\s(.+)\sis\sCGC_.+/){
+      $locus = $1;
+      $gene_class = $1;
+      $gene_class =~ s/-\d+//;
+      push(@gc_loci, "\n\nGene_Class : \"$gene_class\"\n");
+      push(@gc_loci, "Loci\t\"$locus\"\n");
+    }
+    foreach (@gc_loci){
+      $ace_window -> insert('end',"$_");
+    } 
+  }
+}
 
 sub clear_bench {
   $input_window_lbl -> destroy();
@@ -108,8 +191,9 @@ sub clear_bench {
   &create_windows_and_lbl;
 }
 
-sub load_file_input {
-  $info = "Loading file $filename";
+sub show_format {
+  $filename = "/wormsrv1/chaokung/JAH/JAH_data_format";
+  
   $input_window->delete ('1.0', 'end');
   if (!open(IN, "$filename")){
     $input_window->insert('end', "ERROR: $!\n");
@@ -119,18 +203,76 @@ sub load_file_input {
     $input_window->insert('end', $_);
   }
   close IN;
-  $info = "File $filename loaded";
+  return;
+} 
+
+sub open_update_file {
+  $filename=$btn_frame->getOpenFile(
+			  -filetypes        =>
+			  [
+			   ['Perl Scripts',     '.pl'            ],
+			   ['ace Files',        '.ace'],
+			   ['Text Files',       ['.txt', '.text']],
+			   ['All Files',        '*',             ],
+			  ],
+			 # -initialdir       => Cwd::cwd(),	    
+			  -initialdir       => chdir "/wormsrv1/chaokung/wormdata/ACE/",
+			  #-initialfile      => "getopenfile",
+			  -title            => "Open update file",
+			 ),
+  #$info = "Loading file $filename";
+ 
+  $input_window->delete ('1.0', 'end');
+  if (!open(IN, "$filename")){
+    $input_window->insert('end', "ERROR: $!\n");
+    return;
+  }
+  while (<IN>){
+    $input_window->insert('end', $_);
+  }
+  close IN;
+  #$info = "File $filename loaded";
   return;
 }
 
-sub save_file_input {
+
+sub type_update_file {
+  #$info = "Loading file $filename";
+  
+  $input_window->delete ('1.0', 'end');
+  if (!open(IN, "$filename")){
+    $input_window->insert('end', "ERROR: $!\n");
+    return;
+  }
+  while (<IN>){
+    $input_window->insert('end', $_);
+  }
+  close IN;
+  #$info = "File $filename loaded";
+
+  return;
+}
+
+sub save_update_file {
   $info="Saving $filename";
   open(IN, ">$filename");
   print IN $input_window->get('1.0', 'end');
   $info = "File saved";
 }
 
-sub load_file_ace {
+sub open_ace_file {
+  my $init_dir = chdir "/wormsrv1/chaokung/DOCS"; 
+  $filename=$btn_frame->getOpenFile(-defaultextension =>  ".ace",
+			  -filetypes        =>
+			  [
+			   ['ace Files',        '.ace'],
+			   ['All Files',        '*'],
+                          ],
+			
+			  -initialdir       => $init_dir,
+			  #-initialfile      => "getopenfile",
+			  -title            => "Open ace file",
+			 ),
   
   $info = "Loading file $filename";
   $ace_window->delete ('1.0', 'end');
@@ -146,44 +288,59 @@ sub load_file_ace {
   return;
 }
 
-sub save_file_ace {
+sub type_ace_file {
+
+  $info = "Loading file $filename";
+  $ace_window->delete ('1.0', 'end');
+  if (!open(IN, "$filename")){
+    $ace_window->insert('end', "ERROR: $!\n");
+    return;
+  }
+  while (<IN>){
+    $ace_window->insert('end', $_);
+  }
+  close IN;
+  $info = "File $filename loaded";
+  return;
+}
+
+sub save_ace_file {
   $info="Saving $filename";
   open(IN, ">$filename");
   print IN $ace_window->get('1.0', 'end');
   $info = "File saved";
 }
 
-sub upload_ace {
- #$filename="/home/ck02/Dump/dump_2003-01-04_A.1.ace";
- my $command=<<END;
+sub upload_ace_test {
+  my $command=<<EOF;
 pparse $filename
 save
 quit
-END
+EOF
 
   my $test_db_dir="/wormsrv1/chaokung/wormdata/CK1_GENEACE/";
   open (Load_testGA,"| tace $test_db_dir ") || die "Failed to upload to test_Geneace";
   print Load_testGA $command;
   close Load_testGA;
+  print "Done\n";
+
 }
 
-
-sub update_input {
-
-  open(OUT, ">>/home/ck02/srg") || die "Can't update file!";
-  #$input= "a line of text";
-  #$input_window -> insert('end',"$input\n");  # next line is at end of previous one 
-  $update=$input_window -> get('1.0', 'end');
-  $ace_window -> insert('end', "$update\n");
-  print OUT $update;
+sub upload_ace_GA {
+  my $command="pparse $filename\nsave\nquit\n";
+  my $db_dir="/wormsrv1/geneace/";
+  open (Load_GA,"| tace $db_dir ") || die "Failed to upload to test_Geneace";
+  print Load_GA $command;
+  close Load_GA;
+  print "Done\n";
 }
 
 sub geneclass_loci_other_name {
   open (IN, $filename) || die "Can't read in file!";
   #open (IN, "/wormsrv1/chaokung/wormdata/JAH/$filename") || die "Can't read in file!"; 
 
-  my ($gene_class, @Update, $locus, $seq, $rest, @parts, $num_parts, 
-      $head, $tail, @variants, $i, $person, $pmid, $evidence, @persons);
+  my ($gene_class, @Update, $locus, $seq, $rest, @parts, $num_parts,$cgc_paper, $paper,
+      $head, $tail, @variants, $i, $person, $pmid, $other_name, @evidence, $evidence, @persons);
 
   while(<IN>){
     if ($_ =~ ""){}
@@ -220,11 +377,13 @@ sub geneclass_loci_other_name {
       if ($num_parts > 1){
 	$head = $seq;
 	$tail = $seq;
-	$head =~ /[\w\d]+\.\d+/;
+	$head =~ /[\w\d]+\.\d+/; # get seq. names like C18H9.7 or M01E5.5 from M01E5.5a,b
 	$head = $&;
-	$tail =~ s/$head//;
+	$tail =~ s/$head//;  # would retrieve a,b from M01E5.5a,b
 	$head = uc($head);
 	$seq=$head.$tail;
+	#print $head, "##1##\n";
+	#print $seq, "\##2##\n";
 	if($tail ne ""){
 	  @variants=split(/,/, $tail);
 	  #print "@variants\n";
@@ -244,12 +403,15 @@ sub geneclass_loci_other_name {
 		  #print "Genomic_sequence\t\"$seq\"\t$1\t\"$pmid\"\n";	
 		}
 		else {
-		  push(@Update, "Genomic_sequence\t\"$seq\"\tPaper_evidence\t\"$2\"\n");
-		  push(@Update, "Evidence\tPaper_evidence\t\"$2\"\n");
+		  $cgc_paper=$2;
+                  $cgc_paper =~ s/\[|\]//g;
+
+		  push(@Update, "Genomic_sequence\t\"$seq\"\tPaper_evidence\t\"[$cgc_paper]\"\n");
+		  push(@Update, "Evidence\tPaper_evidence\t\"[$cgc_paper]\"\n");
 		}
 	      }
 	      if ($parts[$i] =~ /(Person_evidence)\s(.+)/){
-		#print $1, "\n";
+		
 		$evidence = $1;
 		$person = $2;
 		$person =~ s/\[|\]//g;
@@ -266,7 +428,6 @@ sub geneclass_loci_other_name {
 	}
 	if ($tail eq "") {
 	  for ($i = 1; $i < $num_parts; $i++){
-	    print $parts[$i],"\n";
 	    if ($parts[$i] =~ /(Paper_evidence)\s(.+)/){
 	      #print $1, "\n";
 	      if ($2 =~ /PMID.+/){
@@ -279,13 +440,16 @@ sub geneclass_loci_other_name {
 		  #print "Genomic_sequence\t\"$seq\"\t$1\t\"$pmid\"\n";	
 	      }
 	      else {
-		  push(@Update, "Genomic_sequence\t\"$seq\"\tPaper_evidence\t\"$2\"\n");
-		  push(@Update, "Evidence\tPaper_evidence\t\"$2\"\n");
+		$cgc_paper=$2;
+                $cgc_paper =~ s/\[|\]//g;
+
+		push(@Update, "Genomic_sequence\t\"$seq\"\tPaper_evidence\t\"[$cgc_paper]\"\n");
+		push(@Update, "Evidence\tPaper_evidence\t\"[$cgc_paper]\"\n");
 	      }
 	    }
-	    if ($parts[$i] =~ /(Person_evidence)\s(.+)/){
-	      push(@Update, $1);
-	      $person = $2;
+	    if ($parts[$i] =~ /Person_evidence\s(.+)/){
+	      #push(@Update, $2);
+	      $person = $1;
 	      $person =~ s/\[|\]//g;
 	      @persons = split(/,/, $person);
 	      foreach (@persons){
@@ -296,6 +460,40 @@ sub geneclass_loci_other_name {
               }
 	    }
 	  }
+	}
+      }
+    }
+    if ($_ =~ /(.+)\s+main name\s(.+)\s+other name\s+(.+)/){
+      $other_name = $2;
+      push(@Update, "\n-R Locus : \"$2\" \"$1\"\n");
+      push(@Update, "\nLocus : \"$1\"\n");
+      @evidence = split(/\s+/, $3);
+
+      if ($evidence[0] eq "Paper_evidence"){
+	#print $evidence[1], "\n";
+	$paper = $evidence[1];
+	$paper =~ s/\[|://g;
+	if ($paper eq "PMID"){
+	  $pmid = $evidence[2];
+	  #print $pmid, "\n";
+	  $pmid =~ s/\]//;
+	  push(@Update, "Other_name\t\"$other_name\"\tPMID_evidence\t\"$pmid\"\n");
+	}
+	else {
+	  $paper = $evidence[1];
+	  $paper =~ s/\[|\]//g;
+	  push(@Update, "Other_name\t\"$other_name\"\tPaper_evidence\t\"[$paper]\"\n");
+	}
+      }
+      if ($3 =~ /Person_evidence\s+(.+)/){
+	
+	$person = $1;
+	$person =~ s/\[|\]//g;
+	@persons = split(/,/, $person);
+	foreach (@persons){
+	  $person = $_;
+	  $person =~ s/^\s//;
+	  push(@Update, "Other_name\t\"$other_name\"\tPerson_evidence\t\"$person\"\n");
 	}
       }
     }
@@ -324,8 +522,6 @@ sub gene_mapping {
   my $two_pt_count=7142;
   my $pos_neg_count=10683;
   
-  
-  
   ############################
   # date of update: for remark
   ############################
@@ -340,7 +536,6 @@ sub gene_mapping {
     chomp;
     
     ######################
-
     # parse multip_pt_data
     ######################
     
@@ -618,25 +813,15 @@ sub create_windows_and_lbl {
                                       "Text",
 				      width => 100,
 				      height => 30
-				     )-> pack(side => 'top', anchor => 'n', fill => 'x'); # takes "Text" inside () 
+				     )-> pack(side => 'top', anchor => 'n', fill => 'x'); # takes "Text" inside ()
 
-}}
+}
+}
+
+
 
 
 __END__
-=start
-$menus[0]->pack(side => 'left');
-$menus[0]->AddItems(["command" => "Open", command => \$open_file],
-                    ["command" => "Make ace file", command => \$make_ace_file],
-                    ["command" => "Upload ace file", command => \$upload_ace_file]
-                   )
 
-$menus[1]->pack(side => 'left');
-=end
-=cut
-$scroll = $txt_frame -> Scrollbar (orient => 'horizontal');
-  $ace_window = $txt_frame -> Entry(relief => 'sunken',
-				    width => 100, 
-				    #height => 30
-				    xscrollcommand => ['set' => $scroll]				   )						
-			   ->pack (-side =>'top', anchor => 'n', fill => 'x');      # takes "Text" inside ()
+
+
