@@ -7,7 +7,7 @@
 # This script interogates an ACEDB database and returns all pfam/Interpro/blastx 
 # data as appropriate and generates the DB_remark for stlace
 #
-# Last updated on: $Date: 2004-04-26 10:36:39 $
+# Last updated on: $Date: 2004-06-09 12:34:14 $
 # Last updated by: $Author: krb $
 
 
@@ -114,12 +114,10 @@ GetOptions(
 	   "debug=s"  => \$debug,
 	   "test"     => \$test,
 	   "source:s" => \$CDS_source_db,
-	   "target:s" => \$remark_target,
 	  );
 
 
 my $tace = &tace;
-my $file = "$remark_target/"."DB_remark.ace";
 my $log;
 my $basedir;
 
@@ -210,7 +208,7 @@ SUBSEQUENCE: foreach my $cds (@sequences) {
 	$protein_obj = $db1->fetch(Protein => $protein);
       }
 
-      @motif = $protein_obj->Motif_homol;
+      (@motif = $protein_obj->Motif_homol) if ($protein_obj->Motif_homol);
       unless($motif[0]) {
 	@pep = $protein_obj->Pep_homol(1);
       }
