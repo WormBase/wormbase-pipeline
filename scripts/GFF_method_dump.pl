@@ -7,7 +7,7 @@
 # Selectively dump GFF for certain acedb methods
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-08-05 15:12:15 $
+# Last edited on: $Date: 2004-08-05 16:40:48 $
 
 
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{CVS_DIR};
@@ -80,8 +80,9 @@ sub check_options {
   unless( @clones ) {
     # -chromosomes
     my %chroms = qw(I 1 II 1 III 1 IV 1 V 1 X 1);
+    my @chrom_keys = keys %chroms;
     unless (@chromosomes ) {
-      @sequences= map("CHROMOSOME_"."$_",@{keys %chroms});
+      @sequences= map("CHROMOSOME_"."$_",@chrom_keys);
       print "Dumping for all chromosomes\n";
     } 
     else {
