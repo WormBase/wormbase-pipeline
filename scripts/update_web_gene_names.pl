@@ -5,7 +5,7 @@
 # completely rewritten by Keith Bradnam from list_loci_designations
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-07-30 08:41:53 $      
+# Last updated on: $Date: 2004-07-30 09:00:08 $      
 #
 # This script should be run under a cron job and simply update the webpages that show
 # current gene names and sequence connections.  Gets info from geneace.  
@@ -103,7 +103,7 @@ sub create_currentDB_loci_pages{
 
   # open text file which will contain all genes
   open (TEXT, ">$www/loci_all.txt") || croak "Couldn't open text file for writing to\n";
-  print TEXT "Gene name, WormBase gene ID, Gene version, CDS name, RNA gene name, pseudogene name, other names, cgc approved?\n";
+  print TEXT "Gene name, WormBase gene ID, Gene version, CDS name (Wormpep ID), RNA gene name, pseudogene name, other names, cgc approved?\n";
 
   foreach my $letter ("a".."z"){
     # Get all Loci
