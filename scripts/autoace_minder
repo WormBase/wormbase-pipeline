@@ -58,7 +58,7 @@ my $scriptdir   = "/wormsrv2/scripts";
 
 # $opt_y="";   # make agp files for the yellow brick road
 
-getopts ('awbchipqfzdrsguymn123');
+getopts ('awbchipqfzdrsguymn123x');
 &usage(0) if ($opt_h);
 
 # -d debug mode modifies $maintainers to reduce e-mail load
