@@ -60,55 +60,23 @@ while (<INPUT>)
 	if($_ =~ m/(SW:\w+|TR:\w+)/)#any "words" prefixed with SW: or TR:
 	  {
 	    $accn_holder = $1;
-	    #print "protein $count $protein[$count] accn is $accn_holder\n";
+	    print "protein $count $protein[$count] accn is $accn_holder\n";
 
-	    #check if the pepace entry has a SWISS-PROT entry
-	    my $worm_protein = $db->fetch(Protein => "WP:$protein[$count]");
-	    
-	    if (defined $worm_protein)
-	      {
-		my @ace_database = $worm_protein->at('DB_info.Database');#returns list of entries in Database field eg "WORMPEP SwissProt"
-		
-		#if the protein does not have a SwissProt ID in Pepace put it on the the list of queries to be done in next batch;
-		my $swiss = grep $_  eq "SwissProt", @ace_database;
-		unless($swiss)
-		  {
-		    $accession[$count] = $accn_holder;
-		    #build hash of wormpep to accession no.
-		    $wormpep_acc{$protein[$count]} = $accession[$count];
-		    $count++;
-		  }	
-	      }
-	    else 
-	      {
-		print LOG "something funny about $accn_holder  - get nothing back from $pepace when trying to fetch it\n";
-	      }
+	    $accession[$count] = $accn_holder;
+	    #build hash of wormpep to accession no.
+	    $wormpep_acc{$protein[$count]} = $accession[$count];
+	    $count++;
+
 	  }
 	else
 	  {
 	    print LOG "no TR: SW: accn in $_\n";
 	  }
 	
-#	if($count == 2000)#limits the no of requests in pfetch call per loop
+#	if($count == 2000)
 #	  {
 #	    #DEBUG########################################
-#	    #print "wormpep_acc hash after building\n";
-#	    #foreach my $worm (keys %wormpep_acc){
-#	    #  print "$worm","\t",$wormpep_acc{$worm},"\n";}
-#	    #############################################
-	    
-#	    outputToAce(\%wormpep_acc, \@accession, \$ace_output, \$old_ip_output, \$errorLog);
-
-#	    #reset batch loop variables
-#	    $count = 0;
-#	    %idextract = ();
-#	    @accession = "";
-#	    %wormpep_acc = ();
-#	    @protein = "";
-#	    @accession = "";
-#	    @proteinID = "";	    
-
-#	    #last;#only included for testing on small sample sets
+#	    last;#only included for testing on small sample sets
 #	  }
       }
     else
@@ -118,18 +86,21 @@ while (<INPUT>)
   }
 
 #hash and accession array are built in one go 
-#now submit 2000 unit slices to outputToAce
+#now submit unit slices to outputToAce
+my $chunk_size = 2000;
 my $last_ind = $#accession;
-my $upper = 1999;
+my $upper = $chunk_size -1;
 my $lower = 0;
 my @array_chunk;
-while ($upper < $last_ind - 2000)
+
+while ( $lower <= $last_ind ) 
   {
      @array_chunk = @accession[$lower .. $upper];
     outputToAce(\%wormpep_acc, \@array_chunk, \$ace_output, \$old_ip_output, \$errorLog);
-    $lower += 2000;
-    $upper += 2000;
+    $lower += $chunk_size;
+    $upper += $chunk_size;
   }
+
 @array_chunk = @accession[$lower .. $last_ind];
 #process the remainders
 outputToAce(\%wormpep_acc, \@array_chunk, \$ace_output, \$old_ip_output, \$errorLog);
@@ -138,24 +109,8 @@ close OLD_IP_OUTPUT;
 close ACE_OUTPUT;
 $db->close();
 
-#update pepace
-my $command=<<END;
-pparse $temp_clearOldInterPro 
-  save 
-  pparse $temp_acefile
-  save
-  quit
-END
-  
-  open (WRITEDB, "| tace $pepace >> $log") || die "cant do the tace command on $pepace";
-print WRITEDB $command;
-close WRITEDB;
-
-#modification of database completed
-
-#===========================================================================
-
-print LOG "parsed files:\n $temp_clearOldInterPro \n $temp_acefile \n\nto database $db\n\n";
+print LOG "Files available -\n $temp_acefile\n
+$temp_clearOldInterPro\n";
 print LOG "SubGetSwissId finished at ",`date`,"\n";
 
 close LOG;
@@ -168,23 +123,23 @@ $maintainer = "ar2\@sanger.ac.uk";
 #===========================================================================
 sub outputToAce #(\%wormpep_acc, \@accession \$ace_output, \$errorLog)
   {
-    my ($wormpep_acc, $accession, $ace_ouput, $old_ip_output, $errorLog) = @_;
+    my ($wormpep_acc, $chunk, $ace_ouput, $old_ip_output, $errorLog) = @_;
     #$ace_output is filehandle of file creatred in calling script
 
     #construct pfetch command string by concatenating accession no's
-    my $submitString = "pfetch -F"." @accession";#get full Fasta record (includes Interpro motifs)
+    my $submitString = "pfetch -F"." @$chunk";#get full Fasta record (includes Interpro motifs)
     my %idextract;
-    print "$submitString\n";
-    my $fasta_output = "../fasta_output";
+
+    #create the fasta record in wormpep dir (and remove it after use)
+    my $ver = &get_wormbase_version();
+    print "\n\n$submitString\n";
+    my $fasta_output = "~/fasta_output";#"/wormsrv2/WORMPEP/wormpep$ver/fasta_output";
     open (FASTA,">$fasta_output")||die " cant open fasta_output";# > clears before each use 
     #this submits request and put results in file
     print FASTA `$submitString`;
     close FASTA;
     
     #build hash of accession : Swissprot/Trembl ID
-
-    # ! ! ! ! ! CHANGING RECORD SEPARATOR ! ! ! ! ! ###
- #   $/ = "\/\/"; #//
     open (FASTA,"<$fasta_output")|| die "cant open fasta record";#read
     #print FASTA "This is a temp file created by SubGetSwissId.pl and can be removed -unless script is running!";
     my %interpro;
@@ -231,6 +186,7 @@ sub outputToAce #(\%wormpep_acc, \@accession \$ace_output, \$errorLog)
 		    
       }
     close FASTA;
+    `rm -f $fasta_output`;
     # ! ! ! ! resetting record separator ! ! ! ! #
    # $/ = '\n'; #\n
 
@@ -255,8 +211,14 @@ sub outputToAce #(\%wormpep_acc, \@accession \$ace_output, \$errorLog)
 	elsif($Database eq "TR"){$Database = "TrEMBL";}
 	else{print $errorLog $peptide,"\t",$full_accn,"\tfrom unknown database\n";}
 
+	
+
 	my @splitInterPros;
 	my $databaseID = $idextract{$accn};
+	#catch the new SwissProt entries
+	if( $databaseID =~q /CAEEL/){
+	  $Database = "SwissProt";
+	}
 	if(defined($databaseID))
 	  {
 	   #remove any old InterPro entries for any proteins with SP / Tr Id's
