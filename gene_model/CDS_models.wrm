@@ -1061,6 +1061,7 @@
                                                         stRNA UNIQUE Text         // [010723 dl]
                                                         misc_RNA UNIQUE Text
                                                         miRNA UNIQUE Text         // [020306 kj]
+		                Isoform #Evidence
                                 Start_not_found                                   // [020306 kj]
                                 End_not_found                                     // [020306 kj]
                 Method UNIQUE ?Method                  
