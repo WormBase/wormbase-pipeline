@@ -45,6 +45,9 @@ my @filenames = qw( overlapping_genes_cam overlapping_genes_stl EST_in_intron_ca
 
 print LOG "copying files from /wormsrv2/autoace/CHECKS/ to /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/$WSversion/Checks\n"; 
 
+system("mkdir /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/$WSversion") && die "Cannot create web $WSversion dir $!\n";
+system("mkdir /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/$WSversion/Checks") && die "Cannot create web $WSversion/Checks dir $!\n";
+
 foreach my $chrom (@chrom) {
     foreach my $file (@filenames) {
         print LOG "Copying file CHROMOSOME_$chrom.$file to /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/$WSversion/Checks\n";
@@ -74,18 +77,22 @@ for (my $n = 0; $n < @filenames; $n++) {
 
 print LOG "Generating new html files in /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/$WSversion/Checks/\n";
 
+my ($newnumber) = ($WSversion =~ /(\d+$)/);
+my $oldnumber = $newnumber -1;
+my $oldWSversion = "WS".$oldnumber;
+
 for (my $m = 0; $m < @filenames; $m++) {    
     my $fh     = gensym();
     my $newfh  = gensym();
     my $file   = $filenames[$m];
     my $count = 0;
     
-    open ($fh, "/nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/$WSversion/Checks/$file.html") 
+    open ($fh, "/nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/$oldWSversion/Checks/$file.html") 
         || die "Cannot open old html file $!\n";
-    open ($newfh, ">/nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/$WSversion/Checks/$file.html.new")
+    open ($newfh, ">/nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/$WSversion/Checks/$file.html")
         || die "Cannot open new html file $!\n";
     
-    print LOG "Generating /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/$WSversion/Checks/$file.html.new\n";
+    print LOG "Generating /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/$WSversion/Checks/$file.html\n";
     
     while (<$fh>) {
         if ((/<TD ALIGN=\"center\" COLSPAN=\"2\"><B>\s*(\d+)\s+\[\s*\d+\]<\/B><\/TD>/) && ($count < 6)) {
@@ -109,22 +116,6 @@ for (my $m = 0; $m < @filenames; $m++) {
     close $fh    || die "Cannot close old html file $!\n";
     close $newfh || die "Cannot close new html file $!\n";
 }
-
-#####################
-# replace old files #
-#####################
-
-print LOG "Replacing old files\n"; 
-
-foreach my $file (@filenames) {
-    print LOG "Deleting /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/current/Checks/$file.html\n";
-    unlink ("/nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/current/Checks/$file.html") 
-        || die "Cannot delete old file $file $!\n";
-    print LOG "Renaming /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/current/Checks/$file.html.new\n\n";    
-    rename ("/nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/current/Checks/$file.html.new",
-        "/nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/current/Checks/$file.html") 
-        || die "Cannot rename old file $file $!\n";
-}    
 
 #################
 # mail log file #
