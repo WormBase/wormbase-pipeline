@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.0 -w
+#!/usr/local/bin/perl5.6.1 -w
 #
 # make_acefiles 
 #
@@ -7,16 +7,16 @@
 # Generates the .acefiles from the primary databases as a prelim for building
 # autoace.
 #
-# Last updated by: $Author: ar2 $                     
-# Last updated on: $Date: 2002-11-13 17:48:01 $       
+# Last updated by: $Author: dl1 $                     
+# Last updated on: $Date: 2002-12-09 14:37:06 $       
 
 #################################################################################
 # Variables                                                                     #
 #################################################################################
 
 $|=1;
-use lib "/wormsrv2/scripts/";   
 use strict;
+use lib "/wormsrv2/scripts/";   
 use Wormbase;
 use IPC::Open2;
 use IO::Handle;
@@ -29,6 +29,11 @@ use Getopt::Long;
 my $maintainers = "All";
 my $rundate     = `date +%y%m%d`;   chomp $rundate;
 my $runtime     = `date +%H:%M:%S`; chomp $runtime;
+my $WS_version  = &get_wormbase_version_name;
+
+# touch logfile for run details
+$0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
+my $logfile = "/wormsrv2/logs/$1.${WS_version}.`date +%y%m%d`.$$";
 
  ##############################
  # command-line options       #
@@ -36,11 +41,11 @@ my $runtime     = `date +%H:%M:%S`; chomp $runtime;
 
 my $help;       # Help perdoc
 my $db;         # Database name for single db option
-my $debug;      # Debug mode, verbose output to dl1 only
+my $debug;      # Debug mode, verbose output to runner only
 my $dev;        # Write to development stream (/wormsrv1/ not /wormsrv2/)
 
 GetOptions (
-	    "debug"     => \$debug,
+	    "debug=s"   => \$debug,
 	    "help"      => \$help,
 	    "db=s"      => \$db,
 	    "dev"       => \$dev
@@ -67,25 +72,18 @@ if ($dev) {
 # help page
 &usage("Help") if ($help);
 
+# no debug name
+&usage("Debug") if ((defined $debug) && ($debug eq ""));
+
 # single database mode
 if ($db) {
     &usage("Bad_database_name") unless (($db eq "camace") || ($db eq "stlace") || ($db eq "briggsae") || ($db eq "cshace") || ($db eq "citace") || ($db eq "geneace"));
 }
 
-# set dl1 as only mail recipient if running debug mode
-$maintainers = "dl1\@sanger.ac.uk" if ($debug);
-
-#################################################################################
-# Get the WS version number and set the wormpep release number                  #
-#################################################################################
-
-my $WS_version = &get_wormbase_version_name;
-
  ########################################
  # Open logfile                         #
  ########################################
 
-my $logfile = "/wormsrv2/logs/make_acefiles.${WS_version}.$rundate.$$";
 system ("/bin/touch $logfile");
 open (LOG,">>$logfile") or die ("Could not create logfile\n");
 LOG->autoflush();
@@ -338,6 +336,12 @@ sub usage {
 	system ('perldoc',$0);
 	exit (0);
     }
+    elsif ($error eq "Debug") {
+	# No debug bod named
+	print "You haven't supplied your name\nI won't run in debug mode until i know who you are\n";
+        exit (0);
+    }
+
 }
 
 __END__
