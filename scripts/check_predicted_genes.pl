@@ -3,16 +3,19 @@
 # check_predicted_genes.pl
 #
 # by Keith Bradnam aged 12 and a half
-# 15/06/01
+#
+# Last updated on: $Date: 2002-11-20 10:28:40 $
+# Last updated by: $Author: krb $
 #
 # see pod documentation at end of file for more information about this script
 
-use Ace;
-use IO::Handle;
-use Getopt::Long;
 use strict;
 use lib "/wormsrv2/scripts/";
 use Wormbase;
+use Ace;
+use IO::Handle;
+use Getopt::Long;
+
 $|=1;
 
 our($verbose,$db_path,$log);
@@ -36,11 +39,8 @@ die "Please use -database <path> specify a valid database directory.\n\n" if (!d
 
 # Specify which tace to use if you are using -program flag
 
-#my $tace = &tace;
-#going back to old version
-my $tace = glob("~wormpub/ACEDB/bin.ALPHA_4/tace_4_9f");
+my $tace = &tace;
 my $db = Ace->connect(-path=>$db_path, -program=>$tace) || die "Couldn't connect to $db_path\n", Ace->error;
-
 
 
 # set up log file for output, use specified command line argument where present or write to screen
@@ -72,13 +72,20 @@ LOG->autoflush();
 
 my @predicted_genes = $db->fetch (-query => 'FIND Predicted_gene');
 my $gene_count=@predicted_genes;
-print LOG "\nChecking $gene_count predicted genes in '$db_path'\n\n";
+print LOG "Checking $gene_count predicted genes in '$db_path'\n\n";
 print "\nChecking $gene_count predicted genes in '$db_path'\n\n" if $verbose;;
 
 
 ################################
 # Run checks on genes
 ################################
+
+# create separate arrays for different classes of errors (1 = most severe, 4 = least severe)
+our @error1;
+our @error2;
+our @error3;
+our @error4;
+
 
 CHECK_GENE:
 foreach my $gene (@predicted_genes){
@@ -89,7 +96,7 @@ foreach my $gene (@predicted_genes){
   # check that 'Source' tag is present and if so then grab parent sequence details
   my $source = $gene_object->Source;
   if (!defined ($source)){
-    print LOG "Gene error - $gene: has no Source tag, cannot check DNA\n";
+    push(@error1,"Gene error - $gene: has no Source tag, cannot check DNA\n");
     print "Gene error - $gene: has no Source tag, cannot check DNA\n" if $verbose;
     next CHECK_GENE;
   }
@@ -105,7 +112,8 @@ foreach my $gene (@predicted_genes){
   for($i=1; $i<@exon_coord2;$i++){
     my $intron_size = ($exon_coord1[$i] - $exon_coord2[$i-1] -1);
     print "Gene warning - $gene has a small intron ($intron_size bp)\n" if (($intron_size < 31)  && $verbose);
-    print LOG "Gene warning - $gene has a small intron ($intron_size bp)\n" if ($intron_size < 31);
+    push(@error3,"Gene warning - $gene has a small intron ($intron_size bp)\n") if ($intron_size > 20 && $intron_size < 26);
+    push(@error4,"Gene warning - $gene has a small intron ($intron_size bp)\n") if ($intron_size > 25 && $intron_size < 31);
 
   }
 
@@ -115,7 +123,7 @@ foreach my $gene (@predicted_genes){
     for ($j=$i+1;$j<@exon_coord1;$j++){
       if(($end > $exon_coord1[$j]) && ($start < $exon_coord2[$j])){
 	print "Gene error - $gene: exon inconsistency, exons overlap\n" if $verbose;
-	print LOG "Gene error - $gene: exon inconsistency, exons overlap\n";
+	push(@error1,"Gene error - $gene: exon inconsistency, exons overlap\n");
       }
     }
   }
@@ -128,38 +136,38 @@ foreach my $gene (@predicted_genes){
 
   if ($gene_object->get('Start_not_found')){
     $start_tag = "present";
-    print LOG "Gene warning - $gene: Start_not_found tag present\n";
+    push(@error2,"Gene warning - $gene: Start_not_found tag present\n");
     print "Gene warning - $gene: Start_not_found tag present\n" if $verbose;
   }
   
   if ($gene_object->get('End_not_found')){
     $end_tag = "present";
-    print LOG "Gene warning - $gene: End_not_found tag present\n";
+    push(@error2,"Gene warning - $gene: End_not_found tag present\n");
     print "Gene warning - $gene: End_not_found tag present\n" if $verbose;
   }
 
   # check species is correct
   my $species = "";
   ($species) = ($gene_object->get('Species'));
-  print LOG "Gene error - $gene: species is $species\n" if ($species ne "Caenorhabditis elegans");  
+  push(@error3,"Gene error - $gene: species is $species\n") if ($species ne "Caenorhabditis elegans");  
   print "Gene error - $gene: species is $species\n" if ($species ne "Caenorhabditis elegans" && $verbose);
 
   # check Method isn't 'hand_built'
   my $method = "";
   ($method) = ($gene_object->get('Method'));
-  print LOG "Gene error - $gene: method is hand_built\n" if ($method eq 'hand_built');
+  push(@error3,"Gene error - $gene: method is hand_built\n") if ($method eq 'hand_built');
   print "Gene error - $gene: method is hand_built\n" if ($method eq 'hand_built' && $verbose);
 
   # check From_laboratory tag is present
   my $laboratory = ($gene_object->From_laboratory);
-  print LOG "Gene error - $gene: does not have From_laboratory tag\n" if (!defined($laboratory));
+  push(@error3, "Gene error - $gene: does not have From_laboratory tag\n") if (!defined($laboratory));
   print "Gene error - $gene: does not have From_laboratory tag\n" if (!defined($laboratory) && $verbose);
 
 
   # then run misc. sequence integrity checks
   my $dna = $gene->asDNA();
   if(!$dna){
-    print LOG "Gene error - $gene: can't find any DNA to analyse\n";
+    push(@error1,"Gene error - $gene: can't find any DNA to analyse\n");
     print "Gene error - $gene: can't find any DNA to analyse\n" if $verbose;
     next CHECK_GENE;
   }
@@ -168,6 +176,30 @@ foreach my $gene (@predicted_genes){
   &test_gene_sequence_for_errors($gene,$start_tag,$end_tag,$dna,$gene_object);
 
 }
+
+
+# print warnings to log file, log all category 1 errors, and then fill up a top
+# 20 with what is left
+
+my $count_errors =0;
+foreach my $error (@error1){
+  $count_errors++;
+  print LOG "$count_errors) $error";
+}
+while ($count_errors < 20){
+  foreach my $error (@error2){
+    $count_errors++;
+    print LOG "$count_errors) $error";
+    last if $count_errors > 20;
+  }
+  foreach my $error (@error3){
+    $count_errors++;
+    print LOG "$count_errors) $error";
+    last if $count_errors > 20;
+  }
+}
+
+
 
 print LOG "\ncheck_predicted_genes.pl ended at ",`date`,"\n";;
 close(LOG);
@@ -195,44 +227,47 @@ sub test_gene_sequence_for_errors{
   my $stop_codon = substr($dna,-3,3);   
 
   # check for length errors
+  my $warning;
   if ($gene_length < 100){
-    print LOG "Gene warning - $gene is very short ($gene_length bp), ";
+    $warning = "Gene warning - $gene is very short ($gene_length bp), ";
     print "Gene warning - $gene is very short ($gene_length bp), " if $verbose;
     if(defined($gene_object->at('Properties.Coding.Confirmed_by'))){
-      print LOG "gene is Confirmed\n";
+      $warning .= "gene is Confirmed\n";
       print "gene is Confirmed\n" if $verbose;
     }
     elsif(defined($gene_object->at('Visible.Matching_cDNA'))){
-      print LOG "gene is Partially_confirmed\n";
+      $warning .= "gene is Partially_confirmed\n";
       print "gene is Partially_confirmed\n" if $verbose;
     }
     else{
-      print LOG "gene is Predicted\n";
+      $warning .= "gene is Predicted\n";
       print "gene is predicted\n" if $verbose;
     }
+    push(@error3, $warning);
   }
   elsif($gene_length < 150){
     if (defined($gene_object->at('Properties.Coding.Confirmed_by'))){
-#      print LOG "Gene warning - $gene is short ($gene_length bp) and is Confirmed\n";
-#      print "Gene warning - $gene is short ($gene_length bp) and is Confirmed\n" if $verbose;
+      $warning = "Gene warning - $gene is short ($gene_length bp) and is Confirmed\n";
+      print "Gene warning - $gene is short ($gene_length bp) and is Confirmed\n" if $verbose;
     }    
     elsif(defined($gene_object->at('Visible.Matching_cDNA'))){
-      print LOG "Gene warning - $gene is short ($gene_length bp) and is Partially_confirmed\n";
+      $warning .= "Gene warning - $gene is short ($gene_length bp) and is Partially_confirmed\n";
       print "Gene warning - $gene is short ($gene_length bp) and is Partially_confirmed\n" if $verbose;
     }
     else{
-      print LOG "Gene warning - $gene is short ($gene_length bp) and is Predicted\n";
+      $warning .= "Gene warning - $gene is short ($gene_length bp) and is Predicted\n";
       print "Gene warning - $gene is short ($gene_length bp) and is Predicted\n" if $verbose;
     }
+    push(@error4, $warning);
   }
 
   if ($remainder != 0){
     if (($end_tag ne "present") && ($start_tag ne "present")){
-      print LOG "Gene error - $gene: length ($gene_length bp) not divisible by 3, Start_not_found & End_not_found tags MISSING\n";
+      push(@error1,"Gene error - $gene: length ($gene_length bp) not divisible by 3, Start_not_found & End_not_found tags MISSING\n");
       print "Gene error - $gene: length ($gene_length bp) not divisible by 3, Start_not_found & End_not_found tags MISSING\n" if $verbose;
     }
     else{
-      print LOG "Gene error - $gene: length ($gene_length bp) not divisible by 3, Start_not_found and/or End_not_found tag present\n";
+      push(@error2,"Gene error - $gene: length ($gene_length bp) not divisible by 3, Start_not_found and/or End_not_found tag present\n");
       print "Gene error - $gene: length ($gene_length bp) not divisible by 3, Start_not_found and/or End_not_found tag present\n" if $verbose;
     }   
   }   
@@ -241,11 +276,11 @@ sub test_gene_sequence_for_errors{
   # look for incorrect stop codons
   if (($stop_codon ne 'taa') && ($stop_codon ne 'tga') && ($stop_codon ne 'tag')){
     if($end_tag ne "present"){
-      print LOG "Gene error - $gene: '$stop_codon' is not a valid stop codon. End_not_found tag MISSING\n";
+      push(@error1, "Gene error - $gene: '$stop_codon' is not a valid stop codon. End_not_found tag MISSING\n");
       print "Gene error - $gene: '$stop_codon' is not a valid stop codon. End_not_found tag MISSING\n" if $verbose;
     }
     else{
-      print LOG "Gene error - $gene: '$stop_codon' is not a valid stop codon. End_not_found tag present\n";
+      push(@error2,"Gene error - $gene: '$stop_codon' is not a valid stop codon. End_not_found tag present\n");
       print "Gene error - $gene: '$stop_codon' is not a valid stop codon. End_not_found tag present\n" if $verbose;
     }
   }
@@ -254,11 +289,11 @@ sub test_gene_sequence_for_errors{
   # look for incorrect start codons
   if ($start_codon ne 'atg'){
    if($start_tag ne "present"){
-      print LOG "Gene error - $gene: '$start_codon' is not a valid start codon. Start_not_found tag MISSING\n";
+      push(@error1,"Gene error - $gene: '$start_codon' is not a valid start codon. Start_not_found tag MISSING\n");
       print "Gene error - $gene: '$start_codon' is not a valid start codon. Start_not_found tag MISSING\n" if $verbose;
     }
     else{
-      print LOG "Gene error - $gene: '$start_codon' is not a valid start codon. Start_not_found tag present\n";
+      push(@error2, "Gene error - $gene: '$start_codon' is not a valid start codon. Start_not_found tag present\n");
       print "Gene error - $gene: '$start_codon' is not a valid start codon. Start_not_found tag present\n" if $verbose;
     }
   }
@@ -276,7 +311,7 @@ sub test_gene_sequence_for_errors{
       my $previous_sequence = substr($dna, $j-11,10);
       my $following_sequence = substr($dna, $j+2, 10);
       my $offending_codon = substr($dna, $j-1, 3);
-      print LOG "Gene error - $gene: internal stop codon at position $j ...$previous_sequence $offending_codon $following_sequence...\n";      
+      push(@error1, "Gene error - $gene: internal stop codon at position $j ...$previous_sequence $offending_codon $following_sequence...\n");      
       print "Gene error - $gene: internal stop codon at position $j ...$previous_sequence $offending_codon $following_sequence...\n" if $verbose;   
     }
   }			       
@@ -284,7 +319,7 @@ sub test_gene_sequence_for_errors{
   # look for non-ACTG characters
   if ($dna =~ /[^acgt]/i){
     $dna =~ s/[acgt]//g;
-    print LOG "Gene error - $gene: DNA sequence contains the following non-ATCG characters: $dna\n"; 
+    push(@error2, "Gene error - $gene: DNA sequence contains the following non-ATCG characters: $dna\n"); 
     print "Gene error - $gene: DNA sequence contains the following non-ATCG characters: $dna\n" if $verbose;
   }
 
@@ -312,6 +347,7 @@ __END__
 
 This script is designed to check the validity of predicted gene objects from any wormbase (or
 other acedb) database.  The script will only analyse objects in the 'Predicted_gene' class.
+The script emails the top 20 problems each day (sorted by severity).
 
 
 =over 4
