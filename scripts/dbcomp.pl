@@ -6,7 +6,7 @@
 # Compares this number to those from a second database.
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-12-01 11:54:26 $      
+# Last updated on: $Date: 2004-03-10 16:37:53 $      
 
 
 use strict;
@@ -332,6 +332,7 @@ Accession_number
 Allele
 Anatomy_name
 Anatomy_term
+Antibody
 Author
 CDS
 Cell
@@ -349,10 +350,12 @@ Expr_pattern
 Expr_profile
 Feature
 Feature_data
+Gene
 Gene_class
 Gene_name
 Gene_regulation
 GO_term
+Homology_group
 Homol_data
 Journal
 Keyword
@@ -360,12 +363,12 @@ Laboratory
 Life_stage
 Lineage
 Locus
+LongText
 Map
 Method
-Microarray_aff
 Microarray_experiment
-Microarray_result
 Microarray_results
+Model
 Motif
 Movie
 Multi_pt_data
@@ -373,6 +376,7 @@ Oligo
 Oligo_set
 Operon
 Paper
+Paper_name
 PCR_product
 Peptide
 Person
@@ -386,6 +390,9 @@ Rearrangement
 Reference
 Repeat_Info
 RNAi
+SAGE_tag
+SAGE_transcript
+SAGE_experiment
 Sequence
 Session
 SK_map
@@ -393,8 +400,8 @@ Species
 Strain
 Table
 Tag
-Transgene
 Transcript
+Transgene
 Transposon
 UTR
 __END__
