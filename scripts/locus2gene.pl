@@ -7,257 +7,57 @@
 # A script to convert ?Locus objects into the new ?Gene object
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-01-30 13:24:44 $   
+# Last updated on: $Date: 2004-02-04 16:43:50 $   
 
 use strict;
-use lib "/wormsrv2/scripts/";
+use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
-use Ace;
+use Getopt::Long;
 
 
-# open a local database connection
-my $db = Ace->connect(-path  => '/wormsrv1/geneace/');
+################################################################
+# set up input/output streams
+################################################################
 
-# two output streams for good (i.e. data converted ok) and bad data
-system("cp good_data.ace good_data.backup");
-system("cp bad_data.ace bad_data.backup");
+my $file; # where input file is located
+GetOptions ("file=s"   => \$file);
 
-open(GOOD,">good_data.ace") || die "Couldn't write to 'good_data.ace'\n";
-open(BAD,">bad_data.ace") || die "Couldn't write to 'bad_data.ace'\n";
+open(IN,"<$file") || die "Can't open input file\n";
+open(OUT,">$file.gene") || die "Couldn't open output file\n";
 
 
-###################################################################
-# Main loop, grab loci objects and loop through each locus object #
-###################################################################
 
-$db->timestamps(1);
+################################################################
+# misc. variables
+################################################################
 
-my @loci = $db->fetch(-class => 'Locus',
-		      -name  => '*');
+# pattern to match timestamps
+my $ts = "-O \"(\\d{4}\-\\d{2}\-\\d{2}_\\d{2}:\\d{2}:\\d{2}\.?\\d?_\\S+|original)\"";
+my $id = 1; # the numerical part of the gene ID
+my $date = "2004-02-04";
+$/ = ""; # reset input line separator
 
-my $errors = 0;
-my $id = 1;
 
-# need hash to keep locus name -> WBgn name connections
-my %genes;
 
-foreach my $locus (@loci){
-  my $cgc_name;
-  my $public_name;
-  my $object;
-  my $species = $locus->Species;
+# process input file, changing lines as appropriate
 
-  print "\nLOCUS: $locus\n";
+while(<IN>){
 
-  # check for various potential errors in the Locus object
-  my $warnings = &test_locus_for_errors($locus);
+  my $id_padded = sprintf "%08d" , $id;
+  my $name = "WBGene$id_padded";  
 
-  # grab Locus as an object
-  $object = $locus->asAce;
-#  my $ts = $locus->timestamp if $locus;
-#  print "$ts\n";
-  ##########################################
-  # NO warnings? Ok to process object
-  ##########################################
-  if(!defined($warnings)){
-    
-    ###############################################################################
-    # Process if Gene, and try to catch anything that falls through if not a Gene
-    ###############################################################################
-    if(defined($locus->at('Type.Gene'))){  
-      # assign new Gene id and public_name
-      ($object,$warnings) = &assign_gene_details($locus,$object,$species,$warnings);
-    }    
-    elsif(!defined($locus->at('Type.Polymorphism')) && !defined($locus->at('Type.Gene_cluster'))){
-      $warnings .= "WARNING: $locus - Unknown locus object\n";
-      $errors++;
-    }    
-  }
+  s/^Locus :.*/Gene : \"$name\"\nLive\nVersion 1\nVersion_change 1 now \"Bradnam KR\" Imported \"Initial conversion from geneace\"\nRemark \"Gene created on $date\"/;
 
-  ######################################################
-  # Warnings? Don't process, print to separate out file
-  ########################################################
-
-  # tidy up object
-  $object = &tidy_object($object,$locus);
-
-  if($warnings){    
-    print BAD "$warnings\n";
-    print BAD "$object\n\n" if ($object);
-  }
-  else{
-    print GOOD "$object\n\n" if ($object);
-  }   
+  $id++;
 }
 
-print "\nNumber of errors to fix = $errors\n";
 
-
-################
-# C'est finis! #
-################
-close(GOOD);
-close(BAD);
+# tidy up
+close(IN);
+close(OUT);
 exit(0);
 
 
-#####################################################################################
-# The Subroutines!!!
-#####################################################################################
-
-
-sub test_locus_for_errors{
-  my $locus = shift;
-  my $warnings;
-
-  # test for Map AND !NEXT
-  if($locus->at('Map')){
-    my $map = $locus->Map;
-    if (!defined($map)){
-        $warnings .= "ERROR 1: $locus has a 'Map' tag but that tag has no map value!\n";
-	$errors++;
-      }
-  }
-
-  # test for more than one gene class
-  if(defined($locus->at('Name.Gene_class'))){
-    my @gene_classes = $locus->at('Name.Gene_Class');
-    if(scalar(@gene_classes) > 1){
-      $warnings .= "ERROR 2: $locus has more than one Gene_class\n";
-      $errors++;
-    }    
-  }
-
-  # test for no Type tag
-  if(!defined($locus->at('Type'))){  
-    $warnings .= "ERROR 3: $locus has no Type tag present\n";
-    $errors++;
-  }
-
-  # test for Gene AND !Species 
-  if(defined($locus->at('Type.Gene')) && !defined($locus->at('Species'))){
-    $warnings .= "ERROR 4: $locus has a 'Gene' tag but not a 'Species' tag\n";;
-    $errors++;
-  }
-
-  # test for !Gene AND Gene_class 
-  if(!defined($locus->at('Type.Gene')) && defined($locus->at('Name.Gene_class'))){
-    $warnings .= "ERROR 5: $locus has a 'Gene_class' tag but not a 'Gene' tag\n";
-    $errors++;
-  }
-
-  # test for polymorphisms without a defined type
-#  if(defined($locus->at('Type.Polymorphism')) && !defined($locus->Polymorphism)){
-#    $warnings .= "ERROR 6: $locus has a 'Polymorphism' tag but no associated info\n";
-#    $errors++;
-#  }
-
-  # test for no Gene tag AND Genomic_sequence tag
-  if(!defined($locus->at('Type.Gene')) && defined($locus->at('Molecular_information.Genomic_sequence'))){
-    $warnings .= "ERROR 7: $locus has 'Genomic_sequence' tag but no 'Gene' tag\n";
-    $errors++;
-  }
-
-  # test for Genomic_sequence tag but no value   
-  if(defined($locus->at('Molecular_information.CDS')) && !defined($locus->CDS)){
-    $warnings .= "ERROR 8: $locus has 'CDS' tag but no associated value\n";
-    $errors++;
-  }
-
-  # test for more than one Genomic_sequence tag, but need to allow for splice variants. A bit tricky this
-  # and I think my RE (which just looks for word.number.letter) might allow some errors to creep through.  
-  if(defined($locus->at('Molecular_information.CDS'))){
-    my @genomic_sequences = $locus->CDS;
-    if(scalar(@genomic_sequences)>1){
-      my @problems = $locus->at('Molecular_information.CDS');
-      foreach my $problem (@problems){
-	if ($problem !~ m/[\w\d]+\.\d+[a-z]/){
-	  $warnings .= "ERROR 9: $locus has multiple 'CDS' tags (see $problem)\n";
-	  $errors++;
-	}
-      }
-    }
-  }
-
-  # test for Polymorphism AND Gene tags both present
-  if(defined($locus->at('Type.Gene')) && defined($locus->at('Type.Polymorphism'))){  
-    $warnings .= "ERROR 10: $locus has a 'Polymorphism' tag AND 'Gene' tag\n";
-    $errors++;
-  }
-
-
-  # test for Canonical_gene tag present
-  if(defined($locus->at('Molecular_information.Canonical_gene'))){  
-    $warnings .= "ERROR 12: $locus has a 'Canonical_gene' tag\n";
-    $errors++;
-  }
-  
-
-  # Look for Gene_class tag in non-gene objects 
-  if(!defined($locus->at('Type.Gene'))){
-    if(defined($locus->at('Name.Gene_class'))){
-      $warnings .= "ERROR 16: Gene_class tag in non-gene!\n";
-      $errors++;
-    }
-  }
-
-  # test for Other_name tag but no value   
-  if(defined($locus->at('Name.Other_name')) && !defined($locus->Other_name)){
-    $warnings .= "ERROR 17: $locus has 'Other_name' tag but no associated value\n";
-    $errors++;
-  }
-  return($warnings);
-}
-
-################################################################
-# Routine to assign a new gene id and CGC_name, Public_name etc.
-################################################################
-
-sub assign_gene_details{
-  my $locus = shift;
-  my $object = shift;
-  my $species = shift;
-  my $warnings = shift;
-  my $cgc_name;
-  my $sequence_name;
-  my @sequence_names;
-  my $other_name;
-  my $public_name;
-  my $id_padded = sprintf "%08d" , $id;
-  $id++;
-
-  # get approximate age of gene from timestamp
-  my $date = &ts($locus,"Type.Gene");
-  $date =~ s/_.*//;
-
-  # Add wormbase ID, Live tag, version number, and version change line, 
-  # but first check that gene ID hasn't already been assigned by an earlier cross link.
-
-  my $assigned_gene_name;
-  if(defined($genes{$locus})){
-    print "$locus = $genes{$locus} - already existed\n";
-    $assigned_gene_name = $genes{$locus};
-  }
-  else{
-    $genes{$locus} = "WBgn:".$id_padded;
-    print "$locus = WBgn:$id_padded\n";
-    $assigned_gene_name = "WBgn:$id_padded";  
-  }
-  $object =~ s/^Locus :.*/Gene : \"$assigned_gene_name\"\nLive\nVersion 1\nVersion_change 1 now \"Bradnam KR\" Imported \"Initial conversion from geneace\"\nRemark \"Gene created on $date\"/;
-  chomp($object); # necessary if we are to append to object, have to remove the trailing "\n"
-  
-  # create CGC_name if CGC_approved tag is present
-  if(defined($locus->at('Type.Gene.CGC_approved'))){
-    $cgc_name = $locus;
-    $object .= "CGC_name \"$cgc_name\"\n";
-  }
-  else{
-    # Have to be careful, if it is a Gene but not CGC_approved, you need to add the Locus name
-    # as an 'Other_name' in $object as well as setting $other_name
-    $other_name = $locus;
-    $object .= "Other_name \"$other_name\"\n";	
-  }
-  
   # Calculate 'Sequence_name' if Genomic_sequence tag is present
   if(defined($locus->at('Molecular_information.Genomic_sequence'))){
     @sequence_names = $locus->at('Molecular_information.Genomic_sequence');
@@ -391,35 +191,5 @@ sub tidy_object{
     }
     
   }
-  # Gene clusters, do similar thing as above
-#  if ($object =~ m/Gene_cluster\s+Contains\s+\"(\w{3}-[\.\d]+)\"/){
-    while(($object =~ m/Gene_cluster\s+Contains\s+\"(\w{3}-[\d\.]+)\"/)){
-      my $match = $1;
-      if($genes{$match}){
-	$object =~ s/Type\s+Gene_cluster\s+Contains\s+\".*\"/Contains \"$genes{$match}\"/;
-      }
-      else{
-	# Assign new wormbase ID to linked locus name
-	my $id_padded = sprintf "%08d" , $id;
-	$id++;
-	$object =~ s/Type\s+Gene_cluster\s+Contains\s+\".*\"/Contains \"WBgn:$id_padded\"/;
-	$genes{$match} = "WBgn:".$id_padded;	
-      }
-    }
- # }
 
 
-  return($object);
-
-}
-
-######################################################################################################
-# quick and dirty subroutine to grab timestamps for the value associated with any tag (if tag present)
-######################################################################################################
-sub ts{
-  my $locus = shift;
-  my $tag = shift;
-  my $ts = "";
-  $ts = $locus->at($tag)->timestamp if $locus->at($tag);
-  return($ts);
-}
