@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.80 2002-08-29 15:35:20 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.81 2002-10-09 09:04:15 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -315,6 +315,7 @@
 //           Remark ?Text
 
 ?Allele Name	Rearrangement ?Rearrangement XREF Allele
+		Other_name ?Text #Evidence
 	Source	UNIQUE Gene ?Gene XREF Allele // RD 0107 Locus->Gene
 	               Gene_class ?Gene_class XREF Allele
 	//SMap S_parent Sequence UNIQUE ?Sequence XREF Allele     // changed into S_parent Sequence UNIQUE [020311 kj]
