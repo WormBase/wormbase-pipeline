@@ -10,7 +10,7 @@ my $log         = "/tmp/whoswho.log";
 my $line_count  = 0;
 
 # move to dl1 cvs checkout directory
-chdir ("/nfs/griffin2/dl1/wormbase/wormbase/scripts");
+chdir ("/wormsrv2/scripts") || die "Couldn't cd to /wormsrv2/scripts\n";
 
 open (LOG, ">$log");
 print LOG "Current checkouts from the CVS repository\n";
