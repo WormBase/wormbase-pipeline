@@ -7,7 +7,7 @@
 # Usage : autoace_minder [-options]
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2002-11-13 16:50:43 $
+# Last edited on: $Date: 2002-11-28 12:22:29 $
 
 
 #################################################################################
@@ -605,6 +605,9 @@ sub make_autoace {
     
     # make a make_autoace log file in /logs
     system ("touch $logdir/$flag{'B1'}");
+
+    # Update Common_data clone2accession info
+    system ("Common_data.pm -build -update -a2c");
     
   }
   
