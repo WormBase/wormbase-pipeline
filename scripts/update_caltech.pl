@@ -4,7 +4,7 @@
 
 # by Chao-Kung Chen [030113]
 
-# Last updated on: $Date: 2003-01-24 11:21:50 $
+# Last updated on: $Date: 2003-01-24 13:02:03 $
 # Last updated by: $Author: ck1 $
 
 
@@ -58,32 +58,36 @@ END
 
 my $tace = &tace;
 
-chdir "/wormsrv1/geneace/ERICHS_DATA";
-my $geneace_dir="/wormsrv1/geneace/";
-open (FH,"| $tace $geneace_dir ") || die "Failed to upload to test_Geneace";
+my $geneace_dir="/wormsrv1/geneace";
+
+open (FH,"| $tace $geneace_dir ") || die "Failed to upload to Geneace";
 print FH $command;
 close FH;
 
-$command=<<END;
-pparse /wormsrv1/geneace/ERICHS_DATA/$update_file
-save
-quit
-END
+print $update_file, "\n";
 
-$geneace_dir="/wormsrv1/geneace";
-  open (Load_GA,"| $tace $geneace_dir ") || die "Failed to upload to Geneace";
-  print Load_GA $command;
-  close Load_GA;
 
-system("rm -rf seq_dump.ace loci_dump.ace seq_loci_dump_modified.ace");
-       
-print "##########################################\n";
-print "\nPhenotype annotation is now updated!\n\n";       
-print "\nIf everthing is OK, REMEMBER to remove\n"; 
-print "loci_TS_dump.ace and seq_TS_dump.ace\n";
-print "in /wormsrv1/geneace/ERICHS_DATA\n\n";
-print "##########################################\n\n"; 
+$command="pparse $update_file\nsave\nquit\n";
 
+open (Load_GA,"| $tace $geneace_dir ") || die "Failed to upload to Geneace";
+print Load_GA $command;
+close Load_GA;
+
+if($!){
+  print "##########################################\n";
+  print "\nPhenotype annotation is now updated!\n\n";       
+  print "\nIf everthing is OK, REMEMBER to remove\n"; 
+  print "loci_TS_dump.ace and seq_TS_dump.ace\n";
+  print "in /wormsrv1/geneace/ERICHS_DATA\n\n";
+  print "##########################################\n\n"; 
+}
+else{
+  print "##############################\n";
+  print "Mission failed, Mr. Bond!\n";
+  print "##############################\n\n";
+}
 
 __END__
 
+
+#perl5.6.1 ~ck1/WORMBASE_CVS/scripts/update_caltech.pl /wormsrv1/geneace/ERICHS_DATA/annots-22jan2003.ace
