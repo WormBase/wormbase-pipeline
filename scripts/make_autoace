@@ -63,12 +63,17 @@ use Cwd;
  # Script variables (run)                         #
  ##################################################
 
-my $maintainers = "dl1\@sanger.ac.uk kj2\@sanger.ac.uk krb\@sanger.ac.uk";
-my $rundate = `date +%y%m%d`; chomp $rundate;
-my $runtime = `date +%H:%M:%S`; chomp $runtime;
+my $maintainers   = "dl1\@sanger.ac.uk kj2\@sanger.ac.uk krb\@sanger.ac.uk";
+my $rundate       = `date +%y%m%d`; chomp $rundate;
+my $runtime       = `date +%H:%M:%S`; chomp $runtime;
+my $WS_current    = &get_wormbase_version;
+my $WS_previous   = $WS_current - 1;
+our $WS_version   = &get_wormbase_version_name;
 
 # grab version number from cvs
 my $cvs_version = &get_cvs_version($0);
+
+
 
 my $CWD = cwd;
 
@@ -131,11 +136,7 @@ sub REAPER {
     $SIG{CHLD}=\&REAPER;
 }
 
-###################################################################
-# Get the WS version number and set the wormpep release number    #
-###################################################################
 
-our $WS_version = &get_wormbase_version_name;
 
 ##################################################	
 # Create the directory structure                 #
@@ -629,6 +630,14 @@ sub setdate {
 # 010927 : dl : md5sum file is named based on the release i.e. md5sum.WS56
 
 sub makedistr {
+
+
+  # Remove old release files if present
+  if (-e "$autodir/release/database.WS"."$WS_previous"."4-0.tar.gz"){
+    print LOGFILE "Older WS version files exist, removing them\n";
+    system("rm -f $autodir/release/*WS"."$WS_previous"."*") && die "Can't remove old release files\n";
+  }
+
 
     open (DBWRM,"<$autodir/wspec/database.wrm");
     while (<DBWRM>) {
