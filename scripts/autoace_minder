@@ -9,6 +9,8 @@
 #
 
 
+# 010807 : kj  : Added subs gff_dump (-g) and map_PCR_and_RNAi (-m)
+
 # v0.3
 # 001110 : dl  : Added 'test_dna_dump' into the DNA dump sub
 #              : This is a fatal exit if any .dna file is zero length
@@ -61,8 +63,11 @@ $opt_f="";   # Wormbase release to FTP site
 $opt_z="";   # Public release to FTP site
 $opt_d="";   # Verbose debug mode
 $opt_h="";   # Help/Usage page
+$opt_g="";   # gff_dump
+$opt_m="";   # map PCR and RNAi
 
-getopts ('awbchpfzdrg123');
+
+getopts ('awbchpfzdrgm123');
 &usage(0) if ($opt_h);
 
 # specify location of scripts
@@ -88,7 +93,7 @@ $WP_version = $WS_version + 10;
  ########################################
 
 if ($opt_a) {
-    $opt_w = 1; $opt_b = 1; $opt_c = 1; $opt_p = 1;
+    $opt_w = 1; $opt_b = 1; $opt_c = 1; $opt_p = 1; $opt_g = 1; $opt_m = 1;
 }
 
  ########################################
@@ -118,6 +123,8 @@ print LOG "  -p : Build wormpep database\n" if ($opt_p);
 print LOG "  -f : Move WS release to the ftp-wormbase site (WormBase private release)\n" if ($opt_f);
 print LOG "  -z : Move WS release to the external FTP site (Full public release)\n" if ($opt_z);
 print LOG "  -d : Verbose/Debug mode\n" if ($opt_d);
+print LOG "  -g : gff_dump\n" if ($opt_g);
+print LOG "  -m : map PCR and RNAi\n" if ($opt_m);
 print LOG "======================================================================\n";
 print LOG "\n";
 
@@ -134,6 +141,8 @@ print LOG "\n";
 &make_wormpep       if ($opt_p);
 &make_FTP_wormbase  if ($opt_f);
 &make_anonymous_FTP if ($opt_z);
+&dump_GFFs          if ($opt_g);
+&map_PCR_and_RNAi   if ($opt_m);
 
  ##############################
  # mail $maintainer report    #
@@ -233,6 +242,32 @@ sub make_wormpep {
 }
 
 #################################################################################
+# dump GFF files                                                                #
+#################################################################################
+
+sub dump_GFFs {
+    system ("$scriptdir/gff_dump /wormsrv2/autoace") && die "Couldn't make GFF files\n";
+    print LOG " Dumped GFF files for $WS_version\n";
+    print LOG " =>'gff_dump /wormsrv2/autoace'\n\n";
+
+}
+
+
+#################################################################################
+# map PCR and RNAi                                                              #
+#################################################################################
+
+sub map_PCR_and_RNAi {
+    system("$scriptdir/map_PCR_products") && die "Couldn't run map_PCR_products\n";
+    print LOG " Mapped PCR products for $WS_version\n";
+    print LOG " =>'map_PCR_products'\n\n";
+    system("$scriptdir/map_RNAi.pl") && die "Couldn't run map_RNAi.pl\n";
+    print LOG " Mapped RNAi experiments for $WS_version\n";
+    print LOG " =>'map_RNAi.pl'\n\n";
+}
+
+
+#################################################################################
 # make_FTP_wormbase                                                             #
 #################################################################################
 
@@ -276,6 +311,8 @@ sub run_details {
     print "  -f : Move WS release to the ftp-wormbase site (WormBase private release)\n" if ($opt_f);
     print "  -z : Move WS release to the external FTP site (Full public release)\n" if ($opt_z);
     print "  -d : Verbose/Debug mode\n" if ($opt_d);
+    print "  -g : gff_dump\n" if ($opt_g);
+    print "  -m : map PCR and RNAi\n" if ($opt_m);
     print "\n\n";
 }
 
@@ -346,6 +383,10 @@ autoace_minder OPTIONAL arguments:
 =item -z, Move WS release to the external FTP site (Full public release)
 
 =item -d, Verbose/Debug mode
+
+=item -g, dump GFF files
+
+=item -m, map PCR and RNAi
 
 =back
 
