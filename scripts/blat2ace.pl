@@ -7,11 +7,9 @@
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2004-03-15 14:08:36 $
-
+# Last edited on: $Date: 2004-04-28 10:23:43 $
 
 use strict;
-use Data::Dumper;
 use lib "/wormsrv2/scripts/";
 use Wormbase;
 use Getopt::Long;
@@ -49,8 +47,8 @@ if ($camace) {
     $tace      = &tace." /wormsrv1/camace";
 }
 
-my %EST_name;    # EST accession => name
-my %EST_dir;     # EST accession => orientation [5|3]
+my %NDBaccession2est = &FetchData('NDBaccession2est');     # EST accession => name
+my %estorientation   = &FetchData('estorientation');       # EST accession => orientation [5|3]
 
 my %hash;
 my (%best,%other,%bestclone,%match,%ci);
@@ -99,25 +97,6 @@ $flags++ if $nematode;
 ($type = 'tc1')      if ($tc1);
 ($type = 'nematode') if ($nematode);
 
-############################################
-# EST data from autoace (name,orientation) #
-############################################
-
-# check to see if EST hash data exists, make it via tablemaker queries if absent
-# else read it into memory
-unless (-e "$blat_dir/EST.dat") {
-    (%EST_name,%EST_dir) = &make_EST_hash;
-}
-else {
-  open (FH, "<$blat_dir/EST.dat") or die "EST.dat : $!\n";
-  undef $/;
-  my $data = <FH>;
-  eval $data;
-  die if $@;
-  $/ = "\n";
-  close FH;
-}
-
 #########################################
 # get links for database                #
 #########################################
@@ -145,7 +124,6 @@ print LOG "$runtime: Start mapping\n\n";
 # open input and output filehandles
 open(ACE,  ">$blat_dir/autoace.$type.ace")  or die "Cannot open $blat_dir/autoace.${type}.ace $!\n";
 open(BLAT, "<$blat_dir/${type}_out.psl")    or die "Cannot open $blat_dir/${type}_out.psl $!\n";
-#open(OUTBLAT, ">$blat_dir/${type}_parsed.psl")  or die "Cannot open $blat_dir/${type}_parsed.psl $!\n";
 
 # loop through each blat hit
 while (<BLAT>) {
@@ -166,8 +144,8 @@ while (<BLAT>) {
   my @slink_starts = split (/,/, $f[20]);      # start coordinates of each target (superlink) block
 
   # replace EST name (usually accession number) by yk... name 
-  if ( ($est || $ost) && (exists $EST_name{$query}) ) {
-      my $estname  = $EST_name{$query};
+  if ( ($est || $ost) && (exists $NDBaccession2est{$query}) ) {
+      my $estname  = $NDBaccession2est{$query};
       if ($query ne $estname) {
 	  print LOG "EST name '$query' was replaced by '$estname'\n\n";
 	  $query = $estname;
@@ -374,13 +352,13 @@ foreach my $found (sort keys %best) {
 			my $last   = $y - 1;
 			my $first  =  (${$entry->{"exons"}}[$last][1] + 1) + (($n-1)*100000);
 			my $second =  (${$entry->{'exons'}}[$y][0]    - 1) + (($n-1)*100000);
-			$EST_dir{$found} = 5 if ($mrna || $embl);
+			$estorientation{$found} = 5 if ($mrna || $embl);
 			if (${$entry->{'exons'}}[0][2] < ${$entry->{'exons'}}[0][3]) {
 			    if ((${$entry->{'exons'}}[$y][2] == ${$entry->{'exons'}}[$last][3] + 1) && (($second - $first) > 2)) {
-				if (exists $EST_dir{$found} && $EST_dir{$found} eq '3') {
+				if (exists $estorientation{$found} && $estorientation{$found} eq '3') {
 				    push @{$ci{$superlink}}, [$second,$first,$found];
 				}
-				elsif (exists $EST_dir{$found} && $EST_dir{$found} eq '5') {
+				elsif (exists $estorientation{$found} && $estorientation{$found} eq '5') {
 				    push @{$ci{$superlink}}, [$first,$second,$found];
 				}
 				else {
@@ -390,10 +368,10 @@ foreach my $found (sort keys %best) {
 			}
 			elsif (${$entry->{'exons'}}[0][2] > ${$entry->{'exons'}}[0][3]) {
 			    if ((${$entry->{'exons'}}[$last][3] == ${$entry->{'exons'}}[$y][2] + 1) && (($second - $first) > 2)) {
-				if (exists $EST_dir{$found} && $EST_dir{$found} eq '3') {
+				if (exists $estorientation{$found} && $estorientation{$found} eq '3') {
 				    push @{$ci{$superlink}}, [$first,$second,$found];
 				}
-				elsif (exists $EST_dir{$found} && $EST_dir{$found} eq '5') {
+				elsif (exists $estorientation{$found} && $estorientation{$found} eq '5') {
 				    push @{$ci{$superlink}}, [$second,$first,$found]; 
 				}
 				else {
@@ -579,57 +557,6 @@ EOF
     return($command1,$command2);
 
 }
-
-sub make_EST_hash {
-    
-  my ($command1,$command2) = &commands;
-  my ($acc,$name,$orient);
-  
-  my %EST_name = ();
-  my %EST_dir  = ();
-  
-  # get EST names  (-e option only)       #
-  open (TACE, "echo '$command1' | $tace | ");
-  while (<TACE>) {
-    chomp;
-    next if ($_ eq "");
-    next if (/\/\//);
-    s/acedb\>\s//g;
-    s/\"//g;
-    s/EMBL://g;
-    ($acc,$name) = ($_ =~ /^(\S+)\s(\S+)/);
-    $name = $acc unless ($name);
-    $EST_name{$acc} = $name;
-  }
-  close TACE;
-  
-  # get EST orientation (5' or 3')    #
-  open (TACE, "echo '$command2' | $tace | ");
-  while (<TACE>) {
-    chomp;
-    next if ($_ eq "");
-    next if (/\/\//);
-    s/acedb\>\s//g;
-    s/\"//g;
-    ($name,$orient) = ($_ =~ /^(\S+)\s+EST_(\d)/);
-    $EST_dir{$name} = $orient if ($orient);
-  }
-  close TACE;
-  
-  # Data::Dumper write hash to /wormsrv2/autoace/BLAT/EST.dat
-  open (OUT, ">/wormsrv2/autoace/BLAT/EST.dat") or die "EST.dat : $!";
-  print OUT Data::Dumper->Dump([\%EST_name],['*EST_name']);
-  print OUT Data::Dumper->Dump([\%EST_dir],['*EST_dir']);
-  close OUT;
-  
-  return (%EST_name,%EST_dir);
-  
-  
-}
-
-
-
-
 
 ###################################
 
