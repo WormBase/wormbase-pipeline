@@ -46,8 +46,8 @@ $|=1;
 ###############
 
 our $dbdir  = '/wormsrv2/autoace';
-#my $bin     = '/wormsrv2/scripts';
-my $bin    = '/nfs/griffin2/dl1/wormbase/wormbase/scripts';
+my $bin     = '/wormsrv2/scripts';
+#my $bin    = '/nfs/griffin2/dl1/wormbase/wormbase/scripts';
 
 my $query;
 $query      = '/nfs/disk100/wormpub/analysis/ESTs/C.elegans_nematode_ESTs'    if ($opt_e); # EST data set
@@ -70,7 +70,6 @@ our %word = (
 	     EMBL     => 'BLAT_EMBL',
 	     NEMATODE => 'BLATX_NEMATODE',
 	     );
-
 
 ########################################
 # command-line options & ramifications #
@@ -186,6 +185,12 @@ if ($opt_s) {
 	
 	print "Mapping blat data to autoace\n";
 	system("$bin/blat2ace.pl -ei ") && die "Mapping failed\n"; 
+
+	print "Mapping blat data to camace\n";
+	system("$bin/blat2ace.pl -eic ") && die "Mapping failed\n"; 
+
+	print "Mapping blat data to stlace\n";	
+	system("$bin/blat2ace.pl -eis ") && die "Mapping failed\n"; 
 
     }
     if ($opt_m) {
