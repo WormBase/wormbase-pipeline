@@ -6,8 +6,8 @@
 #
 # Script to check if allele sequence from allele mapping script is the same as current 
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-12-01 11:54:25 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2005-02-11 13:53:58 $
 
 # What it does: this script is a small integrity check before loading data generated from 
 # map_alleles.pl during the build it should warn you if mapping result returns a clone different 
@@ -40,7 +40,7 @@ foreach (@mapping){
 open(IN, "/wormsrv2/autoace/MAPPINGS/map_alleles_geneace_update.".$WS_release.".ace") || die $!;
 
 while(<IN>){
-  if ($_ =~ /^Allele\s+:\s+\"(.+)\"/){
+  if ($_ =~ /^Variation\s+:\s+\"(.+)\"/){
     $allele = $1;
   }
   if ($_ =~ /^Sequence\s+\"(.+)\"/){
