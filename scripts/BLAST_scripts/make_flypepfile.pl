@@ -8,8 +8,8 @@
 
 use strict;
 use Getopt::Std;
-use vars qw($opt_c $opt_d $opt_n);
-getopt('cdn');
+use vars qw($opt_c $opt_d $opt_o);
+getopt('cdo');
 
 
 
@@ -30,7 +30,7 @@ make_flypepfile.pl input_file gadfly3.pep\n";
 else { 
   $pepfile = "$dir/"."$pepfile";
 }
-
+$pepfile = glob("~wormpipe/delete_me");
 open (PEP,">$pepfile") or die "cant open $pepfile $!\n";
 open (ACE,">$acefile") or die "cant open $acefile\n";
 open (SOURCE,"<$source_file") or die "cant open $source_file\n";
@@ -66,10 +66,10 @@ while (<SOURCE>)
 	  }
 	}
 	
-	if( $FBgn ) {
-	  unless( $FBgn =~ m/FBgn/ ) {
-	    $FBgn = "non-assigned";
-	  }
+	if( !($FBgn) ||          # no FBgn
+	    !( $FBgn =~ m/FBgn/ )# invalid FBgn
+	  ) {
+	    $FBgn = $1 if ($_ =~ /(FBgn\d+)/);  #last ditch attemp to grap if from the header
 	}
 	
 	# some old style names still exist eg pp-CT*****.  In these cases
@@ -86,7 +86,7 @@ while (<SOURCE>)
 	    print ACE "\n\nProtein : \"GADFLY:$gadID\"\n";
 	    print ACE "Peptide \"GADFLY:$gadID\"\n";
 	    print ACE "Species \"Drosophila melanogaster\"\n";
-	    if ( $opt_n ) {
+	    unless ( $opt_o ) {
 	      #FlyBase_gn	      #Gadfly_ID
 	      print ACE "Gene_name \"$FBname\"\n" if $FBname;
 	      print ACE "Database \"Flybase\" FlyBase_gn \"$FBgn\"\n" if ($FBgn); 
@@ -121,12 +121,8 @@ close PEP;
 close ACE;
 
 unless ($opt_d) {
-  print "\n\nabout to copy (scp) $acefile to /wormsrv2/wormbase/ensembl_dumps/\n";
-  system ("scp -r $acefile wormpub\@wormsrv2:/wormsrv2/wormbase/ensembl_dumps/") and warn "copy $acefile failed\n";
-  
   print "\n\nMaking gadfly BLASTable database \n";
   system ("setdb pepfile") and warn "cant setdb on $pepfile\n";
-  
 }
 
 print "$record_count proteins\n";
