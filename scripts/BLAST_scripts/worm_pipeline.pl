@@ -32,7 +32,7 @@ unless ($fasta) {
 # define some variables
 
 my $host = "ecs1f";
-my $dbname = $brig ? "worm_brigprot" : "wormprot"; #if -brig opt, use worm_brigprot else use wormprot
+my $dbname = $brig ? "worm_brigpep" : "worm_pep"; #if -brig opt, use worm_brigprot else use worm_pep
 my $user = "wormadmin";
 my $pass = "worms";
 my $species = $brig ? 2 : 1; #assign no based on species
@@ -103,10 +103,10 @@ print "populate the protein, peptide and InputIdAnalysis tables with the new pro
 my $stream = Bio::SeqIO->new ( -file   => $fasta,
                                -format => 'fasta',
                              );
-$stream->moltype ('protein');
+$stream->alphabet('protein');
 my $count = 0;
 my $count_swall = 0;
-while (my $pep = $stream->next_primary_seq) {
+while (my $pep = $stream->next_seq) {
     if (exists $exists{$pep->id}) {
         print "\t".$pep->id." already exists in the database...\n";
         next;

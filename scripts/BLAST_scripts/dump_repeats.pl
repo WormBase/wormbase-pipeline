@@ -37,7 +37,7 @@ my %clonesize;
 # mysql database parameters
 my $dbhost = "ecs1f";
 my $dbuser = "wormro";
-my $dbname = "wormrepeats";
+my $dbname = "worm_dna";
 my $dbpass = "";
 
 my $wormrepeats_DB = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
@@ -45,7 +45,7 @@ my $wormrepeats_DB = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpas
 
 # build hash of internal_id to clone via EMBL accession
 my $sth_f = $wormrepeats_DB->prepare ( q{SELECT
-					 internal_id , id
+					 clone_id , name
 					 FROM clone
 	  	  	     } );
 
@@ -69,13 +69,13 @@ foreach my $pair (@$ref_results) {
 
 # now retrieve the data from wormrepeats database
 $sth_f = $wormrepeats_DB->prepare ( q{SELECT
-				      contig, seq_start, seq_end,
-				      score, strand,
-				      hstart,hend,hid
+				      contig_id, contig_start, contig_end,
+				      score, contig_strand,
+				      repeat_start,repeat_end,repeat_consensus_id
 				      FROM repeat_feature
-				      WHERE analysis = 1
+				      WHERE analysis_id = 10
 				      AND score > 225
-				      ORDER BY contig
+				      ORDER BY contig_id
 				     }
 				  );
 

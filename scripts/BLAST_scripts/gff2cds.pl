@@ -14,7 +14,7 @@ my %line; my %cds;
 
 while (<>) {
     chomp;
-    if ((/^\S+\t(curated|provisional)\tSequence\t/) && (/\"(\S+\.\S+)\"/)) {
+    if ((/^\S+\t(curated)\tCDS\t/) && (/\"(\S+\.\S+)\"/)) {
         $line{$1} = $_;
     }
     if ((/^\S+\t+\w*\tCDS\t/) && (/\"(\S+\.\S+)\"$/)) {

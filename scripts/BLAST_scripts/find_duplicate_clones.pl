@@ -29,7 +29,7 @@ GetOptions(
 
 $dbhost = "ecs1f" unless $dbhost;
 $dbuser = "wormadmin" unless $dbuser;
-$dbname = "worm01" unless $dbname;
+$dbname = "worm_dna" unless $dbname;
 $dbpass = "worms" unless $dbpass;
 
 ####################################################################
@@ -39,15 +39,15 @@ $dbpass = "worms" unless $dbpass;
 my $dbh = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
     || die "cannot connect to db, $DBI::errstr";
 
-my $clone_table     = $dbh->prepare (q{ SELECT internal_id, embl_id, embl_version FROM clone 
-				       ORDER BY embl_id,embl_version} );
+my $clone_table     = $dbh->prepare (q{ SELECT clone_id, embl_acc, embl_version FROM clone 
+				       ORDER BY embl_acc,embl_version} );
 
-my $contig_table    = $dbh->prepare (q{ SELECT internal_id, id, dna FROM contig where clone = ? } );
+my $contig_table    = $dbh->prepare (q{ SELECT contig_id, name, dna FROM contig where clone_id = ? } );
 
-my $delete_clone    = $dbh->prepare (q{ DELETE FROM clone           WHERE internal_id = ? } );
-my $delete_contig   = $dbh->prepare (q{ DELETE FROM contig          WHERE internal_id = ? } );
-my $delete_dna      = $dbh->prepare (q{ DELETE FROM dna             WHERE id = ? } );
-my $delete_inputId  = $dbh->prepare (q{ DELETE FROM InputIdAnalysis WHERE inputId = ? } );
+my $delete_clone    = $dbh->prepare (q{ DELETE FROM clone             WHERE clone_id = ? } );
+my $delete_contig   = $dbh->prepare (q{ DELETE FROM contig            WHERE contig_id = ? } );
+my $delete_dna      = $dbh->prepare (q{ DELETE FROM dna               WHERE dna_id = ? } );
+my $delete_inputId  = $dbh->prepare (q{ DELETE FROM input_id_analysis WHERE input_id = ? } );
 
 
 #grab clone information, sorted by Accession then version number

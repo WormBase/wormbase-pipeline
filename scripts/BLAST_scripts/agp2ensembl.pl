@@ -50,6 +50,8 @@ Insert list of bugs here!
 
 =cut
 
+use lib '/nfs/farm/Worms/Ensembl/ensembl-pipeline/modules';
+use lib '/nfs/farm/Worms/Ensembl/ensembl/modules';
 use lib '/nfs/disk100/humpub/modules/PerlModules';
 
 use strict;
@@ -57,9 +59,9 @@ use Getopt::Long;
 use Bio::Root::RootI;
 use Bio::Seq;
 use Bio::SeqIO;
-use Bio::EnsEMBL::DBSQL::DBAdaptor;
-use Bio::EnsEMBL::PerlDB::Clone;
-use Bio::EnsEMBL::PerlDB::Contig;
+use Bio::EnsEMBL::Pipeline::DBSQL::DBAdaptor;
+use Bio::EnsEMBL::Clone;
+use Bio::EnsEMBL::RawContig;
 use Hum::NetFetch qw( wwwfetch );
 use Hum::EMBL;
 
@@ -116,7 +118,7 @@ $phase = -1 unless defined $phase;
 # open connection to EnsEMBL DB
 my $dbobj;
 if ($dbpass) {
-    $dbobj = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
+    $dbobj = Bio::EnsEMBL::Pipeline::DBSQL::DBAdaptor->new(
         '-host'   => $dbhost,
         '-user'   => $dbuser,
         '-pass'   => $dbpass,
@@ -125,12 +127,17 @@ if ($dbpass) {
     ) or die "Can't connect to DB $dbname on $dbhost as $dbuser"; # Do we need password as well?
 }
 else {
-    $dbobj = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
+    $dbobj = Bio::EnsEMBL::DBSQL::Pipeline::DBAdaptor->new(
         '-host'   => $dbhost,
         '-user'   => $dbuser,
         '-dbname' => $dbname
     ) or die "Can't connect to DB $dbname on $dbhost as $dbuser"; # Do we need password as well?
 }
+
+my $clone_adaptor = $dbobj->get_CloneAdaptor();
+my $sic = $dbobj->get_StateInfoContainer();
+my $analysis_adaptor = $dbobj->get_AnalysisAdaptor();
+my $submitted_analysis = $analysis_adaptor->fetch_by_dbID(1); #1 is dummy analysis to mark addition
 
 my %seqs;
 if ($fasta) {
@@ -156,7 +163,7 @@ while (<AGP>) {
 	}
     }
 
-    if (&is_in_db($dbobj, $sv)) {
+    if (&is_in_db($clone_adaptor, $sv)) {
         print "Found $sv; skipping\n";
         next;
     }
@@ -180,21 +187,24 @@ while (<AGP>) {
 	}
     }
 
-    my $clone = new Bio::EnsEMBL::PerlDB::Clone;
-    my $contig = new Bio::EnsEMBL::PerlDB::Contig;
+    my $clone = new Bio::EnsEMBL::Clone;
+    my $contig = new Bio::EnsEMBL::RawContig;
     my $length = $seq->length;
 
-    $clone->id          ($acc);
+    $clone->id       ($acc);
     $clone->htg_phase   ($phase);
     $clone->embl_id     ($acc);
     $clone->version     (1);
     $clone->embl_version($ver);
-    $contig->id         ("$acc.$ver.1.$length");
+    my $time = time;
+    $clone->created($time);
+
+    $contig->name         ("$acc.$ver.1.$length");
     $contig->embl_offset(1);
     $contig->length     ($length);
-    $contig->seq        ($seq);
-    $contig->version    (1);
-    $contig->embl_order (1);
+    $contig->seq        ($seq->seq);
+  #  $contig->version    (1);
+  #  $contig->embl_order (1);
 
     print "Clone ", $clone->id, "\n";
     if ($verbose) {
@@ -205,24 +215,30 @@ while (<AGP>) {
     }
     print "Contig ", $contig->id, "\n";
     if ($verbose) {
-        print "\toffset: ", $contig->embl_offset, "\n";
+     #   print "\toffset: ", $contig->embl_offset, "\n";
         print "\tlength: ", $contig->length, "\n";
-        print "\tend:    ", ($contig->embl_offset + $contig->length - 1), "\n";
-        print "\tversion:", $contig->version, "\n";
-        print "\torder:  ", $contig->embl_order, "\n";
-        print "\tlength: ", $contig->length, "\n";
+     #   print "\tend:    ", ($contig->embl_offset + $contig->length - 1), "\n";
+     #   print "\tversion:", $contig->version, "\n";
+     #   print "\torder:  ", $contig->embl_order, "\n";
     }
     print "\n";
 
     $clone->add_Contig($contig);
+    $clone->modified($time);
 
     if ($write) {
         eval {
-            $dbobj->write_Clone($clone);
+            $clone_adaptor->store($clone);
         };
         if ($@) {
             print "Error writing clone $sv\n"; 
         }
+	else {
+	  $sic->store_input_id_analysis($contig->name,$submitted_analysis) ;
+	  if( $@ ) {
+	    print "Error update input_id_analysis table for ",$contig->name,"\n";
+	  }
+	}
     }
 }
 
@@ -274,7 +290,10 @@ sub is_in_db {
     my $clone;
 
     eval {
-        $clone = $dbobj->get_Clone($sv);
+      /(\w+)\.(\d+)/;
+      my $acc = $1;
+      my $ver = $2;
+      $clone = $dbobj->fetch_by_accession_version($acc, $ver);
     };
     if (defined $clone) {
         return 1;

@@ -5,7 +5,7 @@
 # Dumps protein motifs from ensembl mysql (protein) database to an ace file
 #
 # Last updated by: $Author: wormpipe $
-# Last updated on: $Date: 2003-06-11 08:33:35 $
+# Last updated on: $Date: 2004-01-20 09:56:39 $
 
 
 use strict;
@@ -14,8 +14,7 @@ use Getopt::Long;
 
 my ($debug, $WPver, $database, $mysql);
 
-GetOptions("debug:s" => \$debug,
-	   "version:s" => \$WPver,
+GetOptions("debug:s"    => \$debug,
 	   "database:s" => \$database,
 	   "mysql"      => \$mysql
 	  );
@@ -26,7 +25,7 @@ my @methods = qw(ncoils seg signalp tmhmm hmmpfam);
 # mysql database parameters
 my $dbhost = "ecs1f";
 my $dbuser = "wormro";
-my $dbname = "wormprot";
+my $dbname = "worm_pep";
 $dbname = $database if $database;
 print "Dumping motifs from $dbname\n";
 my $dbpass = "";
@@ -39,9 +38,9 @@ sub now {
 
 # create output files
 my $dump_dir = "/acari/work2a/wormpipe/dumps";
-open(ACE,">$dump_dir/".$dbname."_motif_info.ace") || die "cannot create ace file";
+open(ACE,">$dump_dir/".$dbname."_motif_info.ace") || die "cannot create ace file:$!\n";
 
-open(LOG,">$dump_dir/".$dbname."_motif_info.log") || die "cannot create log file";
+open(LOG,">$dump_dir/".$dbname."_motif_info.log") || die "cannot create log file:$!\n";
 
 # make the LOG filehandle line-buffered
 my $old_fh = select(LOG);
@@ -64,8 +63,8 @@ my $dbh = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseEr
 # get the mapping of method 2 analysis id
 my %method2analysis;
 print LOG "get mapping of method to analysis id [".&now."]:\n";
-my $sth = $dbh->prepare ( q{ SELECT analysisId
-                               FROM analysisprocess
+my $sth = $dbh->prepare ( q{ SELECT analysis_id
+                               FROM analysis
                               WHERE program = ?
                            } );
 
@@ -77,9 +76,9 @@ foreach my $method (@methods) {
 }
 
 # prepare the sql querie
-my $sth_f = $dbh->prepare ( q{ SELECT proteinId, start, end, hid, hstart, hend, score
+my $sth_f = $dbh->prepare ( q{ SELECT protein_id, seq_start, seq_end, hit_id, hit_start, hit_end, score
                                  FROM protein_feature
-                                WHERE analysis = ?
+                                WHERE analysis_id = ?
                              } );
 
 # get the motifs
@@ -104,7 +103,7 @@ foreach my $method (@methods) {
 
 # print ace file
 my $prefix = "WP";
-if( "$database" eq "worm_brigprot") {
+if( "$database" eq "worm_brigpep") {
   $prefix = "BP";
 }
 foreach my $prot (sort {$a cmp $b} keys %motifs) {

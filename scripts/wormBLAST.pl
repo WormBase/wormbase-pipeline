@@ -465,63 +465,32 @@ if( $dump_data )
       print "Please run wormBLAST.pl -prep_dump version $WS_version    before dumping\n\nTo dump you CAN NOT have wormsrv2 mounted\n\n";
       exit(0);
     }
-####################################################
-
-###   Forking code attempt
-#    # Dump
-
-#    # fork new process to dump x and p at same time !
-
-#    my $dumping_P = "";
-#    my $dumping_X = "";
-
-
-#    # fork off child process to dump BLASTP data at the same time
-
-#    if( my $pid = fork ) {
-#      print "Dumping blastp\n";
-#      $dumping_P = "start_P";
-#      &run_command("$wormpipe_dir/scripts/Dump_new_prot_only.pl -all -version $WS_version -matches");
-#      $dumping_P = "finished_P";
-#    }
-#    else {warn "ERROR : forked dumping of BLASTP failed\n";}
-
-#    unless ($dumping_X ) {
-#      $dumping_X = "start_X";
-#      print "Dumping blastx\n";
-#      &run_command("$scripts_dir/dump_blastx_new.pl -version $WS_version");
-#      $dumping_X = "finished_X";
-#    }
-
-#    # go in to holding routine until both have finished
-#    while(! ( ( $dumping_X eq "finished_X" ) and ($dumping_P eq "finished_P") ) ) {
-#      sleep 1000;
-#    }
-####################################################
 
     # need this to dump new databases in full
     &get_updated_database_list;
     my $anal_list = join(',',@updated_DBs);
 
-    # Dump new pep
+    # Dump data for new peptides - into separate file to append
     print "Dumping new peptides for worm_pep\n";
-    &run_command("$wormpipe_dir/scripts/Dump_blastp.pl -all -version $WS_version -matches -database worm_pep -new_peps $wormpipe_dir/dumps/new_entries.WS$WS_version");
+    &run_command("$wormpipe_dir/scripts/Dump_blastp.pl -version $WS_version -matches -database worm_pep -new_peps $wormpipe_dir/dumps/new_entries.WS$WS_version");
 
-    # updated databases
+    # updated databases (eg gadfly) need to be redumped
     print "Dumping all peptides for updated databases for worm_pep\n";
-    &run_command("$wormpipe_dir/scripts/Dump_blastp.pl -all -version $WS_version -matches -database worm_pep -all -analysis $anal_list");
+    &run_command("$wormpipe_dir/scripts/Dump_blastp.pl -version $WS_version -matches -database worm_pep -all -analysis $anal_list");
 
     # . . and brigpep
     print "Dumping all peptides for updated databases for worm_brig\n";
-    &run_command("$wormpipe_dir/scripts/Dump_blastp.pl -all -version $WS_version -matches -database worm_pep -all -analysis $anal_list");
-    
+    &run_command("$wormpipe_dir/scripts/Dump_blastp.pl -version $WS_version -matches -database worm_brigpep -all -analysis $anal_list");
 
 
-    print "Dumping blastx\n";
-    &run_command("$scripts_dir/dump_blastx_new.pl -version $WS_version");
+    # dump blastx
+    print "Dumping blastx for analysis $anal_list\n";
+    &run_command("$scripts_dir/dump_blastx_new.pl -version $WS_version -analysis $anal_list");
 
+    # dump motifs for elegans and brig
     print "Dumping motifs\n";
     &run_command("$scripts_dir/dump_motif.pl");
+    &run_command("$scripts_dir/dump_motif.pl -database worm_brigpep");
 
     # Dump extra info for SWALL proteins that have matches. Info retrieved from the dbm databases on /acari/work2a/wormpipe/
     print "Creating acefile of SWALL proteins with homologies\n";
@@ -642,7 +611,7 @@ sub check_wormsrv2_conflicts
       }
     elsif( !(-e "/wormsrv2") && ($chromosomes || $wormpep  || $update_mySQL || $prep_dump) ) {
       print "The following option need access to wormsrv2 and it aint there (rsh wormsrv2 )\n";
-      print "-chromosomes\t-wormpep\t-databases\t-mysql\t-prep_dump\n";
+      print "-chromosomes\t-wormpep\t-databases\t-updatemysql\t-prep_dump\n";
       exit(1);
     }
     else {
@@ -737,7 +706,7 @@ sub run_RuleManager
     $script = "$bdir/RuleManager3Prot.pl" if $moltype eq "pep";
 
     die "invalid or no moltype passed to run_RuleManager : $moltype\n" unless $script;
-    &run_command("perl $script -dbhost $dbhost -dbname $dbname -dbpass $dbpass -dbuser $dbuser");
+    &run_command("perl5.6.1 $script -dbhost $dbhost -dbname $dbname -dbpass $dbpass -dbuser $dbuser");
 
   }
 
