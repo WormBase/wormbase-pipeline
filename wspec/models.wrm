@@ -819,7 +819,6 @@
 			Locus_other_seq ?Locus XREF Other_sequence       // dl 001128
 			Enzyme ?Enzyme XREF DNA
 		        Related_DNA ?Sequence XREF Related_DNA
-		        Related_protein ?Protein XREF Related_DNA
 			Remark ?Text
 			Confidential_remark ?Text
 			Brief_identification UNIQUE ?Text
@@ -1054,8 +1053,6 @@
 			  Inactive Replaced_by ?Protein XREF Replaces
 		// inactive wormpep entries won't be output in standard wormpep dumps
 	  Visible	Corresponding_DNA ?Sequence XREF Corresponding_protein
-		        Related_DNA ?Sequence XREF Related_protein
-		        Related_protein ?Protein XREF Related_protein
 			Enzyme ?Enzyme XREF Protein
 			Reference ?Paper XREF Protein
 			Expr_pattern ?Expr_pattern XREF Protein
