@@ -6,7 +6,7 @@
 #
 # Automatically update Geneace with Erich's functional annotation update
 #
-# Last updated on: $Date: 2004-03-19 11:06:08 $
+# Last updated on: $Date: 2004-03-22 10:44:17 $
 # Last updated by: $Author: ck1 $
 
 use strict;                    
@@ -34,7 +34,7 @@ $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`")
 ###################################################
 
 my ($debug, $help, $update, $merge, $recipients);
-$recipients ="bastiani\@its.caltech.edu, ck1\@sanger.ac.uk, emsch\@its.caltech.edu, vanauken\@caltech.edu, krb\@sanger.ac.uk";
+$recipients ="bastiani\@its.caltech.edu, ck1\@sanger.ac.uk, emsch\@its.caltech.edu, vanauken\@caltech.edu, krb\@sanger.ac.uk, ranjana\@its.caltech.edu";
 my $tace = &tace;   # tace executable path
 
 GetOptions ("d|debug=s"  => \$debug,
