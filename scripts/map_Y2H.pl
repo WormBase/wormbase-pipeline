@@ -7,7 +7,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: krb $                      
-# Last updated on: $Date: 2004-08-06 10:02:06 $        
+# Last updated on: $Date: 2004-08-06 15:55:28 $        
 
 use strict;
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
@@ -168,6 +168,9 @@ close (OUTPUT);      # close the output filehandle
 ###############
 # hasta luego #
 ###############
+
+print LOG &runtime, " : finished script\n";
+close LOG;
 
 exit(0);
 
