@@ -7,7 +7,7 @@
 # Builds a wormpep data set from the current autoace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-12-22 08:56:23 $
+# Last updated on: $Date: 2004-03-03 14:57:59 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -576,10 +576,14 @@ sub write_main_wormpep_and_table{
     ($output .= " locus\:".$cds2locus{$cds})           if ($cds2locus{$cds});
     ($output .= " $cds2id{$cds}")                      if ($cds2id{$cds});
     ($output .= " status\:".$cds_status{$cds})         if ($cds_status{$cds});
-    ($output .= " SW:$cds2protein_ac{$cds}")           if (($cds2protein_db{$cds} eq "SwissProt") && defined($cds2protein_ac{$cds}));
-    ($output .= " TR:$cds2protein_ac{$cds}")           if (($cds2protein_db{$cds} eq "TREMBL")    && defined($cds2protein_ac{$cds}));
-    ($output .= " TN:$cds2protein_ac{$cds}")           if (($cds2protein_db{$cds} eq "TREMBLNEW") && defined($cds2protein_ac{$cds}));
-    ($output .= " protein_id\:".$cds2protein_id{$cds}) if ($cds2protein_id{$cds});
+
+    # can only get the following information if running in final mode, else won't yet be in autoace
+    if($final){
+      ($output .= " SW:$cds2protein_ac{$cds}")           if (($cds2protein_db{$cds} eq "SwissProt") && defined($cds2protein_ac{$cds}));
+      ($output .= " TR:$cds2protein_ac{$cds}")           if (($cds2protein_db{$cds} eq "TREMBL")    && defined($cds2protein_ac{$cds}));
+      ($output .= " TN:$cds2protein_ac{$cds}")           if (($cds2protein_db{$cds} eq "TREMBLNEW") && defined($cds2protein_ac{$cds}));
+      ($output .= " protein_id\:".$cds2protein_id{$cds}) if ($cds2protein_id{$cds});
+    }
     $output .= "\n$pepseq\n";
     print FASTA "$output";
     
