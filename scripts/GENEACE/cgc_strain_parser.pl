@@ -8,7 +8,7 @@
 # Page download and update upload to geneace has been automated [ck1]
 
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-11-30 13:49:18 $
+# Last updated on: $Date: 2004-11-30 14:20:35 $
 
 use strict;
 use Getopt::Std;
@@ -356,7 +356,7 @@ my $backup_file ="$path/All_strain_TS_dump_$rundate.ace";
 
 my (@dir, @deleteACE, $last_delete_ace);
 
-opendir(DIR, '$path/') || die "Can't read directory";
+opendir(DIR, "$path/") || die "Can't read directory";
 @dir=readdir DIR;
 closedir (DIR);
 foreach (@dir){
