@@ -226,6 +226,7 @@
                 Loci ?Locus XREF Gene_Class
                 Main_name  ?Gene_Class XREF Other_name
 		Other_name ?Gene_Class XREF Main_name
+                Remark Text
 
 ?Locus  Name    Other_name ?Text
                 Gene_Class  ?Gene_Class XREF Loci
@@ -1272,6 +1273,7 @@
 		Type	UNIQUE  Tissue
 				Organ
 				Region
+                                Lineage //put in for Lilncoln some time ago
 		Expr_pattern ?Expr_pattern XREF Cell_group	
 		Life_stage ?Life_stage XREF Cell_group
                 Reference ?Paper XREF Cell_group
@@ -1464,6 +1466,7 @@
  	     Overlaps_CDS ?Sequence XREF Corresponding_PCR_product  // added for Dan PCR mappings [010419 dl]
 	     Oligo ?Oligo UNIQUE Int UNIQUE Int
  	     Assay_conditions ?LongText
+	     Remark ?Text
 
 ?Phenotype Description UNIQUE ?Text
            Assay UNIQUE ?Text
