@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.59 2002-06-18 17:08:07 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.60 2002-07-04 09:02:20 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -806,6 +806,8 @@
 			Drives_transgene ?Transgene XREF Driven_by_sequence
 			Transgene_product ?Transgene XREF Worm_sequence
 			Tree_node ?TreeNode XREF Sequence
+			Interacts_with_sequence ?Sequence XREF Interacts_with_sequence #Evidence // for future interaction data [020704 krb]
+			Interacts_with_protein ?Protein XREF Interacts_with_sequence #Evidence // for future interaction data [020704 krb]
 		// tag2 system: names of all objects following next tag are shown in the 
 		//   general annotation display column as "tag:objname"
 	  Properties    Pseudogene Text		// explanation
@@ -1039,6 +1041,8 @@
 	  Visible	Corresponding_CDS ?CDS XREF Corresponding_protein // RD 0107 was Corresponding_DNA
 			Reference ?Paper XREF Protein
 			Gene ?Gene XREF Protein
+			Interacts_with_sequence ?Sequence XREF Interacts_with_protein #Evidence // for future interaction data [020704 krb]
+			Interacts_with_protein ?Protein XREF Interacts_with_protein #Evidence // for future interaction data [020704 krb]
 		// tag2 system.  For now I have not populated this column.  For C. elegans
 		// wormpep we want to get the information from the ?Corresponding_DNA 
 		// object.  Because those objects have long term continuity, while wormpep
