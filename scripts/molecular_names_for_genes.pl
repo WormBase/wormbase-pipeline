@@ -4,10 +4,10 @@
 # 
 # by Keith Bradnam
 #
-# quick script to populat Molecular_name tag in ?Gene model during build
+# quick script to populate Molecular_name tag in ?Gene model during build
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-04-26 10:36:39 $
+# Last updated on: $Date: 2004-04-27 14:13:11 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -70,7 +70,8 @@ while (<TACE>) {
   chomp;
   next if ($_ eq "");
   last if (/\/\//);
-  
+  next if ($_ =~ m/^acedb>/);
+
   # get rid of quote marks
   s/\"//g;
 
@@ -78,30 +79,35 @@ while (<TACE>) {
   my ($gene,$cds,$transcript,$pseudogene,$protein) = split(/\t/, $_) ;
 
   # write output file
-  print OUT "Gene : \"$gene\"\n";
+
 
   if($cds){
-    print OUT "Molecular_name \"$cds\"\n";
+    print OUT "Gene : \"$gene\"\n";
+    print OUT "Molecular_name \"$cds\"\n\n";
     $counter++;
   }
   if($transcript){
-    print OUT "Molecular_name \"$transcript\"\n";
+    print OUT "Gene : \"$gene\"\n";
+    print OUT "Molecular_name \"$transcript\"\n\n";
     $counter++;
   }
   if($pseudogene){
-    print OUT "Molecular_name \"$pseudogene\"\n";
+    print OUT "Gene : \"$gene\"\n";
+    print OUT "Molecular_name \"$pseudogene\"\n\n";
     $counter++;
   }
   if($protein){
+    print OUT "Gene : \"$gene\"\n";
     print OUT "Molecular_name \"$protein\"\n";
     $counter++;
 
     # also capture version without WP: prefix
     $protein =~ s/^WP\://;
-    print OUT "Molecular_name \"$protein\"\n";
+    print OUT "Molecular_name \"$protein\"\n\n";
     $counter++;
+
   }
-  print OUT "\n\n";
+
 
 }
 close TACE; 
@@ -113,7 +119,7 @@ $log->write_to("Found $counter molecular names for genes\n");
 # load file to autoace using autoace_minder.pl -load
 $log->write_to("Loading /wormsrv2/autoace/molecular_names_for_genes.ace to autoace\n");
 
-$command = "autoace_minder.pl -load /wormsrv2/autoace/molecular_names_for_genes.ace -tsuser molecular_names"; 
+$command = "autoace_minder.pl -load /wormsrv2/autoace/acefiles/molecular_names_for_genes.ace -tsuser molecular_names"; 
 
 my $status = system($command);
 if(($status >>8) != 0){
