@@ -2,8 +2,8 @@
 #
 # EMBLDump.pl :  makes EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2002-12-13 12:52:04 $
-#  Last updated by: $Author: dl1 $
+#  Last updated on: $Date: 2003-01-06 18:02:48 $
+#  Last updated by: $Author: krb $
 
 
 $0 =~ s/^\/.+\///;
@@ -14,7 +14,10 @@ use lib "/wormsrv2/scripts";
 use Wormbase;
 
 # variables
-my $exec        = &giface;
+
+# Need new Transcript dumping code for this part
+#my $exec        = &giface;
+my $exec = "/nfs/team71/acedb/edgrif/TEST/KEITH/giface ";
 my $dbdir       = "/wormsrv2/camace";
 my $tace        = &tace;
 my $giface      = "$exec $dbdir";
@@ -28,69 +31,11 @@ print "Query = $query\n";
 print "Exec = $giface\n";
 open (READ, "echo '$query' | $giface |") or die ("Could not open $giface\n"); 
 while (<READ>) {
-  if ($_ =~ /\/\//) {next};
-  if ($_ =~ /acedb/) {next};
-}		    
+ if ($_ =~ /\/\//) {next};
+ if ($_ =~ /acedb/) {next};
+}                   
 close READ;
 
-######################################
-# do some  modifications of the file #
-######################################
-
-# make CDS2locus hash
-my %CDS2locus;
-my ($locus,$cds,$processing);    
-    
-$ENV{'ACEDB'} = "/wormsrv2/current_DB";
-my $command = "Table-maker -p \"/wormsrv2/autoace/wquery/CDS2locus.def\"\nqui
-t\n";
-
-
-open (TACE, "echo '$command' | $tace | ");
-while (<TACE>) {
-    chomp;
-    s/acedb\> //g;      # only need this is using 4_9i code, bug fixed in 4_9k onward (should be redundant)
-    next if ($_ eq "");
-    next if (/\/\//);
-    s/\"//g;
-    (/^(\S+)\s/);
-
-    ($locus,$cds) = split /\t/;
-    $CDS2locus{$cds} = $locus;
-    print "Assigning $locus to $cds\n";
-}
-close TACE;
-
-# cycle through the EMBL dump
-    
-open (EMBL2, ">/nfs/disk100/wormpub/tmp/EMBLdump.mod") or  die "Can't process new EMBL dump file\n";
-open (EMBL,  "<$outfilename.embl") or die "Can't process EMBL dump file\n";
-while (<EMBL>) {
-    
-    # gene line
-    if (/\/gene=\"(\S+)\"/) {
-	$processing = $1;
-	# is this a defined locus?
-	if ($CDS2locus{$processing} ne "") {
-	    print EMBL2 "FT                   /gene=\"$CDS2locus{$processing}\"\n";
-	    print EMBL2 "FT                   /standard_name=\"$processing\"\n";
-	    print EMBL2 "FT                   /product=\"C. elegans $CDS2locus{$processing} protein\n";
-	    print EMBL2 "FT                   (corresponding sequence $processing)\"\n";}
-	else {
-	    print EMBL2;
-	    print EMBL2 "FT                   /standard_name=\"$processing\"\n";
-	    print EMBL2 "FT                   /product=\"Hypothetical protein $processing\"\n";
-	}
-    }
-    else {
-	print EMBL2;
-    }
-}
-close EMBL;
-close EMBL2;
-
-# copy modified copy back onto output file
-system ("mv -f /nfs/disk100/wormpub/tmp/EMBLdump.mod $outfilename.embl");
 
 print "Outfile is $outfilename";
 exit;
