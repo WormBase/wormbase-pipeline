@@ -96,7 +96,6 @@ print LOG "\n\nC'est finis\n\n";
 
 close(LOG);
 
-$db->close;
 exit(0);
 
 
@@ -340,6 +339,7 @@ sub create_top_level_web_pages{
   print DB_comp "</TABLE>\n";
   print DB_comp "</P>\n";
   close (DB_comp);
+  $db->close;
 
 }
 
