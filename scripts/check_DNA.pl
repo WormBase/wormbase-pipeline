@@ -7,7 +7,7 @@
 # processes GFF files to make new files which can be used to make agp files 
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-12-01 11:54:25 $
+# Last updated on: $Date: 2003-12-03 16:03:08 $
 
 
 
@@ -70,8 +70,7 @@ foreach my $file (@gff_files) {
   next if ($file eq "");
   my ($chromosome) = $file =~ (/CHROMOSOME\_(\S+)\./);
   
-  # CHROMOSOME_X    Genomic_canonical       Sequence        1196305 1224112 .       +       .       Sequence "C46H3"
-  
+  # CHROMOSOME_X    Genomic_canonical       Sequence        1196305 1224112 .       +       .       Sequence "C46H3"  
   open (OUT, ">$agpdir/CHROMOSOME_$chromosome.clone_path.gff") || die "can't open output file '$agpdir/CHROMOSOME_$chromosome.clone_path.gff'\n";
   open (GFF, "<$gffdir/$file") || die "can't open gff file '$gffdir/$file'\n";
   while (<GFF>) {
@@ -88,8 +87,6 @@ foreach my $file (@gff_files) {
   
   # modify to make the clone_acc lists
   &GFF_with_acc("$agpdir/CHROMOSOME_$chromosome.clone_path.gff", "$agpdir/CHROMOSOME_$chromosome.clone_acc.gff" );
-
-
 
 }
 
@@ -120,14 +117,22 @@ sub GFF_with_acc{
       print "Could not fetch sequence '$gen_can'\n";
       next;
     }
-    
-    my ($acc) = $obj->at('DB_info.Database.EMBL.NDB_AC');
-    my ($sv) = $obj->at('DB_info.Database.EMBL.NDB_SV');
+
+    my $sv;
+    if($obj->at('DB_info.Database.EMBL.NDB_SV')){
+      ($sv) = $obj->at('DB_info.Database.EMBL.NDB_SV');
+    }
+    elsif($obj->at('DB_info.Database.GenBank.NDB_SV')){
+      ($sv) = $obj->at('DB_info.Database.GenBank.NDB_SV');
+    }
     
     # now just want the numerical suffix of sequence version field
-    $sv =~ s/.*\.//;
-    print OUT "$_ acc=$acc ver=$sv\n";
-    
+    my $suffix = substr($sv,-1,1);  
+    substr($sv,-2,2,"");  
+    my $acc = $sv;
+    print OUT "$_ acc=$acc ver=$suffix\n";
+       
+
     $obj->DESTROY();
     
   }
