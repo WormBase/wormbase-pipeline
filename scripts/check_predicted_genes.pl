@@ -102,8 +102,8 @@ foreach my $gene (@predicted_genes){
 
   for($i=1; $i<@exon_coord2;$i++){
     my $intron_size = ($exon_coord1[$i] - $exon_coord2[$i-1] -1);
-    print "Small intron ($intron_size bp) in $gene\n" if (($intron_size < 21)  && $verbose);
-    print LOG "Small intron ($intron_size bp) in $gene\n" if ($intron_size < 21);
+    print "Gene warning - $gene has a small intron ($intron_size bp)\n" if (($intron_size < 21)  && $verbose);
+    print LOG "Gene warning - $gene has a small intron ($intron_size bp)\n" if ($intron_size < 21);
 
   }
 
@@ -154,7 +154,7 @@ foreach my $gene (@predicted_genes){
   }
 
   # feed DNA sequence to function for checking
-  &test_gene_sequence_for_errors($gene,$start_tag,$end_tag,$dna);
+  &test_gene_sequence_for_errors($gene,$start_tag,$end_tag,$dna,$gene_object);
 
 }
 
@@ -170,6 +170,7 @@ sub test_gene_sequence_for_errors{
   my $start_tag = shift;
   my $end_tag = shift;
   my $dna = shift;
+  my $gene_object = shift;
 
   # trim DNA sequence to just A,T,C,G etc.
   $dna =~ s/\n//g;
@@ -183,6 +184,37 @@ sub test_gene_sequence_for_errors{
   my $stop_codon = substr($dna,-3,3);   
 
   # check for length errors
+  if ($gene_length < 100){
+    print LOG "Gene warning - $gene is very short ($gene_length bp), ";
+    print "Gene warning - $gene is very short ($gene_length bp), " if $verbose;
+    if(defined($gene_object->at('Properties.Coding.Confirmed_by'))){
+      print LOG "gene is Confirmed\n";
+      print "gene is Confirmed\n" if $verbose;
+    }
+    elsif(defined($gene_object->at('Visible.Matching_cDNA'))){
+      print LOG "gene is Partially_confirmed\n";
+      print "gene is Partially_confirmed\n" if $verbose;
+    }
+    else{
+      print LOG "gene is Predicted\n";
+      print "gene is predicted\n" if $verbose;
+    }
+  }
+  elsif($gene_length < 150){
+    if (defined($gene_object->at('Properties.Coding.Confirmed_by'))){
+#      print LOG "Gene warning - $gene is short ($gene_length bp) and is Confirmed\n";
+#      print "Gene warning - $gene is short ($gene_length bp) and is Confirmed\n" if $verbose;
+    }    
+    elsif(defined($gene_object->at('Visible.Matching_cDNA'))){
+      print LOG "Gene warning - $gene is short ($gene_length bp) and is Partially_confirmed\n";
+      print "Gene warning - $gene is short ($gene_length bp) and is Partially_confirmed\n" if $verbose;
+    }
+    else{
+      print LOG "Gene warning - $gene is short ($gene_length bp) and is Predicted\n";
+      print "Gene warning - $gene is short ($gene_length bp) and is Predicted\n" if $verbose;
+    }
+  }
+
   if ($remainder != 0){
     if (($end_tag ne "present") && ($start_tag ne "present")){
       print LOG "Gene error - $gene: length ($gene_length bp) not divisible by 3, Start_not_found & End_not_found tags MISSING\n";
