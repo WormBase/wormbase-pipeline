@@ -5,7 +5,7 @@
 # completely rewritten by Keith Bradnam from list_loci_designations
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-07-14 08:36:46 $      
+# Last updated on: $Date: 2004-07-14 08:54:18 $      
 #
 # This script should be run under a cron job and simply update the webpages that show
 # current gene names and sequence connections.  Gets info from geneace.  
@@ -34,10 +34,6 @@ my $log = "/tmp/update_web_gene_names";
 open(LOG,">$log") || carp "Couldn't open tmp log file\n";
 print LOG "Running update_web_gene_names.pl on $rundate\n\n";
 
-# query against active geneace database
-my $db = Ace->connect(-path  => "/wormsrv1/geneace",
-                      -program =>$tace) || do { print "Connection failure: ",Ace->error; croak();};
-
 
 # make the a-z lists based on CGC_name
  print LOG "Creating loci pages\n";
@@ -50,8 +46,6 @@ print LOG "Making gene lists\n";
 ###################################################
 # Tidy up - close things, mail log, run webpublish
 ###################################################
-
-$db->close;
 
 
 # now update pages using webpublish
@@ -77,6 +71,12 @@ exit(0);
 
 
 sub create_loci_pages{
+
+  # query against active geneace database
+  my $db = Ace->connect(-path  => "/wormsrv1/geneace",
+                      -program =>$tace) || do { print "Connection failure: ",Ace->error; croak();};
+
+
 
   # open text file which will contain all genes
   open (TEXT, ">$www/loci_all.txt") || croak "Couldn't open text file for writing to\n";
@@ -195,6 +195,10 @@ sub create_loci_pages{
     close(HTML);    
   }
   close(TEXT);
+
+  $db->close;
+
+
 }
 
 
@@ -208,7 +212,7 @@ sub make_gene_lists{
 
   # connect to AceDB using TableMaker, 
   my $command="Table-maker -p /wormsrv1/geneace/wquery/gene2molecular_name.def\nquit\n";
-                                                                                     
+  print LOG "Using command $command\n";
   open (TACE, "echo '$command' | $tace /wormsrv1/geneace |") || print LOG "ERROR: Can't open tace connection to /wormsrv1/geneace\n";
   while (<TACE>) {
     chomp;
