@@ -9,8 +9,8 @@
 # Counts the number of objects in an ACEDB database for each Class stated in the config file
 
 # v1.1
-# 001109 : dl1 : change output style to reflect WWW WormBase pages
-  
+# 001109 : dl  : change output style to reflect WWW WormBase pages
+# 010712 : dl  : added new classes to list 
 
 # v1.0
 # 001009 : ag3 : now accepts command-line arguments 
@@ -317,6 +317,7 @@ Species
 Strain
 Table
 Tag
+Transgene
 Url
 __END__
 
