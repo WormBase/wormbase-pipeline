@@ -7,7 +7,7 @@
 # Attempt to unify all of the diverse scripts to fetch ESTs, OSTs, mRNAs etc. used by blat 
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-09-11 13:31:09 $
+# Last edited on: $Date: 2003-09-12 07:42:21 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -406,7 +406,7 @@ sub make_embl_cds{
     if (/^SQ/) {
       print "// Parsed accession $acc\n" if ($verbose);
       
-      open (CDS, "CDS.pl $acc |");   # Ugly. this needs rationalising dl
+      open (CDS, "/wormsrv2/scripts/CDS.pl $acc |");   # Ugly. this needs rationalising dl
       while  (<CDS>) {
 	print OUT_EMBL $_;
       }
