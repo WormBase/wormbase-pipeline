@@ -5,7 +5,7 @@
 # A script to make multiple copies of camace for curation, and merge them back again
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2004-05-06 09:12:35 $
+# Last edited on: $Date: 2004-06-15 14:53:19 $
 
 
 use strict;
@@ -184,6 +184,9 @@ sub update_camace {
   # synchronize the gene -> sequence connections
   print  "Update gene2CDS/Transcript/Pseudogene connections in /wormsrv1/camace\n";
   system ("cgc_names_for_worm_genes.pl -update_camace") && die "Failed to run cgc_names_for_worm_genes.pl\n";
+
+  #check wormsrv1/camace to see if there are any errors prior to the build starting.
+  system ("camcheck.pl") && die "Failed to run camcheck.pl\n";
 }
 
 #(3)Data dispersion#
