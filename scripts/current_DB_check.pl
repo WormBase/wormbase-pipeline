@@ -8,7 +8,7 @@
 # to look for bogus sequence entries
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-07-18 16:07:01 $
+# Last updated on: $Date: 2002-08-05 08:39:57 $
 
 use Ace;
 use lib "/wormsrv2/scripts/"; 
@@ -232,8 +232,11 @@ sub create_log_files{
   open(LOG,">$log") || die "cant open $log";
 
   print LOG "$0 started at ",`date`,"\n";
-  print LOG "Checking $database\n";
-  print LOG "=============================================\n";
+  print LOG "Checking $database and looking for sequences which don't have a Source tag.\n";
+  print LOG "First column below shows timestamp info, second column shows sequence name,\n";
+  print LOG "third column shows possible tag name which is creating this object.  Optional\n";
+  print LOG "fourth column indicates whether the sequence in question has valid splice variants\n";
+  print LOG "==========================================================================\n";
 
 
 }
