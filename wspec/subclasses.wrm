@@ -73,17 +73,17 @@ Filter "((Method = curated) OR (Method = provisional)) AND (Species = C*briggsae
 Class elegans_RNA_genes
 Visible
 Is_a_subclass_of Transcript
-Filter "(NOT Method = Transcript) AND (Species = C*elegans)"
+Filter "(NOT Method = Coding_transcript) AND (Species = C*elegans)"
 
 Class briggsae_RNA_genes
 Visible
 Is_a_subclass_of Transcript
-Filter "(NOT Method = Transcript) AND (Species = C*briggsae)"
+Filter "(NOT Method = Coding_transcript) AND (Species = C*briggsae)"
 
 Class Coding_transcripts
 Visible
 Is_a_subclass_of Transcript
-Filter "(Method = Coding_ranscript) AND (Species = C*elegans)"
+Filter "(Method = Coding_transcript) AND (Species = C*elegans)"
 
 
 
@@ -166,6 +166,15 @@ Class Lineage
 Visible
 Is_a_subclass_of Tree
 Filter "Cell_Lineage"
+
+
+// First attempt to use new 'composite class' to merge together various
+// gene like classes for C. elegans genes
+
+//Class worm_genes
+//Visible
+//Composite_of CDS
+//Composite_of Transposon
 
 
 
