@@ -7,7 +7,7 @@
 # Attempt to unify all of the diverse scripts to fetch ESTs, OSTs, mRNAs etc. used by blat 
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2004-05-10 13:45:54 $
+# Last edited on: $Date: 2004-05-18 15:14:34 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -128,7 +128,7 @@ sub make_ests{
   open (OUT_ACE, ">$dir/$est_file.ace")     if ($ace);
 
   # grab everything which is C. elegans species in EST division of EMBL (=emblrelease + emblnew)
-  open (SEQUENCES, "$getz -sf fasta -f \"id acc des seq sv\" \'([embl-org:caenorhabditis elegans] \& [embl-div:est])\' |") ;
+  open (SEQUENCES, "$getz -sf fasta -f \"id acc des sv seq \" \'([embl-org:caenorhabditis elegans] \& [embl-div:est])\' |") ;
 
   # reset variables
   $id = "";
@@ -136,12 +136,14 @@ sub make_ests{
   $sv = "";
 
   while (<SEQUENCES>) {
-
-    unless (/^AC\s+/ || /^DE\s+/ || /^>/ || /^ID\s+/ || /^SV\s+/) {
-      print OUT_EST  if ($ost_seq == 0);
-      print OUT_ACE  if (($ost_seq == 0) && ($ace));
-      print OUT_OST  if (($ost_seq == 1) && ($ost));      
-    }
+      
+      print;
+      
+      unless (/^AC\s+/ || /^DE\s+/ || /^>/ || /^ID\s+/ || /^SV\s+/) {
+	  print OUT_EST  if ($ost_seq == 0);
+	  print OUT_ACE  if (($ost_seq == 0) && ($ace));
+	  print OUT_OST  if (($ost_seq == 1) && ($ost));      
+      }
     
     # grab accession, id, sequence version, and description
     ($acc = $1) if (/^AC\s+(\S+);/);
