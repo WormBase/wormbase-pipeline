@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-03-03 16:57:52 $
+# Last edited on: $Date: 2004-03-04 12:51:33 $
 
 
 #################################################################################
@@ -1105,7 +1105,6 @@ sub parse_briggsae_data {
   &load($file,"briggsae_rna_genes");
 
   # briggsae BAC end data
-
   $file = "/wormsrv1/briggsae/BAC_ENDS/briggsae_BAC_ends.fasta";
   &load($file,"briggsae_BAC");
                            
@@ -1115,7 +1114,7 @@ sub parse_briggsae_data {
   $file = "/wormsrv1/briggsae/BAC_ENDS/briggsae_BAC_ends_data.ace";
   &load($file,"briggsae_BAC");
                            
-  $file = "/wormsrv1/briggsae/BAC_ENDS/briggsae_bac_ends_unique.ace";
+  $file = "/wormsrv1/briggsae/BAC_ENDS/bac_ends_unique.ace";
   &load($file,"briggsae_BAC");
 
   $file = "/wormsrv1/briggsae/BAC_ENDS/briggsae_bac_clone_ends.ace";
