@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.0 
+#!/usr/local/bin/perl5.6.1 -w
 #
 # blat2ace.pl
 # kj2
@@ -20,7 +20,7 @@
 # 010905 by Kerstin Jekosch
 
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2002-11-21 10:23:44 $
+# Last edited on: $Date: 2003-04-01 09:21:50 $
 
 
 use strict;
@@ -49,7 +49,6 @@ our %camace;
 our %stlace;
 
 our $type = "";
-our $db   = "";
 our %word = (
 	     EST      => 'BLAT_EST',
 	     mRNA     => 'BLAT_mRNA',
@@ -57,10 +56,10 @@ our %word = (
 	     NEMATODE => 'BLATX_NEMATODE',
 	     );
 
+
 # create log file
-my $rundate    = `date +%y%m%d`; 
-chomp $rundate;
-open (LOG, ">/wormsrv2/logs/blat2ace.log.$rundate.$$") || die "Couldn't write to the blinking log file, innit?\n";
+our $log;
+&create_log_files;
 
  ########################################
  # command-line options & ramifications #
@@ -626,7 +625,7 @@ sub usage {
     }
     if ($error == 20) {
 	# 
-	print "\Don't want to do this for the -x option.\n";
+	print "\nDon't want to do this for the -x option.\n";
 	print "hasta luego\n\n";
 	exit(0);
     }
@@ -635,6 +634,31 @@ sub usage {
 	exec ('perldoc',$0);
     }
 }
+
+
+##############################################################
+
+sub create_log_files{
+
+  # Create history logfile for script activity analysis
+  $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`
+");
+
+  # create main log file using script name for
+  my $script_name = $1;
+  $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
+  my $WS_version = &get_wormbase_version_name;
+  my $rundate     = `date +%y%m%d`; chomp $rundate;
+  $log        = "/wormsrv2/logs/$script_name.${WS_version}.$rundate.$$";
+
+  open (LOG, ">$log") or die "cant open $log";
+  print LOG "$script_name\n";
+  print LOG "started at ",`date`,"\n";
+  print LOG "=============================================\n";
+  print LOG "\n";
+
+}
+
 
 ###################################
 
