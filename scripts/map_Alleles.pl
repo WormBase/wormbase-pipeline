@@ -7,7 +7,7 @@
 # This maps alleles to the genome based on their flanking sequence
 #
 # Last updated by: $Author: krb $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2003-12-01 11:36:47 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2003-12-16 15:09:25 $        # quickly see when script was last changed and by whom
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -38,7 +38,6 @@ GetOptions( "debug:s"    => \$debug,
 	    "limit=s"    => \$limit,
 	    "database=s" => \$database,
 	    "WS=s"       => \$ver,
-	    "verbose"    => \$verbose,
 	    "help"       => \$help,
 	    "restart=s"  => \$restart,
 	    "no_parse"   => \$no_parse,
