@@ -214,6 +214,8 @@
 		        Mutagen UNIQUE Text UNIQUE Text
 			Procedure Text
 			Transposon_insertion Text  // Text Transposon type
+			Transposon_excision Text  //  new tag [030220 krb]
+			Transposon_mobilisation Text  // added [030220 krb]
 			Derived_from ?Allele XREF Derivative
 			// for revertants and deletions from Transposon alleles
 			Isolated_for ?Author  // person requesting allele 
@@ -1860,7 +1862,7 @@
               Person  ?Person XREF Laboratory
               Past_lab_member ?Person XREF Old_laboratory // I think this is useful and
                                                           // anyway, the reverse is track.
-
+	      Remark ?Text
 
 
 
