@@ -6,8 +6,8 @@
 #
 # by Kerstin Jekosch
 #
-# Last updated by: $Author: krb $                      
-# Last updated on: $Date: 2003-03-14 09:29:03 $        
+# Last updated by: $Author: dl1 $                      
+# Last updated on: $Date: 2003-08-19 10:49:34 $        
 
 
 $|=1;
@@ -88,7 +88,7 @@ foreach my $chromosome (@chromosomes) {
     @line = split /\t/;
     
     if ($line[1] eq "RNAi") {
-      my ($name) = ($line[8] =~ /\"(.*)\"$/);
+      my ($name) = ($line[8] =~ /\"(\S+.+)\"$/);
       $RNAicount{$name}++;
       my $RNAiname = $name.".".$RNAicount{$name};
       $RNAi{$RNAiname} = [$line[3],$line[4]];
