@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: krb $
-// Last edited on: $Date: 2004-11-19 11:53:22 $
+// Last edited on: $Date: 2004-11-19 13:04:00 $
  
 
 
@@ -390,6 +390,8 @@
 				Pos_neg_data ?Pos_neg_data
                   Interpolated_map_position UNIQUE ?Map UNIQUE Float // for loci with CDSs but no real Map position
 		  Landmark_gene // for those genes that will appear in genetic map of Genome Browser
+		  Pseudo_map_position // should be added to flag those genes which have Map position tags that
+				      // were 'promoted' from Interpolated_map_position tags
         Reference ?Paper XREF Gene
         Remark ?Text #Evidence
 	Method UNIQUE ?Method
