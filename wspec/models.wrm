@@ -859,7 +859,7 @@
                         NI_number UNIQUE Text
 			Protein_id ?Sequence UNIQUE Text UNIQUE Int
 				   // modified to deal with multiple protein_ids [dl 1999-12-22]
-			DB_remark ?Text		// EMBL/Genbank
+			DB_remark ?Text	#Evidence	// EMBL/Genbank
 			Keyword ?Keyword	// EMBL/Genbank
 			DB_annotation ?Database UNIQUE ?LongText
 			EMBL_dump_info #EMBL_dump_info
@@ -1123,7 +1123,7 @@
 	  Display  View ?View
 		   Default_view UNIQUE ?View
 	  DB_info	Database ?Database ?Text ?Accession_number XREF Protein // ID  Accession_number
-		  	DB_remark ?Text		// Swissprot CC entries
+		  	DB_remark ?Text	#Evidence	// Swissprot CC entries
 			Keyword ?Keyword	// Swissprot
 	  		DB_searched ?Database Int // Int = version - should this be here?
 	  Origin  From_Database ?Database UNIQUE Int	// release number
@@ -1165,7 +1165,7 @@
         Remark ?Text
 	Title ?Text
 	DB_info	Database ?Database Text ?Accession_number XREF Motif // ID  Accession_number
-	  	DB_remark ?Text
+	  	DB_remark ?Text #Evidence
 		DB_text ?LongText
 		Template ?Url //old way of making and clling URLs
 		Web_location ?WWW_server
