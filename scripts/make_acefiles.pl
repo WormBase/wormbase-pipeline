@@ -1,20 +1,19 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/bin/perl5.8.0 -w
 #
-# make_acefiles 
+# make_acefiles.pl 
 #
 # dl1
 #
 # Generates the .acefiles from the primary databases as a prelim for building
 # autoace.
 #
-# Last updated by: $Author: dl1 $                     
-# Last updated on: $Date: 2003-04-24 09:29:41 $       
+# Last updated by: $Author: krb $                     
+# Last updated on: $Date: 2003-05-20 14:43:27 $       
 
 #################################################################################
 # Variables                                                                     #
 #################################################################################
 
-$|=1;
 use strict;
 use lib "/wormsrv2/scripts/";   
 use Wormbase;
@@ -88,14 +87,14 @@ if ($db) {
 ##############################
 
 my $endtime = `date +%H:%M:%S`; chomp $endtime;
-print LOG "Ended make_acefiles @ $endtime\n";
-print "Ended make_acefiles @ $endtime\n" if ($debug);
+print LOG "Ended make_acefiles.pl @ $endtime\n";
+print "Ended make_acefiles.pl @ $endtime\n" if ($debug);
 
 close(STDOUT);
 close(STDERR);
 close(LOG);
 
-&mail_maintainer("WormBase Report: make_acefiles",$maintainers,$log);
+&mail_maintainer("WormBase Report: make_acefiles.pl",$maintainers,$log);
 
 exit (0);
 
@@ -137,7 +136,7 @@ sub create_log_files{
   print LOG "======================================================================\n";
 
   if ($debug) {
-    print "# make_acefiles\n\n";
+    print "# make_acefiles.pl\n\n";
     print "# run details    : $rundate $runtime\n";
     print "\n";
     print "WormBase version : ${WS_version}\n";
@@ -148,7 +147,7 @@ sub create_log_files{
     print "  Output to /wormsrv1\n"                         if ($dev);
     print "======================================================================\n";
     print "\n";
-    print "Starting make_acefiles .. \n\n";
+    print "Starting make_acefiles.pl .. \n\n";
     print "writing .acefiled to '$basedir'\n";
   }
 
@@ -313,17 +312,23 @@ sub mknewacefiles {
     open (TACE,"| $exe");
     print TACE $command;
     close TACE;
-    print "Made file $filepath\n";
-    
-    # cat extra data into file if needed and clear up
-    if ($follow) {
+
+
+    # Check file was made (if class is empty no output file will be made from tace, and downstream
+    # checks/processing can be skipped)
+    if(-e $filepath){
+      print "Made file $filepath\n";
+
+      # cat extra data into file if needed and clear up
+      if ($follow) {
 	system ("cat $extrafile >> $filepath");
 	system ("rm -f $extrafile");
 	undef ($follow);
-    }
+      }
 
     # process database dumps to add database names into time stamps
-    &process_ace_file($filepath,$dbname);
+      &process_ace_file($filepath,$dbname);
+    }     
     
     next;
   }
@@ -390,23 +395,23 @@ __END__
 
 =pod
 
-=head2   NAME - make_acefiles
+=head2   NAME - make_acefiles.pl
 
 =head1 USAGE
 
 =over 4
 
-=item make_acefiles [-options]
+=item make_acefiles.pl [-options]
 
 =back
 
-make_acefiles is the first step in a WS build.
+make_acefiles.pl is the first step in a WS build.
 
 to write a number of .acefiles which are data dumps from the respective
 ACEDB databases which make up the full C.elegans release (i.e. camace,
 stlace, geneace, brigace, citace & cshace)
 
-make_acefiles MANDATORY arguments:
+make_acefiles.pl MANDATORY arguments:
 
 =over 4
 
@@ -414,7 +419,7 @@ make_acefiles MANDATORY arguments:
 
 =back
 
-make_acefiles OPTIONAL arguments:
+make_acefiles.pl OPTIONAL arguments:
 
 =over 4
 
@@ -428,9 +433,9 @@ make_acefiles OPTIONAL arguments:
 
 =back
 
-make_acefiles DEFAULT behaviour:
+make_acefiles.pl DEFAULT behaviour:
 
-make_acefiles will write .acefiles for each of the primary databases to the
+make_acefiles.pl will write .acefiles for each of the primary databases to the
 /wormsrv2/wormbase/ directories camace, stlace, briggsae, caltech, csh,
 emblace, and geneace.
 

@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder [-options]
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2003-05-19 12:45:30 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2003-05-20 14:43:27 $
 
 
 #################################################################################
@@ -541,7 +541,7 @@ sub last_versions {
 
 
 #################################################################################
-# make_acefiles                                                                 #
+# make_acefiles                                                               
 #################################################################################
 
 sub make_acefiles {
@@ -553,9 +553,9 @@ sub make_acefiles {
   # exit unless A4:Primary_databases_on_wormsrv2
   &usage("Build_in_progress_absent") unless (-e "$logdir/$flag{'A4'}");
   
-  system ("$scriptdir/make_acefiles") && die "Couldn't run make_acefiles\n";
+  system ("$scriptdir/make_acefiles.pl") && die "Couldn't run make_acefiles.pl\n";
   $runtime = `date +%H:%M:%S`; chomp $runtime;
-  print LOG "Finished running make_acefiles at $runtime\n";
+  print LOG "Finished running make_acefiles.pl at $runtime\n";
 
   # make a make_acefiles log file in /logs
   system ("touch $logdir/$flag{'A5'}");
