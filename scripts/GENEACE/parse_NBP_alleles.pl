@@ -2,7 +2,7 @@
 
 # Author: Chao-Kung Chen
 # Last updated by $Author: krb $
-# Last updated on: $Date: 2004-12-06 17:40:03 $ 
+# Last updated on: $Date: 2004-12-08 14:27:04 $ 
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -13,15 +13,15 @@ use Getopt::Long;
 
 # ----- command line options
 my ($input, $debug);
-GetOptions ("i|input=s"  => \$input);
+GetOptions ("input=s"  => \$input);
 
 # ----- warn
 if (!$input){
-  print "\n\nUSAGE: -i path/filename OR -input path/filename\n\n";
+  print "\n\nUSAGE: -input path/filename\n\n";
   exit(0);
 }
 
-# ----- check user previledge
+# ----- check user priviledges
 my $user = `whoami`; chomp $user;
 if ($user ne "wormpub"){
   print "\n\nYou need to be wormpub to do this!\n\n";
@@ -32,8 +32,20 @@ if ($user ne "wormpub"){
 my $ga = init Geneace();
 my $database = $ga->curr_db;
 my $tace = &tace;
-my $allele_dir = "/wormsrv1/geneace/ALLELE_DATA";
+my $allele_dir = "/wormsrv1/geneace/ALLELE_DATA/JAPANESE_KNOCKOUTS";
+
+
+##########################################
+# open logfile and various output streams
+##########################################
+
 my $rundate = &rundate;
+my $log = "/wormsrv2/logs/$0.$rundate.$$";
+open(LOG,    ">$log")                                              || die $!;
+open(ACE,    ">$allele_dir/NBP_alleles.$rundate.ace")              || die $!;
+open(DELETE, ">$allele_dir/NBP_alleles.$rundate.delete.ace")       || die $!;
+open(CHECK,  ">$allele_dir/NBP_alleles_to_check_by_hand.$rundate") || die $!;
+
 
 # ----- prepare a locus to gene_id conversion hash
 
@@ -45,13 +57,15 @@ my %clone_info = $ga->get_clone_chrom_coords(); # key is clone, values: chrom, s
 # ----- parse NBP flatfile
 my (%NBP_info, %chrom_NBP_allele);
 
+# only work with certain fields in their input file
 my @NBP = `cut -f 1-5,8,12 $input`;
 
-open(CHECK, ">$allele_dir/NBP_alleles_to_check_by_hand.$rundate") || die $!;
+
+print LOG "\nProcessing \'$input\' input file\n";
 
 foreach(@NBP){
   chomp;
-  my($allele, $locus, $clone, $indel, $pheno, $primers, $mapper)=split(/\t+/,$_);
+  my($allele, $locus, $clone, $indel, $pheno, $primers, $mapper)=split(/\t/,$_);
 
   if ($allele =~ /^tm0.+/){
     $allele =~ /(tm)0(\d+)/;  # remove leading 0 in allele name
@@ -135,56 +149,25 @@ foreach(@NBP){
   #print "(1) $allele\n(2)$locus\n(3)$clone\n(4)$indel\n(5)$pheno\n(6)$primers\n(7)$mapper\n";# if $allele eq "tm1223";
 }
 
-# ----- acefile names, log file and location
 
-my $acefile = $input;
-$acefile =~ /(.+)\.txt/;
-$acefile = $1.".ace";
-
-open(ACE, ">$acefile") || die $!;
-
-# last update has the -D lines to delete everything from last update as the NBP sends full updates, not incremental
-my @last_updates = glob("$allele_dir/NBP_last_update.ace.*");
-my $last_update = $last_updates[-1];
-
-open(ACE_del, ">$allele_dir/NBP_last_update.ace.$rundate") || die $!;
-
-my $acelog = $acefile;
-$acelog =~ s/^.+\///;
-
-my $log = "/wormsrv2/logs/$acelog.$rundate";
-`rm -f $log` if -e $log;
-
-open(LOG, ">$log") || die $!;
-#print LOG "\n\nLoaded $acefile to Geneace . . .\n";
-print LOG "--------------------------------------------------\n\n";
+print LOG "Finding flanking sequences for alleles\n";
 
 &get_30_bp_flanks($database);
 
-# ----- upload data to Geneace
-
-# parse in the $last_update file first to remove everthing from last update and then upload new updates
-#my $command="pparse $last_update\npparse $acefile\nsave\nquit\n";
-
-print LOG "\n\n";
-#$ga->upload_database($ga->geneace, $command, "NBP_allele", $log);
 
 # ----- mail notice
 
 my $recipients = "mt3\@sanger.ac.uk";
-mail_maintainer("NBP allele update", $recipients, $log);
-
-# ----- moving old files to ARCHIVE dir
-
-my @old_txt   = glob("$allele_dir/NBP_*txt"); pop @old_txt;
-my @old_ace   = glob("$allele_dir/NBP_*ace"); pop @old_ace;	
-my @old_check = glob("$allele_dir/NBP_alleles_to_check_by_hand*"); pop @old_check;
-my @old_last  = glob("NBP_last_update.ace*"); pop @old_last;
-
-`mv @old_txt @old_ace @old_check @old_last $allele_dir/ARCHIVE/`;
+&mail_maintainer("NBP allele update", $recipients, $log);
 
 
 # ----- The End
+
+print LOG "\nScript finished\n";
+close(LOG);
+close(CHECK);
+close(ACE);
+close(DELETE);
 exit(0);
 
 #-------------------------------------
@@ -211,7 +194,7 @@ sub get_30_bp_flanks {
     foreach my $allele (@{$chrom_NBP_allele{$chrom}}){
 
       print ACE "\nAllele : \"$allele\"\n";
-      print ACE_del "\nAllele : \"$allele\"\n";
+      print DELETE "\nAllele : \"$allele\"\n";
       my @indel_info = @{$NBP_info{$allele}->[2]};
       my $L_clone = $indel_info[4];
       my $R_clone = $indel_info[5];
@@ -223,12 +206,12 @@ sub get_30_bp_flanks {
          $DNA_R =substr($line, $clone_info{$R_clone}->[1] + $indel_info[1]-1,     30)                if $R_clone ne "NA";
 
       print ACE "Sequence \"$NBP_info{$allele}->[1]\"\n";
-      print ACE_del "-D Sequence \"$NBP_info{$allele}->[1]\"\n";
+      print DELETE "-D Sequence \"$NBP_info{$allele}->[1]\"\n";
 
       if ( $NBP_info{$allele}->[0] =~ /\w{3,4}-.+/ ){
 	my $locus = lc($NBP_info{$allele}->[0]);  # NBP data often use capitalized locus name
 	print ACE "Gene \"$Gene_info{$locus}{'Gene'}\"  \/\/$NBP_info{$allele}->[0]\n" if exists $Gene_info{$locus}{'Gene'};
-	print ACE_del "-D Gene \"$Gene_info{$locus}{'Gene'}\"  \/\/$NBP_info{$allele}->[0]\n" if exists $Gene_info{$locus}{'Gene'};
+	print DELETE "-D Gene \"$Gene_info{$locus}{'Gene'}\"  \/\/$NBP_info{$allele}->[0]\n" if exists $Gene_info{$locus}{'Gene'};
 	print LOG "ERROR: $allele is linked to a locus ($locus) which does not associate with a Gene id\n" if !exists $Gene_info{$locus}{'Gene'};
       }
 
@@ -242,38 +225,38 @@ sub get_30_bp_flanks {
       print ACE "Author \"$NBP_info{$allele}->[5]\"\n" if $NBP_info{$allele}->[5] ne "NA";
       print ACE "Flanking_sequences \"$DNA_L\" \"$DNA_R\"\n";
       print ACE "Deletion\n" if $indel_info[3] eq "NA";
-      print ACE_del "-D Flanking_PCR_product     \"$allele"."_external\"\n";
-      print ACE_del "-D Flanking_PCR_product     \"$allele"."_internal\"\n";
-      print ACE_del "-D Author \"$NBP_info{$allele}->[5]\"\n" if $NBP_info{$allele}->[5] ne "NA";
-      print ACE_del "-D Flanking_sequences \"$DNA_L\" \"$DNA_R\"\n";
-      print ACE_del "-D Deletion\n" if $indel_info[3] eq "NA";
+      print DELETE "-D Flanking_PCR_product     \"$allele"."_external\"\n";
+      print DELETE "-D Flanking_PCR_product     \"$allele"."_internal\"\n";
+      print DELETE "-D Author \"$NBP_info{$allele}->[5]\"\n" if $NBP_info{$allele}->[5] ne "NA";
+      print DELETE "-D Flanking_sequences \"$DNA_L\" \"$DNA_R\"\n";
+      print DELETE "-D Deletion\n" if $indel_info[3] eq "NA";
 
       if ($indel_info[3] ne "NA"){
 	print ACE "Deletion_with_insertion \"", lc($indel_info[3]),"\"\n";
 	print ACE "Method \"Deletion_and_insertion_allele\"\n";
-	print ACE_del "-D Deletion_with_insertion \"", lc($indel_info[3]),"\"\n";
-	print ACE_del "-D Method \"Deletion_and_insertion_allele\"\n";
+	print DELETE "-D Deletion_with_insertion \"", lc($indel_info[3]),"\"\n";
+	print DELETE "-D Method \"Deletion_and_insertion_allele\"\n";
       }
       else {
 	print ACE "Method \"Deletion_allele\"\n";
-	print ACE_del "-D Method \"Deletion_allele\"\n";
+	print DELETE "-D Method \"Deletion_allele\"\n";
       }
       print ACE "NBP_allele\n";
       print ACE "Species \"Caenorhabditis elegans\"\n";
-      print ACE "Phenotype \"$NBP_info{$allele}->[3]\"\n";
+      print ACE "Phenotype \"$NBP_info{$allele}->[3]\"\n" unless ($NBP_info{$allele}->[3] eq "NA");
       print ACE "Mutagen \"TMP\/UV\"\n";
       print ACE "Location \"FX\"\n";
-      print ACE "MAP \"$chrom\"\n"; 
+      print ACE "Map \"$chrom\"\n"; 
       print ACE "Remark \"Mutations at cosmid coordinates: $indel_info[6]\"\n";
       print ACE "Remark \"<A href='http:\\/\/www.shigen.nig.ac.jp\/c.elegans\/mutants/DetailsSearch?lang=english&seq=$allele_id' target=_new> more on $allele...<\/A>\"\n";
-      print ACE_del "-D NBP_allele\n";
-      print ACE_del "-D Species \"Caenorhabditis elegans\"\n";
-      print ACE_del "-D Phenotype \"$NBP_info{$allele}->[3]\"\n";
-      print ACE_del "-D Mutagen \"TMP\/UV\"\n";
-      print ACE_del "-D Location \"FX\"\n";
-      print ACE_del "-D MAP \"$chrom\"\n"; 
-      print ACE_del "-D Remark \"Mutations at cosmid coordinates: $indel_info[6]\"\n";
-      print ACE_del "-D Remark \"<A href='http:\\/\/www.shigen.nig.ac.jp\/c.elegans\/mutants/DetailsSearch?lang=english&seq=$allele_id' target=_new> more on $allele...<\/A>\"\n";
+      print DELETE "-D NBP_allele\n";
+      print DELETE "-D Species \"Caenorhabditis elegans\"\n";
+      print DELETE "-D Phenotype \"$NBP_info{$allele}->[3]\"\n" unless ($NBP_info{$allele}->[3] eq "NA");
+      print DELETE "-D Mutagen \"TMP\/UV\"\n";
+      print DELETE "-D Location \"FX\"\n";
+      print DELETE "-D Map \"$chrom\"\n"; 
+      print DELETE "-D Remark \"Mutations at cosmid coordinates: $indel_info[6]\"\n";
+      print DELETE "-D Remark \"<A href='http:\\/\/www.shigen.nig.ac.jp\/c.elegans\/mutants/DetailsSearch?lang=english&seq=$allele_id' target=_new> more on $allele...<\/A>\"\n";
 
 
       # ----- only for those tm allele having primer information
@@ -309,35 +292,35 @@ sub get_30_bp_flanks {
 	print ACE "Length ", length($NBP_info{$allele}->[4]->[2]), "\n";
         print ACE "PCR_product \"$allele"."_internal\"\n";
 
-	print ACE_del "\nPCR_product : $allele"."_external\n";
-	print ACE_del "-D Oligo $allele"."_external_f\n";
-	print ACE_del "-D Oligo $allele"."_external_b\n";
-	print ACE_del "-D Flanks_deletion \"$allele\"\n";
+	print DELETE "\nPCR_product : $allele"."_external\n";
+	print DELETE "-D Oligo $allele"."_external_f\n";
+	print DELETE "-D Oligo $allele"."_external_b\n";
+	print DELETE "-D Flanks_deletion \"$allele\"\n";
 	
-	print ACE_del "\nOligo : \"$allele"."_external_f\"\n";
-	print ACE_del "-D Sequence \"$NBP_info{$allele}->[4]->[0]\"\n";
-	print ACE_del "-D Length ", length($NBP_info{$allele}->[4]->[0]), "\n";
-        print ACE_del "-D PCR_product \"$allele"."_external\"\n";
+	print DELETE "\nOligo : \"$allele"."_external_f\"\n";
+	print DELETE "-D Sequence \"$NBP_info{$allele}->[4]->[0]\"\n";
+	print DELETE "-D Length ", length($NBP_info{$allele}->[4]->[0]), "\n";
+        print DELETE "-D PCR_product \"$allele"."_external\"\n";
 
-      	print ACE_del "\nOligo : \"$allele"."_external_b\"\n";
-	print ACE_del "-D Sequence \"$NBP_info{$allele}->[4]->[3]\"\n";
-	print ACE_del "-D Length ", length($NBP_info{$allele}->[4]->[3]), "\n";
-        print ACE_del "-D PCR_product \"$allele"."_external\"\n";
+      	print DELETE "\nOligo : \"$allele"."_external_b\"\n";
+	print DELETE "-D Sequence \"$NBP_info{$allele}->[4]->[3]\"\n";
+	print DELETE "-D Length ", length($NBP_info{$allele}->[4]->[3]), "\n";
+        print DELETE "-D PCR_product \"$allele"."_external\"\n";
 
-        print ACE_del "\nPCR_product : $allele"."_internal\n";
-        print ACE_del "-D Oligo $allele"."_internal_f\n";
-        print ACE_del "-D Oligo $allele"."_internal_b\n";
-        print ACE_del "-D Flanks_deletion \"$allele\"\n";
+        print DELETE "\nPCR_product : $allele"."_internal\n";
+        print DELETE "-D Oligo $allele"."_internal_f\n";
+        print DELETE "-D Oligo $allele"."_internal_b\n";
+        print DELETE "-D Flanks_deletion \"$allele\"\n";
 
-        print ACE_del "\nOligo : \"$allele"."_internal_f\"\n";
-	print ACE_del "-D Sequence \"$NBP_info{$allele}->[4]->[1]\"\n";
-	print ACE_del "-D Length ", length($NBP_info{$allele}->[4]->[1]), "\n";
-        print ACE_del "-D PCR_product \"$allele"."_internal\"\n";
+        print DELETE "\nOligo : \"$allele"."_internal_f\"\n";
+	print DELETE "-D Sequence \"$NBP_info{$allele}->[4]->[1]\"\n";
+	print DELETE "-D Length ", length($NBP_info{$allele}->[4]->[1]), "\n";
+        print DELETE "-D PCR_product \"$allele"."_internal\"\n";
 
-      	print ACE_del "\nOligo : \"$allele"."_internal_b\"\n";
-	print ACE_del "-D Sequence \"$NBP_info{$allele}->[4]->[2]\"\n";
-	print ACE_del "-D Length ", length($NBP_info{$allele}->[4]->[2]), "\n";
-        print ACE_del "-D PCR_product \"$allele"."_internal\"\n";
+      	print DELETE "\nOligo : \"$allele"."_internal_b\"\n";
+	print DELETE "-D Sequence \"$NBP_info{$allele}->[4]->[2]\"\n";
+	print DELETE "-D Length ", length($NBP_info{$allele}->[4]->[2]), "\n";
+        print DELETE "-D PCR_product \"$allele"."_internal\"\n";
 
       }
     }
@@ -348,42 +331,91 @@ __END__
 
 =head2 NAME - parse_NBP_alleles.pl
                                                                                                                                                  
-B<USAGE>
+B<USAGE> 
+    
+    parse_NBP_alleles.pl -input <input_file>
 
-	-i input_file
 
 B<Interval of update>
 
-        Normally every 2-3 wks. Shohei Mitani sends out update file (full update) in xls format.
+    Normally every 2-3 wks. Shohei Mitani sends out a full list of all tm* alleles in a tab 
+    separated value (tsv) file.  This file will contain those alleles previously processed by 
+    us (but some of their details may have changed) plus any new alleles and associated PCR 
+    product information.
 
-B<get lesion flanks>	
+B<What the script does>	
 
-	NBP allele lesions are marked up as clone coordinates and do not supply flanking sequences in the flatfile.
-	Hence, the script takes these coordinates and retrieve 30 bp flanks.
-	How:
-	(1) grep clone info (chrom, start, end, clone_name) from GFF file: /wormsrv2/autoace/GFF_SPLITS/WSXXX/CHROMOSOME_*.clone_acc.gff`;
-            (via get_clone_chrom_coords() of Geneace.pm).
-	(2) fetch flanks from /nfs/disk100/wormpub/DATABASES/current_DB/CHROMOSOMES/CHROMOSOME_*.dna" file using substr()                                                                                                                                  
+    The deletion alleles in the input file are described using clone coordinates and so they 
+    do not supply the 30 bp flanking sequences that we need to be able to curate the alleles 
+    in our WormBase allele pipeline.  Hence, the script uses these coordinates to retrieve 
+    30 bp flanking sequences (as well as processing other basic information from the file).
+    The script does the following two steps to get flanking sequence info:
 
-B<preparing files>
+    (1) grep clone info (chrom, start, end, clone_name) from GFF file: 
+        /wormsrv2/autoace/GFF_SPLITS/WSXXX/CHROMOSOME_*.clone_acc.gff`;
+        (via get_clone_chrom_coords() of Geneace.pm).
 
-	Remove Mac carriage return in the flatfle from NBP: tr '\r' '\n' < NBP_mutants_file > NBP_alleles.yymmdd, 
-	The processed file should be saved in /wormsrv1/geneace/ALLELE_DATA/ (need to be wormpub for write acess)
+    (2) fetch flanks from ~wormpub/DATABASES/current_DB/CHROMOSOMES/CHROMOSOME_*.dna file 
+        using substr command
+
+
+B<What you need to do>
+
+     First you MUST remove the Mac carriage return in their input file and convert this to a
+     UNIX style newline character:
+
+     1) tr '\r' '\n' < input_file > NBP_alleles.yymmdd.txt
+
+     This processed file should be saved in /wormsrv1/geneace/ALLELE_DATA/JAPANESE_KNOCKOUTS 
+     (need to be wormpub for write access).  Then run the script, specifying the input file 
+     that you have just generated:
+
+     2) parse_NBP_alleles.pl -input NBP_alleles.yymmdd.txt
 	
-B<script generated files>
+     The script will create three output files:
 
-	(1) NBP_alleles.yymmdd.ace
-	(2) NBP_last_update.ace.yymmdd
+	i)   NBP_alleles.yymmdd.ace
+	ii)  NBP_alleles.yymmdd.delete.ace
+        iii) NBP_alleles_to_check_by_hand.yymmdd
 
-	The script uploads (1) and (2) from last update to geneace. The (2) file contains -D lines which deletes only last update 
-	info from NBP for each tm alleles. Some alleles may have parsing problems due to their format. The script will flag them and 
-	generate a file NBP_alleles_to_check_by_hand. 
-	Typically, the fix-by-hand cases are due to 
-	(1) the free-styled strings embedded in between two lesion coordinates of an 
-	    allele. Eg, the line "tm325 -> 14441/14442- 33 bp addition-14971/14972  (530 bp deletion)" indicates the script has no 
-	    knowledge about the "33 bp addition" and what the 33 bp additions are: so the script only knows it is a deletion allele. 
-	    Basically, you basically need to look at tm325 allele in Geneace and see what info is missing from the output line: ie, 
-	    you should change Deletion tag to Deletion_with_insertion tag and change the Method to Deletion_and_insertion.
+     The first two files complement each other.  The first contains a suitable ace file of all 
+     allele information from their input file (including flanking sequences).  The second is a 
+     delete ace file which will remove only that information which is contained in the first file.
+
+     This means that if there is a delete ace file from the *last* time this script was run then
+     we can use this to first remove any tm* allele data that will be in geneace before updating 
+     with the new information (plus any old information which has been changed).  So each time we 
+     run this script we will make these two ace files, but we will always need to first load the 
+     delete ace file from the last time the script was run.  E.g.
+
+     If today is 041230 and we just run this script, we will make:
+
+     NBP_alleles.041230.ace
+     NBP_alleles.041230.delete.ace
+
+     If we then run the script again on 050122 then we will make:
+   
+     NBP_alleles.050122.ace
+     NBP_alleles.050122.delete.ace
+
+     So we would first load NBP_alleles.041230.delete.ace to geneace to clear any old information
+     and then load the new NBP_alleles.050122.ace file to add all of the new information.
+
+     You should clear up the directory from time to time to remove very old files.
+
+
+B<Fix by hand checks>
+
+     The third file the script makes is called NBP_alleles_to_check_by_hand.yymmdd.txt.  These are
+     things to be investigated by hand.  Typically, the fix-by-hand cases are due to 
+       (1) the free-styled strings embedded in between two lesion coordinates of an allele.
+           E.g. the line "tm325 -> 14441/14442- 33 bp addition-14971/14972  (530 bp deletion)" 
+           indicates the script has no knowledge about the "33 bp addition" and what the 33 bp 
+           additions are: so the script only knows it is a deletion allele.   Basically, you 
+           need to look at tm325 allele in Geneace and see what info is missing from the output 
+           line: i.e. you should change Deletion tag to Deletion_with_insertion tag and change the 
+           Method to Deletion_and_insertion.
+
 
 B<Contact person>
 
