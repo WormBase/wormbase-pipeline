@@ -7,7 +7,7 @@
 # Script to make ?Transcript objects
 #
 # Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2003-09-25 09:39:00 $  
+# Last updated on: $Date: 2003-09-25 10:10:38 $  
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -265,7 +265,7 @@ if( $load_transcripts ) {
 if( $load_matches ) {
   print $log "loading matching_cDNA file to $database\n";
   system("cat $transcript_dir/chromosome*_matching_cDNA.ace > $transcript_dir/matching_cDNA_all.ace");
-  system("echo \"parse $transcript_dir/matching_cDNA_all.ace\nsave\nquit\" | $tace -tsuser matching_cDNA $database");
+  system("echo \"pparse $transcript_dir/matching_cDNA_all.ace\nsave\nquit\" | $tace -tsuser matching_cDNA $database");
 }
   
 print $log "$0 finished at ",&runtime,"\n";
