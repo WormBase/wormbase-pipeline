@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-10-03 15:27:43 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2003-10-16 09:13:54 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -137,7 +137,7 @@ sub copy_release_files{
   while (defined($filename = readdir(RELEASE))) {
     if (($filename eq ".")||($filename eq "..")) { next;}
     if (($filename =~ /letter/)||($filename =~ /dbcomp/)) { next;}
-    &run_command("cp $sourcedir/release/$filename $targetdir/$release/$filename");
+    &run_command("scp $sourcedir/release/$filename $targetdir/$release/$filename");
 
     my $O_SIZE = (stat("$sourcedir/release/$filename"))[7];
     my $N_SIZE = (stat("$targetdir/$release/$filename"))[7];
@@ -164,7 +164,7 @@ sub copy_chromosome_files{
   opendir (DNAGFF,"$sourcedir/CHROMOSOMES") or croak ("Could not open directory $sourcedir/CHROMOSOMES");
   while (defined($filename = readdir(DNAGFF))) {
     if (($filename eq ".")||($filename eq "..")) { next;}
-    &run_command("cp $sourcedir/CHROMOSOMES/$filename $targetdir/$release/CHROMOSOMES/$filename");
+    &run_command("scp $sourcedir/CHROMOSOMES/$filename $targetdir/$release/CHROMOSOMES/$filename");
     my $O_SIZE = (stat("$sourcedir/CHROMOSOMES/$filename"))[7];
     my $N_SIZE = (stat("$targetdir/$release/CHROMOSOMES/$filename"))[7];
     if ($O_SIZE != $N_SIZE) {
@@ -185,11 +185,11 @@ sub copy_misc_files{
 
 
   # Copy across the models.wrm file
-  &run_command("cp $sourcedir/wspec/models.wrm $targetdir/$release/models.wrm.$release");
+  &run_command("scp $sourcedir/wspec/models.wrm $targetdir/$release/models.wrm.$release");
 
   # copy some miscellaneous files across
-  &run_command("cp /wormsrv2/autoace/COMPARE/WS$old_release-$release.dbcomp $targetdir/$release/");
-  &run_command("cp /wormsrv2/autoace_config/INSTALL $targetdir/$release/");
+  &run_command("scp /wormsrv2/autoace/COMPARE/WS$old_release-$release.dbcomp $targetdir/$release/");
+  &run_command("scp /wormsrv2/autoace_config/INSTALL $targetdir/$release/");
 
   # tar, zip, and copy WormRNA files across from wormsrv2/WORMRNA
   my $dest = "/wormsrv2/WORMRNA/wormrna${wormrna_release}";
@@ -201,8 +201,8 @@ sub copy_misc_files{
 
   chdir "/wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/";
   &run_command("/bin/gzip WS*interpolated_map.txt"); 
-  &run_command("cp ${release}_CDSes_interpolated_map.txt.gz $targetdir/$release/gene_interpolated_map_positions.${release}.gz");
-  &run_command("cp ${release}_Clones_interpolated_map.txt.gz $targetdir/$release/clone_interpolated_map_positions.${release}.gz");
+  &run_command("scp ${release}_CDSes_interpolated_map.txt.gz $targetdir/$release/gene_interpolated_map_positions.${release}.gz");
+  &run_command("scp ${release}_Clones_interpolated_map.txt.gz $targetdir/$release/clone_interpolated_map_positions.${release}.gz");
 
 
 }
@@ -227,11 +227,11 @@ sub copy_wormpep_files{
 
 
   my $new_wpdir = "/wormsrv2/WORMPEP/wormpep${wormpep}";
-  &run_command("cp $new_wpdir/wormpep_current $wormpub_dir/wormpep_current");
-  &run_command("cp $new_wpdir/wormpep.accession$wormpep $wormpub_dir/wormpep.accession_current");
-  &run_command("cp $new_wpdir/wormpep.dna$wormpep $wormpub_dir/wormpep.dna_current");
-  &run_command("cp $new_wpdir/wormpep.history$wormpep $wormpub_dir/wormpep.history_current");
-  &run_command("cp $new_wpdir/wp.fasta$wormpep $wormpub_dir/wp.fasta_current");
+  &run_command("scp $new_wpdir/wormpep_current $wormpub_dir/wormpep_current");
+  &run_command("scp $new_wpdir/wormpep.accession$wormpep $wormpub_dir/wormpep.accession_current");
+  &run_command("scp $new_wpdir/wormpep.dna$wormpep $wormpub_dir/wormpep.dna_current");
+  &run_command("scp $new_wpdir/wormpep.history$wormpep $wormpub_dir/wormpep.history_current");
+  &run_command("scp $new_wpdir/wp.fasta$wormpep $wormpub_dir/wp.fasta_current");
   &run_command("/usr/local/pubseq/bin/setdb $wormpub_dir/wormpep_current");
   &run_command("chmod +rw $new_wpdir/*");
 
@@ -260,25 +260,25 @@ sub copy_wormpep_files{
 
 
   # copy the wormpep release files across
-  &run_command("cp $wp_source_dir/wormpep.accession$wormpep $wp_ftp_dir/wormpep.accession");
+  &run_command("scp $wp_source_dir/wormpep.accession$wormpep $wp_ftp_dir/wormpep.accession");
   &CheckSize("$wp_source_dir/wormpep.accession$wormpep","$wp_ftp_dir/wormpep.accession");
   
-  &run_command("cp $wp_source_dir/wormpep.diff$wormpep $wp_ftp_dir/wormpep.diff");
+  &run_command("scp $wp_source_dir/wormpep.diff$wormpep $wp_ftp_dir/wormpep.diff");
   &CheckSize("$wp_source_dir/wormpep.diff$wormpep","$wp_ftp_dir/wormpep.diff");
   
-  &run_command("cp $wp_source_dir/wormpep.dna$wormpep $wp_ftp_dir/wormpep.dna");
+  &run_command("scp $wp_source_dir/wormpep.dna$wormpep $wp_ftp_dir/wormpep.dna");
   &CheckSize("$wp_source_dir/wormpep.dna$wormpep","$wp_ftp_dir/wormpep.dna");
   
-  &run_command("cp $wp_source_dir/wormpep.history$wormpep $wp_ftp_dir/wormpep.history");
+  &run_command("scp $wp_source_dir/wormpep.history$wormpep $wp_ftp_dir/wormpep.history");
   &CheckSize("$wp_source_dir/wormpep.history$wormpep","$wp_ftp_dir/wormpep.history");
   
-  &run_command("cp $wp_source_dir/wormpep.table$wormpep $wp_ftp_dir/wormpep.table");
+  &run_command("scp $wp_source_dir/wormpep.table$wormpep $wp_ftp_dir/wormpep.table");
   &CheckSize("$wp_source_dir/wormpep.table$wormpep","$wp_ftp_dir/wormpep.table");
   
-  &run_command("cp $wp_source_dir/wormpep${wormpep} $wp_ftp_dir/wormpep${wormpep}");
+  &run_command("scp $wp_source_dir/wormpep${wormpep} $wp_ftp_dir/wormpep${wormpep}");
   &CheckSize("$wp_source_dir/wormpep${wormpep}","$wp_ftp_dir/wormpep${wormpep}");
   
-  &run_command("cp $wp_source_dir/wp.fasta$wormpep $wp_ftp_dir/wp.fasta");
+  &run_command("scp $wp_source_dir/wp.fasta$wormpep $wp_ftp_dir/wp.fasta");
   &CheckSize("$wp_source_dir/wp.fasta$wormpep","$wp_ftp_dir/wp.fasta");
   
 
@@ -391,35 +391,41 @@ sub copy_homol_data{
   my $private_ftp = "/nfs/privateftp/ftp-wormbase/pub/data/st_louis_homol_data";
   &run_command("rm -f $private_ftp/*gz");
   
-  &run_command("cp $blat_dir/stlace.blat.est.ace                  $private_ftp/${release}_stlace.blat.EST.ace");
-  &run_command("cp $blat_dir/stlace.blat.ost.ace                  $private_ftp/${release}_stlace.blat.OST.ace");
-  &run_command("cp $blat_dir/stlace.blat.mrna.ace                 $private_ftp/${release}_stlace.blat.mRNA.ace");
-  &run_command("cp $blat_dir/stlace.blat.embl.ace                 $private_ftp/${release}_stlace.blat.EMBL.ace");
-  &run_command("cp $blat_dir/stlace.good_introns.est.ace          $private_ftp/${release}_stlace.blat.good_introns.EST.ace");
-  &run_command("cp $blat_dir/stlace.good_introns.ost.ace          $private_ftp/${release}_stlace.blat.good_introns.OST.ace");
-  &run_command("cp $blat_dir/stlace.good_introns.mrna.ace         $private_ftp/${release}_stlace.blat.good_introns.mRNA.ace");
-  &run_command("cp $blat_dir/stlace.good_introns.embl.ace         $private_ftp/${release}_stlace.blat.good_introns.EMBL.ace");
-  
-  &run_command("cp $blat_dir/virtual_objects.stlace.blat.est.ace  $private_ftp/${release}_virtual_objects.stlace.BLAT_EST.ace");
-  &run_command("cp $blat_dir/virtual_objects.stlace.blat.ost.ace  $private_ftp/${release}_virtual_objects.stlace.BLAT_OST.ace");
-  &run_command("cp $blat_dir/virtual_objects.stlace.blat.mrna.ace $private_ftp/${release}_virtual_objects.stlace.BLAT_mRNA.ace");
-  &run_command("cp $blat_dir/virtual_objects.stlace.blat.embl.ace $private_ftp/${release}_virtual_objects.stlace.BLAT_EMBL.ace");
-  &run_command("cp $blat_dir/virtual_objects.stlace.ci.est.ace    $private_ftp/${release}_virtual_objects.stlace.ci.EST.ace");
-  &run_command("cp $blat_dir/virtual_objects.stlace.ci.ost.ace    $private_ftp/${release}_virtual_objects.stlace.ci.OST.ace");
-  &run_command("cp $blat_dir/virtual_objects.stlace.ci.mrna.ace   $private_ftp/${release}_virtual_objects.stlace.ci.mRNA.ace");
-  &run_command("cp $blat_dir/virtual_objects.stlace.ci.embl.ace   $private_ftp/${release}_virtual_objects.stlace.ci.EMBL.ace");
-  
-  &run_command("cp $blast_dir/blastp_ensembl.ace          $private_ftp/${release}_blastp_data.ace");
-  &run_command("cp $blast_dir/blastx_ensembl.ace          $private_ftp/${release}_blastx_data.ace");
-  &run_command("cp $blast_dir/wormprot_motif_info.ace     $private_ftp/${release}_protein_motif_data.ace");
-  &run_command("cp $blast_dir/worm_brigprot_motif_info.ace    $private_ftp/${release}_brig_protein_motif_data.ace");
+  &run_command("scp $blat_dir/stlace.blat.est.ace                  $private_ftp/${release}_stlace.blat.EST.ace");
+  &run_command("scp $blat_dir/stlace.blat.ost.ace                  $private_ftp/${release}_stlace.blat.OST.ace");
+  &run_command("scp $blat_dir/stlace.blat.mrna.ace                 $private_ftp/${release}_stlace.blat.mRNA.ace");
+  &run_command("scp $blat_dir/stlace.blat.embl.ace                 $private_ftp/${release}_stlace.blat.EMBL.ace");
+  &run_command("scp $blat_dir/stlace.good_introns.est.ace          $private_ftp/${release}_stlace.blat.good_introns.EST.ace");
+  &run_command("scp $blat_dir/stlace.good_introns.ost.ace          $private_ftp/${release}_stlace.blat.good_introns.OST.ace");
+  &run_command("scp $blat_dir/stlace.good_introns.mrna.ace         $private_ftp/${release}_stlace.blat.good_introns.mRNA.ace");
+  &run_command("scp $blat_dir/stlace.good_introns.embl.ace         $private_ftp/${release}_stlace.blat.good_introns.EMBL.ace");
+ 
+  &run_command("scp $blat_dir/virtual_objects.stlace.blat.est.ace  $private_ftp/${release}_virtual_objects.stlace.BLAT_EST.ace");
+  &run_command("scp $blat_dir/virtual_objects.stlace.blat.ost.ace  $private_ftp/${release}_virtual_objects.stlace.BLAT_OST.ace");
+  &run_command("scp $blat_dir/virtual_objects.stlace.blat.mrna.ace $private_ftp/${release}_virtual_objects.stlace.BLAT_mRNA.ace");
+  &run_command("scp $blat_dir/virtual_objects.stlace.blat.embl.ace $private_ftp/${release}_virtual_objects.stlace.BLAT_EMBL.ace");
+  &run_command("scp $blat_dir/virtual_objects.stlace.ci.est.ace    $private_ftp/${release}_virtual_objects.stlace.ci.EST.ace");
+  &run_command("scp $blat_dir/virtual_objects.stlace.ci.ost.ace    $private_ftp/${release}_virtual_objects.stlace.ci.OST.ace");
+  &run_command("scp $blat_dir/virtual_objects.stlace.ci.mrna.ace   $private_ftp/${release}_virtual_objects.stlace.ci.mRNA.ace");
+  &run_command("scp $blat_dir/virtual_objects.stlace.ci.embl.ace   $private_ftp/${release}_virtual_objects.stlace.ci.EMBL.ace");
 
-  &run_command("cp $blast_dir/best_blastp_hits  $targetdir/$release/best_blastp_hits.$release");
-  &run_command("cp $blast_dir/best_blastp_hits_brigprot  $targetdir/$release/best_blastp_hits_brigprot.$release");
 
-  &run_command("/bin/gzip $targetdir/$release/best_blastp_hits.$release");
-  &run_command("/bin/gzip $targetdir/$release/best_blastp_hits_brigprot.$release");
-  
+  &run_command("/bin/gzip $blast_dir/blastp_ensembl.ace");
+  &run_command("/bin/gzip $blast_dir/blastx_ensembl.ace");
+  &run_command("/bin/gzip $blast_dir/wormprot_motif_info.ace");
+  &run_command("/bin/gzip $blast_dir/worm_brigprot_motif_info.ace");
+
+  &run_command("scp $blast_dir/blastp_ensembl.ace.gz           $private_ftp/${release}_blastp_data.ace.gz");
+  &run_command("scp $blast_dir/blastx_ensembl.ace.gz           $private_ftp/${release}_blastx_data.ace.gz");
+  &run_command("scp $blast_dir/wormprot_motif_info.ace.gz      $private_ftp/${release}_protein_motif_data.ace.gz");
+  &run_command("scp $blast_dir/worm_brigprot_motif_info.ace.gz $private_ftp/${release}_brig_protein_motif_data.ace.gz");
+
+  &run_command("/bin/gzip $blast_dir/best_blastp_hits");
+  &run_command("/bin/gzip $blast_dir/best_blastp_hits_brigprot");
+
+  &run_command("scp $blast_dir/best_blastp_hits.gz  $targetdir/$release/best_blastp_hits.$release.gz");
+  &run_command("scp $blast_dir/best_blastp_hits_brigprot.gz  $targetdir/$release/best_blastp_hits_brigprot.$release.gz");
+
   &run_command("/bin/gzip $private_ftp/*ace");
 
 
