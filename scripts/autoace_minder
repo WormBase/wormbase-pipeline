@@ -6,7 +6,7 @@
 # Usage : autoace_minder [-options]
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2002-07-22 09:10:08 $
+# Last edited on: $Date: 2002-07-22 11:19:33 $
 
 
 #################################################################################
@@ -778,17 +778,20 @@ sub blat_jobs {
 
     # run the blat jobs
 
+    # blat_them_all -n
+    system ("$scriptdir/blat_them_all.pl -n") && die "Couldn't blat_them_all -n\n";
+
     # blat_them_all -e
-    system ("$scriptdir/blat_them_all.pl -nbsve") && die "Couldn't blat_them_all -nbsve\n";
+    system ("$scriptdir/blat_them_all.pl -bsve") && die "Couldn't blat_them_all -bsve\n";
 
     # blat_them_all -m
-    system ("$scriptdir/blat_them_all.pl -bsm") && die "Couldn't blat_them_all -nbsve\n";
+    system ("$scriptdir/blat_them_all.pl -bsvm") && die "Couldn't blat_them_all -bsvm\n";
 
     # blat_them_all -o
-    system ("$scriptdir/blat_them_all.pl -bso") && die "Couldn't blat_them_all -nbsve\n";
+    system ("$scriptdir/blat_them_all.pl -bsvo") && die "Couldn't blat_them_all -bsvo\n";
 
     # blat_them_all -x
-    system ("$scriptdir/blat_them_all.pl -bsx") && die "Couldn't blat_them_all -nbsve\n";
+    system ("$scriptdir/blat_them_all.pl -bsvx") && die "Couldn't blat_them_all -bsvx\n";
 
     # make a file in /logs
     system ("touch $logdir/$flag{'B6'}");  
@@ -815,7 +818,7 @@ pparse /wormsrv2/autoace/BLAT/autoace.blat.mRNA.ace
 save
 pparse /wormsrv2/autoace/BLAT/autoace.blat.EMBL.ace 
 save
-pparse /wormsrv2/autoace/BLAT/autoace.blat.nematode.ace 
+pparse /wormsrv2/autoace/BLAT/autoace.blat.NEMATODE.ace 
 save
 pparse /wormsrv2/autoace/BLAT/autoace.good_introns.EST.ace 
 save
