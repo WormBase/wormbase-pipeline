@@ -387,12 +387,12 @@
         Sequence_status	Shotgun	UNIQUE DateType
 			Finished UNIQUE DateType
 			Accession_number UNIQUE Text
-	Type UNIQUE Cosmid  // 000824 Lincoln's additions to segregate clones
-		    Fosmid // added 06/12/01 by krb for dl
+	Type UNIQUE Cosmid            // 000824 Lincoln's additions to segregate clones
+		    Fosmid            // added 06/12/01 by krb for dl
 		    YAC
 		    cDNA
 		    Plasmid
-		    Other       // added to catch all clones 011017 dl
+		    Other Text        // added to catch all clones 011017 dl
 	Transgene ?Transgene XREF Clone
         Derived_from	?Clone
 
@@ -819,6 +819,7 @@
 			Locus_other_seq ?Locus XREF Other_sequence       // dl 001128
 			Enzyme ?Enzyme XREF DNA
 		        Related_DNA ?Sequence XREF Related_DNA
+			Paired_read ?Sequence XREF Paired_read          // dl 020110
 			Remark ?Text
 			Confidential_remark ?Text
 			Brief_identification UNIQUE ?Text
