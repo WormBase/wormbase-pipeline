@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.94 2002-11-21 10:48:48 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.95 2002-11-26 10:41:28 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -1683,7 +1683,6 @@
                   Life_stage ?Life_stage XREF Reference
                   RNAi ?RNAi XREF Reference  // added for Lincoln RNAi [001213 dl]
                   Transgene ?Transgene XREF Reference
-                  Gene ?Gene XREF Reference
                   GO_term ?GO_term XREF Reference
                   Operon ?Operon XREF Reference      // added for operon data [010928 dl]
         Keyword ?Keyword
