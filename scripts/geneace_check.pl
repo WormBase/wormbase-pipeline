@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-10-03 09:57:09 $
+# Last updated on: $Date: 2003-10-03 10:07:16 $
 
 
 use strict;
@@ -1131,7 +1131,7 @@ EOF
       my $allele = $_->Has_allele(1);
       if (exists $allele_predict_no_gene{$allele}){
 	print LOG "WARNING: Allele $allele is not linked to $gene\n";
-	print ACE "\nAllele: \"$allele\"\n" if $ace;
+	print ACE "\nAllele : \"$allele\"\n" if $ace;
 	print ACE "Gene \"$gene\"\n" if $ace;
       }
     }
@@ -1140,7 +1140,7 @@ EOF
       my $allele = $_->Has_allele(1);
       if (exists $allele_predict_no_gene{$allele}){
 	print LOG "WARNING: Allele $allele is not linked to $gene\n";
-	print ACE "\nAllele: \"$allele\"\n" if $ace;
+	print ACE "\nAllele : \"$allele\"\n" if $ace;
 	print ACE "Gene \"$gene\"\n" if $ace;
       }
     }
