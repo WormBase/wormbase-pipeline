@@ -4,7 +4,7 @@
 
 # by Chao-Kung Chen [030625]
 
-# Last updated on: $Date: 2004-01-06 17:09:26 $
+# Last updated on: $Date: 2004-03-03 10:56:29 $
 # Last updated by: $Author: ck1 $
 
 use Tk;
@@ -162,12 +162,12 @@ $msg_frame_3 -> Label(text => ". This color coding does not apply to multiple mu
 
 #----------- upper window frame ----------
 
-my $run_window = $mw ->TextANSIColor(height => 23)
-                  ->pack(side => 'top', anchor => 'n', after => $msg_frame_3, expand => 1, fill => 'x');
+my $run_window = $mw ->TextANSIColor(height => 24)
+                     ->pack(side => 'top', anchor => 'n', after => $msg_frame_3, expand => 1, fill => 'x');
 
 #----------- lower window frame ----------
 
-my $ace_frame = $mw->Frame(relief => 'groove', borderwidth => 2)
+my $ace_frame = $mw->Frame(relief => 'groove', borderwidth => 1)
 		   ->pack(after => $run_window, side => 'top', anchor => 'n', expand => 1, fill => 'x');
 
 my $ace_window =$ace_frame -> Scrolled("Text",  -scrollbars => "ow", height => 400)
@@ -525,6 +525,15 @@ sub run {
     $ace_window->insert('end', "\/\/Remark \"\" Curator_confirmed \"WBPerson1845\"\n");
     $ace_window->insert('end', "\/\/Method \"Allele\"\n");
     $ace_window->insert('end', "\/\/Method \"Deletion_allele\"\n");
+    $ace_window->insert('end', "\/\/Method \"Insertion_allele\"\n");
+    $ace_window->insert('end', "\/\/Method \"Deletion_and_insertion_allele\"\n");
+    $ace_window->insert('end', "\/\/Method \"Transposon_insertion\"\n");
+    $ace_window->insert('end', "\/\/Method \"Substitution_allele\"\n");
+
+
+
+
+
   }
 
   else {
@@ -984,7 +993,7 @@ sub write_ace {
   $ace_window->insert('end', "\/\/Deletion_with_insertion\n");
   $ace_window->insert('end', "Flanking_sequences \"$Lf\" \"$Rf\"\n");
   $ace_window->insert('end', "Gene  \"$locus\"\n");
-  $ace_window->insert('end', "CDS  \"$cds\"\n");
+  $ace_window->insert('end', "Predicted_gene  \"$cds\"\n");
   $ace_window->insert('end', "Species \"Caenorhabditis elegans\"\n");
   $ace_window->insert('end', "\/\/Reference \"\"\n");
   if ($info[0] eq "X"){
@@ -1006,7 +1015,10 @@ sub write_ace {
   $ace_window->insert('end', "\/\/Remark \"\" Curator_confirmed \"WBPerson1845\"\n");
   $ace_window->insert('end', "\/\/Method \"Allele\"\n");
   $ace_window->insert('end', "\/\/Method \"Deletion_allele\"\n");
+  $ace_window->insert('end', "\/\/Method \"Insertion_allele\"\n");
+  $ace_window->insert('end', "\/\/Method \"Deletion_and_insertion_allele\"\n");
   $ace_window->insert('end', "\/\/Method \"Transposon_insertion\"\n");
+  $ace_window->insert('end', "\/\/Method \"Substitution_allele\"\n");
 }      
 
 
