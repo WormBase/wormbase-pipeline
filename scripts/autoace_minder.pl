@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2004-05-10 14:31:30 $
+# Last edited on: $Date: 2004-05-11 13:31:38 $
 
 
 
@@ -726,6 +726,14 @@ sub make_autoace {
     
     # make a make_autoace log file in /logs
     system("touch $logdir/$flag{'B2'}");
+    
+    # make the allcmid file needed for the farm
+    
+    $command = "query find genome_sequence\nDNA -f /wormsrv2/autoace/allcmid\nquit\n";
+    open (WRITEDB, "| $tace $basedir/autoace ") || die "Couldn't open pipe to autoace\n";
+    print WRITEDB $command;
+    close (WRITEDB);
+    
   }
   
   if ($buildrelease) {
