@@ -17,8 +17,8 @@
 #       3) Copy the version to ~wormpub/analysis/TO_SUBMIT.  
 #
 #
-# Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-12-04 14:07:00 $      
+# Last updated by: $Author: dl1 $     
+# Last updated on: $Date: 2003-12-09 16:16:02 $      
 
 
 use strict;
@@ -169,7 +169,7 @@ while (<IN>) {
     # Report the change and place in TO_SUBMIT directory. 
 
     if ($compare==1) {
-      my $status copy("temp$$", "/nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.$datestamp.embl");
+      my $status = copy("temp$$", "/nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.$datestamp.embl");
       print LOG "ERROR: Couldn't copy file: $!\n" if ($status == 0);
       system "ln -fs /nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.$datestamp.embl /nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.current.embl";
       $status = move("temp$$", "/nfs/disk100/wormpub/analysis/TO_SUBMIT/$cosmid.$datestamp.embl");
