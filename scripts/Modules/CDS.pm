@@ -251,11 +251,16 @@ sub report
 
     print $fh "\nCDS : \"",$self->name,"\"\n";
     foreach (@{$self->{'matching_cdna'}}) {
-      print $fh "Matching_cDNA \"",$_->name,"\"\n";
+      print $fh "Matching_cDNA \"",$_->name,"\"Inferred_Automatically \"transcript_builder.pl\"\n";
     }
 
     foreach  ( $self->transcripts ) {
       print $fh "Corresponding_transcript \"",$_->name,"\"\n";
+    }
+
+    foreach (@{$self->{'matching_cdna'}}) {
+      print $fh "\nSequence :\"",$_->name,"\n";
+      print $fh "Matching_CDS ",$self->name," Inferred_Automatically \"transcript_builder.pl\"\n";
     }
 
     foreach ( $self->transcripts ) {

@@ -210,14 +210,19 @@ sub report
 
     # . . and Matching_cDNA
     foreach (@{$self->{'matching_cdna'}}) {
-      print $fh "Matching_cDNA \"",$_->name,"\"\n";
+      print $fh "Matching_cDNA \"",$_->name,"\" Inferred_Automatically \"transcript_builder.pl\"\n";
 
       foreach my $f ( $_->features ) {
 	print $fh "Associated_feature $f\n";
       }
     }
     print $fh "Species \"Caenorhabditis elegans\"\n";
-    print $fh "Method Coding_transcript\n";
+    print $fh "Method Coding_transcript\n";  
+
+    foreach (@{$self->{'matching_cdna'}}) {
+      print $fh "\nSequence :\"",$_->name,"\n";
+      print $fh "Matching_transcript ",$self->name," Inferred_Automatically \"transcript_builder.pl\"\n";
+    }
   }
 
 
