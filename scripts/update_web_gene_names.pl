@@ -5,7 +5,7 @@
 # completely rewritten by Keith Bradnam from list_loci_designations
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-07-14 13:42:39 $      
+# Last updated on: $Date: 2004-07-14 13:48:11 $      
 #
 # This script should be run under a cron job and simply update the webpages that show
 # current gene names and sequence connections.  Gets info from geneace.  
@@ -229,7 +229,6 @@ sub make_gene_lists{
     my ($gene,$cds,$transcript,$pseudogene,$public_name) = split(/\t/, $_) ;
 
     $gene2public_name{$gene} = "$public_name";
-    print LOG "$public_name\n";
     if($cds){
       $gene2molecular_name{$gene} .= "CDS_$cds ";
       $molecular_name2gene{$cds} = $gene;
