@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-09-24 10:41:37 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2003-09-24 13:34:14 $
 
 
 #################################################################################
@@ -954,7 +954,8 @@ sub parse_homol_data {
 		    "waba.ace",
 		    "wormprot_motif_info.ace",
 		    "worm_brigprot_motif_info.ace",
-		    "brigprot_blastp_ensembl.ace"
+		    "brigprot_blastp_ensembl.ace",
+		    "repeat_homologies.ace"
 		   );
 
   foreach my $file ( @files2Load ) {
