@@ -87,7 +87,7 @@ sub changed {
     
     my($CDS,$old_acc,$new_acc)= @_;
 
-    my $sequence = $db->fetch(Protein => 'WP:$old_acc');
+    my $sequence = $db->fetch(Protein => "WP:$old_acc");
     my @list = $sequence->Corresponding_DNA;
     my $length = scalar(@list);
 
