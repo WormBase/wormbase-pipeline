@@ -1482,7 +1482,8 @@
 ?WTP         SMap S_Parent Canonical_parent UNIQUE ?Sequence XREF WTP
  	     Method ?Method
  	     Overlaps_CDS ?Sequence XREF Corresponding_WTP  // added for Dan PCR mappings [010419 dl]
-		
+	     Contact_information Text
+
 
 // end of file
 
