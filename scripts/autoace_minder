@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder [-options]
 #
-# Last edited by: $Author: wormpub $
-# Last edited on: $Date: 2003-04-23 17:01:45 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2003-05-19 12:45:30 $
 
 
 #################################################################################
@@ -842,7 +842,26 @@ sub blat_jobs {
       # tidy
       system ("touch $logdir/$flag{'B6A'}");  
 
+      # blat_them_all -y {OST}
+      # do the blats
+      $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Starting blat_them_all.pl -bsy at $runtime\n\n";
+      $i = system ("$scriptdir/blat_them_all.pl -bsy");
+      $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Finishing blat_them_all.pl -bsy at $runtime\n\n";
 
+      $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Starting blat_them_all.pl -vyy at $runtime\n\n";
+      $i = system ("$scriptdir/blat_them_all.pl -vy"); 
+      $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Finishing blat_them_all.pl -vy at $runtime\n\n";
+
+      # process them to cleaner files
+      $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Starting acecompress.pl at $runtime\n\n";
+      $i = system ("$scriptdir/acecompress.pl -homol autoace.blat.OST.ace > autoace.blat.OSTlite.ace");
+      $i = system ("mv -f autoace.blat.OSTlite.ace autoace.blat.OST.ace");
+      $i = system ("$scriptdir/acecompress.pl -feature autoace.good_introns.OST.ace > autoace.good_introns.OSTlite.ace");
+      $i = system ("mv -f autoace.good_introns.OSTlite.ace autoace.good_introns.OST.ace");
+      $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Finishing acecompress.pl at $runtime\n\n";
+
+      # tidy
+#      system ("touch $logdir/$flag{'B6A'}");  
       
       # blat_them_all -m {mRNA}
 
@@ -950,9 +969,11 @@ sub parse_blat_files {
   
   $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Adding BLAT virtual objects data at $runtime\n";
   $command =  "pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLAT_EST.ace\n";
+  $command =  "pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLAT_OST.ace\n";
   $command .= "pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLAT_mRNA.ace\n";
   $command .= "pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLAT_EMBL.ace\n";
   $command .= "pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.EST.ace\n";
+  $command .= "pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.OST.ace\n";
   $command .= "pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.mRNA.ace\n";
   $command .= "pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.EMBL.ace\n";
   $command .= "pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLATX_NEMATODE.ace\n";
@@ -970,6 +991,14 @@ sub parse_blat_files {
   print WRITEDB $command;
   close WRITEDB;
   $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Finished adding BLAT_EST data at $runtime\n";  
+
+  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Adding BLAT_OST data at $runtime\n";
+  $command =  "pparse /wormsrv2/autoace/BLAT/autoace.blat.OST.ace\n";           
+  $command .= "save\nquit\n";
+  open (WRITEDB, "| $tace -tsuser Sanger_BLAT_data /wormsrv2/autoace |") || die "Couldn't open pipe to autoace\n";
+  print WRITEDB $command;
+  close WRITEDB;
+  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Finished adding BLAT_OST data at $runtime\n";  
 
 
   $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Adding BLAT_mRNA data at $runtime\n";
@@ -1001,6 +1030,12 @@ sub parse_blat_files {
 
   $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Adding BLAT good intron data at $runtime\n";  
   $command =  "pparse /wormsrv2/autoace/BLAT/autoace.good_introns.EST.ace \n";      
+  $command .= "save\nquit\n";
+  open (WRITEDB, "| $tace -tsuser Sanger_BLAT_data /wormsrv2/autoace |") || die "Couldn't open pipe to autoace\n";
+  print WRITEDB $command;
+  close WRITEDB;
+  
+  $command =  "pparse /wormsrv2/autoace/BLAT/autoace.good_introns.OST.ace \n";      
   $command .= "save\nquit\n";
   open (WRITEDB, "| $tace -tsuser Sanger_BLAT_data /wormsrv2/autoace |") || die "Couldn't open pipe to autoace\n";
   print WRITEDB $command;
@@ -1040,9 +1075,11 @@ sub parse_blat_files_other {
   
   $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Started parsing virtual objects at $runtime\n";    
   $command =  "pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLAT_EST.ace\n";
+  $command =  "pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLAT_OST.ace\n";
   $command .= "pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLAT_mRNA.ace\n";
   $command .= "pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLAT_EMBL.ace\n";
   $command .= "pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.EST.ace\n";
+  $command .= "pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.OST.ace\n";
   $command .= "pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.mRNA.ace\n";
   $command .= "pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.EMBL.ace\n";
   $command .= "save\nquit\n";
@@ -1059,6 +1096,15 @@ sub parse_blat_files_other {
   print WRITEDB $command;
   close WRITEDB;
   $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Finished adding BLAT_EST data at $runtime\n";    
+
+
+  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Adding BLAT_OST data at $runtime\n";    
+  $command =  "pparse /wormsrv2/autoace/BLAT/autoace.blat.OST.ace\n";           
+  $command .= "save\nquit\n";
+  open (WRITEDB, "| $tace -tsuser Sanger_BLAT_data /wormsrv2/autoace |") || die "Couldn't open pipe to autoace\n";
+  print WRITEDB $command;
+  close WRITEDB;
+  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Finished adding BLAT_OST data at $runtime\n";    
 
 
   $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Adding BLAT_mRNA data at $runtime\n";    
@@ -1086,6 +1132,12 @@ sub parse_blat_files_other {
   print WRITEDB $command;
   close WRITEDB;
   
+  $command =  "pparse /wormsrv2/autoace/BLAT/autoace.good_introns.OST.ace \n";      
+  $command .= "save\nquit\n";
+  open (WRITEDB, "| $tace -tsuser Sanger_BLAT_data /wormsrv2/autoace |") || die "Couldn't open pipe to autoace\n";
+  print WRITEDB $command;
+  close WRITEDB;
+
   $command =  "pparse /wormsrv2/autoace/BLAT/autoace.good_introns.mRNA.ace \n";      
   $command .= "save\nquit\n";
   open (WRITEDB, "| $tace -tsuser Sanger_BLAT_data /wormsrv2/autoace |") || die "Couldn't open pipe to autoace\n";
