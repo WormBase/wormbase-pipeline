@@ -1846,7 +1846,7 @@
 		  //Microarray_result ?Microarray_result XREF Reference  //added for Microarray_result [030127 krb]
                   Cluster ?Cluster XREF Reference #Evidence
 		  Feature ?Feature XREF Defined_by_paper                 // added [030424 dl]
-		  Gene_regualtion ?Gene_regulation XREF Reference // added [030804 krb]
+		  Gene_regulation ?Gene_regulation XREF Reference // added [030804 krb]
         Keyword ?Keyword
 
 
