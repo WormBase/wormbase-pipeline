@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers                             
 #
-# Last updated by: $Author: dl1 $               
-# Last updated on: $Date: 2002-10-11 15:42:54 $         
+# Last updated by: $Author: wormpub $               
+# Last updated on: $Date: 2002-10-25 10:14:00 $         
 #
 # Generates a release letter at the end of build.
 #
@@ -183,11 +183,11 @@ if( defined($opt_l)) {
     }
     
     print RL "\n";
-    
+        
     # Gap summary (hard coded at the moment)   
     print RL "Remaining gaps:\n";
     print RL "---------------\n";
-    print RL "For more info mail worm@sanger.ac.uk\n";
+    print RL "For more info mail worm\@sanger.ac.uk\n";
     print RL "\n";
     print RL "# Gap on Chromosome III is covered by a 950Kb SseI fragment \n";
     print RL "\n";
