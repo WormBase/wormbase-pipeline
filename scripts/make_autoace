@@ -7,8 +7,8 @@
 #
 # This makes the autoace database from its composite sources.
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2002-11-13 17:48:01 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2002-12-13 13:15:43 $
 
 
 ###########################################################################################
@@ -86,7 +86,7 @@ $wormbasedir = "$basedir/wormbase";
  ################################################
 
 $configfile     = "/wormsrv2/autoace_config/autoace.config";
-$makeChromLinks = "/wormsrv2/scripts/makeChromLinks.pl -l $autodir";
+$makeChromLinks = "/wormsrv2/scripts/makeChromLinks.pl";
 
  ################################################
  # Avoid filling process table with zombies     #
@@ -615,7 +615,7 @@ sub makedistr {
 
 sub makechromlink {
     system ("rm -f $wormbasedir/misc/misc_chromlinks.ace");
-    system ("$makeChromLinks -a > $wormbasedir/misc/misc_chromlinks.ace"); 
+    system ("$makeChromLinks > $wormbasedir/misc/misc_chromlinks.ace"); 
     if (-z "$wormbasedir/misc/misc_chromlinks.ace") {
 	print LOGFILE "*Makechromlink: chromlinks.ace has ZERO size\n";  
 	return;
