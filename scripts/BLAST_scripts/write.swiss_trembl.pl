@@ -158,6 +158,8 @@ sub output_list
 	}
       }  
     }
+    #copy file over to wormsrv2
+    `usr/bin/rcp $outfile /wormsrv2/wormbase/ensembl_dumps/`;
   }
 
 

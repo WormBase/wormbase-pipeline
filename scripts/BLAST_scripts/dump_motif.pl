@@ -4,8 +4,8 @@
 #
 # Dumps protein motifs from ensembl mysql (protein) database to an ace file
 #
-# Last updated by: $Author: wormpipe $
-# Last updated on: $Date: 2003-01-15 13:41:12 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2003-01-29 10:18:37 $
 
 
 use strict;
@@ -115,5 +115,13 @@ $sth->finish;
 $sth_f->finish;
 $dbh->disconnect;
 
+# copy output to wormsrv2
+
+print LOG "\nCopying to /wormsrv2/wormbase/ensembl_dumps\n";
+print "\nCopying to /wormsrv2/wormbase/ensembl_dumps\n";
+`/usr/bin/rcp $dump_dir/ensembl_motif_info.ace /wormsrv2/wormbase/ensembl_dumps/`;
+
 print LOG "\nEnd of Motif dump\n";
 print "\nEnd of Motif dump\n";
+
+exit(0);

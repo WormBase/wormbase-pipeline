@@ -600,8 +600,8 @@ close ACE;
 
 print "\nEnd of dump - moving $ace to /wormsrv2\n";
 
-# This will pause and wait for password so preventing the next dumping stages to occur
-#`scp $ace wormpub@wormsrv2:/wormsrv2/wormbase/ensembl_dumps/`;
+# Copy resulting file to wormsrv2 - leave in original place for subsequent script write.swiss_trembl
+`/usr/bin/rcp $ace /wormsrv2/wormbase/ensembl_dumps/`;
 
 
 exit 0;
