@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.43 2002-03-06 18:42:34 kj2 Exp $
+// CVS info:  $Id: models.wrm,v 1.44 2002-03-07 16:34:18 kj2 Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -787,7 +787,8 @@
 			Remark ?Text
 			Confidential_remark ?Text
                         Reference ?Paper XREF Sequence
-			Expr_pattern ?Expr_pattern XREF Sequence
+			Paired_read ?Text                                // [020307 kj]
+                        Expr_pattern ?Expr_pattern XREF Sequence
                         RNAi_result ?RNAi XREF Predicted_gene // added for Lincoln RNAi [001213 dl]
 			Drives_transgene ?Transgene XREF Driven_by_sequence
 			Transgene_product ?Transgene XREF Worm_sequence
