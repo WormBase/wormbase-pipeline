@@ -16,11 +16,11 @@ require "/wormsrv2/scripts/babel.pl";
 
 my $opt_a="";   # does all the following
 my $opt_o="";   # performs overlapcheck
-my $opt_e="";   # performss estcheck 
+my $opt_e="";   # performs estcheck 
 my $opt_i="";   # performs introncheck
 my $opt_h="";   # Help/Usage page
 
-getopts ('aoeih');
+getopt ('aeioh');
 &usage(0) if ($opt_h);
 if ($opt_a) { $opt_e = 1; $opt_i = 1; $opt_o = 1; }
 
@@ -108,7 +108,7 @@ sub usage {
     my $error = shift;
     if ($error == 0) {
 	# normal help menu
-	exec ('perldoc',$0);
+	system('perldoc',$0);
 	exit (0);
     }
 }
