@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-04-30 10:32:11 $
+# Last updated on: $Date: 2004-04-30 10:36:35 $
 
 package Geneace;
 
@@ -241,7 +241,7 @@ sub get_clone_chrom_coords {
   my @clone_coords = `cut -f 1,4,5,9 /wormsrv2/autoace/GFF_SPLITS/WS$gff_version/CHROMOSOME_*.clone_acc.gff`;
   foreach (@clone_coords){
     chomp;
-    my ($chrom, $start, $end, $ninth) = split(/\t+/, $_);
+    my ($chrom, $start, $end, $nineth) = split(/\t+/, $_);
     $chrom =~ s/[A-Z]+_//;
     $nineth =~ /S.+\s+\"(.+)\".+/;
     my $clone = $1;
