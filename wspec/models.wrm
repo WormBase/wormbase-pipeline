@@ -283,11 +283,13 @@
                 Remark Text
 
 
+
 ?Locus  Evidence #Evidence
-	Name    Other_name ?Text #Evidence
+	Name    Other_name ?Gene_name XREF Other_name #Evidence // now revamped to link to ?Gene_name
                 Gene_Class  ?Gene_Class XREF Loci
-                Old_name ?Locus XREF New_name
-                New_name ?Locus XREF Old_name
+		CGC_name ?Gene_name XREF CGC_name //new for ?Gene_name [krb 030124]
+	     	Non_CGC_name ?Gene_name XREF Non_CGC_name  // new for ?Gene_name
+		Sequence_name ?Gene_name XREF Sequence_name // new for ?Gene_name
 	Gene_information Description ?Text #Evidence // added by krb [020802]
 			 Provisional_description ?Text #Evidence // added for Erich [020322 krb]
 			 Detailed_description ?Text #Evidence  // added for Erich [020322 krb]
@@ -340,6 +342,22 @@
 	GO_term ?GO_term XREF Locus #Evidence // Added by krb 020905
 
 
+////////////////////////////////////////////////////////////////////////////////////////
+//
+// New Gene_name class to allow for easier indexing of all names - added [krb 030124]
+//
+//////////////////////////////////////////////////////////////////////////////////////////
+
+?Gene_name Gene CGC_name ?Locus XREF CGC_name
+		Non_CGC_name ?Locus XREF Non_CGC_name // to distinguish between CGC and Non CGC approved names
+						      // won't be needed in new gene model
+                Sequence_name ?Locus XREF Sequence_name // optional to also link to name described by 
+							// Genomic_sequence or Transcript name
+                Other_name ?Locus XREF Other_name
+		//Public_name ?Locus XREF Public_name // not quite ready for this
+
+
+
 
 ?Balancer From_left_end
           To_right_end
@@ -387,16 +405,16 @@
 		   Rearrangement	 ?Rearrangement XREF Strain
                    Clone ?Clone XREF In_strain		  
 		   Sequence ?Sequence XREF Strain // new for KO allele data, krb [021114]
+		   Transgene ?Transgene XREF Strain // moved under Contains tag krb [030124]
 	 Properties  Males Text
 		     Reference_strain Text
-		     Outcrossed
+		     Outcrossed Text // added Text field to allow more detail to be stored [krb 030128]
 		     Mutagen Text
 		     CGC_received DateType
          Location ?Laboratory #Lab_Location
 	 Made_by Text
 	 Remark	?Text
          Reference ?Paper XREF Strain
-         Transgene ?Transgene XREF Strain
 	 Species UNIQUE ?Species // added by krb [021021]
 
 ?Lab_Location	Freezer		Text
