@@ -530,7 +530,7 @@
 //
 ///////////////////////////////
 
-?2_point_data Evidence #Evidence
+?2_point_data   Evidence #Evidence
 		Genotype  UNIQUE Text
 		Results  UNIQUE Text
 		Experiment	Mapper ?Author
@@ -792,13 +792,12 @@
 		     Clone_left_end ?Clone XREF Clone_left_end UNIQUE Int
 		     Clone_right_end ?Clone XREF Clone_right_end UNIQUE Int
 		     Flipped
-	  DB_info	Database ?Database ?Text ?Accession_number XREF Sequence UNIQUE Int 
-				  // ID  Accession_number & sequence version [dl 2000-07-27]
-			Secondary_accession ?Accession_number XREF Sequence
-			DB_remark ?Text	#Evidence	// EMBL/Genbank
-			Keyword ?Keyword	// EMBL/Genbank
-			DB_annotation ?Database UNIQUE ?LongText
-			EMBL_dump_info #EMBL_dump_info
+	  DB_info    Database ?Database ?Database_field UNIQUE ?Accession_number XREF Sequence
+		     Secondary_accession ?Accession_number XREF Sequence
+		     DB_remark ?Text	#Evidence	// EMBL/Genbank
+		     Keyword ?Keyword	// EMBL/Genbank
+		     DB_annotation ?Database UNIQUE ?LongText
+		     EMBL_dump_info #EMBL_dump_info
 	  Origin  From_database UNIQUE ?Database UNIQUE Int	// release number
 		  From_author ?Author XREF Sequence
 		  From_laboratory UNIQUE ?Laboratory
@@ -963,7 +962,7 @@
 ?CDS	Evidence #Evidence
 	SMap S_parent Sequence UNIQUE ?Sequence XREF CDS      // changed into S_parent Sequence UNIQUE [020311 kj]
 	Structure Source_exons Int UNIQUE Int
-	DB_info Database ?Database ?Text ?Accession_number XREF CDS UNIQUE Int 
+	DB_info Database ?Database ?Database_field UNIQUE ?Accession_number XREF CDS
 		Protein_id ?Sequence UNIQUE Text UNIQUE Int // DB_info tag added [011030 krb]
 		DB_remark ?Text #Evidence
 //	Gene_info Gene UNIQUE ?Gene XREF CDS // when live 
@@ -1027,7 +1026,7 @@
 		SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF Transcript
                 Structure Source_exons Int UNIQUE Int
 		DB_info DB_remark ?Text #Evidence // was missing from first draft of Transcript class krb
-			Database ?Database ?Text ?Accession_number XREF Transcript UNIQUE Int // added for Lincoln [030228 krb]
+			Database ?Database ?Database_field UNIQUE ?Accession_number XREF Transcript
                 Origin  From_laboratory UNIQUE ?Laboratory                         // [020306 kj]
                         Species UNIQUE ?Species                                    // [020306 kj]
                 Visible Locus ?Locus XREF Transcript // new to fit existing Locus class
@@ -1079,7 +1078,7 @@
                 SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF Pseudogene      
                 Structure Source_exons Int UNIQUE Int
                 DB_info DB_remark ?Text #Evidence
-                        Database ?Database ?Text ?Accession_number XREF Pseudogene UNIQUE Int 
+			Database ?Database ?Database_field UNIQUE ?Accession_number XREF Pseudogene
                 Origin  From_laboratory UNIQUE ?Laboratory
                         Species UNIQUE ?Species
                 Type    UNIQUE Coding_pseudogene Text // [110803 dl] 
@@ -1261,12 +1260,28 @@
 
 
 
-?Accession_number  Entry CDS ?CDS
-			 Sequence ?Sequence
+///////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// Accession_number
+//
+// Small class to track lots of different accessions which are not just EMBL/GenBank accessions. 
+// E.g. they can be: SGD ORF ids, GenBank GI numbers, protein IDs, Ensembl identifiers, swissprot 
+// accessions *and* swissprot identifiers etc.
+// Many classes will first reference the ?Accession_number class by specifying both
+// a database name and a database field/qualifier to help clarify, e.g.
+//
+// Protein "WP:CE23172"
+// Database TREMBL TrEMBL_AC Q9N2U8
+//          WormPep WORMPEP_ID WP:CE23172
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+?Accession_number  Entry Sequence ?Sequence	
+			 CDS ?CDS
+			 Transcript ?Transcript
+			 Pseudogene ?Pseudogene 
 			 Protein ?Protein
 			 Motif ?Motif
-			 Transcript ?Transcript // added for Lincoln [030228 krb]
-			 Pseudogene ?Pseudogene 
 		   Web_location ?Database // use for WWW display
 
 
