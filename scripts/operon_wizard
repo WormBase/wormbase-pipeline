@@ -23,18 +23,22 @@ use Data::Dumper;
 use Getopt::Std;
 use Ace;
 
-# This is never being used?
-#%tsl = (
-#	'SL2k', 'GGTTTTAACCCAGTTAATTGAG',
-#	);
+$|=1;
 
+
+print "// Operon_wizard run\n";
+
+print "read in formats\t";
 &formats;
+print "done\n";
 
 my ($opt_a,$opt_b,$opt_c,$opt_d,$opt_e,$opt_f,$opt_j,
    $opt_l,$opt_m,$opt_n,$opt_p,$opt_q,$opt_r,$opt_s,
    $opt_t,$opt_w,$opt_x,$opt_z);
 
-getopts ('abzqdcjyst:exwfmlr:p:k:n:');
+#getopts ('abzqdcjyst:exwfmlr:p:k:n:');
+
+
 
 # b       : read hash from datafile [operon.dat]
 # d       : write hash to datafile  [operon.dat]
@@ -64,8 +68,19 @@ getopts ('abzqdcjyst:exwfmlr:p:k:n:');
 
 
 # do everything in /wormsrv2/autoace/OPERONS
+print "change dir to /wormsrv2\t";
 chdir("/wormsrv2/autoace/OPERONS");
 $dir = "/wormsrv2/autoace/OPERONS";
+print "done\n";
+
+#if ($opt_t) {
+$opt_t = shift;
+    print "Use -t file $opt_t\n";
+    &simple_list_operons_in($opt_t);
+    exit(0);
+#}
+
+print "shouldn't get here\n";
 
 &recreate_hashes;
 
@@ -89,7 +104,6 @@ $dir = "/wormsrv2/autoace/OPERONS";
 &list_operons if ($opt_l);
 
 &simple_list_operons_out if ($opt_s);
-&simple_list_operons_in($opt_t) if ($opt_t);
 
 &list_operons_of_selected_length($opt_k) if ($opt_k);
 &list_operons_from_chromosome($opt_n) if ($opt_n);
@@ -454,12 +468,13 @@ sub simple_list_operons_out {
 }
 
 sub simple_list_operons_in {
-
-    my $file = shift;
+    
+    my $file = shift;	   
     my ($operon_noCDS,$operon_chrom,$operon_acc,@operonCDS,$parse);
     my ($limit);
-
-    open (LIST, "</nfs/disk100/wormpub/analysis/operons/$file") or die "$file : $!\n";
+    
+    print "open file $file\n";
+    open (LIST, "<./$file") or die "$file : $!\n";
     while (<LIST>) {
 
 	undef ($operon_noCDS);
@@ -499,7 +514,9 @@ sub simple_list_operons_in {
 	}
     }
 
-    &dump_hashes
+    print "Dump back to hash\n";
+
+    &dump_hashes;
 
 }
 
@@ -967,7 +984,6 @@ sub webpages {
 ######################################################################################################################################################
 
 sub formats {
-
  
 format ESTLIST =
   EST_Info  : @<<<<<<< [@<<<<] @<<<<<<<<<< @<<< [@<]    @>>>>> [@>>>>> - @>>>>>]   [@ : @<<<<<]
@@ -983,8 +999,6 @@ format ESTFILE =
 @<<<<<<< @<<<<<<<<<< [@<<<<] @<<<<<<<<< [@<<< @<<<<<<< @>>>>> @>>>>> @>] [@<<<<<<] @<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 $est_lookup, $est{$est_lookup}{NAME}, $est{$est_lookup}{EST_TYPE}, $est{$est_lookup}{MAPS_TO_CDS}, $est{$est_lookup}{SL_TYPE}, $est{$est_lookup}{MAPS_TO_GENOME}, $est{$est_lookup}{GENOME_START}, $est{$est_lookup}{GENOME_END}, $est{$est_lookup}{SL_LENGTH}, $est{$est_lookup}{SPLICE_SCORE}, $est{$est_lookup}{SEQUENCE} 
 .
-
-
 
 }
 
