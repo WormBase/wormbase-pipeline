@@ -8,7 +8,7 @@
 # Page download and update upload to geneace has been automated [ck1]
 
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-12-03 16:48:28 $
+# Last updated on: $Date: 2004-12-03 16:53:53 $
 
 use strict;
 use Getopt::Long;
@@ -145,7 +145,7 @@ while(<INPUT>){
 
   $strain =~ s/\s+//g;
   if ($strain){
-    print STRAIN "Strain : \"$strain\"\n";
+    print STRAIN "\n\nStrain : \"$strain\"\n";
     print DELETE_STRAIN "\n\nStrain : \"$strain\"\n";
   }
   my $species;
