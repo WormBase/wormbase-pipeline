@@ -12,21 +12,28 @@ my $bin_size = shift;
 my $output_name = shift;
 my $count = 0;
 my $output_count = 1;
+my $line;
+                                                                                                                            
+open (OUTPUT, ">${output_name}_${output_count}") || die "can't open file\n" ;
 
 open (FILE, "<$file");
 while (<FILE>) {
+    $line = $_;
 
     if (/^>(\S+)/) {
+
 	if ($count == $bin_size) {
 	    close OUTPUT if (OUTPUT);
-	    open (OUTPUT, ">${output_name}_${output_count}") || die "can't open file\n" ;
+
 	    $output_count++;
+
+	    open (OUTPUT, ">${output_name}_${output_count}") || die "can't open file\n" ;
+
 	    $count = 0;
 	}
-	
 	$count++;
     }
-    print OUTPUT ;
+    print OUTPUT;
 }
 close FILE;
 
