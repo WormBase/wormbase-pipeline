@@ -5,7 +5,7 @@ use Wormbase;
 use Getopt::Long;
 use strict;
 
-my ($help, $debug, $test, $quicktest, $database, @methods, @chromosomes );
+my ($help, $debug, $test, $quicktest, $database, @methods, @chromosomes, $dump_dir );
 
 GetOptions (
 	    "help"          => \$help,
@@ -13,6 +13,7 @@ GetOptions (
 	    "test"          => \$test,
 	    "quicktest"     => \$quicktest,
 	    "database:s"    => \$database,
+	    "dump_dir:s"    => \$dump_dir,
 
 	    # ive added method and methods for convenience
 	    "method:s"      => \@methods,
@@ -29,22 +30,26 @@ GetOptions (
 my $giface = &giface;
 
 $database = "/wormsrv2/autoace" unless $database;
-
-my $dump_dir = "/tmp/GFF_CLASS";
+$dump_dir = "/tmp/GFF_CLASS" unless $dump_dir;
 
 mkdir $dump_dir unless -e $dump_dir;
 
 # open database connection once
 open (WRITEDB,"| $giface $database") or die "failed to open giface connection to $database\n";
 
-
-
-foreach my $method ( @methods ) {
-  foreach my $chromosome ( @chromosomes ) {
-    my $command = "gif seqget CHROMOSOME_$chromosome +method $method; seqfeatures -version 2 -file $dump_dir/CHROMOSOME_${chromosome}_${method}.gff";
+foreach my $chromosome ( @chromosomes ) {
+  if ( @methods ) {
+    foreach my $method ( @methods ) {
+      my $command = "gif seqget CHROMOSOME_$chromosome +method $method; seqfeatures -version 2 -file $dump_dir/CHROMOSOME_${chromosome}_${method}.gff";
+      print WRITEDB $command;
+    }
+  }
+  else { 
+    my $command = "gif seqget CHROMOSOME_$chromosome; seqfeatures -version 2 -file $dump_dir/CHROMOSOME_${chromosome}.gff";
     print WRITEDB $command;
   }
 }
+
 
 close WRITEDB;
 
@@ -96,6 +101,8 @@ sub check_options {
 =over 4
 
 This script will GFF dump specified methods from a database
+
+It is use by dump_gff_batch.pl so if you change it make sure it is still compatible !
 
 =back
 
