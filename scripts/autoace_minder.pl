@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-12-02 14:31:08 $
+# Last edited on: $Date: 2003-12-02 14:36:13 $
 
 
 #################################################################################
@@ -555,36 +555,36 @@ sub prepare_primaries {
 
 sub FTP_versions {
 
-    local (*STLACE_FTP,*BRIGDB_FTP,*CITACE_FTP,*CSHACE_FTP);
-
-    my $stlace_FTP = "/nfs/disk100/wormpub/private_ftp/incoming/stl/stlace_*";
-    my $brigdb_FTP = "/nfs/disk100/wormpub/private_ftp/incoming/stl/brigdb_*";
-    my $citace_FTP = "/nfs/disk100/wormpub/private_ftp/incoming/caltech/citace_*";
-    my $cshace_FTP = "/nfs/disk100/wormpub/private_ftp/incoming/csh/cshl_*";
-    my ($stlace_date,$brigdb_date,$citace_date,$cshace_date);
-
-    # stlace
-    open (STLACE_FTP, "/bin/ls -t $stlace_FTP |")  || die "cannot open $stlace_FTP\n";
-    while (<STLACE_FTP>) { chomp; (/\_(\d+)\-(\d+)\-(\d+)\./); $stlace_date = substr($1,-2).$2.$3; last; }
-    close STLACE_FTP; 
-
-    # brigdb
-    open (BRIGDB_FTP, "/bin/ls -t $brigdb_FTP |") || die "cannot open $brigdb_FTP\n";
-    while (<BRIGDB_FTP>) { chomp; (/\_(\d+)\-(\d+)\-(\d+)\./); $brigdb_date = substr($1,-2).$2.$3; last; }
-    close BRIGDB_FTP; 
-
-    # citace
-    open (CITACE_FTP, "/bin/ls -t $citace_FTP |") || die "cannot open $citace_FTP\n";
-    while (<CITACE_FTP>) { chomp; (/\_(\d+)\-(\d+)\-(\d+)\./); $citace_date = substr($1,-2).$2.$3; last; }
-    close CITACE_FTP; 
-
-    # cshace
-    open (CSHACE_FTP, "/bin/ls -t $cshace_FTP |") || die "cannot open $cshace_FTP\n";
-    while (<CSHACE_FTP>) { chomp; (/\_(\d+)\-(\d+)\-(\d+)\./); $cshace_date = substr($1,-2).$2.$3; last; }
-    close CSHACE_FTP; 
-    
-    # return current dates as 6-figure string
-    return($stlace_date,$brigdb_date,$citace_date,$cshace_date);
+  local (*STLACE_FTP,*BRIGDB_FTP,*CITACE_FTP,*CSHACE_FTP);
+  
+  my $stlace_FTP = "/nfs/privateftp/incoming/stl/stlace_*";
+  my $brigdb_FTP = "/nfs/privateftp/incoming/stl/brigdb_*";
+  my $citace_FTP = "/nfs/privateftp/incoming/caltech/citace_*";
+  my $cshace_FTP = "/nfs/privateftp/incoming/csh/cshl_*";
+  my ($stlace_date,$brigdb_date,$citace_date,$cshace_date);
+  
+  # stlace
+  open (STLACE_FTP, "/bin/ls -t $stlace_FTP |")  || die "cannot open $stlace_FTP\n";
+  while (<STLACE_FTP>) { chomp; (/\_(\d+)\-(\d+)\-(\d+)\./); $stlace_date = substr($1,-2).$2.$3; last; }
+  close STLACE_FTP; 
+  
+  # brigdb
+  open (BRIGDB_FTP, "/bin/ls -t $brigdb_FTP |") || die "cannot open $brigdb_FTP\n";
+  while (<BRIGDB_FTP>) { chomp; (/\_(\d+)\-(\d+)\-(\d+)\./); $brigdb_date = substr($1,-2).$2.$3; last; }
+  close BRIGDB_FTP; 
+  
+  # citace
+  open (CITACE_FTP, "/bin/ls -t $citace_FTP |") || die "cannot open $citace_FTP\n";
+  while (<CITACE_FTP>) { chomp; (/\_(\d+)\-(\d+)\-(\d+)\./); $citace_date = substr($1,-2).$2.$3; last; }
+  close CITACE_FTP; 
+  
+  # cshace
+  open (CSHACE_FTP, "/bin/ls -t $cshace_FTP |") || die "cannot open $cshace_FTP\n";
+  while (<CSHACE_FTP>) { chomp; (/\_(\d+)\-(\d+)\-(\d+)\./); $cshace_date = substr($1,-2).$2.$3; last; }
+  close CSHACE_FTP; 
+  
+  # return current dates as 6-figure string
+  return($stlace_date,$brigdb_date,$citace_date,$cshace_date);
 }
 
 #####################################################################################################################
