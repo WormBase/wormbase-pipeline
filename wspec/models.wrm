@@ -219,7 +219,7 @@
 			Insertion	// Added for Todd [171001 krb]
 	Remark	?Text
         Reference ?Paper XREF Allele               // Mary
-        Rescued_by_Transgene ?Transgene
+        Rescued_by_Transgene ?Transgene XREF Rescue
 
 ?Gene_Class     Phenotype ?Text
                 Designating_laboratory UNIQUE ?Laboratory XREF Gene_classes
