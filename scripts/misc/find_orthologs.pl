@@ -5,6 +5,7 @@ $e_b = shift;
 
 open (BE,"<$b_e");
 while (<BE>) {
+  next if /,/;
   chomp;
   @data = split;
   $brig_el{$data[0]} = $data[1];
@@ -13,6 +14,7 @@ while (<BE>) {
 
 open (EB,"<$e_b");
 while (<EB>) {
+  next if /,/;
   chomp;
   @data = split;
   $el_brig{$data[0]} = $data[1];
