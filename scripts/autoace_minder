@@ -476,16 +476,16 @@ sub blat_jobs {
     # run the blat jobs
 
     # blat_them_all -e
-    system ("$scriptdir/blat_them_all -nbsve") && die "Couldn't blat_them_all -nbsve\n";
+    system ("$scriptdir/blat_them_all.pl -nbsve") && die "Couldn't blat_them_all -nbsve\n";
 
     # blat_them_all -m
-    system ("$scriptdir/blat_them_all -bsm") && die "Couldn't blat_them_all -nbsve\n";
+    system ("$scriptdir/blat_them_all.pl -bsm") && die "Couldn't blat_them_all -nbsve\n";
 
     # blat_them_all -o
-    system ("$scriptdir/blat_them_all -bso") && die "Couldn't blat_them_all -nbsve\n";
+    system ("$scriptdir/blat_them_all.pl -bso") && die "Couldn't blat_them_all -nbsve\n";
 
     # blat_them_all -x
-    system ("$scriptdir/blat_them_all -bsx") && die "Couldn't blat_them_all -nbsve\n";
+    system ("$scriptdir/blat_them_all.pl -bsx") && die "Couldn't blat_them_all -nbsve\n";
 
     # quit if blat_them_all has not been run
     &usage(9) unless (-e "$logdir/blat_transcript_data");
