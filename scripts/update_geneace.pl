@@ -436,10 +436,10 @@ sub geneclass_loci_other_name {
 	      #print $parts[$i],"\n";
 	      if ($parts[$i] =~ /(Paper_evidence)\s(.+)/){
 		#print $1, "\n";
-		if ($2 =~ /PMID.+/){
+		if ($2 =~ /PMID.+/i){
 		  $pmid = $&;
-		  $pmid =~ s/PMID:\s|\[|\]|//;
-		  $pmid =~ s/\]//;		
+		  $pmid =~ s/PMID:\s+|\[|\]|pmid|pmid\s+|\s+//;
+		  $pmid =~ s/\]//;	$pmid =~ s/\s+//;	
 		  print $pmid, "\n";
 		  push(@Update, "Sequence_name\t\"$seq\"\n");
 		  push(@Update, "CDS\t\"$seq\"\tPMID_evidence\t\"$pmid\"\n");
@@ -475,9 +475,9 @@ sub geneclass_loci_other_name {
 	  for ($i = 1; $i < $num_parts; $i++){
 	    if ($parts[$i] =~ /(Paper_evidence)\s(.+)/){
 	      #print $1, "\n";
-	      if ($2 =~ /PMID.+/){
+	      if ($2 =~ /PMID.+/i){
 		  $pmid = $&;
-		  $pmid =~ s/PMID:\s|\[|\]|//;
+		  $pmid =~ s/PMID:\s|\[|\]|pmid|:|\s+//;
 		  $pmid =~ s/\]//;		
 		  print $pmid, "\n";
 		  push(@Update, "Sequence_name\t\"$seq\"\n");
