@@ -98,9 +98,10 @@ unless ($opt_b || $opt_s || $opt_v) {
 	quit
 EOF
 
-	open(F,"echo '$command1' | $giface $dbdir");
-	while (<F>) {
-	}
+	system("echo '$command1' | $giface $dbdir") && die "Cannot open autoace $!\n";;
+#	open(F,"echo '$command1' | $giface $dbdir");
+#	while (<F>) {
+#	}
 }	
 
 ############
@@ -180,7 +181,7 @@ unless ($opt_v) {
 if ($opt_e) {
 	print "Producing files for the virtual objects in autoace: $blat/virtual_objects.autoace.BLAT_EST.ace\n";
 	unlink "$blat/virtual_objects.BLAT_EST.ace" if (-e "$blat/virtual_objects.BLAT_EST.ace");
-	system("$bin/superlinks.blat.pl $chrom > $blat/virtual_objects.BLAT_EST.ace")
+	system("$bin/superlinks.blat.pl $chrom > $blat/virtual_objects.autoace.BLAT_EST.ace")
 		&& die "Producing virtual objects for blat failed\n";
 
 	print "Producing files for the virtual objects in camace : $blat/virtual_objects.camace.BLAT_EST.ace\n";
@@ -239,9 +240,9 @@ unless ($opt_v) {
 	print "\n";
 	print "Read into autoace:\n";
 	if ($opt_e) {
-		print "$blat/virtual_objects.BLAT_EST.ace\n";
+		print "$blat/virtual_objects.autoace.BLAT_EST.ace\n";
 		print "$blat/autoace.blat.EST.ace\n";
-		print "$blat/virtual_objects.ci.EST.ace\n";
+		print "$blat/virtual_objects.autoace.ci.EST.ace\n";
 		print "$blat/autoace.good_introns.EST.ace\n";
 		unlink("$blat/autoace.EST.ace");
 		unlink("$blat/autoace.best.EST.ace");
@@ -249,9 +250,9 @@ unless ($opt_v) {
 		unlink("$blat/autoace.ci.EST.ace");
 	}
 	if ($opt_m) {
-		print "$blat/virtual_objects.BLAT_mRNA.ace\n";
+		print "$blat/virtual_objects.autoace.BLAT_mRNA.ace\n";
 		print "$blat/autoace.blat.mRNA.ace\n";
-		print "$blat/virtual_objects.ci.mRNA.ace\n";
+		print "$blat/virtual_objects.autoace.ci.mRNA.ace\n";
 		print "$blat/autoace.good_introns.mRNA.ace\n";
 		unlink("$blat/autoace.mRNA.ace");
 		unlink("$blat/autoace.best.mRNA.ace");
@@ -259,7 +260,7 @@ unless ($opt_v) {
 		unlink("$blat/autoace.ci.mRNA.ace");
 	}
 	if ($opt_x) {
-		print "$blat/virtual_objects.BLATX_NEMATODE.ace\n";
+		print "$blat/virtual_objects.autoace.BLATX_NEMATODE.ace\n";
 		print "$blat/autoace.blat.nematode.ace\n";
 	}
 	print "\nRead into camace:\n";
