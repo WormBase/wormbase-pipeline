@@ -6,7 +6,7 @@
 # Usage : autoace_minder [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2002-09-04 13:05:17 $
+# Last edited on: $Date: 2002-09-04 14:13:28 $
 
 
 #################################################################################
@@ -169,84 +169,79 @@ $time = 1;
 
 &make_suggestion if ($suggest);
 
-
 #__ PREPARE SECTION __#
 
 # A1:Build_in_progress & A2:Updated_WS_version
 # Requires: 
-
 &initiate_build    if ($initial);
+
 
 # A3:Unpack_FTP_databases & A4:Primary_databases_on_wormsrv2
 # Requires: A1   
-
 &prepare_primaries if ($unpack);
+
 
 # A5:Wrote_acefiles_to_wormbase 
 # Requires: A1,A4
-
 &make_acefiles     if ($acefile);
-
-
 
 #__ BUILD SECTION __#
 
 # B1:Make_autoace_database & B2:Dump_DNA_files
 # Requires: A1,A4,A5
-
 &make_autoace           if ($build || $builddb || $buildchrom || $buildrelease);
 &test_build             if ($buildtest);
 
+
 # B3:Make_agp_files
 # Requires: A1,A4,A5,B1
-
 &check_release          if ($check);
+
 
 # B5:Copy_to_midway
 # Requires: A1,A4,A5,B1
-
 &pre_blat_copy          if ($secure);
+
 
 # B6:Blat_analysis & B7:Upload_BLAT_data
 # Requires: A1,A4,A5,B1
-
 &blat_jobs              if ($blat);
 &parse_blat_files_other if ($addblatpartial);
 &parse_blat_files       if ($addblat);
 
+
 # B8:Upload_wublast_data & B9:Upload_briggsae_data
 # Requires: A1,A4,A5,B1
-
 &parse_homol_data       if ($addhomol);
 &parse_briggsae_data    if ($addbriggsae);
 
+
 # B10:Generate_UTR_data
 # Requires: A1,A4,A5,B1,B6,B7
-
 &generate_utrs          if ($utrs);
+
 
 #__ PROCESS SECTION __#
 
+
 # C1:Dumped_GFF_files  
 # Requires: A1,A4,A5,B1
-
 &dump_GFFs         if ($gffdump);
+
 
 # C2:Split_GFF_files   
 # Requires: A1,A4,A5,B1
-
 &split_GFFs        if ($gffsplit);
+
 
 # C3:Map_PCR_products  
 # Requires: A1,A4,A5,B1
-
 &map_features      if ($map);
+
 
 # C4:Confirm_gene_models
 # Requires: A1,A4,A5,B1
-
 &confirm_gene_models   if ($confirm);
-
 
 
 #__ ANCILLIARY DATA SECTION __#
@@ -1249,15 +1244,30 @@ sub parse_briggsae_data {
 
 sub generate_utrs {
 
-  # quit if there are not the first splitting of GFF files after BLATTING
+  my $runtime;
+  my $command;
+  # quit if split GFF files have not been made after BLATTING
 #  &usage(17) unless (-e "$logdir/$flag{'B7'}");
 #
   # First add CDS-EST connections from fixfile
-  my $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Adding CDS-EST connections from fixfile at $runtime\n";
-  my $command = "pparse /wormsrv2/autoace/fixfiles/CDS-EST_connections.ace\nsave\nquit\n"; 
+  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Adding CDS-EST connections from fixfile at $runtime\n";
+  $command = "pparse /wormsrv2/autoace/fixfiles/CDS-EST_connections.ace\nsave\nquit\n"; 
   open (WRITEDB, "| $tace -tsuser cds_est_connection_fixfile /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
   print WRITEDB $command;
   close WRITEDB;
+  
+  # run find_utrs.pl to generate data
+  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Running find_utrs.pl\n";
+  system("find_utrs.pl-d autoace -r /nfs/disk100/wormpub/analysis/UTR") && die "Couldn't run find_utrs.pl\n";
+
+  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Adding UTRs.ace file to autoace\n";
+  $command = "pparse /nfs/disk100/wormpub/UTR/UTRs.ace\nsave\nquit\n"; 
+  open (WRITEDB, "| $tace -tsuser cds_est_connection_fixfile /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
+  print WRITEDB $command;
+  close WRITEDB;
+
+  # make a log file in /autoace/logs
+  system ("touch $logdir/B10:Generate_UTR_data");
 }
 #__ end generate_utrs __#
 
