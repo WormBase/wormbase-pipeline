@@ -169,7 +169,7 @@ sub new {
     print "$seq\n\n";
 
     # write fasta file to update log
-    print LOG ">WP:";
+    print LOG ">";
     print LOG "$seq\n";
 }
 
