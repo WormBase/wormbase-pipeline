@@ -4,7 +4,7 @@
 
 # by Chao-Kung Chen [030113]
 
-# Last updated on: $Date: 2003-02-18 19:18:09 $
+# Last updated on: $Date: 2003-02-24 01:51:17 $
 # Last updated by: $Author: ck1 $
 
 
@@ -33,7 +33,10 @@ if ($help){
   exit (0);
 }
 
-
+if ($debug){
+  $recipients = "$debug\@sanger.ac.uk";
+}
+	
 ##################################################
 # check user is wormpub otherwise script won't run
 ##################################################
@@ -73,25 +76,19 @@ system("echo '\$ caltech' | ftp -i caltech.wormbase.org") && print LOG "Failed t
 my @ftp_date=dataset($caltech);    # [0] is the date of the file , [1] is the filename
 my @last_date=dataset($updatedir); # [0] is the date of the file , [1] is the filename
 
-#print $ftp_date[0], "#\n";
-#print $ftp_date[1], "#\n";
-#print $last_date[0], "##\n";
-#print $last_date[1], "##\n";
+print $ftp_date[0], "#\n";
+print $ftp_date[1], "#\n";
+print $last_date[0], "##\n";
+print $last_date[1], "##\n";
 
-push(@dates, $ftp_date[0], $last_date[0]);
-
-my @order = sort {$a <=> $b} @dates;
-
-if ($last_date[0] != $order[0]){
-  print LOG "UPDATE file $ftp_date[1] avilable on FTP...start to download\n\n";
-  chdir $updatedir;
-  system("echo '\$ caltech' | ftp -i caltech.wormbase.org") && print LOG "Failed to download file\n"; 
-  if (!$!){system("mv $last_date[1] ARCHIVE/")}   # if download failed, do not move the last update file to ARCHIVE
-}
-else {
+if ($last_date[0] != $ftp_date[0]){
+  print LOG "UPDATE file $ftp_date[1] avilable on FTP\n\n";
+  system("mv $ftp_date[1] ../");
+}  
+if ($last_date[0] == $ftp_date[0]){
   print LOG "No new update on FTP site\n";
-  $recipients ="ck1\@sanger.ac.uk, krb\@sanger.ac.uk";
-  mail_maintainer($script, $recipients, $log) unless $debug;
+  $recipients ="ck1\@sanger.ac.uk, krb\@sanger.ac.uk";  # notify ck1 & krb if no update
+  mail_maintainer($script, $recipients, $log);
   exit(0);
 }
 
@@ -167,8 +164,6 @@ print LOG "There are $change change(s)\n";
 print LOG "These have been changed in $ftp_date[1],\n";
 print LOG "but Caltech needs to update on their side. THANKS.\n\n";
 
-system("rm $caltech/*");
-
 my $command=<<END;
 find sequence * where concise_description OR detailed_description OR provisional_description
 show -a -T -f /wormsrv1/geneace/ERICHS_DATA/seq_TS_dump.ace
@@ -178,7 +173,6 @@ edit -D Provisional_description
 
 find locus * where concise_description OR detailed_description OR provisional_description
 show -a -T -f /wormsrv1/geneace/ERICHS_DATA/loci_TS_dump.ace
-
 edit -D Concise_description
 edit -D Detailed_description
 edit -D Provisional_description
@@ -191,7 +185,7 @@ END
 
 my $geneace_dir="/wormsrv1/geneace";
 
-open (Load_GA,"| $tace -tsuser \"Functional_annotation\" $geneace_dir > $log") || die "Failed to upload to Geneace";
+open (Load_GA,"| $tace -tsuser \"Functional_annotation\" $geneace_dir >> $log") || die "Failed to upload to Geneace";
 print Load_GA $command;
 close Load_GA;
 
@@ -210,20 +204,19 @@ else{
 }
 
 ######################################
-# move modified file to ARCHIVE folder
+# move modified file/last update file to ARCHIVE folder
 ######################################
 
-system("mv $last_date[1].modified ARCHIVE/");
-
-exit(0);
+chdir $updatedir;
+system("mv $last_date[1]* ARCHIVE/");
 
 ##################################################
 # Mail log file
 # Only mail to person running script in debug mode
 ##################################################
 
-mail_maintainer($script, $recipients, $log) unless $debug;
-
+mail_maintainer($script, $recipients, $log);
+exit(0);
 
 #############
 # subroutines
@@ -237,7 +230,7 @@ sub dataset {
   splice(@dir, 0,2);
   closedir (DIR);
   foreach (@dir){
-    if ($_ =~ /^annots-(\d+)(\w{3,3})(\d+)/){
+    if ($_ =~ /^annots-(\d+)(\w{3,3})(\d+)\.ace$/){
       $name = $_;
       my $mon = $2;
       if ($mon eq "jan"){$mon = "01"}
