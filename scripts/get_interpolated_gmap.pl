@@ -7,7 +7,7 @@
 # This script calculates interpolated genetic map positions for CDS, Transcripts 
 # and Pseudogenes lying between and outside genetic markers.
 #
-# Last updated on: $Date: 2003-12-15 10:58:49 $
+# Last updated on: $Date: 2003-12-17 10:14:49 $
 # Last updated by: $Author: ck1 $
 
 use strict;
@@ -721,15 +721,14 @@ save
 quit
 END
 
-  open (LOAD_A,"| $tace -tsuser $database/ >> $log") || die "Failed to upload to Geneace";
+  open (LOAD_A,"| $tace -tsuser \"genetic_map\" $database/ >> $log") || die "Failed to upload to Geneace";
   print LOAD_A $command;
   close LOAD_A;
  
   system("chmod 777 $log");
   
-  print "\nFinished uploading files to $database\n";
+  print "\nCheck $log to double check file uploading to $database went OK\n";
 }
-
 
 
 # Finish and exit
@@ -838,7 +837,7 @@ sub ace_output {
       my $cdsf = $_;
       $cdsf = sprintf ("%-15s", "$cdsf");
       
-      if ($type eq "DNA"){print ACE "\nSequence : \"$_\"\n";	print CDSes "$cdsf\t";}
+      if ($type eq "DNA"){print ACE "\nCDS : \"$_\"\n";	print CDSes "$cdsf\t";}
       if ($type eq "RNA"){print ACE "\nTranscript : \"$_\"\n"; print CDSes "$cdsf\t"}
       if ($type eq "pseudo"){print ACE "\nPseudogene : \"$_\"\n"; print PSEUDO "$cdsf\t"}
       print ACE "Interpolated_map_position\t\"$chrom\"\t$gmap\t\/\/$mean_coord (iso)\n";
@@ -866,7 +865,8 @@ sub ace_output {
   }  
   else {
     if ($feature eq "DNA"){
-      print ACE "\nSequence : \"$cds\"\n"; 
+      print ACE "\nCDS : \"$cds\"\n" if !$clone;
+      print ACE "\nSequence : \"$cds\"\n" if $clone;
       print CDSes "$cdsf\t" if !$clone; 
       print CLONEs "$clone\t" if $clone;
     }
