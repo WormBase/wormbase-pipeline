@@ -50,15 +50,8 @@ our $dbdir  = '/wormsrv2/autoace';
 my $bin     = '/wormsrv2/scripts';
 #my $bin    = '/nfs/griffin2/dl1/wormbase/wormbase/scripts';
 
-my $query;
-$query      = '/nfs/disk100/wormpub/analysis/ESTs/C.elegans_nematode_ESTs'    if ($opt_e); # EST data set
-$query      = '/wormsrv2/mRNA_GENOME/NDB_mRNAs.fasta'                         if ($opt_m); # mRNA data set
-$query      = '/wormsrv2/autoace/BLAT/nematode.fa'                            if ($opt_x); # ParaNem EST data set
-$query      = '/nfs/disk100/wormpub/analysis/ESTs/C.elegans_nematode_miscPep' if ($opt_o); # Other CDS data set
-
 my $db;
 our %homedb;
-
 our $seq     = '/wormsrv2/autoace/BLAT/autoace.fa';               
 our $chrom   = '/wormsrv2/autoace/BLAT/chromosome.ace';
 our $blatex  = '/nfs/disk100/wormpub/blat/blat';
@@ -96,6 +89,11 @@ getopts('emxbsvonhd');
 ($data = 'EMBL')     if ($opt_o);
 ($data = 'NEMATODE') if ($opt_x);
 
+my $query;
+$query      = '/nfs/disk100/wormpub/analysis/ESTs/C.elegans_nematode_ESTs'    if ($opt_e); # EST data set
+$query      = '/wormsrv2/mRNA_GENOME/NDB_mRNAs.fasta'                         if ($opt_m); # mRNA data set
+$query      = '/wormsrv2/autoace/BLAT/nematode.fa'                            if ($opt_x); # ParaNem EST data set
+$query      = '/nfs/disk100/wormpub/analysis/ESTs/C.elegans_nematode_miscPep' if ($opt_o); # Other CDS data set
 
 
 #############
@@ -107,17 +105,16 @@ my $maintainer = "kj2\@sanger.ac.uk dl1\@sanger.ac.uk krb\@sanger.ac.uk";
 
 my $rundate    = `date +%y%m%d`;   chomp $rundate;
 my $runtime    = `date +%H:%M:%S`; chomp $runtime;
-my $version    = &get_cvs_version('/wormsrv2/scripts/blat_them_all.pl');
 my $WS_version = &get_wormbase_version_name;
 
 my $logfile = "/wormsrv2/logs/blat_them_all.${WS_version}.$rundate.$$";
 system ("/bin/touch $logfile");
 open (LOG,">>$logfile") or die ("Could not create logfile\n");
 LOG->autoflush();
-#open (STDOUT,">>$logfile");
-#STDOUT->autoflush();
-#open (STDERR,">>$logfile"); 
-#STDERR->autoflush();
+open (STDOUT,">>$logfile");
+STDOUT->autoflush();
+open (STDERR,">>$logfile"); 
+STDERR->autoflush();
 
 print LOG "# blat_them_all\n\n";     
 print LOG "# version        : $version\n";
@@ -142,12 +139,7 @@ print LOG "Starting blat process .. \n\n";
 # Write sequence data from autoace
 if ($opt_n) {
 
-    # CHECK: do the autoace.fa & chromosome.ace files exist
-
-    # CHECK: are we dumping from a new database
-    
     &dump_dna;
-    %homedb = &which_db;
 }
 
 # BLAT the query data type 
@@ -155,7 +147,7 @@ if ($opt_b) {
 
     # CHECK: does the autoace.fa exist
     # exit if autoace.fa file is absent
-    &usage(5) if (-e "/wormsrv2/autoace/BLAT/autoace.fa");
+    &usage(5) unless (-e "/wormsrv2/autoace/BLAT/autoace.fa");
     
     # CHECK: how old is the autoace.fa file ?
     # exit if autoace.fa file created prior to start of (re)build 
