@@ -6,8 +6,8 @@
 #
 # Ashwin Hajarnavis ah3@sanger.ac.uk  August 2002
 #
-# Last updated by: $Author: dl1 $                 
-# Last updated on: $Date: 2004-04-28 10:37:00 $   
+# Last updated by: $Author: krb $                 
+# Last updated on: $Date: 2004-06-08 13:00:31 $   
 
 
 use strict;
@@ -90,6 +90,18 @@ while (<LINK>) {
 close LINK;
 
 
+ ###################################
+ # Set up output files if needed   #
+ ###################################
+
+if ($output_dir)  {
+  open(OUTFILE,   ">$output_dir/ALL.UTRs.tmp")    || die "Cannot open outfile $output_dir\n";
+  open(ERRORFILE, ">$output_dir/data_errors.txt") || die "Cannot dump errors\n";
+  open(ACEFILE,   ">$output_dir/UTRs.ace")        || die "Cannot open ace file\n";
+}
+
+
+
 # check to see if EST hash data exists
 # make it via tablemaker queries if absent
 
@@ -112,15 +124,6 @@ $est_data = read_gff($gff_dir, $est_file, $est_data);
 # write mRNA gff positions
 $est_data = read_gff($gff_dir, $mrna_file, $est_data);
 
- ##############################
- # Write output               #
- ##############################
-
-if ($output_dir)  {
-  open(OUTFILE,   ">$output_dir/ALL.UTRs.tmp")    || die "Cannot open outfile $output_dir\n";
-  open(ERRORFILE, ">$output_dir/data_errors.txt") || die "Cannot dump errors\n";
-  open(ACEFILE,   ">$output_dir/UTRs.ace")        || die "Cannot open ace file\n";
-}
 
 &find_transcript($gene_est_map, $gene_data, $est_data);
 
