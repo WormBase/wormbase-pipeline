@@ -1,5 +1,5 @@
 #!/usr/local/bin/perl -w
-#
+
 # GFFsplitter
 # 
 # v 0.1
@@ -36,6 +36,12 @@ my $WS_version = &get_wormbase_version;
 
 my $datadir = "/wormsrv2/autoace/GFF_SPLITS";
 
+# create GFF_SPLITS subdirectory if it doesn't already exist
+if (! -e "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS"){
+  system("mkdir /wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS") || die "Couldn't create directory\n";
+}
+
+
  ##############################
  # command-line options       #
  ##############################
@@ -52,7 +58,7 @@ getopts ('ha');
 
 # runs only if -a is specified
 if($opt_a){
-  print LOG "Renaming $datadir/GFF_SPLITS to $datadir/$WS_version\n";
+  print "Renaming $datadir/GFF_SPLITS to $datadir/$WS_version\n";
   system("mv $datadir/GFF_SPLITS ${datadir}/${WS_version}") && die "Couldn't rename directory\n";
   exit(0);
 }
