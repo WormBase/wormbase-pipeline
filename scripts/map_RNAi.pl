@@ -12,6 +12,9 @@
 # 060801 :  kj : original version 
 #
 #############################################################################################
+#
+# Last updated by: $Author: dl1 $                      
+# Last updated on: $Date: 2002-12-09 14:28:39 $        
 
 
 #############
@@ -19,9 +22,9 @@
 #############
 
 $|=1;
-
+use strict;
 use IO::Handle;
-use Getopt::Std;
+use Getopt::Long;
 use Cwd;
 use lib "/wormsrv2/scripts/";
 use Wormbase;
@@ -33,37 +36,49 @@ use Wormbase;
 my $maintainer = "All";
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
-my %output      = ();
-my %finaloutput = ();
+my $name;
+
+# touch logfile for run details
+if ($0 =~ /\//) {($name) = $0 =~ m/\/([^\/]+)$/;}
+else {$name = $0;}
+system ("touch /wormsrv2/logs/history/$name.`date +%y%m%d`");
+my $logfile = "/wormsrv2/logs/whats_new_in_EMBL.$rundate.$$";
 
 ########################
 # command-line options #
 ########################
 
-$opt_d="";   # Verbose debug mode
-$opt_h="";   # Help/Usage page
+my $help;       # Help perdoc
+my $debug;      # Debug mode, verbose output to user running script
 
-getopts ('hd');
-&usage(0) if ($opt_h);
-my $debug = $opt_d;
+GetOptions (
+            "debug=s"   => \$debug,
+            "help"      => \$help
+            );
+
+# help page	   
+&usage("Help") if ($help);
+	   
+# no debug name
+&usage("Debug") if ((defined $debug) && ($debug eq ""));
 
 #############
 # Paths etc #
 #############
 
-my $tace = &tace;    # tace executable path
-my $dbdir  = "/wormsrv2/autoace";                                  # Database path
-my $gffdir = "/wormsrv2/autoace/CHROMOSOMES";
-my @chromosomes = qw( I II III IV V X );
-my $db_version = &get_wormbase_version_name;
- 
+my $tace        = &tace;                                  # tace executable path
+my $dbdir       = "/wormsrv2/autoace";                    # Database path
+my $gffdir      = "/wormsrv2/autoace/CHROMOSOMES";        # CHROMOSOME dir
+my @chromosomes = qw( I II III IV V X );                  # chromosomes
+my $db_version  = &get_wormbase_version_name;             # WS version name
+my %output      = ();
+my %finaloutput = ();
+
 ################
 # Open logfile #
 ################
 
-my $log="/wormsrv2/logs/map_RNAi.$rundate";
-
-open (LOG,">$log");
+open (LOG,">$logfile");
 LOG->autoflush();
 
 print LOG "# map_RNAi\n";     
@@ -74,8 +89,9 @@ print LOG "\n";
 # get exons and RNAis out of the gff files #
 ############################################        
    
-foreach $chromosome (@chromosomes) {
+my @f;
 
+foreach my $chromosome (@chromosomes) {
     my %exoncount = ();
     my %RNAicount = ();
     my %genes     = ();
@@ -118,10 +134,10 @@ foreach $chromosome (@chromosomes) {
 # make indexlists #
 ###################
  
-    my @exonlist= sort { $exon{$a}->[0]  <=> $exon{$b}->[0]  } keys %exon;
-    my @genelist= sort { $genes{$a}->[0] <=> $genes{$b}->[0] } keys %genes;
-    my @RNAilist = sort { $RNAi{$a}->[0]   <=> $RNAi{$b}->[0] || $a cmp $b } keys %RNAi;     
-
+    my @exonlist = sort { $exon{$a}->[0]  <=> $exon{$b}->[0]  } keys %exon;
+    my @genelist = sort { $genes{$a}->[0] <=> $genes{$b}->[0] } keys %genes;
+    my @RNAilist = sort { $RNAi{$a}->[0]  <=> $RNAi{$b}->[0] || $a cmp $b } keys %RNAi;     
+    
 ##########
 # map it #
 ##########
@@ -142,8 +158,7 @@ foreach $chromosome (@chromosomes) {
                 $lastfail = $y;
                 next; 
             }
-            
-            elsif ($RNAistop < $genestart) {
+	    elsif ($RNAistop < $genestart) {
                 last; 
             }
             
@@ -221,5 +236,24 @@ open (TACE,"| $tace -tsuser map_RNAi.pl $dbdir") || die "Couldn't open tace conn
 print TACE $command;
 close (TACE);
 
-
 exit(0);
+
+###############################
+# Prints help and disappears  #
+###############################
+
+sub usage {
+    my $error = shift;
+
+    if ($error eq "Help") {
+        # Normal help menu
+        system ('perldoc',$0);
+        exit (0);
+    }
+    elsif ($error eq "Debug") {
+        # No debug bod named
+        print "You haven't supplied your name\nI won't run in debug mode until i know who you are\n";
+        exit (0);
+    }
+}
+
