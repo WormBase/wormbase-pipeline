@@ -7,7 +7,7 @@
 # Script to convert cgc strain file into ace file for geneace
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-07-15 12:36:16 $
+# Last updated on: $Date: 2002-07-15 12:41:29 $
 
 use strict;
 use Getopt::Std;
@@ -156,13 +156,13 @@ while(<INPUT>){
   $description =~ s/\s+$//g;
   # get rid of any quotation marks
   $description =~ s/\"//g; 
-  # change any URLs present else the // will be treated as a comment
-  $description =~ s/http:\/\/URL: /g;
+  # change any URLs present else the double back slash will be treated as a comment
+  $description =~ s/http:\/\//URL: /g;
   $ace_object .= "Remark \"$description\"\n" unless ($description eq "");
   $delete_ace_object .= "-D Remark \"$description\"\n" unless ($description eq "");
 
   my $mutagen;
-  (m/Mutagen: (.*?)Outcrossed:/);
+  m/Mutagen: (.*?)Outcrossed:/;
   $mutagen = $1;
   $mutagen =~ s/\s{2,}/ /g;
   $mutagen =~ s/\s+$//g;
