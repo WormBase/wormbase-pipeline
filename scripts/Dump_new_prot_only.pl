@@ -63,7 +63,13 @@ my %processIds2prot_analysis = ( 11 => "wublastp_worm",
 				 14 => "wublastp_slimtrembl"
 			       );
 
-
+our %org_prefix = ( 'wublastp_worm' => 'WP',
+		    'wublastp_ensembl' => 'ENSEMBL',
+		    'wublastp_fly' => 'GADFLY',
+		    'wublastp_yeast' => 'SGD',
+		    'wublastp_slimswissprot' => 'SW',
+		    'wublastp_slimtrembl' => 'TR'
+		  );
 
 #get list of wormpeps to dump from wormpep.diffXX or wormpep.tableXX depending on wether u want to dump all or just new
 my @peps2dump;
@@ -235,7 +241,7 @@ while (<SORT>) {
 }
   
 my $wormpub = glob("~wormpub");
-my $tace =  "$wormpub/ACEDB/bin.ALPHA_4/tace";
+my $tace =  &tace;
 my $command;
 
 print LOG &runtime," : finished\n\n______END_____";
@@ -267,13 +273,13 @@ sub dumpData
 	    #need to convert form gene name to CE id for worms (they are stored as genes to compare isoforms)
 	    if( "$$data[1]" eq "wublastp_worm" ) {
 	      my $gene = $$data[4]; 
-	      $$data[4] = "WP:".$gene2CE{"$gene"};
+	      $$data[4] = $gene2CE{"$gene"};
 	    }
 	    
 	    foreach (@cigar){
 	      #print OUT "Pep_homol \"$homolID\" $processIds2prot_analysis{$analysis} $e $myHomolStart $myHomolEnd $pepHomolStart $pepHomolEnd Align ";
 	      print OUT "Pep_homol ";
-	      print OUT "$$data[4] ";   #  homolID
+	      print OUT $org_prefix{"$$data[1]"}":$$data[4] ";   #  homolID
 	      print OUT "$$data[1] ";   #  analysis
 	      print OUT "$$data[7] ";   #  e value
 	      print OUT "$$data[2] ";   #  HomolStart
@@ -287,7 +293,7 @@ sub dumpData
 	      
 	      
 	      #and print out the reciprocal homology to different file
-	      print RECIP "Protein : $$data[4] line "; #  matching peptide
+	      print RECIP "Protein : ",$$data[4] line "; #  matching peptide
 	      print RECIP "WP:$pid ";              #worm protein
 	      print RECIP "$$data[1] ";   #  analysis
 	      print RECIP "$$data[7] ";   #  e value
