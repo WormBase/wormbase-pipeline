@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.0 -w
+#!/usr/local/bin/perl5.6.1 -w
 #
 # make_wormrna.pl
 # 
@@ -7,7 +7,7 @@
 # Builds a wormrna data set from the current autoace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-11-21 09:19:08 $
+# Last updated on: $Date: 2003-01-22 14:45:53 $
 
 
 #################################################################################
@@ -16,48 +16,49 @@
 
 $| = 1;
 use strict;
-use vars qw($opt_r $opt_d $opt_h);
-use Getopt::Std;
+use lib '/wormsrv2/scripts/';
+use Wormbase;
+use Getopt::Long;
 use IO::Handle;
 use Ace;
 use Socket;
-use lib '/wormsrv2/scripts/';
-use Wormbase;
 
     
- #######################################
- # Script variables (run)              #
- #######################################
+######################################
+# variables and command-line options # 
+######################################
 
-my $maintainer = "All";
-my $rundate    = `date +%y%m%d`; chomp $rundate;
-my $runtime    = `date +%H:%M:%S`; chomp $runtime;
+my ($help, $debug, $release);
+my $maintainers = "All";
+my $rundate     = `date +%y%m%d`; chomp $rundate;
+my $runtime     = `date +%H:%M:%S`; chomp $runtime;
+our $log;
+
+GetOptions ("help"      => \$help,
+	    "release=s" => \$release,
+            "debug=s"   => \$debug);
 
 
- #######################################
- # command-line options                #
- #######################################
+# Display help if required
+&usage("Help") if ($help);
+&usage("releasename") if (!$release);
+&usage("releasename") if ($release =~ /\D+/);
 
-getopts ('dhr:');
+# Use debug mode?
+if($debug){
+  print "DEBUG = \"$debug\"\n\n";
+  ($maintainers = $debug . '\@sanger.ac.uk');
+}
 
- #######################################
- # sanity checks for the input         #
- #######################################
+&create_log_files;
 
-&error(0) if ($opt_h);
-&error(1) if ((length $opt_r) == 0);
-&error(2) if (($opt_r =~ /\D+/));
 
- #######################################
- # release data                        #
- #######################################
+#######################################
+# release data                        #
+#######################################
 
-my $release = $opt_r; 
 my $release_date     = &get_wormbase_release_date("long");
 my $old_release = $release-1;
-my $debug = $opt_d;
-
-if ($debug) {$maintainer = "dl1\@sanger.ac.uk";}
 
 
 my $dbdir     = "/wormsrv2/autoace";
@@ -67,93 +68,77 @@ my $tace      = &tace;
 
 $ENV{'ACEDB'} = $dbdir;
 
- ########################################
- # Open logfile                         #
- ########################################
 
-my $log="/wormsrv2/logs/make_wormrna.$release.$rundate.$$";
-open (LOG,">$log") || &error(3);
-LOG->autoflush();
-
-print LOG "# make_wormrna.pl\n";
-print LOG "# run details    : $rundate $runtime\n";
-print LOG "\n";
-print LOG "Wormrna version  : wormrna$opt_r\n\n";
-print LOG "=============================================\n";
-print LOG "\n";
-
- ##################################################
- # Make new directory for current release         #
- ##################################################
-
-mkdir ("$new_wrdir" , 0755) || &error(4);   
-
+# Make new directory for current release      
 print LOG "# $runtime : making wormrna$release for $rundate\n\n";
+mkdir ("$new_wrdir" , 0755) || die "Couldn't create $new_wrdir\n";   
 
- ###############################################
- # retrieve the desired RNA sequence objects   #
- ###############################################
+
+###############################################
+# retrieve the desired RNA sequence objects   #
+###############################################
 
 $runtime = `date +%H:%M:%S`; chomp $runtime;
 print LOG "# $runtime : connect to primary database\n";
 
-my $db = Ace->connect (-path => $dbdir, -program => $tace) || &error(5);
-my @dotnames_1 = $db->fetch (-query => 'FIND Genome_sequence ; FOLLOW Subsequence ; where (Method = rna) OR (Method=tRNAscan-SE-1.11)');
-my @dotnames_2 = $db->fetch (-query => 'FIND Sequence SUPERLINK* ; FOLLOW Subsequence ; where (Method = rna) OR (Method=tRNAscan-SE-1.11)');
+my $db = Ace->connect (-path => $dbdir, -program => $tace) || die "Couldn't connect to $dbdir\n";
+my @transcripts = $db->fetch (-query => 'FIND Transcript');
 
-push (@dotnames_1 , @dotnames_2);
-@dotnames_1 = sort @dotnames_1;
-my $count = scalar(@dotnames_1)+scalar(@dotnames_2);
+@transcripts = sort @transcripts;
+my $count = scalar(@transcripts);
 $runtime = `date +%H:%M:%S`; chomp $runtime;
-print LOG "=> " . scalar(@dotnames_1) . " RNA sequences\n";
-print LOG "=> " . scalar(@dotnames_2) . " of which are attached to LINK objects\n";
+print LOG "=> " . $count . " RNA sequences\n";
 print LOG "# $runtime : finished connection to database\n\n";
 
- ###########################################################################
- # get the rna sequence, write a rna.fasta file,
- ###########################################################################
+
+###########################################################################
+# get the rna sequence, write a rna.fasta file,
+###########################################################################
  
 $runtime = `date +%H:%M:%S`; chomp $runtime;
 print LOG "# $runtime : write wormrna.rna file\n\n";
 
-my $obj = "";
 
-open (DNA , ">$new_wrdir/wormrna$release.rna") || &error(6); 
+open (DNA , ">$new_wrdir/wormrna$release.rna") || die "Couldn't write wormrna$release.rna file\n"; 
 my (%dot2num , @dotnames , @c_dotnames);
 
-foreach my $dot (@dotnames_1) {    
+foreach my $transcript (@transcripts) {    
   undef (my $dna);
   undef (my $locus);
   undef (my $brief_id);
   undef (my $method);
+
     
-  print LOG "Extracting RNA sequence $dot\n";
-  $obj = $db->fetch(Sequence=>"$dot");
+  print LOG "Extracting RNA sequence $transcript\n";
+  my $obj = $db->fetch(Transcript=>"$transcript");
   
-  $locus = $obj->Locus_genomic_seq(1);
-  if ((!defined ($locus)) || ($locus eq "")) {
-    print LOG "No locus designation for $dot\n";
-    undef ($locus);
-  }
-  
-  $brief_id = $obj->Brief_identification(1);
+
+  # Grab Brief_identification
+  $brief_id = $obj->Brief_identification;
   if ((!defined ($brief_id)) || ($brief_id eq "")) {
-    print LOG "No Brief_id for $dot\n";
+    print LOG "ERROR: No Brief_id for $transcript\n";
     undef ($brief_id);
   }
   
   $dna = $obj->asDNA();
   if ((!defined ($dna)) || ($dna eq "")) {
-    print LOG "cannot extract dna sequence for $dot\n";
+    print LOG "cannot extract dna sequence for $transcript\n";
   }
-  $dna =~ /^>(\S+)\s+(\w.*)/s ; my $dseq = $2 ; $dseq =~ tr/a-z/A-Z/ ; $dseq =~ tr /T/U/ ; $dseq =~ s/\s//g;
+  $dna =~ /^>(\S+)\s+(\w.*)/s; 
+  my $dseq = $2; 
+  $dseq =~ tr/a-z/A-Z/; 
+  $dseq =~ tr /T/U/; 
+  $dseq =~ s/\s//g;
+  
+  # Grab locus name if present
+  $locus = $obj->Locus;
 
   my $rseq = &reformat($dseq);
-  if (defined $locus) {
-    print DNA ">$dot $brief_id locus:$locus\n$rseq";
+  if ($locus) {
+    print DNA ">$transcript $brief_id locus:$locus\n$rseq";
   }
   else {
-    print DNA ">$dot $brief_id\n$rseq";
+    print DNA ">$transcript $brief_id\n$rseq";
   }
   
   $obj->DESTROY();
@@ -166,12 +151,14 @@ chmod (0444 , "$new_wrdir/wormrna$release.rna") || print LOG "cannot chmod $new_
 $runtime = `date +%H:%M:%S`; chomp $runtime;
 print LOG "# $runtime : finished writing wormrna.rna file\n";
 
+
+
 ###########################################################################
 # Create the associated README file          
 ###########################################################################
 
 print LOG "# $runtime : creating README file\n\n";
-open (README , ">$new_wrdir/README") || &error(7); 
+open (README , ">$new_wrdir/README") || die "Couldn't creat README file\n"; 
 
 my $readme = <<END;
 WormRNA
@@ -190,33 +177,49 @@ $release_date
 END
 
 print README "$readme";
+
+
+##################
+# Tidy up
+##################
+
 close(README);
-
- ##############################
- # mail $maintainer report    #
- ##############################
-
-close LOG;
-
-open (mailLOG, "|/usr/bin/mailx -s \"WormBase Report: make_wormrna.pl\" $maintainer ");
-open (readLOG, "<$log");
-while (<readLOG>) {
-    print mailLOG $_;
-}
-close readLOG;
-close mailLOG;
-
- ##############################
- # hasta luego                #
- ##############################
-
+close(LOG);
 $db->close;
+
+&mail_maintainer ("make_wormrna.pl WS$release",$maintainers,$log);
+
+
 exit(0);
 
-#################################################################################
-# Subroutines                                                                   #
-#################################################################################
 
+
+##############################################################
+#
+# Subroutines
+#
+##############################################################
+
+sub create_log_files{
+
+  # Create history logfile for script activity analysis
+  $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
+
+  # create main log file using script name for
+  my $script_name = $1;
+  $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
+  my $rundate     = `date +%y%m%d`; chomp $rundate;
+  $log        = "/wormsrv2/logs/$script_name.$rundate.$$";
+
+  open (LOG, ">$log") or die "cant open $log";
+  print LOG "$script_name\n";
+  print LOG "started at ",`date`,"\n";
+  print LOG "=============================================\n";
+  print LOG "\n";
+
+}
+
+#################################################################
 
 sub reformat {
     my $in_string = shift;
@@ -232,102 +235,27 @@ sub reformat {
 }
 
 
- ##########################
- # run details            #
- ##########################
 
-sub run_details {
-    print "# make_wormrna.pl\n";
-    print "# run details    : $rundate $runtime\n";
-    print "\n";
-    print "wormrna version  : wormrna$opt_r\n";
-    print "Primary database : $dbdir\n\n";
+#################################
 
-    if ($opt_d) {
-	print "Usage : make_wormrna.pl [-options]\n";
-	print "=============================================\n";
-	print " -r <int>     : release version number\n";
-	print " -h           : help pages   \n";
-	print " -d           : verbose (debug) mode\n";
-	print "=============================================\n";
-	print "\n";
-    }
-} # end of sub 'run details'
+sub usage {
+  my $error = shift;
 
- ##########################
- # errors from the script #
- ##########################
+  if ($error eq "Help") {
+    # Normal help menu
+    system ('perldoc',$0);
+    exit (0);
+  }
+  # Error  2 - invalid wormrna release number
+  elsif ($error eq "releasename") {
+    # Invalid wormrna release number file
+    print "=> Invalid/missing wormrna release number supplied.\n";
+    print "=> Release number must be an interger (e.g. 30)\n\n";
+    exit(0);
+  }
 
-sub error {
-    my $error = shift;
-    # Error 0 - help page
-    if ($error == 0) {
-        exec ('perldoc',$0);
-        exit (0);
-    }
-    # Error  1 - no wormrna release number
-    elsif ($error == 1) {
-        # No wormrna release number file
-	&run_details;
-        print "=> No wormrna release number supplied\n\n";
-        exit(0);
-    }
-    # Error  2 - invalid wormrna release number
-    elsif ($error == 2) {
-        # Invalid wormrna release number file
-        &run_details;
-        print "=> Invalid wormrna release number supplied.\n=> Release number must be an interger (e.g. 30)\n\n";
-	exit(0);
-    }
-    # Error  3 - cannot open new wp.log file 
-    elsif ($error == 3) {
-        &run_details;
-        print "=> Failed to create a new wp.log for wormrna release wormrna$release\n\n";
-        $runtime = `date +%H:%M:%S`; chomp $runtime;
-        print LOG "=> Exiting at $rundate $runtime\n";
-        close LOG;
-        &mail_maintainer("WormBase Report: make_wormrna.pl",$maintainer,$log);
-    }
-    # Error  4 - cannot create new wormrna directory 
-    elsif ($error == 4) {
-        &run_details;
-	print "=> Failed to create a new directory for wormrna release wormrna$release\n\n";
-        $runtime = `date +%H:%M:%S`; chomp $runtime;
-	print LOG "=> Failed to create a new directory for wormrna release wormrna$release\n\n";
-	print LOG "=> Exiting at $rundate $runtime\n";
-        close LOG;
-        &mail_maintainer("WormBase Report: make_wormrna.pl",$maintainer,$log);
-    }
-    # Error  5 - cannot connect to ACEDB database 
-    elsif ($error == 5) {
-        &run_details;
-        print "=> Failed to connect to primary database 'dbdir'\n\n";
-        $runtime = `date +%H:%M:%S`; chomp $runtime;
-        print LOG "=> Exiting at $rundate $runtime\n";
-        close LOG;
-        &mail_maintainer("WormBase Report: make_wormrna.pl",$maintainer,$log);
-    }
-    # Error  6 - cannot open new wp.log file 
-    elsif ($error == 6) {
-        &run_details;
-        print "=> Failed to create a new wormrna.rna for wormrna release wormrna$release\n\n";
-        $runtime = `date +%H:%M:%S`; chomp $runtime;
-        print LOG "=> Exiting at $rundate $runtime\n";
-        close LOG;
-        &mail_maintainer("WormBase Report: make_wormrna.pl",$maintainer,$log);
-    }
-    # Error  7 - cannot open new wp.log file 
-    elsif ($error == 7) {
-        &run_details;
-        print "=> Failed to create README file for wormrna release wormrna$release\n\n";
-        $runtime = `date +%H:%M:%S`; chomp $runtime;
-        print LOG "=> Exiting at $rundate $runtime\n";
-        close LOG;
-        &mail_maintainer("WormBase Report: make_wormrna.pl",$maintainer,$log);
-    }
+}
 
-    exit(1);
-} # end of sub 'error'
 
 
 
@@ -353,7 +281,7 @@ make_wormrna.pl mandatory arguments:
 
 =over 4
 
-=item -r, release number
+=item -release <release number>
 
 =back
 
@@ -361,9 +289,9 @@ make_wormrna.pl OPTIONAL arguments:
 
 =over 4
 
-=item -h, Help page
+=item -help, Help page
 
-=item -d, Verbose/Debug mode
+=item -debug <username> = Verbose/Debug mode
 
 =back
 
@@ -371,7 +299,7 @@ make_wormrna.pl OPTIONAL arguments:
 
 =over 4
 
-=item make_wormrna.pl -r 4
+=item make_wormrna.pl -release 4
 
 =back
 
