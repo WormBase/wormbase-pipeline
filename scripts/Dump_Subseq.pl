@@ -1,22 +1,24 @@
-#!/usr/local/bin/perl
-# Dump_Subseq
-# v1.1
+#!/usr/local/bin/perl5.6.1 -w
+#
+# Dump_Subseq.pl
+#
+# by Dan Lawson
+#
+# Last updated on: $Date: 2002-12-09 14:54:10 $
+# Last updated by: $Author: krb $
 #
 # Ace dumps a subsequence from a given target database
 # And retrieves the coordinates from parent object
-#
-# dl1,ag3 01/2000
-#
-# 000207 dan : Added new command line switch for internal dump of a keyset from camace
-#              Modified output streaming to flip order of parent/child and remove excess "\n"
-#
+
 #####################################################################################################
 
+use strict;
+use lib "/wormsrv2/scripts/";
+use Wormbase;
 use IPC::Open2;
 use Getopt::Std;
-use lib "/wormsrv2/scripts/";
-use Wormbase.pm;
 
+our ($opt_d, $opt_s, $opt_n, $keyset);
 getopts ('n:d:s:');
 
 if ($opt_n) {
@@ -30,14 +32,14 @@ if ((!$opt_d)||(!$opt_s)) {
  exit 0;
 }
 
-$dbpath=$opt_d;
+my $dbpath=$opt_d;
 $opt_d =~ /camace/  && do {$dbpath = "/wormsrv2/camace";};
 $opt_d =~ /autoace/ && do {$dbpath = "/wormsrv2/autoace";};
 $opt_d =~ /stlace/  && do {$dbpath = "/wormsrv2/stlace";};
 my $cwd = `/bin/pwd`;
 chomp $cwd;
 print "DBPATH: $dbpath\n";
-my $tace= &tace";
+my $tace= &tace;
 my $database = "$tace $dbpath";
 
 my $outfile = "$cwd/" ."$opt_s".".ace";
@@ -77,6 +79,7 @@ END
 print WRITE $QUERY;
 close WRITE;
 
+my $SOURCE;
 while (<READ>) {  
   /\/\// && next;
   /acedb/ && next;
@@ -130,14 +133,14 @@ __END__
 
 =pod
 
-=head1   NAME - Dump_Subseq
+=head1   NAME - Dump_Subseq.pl
 
 =head2 USAGE
 
-Dump_Subseq will extract a Subsequence object (with coordinates from the parent)
+Dump_Subseq.pl will extract a Subsequence object (with coordinates from the parent)
 from an ACEDB database.
 
-Dump_Subseq mandatory arguments [n excludes d and s]
+Dump_Subseq.pl mandatory arguments [n excludes d and s]
 
 =over 4
 
