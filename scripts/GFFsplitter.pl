@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2003-02-04 12:19:29 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2003-04-02 09:10:58 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -132,7 +132,7 @@ foreach $file (@gff_files) {
   #########################################################
   
   my $running_total = 0;
-  my ($name,$feature,$method,$start,$stop,$score,$strand,$other);
+  my ($chromosome,$method,$feature,$start,$stop,$score,$strand,$other,$name);
   my @header = "";
   
   open (GFF, "</wormsrv2/autoace/CHROMOSOMES/$file.gff");
@@ -145,26 +145,23 @@ foreach $file (@gff_files) {
     #skip header lines of file
     if (/^\#/) {push (@header,$_); next;}
     
-    ($name,$method,$feature,$start,$stop,$score,$strand,$other,$name) = split /\t/;
+    ($chromosome,$method,$feature,$start,$stop,$score,$strand,$other,$name) = split /\t/;
     
     # Clone path
-    if (($method eq "Genomic_canonical") 
-	&& ($feature eq "Sequence"))                  {push ( @{$GFF{$file}{clone_path}},$_);}
+    if    ( ($method eq "Genomic_canonical") && ($feature eq "Sequence"))      {push (@{$GFF{$file}{clone_path}},$_);}
     # Genes     
-    elsif ( (($method eq "curated") && ($feature eq "Sequence")) ||
-	    (($method eq "provisional") && ($feature eq "Sequence")) )
-      {push (@{$GFF{$file}{genes}},$_);}
-    elsif ( ($method eq "Pseudogene")   && ($feature eq "Sequence"))              
-      {push (@{$GFF{$file}{pseudogenes}},$_);}
+    elsif ((($method eq "curated")           && ($feature eq "Sequence"))  ||
+	   (($method eq "provisional")       && ($feature eq "Sequence")))     {push (@{$GFF{$file}{genes}},$_);}
+    # Pseudogenes
+    elsif ( ($method eq "Pseudogene")        && ($feature eq "Sequence"))      {push (@{$GFF{$file}{pseudogenes}},$_);}
     # RNA genes 
     elsif ((($method eq "RNA")    || ($method eq "tRNAscan-SE-1.11") ||
 	    ($method eq "rRNA")   || ($method eq "scRNA") ||
 	    ($method eq "snRNA")  || ($method eq "snoRNA") || 
-	    ($method eq "miRNA")) && ($feature eq "Transcript"))               
-      {push (@{$GFF{$file}{rna}},$_);}
+	    ($method eq "miRNA")) && ($feature eq "Transcript"))               {push (@{$GFF{$file}{rna}},$_);}
     # CDS Exon  
-    elsif ( (($method eq "curated") || ($method eq "provisional")) 
-	    && ($feature eq "CDS"))                   {push (@{$GFF{$file}{CDS_exon}},$_);}
+    elsif ((($method eq "curated") || ($method eq "provisional")) 
+	   && ($feature eq "CDS"))                   {push (@{$GFF{$file}{CDS_exon}},$_);}
     # Exon      
     elsif ((($method eq "curated") 
 	    || ($method eq "provisional")) 
@@ -193,17 +190,10 @@ foreach $file (@gff_files) {
 	   || ($feature eq "repeat_region"))             {push (@{$GFF{$file}{repeats}},$_);}
     # TC1 insertions
     elsif ($method eq "BLASTN_TC1")                   {push (@{$GFF{$file}{tc_insertions}},$_);}
-    # Protein similarities
-    elsif ($method eq "BLASTX")                       {push (@{$GFF{$file}{BLASTX}},$_);}
-    # C.briggsae similarities
-    elsif (($method eq "WABA_coding") 
-	   || ($method eq "WABA_strong")
-	   || ($method eq "WABA_weak"))               {push (@{$GFF{$file}{WABA_BRIGGSAE}},$_);}
     # Assembly tags
     elsif ($method eq "assembly_tag")                 {push (@{$GFF{$file}{assembly_tags}},$_);}
     # TS site
-    elsif ((/misc_feature/) && 
-	   (/trans-splice site/))                     {push (@{$GFF{$file}{ts_site}},$_);}
+    elsif (/trans-splice_acceptor/)                     {push (@{$GFF{$file}{ts_site}},$_);}
     # Oligo mapping
     elsif ($feature eq "OLIGO")                       {push (@{$GFF{$file}{oligos}},$_);}
     # RNAi
@@ -211,7 +201,7 @@ foreach $file (@gff_files) {
     # GENEPAIR
     elsif ($method eq "GenePair_STS")                 {push (@{$GFF{$file}{genepair}},$_);}
     # Alleles
-    elsif (/Allele/)                                  {push (@{$GFF{$file}{allele}},$_);}
+    elsif ($method eq "Allele")                                  {push (@{$GFF{$file}{allele}},$_);}
     # Clone ends
     elsif ((/Clone_left_end/)  
 	   || (/Clone_right_end/))                    {push (@{$GFF{$file}{clone_ends}},$_);}
@@ -234,6 +224,11 @@ foreach $file (@gff_files) {
     elsif (/Expr_profile/)                            {push (@{$GFF{$file}{Expr_profile}},$_);}
     # UTR         
     elsif (/UTR/)                                     {push (@{$GFF{$file}{UTR}},$_);}
+    # Protein similarities
+    elsif (/wublastx_/)                                {push (@{$GFF{$file}{BLASTX}},$_);}
+    #C. briggsae
+    elsif (/:waba/)                                   {push (@{$GFF{$file}{WABA_BRIGGSAE}},$_);}
+
     # REST OF LINES
     else                                              {push (@{$GFF{$file}{rest}},$_); $running_total--;}
     
@@ -377,10 +372,13 @@ sub GFF_with_UTR{
   open( UTR, "<$utr" );
   open( UTR_CDS, ">$utr_cds");
   while (<UTR>) {
-    
-    print UTR_CDS $_ if (/^\#/);
-    (/_UTR:(\S+)\"/);
-    print UTR_CDS "$`" . "_UTR:$1\" CDS=\"$1\"\n";
+    if (/^\#/){
+      print UTR_CDS $_;
+    }
+    else{
+      (/_UTR:(\S+)\"/);
+      print UTR_CDS "$`" . "_UTR:$1\" CDS=\"$1\"\n";
+    }
   }
   close UTR;
   close UTR_CDS;
@@ -488,14 +486,12 @@ intron_confirmed_CDS
 intron_confirmed_UTR
 repeats
 tc_insertions
-BLASTX
-WABA_BRIGGSAE
 assembly_tags
 ts_site
 oligos
 RNAi
 genepair
-alleles
+allele
 clone_ends
 PCR_products
 cDNA_for_RNAi
@@ -508,6 +504,8 @@ BLAT_EMBL_OTHER
 BLATX_NEMATODE
 Expr_profile
 UTR
+BLASTX
+WABA_BRIGGSAE
 rest
 __END__
 
