@@ -224,6 +224,7 @@
         Rescued_by_Transgene ?Transgene XREF Rescue
 
 ?Gene_Class     Phenotype ?Text
+		Description ?Text // [krb 020614]
                 Designating_laboratory UNIQUE ?Laboratory XREF Gene_classes
                 Allele ?Allele	XREF Gene_class
                 Loci ?Locus XREF Gene_Class
