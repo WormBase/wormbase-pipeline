@@ -2,12 +2,12 @@
 # 
 # geneace_check.pl
 #
-# by Keith Bradnam
+# Initiated by Keith Bradnam
 #
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-07-30 12:44:50 $
+# Last updated on: $Date: 2003-07-30 12:45:58 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -644,7 +644,6 @@ EOF
   
   foreach (keys %loci_no_pos_clone){
     $seq = $loci_no_pos_clone{$_};
-    print $seq, "\n";
     $seq =~ s/\..+//;
     $locus_errors++;
     print LOG "WARNING: $_ has no positive_clone, the derived one $seq can be added to it\n";
