@@ -6,7 +6,7 @@
 #
 # Updates the local webpages in synch with the main website
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-07-21 08:08:33 $
+# Last updated on: $Date: 2004-07-21 08:12:33 $
 
 
 use strict;
@@ -16,7 +16,7 @@ use Carp;
 use Getopt::Long;
 
 my $release;
-my $errors;
+my $errors = 0;
 GetOptions ("release:s" => \$release );
 
 die "you must give a release version ( just numbers eg -release 125 )\n" unless $release;
@@ -30,7 +30,7 @@ my $www = "/nfs/WWWdev/htdocs/Projects/C_elegans";
 my $wormpub_dir = "/nfs/disk100/wormpub/WORMPEP";
 my $wormpep_ftp_root = glob("~ftp/pub/databases/wormpep");
 my $wp_ftp_dir = "$wormpep_ftp_root/wormpep${release}";
-#my @wormpep_files = ("wormpep", "wormpep.accession", "wormpep.dna", "wormpep.history", "wp.fasta", "wormpep.table", "wormpep.diff");
+
 # grab from Wormbase.pm subroutine
 my @wormpep_files = &wormpep_files;
 
