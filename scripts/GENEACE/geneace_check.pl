@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-02-11 15:48:29 $
+# Last updated on: $Date: 2005-02-15 14:19:57 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -188,7 +188,7 @@ sub process_gene_class{
   }
 
   # checks Genes that do not have a map position nor an interpolated_map_position but has sequence info
-  my $query = "Find Gene WHERE !(Map | Interpolated_map_position) & Sequence_name & Species=\"*elegans\" & !Sequence_name=\"MTCE*\"";
+  my $query = "Find Gene WHERE !(Map | Interpolated_map_position) & Sequence_name & Species=\"*elegans\" & !Positive_clone=\"MTCE\" & !Made_into_transposon";
   foreach my $gene ($db->fetch(-query=>"$query")){
     print LOG "ERROR: $gene ($Gene_info{$gene}{'Public_name'}) has neither Map nor Interpolated_map_position info but has Sequence_name\n";
   }
@@ -828,11 +828,6 @@ sub process_allele_class{
   print LOG "\n\nChecking Allele class for errors:\n";
   print LOG "---------------------------------\n";
 
-
-  my @alleles = $db->fetch(-class => 'Variation',
-                 	   -name  => '*');
-
-
   # make hash of allele to lab connections
   my %allele2lab;
   my $def="Table-maker -p \"$def_dir/allele_designation_to_LAB.def\"\nquit\n";
@@ -846,18 +841,21 @@ sub process_allele_class{
     }
   }
 
-  # now loop through all alleles looking for problems
-  foreach my $allele (@alleles) {
+  my $query = "find Variation;Allele";
+  my $alleles_it = $db->fetch_many(-query => "$query");
 
+  # now loop through all alleles looking for problems
+#  foreach my $allele (@alleles) {
+  while( my $allele = $alleles_it->next){
     print "$allele\n" if ($verbose);
 
     # check allele has no location tag
     if (!defined $allele->Laboratory ) {
       
       if (!$ace) {
-	print LOG "ERROR: $allele has no Location tag\n";
+	print LOG "ERROR: $allele has no Laboratory tag\n";
       } else {
-	print LOG "ERROR(a): $allele has no Location tag\n";
+	print LOG "ERROR(a): $allele has no Laboratory tag\n";
 
 	# try to find lab designation for alleles with CGC-names (1 or 2 letters and then numbers)
 	if ($allele =~ /^([a-z]{1,2})\d+$/) {
@@ -950,7 +948,7 @@ sub process_allele_class{
 	  $expected_method = "Deletion_allele";
 	} elsif ($mut_type[0] eq "Insertion" && !defined $allele->Transposon_insertion ) {
 	  $expected_method = "Insertion_allele";
-	} elsif ($allele->at('Transposon_insertion') && $allele->at('Sequence_details.Type_of_mutation.Insertion')) {
+	} elsif ($allele->Transposon_insertion && $allele->at('Sequence_details.Type_of_mutation.Insertion')) {
 	  $expected_method = "Transposon_insertion";
 	} elsif ($allele->Type_of_mutation eq "Substitution" ) {
 	  $expected_method = "Substitution_allele";
