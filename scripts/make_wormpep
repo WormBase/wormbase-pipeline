@@ -14,6 +14,7 @@
 # 010124 : dl  : Include CDS with X's in the full release
 # 010418 : dl  : Added system call to make patch file from old release
 # 010612 : dl  : Moved to RELEASE.SUPPORTED code to circumvent aceperl 4_9 code problem
+# 010711 : dl  : Added Kerstin and Keith to maintainer mail list 
 
 # v4.0
 # 010116 : dl  : Use tace not AcePerl
@@ -45,10 +46,9 @@ require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
  # Script variables (run)              #
  #######################################
 
-my $maintainer = "dl1\@sanger.ac.uk";
-my $rundate = `date +%y%m%d`; chomp $rundate;
-my $runtime = `date +%H:%M:%S`; chomp $runtime;
-my $version = &get_script_version("make_wormpep");
+my $maintainer = "dl1\@sanger.ac.uk, krb\@sanger.ac.uk, kj2\@sanger.ac.uk";
+my $rundate    = `date +%y%m%d`; chomp $rundate;
+my $runtime    = `date +%H:%M:%S`; chomp $runtime;
 
  #######################################
  # command-line options                #
