@@ -8,7 +8,7 @@
 # build to check the current build
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-12-01 11:39:13 $      
+# Last updated on: $Date: 2004-06-09 10:42:48 $      
 
 
 use strict;
@@ -60,7 +60,8 @@ print LOG "THINGS TO CHECK:\n\n";
 print LOG "1) The following 12 clones are representative of the whole genome in that\n";
 print LOG "they include one Sanger and one St. Louis clone for each chromosome.  Check\n";
 print LOG "each clone to ensure that it contains BLAT data (EST and mRNA), BLAST data,\n";
-print LOG "waba data, gene models, UTRs etc.\n\n";
+print LOG "waba data, gene models, UTRs etc.  Also check for presence of tandem and inverted\n";
+print LOG "repeats which have gone missing in the past\n\n";
 print LOG "i)    C25A1\n";
 print LOG "ii)   F56A3\n";
 print LOG "iii)  C04H5\n";
