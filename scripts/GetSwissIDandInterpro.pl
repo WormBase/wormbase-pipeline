@@ -64,44 +64,75 @@ while (<INPUT>)
 
 	    #check if the pepace entry has a SWISS-PROT entry
 	    my $worm_protein = $db->fetch(Protein => "WP:$protein[$count]");
-	    my @ace_database = $worm_protein->at('DB_info.Database');#returns list of entries in Database field eg "WORMPEP SwissProt"
 	    
-	    #if the protein does not have a SwissProt ID in Pepace put it on the the list of queries to be done in next batch;
-	    my $swiss = grep $_  eq "SwissProt", @ace_database;
-	    unless($swiss)
+	    if (defined $worm_protein)
 	      {
-		$accession[$count] = $accn_holder;
-		#build hash of wormpep to accession no.
-		$wormpep_acc{$protein[$count]} = $accession[$count];
-		$count++;
-	      }	
+		my @ace_database = $worm_protein->at('DB_info.Database');#returns list of entries in Database field eg "WORMPEP SwissProt"
+		
+		#if the protein does not have a SwissProt ID in Pepace put it on the the list of queries to be done in next batch;
+		my $swiss = grep $_  eq "SwissProt", @ace_database;
+		unless($swiss)
+		  {
+		    $accession[$count] = $accn_holder;
+		    #build hash of wormpep to accession no.
+		    $wormpep_acc{$protein[$count]} = $accession[$count];
+		    $count++;
+		  }	
+	      }
+	    else 
+	      {
+		print LOG "something funny about $accn_holder  - get nothing back from $pepace when trying to fetch it\n";
+	      }
+	  }
+	else
+	  {
+	    print LOG "no TR: SW: accn in $_\n";
 	  }
 	
-	if($count == 2000)#limits the no of requests in pfetch call per loop
-	  {
-	    #DEBUG########################################
-	    #print "wormpep_acc hash after building\n";
-	    #foreach my $worm (keys %wormpep_acc){
-	    #  print "$worm","\t",$wormpep_acc{$worm},"\n";}
-	    #############################################
+#	if($count == 2000)#limits the no of requests in pfetch call per loop
+#	  {
+#	    #DEBUG########################################
+#	    #print "wormpep_acc hash after building\n";
+#	    #foreach my $worm (keys %wormpep_acc){
+#	    #  print "$worm","\t",$wormpep_acc{$worm},"\n";}
+#	    #############################################
 	    
-	    outputToAce(\%wormpep_acc, \@accession, \$ace_output, \$old_ip_output, \$errorLog);
+#	    outputToAce(\%wormpep_acc, \@accession, \$ace_output, \$old_ip_output, \$errorLog);
 
-	    #reset batch loop variables
-	    $count = 0;
-	    %idextract = ();
-	    @accession = "";
-	    %wormpep_acc = ();
-	    @protein = "";
-	    @accession = "";
-	    @proteinID = "";	    
+#	    #reset batch loop variables
+#	    $count = 0;
+#	    %idextract = ();
+#	    @accession = "";
+#	    %wormpep_acc = ();
+#	    @protein = "";
+#	    @accession = "";
+#	    @proteinID = "";	    
 
-	    #last;#only included for testing on small sample sets
-	  }
+#	    #last;#only included for testing on small sample sets
+#	  }
+      }
+    else
+      {
+	print LOG "no protein in $_\n";
       }
   }
+
+#hash and accession array are built in one go 
+#now submit 2000 unit slices to outputToAce
+my $last_ind = $#accession;
+my $upper = 1999;
+my $lower = 0;
+my @array_chunk;
+while ($upper < $last_ind - 2000)
+  {
+     @array_chunk = @accession[$lower .. $upper];
+    outputToAce(\%wormpep_acc, \@array_chunk, \$ace_output, \$old_ip_output, \$errorLog);
+    $lower += 2000;
+    $upper += 2000;
+  }
+@array_chunk = @accession[$lower .. $last_ind];
 #process the remainders
-outputToAce(\%wormpep_acc, \@accession, \$ace_output, \$old_ip_output, \$errorLog);
+outputToAce(\%wormpep_acc, \@array_chunk, \$ace_output, \$old_ip_output, \$errorLog);
 
 close OLD_IP_OUTPUT;
 close ACE_OUTPUT;
@@ -130,7 +161,7 @@ print LOG "SubGetSwissId finished at ",`date`,"\n";
 close LOG;
 #### use Wormbase.pl to mail Log ###########
 my $name = "Update Swiss ID's and Interpro motifs";
-#$maintainer = "ar2\@sanger.ac.uk";
+$maintainer = "ar2\@sanger.ac.uk";
 &mail_maintainer ($name,$maintainer,$log);
 #########################################
 
@@ -143,16 +174,17 @@ sub outputToAce #(\%wormpep_acc, \@accession \$ace_output, \$errorLog)
     #construct pfetch command string by concatenating accession no's
     my $submitString = "pfetch -F"." @accession";#get full Fasta record (includes Interpro motifs)
     my %idextract;
-    
+    print "$submitString\n";
     my $fasta_output = "../fasta_output";
     open (FASTA,">$fasta_output")||die " cant open fasta_output";# > clears before each use 
+    #this submits request and put results in file
     print FASTA `$submitString`;
     close FASTA;
     
     #build hash of accession : Swissprot/Trembl ID
 
     # ! ! ! ! ! CHANGING RECORD SEPARATOR ! ! ! ! ! ###
-    $/ = "\/\/"; #//
+ #   $/ = "\/\/"; #//
     open (FASTA,"<$fasta_output")|| die "cant open fasta record";#read
     #print FASTA "This is a temp file created by SubGetSwissId.pl and can be removed -unless script is running!";
     my %interpro;
@@ -162,19 +194,37 @@ sub outputToAce #(\%wormpep_acc, \@accession \$ace_output, \$errorLog)
     while(<FASTA>)
       {
 	chomp;
+	my $record .= "$_\n";
+	if ($_ =~ /^\/\//)
+	  {
+	    if (defined $proteinID)
+	      {
+		print "$proteinID went fine\n";
+		undef $proteinID;
+		undef $acc;
+		$record = "";
+	      }
+	    else{
+	      print "gone thru a record with out picking up protein - \n$record\n";
+	      die;
+	    }
+	  }
 	#get the SWISSPROT/TrEMBL id
 	if($_ =~ m/^ID\s+(\w+)/)
 	 { $proteinID = $1;}
 	
 	#get the SWISSPROT accession
 	if($_ =~ m/^AC\s+(\w+)/)
-	  { $acc = $1;}
+	  {
+	    $acc = $1;
 
-	#get all InterPro motifs
-	$idextract{$acc} = $proteinID ;
+	    #put ID AC pair in to hash
+	    $idextract{$acc} = $proteinID;
+	  }
 
 	#extract Interpro motifs
 	while ($_ =~ m/(IPR\d+)/g){
+	  print "found IP $1 for protein -$proteinID-end\n";
 	  $interpro{$proteinID} .= "$1 ";}
 	
 	#print "$interpro{$proteinID}\n";
@@ -182,7 +232,7 @@ sub outputToAce #(\%wormpep_acc, \@accession \$ace_output, \$errorLog)
       }
     close FASTA;
     # ! ! ! ! resetting record separator ! ! ! ! #
-    $/ = '\n'; #\n
+   # $/ = '\n'; #\n
 
     #DEBUG#############################
     #print "idextract contents\n";
