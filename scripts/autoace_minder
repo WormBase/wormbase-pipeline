@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder [-options]
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-06-03 14:42:12 $
+# Last edited by: $Author: wormpub $
+# Last edited on: $Date: 2003-06-09 10:39:30 $
 
 
 #################################################################################
@@ -1076,7 +1076,7 @@ sub parse_blat_files_other {
   
   $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Started parsing virtual objects at $runtime\n";    
   $command =  "pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLAT_EST.ace\n";
-  $command =  "pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLAT_OST.ace\n";
+  $command .= "pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLAT_OST.ace\n";
   $command .= "pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLAT_mRNA.ace\n";
   $command .= "pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLAT_EMBL.ace\n";
   $command .= "pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.EST.ace\n";
