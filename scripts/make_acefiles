@@ -8,7 +8,7 @@
 # autoace.
 #
 # Last updated by: $Author: dl1 $                     
-# Last updated on: $Date: 2002-07-02 11:57:18 $       
+# Last updated on: $Date: 2002-07-17 16:16:44 $       
 
 #################################################################################
 # Variables                                                                     #
@@ -50,8 +50,11 @@ GetOptions (
  # Paths etc                  #
  ##############################
 
-my $tace           = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
-my $autoace_config = "/wormsrv2/autoace_config/autoace.config";
+# my $tace           = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
+# my $autoace_config = "/wormsrv2/autoace_config/autoace_test.config";
+
+my $tace           = glob ('~edgrif') . "/TEST/DAN/tace";
+my $autoace_config = "/wormsrv1/dan/autoace_test.config";
 my $basedir        = "/wormsrv2/wormbase";
 my $miscdir        = "$basedir/misc";
 
@@ -60,7 +63,7 @@ my $miscdir        = "$basedir/misc";
  ##############################
 
 if ($dev) {
-    $basedir        = "/wormsrv1/wormbase";
+    $basedir        = "/nfs/griffin2/dl1/perlscrip/MAKE_ACEFILES";
     $miscdir        = "$basedir/misc";
 }
 
@@ -89,10 +92,10 @@ my $logfile = "/wormsrv2/logs/make_acefiles.${WS_version}.$rundate.$$";
 system ("/bin/touch $logfile");
 open (LOG,">>$logfile") or die ("Could not create logfile\n");
 LOG->autoflush();
-open (STDOUT,">>$logfile");
-STDOUT->autoflush();
-open (STDERR,">>$logfile"); 
-STDERR->autoflush();
+#open (STDOUT,">>$logfile");
+#STDOUT->autoflush();
+#open (STDERR,">>$logfile"); 
+#STDERR->autoflush();
 
 print LOG "# make_acefiles\n\n";     
 print LOG "# run details    : $rundate $runtime\n";
@@ -161,32 +164,34 @@ exit (0);
 sub mknewacefiles {
     
     my ($dbname,$dbdir,$targetdir,$exe,$object,$criteria,$criterianoasterisk);
-    my ($filename,$command,$outfile,$tag,@deletes);
+    my ($filename,$command,$outfile,$tag,@deletes,$include);
 
     local (*CONFIG);
 
     open (CONFIG, "$autoace_config");
     while (<CONFIG>) {
-	s/^\s+//;s/\s+$//;    
+	
+	# some formating, remove leading and trailing whitespace
+	s/^\s+//;
+	s/\s+$//;    
 			
 	# next if comment line
 	next if (/^\#/  || /^$/);
 
-        # single database mode
+        # single database mode, next unless line contains db name
 	if ($db) {
 	    next unless (/$db/);
 	}
-
+	# parse database information
 	if (/^P\s+(\S+)\s+(\S+)$/) {
 	    $dbname    = $1;
 	    $dbdir     = $2;
-	    $targetdir = "$basedir"."/$dbname";
+	    $targetdir = "$basedir/$dbname";
 	    $exe       = "$tace $dbdir";
 	    next;
 	}
+
 	next if ($dbname =~ /misc/);
-	# single database mode
-	next if (($db) && ($db ne "$dbname"));
 
 	# nuts and bolts of acefile generation
 	# format:  database object criteria
@@ -194,76 +199,96 @@ sub mknewacefiles {
 	# clear out the @deletes array eachtime
 	undef (@deletes);
 
-	# deal with complete queries
-	unless (/\[(\S+.+)\]$/) { 
-	    if (/^\S+\s+(\S+)$/) {
-		$object=$1; 
-		$criteria=""; 
-		$criterianoasterisk="";
-	    }
-	    elsif (/^\S+\s+(\S+)\s+(\S+.+)$/) {
-		$object   = $1; 
-		$criteria = $2;
-		$criterianoasterisk = $2;
-		chop($criterianoasterisk) if ($criteria =~ /\*$/);
-	    } 
-	}
-	# deal with queries requiring tag deletions
-	else {
-	    (/\[(\S+.+)\]$/);
+	# parse filename
+	($filename) = (/^\S+\s+(\S+)/);
+	 
+	print "Noting filename:$filename\n" if ($debug);
+
+	# deal with queries requiring tag deletion
+	if (/\[(\S+.+)\]$/) { 
 	    @deletes = split (/\s/,$1);
 	    print LOG "add " . scalar (@deletes) . " tags to delete array\n";
 	    my $report = join ' + ', @deletes;
-	
-	    if (/^\S+\s+(\S+)\s+\[/) {  
-		$object=$1; 
-		$criteria=""; 
-		$criterianoasterisk="";
+	    
+	    if (/^\S+\s+\S+\s+(\S+)\s+\[/) {  
+		$object = $1; ($criteria,$criterianoasterisk) = ""; 
+
+		$command = "nosave\nquery find $object\n";
+		foreach my $delete (@deletes) {
+		    $command .= "eedit -D $delete\n";
+		}
+		$command .= "show -a -T -f $filename\nquit\n";
 	    } 
-	    elsif (/^\S+\s+(\S+)\s+(\S+.+)\s+\[/) {
-		$object   = $1; 
-		$criteria = $2;
-		$criterianoasterisk = $2;
+	    elsif (/^\S+\s+\S+\s+(\S+)\s+(\S+.+)\s+\[/) {
+		$object   = $1; ($criteria,$criterianoasterisk) = $2; 
 		chop($criterianoasterisk) if ($criteria =~ /\*$/);
+
+		$command ="nosave\nquery find $object where ($criteria)\n";
+		foreach my $delete (@deletes) {
+		    $command .= "eedit -D $delete\n";
+		}
+		$command .= "show -a -T -f $filename\nquit\n";
 	    }
 	}
+	# queries requiring tag inclusion
+	elsif (/\{(\S+)\}$/) { 
+	    $include = $1;
+	    print LOG "add $include tags\n";
+	    if (/^\S+\s+\S+\s+(\S+)\s+\{/) {  
+		$object = $1; 
+		($criteria,$criterianoasterisk) = ""; 
+		
+		$command = "nosave\nquery find $object\n";
+		$command .= "show -a -T $include -f $filename\nquit\n";
+	    } 
+	    elsif (/^\S+\s+\S+\s+(\S+)\s+(\S+.+)\s+\{/) {
+		$object   = $1; 
+		($criteria,$criterianoasterisk) = $2; 
+		chop($criterianoasterisk) if ($criteria =~ /\*$/);
+		
+		$command ="nosave\nquery find $object where ($criteria)\n";
+		$command .= "show -a -T $include -f $filename\nquit\n";
+	    }
+	}
+	# simple query
+	else { 
+	    if (/^\S+\s+\S+\s+(\S+)$/) {
+		$object=$1; 
+		($criteria,$criterianoasterisk) = ""; 
+		if ($object eq "DNA") {
+		    $command   = "nosave\nquery find Sequence\nfollow DNA\n";
+		    $command  .= "show -a -T -f $filename\nquit\n";
+		}
+		else {
+		    $command   = "nosave\nquery find $object\n";
+		    $command  .= "show -a -T -f $filename\nquit\n";
+		}
+	    }
+	    elsif (/^\S+\s+\S+\s+(\S+)\s+(\S+.+)$/) {
+		$object   = $1; 
+		$criteria = $2;
+		($criteria,$criterianoasterisk) = $2;
+		chop($criterianoasterisk) if ($criteria =~ /\*$/);
 
-	# write tace command for different options:
-	# Simple   :- whole ?Class
-	# Advanced :- ?Class with tag deletions based on @deletes
-	# DNA      :- ?Sequence with Species, follow DNA
-
-	if ($object eq "DNA") {
-	    ($command,$filename) = &make_command_DNA($object,$dbname,$targetdir,$criteria);
+		if ($object eq "DNA") {
+		    $command   = "nosave\nquery find Sequence where ($criteria)\nfollow DNA\n";
+		    $command  .= "show -a -T -f $filename\nquit\n";
+		}
+		else {
+		    $command   ="nosave\nquery find $object where ($criteria)\n";
+		    $command  .= "show -a -T -f $filename\nquit\n";
+		}
+	    }
 	}
-	elsif ($criteria ne "") {
-	    ($command,$filename) = &make_command_advanced($object,$dbname,$targetdir,$criteria,$criterianoasterisk);
-	}
-	else {
-	    ($command,$filename) = &make_command_simple($object,$dbname,$targetdir,$criteria,$criterianoasterisk);
-	}
-	
+		
 	# dump out from ACEDB
-	print LOG "Filename: $filename\n";
-        print LOG "Command : 'find $object $criteria' in $dbname\n";
+	print "\nFilename: $filename\n";
+        print "Command : 'find $object $criteria' in $dbname\n";
 	open (TACE,"| $exe");
 	print TACE $command;
 	close TACE;
-	print LOG "Made file $filename\n";
+	print "Made file $filename\n";
 	
-	# delete things
-	if (scalar (@deletes) > 0) {
-	    print "Going to delete some tags ....\n";
-	    &strip_object($filename,@deletes);
-	}
-
-	# remove ghost objects
-        # don't run on LongText files as these may look like ghosts
-
-	unless ($filename =~ /LongText/) {
-	    &strip_ghosts($filename,$object);
-	}
-
 	# process database dumps to add database names into time stamps
 	# rather than keeping the existing 'wormpub', 'lstein' etc.  name
 	&process_ace_file($filename,$dbname);
@@ -271,122 +296,6 @@ sub mknewacefiles {
 	next;
     }
     close CONFIG;
-}
-
-sub make_command_simple {
-
-   my ($object,$dbname,$targetdir,$criteria,$criterianoasterisk) = @_;
-
-   my $filename="$targetdir/".$dbname."_".$object.".ace";
-   my $command;
-   $command=<<END;
-query find $object
-show -a -T -f $filename
-quit
-END
-
-   return ($command,$filename);
-}
-
-sub make_command_advanced {
-
-   my ($object,$dbname,$targetdir,$criteria,$criterianoasterisk) = @_;
-
-   my $filename="$targetdir/".$dbname."_".$object.".ace";
-   my $command;
-   $command=<<END;
-query find $object where ($criteria)
-show -a -T -f $filename
-quit
-END
-   return ($command,$filename);
-}
-
-sub make_command_DNA {
-
-    my ($object,$dbname,$targetdir,$criteria) = @_;    
-    my $filename = "$targetdir/" . $dbname . "_DNA.ace";
-    my $command;
-
-    if(($dbname eq "stlace") || ($dbname eq "briggsae")){
-      $command=<<END;
-query find Sequence where ($criteria)
-follow DNA
-show -a -T -f $filename
-quit
-END
-}
-    else{
-      $command=<<END;
-find Sequence
-follow DNA
-show -a -T -f $filename
-quit
-END
-
-    }
-    return ($command,$filename);
-
-}
-
-#######################################################################
-# Strip unwanted lines from the acefiles                              #
-#######################################################################
-
-sub strip_object {
-    my ($filename,@deletes) = @_;
-    my $strip = "";
-    local (*OUT,*FILE);
-
-    foreach $strip (@deletes) {
-	print LOG "Remove '$strip' from file $filename\n";
-
-	open (OUT, ">${filename}.rm");
-	open (FILE, "<$filename") || warn "can't do this chappie\n";
-	while (<FILE>) {
-	    next if (/$strip/);
-	    print OUT "$_";
-	}
-	close FILE;
-	close OUT;
-	system ("mv -f ${filename}.rm $filename");
-    }
-}
-
-sub strip_ghosts {
-    my ($filename,$object) = @_;
-    my ($object_header) = "";
-    my $object_look = 0;
-
-    local (*OUT,*FILE);
-
-    open (OUT, ">${filename}.rm");
-    open (FILE, "<$filename") || warn "can't do this either chappie\n";
-    while (<FILE>) { 
-	chomp;
-	if (/^$object \: \"\S+.+\"$/) {
-	    $object_header = $_;
-	    $object_look = 1;
-	    next;
-	}
-	
-	if (($object_look == 1) && ($_ ne "")) {
-	    print OUT "$object_header\n";
-	    print OUT "$_\n";
-	    $object_look = 0;
-	    next;
-	}
-	elsif (($object_look == 1) && ($_ eq "")) {
-	    $object_header = "";
-	    $object_look = 0;
-	    next;
-	}
-
-	print OUT "$_\n";
-    }
-    close FILE;
-    close OUT;
-    system ("mv -f ${filename}.rm $filename");
 }
 
 ########################################################################
