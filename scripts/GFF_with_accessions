@@ -3,6 +3,7 @@
 # GFF_with_accessions
 #
 
+# 010927 :  dl : Removed final exception
 # 010620 :  dl : Removed execeptions
 
 use Ace;
@@ -32,7 +33,7 @@ while (<GFF>) {
     }
 
     # exceptions WS32
-    if ($gen_can eq "ZK1236R") {print "$_ acc=n/a\n"; next;}
+#    if ($gen_can eq "ZK1236R") {print "$_ acc=n/a\n"; next;}  : removed 010927
 
     @acc = $obj->DB_info->row();
     
