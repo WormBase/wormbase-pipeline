@@ -7,7 +7,7 @@
 # Script to make ?Transcript objects
 #
 # Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2003-10-09 11:26:10 $  
+# Last updated on: $Date: 2003-10-09 11:31:00 $  
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -281,7 +281,7 @@ if( $load_matches ) {
   &run_command("echo \"pparse $transcript_dir/matching_cDNA_all.ace\nsave\nquit\" | $tace -tsuser matching_cDNA $database");
 }
 
-$log->mail("All");
+$log->mail("$maintainers");
 
 exit(0);
 
@@ -498,7 +498,7 @@ sub cDNA_ExonThatEndsWith
 
 sub eradicateSingleBaseDiff
   {
-    print $log "removing small cDNA mismatches\n\n\n";
+    $log->write_to( "removing small cDNA mismatches\n\n\n");
     foreach my $cdna_hash (keys %cDNA ) {
       my $last_key;
       my $check;
@@ -530,7 +530,7 @@ sub eradicateSingleBaseDiff
 
 sub checkOverlappingTranscripts  {
   my $chrom = shift;
-  print $log "checking overlapping transcripts for chromosome_$chrom\n";
+  $log->write_to( "checking overlapping transcripts for chromosome_$chrom\n");
   my @ordered_transcripts;
   foreach my $transcript ( sort { $transcript_span{$a}[0]<=>$transcript_span{$b}[0]  } keys %transcript_span) {
     push (@ordered_transcripts, $transcript);
@@ -582,7 +582,7 @@ sub checkOverlappingTranscripts  {
 }
 
 sub check_opts {
-  print $log "checking options . . . \n\n\n";
+  $log->write_to("checking options . . . \n\n\n");
   # sanity check options
   if( $help ) {
     system("perldoc $0");
@@ -622,13 +622,13 @@ sub checkData
 
 sub run_command{
   my $command = shift;
-  print $log &runtime, ": started running $command\n";
+  $log->write_to( &runtime, ": started running $command\n");
   my $status = system($command);
   if($status != 0){
     $errors++;
-    print $log "ERROR: $command failed\n";
+    $log->write_to("ERROR: $command failed\n");
   }
-  print $log &runtime, ": finished running $command\n";
+  $log->write_to( &runtime, ": finished running $command\n");
 
   # for optional further testing by calling subroutine
   return($status);
