@@ -12,8 +12,8 @@
 # 3) Archives old GFF_SPLITS directory
 # 4) Makes wormsrv2/current_DB point at latest release
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2003-04-01 15:07:06 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2003-04-04 17:28:23 $
 
 
 
@@ -74,10 +74,9 @@ system("rm -f $db_path/autoace/CHROMOSOMES/*") && die "Couldn't remove old CHROM
  print LOG "Removing old files in /wormsrv2/autoace/logs\n";
 system("rm -f $db_path/autoace/logs/*:*") && die "Couldn't remove old log files\n";
 
-# update symbolic link for 'current_DB'
-print LOG "Updating symbolic link to point to current_DB\n\n";
-system("rm -f $db_path/current_DB") && die "Couldn't remove 'current_DB' symlink\n";
-system("ln -s $db_path/$WS_name/ $db_path/current_DB") && die "Couldn't create new 'Current_DB' symlink\n";
+# Transfer autoace to ~wormpub/DATABASES/current_DB
+print LOG "Transferring autoace to ~wormpub/DATABASES/current_DB\n";
+system("TransferDB.pl -start /wormsrv2/autoace -end /nfs/disk100/wormpub/DATABASES/current_DB -all -name $WS_name")  && die "couldn't run TransferDB for wormpub\n";
 
 # archive old GFF splits directory'
 print LOG "Archiving GFFsplits directory using GFFsplitter.pl -a\n\n";
