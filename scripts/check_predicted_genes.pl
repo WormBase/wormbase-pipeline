@@ -8,7 +8,7 @@
 # see pod documentation at end of file for more information about this script
 
 use Ace;
-use IO::Handle;
+#use IO::Handle;
 use strict;
 $|=1;
 
@@ -68,7 +68,7 @@ if(defined($ARGV[1])){
     open(LOG,">$log");
   }
   # make LOG the default location for 'print' commands
-  LOG->autoflush();
+#  LOG->autoflush();
   select(LOG);
 }
 
