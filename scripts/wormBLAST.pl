@@ -4,8 +4,8 @@
 # 
 # written by Anthony Rogers
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-02-19 09:50:01 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2004-02-19 10:01:57 $
 
 use DBI;
 use strict;
@@ -116,11 +116,11 @@ my %wormprotprocessIds = (
 			 );
 
 #get new chromosomes
-&run_command("$scripts_dir/copy_files_to_acari.pl -c") if ($chromosomes);
+&run_command("perl5.6.1 $scripts_dir/copy_files_to_acari.pl -c") if ($chromosomes);
 
 
 #get new wormpep
-&run_command("$scripts_dir/copy_files_to_acari.pl -w") if ($wormpep);
+&run_command("perl5.6.1 $scripts_dir/copy_files_to_acari.pl -w") if ($wormpep);
 
 
 my %currentDBs;   #ALSO used in setup_mySQL 
@@ -268,7 +268,7 @@ if( $update_mySQL )
     
     #load information about any new clones
     print "\tloading information about any new clones in to $dbname\n";
-    &run_command("$scripts_dir/agp2ensembl.pl -dbname worm_dna -dbhost ecs1f -dbuser wormadmin -dbpass worms -agp $wormpipe_dir/Elegans/WS$WS_version.agp -write -v -strict");
+    &run_command("perl5.6.1 $scripts_dir/agp2ensembl.pl -dbname worm_dna -dbhost ecs1f -dbuser wormadmin -dbpass worms -agp $wormpipe_dir/Elegans/WS$WS_version.agp -write -v -strict");
     
     #check that the number of clones in the clone table equals the number of contigs and dna objects
     my ($clone_count, $contig_count, $dna_count);
@@ -304,13 +304,13 @@ clones = $clone_count\ncontigs = $contig_count\ndna = $dna_count\n";
 	$query = "select contig_id from contig where contig_id > $last_clone into outfile '$wormpipe_dir/Elegans/ids.txt'";
 	print &update_database( $query, $worm_dna );
 	
-	&run_command("$scripts_dir/InputIdManager.pl -dbname worm_dna -dbhost ecs1f -dbuser wormadmin -dbpass worms -insert -analysis SubmitContig -class contig -file $wormpipe_dir/Elegans/ids.txt");
+	&run_command("perl5.6.1 $scripts_dir/InputIdManager.pl -dbname worm_dna -dbhost ecs1f -dbuser wormadmin -dbpass worms -insert -analysis SubmitContig -class contig -file $wormpipe_dir/Elegans/ids.txt");
 	
       }
     $worm_dna->disconnect;
 
     print "\tchecking for duplicate clones\n";
-    &run_command("$scripts_dir/find_duplicate_clones.pl");
+    &run_command("perl5.6.1 $scripts_dir/find_duplicate_clones.pl");
 
 
     #add new peptides to MySQL database
@@ -324,7 +324,7 @@ clones = $clone_count\ncontigs = $contig_count\ndna = $dna_count\n";
     @results = &single_line_query( $query, $worm_pep );
     my $old_topCE = $results[0];
     if (-e "/wormsrv2/WORMPEP/wormpep$WS_version/new_entries.WS$WS_version"){
-      &run_command("$scripts_dir/worm_pipeline.pl -fasta /wormsrv2/WORMPEP/wormpep$WS_version/new_entries.WS$WS_version");
+      &run_command("perl5.6.1 $scripts_dir/worm_pipeline.pl -fasta /wormsrv2/WORMPEP/wormpep$WS_version/new_entries.WS$WS_version");
     }
     else {
       die "new_entries.WS$WS_version does not exist! \nThis should have been made in autoace_minder -buildpep\n";
@@ -481,32 +481,32 @@ if( $dump_data )
 
     # Dump data for new peptides - into separate file to append
     print "Dumping new peptides for worm_pep\n";
-    &run_command("$wormpipe_dir/scripts/Dump_blastp.pl -version $WS_version -matches -database worm_pep -new_peps $wormpipe_dir/dumps/new_entries.WS$WS_version");
+    &run_command("perl5.6.1 $wormpipe_dir/scripts/Dump_blastp.pl -version $WS_version -matches -database worm_pep -new_peps $wormpipe_dir/dumps/new_entries.WS$WS_version");
 
     # updated databases (eg gadfly) need to be redumped
     print "Dumping all peptides for updated databases for worm_pep\n";
-    &run_command("$wormpipe_dir/scripts/Dump_blastp.pl -version $WS_version -matches -database worm_pep -all -analysis $anal_list");
+    &run_command("perl5.6.1 $wormpipe_dir/scripts/Dump_blastp.pl -version $WS_version -matches -database worm_pep -all -analysis $anal_list");
 
     # . . and brigpep
     print "Dumping all peptides for updated databases for worm_brig\n";
-    &run_command("$wormpipe_dir/scripts/Dump_blastp.pl -version $WS_version -matches -database worm_brigpep -all -analysis $anal_list");
+    &run_command("perl5.6.1 $wormpipe_dir/scripts/Dump_blastp.pl -version $WS_version -matches -database worm_brigpep -all -analysis $anal_list");
 
 
     # dump blastx
     print "Dumping blastx for analysis $anal_list\n";
-    &run_command("$scripts_dir/dump_blastx_new.pl -version $WS_version -analysis $anal_list");
+    &run_command("perl5.6.1 $scripts_dir/dump_blastx_new.pl -version $WS_version -analysis $anal_list");
 
     # dump motifs for elegans and brig
     print "Dumping motifs\n";
-    &run_command("$scripts_dir/dump_motif.pl");
-    &run_command("$scripts_dir/dump_motif.pl -database worm_brigpep");
+    &run_command("perl5.6.1 $scripts_dir/dump_motif.pl");
+    &run_command("perl5.6.1 $scripts_dir/dump_motif.pl -database worm_brigpep");
 
     # Dump extra info for SWALL proteins that have matches. Info retrieved from the dbm databases on /acari/work2a/wormpipe/
     print "Creating acefile of SWALL proteins with homologies\n";
-    &run_command("$scripts_dir/write.swiss_trembl.pl -swiss -trembl");
+    &run_command("perl5.6.1 $scripts_dir/write.swiss_trembl.pl -swiss -trembl");
 
     print "Creating acefile of matched IPI proteins\n";
-    &run_command("$scripts_dir/write_ipi_info.pl");
+    &run_command("perl5.6.1 $scripts_dir/write_ipi_info.pl");
   }
 
 
