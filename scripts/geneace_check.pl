@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2002-10-23 13:56:58 $
+# Last updated on: $Date: 2002-10-29 15:53:23 $
 
 use Ace;
 use lib "/wormsrv2/scripts/"; 
@@ -157,7 +157,7 @@ sub process_strain_class {
 
   # Check if sequence name of a strain genotype is now connected to a locus
 
-  my (@strains, @seqs, @genotype, $genotype, @genes, $genes, $seq, $strain);
+  my (@strains, @seqs, $genotype, @genes, $seq, $strain, $extract);
 
   print"\n\nChecking Strain class for errors:\n";
   print LOG "\n\nChecking Strain class for errors:\n";
@@ -168,34 +168,24 @@ sub process_strain_class {
   foreach (@seqs){
     $seqs{$_}++;
   }
-
   foreach $strain (@strains){
     if ($strain->Genotype){
       $genotype = $strain->Genotype(1);
-      if($genotype =~ /.+\(\w+\).+/){
-	#print $&, "\n";
-	$genotype=$&;
-	$genotype=~ s/\(\w+\)//g;
-	$genotype=~ s/\(\w+;\w+;\)//g;
-	$genotype=~ s/\(.+\)//g;
-	$genotype=~ s/X|I|II|III|IV|V|VI|;|\+|:|\]|\[|\?/ /g;
-	$genotype=~ s/\// /g;
-	$genotype=~ s/\[|\]/ /g;
-	$genotype=~ s/  / /g;
-	$genotype=~ s/\.$//;
-	#print  $genotype, "\n";
-	@genes=split(/ /,$genotype);
-	# print @genes, "\n"; 
-	foreach (@genes){
-	  #print $_, "\n";
-	  if($seqs{$_}){
-	    my $seq = $db->fetch('Sequence', $_);
-	    if ($seq->Locus_genomic_seq){
-	      my @loci=$seq->Locus_genomic_seq(1);
-	      print LOG "Strain $strain has sequence_name $_ in Genotype, which can now become @loci.\n";
-	      $strain_update++; 
-	    }  
-	  }
+      $extract = $genotype;
+      $extract =~ s/\(|\)|\/|\+|;|\?|\{|\}|,|\=|\.$/ /g;
+      $extract =~ s/ I | II | III | IV | V | X / /g;
+      $extract =~ s/ I | II | III | IV | V | X | f / /g; # further tidying up of chromosomes
+      $extract =~ s/^\s|\w{3}-\s| f | A //g;
+      $extract =~ s/\s{1,}/ /g;
+      @genes=split(/ /,$extract);
+      foreach (@genes){
+	if($seqs{$_}){
+	  my $seq = $db->fetch('Sequence', $_);
+	  if ($seq->Locus_genomic_seq){
+	    my @loci=$seq->Locus_genomic_seq(1);
+	    print LOG "Strain $strain has sequence_name $_ in Genotype, which can now become @loci.\n";
+	    $strain_update++; 
+	  }  
 	}
       }
     }
