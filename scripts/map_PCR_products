@@ -103,8 +103,12 @@ foreach my $chromosome (@chromosomes) {
         next unless /\S/;
         @f = split /\t/;
 
-	# ignore smd spot data from caltech
-	next if ($f[8] =~ /smd_INTERGENIC_CONTROL/);
+# 031029 dl : Molecular biology in action. I can see no evidence for the smd data in the GFF files
+#             anymore and have commented out the line below. This was causing the -w errors when you
+#             run the script but i don't see how. 
+
+#	# ignore smd spot data from caltech
+#	next if ($f[8] =~ /smd_INTERGENIC_CONTROL/);
 
 	if ($f[1] eq "GenePair_STS") {
 	    my ($name) = ($f[8] =~ /PCR_product \"(.*)\"$/);
@@ -113,10 +117,7 @@ foreach my $chromosome (@chromosomes) {
             $PCR{$PCRname} = [$f[3],$f[4]];
 	    print "GenePair : '$name'\n" if ($verbose);
 	}
-	elsif (($f[2] eq "exon") && (($f[1] eq "curated")    ||
-				     ($f[1] eq "Pseudogene") ||
-				     ($f[1] eq "transcript")    ||
-				     ($f[1] eq "provisional"))) {
+	elsif ( ($f[2] eq "exon") && ($f[1] =~ /curated|Pseudogene|transcript|provisional/) ) { 
             my ($name) = ($f[8] =~ /\"(\S+)\"/);
             $exoncount{$name}++;
             my $exonname = $name.".".$exoncount{$name};
