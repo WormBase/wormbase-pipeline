@@ -141,7 +141,7 @@ Filter "NBP_allele"
 Class Live_genes
 Visible
 Is_a_subclass_of Gene
-Filter "Live AND Species = Caenorhabditis*elegans"
+Filter "Live AND Species = Caenorhabditis*elegans AND Sequence_name"
 
 
 // Other Misc. subclasses
