@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.0
+#!/usr/local/bin/perl5.8.0 -w
 #
 # blat_them_all.pl
 # kj2
@@ -33,8 +33,8 @@
 # 02.02.21 dl: typos in the naming of the confirmed_intron virtual objects
 # 02.04.08 dl: old style logging for autoace.fa check, prevented complete run of subs
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2003-06-13 12:14:31 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2003-09-03 08:55:13 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -42,7 +42,6 @@ use Wormbase;
 use Getopt::Std;
 use IO::Handle;
 use vars qw($opt_e $opt_m $opt_x $opt_b $opt_s $opt_o $opt_v $opt_n $opt_h $opt_d $opt_c $opt_y);
-$|=1;
 
 
 ###############
@@ -58,7 +57,7 @@ my $bin     = "/wormsrv2/scripts";
 my $db;
 
 our %homedb;
-our $blatex  = '/nfs/disk100/wormpub/blat/blat';
+our $blatex  = '/nfs/disk100/wormpub/bin.ALPHA/blat';
 our $giface  = '/nfs/disk100/wormpub/ACEDB/bin_ALPHA/giface';
 our $data;
 our %word = (
@@ -299,16 +298,20 @@ if ($opt_v) {
 }
 
 
-close LOG
+##############################
+# Clean up and say goodbye   #
+##############################
+
+
+
+close(LOG);
 
 # mail logfile to maintainer
 &mail_maintainer("WormBase Report: blat_them_all ",$maintainer,$logfile);
 
-##############################
-# hasta luego                #
-##############################
-
 exit(0);
+
+
 
 #################################################################################
 ### Subroutines                                                               ###
