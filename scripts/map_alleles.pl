@@ -7,7 +7,7 @@
 # This maps alleles to the genome based on their flanking sequence
 #
 # Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2003-01-15 11:30:47 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2003-01-15 12:32:51 $        # quickly see when script was last changed and by whom
 
 
 use strict;
@@ -24,6 +24,7 @@ my ($debug, $update, $limit);
 my $database;
 my $ver;
 my $verbose;
+my $restart = "go";
 
 # $debug   -  all output goes to ar/allele_mapping
 
@@ -32,7 +33,8 @@ GetOptions( "debug"     => \$debug,
 	    "limit=s"   => \$limit,
 	    "database=s"=> \$database,
 	    "WS=s"      => \$ver,
-	    "verbose"   => \$verbose
+	    "verbose"   => \$verbose,
+	    "restart=s" => \$restart
 	  );
 
 ##############
@@ -51,6 +53,7 @@ $ver = &get_wormbase_version unless defined $ver;
 my $allele_fa_file;
 my $genome_fa_file;
 my $scan_file;
+my $ace_file;
 
 my (%chromosomeI_clones, %chromosomeII_clones, %chromosomeIII_clones, %chromosomeIV_clones, %chromosomeV_clones, %chromosomeX_clones);
 
@@ -68,14 +71,15 @@ if( $debug )  {
   $genome_fa_file = glob("~ar2/allele_mapping/genome.fa");
   $scan_file = glob("~ar2/allele_mapping/alleles.scan");
   $log        = glob("~ar2/allele_mapping/map_alleles.$rundate");
- # $database = glob("~ar2/testace/");
   $database = "/wormsrv2/current_DB/" unless $database;
   $ver--;
+  $ace_file = glob("~ar2/allele_mapping/mapped_alleles.ace");
 }
 else { 
   $log        = "/wormsrv2/logs/map_alleles.$rundate";
   $scan_file = glob("~ar2/allele_mapping/alleles.scan");
   $allele_fa_file = "/wormsrv2/autoace/BLATS/alleles.fa";
+  $ace_file = "/wormsrv2/autoace/BLATS/mapped_alleles.ace";
   $database = "/wormsrv2/autoace/" unless $database;
 }
 
@@ -91,9 +95,78 @@ if( $update ){
 open (LOG,">$log") or die "cant open $log\n\n";
 print LOG "$0 start at $runtime on $rundate\n----------------------------------\n\n";
 
+open (OUT,">$ace_file") or die "cant open $ace_file\n";
+
 #get allele info from database
 my $db = Ace->connect(-path  => $database) || do { print  "$database Connection failure: ",Ace->error; die();};
 my @alleles = $db->fetch(-query =>'Find Allele;flanking_sequences');
+
+#parse GFF to determine where the genes are
+my (%chromI_genes, %chromII_genes, %chromIII_genes, %chromIV_genes, %chromV_genes, %chromX_genes);
+my @hashrefs = (
+
+		\%chromI_genes, 
+		\%chromII_genes,
+		\%chromIII_genes,
+		\%chromIV_genes,
+		\%chromV_genes,
+		\%chromX_genes
+	       );
+
+my %allele2gene;
+my @chromosomes = qw( I II III IV V X );
+my $i = 0;
+foreach (@chromosomes) {
+  my $gff = "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS/CHROMOSOME_$_.genes.gff";
+  my $chrom2gene = $hashrefs[$i];
+  open (GFF,"<$gff") or die "cant open $gff\n";
+  while(<GFF>) {
+   # CHROMOSOME_I    curated Sequence        222722  223159  .       +       .       Sequence "Y48G1BM.3" wp_acc=CE26120
+    if( /curated/ ) {
+      my @data = split;
+      $data[9] =~ s/\"//g;
+      my $gene = $data[9];
+      my $end5 = $data[3];
+      my $end3 = $data[4];
+      $$chrom2gene{$gene} = [$end5, $end3];
+    }
+  }
+  $i++;
+}
+my (@chromI_genes,  @chromII_genes, @chromIII_genes, @chromIV_genes, @chromV_genes, @chromX_genes);
+my @arrayrefs = (
+
+		\@chromI_genes, 
+		\@chromII_genes,
+		\@chromIII_genes,
+		\@chromIV_genes,
+		\@chromV_genes,
+		\@chromX_genes
+	       );
+
+#need to sort these in to an ordered array - ordered on 5' coord of gene
+$i = 0;
+foreach (@chromosomes) {
+  my $chrom_array = $arrayrefs[$i];
+  my $chrom2gene = $hashrefs[$i];
+  foreach (sort { $$chrom2gene{$a}[1]<=>$$chrom2gene{$b}[1]} keys  %$chrom2gene )  {
+    my @temp = ($_,$$chrom2gene{$_}[0],$$chrom2gene{$_}[1]);
+    push(@$chrom_array,[ @temp ]);
+  } 
+  $i++;
+}
+
+#this hash is to get from roman numeral chromosome to array index to get references for
+# @chromo_clones_refs @arrayrefs @hashrefs
+
+my %roman2num = ( I   => '0',
+		  II  => '1',
+		  III => '2',
+		  IV  => '3',
+		  V   => '4',
+		  X   => '5' 
+		);
+
 
 
 my %allele_data;   #  allele => [ (0)type, (1)5'flank_seq , (2)3'flank_seq, (3)CDS, (4)end of 5'match, (5)start of 3'match , (6)clone, (7)chromosome, (8)strains]
@@ -125,12 +198,15 @@ foreach $allele (@alleles)
     $name = $allele->name;
 
     
-   # unless ($go == 1){
-#      if ("$name" eq "e1124") {
-#	$go = 1;
-#      }
-#      else { next;}
-#    }
+    unless ("$restart" eq "go"){
+      if ("$restart" eq "$name") {
+	$restart = "go";
+      }
+      else { 
+	print "skipping $name\n";
+	next;
+      }
+    }
 
     $left = $allele->Flanking_sequences->name;
     $right = $allele->Flanking_sequences->right->name;
@@ -223,6 +299,7 @@ foreach $allele (@alleles)
 		else {
 		  print LOG "$name failed mapping\n";
 		  print  "$name failed mapping\n";
+		  
 		}
 		
 	      }
@@ -231,156 +308,25 @@ foreach $allele (@alleles)
 	      next;
 	    }
 	  }
+
+	&findOverlapGenes($name);
+	&outputAllele($name);
       }
-  }
-
-#parse GFF to determine where the genes are
-my (%chromI_genes, %chromII_genes, %chromIII_genes, %chromIV_genes, %chromV_genes, %chromX_genes);
-my @hashrefs = (
-
-		\%chromI_genes, 
-		\%chromII_genes,
-		\%chromIII_genes,
-		\%chromIV_genes,
-		\%chromV_genes,
-		\%chromX_genes
-	       );
-
-my @chromosomes = qw( I II III IV V X );
-my $i = 0;
-foreach (@chromosomes) {
-  my $gff = "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS/CHROMOSOME_$_.genes.gff";
-  my $chrom2gene = $hashrefs[$i];
-  open (GFF,"<$gff") or die "cant open $gff\n";
-  while(<GFF>) {
-   # CHROMOSOME_I    curated Sequence        222722  223159  .       +       .       Sequence "Y48G1BM.3" wp_acc=CE26120
-    if( /curated/ ) {
-      my @data = split;
-      $data[9] =~ s/\"//g;
-      my $gene = $data[9];
-      my $end5 = $data[3];
-      my $end3 = $data[4];
-      $$chrom2gene{$gene} = [$end5, $end3];
+    else {
+      print LOG "$allele - cant find valid sequence\n";
     }
   }
-  $i++;
-}
-my (@chromI_genes,  @chromII_genes, @chromIII_genes, @chromIV_genes, @chromV_genes, @chromX_genes);
-my @arrayrefs = (
 
-		\@chromI_genes, 
-		\@chromII_genes,
-		\@chromIII_genes,
-		\@chromIV_genes,
-		\@chromV_genes,
-		\@chromX_genes
-	       );
 
-#need to sort these in to an ordered array - ordered on 5' coord of gene
-$i = 0;
-foreach (@chromosomes) {
-  my $chrom_array = $arrayrefs[$i];
-  my $chrom2gene = $hashrefs[$i];
-  foreach (sort { $$chrom2gene{$a}[1]<=>$$chrom2gene{$b}[1]} keys  %$chrom2gene )  {
-    my @temp = ($_,$$chrom2gene{$_}[0],$$chrom2gene{$_}[1]);
-    push(@$chrom_array,[ @temp ]);
-  } 
-  $i++;
-}
-
-#this hash is to get from roman numeral chromosome to array index to get references for
-# @chromo_clones_refs @arrayrefs @hashrefs
-
-my %roman2num = ( I   => '0',
-		  II  => '1',
-		  III => '2',
-		  IV  => '3',
-		  V   => '4',
-		  X   => '5' 
-		);
-
-  my %allele2gene;
-#now find any genes that overlap with the alleles
-foreach $allele (keys %allele_data) {
-  my $chromosome = $allele_data{$allele}[7];
-  my $clone =  $allele_data{$allele}[6];
-  my $clone_pos =  $chromo_clones_refs[ $roman2num{"$chromosome"} ];
-  my $genelist= $arrayrefs[ $roman2num{"$chromosome"} ];
-
-  my $chromosomal_coords_5 = $$clone_pos{"$clone"}[0] + $allele_data{$allele}[4];
-  my $chromosomal_coords_3 = $$clone_pos{"$clone"}[0] + $allele_data{$allele}[5];
-  
-  foreach my $gene ( @$genelist ) {
-    if(
-       ( $chromosomal_coords_5 > $$gene[1] and $chromosomal_coords_5 < $$gene[2] ) or  # 5' end of allele is in gene
-       ( $chromosomal_coords_3 > $$gene[1] and $chromosomal_coords_3 < $$gene[2] ) or  # 3' end of allele is in gene
-       ( $chromosomal_coords_5 < $$gene[1] and $chromosomal_coords_3 > $$gene[2] )     # whole gene removed
-      ) {
-      
-      $allele2gene{$allele} .= "$$gene[0] ";
-    }
-  }
-}
-
- 
-my $output = glob("~ar2/allele_mapping/map_results");
-my $strseq = glob("~ar2/allele_mapping/strain_seq");
-open (OUT,">$output");
-open (STR,">$strseq");
 foreach (keys %allele_data )
   {
-    if( $allele_data{$_}[3] and $allele_data{$_}[4] and  $allele_data{$_}[5]) { 
-      
-      print OUT "\nSequence : \"$allele_data{$_}[6]\"\nAllele $_ $allele_data{$_}[4] $allele_data{$_}[5]\n";
-      #print OUT "\nAllele : \"$_\"\nSequence $allele_data{$_}[6] $allele_data{$_}[4] $allele_data{$_}[5] $allele_data{$_}[0] \n";
-     
-      if( $allele2gene{$_} ) {
-	my @myStrains;
-	my @affects_genes = split(/\s/,"$allele2gene{$_}");
-	
-	# in Predicted gene object
-	foreach my $ko (@affects_genes) {
-	  print OUT "\nSequence : \"$ko\"\nHas_allele $_\n";
-	}
-
-	# in Allele object
-	print OUT "\nAllele : $_\n";
-	if( $allele_data{$_}[8] ) {
-	  @myStrains = split(/\*\*\*/,"$allele_data{$_}[8]");
-	}
-	foreach my $ko (@affects_genes) {
-	  #allele - seq connection
-	  print OUT "Predicted_gene $ko\n";
-	  foreach my $str (@myStrains) {
-	    #strain - seq connection
-	    print STR "Strain : \"$str\"\n";
-	    print STR "Knocks_out_CDS $ko\n\n";
-	  }
-	}
-      }
-      else {
-	print "no overlapping gene for $_\n" if $verbose;
-      }
-
-      #map position on genome
-      #(0)type, 
-      #(1)5'flank_seq ,
-      #(2)3'flank_seq
-      #(3)CDS
-      #(4)end of 5'match
-      #(5)start of 3'match
-      #(6)clone
-      #(7)chromosome
-      #(8)strains containing this allele
-
-    }
+   
   }
 print "$count alleles\n";
 $db->close;
 $runtime = `date +%H:%M:%S`; chomp $runtime;
 print LOG "$0 end at ",$runtime," \n-------------- END --------------------\n\n";
 close LOG;
-`less $output`;
 
 # Always good to cleanly exit from your script
 exit(0);
@@ -402,6 +348,54 @@ sub findChromosome
     return "$csome";
   }
 
+sub outputAllele
+  {
+    my $to_dump = shift;
+    if( $allele_data{$to_dump}[3] and $allele_data{$to_dump}[4] and  $allele_data{$to_dump}[5]) { 
+      
+      print OUT "\nSequence : \"$allele_data{$to_dump}[6]\"\nAllele $to_dump $allele_data{$to_dump}[4] $allele_data{$to_dump}[5]\n";
+      
+      if( $allele2gene{$to_dump} ) {
+	my @myStrains;
+	my @affects_genes = split(/\s/,"$allele2gene{$to_dump}");
+	
+	# in Predicted gene object
+	foreach my $ko (@affects_genes) {
+	  print OUT "\nSequence : \"$ko\"\nHas_allele $to_dump\n";
+	}
+
+	# in Allele object
+	print OUT "\nAllele : $to_dump\n";
+	if( $allele_data{$to_dump}[8] ) {
+	  @myStrains = split(/\*\*\*/,"$allele_data{$to_dump}[8]");
+	}
+	foreach my $ko (@affects_genes) {
+	  #allele - seq connection
+	  print OUT "Predicted_gene $ko\n";
+	  foreach my $str (@myStrains) {
+	    #strain - seq connection
+	    print STR "Strain : \"$str\"\n";
+	    print STR "Knocks_out_CDS $ko\n\n";
+	  }
+	}
+      }
+      else {
+	print "no overlapping gene for $to_dump\n" if $verbose;
+      }
+
+      #map position on genome
+      #(0)type, 
+      #(1)5'flank_seq ,
+      #(2)3'flank_seq
+      #(3)CDS
+      #(4)end of 5'match
+      #(5)start of 3'match
+      #(6)clone
+      #(7)chromosome
+      #(8)strains containing this allele
+
+    }
+  }
 
 
 sub MapAllele
@@ -530,6 +524,36 @@ sub UpdateHashes #(hash, file)
 	  }
       }
   }
+
+sub findOverlapGenes
+  {
+    my $allele = shift;
+    #now find any genes that overlap with the alleles
+    my $chromosome = $allele_data{$allele}[7];
+    my $clone =  $allele_data{$allele}[6];
+    my $clone_pos =  $chromo_clones_refs[ $roman2num{"$chromosome"} ];
+    my $genelist= $arrayrefs[ $roman2num{"$chromosome"} ];
+    
+    my $chromosomal_coords_5 = $$clone_pos{"$clone"}[0] + $allele_data{$allele}[4];
+    my $chromosomal_coords_3 = $$clone_pos{"$clone"}[0] + $allele_data{$allele}[5];
+    
+    foreach my $gene ( @$genelist ) {
+      if(
+	 ( $chromosomal_coords_5 > $$gene[1] and $chromosomal_coords_5 < $$gene[2] ) or  # 5' end of allele is in gene
+	 ( $chromosomal_coords_3 > $$gene[1] and $chromosomal_coords_3 < $$gene[2] ) or  # 3' end of allele is in gene
+	 ( $chromosomal_coords_5 < $$gene[1] and $chromosomal_coords_3 > $$gene[2] )     # whole gene removed
+	) {
+	
+	$allele2gene{$allele} .= "$$gene[0] ";
+	
+      }
+    }
+  }
+
+
+
+
+
 
 # Add perl documentation in POD format
 # This should expand on your brief description above and add details of any options
