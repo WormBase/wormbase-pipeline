@@ -1,0 +1,191 @@
+#!/usr/local/bin/perl5.6.0
+#
+# make_C.elegans_nematode_mRNAs
+#
+# Script to pull out all the celegans nematode RNAs 
+#
+# dl 
+#
+# Last updated by: $Author: dl1 $                      
+# Last updated on: $Date: 2002-08-06 15:12:45 $        
+
+use strict;
+use Getopt::Long;
+
+$|=1;
+
+ ##############################
+ # command-line options       #
+ ##############################
+
+my $help;       # Help perdoc
+my $db;         # Database name for single db option
+my $debug;      # Debug mode, verbose output to dl1 only
+
+GetOptions (
+            "debug"     => \$debug,
+            "help"      => \$help,
+            );
+
+# help page
+&usage("Help") if ($help);
+
+ ##############################
+ # Paths etc                  #
+ ##############################
+
+my $fasta_file = "/nfs/disk100/wormpub/analysis/ESTs/C.elegans_nematode_mRNAs";
+my $ftp_file   = "/nfs/disk69/ftp/pub/wormbase/sequences/ESTS/C.elegans_nematode_mRNAs";
+
+# remove old file
+system ("/bin/rm -f $fasta_file");
+
+# open filehandles for output files 
+open (OUTPUT_fasta, ">$fasta_file");
+open (OUTPUT_ace,   ">${fasta_file}.ace");
+
+# getz query for C.elegans RNA molecules accessions
+
+my $acc     = "";  # EMBL accession number
+my $id      = "";  # EMBL ID
+my $sv      = "";  # EMBL sequence version
+my $def     = "";  # EMBL description
+my $protid  = "";  # EMBL Protein_ID
+my $protver = "";  # EMBL Protein_ID version
+
+open (SEQUENCES, "/usr/local/pubseq/bin/getz -f \"acc\" \'([emblnew-org:caenorhabditis elegans*] \& [emblnew-mol:rna]  \! [emblnew-div:EST]) | ([embl-org:caenorhabditis elegans*] \& [embl-mol:rna] \! [embl-div:EST])\' |") ;
+while (<SEQUENCES>) {
+    chomp;
+    ($acc) = (/^AC\s+(\S+)\;/);
+    print "Parsing EMBL accession: '$acc'\n";
+    next if ($acc eq "");
+
+    # pfetch each sequence individually
+    open (LOOK, "/usr/local/pubseq/bin/pfetch -F $acc |");
+    while (<LOOK>) {
+	print if ($debug);
+
+	if (/^\s/) {
+	    s/\s+//g;
+	    s/\d+//g;
+	    print OUTPUT_fasta "$_\n";
+	    print OUTPUT_ace   "$_\n";
+	}
+	
+	if (/^ID\s+(\S+)/)                         {$id  = $1;}
+	if (/^SV\s+\S+\.(\d+)/)                    {$sv  = $1;}
+	if (/^DE\s+(.+)/)                          {$def = $def." ".$1;}
+	if (/^FT\s+\/protein_id=\"(\S+)\.(\d+)\"/) {$protid=$1; $protver=$2;}
+	if (/^SQ/) {
+	    print OUTPUT_fasta ">$acc $id $def\n";
+	    print OUTPUT_ace   "\nSequence : \"$acc\"\nDatabase EMBL $id $acc $sv\n";
+	    print OUTPUT_ace   "Protein_id $acc $protid $protver\n";
+	    print OUTPUT_ace   "Species \"Caenorhabditis elegans\"\n";
+	    print OUTPUT_ace   "Title \"$def\"\nMethod NDB\n";
+	    print OUTPUT_ace   "\nDNA \"$acc\"\n";
+	    
+	    # reset vars
+	    $def = ""; $id = ""; $acc = ""; $sv = ""; $protid = ""; $protver ="";
+	}
+    }
+}
+close SEQUENCES;
+
+# close filehandles
+close OUTPUT_fasta;
+close OUTPUT_ace;
+
+# pressdb fasta database
+system ("/usr/local/pubseq/bin/pressdb $fasta_file > /dev/null");
+
+# clean FTP copy and transfer new ones
+system ("/bin/rm -f ${ftp_file}.gz");
+system ("cp $fasta_file $ftp_file");
+system ("/bin/gzip $ftp_file");
+
+exit(0);
+
+#######################################################################
+# Help and error trap outputs                                         #
+#######################################################################
+ 
+sub usage {
+    my $error = shift;
+    if ($error eq "Help") {
+        # Normal help menu
+        system ('perldoc',$0);
+        exit (0);
+    }
+}
+
+
+__END__
+
+=pod
+
+=head2   NAME - make_C.elegans_nematode_mRNAs
+
+=head1 USAGE
+
+=over 4
+
+=item make_C.elegans_nematode_mRNAs [-options]
+
+=back
+
+make_C.elegans_nematode_mRNAs is a wrapper around a getz
+call to make a fasta file for all C.elegans mRNAs in the
+EMBL database. The script produces two files:
+
+fasta file for BLAT similarity mapping
+
+ace file for loading data into ACEDB
+
+make_C.elegans_nematode_mRNAs MANDATORY arguments:
+
+=over 4
+
+=item none, 
+
+=back
+
+make_C.elegans_nematode_mRNAs OPTIONAL arguments:
+
+=over 4
+
+=item -debug, verbose report (e-mails dl1 only)
+
+=item -help, this help page
+
+=back
+
+make_C.elegans_nematode_mRNAs DEFAULT behaviour:
+
+make_C.elegans_nematode_mRNAs will write the two 
+data files into /nfs/disk100/wormpub/analysis/ESTs.
+
+=head1 REQUIREMENTS
+
+=back
+
+=item none
+
+=back
+
+This script is called by the following scripts:
+
+=over 4
+
+=item none
+
+=back
+
+=head1 AUTHOR
+
+=back
+
+=item Dan Lawson (dl1@sanger.ac.uk)
+
+=back
+
+=cut
