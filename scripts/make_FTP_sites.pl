@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-12-16 11:51:12 $
+# Last updated on: $Date: 2002-12-16 13:23:40 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -25,7 +25,7 @@ $|=1;
 
 
 #################################################################################
-# variables                                                                     #
+# Command-line options and variables                                            #
 #################################################################################
 
 our $sourcedir = "/wormsrv2/autoace";
@@ -38,13 +38,23 @@ our $release_number     = &get_wormbase_version();      # e.g.   89
 our $old_release        = $release_number - 1;
 our $wormrna_release    = $release_number;
 our $wormpep            = $release_number;
-our $help;
+our ($help,$debug);
+my $maintainers = "All";
 
 GetOptions (
 	    "help"     => \$help,
-);
+	    "debug=s"   => \$debug
+	   );
 
-&usage if $help;
+# Display help if required
+&usage("Help") if ($help);
+
+# Use debug mode?
+if($debug){
+  print "DEBUG = \"$debug\"\n\n";
+  ($maintainers = $debug . '\@sanger.ac.uk');
+}
+
 
 #################################################################################
 # Main                                                                          #
@@ -74,18 +84,17 @@ $runtime = &runtime;
 print LOG "\n\n\nmake_FTP_public.pl finished at $runtime\n";
 
 close(LOG);
-&mail_maintainer("WormBase Report: make_FTP_public.pl","All",$log);
+&mail_maintainer("WormBase Report: make_FTP_public.pl","$maintainers",$log);
 
 
 exit (0);
 
+
+
+
 #################################################################################
 # Subroutines                                                                   #
 #################################################################################
-
-
-
-
 
 ########################################
 # Open logfile                         #
@@ -415,10 +424,14 @@ sub copy_homol_data{
 
 }
 
-
 sub usage {
+  my $error = shift;
+
+  if ($error eq "Help") {
+    # Normal help menu
     system ('perldoc',$0);
-    exit;       
+    exit (0);
+  }
 }
 
 
