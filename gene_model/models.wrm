@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.67 2002-07-26 16:16:59 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.68 2002-07-29 10:13:10 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -769,6 +769,7 @@
 		       Transposon ?Transposon XREF Sequence UNIQUE Int UNIQUE Int #SMap_info // added for transposons [020128 dl]
 		       Microarray_aff ?Microarray_aff XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info //added for Wen's Affymetrix model [020614 krb]
 		       AGP_fragment ?Sequence XREF AGP_parent Int UNIQUE Int #SMap_info // added for Briggsae data [krb 020726]
+		       UTR ?UTR XREF Canonical_parent Int UNIQUE Int #SMap_info // added for new UTR model [krb 020729]
 	  Structure  From	Source UNIQUE ?Sequence XREF Subsequence
 				Source_exons Int UNIQUE Int // start at 1
 		     Subsequence ?Sequence XREF Source UNIQUE Int UNIQUE Int
@@ -914,6 +915,7 @@
 		Species UNIQUE ?Species
 	Visible 	Transcript ?Transcript XREF CDS
 			Matching_cDNA ?Sequence XREF Matching_CDS
+			Matching_UTR ?UTR XREF Matching_CDS // added for UTR model [krb 020729]
 			Corresponding_protein UNIQUE ?Protein XREF Corresponding_CDS
 		        Related_CDS ?CDS XREF Related_CDS     // RD 0107 was Related_DNA
 			Brief_identification UNIQUE ?Text
@@ -1550,6 +1552,17 @@
                        Reference       ?Paper  //Defines the condition.
                        Remark          ?Text
 
+
+
+// New UTR data model for Lincoln's UTR data.  [krb 020729]
+
+?UTR SMap S_Parent Canonical_parent UNIQUE ?Sequence XREF UTR
+     Source_Exons Int UNIQUE Int // start at 1
+     Matching_CDS ?CDS XREF Matching_UTR
+     Properties 5_UTR #Evidence
+                3_UTR #Evidence
+     Species ?Species
+     Method ?Method
 
 
 // end of file
