@@ -108,7 +108,7 @@ sub invoke
       if(/Sequence.*(CHROMOSOME_\w+)/) {
 	$parent = $1;
       }
-      elsif( /Subsequence\s+\"(SUPERLINK_\w+)\"\s+(\d+)\s+(\d+)/ ) {
+      elsif( ( /Subsequence\s+\"(SUPERLINK_\w+)\"\s+(\d+)\s+(\d+)/ ) or ( /Subsequence\s+\"(MTCE+)\"\s+(\d+)\s+(\d+)/) )  {
 	$self->{"$parent"}->{'SUPERLINK'}->{"$1"} = [$2,$3];
 	$self->{'SUPERLINK2CHROM'}->{"$1"} = "$parent";
       }
@@ -125,15 +125,33 @@ sub invoke
 	$self->{'CLONE2CHROM'}->{"$1"} = $self->{'SUPERLINK2CHROM'}->{"$parent"};
       }
     }
-    %{$self->{"numerals"}} = ( "1" => "I",
-			    "2" => "II",
-			    "3" => "III",
-			    "4" => "IV",
-			    "5" => "V",
-			    "X" => "X"
+
+    # mitochondrial chromosome doesn't have 3 levels of sequence ( Chromosome, SLink, clone ) so 
+    # a fake clone covering the entire chromosome and MTCE superlink is made
+    $self->{'CLONE2CHROM'}->{'MTCE'} = "MtDNA";
+    $self->{'SUPERLINK'}->{"MTCE"}->{'MTCE'} = $self->{'CHROMOSOME_MtDNA'}->{'SUPERLINK'}->{'MTCE'};
+
+    %{$self->{"numerals"}} = ( 
+			      "1" => "I",
+			      "2" => "II",
+			      "3" => "III",
+			      "4" => "IV",
+			      "5" => "V",
+			      "X" => "X",
+			      "M" => "MtDNA"
 			  );
 
     $self->{'DATABASE'} = $database;
+    %{$self->{'single_chrom'}} = ( 
+			       "I"   => "CHROMOSOME_I",
+			       "II"  => "CHROMOSOME_II",
+			       "III" => "CHROMOSOME_III",
+			       "IV"  => "CHROMOSOME_IV",
+			       "V"   => "CHROMOSOME_V",
+			       "X"   => "CHROMOSOME_X",
+			       "M"   => "CHROMOSOME_MtDNA",
+			       "MtDNA" => "CHROMOSOME_MtDNA"
+			      );
 			
     bless( $self, $class);
     return $self;
@@ -226,15 +244,7 @@ sub LocateSpan
     my $x = shift;
     my $y = shift;
 
-    my %single_chrom = ( "I" => "CHROMOSOME_I",
-			 "II" => "CHROMOSOME_II",
-			 "III" => "CHROMOSOME_III",
-			 "IV" => "CHROMOSOME_IV",
-			 "V" => "CHROMOSOME_V",
-			 "X" => "CHROMOSOME_X"
-		       );
-
-    $chrom = $single_chrom{$chrom} if $single_chrom{$chrom};
+    $chrom = $self->{'single_chrom'}->{"$chrom"} if $self->{'single_chrom'}->{"$chrom"};
 
     # if a clone is passed (handles negative coords eg AH6, -500, 12000)
     unless( $chrom =~ /CHROMOSOME/ or $chrom =~ /SUPERLINK/ ) { 

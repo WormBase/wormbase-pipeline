@@ -69,7 +69,7 @@ sub invoke
 
     # get the chromosomal sequences
     my $tace = &tace;
-    my @chromosome = qw( I II III IV V X );
+    my @chromosome = qw( I II III IV V X MtDNA);
     my $seq_file = "$database/CHROMOSOMES/CHROMOSOME_I.dna";
     unless( -e "$seq_file" ) {
       open (ACE, "| $tace $database") or croak "cant connect to $database :$!\n";
@@ -134,6 +134,8 @@ sub Sub_sequence
     }
 
     #carp "no length given for sequence to extract - using full length of $seq\n" unless (defined $length);
+
+    $seq = $self->{'single_chrom'}->{"$seq"} if $self->{'single_chrom'}->{"$seq"};
 
     #passed seq is a SUPERLINK
     if( $seq =~ /SUPERLINK/ ) {
