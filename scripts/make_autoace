@@ -7,8 +7,8 @@
 #
 # This makes the autoace database from its composite sources.
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2003-02-07 10:06:22 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2003-02-11 10:05:43 $
 
 
 $|=1;
@@ -236,7 +236,7 @@ sub buildautoace{
   
   &rmhistory();
   $now = `date +%H:%M:%S`; chomp $now;
-  print LOG "* Removed history sequences at $now\n\n";
+  print LOG "* Removed history Sequences and Transcripts at $now\n\n";
     
 }
 
@@ -565,8 +565,10 @@ sub makechromlink {
 # Remove History                                  
 
 sub rmhistory {
-    my $command = "query find sequence method = history\nkill\nsave\nquit\n";
+    my $command  = "query find sequence method = history\nkill\nsave\nquit\n";
+    my $command2 = "query find Transcript method = history\nkill\nsave\nquit\n";
     &DbWrite($command,$tace,$dbpath,"RmHistory");
+    &DbWrite($command2,$tace,$dbpath,"RmHistory");
 }
 
 
