@@ -575,7 +575,7 @@ sub release_composition
       print COMP_ANALYSIS "Number of gaps has increased - please investigate ! \n";
     }
     
-    if ($change_data{"total_length"} < 0) {
+    if ($change_data{"Total"} < 0) {
       print COMP_ANALYSIS "Total number of bases has decreased - please investigate ! \n";
     }
     close COMP_ANALYSIS;
