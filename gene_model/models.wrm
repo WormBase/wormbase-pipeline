@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.40 2002-03-06 12:04:50 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.41 2002-03-06 13:08:55 kj2 Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -928,7 +928,9 @@
 							stRNA UNIQUE Text         // [010723 dl]
 							misc_RNA UNIQUE Text
                                                         miRNA UNIQUE Text         // [020306 kj]
-				Pseudogene Text                                   // [020306 kj]                      
+				Start_not_found					  // [020306 kj]
+				End_not_found                                     // [020306 kj]
+				Pseudogene Text					  // [020306 kj]
 		Method ?Method			
 
 // Homol and Feature info
