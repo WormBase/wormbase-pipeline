@@ -8,7 +8,7 @@ use strict;
 
 while (<>) {
     chomp;
-    if ((/^\S+\tGenomic_canonical\tSequence\s+/) && (/\"(\S+)\"$/)) {
+    if ((/^\S+\tGenomic_canonical\tregion\s+/) && (/\"(\S+)\"$/)) {
         print "$_\n";
     }
 }
