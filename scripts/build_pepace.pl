@@ -10,7 +10,7 @@
 # 
 #
 # Last updated by: $Author: ar2 $                     
-# Last updated on: $Date: 2002-12-17 17:34:48 $     
+# Last updated on: $Date: 2003-04-16 08:36:39 $     
 
 use strict;                                     
 use lib "/wormsrv2/scripts/";                  
@@ -253,7 +253,7 @@ print LOG "\n$0 finished at $date\n";
 print LOG "\n   . . about to start GetSwissIDandInterpro.pl\n";
 
 # auto run GetSwissIDandInterpro.pl
-`perl5.6.1 /wormsrv2/scripts/GetSwissIDandInterpro.pl`;
+# `perl5.6.1 /wormsrv2/scripts/GetSwissIDandInterpro.pl`; Im going to do this manually to check for errors
 
 
 #load files in to autoace.
