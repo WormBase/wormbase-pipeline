@@ -1,11 +1,11 @@
-#!/usr/local/bin/perl5.6.0 -w
+#!/usr/local/bin/perl5.6.1 -w
 #
 # locus2seq.pl
 #
 # written by Anthony Rogers (ar2@sanger.ac.uk)
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-07-08 10:31:55 $
+# Last updated on: $Date: 2002-11-11 11:37:12 $
 
 
 use strict;
@@ -17,9 +17,11 @@ use Getopt::Std;
 ##############################
 # command-line options       #
 ##############################
-our $opt_d = "";      # Help/Usage page
-our $opt_h = "";      # wormpep release number
-getopts ('d:h');
+our $opt_d = "";      # Source geneace database to use
+our $opt_h = "";      # Help page
+our $opt_c = "";      # Option for updating camace
+getopts ('d:hc');
+
 &usage if ($opt_h);
 
 # choose geneace database
@@ -33,10 +35,9 @@ else{
 }
 print "\nUsing $geneace_dir as target geneace database\n";
 
-my $maintainer = "All";
 my $rundate    = `date +%y%m%d`; chomp $rundate;
 
-my $log = "/wormsrv2/logs/locus2seq.log.$rundate";
+our $log = "/wormsrv2/logs/locus2seq.log.$rundate.$$";
 open(LOG,">$log")|| die "cant open $log";
 print LOG "$0\n";
 print LOG "Date: $rundate\n";
@@ -44,16 +45,8 @@ print LOG "Databases compared: $geneace_dir /wormsrv2/current_DB\n";
 print LOG "=====================================================\n";
 
 
-
-#get locus with confirmed CGC names and the corresponding seq
-#this uses a table_maker query exported from xace
-my $command1=<<EOF;
-Table-maker -p "/wormsrv2/geneace/wquery/locus_seq.def"
-quit
-EOF
-
 my %seq_locus;
-my $count;$count = 0;
+my $count = 0;
 my @entry;
 my $seq;
 my $locus;
@@ -62,6 +55,15 @@ my $locus;
 ###############################################
 # Grab locus->sequence connections from geneace
 ################################################
+
+#get locus with confirmed CGC names and the corresponding seq
+#this uses a table_maker query exported from xace
+my $command1=<<EOF;
+Table-maker -p "/wormsrv2/geneace/wquery/locus_seq.def"
+quit
+EOF
+
+
 
 open (GENEACE, "echo '$command1' | tace $geneace_dir | ") || die "Couldn't open pipe to $geneace_dir\n";
 while (<GENEACE>)
@@ -136,16 +138,16 @@ foreach $sequence(keys %seq_locus)
 	      {	    
 		if($lab[0] eq "HX")
 		  {
-		    print CAMOUT "Locus: \"$locus\"\nSequence\t\"$sequence\"\n\n";
+		    print CAMOUT "Locus : \"$locus\"\nGenomic_sequence\t\"$sequence\"\n\n";
 		    $CAMcount++;
-		    print ALLOUT "Locus: \"$locus\"\nSequence\t\"$sequence\"\n\n";
+		    print ALLOUT "Locus : \"$locus\"\nGenomic_sequence\t\"$sequence\"\n\n";
 		    $ALLcount++;
 		  }
 		elsif($lab[0] eq "RW")
 		  {
-		    print STLOUT "Locus: \"$locus\"\nSequence\t\"$sequence\"\n\n";
+		    print STLOUT "Locus : \"$locus\"\nGenomic_sequence\t\"$sequence\"\n\n";
 		    $STLcount++;	 
-		    print ALLOUT "Locus: \"$locus\"\nSequence\t\"$sequence\"\n\n";
+		    print ALLOUT "Locus : \"$locus\"\nGenomic_sequence\t\"$sequence\"\n\n";
 		    $ALLcount++;
 		  }
 		else
@@ -183,9 +185,12 @@ $autoace->close;
 close CAMOUT;
 close STLOUT;
 close ALLOUT;
+
+&update_camace if ($opt_c); # remove existing camace connections and replace with new ones
+
 close LOG;
-#$maintainer = "ar2\@sanger.ac.uk";
-&mail_maintainer($0,$maintainer,$log);
+
+&mail_maintainer($0,"All",$log);
 
 #copy the ace files to the FTP site
 
@@ -388,8 +393,29 @@ sub usage {
     exit;       
 }
 
+##############################################################
+# update camace with new locus->Sequence connectons
+###############################################################
 
+sub update_camace{
 
+  my $runtime = &runtime;
+  print LOG "$runtime: Starting to remove existing locus->sequence connections in camace and replace with new ones\n";
+  my $command;
+  $command = "query find Predicted_gene\n";
+  $command .= "eedit -D Locus_genomic_seq\nsave\n";
+  $command .= "pparse /wormsrv2/autoace/acefiles/CAM_locus_seq.ace\n";
+  $command .= "save\nquit\n";
+
+  my $tace = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace" ;
+
+  open (WRITEDB, "| $tace -tsuser locus2seq.pl /wormsrv1/camace |") || die "Couldn't open pipe to /wormsrv1/camace\n";
+  print WRITEDB $command;
+  close WRITEDB;
+
+  $runtime = &runtime;
+  print LOG "$runtime: Finished updating camace\n";
+}
 
 
 __END__
@@ -430,6 +456,11 @@ locus2seq.pl  OPTIONAL arguments:
 
 By default this script will compare /wormsrv2/current_DB to /wormsrv2/geneace.  The
 -d flag allows you to compare against another copy of geneace (i.e. /wormsrv1/geneace)
+
+=item -c, update camace
+
+This option will specify that existing Locus->Sequence connections should be removed and
+replaced with the new ones.
 
 =item -h, Help
 
