@@ -14,7 +14,7 @@ print LOG "$rundate\n";
 print LOG "=============================================\n";
 
 
-my $geneace_dir = "/wormsrv1/genace";
+my $geneace_dir = "/wormsrv2/genace";
 my $autoace_acefiles_dir = "/wormsrv2/autoace/acefiles";
 open (CAMOUT,">$autoace_acefiles_dir/CAM_locus_seq.ace") || die "cant open CAMOUT";
 open (STLOUT,">$autoace_acefiles_dir/STL_locus_seq.ace") || die "cant open STLOUT";
@@ -26,7 +26,7 @@ open (ALLOUT,">$autoace_acefiles_dir/ALL_locus_seq.ace") || die "cant open ALLOU
 #my $table = "/wormsrv1/geneace/wquery/locus_seq.def";
 #print system(stat $table);
 my $command1=<<EOF;
-Table-maker -p "/wormsrv1/geneace/wquery/locus_seq.def"
+Table-maker -p "/wormsrv2geneace/wquery/locus_seq.def"
 quit
 EOF
 
@@ -35,7 +35,7 @@ my $count;$count = 0;
 my @entry;
 my $seq;
 my $locus;
-open (GENEACE, "echo '$command1' | tace /wormsrv1/geneace | ");
+open (GENEACE, "echo '$command1' | tace /wormsrv2/geneace | ");
 while (<GENEACE>)
   { 
     @entry = split(/\s+/,$_);
