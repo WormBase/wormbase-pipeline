@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.1
+#!/usr/local/bin/perl5.6.1 
 #
 # operon_wizard
 #
@@ -15,7 +15,10 @@
 # Variables                                                                               #
 ###########################################################################################
 
-$!=1;
+#use strict;
+use lib "/wormsrv2/scripts/";                    
+use Wormbase;
+
 use Data::Dumper;
 use Getopt::Std;
 use Ace;
@@ -57,6 +60,7 @@ getopts ('abzqdcjyst:exwfmlr:p:k:n:');
 
 # do everything in /wormsrv2/autoace/OPERONS
 chdir("/wormsrv2/autoace/OPERONS");
+$dir = "/wormsrv2/autoace/OPERONS";
 
 &recreate_hashes;
 
@@ -171,7 +175,7 @@ sub report {
 
 sub recreate_hashes {
 
-    open (FH, "<operon.dat") or die "operon.dat : $!";
+    open (FH, "<$dir/operon.dat") or die "operon.dat : $!";
     undef $/;
     $data = <FH>;
     eval $data;
