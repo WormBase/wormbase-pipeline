@@ -3,6 +3,7 @@
 use DBI;
 use strict;
 use Getopt::Long;
+use DB_File;
 
 #######################################
 # command-line options                #
@@ -24,6 +25,11 @@ open( LOG, ">$log") || die "cant open $log";
 print LOG "Dump_new_prot_only.pl log file $rundate\n";
 print LOG "-----------------------------------------------------\n\n";
 
+# to be able to include only those proteins that have homologies we need to record those that do
+# this file is then used by write_ipi_info.pl
+my $ipi_file = "/acari/work2a/wormpipe/dumps/ipi_hits_list";
+open (IPI_HITS,">$ipi_file") or die "cant open $ipi_file\n";
+
 
 # help page
 &usage("Help") if ($help);
@@ -38,7 +44,7 @@ print "DEBUG = \"$debug\"\n\n" if $debug;
 
 my @sample_peps = @_;
 
-my $wormpipe_dir = "/acari/work2a/wormpipe/";
+my $wormpipe_dir = "/acari/work2a/wormpipe";
 my $wormpipe = glob("~wormpipe");
 my $output = "$wormpipe_dir/dumps/blastp_ensembl.ace";
 my $recip_file = "$wormpipe_dir/dumps/wublastp_recip.ace";
@@ -118,7 +124,7 @@ unless (@peps2dump)  {
   }
   
   else {
-    open( DIFF,"<$wormpipe_dir/dumps/wormpep.diff$WPver") or die "cant opne diff file\n";
+    open( DIFF,"<$wormpipe/dumps/wormpep.diff$WPver") or die "cant opne diff file $wormpipe/dumps/wormpep.diff$WPver\n";
     print LOG " : Dumping updated proteins ( wormpep.diff$WPver )\n";
     while (<DIFF>)
       {
@@ -143,6 +149,7 @@ unless (@peps2dump)  {
 my $dbhost = "ecs1f";
 my $dbuser = "wormro";
 my $dbname = "wormprot";
+$dbname .= "_dev" if $test;
 my $dbpass = "";
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
 print LOG "\n : Connecting to database : $dbname on $dbhost as $dbuser\n";
@@ -188,6 +195,7 @@ open (OUT,">$output") or die "cant open $output\n";
 
 open (RECIP,">$recip_file") or die "cant open recip file\n";
 
+dbmopen my %ACC2DB, "$wormpipe_dir/dumps/acc2db.dbm", 0666 or die "cannot open acc2db \n";
 my $count;
 
 
@@ -246,6 +254,14 @@ foreach $pep (@peps2dump)
 
 close OUT;
 close RECIP;
+close IPI_HITS;
+
+print "sorting ipi_hits file . . ";
+`mv $ipi_file $ipi_file._tmp`;
+`sort -u $ipi_file._tmp > $ipi_file`;
+`rm -f $ipi_file._tmp`;
+print "DONE\n";
+
 
 print LOG " : Data extraction complete\n\n";
 
@@ -287,15 +303,16 @@ my $wormpub = glob("~wormpub");
 print LOG " : finished\n\n______END_____";
 
 close LOG;
-`rm -f $recip_file`;
+#`rm -f $recip_file`;
 
 
 print "\nEnd of dump - moving $output to /wormsrv2/wormbase/ensembl_dumps/\n";
 
 # Copy resulting file to wormsrv2 - leave in original place for subsequent script write.swiss_trembl
- `/usr/bin/rcp $output /wormsrv2/wormbase/ensembl_dumps/`;
+# `/usr/bin/rcp $output /wormsrv2/wormbase/ensembl_dumps/`;
 
-&mail_maintainer("Dump_new_proteins_only.pl",$maintainers,$log);
+dbmclose %ACC2DB;
+
 
 exit(0);
 
@@ -477,6 +494,10 @@ sub justGeneName
 sub getPrefix 
   {
     my $name = shift;
+    if( $ACC2DB{$name} ) {
+      print IPI_HITS "$name\n";
+      return $ACC2DB{$name} 
+    }
     if( $name =~ /ENS\w+/ ) {
       return $org_prefix{'wublastp_ensembl'};
     }
@@ -505,6 +526,7 @@ sub usage {
         exit (0);
     }
 }
+
 
 __END__
 
