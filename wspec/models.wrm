@@ -240,7 +240,7 @@
                 Gene_Class  ?Gene_Class XREF Loci
                 Old_name ?Locus XREF New_name
                 New_name ?Locus XREF Old_name
-	Gene_information Description ?Text
+	Gene_information Description ?Text #Evidence // added by krb [020802]
 			 Provisional_description ?Text #Evidence // added for Erich [020322 krb]
 			 Detailed_description ?Text #Evidence  // added for Erich [020322 krb]
 			 Concise_description ?Text #Evidence  // added for Erich [020523 krb]
