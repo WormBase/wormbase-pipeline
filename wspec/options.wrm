@@ -146,6 +146,10 @@ _VFeature_data     -V -D FMAP
 // WTP
 // _VWTP		   -V -D FMAP
 
+// WTP
+// _VUTR		   -V -D FMAP
+
+
 // Transposons
 _VTransposon       -V -D FMAP
 
