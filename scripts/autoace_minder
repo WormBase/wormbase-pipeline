@@ -7,7 +7,7 @@
 # Usage : autoace_minder [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-05-20 14:43:27 $
+# Last edited on: $Date: 2003-05-21 07:23:15 $
 
 
 #################################################################################
@@ -685,8 +685,9 @@ sub test_build {
   
   print "Open log file $logfile\n" if ($debug);
   
-  my ($parsefile,$parsefilename,$builderrors);
-  
+  my ($parsefile,$parsefilename);
+  my $builderrors = 0;
+
   open (BUILDLOG, "<$logfile") || die "Couldn't open logfile out\n";
   while (<BUILDLOG>) {
     if (/^\* Reinitdb: reading in new database  (\S+)/) {
