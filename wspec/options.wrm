@@ -128,6 +128,8 @@ _VHomol_data       -V
 // WTP
 _VWTP		   -V -D FMAP
 
+// Addition to support Lincoln's new movie class, krb [010807]
+_VMovie            -H
 
 // The following lines are now obsolete and declared in kernel
 // _VgMap		   -A -H -D GMAP
