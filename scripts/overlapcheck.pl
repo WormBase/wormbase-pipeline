@@ -8,8 +8,8 @@
 # by Kerstin Jekosch
 # 10/07/01
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-11-21 10:23:44 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2002-11-22 13:47:14 $
 
 use strict;
 use Carp;
@@ -86,8 +86,8 @@ foreach my $stlclone (@stlclones) {
 
 foreach my $chrom (@chrom) {
     print "\nProcessing chromosome $chrom\n";
-#  open (GFF, "/wormsrv2/autoace/CHROMOSOMES/CHROMOSOME_$chrom.gff"); 
-    open (GFF, "/wormsrv2/current_DB/CHROMOSOMES/CHROMOSOME_$chrom.gff"); 
+    open (GFF, "/wormsrv2/autoace/CHROMOSOMES/CHROMOSOME_$chrom.gff") or die "cant open /wormsrv2/autoace/CHROMOSOMES/CHROMOSOME_$chrom.gff\n"; 
+    #open (GFF, "/wormsrv2/current_DB/CHROMOSOMES/CHROMOSOME_$chrom.gff"); 
     open (CAMOL, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.overlapping_genes_cam") 
 	|| die "Cannot open output file $chrom $!\n"; 
     open (CAMEST, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.EST_in_intron_cam")    
