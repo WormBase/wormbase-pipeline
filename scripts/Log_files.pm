@@ -65,6 +65,7 @@ sub make_build_log
     my $debug = shift;
     my $ver = &Wormbase::get_wormbase_version if ( -e "/wormsrv2" );
     $ver = $debug unless $ver;  #if wormsrv2 not accessible then Wormbase module wont get version
+    $ver = 'XXX' unless $ver;
     my $filename;
     $0 =~ m/([^\/]*$)/ ? $filename = $0 :  $filename = $1 ; # get filename (sometimes $0 includes full path if not run from its dir )
 
@@ -90,6 +91,7 @@ sub make_build_log
     $self->{"FILENAME"} = $log_file;
     $self->{"SCRIPT"} = $filename;
     $self->{"FH"} = $log;
+    $self->{"DEBUG"} = $debug if $debug;
 
     bless($self, $class);
 
@@ -117,6 +119,7 @@ sub mail
    close $fh;
 
    $recipient = "All" unless $recipient;
+   $recipient = $self->{"DEBUG"} if (defined $self->{"DEBUG"});
    my $file = $self->{"FILENAME"};
    my $script = $self->{"SCRIPT"};
    &Wormbase::mail_maintainer($script,$recipient,$file);
