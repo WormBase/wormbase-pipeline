@@ -8,7 +8,7 @@
 # relevant WormBase and Wormpep web pages.
 #
 # Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2004-11-22 14:08:07 $      
+# Last updated on: $Date: 2004-12-06 10:45:40 $      
 
 
 #################################################################################
@@ -183,7 +183,7 @@ sub create_log_file{
 
 sub create_web_directories{
 
-  if (! -e "$www".$WS_name){
+  if (! -e "$www/$WS_name"){
     system("mkdir $www/$WS_name") && warn "Cannot create $WS_name directory $!\n";
     system("mkdir $www/$WS_name/Checks") && warn "Cannot create $WS_name/Checks directory $!\n";
     system("mkdir $www/$WS_name/GFF") && warn "Cannot create $WS_name/GFF directory $!\n";
@@ -489,7 +489,7 @@ sub create_dbcomp {
   
   my $dbcompcount = 0;
 
-  open (COMP, "</wormsrv2/autoace/COMPARE/current.dbcomp") || croak "Failed to open composition.all\n\n";
+  open (COMP, "</wormsrv2/autoace/COMPARE/current.dbcomp") || croak "Failed to open current.dbcomp\n\n";
   while (<COMP>) {
       next if (/\+/);
       next if (/ACEDB/);
