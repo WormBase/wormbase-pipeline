@@ -989,7 +989,7 @@
                 Base1 UNIQUE    Text
                 Base2 UNIQUE    Text
                 Base3 UNIQUE    Text
-
+		Selenocysteine // new to allow Selenocysteine residues [krb 030604]
 
 
 
