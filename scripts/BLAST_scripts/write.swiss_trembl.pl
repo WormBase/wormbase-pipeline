@@ -1,98 +1,142 @@
-#!/usr/local/bin/perl
+#!/usr/local/bin/perl5.6.1
 
 # Marc Sohrmann (ms2@sanger.ac.uk)
 
 # takes as input a swissprot or trembl .fasta file,
 # and deletes all worm, fly, human and yesast entries
-
+BEGIN {
+    unshift (@INC , "/nfs/acari/wormpipe/scripts/BLAST_scripts");
+}
+my $wormpipe = glob("~wormpipe");
 use strict;
-use Getopt::Std;
+use Getopt::Long;
 use DB_File;
-use vars qw($opt_s $opt_t $opt_d);
+use GSI;
 
-getopts ("std:");
+my ($swiss, $trembl, $debug, $database);
+
+GetOptions (
+	   "swiss"    => \$swiss,
+	   "trembl"   => \$trembl,
+	   "database:s" => \$database,
+	   "debug"    => \$debug
+	  );
+
+my $wormpipe_dump = "$wormpipe/dumps";
+$wormpipe_dump .= "_test" if $debug;
+my $output_swiss = "$wormpipe_dump/swissproteins.ace";
+my $output_trembl = "$wormpipe_dump/tremblproteins.ace";
+my $db_files = "/acari/work2a/wormpipe/swall_data";
+my $swiss_list_txt = "$wormpipe_dump/swisslist.txt";
+my $trembl_list_txt = "$wormpipe_dump/trembllist.txt";
+
+my @lists_to_dump;
+$db_files = "$database" if defined $database;  # can use other database files if desired
+
+my %input2output;
+$input2output{"$swiss_list_txt"}  = [ ("$output_swiss", "SwissProt", "SW", "$db_files/slimswissprot" ) ];
+$input2output{"$trembl_list_txt"} = [ ("$output_trembl", "TrEMBL", "TR", "$db_files/slimtrembl" ) ];
+
+my @lists_to_dump;
+$db_files = "$database" if defined $database;  # can use other database files if desired
 
 my %ORG;
 my %DES;
 
-if ($opt_s && $opt_t) {
-    die "usage -s for swissprot,-t for trembl, -d directory name where files are < file with ids\n";
+if ($swiss) {
+  unless (-s "$db_files/swissprot2org") {
+    die "swissprot2org not found or empty";
+  }
+  dbmopen %ORG, "$db_files/swissprot2org", 0666 or die "cannot open swissprot2org DBM file $db_files/swissprot2org";
+  unless (-s "$db_files/swissprot2des") {
+    die "swissprot2des not found or empty";
+  }
+  dbmopen %DES, "$db_files/swissprot2des", 0666 or die "cannot open swissprot2des DBM file $db_files/swissprot2des";
+  push( @lists_to_dump,$swiss_list_txt);
 }
-elsif ($opt_s) {
-    unless (-s "$opt_d/swissprot2org") {
-        die "swissprot2org not found or empty";
-    }
-    dbmopen %ORG, "$opt_d/swissprot2org", 0666 or die "cannot open swissprot2org DBM file";
-    unless (-s "$opt_d/swissprot2des") {
-        die "swissprot2des not found or empty";
-    }
-    dbmopen %DES, "$opt_d/swissprot2des", 0666 or die "cannot open swissprot2des DBM file";
-}
-elsif ($opt_t) {
-    unless (-s "$opt_d/trembl2org") {
-        die "trembl2org not found or empty";
-    }
-    dbmopen %ORG, "$opt_d/trembl2org", 0666 or die "cannot open trembl2org DBM file";
-    unless (-s "$opt_d/trembl2des") {
-        die "trembl2des not found or empty";
-    }
-    dbmopen %DES, "$opt_d/trembl2des", 0666 or die "cannot open trembl2des DBM file";
-}
-else {
-    die "usage -s for swissprot,-t for trembl, -d directory name where files are < file with ids\n";
+if ($trembl) {
+  unless (-s "$db_files/trembl2org") {
+    die "trembl2org not found or empty";
+  }
+  dbmopen %ORG, "$db_files/trembl2org", 0666 or die "cannot open trembl2org DBM file";
+  unless (-s "$db_files/trembl2des") {
+    die "trembl2des not found or empty";
+  }
+  dbmopen %DES, "$db_files/trembl2des", 0666 or die "cannot open trembl2des DBM file";
+  push( @lists_to_dump,$trembl_list_txt);
 }
 
-print "\n\n";
-
-while (<>) {
-#	print;  # ID line 
-    chomp;
-    /^(\S+)/;
-    my $db;
-    my $fetch_db;
-    my $prefix;
-    my $id = $1;
-    if ($opt_s) {
-        $db = "SwissProt";
-        $fetch_db = "slimswissprot";
-        $prefix = "SW";
-    }
-    elsif ($opt_t) {
-        $db = "TrEMBL";
-        $fetch_db = "slimtrembl";
-        $prefix = "TR";
-    }
-    else {
-        die "wrong options";
-    }
-    my $entry = `/nfs/acari/wormpipe/wormbase/scripts/BLAST_scripts/fetch.pl -g $opt_d/$fetch_db.gsi -i $id`;
-    chomp $entry;
-    my @ary = split (/\n/, $entry);
-
-    my $header = shift @ary;
-#	print "$header\n";  # fasta header line
-    $header =~ /^\S+\s+(\S+)/;
-    my $accession = $1;
-
-    my $seq = join ("", @ary);
-    if ($seq) {
-        print "Protein : \"$prefix:$id\"\n";
-        print "Peptide \"$prefix:$id\"\n";
-        print "Title \"$DES{$id}\"\n";
-        print "Species \"$ORG{$id}\"\n";
-        print "Database \"$db\" \"$id\" \"$accession\"\n";
-        print "\n";
-        print "Peptide : \"$prefix:$id\"\n";
-        print "$seq\n";
-        print "\n";
-    }
-    else {
-        print "// Couldn't fetch sequence for $id\n\n";
-    }
+unless (defined $lists_to_dump[0]) {
+    die "usage -swiss for swissprot,-trembl for trembl, -database directory where .gsi database file is\n";
 }
 
+foreach my $list (@lists_to_dump) {
+  &output_list($list,$input2output{"$list"});
+}
+
+    
 dbmclose %ORG;
 dbmclose %DES;
 
+sub output_list
+  {
+    my $list = shift;
+    my $parameters = shift;  
+    my $db = $$parameters[1];
+    my $fetch_db = $$parameters[3].".gsi";
+    my $prefix = $$parameters[2];
+    my $outfile = $$parameters[0];
+    
+    #used to be in fetch.pl
+    ########################
+    # open the GSI file
+    GSI::openGSI ("$fetch_db");
+    ########################
 
 
+    open (LIST,"<$list") or die "cant open input file $list\n";
+    open (ACE, ">$outfile") or die "cant write to $outfile\n";
+    while (<LIST>) {
+      #	print;  # ID line 
+      chomp;
+      /^(\S+)/;
+
+      my $id = $1;
+      
+      # access gsi database to get info about protein
+      my ($file , $fmt , $offset) = GSI::getOffset ($id);
+      unless( "$file" eq "-1" ) {
+	open (DB , "$file") || die "cannot open db $file\n";
+	seek (DB , $offset , 0);
+	my $header = <DB>;
+	chomp $header;
+	my $seq = "";
+	while ((my $line = <DB>) =~ /^[^\>]/) {
+	  $seq .= "$line"."\n";
+	}
+	close DB;
+	$seq =~ s/\n//g;
+	
+	$header =~ /^\S+\s+(\S+)/;
+	my $accession = $1;
+	
+	if ($seq) {
+	  print ACE "Protein : \"$prefix:$id\"\n";
+	  print ACE "Peptide \"$prefix:$id\"\n";
+	  print ACE "Title \"$DES{$id}\"\n";
+	  print ACE "Species \"$ORG{$id}\"\n";
+	  print ACE  "Database \"$db\" \"$id\" \"$accession\"\n";
+	  print ACE  "\n";
+	  print ACE  "Peptide : \"$prefix:$id\"\n";
+	  print ACE "$seq\n";
+	  print ACE "\n";
+	}
+	else {
+	  print "// Couldn't fetch sequence for $id\n\n";
+	}
+      }  
+    }
+  }
+
+
+ #used to be in fetch.pl
