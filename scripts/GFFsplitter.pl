@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2004-03-25 09:29:41 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2004-03-25 11:12:13 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -216,7 +216,7 @@ foreach $file (@gff_files) {
     # UTR         
     elsif (/UTR/)                                     {push (@{$GFF{$file}{UTR}},$_);}
     # Protein similarities
-    elsif (/wublastx_/)                                {push (@{$GFF{$file}{BLASTX}},$_);}
+    elsif (/wublastx/)                                {push (@{$GFF{$file}{BLASTX}},$_);}
     # C. briggsae
     elsif (/:waba/)                                   {push (@{$GFF{$file}{WABA_BRIGGSAE}},$_);}
 
