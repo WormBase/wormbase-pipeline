@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2004-07-23 11:10:45 $
+# Last updated by: $Author: dl1 $
+# Last updated on: $Date: 2004-08-02 10:26:34 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -244,7 +244,10 @@ sub copy_wormpep_files{
   my $wp_ftp_dir = "$wormpep_ftp_root/wormpep${wormpep}";
   mkdir $wp_ftp_dir unless -e $wp_ftp_dir;
 
-  foreach my $file ( @{&wormpep_files} ){
+ 
+  my @wormpep_files = &wormpep_files;
+  
+  foreach my $file ( @wormpep_files ){
   # copy the wormpep release files across
     &run_command("scp $wp_source_dir/$file$wormpep $wp_ftp_dir/$file$wormpep");
     &CheckSize("$wp_source_dir/$file$wormpep","$wp_ftp_dir/$file$wormpep");
@@ -255,9 +258,8 @@ sub copy_wormpep_files{
   my $command = "/bin/tar -c -h -P \"/wormsrv2/WORMPEP/\" -f $tgz_file";
 
   # grab list of wormpep file names from subroutine
-  my @wormpep_files = &wormpep_files;
   foreach my $file (@wormpep_files){
-    $command .= " $wp_source_dir/$file$wormpep";
+      $command .= " $wp_source_dir/$file$wormpep";
   }
   &run_command("$command");
   &run_command("/bin/gzip $tgz_file");
@@ -363,22 +365,19 @@ sub make_geneID_list {
   print LOG &runtime, ": making Gene ID list\n";
   # For each 'live' Gene object, extract 'CGC_name' and 'Sequence_name' fields (if present)
 
-  my $tace = &tace;
-  my $command=<<EOF;
-Table-maker -p "/wormsrv2/autoace/wquery/gene2cgc_name_and_sequence_name.def" quit
-EOF
+  my $tace    = &tace;
+  my $command = "Table-maker -p /wormsrv2/autoace/wquery/gene2cgc_name_and_sequence_name.def\nquit\n";
+  my $dir     = "/wormsrv2/autoace";
+  my $out     = "$targetdir/$release/geneIDs.$release";
 
-  my $dir = "/wormsrv2/autoace";
-
-  my $out = "$targetdir/$release/geneIDs.$release";
-  open(OUT, ">$out") || croak "Couldn't open $out\n";
+  open (OUT, ">$out") || croak "Couldn't open $out\n";
   open (TACE, "echo '$command' | $tace $dir | ") || croak "Couldn't access $dir\n";  
   while (<TACE>){
-    if (m/^\"/){
-      s/\"//g;
-      tr/\t/,/;
-      print OUT "$_";
-    }
+      if (m/^\"/){
+	  s/\"//g;
+	  tr/\t/,/;
+	  print OUT "$_";
+      }
   }
   close(TACE);
   close(OUT);
