@@ -2,14 +2,15 @@
 #
 # make_autoace
 #
-# v 3.2
-#
 # Usage : make_autoace [-options]
 #
-# This makes the autoace database from
-# its composite sources.
+# This makes the autoace database from its composite sources.
 #
 ###########################################################################################
+
+
+# v1.17  :  dl : Added '-f' option to the rm lines in the (re)initialisation subroutine.
+#                This circumvents problems with file ownership.
 
 # v1.12  :  dl : Tidied the dna_dumping routine, removed alessandro's 'New' prefix and
 #                made it a dna dump line in the logfile. Superficial really.
@@ -492,10 +493,14 @@ sub rmconfremark {
 # Re-initialize the database                      
 # cleans and re-initalizes the ACEDB residing in $autodir
 # then parses .ace files in @filenames
+#
+# 011016 : dl  : Added '-f' option to the rm lines. This will ensure that non 
+#                wormpub owned files within group worm are deleted without the
+#                need for an interactive prompt
 
 sub reinitdb {
-  system ("\\rm $autodir/database/new/*");
-  system ("\\rm $autodir/database/touched/*");
+  system ("\\rm -f $autodir/database/new/*");
+  system ("\\rm -f $autodir/database/touched/*");
   if (-e "$autodir/database/lock.wrm") {
     print LOGFILE "*Reinitdb error - lock.wrm file present..\n";
     close LOGFILE;
