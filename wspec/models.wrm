@@ -258,7 +258,7 @@
                         Maternal	Strictly_Maternal
 					With_Maternal_Effect
                         Paternal
-	Remark	?Text
+	Remark	?Text #Evidence
         Reference ?Paper XREF Allele               // Mary
         Rescued_by_Transgene ?Transgene
 	Method UNIQUE ?Method // necessary now that Allele is SMap [030106 krb]
@@ -282,7 +282,7 @@
 		Other_name ?Gene_Class XREF Main_name
 		CGC_approved // added by krb 24/01/02
 		CGC_unresolved Text // added by krb 28/01/02
-                Remark Text
+                Remark ?Text #Evidence
 
 
 ?Locus  Evidence #Evidence
@@ -319,7 +319,7 @@
                                 Other_sequence ?Sequence XREF Locus_other_seq #Evidence    // dl 001128
 				Transcript ?Transcript XREF Locus #Evidence // en route to new gene model [021126 krb]
 				Product ?Text
-	Remark ?Text
+	Remark ?Text #Evidence
 	Map    ?Map XREF Locus #Map_position
         Hide_under ?Locus XREF Representative_for
         Representative_for ?Locus XREF Hide_under
@@ -376,7 +376,7 @@
 //	or perhaps there should be another class Complex_Rear that refers to
 //	several intervals.
 	        Reference_strain ?Strain
-		Remark ?Text
+		Remark ?Text #Evidence
 		Isolation	Author Text	// should be ?Author
 				Date DateType
 				Mutagen UNIQUE Text UNIQUE Text // Text is dose
@@ -411,21 +411,21 @@
 		     CGC_received DateType
          Location ?Laboratory #Lab_Location
 	 Made_by Text
-	 Remark	?Text
+	 Remark	?Text #Evidence
          Reference ?Paper XREF Strain
 	 Species UNIQUE ?Species // added by krb [021021]
 
 ?Lab_Location	Freezer		Text
 		LiquidN2        Text
 		Minus70		Text
-                Remark		?Text
+                Remark		?Text #Evidence
 
 //
 //worm physical map classes
 //
 
 ?Clone  Evidence #Evidence
-	Remark  General_remark ?Text
+	Remark  General_remark ?Text 
 		Y_remark ?Text
 		PCR_remark ?Text
 	Position  Map ?Map XREF Clone #Map_position
@@ -573,7 +573,7 @@
                                 Error    UNIQUE Float
                                 Linkage  UNIQUE Text
 			// some of these are used for drawing in the absence of Calculation data
-		Remark ?Text
+		Remark ?Text #Evidence
 	// code uses Point_1, Point_2, Calculation and all its subtags, all the Calc subtags,
 	// and most of the Simple_distance subtags.
 		
@@ -593,7 +593,7 @@
 				Clone_2 UNIQUE ?Clone XREF Pos_neg_data
 		Calculation UNIQUE Positive
 				   Negative
-		Remark ?Text
+		Remark ?Text #Evidence
 	// code uses Item_1, Item_2, Positive and Negative
 
 
@@ -615,7 +615,7 @@
 			B_non_A	#Multi_counts
 			Combined #Multi_counts
 		Old_CGC_results Text
-		Remark ?Text
+		Remark ?Text #Evidence
 	// code uses all the Results subtags, and the #Multi_counts structure
 
 
@@ -692,7 +692,7 @@
 // Class added 030224 krb
 
 ?GO_code Description ?Text 
-	 Remark Text 
+	 Remark ?Text #Evidence
 
 
 
@@ -714,7 +714,7 @@
 		 Syncitial_cell ?Cell_group XREF Nucleus //see Cell_group,
 	Summary Text                     // the whole of old remark plus more to be added by Raymond
         Embryo_division_time Text
-        Remark        ?Text
+        Remark        ?Text #Evidence
         Lineage Parent  UNIQUE  ?Cell XREF Daughter
                 Daughter      ?Cell XREF Parent
                 Lineage_name    Text
@@ -761,7 +761,7 @@
 ?Reconstruction Cell ?Cell
 		Author ?Author
 		Date UNIQUE DateType
-		Remark ?Text
+		Remark ?Text #Evidence
 		Description ?LongText
 
 ?ReconCellInfo	Birth UNIQUE Float
@@ -845,7 +845,7 @@
 		        Related_DNA ?Sequence XREF Related_DNA
 			Paired_read ?Sequence XREF Paired_read          // dl 020110
 			Orthologue ?Sequence XREF Orthologue ?Species #Evidence  // dl 030304
-			Remark ?Text
+			Remark ?Text #Evidence
 			Confidential_remark ?Text
 			Brief_identification UNIQUE ?Text #Evidence     // dl 030219
 	  		Reference ?Paper XREF Sequence
@@ -1014,7 +1014,7 @@
 			Allele ?Allele XREF Transcript // added to fit two alleles of RNA genes [021127 krb]
 			Orthologue ?Transcript XREF Orthologue ?Species #Evidence  // [030310 krb]
                         Matching_cDNA ?Sequence XREF Matching_transcript
-                        Remark ?Text
+                        Remark ?Text #Evidence
                         Confidential_remark ?Text
                         Brief_identification UNIQUE Text                           // [020306 kj]
                         Reference ?Paper XREF Transcript                           // [020306 kj]
@@ -1119,7 +1119,7 @@
 		        Overhang UNIQUE Int
 		        Company UNIQUE Text
                         Redundant
-        Remark ?Text
+        Remark ?Text #Evidence
 	Title ?Text
 	DB_info	Database ?Database Text ?Accession_number XREF Motif // ID  Accession_number
 	  	DB_remark ?Text #Evidence
@@ -1164,7 +1164,7 @@
 		
 // Method
 
-?Method	Remark ?Text
+?Method	Remark ?Text #Evidence
 	  // the Display information controls how the column looks.
 	Display No_display
 		Colour #Colour
@@ -1220,7 +1220,7 @@
 
 
 ?Reference	Reference ?Paper
-		Remark ?Text
+		Remark ?Text #Evidence
 		Species ?Species
 		Description ?Text //For trait information
 
@@ -1243,7 +1243,7 @@
 			Antibody ?Text
 		Pattern ?Text
 		Picture ?Picture XREF Expr_pattern	
-                Remark ?Text
+                Remark ?Text #Evidence
                 Experiment	Laboratory ?Laboratory
 				Author ?Author 
 				Date UNIQUE DateType
@@ -1261,7 +1261,7 @@
               Expr_map ?SK_map XREF Expr_profile
               Reference ?Paper XREF Expr_profile
 	      RNAi_result ?RNAi XREF Expr_profile // Connection made by script during build [030106 krb]
-              Remark ?Text
+              Remark ?Text #Evidence
 
 		
 ?SK_map       X_coord UNIQUE Float
@@ -1269,7 +1269,7 @@
               Mountain UNIQUE Int
               Date UNIQUE DateType
 	      Attribute_of Expr_profile ?Expr_profile XREF Expr_map
-              Remark ?Text
+              Remark ?Text #Evidence
 
 
 
@@ -1277,14 +1277,14 @@
 	 Pick_me_to_call Text Text
 	 Expr_pattern ?Expr_pattern XREF Picture
 	 RNAi ?RNAi XREF Picture		// new, added for Lincoln.  krb [010807]
-	 Remark ?Text				// also new
+	 Remark ?Text #Evidence				// also new 
 
 
 // Updated from geneace copy [010723 dl]
 
 ?Cell_group	Other_name ?Text                 //new, put in for Paul, this could become ?Cell_group for pseudo-aliasing
 		Fate ?Text	
-		Remark	?Text
+		Remark	?Text #Evidence
 		Contains	Cell ?Cell XREF Cell_group
 				Nucleus ?Cell XREF Syncitial_cell //new for syncitia like hyp7
 				Sub_group ?Cell_group XREF Contained_in
@@ -1308,7 +1308,7 @@
                 Preceded_by ?Life_stage XREF Followed_by
 		Followed_by ?Life_stage XREF Preceded_by
 		Expr_pattern ?Expr_pattern XREF Life_stage
-		Remark	?Text
+		Remark	?Text #Evidence
 		Definition ?Text // added for Wen [020607 krb]
 		Other_name ?Text // added for Wen [020607 krb]
                 Reference ?Paper XREF Life_stage
@@ -1454,7 +1454,7 @@
 		Phenotype	?Text	//Phenotype should be described as "Unc. With other ..."
 		Rescue ?Locus XREF Rescued_by_Transgene ?Allele XREF Rescued_by_Transgene
 		Expr_pattern ?Expr_pattern XREF Transgene //Related Expr_pattern
-		Remark ?Text //More comments on the transgene
+		Remark ?Text #Evidence //More comments on the transgene
 		Reference ?Paper XREF Transgene //papers refered to the transgene.
 		Species UNIQUE ?Species // added by krb for consistency with other classes 021030
 
@@ -1480,9 +1480,9 @@
 	Reference ?Paper XREF RNAi
         Phenotype ?Phenotype XREF RNAi #Phenotype_info
 	Expr_profile ?Expr_profile XREF RNAi_result // connection added during build [030106 krb]
-        Remark ?Text
+        Remark ?Text #Evidence
 
-#Phenotype_info Remark ?Text                            // specific remarks about this instance
+#Phenotype_info Remark ?Text #Evidence                           // specific remarks about this instance
                 Penetrance UNIQUE Int UNIQUE Int        // estimated percent penetrance range (0-100)
                 Temperature_sensitive Int UNIQUE Int    // temperature (degrees C), penetrance
                 Quantity UNIQUE Int UNIQUE Int          // for quantitative phenotypes low/high
@@ -1499,7 +1499,7 @@
  	     Assay_conditions ?LongText
 	     From_Laboratory ?Laboratory                            // added for Lincoln Orfeome attribution [020304 dl]
 	     Amplified Int
-	     Remark ?Text
+	     Remark ?Text #Evidence
 	     SNP_locus ?Locus XREF SNP_assay	                    // added for Todd [171001 krb]
 	     Flanks_deletion ?Allele XREF Flanking_PCR_product // For KO allele data [krb 021217]
 	     Microarray_result ?Microarray_result XREF PCR_product // added [krb 030127]
@@ -1507,7 +1507,7 @@
 
 ?Phenotype Description UNIQUE ?Text
            Assay UNIQUE ?Text
-           Remark ?Text
+           Remark ?Text #Evidence
            Related_phenotypes Specialisation_of ?Phenotype XREF Generalisation_of
                               Generalisation_of ?Phenotype XREF Specialisation_of
                               Equivalent_to ?Phenotype XREF Equivalent_to
@@ -1540,7 +1540,7 @@
 
 ?Transposon SMap S_Parent Canonical_parent UNIQUE ?Sequence XREF Transposon
             LTR_region UNIQUE Int UNIQUE Int
-            Remark ?Text
+            Remark ?Text #Evidence
             Method ?Method
 
 
@@ -1549,7 +1549,7 @@
 ?Movie Description ?Text
        Pick_me_to_call Text Text
        RNAi ?RNAi XREF Movie
-       Remark ?Text
+       Remark ?Text #Evidence
 
 
 /////////////////////////////////////////////////////////////////////
@@ -1563,7 +1563,7 @@
                 Result ?Affymetrix_result XREF Microarray_aff
                 Microarray_result ?Microarray_result XREF Microarray_aff // Added to merge with SMD microarray.
 		Reference ?Paper //Describes the design of the chip
-                Remark ?Text
+                Remark ?Text #Evidence
 
 
 ?Affymetrix_result Condition ?Condition
@@ -1575,7 +1575,7 @@
                    Microarray_aff  ?Microarray_aff XREF Result
                    Chip_info       ?Text   //Describes batch number of the chip created the result ... etc.
                    Reference       ?Paper  //The paper reported this result.
-                   Remark          ?Text
+                   Remark          ?Text #Evidence
 
 
 // Microarray_result data model is created for Data types from Stanford Microarray Database
@@ -1617,7 +1617,7 @@
                                      SMD
                    Chip_info  ?Text   //Describes batch number of the chip created the result ... etc.
                    Reference  ?Paper
-                   Remark     ?Text
+                   Remark     ?Text #Evidence
 
 
 
@@ -1631,7 +1631,7 @@
          Algorithm     ?Text
          Microarray_result    ?Microarray_result     XREF    Cluster
          Reference     ?Paper          XREF    Cluster 
-         Remark        ?Text
+         Remark        ?Text #Evidence
                   
 
 
@@ -1647,7 +1647,7 @@
                            Precedes        ?Condition XREF Follows
                            Follows         ?Condition XREF Precedes
            Reference       ?Paper  //Defines the condition.
-           Remark          ?Text
+           Remark          ?Text #Evidence
 
 
 
@@ -1847,7 +1847,7 @@
               Person  ?Person XREF Laboratory
               Past_lab_member ?Person XREF Old_laboratory // I think this is useful and
                                                           // anyway, the reverse is track.
-	      Remark ?Text
+	      Remark ?Text #Evidence
 
 
 
