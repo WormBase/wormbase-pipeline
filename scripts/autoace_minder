@@ -7,7 +7,7 @@
 # Usage : autoace_minder [-options]
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2003-06-10 16:11:26 $
+# Last edited on: $Date: 2003-06-10 16:27:16 $
 
 
 #################################################################################
@@ -1196,7 +1196,7 @@ sub parse_homol_data {
 		    "ensembl_protein_info.ace",
 		    "waba.ace",
 		    "wormprot_motif_info.ace",
-		    "brigprot_motif_info.ace",
+		    "worm_brigprot_motif_info.ace",
 		    "brigprot_blastp_ensembl.ace"
 		   );
 
@@ -1206,6 +1206,7 @@ sub parse_homol_data {
     # make sure file exists
     unless ( -e "/wormsrv2/wormbase/ensembl_dumps/$file" ) {
       print LOG "ERROR *** $file doesn't exist \n\n";
+      next;
     }
 
     # tsuser cant contain '.' so strip of .ace
