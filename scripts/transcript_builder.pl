@@ -55,8 +55,6 @@ $gff_file = $gff if $gff;
 my @chromosomes = qw(I II III IV V X);
 foreach my $chrom ( @chromosomes ) {
 
-  $chrom = "CHROMOSOME_".$chrom;
-
   #Make sure these are empty
   %genes_exons = ();
   %genes_span= ();
@@ -207,7 +205,7 @@ foreach my $chrom ( @chromosomes ) {
 	}
       }
       ($chrom) = $gff =~ /.*_(\w+)/ if $gff;
-      my($source, $x, $y ) = $coords->LocateSpan("$chrom",$exons[0],$transcript{$exons[-1]});
+      my($source, $x, $y ) = $coords->LocateSpan("CHROMOSOME_$chrom",$exons[0],$transcript{$exons[-1]});
       $transcript_span{"$gene.trans"} = [ ($exons[0],$transcript{$exons[-1]}) ];
       print ACE "Sequence \"$source\"\n";
       print ACE "Method \"transcript\"\n";
