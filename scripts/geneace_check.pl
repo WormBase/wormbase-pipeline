@@ -6,8 +6,8 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-05-02 08:49:24 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2003-05-06 09:19:09 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -23,11 +23,16 @@ use Getopt::Long;
 my ($help, $debug, $database, $class, @class, $ace, $info);
 my $maintainers = "All";
 
+# hashes for checking Person and Author merging?
+my (%L_name_F_WBP, %L_name_F_M_WBP);
+
+
 our $tace = &tace;   # tace executable path
 our ($log, $erichlog, $jahlog, $JAHmsg, $Emsg, $caltech, @CGC, $cgc);
 
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $acefile = "/wormsrv2/logs/geneace_check_ACE.$rundate.$$";
+my $curr_db = "/nfs/disk100/wormpub/DATABASES/current_DB"; 
 
 GetOptions ("h|help"        => \$help,
             "d|debug=s"     => \$debug,
@@ -37,26 +42,25 @@ GetOptions ("h|help"        => \$help,
 	    "i|info"        => \$info 
            );
 
-################################################ 
-# choose database to query: default is Geneace #
-################################################
-
-my $default_db;
-my $curr_db = "/nfs/disk100/wormpub/DATABASES/current_DB"; 
 
 
 # Display help if required
 &usage("Help") if ($help);
 
-# Specify database
+
+##########################################################
+# choose database to query: default is /wormsrv1/geneace #
+##########################################################
+
+my $default_db;
+
 if ($database eq ""){
   $default_db = "/wormsrv1/geneace"; 
-  print "\nUsing Geneace as default database\n\n";
 }
 else {
   $default_db = $database;
-  print "\nUsing $database as default database path\n\n";
 }
+print "\nUsing $default_db as default database.\n\n";
 
 
 # Use debug mode?
@@ -65,13 +69,15 @@ if($debug){
   ($maintainers = "$debug" . '\@sanger.ac.uk');
 }
 
-if ($ace){open (ACE, ">>$acefile") || die "Can't write to file!"}
+# Open output ace file if specified
+if ($ace){open (ACE, ">>$acefile") || die "Can't write to file!\n"}
 
 &create_log_files;
 
 # open a connection to geneace
 my $db = Ace->connect(-path  => $default_db,
 		      -program =>$tace) || do { print LOG "Connection failure: ",Ace->error; die();};
+
 
 ############## 
 # MAIN LOOPS #
@@ -91,7 +97,7 @@ our $sequence_errors = 0;
 ####################################################
 
 if(!@class){
-  print "Checking all classes in Geneace.....\n\n";
+  print "Checking all classes in $default_db.....\n\n";
   &process_locus_class;
   &process_laboratory_class;
   &process_allele_class;
@@ -155,14 +161,25 @@ if ($cgc ne $JAHmsg){
 
 exit(0);
 
+
+##############################################################################################
+#
+#
+#                                    geneace_check subroutines
+#
+#
+#
+##############################################################################################
+
+
+
 #######################################
 # Check misuse of Evidence in 7 classes 
 # Convert Author to Person
 #######################################
 
-my (%L_name_F_WBP, %L_name_F_M_WBP);
-
 sub check_evidence {
+
 
 my $WBPerson_F_M_L_names=<<EOF;
 Table-maker -p "/wormsrv1/geneace/wquery/WBperson_first_middle_last_names.def" quit
@@ -1290,6 +1307,15 @@ sub test_locus_for_errors{
     }
     $locus_errors++;
   }
+
+  # test for Gene AND !CGC_name AND !Non_CGC_name
+  if(defined($locus->at('Type.Gene')) && !defined($locus->at('Name.CGC_name'))
+     && !defined($locus->at('Name.Non_CGC_name'))){					       
+    $warnings .= "ERROR: $locus has a 'Gene' tag but not a 'CGC_name' or 'Non_CGC_name' tag\n";
+    $locus_errors++;
+  }
+
+
   # test for !Gene AND Gene_class 
   if(!defined($locus->at('Type.Gene')) && defined($locus->at('Name.Gene_class'))){
     $warnings .= "ERROR 5: $locus has a 'Gene_class' tag but not a 'Gene' tag\n";
