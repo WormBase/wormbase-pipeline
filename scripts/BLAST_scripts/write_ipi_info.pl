@@ -29,8 +29,8 @@ my @blastp_databases = qw( worm_pep worm_brigpep );
 
 my $ipi_hits_files = "$wormpipe_dump/ipi_hits_list_x ";
 foreach ( @blastp_databases ){ 
-  $ipi_hits_files .= "$wormpipe_dump/${_}_blastp_ipi ";
-  warn "no ipi_hits file for $_ : $wormpipe_dump/${_}_blastp_ipi\n" unless (-e "$wormpipe_dump/${_}_blastp_ipi" );
+  $ipi_hits_files .= "$wormpipe_dump/${_}_ipi_hits_list ";
+  warn "no ipi_hits file for $_ : $wormpipe_dump/${_}_ipi_hits_list\n" unless (-e "$wormpipe_dump/${_}_ipi_hits_list" );
 }
 
 $list_all = "$wormpipe_dump/ipi_hits_all" unless $list_all;
