@@ -7,7 +7,7 @@
 # Script to make ?Transcript objects
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2004-09-01 14:50:34 $
+# Last updated on: $Date: 2004-12-13 14:45:13 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -62,12 +62,7 @@ if ($debug) {
 &check_opts;
 die "no database\n" unless $database;
 
-my $log;
-if ( $test ) {
-  $log = Log_files->make_log("$database/transcript_builder.log.$$");
-} else {
-  $log = Log_files->make_build_log($debug);
-}
+my $log = Log_files->make_build_log($debug);
 
 #setup directory for transcript
 my $transcript_dir = "$database/TRANSCRIPTS";
@@ -305,7 +300,7 @@ foreach my $chrom ( @chromosomes ) {
 	    next;
 	  }
 	  # @cds_objs is structured so that + strand genes are in a block at start, then - strand
-	  last DOWN if( $downstream_CDS->strand ne $cds->strand ); 
+	  last DOWN if( $downstream_CDS->strand ne $cds->strand );
 
 	  # check unmapped cdna ( $CDNA ) lies within 1kb of CDS that paired read maps to ( $cds ) and before $downstream_CDS
 	
@@ -316,6 +311,9 @@ foreach my $chrom ( @chromosomes ) {
 	    $CDNA->mapped($cds);
 	    last;
 	  }
+	}
+	else {
+	  last DOWN;
 	}
       }
     }
