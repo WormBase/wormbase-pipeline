@@ -1,4 +1,13 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/bin/perl5.8.0 -w
+#
+# transcript_builder.pl                           
+# 
+# by Anthony Rogers                       
+#
+# Script to make ?Transcript objects
+#
+# Last updated by: $Author: krb $     
+# Last updated on: $Date: 2003-09-19 14:06:19 $  
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -12,29 +21,26 @@ my $rundate = `date +%y%m%d`; chomp $rundate;
 
 my $log = &make_build_log; 
 
-#open(FH, ">/wormsrv2/logs/transcript_builder_$rundate") || die $!;
-#my $log = (*FH);
-
 my ($debug, $help, $verbose, $really_verbose, $est, $count, $report, $gap, $transcript, $gff, $show_matches, $database, $overlap_check, $load_matches, $load_transcripts, $build);
 
 $gap = 5; # $gap is the gap allowed in an EST alignment before it is considered a "real" intron
 
-GetOptions ( "debug" => \$debug,
-	     "help" => \$help,
-	     "verbose" => \$verbose,
-	     "really_verbose" => \$really_verbose,
-	     "est:s" => \$est,
-	     "count" => \$count,
-	     "report" => \$report,
-	     "gap:s"  => \$gap,
-	     "transcript" => \$transcript,
-	     "gff:s"    => \$gff,
-	     "show_matches"    => \$show_matches,
-	     "database:s"   => \$database,
-	     "overlap"      => \$overlap_check,
+GetOptions ( "debug"            => \$debug,
+	     "help"             => \$help,
+	     "verbose"          => \$verbose,
+	     "really_verbose"   => \$really_verbose,
+	     "est:s"            => \$est,
+	     "count"            => \$count,
+	     "report"           => \$report,
+	     "gap:s"            => \$gap,
+	     "transcript"       => \$transcript,
+	     "gff:s"            => \$gff,
+	     "show_matches"     => \$show_matches,
+	     "database:s"       => \$database,
+	     "overlap"          => \$overlap_check,
 	     "load_transcripts" => \$load_transcripts,
-	     "load_matches"    => \$load_matches,
-	     "build"           => \$build
+	     "load_matches"     => \$load_matches,
+	     "build"            => \$build
 	   ) ;
 
 &check_opts; # if -build set, this will set all relevant opts to works as if in build. Will NOT overwrite the others (eg -count)
@@ -233,7 +239,7 @@ foreach my $chrom ( @chromosomes ) {
     print MATCHES Data::Dumper->Dump([\%gene2cdnas]);
     close MATCHES;
 
-    open (CDNAS, ">$database/chromosome${chrom}_matching_cDNA.ace") or die "output ace for chromosome $chrom\n";
+    open (CDNAS, ">$database/TRANSCRIPTS/chromosome${chrom}_matching_cDNA.ace") or die "output ace for chromosome $chrom\n";
     foreach my $gene ( keys %gene2cdnas ) {
       print CDNAS "\nSequence : \"$gene\"\n";
       foreach my $cdna ( @{$gene2cdnas{$gene}} ) {
@@ -251,17 +257,17 @@ foreach my $chrom ( @chromosomes ) {
 
 if( $load_transcripts ) {
   print $log "loading transcripts file to $database\n";
-  system("cat $database/TRANSCRIPTS/ranscripts_*.ace > $database/TRANSCRIPTS/transcripts_all.ace");
+  system("cat $database/TRANSCRIPTS/transcripts_*.ace > $database/TRANSCRIPTS/all_transcripts.ace");
   open(TACE, " | $tace -tsuser transcripts $database |") or warn "could open $database to load transcript file\n";
-  print TACE "pparse $database/TRANSCRIPTS/transcripts_all.ace\nsave\nquit";
+  print TACE "pparse $database/TRANSCRIPTS/all_transcripts.ace\nsave\nquit";
   close TACE;
 }
 
 if( $load_matches ) {
   print $log "loading matching_cDNA file to $database\n";
-  system("cat $database/TRANSCRIPTS/chromosome*_matching_cDNA.ace > $database/TRANSCRIPTS/matching_cDNA_all.ace");
+  system("cat $database/TRANSCRIPTS/chromosome*_matching_cDNA.ace > $database/TRANSCRIPTS/all_matching_cDNA.ace");
   open(TACE, " | $tace -tsuser matching_cDNA $database |") or warn "could open $database to load matching_cDNA file\n";
-  print TACE "pparse $database/TRANSCRIPTS/matching_cDNA_all.ace\nsave\nquit";
+  print TACE "pparse $database/TRANSCRIPTS/all_matching_cDNA.ace\nsave\nquit";
   close TACE;
 }
   
