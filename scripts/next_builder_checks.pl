@@ -8,7 +8,7 @@
 # build to check the current build
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-02-26 17:15:21 $      
+# Last updated on: $Date: 2003-02-27 15:43:01 $      
 
 
 $|=1;
@@ -81,6 +81,11 @@ print LOG "which are slightly out of sync.)\n\n";
 
 print LOG "3) Check /wormsrv2/autoace/CHROMOSOMES/composition.all - are there any non-ATCGN\n";
 print LOG "characters\n\n";
+
+
+print LOG "4) Check that the latest WormPep proteins have proper protein and motif homologies\n";
+print LOG "This has been a problem in some builds where all new WormPep proteins don't get any\n";
+print LOG "BLAST analysis\n\n";
 
 print LOG "\nThat's all...for now!  If you are satisfied the build is ok, please inform the person\n";
 print LOG "building the database. Please continue to add to this list as appropriate\n";
