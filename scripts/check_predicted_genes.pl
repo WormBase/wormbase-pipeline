@@ -21,7 +21,7 @@
 # 10) Presence of 'Source' tag
 # 11) Inconsistencies in exon coordinates, i.e. where adjacent exons might have overlapping 
 #     coordinates
-
+# 12) Checks for presence of 'From_laboratory' tag
 
 use Ace;
 use IO::Handle;
@@ -63,10 +63,18 @@ my $db = Ace->connect(-path=>$db_path, -program=>$tace) || die "Couldn't connect
 #my $verbose = 'ON';
 my $verbose = 'OFF';
 
-# set up log file for output, use specified command line argument if it exists or write to screen
+# set up log file for output, use specified command line argument where present or write to screen
+# if log file specified and it exists, then append.  Else write to new file.
+
 if(defined($ARGV[1])){
   my $log = "$ARGV[1]";
-  open(LOG,">$log");  
+
+  if(-e $log){
+    open(LOG,">>$log");  
+  }
+  else{
+    open(LOG,">$log");
+  }
   # make LOG the default location for 'print' commands
   LOG->autoflush();
   select(LOG);
@@ -99,6 +107,7 @@ foreach my $gene (@predicted_genes){
 
   # get gene
   my $gene_object = $db->fetch(Sequence=>$gene);
+
   
   # check that 'Source' tag is present and if so then grab parent sequence details
   my $source = $gene_object->Source;
@@ -107,7 +116,9 @@ foreach my $gene (@predicted_genes){
     next CHECK_GENE;
   }
   my $parent = $db->fetch(Sequence=>$source);
-
+  
+  # need to fetch subsequence coordinates from source and compare to parent length
+  # to see if any exon coordinate exceed parent length
 
 
   # check to see if any predicted gene belongs to superlink object...they shouldn't
@@ -132,9 +143,11 @@ foreach my $gene (@predicted_genes){
       $max_coordinate = $exon_coord2[$i] if ($exon_coord2[$i] > $max_coordinate);
       print "Gene error - $gene: exon inconsistency, overlapping exons?\n" if (($exon_coord1[$i] < $exon_coord2[$i-1]) && ($i>0));
     }
-    if ($max_coordinate >$parent_length){
-      print "Gene error - $gene: largest exon coordinate ($max_coordinate) exceeds length of parent ($parent = $parent_length bp)\n" 
-    }
+
+# Error - doesn't work!
+#    if ($max_coordinate >$parent_length){
+#      print "Gene error - $gene: largest exon coordinate ($max_coordinate) exceeds length of parent ($parent = $parent_length bp)\n" 
+#    }
   }
 
   
