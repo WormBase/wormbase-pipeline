@@ -12,6 +12,7 @@
 
 use strict;
 use Ace;
+use lib "/wormsrv2/scripts/";
 use Wormbase;
 use Getopt::Std;
 use IO::Handle;
