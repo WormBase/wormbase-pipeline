@@ -7,8 +7,8 @@
 #
 # dl
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-01-21 10:30:42 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2004-02-27 17:14:13 $
 
 use lib "/wormsrv2/scripts/";
 use Wormbase;
@@ -19,6 +19,7 @@ use Data::Dumper;
 my %acc2clone = &FetchData('acc2clone');
 my %gene2CE   = &FetchData('gene2CE');
 my %Ip2Go;
+our %swall;
 
 # get the InterPro => GOterm mapping ( space separated ie 'IPR004794' => 'GO:0008703 GO:0008835 GO:0009231 ')
 
@@ -53,6 +54,11 @@ unless ($no_go) {
   system("make_Interpro2GO_mapping.pl") and die "cant update the interpro to GO term mappings\n";
   %Ip2Go = &FetchData('interpro2go');
 }
+
+# get swall data
+
+&getswalldata;
+
 # Display help if required
 &usage("Help") if ($help);
 
@@ -69,18 +75,11 @@ my @f = "";
 my ($dbxref_ac,$dbxref_id,$dbxref_db);
 
 # File format for protein_ID file
-#
 # <acc>          <ver>    <proteinID>   <ver>     <checksum>     <gene_name>  <swall> <standard_name>
-#
 # non-genome entry (e.g. from a mRNA) 
-#
 # AB000913        2       BAA21715        1       2898126014      unc-14      O15940   
-#
 # genome entry
-#
 # AC006633        10      AAK68374        1       3313183671      F35B3.3     Q966K1   F35B3.3
-
-
 
 open (FILE, "<$file") || die "Can't open the protein_ID file\n";
 while (<FILE>) {
@@ -92,28 +91,28 @@ while (<FILE>) {
 
     # discard non genome_sequence entries
     next unless (defined $acc2clone{$f[0]});
-
+    
     my @interpro = "";
-
-    # get database, id and acc and interpro hits from getz call
-    ($dbxref_ac,$dbxref_id,$dbxref_db,@interpro) = &get_from_protein_id($f[2]);
 
     # standard name
     print "$f[7]\t" if ($verbose);
     my $protein = $gene2CE{$f[7]};                      # incremented array slice to handle new SWALL column
     
-    if ($dbxref_ac ne $f[6]) { 
-	print "ERROR:  mismatch between getz and EBI for $protein [EBI:$f[6]|GETZ:$dbxref_ac)\n";
+    if ($swall{$f[2]}{Accession} ne $f[6]) { 
+	print "ERROR:  mismatch between getz and EBI for $protein [EBI:$f[6]|GETZ:$swall{$f[2]}{Accession})\n";
     }
 
     if ($protein) {
 	print "$protein" if ($verbose);
 	print OUT "\nProtein : WP:$protein\n";
-	print OUT "Database $databases{$dbxref_db} ",$db_ids_acc{$dbxref_db."_id"}," $dbxref_id\n" if($dbxref_id and(  "$dbxref_id" ne "$dbxref_ac"));
-	print OUT "Database $databases{$dbxref_db} ",$db_ids_acc{$dbxref_db."_ac"}," $dbxref_ac\n";
-	foreach (@interpro) {
-	  print OUT "Motif_homol\t\"INTERPRO:$_\"\n"
-	}
+	print OUT "Database $databases{ $swall{$f[2]}{Database} } ",$db_ids_acc{ $swall{$f[2]}{Database}."_id" }," $swall{$f[2]}{Identifier}\n"
+ 	     if ( ($swall{$f[2]}{Identifier}) and  ($swall{$f[2]}{Identifier} ne $swall{$f[2]}{Accession}) );
+	print OUT "Database $databases{ $swall{$f[2]}{Database} } ",$db_ids_acc{ $swall{$f[2]}{Database}."_ac" }," $swall{$f[2]}{Accession}\n";
+	
+	foreach (@{$swall{$f[2]}{Interpro}}) {
+	    next if ($_ eq "");
+	    print OUT "Motif_homol\t\"INTERPRO:$_\"\n"
+	    }
     }
     else {
 	print "ERROR: gene $f[7] has no protein (has common_data been updated ?)\n";
@@ -122,17 +121,18 @@ while (<FILE>) {
     print "\n" if ($verbose);
     
     print OUT "\nCDS : \"$f[7]\"\n";
-    print OUT "Database $databases{$dbxref_db} ",$db_ids_acc{$dbxref_db."_ac"}," $dbxref_ac\n";
-    print OUT "Database $databases{$dbxref_db} ",$db_ids_acc{$dbxref_db."_id"}," $dbxref_id\n";
+    print OUT "Database $databases{ $swall{$f[2]}{Database} } ",$db_ids_acc{ $swall{$f[2]}{Database}."_id" }," $swall{$f[2]}{Identifier}\n"
+	 	     if ( ($swall{$f[2]}{Identifier}) and  ($swall{$f[2]}{Identifier} ne $swall{$f[2]}{Accession}) );
+    print OUT "Database $databases{ $swall{$f[2]}{Database} } ",$db_ids_acc{ $swall{$f[2]}{Database}."_ac" }," $swall{$f[2]}{Accession}\n";
     print OUT "Protein_id \"$acc2clone{$f[0]}\" $f[2] $f[3]\n";
     
     # assign GO terms based on InterPro Motifs
     unless ($no_go) {
-	foreach my $ip (@interpro) {
+	foreach my $ip (@{$swall{$f[2]}{Interpro}}) {
 	  if( exists $Ip2Go{$ip} ) {
 	    my @GOterms = split(/\s/,$Ip2Go{$ip});
 	    foreach my $go (@GOterms) {
-	      print OUT "GO_term\t\"$go\" \"IEA\"\n"
+	      print OUT "GO_term\t\"$go\" \"IEA\" Inferred_automatically\n"
 	    }
 	  }
 	}
@@ -147,30 +147,89 @@ exit(0);
 # Subroutines
 ##############################################################
 
-sub get_from_protein_id {
+
+sub getswalldata {
     
-    my $protein_id = shift;
+# ID   1433_CAEEL     STANDARD;      PRT;   248 AA. 
+# AC   P41932; Q21537; 
+# DR   EMBL; U05038; AAA61872.1; -.
+# DR   EMBL; Z73910; CAA98138.1; -.
+# DR   PIR; JC2581; JC2581.
+# DR   PIR; T23759; T23759.
+# DR   HSSP; P29312; 1A38.
+# DR   WormPep; M117.2; CE06200.
+# DR   InterPro; IPR000308; 14-3-3.
+# DR   Pfam; PF00244; 14-3-3; 1.
+# DR   PRINTS; PR00305; 1433ZETA.
+# DR   SMART; SM00101; 14_3_3; 1.
+# DR   PROSITE; PS00796; 1433_1; 1.
+# DR   PROSITE; PS00797; 1433_2; 1. 
+
     my $acc; 
     my $id; 
     my $db;
+    my $text;
     my @interpro;
+    my @proteinID;
 
-#  cbi1c[hrh]53: getz "[swall-proteinID:CAB54233]"
+    $/ = "ID";
 
-#   open (LOOK, "/usr/local/pubseq/bin/pfetch -F $protein_id | grep -E '^ID|^AC|InterPro' |");
-    open (LOOK, "/usr/local/pubseq/bin/getzc -e \"[SWALL-proteinID:$protein_id]\" | grep -E '^ID|^AC|InterPro' |");
+#    open (LOOK, "/usr/local/pubseq/bin/getzc -f 'id acc dbxref'  \"[SWALL-organism:Caenorhabditis elegans]\" |");
+    open (LOOK, "</nfs/disk100/wormpub2/dan/swall_all.txt");
     while (<LOOK>) {
-	($id  = $1) if (/^ID\s+(\S+)/);                           # ID   Q95YB2      PRELIMINARY;      PRT;   409 AA.
-	($acc = $1) if (/^AC\s+(\S+);/);                          # AC   Q95YB2;
-	push (@interpro, $1) if(/^DR\s+InterPro;\s(\w+)/ );       # DR   InterPro; IPR006089; Acyl-CoA_dh.
+	$text = "ID" . $_;         # add the leading 'ID'
+	chop $text;                # remove the trailing 'ID'
+	chop $text;
+
+	next if ($text eq "ID");     # shortcircuit loop for empty set at beginning
+
+#	print "\n$text\n";
+
+	if ($text =~ /ID\s+(\S+)/)  {                                        # ID  Q95YB2  PRELIMINARY;  PRT;  409 AA.
+	    $id = $1;
+#	    print "assign ID\n";
+	}
+	if ($text =~ /AC\s+(\S+);/) {                                        # AC  Q95YB2;
+	    $acc = $1;
+	    if ((length ($acc)) == 8) {	$db = "TN"; }
+	    elsif ($id =~ /_CAEEL/)   { $db = "SW"; }
+	    else                      {	$db = "TR"; }
+#	    print "assign AC & DB\n";
+	}
+	while ($text =~ /DR\s+EMBL;\s\S+\s(\S+)\.\d+; \-\./g) {            # DR   EMBL; U05038; AAA61872.1; -.
+	    push (@proteinID, $1);
+#	    print "assign proteinID\n";
+	}
+	while ($text =~ /DR\s+InterPro;\s(\w+)/g ) {                      # DR  InterPro; IPR006089; Acyl-CoA_dh.
+	    push (@interpro, $1);
+#	    print "assign InterPro\n";
+	}
+	
+	foreach my $i (@proteinID) {
+	    next if ($i eq "");
+	    $swall{$i}{Identifier} = $id;
+	    $swall{$i}{Accession}  = $acc;
+	    $swall{$i}{Database}   = $db;
+	    foreach my $j (@interpro) {
+		push (@{$swall{$i}{Interpro}},$j);
+	    }
+	    
+	    print "// Assign to proteinID $i [ID:$id\tAC:$acc\tDB:$db\tInterPro: " . (join ' ',@interpro) . "]\n";
+	}
+
+	@proteinID = "";
+	@interpro = "";
+	$acc = "";
+	$id  = "";
+	$text = "";
+
     }
-    close LOOK;
-    
-    if ((length ($acc)) == 8) {	$db = "TN"; }
-    elsif ($id =~ /_CAEEL/)   { $db = "SW"; }
-    else                      {	$db = "TR"; }
-    return ($acc,$id,$db,@interpro);
+
+    $/ = "\n";
+
 }
+
+
 
 
 ##########################################
