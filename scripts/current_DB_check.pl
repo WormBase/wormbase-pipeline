@@ -8,7 +8,7 @@
 # to look for bogus sequence entries
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-08-02 16:12:51 $
+# Last updated on: $Date: 2004-10-22 15:43:22 $
 
 
 use strict;
@@ -94,49 +94,48 @@ my $stlouis_counter = 0;
 my $all_counter = 0;
 
 
-
-# Checks for CDS connected to multiple loci
-print "\nChecking for CDSs connected to multiple loci\n" if ($verbose);
-&find_multiple_loci;
-
-# Search everything else, one sequence at a time
-print "\nChecking CDS objects\n" if ($verbose);
-&process_sequences;
-
 # Check out-of-date gene id
 print "\nChecking for connections to non-live Gene objects\n" if ($verbose);
 &find_out_of_date_gene_id;
 
+# look for CDS, Pseudogene, and Transcript objects created by XREF
+&process_genes;
+
+
+
 # Count problems and print output
 
-foreach my $i (@other){
-  print ALL_LOG "Other - $i\n";
-  print SANGER_LOG "Other - $i\n";
-  print "Other - $i\n" if $verbose;
+foreach (@gene_id_error){
+  print ALL_LOG $_;
+  print $_ if $verbose;
   $all_counter++;
-  $sanger_counter++;
+  if ($_ =~ /^csh/ )         { $cshl_counter++;    print CSHL_LOG $_ }
+  if ($_ =~ /^camace|^misc/ ){ $sanger_counter++;  print SANGER_LOG $_ }
+  if ($_ =~ /^caltech/ )     { $caltech_counter++; print CALTECH_LOG $_ }
+  if ($_ =~ /^stlace/ )      { $stlouis_counter++; print STLOUIS_LOG $_ }
 }
+
 
 foreach my $j (keys(%problems)){
   foreach my $k (keys(%{$problems{$j}})){
-    print ALL_LOG "$j $k @{${$problems{$j}}{$k}}\n";
+    print ALL_LOG "ERROR: $j $k @{${$problems{$j}}{$k}}\n";
     if ($j ne "caltech" && $j ne "csh" && $j ne "stlace" && $j ne "brigace"){
-      print SANGER_LOG "$j $k @{${$problems{$j}}{$k}}\n";
+      print SANGER_LOG "ERROR: $j $k @{${$problems{$j}}{$k}}\n";
       $sanger_counter++;
       $all_counter++;
     }
     if ($j eq "csh"){
-      print CSHL_LOG "$k @{${$problems{$j}}{$k}}\n";
+      print CSHL_LOG "ERROR: $k @{${$problems{$j}}{$k}}\n";
       $cshl_counter++;
       $all_counter++;
     }
     if ($j eq "caltech"){
-      print CALTECH_LOG "$k @{${$problems{$j}}{$k}}\n";
+      print CALTECH_LOG "ERROR: $k @{${$problems{$j}}{$k}}\n";
       $caltech_counter++;
       $all_counter++;
     }
     if ($j eq "stlace" && $j eq "brigace"){
-      print STLOUIS_LOG "$j $k @{${$problems{$j}}{$k}}\n";
+      print STLOUIS_LOG "ERROR: $j $k @{${$problems{$j}}{$k}}\n";
       $stlouis_counter++;
       $all_counter++;
     }
@@ -144,15 +143,15 @@ foreach my $j (keys(%problems)){
   }
 }
 
-foreach (@gene_id_error){
-  print ALL_LOG $_;
-  print $_ if $verbose;
+foreach my $i (@other){
+  print ALL_LOG "ERROR: Other - $i\n";
+  print SANGER_LOG "ERROR: Other - $i\n";
+  print "Other - $i\n" if $verbose;
   $all_counter++;
-  if ($_ =~ /^csh/ ){ $cshl_counter++; print CSHL_LOG $_ }
-  if ($_ =~ /^camace|^misc/ ){ $sanger_counter++; print SANGER_LOG $_ }
-  if ($_ =~ /^caltech/ ){ $caltech_counter++; print CALTECH_LOG $_ }
-  if ($_ =~ /^stlace/ ){ $stlouis_counter++; print STLOUIS_LOG $_ }
+  $sanger_counter++;
 }
+
+
 
 print "\n$all_counter problems found\n" if $verbose;
 
@@ -179,8 +178,8 @@ close(STLOUIS_LOG);
 my $all = "wormbase-dev\@wormbase.org";
 
 my $caltech = "wormbase\@its.caltech.edu, krb\@sanger.ac.uk";
-my $sanger = "wormbase\@sanger.ac.uk";
-my $cshl = "stein\@cshl.org, harris\@cshl.org, chenn\@cshl.edu, krb\@sanger.ac.uk";
+my $sanger  = "wormbase\@sanger.ac.uk";
+my $cshl    = "stein\@cshl.org, harris\@cshl.org, chenn\@cshl.edu, krb\@sanger.ac.uk";
 my $stlouis = "dblasiar\@watson.wustl.edu, jspieth\@watson.wustl.edu, krb\@sanger.ac.uk";
 
 if($debug){
@@ -203,241 +202,244 @@ exit(0);
 #####################################################################
 
 
-##############################################################
-# Main loop to step through each sequence object which is a
-# child of a genomic clone sequence
-##############################################################
+sub process_genes{
 
-sub process_sequences{
+  # loop through each class  
+  my @classes_to_check = ("CDS","Transcript","Pseudogene");
 
-  my @genome_seqs = $db->fetch(-class => 'Genome_sequence',
-			       -name  => '*');
-  my $class = "CDS";
+  foreach my $class (@classes_to_check){
+    print "\n\n\nCHECKING $class CLASS\n\n\n" if ($verbose);
 
-  # loop through each subseq-style name
+    my @genes = $db->fetch(-query=>"Find $class WHERE !Method");
 
-  foreach my $seq (@genome_seqs){
 
-    my @CDSs = $db->fetch(-class=>'CDS',-name=>"$seq.*");
+    foreach my $gene (@genes){
+      my $category = 0;
 
-    foreach my $CDS (@CDSs){
-      our $category = 0;
-
+      print "\n\n*$gene*\n" if ($verbose);
       # only look for some errors for CDS objects with no Method (most likely to be errant objects)
-      if(!defined($CDS->at('Method'))){  
-	if(defined($CDS->at('DB_info.Database'))){
+      if(!defined($gene->at('Method'))){  
+	if(defined($gene->at('DB_info.Database'))){
 	  my $tag = "Database";
-	  my $timestamp = &get_timestamp($class, $CDS, $tag);
-	  my $comment = &splice_variant_check($CDS);
-	  $problems{$timestamp}{$class.":".$CDS} = ["\"$tag tag is creating this sequence. $comment\""];
-	  print "$timestamp $class:$CDS \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  my $timestamp = &get_timestamp($class, $gene, $tag);
+	  my $comment = &check_fate_of_gene($gene,$class);
+	  $problems{$timestamp}{$class.":".$gene} = ["\'$tag\' tag is creating this sequence. $comment"];
+	  print "$timestamp $class:$gene \'$tag\' tag is creating this sequence. $comment\n" if $verbose;
 	  $category = 1;
 	}
-	if(defined($CDS->at('Visible.RNAi_result'))){
+	if(defined($gene->at('Visible.RNAi_result'))){
 	  my $tag = "RNAi_result";
-	  my $timestamp = &get_timestamp($class, $CDS, $tag);	
-	  my $comment = &splice_variant_check($CDS);
-	  $problems{$timestamp}{$class.":".$CDS} = ["\"$tag tag is creating this sequence. $comment\""];
-	  print "$timestamp $class:$CDS \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  my $timestamp = &get_timestamp($class, $gene, $tag);	
+	  my $comment = &check_fate_of_gene($gene,$class);
+	  $problems{$timestamp}{$class.":".$gene} = ["\'$tag\' tag is creating this sequence. $comment"];
+	  print "$timestamp $class:$gene \'$tag\' tag is creating this sequence. $comment\n" if $verbose;
 	  $category = 1;
 	}
-	if(defined($CDS->at('Visible.Gene'))){
+	if(defined($gene->at('Visible.Gene'))){
 	  my $tag = "Gene";
-	  my $timestamp = &get_timestamp($class, $CDS, $tag);
-	  my $comment = &splice_variant_check($CDS);
-	  $problems{$timestamp}{$class.":".$CDS} = ["\"$tag tag is creating this sequence. $comment\""];
-	  print "$timestamp $class:$CDS \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  my $timestamp = &get_timestamp($class, $gene, $tag);
+	  my $comment = &check_fate_of_gene($gene,$class);
+	  $problems{$timestamp}{$class.":".$gene} = ["\'$tag\' tag is creating this sequence. $comment"];
+	  print "$timestamp $class:$gene \'$tag\' tag is creating this sequence. $comment\n" if $verbose;
 	  $category = 1;
 	}
-	if(defined($CDS->at('Visible.Contained_in_operon'))){
+	if(defined($gene->at('Visible.Contained_in_operon'))){
 	  my $tag = "Contained_in_operon";
-	  my $timestamp = &get_timestamp($class, $CDS, $tag);
-	  my $comment = &splice_variant_check($CDS);
-	  $problems{$timestamp}{$class.":".$CDS} = ["\"$tag tag is creating this sequence. $comment\""];
-	  print "$timestamp $class:$CDS \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  my $timestamp = &get_timestamp($class, $gene, $tag);
+	  my $comment = &check_fate_of_gene($gene,$class);
+	  $problems{$timestamp}{$class.":".$gene} = ["\'$tag\' tag is creating this sequence. $comment"];
+	  print "$timestamp $class:$gene \'$tag\' tag is creating this sequence. $comment\n" if $verbose;
 	  $category = 1;
 	}
-	if(defined($CDS->at('Allele'))){
+	if(defined($gene->at('Allele'))){
 	  my $tag = "Allele";
-	  my $timestamp = &get_timestamp($class, $CDS, $tag);
-	  my $comment = &splice_variant_check($CDS);
-	  $problems{$timestamp}{$class.":".$CDS} = ["\"$tag tag is creating this sequence. $comment\""];
-	  print "$timestamp $class:$CDS \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  my $timestamp = &get_timestamp($class, $gene, $tag);
+	  my $comment = &check_fate_of_gene($gene,$class);
+	  $problems{$timestamp}{$class.":".$gene} = ["\'$tag\' tag is creating this sequence. $comment"];
+	  print "$timestamp $class:$gene \'$tag\' tag is creating this sequence. $comment\n" if $verbose;
 	  $category = 1;
 	}
-	if(defined($CDS->at('Visible.Matching_cDNA'))){
+	if(defined($gene->at('Visible.Matching_cDNA'))){
 	  my $tag = "Matching_cDNA";
-	  my $timestamp = &get_timestamp($class, $CDS, $tag);
-	  my $comment = &splice_variant_check($CDS);
-	  $problems{$timestamp}{$class.":".$CDS} = ["\"$tag tag is creating this sequence. $comment\""];
-	  print "$timestamp $class:$CDS \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  my $timestamp = &get_timestamp($class, $gene, $tag);
+	  my $comment = &check_fate_of_gene($gene,$class);
+	  $problems{$timestamp}{$class.":".$gene} = ["\'$tag\' tag is creating this sequence. $comment"];
+	  print "$timestamp $class:$gene \'$tag\' tag is creating this sequence. $comment\n" if $verbose;
 	  $category = 1;
 	}
-	if(defined($CDS->at('Visible.Reference'))){
+	if(defined($gene->at('Visible.Reference'))){
 	  my $tag = "Reference";
-	  my $timestamp = &get_timestamp($class, $CDS, $tag);
-	  my $comment = &splice_variant_check($CDS);
-	  $problems{$timestamp}{$class.":".$CDS} = ["\"$tag tag is creating this sequence. $comment\""];
-	  print "$timestamp $class:$CDS \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  my $timestamp = &get_timestamp($class, $gene, $tag);
+	  my $comment = &check_fate_of_gene($gene,$class);
+	  $problems{$timestamp}{$class.":".$gene} = ["\'$tag\' tag is creating this sequence. $comment"];
+	  print "$timestamp $class:$gene \'$tag\' tag is creating this sequence. $comment\n" if $verbose;
 	  $category = 1;
 	}
-	if(defined($CDS->at('Visible.Paired_read'))){
+	if(defined($gene->at('Visible.Paired_read'))){
 	  my $tag = "Paired_read";
-	  my $timestamp = &get_timestamp($class, $CDS, $tag);
-	  my $comment = &splice_variant_check($CDS);
-	  $problems{$timestamp}{$class.":".$CDS} = ["\"$tag tag is creating this sequence. $comment\""];
-	  print "$timestamp $class:$CDS \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
-	$category = 1;
+	  my $timestamp = &get_timestamp($class, $gene, $tag);
+	  my $comment = &check_fate_of_gene($gene,$class);
+	  $problems{$timestamp}{$class.":".$gene} = ["\'$tag\' tag is creating this sequence. $comment"];
+	  print "$timestamp $class:$gene \'$tag\' tag is creating this sequence. $comment\n" if $verbose;
+	  $category = 1;
 	}
-	if(defined($CDS->at('DNA'))){
+	if(defined($gene->at('DNA'))){
 	  my $tag = "DNA";
-	  my $timestamp = &get_timestamp($class, $CDS, $tag);
-	  my $comment = &splice_variant_check($CDS);
-	  $problems{$timestamp}{$class.":".$CDS} = ["\"$tag tag is creating this sequence. $comment\""];
-	  print "$timestamp $class:$CDS \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  my $timestamp = &get_timestamp($class, $gene, $tag);
+	  my $comment = &check_fate_of_gene($gene,$class);
+	  $problems{$timestamp}{$class.":".$gene} = ["\'$tag\' tag is creating this sequence. $comment"];
+	  print "$timestamp $class:$gene \'$tag\' tag is creating this sequence. $comment\n" if $verbose;
 	  $category = 1;
 	}
-	if(defined($CDS->at('Visible.Remark'))){
+	if(defined($gene->at('Visible.Remark'))){
 	  my $tag = "Remark";
-	  my $timestamp = &get_timestamp($class, $CDS, $tag);
-	  my $comment = &splice_variant_check($CDS);
-	  $problems{$timestamp}{$class.":".$CDS} = ["\"$tag tag is creating this sequence. $comment\""];
-	  print "$timestamp $class:$CDS \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  my $timestamp = &get_timestamp($class, $gene, $tag);
+	  my $comment = &check_fate_of_gene($gene,$class);
+	  $problems{$timestamp}{$class.":".$gene} = ["\'$tag\' tag is creating this sequence. $comment"];
+	  print "$timestamp $class:$gene \'$tag\' tag is creating this sequence. $comment\n" if $verbose;
 	  $category = 1;
 	}
-	if(defined($CDS->at('Visible.Expr_pattern'))){
+	if(defined($gene->at('Visible.Expr_pattern'))){
 	  my $tag = "Expr_pattern";
-	  my $timestamp = &get_timestamp($class, $CDS, $tag);
-	  my $comment = &splice_variant_check($CDS);
-	  $problems{$timestamp}{$class.":".$CDS} = ["\"$tag tag is creating this sequence. $comment\""];
-	  print "$timestamp $class:$CDS \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  my $timestamp = &get_timestamp($class, $gene, $tag);
+	  my $comment = &check_fate_of_gene($gene,$class);
+	  $problems{$timestamp}{$class.":".$gene} = ["\'$tag\' tag is creating this sequence. $comment"];
+	  print "$timestamp $class:$gene \'$tag\' tag is creating this sequence. $comment\n" if $verbose;
 	  $category = 1;
 	}
-	if(defined($CDS->at('Visible.Provisional_description'))){
+	if(defined($gene->at('Visible.Provisional_description'))){
 	  my $tag = "Provisional_description";
-	  my $timestamp = &get_timestamp($class, $CDS, $tag);
-	  my $comment = &splice_variant_check($CDS);
-	  $problems{$timestamp}{$class.":".$CDS} = ["\"$tag tag is creating this sequence. $comment\""];
-	  print "$timestamp $class:$CDS \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  my $timestamp = &get_timestamp($class, $gene, $tag);
+	  my $comment = &check_fate_of_gene($gene,$class);
+	  $problems{$timestamp}{$class.":".$gene} = ["\'$tag\' tag is creating this sequence. $comment"];
+	  print "$timestamp $class:$gene \'$tag\' tag is creating this sequence. $comment\n" if $verbose;
 	  $category = 1;
 	}
-	if(defined($CDS->at('Visible.Detailed_description'))){
+	if(defined($gene->at('Visible.Detailed_description'))){
 	  my $tag = "Detailed_description";
-	  my $timestamp = &get_timestamp($class, $CDS, $tag);
-	  my $comment = &splice_variant_check($CDS);
-	  $problems{$timestamp}{$class.":".$CDS} = ["\"$tag tag is creating this sequence. $comment\""];
-	  print "$timestamp $class:$CDS \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  my $timestamp = &get_timestamp($class, $gene, $tag);
+	  my $comment = &check_fate_of_gene($gene,$class);
+	  $problems{$timestamp}{$class.":".$gene} = ["\'$tag\' tag is creating this sequence. $comment"];
+	  print "$timestamp $class:$gene \'$tag\' tag is creating this sequence. $comment\n" if $verbose;
 	  $category = 1;
 	}
-	if(defined($CDS->at('Visible.Concise_description'))){
+	if(defined($gene->at('Visible.Concise_description'))){
 	  my $tag = "Concise_description";
-	  my $timestamp = &get_timestamp($class, $CDS, $tag);
-	  my $comment = &splice_variant_check($CDS);
-	  $problems{$timestamp}{$class.":".$CDS} = ["\"$tag tag is creating this sequence. $comment\""];
-	  print "$timestamp $class:$CDS \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  my $timestamp = &get_timestamp($class, $gene, $tag);
+	  my $comment = &check_fate_of_gene($gene,$class);
+	  $problems{$timestamp}{$class.":".$gene} = ["\'$tag\' tag is creating this sequence. $comment"];
+	  print "$timestamp $class:$gene \'$tag\' tag is creating this sequence. $comment\n" if $verbose;
 	  $category = 1;
 	}
-	if(defined($CDS->at('Visible.Corresponding_protein'))){
+	if(defined($gene->at('Visible.Corresponding_protein'))){
 	  my $tag = "Corresponding_protein";
-	  my $timestamp = &get_timestamp($class, $CDS, $tag);
-	  my $comment = &splice_variant_check($CDS);
-	  $problems{$timestamp}{$class.":".$CDS} = ["\"$tag tag is creating this sequence. $comment\""];
-	  print "$timestamp $class:$CDS \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  my $timestamp = &get_timestamp($class, $gene, $tag);
+	  my $comment = &check_fate_of_gene($gene,$class);
+	  $problems{$timestamp}{$class.":".$gene} = ["\'$tag\' tag is creating this sequence. $comment"];
+	  print "$timestamp $class:$gene \'$tag\' tag is creating this sequence. $comment\n" if $verbose;
 	  $category = 1;
 	}
-	if(defined($CDS->at('Visible.GO_term'))){
+	if(defined($gene->at('Visible.GO_term'))){
 	  my $tag = "GO_term";
-	  my $timestamp = &get_timestamp($class, $CDS, $tag);
-	  my $comment = &splice_variant_check($CDS);
-	  $problems{$timestamp}{$class.":".$CDS} = ["\"$tag tag is creating this sequence. $comment\""];
-	  print "$timestamp $class:$CDS \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  my $timestamp = &get_timestamp($class, $gene, $tag);
+	  my $comment = &check_fate_of_gene($gene,$class);
+	  $problems{$timestamp}{$class.":".$gene} = ["\'$tag\' tag is creating this sequence. $comment"];
+	  print "$timestamp $class:$gene \'$tag\' tag is creating this sequence. $comment\n" if $verbose;
 	  $category = 1;
 	}
-	if(defined($CDS->at('Properties'))){
+	if(defined($gene->at('Properties'))){
 	  my $tag = "Properties";
-	  my $timestamp = &get_timestamp($class, $CDS, $tag);
-	  my $comment = &splice_variant_check($CDS);
-	  $problems{$timestamp}{$class.":".$CDS} = ["\"$tag tag is creating this sequence. $comment\""];
-	  print "$timestamp $class:$CDS \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  my $timestamp = &get_timestamp($class, $gene, $tag);
+	  my $comment = &check_fate_of_gene($gene,$class);
+	  $problems{$timestamp}{$class.":".$gene} = ["\'$tag\' tag is creating this sequence. $comment"];
+	  print "$timestamp $class:$gene \'$tag\' tag is creating this sequence. $comment\n" if $verbose;
 	  $category = 1;
 	}
-	if(defined($CDS->at('Visible.Clone'))){
+	if(defined($gene->at('Visible.Clone'))){
 	  my $tag = "Clone";
-	  my $timestamp = &get_timestamp($class, $CDS, $tag);
-	  my $comment = &splice_variant_check($CDS);
-	  $problems{$timestamp}{$class.":".$CDS} = ["\"$tag tag is creating this sequence. $comment\""];
-	  print "$timestamp $class:$CDS \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  my $timestamp = &get_timestamp($class, $gene, $tag);
+	  my $comment = &check_fate_of_gene($gene,$class);
+	  $problems{$timestamp}{$class.":".$gene} = ["\'$tag\' tag is creating this sequence. $comment"];
+	  print "$timestamp $class:$gene \'$tag\' tag is creating this sequence. $comment\n" if $verbose;
 	  $category = 1;
 	}
-	if(defined($CDS->at('Visible.Alleles'))){
+	if(defined($gene->at('Visible.Alleles'))){
 	  my $tag = "Alleles";
-	  my $timestamp = &get_timestamp($class, $CDS, $tag);
-	  my $comment = &splice_variant_check($CDS);
-	  $problems{$timestamp}{$class.":".$CDS} = ["\"$tag tag is creating this sequence. $comment\""];
-	  print "$timestamp $class:$CDS \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  my $timestamp = &get_timestamp($class, $gene, $tag);
+	  my $comment = &check_fate_of_gene($gene,$class);
+	  $problems{$timestamp}{$class.":".$gene} = ["\'$tag\' tag is creating this sequence. $comment"];
+	  print "$timestamp $class:$gene \'$tag\' tag is creating this sequence. $comment\n" if $verbose;
 	  $category = 1;
 	}
-	if(defined($CDS->at('Visible.Y2H_target'))){
+	if(defined($gene->at('Visible.Y2H_target'))){
 	  my $tag = "Y2H_target";
-	  my $timestamp = &get_timestamp($class, $CDS, $tag);
-	  my $comment = &splice_variant_check($CDS);
-	  $problems{$timestamp}{$class.":".$CDS} = ["\"$tag tag is creating this sequence. $comment\""];
-	  print "$timestamp $class:$CDS \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  my $timestamp = &get_timestamp($class, $gene, $tag);
+	  my $comment = &check_fate_of_gene($gene,$class);
+	  $problems{$timestamp}{$class.":".$gene} = ["\'$tag\' tag is creating this sequence. $comment"];
+	  print "$timestamp $class:$gene \'$tag\' tag is creating this sequence. $comment\n" if $verbose;
 	  $category = 1;
 	}
 	
-	if(defined($CDS->at('Visible.Y2H_bait'))){
+	if(defined($gene->at('Visible.Y2H_bait'))){
 	  my $tag = "Y2H_bait";
-	  my $timestamp = &get_timestamp($class, $CDS, $tag);
-	  my $comment = &splice_variant_check($CDS);
-	  $problems{$timestamp}{$class.":".$CDS} = ["\"$tag tag is creating this sequence. $comment\""];
-	  print "$timestamp $class:$CDS \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  my $timestamp = &get_timestamp($class, $gene, $tag);
+	  my $comment = &check_fate_of_gene($gene,$class);
+	  $problems{$timestamp}{$class.":".$gene} = ["\'$tag\' tag is creating this sequence. $comment"];
+	  print "$timestamp $class:$gene \'$tag\' tag is creating this sequence. $comment\n" if $verbose;
 	  $category = 1;
 	}
-	if(defined($CDS->at('Visible.SAGE_transcript'))){
+	if(defined($gene->at('Visible.SAGE_transcript'))){
 	  my $tag = "SAGE_transcript";
-	  my $timestamp = &get_timestamp($class, $CDS, $tag);
-	  my $comment = &splice_variant_check($CDS);
-	  $problems{$timestamp}{$class.":".$CDS} = ["\"$tag tag is creating this sequence. $comment\""];
-	  print "$timestamp $class:$CDS \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  my $timestamp = &get_timestamp($class, $gene, $tag);
+	  my $comment = &check_fate_of_gene($gene,$class);
+	  $problems{$timestamp}{$class.":".$gene} = ["\'$tag\' tag is creating this sequence. $comment"];
+	  print "$timestamp $class:$gene \'$tag\' tag is creating this sequence. $comment\n" if $verbose;
 	  $category = 1;
 	}
 
-	if(defined($CDS->at('Visible.Drives_Transgene'))){
+	if(defined($gene->at('Visible.Drives_Transgene'))){
 	  my $tag = "Drives_Transgene";
-	  my $timestamp = &get_timestamp($class, $CDS, $tag);
-	  my $comment = &splice_variant_check($CDS);
-	  $problems{$timestamp}{$class.":".$CDS} = ["\"$tag tag is creating this sequence. $comment\""];
-	  print "$timestamp $class:$CDS \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  my $timestamp = &get_timestamp($class, $gene, $tag);
+	  my $comment = &check_fate_of_gene($gene,$class);
+	  $problems{$timestamp}{$class.":".$gene} = ["\'$tag\' tag is creating this sequence. $comment"];
+	  print "$timestamp $class:$gene \'$tag\' tag is creating this sequence. $comment\n" if $verbose;
 	  $category = 1;
 	}
 
-	if(defined($CDS->at('Visible.Transgene_product'))){
+	if(defined($gene->at('Visible.Transgene_product'))){
 	  my $tag = "Transgene_product";
-	  my $timestamp = &get_timestamp($class, $CDS, $tag);
-	  my $comment = &splice_variant_check($CDS);
-	  $problems{$timestamp}{$class.":".$CDS} = ["\"$tag tag is creating this sequence. $comment\""];
-	  print "$timestamp $class:$CDS \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  my $timestamp = &get_timestamp($class, $gene, $tag);
+	  my $comment = &check_fate_of_gene($gene,$class);
+	  $problems{$timestamp}{$class.":".$gene} = ["\'$tag\' tag is creating this sequence. $comment"];
+	  print "$timestamp $class:$gene \'$tag\' tag is creating this sequence. $comment\n" if $verbose;
 	  $category = 1;
 	}
-	if(defined($CDS->at('Visible.Microarray_results'))){
+	if(defined($gene->at('Visible.Microarray_results'))){
 	  my $tag = "Microarray_results";
-	  my $timestamp = &get_timestamp($class, $CDS, $tag);
-	  my $comment = &splice_variant_check($CDS);
-	  $problems{$timestamp}{$class.":".$CDS} = ["\"$tag tag is creating this sequence. $comment\""];
-	  print "$timestamp $class:$CDS \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	  my $timestamp = &get_timestamp($class, $gene, $tag);
+	  my $comment = &check_fate_of_gene($gene,$class);
+	  $problems{$timestamp}{$class.":".$gene} = ["\'$tag\' tag is creating this sequence. $comment"];
+	  print "$timestamp $class:$gene \'$tag\' tag is creating this sequence. $comment\n" if $verbose;
 	  $category = 1;
 	}
+	if(defined($gene->at('Visible.Corresponding_oligo_set'))){
+	  my $tag = "Corresponding_oligo_set";
+	  my $timestamp = &get_timestamp($class, $gene, $tag);
+	  my $comment = &check_fate_of_gene($gene,$class);
+	  $problems{$timestamp}{$class.":".$gene} = ["\'$tag\' tag is creating this sequence. $comment"];
+	  print "$timestamp $class:$gene \'$tag\' tag is creating this sequence. $comment\n" if $verbose;
+	  $category = 1;
+	}
+
 
 
 	if ($category == 0){
-	  push(@other,$CDS);
-	  print "$CDS - Other problem\n" if $verbose;
+	  push(@other,$gene);
+	  print "$gene - Other problem\n" if $verbose;
 	}
       }
-      $CDS->DESTROY();
+      $gene->DESTROY();
     }
-    $seq->DESTROY();
   }
 }
 
@@ -458,21 +460,42 @@ sub find_out_of_date_gene_id {
   }
 
   # ----- get latest live gene id / non_live gene id from geneace
-  my $ga = init Geneace();
-  my ($Live_gene_id, $Non_Live_gene_id) = $ga -> gene_id_status(); # hash ref
+  
+  my $db = Ace->connect(-path  => $database,
+			-program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
 
-  # ----- loop through each acefile of all groups subdir of at /wormsrv2/wormbase and
-  #       see if there is WBGxxxxxxx. If yes, check if gene id is up-to-date
+  
+  # get list of live genes and add to hash
+  my @genes = $db->fetch(-query=>"Find Gene WHERE !Live");
+  my %genes;
+  foreach my $gene (@genes){
+    my $fate;
+    if($gene->Merged_into){
+      $fate = $gene->Merged_into;
+      $genes{$gene->name} = "$fate";
+    }
+    else{
+      $genes{$gene->name} = "Other fate";
+    }
+  }
+  $db->close;
 
   foreach my $group ("stlace", "camace", "csh", "caltech", "misc") {
+    print "\n\nProcessing $group data\n\n" if ($verbose);
     my @config = `cat /wormsrv2/autoace_config/autoace.config`;
     my $error =();
     my ($acefile, $exist, $obj);
-    foreach my $line (@config){
-      if ($line =~ /^$group\s+(.+\.ace)\s+(\w+)\s+/){
+    foreach my $config_line (@config){
+      if ($config_line =~ /^$group\s+(.+\.ace)\s+(\w+)\s+/){
 	$acefile = $1;
 	$acefile =~ s/\s+//g;
 	$acefile = "/wormsrv2/wormbase/$group/$acefile";
+
+	# fix path if group is misc
+	if($group eq "misc"){
+	  $acefile = "/wormsrv2/wormbase/misc_static/$1";
+	}
+
 	$exist = `grep "WBGene" $acefile`; # check only acefiles that have WBGxxxxxxx info
 	
 	if ( exists $class_has_Gene{$2} && $exist ){  # $2 is ?class
@@ -485,11 +508,21 @@ sub find_out_of_date_gene_id {
 	      $obj = $2;
 	    }
 	    if ( $line =~ /(WBGene\d+)/ ){
-	      if ( !exists $Live_gene_id->{$1} && exists $Non_Live_gene_id->{$1} ){
-		push (@gene_id_error, "$group $class: $obj \"attached gene id $1 has been merged into $Non_Live_gene_id->{$1}\"\n");
-	      }
-	      if ( !exists $Live_gene_id->{$1} && !exists $Non_Live_gene_id->{$1} ){
-		push (@gene_id_error, "$group $class: $obj \"attached gene id $1 is invalid\"\n");
+	      # skip gene history lines which will by definition be non-Live genes
+	      next if ($line =~ m/Gene_history/);
+
+	      if (exists $genes{$1}){
+		# ignore CDS objects if there is no Merged_into tag, these are probably all
+		# cases of CDSs being made into Transposon CDSs
+		unless(($class eq "CDS") && ($genes{$1} eq "Other fate")){
+		  print "$class : $obj\n$line\nGene $1 is no longer live, gene was merged into $genes{$1}\n\n" if ($verbose); 
+		  if($genes{$1} eq "Other fate"){		    
+		    push (@gene_id_error, "$group $class:$obj connects to gene $1 which is no longer live and has not been merged into any other gene.  Please investigate\n");
+		  }
+		  else{
+		    push (@gene_id_error, "$group $class:$obj connects to gene $1 which is no longer live, gene was merged into $genes{$1}\n");
+		  }
+		}
 	      }
 	    }
 	  }
@@ -497,6 +530,7 @@ sub find_out_of_date_gene_id {
       }
     }
   }
+
 }
 
 ##########################################################################
@@ -573,23 +607,24 @@ sub get_timestamp{
   # if timestamp is wormpub, need to look at the corresponding object to see if that has 
   # more informative timestamp
   if (($timestamp =~ m/wormpub/)&&($class eq "CDS")){
-    ($class = "Protein", $tag = "Sequence")               if ($tag eq "GO_term");
-    ($class = "Protein", $tag = "Corresponding_protein")  if ($tag eq "Corresponding_CDS");
-    ($class = "Expr_pattern", $tag = "CDS")               if ($tag eq "Expr_pattern");
-    ($class = "Paper", $tag = "CDS")                      if ($tag eq "Reference");
-    ($class = "Sequence", $tag = "Matching_CDS")          if ($tag eq "Matching_cDNA");
-    ($class = "Allele", $tag = "Predicted_gene")          if ($tag eq "Alleles");
-    ($class = "Operon", $tag = "Contains_CDS")            if ($tag eq "Contained_in_operon");
-    ($class = "Gene", $tag = "Corresponding_CDS")         if ($tag eq "Gene");
-    ($class = "RNAi", $tag = "CDS")                       if ($tag eq "RNAi_result");
-    ($class = "Clone", $tag = "Sequence")                 if ($tag eq "Clone");
-    ($class = "Allele", $tag = "CDS")                     if ($tag eq "Allele");
-    ($class = "Y2H", $tag = "Target_overlapping_CDS")     if ($tag eq "Y2H_target");
-    ($class = "Y2H", $tag = "Bait_overlapping_CDS")       if ($tag eq "Y2H_bait");
-    ($class = "SAGE_transcript", $tag = "Predicted_gene") if ($tag eq "SAGE_transcript");
+    ($class = "Protein", $tag = "Sequence")                 if ($tag eq "GO_term");
+    ($class = "Protein", $tag = "Corresponding_protein")    if ($tag eq "Corresponding_CDS");
+    ($class = "Expr_pattern", $tag = "CDS")                 if ($tag eq "Expr_pattern");
+    ($class = "Paper", $tag = "CDS")                        if ($tag eq "Reference");
+    ($class = "Sequence", $tag = "Matching_CDS")            if ($tag eq "Matching_cDNA");
+    ($class = "Allele", $tag = "Predicted_gene")            if ($tag eq "Alleles");
+    ($class = "Operon", $tag = "Contains_CDS")              if ($tag eq "Contained_in_operon");
+    ($class = "Gene", $tag = "Corresponding_CDS")           if ($tag eq "Gene");
+    ($class = "RNAi", $tag = "CDS")                         if ($tag eq "RNAi_result");
+    ($class = "Clone", $tag = "Sequence")                   if ($tag eq "Clone");
+    ($class = "Allele", $tag = "CDS")                       if ($tag eq "Allele");
+    ($class = "Y2H", $tag = "Target_overlapping_CDS")       if ($tag eq "Y2H_target");
+    ($class = "Y2H", $tag = "Bait_overlapping_CDS")         if ($tag eq "Y2H_bait");
+    ($class = "SAGE_transcript", $tag = "Predicted_gene")   if ($tag eq "SAGE_transcript");
     ($class = "Transgene", $tag = "Driven_by_CDS_promoter") if ($tag eq "Drives_transgene");
-    ($class = "Transgene", $tag = "CDS")                  if ($tag eq "Transgene_product");
-    ($class = "Microarray_results", $tag = "CDS")                  if ($tag eq "Microarray_results");
+    ($class = "Transgene", $tag = "CDS")                    if ($tag eq "Transgene_product");
+    ($class = "Microarray_results", $tag = "CDS")           if ($tag eq "Microarray_results");
+    ($class = "Oligo_set", $tag = "Overlaps_CDS")           if ($tag eq "Corresponding_oligo_set");
 
     my $aql_query = "select s,s->${tag}.node_session from s in object(\"$class\",\"$value\")";
     my @aql = $db->aql($aql_query);
@@ -604,48 +639,72 @@ sub get_timestamp{
 
 }
 
-
+#################################################################
+# Check whether corresponding gene is dead or there are isoforms 
+# or data should now be connected to a different class etc.
 #################################################################
 
-sub splice_variant_check{
+sub check_fate_of_gene{
   my $object = shift;
-  my $splice_variant = $db->fetch(-class => 'elegans_CDS',-name  => "${object}a");
+  my $class = shift;
+
+  # treat object name to remove splice variant suffixes
+  my $new_name = $object;
+  if($new_name =~ m/[a-z]$/){
+    $new_name =~ s/[a-z]$//;
+  }
+
+  # store comment to return to parent subroutine
   my $comment =  "";
-  $comment =  "Splice variants now exist for this sequence" if(defined($splice_variant));
-  return($comment);
 
-}
+  # get gene object via Gene_name class
+  my $gene_name = $db->fetch(-class => 'Gene_name',-name  => "$new_name");
 
-############################################
-# Check sequences connected to multiple loci
-############################################
-
-sub find_multiple_loci {
-
-  my $get_seqs_with_multiple_loci=<<EOF;
-  Table-maker -p "/wormsrv2/autoace/wquery/CDSs_with_multiple_genes.def" quit 
-EOF
-
-  my ($cds, $gene);
-
-  open (FH, "echo '$get_seqs_with_multiple_loci' | tace $database | ") || die "Couldn't access $database\n";
-  while (<FH>){
-    chomp($_);
-    if ($_ =~ /^\"/){
-      $_ =~ s/\"//g;
-      ($cds, $gene)=split(/\s+/, $_);
-
-      # Don't know how to get timestamps for each value next to Gene tag but can
-      # get the timestamp from the Corresponding_CDS tag itself
-      my $aql_query = "select s,s->Gene.node_session from s in object(\"Corresponding_CDS\",\"$cds\")";
-
-      my @aql = $db->aql($aql_query);
-      my $timestamp = "$aql[0]->[1]";
-      $timestamp =~ s/\d{4}\-\d{2}\-\d{2}_\d{2}:\d{2}:\d{2}_//;
-      $problems{$timestamp}{"CDS".":".$cds} = ["\"connected to multiple genes\""];
+  # exit early if can't get valid gene name
+  if(!defined($gene_name)){
+    $comment = "$object apppears to have no corresponding ?Gene_name object...possible typo in $object name?";
+    return($comment);
+  }
+  else{
+    # now query corresponding gene object
+    my $gene = $gene_name->Sequence_name_for;
+    
+    # test Public_name_for if not defined as gene may be dead (no Sequence_name_for field set)
+    if(!defined($gene)){
+      $gene = $gene_name->Public_name_for;
     }
-  }  
+    
+    if(defined($gene)){
+      # test if gene is Live
+      if(!defined($gene->at("Identity.Live"))){
+	$comment = "$object connects to a dead gene (no 'Live' tag)...maybe gene has been merged into another?";
+	return($comment);
+      }
+      # else remind what valid objects should connect to the gene
+      else{
+	my @CDSs        = $gene->Corresponding_CDS;
+	my @transcripts = $gene->Corresponding_transcript;
+	my @pseudogenes = $gene->Corresponding_pseudogene;
+
+	if(@CDSs || @pseudogenes || @transcripts){
+	  $comment .= "$class : $object should be replaced by: ";
+	}
+	if(@CDSs){
+	  $comment .= "CDSs: @CDSs,";
+	}
+	if(@transcripts){
+	  $comment .= "Transcripts: @transcripts,";
+	}
+	if(@pseudogenes){
+	  $comment .= "Pseudogenes: @pseudogenes";
+	}
+
+	return($comment);
+      }
+    }
+  }
 }
+
    
 ###########################################
 sub usage {
