@@ -117,7 +117,6 @@ foreach my $gene (@predicted_genes){
   }
   my $parent = $db->fetch(Sequence=>$source);
   
-
   # check to see if any predicted gene belongs to superlink object...they shouldn't
   if ($parent =~ m/SUPERLINK/){
     print "Gene error - $gene: belongs to a superlink object ($parent)\n";
@@ -148,12 +147,13 @@ foreach my $gene (@predicted_genes){
     my @exon_coord1 = $gene_object->get('Source_Exons',1);
     my @exon_coord2 = $gene_object->get('Source_Exons',2);
     # check that largest exon coordinate does not exceed range of parent sequence?    
-
     for($i=0; $i<@exon_coord1; $i++){
       $max_coordinate = $exon_coord1[$i] if ($exon_coord1[$i] > $max_coordinate);
       $max_coordinate = $exon_coord2[$i] if ($exon_coord2[$i] > $max_coordinate);
       print "Gene error - $gene: exon inconsistency, overlapping exons?\n" if (($exon_coord1[$i] < $exon_coord2[$i-1]) && ($i>0));
     }
+
+  }
 
   # check that 'Start_not_found' and 'End_not_found' tags present?
   my $start_tag = "";
@@ -172,7 +172,6 @@ foreach my $gene (@predicted_genes){
   my $method = "";
   ($method) = ($gene_object->get('Method'));
   print "Gene error - $gene: method is hand_built\n" if ($method eq 'hand_built');
-
 
   # check From_laboratory tag is present
   my $laboratory = ($gene_object->From_laboratory);
