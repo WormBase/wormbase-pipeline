@@ -8,7 +8,7 @@
 # relevant WormBase and Wormpep web pages.
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-04-04 15:25:34 $      
+# Last updated on: $Date: 2003-04-04 15:46:16 $      
 
 
 
@@ -46,8 +46,9 @@ my $WS_previous_name = "WS".$WS_previous;
 
 
 # file path info
-my $www_root         = "/nfs/WWW/htdocs/Projects/C_elegans";
-my $www              = "/nfs/WWW/htdocs/Projects/C_elegans/WORMBASE";
+my $www_root         = "/nfs/WWWdev/htdocs/Projects/C_elegans";
+my $www              = "/nfs/WWWdev/htdocs/Projects/C_elegans/WORMBASE";
+my $wwwlive          = "/nfs/WWW/htdocs/Projects/C_elegans/WORMBASE";
 my $gff              = "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS";
 my $dbpath           = "/wormsrv2/autoace";
 our $log             = "/wormsrv2/logs/update_website.$rundate";
@@ -84,7 +85,7 @@ our $log             = "/wormsrv2/logs/update_website.$rundate";
 # update 'current' symlink
 print LOG "\nChanging 'current symbolic link to point to new release\n";
 system("rm -f $www/current") && croak "Couldn't remove 'current' symlink\n";
-system("ln -s $www/$WS_name/ $www/current") && croak "Couldn't create new symlink\n";
+system("ln -s $wwwlive/$WS_name/ $www/current") && croak "Couldn't create new symlink\n";
 
 print LOG "\n\nC'est finis\n\n";
 
