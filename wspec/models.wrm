@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: krb $
-// Last edited on: $Date: 2004-06-09 07:50:53 $
+// Last edited on: $Date: 2004-06-30 14:18:03 $
  
 
 
@@ -401,12 +401,13 @@
                             Acquires_merge UNIQUE ?Gene
                             Split_from UNIQUE ?Gene
                             Split_into UNIQUE ?Gene
-                            Imported Text // added to agree to rd's latest model krb 04/03/02
+                            Imported Text // for the first set of Gene IDs created
 			    Changed_class Text Text	// added to capture CDS->Pseudogene changes, two text 
-						  	// fields should list old and new class
+						  	// fields should list old and new classes
+			    Made_into_transposon       // for CDSs that become Transposon CDSs - no longer count as Live Gene
                      Name_change CGC_name UNIQUE Text
                                  Sequence_name UNIQUE Text
-                                 Other_name UNIQUE Text
+                                 Other_name UNIQUE Text // Text field to store 'Other_name' of Gene
 
 
 
