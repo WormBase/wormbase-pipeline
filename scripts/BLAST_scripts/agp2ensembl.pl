@@ -138,7 +138,6 @@ my $clone_adaptor = $dbobj->get_CloneAdaptor();
 my $sic = $dbobj->get_StateInfoContainer();
 my $analysis_adaptor = $dbobj->get_AnalysisAdaptor();
 my $submitted_analysis = $analysis_adaptor->fetch_by_dbID(1); #1 is dummy analysis to mark addition
-
 my %seqs;
 if ($fasta) {
     open (FH , "$fasta") || die "cannot open file $fasta";
@@ -167,7 +166,7 @@ while (<AGP>) {
         print "Found $sv; skipping\n";
         next;
     }
-    elsif ( &update_existing_clone($clone_adaptor, $sv) ) {
+    elsif ( &update_existing_clone($clone_adaptor, $sv) == 1) {
       print "Found old version of $sv; updated\n";
       next;
     }
@@ -297,6 +296,7 @@ sub update_existing_clone
 
     my $acc = $1;
     my $ver = $2;
+    my $time = time;
 
     my $clone = $clone_adaptor->_generic_sql_fetch(qq{ WHERE name = '$acc' });# I know this is bad :)
     if ($clone ) {
@@ -308,7 +308,6 @@ sub update_existing_clone
 	#update the clone version and embl_version
 	my $db_ver = $clone->version();
 	$db_ver++;
-	my $time = time;
 
 	&make_SQL_query($dbobj,"UPDATE clone SET version = $db_ver WHERE name = \"$acc\"");
 	&make_SQL_query($dbobj,"UPDATE clone SET embl_version = $ver WHERE name = \"$acc\"");
@@ -320,18 +319,30 @@ sub update_existing_clone
 	foreach my $contig ( @{$contigs} ) { 
 	
 	  # update the DNA 
-	  my $dna = $seqs{$acc};
+	  my $dna = fetch_seq($acc, $ver);
+	  unless ($dna) {
+            print "Error fetching $sv\n";
+            next;
+	  }
+	  my $seqstr = uc($dna->seq);
 	  my $dna_id = $contig->dna_id();
-	  &make_SQL_query($dbobj,"UPDATE dna SET sequence = \"$dna\" WHERE dna_id = $dna_id");
+	  &make_SQL_query($dbobj,"UPDATE dna SET sequence = \"$seqstr\" WHERE dna_id = $dna_id");
 
 	  # update the contig
-	  my $length = length($dna);
+	  my $length = length($seqstr);
 	  my $name = "$acc."."$ver."."1."."$length";
 	  my $contig_id = $contig->dbID;
+	  my $contig_old_name = $contig->name;
 
+	  # need to update the input_id_analysis table
+	  &make_SQL_query($dbobj,"delete from input_id_analysis where input_id = \"$contig_old_name\"");# remove old
+	  &make_SQL_query($dbobj,"INSERT INTO input_id_analysis VALUES (\"$name\",\"Contig\",1,FROM_UNIXTIME($time),\"\",\"\",0)");# add dummy
+	
+	  #update clone and contig tables
 	  &make_SQL_query($dbobj,"UPDATE contig SET name = \"$name\" WHERE contig_id = $contig_id");
 	  $contig->length($length);
 	  &make_SQL_query($dbobj,"UPDATE contig SET length = $length WHERE contig_id = $contig_id");
+
 	  return 1;
 	}
       }
