@@ -8,7 +8,7 @@
 # This makes the autoace database from its composite sources.
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-05-30 08:29:03 $
+# Last edited on: $Date: 2003-07-14 15:30:47 $
 
 
 $|=1;
@@ -415,16 +415,16 @@ sub parseconfig {
 
 sub reinitdb {
 
-  system ("\\rm -f $dbpath/database/new/*")     && print LOG "ERROR: Couldn't remove database/new/ file\n";
-  system ("\\rm -f $dbpath/database/touched/*") && print LOG "ERROR: Couldn't remove database/touched/ file\n";
+  system ("\\rm -f $dbpath/database/new/*");
+  system ("\\rm -f $dbpath/database/touched/*");
 
   if (-e "$dbpath/database/lock.wrm") {
     print LOG "*Reinitdb error - lock.wrm file present..\n";
     close LOG;
     die();
   }
-  system ("\\mv $dbpath/database/log.wrm $dbpath/database/log.old") && print LOG "ERROR: couldn't mv log.wrm\n";  
-  system ("\\rm $dbpath/database/*.wrm") && print LOG "ERROR: couldn't mv *.wrm file\n";
+  system ("\\mv $dbpath/database/log.wrm $dbpath/database/log.old");  
+  system ("\\rm $dbpath/database/*.wrm");
   unlink "$dbpath/database/ACEDB.wrm";
 
   my $command = "y\n";
@@ -528,8 +528,8 @@ sub setdate {
 #
 
 sub makechromlink {
-  system ("rm -f $wormbasedir/misc/misc_chromlinks.ace") && print LOG "ERROR: Couldn't rm chromlinks file\n";
-  system ("/wormsrv2/scripts/makeChromLinks.pl > $wormbasedir/misc/misc_chromlinks.ace") && print LOG "ERROR: couldn't run makechromlinks\n"; 
+  system ("rm -f $wormbasedir/misc/misc_chromlinks.ace");
+  system ("/wormsrv2/scripts/makeChromLinks.pl > $wormbasedir/misc/misc_chromlinks.ace"); 
   if (-z "$wormbasedir/misc/misc_chromlinks.ace") {
     print LOG "*Makechromlink: chromlinks.ace has ZERO size\n";  
     return;
