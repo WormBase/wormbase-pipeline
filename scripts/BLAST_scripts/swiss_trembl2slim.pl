@@ -67,6 +67,9 @@ sub read_fasta {
                 my $org;
 	 	if (exists($HASH{$id})){
 	            $org = $HASH{$id};
+		    if ($org =~ /Human immunodeficiency virus/){
+		      next;
+		    }
                     if (exists $exclude{$org}) {
                     	$id = $new_id; $acc = $new_acc; $seq = "" ;
                     	next;
