@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.86 2002-10-17 08:45:11 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.87 2002-10-22 15:56:51 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -324,6 +324,7 @@
 	Sequence_details Sequence ?Sequence XREF Allele #Evidence	
                          Flanking_sequences UNIQUE Text UNIQUE Text
                          Allelic_difference UNIQUE ?Text #Evidence
+	Species UNIQUE ?Species
 	Method UNIQUE ?Method
 	Replacement UNIQUE Text UNIQUE Text	// RD 0107 big change
 		// canonical sequence, replacement sequence
@@ -444,6 +445,7 @@
 	 Made_by Text
 	 Remark	?Text
          Reference ?Paper XREF Strain
+	 Species UNIQUE ?Species
 
 //
 //worm physical map classes
