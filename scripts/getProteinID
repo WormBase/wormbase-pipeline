@@ -7,8 +7,8 @@
 #
 # dl
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2003-03-11 12:45:11 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2003-04-22 09:44:33 $
 
 use lib "/wormsrv2/scripts/";
 use Wormbase;
@@ -16,6 +16,8 @@ use Getopt::Long;
 use strict;
 
 my %acc2clone = &FetchData('acc2clone');
+my %gene2CE = &FetchData('gene2CE');
+
 our %databases = (
 		  'SW' => 'SWISSPROT',
 		  'TR' => 'TREMBL',
@@ -26,11 +28,12 @@ our %databases = (
 # variables and command-line options # 
 ######################################
 
-my ($help, $file);
+my ($help, $file, $debug);
 
 GetOptions (
-	    "help"      => \$help, 
-            "file=s"    => \$file
+	    "help"      => \$help,
+            "file=s"    => \$file,
+	    "debug"     => \$debug
 	    );
 
 # Display help if required
@@ -39,8 +42,10 @@ GetOptions (
 if (! defined $file) {
     $file = "/nfs/disk100/wormpub/protein_ID.mail";
 }
+my $ace_file = "/wormsrv2/autoace/wormpep_ace/WormpepACandIDs.ace";
+$ace_file = "/tmp/WormpepACandIDs.ace" if ($debug);
 
-open (OUT, ">/wormsrv2/autoace/wormpep_ace/WormpepACandIDs.ace");
+open (OUT, ">$ace_file");
 
 my @f = "";
 my ($dbxref_ac,$dbxref_id,$dbxref_db);
@@ -56,12 +61,23 @@ while (<FILE>) {
     # discard non genome_sequence entries
     next unless (defined $acc2clone{$f[0]});
 
-    ($dbxref_ac,$dbxref_id,$dbxref_db) = &get_from_protein_id($f[2]);
+    my @interpro = "";
+    ($dbxref_ac,$dbxref_id,$dbxref_db,@interpro) = &get_from_protein_id($f[2]);
     
     print OUT "\nSequence : \"$f[6]\"\n";
     print OUT "Database $databases{$dbxref_db} $dbxref_id $dbxref_ac\n";
     print OUT "Protein_id \"$acc2clone{$f[0]}\" $f[2] $f[3]\n";
-    
+
+    if( $interpro[0] ) {
+      my $protein = $gene2CE{$f[6]};
+      if( $protein ) {
+	print OUT "\nProtein : WP:$protein\n";
+	foreach (@interpro) {
+	  print OUT "Motif_homol\t\"INTERPRO:$_\"\n"
+	}
+      }
+      else {print "gene $f[6] has no protein (has common_data been updated ?)\n";}
+    }
 } 
 close FILE;
 close OUT;
@@ -77,11 +93,13 @@ sub get_from_protein_id {
     my $acc; 
     my $id; 
     my $db;
-    
-    open (LOOK, "/usr/local/pubseq/bin/pfetch -F $protein_id |");
+    my @interpro;
+
+    open (LOOK, "/usr/local/pubseq/bin/pfetch -F $protein_id | grep -E '^ID|^AC|InterPro' |");
     while (<LOOK>) {
 	($acc = $1) if (/^AC\s+(\S+);/);
 	($id  = $1) if (/^ID\s+(\S+)/);
+	push (@interpro, $1) if(/^DR\s+InterPro;\s(\w+)/ );#DR   InterPro; IPR008160
     }
     close LOOK;
     
@@ -89,7 +107,7 @@ sub get_from_protein_id {
     if ((length ($acc)) == 8) {	$db = "TN"; }
     elsif ($id =~ /_CAEEL/)   { $db = "SW"; }
     else                      {	$db = "TR"; }
-    return ($acc,$id,$db);
+    return ($acc,$id,$db,@interpro);
 }
 
 
