@@ -4,7 +4,7 @@
 #
 # by Dan Lawson
 #
-# Last updated on: $Date: 2002-12-09 14:54:10 $
+# Last updated on: $Date: 2002-12-09 16:04:31 $
 # Last updated by: $Author: krb $
 #
 # Ace dumps a subsequence from a given target database
@@ -17,6 +17,7 @@ use lib "/wormsrv2/scripts/";
 use Wormbase;
 use IPC::Open2;
 use Getopt::Std;
+
 
 our ($opt_d, $opt_s, $opt_n, $keyset);
 getopts ('n:d:s:');
@@ -31,6 +32,9 @@ if ((!$opt_d)||(!$opt_s)) {
  &PrintHelp;
  exit 0;
 }
+
+# touch logfile for run details
+$0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
 
 my $dbpath=$opt_d;
 $opt_d =~ /camace/  && do {$dbpath = "/wormsrv2/camace";};
