@@ -6,11 +6,11 @@
 #
 # Script to convert cgc allele/lab links into ace file for geneace
 #
-# Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2004-03-19 11:59:04 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2005-02-11 16:57:11 $
 
 use strict;
-use lib "/wormsrv2/scripts/";                    
+use lib "/wormsrv2/scripts/";
 use Wormbase;
 use Getopt::Long;
 use Ace;
@@ -63,10 +63,13 @@ my $db = Ace->connect(-path  =>  '/wormsrv1/geneace') || die "Couldn't connect t
 foreach my $key (sort keys %alleles_labs){
 #  print "ALLELE: $key LAB: $alleles_labs{$key}\n";
   for (my $i=0;$i<10;$i++){
-    my @alleles  = $db->fetch("Allele","${key}${i}*");
+    my $query = "find Variation ${key}${i}*;Allele";
+    my @alleles  = $db->fetch(-query => "$query" );
+
+#    my @alleles  = $db->fetch("Allele","${key}${i}*");
     foreach my $i (@alleles){
-      print "Allele : \"$i\"\n";
-      print "Location \"$alleles_labs{$key}\"\n\n";
+      print "Variation : \"$i\"\n";
+      print "Laboratory \"$alleles_labs{$key}\"\n\n";
     }
   }
 }
