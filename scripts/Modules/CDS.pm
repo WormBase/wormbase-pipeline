@@ -57,7 +57,11 @@ sub map_cDNA
 	#this must overlap - check exon matching
 	if( $self->check_exon_match( $cdna ) ) {
 	  # if this cdna matches the CDS but not the existing transcripts create a new one
-	  my $transcript = Transcript->new( $self->name, $self->exon_data, $self->strand);
+	  # append .x to indicate multiple transcripts for same CDS.
+	  my $transcript_count = scalar($self->transcripts);
+	  my $new_name = $transcript_count > 1 ? $self->name : $self->name . ".$transcript_count";
+	  my $transcript = Transcript->new( $new_name, $self->exon_data, $self->strand);
+	  $transcript->chromosome( $self->chromosome );
 	  $transcript->add_matching_cDNA($cdna);
 	  
 	  $self->transcripts($transcript);
@@ -94,6 +98,8 @@ sub report
     my $self = shift;
     my $fh = shift;
     my $coords = shift;
+
+    #$fh = STDOUT unless defined $fh;
 
     print $fh "\nCDS : \"",$self->name,"\"\n";
     foreach (@{$self->{'matching_cdna'}}) {

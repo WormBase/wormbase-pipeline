@@ -72,7 +72,8 @@ sub add_matching_cDNA
       #extend 3'
       if( $match_code == 2 or $match_code == 9 ) {
 	# cdna overlaps last exon so extend.
-	$self->exon_data->{"$exon->[0]"} = $cdna->exon_data->{"$exon->[0]"};
+	my $last_exon_start = $self->last_exon->[0];
+	$self->exon_data->{"$last_exon_start"} = $exon->[1];
       }
       #extend 5'
       elsif( $match_code == 4  or $match_code == 5 or $match_code == 8 ) {
@@ -109,10 +110,18 @@ sub report
 
     # . . and the transcript object
     print $fh "\nTranscript : \"", $self->name,"\"\n";
-    my $start = $self->start - 1;
+    my$start = $self->start - 1;
+    my $exon_1 = 1;
     foreach $exon ( @{$self->sorted_exons} ) {
       $exon->[0] = $exon->[0] - $start;
       $exon->[1] = $exon->[1] - $start;
+
+      # start coord for 1st exon has to be 1
+      #"Source_exons ",$_ - $exons[0] + 1," ",$transcript{$_} - $exons[0]+1," \n"; # + strand
+   #   if( $exon_1 == 1) {
+#	$exon->[0] += 2;
+#	$exon_1 = 0;
+#      }
       print $fh "Source_exons\t$exon->[0]\t$exon->[1]\n";
     }
 
