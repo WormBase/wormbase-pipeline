@@ -6,7 +6,7 @@
 #
 # Updates the local webpages in synch with the main website
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-07-20 09:41:24 $
+# Last updated on: $Date: 2004-07-20 09:44:36 $
 
 
 use strict;
@@ -51,7 +51,7 @@ foreach my $file ( @wormpep_files ) {
 
 # delete the old symbolic link and make the new one to wormpep.prev
 my $prev_release = $release -1;
-&run_command("cd $wormpep_ftp_root; ln -fs wormpep/wormpep${prev_release} wormpep.prev");
+&run_command("cd $wormpep_ftp_root; ln -fs wormpep${prev_release}/wormpep${prev_release} wormpep.prev");
 
 
 
