@@ -2,7 +2,7 @@
 
 # Author: Chao-Kung Chen
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2003-11-26 16:01:59 $ 
+# Last updated on: $Date: 2003-11-28 11:32:20 $ 
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'}; 
@@ -123,7 +123,7 @@ if ($feature){
       if ( $c =~ /(\d+)\.\.(\d+)$/ && $Coord_F_Q_R{$c}->[0] eq "polyA_signal" ){
 	$L = $1; $R = $2;
 	$R = ($2-$L);  # number of bp downstream of the first coord of polyA_signal 
-	$number = get_60bp_left_to_EMBL_coord($AC, $L, $R, *FH, $chrom);
+	$number = get_60bp_left_to_EMBL_coord($AC, $L, $R, *FH, $chrom) if $R < 10; # filter out signal seqs > 10 bp apart
 	$num_a += $number;
       }
       if ( $c =~ /(\d+)\.\.(\d+)$/ && $Coord_F_Q_R{$c}->[0] eq "polyA_site" ){
@@ -316,14 +316,14 @@ sub get_30bp_flank_seq {
 	#$DNA_L = reverse $DNA_L; $DNA_L =~ tr/atcg/tagc/;
 
 	$DNA_R = substr($line, $coord_S-30-$R_end-1, 30) if $feature eq "polyA_signal_sequence";
-        $DNA_R = substr($line, $coord_S-30-1, 30)        if $feature eq "polyA_site"; 
+        $DNA_R = substr($line, $coord_S-30-2, 30)        if $feature eq "polyA_site";   # 2 bp followd by right flank
 	$DNA_R = reverse $DNA_R; $DNA_R =~ tr/atcg/tagc/; 
       }
       if ($strand eq "+"){
 	#$DNA_L = substr($line, $coord_E-30, 30); 
 	
 	$DNA_R = substr($line, $R_end+$coord_E+1, 30) if $feature eq "polyA_signal_sequence";
-        $DNA_R = substr($line, $coord_E+1, 30)        if $feature eq "polyA_site";
+        $DNA_R = substr($line, $coord_E+2, 30)        if $feature eq "polyA_site"; # 2 bp following by right flank
       }
 
       # get clone info
@@ -333,12 +333,12 @@ sub get_30bp_flank_seq {
       my $verify = $V[1]-$V[0] if @V;
       #print "$acc   : $verify -> $V[0] -- $V[1]\n";
 
-      if ( ($feature eq "polyA_site" && $verify == 0) || ($feature eq "polyA_signal_sequence" && $verify == $R_end) ){
+      if ( ($feature eq "polyA_site" && $verify == 1) || ($feature eq "polyA_signal_sequence" && $verify == $R_end) ){
 	$wb++;
 	
 	print ACE "\nFeature : \"WBsf0$wb\"\n";
 	print ACE "Sequence \"$clone[0]\"\n";
-	print ACE "Flanking_sequences\t\"$DNA_L\"\t\"$DNA_R\"\n";
+	print ACE "Flanking_sequences\t\"$clone[0]\"\t\"$DNA_L\"\t\"$DNA_R\"\n";
 	print ACE "Defined_by_sequence\t\"$acc\"\n";
 	print ACE "Method\t\"$feature\"\n";
       }
