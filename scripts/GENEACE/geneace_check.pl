@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-07-09 15:42:58 $
+# Last updated on: $Date: 2004-07-22 08:27:42 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -491,12 +491,12 @@ sub test_locus_for_errors{
   }
 
 
-  # Look for Genes with no Live tag but also no Merged_into or Killed tags
+  # Look for Genes with no Live tag but also no Merged_into, Killed, or Made_into_transposon tags
   if ( !defined $gene_id->at('Identity.Live') && !defined $gene_id->Merged_into ){
     print "." if ($verbose);
-    my $tag = get_event($gene_id);
-    if ( $tag ne "Killed" ){
-      $warnings .= "ERROR 20(a): $gene_id ($Gene_info{$gene_id}{'Public_name'}) has no 'Live' tag, no 'Merged_into' and no 'Killed' tags => Go live\n";
+    my $tag = &get_event($gene_id);
+    if (($tag ne "Killed") && ($tag ne "Made_into_transposon")){
+      $warnings .= "ERROR 20(a): $gene_id ($Gene_info{$gene_id}{'Public_name'}) has no 'Live' tag, and no 'Merged_into', 'Killed' or 'Made_into_transposon' tags\n";
       if ($ace){
 	print ACE "\nGene : \"$gene_id\"\n";
 	print ACE "Live\n";
@@ -518,7 +518,7 @@ sub test_locus_for_errors{
     }
     
     if ( $gene_id->History ){
-      my $tag = get_event($gene_id);
+      my $tag = &get_event($gene_id);
       if ($tag eq "Killed"){
 	$warnings .= "ERROR 20.2(a): $gene_id ($Gene_info{$gene_id}{'Public_name'}) has 'Live' tag but also has 'Killed' tag => Lose Live\n";
 	if ($ace){
