@@ -5,7 +5,7 @@
 # completely rewritten by Keith Bradnam from list_loci_designations
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-07-30 09:00:08 $      
+# Last updated on: $Date: 2004-08-17 12:20:41 $      
 #
 # This script should be run under a cron job and simply update the webpages that show
 # current gene names and sequence connections.  Gets info from geneace.  
@@ -164,8 +164,8 @@ sub create_currentDB_loci_pages{
       print TEXT "$version,";
       
       # Column 4 - ?CDS connections
-      if(defined($gene->at('Molecular_info.CDS'))){
-	my @CDSs = $gene->CDS;
+      if(defined($gene->at('Molecular_info.Corresponding_CDS'))){
+	my @CDSs = $gene->Corresponding_CDS;
 	print HTML "<TD>";
 	foreach my $cds (@CDSs){
 	  # also get wormpep identifier for each protein
@@ -180,9 +180,9 @@ sub create_currentDB_loci_pages{
       
       
       # Column 5 - ?Transcript connections
-      elsif(defined($gene->at('Molecular_info.Transcript'))){
+      elsif(defined($gene->at('Molecular_info.Corresponding_transcript'))){
 	print HTML "<TD>&nbsp</TD>";
-	my @transcripts = $gene->Transcript;
+	my @transcripts = $gene->Corresponding_transcript;
 	print HTML "<TD>";
 	print TEXT ",";
 	foreach my $i (@transcripts){
@@ -194,8 +194,8 @@ sub create_currentDB_loci_pages{
       }
       
       # Column 6 - ?Pseudogene connections
-      elsif(defined($gene->at('Molecular_info.Pseudogene'))){
-	my @pseudogenes = $gene->Pseudogene;
+      elsif(defined($gene->at('Molecular_info.Corresponding_pseudogene'))){
+	my @pseudogenes = $gene->Corresponding_pseudogene;
 	print HTML "<TD>&nbsp</TD><TD>&nbsp</TD><TD>";
 	print TEXT ",,";
 	foreach my $i (@pseudogenes){
