@@ -8,7 +8,7 @@
 # This makes the autoace database from its composite sources.
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-10-31 15:42:28 $
+# Last edited on: $Date: 2003-11-10 16:36:33 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -228,14 +228,6 @@ sub buildautoace{
   $now = `date +%H:%M:%S`; chomp $now;
   print LOG "* Chromosomal links rebuilt at $now\n\n";
 
-  ################################################
-  # Remove history sequences from autoace        #
-  ################################################
-  # 000403 : dl  :  Added to remove history gene models
-  
-  &rmhistory();
-  $now = `date +%H:%M:%S`; chomp $now;
-  print LOG "* Removed history Sequences and Transcripts at $now\n\n";
     
 }
 
@@ -547,18 +539,6 @@ sub makechromlink {
   }
 }
 
-
-###################################################
-# Remove History                                  
-
-sub rmhistory {
-    my $command  = "query find sequence method = history\nkill\nsave\nquit\n";
-    my $command2 = "query find Transcript method = history\nkill\nsave\nquit\n";
-    my $command3 = "query find Pseudogene method = history\nkill\nsave\nquit\n";
-    &DbWrite($command,$tace,$dbpath,"RmHistory");
-    &DbWrite($command2,$tace,$dbpath,"RmHistory");
-    &DbWrite($command3,$tace,$dbpath,"RmHistory");
-}
 
 
 #########################################
