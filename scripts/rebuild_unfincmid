@@ -56,7 +56,9 @@ getopts ('h');
  # Projects 2B dumped         #
  ##############################
 
-@clones = (Y105E8,Y39B6,Y67H2,Y10G11);
+#@clones = (Y105E8,Y39B6,Y67H2,Y10G11);
+# updated 011128
+@clones = (Y10G11);
 
 my %CHROME = ("Y105E8","I","Y39B6","V","Y67H2","IV","Y10G11","IV");
 my %CLONES;
