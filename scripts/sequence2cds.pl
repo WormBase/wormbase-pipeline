@@ -7,7 +7,7 @@
 # A script to take ?Sequence objects and make ?CDS (and ?Pseudogene) objects
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-08-05 14:26:50 $     
+# Last updated on: $Date: 2003-08-11 14:12:49 $     
 
 use strict;
 use Carp;
@@ -48,7 +48,7 @@ $/ = "";
 
 # Two output files, one for pseudogenes, one for everything else.
 open(OUT,">${dbdir}krb_${db}_Sequence.ace") || croak "Couldn't open output file\n";
-open(PSEUDOGENES,">${dbdir}krb_${db}_Pseudogenes.ace") || croak "Couldn't open pseudogenes file\n";
+open(PSEUDOGENES,">${dbdir}${db}_Pseudogene.ace") || croak "Couldn't open pseudogenes file\n";
 
 
 open(IN,"<${dbdir}${db}_Sequence.ace") || carp "Can't open input file\n";
@@ -80,7 +80,13 @@ while(<IN>){
 
     # Track pseudogene names for changing parent ?Sequence objects later
     m/^Pseudogene : (\".*?\")/;
-    $pseudogenes{$1} = 1;
+    my $key = $1;
+
+    #Find Parent sequence object (might be superlink)    
+    m/From\s+$ts\s+Source\s+$ts\s+(\".*?\")\s+$ts/;    
+    my $parent = $3;
+
+    $pseudogenes{$key} = $parent;
 
     # No need for Pseudogene tag now, but these are all Sequence objects so can
     # set 'Type' tag to be 'Coding_pseudogene'
@@ -111,10 +117,14 @@ close(PSEUDOGENES);
 # Now need to re-read the Sequence output file to replace 'Subsequence' with
 # 'Pseudogene' for those things which will be pseudogenes
 
-# Need new output file
+# read from first dumped file
 open(IN,"<${dbdir}krb_${db}_Sequence.ace") || croak "Can't open input file\n";
 
+# Need new output file
 open(OUT,">${dbdir}krb2_${db}_Sequence.ace") || croak "Couldn't open output file\n";
+
+# Second output file to generate fix file for camace/stlace
+open(OUT2,">${dbdir}${db}_fix_file_for_pseudogenes.ace") || croak "Couldn't open output file\n";
 
 # reset input line separator
 $/ = "\n";
@@ -125,6 +135,7 @@ while(<IN>){
   if(m/^Structure\s+.*\s+Subsequence\s+$ts\s+(\".*\")\s+$ts\s+\d+/){
     my $subsequence = $2;
     s/Subsequence/Pseudogene/ if ($pseudogenes{$subsequence});           
+    print OUT2 "\nSequence : $pseudogenes{$subsequence}\n$_" if ($pseudogenes{$subsequence});
   }
 
   print OUT;
@@ -133,8 +144,9 @@ while(<IN>){
 
 close(IN);
 close(OUT);
+close(OUT2);
 
-system("mv ${dbdir}krb2_${db}_Sequence.ace ${dbdir}krb_${db}_Sequence.ace") && croak "Couldn't overwrite file\n";
+system("mv ${dbdir}krb2_${db}_Sequence.ace ${dbdir}${db}_Sequence.ace") && croak "Couldn't overwrite file\n";
 
 exit(0);
 
