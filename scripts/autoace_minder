@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder [-options]
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2002-09-05 14:11:28 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2002-09-06 09:16:53 $
 
 
 #################################################################################
@@ -260,7 +260,7 @@ LOG->autoflush();
 
 $rundate    = `date +%y%m%d`; chomp $rundate;
 $runtime    = `date +%H:%M:%S`; chomp $runtime;
-print LOG "# autoace_minder finished at: $rundate $runtime\n";
+print LOG "\n# autoace_minder finished at: $rundate $runtime\n";
 close LOG;
 
 &mail_maintainer("WormBase Report: $am_option",$maintainers,$logfile);
@@ -1395,30 +1395,28 @@ sub make_suggestion {
 
 sub logfile_details {
   
-  print LOG "# autoace_minder started at: $rundate $runtime\n\n";
+  print LOG "# autoace_minder started at: $rundate $runtime\n";
   print LOG "# WormBase/Wormpep version: WS${WS_version}\n\n";  
-  print LOG "======================================================================\n";
-  print LOG "  -initial      : Prepare for a new build, update WSnn version number\n"                 if ($initial);
-  print LOG "  -unpack       : Unpack databases from FTP site and copy Sanger dbs\n"                  if ($unpack);
-  print LOG "  -acefile      : Write .acefiles from WormBase copies of the databases\n"               if ($acefile);
-  print LOG "  -build        : Build autoace\n"                                                       if ($build);
-  print LOG "  -builddb      : Build autoace : DB only\n"                                             if ($builddb);
-  print LOG "  -buildchrom   : Build autoace : DNA data\n"                                            if ($buildchrom);
-  print LOG "  -buildtest    : Build autoace : Test for failed .ace object uploads\n"                 if ($buildtest);
-  print LOG "  -buildrelease : Build autoace : Release directory\n"                                   if ($buildrelease);
-  print LOG "  -check        : Check DB consistency and diffs from previous version\n"                if ($check);
-  print LOG "  -buildpep     : Build wormpep database\n"                                              if ($buildpep);
-  print LOG "  -buildrna     : Build wormrna database\n"                                              if ($buildrna);
-  print LOG "  -addhomol     : Load blast data into autoace\n"                                        if ($addhomol);
-  print LOG "  -addbriggsae  : Load briggsae data into autoace\n"                                     if ($addbriggsae);
-  print LOG "  -utrs         : Generates and load UTR data into autoace\n"                            if ($utrs);
-  print LOG "  -ftp          : Move WS release to the external FTP site (Full public release)\n"      if ($ftp);
-  print LOG "  -debug        : Verbose/Debug mode\n"                                                  if ($debug);
-  print LOG "  -gffdump      : Dump GFF files\n"                                                      if ($gffdump);
-  print LOG "  -gffsplit     : Split GFF files\n"                                                     if ($gffsplit);
-  print LOG "  -map          : map PCR and RNAi\n"                                                    if ($map);
-  print LOG "======================================================================\n";
-  print LOG "\n";
+  print LOG "#  -initial      : Prepare for a new build, update WSnn version number\n"                 if ($initial);
+  print LOG "#  -unpack       : Unpack databases from FTP site and copy Sanger dbs\n"                  if ($unpack);
+  print LOG "#  -acefile      : Write .acefiles from WormBase copies of the databases\n"               if ($acefile);
+  print LOG "#  -build        : Build autoace\n"                                                       if ($build);
+  print LOG "#  -builddb      : Build autoace : DB only\n"                                             if ($builddb);
+  print LOG "#  -buildchrom   : Build autoace : DNA data\n"                                            if ($buildchrom);
+  print LOG "#  -buildtest    : Build autoace : Test for failed .ace object uploads\n"                 if ($buildtest);
+  print LOG "#  -buildrelease : Build autoace : Release directory\n"                                   if ($buildrelease);
+  print LOG "#  -check        : Check DB consistency and diffs from previous version\n"                if ($check);
+  print LOG "#  -buildpep     : Build wormpep database\n"                                              if ($buildpep);
+  print LOG "#  -buildrna     : Build wormrna database\n"                                              if ($buildrna);
+  print LOG "#  -addhomol     : Load blast data into autoace\n"                                        if ($addhomol);
+  print LOG "#  -addbriggsae  : Load briggsae data into autoace\n"                                     if ($addbriggsae);
+  print LOG "#  -utrs         : Generates and load UTR data into autoace\n"                            if ($utrs);
+  print LOG "#  -ftp          : Move WS release to the external FTP site (Full public release)\n"      if ($ftp);
+  print LOG "#  -debug        : Verbose/Debug mode\n"                                                  if ($debug);
+  print LOG "#  -gffdump      : Dump GFF files\n"                                                      if ($gffdump);
+  print LOG "#  -gffsplit     : Split GFF files\n"                                                     if ($gffsplit);
+  print LOG "#  -map          : map PCR and RNAi\n"                                                    if ($map);
+  print LOG "======================================================================\n\n";
 
 }
 
