@@ -5,9 +5,10 @@ use lib glob("~ar2/wormbase/scripts/");
 use Ace;
 use Getopt::Long;
 use Data::Dumper;
+use Coords_converter;
 
 my ($debug, $verbose, $really_verbose, $est, $count, $report, $gap, $transcript, $gff, $show_matches, $database);
-$gap = 1; # $gap is the gap allowed in an EST alignment before it is considered a "real" intron
+$gap = 5; # $gap is the gap allowed in an EST alignment before it is considered a "real" intron
 
 GetOptions ( "debug" => \$debug,
 	     "verbose" => \$verbose,
@@ -24,11 +25,14 @@ GetOptions ( "debug" => \$debug,
 
 $database = glob("~wormpub/DATABASES/TEST_DBs/ANT_matchingace") unless $database;
 
-  
-  my %genes_exons;
-  my %genes_span;
-  my %cDNA;
-  my %cDNA_span;
+
+my %genes_exons;
+my %genes_span;
+my %cDNA;
+my %cDNA_span;
+my $gff_file;
+
+$gff_file = $gff if $gff;
 
 my @chromosomes = qw(I II III IV V X);
 foreach my $chrom ( @chromosomes ) {
@@ -40,10 +44,10 @@ foreach my $chrom ( @chromosomes ) {
   %cDNA_span = ();
   
   unless ($gff) {
-    $gff = "$database/CHROMOSOMES/CHROMOSOME_$chrom.gff";
+    $gff_file = "$database/CHROMOSOMES/CHROMOSOME_$chrom.gff";
   }
 
-  open (GFF,"<$gff") or die "gff\n";
+  open (GFF,"<$gff_file") or die "gff_file\n";
   # C43G2	  curated	  exon         10841   10892   .       +       .       Sequence "C43G2.4"
   # C43G2   curated         CDS          10841   10892   .       +       0       Sequence "C43G2.4"
   # C43G2   curated         Sequence     10841   13282   .       +       .       Sequence "C43G2.4"
@@ -100,7 +104,10 @@ foreach my $chrom ( @chromosomes ) {
     }
     last if $est;
   }
-  
+
+  # get coords obj to return clone and coords from chromosomal coords
+  my $coords = Coords_converter->invoke;
+
   # write out the transcript objects
   open (ACE,">$database/transcripts.ace") or die "transcripts\n";
   foreach my $gene (keys %gene2cdnas) {
@@ -146,19 +153,26 @@ foreach my $chrom ( @chromosomes ) {
 	  print ACE "source_exons ",$transcript{$exons[-1]} - $transcript{$_} + 1 ," ",$transcript{$exons[-1]} - $_ + 1 ," \n"; # - strand
 	}
       }
-      
-      my $source = $1 if($gene =~ /^(\S+)\./);
+      #my $source = $1 if($gene =~ /^(\S+)\./);
+
+      my($source, $x, $y ) = $coords->LocateSpan("$chrom",$exons[0],$transcript{$exons[-1]});
       print ACE "Source $source\n";
       print ACE "method history\n";
       
       # parent object
       print ACE "\nSequence : $source\n";
       if( $genes_span{$gene}->[2] eq "+"){
-	print ACE "Subsequence $gene.trans $exons[0] $transcript{$exons[-1]}\n"; # + strand
+	print ACE "Subsequence $gene.trans $x $y\n"; # + strand
       }
       else {
-	print ACE "Subsequence $gene.trans $transcript{$exons[-1]} $exons[0]\n"; # - strand
-      }
+	print ACE "Subsequence $gene.trans $y $x\n"; # - strand
+      }   
+#      if( $genes_span{$gene}->[2] eq "+"){
+#	print ACE "Subsequence $gene.trans $exons[0] $transcript{$exons[-1]}\n"; # + strand
+#      }
+#      else {
+#	print ACE "Subsequence $gene.trans $transcript{$exons[-1]} $exons[0]\n"; # - strand
+#      }
     }
   }
   
@@ -193,7 +207,7 @@ sub findOverlappingGene
 	# overlaps 
 	push( @overlap_genes, $_);
       }
-      elsif( ($cDNA_span{$$cdna}[0] > $genes_span{$_}[0]) and ($cDNA_span{$$cdna}[1] < $genes_span{$_}[1]) ) { # cDNA contained within gene
+      elsif( ($cDNA_span{$$cdna}[0] >= $genes_span{$_}[0]) and ($cDNA_span{$$cdna}[1] <= $genes_span{$_}[1]) ) { # cDNA contained within gene
 	#overlaps
 	push( @overlap_genes, $_);
       }
@@ -299,7 +313,7 @@ sub checkExonMatch
 	# cDNA exon overlaps 1st gene exon start and terminate therein
 	elsif( ( $cExonStart == $cdna_exon_starts[-1]  ) and #  last exon of cDNA
 	       ( $cExonStart < $genes_span{$$gene}->[0] ) and 
-	       ( $cDNA{$$cdna}->{$cExonStart} > $genes_exons{$gene_exon_starts[0]} )
+	       ( $cDNA{$$cdna}->{$cExonStart} > $genes_exons{$$gene}->{$gene_exon_starts[0]} )
 	     ) {
 	  print "\tcDNA final exon overlaps first exon of gene and end therein\n" if $verbose;
 	  next;
@@ -405,3 +419,70 @@ sub eradicateSingleBaseDiff
       }
     }
   }
+
+
+
+__END__
+
+=pod
+
+=head2 NAME - transcript_builder.pl
+
+=head1 USAGE
+
+=over 4
+
+=item transcript_builder.pl  [-options]
+
+=back
+
+This script "does exactly what it says on the tin". ie it builds transcript objects for each gene in the database
+
+To do this it ;
+
+1) Determines matching_cDNA status for each gene. Goes through gff files and examines each cDNA to see if it matches any gene that it overlaps.
+
+2) For each gene that has matching cDNAs it then confirms that every exon of the gene that lies within the region covered by the cDNA is covered correctly.  So if a gene has an extra exon that is in the intron of a cDNA, that cDNA will NOT be linked to that gene.
+
+
+The script outputs up to 3 files for each chromosome.
+
+  chromosome*_transcripts.ace    -     transcript object ace file 
+
+  chromosome*_matching_cDNA.ace  -     matching_cDNA assignments
+
+  chromosome*_matching_cDNA.dat  -     matching_cDNA assignments as Data::Dumper hash   gene => [cdna, cdna]
+
+=back
+
+=head2 transcript_builder.pl arguments:
+
+=over 4
+
+=item * verbose and really_verbose  -  levels of terminal output
+  
+=item *  est:s     - just do for single est 
+
+=item * count     - reports number of matching_cDNAs for each gene 
+
+=item * report    - reports list of matching_cDNA for each gene
+
+=item * gap:s      - when building up cDNA exon structures from gff file there are often single / multiple base pair gaps in the alignment. This sets the gap size that is allowable [ defaults to 5 ]
+
+=item *  transcript   - write transcipt files
+
+=item * gff:s         - pass in a gff file to use
+
+=item * show_matches   - write the matching_cDNA ace files
+
+=item * database:s      - database directory to use. Expects gff files to be in CHROMSOMES subdirectory.
+
+=head1 AUTHOR
+
+=over 4
+
+=item Anthony Rogers (ar2@sanger.ac.uk)
+
+=back
+
+=cut
