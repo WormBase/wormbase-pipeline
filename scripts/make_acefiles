@@ -303,7 +303,7 @@ END
 sub strip_protein {
     my ($filename,$strip) = @_;
 
-    $/ = "Protein :";
+    $/ = "";
     
     open (OUT, ">${filename}.rm");
     open (FILE, "<$filename");
