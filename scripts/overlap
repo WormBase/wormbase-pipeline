@@ -10,7 +10,7 @@ use Carp;
 use Ace;
 use IO::Handle;
 $|=1;
-my @chrom = qw( I II III IV V X );
+my @chrom = qw( I );
 my (%exon, %est, %genes, %repeat, %intron, %camace, %stlace);
 
 ######################
@@ -40,9 +40,9 @@ foreach my $stlclone (@stlclones) {
 foreach my $chrom (@chrom) {
 
     open (GFF, "/wormsrv2/autoace/CHROMOSOMES/CHROMOSOME_$chrom.gff"); 
-    open (OUTCAM, ">/nfs/disk100/wormpub/kerstin/testruns/CHROMOSOME_$chrom.camace") 
+    open (OUTCAM, ">/nfs/disk100/wormpub/kerstin/testruns/CHROMOSOME_$chrom.camace.check") 
 		|| die "Cannot open output file $chrom $!\n"; 
-	open (OUTSTL, ">/nfs/disk100/wormpub/kerstin/testruns/CHROMOSOME_$chrom.stlace") 
+	open (OUTSTL, ">/nfs/disk100/wormpub/kerstin/testruns/CHROMOSOME_$chrom.stlace.check") 
 		|| die "Cannot open output file $chrom $!\n"; 
 	
 	#open (GFF, "/nfs/griffin/kj2/worm/CHROMOSOME_$chrom.gff") || die "Cannot open $chrom $!";
@@ -151,7 +151,7 @@ foreach my $chrom (@chrom) {
             elsif (${$exon{$name}}[1] >= ${$exon{$other}}[0])  {
                 (my $onename)    = ($name  =~ /(\S.*?\.\S.*?)\./);
                 (my $othername)  = ($other =~ /(\S.*?\.\S.*?)\./);
-                push (@geneoutput, [$onename,$othername] );
+                push (@geneoutput, [sort ($onename,$othername)] );
             }    
             else {last;}
         }
