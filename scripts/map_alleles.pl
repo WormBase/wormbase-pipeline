@@ -7,7 +7,7 @@
 # This maps alleles to the genome based on their flanking sequence
 #
 # Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2003-02-04 16:51:45 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2003-02-05 09:38:24 $        # quickly see when script was last changed and by whom
 
 
 use strict;
@@ -111,9 +111,20 @@ print LOG "$0 start at $runtime on $rundate\n----------------------------------\
 
 my $geneace_update = "/wormsrv2/autoace/MAPPINGS/map_alleles_geneace_update$ver.ace";
 my $geneace_update_delete = "/wormsrv2/autoace/MAPPINGS/map_alleles_geneace_update_delete$ver.ace";
+my %geneace_alleles;
 unless ($no_geneace) {
   open (GENEACE,">$geneace_update") or die "cant open $geneace_update: $!\n";
   open (GEN_DEL,">$geneace_update_delete") or die "cant open $geneace_update_delete\n";
+  
+  # get list of alleles from geneace to check against for feedback files
+  my $geneace = "/wormsrv2/geneace";
+  my $g_db = Ace->connect(-path => $geneace) || do { print  "$database Connection failure: ",Ace->error; die();};
+  my @g_alleles = $g_db->fetch(-query =>'Find Allele;flanking_sequences');
+  foreach ( @g_alleles ) {
+    my $G_name = $_->name;
+    $geneace_alleles{$G_name} = 1;
+  }
+  $g_db->close;
 }
 open (OUT,">$ace_file") or die "cant open $ace_file\n";
 #open (STR,">$strain_file") or die "cant open $strain_file\n";
@@ -479,16 +490,16 @@ sub outputAllele
 
 	# in Allele object
 	print OUT "\nAllele : $to_dump\n";
-	print GEN_DEL "\nAllele : $to_dump\n-D Predicted_gene\n-D Sequence\n" unless $no_geneace;# remove current sequence and predicted genes from Geneace
+	print GEN_DEL "\nAllele : $to_dump\n-D Predicted_gene\n-D Sequence\n" if defined $geneace_alleles{$to_dump};# remove current sequence and predicted genes from Geneace
 
-	print GENEACE "\nAllele : \"$to_dump\"\nSequence \"$allele_data{$to_dump}[6]\"\n" unless $no_geneace;# allele -> sequence
+	print GENEACE "\nAllele : \"$to_dump\"\nSequence \"$allele_data{$to_dump}[6]\"\n" if defined $geneace_alleles{$to_dump};# allele -> sequence
 	if( $allele_data{$to_dump}[8] ) {
 	  @myStrains = split(/\*\*\*/,"$allele_data{$to_dump}[8]");
 	}
 	foreach my $ko (@affects_genes) {
 	  #allele - seq connection
 	  print OUT "Predicted_gene $ko\n";
-	  print GENEACE "Predicted_gene $ko\n" unless $no_geneace;# update geneace with allele -> Predicted_genes
+	  print GENEACE "Predicted_gene $ko\n" if defined $geneace_alleles{$to_dump};# update geneace with allele -> Predicted_genes
 
 
 #         NOT DOING THIS ANY MORE
