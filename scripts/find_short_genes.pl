@@ -4,10 +4,10 @@
 # 
 # by Keith Bradnam, aged 12 and half
 #
-# A script to find (and classify) potentially short, spurious genes (<100 aa)
+# A script to find (and classify) potentially short, spurious genes (default = <50 aa)
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-10-29 14:57:21 $     
+# Last updated on: $Date: 2003-10-29 14:58:06 $     
 
 
 use strict;
@@ -56,7 +56,7 @@ if($debug){
   ($maintainers = $debug . '\@sanger.ac.uk');
 }
 
-# set default cutoff to 100 amino acids if not specified on command line
+# set default cutoff to 50 amino acids if not specified on command line
 if(!defined($cutoff)){
   $cutoff = 50;        
 }
@@ -233,7 +233,7 @@ __END__
 =head1 DESCRIPTION
 
 This script will check the 'Predicted_gene' subclass in any target database
-and find all genes less than a certain size (defaults to 100 amino acids).
+and find all genes less than a certain size (defaults to 50 amino acids).
 It will then check each of those genes for the presence/absence of cDNA
 information and also whether there are associated RNAi experiments that give
 a wild-type phenotype.  Finally, it also looks to see if there are associated
