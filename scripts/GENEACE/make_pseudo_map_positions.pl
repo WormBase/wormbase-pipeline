@@ -7,7 +7,7 @@
 # Script to identify genes which can have their Interpolated_map_position tag promoted to a Map position
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-12-09 17:01:12 $
+# Last updated on: $Date: 2004-12-14 16:15:56 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -51,6 +51,7 @@ my $tace = &tace;                               # tace executable path
 $database = "$basedir/autoace" if (!$database); # specify autoace as the default database if -database not specified
 my $output = "pseudo_map_positions.ace";
 
+
 ###############################################################################################
 # Look for CGC-named Gene objects without a 'Map' tag or mapping_data but which have an allele
 # and a sequence connection and an 'Interpolated_map_position' tag.  This is for creating 
@@ -73,11 +74,12 @@ print OUT "// can be placed on the genetic map.  A later build script will have 
 print OUT "// make associated Multi_pt_data objects to accompany these genes (all\n";
 print OUT "// genes with map positions need to have mapping data).\n\n";
 
-print OUT "// This file should also be uploaded back into geneace\n\n";
+print OUT "// This file should also be uploaded back into geneace...normally this\n";
+print OUT "// happen automatically by a later build script\n\n";
 
 
 $log->write_to("Genes with newly promoted Map positions ");
-$log->write_to("(this file MUST be loaded into /wormsrv1/geneace by the geneace curator):\n\n");
+$log->write_to("(this file will be loaded to geneace by a later build script):\n\n");
 
 # open a connection to database
 my $db = Ace->connect(-path  => $database,
