@@ -7,7 +7,7 @@
 # by Kerstin Jekosch
 #
 # Last updated by: $Author: dl1 $                      
-# Last updated on: $Date: 2004-12-22 11:19:32 $        
+# Last updated on: $Date: 2004-12-22 15:10:19 $        
 
 use strict;
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
@@ -113,7 +113,7 @@ foreach my $chromosome (@chromosomes) {
     next unless /\S/;
     @line = split /\t/;
     
-    my ($name) = ($line[8] =~ /\"(\S+.+)\"\s+\d+\s+\d+$/);
+    my ($name) = ($line[8] =~ /\"RNAi:(\S+.+)\"\s+\d+\s+\d+$/);
     $RNAicount{$name}++;
     my $RNAiname = $name.".".$RNAicount{$name};
     $RNAi{$RNAiname} = [$line[3],$line[4]];
