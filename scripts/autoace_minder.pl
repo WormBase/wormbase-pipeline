@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-09-08 16:55:00 $
+# Last edited on: $Date: 2003-09-09 08:16:12 $
 
 
 #################################################################################
@@ -836,6 +836,7 @@ sub blat_jobs{
   push(@blat_jobs,"est","ost","mrna","embl","nematode") if $blat_all;
 
   my $status;
+  my $nematode_flag = 0; # have nematode blats been run?
 
   # run each blat job in turn 
   foreach my $job(@blat_jobs){
@@ -848,6 +849,7 @@ sub blat_jobs{
       &dump_GFFs;
       &split_GFFs;
       system ("touch $logdir/UTR_gff_dump");
+      $nematode_flag = 1;
     }
     
     # run the main blat job
@@ -871,9 +873,6 @@ sub blat_jobs{
     }
     print LOG "Finishing acecompress.pl at ",&runtime,"\n\n";
       
-    # load final blat results into autoace
-    &load_blat_results("nematode") if ($job eq "nematode");
-
     # make blat job specific lock file
     system ("touch $logdir/$flag{'B6_$job'}");
     
@@ -881,6 +880,15 @@ sub blat_jobs{
   # generic lock file
   system ("touch $logdir/$flag{'B6'}");  
 
+  # now load blat results into autoace
+  # if blat_nematode was selected then only need to load just those results as other results would have been loaded above.
+  # otherwise load everything
+  if($nematode_flag == 1){
+    &load_blat_results("nematode");
+  }
+  else{
+    &load_blat_results("all");
+  }
 }
 
 ################################################################################
