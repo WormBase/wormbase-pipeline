@@ -36,8 +36,8 @@ $|=1;
 use IO::Handle;
 use Getopt::Std;
 use Cwd;
-#use strict;
-require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
+use strict;
+require "/wormsrv2/scripts/babel.pl";
 
  ##############################
  # Script variables (run)     #
@@ -47,7 +47,11 @@ my $maintainer = "dl1\@sanger.ac.uk";
 my $rundate    = `date +%y%m%d`; chomp $rundate;
 my $runtime    = `date +%H:%M:%S`; chomp $runtime;
 my $logfile    = "/wormsrv2/logs/unpack_briggsae.$rundate.$$";
-my $version    = &get_script_version("unpack_briggsae");
+
+# grab version number from cvs
+my $version = `cvs -d /nfs/ensembl/cvsroot/ status /wormsrv2/scripts/unpack_briggsae`;
+$version =~ s/.* +Repository revision:\s+([\d\.]*)\s+.*/$1/s; 
+
 
  ##############################
  # Paths for I/O files        #
@@ -61,12 +65,12 @@ my $giface = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/giface";
 my @filenames = "";
 my $filename  = "";
 
- ##############################
- # command-line options       #
- ##############################
+##############################
+# command-line options       #
+##############################
 
-$opt_h = "";   # Help/Usage page
-$opt_r = "";   # Release date of database.tar.gz files
+my $opt_h = "";   # Help/Usage page
+my $opt_r = "";   # Release date of database.tar.gz files
 
 getopts ('hr:');
 &usage if ($opt_h);
@@ -74,12 +78,14 @@ getopts ('hr:');
 &error(1) if ((length $opt_r) != 6);
 my $today = "20" . substr($opt_r,0,2) . "-" . substr($opt_r,2,2) . "-" . substr($opt_r,4,2);
 
- ##############################
- # open logfile               #
- ##############################
+##############################
+# open logfile               #
+##############################
 
-system ("/bin/touch $logfile");
-open (LOGFILE,">>$logfile");
+my $system_return = system ("/bin/touch $logfile");
+warn "Couldn't touch $logfile: $?" if ($?);
+
+open (LOGFILE,">>$logfile") || die "Couldn't append to $logfile";
 LOGFILE->autoflush;
 
 print LOGFILE "# unpack_briggsae\n#\n";
@@ -98,21 +104,25 @@ chdir $dbdir;
 my $dir = cwd();
 print LOGFILE "Move to directory: '$dir'\n";
 
- # copy database.tar.gz file & check size
-system ("cp -f $ftp/brigdb_$today.tar.gz .");
+# copy database.tar.gz file & check size
+$system_return = system ("cp -f $ftp/brigdb_$today.tar.gz .");
+warn "Couldn't run cp command: $?" if ($?);
+
 my $match = &copy_check("$ftp/brigdb_$today.tar.gz","$dbdir/brigdb_$today.tar.gz");
 print LOGFILE "Copy 'brigdb_$today.tar.gz' to $dbdir successful\n" if ($match == 1); 
 
 print LOGFILE "Copy 'brigdb_$today.tar.gz' to $dbdir failed\n" if ($match == 0);
  
-system ("/bin/gzip -d brigdb_$today.tar.gz");
+$system_return = system ("/bin/gzip -d brigdb_$today.tar.gz");
+warn "Couldn't run gzip command: $?" if ($?);
 print LOGFILE "uncompress file\n";
 
-system ("/bin/tar -xvf brigdb_$today.tar");
+$system_return = system ("/bin/tar -xvf brigdb_$today.tar");
+warn "Couldn't run tar command: $?" if ($?);
 print LOGFILE "untar file\n\n";
 
 print LOGFILE "Database files to be loaded:\n";
-open (LIST, "/bin/ls dump*$today*ace |");
+open (LIST, "/bin/ls dump*$today*ace |") || die "Couldn't pipe";
 while (<LIST>) {
     chomp;
     push (@filenames,"$_");
@@ -125,7 +135,8 @@ print LOGFILE "\n";
  # modify displays.wrm for rebuild #
  ###################################
 
-system ("mv $dbdir/wspec/displays.wrm $dbdir/wspec/displays.old") ;
+$system_return = system ("mv $dbdir/wspec/displays.wrm $dbdir/wspec/displays.old") ;
+warn "Couldn't run mv command: $?" if ($?);
 open (FILE_OLD,"$dbdir/wspec/displays.old") || do { 
     print LOGFILE "failed to open $dbdir/wspec/displays.old\n"; 
     die(1);
@@ -148,15 +159,23 @@ unlink "$dbdir/wspec/displays.old" ;
  # Re-initialise the ACEDB database #
  ####################################
 
-system ("\\rm $dbdir/database/new/*");
-system ("\\rm $dbdir/database/touched/*");
+$system_return = system ("\\rm $dbdir/database/new/*");
+warn "Couldn't run rm command: $?" if ($?);
+
+$system_return = system ("\\rm $dbdir/database/touched/*");
+warn "Couldn't run rm command: $?" if ($?);
+
 if (-e "$dbdir/database/lock.wrm") {
     print LOGFILE "*Reinitdb error - lock.wrm file present..\n";
     close LOGFILE;
     die();
 }
-system ("\\mv $dbdir/database/log.wrm $dbdir/database/log.old");  
-system ("\\rm $dbdir/database/*.wrm");
+$system_return = system ("\\mv $dbdir/database/log.wrm $dbdir/database/log.old");  
+warn "Couldn't run rm command: $?" if ($?);
+
+$system_return = system ("\\rm $dbdir/database/*.wrm");
+warn "Couldn't run rm command: $?" if ($?);
+
 unlink "$dbdir/database/ACEDB.wrm";
 
 my $command=<<EOF;
@@ -191,7 +210,9 @@ if (-e $filename) {
 # Tidy up old ace files       #
 ###############################
 
-system ("/bin/rm -f brigdb_$today.tar");
+$system_return = system ("/bin/rm -f brigdb_$today.tar");
+warn "Couldn't run rm command: $?" if ($?);
+
 print LOGFILE "\ndelete tar file from current directory\n\n";
 
 print LOGFILE "Database files to be removed:\n";
