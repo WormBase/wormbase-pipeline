@@ -6,8 +6,8 @@
 #
 # Usage: camcheck.pl
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-07-01 10:36:04 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2004-07-28 14:56:08 $
 #
 # see pod documentation (i.e. 'perldoc camcheck.pl') for more information.
 #
@@ -120,6 +120,8 @@ print LOG "** Monthly edition **\n\n" if ($opt_m);
 &CloneTests;
 
 &check_worm_genes;
+
+&check_worm_transcripts;
 
 &CheckPredictedGenes;
 
@@ -311,7 +313,18 @@ sub check_worm_genes{
     }
 }
 
+####################################
+# Check elegans_RNA_gene class     #
+####################################
 
+sub check_worm_transcripts{
+  my @Transcripts= $db->fetch(-query=>'find elegans_RNA_genes NOT Transcript');
+  if(@Transcripts){
+    foreach (@Transcripts){
+      print LOG "ERROR: $_ has no Transcript tag, this will cause errors in the build\n";
+    }
+  }
+}
 #########################
 # Check predicted genes #
 #########################
