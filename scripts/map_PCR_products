@@ -201,6 +201,8 @@ foreach my $mapped (sort keys %finaloutput) {
         print OUTACE "Corresponding_PCR_product \"$mapped\"\n\n";
     }
 } 
+close(OUT);
+close(OUTACE);
 
 ##############################
 # read acefiles into autoace #

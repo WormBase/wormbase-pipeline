@@ -210,6 +210,8 @@ foreach my $mapped (sort keys %finaloutput) {
     }
 } 
 
+close(OUT);
+close(OUTACE);
 
 ##############################
 # read acefiles into autoace #
