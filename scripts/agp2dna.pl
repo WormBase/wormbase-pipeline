@@ -1,8 +1,8 @@
-#!/usr/local/bin/perl5.6.0 -w
+#!/usr/local/bin/perl5.6.1 -w
 #
 # agp2dna.pl
 #
-# dl
+# by Dan Lawson
 #
 # Reconstructs chromosome DNA consensus file from the agp file.
 # Each clone segment of sequence is checked from the EMBL
@@ -10,20 +10,22 @@
 #
 # Usage : agp2dna.pl [-options]
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2002-07-09 14:44:26 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2002-12-09 17:27:57 $
 
 
 $|=1;
-use Getopt::Long;
+
 use strict;
-use vars qw ($seq_len $sv_acc $sv_ver);
 use lib "/wormsrv2/scripts/";
 use Wormbase;
+use Getopt::Long;
+use vars qw ($seq_len $sv_acc $sv_ver $log);
 
- ##############################
- # Script variables (run)     #
- ##############################
+
+##############################
+# Script variables (run)     #
+##############################
 
 my $maintainers = "All";
 my $rundate     = `date +%y%m%d`;   chomp $rundate;
@@ -47,18 +49,25 @@ my $getz;               # Fetch sequences using getz
 GetOptions (
             "pfetch"      => \$pfetch,
             "getz"        => \$getz,
-	    "debug"       => \$debug,
+	    "debug=s"     => \$debug,
             "help"        => \$help,
 	    "chrom=s"     => \$chrom
  );
 
-&usage(0) if ($help);
+&usage("Help") if ($help);
+
+
+# Use debug mode?
+if($debug){
+  print "DEBUG = \"$debug\"\n\n";
+  ($maintainers = $debug . '\@sanger.ac.uk');
+}
+
+&create_log_files;
 
 # Set pfetch as the default retreival option
 if (!$getz) {$pfetch = 1};
 
-# short-cut for developer
-($maintainers = "dl1\@sanger.ac.uk") if ($debug);
 
 # single chromosome mode
 if ($chrom) {
@@ -177,6 +186,9 @@ foreach my $chromosome (@gff_files) {
 
 exit(0);
 
+
+
+
  ########################################
  # getz query accession for sequence    #
  ########################################
@@ -237,7 +249,7 @@ sub sequence_pfetch {
 
 sub usage {
     my $error = shift;
-    if ($error == 1){ 
+    if ($error == "1"){ 
         # Error 01 - no DNA file to read
         print "No Chromosome DNA file available.\n";
         exit(1);
@@ -262,12 +274,35 @@ sub usage {
         print "Single chromosome mode aborted. '$chrom' is not a valid chromsome designation.\n";
         exit(1);
     }
-    elsif ($error == 0) {
+    elsif ($error eq "Help") {
 	# Normal help menu
 	exec ('perldoc',$0);
+	exit(0)
     }
 
 }
+
+#################################################
+
+sub create_log_files{
+
+  # Create history logfile for script activity analysis
+  $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
+
+  # create main log file using script name for
+  my $script_name = $1;
+  $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
+  my $rundate     = `date +%y%m%d`; chomp $rundate;
+  $log        = "/wormsrv2/logs/$script_name.$rundate.$$";
+
+  open (LOG, ">$log") or die "cant open $log";
+  print LOG "$script_name\n";
+  print LOG "started at ",`date`,"\n";
+  print LOG "=============================================\n";
+  print LOG "\n";
+
+}
+
 
 __END__
 
