@@ -117,7 +117,6 @@ open (STDERR,">>$logfile");
 STDERR->autoflush();
 
 print LOG "# blat_them_all\n\n";     
-print LOG "# version        : $version\n";
 print LOG "# run details    : $rundate $runtime\n";
 print LOG "\n";
 print LOG "WormBase version : ${WS_version}\n";
