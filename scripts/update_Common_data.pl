@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers
 #
-# Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2004-05-20 09:36:37 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2004-07-21 13:25:53 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -117,8 +117,12 @@ sub write_cds2protein_id {
   
   open (TACE, "echo '$command' | $tace $ace_dir |");
   while (<TACE>) {
-    #gene pid version
     chomp;
+    #gene pid version
+    next if ($_ eq "");
+    next if (/acedb\>/);
+    last if (/\/\//);
+
     if (/\"(\S+)\"\s+\"(\S+)\"\s+(\d)/) {
       my $protein_id = "$2".".$3";
       my $gene = $1;
@@ -154,6 +158,9 @@ sub write_clone2accession  {
   open (TACE, "echo '$command' | $tace $ace_dir |");
   while (<TACE>) {
     chomp;
+    next if ($_ eq "");
+    next if (/acedb\>/);
+    last if (/\/\//);
     if (/\"(\S+)\"\s+\"(\S+)\"\s*\d*/) {
       $clone2accession{$1} = $2;
       $accession2clone{$2} = $1;
@@ -220,6 +227,7 @@ sub write_CDSlist  {
   while (<TACE>) {
     chomp;
     next if ($_ eq "");
+    next if (/acedb\>/);
     last if (/\/\//);
     ($CDS) = (/^\"(\S+)\"/);
     # Flag confirmed genes with a 1
@@ -251,6 +259,7 @@ sub write_Feature  {
       print;
       chomp;
       next if ($_ eq "");
+      next if (/acedb\>/);
       last if (/\/\//);
       if (/^\"(\S+)\"\s+\"(\S+)\"/) {
 	  $Featurelist{$1} = $2;
@@ -281,6 +290,7 @@ sub write_EST  {
   while (<TACE>) {
     chomp;
     next if ($_ eq "");    # shortcut at empty lines
+    next if (/acedb\>/);
     last if (/\/\//);      # end when you get to the end
     s/\"//g;               # remove speech marks
     @f = split (/\t/);
@@ -324,6 +334,7 @@ sub write_clones2seq  {
   while (<TACE>) {
     chomp;
     next if ($_ eq "");
+    next if (/acedb\>/);
     next if (/\/\//);
     
     if (/^>(\S+)/) {
@@ -372,8 +383,8 @@ sub write_genes2lab  {
     while (<TACE>) {
       chomp;
       next if ($_ eq "");
+      next if (/acedb\>/);
       last if (/\/\//);
-      
       if (/^\"(\S+)\"\s+\"(\S+)\"/) {
 	$genes2lab{$1} = $2;
       }
@@ -405,6 +416,7 @@ sub write_worm_gene2cgc  {
   while (<TACE>) {
     chomp;
     next if ($_ eq "");
+    next if (/acedb\>/);
     last if (/\/\//);
 
     # get rid of quote marks
