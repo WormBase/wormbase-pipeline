@@ -1261,6 +1261,9 @@
 ?Picture Description ?Text
 	 Pick_me_to_call Text Text
 	 Expr_pattern ?Expr_pattern XREF Picture
+	 RNAi ?RNAi XREF Picture		// new, added for Lincoln.  krb [010807]
+	 Remark ?Text				// also new
+
 
 // Updated from geneace copy [010723 dl]
 
@@ -1450,7 +1453,9 @@
                                             Transgene_expression   //RL [010327]
         Inhibits	Predicted_gene ?Sequence XREF RNAi_result  // "gene" parent (unreliable)
 			Locus ?Locus   XREF RNAi_result            //RL [010327]
-        Reference ?Paper XREF RNAi
+        Supporting_data Movie ?Movie XREF RNAi			   // added for Lincoln, krb [010807]
+                        Picture ?Picture XREF RNAi
+	Reference ?Paper XREF RNAi
         Phenotype ?Phenotype XREF RNAi #Phenotype_info
         Remark ?Text
 
@@ -1487,6 +1492,14 @@
  	     Method ?Method
  	     Overlaps_CDS ?Sequence XREF Corresponding_WTP  // added for Dan PCR mappings [010419 dl]
 	     Contact_information Text
+
+
+// New movie class for Lincoln's movies.
+
+?Movie Description ?Text
+       Pick_me_to_call Text Text
+       RNAi ?RNAi XREF Movie
+       Remark ?Text
 
 
 // end of file
