@@ -260,7 +260,7 @@ sub dumpData
   {
     my $matches;
     my $pid = shift; 
-    print OUT "\nProtein : \"WP:$pid\n";
+    print OUT "\nProtein : \"WP:$pid\"\n";
     while( $matches = shift) {   #pass reference to the hash to dump
       #write ace info
       my $output_count = 0;
