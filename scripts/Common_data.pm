@@ -4,7 +4,7 @@
 # by Anthony Rogers                             
 #
 # Last updated by: $Author: ar2 $               
-# Last updated on: $Date: 2002-11-21 13:58:36 $         
+# Last updated on: $Date: 2002-11-21 14:15:48 $         
 
 use strict;                    
 use lib "/wormsrv2/scripts/";
@@ -15,9 +15,9 @@ my $data_dir = "/wormsrv2/autoace/COMMON_DATA";
 our %sub2file = ( 'gene2CE' => "$data_dir/gene2CE.dat",
 		  'CE2gene' => "$data_dir/CE2gene.dat",
 		  'clone2acc' => "$data_dir/clone2acc.dat",
-		  'acc2clone' => "$data_dir/acc2clone.dat"
+		  'acc2clone' => "$data_dir/acc2clone.dat",
 		  'gene2pid' => "$data_dir/gene2pid.dat",
-		  'pid2gene' => "$data_dir/pid2gene.dat",
+		  'pid2gene' => "$data_dir/pid2gene.dat"
 		);
 
 
@@ -30,8 +30,8 @@ sub write_gene2pid
     my $wquery_dir = "/wormsrv2/autoace/wquery";
     my $tace = &tace;
 
-    my %clone2acc;
-    my %acc2clone;
+    my %gene2pid;
+    my %pid2gene;
     
     ####################################################################
     # connect to AceDB using TableMaker,
@@ -43,7 +43,7 @@ sub write_gene2pid
     while (<TACE>) {
       #gene pid version
       chomp;
-      if (/\"(\S+)\"\s+\"(\S+)\"\s+\"\d\"/) {
+      if (/\"(\S+)\"\s+\"(\S+)\"\s+(\d)/) {
 	my $pid = "$2".".$3";
 	my $gene = $1;
 	$gene2pid{"$gene"} = $pid;
@@ -71,8 +71,8 @@ sub write_clone2acc
     my $wquery_dir = "/wormsrv2/autoace/wquery";
     my $tace = &tace;
 
-    my %gene2pid;
-    my %pid2clone;
+    my %clone2acc;
+    my %acc2clone;
     
     ####################################################################
     # connect to AceDB using TableMaker,
