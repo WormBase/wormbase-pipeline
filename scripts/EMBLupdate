@@ -26,6 +26,8 @@ if ($mon < 10) {$mon="0".$mon;}
 if ($mday < 10) {$mday="0".$mday;}
 $year = $year-100;
 
+$datestamp = "0" . $year . $mon . $mday;
+
 if ($ARGV[0] eq "" ) {
 $HELP=<<END;
 Usage: $0 embl_file from EMBLDump
@@ -77,7 +79,7 @@ while (<>) {
      if ($answer eq "y\n") {
 	 system "cp temp$$ /nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.embl";
 	 system "ln -s /nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.embl /nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.current.embl";
-	 system "cp temp$$ /nfs/disk100/wormpub/analysis/TO_SUBMIT/$cosmid.$year$mon$mday.embl";	 } else {
+	 system "cp temp$$ /nfs/disk100/wormpub/analysis/TO_SUBMIT/$cosmid.$datestamp.embl";	 } else {
 	 print "** WARNING - COSMID $cosmid DOES NOT HAVE A $cosmid.embl FILE AND HAS NOT BEEN SUBMITTED\n";
 	 next;
      }
@@ -116,9 +118,9 @@ while (<>) {
 #
 
  if ($compare==1) {
-    system "cp temp$$ /nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.$year$mon$mday.embl";
-    system "ln -fs /nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.$year$mon$mday.embl /nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.current.embl";
-    system "\mv temp$$ /nfs/disk100/wormpub/analysis/TO_SUBMIT/$cosmid.0$year$mon$mday.embl";
+    system "cp temp$$ /nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.$datestamp.embl";
+    system "ln -fs /nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.$datestamp.embl /nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.current.embl";
+    system "\mv temp$$ /nfs/disk100/wormpub/analysis/TO_SUBMIT/$cosmid.$datestamp.embl";
     print "$cosmid should be resubmitted and is in TO_SUBMIT.\n";
  } else {
     print "Cosmid $cosmid is up to date\n";
@@ -145,5 +147,15 @@ sub detectdifference {
     }
     return($difference);					   
 }
+
+
+
+
+
+
+
+
+
+
 
 
