@@ -2,7 +2,7 @@
 #
 # EMBLDump.pl :  makes EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2003-12-02 17:57:44 $
+#  Last updated on: $Date: 2003-12-03 10:06:15 $
 #  Last updated by: $Author: krb $
 
 use strict;
@@ -125,7 +125,6 @@ open (OUT, ">/nfs/disk100/wormpub/tmp/EMBLdump.mod") or  die "Can't process new 
 open (EMBL, "<$outfilename.embl") or die "Can't process EMBL dump file\n";
 
 my $id = "";
-my $date = "";
 
 while (<EMBL>) {
 
@@ -134,11 +133,6 @@ while (<EMBL>) {
     $id = $_;
     chomp($id);
   }
-  # store DT line to reformat later
-  if(/^DT/){
-    $date .= $_;
-  }
-  
 
   # DE   Caenorhabditis elegans cosmid C05G5    
   if (/^DE   Caenorhabditis elegans cosmid (\S+)/) {
@@ -158,12 +152,9 @@ while (<EMBL>) {
     print OUT "XX\n";
     print OUT "SV   $clone2sv{$clone};\n";
     print OUT "XX\n";
-    print OUT "$date";
-    print OUT "XX\n";
 
-    # can now reset $id and $date
+    # can now reset $id
     $id = "";
-    $date = "";
 
     if (!defined($clone2type{$clone})){
       print OUT "DE   Caenorhabditis elegans clone $clone\n";
