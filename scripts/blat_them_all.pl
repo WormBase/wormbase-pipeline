@@ -31,6 +31,9 @@
 #            : else you get a zero length fasta file each time and the confirm intron routines fail
 # 02.02.21 dl: typos in the naming of the confirmed_intron virtual objects
 # 02.04.08 dl: old style logging for autoace.fa check, prevented complete run of subs
+#
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2002-07-22 11:18:36 $
 
 use strict;
 use Ace;
@@ -78,7 +81,7 @@ getopts('emxbsvonhd');
 &usage(1) unless ($opt_n || $opt_b || $opt_s || $opt_v); 
 
 # Exit if no data type choosen [EST|mRNA|EMBL|NEMATODE]
-&usage(2) unless ($opt_e || $opt_m || $opt_o || $opt_x); 
+&usage(2) unless ($opt_e || $opt_m || $opt_o || $opt_x || $opt_n); 
 
 # Exit if multiple data types choosen [EST|mRNA|EMBL|NEMATODE]
 &usage(3) if (($opt_e + $opt_m + $opt_o + $opt_x) > 1);
@@ -283,11 +286,11 @@ dna -f /wormsrv2/autoace/BLAT/autoace.first
 quit
 EOF
 
-my $command2=<<EOF;
-query find nematode_ESTs where Remark = "*Blaxter*"
-dna -f /wormsrv2/autoace/BLAT/nematode.fa
-quit
-EOF
+#my $command2=<<EOF;
+#query find nematode_ESTs where Remark = "*Blaxter*"
+#dna -f /wormsrv2/autoace/BLAT/nematode.fa
+#quit
+#EOF
 
     my ($sequence,$name);
     
@@ -309,7 +312,7 @@ EOF
     unlink ('/wormsrv2/autoace/BLAT/autoace.first') if (-e '/wormsrv2/autoace/BLAT/autoace.first');
 
     # tace dump parasitic nematode consensus
-    system("echo '$command2' | $giface $dbdir ");
+#    system("echo '$command2' | $giface $dbdir ");
 }
 
 
