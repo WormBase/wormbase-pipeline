@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-12-02 09:32:07 $
+# Last edited on: $Date: 2003-12-02 10:53:42 $
 
 
 #################################################################################
@@ -363,14 +363,22 @@ sub initiate_build {
   &usage(1) if (-e "$logdir/$flag{'A1'}");
     
   # get old build version number, exit if no WS version is returned
-  # add 1 for new build number
-  # Use '666' if in test mode
-  $WS_version = &get_wormbase_version;
-  $WS_version = "666" if ($test);
+  # add 1 for new build number, but just use '666' if in test mode
 
+  my $WS_new_name;
+  my $WS_version;
+
+  if ($test){
+    $WS_version = "666"; 
+    $WS_new_name = "666";
+  }
+  else{
+    $WS_version = &get_wormbase_version;
+    $WS_new_name = $WS_version +1;
+  }
   &usage("No_WormBase_release_number") if (!defined($WS_version));
-  my $WS_new_name = $WS_version +1;
- 
+
+
   # make new build_in_process flag
   system("touch $logdir/$flag{'A1'}");
   open (FLAG, ">>$logdir/$flag{'A1'}"); 
