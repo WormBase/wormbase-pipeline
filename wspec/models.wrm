@@ -259,7 +259,7 @@
 	Remark	?Text
         Reference ?Paper XREF Allele               // Mary
         Rescued_by_Transgene ?Transgene
-
+	Method UNIQUE ?Method // necessary now that Allele is SMap [030106 krb]
 
 
 // New hash to hold more details of the Allele->Sequence/Gene/CDS connection.  What is the relationship
