@@ -24,7 +24,7 @@ use IO::Handle;
 use Getopt::Std;
 use Cwd;
 use Ace;
-require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
+require "/wormsrv2/scripts/babel.pl";
 
  ##############################
  # Script variables (run)     #
