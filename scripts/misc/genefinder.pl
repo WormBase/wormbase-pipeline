@@ -1,11 +1,10 @@
+#!/usr/local/bin/perl -w
+
 use strict;
-use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
+use lib  $ENV{'CVS_DIR'};
 use Getopt::Long;
-use Data::Dumper;
 use Coords_converter;
 use Wormbase;
-use Modules::Transcript;
-use Modules::CDS;
 use Modules::GFF_feature;
 use POSIX;
 
@@ -26,31 +25,29 @@ my $chromosome;   # so that Coords converter can give clone details
 
 our %score;
 my $window = 200;
+my ($max, $min);
 
 GetOptions ( 
 	    "database:s"    => \$database,
 	    "chromosome:s"  => \$chromosome,
-
 	    "feature_gff:s" => \@feature_gff,
 	    "exclude_gff:s" => \@exclude_gff,
-
-	    "config:s"      => \$config
+	    "config:s"      => \$config,
+	    "window:s"      => \$window,
+	    "min:s"         => \$min,
+	    "max:s"         => \$max
 	   );
 
 die unless $chromosome;
 
+die if ( ( ($max and !$min) and ( $min != 0) ) or ($min and !$max ));
+
 if ($config) {
   &parse_config($config);
 }
-
-#else {
-#  @feature_gff  = split(/,/,join(',',@feature_gff));
-#  @exclude_gff  = split(/,/,join(',',@exclude_gff));
-#  @f_source     = split(/,/,join(',',@f_source));
-#  @x_source     = split(/,/,join(',',@x_source));
-#  @f_method     = split(/,/,join(',',@f_method));
-#  @x_method     = split(/,/,join(',',@x_method));
-#}
+else {
+  die "no config file specified - $0 -config config\n";
+}
 
 $database = glob("~wormpub/DATABASES/current_DB") unless $database;
 &load_exlusions(\@exclude_gff,\@exclusions,\%exclude);#"curated","Pseudogene"," Transposon","RepeatMasker");
@@ -59,6 +56,8 @@ my $method_check;#= join('|',@f_method);
 my $source_check;# = join('|',@f_source);
 
 foreach my $feature_file ( @feature_gff ) {
+
+  $feature_file = "CHUNK/${feature_file}_${min}_${max}" if ($min or $min == 0);# for split batch jobs
   open( GFF, "<$feature_file") or die "cant open $feature_file GFF file\t$!\n";
   print "Reading feature info from $feature_file\n\n";
   while(<GFF>) {
@@ -66,7 +65,11 @@ foreach my $feature_file ( @feature_gff ) {
     next unless( defined $feature{$data[1]} and $feature{$data[1]} eq $data[2] );
     # my ($id) = $data[9] =~ /\"$type:(\S+)\"/;
     my $id = $data[9];
+
     my $feature = GFF_feature->new($id, $data[3], $data[4], $data[5], $data[6] );
+    $feature->method($data[1]);
+    $feature->feature($data[2]);
+
     push( @features, $feature);  
     #CHROMOSOME_I    wublastx        protein_match   74626   74943   38.19   +       0       Target "Protein:TR:O77132" 105 206
   }
@@ -80,19 +83,19 @@ FEATURE: foreach my $feature (@features) {
   my $end = $feature->end;
 
   my $match = 0;
-  GENE: foreach my $exclude (@ordered_exclusions) {
+  EXCLUSION: foreach my $exclude (@ordered_exclusions) {
     if( $start > $exclude->end ) {
-      next GENE;
+      next EXCLUSION;
     }
     elsif ( $end < $exclude->start ) {
-      last GENE;
+      last EXCLUSION;
     }
     elsif( ( $start > $exclude->start and $start < $exclude->end ) or
 	   (   $end > $exclude->start and $end   < $exclude->end ) or 
 	   ( $start < $exclude->start and $end   > $exclude->end )
 	 ) {
       $match = 1; # matches so report and move on
-      last GENE ;
+      last EXCLUSION ;
     }
   }
   &addscore($feature) unless ($match == 1);
@@ -100,14 +103,30 @@ FEATURE: foreach my $feature (@features) {
 
 # output hits
 print "outputting  . . . \n\n";
-my $coords = Coords_converter->invoke($database,1);
+my $output = "gene_find_${chromosome}_${min}_${max}";
+open( OUT ,">$output") or die "cant open $output: $!\n";
+my $coords = Coords_converter->invoke($database);
 my $count = 0;
-print "Clone\tstart\tend\tscore\tGFF_coord\n";
-foreach my $region ( sort{ $score{$b} <=> $score{$a} } keys %score ) {
+my %cum_score;
+
+REGION: foreach my $region ( sort{ $score{$b} <=> $score{$a} } keys %score ) {
+  my $total_score;
+  foreach my $test_method ( keys %feature ){
+    if( $score{$region}->{$test_method} ) {
+      $total_score += $score{$region}->{$test_method};
+    }
+    else {
+      next REGION;
+    }
+  }
+  $cum_score{$region} = $total_score;
+}
+
+print OUT "Clone\tstart\tend\tscore\tGFF_coord\n";
+foreach my $region ( sort{ $cum_score{$b} <=> $cum_score{$a} } keys %cum_score ) {
   my $scaled_region = ($region * $window) - ($window * 0.5);
   my @clone = $coords->LocateSpan("$chromosome",$scaled_region,$scaled_region + $window);
-  print "$clone[0]\t$clone[1]\t$clone[2]\t$score{$region}\t",$scaled_region,"\n";
-  last if $count++ > 50;
+  print OUT "$clone[0]\t$clone[1]\t$clone[2]\t$cum_score{$region}\t",$scaled_region,"\n";;
 }
 
 
@@ -122,9 +141,17 @@ sub load_exlusions
     my $exclude    = shift;
 
     foreach my $file ( @{$files} ) {
+      $file = "CHUNK/${file}_${min}_${max}" if ($min or $min == 0);# for split batch jobs
+      die "no such file $file\n" unless ( -e "$file");
       # parse GFF file to get CDS, exon and cDNA info
       open( GFF,"<$file") or die "cant open $file to read gene info\n";
-      print "reading exclusion info from $file\n\n";
+
+      print "reading exclusion info from $file\n";
+      print "Excluding the following  . . \n";
+      foreach (keys %{$exclude} ) {
+	print "\t$_\t$$exclude{$_}\n";
+      } print "\n";
+
     LINE: while (<GFF>) {
 	my @data = split;
 	next unless( defined $$exclude{$data[1]} and $$exclude{$data[1]} eq $data[2] );
@@ -144,7 +171,8 @@ sub addscore
       my $span = abs($feature->end - $feature->start);
       $feature->score($span);
     }
-    $score{$mid_region} += $feature->score;
+    # store score per method type - can then impose that each method contributes( ie method1 and method2 must be represented)
+    $score{$mid_region}->{$feature->method} += $feature->score;
   }
 
 
@@ -159,7 +187,9 @@ sub parse_config
     my $parameter;
     while( <CF> ) {
       next unless /\w/;
+      next if (/\#/);
       chomp;
+      s/\s//g;
       if( />(\w+)/ ){
 	CASE:{
           ($1 eq "feature_gff") && do { $parameter = \@feature_gff; last CASE; };
