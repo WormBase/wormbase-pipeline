@@ -6,8 +6,8 @@
 #
 # Makes CDS status information by looking at transcript to exon mappings
 #
-# Last updated by: $Author: dl1 $     
-# Last updated on: $Date: 2004-10-07 10:01:18 $      
+# Last updated by: $Author: krb $     
+# Last updated on: $Date: 2004-10-20 09:44:01 $      
 
 
 use strict;
@@ -22,11 +22,13 @@ use Getopt::Long;
 ##############################
 
 my ($help, $verbose, $test, $quicktest); # the main options
+my $load; # whether to load to autoace or not
 
 GetOptions (
 	    "help"         => \$help,
             "verbose"      => \$verbose,
 	    "test"         => \$test,
+	    "load"         => \$load,
 	    "quicktest"    => \$quicktest
             );
 
@@ -34,8 +36,10 @@ GetOptions (
 # Other script variables     #
 ##############################
 
-#my @chromosomes  = qw( I II III IV V X );                    # all chromosomes
-my @chromosomes  = qw( X );                    # all chromosomes
+my $log = Log_files->make_build_log();
+my $maintainers = "All";
+
+my @chromosomes  = qw( I II III IV V X );                    # all chromosomes
 @chromosomes     = qw( III ) if $quicktest;
 
 &printhelp() if ($help);
@@ -51,8 +55,8 @@ my $basedir = "/wormsrv2";
 $basedir    = glob("~wormpub/TEST_BUILD") if ($test or $quicktest);
 
 my $gffdir = "$basedir/autoace/GFF_SPLITS/GFF_SPLITS";
-my $outdir = "$basedir/wormbase/misc_dynamic";
-my $output = "$outdir/misc_CDS_confirmation.ace";                             # output acefile name & path
+my $outdir = "$basedir/autoace/acefiles";
+my $output = "$outdir/gene_confirmation_status.ace";                             # output acefile name & path
 
 
 ####################################################################################################################
@@ -181,6 +185,20 @@ foreach my $chromosome (@chromosomes) {
 }
 
 close(ACE);
+
+# load file to autoace?
+if($load){
+  $log->write_to("Loading file to autoace\n");
+  my $command = "autoace_minder.pl -load /wormsrv2/autoace/acefiles/gene_confirmation_status.ace -tsuser interpro_motifs";
+
+  my $status = system($command);
+  if(($status >>8) != 0){
+    $log->write_to("ERROR: Loading interpro_motifs.ace file failed \$\? = $status\n");
+  }
+}
+
+
+$log->mail("$maintainers", "BUILD REPORT: $0");
 
 # Ate logo
 

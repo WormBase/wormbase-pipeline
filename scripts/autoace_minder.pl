@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-10-19 14:58:12 $
+# Last edited on: $Date: 2004-10-20 09:44:01 $
 
 
 
@@ -1329,11 +1329,7 @@ sub confirm_gene_models {
   $am_option = "-confirm";
 
   # confirm_genes from EST&OST (-est) and mRNA (-mrna) data sets
-  &run_command("$scriptdir/confirm_genes.pl");
-
-  # load files
-  my $file = "$basedir/wormbase/misc_dynamic/misc_CDS_confirmation.ace";
-  &load($file,"CDS_status");
+  &run_command("$scriptdir/confirm_genes.pl -load");
 
   # make dumped_GFF_file in /logs
   system("touch $logdir/C4:Confirm_gene_models");
