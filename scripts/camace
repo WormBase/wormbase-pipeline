@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
 
-my $db = "/wormsrv2/camace";
+my $db = "/wormsrv1/camace";
 
 open (DISPLAY, 'printenv HOST |');
 while (<DISPLAY>) {
