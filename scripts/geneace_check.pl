@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-08-20 12:30:30 $
+# Last updated on: $Date: 2003-09-01 11:43:18 $
 
 
 use strict;
@@ -457,9 +457,16 @@ sub test_locus_for_errors{
 
  # test for Genomic_sequence = Sequence_name
   if(defined($locus->at('Molecular_information.Genomic_sequence')) && defined($locus->at('Name.Sequence_name'))){  
-    my $seq = $locus->Genomic_sequence;
-    my $name = $locus->Sequence_name;
-    if($seq ne $name){
+    my @seq = $locus->Genomic_sequence;
+    my @name = $locus->Sequence_name;
+
+    # compare @seq with @name for difference (order does not matter)
+    my @comp_result = array_comp(\@seq, \@name);
+    my @diff = @{$comp_result[0]}; 
+    
+    if (@diff){
+    
+#    if($seq ne $name){
       $warnings .= "ERROR 22: $locus has a 'Genomic_sequence' name different to 'Sequence_name'\n";
       print "." if ($verbose);
     }
@@ -480,9 +487,15 @@ sub test_locus_for_errors{
 
   # test for Transcript = Transcript_name
   if(defined($locus->at('Molecular_information.Transcript')) && defined($locus->at('Name.Transcript_name'))){  
-    my $seq = $locus->Transcript;
-    my $name = $locus->Transcript_name;
-    if($seq ne $name){
+    my @seq = $locus->Transcript;
+    my @name = $locus->Transcript_name;
+
+    # compare @seq with @name for difference (order does not matter)
+    my @comp_result = array_comp(\@seq, \@name);
+    my @diff = @{$comp_result[0]}; 
+    
+    if (@diff){ 
+#    if($seq ne $name){
       $warnings .= "ERROR 24: $locus has a 'Transcript' name different to 'Transcript_name'\n";
       print "." if ($verbose);
     }
@@ -504,9 +517,16 @@ sub test_locus_for_errors{
 
   # test for Pseudogene = Pseudogene_name
   if(defined($locus->at('Molecular_information.Pseudogene')) && defined($locus->at('Name.Pseudogene_name'))){  
-    my $seq = $locus->Pseudogene;
-    my $name = $locus->Pseudogene_name;
-    if($seq ne $name){
+    my @seq = $locus->Pseudogene;
+    my @name = $locus->Pseudogene_name;
+
+    # compare @seq with @name for difference (order does not matter)
+    my @comp_result = array_comp(\@seq, \@name);
+    my @diff = @{$comp_result[0]}; 
+    
+    if (@diff){
+
+#    if($seq ne $name){
       $warnings .= "ERROR 26: $locus has a 'Pseudogene' name different to 'Pseudogene_name'\n";
       print "." if ($verbose);
     }
@@ -679,7 +699,7 @@ EOF
 
   my @WBPerson = &process_WBPerson_names($WBPerson_F_M_L_names, $curr_db);
  
-  print LOG "\nChecking misuse of Evidence and converting Author to Person / Non-Person to Author:\n";
+  print LOG "\n\nChecking misuse of Evidence and converting Author to Person / Non-Person to Author:\n";
   print LOG "-----------------------------------------------------------------------------------\n\n";
 
 # dump flat files with time stamps
