@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-06-16 13:42:12 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2004-06-25 16:01:01 $
 
 
 
@@ -1088,39 +1088,20 @@ sub parse_briggsae_data {
   $am_option = "-addbriggsae";
 
   my $file;
-  
-  # load raw briggsae data files		   
-  $file = "$basedir/wormbase/briggsae/briggsae_cb25.agp8_DNA.ace";
-  &load($file,"briggsae_DNA");
 
-  $file = "$basedir/wormbase/briggsae/briggsae_cb25.agp8_fosmid.ace"; 
-  &load($file,"briggsae_fosmids");
-  
-  $file = "$basedir/wormbase/briggsae/briggsae_cb25.agp8_agplink.ace"; 
-  &load($file,"briggsae_links");
-
-  $file = "$basedir/wormbase/briggsae/briggsae_cb25.agp8_sequence.ace"; 
-  &load($file,"briggsae_sequence");
-  
-
+  # load raw briggsae data files
+  my @Brigdata = ("DNA", "fosmid", "agplink", "sequence");
+  foreach my $Brigdata (@Brigdata) {
+    $file = "$basedir/wormbase/briggsae/briggsae_cb25.agp8_${Brigdata}.ace";
+    &load($file,"briggsae_${Brigdata}");
+  }
+		   
   # load gene prediction sets
-  $file = "$basedir/wormbase/briggsae/briggsae_cb25.agp8_genefinder.ace"; 
-  &load($file,"briggsae_genefinder_genes");
-
-  $file = "$basedir/wormbase/briggsae/briggsae_cb25.agp8_fgenesh.ace"; 
-  &load($file,"briggsae_fgenesh_genes");
-
-  $file = "$basedir/wormbase/briggsae/briggsae_cb25.agp8_twinscan.ace"; 
-  &load($file,"briggsae_twinscan_genes");
-
-  $file = "$basedir/wormbase/briggsae/briggsae_cb25.agp8_ensembl.ace"; 
-  &load($file,"briggsae_ensembl_genes");
-
-  $file = "$basedir/wormbase/briggsae/briggsae_cb25.agp8_hybrid.ace"; 
-  &load($file,"briggsae_hybrid_genes");
-
-  $file = "$basedir/wormbase/briggsae/briggsae_cb25.agp8_rna.ace"; 
-  &load($file,"briggsae_rna_genes");  
+  my @genepredicters =("genefinder", "fgenesh", "twinscan", "ensembl", "hybrid", "rna");
+  foreach my $genepredicters (@genepredicters) {
+    $file = "$basedir/wormbase/briggsae/briggsae_cb25.agp8_${genepredicters}.ace"; 
+    &load($file,"briggsae_${genepredicters}_genes");
+  }
 
   # briggsae BAC end data
   $file = "/wormsrv1/briggsae/BAC_ENDS/briggsae_BAC_ends.fasta";
@@ -1300,23 +1281,20 @@ sub map_features {
     
   $am_option = "-map";
 
+  # make GFF split files as they are needed for the RNAi and PCR mapping
+  &run_command("$scriptdir/GFFsplitter.pl");
+
   # features
   &run_command("$scriptdir/map_features.pl -all");
 
   # these should be folded into a loop or into the script itself [dl]
-
-  my $file = "$basedir/autoace/FEATURES/WS${WS_version}_feature_SL1.ace";
-  &load($file,"feature_SL1");
-
-  $file = "$basedir/autoace/FEATURES/WS${WS_version}_feature_SL2.ace";
-  &load($file,"feature_SL2");
-
-  $file = "$basedir/autoace/FEATURES/WS${WS_version}_feature_polyA_site.ace";
-  &load($file,"feature_polyA");
-
-  $file = "$basedir/autoace/FEATURES/WS${WS_version}_feature_polyA_signal.ace";
-  &load($file,"feature_polyA");
-
+  #Loads feature data into autoace with tsuser set to feature type.
+  my @features = ("SL1", "SL2", "polyA_site", "polyA_signal",);
+  foreach my $feature (@features) {
+    my $file = "$basedir/autoace/FEATURES/WS${WS_version}_feature_${feature}.ace";
+    &load($file,"feature_${feature}");
+  }
+  
   # PCR products
   &run_command("$scriptdir/map_PCR_products.pl");
   
@@ -1329,7 +1307,7 @@ sub map_features {
   # microarray connections
   &run_command("$scriptdir/map_microarray.pl");
 
-  $file = "$basedir/wormbase/misc/misc_microarrays.ace";
+  my $file = "$basedir/wormbase/misc/misc_microarrays.ace";
   &load($file,"microarray_connections");
 
 }
