@@ -8,7 +8,7 @@
 # RUN this script anytime during the build or after the build when get_interpolated_map 
 # and update_inferred multi-pt data are done
 #
-# Last updated on: $Date: 2004-12-16 15:30:16 $
+# Last updated on: $Date: 2004-12-22 16:37:24 $
 # Last updated by: $Author: krb $
 
 
@@ -60,10 +60,11 @@ $log->write_to("Loading interpolated map data\n");
 my @map = glob("/wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/interpolated_map_to_geneace_$release.*ace");
 my $map = $map[-1];
 
-# need to first remove existing data before uploading new file
+#  just load new data, the structure of the models means that you will overwrite
+# any existing data.  This also allows us to patch genes by hand which are not getting
+# picked up Chao-Kung's script for generating interpolated_map_positions
 $command = <<END;
 Find Gene * where Interpolated_map_position
-edit -D Interpolated_map_position
 pparse $map
 save
 quit
