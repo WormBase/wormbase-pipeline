@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.95 2002-11-26 10:41:28 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.96 2002-11-26 10:49:39 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -336,8 +336,7 @@
 	               Gene_class ?Gene_class XREF Allele
 	SMap S_parent Sequence UNIQUE ?Sequence XREF Allele     // changed into S_parent Sequence UNIQUE [020311 kj]
 	// Do we really need SMap for Alleles? Commented this out for now. krb 020726
-	Sequence_details CDS ?CDS XREF Allele #Evidence	
-                         Flanking_sequences UNIQUE Text UNIQUE Text
+	Sequence_details Flanking_sequences UNIQUE Text UNIQUE Text
                          Allelic_difference UNIQUE ?Text #Evidence
 			 Knocks_out ?CDS XREF Knock_out_allele // for new KO allele data krb [021114]
 	Species UNIQUE ?Species
