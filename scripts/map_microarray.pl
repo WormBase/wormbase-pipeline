@@ -6,8 +6,8 @@
 #
 # by Anon
 #
-# Last updated by: $Author: ar2 $                      
-# Last updated on: $Date: 2004-07-06 15:36:58 $        
+# Last updated by: $Author: dl1 $                      
+# Last updated on: $Date: 2004-07-22 13:55:14 $        
 
 
 use strict;
@@ -58,6 +58,10 @@ my $db = Ace->connect(-path=>$dbdir,
 if ($debug) {
     my $count = $db->fetch(-query=> 'find PCR_product where Microarray_results');
     print "checking $count PCR_products\n\n";
+
+    $count = $db->fetch(-query=> 'find Oligo_set where Microarray_results');
+    print "checking $count Oligo_sets\n\n";
+
 }
 
 my $microarray_results;
@@ -70,6 +74,10 @@ my $locus;
 
 open (OUTPUT, ">$outfile") or die "Can't open the output file $outfile\n";
 
+###########################################
+# PCR_products and SMD_microarray results #
+###########################################
+
 my $i = $db->fetch_many(-query=> 'find PCR_product where Microarray_results');  
 while (my $obj = $i->next) {
     
@@ -79,7 +87,7 @@ while (my $obj = $i->next) {
     
     $microarray_results = $obj->Microarray_results;
 
-    @CDSs     = $obj->Overlaps_CDS;
+    @CDSs    = $obj->Overlaps_CDS;
     @Pseudo  = $obj->Overlaps_pseudogene;
     
     print "Microarray_results : \"$microarray_results\"\tCDS: " . (scalar @CDSs) . " Pseudo: " . (scalar @Pseudo) . "\n" if ($debug);
@@ -95,20 +103,64 @@ while (my $obj = $i->next) {
 	print OUTPUT "\n";
     }
 
-    
-#    if (scalar @Pseudo > 1) {
-#	print OUTPUT "\n// Microarray_results : \"$microarray_results\"\n";
-#	foreach $pseudo (@Pseudo) {
-#	    print OUTPUT "// Predicted_pseudogene \"$pseudo\"\n";
-#	}
-#	print OUTPUT "\n";
-#    }
-    
+    if (scalar @Pseudo > 1) {
+	print OUTPUT "\n// Microarray_results : \"$microarray_results\"\n";
+	foreach $pseudo (@Pseudo) {
+	    print OUTPUT "// Predicted_pseudogene \"$pseudo\"\n";
+	}
+	print OUTPUT "\n";
+    }
+
     @CDSs    = "";
     @Pseudo = "";
     $gene = "";
     $obj->DESTROY();
-} 
+}
+
+###########################################
+# Oligo_sets and Aff_microarray results #
+###########################################
+
+$i = $db->fetch_many(-query=> 'find Oligo_set where Microarray_results');  
+while (my $obj = $i->next) {
+    
+    print "$obj\t" if ($debug);
+
+    # Microarray_results
+    
+    $microarray_results = $obj->Microarray_results;
+
+    @CDSs    = $obj->Overlaps_CDS;
+    @Pseudo  = $obj->Overlaps_pseudogene;
+    
+    print "Microarray_results : \"$microarray_results\"\tCDS: " . (scalar @CDSs) . " Pseudo: " . (scalar @Pseudo) . "\n" if ($debug);
+    
+    if (scalar @CDSs > 0) {
+	print OUTPUT "\nMicroarray_results : \"$microarray_results\"\n";
+	foreach $cds (@CDSs) {
+	    print OUTPUT "CDS \"$cds\"\n";
+	    $gene   = $obj->Overlaps_CDS->Gene;
+	}
+	
+	print OUTPUT "Gene $gene\n" if (defined $gene);
+	print OUTPUT "\n";
+    }
+    
+    if (scalar @Pseudo > 1) {
+	print OUTPUT "\n// Microarray_results : \"$microarray_results\"\n";
+	foreach $pseudo (@Pseudo) {
+	    print OUTPUT "// Predicted_pseudogene \"$pseudo\"\n";
+	}
+	print OUTPUT "\n";
+    }
+
+    @CDSs    = "";
+    @Pseudo = "";
+    $gene = "";
+    $obj->DESTROY();
+}
+
+
 close OUTPUT;
 $db->close;
 
