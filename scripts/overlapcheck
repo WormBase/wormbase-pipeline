@@ -1,4 +1,5 @@
 #!/usr/local/bin/perl -w
+#
 # checks whether genes overlap, ESTs match introns and repeats match exons                                   
 # sorts output for stl and cam clones
 #

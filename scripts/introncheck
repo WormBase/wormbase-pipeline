@@ -3,7 +3,7 @@
 # introncheck
 # v 0.1
 #
-# Cronjob integrity check controls for generic ACEDB database.
+# introncheck searches for confirmed introns which aren't part of a gene model yet
 #
 # Usage: introncheck [-options]
 #
