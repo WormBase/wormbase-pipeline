@@ -84,7 +84,7 @@ if ($swiss) {
     die "swissprot2des not found or empty";
   }
   dbmopen %DES, "$db_files/swissprot2des", 0666 or die "cannot open swissprot2des DBM file $db_files/swissprot2des";
-  &output_list($swiss_list_txt,$input2output{"$swiss_trembl_list"});
+  &output_list($swiss_list_txt,$input2output{"$swiss_list_txt"});
   dbmclose %ORG;
   dbmclose %DES;
 }
