@@ -233,9 +233,17 @@ sub check_overlapping_CDS
       }
     }
 
-
-    ($chromosome,$x) = $self->Coords_2chrom_coords($seq,$x);
-    ($chromosome,$y) = $self->Coords_2chrom_coords($seq,$y);
+    # determine if chromosome is being used as seq obj
+    if( $self->{'single_chrom'}->{"$seq"} ) {
+      $chromosome = $self->{'single_chrom'}->{"$seq"};
+    }
+    elsif( $seq =~ /CHROMOSOME_\d+/ ) {
+      $chromosome = $seq;
+    }
+    else{
+      ($chromosome,$x) = $self->Coords_2chrom_coords($seq,$x);
+      ($chromosome,$y) = $self->Coords_2chrom_coords($seq,$y);
+    }
 
     # if allele on -ve strand 3' coord will be bigger than 5'
     $self->swap(\$x, \$y) if( $y < $x ) ;
