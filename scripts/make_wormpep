@@ -320,7 +320,7 @@ foreach my $dot (@dotnames_1) {
     $obj->DESTROY();
 
 }   
-if( $opt_t) {
+if( $opt_f) {
   close DNA;
   chmod (0444 , "$new_wpdir/wormpep.dna$release") || print LOG "cannot chmod $new_wpdir/dotnames.dna$release\n";
 }
