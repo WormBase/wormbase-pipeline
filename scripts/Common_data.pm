@@ -4,7 +4,7 @@
 # by Anthony Rogers                             
 #
 # Last updated by: $Author: ar2 $               
-# Last updated on: $Date: 2002-11-19 14:33:26 $         
+# Last updated on: $Date: 2002-11-21 13:58:36 $         
 
 use strict;                    
 use lib "/wormsrv2/scripts/";
@@ -16,14 +16,14 @@ our %sub2file = ( 'gene2CE' => "$data_dir/gene2CE.dat",
 		  'CE2gene' => "$data_dir/CE2gene.dat",
 		  'clone2acc' => "$data_dir/clone2acc.dat",
 		  'acc2clone' => "$data_dir/acc2clone.dat"
-		 # '' => "$data_dir/.dat",
-		 # '' => "$data_dir/.dat",
+		  'gene2pid' => "$data_dir/gene2pid.dat",
+		  'pid2gene' => "$data_dir/pid2gene.dat",
 		);
 
 
 # Data writing routines - actually create and dump the data
 ##################################
-sub write_clone2acc
+sub write_gene2pid
   {
     # AceDB database
     my $ace_dir = "/wormsrv2/autoace";
@@ -36,6 +36,47 @@ sub write_clone2acc
     ####################################################################
     # connect to AceDB using TableMaker,
     # populating %accession2name (maps embl accession to contig name)
+    ####################################################################
+    my $command="Table-maker -p $wquery_dir/gene2pid.def\nquit";
+    
+    open (TACE, "echo '$command' | $tace /wormsrv2/autoace |");
+    while (<TACE>) {
+      #gene pid version
+      chomp;
+      if (/\"(\S+)\"\s+\"(\S+)\"\s+\"\d\"/) {
+	my $pid = "$2".".$3";
+	my $gene = $1;
+	$gene2pid{"$gene"} = $pid;
+	$pid2gene{"$pid"} = $gene;
+      }
+    }
+    close TACE;
+
+    #now dump data to file
+    open (G2P, ">$sub2file{'gene2pid'}") or die "cant write $sub2file{'gene2pid'} :$!";
+    open (P2G, ">$sub2file{'pid2gene'}") or die "cant write $sub2file{'pid2gene'} :$! ";
+
+    print G2P Data::Dumper->Dump([\%gene2pid]);
+    print P2G Data::Dumper->Dump([\%pid2gene]);
+    
+    close G2P;
+    close P2G;
+        
+  }
+
+sub write_clone2acc
+  {
+    # AceDB database
+    my $ace_dir = "/wormsrv2/autoace";
+    my $wquery_dir = "/wormsrv2/autoace/wquery";
+    my $tace = &tace;
+
+    my %gene2pid;
+    my %pid2clone;
+    
+    ####################################################################
+    # connect to AceDB using TableMaker,
+    # populating %gene2pid
     ####################################################################
     my $command="Table-maker -p $wquery_dir/accession2clone.def\nquit";
     
@@ -93,6 +134,14 @@ sub write_gene2CE
 
 
 # Data retrieval routines - all work thru same sub but pass different files
+
+sub gene2pid 
+  {
+    my $ref = shift;
+    my $file = $sub2file{'gene2pid'};
+    &getData($ref, $file);
+  }
+
 sub clone2acc 
   {
     my $ref = shift;
