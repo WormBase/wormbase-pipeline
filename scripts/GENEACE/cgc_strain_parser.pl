@@ -8,7 +8,7 @@
 # Page download and update upload to geneace has been automated [ck1]
 
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2005-01-11 15:51:53 $
+# Last updated on: $Date: 2005-01-11 15:59:28 $
 
 use strict;
 use Getopt::Long;
@@ -438,8 +438,8 @@ delete instructions for removing all the data you have just added.  Some files
 will be loaded automatically (strain objects in one, and Gene->Allele connections 
 in another).  
 
-A third file (potential_new_genes.ace) needs to be checked by hand and modified to 
-add Gene IDs (if data is ok).  This file may contain allele names (that appear in 
+A third ace file (potential_new_genes.ace) needs to be checked by hand and modified 
+to add Gene IDs (if data is ok).  This file may contain allele names (that appear in 
 the strain data file) that we do not yet have in geneace.  These are probably KO 
 consortium alleles that will be in our next allele update, but which have strain 
 data already submitted to the CGC.
@@ -451,6 +451,13 @@ should have received details of these alleles already, chase this up with Mark E
 
 Other items in this file to check by hand will concern alleles of C. briggsae genes
 which will already have a gene ID.  
+
+The script will also generate another output file, e.g. caltech_paper_IDs.041130.txt.
+This file is downloaded from a Caltech website and it does nothing more than connect
+CGC paper identifiers to their relevant WormBase paper ID.  CGC strain data uses
+the former and we need to use the latter.  It is safe to delete this file after the
+script runs.
+
 
 =over 4
 
