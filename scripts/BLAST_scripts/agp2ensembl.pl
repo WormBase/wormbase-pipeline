@@ -319,12 +319,19 @@ sub update_existing_clone
 	foreach my $contig ( @{$contigs} ) { 
 	
 	  # update the DNA 
-	  my $dna = fetch_seq($acc, $ver);
+	  my $dna = $seqs{"$acc"};
+	  my $seqstr;
+	  
 	  unless ($dna) {
-            print "Error fetching $sv\n";
-            next;
+	    $dna  = fetch_seq($acc, $ver);
+	    unless ($dna) {
+	      print "Error fetching $sv\n";
+	      next;
+	    }
+	    $seqstr = uc($dna->seq)
 	  }
-	  my $seqstr = uc($dna->seq);
+	  $seqstr = $dna unless $seqstr;
+
 	  my $dna_id = $contig->dna_id();
 	  &make_SQL_query($dbobj,"UPDATE dna SET sequence = \"$seqstr\" WHERE dna_id = $dna_id");
 
