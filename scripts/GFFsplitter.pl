@@ -5,7 +5,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2003-10-29 12:14:51 $
+# Last updated on: $Date: 2003-10-29 12:23:16 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -203,7 +203,11 @@ foreach $file (@gff_files) {
     # Alleles
     elsif ($method eq "Allele")                       {push (@{$GFF{$file}{allele}},$_);}
     # operons
-    elsif ($feature eq "operon")                      {push (@{$GFF{$file}{operon}},$_);}
+    elsif ($method eq "operon")                       {push (@{$GFF{$file}{operon}},$_);}
+    # Oligo_set
+    elsif ($feature eq "Oligo_set")                   {push (@{$GFF{$file}{Oligo_set}},$_);}
+    # Microarray_aff
+    elsif ($feature eq "Microarray_aff")              {push (@{$GFF{$file}{Microarray_aff}},$_);}
     # Clone ends
     elsif ((/Clone_left_end/)  
 	   || (/Clone_right_end/))                    {push (@{$GFF{$file}{clone_ends}},$_);}
@@ -517,6 +521,8 @@ UTR
 BLASTX
 WABA_BRIGGSAE
 operon
+Microarray_aff
+Oligo_set
 rest
 __END__
 
