@@ -133,7 +133,7 @@ MainLoop();
 
 sub cds_has_isoforms {
   open (IN, $filename) || die "Can't read in $filename";
-  my ($locus, $seq, $iso, $database, $acc, @Update);
+  my ($locus, $seq, $iso, $database, $acc, @Update, $type);
   while (<IN>){
     chomp;
     if ($_ =~ /(.+)\s+\((\w{3,3}-\d+)\)\sis now:/){
@@ -141,13 +141,16 @@ sub cds_has_isoforms {
       $seq = $1;
       push(@Update, "\n\nLocus : \"$locus\"\n");
     }
-    if ($_ =~ /(.+)\s+\((\w+)\s(\w+)\)\s+CDS/){
+    if ($_ =~ /(.+)\s+\((\w+)\s(\w+)\)\s+(CDS|Transcript)/){
       $iso = $1;
       $database = $2;
+      if ($database eq "GB") {$database = "GenBank"}
       $acc = $3;
+      $type = $4;
       $iso =~ /$seq/;
       if ("$seq" eq "$&"){
-	push(@Update, "Genomic_sequence \"$iso\" Accession_evidence \"$database\" \"$acc\"\n");
+	push(@Update, "Genomic_sequence \"$iso\" Accession_evidence \"$database\" \"$acc\"\n") if $type eq "CDS";
+	push(@Update, "Genomic_sequence \"$iso\" Accession_evidence \"$database\" \"$acc\"\n") if $type eq "Transcript";
       }
     }
   }
