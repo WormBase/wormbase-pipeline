@@ -10,6 +10,7 @@ $!=1;
 use Ace ;
 use strict;
 use Getopt::Long ;
+use Wormbase;
 
 ##############################
 # command-line options       #
@@ -49,18 +50,26 @@ our %clone2super = ("H06O01"  => "I",
 # get data from camace       #
 ##############################
 
+our $tace         =  &tace;
+
+
 my $campath = "/wormsrv1/camace";
 ($campath = $db) if ($db ne "");
 
 warn "Acessing database $campath\n" if ($debug);
 
 # connect to database
-my $camdb   = Ace->connect(-path=>"$campath") || die "failed to connect to database\n";
+my $camdb   = Ace->connect(-path=>"$campath",
+			   -program => $tace) || die "failed to connect to database\n";
 
 # first get lots of info about Genome_sequence objects
 
 my (%isGenomeSequence,%length,%right,%rightOffset,%left,%isLinkCandidate,%isExternal);
 my (%currSource,%currStart,%currEnd);
+my (%CDSSource,%CDSStart,%CDSEnd);
+my (%PseudoSource,%PseudoStart,%PseudoEnd);
+my (%TransposonSource,%TransposonStart,%TransposonEnd);
+my (%TranscriptSource,%TranscriptStart,%TranscriptEnd);
 my ($it,$obj,$seq,$start,$end);
 
 $it = $camdb->fetch_many(Genome_sequence => '*') ;
@@ -87,7 +96,46 @@ while ($obj = $it->next) {
 	$currSource{$seq}    = $obj;
 	$currStart{$seq}     = $start;
 	$currEnd{$seq}       = $end;
+	
+#	print "// push $seq to subsequence hash\n";
+
     }
+
+    foreach $a ($obj->at('SMap.S_child.CDS_child')) {
+	($seq, $start, $end) = $a->row;
+	$CDSSource{$seq}    = $obj;
+	$CDSStart{$seq}     = $start;
+	$CDSEnd{$seq}       = $end;
+#	print "// push $seq to CDS hash\n";
+
+    }
+
+    foreach $a ($obj->at('SMap.S_child.Pseudogene')) {
+	($seq, $start, $end) = $a->row;
+	$PseudoSource{$seq}    = $obj;
+	$PseudoStart{$seq}     = $start;
+	$PseudoEnd{$seq}       = $end;
+#	print "// push $seq to Pseudo hash\n";
+
+    }
+
+    foreach $a ($obj->at('SMap.S_child.Transcript')) {
+	($seq, $start, $end) = $a->row;
+	$TranscriptSource{$seq}    = $obj;
+	$TranscriptStart{$seq}     = $start;
+	$TranscriptEnd{$seq}       = $end;
+#	print "// push $seq to Transcript hash\n";
+
+    }
+
+    foreach $a ($obj->at('SMap.S_child.Transposon')) {
+	($seq, $start, $end) = $a->row;
+	$TransposonSource{$seq}    = $obj;
+	$TransposonStart{$seq}     = $start;
+	$TransposonEnd{$seq}       = $end;
+#	print "// push $seq to Transposon hash\n";
+    }
+
 }
 
 warn "Stored data to hash\n" if ($debug);
@@ -135,7 +183,7 @@ foreach $seq (keys %isGenomeSequence) {
 # Re-map subsequences back onto the new links 
 ###########################################
 
-foreach $seq (keys %currStart) {
+foreach $seq (keys %CDSStart) {
     next if ($isGenomeSequence{$seq});
     
     if ($seq =~ /(\S+)\.\d+/) {
@@ -155,7 +203,7 @@ foreach $seq (keys %currStart) {
 	next;
     }
     # next if parent and child map to different links
-    if (!($currSource{$seq} eq $currSource{$parent})) { 
+    if (!($CDSSource{$seq} eq $currSource{$parent})) { 
 	warn "parent $parent and child $seq in different links\n"; 
 	next;
     }
@@ -167,13 +215,129 @@ foreach $seq (keys %currStart) {
     # next if sequence is a superlink
     next if ($seq =~ /^SUPERLINK/);
 
-    $start{$seq} = $start{$parent} - $currStart{$parent} + $currStart{$seq};
-    $end{$seq}   = $start{$parent} - $currStart{$parent} + $currEnd{$seq};
+    $start{$seq} = $start{$parent} - $currStart{$parent} + $CDSStart{$seq};
+    $end{$seq}   = $start{$parent} - $currStart{$parent} + $CDSEnd{$seq};
     $link{$seq}  = $link{$parent};
 
     print "\nSequence $link{$parent}\n";
-    print "Subsequence $seq $start{$seq} $end{$seq}\n";
+    print "CDS_child $seq $start{$seq} $end{$seq}\n";
 }
+
+foreach $seq (keys %PseudoStart) {
+    next if ($isGenomeSequence{$seq});
+    
+    if ($seq =~ /(\S+)\.\d+/) {
+	$parent = $1; 
+    }
+    else { 
+	warn "no dot in subsequence name $seq\n";
+	next; 
+    }
+    
+    # next if no coordinate for parent clone
+    if (!$currStart{$parent}) { 
+	warn "no coord in link for parent $parent of $seq\n";
+	next;
+    }
+    # next if parent and child map to different links
+    if (!($PseudoSource{$seq} eq $currSource{$parent})) { 
+	warn "parent $parent and child $seq in different links\n"; 
+	next;
+    }
+    # next if parent has no home to go to
+    if (!$link{$parent}) {
+	warn "no new link for parent $parent of $seq\n";
+	next;
+    }
+    # next if sequence is a superlink
+    next if ($seq =~ /^SUPERLINK/);
+
+    $start{$seq} = $start{$parent} - $currStart{$parent} + $PseudoStart{$seq};
+    $end{$seq}   = $start{$parent} - $currStart{$parent} + $PseudoEnd{$seq};
+    $link{$seq}  = $link{$parent};
+
+    print "\nSequence $link{$parent}\n";
+    print "Pseudogene $seq $start{$seq} $end{$seq}\n";
+}
+
+# Transposons
+
+foreach $seq (keys %TransposonStart) {
+    next if ($isGenomeSequence{$seq});
+    
+    if ($seq =~ /(\S+)\.\d+/) {
+	$parent = $1; 
+    }
+    else { 
+	warn "no dot in subsequence name $seq\n";
+	next; 
+    }
+    
+    # next if no coordinate for parent clone
+    if (!$currStart{$parent}) { 
+	warn "no coord in link for parent $parent of $seq\n";
+	next;
+    }
+    # next if parent and child map to different links
+    if (!($TransposonSource{$seq} eq $currSource{$parent})) { 
+	warn "parent $parent and child $seq in different links\n"; 
+	next;
+    }
+    # next if parent has no home to go to
+    if (!$link{$parent}) {
+	warn "no new link for parent $parent of $seq\n";
+	next;
+    }
+    # next if sequence is a superlink
+    next if ($seq =~ /^SUPERLINK/);
+
+    $start{$seq} = $start{$parent} - $currStart{$parent} + $TransposonStart{$seq};
+    $end{$seq}   = $start{$parent} - $currStart{$parent} + $TransposonEnd{$seq};
+    $link{$seq}  = $link{$parent};
+
+    print "\nSequence $link{$parent}\n";
+    print "Transposon $seq $start{$seq} $end{$seq}\n";
+}
+
+
+foreach $seq (keys %TranscriptStart) {
+    next if ($isGenomeSequence{$seq});
+    
+    if ($seq =~ /(\S+)\.\d+/) {
+	$parent = $1; 
+    }
+    else { 
+	warn "no dot in subsequence name $seq\n";
+	next; 
+    }
+    
+    # next if no coordinate for parent clone
+    if (!$currStart{$parent}) { 
+	warn "no coord in link for parent $parent of $seq\n";
+	next;
+    }
+    # next if parent and child map to different links
+    if (!($TranscriptSource{$seq} eq $currSource{$parent})) { 
+	warn "parent $parent and child $seq in different links\n"; 
+	next;
+    }
+    # next if parent has no home to go to
+    if (!$link{$parent}) {
+	warn "no new link for parent $parent of $seq\n";
+	next;
+    }
+    # next if sequence is a superlink
+    next if ($seq =~ /^SUPERLINK/);
+
+    $start{$seq} = $start{$parent} - $currStart{$parent} + $TranscriptStart{$seq};
+    $end{$seq}   = $start{$parent} - $currStart{$parent} + $TranscriptEnd{$seq};
+    $link{$seq}  = $link{$parent};
+
+    print "\nSequence $link{$parent}\n";
+    print "Transcript $seq $start{$seq} $end{$seq}\n";
+}
+
+
 
 ###########################################
 # Do a quick check to make sure that everything 
