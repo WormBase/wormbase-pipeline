@@ -13,7 +13,7 @@
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-04-07 08:06:45 $
+# Last updated on: $Date: 2003-06-03 16:26:46 $
 
 
 
@@ -77,6 +77,8 @@ system("rm -f $db_path/autoace/logs/*:*") && die "Couldn't remove old log files\
 # Transfer autoace to ~wormpub/DATABASES/current_DB
 print LOG "Transferring autoace to ~wormpub/DATABASES/current_DB\n";
 system("TransferDB.pl -start /wormsrv2/autoace -end /nfs/disk100/wormpub/DATABASES/current_DB -all -name $WS_name")  && die "couldn't run TransferDB for wormpub\n";
+system("/bin/gunzip /nfs/disk100/wormpub/DATABASES/current_DB/CHROMOSOMES/*.gz") && die "Couldn't gunzip CHROMOSOMES/*.gz\n";
+
 
 # archive old GFF splits directory'
 print LOG "Archiving GFFsplits directory using GFFsplitter.pl -a\n\n";
