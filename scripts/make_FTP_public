@@ -146,11 +146,10 @@ system "cp $sourcedir/wspec/* $targetdir/$release/wspec/";
 print "move the contents of the wspec directory\n" if ($debug);
  
 
-# make a new pictures directory
-
-system("cp -r /nfs/disk67/sylvia/geneace/pictures/ $targetdir/$release/");
-print "copying picture files from ~sylvia/geneace to $targetdir/$release/pictures\n" if ($debug);
-
+# copy the pictures directory to a tarball
+system "/bin/tar -cf $targetdir/$release/pictures.tar /nfs/disk67/sylvia/geneace/pictures/*";
+system "/bin/gzip $targetdir/$release/pictures.tar";
+print "make the pictures.tar.gz file in the FTP directory\n" if ($debug);
 
 # copy some miscellaneous files across
 
