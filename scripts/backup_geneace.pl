@@ -7,8 +7,8 @@
 #
 # Usage : backup_geneace
 #
-# Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2002-12-09 17:40:47 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2003-04-13 16:30:46 $
 
 # touch logfile for run details
 $0 =~ m/\/*([^\/]+)$/; system("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
@@ -49,7 +49,7 @@ GetOptions (
 my $maintainers = "All";
 my $rundate    = `date +%y%m%d`;   chomp $rundate;
 my $runtime    = `date +%H:%M:%S`; chomp $runtime;
-my $logfile = "/wormsrv2/logs/$1.`date +%y%m%d`.$$";
+my $logfile = "/wormsrv2/logs/$1.$rundate.$$";
 
  ##############################
  # paths for I/O files        #
