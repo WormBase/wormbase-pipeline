@@ -8,7 +8,7 @@
 # 031023 dl1
 
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-03-05 16:10:59 $
+# Last edited on: $Date: 2004-03-16 18:26:24 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -96,9 +96,13 @@ my $seqlength;                                        #
 
 
 # which data file to parse
-
+print LOG &runtime, ": masking mRNA sequences\n" if ($mrna || $all);
 &masksequence($datafiles{mrna}) if ($mrna || $all);
+
+print LOG &runtime, ": masking EST sequences\n" if ($est || $all);
 &masksequence($datafiles{est})  if ($est || $all);
+
+print LOG &runtime, ": masking OST sequences\n" if ($ost || $all);
 &masksequence($datafiles{ost})  if ($ost || $all);
 
 close LOG;
