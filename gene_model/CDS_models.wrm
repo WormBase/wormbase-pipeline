@@ -990,7 +990,7 @@
 		Matching_cDNA ?Sequence XREF Matching_CDS
 		Matching_UTR ?UTR XREF Matching_CDS // added for UTR model [krb 020729]
 		Orthologue ?CDS XREF Orthologue ?Species #Evidence  // dl 030304
-		Expr_pattern ?Expr_pattern XREF Sequence
+		Expr_pattern ?Expr_pattern XREF CDS
                 RNAi_result ?RNAi XREF CDS // added for Lincoln RNAi [001213 dl]
 		Contained_in_operon ?Operon XREF Contains_CDS
 		GO_term ?GO_term XREF CDS #Evidence
@@ -1005,7 +1005,7 @@
 		Remark ?Text #Evidence
 	Sequence_features ?Feature XREF Part_of_gene #Evidence            // Feature data model [dl 030304]
  	Interpolated_map_position UNIQUE ?Map UNIQUE Float 
-	Drives_transgene  ?Transgene XREF Driven_by_CDS
+	Drives_transgene  ?Transgene XREF Driven_by_CDS_promoter
 	Transgene_product ?Transgene XREF CDS
         Method UNIQUE ?Method
 
@@ -1626,8 +1626,8 @@
 
 ?Transgene      Evidence #Evidence
 		Summary UNIQUE ?Text //Searchable description of the transgene
-		Driven_by Driven_by_CDS   ?CDS   XREF Drives_transgene Text //driving promoter
-			  Driven_by_Locus ?Locus XREF Drives_transgene	
+		Driven_by_CDS_promoter   ?CDS   XREF Drives_transgene Text //driving promoter
+		Driven_by_Locus          ?Locus XREF Drives_transgene	
 		Reporter_product GFP
 				 LacZ
 			         Other_reporter ?Text
