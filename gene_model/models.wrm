@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.85 2002-10-10 14:50:18 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.86 2002-10-17 08:45:11 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -343,7 +343,7 @@
 		// for revertants and deletions from transposon alleles
 			Isolated_for ?Author  
 		// person requesting allele -- for transposon insertion
-        Location ?Laboratory
+        Location ?Laboratory XREF Alleles
 	Derivative ?Allele XREF Derived_from
         Strain ?Strain XREF Allele
         Genetics        Map ?Map #Map_position
@@ -700,6 +700,7 @@
                 CGC     Representative UNIQUE ?Author XREF Laboratory 
                         Strain_designation Text
                         Allele_designation Text
+			Alleles ?Allele XREF Location
                         Gene_classes ?Gene_class XREF Designating_laboratory
 		Staff   ?Author XREF Laboratory
 		Staff_person    ?Person XREF Laboratory // new for Juancarlos 021010
