@@ -13,7 +13,7 @@
 # the Caltech database (citace)
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-12-02 13:26:01 $
+# Last updated on: $Date: 2003-12-02 13:58:48 $
 
 
 #################################################################################
@@ -178,7 +178,6 @@ sub unpack_stuff{
     chomp;
     push (@filenames,"$_");
     print LOGFILE "$_\n";
-    print "$_\n";
   }
   close LIST;
   print LOGFILE "\n\n";
