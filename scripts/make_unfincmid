@@ -1,18 +1,22 @@
-#!/usr/local/bin/perl
-
+#!/usr/local/bin/perl5.6.0 
+#
+# make_unfincmid
+#
 # [ag3] This script makes the unfinished cosmids file make_unfincmid
 
 $|=1;
 
 # List of unfinished clones
-@clones = (Y105E8A,Y105E8B,Y111B2C,Y11B2E,Y111B2G,Y39B6A,Y39B6B,Y67H2A);
+@clones = ();
 
 # Minimum contig length which we want to include in the unfinished cosmid list
-my $mincontig = 100;
-my $wormpub="/nfs/disk100/wormpub";
+
 $log="/wormsrv2/tmp/make_unfincmid.$$";
+
+my $mincontig = 100;
+my $wormpub   = "/nfs/disk100/wormpub";
 my $unfincmid = "$wormpub/analysis/Sequence_Databases/unfincmid";
-my $chrom_pos="/nfs/disk100/wormpub/analysis/scripts/clone_iMap_position";
+my $chrom_pos = "/nfs/disk100/wormpub/analysis/scripts/clone_iMap_position";
 
 if (!-e $unfincmid) {
     unlink $unfincmid;
