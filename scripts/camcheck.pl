@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.0 -w
+#!/usr/local/bin/perl5.6.1 -w
 #
 # camcheck.pl
 #
@@ -7,7 +7,7 @@
 # Usage: camcheck.pl
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-08-19 15:29:22 $
+# Last updated on: $Date: 2002-10-15 15:51:38 $
 #
 # see pod documentation (i.e. 'perldoc camcheck.pl') for more information.
 #
@@ -62,7 +62,7 @@ $maintainers = "dl1\@sanger.ac.uk" if ($debug);
 # Open logfile                         #
 ########################################
 
-my $log="/wormsrv2/logs/camcheck.$rundate";
+my $log="/wormsrv2/logs/camcheck.$rundate.$$";
 
 
 open (LOG,">$log");
