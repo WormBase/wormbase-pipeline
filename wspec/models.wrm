@@ -186,20 +186,28 @@
 //
 ///////////////////////////////////////////////////////////////////////////////////
 
-
-
-
 ?Allele Evidence #Evidence
 	Name	Other_name ?Text #Evidence
 		Qualifier Text	    // sd, sm, ts etc.  Not systematic just now
 		Rearrangement ?Rearrangement XREF Allele
-	Source	Gene ?Locus XREF Allele
-	        Gene_class ?Gene_Class XREF Allele
-	Sequence_details Sequence ?Sequence XREF Allele #Evidence
+	Gene_class ?Gene_Class XREF Allele
+	Sequence_details SMap SParent Sequence UNIQUE ?Sequence XREF Allele // Allele becomes SMapped now [krb 021216]
                          Flanking_sequences UNIQUE Text UNIQUE Text
-                         Allelic_difference UNIQUE ?Text #Evidence
-			 Transcript ?Transcript XREF Allele // added for two cases of RNA genes with alleles [021126 krb]
-			 Knocks_out ?Sequence XREF Knock_out_allele // new to handle KO alleles krb [021114]
+			 Flanking_PCR_product ?PCR_product XREF Flanks_deletion // KO data has PCR info
+			 // What is the nature of the Allele, based on sequence data?
+                         Allele_type UNIQUE Substitution UNIQUE Text #Evidence // for simple base substitution alleles
+								     // e.g. [A/T], [AA/GG]
+					    Insertion UNIQUE Text    #Evidence  // when nothing is deleted, Text field optionally
+								     // captures insertion sequence
+					    Deletion #Evidence                
+					    Deletion_with_insertion UNIQUE Text  #Evidence // for some KO alleles where material
+										 // is deleted and something else is 
+										 // also inserted
+	Affects Gene ?Locus XREF Allele #Allele_details  // New tag structure to handle allele cross-links [krb 021217]
+		Predicted_gene ?Sequence XREF Has_allele #Allele_details // Can't XREF to Allele tag
+		Transcript ?Transcript XREF Allele #Allele_details// added for two cases of RNA genes with alleles [021126 krb]
+		//Gene ?Gene XREF Allele #Allele_details // what this will becomee
+		//CDS ?CDS XREF Allele #Allele_details // awaiting gene model change
         Reference_Allele
 	Isolation	Author	Text	// Isolator - should be ?Author
 			Date	DateType
@@ -207,9 +215,9 @@
 			Procedure Text
 			Transposon_insertion Text  // Text Transposon type
 			Derived_from ?Allele XREF Derivative
-		// for revertants and deletions from Transposon alleles
-			Isolated_for ?Author  
-		// person requesting allele -- for transposon insertion
+			// for revertants and deletions from Transposon alleles
+			Isolated_for ?Author  // person requesting allele 
+			KO_consortium_allele
         Location ?Laboratory XREF Alleles #Lab_Location
 	Species UNIQUE ?Species // added krb [021021]
 	Derivative ?Allele XREF Derived_from
@@ -248,13 +256,19 @@
                         Maternal	Strictly_Maternal
 					With_Maternal_Effect
                         Paternal
-                        Deletion     // added sdm for consistency 0101
-			Insertion	// Added for Todd [171001 krb]
 	Remark	?Text
         Reference ?Paper XREF Allele               // Mary
         Rescued_by_Transgene ?Transgene
 
 
+
+// New hash to hold more details of the Allele->Sequence/Gene/CDS connection.  What is the relationship
+// between the Allele and the Sequence/Gene that it overlaps with?
+
+#Allele_details UNIQUE Substitution 
+		       Deletion 
+		       Partial_deletion
+		       Insertion 
 
 ?Gene_Class     Evidence #Evidence
 		Phenotype ?Text
@@ -372,12 +386,12 @@
 	  	   Allele  ?Allele XREF Strain 
 		   Rearrangement	 ?Rearrangement XREF Strain
                    Clone ?Clone XREF In_strain		  
+		   Sequence ?Sequence XREF Strain // new for KO allele data, krb [021114]
 	 Properties  Males Text
 		     Reference_strain Text
 		     Outcrossed
 		     Mutagen Text
 		     CGC_received DateType
-	 Knocks_out ?Sequence XREF Knock_out_strain // new for KO allele data, krb [021114]
          Location ?Laboratory #Lab_Location
 	 Made_by Text
 	 Remark	?Text
@@ -793,6 +807,7 @@
      		       AGP_fragment ?Sequence XREF AGP_parent Int UNIQUE Int #SMap_info // added for Briggsae data [krb 020726]
      		       UTR ?UTR XREF Canonical_parent Int UNIQUE Int #SMap_info // added for new UTR model [krb 020729]
 		       Transcript_child ?Transcript XREF Sequence UNIQUE Int UNIQUE Int #SMap_info // on the way to new gene model krb [021126]
+		       Allele ?Allele XREF Sequence UNIQUE Int UNIQUE Int #SMap_info // New SMapped Allele class [krb 021217]
 	  Structure  From	Source UNIQUE ?Sequence XREF Subsequence
 				Source_Exons Int UNIQUE Int // start at 1
 		     Subsequence ?Sequence XREF Source UNIQUE Int UNIQUE Int
@@ -906,15 +921,9 @@
 			Predicted_5 ?Method Int Int UNIQUE Float // (x, x+1) or (x, x-1)
 			Predicted_3 ?Method Int Int UNIQUE Float // (x, x+1) or (x, x-1)
           Oligo ?Oligo XREF In_sequence Int UNIQUE Int  // for OSP and human mapping mostly
+	  Has_allele ?Allele XREF Predicted_gene // for linking to KO genes, substitution alleles etc. Used for Predicted_genes only
+	  Strain ?Strain XREF Sequence // new for KO data [krb 021219]
 	  Assembly_tags	Text Int Int Text // type, start, stop, comment
-	  Allele ?Allele XREF Sequence UNIQUE Int UNIQUE Int UNIQUE Text
-		// start, stop, replacement sequence
-		// if an insertion point Text is transposon name (distinguished
-		// by containing non ACTG letters), and (n, n+1) = T A, so indicates 
-		// direction (if known).
-		// if a deletion, put '-' as the replacement sequence
-	  Knock_out_allele ?Allele XREF Knocks_out // new for KO alleles krb [021114]
-	  Knock_out_strain ?Strain XREF Knocks_out //
 	  EMBL_feature  CAAT_signal	Int Int Text #EMBL_info
 			GC_signal	Int Int Text #EMBL_info
 			TATA_signal	Int Int Text #EMBL_info
@@ -1536,6 +1545,7 @@
 	     Amplified Int
 	     Remark ?Text
 	     SNP_locus ?Locus XREF SNP_assay	                    // added for Todd [171001 krb]
+	     Flanks_deletion ?Allele XREF Flanking_PCR_product // For KO allele data [krb 021217]
 
 ?Phenotype Description UNIQUE ?Text
            Assay UNIQUE ?Text
