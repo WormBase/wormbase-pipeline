@@ -76,7 +76,7 @@ my $db = Ace->connect(-path=>$dbdir);
 
 foreach $chromosome (@chromosomes) {
 
-    next if ($_ eq "");
+#    next if ($_ eq "");
 
     undef (@coords);
     undef (@introns);
@@ -212,13 +212,12 @@ sub usage {
     if ($error == 1) {
         # No WormBase release number file
         print "The WormBase release number cannot be parsed\n";
-        print "Check File: '$Wormbase_release_file'\n\n";
         &run_details;
         exit(0);
     }
     elsif ($error == 0) {
         # Normal help menu
-        exec ('perldoc',$0);
+        system ('perldoc',$0);
         exit (0);
     }
 }
