@@ -141,8 +141,8 @@ print "DEBUG = \"$debug\"\n\n" if $debug;
 our %CE2gene;
 my %gene2CE;
 
-&load_data("$wormpipe/dumps/gene2CE.dat",\%gene2CE);
-&load_data("$wormpipe/dumps/CE2gene.dat",\%CE2gene);
+&load_data("$wormpipe/dumps/cds2wormpep.dat",\%gene2CE);
+&load_data("$wormpipe/dumps/wormpep2cds.dat",\%CE2gene);
 &generate_best_hits if $hits;
 
 

@@ -7,12 +7,10 @@
 # by Kerstin Jekosch
 #
 # Last updated by: $Author: krb $                      
-# Last updated on: $Date: 2004-03-05 17:56:09 $        
+# Last updated on: $Date: 2004-04-26 10:36:39 $        
 
-
-$|=1;
 use strict;
-use lib "/wormsrv2/scripts/";
+use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
 use Wormbase;
 use IO::Handle;
 use Getopt::Long;
@@ -37,6 +35,10 @@ my %finaloutput  = (); # for RNAi
 my %finaloutput2 = (); # for Expression profiles
 
 my $maintainers = "All";
+
+my $rundate = &rundate;
+my $runtime = &runtime;
+
 my $name;
 my $help;       # Help perdoc
 my $test;       # Test mode
@@ -360,35 +362,49 @@ foreach my $mapped (sort keys %finaloutput) {
     
     print OUTACE "\nRNAi : \"$mapped\"\n";
     
-    # Does this CDS have a locus?
-    if ($genetype{$gene} eq "CDS") {
-      print OUTACE "Predicted_gene \"$gene\"\n";
-      $seq = $db->fetch(-class=>'CDS',-name=>" $finaloutput{$mapped}->[$n]");
-      if (defined($seq->at('Visible.Locus'))) {
-	($locus) = ($seq->get('Locus'));
-	print OUTACE "Locus \"$locus\"\n";
-      }
-      print " which is a CDS\n" if ($debug);
-    }
-    # Does this Pseudogene have a locus?
-    elsif ($genetype{$gene} eq "Pseudogene") {
-      print OUTACE "Pseudogene \"$gene\"\n";
-      $seq = $db->fetch(-class=>'Pseudogene',-name=>" $finaloutput{$mapped}->[$n]");
-      if (defined($seq->at('Genetics.Locus'))){
-	($locus) = ($seq->get('Locus'));
-	print OUTACE "Locus \"$locus\"\n";
-      }
-      print " which is a pseudogene\n" if ($debug);
-    }
-    # Does this transcript have a locus?
-    elsif ($genetype{$gene} eq "Transcript") {
-      print OUTACE "Transcript \"$gene\"\n";
-      $seq = $db->fetch(-class=>'Transcript',-name=>" $finaloutput{$mapped}->[$n]");
-      if (defined($seq->at('Visible.Locus'))){
-	($locus) = ($seq->get('Locus'));
-	print OUTACE "Locus \"$locus\"\n";
-      }
-      print " which is a transcript\n" if ($debug);
+    print OUT "$mapped\t@{$finaloutput{$mapped}}\n";
+
+    my $seq;
+    my $gene;       # e.g. WBGene00001231
+    my $worm_gene;  # CDS, Transcript, or Pseudogene name
+
+    for (my $n = 0; $n < (scalar @{$finaloutput{$mapped}}); $n++) {
+	
+	$worm_gene = $finaloutput{$mapped}->[$n];
+	print "'$mapped' is mapped to $worm_gene\t" if ($debug);
+
+	print OUTACE "\nRNAi : \"$mapped\"\n";
+
+	# Does this CDS have a Gene object?
+	if ($genetype{$worm_gene} eq "CDS") {
+	    print OUTACE "Predicted_gene \"$worm_gene\"\n";
+	    $seq = $db->fetch(-class=>'CDS',-name=>" $finaloutput{$mapped}->[$n]");
+	    if (defined($seq->at('Visible.Gene'))) {
+		($gene) = ($seq->get('Gene'));
+		print OUTACE "Gene \"$gene\"\n";
+	    }
+	    print " which is a CDS\n" if ($debug);
+	}
+	# Does this Pseudogene have a Gene object?
+	elsif ($genetype{$worm_gene} eq "Pseudogene") {
+	    print OUTACE "Pseudogene \"$worm_gene\"\n";
+	    $seq = $db->fetch(-class=>'Pseudogene',-name=>" $finaloutput{$mapped}->[$n]");
+	    if (defined($seq->at('Visible.Gene'))){
+		($gene) = ($seq->get('Gene'));
+		print OUTACE "Gene \"$gene\"\n";
+	    }
+	    print " which is a pseudogene\n" if ($debug);
+	}
+	# Does this transcript have a Gene object?
+	elsif ($genetype{$worm_gene} eq "Transcript") {
+	    print OUTACE "Transcript \"$worm_gene\"\n";
+	    $seq = $db->fetch(-class=>'Transcript',-name=>" $finaloutput{$mapped}->[$n]");
+	    if (defined($seq->at('Visible.Gene'))){
+		($gene) = ($seq->get('Gene'));
+		print OUTACE "Gene \"$gene\"\n";
+	    }
+	    print " which is a transcript\n" if ($debug);
+	}
     }
   }
 } 
@@ -489,7 +505,7 @@ __END__
 map_RNAi.pl calculates the overlap between the genomic regions used in RNAi
 experiments and the CDS, transcript and pseudogene coordinates in the WS
 database release. It will generate an acefile which will remove any existing
-connections and make new ones. It wil check the current database and make Locus
+connections and make new ones. It wil check the current database and make Gene
 connections where valid and attach expression_profiles as needed. This acefile
 is then loaded into /wormsrv2/autoace
 

@@ -7,7 +7,7 @@
 # Builds a wormrna data set from the current autoace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-11-10 16:27:22 $
+# Last updated on: $Date: 2004-04-26 10:36:39 $
 
 
 #################################################################################
@@ -15,7 +15,7 @@
 #################################################################################
 
 use strict;
-use lib '/wormsrv2/scripts/';
+use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
 use IO::Handle;
@@ -29,8 +29,8 @@ use Socket;
 
 my ($help, $debug, $release);
 my $maintainers = "All";
-my $rundate     = `date +%y%m%d`; chomp $rundate;
-my $runtime     = `date +%H:%M:%S`; chomp $runtime;
+my $rundate     = &rundate;
+my $runtime     = &runtime;
 my $log;
 my $errors      = 0;    # for tracking how many errors there are
 
@@ -94,10 +94,10 @@ my (%dot2num , @dotnames , @c_dotnames);
 
 foreach my $transcript (@transcripts) {    
   undef (my $dna);
-  undef (my $locus);
+  undef (my $cgc_name);
   undef (my $brief_id);
   undef (my $method);
-
+  undef (my $gene);
     
   my $obj = $db->fetch(Transcript=>"$transcript");
   
@@ -124,11 +124,13 @@ foreach my $transcript (@transcripts) {
   $dseq =~ s/\s//g;
   
   # Grab locus name if present
-  $locus = $obj->Locus;
+  $gene = $obj->Gene;
+  $cgc_name = $gene->CGC_name;
+  
 
   my $rseq = &reformat($dseq);
-  if ($locus) {
-    print DNA ">$transcript $brief_id locus:$locus\n$rseq";
+  if ($cgc_name) {
+    print DNA ">$transcript $brief_id locus:$cgc_name\n$rseq";
   }
   elsif($brief_id) {
     print DNA ">$transcript $brief_id\n$rseq";

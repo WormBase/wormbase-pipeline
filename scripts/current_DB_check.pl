@@ -8,7 +8,8 @@
 # to look for bogus sequence entries
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-03-12 17:09:02 $
+# Last updated on: $Date: 2004-04-26 10:36:39 $
+
 
 use strict;
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
@@ -232,8 +233,8 @@ sub process_sequences{
 	  print "$timestamp $class:$CDS \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
 	  $category = 1;
 	}
-	if(defined($CDS->at('Visible.Locus'))){
-	  my $tag = "Locus";
+	if(defined($CDS->at('Visible.Gene'))){
+	  my $tag = "Gene";
 	  my $timestamp = &get_timestamp($class, $CDS, $tag);
 	  my $comment = &splice_variant_check($CDS);
 	  $problems{$timestamp}{$class.":".$CDS} = ["\"$tag tag is creating this sequence. $comment\""];
@@ -464,7 +465,7 @@ sub get_timestamp{
     ($class = "Sequence", $tag = "Matching_CDS")          if ($tag eq "Matching_cDNA");
     ($class = "Allele", $tag = "CDS")                     if ($tag eq "Allele");
     ($class = "Operon", $tag = "Contains_CDS")            if ($tag eq "Contained_in_operon");
-    ($class = "Locus", $tag = "CDS")                      if ($tag eq "Locus");
+    ($class = "Gene", $tag = "CDS")                       if ($tag eq "Gene");
     ($class = "RNAi", $tag = "CDS")                       if ($tag eq "RNAi_result");
     ($class = "Clone", $tag = "Sequence")                 if ($tag eq "Clone");
     ($class = "Allele", $tag = "CDS")                     if ($tag eq "Allele");
@@ -514,13 +515,14 @@ EOF
       $_ =~ s/\"//g;
       ($cds, $locus)=split(/\s+/, $_);
 
-      # Don't know how to get timestamps for each value next to Locus tag but can
-      # get the timestamp from the Locus tag itself
-      my $aql_query = "select s,s->Locus.node_session from s in object(\"CDS\",\"$cds\")";
+      # Don't know how to get timestamps for each value next to Gene tag but can
+      # get the timestamp from the Gene tag itself
+      my $aql_query = "select s,s->Gene.node_session from s in object(\"CDS\",\"$cds\")";
+
       my @aql = $db->aql($aql_query);
       my $timestamp = "$aql[0]->[1]";
       $timestamp =~ s/\d{4}\-\d{2}\-\d{2}_\d{2}:\d{2}:\d{2}_//;
-      $problems{$timestamp}{"CDS".":".$cds} = ["\"connected to multiple loci\""];
+      $problems{$timestamp}{"CDS".":".$cds} = ["\"connected to multiple genes\""];
     }
   }  
 }

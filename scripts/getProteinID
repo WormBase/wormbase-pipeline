@@ -7,8 +7,8 @@
 #
 # dl
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2004-02-27 17:14:13 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2004-04-26 10:36:39 $
 
 use lib "/wormsrv2/scripts/";
 use Wormbase;
@@ -16,8 +16,8 @@ use Getopt::Long;
 use strict;
 use Data::Dumper;
 
-my %acc2clone = &FetchData('acc2clone');
-my %gene2CE   = &FetchData('gene2CE');
+my %acc2clone = &FetchData('accession2clone');
+my %gene2CE   = &FetchData('cds2wormpep');
 my %Ip2Go;
 our %swall;
 

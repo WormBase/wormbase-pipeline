@@ -4,8 +4,9 @@
 # 
 # A script to make multiple copies of camace for curation, and merge them back again
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2004-04-06 11:11:25 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2004-04-26 10:36:39 $
+
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -196,9 +197,10 @@ sub update_camace {
   print "Update BLAT results in /wormsrv1/camace\n";
   system ("load_blat2db.pl -all -dbdir $current") && die "Failed to run load_blat2db.pl\n";
 
-  # synchronize the locus - sequence connections
-  print  "Update locus2sequence connections in /wormsrv1/camace\n";
-  system ("locus2seq.pl -camace -update") && die "Failed to run locus2seq.pl\n";
+  # synchronize the gene -> sequence connections
+  print  "Update gene2CDS/Transcript/Pseudogene connections in /wormsrv1/camace\n";
+  system ("cgc_names_for_worm_genes.pl -update_camace") && die "Failed to run cgc_names_for_worm_genes.pl\n";
+
 }
 
 #(3)Data dispersion#

@@ -5,8 +5,8 @@
 # by Anthony Rogers                             
 #
 # Last updated by: $Author: krb $               
-# Last updated on: $Date: 2004-03-12 15:12:26 $         
-#
+# Last updated on: $Date: 2004-04-26 10:36:39 $         
+
 # Generates a release letter at the end of build.
 #
 # Three subroutines are called during the build - 
@@ -105,12 +105,12 @@ if( defined($opt_l)) {
   }
 
 
-  # Find out Locus->CDS connections
+  # Find out Gene->CDS, Transcript, Pseudogene connections
   my $tace = &tace;
   my $db = Ace->connect(-path  => "/wormsrv2/autoace",
                         -program =>$tace) || do { print LOG "Connection failure: ",Ace->error; die();};
-  my $query = "Find Locus WHERE (CDS OR Transcript OR Pseudogene) AND CGC_approved";
-  my $locus_seq_count = $db->fetch(-query=> "$query");
+  my $query = "Find Gene WHERE (CDS OR Transcript OR Pseudogene) AND CGC_name";
+  my $gene_seq_count = $db->fetch(-query=> "$query");
   $db->close;
 
   # wormpep status overview
@@ -118,7 +118,7 @@ if( defined($opt_l)) {
   $wp_status{Confirmed}  = `grep Confirmed    /wormsrv2/WORMPEP/wormpep$ver/wormpep_current | wc -l`;
   $wp_status{Supported}  = `grep confirmed    /wormsrv2/WORMPEP/wormpep$ver/wormpep_current | wc -l`;
   $wp_status{Predicted}  = `grep Predicted    /wormsrv2/WORMPEP/wormpep$ver/wormpep_current | wc -l`;
-  $wp_status{Locus}      = $locus_seq_count;
+  $wp_status{Gene}      = $gene_seq_count;
   $wp_status{Swissprot}  = `grep 'SW:'        /wormsrv2/WORMPEP/wormpep$ver/wormpep_current | wc -l`;
   $wp_status{Trembl}     = `grep 'TR:'        /wormsrv2/WORMPEP/wormpep$ver/wormpep_current | wc -l`;
   $wp_status{Tremblnew}  = `grep 'TN:'        /wormsrv2/WORMPEP/wormpep$ver/wormpep_current | wc -l`;
@@ -143,9 +143,9 @@ if( defined($opt_l)) {
   print  RL "---------------------------------------\n";
   printf RL "Protein_id           %6d (%2.1f%%)\n", $wp_status{Protein_ID}, (($wp_status{Protein_ID}/$wp_status{Total}) * 100);
   print  RL "\n\n\n";
-  print  RL "Locus <-> Sequence connections (cgc-approved)\n";
+  print  RL "Gene <-> CDS,Transcript,Pseudogene connections (cgc-approved)\n";
   print  RL "---------------------------------------------\n";
-  printf RL "Entries with locus connection %6d\n", $wp_status{Locus};
+  printf RL "Entries with CGC-approved Gene name %6d\n", $wp_status{Gene};
   print  RL "\n\n";
   
   # Get the GeneModel corrections

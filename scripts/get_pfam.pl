@@ -1,14 +1,18 @@
-#!/usr/local/bin/perl -w
+#!/usr/local/bin/perl5.8.0 -w
+#
+# get_pfam.pl
+#
+# by Darin Blasiar
+#
+# This script interogates an ACEDB database and returns all pfam/Interpro/blastx 
+# data as appropriate and generates the DB_remark for stlace
+#
+# Last updated on: $Date: 2004-04-26 10:36:39 $
+# Last updated by: $Author: krb $
 
-#
-##################
-# get_pfam.pl    #
-##################
-#
-# This script interogates an ACEDB database and returns
-# all pfam/Interpro/blastx data as appropriate and 
-# generates the DB_remark for stlace
-#
+
+
+
 # NOTE: there is a two-week lack of synchrony with acedb. 
 #       new forms in camace not yet appearing in acedb 
 #       get their similarities from the previous or "parent"
@@ -148,7 +152,8 @@ $db->auto_save(0);
 my $db1;
 if ( $CDS_source_db eq $remark_target ) {
   $db1 = $db;
-} else {
+} 
+else {
   $db1 = Ace->connect (-path => "$remark_target",
 		       -program => $tace) || 
 			 die "cannot connect to acedb at $remark_target\n";
@@ -164,48 +169,98 @@ my @sequences;
 if ($ARGV[0]) {
   push(@sequences, $ARGV[0]);
 } else {
-  @sequences = $db->fetch(-query => 'Find elegans_CDS *.* & Method!=history & Method!=genefinder');
+  @sequences = $db->fetch(-query => 'Find elegans_CDS');
 }
 
 #print "checking $#sequences sequences\n";
 
-SUBSEQUENCE: foreach (@sequences) {
-  my $gene = $_;
-  chomp($gene);
-  #    print " ### gene: $_    acedb connection : $db1\n";
+SUBSEQUENCE: foreach my $cds (@sequences) {
+  chomp($cds);
 
-  my (@motif, @pep, $protein, $locus);
+  my (@motif, @pep, $protein, $gene_name, $gene, $cgc_name);
 
   my $full_string = "";
 
   # get data from camace
 
-  my $obj= $db->fetch(CDS => $gene);
 
-  $locus = $obj->Locus(1);
+  my $obj = $db->fetch(CDS => $cds);
+
+  # grab Gene ID, and use this to look up Gene object to get CGC_name if present
+  $gene_name = $obj->Gene;
+  $gene = $db->fetch(Gene => $gene_name);
+  if(defined($gene->CGC_name)){
+    $cgc_name = $gene->CGC_name;
+  }
+
+
   my $thismethod = $obj->Method(1);
 
   # get pfam data from acedb
 
-  my $obj1 = $db1->fetch(CDS => $gene);
+  my $obj1 = $db1->fetch(CDS => $cds);
 
-  #    print "testing: $gene $obj1\n";
+  #    print "testing: $cds $obj1\n";
 
   if ($obj1) {
     $protein = $obj1->Corresponding_protein(1);
     if ($protein) {
-      @motif = $protein->Motif_homol;
+      my $protein_obj;
+      if ($protein_obj) {
+	$protein_obj = $db1->fetch(Protein => $protein);
+      }
+
+      @motif = $protein_obj->Motif_homol;
       unless($motif[0]) {
-	@pep = $protein->Pep_homol(1);
+	@pep = $protein_obj->Pep_homol(1);
+      }
+    }
+  } else {			# if changes haven't carried through to acedb yet,
+				# check "parent_clone" (first check with no letter suffix,
+				# then ".a" suffix)
+
+    next SUBSEQUENCE unless($cds =~ /\D$/); # skip if does not end in a letter; ie, skip new genes not alternatively spliced (ie, would skip B0205.15 but not skip B0205.15c)
+
+    my $parent_gene = $cds;
+    chop($parent_gene);
+    my $obj1 = $db1->fetch(CDS => $parent_gene);
+    my $method;
+    if ($obj1) {		# eg. B0205.15 exists
+      $method = $obj1->Method(1); # test for empty sequence objects
+    }
+    if (($obj1) && ($method)) {
+      $protein = $obj1->Corresponding_protein(1);
+      my $protein_obj = $db1->fetch(Protein => $protein);
+      if ($protein_obj) {
+	@motif = $protein_obj->Motif_homol(1);
+	unless($motif[0]) {
+	  @pep = $protein_obj->Pep_homol(1);
+	}
+      }
+    } else {			# eg. B0205.15 does not exist (or has not method); check if B0205.15a exists
+      my $parent_gene_a = $parent_gene . 'a';
+      my $obj1 = $db1->fetch(CDS => $parent_gene_a);
+      if ($obj1) {
+	$protein = $obj1->Corresponding_protein(1);
+	my $protein_obj = $db1->fetch(Protein => $protein);
+	if ($protein_obj) {
+
+	  @motif = $protein_obj->Motif_homol(1);
+	  unless($motif[0]) {
+	    @pep = $protein_obj->Pep_homol(1);
+	  }
+	} else {		# if all else fails
+	  $log->write_to("$cds not in acedb\n\n");
+	}
       }
     }
   }
 
-  if (($locus) && (!($motif[0]))) { # locus and no motif
-    my $prot = uc($locus);
+  if (($cgc_name) && (!($motif[0]))) { # locus and no motif
+    my $prot = uc($cgc_name);
     $full_string .= "C. elegans $prot protein";
-  } elsif (($locus) && ($motif[0])) { # locus and motif
-    my $prot = uc($locus);
+  } elsif (($cgc_name) && ($motif[0])) { # locus and motif
+    my $prot = uc($cgc_name);
     $full_string .= "C. elegans $prot protein; ";
   }
 
@@ -299,14 +354,14 @@ SUBSEQUENCE: foreach (@sequences) {
       #	    next PROTEIN if($_ eq 'BP:CBP20482');
       #	    foreach(@ignoreproteins) {
       #		if($thispep eq $_) {
-      #		    print "ignoreing $thispep for $gene\n";
+      #		    print "ignoreing $thispep for $cds\n";
       #		    next PROTEIN;
       #		}
       #	    }
       $pepscore{$thispep} = $c;
       my $pep_obj = $db1->fetch(Protein => $thispep);
 
-      #	    print "getting title/desc for $thispep ; pep object : $pep_obj ; clone : $gene\n";
+      #	    print "getting title/desc for $thispep ; pep object : $pep_obj ; clone : $cds\n";
       next PROTEIN unless($pep_obj);
       #	    my $title = $pep_obj->Title(1);
       my $title = $pep_obj->Description(1);
@@ -321,7 +376,7 @@ SUBSEQUENCE: foreach (@sequences) {
     for (sort { $pepscore{$a} <=> $pepscore{$b} } keys %pepscore) {
 
       if ($peptitle{$_}) {	# takes highest score WITH a title
-	if ($locus) {		# don't always take a peptide match, so can't add "; " above, must add here
+	if ($cgc_name) {		# don't always take a peptide match, so can't add "; " above, must add here
 	  $full_string .= "; ";
 	}
 	$full_string .= "contains similarity to $pepspecies{$_} $peptitle{$_}; $_";
@@ -334,7 +389,7 @@ SUBSEQUENCE: foreach (@sequences) {
 
   next SUBSEQUENCE if ($full_string eq "");
 
-  print ACE "CDS : $gene\n";
+  print ACE "CDS : $cds\n";
   print ACE "-D DB_remark\n";
   print ACE "DB_remark \"$full_string\"\n\n";
 
@@ -348,31 +403,36 @@ SUBSEQUENCE: foreach (@sequences) {
 
 my @pseudogenes = $db->fetch(-query => 'Find Pseudogene & Method!=history');
 
-PSEUDOGENE: foreach (@pseudogenes) {
-  my $gene = $_;
-  chomp($gene);
+PSEUDOGENE: foreach my $pseudogene (@pseudogenes) {
+  chomp($pseudogene);
 
-  my ($pseudogene1, $locus, $thismethod);
+  my ($pseudogene1, $gene_name, $gene, $cgc_name, $thismethod);
 
   my $full_string = "";
 
   # get data from camace
+  my $obj = $db->fetch(Pseudogene => $pseudogene);
 
-  my $obj = $db->fetch(elegans_pseudogene => $gene);
-  $locus = $obj->Locus(1);
+  # grab Gene ID, and use this to look up Gene object to get CGC_name if present
+  $gene_name = $obj->Gene;
+  $gene = $db->fetch(Gene => $gene_name);
+  if(defined($gene->CGC_name)){
+    $cgc_name = $gene->CGC_name;
+  }
+
   $thismethod = $obj->Method(1);
   $pseudogene1 = $obj->Coding_pseudogene(1); # type of pseudogene
 
   next PSEUDOGENE if ($thismethod eq 'history');
 
   if ($thismethod eq 'Pseudogene') {
-    if (($pseudogene1) || ($locus)) {
-      if (($pseudogene1) && ($locus)) { 
-	$full_string .= "C. elegans $pseudogene1 pseudogene $locus"; 
+    if (($pseudogene1) || ($cgc_name)) {
+      if (($pseudogene1) && ($cgc_name)) { 
+	$full_string .= "C. elegans $pseudogene1 pseudogene $cgc_name"; 
       } elsif ($pseudogene1) { 
 	$full_string .= "C. elegans $pseudogene1 pseudogene"; 
-      } elsif ($locus) {
-	$full_string .= "C. elegans pseudogene $locus"; 
+      } elsif ($cgc_name) {
+	$full_string .= "C. elegans pseudogene $cgc_name"; 
       }
     } else {
       $full_string .= "C. elegans predicted pseudogene"; 
@@ -381,7 +441,7 @@ PSEUDOGENE: foreach (@pseudogenes) {
 
   next PSEUDOGENE if ($full_string eq "");
 
-  print ACE "Pseudogene : $gene\n";
+  print ACE "Pseudogene : $pseudogene\n";
   print ACE "-D DB_remark\n";
   print ACE "DB_remark \"$full_string\"\n\n";
 
@@ -395,65 +455,69 @@ PSEUDOGENE: foreach (@pseudogenes) {
 my @transcripts = $db->fetch(-query => 'Find Transcript *.* Species="Caenorhabditis elegans" & Method!=history');
 #my @transcripts = $db->fetch(-query => 'Find Transcript');
 
-TRANSCRIPT: foreach (@transcripts) {
-  my $gene = $_;
-  chomp($gene);
-  #    print "gene: $_\n";
+TRANSCRIPT: foreach my $transcript (@transcripts) {
+  chomp($transcript);
 
-  my ($transcript1, $locus, $transcript2, $thismethod);
+  my ($transcript1, $cgc_name, $gene_name, $gene, $transcript2, $thismethod);
 
   my $full_string = "";
 
   # get data from camace
+  my $obj = $db->fetch(Transcript => $transcript);
 
-  my $obj = $db->fetch(Transcript => $gene);
-  $locus = $obj->Locus(1);
-  $thismethod = $obj->Method(1)->name;
-  $transcript1 = $obj->Transcript(1)->name; # type of transcript
-  $transcript2 = $obj->Transcript(2)->name; # text
+  # grab Gene ID, and use this to look up Gene object to get CGC_name if present
+  $gene_name = $obj->Gene;
+  $gene = $db->fetch(Gene => $gene_name);
+  if(defined($gene->CGC_name)){
+    $cgc_name = $gene->CGC_name;
+  }
+
+  $thismethod = $obj->Method(1);
+  $transcript1 = $obj->Transcript(1); # type of transcript
+  $transcript2 = $obj->Transcript(2); # text
 
   next TRANSCRIPT if ($thismethod eq 'history' or $thismethod eq "Coding_transcript");
 
 
   if ($thismethod eq 'tRNAscan-SE-1.23') { # tRNAs
-    if ($locus) {
-      $full_string .= "C. elegans tRNA $locus";
+    if ($cgc_name) {
+      $full_string .= "C. elegans tRNA $cgc_name";
     } else {
       $full_string .= "C. elegans predicted tRNA";
     }
   } elsif ($transcript1 eq 'misc_RNA') { # RNA genes
-    if ($locus) {
-      $full_string .= "C. elegans non-protein coding RNA $locus";
+    if ($cgc_name) {
+      $full_string .= "C. elegans non-protein coding RNA $cgc_name";
     } else {
       $full_string .= "C. elegans probable non-coding RNA";
     }
   } elsif ($transcript1 eq 'snRNA') { # snRNA genes
-    if ($locus) {
-      $full_string .= "C. elegans small nuclear RNA $transcript2 $locus";
+    if ($cgc_name) {
+      $full_string .= "C. elegans small nuclear RNA $transcript2 $cgc_name";
     } else {
       $full_string .= "C. elegans small nuclear RNA $transcript2";
     }
   } elsif ($transcript1 eq 'snoRNA') { # snoRNA genes
-    if ($locus) {
-      $full_string .= "C. elegans small nucleolar RNA $transcript2 $locus";
+    if ($cgc_name) {
+      $full_string .= "C. elegans small nucleolar RNA $transcript2 $cgc_name";
     } else {
       $full_string .= "C. elegans small nucleolar RNA $transcript2";
     }
   } elsif ($transcript1 eq 'miRNA') { # miRNA genes
-    if ($locus) {
-      $full_string .= "C. elegans microRNA $locus";
+    if ($cgc_name) {
+      $full_string .= "C. elegans microRNA $cgc_name";
     } else {
       $full_string .= "C. elegans predicted micro RNA";
     }
   } elsif ($transcript1 eq 'stRNA') { # stRNA genes
-    if ($locus) {
-      $full_string .= "C. elegans regulatory RNA $locus";
+    if ($cgc_name) {
+      $full_string .= "C. elegans regulatory RNA $cgc_name";
     } else {
       $full_string .= "C. elegans predicted regulatory RNA";
     }
   } elsif ($transcript1 eq 'scRNA') { # scRNA genes
-    if ($locus) {
-      $full_string .= "C. elegans small cytoplasmic RNA $locus";
+    if ($cgc_name) {
+      $full_string .= "C. elegans small cytoplasmic RNA $cgc_name";
     } else {
       $full_string .= "C. elegans predicted small cytoplasmic RNA";
     }
@@ -461,7 +525,7 @@ TRANSCRIPT: foreach (@transcripts) {
 
   next TRANSCRIPT if ($full_string eq "");
 
-  print ACE "Transcript : $gene\n";
+  print ACE "Transcript : $transcript\n";
   print ACE "-D DB_remark\n";
   print ACE "DB_remark \"$full_string\"\n\n";
 

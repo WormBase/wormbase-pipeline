@@ -4,8 +4,9 @@
 # 
 # written by Anthony Rogers
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2004-04-21 08:26:47 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2004-04-26 10:36:39 $
+
 
 use DBI;
 use strict;
@@ -449,8 +450,8 @@ if( $prep_dump ) {
     &run_command("$scripts_dir/prepare_dump_blastx.pl > $wormpipe_dir/dumps/accession2clone.list");
     &run_command("cp /wormsrv2/WORMPEP/wormpep$WS_version/wormpep.diff$WS_version $wormpipe_dir/dumps/");
     &run_command("cp /wormsrv2/WORMPEP/wormpep$WS_version/new_entries.WS$WS_version $wormpipe_dir/dumps/");
-    &run_command("cp /wormsrv2/autoace/COMMON_DATA/CE2gene.dat $wormpipe_dir/dumps/");
-    &run_command("cp /wormsrv2/autoace/COMMON_DATA/gene2CE.dat $wormpipe_dir/dumps/");
+    &run_command("cp /wormsrv2/autoace/COMMON_DATA/wormpep2cds.dat $wormpipe_dir/dumps/");
+    &run_command("cp /wormsrv2/autoace/COMMON_DATA/cds2wormpep.dat $wormpipe_dir/dumps/");
     
     system("touch $wormpipe_dir/DUMP_PREP_RUN");
   }

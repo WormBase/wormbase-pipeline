@@ -30,7 +30,7 @@ open (OUT,">$output") or die "cant open $output\n";
 
 # retrieve hash of acc2clone
 my %acc2clone;
-&FetchData("acc2clone",\%acc2clone);
+&FetchData("accession2clone",\%acc2clone);
 
 
 

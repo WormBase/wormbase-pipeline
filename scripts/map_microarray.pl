@@ -7,7 +7,7 @@
 # by Anon
 #
 # Last updated by: $Author: krb $                      
-# Last updated on: $Date: 2003-12-01 11:38:35 $        
+# Last updated on: $Date: 2004-04-26 10:36:39 $        
 
 
 use strict;
@@ -61,8 +61,9 @@ if ($debug) {
 }
 
 my $microarray_results;
-my @CDS;
+my @CDSs;
 my @Pseudo;
+my $cds;
 my $gene;
 my $pseudo;
 my $locus;
@@ -78,19 +79,19 @@ while (my $obj = $i->next) {
     
     $microarray_results = $obj->Microarray_results;
 
-    @CDS     = $obj->Overlaps_CDS;
+    @CDSs     = $obj->Overlaps_CDS;
     @Pseudo  = $obj->Overlaps_pseudogene;
     
-    print "Microarray_results : \"$microarray_results\"\tCDS: " . (scalar @CDS) . " Pseudo: " . (scalar @Pseudo) . "\n" if ($debug);
+    print "Microarray_results : \"$microarray_results\"\tCDS: " . (scalar @CDSs) . " Pseudo: " . (scalar @Pseudo) . "\n" if ($debug);
     
-    if (scalar @CDS > 0) {
+    if (scalar @CDSs > 0) {
 	print OUTPUT "\nMicroarray_results : \"$microarray_results\"\n";
-	foreach $gene (@CDS) {
-	    print OUTPUT "CDS \"$gene\"\n";
-	    $locus   = $obj->Overlaps_CDS->Locus;
+	foreach $cds (@CDSs) {
+	    print OUTPUT "CDS \"$cds\"\n";
+	    $gene   = $obj->Overlaps_CDS->Gene;
 	}
 	
-	print OUTPUT "Locus $locus\n" if (defined $locus);
+	print OUTPUT "Gene $gene\n" if (defined $gene);
 	print OUTPUT "\n";
     }
 
@@ -103,9 +104,9 @@ while (my $obj = $i->next) {
 #	print OUTPUT "\n";
 #    }
     
-    @CDS    = "";
+    @CDSs    = "";
     @Pseudo = "";
-    $locus  = "";
+    $gene = "";
     $obj->DESTROY();
 } 
 close OUTPUT;

@@ -7,7 +7,8 @@
 # Builds a wormpep data set from the current autoace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-03-03 14:57:59 $
+# Last updated on: $Date: 2004-04-26 10:36:39 $
+
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -74,7 +75,7 @@ my @number2peptide;   # stores peptide sequence at array positions corresponding
 my @number2accession; # stores full Wormpep accessions (e.g. CE04323) in array, indexed as above
 my @CDSs;             # stores list of CDS object names from autoace
 my %cds2number;       # stores cds name (e.g. AH6.1) as key, Wormpep number (e.g. 4323) as value
-my %cds2locus;        # cds name and corresponding locus name
+my %cds2cgc_name;     # cds name and corresponding CGC name name
 my %cds2id;           # 'Brief_identification' field for each CDS
 my %cds_status;       # 'Confirmed', 'Partially_confirmed', 'Predicted' status for each CDS
 my %cds2protein_id;   # protein ID for each CDS
@@ -126,7 +127,7 @@ my $new_wpdir = "$basedir/WORMPEP/wormpep$release";
 
 
 # grab protein information for each CDS from autoace, using Table-Maker
-# in -initial mode, this is just getting locus and Brief_identification information
+# in -initial mode, this is just getting CGC name and Brief_identification information
 # in -final mode, also gets protein ID, and protein Database accessions, and confirmation status
 &retrieve_cds_data;
 
@@ -483,8 +484,8 @@ sub retrieve_cds_data{
     next if (/\/\//);
     s/\"//g;
     (/^(\S+)\s/);
-    my ($cds,$prot_id_parent,$prot_id,$prot_id_ver,$prot_db,$prot_ac,$loci,$confirmed,$est,$brief_id) = split /\t/;
-    ($cds2locus{$cds} = $loci)  if (defined($loci));
+    my ($cds,$prot_id_parent,$prot_id,$prot_id_ver,$prot_db,$prot_ac,$gene,$cgc_name,$confirmed,$est,$brief_id) = split /\t/;
+    ($cds2cgc_name{$cds} = $cgc_name)  if (defined($cgc_name));
     ($cds2id{$cds} = $brief_id) if (defined($brief_id));
 
     # can only work with some of this data in full wormpep mode, not in initial
@@ -507,7 +508,7 @@ sub retrieve_cds_data{
 	$cds_status{$cds} = "Predicted";
       }
     }
-    print "$cds Locus:$cds2locus{$cds} Protein_ID:$cds2protein_id{$cds} Protein_AC:$cds2protein_ac{$cds} Protein_DB:$cds2protein_db{$cds} Brief_ID:$cds2id{$cds}\n\n" if ($verbose);
+    print "$cds Locus:$cds2cgc_name{$cds} Protein_ID:$cds2protein_id{$cds} Protein_AC:$cds2protein_ac{$cds} Protein_DB:$cds2protein_db{$cds} Brief_ID:$cds2id{$cds}\n\n" if ($verbose);
     
   }
   close(TACE);
@@ -573,7 +574,7 @@ sub write_main_wormpep_and_table{
     
     # set the fields to be printed depending on whether they exist
     my $output = ">$cds CE$wpid_pad";
-    ($output .= " locus\:".$cds2locus{$cds})           if ($cds2locus{$cds});
+    ($output .= " locus\:".$cds2cgc_name{$cds})           if ($cds2cgc_name{$cds});
     ($output .= " $cds2id{$cds}")                      if ($cds2id{$cds});
     ($output .= " status\:".$cds_status{$cds})         if ($cds_status{$cds});
 
@@ -591,7 +592,7 @@ sub write_main_wormpep_and_table{
     if($final){
       my $output = ">$cds\tCE$wpid_pad";
       $output .= "\t";
-      ($output .= "$cds2locus{$cds}")          if ($cds2locus{$cds});
+      ($output .= "$cds2cgc_name{$cds}")          if ($cds2cgc_name{$cds});
       $output .= "\t";
       ($output .= "$cds2id{$cds}")             if ($cds2id{$cds});
       $output .= "\t";

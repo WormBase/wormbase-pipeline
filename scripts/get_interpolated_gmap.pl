@@ -7,8 +7,9 @@
 # This script calculates interpolated genetic map positions for CDS, Transcripts 
 # and Pseudogenes lying between and outside genetic markers.
 #
-# Last updated on: $Date: 2004-03-10 13:42:23 $
-# Last updated by: $Author: ck1 $
+# Last updated on: $Date: 2004-04-26 10:36:39 $
+# Last updated by: $Author: krb $
+
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -78,7 +79,7 @@ if ($diff){
 
 chdir $gff_location;
 
-my (@data, %CDS_mapping, %CDS_isoforms_mapping, %CDS_variants, %predicted_gene_to_locus);
+my (@data, %CDS_mapping, %CDS_isoforms_mapping, %CDS_variants, %CDS_to_gene);
 my (%chrom_meanCoord, %genetics_mapping);
 my ($cds, $parts, @coords, $i, $mean_coords, %cds_mean, %mean_coord_cds, %chrom_mean_coord_cds);
 
@@ -112,19 +113,19 @@ print PSEUDO "WS$version interpolated map positions for Pseudogenes\n\n";
 # get list of predicted CDS/Transcript linked to locus for writing interpolated map to locus as well
 ####################################################################################################
 
-my $CDS_linked_to_locus=<<EOF;
-  Table-maker -p "/wormsrv1/geneace/wquery/get_predicted_gene_to_locus.def" quit
+my $CDS_linked_to_gene=<<EOF;
+  Table-maker -p "/wormsrv1/geneace/wquery/get_CDS_to_gene.def" quit
 EOF
-my $transcript_linked_to_locus=<<EOF;
-  Table-maker -p "/wormsrv1/geneace/wquery/get_transcript_to_locus.def" quit
+my $transcript_linked_to_gene=<<EOF;
+  Table-maker -p "/wormsrv1/geneace/wquery/get_transcript_to_gene.def" quit
 EOF
-my $pseudogene_linked_to_locus=<<EOF;
-  Table-maker -p "/wormsrv1/geneace/wquery/get_pseudogene_to_locus.def" quit
+my $pseudogene_linked_to_gene=<<EOF;
+  Table-maker -p "/wormsrv1/geneace/wquery/get_pseudogene_to_gene.def" quit
 EOF
 
-open (FH1, "echo '$CDS_linked_to_locus' | tace $curr_db |") || die "Couldn't access $curr_db\n";
-open (FH2, "echo '$transcript_linked_to_locus' | tace $curr_db |") || die "Couldn't access $curr_db\n";         
-open (FH3, "echo '$pseudogene_linked_to_locus' | tace $curr_db |") || die "Couldn't access $curr_db\n";  
+open (FH1, "echo '$CDS_linked_to_gene' | tace $curr_db |") || die "Couldn't access $curr_db\n";
+open (FH2, "echo '$transcript_linked_to_gene' | tace $curr_db |") || die "Couldn't access $curr_db\n";         
+open (FH3, "echo '$pseudogene_linked_to_gene' | tace $curr_db |") || die "Couldn't access $curr_db\n";  
 
 my @FHS = qw(*FH1 *FH2 *FH3);
 foreach my $e (@FHS){
@@ -132,7 +133,7 @@ foreach my $e (@FHS){
     chomp($_);
     if ($_ =~ /^\"(.+)\"\s+\"(.+)\"$/){
       my $gene = $1; my $locus = $2;
-      $predicted_gene_to_locus{$gene} = $locus; 
+      $CDS_to_gene{$gene} = $locus; 
     }
   }
 }
@@ -874,16 +875,16 @@ sub ace_output {
       print PSEUDO "\t$chrom\t$gmap\t" if $type eq "pseudo";
 
       # write interpolated_map to locus as well when a gene is linked to a locus
-      if (exists $predicted_gene_to_locus{$_}){
-        print ACE "\nLocus : \"$predicted_gene_to_locus{$_}\"\n";
-	print GACE "\nLocus : \"$predicted_gene_to_locus{$_}\"\n";
-	print CDSes "$predicted_gene_to_locus{$_}\n" if $type ne "pseudo";
-	print PSEUDO "$predicted_gene_to_locus{$_}\n" if $type eq "pseudo";
+      if (exists $CDS_to_gene{$_}){
+        print ACE "\nGene : \"$CDS_to_gene{$_}\"\n";
+	print GACE "\nGene : \"$CDS_to_gene{$_}\"\n";
+	print CDSes "$CDS_to_gene{$_}\n" if $type ne "pseudo";
+	print PSEUDO "$CDS_to_gene{$_}\n" if $type eq "pseudo";
         print ACE "Interpolated_map_position\t\"$chrom\"\t$gmap\t\/\/$mean_coord (iso)\n";
 	print GACE "Interpolated_map_position\t\"$chrom\"\t$gmap\t\/\/$mean_coord (iso)\n";
 	
-	if ($comp && $locus_map{$predicted_gene_to_locus{$_}}){
-	  print MAPCOMP "$predicted_gene_to_locus{$_}\t\"$chrom\"\tCoords:\t$gmap\tContig:\t$locus_map{$predicted_gene_to_locus{$_}}\n";
+	if ($comp && $locus_map{$CDS_to_gene{$_}}){
+	  print MAPCOMP "$CDS_to_gene{$_}\t\"$chrom\"\tCoords:\t$gmap\tContig:\t$locus_map{$CDS_to_gene{$_}}\n";
 	}
       }
       else {
@@ -911,15 +912,15 @@ sub ace_output {
     print PSEUDO"\t$chrom\t$gmap\t" if $feature eq "pseudogene";
 
     # write interpolated_map to locus as well when a gene is linked to a locus
-    if (exists $predicted_gene_to_locus{$cds}){
-      print ACE "\nLocus : \"$predicted_gene_to_locus{$cds}\"\n";
-      print GACE "\nLocus : \"$predicted_gene_to_locus{$cds}\"\n";
-      print CDSes "$predicted_gene_to_locus{$cds}\n" if $feature ne "pseudogene";
-      print PSEUDO "$predicted_gene_to_locus{$cds}\n" if $feature eq "pseudogene";
+    if (exists $CDS_to_gene{$cds}){
+      print ACE "\nGene : \"$CDS_to_gene{$cds}\"\n";
+      print GACE "\nGene : \"$CDS_to_gene{$cds}\"\n";
+      print CDSes "$CDS_to_gene{$cds}\n" if $feature ne "pseudogene";
+      print PSEUDO "$CDS_to_gene{$cds}\n" if $feature eq "pseudogene";
       print ACE "Interpolated_map_position\t\"$chrom\"\t$gmap\t\/\/$mean_coord\n";
       print GACE "Interpolated_map_position\t\"$chrom\"\t$gmap\t\/\/$mean_coord\n";
-      if ($comp && exists $locus_map{$predicted_gene_to_locus{$cds}}){
-	print MAPCOMP "$predicted_gene_to_locus{$cds}\t\"$chrom\"\tCoords:\t$gmap\tContig:\t$locus_map{$predicted_gene_to_locus{$cds}}\n";
+      if ($comp && exists $locus_map{$CDS_to_gene{$cds}}){
+	print MAPCOMP "$CDS_to_gene{$cds}\t\"$chrom\"\tCoords:\t$gmap\tContig:\t$locus_map{$CDS_to_gene{$cds}}\n";
       }
     }
     else {

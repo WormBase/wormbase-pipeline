@@ -6,8 +6,9 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2004-04-15 09:20:41 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2004-04-26 10:36:39 $
+
 
 
 #################################################################################
@@ -691,8 +692,8 @@ sub make_autoace {
     # make a make_autoace log file in /logs
     system("touch $logdir/$flag{'B1'}");
 
-    # Update Common_data clone2accession info
-    $command = "$scriptdir/Common_data.pm --in_build --update --accession";
+    # Update Common_data clone2accession info, genes2lab, and worm_genes2cgc (uses geneace)
+    $command = "$scriptdir/update_Common_data.pl --build --clone2acc --genes2lab --worm_gene2cgc";
     $command .= " --test" if ($test);
     &run_command($command);
   }
@@ -1187,7 +1188,7 @@ sub make_wormpep {
     &run_command("$command");
 
     # update common data
-    $command = "$scriptdir/update_Common_data.pl -update -in_build -ce";
+    $command = "$scriptdir/update_Common_data.pl --build --cds2wormpep";
     $command .= " -test" if ($test);
     &run_command("$command");
 
@@ -1211,7 +1212,7 @@ sub make_wormpep {
     # make acefile of peptides etc to add to autoace (replacement for pepace)
     &run_command("$scriptdir/build_pepace.pl");
 
-    &run_command("$scriptdir/update_Common_data.pl -update -in_build -pid");
+    &run_command("$scriptdir/update_Common_data.pl -build -cds2pid");
 
     
     # make a make_autoace log file in /logs
@@ -1339,7 +1340,7 @@ sub confirm_gene_models {
   # make dumped_GFF_file in /logs
   system("touch $logdir/C4:Confirm_gene_models");
 
-  &run_command("$scriptdir/update_Common_data.pl -update -in_build -predicted_CDS");
+  &run_command("$scriptdir/update_Common_data.pl -build -CDS_list");
 
 }
 #__ end confirm_gene_models __#
