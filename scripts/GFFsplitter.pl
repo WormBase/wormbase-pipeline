@@ -5,7 +5,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-01-17 16:29:25 $
+# Last updated on: $Date: 2003-01-23 09:22:56 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -119,180 +119,180 @@ my %GFF;
 my $file;
 
 foreach $file (@gff_files) {
+  undef(%GFF);
+  next if ($file eq "");
     
-    next if ($file eq "");
+  print LOG "# File $file\n";
+  print     "# File $file\n";
+  
+  my $line_count = 0;
+  
+  #########################################################
+  # open the gff file                                     #
+  #########################################################
+  
+  my $running_total = 0;
+  my ($name,$feature,$method,$start,$stop,$score,$strand,$other);
+  my @header = "";
+  
+  open (GFF, "</wormsrv2/autoace/CHROMOSOMES/$file.gff");
+  while (<GFF>) {
+    chomp;
+    $line_count++;
     
-    print LOG "# File $file\n";
-    print     "# File $file\n";
-
-    my $line_count = 0;
-
-    #########################################################
-    # open the gff file                                     #
-    #########################################################
+    print "." if (($line_count % 5000) == 0);
     
-    my $running_total = 0;
-    my ($name,$feature,$method,$start,$stop,$score,$strand,$other);
-    my @header = "";
-
-    open (GFF, "</wormsrv2/autoace/CHROMOSOMES/$file.gff");
-    while (<GFF>) {
-	chomp;
-	$line_count++;
-	
-	print "." if (($line_count % 5000) == 0);
-
-	#skip header lines of file
-	if (/^\#/) {push (@header,$_); next;}
-
-	($name,$method,$feature,$start,$stop,$score,$strand,$other,$name) = split /\t/;
-
-	# Clone path
-	if (($method eq "Genomic_canonical") 
-	    && ($feature eq "Sequence"))                  {push ( @{$GFF{$file}{clone_path}},$_);}
-	# Genes     
-	elsif ( (($method eq "curated") && ($feature eq "Sequence")) ||
-		(($method eq "provisional") && ($feature eq "Sequence")) )
-		{push (@{$GFF{$file}{genes}},$_);}
-	elsif ( ($method eq "Pseudogene")   && ($feature eq "Sequence"))              
-		{push (@{$GFF{$file}{pseudogenes}},$_);}
-	# RNA genes 
-	elsif ((($method eq "RNA")    || ($method eq "tRNAscan-SE-1.11") ||
-		($method eq "rRNA")   || ($method eq "scRNA") ||
-		($method eq "snRNA")  || ($method eq "snoRNA") || 
-		($method eq "miRNA")) && ($feature eq "Transcript"))               
-		{push (@{$GFF{$file}{rna}},$_);}
-	# CDS Exon  
-	elsif ( (($method eq "curated") || ($method eq "provisional")) 
-		&& ($feature eq "CDS"))                   {push (@{$GFF{$file}{CDS_exon}},$_);}
-	# Exon      
-	elsif ((($method eq "curated") 
-		|| ($method eq "provisional")) 
-	       && ($feature eq "exon"))                   {push (@{$GFF{$file}{exon}},$_);}
-       	elsif (($method eq "tRNAscan-SE-1.11") 
-	       && ($feature eq "exon"))                   {push (@{$GFF{$file}{exon_tRNA}},$_);}
-	elsif (($method eq "Pseudogene") 
-	       && ($feature eq "exon"))                   {push (@{$GFF{$file}{exon_pseudogene}},$_);}
-	# Intron    
-	elsif ((($method eq "curated") 
-		|| ($method eq "provisional")) 
-	       && ($feature eq "intron"))                 {push (@{$GFF{$file}{intron}},$_);}
-	elsif (($method eq "tRNAscan-SE-1.11") 
-	       && ($feature eq "intron"))                 {push (@{$GFF{$file}{intron_tRNA}},$_);}
-	elsif (($method eq "Pseudogene") 
-	       && ($feature eq "intron"))                 {push (@{$GFF{$file}{intron_pseudogene}},$_);}
-	# Intron confirmed by ESTs
-	elsif (/Confirmed_by_EST/)                        {push (@{$GFF{$file}{intron_confirmed_CDS}},$_);}
-	elsif (/Confirmed_by_cDNA/)                       {push (@{$GFF{$file}{intron_confirmed_CDS}},$_);}
-	elsif (/Confirmed_in_UTR/)                        {push (@{$GFF{$file}{intron_confirmed_UTR}},$_);}
-        # Repeats
-	elsif (($method eq "tandem") 
-            || ($method eq "inverted") 
-            || ($method eq "hmmfs.3") 
-            || ($method eq "scan") 
-            || ($feature eq "repeat_region"))             {push (@{$GFF{$file}{repeats}},$_);}
-   	# TC1 insertions
-	elsif ($method eq "BLASTN_TC1")                   {push (@{$GFF{$file}{tc_insertions}},$_);}
-   	# Protein similarities
-	elsif ($method eq "BLASTX")                       {push (@{$GFF{$file}{BLASTX}},$_);}
-   	# C.briggsae similarities
-	elsif (($method eq "WABA_coding") 
-	       || ($method eq "WABA_strong")
-               || ($method eq "WABA_weak"))               {push (@{$GFF{$file}{WABA_BRIGGSAE}},$_);}
-   	# Assembly tags
-	elsif ($method eq "assembly_tag")                 {push (@{$GFF{$file}{assembly_tags}},$_);}
-	# TS site
-	elsif ((/misc_feature/) && 
-               (/trans-splice site/))                     {push (@{$GFF{$file}{ts_site}},$_);}
-   	# Oligo mapping
-	elsif ($feature eq "OLIGO")                       {push (@{$GFF{$file}{oligos}},$_);}
-   	# RNAi
-	elsif ($method eq "RNAi")                         {push (@{$GFF{$file}{RNAi}},$_);}
-   	# GENEPAIR
-	elsif ($method eq "GenePair_STS")                 {push (@{$GFF{$file}{genepair}},$_);}
-   	# Alleles
-	elsif (/Allele/)                                  {push (@{$GFF{$file}{allele}},$_);}
-   	# Clone ends
-	elsif ((/Clone_left_end/)  
-               || (/Clone_right_end/))                    {push (@{$GFF{$file}{clone_ends}},$_);}
-   	# PCR Products
-	elsif (/PCR_product/)                             {push (@{$GFF{$file}{PCR_products}},$_);}
-   	# cDNA for RNAi
-	elsif (/cDNA_for_RNAi/)                           {push (@{$GFF{$file}{cDNA_for_RNAi}},$_);}
-   	# BLAT_EST
-	elsif (/BLAT_EST_BEST/)                           {push (@{$GFF{$file}{BLAT_EST_BEST}},$_);}
+    #skip header lines of file
+    if (/^\#/) {push (@header,$_); next;}
+    
+    ($name,$method,$feature,$start,$stop,$score,$strand,$other,$name) = split /\t/;
+    
+    # Clone path
+    if (($method eq "Genomic_canonical") 
+	&& ($feature eq "Sequence"))                  {push ( @{$GFF{$file}{clone_path}},$_);}
+    # Genes     
+    elsif ( (($method eq "curated") && ($feature eq "Sequence")) ||
+	    (($method eq "provisional") && ($feature eq "Sequence")) )
+      {push (@{$GFF{$file}{genes}},$_);}
+    elsif ( ($method eq "Pseudogene")   && ($feature eq "Sequence"))              
+      {push (@{$GFF{$file}{pseudogenes}},$_);}
+    # RNA genes 
+    elsif ((($method eq "RNA")    || ($method eq "tRNAscan-SE-1.11") ||
+	    ($method eq "rRNA")   || ($method eq "scRNA") ||
+	    ($method eq "snRNA")  || ($method eq "snoRNA") || 
+	    ($method eq "miRNA")) && ($feature eq "Transcript"))               
+      {push (@{$GFF{$file}{rna}},$_);}
+    # CDS Exon  
+    elsif ( (($method eq "curated") || ($method eq "provisional")) 
+	    && ($feature eq "CDS"))                   {push (@{$GFF{$file}{CDS_exon}},$_);}
+    # Exon      
+    elsif ((($method eq "curated") 
+	    || ($method eq "provisional")) 
+	   && ($feature eq "exon"))                   {push (@{$GFF{$file}{exon}},$_);}
+    elsif (($method eq "tRNAscan-SE-1.11") 
+	   && ($feature eq "exon"))                   {push (@{$GFF{$file}{exon_tRNA}},$_);}
+    elsif (($method eq "Pseudogene") 
+	   && ($feature eq "exon"))                   {push (@{$GFF{$file}{exon_pseudogene}},$_);}
+    # Intron    
+    elsif ((($method eq "curated") 
+	    || ($method eq "provisional")) 
+	   && ($feature eq "intron"))                 {push (@{$GFF{$file}{intron}},$_);}
+    elsif (($method eq "tRNAscan-SE-1.11") 
+	   && ($feature eq "intron"))                 {push (@{$GFF{$file}{intron_tRNA}},$_);}
+    elsif (($method eq "Pseudogene") 
+	   && ($feature eq "intron"))                 {push (@{$GFF{$file}{intron_pseudogene}},$_);}
+    # Intron confirmed by ESTs
+    elsif (/Confirmed_by_EST/)                        {push (@{$GFF{$file}{intron_confirmed_CDS}},$_);}
+    elsif (/Confirmed_by_cDNA/)                       {push (@{$GFF{$file}{intron_confirmed_CDS}},$_);}
+    elsif (/Confirmed_in_UTR/)                        {push (@{$GFF{$file}{intron_confirmed_UTR}},$_);}
+    # Repeats
+    elsif (($method eq "tandem") 
+	   || ($method eq "inverted") 
+	   || ($method eq "hmmfs.3") 
+	   || ($method eq "scan") 
+	   || ($feature eq "repeat_region"))             {push (@{$GFF{$file}{repeats}},$_);}
+    # TC1 insertions
+    elsif ($method eq "BLASTN_TC1")                   {push (@{$GFF{$file}{tc_insertions}},$_);}
+    # Protein similarities
+    elsif ($method eq "BLASTX")                       {push (@{$GFF{$file}{BLASTX}},$_);}
+    # C.briggsae similarities
+    elsif (($method eq "WABA_coding") 
+	   || ($method eq "WABA_strong")
+	   || ($method eq "WABA_weak"))               {push (@{$GFF{$file}{WABA_BRIGGSAE}},$_);}
+    # Assembly tags
+    elsif ($method eq "assembly_tag")                 {push (@{$GFF{$file}{assembly_tags}},$_);}
+    # TS site
+    elsif ((/misc_feature/) && 
+	   (/trans-splice site/))                     {push (@{$GFF{$file}{ts_site}},$_);}
+    # Oligo mapping
+    elsif ($feature eq "OLIGO")                       {push (@{$GFF{$file}{oligos}},$_);}
+    # RNAi
+    elsif ($method eq "RNAi")                         {push (@{$GFF{$file}{RNAi}},$_);}
+    # GENEPAIR
+    elsif ($method eq "GenePair_STS")                 {push (@{$GFF{$file}{genepair}},$_);}
+    # Alleles
+    elsif (/Allele/)                                  {push (@{$GFF{$file}{allele}},$_);}
+    # Clone ends
+    elsif ((/Clone_left_end/)  
+	   || (/Clone_right_end/))                    {push (@{$GFF{$file}{clone_ends}},$_);}
+    # PCR Products
+    elsif (/PCR_product/)                             {push (@{$GFF{$file}{PCR_products}},$_);}
+    # cDNA for RNAi
+    elsif (/cDNA_for_RNAi/)                           {push (@{$GFF{$file}{cDNA_for_RNAi}},$_);}
+    # BLAT_EST
+    elsif (/BLAT_EST_BEST/)                           {push (@{$GFF{$file}{BLAT_EST_BEST}},$_);}
 	elsif (/BLAT_EST_OTHER/)                          {push (@{$GFF{$file}{BLAT_EST_OTHER}},$_);}
-   	# BLAT_mRNA
-	elsif (/BLAT_mRNA_BEST/)                          {push (@{$GFF{$file}{BLAT_mRNA_BEST}},$_);}
-	elsif (/BLAT_mRNA_OTHER/)                         {push (@{$GFF{$file}{BLAT_mRNA_OTHER}},$_);}
-   	# BLAT_EMBL
-	elsif (/BLAT_EMBL_BEST/)                          {push (@{$GFF{$file}{BLAT_EMBL_BEST}},$_);}
-	elsif (/BLAT_EMBL_OTHER/)                         {push (@{$GFF{$file}{BLAT_EMBL_OTHER}},$_);}
-   	# BLATX_NEMATODE
-	elsif (/BLATX_NEMATODE/)                          {push (@{$GFF{$file}{BLATX_NEMATODE}},$_);}
-   	# Expr_profile
-	elsif (/Expr_profile/)                            {push (@{$GFF{$file}{Expr_profile}},$_);}
-   	# UTR         
-	elsif (/UTR/)                                     {push (@{$GFF{$file}{UTR}},$_);}
-	# REST OF LINES
-	else                                              {push (@{$GFF{$file}{rest}},$_); $running_total--;}
-	
-	# increment no of lines sorted to bin
-	$running_total++; 
-	
-    }
-
-    ########################################
-    # write some output                    #
-    ########################################
-
-    foreach my $tag (@gff_classes) {
-	print "# $file $tag\n" if ($debug);
-
-	open (OUT, ">$datadir/GFF_SPLITS/$file.$tag.gff") or die "Can't open file\n";
-
-	# gff header lines
-	foreach my $line (@header) {
-	    next if ($line eq "");
-	    print OUT "$line\n";
-	}
-	
-	# gff split data lines
-	foreach my $line (@{$GFF{$file}{$tag}}) {
-	    next if ($line eq "");
-	    print OUT "$line\n";
-	}
-	close OUT;
-    }
+    # BLAT_mRNA
+    elsif (/BLAT_mRNA_BEST/)                          {push (@{$GFF{$file}{BLAT_mRNA_BEST}},$_);}
+    elsif (/BLAT_mRNA_OTHER/)                         {push (@{$GFF{$file}{BLAT_mRNA_OTHER}},$_);}
+    # BLAT_EMBL
+    elsif (/BLAT_EMBL_BEST/)                          {push (@{$GFF{$file}{BLAT_EMBL_BEST}},$_);}
+    elsif (/BLAT_EMBL_OTHER/)                         {push (@{$GFF{$file}{BLAT_EMBL_OTHER}},$_);}
+    # BLATX_NEMATODE
+    elsif (/BLATX_NEMATODE/)                          {push (@{$GFF{$file}{BLATX_NEMATODE}},$_);}
+    # Expr_profile
+    elsif (/Expr_profile/)                            {push (@{$GFF{$file}{Expr_profile}},$_);}
+    # UTR         
+    elsif (/UTR/)                                     {push (@{$GFF{$file}{UTR}},$_);}
+    # REST OF LINES
+    else                                              {push (@{$GFF{$file}{rest}},$_); $running_total--;}
     
+    # increment no of lines sorted to bin
+    $running_total++; 
     
-    #########################################
-    # Alter clone file to include accession #
-    #########################################
-   
-    # GFF clone_path with EMBL accessions and sequence versions
-    my $input_file = "$datadir/GFF_SPLITS/$file.clone_path.gff";
-    my $output_file = "$datadir/GFF_SPLITS/$file.clone_acc.gff";
-    &GFF_clones_with_accessions("$input_file", "$output_file");
-
-
-    # GFF genes with wormpep CE accessions
-    # Shouldn't do this unless Wormpep has been made else no Corresponding_protein tags in database
-    if(-e "$lockdir/D1:Build_wormpep_final"){
-      $input_file = "$datadir/GFF_SPLITS/$file.genes.gff";
-      $output_file = "$datadir/GFF_SPLITS/$file.genes_acc.gff";
-      &GFF_genes_with_accessions("$input_file", "$output_file");
-      system ("mv -f $output_file $input_file");
-    }
-    
-    # GFF UTRs with CDS names
-    # Shouldn't attempt to do this if UTR data has not been generated
-    if(-e "$lockdir/B10:Generate_UTR_data" ) {
-      my $utr_file = "$datadir/GFF_SPLITS/$file.UTR.gff";
-      my $utr_cds_file = "$datadir/GFF_SPLITS/$file.UTR_CDS.gff";
-      &GFF_with_UTR("$utr_file","$utr_cds_file");
   }
+  close(GFF);
+  ########################################
+  # write some output                    #
+  ########################################
+  
+  foreach my $tag (@gff_classes) {
+    print "# $file $tag\n" if ($debug);
     
+    open (OUT, ">$datadir/GFF_SPLITS/$file.$tag.gff") or die "Can't open file\n";
+    
+    # gff header lines
+    foreach my $line (@header) {
+      next if ($line eq "");
+      print OUT "$line\n";
+    }
+    
+    # gff split data lines
+    foreach my $line (@{$GFF{$file}{$tag}}) {
+      next if ($line eq "");
+      print OUT "$line\n";
+    }
+    close OUT;
+  }
+  
+  
+  #########################################
+  # Alter clone file to include accession #
+  #########################################
+  
+  # GFF clone_path with EMBL accessions and sequence versions
+  my $input_file = "$datadir/GFF_SPLITS/$file.clone_path.gff";
+  my $output_file = "$datadir/GFF_SPLITS/$file.clone_acc.gff";
+  &GFF_clones_with_accessions("$input_file", "$output_file");
+  
+  
+  # GFF genes with wormpep CE accessions
+  # Shouldn't do this unless Wormpep has been made else no Corresponding_protein tags in database
+  if(-e "$lockdir/D1:Build_wormpep_final"){
+    $input_file = "$datadir/GFF_SPLITS/$file.genes.gff";
+    $output_file = "$datadir/GFF_SPLITS/$file.genes_acc.gff";
+    &GFF_genes_with_accessions("$input_file", "$output_file");
+    system ("mv -f $output_file $input_file");
+  }
+  
+  # GFF UTRs with CDS names
+  # Shouldn't attempt to do this if UTR data has not been generated
+  if(-e "$lockdir/B10:Generate_UTR_data" ) {
+    my $utr_file = "$datadir/GFF_SPLITS/$file.UTR.gff";
+    my $utr_cds_file = "$datadir/GFF_SPLITS/$file.UTR_CDS.gff";
+    &GFF_with_UTR("$utr_file","$utr_cds_file");
+  }
+  
 }
 
 # Tidy up
