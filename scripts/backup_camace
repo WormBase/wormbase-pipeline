@@ -7,8 +7,8 @@
 
 # Usage : backup_camace
 
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2002-11-13 17:48:00 $
+# Last updated by: $Author: dl1 $
+# Last updated on: $Date: 2003-04-02 11:52:31 $
 
 #################################################################################
 # variables                                                                     #
@@ -47,7 +47,6 @@ open (LOGFILE,">$logfile");
 LOGFILE->autoflush;
 
 print LOGFILE "# backup_camace\n#\n";
-print LOGFILE "# version             : $version\n";
 print LOGFILE "# run details         : $rundate $runtime\n";
 print LOGFILE "# Source directory    : $campath\n";
 print LOGFILE "# Target directory    : $backuppath\n#\n";
@@ -68,7 +67,7 @@ my $command = "dump -T\nquit\n";
 print "Dump files to be compressed:\n";
 
 my $file;
-opendir(LIST, $campath) or die ("Could not opendir $datadir");
+opendir(LIST, $campath) or die ("Could not opendir $campath");
 while (defined($file=readdir(LIST))) {
     next unless ($file =~ /dump\S+.+\.ace/);
     print "compressing $file ... \n";
