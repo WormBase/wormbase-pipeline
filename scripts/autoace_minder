@@ -7,7 +7,7 @@
 # Usage : autoace_minder [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-02-18 16:51:51 $
+# Last edited on: $Date: 2003-02-20 17:36:49 $
 
 
 #################################################################################
@@ -1591,7 +1591,7 @@ sub usage {
 	print "You must remove this file before you can run the BLAT analysis.\n\n";
 	exit(0);
     }
-    elsif ($error == 15) {
+    elsif ($error == 16) {
 	# atempted BLAT analysis without copying to autoace_midway 
 	print "\nautoace build aborted:\n";
 	print "The '$flag{'B5'} flag is absent indicating that the copy of autoace has not been made. \n";
