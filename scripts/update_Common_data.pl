@@ -5,7 +5,7 @@
 # by Anthony Rogers
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-09-07 15:48:45 $
+# Last updated on: $Date: 2004-09-07 16:18:57 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -37,6 +37,7 @@ my $clone2seq;      # Hash: %clone2seq           Key: Genomic_canbonical        
 my $genes2lab;      # Hash: %worm_gene2lab       Key: Gene (CDS|Transcript|Pseudogene)  Value: From_laboratory (HX, RW, DRW)
 
 my $worm_gene2cgc;  # Hash: %worm_gene2cgc_name  Key: CGC name                          Value: Gene ID, plus molecular name (e.g. AH6.1), also a hash of cgc_name2gene
+my $worm_gene2geneID;  # Hash: %worm_gene2geneID Key: Gene (CDS|Transcript|Pseudogene)  Value: Gene ID
 my $worm_gene2class; # Hash: %worm_gene2class      Key: CDS/Transcript/Pseudogene name    Value: 'CDS', 'Transcript', or 'Pseudogene'
 my $estdata;        # Hash: %NDBaccession2est    Key: GenBank/EMBL accession            Value: EST name (WormBase)  
                     # Hash: %estorientation      Key: EST name (WormBase)               Value: EST_5 = 5, EST_3 = 3
@@ -44,20 +45,21 @@ my $feature_list;   # Hash: %Featurelist         Key: EST name (WormBase)       
 my $CDS2gene_id;     # Hash: %CDS2gene_id         Key: CDS name                          Value: WBGene_id
 
 
-GetOptions("build"           => \$build,
-	   "clone2acc"       => \$clone2accession,
-	   "cds2wormpep"     => \$cds2wormpep,
-	   "cds2pid"         => \$cds2protein_id,
-	   "CDS_list"        => \$CDS_list,
-	   "clone2seq"       => \$clone2seq,
-	   "genes2lab"       => \$genes2lab,
-	   "worm_gene2cgc"   => \$worm_gene2cgc,
-	   "worm_gene2class" => \$worm_gene2class,
-	   "est"             => \$estdata,
-	   "feature"         => \$feature_list,
-	   "gene_id"         => \$CDS2gene_id,
-	   "all"             => \$all,
-	   "test"            => \$test
+GetOptions("build"              => \$build,
+	   "clone2acc"          => \$clone2accession,
+	   "cds2wormpep"        => \$cds2wormpep,
+	   "cds2pid"            => \$cds2protein_id,
+	   "CDS_list"           => \$CDS_list,
+	   "clone2seq"          => \$clone2seq,
+	   "genes2lab"          => \$genes2lab,
+	   "worm_gene2cgc"      => \$worm_gene2cgc,
+	   "worm_gene2geneID"   => \$worm_gene2geneID,
+	   "worm_gene2class"    => \$worm_gene2class,
+	   "est"                => \$estdata,
+	   "feature"            => \$feature_list,
+	   "gene_id"            => \$CDS2gene_id,
+	   "all"                => \$all,
+	   "test"               => \$test
 	   );
 
 ##########################################
@@ -91,17 +93,19 @@ else {
 
 
 # run the various options depending on command line arguments
-&write_cds2protein_id  if ($cds2protein_id || $all );
-&write_clone2accession if ($clone2accession || $all );
-&write_cds2wormpep     if ($cds2wormpep || $all );
-&write_CDSlist         if ($CDS_list || $all );
-&write_clones2seq      if ($clone2seq || $all);
-&write_genes2lab       if ($genes2lab || $all);
+&write_cds2protein_id   if ($cds2protein_id || $all );
+&write_clone2accession  if ($clone2accession || $all );
+&write_cds2wormpep      if ($cds2wormpep || $all );
+&write_CDSlist          if ($CDS_list || $all );
+&write_clones2seq       if ($clone2seq || $all);
+&write_genes2lab        if ($genes2lab || $all);
 &write_worm_gene2class  if ($worm_gene2class || $all);
-&write_worm_gene2cgc   if ($worm_gene2cgc || $all);
-&write_EST             if ($estdata || $all);
-&write_Feature         if ($feature_list || $all);
-&write_Gene_id         if ($CDS2gene_id || $all);
+&write_EST              if ($estdata || $all);
+&write_Feature          if ($feature_list || $all);
+&write_Gene_id          if ($CDS2gene_id || $all);
+&write_worm_gene2geneID if ($worm_gene2geneID || $all);
+&write_worm_gene2cgc    if ($worm_gene2cgc);
+
 # hasta luego
 
 exit(0);
@@ -462,6 +466,48 @@ sub write_worm_gene2cgc  {
 
 }
 
+
+sub write_worm_gene2geneID  {   
+
+  my %worm_gene2geneID;
+
+  # connect to AceDB using TableMaker, but use /wormsrv2/geneace for Table-maker definition
+  my $command="Table-maker -p $ace_dir/wquery/gene_IDs_for_worm_genes.def\nquit\n";
+  
+  open (TACE, "echo '$command' | $tace $ace_dir |");
+  while (<TACE>) {
+    chomp;
+    next if ($_ eq "");
+    next if (/acedb\>/);
+    last if (/\/\//);
+
+    # get rid of quote marks
+    s/\"//g;
+
+    # split the line into various fields
+    my ($gene,$cds,$transcript,$pseudogene) = split(/\t/, $_) ;
+
+    # add to hash. CDS, Pseudogene, or Transcript name is key, gene ID is value
+
+    if($cds){
+      $worm_gene2geneID{$cds} = "$gene";
+    }
+    if($transcript){
+      $worm_gene2geneID{$transcript} = "$gene";
+    }
+    if($pseudogene){
+      $worm_gene2geneID{$pseudogene} = "$gene";
+    }
+  }
+  close TACE;
+  
+  #now dump data to file
+  open (OUT, ">$data_dir/worm_gene2geneID_name.dat") or die "Can't open file: $data_dir/worm_gene2geneID_name.dat";
+  print OUT Data::Dumper->Dump([\%worm_gene2geneID]);
+  close OUT;
+
+}
+
 sub write_Gene_id{
   my %CDS2gene;
   my %gene2CDS;
@@ -613,6 +659,10 @@ This module updates the following data sets:
 (separated by spaces). 1) class name of the key (CDS, Transcript, or Pseudogene) 2) CGC name 3) Gene ID
 
 =back
+
+=item *
+
+%worm_gene2geneID - simplification of above: CDS, Transcript, or Pseudogene is key, gene ID is value
 
 =item *
 
