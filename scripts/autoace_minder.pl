@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2004-09-15 12:41:53 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2004-09-17 15:20:08 $
 
 
 
@@ -698,7 +698,7 @@ sub make_autoace {
     system("touch $logdir/$flag{'B1'}");
 
     # Update Common_data clone2accession info, genes2lab, and worm_genes2cgc (uses geneace)
-    $command = "$scriptdir/update_Common_data.pl --build --clone2acc --genes2lab --worm_gene2cgc";
+    $command = "$scriptdir/update_Common_data.pl --build --clone2acc --genes2lab --worm_gene2cgc --worm_gene2class";
     $command .= " --test" if ($test);
     &run_command($command);
   }
