@@ -433,7 +433,7 @@ if( $blastp )
 	my $analysis = $wormprotprocessIds{$_};
 	`perl $bdir/RuleManager3Prot.pl -once -flushsize 5 -analysis $analysis`;
       }
-    `perl $bdir/RuleManager3prot.pl -once -flushsize 5`; # finish off anything that didn't work + PFams and low complexity, signalp, ncoils, transmembrane
+    `perl $bdir/RuleManager3Prot.pl -once -flushsize 5`; # finish off anything that didn't work + PFams and low complexity, signalp, ncoils,transmembrane
   }
 
 if( $dump_data )
