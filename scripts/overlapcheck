@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl -w
+#!/usr/local/bin/perl5.6.0 -w
 #
 # checks whether genes overlap, ESTs match introns and repeats match exons                                   
 # sorts output for stl and cam clones
@@ -10,6 +10,7 @@ use strict;
 use Carp;
 use Ace;
 use IO::Handle;
+
 $|=1;
 my @chrom = qw( I II III IV V X );
 my (%exon, %est, %genes, %repeat, %intron, %camace, %stlace);
@@ -23,19 +24,19 @@ my (%exon, %est, %genes, %repeat, %intron, %camace, %stlace);
 my $camdb     = Ace->connect(-path => '/wormsrv2/camace/') || die "Couldn't connect to  camace\n", Ace->error;
 my @camclones = $camdb->fetch(-query => 'FIND Genome_Sequence');
 foreach my $camclone (@camclones) {
-	my $string = $camclone->Confidential_remark(1);
-	if ((defined $string) && (($string =~ /not in Cambridge LINK/) || ($string =~ /Louis/))) {
-		next;
-	}
-	else {$camace{$camclone} = 1;}
+  my $string = $camclone->Confidential_remark(1);
+  if ((defined $string) && (($string =~ /not in Cambridge LINK/) || ($string =~ /Louis/))) {
+    next;
+  }
+  else {$camace{$camclone} = 1;}
 }
 
 my $stldb     = Ace->connect(-path => '/wormsrv2/stlace/') || die "Couldn't connect to  stlace\n", Ace->error;
 my @stlclones = $stldb->fetch(-query => 'FIND Genome_Sequence');
-foreach my $stlclone (@stlclones) {
-	$stlace{$stlclone} = 1;
-}
 
+foreach my $stlclone (@stlclones) {
+  $stlace{$stlclone} = 1;
+}
 
 
 #############################################
@@ -44,108 +45,106 @@ foreach my $stlclone (@stlclones) {
 
 foreach my $chrom (@chrom) {
 
-    open (GFF, "/wormsrv2/autoace/CHROMOSOMES/CHROMOSOME_$chrom.gff"); 
-    open (CAMOL, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.overlapping_genes_cam") 
-	|| die "Cannot open output file $chrom $!\n"; 
-    open (CAMEST, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.EST_in_intron_cam") 
-	|| die "Cannot open output file $chrom $!\n"; 
-    open (CAMREP, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.repeat_in_exon_cam") 
-	|| die "Cannot open output file $chrom $!\n"; 
-    open (STLOL, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.overlapping_genes_stl") 
-	|| die "Cannot open output file $chrom $!\n"; 
-    open (STLEST, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.EST_in_intron_stl") 
-	|| die "Cannot open output file $chrom $!\n"; 
-    open (STLREP, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.repeat_in_exon_stl") 
-	|| die "Cannot open output file $chrom $!\n"; 
+  open (GFF, "/wormsrv2/autoace/CHROMOSOMES/CHROMOSOME_$chrom.gff"); 
+  open (CAMOL, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.overlapping_genes_cam") 
+    || die "Cannot open output file $chrom $!\n"; 
+  open (CAMEST, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.EST_in_intron_cam") 
+    || die "Cannot open output file $chrom $!\n"; 
+  open (CAMREP, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.repeat_in_exon_cam") 
+    || die "Cannot open output file $chrom $!\n"; 
+  open (STLOL, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.overlapping_genes_stl") 
+    || die "Cannot open output file $chrom $!\n"; 
+  open (STLEST, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.EST_in_intron_stl") 
+    || die "Cannot open output file $chrom $!\n"; 
+  open (STLREP, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.repeat_in_exon_stl") 
+    || die "Cannot open output file $chrom $!\n"; 
 		
-    %exon  = %est = %genes = %intron = %repeat = (); 
-    my (%exoncount, %introncount, %estcount, %repeatcount, $name);
-    
-    while (<GFF>) {
-        if (/^CHROM/) {
-            my @fields = ();
-            @fields = split(/\t/,$_);
+  %exon  = %est = %genes = %intron = %repeat = (); 
+  my (%exoncount, %introncount, %estcount, %repeatcount, $name);
+  
+  while (<GFF>) {
+    if (/^CHROM/) {
+      my @fields = ();
+      @fields = split(/\t/,$_);
 
-    #################
-    # get the exons #
-    #################
+      #################
+      # get the exons #
+      #################
 			
-            if ($fields[2] =~ /exon/ and $fields[1] =~ /curated/) {
-                $fields[8] =~ /^Sequence \"(\S+)\"/;
-                $name = $1;
-                $exoncount{$name}++; 
-                my $exonname = $name.".".$exoncount{$name};
-                $exon{$exonname} = [$fields[3],$fields[4]]; 
-            }   
-            
-    ###################
-    # get the introns #
-    ###################
+      if ($fields[2] =~ /exon/ and $fields[1] =~ /curated/) {
+	$fields[8] =~ /^Sequence \"(\S+)\"/;
+	$name = $1;
+	$exoncount{$name}++; 
+	my $exonname = $name.".".$exoncount{$name};
+	$exon{$exonname} = [$fields[3],$fields[4]]; 
+      }   
+      
+      ###################
+      # get the introns #
+      ###################
 			
-            if ($fields[2] =~ /intron/ and $fields[1] =~ /curated/) {
-                $fields[8] =~ /^Sequence \"(\S+)\"/;
-                $name = $1;
-                $introncount{$name}++; 
-                my $intronname = $name.".".$introncount{$name};
-                $intron{$intronname} = [$fields[3],$fields[4]]; 
-            }
-    
-    ###################################################
-    # get the ESTs above a certain thresholdthreshold #
-    ###################################################
+      if ($fields[2] =~ /intron/ and $fields[1] =~ /curated/) {
+	$fields[8] =~ /^Sequence \"(\S+)\"/;
+	$name = $1;
+	$introncount{$name}++; 
+	my $intronname = $name.".".$introncount{$name};
+	$intron{$intronname} = [$fields[3],$fields[4]]; 
+      }
+      
+      ###################################################
+      # get the ESTs above a certain thresholdthreshold #
+      ###################################################
 			
-            elsif ($fields[1] =~ /^EST_GENOME/ && $fields[5] > 98.0) {
-                $fields[8] =~ /Sequence:(\S+)\"/;
-                $name = $1;
-                $estcount{$name}++;
-                my $estname = $name.".".$estcount{$name};
-                my @names = split (/ /, $fields[8]);
-                $est{$estname} = [$fields[3],$fields[4],$names[3],$names[4]];  
-            } 
-           
-    ###################
-    # get the repeats #
-    ###################
-			
-            elsif ($fields[1] =~ /hmmfs/) {
-                my @descr = split (/ /);
-                $descr[1] =~ /\"Motif:(\S+)\"/; 
-                $name = $1;
-                $repeatcount{$name}++;
-                my $repeatname = $name.".".$repeatcount{$name};
-                $repeat{$repeatname} = [$fields[3],$fields[4]];  
-			} 
-        }
-    }        
-		
-    #########################
-    # make exons into genes #
-    #########################
-	
-    foreach $name (sort keys %exoncount) {
-	my $v = $exoncount{$name};
-	my $w = "$name.$v";
-        $genes{$name} = [$exon{$name.".1"}->[0],$exon{$w}->[1]];
+      elsif ($fields[1] =~ /^EST_GENOME/ && $fields[5] > 98.0) {
+	$fields[8] =~ /Sequence:(\S+)\"/;
+	$name = $1;
+	$estcount{$name}++;
+	my $estname = $name.".".$estcount{$name};
+	my @names = split (/ /, $fields[8]);
+	$est{$estname} = [$fields[3],$fields[4],$names[3],$names[4]];  
+      } 
+      
+      ###################
+      # get the repeats #
+      ###################
+      
+      elsif ($fields[1] =~ /hmmfs/) {
+	my @descr = split (/ /);
+	$descr[1] =~ /\"Motif:(\S+)\"/; 
+	$name = $1;
+	$repeatcount{$name}++;
+	my $repeatname = $name.".".$repeatcount{$name};
+	$repeat{$repeatname} = [$fields[3],$fields[4]];  
+      } 
     }
-
-    #####################
-    # get "index" lists #
-    #####################
-	
-    my @exonlist   = sort { ${$exon{$a}}[0]     <=> ${$exon{$b}}[0]   || $a cmp $b  } keys %exon;
-    my @estlist    = sort { ${$est{$a}}[0]      <=> ${$est{$b}}[0]    || $a cmp $b  } keys %est;
-    my @genelist   = sort { ${$genes{$a}}[0]    <=> ${$genes{$b}}[0]  || $a cmp $b  } keys %genes;
-    my @repeatlist = sort { ${$repeat{$a}}[0]   <=> ${$repeat{$b}}[0] || $a cmp $b  } keys %repeat; 
-    my @intronlist = sort { ${$intron{$a}}[0]   <=> ${$intron{$b}}[0] || $a cmp $b  } keys %intron; 
-
-
+  }        
+  
+  #########################
+  # make exons into genes #
+  #########################
+  
+  foreach $name (sort keys %exoncount) {
+    my $v = $exoncount{$name};
+    my $w = "$name.$v";
+    $genes{$name} = [$exon{$name.".1"}->[0],$exon{$w}->[1]];
+  }
+  
+  #####################
+  # get "index" lists #
+  #####################
+  
+  my @exonlist   = sort { ${$exon{$a}}[0]     <=> ${$exon{$b}}[0]   || $a cmp $b  } keys %exon;
+  my @estlist    = sort { ${$est{$a}}[0]      <=> ${$est{$b}}[0]    || $a cmp $b  } keys %est;
+  my @genelist   = sort { ${$genes{$a}}[0]    <=> ${$genes{$b}}[0]  || $a cmp $b  } keys %genes;
+  my @repeatlist = sort { ${$repeat{$a}}[0]   <=> ${$repeat{$b}}[0] || $a cmp $b  } keys %repeat; 
+  my @intronlist = sort { ${$intron{$a}}[0]   <=> ${$intron{$b}}[0] || $a cmp $b  } keys %intron; 
 
    
 ###############################
 # III. find overlapping genes #
 ###############################
 	
-    my @geneoutput = ();
+  my @geneoutput = ();
     for (my $x = 0; $x < @exonlist; $x++) {
         for (my $y = $x + 1; $y < @exonlist; $y++) {
             my $name  = $exonlist[$x];
@@ -156,8 +155,8 @@ foreach my $chrom (@chrom) {
             if (!$one) {$one = "n/a";}
             if (!$two) {$two = "n/b";}
             if ($name eq $other || $one eq $two) {
-                next;
-            }
+	      next;
+	    }
             elsif (${$exon{$name}}[1] >= ${$exon{$other}}[0])  {
                 (my $onename)    = ($name  =~ /(\S.*?\.\S.*?)\./);
                 (my $othername)  = ($other =~ /(\S.*?\.\S.*?)\./);
@@ -236,78 +235,78 @@ foreach my $chrom (@chrom) {
 
 sub findmatch {
     
-    my @masterlist= @{$_[0]};
-    my %master    = %{$_[1]};
-    my @slavelist = @{$_[2]}; 
-    my %slave     = %{$_[3]};
-    my %count     = %{$_[4]};
-    my %structure  = %{$_[5]};
-    my $lastfail  = 0;
-    my @output    = ();
-        
-    for (my $x = 0; $x < @slavelist; $x++) {
-        my $testslave = $slavelist[$x];
-
-        for (my $y = $lastfail; $y < @masterlist; $y++) {
-            my $testmaster  = $masterlist[$y];
-
-            if (!defined $count{$testmaster}) {
-                next;
-            }
-            
-            elsif ($slave{$testslave}->[0] > $master{$testmaster}->[1]){
-                $lastfail = $y;
-                next;
-            }
-
-            elsif ($slave{$testslave}->[1] < $master{$testmaster}->[0]){
-                last;
-            }
-
-            else {
-                for (my $z = 1; $z <= $count{$testmaster}; $z++) {
-                    my $masterstart = $structure{"$testmaster.$z"}->[0];
-		    my $masterend   = $structure{"$testmaster.$z"}->[1];
-		    my $slavestart  = $slave{$testslave}->[0];
-		    my $slaveend    = $slave{$testslave}->[1];
-		    if ( not (($slavestart > $masterend) || ($slaveend < $masterstart))) {
-                        my ($finalslave)  = ($testslave =~ /^(\S+)\.\d+/);  	
-		        push (@output, [$finalslave,$testmaster]);
-	            }
-                }
-            }
-        }   
-    }
-    return @output;
+  my @masterlist= @{$_[0]};
+  my %master    = %{$_[1]};
+  my @slavelist = @{$_[2]}; 
+  my %slave     = %{$_[3]};
+  my %count     = %{$_[4]};
+  my %structure  = %{$_[5]};
+  my $lastfail  = 0;
+  my @output    = ();
+  
+  for (my $x = 0; $x < @slavelist; $x++) {
+    my $testslave = $slavelist[$x];
+    
+    for (my $y = $lastfail; $y < @masterlist; $y++) {
+      my $testmaster  = $masterlist[$y];
+      
+      if (!defined $count{$testmaster}) {
+	next;
+      }
+      
+      elsif ($slave{$testslave}->[0] > $master{$testmaster}->[1]){
+	$lastfail = $y;
+	next;
+      }
+      
+      elsif ($slave{$testslave}->[1] < $master{$testmaster}->[0]){
+	last;
+      }
+      
+      else {
+	for (my $z = 1; $z <= $count{$testmaster}; $z++) {
+	  my $masterstart = $structure{"$testmaster.$z"}->[0];
+	  my $masterend   = $structure{"$testmaster.$z"}->[1];
+	  my $slavestart  = $slave{$testslave}->[0];
+	  my $slaveend    = $slave{$testslave}->[1];
+	  if ( not (($slavestart > $masterend) || ($slaveend < $masterstart))) {
+	    my ($finalslave)  = ($testslave =~ /^(\S+)\.\d+/);  	
+	    push (@output, [$finalslave,$testmaster]);
+	  }
+	}
+      }
+    }   
+  }
+  return @output;
 }
     
 #################
 
 sub find_database {
     
-    my @messy = @{$_[0]};
-    my %ace= %{$_[1]};     
-    my @output;
-    carp "find_database not called with references\n" if (ref($_[0]) ne 'ARRAY' || ref($_[1]) ne 'HASH');
-    
-    foreach my $testpair (@messy) {
-        my ($gene) = ($testpair->[1] =~ /(\S+)\./);
-        carp "Second element of pair submitted to find_database looks like $gene\n" if !defined $gene;
-        push (@output, $testpair) if (exists ($ace{$gene}));
-    }
-    return @output;   
+  my @messy = @{$_[0]};
+  my %ace= %{$_[1]};     
+  my @output;
+  carp "find_database not called with references\n" if (ref($_[0]) ne 'ARRAY' || ref($_[1]) ne 'HASH');
+  
+  foreach my $testpair (@messy) {
+    my ($gene) = ($testpair->[1] =~ /(\S+)\./);
+    carp "Second element of pair submitted to find_database looks like $gene\n" if !defined $gene;
+    push (@output, $testpair) if (exists ($ace{$gene}));
+  }
+  return @output;   
 }	
 
 #################
 
 sub sort_by_gene {  
-
-    my @output = @{$_[0]};
-    my %final_output;
-	
-    foreach my $out (@output) {
-    	my $both  = $out->[1].":".$out->[0];
-        $final_output{$both}++,
-    }
-    return %final_output;
+  
+  my @output = @{$_[0]};
+  my %final_output;
+  
+  foreach my $out (@output) {
+    my $both  = $out->[1].":".$out->[0];
+    $final_output{$both}++,
+  }
+  return %final_output;
 }
