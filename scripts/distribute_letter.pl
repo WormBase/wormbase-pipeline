@@ -9,7 +9,7 @@
 #                          /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/current/release_notes.txt/
 #
 # Last updated by: $Author: krb $                       
-# Last updated on: $Date: 2003-04-08 08:12:52 $         
+# Last updated on: $Date: 2003-04-09 13:07:20 $         
 
 
 use strict;                                     
@@ -78,30 +78,30 @@ system "cd $targetdir; ln -s $release current_release";
 # Separate webpublish commands (for safety!) on the two top level directories that need updating
 ##############################################
 
+my $webpublish = "/nfs/WWW/bin/webpublish";
+
+#First update wormpep subdirectory
 chdir($www) || print LOG "Couldn't run chdir\n";
+system("$webpublish -f -q -r wormpep") && print LOG "Couldn't run webpublish on wormpep files\n";
 
-system("/usr/local/bin/webpublish -f -q -r wormpep") && print LOG "Couldn't run webpublish on wormpep files\n";
-
+# Now update WORMBASE pages
 chdir("$www/WORMBASE") || print LOG "Couldn't run chdir\n";
-system("/usr/local/bin/webpublish -f -q -r $release") && print LOG "Couldn't run webpublish on release directory\n";
-system("/usr/local/bin/webpublish -f -q -r current") && print LOG "Couldn't run webpublish on current symlink files\n";
+system("$webpublish -f -q -r $release") && print LOG "Couldn't run webpublish on release directory\n";
+system("$webpublish -f -q -r current") && print LOG "Couldn't run webpublish on current symlink files\n";
 
-# Now need to unpack dbcomp file on live site
-chdir("$www/WORMBASE/${release}") || print LOG "Couldn't chdir to $www/WORMBASE/${release}\n";
-system("/bin/gunzip WS.dbcomp_output.gz") && print LOG "Couldn't gunzip WS.dbcomp_output.gz\n";
-system("rm -f WS.dbcomp_output.gz") && print LOG "Couldn't remove gzip fil\n"; 
+# Now need to update big dbcomp output in data directory
+chdir("/nfs/WWWdev/SANGER_docs/data/Projects/C_elegans") || print LOG "Couldn't chdir to data directory\n";
+system("$webpublish -f -q WS.dbcomp_output") && print LOG "Couldn't webpublish data directory\n"; 
 
 print LOG "$0 finished at ",`date`,"\n\n";
 
-
-# Always good to cleanly exit from your script
 exit(0);
 
 
-# Add perl documentation in POD format
-# This should expand on your brief description above and add details of any options
-# that can be used with the program.  Such documentation can be viewed using the perldoc
-# command.
+
+
+########################################################
+
 
 
 __END__
@@ -124,8 +124,11 @@ copies the release letter to the ftp site, website and autoace/release
 
 mails release letter to wormbase-dev
 
-Finally, when release letter is emailed it updates the symlink on the FTP
+Then, when release letter is emailed it updates the symlink on the FTP
 site to make current_release point to the latest release directory.
+
+Finally, it runs webpublish in a few separate places to update the dev
+site with the live site.
 
 script_template.pl MANDATORY arguments:
 

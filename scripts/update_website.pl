@@ -8,7 +8,7 @@
 # relevant WormBase and Wormpep web pages.
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-04-07 09:12:34 $      
+# Last updated on: $Date: 2003-04-09 13:07:21 $      
 
 
 
@@ -48,6 +48,7 @@ my $WS_previous_name = "WS".$WS_previous;
 # file path info
 my $www_root         = "/nfs/WWWdev/htdocs/Projects/C_elegans";
 my $www              = "/nfs/WWWdev/htdocs/Projects/C_elegans/WORMBASE";
+my $wwwdata          = "/nfs/WWWdev/SANGER_docs/data/Projects/C_elegans";
 my $wwwlive          = "/nfs/WWW/htdocs/Projects/C_elegans/WORMBASE";
 my $gff              = "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS";
 my $dbpath           = "/wormsrv2/autoace";
@@ -279,9 +280,7 @@ sub create_top_level_web_pages{
   # create dbcomp.shtml
   print LOG "Creating $www/$WS_name/dbcomp.shtml\n";
 
-  system ("cp /wormsrv2/autoace/COMPARE/current.out $www/$WS_name/WS.dbcomp_output") && croak "Couldn't copy current.out\n";
-  # need to zip this file else webpublish will fail, another script unpacks it on the ilve site
-  system ("/bin/gzip $www/$WS_name/WS.dbcomp_output") && croak "Couldn't zip $www/$WS_name/WS.dbcomp_output\n";
+  system ("cp /wormsrv2/autoace/COMPARE/current.out $wwwdata/WS.dbcomp_output") && croak "Couldn't copy current.out\n";
 
   open (DB_comp, ">$www/$WS_name/dbcomp.shtml") || croak "Couldn't create dbcomp.shtml\n\n";
   print DB_comp "<P>\n";
@@ -296,7 +295,7 @@ sub create_top_level_web_pages{
 
     my ($nowt,$class,$count_1,$count_2,$diff) = split (/\|/,$_);
     $class =~ s/^\s+//g;
-    print DB_comp "<TR> <TD ALIGN=\"RIGHT\"><A  href=\"/cgi-bin/Protozoa/wormbase_dbcomp.pl?class=$class\" TARGET=\"_blank\">$class</A></TD> <TD ALIGN=\"RIGHT\">$count_1</TD> <TD ALIGN=\"RIGHT\">$count_2</TD> <TD ALIGN=\"RIGHT\">$diff</TD> </TR>\n";
+    print DB_comp "<TR> <TD ALIGN=\"RIGHT\"><A  href=\"/cgi-bin/Projects/C_elegans/wormbase_dbcomp.pl?class=$class\" TARGET=\"_blank\">$class</A></TD> <TD ALIGN=\"RIGHT\">$count_1</TD> <TD ALIGN=\"RIGHT\">$count_2</TD> <TD ALIGN=\"RIGHT\">$diff</TD> </TR>\n";
 
   }
   close (COMP);
