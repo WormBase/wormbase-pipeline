@@ -2,7 +2,7 @@
 #
 # EMBLDump.pl :  makes EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2003-01-06 18:02:48 $
+#  Last updated on: $Date: 2003-04-14 07:39:25 $
 #  Last updated by: $Author: krb $
 
 
@@ -16,8 +16,8 @@ use Wormbase;
 # variables
 
 # Need new Transcript dumping code for this part
-#my $exec        = &giface;
-my $exec = "/nfs/team71/acedb/edgrif/TEST/KEITH/giface ";
+my $exec        = &giface;
+#my $exec = "/nfs/team71/acedb/edgrif/TEST/KEITH/giface ";
 my $dbdir       = "/wormsrv2/camace";
 my $tace        = &tace;
 my $giface      = "$exec $dbdir";
