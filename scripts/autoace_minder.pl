@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2004-08-02 10:19:24 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2004-08-02 17:09:44 $
 
 
 
@@ -815,6 +815,21 @@ sub check_make_autoace {
     }
   }
   close BUILDLOG;
+
+
+  # look for objects with no Gene tag
+  print LOG "\n", &runtime, ": Looking for CDSs, Transcripts, Pseudogenes with no Gene tag\n";
+  my $db = Ace->connect(-path=>$db_path, -program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
+
+  my @genes= $db->fetch(-query=>'find worm_genes NOT Gene');
+  if(@genes){
+    foreach (@genes){
+      print LOG "ERROR: $_ has no Gene tag, please add valid Gene ID from geneace\n";
+      $builderrors++;
+    }
+  }
+  $db->close;
+
   print LOG &runtime, ": Finished subroutine\n\n";
 
   return ($builderrors);
