@@ -69,6 +69,9 @@ while (<DIFF>) {
     if (/new:\t(\S+)\s+(\S+)/) {
 	&new($1,$2);
     }
+    if (/reappeared:\t(\S+)\s+(\S+)/) {
+	&reappeared($1,$2);
+    }
 }
 close DIFF;
 close LOG;
@@ -94,9 +97,9 @@ sub changed {
     # Delete old entry
     print "Protein : \"WP:$old_acc\"\n";
     print "-D Corresponding_DNA $CDS\n";
-    print "-D Wormpep\n";
     print "DB_Remark \"[wormpep${release}] Altered GeneModel, new accession is $new_acc\n";
     print "Replaced_by WP:$new_acc\n" if ($length > 1); # don't add this tag if there are 2 or more CDS
+    print "-D Live\n" if ($length > 1); # don't add this tag if there are 2 or more CDS
     print "\n";
 
     # Add new entry
@@ -104,9 +107,10 @@ sub changed {
     print "Database WORMPEP $CDS $new_acc\n";
     print "Corresponding_DNA $CDS\n";
     print "Species \"Caenorhabditis elegans\"\n";
-    print "Wormpep\n";
-    print "DB_Remark \"[wormpep${release}] Altered GeneModel, old accession was $old_acc\n";
+    print "Wormpep";
+    print "Live\n";
     print "Replaces WP:$old_acc\n";
+    print "DB_Remark \"[wormpep${release}] Altered GeneModel, old accession was $old_acc\n";
     print "\n";
 
     print "Peptide : WP:";
@@ -127,7 +131,7 @@ sub lost {
     # Delete old entry
     print "Protein : \"WP:$old_acc\"\n";
     print "-D Corresponding_DNA $CDS\n";
-    print "-D Wormpep\n";
+    print "-D Live\n";
     print "DB_Remark \"[wormpep${release}] Deleted GeneModel\n";
     print "\n";
 
@@ -146,6 +150,7 @@ sub new {
     print "Corresponding_DNA $CDS\n";
     print "Species \"Caenorhabditis elegans\"\n";
     print "Wormpep\n";
+    print "Live\n";
     print "DB_Remark \"[wormpep${release}] New GeneModel\n";
     print "\n";
     
@@ -155,6 +160,35 @@ sub new {
 
     print LOG "Full analysis: $new_acc\n"; 
 }
+
+
+###################################################
+# Subroutine for reappeared entries               #   
+###################################################
+
+sub reappeared {
+    my($CDS,$new_acc)= @_;
+
+    # Add new entry
+    print "Protein : \"WP:$new_acc\"\n";
+    print "Database WORMPEP $CDS $new_acc\n";
+    print "Corresponding_DNA $CDS\n";
+    print "Species \"Caenorhabditis elegans\"\n";
+    print "Wormpep\n";
+    print "Live\n";
+    print "DB_Remark \"[wormpep${release}] Reappeared GeneModel\n";
+    print "\n";
+    
+    print "Peptide : WP:";
+    &dbfetch($new_acc,$dbfile);
+    print "\n\n";
+
+    print LOG "Full analysis: $new_acc\n"; 
+}
+
+
+
+
 
 ###################################################
 # Errors and pod documentation                    #
