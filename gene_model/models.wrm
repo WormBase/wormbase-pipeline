@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.21 2001-11-29 10:15:36 dl1 Exp $
+// CVS info:  $Id: models.wrm,v 1.22 2001-11-29 14:51:04 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -867,7 +867,6 @@
 			Matching_cDNA ?Sequence XREF Matching_CDS
 			Corresponding_protein UNIQUE ?Protein XREF Corresponding_CDS
 		        Related_CDS ?CDS XREF Related_CDS     // RD 0107 was Related_DNA
-		        Related_protein ?Protein XREF Related_CDS
 			Brief_identification UNIQUE ?Text
 			Corresponding_PCR_product ?PCR_product XREF Overlaps_CDS // added for PCR mappings [010419 dl]
 			Corresponding_WTP ?WTP XREF Overlaps_CDS // [010623 rd]
@@ -992,8 +991,6 @@
 			  Inactive Replaced_by ?Protein XREF Replaces
 		// inactive wormpep entries won't be output in standard wormpep dumps
 	  Visible	Corresponding_CDS ?CDS XREF Corresponding_protein // RD 0107 was Corresponding_DNA
-		        Related_CDS ?CDS XREF Related_protein // RD 0107 was Related_DNA
-		        Related_protein ?Protein XREF Related_protein
 			Reference ?Paper XREF Protein
 			Gene ?Gene XREF Protein
 		// tag2 system.  For now I have not populated this column.  For C. elegans
