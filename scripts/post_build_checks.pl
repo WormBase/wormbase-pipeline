@@ -8,8 +8,8 @@
 #
 # N.B. Previously called gffcheck
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-08-09 15:45:22 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2002-11-22 10:08:16 $
 
 
 use Getopt::Std;
@@ -103,7 +103,7 @@ sub runestcheck {
 
 sub runintroncheck {
     print LOG "Starting introncheck\n";
-    system ("/wormsrv2/scripts/introncheck");
+    system ("/wormsrv2/scripts/introncheck") or die "cant run /wormsrv2/scripts/introncheck\n";
     print LOG "Finished running introncheck\n";
 }
 
