@@ -7,26 +7,52 @@
 # A script to take ?Sequence objects and make ?CDS (and ?Pseudogene) objects
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-08-01 15:56:45 $     
+# Last updated on: $Date: 2003-08-04 16:11:07 $     
 
 use strict;
 use Carp;
+use Getopt::Long;
+
 
 ##################
 # variables etc. #
 ##################
 
-# Needs ace file dump of sequence class as input
-#my $dir      = "/wormsrv2/wormbase/camace/";
-#my $file    = glob("$dir/camace_Sequence.ace");
-
-# reset input line separator
-$/ = "";
+my ($camace,$stlace, $db, $dbdir);
 
 # pattern to match timestamps
 my $ts = "-O \"(\\d{4}\-\\d{2}\-\\d{2}_\\d{2}:\\d{2}:\\d{2}\.?\\d?_\\S+|original)\"";
 
-open(IN,"<$ARGV[0]") || carp "Can't open input file\n";
+# store pseudogene names in hash
+my %pseudogenes;
+
+GetOptions ("camace"      => \$camace,
+            "stlace"      => \$stlace);
+
+
+if($camace){
+  $db = "camace";
+  $dbdir = "/wormsrv2/wormbase/camace/";
+}
+
+if($stlace){
+  $db = "stlace";
+  $dbdir = "/wormsrv2/wormbase/stlace/";
+}
+
+
+# reset input line separator
+$/ = "";
+
+
+
+# Two output files, one for pseudogenes, one for everything else.
+open(OUT,">${dbdir}krb_${db}_Sequence.ace") || croak "Couldn't open output file\n";
+open(PSEUDOGENES,">${dbdir}krb_${db}_Pseudogenes.ace") || croak "Couldn't open pseudogenes file\n";
+
+
+open(IN,"<${dbdir}${db}_Sequence.ace") || carp "Can't open input file\n";
+
 while(<IN>){
 
   # Misc tidy up of bits of models
@@ -35,21 +61,26 @@ while(<IN>){
 
 
   # convert things which have CDS tag to ?CDS objects
-  if (m/Properties\s+$ts\s+Coding\s+$ts\s+CDS/){
+#  if (m/Properties\s+$ts\s+Coding\s+$ts\s+CDS/){
     # Convert to new CDS class
-    s/^Sequence :/CDS :/;
+#    s/^Sequence :/CDS :/;
 
     # Need to add tags for SMap
-    s/Structure\s+$ts\s+From\s+$ts\s+Source/Sequence/;
+#    s/Structure\s+$ts\s+From\s+$ts\s+Source/Sequence/;
 
     # Get rid of this line (now removed in camace)
-    s/Properties\s+$ts\s+Status\s+$ts\s+Annotated\s+$ts\s+\d{4}-\d{2}-\d{2}\s+$ts\s//g;
-  }
+#    s/Properties\s+$ts\s+Status\s+$ts\s+Annotated\s+$ts\s+\d{4}-\d{2}-\d{2}\s+$ts\s//g;
+#  }
 
   # Convert Sequences with Pseudogene tag into ?Pseudogene objects
-  elsif(m/Properties\s+$ts\s+Pseudogene/){
+  if(m/Properties\s+$ts\s+Pseudogene/){
+ 
     # Convert to new Pseudogene class
     s/^Sequence :/Pseudogene :/;
+
+    # Track pseudogene names for changing parent ?Sequence objects later
+    m/^Pseudogene : (\".*?\")/;
+    $pseudogenes{$1} = 1;
 
     # No need for Pseudogene tag now, but these are all Sequence objects so can
     # set 'Type' tag to be 'Coding_pseudogene'
@@ -59,18 +90,49 @@ while(<IN>){
     s/Structure\s+$ts\s+From\s+$ts\s+Source/Sequence/;
 
     
-    print;
+    print PSEUDOGENES;
   }
+
 
   # Make changes in Parent sequence objects that might link to CDS objects
   else{
-    s/Structure\s+$ts\s+Subsequence\s+$ts/CDS_child/g;
-    s/Visible\s+$ts\s+Matching_Genomic/Matching_CDS/g;
-    
+#    s/Structure\s+$ts\s+Subsequence\s+$ts/CDS_child/g;
+#    s/Visible\s+$ts\s+Matching_Genomic/Matching_CDS/g;
+    print OUT;
   }
 
 }
+
 close(IN);
+close(OUT);
+close(PSEUDOGENES);
+
+
+# Now need to re-read the Sequence output file to replace 'Subsequence' with
+# 'Pseudogene' for those things which will be pseudogenes
+
+# Need new output file
+open(IN,"<${dbdir}krb_${db}_Sequence.ace") || carp "Can't open input file\n";
+
+open(OUT,">${dbdir}krb2_${db}_Sequence.ace") || croak "Couldn't open output file\n";
+
+# reset input line separator
+$/ = "\n";
+
+
+while(<IN>){
+
+  if(m/^Structure\s+.*\s+Subsequence\s+$ts\s+(\".*\")\s+$ts\s+\d+/){
+    my $subsequence = $2;
+    s/Subsequence/Pseudogene/ if ($pseudogenes{$subsequence});           
+  }
+
+  print OUT;
+}
+
+
+close(IN);
+close(OUT);
 
 exit(0);
 
