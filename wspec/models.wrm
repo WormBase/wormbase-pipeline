@@ -706,18 +706,27 @@
                                 // anyway, the reverse is tracked.
 
 
+// Author class
+// updated for Juancarlos 021029
+
 ?Author Full_name Text
+        EMBL_name Text
         Also_known_as Text
-	Laboratory UNIQUE ?Laboratory XREF Staff
-	Old_lab ?Laboratory
+//      Laboratory UNIQUE ?Laboratory XREF Staff
+//      Old_lab ?Laboratory
+// No longer connecting Authors to Labs.
+        Possible_person ?Person XREF Possibly_publishes_as
+        Paper ?Paper
+        Sequence ?Sequence XREF From_author
+        Keyword ?Keyword
+// The following tags are no longer a part of Author, but maybe they
+// shouldn't be taken out until we have Person to Author connections ?
         Address Mail Text
                 E_mail Text
                 Phone Text
-		Fax   Text
-        Paper ?Paper
-	Sequence ?Sequence XREF From_author
-        Keyword ?Keyword
-	Contact_details_confirmed DateType // Added for Juancarlos [020322 krb]
+                Fax   Text
+        Details_confirmed DateType // Added for Juancarlos [020322 krb]
+
 
 ?Journal Paper ?Paper XREF Journal
 	 Full_name ?Text // added for Wen [020607 krb]
