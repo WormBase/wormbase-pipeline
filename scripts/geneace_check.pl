@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-09-09 08:56:29 $
+# Last updated on: $Date: 2003-10-02 14:13:03 $
 
 
 use strict;
@@ -110,7 +110,7 @@ my $db = Ace->connect(-path  => $default_db,
 
 
 # Process separate classes if specified on the command line else process all classes
-@classes = ("locus","laboratory","allele","strain","rearrangement","sequence","mapping","evidence") if (!@classes);
+@classes = ("locus","laboratory","allele","strain","rearrangement","sequence","mapping","evidence", "xref") if (!@classes);
 
 foreach $class (@classes){
   if ($class =~ m/locus/i)           {&process_locus_class}
@@ -121,6 +121,7 @@ foreach $class (@classes){
   if ($class =~ m/(sequence)/i)      {&process_sequence}
   if ($class =~ m/(mapping)/i)       {&check_genetics_coords_mapping}
   if ($class =~ m/(evidence)/i)      {&check_evidence}
+  if ($class =~ m/(xref)/i)          {&check_bogus_XREF}
 }  
 
 
@@ -1460,6 +1461,62 @@ EOF
   }
 }   
 
+sub check_bogus_XREF {
+  
+  print "\nChecking bogus XREF debris from deleted CDS / Transcript / Pseudogene in Locus obj. . . .\n\n";
+  
+  my $query_cds = "find Sequence * where !(yk*) & *.*; locus_genomic_seq";
+  my $query_transcript = "find Transcript * ; locus";
+  my $query_pseudo = "find Pseudogene * ; locus";
+  my @CDS;
+  
+  push(@CDS, $db->find($query_cds));
+  push(@CDS, $db->find($query_transcript));
+  push(@CDS, $db->find($query_pseudo));
+  
+  my %Seqs;
+
+  #################################################################################################
+  # HOW it works: 
+  # hash dataset -
+  # split a sequence eg. Y110A7A.10a, into "Y110A7A.10" (left: as key) and "a" (right: as value)
+  # if a sequence has no right (ie, not an isoform), then "NA" is assigned.
+  # So, if a key has multiple "NA" as values, then that seq. is found in multiple classes,
+  # and if a key's value has "NA", other than a/b/c/d..etc, then the one without isoform is invalid
+  ################################################################################################# 
+  
+  foreach (@CDS){
+    my ($left, $right);
+    
+    if ($_ =~ /^(.+\.\d+)(\D)$/){$left = $1; $right = $2}
+    if ($_ =~ /^(.+\.\d+)$/){$left = $1; $right = "NA"}
+    push(@{$Seqs{$left}}, $right) if defined $left;  
+    $left =();  
+  }   
+  
+  my $counter=0;
+  
+  foreach (keys %Seqs){
+    if (scalar @{$Seqs{$_}} > 1){
+      foreach my $e (@{$Seqs{$_}}){
+	$counter++;
+	print "Found $_\n" if $e eq "NA";
+	next;
+      }
+    }
+  }
+  
+  if ($counter > 1){
+    print "\n=======================================================================================\n";
+    print "NOTE:\nCheck Sequence/Transcript/Pseudogene class(es) for\n1. Sequence found once, which is invalid.\n";
+    print "2. Those appear more than once are found in multiple classes -> delete the invalid one.\n";
+    print "=======================================================================================\n";
+  }
+  else{
+    print "No bogus XREF link found\n";
+  }
+}
+ 
 
 #############################################
 
@@ -1642,6 +1699,21 @@ B<-verbose:>
             For the locus class it will display each locus name as it is processes it and show
             (next to the locus name) a dot for each error it had found in that locus
 
+B<-xref:>  
+            This option is used to check mysterious two-way XREF problem 
+            in AceDB for Geneace, ie, when a sequence under Genomic_
+            sequence tag is deleted from a locus object, that sequence obj. 
+            in Sequence class is still linked to that locus.
+
+            This has caused problem when dumping out the whole database 
+            and back in again, because old data made their way back again due 
+            to XREF, which should have been gone.
+
+            The check also looks for bogus XREF links from Pseudogene 
+            and Transcript classes. For instance, when a Pseudogene seq is 
+            connected to a locus, which later became a CDS, the locus - seq 
+            link from that Pseudogene obj. in Pseudogene class is still there, 
+            causing the same problem.
 
 =head3 <RUN geneace_check.pl>
 
