@@ -616,17 +616,35 @@
 ?Gene_name Gene ?Gene
 
 //
-// Person class added 5/1/01 Lincoln Stein
+// Person class added 5/1/01 Lincoln Stein, heavily revised for Juancarlos 021010
 // 
 
-?Person Full_name Text
-        Also_known_as Text
-	Laboratory UNIQUE ?Laboratory XREF Staff
-	Old_lab ?Laboratory
-        Address Mail Text
-                E_mail Text
-                Phone Text
-		Fax   Text
+?Person Identity UNIQUE Int
+        Name    First_name      Text
+                Middle_name     Text
+                Last_name       Text
+        Laboratory UNIQUE ?Laboratory XREF Staff_person
+        Old_lab         ?Laboratory
+        Address Street  Text
+                City    Text
+                State   Text
+                Post    Text
+                Country Text
+                Email   Text
+                Old_email       Text
+                Main_phone      Text
+                Lab_phone       Text
+                Office_phone    Text
+                Other_phone     Text
+                Fax     Text
+        Last_attempt_to_contact Text
+        No_longer_in_field      Text
+        Also_known_as   Text
+        Also_published_under    Text
+        Webpage Text
+        Comment Text
+        Paper   ?Paper
+
 
 //
 // GO_term class added 5/1/01 Lincoln Stein
@@ -660,12 +678,15 @@
 ?Laboratory     Address Mail Text
                         Phone Text
                         E_mail Text
-			Fax Text
-                CGC     Representative UNIQUE ?Author XREF Laboratory 
+                        Fax Text
+                CGC     Representative UNIQUE ?Author XREF Laboratory
                         Strain_designation Text
                         Allele_designation Text
                         Gene_classes ?Gene_Class XREF Designating_laboratory
-		Staff   ?Author XREF Laboratory
+                Staff   ?Author XREF Laboratory
+                Staff_person    ?Person XREF Laboratory // added for Juancarlos 021010
+
+
 
 ?Author Full_name Text
         Also_known_as Text
