@@ -7,7 +7,7 @@
 # Usage: camcheck.pl
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-08-19 12:07:12 $
+# Last updated on: $Date: 2002-08-19 15:29:22 $
 #
 # see pod documentation (i.e. 'perldoc camcheck.pl') for more information.
 #
@@ -223,19 +223,15 @@ close(CLONEFILE);
 
 # need to close and reopen existing log filehandle either side of system call
 
-my $runtime1 = `date +%H:%M:%S`; chomp $runtime1;
-print LOG "\nLaunching check_predicted_genes.pl at $runtime1\n";
 close(LOG);
 
-system("/wormsrv2/scripts/check_predicted_genes.pl $dbpath $log");
+system("/wormsrv2/scripts/check_predicted_genes.pl -database $dbpath -log $log");
 warn "check_predicted_genes.pl did not run correctly: $?" if ($?);
 
 # now opened in append mode
 open (LOG,">>$log");
 LOG->autoflush();
 
-my $runtime2 = `date +%H:%M:%S`; chomp $runtime2;
-print LOG "Returning from check_predicted_genes.pl at $runtime2\n";
 
 
 ############################################################
