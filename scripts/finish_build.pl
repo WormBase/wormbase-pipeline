@@ -13,7 +13,7 @@
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-07-06 15:47:33 $
+# Last updated on: $Date: 2004-07-09 15:53:57 $
 
 
 use strict;
@@ -123,7 +123,7 @@ system("GFFsplitter.pl -a") && die "Couldn't run GFFsplitter.pl -a\n";
 
 # run cgc_names_for_worm_genes.pl
 print LOG "Running cgc_names_for_worm_genes.pl\n\n";
-system("cgc_names_for_worm_genes.pl -update_camace ") && die "Couldn't run cgc_names_for_worm_genes.pl -a\n";
+system("cgc_names_for_worm_genes.pl") && die "Couldn't run cgc_names_for_worm_genes.pl -a\n";
 
 # update all Common_data files - see Commom_data.pm
 system("update_Common_data.pl -build -all") && die "Couldn't run update_Common_data.pl -update -in_build -all\n";
