@@ -8,8 +8,8 @@
 # solely in the wormpep.history file.
 # 
 #
-# Last updated by: $Author: wormpub $                     
-# Last updated on: $Date: 2002-08-09 15:27:16 $     
+# Last updated by: $Author: ar2 $                     
+# Last updated on: $Date: 2002-08-12 15:45:52 $     
 
 
 use strict;                                     
@@ -226,8 +226,8 @@ while (<FASTA>)
 close FASTA;
 
 ##write ace file
-#my $ii;
-my $acefile = "$wormpepdir/pepace.ace";
+my $ii;
+my $acefile = "/worwmsrv2/autoace/wormpep_ace/pepace.ace";
 open (ACE, ">$acefile") || die "cant write $acefile\n";
 
 #ace file for new Protein model (with History)
