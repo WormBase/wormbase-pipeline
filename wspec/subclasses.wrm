@@ -180,7 +180,7 @@ Visible
 Composite_of CDS
 Composite_of Pseudogene
 Composite_of Transcript
-
+Composite_of Transposon
 
 
 // extra indexing for sequence class
