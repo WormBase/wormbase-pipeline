@@ -9,7 +9,7 @@
 #                          /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/current/release_notes.txt/
 #
 # Last updated by: $Author: krb $                       
-# Last updated on: $Date: 2003-04-04 16:20:26 $         
+# Last updated on: $Date: 2003-04-04 17:04:33 $         
 
 
 use strict;                                     
@@ -76,12 +76,15 @@ system "cd $targetdir; ln -s $release current_release";
 
 
 # now update pages using webpublish
+# Separate webpublish commands (for safety!) on the two top level directories that need updating
 my $www = "/nfs/WWWdev/htdocs/Projects/C_elegans";
 chdir($www) || print LOG "Couldn't run chdir\n";
 
-# Separate webpublish commands (for safety!) on the two top level directories that need updating
 system("/usr/local/bin/webpublish -f -q -r wormpep") && print LOG "Couldn't run webpublish on wormpep files\n";
-system("/usr/local/bin/webpublish -f -q -r WORMBASE") && print LOG "Couldn't run webpublish on WORMBASE file\n";
+
+chdir("$www/WORMBASE") || print LOG "Couldn't run chdir\n";
+system("/usr/local/bin/webpublish -f -q -r $release") && print LOG "Couldn't run webpublish on release directory\n";
+system("/usr/local/bin/webpublish -f -q -r current") && print LOG "Couldn't run webpublish on current symlink files\n";
 
 
 print LOG "$0 finished at ",`date`,"\n\n";
