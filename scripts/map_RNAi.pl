@@ -195,7 +195,7 @@ open (OUTACE, ">/wormsrv2/autoace/mappings/RNAi_mappings.$dbnumber.ace");
 foreach my $mapped (sort keys %finaloutput) {
     print OUT "$mapped\t@{$finaloutput{$mapped}}\n";
     for (my $n = 0; $n < (scalar @{$finaloutput{$mapped}}); $n++) {
-        print OUTACE "Sequence : $mapped\n";
+        print OUTACE "RNAi : $mapped\n";
         print OUTACE "-D Predicted_gene\n";
         print OUTACE "Predicted_gene $finaloutput{$mapped}->[$n]\n\n";
     }
