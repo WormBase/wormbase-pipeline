@@ -8,8 +8,9 @@ use DB_File;
 #######################################
 # command-line options                #
 #######################################
-my ($test, $debug, $help, $all, $WPver, $analysisTOdump, $just_matches, $matches, $list, $brigprot);
+my ($test, $debug, $verbose, $help, $all, $WPver, $analysisTOdump, $just_matches, $matches, $list, $brigprot);
 GetOptions ("debug=s"      => \$debug,
+	    "verbose"      => \$verbose,
 	    "test"         => \$test,
 	    "help"         => \$help,
 	    "all"          => \$all,
@@ -397,7 +398,7 @@ sub dumpData
 	  last HOMOLOGUES if $output_count++ ==  $count_limit; # only output the top 10
 
 	  foreach my $data (@$data_array_ref) {
-	    print "@$data\n" if ($debug);
+	    print "@$data\n" if ($verbose);
 	    my @cigar = split(/:/,"$$data[8]");  #split in to blocks of homology
 
 	    #need to convert form gene name to CE id for worms (they are stored as genes to compare isoforms)
