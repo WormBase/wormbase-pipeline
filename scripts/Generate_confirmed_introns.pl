@@ -5,35 +5,43 @@ use Wormbase;
 
 my $ver = &get_wormbase_version;
 my $done;
-while(! defined($done) ){
-  print "which chromosome (eg II, V ) . .(q to exit) ";
-  my $csome = <STDIN>;
-  chomp $csome;
-  exit(0) if "$csome" eq "q";
-  
-my $file = "/nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/WS$ver/GFF/CHROMOSOME_$csome.check_intron_cam.gff";
+my $csome = shift;
+my $dir = glob ("~ar2/testlogs");
 
-$done = open (GFF, "<$file") or warn "can do that . . either the file is missing or you have entered an invalid chromosome (try I II III IV V or X )\nI'm looking for $file\n\n\n\n\n";
-}
-my %uniquify;
-my $count;
-while (<GFF>)
+my @chromosome = ("I", "II", "III", "IV", "V", "X");
+foreach $c ( @chromosome )
   {
-    my @data = split;
-    $uniquify{"$data[8]"}++;
-    $count++;
-  }
-
-my $clone_count;
-foreach (sort { $uniquify{$b} <=> $uniquify{$a} } keys %uniquify)
-  {
-    if( /Clone:(\w+)/ ) {
-      print "$1 has $uniquify{$_} introns\n";
+    my $outfile = "$dir/intron$c\.html";
+    open (HTML, ">$outfile") or die "cant open $outfile";
+    print HTML "<html\>\n<head>\n<title>Confirmed introns in gene models - chromosome $c</title>";
+    print HTML "<FORM METHOD=POST ACTION=$dir/update.pl>\n";
+print HTML "<P><INPUT TYPE=submit VALUE = \"Update page\"><BR><P>\n";
+    my $file = "/nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/WS$ver/GFF/CHROMOSOME_$c.check_intron_cam.gff";
+    
+    $done = open (GFF, "<$file") or warn "can do that . . either the file is missing or you have entered an invalid chromosome (try I II III IV V or X )\nI'm looking for $file\n\n\n\n\n";
+    
+    my %uniquify;
+    my $count;
+    while (<GFF>)
+      {
+	my @data = split;
+	$uniquify{"$data[8]"}++;
+	$count++;
+      }
+    
+    my $clone_count;
+    foreach (sort { $uniquify{$b} <=> $uniquify{$a} } keys %uniquify)
+      {
+	if( /Clone:(\w+)/ ) {
+	  print HTML "$1 has $uniquify{$_} introns -  finished  <INPUT NAME=\"$1\" TYPE=checkbox>
+ <INPUT NAME=\"$1comment\" TYPE=text SIZE=\"48\"><BR>\n";
       $clone_count++;
     }
+      }
+    close GFF;
+  print HTML "\n</body>\n</html>\n";
+    close HTML;
   }
-print "get busy - you have $count introns to accout for in $clone_count clones\n";
-close GFF;
 exit(0);
 
 
