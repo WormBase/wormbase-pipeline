@@ -66,8 +66,8 @@ my $debug = $opt_d;
 my $dbdir     = "/wormsrv2/autoace";
 my $wpdir     = "/wormsrv2/WORMPEP/wormpep$old_release";
 my $new_wpdir = "/wormsrv2/WORMPEP/wormpep$release";
-#my $tace      = &tace; 
-my $tace      = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace_4_9f";
+my $tace      = &tace; 
+#my $tace      = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace_4_9f";
 
 if ($opt_t) {
     $dbdir     = "/wormsrv2/autoace";
