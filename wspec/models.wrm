@@ -178,7 +178,9 @@
 		Rearrangement ?Rearrangement XREF Allele
 	Source	UNIQUE Gene ?Locus XREF Allele
 	               Gene_class ?Gene_Class XREF Allele
-	Sequence ?Sequence XREF Allele
+	Sequence_details Sequence ?Sequence XREF Allele #Evidence
+                         Flanking_sequences UNIQUE Text UNIQUE Text
+                         Allelic_difference UNIQUE ?Text #Evidence
         Reference_Allele
 	Isolation	Author	Text	// Isolator - should be ?Author
 			Date	DateType
@@ -221,7 +223,7 @@
 			Insertion	// Added for Todd [171001 krb]
 	Remark	?Text
         Reference ?Paper XREF Allele               // Mary
-        Rescued_by_Transgene ?Transgene XREF Rescue
+        Rescued_by_Transgene ?Transgene
 
 ?Gene_Class     Phenotype ?Text
 		Description ?Text // [krb 020614]
