@@ -4,8 +4,8 @@
 // "Read Models" or "Add Update File" from the main menu.
 
 // ALL WormBase groups should be in sync with this set of models
-// Last edited by: $Author: krb $
-// Last edited on: $Date: 2004-05-05 08:57:07 $
+// Last edited by: $Author: wormpub $
+// Last edited on: $Date: 2004-05-10 13:04:50 $
  
 
 
@@ -42,7 +42,7 @@
 		 Sequence ?Sequence XREF Map
 		 Allele ?Allele XREF Map
 		 Map_shown ?Map XREF Map
-                Transgene  ?Transgene XREF Map //sdm added to display new gmaps 
+                 Transgene  ?Transgene XREF Map //sdm added to display new gmaps 
 		// tag2 system for items shown in main region
 	EMBL_chromosome UNIQUE Text
 
