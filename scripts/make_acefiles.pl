@@ -7,8 +7,8 @@
 # Generates the .acefiles from the primary databases as a prelim for building
 # autoace.
 #
-# Last updated by: $Author: ar2 $                     
-# Last updated on: $Date: 2004-12-06 16:03:09 $       
+# Last updated by: $Author: dl1 $                     
+# Last updated on: $Date: 2004-12-07 09:42:37 $       
 
 #################################################################################
 # Variables                                                                     #
@@ -81,7 +81,7 @@ if($debug){
 
 # single database mode
 if ($db) {
-    &usage("Bad_database_name") unless (($db eq "camace") || ($db eq "stlace") || ($db eq "briggsae") || ($db eq "cshace") || ($db eq "citace") || ($db eq "geneace"));
+    &usage("Bad_database_name") unless (($db eq "camace") || ($db eq "stlace") || ($db eq "briggsae") || ($db eq "cshace") || ($db eq "caltech") || ($db eq "geneace"));
 }
 
 
