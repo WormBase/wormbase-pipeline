@@ -365,7 +365,9 @@ for (my $i = 1 ; $i <= $wpmax ; $i++) {
 }
 close WPFASTA;
 
-system ("/nfs/disk100/wormpub/bin.ALPHA/seqpress -a $new_wpdir/wp.fasta_unwrap$release > $new_wpdir/wp.fasta$release");
+system ("rewrap $new_wpdir/wp.fasta_unwrap$release > $new_wpdir/wp.fasta$release");
+
+#system ("/nfs/disk100/wormpub/bin.ALPHA/seqpress -a $new_wpdir/wp.fasta_unwrap$release > $new_wpdir/wp.fasta$release");
 #chmod (0444 , "$new_wpdir/wp.fasta$release") || print LOG "cannot chmod $new_wpdir/wp.fasta$release\n";
 
 $runtime = `date +%H:%M:%S`; chomp $runtime;
