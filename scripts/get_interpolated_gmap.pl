@@ -7,7 +7,7 @@
 # This script calculates interpolated genetic map positions for CDS, Transcripts 
 # and Pseudogenes lying between and outside genetic markers.
 #
-# Last updated on: $Date: 2003-09-29 11:14:52 $
+# Last updated on: $Date: 2003-09-29 14:21:55 $
 # Last updated by: $Author: krb $
 
 use strict;
@@ -16,27 +16,31 @@ use Wormbase;
 use Cwd 'chdir';
 use Getopt::Long;
 
-my $start=`date +%H:%M:%S`; chomp $start;
-my $rundate = `date +%y%m%d`; chomp $rundate;
 
 ###################################################
 # variables and command-line options with aliases #
 ###################################################
 
-my ($diff, $reverse, $database, $gff_location, $help, $noUpload, $map, $comp);
+my ($diff, $reverse, $database, $gff_location, $help, $noUpload, $map, $comp, $verbose);
 
 GetOptions ("diff"          => \$diff,
             "rev|reverse"   => \$reverse,
 	    "db|database=s" => \$database,
 	    "map"           => \$map,
 	    "comp"          => \$comp, 
-	    "help"        => \$help, 
-	    "noUpload"    => \$noUpload
+	    "help"          => \$help, 
+	    "noUpload"      => \$noUpload,
+	    "verbose"       => \$verbose
            );
+
+
+
+print "Script started at ",&runtime,"\n";
 
 my $gff_dir = "/wormsrv2/autoace/GFF_SPLITS/";
 my $curr_db = "/nfs/disk100/wormpub/DATABASES/current_DB/"; 
 my $output = "/wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP";
+my $rundate = `date +%y%m%d`; chomp $rundate;
 
 if (!defined @ARGV or $help){system ("perldoc /wormsrv2/scripts/get_interpolated_gmap.pl"); exit(0)}
 
@@ -153,7 +157,6 @@ if($comp){
 open (INFO, ">$output/gmap_info_"."WS$version.$rundate") || die $!;
 system("chmod 777 $output/gmap_info_WS*.$rundate");
 
-#print INFO "\nAll CDS/transcript linked to locus in $curr_db ", scalar keys %predicted_gene_to_locus,"\n\n";
 
 
 ########################################################################################
@@ -170,7 +173,7 @@ my $pseudogene_count=0;
 my $variants=0;
 
 
-print "\nEgrepping CDSes in gff files . . .\n"; 
+print "Finding CDSes in gff files . . .\n" if ($verbose); 
   
 foreach (@gff_files_cds){
   @data = `less $_ | cut -f 1,4,5,9`;
@@ -195,7 +198,7 @@ foreach (@gff_files_cds){
   }
 }
 
-print "\nEgrepping transcripts in gff files . . .\n"; 
+print "Finding transcripts in gff files . . .\n" if ($verbose); 
 
 foreach (@gff_files_rna){
   @data = `egrep "RNA.+(Transcript|Sequence).+" $_ | cut -f 1,2,4,5,9`;
@@ -222,7 +225,7 @@ foreach (@gff_files_rna){
   }
 }
 
-print "\nEgrepping pseudogenes in gff files . . .\n"; 
+print "\nFinding pseudogenes in gff files . . .\n" if ($verbose); 
 
 foreach (@gff_files_pseudogene){
   @data = `less $_ | cut -f 1,4,5,9`;
@@ -247,14 +250,7 @@ foreach (@gff_files_pseudogene){
   }
 }
 
-#print INFO "Things fetched from gff files:\n";
-#print INFO "Number of CDS/transcript/Pseudogene without isoforms: ", scalar keys %CDS_mapping, "\n";
-#print INFO "Number of CDS/transcript/Pseudogene with isoforms: ", scalar keys %CDS_isoforms_mapping, "\n";
-#print INFO "Number of CDS/transcript/Pseudogene variants: ", $variants, "\n";
-#print INFO "Total CDS/transcript/Pseudogene: ", $cds_count + $rna_count + $pseudogene_count, "\n";
-
-
-print "\nProcessing gmap positions and coordinates . . .\n";
+print "Processing gmap positions and coordinates\n";
      
 ###########################################################################################
 # get mean value of chrom coords of each CDS/Transcript from GFF files (genes|rna|rest.gff)
@@ -407,11 +403,14 @@ foreach (sort keys %chrom_length){print INFO "$_ -> $chrom_length{$_} bp\n"}
 # sorting gmap positions of marker loci from left tip to right tip 
 ##################################################################
 
-print "\nGenerating ace files . . .\n";
+print "Generating ace files\n";
 
 my (@chroms, $chrom, $ea, @pos_order, $part, @unique_pos_order, %pos_order_to_mean_coord_locus_cds, 
     @mean_coords_order, $units, $bp_length_per_unit, @all_mean_of_each_chrom, @unique_all_mean_of_each_chrom,
     %all_mean_of_each_chrom);
+
+# check for any error which will mean script needs to be rerun
+my $error_check = 0;
 
 @chroms=qw(I II III IV V X);
 
@@ -596,17 +595,19 @@ foreach $chrom (@chroms){
       if ($down_mean_coord ne "NA" && $up_mean_coord ne "NA" && ($down_mean_coord > $up_mean_coord)){
 	if (exists $CDS_variants{$cds}){
 	  $rev_phys++;
+	  $error_check = 1;
 	  if ($reverse) {print REV "Reverse physical: $chrom\t$gmap_down\t$locus1\t$cds\[@{$CDS_variants{$cds}}\]\t$down_mean_coord\n"}
 	}
 	else {
 	  $rev_phys++;
+	  $error_check = 1;
 	  if ($reverse) {print REV "Reverse physical: $chrom\t$gmap_down\t$locus1\t$cds\t$down_mean_coord\n"}
 	}
       }  
     }  
   }  
   if ($reverse){
-    print REV "--->$rev_phys reverse physical(s) on Chromosom $chrom\n\n";
+    print REV "--->$rev_phys reverse physical(s) on Chromosome $chrom\n\n";
     my $gmap = $unique_pos_order[-1];
     my $gm = $gmap;
     $gm = sprintf("%8.4f", $gm);
@@ -627,8 +628,9 @@ foreach $chrom (@chroms){
   $rev_phys=(); @all_mean_of_each_chrom=(); @unique_all_mean_of_each_chrom=(); %all_mean_of_each_chrom=();
 }
 
+
 if (!$noUpload){
-  print "\n\nDeleting old interpolated map and uploading new ones to autolace . . .\n\n";
+  print "Deleting old interpolated map and uploading new ones to autoace\n";
 
   my $tace = &tace;
   my $log = "/wormsrv2/logs/load_gmap_to_autoace_"."WS$version.$rundate.$$";
@@ -646,20 +648,23 @@ save
 quit
 END
 
-  open (Load_A,"| $tace /wormsrv2/autoace/ >> $log") || die "Failed to upload to Geneace";
-  print Load_A $command;
-  close Load_A;
+  open (LOAD_A,"| $tace /wormsrv2/autoace/ >> $log") || die "Failed to upload to Geneace";
+  print LOAD_A $command;
+  close LOAD_A;
  
   system("chmod 777 $log");
   
-  print "\n\nDone with uploading . . .\n\n";
+  print "\nFinished uploading files to autoace\n";
 }
 
-my $end=`date +%H:%M:%S`; chomp $end;
 
-print "\nJob started at $start\n";
-print "Job finished at $end\n";
 
+# Finish and exit
+if($error_check == 1){
+  print "\nERROR: reverse physicals were found, you cannot proceed with the build until these are fixed\n\n";
+}
+print "Script finished at ",&runtime,"\n";
+exit(0);
 
 
 
