@@ -13,7 +13,7 @@
 # 010717 : dl  : Altered the SRS call for nematode EST sequences
 #                This will now add the Method tag to the object
 #                Object names do not have the EMBL: prefix
-
+# 010724 : dl  : Fixed bug for local filehandle in sub mknewacefiles
 
 # v1.2
 # 010102 : dl  : Add alternative config files to generate acefiles from a 
@@ -168,7 +168,7 @@ sub mknewacefiles {
     my ($filename,$command,$outfile);
 
 
-    local (CONFIG*);
+    local (*CONFIG);
 
     open (CONFIG, "$autoace_config");
     while (<CONFIG>) {
