@@ -10,7 +10,7 @@
 # 
 #
 # Last updated by: $Author: ar2 $                     
-# Last updated on: $Date: 2003-06-11 14:25:49 $     
+# Last updated on: $Date: 2003-06-16 09:41:12 $     
 
 use strict;                                     
 use lib "/wormsrv2/scripts/";                  
@@ -214,7 +214,7 @@ foreach my $key(sort keys %CE_history) {
 	}
     } 
     
-    print ACE "Database \"WORMPEP\" \"$key\" \"WP:$key\"\n";
+    print ACE "Database \"WORMPEP\" WORMPEP_ID \"WP:$key\"\n";
     print ACE "Species \"Caenorhabditis elegans\"\n";
     print ACE "Wormpep\n";
     
