@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-01-23 18:15:22 $
+# Last updated on: $Date: 2003-04-03 15:47:30 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -21,8 +21,7 @@ use Wormbase;
 use Getopt::Long;
 use Ace;
 use IO::Handle;
-$|=1;
-
+use Carp;
 
 #################################################################################
 # Command-line options and variables                                            #
@@ -112,31 +111,28 @@ sub create_log_file{
 
 sub copy_release_files{
   $runtime = &runtime;
-  print LOG "$runtime: Starting to copy release directory to FTP site\n\n";
+  print LOG "$runtime: Starting to copy release directory to FTP site\n";
 
   system ("mkdir $targetdir/$release") unless -e "$targetdir/$release";
 
   my $filename;
 
-  opendir (RELEASE,"$sourcedir/release") or die ("Could not open directory $sourcedir/release");
+  opendir (RELEASE,"$sourcedir/release") or croak ("Could not open directory $sourcedir/release");
   while (defined($filename = readdir(RELEASE))) {
     if (($filename eq ".")||($filename eq "..")) { next;}
     if (($filename =~ /letter/)||($filename =~ /dbcomp/)) { next;}
-    system ("cp $sourcedir/release/$filename $targetdir/$release/$filename") && die "ERROR: can't copy source directory\n";
+    system ("cp $sourcedir/release/$filename $targetdir/$release/$filename") && croak "ERROR: can't copy source directory\n";
     my $O_SIZE = (stat("$sourcedir/release/$filename"))[7];
     my $N_SIZE = (stat("$targetdir/$release/$filename"))[7];
     if ($O_SIZE != $N_SIZE) {
-      print LOG "\tError - file $filename not transferred regularly - please check\n";
-      die();
+      print LOG "\tError: $filename SRC: $O_SIZE TGT: $N_SIZE - different file sizes, please check\n";
+      croak "Couldn't copy $filename\n";
     } 
-    else {
-      print LOG "\tCopied filename: $filename SRC: $O_SIZE TGT: $N_SIZE\n";
-    }
   }
   closedir RELEASE;
 
   $runtime = &runtime;
-  print LOG "$runtime: Finished copying the release directory to FTP site\n";
+  print LOG "$runtime: Finished copying the release directory to FTP site\n\n";
   
 }
 
@@ -152,24 +148,21 @@ sub copy_chromosome_files{
   my $filename;
   system ("mkdir $targetdir/$release/CHROMOSOMES") unless -e "$targetdir/$release/CHROMOSOMES";
 
-  opendir (DNAGFF,"$sourcedir/CHROMOSOMES") or die ("Could not open directory $sourcedir/CHROMOSOMES");
+  opendir (DNAGFF,"$sourcedir/CHROMOSOMES") or croak ("Could not open directory $sourcedir/CHROMOSOMES");
   while (defined($filename = readdir(DNAGFF))) {
     if (($filename eq ".")||($filename eq "..")) { next;}
-    system ("cp $sourcedir/CHROMOSOMES/$filename $targetdir/$release/CHROMOSOMES/$filename") && die "ERROR: Can't copy chromosome file\n";
+    system ("cp $sourcedir/CHROMOSOMES/$filename $targetdir/$release/CHROMOSOMES/$filename") && croak "ERROR: Can't copy chromosome file\n";
     my $O_SIZE = (stat("$sourcedir/CHROMOSOMES/$filename"))[7];
     my $N_SIZE = (stat("$targetdir/$release/CHROMOSOMES/$filename"))[7];
     if ($O_SIZE != $N_SIZE) {
-      print LOG "Error - file $filename not transferred regularly - please check\n";
-      die();
+      print LOG "\tError: $filename SRC: $O_SIZE TGT: $N_SIZE - different file sizes, please check\n";
+      croak "Couldn't copy $filename\n";
     } 
-    else {
-      print LOG "\tCopied filename: $filename SRC: $O_SIZE TGT: $N_SIZE\n";
-    }
   }
   closedir DNAGFF;
   
   $runtime = &runtime;
-  print LOG "$runtime: Finished copying the CHROMOSOMES directory\n";
+  print LOG "$runtime: Finished copying the CHROMOSOMES directory\n\n";
 
 }
 
@@ -184,22 +177,22 @@ sub copy_misc_files{
 
 
   # Copy across the models.wrm file
-  system("cp $sourcedir/wspec/models.wrm $targetdir/$release/models.wrm.$release") && die "ERROR: can't copy models.wrm\n";
+  system("cp $sourcedir/wspec/models.wrm $targetdir/$release/models.wrm.$release") && croak "ERROR: can't copy models.wrm\n";
 
   # copy some miscellaneous files across
-  system("cp /wormsrv2/autoace/COMPARE/WS$old_release-$release.dbcomp $targetdir/$release/") && die "ERROR: can't copy dbcomp file\n";
+  system("cp /wormsrv2/autoace/COMPARE/WS$old_release-$release.dbcomp $targetdir/$release/") && croak "ERROR: can't copy dbcomp file\n";
   
-  system("cp /wormsrv2/autoace_config/INSTALL $targetdir/$release/") && die "ERROR: can't copy INSTALL script\n";
+  system("cp /wormsrv2/autoace_config/INSTALL $targetdir/$release/") && croak "ERROR: can't copy INSTALL script\n";
 
   # tar, zip, and copy WormRNA files across from wormsrv2/WORMRNA
   my $dest = "/wormsrv2/WORMRNA/wormrna${wormrna_release}";
-  chdir "$dest" or die "Couldn't cd $dest\n";
-  system("/bin/tar -cf $targetdir/$release/wormrna${wormrna_release}.tar README wormrna${wormrna_release}.rna") && die "ERROR: can't create wormrna tar file\n";
-  system("/bin/gzip $targetdir/$release/wormrna${wormrna_release}.tar") && die "ERROR: can't create wormrna gzip file\n";
+  chdir "$dest" or croak "Couldn't cd $dest\n";
+  system("/bin/tar -cf $targetdir/$release/wormrna${wormrna_release}.tar README wormrna${wormrna_release}.rna") && croak "ERROR: can't create wormrna tar file\n";
+  system("/bin/gzip $targetdir/$release/wormrna${wormrna_release}.tar") && croak "ERROR: can't create wormrna gzip file\n";
 
 
   $runtime = &runtime;
-  print LOG "$runtime: Finished copying misc files\n";
+  print LOG "$runtime: Finished copying misc files\n\n";
 
 }
 
@@ -227,25 +220,21 @@ sub copy_wormpep_files{
 
   print LOG "\tCopying new files to $wormpub_dir\n";
   my $new_wpdir = "/wormsrv2/WORMPEP/wormpep${wormpep}";
-  system ("cp $new_wpdir/wormpep_current $wormpub_dir/wormpep_current")                     && die "ERROR: Cannot copy file to $wormpub_dir\n";
-  system ("cp $new_wpdir/wormpep.accession$wormpep $wormpub_dir/wormpep.accession_current") && die "ERROR: Cannot copy file to $wormpub_dir\n";
-  system ("cp $new_wpdir/wormpep.dna$wormpep $wormpub_dir/wormpep.dna_current")             && die "ERROR: Cannot copy file to $wormpub_dir\n";
-  system ("cp $new_wpdir/wormpep.history$wormpep $wormpub_dir/wormpep.history_current")     && die "ERROR: Cannot copy file to $wormpub_dir\n";
-  system ("cp $new_wpdir/wp.fasta$wormpep $wormpub_dir/wp.fasta_current")                   && die "ERROR: Cannot copy file to $wormpub_dir\n";
-  system ("/usr/local/pubseq/bin/setdb $wormpub_dir/wormpep_current")                       && die "ERROR: setdb in wormpub failed\n";
-  system ("chmod +rw $new_wpdir/*") && die "ERROR: chmod command failed\n";
+  system ("cp $new_wpdir/wormpep_current $wormpub_dir/wormpep_current")                     && croak "ERROR: Cannot copy file to $wormpub_dir\n";
+  system ("cp $new_wpdir/wormpep.accession$wormpep $wormpub_dir/wormpep.accession_current") && croak "ERROR: Cannot copy file to $wormpub_dir\n";
+  system ("cp $new_wpdir/wormpep.dna$wormpep $wormpub_dir/wormpep.dna_current")             && croak "ERROR: Cannot copy file to $wormpub_dir\n";
+  system ("cp $new_wpdir/wormpep.history$wormpep $wormpub_dir/wormpep.history_current")     && croak "ERROR: Cannot copy file to $wormpub_dir\n";
+  system ("cp $new_wpdir/wp.fasta$wormpep $wormpub_dir/wp.fasta_current")                   && croak "ERROR: Cannot copy file to $wormpub_dir\n";
+  system ("/usr/local/pubseq/bin/setdb $wormpub_dir/wormpep_current")                       && croak "ERROR: setdb in wormpub failed\n";
+  system ("chmod +rw $new_wpdir/*") && croak "ERROR: chmod command failed\n";
 
 
   # tar up the latest wormpep release and copy across
-  print LOG "Creating tar file and copying across to ftp site\n";
-  system ("/bin/tar -hcf $wormpub_dir/wormpep${wormpep}.tar $new_wpdir/wormpep${wormpep} $new_wpdir/wormpep.accession${wormpep} $new_wpdir/wormpep.diff${wormpep} $new_wpdir/wormpep.dna${wormpep} $new_wpdir/wormpep.history${wormpep} $new_wpdir/wormpep.table${wormpep} $new_wpdir/wp.fasta${wormpep}") && die "ERROR: Couldn't run tar command\n";
-  system ("/bin/gzip $wormpub_dir/wormpep${wormpep}.tar") && die "ERROR: Cannot gzip tar file\n";
+  print LOG "\tCreating tar file and copying across to ftp site\n";
+  system ("/bin/tar -hcf $wormpub_dir/wormpep${wormpep}.tar $new_wpdir/wormpep${wormpep} $new_wpdir/wormpep.accession${wormpep} $new_wpdir/wormpep.diff${wormpep} $new_wpdir/wormpep.dna${wormpep} $new_wpdir/wormpep.history${wormpep} $new_wpdir/wormpep.table${wormpep} $new_wpdir/wp.fasta${wormpep}") && croak "ERROR: Couldn't run tar command\n";
+  system ("/bin/gzip $wormpub_dir/wormpep${wormpep}.tar") && croak "ERROR: Cannot gzip tar file\n";
 
-  system("mv $wormpub_dir/wormpep${wormpep}.tar.gz $targetdir/$release") && die "ERROR: Couldn't move wormpep gzip tar file from $wormpub_dir to $targetdir/$release\n";
-
-
-  $runtime = &runtime;
-  print LOG "$runtime: Starting to make wormpep ftp directory\n";
+  system("mv $wormpub_dir/wormpep${wormpep}.tar.gz $targetdir/$release") && croak "ERROR: Couldn't move wormpep gzip tar file from $wormpub_dir to $targetdir/$release\n";
 
 
   my $wp_source_dir = "/wormsrv2/WORMPEP/wormpep${wormpep}";
@@ -291,8 +280,8 @@ sub copy_wormpep_files{
   &CheckSize("$wp_source_dir/wormpep.table$wormpep","$wp_ftp_dir/wormpep.table");
   print LOG "\tmove & rename wormpep.table$wormpep => wormpep.table\n";
   
-  system("cp $wp_source_dir/wormpep$wormpep $wp_ftp_dir/wormpep${wormpep}");
-  &CheckSize("$wp_source_dir/wormpep$wormpep","$wp_ftp_dir/wormpep${release}");
+  system("cp $wp_source_dir/wormpep${wormpep} $wp_ftp_dir/wormpep${wormpep}");
+  &CheckSize("$wp_source_dir/wormpep${wormpep}","$wp_ftp_dir/wormpep${release}");
   print LOG "\tmove wormpep$wormpep =>  wormpep$wormpep\n";
   
   system("cp $wp_source_dir/wp.fasta$wormpep $wp_ftp_dir/wp.fasta");
@@ -303,11 +292,11 @@ sub copy_wormpep_files{
   # delete the old symbolic link and make the new one  
   system("cd $wp_ftp_dir; ln -fs wormpep$wormpep wormpep");
   system("cd $wp_ftp_dir; ln -fs $wp_old_release/wormpep$old_release wormpep.prev");
-  print LOG "Deleted the old sym_link and created the new one\n\n";
+  print LOG "\tDeleted the old sym_link and created the new one\n";
 
 
   $runtime = &runtime;
-  print LOG "$runtime: Finished copying wormpep files to ~wormpub, and creating wormbase and wormpep ftp directories\n";
+  print LOG "$runtime: Finished copying wormpep files to ~wormpub, and creating wormbase and wormpep ftp directories\n\n";
 }
 
 
@@ -326,7 +315,7 @@ sub extract_confirmed_genes{
   my @confirmed_genes   = $db->fetch(-query=>$query);
 
 
-  open(OUT,">${targetdir}/${release}/confirmed_genes.${release}") || die "Couldn't write to ${targetdir}/${release}/confirmed_genes.${release}\n";
+  open(OUT,">${targetdir}/${release}/confirmed_genes.${release}") || croak "Couldn't write to ${targetdir}/${release}/confirmed_genes.${release}\n";
 
   foreach my $seq (@confirmed_genes){
     my $dna = $seq->asDNA();
@@ -343,7 +332,6 @@ sub extract_confirmed_genes{
   }
 
   close(OUT);
-  print LOG "gzipping confirmed_genes.${release}\n";
   system("/bin/gzip ${targetdir}/${release}/confirmed_genes.${release}") && print LOG "ERROR: couldn't gzip confirmed_genes\n";
 
 
@@ -362,11 +350,8 @@ sub CheckSize {
   my $F_SIZE = (stat("$first"))[7];
   my $S_SIZE = (stat("$second"))[7];
   if ($F_SIZE != $S_SIZE) {
-    print LOG "ERROR - file $first not transferred regularly - please check\n";
+    print LOG "\tERROR: $first SRC: $F_SIZE TGT: $S_SIZE - not same size, please check\n";
   } 
-  else {
-    print LOG "Copied filename: $first SRC: $F_SIZE TGT: $S_SIZE\n";
-  }
 }
 
 ############################################################
@@ -376,7 +361,7 @@ sub CheckSize {
 sub copy_homol_data{
 
   $runtime = &runtime;
-  print LOG "$runtime: Starting to copy BLAT data to private ftp site\n";
+  print LOG "$runtime: Starting to copy BLAT & BLAST data to private ftp site\n";
 
   my $blat_dir  = "/wormsrv2/autoace/BLAT";
   my $blast_dir = "/wormsrv2/wormbase/ensembl_dumps";
@@ -393,8 +378,6 @@ sub copy_homol_data{
   system("cp $blat_dir/virtual_objects.stlace.ci.EST.ace    $private_ftp/${release}_virtual_objects.stlace.ci.EST.ace");
   system("cp $blat_dir/virtual_objects.stlace.ci.mRNA.ace   $private_ftp/${release}_virtual_objects.stlace.ci.mRNA.ace");
   
-  $runtime = &runtime;
-  print LOG "$runtime: Starting to copy BLAST data to private ftp site\n";
 
   system("cp $blast_dir/blastp_ensembl.ace          $private_ftp/${release}_blastp_data.ace");
   system("cp $blast_dir/blastx_ensembl.ace          $private_ftp/${release}_blastx_data.ace");
