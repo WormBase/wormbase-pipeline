@@ -9,7 +9,7 @@ use Exporter;
 use Carp;
 use Ace;
 @ISA       = qw(Exporter);
-@EXPORT    = qw(get_wormbase_version get_wormbase_version_name get_wormbase_release_date copy_check mail_maintainer celeaccession tace gff_sort dbfetch clones_in_database open_TCP DNA_string_reverse DNA_string_composition release_databases find_file_last_modified release_composition release_wormpep test_user_wormpub runtime tace giface);
+@EXPORT    = qw(get_wormbase_version get_wormbase_version_name get_wormbase_release_date copy_check mail_maintainer celeaccession tace gff_sort dbfetch clones_in_database open_TCP DNA_string_reverse DNA_string_composition release_databases find_file_last_modified FetchData release_composition release_wormpep test_user_wormpub runtime tace giface);
 @EXPORT_OK = qw(get_script_version); 
 
 
@@ -102,6 +102,23 @@ sub get_wormbase_release_date{
   return($date2,$date) if ($format eq "both"); 
 }
 
+
+###################################################################################
+
+sub FetchData {
+
+    my ($file,$ref) = @_;
+    
+    open (FH, "</wormsrv2/autoace/COMMON_DATA/$file.dat") or die "can't open $file.dat";
+    undef $/;
+    my $VAR1;
+    my $data = <FH>;
+    eval $data;
+    die if $@;
+    $/ = "\n";
+    close FH;
+    %$ref = (%$VAR1);    
+}
 
 ###################################################################################
 
