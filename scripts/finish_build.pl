@@ -12,8 +12,8 @@
 # 3) Archives old GFF_SPLITS directory
 # 4) Makes wormsrv2/current_DB point at latest release
 #
-# Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2002-12-06 16:07:36 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2002-12-09 16:01:31 $
 
 
 
@@ -80,8 +80,8 @@ system("rm -f $db_path/current_DB") && die "Couldn't remove 'current_DB' symlink
 system("ln -s $db_path/$WS_name/ $db_path/current_DB") && die "Couldn't create new 'Current_DB' symlink\n";
 
 # archive old GFF splits directory'
-print LOG "Archiving GFFsplits directory using GFFsplitter -a\n\n";
-system("GFFsplitter -a") && die "Couldn't run GFFsplitter -a\n";
+print LOG "Archiving GFFsplits directory using GFFsplitter.pl -a\n\n";
+system("GFFsplitter -a") && die "Couldn't run GFFsplitter.pl -a\n";
 
 # run locus2seq.pl
 print LOG "Running locus2seq.pl\n\n";
@@ -197,7 +197,7 @@ This script:
  /wormsrv2/wormbase_archive
  2) Does a similar thing with Wormpep releases in /wormsrv2/WORMPEP
  but 
- 3) Runs GFFsplitter -a to archive away the last GFF_SPLITS directory
+ 3) Runs GFFsplitter.pl -a to archive away the last GFF_SPLITS directory
  4) Copies autoace into a separate WSxx directory
  5) updates the /wormsrv2/current_DB symlink to point to the directory created
     in step 4.
