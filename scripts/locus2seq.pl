@@ -5,7 +5,7 @@
 # written by Anthony Rogers (ar2@sanger.ac.uk)
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-01-28 10:22:31 $
+# Last updated on: $Date: 2003-01-29 09:44:43 $
 
 
 use strict;
@@ -41,8 +41,12 @@ if($debug){
 # Set up and initialise variables      #
 ########################################
 
-
-our $log;
+my (%seq_locus);
+our $log; # for error email to go to Sanger crew
+our $stlouis_log; # for email to go to St. Louis
+our $cam_out = "/wormsrv2/autoace/acefiles/CAM_locus_seq.ace";
+our $stl_out = "/wormsrv2/autoace/acefiles/STL_locus_seq.ace";
+our $all_out = "/wormsrv2/autoace/acefiles/ALL_locus_seq.ace";
 our $currentDB  = "/wormsrv2/current_DB";
 our $camace_dir = "/wormsrv1/camace";
 my $geneace_dir;
@@ -55,188 +59,81 @@ else{
 }
 print "\nUsing $geneace_dir as target geneace database\n";
 
+
+
+
+################################
+# 
+#       Main subroutines
+#
+################################
+
+
 # set up log files
 &create_log_files;
 
 
-my %seq_locus;
-my $count = 0;
-my @entry;
-my $seq;
-my $locus;
+# grab locus->sequence and locus->transcript connections from geneace
+&get_sequence_connections;
 
 
-###############################################
-# Grab locus->sequence connections from geneace
-################################################
+# Compare this to current_DB
+&compare_with_currentDB;
 
-#get locus with confirmed CGC names and the corresponding seq
-#this uses a table_maker query exported from xace
-my $command1=<<EOF;
-Table-maker -p "/wormsrv2/geneace/wquery/locus_seq.def"
-quit
-EOF
+
+# remove existing camace connections and replace with new ones
+&update_camace if ($camace); 
 
 
 
-open (GENEACE, "echo '$command1' | tace $geneace_dir | ") || die "Couldn't open pipe to $geneace_dir\n";
-while (<GENEACE>)
-  { 
-    @entry = split(/\s+/,$_);
-    $locus = $entry[0];
-    $seq = $entry[1];
-    if( $entry[0] && $entry[1]) {
-      print "$entry[0]\t$entry[1]\n";
-    }
-    else {
-      print "ERROR in line $_\n";
-    }
-      
 
-    #this statement is to take in to account the acedb> prompt that is included in the GENEACE data
-    if (scalar(@entry) > 2){
-      $locus = $entry[1];
-      $seq = $entry[2];
-    }
-    if ((defined($locus))&&($locus =~ m/(\w{3}\-\d+\.*\d*)/)) #validate cgc naming convention (a v. few genes have ***-*.* eg hmg-1.2
-      {
-        $locus = $1;#this strips the "'s 
-	#if ($count > 1 ){last;}
-	if ($seq =~ m/([QWERTYUIOPLKJHGFDSAZXCVBNM0123657894]{2,}\.\w+)/)  #validate sequence name eg XNXNX.XN
-	  {
-	    $seq = $1;
-	    $seq_locus{$seq} .= "$locus ";
-	    $count++;
-	  }
-	else{print LOG  "$locus -> $seq: invalid sequence name\n";
-	   }
-      }
-    elsif(scalar(@entry) == 2)#entry no test is to exclude AceDB startup text
-      {
-	print LOG "$locus: has <CGC_approved> tag yet invalid format name in $geneace_dir\n";
-      }
-  }
-close(GENEACE);
+################################
+# 
+#       Tidy up
+#
+################################
+
+
+close (CAMOUT);
+close (STLOUT);
+close (ALLOUT);
 
 
 
-##########################################
-# Compare data to /wormsrv2/current_DB
-##########################################
-
-my $autoace_acefiles_dir = "/wormsrv2/autoace/acefiles";
-open (CAMOUT,">$autoace_acefiles_dir/CAM_locus_seq.ace") || die "cant open CAMOUT";
-open (STLOUT,">$autoace_acefiles_dir/STL_locus_seq.ace") || die "cant open STLOUT";
-open (ALLOUT,">$autoace_acefiles_dir/ALL_locus_seq.ace") || die "cant open ALLOUT";
-
-
-
-my $sequence;
-my $autoace = Ace->connect($currentDB) || die "cant open $currentDB\n";
-my $retrved_seq;
-my @lab;
-my $CAMcount = 0;
-my $STLcount = 0;
-my $ALLcount = 0;
-my $PROBcount = 0;
-my @loci;
-my @searched;
-my $remark;
-foreach $sequence(keys %seq_locus)
-  {
-    $retrved_seq = $autoace->fetch(Sequence => "$sequence");
-    if (defined($retrved_seq))
-      {
-	@lab = $retrved_seq->at('Origin.From_Laboratory');
-	#extract any cases where a sequence contains two loci
-	@loci = split(/\s+/,"$seq_locus{$sequence}");
-	
-	foreach $locus (@loci)
-	  {
-	    if(defined($lab[0]))
-	      {	    
-		if($lab[0] eq "HX")
-		  {
-		    print CAMOUT "Locus : \"$locus\"\nGenomic_sequence\t\"$sequence\"\n\n";
-		    $CAMcount++;
-		    print ALLOUT "Locus : \"$locus\"\nGenomic_sequence\t\"$sequence\"\n\n";
-		    $ALLcount++;
-		  }
-		elsif($lab[0] eq "RW")
-		  {
-		    print STLOUT "Locus : \"$locus\"\nGenomic_sequence\t\"$sequence\"\n\n";
-		    $STLcount++;	 
-		    print ALLOUT "Locus : \"$locus\"\nGenomic_sequence\t\"$sequence\"\n\n";
-		    $ALLcount++;
-		  }
-		else
-		  {
-		    print  LOG "\n$locus -> $sequence:  $sequence has unknown <From_Laboratory> tag: $lab[0]\n";
-		  }
-	      }	
-	    else
-	      {
-		print LOG "$locus -> $sequence: $sequence  has no <From_laboratory> tag in $currentDB\n";
-		$PROBcount++;
-		FindSequenceInfo($sequence,$locus);
-	      }
-	  }
-      }
-    else
-      {
-	print LOG "\n$seq_locus{$sequence} -> $sequence: $sequence not found in $currentDB\n";
-	$PROBcount++;
-	FindSequenceInfo($sequence,$locus);
-      }
-  }
-my $sum = $CAMcount+$STLcount+$PROBcount;
-
-my $interested = "John Spieth & Darin Blasair ";
-
-print LOG "found $CAMcount loci on Hinxton sequences.\n
-found $STLcount loci on StLouis sequences.\n
-found $ALLcount total (plus another$PROBcount that have problems)\n
-This should equal sum of others ie $sum and the number put into hash - $count \n
-Wrote output ACE files to $autoace_acefiles_dir\n
-$interested would like to be informed of this update.\n\n";
-
-$autoace->close;
-close CAMOUT;
-close STLOUT;
-close ALLOUT;
-
-&update_camace if ($camace); # remove existing camace connections and replace with new ones
-
-close LOG;
-
-&mail_maintainer($0,"All",$log);
 
 #copy the ace files to the FTP site
 
-`gzip -f /$autoace_acefiles_dir/STL_locus_seq.ace` && print LOG "gzip failed on STL";
-`gzip -f /$autoace_acefiles_dir/CAM_locus_seq.ace` && print LOG "gzip failed on CAM";
-`gzip -f /$autoace_acefiles_dir/ALL_locus_seq.ace` && print LOG "gzip failed on ALL";
+my $runtime = &runtime;
+print LOG "\n$runtime: Gzipping files and copying across to ftp site\n";
+system("gzip -f /$stl_out") && print LOG "ERROR: gzip failed on STL";
+system("gzip -f /$cam_out") && print LOG "ERROR: gzip failed on CAM";
+system("gzip -f /$all_out") && print LOG "ERROR: gzip failed on ALL";
 
-`cp /$autoace_acefiles_dir/CAM_locus_seq.ace.gz /nfs/privateftp/ftp-wormbase/pub/data/updated_locus2seq/`;
-`mv /$autoace_acefiles_dir/STL_locus_seq.ace.gz /nfs/privateftp/ftp-wormbase/pub/data/updated_locus2seq/`;
-`mv /$autoace_acefiles_dir/ALL_locus_seq.ace.gz /nfs/privateftp/ftp-wormbase/pub/data/updated_locus2seq/`;
+system("mv $cam_out.gz /nfs/privateftp/ftp-wormbase/pub/data/updated_locus2seq/") && print LOG "Couldn't move camace file to ftp site\n"; 
+system("mv $stl_out.gz /nfs/privateftp/ftp-wormbase/pub/data/updated_locus2seq/") && print LOG "Couldn't move stlouis ace file to ftp site\n"; 
+system("mv $all_out.gz /nfs/privateftp/ftp-wormbase/pub/data/updated_locus2seq/") && print LOG "Couldn't move all file to ftp site\n"; 
 
 
 #inform any interested parties
-my $notify = "jspieth\@watson.wustl.edu,dblasiar\@watson.wustl.edu,ar2\@sanger.ac.uk,krb\@sanger.ac.uk";
-open (OUTLOG,  "|/usr/bin/mailx -s \"New locus->sequence connections available from Sanger\" $notify ");
-print OUTLOG "Updated info linking loci to sequences is available from\n
-ftp-wormbase\/pub\/data\/updated_locus2seq\/\n
-in the 3 files\n
-CAM_locus_seq.ace\t loci in Hinxton sequence.\n
-STL_locus_seq.ace\t loci in St Louis sequence.\n
-ALL_locus_seq.ace\t all loci.\n
-\n
-These are loci with approved cgc names and that connect to a valid Genome sequence gene.\n";
+$runtime = &runtime;
+print LOG "\n$runtime: Sending ERROR email to Sanger and emailing St. Louis about updates\n";
+close (LOG);
 
-close (OUTLOG);
 
+# send main error log email to Sanger
+&mail_maintainer($0,"$maintainers",$log);
+
+# Send reminder to St. Louis (unless in debug mode)
+my $notify = "jspieth\@watson.wustl.edu,dblasiar\@watson.wustl.edu,krb\@sanger.ac.uk";
+if($debug){
+  &mail_maintainer($0,"$maintainers",$stlouis_log);
+}
+else{
+  &mail_maintainer($0,"$notify",$stlouis_log);
+}
 exit(0);
+
+
 
 
 
@@ -256,7 +153,8 @@ sub create_log_files{
   my $script_name = $1;
   $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
   my $rundate     = `date +%y%m%d`; chomp $rundate;
-  $log        = "/wormsrv2/logs/$script_name.$rundate.$$";
+  $log          = "/wormsrv2/logs/$script_name.$rundate.$$";
+  $stlouis_log  = "/wormsrv2/logs/$script_name.st_louis_data.txt";
 
   open (LOG, ">$log") or die "cant open $log";
   print LOG "$script_name\n";
@@ -264,175 +162,149 @@ sub create_log_files{
   print LOG "=============================================\n";
   print LOG "\n";
 
+
+  # Admittedly it's possibly overkill to write a log file each time for such invariant
+  # information!
+
+  open(STLOUIS, ">$stlouis_log") || die "Couldn't open $stlouis_log\n";
+  print STLOUIS "Updated info linking Loci to Sequences and Loci to Transcripts is available from\n";
+  print STLOUIS "ftp-wormbase\/pub\/data\/updated_locus2seq\/ in the three files:\n";
+  print STLOUIS "CAM_locus_seq.ace\t loci in Hinxton sequence.\n";
+  print STLOUIS "STL_locus_seq.ace\t loci in St Louis sequence.\n";
+  print STLOUIS "ALL_locus_seq.ace\t all loci.\n\n";
+  print STLOUIS "These are loci with approved cgc names and that connect to a valid\n";
+  print STLOUIS "Sequence (Predicted_gene) or Transcript object.\n";
+  close(STLOUIS);
+
+
+  open (CAMOUT,">$cam_out") || die "cant open CAMOUT";
+  open (STLOUT,">$stl_out") || die "cant open STLOUT";
+  open (ALLOUT,">$all_out") || die "cant open ALLOUT";
+
+
+
+}
+
+
+#######################################################################
+# Grab locus->sequence and Locus-> Transcript connections from geneace
+#######################################################################
+
+sub get_sequence_connections{
+
+  print LOG "Getting Locus->Sequence and Locus->Transcript connections from $geneace_dir:\n\n";
+
+  # get locus with confirmed CGC names and the corresponding sequences and transcripts
+  # this uses two table_maker queries exported from xace
+  my $command1=<<EOF;
+Table-maker -p "${geneace_dir}/wquery/locus_seq.def"
+quit
+EOF
+
+  my $command2=<<EOF;
+Table-maker -p "${geneace_dir}/wquery/locus_transcript.def"
+quit
+EOF
+    
+  my @commands = ($command1, $command2);
+  my $type = "Sequence";
+
+  foreach my $command (@commands){
+
+    open (GENEACE, "echo '$command' | tace $geneace_dir | ") || die "Couldn't open pipe to $geneace_dir\n";
+    while (<GENEACE>){ 
+      # skip acedb related lines, i.e. not actual data
+      next if ((m/acedb>/) || (m/\/\//));
+
+      my @entry = split(/\s+/,$_);
+
+      if($entry[0] && $entry[1]){
+	my $locus = $entry[0]; $locus =~ s/\"//g;
+	my $sequence = $entry[1]; $sequence =~ s/\"//g;
+	
+	# Add to hash with appropriate type prefix
+	$seq_locus{"Sequence:".$sequence}   .= "$locus " if ($type eq "Sequence");
+	$seq_locus{"Transcript:".$sequence} .= "$locus " if ($type eq "Transcript");
+       
+      }
+    }
+    close(GENEACE);
+    
+    # Change type to Transcript for second run
+    $type = "Transcript";
+  }
 }
 
 ##########################################
+# Compare data to /wormsrv2/current_DB
+##########################################
+sub compare_with_currentDB{
+  print LOG "Getting associated lab info from $currentDB:\n\n";
 
+  my $autoace = Ace->connect($currentDB) || die "cant open $currentDB\n";
 
-sub FindSequenceInfo #($sequence - genomic seq and $locus )
-  {
-    my ($seq,$locus) = @_;
+  my $CAMcount = 0;
+  my $STLcount = 0;
+  my $PROBcount = 0;
 
-    my $test_seq = $seq;
-    my $autoace = Ace->connect($currentDB) || die "Can't connect to $currentDB\n";
-    my $solved = 0;
-    my @lab;
-    my $foundlab;
-    my $seq_used;
+  my $count;
+  foreach my $entry(keys %seq_locus){
 
-    #print LOG "examining $seq\n";
-    
-    if ($test_seq =~ m/(\w+\.)(\d+)$/ )#if the sequence name ends with ".number" (.1   .123)
-      {
-	my $pre_catch = $1;
-	my $catch = $2;
+    # work out what to get (i.e. transcript or sequence)
+    my @details = split(/\:/,$entry);
+    my $class  = $details[0];
+    my $object = $details[1];
 
-	#print " . . . . . . ends with digit\n";
+    my $seq = $autoace->fetch($class => "$object");
 
-	#catch where sequence now has isoforms
-	$test_seq = $seq."a";
-	my $result = TestSeq($test_seq);
-	if(defined($result))
-	  {
-	    print LOG "\t$seq does not exist but has isoforms\n\n";
-	    $solved = 1;
+    if (defined($seq)){
+      my @lab = $seq->at('Origin.From_Laboratory');
+      #extract any cases where a sequence contains two loci
+      my @loci = split(/\s+/,"$seq_locus{$entry}");
+      
+      foreach my $locus (@loci){
+	if(defined($lab[0])){	    
+	  my $tag = $class;
+	  $tag = "Genomic_sequence" if ($class eq "Sequence");
+	  if($lab[0] eq "HX"){
+	    print CAMOUT "Locus : \"$locus\"\n$tag\t\"$object\"\n\n";
+	    $CAMcount++;
+	    print ALLOUT "Locus : \"$locus\"\n$tag\t\"$object\"\n\n";
 	  }
-
-
-
-	#catch merged sequence eg F34C23.10 has been amalgamated with F34C23.11 or F34C23.9
-	else
-	  {
-	    $catch++;
-	    $test_seq = $pre_catch.$catch;
-	    #print LOG "testing with seq++ :$seq -> $test_seq\n";
-	    if(defined(TestSeq($test_seq)))
-	      {
-		print LOG "\t$seq may have been merged to $test_seq \n\n";
-		$solved = 1;
-	      }	  
-	    else
-	      {
-		$catch -= 2;
-		$test_seq = $pre_catch.$catch;
-		print LOG "testing with seq-- :$seq -> $test_seq\n";
-		if(defined(TestSeq($test_seq)))
-		  {
-		    print LOG "\t$seq may have been merged to $test_seq \n\n";
-		    $solved = 1;
-		  }
-
-
-	#try with just one digit eg  F24G4.23 try F24G4.2
-		else
-		  {
-		    if( length($catch) > 2 )
-		      {
-			$test_seq = $pre_catch.(substr($catch,0,1));
-			if(defined(TestSeq($test_seq)))
-			  {
-			    print LOG "\t$seq not valid - but found $test_seq \n\n";
-			    $solved = 1;
-			  }
-		      }
-		  }
-	      }
+	  elsif($lab[0] eq "RW"){
+	    print STLOUT "Locus : \"$locus\"\n$tag\t\"$object\"\n\n";
+	    $STLcount++;	 
+	    print ALLOUT "Locus : \"$locus\"\n$tag\t\"$object\"\n\n";
 	  }
-      }
-
-
-    ####################################
-    #the sequence name ends with a letter
-
-    else   
-      {
-
-	#print "$seq\n";
-	#print "ends with letter\n";	
-	if ($seq =~ m/(\w+\.\d+)([a-z])/)
-	{
-	  my $letter = $2;
-	  my $main_part = $1;
-
-	  #print "\nletter - $letter\tmain - $main_part\n";
-
-	  #increment the last letter eg  F32F7.1a merged -> F32F7.1b
-	  my $letter_inc = $letter++;
-	  $test_seq = $main_part.$letter_inc;
-	 # print "trying with $test_seq . . \n";
-	  if(defined(TestSeq($test_seq)))
-	    {
-	      print LOG "\t$seq merged to $test_seq \n\n";
-	      $solved = 1;
-	    }
-
-	  #leave off the letter and try
-	         #if this leaves a bare . eg F32F7. it doesn't matter - this is handled elsewhere
-	  else
-	    {
-	      if(defined(TestSeq($main_part)))
-		{
-		  print LOG "\t$seq isoform not found try $main_part \n\n";
-		  $solved = 1;
-		}
-	    }
+	  else{
+	    print LOG "ERROR: $class: $object ($locus) has unknown From_Laboratory tag: $lab[0]\n";
+	    $PROBcount++;
+	  }
+	}	
+	else{
+	  print LOG "ERROR: $class: $object ($locus) has no From_laboratory tag in $currentDB\n";
+	  $PROBcount++;
 	}
-    
-
-    #if all else fails just use the root name  ie lop off anything after "."
-    if($solved != 1)
-      {
-	if ($seq =~ m/(\w+)\.\w+/)
-	  {
-	    $test_seq = $1;
-	    if(defined(TestSeq($test_seq)))
-	      {
-		print LOG "\t$seq is not valid seq but parent $test_seq is\n\n";
-	      }
-	    else
-	      {	      
-		print LOG "\t$seq -  can't find sequence or parent sequence\n\n";
-	      }
-	  }
-	else
-	  {	      
-	    print LOG "\t$seq -  can't find sequence or parent sequence\n\n";
-	  }
       }
+    }
+    else{
+      print LOG "ERROR: $class: $object ($seq_locus{$entry}) not found in $currentDB\n";
+      $PROBcount++;
+    }
   }
+  $autoace->close;
 
+  print LOG "\nFound $CAMcount loci on Hinxton sequences.\n";
+  print LOG "Found $STLcount loci on StLouis sequences.\n";
+  print LOG "Found $PROBcount loci that have problems (see above)\n\n";
 
+  print LOG "Wrote output ACE files to /wormsrv2/autoace/acefiles\n";
 
-#retun the last character in a string
-sub LastChar 
-  {
-    my $myString = $_[0];
-    return chop($myString);
-  }
-
-sub TestSeq # recieves a sequence | returns LabCode if it exists
-  {
-    
-    my $autoace = Ace->connect('/wormsrv2/current_DB');
-    my $seq = $_[0];
-    my $seq_obj = $autoace->fetch(Sequence => "$seq");
-    my $labtag;
-    if (defined($seq_obj))
-      {
-	#get the FROM LAB TAG
-	my @lab = $seq_obj->at('Origin.From_Laboratory');
-	$labtag = $lab[0];
-	unless (defined($labtag))
-	  {
-	    undef($seq_obj);
-	  }
-      }
-    $autoace->close;
-    return $labtag;
-  }
 }
 
 ##########################################
+
+
 
 sub usage {
   my $error = shift;
@@ -451,10 +323,12 @@ sub usage {
 sub update_camace{
 
   my $runtime = &runtime;
-  print LOG "$runtime: Starting to remove existing locus->sequence connections in camace and replace with new ones\n";
+  print LOG "\n$runtime: Starting to remove existing locus->sequence connections in camace and replace with new ones\n";
   my $command;
   $command = "query find Predicted_gene\n";
   $command .= "eedit -D Locus_genomic_seq\nsave\n";
+  $command .= "query find Transcript\n";
+  $command .= "eedit -D Locus\nsave\n";
   $command .= "pparse /wormsrv2/autoace/acefiles/CAM_locus_seq.ace\n";
   $command .= "save\nquit\n";
 
