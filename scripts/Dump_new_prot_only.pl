@@ -277,8 +277,8 @@ close LOG;
 
 print "\nEnd of dump - moving $output to /wormsrv2/wormbase/ensembl_dumps/\n";
 
-# This will pause and wait for password so preventing the next dumping stages to occur
-# `scp $output wormpub@wormsrv2:/wormsrv2/wormbase/ensembl_dumps/`;
+# Copy resulting file to wormsrv2 - leave in original place for subsequent script write.swiss_trembl
+ `/usr/bin/rcp $output /wormsrv2/wormbase/ensembl_dumps/`;
 
 &mail_maintainer("Dump_new_proteins_only.pl",$maintainers,$log);
 
@@ -288,7 +288,7 @@ exit(0);
 sub dumpData
   {
     my $matches;
-    my $pid = shift; 
+    my $pid = shift;
     print OUT "\nProtein : \"WP:$pid\"\n";
     while( $matches = shift) {   #pass reference to the hash to dump
       #write ace info
@@ -308,7 +308,7 @@ sub dumpData
 	      my $gene = $$data[4]; 
 	      $$data[4] = $gene2CE{"$gene"};
 	    }
-	    
+	
 	    foreach (@cigar){
 	      #print OUT "Pep_homol \"$homolID\" $processIds2prot_analysis{$analysis} $e $myHomolStart $myHomolEnd $pepHomolStart $pepHomolEnd Align ";
 	      print OUT "Pep_homol ";
@@ -320,23 +320,27 @@ sub dumpData
 	      print OUT "$$data[5] ";   #  pepHomolStar
 	      print OUT "$$data[6] ";   #  pepHomolEnd
 	      print OUT "Align ";
-	      
+	
 	      my @align = split(/\,/,$_);
 	      print OUT "$align[0] $align[1]\n";
-	      
-	      
-	      #and print out the reciprocal homology to different file
-	      #prints out on single line. "line" is used to split after sorting
-	      print RECIP "Protein : \"",$org_prefix{"$$data[1]"},":$$data[4]\" line "; #  matching peptide
-	      print RECIP "\"WP:$pid\" ";              #worm protein
-	      print RECIP "$$data[1] ";   #  analysis
-	      print RECIP "$$data[7] ";   #  e value
-	      print RECIP "$$data[2] ";   #  HomolStart
-	      print RECIP "$$data[3] ";   #  HomolEnd
-	      print RECIP "$$data[5] ";   #  pepHomolStar
-	      print RECIP "$$data[6] ";   #  pepHomolEnd
-	      print RECIP "Align ";
-	      print RECIP "$align[0] $align[1]\n";
+	
+	      unless ("$$data[1]" eq "wublastp_worm")  #no need for WORMPEP
+		{		
+		  #and print out the reciprocal homology to different file
+		  #prints out on single line. "line" is used to split after sorting
+
+		  print RECIP "Protein : \"",$org_prefix{"$$data[1]"},":$$data[4]\" line "; #  matching peptide
+		  print RECIP "\"WP:$pid\" ";              #worm protein
+		  print RECIP "$$data[1] ";   #  analysis
+		  print RECIP "$$data[7] ";   #  e value
+		  print RECIP "$$data[5] ";   #  HomolStart
+		  print RECIP "$$data[6] ";   #  HomolEnd
+		  print RECIP "$$data[2] ";   #  pepHomolStar
+		  print RECIP "$$data[3] ";   #  pepHomolEnd
+		  print RECIP "Align ";
+		  print RECIP "$align[1] $align[0]\n";
+
+		}
 	    }
 	  }
 	}
