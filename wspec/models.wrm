@@ -357,7 +357,7 @@
                        Pseudogene_history ?Pseudogene XREF Gene_history
                        Gene_variant_count UNIQUE Int    // how many isoforms have been made (including Pseudogenes and non coding)
                                                         // intended for acedb code to look at this when suggesting new gene name
-                       Other_sequence ?Sequence XREF Gene #Evidence  // for linking to mRNAs etc. that correspond to a gene
+                       Other_sequence ?Sequence XREF Gene #Evidence  // for linking to mRNAs etc. that correspond to a gene		   
         Experimental_info RNAi_result ?RNAi XREF Gene
                           Expr_pattern ?Expr_pattern XREF Gene
                           Drives_Transgene ?Transgene XREF Driven_by_gene
@@ -370,6 +370,7 @@
 			  SAGE_transcript ?SAGE_transcript XREF Gene
 			  Y2H_bait   ?Y2H XREF Bait_overlapping_gene // for yeast two hybrid data
 			  Y2H_target ?Y2H XREF Target_overlapping_gene
+			  3d_data ?3d_data XREF Gene // for NESGC structure information
         Map_info  Map UNIQUE ?Map XREF Gene #Map_position
                   Well_ordered          // "on the line"
                   Hide_under ?Gene XREF Representative_for
@@ -1095,6 +1096,7 @@
 		Interpolated_map_position UNIQUE ?Map UNIQUE Float 
 		Y2H_bait   ?Y2H XREF Bait_overlapping_CDS // for yeast two hybrid data
 		Y2H_target ?Y2H XREF Target_overlapping_CDS
+		3d_data ?3d_data XREF CDS
 		Remark ?Text #Evidence
 	Sequence_features ?Feature XREF Part_of_gene #Evidence            // Feature data model [dl 030304]
 	Drives_transgene  ?Transgene XREF Driven_by_CDS_promoter
@@ -1367,6 +1369,7 @@
                   Reference ?Paper XREF Protein
                   Expr_pattern ?Expr_pattern XREF Protein
 		  Homology_group ?Homology_group XREF Protein // added [031120 krb]
+		  3d_data ?3d_data XREF Protein
           Homol DNA_homol ?Sequence XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int  #Homol_info
                 Pep_homol ?Protein XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int  #Homol_info
                 Motif_homol ?Motif XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int  #Homol_info
@@ -1431,6 +1434,7 @@
 			 Motif ?Motif
 			 Clone ?Clone // added [031120 krb]
 			 Homology_group // added [031120 krb]
+			 3d_data ?3d_data
 		   Web_location ?Database // use for WWW display
 
 
@@ -2136,6 +2140,44 @@
      Reference ?Paper XREF Y2H
      Remark ?Text #Evidence
 
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+//
+// ?3d_data
+// 
+// A protein structure class which will store data from the NESGC
+//
+// Added April 14th, 2004
+//
+///////////////////////////////////////////////////////////////////////////////////////
+
+?3d_data Evidence              #Evidence
+         DB_info               Database ?Database ?Database_field ?Accession_number XREF 3d_data
+         CDS      ?CDS XREF 3d_data
+	 Protein  ?Protein XREF 3d_data
+	 Gene	  ?Gene XREF 3d_data
+         Status                Selected
+                               Cloned
+                               Expressed
+                               Soluble
+                               Purified
+                               Crystallized
+                               Diffraction_quality_crystals    //Diffraction-quality Crystals
+                               Diffraction
+                               NMR_assigned                    //NMR assigned
+                               HSQC
+                               Crystal_structure               //Crystal Structure
+                               NMR_structure                   //NMR Structure
+                               In_PDB                          //In PDB
+                               Work_stopped                    //Work Stopped
+                               Test_target                     //Test Target
+                               Other
+         Origin                Location UNIQUE NESGC           //New 3d data sources can be added as new sub-tags to the model in the future
+                               First_imported UNIQUE DateType
+                               Last_updated UNIQUE DateType
+         Remark                ?Text #Evidence
 
 
 
