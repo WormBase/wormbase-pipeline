@@ -83,19 +83,19 @@ _VPaper            -V -T Brief_citation
 _VGene_class       -V
 _VGene_name	   -V
 _VLocus            -V -D GMAP
-_VGene             -V -D GMAP -T Public_name
+_VGene             -V -T Public_name
 _VRearrangement    -V -D GMAP
 _VMap              -V -D GMAP  
 _VMultiMap	   -H -D DtMULTIMAP
 _VManyMap          -H -D GMAP
 _VContig           -H -D PMAP
 _VClone            -V -D PMAP
-_VAllele           -V
 _VStrain           -V -T Genotype 
 _VLaboratory       -V
 _V2_point_data     -H -T Genotype 
 _VMulti_pt_data    -H -T Genotype
 _VPos_neg_data     -H -T Results 
+_VVariation        -V
 
 
 // worm biology
