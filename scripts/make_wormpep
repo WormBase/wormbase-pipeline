@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.0 -w
+#!/usr/local/bin/perl5.6.0 
 #
 # make_wormpep
 # v 4.1
@@ -64,12 +64,11 @@ my $debug = $opt_d;
  #   wormpep.accession   wpid, if active all associated dotnames, if duplicate link to active wpid
  #   wormpep.history     dotname, wpid, start (version Nr.), stop (version Nr.) if inactive
  ########################################################################
- # set variables
 
 my $dbdir     = "/wormsrv2/autoace";
 my $wpdir     = "/wormsrv2/WORMPEP/wormpep$old_release";
 my $new_wpdir = "/wormsrv2/WORMPEP/wormpep$release";
-my $tace      = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
+my $tace      = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace_4_9f";
 
 if ($opt_t) {
     $dbdir     = "/wormsrv2/autoace";
@@ -99,7 +98,6 @@ print LOG "\n";
 
 mkdir ("$new_wpdir" , 0755) || &error(3);               # die "cannot create the $new_wpdir directory\n";
 
-#open (WP_LOG , ">$new_wpdir/wp.log$release") || &error(4); # die "cannot create $new_wpdir/wp.log$release\n" ;
 print LOG "# $runtime : making wormpep$release for $rundate\n\n";
 
 
@@ -113,6 +111,7 @@ print LOG "# $runtime : making wormpep$release for $rundate\n\n";
  ##################################################
 
 print LOG "# $runtime : initiate parsing of wp.fasta file\n";
+print "# $runtime : initiate parsing of wp.fasta file\n" if ($debug);
 
 my (%seq2num , @num2seq , @num2dot);
 undef (my $id) ;
@@ -126,7 +125,7 @@ while (<WP>) {
     if (/^>(\S+)/) {
         my $new_id = $1;
 	if ($id) {
-            $id =~ /CE0*([1-9]\d*)/ ; my $num = $1 ;
+            $id =~ /CE0*([1-9]\d*)/ ; my $num = $1 ;           # bewarned - lurking 100000 protein bug
 	    if ($num > $wpmax) {
 		$wpmax = $num;
 	    }
@@ -160,7 +159,8 @@ while (<WP>) {
                 $num2dot[$num] = "$id -> CE$old_id_pad";
 	    }
         }
-    } else {
+    } 
+    else {
 	$seq .= $_ ;
     }
 }
@@ -171,6 +171,9 @@ $runtime = `date +%H:%M:%S`; chomp $runtime;
 print LOG "=> wp.fasta file contains $duplicates duplicate sequences\n";
 print LOG "=> wpmax of wp.fasta$old_release equals $old_wpmax\n";
 print LOG "# $runtime : completed parsing of wp.fasta file\n\n";
+print "=> wp.fasta file contains $duplicates duplicate sequences\n" if ($debug);
+print "=> wpmax of wp.fasta$old_release equals $old_wpmax\n" if ($debug);
+print "# $runtime : completed parsing of wp.fasta file\n\n" if ($debug);
 close WP;
 
  ###############################################
@@ -179,6 +182,7 @@ close WP;
 
 $runtime = `date +%H:%M:%S`; chomp $runtime;
 print LOG "# $runtime : connect to primary database\n";
+print "# $runtime : connect to primary database\n" if ($debug);
 
 my $db = Ace->connect (-path => $dbdir, -program => $tace) 
     || &error(6); # die "cannot connect to autoace\n";
@@ -192,6 +196,10 @@ $runtime = `date +%H:%M:%S`; chomp $runtime;
 print LOG "=> " . scalar(@dotnames_1) . " CDS sequences\n";
 print LOG "=> " . scalar(@dotnames_2) . " of which are attached to LINK objects\n";
 print LOG "# $runtime : finished connection to database\n\n";
+
+print "=> " . scalar(@dotnames_1) . " CDS sequences\n" if ($debug);
+print "=> " . scalar(@dotnames_2) . " of which are attached to LINK objects\n" if ($debug);
+print "# $runtime : finished connection to database\n\n" if ($debug);
 
  ###########################################################################
  # get the dna and peptide sequence, write a dna.fasta file,
@@ -208,7 +216,8 @@ open (DNA , ">$new_wpdir/wormpep.dna$release") || &error(7); # die "cannot creat
 my (%dot2num , @dotnames , @c_dotnames);
 foreach my $dot (@dotnames_1) {
     
-    
+    print "Processing: '$dot'\n";
+
     if ($dot =~ /temp/) {
        print LOG "$dot is only a temporary sequence\n";
        next;
@@ -242,8 +251,8 @@ foreach my $dot (@dotnames_1) {
     }
     $dna =~ /^>(\S+)\s+(\w.*)/s ; my $dseq = $2 ; $dseq =~ tr/a-z/A-Z/ ; $dseq =~ s/\s//g;
     if ($dseq =~ /[^ACGT]/) {
-	if ($dseq =~ /\-/) {                                  # - seems to indicate that e.g the subsequence
-	    print LOG "the dna sequence $dot contains a -\n"; # coordinates differ from the last exon coordinate
+	if ($dseq =~ /\-/) {                                          # - seems to indicate that e.g the subsequence
+	    print LOG "the dna sequence $dot contains a -\n";         # coordinates differ from the last exon coordinate
 	} elsif ($dseq =~ /N/) {
             print LOG "the dna sequence $dot contains a N\n";
 	  } else {                         
@@ -267,13 +276,7 @@ foreach my $dot (@dotnames_1) {
 	print LOG "the peptide sequence $dot contains an X\n";             
     #       next;                                       
     # 010124 : dl  : CDS with 'X's will be included in the wormpep release
-                                                    
-
-
-
-
-                                                               # perhaps I should check if $pname=$1
-    }                                                          # equals $dot in all cases
+    }
     if ($pseq =~ /\*/) {
        print LOG "the peptide sequence $dot contains a *\n";              
        next;
@@ -358,8 +361,9 @@ EOF
    
 open (TACE, "echo '$command' | $tace | ");
 while (<TACE>) {
+    print;
     chomp;
-    s/acedb\>//g;
+    s/acedb\> //g;      # only need this is using 4_9i code, bug fixed in 4_9k onward (should be redundant)
     next if ($_ eq "");
     next if (/\/\//);
     s/\"//g;
@@ -403,8 +407,8 @@ open (TACE, "echo '$command1' | $tace | ");
 while (<TACE>) {
     chomp;
     next if ($_ eq "");
-    next if (/acedb\>/);
     next if (/\/\//);
+    s/acedb\>//g;
     s/\"//g;
     my ($clone,$lab) = (/^(\S+)\s(\S+)$/);
     $laboratory{$clone} = $lab;
@@ -432,11 +436,10 @@ foreach (@dotnames) {
     undef (my $locus);
     undef (my $brief_id);
     undef (my $cosmid);
-#    undef (my $lab);
 
     my $cds = $_;
     my $c_dot = $cds;
-    $c_dot =~ tr/a-z/A-Z/;
+#    $c_dot =~ tr/a-z/A-Z/;
     my $wpid = $dot2num{$c_dot};
     my $wpid_pad = sprintf "%05d" , $wpid;
     my $pepseq = $num2seq[$wpid];
@@ -450,9 +453,13 @@ foreach (@dotnames) {
 	    print USERFASTA ">$c_dot CE$wpid_pad  $locus_1 $CDS_id{$cds} status\:$CDS_status{$cds} SW\:$Protein_ac{$cds} protein_id\:$Protein_id{$cds}\n$pepseq\n";
 	    print USERTABLE "$c_dot\tCE$wpid_pad\t$CDS_locus{$cds}\t$CDS_id{$cds}\t$CDS_status{$cds}\tSW\:$Protein_ac{$cds}\t$Protein_id{$cds}\n";
 	}
-	elsif ($Protein_db{$cds} eq "TrEMBL") {
+	elsif ($Protein_db{$cds} eq "TREMBL") {
 	    print USERFASTA ">$c_dot CE$wpid_pad  $locus_1 $CDS_id{$cds} status\:$CDS_status{$cds} TR\:$Protein_ac{$cds} protein_id\:$Protein_id{$cds}\n$pepseq\n";
 	    print USERTABLE "$c_dot\tCE$wpid_pad\t$CDS_locus{$cds}\t$CDS_id{$cds}\t$CDS_status{$cds}\tTR\:$Protein_ac{$cds}\t$Protein_id{$cds}\n";
+	}
+	elsif ($Protein_db{$cds} eq "TREMBLNEW") {
+	    print USERFASTA ">$c_dot CE$wpid_pad  $locus_1 $CDS_id{$cds} status\:$CDS_status{$cds} TN\:$Protein_ac{$cds} protein_id\:$Protein_id{$cds}\n$pepseq\n";
+	    print USERTABLE "$c_dot\tCE$wpid_pad\t$CDS_locus{$cds}\t$CDS_id{$cds}\t$CDS_status{$cds}\tTN\:$Protein_ac{$cds}\t$Protein_id{$cds}\n";
 	}
 	else {
 	    print USERFASTA ">$c_dot CE$wpid_pad  $locus_1 $CDS_id{$cds} status\:$CDS_status{$cds} protein_id\:$Protein_id{$cds}\n$pepseq\n";
@@ -464,10 +471,15 @@ foreach (@dotnames) {
 	    print USERFASTA     ">$c_dot CE$wpid_pad  $locus_1 $CDS_id{$cds} status\:$CDS_status{$cds} SW\:$Protein_ac{$cds}\n$pepseq\n";
 	    print USERTABLE      "$c_dot\tCE$wpid_pad\t$CDS_locus{$cds}\t$CDS_id{$cds}\t$CDS_status{$cds}\tSW\:$Protein_ac{$cds}\n";
 	} 
-	elsif ($Protein_db{$cds} eq "TrEMBL") {
+	elsif ($Protein_db{$cds} eq "TREMBL") {
 	    print USERFASTA ">$c_dot CE$wpid_pad  $locus_1 $CDS_id{$cds} status\:$CDS_status{$cds} TR\:$Protein_ac{$cds}\n$pepseq\n";
 	    print USERTABLE  "$c_dot\tCE$wpid_pad\t$CDS_locus{$cds}\t$CDS_id{$cds}\t$CDS_status{$cds}\tTR\:$Protein_ac{$cds}\n";
-	} else {
+	}
+	elsif ($Protein_db{$cds} eq "TREMBLNEW") {
+	    print USERFASTA ">$c_dot CE$wpid_pad  $locus_1 $CDS_id{$cds} status\:$CDS_status{$cds} TN\:$Protein_ac{$cds}\n$pepseq\n";
+	    print USERTABLE  "$c_dot\tCE$wpid_pad\t$CDS_locus{$cds}\t$CDS_id{$cds}\t$CDS_status{$cds}\tTR\:$Protein_ac{$cds}\n";
+	}
+	else {
 	    print USERFASTA ">$c_dot CE$wpid_pad  $locus_1 $CDS_id{$cds} status\:$CDS_status{$cds}\n$pepseq\n";
 	    print USERTABLE  "$c_dot\tCE$wpid_pad\t$CDS_locus{$cds}\t$CDS_id{$cds}\t$CDS_status{$cds}\n";
 	}
@@ -508,15 +520,14 @@ my $number_alternate = 0;
 my %new_name2x;
 foreach (@end_dotnames) {
     $number_total++;
-    tr/a-z/A-Z/;
-    /^([A-Z0-9]+)\.(.*)$/;
+    /^([A-Za-z0-9]+)\.(.*)$/;
     my $cosmid = $1;
     my $dot = $2;
     if ($dot =~ /^[1-9][0-9]?$/) {
         $number_cds++;
-    } elsif ($dot =~ /^[A-Z][A-Z]?$/) {
+    } elsif ($dot =~ /^[a-z][a-z]?$/) {
          $number_cds++;
-    } elsif ($dot =~ /(^[1-9][0-9]?)([A-Z])/) {
+    } elsif ($dot =~ /(^[1-9][0-9]?)([a-z])/) {
         my $number = $1;
 	my $letter = $2;
         my $new_name = $cosmid."_".$number;
@@ -554,9 +565,9 @@ chmod (0444 , "$new_wpdir/wormpep.accession$release") || print LOG "cannot chmod
 # read in the current wormpep.history file, update it, and read it back out,
 # wormpep.history contains tab-separated:  dotname, wpid, start (release), end (release)
 
-open (OLDHISTORY , "$wpdir/wormpep.history$old_release") || die "cannot open $wpdir/wormpep.history$old_release\n";
-open (HISTORY , ">$new_wpdir/wormpep.history$release") || die " cannot create $wpdir/wormpep.history$release\n";
-open (DIFF , ">$new_wpdir/wormpep.diff$release") || die " cannot create $wpdir/wormpep.diff$release\n";
+open (OLDHISTORY, "$wpdir/wormpep.history$old_release")  || die "cannot open $wpdir/wormpep.history$old_release\n";
+open (HISTORY,    ">$new_wpdir/wormpep.history$release") || die "cannot create $wpdir/wormpep.history$release\n";
+open (DIFF,       ">$new_wpdir/wormpep.diff$release")    || die "cannot create $wpdir/wormpep.diff$release\n";
 
 my %line;
 while (my $line = <OLDHISTORY>) {
@@ -564,7 +575,6 @@ while (my $line = <OLDHISTORY>) {
     my $dotname = ""; my $wpid = ""; my $start = ""; my $end = "";
     ($dotname , $wpid , $start , $end) = split (/\t/ , $line);
     my $c_dot = $dotname;
-    $c_dot =~ tr/a-z/A-Z/;
     $wpid =~ /CE0*([1-9]\d*)/ ; my $num = $1;
     $line{$c_dot} = $line;
     if ((!exists ($dot2num{$c_dot}) && ($end eq ""))) {
@@ -584,7 +594,6 @@ while (my $line = <OLDHISTORY>) {
 foreach (keys (%dot2num)) {
     my $empty = "";
     my $c_dot = $_;
-    $c_dot =~ tr/a-z/A-Z/;
     if (!exists ($line{$c_dot})) {
         my $num = $dot2num{$c_dot};
         my $pad = sprintf "%05d" , $num;
@@ -602,7 +611,6 @@ foreach (keys (%dot2num)) {
     }
 }
 
-
 close OLDHISTORY;
 close HISTORY;
 close DIFF;
@@ -616,15 +624,16 @@ print LOG "\n\nnew wpmax of wp.fasta$release equals $wpmax\n$wpdiff new sequence
  # make patch file for changes from last release    #
  ####################################################
 
+# return to this - pepace has retired but the fasta file is retained for ensembl analysis
+
 print LOG "make patch file for changes since wormpep${old_release}\n";
-system ("patch_wormpep -r $release > $new_wpdir/patch_wormpep.${release}-${old_release}.ace");
+#system ("patch_wormpep -r $release > $new_wpdir/patch_wormpep.${release}-${old_release}.ace");
 print LOG "patch file made...\n\n";
 
  ##############################
  # mail $maintainer report    #
  ##############################
 
-#chmod (0444 , "$new_wpdir/wp.log$release")    || print LOG "cannot chmod $new_wpdir/wp.log$release\n";
 unlink ("$new_wpdir/wp.fasta_unwrap$release") || print LOG "cannot delete $new_wpdir/wp.fasta_unwrap$release\n";
 unlink ("$new_wpdir/wormpep_unwrap$release")  || print LOG "cannot delete $new_wpdir/wormpep_unwrap$release\n";
 
@@ -633,25 +642,27 @@ unlink ("$new_wpdir/wormpep_unwrap$release")  || print LOG "cannot delete $new_w
 # copy files to ~wormpub/WORMPEP so that wormpep webpage scripts work
 #####################################################################
 
-my $wormpub_dir = "/nfs/disk100/wormpub/WORMPEP";
+# please don't do this .............
 
-print LOG "Removing old files in $wormpub_dir\n";
-
-unlink("$wormpub_dir/wormpep_current") || print LOG "Cannot delete files in $wormpub_dir\n";
-unlink("$wormpub_dir/wormpep.accession_current") || print LOG "Cannot delete files in $wormpub_dir\n";
-unlink("$wormpub_dir/wormpep.dna_current") || print LOG "Cannot delete files in $wormpub_dir\n";
-unlink("$wormpub_dir/wormpep.history_current") || print LOG "Cannot delete files in $wormpub_dir\n";
-unlink("$wormpub_dir/wp.fasta_current") || print LOG "Cannot delete files in $wormpub_dir\n";
-
-print LOG "Copying new files to $wormpub_dir\n";
-
-system ("cp $new_wpdir/wormpep_current $wormpub_dir/wormpep_current")                     || print LOG "Cannot copy file to $wormpub_dir\n";
-system ("cp $new_wpdir/wormpep.accession$release $wormpub_dir/wormpep.accession_current") || print LOG "Cannot copy file to $wormpub_dir\n";
-system ("cp $new_wpdir/wormpep.dna$release $wormpub_dir/wormpep.dna_current")             || print LOG "Cannot copy file to $wormpub_dir\n";
-system ("cp $new_wpdir/wormpep.history$release $wormpub_dir/wormpep.history_current")     || print LOG "Cannot copy file to $wormpub_dir\n";
-system ("cp $new_wpdir/wp.fasta$release $wormpub_dir/wp.fasta_current")                   || print LOG "Cannot copy file to $wormpub_dir\n";
-system ("/usr/local/pubseq/bin/setdb $wormpub_dir/wormpep_current")                       || print LOG "Cannot index wormpep file in $wormpub_dir\n";
-system ("chmod +rw $new_wpdir/*");
+#my $wormpub_dir = "/nfs/disk100/wormpub/WORMPEP";
+#
+#print LOG "Removing old files in $wormpub_dir\n";
+#
+#unlink("$wormpub_dir/wormpep_current") || print LOG "Cannot delete files in $wormpub_dir\n";
+#unlink("$wormpub_dir/wormpep.accession_current") || print LOG "Cannot delete files in $wormpub_dir\n";
+#unlink("$wormpub_dir/wormpep.dna_current") || print LOG "Cannot delete files in $wormpub_dir\n";
+#unlink("$wormpub_dir/wormpep.history_current") || print LOG "Cannot delete files in $wormpub_dir\n";
+#unlink("$wormpub_dir/wp.fasta_current") || print LOG "Cannot delete files in $wormpub_dir\n";
+#
+#print LOG "Copying new files to $wormpub_dir\n";
+#
+#system ("cp $new_wpdir/wormpep_current $wormpub_dir/wormpep_current")                     || print LOG "Cannot copy file to $wormpub_dir\n";
+#system ("cp $new_wpdir/wormpep.accession$release $wormpub_dir/wormpep.accession_current") || print LOG "Cannot copy file to $wormpub_dir\n";
+#system ("cp $new_wpdir/wormpep.dna$release $wormpub_dir/wormpep.dna_current")             || print LOG "Cannot copy file to $wormpub_dir\n";
+#system ("cp $new_wpdir/wormpep.history$release $wormpub_dir/wormpep.history_current")     || print LOG "Cannot copy file to $wormpub_dir\n";
+#system ("cp $new_wpdir/wp.fasta$release $wormpub_dir/wp.fasta_current")                   || print LOG "Cannot copy file to $wormpub_dir\n";
+#system ("/usr/local/pubseq/bin/setdb $wormpub_dir/wormpep_current")                       || print LOG "Cannot index wormpep file in $wormpub_dir\n";
+#system ("chmod +rw $new_wpdir/*");
 
 
 close LOG;
