@@ -8,7 +8,7 @@
 # to look for bogus sequence entries
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-11-22 16:19:38 $
+# Last updated on: $Date: 2002-11-22 16:28:50 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -415,8 +415,8 @@ sub get_timestamp{
     ($tag = "Sequence")               if ($tag eq "Allele");
     ($class = "Operon")               if ($tag eq "Contained_in_operon");
     ($tag = "Contains_CDS")           if ($tag eq "Contained_in_operon");
-    ($class = "Locus")                if ($tag eq "Genomic_sequence");
-    ($tag = "Locus_genomic_seq")      if ($tag eq "Genomic_sequence");
+    ($class = "Locus")                if ($tag eq "Locus_genomic_seq");
+    ($tag = "Genomic_sequence")       if ($tag eq "Locus_genomic_seq");
     ($class = "RNAi")                 if ($tag eq "RNAi_result");
     ($tag = "Predicted_gene")         if ($tag eq "RNAi_result");
     ($class = "Clone")                if ($tag eq "Clone");
