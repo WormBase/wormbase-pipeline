@@ -14,23 +14,19 @@
 #
 # [01] - make a new directory for the WS release
 # [02] - copy the WS release files to the target directory
-# [03] - make a new directory for the chromosome DNA/GFF files
-# [04] - copy the chromosome DNA/GFF files to the target directory
-# [05] - make a new directory for the wspec files
-# [06] - copy the wspec files to the target directory
-# [07] - make a new directory for the pictures files - removed by krb
-# [08] - copy the pictures files to the target directory
-# [09] - make a new directory for the additional files
-# [10] - copy the additional files to the target directory
+# [03] - make a new directory for the chromosome DNA/GFF/AGP files
+# [04] - copy the chromosome DNA/GFF/AGP files to the target directory
+# [05] - copy the models.wrm file across (also present in the database.*.tar.gz files)
+# [06] - copy the relevant dbcomp file across
+# [07] - copy across latest wormpep release
+# [08] - make wormpep FTP site
+# [09] - copy WormRNA release across
+# [10] - extract confirmed genes from autoace and make a file on FTP site
 # [11] - delete the old symbolic link and make the new one
 # [12] - delete the old WS release version directory
 # [13] - exit gracefully
 
 
-# 010103 : dl  : mended command-line for make_FTP_wormpep call
-# 001004 : ag3 : changed symlink
-# 001004 : ag3 : added check on the copy of release and CHROMOSOMES files
-# 000927 : dl  : PP version
 
 #################################################################################
 # variables                                                                     #
@@ -40,6 +36,7 @@ $|=1;
 use Getopt::Long;
 use lib '/wormsrv2/scripts';
 use Wormbase;
+use Ace;
 
 my $sourcedir          = "";    # [Text] Directory in which the latest WS release resides
 my $targetdir          = "";    # [Text] Directory in which to build the new release
@@ -48,7 +45,7 @@ my $old_release        = "";    # [Text] Internally generated release number ($r
 my $old_release_number = "";    # [Int]  Internally generated release number 
 my $debug              = "";    #        on/off flag for verbose mode
 my $clean              = "";    #        on/off flag for removing old WS directories from the FTP site
-my $wormrna_release = get_wormrna_version();
+my $wormrna_release    = get_wormrna_version();
 
 GetOptions (
             "source=s"       => \$sourcedir,
@@ -113,10 +110,12 @@ closedir RELEASE;
 print "copied the release directory to FTP site\n" if ($debug);
 
 
+
 # make a new /CHROMOSOMES directory for the chromosome DNA/GFF
 
 system "mkdir $targetdir/$release/CHROMOSOMES" unless -e "$targetdir/$release/CHROMOSOMES";
 print "make a new CHROMOSOMES directory : '$targetdir/$release/CHROMOSOMES'\n" if ($debug);
+
 
 
 # copy the DNA,GFF, and agp files across
@@ -138,16 +137,17 @@ closedir DNAGFF;
 print "moved the contents of the CHROMOSOMES directory\n" if ($debug);
 
 
+
 # Copy across the models.wrm file
 system "cp $sourcedir/wspec/models.wrm $targetdir/$release/models.wrm.$release";
 print "Copying models.wrm\n" if ($debug);
+
  
 
 # copy some miscellaneous files across
-system "cp /wormsrv2/autoace_config/INSTALL $targetdir/$release/";
-system "cp /wormsrv2/autoace_config/PICTURES.doc $targetdir/$release/";
 system "cp /wormsrv2/autoace/COMPARE/WS${old_WS_release}-${release}.dbcomp $targetdir/$release/";
-print "copying some miscellaneous file across\n" if ($debug);
+print "copying dbcomp file across\n" if ($debug);
+
 
 
 # tar up the latest wormpep release and copy across
@@ -156,9 +156,11 @@ system("mv /wormsrv2/WORMPEP/wormpep${wormpep}/wormpep${wormpep}.tar.gz $targetd
 print "running tar_wormpep and copying across to ftp site\n" if ($debug);
 
 
+
 # Create wormpep FTP site
 system "/wormsrv2/scripts/make_FTP_wormpep -r $wormpep";
 print "make the wormpep FTP release for wormpep${wormpep}\n" if ($debug);
+
 
 
 # tar, zip, and copy WormRNA files across from wormsrv2/WORMRNA
@@ -167,6 +169,11 @@ chdir "$dest" or die "Couldn't cd $dest\n";
 system "/bin/tar -cf $targetdir/$release/wormrna${wormrna_release}.tar README wormrna${wormrna_release}.rna";
 system "/bin/gzip $targetdir/$release/wormrna${wormrna_release}.tar";
 print "make the FTP files for WormRNA${wormrna_release}\n" if ($debug);
+
+
+# make file of confirmed genes from autoace and copy across
+&extract_confirmed_genes($targetdir);
+
 
 
 # delete the old symbolic link and make the new one
@@ -204,3 +211,44 @@ sub usage {
     exit(0);
 }
 
+###################################
+# extract confirmed genes
+###################################
+
+sub extract_confirmed_genes{
+
+  my $targetdir = shift;
+
+  print "extracting confirmed genes from autoace\n" if ($debug);
+
+
+  my $db = Ace->connect(-path  => "/wormsrv2/autoace/");
+  my $query = "Find Sequence; Confirmed_by";
+  my @confirmed_genes   = $db->fetch(-query=>$query);
+
+
+  open(OUT,">/wormsrv2/tmp/confirmed_genes.dna") || die "Couldn't write to /wormsrv2/tmp/confirmed_genes.dna\n";
+
+  foreach my $seq (@confirmed_genes){
+    my $dna = $seq->asDNA();
+    
+    my (@type) = $seq->get('Confirmed_by');
+    
+    if(defined($type[1])){
+      $dna =~ s/(>\w+\.\w+)/$1 Confirmed_by_EST_and_cDNA/;    
+    }       
+    else{
+      $dna =~ s/(>\w+\.\w+)/$1 Confirmed_by_$type[0]/;        
+    }       
+    print OUT "$dna";
+  }
+
+  close(OUT);
+
+  system("/bin/gzip /wormsrv2/tmp/confirmed_genes.dna") && die "Couldn't gzip confirmed_genes.dna file\n";
+  print "gzipping confirmed_genes.dna\n" if ($debug);
+  system("/bin/mv /wormsrv2/tmp/confirmed_genes.dna.gz $targetdir/") && die "Couldn't gzip confirmed_genes.dna file\n";
+  
+  return(0);
+
+}
