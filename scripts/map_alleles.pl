@@ -7,7 +7,7 @@
 # This maps alleles to the genome based on their flanking sequence
 #
 # Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2003-03-26 11:51:34 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2003-03-26 14:10:05 $        # quickly see when script was last changed and by whom
 
 
 use strict;
@@ -87,6 +87,7 @@ if( $debug )  {
   $database = "/wormsrv2/current_DB/" unless $database;
   $ver--;
   $ace_file = "$data_dump_dir/mapped_alleles.ace";
+  $maintainers = "ar2\@sanger.ac.uk";
 }
 else { 
   $log        = "/wormsrv2/logs/map_allelesWS$ver.$rundate.$$";
@@ -116,12 +117,16 @@ my %geneace_alleles;
 my $cshl_update = "/wormsrv2/autoace/MAPPINGS/map_alleles_cshl_update$ver.ace";
 my $cshl_update_delete = "/wormsrv2/autoace/MAPPINGS/map_alleles_cshl_update_delete$ver.ace";
 
+my $KO_overlap_genes = "/wormsrv2/autoace/MAPPINGS/KO_genes_overlap";
+
 unless ($no_geneace) {
   open (GENEACE,">$geneace_update") or die "cant open $geneace_update: $!\n";
   open (GEN_DEL,">$geneace_update_delete") or die "cant open $geneace_update_delete\n";
 
   open (CSHLACE,">$cshl_update") or die "cant open $cshl_update: $!\n";
   open (CSHL_DEL,">$cshl_update_delete") or die "cant open $cshl_update_delete\n";
+
+  open (KOC, ">$KO_overlap_genes") or die "cant open $KO_overlap_genes\n";
   
   # get list of alleles from geneace to check against for feedback files
   my $geneace = "/wormsrv2/geneace";
@@ -250,6 +255,8 @@ my $right;
 my $allele;
 my $onSuperlink;
 my $go = 0;
+my $KO_allele;
+
 ALLELE:
 foreach $allele (@alleles)
   {
@@ -414,7 +421,15 @@ foreach $allele (@alleles)
 	}
 
 	&findOverlapGenes($name);
+	
+	# this identified KO_consortium alleles so they can be fed back to KOAC
+	
+	my $method = $allele->Method;
+	if ("$method" eq "Knockout_allele") {
+	  $KO_allele = 1;
+	}
 	&outputAllele($name);
+	undef $KO_allele;
       }
     else {
       print LOG "$allele - cant find valid sequence\n";
@@ -483,6 +498,7 @@ sub findChromosome
 sub outputAllele
   {
     my $to_dump = shift;
+    print KOC "$to_dump $allele2gene{$to_dump}\n" if $KO_allele;
     if( $allele_data{$to_dump}[3] and $allele_data{$to_dump}[4] and  $allele_data{$to_dump}[5]) { 
       
       print OUT "\nSequence : \"$allele_data{$to_dump}[6]\"\nAllele $to_dump $allele_data{$to_dump}[4] $allele_data{$to_dump}[5]\n";
@@ -510,6 +526,7 @@ sub outputAllele
 	if( $allele_data{$to_dump}[8] ) {
 	  @myStrains = split(/\*\*\*/,"$allele_data{$to_dump}[8]");
 	}
+
 	foreach my $ko (@affects_genes) {
 	  #allele - seq connection
 	  print OUT "Predicted_gene $ko\n";
