@@ -6,7 +6,7 @@
 # Compares this number to those from a second database.
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-04-14 08:46:06 $      
+# Last updated on: $Date: 2004-05-19 13:21:39 $      
 
 
 use strict;
@@ -236,7 +236,7 @@ EOF
   ####################################
 
   # open temp output file
-  $out = "/tmp/dbcomp_A_${counter}";
+  $out = "/wormsrv2/tmp/dbcomp_A_${counter}";
   open (COUNT, ">$out") || die "Couldn't write to tmp file: $out\n";
 
   # open tace connection and count how many objects in that class
@@ -253,7 +253,7 @@ EOF
   # Count objects in second database
   ####################################
 
-  $out = "/tmp/dbcomp_B_${counter}";
+  $out = "/wormsrv2/tmp/dbcomp_B_${counter}";
   open (COUNT, ">$out") || die "Couldn't write to tmp file: $out\n";
 
   # open tace connection and count how many objects in that class
@@ -283,9 +283,9 @@ sub diff {
   my $added   = 0; 
   my $removed = 0;
 
-  system ("cat /tmp/dbcomp_A_${counter} | sort > /tmp/look-1");
-  system ("cat /tmp/dbcomp_B_${counter} | sort > /tmp/look-2");
-  open (COMM, "comm -3 /tmp/look-1 /tmp/look-2 |");
+  system ("cat /wormsrv2/tmp/dbcomp_A_${counter} | sort > /wormsrv2/tmp/look-1");
+  system ("cat /wormsrv2/tmp/dbcomp_B_${counter} | sort > /wormsrv2/tmp/look-2");
+  open (COMM, "comm -3 /wormsrv2/tmp/look-1 /wormsrv2/tmp/look-2 |");
   while (<COMM>) {
     if (/^(\S+.+)/){
       print ERR " <- $dbname_1 $1\n";
@@ -297,11 +297,11 @@ sub diff {
     }
   }   
   close (COMM);
-  system ("rm -f /tmp/look-1");
-  system ("rm -f /tmp/look-2");
+  system ("rm -f /wormsrv2/tmp/look-1");
+  system ("rm -f /wormsrv2/tmp/look-2");
 
-  system ("rm -f /tmp/dbcomp_A_${counter}");
-  system ("rm -f /tmp/dbcomp_B_${counter}");
+  system ("rm -f /wormsrv2/tmp/dbcomp_A_${counter}");
+  system ("rm -f /wormsrv2/tmp/dbcomp_B_${counter}");
  
   # Add break symbol to output file to separate classes
   print ERR "\/\/ -----------------------------\n";
