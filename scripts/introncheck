@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl
+#!/usr/local/bin/perl -w
 #
 # introncheck
 # v 0.1
@@ -30,7 +30,7 @@ require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
  # Script variables (run)     #
  ##############################
 
-my $maintainer = "dl1\@sanger.ac.uk";
+my $maintainer = "dl1\@sanger.ac.uk, kj2\@sanger.ac.uk";
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
 
@@ -89,7 +89,7 @@ foreach $chromosome (@chromosomes) {
     # make a hash for all curated introns
 
     print "Make a hash for all introns\n";
-    open (GFF_in, "/nfs/disk100/wormpub/analysis/scripts/gff_sort $gffdir/GFF_SPLITS/CHROMOSOME_${chromosome}.intron.gff |") || die "Failed to open gff file\n\n";
+    open (GFF_in, "/wormsrv2/scripts/gff_sort $gffdir/GFF_SPLITS/CHROMOSOME_${chromosome}.intron.gff |") || die "Failed to open gff file\n\n";
     while (<GFF_in>) {
 	chomp;
 	s/\#.*//;
@@ -201,7 +201,6 @@ sub numerically {
 
 sub run_details {
     print "# dbcheck\n";     
-    print "# version        : $version\n";
     print "# run details    : $rundate $runtime\n";
     print "\n";
 }
@@ -229,7 +228,7 @@ __END__
 
 =pod
 
-=head1 NAME - dbcheck
+=head1 NAME - introncheck
 
 =back
 
@@ -237,11 +236,9 @@ __END__
 
 =over 4
 
-=item dbcheck [-options]
+=item introncheck [-options]
 
-dbcheck performs a number of integrity/consistency checks against
-the dbace database. The script is based on an iterative loop across
-all Genome_sequences and LINK* objects.
+introncheck searches for confirmed introns which aren't part of a gene model yet.
 
 =back
 
@@ -253,7 +250,7 @@ all Genome_sequences and LINK* objects.
 
 =back
 
-=head2 dbcheck OPTIONAL arguments:
+=head2 introncheck OPTIONAL arguments:
 
 =over 4
 
@@ -261,116 +258,9 @@ all Genome_sequences and LINK* objects.
 
 =item -d, Debug/Verbose mode
 
-=back
-
-=head1 DOCUMENTATION
-
-=over 4
+=item -s, check Status tags
 
 =back
-
-The following checks have been incorporated into dbcheck:
-
-=head2 Status tags
-
-=head3 Genome sequences which are not Finished.
-
-Genome sequences which do not have a Finished tag.
-
-=head3 Genome sequences which are Finished but not Annotated.
-
-Genome sequences which are finished but not annotated.
-
-=head2 File storage on /analysis/cosmids
-
-=head3 Date mismatch between the file system and dbace.
-
-Inconsistent Date_directory tag in ACEDB with respect to the file
-system (/analyis/cosmids/current.versions).
-
-For details of how the date dirtectory structure works:
- http://intweb.sanger.ac.uk/Projects/C_elegans/MANUAL
-
-=head3 Sequence mismatch between the file system and dbace. 
-
-This is based on a GCG checksum calculation for the .seq file in 
-the date directory and the sequence extracted from ACEDB.
-
-For details of how the date dirtectory structure works:
- http://intweb.sanger.ac.uk/Projects/C_elegans/MANUAL
-
-=head2 Gene Models
-
-=head3 Absence of Source in ?Sequence
-
-All Subsequence Gene Models MUST have a parent ?Sequence.
-
-    i.e. Sequence "ZK637.5"
-         Source "ZK637"
-
-=head3 Absence of Source_Exons in ?Sequence
-
-All Subsequence Gene Models MUST have Source_Exons.
-
-    i.e. Sequence "ZK637.5"
-         Source_Exons      1   434
-                         483   741
-                         950  1159
-                        1288  1413
-
-=head3 Absence of Method in ?Sequence
-
-All Subsequence Gene Models MUST have a Method tag. Method tags 
-are used in two ways: Firstly, as a means of tagging Gene Models
-into classes (e.g. 'curated' for active CDS prediction, 'RNA' for
-RNA gene) and secondly as an internal ACEDB description of how
-to display the object in the F-map.
-
-    i.e. Sequence "ZK637.5"
-         Method "curated"
-
-For details of permissible Method tags see:
- http://intweb.sanger.ac.uk/Projects/C_elegans/MANUAL
-
-=head3 Absence of Species tag in ?Sequence
-
-All Subsequence Gene Models MUST have Species tag.
-
-    i.e. Sequence "ZK637.5"
-         Species "Caenorhabditis elegans"
-
-=head3 Absence of CDS tag in ?Sequence
-
-All Subsequence Gene Models MUST have a Coding CDS tag.
-
-    i.e. Sequence "ZK637.5"
-         Coding CDS
-
-=head3 Mismatch between Parent coordinates and CDS span length
-
-The coordinate span of the Gene Model (1 => n) based on the 
-Source_Exon tags MUST be in agreement with the coordinate span
-of the Gene Model as a Subsequence of the parent ?Sequence.
-
-    i.e. Sequence "ZK637"
-         Subsequence ZK637.5 11124 12536
-
-         Sequence "ZK637.5"
-         Source_Exons      1   434
-                         483   741
-                         950  1159
-                        1288  1413
-
-         Span in CDS (ZK637.5) = ( 1413 -     1) + 1 = 1413
-         Parent (ZK637)        = (12536 - 11124) + 1 = 1413
-                                                       ----
-
-
-=head2 LINK objects
-
-=head3 CDS Gene Models on SUPERLINK objects
-
-CDS Gene Models are not allowed as children of SUPERLINK objects.
 
 =head1 AUTHOR - Daniel Lawson
 
