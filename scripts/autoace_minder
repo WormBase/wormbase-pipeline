@@ -5,8 +5,8 @@
 #
 # Usage : autoace_minder [-options]
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2002-07-22 11:19:33 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2002-07-22 13:47:40 $
 
 
 #################################################################################
@@ -362,7 +362,7 @@ sub get_WS_version {
 
     # exit if WS version (database.wrm) is older than build_in_process flag
     # i.e. the WS version has been changed since the start of the build
-    &usage(11) if (-M "$logdir/$flag{'A1'}" > -M "$WSver_file");
+    &usage(11) if (-M "$logdir/$flag{'A1'}" < -M "$WSver_file");
     
 #    print "$logdir/$flag{'A1'} : " . (-M "$logdir/$flag{'A1'}") . "\n";
 #    print "$WSver_file : "         . (-M "$WSver_file") . "\n";
