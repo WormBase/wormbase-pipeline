@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2004-01-15 13:15:26 $
+# Last edited on: $Date: 2004-01-28 10:55:56 $
 
 
 #################################################################################
@@ -67,6 +67,7 @@ my $load;               # generic file loading routine
 my $tsuser;             # tsuser setting to go with -load
 my $am_option;          # track which option has been used (for logging purposes)
 my $errors = 0;         # keep track of errors in each step (from bad system calls), use in subject line of email 
+my $remarks;
 
 
 GetOptions (
@@ -105,6 +106,7 @@ GetOptions (
 	    "help"           => \$help,
 	    "test"           => \$test,
 	    "quicktest"      => \$quicktest,
+	    "remarks"        => \$remarks,
 );
 
 # Help pod if needed
@@ -294,6 +296,9 @@ if ($addblat){
 
 # D1:Build_wormpep                    
 &make_wormpep      if ($buildpep);
+
+# add DB_remarks
+&run_command( "$scriptdir/get_pfam.pl -build")  if ( $remarks );
 
 # D4:Build_wormrna                    
 &make_wormrna      if ($buildrna);
