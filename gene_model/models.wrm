@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.92 2002-11-15 14:42:25 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.93 2002-11-19 14:56:58 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -13,9 +13,11 @@
 
 // significant changes are noted with "RD 0107"
 
-//
-// Basic Map classes
-//
+
+
+////////////////////////
+// Basic map classes  //
+////////////////////////
 
 ?Map	Display Centre UNIQUE Float UNIQUE Float  
 			// default centre, width - else 0, 10
@@ -35,6 +37,7 @@
                  Transgene  ?Transgene XREF Map //sdm added to display new gmaps 
         EMBL_chromosome UNIQUE ?Text  // [020307 kj]
 
+
 #Map_position UNIQUE	Position UNIQUE Float #Map_error
 			Ends Left UNIQUE Float #Map_error
 			     Right UNIQUE Float #Map_error
@@ -46,11 +49,14 @@
 
 #Map_error Error UNIQUE Float
 
+
 #Map_offset Relative #Map_position
 
-//
-// Views and Columns
-//
+
+
+///////////////////////
+// Views and Columns //
+///////////////////////
 
 ?View 	Type 	UNIQUE 	Pepmap
 			Fmap
@@ -154,11 +160,14 @@
 			Nne #Colour // negative, no error
                 	Ne  #Colour // negative, error
 
-//
-// Genetics
-// 
 
-// krb 020125 - Expanded Gene_name class to make cleaner XREFs with Gene class
+
+
+/////////////////////////  CLASSICAL GENETICS STUFF ///////////////////////////////
+//
+// ?Gene_name, ?Gene, ?Locus, ?Allele
+//
+///////////////////////////////////////////////////////////////////////////////////
 
 ?Gene_name Gene Public_name ?Gene XREF Public_name
 		CGC_name ?Gene XREF CGC_name
@@ -226,9 +235,11 @@
 	Remark ?Text
 	Laboratory ?Laboratory
         Reference ?Paper XREF Gene
+
 	
 
-?Locus  Name	Other_name	?Text			// 06/03/02 krb
+?Locus  Evidence #Evidence
+	Name	Other_name	?Text			// 06/03/02 krb
 	Type	Polymorphism    SNP  Text               // SNP stuff added for Todd [171001 krb]
                                 Status Text
                                 SNP_assay ?PCR_product XREF SNP_locus ?Text
@@ -254,6 +265,7 @@
 	Reference ?Paper XREF Locus
 	Strain ?Strain XREF Locus
 
+
 #Gene_history_action Event  Created
 			    Killed
 			    Resurrected
@@ -265,6 +277,7 @@
 		     Name_change CGC_name UNIQUE Text
                                  Sequence_name UNIQUE Text
 		                 Other_name UNIQUE Text
+
 
 // RD 0107 I redid the Evidence model based on extensive email 
 // discussions back in April.  For now only used for names and
@@ -315,7 +328,9 @@
 //                             	    TAS Text
 //           Remark ?Text
 
-?Allele Name	Rearrangement ?Rearrangement XREF Allele
+
+?Allele Evidence #Evidence
+	Name	Rearrangement ?Rearrangement XREF Allele
 		Other_name ?Text #Evidence
 	Source	UNIQUE Gene ?Gene XREF Allele // RD 0107 Locus->Gene
 	               Gene_class ?Gene_class XREF Allele
@@ -379,6 +394,7 @@
         Reference ?Paper XREF Allele               // Mary
         Rescued_by_transgene ?Transgene
 
+
 ?Gene_class     Phenotype ?Text
 		Description ?Text // [krb 020614]
                 Designating_laboratory UNIQUE ?Laboratory XREF Gene_classes
@@ -395,7 +411,9 @@
           To_right_end
           Locus ?Locus
 
-?Rearrangement 	Name    Other_name ?Text
+
+?Rearrangement 	Evidence #Evidence
+		Name    Other_name ?Text
 			Allele ?Allele XREF Rearrangement
 		Type    Deletion
 			Duplication	Free_dup
@@ -449,9 +467,13 @@
          Reference ?Paper XREF Strain
 	 Species UNIQUE ?Species
 
+
+
+//////////////////////////////
 //
-//worm physical map classes
+// worm physical map classes
 //
+//////////////////////////////
 
 ?Clone  Remark  General_remark ?Text
 		Y_remark ?Text
@@ -550,11 +572,17 @@
 		   Family UNIQUE Text 
 		   Genus UNIQUE Text
 
+
+
+//////////////////////////////////////////////////////////////////////////////
 //
 // Map data classes
 //
+//////////////////////////////////////////////////////////////////////////////
 
-?Two_pt_data    Genotype  UNIQUE Text
+
+?Two_pt_data    Evidence #Evidence
+		Genotype  UNIQUE Text
 		Results  UNIQUE Text
 		Experiment	Mapper ?Author
 				Laboratory ?Laboratory
@@ -606,7 +634,9 @@
 	// code uses Point_1, Point_2, Calculation and all its subtags, all the Calc subtags,
 	// and most of the Simple_distance subtags.
 		
-?Pos_neg_data	Genotype  UNIQUE Text
+
+?Pos_neg_data	Evidence #Evidence
+		Genotype  UNIQUE Text
 		Results  UNIQUE Text
 		Experiment Mapper ?Author
 			   Laboratory ?Laboratory
@@ -626,7 +656,10 @@
 		Remark ?Text
 	// code uses Item_1, Item_2, Positive and Negative
 
-?Multi_pt_data	Genotype  UNIQUE Text
+
+
+?Multi_pt_data	Evidence #Evidence
+		Genotype  UNIQUE Text
 		Experiment  Mapper ?Author
 			    Laboratory ?Laboratory
 			    Date  UNIQUE DateType
@@ -1365,7 +1398,8 @@
 
 //transgene from Wen Chen 12/00
 
-?Transgene      Summary UNIQUE ?Text //Searchable description of the transgene
+?Transgene      Evidence #Evidence
+		Summary UNIQUE ?Text //Searchable description of the transgene
 		Driven_by Driven_by_sequence ?Sequence XREF Drives_transgene	Text //driving promoter
 			  Driven_by_gene    ?Gene    XREF Drives_transgene	Text //driving promoter
 			  Driven_by_CDS    ?CDS    XREF Drives_transgene	Text //driving promoter
