@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-08-19 16:50:56 $
+# Last updated on: $Date: 2003-08-20 12:30:30 $
 
 
 use strict;
@@ -1030,247 +1030,240 @@ sub process_laboratory_class{
  
 
 sub process_allele_class{
- 
+
   print"\n\nChecking Allele class for errors:\n";
   print LOG "\n\nChecking Allele class for errors:\n";
   print LOG "---------------------------------\n";
 
   my @alleles = $db->fetch('Allele','*');
-  my ($allele, $desig, $desig2, $desig3, $main_allele, %allele_gene, $gene, $seq_name, @seq1, @seq2, @seqs, $cdb);
-
-  $cdb = Ace->connect(-path  => $default_db,
-	              -program =>$tace) || do { print LOG "Connection failure: ",Ace->error; die();};
-  
-  @seqs=Table_maker();
-
-  #print scalar @seqs, "\n";
-  my %seqs;
-  foreach (@seqs){$seqs{$_}++}
-
-  # check if an allele has no Location tag 
-  #          an allele is connected to multiple loci
-  #          the sequence tag of an allele has a locus name
+  my ($allele, $desig, $desig2, $main_allele, %allele_gene, $gene);
+  my $allele_error = 0;
 
   my $allele_designation_to_LAB=<<EOF;
   Table-maker -p "$def_dir/allele_designation_to_LAB.def" quit
 EOF
   
   my %location;
+  # get a hash of allele-desig (key) and lab-desig (value)
   if ($ace){%location=allele_location($allele_designation_to_LAB, $default_db)};
-
+  
   foreach $allele (@alleles){
    
+    # check allele has not location tag
     if(!defined($allele->at('Location'))){
-      if ($allele =~ /^[A-Z].+/){
+      # catch non-standard upper-case allele name
+      if ($allele =~ /^[A-Z].+/){ 
+	$allele_error++;
 	print LOG "ERROR: $allele has no Location tag present (no info available)\n";
       }
       else {
-	$desig=(); $desig2=(); $desig3=();
+	$allele_error++;
 	print LOG "ERROR: $allele has no Location tag present\n";
 
+	# acefile output for normal or double alleleles having no location tag
 	if ($ace){
 	  if ($allele =~ /^([a-z]{1,})\d+$/){
 	    $desig = $1;
-	  }
-	  elsif ($allele =~ /^([a-z]{1,})\d+([a-z]{1,})\d+$/){
-	    if ("$1" eq "$2"){$desig = $1}
-	    else {$desig = $1; $desig2 = $2}
-	    print "Double allele\n";
-          }
-	  elsif ($allele =~ /^(([a-z]{1,})\d+)[a-z]{1,}$/){
-	    $desig3 = $2;
-	    $main_allele = $1;
-	  }
-
-	  if (exists $location{$desig}){
+	    print "1: $desig: $location{$desig}\n";
 	    print  ACE "\n\nAllele : \"$allele\"\n";
 	    print  ACE "Location \"$location{$desig}\"\n";
+	    print   "\n\nAllele : \"$allele\"\n";
+	    print   "Location \"$location{$desig}\"\n";
+	    next;
 	  }
-	  if (exists $location{$desig2}){
-	    print  ACE "\n\nAllele : \"$allele\"\n";
-	    print  ACE "Location \"$location{$desig2}\"\n";
-	  }
-	  if (exists $location{$desig3}){
-	    print  ACE "\n\nAllele : \"$main_allele\"\n";
-	    print  ACE "Other_name \"$allele\"\n";  
-	    print  ACE "Location \"$location{$desig3}\"\n";
-	  }
+
+	  ######################
+	  # catch double alleles
+          ######################
+
+	  # double allele has same designation
+	  if ($allele =~ /^([a-z]{1,})\d+([a-z]{1,})\d+$/){
+	    $desig = $1; $desig2 = $2;
+	    if ("$desig" eq "$desig2"){
+	      print "2. Double allele: $desig\n";
+	      print  ACE "\n\nAllele : \"$allele\"\n";
+	      print  ACE "Location \"$location{$desig}\"\n";
+	      print   "\n\nAllele : \"$allele\"\n";
+	      print   "Location \"$location{$desig}\"\n";
+	    }
+	    else {
+
+	      # double allele has diff designation
+	      $desig = $1; $desig2 = $2;
+	      print "3. Double allele: $desig and $desig2\n";
+	      print  ACE "\n\nAllele : \"$allele\"\n";
+	      print  ACE "Location \"$location{$desig}\"\n";
+	      print  ACE "Location \"$location{$desig2}\"\n";
+	      print   "\n\nAllele : \"$allele\"\n";
+	      print   "Location \"$location{$desig}\"\n";
+	      print   "Location \"$location{$desig2}\"\n";
+	    }
+	    next;
+          }
 	}
       }
     }
-    # checking if sequence name in Allele has now a locus name 
 
     if($allele -> Gene){
       my @loci=$allele->Gene(1);
-      push(@{$allele_gene{$allele}}, @loci); 
-      foreach $gene (@loci){
-	if($seqs{$gene}){
-	  my $seq = $cdb->fetch('Sequence', $gene);
-	  if ($seq->Locus_genomic_seq){
-	    my @LOCI=$seq->Locus_genomic_seq(1);
-	    print LOG "WARNING: Sequence tag of Allele $allele points to $seq, which can now become @LOCI.\n";
-	  }
-	}
+      if (scalar @loci > 1){
+	$allele_error++;
+	print LOG "ERROR: $allele is connected to more than one Loci: @loci\n";
       }
     }
-    undef($allele);
   }
-
-  $cdb->close;
-
-  foreach (keys %allele_gene){
-    if ((scalar @{$allele_gene{$_}}) > 1){
-      print LOG "ERROR: $_ is connected to more than one Loci: @{$allele_gene{$_}}\n";
-    }
-  }
-
+  
   my $allele_has_flankSeq_and_no_seq=<<EOF;
   Table-maker -p "$def_dir/allele_has_flankSeq_and_no_seq.def" quit
 EOF
-
-  #&allele_has_flankSeq_and_no_seq($allele_has_flankSeq_and_no_seq, $default_db);
-
+  
+  &allele_has_flankSeq_and_no_seq($allele_has_flankSeq_and_no_seq, $default_db);
+  
   my $allele_has_predicted_gene_and_no_seq=<<EOF;
   Table-maker -p "$def_dir/allele_has_predicted_gene_and_no_seq.def" quit
 EOF
-
-  #&allele_has_predicted_gene_and_no_seq($allele_has_predicted_gene_and_no_seq, $default_db);
-
-  my $allele_methods=<<EOF;
+  
+  &allele_has_predicted_gene_and_no_seq($allele_has_predicted_gene_and_no_seq, $default_db);
+  
+  my $allele_has_no_methods=<<EOF;
   Table-maker -p "$def_dir/allele_methods.def" quit
 EOF
+  
+  check_missing_allele_method($allele_has_no_methods, $default_db);
 
-  check_missing_allele_method($allele_methods, $default_db);
+  print LOG "\nThere are $allele_error errors in Allele class\n";
 
+  ##################################################
+  # subroutines for process_allele_class routine
+  ##################################################
+  
+  sub allele_location {
+    my ($def, $dir)=@_;
+    my %location_desig;
+    open (FH, "echo '$def' | $tace $dir | ") || die "Couldn't access geneace\n";
+    while (<FH>){
+      chomp($_);
+      if ($_ =~ /^\"(.+)\"\s+\"(.+)\"/){
+	$location_desig{$2} = $1  # $2 is allele_designation $1 is LAB	
+      }
+    }
+    return %location_desig;
+  }
+  
+  sub allele_has_flankSeq_and_no_seq {
+    
+    my ($def, $dir) = @_;
+    open (FH, "echo '$def' | $tace $dir | ") || die "Couldn't access geneace\n";
+    while (<FH>){
+      chomp($_);
+      if ($_ =~ /^\"/){
+	$_ =~ s/\"//g;
+	$allele_error++;
+	print LOG "ERROR: Allele $_ has flanking sequences but has no parent sequence\n";
+      }
+    }
+  }
+  
+
+  sub allele_has_predicted_gene_and_no_seq {
+          
+    my ($def, $dir) = @_;
+    my ($allele, $seq, $parent, $cds);
+    
+    open (FH, "echo '$def' | $tace $dir | ") || die "Couldn't access geneace\n";
+    while (<FH>){
+      chomp($_);
+      if ($_ =~ /^\"(.+)\"\s+\"(.+)\"\s$/) {
+	$allele = $1;
+	$cds = $2;
+	$allele_error++;
+	print LOG  "ERROR: Allele $allele has predicted gene but has no parent sequence\n";
+	if ($ace){
+	  get_parent_seq($cds, $allele);
+	}
+      }
+      if ($_ =~ /\"(.+)\"\s+\"(.+)\"\s+\"(.+)\"/){
+	$allele = $1;  
+	$cds = $2;
+	$seq = $3;
+	if ($seq eq $cds){
+	  $allele_error++;
+	  # temporarily commented out to see if suitable to automate this part
+	  print LOG "ERROR: $allele has a different parent sequence ($seq) based on its predicted gene ($cds) (overlapped clones?)\n";
+	  if ($ace){
+	    #print ACE "\n\nAllele : \"$allele\"\n";
+	    #print ACE "-D Sequence \"$seq\"\n";
+	    &get_parent_seq($cds, $allele);
+	  }
+	}
+	if ($seq ne $cds && $seq !~ /SUPERLINK.+/){
+	  $parent=get_parent_seq($cds, $allele, "getparent");
+	  if ($parent ne $seq){
+	    $allele_error++;
+	    print LOG "ERROR: $allele has a different parent sequence ($seq) based on its predicted gene ($cds) (overlapped clones?)\n";
+	    if ($ace){
+	      # temporarily commented out to see if suitable to automate this part
+	      #print ACE "\nAllele : \"$allele\"\n";
+	      #print ACE "-D Sequence \"$seq\"\n";
+	      #print ACE "Sequence \"$parent\"\n";
+	    }
+	  } 
+	}
+      }
+    }
+    sub get_parent_seq {
+      my ($predict, $allele, $get_parent) = @_;   
+      my ($parent, $cds);
+      if ($predict =~ /(.+)\.(\d+)[a-z]/ || $predict =~ /(.+)\.(\d+)/){
+	$parent =  $1;
+	if (!$get_parent){
+	  print ACE "\n\nAllele : \"$allele\"\n";
+	  print ACE "Sequence \"$parent\"\n";
+	}
+      }
+      return $parent;
+    }
+  }
+  
+  sub check_missing_allele_method {
+    my ($def, $dir) = @_;
+    my ($allele, $tag);
+    
+    open (FH, "echo '$def' | $tace $dir | ") || die "Couldn't access geneace\n";
+    while (<FH>){
+      chomp($_);
+      print $_, "\n";
+      if ($_ =~ /^\"(.+)\"\s+\"(.+)\"/){
+	$allele = $1;
+	$tag = $2;
+	# check type of method to use
+	if ($tag eq "KO_consortium_allele"){$tag = "Knockout_allele"}
+	if ($tag eq "Transposon_insertion"){$tag = "Transposon_insertion"}
+	if ($ace){output($allele, $tag, "ace")}
+	else {output($allele, $tag)}		    
+      }
+      if ($_ =~ /^\"(.+)\"/){
+	print $1, "\n";
+	$allele = $1;
+	if ($ace){output($allele, "Allele", "ace")}
+	else {$allele_error++; print LOG "ERROR: Allele $allele has no Method \"Allele\"\n"}		    
+      }
+    }
+    sub output {
+      my ($allele, $tag, $ace) = @_;
+      $allele_error++;
+      print LOG "ERROR: Allele $allele has no Method $tag\n";
+      if ($ace ne ""){
+	# output acefile for correct type of method of an allele
+	print ACE "\n\nAllele : \"$allele\"\n";
+	print ACE "Method \"$tag\"\n";
+      }
+    }
+  }
 }
 
 ##############################################################################################################################
 
-
-sub allele_location {
-  my ($def, $dir)=@_;
-  my %location_desig;
-  open (FH, "echo '$def' | $tace $dir | ") || die "Couldn't access geneace\n";
-  while (<FH>){
-    chomp($_);
-    if ($_ =~ /^\"(.+)\"\s+\"(.+)\"/){
-      $location_desig{$2} = $1  # $2 is allele_designation $1 is LAB	
-    }
-  }
-  return %location_desig;
-}
-  
-#################################################################
-
-sub allele_has_flankSeq_and_no_seq {
-      
-  my ($def, $dir) = @_;
-  open (FH, "echo '$def' | $tace $dir | ") || die "Couldn't access geneace\n";
-  while (<FH>){
-    chomp($_);
-    if ($_ =~ /^\"/){
-      $_ =~ s/\"//g;
-      print LOG "WARNING: Allele $_ has flanking sequences but is NOT connected to parent sequence\n";
-    }
-  }
-}
-
-
-#################################################################
-
-sub allele_has_predicted_gene_and_no_seq {
-          
-  my ($def, $dir) = @_;
-  my ($allele, $seq, $parent, $cds);
-      
-  open (FH, "echo '$def' | $tace $dir | ") || die "Couldn't access geneace\n";
-  while (<FH>){
-    chomp($_);
-    if ($_ =~ /^\"(.+)\"\s+\"(.+)\"\s$/) {
-      $allele = $1;
-      $cds = $2;
-      print LOG  "WARNING: Allele $allele has predicted gene but is NOT connected to parent sequence\n";
-      if ($ace){
-        get_parent_seq($cds, $allele);
-      }
-    }
-    if ($_ =~ /\"(.+)\"\s+\"(.+)\"\s+\"(.+)\"/){
-      $allele = $1;  
-      $cds = $2;
-      $seq = $3;
-      if ($seq eq $cds){
-        print LOG "ERROR: Allele $allele has an incorrect parent sequence ($seq) with respect to its predicted gene ($cds)\n";
-        if ($ace){
-          print ACE "\n\nAllele : \"$allele\"\n";
-          print ACE "-D Sequence \"$seq\"\n";
-          &get_parent_seq($cds, $allele);
-        }
-      }
-      if ($seq ne $cds && $seq !~ /SUPERLINK.+/){
-        $parent=get_parent_seq($cds, $allele, "getparent");
-        if ($parent ne $seq){
-          print LOG "ERROR: Allele $allele has an incorrect parent sequence ($seq) with respect to its predicted gene ($cds)\n";
-          if ($ace){
-            print ACE "\nAllele : \"$allele\"\n";
-            print ACE "-D Sequence \"$seq\"\n";
-            print ACE "Sequence \"$parent\"\n";
-          }
-        } 
-      }
-    }
-  }
-  sub get_parent_seq {
-    my ($predict, $allele, $get_parent) = @_;   
-    my ($parent, $cds);
-    if ($predict =~ /(.+)\.(\d+)[a-z]/ || $predict =~ /(.+)\.(\d+)/){
-      $parent =  $1;
-      if (!$get_parent){
-        print ACE "\n\nAllele : \"$allele\"\n";
-        print ACE "Sequence \"$parent\"\n";
-      }
-    }
-    return $parent;
-  }
-}
-
-#################################################################
-
-sub check_missing_allele_method {
-  my ($def, $dir) = @_;
-  my ($allele, $tag);
-      
-  open (FH, "echo '$def' | $tace $dir | ") || die "Couldn't access geneace\n";
-  while (<FH>){
-    chomp($_);
-    print $_, "\n";
-    if ($_ =~ /^\"(.+)\"\s+\"(.+)\"/){
-      $allele = $1;
-      $tag = $2;
-      if ($tag eq "KO_consortium_allele"){$tag = "Knockout_allele"}
-      if ($tag eq "Transposon_insertion"){$tag = "Transposon_insertion"}
-      if ($ace){output($allele, $tag, "ace")}
-      else {output($allele, $tag)}		    
-    }
-    if ($_ =~ /^\"(.+)\"/){
-      print $1, "\n";
-      $allele = $1;
-      if ($ace){output($allele, "Allele", "ace")}
-      else {print LOG "ERROR: Allele $allele has no Method \"Allele\"\n"}		    
-    }
-  }
-  sub output {
-    my ($allele, $tag, $ace) = @_;
-    print LOG "ERROR: Allele $allele has no Method $tag\n";
-    if ($ace ne ""){
-      print ACE "\n\nAllele : \"$allele\"\n";
-      print ACE "Method \"$tag\"\n";
-    }
-  }
-}
-
-########################
-# Process Strain class #  
-########################
 
 sub process_strain_class {
 
@@ -1566,42 +1559,6 @@ sub usage {
     system ('perldoc',$0);
     exit (0);
   }
-}
-
-##############################
-
-sub Table_maker {
-
-  my $get_predicted_genes=<<EOF;
-  Table-maker -p "$def_dir/get_all_predicted_gene_names.def" quit 
-EOF
-  my $get_genome_seqs=<<EOF;
-  Table-maker -p "$def_dir/get_all_genome_sequence_names.def" quit
-EOF
-
-  my $dir="/nfs/disk100/wormpub/DATABASES/current_DB";
-  
-  my @names=();
-  open (FH1, "echo '$get_predicted_genes' | $tace $dir | ") || die "Couldn't access current_DB\n";
-  open (FH2, "echo '$get_genome_seqs' | $tace $dir | ") || die "Couldn't access current_DB\n";
-  
-    while (<FH1>){
-      chomp($_);
-      if ($_ =~ /^\"/){ 
-	$_ =~ s/"//g;
-        #print $_, "\n";
-        push (@names, $_);
-      }
-    }
-    while (<FH2>){
-      chomp($_);
-      if ($_ =~ /^\"/){ 
-	$_ =~ s/"//g;
-        #print $_, "\n";
-        push (@names, $_);
-      }
-    }
-  return @names;
 }
 
 sub array_comp{
