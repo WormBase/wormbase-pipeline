@@ -1868,16 +1868,25 @@
                                           // multiple fax numbers if present (optional)
           Web_page      Text    // web page is part of the address info I think
 
-#Role   Phd
-        Postdoc
-        Masters
-        Undergrad
-        Highschool
-        Sabbatical
-        Lab_visitor
-        Collaborated
-        Research_staff
-        Unknown
+
+
+// New little 'Role' hash to work with the Person class and is used for work on the
+// Person lineage only.  The two DateType fields allow you to specify a start year
+// and optionally an 'end' year.  If the second field is not specified, it is taken
+// to mean that they are currently active at that particular role
+// added for Juancarlos by krb October 2003
+
+#Role   Phd		DateType DateType
+        Postdoc		DateType DateType
+        Masters		DateType DateType
+        Undergrad	DateType DateType
+        Highschool	DateType DateType
+        Sabbatical	DateType DateType
+        Lab_visitor	DateType DateType
+        Collaborated	DateType DateType
+        Research_staff  DateType DateType
+        Unknown		DateType DateType
+
 
 
 ///////////////////////
@@ -1892,6 +1901,8 @@
 		  Standard_name_of ?Person XREF Standard_name // added [030321 krb]
 		  Last_name_of     ?Person XREF Last_name
 		  Other_name_of    ?Person XREF Also_known_as // added [030310 krb]
+
+
 
 //////////////////
 // Author class //
