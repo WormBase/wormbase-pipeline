@@ -290,9 +290,10 @@ foreach (@gff_files) {
 	    print GFF_WTP                  "$_\n";
 	    next;
 	}
-	
+	#skip header lines of file
+	next if($_ =~ /^\#/);
 	($name,$method,$feature,$start,$stop,$score,$strand,$other,$name) = split (/\t/,$_);
-	
+	     
 	undef $found_a_home;
 
 	################################
@@ -553,18 +554,17 @@ foreach (@gff_files) {
 	################################
 
 	if (/WTP/) {
-#	    print "$_\n" if ($debug);
-	    print GFF_WTP "$_\n";
-	    $found_a_home = 1;
+	  #	    print "$_\n" if ($debug);
+	  print GFF_WTP "$_\n";
+	  $found_a_home = 1;
 	}
-
-
 
 	
 	print GFF_REST "$_\n" unless ($found_a_home); 
 	$running_total++ if ($found_a_home); 
 	    
-    }
+      }
+
     close GFF;
     
     print "\n";
