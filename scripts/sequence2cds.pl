@@ -7,7 +7,7 @@
 # A script to take ?Sequence objects and make ?CDS objects
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-11-07 17:00:17 $     
+# Last updated on: $Date: 2003-11-17 14:46:23 $     
 
 use strict;
 use Getopt::Long;
@@ -67,7 +67,10 @@ while(<IN>){
   }
   # Make changes in Parent sequence objects that might link to CDS objects
   else{
-    s/Structure\s+$ts\s+Subsequence\s+$ts/CDS/g;
+    # change Subsequence tag for parent clones, but only where used for subsequence objects
+    # i.e. objects that have a '.' in their object name
+    s/Structure\s+$ts\s+Subsequence\s+$ts\s+(\"[\w\d]+\.[\d\w:]+\")\s+$ts\s+(\d+)\s+$ts\s+(\d+)\s+$ts/CDS $3 $5 $7/g;
+
     s/Visible\s+$ts\s+Matching_Genomic/Matching_CDS/g;
     
     # Transcript_child tag now just called Transcript
