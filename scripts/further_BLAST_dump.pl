@@ -5,8 +5,8 @@
 #
 # Author: Chao-Kung CHen
 #
-# Last updated by: $Author: ck1 $                      
-# Last updated on: $Date: 2003-07-04 11:00:09 $        
+# Last updated by: $Author: krb $                      
+# Last updated on: $Date: 2003-07-25 09:43:41 $        
 
 system("/usr/apps/bin/scp /acari/work2a/wormpipe/dumps/blastp_ensembl.ace wormsrv2:/wormsrv2/wormbase/ensembl_dumps/");
 system("/usr/apps/bin/scp /acari/work2a/wormpipe/dumps/blastx_ensembl.ace wormsrv2:/wormsrv2/wormbase/ensembl_dumps/");
@@ -14,6 +14,7 @@ system("/usr/apps/bin/scp /acari/work2a/wormpipe/dumps/wormprot_motif_info.ace w
 system("/usr/apps/bin/scp /acari/work2a/wormpipe/dumps/swissproteins.ace wormsrv2:/wormsrv2/wormbase/ensembl_dumps/");
 system("/usr/apps/bin/scp /acari/work2a/wormpipe/dumps/tremblproteins.ace wormsrv2:/wormsrv2/wormbase/ensembl_dumps/");
 system("/usr/apps/bin/scp /acari/work2a/wormpipe/dumps/ipi_hits.ace wormsrv2:/wormsrv2/wormbase/ensembl_dumps/");
+system("/usr/apps/bin/scp /acari/work2a/wormpipe/dumps/best_blastp_hits wormsrv2:/wormsrv2/wormbase/ensembl_dumps/");
 
 chdir "/wormsrv2/wormbase/ensembl_dumps";
 
