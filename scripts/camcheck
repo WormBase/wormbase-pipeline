@@ -1,7 +1,6 @@
 #!/usr/local/bin/perl
 #
 # camcheck
-# v 0.4
 #
 # Cronjob integrity check controls for camace database.
 #
@@ -15,15 +14,11 @@
 #            : which involves a seperate tace call for some date_dir
 #            : !! This can come out when AcePerl is updated to a patched newer version !!
 #
-
 # v0.3
 # 010316 : dl  : Added highlight in red for SUPERLINK child problems
-
-# v0.4
-# 010618 : krb : Added a call to the check_predicted_genes.pl script to check all
-# predicted genes for a number of possible errors
-
-#####################################################################################################
+# 
+# see pod documentation (i.e. 'perldoc camcheck') for more information.
+##########################################################################################
 
 
 #################################################################################
@@ -38,7 +33,7 @@ use Bio::Seq;
 use IO::Handle;
 use Getopt::Std;
 use Ace;
-require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
+require "/wormsrv2/scripts/babel.pl";
 
 
  ##############################
@@ -48,7 +43,11 @@ require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
 my $maintainer = "dl1\@sanger.ac.uk";
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
-my $version = &get_script_version(camcheck);
+
+# grab version number from cvs
+my $version = `cvs -d /nfs/ensembl/cvsroot/ status /wormsrv2/scripts/camcheck`;
+$version =~ s/.* +Repository revision:\s+([\d\.]*)\s+.*/$1/s; 
+
 
  ##############################
  # command-line options       #
@@ -67,18 +66,20 @@ my $debug = $opt_d;
 
 my $clonepath="/nfs/disk100/wormpub/analysis/cosmids";
 my $clonefile="$clonepath"."/current.versions";
-my $tace = glob("~acedb/RELEASE.2001_04_26.BUILD/bin.ALPHA_4/tace");   # tace executable path
-my $dbpath = "/wormsrv2/camace";                                       # Database path
+my $tace = glob("~acedb/RELEASE.SUPPORTED/bin.ALPHA_4/tace");   # tace executable path
+
+#my $dbpath = "/wormsrv2/camace";                                       # Database path
+my $dbpath = "/wormsrv2/WS44";                                       # Database path
 
  ########################################
  # Open logfile                         #
  ########################################
 
-my $log="/wormsrv2/logs/camcheck.$rundate";
+#my $log="/wormsrv2/logs/camcheck.$rundate";
+my $log="/nfs/europa2/krb/camcheck.$rundate";
 
 open (LOG,">$log");
 LOG->autoflush();
-
 
 print LOG "# camcheck\n";     
 print LOG "# version        : $version\n";
@@ -101,69 +102,69 @@ print LOG "CamCheck run STARTED at $runtime\n\n";
 
 open (CLONEFILE,"<$clonefile");
 
-while($line=<CLONEFILE>) {
+while($line=<CLONEFILE>){
     
-    undef ($seq_file);
-    undef ($seq_ace);
-    chomp ($line);
-    $line =~ m/(\w+)\/(\w+)/;
-    $clone = $1;
-    $dir_date = $2;
- 
-    print "[$clone|$dir_date]    \t" if ($debug);
+  undef ($seq_file);
+  undef ($seq_ace);
+  chomp ($line);
+  $line =~ m/(\w+)\/(\w+)/;
+  $clone = $1;
+  $dir_date = $2;
+  
+  print "[$clone|$dir_date]    \t" if ($debug);
 
  ######################################################################
  # Retrieve the first sequence and date FROM DIRECTORY                #
  ######################################################################
     
-    $seqpath = "$clonepath"."/"."$line"."/"."$clone.seq";
+  $seqpath = "$clonepath"."/"."$line"."/"."$clone.seq";
 
-    open SEQPATH,"<$seqpath" || do {print LOG "$clone  \t:NOT_IN_DIRECTORY $seqpath\n"; next; };
-    while ($line1=<SEQPATH>) {  
-	chomp($line1);
-	$seq_file.="$line1";
-    }
-    close SEQPATH;
-    $seq_file =~ tr/a-z/A-Z/;
-    $seq_file =~ s/\>\w+//;
-    $seq_file =~ s/\W+//mg;
-    if ($seq_file =~ /[^ACGTUMRWSYKVHDBXN]/img) {
-	print LOG  "DIRSEQ for $clone contains bad characters\n";
-	$seq_file =~ s/[^ACGTUMRWSYKVHDBXN]//img;
-    }
+  open SEQPATH,"<$seqpath" || do {print LOG "$clone  \t:NOT_IN_DIRECTORY $seqpath\n"; next; };
+  while ($line1=<SEQPATH>) {  
+    chomp($line1);
+    $seq_file.="$line1";
+  }
+  close SEQPATH;
+  $seq_file =~ tr/a-z/A-Z/;
+  $seq_file =~ s/\>\w+//;
+  $seq_file =~ s/\W+//mg;
+  if ($seq_file =~ /[^ACGTUMRWSYKVHDBXN]/img) {
+    print LOG  "DIRSEQ for $clone contains bad characters\n";
+    $seq_file =~ s/[^ACGTUMRWSYKVHDBXN]//img;
+  }
 
  ######################################################################
  # Retrieve the second sequence and date FROM ACEDB                   #
  ######################################################################
 
-    $obj = $db->fetch(Sequence=>$clone);
-    if (!defined ($obj)) {
-	print LOG "Could not fetch sequence $clone\n";
-	next;
-    }
+  $obj = $db->fetch(Sequence=>$clone);
+  if (!defined ($obj)) {
+    print LOG "Could not fetch sequence $clone\n";
+    next;
+  }
 
   #####################################################################
   # skipping the non-canonical genomic sequences                      #
   #####################################################################
 	
-    $canonical=$obj->Properties(1);
-    if ($canonical !~ /Genomic_canonical/) {
-	print LOG "Not Genomic_canonical sequence $clone\n";
-	next;
-    }
+  $canonical=$obj->Properties(1);
+  if ($canonical !~ /Genomic_canonical/) {
+    print LOG "Not Genomic_canonical sequence $clone\n";
+    next;
+  }
   
   #####################################################################
   # Push the sequence as string in $seq2                              #
   #####################################################################
     
-    $seq_ace=$obj->asDNA();
-    if (!$seq_ace) {
-	print LOG "$clone NOT_IN_ACEDB $clone\n" ;
-	next;
-    }
-    $seq_ace =~ s/\>\w+//mg;
-    $seq_ace =~ tr/a-z/A-Z/;
-    $seq_ace =~ s/\W+//mg;
+  $seq_ace=$obj->asDNA();
+  if (!$seq_ace) {
+    print LOG "$clone NOT_IN_ACEDB $clone\n" ;
+    next;
+  }
+  $seq_ace =~ s/\>\w+//mg;
+  $seq_ace =~ tr/a-z/A-Z/;
+  $seq_ace =~ s/\W+//mg;
     
 	
  ######################################################################
@@ -174,45 +175,45 @@ while($line=<CLONEFILE>) {
  # ?Sequence is Finished but not annotated                            #
  ######################################################################
     
-    print " [FINISHED/ANNOTATED" if ($debug);
-    &finannot($clone);
+  print " [FINISHED/ANNOTATED" if ($debug);
+  &finannot($clone);
 
  ######################################################################
  # Check for N's in FINISHED sequences                                #
  ######################################################################
 	
-    print " | N's" if ($debug);
-    &checkchars;
+  print " | N's" if ($debug);
+  &checkchars;
 
  ######################################################################
  # Compare date and checksum                                          #
  ######################################################################
 
-    print " | DATE" if ($debug);
-    &dateseq;
+  print " | DATE" if ($debug);
+  &dateseq;
 
-    print " | CHKSUM" if ($debug);
-    &chksum;
+  print " | CHKSUM" if ($debug);
+  &chksum;
 
  ######################################################################
  # Check correctness of gene structure                                #
  ######################################################################
 
 
-    print " | CDS_coords" if ($debug);
-    &checkgenes;
+  print " | CDS_coords" if ($debug);
+  &checkgenes;
 
  ######################################################################
  # last check complete, tidy up                                       #
  ######################################################################
 
-    print "]\n" if ($debug);
+  print "]\n" if ($debug);
 
  ######################################################################
  # Get rid of this sequence object                                    #
  ######################################################################
 
-    $obj->DESTROY();
+  $obj->DESTROY();
 }
 
 close(CLONEFILE);
@@ -232,6 +233,18 @@ warn "check_predicted_genes.pl did not run correctly: $?" if ($?);
 open (LOG,">>$log");
 LOG->autoflush();
 
+
+##########################################################
+# Check that each clone only belongs to one (Sequence) map
+##########################################################
+
+my @multimap_clones= $db->fetch(-query=>'find Clone COUNT Map > 1');
+if (@mutimap_clones){
+  foreach (@multimap_clones){
+    print LOG "Clone error - $_ contains two or more map objects\n";
+  }
+}
+
 ##################
 # LINK objects 
 ###################
@@ -239,8 +252,7 @@ LOG->autoflush();
 $i = $db->fetch_many(-query=> 'find Sequence "*LINK*"');  
 while ($obj = $i->next) {
     my $link = $obj;
-    
-   
+
     print "[$link]    \t" if ($debug);
     print " | CDS_coords" if ($debug);
     &checkgenes;
@@ -358,7 +370,6 @@ sub checkchars {
 #######################################################################
 
 sub checkgenes {
-  my ($parent_length) = $obj->DNA(2);
   foreach my $child ($obj->Subsequence) {
     undef my @num;
     undef my ($method);
@@ -366,13 +377,9 @@ sub checkgenes {
 	
     my ($seq, $start, $end) = $child->row();
     
-    if($end > $parent_length){
-      print LOG "Gene error - $child has coordinates greater than length if parent\n";
-    }
-    
     unless ($seq =~ /\./) {next;}
     
-    if ($link =~ /^SUPERLINK/) {print LOG "SUPERLINK $link contains CDS gene models\n";}
+    if ($obj =~ /^SUPERLINK/) {print LOG "SUPERLINK $link contains CDS gene models\n";}
     
     my $diff = $end - $start;
     if ($diff < 0) {
@@ -530,6 +537,7 @@ END
 	push (@subsequence,$_) if (/^The subsequence/);
 	push (@subsequence,$_) if (/^Gene error - /);
 	push (@link,$_)        if (/^SUPERLINK/);
+	push (@clone,$_)       if (/^Clone error - /);
     }
     close READLOG;
 
@@ -582,6 +590,13 @@ END
     }
     print OUTHTML "</TABLE></P>\n";
 
+     # clone problems
+    print OUTHTML "<TABLE BORDER=\"0\" WIDTH=\"100%\">\n";
+    print OUTHTML "<TH BGCOLOR=\"darkblue\"><TD><FONT COLOR=\"white\">Clone objects</FONT></TD></TH>\n";
+    foreach (@clone) {
+	print OUTHTML "<TR><TD><FONT SIZE=\"-1\" COLOR=\"red\">$_</FONT></TD></TR>\n";
+    }
+    print OUTHTML "</TABLE></P>\n";
 
 
     print OUTHTML $HTML_END;
@@ -593,7 +608,7 @@ END
     undef (@sequence);
     undef (@subsequence);
     undef (@link);
-    
+    undef (@clone);
 }
 
 #######################################################################
@@ -786,13 +801,17 @@ number of integrity checks on each object within the 'Predicted_gene'
 class. See L<check_predicted_genes.pl> for more details of these 
 checks.
 
-=head1 AUTHOR - Daniel Lawson
+=head2 Valid clone/map relationships
 
-Email dl1@sanger.ac.uk
+If clones are placed on a sequence map then they should exist only on one
+sequence map and not on two different maps belonging to different chromosomes.
+camcheck determines if this is the case by using the simple acedb query:
+'find Clone COUNT Map > 1'
 
-=head2 Also hacked by Keith Bradnam
 
-Email krb@sanger.ac.uk
+=head1 AUTHOR - Daniel Lawson (with some contributions by Keith Bradnam)
+
+Email dl1@sanger.ac.uk, krb@sanger.ac.uk
 
 =cut
 
