@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.0
+#!/usr/local/bin/perl5.6.0 -w
 #
 # make_wormpep
 # v 4.1
@@ -13,7 +13,7 @@
 #################################################################################
 
 $| = 1;
-#use strict;
+use strict;
 use vars qw($opt_r $opt_d $opt_h $opt_t);
 use Getopt::Std;
 use IO::Handle;
@@ -29,7 +29,6 @@ use Wormbase;
 my $maintainer = "All";
 my $rundate    = `date +%y%m%d`; chomp $rundate;
 my $runtime    = `date +%H:%M:%S`; chomp $runtime;
-#my $version    = get_cvs_version($0);
 
  #######################################
  # command-line options                #
@@ -88,7 +87,6 @@ open (LOG,">$log");
 LOG->autoflush();
 
 print LOG "# make_wormpep\n";
-print LOG "# version        : $version\n";
 print LOG "# run details    : $rundate $runtime\n";
 print LOG "\n";
 print LOG "Wormpep version  : wormpep$opt_r\n\n";
@@ -169,7 +167,7 @@ while (<WP>) {
 
 my $old_wpmax = $wpmax;
 
-my $runtime = `date +%H:%M:%S`; chomp $runtime;
+$runtime = `date +%H:%M:%S`; chomp $runtime;
 print LOG "=> wp.fasta file contains $duplicates duplicate sequences\n";
 print LOG "=> wpmax of wp.fasta$old_release equals $old_wpmax\n";
 print LOG "# $runtime : completed parsing of wp.fasta file\n\n";
@@ -179,7 +177,7 @@ close WP;
  # retrieve the desired sequence objects (CDS) #
  ###############################################
 
-my $runtime = `date +%H:%M:%S`; chomp $runtime;
+$runtime = `date +%H:%M:%S`; chomp $runtime;
 print LOG "# $runtime : connect to primary database\n";
 
 my $db = Ace->connect (-path => $dbdir, -program => $tace) 
@@ -190,7 +188,7 @@ my @dotnames_2 = $db->fetch (-query => 'FIND Sequence SUPERLINK* ; FOLLOW Subseq
 push (@dotnames_1 , @dotnames_2);
 @dotnames_1 = sort @dotnames_1;
 
-my $runtime = `date +%H:%M:%S`; chomp $runtime;
+$runtime = `date +%H:%M:%S`; chomp $runtime;
 print LOG "=> " . scalar(@dotnames_1) . " CDS sequences\n";
 print LOG "=> " . scalar(@dotnames_2) . " of which are attached to LINK objects\n";
 print LOG "# $runtime : finished connection to database\n\n";
@@ -201,7 +199,7 @@ print LOG "# $runtime : finished connection to database\n\n";
  # and giving a new wpid if necessary, creating %dot2num
  ###########################################################################
  
-my $runtime = `date +%H:%M:%S`; chomp $runtime;
+$runtime = `date +%H:%M:%S`; chomp $runtime;
 print LOG "# $runtime : write wormpep.dna file\n\n";
 
 my $obj = "";
@@ -306,14 +304,14 @@ foreach my $dot (@dotnames_1) {
 close DNA;
 chmod (0444 , "$new_wpdir/wormpep.dna$release") || print LOG "cannot chmod $new_wpdir/dotnames.dna$release\n";
 
-my $runtime = `date +%H:%M:%S`; chomp $runtime;
+$runtime = `date +%H:%M:%S`; chomp $runtime;
 print LOG "# $runtime : finished writing wormpep.dna file\n\n";
 
  ############################################################################
  # write the new wp.fasta file, and wrap the sequences using rd's seqpress  #
  ############################################################################
 
-my $runtime = `date +%H:%M:%S`; chomp $runtime;
+$runtime = `date +%H:%M:%S`; chomp $runtime;
 print LOG "# $runtime : writing wormpep.fasta file\n\n";
 
 open (WPFASTA , ">$new_wpdir/wp.fasta_unwrap$release");
@@ -328,7 +326,7 @@ close WPFASTA;
 system ("/nfs/disk100/wormpub/bin.ALPHA/seqpress -a $new_wpdir/wp.fasta_unwrap$release > $new_wpdir/wp.fasta$release");
 chmod (0444 , "$new_wpdir/wp.fasta$release") || print LOG "cannot chmod $new_wpdir/wp.fasta$release\n";
 
-my $runtime = `date +%H:%M:%S`; chomp $runtime;
+$runtime = `date +%H:%M:%S`; chomp $runtime;
 print LOG "\n# $runtime : finished writing wormpep.fasta file\n\n";
 
  ##################################################
@@ -336,7 +334,7 @@ print LOG "\n# $runtime : finished writing wormpep.fasta file\n\n";
  # via a tablemaker call                          #
  ##################################################
 
-my $runtime = `date +%H:%M:%S`; chomp $runtime;
+$runtime = `date +%H:%M:%S`; chomp $runtime;
 print LOG "# $runtime : retrieving data from autoace for each CDS\n\n";
 
 
@@ -353,7 +351,7 @@ our %Protein_ac     = "";
 our %Protein_db     = "";
 
 $ENV{'ACEDB'} = $dbdir;
-$command=<<EOF;
+my $command=<<EOF;
 Table-maker -p "$dbdir/wquery/wormpep.def"
 quit
 EOF
@@ -366,7 +364,7 @@ while (<TACE>) {
     next if (/\/\//);
     s/\"//g;
     (/^(\S+)\s/);
-    ($cds,$parent,$prot_id_parent,$prot_id,$prot_id_ver,$prot_db,$prot_ac,$loci,$confirmed,$est,$brief_id) = split /\t/;
+    my ($cds,$parent,$prot_id_parent,$prot_id,$prot_id_ver,$prot_db,$prot_ac,$loci,$confirmed,$est,$brief_id) = split /\t/;
 
     $CDS_locus{$cds}  = $loci;
     $CDS_id{$cds}     = $brief_id;
@@ -374,6 +372,7 @@ while (<TACE>) {
     $EST{$cds}        = $est;
     $Protein_ac{$cds} = $prot_ac;
     $Protein_id{$cds} = $prot_id . "." . $prot_id_ver;
+    $Protein_id{$cds} = "" if $Protein_id{$cds} eq ".";
     $Protein_db{$cds} = $prot_db;
 
     print "$cds Locus:$CDS_locus{$cds} Protein_ID:$Protein_id{$cds} Protein_AC:$Protein_ac{$cds} Protein_DB:$Protein_db{$cds} Brief_ID:$CDS_id{$cds}\n\n";
@@ -395,7 +394,7 @@ while (<TACE>) {
 }
 close TACE;
 
-$command1=<<EOF;
+my $command1=<<EOF;
 Table-maker -p "$dbdir/wquery/wormpep2.def"
 quit
 EOF
@@ -407,12 +406,12 @@ while (<TACE>) {
     next if (/acedb\>/);
     next if (/\/\//);
     s/\"//g;
-    ($clone,$lab) = (/^(\S+)\s(\S+)$/);
+    my ($clone,$lab) = (/^(\S+)\s(\S+)$/);
     $laboratory{$clone} = $lab;
 }
 close TACE;
 
-my $runtime = `date +%H:%M:%S`; chomp $runtime;
+$runtime = `date +%H:%M:%S`; chomp $runtime;
 print LOG "# $runtime : finished retrieving data from autoace for each CDS\n\n";
 
  ###########################################################################
@@ -420,7 +419,7 @@ print LOG "# $runtime : finished retrieving data from autoace for each CDS\n\n";
  # use rd's seqpress to wrap the sequence lines in the wormpep file 
  ###########################################################################
 
-my $runtime = `date +%H:%M:%S`; chomp $runtime;
+$runtime = `date +%H:%M:%S`; chomp $runtime;
 print LOG "# $runtime : Build wormpep & wormpep.table files\n\n";
 
 open (USERFASTA , ">$new_wpdir/wormpep_unwrap$release") || die "cannot create wormpep_unwrap$release\n";
@@ -482,7 +481,7 @@ system ("/nfs/disk100/wormpub/bin.ALPHA/seqpress -a $new_wpdir/wormpep_unwrap$re
 chmod (0444 , "$new_wpdir/wormpep$release") || print LOG "cannot chmod $new_wpdir/wormpep$release\n";
 chmod (0444 , "$new_wpdir/wormpep.table$release") || print LOG "cannot chmod $new_wpdir/wormpep.table$release\n";
 
-my $runtime = `date +%H:%M:%S`; chomp $runtime;
+$runtime = `date +%H:%M:%S`; chomp $runtime;
 print LOG "# $runtime : Finished building wormpep & wormpep.table files\n\n";
 
 ###########################################################################
@@ -684,7 +683,6 @@ exit(0);
 
 sub run_details {
     print "# make_wormpep\n";
-    print "# version        : $version\n";
     print "# run details    : $rundate $runtime\n";
     print "\n";
     print "Wormpep version  : wormpep$opt_r\n";
