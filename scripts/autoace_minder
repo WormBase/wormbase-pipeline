@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder [-options]
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2002-11-11 12:01:16 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2002-11-13 16:50:43 $
 
 
 #################################################################################
@@ -142,7 +142,7 @@ our %flag = (
 our @chrom        = ('I','II','III','IV','V','X');
 our $logdir       = "/wormsrv2/autoace/logs";
 our $WSver_file   = "/wormsrv2/autoace/wspec/database.wrm";
-our $tace         =  "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
+our $tace         =  &tace;#"/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
 our ($WS_version,$WS_previous) = &get_WS_version;
 
 # deal with logfile issues
