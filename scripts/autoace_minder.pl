@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-12-01 11:54:25 $
+# Last edited on: $Date: 2003-12-02 09:32:07 $
 
 
 #################################################################################
@@ -1146,7 +1146,7 @@ sub make_wormpep {
   # make wormpep database but also perform all the other related protein steps in the build
   unless( -e "$logdir/D1A:Build_wormpep_initial" ) {
     # make wormpep -i
-    &run_command("$scriptdir/make_wormpep -i");
+    &run_command("$scriptdir/make_wormpep.pl -initial");
    
     #generate file to ad new peptides to mySQL database.
     &run_command("$scriptdir/new_wormpep_entries.pl");
@@ -1165,7 +1165,7 @@ sub make_wormpep {
     &load($file,"wormpep_acs_and_Ids");
     
     # make wormpep
-    &run_command("$scriptdir/make_wormpep -f");
+    &run_command("$scriptdir/make_wormpep.pl -final");
     
     # make acefile of peptides etc to add to autoace (replacement for pepace)
     &run_command("$scriptdir/build_pepace.pl");
