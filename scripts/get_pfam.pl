@@ -7,7 +7,7 @@
 # This script interogates an ACEDB database and returns all pfam/Interpro/blastx 
 # data as appropriate and generates the DB_remark for stlace
 #
-# Last updated on: $Date: 2004-06-09 12:38:05 $
+# Last updated on: $Date: 2004-06-09 14:33:28 $
 # Last updated by: $Author: krb $
 
 
@@ -114,6 +114,7 @@ GetOptions(
 	   "debug=s"  => \$debug,
 	   "test"     => \$test,
 	   "source:s" => \$CDS_source_db,
+	   "target:s" => \$remark_target
 	  );
 
 
@@ -121,6 +122,7 @@ my $tace = &tace;
 my $log;
 my $basedir;
 my $file; # specify output file location
+my $runtime;
 
 if( $test ) {
   $basedir = glob("~wormpub/TEST_BUILD");
@@ -137,7 +139,10 @@ if ( $build ) {
 }
 else {
   $log = Log_files->make_log("/tmp/$0.$$") unless $test;
+  $file = "$remark_target/"."DB_remark.ace";
+
 }
+print "Output file is $file\n\n";
 
 open (ACE,">$file") or die "cant open output file $file:\t$!\n";
 
@@ -161,100 +166,34 @@ else {
 
 ##################################################
 
-# get subsequences
+$runtime= &runtime;
+$log->write_to("$runtime: Processing CDS class\n");
 
-my @sequences;
+# get CDSs for C. elegans
+my @CDSs = $db->fetch(-query => 'Find elegans_CDS');
 
-if ($ARGV[0]) {
-  push(@sequences, $ARGV[0]);
-} else {
-  @sequences = $db->fetch(-query => 'Find elegans_CDS');
-}
-
-#print "checking $#sequences sequences\n";
-
-SUBSEQUENCE: foreach my $cds (@sequences) {
-  chomp($cds);
+SUBSEQUENCE: foreach my $cds (@CDSs) {
 
   my (@motif, @pep, $protein, $gene_name, $gene, $cgc_name);
 
   my $full_string = "";
 
-  # get data from camace
-
-
-  my $obj = $db->fetch(CDS => $cds);
 
   # grab Gene ID, and use this to look up Gene object to get CGC_name if present
-  $gene_name = $obj->Gene;
+  $gene_name = $cds->Gene;
   $gene = $db->fetch(Gene => $gene_name);
   if(defined($gene->CGC_name)){
     $cgc_name = $gene->CGC_name;
   }
-
-
-  my $thismethod = $obj->Method(1);
-
-  # get pfam data from acedb
-
-  my $obj1 = $db1->fetch(CDS => $cds);
-
-  #    print "testing: $cds $obj1\n";
-
-  if ($obj1) {
-    $protein = $obj1->Corresponding_protein(1);
-    if ($protein) {
-      my $protein_obj;
-      if ($protein_obj) {
-	$protein_obj = $db1->fetch(Protein => $protein);
-      }
-
-      (@motif = $protein_obj->Motif_homol) if ($protein_obj->Motif_homol);
-      unless($motif[0]) {
-	@pep = $protein_obj->Pep_homol(1);
-      }
-    }
-  } else {			# if changes haven't carried through to acedb yet,
-				# check "parent_clone" (first check with no letter suffix,
-				# then ".a" suffix)
-
-    next SUBSEQUENCE unless($cds =~ /\D$/); # skip if does not end in a letter; ie, skip new genes not alternatively spliced (ie, would skip B0205.15 but not skip B0205.15c)
-
-    my $parent_gene = $cds;
-    chop($parent_gene);
-    my $obj1 = $db1->fetch(CDS => $parent_gene);
-    my $method;
-    if ($obj1) {		# eg. B0205.15 exists
-      $method = $obj1->Method(1); # test for empty sequence objects
-    }
-    if (($obj1) && ($method)) {
-      $protein = $obj1->Corresponding_protein(1);
-      my $protein_obj = $db1->fetch(Protein => $protein);
-      if ($protein_obj) {
-	@motif = $protein_obj->Motif_homol(1);
-	unless($motif[0]) {
-	  @pep = $protein_obj->Pep_homol(1);
-	}
-      }
-    } else {			# eg. B0205.15 does not exist (or has not method); check if B0205.15a exists
-      my $parent_gene_a = $parent_gene . 'a';
-      my $obj1 = $db1->fetch(CDS => $parent_gene_a);
-      if ($obj1) {
-	$protein = $obj1->Corresponding_protein(1);
-	my $protein_obj = $db1->fetch(Protein => $protein);
-	if ($protein_obj) {
-
-	  @motif = $protein_obj->Motif_homol(1);
-	  unless($motif[0]) {
-	    @pep = $protein_obj->Pep_homol(1);
-	  }
-	} else {		# if all else fails
-	  $log->write_to("$cds not in acedb\n\n");
-	}
-      }
+  
+  $protein = $cds->Corresponding_protein(1);
+  if ($protein) {
+    @motif = $protein->Motif_homol;
+    unless($motif[0]) {
+      @pep = $protein->Pep_homol(1);
     }
   }
-
+  
   if (($cgc_name) && (!($motif[0]))) { # locus and no motif
     my $prot = uc($cgc_name);
     $full_string .= "C. elegans $prot protein";
@@ -304,12 +243,14 @@ SUBSEQUENCE: foreach my $cds (@sequences) {
       my $count = 1;
       $full_string .= "contains similarity to Pfam domains ";
       foreach (keys %pfamhits) {
-	$full_string .= "$_ ($pfamhits{$_})";
-	$full_string .=  "($pfam_count{\"PFAM:$_\"})" if $pfam_count{"PFAM:$_"} > 1;
-	if ($count < $#pfamelements) {
-	  $full_string .= ", ";
+	if($pfamhits{$_}){
+	  $full_string .= "$_ ($pfamhits{$_})";
+	  $full_string .=  "($pfam_count{\"PFAM:$_\"})" if $pfam_count{"PFAM:$_"} > 1;
+	  if ($count < $#pfamelements) {
+	    $full_string .= ", ";
+	  }
+	  $count += 2;
 	}
-	$count += 2;
       }
       goto PRINTIT;
     }
@@ -396,47 +337,42 @@ SUBSEQUENCE: foreach my $cds (@sequences) {
 }
 
 
-
+$runtime= &runtime;
+$log->write_to("$runtime: Processing pseudogene class\n");
 
 # get pseudogene objects
 
-my @pseudogenes = $db->fetch(-query => 'Find Pseudogene & Method!=history');
+my @pseudogenes = $db->fetch(-query => 'Find elegans_pseudogenes');
 
 PSEUDOGENE: foreach my $pseudogene (@pseudogenes) {
   chomp($pseudogene);
 
-  my ($pseudogene1, $gene_name, $gene, $cgc_name, $thismethod);
+  my ($pseudogene1, $gene_name, $gene, $cgc_name);
 
   my $full_string = "";
 
-  # get data from camace
-  my $obj = $db->fetch(Pseudogene => $pseudogene);
-
   # grab Gene ID, and use this to look up Gene object to get CGC_name if present
-  $gene_name = $obj->Gene;
+  $gene_name = $pseudogene->Gene;
   $gene = $db->fetch(Gene => $gene_name);
   if(defined($gene->CGC_name)){
     $cgc_name = $gene->CGC_name;
   }
 
-  $thismethod = $obj->Method(1);
-  $pseudogene1 = $obj->Coding_pseudogene(1); # type of pseudogene
+  $pseudogene1 = $pseudogene->Coding_pseudogene(1); # type of pseudogene
 
-  next PSEUDOGENE if ($thismethod eq 'history');
-
-  if ($thismethod eq 'Pseudogene') {
-    if (($pseudogene1) || ($cgc_name)) {
-      if (($pseudogene1) && ($cgc_name)) { 
-	$full_string .= "C. elegans $pseudogene1 pseudogene $cgc_name"; 
-      } elsif ($pseudogene1) { 
-	$full_string .= "C. elegans $pseudogene1 pseudogene"; 
-      } elsif ($cgc_name) {
-	$full_string .= "C. elegans pseudogene $cgc_name"; 
-      }
-    } else {
-      $full_string .= "C. elegans predicted pseudogene"; 
+  if (($pseudogene1) || ($cgc_name)) {
+    if (($pseudogene1) && ($cgc_name)) { 
+      $full_string .= "C. elegans $pseudogene1 pseudogene $cgc_name"; 
+    } elsif ($pseudogene1) { 
+      $full_string .= "C. elegans $pseudogene1 pseudogene"; 
+    } elsif ($cgc_name) {
+      $full_string .= "C. elegans pseudogene $cgc_name"; 
     }
+  } 
+  else {
+    $full_string .= "C. elegans predicted pseudogene"; 
   }
+
 
   next PSEUDOGENE if ($full_string eq "");
 
@@ -448,11 +384,11 @@ PSEUDOGENE: foreach my $pseudogene (@pseudogenes) {
 }
 
 
-
+$runtime= &runtime;
+$log->write_to("$runtime: Processing transcript class\n");
 # get transcript objects
 
-my @transcripts = $db->fetch(-query => 'Find Transcript *.* Species="Caenorhabditis elegans" & Method!=history');
-#my @transcripts = $db->fetch(-query => 'Find Transcript');
+my @transcripts = $db->fetch(-query => 'Find elegans_RNA_genes');
 
 TRANSCRIPT: foreach my $transcript (@transcripts) {
   chomp($transcript);
@@ -461,21 +397,17 @@ TRANSCRIPT: foreach my $transcript (@transcripts) {
 
   my $full_string = "";
 
-  # get data from camace
-  my $obj = $db->fetch(Transcript => $transcript);
 
   # grab Gene ID, and use this to look up Gene object to get CGC_name if present
-  $gene_name = $obj->Gene;
+  $gene_name = $transcript->Gene;
   $gene = $db->fetch(Gene => $gene_name);
   if(defined($gene->CGC_name)){
     $cgc_name = $gene->CGC_name;
   }
 
-  $thismethod = $obj->Method(1);
-  $transcript1 = $obj->Transcript(1); # type of transcript
-  $transcript2 = $obj->Transcript(2); # text
-
-  next TRANSCRIPT if ($thismethod eq 'history' or $thismethod eq "Coding_transcript");
+  $thismethod = $transcript->Method(1);
+  $transcript1 = $transcript->Transcript(1); # type of transcript
+  $transcript2 = $transcript->Transcript(2); # text
 
 
   if ($thismethod eq 'tRNAscan-SE-1.23') { # tRNAs
@@ -484,37 +416,43 @@ TRANSCRIPT: foreach my $transcript (@transcripts) {
     } else {
       $full_string .= "C. elegans predicted tRNA";
     }
-  } elsif ($transcript1 eq 'misc_RNA') { # RNA genes
+  } 
+  elsif ($transcript1 eq 'ncRNA') { # RNA genes
     if ($cgc_name) {
       $full_string .= "C. elegans non-protein coding RNA $cgc_name";
     } else {
       $full_string .= "C. elegans probable non-coding RNA";
     }
-  } elsif ($transcript1 eq 'snRNA') { # snRNA genes
+  } 
+  elsif ($transcript1 eq 'snRNA') { # snRNA genes
     if ($cgc_name) {
       $full_string .= "C. elegans small nuclear RNA $transcript2 $cgc_name";
     } else {
       $full_string .= "C. elegans small nuclear RNA $transcript2";
     }
-  } elsif ($transcript1 eq 'snoRNA') { # snoRNA genes
+  } 
+  elsif ($transcript1 eq 'snoRNA') { # snoRNA genes
     if ($cgc_name) {
       $full_string .= "C. elegans small nucleolar RNA $transcript2 $cgc_name";
     } else {
       $full_string .= "C. elegans small nucleolar RNA $transcript2";
     }
-  } elsif ($transcript1 eq 'miRNA') { # miRNA genes
+  } 
+  elsif ($transcript1 eq 'miRNA') { # miRNA genes
     if ($cgc_name) {
       $full_string .= "C. elegans microRNA $cgc_name";
     } else {
       $full_string .= "C. elegans predicted micro RNA";
     }
-  } elsif ($transcript1 eq 'stRNA') { # stRNA genes
+  } 
+  elsif ($transcript1 eq 'stRNA') { # stRNA genes
     if ($cgc_name) {
       $full_string .= "C. elegans regulatory RNA $cgc_name";
     } else {
       $full_string .= "C. elegans predicted regulatory RNA";
     }
-  } elsif ($transcript1 eq 'scRNA') { # scRNA genes
+  } 
+  elsif ($transcript1 eq 'scRNA') { # scRNA genes
     if ($cgc_name) {
       $full_string .= "C. elegans small cytoplasmic RNA $cgc_name";
     } else {
@@ -536,11 +474,19 @@ close ACE;
 $db->close;
 $db1->close;
 
+$runtime= &runtime;
+$log->write_to("$runtime: loading results to $remark_target\n");
 
 # load the file
 &load_to_database($remark_target,$file,"DB_remark");
 
+$runtime= &runtime;
+$log->write_to("$runtime: Finished script\n\n");
+
+
 $log->mail unless $test;
+
+
 
 exit(0);
 
