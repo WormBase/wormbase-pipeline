@@ -1,0 +1,117 @@
+//////////////////////////////////////////////////////////////////
+// This file contains information needed by the acedb server for
+// activities such as controlling server restarting, global access
+// permissions and so on.
+//
+// See socketace_.h for keywords/further description of the server
+// code interface to this file.
+//
+
+//////////////////////////////////////////////////////////////////
+// DATABASE RESTART:
+// If the NO_RESTART flag is uncommented in this file then the
+// server will _not_ restart if it finds either the SHUTDOWN or
+// CRASH lock files in the "/database" directory. By setting this
+// flag the database administrator can make sure that the server
+// will not restart either after a controlled shutdown, or after
+// a crash. This is especially necessary if the server is controlled
+// by inetd because although the administrator may shut down the
+// database, inetd may immediately restart it because of a new
+// client connection.
+//
+//NO_RESTART
+
+
+//////////////////////////////////////////////////////////////////
+// NO_HOSTNAME_RESOLUTION:
+// By default the server will, for clients whose userid has not
+// been found in one of the read/write/admin groups, try to find
+// the domain name of the client in one of groups (except admin).
+// If NO_HOSTNAME_RESOLUTION is uncommented the domain name
+// resolution will not be attempted, administrators may wish to
+// to this because:
+// a) hostname resolution can be costly in terms of processing
+// b) can be unreliable leading to valid users being refused access
+// c) to disallow any resolution of this kind for a period while
+//    debugging or whatever.
+//
+//
+//NO_HOSTNAME_RESOLUTION
+
+
+//////////////////////////////////////////////////////////////////
+// DEBUG:
+// If this flag is uncommented then debuggging information will be
+// be sent by the server to the terminal (if not inetd started)
+// and to a "server.log" file in the .../database directory.
+//
+//DEBUG
+
+//////////////////////////////////////////////////////////////////
+// DATABASE ACCESS BY THE SERVER:
+//
+// Enabling this option will tell the server not to try to write
+// to the database directory at all.
+//
+// - the advantage of this is that you can set the whole database
+//   directory to be read-only (via unix file permissions) thus
+//   avoiding any chance of corruptions.
+// - the disadvantage is that if something goes wrong there will
+//   be _NO_ logging/debugging information to help you !!
+// - you cannot use the NO_RESTART option if you enable this
+//   option because NO_RESTART requires lock files to be written
+//   to the database directory.
+//
+// READONLY_DATABASE
+
+
+//////////////////////////////////////////////////////////////////
+// DATABASE ACCESS BY USERS:
+//
+// Their are three classes of user: admin, write and read.
+// Users in the admin group always have read/write access to the
+// database via a userid/passwd. Access for all users in the write
+// and read groups are controlled by the WRITE and READ keywords:
+//
+// WRITE access:
+// specify the WRITE keyword with either NONE, PASSWD or WORLD:
+//
+// WRITE NONE   means no one except admin users have write access
+// WRITE PASSWD means only admin and users in the write group in
+//              passwd.wrm have write access
+// WRITE WORLD  anyone has write access, users not in the write
+//              group can use the 'anonymous' id to get access
+//              without a password.
+// if you do not specify the WRITE keyword the default is PASSWD
+//              
+// READ access:
+// specify the READ keyword with either NONE, PASSWD or WORLD
+//
+// READ NONE    means no one except admin users have read access
+// READ PASSWD  means only admin and users in the read group in
+//              passwd.wrm have read access
+// READ WORLD   means anyone has read access, users not in the read
+//              group can use the 'anonymous' id to get access
+//              without a password.
+// if you do not specify the READ keyword the default is PASSWD
+//
+// These WRITE and READ fields are maintained by the server program,
+// you should not alter them by hand without understanding the format
+// the server expects to find. The line should begin with READ or WRITE
+// and be followed by blank(s) and then one of NONE or PASSWD or WORLD
+//
+WRITE PASSWD
+READ PASSWD
+
+
+// In case of problems or comments mail edgrif@sanger.ac.uk
+//                                   or mieg@kaa.crbm.cnrs-mop.fr 
+//////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+

@@ -1,0 +1,55 @@
+//////////////////////////////////////////////////////////////////
+//
+//  wspec/serverpasswd.wrm
+//
+//                  !!   WARNING   !!
+//  This file is maintained by the server program, you should not edit this
+//  file by hand without understanding the format that the server expects
+//  to find (see notes below).
+//  
+//
+//  This is the password file that the acedb server uses to authenticate
+//  new users. This file is _NOT_ the same as password.wrm which is used
+//  by non server/client acedb programs.
+//
+//  This file should have the same permissions as the rest of the database
+//  and be accessible for writing only by the acedb server program accessing
+//  the program and by the database administrator.
+//
+//  Format:
+//
+//  //comments out the line
+//
+//  All users names should also be in one of the three groups admin, write or read.
+//  Unless the users name can be found in one of the groups in this file they will
+//  not be able to log on. The format of a 'group' line is the group name followed
+//  by a ":" followed by a list (on one line) of the users separated by blanks:
+//  
+//  admin: joebloggs user1 user2 user3
+//
+//  and so on.
+//
+//  users should be one per line with the encrypted form of their
+//  password following as a separate 'word' on that line, there must be
+//  _NO_ white space in front of the userid, it must be at the beginning of
+//  the line.
+//
+//  joebloggs  38a6557860893d95c7e738c0e5cd233d
+//
+//
+
+
+//////////////////////////////////////////////////////////////////
+// Groups that users belong to, each user should only be in one group,
+// The code will use the first group that it finds a user in.
+//
+admin:
+write:
+read:
+
+//////////////////////////////////////////////////////////////////
+// users and passwords
+//
+// new users are just added to the bottom of the file.
+// 
+//
