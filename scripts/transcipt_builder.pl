@@ -142,8 +142,11 @@ foreach my $chrom ( @chromosomes ) {
     print "$_ matches ",scalar(@{$gene2cdnas{$gene}}),"\n" if $count;
     if( $transcript ) {
       # next unless $genes_span{$_}->[2] eq "-"; #just do forward for now
+
+      # put the gene model in to the transcript
       my %transcript;
-      %transcript = %{$genes_exons{$gene}};   # put the gene model in to the transcript
+      %transcript = %{$genes_exons{$gene}};   
+      my @transcript_span = @{ $genes_span{$gene} };
 
       #transcript object
       print ACE "\nTranscript : \"$gene\"\n";
@@ -154,10 +157,15 @@ foreach my $chrom ( @chromosomes ) {
 
 	  next if( defined $transcript{$cExon} and  $transcript{$cExon} == $cDNA{$cdna}->{$cExon} ); #skip if the cDNA exon is same as one in transcript
 	
-#	  # if exon outside range of gene add it to the transcript UTR
-#	  if( $cExon > $genes_span{$gene}->[1] or  $cDNA{$cdna}->{$cExon} < $genes_span{$gene}->[0] ){
-#           $transcript{$cExon} = $cDNA{$cdna}->{$cExon};
-#	  }
+	  # if exon outside range of current transcript add it to the transcript UTR
+	  if( $cExon > $transcript_span[1] or  $cDNA{$cdna}->{$cExon} < $transcript_span[0] ){
+	    # add to transcript hash
+           $transcript{$cExon} = $cDNA{$cdna}->{$cExon};
+
+	   #expand transcript span to accomodate new exon
+	   $transcript_span[0] =  $cExon if( $cExon < $transcript_span[0] );
+	   $transcript_span[1] =  $cDNA{$cdna}->{$cExon} if( $cDNA{$cdna}->{$cExon} > $transcript_span[1] );
+	  }
 
 	  # iterate thru existing transcript exons and check for overlaps
 	  foreach my $transExon (keys %transcript ) {
@@ -187,7 +195,7 @@ foreach my $chrom ( @chromosomes ) {
 	  print ACE "source_exons ",$transcript{$exons[-1]} - $transcript{$_} + 1 ," ",$transcript{$exons[-1]} - $_ + 1 ," \n"; # - strand
 	}
       }
-      ($chrom) = $gff =~ /CHROMOSOME_(\w+)/ if $gff;
+      ($chrom) = $gff =~ /.*_(\w+)/ if $gff;
       my($source, $x, $y ) = $coords->LocateSpan("$chrom",$exons[0],$transcript{$exons[-1]});
       $transcript_span{"$gene.trans"} = [ ($exons[0],$transcript{$exons[-1]}) ];
       print ACE "Sequence $source\n";
