@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/bin/perl5.8.0 -w
 #
 # map_microarray.pl
 #
@@ -6,8 +6,8 @@
 #
 # by Anon
 #
-# Last updated by: $Author: dl1 $                      
-# Last updated on: $Date: 2003-11-10 10:31:50 $        
+# Last updated by: $Author: krb $                      
+# Last updated on: $Date: 2003-11-18 14:15:59 $        
 
 
 $|=1;
@@ -110,6 +110,7 @@ while (my $obj = $i->next) {
     $obj->DESTROY();
 } 
 close OUTPUT;
+$db->close;
 
 exit(0);
 
