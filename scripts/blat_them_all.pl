@@ -8,7 +8,7 @@
 # and virtual objects to hang the data onto
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2004-04-14 14:50:03 $
+# Last edited on: $Date: 2004-05-07 15:27:50 $
 
 
 use strict;
@@ -186,7 +186,7 @@ if ($process) {
     print LOG "$runtime: Processing blat ouput file, running blat2ace.pl\n";
     
     # treat slightly different for nematode data (no confirmed introns needed)
-    if ( ($nematode) || ($tc1) ) {
+    if ( ($nematode) || ($tc1) || ($embl) ) {
 	&run_command("$bin/blat2ace.pl -$data"); 
     }
     elsif($camace){
@@ -201,7 +201,7 @@ if ($process) {
     print LOG "$runtime: Producing confirmed introns in databases\n";
 
     # produce confirmed introns for all but nematode and tc1 data
-    unless ( ($nematode) || ($tc1) ) {
+    unless ( ($nematode) || ($tc1) || ($embl) ) {
 	print "Producing confirmed introns using $data data\n" if $verbose;
 	&confirm_introns('autoace',"$data");
 	&confirm_introns('camace', "$data");
@@ -213,6 +213,7 @@ if ($process) {
 #########################################
 # produce files for the virtual objects #
 #########################################
+
 if ($virtual) {
     my $runtime = &runtime;
     print LOG "$runtime: Producing $data files for the virtual objects\n";
@@ -602,7 +603,7 @@ sub virtual_objects_blat {
   # dl 040315 - this is crazy. we make all of the files and then delete the ones we don't want.
   #             don't rock the boat...
 
-  if ( ($data eq "nematode") || ($data eq "tc1") ) {
+  if ( ($data eq "nematode") || ($data eq "tc1") || ($data eq "embl") ) {
     unlink ("$blat_dir/virtual_objects.autoace.ci.$data.ace");
     unlink ("$blat_dir/virtual_objects.camace.ci.$data.ace");
     unlink ("$blat_dir/virtual_objects.stlace.ci.$data.ace");

@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2004-05-04 09:09:02 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2004-05-07 15:27:50 $
 
 
 
@@ -917,14 +917,15 @@ sub blat_jobs{
   &usage(16) unless (-e "$logdir/$flag{'B5'}");
   
   # what blat jobs should I run? Do everything if blat_all selected
+  # nematode should always be last job to tackle
+
   my @blat_jobs;
-  push(@blat_jobs,"est")      if $blat_est;
-  push(@blat_jobs,"ost")      if $blat_ost;
-  push(@blat_jobs,"mrna")     if $blat_mrna;
-  push(@blat_jobs,"embl")     if $blat_embl;
-  push(@blat_jobs,"tc1")      if $blat_tc1;      
-  push(@blat_jobs,"nematode") if $blat_nematode;  # nematode should always be last job to tackle
-  push(@blat_jobs,"est","ost","mrna","embl","tc1","nematode") if $blat_all;
+  push(@blat_jobs,"est")      if ( ($blat_est)      || ($blat_all) );
+  push(@blat_jobs,"ost")      if ( ($blat_ost)      || ($blat_all) );
+  push(@blat_jobs,"mrna")     if ( ($blat_mrna)     || ($blat_all) );
+  push(@blat_jobs,"embl")     if ( ($blat_embl)     || ($blat_all) );
+  push(@blat_jobs,"tc1")      if ( ($blat_tc1)      || ($blat_all) );      
+  push(@blat_jobs,"nematode") if ( ($blat_nematode) || ($blat_all) );
 
   my $status;
   my $nematode_flag = 0; # have nematode blats been run?
@@ -972,26 +973,30 @@ sub blat_jobs{
   system("touch $logdir/$flag{'B6'}");  
 
   # now load blat results into autoace
-  # if blat_nematode was selected then only need to load just those results as other results would have been loaded above.
-  # otherwise load everything
-  if($nematode_flag == 1){
-    &load_blat_results("nematode");
+  # if blat_nematode was selected then only need to load just those results as other results 
+  # would have been loaded above. otherwise load everything
+
+  if ($nematode_flag == 1) {
+      &load_blat_results("nematode");
   }
-  else{
-    &load_blat_results("all");
-  }
-}
+  else {
+      &load_blat_results("all");
+  } 
+} 
 
 ################################################################################
-sub load_blat_results{
+
+# load_blat_results
+# generic subroutine for loading blat data into autoace
+# will load all types of blat result if 'all' is passed to the subroutine
+
+sub load_blat_results {
 
     $am_option .= "-addblat";
-    # generic subroutine for loading blat data into autoace
-    # will load all types of blat result if 'all' is passed to the subroutine
+    
     my $first_blat_type = $_[0];
-
     my @blat_types = @_;
-    @blat_types = ("est","mrna","ost","embl","nematode","tc1") if ($first_blat_type eq "all");
+    @blat_types    = ("est","mrna","ost","embl","nematode","tc1") if ($first_blat_type eq "all");
   
     foreach my $type (@blat_types){    
 	print LOG "Adding BLAT $type data to autoace at ",&runtime,"\n";
@@ -999,7 +1004,7 @@ sub load_blat_results{
 	&load($file,"virtual_objects_$type");
 
 	# Don't need to add confirmed introns from nematode data (because there are none!)
-	unless (($type eq "nematode") || ($type eq "tc1")) {
+	unless ( ($type eq "nematode") || ($type eq "tc1") || ($type eq "embl") ) {
 	    $file = "$basedir/autoace/BLAT/virtual_objects.autoace.ci.$type.ace"; 
 	    &load($file,"blat_confirmed_introns_$type");
 	    
@@ -1012,7 +1017,6 @@ sub load_blat_results{
 	
     }
     system("touch $logdir/$flag{'B7'}"); 
-    
 }
 
 #__ end load_blat_results __#
