@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-12-08 16:04:03 $
+# Last updated on: $Date: 2003-12-08 17:47:29 $
 
 
 use strict;
@@ -108,7 +108,6 @@ if ($ace){
 my $db = Ace->connect(-path  => $default_db,
 		      -program =>$tace) || do { print LOG "Connection failure: ",Ace->error; die();};
 
-
 # Process separate classes if specified on the command line else process all classes
 @classes = ("locus","laboratory","allele","strain","rearrangement","sequence","mapping","evidence", "xref", "gmap") if (!@classes);
 
@@ -155,7 +154,6 @@ mail_maintainer($0,"cgc\@wormbase.org",$jah_log) unless ($debug || $jah_errors =
 exit(0);
 
 
-
 ##############################################################################################
 #
 #
@@ -186,6 +184,9 @@ sub process_locus_class{
     undef($locus);
   }
 
+  # Look for allele linked to @loci and @seqs, but the locus does not have seq. info
+  &link_seq_to_locus($db); 
+ 
 
   # Look for loci in current_DB that are not in geneace
   print "\nLooking for loci in /nfs/disk100/wormpub/DATABASES/current_DB that are not in $default_db\n" if ($verbose);
@@ -499,8 +500,6 @@ sub test_locus_for_errors{
 
   }
 
-
-
   # test for Pseudogene AND !Pseudogene_name
   if(defined($locus->at('Molecular_information.Pseudogene')) && !defined($locus->at('Name.Pseudogene_name'))){  
     my $seq = $locus->Pseudogene;
@@ -641,13 +640,26 @@ sub test_locus_for_errors{
     }
   }
 
-
   return($warnings);
 
 }
 
 
 ############################################
+
+sub link_seq_to_locus {
+
+  my $db = shift;
+  
+  my $query = "Find Allele * where predicted_gene & gene; >gene; !(CDS|Transcript|Pseudogene); > Allele; predicted_gene & gene";
+  push(my @seq_to_link_to_locus, $db->find($query));
+  foreach (@seq_to_link_to_locus){
+    my @loci  = $_ -> Gene(1);
+    my @seqs  = $_ -> Predicted_gene(1);
+    print LOG "ERROR 35: Allele $_ is linked to @loci and @seqs, but the locus does not have seq. info\n"; 
+  }
+}
+
 
 sub find_new_loci_in_current_DB{
   my $db = shift;
@@ -1140,6 +1152,7 @@ EOF
   
   my @Allele_gene;
   my $query_cds_locus_has_allele = "Find CDS WHERE Locus AND Allele";
+ 
   push(@Allele_gene, $db->find($query_cds_locus_has_allele));
   
   foreach (@Allele_gene){
@@ -1162,7 +1175,6 @@ EOF
       }
     }
   }
-
   my $allele_has_flankSeq_and_no_seq=<<EOF;
   Table-maker -p "$def_dir/allele_has_flankSeq_and_no_seq.def" quit
 EOF
@@ -1729,7 +1741,10 @@ sub int_loci {
     print ACE "\nLocus : \"$_\"\n";
     print ACE "Map \"$int_map\" Position $int_pos\n";
   }
-  print "No such locus found\n\n" if $error == 0;
+
+  print LOG    "No such locus found\n\n" if $error == 0;
+  print JAHLOG "No such locus found\n\n" if $error == 0;
+
 }
 
 ##############################
