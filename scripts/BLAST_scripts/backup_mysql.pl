@@ -27,7 +27,7 @@ system("mysqldump -h ecs1f -u wormadmin --opt -p wormprot > /nfs/disk100/wormpub
 my @files =`ls /nfs/disk100/wormpub/MYSQL_DUMPS`;
 foreach (@files){
   chomp;
-  if( ($_ ne "worm01_$date") || ($_ ne "wormprot_$date") ){ 
+  if ($_ ne "worm.+_$date"){ 
    system ("rm -rf $_");
   }
 }
