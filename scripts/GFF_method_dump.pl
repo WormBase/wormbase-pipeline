@@ -36,6 +36,10 @@ $dump_dir = "/tmp/GFF_CLASS" unless $dump_dir;
 
 mkdir $dump_dir unless -e $dump_dir;
 
+#make surdump_dir is writable
+system("touch $dump_dir/dump") and die "cant write to $dump_dir\n";
+
+
 # open database connection once
 open (WRITEDB,"| $giface $database") or die "failed to open giface connection to $database\n";
 
@@ -56,6 +60,8 @@ foreach my $sequence ( @sequences ) {
 
 close WRITEDB;
 
+# remove write test
+system("rm -f $dump_dir/dump");
 exit(0);
 
 sub check_options {
