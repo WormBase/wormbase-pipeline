@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.1 -w                    
+#!/usr/local/bin/perl5.8.0 -w                    
 #
 # map_alleles.pl
 #
@@ -6,8 +6,8 @@
 #
 # This maps alleles to the genome based on their flanking sequence
 #
-# Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2003-09-15 14:45:08 $        # quickly see when script was last changed and by whom
+# Last updated by: $Author: krb $                      # These lines will get filled in by cvs and helps us
+# Last updated on: $Date: 2003-09-26 15:32:57 $        # quickly see when script was last changed and by whom
 
 
 use strict;
@@ -28,14 +28,14 @@ my $database;
 my $ver;
 my $verbose;
 my $restart = "go";
-my $help;# { `perldoc $0`;};
+my $help;
 my $no_geneace;
 my $no_parse;
 my $list;
 
 # $debug   -  all output goes to ar/allele_mapping
 
-GetOptions( "debug:s"     => \$debug,
+GetOptions( "debug:s"   => \$debug,
 	    "limit=s"   => \$limit,
 	    "database=s"=> \$database,
 	    "WS=s"      => \$ver,
@@ -323,7 +323,7 @@ foreach $allele (@alleles)
       }
 
       unless ( $p_gene ){
-	print LOG "$allele has no predicted gene $p_gene\n";
+	print LOG "ERROR: $allele has no predicted gene $p_gene\n";
 	next ALLELE;
       }
 
@@ -331,7 +331,7 @@ foreach $allele (@alleles)
       $sequence = $1;
       $sequence = $db->fetch(Sequence => "$sequence");
       unless( $sequence ) {
-	print LOG "$name - cant get a Sequence from Sequence tag or Predicted_gene\n";
+	print LOG "ERROR: $name - cant get a Sequence from Sequence tag or Predicted_gene\n";
 	next ALLELE;
       }
     }     
@@ -421,7 +421,7 @@ foreach $allele (@alleles)
 		    }
 		    
 		    else {
-		      print LOG "$name failed mapping\n";
+		      print LOG "ERROR: $name failed mapping\n";
 		      print  "$name failed mapping\n";
 		    }
 		  }
@@ -429,7 +429,7 @@ foreach $allele (@alleles)
 	      }
 	  }	
 	else {
-	  print LOG "$allele $sequence has no Source\n";
+	  print LOG "ERROR: $allele $sequence has no Source\n";
 	  next;
 	}
 
@@ -445,7 +445,7 @@ foreach $allele (@alleles)
 	undef $KO_allele;
       }
     else {
-      print LOG "$allele - cant find valid sequence\n";
+      print LOG "ERROR: $allele - cant find valid sequence\n";
     }
   }
 
