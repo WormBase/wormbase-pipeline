@@ -7,8 +7,8 @@
 #
 # dl
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-10-03 11:00:55 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2003-11-12 09:56:57 $
 
 use lib "/wormsrv2/scripts/";
 use Wormbase;
@@ -128,13 +128,15 @@ while (<FILE>) {
     # assign GO terms based on InterPro Motifs
     unless ($no_go) {
 	foreach my $ip (@interpro) {
+	  if( exists $Ip2Go{$ip} ) {
 	    my @GOterms = split(/\s/,$Ip2Go{$ip});
 	    foreach my $go (@GOterms) {
-		print OUT "GO_term\t\"$go\" \"IEA\"\n"
-		}
+	      print OUT "GO_term\t\"$go\" \"IEA\"\n"
+	    }
+	  }
 	}
-    }
-}
+      }
+  }
 
 close FILE;
 close OUT;
