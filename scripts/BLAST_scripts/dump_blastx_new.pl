@@ -11,12 +11,17 @@ use Getopt::Long;
 use DB_File;
 
 my ($version, $map, $worm, $start_clone);
+my @analysis;
 GetOptions ("version=s" => \$version,
 	    "map"       => \$map,
 	    "worm"      => \$worm,
-	    "restart=s" => \$start_clone  
+	    "restart=s" => \$start_clone,
+	    "analysis=s"=> \@analysis
 	   );
 
+@analysis = split(/,/,join(',',@analysis));  
+
+print "dumping for @analysis\n";
 
 my $usage = "dump_blastx.pl\n";
 $usage .= "-map  map accessions to names, needed for elegans select if DONT want clone names. Default is to output clone names\n";
