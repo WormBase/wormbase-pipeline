@@ -836,10 +836,26 @@ sub gene_mapping {
     
     while(<IN>){
       if ($_ =~ ""){}
-      if ($_ =~ /^(\w{2,2})\s+(\w{2,2})\s+(.+,.+)\s+(.+)&/) { 
-	push(@Update,"\n\nGene_Class : \"$1\"\n"); 
-	push(@Update,"CGC_approved\n");
-	push(@Update,"Phenotype \"$2\"\n");
+      # 2-letter lab
+      if ( $_ =~ /^([A-Z]{2,2})\s+(\w{2,2}|--|\w{1,1})\s+(\w{1,} \w{1,},\s\w{1,}|\w{1,}-\w{1,},\s\w{1,}|\w{1,}-\w{1,},\s\w{1,}-\w{1,}|\w{1,},\s\w{1,}|\w{1,},\s\w{1,}-\w{1,})\s+(.+)$/ ) { 
+     
+     #  if ( $_ =~ /^([A-Z]{2,2})\s+.+/ ) { 	
+	push(@Update,"\n\nLaboratory : \"$1\"\n"); 
+	push(@Update,"Allele_designation \"$2\"\n");
+	push(@Update,"Representative \"$3\"\n");
+	push(@Update, "Mail\t\"$4\"\n");
+      }
+      if ( $_ =~ /^([A-Z]{2,2})\s+(\w{2,2}|--)\s+\[(.+)\]\s+\[(.+)\]/){
+	push(@Update,"\n\nLaboratory : \"$1\"\n"); 
+	push(@Update,"Allele_designation \"$2\"\n");
+	push(@Update,"Representative \"$3\"\n");
+	push(@Update, "Mail\t\"$4\"\n");
+      }
+      # 3-letter lab 
+      if ( $_ =~ /^([A-Z]{3,3})\s+(\w{1,} \w{1,},\s\w{1,}|\w{1,}-\w{1,},\s\w{1,}|\w{1,}-\w{1,},\s\w{1,}-\w{1,}|\w{1,},\s\w{1,}|\w{1,},\s\w{1,}-\w{1,})\s+(.+)$/ ) { 
+	push(@Update,"\n\nLaboratory : \"$1\"\n"); 
+	push(@Update,"Representative \"$2\"\n");
+	push(@Update, "Mail\t\"$3\"\n");
       }
     }
     foreach (@Update){
