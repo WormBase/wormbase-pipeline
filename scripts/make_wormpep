@@ -8,30 +8,6 @@
 # Builds a wormpep data set from the current autoace database
 #
 
-# v1.10  : dl  : use rd tace version as the current one does not contain the dumping 
-#                sequences with S_Map tags bug fix
-
-# v4.1
-# 010116 : dl  : Use tablemaker call in tace to get data from autoace
-#              : Bring runtime down to 30 minutes
-# 010124 : dl  : Include CDS with X's in the full release
-# 010418 : dl  : Added system call to make patch file from old release
-# 010612 : dl  : Moved to RELEASE.SUPPORTED code to circumvent aceperl 4_9 code problem
-# 010711 : dl  : Added Kerstin and Keith to maintainer mail list 
-
-# v4.0
-# 010116 : dl  : Use tace not AcePerl
-
-# v3.0
-# 010110 : dl  : More verbose logging/error trapping
-
-# v2.0
-# 001102 : dl  : Moved to new path for wormpep versions
-
-# v1.0
-# 990930 : ms2 : original
-
-
 #################################################################################
 # variables                                                                     #
 #################################################################################
@@ -46,7 +22,6 @@ use Socket;
 use lib '/wormsrv2/scripts/';
 use Wormbase;
 
-    
  #######################################
  # Script variables (run)              #
  #######################################
@@ -363,31 +338,18 @@ print LOG "\n# $runtime : finished writing wormpep.fasta file\n\n";
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
 print LOG "# $runtime : retrieve protein_id & accession for each CDS\n";
 
-my $querycontent="%5Blibs%3D%7Bembl_SP_emblnew%7D-Organism%3A%22Caenorhabditis%20elegans%22%5D%26%28%5Blibs-FtQualifier%3Agene%5D%3Eparent%29%26%5Blibs-AllText%3Acosmid%5D+-f+div+-f+key+-f+org+-f+prd+-f+ftd+-f+ftl+-f+date";
-my $request = "/srs6bin/cgi-bin/wgetz?$querycontent";
-
-# The EBI server is well hidden under something weird |-(
-# Let's use HGMP for the moment
-# Use the Sanger one [dl]
-
-my $server = "www.sanger.ac.uk";
-if (!defined(open_TCP(*F,$server,80))) {
-	print "Error connecting to server at \n";
-	exit(-1);
-	}
-print F "GET $request HTTP/1.0\n\n";
-print F "Accept: */*\n";
-print F "User-Agent: socketsrs/1.0\n\n";
-
 my $GENE ;    my $GENE_1 ;     my $SPT ;    my $SWISS;
 my $PROTEIN;  my $PRODUCT;     
 my %SPTREMBL; my %SWISS_PROT ; my %PROTEIN;
+
+my $querycontent="(([embl-organism\:Caenorhabditis elegans]) & ([embl-des:cosmid*]))";
 
 # Parsing annotation
 
 my $genes_parsed=0;
 
-while (my $return_line=<F>) {
+open (GETZ, "getz -e \'$querycontent\' | ");
+while (my $return_line=<GETZ>) {
     if ($return_line =~ /ID\s+(\w+)/) {
 	undef $GENE;
 	undef $GENE_1;
@@ -428,7 +390,7 @@ while (my $return_line=<F>) {
 	if ($GENE =~ /\-/) {   # in some cases the gene tag contains the locus name, gene is in note tag!!
 	    $GENE = $GENE_1; 
 	}
-	if ($PSEUDO == 1) {                    # get rid of psudogenes
+	if ($PSEUDO == 1)  {                   # get rid of psudogenes
 	    next;
 	}
 	
@@ -436,6 +398,10 @@ while (my $return_line=<F>) {
 	# assign SPTREMBL/SWISSPROT hash entries
 	$SPTREMBL{$GENE} = $SPT;
 	$SWISS_PROT{$GENE} = $SWISS;
+
+	print "Assign $SWISS as swissprot accession for $GENE\n" if (defined $SWISS);
+	print "Assign $SPT as trembl accession for $GENE\n" if (defined $SPT);
+
     }
     if ($return_line =~ /product=/) {
 	$PRODUCT=$';
@@ -463,31 +429,14 @@ while (my $return_line=<F>) {
 	$PROTEIN =~ s/\"//g;
 	$PROTEIN =~ s/\s+//g;
 	$PROTEIN{$GENE} = $PROTEIN;
+	print "Assign $PROTEIN as protein_id for $GENE in $ACC\n";
     }
 }
-close F;
+close GETZ;
 
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
-print LOG "=> parsed $genes_parsed CDS\n";
+print LOG "\t=> parsed $genes_parsed CDS\n";
 print LOG "# $runtime : finished retrieving protein_id & accession for each CDS\n\n";
-
- ########################################################
- # Output: successful network connection in file handle #
- ########################################################
-
-sub open_TCP 
-{
-	my ($FS,$dest,$port) = @_;
-	my $proto = getprotobyname ('tcp');
-	socket ($FS,PF_INET,SOCK_STREAM,$proto);
-	my $sin = sockaddr_in($port,inet_aton($dest));
-	connect($FS,$sin) || return undef;
-	my $old_fh = select($FS);
-        $| = 1;
-	select($old_fh);
-
-}
-
 
  ########### 
  # most of the data 
