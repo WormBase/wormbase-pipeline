@@ -320,6 +320,7 @@
 	Identity  Version UNIQUE Int
                   Name  CGC_name	UNIQUE ?Gene_name XREF CGC_name_for
                         Sequence_name	UNIQUE ?Gene_name XREF Sequence_name_for
+			Molecular_name         ?Gene_name XREF Molecular_name_for
                         Other_name	       ?Gene_name XREF Other_name_for #Evidence
 			Public_name	UNIQUE ?Gene_name XREF Public_name_for
 		  CGC_approved 
@@ -332,33 +333,35 @@
                           Split_into ?Gene XREF Split_from
                   Live  // remove live to make gene "dead"
         Gene_info Gene_class UNIQUE ?Gene_class XREF Genes
-		  RNA_gene // to flag RNA genes where we might not know what the ?Transcript is
+		  Laboratory ?Laboratory
 		  Reference_allele ?Allele Text
 		  Allele  ?Allele XREF Gene #Evidence
 		  Phenotype ?Text #Evidence
 		  Provisional_description ?Text #Evidence // added for Erich [020322 krb]
 		  Detailed_description ?Text #Evidence // added for Erich [020322 krb]
 		  Concise_description ?Text #Evidence // added for Erich [020523 krb]
-		  RNAi_result   ?RNAi XREF Gene                       //RL [010327]
 		  Complementation_data Text
 		  Strain ?Strain XREF Gene
-		  Expr_pattern ?Expr_pattern XREF Gene
-		  Drives_Transgene ?Transgene XREF Driven_by_gene
-		  Transgene_product ?Transgene XREF Gene
-		  Rescued_by_transgene ?Transgene	
 		  In_cluster ?Locus XREF Contains // new way of linking to Clusters in locus class
-	Gene_regulation Trans_regulator ?Gene_regulation XREF Trans_regulator_gene
-                        Trans_target    ?Gene_regulation XREF Trans_regulated_gene
-        Molecular_info	  CDS ?CDS XREF Gene #Evidence		// to link to live CDSs
-			  CDS_history ?CDS XREF Gene_history	// to link to history CDSs
-			  Transcript ?Transcript XREF Gene #Evidence
-			  Transcript_history ?Transcript XREF Gene_history
-			  Pseudogene ?Pseudogene XREF Gene #Evidence
-			  Pseudogene_history ?Pseudogene XREF Gene_history
-			  Gene_variant_count UNIQUE Int	// how many isoforms have been made (including Pseudogenes and non coding)
+		  GO_term ?GO_term XREF Gene ?GO_code #Evidence
+        Molecular_info CDS ?CDS XREF Gene #Evidence		// to link to live CDSs
+		       CDS_history ?CDS XREF Gene_history	// to link to history CDSs
+		       Transcript ?Transcript XREF Gene #Evidence
+		       Transcript_history ?Transcript XREF Gene_history
+		       Pseudogene ?Pseudogene XREF Gene #Evidence
+		       Pseudogene_history ?Pseudogene XREF Gene_history
+		       Gene_variant_count UNIQUE Int	// how many isoforms have been made (including Pseudogenes and non coding)
 							// intended for acedb code to look at this when suggesting new gene name
-			  Protein ?Protein XREF Gene
-			  Other_sequence ?Sequence XREF Gene #Evidence  // for linking to mRNAs etc. that correspond to a gene
+		       Other_sequence ?Sequence XREF Gene #Evidence  // for linking to mRNAs etc. that correspond to a gene
+	Experimental_info RNAi_result ?RNAi XREF Gene 
+			  Expr_pattern ?Expr_pattern XREF Gene
+			  Drives_Transgene ?Transgene XREF Driven_by_gene
+			  Transgene_product ?Transgene XREF Gene
+			  Rescued_by_transgene ?Transgene	
+			  Gene_regulation Trans_regulator ?Gene_regulation XREF Trans_regulator_gene
+					  Trans_target    ?Gene_regulation XREF Trans_regulated_gene
+			  Antibody ?Antibody XREF Gene
+			  Microarray_results ?Microarray_results XREF Gene
         Map_info  Map UNIQUE ?Map XREF Gene #Map_position
                   Well_ordered          // "on the line"
                   Hide_under ?Gene XREF Representative_for
@@ -371,10 +374,6 @@
                                 Multi_point ?Multi_pt_data
                                 Pos_neg_data ?Pos_neg_data
 		  Interpolated_map_position UNIQUE ?Map UNIQUE Float // for loci with CDSs but no real Map position
-	Antibody ?Antibody XREF Gene
-	GO_term ?GO_term XREF Gene ?GO_code #Evidence
-	Microarray_results ?Microarray_results XREF Gene
-	Laboratory ?Laboratory
 	Reference ?Paper XREF Gene
         Remark ?Text #Evidence
 
@@ -399,6 +398,7 @@
 
 ?Gene_name Gene CGC_name_for		?Gene XREF CGC_name 
 		Sequence_name_for	?Gene XREF Sequence_name 
+		Molecular_name_for	?Gene XREF Molecular_name // captures CDS names, Wormpep names etc.
 		Other_name_for		?Gene XREF Other_name // main reason for this class
 		Public_name_for		?Gene XREF Public_name // the main name for a gene		
 
@@ -1334,8 +1334,7 @@
 		   Brigpep // 
 		   History Int Text ?Text //new history logging [020801 krb]
                    Live       // new tag to replace use of 'Inactive' krb 06/12/01
-          Visible  Gene ?Gene XREF Protein
-		   Corresponding_CDS ?CDS XREF Corresponding_protein
+          Visible  Corresponding_CDS ?CDS XREF Corresponding_protein
 		   Reference ?Paper XREF Protein
                    Expr_pattern ?Expr_pattern XREF Protein
                    Interacts_with_sequence ?Sequence XREF Interacts_with_protein #Evidence // for future interaction data [020704 krb]
