@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2003-06-18 14:59:29 $
+# Last updated by: $Author: ck1 $
+# Last updated on: $Date: 2003-07-03 14:13:02 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -190,7 +190,11 @@ sub copy_misc_files{
   system("/bin/tar -cf $targetdir/$release/wormrna${wormrna_release}.tar README wormrna${wormrna_release}.rna") && croak "ERROR: can't create wormrna tar file\n";
   system("/bin/gzip $targetdir/$release/wormrna${wormrna_release}.tar") && croak "ERROR: can't create wormrna gzip file\n";
 
+  # zip and copy interpolated map across from /wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/
 
+  chdir "/wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/";
+  system("gzip WS*interpolated_map.txt; cp WS*interpolated_map.txt.gz $targetdir/$release/");
+  
   $runtime = &runtime;
   print LOG "$runtime: Finished copying misc files\n\n";
 
