@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.0 
+#!/usr/local/bin/perl5.6.1
 #
 # make_wormpep
 # v 4.1
@@ -14,7 +14,7 @@
 
 $| = 1;
 use strict;
-use vars qw($opt_r $opt_d $opt_h $opt_t);
+use vars qw($opt_i $opt_d $opt_f $opt_h $opt_t);
 use Getopt::Std;
 use IO::Handle;
 use Ace;
@@ -34,26 +34,26 @@ my $runtime    = `date +%H:%M:%S`; chomp $runtime;
  # command-line options                #
  #######################################
 
-getopts ('dhtr:');
+getopts ('dhtif:');
 
  #######################################
  # sanity checks for the input         #
  #######################################
 
 &error(0) if ($opt_h);
-&error(1) if ((length $opt_r) == 0);
-&error(2) if (($opt_r =~ /\D+/));
+&error(1) if ($opt_i and $opt_f);
+&error(2) if (!($opt_i or $opt_f));
 
 
  #######################################
  # release data                        #
  #######################################
 
-my $release = $opt_r; 
+my $release = &get_wormbase_version; 
 my $old_release = $release-1;
 my $debug = $opt_d;
 
-($maintainer = "dl1\@sanger.ac.uk") if ($debug);
+($maintainer = "ar2\@sanger.ac.uk") if ($debug);
 
 
  ########################################################################
@@ -80,25 +80,39 @@ $ENV{'ACEDB'} = $dbdir;
  ########################################
  # Open logfile                         #
  ########################################
+my $log;
+if( $opt_i) {
+  $log="/wormsrv2/logs/make_wormpep_initial.$release.$rundate.$$";
+}
+else {
+  $log="/wormsrv2/logs/make_wormpep_full.$release.$rundate.$$";
+}
 
-my $log="/wormsrv2/logs/make_wormpep.$release.$rundate.$$";
+
 open (LOG,">$log");
 LOG->autoflush();
 
 print LOG "# make_wormpep\n";
 print LOG "# run details    : $rundate $runtime\n";
 print LOG "\n";
-print LOG "Wormpep version  : wormpep$opt_r\n\n";
+print LOG "Wormpep version  : wormpep$release\n\n";
+print LOG "initial phase\n" if ( $opt_i );
+print LOG "full phase\n"    if ( $opt_f );
 print LOG "=============================================\n";
 print LOG "\n";
 
  ##################################################
  # Make new directory for current release         #
  ##################################################
-
-mkdir ("$new_wpdir" , 0755) || &error(3);               # die "cannot create the $new_wpdir directory\n";
-
-print LOG "# $runtime : making wormpep$release for $rundate\n\n";
+if ($opt_i ) { 
+  if ( $opt_t and -e $new_wpdir){
+    print LOG "$new_wpdir already exists\n";
+  }
+  else {
+    mkdir ("$new_wpdir" , 0755) || &error(3);               # die "cannot create the $new_wpdir directory\n";
+    print LOG "# $runtime : making wormpep$release for $rundate\n\n";
+  }
+}
 
 
  ##################################################
@@ -125,7 +139,7 @@ while (<WP>) {
     if (/^>(\S+)/) {
         my $new_id = $1;
 	if ($id) {
-            $id =~ /CE0*([1-9]\d*)/ ; my $num = $1 ;           # bewarned - lurking 100000 protein bug
+            $id =~ /CE0*([1-9]\d*)/ ; my $num = $1 ;           # bewarned - lurking 100000 protein bug   - uses this pattern to cope with numbers beginning with 0.
 	    if ($num > $wpmax) {
 		$wpmax = $num;
 	    }
@@ -212,7 +226,10 @@ print LOG "# $runtime : write wormpep.dna file\n\n";
 
 my $obj = "";
 
-open (DNA , ">$new_wpdir/wormpep.dna$release") || &error(7); # die "cannot create $new_wpdir/wormpep.dna$release\n";
+if ( $opt_f ) {
+  open (DNA , ">$new_wpdir/wormpep.dna$release") || &error(7); # die "cannot create $new_wpdir/wormpep.dna$release\n";
+}
+
 my (%dot2num , @dotnames , @c_dotnames);
 foreach my $dot (@dotnames_1) {
     
@@ -259,7 +276,7 @@ foreach my $dot (@dotnames_1) {
 	      print LOG "the dna sequence $dot contains a non ACGT character different from - and N\n";  
 	    }
     }
-    print DNA "$dna";
+    print DNA "$dna" if $opt_f;
     undef (my $pep);
     $pep = $obj->asPeptide();
     if ((!defined ($pep)) || ($pep eq "")) {
@@ -303,12 +320,34 @@ foreach my $dot (@dotnames_1) {
     $obj->DESTROY();
 
 }   
-
-close DNA;
-chmod (0444 , "$new_wpdir/wormpep.dna$release") || print LOG "cannot chmod $new_wpdir/dotnames.dna$release\n";
+if( $opt_t) {
+  close DNA;
+  chmod (0444 , "$new_wpdir/wormpep.dna$release") || print LOG "cannot chmod $new_wpdir/dotnames.dna$release\n";
+}
 
 $runtime = `date +%H:%M:%S`; chomp $runtime;
-print LOG "# $runtime : finished writing wormpep.dna file\n\n";
+print LOG "# $runtime : finished writing wormpep.dna file\n\n" if $opt_t;
+
+
+
+# if initial phase this writes the wormpepXX file for use in the BLAST analysis
+if( $opt_i ) {
+  open (WP,">$new_wpdir/wormpep$release") or die "cant create wormpep$release file\n";
+  foreach( @dotnames ) {
+    my $wpid = $dot2num{$_};
+    my $wpid_pad = sprintf "%05d" , $wpid;
+    my $pepseq = $num2seq[$wpid];
+
+    print WP ">$_ CE$wpid_pad\n$pepseq\n";
+  }
+  
+  exit(0) unless ($opt_f);
+}
+
+
+
+
+
 
  ############################################################################
  # write the new wp.fasta file, and wrap the sequences using rd's seqpress  #
@@ -696,7 +735,7 @@ sub run_details {
     print "# make_wormpep\n";
     print "# run details    : $rundate $runtime\n";
     print "\n";
-    print "Wormpep version  : wormpep$opt_r\n";
+    print "Wormpep version  : wormpep$release\n";
     print "Primary database : $dbdir\n\n";
 
     if ($opt_d) {
@@ -721,18 +760,24 @@ sub error {
         exec ('perldoc',$0);
         exit (0);
     }
-    # Error  1 - no wormpep release number
+ #   # Error  1 - initial and full at same time - WARN only
     elsif ($error == 1) {
-        # No wormpep release number file
 	&run_details;
-        print "=> No wormpep release number supplied\n\n";
-        exit(0);
+        print "=> Running initial and full at same time\n\n";
+	print "are you sure you want to continue ( y / n )\n";
+	my $yn = <STDIN>;
+	if ("$yn" ne "y" ) {
+	  return;
+	}
+	else {
+	  print "Exiting\n";
+	  exit(0);
+	}
     }
-    # Error  2 - invalid wormpep release number
+    # Error  2 - not chosen initial or full
     elsif ($error == 2) {
-        # Invalid wormpep release number file
         &run_details;
-        print "=> Invalid wormpep release number supplied.\n=> Release number must be an interger (e.g. 30)\n\n";
+        print "=> not chosen initial or full.\n\n";
 	exit(0);
     }
     # Error  3 - cannot create new wormpep directory 
@@ -809,7 +854,7 @@ autoace_minder mandatory arguments:
 
 =over 4
 
-=item -r, release number
+=item -i or -f
 
 =back
 
@@ -821,13 +866,22 @@ autoace_minder OPTIONAL arguments:
 
 =item -d, Verbose/Debug mode
 
+=item -i ,initial
+just writes a FASTA style file for use in the BLAST analysis wormpep88.
+
+=item -f , full.
+creates the version of Wormpep
+
+=item -t, test
+Writes to a test directory rather than the actual release one.
+
 =back
 
 =head1 EXAMPLES:
 
 =over 4
 
-=item make_wormpep -r 40
+=item make_wormpep -f
 
 =back
 
