@@ -1,6 +1,16 @@
-#!/usr/local/bin/perl5.6.0
+#!/usr/local/bin/perl5.6.0 -w
+# 
+# geneace_check.pl
+#
+# by Anthony Rogers
+#
+# Script to run consistency checks on the geneace database
+#
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2002-07-05 11:03:00 $
 
 use Ace;
+use lib "/wormsrv2/scripts/"; 
 use Wormbase;
 use strict;
 
