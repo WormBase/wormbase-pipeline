@@ -6,8 +6,8 @@
 #
 # simple script for creating new (sequence based) Gene objects 
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-11-23 16:34:36 $
+# Last edited by: $Author: mt3 $
+# Last edited on: $Date: 2005-02-02 15:33:27 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -46,7 +46,7 @@ die "-seq option not valid if -input is specified\n"     if ($input && $seq);
 die "-cgc option not valid if -input is specified\n"     if ($input && $cgc);
 die "-cgc option not valid if -seq is not specified\n"   if ($cgc && !$seq);
 die "You must specify either -input <file> or -seq <sequence> -cgc <cgc name>\n" if (!$seq && !$input);
-die "-cgc option is not a valid type of CGC name\n"      if ($cgc && ($cgc !~ m/^[a-z]{3,4}\-\d{1,2}$/));
+die "-cgc option is not a valid type of CGC name\n"      if ($cgc && ($cgc !~ m/^[a-z]{3,4}\-\d{1,3}$/));
 die "-who option must be an integer\n"                   if ($who && ($who !~ m/^\d+$/));
 die "can't use -id option if processing input file\n"    if ($id && $input);
 die "-seq option is not a valid type of sequence name\n" if ($seq && ($seq !~ m/^\w+\.\d{1,2}$/));
