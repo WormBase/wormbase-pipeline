@@ -6,8 +6,8 @@
 #
 # This script checks the exon order and corrects them if needed
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2004-01-07 14:04:08 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2004-02-05 14:26:17 $
 
 
 
@@ -29,10 +29,14 @@ use Cwd;
 
 my $database; # which database to test
 my $test;     # use test environment?
+my $quicktest;# use test environment but gets less clones?
 
 GetOptions ("database=s"   => \$database,
-            "test"         => \$test);
+            "test"         => \$test,
+	    "quicktest"    => \$quicktest
+	   );
 
+$test = 1 if $quicktest;
 
 #################################
 # Set paths                     #
@@ -88,8 +92,13 @@ $db->auto_save(0);
 ####################################
 # get genomic_canonical sequences  #
 ####################################
-
-my @sequences = $db->fetch(-query => 'Find Sequence Properties == Genomic_canonical & Species="Caenorhabditis elegans"');
+my @sequences;
+if( $quicktest ) {
+  @sequences = $db->fetch(-query => 'Find Sequence AH6');
+}
+else {
+  @sequences = $db->fetch(-query => 'Find Sequence Properties == Genomic_canonical & Species="Caenorhabditis elegans"');
+}
 
 unless($sequences[0]) {
     die print "database contained no genomic_canonical sequences\n";
@@ -193,7 +202,7 @@ if($dbpath =~ m/autoace$/){
   my $command = "pparse $dbpath/acefiles/sorted_exons.ace";
   $command .= "\nsave\nquit\n";
   print "\nUploading sorted exon info to autoace\n";
-  open (WRITEDB, "| $tace -tsuser reorder_exons $dbpath |") || die "Couldn't open pipe to autoace\n";
+  open (WRITEDB, "| $tace -tsuser reorder_exons $dbpath") || die "Couldn't open pipe to autoace\n";
   print WRITEDB $command;
   close WRITEDB;
 
