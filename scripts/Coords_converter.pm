@@ -62,7 +62,7 @@ sub invoke
       undef $refresh;
     }
 
-    unless( -e "$database/SL_coords.ace" and -e "$database/clone_coords.ace") {
+    unless( -e "$database/SL_coords" and -e "$database/clone_coords") {
       warn "\nno coordinate info was present - extracting new data\n"; 
       $refresh = 1;
     }
@@ -70,8 +70,8 @@ sub invoke
     if( $refresh ) {
       print "refreshing coordinates for $database\n";
       my $tace = &tace;
-      my $SL_coords_file = "$database/SL_coords.ace";
-      my $clone_coords_file = "$database/clone_coords.ace";
+      my $SL_coords_file = "$database/SL_coords";
+      my $clone_coords_file = "$database/clone_coords";
 
       my @command;
       $command[0] = "find sequence CHROM*\nshow -a Subsequence -f ${SL_coords_file}\n";
@@ -102,7 +102,7 @@ sub invoke
     }
 
     my $self = {};
-    open (SL,"<$database/SL_coords.ace") or croak "cant open superlink coordinate file ";
+    open (SL,"<$database/SL_coords") or croak "cant open superlink coordinate file ";
       my $parent;
     while (<SL>) {
       if(/Sequence.*(CHROMOSOME_\w+)/) {
@@ -115,7 +115,7 @@ sub invoke
     }
 
     undef $parent;
-    open (CLONE,"</$database/clone_coords.ace") or croak "cant open clone coordinate file $database/clone_coords.ace\t$!";
+    open (CLONE,"</$database/clone_coords") or croak "cant open clone coordinate file $database/clone_coords\t$!";
     while(<CLONE>) {
       if(/Sequence.*\"(SUPERLINK_\w+)/) {
 	$parent = $1;
