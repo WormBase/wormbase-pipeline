@@ -7,7 +7,7 @@
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-09-03 15:29:29 $
+# Last edited on: $Date: 2003-09-04 15:32:11 $
 
 
 use strict;
@@ -126,9 +126,10 @@ foreach my $stlclone (@stlclones) {
   $stlace{$stlclone} = 1;
 }
 
-############################
-# map the blat hits to ace #
-############################
+
+##########################################################################################
+# map the blat hits to ace - i.e. process blat output (*.psl) file into set of ace files #
+##########################################################################################
 
 my $runtime = &runtime;
 print LOG "$runtime: Start mapping\n\n";
@@ -138,41 +139,33 @@ open(ACE,  ">$blat_dir/autoace.$type.ace")  or die "Cannot open $blat_dir/autoac
 
 # input filehandle
 open(BLAT, "<$blat_dir/${type}_out.psl")  or die "Cannot open $blat_dir/${type}_out.psl $!\n";
+
 while (<BLAT>) {
   next unless (/^\d/);
-  my @f         = split "\t";
-  my $superlink = $f[13];
-  my $slsize    = $f[14];
-  my $lastvirt  = int($slsize/100000) + 1; 
-    
-  #############################################################
-  # replace EST name (usually accession number) by yk... name #
-  #############################################################
-	
-  my $est = $f[9];
-  if (( $est || $ost )  && (exists $EST_name{$est})) {
-    my $estname  = $EST_name{$est};
-    if ($est ne $estname) {
-      print LOG "EST name '$est' was replaced by '$estname'\n\n";
-      $est = $estname;
+  my @f           = split "\t";
+  my $match       = $f[0];                    # number of bases matched by blat
+  my $query       = $f[9];                    # query sequence name
+  my $query_size  = $f[10];                   # query sequence length
+  my $superlink   = $f[13];                   # name of superlink that was used as blat target sequence
+  my $slsize      = $f[14];                   # superlink size
+  my $lastvirt    = int($slsize/100000) + 1;  # for tracking how many virtual sequences have been created???
+  my $matchstart  = $f[15];                   # target (superlink) start coordinate...
+  my $matchend    = $f[16];                   # ...and end coordinate
+  my @lengths     = split (/,/, $f[18]);      # sizes of each blat 'block' in any individual blat match
+  my @querystarts = split (/,/, $f[19]);      # start coordinates of each query block
+  my @slinkstarts = split (/,/, $f[20]);      # start coordinates of each target (superlink) block
+
+
+
+  # replace EST name (usually accession number) by yk... name 
+  if (( $est || $ost )  && (exists $EST_name{$query})) {
+    my $estname  = $EST_name{$query};
+    if ($query ne $estname) {
+      print LOG "EST name '$query' was replaced by '$estname'\n\n";
+      $query = $estname;
     }
   }
-  my @lengths     = split (/,/, $f[18]);
-  my @eststarts   = split (/,/, $f[19]);
-  my @slinkstarts = split (/,/, $f[20]);
 
-
-#    print "$est maps to $superlink [currentDB: $db => $camace{$superlink} | $stlace{$superlink}]\n";
-#    # next if LINK is part of camace BUT we want stlace
-#    next if ((defined ($camace{$superlink})) && ($stlace));
-#    
-#    # next if LINK is part of stlace BUT we want camace
-#    next if ((defined ($stlace{$superlink})) && ($camace));
-#    print "$est will be processed\n";
-
-
-  my $matchstart  = $f[15];
-  my $matchend    = $f[16];
 
   ###############################
   # find virtual superlink part #
@@ -192,7 +185,7 @@ while (<BLAT>) {
     $virtual = "$word{$type}:${superlink}_${startvirtual}";
   }
   else {
-    print LOG "$est wasn't assigned to a virtual object as match size was too big\n";
+    print LOG "$query wasn't assigned to a virtual object as match size was too big\n";
     print LOG "Start is $matchstart, end is $matchend on $superlink\n\n";
     next;
   }
@@ -205,8 +198,7 @@ while (<BLAT>) {
   foreach my $length (@lengths) {
     $sum = $sum + $length;
   }	
-  my $match = $f[0];
-  my $query_size = $f[10];
+
   # new way of calculating score, divide by query size rather than sum of matching blocks, 
   # so short 30 bp polyA chunks will get 30/2000 rather than 30/30, should improve things
   # that are currently assigned OTHER but should be BEST
@@ -233,77 +225,77 @@ while (<BLAT>) {
       $virtualstart = (($slinkstarts[$x] +1)%100000) + 100000;
     }
     my $virtualend   = $virtualstart + $lengths[$x] -1;
-    my ($eststart,$estend);
+    my ($query_start,$query_end);
     
     # blatx 6-frame translation v 6-frame translation
     if ($nematode) {
       my $temp;
       if (($f[8] eq '++') || ($f[8] eq '-+')) {
-	$eststart   = $eststarts[$x] +1;
-	$estend     = $eststart + $lengths[$x] -1;
+	$query_start   = $querystarts[$x] +1;
+	$query_end     = $query_start + $lengths[$x] -1;
 	if ($f[8] eq '-+') {
-	  $temp     = $estend;
-	  $estend   = $eststart;
-	  $eststart = $temp; 
+	  $temp     = $query_end;
+	  $query_end   = $query_start;
+	  $query_start = $temp; 
 	}
       }
       elsif (($f[8] eq '--') || ($f[8] eq '+-')) {
 	$temp         = $virtualstart;
 	$virtualstart = $virtualend;
 	$virtualend   = $temp;
-	$eststart     = $f[10] - $eststarts[$x];
-	$estend       = $eststart - $lengths[$x] +1;
+	$query_start     = $f[10] - $querystarts[$x];
+	$query_end       = $query_start - $lengths[$x] +1;
 	if ($f[8] eq '--') {
-	  $temp     = $estend;
-	  $estend   = $eststart;
-	  $eststart = $temp; 
+	  $temp     = $query_end;
+	  $query_end   = $query_start;
+	  $query_start = $temp; 
 	}
       }			
     }
     else {
       if ($f[8] eq '+'){
-	$eststart   = $eststarts[$x] +1;
-	$estend     = $eststart + $lengths[$x] -1;
+	$query_start   = $querystarts[$x] +1;
+	$query_end     = $query_start + $lengths[$x] -1;
       }
       elsif ($f[8] eq '-') {
-	$eststart   = $f[10] - $eststarts[$x];
-	$estend     = $eststart - $lengths[$x] +1;
+	$query_start   = $f[10] - $querystarts[$x];
+	$query_end     = $query_start - $lengths[$x] +1;
       }		
     }		
-    print LOG "$est was mapped to $virtual\n\n";
+    print LOG "$query was mapped to $virtual\n\n";
     
     # write to output file
     print  ACE "Homol_data : \"$virtual\"\n";
     if ($type eq "NEMATODE") {
-      printf ACE "DNA_homol\t\"%s\"\t\"$word{$type}\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$est,$score,$virtualstart,$virtualend,$eststart,$estend;
+      printf ACE "DNA_homol\t\"%s\"\t\"$word{$type}\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$query,$score,$virtualstart,$virtualend,$query_start,$query_end;
     }
     else {
-      printf ACE "DNA_homol\t\"%s\"\t\"$word{$type}_OTHER\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$est,$score,$virtualstart,$virtualend,$eststart,$estend;
+      printf ACE "DNA_homol\t\"%s\"\t\"$word{$type}_OTHER\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$query,$score,$virtualstart,$virtualend,$query_start,$query_end;
     }
-    push @exons, [$virtualstart,$virtualend,$eststart,$estend];				
+    push @exons, [$virtualstart,$virtualend,$query_start,$query_end];				
   }
     
   ########################
   # collect best matches #
   ########################
   
-  if (exists $best{$est}) {
-    if ($score >= $best{$est}->{'score'}) {
-      if ( ($score > $best{$est}->{'score'}) || ($match > $best{$est}->{'match'})) { 
-	$best{$est}->{'score'} = $score;
-	$best{$est}->{'match'} = $match;
-	@{$best{$est}->{'entry'}} = ({'clone' => $virtual,'link' => $superlink,'exons' => \@exons});
+  if (exists $best{$query}) {
+    if ($score >= $best{$query}->{'score'}) {
+      if ( ($score > $best{$query}->{'score'}) || ($match > $best{$query}->{'match'})) { 
+	$best{$query}->{'score'} = $score;
+	$best{$query}->{'match'} = $match;
+	@{$best{$query}->{'entry'}} = ({'clone' => $virtual,'link' => $superlink,'exons' => \@exons});
       }
-      elsif ($match == $best{$est}->{'match'}) {
-	$best{$est}->{'score'} = $score;
-	push @{$best{$est}->{'entry'}}, {'clone' => $virtual,'link' => $superlink,'exons' => \@exons};
+      elsif ($match == $best{$query}->{'match'}) {
+	$best{$query}->{'score'} = $score;
+	push @{$best{$query}->{'entry'}}, {'clone' => $virtual,'link' => $superlink,'exons' => \@exons};
       }
     }
   }
   else {
-    $best{$est}->{'match'} = $match;
-    $best{$est}->{'score'} = $score;
-    @{$best{$est}->{'entry'}} = ({'clone' => $virtual,'link' => $superlink,'exons' => \@exons});
+    $best{$query}->{'match'} = $match;
+    $best{$query}->{'score'} = $score;
+    @{$best{$query}->{'entry'}} = ({'clone' => $virtual,'link' => $superlink,'exons' => \@exons});
   }
 }
 close BLAT;
@@ -334,21 +326,21 @@ foreach my $found (sort keys %best) {
 	  my $score        = $best{$found}->{'score'};
 	  my $virtualstart = $ex->[0];
 	  my $virtualend   = $ex->[1];
-	  my $eststart     = $ex->[2];
-	  my $estend       = $ex->[3];
+	  my $query_start  = $ex->[2];
+	  my $query_end    = $ex->[3];
 	  
 	  # print line for autoace
 	  print  AUTBEST "Homol_data : \"$virtual\"\n";
-	  printf AUTBEST "DNA_homol\t\"%s\"\t\"$word{$type}_BEST\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$found,$score,$virtualstart,$virtualend,$eststart,$estend;
+	  printf AUTBEST "DNA_homol\t\"%s\"\t\"$word{$type}_BEST\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$found,$score,$virtualstart,$virtualend,$query_start,$query_end;
 	  # camace
 	  if ($camace{$superlink}) {
 	    print  CAMBEST "Homol_data : \"$virtual\"\n";
-	    printf CAMBEST "DNA_homol\t\"%s\"\t\"$word{$type}_BEST\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$found,$score,$virtualstart,$virtualend,$eststart,$estend;
+	    printf CAMBEST "DNA_homol\t\"%s\"\t\"$word{$type}_BEST\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$found,$score,$virtualstart,$virtualend,$query_start,$query_end;
 	  }
 	  # and stlace
 	  elsif ($stlace{$superlink}) {
 	    print  STLBEST "Homol_data : \"$virtual\"\n";
-	    printf STLBEST "DNA_homol\t\"%s\"\t\"$word{$type}_BEST\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$found,$score,$virtualstart,$virtualend,$eststart,$estend;
+	    printf STLBEST "DNA_homol\t\"%s\"\t\"$word{$type}_BEST\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$found,$score,$virtualstart,$virtualend,$query_start,$query_end;
 	  }
 	  
 	}
