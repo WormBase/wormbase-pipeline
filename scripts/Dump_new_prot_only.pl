@@ -228,7 +228,7 @@ open (OUT,">$output") or die "cant open $output\n";
 print "opening $recip_file";
 open (RECIP,">$recip_file") or die "cant open recip file $recip_file: $!\n";
 
-dbmopen our %ACC2DB, "$wormpipe_dir/dumps/acc2db.dbm", 0666 or die "cannot open acc2db \n";
+dbmopen our %ACC2DB, "$wormpipe_dir/dumps/acc2db.dbm", 0666 or warn "cannot open acc2db \n";
 
 my $count;
 my $count_limit = 10;
