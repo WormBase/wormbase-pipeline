@@ -4,7 +4,7 @@
 #
 # by Chao-Kung Chen [030625]
 
-# Last updated on: $Date: 2004-11-22 17:37:27 $
+# Last updated on: $Date: 2004-12-08 17:50:43 $
 # Last updated by: $Author: krb $
 
 use Tk;
@@ -26,13 +26,14 @@ my $paper_name;          # Will store paper object names in form 'WBPaperXXXXXXX
 my $tace = &tace;        # gets default path to tace binary
 my $database = "/nfs/disk100/wormpub/DATABASES/current_DB";
 my $WB_version = &get_wormbase_version() -1; # get release number for last release (i.e. not current one)
+my $top;
 
 # check that GFF splits directory exists for the version that you are looking at
 if (! -e "/wormsrv2/autoace/GFF_SPLITS/WS$WB_version/"){
   die "/wormsrv2/autoace/GFF_SPLITS/WS$WB_version does not exist\n";
 }
 else{
-  print "\nWorking with WS$WB_version data\n";
+
 }
 
 
@@ -40,14 +41,16 @@ else{
 # check for latest exon table version
 #####################################
 
-my $exon_tbl = "/wormsrv1/geneace/ALLELE_DATA/EXON_TABLES";
-my $archive;
-my @archive = `ls $exon_tbl`; foreach (@archive){chomp; if ($_ =~ /.+(WS\d+)/){$archive = $1}}
-my $top;
+my $exon_table_dir = "/wormsrv1/geneace/ALLELE_DATA/EXON_TABLES";
 
+# check that an ExonTable_XXX file exists that corresponds to last release of WormBase
+# if not, then need to make new Exon_Table file
+print "\nLast available WormBase release was WS$WB_version\n";
+print "Looking for $exon_table_dir/ExonTable_$WB_version...\n";
 
-# If there has been a new release, then we first need to update the EXON_TABLES directory under /wormsrv1/geneace
-if ("$WB_version" ne "$archive") {	
+if (! -e "$exon_table_dir/ExonTable_$WB_version"){
+  print "File does not exist, creating ExonTable_$WB_version file...\n\n";
+
   $top = MainWindow->new();
   $top->configure (title => "Updating datasets . . .", background => "white");
 
@@ -63,7 +66,9 @@ if ("$WB_version" ne "$archive") {
                  -> pack(side => "left", expand => 1);
   MainLoop();
 }
-
+else{
+  print "Found it!\n\n";
+}
 
 ###############################################
 # get hash for Gene_name <-> Gene id conversion
@@ -85,7 +90,7 @@ $mw->configure (title => "Allele Flanking Sequences Retriever   by Chao-Kung Che
                );
 
 $mw->geometry("760x900+0+0");
-#$mw->resizable(0,0);
+
 
 ######################################
 # Instantiate widgets and arrange them
@@ -136,7 +141,7 @@ my $param_frame = $mw ->Frame(relief => 'groove', borderwidth => 2)
 $param_frame -> Label(text=>"Query parameters: ", fg=>"blue") # create a horizontal space 
            -> pack(side => "left");
 
-$param_frame -> Label(text => "Eg: 4R79.1 -aa 324D ok12 abc-1 1232   OR   4R79.1 -dna 1324t ok12 abc-1 1232", fg => "black")
+$param_frame -> Label(text => "Eg: 4R79.1 -aa 332Q ok12 abc-1 1232   OR   4R79.1 -dna 1324t ok12 abc-1 1232", fg => "black")
                 -> pack(side => "left");
 
 #----------- entry box ----------
@@ -263,11 +268,11 @@ my ($cds_or_locus, $aa_or_dna, $mutation, $allele, $cgc_name, $position, $cds,
 ######################################################
 
 sub update {
-  system ("rm -f $exon_tbl/* ");
-  `echo "table-maker -o $exon_tbl/CDS_table_$WB_version -p /wormsrv1/geneace/wquery/get_elegans_CDS_source_exons.def" | $tace $database`;
-  `echo "table-maker -o $exon_tbl/RNA_table_$WB_version -p /wormsrv1/geneace/wquery/get_elegans_RNA_gene_source_exons.def" | $tace $database`;
-  system ("cat $exon_tbl/CDS_table_$WB_version $exon_tbl/RNA_table_$WB_version > $exon_tbl/ExonTable_$WB_version; rm -f $exon_tbl/*table_$WB_version");
-  system ("chmod 775 $exon_tbl/* ");
+  system ("rm -f $exon_table_dir/* ");
+  `echo "table-maker -o $exon_table_dir/CDS_table_$WB_version -p /wormsrv1/geneace/wquery/get_elegans_CDS_source_exons.def" | $tace $database`;
+  `echo "table-maker -o $exon_table_dir/RNA_table_$WB_version -p /wormsrv1/geneace/wquery/get_elegans_RNA_gene_source_exons.def" | $tace $database`;
+  system ("cat $exon_table_dir/CDS_table_$WB_version $exon_table_dir/RNA_table_$WB_version > $exon_table_dir/ExonTable_$WB_version; rm -f $exon_table_dir/*table_$WB_version");
+  system ("chmod 775 $exon_table_dir/* ");
   $top->after(1, sub { $top->destroy } );
 }
 
@@ -469,7 +474,6 @@ sub run {
     else {
       $cds = uc($cds_or_locus);
     }
-
   }
 
   ####################################################
@@ -478,7 +482,7 @@ sub run {
 
   my ($DNA, @coords, $chrom, $left, $right, $strand, $CDS);
 
-  chdir "/wormsrv2/autoace/GFF_SPLITS/$WB_version/";
+  chdir "/wormsrv2/autoace/GFF_SPLITS/WS$WB_version/";
 
   @CDS_coords = `grep $cds *.CDS.gff | cut -f 1,4,5,7,9`;
   if (!@CDS_coords){@CDS_coords = `grep $cds *.rna.gff | cut -f 1,4,5,7,9`} # do this if seq. belongs to Transcript class
@@ -533,12 +537,13 @@ sub run {
 
     $ace_window->insert('end', "\nGene : \"$Gene_info{$cgc_name}{'Gene'}\"  \/\/$cgc_name\n");
     $ace_window->insert('end', "\/\/Allele \"$allele\" Paper_evidence \"$paper_name\"\n");
+
     $ace_window->insert('end', "\nAllele : \"$allele\"\n");
     $ace_window->insert('end', "\/\/Evidence Paper_evidence \"$paper_name\"\n");
+    $ace_window->insert('end', "Flanking_sequences \"$dna_L\" \"$dna_R\"\n");
     $ace_window->insert('end', "Sequence \"$seq\"\n");
     $ace_window->insert('end', "\/\/Substitution \"[\/]\"\n");
     $ace_window->insert('end', "\/\/Deletion \"[\/]\"\n");
-    $ace_window->insert('end', "Flanking_sequences \"$dna_L\" \"$dna_R\"\n");
     $ace_window->insert('end', "Species \"Caenorhabditis elegans\"\n");
     $ace_window->insert('end', "\/\/Remark \"\" Paper_evidence \"$paper_name\"\n");
     $ace_window->insert('end', "\/\/Remark \"\" Curator_confirmed \"WBPerson2861\"\n");
@@ -570,7 +575,7 @@ sub run {
     # fetch source exons of a CDS/Transcript
     ########################################
 
-    my @exons = `grep $cds $exon_tbl/ExonTable*`;
+    my @exons = `grep $cds $exon_table_dir/ExonTable*`;
 
     ########################################################################################
     # retrieving flank seq of a specified codon or mutation site via exons_to_codons routine
@@ -873,7 +878,7 @@ sub exons_to_codons {
   push(@output,  "\n");
 
   $run_window -> delete('1.0', 'end');
-  $run_window -> insert('end', "$archive\n$cds\n");
+  $run_window -> insert('end', "WS$WB_version\n$cds\n");
 
   foreach (@output){
     if ($_ =~ /(red) (.+)/ || $_ =~ /(blue) (.+)/ || $_ =~ /(black) (.+)/ || $_ =~ /(magenta) (.+)/ ||
@@ -1001,19 +1006,18 @@ sub write_ace {
   $ace_window->insert('end', "\nGene : \"$Gene_info{$cgc_name}{'Gene'}\"\n");
   $ace_window->insert('end', "Allele \"$allele\" Paper_evidence \"$paper_name\"\n");
   
-
   $ace_window->insert('end', "\nAllele : \"$allele\"\n");
   $ace_window->insert('end', "Evidence Paper_evidence \"$paper_name\"\n");
-  
-
   $ace_window->insert('end', "Sequence \"$seq\"\n");
+  $ace_window->insert('end', "Flanking_sequences \"$Lf\" \"$Rf\"\n");
+  $ace_window->insert('end', "Gene  \"$Gene_info{$cgc_name}{'Gene'}\"  \/\/$cgc_name\n");
+  $ace_window->insert('end', "Species \"Caenorhabditis elegans\"\n");
+
   $ace_window->insert('end', "\/\/Substitution \"[\/]\"\n");
   $ace_window->insert('end', "\/\/Deletion \n");
   $ace_window->insert('end', "\/\/Insertion\n");
   $ace_window->insert('end', "\/\/Deletion_with_insertion\n");
-  $ace_window->insert('end', "Flanking_sequences \"$Lf\" \"$Rf\"\n");
-  $ace_window->insert('end', "Gene  \"$Gene_info{$cgc_name}{'Gene'}\"  \/\/$cgc_name\n");
-  $ace_window->insert('end', "Species \"Caenorhabditis elegans\"\n");
+
   if ($info[0] eq "X"){
     $ace_window->insert('end', "\/\/Nonsense \"Amber_UAG\" \"$info[2] to stop\"\n");
     $ace_window->insert('end', "\/\/Nonsense \"Ochre_UAA\" \"$info[2] to stop\"\n");
