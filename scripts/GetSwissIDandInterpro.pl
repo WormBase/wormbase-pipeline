@@ -14,18 +14,19 @@
 #
 # pfetch is done in batches of 2000, any greater and nothing comes back!
 #
-# Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs 
-# Last updated on: $Date: 2002-08-12 15:44:25 $        # quickly see when script was last changed and by whom
+# Last updated by: $Author: dl1 $                      # These lines will get filled in by cvs 
+# Last updated on: $Date: 2002-08-22 08:30:16 $        # quickly see when script was last changed and by whom
 
 use strict;
+use lib "/wormsrv2/scripts/";                  
 use Wormbase;
 use Ace;
 
-my $maintainer = "All";
-my $rundate    = `date +%y%m%d`; chomp $rundate;
-my $wmpep_ver = &get_wormbase_version();#-1 for testing during builds
-my $wormpepdir = "/wormsrv2/WORMPEP/wormpep$wmpep_ver";
-my $log = "/wormsrv2/logs/GetSwissIDandInterpro.WB$wmpep_ver.$rundate";#error log (email to All)
+my $maintainer   = "All";
+my $rundate      = `date +%y%m%d`; chomp $rundate;
+my $wmpep_ver    = &get_wormbase_version();#-1 for testing during builds
+my $wormpepdir   = "/wormsrv2/WORMPEP/wormpep$wmpep_ver";
+my $log          = "/wormsrv2/logs/GetSwissIDandInterpro.WB$wmpep_ver.$rundate";#error log (email to All)
 my $temp_acefile = "$wormpepdir/SwissprotIDs.ace";
 
 my $ace_output = *ACE_OUTPUT;
