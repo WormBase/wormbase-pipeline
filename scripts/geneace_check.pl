@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-10-22 15:12:22 $
+# Last updated on: $Date: 2003-10-22 16:03:45 $
 
 
 use strict;
@@ -1486,6 +1486,10 @@ EOF
 }   
 
 sub check_bogus_XREF {
+
+  # Does two things:
+  #  A: finding deleted parent seq name after isoforms are created
+  #  B: finding bogus XREF from seq. names that are typos
   
   print LOG "\nChecking bogus XREF debris from deleted CDS / Transcript / Pseudogene / Gene_name in Locus obj. . . .\n\n";
   
@@ -1502,13 +1506,14 @@ sub check_bogus_XREF {
   push(my @loci,  $db->find($query_locus));
 
   my $error = 0;
-  # finding deleted parent seq name after isoforms are created
+
+  # A: finding deleted parent seq name after isoforms are created
   $error = find_bogus(\@CDS, "CDS");
   $error = find_bogus(\@TRANS, "Transcripts");
   $error = find_bogus(\@PSEUDO, "Pseudogene");
   $error = find_bogus(\@GNAME, "Gene_name");
 
-  # finding bogus XREF from seq. names that are typos
+  # B: finding bogus XREF from seq. names that are typos
   my (%locus_seq_A, %locus_seq_B); # hash A, locus linked to seq. in seq objs, hash B, locus linked to seq. in locus obj.
 
   my @all = (\@CDS, \@TRANS, \@PSEUDO);
@@ -1526,13 +1531,6 @@ sub check_bogus_XREF {
   }  
  
   foreach (keys %locus_seq_A){
-    print "$_ ->@{$locus_seq_A{$_}}\n";
-  }
-  foreach (keys %locus_seq_B){
-    print "$_ ->@{$locus_seq_B{$_}}\n";
-  }
-
-  foreach (keys %locus_seq_A){
     if (exists $locus_seq_B{$_}){
 
       # compare seq. obj. in a locus class with seq. obj linked to same locus in seq. classes
@@ -1540,13 +1538,10 @@ sub check_bogus_XREF {
       my @comp_result = array_comp(\@{$locus_seq_A{$_}},  \@{$locus_seq_B{$_}});
       my @diff = @{$comp_result[0]}; 
       if (@diff){
-	print LOG "Found typo bogus @diff linked to $_\n" if @diff;
+	print LOG "ERROR: Found typo bogus @diff linked to $_\n" if @diff;
 	$error = 1;
       }
     } 
-    else {
-      print $_, "\n";
-    }
   }
   
   print LOG "No bogus XREF link found\n" if $error == 0;
@@ -1554,16 +1549,17 @@ sub check_bogus_XREF {
   #################################################################################################
   # HOW this routine works: 
   # split a sequence eg. Y110A7A.10a, into "Y110A7A.10" (left: as key) and "a" (right: as value)
-  # if a sequence has no right (ie, not an isoform), then "NA" is assigned.
+  # if a sequence has no right part (ie, not an isoform), then "NA" is assigned.
   # and if a key's value has "NA", other than a/b/c/d..etc, then the one without isoform is invalid
-  # this routine checks only deleted bogus parent seq. names when isoforms are created
+  #
+  # This routine checks only deleted bogus parent seq. names when isoforms are created
   # it cannot check bogus seq. names created by typos 
   ##################################################################################################
 
   sub find_bogus {
     my ($class, $cat) = @_;
     my %Seqs;
-    my@class = @{$class};
+    my @class = @{$class};
 
     foreach (@class){
       my ($left, $right);
@@ -1587,7 +1583,7 @@ sub check_bogus_XREF {
 	}
       }
       if ($counter_iso != 0 && $counter_NA != 0){
-	print LOG "Found bogus $_ in $cat class\n" if $counter_iso != 0 && $counter_NA != 0;
+	print LOG "ERROR: Found bogus $_ in $cat class\n" if $counter_iso != 0 && $counter_NA != 0;
 	$error = 1;
       }
     }
