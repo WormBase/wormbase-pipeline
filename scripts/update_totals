@@ -8,8 +8,8 @@
 #
 # Usage : update_totals
 #
-# Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2002-11-14 15:05:09 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2004-02-19 15:38:52 $
 #
 # see pod documentation (i.e. 'perldoc update_totals') for more information.
 #
@@ -32,8 +32,9 @@ use Getopt::Long;
 my $cmid        = "/nfs/disk100/wormpub/analysis/cosmids/cmid";
 my $unfincmid   = "/nfs/disk100/wormpub/analysis/Sequence_Databases/unfincmid";
 my $composition = "/nfs/disk100/wormpub/bin.ALPHA/composition";
-my $count_fin   = "/nfs/disk2/sign/orginfo/celegans.fin";
-my $count_unfin = "/nfs/disk2/sign/orginfo/celegans.unfin";
+my $webpath     = "/nfs/WWW/SANGER_docs/data/sequencing_stats";
+my $count_fin   = "$webpath/celegans.fin";
+my $count_unfin = "$webpath/celegans.unfin";
 my $fin;
 my $unfin;
 
