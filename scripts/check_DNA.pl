@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl
+#!/usr/local/bin/perl5.6.1 -w
 #
 # Check_DNA.pl v1.0
 # dl
