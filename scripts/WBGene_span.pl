@@ -6,8 +6,8 @@
 #
 # Creates SMapped Gene spans for Gene objects
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-09-10 09:53:02 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2005-03-21 10:29:48 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -17,14 +17,15 @@ use Getopt::Long;
 use Log_files;
 
 my $database = "/wormsrv2/autoace";
-my ($test, $gff, $no_ace, $debug, $gff_file);
+my ($test, $gff, $no_ace, $debug, $gff_file, $chromosome);
 GetOptions (
 	    'database=s' => \$database,
 	    'test'       => \$test,
 	    'gff'        => \$gff,
 	    'no_ace'     => \$no_ace,
 	    'debug=s'    => \$debug,
-	    'gff_file=s'      => \$gff_file
+	    'gff_file=s'      => \$gff_file,
+	    'chromosome=s' => \$chromosome
 	   );
 
 my $log = Log_files->make_build_log($debug);
@@ -61,6 +62,7 @@ close FH;
 
 my @chromosomes = qw( I II III IV V X MtDNA);
 @chromosomes = qw(III) if $test;
+@chromosomes = ("$chromosome") if $chromosome;
 foreach my $chrom ( @chromosomes ) {
   my %gene_coords;
   $gff_file = "$database/CHROMOSOMES/CHROMOSOME_${chrom}.gff" unless $gff_file;
