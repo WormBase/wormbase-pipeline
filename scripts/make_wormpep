@@ -282,7 +282,7 @@ foreach my $dot (@dotnames_1) {
        print LOG "the peptide sequence $dot does not start with a M\n";
     } 
     my $c_dot = $dot;
-    $c_dot =~ tr/a-z/A-Z/;
+#   $c_dot =~ tr/a-z/A-Z/;   # commented out to leave isoform systematic names as lower case
     unless (exists ($seq2num{$pseq})) {
         $num2seq[++$wpmax] = $pseq;
         $seq2num{$pseq} = $wpmax;
