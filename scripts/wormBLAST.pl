@@ -4,8 +4,8 @@
 # 
 # written by Anthony Rogers
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-01-30 13:30:10 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2004-02-04 16:25:38 $
 
 use DBI;
 use strict;
@@ -82,7 +82,7 @@ if( $run_pipeline ) {
 
 die "please give a build version number ie  wormBLAST -version 114\n" unless $WS_version;
 my $WS_old = $WS_version - 1;
-my $scripts_dir = "$wormpipe_dir/Ensembl_update/scripts/BLAST_scripts";
+my $scripts_dir = "$wormpipe_dir/scripts/BLAST_scripts";
 #process Ids
 
 #|         18 | gadfly3.pep         |
