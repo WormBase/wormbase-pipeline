@@ -5,9 +5,7 @@
 # dl
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2003-06-17 09:33:44 $
-
-
+# Last edited on: $Date: 2003-08-11 11:44:49 $
 
 use strict;
 use lib "/wormsrv2/scripts/";   
@@ -15,118 +13,147 @@ use Wormbase;
 use Getopt::Long;
 
 my $debug = 1;
-
-our $tace        = &tace;
+our $tace       = &tace;
 our $WS_version = &get_wormbase_version;
 
 my $WS_previous = $WS_version - 1;
 print "WS_version : $WS_version\tWS_previous : $WS_previous\n" if ($debug);
 
-my $directory   = "/nfs/disk100/wormpub/camace_orig/WS${WS_previous}-WS${WS_version}";
-my $camace_orig = "/nfs/disk100/wormpub/camace_orig";
-my $camace_dl1  = "/nfs/disk100/wormpub/camace_dl1";
-my $camace_pad  = "/nfs/disk100/wormpub/camace_pad";
-my $camace_ar2  = "/nfs/disk100/wormpub/camace_ar2";
+##############################
+# command-line options       #
+##############################
 
-# make the new directory
+my $all;                   # All
+my $dan;                   # Use Daniel's split
+my $ant;                   # Use Anthony's split
+my $paul;                  # Use Paul's split
+my $merge;                 # Merging databases
+my $split;                 # Splitting databases
+my $update;                # Update current database
 
-print "Make a new directory : '$directory'\n" if ($debug);
-mkdir $directory;
+GetOptions (
+            "all"        => \$all,
+	    "dan"        => \$dan,
+	    "ant"        => \$ant,
+	    "paul"       => \$paul,
+	    "merge"      => \$merge,
+	    "split"      => \$split,
+	    "update"     => \$update,
+	    "debug"      => \$debug
+	    );
 
-# dump the Sequence and Transcript class from the database
-my $path;
 
-# camace_orig
-$ENV{'ACEDB'} = $camace_orig;
+# directory paths for the split databases
 
-print "dumped Sequence class from camace_orig\n" if ($debug);
-$path = $directory . '/sequence_orig.ace';
-&dumpace('Sequence',$path);
+our $current     = "/wormsrv1/camace";
+our $directory   = "/nfs/disk100/wormpub/camace_orig/WS${WS_previous}-WS${WS_version}";
+our $camace_orig = "/nfs/disk100/wormpub/camace_orig";
+our $camace_dl1  = "/nfs/disk100/wormpub/camace_dl1";
+our $camace_pad  = "/nfs/disk100/wormpub/camace_pad";
+our $camace_ar2  = "/nfs/disk100/wormpub/camace_ar2";
 
-print "dumped Transcript class from camace_orig\n" if ($debug);
-$path = $directory . '/transcript_orig.ace';
-&dumpace('Transcript',$path);
 
-# camace_dl1
-$ENV{'ACEDB'} = $camace_dl1;
+# TransferDB calls to move /wormsrv1/camace to the split databases
+if ($split) {
+    print "Copying /wormsrv1/database to the split camaces\n";
+    &split_database;
+    exit(0);
+}
 
-print "dumped Sequence class from camace_dl1\n" if ($debug);
-$path = $directory . '/sequence_dl1.ace';
-&dumpace('Sequence',$path);
 
-print "dumped Transcript class from camace_dl1\n" if ($debug);
-$path = $directory . '/transcript_dl1.ace';
-&dumpace('Transcript',$path);
+# Merge split databases #1 - do the diffs
 
-# camace_pad
-$ENV{'ACEDB'} = $camace_pad;
+if ($merge) {
 
-print "dumped Sequence class from camace_pad\n" if ($debug);
-$path = $directory . '/sequence_pad.ace';
-&dumpace('Sequence',$path);
+    print "Make a new directory : '$directory'\n" if ($debug);
+    mkdir $directory;
 
-print "dumped Transcript class from camace_pad\n" if ($debug);
-$path = $directory . '/transcript_pad.ace';
-&dumpace('Transcript',$path);
+    # dump the Sequence and Transcript class from the database
+    
+    # copy to camace_orig (always do this)
+    &dump_camace_orig;
 
-# camace_ar2
-$ENV{'ACEDB'} = $camace_ar2;
+    # copy to camace_ar2 (-ant or -all)
+    &dump_camace_ar2 if ($ant || $all);
 
-print "dumped Sequence class from camace_ar2\n" if ($debug);
-$path = $directory . '/sequence_ar2.ace';
-&dumpace('Sequence',$path);
+    # copy to camace_dl1 (-dan or -all)
+    &dump_camace_dl1 if ($dan || $all);
 
-print "dumped Transcript class from camace_ar2\n" if ($debug);
-$path = $directory . '/transcript_ar2.ace';
-&dumpace('Transcript',$path);
+    # copy to camace_pad (-paul or -all)
+    &dump_camace_pad if ($paul || $all);
 
-###################################################
-# All of the raw data is now dumped to files      #
-###################################################
+    ###################################################
+    # All of the raw data is now dumped to files      #
+    ###################################################
 
-my $path1;
-my $path2;
-my $path3;
-my $path4;
+    # run acediff on the files
 
-# run acediff on the files
+    # Sequence
+    my $path_orig = $directory . '/sequence_orig.ace';
+    my $path_dl1  = $directory . '/sequence_dl1.ace';
+    my $path_pad  = $directory . '/sequence_pad.ace';
+    my $path_ar2  = $directory . '/sequence_ar2.ace';
+    
+    system ("acediff $path_orig $path_dl1 > $directory/sequence_diff_dl1.ace") if ($dan  || $all);
+    system ("acediff $path_orig $path_pad > $directory/sequence_diff_pad.ace") if ($paul || $all);
+    system ("acediff $path_orig $path_ar2 > $directory/sequence_diff_ar2.ace") if ($ant  || $all);
 
-# Sequence
-$path1 = $directory . '/sequence_orig.ace';
-$path2 = $directory . '/sequence_dl1.ace';
-$path3 = $directory . '/sequence_pad.ace';
-$path4 = $directory . '/sequence_ar2.ace';
+    # Transcript
+    $path_orig = $directory . '/transcript_orig.ace';
+    $path_dl1  = $directory . '/transcript_dl1.ace';
+    $path_pad  = $directory . '/transcript_pad.ace';
+    $path_ar2  = $directory . '/transcript_ar2.ace';
+    
+    system ("acediff $path_orig $path_dl1 > $directory/transcript_diff_dl1.ace") if ($dan  || $all);
+    system ("acediff $path_orig $path_pad > $directory/transcript_diff_pad.ace") if ($paul || $all);
+    system ("acediff $path_orig $path_ar2 > $directory/transcript_diff_ar2.ace") if ($ant  || $all);
+    
+    # Feature
+    $path_orig = $directory . '/feature_orig.ace';
+    $path_dl1  = $directory . '/feature_dl1.ace';
+    $path_pad  = $directory . '/feature_pad.ace';
+    $path_ar2  = $directory . '/feature_ar2.ace';
+    
+    system ("acediff $path_orig $path_dl1 > $directory/feature_diff_dl1.ace") if ($dan  || $all);
+    system ("acediff $path_orig $path_pad > $directory/feature_diff_pad.ace") if ($paul || $all);
+    system ("acediff $path_orig $path_ar2 > $directory/feature_diff_ar2.ace") if ($ant  || $all);
+    
 
-system ("acediff $path1 $path2 > $directory/sequence_diff_dl1.ace");
-system ("acediff $path1 $path3 > $directory/sequence_diff_pad.ace");
-system ("acediff $path1 $path4 > $directory/sequence_diff_ar2.ace");
+    ###################################################
+    # all of the acediffs are now complete            #
+    ###################################################
 
-# Transcript
-$path1 = $directory . '/transcript_orig.ace';
-$path2 = $directory . '/transcript_dl1.ace';
-$path3 = $directory . '/transcript_pad.ace';
-$path4 = $directory . '/transcript_ar2.ace';
+    # tidy up and reformat the diff files
 
-system ("acediff $path1 $path2 > $directory/transcript_diff_dl1.ace");
-system ("acediff $path1 $path3 > $directory/transcript_diff_pad.ace");
-system ("acediff $path1 $path4 > $directory/transcript_diff_ar2.ace");
+    if ($dan || $all) {
+	system ("reformat_acediff $directory/sequence_diff_dl1.ace   > $directory/update_sequence_dl1.ace");
+	system ("reformat_acediff $directory/transcript_diff_dl1.ace > $directory/update_transcript_dl1.ace");
+	system ("reformat_acediff $directory/feature_diff_dl1.ace    > $directory/update_feature_dl1.ace");
+    }
+    if ($paul || $all) {
+	system ("reformat_acediff $directory/sequence_diff_pad.ace   > $directory/update_sequence_pad.ace");
+	system ("reformat_acediff $directory/transcript_diff_pad.ace > $directory/update_transcript_pad.ace");
+	system ("reformat_acediff $directory/feature_diff_pad.ace    > $directory/update_feature_pad.ace");
+    }
+    if ($ant || $all) {
+	system ("reformat_acediff $directory/sequence_diff_ar2.ace   > $directory/update_sequence_ar2.ace");
+        system ("reformat_acediff $directory/transcript_diff_ar2.ace > $directory/update_transcript_ar2.ace");
+	system ("reformat_acediff $directory/feature_diff_ar2.ace    > $directory/update_feature_ar2.ace");
+    }
 
-###################################################
-# all of the acediffs are now complete            #
-###################################################
+    print "acediff's done and files can be found in $directory\n";
+}
 
-# tidy up and reformat the diff files
 
-system ("reformat_acediff $directory/sequence_diff_dl1.ace > $directory/update_sequence_dl1.ace");
-system ("reformat_acediff $directory/sequence_diff_pad.ace > $directory/update_sequence_pad.ace");
-system ("reformat_acediff $directory/sequence_diff_ar2.ace > $directory/update_sequence_ar2.ace");
 
-system ("reformat_acediff $directory/transcript_diff_dl1.ace > $directory/update_transcript_dl1.ace");
-system ("reformat_acediff $directory/transcript_diff_pad.ace > $directory/update_transcript_pad.ace");
-system ("reformat_acediff $directory/transcript_diff_ar2.ace > $directory/update_transcript_ar2.ace");
+if ($update) {
+    &update_camace;
+}
 
-system ("cat $directory/update_sequence_dl1.ace   $directory/update_sequence_pad.ace   $directory/update_sequence_ar2.ace   > $directory/update_sequence.ace");
-system ("cat $directory/update_transcript_dl1.ace $directory/update_transcript_pad.ace $directory/update_transcript_ar2.ace > $directory/update_transcript.ace");
+if ($other) {
+    &update_others;
+}
+
 
 print "hasta luego\n";
 
@@ -145,4 +172,148 @@ sub dumpace {
     print TACE $command;
     close TACE;
 
+}
+
+sub loadace {
+    my $filepath = shift;
+    my $tsuser   = shift;
+
+    my $command = "pparse $filepath\nsave\nquit\n";
+
+    # dump out from ACEDB
+    print "\nFilename: $filepath\n";
+    open (TACE,"| $tace -tsuser $tsuser");
+    print TACE $command;
+    close TACE;
+
+}
+
+
+sub update_camace {
+
+    print "Upload diff files to /wormsrv1/camace";
+    $ENV{'ACEDB'} = $current;
+
+    if ($dan || $all) {
+	&loadace("$directory/sequence_diff_dl1.ace",'dl1');
+	&loadace("$directory/transcript_diff_dl1.ace",'dl1');
+	&loadace("$directory/feature_diff_dl1.ace",'dl1');
+    }
+    if ($ant || $all) {
+	&loadace("$directory/sequence_diff_ar2.ace",'ar2');
+	&loadace("$directory/transcript_diff_ar2.ace",'ar2');
+	&loadace("$directory/feature_diff_ar2.ace",'ar2');
+    }
+    if ($paul || $all) {
+	&loadace("$directory/sequence_diff_pad.ace",'pad');
+	&loadace("$directory/transcript_diff_pad.ace",'pad');
+	&loadace("$directory/feature_diff_pad.ace",'pad');
+    }
+
+    # uplaod new mRNAs into camace
+    print "Upload new mRNAs in /wormsrv1/camace\n";
+    &loadace("/nfs/disk100/wormpub/analysis/ESTs/C.elegans_nematode_mRNAs.ace",'NDB_data'); 
+
+
+    # upload BLAT results to database
+    print "Update BLAT results in /wormsrv1/camace\n";
+    system ("load_blat2db.pl -dbdir $current");
+
+    # synchronize the locus - sequence connections
+    print  "Update locus2sequence connections in /wormsrv1/camace\n";
+    system ("locus2seq.pl -camace -update");
+		   
+}
+
+sub split {
+
+    # copy to camace_orig (always do this)
+    system ("TransferDB.pl -start /wormsrv1/camace -end $camace_orig -all -name WS$WS_version");
+
+    # copy to camace_ar2 (-ant or -all)
+    system ("TransferDB.pl -start /wormsrv1/camace -end $camace_ar2 -all -name WS$WS_version") if ($ant || $all);
+
+    # copy to camace_dl1 (-dan or -all)
+    system ("TransferDB.pl -start /wormsrv1/camace -end $camace_dl1 -all -name WS$WS_version") if ($dan || $all);
+
+    # copy to camace_pad (-paul or -all)
+    system ("TransferDB.pl -start /wormsrv1/camace -end $camace_pad -all -name WS$WS_version") if ($paul || $all);
+
+}
+
+sub dump_camace_orig {
+
+    # camace_orig
+    $ENV{'ACEDB'} = $camace_orig;
+    my $path;
+
+    print "dumped Sequence class from camace_orig\n" if ($debug);
+    $path = $directory . '/sequence_orig.ace';
+    &dumpace('Sequence',$path);
+    
+    print "dumped Transcript class from camace_orig\n" if ($debug);
+    $path = $directory . '/transcript_orig.ace';
+    &dumpace('Transcript',$path);
+    
+    print "dumped Feature class from camace_orig\n" if ($debug);
+    $path = $directory . '/feature_orig.ace';
+    &dumpace('Feature',$path);
+    
+}
+
+sub dump_camace_dl1 {
+
+    # camace_dl1
+    $ENV{'ACEDB'} = $camace_dl1;
+    my $path;
+
+    print "dumped Sequence class from camace_dl1\n" if ($debug);
+    $path = $directory . '/sequence_dl1.ace';
+    &dumpace('Sequence',$path);
+    
+    print "dumped Transcript class from camace_dl1\n" if ($debug);
+    $path = $directory . '/transcript_dl1.ace';
+    &dumpace('Transcript',$path);
+
+    print "dumped Feature class from camace_dl1\n" if ($debug);
+    $path = $directory . '/feature_dl1.ace';
+    &dumpace('Feature',$path);
+}
+
+sub dump_camace_pad {
+
+    # camace_pad
+    $ENV{'ACEDB'} = $camace_pad;
+    my $path;
+
+    print "dumped Sequence class from camace_pad\n" if ($debug);
+    $path = $directory . '/sequence_pad.ace';
+    &dumpace('Sequence',$path);
+    
+    print "dumped Transcript class from camace_pad\n" if ($debug);
+    $path = $directory . '/transcript_pad.ace';
+    &dumpace('Transcript',$path);
+    
+    print "dumped Feature class from camace_pad\n" if ($debug);
+    $path = $directory . '/feature_pad.ace';
+    &dumpace('Feature',$path);
+}
+
+sub dump_camace_ar2 {
+
+    # camace_ar2
+    $ENV{'ACEDB'} = $camace_ar2;
+    my $path;
+
+    print "dumped Sequence class from camace_ar2\n" if ($debug);
+    $path = $directory . '/sequence_ar2.ace';
+    &dumpace('Sequence',$path);
+    
+    print "dumped Transcript class from camace_ar2\n" if ($debug);
+    $path = $directory . '/transcript_ar2.ace';
+    &dumpace('Transcript',$path);
+    
+    print "dumped Feature class from camace_ar2\n" if ($debug);
+    $path = $directory . '/feature_ar2.ace';
+    &dumpace('Feature',$path);
 }
