@@ -210,8 +210,8 @@ sub get_history_version
 sub confirm_case
   {
     my $cds = shift;
-    my $last_char = chop $cds;
-    $cds = uc $cds . "$last_char";
+    my ($last_char) = lc(chop $cds);
+    $cds = (uc $cds) . "$last_char";
     return $cds;
   }
 
