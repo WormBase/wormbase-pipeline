@@ -6,8 +6,8 @@
 #
 # Gets latest PFAM motifs from sanger/pub and puts info in to ace file
 #
-# Last updated by: $Author: ar2 $                      
-# Last updated on: $Date: 2004-07-06 15:36:58 $         
+# Last updated by: $Author: krb $                      
+# Last updated on: $Date: 2004-09-01 14:29:26 $         
 
 
 use strict;                                     
@@ -21,14 +21,14 @@ use Getopt::Long;
 ######################################
 
 my ($help, $debug);
-our $log;
+my $load;      # option for loading resulting acefile to autoace
 my $maintainers = "All";
-my $rundate     = `date +%y%m%d`; chomp $rundate;
-my $runtime     = `date +%H:%M:%S`; chomp $runtime;
+my $rundate     = &rundate;
+my $runtime     = &runtime;
 
-GetOptions (
-            "help"      => \$help,
-            "debug=s"   => \$debug
+GetOptions ("help"      => \$help,
+            "debug=s"   => \$debug, 
+	    "load"      => \$load
             );
 
 # help 
@@ -40,78 +40,80 @@ if($debug){
   ($maintainers = $debug . '\@sanger.ac.uk');
 }
 
-&create_log_files;
+# create log
+my $log = Log_files->make_build_log();
 
 #Get the latest version
 my $pfam_motifs_gz = "/wormsrv2/tmp/Pfam_motifs.gz";
-print LOG "Attempting to wget the latest version\n";
+$log->write_to("Attempting to wget the latest version\n");
 print "Attempting to wget the latest version\n";
 `wget -O $pfam_motifs_gz ftp://ftp.sanger.ac.uk/pub/databases/Pfam/Pfam-A.full.gz` and die "$0 Couldnt get Pfam-A.full.gz \n";
-print LOG "...... got it!\nUnzipping . .";
-print "...... got it!\nUnzipping . .";
+
 `gunzip -f $pfam_motifs_gz` and die "gunzip failed\n";
-print LOG "DONE\n";
-print "DONE\n";
 
 my $pfam_motifs = "/wormsrv2/tmp/Pfam_motifs";
-print LOG "\n\nOpening file $pfam_motifs . . \n";
+$log->write_to("Opening file $pfam_motifs\n");
 print "\n\nOpening file $pfam_motifs . . \n";
 open (PFAM,"<$pfam_motifs") or die "cant open $pfam_motifs\n";
 
-my $acefile = "/wormsrv2/wormbase/misc_dynamic/misc_pfam_motifs.ace";
 
-open (PFAMOUT,">$acefile") or die "cant write misc_pfam_motifs.ace\n";
+my $acefile = "/wormsrv2/autoace/acefiles/pfam_motifs.ace";
+
+open (PFAMOUT,">$acefile") or die "cant write to /wormsrv2/autoace/acefiles/pfam_motifs.ace\n";
 
 my $text;
 my $pfam;
 
-print LOG "\treading data . . . \n";
 print "\treading data . . . \n";
 my $pfcount = 0;
-while (<PFAM>)
-  {
-    chomp;
-    if ($_ =~ /^\/\//)
-      {
-	if (defined $pfam)
-	  {
-	    $pfcount++;
-	    print "$pfam went fine\n";
-	    print PFAMOUT "Motif : \"PFAM:$pfam\"\n";
-	    print PFAMOUT "Title \"$text\"\n";
-	    print PFAMOUT "Database \"Pfam\" \"Pfam_ID\" \"$pfam\"\n";
-	    print PFAMOUT "\n";
-		undef $pfam;
-	    $text = "";
-	  }
-	else{
-	  print "gone thru a record with out picking up pfam\n";
-	  die;
-	}
-      }
-    #get the id
-    if($_ =~ m/^\#=GF AC\s+(PF\d{5})/  )
-      { $pfam = $1;}
-    
-    #get the description
-    if($_ =~ m/^\#=GF DE\s+(.*$)/  ) 
-      {
-	$text = $1;
-	$text =~ s/\"//g;
-      }      
+while (<PFAM>){
+  chomp;
+  if ($_ =~ /^\/\//){
+    if (defined $pfam){
+      $pfcount++;
+      print "$pfam went fine\n";
+      print PFAMOUT "Motif : \"PFAM:$pfam\"\n";
+      print PFAMOUT "Title \"$text\"\n";
+      print PFAMOUT "Database \"Pfam\" \"Pfam_ID\" \"$pfam\"\n";
+      print PFAMOUT "\n";
+      undef $pfam;
+      $text = "";
+    }
+    else{
+      print "gone through a record with out picking up pfam\n";
+      die;
+    }
   }
+  #get the id
+  if($_ =~ m/^\#=GF AC\s+(PF\d{5})/  ){ 
+    $pfam = $1;
+  }
+  
+  #get the description
+  if($_ =~ m/^\#=GF DE\s+(.*$)/  ) {
+    $text = $1;
+    $text =~ s/\"//g;
+  }         
+}
+  
+$log->write_to("added $pfcount PFAM motifs\n");
 
-print LOG "added $pfcount PFAM motifs\n";
-print LOG "finished at ",`date`,"\n";
 print "finished at ",`date`,"\n";
 close PFAM;
 close PFAMOUT;
-close LOG;
 
-#### use Wormbase.pl to mail Log ###########
-my $name = "GetPFAM_motifs";
-&mail_maintainer ($name,$maintainers,$log);
+# load file to autoace if -load specified
+if($load){
+  my $command = "autoace_minder.pl -load /wormsrv2/autoace/acefiles/pfam_motifs.ace -tsuser pfam_motifs";
+  my $status = system($command);
+  if(($status >>8) != 0){
+    die "ERROR: Loading pfam_motifs.ace file failed \$\? = $status\n";
+  }
+}
 
+
+# tidy up and die
+$log->mail("$maintainers");
 exit(0);
 
 
@@ -121,23 +123,7 @@ exit(0);
 #
 ################################################################
 
-sub create_log_files{
 
-  my $rundate     = `date +%y%m%d`; chomp $rundate;
-
-  # touch logfile for run details
-  $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
-
-  $log        = "/wormsrv2/logs/$1.$rundate.$$";
-  open (LOG, ">$log") or die "cant open $log";
-  print LOG "$0\n";
-  print LOG "started at ",`date`,"\n";
-  print LOG "=============================================\n";
-  print LOG "\n";
-
-}
-
-##########################################
 sub usage {
   my $error = shift;
 
@@ -178,6 +164,17 @@ Database" "Pfam" "Pfam_ID" "PF00351"
 
 
 writes to /wormsrv2/wormbase/misc_dynamic/misc_pfam_motifs.ace
+
+=head4 OPTIONAL arguments:
+
+=over 4
+  
+=item -load
+ 
+if specified will load resulting acefile to autoace
+ 
+=back
+ 
 
 =head1 REQUIREMENTS
 

@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-09-01 13:50:57 $
+# Last edited on: $Date: 2004-09-01 14:29:26 $
 
 
 
@@ -1215,6 +1215,9 @@ sub make_wormpep {
     system("touch $logdir/D1A:Build_wormpep_initial");
   }
   else {
+    # get Pfam domains (this step loads resulting ace file to autoace)
+    &run_command("$scriptdir/GetPFAM_motifs.pl -load");
+
     # get interpro domains (this step loads resulting ace file to autoace)
     &run_command("$scriptdir/GetInterpro_motifs.pl -load");
 
