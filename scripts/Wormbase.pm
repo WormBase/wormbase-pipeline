@@ -17,7 +17,14 @@ use Ace;
 
 sub get_cvs_version{
   my $script_name = shift;
-  my $version = `cvs -d /nfs/ensembl/cvsroot/ status $script_name`;
+  chdir ("/wormsrv2/scripts");
+  open (CVS, "/usr/local/bin/cvs status $script_name |");
+  my $version;
+  while (<CVS>) {
+   $version .= $_;
+  }
+  close CVS;
+
   $version =~ s/.* +Repository revision:\s+([\d\.]*)\s+.*/$1/s; 
   return($version);
 }
