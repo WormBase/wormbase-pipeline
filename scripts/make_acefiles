@@ -253,8 +253,6 @@ sub mknewacefiles {
 	elsif ($filename eq "/wormsrv2/wormbase/camace/camace_Sequence.ace") {
 	    $outfile = "$targetdir/".$dbname."_".$object.$criterianoasterisk.".ace";
 	    &strip_sequence("$outfile","\"WP:");
-	    &strip_sequence("$outfile","\"EST_GENOME\"");
-	    &strip_sequence("$outfile","\"mRNA_GENOME\"");
 	    &strip_sequence('$outfile','(Pep|DNA|Motif)_homol\s\-O\s+\"[\d:+\w-\.]+\"$');
 }
 	elsif ($filename eq "/wormsrv2/wormbase/briggsae/briggsae_Sequence.ace") {
