@@ -8,7 +8,7 @@
 # and virtual objects to hang the data onto
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2004-03-15 14:08:36 $
+# Last edited on: $Date: 2004-04-14 13:10:43 $
 
 
 use strict;
@@ -26,14 +26,14 @@ use Carp;
 my ($help, $debug, $verbose, $est, $mrna, $ost, $nematode, $embl, 
     $blat, $tc1, $process, $virtual, $dump, $camace, $fine);
 my $maintainers = "All";
-my $errors = 0;
-my $bin       = "/wormsrv2/scripts";
+my $errors      = 0;
+my $bin         = "/wormsrv2/scripts";
 our $log;
-our $blat_dir = "/wormsrv2/autoace/BLAT";    # default BLAT directory, can get changed if -camace used
-our $dbpath   = "/wormsrv2/autoace";         # default database location
-our %homedb;                                 # for storing superlink->lab connections
-our $blatex   = '/nfs/disk100/wormpub/bin.ALPHA/blat';
-our $giface   = &giface;
+our $blat_dir   = "/wormsrv2/autoace/BLAT";    # default BLAT directory, can get changed if -camace used
+our $dbpath     = "/wormsrv2/autoace";         # default database location
+our %homedb;                                   # for storing superlink->lab connections
+our $blatex     = '/nfs/disk100/wormpub/bin.ALPHA/blat';
+our $giface     = &giface;
 our %word = (
 	     est      => 'BLAT_EST',
 	     mrna     => 'BLAT_mRNA',
@@ -477,14 +477,23 @@ sub confirm_introns {
 	  print STDERR "Problem with $test\n" unless (defined $one && defined $two); 
 	  
 	  if ( ( (($start eq 'gt') || ($start eq 'gc')) && ($end eq 'ag')) ||
-	       (  ($start eq 'ct') && (($end eq 'ac') || ($end eq 'gc')) ) ) {	 
-	    print GOOD "Feature_data : \"$virtual\"\n";
-	    print GOOD "Confirmed_intron $one $two $tag $f[4]\n\n";
-	  }  	
+		 (  ($start eq 'ct') && (($end eq 'ac') || ($end eq 'gc')) ) ) {	 
+	      print GOOD "Feature_data : \"$virtual\"\n";
+
+	      # check to see intron length. If less than 25 bp then mark up as False
+	      # dl 040413
+	    
+	      if (($end - $start) <= 25) {
+		  print GOOD "Confirmed_intron $one $two False $f[4]\n\n";
+	      }
+	      else {
+		  print GOOD "Confirmed_intron $one $two $tag $f[4]\n\n";
+	      }
+	  }
 	  else {
 	    print BAD "Feature_data : \"$virtual\"\n";
 	    print BAD "Confirmed_intron $one $two $tag $f[4]\n\n";		
-	  }
+	}
 	}
       }
     }
