@@ -15,7 +15,7 @@
 # pfetch is done in batches of 2000, any greater and nothing comes back!
 #
 # Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs 
-# Last updated on: $Date: 2002-07-22 13:34:16 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2002-07-29 15:03:39 $        # quickly see when script was last changed and by whom
 
 use strict;
 use Wormbase;
@@ -142,10 +142,8 @@ sub outputToAce #(\%wormpep_acc, \@accession \$ace_output, \$errorLog)
     my $submitString = "pfetch -F"." @$chunk";#get full Fasta record (includes Interpro motifs)
     my %idextract;
 
-    #create the fasta record in wormpep dir (and remove it after use)
-    my $ver = &get_wormbase_version();
-    print "\n\n$submitString\n";
-    my $fasta_output = "/wormsrv2/WORMPEP/wormpep$ver/fasta_output";
+    #create the fasta record in /wormsrv2/tmp dir (and remove it after use)
+    my $fasta_output = "/wormsrv2/tmp/fasta_output";
     open (FASTA,">$fasta_output")||die " cant open fasta_output";# > clears before each use 
     #this submits request and put results in file
     print FASTA `$submitString`;
