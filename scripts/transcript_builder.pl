@@ -7,7 +7,7 @@
 # Script to make ?Transcript objects
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2004-12-13 14:45:13 $
+# Last updated on: $Date: 2005-01-12 17:00:20 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -24,7 +24,7 @@ my $tace = &tace;
 
 my ($debug, $help, $verbose, $really_verbose, $est, $gff, $database, $build, $new_coords, $test, $UTR_range, @chromosomes, $gff_dir, $test_cds);
 
-my $gap = 5;			# $gap is the gap allowed in an EST alignment before it is considered a "real" intron
+my $gap = 15;			# $gap is the gap allowed in an EST alignment before it is considered a "real" intron
 
 # to track failings of system calls
 my $errors = 0;
@@ -274,7 +274,7 @@ foreach my $chrom ( @chromosomes ) {
     next unless (my $mapped_pair_name = $CDNA->paired_read );
 
     # retreive object from array
-    next unless (my $pair = $cdna_objs[ $cDNA_index{"$mapped_pair_name"} ] );
+    next unless ($cDNA_index{"$mapped_pair_name"} and (my $pair = $cdna_objs[ $cDNA_index{"$mapped_pair_name"} ] ) );
 
     # get cds that paired read maps to 
     if (my $cds = $pair->mapped ) {
