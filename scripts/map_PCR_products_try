@@ -53,7 +53,7 @@ my $debug = $opt_d;
 my $tace = glob("~acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace");    # tace executable path
 my $dbdir  = "/wormsrv2/autoace";                                  # Database path
 my $gffdir = "/wormsrv2/autoace/CHROMOSOMES";
-my @chromosomes = ('I','II','III','IV', 'V','X');
+my @chromosomes = ('I' );
 
  ########################################
  # Open logfile                         #
@@ -74,8 +74,8 @@ foreach $chromosome (@chromosomes) {
 
     undef (my %PCR);
     undef (my %exon);
-    my %PCRcount  = 0;
-    my %exoncount = 0;
+    my %PCRcount  = ();
+    my %exoncount = ();
     
     open (GFF_in, "<$gffdir/CHROMOSOME_${chromosome}.gff") || die "Failed to open gff file\n\n";
     while (<GFF_in>) {
@@ -86,7 +86,7 @@ foreach $chromosome (@chromosomes) {
 
 
 	if ($f[1] eq "GenePair_STS") {
-	    my ($name) = ($f[8] =~ /\"(S+)\"/);
+	    my ($name) = ($f[8] =~ /PCR_product \"(.*)\"$/);
             $PCRcount{$name}++;
             my $PCRname = $name.".".$PCRcount{$name};
             $PCR{$PCRname} = [$f[3],$f[4]];
