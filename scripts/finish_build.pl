@@ -13,7 +13,7 @@
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-06-03 16:26:46 $
+# Last updated on: $Date: 2003-08-19 13:44:28 $
 
 
 
@@ -74,11 +74,6 @@ system("rm -f $db_path/autoace/CHROMOSOMES/*") && die "Couldn't remove old CHROM
  print LOG "Removing old files in /wormsrv2/autoace/logs\n";
 system("rm -f $db_path/autoace/logs/*:*") && die "Couldn't remove old log files\n";
 
-# Transfer autoace to ~wormpub/DATABASES/current_DB
-print LOG "Transferring autoace to ~wormpub/DATABASES/current_DB\n";
-system("TransferDB.pl -start /wormsrv2/autoace -end /nfs/disk100/wormpub/DATABASES/current_DB -all -name $WS_name")  && die "couldn't run TransferDB for wormpub\n";
-system("/bin/gunzip /nfs/disk100/wormpub/DATABASES/current_DB/CHROMOSOMES/*.gz") && die "Couldn't gunzip CHROMOSOMES/*.gz\n";
-
 
 # archive old GFF splits directory'
 print LOG "Archiving GFFsplits directory using GFFsplitter.pl -a\n\n";
@@ -94,6 +89,14 @@ system("update_Common_data.pl -update -in_build -all") && die "Couldn't run upda
 
 # update "Confirmed Introns" webpage (introns to be addressed)
 system("/nfs/intweb/cgi-bin/wormpub/confirmed_introns/parse_gff.pl") && warn "Couldn't run parse_gff.pl\n";
+
+
+# Transfer autoace to ~wormpub/DATABASES/current_DB
+print LOG "Transferring autoace to ~wormpub/DATABASES/current_DB\n";
+system("TransferDB.pl -start /wormsrv2/autoace -end /nfs/disk100/wormpub/DATABASES/current_DB -all -name $WS_name")  && die "couldn't run TransferDB for wormpub\n";
+system("/bin/gunzip /nfs/disk100/wormpub/DATABASES/current_DB/CHROMOSOMES/*.gz") && die "Couldn't gunzip CHROMOSOMES/*.gz\n";
+
+
 
 ##################
 # End
