@@ -5,7 +5,7 @@
 # completely rewritten by Keith Bradnam from list_loci_designations
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-07-28 17:10:19 $      
+# Last updated on: $Date: 2004-07-30 08:41:53 $      
 #
 # This script should be run under a cron job and simply update the webpages that show
 # current gene names and sequence connections.  Gets info from geneace.  
@@ -167,9 +167,12 @@ sub create_currentDB_loci_pages{
       if(defined($gene->at('Molecular_info.CDS'))){
 	my @CDSs = $gene->CDS;
 	print HTML "<TD>";
-	foreach my $i (@CDSs){
-	  print HTML "<A HREF=\"http://www.wormbase.org/db/seq/sequence?name=${i}\">${i}</a> ";
-	  print TEXT "$i ";
+	foreach my $cds (@CDSs){
+	  # also get wormpep identifier for each protein
+	  my $protein = $cds->Corresponding_protein;
+	  print HTML "<A HREF=\"http://www.wormbase.org/db/seq/sequence?name=${cds}\">${cds}</a> ";
+	  print HTML "(<A HREF=\"http://www.wormbase.org/db/seq/protein?name=${protein};class=Protein\">${protein}</a>) ";
+	  print TEXT "$cds ($protein) ";
 	}
 	print TEXT ",,,";
 	print HTML "</TD><TD>&nbsp</TD><TD>&nbsp</TD>";
@@ -318,9 +321,10 @@ __END__
 Simply takes the latest set of gene names in geneace and writes to the development web site
 a set of HTML pages (one for each letter of the alphabet) containing all gene names starting
 with that letter.  Makes these tables hyperlinked to WormBase and also includes other names
-and sequence/transcript/pseudogene connections.  Now includes Gene IDs and version numbers
-as extra columns.
+and CDS (with wormpep)/transcript/pseudogene connections.  Also includes Gene IDs and 
+version numbers as extra columns.
 
+Additionally makes two other files which is just gene 2 molecular name and vice versa.
 
 When script finishes it copies across to the live web site.  This script should normally be
 run every night on a cron job for the genes2molecular_names.txt file and weekly for the a-z pages.
@@ -339,9 +343,9 @@ run every night on a cron job for the genes2molecular_names.txt file and weekly 
 
 =over 4
 
-=item -daily 
+=item -daily (queries geneace: makes gene2molecular_name and molecular_name2gene files)
 
-=item -weekly
+=item -weekly (queries current_DB, makes a-z lists)
 
 =back
 
