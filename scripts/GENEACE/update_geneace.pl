@@ -376,20 +376,10 @@ sub geneclass_loci_other_name {
 	      #print $parts[$i],"\n";
 	      if ($parts[$i] =~ /(Paper_evidence)\s(.+)/){
 		#print $1, "\n";
-		if ($2 =~ /PMID.+/i){
-		  $pmid = $&;
-		  $pmid =~ s/PMID:\s+|\[|\]|pmid|pmid\s+|\s+//;
-		  $pmid =~ s/\]//;	$pmid =~ s/\s+//;	
-		  print $pmid, "\n";
-		  push(@Update, "Sequence_name\t\"$seq\"\n");
-		  push(@Update, "Evidence\tPMID_evidence\t\"$pmid\"\n");
-		}
-		else {
-		  $cgc_paper=$2;
-                  $cgc_paper =~ s/\[|\]//g;
-		  push(@Update, "Sequence_name\t\"$seq\"\n");
-		  push(@Update, "Evidence\tPaper_evidence\t\"[$cgc_paper]\"\n");
-		}
+		$cgc_paper=$2;
+		$cgc_paper =~ s/\[|\]//g;
+		push(@Update, "Sequence_name\t\"$seq\"\n");
+		push(@Update, "Evidence\tPaper_evidence\t\"WBPaper\"\n");	      
 	      }
 	      if ($parts[$i] =~ /(Person_evidence)\s(.+)/){
 		
@@ -410,20 +400,11 @@ sub geneclass_loci_other_name {
 	  for ($i = 1; $i < $num_parts; $i++){
 	    if ($parts[$i] =~ /(Paper_evidence)\s(.+)/){
 	      #print $1, "\n";
-	      if ($2 =~ /PMID.+/i){
-		  $pmid = $&;
-		  $pmid =~ s/PMID:\s|\[|\]|pmid|:|\s+//;
-		  $pmid =~ s/\]//;		
-		  print $pmid, "\n";
-		  push(@Update, "Sequence_name\t\"$seq\"\n");
-		  push(@Update, "Evidence\tPMID_evidence\t\"$pmid\"\n");
-	      }
-	      else {
-		$cgc_paper=$2;
-                $cgc_paper =~ s/\[|\]//g;
-		push(@Update, "Sequence_name\t\"$seq\"\n");
-		push(@Update, "Evidence\tPaper_evidence\t\"[$cgc_paper]\"\n");
-	      }
+	      $cgc_paper=$2;
+	      $cgc_paper =~ s/\[|\]//g;
+	      push(@Update, "Sequence_name\t\"$seq\"\n");
+	      push(@Update, "Evidence\tPaper_evidence\t\"WBPaper\"\n");
+	      
 	    }
 	    if ($parts[$i] =~ /Person_evidence\s(.+)/){
 	      #push(@Update, $2);
@@ -454,17 +435,9 @@ sub geneclass_loci_other_name {
 	#print $evidence[1], "\n";
 	$paper = $1;
 	$paper =~ s/\[|://g;
-	if ($paper eq "PMID"){
-	  $pmid = $evidence[2];
-	  #print $pmid, "\n";
-	  $pmid =~ s/\]//;
-	  push(@Update, "Other_name\t\"$other_name\"\tPMID_evidence\t\"$pmid\"\n");
-	}
-	else {
-	  $paper = $1;
-	  $paper =~ s/\[|\]//g;
-	  push(@Update, "Other_name\t\"$other_name\"\tPaper_evidence\t\"[$paper]\"\n");
-	}
+	$paper =~ s/\[|\]//g;
+	push(@Update, "Other_name\t\"$other_name\"\tPaper_evidence\t\"WBPaper\"\n");
+	
       }
       if ($evidence =~ /Person_evidence\s+(.+)/){
 	

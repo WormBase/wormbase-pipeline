@@ -3,7 +3,7 @@
 # map_operons.pl
 
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-08-09 15:34:58 $
+# Last edited on: $Date: 2004-08-23 10:55:19 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -188,7 +188,7 @@ sub acedump_operons {
 	    }
 
 	    if ($cds{$gene_lookup}{SL2_MICROARRAY} eq "++") {
-		print OUTPUT "Contains_gene \"$gene_lookup\" Microarray Paper_evidence \"[cgc5303]\"\n";
+		print OUTPUT "Contains_gene \"$gene_lookup\" Microarray Paper_evidence \"WBPaper00005303]\"\n";
 		$reset = 1;
 	    }
 	    elsif ($cds{$gene_lookup}{SL2_MICROARRAY} eq "+") {

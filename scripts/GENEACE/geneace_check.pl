@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-08-02 16:12:51 $
+# Last updated on: $Date: 2004-08-23 10:55:19 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -575,35 +575,14 @@ END
 	$info_num += $counters[2];
       }
     }
-    if ($_ =~ /((\w+)\s+.+)Paper_evidence -O .+\"(.+)\" -O.+/){
+    if ($_ =~ /(\w+)\s+.+Paper_evidence -O .+\"(.+)\" -O.+/){
       $ori = $_;
-      $b4_evi = $1;
-      $tag = $2;
-      $paper = $3;
-      $class_obj = $class." : "."\"$obj\"";
-      if ($paper !~ /\[.+\]/){
+      $tag = $1;
+      $paper = $2;
+      if ($paper !~ /WBPaper\d+/){
         $evid_errors++;
 	print LOG "\nERROR: $class $obj has Paper $paper under main tag $tag\n";
-	if ($ace){
-	  print ACE "\n$class_obj\n";
-	  print ACE "-D $ori\n\n";
-	  print ACE "\n$class_obj\n";
-	  $paper =~ s/\[|\]//g;
-	  print ACE "$b4_evi Paper_evidence \"\[$paper$\]\"\n";
-        }
       }
-     # Likely to be deleted, when Caltech is clear about rules of using cgc and pmid
-     # if ($paper !~ /\[cgc\d+\]/ && $paper =~ /\[pmid(\d+)\]/){
-#	$evid_errors++;
-#	$paper = $1;
-#	print LOG "\n: $class $obj has Paper $paper under main tag $tag\n";
-#	if ($ace){
-#	  print ACE "\n$class_obj\n";
-#	  print ACE "-D $ori\n\n";
-#	  print ACE "\n$class_obj\n";
-#	  print ACE "$b4_evi PMID_evidence \"\[$paper$\]\"\n"; 
-#        }
-#      }
     }
 
     if ($_ =~ /((\w+)\s+.+)Author_evidence -O .+\"(.+)\" -O.+/){
@@ -617,8 +596,8 @@ END
       $updates += $counters[1];
       $info_num += $counters[2];
     }
-    if ($_ =~ /(Unregistered_lab_members)\s+-O\s\"\d+.+_\w+\" \"(.+)\" -O .+/){
 
+    if ($_ =~ /(Unregistered_lab_members)\s+-O\s\"\d+.+_\w+\" \"(.+)\" -O .+/){
       $ori = $_;
       $tag = $1;
       $author = $2;

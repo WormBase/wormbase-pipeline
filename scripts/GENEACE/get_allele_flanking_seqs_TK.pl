@@ -4,7 +4,7 @@
 #
 # by Chao-Kung Chen [030625]
 
-# Last updated on: $Date: 2004-08-18 14:39:44 $
+# Last updated on: $Date: 2004-08-23 10:55:19 $
 # Last updated by: $Author: krb $
 
 use Tk;
@@ -18,12 +18,18 @@ use Tk::DialogBox;
 use GENEACE::Geneace;
 
 
+##################################################
+# Script variables
+##################################################
+my $paper_name;          # Will store paper object names in form 'WBPaperXXXXXXXX'
+my $tace = &tace;        # gets default path to tace binary
+
+
 
 #####################################
 # check for latest exon table version
 #####################################
 
-my $tace = &tace;
 my $curr_db = "/nfs/disk100/wormpub/DATABASES/current_DB";
 my $exon_tbl = "/wormsrv1/geneace/ALLELE_DATA/EXON_TABLES";
 
@@ -86,7 +92,6 @@ $menu_File->AddItems(
 		     ["command" => "Open ace file", "accelerator" => "Ctrl-o", command => \&open_ace_file],
 		     ["command" => "Save ace file", "accelerator" => "Ctrl-s", command => \&save_ace_file],
 		     "-",
-		     ["command" => "Load ace file to TEST_DB", "accelerator" => "Ctrl-t", command => \&upload_ace_TEST],
 		     ["command" => "Load ace file to Geneace", "accelerator" => "Ctrl-g", command => \&upload_ace_GA],
                      "-",
                      ["command" => "Quit", "accelerator" => "Ctrl-q", command => sub{exit}]
@@ -94,8 +99,9 @@ $menu_File->AddItems(
 
 $mw->bind('<Control-Key-o>' => \&open_ace_file);
 $mw->bind('<Control-Key-s>' => \&save_ace_file);
-$mw->bind('<Control-Key-t>' => \&upload_ace_TEST);
-$mw->bind('<Control-Key-g>' => \&upload_ace_GA);
+
+# temporarily commented out, prefer direct upload by hand rather than by script for now
+#$mw->bind('<Control-Key-g>' => \&upload_ace_GA);
 $mw->bind('<Control-Key-q>' => sub{exit});
 
 my $menu_Window=$menu_frame->Menubutton(text => 'Window')->pack (side => 'left', anchor => 'w');
@@ -323,36 +329,6 @@ sub save_ace_file{
   }
 }
 
-sub upload_ace_TEST{
-
-  my $log = "/wormsrv2/tmp/load_allele.log";
-  system("chmod 777 $log");
-
-  my @out = $ace_window->get('1.0', 'end');
-  my $filename = "/wormsrv2/tmp/tmp.ace";
-  system("chmod 777 $filename");
-
-  open(SAVE, ">$filename");
-  print SAVE @out;
-  close SAVE;
-
-  my $command="pparse $filename\nsave\nquit\n";
-
-  my $test_db_dir="/nfs/disk100/wormpub/DATABASES/TEST_DBs/CK1TEST/";
-  open (Load_testGA,"| tace $test_db_dir > $log") || die "Failed to upload to test_Geneace";
-  print Load_testGA $command;
-  close Load_testGA;
-
-  my $dialog2 =  $mw -> DialogBox(-title   => "Uploading ace file . . .",
-                                 -buttons => ["Close" ]);
-
-  $dialog2->geometry("800x500");
-  #$dialog2->resizable(0,0);
-  my $txt=$dialog2->Scrolled("Text",  -scrollbars=>"ow", height=>60, width=> 170)->pack(side => "left", anchor => "w");
-  open(LOG, "$log");
-  while(<LOG>){$txt -> insert('end', "$_")}
-  $dialog2->Show();
-}
 
 sub upload_ace_GA{
 
@@ -456,15 +432,17 @@ sub run {
     my $ref;
     @info=();
     ($cds_or_locus, $aa_or_dna, $mutation, $allele, $locus, $ref) = split(/\s+/, $params);
-     $run_window -> insert('end', "$cds_or_locus, $aa_or_dna, $mutation, $allele, $locus, $ref");
+    $run_window -> insert('end', "$cds_or_locus, $aa_or_dna, $mutation, $allele, $locus, $ref");
     $position = $mutation;
     $position =~ s/\D//g;
-
     $mutation =~ s/\d+//;
     if ($mutation =~ /\w{3,4}/){$mutation = $three_ltr_code{lc($mutation)}}
     $mutation = uc($mutation);
+    push(@info, uc($mutation));
 
-    push(@info, uc($mutation), $ref);
+    # set $paper_name from parameter given by $ref
+    my $id_padded = sprintf "%08d" , $ref;
+    $paper_name = "WBPaper$id_padded";
 
     if ($aa_or_dna eq "-aa" || $aa_or_dna eq "-AA"){$molecule = "aa"} else {$molecule = "DNA"}
 
@@ -538,15 +516,15 @@ sub run {
     $run_window -> insert('end', " $dna_R");
 
     $ace_window->insert('end', "\nGene : \"$Gene_info{$locus}{'Gene'}\"  \/\/$locus\n");
-    $ace_window->insert('end', "\/\/Allele \"$allele\" Paper_evidence \"WBPaper${info[1]}\"\n");
+    $ace_window->insert('end', "\/\/Allele \"$allele\" Paper_evidence \"$paper_name\"\n");
     $ace_window->insert('end', "\nAllele : \"$allele\"\n");
-    $ace_window->insert('end', "\/\/Evidence Paper_evidence \"WBPaper${info[1]}\"\n");
+    $ace_window->insert('end', "\/\/Evidence Paper_evidence \"$paper_name\"\n");
     $ace_window->insert('end', "Sequence \"$seq\"\n");
     $ace_window->insert('end', "\/\/Substitution \"[\/]\"\n");
     $ace_window->insert('end', "\/\/Deletion \"[\/]\"\n");
     $ace_window->insert('end', "Flanking_sequences \"$dna_L\" \"$dna_R\"\n");
     $ace_window->insert('end', "Species \"Caenorhabditis elegans\"\n");
-    $ace_window->insert('end', "\/\/Remark \"\" Paper_evidence \"WBPaper${info[1]}\"\n");
+    $ace_window->insert('end', "\/\/Remark \"\" Paper_evidence \"$paper_name\"\n");
     $ace_window->insert('end', "\/\/Remark \"\" Curator_confirmed \"WBPerson2861\"\n");
     $ace_window->insert('end', "\/\/Method \"Substitution_allele\"\n");
     $ace_window->insert('end', "\/\/Method \"Allele\"\n");
@@ -992,11 +970,11 @@ sub write_ace {
   my ($Lf, $Rf, $allele, $locus, $seq) = @_;
 
   $ace_window->insert('end', "\nGene : \"$Gene_info{$locus}{'Gene'}\"\n");
-  $ace_window->insert('end', "Allele \"$allele\" Paper_evidence \"WBPaper${info[1]}\"\n");
+  $ace_window->insert('end', "Allele \"$allele\" Paper_evidence \"$paper_name\"\n");
   
 
   $ace_window->insert('end', "\nAllele : \"$allele\"\n");
-  $ace_window->insert('end', "Evidence Paper_evidence \"WBPaper${info[1]}\"\n");
+  $ace_window->insert('end', "Evidence Paper_evidence \"$paper_name\"\n");
   
 
   $ace_window->insert('end', "Sequence \"$seq\"\n");
@@ -1047,9 +1025,10 @@ DESCRIPTION
 
   You need to supply a CDS/Transcript name (case-insensitive) and amino acid coordinate by -aa option 
   (or nucleotide coordinate by -dna opti  on) followed by a mutation in single- or three-letter code (case-insensitive) 
-  as arguments (see USAGE) to retrieve the flanking sequences.  Finally, incude an 8 digit WBPaper ID.
+  as arguments (see USAGE) to retrieve the flanking sequences.  Finally, incude a numerical WBPaper ID
+  (this will be padded by leading zeros automatically).
 
-  Eg, 4R79.1 -aa 324y ok12 abc-1 00001321   OR   4R79.1 -dna 1324t ok12 abc-1 00001231
+  Eg, 4R79.1 -aa 324y ok12 abc-1 00001321   OR   4R79.1 -dna 1324t ok12 abc-1 1231
 
 SCENARIO A: DNA coordinate
 
