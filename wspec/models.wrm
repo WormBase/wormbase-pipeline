@@ -701,6 +701,15 @@
 	 Remark ?Text #Evidence
 
 
+
+// New AO_code class for evidence codes only relevant to the Anatomy_term class
+// requested by Raymond Lee
+// Class added 040203
+
+?AO_code Description ?Text
+	 Remark ?Text #Evidence
+
+
 //Affiliation Text	// Authors' affiliation if available
 //usually comes with wbg abstracts and worm meeting abstracts
 //new ones used the hash structure, some old ones probably still use this
@@ -1641,7 +1650,7 @@
                         DESC_IN_MALE_p  ?Anatomy_term   XREF    DESC_IN_MALE_c
                         DEVELOPS_FROM_p ?Anatomy_term   XREF    DEVELOPS_FROM_c
                 Attribute_of    Expr_pattern    ?Expr_pattern   XREF    Anatomy_term
-                                GO_term ?GO_term XREF Anatomy_term ?GO_code #Evidence
+                                GO_term ?GO_term XREF Anatomy_term ?AO_code #Evidence
                                 Reference       ?Paper  XREF Anatomy_term
                 Index   Ancestor ?Anatomy_term XREF Descendent  //store ancestors of relationship IS_A and PART_OF
                         Descendent ?Anatomy_term XREF Ancestor  //store descendents of relationship IS_A and PART_OF
