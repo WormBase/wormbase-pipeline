@@ -7,16 +7,17 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2002-12-03 16:14:11 $
+# Last updated on: $Date: 2002-12-03 16:26:05 $
 
 use Ace;
 use lib "/wormsrv2/scripts/"; 
 use Wormbase;
 use strict;
-use Getopt::Std;
-use vars qw($opt_t);
+use Getopt::Long;
 
-getopts ("t");
+my $debug;            # debug mode, email sends only to the script tester
+GetOptions ("debug"  => \$debug);
+
 
 our $log;
 our $erichlog;
@@ -53,7 +54,7 @@ $db->close;
 close(LOG);
 close(ERICHLOG);
 
-if ($opt_t){
+if ($debug){
   chomp(my $who=`whoami`);
   script_tester ($0,$who,$log); 
 }
