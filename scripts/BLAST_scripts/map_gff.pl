@@ -128,6 +128,8 @@ foreach my $line (@two_tmp) {
 
 #######################################
 # do the mapping
+
+open (FAILED,">failed_mappings") or die "cant open failure file $!\n";
 my @parents_list = ();
 push (@parents_list, keys %one); push (@parents_list, keys %two);
 my %seen = ();
@@ -181,7 +183,8 @@ foreach my $parent (sort {$a cmp $b} @parents) {
             print "$map\n";
 	}
         else {
-            print STDERR "\tno mapping for ".$match->{gff}."\n";
+            print FAILED $match->{gff},"\n";
 	}
     }
 }
+close FAILED;
