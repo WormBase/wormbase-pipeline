@@ -1,0 +1,3 @@
+#!/bin/sh
+
+blastall -p blastp -d /home/todd/blast/cb25.hybrid.pep2.00 -F F -a 4 -m 8 -i ws77.pep2.00_longest_splices -o elegans_vs_briggs-seg-off.out -v 50 -b 50 -e 0.02 &

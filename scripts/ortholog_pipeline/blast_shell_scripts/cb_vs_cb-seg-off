@@ -1,0 +1,4 @@
+
+#!/bin/sh
+
+blastall -p blastp -d /a/blue2/home/todd/blast/cb25.hybrid.pep2.00 -F F -a 4 -m 8 -i cb25.hybrid.pep2.00 -o briggs_vs_briggs-seg-off.out -v 50 -b 50 -e 0.02 &
