@@ -53,7 +53,7 @@ my $WS_version = substr ($WS_release,2);
 # open LOG file #
 #################
 
-my $logfile = "/wormsrv2/logs/gffcheck.WS${WS_version}.${rundate}.$$";
+my $logfile = "/wormsrv2/logs/post_build_checks.WS${WS_version}.${rundate}.$$";
 open (LOG,">$logfile") || die "Cannot open logfile $!\n";
 LOG->autoflush();
 
