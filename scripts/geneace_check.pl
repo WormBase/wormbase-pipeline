@@ -7,12 +7,13 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-08-12 08:38:57 $
+# Last updated on: $Date: 2003-08-12 09:03:32 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
 use Wormbase;
 use Ace;
+use Carp;
 use Getopt::Long;
 
 
@@ -40,10 +41,10 @@ GetOptions ("h|help"        => \$help,
 	    "c|class=s"     => \@class,
 	    "db|database=s" => \$database,
             "a|ace"         => \$ace, 
-	    "v|verbose"        => \$verbose
+	    "v|verbose"     => \$verbose
            );
 
-if ($ace){open(ACE, ">>$acefile") || die  $!}
+if ($ace){open(ACE, ">>$acefile") || croak $!}
 
 # Display help if required
 &usage("Help") if ($help);
@@ -75,14 +76,19 @@ if ($ace){open (ACE, ">>$acefile") || die "Can't write to file!\n"}
 
 &create_log_files;
 
-# open a connection to geneace
+
+
+
+
+
+#######################
+# MAIN PART OF SCRIPT #
+#######################
+
+# open a connection to database
 my $db = Ace->connect(-path  => $default_db,
 		      -program =>$tace) || do { print LOG "Connection failure: ",Ace->error; die();};
 
-
-############## 
-# MAIN LOOPS #
-##############
 
 # track errors in each class
 our $locus_errors = 0;
@@ -132,6 +138,8 @@ $db->close;
 close(LOG);
 close(ERICHLOG);
 close(JAHLOG);
+close(ACE) if ($ace);
+
 
 # Always mail to $maintainers (which might be a single user under debug mode)
 mail_maintainer($0,$maintainers,$log);
@@ -146,6 +154,7 @@ $caltech=join('', @caltech);
 if ($caltech ne $Emsg){      
   mail_maintainer($0,"$interested",$erichlog) unless $debug; 
 }
+
 
 # Email to Jonathan for problematic loci 
 my $CGC = "ck1\@sanger.ac.uk, krb\@sanger.ac.uk"; 
@@ -537,22 +546,18 @@ sub process_locus_class{
     undef($locus);
   }
 
-  # Look for loci in current_DB not in geneace
-  # Look for sequence in current_DB that is a pseudogene and has locus connection
-  print "\nLooking for new loci in /nfs/disk100/wormpub/DATABASES/current_DB:\n\n";
 
-  my $get_seg_with_pseudogene_locus=<<EOF;
-  Table-maker -p "$def_dir/get_all_seq_with_pseudogene_and_locus.def" quit
-EOF
+
+  # Look for loci in current_DB that are not in geneace
+  print "\nLooking for new loci in /nfs/disk100/wormpub/DATABASES/current_DB:\n\n";
+  &find_new_loci_in_current_DB($db);
+
+  
  
-  &find_new_loci_in_current_DB($get_seg_with_pseudogene_locus, $db);
-   
   #Look for loci that are other_names and still are obj of ?Locus -> candidate for merging
- 
   my $locus_has_other_name=<<EOF;
   Table-maker -p "$def_dir/locus_has_other_name.def" quit
 EOF
-  
   &loci_as_other_name($locus_has_other_name, $default_db, $db);
 
   my $locus_to_CDS=<<EOF;
@@ -1316,31 +1321,20 @@ sub check_genetics_coords_mapping {
 ############################################
 
 sub find_new_loci_in_current_DB{
-  my ($def, $db) = @_;
+  my $db = shift;
   my $warnings;
-  my @genes=();
   my $dir="/nfs/disk100/wormpub/DATABASES/current_DB";
   my $locus_errors=0;
+
 
   # open a database connection to current_DB and grab all loci names (excluding polymorphisms)
   my $new_db = Ace->connect(-path  => '/nfs/disk100/wormpub/DATABASES/current_DB',
 		    -program =>$tace) || do { print LOG "Connection failure: ",Ace->error; die();};
   my @current_DB_loci = $db->fetch(-query=>'Find Locus;!Polymorphism');
-
-  open (FH, "echo '$def' | $tace $dir | ") || die "Couldn't access geneace\n";
-  while (<FH>){
-    chomp($_);
-    if ($_ =~ /^\"/){
-      $_ =~ s/\"|//g;
-      $_ =~ s/\s+/ /g;
-      my @items=split(/ /, $_);
-      push (@genes, $items[2]);
-    }
-  }
-    
   $new_db->close;
 
-  #cross reference in geneace
+
+  #cross reference current_DB loci against those in geneace
   foreach my $loci(@current_DB_loci){
     my $new_loci = $db->fetch(-class=>'Locus',-name=>"$loci");
     unless(defined($new_loci)){
@@ -1349,7 +1343,6 @@ sub find_new_loci_in_current_DB{
     }
   }
   print LOG "\n$warnings\n" if $warnings;
-
 
 }
 
