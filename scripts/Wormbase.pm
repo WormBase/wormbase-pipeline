@@ -12,7 +12,7 @@ use Log_files;
 use File::Path;
 @ISA       = qw(Exporter);
 
-@EXPORT    = qw(get_wormbase_version get_wormbase_version_name get_wormbase_release_date copy_check mail_maintainer celeaccession tace gff_sort dbfetch clones_in_database open_TCP DNA_string_reverse DNA_string_composition release_databases find_file_last_modified FetchData release_composition release_wormpep test_user_wormpub runtime rundate giface check_write_access Map_feature scan MapFeature delete_files_from load_to_database);
+@EXPORT    = qw(get_wormbase_version get_wormbase_version_name get_wormbase_release_date copy_check mail_maintainer celeaccession tace gff_sort dbfetch clones_in_database open_TCP DNA_string_reverse DNA_string_composition release_databases find_file_last_modified FetchData release_composition release_wormpep test_user_wormpub runtime rundate giface check_write_access Map_feature scan MapFeature delete_files_from load_to_database wormpep_files);
 
  
 
@@ -797,6 +797,11 @@ sub load_to_database {
   print WRITEDB $command;
   close (WRITEDB);
 }
+
+sub wormpep_files
+  {
+    return [ ("wormpep", "wormpep.accession", "wormpep.dna", "wormpep.history", "wp.fasta", "wormpep.table", "wormpep.diff") ];
+  }
 
 ################################################################################
 #Return a true value
