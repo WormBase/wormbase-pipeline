@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-12-08 17:47:29 $
+# Last updated on: $Date: 2004-01-14 13:15:46 $
 
 
 use strict;
@@ -121,7 +121,7 @@ foreach $class (@classes){
   if ($class =~ m/(mapping)/i)       {&check_genetics_coords_mapping}
   if ($class =~ m/(evidence)/i)      {&check_evidence}
   if ($class =~ m/(xref)/i)          {&check_bogus_XREF}
-  if ($class =~ m/(gmap)/i)          {&int_loci}
+  if ($class =~ m/(multipt)/i)       {&int_map_to_map_loci}
   
 }  
 
@@ -1713,11 +1713,12 @@ sub create_log_files{
 
 }
 
-# Look for loci without map and mapping_data but have allele and seq. connection and interpolated_map_position
-# Convert their Interpolated_map to Map
-# sent to JAH for approval
+sub int_map_to_map_loci {
 
-sub int_loci {
+  # Look for loci without map and mapping_data but have allele and seq. connection and interpolated_map_position
+  # This is for creating inferred multip_pt obj for such loci found 
+  # sent to JAH for approval
+
 
   my $error=0;
 
@@ -1726,8 +1727,10 @@ sub int_loci {
   print LOG "------------------------------------------------------------------------------------------------------\n";
   print JAHLOG "\n\nChecking loci without map & mapping_data but have allele & seq. connection & interpolated_map_position\n";
   print JAHLOG "------------------------------------------------------------------------------------------------------\n";
-  my $int_loci  = "find Locus * where !map & !mapping_data & allele & (genomic_sequence|transcript|pseudogene) & species =\"*elegans\"";
+  my $int_loci  = "find Locus * where !map & !mapping_data & allele & (CDS|transcript|pseudogene) & interpolated_map_position & species =\"*elegans\"";
   my %INT_loci;
+
+  open(INT_map_TO_MAP, ">/wormsrv1/geneace/JAH_DATA/MULTI_PT_INFERRED/loci_become_genetic_marker.$rundate") || die $!;
 
   push( my @int_loci, $db->find($int_loci) );
   foreach (@int_loci){
@@ -1740,6 +1743,12 @@ sub int_loci {
     print ACE "-D Interpolated_map_position \n";
     print ACE "\nLocus : \"$_\"\n";
     print ACE "Map \"$int_map\" Position $int_pos\n";
+
+    # keep a copy here
+    print INT_map_TO_MAP "\nLocus : \"$_\"\n"; 
+    print INT_map_TO_MAP "-D Interpolated_map_position \n";
+    print INT_map_TO_MAP "\nLocus : \"$_\"\n";
+    print INT_map_TO_MAP "Map \"$int_map\" Position $int_pos\n";
   }
 
   print LOG    "No such locus found\n\n" if $error == 0;
