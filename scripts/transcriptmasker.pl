@@ -8,7 +8,7 @@
 # 031023 dl1
 
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2005-01-20 12:36:26 $
+# Last edited on: $Date: 2005-02-18 15:38:21 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -32,6 +32,7 @@ my $maintainers = "All";
 our $log;
 
 my $debug;              # debug mode
+my $report;             # simple report mode
 my $help;               # Help/Usage page
 my $mrna;               # mRNA data
 my $ncrna;              # ncRNA data
@@ -46,8 +47,8 @@ GetOptions (
 	    "est"            => \$est,
 	    "ost"            => \$ost,
             "debug:s"        => \$debug,
+	    "report:s"       => \$report,
             "help"           => \$help,
-            "h"              => \$help
 	    );
 
 # Help pod if needed
@@ -57,6 +58,10 @@ GetOptions (
 if ($debug) {
     print "// DEBUG : \"$debug\"\n\n";
     ($maintainers = $debug . '\@sanger.ac.uk');
+}
+if ($report) {
+    print "// REPORT : \"$report\"\n\n";
+    ($maintainers = $report . '\@sanger.ac.uk');
 }
 
 &create_log_files;
@@ -88,6 +93,8 @@ print "// Finished reading EST_names.dat hash\n\n" if ($debug);
 
 # which database
 my $dbdir = "/wormsrv2/autoace";
+if ($debug) {$dbdir = "/nfs/disk100/wormpub/camace_dl1";}    # Use dan's split for the debug option
+if ($report) {$dbdir = "/nfs/disk100/wormpub/camace_dl1";}    # Use dan's split for the debug option
 my $tace  = &tace;                                    # tace executable path
 my $acc;                                              # accession for the entry
 my $id;                                               # id for the entry
@@ -155,7 +162,7 @@ sub MaskSequence {
     $/ = ">";
 
     # assign output file
-    if ($debug) {
+    if ( ($debug) || ($report) ) {
 	open (OUTPUT, ">${data}.testmasked") || die "ERROR: Can't open output file: '${data}.testmasked'";
     }
     else {
@@ -228,6 +235,7 @@ sub MaskSequence {
 		if ($cut_to < 0 ) {$cut_to = 0;}                 # fudge to ensure non-negative clipping coords
 		    
 		print "// $acc [$id] $method:" . substr($seq,$cut_to,$cut_length) . " [$start - $stop]\n\n" if ($debug);
+		print "// $acc [$id] $method:" . substr($seq,$cut_to,$cut_length) . " [$start - $stop]\n" if ($report);
 		$newseq = substr($seqmasked,0,$cut_to) . ('n' x $cut_length)  . substr($seqmasked,$cut_from);
 		$seqmasked = $newseq;
 	    }
@@ -242,10 +250,11 @@ sub MaskSequence {
 	$ignore = $obj->Ignore;        # Ignore tag set?
 	unless (defined $ignore) {
 	    # output masked sequence
-	    print OUTPUT "\n>$acc $id\n$seqmasked\n";
+	    print OUTPUT ">$acc $id\n$seqmasked\n\n";
 	}
 	else {
 	    print "\n// Ignore tag set for $acc $id\n\n" if ($debug);
+	    print "\n// Ignore tag set for $acc $id\n\n" if ($report);
 	    $ignored++;
 	}	
 	undef $ignore;
