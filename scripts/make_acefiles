@@ -224,7 +224,7 @@ sub mknewacefiles {
 	open (TACE,"| $exe");
 	print TACE $command;
 	close TACE;
-	print LOG "Made file $filename\n\n";
+	print LOG "Made file $filename\n";
 
 	if ($filename eq "/wormsrv2/wormbase/stlace/stlace_Protein.ace") {
 	    $outfile = "$targetdir/".$dbname."_".$object.$criterianoasterisk.".ace";
@@ -501,7 +501,7 @@ sub process_ace_file{
   my $filename = shift;
   my $database = shift;
 
-  print LOG "Replacing 'wormpub' in timestamps with $database\n\n";
+  print LOG "Changing timestamp information to contain $database\n\n";
 
   open (INPUT, "<$filename") || die "Couldn't open $filename for reading\n";
   open (OUTPUT, ">${filename}.tmpfile") || die "Couldn't write to tmpfile\n";
