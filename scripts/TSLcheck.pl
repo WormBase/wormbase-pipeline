@@ -8,7 +8,7 @@
 # Will discard matches to isoforms (Warning).
 #
 # Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2004-09-14 10:41:10 $
+# Last updated on: $Date: 2004-09-14 15:47:51 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
@@ -81,7 +81,7 @@ foreach $chromosome (@chromosomes) {
     &usage("No exon file") unless (-e "$datadir/CHROMOSOME_${chromosome}.exon.gff");
 
     # cycle through overlap file and assign to centre
-    open (IN, "gff_overlap $datadir/CHROMOSOME_${chromosome}.TSL_site.gff $datadir/CHROMOSOME_${chromosome}.exon.gff |");
+    open (IN, "gff_overlap -minfrac1 1 $datadir/CHROMOSOME_${chromosome}.TSL_site.gff $datadir/CHROMOSOME_${chromosome}.CDS.gff |");
     while (<IN>) {
 	
 	$line = $_;
@@ -92,7 +92,7 @@ foreach $chromosome (@chromosomes) {
 	$overlap{$chromosome}++;                                          # increment overlap count
 
 	# discard isoforms 
-	if ($line =~ /[a-z]\" intersect/) {
+	if ($line =~ /[a-z]\" /) {
 	    print "// discard as an isoform match\n"if ($verbose);
 	    $isoform{$chromosome}++;                                      # increment isoform count
 	    $log->write_to("WARNING: Isoform match $line") if ($verbose);
