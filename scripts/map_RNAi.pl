@@ -211,4 +211,19 @@ foreach my $mapped (sort keys %finaloutput) {
 } 
 
 
+##############################
+# read acefiles into autoace #
+##############################
+
+my $command =<<END;
+pparse /wormsrv2/autoace/mappings/RNAi_mappings.$db_version.ace
+save
+quit
+END
+
+open (TACE,"| $tace -tsuser map_RNAi.pl $dbdir") || die "Couldn't open tace connection to $dbdir\n";
+print TACE $command;
+close (TACE);
+
+
 exit(0);
