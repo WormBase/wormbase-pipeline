@@ -6,8 +6,8 @@
 #
 # script for creating extra GFF lines to indicate those genes that are landmark genes
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-09-14 16:26:13 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2004-09-23 09:45:11 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -77,7 +77,7 @@ foreach (@chromosomes) {
   $log->write_to("Processing chromosome $_\n");
 
   # open input/output streams
-  open(OUT,">$database/GFF_SPLITS/$release/CHROMOSOME_$_.landmarks.gff") || die "Cannot open output file\n";
+  open(OUT,">$database/GFF_SPLITS/GFF_SPLITS/CHROMOSOME_$_.landmarks.gff") || die "Cannot open output file\n";
   open(GFF,"<$database/CHROMOSOMES/CHROMOSOME_$_.gff")                   || die "Can't read CHROMOSOME_$_.gff file\n";
   
   while (<GFF>) {
