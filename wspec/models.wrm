@@ -802,6 +802,7 @@
 	  Origin  From_Database UNIQUE ?Database UNIQUE Int	// release number
 		  From_Author ?Author XREF Sequence
 		  From_Laboratory UNIQUE ?Laboratory
+		  Genetic_code UNIQUE ?Genetic_code // krb 030506
 		  Production_group Text
 		  Finishing_group Text
 		  Date DateType Text			// Text for comments on operation
@@ -969,6 +970,27 @@
 			// if just the tag is set without values, then accept mismatches anywhere
 	   Display Max_mag UNIQUE Float	// don't show if more bases per line
 		   Min_mag UNIQUE Float	// don't show if fewer bases per line
+
+
+///////////////////////////////////////////////////////////////////
+//
+// New ?Genetic_code class to support alternative genetic codes
+// will allow translation of mitochondrial genes
+//
+// Added by krb 030506
+//
+////////////////////////////////////////////////////////////////////
+
+
+?Genetic_code   Other_name ?Text
+                NCBI_id   UNIQUE        Int
+                Translation  UNIQUE     Text
+                Start  UNIQUE   Text
+                Base1 UNIQUE    Text
+                Base2 UNIQUE    Text
+                Base3 UNIQUE    Text
+
+
 
 
 ///////////////////////////////////////////////////////////////////
