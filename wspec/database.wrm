@@ -69,7 +69,7 @@ PART :       1   local    ACEDB          block48.wrm  50000    0
 PART :       1   local    ACEDB          block49.wrm  50000    0
 PART :       1   local    ACEDB          block50.wrm  50000    0
 //
-NAME WS54
+NAME WS55
 TITLE C.elegans database
 //
 ///////////////// end of file
