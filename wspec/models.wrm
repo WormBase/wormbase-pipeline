@@ -238,8 +238,9 @@
                 Old_name ?Locus XREF New_name
                 New_name ?Locus XREF Old_name
 	Gene_information Description ?Text
-			 Provisional_description ?LongText #Evidence // added for Erich [020322 krb]
-			 Detailed_description ?LongText #Evidence  // added for Erich [020322 krb]
+			 Provisional_description ?Text #Evidence // added for Erich [020322 krb]
+			 Detailed_description ?Text #Evidence  // added for Erich [020322 krb]
+			 Concise_description ?Text #Evidence  // added for Erich [020523 krb]
 	Species UNIQUE ?Species // added by krb 15/02/02
 	Type	Gene	Reference_Allele ?Allele Text
                         Phenotype ?Text
@@ -851,8 +852,9 @@
 			Gene ?Gene XREF Sequence                                 // added by Lincoln 010417
 			GO_term ?GO_term XREF Sequence                           // added for Erich [011210 krb]
                         Contained_in_operon ?Operon XREF Contains_CDS            // added for Operons [020128 dl]
-			Provisional_description ?LongText #Evidence // added for Erich [020322 krb]
-			Detailed_description ?LongText #Evidence  // added for Erich [020322 krb]
+			Provisional_description ?Text #Evidence // added for Erich [020322 krb]
+			Detailed_description ?Text #Evidence  // added for Erich [020322 krb]
+			Concise_description ?Text #Evidence  // added for Erich [020523 krb]
 		// tag2 system: names of all objects following next tag are shown in the 
 		//   general annotation display column as "tag:objname"
 	  Properties    Pseudogene Text		                                 // explanation
