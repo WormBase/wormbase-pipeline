@@ -14,8 +14,8 @@
 #
 # pfetch is done in batches of 2000, any greater and nothing comes back!
 #
-# Last updated by: $Author: krb $                      # These lines will get filled in by cvs 
-# Last updated on: $Date: 2002-11-21 10:23:44 $        # quickly see when script was last changed and by whom
+# Last updated by: $Author: wormpub $                      # These lines will get filled in by cvs 
+# Last updated on: $Date: 2003-04-16 13:29:51 $        # quickly see when script was last changed and by whom
 
 use strict;
 use lib "/wormsrv2/scripts/";                  
@@ -249,7 +249,7 @@ sub outputToAce #(\%wormpep_acc, \@accession \$ace_output, \$errorLog)
 	      $Database = "SwissProt";
 	    }
 	    else {
-	      if ($databaseID =~ m/[OPQ]\d\w{4}/ ) {
+	      if ($databaseID =~ m/[\s>][OPQ]\d\w{4}/ ) {
 		$Database = "TrEMBL";
 	      }
 	      else {
@@ -328,7 +328,7 @@ sub GetNoAccPeps
 		{
 		  # this is an AAMXXXXX.X style id that we know about
 		  $CE = $noSWALL{$aaaID};
-		  if( $_ =~ m/([OPQ]\d\w{4})\s/ ) {
+		  if( $_ =~ m/[\s>]([OPQ]\d\w{4})\s/ ) {
 		    $noswall_acc{$CE} = $1;
 		  }
 		  else {
