@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-12-10 16:48:14 $
+# Last updated on: $Date: 2004-12-16 14:49:37 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -115,10 +115,6 @@ foreach $class (@classes){
   if ($class =~ m/rearrangement/i) {&process_rearrangement}
   if ($class =~ m/mapping/i)       {&check_genetics_coords_mapping}
   if ($class =~ m/multipoint/i)    {&check_dubious_multipt_gene_connections}
-
-  # this will not fire off even if no class is specified see also http://intweb.sanger.ac.uk/Projects/C_elegans/DOCS/geneace_duties.shtml
-  # section "Load CGC approved pseudo genetic markers to geneace before at start of a build"
-  if ($class =~ m/pseudo/i)        {&int_map_to_map_loci}
 }
 
 
@@ -1151,62 +1147,6 @@ sub check_genetics_coords_mapping {
   }
 }
 
-                          #######################################################
-                          #     SUBROUTINES FOR -class pseudo option            #
-                          #######################################################
-
-sub int_map_to_map_loci {
-
-  # Look for Gene(loci) without map and mapping_data but have allele and seq. connection and interpolated_map_position
-  # This is for creating inferred multip_pt obj for such loci found 
-  # sent to JAH for approval
-
-  my $error=0;
-  my $header = "\n\nChecking Genes without map & mapping_data but have allele & seq. connection & interpolated_map_position\n";
-  my $sep = "--------------------------------------------------------------------------------------------------------\n";
-  print $header;
-  print LOG $header, $sep;
-  print JAHLOG $header, $sep;
-
-  my $int_loci  = "find Gene * where !mapping_data & allele & Sequence_name & interpolated_map_position & species =\"*elegans\"";
-  my %INT_loci;
-
-  # need to increment again because this is run before autoace_minder -initial is run so build hasn't actually started
-  my $version = $next_build_ver +1;
-  open(INT_map_TO_MAP, ">/wormsrv1/geneace/JAH_DATA/MULTI_PT_INFERRED/loci_become_genetic_marker_for_WS$version.ace") || die $!;
-
-  # create a list of "promoted" loci
-  push( my @int_loci, $db->find($int_loci) );
-  my %Alleles = $ga->get_non_Transposon_alleles($db); # all Geneace alleles which have no Transposon_insertion tag
-
-  foreach (@int_loci){
-    my @alleles = $_ -> Allele(1);
-    foreach my $e (@alleles){
-      if (exists $Alleles{$e} ){
-
-	my $int_map = $_ -> Interpolated_map_position(1);
-	my $int_pos = $_ -> Interpolated_map_position(2);
-	if (exists $Gene_info{$_}{'CGC_name'}){
-	  $error++;
-	  print LOG "$Gene_info{$_}{'CGC_name'} ($_ => $e) has interpolated_map which can be updated to Map: $int_pos\n";
-	  print JAHLOG "$Gene_info{$_}{'CGC_name'} ($_ => $e) has interpolated_map which can be updated to Map: $int_pos\n";
-	
-	  # keep a copy here
-	  print INT_map_TO_MAP "\nGene : \"$_\" \/\/ $Gene_info{$_}{'CGC_name'}\n";
-	  print INT_map_TO_MAP "-D Interpolated_map_position \n";
-	  print INT_map_TO_MAP "\nGene : \"$_\"\n";
-	  print INT_map_TO_MAP "Pseudo_map_position\n";
-	  print INT_map_TO_MAP "Map \"$int_map\" Position $int_pos\n";
-	  print INT_map_TO_MAP "Remark \"Map position created from combination of previous interpolated map position (based on known location of sequence) and allele information.  Therefore this is not a genetic map position based on recombination frequencies or genetic experiments.  This was done on advice of the CGC.\" CGC_data_submission\n";
-	  last;
-	}
-      }
-    }
-  }
-
-  print LOG    "Total: $error to become inferred genetic marker(s)\n\n";
-  print JAHLOG "Total: $error to become inferred genetic marker(s)\n\n";
-}
 
 
 
