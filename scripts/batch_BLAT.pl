@@ -4,8 +4,8 @@
 #
 # Anthony Rogers
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2004-12-07 15:32:27 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2005-01-26 09:45:02 $
  
 
 use strict;
@@ -159,21 +159,24 @@ sub new_file
 sub split_run 
   {
     my $type = shift;
-    my $shatter_dir;
+    my $shatter_tree;
     my $name_stem;
     my $source_file;
     my $opts;
     my $ESTdir = "${wormpub}/analysis/ESTs";
+    my $shattered_dir;
 
     if( $type eq "est" ) {
-      $shatter_dir = "shatteredEST";
-      $name_stem   = "$shatter_dir/elegansEST";
+      $shattered_dir = "shatteredESTs";
+      $shatter_tree = "$ESTdir/$shattered_dir";
+      $name_stem   = "$shatter_tree/elegansEST";
       $source_file = "${wormpub}/analysis/ESTs/elegans_ESTs.masked";
       $opts = "";
     }
     elsif ($type eq "nematode" ) {
-      $shatter_dir = "shatteredOST";
-      $name_stem   = "$shatter_dir/nematodeEST";
+      $shattered_dir = "shattered_nematode";
+      $shatter_tree = "$ESTdir/$shattered_dir";
+      $name_stem   = "$shatter_tree/nematodeEST";
       $source_file = "${wormpub}/analysis/ESTs/other_nematode_ESTs";
       $opts        = "-t=dnax -q=dnax"
     }
@@ -181,15 +184,15 @@ sub split_run
       $log->log_and_die("no type passed to split_run\n");
     }
 
-    mkdir( $shatter_dir ) unless ( -e $shatter_dir );
+    mkdir( $shatter_tree ) unless ( -e $shatter_tree );
 
     system("perl $ENV{'CVS_DIR'}/shatter $source_file 25000 $name_stem") and $log->log_and_die("cant shatter $source_file : $!\n");
 
-    opendir(DIR,"$ESTdir/$shatter_dir");
+    opendir(DIR,"$shatter_tree");
 
     while ( my $file = readdir( DIR ) ) {
       next unless $file =~ /\d+/;
-      &run_bsub("$shatter_dir/${file}","$file.psl","$opts");
+      &run_bsub("$shattered_dir/${file}","$file.psl","$opts");
     }
   }
 
