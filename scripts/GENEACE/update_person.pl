@@ -4,11 +4,11 @@
 
 # by Chao-Kung Chen [030728]
 
-# Last updated on: $Date: 2004-05-19 08:58:37 $
+# Last updated on: $Date: 2004-05-28 12:56:05 $
 # Last updated by: $Author: ck1 $
 
 
-# Automatically update Geneace with Person/Person_name classes from autoace
+# update Geneace with Person/Person_name classes from autoace
 
 use strict;
 
@@ -71,4 +71,3 @@ close Load_GA;
 
 `rm -f /tmp/lab_PI.ace /tmp/new_Person.ace /tmp/new_Person_name.ace`;
 
-print "Person and Person_name classes updated. Check /wormsrv2/logs/update_Person.$rundate to see if everything is ok!\n";
