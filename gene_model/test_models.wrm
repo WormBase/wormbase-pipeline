@@ -735,7 +735,6 @@
 		       Phenotype  ?Phenotype  XREF GO_term // added for Erich, [020128 dl]
 		       Index Ancestor   ?GO_term XREF Descendent // added for Lincoln [020709 [krb]
                	             Descendent ?GO_term XREF Ancestor		  
-		       Locus ?Locus XREF GO_term // added by krb 020905
 		       Anatomy_term ?Anatomy_term XREF GO_term // added [031107 krb]
 		       Homology_group ?Homology_group XREF GO_term // added [031120 krb]
  	 Version UNIQUE Text UNIQUE Text // added for Lincoln, to store version number of GO
