@@ -8,7 +8,7 @@
 # This makes the autoace database from its composite sources.
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2004-06-28 13:16:15 $
+# Last edited on: $Date: 2004-07-06 15:36:58 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -507,17 +507,17 @@ sub setdate {
 sub makechromlink {
 
   print LOG &runtime, ": starting makechromlink subroutine\n";
-  unlink "$wormbasedir/misc/misc_chromlinks.ace" or print LOG "ERROR: Couldn't unlink file: $!\n";
-  my $command = "$basedir/scripts/makeChromLinks.pl -out $wormbasedir/misc/misc_chromlinks.ace";
-  $command = "$basedir/scripts/makeChromLinks.pl -test -out $wormbasedir/misc/misc_chromlinks.ace" if ($test);
+  unlink "$wormbasedir/misc_dynamic/misc_chromlinks.ace" or print LOG "ERROR: Couldn't unlink file: $!\n";
+  my $command = "$basedir/scripts/makeChromLinks.pl -out $wormbasedir/misc_dynamic/misc_chromlinks.ace";
+  $command = "$basedir/scripts/makeChromLinks.pl -test -out $wormbasedir/misc_dynamic/misc_chromlinks.ace" if ($test);
   &run_command("$command"); 
 
-  if (-z "$wormbasedir/misc/misc_chromlinks.ace") {
+  if (-z "$wormbasedir/misc_dynamic/misc_chromlinks.ace") {
     print LOG "*Makechromlink: chromlinks.ace has ZERO size\n";  
     return;
   } 
   else {
-    my $command = "pparse $wormbasedir/misc/misc_chromlinks.ace\nsave\nquit\n";
+    my $command = "pparse $wormbasedir/misc_dynamic/misc_chromlinks.ace\nsave\nquit\n";
     &DbWrite($command,"$tace -tsuser make_autoace",$dbpath,"MakeChromLinks");
   }
 

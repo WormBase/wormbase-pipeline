@@ -4,8 +4,8 @@
 #
 # map GO_terms to ?Sequence objects from ?Motif and ?Phenotype
 #
-# Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-06-04 10:45:55 $      
+# Last updated by: $Author: ar2 $     
+# Last updated on: $Date: 2004-07-06 15:36:58 $      
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -52,7 +52,7 @@ if ($debug) {
 my $tace      = &tace;      # tace executable path
 my $dbpath    = "/wormsrv2/autoace";                                      # Database path
 
-my $out="/wormsrv2/wormbase/misc/misc_inherit_GO_term.ace";
+my $out="/wormsrv2/wormbase/misc_dynamic/misc_inherit_GO_term.ace";
 open (OUT,">$out");
 OUT->autoflush();
 
@@ -76,7 +76,7 @@ print LOG "inherit_GO_terms run STARTED at $runtime\n\n";
 
 unless ($noload || $debug) {
 
-  my $command = "pparse /wormsrv2/wormbase/misc/misc_inherit_GO_term.ace\nsave\nquit\n";
+  my $command = "pparse /wormsrv2/wormbase/misc_dynamic/misc_inherit_GO_term.ace\nsave\nquit\n";
     
   open (TACE,"| $tace -tsuser inherit_GO_terms $dbpath") || die "Couldn't open tace connection to $dbpath\n";
   print TACE $command;

@@ -6,8 +6,8 @@
 #
 # Gets latest Interpro:GO mappings from XXXX and puts info in to ace file
 #
-# Last updated by: $Author: krb $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2004-06-09 16:07:33 $                        # quickly see when script was last changed and by whom
+# Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
+# Last updated on: $Date: 2004-07-06 15:36:58 $                        # quickly see when script was last changed and by whom
 
 
 use strict;
@@ -110,11 +110,11 @@ foreach my $key (keys %interpro_des)
 close I2GACE;
 
 # now copy file to /wormsrv2 and load to autoace
-my $status = copy("/wormsrv2/tmp/interpro2go.ace", "/wormsrv2/wormbase/misc/misc_interpro2go.ace");
+my $status = copy("/wormsrv2/tmp/interpro2go.ace", "/wormsrv2/wormbase/misc_dynamic/misc_interpro2go.ace");
 print LOG "Failed to copy interpro2go.ace file: $!\n" if ($status == 0);
 
 print LOG "Loading interpro2go.ace file to autoace\n";
-my $command = "autoace_minder.pl -load /wormsrv2/wormbase/misc/misc_interpro2go.ace -tsuser interpro2go_mappings";
+my $command = "autoace_minder.pl -load /wormsrv2/wormbase/misc_dynamic/misc_interpro2go.ace -tsuser interpro2go_mappings";
  
 $status = system($command);
 if(($status >>8) != 0){

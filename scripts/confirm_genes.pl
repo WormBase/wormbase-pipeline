@@ -8,7 +8,7 @@
 # if the whole model is confirmed
 #
 # Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2004-02-17 16:19:36 $      
+# Last updated on: $Date: 2004-07-06 15:36:58 $      
 
 
 #use strict;
@@ -67,7 +67,7 @@ my $basedir = "/wormsrv2";
 $basedir = glob("~wormpub/TEST_BUILD") if ($test or $quicktest);
 
 my $gffdir = "$basedir/autoace/GFF_SPLITS/GFF_SPLITS";
-my $outdir = "$basedir/wormbase/misc";
+my $outdir = "$basedir/wormbase/misc_dynamic";
 
 
 

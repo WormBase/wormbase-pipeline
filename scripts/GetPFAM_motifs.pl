@@ -6,8 +6,8 @@
 #
 # Gets latest PFAM motifs from sanger/pub and puts info in to ace file
 #
-# Last updated by: $Author: krb $                      
-# Last updated on: $Date: 2003-12-01 11:54:25 $         
+# Last updated by: $Author: ar2 $                      
+# Last updated on: $Date: 2004-07-06 15:36:58 $         
 
 
 use strict;                                     
@@ -58,7 +58,7 @@ print LOG "\n\nOpening file $pfam_motifs . . \n";
 print "\n\nOpening file $pfam_motifs . . \n";
 open (PFAM,"<$pfam_motifs") or die "cant open $pfam_motifs\n";
 
-my $acefile = "/wormsrv2/wormbase/misc/misc_pfam_motifs.ace";
+my $acefile = "/wormsrv2/wormbase/misc_dynamic/misc_pfam_motifs.ace";
 
 open (PFAMOUT,">$acefile") or die "cant write misc_pfam_motifs.ace\n";
 
@@ -177,7 +177,7 @@ Title "Biopterin-dependent aromatic amino acid hydroxylase"
 Database" "Pfam" "Pfam_ID" "PF00351"
 
 
-writes to /wormsrv2/wormbase/misc/misc_pfam_motifs.ace
+writes to /wormsrv2/wormbase/misc_dynamic/misc_pfam_motifs.ace
 
 =head1 REQUIREMENTS
 

@@ -7,7 +7,7 @@
 # Gets latest Interpro:GO mappings from XXXX and puts info in to ace file
 #
 # Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2004-02-25 09:46:23 $                        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2004-07-06 15:36:58 $                        # quickly see when script was last changed and by whom
 
 
 use strict;                                     
@@ -43,7 +43,7 @@ print LOG "...... got it!\n";
 
 print LOG "\n\nOpening file $motifs . . \n";
 open (I2G,"<$motifs") or die "cant open $motifs\n";
-open (IPDESC,">/wormsrv2/wormbase/misc/misc_interpro_motifs.ace") or die "cant write misc_interpro_motifs.ace\n";
+open (IPDESC,">/wormsrv2/wormbase/misc_dynamic/misc_interpro_motifs.ace") or die "cant write misc_interpro_motifs.ace\n";
 my %interpro_des;   #IPR000018 => "P2Y4 purinoceptor"
 my $text;
 my $ip;

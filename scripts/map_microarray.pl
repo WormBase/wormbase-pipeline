@@ -6,8 +6,8 @@
 #
 # by Anon
 #
-# Last updated by: $Author: krb $                      
-# Last updated on: $Date: 2004-04-26 10:36:39 $        
+# Last updated by: $Author: ar2 $                      
+# Last updated on: $Date: 2004-07-06 15:36:58 $        
 
 
 use strict;
@@ -34,7 +34,7 @@ my $test;       # Test mode
 my $debug;      # Debug mode, verbose output to user running script
 our $log;
 
-my $outfile = "/wormsrv2/wormbase/misc/misc_microarrays.ace";
+my $outfile = "/wormsrv2/wormbase/misc_dynamic/misc_microarrays.ace";
 
 GetOptions ("debug=s"   => \$debug,
 	    "test"      => \$test,

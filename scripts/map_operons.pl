@@ -2,8 +2,8 @@
 #
 # map_operons.pl
 
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2004-04-29 10:20:41 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2004-07-06 15:36:58 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -26,7 +26,7 @@ our $gff    = "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS";
 our $WS_version =  &get_wormbase_version_name;
 
 our $output1 = "/wormsrv2/autoace/OPERONS/operons_${WS_version}.ace";
-our $output2 = "/wormsrv2/wormbase/misc/misc_operons.ace";
+our $output2 = "/wormsrv2/wormbase/misc_dynamic/misc_operons.ace";
 
 # do everything in /wormsrv2/autoace/OPERONS
 chdir("$dir");
