@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam aged 12 and a half
 #
-# Last updated on: $Date: 2004-05-20 14:41:30 $
+# Last updated on: $Date: 2004-06-03 16:02:03 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
@@ -85,6 +85,7 @@ our @error1;
 our @error2;
 our @error3;
 our @error4;
+our @error5;
 
 
 CHECK_GENE:
@@ -112,8 +113,8 @@ foreach my $cds (@CDSs){
   for($i=1; $i<@exon_coord2;$i++){
     my $intron_size = ($exon_coord1[$i] - $exon_coord2[$i-1] -1);
     print "ERROR: $cds has a small intron ($intron_size bp)\n" if (($intron_size < 34)  && $verbose);
-    push(@error2,"ERROR: $cds has a very small intron ($intron_size bp)\n") if ($intron_size < 34);
-    push(@error4,"WARNING: $cds has a small intron ($intron_size bp)\n") if (($intron_size > 33) && ($intron_size < 39) && (!$basic));
+    push(@error4,"ERROR: $cds has a very small intron ($intron_size bp)\n") if ($intron_size < 34);
+    push(@error5,"WARNING: $cds has a small intron ($intron_size bp)\n") if (($intron_size > 33) && ($intron_size < 39) && (!$basic));
   }
   
 
@@ -207,6 +208,11 @@ foreach my $error (@error3){
   last if $count_errors > 19;
 }
 foreach my $error (@error4){
+  $count_errors++;
+  print LOG "$count_errors) $error";
+  last if $count_errors > 19;
+}
+foreach my $error (@error5){
   $count_errors++;
   print LOG "$count_errors) $error";
   last if $count_errors > 19;
