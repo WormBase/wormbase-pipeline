@@ -1,0 +1,132 @@
+
+I systematised case usage, so Gene_Class -> Gene_class,
+With_Maternal_Effect -> With_maternal_effect etc.
+
+Changes to conform to C identifier syntax for tags and classes:
+  2_point -> Two_pt
+  2_point_data -> Two_pt_data
+
+?Gene, ?Locus
+-------------
+
+I gave ?Gene some hierarchical structure which may not be to
+everyone's taste.
+
+Sylvia will have to 
+  a) transfer all current Genes to the new Gene class,
+  b) transfer all old_names for these to Other_name tag in their parent
+  c) look for things not yet blessed as Genes, and put them in Gene
+	with their name under "Other_name" - many have "Gene_class" set
+
+There are a very few current Other_locus with Old_names.  I would just
+make these remarks - they are not important, or in some cases just
+suppress the old name, which for these non-gene loci will never now be
+used.  So I removed the whole Name section from ?Locus.
+
+I added Species to ?Gene and ?Locus, because there are C_briggsae and
+C_vulgaris genes (which should be in the Gene class).  Should Species 
+be part of the Identity subtree? (I put it there for now.)
+
+I removed Description from ?Locus.  It is only used twice and should
+be rationalised (done in fixes).
+
+Should Genes have an extent on the sequence themselves (i.e. be SMAP'd
+onto the genome) or just be connected to sequence by their CDS,
+Transcript and perhaps regulatory objects?  I know the miegs give 
+explicit coordinates.  Logically I would like to see the gene as a 
+collection of components, but it may be practically useful to
+calculate an extent automatically offline that encloses all the CDSs,
+transcripts etc.  This allows you to jump to the genomic view for
+the gene as a whole.  I added this.
+
+I renamed Locus Contains <-> Gene Contained_in
+       to Locus Cluster_contains <-> Gene In_cluster
+because it is only (legitimately) used for gene clusters.
+
+#Evidence
+---------
+
+I changed this model to contain GO codes, following an email
+discussion in April.  
+
+For now it is only used in Gene_event_history and for GO_term assignment.
+We could/should be using it much more widely, for most curated assertions.
+
+?Allele
+-------
+
+Tag Qualifier is not used, but surely it should be?  I removed it.
+
+I moved the replacement information from the Sequence object to the
+Allele object, and position the Allele by standard SMAP, using a
+Method with style Variation.
+
+There were three uses of tag Other_name, inconsistently applied.  I
+remove them in fixes.ace and then the tag.
+
+#Lab_location
+-------------
+
+I have not checked we don't use this, but I removed it anyway, because
+we should not be using it.  It was really a teaching illustration of
+how to use # structures.  Not relevant to wormbase.
+
+Map data classes
+----------------
+rename 2_point to Two_pt
+add Gene alternative with Allele (Locus no longer has Allele)
+
+?Person
+-------
+I left in Lincoln's Person class, but this is only connected to from
+Gene Identity History and Evidence, i.e. is only used for Curators.
+In fact we don't use it at all yet.  Should we rename this class
+Curator and start using it?
+
+?Sequence
+---------
+Added Gene, Locus, Allele, CDS and Transcript as S_children.
+What is the Spliced_cDNA tag, which is used in 4 objects only, without
+Int values as in the model?  ?A test idea from CSH?  I eliminate this
+and reciprocal Component_of.
+
+I remove EMBL_features, although 976 objects have them.  These are
+incredibly archaic, and should all become Features with proper
+methods.
+
+Locus_other_seq -> Gene_other_seq for now, because
+non-canonical-parented CDS stay in the sequence class for now.
+
+
+Source code changes required
+============================
+
+PMAP code will have to recognize the Gene class wherever Locus class
+now.
+
+Genetic mapping code will have to switch from 2_point to Two_pt.
+
+Allele drawing code in FMAP becomes Method-based using style Variation.
+
+Data problems not resolved in fixes.ace
+=======================================
+
+References [wbg16.3p12] and [wbg16.3p20] are identical !?  Which is
+right?
+
+I think that Alleles pPK* should be pkP* (i.e. polymorphisms from the
+Plasterk lab).
+
+We should remove Related_protein, Related_DNA and redo something systematically.
+
+
+
+
+
+
+
+
+
+
+
+
