@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2004-07-12 10:45:58 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2004-07-21 12:06:47 $
 
 
 
@@ -914,8 +914,10 @@ sub prepare_for_blat{
   &run_command("$scriptdir/transcriptmasker.pl -all");
 
   # Now make blat target database using autoace (will be needed for all possible blat jobs)
-  # Need to run blat_them_all -dump
+  # This also makes a backup copy of the old psl files (in case you need them to refer to)
+
   &run_command("$scriptdir/blat_them_all.pl -dump");
+
 
 } 
 
