@@ -7,7 +7,7 @@
 # Builds a wormrna data set from the current autoace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-09-30 08:51:43 $
+# Last updated on: $Date: 2003-11-10 16:27:22 $
 
 
 #################################################################################
@@ -78,7 +78,7 @@ mkdir ("$new_wrdir" , 0755) || die "Couldn't create $new_wrdir\n";
 
 my $db = Ace->connect (-path => $dbdir, -program => $tace) || die "Couldn't connect to $dbdir\n";
 # Get RNA genes, but not other Transcript objects
-my @transcripts = $db->fetch (-query => 'FIND Transcript WHERE Species = "Caenorhabditis elegans" AND NOT Method = "Transcript"');
+my @transcripts = $db->fetch (-query => 'FIND Transcript WHERE Species = "Caenorhabditis elegans" AND ((Method = RNA) OR (Method = miRNA) OR (Method = tRNAscan-SE-1.23) OR (Method = snRNA) OR (Method = snoRNA) OR (Method = rRNA) OR (Method =scRNA) OR (Method = stRNA))');
 
 @transcripts = sort @transcripts;
 my $count = scalar(@transcripts);
