@@ -1,26 +1,27 @@
-#!/usr/local/bin/perl5.6.1
+#!/usr/local/bin/perl5.8.0
 #
 # make_wormpep
-# v 4.1
 # 
 # Usage : make_wormpep -r <release_number>
 #
 # Builds a wormpep data set from the current autoace database
 #
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2003-07-23 15:22:48 $
 
 #################################################################################
 # variables                                                                     #
 #################################################################################
 
-$| = 1;
 use strict;
+use lib '/wormsrv2/scripts/';
+use Wormbase;
 use vars qw($opt_i $opt_d $opt_f $opt_h $opt_t);
 use Getopt::Std;
 use IO::Handle;
 use Ace;
 use Socket;
-use lib '/wormsrv2/scripts/';
-use Wormbase;
+
 
  #######################################
  # Script variables (run)              #
@@ -243,7 +244,7 @@ foreach my $dot (@dotnames_1) {
        print LOG "$dot is only a temporary sequence\n";
        next;
     }
-    unless (($dot =~ /^[A-Z0-9]+\.[1-9]\d?[A-Za-z]?$/) || ($dot =~ /^[A-Z0-9]+\.[A-Za-z]{1,2}$/)) {
+    unless ($dot =~ /^[A-Z0-9_]+\.[1-9]\d?[A-Za-z]?$/i) {
         print LOG "the sequence $dot has an incorrect dotname\n";
     }
     undef (my $dna);
@@ -571,24 +572,25 @@ my $number_alternate = 0;
 my %new_name2x;
 foreach (@end_dotnames) {
     $number_total++;
-    /^([A-Za-z0-9]+)\.(.*)$/;
+    /^([A-Z0-9_]+)\.(.*)$/i;
     my $cosmid = $1;
     my $dot = $2;
     if ($dot =~ /^[1-9][0-9]?$/) {
         $number_cds++;
-    } elsif ($dot =~ /^[a-z][a-z]?$/) {
-         $number_cds++;
-    } elsif ($dot =~ /(^[1-9][0-9]?)([a-z])/) {
-        my $number = $1;
+    }
+    elsif ($dot =~ /(^[1-9][0-9]?)([a-z])/) {
+	my $number = $1;
 	my $letter = $2;
         my $new_name = $cosmid."_".$number;
         unless (exists ($new_name2x{$new_name})) {
 	    $number_cds++;
-        } else {
+        } 
+	else {
 	    $number_alternate++;
-          }
+        }
         $new_name2x{$new_name} = "x";
-    } else {
+    } 
+    else {
         print LOG "$_ has a non\-acceptable name in wormpep$release \(has not been counted\)\n";
         next;
     }
