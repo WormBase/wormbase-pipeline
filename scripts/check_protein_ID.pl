@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl -w
+#!/usr/local/bin/perl
 #
 # check_protein_ID.pl
 # v0.1
@@ -17,61 +17,76 @@
 # 000712 : dan : PP version
 # 020116 : dan : moved to /wormsrv1/camace as acedb database
 
-use strict;
+#use strict;
+use Socket;
+use vars qw ($debug $seq_len $sv_acc $sv_ver);
+use lib '/wormsrv2/scripts';
+use Wormbase;
+
+$|=1;
 
 #####################################################################################################
 # Declare variables                                                                                 # 
 #####################################################################################################
 
 my $CDS = "";                                           # CDS name
-my $cds_count = 0;                                      # No. of CDS in database
-my $cds_pid_count = 0;                                  # No. of CDS with Protein_ID in database
-my $PID_count = 0;                                      # No. of Protein_ID tags in database
-my $errors = 0;                                         # No. of CDS with corrupted Protein_ID tags
-my @LOG = ();                                           # List of CDS with corrupted Protein_ID tags
-my $tace = glob("~acedb/RELEASE.SUPPORTED/bin.ALPHA_4/tace"); # tace executable path
+my $genome_sequence = "";                                           # CDS name
+my %clone2acc = "";
+my %clone2id = "";
+my %acc2ver = "";
+
+my $tace = "/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_4/tace"; # tace executable path
 my $db = "/wormsrv1/camace";                            # Database path
 my $exec="$tace $db";     
-my $command1=<<EOF;
-find Predicted_gene
-list -a
-quit
-EOF
-my $command2=<<EOF;
+my $command=<<EOF;
 find Predicted_gene
 show -a Protein_id
 quit
 EOF
+my $command_db=<<EOF;
+find Genome_sequence
+show -a Database
+quit
+EOF
+
+
+
+
+
 
 #####################################################################################################
 # MAIN LOOP                                                                                         # 
 #####################################################################################################
-
-#####################################################################################################
-# Count the No. of CDS objects in the database                                                      # 
-#####################################################################################################
-
-open (output1, ">/tmp/gene_list");
-open(textace1, "echo '$command1' | $exec -| ");
-while (<textace1>) {
+open(textace_db, "echo '$command_db' | $exec | ");
+while (<textace_db>) {
+#    print "$_";
+    chomp;
     next if ($_ eq "");
     next if (/acedb/);
     next if (/\/\//);
-    if (/^Sequence : \"(\S+)\"/) {
-       print output1 "$1\n";
-	$cds_count++;
+    s/\"//g;
+    if (/^Sequence : (\S+)/) {
+	$genome_sequence = $1;
+#	print "processing $genome_sequence\n";
+	next;
     }
-}    
-close (textace1);     
-close (output1);
+    if (/Database\s+EMBL\s+(\S+)\s+(\S+)\s+(\d+)/) {
+	$clone2acc{$genome_sequence} = $2;
+	$clone2id{$genome_sequence} = $1;
+	$acc2ver{$2} = $3;
+    }
+    
+}   
+close textace_db;  
+
 
 #####################################################################################################
 # Count the No. of CDS objects with Protein_ID tags                                                 # 
 #####################################################################################################
 
-open (output2, ">/tmp/protein_ID_list");
-open(textace2, "echo '$command2' | $exec -| ");
-while (<textace2>) {
+open(textace, "echo '$command' | $exec | ");
+while (<textace>) {
+#    print "$_";
     chomp;
     next if ($_ eq "");
     next if (/acedb/);
@@ -79,45 +94,120 @@ while (<textace2>) {
     s/\"//g;
     if (/^Sequence : (\S+)/) {
 	$CDS = $1;
-	print output2 "$CDS\n";
-	$cds_pid_count++;
+	print "processing $CDS\n";
 	next;
     }
+    # correct syntax for the protein_id fields
     if (/Protein_id\s+(\S+)\s+(\S+)\s+(\d+)/) {
+	my ($cam_clone,$cam_pid,$cam_ver) = ($1,$2,$3);
 	$PID_count++;
+	print "[acedb]  Protein_id $CDS in $cam_clone $cam_pid.$cam_ver\n";
+	@embl_data = &getseq($CDS,$cam_pid);
+
+	my ($EMBL_clone,$EMBL_pid,$EMBL_ver);
+	
+	foreach (@embl_data) {
+	    ($EMBL_clone,$EMBL_pid,$EMBL_ver) = split (/ /,$_);
+#	    print "[embl]   Protein_id $CDS in $EMBL_clone $EMBL_pid.$EMBL_ver\n";
+	    
+	    # if accessions match then check protein_id
+	    if ($EMBL_clone eq $clone2acc{$cam_clone}) {
+		print "[embl]   Protein_id $CDS in $EMBL_clone $EMBL_pid.$EMBL_ver\n";
+		print "---> checking protein_id for clone $cam_clone [$clone2acc{$cam_clone}]\n";
+		if ($EMBL_pid ne $cam_pid) {
+		    print "Protein_ID for $CDS identifier is incorrect [$cam_clone $cam_pid.$cam_ver  EMBL: $EMBL_pid.$EMBL_ver]\n\n";
+		} 
+		elsif ($EMBL_ver ne $cam_ver) {
+		    print "Protein_ID for $CDS version is incorrect [$cam_clone $cam_pid.$cam_ver  EMBL: $EMBL_pid.$EMBL_ver]\n\n";
+		}
+		else {
+		    print "Protein_ID for $CDS is synchronised [$cam_clone $cam_pid.$cam_ver]\n\n";
+		}
+		print "End loop: Checked for genome_sequence $cam_clone\n\n";
+		last;
+	    }
+	    else {
+		print "Discard data: Incorrect clone\n";
+	    }
+	}
     }
-    else {
-	push (@LOG, "Problem with $CDS : [$_]");
-    }
+    
+#    print "\n";
+    # eeek
+    
 }    
-close textace2;     
-close (output2);
+close textace;     
+
+exit(0);
 
 #####################################################################################################
-# Report numbers and list of errors / discrepencies                                                 # 
-#####################################################################################################
+#################
 
-$errors = scalar (@LOG);
+sub getseq {
 
-print "No. of CDS objects          : '$cds_count'\n";
-print "No. of CDS with Protein_IDs : '$cds_pid_count'\n";
-print "No. of Protein_IDs          : '$PID_count'\n";
-print "No. of CDS with problems    : '$errors'\n\n";
+    my ($cds,$protein_id) = @_;
+    my ($EMBL_clone,$EMBL_pid,$EMBL_ver,$EMBL_misc);
+    my @data;
 
-if ($errors > 0) {
-    print "Putative errors in the database\n\n";
-    foreach (@LOG) {
-	next if ($_ eq "");
-	print "$_\n";
+    my $querycontent = "-e+[{SWALL_SP_REMTREMBL}-prd:'$protein_id']";
+    my $request      = "/srs6bin/cgi-bin/wgetz?$querycontent";
+    my $server       = "srs.ebi.ac.uk";
+
+    if (!defined(open_TCP(*G,$server,80))) {
+        print "Error connecting to server \n";
+        exit(-1);
     }
-    print "\n";
+    
+    print G "GET $request HTTP/1.0\n\n";
+    print G "Accept: */*\n";
+    print G "User-Agent: socketsrs/1.0\n\n";
+    
+# Parsing annotation
+    while (my $return_line=<G>) {
+	
+	if ($return_line =~ /embl-ProteinID/) {
+#	    print "$return_line";
+	    ($EMBL_clone) = $return_line =~ (/EMBL-acc\:(\S+)\]/);
+	    ($EMBL_pid,$EMBL_ver) = $return_line =~ (/AMP_gt;parent\)\+\-e\"\>(\S+)\<\/A\>\.(\d+)\;/);
+	    ($EMBL_misc) = $return_line =~ (/\d\;(.+)$/);
+	    $EMBL_misc  =~ s/^\s+//g;
+	    $EMBL_misc  =~ s/\.$//g;
+#	    ($EMBL_pid,$EMBL_ver) = $return_line =~ (/AMP_gt;parent\)\+\-e\"\>(\S+)\<\/A\>\.(\d+)\;.[0,2]\-/);
+	    print "[getseq] Protein_id $cds in $EMBL_clone $EMBL_pid.$EMBL_ver '$EMBL_misc'";
+	    if ($EMBL_misc eq "JOINED") {
+		print "\t !! Discard !!\n";
+		next;
+	    }
+	    else {
+		print "\n";
+	    }
+	    push (@data,"$EMBL_clone $EMBL_pid $EMBL_ver");
+#	    return ($EMBL_clone,$EMBL_pid,$EMBL_ver);
+#	    last;
+	}
+    }
+    close G;
+    
+    return (@data);
+
 }
 
-if ($cds_count != $cds_pid_count) {
-    print "Mismatch between No, of CDS objects and No. of objects with Protein_ID's\n\n";
-    print "CDS Objects without Protein_ID's are :\n";
-    system ("comm -3 /tmp/gene_list /tmp/protein_ID_list");
+
+ ########################################################
+ # Output: successful network connection in file handle #
+ ########################################################
+
+sub open_TCP {
+    my ($FS,$dest,$port) = @_;
+    my $proto = getprotobyname ('tcp');
+    socket ($FS,PF_INET,SOCK_STREAM,$proto);
+    my $sin = sockaddr_in($port,inet_aton($dest));
+    connect($FS,$sin) || return undef;
+    my $old_fh = select($FS);
+    $| = 1;
+    select($old_fh);
 }
+
 
 #####################################################################################################
 # Tidy up                                                                                           # 
