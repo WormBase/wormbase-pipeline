@@ -133,16 +133,14 @@ foreach my $gene (@predicted_genes){
     my @subseq_coord2 = $parent->get('Subsequence',3);
 
     # check subsequence coordinates against parent length
-    my $max_coordinate = 0;
     my $i;
     for($i=0; $i<@subseq_coord1; $i++){
-      $max_coordinate = $subseq_coord1[$i] if ($subseq_coord1[$i] > $max_coordinate);
-      $max_coordinate = $subseq_coord2[$i] if ($subseq_coord2[$i] > $max_coordinate);
-      print "Gene error - $gene: exon inconsistency, overlapping exons?\n" if ($max_coordinate > $parent_length);
+      if (($subseq_coord1[$i] > $parent_length) || ($subseq_coord2[$i] > $parent_length)){
+	print "Gene error - $gene: subsequence coordinates exceed length of parent \n" 
+      }
     }
-
-    $max_coordinate = $i = 0;
-
+    $i = 0;
+    my $max_coordinate = 0;
     # fetch exon coordinates
     my @exon_coord1 = $gene_object->get('Source_Exons',1);
     my @exon_coord2 = $gene_object->get('Source_Exons',2);
@@ -152,7 +150,6 @@ foreach my $gene (@predicted_genes){
       $max_coordinate = $exon_coord2[$i] if ($exon_coord2[$i] > $max_coordinate);
       print "Gene error - $gene: exon inconsistency, overlapping exons?\n" if (($exon_coord1[$i] < $exon_coord2[$i-1]) && ($i>0));
     }
-
   }
 
   # check that 'Start_not_found' and 'End_not_found' tags present?
