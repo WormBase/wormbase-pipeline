@@ -793,6 +793,7 @@
 			Keyword ?Keyword	// EMBL/Genbank
 			DB_annotation ?Database UNIQUE ?LongText
 			EMBL_dump_info #EMBL_dump_info
+	  Web_location  ?Url 
 	  Annotation	SwissProt_DE	UNIQUE	Text
 			EC_number	?Url
 			Pfam	UNIQUE	Text
