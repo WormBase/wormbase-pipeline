@@ -53,7 +53,7 @@ my $txt_frame = $mw->Frame(relief => 'groove', borderwidth => 2,
  # push(@menus, $frame->Menubutton(text => $_));
 #}
 
-my $menu_File=$btn_frame->Menubutton(text => 'File')->pack (side => 'left', anchor => 'n', fill => 'x');
+my $menu_File=$btn_frame->Menubutton(text => 'File', relief => 'groove', borderwidth => 2)->pack (side => 'left', anchor => 'n', fill => 'x');
 $menu_File->AddItems(
 		     ["command" => "Open Update file", "accelerator" => "Ctrl-u", command => \&open_update_file],
 		     ["command" => "Save Update file", command => \&save_update_file],
@@ -73,14 +73,14 @@ $mw->bind('<Control-Key-a>' => \&open_ace_file);
 $mw->bind('<Control-Key-g>' => \&upload_ace);
 $mw->bind('<Control-Key-q>' => sub{exit});
 
-my $menu_GA=$btn_frame->Menubutton(text => 'Correct Geneace_check')->pack (side => 'left', anchor => 'n', fill => 'x');
+my $menu_GA=$btn_frame->Menubutton(text => 'Correct Geneace_check', relief => 'groove')->pack (side => 'left', anchor => 'n', fill => 'x');
 $menu_GA->AddItems(
 		     ["command" => "Add loci to Gene_Class obj", command => \&add_loci_to_geneclass],
 		     ["command" => "Add location to Allele obj", command => \&add_location_to_allele]
 		  );
 
 
-my $menu_Option=$btn_frame->Menubutton(text => 'Options')->pack (side => 'left', anchor => 'n', fill => 'x');
+my $menu_Option=$btn_frame->Menubutton(text => 'Options', relief => 'groove')->pack (side => 'left', anchor => 'n', fill => 'x');
 $menu_Option->AddItems(
 		       ["command" => "Gene_class/Gene/Other_name assignment -> .ace", command => \&geneclass_loci_other_name],
 		       ["command" => "Genetics mapping -> .ace", command => \&gene_mapping],
@@ -562,11 +562,30 @@ sub gene_mapping {
   # fetch the numbers of the last obj of 
   # ?multi_pt_data ?2_point_data ?pos_neg_data
   ############################################
+
+  my ($multi_pt_count, $two_pt_count, $pos_neg_count);
   
-  my $multi_pt_count=4066;
-  my $two_pt_count=7142;
-  my $pos_neg_count=10719;
+  my $dialog =  $mw -> DialogBox(-title   => "Get next number...",
+				 -buttons => ["Close"]);
   
+  $dialog->geometry("220x260");
+  $dialog->add('Label',
+	       -anchor => 'n',
+	       -justify => 'left',
+	       -text => "Enter next number of\npos-neg-data\nmulti-pt-data\n2-pt-data objects!\n")
+         ->pack();
+
+  $dialog->Label(text => 'Last multi-point #')->pack(side => 'top', anchor => 'w');
+  $dialog->Entry(textvariable => \$multi_pt_count)->pack(side => 'top', anchor => 'w', fill => 'x', expand => 1);
+
+  $dialog->Label(text => 'Last 2-point #')->pack(side => 'top', anchor => 'w');
+  $dialog->Entry(textvariable => \$two_pt_count)->pack(side => 'top', anchor => 'w', fill => 'x', expand => 1);
+
+  $dialog->Label(text => 'Last pos-neg-data #')->pack(side => 'top', anchor => 'w');
+  $dialog->Entry(textvariable => \$pos_neg_count)->pack(side => 'top', anchor => 'w', fill => 'x', expand => 1);
+
+  $dialog->Show();
+   
   ############################
   # date of update: for remark
   ############################
