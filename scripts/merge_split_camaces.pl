@@ -5,7 +5,7 @@
 # A script to make multiple copies of camace for curation, and merge them back again
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2004-08-02 09:24:14 $
+# Last edited on: $Date: 2004-08-23 09:43:39 $
 
 
 use strict;
@@ -38,8 +38,8 @@ GetOptions (
 our $tace       = &tace;
 our $WS_version = &get_wormbase_version;
 
-my $WS_previous = $WS_version - 1;
-print "WS_version : $WS_version\tWS_previous : $WS_previous\n" if ($debug);
+my $WS_next = $WS_version + 1;
+print "WS_version : $WS_version\tWS_next : $WS_next\n" if ($debug);
 
 my @databases; #array to store what splits are to be merged.
 my $path_new = ();
@@ -55,7 +55,7 @@ push(@databases,"krb");
 
 # directory paths
 our $current     = "/wormsrv1/camace";
-our $directory   = "/nfs/disk100/wormpub/camace_orig/WS${WS_previous}-WS${WS_version}";
+our $directory   = "/nfs/disk100/wormpub/camace_orig/WS${WS_version}-WS${WS_next}";
 our $camace_orig = "/nfs/disk100/wormpub/camace_orig";
 
 ## (1) Merge split databases #1 - do the diffs ##
