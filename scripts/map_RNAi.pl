@@ -7,7 +7,7 @@
 # by Kerstin Jekosch
 #
 # Last updated by: $Author: krb $                      
-# Last updated on: $Date: 2003-01-10 17:49:49 $        
+# Last updated on: $Date: 2003-01-15 09:38:44 $        
 
 
 $|=1;
@@ -303,7 +303,6 @@ close(LOG);
 close(OUT);
 close(OUTACE);
 
-exit(0);
 
 ##############################
 # read acefiles into autoace #
