@@ -7,7 +7,7 @@
 # Usage : autoace_minder [-options]
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2002-10-17 14:25:13 $
+# Last edited on: $Date: 2002-10-30 11:36:13 $
 
 
 #################################################################################
@@ -1298,7 +1298,13 @@ sub make_wormpep {
     $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Running make_wormpep -f at $runtime\n";
     system ("$scriptdir/make_wormpep -f") && die "Couldn't run make_wormpep -f\n";
     $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Finished running make_wormpep -f at $runtime\n";
+ 
     
+    # make acefile of peptides etc to add to autoace (replacement for pepace)
+    print LOG &runtime," : Running build_pepace.pl\n";
+    system ("$scriptdir/build_pepace.pl") && die "Couldn't run build_pepace.pl\n";
+    print LOG &runtime," : Finished running build_pepace.pl\n";
+   
     
     # make a make_autoace log file in /logs
     system ("touch $logdir/D1:Build_wormpep_final");
