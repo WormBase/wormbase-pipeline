@@ -2,7 +2,7 @@
 
 # Author: Chao-Kung Chen
 # Last updated by $Author: krb $
-# Last updated on: $Date: 2004-12-08 14:27:04 $ 
+# Last updated on: $Date: 2004-12-16 10:13:54 $ 
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -40,7 +40,8 @@ my $allele_dir = "/wormsrv1/geneace/ALLELE_DATA/JAPANESE_KNOCKOUTS";
 ##########################################
 
 my $rundate = &rundate;
-my $log = "/wormsrv2/logs/$0.$rundate.$$";
+my $log = "/wormsrv2/logs/parse_NBP_alleles.$rundate.$$";
+
 open(LOG,    ">$log")                                              || die $!;
 open(ACE,    ">$allele_dir/NBP_alleles.$rundate.ace")              || die $!;
 open(DELETE, ">$allele_dir/NBP_alleles.$rundate.delete.ace")       || die $!;
