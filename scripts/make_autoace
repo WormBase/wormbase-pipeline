@@ -8,7 +8,7 @@
 # This makes the autoace database from its composite sources.
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-02-11 18:41:11 $
+# Last edited on: $Date: 2003-02-12 13:08:18 $
 
 
 $|=1;
@@ -421,7 +421,7 @@ sub rmconfremark {
     }
     close ACEFILE;
     close TEMP;
-    system("mv -f $dbpath/acefiles/temp$$ $this_acefile") && print LOG "ERROR: can't overwrite original acefile with stripped-down acefile\n";
+    system("\\mv -f $dbpath/acefiles/temp$$ $this_acefile") && print LOG "ERROR: can't overwrite original acefile with stripped-down acefile\n";
   }
 }
 
@@ -439,32 +439,36 @@ sub rmconfremark {
 #                camace_Sequence.ace will be loaded as camace.
 
 sub reinitdb {
-    system ("\\rm -f $dbpath/database/new/*") && print LOG "ERROR: Couldn't remove database/new/ file\n";
-    system ("\\rm -f $dbpath/database/touched/*") && print LOG "ERROR: Couldn't remove database/touched/ file\n";
-    if (-e "$dbpath/database/lock.wrm") {
-	print LOG "*Reinitdb error - lock.wrm file present..\n";
-	close LOG;
-	die();
+
+  system ("\\rm -f $dbpath/database/new/*")     && print LOG "ERROR: Couldn't remove database/new/ file\n";
+  system ("\\rm -f $dbpath/database/touched/*") && print LOG "ERROR: Couldn't remove database/touched/ file\n";
+
+  if (-e "$dbpath/database/lock.wrm") {
+    print LOG "*Reinitdb error - lock.wrm file present..\n";
+    close LOG;
+    die();
+  }
+  system ("\\mv $dbpath/database/log.wrm $dbpath/database/log.old") && print LOG "ERROR: couldn't mv log.wrm\n";  
+  system ("\\rm $dbpath/database/*.wrm") && print LOG "ERROR: couldn't mv *.wrm file\n";
+  unlink "$dbpath/database/ACEDB.wrm";
+
+  my $command = "y\n";
+  print LOG "* Reinitdb: reinitializing the database ..\n";
+  &DbWrite($command,$tace,$dbpath,"ReInitDB");
+ 
+  foreach my $filename (@filenames) {
+    my $command = "pparse $filename\nsave\nquit\n";
+    if (-e $filename) {
+      my $now = `date +%H:%M:%S`; chomp $now;
+      print LOG "* Reinitdb: reading in new database  $filename at $now\n";
+      my ($tsuser) = $filename =~ (/^\S+\/(\S+)\_/);
+      &DbWrite($command,"$tace -tsuser $tsuser",$dbpath,"ParseFile");
     }
-    system ("\\mv $dbpath/database/log.wrm $dbpath/database/log.old") && print LOG "ERROR: couldn't mv log.wrm\n";  
-    system ("\\rm $dbpath/database/*.wrm") && print LOG "ERROR: couldn't mv *.wrm file\n";
-    unlink "$dbpath/database/ACEDB.wrm";
-    my $command = "y\n";
-    print LOG "* Reinitdb: reinitializing the database ..\n";
-    &DbWrite($command,$tace,$dbpath,"ReInitDB");
-    foreach my $filename (@filenames) {
-      my $command = "pparse $filename\nsave\nquit\n";
-      if (-e $filename) {
-	my $now = `date +%H:%M:%S`; chomp $now;
-	print LOG "* Reinitdb: reading in new database  $filename at $now\n";
-	my ($tsuser) = $filename =~ (/^\S+\/(\S+)\_/);
-	&DbWrite($command,"$tace -tsuser $tsuser",$dbpath,"ParseFile");
-      }
-      else {
-	print LOG "* Reinitdb: $filename is not existent - skipping ..\n";
-	next;
-      }
+    else {
+      print LOG "* Reinitdb: $filename is not existent - skipping ..\n";
+      next;
     }
+  }
 }
 
 
