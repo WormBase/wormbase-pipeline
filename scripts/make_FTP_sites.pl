@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: wormpub $
-# Last updated on: $Date: 2004-09-07 12:07:21 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2004-09-16 13:35:23 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -27,40 +27,39 @@ use Carp;
 # Command-line options and variables                                            #
 #################################################################################
 
-our $sourcedir = "/wormsrv2/autoace";
-our $targetdir = "/nfs/disk69/ftp/pub/wormbase";  # default directory, can be overidden
-our $log;
+my $sourcedir = "/wormsrv2/autoace";
+my $targetdir = "/nfs/disk69/ftp/pub/wormbase";  # default directory, can be overidden
 
-our $release            = &get_wormbase_version_name(); # e.g. WS89
-our $release_number     = &get_wormbase_version();      # e.g.   89
-our $old_release        = $release_number - 1;
-our $wormrna_release    = $release_number;
-our $wormpep            = $release_number;
-my $maintainers = "All";
-my $errors = 0;    # tracking system call errors
+my $WS              = &get_wormbase_version();      # e.g.   132
+my $WS_name         = &get_wormbase_version_name(); # e.g. WS132
+my $maintainers     = "All";
+my $runtime;
 
 my $help;
 my $debug;
-my $norelease; # don't copy across release files
-my $nochroms;  # don't copy across chromosome files
-my $nomisc;    # don't copy misc files
-my $nowormpep; # don't copy wormpep files
-my $nogenes;   # don't copy confirmed genes
-my $noyk;      # don't copy yk2orf file
-my $nogeneIDs; # don't copy file of gene IDs
-my $nopcr;     # don't copy file of PCR products
+my $release; # only copy across release files
+my $chroms;  # only copy across chromosome files
+my $misc;    # only copy misc files
+my $wormpep; # only copy wormpep files
+my $genes;   # only copy confirmed genes
+my $cDNA;    # only copy cDNA2orf file
+my $geneIDs; # only copy file of gene IDs
+my $pcr;     # only copy file of PCR products
+my $homols;  # only copy best blast hits 
+my $all;     # copy everything across
 
-GetOptions (
-	    "help"       => \$help,
-	    "debug=s"    => \$debug,
-	    "norelease"  => \$norelease,
-	    "nochroms"   => \$nochroms,
-	    "nomisc"     => \$nomisc,
-	    "nowormpep"  => \$nowormpep,
-	    "nogenes"    => \$nogenes,
-	    "noyklist"   => \$noyk,
-	    "nogeneIDs"  => \$nogeneIDs
-	   );
+GetOptions ("help"     => \$help,
+	    "debug=s"  => \$debug,
+	    "release"  => \$release,
+	    "chroms"   => \$chroms,
+	    "misc"     => \$misc,
+	    "wormpep"  => \$wormpep,
+	    "genes"    => \$genes,
+	    "cDNAlist" => \$cDNA,
+	    "geneIDs"  => \$geneIDs,
+	    "pcr"      => \$pcr,
+	    "homols"   => \$homols,
+	    "all"      => \$all);
 
 # Display help if required
 &usage("Help") if ($help);
@@ -71,31 +70,35 @@ if ($debug) {
     ($maintainers = $debug . '\@sanger.ac.uk');
 }
 
+# using -all option?
+($release=$chroms=$misc=$wormpep=$genes=$cDNA=$geneIDs=$pcr= 1) if ($all);
+
 
 #################################################################################
 # Main                                                                          #
 #################################################################################
 
+# open log file
+my $log = Log_files->make_build_log();
 
-&create_log_file;
 
-&copy_release_files unless ($norelease);    # make a new directory for the WS release and copy across release files
+&copy_release_files if ($release);    # make a new directory for the WS release and copy across release files
 
-&copy_chromosome_files unless ($nochroms);  # make a new /CHROMOSOMES directory for the DNA, GFF, and agp files and copy files across
+&copy_chromosome_files if ($chroms);  # make a new /CHROMOSOMES directory for the DNA, GFF, and agp files and copy files across
 
-&copy_misc_files unless ($nomisc);          # copy across models.wrm and other misc. files, e.g. wormRNA
+&copy_misc_files if ($misc);          # copy across models.wrm and other misc. files, e.g. wormRNA
 
-&copy_wormpep_files unless ($nowormpep);    # copied from ~wormpub/WORMPEP
+&copy_wormpep_files if ($wormpep);    # copied from ~wormpub/WORMPEP
 
-&extract_confirmed_genes unless ($nogenes); # make file of confirmed genes from autoace and copy across
+&extract_confirmed_genes if ($genes); # make file of confirmed genes from autoace and copy across
 
-&make_yk2ORF_list unless ($noyk);           # make file of yk EST -> ORF connections and add to FTP site
+&make_cDNA2ORF_list if ($cDNA);       # make file of cDNA -> ORF connections and add to FTP site
 
-&make_geneID_list unless ($nogeneIDs);      # make file of WBGene IDs -> CGC name & Sequence name and add to FTP site
+&make_geneID_list if ($geneIDs);      # make file of WBGene IDs -> CGC name & Sequence name and add to FTP site
 
-&make_pcr_list unless ($nopcr);             # make file of PCR products -> WBGene IDs, CDS, CGC name
+&make_pcr_list if ($pcr);             # make file of PCR products -> WBGene IDs, CDS, CGC name
 
-&copy_homol_data;                           # copies best blast hits files across
+&copy_homol_data if ($homols);        # copies best blast hits files across
 
 
 
@@ -106,19 +109,19 @@ if ($debug) {
 ################################
 
 
-print LOG "\n\n\n",&runtime," make_FTP_sites.pl finished\n";
-
-close(LOG);
-
 # warn about errors in subject line if there were any
+my $errors = $log->report_errors;
+
+$log->write_to("\n$errors errors found\n");
+
 if($errors == 0){
-  &mail_maintainer("BUILD REPORT: make_FTP_sites.pl",$maintainers,$log);
+  $log->mail("$maintainers","BUILD REPORT: make_FTP_sites.pl");
 }
 elsif ($errors ==1){
-  &mail_maintainer("BUILD REPORT: make_FTP_sites.pl : $errors ERROR!",$maintainers,$log);
+  $log->mail("$maintainers","BUILD REPORT: make_FTP_sites.pl : $errors ERROR!");
 }
 else{
-  &mail_maintainer("BUILD REPORT: make_FTP_sites.pl : $errors ERRORS!!!",$maintainers,$log);
+  $log->mail("$maintainers","BUILD REPORT: make_FTP_sites.pl : $errors ERRORS!!!");
 }
 
 exit (0);
@@ -130,18 +133,6 @@ exit (0);
 # Subroutines                                                                   #
 #################################################################################
 
-########################################
-# Open logfile                         #
-########################################
-
-sub create_log_file{
-  my $rundate = `date +%y%m%d`; chomp $rundate;
-  $log="/wormsrv2/logs/make_FTP_sites.pl.$rundate.$$";
-  open (LOG,">$log");
-  LOG->autoflush();
-
-  print LOG &runtime, " make_FTP_sites.pl started\n\n";
-}
 
 ##########################################################
 # copy the WS release files across and check on the size
@@ -149,9 +140,10 @@ sub create_log_file{
 ##########################################################
 
 sub copy_release_files{
-  print LOG &runtime, ": copying release files\n";
+  $runtime = &runtime;
+  $log->write_to("$runtime: copying release files\n");
 
-  &run_command("mkdir $targetdir/$release") unless -e "$targetdir/$release";
+  &run_command("mkdir $targetdir/$WS_name") unless -e "$targetdir/$WS_name";
 
   my $filename;
 
@@ -159,17 +151,18 @@ sub copy_release_files{
   while (defined($filename = readdir(RELEASE))) {
     if (($filename eq ".")||($filename eq "..")) { next;}
     if (($filename =~ /letter/)||($filename =~ /dbcomp/)) { next;}
-    &run_command("scp $sourcedir/release/$filename $targetdir/$release/$filename");
+    &run_command("scp $sourcedir/release/$filename $targetdir/$WS_name/$filename");
 
     my $O_SIZE = (stat("$sourcedir/release/$filename"))[7];
-    my $N_SIZE = (stat("$targetdir/$release/$filename"))[7];
+    my $N_SIZE = (stat("$targetdir/$WS_name/$filename"))[7];
     if ($O_SIZE != $N_SIZE) {
-      print LOG "\tError: $filename SRC: $O_SIZE TGT: $N_SIZE - different file sizes, please check\n";
+      $log->write_to("\tError: $filename SRC: $O_SIZE TGT: $N_SIZE - different file sizes, please check\n");
       croak "Couldn't copy $filename\n";
     } 
   }
   closedir RELEASE;
-  print LOG &runtime, ": Finished\n\n";
+  $runtime = &runtime;
+  $log->write_to("$runtime: Finished\n\n");
   
 }
 
@@ -179,24 +172,25 @@ sub copy_release_files{
 
 sub copy_chromosome_files{
 
-  print LOG &runtime, ": copying chromosome files\n";
+  $runtime = &runtime;
+  $log->write_to("$runtime: copying chromosome files\n");
   my $filename;
-  &run_command("mkdir $targetdir/$release/CHROMOSOMES") unless -e "$targetdir/$release/CHROMOSOMES";
+  &run_command("mkdir $targetdir/$WS_name/CHROMOSOMES") unless -e "$targetdir/$WS_name/CHROMOSOMES";
 
   opendir (DNAGFF,"$sourcedir/CHROMOSOMES") or croak ("Could not open directory $sourcedir/CHROMOSOMES");
   while (defined($filename = readdir(DNAGFF))) {
     if (($filename eq ".")||($filename eq "..")) { next;}
-    &run_command("scp $sourcedir/CHROMOSOMES/$filename $targetdir/$release/CHROMOSOMES/$filename");
+    &run_command("scp $sourcedir/CHROMOSOMES/$filename $targetdir/$WS_name/CHROMOSOMES/$filename");
     my $O_SIZE = (stat("$sourcedir/CHROMOSOMES/$filename"))[7];
-    my $N_SIZE = (stat("$targetdir/$release/CHROMOSOMES/$filename"))[7];
+    my $N_SIZE = (stat("$targetdir/$WS_name/CHROMOSOMES/$filename"))[7];
     if ($O_SIZE != $N_SIZE) {
-      print LOG "\tError: $filename SRC: $O_SIZE TGT: $N_SIZE - different file sizes, please check\n";
+      $log->write_to("\tError: $filename SRC: $O_SIZE TGT: $N_SIZE - different file sizes, please check\n");
       croak "Couldn't copy $filename\n";
     } 
   }
   closedir DNAGFF;
-  
-  print LOG &runtime, ": Finished copying\n\n";
+  $runtime = &runtime;
+  $log->write_to("$runtime: Finished copying\n\n");
 }
 
 ############################################
@@ -204,30 +198,32 @@ sub copy_chromosome_files{
 #############################################
 
 sub copy_misc_files{
-
-  print LOG &runtime, ": copying misc files\n";
+  $runtime = &runtime;
+  $log->write_to("$runtime: copying misc files\n");
 
   # Copy across the models.wrm file
-  &run_command("scp $sourcedir/wspec/models.wrm $targetdir/$release/models.wrm.$release");
+  &run_command("scp $sourcedir/wspec/models.wrm $targetdir/$WS_name/models.wrm.$WS_name");
 
   # copy some miscellaneous files across
-  &run_command("scp /wormsrv2/autoace/COMPARE/WS$old_release-$release.dbcomp $targetdir/$release/");
-  &run_command("scp /wormsrv2/autoace_config/INSTALL $targetdir/$release/");
+  my $old_release = $WS -1;
+  &run_command("scp /wormsrv2/autoace/COMPARE/WS$old_release-$WS_name.dbcomp $targetdir/$WS_name/");
+  &run_command("scp /wormsrv2/autoace_config/INSTALL $targetdir/$WS_name/");
 
   # tar, zip, and copy WormRNA files across from wormsrv2/WORMRNA
-  my $dest = "/wormsrv2/WORMRNA/wormrna${wormrna_release}";
+  my $dest = "/wormsrv2/WORMRNA/wormrna$WS";
   chdir "$dest" or croak "Couldn't cd $dest\n";
-  &run_command("/bin/tar -cf $targetdir/$release/wormrna${wormrna_release}.tar README wormrna${wormrna_release}.rna");
-  &run_command("/bin/gzip $targetdir/$release/wormrna${wormrna_release}.tar");
+  &run_command("/bin/tar -cf $targetdir/$WS_name/wormrna$WS.tar README wormrna$WS.rna");
+  &run_command("/bin/gzip $targetdir/$WS_name/wormrna$WS.tar");
 
   # zip and copy interpolated map across from /wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/
 
   chdir "/wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/";
   &run_command("/bin/gzip WS*interpolated_map.txt"); 
-  &run_command("scp ${release}_CDSes_interpolated_map.txt.gz $targetdir/$release/gene_interpolated_map_positions.${release}.gz");
-  &run_command("scp ${release}_Clones_interpolated_map.txt.gz $targetdir/$release/clone_interpolated_map_positions.${release}.gz");
+  &run_command("scp ${WS_name}_CDSes_interpolated_map.txt.gz $targetdir/$WS_name/gene_interpolated_map_positions.${WS_name}.gz");
+  &run_command("scp ${WS_name}_Clones_interpolated_map.txt.gz $targetdir/$WS_name/clone_interpolated_map_positions.${WS_name}.gz");
 
-  print LOG &runtime, ": Finished copying\n\n";
+  $runtime = &runtime;
+  $log->write_to("$runtime: Finished copying\n\n");
 
 }
 
@@ -238,12 +234,13 @@ sub copy_misc_files{
 
 sub copy_wormpep_files{
 
-  print LOG &runtime, ": copying wormpep files\n";
+  $runtime = &runtime;
+  $log->write_to("$runtime: copying wormpep files\n");
 
   my $wormpub_dir = "/nfs/disk100/wormpub/WORMPEP";
-  my $wp_source_dir = "/wormsrv2/WORMPEP/wormpep${wormpep}";
+  my $wp_source_dir = "/wormsrv2/WORMPEP/wormpep$WS";
   my $wormpep_ftp_root = glob("~ftp/pub/databases/wormpep");
-  my $wp_ftp_dir = "$wormpep_ftp_root/wormpep${wormpep}";
+  my $wp_ftp_dir = "$wormpep_ftp_root/wormpep$WS";
   mkdir $wp_ftp_dir unless -e $wp_ftp_dir;
 
  
@@ -251,26 +248,26 @@ sub copy_wormpep_files{
   
   foreach my $file ( @wormpep_files ){
   # copy the wormpep release files across
-    &run_command("scp $wp_source_dir/$file$wormpep $wp_ftp_dir/$file$wormpep");
-    &CheckSize("$wp_source_dir/$file$wormpep","$wp_ftp_dir/$file$wormpep");
+    &run_command("scp $wp_source_dir/$file$WS $wp_ftp_dir/$file$WS");
+    &CheckSize("$wp_source_dir/$file$WS","$wp_ftp_dir/$file$WS");
   }
 
   # tar up the latest wormpep release and copy across
-  my $tgz_file = "$wp_source_dir/wormpep${wormpep}.tar";
+  my $tgz_file = "$wp_source_dir/wormpep$WS.tar";
   my $command = "/bin/tar -c -h -P \"/wormsrv2/WORMPEP/\" -f $tgz_file";
 
   # grab list of wormpep file names from subroutine
   foreach my $file (@wormpep_files){
-      $command .= " $wp_source_dir/$file$wormpep";
+      $command .= " $wp_source_dir/$file$WS";
   }
   &run_command("$command");
   &run_command("/bin/gzip $tgz_file");
   $tgz_file .= ".gz";
-  &run_command("mv $tgz_file $targetdir/$release");
+  &run_command("mv $tgz_file $targetdir/$WS_name");
 
 
-
-  print LOG &runtime, ": Finished copying\n\n";
+  $runtime = &runtime;
+  $log->write_to("$runtime: Finished copying\n\n");
 }
 
 
@@ -280,14 +277,15 @@ sub copy_wormpep_files{
 
 sub extract_confirmed_genes{
 
-  print LOG &runtime, ": Extracting confirmed genes\n";
+  $runtime = &runtime;
+  $log->write_to("$runtime: Extracting confirmed genes\n");
 
   my $db = Ace->connect(-path  => "/wormsrv2/autoace/");
   my $query = "Find elegans_CDS; Confirmed_by";
   my @confirmed_genes   = $db->fetch(-query=>$query);
 
 
-  open(OUT,">${targetdir}/${release}/confirmed_genes.${release}") || croak "Couldn't write to ${targetdir}/${release}/confirmed_genes.${release}\n";
+  open(OUT,">${targetdir}/$WS_name/confirmed_genes.$WS_name") || croak "Couldn't write to ${targetdir}/$WS_name/confirmed_genes.$WS_name\n";
 
   foreach my $seq (@confirmed_genes){
     my $dna = $seq->asDNA();
@@ -304,39 +302,42 @@ sub extract_confirmed_genes{
   }
 
   close(OUT);
-  &run_command("/bin/gzip ${targetdir}/${release}/confirmed_genes.${release}");
+  &run_command("/bin/gzip ${targetdir}/$WS_name/confirmed_genes.$WS_name");
 
   $db->close;
 
-  print LOG &runtime, ": Finished extracting\n\n";
+  $runtime = &runtime;
+  $log->write_to("$runtime: Finished extracting\n\n");
   return(0);
 
 }
 
 ################################################################################
-# make list of yk EST -> orf connections
+# make list of cDNA -> orf connections
 ################################################################################
 
-sub make_yk2ORF_list {
+sub make_cDNA2ORF_list {
 
-  print LOG &runtime, ": making yk2ORF files\n";
-  # simple routine to just get yk est names and their correct ORFs and make an FTP site file
+  $runtime = &runtime;
+  $log->write_to("$runtime: making cDNA2ORF files\n");
+  # simple routine to just get cDNA est names and their correct ORFs and make an FTP site file
   # two columns, second column supports multiple ORF names
 
   my $tace = &tace;
   my $command=<<EOF;
-Table-maker -p "/wormsrv2/autoace/wquery/yk2ORF.def" quit
+Table-maker -p "/wormsrv2/autoace/wquery/cDNA2CDS.def" quit
 EOF
 
   my $dir = "/wormsrv2/autoace";
-  my %est2orf;
+
+  my %cDNA2orf;
   open (TACE, "echo '$command' | $tace $dir | ") || croak "Couldn't access $dir\n";  
   while (<TACE>){
     chomp;
     if (m/^\"/){
       s/\"//g;
       m/(.+)\s+(.+)/;     
-      $est2orf{$1} .= "$2 ";
+      $cDNA2orf{$1} .= "$2 ";
     }
   }
   close(TACE);
@@ -344,17 +345,18 @@ EOF
   # output to ftp site
 
   
-  my $out = "$targetdir/$release/yk2orf.$release";
+  my $out = "$targetdir/$WS_name/cDNA2orf.$WS_name";
   open(OUT, ">$out") || croak "Couldn't open $out\n";
 
-  foreach my $key (keys %est2orf){
-    print OUT "$key,$est2orf{$key}\n";
+  foreach my $key (keys %cDNA2orf){
+    print OUT "$key,$cDNA2orf{$key}\n";
   }
   close(OUT);
 
   &run_command("/bin/gzip $out");
 
-  print LOG &runtime, ": Finished making files\n\n";  
+  $runtime = &runtime;
+  $log->write_to("$runtime: Finished making files\n\n");  
   
 }
 
@@ -364,13 +366,14 @@ EOF
 
 sub make_geneID_list {
 
-  print LOG &runtime, ": making Gene ID list\n";
+  $runtime = &runtime;
+  $log->write_to("$runtime: making Gene ID list\n");
   # For each 'live' Gene object, extract 'CGC_name' and 'Sequence_name' fields (if present)
 
   my $tace    = &tace;
   my $command = "Table-maker -p /wormsrv2/autoace/wquery/gene2cgc_name_and_sequence_name.def\nquit\n";
   my $dir     = "/wormsrv2/autoace";
-  my $out     = "$targetdir/$release/geneIDs.$release";
+  my $out     = "$targetdir/$WS_name/geneIDs.$WS_name";
 
   open (OUT, ">$out") || croak "Couldn't open $out\n";
   open (TACE, "echo '$command' | $tace $dir | ") || croak "Couldn't access $dir\n";  
@@ -386,7 +389,8 @@ sub make_geneID_list {
 
   &run_command("/bin/gzip $out");
   
-  print LOG &runtime, ": Finished making list\n\n";
+  $runtime = &runtime;
+  $log->write_to("$runtime: Finished making list\n\n");
 }
 
 
@@ -396,12 +400,13 @@ sub make_geneID_list {
 
 sub make_pcr_list {
 
-  print LOG &runtime, ": making PCR product 2 gene list list\n";
+  $runtime = &runtime;
+  $log->write_to("$runtime: making PCR product 2 gene list list\n");
 
   my $tace    = &tace;
   my $command = "Table-maker -p /wormsrv2/autoace/wquery/pcr_product2gene.def\nquit\n";
   my $dir     = "/wormsrv2/autoace";
-  my $out     = "$targetdir/$release/pcr_product2gene.$release";
+  my $out     = "$targetdir/$WS_name/pcr_product2gene.$WS_name";
 
   # hashes needed because one pcr product may hit two or more genes
   my %pcr2gene;
@@ -455,8 +460,9 @@ sub make_pcr_list {
   close(OUT);
 
   &run_command("/bin/gzip $out");
-  
-  print LOG &runtime, ": Finished making list\n\n";
+
+  $runtime = &runtime;
+  $log->write_to("$runtime: Finished making list\n\n");
 }
 
 ########################
@@ -466,7 +472,7 @@ sub CheckSize {
   my $F_SIZE = (stat("$first"))[7];
   my $S_SIZE = (stat("$second"))[7];
   if ($F_SIZE != $S_SIZE) {
-    print LOG "\tERROR: $first SRC: $F_SIZE TGT: $S_SIZE - not same size, please check\n";
+    $log->write_to("\tERROR: $first SRC: $F_SIZE TGT: $S_SIZE - not same size, please check\n");
   } 
 }
 
@@ -490,8 +496,8 @@ sub copy_homol_data{
   # compress best blast hits files and then copy to FTP site
   &run_command("/bin/gzip -f $blast_dir/worm_pep_best_blastp_hits");
   &run_command("/bin/gzip -f $blast_dir/worm_brigpep_best_blastp_hits");
-  &run_command("scp $blast_dir/worm_pep_best_blastp_hits.gz      $targetdir/$release/best_blastp_hits.$release.gz");
-  &run_command("scp $blast_dir/worm_brigpep_best_blastp_hits.gz  $targetdir/$release/best_blastp_hits_brigpep.$release.gz");
+  &run_command("scp $blast_dir/worm_pep_best_blastp_hits.gz      $targetdir/$WS_name/best_blastp_hits.$WS_name.gz");
+  &run_command("scp $blast_dir/worm_brigpep_best_blastp_hits.gz  $targetdir/$WS_name/best_blastp_hits_brigpep.$WS_name.gz");
 
 
 }
@@ -516,11 +522,12 @@ sub usage {
 
 sub run_command{
   my $command = shift;
-  print LOG &runtime, ": running $command\n";
+  $runtime = &runtime;
+  $log->write_to("$runtime: running $command\n");
   my $status = system($command);
   if($status != 0){
-    $errors++;
-    print LOG "ERROR: $command failed\n";
+    $log->error;
+    $log->write_to("ERROR: $command failed\n");
   }
 
   # for optional further testing by calling subroutine
@@ -563,7 +570,7 @@ This script does :
  [10] - extract confirmed genes from autoace and make a file on FTP site
  [11] - delete the old symbolic link and make the new one
  [12] - delete the old WS release version directory
- [13] - makes a file of yk2orf connections
+ [13] - makes a file of cDNA2orf connections
  [14] - makes a file of all gene IDs with CGC names and Sequence names (where present)
  [15] - exit gracefully
 
