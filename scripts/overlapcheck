@@ -317,19 +317,19 @@ foreach my $chrom (@chrom) {
                         my $overlap = ($repeatend - $exonstart + 1);
                         # set size of overlap to be reported
                         my ($finalrepeat)  = ($testrepeat =~ /^(\S+)\.\d+/);
-                        push (@repeatoutput, [$finalrepeat,$testgene]) if ($overlap >= 6);#here
+                        push (@repeatoutput, [$finalrepeat,$testgene]) if ($overlap >= 10);#here
                     }
                     elsif (($repeatstart > $exonstart) && ($repeatend < $exonend)) {
                         my $overlap = ($repeatend - $repeatstart + 1);
                         # set size of overlap to be reported
                         my ($finalrepeat)  = ($testrepeat =~ /^(\S+)\.\d+/);
-                        push (@repeatoutput, [$finalrepeat,$testgene]) if ($overlap >= 6);#here
+                        push (@repeatoutput, [$finalrepeat,$testgene]) if ($overlap >= 23);#here
                     }
                     elsif (($repeatstart < $exonend) && ($repeatend > $exonend)) {
                         my $overlap = ($exonend - $repeatstart + 1);
                         # set size of overlap to be reported
                         my ($finalrepeat)  = ($testrepeat =~ /^(\S+)\.\d+/);
-                        push (@repeatoutput, [$finalrepeat,$testgene]) if ($overlap >= 6);#here
+                        push (@repeatoutput, [$finalrepeat,$testgene]) if ($overlap >= 10);#here
                     }
                 }
             }
