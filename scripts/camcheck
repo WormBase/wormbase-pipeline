@@ -224,7 +224,9 @@ close(CLONEFILE);
 
 # need to close and reopen existing log filehandle either side of system call
 close(LOG);
-system("/wormsrv2/scripts/check_predicted_genes.pl $dbpath $log");
+
+my $system_return = system("/wormsrv2/scripts/check_predicted_genes.pl $dbpath $log");
+warn "check_predicted_genes.pl did not run correctly: $?" if ($?);
 
 # now opened in append mode
 open (LOG,">>$log");
@@ -766,6 +768,14 @@ of the Gene Model as a Subsequence of the parent ?Sequence.
 =head3 CDS Gene Models on SUPERLINK objects
 
 CDS Gene Models are not allowed as children of SUPERLINK objects.
+
+
+=head2 Valid predicted gene objects
+
+camcheck calls the check_predicted_genes.pl script which performs a
+number of integrity checks on each object within the 'Predicted_gene'
+class. See L<check_predicted_genes.pl> for more details of these 
+checks.
 
 =head1 AUTHOR - Daniel Lawson
 
