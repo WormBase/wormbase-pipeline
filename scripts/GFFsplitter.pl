@@ -1,11 +1,11 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/bin/perl5.8.0 -w
 #
 # GFFsplitter.pl
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2003-06-20 14:39:07 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2003-08-05 15:35:07 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -20,8 +20,6 @@ use Wormbase;
 use IO::Handle;
 use Getopt::Long;
 use Ace;
-
-$|=1;
 
 
 ##################################################
@@ -153,7 +151,7 @@ foreach $file (@gff_files) {
     elsif ((($method eq "curated")           && ($feature eq "Sequence"))  ||
 	   (($method eq "provisional")       && ($feature eq "Sequence")))     {push (@{$GFF{$file}{genes}},$_);}
     # Pseudogenes
-    elsif ( ($method eq "Pseudogene")        && ($feature eq "Sequence"))      {push (@{$GFF{$file}{pseudogenes}},$_);}
+    elsif ( ($method eq "Pseudogene")        && (($feature eq "Sequence")  || ($feature eq "Pseudogene")))      {push (@{$GFF{$file}{pseudogenes}},$_);}
     # RNA genes 
     elsif ((($method eq "RNA")    || ($method eq "tRNAscan-SE-1.11") ||
 	    ($method eq "rRNA")   || ($method eq "scRNA") ||
