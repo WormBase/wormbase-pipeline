@@ -7,7 +7,7 @@
 # Builds a wormrna data set from the current autoace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-09-30 08:47:22 $
+# Last updated on: $Date: 2003-09-30 08:51:43 $
 
 
 #################################################################################
@@ -130,8 +130,11 @@ foreach my $transcript (@transcripts) {
   if ($locus) {
     print DNA ">$transcript $brief_id locus:$locus\n$rseq";
   }
-  else {
+  elsif($brief_id) {
     print DNA ">$transcript $brief_id\n$rseq";
+  }
+  else{
+    print DNA ">$transcript\n$rseq";
   }
   
   $obj->DESTROY();
