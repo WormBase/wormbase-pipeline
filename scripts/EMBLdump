@@ -1,8 +1,11 @@
-#!/usr/local/bin/perl
+#!/usr/local/bin/perl5.6.0
+#
 # EMBLDump makes EMBL dumps from camace.
-# [ag3 000221]
+# ag3
+#
 # [dl1 000618] : Altered script to accomodate change of lab 'CB' -> 'HX'
 #
+
 use IO::Handle;
 use IPC::Open2;
 use POSIX qw(:signal_h :errno_h :sys_wait_h);
@@ -16,10 +19,11 @@ sub REAPER {
   $SIG{CHLD}=\&REAPER;
 }
 
-my $exec = "/nfs/griffin2/rd/acedb/bin.ALPHA_4/giface ";
-#my $exec = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/giface ";
-my $dbdir = "/wormsrv2/camace";
-my $giface = "$exec $dbdir";
+#my $exec = "/nfs/griffin2/rd/acedb/bin.ALPHA_4/giface ";
+
+my $exec        = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/giface ";
+my $dbdir       = "/wormsrv2/camace";
+my $giface      = "$exec $dbdir";
 my $outfilename = "/nfs/disk100/wormpub/tmp/EMBLdump.$$";
 
 # Dump the EMBL file from camace
@@ -41,28 +45,6 @@ close READ;
 
 print "Outfile is $outfilename";
 exit;
-
-
-# [ag3] 062100 this should be useless now thanks to rd modifications
-#
-## Reformat for the author field
-#open (REFORMATFILE,">$reformatfile");
-#open (INFILE,"<$outfilename");
-#while ($line=<INFILE>) {
-#  if ($line =~ /Consortium/) {
-#	print $line;
-#    $line =~ s/RA/RC/;
-#    $line =~ s/Consortium/Consortium\./;
-#    print REFORMATFILE $line;
-#    print REFORMATFILE "RA   none;\n";
-#    next;
-#  }
-#  print REFORMATFILE $line;	
-#}
-#close INFILE;
-#close REFORMATFILE;
-
-
 
 
 
