@@ -843,7 +843,6 @@
 	  Properties    Pseudogene Text		                                 // explanation
 			Genomic_canonical Gene_count UNIQUE Int                  // added tag for dot name tracking [020128 dl]
                         Briggsae_canonical
-			Wormpep  
 			cDNA cDNA_EST
 			     EST_5		       // Indicate whether this is a 5' or 3' read [010423 dl]
 			     EST_3
