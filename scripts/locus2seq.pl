@@ -4,8 +4,8 @@
 #
 # written by Anthony Rogers (ar2@sanger.ac.uk)
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-10-31 15:32:20 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2003-11-17 12:37:29 $
 
 
 use strict;
@@ -279,6 +279,11 @@ sub compare_with_current_DB{
 	  elsif($lab[0] eq "RW"){  
 	    print STLOUT "Locus : \"$locus\"\n$tag\t\"$object\"\n\n";  
 	    $STLcount++;  
+	    print ALLOUT "Locus : \"$locus\"\n$tag\t\"$object\"\n\n";  
+	  }  
+	  elsif($lab[0] eq "DRW"){  
+	    print CAMOUT "Locus : \"$locus\"\n$tag\t\"$object\"\n\n";  
+	    $CAMcount++;  
 	    print ALLOUT "Locus : \"$locus\"\n$tag\t\"$object\"\n\n";  
 	  }  
 	  else{  
