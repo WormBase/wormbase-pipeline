@@ -4,8 +4,8 @@ use strict;
 use Getopt::Long;
 use DB_File;
 
-my $new;
-GetOptions ( "new" => \$new );
+my $old;
+GetOptions ( "old" => \$old );
 
 my $wormpipe_dump = "/acari/work2a/wormpipe/dumps";
 
@@ -50,7 +50,7 @@ open (ACE, ">$output") or die "cant open $output\n";
 
 # Description goes in "Title" field for old style model 
 my $title_desc = "Description";
-$title_desc = "Title" unless $new;
+$title_desc = "Title" if $old;
 
 while (<LIST>) {
   chomp;
@@ -82,7 +82,7 @@ while (<LIST>) {
   #ENSEMBL_proteinID
   #WORMPEP_ID 
 
-  if ($new) {
+  unless ($old) {
     foreach (@databases) {
       my ($DB,$ID) = split(/:/, $_);
       if( "$DB" eq "ENSEMBL" ){
