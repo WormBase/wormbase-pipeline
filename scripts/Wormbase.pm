@@ -9,7 +9,7 @@ use Exporter;
 use Carp;
 use Ace;
 @ISA       = qw(Exporter);
-@EXPORT    = qw(get_wormbase_version get_wormbase_version_name get_wormbase_release_date copy_check mail_maintainer celeaccession tace gff_sort dbfetch clones_in_database open_TCP DNA_string_reverse DNA_string_composition release_databases find_file_last_modified release_composition release_wormpep test_user_wormpub runtime);
+@EXPORT    = qw(get_wormbase_version get_wormbase_version_name get_wormbase_release_date copy_check mail_maintainer celeaccession tace gff_sort dbfetch clones_in_database open_TCP DNA_string_reverse DNA_string_composition release_databases find_file_last_modified release_composition release_wormpep test_user_wormpub runtime tace giface);
 @EXPORT_OK = qw(get_script_version); 
 
 
@@ -687,6 +687,20 @@ sub runtime {
   my $runtime    = `date +%H:%M:%S`; chomp $runtime;
   return $runtime;
 }
+
+###################################################
+# subs to get the correct version of ACEDB binaries
+sub tace {
+  my $tace = glob("~wormpub/ACEDB/bin_ALPHA/tace");
+  return $tace;
+}
+
+sub giface {
+  my $giface = glob("~wormpub/ACEDB/bin_ALPHA/giface");
+  return $giface;
+}
+
+
 ################################################################################
 #Return a true value
 ################################################################################
