@@ -7,7 +7,7 @@
 # checks EMBL for new EST or mRNA entries
 #
 # Last updated by: $Author: krb $                      
-# Last updated on: $Date: 2003-09-08 09:14:39 $        
+# Last updated on: $Date: 2003-09-09 14:46:06 $        
 
 use strict;
 use Getopt::Long;
@@ -109,10 +109,10 @@ print "There are $new_EMBL_CDS new C. elegans non-WormBase CDS entries since $da
 # mail $maintainer report    #
 ##############################
 
-print LOG "EMBL entries created since $date\n";
+print LOG "New EMBL sequence entries created since: $date\n";
 print LOG "There are $new_elegans_mRNA new C. elegans mRNA entries\n";
 print LOG "There are $new_elegans_EST new C. elegans EST entries\n";
-print LOG "There are $non_elegans_ESTs new non-C. elegans nematode ESTs since $date\n";
+print LOG "There are $non_elegans_ESTs new non-C. elegans nematode ESTs since\n";
 print LOG "There are $new_EMBL_CDS new C. elegans non-WormBase CDS entries\n";
 
 
