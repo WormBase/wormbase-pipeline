@@ -146,7 +146,7 @@ sub new {
     
     print "Peptide : WP:";
     &dbfetch($new_acc,$dbfile);
-    print "\n";
+    print "\n\n";
 
     print LOG "Full analysis: $new_acc\n"; 
 }
