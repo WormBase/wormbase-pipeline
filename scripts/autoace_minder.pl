@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-09-10 07:26:13 $
+# Last edited on: $Date: 2003-09-12 15:39:23 $
 
 
 #################################################################################
@@ -340,6 +340,7 @@ sub initiate_build {
   # add lines to the logfile
   print LOG "Updated WormBase version number to WS$WS_new_name\n\n";
   print LOG "You are ready to build another WormBase release\n\n";
+  print LOG "Please tell camace and geneace curators to update their database to use the new models!!!\n\n";
     
 }
 #__ end initiate_build __#
