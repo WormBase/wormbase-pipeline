@@ -69,7 +69,7 @@ sub map_cDNA
 
       # and polyA_Site
       my $polyA_site;
-      if( $polyA_site == $cdna->polyA_site ) {
+      if( $polyA_site = $cdna->polyA_site ) {
 	if( $self->polyA_site ) {
 	  unless( $polyA_site->[0] == $self->polyA_site->[0] ) {
 	    print STDERR "Conficting polyA_sites ",$self->name, "\t",$cdna->name,"\n";
@@ -86,7 +86,7 @@ sub map_cDNA
 
       # . and polyA_signal
       my $polyA_sig;
-      if( $polyA_sig == $cdna->polyA_signal ) {
+      if( $polyA_sig = $cdna->polyA_signal ) {
 	if( $self->polyA_signal ) {
 	  unless( $cdna->polyA_signal->[0] == $self->polyA_signal->[0] ) {
 	    print STDERR "Conficting polyA_signals ",$self->name, "\t",$cdna->name,"\n";
