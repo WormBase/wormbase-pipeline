@@ -14,6 +14,7 @@
 #                This will now add the Method tag to the object
 #                Object names do not have the EMBL: prefix
 # 010724 : dl  : Fixed bug for local filehandle in sub mknewacefiles
+# 010730 : dl  : Fixed bug regarding logfiles and single database dumping
 
 # v1.2
 # 010102 : dl  : Add alternative config files to generate acefiles from a 
@@ -78,7 +79,7 @@ $opt_p = "";       # write peptide dataset
 $opt_d = "";       # debug mode (maintainer = dl1)
 $opt_h = "";       # Help/Usage page
 
-getopts ('nephs:');
+getopts ('nedphs:');
 # help page
 &usage(0) if ($opt_h);
 # no option supplied
@@ -177,7 +178,9 @@ sub mknewacefiles {
 	next if (/^\#/  || /^$/);            # comments in file
 
         # turn off today
-        next unless (/$opt_s/);              # single database mode
+        if ($opt_s) {
+	    next unless (/$opt_s/);              # single database mode
+	}
 	
 	if (/^P\s+(\S+)\s+(\S+)$/) {
 	    $dbname    = $1;
@@ -388,7 +391,7 @@ sub nonelegansests {
     }
     close SEQUENCES;
     close ESTFILE;
-    print LOGFILE "Made $estfile\n";
+    print LOG "Made $estfile\n";
     return;
 }
 
@@ -434,9 +437,9 @@ END
     close TREMBL;
     close WORMPEP;
     close SWISSPROT;
-    print LOGFILE "Made $tremblfile\n";
-    print LOGFILE "Made $wormpepfile\n";
-    print LOGFILE "made $swissfile\n";
+    print LOG "Made $tremblfile\n";
+    print LOG "Made $wormpepfile\n";
+    print LOG "made $swissfile\n";
 # Produce the .ace file with all the protein sequences
     open(PEPTIDE,">$peptidefile");
     open (GETZTREMBL,"/usr/local/pubseq/bin/getz6 -d -sf fasta \'\@$tremblfile\' |");
@@ -455,7 +458,7 @@ END
     }
     close GETZSWISS;
     close PEPTIDE;
-    print LOGFILE "Made $peptidefile\n";
+    print LOG "Made $peptidefile\n";
 }
 
 
