@@ -676,11 +676,18 @@
 //new ones used the hash structure, some old ones probably still use this
 
 //
-// Cell models
+// Cell models 
 //
+// Updated from geneace copy [010723 dl]
 
-?Cell   Other_name Text
-        Fate    ?Text
+
+?Cell   Main_name ?Cell                  //Put in for Paul
+	Other_name Text
+        Brief_id ?Text                   //put in for Raymond and Paul, equivalent to old Remark but shorter
+	Fate	 Cell_type  ?Text        // e.g. muscle, neuron,hypodermis, gland
+		 Program ?Text           //division, differentiation, death, and differs between sexes
+		 Syncitial_cell ?Cell_group XREF Nucleus //see Cell_group,
+	Summary Text                     // the whole of old remark plus more to be added by Raymond
         Embryo_division_time Text
         Remark        ?Text
         Lineage Parent  UNIQUE  ?Cell XREF Daughter
@@ -833,6 +840,7 @@
 						rRNA UNIQUE Text
 						snRNA UNIQUE Text
 						scRNA UNIQUE Text
+						stRNA UNIQUE Text         // [010723 dl]
 						misc_RNA UNIQUE Text
 			Status	Received UNIQUE DateType
 				Library_construction UNIQUE DateType
@@ -1249,9 +1257,13 @@
 	 Pick_me_to_call Text Text
 	 Expr_pattern ?Expr_pattern XREF Picture
 
-?Cell_group	Fate ?Text	
+// Updated from geneace copy [010723 dl]
+
+?Cell_group	Other_name ?Text                 //new, put in for Paul, this could become ?Cell_group for pseudo-aliasing
+		Fate ?Text	
 		Remark	?Text
 		Contains	Cell ?Cell XREF Cell_group
+				Nucleus ?Cell XREF Syncitial_cell //new for syncitia like hyp7
 				Sub_group ?Cell_group XREF Contained_in
 		Contained_in ?Cell_group XREF Sub_group
 		Type	UNIQUE  Tissue
@@ -1261,6 +1273,9 @@
 		Life_stage ?Life_stage XREF Cell_group
                 Reference ?Paper XREF Cell_group
                 Tree_Node ?TreeNode XREF Cell_group
+		Group_derivation Expression_experiment          //groups made by experimenters in their reports
+                                 Top_down_modelling             // sylvia's anatomy modelling shown on dendrograms starting with whole animal and working downwards
+                                 Bottom_up_modelling            // for Raymond in the future for cell upwards approach
 
 ?Life_stage	Contains Cell ?Cell XREF Life_stage
 			 Cell_group ?Cell_group XREF Life_stage
