@@ -324,7 +324,7 @@
 		  CGC_approved 
 		  CGC_unresolved Text // for flagging problem genes
                   Species UNIQUE ?Species
-                  History Version_change Int UNIQUE DateType UNIQUE ?Curator #Gene_history_action
+                  History Version_change Int UNIQUE DateType UNIQUE ?Person #Gene_history_action
                           Merged_into UNIQUE ?Gene XREF Acquires_merge
                           Acquires_merge ?Gene XREF Merged_into
                           Split_from UNIQUE ?Gene XREF Split_into
