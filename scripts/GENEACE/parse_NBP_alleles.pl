@@ -2,7 +2,7 @@
 
 # Author: Chao-Kung Chen
 # Last updated by $Author: krb $
-# Last updated on: $Date: 2004-09-14 09:32:30 $ 
+# Last updated on: $Date: 2004-12-06 17:40:03 $ 
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -156,10 +156,10 @@ my $log = "/wormsrv2/logs/$acelog.$rundate";
 `rm -f $log` if -e $log;
 
 open(LOG, ">$log") || die $!;
-print LOG "\n\nLoaded $acefile to Geneace . . .\n";
+#print LOG "\n\nLoaded $acefile to Geneace . . .\n";
 print LOG "--------------------------------------------------\n\n";
 
-get_30_bp_flanks($database);
+&get_30_bp_flanks($database);
 
 # ----- upload data to Geneace
 
@@ -171,7 +171,7 @@ print LOG "\n\n";
 
 # ----- mail notice
 
-my $recipients = "krb\@sanger.ac.uk";
+my $recipients = "mt3\@sanger.ac.uk";
 mail_maintainer("NBP allele update", $recipients, $log);
 
 # ----- moving old files to ARCHIVE dir
@@ -229,7 +229,7 @@ sub get_30_bp_flanks {
 	my $locus = lc($NBP_info{$allele}->[0]);  # NBP data often use capitalized locus name
 	print ACE "Gene \"$Gene_info{$locus}{'Gene'}\"  \/\/$NBP_info{$allele}->[0]\n" if exists $Gene_info{$locus}{'Gene'};
 	print ACE_del "-D Gene \"$Gene_info{$locus}{'Gene'}\"  \/\/$NBP_info{$allele}->[0]\n" if exists $Gene_info{$locus}{'Gene'};
-	print LOG "$allele is linked to a locus ($locus) which does not associate with a Gene id\n" if !exists $Gene_info{$locus}{'Gene'};
+	print LOG "ERROR: $allele is linked to a locus ($locus) which does not associate with a Gene id\n" if !exists $Gene_info{$locus}{'Gene'};
       }
 
       # ----- remove tm and use the rest in as allele id to link back to NBP allele webpage
