@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-07-07 16:56:16 $
+# Last updated on: $Date: 2004-07-09 13:30:02 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -1265,11 +1265,11 @@ sub process_strain_class {
   close FH2;
 
   foreach my $strain (keys %strain_genotype){
-    my @matches = ($strain_genotype{$strain} =~  /((Cb-\w{3,3}-\d+|Cr-\w{3,3}-\d+|\w{3,3}-\d+)\(\w+\d+\))/g);
+    my @matches = ($strain_genotype{$strain} =~  /((Cb-\w{3,4}-\d+|Cr-\w{3,4}-\d+|\w{3,4}-\d+)\(\w+\d+\))/g);
     foreach (@matches){
       my @la = split(/\s+/, $_);
       foreach (@la){
-	if ($_ =~ /(Cb-\w{3,3}-\d+|Cr-\w{3,3}-\d+|\w{3,3}-\d+)\((\w+\d+)\)/){
+	if ($_ =~ /(Cb-\w{3,4}-\d+|Cr-\w{3,4}-\d+|\w{3,4}-\d+)\((\w+\d+)\)/){
 	  $locus = $1; $allele = $2; 
 	  # diff allele->locus link in geneace and allele->locus in strain genotype
 	  # if diff, print error LOG

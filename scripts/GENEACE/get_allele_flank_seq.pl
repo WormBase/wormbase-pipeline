@@ -6,8 +6,8 @@
 
 # Author: Chao-Kung Chen
 
-# Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2004-03-24 16:25:49 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2004-07-09 13:30:02 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -73,7 +73,7 @@ foreach my $ea (keys %code){
 ###############################################
 
 my $mutation = $aa;  $mutation =~ s/\d+//; 
-if ($mutation =~ /\w{3,3}/){$mutation = $three_ltr_code{lc($mutation)}}
+if ($mutation =~ /\w{3,4}/){$mutation = $three_ltr_code{lc($mutation)}}
 $mutation = uc($mutation);
 
 

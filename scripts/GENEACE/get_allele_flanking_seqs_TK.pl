@@ -4,8 +4,8 @@
 
 # by Chao-Kung Chen [030625]
 
-# Last updated on: $Date: 2004-06-11 15:47:18 $
-# Last updated by: $Author: ck1 $
+# Last updated on: $Date: 2004-07-09 13:30:02 $
+# Last updated by: $Author: krb $
 
 use Tk;
 use strict;
@@ -461,7 +461,7 @@ sub run {
     $position =~ s/\D//g;
 
     $mutation =~ s/\d+//;
-    if ($mutation =~ /\w{3,3}/){$mutation = $three_ltr_code{lc($mutation)}}
+    if ($mutation =~ /\w{3,4}/){$mutation = $three_ltr_code{lc($mutation)}}
     $mutation = uc($mutation);
 
     push(@info, uc($mutation), $ref);

@@ -336,7 +336,7 @@ sub geneclass_loci_other_name {
       push(@Update,"Description\t\"See $2\"\n");
     }
 
-    if ($_ =~ /^((\w{3,3})-\d+)\s+=\s+(\w+\..+)/) {
+    if ($_ =~ /^((\w{3,4})-\d+)\s+=\s+(\w+\..+)/) {
       push(@Update, "\n\nGene : \"$Gene_info{$1}{'Gene'}\"\n");
       push(@Update, "Public_name\t\"$1\"\n");
       push(@Update, "CGC_name\t\"$1\"\n");
@@ -344,6 +344,7 @@ sub geneclass_loci_other_name {
       push(@Update, "Species\t\"Caenorhabditis elegans\"\n");
       push(@Update, "Live\n");
       push(@Update, "Version  1\n");
+      push(@Update, "Method Gene\n");
       push(@Update, "Version_change   1 now \"WBPerson1971\" Created\n");
 
       $locus = $1;
@@ -450,7 +451,7 @@ sub geneclass_loci_other_name {
 	}
       }
     }
-    if($_ =~ /(\w{3,3}-\d+)\s+\(common name\)\s+=\s+(\w{3,3}-\d+)\s+\(other name\)\s+(.+)/){
+    if($_ =~ /(\w{3,4}-\d+)\s+\(common name\)\s+=\s+(\w{3,4}-\d+)\s+\(other name\)\s+(.+)/){
       my $main = $1;
       $other_name = $2;
       print "$main : $other_name : $3\n";

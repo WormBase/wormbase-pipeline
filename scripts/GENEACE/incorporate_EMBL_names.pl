@@ -4,8 +4,8 @@
 
 
 # Author: Chao-Kung Chen
-# Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-06-08 13:00:27 $ 
+# Last updated by $Author: krb $
+# Last updated on: $Date: 2004-07-09 13:30:02 $ 
 
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
@@ -150,7 +150,7 @@ while(<IN>){
       $cgc_style_name =();
       my $name = $1;
   #    if ($name =~  /.+\..+/ )
-      if ($name =~ /^[a-z]{3,3}-\d+$/ || $name =~ /^\w{3,3}-\d+\.[a-zA-Z0-9]+$/ ){
+      if ($name =~ /^[a-z]{3,4}-\d+$/ || $name =~ /^\w{3,4}-\d+\.[a-zA-Z0-9]+$/ ){
 	$cgc_style_name = $name;
       }
       else {
@@ -163,7 +163,7 @@ while(<IN>){
   #############
   # get product
   #############
-  if ($each_line =~ /^FT\s+\/product=\"(^\w{3,3}-\d+$)\"/ && $omit == 0){
+  if ($each_line =~ /^FT\s+\/product=\"(^\w{3,4}-\d+$)\"/ && $omit == 0){
     $product =();
     # grep only 3-letter style product name
     $product = $1;

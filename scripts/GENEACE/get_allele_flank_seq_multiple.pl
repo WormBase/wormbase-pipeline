@@ -6,8 +6,8 @@
 
 # Author: Chao-Kung Chen
 
-# Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2004-03-24 16:25:49 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2004-07-09 13:30:02 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'}; 
@@ -78,7 +78,7 @@ my ($wt_aa_pos, $mutation, $WT_aa, $MU_codon, $WT_codon, $acefile, $Allele) = sp
 print "$wt_aa_pos, $mutation : $WT_aa : $MU_codon : $WT_codon\n" if $verbose;
 
 #my $mutation = $aa;  $mutation =~ s/\d+//; 
-if ($mutation =~ /\w{3,3}/){$mutation = $three_ltr_code{lc($mutation)}}
+if ($mutation =~ /\w{3,4}/){$mutation = $three_ltr_code{lc($mutation)}}
 $mutation = uc($mutation);
 
 #$aa =~ s/\D//g;

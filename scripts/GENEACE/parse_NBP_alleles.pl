@@ -1,8 +1,8 @@
 #!/usr/local/bin/perl5.8.0 -w
 
 # Author: Chao-Kung Chen
-# Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-06-03 16:15:14 $ 
+# Last updated by $Author: krb $
+# Last updated on: $Date: 2004-07-09 13:30:02 $ 
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -225,7 +225,7 @@ sub get_30_bp_flanks {
       print ACE "Sequence \"$NBP_info{$allele}->[1]\"\n";
       print ACE_del "-D Sequence \"$NBP_info{$allele}->[1]\"\n";
 
-      if ( $NBP_info{$allele}->[0] =~ /\w{3,3}-.+/ ){
+      if ( $NBP_info{$allele}->[0] =~ /\w{3,4}-.+/ ){
 	my $locus = lc($NBP_info{$allele}->[0]);  # NBP data often use capitalized locus name
 	print ACE "Gene \"$Gene_info{$locus}{'Gene'}\"  \/\/$NBP_info{$allele}->[0]\n" if exists $Gene_info{$locus}{'Gene'};
 	print ACE_del "-D Gene \"$Gene_info{$locus}{'Gene'}\"  \/\/$NBP_info{$allele}->[0]\n" if exists $Gene_info{$locus}{'Gene'};
