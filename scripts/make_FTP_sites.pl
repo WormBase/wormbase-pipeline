@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-12-01 11:54:26 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2004-01-22 11:05:00 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -411,21 +411,22 @@ sub copy_homol_data{
   &run_command("scp $blat_dir/virtual_objects.stlace.ci.embl.ace   $private_ftp/${release}_virtual_objects.stlace.ci.EMBL.ace");
 
 
-  &run_command("/bin/gzip -f $blast_dir/blastp_ensembl.ace");
-  &run_command("/bin/gzip -f $blast_dir/blastx_ensembl.ace");
-  &run_command("/bin/gzip -f $blast_dir/wormprot_motif_info.ace");
-  &run_command("/bin/gzip -f $blast_dir/worm_brigprot_motif_info.ace");
+  &run_command("/bin/gzip -f $blast_dir/worm_pep_blastp.ace");
+  &run_command("/bin/gzip -f $blast_dir/worm_brigpep_blastp.ace");
+  &run_command("/bin/gzip -f $blast_dir/worm_dna_blastx.ace");
+  &run_command("/bin/gzip -f $blast_dir/worm_pep_motif_info.ace");
+  &run_command("/bin/gzip -f $blast_dir/worm_brigpep_motif_info.ace");
 
-  &run_command("scp $blast_dir/blastp_ensembl.ace.gz           $private_ftp/${release}_blastp_data.ace.gz");
-  &run_command("scp $blast_dir/blastx_ensembl.ace.gz           $private_ftp/${release}_blastx_data.ace.gz");
-  &run_command("scp $blast_dir/wormprot_motif_info.ace.gz      $private_ftp/${release}_protein_motif_data.ace.gz");
-  &run_command("scp $blast_dir/worm_brigprot_motif_info.ace.gz $private_ftp/${release}_brig_protein_motif_data.ace.gz");
+  &run_command("scp $blast_dir/worm_pep_blastp.ace.gz           $private_ftp/${release}_blastp_data.ace.gz");
+  &run_command("scp $blast_dir/worm_dna_blastx.ace.gz           $private_ftp/${release}_blastx_data.ace.gz");
+  &run_command("scp $blast_dir/worm_pep_motif_info.ace.gz       $private_ftp/${release}_protein_motif_data.ace.gz");
+  &run_command("scp $blast_dir/worm_brigpep_motif_info.ace.gz   $private_ftp/${release}_brig_protein_motif_data.ace.gz");
 
   &run_command("/bin/gzip -f $blast_dir/best_blastp_hits");
-  &run_command("/bin/gzip -f $blast_dir/best_blastp_hits_brigprot");
+  &run_command("/bin/gzip -f $blast_dir/best_blastp_hits_brigpep");
 
-  &run_command("scp $blast_dir/best_blastp_hits.gz  $targetdir/$release/best_blastp_hits.$release.gz");
-  &run_command("scp $blast_dir/best_blastp_hits_brigprot.gz  $targetdir/$release/best_blastp_hits_brigprot.$release.gz");
+  &run_command("scp $blast_dir/worm_pep_best_blastp_hits.gz      $targetdir/$release/best_blastp_hits.$release.gz");
+  &run_command("scp $blast_dir/worm_brigpep_best_blastp_hits.gz  $targetdir/$release/best_blastp_hits_brigpep.$release.gz");
 
   &run_command("/bin/gzip $private_ftp/*ace");
 

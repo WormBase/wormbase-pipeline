@@ -6,8 +6,8 @@
 #
 # Author: Chao-Kung CHen
 #
-# Last updated by: $Author: krb $                      
-# Last updated on: $Date: 2003-09-30 15:09:43 $        
+# Last updated by: $Author: ar2 $                      
+# Last updated on: $Date: 2004-01-22 11:05:00 $        
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -15,9 +15,18 @@ use Wormbase;
 
 my $acari_dir    = "/acari/work2a/wormpipe/dumps";
 my $wormsrv2_dir = "/wormsrv2/wormbase/ensembl_dumps";
-my @files        = ("blastp_ensembl.ace","blastx_ensembl.ace","wormprot_motif_info.ace","worm_brigprot_motif_info.ace",
-		    "swissproteins.ace","tremblproteins.ace","ipi_hits.ace","best_blastp_hits","best_blastp_hits_brigprot",
-		    "brigprot_blastp_ensembl.ace");
+
+my @files        = ("worm_pep_blastp.ace",
+		    "worm_brigpep_blastp.ace",
+		    "worm_dna_blastx.ace",
+		    "worm_pep_motif_info.ace",
+		    "worm_brigpep_motif_info.ace",
+		    "swissproteins.ace",
+		    "tremblproteins.ace",
+		    "ipi_hits.ace",
+		    "worm_pep_best_blastp_hits",
+		    "worm_brigpep_best_blastp_hits",
+		   );
 
 
 # make backup directory on wormsrv2

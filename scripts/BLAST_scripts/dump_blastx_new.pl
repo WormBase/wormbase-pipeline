@@ -312,24 +312,25 @@ $sth_c = $dbh->prepare ( $sql );
 #			      ORDER BY contig_id
 #			    } );
 #}
+# this was an attempt to spee it up ! 
+#$sql = " SELECT dna_align_feature_id, analysis_id, contig_start, contig_end, hit_name, hit_start, hit_end, score, evalue,contig_strand, cigar_line FROM dna_align_feature WHERE contig_id = ?";
+#$x = join("OR analysis_id = ",@analysis);
+#$sql .= " AND ( analysis_id = $x )", if ( @analysis );
+#$sql .= " ORDER BY contig_start and contig_end";
 
-$sql = " SELECT dna_align_feature_id, analysis_id, contig_start, contig_end, hit_name, hit_start, hit_end, score, evalue,contig_strand, cigar_line FROM dna_align_feature WHERE contig_id = ?";
-$x = join("OR analysis_id = ",@analysis);
-$sql .= " AND ( analysis_id = $x )", if ( @analysis );
-$sql .= " ORDER BY contig_start and contig_end";
+#my $sth_f = $dbh->prepare ( $sql );
 
-my $sth_f = $dbh->prepare ( $sql );
 
 # feature table
-#my $sth_f = $dbh->prepare ( q{ SELECT dna_align_feature_id,
-#			       analysis_id,
-#			       contig_start, contig_end,
-#			       hit_name, hit_start, hit_end,
-#			       score, evalue,contig_strand, cigar_line
-#			       FROM dna_align_feature
-#			       WHERE contig_id = ?
-#			       ORDER BY contig_start and contig_end
-#			     } );
+my $sth_f = $dbh->prepare ( q{ SELECT dna_align_feature_id,
+			       analysis_id,
+			       contig_start, contig_end,
+			       hit_name, hit_start, hit_end,
+			       score, evalue,contig_strand, cigar_line
+			       FROM dna_align_feature
+			       WHERE contig_id = ?
+			       ORDER BY contig_start and contig_end
+			     } );
 
 
 ####################################################################
@@ -590,7 +591,7 @@ foreach my $aref (@$ref) {
 
     # if filehandle no already active create & store it
     unless( $output_ACE{$org} ) {
-      my $ace = "$dump_dir/${org}_blastx_ensembl.ace";
+      my $ace = "$dump_dir/${org}_blastx.ace";
       open($output_ACE{$org}, ">$ace") ;
     }
     $output = $output_ACE{$org};
@@ -687,14 +688,16 @@ $sth_c->finish;
 $sth_f->finish;
 $dbh->disconnect;
 
-close LOG;
 close IPI_LIST;
 
 foreach ( keys %output_ACE ) {
   close $output_ACE{$_};
 }
 
+print LOG "cat'ing individual files in to ${dbname}_blastx.ace\n";
+system( "cat $dump_dir/*_blastx.ace > /acari/work2a/wormpipe/dumps/${dbname}_blastx.ace");
 
+close LOG;
 print "\nEnd of dump \n";
 
 

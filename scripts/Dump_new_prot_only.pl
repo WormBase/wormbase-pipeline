@@ -8,7 +8,7 @@ use DB_File;
 #######################################
 # command-line options                #
 #######################################
-my ($test, $debug, $verbose, $help, $all, $WPver, $analysisTOdump, $just_matches, $matches, $list, $species);
+my ($test, $debug, $verbose, $help, $all, $WPver, $analysisTOdump, $just_matches, $matches, $list, $database);
 GetOptions ("debug=s"      => \$debug,
 	    "verbose"      => \$verbose,
 	    "test"         => \$test,
@@ -19,29 +19,23 @@ GetOptions ("debug=s"      => \$debug,
 	    "just_matches" => \$just_matches,
 	    "matches"      => \$matches,
 	    "dumplist=s"   => \$list,
-	    "species=s"     => \$species
+	    "database=s"     => \$database
            );
 
+die "please give me a mysql protein database eg -database worm_pep\n" unless $database;
 my @sample_peps = @_;
+my $dbname = $database;
 
 my $maintainers = "All";
 my $rundate    = `date +%y%m%d`; chomp $rundate;
-my $wormpipe_dir = "/acari/work2a/wormpipe";
-my $dbname = "worm_pep";
-my $best_hits = "$wormpipe_dir/dumps/best_blastp_hits";
-my $ipi_file = "$wormpipe_dir/dumps/ipi_hits_list";
-
 my $wormpipe = glob("~wormpipe");
-my $output = "$wormpipe_dir/dumps/blastp_ensembl.ace";
-my $recip_file = "$wormpipe_dir/dumps/wublastp_recip.ace";
+my $wormpipe_dir = "/acari/work2a/wormpipe";
 
-if ($species) {
-  $ipi_file .= "_$species";
-  $best_hits .= "_$species";
-  $dbname = "worm_$species";
-  $output = "$wormpipe_dir/dumps/${species}_blastp_ensembl.ace";
-  $recip_file = "$wormpipe_dir/dumps/${species}_wublastp_recip.ace";
-}
+my $best_hits = "$wormpipe_dir/dumps/${database}_best_blastp_hits";
+my $ipi_file = "$wormpipe_dir/dumps/${database}_ipi_hits_list";
+my $output = "$wormpipe_dir/dumps/${database}_blastp.ace";
+my $recip_file = "$wormpipe_dir/dumps/${database}_wublastp_recip.ace";
+
 open (BEST, ">$best_hits") or die "cant open $best_hits for writing\n";
 
 my $log = "$wormpipe_dir/Dump_new_prot_only.pl.$dbname.$rundate";
@@ -52,7 +46,6 @@ print LOG "-----------------------------------------------------\n\n";
 # to be able to include only those proteins that have homologies we need to record those that do
 # this file is then used by write_ipi_info.pl
 open (IPI_HITS,">$ipi_file") or die "cant open $ipi_file\n";
-
 
 # help page
 &usage("Help") if ($help);
@@ -136,7 +129,7 @@ while ( $pep_input ) {
 }
 unless (@peps2dump)  {
   # this is not generic for when 3rd species arrives.
-  if( $species ) {  # get all the briggsae proteins
+  if( "$database" eq "worm_brigpep" ) {  # get all the briggsae proteins
     print LOG " : Dumping all current brigpep proteins\n";
     open (BRIGPEP,"<$wormpipe/BlastDB/brigpep2.pep") or die "cant find brigpep2.pep file - has it been updated?\n";
     while (<BRIGPEP>) {
@@ -356,7 +349,7 @@ sub dumpData
     my $pid = shift;
     my %BEST;
     my $prot_pref = "WP";
-    $prot_pref = "BP" if $species; # not generic for when 3rd species arrives
+    $prot_pref = "BP" if ($database eq "worm_brigpep" ) ; # not generic for when 3rd species arrives
     print OUT "\nProtein : \"$prot_pref:$pid\"\n";
     while( $matches = shift) {   #pass reference to the hash to dump
       #write ace info
@@ -498,7 +491,7 @@ sub addWormData
     my $homol = $$data[4];
     my $homol_gene = &justGeneName( $homol );
 
-    unless( $species ) {
+    if( $database eq "worm_pep" ) {
       my $my_gene = &justGeneName( $CE2gene{ $$data[0] } ) ;
       return if ("$homol_gene" eq "$my_gene"); # self match or isoform of same gene
     }
