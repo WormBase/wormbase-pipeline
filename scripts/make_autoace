@@ -1,48 +1,11 @@
 #!/usr/local/bin/perl5.6.0 -w
 #
 # make_autoace
+# dl1/ag3 & others
 #
 # Usage : make_autoace [-options]
 #
 # This makes the autoace database from its composite sources.
-#
-###########################################################################################
-
-
-# v1.17  :  dl : Added '-f' option to the rm lines in the (re)initialisation subroutine.
-#                This circumvents problems with file ownership.
-
-# v1.12  :  dl : Tidied the dna_dumping routine, removed alessandro's 'New' prefix and
-#                made it a dna dump line in the logfile. Superficial really.
-
-# v3.2 (010102)
-# 010102 :  dl : Altered logging procedure
-# 010102 :  dl : Modified 'autoace.config' reading loop to include the new DNA dumping
-#                procedure (see make_acefiles_1.2)
-# 010306 :  dl : Expanded list of directories to tar for release
-#                Removed w* in favour of full list
-# 010606 :  rd : add removing gaze genes, and do all of genewise, halfwise, gaze in one go
-# 010712 :  dl : Expanded wspec directory contents explicitly for release. The CVS directory
-#                is no longer exported
-# 010802 :  dl : Removed server.wrm from the list of files to add to the tar archive
-
-# v3.1 (001004)
-# 001218 : dl1 : Altered path of chromlinks .acefile to wormbase misc directory
-# 001110 : dl1 : Swapped order of -c and -d options (i.e. dump DNA before making release)
-# 001016 : dl1 : Fixed bug with chrom_dump path
-# 000919 : ag3 : Rewritten rmconfremark; added Briggsae check.
-
-# v3.0 (000824)
-# 000824 : ag3 : Complete rewrite - decoupled production of ace files from db build
-# 000824 : dl1 : Re-write top build from static .ace files 
-
-# previously
-# 000731 : ag3 : Modified path of tace output from /dev/null to the logfile
-# 000802 : dl1 : Back to the 4_7 tace executable
-# 000802 : dl1 : Corrected filename for removal of confidential tags from camace
-# 000801 : ag3 : Modified to use Ed's new tace executable
-# 000801 : dl1 : temp change to read alternative camace
-# 000731 : ag3 : Modified path of tace output from /dev/null to the logfile
 
 
 ###########################################################################################
@@ -57,7 +20,7 @@ use IO::Handle;
 use POSIX qw(:signal_h :errno_h :sys_wait_h);
 use Getopt::Std;
 use Cwd;
-
+use vars qw($opt_r $opt_d $opt_c $opt_p);
 
  ##################################################
  # Script variables (run)                         #
@@ -72,8 +35,6 @@ our $WS_version   = &get_wormbase_version_name;
 
 # grab version number from cvs
 my $cvs_version = &get_cvs_version($0);
-
-
 
 my $CWD = cwd;
 
@@ -418,7 +379,7 @@ sub createdirs {
 		die(0);
 	} 
  }
- system ("/bin/ln -s /wormsrv1/geneace/pictures $pictures") && die "Couldn't make symbolic link\n";
+ system ("/bin/ln -s /wormsrv2/geneace/pictures $pictures") && die "Couldn't make symbolic link\n";
  return;
 }
 
@@ -427,45 +388,45 @@ sub createdirs {
 # Parses the lists from the config files     
 
 sub parseconfig {
-  open(CONFIG,"$configfile");
-  while(<CONFIG>) {
-    s/^\s+//;s/\s+$//;   
-    if (/^#/ || /^$/) {
-	next;
-      }	 
-    if (/^P\s+(\S+)\s+(\S+)$/) {
-      $dbname = $1;
-      # $dbdir not used by anything!
-      # $dbdir = $2;
-      $targetdir="$wormbasedir"."/$dbname";
-      next;
+    open(CONFIG,"$configfile");
+    while(<CONFIG>) {
+	s/^\s+//;s/\s+$//;   
+	if (/^#/ || /^$/) {
+	    next;
+	}	 
+	
+	# parse database information
+	if (/^P\s+(\S+)\s+(\S+)$/) {
+	    $dbname = $1;
+	    $dbdir  = $2;
+	    $targetdir="$wormbasedir"."/$dbname";
+	    next;
+	}
+	
+	# parse file name
+	if (/^\S+\s+(\S+)/) {
+	    $object=$1; 
+	    $filename="$targetdir/".$dbname."_".$object.".ace";
+	}
+	
+	# next if no filename parsed
+	if (!defined $filename) {
+	    print LOGFILE "* Failed to parse filename ..\n";
+	    next;
+	}
+
+	# check that file exists before adding to array
+	if (-e $filename) {
+	    push (@filenames,$filename);
+	    print LOGFILE "* Parse config file : file $filename noted ..\n";
+	} 
+	else {
+	    print LOGFILE "** Warning - file $filename is not existent !\n";
+	    next;
+	}
+	
     }
-    if (/^\S+\s+(\S+)$/) {
-      $object=$1; $criteria="";$criterianoasterisk="";
-    } elsif (/^\S+\s+(\S+)\s+(\S+)$/) {
-      $object=$1; $criteria=$2;
-      $criteria=~/(\S+)\*/;
-      $criterianoasterisk=$1;
-    } 
-    
-    # filename look-up
-    
-    if ($criteria eq "DNA") {
-      $filename="$targetdir/".$dbname."_".DNA.".ace";
-    }
-    else {
-      $filename="$targetdir/".$dbname."_".$object.$criterianoasterisk.".ace";
-    }
-    
-    if (-e $filename) {
-      push (@filenames,$filename);
-      print LOGFILE "* Parse config file : file $filename noted ..\n";
-    } else {
-      print LOGFILE "** Warning - file $filename is not existent !\n";
-      next;
-    }
-  }
-  close(CONFIG);
+    close(CONFIG);
 }
 
 
