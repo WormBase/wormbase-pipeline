@@ -395,7 +395,8 @@
 		Location ?Laboratory #Lab_Location
 	        Strain   ?Strain XREF Rearrangement
         	Reference ?Paper XREF Rearrangement
-      
+
+
 ?Strain  Evidence #Evidence
 	 Genotype Text
 	 Contains  Gene	 ?Locus XREF Strain
@@ -576,7 +577,8 @@
 		Remark ?Text #Evidence
 	// code uses Point_1, Point_2, Calculation and all its subtags, all the Calc subtags,
 	// and most of the Simple_distance subtags.
-		
+
+
 ?Pos_neg_data	Evidence #Evidence
 		Genotype  UNIQUE Text
 		Results  UNIQUE Text
@@ -1263,7 +1265,7 @@
 	      RNAi_result ?RNAi XREF Expr_profile // Connection made by script during build [030106 krb]
               Remark ?Text #Evidence
 
-		
+
 ?SK_map       X_coord UNIQUE Float
               Y_coord UNIQUE Float
               Mountain UNIQUE Int
