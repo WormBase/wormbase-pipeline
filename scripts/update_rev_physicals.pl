@@ -2,7 +2,7 @@
 
 # Author: Chao-Kung Chen
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2003-11-18 13:08:29 $ 
+# Last updated on: $Date: 2003-11-19 16:08:58 $ 
 
 use strict;
 use lib "/wormsrv2/scripts";
@@ -166,7 +166,7 @@ sub load_autoace {
 
   my $updt = "rev_physical_update_WS$version";
   open(CGC, ">>/wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/rev_physical_CGC_WS$version") || die $!;
-  open(UPDT, ">$updt") || die $!;
+  open(UPDT, ">/wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/$updt") || die $!;
   my @rev = `cat $rev`;
   print CGC "\n\n", @rev;
   print CGC ("M O D I F I C A T I O N S\n\n");
@@ -195,7 +195,7 @@ quit
 END
 
   my $autoace = "/wormsrv2/autoace/" if !$debug;
-  my $autoace = "/nfs/disk100/wormpub/DATABASES/TEST_DBs/CK1TEST/" if $debug;
+  $autoace = "/nfs/disk100/wormpub/DATABASES/TEST_DBs/CK1TEST/" if $debug;
   my $log = "/wormsrv2/logs/upload_rev_phys_correction_$version";
 
   open (Load_GA,"| $tace $autoace > $log") || die "Failed to upload to Geneace";
