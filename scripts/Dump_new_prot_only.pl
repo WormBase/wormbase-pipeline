@@ -2,33 +2,27 @@
 
 use DBI;
 use strict;
-use lib "/wormsrv2/scripts/";
-use Wormbase;
-use Common_data;
 use Getopt::Long;
 
 #######################################
 # command-line options                #
 #######################################
-my ($test, $debug, $help, $all);
-GetOptions ("debug"   => \$debug,
+my ($test, $debug, $help, $all, $WPver, $analysisTOdump);
+GetOptions ("debug=s"   => \$debug,
 	    "test"    => \$test,
 	    "help"    => \$help,
-	    "all"     => \$all
+	    "all"     => \$all,
+	    "analysis=s" => \$analysisTOdump,
+	    "version=s" =>\$WPver
            );
-$all = 1; #hack while working out why GetOpts not working
+
 my $maintainers = "All";
 my $rundate    = `date +%y%m%d`; chomp $rundate;
-my $runtime    = &runtime;
 my $log = "/acari/work2a/wormpipe/Dump_new_prot_only.pl.$rundate";
+
 open( LOG, ">$log") || die "cant open $log";
-print LOG "Dump_new_prot_only.pl log file $rundate ",&runtime,"\n";
+print LOG "Dump_new_prot_only.pl log file $rundate\n";
 print LOG "-----------------------------------------------------\n\n";
-
-# touch logfile for run details
-$0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
-my $logfile = "/wormsrv2/logs/$1.`date +%y%m%d`.$$";
-
 
 
 # help page
@@ -45,21 +39,12 @@ print "DEBUG = \"$debug\"\n\n" if $debug;
 my @sample_peps = @_;
 
 my $wormpipe_dir = "/acari/work2a/wormpipe/";
-my $WPver = &get_wormbase_version;
-my $acedb_database;
+my $wormpipe = glob("~wormpipe");
 my $output = "$wormpipe_dir/dumps/blastp_ensembl.ace";
 my $recip_file = "$wormpipe_dir/dumps/wublastp_recip.ace";
 
-if( $test ) {
-  $WPver-- ;
-  $acedb_database = "/wormsrv1/antace";
-  $maintainers = "ar2\@sanger.ac.uk";
-}
-else {
-  $acedb_database = "/wormsrv2/autoace";
-}
+$WPver-- if( $test );
   
-
 
 #|          7 | yeast2.pep          | 
 #|          8 | gadfly3.pep         |
@@ -73,7 +58,8 @@ my %wormprotprocessIds = ( wormpep => 11,
 			   gadfly  => 8,
 			   yeast => 7,
 			   slimswissprot => 13,
-			   slimtrembl =>14
+			   slimtrembl =>14,
+			   ipi_human => 15
 			 );
 
 my %processIds2prot_analysis = ( 11 => "wublastp_worm",
@@ -81,7 +67,8 @@ my %processIds2prot_analysis = ( 11 => "wublastp_worm",
 				 8  => "wublastp_fly",
 				 7  => "wublastp_yeast",
 				 13 => "wublastp_slimswissprot",
-				 14 => "wublastp_slimtrembl"
+				 14 => "wublastp_slimtrembl",
+				 15 => "wublastp_ipi_human"
 			       );
 
 our %org_prefix = ( 'wublastp_worm' => 'WP',
@@ -91,6 +78,27 @@ our %org_prefix = ( 'wublastp_worm' => 'WP',
 		    'wublastp_slimswissprot' => 'SW',
 		    'wublastp_slimtrembl' => 'TR'
 		  );
+# gene CE info from COMMON_DATA files copied to ~wormpipe/dumps in prep_dump
+undef $/;
+our %CE2gene;
+open (C2G ,"<$wormpipe/dumps/CE2gene.dat" );
+my $in_data = <C2G>;
+my $VAR1;
+eval $in_data;
+die if $@;
+close C2G;
+%CE2gene = (%$VAR1);
+
+undef $VAR1;
+
+my %gene2CE;
+open (G2C ,"<$wormpipe/dumps/gene2CE.dat" );
+$in_data = <G2C>;
+eval $in_data;
+die if $@;
+close C2G;
+%gene2CE = (%$VAR1);
+$/ = "\n";
 
 #get list of wormpeps to dump from wormpep.diffXX or wormpep.tableXX depending on wether u want to dump all or just new
 my @peps2dump;
@@ -103,25 +111,15 @@ while ( $pep_input ) {
 }
 unless (@peps2dump)  {
   if( $all ) {
-    print LOG &runtime," : Dumping all current wormpep proteins ( Wormpep$WPver )\n";
-    my %tmp_peps;
-    &CE2gene(\%tmp_peps);
-    foreach (keys %tmp_peps) {
+    print LOG " : Dumping all current wormpep proteins ( Wormpep$WPver )\n";
+    foreach (keys %CE2gene) {
       push( @peps2dump, $_ );
     }
   }
-  #  open( DIFF,"</wormsrv2/WORMPEP/wormpep$WPver/wormpep$WPver") or die "cant open Wormpep$WPver file\n";
-#    while(<DIFF>) {
-#      if( /^>/ ) {
-#	chomp;
-#	my @tabledata = split;
-#	push( @peps2dump, $tabledata[1]);
-#      }
-  
   
   else {
-    open( DIFF,"</wormsrv2/WORMPEP/wormpep$WPver/wormpep.diff$WPver") or die "cant opne diff file\n";
-    print LOG &runtime," : Dumping updated proteins ( wormpep.diff$WPver )\n";
+    open( DIFF,"<$wormpipe_dir/dumps/wormpep.diff$WPver") or die "cant opne diff file\n";
+    print LOG " : Dumping updated proteins ( wormpep.diff$WPver )\n";
     while (<DIFF>)
       {
 	if( /new/ ){
@@ -146,8 +144,8 @@ my $dbhost = "ecs1f";
 my $dbuser = "wormro";
 my $dbname = "wormprot";
 my $dbpass = "";
-$runtime    = `date +%H:%M:%S`; chomp $runtime;
-print LOG "\n",&runtime," : Connecting to database : $dbname on $dbhost as $dbuser\n";
+my $runtime = `date +%H:%M:%S`; chomp $runtime;
+print LOG "\n : Connecting to database : $dbname on $dbhost as $dbuser\n";
 
 my @results;
 my $query = "";
@@ -159,14 +157,29 @@ $wormprot = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {Raise
       || die "cannot connect to db, $DBI::errstr";
 
 # get results from mysql for each specific peptide
-my $sth_f = $wormprot->prepare ( q{ SELECT proteinId,analysis,
-                                      start, end,
-                                      hId, hstart, hend,  
-                                      -log10(evalue), cigar
-                                 FROM protein_feature
-                                WHERE proteinId = ? and -log10(evalue) > 1
-                             ORDER BY hId
-	  	  	     } );
+my $sth_f;
+if ( $analysisTOdump ) {
+
+  $sth_f = $wormprot->prepare ( q{ SELECT proteinId,analysis,
+				     start, end,
+				     hId, hstart, hend,  
+				     -log10(evalue), cigar
+				       FROM protein_feature
+					 WHERE proteinId = ? and -log10(evalue) > 1
+					   AND analysis = ?
+					   ORDER BY hId
+				   } );  
+}
+else {
+  $sth_f = $wormprot->prepare ( q{ SELECT proteinId,analysis,
+				     start, end,
+				     hId, hstart, hend,  
+				     -log10(evalue), cigar
+				       FROM protein_feature
+					 WHERE proteinId = ? and -log10(evalue) > 1
+					   ORDER BY hId
+					 } );
+}
 open (OUT,">$output") or die "cant open $output\n";
 
 # reciprocals of matches ie if CE00000 matches XXXX_CAEEL the homology details need to be written for XXXX_CAEEL 
@@ -177,11 +190,6 @@ open (RECIP,">$recip_file") or die "cant open recip file\n";
 
 my $count;
 
-our %CE2gene;
-&CE2gene(\%CE2gene);
-
-my %gene2CE;
-&gene2CE(\%gene2CE);;
 
 foreach $pep (@peps2dump)
   {
@@ -194,7 +202,13 @@ foreach $pep (@peps2dump)
 
 
     #retreive data from mysql
-    $sth_f->execute($pep);
+    if( $analysisTOdump ) {
+      $sth_f->execute($pep, $analysisTOdump);
+    }
+    else {
+      $sth_f->execute($pep);
+    }
+
     my $ref_results = $sth_f->fetchall_arrayref;
     my ($proteinId, $analysis,  $myHomolStart, $myHomolEnd, $homolID, $pepHomolStart, $pepHomolEnd, $e, $cigar);
     foreach my $result_row (@$ref_results)
@@ -221,6 +235,9 @@ foreach $pep (@peps2dump)
 	elsif( $analysis == $wormprotprocessIds{'slimtrembl'}  ) { # others dont have isoforms so let adding routine deal with them
 	  &addData ( \%trembl_matches, \@data );
 	}
+	elsif( $analysis == $wormprotprocessIds{'ipi_human'}  ) { # others dont have isoforms so let adding routine deal with them
+	  &addData ( \%human_matches, \@data );
+	}
       }
     
     
@@ -230,11 +247,11 @@ foreach $pep (@peps2dump)
 close OUT;
 close RECIP;
 
-print LOG &runtime," : Data extraction complete\n\n";
+print LOG " : Data extraction complete\n\n";
 
 
 #process the recip file so that proteins are grouped
-print LOG &runtime," : processing the reciprocal data file for efficient loading.\n";
+print LOG " : processing the reciprocal data file for efficient loading.\n";
 open (SORT,"sort -t \" \" -k2 $recip_file | ");
 open (RS,">>$output") or die "rs"; #append this sorted data to the main homols file and load together.
 
@@ -266,10 +283,8 @@ while (<SORT>) {
 }
   
 my $wormpub = glob("~wormpub");
-my $tace =  &tace;
-my $command;
 
-print LOG &runtime," : finished\n\n______END_____";
+print LOG " : finished\n\n______END_____";
 
 close LOG;
 `rm -f $recip_file`;
@@ -304,15 +319,21 @@ sub dumpData
 	    my @cigar = split(/:/,"$$data[8]");  #split in to blocks of homology
 
 	    #need to convert form gene name to CE id for worms (they are stored as genes to compare isoforms)
+	    my $prefix = $org_prefix{"$$data[1]"};
 	    if( "$$data[1]" eq "wublastp_worm" ) {
 	      my $gene = $$data[4]; 
 	      $$data[4] = $gene2CE{"$gene"};
+	    }
+	    
+	    # sort out prefix - mainly for ipi_human where it can be ENS, SW, TR, LL etc
+	    elsif ( "$$data[1]" eq "wublastp_ipi_human" ) {
+	      $prefix = &getPrefix("$$data[4]");
 	    }
 	
 	    foreach (@cigar){
 	      #print OUT "Pep_homol \"$homolID\" $processIds2prot_analysis{$analysis} $e $myHomolStart $myHomolEnd $pepHomolStart $pepHomolEnd Align ";
 	      print OUT "Pep_homol ";
-	      print OUT "\"",$org_prefix{"$$data[1]"},":$$data[4]\" ";   #  homolID
+	      print OUT "\"$prefix:$$data[4]\" ";   #  homolID
 	      print OUT "$$data[1] ";   #  analysis
 	      print OUT "$$data[7] ";   #  e value
 	      print OUT "$$data[2] ";   #  HomolStart
@@ -329,7 +350,7 @@ sub dumpData
 		  #and print out the reciprocal homology to different file
 		  #prints out on single line. "line" is used to split after sorting
 
-		  print RECIP "Protein : \"",$org_prefix{"$$data[1]"},":$$data[4]\" line "; #  matching peptide
+		  print RECIP "Protein : \"$prefix:$$data[4]\" line "; #  matching peptide
 		  print RECIP "\"WP:$pid\" ";              #worm protein
 		  print RECIP "$$data[1] ";   #  analysis
 		  print RECIP "$$data[7] ";   #  e value
@@ -453,6 +474,21 @@ sub justGeneName
     }
   }
 
+sub getPrefix 
+  {
+    my $name = shift;
+    if( $name =~ /ENS\w+/ ) {
+      return $org_prefix{'wublastp_ensembl'};
+    }
+    else {
+      if (length $name > 5 ) {
+      return $org_prefix{'wublastp_slimswissprot'};
+      }
+      else {
+      return $org_prefix{'wublastp_slimtrembl'};
+      }
+    }
+  }
 
 sub usage {
      my $error = shift;
