@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-12-20 10:47:08 $
+# Last updated on: $Date: 2004-12-22 16:32:27 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -102,8 +102,7 @@ my %Gene_info = %{$Gene_info[0]};
 my %seqs_to_gene_id = %{$Gene_info[1]};
 
 
-# Process separate classes if specified on the command line else process all classes, EXCEPT "pseudo", see
-# /wormsrv1/geneace/JAH_DATA/MULTI_PT_INFERRED/README for detailed description
+# Process separate classes if specified on the command line else process all classes, 
 @classes = ("gene", "laboratory", "evidence", "allele", "strain", "rearrangement", "mapping", "xref", "multipoint") if (!@classes);
 
 foreach $class (@classes){
@@ -128,23 +127,17 @@ close(CALTECHLOG);
 close(JAHLOG);
 close(ACE) if ($ace);
 
-# if running pseudo marker option just email log file to cgc@wormbase.org (JAH + krb)
-if ($classes[0] eq lc("pseudo")){
-  my $next_release = $next_build_ver +1;
-  &mail_maintainer("Pseudo genetic marker(s) to approve for WS$next_release", "cgc\@wormbase.org", $jah_log);      
-}
-else{
-  # email everyone specified by $maintainers
-  &mail_maintainer("geneace_check: SANGER",$maintainers,$log);
+# email everyone specified by $maintainers
+&mail_maintainer("geneace_check: SANGER",$maintainers,$log);
 
-  # Also mail to Erich unless in debug mode or unless there is no errors
-  my $interested ="krb\@sanger.ac.uk, emsch\@its.caltech.edu, kimberly\@minerva.caltech.edu";
-  &mail_maintainer("geneace_check: CALTECH","$interested",$caltech_log) unless ($debug || $caltech_errors == 0);
+# Also mail to Erich unless in debug mode or unless there is no errors
+my $interested ="krb\@sanger.ac.uk, emsch\@its.caltech.edu, kimberly\@minerva.caltech.edu";
+&mail_maintainer("geneace_check: CALTECH","$interested",$caltech_log) unless ($debug || $caltech_errors == 0);
 
-  # Email Jonathan Hodgkin subset of errors that he might be able to help with unless
-  # in debug mode or no errors
-  &mail_maintainer("geneace_check: CGC","cgc\@wormbase.org",$jah_log) unless ($debug || $jah_errors == 0);
-}
+# Email Jonathan Hodgkin subset of errors that he might be able to help with unless
+# in debug mode or no errors
+&mail_maintainer("geneace_check: CGC","cgc\@wormbase.org",$jah_log) unless ($debug || $jah_errors == 0);
+
 
 exit(0);
 
@@ -410,20 +403,6 @@ sub test_locus_for_errors{
   }
 
 
-  # Look for Genes with no Live tag but also no Merged_into, Killed, or Made_into_transposon tags
-  if ( !defined $gene_id->at('Identity.Live') && !defined $gene_id->Merged_into){
-    my $tag = &get_event($gene_id);
-    if (($tag ne "Killed") && ($tag ne "Made_into_transposon") && ($tag ne "Merged_into")){
-      $warnings .= "ERROR(a): $gene_id ($Gene_info{$gene_id}{'Public_name'}) has no 'Live' tag, and no 'Merged_into', 'Killed' or 'Made_into_transposon' tags\n";
-      if ($ace){
-	print ACE "\nGene : \"$gene_id\"\n";
-	print ACE "Live\n";
-      }
-    }
-  }
-
-
-  # this is the problem routine for WBGene00044002
 
   # Look for genes with Live tag but also with Merged_into or Killed tags
   if ( defined $gene_id->at('Identity.Live')){
@@ -1199,11 +1178,11 @@ sub create_log_files{
   print LOG "=============================================\n";
   print LOG "\n";
 
-  unless ($classes[0] eq lc("pseudo")){
-    if($ace){
-      print LOG "The (a) following ERROR, or UPDT, eg, indicates ace output \n$acefile for direct upload to correct problems.\n\n";
-    }
+
+  if($ace){
+    print LOG "The (a) following ERROR, or UPDT, eg, indicates ace output \n$acefile for direct upload to correct problems.\n\n";
   }
+  
 
   $jah_log = "/wormsrv2/logs/$script_name.jahlog.$rundate.$$";
 
