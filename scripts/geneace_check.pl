@@ -6,8 +6,8 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2002-12-03 16:26:05 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2002-12-19 09:25:47 $
 
 use Ace;
 use lib "/wormsrv2/scripts/"; 
@@ -435,22 +435,25 @@ sub test_locus_for_errors{
     $warnings .= "ERROR 11: $locus has a 'Canonical_gene' tag\n";
     $locus_errors++;
   }
-  
+
+
+# This test no longer needed as we don't have New_name tag now  
   # test for New_name tag and other information apart from Gene and Species
-  if(defined($locus->at('Name.New_name'))){
-    if(defined($locus->at('Species')) && defined($locus->at('Type.Gene'))){
-      # check for any other info in object
-      my @tags = $locus->tags();
-      if(scalar(@tags)>3){
-	$warnings .= "ERROR 12: $locus has New_name tag + extra info. Transfer into new gene?\n";
-	$locus_errors++;
-      }
-    }
-    else{
-      $warnings .= "ERROR 13: $locus has no species and/or Gene tag present\n";
-      $locus_errors++;
-    }
-  }
+#  if(defined($locus->at('Name.New_name'))){
+#    if(defined($locus->at('Species')) && defined($locus->at('Type.Gene'))){
+#      # check for any other info in object
+#      my @tags = $locus->tags();
+#      if(scalar(@tags)>3){
+#	$warnings .= "ERROR 12: $locus has New_name tag + extra info. Transfer into new gene?\n";
+#	$locus_errors++;
+#      }
+#    }
+#    else{
+#      $warnings .= "ERROR 13: $locus has no species and/or Gene tag present\n";
+#      $locus_errors++;
+#    }
+#  }
+
 =start  
   # Test for Polymorphisms with no P in their title
   if(defined($locus->at('Type.Polymorphism'))){
