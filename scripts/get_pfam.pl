@@ -7,7 +7,7 @@
 # This script interogates an ACEDB database and returns all pfam/Interpro/blastx 
 # data as appropriate and generates the DB_remark for stlace
 #
-# Last updated on: $Date: 2004-06-09 12:34:14 $
+# Last updated on: $Date: 2004-06-09 12:38:05 $
 # Last updated by: $Author: krb $
 
 
@@ -120,6 +120,7 @@ GetOptions(
 my $tace = &tace;
 my $log;
 my $basedir;
+my $file; # specify output file location
 
 if( $test ) {
   $basedir = glob("~wormpub/TEST_BUILD");
