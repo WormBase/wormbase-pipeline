@@ -6,20 +6,22 @@
 #
 # Automatically update Geneace with Erich's functional annotation update
 #
-# Last updated on: $Date: 2004-03-22 10:44:17 $
+# Last updated on: $Date: 2004-04-30 11:31:43 $
 # Last updated by: $Author: ck1 $
 
-use strict;                    
+use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
 use Cwd 'chdir';
 use Getopt::Long;
+use GENEACE::Geneace;
 
 ###################################################
 # check user is wormpub otherwise script won't run
 ###################################################
 
 my $user = `whoami`; chomp $user;
+
 if ($user ne "wormpub"){
   print "\nYou have to be wormpub to run this script!\n\n";
   exit(0);
@@ -35,7 +37,9 @@ $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`")
 
 my ($debug, $help, $update, $merge, $recipients);
 $recipients ="bastiani\@its.caltech.edu, ck1\@sanger.ac.uk, emsch\@its.caltech.edu, vanauken\@caltech.edu, krb\@sanger.ac.uk, ranjana\@its.caltech.edu";
-my $tace = &tace;   # tace executable path
+
+# my $tace = glob "&tace;   # tace executable path # problematic for some reasons unclear
+my $tace = glob("~wormpub/ACEDB/bin_ALPHA/tace");
 
 GetOptions ("d|debug=s"  => \$debug,
 	    "u|update"   => \$update,
@@ -53,7 +57,7 @@ $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`")
 
 
 my $script = $0;
-my $rundate = `date +%y%m%d`; chomp $rundate;
+my $rundate = rundate;
 my $log = "/wormsrv2/logs/update_caltech.$rundate.$$";
 my $nlog = "/wormsrv2/logs/new_gene_name_merge.$rundate.$$";
 
@@ -83,13 +87,16 @@ my $found = 0;   # counter for found gene name merge
 ######################
 
 # see POD for -update and -merge options
-my $count = &download if $update;  
 
-&process_main_other_name;                                 # get list of main names, their other name(s) and corresponding seq. names
+my ($count, $update_file) = &download if $update;
 
-$found = &check_gene_name_merge if $merge;                # email a notice of new gene name merge
+&upload_data($update_file) if $count == 1;
 
-&main_other_name_assignment if ($update && $count != 0);  # update geneace with latest func. annots; assign annots to main name, if not already
+#&process_main_other_name;                                 # get list of main names, their other name(s) and corresponding seq. names
+
+#$found = &check_gene_name_merge if $merge;                # email a notice of new gene name merge
+
+#&main_other_name_assignment if ($update && $count != 0);  # update geneace with latest func. annots; assign annots to main name, if not already
                                                           # email Caltech what needs to be changed 
 
 # Mail to people, but only to person running script in debug mode
@@ -110,64 +117,153 @@ exit(0);
 #      subroutines
 ########################
 
-sub download {  
+sub download {
 
   # check for new file to upate on FTP site
 
 
   print LOG "This file is generated automatically. If you have spotted any bug, please contact ck1\@sanger.ac.uk\n";
   print LOG "--------------------------------------------------------------------------------------------------\n\n";
-  
+
   chdir $caltech;
   system("echo '\$ caltech' | ftp -i caltech.wormbase.org") && print LOG "Failed to download file\n";
-  
+
   @ftp_date=dataset($caltech);    # [0] is the date of the file , [1] is the filename
   @last_date=dataset($updatedir); # [0] is the date of the file , [1] is the filename
-   
+
   if ($last_date[0] != $ftp_date[0]){
     print LOG "UPDATE file $ftp_date[1] avilable on FTP\n\n";
+    print "UPDATE file $ftp_date[1] avilable on FTP\n\n";
     system("mv $ftp_date[1] ../");
-    return $count = 1;
-  }  
+    return $count = 1, $ftp_date[1];
+  }
   if ($last_date[0] == $ftp_date[0]){
     print LOG "No new update on FTP site\n";
+    print "No new update on FTP site\n";
     $recipients ="ck1\@sanger.ac.uk, krb\@sanger.ac.uk"; # notify ck1 & krb if no update
     $recipients ="$debug\@sanger.ac.uk" if $debug;       # notify ck1 & krb if no update
-    mail_maintainer("Functional annotation update feedback", $recipients, $log); 
+    mail_maintainer("Functional annotation update feedback", $recipients, $log);
     exit(0) if !$merge;
     return $count = 0;
   }
 }
 
+
+sub dataset {
+  my $dir = shift;
+  my $date = ();
+  my $name;
+
+  opendir(DIR, $dir) || die "Can't read directory";
+  my @dir=readdir DIR;
+  splice(@dir, 0,2);
+  closedir (DIR);
+  foreach (@dir){
+    if ($_ =~ /^annots-(\d+)(\w{3,3})(\d+)\.ace$/){
+      $name = $_;
+      my $mon = $2;
+      if ($mon eq "jan"){$mon = "01"}
+      if ($mon eq "feb"){$mon = "02"}
+      if ($mon eq "mar"){$mon = "03"}
+      if ($mon eq "apr"){$mon = "04"}
+      if ($mon eq "may"){$mon = "05"}
+      if ($mon eq "jun"){$mon = "06"}
+      if ($mon eq "jul"){$mon = "07"}
+      if ($mon eq "aug"){$mon = "08"}
+      if ($mon eq "sep"){$mon = "09"}
+      if ($mon eq "oct"){$mon = "10"}
+      if ($mon eq "nov"){$mon = "11"}
+      if ($mon eq "dec"){$mon = "12"}
+      $date = $1.$mon.$3;
+      if (!$date){
+	print LOG "\nFilename in FTP directory cannot be processed. Script halted\n";
+	exit(0);
+      }
+    }
+  }
+  return $date, $name;
+}
+
+sub upload_data {
+
+  my $update_file = shift;
+  my $command=<<END;
+
+find CDS * where concise_description OR detailed_description OR provisional_description
+show -a -T -f /wormsrv1/geneace/ERICHS_DATA/CDS_TS_dump.ace
+edit -D Concise_description
+edit -D Detailed_description
+edit -D Provisional_description
+
+find Transcript * where concise_description OR detailed_description OR provisional_description
+show -a -T -f /wormsrv1/geneace/ERICHS_DATA/TRANSCRIPT_TS_dump.ace
+edit -D Concise_description
+edit -D Detailed_description
+edit -D Provisional_description
+
+find Pseudogene * where concise_description OR detailed_description OR provisional_description
+show -a -T -f /wormsrv1/geneace/ERICHS_DATA/PSEUDOGENE_TS_dump.ace
+edit -D Concise_description
+edit -D Detailed_description
+edit -D Provisional_description
+
+find Gene * where concise_description OR detailed_description OR provisional_description
+show -a -T -f /wormsrv1/geneace/ERICHS_DATA/Gene_TS_dump.ace
+edit -D Concise_description
+edit -D Detailed_description
+edit -D Provisional_description
+
+pparse $updatedir/$update_file
+
+save
+quit
+END
+
+  my $ga = init Geneace();
+  my $tsuser = "Functional_annotation";
+  if (!$debug){
+    $ga -> upload_database($ga->geneace, $command, $tsuser, $log);
+
+    ########################################################
+    # move modified file/last update file to ARCHIVE folder
+    #######################################################
+
+    chdir $updatedir;
+    system("mv $last_date[1]* ARCHIVE/");
+  }
+}
+
+__END__
+
 sub process_main_other_name {
-  
+
   ########################################
   # process locus / other_name information
   ########################################
-  
-  my $ga_dir = "/wormsrv1/geneace";
-  #my $ga_dir = "/nfs/disk100/wormpub/DATABASES/BACKUPS/geneace_backup.031107";
 
-  my $locus_has_other_name_to_cds=<<EOF;
-Table-maker -p "/wormsrv1/geneace/wquery/locus_has_other_name_to_cds.def" quit
+  #y $ga_dir = "/wormsrv1/geneace";
+  my $ga_dir = "/nfs/disk100/wormpub/DATABASES/TEST_DBs/CK1TEST";
+
+  my $gene_other_name_2_seqs=<<EOF;
+Table-maker -p "/wormsrv1/geneace/wquery/Gene_other_name_cds_trans_pseudo.def";
 EOF
-  my $locus_to_CDS=<<EOF;
-Table-maker -p "/wormsrv1/geneace/wquery/locus_to_CDS.def" quit
+  my $gene_to_seqs=<<EOF;
+Table-maker -p "/wormsrv1/geneace/wquery/Gene_cds_trans_pseudo.def" quit
 EOF
-  
-  @other_main=CGC_loci_and_other_name($locus_has_other_name_to_cds, $locus_to_CDS, $ga_dir);
-  
+
+  @other_main=CGC_loci_and_other_name($gene_other_name_2_seqs, $gene_to_seqs, $ga_dir);
+
   %other_main=%{$other_main[0]};
   %locus_cds=%{$other_main[1]};
 
-  push(@info, "\n-----------------------------------------------------------------------------\n"); 
+  push(@info, "\n-----------------------------------------------------------------------------\n");
   push(@info, "FYI - CURRENT LIST ($rundate) OF LOCI THAT ARE BOTH MAIN NAME AND OTHER NAME:\n");
   push(@info, "-----------------------------------------------------------------------------\n");
 
   foreach (sort keys %other_main){
     my $locus = $other_main{$_}->[0];
     my @cds   = $other_main{$_}->[1];
-    
+
     if (exists $locus_cds{$_}){
       push(@info, "$_ (@{$locus_cds{$_}}) is different from $_ which is an other_name of $locus (@cds)\n");
       push(@info, "Annotation needs to be assigned to $_ (@{$locus_cds{$_}})\n\n");
@@ -183,7 +279,7 @@ EOF
   foreach (@other_names){$other_names{$_}++}
 }
 
-sub check_gene_name_merge {  
+sub check_gene_name_merge {
 
   # write current list of exception loci (as CGC main name and non-CGC other name as well)
   my $exception_loci_list = "/wormsrv1/geneace/ERICHS_DATA/exception_loci_list.$rundate";
@@ -198,10 +294,10 @@ sub check_gene_name_merge {
   open(MAIN, ">$main_loci_list") || print NLOG "\nCannot write to $main_loci_list!\n";
   foreach (sort keys %locus_cds){
     print MAIN "$_ -> @{$locus_cds{$_}}\n";
-    
+
   }
   close MAIN;
-  
+
   # grep the two main loci files from two different dates
   my @file_date;
   my @loci_files = glob"/wormsrv1/geneace/ERICHS_DATA/main_loci_list*";
@@ -214,7 +310,7 @@ sub check_gene_name_merge {
   @file_date = sort {$a <=> $b} @file_date;
   # diff the two main loci files to see what is changed
   my @name_diff = `diff $loci_files[0] $loci_files[1]`;
-  
+
   # process diff result for the names found, check also what is its main name now
   my @merger;
 
@@ -246,7 +342,7 @@ sub check_gene_name_merge {
   @name_diff = `diff $loci_files[0] $loci_files[1]`;
 
   foreach (@name_diff){
-    chomp;   
+    chomp;
     print $_, "\n";
     if ($_ =~ /^> (.+)/){
       my $name = $1;
@@ -263,7 +359,7 @@ sub check_gene_name_merge {
     print NLOG "-----------------------------------\n";
     print NLOG "New gene name merge(s) as of $rundate\n";
     print NLOG "-----------------------------------\n\n";
-    print NLOG @merger; 
+    print NLOG @merger;
     print NLOG "\nPlease update other related annotations accordingly. Thanks.\n" if $found == 1;
   }
   else {
@@ -282,46 +378,46 @@ sub main_other_name_assignment {
 
   open (IN, "$updatedir/$ftp_date[1]");
   my $modify ="$updatedir/$ftp_date[1].modified";
-  
+
   open(OUT, ">$modify");
 
   my @assignment;
   push (@assignment,"-----------------------------------------------------------------\n");
   push (@assignment,"B: Detailed FUNCTIONAL ANNOTATION ASSIGNMENT BASED ON YOUR UPDATE\n");
   push (@assignment,"-----------------------------------------------------------------\n");
-  
+
   while(<IN>){
     if ($_ =~ /^Locus : \"(.+)\"/){
-      
+
       my $flag = $1;
       ######################################################### 
       # check if locus is an other_name and also a locus object
       #########################################################
-      
+
       if ($exceptions{$flag}){
 	print $flag, "\n";
 	my $locus = $other_main{$flag}->[0]; # main
 	my @cds   = $other_main{$flag}->[1] if $other_main{$flag}->[1];
 	
 	# locus attached to cds
-	if ($other_main{$flag}->[1]){   
+	if ($other_main{$flag}->[1]){
 	  push (@assignment, "$flag (@{$locus_cds{$1}}) is different from $flag which is an other_name of $locus (@cds)\n");
 	  push (@assignment, "Functional annotation is assigned to $flag (@{$locus_cds{$flag}} in geneace)\n\n");
 	  print OUT "Locus : \"$flag\"\n";
 	}
 	
 	# locus not attached to cds
-	else {                             
+	else {
 	  push (@assignment, "$flag (@{$locus_cds{$flag}}) is different from $flag which is an other_name of $locus (no CDS connection yet)\n");
 	  push (@assignment, "Functional annotation is assigned to $flag (@{$locus_cds{$flag}} in geneace)\n\n");
 	  print OUT "\nLocus : \"$flag\"\n";
 	}
       }
-      
+
       ##################################################################### 
       # check if locus should become an other_name of a CGC locus object
       #####################################################################
-      
+
       elsif ($other_names{$flag}){
 	my $locus = $other_main{$flag}->[0]; # main name
 	my @cds   = $other_main{$flag}->[1]; # seq name if available
@@ -354,8 +450,8 @@ sub main_other_name_assignment {
   }
 
   my $diff_out = `diff $updatedir/$ftp_date[1] $modify`;
-  
-  if (!$diff_out){ 
+
+  if (!$diff_out){
     print LOG "------------------------------------------\n\n";
     print LOG "EVERYTHING WENT OK\n\n";
     print LOG "THANKS.\n\n";
@@ -365,7 +461,7 @@ sub main_other_name_assignment {
     print LOG "\n\n";
     print LOG "------------------------------------\n";
     print LOG "A: CHANGES MADE FOR YOUR UPDATE FILE\n";
-    print LOG "------------------------------------\n";  
+    print LOG "------------------------------------\n";
     print LOG $diff_out, "\n";
     print LOG "------------------------------------\n\n";
     print LOG "Please update accordingly\n";
@@ -394,8 +490,8 @@ edit -D Concise_description
 edit -D Detailed_description
 edit -D Provisional_description
 
-find locus * where concise_description OR detailed_description OR provisional_description
-show -a -T -f /wormsrv1/geneace/ERICHS_DATA/loci_TS_dump.ace
+find Gene * where concise_description OR detailed_description OR provisional_description
+show -a -T -f /wormsrv1/geneace/ERICHS_DATA/Gene_TS_dump.ace
 edit -D Concise_description
 edit -D Detailed_description
 edit -D Provisional_description
@@ -408,69 +504,36 @@ END
 
 
   my $geneace_dir="/wormsrv1/geneace";
-  
+
   if (!$debug){
     open (Load_GA,"| $tace -tsuser \"Functional_annotation\" $geneace_dir >> $log") || die "Failed to upload to Geneace";
     print Load_GA $command;
     close Load_GA;
-    
+
     if($!){
       print "##########################################\n";
-      print "\nPhenotype annotation is now updated!\n\n";       
-      print "\nIf everthing is OK, REMEMBER to remove\n"; 
+      print "\nPhenotype annotation is now updated!\n\n";
+      print "\nIf everthing is OK, REMEMBER to remove\n";
       print "loci_TS_dump.ace and seq_TS_dump.ace\n";
       print "in /wormsrv1/geneace/ERICHS_DATA\n\n";
-      print "##########################################\n\n"; 
+      print "##########################################\n\n";
     }
     else{
       print "######################################\n";
       print "Mission not 100% successful, Mr. Bond!\n";
       print "######################################\n\n";
     }
-    
+
     ########################################################
     # move modified file/last update file to ARCHIVE folder
     #######################################################
-    
+
     chdir $updatedir;
     system("mv $last_date[1]* ARCHIVE/");
-  }  
-}
-
-sub dataset {
-  my $dir = shift;
-  my $date = ();
-  my $name;
-
-  opendir(DIR, $dir) || die "Can't read directory";
-  my @dir=readdir DIR;
-  splice(@dir, 0,2);
-  closedir (DIR);
-  foreach (@dir){
-    if ($_ =~ /^annots-(\d+)(\w{3,3})(\d+)\.ace$/){
-      $name = $_;
-      my $mon = $2;
-      if ($mon eq "jan"){$mon = "01"}
-      if ($mon eq "feb"){$mon = "02"}
-      if ($mon eq "mar"){$mon = "03"}
-      if ($mon eq "apr"){$mon = "04"}
-      if ($mon eq "may"){$mon = "05"}
-      if ($mon eq "jun"){$mon = "06"} 
-      if ($mon eq "jul"){$mon = "07"}
-      if ($mon eq "aug"){$mon = "08"}
-      if ($mon eq "sep"){$mon = "09"}
-      if ($mon eq "oct"){$mon = "10"}
-      if ($mon eq "nov"){$mon = "11"}
-      if ($mon eq "dec"){$mon = "12"}
-      $date = $1.$mon.$3;
-      if (!$date){
-	print LOG "\nFilename in FTP directory cannot be processed. Script halted\n";
-	exit(0);
-      }
-    }
   }
-  return $date, $name; 
 }
+
+
 
 sub CGC_loci_and_other_name {
 
@@ -504,9 +567,9 @@ sub CGC_loci_and_other_name {
       # a locus maybe linked to zero, or 1 or 2 or 3 seq. classes
       @seqs = split(/\s+/, $_) if $_ =~ /^\"/;
       $locus = $seqs[0]; $locus =~ s/\"//g;
-      
+
       shift @seqs; # only seq.
-      
+
       # hash, key = locus (main), value = (seq. linked to it)
       if (@seqs){
 	foreach (@seqs){
