@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-07-07 13:02:07 $
+# Last updated on: $Date: 2004-07-07 13:57:00 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -48,7 +48,7 @@ my ($help, $debug, $class, @classes, $database, $ace, $verbose);
 GetOptions ("help"        => \$help,
             "debug=s"     => \$debug,
 	    "class=s"     => \@classes,
-	    "database=s" => \$database,
+	    "database=s"  => \$database,
             "ace"         => \$ace,
 	    "verbose"     => \$verbose);
 
@@ -105,9 +105,6 @@ my @Gene_info = $ga -> gene_info($default_db, "seq2id");
 my %Gene_info = %{$Gene_info[0]};
 my %seqs_to_gene_id = %{$Gene_info[1]};
 
-# counters used later
-my $non_CGC_to_seq = 0;
-my $non_CGC_non_seq = 0;
 
 # Process separate classes if specified on the command line else process all classes, EXCEPT "pseudo", see
 # /wormsrv1/geneace/JAH_DATA/MULTI_PT_INFERRED/README for detailed description
@@ -129,6 +126,7 @@ foreach $class (@classes){
   if ($class =~ m/pseudo/i)        {&int_map_to_map_loci}
 }
 
+
 #######################################
 # Tidy up and mail relevant log files #
 #######################################
@@ -139,31 +137,30 @@ close(CALTECHLOG);
 close(JAHLOG);
 close(ACE) if ($ace);
 
-
-# Always mail to $maintainers (which might be a single user under debug mode)
-&mail_maintainer($0,$maintainers,$log);
-
-
-# Also mail to Erich unless in debug mode or unless there is no errors
-my $interested ="krb\@sanger.ac.uk, emsch\@its.caltech.edu, kimberly\@minerva.caltech.edu";
-&mail_maintainer($0,"$interested",$caltech_log) unless ($debug || $caltech_errors == 0);
-
-
-# Email Jonathan Hodgkin subset of errors that he might be able to help with unless
-# in debug mode or no errors
-&mail_maintainer($0,"cgc\@wormbase.org",$jah_log) unless ($debug || $jah_errors == 0);
-
-
-if ($classes[0] eq lc("pseudo"){
-  my $version = $next_build_ver +1;
-  &mail_maintainer("Pseudo genetic marker(s) to approve for WS$version", "cgc\@wormbase.org", $jah_log);
-      
+# if running pseudo marker option just email log file to cgc@wormbase.org (JAH + krb)
+if ($classes[0] eq lc("pseudo")){
+  my $next_release = $next_build_ver +1;
+  &mail_maintainer("Pseudo genetic marker(s) to approve for WS$next_release", "cgc\@wormbase.org", $jah_log);      
 }
+else{
+  # email everyone specified by $maintainers
+  &mail_maintainer("geneace_check: SANGER",$maintainers,$log);
 
+  # Also mail to Erich unless in debug mode or unless there is no errors
+  my $interested ="krb\@sanger.ac.uk, emsch\@its.caltech.edu, kimberly\@minerva.caltech.edu";
+  &mail_maintainer("geneace_check: CALTECH","$interested",$caltech_log) unless ($debug || $caltech_errors == 0);
+
+  # Email Jonathan Hodgkin subset of errors that he might be able to help with unless
+  # in debug mode or no errors
+  &mail_maintainer("geneace_check: CGC","cgc\@wormbase.org",$jah_log) unless ($debug || $jah_errors == 0);
+}
 
 exit(0);
 
 #--------------------------------------------------------------------------------------------------------------------
+
+
+
 
                           ###########################################################
                           #         SUBROUTINES FOR -class gene option              #
@@ -181,18 +178,13 @@ sub process_gene_class{
 
   foreach my $gene_id (@gene_ids){
     # useful to see where you are in the script if running on command line
-    if ($verbose){
-      print "$gene_id: $Gene_info{$gene_id}{'Public_name'}";
-    }
+    print "$gene_id: $Gene_info{$gene_id}{'Public_name'}" if ($verbose);
     my $warnings;
 
-    ($non_CGC_to_seq, $non_CGC_non_seq) = &test_locus_for_errors($gene_id);
+    &test_locus_for_errors($gene_id);
     print "\n" if ($verbose);
   }
   
-  print LOG "INFO: $non_CGC_to_seq gene id(s) linked to sequence but not linked to CGC_name\n" if $non_CGC_to_seq > 0;
-  print LOG "INFO: $non_CGC_non_seq gene id(s) NOT linked to sequence AND CGC_name\n" if $non_CGC_non_seq > 0;
-
   # looks for seq. (predictted_gene, transcript) link to an allele, but which gene ids don't => make gene id -> allele connection
   &link_seq_to_Gene_based_on_allele($db);
 
@@ -211,8 +203,8 @@ sub process_gene_class{
   # checks gene_id that does not have a map position nor an interpolated_map_position with conditions in the query
   my $map_query = "Find gene * where !(map | interpolated_map_position) & (cds|transcript|pseudogene) & species=\"*elegans\" & !sequence_name=\"MTCE*\"";
   push(my @gene_id_has_no_map_info, $db->find($map_query));
-  foreach my $e (@gene_id_has_no_map_info){
-    print LOG "ERROR 26: $e has neither Map nor Interpolated_map_position info\n";
+  foreach my $gene (@gene_id_has_no_map_info){
+    print LOG "ERROR 26: $gene ($Gene_info{$gene}{'Public_name'}) has neither Map nor Interpolated_map_position info\n";
   }
 }
 
@@ -258,7 +250,7 @@ sub test_locus_for_errors{
 
   # test for missing Public_name and assign one if so
   if( !defined $gene_id->Public_name && (defined $gene_id->CGC_name || defined $gene_id->Sequence_name || defined $gene_id->Other_name) ){
-    $warnings .= "ERROR 6(a): $gene_id ($Gene_info{$gene_id}{'CGC_name'}) has no Public_name but has CGC/Sequence/Other_name\n";
+    $warnings .= "ERROR 6(a): $gene_id has no Public_name but has CGC/Sequence/Other_name\n";
     if ($ace){
       print ACE "\nGene : \"$gene_id\"\n";
       print ACE "Public_name \"$Gene_info{$gene_id}{'CGC_name'}\"\n" if exists $Gene_info{$gene_id}{'CGC_name'};
@@ -299,17 +291,6 @@ sub test_locus_for_errors{
     print "." if ($verbose);
   }
 
-  # checks a CGC name is linked to a sequence but not yet to a CGC_name 
-  if ( !defined $gene_id->CGC_name && $gene_id->Sequence_name && $gene_id->Species =~ /elegans/ ){
-    $non_CGC_to_seq++;
-    print "." if ($verbose);
-  }
-
-  # checks a gene id is linked neither to a sequence nor a CGC name
-  if ( !$gene_id->CGC_name && !$gene_id->Sequence_name && $gene_id->Species =~ /elegans/ ){
-    $non_CGC_non_seq++;
-    print "." if ($verbose);
-  }
 
   # checks existence of a CGC name but no gene_class
   if ( defined $gene_id->CGC_name && !defined $gene_id->Gene_class ){
@@ -518,7 +499,6 @@ sub test_locus_for_errors{
   }
 
   print LOG "$warnings" if(defined($warnings));
-  return($non_CGC_to_seq, $non_CGC_non_seq);
 }
 
 
@@ -532,13 +512,14 @@ sub get_event {
 
   my @ver_ch = $gene_id->Version_change;
 
-  my $tag = $gene_id->History->right->right->right->right->right if scalar @ver_ch == 1;
-     $tag = $gene_id->History->right->down->right->right->right->right if scalar @ver_ch == 2;
-     $tag = $gene_id->History->right->down->down->right->right->right->right if scalar @ver_ch == 3;
-     $tag = $gene_id->History->right->down->down->down->right->right->right->right if scalar @ver_ch == 4;
-     $tag = $gene_id->History->right->down->down->down->down->right->right->right->right if scalar @ver_ch == 5;
-     $tag = $gene_id->History->right->down->down->down->down->down->right->right->right->right if scalar @ver_ch == 6;
-     $tag = $gene_id->History->right->down->down->down->down->down->down->right->right->right->right if scalar @ver_ch == 7;
+  my $tag;
+  $tag = $gene_id->History->right->right->right->right->right if scalar @ver_ch == 1;
+  $tag = $gene_id->History->right->down->right->right->right->right if scalar @ver_ch == 2;
+  $tag = $gene_id->History->right->down->down->right->right->right->right if scalar @ver_ch == 3;
+  $tag = $gene_id->History->right->down->down->down->right->right->right->right if scalar @ver_ch == 4;
+  $tag = $gene_id->History->right->down->down->down->down->right->right->right->right if scalar @ver_ch == 5;
+  $tag = $gene_id->History->right->down->down->down->down->down->right->right->right->right if scalar @ver_ch == 6;
+  $tag = $gene_id->History->right->down->down->down->down->down->down->right->right->right->right if scalar @ver_ch == 7;
 
   return $tag;
 }
@@ -1544,7 +1525,10 @@ sub create_log_files{
   print LOG "started at ",`date`,"\n";
   print LOG "=============================================\n";
   print LOG "\n";
-  print LOG "The (a) following ERROR, or UPDT, eg, indicates ace output \n$acefile for direct upload to correct problems.\n\n";
+
+  unless ($classes[0] eq lc("pseudo")){
+    print LOG "The (a) following ERROR, or UPDT, eg, indicates ace output \n$acefile for direct upload to correct problems.\n\n";
+  }
 
   $jah_log = "/wormsrv2/logs/$script_name.jahlog.$rundate.$$" if $machine;
   $jah_log = "/nfs/disk100/wormpub/tmp/$script_name.jahlog.$rundate" if !$machine;
