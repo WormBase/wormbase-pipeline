@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.31 2002-01-29 10:35:33 dl1 Exp $
+// CVS info:  $Id: models.wrm,v 1.32 2002-01-29 11:58:30 dl1 Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -792,7 +792,6 @@
 		// tag2 system: names of all objects following next tag are shown in the 
 		//   general annotation display column as "tag:objname"
 	  Properties    Pseudogene Text		// explanation
-			Transposon Text		// transposon type
 			Genomic_canonical UNIQUE Int                             // added tag for dot name tracking [020128 dl]
                         Briggsae_canonical
 			cDNA cDNA_EST
