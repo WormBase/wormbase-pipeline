@@ -6,8 +6,8 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-12-22 16:32:27 $
+# Last updated by: $Author: wormpub $
+# Last updated on: $Date: 2005-01-14 16:55:31 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -1189,7 +1189,7 @@ sub create_log_files{
 
   open(JAHLOG, ">>$jah_log") || die "Can't open $jah_log\n";
   print JAHLOG "This mail is generated automatically for CGC on $rundate\n"; 
-  print JAHLOG "If you have any queries please email krb\@sanger.ac.uk\n\n";
+  print JAHLOG "If you have any queries please email mt3\@sanger.ac.uk\n\n";
   print JAHLOG "=========================================================================\n";
 
   # create separate log with errors for Erich
@@ -1198,7 +1198,7 @@ sub create_log_files{
   open(CALTECHLOG,">$caltech_log") || die "cant open $caltech_log";
   print CALTECHLOG "$0 started at ",`date`,"\n";
   print CALTECHLOG "This mail is generated automatically for Caltech\n";
-  print CALTECHLOG "If you have any queries please email krb\@sanger.ac.uk\n\n";
+  print CALTECHLOG "If you have any queries please email mt3\@sanger.ac.uk\n\n";
   print CALTECHLOG "================================================================================================\n";
 
   `chmod 777 $log $jah_log $caltech_log`; # so that they can be deleted by script
