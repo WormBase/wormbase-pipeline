@@ -8,7 +8,7 @@
 # This makes the autoace database from its composite sources.
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-06-01 12:53:28 $
+# Last edited on: $Date: 2004-06-01 13:09:08 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -459,7 +459,7 @@ sub physical_map_stuff{
 #  &DbWrite($command,"$tace -tsuser Coulson",$dbpath,"ContigC");
   
   # now make the maps
-  $command = "gif makemaps -all\nsave\ngif makemaps -seqclonemap $dbpath/acefiles/seqclonemap.ace\n";
+  my $command = "gif makemaps -all\nsave\ngif makemaps -seqclonemap $dbpath/acefiles/seqclonemap.ace\n";
   $command .= "pparse $dbpath/acefiles/seqclonemap.ace\nsave\nquit\n";
   &DbWrite($command,$giface,$dbpath,"MakeMaps");
 
@@ -508,8 +508,8 @@ sub makechromlink {
 
   print LOG &runtime, ": starting makechromlink subroutine\n";
   unlink "$wormbasedir/misc/misc_chromlinks.ace" or print LOG "ERROR: Couldn't unlink file: $!\n";
-  my $command = "$basedir/scripts/makeChromLinks.pl > $wormbasedir/misc/misc_chromlinks.ace";
-  $command = "$basedir/scripts/makeChromLinks.pl -test > $wormbasedir/misc/misc_chromlinks.ace" if ($test);
+  my $command = "$basedir/scripts/makeChromLinks.pl >! $wormbasedir/misc/misc_chromlinks.ace";
+  $command = "$basedir/scripts/makeChromLinks.pl -test >! $wormbasedir/misc/misc_chromlinks.ace" if ($test);
   &run_command("$command"); 
 
   if (-z "$wormbasedir/misc/misc_chromlinks.ace") {
