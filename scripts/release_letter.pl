@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers                             
 #
-# Last updated by: $Author: ck1 $               
-# Last updated on: $Date: 2003-09-18 13:10:51 $         
+# Last updated by: $Author: ar2 $               
+# Last updated on: $Date: 2003-11-14 16:33:55 $         
 #
 # Generates a release letter at the end of build.
 #
@@ -126,11 +126,12 @@ if( defined($opt_l)) {
   $wp_status{Total}      = $wp_status{Confirmed} + $wp_status{Supported} + $wp_status{Predicted}; 
   
   print  RL "\n\n";
-  print  RL "Status of entries: Confidence level of prediction\n";
+  print  RL "Status of entries: Confidence level of prediction (based on the amount of transcript evidence)\n";
   print  RL "-------------------------------------------------\n";
-  printf RL "Confirmed            %6d (%2.1f%%)\n", $wp_status{Confirmed}, (($wp_status{Confirmed}/$wp_status{Total}) * 100);
-  printf RL "Partially_confirmed  %6d (%2.1f%%)\n", $wp_status{Supported}, (($wp_status{Supported}/$wp_status{Total}) * 100);
-  printf RL "Predicted            %6d (%2.1f%%)\n", $wp_status{Predicted}, (($wp_status{Predicted}/$wp_status{Total}) * 100);
+  printf RL "Confirmed            %6d (%2.1f%%)\tEvery base has transcription evidence (mRNA, EST etc )\n", $wp_status{Confirmed}, (($wp_status{Confirmed}/$wp_status{Total}) * 100);
+  printf RL "Partially_confirmed  %6d (%2.1f%%)\tSome but not all bases are covered by transcript evidence\n", $wp_status{Supported}, (($wp_status{Supported}/$wp_status{Total}) * 100);
+  printf RL "Predicted            %6d (%2.1f%%)\tNo transcriptional evidence at all\n", $wp_status{Predicted}, (($wp_status{Predicted}/$wp_status{Total}) * 100);
+
   print  RL "\n\n\n";
   print  RL "Status of entries: Protein Accessions\n";
   print  RL "-------------------------------------\n";
