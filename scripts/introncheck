@@ -7,7 +7,7 @@
 # Usage: introncheck [-options]
 #
 # Last updated by: $Author: dl1 $     
-# Last updated on: $Date: 2004-01-30 14:33:15 $      
+# Last updated on: $Date: 2004-04-20 14:26:04 $      
 
 #################################################################################
 # variables                                                                     #
@@ -96,74 +96,74 @@ foreach my $chromosome (@chromosomes) {
   open (GFF, "/wormsrv2/scripts/gff_sort $gffdir/GFF_SPLITS/CHROMOSOME_${chromosome}.intron_all.gff |") || die "Failed to open gff file at $gffdir/GFF_SPLITS/CHROMOSOME_${chromosome}.intron_all.gff \n\n";
   
   while (<GFF>) {       	
-    chomp;
-    s/\#.*//;
-    next unless /\S/;
-    
-    # split the GFF line
-    my @f = split /\t/;
-    
-    # reset match tag
-    my $match = 0;
-    my $line = $_;     
-  
-    # Confirmed_introns not in gene models
-    
-    # ignore some marked introns
-#    print "discard as false : $line\n" if ($f[8] =~ /Confirmed_as_false/); 
-    next if ($f[8] =~ /Confirmed_as_false/);                # Bad BLAT mapping
-#    print "discard as inconsistent : $line\n" if ($f[8] =~ /Confirmed_as_inconsistent/); 
-    next if ($f[8] =~ /Confirmed_as_inconsistent/);         # Can't make a valid CDS prediction from this
-
+      chomp;
+      s/\#.*//;
+      next unless /\S/;
+      
+      # split the GFF line
+      my @f = split /\t/;
+      
+      # reset match tag
+      my $match = 0;
+      my $line = $_;     
+      
+      # Confirmed_introns not in gene models
+      
+      # ignore some marked introns
+#    print "discard as false : $line\n" if ($f[8] =~ /Confirmed_false/); 
+      next if ($f[8] =~ /Confirmed_false/);                # Bad BLAT mapping
+#    print "discard as inconsistent : $line\n" if ($f[8] =~ /Confirmed_inconsistent/); 
+      next if ($f[8] =~ /Confirmed_inconsistent/);         # Can't make a valid CDS prediction from this
+      
 #	 ( ($f[2] eq "intron") && ($f[1] eq "Coding_transcript") ) || 
-
-
-    if ( ( ($f[2] eq "intron") && ($f[1] eq ".") && (not $f[8] =~ /Confirmed_in_UTR/) ) || 
-	 ( ($f[1] eq "NDB_CDS") && (($f[8] =~ /Confirmed_by_EST/) || ($f[8] =~ /Confirmed_by_cDNA/) ) ) ) {
-
+      
+      
+      if ( ( ($f[2] eq "intron") && ($f[1] eq ".") && (not $f[8] =~ /Confirmed_UTR/) ) || 
+	   ( ($f[1] eq "NDB_CDS") && (($f[8] =~ /Confirmed_EST/) || ($f[8] =~ /Confirmed_cDNA/) ) ) ) {
+	  
 #      print "Parse : $line\n";
-      
-      # print "Check through known intron coordinates: $f[3] $f[4]\n";
-      
-      foreach my $look (@introns) {
-	my ($start,$stop,$seq) = split (/ /, $look);
+	  
+	  # print "Check through known intron coordinates: $f[3] $f[4]\n";
+	  
+	  foreach my $look (@introns) {
+	      my ($start,$stop,$seq) = split (/ /, $look);
 #	 print "  => $start $stop $seq\n";
-	if (($f[3] == $start) && ($f[4] == $stop) ) {
-	  # found match
-	  $match = 1;
+	      if (($f[3] == $start) && ($f[4] == $stop) ) {
+		  # found match
+		  $match = 1;
 #	   print " !! found match !!\n";
-	  last;
-	}
-      }
-      
-      unless ($match == 1){	
-	
-	my @data = $coords->LocateSpan($f[0], $f[3], $f[4]);
+		  last;
+	      }
+	  }
+	  
+	  unless ($match == 1) {	
+	      
+	      my @data = $coords->LocateSpan($f[0], $f[3], $f[4]);
 #	print "Maps to $data[0] from $data[1] - $data[2]\n";
-
-	my $obj = $db->fetch(Sequence=>$data[0]);
-	my $lab;
-	unless (!defined ($obj)) {
-	  $lab=$obj->From_laboratory(1);
-	  $obj->DESTROY();
-	}
-	if ($lab eq "HX") {
-	  # print "CAM => $line Clone:$data[0] Lab:$lab\n";
-	  print OUT_CAM "$line\tClone:$data[0] $data[1] $data[2]\tLab:$lab\n";
-	}
-	elsif ($lab eq "RW") {
-	  # print  "STL => $line Clone:$data[0] Lab:$lab\n";
-	  print OUT_STL "$line\tClone:$data[0] $data[1] $data[2]\tLab:$lab\n";
-	}
-	$lab = "";
-	$confirmed_intron{$chromosome}++;
+	      
+	      my $obj = $db->fetch(Sequence=>$data[0]);
+	      my $lab;
+	      unless (!defined ($obj)) {
+		  $lab=$obj->From_laboratory(1);
+		  $obj->DESTROY();
+	      }
+	      if ($lab eq "HX") {
+		  # print "CAM => $line Clone:$data[0] Lab:$lab\n";
+		  print OUT_CAM "$line\tClone:$data[0] $data[1] $data[2]\tLab:$lab\n";
+	      }
+	      elsif ($lab eq "RW") {
+		  # print  "STL => $line Clone:$data[0] Lab:$lab\n";
+		  print OUT_STL "$line\tClone:$data[0] $data[1] $data[2]\tLab:$lab\n";
+	      }
+	      $lab = "";
+	      $confirmed_intron{$chromosome}++;
+	  }
+	  # end of parse loop  
       }
-    # end of parse loop  
-    }
 #    else {
 #      print "discard : $line\n";
 #    }
-
+      
   }
   close GFF;
   
