@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.39 2002-03-06 12:03:15 kj2 Exp $
+// CVS info:  $Id: models.wrm,v 1.40 2002-03-06 12:04:50 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -224,7 +224,8 @@
         Reference ?Paper XREF Gene
 	
 
-?Locus  Type	Polymorphism    SNP  Text               // SNP stuff added for Todd [171001 krb]
+?Locus  Name	Other_name	?Text			// 06/03/02 krb
+	Type	Polymorphism    SNP  Text               // SNP stuff added for Todd [171001 krb]
                                 Status Text
                                 SNP_assay ?PCR_product XREF SNP_locus ?Text
 				RFLP	Text
