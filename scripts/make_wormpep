@@ -26,7 +26,7 @@ use Wormbase;
  # Script variables (run)              #
  #######################################
 
-my $maintainer = "All";
+my $maintainers = "All";
 my $rundate    = `date +%y%m%d`; chomp $rundate;
 my $runtime    = `date +%H:%M:%S`; chomp $runtime;
 
@@ -51,7 +51,7 @@ my $release = &get_wormbase_version;
 my $old_release = $release-1;
 my $debug = $opt_d;
 
-($maintainer = "ar2\@sanger.ac.uk") if ($debug);
+($maintainers = "ar2\@sanger.ac.uk") if ($debug);
 
 
  ########################################################################
@@ -677,13 +677,9 @@ unlink ("$new_wpdir/wormpep_unwrap$release")  || print LOG "cannot delete $new_w
 
 close LOG;
 
-open (mailLOG, "|/usr/bin/mailx -s \"WormBase Report: make_wormpep\" $maintainer ");
-open (readLOG, "<$log");
-while (<readLOG>) {
-    print mailLOG $_;
-}
-close readLOG;
-close mailLOG;
+#Email log
+&mail_maintainer("WormBase Build Report: make_wormpep",$maintainers,$log);
+
 
 # write the release letter (also does some checks)
 if( $opt_f ) {
@@ -762,7 +758,7 @@ sub error {
 	print LOG "=> Failed to create a new directory for wormpep release wormpep$release\n\n";
 	print LOG "=> Exiting at $rundate $runtime\n";
         close LOG;
-        &mail_maintainer("WormBase Report: make_wormpep",$maintainer,$log);
+        &mail_maintainer("WormBase Report: make_wormpep",$maintainers,$log);
     }
     # Error  4 - cannot open new wp.log file 
     elsif ($error == 4) {
@@ -771,7 +767,7 @@ sub error {
         $runtime = `date +%H:%M:%S`; chomp $runtime;
         print LOG "=> Exiting at $rundate $runtime\n";
         close LOG;
-        &mail_maintainer("WormBase Report: make_wormpep",$maintainer,$log);
+        &mail_maintainer("WormBase Report: make_wormpep",$maintainers,$log);
     }
     # Error  5 - cannot open old wp.fasta file 
     elsif ($error == 5) {
@@ -780,7 +776,7 @@ sub error {
         $runtime = `date +%H:%M:%S`; chomp $runtime;
         print LOG "=> Exiting at $rundate $runtime\n";
         close LOG;
-        &mail_maintainer("WormBase Report: make_wormpep",$maintainer,$log);
+        &mail_maintainer("WormBase Report: make_wormpep",$maintainers,$log);
     }
     # Error  6 - cannot connect to ACEDB database 
     elsif ($error == 6) {
@@ -789,7 +785,7 @@ sub error {
         $runtime = `date +%H:%M:%S`; chomp $runtime;
         print LOG "=> Exiting at $rundate $runtime\n";
         close LOG;
-        &mail_maintainer("WormBase Report: make_wormpep",$maintainer,$log);
+        &mail_maintainer("WormBase Report: make_wormpep",$maintainers,$log);
     }
     # Error  7 - cannot open new wp.log file 
     elsif ($error == 7) {
@@ -798,7 +794,7 @@ sub error {
         $runtime = `date +%H:%M:%S`; chomp $runtime;
         print LOG "=> Exiting at $rundate $runtime\n";
         close LOG;
-        &mail_maintainer("WormBase Report: make_wormpep",$maintainer,$log);
+        &mail_maintainer("WormBase Report: make_wormpep",$maintainers,$log);
     }
 
     exit(1);
