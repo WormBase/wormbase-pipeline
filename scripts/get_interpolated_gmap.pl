@@ -7,7 +7,7 @@
 # This script calculates interpolated genetic map positions for CDS, Transcripts 
 # and Pseudogenes lying between and outside genetic markers.
 #
-# Last updated on: $Date: 2003-10-09 10:12:08 $
+# Last updated on: $Date: 2003-10-09 10:26:15 $
 # Last updated by: $Author: ck1 $
 
 use strict;
@@ -54,10 +54,9 @@ if($database){
   $gff_location = "/wormsrv2/autoace/GFF_SPLITS/WS"."$current";
 }
 else{
-  $gff_location = "/wormsrv2/autoace/GFF_SPLITS/WS"."$current";
-  $database = "/nfs/disk100/wormpub/DATABASES/current_DB"; 
+  $gff_location = "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS";
+  $database = "/wormsrv2/autoace"; 
 } 
-
 print "\nUsing $database as database path for genetics marker loci\n";
 
 
