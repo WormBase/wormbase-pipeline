@@ -33,7 +33,7 @@
 # 02.04.08 dl: old style logging for autoace.fa check, prevented complete run of subs
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2002-08-19 15:15:08 $
+# Last edited on: $Date: 2002-08-20 13:21:50 $
 
 use strict;
 use Ace;
@@ -170,9 +170,9 @@ if ($opt_b) {
     if ($opt_x) {
 	system("$blatex $seq $query -t=dnax -q=dnax $blat/${data}_out.psl") && die "Blat failed\n";
     }
-    elsif ($opt_o) {
-	system("$blatex $seq $query -q=prot -t=dnax $blat/${data}_out.psl") && die "Blat failed\n";
-    }
+#    elsif ($opt_o) {
+#	system("$blatex $seq $query -q=prot -t=dnax $blat/${data}_out.psl") && die "Blat failed\n";
+#    }
     else {
 	system("$blatex $seq $query $blat/${data}_out.psl") && die "Blat failed\n";
     }
