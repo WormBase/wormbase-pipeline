@@ -8,7 +8,7 @@
 # to look for bogus sequence entries
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2002-12-05 16:24:59 $
+# Last updated on: $Date: 2002-12-18 10:17:42 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -62,6 +62,17 @@ our $WS_version  = &get_wormbase_version_name;
 
 &create_log_files($database);
 
+
+###################################
+# Report errors to log file
+###################################
+
+# Count all the problems!
+my $sanger_counter = 0;
+my $caltech_counter = 0;
+my $cshl_counter = 0;
+my $stlouis_counter = 0;
+my $all_counter = 0;
 
 ############################################################
 # Check ?Sequence class (including predicted genes)
@@ -237,16 +248,6 @@ foreach my $seq (@genome_seqs){
 	print "$timestamp $class:$subseq \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
 	$category = 1;
       }
-      if(defined($subseq->at('Visible.Locus_genomic_seq'))){
-	my $tag = "Locus_genomic_seq";
-	my $timestamp = &get_timestamp($class, $subseq, $tag);
-	my @loci=$subseq->Locus_genomic_seq(1);
-        if (scalar @loci > 1){
-	  $problems{$timestamp}{$class.":".$subseq} = ["\"$tag tag is connected to multiple loci\""];
-	  print "$timestamp $class:$subseq \"$tag tag is connected to multiple loci\n";
-        }
-	$category = 1;
-      }
       if ($category == 0){
 	push(@other,$subseq);
 	print "$subseq - Other problem\n" if $verbose;
@@ -255,16 +256,8 @@ foreach my $seq (@genome_seqs){
   }
 }
 
-###################################
-# Report errors to log file
-###################################
-
-# Count all the problems!
-my $sanger_counter = 0;
-my $caltech_counter = 0;
-my $cshl_counter = 0;
-my $stlouis_counter = 0;
-my $all_counter = 0;
+# Checks sequences connected to multiple loci
+&Process_sequence;
 
 
 foreach my $i (@other){
@@ -454,7 +447,37 @@ sub splice_variant_check{
 
 }
 
+############################################
+# Check sequences connected to multiple loci
+############################################
 
+sub Process_sequence {
+
+  my $get_seqs_with_multiple_loci=<<EOF;
+  Table-maker -p "/wormsrv1/geneace/wquery/get_seq_has_multiple_loci.def" quit 
+EOF
+
+  my (%Seq_loci, $seq_count, $seq, $locus);
+  my $dir = "/wormsrv2/current_DB";
+
+  open (FH, "echo '$get_seqs_with_multiple_loci' | tace $dir | ") || die "Couldn't access geneace\n";
+  while (<FH>){
+    chomp($_);
+    if ($_ =~ /^\"/){
+      $_ =~ s/\"//g;
+      ($seq, $locus)=split(/\s+/, $_);
+      $Seq_loci{$seq}=$locus;
+    }
+  }
+ foreach (keys %Seq_loci){
+    $sanger_counter++;
+    print ALL_LOG "$_ is attached to multiple loci: $Seq_loci{$_}.\n";
+    print SANGER_LOG "$_ is attached to multiple loci: $Seq_loci{$_}.\n";
+   print "$_ is attached to multiple loci: $Seq_loci{$_}.\n";
+  }
+ 
+}
+   
 ###########################################
 sub usage {
     system ('perldoc',$0);
