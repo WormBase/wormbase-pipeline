@@ -29,13 +29,15 @@ open (OUT,">$output") or die "cant open $output\n";
 
 
 # retrieve hash of acc2clone
+my $common_data = glob("~wormpipe/dumps");
+
 my %acc2clone;
-&FetchData("accession2clone",\%acc2clone);
+&FetchData("accession2clone",\%acc2clone,$common_data);
 
 
 
 my %clonesize;
-&FetchData("clonesize", \%clonesize);
+&FetchData("clonesize", \%clonesize, $common_data);
 
 # mysql database parameters
 my $dbhost = "ecs1f";
