@@ -4,8 +4,9 @@ use strict;
 use lib glob("~ar2/wormbase/scripts/");
 use Ace;
 use Getopt::Long;
+use Data::Dumper;
 
-my ($debug, $verbose, $really_verbose, $est, $count, $report, $gap, $transcript, $gff);
+my ($debug, $verbose, $really_verbose, $est, $count, $report, $gap, $transcript, $gff, $show_matches, $database);
 $gap = 1; # $gap is the gap allowed in an EST alignment before it is considered a "real" intron
 
 GetOptions ( "debug" => \$debug,
@@ -16,134 +17,169 @@ GetOptions ( "debug" => \$debug,
 	     "report" => \$report,
 	     "gap:s"  => \$gap,
 	     "transcript" => \$transcript,
-	     "gff:s"    => \$gff
+	     "gff:s"    => \$gff,
+	     "show_matches"    => \$show_matches,
+	     "database:s"   => \$database
 	   ) ;
 
-my $database = glob("~wormpub/DATABASES/TEST_DBs/ANT_matchingace");
-$gff = glob("~wormpub/DATABASES/TEST_DBs/ANT_matchingace/dump/T23G11.gff") unless $gff;
+$database = glob("~wormpub/DATABASES/TEST_DBs/ANT_matchingace") unless $database;
 
-open (GFF,"<$gff") or die "gff\n";
-# C43G2	  curated	  exon         10841   10892   .       +       .       Sequence "C43G2.4"
-# C43G2   curated         CDS          10841   10892   .       +       0       Sequence "C43G2.4"
-# C43G2   curated         Sequence     10841   13282   .       +       .       Sequence "C43G2.4"
-# C43G2   BLAT_EST_BEST   similarity   8877    9029    100     +       .       Target "Sequence:yk1125e01.5" 37 189
+  
+  my %genes_exons;
+  my %genes_span;
+  my %cDNA;
+  my %cDNA_span;
 
-my %genes_exons;
-my %genes_span;
-my %cDNA;
-my %cDNA_span;
-my $superlink;
+my @chromosomes = qw(I II III IV V X);
+foreach my $chrom ( @chromosomes ) {
 
-# parse GFF file to get Sequence, exon and cDNA info
-while (<GFF>) {
-  my @data = split;
-  $superlink = $data[0];
-
-  #  GENE STRUCTURE
-  if( $data[1] eq "curated" ) {
-    $data[9] =~ s/\"//g;
-    if( $data[2] eq "Sequence" ) {
-      # GENE SPAN
-      $genes_span{$data[9]} = [($data[3], $data[4], $data[6])];
-    }
-    elsif ($data[2] eq "exon" ) {
-      # EXON 
-      $genes_exons{$data[9]}{$data[3]} = $data[4];
-    }
+  #Make sure these are empty
+  %genes_exons = ();
+  %genes_span= ();
+  %cDNA = ();
+  %cDNA_span = ();
+  
+  unless ($gff) {
+    $gff = "$database/CHROMOSOMES/CHROMOSOME_$chrom.gff";
   }
 
-  # BLAT DATA
-  elsif( ($data[1] eq "BLAT_EST_BEST") or ($data[1] eq "BLAT_OST_BEST") or ($data[1] eq "BLAT_mRNA_BEST") ){
-    $data[9] =~ s/\"//g;
-    $data[9] =~ s/Sequence:// ;
-    $cDNA{$data[9]}{$data[3]} = $data[4];
-    # keep min max span of cDNA
-    if( !(defined($cDNA_span{$data[9]}[0])) or ($cDNA_span{$data[9]}[0] > $data[3]) ) {
-      $cDNA_span{$data[9]}[0] = $data[3];
-    } 
-    if( !(defined($cDNA_span{$data[9]}[1])) or ($cDNA_span{$data[9]}[1] < $data[4]) ) {
-      $cDNA_span{$data[9]}[1] = $data[4];
-    }
-  }
-}
+  open (GFF,"<$gff") or die "gff\n";
+  # C43G2	  curated	  exon         10841   10892   .       +       .       Sequence "C43G2.4"
+  # C43G2   curated         CDS          10841   10892   .       +       0       Sequence "C43G2.4"
+  # C43G2   curated         Sequence     10841   13282   .       +       .       Sequence "C43G2.4"
+  # C43G2   BLAT_EST_BEST   similarity   8877    9029    100     +       .       Target "Sequence:yk1125e01.5" 37 189
 
-close GFF;
-
-&eradicateSingleBaseDiff;
-
-my %gene2cdnas;
-foreach my $CDNA (keys %cDNA_span) {
-  $CDNA = $est if $est;
-  my @genes = &findOverlappingGene(\$CDNA);
-  print "\n=============================\n\n$CDNA overlaps @genes\n" if $verbose;
-  foreach (@genes){
-    print "____________________________\n\n\nchecking $_ against $CDNA\n";
-    if(&checkExonMatch(\$_,\$CDNA) == 1 ){
-      print "$CDNA matches $_\n";
-      push( @{$gene2cdnas{$_}}, $CDNA);
-    }
-    else { print "$CDNA NOT match $_\n";}
-  }
-  last if $est;
-}
-
-open (ACE,">$database/transcripts.ace") or die "transcripts\n";
-foreach my $gene (keys %gene2cdnas) {
-  print "$_ matching cDNAs => @{$gene2cdnas{$gene}}\n" if $report;
-  print "$_ matches ",scalar(@{$gene2cdnas{$gene}}),"\n" if $count;
-  if( $transcript ) {
-   # next unless $genes_span{$_}->[2] eq "-"; #just do forward for now
-    my %transcript;
-    %transcript = %{$genes_exons{$gene}};   # put the gene model in to the transcript
-
-    print ACE "\nSequence : \"$gene.trans\"\n";
-    my $source = $1 if($gene =~ /^(\S+)\./);
-    print ACE "Source $source\n";
-    print ACE "method history\n";
-    foreach my $cdna (@{$gene2cdnas{$gene}}) { # iterate thru array of cDNAs ( 1 per gene )
-      print ACE "matching_CDNA \"$cdna\"\n";
-      foreach my $cExon(keys %{$cDNA{$cdna}} ){ #  then thru exons of the cDNA
-	next if( defined $transcript{$cExon} and  $transcript{$cExon} == $cDNA{$cdna}->{$cExon} ); #skip if the cDNA exon is same as one in transcript
-	
-	# iterate thru existing transcript exons and check for overlaps
-	foreach my $transExon (keys %transcript ) {
-	  if( $cExon < $transExon and $cDNA{$cdna}->{$cExon} >= $transExon ) {
-	
-	    if( $cDNA{$cdna}->{$cExon} > $transcript{$transExon} ) {
-	      $transcript{$cExon} = $cDNA{$cdna}->{$cExon};
-	    }
-	    else {
-	      $transcript{$cExon} = $transcript{$transExon};
-	    }
-	    delete $transcript{$transExon};
-	  }
-	  elsif( $cExon > $transExon and $cExon < $transcript{$transExon} and $cDNA{$cdna}->{$cExon} >= $transcript{$transExon} ) {
-	    $transcript{$transExon} = $cDNA{$cdna}->{$cExon};
-	  }
-	}
+  # parse GFF file to get Sequence, exon and cDNA info
+  while (<GFF>) {
+    my @data = split;
+    
+    #  GENE STRUCTURE
+    if( $data[1] eq "curated" ) {
+      $data[9] =~ s/\"//g;
+      if( $data[2] eq "Sequence" ) {
+	# GENE SPAN
+	$genes_span{$data[9]} = [($data[3], $data[4], $data[6])];
+      }
+      elsif ($data[2] eq "exon" ) {
+	# EXON 
+	$genes_exons{$data[9]}{$data[3]} = $data[4];
       }
     }
     
-    my @exons = (sort { $transcript{$a} <=> $transcript{$b} } keys %transcript);
-    foreach (@exons) {
-      if( $genes_span{$gene}->[2] eq "+"){
-	print ACE "source_exons ",$_ - $exons[0] + 1," ",$transcript{$_} - $exons[0]+1," \n"; # + strand
+    # BLAT DATA
+    elsif( ($data[1] eq "BLAT_EST_BEST") or ($data[1] eq "BLAT_OST_BEST") or ($data[1] eq "BLAT_mRNA_BEST") ){
+      $data[9] =~ s/\"//g;
+      $data[9] =~ s/Sequence:// ;
+      $cDNA{$data[9]}{$data[3]} = $data[4];
+      # keep min max span of cDNA
+      if( !(defined($cDNA_span{$data[9]}[0])) or ($cDNA_span{$data[9]}[0] > $data[3]) ) {
+	$cDNA_span{$data[9]}[0] = $data[3];
+      } 
+      if( !(defined($cDNA_span{$data[9]}[1])) or ($cDNA_span{$data[9]}[1] < $data[4]) ) {
+	$cDNA_span{$data[9]}[1] = $data[4];
       }
-      else {
-	print ACE "source_exons ",$transcript{$exons[-1]} - $transcript{$_} + 1 ," ",$transcript{$exons[-1]} - $_ + 1 ," \n"; # - strand
-      }
-    }
-
-    print ACE "\nSequence : $source\n";
-    if( $genes_span{$gene}->[2] eq "+"){
-      print ACE "Subsequence $gene.trans $exons[0] $transcript{$exons[-1]}\n"; # + strand
-    }
-    else {
-      print ACE "Subsequence $gene.trans $transcript{$exons[-1]} $exons[0]\n"; # - strand
     }
   }
+
+  close GFF;
+
+  &eradicateSingleBaseDiff;
+
+  my %gene2cdnas;
+  foreach my $CDNA (keys %cDNA_span) {
+    $CDNA = $est if $est;
+    my @genes = &findOverlappingGene(\$CDNA);
+    print "\n=============================\n\n$CDNA overlaps @genes\n" if $verbose;
+    foreach (@genes){
+      print "____________________________\n\n\nchecking $_ against $CDNA\n" if $verbose;
+      if(&checkExonMatch(\$_,\$CDNA) == 1 ){
+	print "$CDNA matches $_\n" if $verbose;
+	push( @{$gene2cdnas{$_}}, $CDNA);
+      }
+      else { print "$CDNA NOT match $_\n" if $verbose;}
+    }
+    last if $est;
+  }
+  
+  # write out the transcript objects
+  open (ACE,">$database/transcripts.ace") or die "transcripts\n";
+  foreach my $gene (keys %gene2cdnas) {
+    print  "$gene matching cDNAs => @{$gene2cdnas{$gene}}\n" if $report;
+    print "$_ matches ",scalar(@{$gene2cdnas{$gene}}),"\n" if $count;
+    if( $transcript ) {
+      # next unless $genes_span{$_}->[2] eq "-"; #just do forward for now
+      my %transcript;
+      %transcript = %{$genes_exons{$gene}};   # put the gene model in to the transcript
+      
+      #transcript object
+      print ACE "\nSequence : \"$gene.trans\"\n";
+      foreach my $cdna (@{$gene2cdnas{$gene}}) { # iterate thru array of cDNAs ( 1 per gene )
+	print ACE "matching_CDNA \"$cdna\"\n";
+	foreach my $cExon(keys %{$cDNA{$cdna}} ){ #  then thru exons of the cDNA
+	  next if( defined $transcript{$cExon} and  $transcript{$cExon} == $cDNA{$cdna}->{$cExon} ); #skip if the cDNA exon is same as one in transcript
+	  
+	  # iterate thru existing transcript exons and check for overlaps
+	  foreach my $transExon (keys %transcript ) {
+	    if( $cExon < $transExon and $cDNA{$cdna}->{$cExon} >= $transExon ) {
+	      
+	      if( $cDNA{$cdna}->{$cExon} > $transcript{$transExon} ) {
+		$transcript{$cExon} = $cDNA{$cdna}->{$cExon};
+	      }
+	      else {
+		$transcript{$cExon} = $transcript{$transExon};
+	      }
+	      delete $transcript{$transExon};
+	    }
+	    elsif( $cExon > $transExon and $cExon < $transcript{$transExon} and $cDNA{$cdna}->{$cExon} >= $transcript{$transExon} ) {
+	      $transcript{$transExon} = $cDNA{$cdna}->{$cExon};
+	    }
+	  }
+	}
+      }
+      
+      my @exons = (sort { $transcript{$a} <=> $transcript{$b} } keys %transcript);
+      foreach (@exons) {
+	if( $genes_span{$gene}->[2] eq "+"){
+	  print ACE "source_exons ",$_ - $exons[0] + 1," ",$transcript{$_} - $exons[0]+1," \n"; # + strand
+	}
+	else {
+	  print ACE "source_exons ",$transcript{$exons[-1]} - $transcript{$_} + 1 ," ",$transcript{$exons[-1]} - $_ + 1 ," \n"; # - strand
+	}
+      }
+      
+      my $source = $1 if($gene =~ /^(\S+)\./);
+      print ACE "Source $source\n";
+      print ACE "method history\n";
+      
+      # parent object
+      print ACE "\nSequence : $source\n";
+      if( $genes_span{$gene}->[2] eq "+"){
+	print ACE "Subsequence $gene.trans $exons[0] $transcript{$exons[-1]}\n"; # + strand
+      }
+      else {
+	print ACE "Subsequence $gene.trans $transcript{$exons[-1]} $exons[0]\n"; # - strand
+      }
+    }
+  }
+  
+  if ($show_matches) { 
+    open(MATCHES,">$database/chromosome${chrom}_matching_cDNA.dat");
+    print MATCHES Data::Dumper->Dump([\%gene2cdnas]);
+    close MATCHES;
+
+    open (CDNAS, ">$database/chromosome${chrom}_matching_cDNA.ace") or die "output ace for chromosome $chrom\n";
+    foreach my $gene ( keys %gene2cdnas ) {
+      print CDNAS "\nSequence : \"$gene\"\n";
+      foreach my $cdna ( @{$gene2cdnas{$gene}} ) {
+	print CDNAS "Matching_cDNA \"$cdna\"\n";
+      }
+    }
+    close CDNAS;
+  }
+
+  close ACE;
+  last if $gff; # if only doing a specified gff file exit after this is complete
 }
-close ACE;
 exit(0);
 
 sub findOverlappingGene
@@ -151,7 +187,7 @@ sub findOverlappingGene
     my $cdna = shift;
     my @overlap_genes;
     foreach ( sort { $genes_span{$a}[0]<=>$genes_span{$b}[0]  } keys %genes_span ) {
-      print "testing overlap $_ $$cdna\n";
+      print "testing overlap $_ $$cdna\n" if $verbose;
       if ($cDNA_span{$$cdna}[0] > $genes_span{$_}[1] ) { next; } #
       elsif( ($cDNA_span{$$cdna}[0] < $genes_span{$_}[0]) and ($cDNA_span{$$cdna}[1] > $genes_span{$_}[0]) ) { # cDNA starts B4 gene and ends after gene start
 	# overlaps 
@@ -195,23 +231,23 @@ sub checkExonMatch
       if( $genes_exons{$$gene}->{$cExonStart} ) {
 	if( $genes_exons{$$gene}->{$cExonStart} == $cDNA{$$cdna}->{$cExonStart} ) {
 	  #exact match
-	  print "\tExact Match\n";
+	  print "\tExact Match\n" if $verbose;
 	  next;
 	}
 	#is this final gene exon
 	elsif( $cExonStart == $gene_exon_starts[-1] ) {
-	  print "\tMatch - last gene exon\n";
+	  print "\tMatch - last gene exon\n" if $verbose;
 	  next;
 	}
 	# or final cDNA exon
 	elsif ( $cExonStart == $cdna_exon_starts[-1] ) {
 	  # . . must terminate within gene exon
 	  if ( $cDNA{$$cdna}->{$cExonStart} > $genes_exons{$$gene}->{$cExonStart} ) {
-	    print "\tMISS - $$cdna $cExonStart => $cDNA{$$cdna}->{$cExonStart} extends over gene exon boundary\n";
+	    print "\tMISS - $$cdna $cExonStart => $cDNA{$$cdna}->{$cExonStart} extends over gene exon boundary\n" if $verbose;
 	    $match = 0;
 	  }
 	  else {
-	    print "\tMatch - last cDNA exon\n";
+	    print "\tMatch - last cDNA exon\n" if $verbose;
 	    next;
 	  }
 	}
@@ -223,23 +259,23 @@ sub checkExonMatch
 	
 	if( $gExonS == $gene_exon_starts[0] ) {	           #is this the 1st gene exon 
 	  if ( $cExonStart == $cdna_exon_starts[0] ) {      # also cDNA start so always match
-	    print "\tMatch - 1st exons overlap\n";
+	    print "\tMatch - 1st exons overlap\n" if $verbose;
 	    next;
 	  }
 	  elsif( $cExonStart < $gene_exon_starts[0] ) {      # cDNA exon overlap 1st gene exon
-	    print "\tMatch - cDNA exon covers 1st exon\n";
+	    print "\tMatch - cDNA exon covers 1st exon\n" if $verbose;
 	    next;
 	  }
 	  else {
-	    print "\tMISS - cDNA exon splices in gene exon\n";
-	    print "\t\t$$cdna $cExonStart => $cDNA{$$cdna}->{$cExonStart}\n";
-	    print "\t\t$$gene $gExonS => $genes_exons{$$gene}->{$gExonS}\n";
+	    print "\tMISS - cDNA exon splices in gene exon\n" if $verbose;
+	    print "\t\t$$cdna $cExonStart => $cDNA{$$cdna}->{$cExonStart}\n" if $verbose;
+	    print "\t\t$$gene $gExonS => $genes_exons{$$gene}->{$gExonS}\n" if $verbose;
 	    $match = 0;
 	  }
 	}
 	# exon matched is not 1st of gene
 	elsif ( $cExonStart == $cdna_exon_starts[-1] ) {    # start of cDNA
-	  print"\tMatch - 1st exon of cDNA starts in exon of gene\n";
+	  print"\tMatch - 1st exon of cDNA starts in exon of gene\n" if $verbose;
 	  next;
 	}
       }
@@ -249,7 +285,7 @@ sub checkExonMatch
 	# cDNA exon wholly outside of gene model
 	if($cExonStart > $genes_span{$$gene}->[1] or
 	   $cDNA{$$cdna}->{$cExonStart} < $genes_span{$$gene}->[0] ) { 
-	  print "\tMatch cDNA exon wholly outside of gene\n";
+	  print "\tMatch cDNA exon wholly outside of gene\n" if $verbose;
 	  next;
 	}
 	# cDNA exon overlaps and starts in final gene exon and must be 1st of cDNA
@@ -257,7 +293,7 @@ sub checkExonMatch
 	      ( $cExonStart > $gene_exon_starts[-1] and $cExonStart < $genes_exons{$$gene}->{$gene_exon_starts[-1]} ) and # cDNA exon starts in final exon of gene
 	       ( $cDNA{$$cdna}->{$cExonStart} > $genes_exons{$$gene}->{$gene_exon_starts[-1]} )
 	     )  {
-	  print "cDNA exon start in final gene exon and protrudes past it\n";
+	  print "cDNA exon start in final gene exon and protrudes past it\n" if $verbose;
 	  next;
 	}
 	# cDNA exon overlaps 1st gene exon start and terminate therein
@@ -265,16 +301,16 @@ sub checkExonMatch
 	       ( $cExonStart < $genes_span{$$gene}->[0] ) and 
 	       ( $cDNA{$$cdna}->{$cExonStart} > $genes_exons{$gene_exon_starts[0]} )
 	     ) {
-	  print "\tcDNA final exon overlaps first exon of gene and end therein\n";
+	  print "\tcDNA final exon overlaps first exon of gene and end therein\n" if $verbose;
 	  next;
 	}
 	# single exon cDNA contained wholly within a single gene exon
 	elsif( &cDNA_wholelyInExon(\$$gene, \$$cdna) == 1 ) {
-	  print "\tsingle exon cDNA contained wholly within a single gene exon\n";
+	  print "\tsingle exon cDNA contained wholly within a single gene exon\n" if $verbose;
 	  next;
 	}
 	else {
-	  print "MISS - exon fell thru\n";
+	  print "MISS - exon fell thru\n" if $verbose;
 	  $match = 0;
 	}
       }
@@ -293,9 +329,9 @@ sub checkExonMatch
       next if ( ($genes_exons{$$gene}->{$gene_exon} < $range[0]) or ($gene_exon > $range[1]) ) ; # exon out of overlapping range
       my $exon_matched = 0;
       foreach (@cdna_exon_starts) {
-	print "\tcomparing $_ : $cDNA{$$cdna}->{$_} with gene exon $gene_exon : $genes_exons{$$gene}->{$gene_exon}\n";
+	print "\tcomparing $_ : $cDNA{$$cdna}->{$_} with gene exon $gene_exon : $genes_exons{$$gene}->{$gene_exon}\n" if $verbose;
 	if( ($_ <= $gene_exon or $_ == $range[0]) and ( $cDNA{$$cdna}->{$_} >= $genes_exons{$$gene}->{$gene_exon} or $cDNA{$$cdna}->{$_} == $range[1]) ) {
-	  print "\t$$gene exon $gene_exon =>  $genes_exons{$$gene}->{$gene_exon} covered by $$cdna $_ => $cDNA{$$cdna}->{$_} \n"; 
+	  print "\t$$gene exon $gene_exon =>  $genes_exons{$$gene}->{$gene_exon} covered by $$cdna $_ => $cDNA{$$cdna}->{$_} \n" if $verbose; 
 	  $exon_matched = 1;
 	  next EXONS;
 	}
