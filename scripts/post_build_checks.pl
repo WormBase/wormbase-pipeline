@@ -9,7 +9,7 @@
 # N.B. Previously called gffcheck
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-03-12 11:41:07 $
+# Last updated on: $Date: 2004-08-13 10:05:13 $
 
 
 use Getopt::Std;
@@ -112,7 +112,7 @@ sub runintroncheck {
 sub runoverlapcheck {
   print LOG &runtime, ": Starting overlapcheck.pl\n";
   system ("/wormsrv2/scripts/overlapcheck.pl") && die "Can't run overlapcheck.pl\n";
-  print LOG "Finished running\n\n";
+  print LOG &runtime, ": Finished running\n\n";
 }
    
 sub usage {
