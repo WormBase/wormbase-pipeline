@@ -271,7 +271,7 @@ sub report
       print $fh "Matching_cDNA \"",$_->name,"\"\n";
 
       foreach my $f ( $_->features ) {
-	print $fh "Sequence_features $f\n";
+	print $fh "Associated_feature $f\n";
       }
     }
     print $fh "Species \"Caenorhabditis elegans\"\n";
