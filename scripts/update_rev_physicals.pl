@@ -2,7 +2,7 @@
 
 # Author: Chao-Kung Chen
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2003-11-19 16:08:58 $ 
+# Last updated on: $Date: 2003-11-19 16:51:11 $ 
 
 use strict;
 use lib "/wormsrv2/scripts";
@@ -164,9 +164,10 @@ sub add_panel {
 
 sub load_autoace {
 
-  my $updt = "rev_physical_update_WS$version";
-  open(CGC, ">>/wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/rev_physical_CGC_WS$version") || die $!;
-  open(UPDT, ">/wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/$updt") || die $!;
+  my $map_dir = "/wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP";
+  my $updt = "$map_dir/rev_physical_update_WS$version";
+  open(CGC, ">>$map_dir/rev_physical_CGC_WS$version") || die $!;
+  open(UPDT, ">$updt") || die $!;
   my @rev = `cat $rev`;
   print CGC "\n\n", @rev;
   print CGC ("M O D I F I C A T I O N S\n\n");
@@ -189,7 +190,7 @@ sub load_autoace {
 
   # load data to autoace
   my $command=<<END;
-pparse $updt
+parse $updt
 save
 quit
 END
