@@ -2,8 +2,8 @@
 #
 # map_operons.pl
 
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2004-07-06 15:36:58 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2004-07-12 09:43:01 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -150,7 +150,7 @@ sub acedump_operons {
 	    if ($gene_count == 1) {
 #		print "// searching for start\n";
 		$operon_start = 0;
-		open (GFF_1, "grep -w '$gene_lookup' $gff/CHROMOSOME_${operon{$operon_lookup}->{CHROMOSOME}}.worm_genes.gff |");
+		open (GFF_1, "grep -w '$gene_lookup' $gff/CHROMOSOME_${operon{$operon_lookup}->{CHROMOSOME}}.WBgene.gff |");
 		while (<GFF_1>) {
 		    @f = split /\t/;
 		    if ($f[6] eq "+") {$operon_start = $f[3];}
@@ -163,7 +163,7 @@ sub acedump_operons {
 	    elsif ($gene_count == $operon{$operon_lookup}->{NO_GENES}) {
 #		print "// searching for stop\n";
 		$operon_stop = 0;
-		open (GFF_2, "grep -w '$gene_lookup' $gff/CHROMOSOME_${operon{$operon_lookup}->{CHROMOSOME}}.worm_genes.gff |");
+		open (GFF_2, "grep -w '$gene_lookup' $gff/CHROMOSOME_${operon{$operon_lookup}->{CHROMOSOME}}.WBgene.gff |");
 		while (<GFF_2>) {
 		    @f = split /\t/;
 		    ($operon_stop = $f[4]) if ($f[6] eq "+");
@@ -177,25 +177,27 @@ sub acedump_operons {
 	    }
 
 	    
-	    if (scalar (@{$cds{$gene_lookup}{SL1_EST}}) > 1) {
-		print OUTPUT "Contains_CDS \"$gene_lookup\" SL1 \"EST clones @{$cds{$gene_lookup}{SL1_EST}}\"\n";
+#	    if (scalar (@{$cds{$gene_lookup}{SL1_EST}}) > 1) {
+#		print OUTPUT "Contains_CDS \"$gene_lookup\" SL1 \"EST clones @{$cds{$gene_lookup}{SL1_EST}}\"\n";
+#		$reset = 1;
+#	    }
+
+	    if ($cds{$gene_lookup}{SL2_FEATURE} ne "-") {
+		print OUTPUT "Contains_gene \"$gene_lookup\" SL2 Curator_confirmed WBPerson1846\n";
 		$reset = 1;
 	    }
-	    if (scalar (@{$cds{$gene_lookup}{SL2_EST}}) > 1) {
-		print OUTPUT "Contains_CDS \"$gene_lookup\" SL2 \"EST clones @{$cds{$gene_lookup}{SL2_EST}}\"\n";
-		$reset = 1;
-	    }
+
 	    if ($cds{$gene_lookup}{SL2_MICROARRAY} eq "++") {
-		print OUTPUT "Contains_CDS \"$gene_lookup\" SL2 \"Microarray strong\"\n";
+		print OUTPUT "Contains_gene \"$gene_lookup\" Microarray Paper_evidence \"[cgc5303]\"\n";
 		$reset = 1;
 	    }
 	    elsif ($cds{$gene_lookup}{SL2_MICROARRAY} eq "+") {
-		print OUTPUT "Contains_CDS \"$gene_lookup\" SL2 \"Microarray weak\"\n";
+		print OUTPUT "Contains_gene \"$gene_lookup\" Microarray Person_evidence \"WBPerson71\"\n";
 		$reset = 1;
 	    }
 	    
 	    unless ($reset == 1) {
-		print OUTPUT "Contains_CDS \"$gene_lookup\"\n";
+		print OUTPUT "Contains_gene \"$gene_lookup\"\n";
 	    }
 	    
 	    $reset = 0;
