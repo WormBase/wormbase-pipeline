@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/bin/perl5.8.0 -w
 # 
 # geneace_check.pl
 #
@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-07-23 11:10:00 $
+# Last updated on: $Date: 2003-07-29 11:54:48 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -28,7 +28,7 @@ my (%L_name_F_WBP, %L_name_F_M_WBP);
 
 
 our $tace = &tace;   # tace executable path
-our ($log, $erichlog, $jahlog, $JAHmsg, $Emsg, $caltech, @CGC, $cgc, $reverse_log, $map_diff);
+our ($log, $erichlog, $jahlog, $JAHmsg, $Emsg, $caltech, @CGC, $cgc);
 
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $acefile = "/wormsrv2/logs/geneace_check_ACE.$rundate.$$";
@@ -105,7 +105,6 @@ if(!@class){
   &process_rearrangement;
   &process_sequence;
   &check_genetics_coords_mapping;
-  #&chech_reverse_physicals;
   &check_evidence;
  }
  
@@ -161,7 +160,7 @@ if ($cgc ne $JAHmsg){
 
 chdir "/wormsrv2/logs";
 
-my @files = qw ($acefile  $log $jahlog $JAHmsg $erichlog $Emsg $reverse_log $map_diff);
+my @files = qw ($acefile  $log $jahlog $JAHmsg $erichlog $Emsg $reverse_log);
 foreach(@files){
   system("$_") if $_;
 }
@@ -1221,21 +1220,7 @@ sub check_genetics_coords_mapping {
   }
 }
 
-##############################################
-
-sub chech_reverse_physicals {
-
-  print "\nChecking reverse physicals of gmap marker loci in Geneace:\n\n";
-  system ("/wormsrv2/scripts/get_interpolated_gmap.pl -db /wormsrv1/geneace -reverse");
-  my $reverse_log = `echo /wormsrv2/logs/reverse_physicals_WS*.$rundate.*`;
-  open(IN, $reverse_log) || die $!;
-  while(<IN>){
-    print LOG $_;
-    print JAHLOG $_;
-  }
-}
-
-##############################
+############################################
 
 sub find_new_loci_in_current_DB{
   my ($def, $db) = @_;
