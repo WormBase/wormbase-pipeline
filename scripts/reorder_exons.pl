@@ -7,7 +7,7 @@
 # This script checks the exon order and corrects them if needed
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-12-01 11:54:27 $
+# Last updated on: $Date: 2003-12-03 13:02:49 $
 
 
 
@@ -109,7 +109,7 @@ my @tranoutoforder;
 foreach (@sequences) {
   my $clone = $_;
   my $obj = $db->fetch(Sequence => $clone);
-  my @CDSs = $obj->CDS;
+  my @CDSs = $obj->CDS_child;
   my @transcripts = $obj->Transcript(1);
   
 #######################################
