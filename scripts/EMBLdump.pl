@@ -2,8 +2,8 @@
 #
 # EMBLDump.pl :  makes EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2004-05-04 09:09:02 $
-#  Last updated by: $Author: ar2 $
+#  Last updated on: $Date: 2004-08-04 15:38:49 $
+#  Last updated by: $Author: dl1 $
 
 use strict;
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
@@ -29,7 +29,9 @@ $basedir        = glob("~wormpub")."/TEST_BUILD" if ($test);
 # misc. variables             #
 ###############################
 
-my $giface      = &giface;
+#my $giface      = &giface;
+
+my $giface =  glob("~edgrif/TEST/DAN/giface");
 my $dbdir       = "$basedir/camace";
 my $tace        = &tace;
 my $outfilename = "/nfs/disk100/wormpub/tmp/EMBLdump.$$";
@@ -37,7 +39,7 @@ my $current_DB  = "/nfs/disk100/wormpub/DATABASES/current_DB";
 my $mod_file    = "/nfs/disk100/wormpub/tmp/EMBLdump.mod";
 
 if( $test ) {
-  $giface    = glob("~edgrif/TEST/ANT/giface");
+  $giface    = glob("~edgrif/TEST/DAN/giface");
   $outfilename   = "/nfs/disk100/wormpub/test/EMBLdump.$$";
   $mod_file  = "/nfs/disk100/wormpub/test/EMBLdump.mod";
 }
@@ -145,8 +147,6 @@ while (<EMBL>) {
     print OUT "AC   ",substr($clone2sv{$id},0,-2),";\nXX\n";
     next;
   }
-
-  if( /^CC
 
   # DE   Caenorhabditis elegans cosmid C05G5    
   if (/^DE   Caenorhabditis elegans cosmid (\S+)/) {
