@@ -94,8 +94,8 @@ foreach my $gene (@predicted_genes){
 
 
   # check coordinate system exons in relation to each other
-  my @exon_coord1 = $gene_object->get('Source_Exons',1);
-  my @exon_coord2 = $gene_object->get('Source_Exons',2);
+  my @exon_coord1 = sort by_number ($gene_object->get('Source_Exons',1));
+  my @exon_coord2 = sort by_number ($gene_object->get('Source_Exons',2));
 
   my $i;
   my $j;
@@ -248,7 +248,7 @@ sub test_gene_sequence_for_errors{
 }
 
 
-
+sub by_number{ $a <=> $b;}
 
 __END__
 
