@@ -1,0 +1,145 @@
+#!/usr/local/bin/perl5.6.0
+#
+# backup_geneace
+# v 0.1
+# 
+# dl
+#
+# Usage : backup_geneace
+#
+# Last updated by: $Author: dl1 $
+# Last updated on: $Date: 2002-08-12 12:35:05 $
+
+
+#################################################################################
+# variables                                                                     #
+#################################################################################
+
+$|=1;
+use Cwd;
+use IO::Handle;
+use lib "/wormsrv2/scripts/";
+use Wormbase;
+use strict;
+
+ ##############################
+ # Script variables (run)     #
+ ##############################
+
+my $maintainer = "dl1\@sanger.ac.uk";
+my $rundate    = `date +%y%m%d`;   chomp $rundate;
+my $runtime    = `date +%H:%M:%S`; chomp $runtime;
+my $logfile    = "/wormsrv2/logs/backup_geneace.$rundate.$$";
+
+ ##############################
+ # paths for I/O files        #
+ ##############################
+
+my $dbpath     = "/wormsrv1/geneace";
+my $backuppath = "/nfs/disk100/wormpub/acedb/ace4/geneace";
+my $tace       = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
+my $giface     = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/giface";
+
+ ##############################
+ # open logfile               #
+ ##############################
+
+open (LOGFILE,">$logfile");
+LOGFILE->autoflush;
+
+print LOGFILE "# backup_geneace\n#\n";
+print LOGFILE "# run details         : $rundate $runtime\n";
+print LOGFILE "# Source directory    : $dbpath\n";
+print LOGFILE "# Target directory    : $backuppath\n#\n";
+print LOGFILE "\n";
+
+ ##########################################
+ # copy the tar.gz file from the ftp site #
+ ##########################################
+
+# move to database directory
+chdir $dbpath;
+my $dir = cwd();
+print "Move to directory: '$dir'\n";
+
+# tace command to dump the database
+my $command = "dump -T\nquit\n";
+&DbWrite($command,$tace,$dbpath,"Dump");
+print "Dump files to be compressed:\n";
+
+my $file;
+opendir (LIST, $dbpath) or die ("Could not opendir $dbpath");
+while (defined($file=readdir(LIST))) {
+    next unless ($file =~ /dump\S+.+\.ace/);
+    print "compressing $file ... \n";
+    print LOGFILE "compressing $file ... \n";
+    system ("/bin/gzip $file");
+    system ("/usr/bin/mv $file.gz $backuppath/");
+    print " and moving to /nfs/disk100/wormpub ..\n";
+    print LOGFILE " and moving to /nfs/disk100/wormpub ..\n";
+}
+close LIST;
+
+print LOGFILE "\narchive procedure complete\n";
+print LOGFILE "\n\n";
+close LOGFILE;
+
+###############################
+# Mail log to curator         #
+###############################
+
+open (OUTLOG,  "|/usr/bin/mailx -s \"WormBase Report: backup_geneace\" $maintainer ");
+open (READLOG, "<$logfile");
+while (<READLOG>) {
+    print OUTLOG "$_";
+}
+close READLOG;
+close OUTLOG;
+
+###############################
+# hasta luego                 #
+###############################
+
+exit(0);
+
+###################################################
+# Subroutine for writing to a given database      #   
+###################################################
+
+sub DbWrite {
+  my ($command,$exec,$dir,$name)=@_;
+  open (WRITEDB,"| $exec $dir >> $logfile") or do {print LOGFILE "$name DbWrite failed\n";close LOGFILE; die();};
+  print WRITEDB $command;
+  close WRITEDB;
+}
+
+
+__END__
+
+=pod
+
+=head2   NAME - backup_geneace
+
+=head1 USAGE
+
+=over 4
+
+=item backup_geneace
+
+=back
+
+backup_geneace makes an acedump of the geneace database from /wormsrv1 to
+/nfs/disk100/wormpub.
+
+=back
+
+=head1 AUTHOR
+
+=over 4
+
+=item Dan Lawson (dl1@sanger.ac.uk)
+
+=back
+
+=cut
+
