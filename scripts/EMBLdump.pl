@@ -2,8 +2,8 @@
 #
 # EMBLDump.pl :  makes EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2003-05-20 15:36:35 $
-#  Last updated by: $Author: dl1 $
+#  Last updated on: $Date: 2003-10-31 15:32:20 $
+#  Last updated by: $Author: krb $
 
 
 $0 =~ s/^\/.+\///;
@@ -25,7 +25,7 @@ our $rundate    = `date +%y%m%d`; chomp $rundate;
 
 # Dump the EMBL file from camace
 
-my $query = "Query Find Genome_Sequence From_Laboratory = HX AND Finished AND DNA\ngif EMBL $outfilename\n";
+my $query = "Query Find Genome_Sequence From_laboratory = HX AND Finished AND DNA\ngif EMBL $outfilename\n";
 print "Query = $query\n";
 print "Exec = $giface\n";
 

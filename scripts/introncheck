@@ -6,8 +6,8 @@
 #
 # Usage: introncheck [-options]
 #
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2003-05-16 12:14:43 $      
+# Last updated by: $Author: krb $     
+# Last updated on: $Date: 2003-10-31 15:32:20 $      
 
 #################################################################################
 # variables                                                                     #
@@ -137,7 +137,7 @@ foreach my $chromosome (@chromosomes) {
 	    my $obj = $db->fetch(Sequence=>$seq);
 	    my $lab;
 	    unless (!defined ($obj)) {
-	      $lab=$obj->From_Laboratory(1);
+	      $lab=$obj->From_laboratory(1);
 	      $obj->DESTROY();
 	    }
 	    if ($lab eq "HX") {

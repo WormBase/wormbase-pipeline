@@ -6,8 +6,8 @@
 #
 # Script to parse columns of predicted tRNA by tRNASCAN-SE
 #
-# Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-10-02 11:37:12 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2003-10-31 15:32:20 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -592,7 +592,7 @@ sub write_ace {
   }
   $ace .= "\nTranscript : \"$transcript\"\n";
   $ace .= "Sequence $clone_coords[0]\n" if $clone_coords[0];
-  $ace .= "From_Laboratory \"$clone_lab{$clone_coords[0]}\"\n" if $clone_coords[0];
+  $ace .= "From_laboratory \"$clone_lab{$clone_coords[0]}\"\n" if $clone_coords[0];
   $ace .= "DB_remark \"Predicted tRNA, Cove score: $score\"\n";
   $ace .= "Species \"Caenorhabditis elegans\"\n";
   $ace .= "Brief_identification \"tRNA-$type\"\n";
@@ -612,8 +612,8 @@ sub write_ace {
     $ace .= "Source_Exons 1 $num // t3\n" if ${@{$predict_cols{$coord}}}[5] == 0;   # if only $
   }
   
-  if ($ace =~ /From_Laboratory.+\"HX\"/){print HX $ace}
-  if ($ace =~ /From_Laboratory.+\"RW\"/){print RW $ace}
+  if ($ace =~ /From_laboratory.+\"HX\"/){print HX $ace}
+  if ($ace =~ /From_laboratory.+\"RW\"/){print RW $ace}
 
   return $HX if $HX;
   return $RW if $RW;
@@ -691,8 +691,8 @@ sub move_to_pseudo {
     $ace .= "Pseudogene \"$transcript\" $clone_coords[1] $clone_coords[2]\n";
     $ace .= "\nPseudogene : \"$transcript\"\n"; 
     $ace .= "Sequence \"$clone_coords[0]\"\n";
-    $ace .= "From_Laboratory \"HX\"\n" if $HX;
-    $ace .= "From_Laboratory \"RW\"\n" if $RW;	
+    $ace .= "From_laboratory \"HX\"\n" if $HX;
+    $ace .= "From_laboratory \"RW\"\n" if $RW;	
   }
   $ace .= "Type \"RNA_pseudogene\"\n";
   $ace .= "DB_remark \"Predicted tRNA by tRNAscan-SE-1.11, but predicted as pseudogene by tRNAscan-SE-1.23, Cover score: $score\"\n" if $pseudo ne "new";
@@ -724,8 +724,8 @@ sub move_to_pseudo {
       }
     }
   }
-  if ($ace =~ /From_Laboratory.+\"HX\"/){print HX $ace}
-  if ($ace =~ /From_Laboratory.+\"RW\"/){print RW $ace}
+  if ($ace =~ /From_laboratory.+\"HX\"/){print HX $ace}
+  if ($ace =~ /From_laboratory.+\"RW\"/){print RW $ace}
 
   return $HX if $HX && $pseudo eq "new";
   return $RW if $RW && $pseudo eq "new";

@@ -153,7 +153,7 @@ EOF
 	if (/Finisher\s+(\S+.+)/) {
 	    $finisher{$split}=$1;
 	}
-	if (/From_Laboratory\s+(\S+)/) {
+	if (/From_laboratory\s+(\S+)/) {
 	    $lab{$split}=$1;
 	}
 	if (/DB_info\s+Database\s+EMBL\s+(\S+)\s+(\S+)/) {

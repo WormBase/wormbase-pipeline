@@ -5,7 +5,7 @@
 # written by Anthony Rogers (ar2@sanger.ac.uk)
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-08-22 16:08:33 $
+# Last updated on: $Date: 2003-10-31 15:32:20 $
 
 
 use strict;
@@ -263,7 +263,7 @@ sub compare_with_current_DB{
     my $seq = $autoace->fetch($class => "$object");  
     
     if (defined($seq)){  
-      my @lab = $seq->at('Origin.From_Laboratory');  
+      my @lab = $seq->at('Origin.From_laboratory');  
       #extract any cases where a sequence contains two loci  
       my @loci = split(/\s+/,"$seq_locus{$entry}");  
       
@@ -282,7 +282,7 @@ sub compare_with_current_DB{
 	    print ALLOUT "Locus : \"$locus\"\n$tag\t\"$object\"\n\n";  
 	  }  
 	  else{  
-	    print LOG "ERROR: $class: $object ($locus) has unknown From_Laboratory tag: $lab[0]\n";  
+	    print LOG "ERROR: $class: $object ($locus) has unknown From_laboratory tag: $lab[0]\n";  
 	    $PROBcount++;  
 	  }  
 	}  

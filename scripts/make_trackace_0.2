@@ -279,7 +279,7 @@ sub loop_genome_sequence_overlaps {
 	$current_dna=~s/\W+//mg;
 	
 	$len = length($current_dna);
-	$lab = $obj->From_Laboratory(1);
+	$lab = $obj->From_laboratory(1);
 	$ol_clone_right = $obj->Overlap_right(1);
 	$ol_int_right = $obj->Overlap_right(2);
 	
@@ -305,7 +305,7 @@ sub loop_genome_sequence_overlaps {
 	$right_dna=~tr/a-z/A-Z/;
 	$right_dna=~s/\W+//mg;
 	$right_len = length($right_dna);
-	$right_lab = $j->From_Laboratory(1);
+	$right_lab = $j->From_laboratory(1);
 
 	print LOG "$right_len \t[$right_lab]\n\n";
 	
@@ -531,7 +531,7 @@ sub get_data {
 	print LOG "$which: " . substr ($dna,0,30) . "\n";
     
 	# Laboratory
-	$data{seq_lab} = $obj->From_Laboratory(1);
+	$data{seq_lab} = $obj->From_laboratory(1);
 
         # Make bioseq
 	my $bioseq = Bio::Seq->new(-seq=>$dna,-ffmt=>'Fasta',-type=>'Dna',);
@@ -764,7 +764,7 @@ END
 # new_Genomic_canonical                                                         #
 #################################################################################
 # create object G
-# set From_Laboratory in G
+# set From_laboratory in G
 # set Current_version to 1 in G
 # make new Sequence_version C
 # add DNA and checksum to C
