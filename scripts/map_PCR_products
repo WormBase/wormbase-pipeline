@@ -34,7 +34,7 @@ use Wormbase;
 # Script variables (run) #
 ##########################
 
-my $maintainer = "dl1\@sanger.ac.uk kj2\@sanger.ac.uk";
+my $maintainer = "dl1\@sanger.ac.uk kj2\@sanger.ac.uk krb\@sanger.ac.uk";
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
 my %output      = ();
@@ -110,9 +110,9 @@ foreach $chromosome (@chromosomes) {
     }
     close GFF_in;
     
-#########################   
-# make exons into genes #
-#########################
+    #########################   
+    # make exons into genes #
+    #########################
  
     foreach my $name (sort keys %exoncount) {
         my $v = $exoncount{$name};
@@ -120,17 +120,17 @@ foreach $chromosome (@chromosomes) {
         $genes{$name} = [$exon{$name.".1"}->[0],$exon{$w}->[1]];
     }
     
-###################
-# make indexlists #
-###################
+    ###################
+    # make indexlists #
+    ###################
  
     my @exonlist= sort { $exon{$a}->[0]  <=> $exon{$b}->[0]  } keys %exon;
     my @genelist= sort { $genes{$a}->[0] <=> $genes{$b}->[0] } keys %genes;
     my @PCRlist = sort { $PCR{$a}->[0]   <=> $PCR{$b}->[0] || $a cmp $b } keys %PCR;     
 
-##########
-# map it #
-##########
+    ##########
+    # map it #
+    ##########
  
     my $lastfail = 0;
     
@@ -201,5 +201,22 @@ foreach my $mapped (sort keys %finaloutput) {
         print OUTACE "Corresponding_PCR_product \"$mapped\"\n\n";
     }
 } 
+
+##############################
+# read acefiles into autoace #
+##############################
+
+my $command =<<END;
+pparse /wormsrv2/autoace/mappings/PCR_mappings.$db_version.ace
+save
+quit
+END
+
+open (TACE,"| $tace -tsuser map_PCR_products $dbdir") || die "Couldn't open tace connection to $dbdir\n";
+print TACE $command;
+close (TACE);
+
+
+
 
 exit(0);
