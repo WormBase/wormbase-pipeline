@@ -54,6 +54,7 @@ use Wormbase;
 
 =cut
 
+
 sub invoke 
   {
     my $class = shift;
@@ -80,28 +81,18 @@ sub invoke
       my $clone_coords_file = "$database/clone_coords.ace";
 
       my @command;
-      $command[0]=<<EOF;
-      find sequence CHROM*
-	show -a subsequence -f $SL_coords_file
- 
-EOF
+      $command[0] = "find sequence CHROM*\nshow -a subsequence -f ${SL_coords_file}\n";
+      $command[1] = "clear\nfind sequence SUPER*\nshow -a subsequence -f ${clone_coords_file}\n";
 
-      $command[1] =<<EOF;
-      clear
-      find sequence SUPER*
-	show -a subsequence -f $clone_coords_file
-EOF
+      # temp fix as &tace isn't working in this script
+      $tace = "/nfs/disk100/wormpub/ACEDB/bin_ALPHA/tace";
 
-      print "Tace is $tace\n";
-      print "database is $database\n";
-      print "com1 is $command[0]\n";
-      print "com2 is $command[1]\n";
 
+      open (ACE,"| $tace $database") or croak "cant open $database\n";
       foreach (@command) {
-	open (ACE,"| $tace $database") or croak "cant open $database\n";
 	print ACE $_ ;
-	close ACE;
       }
+      close(ACE);
 
       # need to remove genes SMapped to slinks
       open( FH, "$clone_coords_file") or die "bugger";
