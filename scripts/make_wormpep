@@ -13,6 +13,7 @@
 #              : Bring runtime down to 30 minutes
 # 010124 : dl  : Include CDS with X's in the full release
 # 010418 : dl  : Added system call to make patch file from old release
+# 010612 : dl  : Moved to RELEASE.SUPPORTED code to circumvent aceperl 4_9 code problem
 
 # v4.0
 # 010116 : dl  : Use tace not AcePerl
@@ -84,7 +85,7 @@ my $debug = $opt_d;
 my $dbdir = glob "/wormsrv2/autoace";
 my $wpdir = glob "/wormsrv2/WORMPEP/wormpep$old_release";
 my $new_wpdir = glob "/wormsrv2/WORMPEP/wormpep$release";
-my $tace = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
+my $tace = "/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_4/tace";
 $ENV{'ACEDB'} = $dbdir;
 
 
@@ -191,7 +192,7 @@ close WP;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
 print LOG "# $runtime : connect to primary database\n";
 
-my $db = Ace->connect (-path => $dbdir, -program => '/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace') 
+my $db = Ace->connect (-path => $dbdir, -program => $tace) 
     || &error(6); # die "cannot connect to autoace\n";
 my @dotnames_1 = $db->fetch (-query => 'FIND Genome_sequence ; FOLLOW Subsequence ; where (Method = curated) OR (Method=provisional)');
 my @dotnames_2 = $db->fetch (-query => 'FIND Sequence *LINK* ; FOLLOW Subsequence ; where (Method = curated) OR (Method=provisional)');
