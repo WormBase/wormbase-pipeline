@@ -13,13 +13,14 @@ use Getopt::Long;
 use DB_File;
 use GSI;
 
-my ($swiss, $trembl, $debug, $database, $list);
-
+my ($swiss, $trembl, $debug, $database, $list, $new);
+# $new is for switch to new protein model
 GetOptions (
 	   "swiss"    => \$swiss,
 	   "trembl"   => \$trembl,
 	   "database:s" => \$database,
 	    "list"    => \$list,
+	    "new"     => \$new,
 	   "debug"    => \$debug
 	  );
 
@@ -151,9 +152,22 @@ sub output_list
 	if ($seq) {
 	  print ACE "Protein : \"$prefix:$id\"\n";
 	  print ACE "Peptide \"$prefix:$id\"\n";
-	  print ACE "Title \"$DES{$id}\"\n";
 	  print ACE "Species \"$ORG{$id}\"\n";
-	  print ACE  "Database \"$db\" \"$id\" \"$accession\"\n";
+	  if ( $new ) {
+	    print ACE "Description \"$DES{$id}\"\n";
+	    if ("$prefix" eq "SW" ) {
+	      print ACE "Database SwissProt SwissProt_ID $id\n";
+	      print ACE "Database SwissProt SwissProt_Acc $accession\n";
+	    }
+	    else {
+	      print ACE "Database TREMBL TrEMBL_Acc $id\n";
+	    }
+	  }
+	  else {
+	    print ACE "Title \"$DES{$id}\"\n";
+	    print ACE  "Database \"$db\" \"$id\" \"$accession\"\n";
+	  }
+
 	  print ACE  "\n";
 	  print ACE  "Peptide : \"$prefix:$id\"\n";
 	  print ACE "$seq\n";
