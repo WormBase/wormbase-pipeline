@@ -14,7 +14,7 @@ use strict;
 # AceDB database
 my $ace_dir = "/wormsrv2/current_DB";
 my $wquery_dir = "/wormsrv2/autoace/wquery";
-my $tace = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
+my $tace = "/nfs/disk100/wormpub/ACEDB/bin_ALPHA/tace";
 
 ####################################################################
 # connect to AceDB using TableMaker,
