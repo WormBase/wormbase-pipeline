@@ -35,7 +35,7 @@ while (<SEQUENCES>) {
     if (/^SQ/) {
 	print "// Parsed accession $acc\n";
 
-	open (CDS, "./CDS.pl $acc |");
+	open (CDS, "CDS.pl $acc |");   # Ugly. this needs rationalising dl
 	while  (<CDS>) {
 	    print OUTPUT $_;
 	}
