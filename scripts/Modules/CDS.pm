@@ -43,13 +43,14 @@ sub map_cDNA
 
     # check strandedness
     return 0 if $self->strand ne $cdna->strand;
-    #return 0 if $self->strand ne "+";
 
     #this must overlap - check exon matching
 
     my $matches_me = 0;
     foreach my $transcript ( $self->transcripts ) {
-      $matches_me = 1 if ($transcript->map_cDNA( $cdna ) == 1);
+      if ($transcript->map_cDNA( $cdna ) == 1) { 
+	$matches_me = 1;
+      }
     }
 
     if( $matches_me == 0 ) {
@@ -63,16 +64,29 @@ sub map_cDNA
       else {
 	#this must overlap - check exon matching
 	if( $self->check_exon_match( $cdna ) ) {
-	  # if this cdna matches the CDS but not the existing transcripts create a new one
-	  # append .x to indicate multiple transcripts for same CDS.
-	  my $transcript_count = scalar($self->transcripts);
-	  my $new_name = $transcript_count > 1 ? $self->name : $self->name . ".$transcript_count";
-	  my $transcript = Transcript->new( $new_name, $self);
-	  $transcript->chromosome( $self->chromosome );
-	  $transcript->add_matching_cDNA($cdna);
-	  
-	  $self->transcripts($transcript);
-	  $matches_me = 1;
+
+	  # check reciprocal CDS -> cdna
+	  if( $cdna->check_exon_match( $self )) {
+	    # if this cdna matches the CDS but not the existing transcripts create a new one
+	    # append .x to indicate multiple transcripts for same CDS.
+	    my $transcript_count = scalar($self->transcripts);
+	    my $new_name;
+	    if( $transcript_count == 1 ) {
+	      # rename the original as .1
+	      $new_name = $self->name . ".$transcript_count";
+	      my @transcripts = $self->transcripts;
+	      $transcripts[0]->name("$new_name");
+	    }
+	    $transcript_count++;
+	    $new_name = $self->name . ".$transcript_count";
+	    
+	    my $transcript = Transcript->new( $new_name, $self);
+	    $transcript->chromosome( $self->chromosome );
+	    $transcript->add_matching_cDNA($cdna);
+	
+	    $self->transcripts($transcript);
+	    $matches_me = 1;
+	  }
 	}
       }
     }
@@ -96,7 +110,7 @@ sub add_matching_cDNA
   {
     my $self = shift;
     my $cdna = shift;
-    print STDERR $cdna->name," matches ",$self->name,"\n";
+    #print STDERR $cdna->name," matches ",$self->name,"\n";
     push( @{$self->{'matching_cdna'}},$cdna->name);
   }
 
