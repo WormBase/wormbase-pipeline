@@ -661,6 +661,10 @@
 	Contact_details_confirmed DateType // Added for Juancarlos [020322 krb]
 
 ?Journal Paper ?Paper XREF Journal
+	 Full_name ?Text // added for Wen [020607 krb]
+	 Other_name ?Text // added for Wen [020607 krb]
+	 Previous_name ?Text // added for Wen [020607 krb]
+
 
 ?Paper  Reference       Title UNIQUE ?Text 
                         Journal UNIQUE ?Journal XREF Paper
@@ -1293,8 +1297,11 @@
 		Followed_by ?Life_stage XREF Preceded_by
 		Expr_pattern ?Expr_pattern XREF Life_stage
 		Remark	?Text
+		Definition ?Text // added for Wen [020607 krb]
+		Other_name ?Text // added for Wen [020607 krb]
                 Reference ?Paper XREF Life_stage
 		Curated_by UNIQUE Text // added for Sylvia [010928 krb]
+
 
 //
 // Alignment models
