@@ -138,6 +138,7 @@ sub execute_tace_command {
 
 sub show_help {
   system ('perldoc',$0);
+  exit(0);
 }
 
 
