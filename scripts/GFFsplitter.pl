@@ -5,7 +5,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2004-12-06 10:05:08 $
+# Last updated on: $Date: 2005-02-09 13:04:54 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -537,6 +537,7 @@ WABA_BRIGGSAE
 operon
 Oligo_set
 rest
+twinscan
 __END__
 
 
