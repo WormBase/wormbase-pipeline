@@ -1,14 +1,14 @@
 #!/bin/csh -f
 
 setenv ACEDB_NO_BANNER
-setenv ACEDB ~wormpub/acedb/ace4/pepace
+setenv ACEDB /wormsrv2/pepace
 
 switch (`uname`)
   case "IRIX":
 	~wormpub/acedb/ace4/bin.SGI_4/xace $ACEDB
 	breaksw
   case "OSF1":
-	~wormpub/acedb/ace4/bin.ALPHA_4/xace $ACEDB
+	~acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/xace $ACEDB
 	breaksw
   case "SunOS":
 	switch (`ostype`)
