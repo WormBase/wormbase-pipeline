@@ -6,7 +6,7 @@
 # Compares this number to those from a second database.
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-03-12 11:29:01 $      
+# Last updated on: $Date: 2004-04-14 08:46:06 $      
 
 
 use strict;
@@ -328,6 +328,7 @@ sub usage {
 
 __DATA__
 2_point_data
+3d_data
 Accession_number
 Allele
 Anatomy_name
@@ -414,6 +415,7 @@ Transcript
 Transgene
 Transposon
 UTR
+Y2H
 __END__
 
 
