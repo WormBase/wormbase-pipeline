@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-07-09 13:30:02 $
+# Last updated on: $Date: 2004-07-09 15:42:58 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -252,10 +252,52 @@ sub process_gene_class{
   # this tells you if a gene id is linked to > 1 sequences
   foreach my $gene_name ($db->fetch(-query=>"Find Gene_name WHERE COUNT Sequence_name_for > 1")){
     my @gid = $gene_name->Sequence_name_for;
-    print "ERROR 11: $gene_name is connected to multiple gene IDs: @gid\n";
+    print LOG "ERROR 11: $gene_name is connected to multiple gene IDs: @gid\n";
     print JAHLOG "ERROR 11: $gene_name is connected to multiple gene IDs: @gid\n";
     $jah_errors++;
   }
+
+  # Look for missing Method tag for Live genes
+  foreach my $gene ($db->fetch(-query=>"Find Gene WHERE Live AND NOT Method")){
+    print LOG "ERROR 12: $gene is a Live gene but has no 'Method' tag\n";
+  }
+
+  # Look for Method tag but no Method field after it
+  foreach my $gene ($db->fetch(-query=>"Find Gene WHERE Method AND NOT NEXT")){
+    print LOG "ERROR 13: $gene has a 'Method' tag but no value\n";
+  }
+
+
+  # test for missing Species tag
+  foreach my $gene ($db->fetch(-query=>"Find Gene WHERE NOT Species")){
+    print LOG "ERROR 14(a): $gene ($Gene_info{$gene}{'CGC_name'}) has no 'Species' info\n";
+    if ($ace){
+      print ACE "\n\nGene : \"$gene\"\n";
+      if ( $Gene_info{$gene}{'Public_name'} !~ /^Cb-|^Cr-|^Cv-/ ){
+        print ACE "Species \"Caenorhabditis elegans\"\n";
+      }
+      if ( $Gene_info{$gene}{'Public_name'} =~/^Cb-.+/ ){
+        print ACE "Species \"Caenorhabditis briggsae\"\n";
+      }
+      if ( $Gene_info{$gene}{'Public_name'} =~/^Cr-.+/ ){
+        print ACE "Species \"Caenorhabditis remanei\"\n";
+      }
+      if ( $Gene_info{$gene}{'Public_name'} =~/^Cv-.+/ ){
+        print ACE "Species \"Caenorhabditis vulgaris\"\n";
+      }
+    }
+  }
+
+  # Look for Species tag but no Species field after it
+  foreach my $gene ($db->fetch(-query=>"Find Gene WHERE Species AND NOT NEXT")){
+    print LOG "ERROR 15: $gene has a 'Species' tag but no value\n";
+  }
+
+
+
+
+
+
 
   # test for CDS AND Pseudogene tags both present
   foreach my $gene ($db->fetch(-query=>"Find Gene WHERE CDS AND Pseudogene")){
@@ -359,32 +401,6 @@ sub test_locus_for_errors{
       print "." if ($verbose);
     }
   }
-
-
-
-
-  # test for missing Species tag
-  if ( !defined $gene_id->Species ){
-    $warnings .= "ERROR 11(a) $gene_id ($Gene_info{$gene_id}{'CGC_name'}) has no 'Species' info\n";
-    print "." if ($verbose);
-    if ($ace){
-      print ACE "\n\nGene : \"$gene_id\"\n";
-      if ( $Gene_info{$gene_id}{'Public_name'} !~ /^Cb-|^Cr-|^Cv-/ ){
-        print ACE "Species \"Caenorhabditis elegans\"\n";
-      }
-      if ( $Gene_info{$gene_id}{'Public_name'} =~/^Cb-.+/ ){
-        print ACE "Species \"Caenorhabditis briggsae\"\n";
-      }
-      if ( $Gene_info{$gene_id}{'Public_name'} =~/^Cr-.+/ ){
-        print ACE "Species \"Caenorhabditis remanei\"\n";
-      }
-      if ( $Gene_info{$gene_id}{'Public_name'} =~/^Cv-.+/ ){
-        print ACE "Species \"Caenorhabditis vulgaris\"\n";
-      }
-    }
-  }
-
-
 
 
 
