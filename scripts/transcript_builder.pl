@@ -7,7 +7,7 @@
 # Script to make ?Transcript objects
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2004-02-02 12:24:20 $
+# Last updated on: $Date: 2004-02-05 10:25:32 $
 
 use strict;
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
@@ -66,7 +66,7 @@ my %cDNA_span;
 my %transcript_span;
 my $gff_file;
 my @ordered_genes;
-my %3_matches;
+my %matches_3;
 
 my %EST_pairs;
 
@@ -319,7 +319,7 @@ sub findOverlappingGene
 	elsif ( $cDNA_span{$$cdna}[0] - $genes_span{$_}[1] < 3000 ) {
 	  # could be 3' EST not overlapping CDS
 	  print "adding $$cdna to $_ as 3'UTR\n";
-	  push( @{$3_matches{$gene}}, $_);
+	  push( @{$matches_3{$_}}, $_);
 	}
       }
       elsif( ($cDNA_span{$$cdna}[0] < $genes_span{$_}[0]) and ($cDNA_span{$$cdna}[1] > $genes_span{$_}[0]) ) { # cDNA starts B4 gene and ends after gene start
@@ -640,28 +640,28 @@ sub checkData
   }
 
 
-sub getESTpairs
-  {
-    unless ( -e "$database/wquery/cDNApairs.def") {
-      warn "$database/wquery/cDNApairs.def does not exist - inclusion of 3'EST not overlapping CDS will fail  . . ."  ;
-      return 1;
-    }
+#sub getESTpairs
+#  {
+#    unless ( -e "$database/wquery/cDNApairs.def") {
+#      warn "$database/wquery/cDNApairs.def does not exist - inclusion of 3'EST not overlapping CDS will fail  . . ."  ;
+#      return 1;
+#    }
 
-    my $command="Table-maker -p $database/wquery/cDNApairs.def/\nquit\n";    
-    open (TACE, "echo '$command' | $tace $ace_dir |");
-    while (<TACE>) {
-      chomp;
-      s/\"//g;
-      my @data = split;
-      $ESTpairs{$data[0]} = $data[1] ? $data[1] : undef;
-    }
-    close TACE;
-  }
+#    my $command="Table-maker -p $database/wquery/cDNApairs.def/\nquit\n";    
+#    open (TACE, "echo '$command' | $tace $ace_dir |");
+#    while (<TACE>) {
+#      chomp;
+#      s/\"//g;
+#      my @data = split;
+#      $ESTpairs{$data[0]} = $data[1] ? $data[1] : undef;
+#    }
+#    close TACE;
+#  }
 
-sub possible_3_UTR
-  {
-    my $cdna, $index,
-  }
+#sub possible_3_UTR
+#  {
+#    my ($cdna, $index);
+#  }
 
 
 
