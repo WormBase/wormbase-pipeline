@@ -144,13 +144,19 @@ sub mail_maintainer {
     my ($name,$maintainer,$logfile) = @_;
     $maintainer = "dl1\@sanger.ac.uk, ar2\@sanger.ac.uk, ck1\@sanger.ac.uk" if ($maintainer eq "All");
     open (OUTLOG,  "|/bin/mailx -s \"$name\" $maintainer ");
-    open (READLOG, "<$logfile");
-    while (<READLOG>) {
-	print OUTLOG "$_";
+    if ( $logfile )
+      {
+	open (READLOG, "<$logfile");
+	while (<READLOG>) 
+	  { print OUTLOG "$_";
+	  }
+	close READLOG;
+      }
+    else {
+      print OUTLOG "$name";
     }
-    close READLOG;
     close OUTLOG;
-} 
+  } 
 
 
 #################################################################################
