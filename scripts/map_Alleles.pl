@@ -7,7 +7,7 @@
 # This maps alleles to the genome based on their flanking sequences
 #
 # Last updated by: $Author: krb $                      
-# Last updated on: $Date: 2004-08-16 07:52:28 $        
+# Last updated on: $Date: 2004-09-03 15:39:12 $        
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -57,7 +57,6 @@ if ($help) { print `perldoc $0`;exit;}
 my $maintainers = "All";
 my $rundate     = &rundate;
 my $runtime     = &runtime;
-my $log;
 $ver = &get_wormbase_version unless defined $ver;
 my $tace = &tace;
 
@@ -74,7 +73,6 @@ my %CDS2gene        = &FetchData('cds2wbgene_id');
 
 if ($debug)  {
     $data_dump_dir = "/tmp";
-    $log           = "$data_dump_dir/map_Alleles.$rundate";
     $database      = "/nfs/disk100/wormpub/DATABASES/current_DB/" unless $database;
     $ver--;
     $ace_file      = "$data_dump_dir/mapped_alleles.ace";
@@ -83,7 +81,6 @@ if ($debug)  {
     $maintainers   = "$debug\@sanger.ac.uk";
 }
 else { 
-    $log          = "/wormsrv2/logs/map_AllelesWS$ver.$rundate.$$";
     $mapping_dir  = "/wormsrv2/autoace/MAPPINGS";
     $ace_file     = "$mapping_dir/allele_mapping.WS$ver.ace";
     $gff_file     = "$mapping_dir/allele_mapping.WS$ver.gff";
@@ -107,26 +104,43 @@ if ( $list ) {
 
 
 
-########## get list of alleles from geneace ####################
+########## get list of alleles from database before mapping script tries to update info ####################
 
-my %geneace_alleles;
+# this will be a hash of arrays, each array element will be a Gene ID that corresponds
+# to an allele (deletion alleles can affect multiple genes).  This hash will be used
+# later on to compare the output of the mapping script to what was already in the database.
+# some of this info can then be fed back to the source databases
 
-# list of alleles will be used later check against for feedback files
-my $geneace_db = Ace->connect(-path => "/wormsrv2/geneace") || do { print  "$database Connection failure: ",Ace->error; die();};
-my @geneace_alleles = $geneace_db->fetch(-query =>'Find Allele WHERE Flanking_sequences');
-foreach ( @geneace_alleles ) {
-  my $G_name = $_->name;
-  my $wb_gene = $_->Gene;
-  $wb_gene = "undef" unless $wb_gene;
-  $geneace_alleles{$G_name} = $wb_gene;
+my %original_alleles;
+
+my $original_db = Ace->connect(-path => "$database") || do { print  "$database Connection failure: ",Ace->error; die();};
+my @original_alleles = $original_db->fetch(-query =>'Find Allele WHERE Flanking_sequences');
+
+# loop through each allele and then each gene for each allele, adding to hash structure
+foreach my $allele (@original_alleles) {
+
+  # set to undef if no genes are attached to allele
+  if(!defined($allele->Gene)){
+    $original_alleles{$allele}[0] = "undef";
+    print "$allele - $original_alleles{$allele}[0]\n";
+  }
+  else{
+    my @gene_IDs = $allele->Gene;
+    my $counter = 0;
+    foreach my $gene (@gene_IDs){
+      $original_alleles{$allele}[$counter] = $gene;
+      $counter++;
+    }
+  }
 }
-$geneace_db->close;
+$original_db->close;
+
+
+# create log
+my $log = Log_files->make_build_log();
 
 
 ##########  File handles etc #############
-
-open (LOG,">$log") or die "cant open $log\n\n";
-print LOG "$0 start at $runtime on $rundate\n----------------------------------\n\n";
 open (OUT,">$ace_file") or die "cant open $ace_file\n";
 open (GFF,">$gff_file") or die "cant open $gff_file\n" if $gff;
 open (GENEACE,">$geneace_file") or die "cant open $geneace_file\n" if $geneace;
@@ -161,7 +175,7 @@ ALLELE:
 foreach my $allele (@alleles) {
   $name = $allele->name;
 
-  print "Mapping $name\n" if $verbose;
+  print "\nMapping $name\n" if $verbose;
 
 
   # debug facility - this bit is so that it can restart from given allele name
@@ -190,7 +204,7 @@ foreach my $allele (@alleles) {
 
   # warn if flanking sequence is missing
   unless ($left and $right){
-    print LOG "ERROR: $name does not have two flanking sequences\n";
+    $log->write_to("ERROR: $name does not have two flanking sequences\n");
     $error_count++;
     next ALLELE;
   }
@@ -199,12 +213,12 @@ foreach my $allele (@alleles) {
   # check that allele is attached to a valid sequence object
   $sequence = $allele->Sequence;
   if(!defined $sequence){    
-    print LOG "ERROR: $name has missing Sequence tag\n";
+    $log->write_to("ERROR: $name has missing Sequence tag\n");
     $error_count++;
     next ALLELE;
   }
   elsif(!defined $sequence->Source) {
-    print LOG "ERROR: $name connects to Sequence $sequence which has no Source tag\n";
+    $log->write_to("ERROR: $name connects to Sequence $sequence which has no Source tag\n");
     $error_count++;
     next ALLELE;
   }
@@ -216,7 +230,7 @@ foreach my $allele (@alleles) {
   # map allele using Feature_mapper.pm, store results of map in @map, warn if mapping failed
   my @map = $mapper->map_feature($sequence->name,$left, $right);
   if( "$map[0]" eq "0" ) {
-    print LOG "ERROR: Couldn't map $name with $left and $right to seq $sequence\n";
+    $log->write_to("ERROR: Couldn't map $name with $left and $right to seq $sequence\n");
     $error_count++;
     next ALLELE;
   }
@@ -267,7 +281,7 @@ close GENEACE if $geneace;
 # read acefiles into autoace #
 ##############################
 unless ( $no_parse ) {
-  print LOG "\nStart parsing $ace_file in to $database\n\n";
+  $log->write_to("\nStart parsing $ace_file in to $database\n\n");
 
   my $command =<<END;
 pparse $ace_file
@@ -281,24 +295,23 @@ END
     close (TACE);
   };
   if ( $@ ) {
-    print LOG "parse failure . . \n$@\n";
+    $log->write_to("parse failure . . \n$@\n");
   }
   else {
-    print LOG "successfully finished parsing\n";
+    $log->write_to("successfully finished parsing\n");
   }
 }
 
 
 # close LOG and send mail
 
-print LOG "ERROR: $error_count alleles failed to map\n" if ($error_count > 0);
-print LOG "$0 end at ",&runtime," \n-------------- END --------------------\n\n";
-close LOG;
+$log->write_to("ERROR: $error_count alleles failed to map\n") if ($error_count > 0);
+
 if($error_count > 0){
-  &mail_maintainer("BUILD REPORT: map_Alleles.pl $error_count ERRORS!","$maintainers","$log");
+  $log->mail("$maintainers","BUILD REPORT: map_Alleles.pl $error_count ERRORS!");
 }
 else{
-  &mail_maintainer("BUILD REPORT: map_Alleles.pl","$maintainers","$log");
+  $log->mail("$maintainers", "BUILD REPORT: map_Alleles.pl");
 }
 exit(0);
 
@@ -335,17 +348,28 @@ sub outputAllele{
 	my $WBGene = $CDS2gene{$cds};
 	print OUT "Gene $WBGene\n";
 
-	if( defined($geneace_alleles{$allele}) and ($geneace_alleles{$allele} eq "undef") ) {
-	  print LOG "ERROR: $allele - no Gene connection in geneace but script maps to $WBGene\n";
+	if( defined($original_alleles{$allele}[0]) and ($original_alleles{$allele}[0] eq "undef") ) {
+	  $log->write_to("ERROR: $allele - script has added new connection to $WBGene\n");
+	  $error_count++;
 	  return;
 	}
-	if( defined($geneace_alleles{$allele}) and $geneace_alleles{$allele}->name ne $WBGene ) {
-	  print LOG "ERROR: $allele - geneace maps to Gene $geneace_alleles{$allele} but scripts maps to Gene $WBGene\n";
+	if( defined($original_alleles{$allele}[0]) and $original_alleles{$allele}[0]->name ne $WBGene ) {
+	  $log->write_to("ERROR: $allele - original connection was to Gene $original_alleles{$allele}[0] but scripts maps to Gene $WBGene\n");
+	  $error_count++;
 	}
       }
     }
     else {
-      print "no overlapping gene for $allele\n" if $verbose;
+      print "$allele - script does not find overlapping CDS/Transcript\n" if $verbose;
+
+      # but should check whether original data had a connected gene
+      if($original_alleles{$allele}[0] ne "undef"){
+	$log->write_to("ERROR: $allele - script does not match this to a gene, but geneace does\n");
+	$error_count++;
+      }
+      else{
+	print "$allele - original database does not have overlapping CDS/Transcript\n" if $verbose;
+      }
     }
 
     
