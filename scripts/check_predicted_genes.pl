@@ -105,12 +105,6 @@ foreach my $gene (@predicted_genes){
     print "Gene error - $gene: has no Source tag, cannot check DNA\n";
     next CHECK_GENE;
   }
-  my $parent = $db->fetch(Sequence=>$source);
-  
-  # check to see if any predicted gene belongs to superlink object...they shouldn't
-  if ($parent =~ m/SUPERLINK/){
-    print "Gene error - $gene: belongs to a superlink object ($parent)\n";
-  }
 
 
   # check coordinate system exons in relation to each other
@@ -129,16 +123,12 @@ foreach my $gene (@predicted_genes){
     }
   }
 
-  # check coordinates system of exons in relation to parent
-  #
-  # haven't done this bit yet
-  if ($parent !~ m/LINK/){    
-    my ($parent_length) = $parent->DNA(2);
-    $parent_length = 0 if (!defined($parent_length));
+  my $parent = $db->fetch(Sequence=>$source);
+  
+  # check to see if any predicted gene belongs to superlink object...they shouldn't
+  if ($parent =~ m/SUPERLINK/){
+    print "Gene error - $gene: belongs to a superlink object ($parent)\n";
   }
-
-
-
 
 
   # check that 'Start_not_found' and 'End_not_found' tags present?
