@@ -4,11 +4,11 @@
 #
 # backup database and compare to last backed up database to look for lost data
 #
-# Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-04-14 08:45:00 $      
+# Last updated by: $Author: ar2 $     
+# Last updated on: $Date: 2005-02-10 15:34:55 $      
 
 use strict;
-use lib '/wormsrv2/scripts';
+use lib -e '/wormsrv2/scripts' ? '/wormsrv2/scripts' : $ENV{'CVS_DIR'};
 use Wormbase;
 use IO::Handle;
 use Getopt::Long;
@@ -18,16 +18,19 @@ use Carp;
 # variables and command-line options # 
 ######################################
 
-our ($help,$debug,$log,@backups);
+our ($help,$debug,$log,@backups, $just_compare);
 my $db;
 our $backup_dir = "/nfs/disk100/wormpub/DATABASES/BACKUPS";
 our $maintainers = "All";
 our $date = `date +%y%m%d`; chomp $date;
 my $exec        = &tace;
 
-GetOptions ("help"    => \$help,
-	    "db=s"    => \$db,
-            "debug=s" => \$debug);
+GetOptions (
+	    "help"           => \$help,
+	    "db=s"           => \$db,
+            "debug=s"        => \$debug,
+	    "just_compare=s" => \$just_compare,
+	   );
 
 
 
@@ -40,7 +43,7 @@ GetOptions ("help"    => \$help,
 
 
 # Look to see what backups are already there, make new backup if appropriate
-&find_and_make_backups($db);
+&find_and_make_backups($db) unless $just_compare;
 
 
 # Compare new backup to previous backup, eeport any data that has disappeared
@@ -74,7 +77,14 @@ sub check_options{
   # Display help if required
   &usage("Help") if ($help);
   &usage("db") if (!$db);
-  &usage("db") unless (($db eq "camace") || ($db eq "geneace"));
+  if( $just_compare ) {
+    die "$db doesn't exist\n" unless ( -e $db );
+    die "$just_compare doesn't exist\n" unless ( -e $just_compare );
+    print "Just comparing $db and $just_compare\n\n";
+  }
+  else  {
+    &usage("db") unless (($db eq "camace") || ($db eq "geneace"));
+  }
 
   # Use debug mode?
   if($debug){
@@ -142,6 +152,12 @@ sub compare_backups{
   my $db_name1 = "${db}\.${date}";
   my $db_name2 = "${db}\.${backups[0]}";
 
+  if( $just_compare ){
+    $db1 = $db;
+    $db_name1 = $db;
+    $db2 = $just_compare;
+    $db_name2 = $just_compare;
+  }
 
   print LOG "First database:  $db_name1\n";
   print LOG "Second database: $db_name2\n\n";
@@ -379,8 +395,12 @@ made, the oldest backup will be removed, leaving four backup databases.
 
 -debug and -help are standard Wormbase script options.
 
--database allows you to specify the path of a database which will
+-db allows you to specify the path of a database which will
 then be compared to /wormsrv2/autoace.
+
+-just_compare  :  allows you to compare the database specified here with that specified in -db.  This will NOT create backups of either.
+
+db_backup_and_compare.pl -db /wormsrv1/geneace -just_compare /wormsrv2/camace
 
 
 =back
