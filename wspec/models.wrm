@@ -1236,6 +1236,8 @@
 		Max_mag UNIQUE Float	// don't show if more bases per line
 		Min_mag UNIQUE Float	// don't show if fewer bases per line
 		Show_text      // only put text in right-hand column if set
+		Gapped // draw sequences or homols with gaps
+		Join_blocks // link up all blocks of a single feature with lines
 	Blastn		// can calculate percent from score if blastn
 	Blixem  Blixem_X
 		Blixem_N
