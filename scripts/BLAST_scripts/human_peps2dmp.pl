@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.6.1 -w
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2003-01-13 16:58:51 $
+# Last updated by: $Author: wormpub $
+# Last updated on: $Date: 2003-01-14 11:48:48 $
 
 use strict;
 use Getopt::Long;
@@ -118,7 +118,7 @@ while (<DATA>) {
     $database_IDS .= "Database SWISSPROT SW:".$swissprot{acc}." " if $swissprot{acc};
     $database_IDS .= "Database SWISSPROT_GENE ".$swissprot{gene}." " if $swissprot{gene};
 
-    $database_IDS .= "Database TREMBL TR".$trembl_id." " if $trembl_id;
+    $database_IDS .= "Database TREMBL TR:".$trembl_id." " if $trembl_id;
     #print $database_IDS;
 
     $ACE_INFO{"$prim_DB_id"} = "$database_IDS";
@@ -131,15 +131,30 @@ while (<DATA>) {
 }
 
 
+print "finished\n";
+exit(0);
+
 sub getSwissGeneName
   {
-    open (GETZ, "getz -f \"ID PrimAccNumber DBxref\" \"[swissprot-NCBI_TaxId#9606:9606]\" | ");
-    my ($id, $acn, $gene);
+    open (GETZ, "getz -f \"ID PrimAccNumber DBxref GeneName\" \"[swissprot-NCBI_TaxId#9606:9606]\" | ");
+    my ($id, $acn, $gene, $backup_gene);
     my %counts;
     while (<GETZ>) {
       #print $_;
       chomp;
       if( /^ID\s+(\S+)/ ) {
+	# before we move on to next protein check if the previous one received a gene name
+	# if not use $backup_gene from the GN line rather than the Genew one
+	unless( $swiss_id2gene{$id} ) {
+	  if( $backup_gene ) {
+	    $swiss_id2gene{$id} = $backup_gene;
+	  }
+	  else {
+	    print "cant find a gene for $id\n";
+	  }
+	}
+	undef $backup_gene;
+
 	$id = $1;
 	$counts{ids}++;
       }
@@ -148,6 +163,9 @@ sub getSwissGeneName
 	$acn =~ s/;//g;
 	$acc2id{"$acn"} = $id; 
 	$counts{acn}++;
+      }
+      elsif( (/GN\s+(\S+)[\s+\.]$/) || (/GN\s+(\S+)/ )){
+	$backup_gene = $1;
       }
       elsif( /DR\s+Genew;\s+\w+:\d+;\s+(\w+)/ ) {
 	    # DR   Genew; HGNC:989; BCL10
