@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.17 2001-10-17 15:31:33 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.18 2001-10-30 15:56:45 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -686,6 +686,7 @@
 	          Allele ?Allele XREF Reference
 		  Rearrangement ?Rearrangement XREF Reference
 		  Sequence ?Sequence XREF Reference
+		  CDS ?CDS XREF Reference // added [011030 krb]
 		  Strain ?Strain XREF Reference
 		  Clone ?Clone XREF Reference
 		  Protein ?Protein XREF Reference
@@ -696,6 +697,7 @@
                   Life_stage ?Life_stage XREF Reference
                   RNAi ?RNAi XREF Reference  // added for Lincoln RNAi [001213 dl]
                   Transgene ?Transgene XREF Reference
+		  Operon ?Operon XREF Reference      // added for operon data [010928 dl]
         Keyword ?Keyword
 
 #Affiliation Affiliation_address UNIQUE Text
@@ -722,6 +724,7 @@
 		       Gene ?Allele XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info                // RD 0107
 		       CDS_child ?CDS XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info                // RD 0107
 		       Transcript_child ?Transcript XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info                // RD 0107
+		       Operon ?Operon XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info  // added for Operon data
 	  Structure  From	Source UNIQUE ?Sequence XREF Subsequence
 				Source_exons Int UNIQUE Int // start at 1
 		     Subsequence ?Sequence XREF Source UNIQUE Int UNIQUE Int
@@ -849,7 +852,12 @@
                    EST  
 
 ?CDS	SMap S_parent Canonical_parent ?Sequence XREF CDS_child
+	S_child PCR_product ?PCR_product XREF Canonical_parent Int UNIQUE Int #SMap_info // added [011030 krb]
 	Structure Source_exons Int UNIQUE Int
+	DB_info Protein_id ?Sequence UNIQUE Text UNIQUE Int // DB_info tag added [011030 krb]
+		DB_remark ?Text
+	Annotation SwissProt_DE	UNIQUE Text
+		   EC_number Text
 	Origin	From_laboratory UNIQUE ?Laboratory
 		Species UNIQUE ?Species
 	Visible 	Gene ?Gene XREF CDS
@@ -865,8 +873,11 @@
 			Confidential_remark ?Text
 			Expr_pattern ?Expr_pattern XREF Sequence
                         RNAi_result ?RNAi XREF Predicted_gene // added for Lincoln RNAi [001213 dl]
+			Contained_in_operon ?Operon XREF Contains_CDS
+	  		Reference ?Paper XREF CDS // added [011030 krb]
 	Properties	Coding	CDS UNIQUE Int UNIQUE Int
 				CDS_predicted_by ?Method Float // score of method
+				Confirmed_by #Gene_confirmation       // added [011030 krb]
 				Precursor
 			End_not_found
 			Start_not_found
@@ -1414,6 +1425,19 @@
        Pick_me_to_call Text Text
        RNAi ?RNAi XREF Movie
        Remark ?Text
+
+
+// New Class to handle operon data [010928 dl]
+
+?Operon SMap S_Parent Canonical_parent UNIQUE ?Sequence XREF Operon
+	Species ?Species
+	Contains_CDS ?CDS XREF Contained_in_operon  #Trans_splice_leader
+	Reference ?Paper XREF Operon
+	Method ?Method
+
+#Trans_splice_leader SL1 ?Text
+                     SL2 ?Text
+
 
 // end of file
 
