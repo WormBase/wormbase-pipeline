@@ -1,5 +1,4 @@
-#!/usr/local/bin/perl -w
-
+#!/usr/local/bin/perl5.6.0 -w
 
 use strict;
 use lib '/wormsrv2/scripts';
@@ -9,9 +8,9 @@ use Ace;
 my $maintainer = "All";
 my $rundate    = `date +%y%m%d`; chomp $rundate;
 
-my $log = "/wormsrv2/logs/$0.log.$rundate";
+my $log = "/wormsrv2/logs/$ARGV[0].log.$rundate";
 open(LOG,">$log")|| die "cant open $log";
-print LOG "$0 started at ",`date`,"\n";
+print LOG "$ARGV[0] started at ",`date`,"\n";
 print LOG "=============================================\n";
 
 
@@ -29,9 +28,9 @@ END
 
 print LOG "parsing patch_wormpep.${WS_number}-${WS_previous}.ace to /wormsrv2/pepace\n";
  
-#open (TACE,"| $tace /wormsrv2/pepace") || die "Couldn't open pipe to tace\n";
-#print TACE $command;
-#close (TACE);
+open (TACE,"| $tace /wormsrv2/pepace") || die "Couldn't open pipe to tace\n";
+print TACE $command;
+close (TACE);
 
 print LOG "parsing complete - about to check . . . . . ";
 
@@ -70,9 +69,9 @@ if (defined($error))
 else{
   print LOG "ok!\n\n";}
 
-print LOG "$0 finished at `date`\n";
+print LOG "$ARGV[0] finished at `date`\n";
 
 close LOG;
 
 $maintainer = "ar2\@sanger.ac.uk";
-&mail_maintainer($0,$maintainer,$log);
+&mail_maintainer($ARGV[0],$maintainer,$log);
