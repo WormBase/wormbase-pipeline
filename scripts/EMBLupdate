@@ -85,7 +85,7 @@ while (<>) {
  }
 
 # for some clones with long names the clone name cannot be got from the ID
- if (/^DE.+cosmid\s+(\S+)$/) { $cosmid=$1; }
+ if (/^DE.+(\S+)$/) { $cosmid=$1; }
 
 # printout the whole file
  print TEMP $_;
