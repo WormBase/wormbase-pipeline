@@ -2,9 +2,10 @@ package Transcript;
 
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'} ;
 use Carp;
+use strict;
 use Modules::SequenceObj;
 
-@ISA = qw( SequenceObj );
+our @ISA = qw( SequenceObj );
 
 sub new
   {
@@ -49,13 +50,13 @@ sub map_cDNA
       if( $SL = $cdna->SL ){
 	if( $self->SL ) {
 	  unless( $SL->[0] == $self->SL->[0] ) {	    #same SL
-	    print STDERR "Conficting SLs ",$self->name, "\t",$cdna->name,"\n" if $debug;
+	    print STDERR "Conficting SLs ",$self->name, "\t",$cdna->name,"\n";
 	    return 0;
 	  }
 	}
 	else { 
 	  if( $SL->[1] > $self->start ) {
-	    print STDERR $cdna->name, " Splice Leader within ", $self->name, "\n" if $debug;
+	    print STDERR $cdna->name, " Splice Leader within ", $self->name, "\n";
 	    return 0;
 	  }
 	}
@@ -68,16 +69,16 @@ sub map_cDNA
 
       # and polyA_Site
       my $polyA_site;
-      if( $polyA_site = $cdna->polyA_site ) {
+      if( $polyA_site == $cdna->polyA_site ) {
 	if( $self->polyA_site ) {
 	  unless( $polyA_site->[0] == $self->polyA_site->[0] ) {
-	    print STDERR "Conficting polyA_sites ",$self->name, "\t",$cdna->name,"\n" if $debug;
+	    print STDERR "Conficting polyA_sites ",$self->name, "\t",$cdna->name,"\n";
 	    return 0;
 	  }
 	}
 	else {
 	  if( $polyA_site->[0] < $self->end ) {
-	    print STDERR $cdna->name, " polyA_site within ", $self->name, "\n" if $debug;
+	    print STDERR $cdna->name, " polyA_site within ", $self->name, "\n";
 	    return 0;
 	  }
 	}
@@ -85,16 +86,16 @@ sub map_cDNA
 
       # . and polyA_signal
       my $polyA_sig;
-      if( $polyA_sig = $cdna->polyA_signal ) {
+      if( $polyA_sig == $cdna->polyA_signal ) {
 	if( $self->polyA_signal ) {
-	  unless( $polyA_signal->[0] == $self->polyA_signal->[0] ) {
-	    print STDERR "Conficting polyA_signals ",$self->name, "\t",$cdna->name,"\n" if $debug;
+	  unless( $cdna->polyA_signal->[0] == $self->polyA_signal->[0] ) {
+	    print STDERR "Conficting polyA_signals ",$self->name, "\t",$cdna->name,"\n";
 	    return 0;
 	  }
 	}
 	else {
-	  if( $polyA_signal->[0] + 30 > $self->end) {
-	    print STDERR $cdna->name, " polyA_signal within ", $self->name, "\n" if $debug;
+	  if( $cdna->polyA_signal->[0] + 30 > $self->end) {
+	    print STDERR $cdna->name, " polyA_signal within ", $self->name, "\n";
 	    return 0;
 	  }
 	}
@@ -126,7 +127,7 @@ sub add_3_UTR
     return if( $self->polyA_site or $self->polyA_signal) ;
 
     # set match code for interpretation in add_matching_cDNA
-    foreach $exon ( @{$cdna->sorted_exons} ) {
+    foreach my $exon ( @{$cdna->sorted_exons} ) {
       $exon->[2] = 12;
     }
     $self->add_matching_cDNA($cdna)
@@ -158,7 +159,7 @@ sub add_matching_cDNA
 ########################################################################
 
     
-    foreach $exon ( @{$cdna->sorted_exons} ) {
+    foreach my $exon ( @{$cdna->sorted_exons} ) {
       my $match_code = $exon->[2];
       next if  ($match_code == 1 or $match_code == 3 or $match_code == 6 or $match_code == 7);
 
@@ -197,7 +198,7 @@ sub add_matching_cDNA
 	}
       }
       # single exon gene extend both ends
-      elsif( match_code == 13 ) {	
+      elsif( $match_code == 13 ) {	
 	# 5' extension
 	my $curr_start = $self->start;
 	my $exon_end = $self->sorted_exons->[0]->[1];
@@ -224,7 +225,7 @@ sub add_matching_cDNA
       $self->polyA_site( $polyA_site )  ;
     }
     if (my $polyA_signal = $cdna->polyA_signal ) {
-      $self->polyA_signal( $polyA_sig ) ;
+      $self->polyA_signal( $polyA_signal ) ;
     }
   }
 
@@ -253,7 +254,7 @@ sub report
     our $start = $self->start - 1;
     our $end = $self->end + 1;
     my $exon_1 = 1;
-    foreach $exon ( @{$self->sorted_exons} ) {    
+    foreach my $exon ( @{$self->sorted_exons} ) {    
       $exon->[0] = $exon->[0] - $start;
       $exon->[1] = $exon->[1] - $start;
 
