@@ -4,45 +4,59 @@
 #
 # written by Anthony Rogers (ar2@sanger.ac.uk)
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2002-12-23 13:35:01 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2003-01-28 10:22:31 $
 
 
 use strict;
 use lib "/wormsrv2/scripts/";
 use Wormbase;
 use Ace;
-use Getopt::Std;
+use Getopt::Long;
  
 ##############################
 # command-line options       #
 ##############################
-our $opt_d = "";      # Source geneace database to use
-our $opt_h = "";      # Help page
-our $opt_c = "";      # Option for updating camace
-getopts ('d:hc');
 
-&usage if ($opt_h);
+my ($help, $debug,$camace,$geneace);
+my $maintainers = "All";
 
-# choose geneace database
+GetOptions ("help"       => \$help,
+            "debug=s"    => \$debug,
+	    "geneace=s"  => \$geneace,
+	    "camace"     => \$camace);
+
+
+# Display help if required
+&usage("Help") if ($help);
+
+# Use debug mode?
+if($debug){
+  print "DEBUG = \"$debug\"\n\n";
+  ($maintainers = $debug . '\@sanger.ac.uk');
+}
+
+
+########################################
+# Set up and initialise variables      #
+########################################
+
+
+our $log;
+our $currentDB  = "/wormsrv2/current_DB";
+our $camace_dir = "/wormsrv1/camace";
 my $geneace_dir;
 
-if ($opt_d){
-  $geneace_dir = $opt_d;
+if ($geneace){
+  $geneace_dir = $geneace;
 }
 else{
   $geneace_dir = "/wormsrv2/geneace";
 }
 print "\nUsing $geneace_dir as target geneace database\n";
 
-my $rundate    = `date +%y%m%d`; chomp $rundate;
-
-our $log = "/wormsrv2/logs/locus2seq.log.$rundate.$$";
-open(LOG,">$log")|| die "cant open $log";
-print LOG "$0\n";
-print LOG "Date: $rundate\n";
-print LOG "Databases compared: $geneace_dir /wormsrv2/current_DB\n";
-print LOG "=====================================================\n";
+# set up log files
+&create_log_files;
 
 
 my %seq_locus;
@@ -118,8 +132,7 @@ open (ALLOUT,">$autoace_acefiles_dir/ALL_locus_seq.ace") || die "cant open ALLOU
 
 
 my $sequence;
-my $database = "/wormsrv2/current_DB";
-my $autoace = Ace->connect($database) || die "cant open $database\n";
+my $autoace = Ace->connect($currentDB) || die "cant open $currentDB\n";
 my $retrved_seq;
 my @lab;
 my $CAMcount = 0;
@@ -163,7 +176,7 @@ foreach $sequence(keys %seq_locus)
 	      }	
 	    else
 	      {
-		print LOG "$locus -> $sequence: $sequence  has no <From_laboratory> tag in $database\n";
+		print LOG "$locus -> $sequence: $sequence  has no <From_laboratory> tag in $currentDB\n";
 		$PROBcount++;
 		FindSequenceInfo($sequence,$locus);
 	      }
@@ -171,7 +184,7 @@ foreach $sequence(keys %seq_locus)
       }
     else
       {
-	print LOG "\n$seq_locus{$sequence} -> $sequence: $sequence not found in $database\n";
+	print LOG "\n$seq_locus{$sequence} -> $sequence: $sequence not found in $currentDB\n";
 	$PROBcount++;
 	FindSequenceInfo($sequence,$locus);
       }
@@ -192,7 +205,7 @@ close CAMOUT;
 close STLOUT;
 close ALLOUT;
 
-&update_camace if ($opt_c); # remove existing camace connections and replace with new ones
+&update_camace if ($camace); # remove existing camace connections and replace with new ones
 
 close LOG;
 
@@ -221,22 +234,47 @@ ALL_locus_seq.ace\t all loci.\n
 \n
 These are loci with approved cgc names and that connect to a valid Genome sequence gene.\n";
 
-close OUTLOG;
+close (OUTLOG);
 
+exit(0);
+
+
+
+
+##############################################################
+#
+# Subroutines
+#
+##############################################################
+
+sub create_log_files{
+
+  # Create history logfile for script activity analysis
+  $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
+
+  # create main log file using script name for
+  my $script_name = $1;
+  $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
+  my $rundate     = `date +%y%m%d`; chomp $rundate;
+  $log        = "/wormsrv2/logs/$script_name.$rundate.$$";
+
+  open (LOG, ">$log") or die "cant open $log";
+  print LOG "$script_name\n";
+  print LOG "started at ",`date`,"\n";
+  print LOG "=============================================\n";
+  print LOG "\n";
+
+}
+
+##########################################
 
 
 sub FindSequenceInfo #($sequence - genomic seq and $locus )
   {
-    my ($seq,$locus,$database) = @_;
+    my ($seq,$locus) = @_;
 
-    #allows a database to be passed but will default to current_DB
-    unless(defined($database)){
-      $database = "/wormsrv2/current_DB";
-    }
-    my $log = "/wormsrv2/logs/locus2seq.log.$rundate";
-    open(LOG,">>$log")|| die "Can't append to $log";
     my $test_seq = $seq;
-    my $autoace = Ace->connect($database) || die "Can't connect to $database\n";
+    my $autoace = Ace->connect($currentDB) || die "Can't connect to $currentDB\n";
     my $solved = 0;
     my @lab;
     my $foundlab;
@@ -394,9 +432,16 @@ sub TestSeq # recieves a sequence | returns LabCode if it exists
   }
 }
 
+##########################################
+
 sub usage {
+  my $error = shift;
+
+  if ($error eq "Help") {
+    # Normal help menu
     system ('perldoc',$0);
-    exit;       
+    exit (0);
+  }
 }
 
 ##############################################################
@@ -415,7 +460,7 @@ sub update_camace{
 
   my $tace = &tace ;
 
-  open (WRITEDB, "| $tace -tsuser locus2seq.pl /wormsrv1/camace |") || die "Couldn't open pipe to /wormsrv1/camace\n";
+  open (WRITEDB, "| $tace -tsuser locus2seq.pl $camace_dir |") || die "Couldn't open pipe to $camace_dir";
   print WRITEDB $command;
   close WRITEDB;
 
@@ -458,17 +503,17 @@ locus2seq.pl  OPTIONAL arguments:
 
 =over 4
 
-=item -d, database
+=item -geneace <path>, location of geneace database
 
 By default this script will compare /wormsrv2/current_DB to /wormsrv2/geneace.  The
 -d flag allows you to compare against another copy of geneace (i.e. /wormsrv1/geneace)
 
-=item -c, update camace
+=item -camace, update camace
 
 This option will specify that existing Locus->Sequence connections should be removed and
 replaced with the new ones.
 
-=item -h, Help
+=item -help, Help
 
 =back
 
