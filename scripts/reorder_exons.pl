@@ -6,8 +6,8 @@
 #
 # This script checks the exon order and corrects them if needed
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-12-03 13:02:49 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2004-01-07 14:04:08 $
 
 
 
@@ -209,9 +209,9 @@ exit(0);
 sub seq_fix_order {
     my ($order_ref, $sub_ref) = @_;
     foreach(@{$order_ref}) {
-	print ACE "\nSequence : \"$_\"\n";
+	print ACE "\nCDS : \"$_\"\n";
 	print ACE "-D Source_exons\n\n";
-	print ACE "Sequence : \"$_\"\n";
+	print ACE "CDS : \"$_\"\n";
 #	print ACE "$$sub_ref{$_}->[0] $$sub_ref{$_}->[1] $$sub_ref{$_}->[2] $$sub_ref{$_}->[3] \n";
 	my @thisarray = @{$$sub_ref{$_}}; 
 	my @sorted = sort {$a <=> $b} (@thisarray);
