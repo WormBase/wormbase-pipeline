@@ -195,7 +195,7 @@ foreach my $mapped (sort keys %finaloutput) {
     print OUT "$mapped\t@{$finaloutput{$mapped}}\n";
     for (my $n = 0; $n < (scalar @{$finaloutput{$mapped}}); $n++) {
         print OUTACE "Sequence : \"$finaloutput{$mapped}->[$n]\"\n";
-        print OUTACE "Corresponding_WTP_product \"$mapped\"\n\n";
+        print OUTACE "Corresponding_WTP \"$mapped\"\n\n";
     }
 } 
 close(OUT);
