@@ -14,45 +14,44 @@
 #
 # pfetch is done in batches of 2000, any greater and nothing comes back!
 #
-# Last updated by: $Author: wormpub $                      # These lines will get filled in by cvs 
-# Last updated on: $Date: 2003-04-16 13:29:51 $        # quickly see when script was last changed and by whom
+# Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs 
+# Last updated on: $Date: 2003-06-17 13:38:55 $        # quickly see when script was last changed and by whom
 
 use strict;
 use lib "/wormsrv2/scripts/";                  
 use Wormbase;
+use Getopt::Long;
 
-
-
-use Getopt::Std;
 #######################################
 # command-line options                #
 #######################################
 
-use vars qw($opt_d);
 # $opt_d debug   -  redirect output
-
-getopts ('d');
+my ($debug, $file);
+GetOptions( "debug=s"     => \$debug,
+	    "file=s"      => \$file
+	  );
 
 my $maintainer = "All";
+
 my $rundate    = `date +%y%m%d`; chomp $rundate;
 my $log;
 my $temp_acefile;
 
 my $wmpep_ver = &get_wormbase_version();#-1 for testing during builds
 my $wormpepdir = "/wormsrv2/WORMPEP/wormpep$wmpep_ver";
+my $table_file = "$wormpepdir/wormpep.table$wmpep_ver";
+$table_file = $file if $file;
 
-if( defined($opt_d) )
-  {
-    $log = glob("~ar2/testlogs/GetSwissIDandInterpro.WB$wmpep_ver.$rundate");
-    $temp_acefile = glob("~ar2/testlogs/SwissprotIDs.ace");
-    $wormpepdir = "/wormsrv2/WORMPEP/wormpep$wmpep_ver";
-    $maintainer = "ar2\@sanger.ac.uk";
-  }
-else
-  {
-    $log = "/wormsrv2/logs/GetSwissIDandInterpro.WB$wmpep_ver.$rundate";
-    $temp_acefile = "/wormsrv2/autoace/wormpep_ace/SwissprotIDs.ace";
-  }
+if( defined($debug) ) {
+  $log = "/tmp/testlogs/GetSwissIDandInterpro.WB$wmpep_ver.$rundate";
+  $temp_acefile = "/tmp/testlogs/SwissprotIDs.ace";
+  $maintainer = $debug ;
+}
+else  {
+  $log = "/wormsrv2/logs/GetSwissIDandInterpro.WB$wmpep_ver.$rundate";
+  $temp_acefile = "/wormsrv2/autoace/wormpep_ace/SwissprotIDs.ace";
+}
 
 my $ace_output = *ACE_OUTPUT;
 
@@ -76,7 +75,7 @@ my %idextract;
 my %wormpep_acc;
 
 #open file with linking data
-open (INPUT, "$wormpepdir/wormpep.table$wmpep_ver")|| print "$0 cant find file wormpep.table$wmpep_ver";
+open (INPUT, "$table_file")|| print "$0 cant find file $table_file";
 
 my $accn_holder;
 my %noSWALL;   #CEXXXXX => AAMXXXXX.X
@@ -130,7 +129,7 @@ while (<INPUT>)
       }
   }
 #try and get AC for those that have AAM or CAD style protein IDs only
-&GetNoAccPeps;
+#&GetNoAccPeps;
 
 
 #hash and accession array are built in one go 
@@ -179,7 +178,7 @@ sub outputToAce #(\%wormpep_acc, \@accession \$ace_output, \$errorLog)
     #$ace_output is filehandle of file creatred in calling script
 
     #construct pfetch command string by concatenating accession no's
-    my $submitString = "pfetch -F"." @$chunk";#get full Fasta record (includes Interpro motifs)
+    my $submitString = "pfetch -F"." @$chunk"." | grep  '^ID|(DR   InterPro)|^OX|//'" ;#get full Fasta record (includes Interpro motifs grep out the ID, NCBItaxID and Interpro)
     my %idextract;
 
     #create the fasta record in /wormsrv2/tmp dir (and remove it after use)
