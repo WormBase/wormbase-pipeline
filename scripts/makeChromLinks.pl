@@ -80,6 +80,7 @@ print "\nSequence CHROMOSOME_X\nMethod Link\n" ; $pos = 1 ;
 &add ("SUPERLINK_CB_X");    &overlap ("C11G6") ;
 &add ("SUPERLINK_RWXR"); 
 
+$db->close;
 exit 0 ;
 
 ############################################################

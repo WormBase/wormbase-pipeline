@@ -32,11 +32,10 @@
 # 02.02.21 dl: typos in the naming of the confirmed_intron virtual objects
 # 02.04.08 dl: old style logging for autoace.fa check, prevented complete run of subs
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2002-11-15 18:21:35 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2002-11-21 10:23:44 $
 
 use strict;
-use Ace;
 use lib "/wormsrv2/scripts/";
 use Wormbase;
 use Getopt::Std;

@@ -207,5 +207,5 @@ foreach (@seqnames) {
 }
 
 print "ChangeMetod FINISHED \n\n";
-
+$db->close;
 exit(0);

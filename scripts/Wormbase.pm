@@ -401,6 +401,7 @@ sub clones_in_database {
         }
         else {push @output, $clone;}    
     }
+    $db->close;
     return @output;   
 
 }

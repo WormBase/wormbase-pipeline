@@ -95,6 +95,8 @@ print LOG "\n\nC'est finis\n\n";
 &mail_maintainer("WormBase Report: update_website.pl",$maintainers,$log);
 
 close(LOG);
+
+$db->close;
 exit(0);
 
 

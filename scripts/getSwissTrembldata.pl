@@ -4,8 +4,8 @@
 #
 # Originally crafted by Dan Lawson
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2002-11-14 18:24:18 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2002-11-21 10:23:44 $
 #
 # see pod documentation (i.e. 'perldoc getSwissTrembldata.pl') for more information.
 #
@@ -15,7 +15,6 @@ use lib "/wormsrv2/scripts/";
 use Wormbase;
 use Getopt::Long;
 use strict;
-use Ace;
 
 
  ###################

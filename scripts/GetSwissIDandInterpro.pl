@@ -14,13 +14,13 @@
 #
 # pfetch is done in batches of 2000, any greater and nothing comes back!
 #
-# Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs 
-# Last updated on: $Date: 2002-10-21 12:48:52 $        # quickly see when script was last changed and by whom
+# Last updated by: $Author: krb $                      # These lines will get filled in by cvs 
+# Last updated on: $Date: 2002-11-21 10:23:44 $        # quickly see when script was last changed and by whom
 
 use strict;
 use lib "/wormsrv2/scripts/";                  
 use Wormbase;
-use Ace;
+
 
 
 use Getopt::Std;

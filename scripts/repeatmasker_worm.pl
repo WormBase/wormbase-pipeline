@@ -174,6 +174,8 @@ elsif ($low) {
 	system("repeatmasker2ace.pl $outdir/low low_complexity_repeat > $outdir/low/all.repeatmasker_low.ace");
 }
 
+$db->close;
+
 exit(0);
 
 __END__

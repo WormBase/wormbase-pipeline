@@ -8,8 +8,8 @@
 # by Kerstin Jekosch
 # 10/07/01
 #
-# Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2002-11-15 10:45:34 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2002-11-21 10:23:44 $
 
 use strict;
 use Carp;
@@ -419,6 +419,11 @@ foreach my $chrom (@chrom) {
     }
 }
 
+
+# Tidy up
+$camdb->close;
+$stldb->close;
+exit(0);
 
 
 ###################

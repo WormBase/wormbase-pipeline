@@ -114,6 +114,8 @@ my $name = "SubGetSwissId";
 #&mail_maintainer ($name,$maintainer,$log);
 #########################################
 
+$db->close;
+
 sub outputToAce #(\%wormpep_acc, \@accession \$ace_output, \$errorLog)
   {
     my ($wormpep_acc, $accession, $ace_ouput, $errorLog) = @_;

@@ -23,7 +23,6 @@ $|=1;
 use IO::Handle;
 use Getopt::Std;
 use Cwd;
-use Ace;
 use lib "/wormsrv2/scripts/";
 use Wormbase;
 

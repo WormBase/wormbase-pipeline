@@ -184,6 +184,9 @@ foreach $seq (keys %currSource) {
     if (!$link{$seq}) { warn "$seq not put back into a link\n"; }
 }
 
+
+$camdb->close;
+
 ############# end of file ################
 
 

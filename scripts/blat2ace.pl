@@ -19,13 +19,12 @@
 #
 # 010905 by Kerstin Jekosch
 
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2002-11-15 16:14:40 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2002-11-21 10:23:44 $
 
 
 use strict;
 use Data::Dumper;
-use Ace;
 use lib "/wormsrv2/scripts/";
 use Wormbase;
 use Getopt::Std;

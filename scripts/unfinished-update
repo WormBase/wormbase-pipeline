@@ -186,6 +186,8 @@ foreach $file (glob "$datedir/$seq.*.ace") {
 
 $db->raw_query("save") ;
 
+$db->close;
+
 close LOG ;
 exit 0 ;
 

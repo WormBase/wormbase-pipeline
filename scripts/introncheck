@@ -165,6 +165,7 @@ foreach my $chromosome (@chromosomes) {
 close OUT_CAM;
 close OUT_STL;
 
+$db->close;
 exit(0);
 
 

@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam aged 12 and a half
 #
-# Last updated on: $Date: 2002-11-20 10:28:40 $
+# Last updated on: $Date: 2002-11-21 10:23:44 $
 # Last updated by: $Author: krb $
 #
 # see pod documentation at end of file for more information about this script
@@ -203,6 +203,7 @@ while ($count_errors < 20){
 
 print LOG "\ncheck_predicted_genes.pl ended at ",`date`,"\n";;
 close(LOG);
+$db->close;
 exit(0);
 
 #################################################################

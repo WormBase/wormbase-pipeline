@@ -43,5 +43,6 @@ while (<GFF>) {
 
 }
 close GFF;
+$db->close;
 exit(0);
 

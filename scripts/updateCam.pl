@@ -164,6 +164,7 @@ if (! $db->parse_file ("$datedir/$seq" . "_2.ace")) { die $db->error() . "\n" ; 
 
 $db->raw_query("save") ;
 
+$db->close;
 exit 0 ;
 
 ############### end of file

@@ -6,8 +6,8 @@
 #
 # Usage: camcheck.pl
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2002-11-13 17:48:00 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2002-11-21 10:23:44 $
 #
 # see pod documentation (i.e. 'perldoc camcheck.pl') for more information.
 #
@@ -279,6 +279,7 @@ close LOG;
 # hasta luego                #
 ##############################
 
+$db->close;
 exit(0);
 
 ########################################################################################
