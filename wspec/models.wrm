@@ -765,7 +765,6 @@
 				  // ID  Accession_number & sequence version [dl 2000-07-27]
                         AC_number Text
 			Secondary_accession ?Accession_number XREF Sequence
-                        NI_number UNIQUE Text
 			Protein_id ?Sequence UNIQUE Text UNIQUE Int
 				   // modified to deal with multiple protein_ids [dl 1999-12-22]
 			DB_remark ?Text	#Evidence	// EMBL/Genbank
