@@ -5,7 +5,7 @@
 # by Anthony Rogers
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-08-09 15:54:18 $
+# Last updated on: $Date: 2004-09-07 15:48:45 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -98,7 +98,7 @@ else {
 &write_clones2seq      if ($clone2seq || $all);
 &write_genes2lab       if ($genes2lab || $all);
 &write_worm_gene2class  if ($worm_gene2class || $all);
-&write_worm_gene2cgc   if ($worm_gene2cgc);
+&write_worm_gene2cgc   if ($worm_gene2cgc || $all);
 &write_EST             if ($estdata || $all);
 &write_Feature         if ($feature_list || $all);
 &write_Gene_id         if ($CDS2gene_id || $all);
@@ -417,9 +417,9 @@ sub write_worm_gene2cgc  {
   my %cgc_name2gene;
 
   # connect to AceDB using TableMaker, but use /wormsrv2/geneace for Table-maker definition
-  my $command="Table-maker -p /wormsrv2/geneace/wquery/cgc_names_for_worm_genes.def\nquit\n";
+  my $command="Table-maker -p $ace_dir/wquery/cgc_names_for_worm_genes.def\nquit\n";
   
-  open (TACE, "echo '$command' | $tace /wormsrv2/geneace |");
+  open (TACE, "echo '$command' | $tace $ace_dir |");
   while (<TACE>) {
     chomp;
     next if ($_ eq "");
