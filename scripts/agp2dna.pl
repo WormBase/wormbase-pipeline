@@ -1,17 +1,23 @@
 #!/usr/local/bin/perl5.6.0 -w
 #
 # agp2dna.pl
-# dl1 020126
+#
+# dl
 #
 # Reconstructs chromosome DNA consensus file from the agp file.
 # Each clone segment of sequence is checked from the EMBL
-# entry (getz call) and the acedb derived DNA file.
+# entry and the acedb derived DNA file.
+#
+# Usage : agp2dna.pl [-options]
+#
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2002-07-09 14:44:26 $
 
 
 $|=1;
-use Getopt::Std;
+use Getopt::Long;
 use strict;
-use vars qw ($seq_len $sv_acc $sv_ver $opt_d $opt_h $opt_s);
+use vars qw ($seq_len $sv_acc $sv_ver);
 use lib "/wormsrv2/scripts/";
 use Wormbase;
 
@@ -22,10 +28,9 @@ use Wormbase;
 my $maintainers = "All";
 my $rundate     = `date +%y%m%d`;   chomp $rundate;
 my $runtime     = `date +%H:%M:%S`; chomp $runtime;
-#my $version     = &get_cvs_version("$0");
 
-my $dnadir = "/wormsrv2/autoace/CHROMOSOMES";
-my $logdir = "/wormsrv2/autoace/yellow_brick_road";
+my $dnadir      = "/wormsrv2/autoace/CHROMOSOMES";
+my $logdir      = "/wormsrv2/autoace/yellow_brick_road";
 
 my @gff_files = ('I','II','III','IV','V','X');
 
@@ -33,18 +38,33 @@ my @gff_files = ('I','II','III','IV','V','X');
  # command-line options                 #
  ########################################
 
-getopts ("hds:");
-&usage(0) if ($opt_h);
-my $debug = $opt_d;
+my $debug;              # Verbose debug mode
+my $help;               # Help/Usage page
+my $chrom;              # Single chromosome mode - provide chromosome name
+my $pfetch;             # Fetch sequences using pfetch
+my $getz;               # Fetch sequences using getz
+
+GetOptions (
+            "pfetch"      => \$pfetch,
+            "getz"        => \$getz,
+	    "debug"       => \$debug,
+            "help"        => \$help,
+	    "chrom=s"     => \$chrom
+ );
+
+&usage(0) if ($help);
+
+# Set pfetch as the default retreival option
+if (!$getz) {$pfetch = 1};
 
 # short-cut for developer
 ($maintainers = "dl1\@sanger.ac.uk") if ($debug);
 
 # single chromosome mode
-if ($opt_s) {
+if ($chrom) {
     @gff_files = ();
-    &usage(5) unless (($opt_s eq "I") || ($opt_s eq "II") || ($opt_s eq "III") || ($opt_s eq "IV") || ($opt_s eq "V") || ($opt_s eq "X"));
-    push (@gff_files, $opt_s);
+    &usage(5) unless (($chrom eq "I") || ($chrom eq "II") || ($chrom eq "III") || ($chrom eq "IV") || ($chrom eq "V") || ($chrom eq "X"));
+    push (@gff_files, $chrom);
 }
 
  ########################################
@@ -86,7 +106,14 @@ foreach my $chromosome (@gff_files) {
 	    
 	    # fetch the EMBL entry
 	    ($EMBL_acc,$EMBL_sv,$EMBL_seq,$EMBL_slice) = "" ;
-	    ($EMBL_acc,$EMBL_sv,$EMBL_seq) = &rubbish($acc);
+
+	    if ($pfetch) {
+		($EMBL_acc,$EMBL_sv,$EMBL_seq) = &sequence_pfetch($acc);
+	    }
+	    elsif ($getz) {
+		($EMBL_acc,$EMBL_sv,$EMBL_seq) = &sequence_getz($acc);
+	    }
+	    
 	    $EMBL_slice = substr($EMBL_seq,$start,$span);
 	    
 	    # wrong orientation handling
@@ -154,20 +181,48 @@ exit(0);
  # getz query accession for sequence    #
  ########################################
 
-sub rubbish {
+sub sequence_getz {
     
     my $acc = shift;
     my ($EMBL_acc,$EMBL_sv,$EMBL_seq);
     
-    open (SEQUENCE, "getz -d -sf fasta -f \'seqversion\' \"[{embl emblnew}-acc:$acc] ! ([embl-acc:$acc] < emblnew)\" |");
+    open (SEQUENCE, "getz -d -sf fasta -f \'seqversion\' \"[{emblrelease emblnew}-acc:$acc] ! ([emblrelease-acc:$acc] < emblnew)\" |");
     while (<SEQUENCE>) {
 	chomp;
-	if (/^SV\s+(\S+)\.(\d+)/) {
+        # deal with header line
+ 	if (/^SV\s+(\S+)\.(\d+)/) {
 	    ($EMBL_acc,$EMBL_sv) = ($1,$2);
 	    $EMBL_seq = "";
 	    next;
 	}
 	next if (/^>/);
+	$EMBL_seq .= $_;
+    }
+    close SEQUENCE;
+
+    return($EMBL_acc,$EMBL_sv,$EMBL_seq);
+}
+
+sub sequence_pfetch {
+    
+    my $acc = shift;
+    my ($EMBL_acc,$EMBL_sv,$EMBL_seq);
+    
+    open (SEQUENCE, "/usr/local/pubseq/bin/pfetch $acc |");
+    while (<SEQUENCE>) {
+	chomp;
+	# deal with header line
+	if (/>\S+\s+(\S+)\.(\d+)/) {
+	    ($EMBL_acc,$EMBL_sv) = ($1,$2);
+	    $EMBL_seq = "";
+	    next;
+	}
+	# replace UPPER->lower case chars
+	s/G/g/g;
+	s/A/a/g;
+	s/T/t/g;
+	s/C/c/g;
+	s/N/n/g;
 	$EMBL_seq .= $_;
     }
     close SEQUENCE;
@@ -204,7 +259,7 @@ sub usage {
     }
     elsif ($error == 5){ 
         # Error 05 - Single chromosome mode with invalid chromosome
-        print "Single chromosome mode aborted. '$opt_s' is not a valid chromsome designation.\n";
+        print "Single chromosome mode aborted. '$chrom' is not a valid chromsome designation.\n";
         exit(1);
     }
     elsif ($error == 0) {
@@ -240,11 +295,15 @@ agp2dna.pl optional arguments:
 
 =over 4
 
-=item -s [txt], Single chromosome mode. Valid options (I,II,III,IV,V and X)
+=item -chrom [txt], Single chromosome mode. Valid options (I,II,III,IV,V and X)
 
-=item -h, Help page
+=item -pfetch, Retrieve sequence data using pfetch (default)
 
-=item -d, Verbose/Debug mode
+=item -getz, Retrieve sequence data using getz
+
+=item -help, Help page
+
+=item -debug, Verbose/Debug mode
 
 =back
 
@@ -254,7 +313,7 @@ agp2dna.pl requires a number of files:
 
 CHROMOSOME_*.dna : DNA sequence for the chromosome [/wormsrv2/autoace/CHROMOSOMES/]
 
-CHROMOSOME_*.agp : agp file for the chromosome [/wormsrv2/autoace/CHROMOSOMES/]
+CHROMOSOME_*.agp : agp file for the chromosome     [/wormsrv2/autoace/CHROMOSOMES/]
 
 =head1 EXAMPLES:
 
@@ -270,14 +329,13 @@ and log files can be found in /wormsrv2/autoace/yellow_brick_road
 
 =over 4
 
-=item agp2dna.pl -s I
+=item agp2dna.pl -chrom I
 
 =back
 
 Reconstructs the chromosome sequences for chromsome I using agp file from /wormsrv2/autoace/CHROMOSOMES
 and compares the sequence with the dna file in /wormsrv2/autoace/CHROMOSOMES. The reconstructed dna file
 and log files can be found in /wormsrv2/autoace/yellow_brick_road
-
 
 =head1 AUTHOR:
 
