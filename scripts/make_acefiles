@@ -8,7 +8,7 @@
 # autoace.
 #
 # Last updated by: $Author: dl1 $                     
-# Last updated on: $Date: 2002-07-22 16:51:01 $       
+# Last updated on: $Date: 2002-08-16 11:48:42 $       
 
 #################################################################################
 # Variables                                                                     #
@@ -50,11 +50,7 @@ GetOptions (
  # Paths etc                  #
  ##############################
 
-# Temporary measure. Need to move to main branch asap
-# my $tace           = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
-my $tace           = glob ('~edgrif') . "/TEST/DAN/tace";
-
-
+my $tace           = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
 my $autoace_config = "/wormsrv2/autoace_config/autoace.config";
 my $basedir        = "/wormsrv2/wormbase";
 my $miscdir        = "$basedir/misc";

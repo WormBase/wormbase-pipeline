@@ -28,11 +28,8 @@ our $tace   = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
 
 # To (mis)quote Bob Marley - 'so much trouble in the world (of acedb)'
 
-#our $giface = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/giface";
+our $giface = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/giface";
 #our $giface = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/giface";
-#our $giface =  "/nfs/team71/acedb/srk/acedb.nfs/bin.ALPHA_4/giface";
-
-our $giface = "/nfs/disk100/acedb/RELEASE.2002_07_29/bin.ALPHA_4/giface";
 
 our ($opt_d,$opt_g,$opt_e,$opt_h,$opt_c, $opt_p, $opt_q, $opt_t);
 getopts("dgehcp:q:t");
