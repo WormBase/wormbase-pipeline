@@ -7,8 +7,8 @@
 # A script to finish the last part of the weekly build by updating all of the
 # relevant WormBase and Wormpep web pages.
 #
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2003-06-17 16:02:46 $      
+# Last updated by: $Author: dl1 $     
+# Last updated on: $Date: 2003-09-23 13:16:06 $      
 
 
 #################################################################################
@@ -846,7 +846,7 @@ sub update_wormpep_pages{
 
   open (TABLE, "<$www_root/wormpep/wormpep_release.txt") || croak "Can't read from the file: $www_root/wormpep/wormpep_release.txt\n\n";
   open (TABLE2, ">$www_root/wormpep/tmp_table.txt") || croak "Can't create the file: $www_root/wormpep/tmp_table.txt\n\n";
-  print TABLE2 "${WS_current}\t$release_date2\t$count";
+  print TABLE2 "${WS_current}\t$release_date2\t$count\n";
   while(<TABLE>){
     print TABLE2 $_;
   }
