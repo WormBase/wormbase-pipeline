@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.19 2001-11-15 11:32:11 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.20 2001-11-15 14:42:38 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -1376,7 +1376,7 @@
                                             Injection              //RL [010327]
                                             Soaking                //RL [010327]
                                             Transgene_expression   //RL [010327]
-        Inhibits	Predicted_gene ?Sequence XREF RNAi_result  // "gene" parent (unreliable)
+        Inhibits	Predicted_gene ?CDS XREF RNAi_result  // changed from Sequence to CDS krb [011115]
 			Gene ?Gene   XREF RNAi_result            //RL [010327]
         Supporting_data Movie ?Movie XREF RNAi                   // added for Lincoln, krb [010807]
                         Picture ?Picture XREF RNAi		 // added for Lincoln, krb [010807]
