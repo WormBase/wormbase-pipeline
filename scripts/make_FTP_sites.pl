@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-11-08 20:08:56 $
+# Last updated on: $Date: 2002-11-08 20:30:36 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -402,7 +402,7 @@ sub copy_homol_data{
   print LOG "$runtime: Starting to copy BLAST data to private ftp site\n";
 
   system "cp $blast_dir/blastp_ensembl.ace          $private_ftp/${release}_blastp_data.ace";
-  system "cp $blast_dir/blastx_ensembl.ace          $private_ftp/${release}_blastp_data.ace";
+  system "cp $blast_dir/blastx_ensembl.ace          $private_ftp/${release}_blastx_data.ace";
   system "cp $blast_dir/ensembl_motif_info.ace      $private_ftp/${release}_protein_motif_data.ace";
 
   system "/bin/gzip $private_ftp/*ace";
