@@ -7,7 +7,7 @@
 # This maps alleles to the genome based on their flanking sequence
 #
 # Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2003-01-30 11:45:15 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2003-02-04 16:09:18 $        # quickly see when script was last changed and by whom
 
 
 use strict;
@@ -27,6 +27,7 @@ my $verbose;
 my $restart = "go";
 my $help; { `perldoc $0`;};
 my $no_geneace;
+my $no_parse;
 
 # $debug   -  all output goes to ar/allele_mapping
 
@@ -37,6 +38,7 @@ GetOptions( "debug"     => \$debug,
 	    "verbose"   => \$verbose,
 	    "help"      => \$help,
 	    "restart=s" => \$restart,
+	    "no_parse"  => \$no_parse,
 	    "no_geneace"=> \$no_geneace
 	  );
 
@@ -319,18 +321,16 @@ foreach $allele (@alleles)
 	if( $sequence->name =~ m/(\w+)\.\w+/ ) {
 	  $clone = $1;
 	  $allele_data{$name}[3] = "$&";
+	  $source = $db->fetch(Sequence => "$clone");
 	}
 	else {
-	  $clone = $sequence->name;
+	  $source = $sequence;
 	}
-	
-	$source = $db->fetch(Sequence => "$clone");	
-	$SEQspan = $source->asDNA;
-	
-	$onSuperlink = 1 if ($sequence =~ /SUPER/);
-	if ($onSuperlink != 1) 
-	  {
-	    if(  &MapAllele == 1 ) { #only try and map to clone if sequence isn't a SUPERLINK
+	if( $source )
+	  {	
+	    $SEQspan = $source->asDNA;
+	    
+	    if(  &MapAllele == 1 ) {
 	      # allele mapped to clone
 	      print "Did $allele with clone\n" if $verbose;
 	    }
@@ -352,26 +352,28 @@ foreach $allele (@alleles)
 		  $allele_data{$name}[4] = $new_5;
 		  $allele_data{$name}[5] = $new_3;
 		}
-		else {
-		  print LOG "$name failed mapping\n";
-		  print  "$name failed mapping\n";
+		else {	
+		  # check that we're not already mapping to superlink
+		  unless ( $source->name =~ /SUPERLINK/ ) {
+		    $onSuperlink = 1;
+		    $source = $source->Source;
+		    $SEQspan = $source->asDNA;
+		    if( &MapAllele == 1 ) {
+		  #allele mapped to superlink
+		      $allele_data{$name}[6] = $source->name;
+		      print "Did $allele with superlink\n" ;
+		    }
+		    else {
+		      print LOG "$name failed mapping\n";
+		      print  "$name failed mapping\n";
+		    }
+		  }
 		}
 	      }
-	  }
+	  }	
 	else {
-	  #$source is a clone obj
-	  if( $source )
-	    {	    
-	      if( &MapAllele == 1 ) {
-		#allele mapped to superlink
-		$allele_data{$name}[6] = $source->name;
-		print "Did $allele with superlink\n" ;
-	      }
-	    }	
-	  else {
-	    print LOG "$allele $sequence has no Source\n";
-	    next;
-	  }
+	  print LOG "$allele $sequence has no Source\n";
+	  next;
 	}
 
 	&findOverlapGenes($name);
@@ -396,7 +398,7 @@ close GENEACE unless $no_geneace;
 ##############################
 # read acefiles into autoace #
 ##############################
-unless ( $debug ) {
+unless ( $no_parse ) {
   print LOG "\nStart parsing $ace_file in to $database\n\n";
   my $command =<<END;
 pparse $geneace_update_delete
@@ -411,8 +413,8 @@ END
   print LOG "finished parsing\n";
 }
 # close LOG and send mail
-close LOG;
 print LOG "$0 end at ",&runtime," \n-------------- END --------------------\n\n";
+close LOG;
 &mail_maintainer("map_alleles","$maintainers","$log");
 
 exit(0);
