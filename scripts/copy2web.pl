@@ -48,10 +48,10 @@ my @filenames = qw( overlapping_genes_cam overlapping_genes_stl EST_in_intron_ca
 
 print LOG "copying files from /wormsrv2/autoace/CHECKS/ to /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/$WSversion/Checks\n"; 
 
-system("mkdir /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/$WSversion") && die "Cannot create web $WSversion dir $!\n";
-system("mkdir /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/$WSversion/Checks") && die "Cannot create web $WSversion/Checks dir $!\n";
+system("mkdir /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/$WSversion") && warn "Cannot create web $WSversion dir $!\n";
+system("mkdir /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/$WSversion/Checks") && warn "Cannot create web $WSversion/Checks dir $!\n";
 system("cp -f /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/$oldWSversion/Checks/index.shtml /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/$WSversion/Checks/")
-    && die "Cannot copy index.shtml $!\n";
+    && warn "Cannot copy index.shtml $!\n";
 
 foreach my $chrom (@chrom) {
     foreach my $file (@filenames) {
