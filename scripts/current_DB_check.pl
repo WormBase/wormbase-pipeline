@@ -8,7 +8,7 @@
 # to look for bogus sequence entries
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-10-15 13:34:56 $
+# Last updated on: $Date: 2002-10-16 09:24:50 $
 
 use Ace;
 use lib "/wormsrv2/scripts/"; 
@@ -49,7 +49,6 @@ print "Checking $database\n\n";
 ##############################################
 # Initialise variables, set up log files
 ###############################################
-my $errors;
 my %problems; # store problems in a double hash, first key being timestamp name
 my @other; # store uncategorised problems
 
@@ -83,7 +82,6 @@ foreach my $seq (@genome_seqs){
     my $category = 0;
 
     if(!defined($subseq->at('Visible.Corresponding_protein'))&&defined($subseq->at('Properties.Coding.CDS'))){  
-      $errors++;     
       my $tag = "Origin";
       my $timestamp = &get_timestamp($class, $subseq, $tag);
       $problems{$timestamp}{$class.":".$subseq} = ["\"No Corresponding_protein set for this sequence\""];
@@ -93,7 +91,6 @@ foreach my $seq (@genome_seqs){
     
     # only look for some specific errors if no Source tag present
     if(!defined($subseq->at('Structure.From.Source'))){  
-      $errors++;     
       
       if(defined($subseq->at('DB_info.Database'))){
 	my $tag = "Database";
@@ -242,40 +239,66 @@ foreach my $seq (@genome_seqs){
 ###################################
 # Report errors to log file
 ###################################
-print "\n\n$errors errors found\n" if $verbose;
-print ALL_LOG "\n$errors errors found\n\n\n";
 
+# Count all the problems!
+my $sanger_counter = 0;
+my $caltech_counter = 0;
+my $cshl_counter = 0;
+my $stlouis_counter = 0;
+my $all_counter = 0;
 
 
 foreach my $i (@other){
   print ALL_LOG "Other - $i\n";
   print SANGER_LOG "Other - $i\n";
   print "Other - $i\n" if $verbose;
+  $all_counter++;
+  $sanger_counter++;
 }
+
+
 
 foreach my $j (keys(%problems)){
   foreach my $k (keys(%{$problems{$j}})){
     print ALL_LOG "$j $k @{${$problems{$j}}{$k}}\n";
-    print SANGER_LOG "$j $k @{${$problems{$j}}{$k}}\n" if ($j ne "caltech" && $j ne "csh" && $j ne "stlace" && $j ne "brigace");
-    print CSHL_LOG "$k @{${$problems{$j}}{$k}}\n" if ($j eq "csh");
-    print CALTECH_LOG "$k @{${$problems{$j}}{$k}}\n" if ($j eq "caltech");
-    print STLOUIS_LOG "$j $k @{${$problems{$j}}{$k}}\n" if ($j eq "stlace" && $j eq "brigace");
+    if ($j ne "caltech" && $j ne "csh" && $j ne "stlace" && $j ne "brigace"){
+      print SANGER_LOG "$j $k @{${$problems{$j}}{$k}}\n";      
+      $sanger_counter++;
+      $all_counter++;
+    }
+
+    if ($j eq "csh"){
+      print CSHL_LOG "$k @{${$problems{$j}}{$k}}\n";
+      $cshl_counter++;
+      $all_counter++;
+    }
+    if ($j eq "caltech"){
+      print CALTECH_LOG "$k @{${$problems{$j}}{$k}}\n";
+      $caltech_counter++;
+      $all_counter++;
+    }
+    if ($j eq "stlace" && $j eq "brigace"){
+      print STLOUIS_LOG "$j $k @{${$problems{$j}}{$k}}\n";
+      $stlouis_counter++;
+      $all_counter++;
+    }
 							  
 #    print "$j $k @{${$problems{$j}}{$k}}\n";
   }
 }
 
+print "\n$all_counter problems found\n" if $verbose;
 
 ##########################################
 # Tidy up and mail relevant log files
 ##########################################
 
 $db->close;
-print ALL_LOG "\n$0 ended at ",`date`,"\n";
-print SANGER_LOG "\n$0 ended at ",`date`,"\n";
-print CSHL_LOG "\n$0 ended at ",`date`,"\n";
-print CALTECH_LOG "\n$0 ended at ",`date`,"\n";
-print STLOUIS_LOG "\n$0 ended at ",`date`,"\n";
+print ALL_LOG "\n$all_counter problems found\n\n$0 ended at ",`date`,"\n";
+print SANGER_LOG "\n$sanger_counter problems found\n\n$0 ended at ",`date`,"\n";
+print CSHL_LOG "\n$cshl_counter problems found\n\n$0 ended at ",`date`,"\n";
+print CALTECH_LOG "\n$caltech_counter problems found\n\n$0 ended at ",`date`,"\n";
+print STLOUIS_LOG "\n$stlouis_counter problems found\n\n$0 ended at ",`date`,"\n";
 
 close(ALL_LOG);
 close(SANGER_LOG);
@@ -290,10 +313,10 @@ my $sanger = "wormbase\@sanger.ac.uk";
 my $cshl = "stein\@cshl.org, cunningh\@cshl.edu, harris\@cshl.org, krb\@sanger.ac.uk";
 my $stlouis = "dblasiar\@watson.wustl.edu, jspieth\@watson.wustl.edu, krb\@sanger.ac.uk";
 
-&mail_maintainer("End of build database integrity checks: Sanger","$sanger",$sanger_log) unless $test;
-&mail_maintainer("End of build database integrity checks: CSHL","$cshl",$cshl_log) unless $test;
-&mail_maintainer("End of build database integrity checks: Caltech","$caltech",$caltech_log) unless $test;
-&mail_maintainer("End of build database integrity checks: St. Louis","$stlouis",$stlouis_log) unless $test;
+&mail_maintainer("$WS_version integrity checks: Sanger","$sanger",$sanger_log) unless ($test || ($sanger_counter == 0));
+&mail_maintainer("$WS_version integrity checks: CSHL","$cshl",$cshl_log) unless ($test || ($cshl_counter ==0));
+&mail_maintainer("$WS_version integrity checks: Caltech","$caltech",$caltech_log) unless ($test || ($caltech_counter == 0));
+&mail_maintainer("$WS_version integrity checks: St. Louis","$stlouis",$stlouis_log) unless ($test || ($stlouis_counter == 0));
 
 exit(0);
 
