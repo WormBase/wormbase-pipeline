@@ -6,8 +6,8 @@
 #
 # Gets latest Interpro:GO mappings from XXXX and puts info in to ace file
 #
-# Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2004-07-06 15:36:58 $                        # quickly see when script was last changed and by whom
+# Last updated by: $Author: krb $                      
+# Last updated on: $Date: 2004-09-01 13:50:57 $           
 
 
 use strict;
@@ -16,7 +16,6 @@ use Wormbase;
 use Data::Dumper;
 use File::Copy;
 
-# Try to keep different parts of code cleanly separated using comments...
 
 ##############
 # variables  #                                                                   #
@@ -26,9 +25,9 @@ use File::Copy;
 # and b) copied to /wormsrv2/logs
 
 my $maintainers = "All";
-my $rundate     = `date +%y%m%d`; chomp $rundate;
-my $runtime     = `date +%H:%M:%S`; chomp $runtime;
-our $log        = "/wormsrv2/logs/make_Interpro2GO_mapping.$rundate";
+my $rundate     = &rundate;
+my $runtime     = &runtime;
+our $log        = "/wormsrv2/logs/make_Interpro2GO_mapping.$rundate.$$";
 my $latest_version = "/wormsrv2/tmp/newip2gos";
 
 open (LOG, ">$log") or die "cant open $log";
@@ -96,27 +95,23 @@ print LOG "\tabout to write ace file  .  .  \n";
 #GO_term  "GO:0004930"
 #GO_term  "GO:0005624"
 
-open (I2GACE, ">/wormsrv2/tmp/interpro2go.ace") or die "cant write ace file\n";
-foreach my $key (keys %interpro_des)
-  {
-    print I2GACE "Motif : \"INTERPRO:$key\"\n";
-    print I2GACE "Database \"INTERPRO\" \"INTERPRO_ID\" \"$key\"\n";
-    @data = split(/\s+/,"$interpro_GO{$key}");
-    foreach (@data){
-      print I2GACE "GO_term \"$_\"\n";
-    }
-    print I2GACE "\n";
+open (I2GACE, ">/wormsrv2/autoace/acefiles/interpro2go.ace") or die "cant write to /wormsrv2/autoace/acefiles/interpro2go.ace\n";
+foreach my $key (keys %interpro_des){
+  print I2GACE "Motif : \"INTERPRO:$key\"\n";
+  print I2GACE "Database \"INTERPRO\" \"INTERPRO_ID\" \"$key\"\n";
+  @data = split(/\s+/,"$interpro_GO{$key}");
+  foreach (@data){
+    print I2GACE "GO_term \"$_\"\n";
   }
-close I2GACE;
+  print I2GACE "\n";
+}
+close(I2GACE);
 
-# now copy file to /wormsrv2 and load to autoace
-my $status = copy("/wormsrv2/tmp/interpro2go.ace", "/wormsrv2/wormbase/misc_dynamic/misc_interpro2go.ace");
-print LOG "Failed to copy interpro2go.ace file: $!\n" if ($status == 0);
 
 print LOG "Loading interpro2go.ace file to autoace\n";
-my $command = "autoace_minder.pl -load /wormsrv2/wormbase/misc_dynamic/misc_interpro2go.ace -tsuser interpro2go_mappings";
+my $command = "autoace_minder.pl -load /wormsrv2/autoace/acefiles/interpro2go.ace -tsuser interpro2go_mappings";
  
-$status = system($command);
+my $status = system($command);
 if(($status >>8) != 0){
   print LOG "ERROR: Loading interpro2go.ace file failed \$\? = $status\n";
 }

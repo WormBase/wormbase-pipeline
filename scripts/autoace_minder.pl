@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2004-08-12 09:42:38 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2004-09-01 13:50:57 $
 
 
 
@@ -1215,12 +1215,14 @@ sub make_wormpep {
     system("touch $logdir/D1A:Build_wormpep_initial");
   }
   else {
-    # Get protein IDs (this step writes to ~wormpub/analysis/SWALL
-    &run_command("$scriptdir/getProteinID");
+    # get interpro domains (this step loads resulting ace file to autoace)
+    &run_command("$scriptdir/GetInterpro_motifs.pl -load");
 
-    # load into autoace
-    my $file = "$basedir/autoace/acefiles/WormpepACandIDs.ace"; 
-    &load($file,"wormpep_acs_and_Ids");
+    # make interpro2go connections (to be used by getProteinID)
+    &run_command("$scriptdir/make_Interpro2GO_mapping.pl");
+
+    # Get protein IDs (this step writes to ~wormpub/analysis/SWALL and loads wormpep info to autoace) 
+    &run_command("$scriptdir/getProteinID.pl -load");
     
     # make wormpep -final
     my $command = "$scriptdir/make_wormpep.pl -final";

@@ -1,14 +1,14 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
-# getProteinID
+# getProteinID.pl
 #
 # Parses the weekly mail from Nadeem to get the Protein_ID and
 # SWALL accession for C.elegans entries in EMBL 
 #
-# dl
+# written by Dan Lawson
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-08-10 13:36:33 $
+# Last edited on: $Date: 2004-09-01 13:50:57 $
 
 use lib "/wormsrv2/scripts/";
 use Wormbase;
@@ -16,9 +16,11 @@ use Getopt::Long;
 use strict;
 use Data::Dumper;
 
+
+# fetch hashes made by other scripts
 my %acc2clone = &FetchData('accession2clone');
 my %gene2CE   = &FetchData('cds2wormpep');
-my %Ip2Go;
+my %Ip2Go     = &FetchData('interpro2go');
 our %swall;
 
 # get the InterPro => GOterm mapping ( space separated ie 'IPR004794' => 'GO:0008703 GO:0008835 GO:0009231 ')
@@ -40,31 +42,29 @@ my %db_ids_acc = (
 # variables and command-line options # 
 ######################################
 
-my ($help, $file, $debug, $no_go, $verbose);
+my $help;
+my $file;    # specify protein ID file to use (defaults to ~wormpub/protein_ID.mail)
+my $debug;
+my $verbose;
+my $load;    # option specifies whether resulting acefile will be loaded to autoace
 
-GetOptions (
-	    "help"      => \$help,
+GetOptions ("help"      => \$help,
             "file=s"    => \$file,
 	    "debug=s"   => \$debug,
 	    "verbose"   => \$verbose,
-	    "go"        => \$no_go
-	    );
-
-unless ($no_go) {
-  system("make_Interpro2GO_mapping.pl") and die "cant update the interpro to GO term mappings\n";
-  %Ip2Go = &FetchData('interpro2go');
-}
+	    "load"      => \$load);
 
 # get swall data
-
 &getswalldata;
+
 
 # Display help if required
 &usage("Help") if ($help);
 
-if (! defined $file) {
-    $file = "/nfs/disk100/wormpub/protein_ID.mail";
-}
+
+# set default file if -file not specified on command line
+($file = "/nfs/disk100/wormpub/protein_ID.mail") if (!defined($file));
+
 
 my $ace_file = "/wormsrv2/autoace/acefiles/WormpepACandIDs.ace";
 $ace_file = "/tmp/WormpepACandIDs.ace" if ($debug);
@@ -129,17 +129,25 @@ while (<FILE>) {
     print OUT "Protein_id \"$acc2clone{$f[0]}\" $f[2] $f[3]\n";
     
     # assign GO terms based on InterPro Motifs
-    unless ($no_go) {
-	foreach my $ip (@{$swall{$f[2]}{Interpro}}) {
-	  if( exists $Ip2Go{$ip} ) {
-	    my @GOterms = split(/\s/,$Ip2Go{$ip});
-	    foreach my $go (@GOterms) {
-	      print OUT "GO_term\t\"$go\" \"IEA\" Inferred_automatically\n"
-	    }
-	  }
+    foreach my $ip (@{$swall{$f[2]}{Interpro}}) {
+      if( exists $Ip2Go{$ip} ) {
+	my @GOterms = split(/\s/,$Ip2Go{$ip});
+	foreach my $go (@GOterms) {
+	  print OUT "GO_term\t\"$go\" \"IEA\" Inferred_automatically\n";
 	}
       }
+    }
   }
+
+
+# now load to autoace if -load specified
+if($load){
+  my $command = "autoace_minder.pl -load /wormsrv2/autoace/acefiles/WormpepACandIDs.ace -tsuser wormpep_IDs";
+  my $status = system($command);
+  if(($status >>8) != 0){
+    die "ERROR: Loading WormpepACandIDs.ace file failed \$\? = $status\n";
+  }
+}
 
 close FILE;
 close OUT;
@@ -251,7 +259,7 @@ __END__
 
 =pod
 
-=head2 NAME - getProteinID
+=head2 NAME - getProteinID.pl
 
 =head1 USAGE
 
@@ -261,25 +269,31 @@ __END__
 
 =back
 
-script_template.pl MANDATORY arguments:
+=head4 MANDATORY arguments:
 
 =over 4
 
 =back
 
-script_template.pl  OPTIONAL arguments:
+-head4 OPTIONAL arguments:
 
 =over 4
 
-=item no_go
+=item -file <file>
 
-use this if you dont want to update and include the interpro to GO data
+Extracted e-mail from EBI containing the Protein_ID data
 
-=item -file <file>, Extracted e-mail from EBI containing the Protein_ID data
+=item -help
 
-=item -help, Help
+This help
 
-=item -verbose, extra command line output, shows status of each WormPep protein (slower!)
+=item -verbose
+
+Extra command line output, shows status of each WormPep protein (runs slower!)
+
+=item -load
+
+if specified will load resulting acefile to autoace
 
 =back
 

@@ -6,50 +6,57 @@
 #
 # Gets latest Interpro:GO mappings from XXXX and puts info in to ace file
 #
-# Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2004-07-06 15:36:58 $                        # quickly see when script was last changed and by whom
-
+# Last updated by: $Author: krb $                      
+# Last updated on: $Date: 2004-09-01 13:50:57 $         
 
 use strict;                                     
 use lib "/wormsrv2/scripts/";                    
 use Wormbase;
+use Getopt::Long;
 
-# Try to keep different parts of code cleanly separated using comments...
+my $help;
+my $load;   # option for loading resulting acefile into autoace
+
+GetOptions ("help"      => \$help,
+            "load"      => \$load);
+
+
+# Display help if required
+&usage("Help") if ($help);
+
 
 ##############
-# variables  #                                                                   #
+# variables  #                                                                   
 ##############
 
 # Most checking scripts should produce a log file that is a) emailed to us all 
 # and b) copied to /wormsrv2/logs
 
 my $maintainers = "All";
-my $rundate     = `date +%y%m%d`; chomp $rundate;
-my $runtime     = `date +%H:%M:%S`; chomp $runtime;
+my $rundate     = &rundate;
+my $runtime     = &runtime;
 our $log        = "/wormsrv2/logs/GetInterPro_motifs.$rundate";
 
 open (LOG, ">$log") or die "cant open $log";
 
 print LOG "$0\n";
-print LOG "started at ",`date`,"\n";
-print LOG "=============================================\n";
-print LOG "\n";
+print LOG &runtime, ": script started\n\n";
 
 #Get the latest version
 my $motifs = "/tmp/interpro_motifs.html";
-print LOG "Attempting to wget the latest version\n";
+print LOG &runtime, ": Running 'wget' to get interpro file from EBI\n";
 `/usr/local/bin/wget -O $motifs ftp://ftp.ebi.ac.uk/pub/databases/interpro/entry.list` and die "$0 Couldnt get listing.html\n";
-print LOG "...... got it!\n";
 
-print LOG "\n\nOpening file $motifs . . \n";
+
 open (I2G,"<$motifs") or die "cant open $motifs\n";
-open (IPDESC,">/wormsrv2/wormbase/misc_dynamic/misc_interpro_motifs.ace") or die "cant write misc_interpro_motifs.ace\n";
+open (IPDESC,">/wormsrv2/wormbase/acefiles/interpro_motifs.ace") or die "cant write /wormsrv2/autoace/acefiles/interpro_motifs.ace\n";
 my %interpro_des;   #IPR000018 => "P2Y4 purinoceptor"
 my $text;
 my $ip;
 
 # IPR000177 Apple domain
-print LOG "\treading data . . . \n";
+
+print LOG &runtime, ": Writing acefile to /wormsrv2/autoace/acefiles/interpro_motifs.ace\n";
 while (<I2G>){
   chomp;
   my @info = split;
@@ -65,17 +72,41 @@ while (<I2G>){
 }
 
 
-print LOG "finsihed at ",`date`,"\n";
+print LOG &runtime, ": script finished\n";
 close IPDESC;
 close I2G;
 close LOG;
-#### use Wormbase.pl to mail Log ###########
-my $name = "GetInterPro_motifs";
-#$maintainers = "ar2\@sanger.ac.uk";
-#&mail_maintainer ($name,$maintainers,$log);
-#########################################
+
+# load file if -load was specified
+if($load){
+  print LOG &runtime, ": Loading acefile to autoace\n";
+  my $command = "autoace_minder.pl -load /wormsrv2/autoace/acefiles/interpro_motifs.ace -tsuser interpro_motifs";
+ 
+  my $status = system($command);
+  if(($status >>8) != 0){
+    print LOG "ERROR: Loading interpro_motifs.ace file failed \$\? = $status\n";
+  }
+}
+
+# mail Log file
+&mail_maintainer ("GetInterPro_motifs.pl",$maintainers,$log);
+
 
 exit(0);
+
+###############################
+
+sub usage {
+  my $error = shift;
+
+  if ($error eq "Help") {
+    # Normal help menu
+    system ('perldoc',$0);
+    exit (0);
+  }
+}
+
+
 
 
 
@@ -105,6 +136,16 @@ Title    "P2Y4 purinoceptor"
 
 Database "INTERPRO" "INTERPRO_ID" "IPR000018"
 
+
+=head1 OPTIONAL arguments:
+
+=over 4
+
+=item -load
+
+if specified will load resulting acefile to autoace
+
+=back
 
 =head1 REQUIREMENTS
 
