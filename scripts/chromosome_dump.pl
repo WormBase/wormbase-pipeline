@@ -52,9 +52,6 @@ else{
 }
 
 
-print "opt_p = $opt_p, opt_q = $opt_q\ndatabase is $database, dump_dir is $dump_dir\n\n";
-exit(0);
-
 #############################
 # display help if required  #
 #############################
