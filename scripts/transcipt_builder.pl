@@ -5,11 +5,16 @@ use lib glob("~ar2/wormbase/scripts/");
 use Getopt::Long;
 use Data::Dumper;
 use Coords_converter;
+use Wormbase;
 
-my ($debug, $verbose, $really_verbose, $est, $count, $report, $gap, $transcript, $gff, $show_matches, $database, $overlap_check);
+my $tace = &tace;
+
+my ($debug, $help, $verbose, $really_verbose, $est, $count, $report, $gap, $transcript, $gff, $show_matches, $database, $overlap_check, $load_matches, $load_transcripts);
+
 $gap = 5; # $gap is the gap allowed in an EST alignment before it is considered a "real" intron
 
 GetOptions ( "debug" => \$debug,
+	     "help" => \$help,
 	     "verbose" => \$verbose,
 	     "really_verbose" => \$really_verbose,
 	     "est:s" => \$est,
@@ -20,8 +25,12 @@ GetOptions ( "debug" => \$debug,
 	     "gff:s"    => \$gff,
 	     "show_matches"    => \$show_matches,
 	     "database:s"   => \$database,
-	     "overlap"      => \$overlap_check
+	     "overlap"      => \$overlap_check,
+	     "load_transcripts" => \$load_transcripts,
+	     "load_matches"    => \$load_matches
 	   ) ;
+
+&check_opts;
 
 $database = glob("~wormpub/DATABASES/TEST_DBs/transcripts") unless $database;
 
@@ -130,7 +139,7 @@ foreach my $chrom ( @chromosomes ) {
       %transcript = %{$genes_exons{$gene}};   # put the gene model in to the transcript
 
       #transcript object
-      print ACE "\nTranscript : \"$gene.trans\"\n";
+      print ACE "\nTranscript : \"$gene\"\n";
       foreach my $cdna (@{$gene2cdnas{$gene}}) { # iterate thru array of cDNAs ( 1 per gene )
 
 	print ACE "matching_CDNA \"$cdna\"\n";
@@ -203,7 +212,7 @@ foreach my $chrom ( @chromosomes ) {
     foreach my $gene ( keys %gene2cdnas ) {
       print CDNAS "\nSequence : \"$gene\"\n";
       foreach my $cdna ( @{$gene2cdnas{$gene}} ) {
-	print CDNAS "Matching_cDNA \"$cdna\"\n";
+	print CDNAS "Matching_cDNA \"$cdna\" Inferred_automatically \"transcript_builder.pl\"\n";
       }
     }
     close CDNAS;
@@ -214,6 +223,23 @@ foreach my $chrom ( @chromosomes ) {
 
   last if $gff; # if only doing a specified gff file exit after this is complete
 }
+
+if( $load_transcripts ) {
+  system("cat $database/transcripts_*.ace > $database/transcripts_all.ace");
+  open(TACE, " | $tace -tsuser transcripts $database |") or warn "could open $database to load transcript file\n";
+  print TACE "pparse $database/transcripts_all.ace\nsave\nquit";
+  close TACE;
+}
+
+if( $load_matches ) {
+  system("cat $database/chromosome*_matching_cDNA.ace > $database/matching_cDNA_all.ace");
+  open(TACE, " | $tace -tsuser matching_cDNA $database |") or warn "could open $database to load matching_cDNA file\n";
+  print TACE "pparse $database/matching_cDNA_all.ace\nsave\nquit";
+  close TACE;
+}
+  
+
+
 exit(0);
 
 sub findOverlappingGene
@@ -289,7 +315,7 @@ sub checkExonMatch
 
       # do cDNA and gene share exon end position
       elsif ( ($gExonS = &geneExonThatEndsWith(\$$gene, $cDNA{$$cdna}->{$cExonStart}) ) and ($gExonS != 0) ) {
-#	# shared exon end$cExonStart > $gene_exon_starts[-1]
+#	# shared exon end
 	
 	if( $gExonS == $gene_exon_starts[0] ) {	           #is this the 1st gene exon 
 	  if ( $cExonStart == $cdna_exon_starts[0] ) {      # also cDNA start so always match
@@ -308,9 +334,14 @@ sub checkExonMatch
 	  }
 	}
 	# exon matched is not 1st of gene
-	elsif ( $cExonStart == $cdna_exon_starts[-1] ) {    # start of cDNA
+	elsif ( ($cExonStart == $cdna_exon_starts[-1] ) and # start of cDNA
+		($cExonStart >$gExonS ) ) {                   # . . . is in gene exon
 	  print"\tMatch - 1st exon of cDNA starts in exon of gene\n" if $verbose;
 	  next;
+	}
+	else {
+	  print "MISS - exon $$cdna : $cExonStart => $cDNA{$$cdna}->{$cExonStart} overlaps start of gene exon : $gExonS => $genes_exons{$$gene}->{$gExonS}\n" if $verbose;
+	  $match = 0;
 	}
       }
 
@@ -494,6 +525,26 @@ sub checkOverlappingTranscripts  {
   close OLT;
 }
 
+sub check_opts {
+  # sanity check options
+  if( $help ) {
+    system("perldoc $0");
+    exit(0);
+  }
+
+  unless ($transcript ) {
+    if( $load_transcripts ) {
+      die print "\n\n\nyou have chosen to load_transcripts without generating them\n Try adding -transcript if you want to build them first\n\n\n\n";
+    }
+    if( $overlap_check ) {
+      die print "\n\n\nyou have chosen to check for overlapping transcripts without generating them\n Try adding -transcript if you want to build them first\n\n\n\n";
+    }
+  }
+
+  if( defined($load_matches) & !defined($show_matches ) ) {
+    die print "\n\n\nyou have chosen to load_matches without generating them\n Try adding -show_matches if you want to generate them first\n\n\n\n";
+  }
+}
 
 __END__
 
