@@ -4,7 +4,7 @@
 
 # by Chao-Kung Chen [030113]
 
-# Last updated on: $Date: 2003-03-03 11:25:39 $
+# Last updated on: $Date: 2003-03-03 12:13:39 $
 # Last updated by: $Author: ck1 $
 
 
@@ -166,7 +166,7 @@ while(<SEQ>){
 }  
 while(<PCR>){
   chomp;
-  if ($_ =~ /^PCR_product : .+/){print OPCR "\n$_\n"}
+  if ($_ =~ /^PCR_product : .+/ || $_ =~ /^Oligo : .+/){print OPCR "\n$_\n"}
   else {
     if ($_ eq ""){}
     else {print OPCR "-D $_\n"}
