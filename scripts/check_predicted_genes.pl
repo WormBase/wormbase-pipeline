@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam aged 12 and a half
 #
-# Last updated on: $Date: 2004-11-01 10:57:36 $
+# Last updated on: $Date: 2004-11-08 10:45:46 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
@@ -110,9 +110,7 @@ foreach my $gene_model (@Predictions){
     my $intron_size = ($exon_coord1[$i] - $exon_coord2[$i-1] -1);
     print "ERROR: $gene_model has a small intron ($intron_size bp)\n" if (($intron_size < 34)  && $verbose && ($method_test eq 'curated'));
     push(@error4,"WARNING: $gene_model has a very small intron ($intron_size bp)\n") if (($intron_size < 34) && (!$basic) && ($method_test eq 'curated'));
-    push(@error4,"WARNING: $gene_model has a very small intron ($intron_size bp)\n") if (($intron_size < 34) && ($method_test eq 'curated') && ($db_path eq ('/nfs/disk100/wormpub/camace_krb/')));
     push(@error5,"WARNING: $gene_model has a small intron ($intron_size bp)\n") if (($intron_size > 33) && ($intron_size < 39) && (!$basic) && ($method_test eq 'curated'));
-    push(@error5,"WARNING: $gene_model has a small intron ($intron_size bp)\n") if (($intron_size > 33) && ($intron_size < 39) && ($method_test eq 'curated') && ($db_path eq ('/nfs/disk100/wormpub/camace_krb/')));
   }
 
   for($i=0; $i<@exon_coord1; $i++){
