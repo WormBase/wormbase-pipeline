@@ -9,16 +9,13 @@
 #                          /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/current/release_notes.txt/
 #
 # Last updated by: $Author: krb $                       
-# Last updated on: $Date: 2003-01-06 10:15:30 $         
+# Last updated on: $Date: 2003-04-04 16:20:26 $         
 
 
 use strict;                                     
 use lib "/wormsrv2/scripts/";                    
 use Wormbase;
 
-
-
-# Try to keep different parts of code cleanly separated using comments...
 
 ##############
 # variables  #                                                                   
@@ -76,6 +73,15 @@ my $release   = &get_wormbase_version_name(); # e.g. WS89
 # delete the old symbolic link and make the new one
 system "rm -f $targetdir/current_release";
 system "cd $targetdir; ln -s $release current_release";
+
+
+# now update pages using webpublish
+my $www = "/nfs/WWWdev/htdocs/Projects/C_elegans";
+chdir($www) || print LOG "Couldn't run chdir\n";
+
+# Separate webpublish commands (for safety!) on the two top level directories that need updating
+system("/usr/local/bin/webpublish -f -q -r wormpep") && print LOG "Couldn't run webpublish on wormpep files\n";
+system("/usr/local/bin/webpublish -f -q -r WORMBASE") && print LOG "Couldn't run webpublish on WORMBASE file\n";
 
 
 print LOG "$0 finished at ",`date`,"\n\n";
