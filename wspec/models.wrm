@@ -1557,22 +1557,9 @@
 
 
 ?Microarray_aff SMap S_Parent Canonical_parent UNIQUE ?Sequence XREF Microarray_aff
-                Result ?Affymetrix_result XREF Microarray_aff
                 Microarray_result ?Microarray_result XREF Microarray_aff // Added to merge with SMD microarray.
 		Reference ?Paper //Describes the design of the chip
                 Remark ?Text #Evidence
-
-
-?Affymetrix_result Condition ?Condition
-                   Frequency  Int
-                   Confidence P_value  Float
-                              Presence UNIQUE  PA
-                                               PS
-                                               NP
-                   Microarray_aff  ?Microarray_aff XREF Result
-                   Chip_info       ?Text   //Describes batch number of the chip created the result ... etc.
-                   Reference       ?Paper  //The paper reported this result.
-                   Remark          ?Text #Evidence
 
 
 // Microarray_result data model is created for Data types from Stanford Microarray Database
