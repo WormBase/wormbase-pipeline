@@ -7,8 +7,8 @@
 # A script to finish the last part of the weekly build by updating all of the
 # relevant WormBase and Wormpep web pages.
 #
-# Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-08-13 17:13:06 $      
+# Last updated by: $Author: pad $     
+# Last updated on: $Date: 2004-09-07 15:12:01 $      
 
 
 #################################################################################
@@ -737,7 +737,7 @@ sub copy_GFF_files{
   print LOG "Copying across GFF files from /wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS\n";
 
   #simple double foreach loop to loop through each chromosome and file name
-  my @gff_files = ("clone_ends", "clone_path", "exon", "clone_acc", "genes", "repeats", "intron", "rna", "UTR");
+  my @gff_files = ("clone_ends", "clone_path", "exon", "clone_acc", "CDS", "repeats", "intron", "rna");
   foreach my $chrom (@chrom) {
     foreach my $file (@gff_files){
       system("sort -u $gff/CHROMOSOME_$chrom.$file.gff | gff_sort > $www/$WS_name/GFF/CHROMOSOME_$chrom.$file.gff")
