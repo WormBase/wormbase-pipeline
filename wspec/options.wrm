@@ -90,9 +90,11 @@ _VExpr_pattern	   -V
 _VMultiMap	   -H -D DtMULTIMAP
 _VManyMap          -H -D GMAP
 
-_VPathway	   -V -D METAB
-_VEnzyme	   -V
-_VMetabolite	   -H
+
+// No longer needed krb 20/09/01
+//_VPathway	   -V -D METAB
+//_VEnzyme	   -V
+//_VMetabolite	   -H
 
 _VView		   -V
 _VCell_group       -H
