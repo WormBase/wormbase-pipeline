@@ -204,11 +204,10 @@ sub check_exon_match
       }
       else {
 	# doesnt match
-	#print STDERR $cdna->name," doesnt match ",$self->name,"\n";
+	print STDERR $cdna->name," doesnt match ",$self->name,"\n" if $debug;
 	return 0;
       }
     }
-    $self->add_matching_cDNA( $cdna );
     return 1;
   }
 
