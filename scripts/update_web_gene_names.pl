@@ -5,7 +5,7 @@
 # completely rewritten by Keith Bradnam from list_loci_designations
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-07-09 17:06:55 $      
+# Last updated on: $Date: 2004-07-14 08:36:46 $      
 #
 # This script should be run under a cron job and simply update the webpages that show
 # current gene names and sequence connections.  Gets info from geneace.  
@@ -209,7 +209,7 @@ sub make_gene_lists{
   # connect to AceDB using TableMaker, 
   my $command="Table-maker -p /wormsrv1/geneace/wquery/gene2molecular_name.def\nquit\n";
                                                                                      
-  open (TACE, "echo '$command' | $tace /wormsrv1/geneace |");
+  open (TACE, "echo '$command' | $tace /wormsrv1/geneace |") || print LOG "ERROR: Can't open tace connection to /wormsrv1/geneace\n";
   while (<TACE>) {
     chomp;
     next if (/acedb/);
