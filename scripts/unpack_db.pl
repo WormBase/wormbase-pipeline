@@ -12,8 +12,8 @@
 # the Cold Spring Harbor Laboratory database (cshace)
 # the Caltech database (citace)
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-08-09 15:45:22 $
+# Last updated by: $Author: dl1 $
+# Last updated on: $Date: 2002-08-19 09:49:12 $
 
 
 #################################################################################
@@ -65,9 +65,9 @@ getopts("h");
 
 
 &unpack_stuff("brigace",$opt_b) if ($opt_b);
-&unpack_stuff("cshace",$opt_c) if ($opt_c);
-&unpack_stuff("stlace",$opt_s) if ($opt_s);
-&unpack_stuff("citace",$opt_i) if ($opt_i);
+&unpack_stuff("cshace",$opt_c)  if ($opt_c);
+&unpack_stuff("stlace",$opt_s)  if ($opt_s);
+&unpack_stuff("citace",$opt_i)  if ($opt_i);
 
 sub unpack_stuff{
   my $database = shift;
@@ -77,38 +77,39 @@ sub unpack_stuff{
 
   # set up correct locations
   if ($database eq "brigace"){
-    $ftp    = "/nfs/privateftp/ftp-wormbase/pub/incoming/stl";
-    $dbdir  = "/wormsrv2/brigace";
+    $ftp     = "/nfs/privateftp/ftp-wormbase/pub/incoming/stl";
+    $dbdir   = "/wormsrv2/brigace";
     $logfile = "/wormsrv2/logs/unpack_briggsae.$rundate.$$";
-    $dbname = "brigdb";
+    $dbname  = "brigdb";
   }
 
   if ($database eq "cshace"){
-    $ftp    = "/nfs/privateftp/ftp-wormbase/pub/incoming/csh";
-    $dbdir  = "/wormsrv2/cshace";
+    $ftp     = "/nfs/privateftp/ftp-wormbase/pub/incoming/csh";
+    $dbdir   = "/wormsrv2/cshace";
     $logfile = "/wormsrv2/logs/unpack_cshace.$rundate.$$";
-    $dbname = "cshl_dump";
+    $dbname  = "cshl_dump";
   }
 
   if ($database eq "stlace"){
-    $ftp    = "/nfs/privateftp/ftp-wormbase/pub/incoming/stl";
-    $dbdir  = "/wormsrv2/stlace";
+    $ftp     = "/nfs/privateftp/ftp-wormbase/pub/incoming/stl";
+    $dbdir   = "/wormsrv2/stlace";
     $logfile = "/wormsrv2/logs/unpack_stlace.$rundate.$$";
-    $dbname = "stlace";
+    $dbname  = "stlace";
   }
 
 
   if ($database eq "citace"){
-    $ftp    = "/nfs/privateftp/ftp-wormbase/pub/incoming/caltech";
-    $dbdir  = "/wormsrv2/citace";
+    $ftp     = "/nfs/privateftp/ftp-wormbase/pub/incoming/caltech";
+    $dbdir   = "/wormsrv2/citace";
     $logfile = "/wormsrv2/logs/unpack_citace.$rundate.$$";
-    $dbname = "citace_dump";
+    $dbname  = "citace_dump";
   }
 
   ##############################
   # open logfile               #
   ##############################
 
+  # year 2000 pragmatic programming, remember to alter script in 2100 !
   my $today = "20" . substr($opt,0,2) . "-" . substr($opt,2,2) . "-" . substr($opt,4,2);
 
   system ("/bin/touch $logfile") && die "Couldn't touch $logfile\n";
@@ -127,8 +128,6 @@ sub unpack_stuff{
   # check that command line argument is correct and form new date string
   &error(1,$database,$logfile,$opt) if ((length $opt) != 6);
 
-
-
  ##########################################
  # copy the tar.gz file from the ftp site #
  ##########################################
@@ -139,8 +138,6 @@ sub unpack_stuff{
 
   # copy database.tar.gz file & check size
   system ("cp -f $ftp/".$dbname."_$today.tar.gz .") && die "Couldn't run cp command\n";
-
-
 
   my $match = &copy_check("$ftp/".$dbname."_$today.tar.gz","$dbdir/".$dbname."_$today.tar.gz");
   print LOGFILE "Copy '".$dbname."_$today.tar.gz' to $dbdir successful\n" if ($match == 1); 
@@ -156,7 +153,6 @@ sub unpack_stuff{
 
 
   # add list of ace files to be loaded into array
-#  open (LIST, "/bin/ls dump*$today*ace |") || die "Couldn't pipe";
   open (LIST, "/bin/ls *ace |") || die "Couldn't pipe";
   while (<LIST>) {
     chomp;
@@ -191,35 +187,28 @@ sub unpack_stuff{
   close FILE_NEW;
   unlink "$dbdir/wspec/displays.old" ;
 
-
-
  ####################################
  # Re-initialise the ACEDB database #
  ####################################
 
-  system ("\\rm $dbdir/database/new/*") && die "Couldn't run rm command\n";
-
-  system ("\\rm $dbdir/database/touched/*") && die "Couldn't run rm command\n";
-
   if (-e "$dbdir/database/lock.wrm") {
-    print LOGFILE "*Reinitdb error - lock.wrm file present..\n";
-    close LOGFILE;
-    die();
+      print LOGFILE "*Reinitdb error - lock.wrm file present..\n";
+      close LOGFILE;
+      die();
   }
-  system ("\\mv $dbdir/database/log.wrm $dbdir/database/log.old") && die "Couldn't run rm command\n";
 
-  system ("\\rm $dbdir/database/*.wrm") && die "Couldn't run rm command\n";
+  system ("\\rm $dbdir/database/new/*")     && warn "Couldn't run rm command\n";
+  system ("\\rm $dbdir/database/touched/*") && warn "Couldn't run rm command\n";
 
+  system ("\\mv $dbdir/database/log.wrm $dbdir/database/log.old") && warn "Couldn't run rm command\n";
+  
+  system ("\\rm $dbdir/database/*.wrm") && warn "Couldn't run rm command\n";
+  
   unlink "$dbdir/database/ACEDB.wrm";
 
-  my $command=<<EOF;
-y
-EOF
-    
+  my $command="y\n";
   print LOGFILE "* Reinitdb: reinitializing the database ..\n";
   &DbWrite($command,$tace,$dbdir,"ReInitDB",$logfile);
-
-
 
 
  ##############################
