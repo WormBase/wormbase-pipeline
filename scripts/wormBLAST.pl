@@ -418,11 +418,10 @@ if( $blastx )
     foreach (@updated_DBs)
       {
 	my $analysis = $worm01processIDs{$_};
+	print "Starting submission of analysis $analysis\n";
 	`perl $bdir/RuleManager3.pl -once -flushsize 5 -analysis $analysis`;
       }
     `perl $bdir/RuleManager3.pl -once -flushsize 5`;#finish off anything that didn't work
-    
-    &wait_for_pipeline_to_finish if $blastp;
   }
 
 if( $blastp )
