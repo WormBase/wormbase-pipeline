@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-06-10 16:12:15 $
+# Last updated on: $Date: 2003-06-11 10:41:09 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -20,7 +20,7 @@ use Getopt::Long;
 # variables and command-line options with aliases # 
 ###################################################
 
-my ($help, $debug, $database, $class, @class, $ace, $info);
+my ($help, $debug, $database, $class, @class, $ace, $verbose);
 my $maintainers = "All";
 
 # hashes for checking Person and Author merging?
@@ -39,7 +39,7 @@ GetOptions ("h|help"        => \$help,
 	    "c|class=s"     => \@class,
 	    "db|database=s" => \$database,
             "a|ace"         => \$ace, 
-	    "i|info"        => \$info 
+	    "v|verbose"        => \$verbose
            );
 
 
@@ -316,7 +316,7 @@ END
   }
   print LOG "\n\nThere are $evid_errors Evidence errors in 7 classes checked\n";
   print LOG "\n$updates Authors can be converted to Persons\n";
-  print LOG "\n$info_num Authors are not Persons\n";
+  print LOG "\n$info_num Authors are not Persons\n" if $verbose;
   system ("rm -f /tmp/*_dump.ace");
 
   #################################################################
@@ -397,7 +397,7 @@ END
       if (defined $conversion){
 	print LOG "=====>Move $name under Author_evidence as NO corresponding WBPersonID exists\n";
       }
-      if ($info && !defined $conversion){
+      if ($verbose && !defined $conversion){
 	$info_count++; 
 	print LOG "\nINFO: $class $obj has $name (Author under $tag tag): NOT yet a Person\n";
       }
@@ -715,10 +715,10 @@ sub process_laboratory_class{
 
   # test for Allele_designation and Representative tags
   foreach my $lab (@labs){
-    if(!defined($lab->at('CGC.Allele_designation')) && $lab ne "CGC"){  
-      print LOG "WARNING: $lab has no Allele_designation tag present\n";
-      $lab_errors++;
+    if($verbose && !defined($lab->at('CGC.Allele_designation')) && $lab =~ /\w{3,3}/){  
+      print LOG "INFO: $lab has no Allele_designation tag present (exception)\n";
     }    
+    
     if(!defined($lab->at('CGC.Representative')) && $lab ne "CGC"){  
       if ($lab ne "XA"){
 	print LOG "WARNING: $lab has no Representative tag present\n";
@@ -1301,11 +1301,11 @@ sub loci_as_other_name {
       foreach (@exceptions){$exceptions{$_}++};  
 
       if ($other_name){
-        $locus_errors++;
 	if ($exceptions{$main}){
 	  print LOG "WARNING: $main has $other_name as Other_name...$other_name is still a separate Locus object (exception)\n";
         }
         else {
+	  $locus_errors++;
 	  print LOG "WARNING: $main has $other_name as Other_name...$other_name is still a separate Locus object\n";
         }
 	if ($ace && !$exceptions{$main}){
