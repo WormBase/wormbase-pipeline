@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers                             
 #
-# Last updated by: $Author: ar2 $               
-# Last updated on: $Date: 2002-12-13 11:17:24 $         
+# Last updated by: $Author: dl1 $               
+# Last updated on: $Date: 2003-02-13 13:07:22 $         
 
 #################################################################################
 # Initialise variables                                                          #
@@ -67,7 +67,6 @@ our $tace = &tace;
 ##############################
 
 my $debug = 0;
-
 
 # Use alternate directory for output if testing (-test)
 $data_dir = "/wormsrv2/tmp" if ($test);
@@ -235,74 +234,7 @@ sub write_CDSlist  {
     close CDS;
 }
 
-
-
 ####################################################################################
-
-# Data retrieval routines - all work thru same sub but pass different files
-
-sub FetchData {
-    my ($file,$ref) = @_;
-
-    open (FH, "<$sub2file{$file}") or die "can't open $file";
-    undef $/;
-    my $VAR1;
-    my $data = <FH>;
-    eval $data;
-    die if $@;
-    $/ = "\n";
-    close FH;
-    %$ref = (%$VAR1);    
-}
-
-sub gene2pid   {
-    my $ref = shift;
-    my $file = $sub2file{'gene2pid'};
-    &getData($ref, $file);
-}
-
-sub clone2acc   {
-    my $ref = shift;
-    my $file = $sub2file{'clone2acc'};
-    &getData($ref, $file);
-}
-
-sub acc2clone {
-    my $ref = shift;
-    my $file = $sub2file{'acc2clone'};
-    &getData($ref, $file);
-}
-
-sub gene2CE  {
-    my $ref = shift;
-    my $file = $sub2file{'gene2CE'};
-    &getData($ref, $file);
-}
-
-sub CE2gene {
-    my $ref = shift;
-    my $file = $sub2file{'CE2gene'};
-    &getData($ref, $file);
-}
-
-#######################################################################
-# Actually gets the data from the .dat files                          # 
-# and populated the hash whose reference is passed.                   # 
-#######################################################################
-
-sub getData  {
-    my $ref = shift;
-    my $file = shift;
-    open (FH, "<$file") or die "cant open $file";
-    undef $/;
-    my $VAR1;
-    my $data = <FH>;
-    eval $data;
-    die if $@;
-    $/ = "\n";
-    close FH;
-    %$ref = (%$VAR1);    
-}
 
 ####################
 #Return a true value
@@ -320,11 +252,9 @@ __END__
 =head2 DESCRIPTION
 
 The Common_data.pm gives quick easy acces to a variety of data frequently used in Wormbase scripts.
-It comprises of two parts
+It comprises of one part.
 
 Part One generates the data and writes it to a file using the Data::Dumper module.
-Part Two is the rapid retrieval of this data ( rather than recreating it multiple times in different scripts)
-
 
 This module provides access to the following data sets:
 
