@@ -8,8 +8,8 @@
 #                          /wormsrv2/autoace/release/
 #                          /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/current/release_notes.txt/
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-08-03 07:28:08 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2004-09-07 15:17:12 $
 
 
 use strict;
@@ -98,7 +98,7 @@ print LOG "Updating some WormBase webpages to live site\n";
 # these won't be seen until current symlink is also updated
 my $webpublish = "/usr/local/bin/webpublish";
 &run_command("$webpublish -f -q -r $release") && print LOG "Couldn't run webpublish on release directory\n";
-&run_command("$webpublish -f -q development_release") && print LOG "Couldn't run webpublish on dev sym link\n";
+&run_command("$webpublish -f -q -r development_release") && print LOG "Couldn't run webpublish on dev sym link\n";
 
 
 
