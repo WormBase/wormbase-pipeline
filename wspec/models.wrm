@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: dl1 $
-// Last edited on: $Date: 2005-02-02 13:13:15 $
+// Last edited on: $Date: 2005-03-07 09:55:57 $
  
 
 
@@ -878,9 +878,9 @@
 		  Species UNIQUE ?Species
 		  Library UNIQUE ?Library
 	  Visible Title UNIQUE ?Text
-		  Matching_CDS ?CDS XREF Matching_cDNA
-		  Matching_transcript ?Transcript XREF Matching_cDNA // to link ESTs/mRNAs to RNA genes
-		  Matching_pseudogene ?Pseudogene XREF Matching_cDNA // for ESTs that match Pseudogenes [krb 030801]
+		  Matching_CDS ?CDS XREF Matching_cDNA #Evidence               // to link ESTs/mRNAs to CDS 
+		  Matching_transcript ?Transcript XREF Matching_cDNA #Evidence // to link ESTs/mRNAs to RNA genes
+		  Matching_pseudogene ?Pseudogene XREF Matching_cDNA #Evidence // to link ESTs/mRNAs to Pseudogenes
 		  Clone ?Clone XREF Sequence 
 		  GO_term ?GO_term XREF Sequence ?GO_code #Evidence
 		  Gene ?Gene XREF Other_sequence  // for where mRNAs etc. correspond to a gene
@@ -1066,9 +1066,8 @@
                         Cis_target      ?Gene_regulation XREF Cis_regulated_seq  // new for Wen
 	Visible Gene UNIQUE ?Gene XREF Corresponding_CDS // when live 
 		Gene_history UNIQUE ?Gene XREF Corresponding_CDS_history // when dead
-		Corresponding_transcript ?Transcript XREF Corresponding_CDS // links CDS' to new-style ?Transcript
-                                                                            // objects, 1-to-1 relationship
-		Corresponding_protein UNIQUE ?Protein XREF Corresponding_CDS #Evidence
+		Corresponding_transcript ?Transcript XREF Corresponding_CDS #Evidence  // links CDS' to new-style ?Transcript objects, 1-to-1 relationship
+		Corresponding_protein UNIQUE ?Protein XREF Corresponding_CDS #Evidence 
 		Corresponding_PCR_product ?PCR_product XREF Overlaps_CDS // added for PCR mappings [010419 dl]
 		Corresponding_oligo_set ?Oligo_set XREF Overlaps_CDS
 		Matching_cDNA ?Sequence XREF Matching_CDS #Evidence
@@ -1115,8 +1114,8 @@
                 Visible Gene ?Gene XREF Corresponding_transcript // for live transcripts
 			Gene_history UNIQUE ?Gene XREF Corresponding_transcript_history // when Transcript is dead
 			Variation ?Variation XREF Transcript // added to fit two alleles of RNA genes [021127 krb]
-                        Matching_cDNA ?Sequence XREF Matching_transcript #Evidence // to attach non-coding RNA genes to matching ESTs
-			Corresponding_CDS UNIQUE ?CDS XREF Corresponding_transcript // new tag for 1-2-1 relationships with coding genes
+                        Matching_cDNA ?Sequence XREF Matching_transcript #Evidence            // to attach non-coding RNA genes to matching ESTs
+			Corresponding_CDS UNIQUE ?CDS XREF Corresponding_transcript #Evidence // new tag for 1-2-1 relationships with coding genes
                         Corresponding_PCR_product ?PCR_product XREF Overlaps_transcript
 			Corresponding_oligo_set ?Oligo_set XREF Overlaps_transcript
                         Reference ?Paper XREF Transcript                           // [020306 kj]
