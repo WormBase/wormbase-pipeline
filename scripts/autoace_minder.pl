@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-10-13 10:20:33 $
+# Last edited on: $Date: 2004-10-13 10:33:05 $
 
 
 
@@ -989,9 +989,6 @@ sub process_blat_jobs{
 
     print LOG "Finishing acecompress.pl at ",&runtime,"\n\n";
 
-    # load blat results to autoace
-    &load_blat_results("$job");
-      
     # make blat job specific lock file
     system("touch $logdir/$flag{'B6_${job}'}");
     
