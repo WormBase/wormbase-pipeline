@@ -22,7 +22,7 @@ GetOptions (
 	   "debug"    => \$debug
 	  );
 
-my $wormpipe_dump = "$wormpipe/dumps";
+my $wormpipe_dump = "/acari/work2a/wormpipe/dumps";
 $wormpipe_dump .= "_test" if $debug;
 my $output_swiss = "$wormpipe_dump/swissproteins.ace";
 my $output_trembl = "$wormpipe_dump/tremblproteins.ace";
@@ -31,7 +31,7 @@ my $swiss_list_txt = "$wormpipe_dump/swisslist.txt";
 my $trembl_list_txt = "$wormpipe_dump/trembllist.txt";
 
 
-# extract lists of which proteins have matches
+# extract and write lists of which proteins have matches
 open (SWISS,">$swiss_list_txt");
 open (TREMBL,">$trembl_list_txt");
 open (DATA,"| cat $wormpipe_dump/blastp_ensembl.ace $wormpipe_dump/blastx_ensembl.ace |");
@@ -159,7 +159,6 @@ sub output_list
       }  
     }
   }
-
 
 
 __END__
