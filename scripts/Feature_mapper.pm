@@ -153,13 +153,11 @@ sub _check_for_match
       $match_left = length ($`);
     }
     if ($dna =~ /$flank_R/i) {
-      $match_right = length ($`);
+      $match_right = length ($`) + 1;
     }
 
     if( $match_left and $match_right ) {
-      $self->swap(\$match_left, \$match_right) if( $match_left > $match_right );
-
-      $match_left += (length $flank_L) + 1;
+      $match_left += (length $flank_L);
     }
 
     # check rev strand
@@ -169,14 +167,12 @@ sub _check_for_match
 
       if ($dna =~ /$rev_left/) {
 	$offset = length ($`);
-	$match_left = $offset;
+	$match_left = $offset +1 ;
 	
 	#only try the right if the left is success
 	if ($dna =~ /$rev_right/) {
 	  $offset = length ($`);
-	  $match_right = $offset + (length $flank_R) + 1 ;
-	
-	  $self->swap(\$match_left, \$match_right);
+	  $match_right = $offset + (length $flank_R);
 	}
       }
     }
@@ -234,7 +230,7 @@ sub check_overlapping_CDS
     ($chromosome,$x) = $self->Coords_2chrom_coords($seq,$x);
     ($chromosome,$y) = $self->Coords_2chrom_coords($seq,$y);
 
-    # if allele of > 1bp on - strand 3' coord will be bigger than 5'
+    # if allele on -ve strand 3' coord will be bigger than 5'
     $self->swap(\$x, \$y) if( $y < $x ) ;
 
     my @gene_hits;

@@ -6,8 +6,8 @@
 #
 # This maps alleles to the genome based on their flanking sequence
 #
-# Last updated by: $Author: pad $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2004-03-22 10:44:49 $        # quickly see when script was last changed and by whom
+# Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
+# Last updated on: $Date: 2004-04-27 15:29:45 $        # quickly see when script was last changed and by whom
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -211,6 +211,15 @@ foreach my $allele (@alleles) {
     print LOG "ERROR: Couldn't map $name with $left and $right to seq $sequence\n";
     $error_count++;
     next ALLELE;
+  }
+
+  # get coords of allele not 1st / last base of flanks
+  if( $map[2] > $map[1] ) {
+    # maps to fwd strand
+    $map[1]++; $map[2]--;
+  }
+  else {
+    $map[1]--; $map[2]++;
   }
 
   $allele_data{$name}[4] = $map[1];
