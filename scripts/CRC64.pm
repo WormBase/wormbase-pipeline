@@ -1,16 +1,16 @@
-#!/sw/arch/bin/perl
+#! /usr/local/bin/perl5.6.1 -w 
+
 # *************************************************************
 #
 # Purpose: 
 # Calculate the CRC64 of a string.
 #
 # $Source: /cvsroot/CVSmaster/wormbase/scripts/CRC64.pm,v $
-# $Revision: 1.1 $
+# $Revision: 1.2 $
 # $State: Exp $
-# $Date: 2002-07-30 08:41:06 $
-# $Author: ck1 $
-# $Locker:  $
-#
+# Last updated on: $Date: 2002-12-09 12:54:27 $
+# Last updated by: $Author: ck1 $
+# #
 # *************************************************************
 #
 
@@ -108,8 +108,6 @@ sub crc64 {
   }
   return wantarray ? ($crch, $crcl) : sprintf("%08X%08X", $crch, $crcl);
 }
-  
-    
-      1;  
+1;  
       
       
