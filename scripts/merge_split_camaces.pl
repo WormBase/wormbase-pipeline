@@ -5,7 +5,7 @@
 # A script to make multiple copies of camace for curation, and merge them back again
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2004-05-05 15:35:38 $
+# Last edited on: $Date: 2004-05-06 09:12:35 $
 
 
 use strict;
@@ -191,12 +191,12 @@ sub split_databases {
   # it has been decided that it is better to remove the database directory to make transfer db more stable #
   # initialise camace_orig and copy data from wormsrv1/camace.
   system("rm -rf /nfs/disk100/wormpub/camace_orig/database") && die "Failed to remove camace_orig/database\n";
-  system ("TransferDB.pl -start /wormsrv1/camace -end $camace_orig -database -wspec -name camace_orig_WS$WS_version");
+  system ("TransferDB.pl -start /wormsrv1/camace -end $camace_orig -split -database -wspec -name camace_orig_WS$WS_version");
 
   #Do the same for each split database but transfer data from camace_orig.
   foreach my $database (@databases) {
     system("rm -rf /nfs/disk100/wormpub/camace_${database}/database") && die "Failed to remove camace_${database}/database\n";
-    system ("TransferDB.pl -start $camace_orig -end ~wormpub/camace_${database} -database -wspec -name camace_${database}_WS$WS_version");
+    system ("TransferDB.pl -start $camace_orig -end ~wormpub/camace_${database} -split -database -wspec -name camace_${database}_WS$WS_version");
   }
   print "CAMACE SPLITS UPDATED\n";
 }
