@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-04-29 17:06:54 $
+# Last updated on: $Date: 2003-05-02 08:49:24 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -204,7 +204,11 @@ END
   close DUMP;
 
   system ("cat /tmp/locus_dump.ace /tmp/allele_dump.ace /tmp/strain_dump.ace /tmp/2_pt_dump.ace /tmp/multi_pt_dump.ace /tmp/posneg_dump.ace /tmp/geneclass_dump.ace > /tmp/class_dump.ace");
+
+  my @dumps = qw (locus_dump.ace allele_dump.ace strain_dump.ace geneclass_dump.ace 2_pt_dump.ace multi_pt_dump.ace posneg_dump.ace class_dump.ace);  
  
+  foreach (@dumps){system ("chmod 777 /tmp/$_")}
+
   open(IN, "/tmp/class_dump.ace") || die $!;
 
   my $evid_errors = 0;
