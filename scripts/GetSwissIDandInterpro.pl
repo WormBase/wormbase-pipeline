@@ -15,7 +15,7 @@
 # pfetch is done in batches of 2000, any greater and nothing comes back!
 #
 # Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs 
-# Last updated on: $Date: 2002-09-06 09:51:13 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2002-10-21 12:48:52 $        # quickly see when script was last changed and by whom
 
 use strict;
 use lib "/wormsrv2/scripts/";                  
@@ -95,9 +95,10 @@ while (<INPUT>)
     if ($_ =~ m /(CE\d+)/)#find wormpep id
       {
 	$protein[$count] = $1;
-	if($_ =~ m/:([OPQ]\d\w{4})\s/ ) #TrEMBL accessions
+	#if($_ =~ m/:([OPQ]\d\w{4})\s/ ) #TrEMBL accessions
+	if($_ =~ m/(SW|TR):(\S+)/ ) #TrEMBL accessions
 	  {
-	    $accession[$count] = $1;
+	    $accession[$count] = $2;
 	    #build hash of wormpep to accession no.
 	    $wormpep_acc{$protein[$count]} = $accession[$count];
 	    $SWTR_count++;
