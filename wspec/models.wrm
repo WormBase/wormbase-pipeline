@@ -605,8 +605,7 @@
 	 Attributes_of Gene ?Gene XREF GO_term
                        Cell ?Cell XREF GO_term
 		       Reference ?Paper XREF GO_term
-
-
+		       Motif ?Motif XREF GO_term
 
 //
 // Laboratory/Bibliography
@@ -1070,6 +1069,7 @@
 		Pep_homol ?Protein XREF Motif_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		Motif_homol ?Motif XREF Motif_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		Homol_homol ?Homol_data XREF Motif_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
+	GO_term ?GO_term XREF Motif
 
 ?Accession_number  Entry Sequence ?Sequence
 			 Protein ?Protein
