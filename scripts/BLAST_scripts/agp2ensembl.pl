@@ -73,52 +73,52 @@ my($dbname, $dbhost, $dbuser, $dbpass);
 my($help, $info, $write, $replace, $verbose);
 
 
-$Getopt::Long::autoabbrev = 0;   # personal preference :)
-$dbuser = 'wormadmin';           # default
+$Getopt::Long::autoabbrev = 0;	# personal preference :)
+$dbuser = 'wormadmin';		# default
 
 my $ok = &GetOptions(
-    "phase=s"   => \$phase,
-    "agp=s"     => \$agp,
-    "dbname=s"  => \$dbname,
-    "dbhost=s"  => \$dbhost,
-    "dbuser=s"  => \$dbuser,
-    "dbpass=s"  => \$dbpass,
-    "help"      => \$help,
-    "info"      => \$info,
-    "write"     => \$write,
-    "v"         => \$verbose,
-    "fasta=s"   => \$fasta,
-    "strict"    => \$strict
-);
+		     "phase=s"   => \$phase,
+		     "agp=s"     => \$agp,
+		     "dbname=s"  => \$dbname,
+		     "dbhost=s"  => \$dbhost,
+		     "dbuser=s"  => \$dbuser,
+		     "dbpass=s"  => \$dbpass,
+		     "help"      => \$help,
+		     "info"      => \$info,
+		     "write"     => \$write,
+		     "v"         => \$verbose,
+		     "fasta=s"   => \$fasta,
+		     "strict"    => \$strict
+		    );
 
 if ($help || not $ok) {
-    &usage;
-    exit 2;
+  &usage;
+  exit 2;
 } elsif ($info) {
-    exec("perldoc $0");
+  exec("perldoc $0");
 }
 
 my $log = Log_files->make_build_log;
 
 unless ($dbname && $dbuser && $dbhost) {
-    print STDERR "Must specify all DB parameters\n";
-    $log->write_to("database parameters not specified\nReq -dbhost -dbname -dbuser\n\n");
-    $log->mail;
-    &usage;
-    exit 1;
+  print STDERR "Must specify all DB parameters\n";
+  $log->write_to("database parameters not specified\nReq -dbhost -dbname -dbuser\n\n");
+  $log->mail;
+  &usage;
+  exit 1;
 }
 
 unless ($agp) {
-    print STDERR "Must specify apg file\n";
-    $log->write_to("agp file required\n");
-    $log->mail;
-    exit 1;
+  print STDERR "Must specify apg file\n";
+  $log->write_to("agp file required\n");
+  $log->mail;
+  exit 1;
 }
 
 if (defined $phase && ($phase < 0 || $phase > 4)) {
 
-    print STDERR "Phase should be 1, 2, 3 or 4\n";
-    exit 1;
+  print STDERR "Phase should be 1, 2, 3 or 4\n";
+  exit 1;
 }
 $phase = -1 unless defined $phase;
 
@@ -127,24 +127,23 @@ $log->write_to("Using $dbname and $agp\n");
 # open connection to EnsEMBL DB
 my $dbobj;
 if ($dbpass) {
-    $dbobj = Bio::EnsEMBL::Pipeline::DBSQL::DBAdaptor->new(
-        '-host'   => $dbhost,
-        '-user'   => $dbuser,
-        '-pass'   => $dbpass,
-        '-dbname' => $dbname
+  $dbobj = Bio::EnsEMBL::Pipeline::DBSQL::DBAdaptor->new(
+							 '-host'   => $dbhost,
+							 '-user'   => $dbuser,
+							 '-pass'   => $dbpass,
+							 '-dbname' => $dbname
 
-    ) or die "Can't connect to DB $dbname on $dbhost as $dbuser"; # Do we need password as well?
-}
-else {
-    $dbobj = Bio::EnsEMBL::DBSQL::Pipeline::DBAdaptor->new(
-							   '-host'   => $dbhost,
-							   '-user'   => $dbuser,
-							   '-dbname' => $dbname
-							  ) or do {
-							    $log->write_to("Can't connect to DB $dbname on $dbhost as $dbuser\n");
-							    die "Can't connect to DB $dbname on $dbhost as $dbuser"; # Do we need password as well?
-							  }
+							) or die "Can't connect to DB $dbname on $dbhost as $dbuser"; # Do we need password as well?
+} else {
+  $dbobj = Bio::EnsEMBL::DBSQL::Pipeline::DBAdaptor->new(
+							 '-host'   => $dbhost,
+							 '-user'   => $dbuser,
+							 '-dbname' => $dbname
+							) or do {
+							  $log->write_to("Can't connect to DB $dbname on $dbhost as $dbuser\n");
+							  die "Can't connect to DB $dbname on $dbhost as $dbuser"; # Do we need password as well?
 							}
+						      }
 
 my $clone_adaptor = $dbobj->get_CloneAdaptor();
 my $sic = $dbobj->get_StateInfoContainer();
@@ -156,122 +155,117 @@ my %acc2clone;
 &FetchData('accession2clone',\%acc2clone);
 
 if ($fasta) {
-    open (FH , "$fasta") || die "cannot open file $fasta";
-    %seqs = read_fasta (\*FH);
+  open (FH , "$fasta") || die "cannot open file $fasta";
+  %seqs = read_fasta (\*FH);
 }
 
 
 open (AGP, "< $agp") or do {
   $log->write_to("Cant open AGP file $agp");
-  $log->mail; 
-  die "Can't open AGP file $agp";
+  $log->log_and_die("Can't open AGP file $agp");
 };
 while (<AGP>) {
-    chomp;
-    my @fields = split;
-    my $sv = $fields[5]; # col 6 is SV - do we need anything else?
-    ($acc, $ver) = $sv =~ /(\w+)\.(\d+)/;
-    unless ($acc && $ver) {
-        if ($strict) {
-            print "Invalid $sv: $_\n";
-            next;
-	}
-        else {
-            $acc = $sv;
-            $ver = 1;
-	}
+  chomp;
+  my @fields = split;
+  my $sv = $fields[5];		# col 6 is SV - do we need anything else?
+  ($acc, $ver) = $sv =~ /(\w+)\.(\d+)/;
+  unless ($acc && $ver) {
+    if ($strict) {
+      print "Invalid $sv: $_\n";
+      next;
+    } else {
+      $acc = $sv;
+      $ver = 1;
     }
-    if (&is_in_db($clone_adaptor, $sv)) {
-        print "Found $sv; skipping\n";
-        next;
-    }
-    elsif ( &update_existing_clone($clone_adaptor, $sv) == 1) {
-      print "Found old version of $sv; updated\n";
-      $log->write_to("Updated $sv\n");
+  }
+  if (&is_in_db($clone_adaptor, $sv)) {
+    print "Found $sv; skipping\n";
+    next;
+  } elsif ( &update_existing_clone($clone_adaptor, $sv) == 1) {
+    print "Found old version of $sv; updated\n";
+    $log->write_to("Updated $sv\n");
+    next;
+  }
+
+  if ($fasta) {
+    my $seq_str = $seqs{ $acc2clone{"$acc"} };
+    $seq = Bio::Seq->new(
+			 -id     => $acc,
+			 -seq    => $seq_str,
+			);
+    unless ($seq) {
+      print "Can't fetch $sv\n";
       next;
     }
-
-    if ($fasta) {
-        my $seq_str = $seqs{ $acc2clone{"$acc"} };
-        $seq = Bio::Seq->new(
-            -id     => $acc,
-            -seq    => $seq_str,
-            );
-        unless ($seq) {
-            print "Can't fetch $sv\n";
-            next;
-	}
+  } else {
+    $seq = fetch_seq($acc, $ver);
+    unless ($seq) {
+      print "Error fetching $sv\n";
+      next;
     }
-    else {
-        $seq = fetch_seq($acc, $ver);
-        unless ($seq) {
-            print "Error fetching $sv\n";
-            next;
-	}
-    }
+  }
 
-    my $clone = new Bio::EnsEMBL::Clone;
-    my $contig = new Bio::EnsEMBL::RawContig;
-    my $length = $seq->length;
+  my $clone = new Bio::EnsEMBL::Clone;
+  my $contig = new Bio::EnsEMBL::RawContig;
+  my $length = $seq->length;
 
-    $clone->id       ($acc);
-    $clone->htg_phase   ($phase);
-    $clone->embl_id     ($acc);
-    $clone->version     (1);
-    $clone->embl_version($ver);
-    my $time = time;
-    $clone->created($time);
+  $clone->id       ($acc);
+  $clone->htg_phase   ($phase);
+  $clone->embl_id     ($acc);
+  $clone->version     (1);
+  $clone->embl_version($ver);
+  my $time = time;
+  $clone->created($time);
 
-    $contig->name         ("$acc.$ver.1.$length");
-    $contig->embl_offset(1);
-    $contig->length     ($length);
-    $contig->seq        ($seq->seq);
+  $contig->name         ("$acc.$ver.1.$length");
+  $contig->embl_offset(1);
+  $contig->length     ($length);
+  $contig->seq        ($seq->seq);
   #  $contig->version    (1);
   #  $contig->embl_order (1);
 
-    print "Clone ", $clone->id, "\n";
-    if ($verbose) {
-        print "\tembl_id     ", $clone->embl_id, "\n";
-        print "\tversion     ", $clone->version, "\n";
-        print "\temblversion ", $clone->embl_version, "\n";
-        print "\thtg_phase   ", $clone->htg_phase, "\n";
-    }
-    print "Contig ", $contig->id, "\n";
-    if ($verbose) {
-     #   print "\toffset: ", $contig->embl_offset, "\n";
-        print "\tlength: ", $contig->length, "\n";
-     #   print "\tend:    ", ($contig->embl_offset + $contig->length - 1), "\n";
-     #   print "\tversion:", $contig->version, "\n";
-     #   print "\torder:  ", $contig->embl_order, "\n";
-    }
-    print "\n";
+  print "Clone ", $clone->id, "\n";
+  if ($verbose) {
+    print "\tembl_id     ", $clone->embl_id, "\n";
+    print "\tversion     ", $clone->version, "\n";
+    print "\temblversion ", $clone->embl_version, "\n";
+    print "\thtg_phase   ", $clone->htg_phase, "\n";
+  }
+  print "Contig ", $contig->id, "\n";
+  if ($verbose) {
+    #   print "\toffset: ", $contig->embl_offset, "\n";
+    print "\tlength: ", $contig->length, "\n";
+    #   print "\tend:    ", ($contig->embl_offset + $contig->length - 1), "\n";
+    #   print "\tversion:", $contig->version, "\n";
+    #   print "\torder:  ", $contig->embl_order, "\n";
+  }
+  print "\n";
 
-    $clone->add_Contig($contig);
-    $clone->modified($time);
+  $clone->add_Contig($contig);
+  $clone->modified($time);
 
-    if ($write) {
-        eval {
-            $clone_adaptor->store($clone);
-        };
-        if ($@) {
-            print "Error writing clone $sv\n"; 
-            $log->write_to("Error writing clone $sv\n");
-        }
-	else {
-	  $sic->store_input_id_analysis($contig->name,$submitted_analysis) ;
-	  if( $@ ) {
-	    print "Error update input_id_analysis table for ",$contig->name,"\n";
-	    $log->write_to("Error update input_id_analysis table for $sv\n");
-	  }
-	  else {
-	    print "\tadded ",$contig->name,"\n";
-	    $log->write_to("\tadded $sv\n");
-	  }
-	}
+  if ($write) {
+    eval {
+      $clone_adaptor->store($clone);
+    };
+    if ($@) {
+      print "Error writing clone $sv\n"; 
+      $log->write_to("Error writing clone $sv\n");
+    } else {
+      $sic->store_input_id_analysis($contig->name,$submitted_analysis) ;
+      if ( $@ ) {
+	print "Error update input_id_analysis table for ",$contig->name,"\n";
+	$log->write_to("Error update input_id_analysis table for $sv\n");
+      } else {
+	print "\tadded ",$contig->name,"\n";
+	$log->write_to("\tadded $sv\n");
+      }
     }
-    $log->mail;
+  }
 }
 
+$log->mail;
+exit(0);
 
 
 sub usage {
