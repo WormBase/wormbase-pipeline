@@ -1,3 +1,4 @@
+
 // %W%    %G%
 // models.wrm - main file defining tree class structures
 // This file is read only when starting a new database or when you select 
@@ -761,6 +762,7 @@
                        PCR_product ?PCR_product XREF Canonical_parent Int UNIQUE Int #SMap_info // added for Lincoln RNAi [010226 dl]
 		       Nongenomic ?Sequence XREF Genomic_parent Int UNIQUE Int #SMap_info       // added for Lincoln RNAi [010226 dl]
                        RNAi ?RNAi XREF Sequence UNIQUE Int UNIQUE Int #SMap_info                // added for Lincoln RNAi [001213 dl]
+		       WTP ?WTP XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info                // added for Mieg WTP data [001623 rd]
 	  Structure  From	Source UNIQUE ?Sequence XREF Subsequence
 				Source_Exons Int UNIQUE Int // start at 1
 		     Subsequence ?Sequence XREF Source UNIQUE Int UNIQUE Int
@@ -814,7 +816,8 @@
 	  		Reference ?Paper XREF Sequence
 			Expression_construct ?Clone	// archaic
 			Expr_pattern ?Expr_pattern XREF Sequence
-			Corresponding_PCR_product ?PCR_product XREF Overlaps_CDS // added for Dan PCR mappings [010419 dl]
+			Corresponding_PCR_product ?PCR_product XREF Overlaps_CDS // added for PCR mappings [010419 dl]
+			Corresponding_WTP ?WTP XREF Overlaps_CDS // [010623 rd]
                         RNAi_result ?RNAi XREF Predicted_gene // added for Lincoln RNAi [001213 dl]
 		        Gene ?Gene XREF Sequence // added by Lincoln 010417
 		// tag2 system: names of all objects following next tag are shown in the 
@@ -1474,5 +1477,12 @@
 
 ?Phenotype_Assay Description ?Text
 		 
+// New Class to handle WTP data [010623 rd]
+
+?WTP         SMap S_Parent Canonical_parent UNIQUE ?Sequence XREF WTP
+ 	     Method ?Method
+ 	     Overlaps_CDS ?Sequence XREF Corresponding_WTP  // added for Dan PCR mappings [010419 dl]
+		
+
 // end of file
 
