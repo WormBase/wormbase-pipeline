@@ -8,7 +8,7 @@
 # and virtual objects to hang the data onto
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-09-03 14:57:35 $
+# Last edited on: $Date: 2003-09-04 09:30:31 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -85,8 +85,8 @@ if($debug){
 # Exit if no dump/process/blat/virtual process option chosen
 &usage(1) unless ($dump || $process || $blat || $virtual); 
 
-# Exit if no data type choosen [EST|mRNA|EMBL|NEMATODE|OST]
-&usage(2) unless ($est || $mrna || $embl || $nematode || $ost); 
+# Exit if no data type choosen [EST|mRNA|EMBL|NEMATODE|OST] (or -dump not chosen)
+&usage(2) unless ($est || $mrna || $embl || $nematode || $ost || $dump); 
 
 # Exit if multiple data types choosen [EST|mRNA|EMBL|NEMATODE|OST]
 &usage(3) if (($est + $mrna + $ost + $embl + $nematode) > 1);
