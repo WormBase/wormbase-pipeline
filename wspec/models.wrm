@@ -1229,6 +1229,9 @@
 		Type	Reporter_gene ?Text
 			In_situ ?Text
 			Antibody ?Text
+			Northern ?Text // added for Wen [krb 030425]
+                        Western ?Text // added for Wen 
+                        RT_PCR ?Text // added for Wen
 		Pattern ?Text
 		Picture ?Picture XREF Expr_pattern	
                 Remark ?Text #Evidence
