@@ -505,12 +505,14 @@ if( $cleanup ) {
 #      *.log
   my $clear_dump = "/acari/work2a/wormpipe/dumps";
   print "Removing . . . \n";
-  print "\t$clear_dump/*.ace\n";  system("rm -f $clear_dump/*.ace") or warn "cant remove ace files from $clear_dump";
-  print "\t$clear_dump/*.log\n";  system("rm -f $clear_dump/*.log") or warn "cant remove log files from $clear_dump";
+  print "\t$clear_dump/*.ace\n";  system("rm -f $clear_dump/*.ace") && warn "cant remove ace files from $clear_dump";
+  print "\t$clear_dump/*.log\n";  system("rm -f $clear_dump/*.log") && warn "cant remove log files from $clear_dump";
   
   print "\nmoving the following to ~wormpipe/last_build . . \n";
-  print "\t$clear_dump/*.txt\n"; system("mv -f $clear_dump/*.txt $wormpipe_dir/last_build/") or warn "cant move $clear_dump/*.txt\n";
-  print "\n$wormpipe_dir/Elegans/*\n"; system("mv -f $wormpipe_dir/Elegans/* $wormpipe_dir/last_build/") or warn "cant move $wormpipe_dir/Elegans/*\n";
+  print "\t$clear_dump/*.txt\n"; system("mv -f $clear_dump/*.txt $wormpipe_dir/last_build/") && warn "cant move $clear_dump/*.txt\n";
+  print "\n$wormpipe_dir/Elegans/*\n"; system("mv -f $wormpipe_dir/Elegans/* $wormpipe_dir/last_build/") && warn "cant move $wormpipe_dir/Elegans/*\n";
+
+  print "\nRemoving the $wormpipe_dir/DUMP_PREP_RUN lock file\n"; system("rm -f $wormpipe_dir/DUMP_PREP_RUN") && warn "cant remove $wormpipe_dir/DUMP_PREP_RUN\n";
 
   print "CLEAN UP COMPLETED\n\n";
 }
