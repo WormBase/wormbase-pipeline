@@ -7,7 +7,7 @@
 # Script to make ?Transcript objects
 #
 # Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2003-10-09 11:31:00 $  
+# Last updated on: $Date: 2003-10-30 17:12:06 $  
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -18,7 +18,7 @@ use Wormbase;
 
 my $tace = &tace;
 
-my ($debug, $help, $verbose, $really_verbose, $est, $count, $report, $transcript, $gff, $show_matches, $database, $overlap_check, $load_matches, $load_transcripts, $build);
+my ($debug, $help, $verbose, $really_verbose, $est, $count, $report, $transcript, $gff, $show_matches, $database, $overlap_check, $load_matches, $load_transcripts, $build, $new_coords);
 
 my $gap = 5; # $gap is the gap allowed in an EST alignment before it is considered a "real" intron
 
@@ -40,7 +40,8 @@ GetOptions ( "debug:s"          => \$debug,
 	     "overlap"          => \$overlap_check,
 	     "load_transcripts" => \$load_transcripts,
 	     "load_matches"     => \$load_matches,
-	     "build"            => \$build
+	     "build"            => \$build,
+	     "new_coords"           => \$new_coords
 	   ) ;
 
 # Who will log be emailed to?
@@ -75,7 +76,7 @@ my $transcript_dir = "$database/TRANSCRIPTS";
 my $coords;
 # write out the transcript objects
 # get coords obj to return clone and coords from chromosomal coords
-$coords = Coords_converter->invoke($database);
+$coords = Coords_converter->invoke($database, $new_coords);
 
 $gff_file = $gff if $gff;
 
@@ -603,6 +604,7 @@ sub check_opts {
       $load_transcripts = 1;
       $load_matches = 1;
       $overlap_check = 1;
+      $new_coords = 1;
     }
   }
 
