@@ -351,40 +351,61 @@ close CAMBEST if $opt_c;
 ########################################################
 
 if ($opt_m) {
-	open(OTHER,"$dir/autoace.mRNA.ace") if ($opt_a);
-	open(OTHER,"$dir/camace.mRNA.ace") if ($opt_c);
-	open(BEST,"$dir/autoace.best.mRNA.ace") if ($opt_a);
-	open(BEST,"$dir/camace.best.mRNA.ace") if ($opt_c);
-	open(OUT,">$dir/autoace.blat.mRNA.ace") if ($opt_a);
-	open(OUT,">$dir/camace.blat.mRNA.ace") if ($opt_c);
+	open(AOTHER,"$dir/autoace.mRNA.ace");
+	open(COTHER,"$dir/camace.mRNA.ace") if ($opt_c);
+	open(ABEST,"$dir/autoace.best.mRNA.ace");
+	open(CBEST,"$dir/camace.best.mRNA.ace") if ($opt_c);
+	open(AOUT,">$dir/autoace.blat.mRNA.ace");
+	open(COUT,">$dir/camace.blat.mRNA.ace") if ($opt_c);
 }
-elsif (!$opt_x) {	open(OTHER,"$dir/autoace.EST.ace") if ($opt_a);
-	open(OTHER,"$dir/camace.EST.ace") if ($opt_c);
-	open(BEST,"$dir/autoace.best.EST.ace") if ($opt_a);
-	open(BEST,"$dir/camace.best.EST.ace") if ($opt_c);
-	open(OUT,">$dir/autoace.blat.EST.ace") if ($opt_a);
-	open(OUT,">$dir/camace.blat.EST.ace") if ($opt_c);
+elsif (!$opt_x) {	
+	open(AOTHER,"$dir/autoace.EST.ace");
+	open(COTHER,"$dir/camace.EST.ace") if ($opt_c);
+	open(ABEST,"$dir/autoace.best.EST.ace");
+	open(CBEST,"$dir/camace.best.EST.ace") if ($opt_c);
+	open(AOUT,">$dir/autoace.blat.EST.ace");
+	open(COUT,">$dir/camace.blat.EST.ace") if ($opt_c);
 }
 
 my (%line);
 my $temp = $/;
 $/ = "";
-while (<BEST>) {
+while (<ABEST>) {
 #	print $_;
 	if ($_ =~ /^Homol_data/) {
 		$line{$_} = 1;
-		print OUT $_;
+		print AOUT $_;
 	}
 }
 
-while (<OTHER>) {
+while (<AOTHER>) {
 #	print $_;
 	if ($_ =~ /^Homol_data/) {
 		my $line = $_;
 		s/BLAT_EST_OTHER/BLAT_EST_BEST/g unless ($opt_m || $opt_x);
 		s/BLAT_mRNA_OTHER/BLAT_mRNA_BEST/g   if ($opt_m);
 		unless (exists $line{$_}) {
-			print OUT $line;
+			print AOUT $line;
+		}	
+	}
+}
+
+while (<CBEST>) {
+#	print $_;
+	if ($_ =~ /^Homol_data/) {
+		$line{$_} = 1;
+		print COUT $_;
+	}
+}
+
+while (<COTHER>) {
+#	print $_;
+	if ($_ =~ /^Homol_data/) {
+		my $line = $_;
+		s/BLAT_EST_OTHER/BLAT_EST_BEST/g unless ($opt_m || $opt_x);
+		s/BLAT_mRNA_OTHER/BLAT_mRNA_BEST/g   if ($opt_m);
+		unless (exists $line{$_}) {
+			print COUT $line;
 		}	
 	}
 }

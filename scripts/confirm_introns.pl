@@ -23,7 +23,7 @@ if ($opt_h) {
 	exec('perldoc',$0);
 	exit;	
 }
-my $dir = '/nfs/disk100/wormpub/blat2';
+my $dir = '/wormsrv2/autoace/BLAT';
 my (%seq,%intron,$temp);
 
 if ($opt_m) {
