@@ -8,7 +8,7 @@
 # Page download and update upload to geneace has been automated [ck1]
 
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-04-28 14:52:37 $
+# Last updated on: $Date: 2004-02-10 17:53:17 $
 
 use strict;
 use Getopt::Std;
@@ -51,7 +51,7 @@ my $rundate = `date +%y%m%d`; chomp $rundate;
 
 my $input_file = "/wormsrv1/geneace/STRAIN_INFO/cgc_strain_list_$rundate";
 
-system("wget -O $input_file http://www.cbs.umn.edu/CGC/Strains/gophstrn") && die "Unable to download from the web page specified!\n\n";
+system("wget -O $input_file http://biosci.umn.edu/CGC/Strains/gophstrnt.txt") && die "Unable to download from the web page specified!\n\n";
 
 
 ########################################################################
