@@ -1,24 +1,23 @@
-
- Genetic_map		Accession_number	Author
-					    	Person
- Gene_class		Sequence		Person_name
- Gene_name	  	 Genome_sequence	Paper
- Locus            	 cDNA_sequence		
- Gene           	 Briggsae_genomic   	Oligo           
-						PCR_product
- Rearrangement		worm_genes		RNAi
- Clone						Expr_pattern
- Strain			CDS			Expr_profile
-		 	 elegans_CDS		
- Allele		 	 briggsae_CDS		Feature
-  Insertion_allele		 		Motif
-  Deletion_allele	Transcript		UTR
-  Substitution_allele	 elegans_RNA_genes	Operon
-  KO_allele 	 	 Coding_transcripts	
-  NBP_allele		                   	Cell
-			Pseudogene		Cell_group
- Model			 elegans_pseudogenes	GO_term
- Method			                    	Species
- Keyset			Protein              	
- Class			 Wormpep		
-       			 Brigpep		
+   Genetic_map            Accession_number        Author
+                                                  Person
+   Gene_class             Sequence                Person_name
+   Gene_name               Genome_Sequence        Paper
+   Locus                   cDNA_Sequence
+   Gene                    Briggsae_genomic       Oligo
+                                                  PCR_product
+   Rearrangement          worm_genes              RNAi
+   Clone                                          Expr_pattern
+   Strain                 CDS                     Expr_profile
+                           elegans_CDS
+  Variation                briggsae_CDS           Feature
+    Insertion_allele                              Motif
+    Deletion_allele       Transcript
+    Substitution_allele    elegans_RNA_genes      Operon
+    KO_allele              Coding_transcripts
+    NBP_allele                                    Cell
+                          Pseudogene              Cell_group
+   Model                   elegans_pseudogenes    GO_term
+   Method                                         Species
+   KeySet                 Protein
+   Class                   Wormpep
+                           Brigpep
