@@ -5,7 +5,7 @@
 # completely rewritten by Keith Bradnam from list_loci_designations
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-12-01 11:54:28 $      
+# Last updated on: $Date: 2004-04-14 15:29:49 $      
 #
 # This script should be run under a cron job and simply update the webpages that show
 # current gene names and sequence connections.  Gets info from geneace.  
@@ -16,7 +16,7 @@
 #################################################################################
 
 use strict;
-use lib '/wormsrv2/scripts/';
+use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
 use Wormbase;
 use Ace;
 use Carp;
@@ -33,7 +33,7 @@ my $db = Ace->connect(-path  => "/wormsrv1/geneace",
                       -program =>$tace) || do { print "Connection failure: ",Ace->error; croak();};
 
 # Get all Loci
-my @loci = $db->fetch(-query=>"Find Locus WHERE Gene AND \(Species = \"Caenorhabditis elegans\"\)");
+my @genes = $db->fetch(-query=>"Find Gene_name WHERE CGC_name_for; Follow CGC_name_For; \(Species = \"Caenorhabditis elegans\"\)");
 
 
 # Need to open first file in series to make this all work
@@ -47,8 +47,11 @@ my $prev_initial = "a";
 my $line = 0;
 
 # cycle through each locus in database
-foreach my $locus (@loci){
-  my $initial = substr($locus,0,1);
+foreach my $gene (@genes){
+  
+  my $cgc_name = $gene->CGC_name;
+  print "$gene -> $cgc_name\n";
+  my $initial = substr($cgc_name,0,1);
   $initial = lc($initial);
   if ($initial ne $prev_initial){
     close(HTML);
@@ -58,20 +61,25 @@ foreach my $locus (@loci){
 
   # Set alternating colours for each row of (HTML) output 
   if (($line % 2) == 0) { 
-      print HTML "<TR BGCOLOR=\"lightblue\">\n";
+    print HTML "<TR BGCOLOR=\"lightblue\">\n";
   }
   else {
-         print HTML "<TR BGCOLOR=\"white\">\n";
+    print HTML "<TR BGCOLOR=\"white\">\n";
   }
   
   # Column 1 - ?Locus name
-  print HTML "<TD><A HREF=\"http://www.wormbase.org/db/gene/gene?name=${locus}\">${locus}</a></TD>";
-  print TEXT "$locus,";
+  print HTML "<TD><A HREF=\"http://www.wormbase.org/db/gene/gene?name=${cgc_name}\">${cgc_name}</a></TD>";
+  print TEXT "$gene,";
 
 
-  # Column 2 - ?CDS connections
-  if(defined($locus->at('Molecular_information.CDS'))){
-    my @CDSs = $locus->CDS;
+  # Column 2 - Gene ID
+  print HTML "<TD>$gene</TD>";
+  print TEXT "$gene,";
+
+
+  # Column 3 - ?CDS connections
+  if(defined($gene->at('Molecular_info.CDS'))){
+    my @CDSs = $gene->CDS;
     print HTML "<TD>";
     foreach my $i (@CDSs){
       print HTML "<A HREF=\"http://www.wormbase.org/db/seq/sequence?name=${i}\">${i}</a> ";
@@ -82,10 +90,10 @@ foreach my $locus (@loci){
   }
 
 
-  # Column 3 -  ?Transcript connections
-  elsif(defined($locus->at('Molecular_information.Transcript'))){
+  # Column 4 -  ?Transcript connections
+  elsif(defined($gene->at('Molecular_info.Transcript'))){
     print HTML "<TD>&nbsp</TD>";
-    my @transcripts = $locus->Transcript;
+    my @transcripts = $gene->Transcript;
     print HTML "<TD>";
     print TEXT ",";
     foreach my $i (@transcripts){
@@ -96,9 +104,9 @@ foreach my $locus (@loci){
     print HTML "</TD><TD>&nbsp</TD>";
   }
 
-  # Column 4 - ?Pseudogene connections
-  elsif(defined($locus->at('Molecular_information.Pseudogene'))){
-    my @pseudogenes = $locus->Pseudogene;
+  # Column 5 - ?Pseudogene connections
+  elsif(defined($gene->at('Molecular_info.Pseudogene'))){
+    my @pseudogenes = $gene->Pseudogene;
     print HTML "<TD>&nbsp</TD><TD>&nbsp</TD><TD>";
     print TEXT ",,";
     foreach my $i (@pseudogenes){
@@ -116,9 +124,9 @@ foreach my $locus (@loci){
   }
 
 
-  # Column 5 - Other names for ?Locus
-  if(defined($locus->at('Name.Other_name'))){
-    my @other_names = $locus->Other_name;
+  # Column 6 - Other names for ?Locus
+  if(defined($gene->at('Identity.Name.Other_name'))){
+    my @other_names = $gene->Other_name;
     print HTML "<TD>";
     foreach my $i (@other_names){
       print HTML "${i} ";
@@ -132,8 +140,8 @@ foreach my $locus (@loci){
   print TEXT ",";
 
 
-  # Column 6 CGC approved?
-  if(defined($locus->at('Type.Gene.CGC_approved'))){
+  # Column 7 CGC approved?
+  if(defined($gene->at('Identity.Name.CGC_name'))){
     print HTML "<TD>CGC approved</TD>\n";
     print TEXT "CGC approved"
   }
@@ -144,7 +152,7 @@ foreach my $locus (@loci){
   $line++;
   print HTML "</TR>\n";
   print TEXT "\n";
-  $locus->DESTROY();
+  $gene->DESTROY();
 }
 
 
@@ -156,7 +164,7 @@ close(HTML);
 
 $db->close;
 
-my $rundate    = `date +%y%m%d`; chomp $rundate;
+my $rundate = &rundate;
 my $log = "/tmp/update_web_gene_names";
 
 open(LOG,">$log") || carp "Couldn't open tmp log file\n";
@@ -166,8 +174,8 @@ print LOG "Running update_web_gene_names.pl on $rundate\n\n";
 # now update pages using webpublish
 chdir($www) || print LOG "Couldn't run chdir\n";
 
-system("/usr/local/bin/webpublish -f -q *.shtml") && print LOG "Couldn't run webpublish on html files\n";
-system("/usr/local/bin/webpublish -f -q *.txt") && print LOG "Couldn't run webpublish on text file\n";
+#system("/usr/local/bin/webpublish -f -q *.shtml") && print LOG "Couldn't run webpublish on html files\n";
+#system("/usr/local/bin/webpublish -f -q *.txt") && print LOG "Couldn't run webpublish on text file\n";
 
 &mail_maintainer("update_web_gene_names.pl","krb\@sanger.ac.uk","$log");
 
@@ -193,7 +201,8 @@ __END__
 Simply takes the latest set of gene names in geneace and writes to the development web site
 a set of HTML pages (one for each letter of the alphabet) containing all gene names starting
 with that letter.  Makes these tables hyperlinked to WormBase and also includes other names
-and sequence/transcript/pseudogene connections.
+and sequence/transcript/pseudogene connections.  Now includes Gene IDs as an extra column
+but this means that Loci are not sorted alphabetically at the moment.
 
 When script finishes it copies across to the live web site.  This script should normally be
 run every night on a cron job.
