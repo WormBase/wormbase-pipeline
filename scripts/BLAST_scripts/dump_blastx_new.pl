@@ -59,11 +59,11 @@ sub now {
 }
 
 # create output files
-open (LOG, ">/nfs/acari/wormpipe/ace_files/blastx_ensembl.log") || die "cannot create log
-file";
-open (ACE, ">/nfs/acari/wormpipe/ace_files/blastx_ensembl.ace") || die "cannot create ace
-file";
-#*LOG = *STDOUT;
+my $log = "/nfs/acari/wormpipe/dumps/blastx_ensembl.log";
+my $ace = "/nfs/acari/wormpipe/dumps/blastx_ensembl.ace";
+
+open (LOG, ">$log") || die "cannot create log file $log\n";
+open (ACE, ">$ace") || die "cannot create ace file $ace\n";
 
 # make ACE and LOG un-buffered
 my $old_fh = select(LOG);
@@ -170,6 +170,8 @@ if ($opt_c) {
 # connect to AceDB using TableMaker,
 # populating %accession2name (maps embl accession to contig name)
 ####################################################################
+
+# this could use Common_data.pm - will investigate
 my %accession2name;
 
 if ($opt_m) {
@@ -596,6 +598,10 @@ $dbh->disconnect;
 close LOG;
 close ACE;
 
-print "\nEnd of dump\n";
+print "\nEnd of dump - moving $ace to /wormsrv2\n";
+
+# This will pause and wait for password so preventing the next dumping stages to occur
+#`scp $ace wormpub@wormsrv2:/wormsrv2/wormbase/ensembl_dumps/`;
+
 
 exit 0;

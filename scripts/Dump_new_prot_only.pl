@@ -16,7 +16,7 @@ GetOptions ("debug"   => \$debug,
 	    "help"    => \$help,
 	    "all"     => \$all
            );
-
+$all = 1; #hack while working out why GetOpts not working
 my $maintainers = "All";
 my $rundate    = `date +%y%m%d`; chomp $rundate;
 my $runtime    = &runtime;
@@ -47,8 +47,8 @@ my @sample_peps = @_;
 my $wormpipe_dir = glob("~wormpipe");
 my $WPver = &get_wormbase_version;
 my $acedb_database;
-my $output = "/wormsrv2/wormbase/ensembl_dumps/blastp_ensembl.ace";
-my $recip_file = "/wormsrv2/tmp/wublastp_recip.ace";
+my $output = "$wormpipe_dir/dumps/blastp_ensembl.ace";
+my $recip_file = "$wormpipe_dir/dumps/wublastp_recip.ace";
 
 if( $test ) {
   $WPver-- ;
@@ -274,6 +274,12 @@ print LOG &runtime," : finished\n\n______END_____";
 close LOG;
 `rm -f $recip_file`;
 
+
+print "\nEnd of dump - moving $output to /wormsrv2/wormbase/ensembl_dumps/\n";
+
+# This will pause and wait for password so preventing the next dumping stages to occur
+# `scp $output wormpub@wormsrv2:/wormsrv2/wormbase/ensembl_dumps/`;
+
 &mail_maintainer("Dump_new_proteins_only.pl",$maintainers,$log);
 
 exit(0);
@@ -288,6 +294,8 @@ sub dumpData
       #write ace info
       my $output_count = 0;
     HOMOLOGUES:
+#Use of uninitialized value in numeric comparison (<=>) at /nfs/team71/worm/ar2/wormbase/scripts/Dump_new_prot_only.pl line 291.
+
       foreach (sort {$$matches{$b}[0]->[7] <=> $$matches{$a}[0]->[7]} keys %$matches ){
         foreach my $data_array_ref (@$matches{$_}) {
 	  last HOMOLOGUES if $output_count++ ==  10; # only output the top 10

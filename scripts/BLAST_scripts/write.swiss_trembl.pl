@@ -34,7 +34,7 @@ my $trembl_list_txt = "$wormpipe_dump/trembllist.txt";
 # extract lists of which proteins have matches
 open (SWISS,">$swiss_list_txt");
 open (TREMBL,">$trembl_list_txt");
-open (DATA,"| cat $wormpipe_dump/blastp_ensembl.ace $wormpipe_dump/blastp_ensembl.ace |");
+open (DATA,"| cat $wormpipe_dump/blastp_ensembl.ace $wormpipe_dump/blastx_ensembl.ace |");
 while (<DATA>) {
   if (/Pep_homol\s+\"/) {
     if( /SW:(\S+)\"/ ) {
