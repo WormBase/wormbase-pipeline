@@ -11,7 +11,7 @@
 # Usage : agp2dna.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-12-03 13:28:22 $
+# Last edited on: $Date: 2003-12-03 13:52:08 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -71,7 +71,7 @@ my $dnadir    = "$basedir/autoace/CHROMOSOMES";
 my $logdir    = "$basedir/autoace/yellow_brick_road";
 
 my @gff_files = ('I','II','III','IV','V','X');
-@gff_files = ('III');
+@gff_files = ('III') if ($quicktest);
 
 &create_log_files;
 
