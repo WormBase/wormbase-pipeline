@@ -8,7 +8,7 @@
 # linked to an existing ?Gene object
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-05-26 15:52:38 $   
+# Last updated on: $Date: 2004-05-27 13:59:21 $   
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -124,6 +124,9 @@ sub process_cds_class{
 ###########################################################################################
 
 sub process_transcript_class{
+  
+  # unused gene IDs
+  my @unused_ids = (7475,7539,8104,8135,8179,9206,9527,9555,9936,10276,308,309,310,311,10376,10430,10431,10733,10777,11346,11470,12292,12350,12377,12653,12752,13010,13386,13918,13948,13993,14026,14126,14147);
 
   # start from highest ID that was used previously
   my $id = $id_limit;
@@ -131,11 +134,14 @@ sub process_transcript_class{
   open(OUT,">processed_transcript_class.ace") || die "Couldn't open output file\n";
 
   my $db_path = "$database";
-  my $db = Ace->connect(-path  => $db_path) || do { print "Connection failure: ",Ace->error; die();};
-  
+
+  # connect to source database, but also to geneace for extra checking
+  my $db  = Ace->connect(-path  => $db_path) || do { print "Connection failure: ",Ace->error; die();};
+  my $db2 = Ace->connect(-path  => "/wormsrv1/geneace") || do { print "Connection failure: ",Ace->error; die();};  
+
   # we want all genes, all species??? Don't want coding_transcripts
   # leave other species for later
-  my $query = "Find Transcript WHERE NOT Method = coding_transcript AND Species = \"Caenorhabditis elegans\" AND NOT Gene";
+  my $query = "Find Transcript WHERE NOT Method = coding_transcript AND Species = \"Caenorhabditis elegans\" AND NOT Gene AND NOT Method = history";
   push(my @transcripts, $db->find($query));
 
   # device for tracking multiple isoforms of same gene
@@ -148,6 +154,18 @@ sub process_transcript_class{
     my $sequence_name = $gene;
     $sequence_name =~ s/[a-z]$//;
     
+    # first check to see that this name isn't already in geneace, i.e. where an other isoform is a CDS
+    my ($obj) = $db2->fetch(-class=>'Gene_name',-name=>"$sequence_name");
+    if ($obj){
+      my $gene_id = $obj->Sequence_name_for;
+      print "WARNING: Transcript $gene ($sequence_name) in camace already exists in geneace under Gene $gene_id\n";
+      print OUT "Gene : \"$gene_id\"\n";
+      print OUT "Transcript $gene\n\n";
+      # can now skip to next gene
+      next;
+    }
+    
+
     # does this isoform belong to the same gene as the last one
     # if so, we can append the Transcript name to the last gene
     if($sequence_name eq $last_sequence_name){
@@ -157,9 +175,22 @@ sub process_transcript_class{
     # if not, it's a new gene, write output
     else{
 
-      $id++;
-      my $id_padded = sprintf "%08d" , $id;
+      # use unused ids first if possible
+      my $final_id;
+      my $id_padded;
+
+      if($unused_ids[0]){
+	my $tmp_id = $unused_ids[0];
+	shift(@unused_ids);
+	$id_padded = sprintf "%08d" , $tmp_id;
+      }
+      else{
+	$id++;
+	$id_padded = sprintf "%08d" , $id;
+
+      }
       my $name = "WBGene$id_padded";  
+
       
       #grab species info
       my $species = $gene->Species;
@@ -170,7 +201,7 @@ sub process_transcript_class{
       print OUT "Gene : \"$name\"\n";
       print OUT "Version 1\n";
       print OUT "Sequence_name $sequence_name\n";
-      print OUT "Public_name $gene\n";
+      print OUT "Public_name $sequence_name\n";
       print OUT "Species \"$species\"\n";
       print OUT "Version_change 1 now \"WBPerson1971\" Imported \"Initial conversion from Transcript class of WS125\"\n";
       print OUT "Live\n";
