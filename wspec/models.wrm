@@ -284,8 +284,11 @@
 
 
 ?Locus  Evidence #Evidence
-	Name    Other_name ?Text #Evidence
-                Gene_Class  ?Gene_Class XREF Loci
+	Name    Other_name ?Gene_name XREF Other_name #Evidence // now links to ?Gene_name
+                Gene_Class  ?Gene_Class XREF Loci 
+		CGC_name ?Gene_name XREF CGC_name //new tag
+		Non_CGC_name ?Gene_name XREF Non_CGC_name //new tag
+		Sequence_name ?Gene_name XREF Sequence_name // new tag
 	Gene_information Description ?Text #Evidence // added by krb [020802]
 			 Provisional_description ?Text #Evidence // added for Erich [020322 krb]
 			 Detailed_description ?Text #Evidence  // added for Erich [020322 krb]
@@ -313,7 +316,6 @@
                                 Other_sequence ?Sequence XREF Locus_other_seq #Evidence    // dl 001128
 				Transcript ?Transcript XREF Locus #Evidence // en route to new gene model [021126 krb]
 				Product ?Text
-				Canonical_gene ?Gene XREF Locus                   // Lincoln 010518
 	Remark ?Text
 	Map    ?Map XREF Locus #Map_position
         Hide_under ?Locus XREF Representative_for
@@ -337,6 +339,17 @@
 	Rescued_by_Transgene ?Transgene XREF Rescue
 	GO_term ?GO_term XREF Locus #Evidence // Added by krb 020905
 
+
+////////////////////////////////////////////////////////////////////////////////
+// New ?Gene_name class to allow easier indexing of gene names and other names
+//
+// [krb 030124]
+
+?Gene_name Gene CGC_name ?Locus XREF CGC_name // these two fields won't be needed under new gene model
+		Non_CGC_name ?Locus XREF CGC_name  // 
+		Sequence_name ?Locus XREF Sequence_name // optional whether to use this and link to 
+							// Transcript and Genomic_sequence names
+		Other_name ?Locus XREF Other_name // main reason for this class
 
 
 ?Balancer From_left_end
@@ -617,40 +630,6 @@
 			  Default_negative
 		// if set then all non-explicit elements on Grid score -ve
 
-// 
-// Gene class added 5/01/01 Lincoln Stein
-// 
-?Gene	Version UNIQUE Int
-	Name	Public_name UNIQUE ?Gene_name XREF Gene // not directly editable
-		CGC_name UNIQUE ?Gene_name XREF Gene
-		Sequence_name UNIQUE ?Gene_name XREF Gene
-		Other_name ?Gene_name XREF Gene #Evidence
-	History	Version_change Int UNIQUE DateType UNIQUE ?Person #Action
-		Merged_into UNIQUE ?Gene XREF Acquired
-		Acquired ?Gene XREF Merged_into
-		Split_from_parent UNIQUE ?Gene XREF Split_child
-		Split_child ?Gene XREF Split_from_parent
-	Live  // remove live to make gene "dead"
-	Attributes Description ?Text
-		   Species ?Species
-		   Phenotype ?Text
-		   Locus ?Locus XREF Canonical_gene
-		   Sequence ?Sequence XREF Gene
-        	   Reference ?Paper XREF Gene
-		   Expr_pattern ?Expr_pattern XREF Gene
-	           GO_term ?GO_term XREF Gene
-
-#Action Event Created
-	      Killed
-	      Resurrected
-	      Merged_into UNIQUE ?Gene
-	      Acquires_merge UNIQUE ?Gene
-	      Split_from UNIQUE ?Gene
-              Split_into UNIQUE ?Gene
-        Name_change CGC_name UNIQUE Text
-                    Sequence_name UNIQUE Text
-		    Other_name UNIQUE Text
-        Attribute_change Text Text
 
 #Evidence Paper_evidence ?Paper
 	  Person_evidence ?Person
@@ -672,8 +651,6 @@
 			    TAS Text
 
 
-?Gene_name Gene ?Gene
-
 
 
 //
@@ -691,8 +668,7 @@
                Component ?GO_term XREF Component_of
 	 Parent Instance_of ?GO_term XREF Instance
                 Component_of ?GO_term XREF Component
-	 Attributes_of Gene ?Gene XREF GO_term
-                       Cell ?Cell XREF GO_term
+	 Attributes_of Cell ?Cell XREF GO_term
 		       Reference ?Paper XREF GO_term
 		       Motif ?Motif XREF GO_term
 		       Sequence ?Sequence XREF GO_term   // added for Erich, [011210 krb]
@@ -863,7 +839,6 @@
 			Corresponding_PCR_product ?PCR_product XREF Overlaps_CDS // added for PCR mappings [010419 dl]
 			Corresponding_WTP ?WTP XREF Overlaps_CDS                 // [010623 rd]
 			RNAi_result ?RNAi XREF Predicted_gene                    // added for Lincoln RNAi [001213 dl]
-			Gene ?Gene XREF Sequence                                 // added by Lincoln 010417
 			GO_term ?GO_term XREF Sequence #Evidence                 // added for Erich [011210 krb]
                         Contained_in_operon ?Operon XREF Contains_CDS            // added for Operons [020128 dl]
 			Provisional_description ?Text #Evidence // added for Erich [020322 krb]
@@ -1282,7 +1257,6 @@
 				Locus ?Locus XREF Expr_pattern
 				Protein ?Protein XREF Expr_pattern
                                 Protein_description Text   // dl1 010307 from geneace
-                                Gene ?Gene XREF Expr_pattern
 		Expressed_in	Cell ?Cell XREF Expr_pattern
 				Cell_group ?Cell_group XREF Expr_pattern
 				Life_stage ?Life_stage XREF Expr_pattern
@@ -1761,7 +1735,6 @@
                   Life_stage ?Life_stage XREF Reference
                   RNAi ?RNAi XREF Reference  // added for Lincoln RNAi [001213 dl]
                   Transgene ?Transgene XREF Reference
-                  Gene ?Gene XREF Reference
                   GO_term ?GO_term XREF Reference
                   Operon ?Operon XREF Reference      // added for operon data [010928 dl]
         Keyword ?Keyword
