@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.27 2002-01-15 15:06:11 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.28 2002-01-25 11:19:59 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -157,25 +157,30 @@
 // Genetics
 // 
 
-// 
-// Gene class added 5/01/01 Lincoln Stein
-// 
-// RD 0107 renamed class Action to Gene_history_action, and added WTP_name support
+// krb 020125 - Expanded Gene_name class to make cleaner XREFs with Gene class
 
-?Gene_name Gene ?Gene
+?Gene_name Gene Public_name ?Gene
+		CGC_name ?Gene
+		Sequence_name ?Gene
+		Other_name ?Gene
+
+
+// Gene class added 5/01/01 Lincoln Stein
+// RD 0107 renamed class Action to Gene_history_action, and added WTP_name support
+// krb 020125 - Removed WTP_name, tidied up Merged, Aquired & Split tags to be consistant with 
+// #Gene_history_action
 
 ?Gene	Identity  Version UNIQUE Int
-		  Name	Public_name UNIQUE ?Gene_name XREF Gene // not directly editable
-			CGC_name UNIQUE ?Gene_name XREF Gene
-			Sequence_name UNIQUE ?Gene_name XREF Gene
-			WTP_name UNIQUE ?Gene_name XREF Gene
-			Other_name ?Gene_name XREF Gene DateType #Evidence
+		  Name	Public_name UNIQUE ?Gene_name XREF Public_name // not directly editable
+			CGC_name UNIQUE ?Gene_name XREF CGC_name
+			Sequence_name UNIQUE ?Gene_name XREF Sequence_name
+			Other_name ?Gene_name XREF Other_name DateType #Evidence
 		  Species UNIQUE ?Species	// RD 0107
 		  History	Version_change Int UNIQUE DateType UNIQUE ?Curator #Gene_history_action
-				Merged_into UNIQUE ?Gene XREF Acquired
-				Acquired ?Gene XREF Merged_into
-				Split_from_parent UNIQUE ?Gene XREF Split_child
-				Split_child ?Gene XREF Split_from_parent
+				Merged_into UNIQUE ?Gene XREF Acquires_merge
+				Acquires_merge ?Gene XREF Merged_into
+				Split_from UNIQUE ?Gene XREF Split_into
+				Split_into ?Gene XREF Split_from
 		  Live  // remove live to make gene "dead"
 	Gene_info	Gene_class UNIQUE ?Gene_class XREF Gene
 			Reference_allele ?Allele Text
@@ -214,6 +219,7 @@
 	Laboratory ?Laboratory
         Reference ?Paper XREF Gene
 	
+
 ?Locus  Type	Polymorphism    SNP  Text               // SNP stuff added for Todd [171001 krb]
                                 Status Text
                                 SNP_assay ?PCR_product XREF SNP_locus ?Text
@@ -248,7 +254,6 @@
 			    Split_into UNIQUE ?Gene
 		     Name_change CGC_name UNIQUE Text
                                  Sequence_name UNIQUE Text
-				 WTP_name UNIQUE Text
 		                 Other_name UNIQUE Text
 
 // RD 0107 I redid the Evidence model based on extensive email 
@@ -259,10 +264,13 @@
 // such as Method be UNIQUE
 // I added Similarity targets as Lincoln suggested in the April
 // discussion.
+// krb 020125 - added Initial_transfer as a tag to have some idea of why an object
+// might have no other Source information, e.g. primary creation of object.
 
 #Evidence  Source  UNIQUE  Author  ?Author
                            Paper   ?Reference
                            Automated_method ?Method ?Database
+			   Initial_transfer
            Curator UNIQUE ?Curator
            Type    UNIQUE Mutant_phenotype	// NB These types map to GO codes
                           Genetic_interaction
