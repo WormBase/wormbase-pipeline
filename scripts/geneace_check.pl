@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-02-20 13:54:20 $
+# Last updated on: $Date: 2003-02-21 21:37:15 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -32,7 +32,7 @@ GetOptions ("h|help"        => \$help,
             "d|debug=s"     => \$debug,
 	    "c|class=s"     => \@class,
 	    "db|database=s" => \$database,
-            "ace|a"         => \$ace,  
+            "a|ace"         => \$ace,  
            );
 
 ################################################ 
@@ -365,18 +365,38 @@ sub process_allele_class{
 
   #print scalar @seqs, "\n";
   my %seqs;
-    foreach (@seqs){
-      $seqs{$_}++;
-  }
+  foreach (@seqs){$seqs{$_}++}
 
-  # test for Location tag and if an allele is connected to multiple loci
+  # check if an allele has no Location tag 
+  #          an allele is connected to multiple loci
+  #          the sequence tag of an allele has a locus name
 
+  my $allele_designation_to_LAB=<<EOF;
+  Table-maker -p "/wormsrv1/geneace/wquery/allele_designation_to_LAB.def" quit
+EOF
+  
+  my %location;
+  if ($ace){%location=allele_location($allele_designation_to_LAB, $default_db)};
+ 
   foreach $allele (@alleles){
-    if(!defined($allele->at('Location'))){  
-      print LOG "ERROR: $allele has no Location tag present\n";
-      $allele_errors++;
+    if(!defined($allele->at('Location'))){
+      if ($allele =~ /^[A-Z].+/){
+        $allele_errors++;
+	print LOG "ERROR: $allele has no Location tag present (no info available)\n";
+      }
+      else {
+	print LOG "ERROR: $allele has no Location tag present\n";
+	$allele_errors++;
+	if ($ace){
+	  my $desig = $allele;        
+	  $desig =~ s/\d+//;
+	  if (exists $location{$desig}){
+	    print  ACE "\n\nAllele : \"$allele\"\n";
+	    print  ACE "Location \"$location{$desig}\"\n";
+	  }
+	}	
+      }
     }
-   
     # checking if sequence name in Allele has now a locus name 
 
     if($allele -> Gene){
@@ -404,7 +424,6 @@ sub process_allele_class{
     }
   }
 
-
   my $allele_has_flankSeq_and_no_seq=<<EOF;
   Table-maker -p "/wormsrv1/geneace/wquery/allele_has_flankSeq_and_no_seq.def" quit
 EOF
@@ -416,99 +435,91 @@ EOF
 EOF
 
   allele_has_predicted_gene_and_no_seq($allele_has_predicted_gene_and_no_seq, $default_db);
-
   print LOG "\nThere are $allele_errors errors in Allele class\n";
 }
 
-sub allele_has_flankSeq_and_no_seq {
+sub allele_location {
+  my ($def, $dir)=@_;
+  my %location_desig;
+  open (FH, "echo '$def' | tace $dir | ") || die "Couldn't access geneace\n";
+  while (<FH>){
+    chomp($_);
+    if ($_ =~ /^\"(.+)\"\s+\"(.+)\"/){
+      $location_desig{$2} = $1  # $2 is allele_designation $1 is LAB	
+    }
+  }
+  return %location_desig;
+}
   
-  my ($def, $dir, $db) = @_;
+sub allele_has_flankSeq_and_no_seq {
+      
+  my ($def, $dir) = @_;
   open (FH, "echo '$def' | tace $dir | ") || die "Couldn't access geneace\n";
   while (<FH>){
     chomp($_);
     if ($_ =~ /^\"/){
       $_ =~ s/\"//g;
-      print LOG "WARNING: Allele $_ has flanking sequences but is NOT connected to parent sequence\n"; 
+      print LOG "WARNING: Allele $_ has flanking sequences but is NOT connected to parent sequence\n";
       $allele_errors++; 
     }
   }
 }
 
 sub allele_has_predicted_gene_and_no_seq {
-  #if ($ace){open (ALLELE, ">>$acefile") || die "Can't write to file!"}
-  my ($def, $dir, $db) = @_;
-  my ($allele, $seq, %allele_cds_seq, %allele_cds, $cds, %all_cds, %all_seq);
-
+          
+  my ($def, $dir) = @_;
+  my ($allele, $seq, $parent, $cds);
+      
   open (FH, "echo '$def' | tace $dir | ") || die "Couldn't access geneace\n";
   while (<FH>){
     chomp($_);
-    if ($_ =~ /\"(.+)\"\s+\"(.+)\"\s$/) {   
+    if ($_ =~ /^\"(.+)\"\s+\"(.+)\"\s$/) {
       $allele = $1;
-      $cds = $2;  
-      print LOG "WARNING: Allele $allele has predicted gene but is NOT connected to parent sequence\n"; 
-      $allele_errors++; 
-      if ($ace){	
+      $cds = $2;
+      print LOG  "WARNING: Allele $allele has predicted gene but is NOT connected to parent sequence\n";
+      $allele_errors++;
+      if ($ace){
         get_parent_seq($cds, $allele);
-      }  
-    }
-    else {   
-      if ($_ =~ /\"(.+)\"\s+\"(.+)\"\s+\"(.+)\"/){
-	$allele = $1;
-	$cds = $2;
-	$seq = $3;
-	push(@{$allele_cds_seq{$allele}}, $cds, $seq);
-      }	
-    }
-  } 
-  if (%allele_cds_seq){
-    foreach $allele (sort keys %allele_cds_seq){
-      foreach (@{$allele_cds_seq{$allele}}[0]){$all_cds{$_}++}
-      foreach $seq (@{$allele_cds_seq{$allele}}[1]){	
-	if ($all_cds{$seq}){
-	  print LOG "ERROR: Allele $allele has a parent sequence the same as its predicted gene\n";  
-	  $allele_errors++;
-	  if ($ace){ 
-	    print ACE "\n\nAllele : \"$allele\"\n";
-	    print ACE "-D Sequence \"$seq\"\n";
-	    get_parent_seq($seq, $allele);
-          }
-	}  
-	if (!$all_cds{$seq}){
-	  for (my $i = 0; $i < scalar @{$allele_cds_seq{$allele}}; ){
-	    $cds = @{$allele_cds_seq{$allele}}[$i];
-            $i=$i+2;
-	    $cds=get_parent_seq($seq, $allele, $cds);  # $seq is $predict in sub
-	    if ($cds ne $seq){
-	      if ($cds eq ""){$cds = @{$allele_cds_seq{$allele}}[$i-2]}
-	      print LOG "ERROR: Allele $allele has an incorrect parent sequence ($seq) with respect to its predicted gene ($cds)\n";  
-	      $allele_errors++; 
-	    }  
-          }
-        }  
       }
     }
-  }     
+    if ($_ =~ /\"(.+)\"\s+\"(.+)\"\s+\"(.+)\"/){
+      $allele = $1;  
+      $cds = $2;
+      $seq = $3;
+      if ($seq eq $cds){
+        print LOG "ERROR: Allele $allele has not  incorrect parent sequence ($seq) with respect to its predicted gene ($cds)\n";
+        $allele_errors++;
+        if ($ace){
+          print ACE "\n\nAllele : \"$allele\"\n";
+          print ACE "-D Sequence \"$seq\"\n";
+          get_parent_seq($cds, $allele);
+        }
+      }
+      if ($seq ne $cds && $seq !~ /SUPERLINK.+/){
+        $parent=get_parent_seq($cds, $allele, "getparent");
+        if ($parent ne $seq){
+          print LOG "ERROR: Allele $allele has an incorrect parent sequence ($seq) with respect to its predicted gene ($cds)\n";
+          $allele_errors++;
+          if ($ace){
+            print ACE "\nAllele : \"$allele\"\n";
+            print ACE "-D Sequence \"$seq\"\n";
+            print ACE "Sequence \"$parent\"\n";
+          }
+        } 
+      }
+    }
+  }
   sub get_parent_seq {
-    my ($predict, $allele, $seq) = @_;	
+    my ($predict, $allele, $get_parent) = @_;   
     my ($parent, $cds);
-    if ($predict =~ /(.+)\.(\d+)[a-z]/){
-      $parent =  $1.".". $2; 
-    }  
-    if ($predict !~ /(.+)\.\d+[a-z]/ && $predict =~ /(.+)\.(\d+)/){
-      if ($seq && $seq  =~ /(.+)\.(\d+)[a-z]/){ 
-        $cds = $1.".".$2; return $cds;
+    if ($predict =~ /(.+)\.(\d+)[a-z]/ || $predict =~ /(.+)\.(\d+)/){
+      $parent =  $1;
+      if (!$get_parent){
+        print ACE "\n\nAllele : \"$allele\"\n";
+        print ACE "Sequence \"$parent\"\n";
       }
-      else {$parent = $1}
-    }  
-    if ($predict !~ /(.+)\.\d+[a-z]/ && $predict !~ /(.+)\.(\d+)/){
-      if ($seq && $seq =~ /(.+)\.(\d+)/){
-        $cds = $1; return $cds;
-      }
-    } 
-    if(!$seq){
-      print ACE "\n\nAllele : \"$allele\"\n";
-      print ACE "Sequence \"$parent\"\n";
-    }  
+    }
+    return $parent;
   }
 }
 
@@ -1146,8 +1157,5 @@ B<-ace:>
 =head3 <RUN geneace_check.pl>
 
             Geneace check is now set to run on Sundays.
-            To see a list of cron jobs: crontab -l
-            To edit cron job of geneace_check: crontab -e (user: wormpub)
-
             ##Run Geneace check over weekend
-            20 7 * * 0 /wormsrv2/scripts/geneace_check.pl &
+            20 7 * * 0 /wormsrv2/scripts/geneace_check.pl -a &
