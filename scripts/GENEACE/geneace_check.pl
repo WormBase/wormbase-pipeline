@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-12-16 14:49:37 $
+# Last updated on: $Date: 2004-12-20 10:47:08 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -159,63 +159,60 @@ exit(0);
 
 sub process_gene_class{
 
-  # get all genes
-  my @gene_ids = $db->fetch(-class => 'Gene',
-	                    -name  => '*');
-
-  # Loop through loci checking for various potential errors in the Locus object
   print "Checking Gene class for errors:\n";
   print LOG "\nChecking Gene class for errors:\n--------------------------------\n";
 
 
+  # Can first check general errors by grabbing sets of genes for querying
+
   # check that there is a Version tag
   foreach my $gene ($db->fetch(-query=>'Find Gene WHERE NOT Version')){
-    print LOG "ERROR 1: $gene ($Gene_info{$gene}{'Public_name'}) has no Version number\n";    
+    print LOG "ERROR: $gene ($Gene_info{$gene}{'Public_name'}) has no Version number\n";    
   }
 
   # test for Other_name tag but no value
   foreach my $gene ($db->fetch(-query=>'Find Gene WHERE Other_name AND NOT NEXT')){
-    print LOG "ERROR 2: $gene ($Gene_info{$gene}{'Public_name'}) has 'Other_name' tag without value\n";
+    print LOG "ERROR: $gene ($Gene_info{$gene}{'Public_name'}) has 'Other_name' tag without value\n";
   }
 
   # checks that when a Gene belongs to a Gene_class, it should have a CGC_name
   foreach my $gene ($db->fetch(-query=>'Find Gene WHERE Gene_class AND NOT CGC_name')){
     my $gc = $gene->Gene_class;
     if(!defined($gc)){
-      print LOG "ERROR 3: $gene ($Gene_info{$gene}{'Public_name'}) has no CGC_name but has an unpopulated Gene_class tag\n";
+      print LOG "ERROR: $gene ($Gene_info{$gene}{'Public_name'}) has no CGC_name but has an unpopulated Gene_class tag\n";
     }
     else{
-      print LOG "ERROR 3: $gene ($Gene_info{$gene}{'Public_name'}) has no CGC_name but links to Gene_class $gc\n";
+      print LOG "ERROR: $gene ($Gene_info{$gene}{'Public_name'}) has no CGC_name but links to Gene_class $gc\n";
     }
   }
 
   # checks existence of a CGC name but no gene_class
   foreach my $gene ($db->fetch(-query=>'Find Gene WHERE CGC_name AND NOT Gene_class')){
     my $cgc_name = $gene->CGC_name;
-    print  "ERROR 4: $gene has CGC name ($cgc_name) but is not linked to its Gene_class\n";
-    print JAHLOG "ERROR 4: $gene has CGC name ($cgc_name) but is not linked to its Gene_class\n";
+    print  "ERROR: $gene has CGC name ($cgc_name) but is not linked to its Gene_class\n";
+    print JAHLOG "ERROR: $gene has CGC name ($cgc_name) but is not linked to its Gene_class\n";
     $jah_errors++;
   }
 
   # checks Genes that do not have a map position nor an interpolated_map_position but has sequence info
   my $query = "Find Gene WHERE !(Map | Interpolated_map_position) & Sequence_name & Species=\"*elegans\" & !Sequence_name=\"MTCE*\"";
   foreach my $gene ($db->fetch(-query=>"$query")){
-    print LOG "ERROR 5: $gene ($Gene_info{$gene}{'Public_name'}) has neither Map nor Interpolated_map_position info but has Sequence_name\n";
+    print LOG "ERROR: $gene ($Gene_info{$gene}{'Public_name'}) has neither Map nor Interpolated_map_position info but has Sequence_name\n";
   }
 
   # test for Map tag and !NEXT
   foreach my $gene ($db->fetch(-query=>"Find Gene WHERE Map AND NOT NEXT")){
-    print LOG "ERROR 6: $gene ($Gene_info{$gene}{'Public_name'}) has a 'Map' tag without a value\n";
+    print LOG "ERROR: $gene ($Gene_info{$gene}{'Public_name'}) has a 'Map' tag without a value\n";
   }
 
   # test for Interpolated_map_position tag and !NEXT
   foreach my $gene ($db->fetch(-query=>"Find Gene WHERE Interpolated_map_position AND NOT NEXT")){
-    print LOG "ERROR 6: $gene ($Gene_info{$gene}{'Public_name'}) has an 'Interpolated_map_position' tag without a value\n";
+    print LOG "ERROR: $gene ($Gene_info{$gene}{'Public_name'}) has an 'Interpolated_map_position' tag without a value\n";
   }
 
   # test for Other_sequence tag and no value
   foreach my $gene ($db->fetch(-query=>"Find Other_sequence AND NOT NEXT")){
-    print LOG "ERROR 10(a): $gene ($Gene_info{$gene}{'Public_name'}) has Other_sequence tag but no associated value\n";
+    print LOG "ERROR(a): $gene ($Gene_info{$gene}{'Public_name'}) has Other_sequence tag but no associated value\n";
     if ($ace){print ACE "\n\nGene : \"$gene\"\n-D Other_sequence\n";}
   }
 
@@ -229,25 +226,25 @@ sub process_gene_class{
     next if ($gene_name eq "Y105E8A.7" || $gene_name eq "ZC416.8");
 
     my @gene_ids = $gene_name->Sequence_name_for;
-    print LOG "ERROR 11: $gene_name is connected to multiple gene IDs: @gene_ids\n";
-    print JAHLOG "ERROR 11: $gene_name is connected to multiple gene IDs: @gene_ids\n";
+    print LOG "ERROR: $gene_name is connected to multiple gene IDs: @gene_ids\n";
+    print JAHLOG "ERROR: $gene_name is connected to multiple gene IDs: @gene_ids\n";
     $jah_errors++;
   }
 
   # Look for missing Method tag for Live genes
   foreach my $gene ($db->fetch(-query=>"Find Gene WHERE Live AND NOT Method")){
-    print LOG "ERROR 12: $gene is a Live gene but has no 'Method' tag\n";
+    print LOG "ERROR: $gene is a Live gene but has no 'Method' tag\n";
   }
 
   # Look for Method tag but no Method field after it
   foreach my $gene ($db->fetch(-query=>"Find Gene WHERE Method AND NOT NEXT")){
-    print LOG "ERROR 13: $gene has a 'Method' tag but no value\n";
+    print LOG "ERROR: $gene has a 'Method' tag but no value\n";
   }
 
 
   # test for missing Species tag
   foreach my $gene ($db->fetch(-query=>"Find Gene WHERE NOT Species")){
-    print LOG "ERROR 14(a): $gene ($Gene_info{$gene}{'CGC_name'}) has no 'Species' info\n";
+    print LOG "ERROR(a): $gene ($Gene_info{$gene}{'CGC_name'}) has no 'Species' info\n";
     if ($ace){
       print ACE "\n\nGene : \"$gene\"\n";
       if ( $Gene_info{$gene}{'Public_name'} !~ /^Cb-|^Cr-|^Cv-/ ){
@@ -267,20 +264,47 @@ sub process_gene_class{
 
   # Look for Species tag but no Species field after it
   foreach my $gene ($db->fetch(-query=>"Find Gene WHERE Species AND NOT NEXT")){
-    print LOG "ERROR 15: $gene has a 'Species' tag but no value\n";
+    print LOG "ERROR: $gene has a 'Species' tag but no value\n";
   }
 
 
 
+  # checks that a genes with alleles are not dead (i.e. merged into something else)
+  foreach my $gene ($db->fetch(-query=>"Find Gene WHERE NOT Live AND Allele")){
+    print LOG "ERROR: Mama mia! $gene is dead but is still connected to an allele\n";
+  }
 
 
+
+  # checks that a Gene doesn't have both Map and Interpolated_map_position tags
+  foreach my $gene ($db->fetch(-query=>"Find Gene WHERE Map AND Interpolated_map_position")){
+    print LOG "ERROR: $gene has both Map and Interpolated_map_position tags, are you crazy?\n";
+  }
+
+  # checks for genes that have no Live tag but a split_from tag
+  foreach my $gene ($db->fetch(-query=>"Find Gene WHERE Split_from AND NOT Live")){
+    print LOG "ERROR: $gene has Split_from tag but no Live tag\n";
+  }
+
+
+
+  # get all genes
+  my @gene_ids = $db->fetch(-class => 'Gene',
+	                    -name  => 'WBGene*');
+
+  # now loop through looking for specific errors that might be in any Gene object
   foreach my $gene_id (@gene_ids){
     # useful to see where you are in the script if running on command line
-    print "$gene_id: $Gene_info{$gene_id}{'Public_name'}" if ($verbose);
-    my $warnings;
 
+    my $species = $gene_id->Species;
+    if($species eq "Caenorhabditis elegans"){
+      print "$gene_id: $Gene_info{$gene_id}{'Public_name'}\n" if ($verbose);
+    }
+    else{
+      print "$gene_id:\n" if ($verbose);
+    }
+    my $warnings;
     &test_locus_for_errors($gene_id);
-    print "\n" if ($verbose);
   }
 
   
@@ -289,9 +313,8 @@ sub process_gene_class{
   $last_gene_id =~ s/WBGene(0)+//;
   
   if ( scalar @gene_ids != $last_gene_id ){
-    print LOG "ERROR 25: The highest gene id ($last_gene_id) is not equal to total number of Gene objects (", scalar @gene_ids, ")";
+    print LOG "ERROR: The highest gene id ($last_gene_id) is not equal to total number of Gene objects (", scalar @gene_ids, ")";
   }
-
 
 }
 
@@ -306,8 +329,7 @@ sub test_locus_for_errors{
     my @ver_changes = $gene_id->Version_change;
     my $ver = $gene_id->Version;
     if ( "$ver" ne "$ver_changes[-1]" ){
-      $warnings .= "ERROR 2: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has Version problem: current ($ver) => history ($ver_changes[-1])\n";
-      print "." if ($verbose);
+      $warnings .= "ERROR: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has Version problem: current ($ver) => history ($ver_changes[-1])\n";
     }
   }
 
@@ -318,18 +340,17 @@ sub test_locus_for_errors{
     my $cgc_name = $gene_id->CGC_name;
     my $pub_name = $gene_id->Public_name;
     if ( $cgc_name ne $pub_name ){
-      $warnings .= "ERROR 5(a): $gene_id ($Gene_info{$gene_id}{'CGC_name'}) has a Public_name ($pub_name) different from its CGC_name ($cgc_name)\n";
+      $warnings .= "ERROR(a): $gene_id ($Gene_info{$gene_id}{'CGC_name'}) has a Public_name ($pub_name) different from its CGC_name ($cgc_name)\n";
       if ($ace){
 	print ACE "\nGene : \"$gene_id\"\n";
 	print ACE "Public_name \"$Gene_info{$gene_id}{'CGC_name'}\"\n";
       }
     }
-    print "." if ($verbose);
   }
 
   # test for missing Public_name and assign one if so
   if( !defined $gene_id->Public_name && (defined $gene_id->CGC_name || defined $gene_id->Sequence_name || defined $gene_id->Other_name) ){
-    $warnings .= "ERROR 6(a): $gene_id has no Public_name but has CGC/Sequence/Other_name\n";
+    $warnings .= "ERROR(a): $gene_id has no Public_name but has CGC/Sequence/Other_name\n";
     if ($ace){
       print ACE "\nGene : \"$gene_id\"\n";
       print ACE "Public_name \"$Gene_info{$gene_id}{'CGC_name'}\"\n" if exists $Gene_info{$gene_id}{'CGC_name'};
@@ -339,12 +360,10 @@ sub test_locus_for_errors{
 	print ACE "Public_name \"$Gene_info{$gene_id}{'Other_name'}\"\n"
       }
     }
-    print "." if ($verbose);
   }
 
   if( !defined $gene_id->Public_name && !defined $gene_id->CGC_name && !defined $gene_id->Sequence_name && !defined $gene_id->Other_name ){
-    $warnings .= "ERROR 6.1: $gene_id (?) has no Public_name as there is no CGC_/Sequence_/Other_name\n";
-    print "." if ($verbose);
+    $warnings .= "ERROR: $gene_id (?) has no Public_name as there is no CGC_/Sequence_/Other_name\n";
   }
 
   # test for discrepancy betw. CGC_name and Gene_class name, ie, for aap-1, the gene_class should be aap
@@ -358,12 +377,9 @@ sub test_locus_for_errors{
     my $gc = $gene_id->Gene_class;
 
     if ($gc ne $gc_name){
-      $warnings .= "ERROR 7: $gene_id ($cgc_name) has incorrect Gene_class $gc\n";
-      print "." if ($verbose);
+      $warnings .= "ERROR: $gene_id ($cgc_name) has incorrect Gene_class $gc\n";
     }
   }
-
-
 
 
   # check that live gene id should not have wpxxx appended to its Sequence_name
@@ -371,34 +387,34 @@ sub test_locus_for_errors{
     if ( defined $gene_id->$tag && $gene_id->at('Identity.Live') ){
       my $history = $gene_id->$tag;
       if ( $history =~ /:wp\d+/ ){
-	$warnings .= "ERROR 15: $gene_id has $tag with :wpxxx history name appended\n";
-	print "." if ($verbose);
+	$warnings .= "ERROR: $gene_id has $tag with :wpxxx history name appended\n";
+
       }
     }
   }
 
   # Look for Genes with no Positive_clone info but which can be derived from its sequence info
-  if( !defined $gene_id->Positive_clone(1) && defined $gene_id->Sequence_name ){
+  if( !defined $gene_id->Positive_clone(1) && defined $gene_id->Sequence_name){
     # don't need to do this for C. briggsae genes
     my $species = $gene_id->Species;
-    last if ($species eq "Caenorhabditis briggsae");
-    my $seq = $gene_id->Sequence_name;
-    
-    # need to chop off the ending to just get clone part
-    $seq =~ s/\..*//;
-    $warnings .= "ERROR 19(a): $gene_id ($Gene_info{$gene_id}{'Public_name'}) has no Positive_clone but info is available from Sequence_name $seq\n";
-    print "." if ($verbose);
-    # must use Inferred_automatically from Evidence hash for this type of info
-    print ACE "\n\nGene : \"$gene_id\"\nPositive_clone \"$seq\" Inferred_automatically \"From sequence, transcript, pseudogene data\"\n" if ($ace);
+    if ($species eq "Caenorhabditis elegans"){
+      my $seq = $gene_id->Sequence_name;
+      
+      # need to chop off the ending to just get clone part
+      $seq =~ s/\..*//;
+      $warnings .= "ERROR(a): $gene_id ($Gene_info{$gene_id}{'Public_name'}) has no Positive_clone but info is available from Sequence_name $seq\n";
+
+      # must use Inferred_automatically from Evidence hash for this type of info
+      print ACE "\n\nGene : \"$gene_id\"\nPositive_clone \"$seq\" Inferred_automatically \"From sequence, transcript, pseudogene data\"\n" if ($ace);
+    }
   }
 
 
   # Look for Genes with no Live tag but also no Merged_into, Killed, or Made_into_transposon tags
-  if ( !defined $gene_id->at('Identity.Live') && !defined $gene_id->Merged_into ){
-    print "." if ($verbose);
+  if ( !defined $gene_id->at('Identity.Live') && !defined $gene_id->Merged_into){
     my $tag = &get_event($gene_id);
-    if (($tag ne "Killed") && ($tag ne "Made_into_transposon")){
-      $warnings .= "ERROR 20(a): $gene_id ($Gene_info{$gene_id}{'Public_name'}) has no 'Live' tag, and no 'Merged_into', 'Killed' or 'Made_into_transposon' tags\n";
+    if (($tag ne "Killed") && ($tag ne "Made_into_transposon") && ($tag ne "Merged_into")){
+      $warnings .= "ERROR(a): $gene_id ($Gene_info{$gene_id}{'Public_name'}) has no 'Live' tag, and no 'Merged_into', 'Killed' or 'Made_into_transposon' tags\n";
       if ($ace){
 	print ACE "\nGene : \"$gene_id\"\n";
 	print ACE "Live\n";
@@ -407,58 +423,46 @@ sub test_locus_for_errors{
   }
 
 
+  # this is the problem routine for WBGene00044002
+
   # Look for genes with Live tag but also with Merged_into or Killed tags
-  if ( defined $gene_id->at('Identity.Live') && ($gene_id->Merged_into || $gene_id->History(6)) ){
-    print "." if ($verbose);
+  if ( defined $gene_id->at('Identity.Live')){
+
     my @merge =  $gene_id->Merged_into;
     if (@merge){
-      $warnings .= "ERROR 20.1(a): $gene_id ($Gene_info{$gene_id}{'Public_name'}) has 'Live' tag but also has been merged into $merge[-1] ($Gene_info{$merge[-1]}{'Public_name'}) => Lose Live\n";
+      $warnings .= "ERROR(a): $gene_id ($Gene_info{$gene_id}{'Public_name'}) has 'Live' tag but also has been merged into $merge[-1] ($Gene_info{$merge[-1]}{'Public_name'}) => Lose Live\n";
       if ($ace){
 	print ACE "\nGene : \"$gene_id\"\n";
 	print ACE "-D Live\n";
       }
     }
     
-    if ( $gene_id->History ){
+    if ( $gene_id->Version_change ){
       my $tag = &get_event($gene_id);
-      if ($tag eq "Killed"){
-	$warnings .= "ERROR 20.2(a): $gene_id ($Gene_info{$gene_id}{'Public_name'}) has 'Live' tag but also has 'Killed' tag => Lose Live\n";
+      if (!defined($tag)){
+	$warnings .= "ERROR: $gene_id has an Event tag but does not have any following tag\n";
+      }
+      elsif ($tag eq "Killed"){
+	$warnings .= "ERROR(a): $gene_id ($Gene_info{$gene_id}{'Public_name'}) has 'Live' tag but also has 'Killed' tag => Lose Live\n";
 	if ($ace){
 	  print ACE "\nGene : \"$gene_id\"  \/\/20.2\n";
 	  print ACE "-D Live\n";
 	}
-	print "." if ($verbose);
       }
     }
   }
 
-  # checks that a Gene has both values for Map and Interpolated_map_positions or tags
-  if ( defined $gene_id->Map(3) && $gene_id->Interpolated_map_position(2) ){
-    $warnings .= "ERROR 21(a): $gene_id ($Gene_info{$gene_id}{'CGC_name'}) has both genetics and interpolated map positions\n";
-    print "." if ($verbose);
-    if ($ace){
-      print ACE "\nGene : \"$Gene_info{$gene_id}{'Gene'}\"\n";
-      print ACE "-D Interpolated_map_position\n";
-    }
-  }
 
   # checks that a Gene has identical CGC_name and Other_name
   if ( defined $gene_id->CGC_name && defined $gene_id->Other_name ){
     my @other_names =  $gene_id->Other_name;
     foreach my $o (@other_names) {
       if ( $o eq $gene_id->CGC_name ){
-	$warnings .= "ERROR 22: $gene_id ($Gene_info{$gene_id}{'CGC_name'}) has an identical Other_name\n";
-	print "." if ($verbose);
+	$warnings .= "ERROR: $gene_id ($Gene_info{$gene_id}{'CGC_name'}) has an identical Other_name\n";
       }
     }
   }
 
-
-  # checks that a Gene doesn't have both Map and Interpolated_map_position tags
-  if ( defined $gene_id->Map && defined $gene_id->Interpolated_map_position ){
-    $warnings .= "ERROR 23: $gene_id has both Map and Interpolated_map_position tags, are you crazy?\n";
-    print "." if ($verbose);
-  }
 
   print LOG "$warnings" if(defined($warnings));
 }
@@ -472,16 +476,16 @@ sub get_event {
   # (generating a string of a series of down-> based on the number of verison change is easy, but did not work)
   # 7 times hard coded version change should be enough to work find for a while, at least
 
-  my @ver_ch = $gene_id->Version_change;
+  my $version = $gene_id->Version;
 
   my $tag;
-  $tag = $gene_id->History->right->right->right->right->right if scalar @ver_ch == 1;
-  $tag = $gene_id->History->right->down->right->right->right->right if scalar @ver_ch == 2;
-  $tag = $gene_id->History->right->down->down->right->right->right->right if scalar @ver_ch == 3;
-  $tag = $gene_id->History->right->down->down->down->right->right->right->right if scalar @ver_ch == 4;
-  $tag = $gene_id->History->right->down->down->down->down->right->right->right->right if scalar @ver_ch == 5;
-  $tag = $gene_id->History->right->down->down->down->down->down->right->right->right->right if scalar @ver_ch == 6;
-  $tag = $gene_id->History->right->down->down->down->down->down->down->right->right->right->right if scalar @ver_ch == 7;
+  $tag = $gene_id->Version_change->right->right->right->right if scalar $version == 1;
+  $tag = $gene_id->Version_change->down->right->right->right->right if scalar $version == 2;
+  $tag = $gene_id->Version_change->down->down->right->right->right->right if scalar $version == 3;
+  $tag = $gene_id->Version_change->down->down->down->right->right->right->right if scalar $version == 4;
+  $tag = $gene_id->Version_change->down->down->down->down->right->right->right->right if scalar $version == 5;
+  $tag = $gene_id->Version_change->down->down->down->down->down->right->right->right->right if scalar $version == 6;
+  $tag = $gene_id->Version_change->down->down->down->down->down->down->right->right->right->right if scalar $version == 7;
 
   return $tag;
 }
