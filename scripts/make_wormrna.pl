@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/bin/perl5.8.0 -w
 #
 # make_wormrna.pl
 # 
@@ -7,14 +7,13 @@
 # Builds a wormrna data set from the current autoace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-08-01 15:26:29 $
+# Last updated on: $Date: 2003-09-30 08:36:17 $
 
 
 #################################################################################
 # variables                                                                     #
 #################################################################################
 
-$| = 1;
 use strict;
 use lib '/wormsrv2/scripts/';
 use Wormbase;
@@ -32,7 +31,8 @@ my ($help, $debug, $release);
 my $maintainers = "All";
 my $rundate     = `date +%y%m%d`; chomp $rundate;
 my $runtime     = `date +%H:%M:%S`; chomp $runtime;
-our $log;
+my $log;
+my $errors      = 0;    # for tracking how many errors there are
 
 GetOptions ("help"      => \$help,
 	    "release=s" => \$release,
@@ -57,9 +57,8 @@ if($debug){
 # release data                        #
 #######################################
 
-my $release_date     = &get_wormbase_release_date("long");
-my $old_release = $release-1;
-
+my $release_date = &get_wormbase_release_date("long");
+my $old_release  = $release-1;
 
 my $dbdir     = "/wormsrv2/autoace";
 my $wrdir     = "/wormsrv2/WORMRNA/wormrna$old_release";
@@ -70,7 +69,6 @@ $ENV{'ACEDB'} = $dbdir;
 
 
 # Make new directory for current release      
-print LOG "# $runtime : making wormrna$release for $rundate\n\n";
 mkdir ("$new_wrdir" , 0755) || die "Couldn't create $new_wrdir\n";   
 
 
@@ -78,27 +76,18 @@ mkdir ("$new_wrdir" , 0755) || die "Couldn't create $new_wrdir\n";
 # retrieve the desired RNA sequence objects   #
 ###############################################
 
-$runtime = `date +%H:%M:%S`; chomp $runtime;
-print LOG "# $runtime : connect to primary database\n";
-
 my $db = Ace->connect (-path => $dbdir, -program => $tace) || die "Couldn't connect to $dbdir\n";
 # Get RNA genes, but not other Transcript objects
 my @transcripts = $db->fetch (-query => 'FIND Transcript WHERE Species = "Caenorhabditis elegans" AND NOT Method = "Transcript"');
 
 @transcripts = sort @transcripts;
 my $count = scalar(@transcripts);
-$runtime = `date +%H:%M:%S`; chomp $runtime;
-print LOG "=> " . $count . " RNA sequences\n";
-print LOG "# $runtime : finished connection to database\n\n";
+print LOG "Finding ". $count . " RNA sequences, writing output file\n";
 
 
 ###########################################################################
 # get the rna sequence, write a rna.fasta file,
 ###########################################################################
- 
-$runtime = `date +%H:%M:%S`; chomp $runtime;
-print LOG "# $runtime : write wormrna.rna file\n\n";
-
 
 open (DNA , ">$new_wrdir/wormrna$release.rna") || die "Couldn't write wormrna$release.rna file\n"; 
 my (%dot2num , @dotnames , @c_dotnames);
@@ -117,12 +106,14 @@ foreach my $transcript (@transcripts) {
   $brief_id = $obj->Brief_identification;
   if ((!defined ($brief_id)) || ($brief_id eq "")) {
     print LOG "ERROR: No Brief_id for $transcript\n";
+    $errors++;
     undef ($brief_id);
   }
   
   $dna = $obj->asDNA();
   if ((!defined ($dna)) || ($dna eq "")) {
-    print LOG "cannot extract dna sequence for $transcript\n";
+    print LOG "ERROR: cannot extract dna sequence for $transcript\n";
+    $errors++;
   }
   $dna =~ /^>(\S+)\s+(\w.*)/s; 
   my $dseq = $2; 
@@ -147,10 +138,6 @@ foreach my $transcript (@transcripts) {
 
 close DNA;
 chmod (0444 , "$new_wrdir/wormrna$release.rna") || print LOG "cannot chmod $new_wrdir/wormrna$release.rna\n";
-
-$runtime = `date +%H:%M:%S`; chomp $runtime;
-print LOG "# $runtime : finished writing wormrna.rna file\n";
-
 
 
 ###########################################################################
@@ -187,10 +174,18 @@ close(README);
 close(LOG);
 $db->close;
 
-&mail_maintainer ("make_wormrna.pl WS$release",$maintainers,$log);
-
+if($errors == 0){
+   &mail_maintainer ("make_wormrna.pl WS$release",$maintainers,$log);
+}
+elsif($errors == 1){
+   &mail_maintainer ("make_wormrna.pl WS$release : $errors ERROR!",$maintainers,$log);
+}
+else{
+  &mail_maintainer ("make_wormrna.pl WS$release : $errors ERRORS!!!",$maintainers,$log);
+}
 
 exit(0);
+
 
 
 
