@@ -113,13 +113,14 @@ close SOURCE;
 close PEP;
 close ACE;
 
-
-print "\n\nabout to copy (scp) $acefile to /wormsrv2/wormbase/ensembl_dumps/\n";
-system ("scp -r $acefile wormpub\@wormsrv2:/wormsrv2/wormbase/ensembl_dumps/") and warn "copy $acefile failed\n";
-
-print "\n\nMaking gadfly BLASTable database \n";
-system ("setdb pepfile") and warn "cant setdb on $pepfile\n";
-
+unless ($opt_d) {
+  print "\n\nabout to copy (scp) $acefile to /wormsrv2/wormbase/ensembl_dumps/\n";
+  system ("scp -r $acefile wormpub\@wormsrv2:/wormsrv2/wormbase/ensembl_dumps/") and warn "copy $acefile failed\n";
+  
+  print "\n\nMaking gadfly BLASTable database \n";
+  system ("setdb pepfile") and warn "cant setdb on $pepfile\n";
+  
+}
 
 print "$record_count proteins\n";
 exit (0);
