@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-03-10 17:09:29 $
+# Last updated on: $Date: 2003-03-11 17:27:06 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -519,7 +519,7 @@ sub allele_has_predicted_gene_and_no_seq {
       $cds = $2;
       $seq = $3;
       if ($seq eq $cds){
-        print LOG "ERROR: Allele $allele has not  incorrect parent sequence ($seq) with respect to its predicted gene ($cds)\n";
+        print LOG "ERROR: Allele $allele has an incorrect parent sequence ($seq) with respect to its predicted gene ($cds)\n";
         $allele_errors++;
         if ($ace){
           print ACE "\n\nAllele : \"$allele\"\n";
@@ -742,7 +742,7 @@ EOF
 sub check_genetics_coords_mapping {
   print "\nChecking discrepancies in genetics/coords mapping:\n\n";
   print LOG "\nChecking discrepancies in genetics/coords mapping:\n\n";
-  system ("/wormsrv2/scripts/cmp_gmap_physical_location.pl -diff");
+  system ("/wormsrv2/scripts/get_interpolated_gmap.pl -diff");
   open(IN, "/wormsrv2/logs/mapping_diff") || die $!;
   while(<IN>){
     print LOG $_;

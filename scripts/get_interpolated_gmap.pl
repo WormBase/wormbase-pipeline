@@ -1,13 +1,13 @@
 #!/usr/local/bin/perl5.6.1 -w
 
-# cmp_genetics_seq_location.pl
+# get_interpolated_gmap.pl
 
 # by Chao-Kung Chen [030113]
 
 # This script calculates interpolated gmap for CDS/transcripts lying between as well as outside genetic markers.
 # Output ace file of such information
 
-# Last updated on: $Date: 2003-03-10 17:01:34 $
+# Last updated on: $Date: 2003-03-11 17:27:06 $
 # Last updated by: $Author: ck1 $
 
 use strict;                    
@@ -42,7 +42,7 @@ print OUT "\nGFF file version from $gff_location\n\n";
 chdir $gff_location;
 
 
-my (@data, %CDS_mapping, %CDS_isoforms_mapping, %RNA_mapping);
+my (@data, %CDS_mapping, %CDS_isoforms_mapping, %CDS_variants, %RNA_mapping);
 my (%chrom_pos, %genetics_mapping, %I_gmap_cds_locus, %II_gmap_cds_locus, %III_gmap_cds_locus, 
     %IV_gmap_cds_locus, %V_gmap_cds_locus, %X_gmap_cds_locus); 
 my ($cds, $parts, @coords, $i, $mean_coords, %cds_mean, %mean_coord_cds,
@@ -69,10 +69,16 @@ sub gff_gmap {
     foreach (@data){
       if ($_ =~ /^CHR.+/){
 	my ($chrom, $left, $right, $junk1, $CDS, $junk2)= split(/\s/,$_); 
-	$CDS =~ s/\"//g;
+     	$CDS =~ s/\"//g;
+	my $ori = $CDS;
+	print $ori, ">\n";
 	$cds_count++;
 	push(@{$CDS_isoforms_mapping{$CDS}}, $chrom, $left, $right);
-	if ($CDS =~ /^(.+\.\d+)\w/){$CDS = $1}
+	if ($CDS =~ /(.+\.\d+)\D+/){
+	  $CDS = $1;
+	  print $CDS, ">>\n";
+	  push(@{$CDS_variants{$CDS}}, $ori); #parent of isoforms
+	}
 	else {$CDS = $CDS}
 	$chrom =~ s/CHROMOSOME_//;
 	push(@{$CDS_mapping{$CDS}}, $chrom, $left, $right);
@@ -89,7 +95,7 @@ sub gff_gmap {
 	$RNA =~ s/\"//g;
 	$rna_count++;
 	push(@{$CDS_isoforms_mapping{$RNA}}, $chrom, $left, $right);
-	if ($RNA =~ /^(.+\.\d+)\w/){$RNA = $1}
+	if ($RNA =~ /(.+\.\d+)\D+/){$RNA = $1}
 	else {$RNA = $RNA}
 	$chrom =~ s/CHROMOSOME_//;
 	push(@{$CDS_mapping{$RNA}}, $chrom, $left, $right);
@@ -109,9 +115,14 @@ sub gff_gmap {
   
   foreach (sort keys %CDS_mapping){
     $parts = scalar @{$CDS_mapping{$_}};
-    if ($parts == 3){	
+
+    ####################
+    # cds has no isoform
+    ####################
+
+    if ($parts == 3){  
       # print "$_ -> ${@{$CDS_mapping{$_}}}[1] --- ${@{$CDS_mapping{$_}}}[2]\n";
-      $mean_coords = (${@{$CDS_mapping{$_}}}[1] + ${@{$CDS_mapping{$_}}}[2]) / 2;
+      $mean_coords = (${@{$CDS_mapping{$_}}}[1] + ${@{$CDS_mapping{$_}}}[2]) / 2;  
       $cds_mean{$_}= $mean_coords;
       if (${@{$CDS_mapping{$_}}}[0] eq "I"){$mean_coord_cds_I{$mean_coords}=$_}
       if (${@{$CDS_mapping{$_}}}[0] eq "II"){$mean_coord_cds_II{$mean_coords}=$_}
@@ -120,10 +131,14 @@ sub gff_gmap {
       if (${@{$CDS_mapping{$_}}}[0] eq "V"){$mean_coord_cds_V{$mean_coords}=$_}
       if (${@{$CDS_mapping{$_}}}[0] eq "X"){$mean_coord_cds_X{$mean_coords}=$_}
       }
-     else {
-       #  print $parts, "-> $_\n";
-       for ($i=0; $i < $parts; $i=$i+3 ){
-#	 $count++;
+    else {
+    
+    ##################
+    # cds has isoforms
+    ##################
+       
+      #  print $parts, "-> $_\n";
+      for ($i=0; $i < $parts; $i=$i+3 ){
 	 push(@coords, ${@{$CDS_mapping{$_}}}[$i+1], ${@{$CDS_mapping{$_}}}[$i+2]);  # get coords of all isoforms
        }
        #   print "$_ -> @coords\n";
@@ -351,7 +366,12 @@ sub get_gmap_mean_of_each_chrom {
         #print "\n";
         #print $mean_down," ->", $mean_up,">1\n";
         #print $gmap_down," -> ",$gmap_up,">2\n";
-        print "### $_ -> interpolated: $position ###\n";
+        if(exists $CDS_variants{$Mean_coord_cds{$_}}){
+	  print "### $Mean_coord_cds{$_} (@{$CDS_variants{$Mean_coord_cds{$_}}}) ($_) on ${@{$CDS_mapping{$Mean_coord_cds{$_}}}}[0] -> interpolated: $position ###\n";
+	}  
+	else {
+	  print "### $Mean_coord_cds{$_} ($_) on ${@{$CDS_mapping{$Mean_coord_cds{$_}}}}[0] -> interpolated: $position ###\n";
+	}  
       }
     }
   }
