@@ -8,7 +8,7 @@
 # autoace.
 #
 # Last updated by: $Author: krb $                     
-# Last updated on: $Date: 2004-08-03 07:22:19 $       
+# Last updated on: $Date: 2004-10-11 17:13:39 $       
 
 #################################################################################
 # Variables                                                                     #
@@ -169,7 +169,7 @@ sub create_log_files{
 
 sub mknewacefiles {
     
-  my ($dbname,$dbdir,$targetdir,$exe,$object,$criteria,$criterianoasterisk,$follow);
+  my ($dbname,$dbdir,$targetdir,$exe,$object,$criteria,$follow);
   my ($filename,$extrafile,$filepath,$command,$outfile,$tag,@deletes,$include);
   
   local (*CONFIG);
@@ -222,7 +222,8 @@ sub mknewacefiles {
       my $report = join ' + ', @deletes;
       
       if (/^\S+\s+\S+\s+(\S+)\s+\[/) {  
-	$object = $1; ($criteria,$criterianoasterisk) = ""; 
+	$object = $1; 
+	$criteria = ""; 
 	
 	$command = "nosave\nquery find $object\n";
 	foreach my $delete (@deletes) {
@@ -231,9 +232,9 @@ sub mknewacefiles {
 	$command .= "show -a -T -f $filepath\nquit\n";
       } 
       elsif (/^\S+\s+\S+\s+(\S+)\s+(\S+.+)\s+\[/) {
-	$object   = $1; ($criteria,$criterianoasterisk) = $2; 
-	chop($criterianoasterisk) if ($criteria =~ /\*$/);
-	
+	$object   = $1; 
+	$criteria = $2; 
+		
 	$command ="nosave\nquery find $object where ($criteria)\n";
 	foreach my $delete (@deletes) {
 	  $command .= "eedit -D $delete\n";
@@ -254,7 +255,7 @@ sub mknewacefiles {
       
       if (/^\S+\s+\S+\s+(\S+)\s+\{/) {  
 	  $object = $1; 
-	  ($criteria,$criterianoasterisk) = ""; 
+	  $criteria = ""; 
 	  
 	  unless ($follow) {
 	      $command = "nosave\nquery find $object\n";
@@ -270,8 +271,7 @@ sub mknewacefiles {
       } 
       elsif (/^\S+\s+\S+\s+(\S+)\s+(\S+.+)\s+\{/) {
 	  $object   = $1; 
-	  ($criteria,$criterianoasterisk) = $2; 
-	  chop($criterianoasterisk) if ($criteria =~ /\*$/);
+	  $criteria = $2; 
 	  
 	  unless ($follow) {
 	      $command ="nosave\nquery find $object where ($criteria)\n";
@@ -289,7 +289,7 @@ sub mknewacefiles {
     else { 
       if (/^\S+\s+\S+\s+(\S+)$/) {
 	$object=$1; 
-	($criteria,$criterianoasterisk) = ""; 
+	$criteria = ""; 
 	if ($object eq "DNA") {
 	  $command   = "nosave\nquery find Sequence\nfollow DNA\n";
 	  $command  .= "show -a -T -f $filepath\nquit\n";
@@ -302,8 +302,6 @@ sub mknewacefiles {
       elsif (/^\S+\s+\S+\s+(\S+)\s+(\S+.+)$/) {
 	$object   = $1; 
 	$criteria = $2;
-	($criteria,$criterianoasterisk) = $2;
-	chop($criterianoasterisk) if ($criteria =~ /\*$/);
 	
 	if ($object eq "DNA") {
 	  $command   = "nosave\nquery find Sequence where ($criteria)\nfollow DNA\n";
