@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-04-26 10:36:39 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2004-04-26 14:36:08 $
 
 
 
@@ -1288,13 +1288,13 @@ sub map_features {
   my $file = "$basedir/autoace/FEATURES/${WS_version}_feature_SL1.ace";
   &load($file,"feature_SL1");
 
-  my $file = "$basedir/autoace/FEATURES/${WS_version}_feature_SL2.ace";
+  $file = "$basedir/autoace/FEATURES/${WS_version}_feature_SL2.ace";
   &load($file,"feature_SL2");
 
-  my $file = "$basedir/autoace/FEATURES/${WS_version}_feature_polyA_site.ace";
+  $file = "$basedir/autoace/FEATURES/${WS_version}_feature_polyA_site.ace";
   &load($file,"feature_polyA");
 
-  my $file = "$basedir/autoace/FEATURES/${WS_version}_feature_polyA_signal.ace";
+  $file = "$basedir/autoace/FEATURES/${WS_version}_feature_polyA_signal.ace";
   &load($file,"feature_polyA");
 
   # PCR products
@@ -1309,7 +1309,7 @@ sub map_features {
   # microarray connections
   &run_command("$scriptdir/map_microarray.pl");
 
-  my $file = "$basedir/wormbase/misc/misc_microarrays.ace";
+  $file = "$basedir/wormbase/misc/misc_microarrays.ace";
   &load($file,"microarray_connections");
 
 }
