@@ -9,7 +9,7 @@ use Exporter;
 use Carp;
 use Ace;
 @ISA       = qw(Exporter);
-@EXPORT    = qw(get_wormbase_version get_wormbase_version_name get_wormbase_release_date copy_check mail_maintainer celeaccession tace gff_sort dbfetch clones_in_database open_TCP DNA_string_reverse DNA_string_composition release_databases find_file_last_modified release_composition release_wormpep);
+@EXPORT    = qw(get_wormbase_version get_wormbase_version_name get_wormbase_release_date copy_check mail_maintainer celeaccession tace gff_sort dbfetch clones_in_database open_TCP DNA_string_reverse DNA_string_composition release_databases find_file_last_modified release_composition release_wormpep test_user_wormpub);
 @EXPORT_OK = qw(get_script_version); 
 
 
@@ -659,6 +659,25 @@ The $number_total sequences contain $codingDNA base pairs in total.\n\n";
 #end of release letter generating subs
 #############################################
 
+#
+sub test_user_wormpub
+  {
+    my $name = `whoami`;
+    if( "$name" eq "wormpub" ){
+      return;
+    }
+    else {
+      print "You are doing this as $name NOT wormpub ! \n\n If you are going to alter autoace in any way it will break.\nDo you want to continue? (y/n). . "
+	my $response = <STDIN>;
+      if( "$response" eq "n" ){
+	die "probably for the best !\n";
+      }
+      else {
+	print "OK - on your head be it !\nBack to the script . .\n#########################################################\n\n\n";
+	return;
+      }
+    }
+  }
 
 ################################################################################
 #Return a true value
