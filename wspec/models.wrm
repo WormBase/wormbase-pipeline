@@ -209,8 +209,9 @@
 										 // is deleted and something else is 
 										 // also inserted
 	Affects Gene ?Locus XREF Allele  // New tag structure to handle allele cross-links [krb 021217]
-		Predicted_gene ?CDS XREF Allele // Replaces linking to Has_allele tag in ?Sequence class
-		Transcript ?Transcript XREF Allele // added for two cases of RNA genes with alleles [021126 krb]
+		Predicted_gene ?CDS XREF Alleles // Replaces linking to Has_allele tag in ?Sequence class
+		Transcript ?Transcript XREF Alleles // added for two cases of RNA genes with alleles [021126 krb]
+		Pseudogene ?Pseudogene XREF Alleles
 		//Gene ?Gene XREF Allele  // what this will becomee
         Reference_Allele
 	Isolation	Author	?Author	// use Person when known, else use Author
@@ -272,7 +273,6 @@
 	Remark	?Text #Evidence
         Reference ?Paper XREF Allele               // Mary
         Rescued_by_Transgene ?Transgene
-	Pseudogene ?Pseudogene XREF Allele
 	Method UNIQUE ?Method // necessary now that Allele is SMap [030106 krb]
 
 
@@ -1024,7 +1024,7 @@
                 RNAi_result ?RNAi XREF Predicted_gene // added for Lincoln RNAi [001213 dl]
 		Contained_in_operon ?Operon XREF Contains_CDS
 		GO_term ?GO_term XREF CDS ?GO_code #Evidence
-		Allele ?Allele XREF Predicted_gene // replaces Has_allele tag in ?Sequence
+		Alleles ?Allele XREF Predicted_gene // replaces Has_allele tag in ?Sequence
 		Microarray_results ?Microarray_results XREF CDS      //added for Microarray_results
 		Antibody ?Antibody XREF CDS // added [031120 krb]
 	  	Reference ?Paper XREF CDS // added [011030 krb]
@@ -1067,7 +1067,7 @@
                 Visible Locus ?Locus XREF Transcript // new to fit existing Locus class
 			// Gene ?Gene XREF Transcript
 			// Not ready for these two yet
-			Allele ?Allele XREF Transcript // added to fit two alleles of RNA genes [021127 krb]
+			Alleles ?Allele XREF Transcript // added to fit two alleles of RNA genes [021127 krb]
 			Orthologue ?Transcript XREF Orthologue ?Species #Evidence  // [030310 krb]
                         Matching_cDNA ?Sequence XREF Matching_transcript #Evidence // to attach non-coding RNA genes to matching ESTs
 			Corresponding_CDS UNIQUE ?CDS XREF Corresponding_transcript // new tag for 1-2-1 relationships with coding genes
@@ -1122,7 +1122,7 @@
                                RNA_pseudogene Text    // Text can store type of RNA (probably tRNA)
                                Transposon
                 Genetics Locus UNIQUE ?Locus XREF Pseudogene
-                         Allele ?Allele XREF Pseudogene 
+                         Alleles ?Allele XREF Pseudogene 
                          Interpolated_map_position ?Map UNIQUE Float 
                 //      Gene_info Gene UNIQUE ?Gene XREF CDS // when live 
                 //                Gene_history UNIQUE ?Gene XREF CDS_history // when dead
