@@ -1,14 +1,13 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/bin/perl5.8.0 -w
 #
 # get_interpolated_gmap.pl
-
+#
 # by Chao-Kung Chen [030512]
-
-# This script calculates interpolated gmap for CDS/transcripts lying between as well as outside genetic markers.
-# Output ace file of such information and upload to autoace during each build
-# Output also other files related. See POD
-
-# Last updated on: $Date: 2003-09-19 09:26:27 $
+#
+# This script calculates interpolated genetic map positions for CDS, Transcripts 
+# and Pseudogenes lying between and outside genetic markers.
+#
+# Last updated on: $Date: 2003-09-29 11:14:52 $
 # Last updated by: $Author: krb $
 
 use strict;
@@ -24,43 +23,43 @@ my $rundate = `date +%y%m%d`; chomp $rundate;
 # variables and command-line options with aliases #
 ###################################################
 
-my ($diff, $reverse, $database, $gff_location, $help, $noUpload, $map, 
-    $comp, $gmap_marker_dir, $gff_dir, $curr_db, $output);
+my ($diff, $reverse, $database, $gff_location, $help, $noUpload, $map, $comp);
 
 GetOptions ("diff"          => \$diff,
             "rev|reverse"   => \$reverse,
 	    "db|database=s" => \$database,
 	    "map"           => \$map,
 	    "comp"          => \$comp, 
-	    "h|help"        => \$help, 
-	    "n|noUpload"    => \$noUpload
+	    "help"        => \$help, 
+	    "noUpload"    => \$noUpload
            );
 
-$gff_dir = "/wormsrv2/autoace/GFF_SPLITS/";
-$curr_db = "/nfs/disk100/wormpub/DATABASES/current_DB/"; 
-$output = "/wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP";
+my $gff_dir = "/wormsrv2/autoace/GFF_SPLITS/";
+my $curr_db = "/nfs/disk100/wormpub/DATABASES/current_DB/"; 
+my $output = "/wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP";
 
 if (!defined @ARGV or $help){system ("perldoc /wormsrv2/scripts/get_interpolated_gmap.pl"); exit(0)}
 
-# latest WS version
-my $current = `grep "NAME WS" $curr_db/wspec/database.wrm`; $current =~ s/NAME WS//; chomp $current;
 
-# autoace version
+
+# set WS version number
+my $current = `grep "NAME WS" $curr_db/wspec/database.wrm`; $current =~ s/NAME WS//; chomp $current;
 my $version = $current+1;  
 
-# using autoace
-if (!defined $database){
-  $gff_location = "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS";
-  $gmap_marker_dir = "/wormsrv2/autoace"; 
-  print "\nUsing $gmap_marker_dir as database path for genetics marker loci . . .\n";
-} 
 
-# using specified database
-if (defined $database){
+
+# Use specified database for path but default to using autoace if -database not specified
+if($database){
   $gff_location = "/wormsrv2/autoace/GFF_SPLITS/WS"."$current";
-  $gmap_marker_dir = $database;
-  print "\nUsing $gmap_marker_dir as database path for genetics marker loci . . .\n";
 }
+else{
+  $gff_location = "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS";
+  $database = "/wormsrv2/autoace"; 
+} 
+print "\nUsing $database as database path for genetics marker loci\n";
+
+
+
 
 my ($revfile, $diffile);
 
@@ -156,13 +155,14 @@ system("chmod 777 $output/gmap_info_WS*.$rundate");
 
 #print INFO "\nAll CDS/transcript linked to locus in $curr_db ", scalar keys %predicted_gene_to_locus,"\n\n";
 
+
 ########################################################################################
 # retrieve data from gff file: CHROMOSOME_number.genes.gff and CHROMOSOME_number.rna.gff
 ########################################################################################
 
-my @gff_files_cds=dataset($gff_location, "genes");
-my @gff_files_rna=dataset($gff_location, "rna");
-my @gff_files_pseudogene=dataset($gff_location, "pseudogene");
+my @gff_files_cds         = &dataset($gff_location, "genes");
+my @gff_files_rna         = &dataset($gff_location, "rna");
+my @gff_files_pseudogene  = &dataset($gff_location, "pseudogene");
 
 my $cds_count=0;
 my $rna_count=0;
@@ -261,7 +261,6 @@ print "\nProcessing gmap positions and coordinates . . .\n";
 # mean of isoforms is the mean of the left and right coords of the longest variant
 ###########################################################################################
      
-my $count=0;
 my $chromo;
 
 ####################
@@ -317,7 +316,7 @@ if ($reverse) {
 # including CDS, Transcript and Prsudogene
 ########################################## 
 
-open (FH, "echo '$marker_gmap_of_each_chrom' | tace $gmap_marker_dir | ") || die "Couldn't access $gmap_marker_dir\n";
+open (FH, "echo '$marker_gmap_of_each_chrom' | tace $database | ") || die "Couldn't access $database\n";
 while (<FH>){
   chomp($_);
   # $4=cds/transcript/pseudogene, $2=chrom, $1=locus, $3=gmap position
@@ -353,36 +352,33 @@ while (<FH>){
     }
   }
 }
-close FH;
+close(FH);
 
-$count = 0;
+
+
 if ($diff){
+
+  my $count = 0;
 
   #############################################
   # check CDS mapping by coords and by genetics
-  #############################################  
-  
+  #############################################    
+
   foreach (sort keys %genetics_mapping){
     
-    ######################################################
     # check for CDS/Pseudogene/Transcript? having isoforms 
-    ######################################################
-    
     if (exists @{$CDS_isoforms_mapping{$_}}->[0] && (@{$genetics_mapping{$_}}->[0] ne @{$CDS_isoforms_mapping{$_}}->[0])){
       $count++;
       print  DIFF "ERROR: $_ (@{$genetics_mapping{$_}}->[1]) on @{$genetics_mapping{$_}}->[0] (genetics) \/ on @{$CDS_isoforms_mapping{$_}}->[0] (coordinates)\n\n";
     }
     
-    #########################################################    
     # check for CDS/Pseudogene/transcripts having no isoforms 
-    #########################################################
-    
     if (exists @{$CDS_mapping{$_}}->[0] && (@{$genetics_mapping{$_}}->[0] ne @{$CDS_mapping{$_}}->[0])){
       $count++;
       print  DIFF "ERROR: $_ (@{$genetics_mapping{$_}}->[1]) on @{$genetics_mapping{$_}}->[0] (genetics) \/ on @{$CDS_mapping{$_}}->[0] (coordinates)\n\n";
     }
   }
-  print DIFF "There are $count discrepancies in genetics\/chrom. coords mapping\n";
+  print DIFF "There are $count discrepancies in genetics\/chromosome coordinates mapping\n";
   close DIFF;
   exit(0);
 }
@@ -405,6 +401,8 @@ foreach (@dna_file){
 
 foreach (sort keys %chrom_length){print INFO "$_ -> $chrom_length{$_} bp\n"}
 
+
+
 ##################################################################
 # sorting gmap positions of marker loci from left tip to right tip 
 ##################################################################
@@ -416,6 +414,7 @@ my (@chroms, $chrom, $ea, @pos_order, $part, @unique_pos_order, %pos_order_to_me
     %all_mean_of_each_chrom);
 
 @chroms=qw(I II III IV V X);
+
 foreach $chrom (@chroms){
   $parts=scalar @{$chrom_pos{$chrom}};
   for (my $i=0; $i< $parts; $i=$i+4){
@@ -498,7 +497,7 @@ foreach $chrom (@chroms){
       $position = $length_diff / $bp_length_per_unit;
       $position = $L_tip - $position;
       if ($map){
-	ace_output($mean_coord_cds{$_}, $chrom, $position, $_, $feature, \%predicted_gene_to_locus);
+	&ace_output($mean_coord_cds{$_}, $chrom, $position, $_, $feature, \%predicted_gene_to_locus);
 	next;
       }	
     }
@@ -509,7 +508,7 @@ foreach $chrom (@chroms){
       $position = $length_diff / $bp_length_per_unit;
       $position = $R_tip + $position;
       if ($map){
-	ace_output($mean_coord_cds{$_}, $chrom, $position, $_, $feature, \%predicted_gene_to_locus);
+	&ace_output($mean_coord_cds{$_}, $chrom, $position, $_, $feature, \%predicted_gene_to_locus);
 	next; 
       }	
     }
@@ -555,7 +554,7 @@ foreach $chrom (@chroms){
           $position = $length_diff / $baseline;
           $position = $gmap_down + $position;
 	  if (!$all_mean_of_each_chrom{$_} && $map){
-            ace_output($mean_coord_cds{$_}, $chrom, $position, $_, $feature, \%predicted_gene_to_locus);       
+            &ace_output($mean_coord_cds{$_}, $chrom, $position, $_, $feature, \%predicted_gene_to_locus);       
           }
           last;        
         }
@@ -662,15 +661,24 @@ print "\nJob started at $start\n";
 print "Job finished at $end\n";
 
 
-#################################
-# s  u  b  r  o  u  t  i  n  e  s
-#################################
+
+
+###########################################################
+#
+#
+#      T  H  E      S  U  B  R  O  U  T  I  N  E  S
+#
+#
+###########################################################
+
           
+
+
+##############################################################
+# use latest GFF_SPLITT folder and retrieve relevant gff files
+##############################################################
+
 sub dataset {
-    
-  ##############################################################
-  # use latest GFF_SPLITT folder and retrieve relevant gff files
-  ##############################################################
     
   my ($dir, $query)= @_;
   opendir(DIR, $dir) || die "Can't read directory";
@@ -686,12 +694,19 @@ sub dataset {
   if ($query eq "rna"){foreach (@dir){if ($_ =~ /^CHROMOSOME_(I|II|III|IV|V|X).(rna|rest).gff/){push(@files, $&)}} return @files}
   if ($query eq "pseudogene"){foreach (@dir){if ($_ =~ /^CHROMOSOME_(I|II|III|IV|V|X).pseudogenes.gff/){push(@files, $&)}} return @files}
 }
-sub ace_output {
 
-  #########################################################
-  # write acefile for all CDSes with gmap/interpolated gmap
-  # also write Map position to locus objects
-  #########################################################
+
+
+############################################################################################################
+
+
+
+#########################################################
+# write acefile for all CDSes with gmap/interpolated gmap
+# also write Map position to locus objects
+#########################################################
+
+sub ace_output {
 
   my ($cds, $chrom, $gmap, $mean_coord, $feature, $predicted_gene_to_locus)=@_;
 
@@ -773,7 +788,13 @@ sub ace_output {
   }
 }
 
+
+###########################################################################################################################
+
+
 __END__
+
+
 =head2 NAME - get_interpolated_gmap.pl  
 
 =head3 <SCRIPT DESCRIPTION> 
