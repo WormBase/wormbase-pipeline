@@ -21,19 +21,17 @@ use strict;
 ###########
 #our($opt_a,$opt_o,$opt_e,$opt_i,$opt_w,$opt_l,$opt_h);
 
-use vars qw / $opt_a $opt_o $opt_e $opt_i $opt_w $opt_l $opt_h /;
+use vars qw / $opt_a $opt_o $opt_e $opt_i $opt_h /;
 
 $opt_a="";   # does all the following
 $opt_o="";   # performs overlapcheck
 $opt_e="";   # performs estcheck 
 $opt_i="";   # performs introncheck
-$opt_w="";   # performs copy2web.pl
-$opt_l="";   # performs list_loci_designations
 $opt_h="";   # Help/Usage page
 
-getopts ('aeiowlh');
+getopts ('aeioh');
 &usage if ($opt_h);
-if ($opt_a) { $opt_e = 1; $opt_i = 1; $opt_o = 1; $opt_w = 1; $opt_l = 1;}
+if ($opt_a) { $opt_e = 1; $opt_i = 1; $opt_o = 1;}
 
 #################
 # set variables #
@@ -66,8 +64,6 @@ print LOG "  -a : executes all of the following -eiolw\n" if ($opt_a);
 print LOG "  -e : executes estcheck\n"                  if ($opt_e);
 print LOG "  -i : executes introncheck\n"               if ($opt_i);
 print LOG "  -o : executes overlapcheck\n"              if ($opt_o);
-print LOG "  -l : executes list_loci_designations\n"    if ($opt_l);
-print LOG "  -w : executes copy2web.pl\n"               if ($opt_w);
 print LOG "======================================================================\n";
 print LOG "\n";
 
@@ -78,8 +74,6 @@ print LOG "\n";
 &runestcheck     if ($opt_e);
 &runoverlapcheck if ($opt_o);
 &runintroncheck  if ($opt_i);
-&run_list_loci_designations if ($opt_l);
-&runcopy2web     if ($opt_w);
 
 
 ##############################
@@ -116,17 +110,7 @@ sub runoverlapcheck {
     system ("/wormsrv2/scripts/overlapcheck") && die "Cannot execute overlapcheck $!\n";
     print LOG "Run overlapcheck\n";
 }
- 
-sub runcopy2web {
-    system ("/wormsrv2/scripts/copy2web.pl") && die "Cannot execute copy2web.pl $!\n";
-    print LOG "Run copy2web.pl\n";
-}
-
-sub run_list_loci_designations {
-    system ("/wormsrv2/scripts/list_loci_designations") && die "Cannot execute list_loci_desinations $!\n";
-    print LOG "Run list_loci_designations\n";
-}
-  
+   
 sub usage {
     system("perldoc /wormsrv2/scripts/post_build_checks.pl") && die "Cannot help you, sorry $!\n";
     exit (0);
@@ -147,8 +131,7 @@ __END__
 
 post_build_checks.pl is a wrapper to drive scripts to check the gff files for confirmed introns (introncheck), 
 inconsistencies in EST assignments (estcheck), overlapping genes, ESTs matching introns and repeats 
-within genes (overlapcheck).  It can also run the list_loci_designations script to update the website
-with the latest gene->sequence assignments
+within genes (overlapcheck).  
 
 post_build_checks.pl mandatory arguments:
 
@@ -169,10 +152,6 @@ post_build_checks.pl OPTIONAL arguments:
 =item -i, executes introncheck 
 
 =item -o, execute overlapcheck
-
-=item -w, execute copy2web.pl
-
-=item -l, execute list_loci_designations
 
 =back
 
