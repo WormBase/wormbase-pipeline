@@ -2,7 +2,9 @@
 
 use DBI;
 use strict;
-use lib "/wormsrv2/scripts/";
+#use lib "/wormsrv2/scripts/";
+my $lib = glob("~ar2/wormbase/scripts");
+use lib "$lib/";
 use Wormbase;
 use Common_data;
 use Getopt::Long;
@@ -258,7 +260,7 @@ sub dumpData
   {
     my $matches;
     my $pid = shift; 
-    print OUT "\nProtein : WP:$pid\n";
+    print OUT "\nProtein : \"WP:$pid\n";
     while( $matches = shift) {   #pass reference to the hash to dump
       #write ace info
       my $output_count = 0;
@@ -279,7 +281,7 @@ sub dumpData
 	    foreach (@cigar){
 	      #print OUT "Pep_homol \"$homolID\" $processIds2prot_analysis{$analysis} $e $myHomolStart $myHomolEnd $pepHomolStart $pepHomolEnd Align ";
 	      print OUT "Pep_homol ";
-	      print OUT $org_prefix{"$$data[1]"}":$$data[4] ";   #  homolID
+	      print OUT "\"",$org_prefix{"$$data[1]"},":$$data[4]\" ";   #  homolID
 	      print OUT "$$data[1] ";   #  analysis
 	      print OUT "$$data[7] ";   #  e value
 	      print OUT "$$data[2] ";   #  HomolStart
@@ -293,8 +295,9 @@ sub dumpData
 	      
 	      
 	      #and print out the reciprocal homology to different file
-	      print RECIP "Protein : ",$$data[4] line "; #  matching peptide
-	      print RECIP "WP:$pid ";              #worm protein
+	      #prints out on single line. "line" is used to split after sorting
+	      print RECIP "Protein : \"",$org_prefix{"$$data[1]"},":$$data[4]\" line "; #  matching peptide
+	      print RECIP "\"WP:$pid\" ";              #worm protein
 	      print RECIP "$$data[1] ";   #  analysis
 	      print RECIP "$$data[7] ";   #  e value
 	      print RECIP "$$data[2] ";   #  HomolStart
