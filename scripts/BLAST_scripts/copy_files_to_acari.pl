@@ -45,11 +45,10 @@ if ( $opt_c )
 
     foreach my $chrom (@CHROMOSOME) {
       print LOG "Chromosome $chrom . . . ";
+      print "about to get Chromosome $chrom\n";
       &test_system_command( system ("scp -r wormpub\@wormsrv2:/wormsrv2/autoace/CHROMOSOMES/CHROMOSOME_$chrom.dna $dir/") );
       print LOG "\nProcess chromsome $chrom\n";
-     # print LOG " \tunzipping the DNA  for chromosome $chrom . . .";
-     # &test_system_command( system ("gzip -d $dir/CHROMOSOME_$chrom.dna.gz") );
-      print LOG "\treplacing padding characters by N's in chromosome consensus DNA . .";
+      print LOG "\treplacing padding characters by N's in chromosome consensus DNA (if necessary ! ). .";
       &test_system_command( system ("cat $dir/CHROMOSOME_$chrom.dna | perl -n -e 's/\-/n/g;print' > $dir/tmp_file") );
       print LOG "\tmoving chromosome $chrom from tmp_file  . . ";
       &test_system_command(system ("mv -f $dir/tmp_file $dir/CHROMOSOME_$chrom.dna") );
@@ -71,7 +70,9 @@ if( $opt_w )
     
     print LOG "copying wormpep version $WS_version . . ";
     &test_system_command( system ("scp wormpub\@wormsrv2:/wormsrv2/WORMPEP/wormpep$WS_version/wormpep$WS_version $dir/") );
-    
+    print LOG "Renaming to wormpep$WS_version.pep\n";
+    &test_system_command( system ("mv $dir/wormpep$WS_version $dir/wormpep$WS_version.pep"));
+
     print LOG "and make it blastable. . . ";
     print "making blastable database. . .\n ";
     #note which setdb this command uses
