@@ -8,7 +8,7 @@
 # and virtual objects to hang the data onto
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2004-04-14 14:00:48 $
+# Last edited on: $Date: 2004-04-14 14:50:03 $
 
 
 use strict;
@@ -456,48 +456,48 @@ sub confirm_introns {
 	  # check introns #
 	  #################
 	  
-	  my $firstcalc = int($f[1]/100000);
-	  my $seccalc   = int($f[2]/100000);
-	  print STDERR "Problem with $test\n" unless (defined $firstcalc && defined $seccalc); 
-	  my ($one,$two);
-	  if ($firstcalc == $seccalc) {
-	    $one = $f[1]%100000;
-	    $two = $f[2]%100000;
-	  }
-	  elsif ($firstcalc == ($seccalc-1)) {
-	    $one = $f[1]%100000;
-	    $two = $f[2]%100000 + 100000;
-	    print STDERR "$virtual: $one $two\n";
-	  }
-	  elsif (($firstcalc-1) == $seccalc) {
-	    $one = $f[1]%100000 + 100000;
-	    $two = $f[2]%100000;
-	    print STDERR "$virtual: $one $two\n";
-	  } 
-	  print STDERR "Problem with $test\n" unless (defined $one && defined $two); 
-	  
-	  if ( ( (($start eq 'gt') || ($start eq 'gc')) && ($end eq 'ag')) ||
-		 (  ($start eq 'ct') && (($end eq 'ac') || ($end eq 'gc')) ) ) {	 
-	      print GOOD "Feature_data : \"$virtual\"\n";
-
-	      # check to see intron length. If less than 25 bp then mark up as False
-	      # dl 040413
+	    my $firstcalc = int($f[1]/100000);
+	    my $seccalc   = int($f[2]/100000);
+	    print STDERR "Problem with $test\n" unless (defined $firstcalc && defined $seccalc); 
+	    my ($one,$two);
+	    if ($firstcalc == $seccalc) {
+		$one = $f[1]%100000;
+		$two = $f[2]%100000;
+	    }
+	    elsif ($firstcalc == ($seccalc-1)) {
+		$one = $f[1]%100000;
+		$two = $f[2]%100000 + 100000;
+		print STDERR "$virtual: $one $two\n";
+	    }
+	    elsif (($firstcalc-1) == $seccalc) {
+		$one = $f[1]%100000 + 100000;
+		$two = $f[2]%100000;
+		print STDERR "$virtual: $one $two\n";
+	    } 
+	    print STDERR "Problem with $test\n" unless (defined $one && defined $two); 
 	    
-	      if  ( (($f[2] - $f[1]) <= 25) || (($f[1] - $f[2]) <= 25) ) {
-		  print GOOD "Confirmed_intron $one $two False $f[4]\n\n";
-	      }
-	      else {
-		  print GOOD "Confirmed_intron $one $two $tag $f[4]\n\n";
-	      }
-	  }
-	  else {
-	    print BAD "Feature_data : \"$virtual\"\n";
-	    print BAD "Confirmed_intron $one $two $tag $f[4]\n\n";		
+	    if ( ( (($start eq 'gt') || ($start eq 'gc')) && ($end eq 'ag')) ||
+		 (  ($start eq 'ct') && (($end eq 'ac') || ($end eq 'gc')) ) ) {	 
+		print GOOD "Feature_data : \"$virtual\"\n";
+		
+		# check to see intron length. If less than 25 bp then mark up as False
+		# dl 040414
+		
+		if (abs ($one - $two) <= 25) {
+		    print GOOD "Confirmed_intron $one $two False $f[4]\n\n";
+		}
+		else {
+		    print GOOD "Confirmed_intron $one $two $tag $f[4]\n\n";
+		}
+	    }
+	    else {
+		print BAD "Feature_data : \"$virtual\"\n";
+		print BAD "Confirmed_intron $one $two $tag $f[4]\n\n";		
+	    }
 	}
-	}
-      }
     }
   }
+}
   close CI;
   
   close GOOD;
