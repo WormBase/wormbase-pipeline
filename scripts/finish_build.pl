@@ -12,8 +12,8 @@
 # 3) Archives old GFF_SPLITS directory
 # 4) Makes wormsrv2/current_DB point at latest release
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-04-26 15:30:20 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2002-05-24 09:52:12 $
 
 
 
@@ -29,7 +29,7 @@ use vars qw($opt_h);
 # variables                                                                     #
 #################################################################################
 
-my $maintainers = "dl1\@sanger.ac.uk krb\@sanger.ac.uk kj2\@sanger.ac.uk";
+my $maintainers = "All";
 my $rundate     = `date +%y%m%d`; chomp $rundate;
 my $runtime     = `date +%H:%M:%S`; chomp $runtime;
 our $log        = "/wormsrv2/logs/finish_build.$rundate";

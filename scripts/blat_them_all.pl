@@ -101,7 +101,7 @@ $query      = '/nfs/disk100/wormpub/analysis/ESTs/C.elegans_nematode_miscPep'  i
 # LOG stuff #
 #############
 
-my $maintainer = "kj2\@sanger.ac.uk dl1\@sanger.ac.uk krb\@sanger.ac.uk";
+my $maintainer = "All";
 #$maintainer = "dl1\@sanger.ac.uk"; 
 
 my $rundate    = `date +%y%m%d`;   chomp $rundate;

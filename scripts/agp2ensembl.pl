@@ -41,7 +41,7 @@ clone.version and loads clone as a single contig.
 =head1 CONTACT
 
 Simon Potter: scp@sanger.ac.uk
-Kerstin Jekosch : kj2@sanger.ac.uk
+Kerstin Jekosch : ar2@sanger.ac.uk
 
 =head1 BUGS
 

@@ -20,7 +20,7 @@ use vars qw( $opt_n $opt_s $opt_e $opt_p $opt_d $opt_h);
  # Script variables (run)     #
  ##############################
 
-my $maintainer = "dl1\@sanger.ac.uk kj2\@sanger.ac.uk krb\@sanger.ac.uk";
+my $maintainer = "All";
 my $rundate = `date +%y%m%d`;   chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
 #my $version = &get_cvs_version('/wormsrv2/scripts/make_acefiles');

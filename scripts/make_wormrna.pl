@@ -6,8 +6,8 @@
 #
 # Builds a wormrna data set from the current autoace database
 #
-# Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2002-05-01 14:42:11 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2002-05-24 09:52:13 $
 
 
 #################################################################################
@@ -29,7 +29,7 @@ use Wormbase;
  # Script variables (run)              #
  #######################################
 
-my $maintainer = "dl1\@sanger.ac.uk, krb\@sanger.ac.uk, kj2\@sanger.ac.uk";
+my $maintainer = "All";
 my $rundate    = `date +%y%m%d`; chomp $rundate;
 my $runtime    = `date +%H:%M:%S`; chomp $runtime;
 

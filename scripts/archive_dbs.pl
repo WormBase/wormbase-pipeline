@@ -21,7 +21,7 @@ use IO::Handle;
 # variables                                                                     #
 #################################################################################
 
-my $maintainers = "dl1\@sanger.ac.uk krb\@sanger.ac.uk kj2\@sanger.ac.uk";
+my $maintainers = "All";
 my $rundate     = `date +%y%m%d`; chomp $rundate;
 my $runtime     = `date +%H:%M:%S`; chomp $runtime;
 our $log        = "/wormsrv2/logs/archive_dbs.$rundate";

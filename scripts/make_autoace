@@ -26,7 +26,7 @@ use vars qw($opt_r $opt_d $opt_c $opt_p);
  # Script variables (run)                         #
  ##################################################
 
-my $maintainers   = "dl1\@sanger.ac.uk kj2\@sanger.ac.uk krb\@sanger.ac.uk";
+my $maintainers   = "All";
 my $rundate       = `date +%y%m%d`; chomp $rundate;
 my $runtime       = `date +%H:%M:%S`; chomp $runtime;
 my $WS_current    = &get_wormbase_version;

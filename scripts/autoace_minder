@@ -5,8 +5,8 @@
 #
 # Usage : autoace_minder [-options]
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2002-04-24 13:09:57 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2002-05-24 09:52:12 $
 
 
 #################################################################################
@@ -92,7 +92,7 @@ if ($full) {
  # Script variables (run)     #
  ##############################
 
-my $maintainers = "dl1\@sanger.ac.uk krb\@sanger.ac.uk kj2\@sanger.ac.uk";
+my $maintainers = "All";
 my $rundate     = `date +%y%m%d`; chomp $rundate;
 my $runtime     = `date +%H:%M:%S`; chomp $runtime;
 my $version     = &get_cvs_version("$0");

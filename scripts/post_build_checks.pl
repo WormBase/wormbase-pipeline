@@ -8,8 +8,8 @@
 #
 # N.B. Previously called gffcheck
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-04-25 16:08:07 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2002-05-24 09:52:13 $
 
 
 use Getopt::Std;
@@ -40,7 +40,7 @@ if ($opt_a) { $opt_e = 1; $opt_i = 1; $opt_o = 1;}
 # set variables #
 #################
 
-my $maintainers = "dl1\@sanger.ac.uk kj2\@sanger.ac.uk krb\@sanger.ac.uk";
+my $maintainers = "All";
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
 

@@ -34,7 +34,7 @@ use Wormbase;
 # Script variables (run) #
 ##########################
 
-my $maintainer = "dl1\@sanger.ac.uk kj2\@sanger.ac.uk krb\@sanger.ac.uk";
+my $maintainer = "All";
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
 my %output      = ();

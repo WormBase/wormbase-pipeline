@@ -8,8 +8,8 @@
 #
 # 03.12.01 Kerstin Jekosch
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-04-24 16:11:59 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2002-05-24 09:52:13 $
 #############################################################################################
 
 
@@ -33,7 +33,7 @@ use Wormbase;
 # Script variables (run) #
 ##########################
 
-my $maintainer = "dl1\@sanger.ac.uk kj2\@sanger.ac.uk krb\@sanger.ac.uk";
+my $maintainer = "All";
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
 my %output      = ();
