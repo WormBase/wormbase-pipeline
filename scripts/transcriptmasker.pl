@@ -8,19 +8,22 @@
 # 031023 dl1
 
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2003-11-05 10:59:20 $
+# Last edited on: $Date: 2003-12-08 14:43:11 $
 
 #################################################################################
 # Initialise variables                                                          #
 #################################################################################
 
 use strict;
-use lib "/wormsrv2/scripts/";
+use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
+use IO::Handle;
 use Ace;
 use Data::Dumper;
 use Getopt::Long;
 use Carp;
+
+$|=1;
 
 ##############################
 # command-line options       #
@@ -72,7 +75,9 @@ our %datafiles = (
 #
 
 our %EST_name;
+print "// Reading EST_names.dat hash\n\n" if ($verbose);
 &recreate_hashes("/nfs/disk100/wormpub/analysis/ESTs/EST_names.dat");
+print "// Finished reading EST_names.dat hash\n\n" if ($verbose);
 
 # which database
 my $dbdir = "/wormsrv2/autoace";
@@ -132,27 +137,25 @@ sub masksequence {
     while (<INPUT>) {
 	chomp;
 	next if ($_ eq "");                 # catch empty lines
-	
+
 	if (/^(\S+)\s+\S+.+\n/) {           # deal with accessions {$acc} and WormBase internal names {$id}
 	    $acc = $1;
-	    $id  = $EST_name{$acc};
+	    if (defined $EST_name{$acc}) {
+		$id  = $EST_name{$acc};
+	    }
+	    else {
+		print "// ERROR: No accession-id connection for this sequence [$acc]\n" if ($verbose || $debug);
+		$EST_name{$acc} = $acc;
+		$id = $acc;
+	    }
 	}
 	$seq = "$'";                        # assign the rest of the string to $seq
 	$seq =~ s/[^gatcn]//g;              # remove non-gatcn characters (i.e. newlines)
 	$seqmasked = $seq;                  # copy sequence to masked file and
 	$seqlength = length ($seq);         # calculate the length of the sequence
 	
-	print "// -> Parsing $acc [$id]\n" if ($verbose);
+	print "-> Parsing $acc [$id]\n" if ($verbose);
 	
-	# ERROR if we haven't added this accession to the database yet.
-	# Use the accession for the mean time. 
-	
-	if ($id eq "") {
-	    print "// ERROR: No accession-id connection for this sequence\n" if ($verbose || $debug);
-	    $EST_name{$acc} = $acc;
-	    $id = $acc;
-	}
-    
 	# fetch the sequence object from the database. push the feature_data objects to memory
 	
 	my $obj = $db->fetch(Sequence=>$id);
@@ -167,7 +170,7 @@ sub masksequence {
 	}
 	else {
 	    foreach $feature (@features) {
-		print "// parse $feature\n" if ($verbose);
+		print "\n// parse $feature\n" if ($verbose);
 		
 		$type  = $obj->Feature_data->Feature(1);         # Feature type (e.g. SL1,SL2,polyA)
 		$start = $obj->Feature_data->Feature(2);         # start coord
