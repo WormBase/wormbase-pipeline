@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.37 2002-03-05 18:06:11 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.38 2002-03-06 11:44:46 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -198,6 +198,7 @@
 			Rescued_by_transgene ?Transgene
 			CGC_unresolved Text // krb [020128]
 			Pseudogene Text // krb 28/02/02
+		  	In_cluster ?Locus XREF Contains // new way of linking to Clusters in locus class
         Molecular_info	CDS ?CDS XREF Gene
 			CDS_history ?CDS XREF Gene_history // added to agree to rd model change
 			CDS_count UNIQUE Int		   // krb 04/03/02
@@ -218,10 +219,6 @@
 		  Mapping_data	Two_pt ?Two_pt_data
 				Multi_point ?Multi_pt_data
 				Pos_neg_data ?Pos_neg_data
-		  In_cluster ?Gene_name // fudge to get data in for now krb 05/04/03
-		  Cluster_contains ?Gene_name // rd 0107 renamed from Contains
-		  //In_cluster ?Gene XREF Cluster_contains // rd 0107 renamed from Contained_in
-		  //Cluster_contains ?Gene XREF In_cluster // rd 0107 renamed from Contains
 	Remark ?Text
 	Laboratory ?Laboratory
         Reference ?Paper XREF Gene
@@ -235,6 +232,7 @@
 				Detection_method Text
 		PCR_product	Primers  Text
 				Length   Int	// bp
+		Gene_cluster	Contains ?Gene XREF In_cluster // krb update to link to ?Gene 06/03/02
 	Species UNIQUE ?Species	// RD 0107
 	Map_info  Map    ?Map XREF Locus #Map_position
 		  Well_ordered		// "on the line"
