@@ -27,6 +27,7 @@ dbmopen my %PEPTIDE, "$peptide", 0666 or die "cant open DBM file $peptide\n";
 dbmopen my %DATABASE, "$database", 0666 or die "cant open DBM file $database\n";
 
 # These are a couple of helper data sets to add in swissprot ids and SWALL / ENSEMBL gene names
+
 my %swiss_id2gene;
 my %acc2id;
 &getSwissGeneName(\%swiss_id2gene, \%acc2id);
@@ -38,6 +39,10 @@ my %ENSpep_gene;
 open (LIST, "<$list") or die "cant open $list\n";
 open (ACE, ">$output") or die "cant open $output\n";
 
+# Description goes in "Title" field for old style model 
+my $title_desc = "Description";
+$title_desc = "Title" unless $new;
+
 while (<LIST>) {
   chomp;
   my $id = $_;
@@ -45,7 +50,7 @@ while (<LIST>) {
   if( $prefix ) {
     print ACE "\nProtein : \"$prefix:$id\"\n";
     print ACE "Peptide \"$prefix:$id\"\n";
-    print ACE "Description \"$DESC{$id}\"\n" if $DESC{$id};
+    print ACE "$title_desc \"$DESC{$id}\"\n" if $DESC{$id};
     print ACE "Species \"Homo sapiens\"\n";
   }
   else {
@@ -97,7 +102,7 @@ while (<LIST>) {
       }
       elsif( "$DB" eq "SWISS-PROT" ){ 
 	$othername = $acc2id{$ID} if $acc2id{$ID};
-	print ACE "Gene \"$swiss_id2gene{$othername}\"\n" if $swiss_id2gene{$othername};
+	print ACE "Other_name \"$swiss_id2gene{$othername}\"\n" if $swiss_id2gene{$othername};
       }
       
       print ACE "Database $DB $othername $ID\n";
