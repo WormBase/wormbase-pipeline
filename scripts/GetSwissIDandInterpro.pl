@@ -7,16 +7,16 @@ my $maintainer = "All";
 my $rundate    = `date +%y%m%d`; chomp $rundate;
 my $wmpep_ver = &get_wormbase_version();$wmpep_ver = 78;#while wormpep.table broken
 my $wormpepdir = "/wormsrv2/WORMPEP/wormpep$wmpep_ver";
-my $log = "wormsrv2/logs/GetSwissIDandInterpro.WB$wmpep_ver.$rundate";#"$wormpepdir/error_report";#error log (email to All)
+my $log = "/wormsrv2/logs/GetSwissIDandInterpro.WB$wmpep_ver.$rundate";#"$wormpepdir/error_report";#error log (email to All)
 my $temp_acefile = "$wormpepdir/SwissprotIDs.ace";
 my $temp_clearOldInterPro = "$wormpepdir/clearOldInterPros.ace";# file to clean up old InterPro domains from the database
-my $pepace = "/wormsrv1/TESTpepace";#"/wormsrv2/pepace";
+my $pepace = "/wormsrv2/pepace";
 
 my $ace_output = *ACE_OUTPUT;
 my $old_ip_output =*OLD_IP_OUTPUT;
-my $errorLog = *LOG;
 
 open(LOG,">$log")|| die "cant open $log";
+my $errorLog = *LOG;
 print LOG "# SubGetSwissId\n";
 print LOG "\n";
 print LOG "Wormpep version  :$wmpep_ver\n\n";
@@ -77,7 +77,7 @@ while (<INPUT>)
 	      }	
 	  }
 	
-	if($count == 100)#limits the no of requests in pfetch call per loop
+	if($count == 2000)#limits the no of requests in pfetch call per loop
 	  {
 	    #DEBUG########################################
 	    #print "wormpep_acc hash after building\n";
@@ -96,7 +96,7 @@ while (<INPUT>)
 	    @accession = "";
 	    @proteinID = "";	    
 
-	    last;#only included for testing on small sample sets
+	    #last;#only included for testing on small sample sets
 	  }
       }
   }
