@@ -41,9 +41,25 @@ my $datadir = "/wormsrv2/autoace/GFF_SPLITS";
  ##############################
 
 $opt_h = "";   # Help/Usage page
-$opt_a = "";   # archive GFF_splits directory into a WSxx directory when script ends
+$opt_a = "";   # archive GFF_splits directory into a WSxx directory
 getopts ('ha');
 &usage if ($opt_h);
+
+
+##########################################################
+# Archive the GFF_splits directory into a WSxx directory
+##########################################################
+
+# runs only if -a is specified
+if($opt_a){
+  print LOG "Renaming $datadir/GFF_SPLITS to $datadir/$WS_version\n";
+  system("mv $datadir/GFF_SPLITS ${datadir}/${WS_version}") && die "Couldn't rename directory\n";
+  exit(0);
+}
+
+
+
+
 
  ########################################
  # Open logfile                         #
@@ -827,15 +843,6 @@ foreach (@gff_files) {
    
     system ("GFF_with_accessions $datadir/GFF_SPLITS/${file_prefix}.clone_path.gff > $datadir/GFF_SPLITS/${file_prefix}.clone_acc.gff");
     
-}
-
-##########################################################
-# Archive the GFF_splits directory into a WSxx directory
-##########################################################
-
-if($opt_a){
-  print LOG "Renaming $datadir/GFF_SPLITS to $datadir/$WS_version\n";
-  system("mv $datadir/GFF_SPLITS ${datadir}/${WS_version}") && die "Couldn't rename directory\n";
 }
 
 
