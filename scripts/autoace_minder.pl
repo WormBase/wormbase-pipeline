@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-06-11 14:40:37 $
+# Last edited on: $Date: 2004-06-16 09:37:49 $
 
 
 
@@ -33,6 +33,7 @@ use File::Copy;
 my $initial;		# Start the build process 
 my $unpack;		# unpack primaries	
 my $gffdump;		# dump gff files
+my $full_gffdump;       # end of build GFF dump that takes place on cbi1
 my $gffsplit;           # split gff files
 my $buildpep;		# Build wormpep
 my $buildrna;		# Build wormrna
@@ -78,6 +79,7 @@ GetOptions (
 	    "initial"        => \$initial,
 	    "unpack"         => \$unpack,
 	    "gffdump"        => \$gffdump,
+	    "full_gffdump"   => \$full_gffdump,
 	    "gffsplit"       => \$gffsplit,
 	    "buildpep"       => \$buildpep,
 	    "buildtest"      => \$buildtest,
@@ -281,6 +283,9 @@ if ($addblat){
 # C1:Dumped_GFF_files  
 # Requires: A1,A4,A5,B1
 &dump_GFFs         if ($gffdump);
+
+
+&full_gff_dump    if ($full_gffdump);
 
 # C2:Split_GFF_files   
 # Requires: A1,A4,A5,B1
@@ -1274,6 +1279,38 @@ sub dump_GFFs {
 }
 #__ end dump_GFFs __#
 
+
+
+#################################################################################
+# dump GFF files at end of build                                                # 
+#################################################################################
+
+
+# this needs to be done on cbi1 to make use of the various nodes for parallele dumping
+sub full_gff_dump {
+  $am_option .= " -full_gffdump";
+
+
+  # first make a copy of autoace to ~wormpub/DATABASES/autoace
+  # TransferDB the current autoace to safe directory 
+  my $targetdir = "/nfs/disk100/wormpub/DATABASES";
+  print LOG &runtime, ": Copying across $basedir/autoace to $targetdir/autoace\n";
+  &run_command("$scriptdir/TransferDB.pl -start $basedir/autoace -end $targetdir/autoace -database -wspec -name autoace");
+  
+  # now run the split gff dumping script#
+  print LOG &runtime, ": Running dump_gff_batch.pl";
+  &run_command("$scriptdir/dump_gff_batch.pl -database $targetdir/autoace -dump_dir $targetdir/GFF_dumps");
+
+  print "Files in ~wormpub/DATABASES/autoace/GFF_dumps can now be copied to /wormsrv2/autoace/CHROMOSOMES\n\n";
+}
+#__ end dump_GFFs __#
+
+
+
+
+
+
+
 ####################################################################################
 
 sub split_GFFs {
@@ -1437,6 +1474,7 @@ sub logfile_details {
   print LOG "#  -debug        : Debug mode\n"                                                          if ($debug);
   print LOG "#  -verbose      : Verbose mode\n"                                                        if ($verbose);
   print LOG "#  -gffdump      : Dump GFF files\n"                                                      if ($gffdump);
+  print LOG "#  -full_gffdump : Dump final GFF files in corebio1\n"                                    if ($full_gffdump);
   print LOG "#  -gffsplit     : Split GFF files\n"                                                     if ($gffsplit);
 
   print LOG "#  -map          : map PCR and RNAi\n"                                                    if ($map);
@@ -1690,6 +1728,8 @@ autoace_minder.pl OPTIONAL arguments:
 =item -agp, creates and checks agp files
 
 =item -gffdump, dump GFF files
+
+=item -full_gffdump, dumps final GFF files at end of build using corebio1
 
 =item -gffsplit, split GFF files
 
