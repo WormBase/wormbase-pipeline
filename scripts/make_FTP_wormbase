@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl
+#!/usr/local/bin/perl -w
 #
 # make_FTP_wormbase
 # v 0.2
@@ -36,7 +36,8 @@
 $|=1;
 use Getopt::Long;
 use IO::Handle;
-require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
+use lib '/wormsrv2/scripts';
+use Wormbase;
 
 my $sourcedir         = "";  # [Text] Directory in which the latest WS release resides
 my $targetdir         = "";  # [Text] Directory in which to build the new release
@@ -49,16 +50,11 @@ my $clean             = "";  #        on/off flag for removing old WS directorie
  # Script variables (run)     #
  ##############################
 
-my $maintainer = "dl1\@sanger.ac.uk";
+my $maintainer = "dl1\@sanger.ac.uk kj2\@sanger.ac.uk krb\@sanger.ac.uk";
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
-my $version = &get_script_version(make_FTP_wormbase);
+my $cvs_version = &get_cvs_version($0);
 
- ##############################
- # paths for I/O files        #
- ##############################
-
-my $Wormbase_release_file = "/wormsrv2/autoace_config/WormBase_release_version";
 
  ##############################
  # deal with command line     #
@@ -69,7 +65,6 @@ GetOptions (
             "target=s"       => \$targetdir,
 	    "debug"          => \$debug,
 	    "clean"          => \$clean,
-	    "help"           => \$help,
 );
 
  ##############################
@@ -84,14 +79,9 @@ $targetdir="/nfs/disk100/wormpub/private_ftp" if ($targetdir eq "");
  ##############################
 
 if ($WS_release eq "") {
-    &error(1) unless (-e $Wormbase_release_file);
-    open (WormBase_release, "<$Wormbase_release_file");
-    while (<WormBase_release>) {
-	chomp;
-	$WS_release = substr ($_,2);
-    }
-    close (WormBase_release);
-    $WP_release = $WS_release + 10;
+  $wormbase_release = &get_wormbase_version;      
+  $WS_release = substr ($wormbase_release,2);
+  $WP_release = $WS_release + 10;
 }
  ###############################
  # get date & time             #
@@ -110,7 +100,7 @@ LOG->autoflush();
 
 if ($debug) {
     print LOG "# make_FTP_wormbase\n";
-    print LOG "# version          : $version\n";
+    print LOG "# version          : $cvs_version\n";
     print LOG "# run details      : $date $time\n#\n";
 
     print LOG "# Source directory : $sourcedir \n";
@@ -183,17 +173,6 @@ system "cd $targetdir; ln -s WS$WS_release current_database";
 print LOG "delete the old sym_link and create the new one\n" if ($debug);
 
  ##################################################
- # update the WS release version information      #
- ##################################################
-
-system "rm -f $Wormbase_release_file";
-$WS_release++;
-open (WormBase_release, ">$Wormbase_release_file");
-print WormBase_release "WS${WS_release}\n";
-close (WormBase_release);
-$WS_release--;
-
- ##################################################
  # commit this release for upgrade of AceBrowser  #
  # This must be the final step - ag3              #
  ##################################################
@@ -233,7 +212,6 @@ sub usage {
 
 sub error {
     my $error = shift;
-    print "Failed to find WormBase release version ['$Wormbase_release_file']\n\n" if ($error == 1);
     exit (1);
 }
 
