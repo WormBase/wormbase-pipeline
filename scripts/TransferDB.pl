@@ -4,8 +4,8 @@
 #
 # by ag3 [991221]
 #
-# Last updated on: $Date: 2004-05-06 09:01:04 $
-# Last updated by: $Author: pad $
+# Last updated on: $Date: 2004-05-13 14:30:34 $
+# Last updated by: $Author: ar2 $
 
 # transferdb moves acedb database files across filesystems.
 # Creates a temporary database.BCK 
@@ -423,18 +423,23 @@ sub usage {
 sub create_log_files{
 
   # Create history logfile for script activity analysis
-  $0 =~ m/\/*([^\/]+)$/; system ("touch $basedir/logs/history/$1.`date +%y%m%d`");
-  # create main log file using script name for
-  my $script_name = $1;
-  $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
-  my $rundate     = `date +%y%m%d`; chomp $rundate;
-  $log        = "$basedir/logs/$script_name.$rundate.$$";
+  if( -e "$basedir/logs/history" ){
+    $0 =~ m/\/*([^\/]+)$/; system ("touch $basedir/logs/history/$1.`date +%y%m%d`");
+    # create main log file using script name for
+    my $script_name = $1;
+    $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
+    my $rundate     = `date +%y%m%d`; chomp $rundate;
+    $log        = "$basedir/logs/$script_name.$rundate.$$";
 
-  open (LOG, ">$log") or die "cant open $log";
-  print LOG "$script_name process $$ started at ",&runtime,"\n";
-  print LOG "=============================================\n";
-  print LOG "\n";
-
+    open (LOG, ">$log") or die "cant open $log";
+    print LOG "$script_name process $$ started at ",&runtime,"\n";
+    print LOG "=============================================\n";
+    print LOG "\n";
+  }
+  else {
+    print "cant see $basedir so LOGing to STDERR\n";
+    *LOG = *STDOUT;
+  }
 }
 
 
