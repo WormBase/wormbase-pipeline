@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.82 2002-10-09 12:31:22 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.83 2002-10-10 09:15:39 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -702,6 +702,7 @@
                         Allele_designation Text
                         Gene_classes ?Gene_class XREF Designating_laboratory
 		Staff   ?Author XREF Laboratory
+		Staff_person    ?Person XREF Laboratory // new for Juancarlos 021010
 
 ?Author Full_name Text
         Also_known_as Text
@@ -1591,5 +1592,37 @@
      Method ?Method
 
 
+// New expanded Person class for Juancarlos 021010
+
+?Person Identity UNIQUE Int
+        Name    First_name      Text
+                Middle_name     Text
+                Last_name       Text
+        Laboratory UNIQUE ?Laboratory XREF Staff_person
+        Old_lab         ?Laboratory
+        Address Street  Text
+                City    Text
+                State   Text
+                Post    Text
+                Country Text
+                Email   Text
+                Old_email       Text
+                Main_phone      Text
+                Lab_phone       Text
+                Office_phone    Text
+                Other_phone     Text
+                Fax     Text
+        Last_attempt_to_contact Text
+        No_longer_in_field      Text
+        Also_known_as   Text
+        Also_published_under    Text
+        Webpage Text
+        Comment Text
+        Paper   ?Paper
+
+
+
 // end of file
+
+
 
