@@ -7,7 +7,7 @@
 # This maps alleles to the genome based on their flanking sequence
 #
 # Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2002-10-30 11:33:09 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2002-11-13 17:43:44 $        # quickly see when script was last changed and by whom
 
 
 use strict;
@@ -20,10 +20,10 @@ use Getopt::Std;
 # command-line options                #
 #######################################
 
-use vars qw($opt_d $opt_c);
+use vars qw($opt_d $opt_c $opt_l);
 # $opt_d debug   -  all output goes to ar/allele_mapping
 
-getopts ('dc');
+getopts ('lcd');
 
 ##############
 # variables  #
@@ -41,7 +41,7 @@ my $ver = &get_wormbase_version;
 my $allele_fa_file;
 my $genome_fa_file;
 my $scan_file;
-x my $database;
+my $database;
 
 my (%chromosomeI_clones, %chromosomeII_clones, %chromosomeIII_clones, %chromosomeIV_clones, %chromosomeV_clones, %chromosomeX_clones);
 
@@ -73,12 +73,18 @@ else {
 
 if( $opt_c ){
   #update clone position hashes
-  &UpdateHashes(\%chromosomeI_clones, "CHROMOSOME_I.clone_ends.gff");
-  &UpdateHashes(\%chromosomeII_clones, "CHROMOSOME_II.clone_ends.gff");
-  &UpdateHashes(\%chromosomeIII_clones, "CHROMOSOME_III.clone_ends.gff");
-  &UpdateHashes(\%chromosomeIV_clones, "CHROMOSOME_IV.clone_ends.gff");
-  &UpdateHashes(\%chromosomeV_clones, "CHROMOSOME_V.clone_ends.gff");
-  &UpdateHashes(\%chromosomeX_clones, "CHROMOSOME_X.clone_ends.gff");
+#  &UpdateHashes(\%chromosomeI_clones, "CHROMOSOME_I.clone_ends.gff");
+#  &UpdateHashes(\%chromosomeII_clones, "CHROMOSOME_II.clone_ends.gff");
+#  &UpdateHashes(\%chromosomeIII_clones, "CHROMOSOME_III.clone_ends.gff");
+#  &UpdateHashes(\%chromosomeIV_clones, "CHROMOSOME_IV.clone_ends.gff");
+#  &UpdateHashes(\%chromosomeV_clones, "CHROMOSOME_V.clone_ends.gff");
+#  &UpdateHashes(\%chromosomeX_clones, "CHROMOSOME_X.clone_ends.gff");
+  &UpdateHashes(\%chromosomeI_clones, "CHROMOSOME_I.clone_path.gff");
+  &UpdateHashes(\%chromosomeII_clones,  "CHROMOSOME_II.clone_path.gff");
+  &UpdateHashes(\%chromosomeIII_clones, "CHROMOSOME_III.clone_path.gff");
+  &UpdateHashes(\%chromosomeIV_clones, "CHROMOSOME_IV.clone_path.gff");
+  &UpdateHashes(\%chromosomeV_clones, "CHROMOSOME_V.clone_path.gff");
+  &UpdateHashes(\%chromosomeX_clones, "CHROMOSOME_X.clone_path.gff");
 }
 open (LOG,">$log");
 print LOG "$0 start at $runtime on $rundate\n----------------------------------\n\n";
@@ -86,14 +92,8 @@ print LOG "$0 start at $runtime on $rundate\n----------------------------------\
 my $db = Ace->connect(-path  => $database) || do { print  "$database Connection failure: ",Ace->error; die();};
 my @alleles = $db->fetch(-query =>'Find Allele;flanking_sequences');
 
-#my @slinks = $db->fetch(sequence =>'SUPER*');
-#foreach (@slinks){
-#  print "$_ ", $_->name," ",$_->Source,"\n";
-#}
 
-
-
-my %allele_data;   #  allele => [ (0)type, (1)5'flank_seq , (2)3'flank_seq, (3)CDS, (4)end of 5'match, (5)start of 3'match , (6)clone]
+my %allele_data;   #  allele => [ (0)type, (1)5'flank_seq , (2)3'flank_seq, (3)CDS, (4)end of 5'match, (5)start of 3'match , (6)clone, (7)chromosome, (8)strains]
 my $count = 0;
 my $scoreCutoff = 29;  #SCAN score is no of matching bases
 my $source;
@@ -111,13 +111,15 @@ my $type;
 my $left;
 my $right;
 my $allele;
+my $limit = shift;
 
 foreach $allele (@alleles)
   {
-    if( $opt_d ) {
-     # last if $count++ > 3;
+    if( $opt_l ) {
+      last if $count++ > $limit;
     }
     $name = $allele->name;print "$name\n";
+    #next unless( "$allele" eq "ok377");
     $type = $allele->Allelic_difference->name;
     $left = $allele->Flanking_sequences->name;
     $right = $allele->Flanking_sequences->right->name;
@@ -134,7 +136,13 @@ foreach $allele (@alleles)
       next unless $sequence;
       next unless( $sequence->Source );
     }      
-      
+    
+    #find strains that contain this allele
+    my @strains = $allele->Strain;
+    foreach (@strains) {
+      $allele_data{$name}[8] .= $_->name,"*** ";
+    }
+    
     if ( $sequence )
       {
 	$allele_data{$name}[7] = &findChromosome( $sequence );
@@ -173,14 +181,14 @@ foreach $allele (@alleles)
 	    if( $source )
 	      {
 		$sourceSeq = $source->asDNA();
-		    $allele_data{$name}[3] = $source->name;  #set 5' DNA to allele source in case of no OLL
+		    $allele_data{$name}[6] = $source->name;  #set 5' DNA to allele source in case of no OLL
 		
 		$OLR = $source->Overlap_Right;
 		$OLL = $source->Overlap_Left;
 		
 		if( $OLL ) {
 		  $OLLseq = $OLL->asDNA();
-		  $allele_data{$name}[3] = $OLL->name;   #set 5' DNA to clone left of allele clone
+		  $allele_data{$name}[6] = $OLL->name;   #set 5' DNA to clone left of allele clone
 		}
 		else {
 		  print LOG "$allele $source has no OLL\n";
@@ -295,24 +303,40 @@ foreach $allele (keys %allele_data) {
     }
   }
 }
-  
+
+ 
 my $output = glob("~ar2/allele_mapping/map_results");
+my $strseq = glob("~ar2/allele_mapping/strain_seq");
 open (OUT,">$output");
+open (STR,">$strseq");
 foreach (keys %allele_data )
   {
     if( $allele_data{$_}[3] and $allele_data{$_}[4] and  $allele_data{$_}[5]) { 
-      #print OUT "$_ is a $allele_data{$_}[0] from $allele_data{$_}[4] to $allele_data{$_}[5] ( ",$allele_data{$_}[5] - $allele_data{$_}[4]," bp )in $allele_data{$_}[3]\n";
-
-      print OUT "Sequence : \"$allele_data{$_}[6]\"\nAllele $_ $allele_data{$_}[4] $allele_data{$_}[5] $allele_data{$_}[0] \n\n";
-
-
+      
+      print OUT "\nSequence : \"$allele_data{$_}[6]\"\nAllele $_ $allele_data{$_}[4] $allele_data{$_}[5] $allele_data{$_}[0] \n\n";
+      #print OUT "\nAllele : \"$_\"\nSequence $allele_data{$_}[6] $allele_data{$_}[4] $allele_data{$_}[5] $allele_data{$_}[0] \n";
+     
       if( $allele2gene{$_} ) {
-	print "$_ $allele2gene{$_}\n";
+	my @myStrains;
+	my @ko_genes = split(/\s/,"$allele2gene{$_}");
+	print OUT "Allele : $_\n";
+	if( $allele_data{$_}[7] ) {
+	  @myStrains = split(/\*\*\*/,"$allele_data{$_}[8]");
+	}
+	foreach my $ko (@ko_genes) {
+	  #allele - seq connection
+	  print OUT "CDS $ko\n";
+	  foreach my $str (@myStrains) {
+	    #strain - seq connection
+	    print STR "Strain : \"$str\"\n";
+	    print STR "Knocks_out_CDS $ko\n\n";
+	  }
+	}
       }
       else {
 	print "no overlapping gene for $_\n";
-
       }
+
       #map position on genome
       #(0)type, 
       #(1)5'flank_seq ,
@@ -322,6 +346,7 @@ foreach (keys %allele_data )
       #(5)start of 3'match
       #(6)clone
       #(7)chromosome
+      #(8)strains containing this allele
 
     }
   }
@@ -439,9 +464,31 @@ sub FASTAformat
     return $fasta;
   }
 
+#sub UpdateHashes #(hash, file)
+#  {
+#    my $dir = "/wormsrv2/autoace/GFF_SPLITS/WS$ver/";
+#    my $hash = shift;
+#    my $file = shift;
+#    $file = $dir.$file;
+#    my @data;
+#    open (CLONES,"<$file") or die "cant open $file";
+#    while (<CLONES>)
+#      {
+#	if( $_ =~ m/left/ )
+#	  {
+#	    @data = split(/\s+/, $_);
+#	    unless( $data[0] =~m/\#/ )
+#	      {
+#		$data[8] =~ s/\"//g;
+#		$$hash{$data[8]} = $data[2];
+#	      }
+#	  }
+#      }
+#  }
+#CHROMOSOME_IV   Genomic_canonical       Sequence        16392472        16417376        .       +       .       Sequence "Y65A5A"
 sub UpdateHashes #(hash, file)
   {
-    my $dir = "/wormsrv2/autoace/GFF_SPLITS/WS$ver/";
+    my $dir = "/wormsrv2/autoace/yellow_brick_road/";
     my $hash = shift;
     my $file = shift;
     $file = $dir.$file;
@@ -449,18 +496,14 @@ sub UpdateHashes #(hash, file)
     open (CLONES,"<$file") or die "cant open $file";
     while (<CLONES>)
       {
-	if( $_ =~ m/left/ )
+	@data = split(/\s+/, $_);
+	unless( $data[0] =~m/\#/ )
 	  {
-	    @data = split(/\s+/, $_);
-	    unless( $data[0] =~m/\#/ )
-	      {
-		$data[8] =~ s/\"//g;
-		$$hash{$data[8]} = $data[2];
-	      }
+	    $data[9] =~ s/\"//g;
+	    $$hash{$data[9]} = $data[3];
 	  }
       }
   }
-
 
 # Add perl documentation in POD format
 # This should expand on your brief description above and add details of any options
