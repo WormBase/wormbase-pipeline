@@ -4,7 +4,7 @@
 
 # by Chao-Kung Chen
 
-# Last updated on: $Date: 2004-03-23 13:07:25 $
+# Last updated on: $Date: 2004-05-18 10:12:31 $
 # Last updated by: $Author: ck1 $
 
 
@@ -14,7 +14,7 @@
 # anytime during the build when get_interpolated_map and update_inferred multi-pt data 
 
 
-use strict;                    
+use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
 use Ace;
@@ -27,6 +27,7 @@ my $tace = glob("~wormpub/ACEDB/bin_ALPHA/tace");          # tace executable pat
 my $geneace_dir = "/wormsrv1/geneace";
 my $autoace = get_wormbase_version(); # only the digits   
 my $log = "/wormsrv2/logs/load_WS".$autoace."_build_data_to_geneace";
+
 open(LOG, ">$log") || die $!;
 print LOG "\n\nLoading WS$autoace Geneace related data back to geneace\n";
 print LOG "----------------------------------------------------------------\n";
@@ -48,8 +49,9 @@ my $command;
 
 if ($rev_pyhs && $multi){
   print LOG "\n\nLoading WS$autoace interpolated map data / corrected reverse physicals / inferred multi-pt data back to geneace . . .\n\n";
+
   $command=<<END;
-Find Locus * where Interpolated_map_position
+Find Gene * where Interpolated_map_position
 edit -D Interpolated_map_position
 pparse $map[-1]
 pparse $rev_pyhs
@@ -57,11 +59,13 @@ pparse $multi
 save
 quit
 END
-	      }
+
+}
+
 if ($rev_pyhs && !$multi){
   print LOG "\nLoading WS$autoace interpolated map data / corrected reverse physicals back to geneace . . .\n\n";
   $command=<<END;
-Find Locus * where Interpolated_map_position
+Find Gene * where Interpolated_map_position
 edit -D Interpolated_map_position
 pparse $map[-1]
 pparse $rev_pyhs
@@ -73,7 +77,7 @@ END
 if (!$rev_pyhs && $multi){
   print LOG "\nLoading WS$autoace interpolated map data / inferred multi-pt data back to geneace . . .\n\n";
 $command=<<END;
-Find Locus * where Interpolated_map_position
+Find Gene * where Interpolated_map_position
 edit -D Interpolated_map_position
 pparse $map[-1]
 pparse $multi

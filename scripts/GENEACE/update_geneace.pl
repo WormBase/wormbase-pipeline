@@ -330,7 +330,7 @@ sub geneclass_loci_other_name {
       #print "Designating_laboratory\t\"$parts[0]\"\n";
     }
 
-    if ($_ =~ /^(\w{3,3})\s+see\s+(.+)/ && $_ !~ /^New|NEW/ ) {  
+    if ($_ =~ /^(\w{3,3})\s+see\s+(.+)/ && $_ !~ /^New|NEW/ ) {
       $gene_class = $1;
       push(@Update,"\n\nGene_Class : \"$1\"\n"); 
       push(@Update,"Description\t\"See $2\"\n");
@@ -338,6 +338,7 @@ sub geneclass_loci_other_name {
 
     if ($_ =~ /^((\w{3,3})-\d+)\s+=\s+(\w+\..+)/) {
       push(@Update, "\n\nGene : \"$Gene_info{$1}{'Gene'}\"\n");
+      push(@Update, "Public_name\t\"$1\"\n");
       push(@Update, "CGC_name\t\"$1\"\n");
       push(@Update, "Gene_class\t\"$2\"\n");
       push(@Update, "Species\t\"Caenorhabditis elegans\"\n");
