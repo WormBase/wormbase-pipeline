@@ -842,6 +842,7 @@
 			Locus_other_seq ?Locus XREF Other_sequence       // dl 001128
 		        Related_DNA ?Sequence XREF Related_DNA
 			Paired_read ?Sequence XREF Paired_read          // dl 020110
+			Orthologue ?Sequence XREF Orthologue ?Species #Evidence  // dl 030304
 			Remark ?Text
 			Confidential_remark ?Text
 			Brief_identification UNIQUE ?Text #Evidence     // dl 030219
