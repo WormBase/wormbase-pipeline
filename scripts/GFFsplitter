@@ -148,6 +148,8 @@ foreach (@gff_files) {
     $gff_PCR_products         = $file_prefix . "\.PCR_products\.gff";
     $gff_cDNA_for_RNAi        = $file_prefix . "\.cDNA_for_RNAi\.gff";
     $gff_BLAT_EST_GENOME      = $file_prefix . "\.BLAT_EST_GENOME\.gff";
+    $gff_BLAT_EST_BEST        = $file_prefix . "\.BLAT_EST_BEST\.gff";
+    $gff_BLAT_EST_OTHER       = $file_prefix . "\.BLAT_EST_OTHER\.gff";
     $gff_mRNA_GENOME          = $file_prefix . "\.mRNA_GENOME\.gff";
 
     
@@ -271,17 +273,25 @@ foreach (@gff_files) {
     print GFF_PCR_PRODUCTS  "##Version: $cvs_version\n";
     print GFF_PCR_PRODUCTS  "##date $rundate\n";
 
-    open (GFF_CDNA_FOR_RNAI, ">$datadir/GFF_SPLITS/$gff_cDNA_for_RNAi");
-    print GFF_CDNA_FOR_RNAI  "##Version: $cvs_version\n";
-    print GFF_CDNA_FOR_RNAI  "##date $rundate\n";
+    open (GFF_CDNA_FOR_RNAI,  ">$datadir/GFF_SPLITS/$gff_cDNA_for_RNAi");
+    print GFF_CDNA_FOR_RNAI   "##Version: $cvs_version\n";
+    print GFF_CDNA_FOR_RNAI   "##date $rundate\n";
 
-    open (GFF_BLAT_EST_GENOME, ">$datadir/GFF_SPLITS/$gff_BLAT_EST_GENOME");
-    print GFF_BLAT_EST_GENOME  "##Version: $cvs_version\n";
-    print GFF_BLAT_EST_GENOME  "##date $rundate\n";
+    open (GFF_BLAT_EST_GENOME,">$datadir/GFF_SPLITS/$gff_BLAT_EST_GENOME");
+    print GFF_BLAT_EST_GENOME "##Version: $cvs_version\n";
+    print GFF_BLAT_EST_GENOME "##date $rundate\n";
 
-    open (GFF_MRNA_GENOME, ">$datadir/GFF_SPLITS/$gff_mRNA_GENOME");
-    print GFF_MRNA_GENOME  "##Version: $cvs_version\n";
-    print GFF_MRNA_GENOME  "##date $rundate\n";
+    open (GFF_BLAT_EST_BEST,  ">$datadir/GFF_SPLITS/$gff_BLAT_EST_BEST");
+    print GFF_BLAT_EST_BEST   "##Version: $cvs_version\n";
+    print GFF_BLAT_EST_BEST   "##date $rundate\n";
+
+    open (GFF_BLAT_EST_OTHER, ">$datadir/GFF_SPLITS/$gff_BLAT_EST_OTHER");
+    print GFF_BLAT_EST_OTHER  "##Version: $cvs_version\n";
+    print GFF_BLAT_EST_OTHER  "##date $rundate\n";
+
+    open (GFF_MRNA_GENOME,    ">$datadir/GFF_SPLITS/$gff_mRNA_GENOME");
+    print GFF_MRNA_GENOME     "##Version: $cvs_version\n";
+    print GFF_MRNA_GENOME     "##date $rundate\n";
 
 
 
@@ -339,8 +349,9 @@ foreach (@gff_files) {
 	    print GFF_PCR_PRODUCTS         "$_\n";
 	    print GFF_CDNA_FOR_RNAI        "$_\n";
 	    print GFF_BLAT_EST_GENOME      "$_\n";
+	    print GFF_BLAT_EST_BEST        "$_\n";
+	    print GFF_BLAT_EST_OTHER       "$_\n";
 	    print GFF_MRNA_GENOME          "$_\n";
-
 	    next;
 	}
 	#skip header lines of file
@@ -633,12 +644,24 @@ foreach (@gff_files) {
 	}
 
 	################################
-   	# BLAT_EST_GENOME
+   	# BLAT
 	################################
 
 	if (/BLAT_EST_GENOME/) {
 	  #	    print "$_\n" if ($debug);
 	  print GFF_BLAT_EST_GENOME "$_\n";
+	  $found_a_home = 1;
+	}
+
+	if (/BLAT_EST_BEST/) {
+	  #	    print "$_\n" if ($debug);
+	  print GFF_BLAT_EST_BEST "$_\n";
+	  $found_a_home = 1;
+	}
+
+	if (/BLAT_EST_OTHER/) {
+	  #	    print "$_\n" if ($debug);
+	  print GFF_BLAT_EST_OTHER "$_\n";
 	  $found_a_home = 1;
 	}
 
@@ -693,6 +716,8 @@ foreach (@gff_files) {
     close GFF_PCR_PRODUCTS;
     close GFF_CDNA_FOR_RNAI;
     close GFF_BLAT_EST_GENOME;
+    close GFF_BLAT_EST_BEST;
+    close GFF_BLAT_EST_OTHER;
     close GFF_MRNA_GENOME;
 
     ########################################
@@ -825,6 +850,14 @@ foreach (@gff_files) {
     $gff_length_BLAT_EST_GENOME = file_size("$datadir/GFF_SPLITS/$gff_BLAT_EST_GENOME") - 3;
     $total_lines = $total_lines + $gff_length_BLAT_EST_GENOME;
     print "$gff_BLAT_EST_GENOME   \t\t: $gff_length_BLAT_EST_GENOME\n";
+
+    $gff_length_BLAT_EST_BEST   = file_size("$datadir/GFF_SPLITS/$gff_BLAT_EST_BEST") - 3;
+    $total_lines = $total_lines + $gff_length_BLAT_EST_BEST;
+    print "$gff_BLAT_EST_BEST   \t\t: $gff_length_BLAT_EST_BEST\n";
+
+    $gff_length_BLAT_EST_OTHER = file_size("$datadir/GFF_SPLITS/$gff_BLAT_EST_OTHER") - 3;
+    $total_lines = $total_lines + $gff_length_BLAT_EST_OTHER;
+    print "$gff_BLAT_EST_OTHER   \t\t: $gff_length_BLAT_EST_OTHER\n";
 
     $gff_length_MRNA_GENOME = file_size("$datadir/GFF_SPLITS/$gff_mRNA_GENOME") - 3;
     $total_lines = $total_lines + $gff_length_MRNA_GENOME;
