@@ -2,7 +2,7 @@
 
 # Author: Chao-Kung Chen
 # Last updated by $Author: krb $
-# Last updated on: $Date: 2004-07-09 13:30:02 $ 
+# Last updated on: $Date: 2004-09-14 09:32:30 $ 
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -164,15 +164,15 @@ get_30_bp_flanks($database);
 # ----- upload data to Geneace
 
 # parse in the $last_update file first to remove everthing from last update and then upload new updates
-my $command="pparse $last_update\npparse $acefile\nsave\nquit\n";
+#my $command="pparse $last_update\npparse $acefile\nsave\nquit\n";
 
 print LOG "\n\n";
-$ga->upload_database($ga->geneace, $command, "NBP_allele", $log);
+#$ga->upload_database($ga->geneace, $command, "NBP_allele", $log);
 
 # ----- mail notice
 
-my $recipients = "ck1\@wormbase.org, krb\@sanger.ac.uk";
-mail_maintainer("Loading NBP_allele", $recipients, $log);
+my $recipients = "krb\@sanger.ac.uk";
+mail_maintainer("NBP allele update", $recipients, $log);
 
 # ----- moving old files to ARCHIVE dir
 
