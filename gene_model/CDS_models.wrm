@@ -968,7 +968,7 @@
 
 
 ?CDS	Evidence #Evidence
-	SMap S_parent Sequence UNIQUE ?Sequence XREF CDS      // changed into S_parent Sequence UNIQUE [020311 kj]
+	SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF CDS 
 	Structure Source_exons Int UNIQUE Int
 	DB_info Database ?Database ?Database_field UNIQUE ?Accession_number XREF CDS
 		Protein_id ?Sequence UNIQUE Text UNIQUE Int // DB_info tag added [011030 krb]
