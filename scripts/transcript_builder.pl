@@ -7,7 +7,7 @@
 # Script to make ?Transcript objects
 #
 # Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2003-10-09 11:22:54 $  
+# Last updated on: $Date: 2003-10-09 11:26:10 $  
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -53,10 +53,7 @@ if($debug){
 
 my $log = Log_files->make_build_log();
 
-exit(0);
-
 &check_opts; # if -build set, this will set all relevant opts to works as if in build. Will NOT overwrite the others (eg -count)
-
 
 $database = glob("~wormpub/DATABASES/TEST_DBs/transcripts") unless $database;
 
