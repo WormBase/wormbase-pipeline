@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.54 2002-05-03 16:09:56 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.55 2002-05-23 14:51:02 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -187,8 +187,9 @@
 			Reference_allele ?Allele Text
                         Phenotype ?Text
 			Description ?Text				// krb [011017]
-                        Provisional_description ?LongText #Evidence // added for Erich [020322 krb]
-                        Detailed_description ?LongText #Evidence // added for Erich [020322 krb]
+                        Provisional_description ?Text #Evidence // added for Erich [020322 krb]
+                        Detailed_description ?Text #Evidence // added for Erich [020322 krb]
+                        Concise_description ?Text #Evidence // added for Erich [020523 krb]
 			RNAi_result   ?RNAi XREF Gene                       //RL [010327]
 			Complementation_data Text
                         Controlled_phenotype ?Phenotype XREF Gene          // added for Lincoln RNAi [001213 dl]
