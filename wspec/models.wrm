@@ -235,9 +235,9 @@
                 Gene_Class  ?Gene_Class XREF Loci
                 Old_name ?Locus XREF New_name
                 New_name ?Locus XREF Old_name
-	Description ?Text
-	Provisional_description ?Text #Evidence // added for Erich [020322 krb]
-	Detailed_description ?Text #Evidence  // added for Erich [020322 krb]
+	Gene_information Description ?Text
+			 Provisional_description ?LongText #Evidence // added for Erich [020322 krb]
+			 Detailed_description ?LongText #Evidence  // added for Erich [020322 krb]
 	Species UNIQUE ?Species // added by krb 15/02/02
 	Type	Gene	Reference_Allele ?Allele Text
                         Phenotype ?Text
@@ -585,10 +585,10 @@
 		    Other_name UNIQUE Text
         Attribute_change Text Text
 
-#Evidence Paper ?Paper
-	  Person ?Person
-	  Similarity ?Sequence
-	  PMID Text //added for Erich's gene function data krb 02/04/09
+#Evidence Paper_evidence ?Paper
+	  Person_evidence ?Person
+	  Similarity_evidence ?Sequence
+	  PMID_evidence Text //added for Erich's gene function data krb 02/04/09
 
 ?Gene_name Gene ?Gene
 
@@ -837,8 +837,6 @@
 			Remark ?Text
 			Confidential_remark ?Text
 			Brief_identification UNIQUE ?Text
-			Provisional_description ?Text #Evidence // added for Erich [020322 krb]
-			Detailed_description ?Text #Evidence  // added for Erich [020322 krb]
 	  		Reference ?Paper XREF Sequence
 			Expression_construct ?Clone	// archaic
 			Expr_pattern ?Expr_pattern XREF Sequence
@@ -848,6 +846,8 @@
 			Gene ?Gene XREF Sequence                                 // added by Lincoln 010417
 			GO_term ?GO_term XREF Sequence                           // added for Erich [011210 krb]
                         Contained_in_operon ?Operon XREF Contains_CDS            // added for Operons [020128 dl]
+			Provisional_description ?LongText #Evidence // added for Erich [020322 krb]
+			Detailed_description ?LongText #Evidence  // added for Erich [020322 krb]
 		// tag2 system: names of all objects following next tag are shown in the 
 		//   general annotation display column as "tag:objname"
 	  Properties    Pseudogene Text		                                 // explanation
