@@ -5,8 +5,8 @@
 #
 # Script to update models.wrm in various directories for the build
 #
-# Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2004-02-17 15:00:27 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2004-03-02 10:48:19 $
 
 
 use strict;
@@ -20,7 +20,7 @@ GetOptions ("n|new" => \$new);
 # ----- update models.wrm in various of build dir. under /wormsrv2 only when there are changes
 
 if ($new){
-  my @db = qw ("autoace" "geneace" "cshace" "camace" "stlace" "brigace");
+  my @db = qw ("autoace" "geneace" "citace" "cshace" "camace" "stlace" "brigace");
   foreach(@db){
     system("cd /wormsrv2/$_/wspec/; cvs update");
   }
