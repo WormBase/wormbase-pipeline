@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2004-03-23 17:35:51 $
+# Last updated on: $Date: 2004-03-30 13:07:15 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -98,6 +98,9 @@ my @exceptions = $ga->cgc_name_is_also_other_name($db);
 my %exceptions;
 
 foreach (@exceptions){$exceptions{$_}++}; 
+
+# get other names to main name hash 
+my %other_main = $ga->other_name($db, "other_main");
 
 # Process separate classes if specified on the command line else process all classes
 @classes = ("locus","laboratory","allele","strain","rearrangement","sequence","mapping","evidence", "xref", "multipt", ) if (!@classes);
@@ -598,57 +601,24 @@ sub test_locus_for_errors{
   }
 
 
-  # test for Other_name value which is also a Locus name in its own right
-  # Also can test for where a Locus has an other name but this fact hasn't been added to parent Gene_class object
-  # as a Remark
-
-  if(defined($locus->at('Name.Other_name'))){
+  # look for Other_name locus which is also a CGC main name OR an other_name that still exists as a locus object
+  
+  if( !exists $exceptions{$locus} && exists $other_main{$locus} ) {
     
-    #foreach (@exceptions){$exceptions{$_}++};  # @exceptions and %exceptions are defined as global
-
-    # get other names of locus
-    my @other_names = $locus->Other_name;
-    foreach my $other_name (@other_names){
-      
-      # Does other_name exist as separate loci?
-      if($db->fetch(-class=>'Locus',-name=>"$other_name")){
-	# Is it on exceptions list?
-	if($exceptions{$locus}) {
-	  # no need for warning
-	  if ($verbose){
-	    print LOG "INFO: $locus has $other_name as Other_name...$other_name is still a separate Locus object (exception)\n";
-	  }  
-	}
-	else{
-	  # can warn that this is potential problem
-	  print LOG "WARNING: $locus has $other_name as Other_name...$other_name is still a separate Locus object\n";
-	  print "." if ($verbose);
-	  if ($ace){
-	    print ACE "\n-R Locus : \"$other_name\" \"$locus\"\n";
-	    print ACE "\nLocus : \"$locus\"\n";
-	    print ACE "Other_name \"$other_name\"\n";
-	  }
-	}	
-	# Does the Parent Gene_class have a Remark for this Other_name?
-	my $gene_class = $locus->Gene_class;	
-	my ($obj) = $db->fetch(-class=>'Gene_class',-name=>"$gene_class") if(defined($locus->at('Name.Gene_class')));
-	if(!defined($obj->at('Remark'))){
-	  $warnings .= "ERROR 32: $locus has Other_name but no Remark in Gene_class object\n";
-	  print "." if ($verbose);      
-	  if($ace){
-	    print ACE "\n\nGene_class : \"$gene_class\"\n";
-	    print ACE "Remark \"$locus is also an unofficial other name of $other_name\" CGC_data_submission\n";
-	    
-	  }         
-	}
-      }
+    # warn that this is potential problem
+    print LOG "WARNING: @{$other_main{$locus}} has $locus as Other_name...$locus is still a separate Locus object\n";
+    print "." if ($verbose);
+    if ($ace){
+      print ACE "\n-R Locus : \"$locus\" \"@{$other_main{$locus}}\"\n";
+      print ACE "\nLocus : \"@{$other_main{$locus}}\"\n";
+      print ACE "Other_name \"$locus\"\n";
     }
+  }	
+  if ( exists $exceptions{$locus} && $verbose ) {
+    print LOG "WARNING: $locus is both a CGC name and an Other_name of @{$other_main{$locus}} - exception\n";
   }
-
   return($warnings);
-
 }
-
 
 ############################################
 
@@ -1092,9 +1062,6 @@ EOF
   if ($ace){%location=allele_location($allele_designation_to_LAB, $default_db)};
   
   my %other_main = $ga->other_name($db, "other_main");
-  my @exceptions = $ga ->cgc_name_is_also_other_name($db);
-  my %exceptions;
-  foreach (@exceptions){$exceptions{$_}++};
   
   foreach $allele (@alleles){
    
@@ -1655,45 +1622,6 @@ sub check_genetics_coords_mapping {
   }
 }
 
-
-
-#############################
-
-sub loci_as_other_name {
-
-  my ($def, $dir, $db) = @_;
-  my ($main, $other_name);
-
-  open (FH, "echo '$def' | $tace $dir | ") || die "Couldn't access geneace\n";
-  while (<FH>){
-    chomp $_;
-    if ($_ =~ /^\"/){
-      $_ =~ s/\"//g;
-      $_ =~ /(.+)\s+(.+)/;     
-      $main = $1;
-      $other_name = $2;
-      $other_name =~ s/\\//g;
-      $other_name = $db->fetch('Locus', $other_name); 
-      
-      if ($other_name){
-	if ($exceptions{$main}){  # see global @exceptions and %exceptions
-	  print LOG "INFO: $main has $other_name as Other_name...$other_name is still a separate Locus object (exception)\n";
-        }
-        else {
-	  print LOG "WARNING: $main has $other_name as Other_name...$other_name is still a separate Locus object\n";
-        }
-	if ($ace && !$exceptions{$main}){
-	  print ACE "\n-R Locus : \"$other_name\" \"$main\"\n";
-	  print ACE "\nLocus : \"$main\"\n";
-          print ACE "Other_name \"$other_name\"\n";
-        }
-      }  
-    }
-  }
-}
-
-
-
 ##############################
 
 sub create_log_files{
@@ -1802,24 +1730,6 @@ sub usage {
     exit (0);
   }
 }
-
-#sub array_comp{
-
-#  my(@union, @isect, @diff, %union, %isect, %count, $e);
-#  my ($ary1_ref, $ary2_ref)=@_;
-#  @union=@isect=@diff=();
-#  %union=%isect=();
-#  %count=();
-#  foreach $e(@$ary1_ref, @$ary2_ref){
-#    $count{$e}++;
-#  }
-#  foreach $e (keys %count){
-#    push (@union, $e);
-#    if ($count{$e}==2){push @isect, $e;}
-#    else {push @diff, $e;}
-#  } 
-#  return \@diff, \@isect, \@union;  # all returned into one array  
-#}
 
 
 __END__
