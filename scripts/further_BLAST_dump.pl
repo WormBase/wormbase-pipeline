@@ -7,7 +7,7 @@
 # Author: Chao-Kung CHen
 #
 # Last updated by: $Author: ar2 $                      
-# Last updated on: $Date: 2004-08-03 13:49:20 $        
+# Last updated on: $Date: 2004-09-16 10:15:00 $        
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -41,7 +41,7 @@ foreach my $file (@files){
   if( ( $file eq "TRF.ace" or $file eq "repeat_homologies.ace") and !(-e $file) ){
     next;
   }
-  &run_command("mv -f $file ${wormsrv2_dir}/BACKUP/$file");
+  &run_command("mv -f $file.gz ${wormsrv2_dir}/BACKUP/$file.gz");
   &run_command("/usr/apps/bin/scp ${acari_dir}/${file} wormsrv2:${wormsrv2_dir}/${file}");
 }
 
