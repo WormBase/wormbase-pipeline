@@ -101,7 +101,7 @@
 // and be followed by blank(s) and then one of NONE or PASSWD or WORLD
 //
 WRITE PASSWD
-READ PASSWD
+READ WORLD
 
 
 // In case of problems or comments mail edgrif@sanger.ac.uk
