@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder [-options]
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2002-11-28 12:22:29 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2002-12-09 16:00:39 $
 
 
 #################################################################################
@@ -1350,9 +1350,9 @@ sub dump_GFFs {
 
 sub split_GFFs {
   $am_option .= " -gffsplit";
-  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "GFFsplitter -s started at $runtime\n";  
-  system ("$scriptdir/GFFsplitter -s") && die "Couldn't split GFF files\n";
-  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "GFFsplitter -s finished at $runtime\n";  
+  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "GFFsplitter.pl started at $runtime\n";  
+  system ("$scriptdir/GFFsplitter.pl") && die "Couldn't split GFF files\n";
+  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "GFFsplitter finished at $runtime\n";  
   # make GFF_splitter file in /logs
   system ("touch $logdir/C2:Split_GFF_files");
 }
