@@ -131,10 +131,8 @@ foreach (@gff_files) {
     $gff_intron_confirmed_CDS = $file_prefix . "\.intron_confirmed_CDS\.gff";
     $gff_intron_confirmed_UTR = $file_prefix . "\.intron_confirmed_UTR\.gff";
     $gff_repeats              = $file_prefix . "\.repeats\.gff";
-    $gff_ests                 = $file_prefix . "\.ests\.gff";
     $gff_tc_insertions        = $file_prefix . "\.tc_insertions\.gff";
     $gff_blastx               = $file_prefix . "\.blastx\.gff";
-    $gff_tblastx_est          = $file_prefix . "\.tblastx_est\.gff";
     $gff_tblastx_briggsae     = $file_prefix . "\.tblastx_briggsae\.gff";
     $gff_assembly_tags        = $file_prefix . "\.assembly_tags\.gff";
     $gff_prosite              = $file_prefix . "\.prosite\.gff";
@@ -149,7 +147,6 @@ foreach (@gff_files) {
     $gff_cDNA_for_RNAi        = $file_prefix . "\.cDNA_for_RNAi\.gff";
     $gff_BLAT_EST_BEST        = $file_prefix . "\.BLAT_EST_BEST\.gff";
     $gff_BLAT_EST_OTHER       = $file_prefix . "\.BLAT_EST_OTHER\.gff";
-    $gff_mRNA_GENOME          = $file_prefix . "\.mRNA_GENOME\.gff";
     $gff_BLAT_mRNA_BEST       = $file_prefix . "\.BLAT_mRNA_BEST\.gff";
     $gff_BLAT_mRNA_OTHER      = $file_prefix . "\.BLAT_mRNA_OTHER\.gff";
     $gff_BLATX_NEMATODE       = $file_prefix . "\.BLATX_NEMATODE\.gff";
@@ -216,10 +213,6 @@ foreach (@gff_files) {
     print GFF_REPEATS  "##Version: $cvs_version\n";
     print GFF_REPEATS  "##date $rundate\n";
 
-    open (GFF_ESTS, ">$datadir/GFF_SPLITS/$gff_ests");
-    print GFF_ESTS  "##Version: $cvs_version\n";
-    print GFF_ESTS  "##date $rundate\n";
-
     open (GFF_TC_INSERTIONS, ">$datadir/GFF_SPLITS/$gff_tc_insertions");
     print GFF_TC_INSERTIONS  "##Version: $cvs_version\n";
     print GFF_TC_INSERTIONS  "##date $rundate\n";
@@ -228,10 +221,6 @@ foreach (@gff_files) {
     print GFF_BLASTX  "##Version: $cvs_version\n";
     print GFF_BLASTX  "##date $rundate\n";
 
-    open (GFF_TBLASTX_EST, ">$datadir/GFF_SPLITS/$gff_tblastx_est");
-    print GFF_TBLASTX_EST  "##Version: $cvs_version\n";
-    print GFF_TBLASTX_EST  "##date $rundate\n";
- 
     open (GFF_TBLASTX_BRIGGSAE, ">$datadir/GFF_SPLITS/$gff_tblastx_briggsae");
     print GFF_TBLASTX_BRIGGSAE  "##Version: $cvs_version\n";
     print GFF_TBLASTX_BRIGGSAE  "##date $rundate\n";
@@ -288,10 +277,6 @@ foreach (@gff_files) {
     print GFF_BLAT_EST_OTHER  "##Version: $cvs_version\n";
     print GFF_BLAT_EST_OTHER  "##date $rundate\n";
 
-    open (GFF_MRNA_GENOME,    ">$datadir/GFF_SPLITS/$gff_mRNA_GENOME");
-    print GFF_MRNA_GENOME     "##Version: $cvs_version\n";
-    print GFF_MRNA_GENOME     "##date $rundate\n";
-
     open (GFF_BLAT_MRNA_BEST,     ">$datadir/GFF_SPLITS/$gff_BLAT_mRNA_BEST");
     print GFF_BLAT_MRNA_BEST     "##Version: $cvs_version\n";
     print GFF_BLAT_MRNA_BEST     "##date $rundate\n";
@@ -347,10 +332,8 @@ foreach (@gff_files) {
 	    print GFF_INTRON_CONFIRMED_CDS "$_\n";
 	    print GFF_INTRON_CONFIRMED_UTR "$_\n";
 	    print GFF_REPEATS              "$_\n";
-	    print GFF_ESTS                 "$_\n";
 	    print GFF_TC_INSERTIONS        "$_\n";
 	    print GFF_BLASTX               "$_\n";
-	    print GFF_TBLASTX_EST          "$_\n";
 	    print GFF_TBLASTX_BRIGGSAE     "$_\n";
 	    print GFF_ASSEMBLY_TAGS        "$_\n";
 	    print GFF_TS_SITE              "$_\n";
@@ -368,7 +351,6 @@ foreach (@gff_files) {
 	    print GFF_BLAT_MRNA_BEST       "$_\n";
 	    print GFF_BLAT_MRNA_OTHER      "$_\n";
 	    print GFF_BLATX_NEMATODE       "$_\n";
-	    print GFF_MRNA_GENOME          "$_\n";
 	    next;
 	}
 	#skip header lines of file
@@ -496,16 +478,6 @@ foreach (@gff_files) {
 	    $found_a_home = 1;
 	}
 
-	################################
-   	# ESTs
-	################################
-
-	if (($method eq "BLASTN_EST_elegans") || ($method eq "EST_GENOME")) {
-#	    print "$_\n" if ($debug);
-	    print GFF_ESTS "$_\n";
-	    $found_a_home = 1;
-	}
-	
 
 	################################
    	# TC1 insertions
@@ -527,15 +499,6 @@ foreach (@gff_files) {
 	    $found_a_home = 1;
 	}
 	
-	################################
-   	# EST similarities (distant)
-	################################
-
-	if (($method eq "TBLASTX_EST") || ($method eq "TBLASTX_EST_elegans")) {
-#	    print "$_\n" if ($debug);
-	    print GFF_TBLASTX_EST "$_\n";
-	    $found_a_home = 1;
-	}
 
 	################################
    	# C.briggsae similarities 
@@ -582,7 +545,7 @@ foreach (@gff_files) {
    	# Oligo mapping 
 	################################
 
-	if ($feature eq "OLIGO_PAIR") {
+	if ($feature eq "OLIGO") {
 #	    print "$_\n" if ($debug);
 	    print GFF_OLIGOS "$_\n";
 	    $found_a_home = 1;
@@ -694,15 +657,6 @@ foreach (@gff_files) {
 	  $found_a_home = 1;
 	}
 
-	################################
-   	# mRNA_GENOME
-	################################
-
-	if (/mRNA_GENOME/) {
-	  #	    print "$_\n" if ($debug);
-	  print GFF_EXPR_PROFILE "$_\n";
-	  $found_a_home = 1;
-	}
 
 	################################
    	# BLATX_NEMATODE
@@ -748,10 +702,8 @@ foreach (@gff_files) {
     close GFF_INTRON_CONFIRMED_CDS;
     close GFF_INTRON_CONFIRMED_UTR;
     close GFF_REPEATS;
-    close GFF_ESTS;
     close GFF_TC_INSERTIONS;
     close GFF_BLASTX;
-    close GFF_TBLASTX_EST;
     close GFF_TBLASTX_BRIGGSAE;
     close GFF_ASSEMBLY_TAGS;
     close GFF_TS_SITE;
@@ -764,7 +716,6 @@ foreach (@gff_files) {
     close GFF_CDNA_FOR_RNAI;
     close GFF_BLAT_EST_BEST;
     close GFF_BLAT_EST_OTHER;
-    close GFF_MRNA_GENOME;
     close GFF_BLAT_MRNA_BEST;
     close GFF_BLAT_MRNA_OTHER;
     close GFF_BLATX_NEMATODE;
@@ -833,10 +784,6 @@ foreach (@gff_files) {
     $total_lines = $total_lines + $gff_length_repeats;
     print "$gff_repeats   \t\t: $gff_length_repeats\n";
 
-    $gff_length_ests = file_size("$datadir/GFF_SPLITS/$gff_ests") - 3;
-    $total_lines = $total_lines + $gff_length_ests;
-    print "$gff_ests   \t\t: $gff_length_ests\n";
-
     $gff_length_tc_insertions = file_size("$datadir/GFF_SPLITS/$gff_tc_insertions") - 3;
     $total_lines = $total_lines + $gff_length_tc_insertions;
     print "$gff_tc_insertions   \t: $gff_length_tc_insertions\n";
@@ -845,10 +792,6 @@ foreach (@gff_files) {
     $total_lines = $total_lines + $gff_length_blastx;
     print "$gff_blastx   \t\t: $gff_length_blastx\n";
 
-    $gff_length_tblastx_est = file_size("$datadir/GFF_SPLITS/$gff_tblastx_est") - 3;
-    $total_lines = $total_lines + $gff_length_tblastx_est;
-    print "$gff_tblastx_est  \t\t: $gff_length_tblastx_est\n";
-    
     $gff_length_tblastx_briggsae = file_size("$datadir/GFF_SPLITS/$gff_tblastx_briggsae") - 3;
     $total_lines = $total_lines + $gff_length_tblastx_briggsae;
     print "$gff_tblastx_briggsae    \t: $gff_length_tblastx_briggsae\n";
@@ -904,10 +847,6 @@ foreach (@gff_files) {
     $gff_length_BLAT_EST_OTHER = file_size("$datadir/GFF_SPLITS/$gff_BLAT_EST_OTHER") - 3;
     $total_lines = $total_lines + $gff_length_BLAT_EST_OTHER;
     print "$gff_BLAT_EST_OTHER   \t\t: $gff_length_BLAT_EST_OTHER\n";
-
-    $gff_length_MRNA_GENOME = file_size("$datadir/GFF_SPLITS/$gff_mRNA_GENOME") - 3;
-    $total_lines = $total_lines + $gff_length_MRNA_GENOME;
-    print "$gff_mRNA_GENOME   \t\t: $gff_length_MRNA_GENOME\n";
 
     $gff_length_BLAT_MRNA_BEST = file_size("$datadir/GFF_SPLITS/$gff_BLAT_mRNA_BEST") - 3;
     $total_lines = $total_lines + $gff_length_BLAT_MRNA_BEST;
