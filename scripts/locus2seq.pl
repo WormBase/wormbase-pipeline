@@ -5,7 +5,7 @@
 # written by Anthony Rogers (ar2@sanger.ac.uk)
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-01-29 09:44:43 $
+# Last updated on: $Date: 2003-02-21 11:32:23 $
 
 
 use strict;
@@ -104,7 +104,7 @@ close (ALLOUT);
 #copy the ace files to the FTP site
 
 my $runtime = &runtime;
-print LOG "\n$runtime: Gzipping files and copying across to ftp site\n";
+print LOG "\n$runtime: Gzipping files and moving across to ftp site\n";
 system("gzip -f /$stl_out") && print LOG "ERROR: gzip failed on STL";
 system("gzip -f /$cam_out") && print LOG "ERROR: gzip failed on CAM";
 system("gzip -f /$all_out") && print LOG "ERROR: gzip failed on ALL";
@@ -169,9 +169,9 @@ sub create_log_files{
   open(STLOUIS, ">$stlouis_log") || die "Couldn't open $stlouis_log\n";
   print STLOUIS "Updated info linking Loci to Sequences and Loci to Transcripts is available from\n";
   print STLOUIS "ftp-wormbase\/pub\/data\/updated_locus2seq\/ in the three files:\n";
-  print STLOUIS "CAM_locus_seq.ace\t loci in Hinxton sequence.\n";
-  print STLOUIS "STL_locus_seq.ace\t loci in St Louis sequence.\n";
-  print STLOUIS "ALL_locus_seq.ace\t all loci.\n\n";
+  print STLOUIS "CAM_locus_seq.ace: loci in Hinxton sequence.\n";
+  print STLOUIS "STL_locus_seq.ace: loci in St Louis sequence.\n";
+  print STLOUIS "ALL_locus_seq.ace: all loci.\n\n";
   print STLOUIS "These are loci with approved cgc names and that connect to a valid\n";
   print STLOUIS "Sequence (Predicted_gene) or Transcript object.\n";
   close(STLOUIS);
@@ -191,7 +191,7 @@ sub create_log_files{
 #######################################################################
 
 sub get_sequence_connections{
-
+ 
   print LOG "Getting Locus->Sequence and Locus->Transcript connections from $geneace_dir:\n\n";
 
   # get locus with confirmed CGC names and the corresponding sequences and transcripts
