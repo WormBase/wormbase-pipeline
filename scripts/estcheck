@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl -w
+#!/usr/local/bin/perl5.6.0 -w
 #
 # estcheck
 # v 0.1
@@ -16,23 +16,17 @@
 #################################################################################
 
 $|=1;
-BEGIN {
-  unshift (@INC,"/nfs/disk92/PerlSource/Bioperl/Releases/bioperl-0.05");
-}
-use Bio::Seq;
+
 use IO::Handle;
 use Getopt::Std;
-use Cwd;
-use Ace;
 use lib '/wormsrv2/scripts';
 use Wormbase;
-
+#use strict;
 
  ##############################
  # Script variables (run)     #
  ##############################
 
-my $maintainers = "dl1\@sanger.ac.uk krb\@sanger.ac.uk kj2\@sanger.ac.uk";
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
 my $cvs_version = &get_cvs_version($0);
@@ -43,7 +37,6 @@ my $cvs_version = &get_cvs_version($0);
 
 $opt_d="";   # Verbose debug mode
 $opt_h="";   # Help/Usage page
-#$opt_s="";   # check Status tags
 
 getopts ('hd');
 &usage(0) if ($opt_h);
@@ -57,12 +50,13 @@ my $tace = glob("~acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace");    # tace execut
 my $dbdir  = "/wormsrv2/autoace";                                  # Database path
 my $gffdir = "/wormsrv2/autoace/GFF_SPLITS";
 my $outdir = "/wormsrv2/autoace/CHECKS";
+my $WS_version = &get_wormbase_version;
 
  ########################################
  # Open logfile                         #
  ########################################
 
-my $log="$outdir/estcheck.$rundate";
+my $log="/wormsrv2/logs/estcheck.$WS_version.$rundate";
 
 open (LOG,">$log");
 LOG->autoflush();
@@ -76,10 +70,7 @@ print LOG "\n";
  # Loop through the EST sequences       #
  ########################################
 
-my %EST_acc  = "";
-my %EST_len   = "";
-my %EST_match = "";
-
+my (%EST_acc, %EST_len, %EST_match);
 
 $ENV{'ACEDB'} = $dbdir;
 $command=<<EOF;
@@ -96,7 +87,6 @@ while (<TACE>) {
     s/\"//g;
     (/^(\S+)\s/);
 
-
     @f = split /\t/;
 #    print "Processing EST: $f[0]\n";
 
@@ -107,9 +97,14 @@ while (<TACE>) {
 }
 close TACE;
 
-#print "Assigned all EST sequences\n\n";
+print "Assigned all EST sequences\n\n";
 
-my %EST_clone = "";
+
+ ########################################
+ # Loop through the EST clones          #
+ ########################################
+
+my %EST_clone;
 
 $command=<<EOF;
 Table-maker -p "$dbdir/wquery/EST_clone.def"
@@ -126,16 +121,18 @@ while (<TACE>) {
     (/^(\S+)\s/);
 
     @f = split /\t/;
-
     $EST_clone{$f[0]} .= "$f[1] ";
-
 }
 close TACE;
 
-#print "Assigned all EST clone read pairs\n\n";
+print "Assigned all EST clone read pairs\n\n";
+
+
+#########################
+# open files for output #
+#########################
 
 open (EST_total, ">$outdir/EST_total.txt");
-
 open (EST_unassigned_1, ">$outdir/EST_unassigned.txt");
 open (EST_unassigned_2, ">$outdir/EST_unassigned.ace");
 
@@ -149,45 +146,45 @@ print EST_unassigned_2   "KeySet :\t\"Unassigned_ESTs.$rundate\"\n";
 print EST_mismatched_2   "KeySet :\t\"Mismatched_ESTs.$rundate\"\n";
 print EST_no_accession_2 "KeySet :\t\"No_accession.$rundate\"\n";
 
-foreach $EST (sort keys %EST_clone) {
 
-    undef ($first_match);
-    undef ($first_read);
+foreach my $EST (sort keys %EST_clone) {
 
-#    print "# $EST  \t  [$EST_clone{$EST}\b]\n";
-    @reads = split (/ /, $EST_clone{$EST});
-    foreach $read (@reads) {
-	next if ($read eq "");
-#	print "$read\t$EST_acc{$read}\t$EST_len{$read}\t$EST_match{$read}\n";
-	print EST_total "$read\t$EST_acc{$read}\t$EST_len{$read}\t$EST_match{$read}\n";
+  my ($first_match,$first_read);
 
-	# No accession
-	if ($EST_acc{$read} eq "") {
-	    print LOG "=> $read has no accession number\n";
-	    print EST_no_accession_1 "$read has no accession number\n";
-	    print EST_no_accession_2 "Sequence : \"$read\"\n";
-	}
-
-	# No match in genome
-	if ($EST_match{$read} eq "") {
-	    print LOG "=> $read is not attached to a CDS\n";
-	    print EST_unassigned_1 "$read is not attached to a CDS\n";
-	    print EST_unassigned_2 "Sequence : \"$read\"\n";
-	}
-	
-	# Mismatch between .3 and .5 reads
-	if ( ($first_match ne "") && ($EST_match{$read} ne $first_match)) {
-	    print LOG "=> $read is attached to a different CDS than $first_read : [${read}:$EST_match{$read} | $first_read:$first_match]\n";
-	    print EST_mismatched_1 "$read is attached to a different CDS than $first_read : [${read}:$EST_match{$read} | $first_read:$first_match]\n";
-	    print EST_mismatched_2 "Sequence : \"$read\"\n";
-	} 
-
-	# Store .3 match for comparison
-	$first_read  = $read;
-	$first_match = $EST_match{$read};
+# print "# $EST  \t  [$EST_clone{$EST}\b]\n";
+  @reads = split (/ /, $EST_clone{$EST});
+  foreach my $read (@reads) {
+    next if ($read eq "");
+    #	print "$read\t$EST_acc{$read}\t$EST_len{$read}\t$EST_match{$read}\n";
+    print EST_total "$read\t$EST_acc{$read}\t$EST_len{$read}\t$EST_match{$read}\n";
+    
+    # No accession
+    if ($EST_acc{$read} eq "") {
+      print LOG "=> $read has no accession number\n";
+      print EST_no_accession_1 "$read has no accession number\n";
+      print EST_no_accession_2 "Sequence : \"$read\"\n";
     }
-#    print "\n";
-
+    
+    # No match in genome
+    if ($EST_match{$read} eq "") {
+      print LOG "=> $read is not attached to a CDS\n";
+      print EST_unassigned_1 "$read is not attached to a CDS\n";
+      print EST_unassigned_2 "Sequence : \"$read\"\n";
+    }
+    
+    # Mismatch between .3 and .5 reads
+    if(defined($first_match) && defined($first_read)){
+      if ( ($first_match ne "") && ($EST_match{$read} ne $first_match)) {
+	print LOG "=> $read is attached to a different CDS than $first_read : [${read}:$EST_match{$read} | $first_read:$first_match]\n";
+	print EST_mismatched_1 "$read is attached to a different CDS than $first_read : [${read}:$EST_match{$read} | $first_read:$first_match]\n";
+	print EST_mismatched_2 "Sequence : \"$read\"\n";
+      } 
+  }
+    # Store .3 match for comparison
+    $first_read  = $read;
+    $first_match = $EST_match{$read};
+  }
+  #    print "\n"; 
 }
 
 close LOG;
