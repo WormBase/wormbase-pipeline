@@ -12,8 +12,8 @@
 # 3) Archives old GFF_SPLITS directory
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
-# Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2004-10-11 08:48:29 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2005-01-20 16:19:55 $
 
 
 use strict;
@@ -131,12 +131,6 @@ unlink("$basedir/autoace/logs/UTR_gff_dump");
 # archive old GFF splits directory'
 print LOG "Archiving GFFsplits directory using GFFsplitter.pl -a\n\n";
 system("GFFsplitter.pl -archive") && die "Couldn't run GFFsplitter.pl -a\n";
-
-# update "Confirmed Introns" webpage (introns to be addressed)
-system("/nfs/intweb/cgi-bin/wormpub/confirmed_introns/parse_gff.pl") && warn "Couldn't run parse_gff.pl\n";
-
-
-
 
 
 ##################
