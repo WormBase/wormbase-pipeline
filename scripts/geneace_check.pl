@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-07-21 16:10:06 $
+# Last updated on: $Date: 2003-07-22 15:48:30 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -1075,52 +1075,49 @@ EOF
   
   my ($locus, %allele_locus, %strain_genotype, $cds, %locus_cds, $main, $other_name, %other_main, $allele);
 
-  my $strain_genotype=<<EOF;
+  my $get_genotype_in_strain=<<EOF;
   Table-maker -p "/wormsrv1/geneace/wquery/strain_genotype.def" quit 
 EOF
-
   my $allele_to_locus=<<EOF;
 Table-maker -p "/wormsrv1/geneace/wquery/allele_to_locus.def" quit
 EOF
     
 
-  open (FH1, "echo '$strain_genotype' | tace $default_db | ") || die $!;
-  open (FH2, "echo '$allele_to_locus' | tace $default_db | ") || die $!;
-
+  open (FH1, "echo '$get_genotype_in_strain' | $tace $default_db | ") || die $!;
+  open (FH5, "echo '$allele_to_locus' | $tace $default_db | ") || die $!;
 
   while(<FH1>){
     chomp;
-    
-    if ($_ =~ /\"(.+)\"\s+\"(.+)\"/){
+ 
+     if ($_ =~ /\"(.+)\"\s+\"(.+)\"/){
       $strain_genotype{$1} = $2;
     }
-  }  
-  
-  while (<FH2>){
+  }   
+  while (<FH5>){
     chomp $_;
     if ($_ =~ /\"(.+)\"\s+\"(.+)\"/){
       $locus = $2;
       $locus =~ s/\\//;
       push(@{$allele_locus{$1}}, $locus);
     }
-  }    
-
+  } 
+  
   foreach my $strain (keys %strain_genotype){
-    my @matches = ($strain_genotype{$strain} =~ /(\w{3,3}-\d+\(.+\d+\))/g);
+    my @matches = ($strain_genotype{$strain} =~  /((Cb-\w{3,3}-\d+|Cr-\w{3,3}-\d+|\w{3,3}-\d+)\(\w+\d+\))/g);
     foreach (@matches){
-      my @locus_allele = split(/\s+/, $_);
-      foreach (@locus_allele){
-	$_ =~ /(\w{3,3}-\d+)\((.+\d+)\)/;
-	$locus = $1; $allele = $2; 
-	if ((defined @{$allele_locus{$allele}}) && ("@{$allele_locus{$allele}}" ne "$locus")){
-	  $strain_errors++;
-	  print LOG "ERROR: Strain $strain has allele $allele linked to $locus in genotype which should now become @{$allele_locus{$allele}}\n";
-
+      my @la = split(/\s+/, $_);
+      foreach (@la){
+	if ($_ =~ /(Cb-\w{3,3}-\d+|Cr-\w{3,3}-\d+|\w{3,3}-\d+)\((\w+\d+)\)/){
+	  $locus = $1; $allele = $2; 
+	  if ((defined @{$allele_locus{$allele}}) && ("@{$allele_locus{$allele}}" ne "$locus")){
+	    $strain_errors++;
+  	    print LOG "ERROR: Strain $strain has allele $allele linked to $locus in genotype ";
+	    print LOG "which should now become @{$allele_locus{$allele}}\n";
+          }
 	}
       }
     }
   }
-         
   print LOG "\nThere are $strain_errors errors in Strain class.\n";
 }
 

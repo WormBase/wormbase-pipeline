@@ -19,7 +19,7 @@ my $ga_dir = "/wormsrv1/geneace";
 #######################
 
 my $mw=MainWindow->new();
-$mw->configure (title => "Geneace Update Accelerator\t\tby Chao-Kung Chen\t\tVersion 1.0 (2003/01)",
+$mw->configure (title => "Geneace Update Accelerator   by Chao-Kung Chen   Version 1.0 (2003/01)",
                 background => "white",
 	       );
 #$mw->minsize(qw(800 750));#slow
@@ -551,6 +551,7 @@ sub geneclass_loci_other_name {
 sub gene_mapping {
 
   open (IN, $filename) || die "Can't read in file!";
+  print $filename, "\n";
   #open (IN, "/wormsrv1/chaokung/wormdata/JAH/$filename") || die "Can't read in file!";  
   my (%obj_info, $info, $obj, $remark, $combined, $mapper, @mappers, $date,
       @update, $seq, @yr_mon, $locus, $provider, @providers, $person, $temp,
@@ -562,9 +563,9 @@ sub gene_mapping {
   # ?multi_pt_data ?2_point_data ?pos_neg_data
   ############################################
   
-  my $multi_pt_count=4065;
+  my $multi_pt_count=4066;
   my $two_pt_count=7142;
-  my $pos_neg_count=10683;
+  my $pos_neg_count=10719;
   
   ############################
   # date of update: for remark
@@ -587,35 +588,36 @@ sub gene_mapping {
       $multi_pt_count++;
       write_ace($multi_pt_count, "\n\nMulti_pt_data : ", $multi_pt_count);
     }
-    if ($_ =~ /^Multi[_-]pt_[cC]omment[:|\s:]\s(.+)/){
-      $remark = $1; $remark =~ s/^\s//; $remark .= " [$date ck1]";
-      write_ace($multi_pt_count, "Remark", $remark);
+    if ($_ =~ /^Multi[_-]pt_[cC]omment(:|\s:)\s(.+)/){
+      $remark = $2; $remark =~ s/^\s//; #$remark .= " [$date ck1]";
+      write_ace($multi_pt_count, "Remark", "$remark\"\t\"CGC_data_submission");
     }
-    if ($_ =~ /^Multi[_-]pt_[cC]ombined_results[:|\s:]\s(.+)/){
-      @distances = split(/ /, $1);
+    if ($_ =~ /^Multi[_-]pt_[cC]ombined_results(:|\s:)\s+(.+)/){
+      @distances = split(/\s+/, $2);
       $combined = "Locus \"$distances[0]\" $distances[1] Locus \"$distances[2]\" $distances[3] Locus \"$distances[4]\"";
       write_ace($multi_pt_count, "Combined", $combined)}
-    if ($_ =~ /^Multi[_-]pt_[gG]enotype[:|\s:]\s(.+)/){write_ace($multi_pt_count, "Genotype", $1)}
-    if ( ($_ =~ /^Multi[_-]pt_[mM]apper[:|\s:]\s(.+)/) || ($_ =~ /Multi_pt_Data_provider[:|\s:]\s(.+)/) ){
-      @mappers = split(/,/, $1);
+    if ($_ =~ /^Multi[_-]pt_[gG]enotype(:|\s:)\s+(.+)/){write_ace($multi_pt_count, "Genotype", $2)}
+    if ( ($_ =~ /^Multi[_-]pt_[mM]apper(:|\s:)\s+(.+)/) || ($_ =~ /Multi_pt_Data_provider(:|\s:)\s+(.+)/) ){
+      @mappers = split(/,/, $2);
       foreach $mapper (@mappers){
 	$mapper =~ s/^\s//;
 	write_ace($multi_pt_count, "Mapper", $mapper);
       }
     }
-    if ($_ =~ /^Multi[_-]pt_[dD]ate[:|\s:]\s(.+)/){
-      @yr_mon = split(/\//, $1);
+    if ($_ =~ /^Multi[_-]pt_[dD]ate(:|\s:)\s+(.+)/){
+      @yr_mon = split(/\//, $2);
       write_ace($multi_pt_count, "Date", "$yr_mon[1]-$yr_mon[0]");
     }
-    if ($_ =~ /^Multi[_-]pt_GeneA[:|\s:]\s(.+)/){write_ace($multi_pt_count, "Locus_A", $1)}
-    if ($_ =~ /^Multi[_-]pt_GeneB[:|\s:]\s(.+)/){write_ace($multi_pt_count, "Locus_B", $1)}
-    if ($_ =~ /^Multi[_-]pt_A_non_B_results[:|\s:]\s(.+)/){
-      @distances = split(/ /, $1);
+    if ($_ =~ /^Multi[_-]pt_GeneA(:|\s:)\s+(.+)/){write_ace($multi_pt_count, "Locus_A", $2)}
+    if ($_ =~ /^Multi[_-]pt_GeneB(:|\s:)\s+(.+)/){write_ace($multi_pt_count, "Locus_B", $2)}
+
+    if ($_ =~ /^Multi[_-]pt_A_non_B_results(:|\s:)\s+(.+)/){
+      @distances = split(/\s+/, $2);
       $A_non_B = "Locus \"$distances[0]\" $distances[1] Locus \"$distances[2]\" $distances[3] Locus \"$distances[4]\"";
       write_ace($multi_pt_count, "A_non_B", $A_non_B);
     }
-    if ($_ =~ /^Multi[_-]pt_B_non_A_results[:|\s:]\s(.+)/){
-      @distances = split(/ /, $1);
+    if ($_ =~ /^Multi[_-]pt_B_non_A_results(:|\s:)\s+(.+)/){
+      @distances = split(/\s+/, $2);
       $B_non_A = "Locus \"$distances[0]\" $distances[1] Locus \"$distances[2]\" $distances[3] Locus \"$distances[4]\"";
       write_ace($multi_pt_count, "B_non_A", $B_non_A);
     }
@@ -628,28 +630,28 @@ sub gene_mapping {
       $two_pt_count++;
       write_ace($two_pt_count, "\n\n2_point_data : ", $two_pt_count);
     }
-    if ($_ =~ /^2_point_[tT]emp[:|\s:]\s(.+)/){$temp = $1; $temp =~ s/°//; write_ace($two_pt_count, "Temperature", $temp)}
-    if ($_ =~ /^2_point_[mM]apped_genes[:|\s:]\s(.+)/){
-      @genes = split(/,/, $1);
+    if ($_ =~ /^2_point_[tT]emp(:|\s:)\s+(.+)/){$temp = $2; $temp =~ s/°//; write_ace($two_pt_count, "Temperature", $temp)}
+    if ($_ =~ /^2_point_[mM]apped_genes(:|\s:)\s+(.+)/){
+      @genes = split(/,/, $2);
       write_ace($two_pt_count, "Locus_1", $genes[0]);
       write_ace($two_pt_count, "Locus_2", $genes[1]);
     }
-    if ($_ =~ /^2_point_[gG]enotype[:|\s:]\s(.+)/){write_ace($two_pt_count, "Genotype", $1)}
-    if ($_ =~ /^2_point_[rR]esults[:|\s:]\s(.+)/){write_ace($two_pt_count, "Results", $1)}
-    if ($_ =~ /^2_point_[mM]apper[:|\s:](.+)/){
-      @mappers = split(/,/, $1);
+    if ($_ =~ /^2_point_[gG]enotype(:|\s:)\s+(.+)/){write_ace($two_pt_count, "Genotype", $2)}
+    if ($_ =~ /^2_point_[rR]esults(:|\s:)\s+(.+)/){write_ace($two_pt_count, "Results", $2)}
+    if ($_ =~ /^2_point_[mM]apper(:|\s:)(.+)/){
+      @mappers = split(/,/, $2);
       foreach (@mappers){write_ace($two_pt_count, "Mapper", $_)}
     }
-    if ($_ =~ /^2_point_[dD]ate[:|\s:]\s(.+)/){
-      @yr_mon = split(/\//, $1); write_ace($two_pt_count, "Date", "$yr_mon[1]-$yr_mon[0]");
+    if ($_ =~ /^2_point_[dD]ate(:|\s:)\s+(.+)/){
+      @yr_mon = split(/\//, $2); write_ace($two_pt_count, "Date", "$yr_mon[1]-$yr_mon[0]");
     }
-    if ($_ =~ /^2_point_[cC]alculation[:|\s:]\s(.+)/){
-      @tested = split(/ /, $1);
+    if ($_ =~ /^2_point_[cC]alculation(:|\s:)\s+(.+)/){
+      @tested = split(/ /, $2);
       write_ace($two_pt_count, "Tested", "$tested[1] $tested[2]");
     }
-    if ($_ =~ /^2_point_[cC]omment[:|\s:]\s(.+)/){
-      $remark = $1; $remark =~ s/^\s//; $remark .= " [$date ck1]";
-      write_ace($two_pt_count, "Remark", $remark);
+    if ($_ =~ /^2_point_[cC]omment(:|\s:)\s+(.+)/){
+      $remark = $2; $remark =~ s/^\s//; #$remark .= " [$date ck1]";
+      write_ace($two_pt_count, "Remark", "$remark\"\t\"CGC_data_submission");
     }
     
     ####################
@@ -659,22 +661,22 @@ sub gene_mapping {
     if ($_ =~ /^\/\/Df[\/|_]Dp.+/){
       $pos_neg_count++; write_ace($pos_neg_count, "\n\nPos_neg_data : ", $pos_neg_count);
     }
-    if ($_ =~ /^Df[\/|_]Dp_[rR]esults[:|\s:]\s(.+)/){write_ace($pos_neg_count, "Results", $1)}
-    if ($_ =~ /^Df[\/|_]Dp_[cC]omment[:|\s:]\s(.+)/){
-      $remark = $1; $remark =~ s/^\s//; $remark .= " [$date ck1]";
-      write_ace($pos_neg_count, "Remark", $remark);
+    if ($_ =~ /^Df[\/|_]Dp_[rR]esults(:|\s:)\s+(.+)/){write_ace($pos_neg_count, "Results", $2)}
+    if ($_ =~ /^Df[\/|_]Dp_[cC]omment(:|\s:)\s+(.+)/){
+      $remark = $2; $remark =~ s/^\s//; #$remark .= " [$date ck1]";
+      write_ace($pos_neg_count, "Remark", "$remark\"\t\"CGC_data_submission");
     }
-    if ($_ =~ /^Df[\/|_]Dp_[rR]earrangement[:|\s:]\s(.+)/){write_ace($pos_neg_count, "Rearrangement_2", $1)}
-    if ($_ =~ /^Df[\/|_]Dp_[gG]enotype[:|\s:]\s(.+)/){write_ace($pos_neg_count, "Genotype", $1)}
-    if ( ($_ =~ /^Df[\/|_]Dp_[dD]ata_[pP]rovider[:|\s:]\s(.+)/) || ($_ =~ /^Df[\/|_]Dp_[mM]apper[:|\s:]\s(.+)/) ) {
-      @providers = split(/,/, $1);
+    if ($_ =~ /^Df[\/|_]Dp_[rR]earrangement(:|\s:)\s+(.+)/){write_ace($pos_neg_count, "Rearrangement_2", $2)}
+    if ($_ =~ /^Df[\/|_]Dp_[gG]enotype(:|\s:)\s+(.+)/){write_ace($pos_neg_count, "Genotype", $2)}
+    if ( ($_ =~ /^Df[\/|_]Dp_[dD]ata_[pP]rovider(:|\s:)\s+(.+)/) || ($_ =~ /^Df[\/|_]Dp_[mM]apper(:|\s:)\s+(.+)/) ) {
+      @providers = split(/,/, $2);
       foreach (@providers){write_ace($pos_neg_count, "Mapper", $_);}
     }
-    if ($_ =~ /^Df[\/|_]Dp_[dD]ate[:|\s:]\s(.+)/){
-      @yr_mon = split(/\//, $1); write_ace($pos_neg_count, "Date", "$yr_mon[1]-$yr_mon[0]");
+    if ($_ =~ /^Df[\/|_]Dp_[dD]ate(:|\s:)\s+(.+)/){
+      @yr_mon = split(/\//, $2); write_ace($pos_neg_count, "Date", "$yr_mon[1]-$yr_mon[0]");
     }
-    if ($_ =~ /^Df[\/|_]Dp_[gG]ene[:|\s:]\s(.+)/){
-      $ga = $1; $ga =~ s/\)$//;
+    if ($_ =~ /^Df[\/|_]Dp_[gG]ene(:|\s:)\s+(.+)/){
+      $ga = $2; $ga =~ s/\)$//;
       @gene_allele = split(/\(/, $ga);
       if ($gene_allele[1] ne ""){
 	write_ace($pos_neg_count, "Locus_1", "$gene_allele[0]\" \"$gene_allele[1]"); # w/ allel info
@@ -687,90 +689,96 @@ sub gene_mapping {
     # parse locus data
     ##################
     
-    if ( ($_ =~ /^Locus_[lL]ocus_[nN]ame[:|\s:]\s(.+)/) ||
-	 ($_ =~ /^Locus_[gG]ene_[nN]ame[:|\s:]\s(.+)/) ){
-      $locus = $1;
-      $gene_class = $1;
+    if ( ($_ =~ /^Locus_[lL]ocus_[nN]ame(:|\s:)\s+(.+)/) ||
+	 ($_ =~ /^Locus_[gG]ene_[nN]ame(:|\s:)\s+(.+)/) ){
+      $locus = $2;
+      $gene_class = $2;
       $gene_class =~ s/-.+//;
+      print "$locus ; $gene_class\n";
       write_ace($locus, "\n\nLocus : ", $locus);
       write_ace($locus, "CGC_approved");
       write_ace($locus, "Gene_Class", $gene_class);
     }
-    if ($_ =~ /^Locus_[sS]equence[:|\s:]\s(.+)/){$seq = uc($1); write_ace($locus, "Genomic_sequence", $seq)}
-    if ($_ =~ /^Locus_[nN]egative_[mM]ethod[:|\s:]\s(.+)/){
-      $remark = $1;
+    if ($_ =~ /^Locus_[sS]equence(:|\s:)\s+(.+)/){$seq = uc($2); write_ace($locus, "Genomic_sequence", $seq)}
+    if ($_ =~ /^Locus_[nN]egative_[mM]ethod(:|\s:)\s+(.+)/){
+      $remark = $2;
       $remark = "Negative method is ".$remark;
-      write_ace($locus, "Remark", $remark);
+      write_ace($locus, "Remark", "$remark\"\t\"CGC_data_submission");
     }
-    if ($_ =~ /^Locus_[pP]ositive_[mM]ethod[:|\s:]\s(.+)/){
-      $remark = $1;
+    if ($_ =~ /^Locus_[pP]ositive_[mM]ethod(:|\s:)\s+(.+)/){
+      $remark = $2;
       $remark = "Postitive method is ".$remark;
-      write_ace($locus, "Remark", $remark);
+      write_ace($locus, "Remark", "$remark\"\t\"CGC_data_submission");
     }
-    if ($_ =~ /^Locus_[cC]omment[:|\s:]\s(.+)/){
-      $remark = $1; $remark =~ s/^\s//; $remark .= " [$date ck1]";
-      write_ace($locus, "Remark", $remark);
+    if ($_ =~ /^Locus_[cC]omment(:|\s:)\s+(.+)/){
+      $remark = $2; $remark =~ s/^\s//; #$remark .= " [$date ck1]";
+      write_ace($locus, "Remark", "$remark\"\t\"CGC_data_submission");
     }
-    if ($_ =~ /^Locus_[nN]egative_[cC]lone[:|\s:]\s(.+)/){
-      @clones = split(/,|and/, $1);
+    if ($_ =~ /^Locus_[nN]egative_[cC]lone(:|\s:)\s+(.+)/){
+      @clones = split(/,|and/, $2);
       foreach $clone (@clones){
 	$clone =~ s/^\s//;
 	write_ace($locus, "Negative_clone", $clone);
       }
     }
-    if ($_ =~ /^Locus_[pP]ositive_[cC]lone[:|\s:]\s(.+)/){
-      @clones = split(/,|and/, $1);
+    if ($_ =~ /^Locus_[pP]ositive_[cC]lone(:|\s:)\s+(.+)/){
+      @clones = split(/,|and/, $2);
       foreach $clone (@clones){
 	$clone =~ s/^\s//;
 	write_ace($locus, "Positive_clone", $clone);
       }
     }
-    if ($_ =~ /^Locus_[dD]escription[:|\s:]\s(.+)/){write_ace($locus, "Description", $1)}
-    if ($_ =~ /^Locus_[cC]hromosome[:|\s:]\s(.+)/){write_ace($locus, "Map", $1)}
-=start
-      if ($_ =~ /^Locus_[dD]ata_provider[:|\s:]\s(.+)/){
-	@providers = split(/,|and/, $1);
-	foreach $person (@providers){
-	  $person =~ s/^\s|\s$//;
-	}
+
+    if ($_ =~ /^Locus_(d|D)ata_provider(:|\s:)\s+(.+)/){
+      @providers = split(/,|and/, $3);
+    }
+ 
+    if ($_ =~ /^Locus_[dD]escription(:|\s:)\s+(.+)/){
+      my $des = $2;
+      foreach $person (@providers){
+	$person =~ s/^\s|\s$//;
+	print "Description", "$des\tAuthor_evidence\t\"$person\"\n";
+	write_ace($locus, "Description", "$des\"\tAuthor_evidence\t\"$person");
       }
-=end
-=cut
-    if ($_ =~ /^Locus_[aA]llele[:|\s:]\s(.+)/){
-      @alleles = split(/,/, $1);
+    }
+     
+    if ($_ =~ /^Locus_[cC]hromosome(:|\s:)\s+(.+)/){write_ace($locus, "Map", $2)}
+
+    if ($_ =~ /^Locus_[aA]llele(:|\s:)\s+(.+)/){
+      @alleles = split(/,/, $2);
       foreach (@alleles){
         $allele = $_;
 	$allele =~ s/^\s|\s$//;
 	write_ace($locus, "Allele", $allele);
       }
     }
-    if ($_ =~ /^Locus_[gG]ene_[pP]roduct[:|\s:]\s(.+)/){write_ace($locus, "Product", $1)}
-    
+    if ($_ =~ /^Locus_[gG]ene_[pP]roduct(:|\s:)\s+(.+)/){write_ace($locus, "Product", $2)}
+
     ###############################
     # parse breakpt (rearrangement)
     ###############################
     
-    if ($_ =~ /^Breakpt_Rearrangement[:|\s:]\s(.+)/){$rearr = $1; write_ace($1, "\n\nRearrangement : ", $1)}
-    if ($_ =~ /^Breakpt_Comment[:|\s:]\s(.+)/){
-      $remark = $1; $remark =~ s/^\s//; $remark .= " [$date ck1]";
-      write_ace($rearr, "Remark", $remark);
+    if ($_ =~ /^Breakpt_Rearrangement(:|\s:)\s+(.+)/){$rearr = $2; write_ace($2, "\n\nRearrangement : ", $2)}
+    if ($_ =~ /^Breakpt_Comment(:|\s:)\s+(.+)/){
+      $remark = $2; $remark =~ s/^\s//; #$remark .= " [$date ck1]";
+      write_ace($rearr, "Remark", "$remark\"\tCGC_data_submission");
     }
-    if ($_ =~ /^Breakpt_Negative_clone[:|\s:]\s(.+)/){
-      @clones = split(/,/, $1);
+    if ($_ =~ /^Breakpt_Negative_clone(:|\s:)\s+(.+)/){
+      @clones = split(/,/, $2);
       foreach $clone (@clones){
 	$clone =~ s/^\s//;
 	write_ace($rearr, "Clone_outside", $clone);
       }
     }
-    if ($_ =~ /^Breakpt_Positive_clone[:|\s:]\s(.+)/){
-      @clones = split(/,/, $1);
+    if ($_ =~ /^Breakpt_Positive_clone(:|\s:)\s+(.+)/){
+      @clones = split(/,/, $2);
       foreach $clone (@clones){
 	$clone =~ s/^\s//;
 	write_ace($rearr, "Clone_inside", $clone);
       }
     }
-    if ($_ =~ /^Breakpt_Data_provider[:|\s:]\s(.+)/){
-      @providers = split(/,/, $1);
+    if ($_ =~ /^Breakpt_Data_provider(:|\s:)\s+(.+)/){
+      @providers = split(/,/, $2);
       foreach $person (@providers){
 	$person =~ s/^\s//;
 	write_ace($rearr, "Author", $person);
@@ -781,16 +789,16 @@ sub gene_mapping {
     # parse gene_class
     ##################
     
-    if ($_ =~ /GeneClass_[gG]ene_name[:|\s:]\s(.+)/){
+    if ($_ =~ /GeneClass_[gG]ene_name(:|\s:)\s+(.+)/){
       $gene_class = $1; 
       write_ace($1, "\n\nGene_Class : ", $1);
       write_ace($1, "CGC_approved");
     }
-    if ($_ =~ /GeneClass_[pP]henotype[:|\s:]\s(.+)/){write_ace($gene_class, "Phenotype", $1)}
-    if ($_ =~ /GeneClass_[lL]aboratory[:|\s:]\s(.+)/){write_ace($gene_class, "Designating_laboratory", $1)}
-    if ($_ =~ /GeneClass_[cC]omment[:|\s:]\s(.+)/){
-      $remark = $1; $remark =~ s/^\s//; $remark .= " [$date ck1]";
-      write_ace($gene_class, "Remark", $remark);
+    if ($_ =~ /GeneClass_[pP]henotype(:|\s:)\s+(.+)/){write_ace($gene_class, "Phenotype", $2)}
+    if ($_ =~ /GeneClass_[lL]aboratory(:|\s:)\s+(.+)/){write_ace($gene_class, "Designating_laboratory", $2)}
+    if ($_ =~ /GeneClass_[cC]omment(:|\s:)\s+(.+)/){
+      $remark = $2; $remark =~ s/^\s//; #$remark .= " [$date ck1]";
+      write_ace($gene_class, "Remark", "$remark\"\tCGC_data_submission");
     }
   }
   
@@ -821,10 +829,13 @@ sub gene_mapping {
       push(@{$obj_info{$obj}},  "$tag\t$value");
     }
     elsif ($tag eq "CGC_approved"){
-      push(@{$obj_info{$obj}},  "$tag");
+      push(@{$obj_info{$obj}}, "$tag");
     }
+    elsif ($tag eq "Description"){
+      push(@{$obj_info{$obj}}, "$tag\t\"$value\"");
+    }  
     else {
-      push(@{$obj_info{$obj}},  "$tag\t\"$value\""); # quotation different
+      push(@{$obj_info{$obj}}, "$tag\t\"$value\""); # quotation different
     }
     
     foreach (keys %obj_info){
