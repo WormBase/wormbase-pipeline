@@ -22,8 +22,6 @@ my $maintainers = "All";
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
 
-# grab version number from cvs
-my $version = &get_cvs_version($0);
 
 ##############################
 # command-line options       #
@@ -47,7 +45,7 @@ $maintainers = "dl1\@sanger.ac.uk" if ($debug);
 # Paths etc                  #
 ##############################
 
-my $tace      = "/nfs/disk100/wormpub/acedb/ace4/bin.ALPHA_4/tace";      # tace executable path
+my $tace      = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";      # tace executable path
 my $dbpath    = "/wormsrv2/autoace";                                      # Database path
 
 ########################################
@@ -60,7 +58,6 @@ open (LOG,">$log");
 LOG->autoflush();
 
 print LOG "# inherit_GO_terms\n";     
-print LOG "# version        : $version\n";
 print LOG "# run details    : $rundate $runtime\n";
 print LOG "\n";
 
