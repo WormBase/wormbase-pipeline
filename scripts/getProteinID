@@ -7,8 +7,8 @@
 #
 # dl
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2003-06-23 14:07:01 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2003-07-02 09:49:16 $
 
 use lib "/wormsrv2/scripts/";
 use Wormbase;
@@ -27,6 +27,13 @@ our %databases = (
 		  'TR' => 'TREMBL',
 		  'TN' => 'TREMBLNEW'
 		  );
+
+my %db_ids_acc = (
+		  'SW_id' => 'SwissProt_ID',
+		  'SW_ac' => 'SwissProt_AC',
+		  'TR_ac' => 'TrEMBL_AC',
+		  'TN_ac' => 'TrEMBLNEW_AC'
+		 );
 
 ######################################
 # variables and command-line options # 
@@ -101,7 +108,8 @@ while (<FILE>) {
     if ($protein) {
 	print "$protein";
 	print OUT "\nProtein : WP:$protein\n";
-	print OUT "Database $databases{$dbxref_db} $dbxref_id $dbxref_ac\n";
+	print OUT "Database $databases{$dbxref_db} ",$db_ids_acc{$dbxref_db."_id"}," $dbxref_id\n" if($dbxref_id and(  "$dbxref_id" ne "$dbxref_ac"));
+	print OUT "Database $databases{$dbxref_db} ",$db_ids_acc{$dbxref_db."_ac"}," $dbxref_ac\n";
 	foreach (@interpro) {
 	    print OUT "Motif_homol\t\"INTERPRO:$_\"\n"
 	    }
