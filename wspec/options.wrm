@@ -46,150 +46,113 @@
      recompilation.
   */
 
-// use the following for Arun Aggrawal's synmap 
-// but note that they will not work with tace unless you
-// register the -M options in displays.wrm, with dummy values
-//  _VMap              -V -D SYN -M STSMAP
-//  _VAssembly         -V -D SYN -M DOGMAP
-//  _VClone            -V -D SYN -M CloneMAP
 
-_VMap              -V -D GMAP  
+
+// Sequence, protein, domain related classes
+
 _VSequence         -V -D FMAP
+_VCDS		   -V -D FMAP
 _VTranscript	   -V -D FMAP
--VTransposon       -V -D FMAP
 _VPseudogene	   -V -D FMAP
-_VClone            -V -D PMAP
-_VGenetic_code	   -V 
+_VTransposon	   -V -D FMAP
+_VProtein	   -V -D PEPMAP
+
+
+// other sequence/SMapped related classes
+
+_VFeature	   -V
+_VHomol_data       -V -D FMAP
+_VFeature_data     -V -D FMAP
+_VMotif            -V -D WWW
+_VOperon           -V
+_VOligo		   -V
+_VUTR		   -V -D FMAP
+
+// literature 
 
 _VAuthor           -V 
 _VPerson	   -V -T Standard_name
 _VPerson_name	   -V
 _VJournal          -V
 _VPaper            -V -T Brief_citation
-_VDatabase         -V
 
-_VGene_Class       -V
-_VLocus            -V -D GMAP 
+
+// genetics / CGC stuff
+
+_VGene_class       -V
 _VGene_name	   -V
+_VLocus            -V -D GMAP 
 _VRearrangement    -V -D GMAP
-
+_VMap              -V -D GMAP  
+_VMultiMap	   -H -D DtMULTIMAP
+_VManyMap          -H -D GMAP
+_VContig           -H -D PMAP
+_VClone            -V -D PMAP
 _VAllele           -V
 _VStrain           -V -T Genotype 
 _VLaboratory       -V
-
 _V2_point_data     -H -T Genotype 
 _VMulti_pt_data    -H -T Genotype
 _VPos_neg_data     -H -T Results 
 
-_VMotif            -V -D WWW
 
-_VContig           -H -D PMAP
+// worm biology
 
-_VProtein	   -V -D PEPMAP
-_VAlignment	   -V
-_VMethod	   -V
-_VWormpep	   -V -D PEPMAP
-_VGrid             -V -D GRID
-_VSpecies          -H
-
-_VExpr_pattern	   -V
-
-// Added for new data from citace krb 04/10/01
-_VExpr_profile	   -V
-_VSK_map	   -V
-
-
-// Added to match new class created by kj2 and dl1 25/02/02
-
-
-// Added for operon analysis
--VOperon           -V
-
-_VMultiMap	   -H -D DtMULTIMAP
-_VManyMap          -H -D GMAP
-
-
-// No longer needed krb 20/09/01
-//_VPathway	   -V -D METAB
-//_VEnzyme	   -V
-//_VMetabolite	   -H
-
-_VView		   -V
 _VCell             -V
 _VCell_group       -H
 _VLife_stage       -H
-_VAnatomy_term     -V
-_VAnatomy_name     -V
 
-_VPicture	   -H
+
+
+// database related classes
 
 _VAccession_number -H
-_VTree             -V -D DtDendrogram
-_VTreeNode         -H -D DtDendrogram
+_VDatabase         -V
 
-//added to allow URL objects to call netscape 
-_VUrl		   -V -D WWW
 
-// Jade class for Lincoln/Jean added by rd 000307
-_VJade		   -H
 
-// RNAi class added by LS 11/18/2000
-_VRNAi             -V
+// classes curated from literature
+_VExpr_pattern	   -V
+_VExpr_profile	   -V
 _VPCR_product      -V
-
-
-// Microarray related classes
-_VSK_map	   -H
-_VMicroarray	   -H
-_VMicroarray_result -H
-_VMicroarray_results -H
-_VMicroarray_experiment -H
-_VMicroarray_aff -H
-_VCondition -H
-_VCluster -H
-_VOligo_set -H
-
-
-// Added krb 04/10/01
-_VOligo		   -V
-
-// phenotypes and RNAis
 _VPhenotype        -V
-
-// Transgenes from Wen
+_VRNAi             -V
+_VSK_map	   -V
 _VTransgene        -V
 
-// GO terms
+
+// microarray related
+
+_VMicroarray       -V
+_VMicroarray_aff   -V
+_VMicroarray_experiment       -V
+_VMicroarray_result       -V
+_VMicroarray_results       -V
+_VOligo_set        -V
+
+
+// misc classes (may not be used), some acedb internal classes
+
+_VAlignment	   -V
+_VGrid             -V -D GRID
+_VJade		   -H
+_VMethod	   -V
+_VPicture	   -H
+_VSpecies          -H
+_VTree             -V -D DtDendrogram
+_VTreeNode         -H -D DtDendrogram
+_VView		   -V
+_VAnatomy_term 	   -V
+_VAnatomy_name 	   -V
+_VAntibody         -V
+_VCluster          -V
+_VCondition        -V
+_VGene_regulation  -V
+_VGenetic_code     -V
+_VHomology_group   -V
+_VMovie            -H
 _VGO_term	   -V
 _VGO_code	   -V
-
-// Others
-_VHomol_data       -V -D FMAP
-_VFeature_data     -V -D FMAP
-
-// Feature class
-_VFeature	   -V
-
-// UTR
-_VUTR		   -V -D FMAP
-
-
-// Transposons
-_VTransposon       -V -D FMAP
-
-// Addition to support Lincoln's new movie class, krb [010807]
-_VMovie            -H
-
-// The following lines are now obsolete and declared in kernel
-// _VgMap		   -A -H -D GMAP
-// _VvMap		   -A -H -D VMAP
-// _VpMap             -A -H -D PMAP
-// _VDNA              -A -H -D FMAP
-// _VPeptide	      -A -H
- 
-
-
-
 
 
 

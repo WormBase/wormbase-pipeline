@@ -49,15 +49,6 @@ Hidden
 Is_a_subclass_of Sequence
 Filter Repeat_consensus
 
-Class Predicted_gene
-Visible
-Is_a_subclass_of Sequence
-Filter "((Method = curated) OR (Method = provisional)) AND (Species = C*elegans)"
-
-Class Briggsae_predicted
-Visible
-Is_a_subclass_of Sequence
-Filter "((Method = curated) OR (Method = provisional)) AND (Species = C*briggsae)"
 
 Class NDB_Sequence
 Visible
@@ -66,13 +57,61 @@ Filter "Method = NDB"
 
 
 
+// ?CDS subclasseses
+Class elegans_CDS
+Visible
+Is_a_subclass_of CDS
+Filter "((Method = curated) OR (Method = provisional)) AND (Species = C*elegans)"
+
+Class briggsae_CDS
+Visible
+Is_a_subclass_of CDS
+Filter "((Method = curated) OR (Method = provisional)) AND (Species = C*briggsae)"
+
+
+
+// ?Transcript subclasseses
+Class elegans_RNA_genes
+Visible
+Is_a_subclass_of Transcript
+Filter "(NOT Method = Transcript) AND (Species = C*elegans)"
+
+Class briggsae_RNA_genes
+Visible
+Is_a_subclass_of Transcript
+Filter "(NOT Method = Transcript) AND (Species = C*briggsae)"
+
+Class Coding_transcripts
+Visible
+Is_a_subclass_of Transcript
+Filter "(Method = Coding_transcript) AND (Species = C*elegans)"
+
+
+
+// ?Pseudogene subclasseses
+Class elegans_pseudogenes
+Visible
+Is_a_subclass_of Pseudogene
+Filter "(Method = Pseudogene) AND (Species = C*elegans)"
+
+Class briggsae_pseudogenes
+Visible
+Is_a_subclass_of Pseudogene
+Filter "(Method = Pseudogene) AND (Species = C*briggsae)"
+
+
+
 // ?Protein subclasses
 
 Class Wormpep
 Visible
 Is_a_subclass_of Protein
-Filter "Wormpep AND Live"
+Filter "Wormpep AND Live AND (Species = C*elegans)"
 
+Class Brigpep
+Visible
+Is_a_subclass_of Protein
+Filter "Brigpep AND Live AND (Species = C*briggsae)"
 
 
 // ?Map subclasses
