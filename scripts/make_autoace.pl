@@ -8,7 +8,7 @@
 # This makes the autoace database from its composite sources.
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-03-02 15:09:36 $
+# Last edited on: $Date: 2004-03-02 15:20:46 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -303,6 +303,7 @@ sub createdirs {
   my $argsize = scalar (@args1);
   if ($argsize == 0) {
     print "** No new directories to create .. end mkdirectories\n";
+    print LOG &runtime, ": Finished.\n\n";
     return;
   }
   my $command = "@args2 @args1";
