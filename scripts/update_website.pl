@@ -8,7 +8,7 @@
 # relevant WormBase and Wormpep web pages.
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-06-18 14:49:15 $      
+# Last updated on: $Date: 2004-06-18 15:54:44 $      
 
 
 #################################################################################
@@ -742,7 +742,7 @@ sub copy_GFF_files{
   print LOG "Copying across GFF files from /wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS\n";
 
   #simple double foreach loop to loop through each chromosome and file name
-  my @gff_files = ("clone_ends", "clone_path", "exon","intron_all", "clone_acc", "genes", "repeats", "intron", "rna", "UTR");
+  my @gff_files = ("clone_ends", "clone_path", "exon", "clone_acc", "genes", "repeats", "intron", "rna", "UTR");
   foreach my $chrom (@chrom) {
     foreach my $file (@gff_files){
       system("sort -u $gff/CHROMOSOME_$chrom.$file.gff | gff_sort > $www/$WS_name/GFF/CHROMOSOME_$chrom.$file.gff")
@@ -781,7 +781,7 @@ sub create_GFF_intron_files{
 
    # open old and new files
    open(OLDFILE, "<$www/$WS_previous_name/Checks/GFF_introns_confirmed_CDS_$lab.html") || croak "Couldn't read old $lab GFF intron file\n";
-   open(NEWFILE, ">$www/$WS_name/Checks/GFF_introns_$lab.html") || croak "Couldn't create new $lab GFF intron file\n";
+   open(NEWFILE, ">$www/$WS_name/Checks/GFF_introns_confirmed_CDS_$lab.html") || croak "Couldn't create new $lab GFF intron file\n";
 
    my $count = 0;
    # loop through old file replacing old info with new info from @line_counts 
