@@ -6,8 +6,8 @@
 # 
 # Attempt to unify all of the diverse scripts to fetch ESTs, OSTs, mRNAs etc. used by blat 
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2004-04-28 10:30:56 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2004-05-05 13:46:03 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -346,6 +346,7 @@ sub make_nematode_ests{
       print OUT_ACE "$_\n" if ($ace);
     }
     
+    if (/^AC\s+(\S+);/)        {$acc = $1};
     if (/^ID\s+(\S+)/)         {$id  = $1;}
     if (/^SV\s+(\S+\.\d+)/)    {$sv = $1;}
     if (/^DE\s+(.+)/)          {$def = $def." ".$1;}
@@ -414,6 +415,7 @@ sub make_embl_cds{
       print OUT_ACE "$_\n" if ($ace);   # print to output
     }
     
+    if (/^AC\s+(\S+);/)                        {$acc = $1};
     if (/^ID\s+(\S+)/)                         {$id  = $1;}
     if (/^SV\s+(\S+\.\d+)/)                    {$sv  = $1;}
     if (/^DE\s+(.+)/)                          {$def = $def." ".$1;}
