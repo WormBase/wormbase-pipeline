@@ -9,8 +9,8 @@
 # solely in the wormpep.history file.
 # 
 #
-# Last updated by: $Author: dl1 $                     
-# Last updated on: $Date: 2002-08-22 10:07:28 $     
+# Last updated by: $Author: ar2 $                     
+# Last updated on: $Date: 2002-10-14 09:04:49 $     
 
 use strict;                                     
 use lib "/wormsrv2/scripts/";                  
@@ -199,6 +199,10 @@ my $acefile = "/wormsrv2/autoace/wormpep_ace/pepace.ace";
 
 open (ACE, ">$acefile") || die "cant write $acefile\n";
 
+
+$CE_live{'CE25872'} = 1; #hard coded as this history is confused. Remove if CE25873 no longer valid
+
+
 #ace file for new Protein model (with History)
 foreach my $key(sort keys %CE_history) {
     print ACE "Protein : \"WP:$key\"\n";
@@ -235,12 +239,12 @@ chomp $live_peps; chomp $table_peps;
 print LOG "This file has $live_peps live peptides\n";
 print LOG "wormpep.table$ver suggests there should be $table_peps\n";
 
-if ( ($live_peps + 1) == $table_peps ) {
-    print LOG "\nso thats OK!\ntaking in to account 1 known problem - CE25872\n";
+if ( ($live_peps ) == $table_peps ) {
+    print LOG "\nso thats OK!\ntaking in to account 1 known problem - CE25872 -hard coded as live in the script\n";
 }
 else {
     print LOG "\n\n! ! ! ! THIS NEEDS ATTENTION ! ! ! !\n\n\n";
-    print LOG "\n1 known problem - CE25872\n";
+    print LOG "\n1 known problem - CE25872 is hard coded as LIVE in $0\n Check this is still valid dequence F36D3.1";
 }
 
 my $date = `date`;
