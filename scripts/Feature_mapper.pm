@@ -211,15 +211,22 @@ sub check_overlapping_CDS
 
 	while (<GFF>) {
 	  # CHROMOSOME_I curated CDS 222722  223159  . + . CDS "Y48G1BM.3" wp_acc=CE26120
-	  if ( ( /curated/ and /CDS/) or (/RNA/ and /Transcript/) ) {
-	    my @data = split;
-	    next unless( "$data[2]" eq "CDS" ); #using full gff so only need 'curated' 'CDS'?
+	  my @data = split;
+	  # look for just protein or RNA genes by examining GFF_source and GFF_feature
+	  if(($data[1] eq "curated"               && $data[2] eq "CDS") ||
+	     ($data[1] eq "miRNA"                 && $data[2] eq "miRNA_primary_transcript") ||
+	     ($data[1] eq "snoRNA"                && $data[2] eq "snoRNA_primary_transcript") ||
+	     ($data[1] eq "tRNAscan-SE-1.23"      && $data[2] eq "tRNA_primary_transcript") ||
+	     ($data[1] eq "snRNA"                 && $data[2] eq "snRNA_primary_transcript") ||
+	     ($data[1] eq "rRNA"                  && $data[2] eq "rRNA_primary_transcript") ||
+	     ($data[1] eq "Non_coding_transcript" && $data[2] eq "nc_primary_transcript") ||
+	     ($data[1] eq "scRNA"                 && $data[2] eq "scRNA_primary_transcript")){
 	    $data[9] =~ s/\"//g;
 	    my $gene = $data[9];
 	    my $end5 = $data[3];
 	    my $end3 = $data[4];
-	    $self->{'CHROM2GENE_POS'}->{"$chromosome"}->{"$gene"} = [$end5, $end3];
-	  }
+	    $self->{'CHROM2GENE_POS'}->{"$chromosome"}->{"$gene"} = [$end5, $end3];	     
+	   }
 	}
 	close GFF;
       }
