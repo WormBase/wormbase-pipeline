@@ -1070,7 +1070,7 @@
                 SMap S_Parent Sequence UNIQUE ?Sequence XREF Pseudogene      
                 Structure Source_exons Int UNIQUE Int
                 DB_info DB_remark ?Text #Evidence
-                        Database ?Database ?Text ?Accession_number XREF Sequence UNIQUE Int 
+                        Database ?Database ?Text ?Accession_number XREF Pseudogene UNIQUE Int 
                 Origin  From_laboratory UNIQUE ?Laboratory
                         Species UNIQUE ?Species
                 Type    UNIQUE Coding_pseudogene Text // [110803 dl] 
@@ -1203,6 +1203,7 @@
 			 Protein ?Protein
 			 Motif ?Motif
 			 Transcript ?Transcript // added for Lincoln [030228 krb]
+			 Pseudogene ?Pseudogene 
 		   Web_location ?Database // use for WWW display
 
 // The following is the model supported by wwwDisplay() in w4/display.c
