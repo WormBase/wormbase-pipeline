@@ -8,7 +8,7 @@
 # and virtual objects to hang the data onto
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-09-11 16:43:49 $
+# Last edited on: $Date: 2003-09-26 12:57:51 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -25,6 +25,7 @@ use Carp;
 my ($help, $debug, $verbose, $est, $mrna, $ost, $nematode, $embl, 
     $blat, $process, $virtual, $dump, $camace, $fine);
 my $maintainers = "All";
+my $errors = 0;
 our $log;
 our $blat_dir = "/wormsrv2/autoace/BLAT"; # default BLAT directory, can get changed if -camace used
 our $dbpath = "/wormsrv2/autoace"; # default database location
@@ -181,13 +182,13 @@ if ($process) {
   
   # treat slightly different for nematode data (no confirmed introns needed)
   if ($nematode) {
-    system("$bin/blat2ace.pl -$data") && croak "Mapping failed\n"; 
+    &run_command("$bin/blat2ace.pl -$data"); 
   }
   elsif($camace){
-    system("$bin/blat2ace.pl -$data -intron -camace") && croak "Mapping failed\n"; 	
+    &run_command("$bin/blat2ace.pl -$data -intron -camace"); 	
   }
   else {
-    system("$bin/blat2ace.pl -$data -intron") && croak "Mapping failed\n"; 
+    &run_command("$bin/blat2ace.pl -$data -intron"); 
   }
 
   $runtime = &runtime;
@@ -224,8 +225,15 @@ if ($virtual) {
 
 close(LOG);
 
-# mail log to maintainer
-&mail_maintainer("WormBase Report: blat_them_all ",$maintainers,$log);
+# send log
+# warn about errors in subject line if there were any
+if($errors == 0){
+  &mail_maintainer("BUILD SCRIPT: blat_them_all",$maintainers,$log);
+}
+else{
+  &mail_maintainer("BUILD SCRIPT: blat_them_all: $errors ERROR!",$maintainers,$log);
+}
+
 
 exit(0);
 
@@ -293,7 +301,7 @@ sub dump_dna {
   }
   
   # tace dump chromosomal DNA and superlinks file
-  system("echo '$command' | $giface $dbpath") && &usage(5);
+  &run_command("echo '$command' | $giface $dbpath");
 
   # Check that superlinks file created ok
   &usage(11) unless (-e "${blat_dir}/superlinks.ace");
@@ -653,6 +661,21 @@ sub usage {
 ######################################################################################################
 
 
+sub run_command{
+  my $command = shift;
+  print LOG &runtime, ": started running $command\n";
+  my $status = system($command);
+  if($status != 0){
+    $errors++;
+    print LOG "ERROR: $command failed\n";
+  }
+  print LOG &runtime, ": finished running $command\n";
+
+  # for optional further testing by calling subroutine
+  return($status);
+}
+
+################################################################
 sub create_log_files{
 
   my $WS_version = &get_wormbase_version_name;
