@@ -8,13 +8,16 @@
 # Page download and update upload to geneace has been automated [ck1]
 
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2004-03-19 11:59:04 $
+# Last updated on: $Date: 2004-05-10 14:48:36 $
 
 use strict;
 use Getopt::Std;
-use lib "/wormsrv2/scripts";
+use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
 use Cwd 'chdir';
+use lib "/nfs/team71/worm/ck1/WORMBASE_CVS/scripts/";
+use GENEACE::Geneace;
+
 
 #######################
 # check user is wormpub
@@ -66,6 +69,11 @@ open(STRAIN,">cgc_strain_info_$rundate.ace") || die "cant create output file1\n"
 
 my $current_strain_ace = "cgc_strain_info_$rundate.ace";
 
+# get hash to convert CGC name to Gene id
+my $ga = init Geneace();
+my %Gene_info = $ga -> gene_info();
+
+
 # Count how many strains to loop through
 my $strain_count = `grep Strain: $input_file | wc -l`;
 
@@ -99,8 +107,8 @@ while(<INPUT>){
   $species =~ s/\s+$//g;
   $ace_object .= "Species : \"$species\"\n";
   $delete_ace_object .= "Species : \"$species\"\n";
-  
- 
+
+
   my $genotype;
   m/Genotype: (.*?)Description:/;
   $genotype = $1;
@@ -129,7 +137,7 @@ while(<INPUT>){
     $genotype =~ s/[Ca-z\-]{3,6}\-\d+\([a-z]{1,2}\d+\)//;
     $counter++;
   }
-  
+
   # find chromosomal aberrations e.g. szT1
   $counter = 0;
   while($genotype =~ m/([a-z]{1,2}(Dp|Df|In|T|C)\d+)/){
@@ -144,7 +152,7 @@ while(<INPUT>){
     $genotype =~ s/[a-z]{1,2}(Ex|Is)\d+//;
     $counter++;
   }
-  
+
   # find double barrelled alleles (revertants) e.g. daf-12(rh61rh412) 
   $counter = 0;
   while($genotype =~ m/([Ca-z\-]{3,6}\-\d+)\(([a-z]{1,2}\d+)([a-z]{1,2}\d+)\)/){
@@ -172,17 +180,17 @@ while(<INPUT>){
     $genotype =~ s/[Ca-z\-]{3,6}\-\d+//;
     $counter++;
   }
-  
-  foreach my $i (@loci) {$ace_object .= "Gene $i\n";}
-  foreach my $i (@loci2) {$ace_object .= "Gene $i\n";}
+
+  foreach my $i (@loci) {$ace_object .= "Gene $Gene_info{$i}{'CGC_name'}\n";}
+  foreach my $i (@loci2) {$ace_object .= "Gene $Gene_info{$i}{'CGC_name'}\n";}
   foreach my $i (@alleles){$ace_object .= "Allele $i\n";}
   foreach my $i (@alleles2){$ace_object .= "Allele $i\n";}
   foreach my $i (@alleles3){$ace_object .= "Allele $i\n";}
   foreach my $i (@rearrangements){$ace_object .= "Rearrangement $i\n";}
   foreach my $i (@transgenes){$ace_object .= "Transgene $i\n";}
 
-  foreach my $i (@loci) {$delete_ace_object .= "-D Gene $i\n";}
-  foreach my $i (@loci2) {$delete_ace_object .= "-D Gene $i\n";}
+  foreach my $i (@loci) {$delete_ace_object .= "-D Gene $Gene_info{$i}{'CGC_name'}\n";}
+  foreach my $i (@loci2) {$delete_ace_object .= "-D Gene $Gene_info{$i}{'CGC_name'}\n";}
   foreach my $i (@alleles){$delete_ace_object .= "-D Allele $i\n";}
   foreach my $i (@alleles2){$delete_ace_object .= "-D Allele $i\n";}
   foreach my $i (@alleles3){$delete_ace_object .= "-D Allele $i\n";}
@@ -209,7 +217,7 @@ while(<INPUT>){
   $mutagen =~ s/\s+$//g;
   $ace_object .= "Mutagen \"$mutagen\"\n" unless ($mutagen eq "");
   $delete_ace_object .= "-D Mutagen \"$mutagen\"\n" unless ($mutagen eq "");
-  
+
   my $outcrossed;
   m/Outcrossed: (.*?)Reference:/;
   $outcrossed = $1;
@@ -281,7 +289,7 @@ foreach (@dir){
 @deleteACE=sort @deleteACE;
 $last_delete_ace=$deleteACE[-2];
 print "\n\nDelete_ace file from last update: $last_delete_ace\n\n";
-       
+
 my $command=<<END;
 find strain "*"
 show -a -T -f $backup_file
@@ -306,7 +314,7 @@ close FH;
 
 sub usage {
     system ('perldoc',$0);
-    exit;       
+    exit;
 }
 
 
