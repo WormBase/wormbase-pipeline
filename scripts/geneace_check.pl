@@ -7,7 +7,7 @@ use strict;
 my $maintainer = "All";
 my $rundate    = `date +%y%m%d`; chomp $rundate;
 
-my $log = "/wormsrv2/logs/$0.log";
+my $log = "/wormsrv2/logs/geneace_check.log.$rundate";
 open(LOG,">$log")|| die "cant open $log";
 print LOG "$0 started at ",`date`,"\n";
 print LOG "=============================================\n";
@@ -20,20 +20,28 @@ my @loci = $db->fetch(-class => 'Locus',
 		      -name  => '*');
 my $locus;
 my $logstring;
-foreach $locus (@loci)
-{
-  print "\nLOCUS: $locus\n";
-  my $warnings;
-  # check for various potential errors in the Locus object
-  #$warnings = &test_locus_for_errors($locus);
-  if(defined($warnings))
-    {
-      print $warnings;
-    }
-  $logstring .= OtherNameCheck($db,$locus,@loci);
+my $checklocus = 0;
+if ($checklocus == 1)
+  {
+    foreach $locus (@loci)
+      {
+	#print "\nLOCUS: $locus\n";
+	my $warnings;
+	# check for various potential errors in the Locus object
+	#$warnings = &test_locus_for_errors($locus);
+	if(defined($warnings))
+	  {
+	    print $warnings;
+	  }
+	# $logstring .= OtherNameCheck($db,$locus,@loci);
+      }
+  }
+      
+my $CDBstring .= FindCurrent_DB_loci(@loci);
 
-}
+print LOG "$CDBstring";
 
+#print the output of the OtherNameCheck subroutine
 print LOG "\n\n-------------------------------------\n
 These are loci that have Name.Other_name tags, but the locus object being\n
 referered to does not have a Name.New_name tag\n\n";
@@ -45,7 +53,7 @@ print LOG "===========================================\n";
 #Locus_genomic_seq.
 
 #Erich Schwarz wants this info - emsch@its.caltech.edu
-my $findLGS = 1;
+my $findLGS = 0;
 
 if ($findLGS == 1)
 {
@@ -87,8 +95,45 @@ close LOG;
 $maintainer = "ar2\@sanger.ac.uk";
 &mail_maintainer($0,$maintainer,$log);
 
-##############################################
+################################################
+sub FindCurrent_DB_loci
+{
+  my $returnstring;
+  my @GEN_loci = @_;
+  #make hash of loci (from wormsrv1/geneace)
+  my %GEN_loci_check;
+  
+  foreach my $loci(@GEN_loci)
+    {
+      $GEN_loci_check{$loci} = 0;
+    }
+  
+  # open a local database connection
+  my $db = Ace->connect(-path  => '/wormsrv2/current_DB');
 
+  #check for non-polymorphism loci that are in current_DB but not geneace
+  my $query = <<END;
+  Find Locus !Polymorphism
+END
+
+  my @CDB_loci = $db->fetch(-query=>"$query");
+  $db->close;
+
+  $returnstring .= "\n\n\n----------------------------------------------
+These loci are in current_DB but not geneace -\n\n";
+  foreach my $loci(@CDB_loci)
+    {
+      unless(defined ($GEN_loci_check{$loci}))
+	{
+	  $returnstring .= "\t$loci is in current_DB but not geneace!\n"
+	}
+    }
+  $returnstring .= "==========================================\n\n\n\n";
+}
+
+
+
+###############################################
 sub OtherNameCheck
   {
     my($db,$locus,@loci) = @_;
