@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-08-11 10:30:56 $
+# Last updated on: $Date: 2003-08-11 10:36:48 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -1507,6 +1507,7 @@ sub test_locus_for_errors{
     if ($ace){
       print ACE "\n\nLocus : \"$locus\"\n";
       print ACE "Gene\n";
+      print ACE "Non_CGC_name \"$locus\"\n";
     }
     $locus_errors++;
   }
