@@ -228,7 +228,7 @@ my $sth = $dbh->prepare ( q{ SELECT analysisId, db
 $sth->execute;
 
 while (my @row = $sth->fetchrow_array) {
-    if ($row[1] =~ /(wormpep|gadfly|ensembl|yeast|slimswissprot|slimtrembl|SWTRE)/) {
+    if ($row[1] =~ /(wormpep|gadfly|ensembl|yeast|slimswissprot|slimtrembl|human)/) {
         my $org;
         if    ($1 =~ /wormpep/)       {$org = "worm";}
         elsif ($1 =~ /gadfly/)        {$org = "fly";}
@@ -236,7 +236,7 @@ while (my @row = $sth->fetchrow_array) {
         elsif ($1 =~ /yeast/)         {$org = "yeast";}
         elsif ($1 =~ /slimswissprot/) {$org = "slimSwissProt";}
         elsif ($1 =~ /slimtrembl/)    {$org = "slimTrEMBL";}
-	elsif ($1 =~ /SWTRE/)     {$org = "ipi_human";}
+	elsif ($1 =~ /human/)         {$org = "human";}
         $analysis2org{$row[0]} = $org;
     }
 }
