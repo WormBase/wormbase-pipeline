@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-08-02 17:09:44 $
+# Last edited on: $Date: 2004-08-02 17:15:41 $
 
 
 
@@ -1300,6 +1300,8 @@ sub map_features {
     
   $am_option = "-map";
 
+  my $file;
+
   # make GFF split files as they are needed for the RNAi and PCR mapping
   &run_command("$scriptdir/GFFsplitter.pl");
 
@@ -1310,7 +1312,7 @@ sub map_features {
   #Loads feature data into autoace with tsuser set to feature type.
   my @features = ("SL1", "SL2", "polyA_site", "polyA_signal",);
   foreach my $feature (@features) {
-    my $file = "$basedir/autoace/FEATURES/WS${WS_version}_feature_${feature}.ace";
+    $file = "$basedir/autoace/FEATURES/WS${WS_version}_feature_${feature}.ace";
     &load($file,"feature_${feature}");
   }
   
@@ -1328,13 +1330,13 @@ sub map_features {
 
   # Y2H objects
   &run_command("$scriptdir/map_Y2H.pl");
-  my $file = "$basedir/wormbase/misc_dynamic/misc_Y2H_connections.ace";
+  $file = "$basedir/wormbase/misc_dynamic/misc_Y2H_connections.ace";
   &load($file,"Y2H_connections");
 
   # microarray connections
   &run_command("$scriptdir/map_microarray.pl");
 
-  my $file = "$basedir/wormbase/misc_dynamic/misc_microarrays.ace";
+  $file = "$basedir/wormbase/misc_dynamic/misc_microarrays.ace";
   &load($file,"microarray_connections");
 
 }
