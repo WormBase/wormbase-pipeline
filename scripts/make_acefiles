@@ -2,12 +2,16 @@
 #
 # make_acefiles will make all the acefiles for autoace building
 #
-# v 1.3
+# v 1.14
 #
-# dl1
+# dl1 et al
 #
 # Usage : make_acefiles [-options]
 #
+
+# v1.14
+# 010829 : dl  : Added stlace and briggsae timestamp parsing lines to subroutine
+#                'process_ace_file'
 
 # v1.3
 # 010717 : dl  : Altered the SRS call for nematode EST sequences
@@ -262,6 +266,8 @@ sub mknewacefiles {
 
 	&process_ace_file($filename,$dbname) if ($filename =~ m/geneace/);
 	&process_ace_file($filename,$dbname) if ($filename =~ m/camace/);
+	&process_ace_file($filename,$dbname) if ($filename =~ m/briggsae/);
+	&process_ace_file($filename,$dbname) if ($filename =~ m/stlace/);
 
 	# when we dump timestamps from everything we can just use the following line:
 	# &process_ace_file($filename,$dbname);
@@ -498,31 +504,48 @@ END
 ########################################################################
 
 sub process_ace_file{
-  my $filename = shift;
-  my $database = shift;
+    my $filename = shift;
+    my $database = shift;
 
-  print LOG "Changing timestamp information to contain $database\n\n";
-
-  open (INPUT, "<$filename") || die "Couldn't open $filename for reading\n";
-  open (OUTPUT, ">${filename}.tmpfile") || die "Couldn't write to tmpfile\n";
+    print LOG "Changing timestamp information to contain $database\n\n";
+    
+    open (INPUT, "<$filename") || die "Couldn't open $filename for reading\n";
+    open (OUTPUT, ">${filename}.tmpfile") || die "Couldn't write to tmpfile\n";
 
     
-  while (<INPUT>) {
-    if (/_wormpub/) {
-      s/_wormpub/_$database/g;
-      print OUTPUT "$_";
+    while (<INPUT>) {
+	# wormpub -> camace
+	if (/_wormpub/) {
+	    s/_wormpub/_$database/g;
+	    print OUTPUT "$_";
+	}
+	# sylvia -> geneace
+	elsif(/_sylvia/){
+	    s/_sylvia/_$database/g;
+	    print OUTPUT "$_";
+	}
+	# analysis -> stlace/briggsae
+	elsif(/_analysis/){
+	    s/_analysis/_$database/g;
+	    print OUTPUT "$_";
+	}
+	# acedb -> citace
+	elsif(/_acedb/){
+	    s/_acedb/_$database/g;
+	    print OUTPUT "$_";
+	}
+	# geneace -> citace (eek - i don't like this one).
+	elsif(/_geneace/){
+	    s/_geneace/_$database/g;
+	    print OUTPUT "$_";
+	}
+	else {
+	    print OUTPUT "$_";
+	} 
     }
-    elsif(/_sylvia/){
-      s/_sylvia/_$database/g;
-      print OUTPUT "$_";
-    }
-    else {
-      print OUTPUT "$_";
-    } 
-  }
-  close(INPUT);
-  close(OUTPUT);
-  system ("mv -f ${filename}.tmpfile $filename");
+    close(INPUT);
+    close(OUTPUT);
+    system ("mv -f ${filename}.tmpfile $filename");
 }
 
 
