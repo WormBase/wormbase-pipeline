@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-10-02 14:22:33 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2003-10-24 11:04:08 $
 
 
 #################################################################################
@@ -1165,7 +1165,7 @@ sub map_features {
   &run_command("$scriptdir/map_RNAi.pl");
 
   # alleles
-  &run_command("$scriptdir/map_alleles.pl");
+  &run_command("$scriptdir/map_Alleles.pl");
 
 }
 #__ end map_features __#
