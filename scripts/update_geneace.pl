@@ -88,7 +88,7 @@ $menu_Option->AddItems(
 		       "-",
 	               ["command" => "CGC strain -> .ace", command => \&update_strain],
 		       "-",
-                       ["command" => "EMBL Release to Geneace -> .ace", command => \&update_EMBL_geneace],
+                       ["command" => "St. Louis isoforms update -> .ace", command => \&cds_has_isoforms],
 		      );
 
 my $clear = $btn_frame->Photo(-file =>"/wormsrv1/chaokung/DOCS/empty.gif");
@@ -131,6 +131,32 @@ MainLoop();
 # subroutines
 #############
 
+sub cds_has_isoforms {
+  open (IN, $filename) || die "Can't read in $filename";
+  my ($locus, $seq, $iso, $database, $acc, @Update);
+  while (<IN>){
+    chomp;
+    if ($_ =~ /(.+)\s+\((\w{3,3}-\d+)\)\sis now:/){
+      $locus = $2;
+      $seq = $1;
+      push(@Update, "\n\nLocus : \"$locus\"\n");
+    }
+    if ($_ =~ /(.+)\s+\((\w+)\s(\w+)\)\s+CDS/){
+      $iso = $1;
+      $database = $2;
+      $acc = $3;
+      $iso =~ /$seq/;
+      if ("$seq" eq "$&"){
+	push(@Update, "Genomic_sequence \"$iso\" Accession_evidence \"$database\" \"$acc\"\n");
+      }
+    }
+  }
+  foreach (@Update){
+    print $_,;
+    $ace_window -> insert('end',"$_");
+  }   
+}  
+ 
 sub add_location_to_allele {
 
   my $allele_designation_to_LAB=<<EOF;
