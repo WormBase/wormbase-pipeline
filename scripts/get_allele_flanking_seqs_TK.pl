@@ -4,8 +4,8 @@
 
 # by Chao-Kung Chen [030625]
 
-# Last updated on: $Date: 2003-12-01 11:54:26 $
-# Last updated by: $Author: krb $
+# Last updated on: $Date: 2004-01-06 17:09:26 $
+# Last updated by: $Author: ck1 $
 
 use Tk;
 use strict;
@@ -440,12 +440,14 @@ sub run {
   my $exon_tbl = "/wormsrv1/geneace/ALLELE_DATA/EXON_TABLES";
 
   $current = `grep "NAME WS" $curr_db/wspec/database.wrm`; $current =~ s/NAME //; chomp $current;
-  @archive = `ls $exon_tbl`; foreach (@archive){chomp; if ($_ =~ /CDS.+(WS\d+)/){$archive = $1}} 
+  @archive = `ls $exon_tbl`; foreach (@archive){chomp; if ($_ =~ /.+(WS\d+)/){$archive = $1}} 
 
   if ("$current" ne "$archive") {	
     push(@output, "New WS release available . .\nFetching latest source exons of all CDS/Transcripts and 6 chromosomal DNA sequencs\n\n");
     system ("rm -f $exon_tbl/* ");
-    `echo "table-maker -o $exon_tbl/CDS_exons_$current -p /wormsrv1/geneace/wquery/get_CDS_source_exons.def" | $tace $curr_db`;  
+    `echo "table-maker -o $exon_tbl/CDS_table_$current -p /wormsrv1/geneace/wquery/get_elegans_CDS_source_exons.def" | $tace $curr_db`;
+    `echo "table-maker -o $exon_tbl/RNA_table_$current -p /wormsrv1/geneace/wquery/get_elegans_RNA_gene_source_exons.def" | $tace $curr_db`;
+    system ("cat $exon_tbl/CDS_table_$current $exon_tbl/RNA_table_$current > $exon_tbl/ExonTable_$current; rm -f $exon_tbl/*table_$current");
     system ("chmod 775 $exon_tbl/* ");
   }
 
@@ -544,7 +546,7 @@ sub run {
     # fetch source exons of a CDS/Transcript
     ########################################
 
-    my @exons = `grep $cds $exon_tbl/CDS*`;
+    my @exons = `grep $cds $exon_tbl/ExonTable*`;
 
     ########################################################################################
     # retrieving flank seq of a specified codon or mutation site via exons_to_codons routine
@@ -682,11 +684,11 @@ sub exons_to_codons {
   }  
 
 
-  push(@output, "\n$prot[$position-1]($position) = "." @{$codon_seq{$position}}->[0] (". (@{$codon_seq{$position}}->[1]-30) .") @{$codon_seq{$position}}->[2] (". (@{$codon_seq{$position}}->[3]-30) . ") @{$codon_seq{$position}}->[4] (". (@{$codon_seq{$position}}->[5]-30) . ") [full-length aa of this gene: ". scalar @prot. "]\n");
+  push(@output, "\n$prot[$position-1]($position) = "." $codon_seq{$position}->[0] (". ($codon_seq{$position}->[1]-30) .") $codon_seq{$position}->[2] (". ($codon_seq{$position}->[3]-30) . ") $codon_seq{$position}->[4] (". ($codon_seq{$position}->[5]-30) . ") [full-length aa of this gene: ". scalar @prot. "]\n");
 
   push(@info, "$prot[$position-1]($position)");
 
-  my $codon = "@{$codon_seq{$position}}->[0]"."@{$codon_seq{$position}}->[2]"."@{$codon_seq{$position}}->[4]";
+  my $codon = "$codon_seq{$position}->[0]"."$codon_seq{$position}->[2]"."$codon_seq{$position}->[4]";
 
 
   ################################
@@ -696,18 +698,18 @@ sub exons_to_codons {
   push(@output, "-------------------------------------\n");
   push(@output, "   	Codon      ($prot[$position-1]):\t\t$codon\n");
   for ($i=0; $i < scalar @{$code{$mutation}}; $i++){
-    push(@output, "	Mutated to \($mutation\):\t\t@{$code{$mutation}}->[$i-1]\n") if $mutation ne "X";
-    push(@output, "	Mutated to \(STOP\):\t@{$code{$mutation}}->[$i-1]\n") if $mutation eq "X";
+    push(@output, "	Mutated to \($mutation\):\t\t$code{$mutation}->[$i-1]\n") if $mutation ne "X";
+    push(@output, "	Mutated to \(STOP\):\t$code{$mutation}->[$i-1]\n") if $mutation eq "X";
   }
   push(@output, "-------------------------------------");    
 
   my ($first_bp, $second_bp, $third_bp, $first_site, $second_site, $third_site);
-  $first_bp = @{$codon_seq{$position}}->[1];
-  $second_bp = @{$codon_seq{$position}}->[3];
-  $third_bp = @{$codon_seq{$position}}->[5];
-  $first_site = @{$codon_seq{$position}}->[0];
-  $second_site = @{$codon_seq{$position}}->[2];
-  $third_site = @{$codon_seq{$position}}->[4];
+  $first_bp = $codon_seq{$position}->[1];
+  $second_bp = $codon_seq{$position}->[3];
+  $third_bp = $codon_seq{$position}->[5];
+  $first_site = $codon_seq{$position}->[0];
+  $second_site = $codon_seq{$position}->[2];
+  $third_site = $codon_seq{$position}->[4];
 
   #######################################################################
   # output 30 bp flank seq under frame shift or no frame shift situations
