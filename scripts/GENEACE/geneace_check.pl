@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2004-05-18 10:01:52 $
+# Last updated on: $Date: 2004-05-19 08:58:37 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -16,7 +16,6 @@ use Ace;
 use Ace::Object;
 use Carp;
 use Getopt::Long;
-use lib "/nfs/team71/worm/ck1/WORMBASE_CVS/scripts/";
 use GENEACE::Geneace;
 
 ###################################################
@@ -200,6 +199,7 @@ sub process_gene_class{
 sub test_locus_for_errors{
   my $gene_id = shift;
   my $warnings;
+  my @ver_ch = $gene_id->Version_change;
 
   # check existence of Gene version
   if ( !defined $gene_id->Version ){
@@ -448,22 +448,33 @@ sub test_locus_for_errors{
 
   # checks that a Gene has a live tag (works together with 'Merged_into' and/or 'Killed' tags)
   if ( !defined $gene_id->at('Identity.Live') && ($gene_id->Merged_into || $gene_id->History(6)) ){
-    my @merge = $gene_id->Merged_into;
-    $warnings .= "INFO: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has no 'Live' tag as it has been merged into $merge[-1] ($Gene_info{$merge[-1]}{'Public_name'})\n" if @merge;
-    $warnings .= "INFO: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has no 'Live' tag as it has a 'Killed' tag\n" if $gene_id->History(6) eq "Killed";
     print "." if ($verbose);
+
+    my @merge = $gene_id->Merged_into;
+    if (@merge){
+      $warnings .= "INFO: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has no 'Live' tag as it has been merged into $merge[-1] ($Gene_info{$merge[-1]}{'Public_name'})\n";
+    }
+
+    if ( $gene_id->History ){
+      my $tag = get_event($gene_id);
+      $warnings .= "INFO: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has no 'Live' tag as it has a 'Killed' tag\n" if $tag eq "Killed";
+    }
   }
 
-  if ( !defined $gene_id->at('Identity.Live') && !defined $gene_id->Merged_into && ! defined  $gene_id->History(6) ){
-    $warnings .= "ERROR 20: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has no 'Live' tag and no 'Merged_into' and 'Killed' tags => Go live\n";
+  if ( !defined $gene_id->at('Identity.Live') && !defined $gene_id->Merged_into ){
     print "." if ($verbose);
-    if ($ace){
-      print ACE "\nGene : \"$gene_id\"\n";
-      print ACE "Live\n";
+    my $tag = get_event($gene_id);
+    if ( $tag ne "Killed" ){
+      $warnings .= "ERROR 20: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has no 'Live' tag, no 'Merged_into' and no 'Killed' tags => Go live\n";
+      if ($ace){
+	print ACE "\nGene : \"$gene_id\"\n";
+	print ACE "Live\n";
+      }
     }
   }
 
   if ( defined $gene_id->at('Identity.Live') && ($gene_id->Merged_into || $gene_id->History(6)) ){
+    print "." if ($verbose);
     my @merge =  $gene_id->Merged_into;
     if (@merge){
       $warnings .= "ERROR 20.1: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has 'Live' tag but also has been merged into $merge[-1] ($Gene_info{$merge[-1]}{'Public_name'}) => Lose Live\n";
@@ -472,13 +483,17 @@ sub test_locus_for_errors{
 	print ACE "-D Live\n";
       }
     }
-    if ( $gene_id->History(6) eq "Killed" ){
-      $warnings .= "ERROR 20.2: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has 'Live' tag but also has 'Killed' tag => Lose Live\n";
-      if ($ace){
-	print ACE "\nGene : \"$gene_id\"  \/\/20.2\n";
-	print ACE "-D Live\n";
+
+    if ( $gene_id->History ){
+      my $tag = get_event($gene_id);
+      if ($tag eq "Killed"){
+	$warnings .= "ERROR 20.2: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has 'Live' tag but also has 'Killed' tag => Lose Live\n";
+	if ($ace){
+	  print ACE "\nGene : \"$gene_id\"  \/\/20.2\n";
+	  print ACE "-D Live\n";
+	}
+	print "." if ($verbose);
       }
-      print "." if ($verbose);
     }
   }
 
@@ -494,6 +509,27 @@ sub test_locus_for_errors{
 
   print LOG "$warnings" if(defined($warnings));
   return($non_CGC_count);
+}
+
+sub get_event {
+  my $gene_id = shift;
+
+  # fetch the last event of history changes based on the info of Version_change
+  # this look clumsy, but did not come up with a better solution yet,
+  # (generating a string of a series of down-> based on the number of verison change is easy, but did not work)
+  # 7 times hard coded version change should be enough to work find for a while, at least
+
+  my @ver_ch = $gene_id->Version_change;
+
+  my $tag = $gene_id->History->right->right->right->right->right if scalar @ver_ch == 1;
+     $tag = $gene_id->History->right->down->right->right->right->right if scalar @ver_ch == 2;
+     $tag = $gene_id->History->right->down->down->right->right->right->right if scalar @ver_ch == 3;
+     $tag = $gene_id->History->right->down->down->down->right->right->right->right if scalar @ver_ch == 4;
+     $tag = $gene_id->History->right->down->down->down->down->right->right->right->right if scalar @ver_ch == 5;
+     $tag = $gene_id->History->right->down->down->down->down->down->right->right->right->right if scalar @ver_ch == 6;
+     $tag = $gene_id->History->right->down->down->down->down->down->down->right->right->right->right if scalar @ver_ch == 7;
+
+  return $tag;
 }
 
 

@@ -4,13 +4,13 @@
 
 # by Chao-Kung Chen [030728]
 
-# Last updated on: $Date: 2004-03-23 13:07:25 $
+# Last updated on: $Date: 2004-05-19 08:58:37 $
 # Last updated by: $Author: ck1 $
 
 
 # Automatically update Geneace with Person/Person_name classes from autoace
 
-use strict;                    
+use strict;
 
 ###########################
 # variables
@@ -29,18 +29,12 @@ my $rundate = `date +%y%m%d`; chomp $rundate;
 my $log = "/wormsrv2/logs/update_Person.$rundate";
 
 
-my $dump_PI=<<END;
-find Laboratory * 
-show -a -T Representative -f /tmp/lab_PI.ace
-quit
-END
+# updates geneace ?Person and ?Person_name classes from caltech via autoace
 
-`echo "$dump_PI" | $tace $ga`;
-
+# the CGC_representative_for is kept as geneace keeps the record
 my $remove_Person_Person_name_from_ga=<<END;
-find Person * 
+find Person *
 edit -D Name
-edit -D CGC_representative_for
 edit -D Laboratory
 edit -D Address
 edit -D Tracking
@@ -65,7 +59,6 @@ END
 `echo "$dump_Person_Person_name_from_autoace" | $tace $autoace`;
 
 my $parse_files=<<END;
-pparse /tmp/lab_PI.ace 
 pparse /tmp/new_Person.ace
 pparse /tmp/new_Person_name.ace
 save
