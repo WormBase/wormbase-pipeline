@@ -8,14 +8,13 @@
 # Page download and update upload to geneace has been automated [ck1]
 
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2004-05-10 14:48:36 $
+# Last updated on: $Date: 2004-05-10 16:04:17 $
 
 use strict;
 use Getopt::Std;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
 use Cwd 'chdir';
-use lib "/nfs/team71/worm/ck1/WORMBASE_CVS/scripts/";
 use GENEACE::Geneace;
 
 
@@ -181,16 +180,18 @@ while(<INPUT>){
     $counter++;
   }
 
-  foreach my $i (@loci) {$ace_object .= "Gene $Gene_info{$i}{'CGC_name'}\n";}
-  foreach my $i (@loci2) {$ace_object .= "Gene $Gene_info{$i}{'CGC_name'}\n";}
+  # will not write out Gene tag if the loci from genotype is not a CGC name
+  foreach my $i (@loci) {$ace_object .= "Gene $Gene_info{$i}{'Gene'}\n" if exists $Gene_info{$i}{'Gene'}}
+  foreach my $i (@loci2) {$ace_object .= "Gene $Gene_info{$i}{'Gene'}\n" if exists $Gene_info{$i}{'Gene'}}
   foreach my $i (@alleles){$ace_object .= "Allele $i\n";}
   foreach my $i (@alleles2){$ace_object .= "Allele $i\n";}
   foreach my $i (@alleles3){$ace_object .= "Allele $i\n";}
   foreach my $i (@rearrangements){$ace_object .= "Rearrangement $i\n";}
   foreach my $i (@transgenes){$ace_object .= "Transgene $i\n";}
 
-  foreach my $i (@loci) {$delete_ace_object .= "-D Gene $Gene_info{$i}{'CGC_name'}\n";}
-  foreach my $i (@loci2) {$delete_ace_object .= "-D Gene $Gene_info{$i}{'CGC_name'}\n";}
+  # will not write out Gene tag if the loci from genotype is not a CGC name
+  foreach my $i (@loci) {$delete_ace_object .= "-D Gene $Gene_info{$i}{'Gene'}\n" if exists $Gene_info{$i}{'Gene'}}
+  foreach my $i (@loci2) {$delete_ace_object .= "-D Gene $Gene_info{$i}{'Gene'}\n" if exists $Gene_info{$i}{'Gene'}}
   foreach my $i (@alleles){$delete_ace_object .= "-D Allele $i\n";}
   foreach my $i (@alleles2){$delete_ace_object .= "-D Allele $i\n";}
   foreach my $i (@alleles3){$delete_ace_object .= "-D Allele $i\n";}
