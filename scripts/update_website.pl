@@ -8,7 +8,7 @@
 # relevant WormBase and Wormpep web pages.
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-06-24 08:37:42 $      
+# Last updated on: $Date: 2004-07-20 15:06:21 $      
 
 
 #################################################################################
@@ -85,13 +85,11 @@ my $WS_previous_name = "WS".$WS_previous;
 
 
 # file path info
-my $www_root         = "/nfs/WWWdev/htdocs/Projects/C_elegans";
 my $www              = "/nfs/WWWdev/htdocs/Projects/C_elegans/WORMBASE";
 my $wwwdata          = "/nfs/WWWdev/SANGER_docs/data/Projects/C_elegans";
-my $wwwlive          = "/nfs/WWW/htdocs/Projects/C_elegans/WORMBASE";
 my $gff              = "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS";
 my $dbpath           = "/wormsrv2/autoace";
-my $log             = "/wormsrv2/logs/update_website.WS${WS_current}.$rundate.$$";
+my $log              = "/wormsrv2/logs/update_website.WS${WS_current}.$rundate.$$";
 
 
 #############
@@ -536,13 +534,13 @@ sub create_dbcomp {
 sub create_wormpep_page{
 
   # create wormpep.shtml  
-  print LOG "\ncreate_wormpep_page\n";
+  print LOG "\ncreate_wormpep_diff.shtml\n";
   print LOG "-------------------\n";
 
 
-  print LOG "Creating $www/$WS_name/wormpep.shtml\n";
+  print LOG "Creating $www/$WS_name/wormpep_diff.shtml\n";
 
-  open (WORMPEP, ">$www/$WS_name/wormpep.shtml") || croak "Failed to create wormpep.shtml\n\n";
+  open (WORMPEP, ">$www/$WS_name/wormpep_diff.shtml") || croak "Failed to create wormpep.shtml\n\n";
   print WORMPEP "<P>\n";
   print WORMPEP "<SPACER TYPE=\"horizontal\" SIZE=\"50\">\n";
 
@@ -807,7 +805,7 @@ sub create_GFF_intron_files{
 
 
 ###########################################################################################################
-# Update the main wormpep pages at ~C_elegans/wormpep                 
+# Update the main wormpep pages at ~C_elegans/WORMBASE/WSXXX/                 
 ###########################################################################################################
 
 sub update_wormpep_pages{
@@ -815,8 +813,26 @@ sub update_wormpep_pages{
   print LOG "\nupdate_wormpep_pages\n";
   print LOG "--------------------\n";
 
-  print LOG "Updating wormpep pages at $www_root/wormpep\n";
+  print LOG "Updating wormpep pages at $www/$WS_name\n";
+
+
+  # first copy/create relevant files from previous release
+
+  # make symbolic
+  print LOG "Creating symbolic link for header.ini file\n";
+  chdir("$www/$WS_name") || print LOG "Couldn't chdir to $www/$WS_name\n";
+  system("ln -s ../header.ini header.ini") && croak "Couldn't create new symlink\n";    
   
+  # copy over static files that don't change
+  print LOG "copying static wormpep files\n"; 
+  system("cp -f $www/$WS_previous_name/wormpep.html $www/$WS_name/") && warn "Cannot copy wormpep.html $!\n";
+  system("cp -f $www/$WS_previous_name/wormpep_changes.shtml $www/$WS_name/") && warn "Cannot copy wormpep_changes.shtml $!\n";
+  system("cp -f $www/$WS_previous_name/wormpep_download.shtml $www/$WS_name/") && warn "Cannot copy wormpep_download.shtml $!\n";
+  system("cp -f $www/$WS_previous_name/wormpep_format.shtml $www/$WS_name/") && warn "Cannot copy wormpep_format.shtml $!\n";
+  system("cp -f $www/$WS_previous_name/wormpep_moreinfo.shtml $www/$WS_name/") && warn "Cannot copy wormpep_moreinfo.shtml $!\n";
+
+
+
   # write a new paragraph for the index.shtml page 
   undef $/;       
   open(LOGFILE,"</wormsrv2/WORMPEP/wormpep${WS_current}/wormpep_current.log") || croak "Couldn't open wormpep log file\n";
@@ -833,35 +849,32 @@ sub update_wormpep_pages{
   $alt_spliced =~ s/\s+//g;
 
   # create release_paragraph.shtml
-  system("rm -f $www_root/wormpep/release_paragraph.shtml") && croak "Couldn't remove old release_paragraph.shtml\n";
-  open (PARAGRAPH, ">$www_root/wormpep/release_paragraph.shtml") || croak "Can't create the file: $www_root/wormpep/release_paragraph.shtml\n\n";
+  open (PARAGRAPH, ">$www/$WS_name/release_paragraph.shtml") || croak "Can't create the file: $www/$WS_name/release_paragraph.shtml\n\n";
   print PARAGRAPH "The current Wormpep database, wormpep${WS_current} (released $release_date), contains $letters residues in $count protein sequences (of which $alt_spliced have splice variants) - wormpep${WS_current} is based on the <A href=\"ftp://ftp.sanger.ac.uk/pub/wormbase/WS$WS_current\">current WS$WS_current release</A> of the <I>C. elegans</I> AceDB database.\n";
   close (PARAGRAPH);
 
   # update the 'current_release.shtml' file
-  system("rm -f $www_root/wormpep/current_release.shtml") && croak "Couldn't remove current_release.shtml\n";
-  open(RELEASE,">$www_root/wormpep/current_release.shtml") || croak "Coudn't write to current_release.shtml\n";
+  open(RELEASE,">$www/$WS_name/current_release.shtml") || croak "Coudn't write to current_release.shtml\n";
   print RELEASE "The current release is wormpep${WS_current}\n";
   close(RELEASE);
 
   # update the history of wormpep releases, i.e. wormpep_release.txt
-
-  open (TABLE, "<$www_root/wormpep/wormpep_release.txt") || croak "Can't read from the file: $www_root/wormpep/wormpep_release.txt\n\n";
-  open (TABLE2, ">$www_root/wormpep/tmp_table.txt") || croak "Can't create the file: $www_root/wormpep/tmp_table.txt\n\n";
+  open (TABLE, "<$www/$WS_name/wormpep_release.txt") || croak "Can't read from the file: $www/$WS_name/wormpep_release.txt\n\n";
+  open (TABLE2, ">$www/$WS_name/tmp_table.txt") || croak "Can't create the file: $www/$WS_name/tmp_table.txt\n\n";
   print TABLE2 "${WS_current}\t$release_date2\t$count\n";
   while(<TABLE>){
     print TABLE2 $_;
   }
   close(TABLE); 
   close(TABLE2);
-  system("mv $www_root/wormpep/tmp_table.txt $www_root/wormpep/wormpep_release.txt") && croak "Couldn't rename file\n";
+  system("mv $www/$WS_name/tmp_table.txt $www/$WS_name/wormpep_release.txt") && croak "Couldn't rename file\n";
 
 
   # write a new table for the wormpep_download.shtml page    
   print LOG "Updating wormpep_download.shtml page\n";
   my $rows = $WS_current + 5;
 
-  open (LIST, ">$www_root/wormpep/releases.shtml") || croak "Can't open the file: $www_root/wormpep/releases.shtml\n\n";
+  open (LIST, ">$www/$WS_name/releases.shtml") || croak "Can't open the file: $www/$WS_name/releases.shtml\n\n";
   print LIST "<CENTER><TABLE CELLPADDING=\"0\" CELLSPACING=\"0\" BORDER=\"0\">\n";
   print LIST "<TR VALIGN=\"top\">\n";
   print LIST "  <TD rowspan=\"$rows\" class=\"grey1\"><img src=\"/icons/blank.gif\" width=\"1\"   height=\"1\"></td>\n";
@@ -882,7 +895,7 @@ sub update_wormpep_pages{
   print LIST "</tr>\n";
 
 
-  open (RETABLE, "<$www_root/wormpep/wormpep_release.txt");
+  open (RETABLE, "<$www/$WS_name/wormpep_release.txt");
   my ($wp_rel,$wp_dat,$wp_CDS);
   while (<RETABLE>) {
     ($wp_rel,$wp_dat,$wp_CDS) = (/^(\S+)\s+(\S+)\s+(\S+)\s*/);
