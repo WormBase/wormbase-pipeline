@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.8.0 -w
+!/usr/local/bin/perl5.8.0 -w
 #
 # autoace_minder
 # 
@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: wormpub $
-# Last edited on: $Date: 2004-06-03 09:05:38 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2004-06-04 10:19:38 $
 
 
 
@@ -1301,16 +1301,16 @@ sub map_features {
 
   # these should be folded into a loop or into the script itself [dl]
 
-  my $file = "$basedir/autoace/FEATURES/${WS_version}_feature_SL1.ace";
+  my $file = "$basedir/autoace/FEATURES/WS${WS_version}_feature_SL1.ace";
   &load($file,"feature_SL1");
 
-  $file = "$basedir/autoace/FEATURES/${WS_version}_feature_SL2.ace";
+  $file = "$basedir/autoace/FEATURES/WS${WS_version}_feature_SL2.ace";
   &load($file,"feature_SL2");
 
-  $file = "$basedir/autoace/FEATURES/${WS_version}_feature_polyA_site.ace";
+  $file = "$basedir/autoace/FEATURES/WS${WS_version}_feature_polyA_site.ace";
   &load($file,"feature_polyA");
 
-  $file = "$basedir/autoace/FEATURES/${WS_version}_feature_polyA_signal.ace";
+  $file = "$basedir/autoace/FEATURES/WS${WS_version}_feature_polyA_signal.ace";
   &load($file,"feature_polyA");
 
   # PCR products
