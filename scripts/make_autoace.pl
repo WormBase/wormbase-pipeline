@@ -7,8 +7,8 @@
 #
 # This makes the autoace database from its composite sources.
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-06-01 13:09:08 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2004-06-28 13:16:15 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -508,8 +508,8 @@ sub makechromlink {
 
   print LOG &runtime, ": starting makechromlink subroutine\n";
   unlink "$wormbasedir/misc/misc_chromlinks.ace" or print LOG "ERROR: Couldn't unlink file: $!\n";
-  my $command = "$basedir/scripts/makeChromLinks.pl >! $wormbasedir/misc/misc_chromlinks.ace";
-  $command = "$basedir/scripts/makeChromLinks.pl -test >! $wormbasedir/misc/misc_chromlinks.ace" if ($test);
+  my $command = "$basedir/scripts/makeChromLinks.pl -out $wormbasedir/misc/misc_chromlinks.ace";
+  $command = "$basedir/scripts/makeChromLinks.pl -test -out $wormbasedir/misc/misc_chromlinks.ace" if ($test);
   &run_command("$command"); 
 
   if (-z "$wormbasedir/misc/misc_chromlinks.ace") {
