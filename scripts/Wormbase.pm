@@ -128,10 +128,10 @@ sub get_wormpep_version {
 
 sub get_wormrna_version {
 
-    my $wormrna_version = `ls /wormsrv2/WORMRNA/current_WormRNA/*.dna`;
+    my $wormrna_version = `ls /wormsrv2/WORMRNA/current_WormRNA/*.rna`;
     chomp($wormrna_version);
     $wormrna_version =~ s/.*wormrna//; 
-    $wormrna_version =~ s/\.dna//; 
+    $wormrna_version =~ s/\.rna//; 
     return($wormrna_version);
 }
 
