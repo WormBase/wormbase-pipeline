@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/bin/perl5.8.0 -w
 #
 # finish_build.pl
 # 
@@ -13,7 +13,7 @@
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-09-18 16:04:53 $
+# Last updated on: $Date: 2003-09-22 14:15:41 $
 
 
 
@@ -93,7 +93,9 @@ system("/nfs/intweb/cgi-bin/wormpub/confirmed_introns/parse_gff.pl") && warn "Co
 
 # Transfer autoace to ~wormpub/DATABASES/current_DB
 print LOG "Transferring autoace to ~wormpub/DATABASES/current_DB\n";
-system("TransferDB.pl -start /wormsrv2/autoace -end /nfs/disk100/wormpub/DATABASES/current_DB -all -name $WS_name")  && die "couldn't run TransferDB for wormpub\n";
+print LOG "First removing ~wormpub/DATABASES/current_DB/database/\n";
+system("rm -rf /nfs/disk100/wormpub/DATABASES/current_DB/database") && die "Couldn't remove current_DB database dir\n";
+system("TransferDB.pl -start /wormsrv2/autoace -end /nfs/disk100/wormpub/DATABASES/current_DB -database -chromosomes -wspec -name $WS_name")  && die "couldn't run TransferDB for wormpub\n";
 system("/bin/gunzip /nfs/disk100/wormpub/DATABASES/current_DB/CHROMOSOMES/*.gz") && die "Couldn't gunzip CHROMOSOMES/*.gz\n";
 
 
