@@ -1,15 +1,17 @@
-#!/usr/local/bin/perl5.6.0
+#!/usr/local/bin/perl5.6.1 -w
 #
-# backup_geneace
+# backup_geneace.pl
 # v 0.1
 # 
-# dl
+# by dl
 #
 # Usage : backup_geneace
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2002-11-13 17:48:00 $
+# Last updated by: $Author: ck1 $
+# Last updated on: $Date: 2002-12-09 17:40:47 $
 
+# touch logfile for run details
+$0 =~ m/\/*([^\/]+)$/; system("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
 
 #################################################################################
 # variables                                                                     #
@@ -20,16 +22,34 @@ use Cwd;
 use IO::Handle;
 use lib "/wormsrv2/scripts/";
 use Wormbase;
+use Getopt::Long;
 use strict;
+
+#############################
+# Command line options      #
+#############################
+
+my ($debug,$help);
+GetOptions (
+           "debug=s"   => \$debug,
+           "help"      => \$help
+           );
+
+# help page
+&usage("Help") if ($help);
+
+# no debug name
+&usage("Debug") if ((defined $debug) && ($debug eq ""));
+
 
  ##############################
  # Script variables (run)     #
  ##############################
 
-my $maintainer = "dl1\@sanger.ac.uk";
+my $maintainers = "All";
 my $rundate    = `date +%y%m%d`;   chomp $rundate;
 my $runtime    = `date +%H:%M:%S`; chomp $runtime;
-my $logfile    = "/wormsrv2/logs/backup_geneace.$rundate.$$";
+my $logfile = "/wormsrv2/logs/$1.`date +%y%m%d`.$$";
 
  ##############################
  # paths for I/O files        #
@@ -85,16 +105,10 @@ print LOGFILE "\n\n";
 close LOGFILE;
 
 ###############################
-# Mail log to curator         #
+# Mail log to curator(s)      #
 ###############################
 
-open (OUTLOG,  "|/usr/bin/mailx -s \"WormBase Report: backup_geneace\" $maintainer ");
-open (READLOG, "<$logfile");
-while (<READLOG>) {
-    print OUTLOG "$_";
-}
-close READLOG;
-close OUTLOG;
+&mail_maintainer("Backup_geneace",$maintainers,$logfile);
 
 ###############################
 # hasta luego                 #
@@ -113,6 +127,25 @@ sub DbWrite {
   close WRITEDB;
 }
 
+############################################################
+# Subroutine for displaying messages of debug options      #   
+############################################################
+
+sub usage {
+     my $error = shift;
+
+     if ($error eq "Help") {
+         # Normal help menu
+         system ('perldoc',$0);
+         exit (0);
+     }
+     elsif ($error eq "Debug") {
+         # No debug bod named
+         print "You haven't supplied your name\nI won't run in debug mode
+         until i know who you are\n";
+        exit (0);
+    }
+}
 
 __END__
 
