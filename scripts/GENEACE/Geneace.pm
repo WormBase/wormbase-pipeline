@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-04-27 14:20:47 $
+# Last updated on: $Date: 2004-04-29 10:29:14 $
 
 package Geneace;
 
@@ -43,15 +43,21 @@ sub test_geneace {
 }
 
 sub gene_info {
-  my $this = shift;
+  my ($this, $db) = @_;
+  shift;
+
+  $db = "/wormsrv1/geneace" if !$db;
+  print $db, "++++++++++++++++++++\n";
+
+  my $outfile = "/tmp/gene_info.tmp";
   my %gene_info;
 
-  my $gene_info=<<EOF;
-  Table-maker -o /tmp/gene_info.tmp -p "/wormsrv1/geneace/wquery/geneace_gene_info.def" quit
-EOF
-  open (FH, "echo '$gene_info' | $tace $geneace_dir |") || die "Couldn't access $curr_db\n";
+  my $gene_info="Table-maker -o $outfile -p \"/wormsrv1/geneace/wquery/geneace_gene_info.def\"\nquit\n";
 
-  my @gene_info = `cut -f 1-2 /tmp/gene_info.tmp`;
+  open (FH, "echo '$gene_info' | $tace $db |") || die "Couldn't access $db\n";
+  while(<FH>){}
+
+  my @gene_info = `cut -f 1-2 $outfile`;
   foreach (@gene_info){
     chomp $_;
     my ($gene, $cgc_name) = split(/\s+/, $_);
@@ -61,7 +67,7 @@ EOF
     $gene_info{$cgc_name}{'Gene'} = $gene     if $cgc_name;
   }
 
-  @gene_info = `cut -f 1-3 /tmp/gene_info.tmp`;
+  @gene_info = `cut -f 1-3 $outfile`;
   foreach (@gene_info){
     chomp $_;
     my ($gene, $seq_name) = split(/\s+/, $_);
@@ -71,7 +77,7 @@ EOF
     $gene_info{$seq_name}{'Gene'}      = $gene     if $seq_name;
   }
 
-  @gene_info = `cut -f 1-4 /tmp/gene_info.tmp`;
+  @gene_info = `cut -f 1-4 $outfile`;
   foreach (@gene_info){
     chomp $_;
     my ($gene, $other_name) = split(/\s+/, $_);
@@ -81,7 +87,7 @@ EOF
     $gene_info{$other_name}{'Gene'} = $gene       if $other_name;
   }
 
-  @gene_info = `cut -f 1-5 /tmp/gene_info.tmp`;
+  @gene_info = `cut -f 1-5 $outfile`;
   foreach (@gene_info){
     chomp $_;
     my ($gene, $public_name) = split(/\s+/, $_);

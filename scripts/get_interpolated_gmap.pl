@@ -7,7 +7,7 @@
 # This script calculates interpolated genetic map positions for CDS, Transcripts 
 # and Pseudogenes lying between and outside genetic markers.
 #
-# Last updated on: $Date: 2004-04-27 10:59:36 $
+# Last updated on: $Date: 2004-04-29 10:29:14 $
 # Last updated by: $Author: ck1 $
 
 
@@ -44,7 +44,6 @@ my $start      = `date +%H:%M:%S`; chomp $start;
 my $script_dir = "/wormsrv2/scripts/";
 my $tace = glob("~wormpub/ACEDB/bin_ALPHA/tace");
 
-#if (!defined @ARGV or $help){system ("perldoc /wormsrv2/scripts/get_interpolated_gmap.pl"); exit(0)}
 if (!defined @ARGV){system ("perldoc /wormsrv2/scripts/get_interpolated_gmap.pl"); exit(0)}
 
 # set WS version number
@@ -61,7 +60,6 @@ else{
   $database = "/wormsrv2/autoace";
 }
 print "\nUsing $database as database path for genetics marker loci\n";
-
 
 my ($revfile, $diffile);
 
@@ -116,7 +114,7 @@ print PSEUDO "WS$version interpolated map positions for Pseudogenes\n\n";
 ##############################################################
 
 my $ga = init Geneace();
-my %Gene_info = $ga -> gene_info();
+my %Gene_info = $ga -> gene_info($database);
 
 ###################################################################################################
 # get list of predicted CDS/Transcript linked to Gene for writing interpolated map to Gene as well
@@ -135,9 +133,11 @@ my $pseudogene_linked_to_gene=<<EOF;
   Table-maker -p "/wormsrv1/geneace/wquery/get_pseudogene_to_gene.def" quit
 EOF
 
-open (FH1, "echo '$CDS_linked_to_Gene' | $tace $database |") || die "Couldn't access $curr_db\n";
-open (FH2, "echo '$transcript_linked_to_Gene' | $tace $database |") || die "Couldn't access $curr_db\n";
-open (FH3, "echo '$pseudogene_linked_to_Gene' | $tace $database |") || die "Couldn't access $curr_db\n";
+open (FH1, "echo '$CDS_linked_to_gene' | $tace $database |") || die "Couldn't access $curr_db\n";
+open (FH2, "echo '$transcript_linked_to_gene' | $tace $database |") || die "Couldn't access $curr_db\n";
+open (FH3, "echo '$pseudogene_linked_to_gene' | $tace $database |") || die "Couldn't access $curr_db\n";
+
+my %predicted_gene_to_locus;
 
 my @FHS = qw(*FH1 *FH2 *FH3);
 foreach my $e (@FHS){
@@ -777,7 +777,7 @@ END
 if($error_check == 1){
   print "\nERROR: $count_rev reverse physical(s) were found and need you to do some corrections.\n";
   system("perl5.6.1 $script_dir\/update_rev_physicals.pl -panel $count_rev -rev $revfile -comp $cmp_file -v $version");
- # system("perl5.6.1 \/nfs\/team71\/worm\/ck1\/WORMBASE_CVS\/scripts\/update_rev_physicals.pl -panel $count_rev -rev $revfile -comp $cmp_file -v $version -d");
+  #system("perl5.6.1 \/nfs\/team71\/worm\/ck1\/WORMBASE_CVS\/scripts\/update_rev_physicals.pl -panel $count_rev -rev $revfile -comp $cmp_file -v $version -d");
 }
 
 else {
