@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.99 2002-11-28 11:00:38 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.100 2003-01-02 16:04:57 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -828,6 +828,7 @@
 						tRNA UNIQUE Text
 						rRNA UNIQUE Text
 						snRNA UNIQUE Text
+						snoRNA UNIQUE Text // [030102 krb]
 						scRNA UNIQUE Text
 						stRNA UNIQUE Text         // [010723 dl]
 						miRNA UNIQUE Text         // [011129 dl]
@@ -953,6 +954,7 @@
 							tRNA UNIQUE Text
 							rRNA UNIQUE Text
 							snRNA UNIQUE Text
+							snoRNA UNIQUE Text [030102 krb]
 							scRNA UNIQUE Text
 							stRNA UNIQUE Text         // [010723 dl]
 							misc_RNA UNIQUE Text
