@@ -3,8 +3,10 @@
 use DBI;
 use strict;
 use lib "/wormsrv2/scripts/";
+use lib "/nfs/team71/worm/ar2/wormbase_cvs/scripts/";
 use Wormbase;
 use Getopt::Long;
+use Wormpep;
 
 #######################################
 # command-line options                #
@@ -134,51 +136,78 @@ my $sth_f = $wormprot->prepare ( q{ SELECT proteinId,analysis,
 
 open (OUT,">wublastp.ace") or die "cant open out file\n";
 my $count;
+
+my %CE2gene = &CE2gene;
+my %gene2CE = &gene2CE;
+
+my %matched_genes;
+
 foreach my $pep (@peps2dump)
   {
-    print OUT "//\nProtein : \"WP:$pep\"\n";
+#    print OUT "//\nProtein : \"WP:$pep\"\n";
+
+    #get gene names and create new wormpep obj
+    my $gene = &justGeneName($CE2gene{$pep});
+    my $pepObj = Wormpep->new($pep, $gene);
+
+    #retreive data from mysql
     $sth_f->execute($pep, $e_threshold);
     my $ref_results = $sth_f->fetchall_arrayref;
+    my ($proteinId, $analysis,  $myHomolStart, $myHomolEnd, $homolID, $pepHomolStart, $pepHomolEnd, $e, $cigar);
     foreach my $result_row (@$ref_results)
       {
-	my ($proteinId, $analysis,  $myHomolStart, $myHomolEnd, $homolProtein, $pepHomolStart, $pepHomolEnd, $e, $cigar) = @$result_row;
-	if ("$pep" ne "$homolProtein")
-	  {
-	    # take -log(10) of evalues
-	    if ($e != 0) {
-	      $e = sprintf ("%.2f", -(log($e))/log(10));
+	($proteinId, $analysis,  $myHomolStart, $myHomolEnd, $homolID, $pepHomolStart, $pepHomolEnd, $e, $cigar) = @$result_row;
+	
+	
+	# take -log(10) of evalues
+	if ($e != 0) {
+	  $e = sprintf ("%.2f", -(log($e))/log(10));
+	}
+	else {
+	  $e = -1;
+	}
+	if( $e > 40 ) {        # arbitrarilly set to 40 - not sure what should be ar2.
+	  my @data = ($proteinId, $processIds2prot_analysis{$analysis},  $myHomolStart, $myHomolEnd, $homolID, $pepHomolStart, $pepHomolEnd, $e, $cigar);
+	  if( $analysis == 11 )   #wormpep
+	    {
+	      #send the CE id rather than gene name
+	      my $worm_protein = $gene2CE{$homolID};
+	      next if ("$worm_protein" eq "$pep" );
+
+	      my $pepgene = &justGeneName($homolID);
+	      $data[4] = $worm_protein;
+	      $pepObj->add_worm_data($pepgene,@data);
 	    }
-	    else {
-	      $e = -1;
-	    }
-	    
-	    if( $e > 40 ){
-	      my @cigar = split(/:/,"$cigar");
-	      
-	      foreach (@cigar){
-		print OUT "Pep_homol \"$homolProtein\" $processIds2prot_analysis{$analysis} $e $myHomolStart $myHomolEnd $pepHomolStart $pepHomolEnd Align ";
-		my @align = split(/\,/,$_);
-		print "@align\n";
-		print OUT "$align[0] $align[1]\n";
-	      }
-	    }
-	    else {
-	      print "irrelevant $e \n";
-	    }
+	  else {
+	    $pepObj->add_data(@data);
 	  }
+	}
+	else {
+	  print "irrelevant $e \n";
+	}
       }
     
-    print OUT "\n";
+    #write ace info
+    my @cigar = split(/:/,"$cigar");
+    
+    foreach (@cigar){
+      print OUT "Pep_homol \"$homolID\" $processIds2prot_analysis{$analysis} $e $myHomolStart $myHomolEnd $pepHomolStart $pepHomolEnd Align ";
+      my @align = split(/\,/,$_);
+      print "@align\n";
+      print OUT "$align[0] $align[1]\n";
+      print OUT "\n";
+    }
+    
     $count++;    last if( $count > 4);
   }
 
 close OUT;
 
 exit(0);
-
-
-sub single_line_query
-  {
+	 
+	 
+	 sub single_line_query
+	 {
     if( $dont_SQL ){
       my @bogus = qw(3 3 3 3 3 3);
       return @bogus;
@@ -191,5 +220,45 @@ sub single_line_query
       my @results = $sth->fetchrow_array();
       $sth->finish();
       return @results;
+    }
+  }
+       
+sub gene2CE
+  {
+    my @array;
+    open (FH,"</wormsrv2/WORMPEP/wormpep$WPver/wormpep.table$WPver") or die "cant open wormpep.table$WPver\n";
+    while(<FH>){
+      my @data = split(/\s+/,$_);
+      push( @array, $data[0], $data[1]);
+    }
+    return @array;
+  }
+
+
+
+
+sub CE2gene
+  {
+    my @array;
+    open (FH,"</wormsrv2/WORMPEP/wormpep$WPver/wormpep.accession$WPver") or die "cant open wormpep.accession$WPver\n";
+    while(<FH>)
+      {
+	chomp;
+	my @data = split;
+	if( $data[1] ){
+	  push(@array, $data[0],$data[1]);
+	}
+      }
+    return @array;
+  }
+
+sub justGeneName
+  {
+    my $test = shift;
+    if( $test =~ m/(\w+\.\d+)/ ){
+      return $1;
+    }
+    else {
+      return "nonworm";
     }
   }
