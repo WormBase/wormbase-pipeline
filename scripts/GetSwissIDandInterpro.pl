@@ -15,7 +15,7 @@
 # pfetch is done in batches of 2000, any greater and nothing comes back!
 #
 # Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs 
-# Last updated on: $Date: 2002-08-05 10:44:30 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2002-08-08 14:18:29 $        # quickly see when script was last changed and by whom
 
 use strict;
 use Wormbase;
@@ -29,7 +29,6 @@ my $log = "/wormsrv2/logs/GetSwissIDandInterpro.WB$wmpep_ver.$rundate";#error lo
 my $temp_acefile = "$wormpepdir/SwissprotIDs.ace";
 
 my $ace_output = *ACE_OUTPUT;
-my $old_ip_output =*OLD_IP_OUTPUT;
 
 open(LOG,">$log")|| die "cant open $log";
 my $errorLog = *LOG;
@@ -63,32 +62,34 @@ open (INPUT, "$wormpepdir/wormpep.table$wmpep_ver")|| print "$0 cant find file w
 
 my $accn_holder;
 my %noSWALL;   #CEXXXXX => AAMXXXXX.X
+my %noswall_acc;
+
 while (<INPUT>)
   {
     chomp;
     if ($_ =~ m /(CE\d+)/)#find wormpep id
       {
 	$protein[$count] = $1;
-	if($_ =~ m/(SW:\w+|TR:\w+)/)#any "words" prefixed with SW: or TR:
+	if($_ =~ m/:([OPQ]\d\w{4})\s/ ) #TrEMBL accessions
 	  {
-	    $accn_holder = $1;
-	    #print "protein $count $protein[$count] accn is $accn_holder\n";
-
-	    $accession[$count] = $accn_holder;
+	    $accession[$count] = $1;
 	    #build hash of wormpep to accession no.
 	    $wormpep_acc{$protein[$count]} = $accession[$count];
 	    $count++;
-
 	  }
 	else
 	  {
-	    print LOG "no TR: SW: accn in $_\n";
-	    if( $_ =~ m/((AA\p{IsUpper})|(CAD))\d{5}\.\d*/ )
+	    
+	    if( $_ =~ m/(((AA\p{IsUpper})|(CAD))\d{5})\.\d*/ )
 	      {
-		$noSWALL{$&} = $protein[$count];
+		#put the AAA accs into hash to be investigated
+		$noSWALL{$1} = $protein[$count];
+		$count++;
 	      }
+	    else{
+	      print LOG "cant find anything useful in $_\n";
+	    }
 	  }
-	
 #	if($count == 20)
 #	  {
 #	    #DEBUG########################################
@@ -100,6 +101,9 @@ while (<INPUT>)
 	print LOG "no protein in $_\n";
       }
   }
+#try and get AC for those that have AAM or CAD style protein IDs only
+&GetNoAccPeps;
+
 
 #hash and accession array are built in one go 
 #now submit unit slices to outputToAce
@@ -109,32 +113,23 @@ my $upper = $chunk_size -1;
 my $lower = 0;
 my @array_chunk;
 
-#try and get AC for those that have AAM or CAD style protein IDs only
-&GetNoAccPeps;
 
-#while ( $lower <= $last_ind ) 
-#  {
-#     @array_chunk = @accession[$lower .. $upper];
-#    outputToAce(\%wormpep_acc, \@array_chunk, \$ace_output, \$old_ip_output, \$errorLog);
-#    $lower += $chunk_size;
-#    $upper += $chunk_size;
-#  }
+while ( $lower <= $last_ind ) 
+  {
+     @array_chunk = @accession[$lower .. $upper];
+     outputToAce(\%wormpep_acc, \@array_chunk, \$ace_output, \$errorLog);
+     $lower += $chunk_size;
+     $upper += $chunk_size;
+  }
 
 @array_chunk = @accession[$lower .. $last_ind];
 ##process the remainders
-outputToAce(\%wormpep_acc, \@array_chunk, \$ace_output, \$old_ip_output, \$errorLog);
+outputToAce(\%wormpep_acc, \@array_chunk, \$ace_output, \$errorLog);
 
 
-
-
-
-
-
-close OLD_IP_OUTPUT;
 close ACE_OUTPUT;
 
-print LOG "Files available -\n $temp_acefile\n
-$temp_clearOldInterPro\n";
+print LOG "Files available -\n $temp_acefile\n";
 print LOG "\nNOTE! - This script no longer parses the outputs to a database\n\n";
 print LOG "SubGetSwissId finished at ",`date`,"\n";
 
@@ -148,7 +143,7 @@ $maintainer = "ar2\@sanger.ac.uk";
 #===========================================================================
 sub outputToAce #(\%wormpep_acc, \@accession \$ace_output, \$errorLog)
   {
-    my ($wormpep_acc, $chunk, $ace_ouput, $old_ip_output, $errorLog) = @_;
+    my ($wormpep_acc, $chunk, $ace_ouput, $errorLog) = @_;
     #$ace_output is filehandle of file creatred in calling script
 
     #construct pfetch command string by concatenating accession no's
@@ -165,7 +160,6 @@ sub outputToAce #(\%wormpep_acc, \@accession \$ace_output, \$errorLog)
     
     #build hash of accession : Swissprot/Trembl ID
     open (FASTA,"<$fasta_output")|| die "cant open fasta record";#read
-    print FASTA "This is a temp file created by $0 and can be removed -unless script is running!";
     my %interpro;
     my $proteinID;
     my $acc;
@@ -188,17 +182,17 @@ sub outputToAce #(\%wormpep_acc, \@accession \$ace_output, \$errorLog)
 	      die;
 	    }
 	  }
-	#get the SWISSPROT/TrEMBL id
-	if($_ =~ m/^ID\s+(\w+)/)
+	#get the id
+	if($_ =~ m/^ID\s+(\w+(\.\d)*)/)
 	 { $proteinID = $1;}
 	
-	#get the SWISSPROT accession
+	#get the accession
 	if($_ =~ m/^AC\s+(\w+)/)
 	  {
 	    $acc = $1;
 
 	    #put ID AC pair in to hash
-	    $idextract{$acc} = $proteinID;
+	    $idextract{$acc} = $proteinID
 	  }
 
 	#extract Interpro motifs
@@ -206,52 +200,37 @@ sub outputToAce #(\%wormpep_acc, \@accession \$ace_output, \$errorLog)
 	  print "found IP $1 for protein -$proteinID-end\n";
 	  $interpro{$proteinID} .= "$1 ";}
 	
-	#print "$interpro{$proteinID}\n";
 		    
       }
     close FASTA;
     `rm -f $fasta_output`;
-    # ! ! ! ! resetting record separator ! ! ! ! #
-   # $/ = '\n'; #\n
-
-    #DEBUG#############################
-    #print "idextract contents\n";
-    #foreach my $key (keys %idextract){
-    #  print $key,"\t",$idextract{$key},"\n";}
-    ##################################
-
-    #DEBUG########################################
-    #print "wormpep_acc hash after building\n";
-    #foreach my $worm (keys %wormpep_acc){
-    #  print "$worm","\t",$wormpep_acc{$worm},"\n";}
-    #############################################
 
     foreach my $peptide(keys %wormpep_acc)
       {
 	my $full_accn = $wormpep_acc->{$peptide};
-	my $accn = substr($full_accn,3);
-	my $Database = substr($full_accn,0,2);
-	if($Database eq "SW"){$Database = "SwissProt";}
-	elsif($Database eq "TR"){$Database = "TrEMBL";}
-	else{print $errorLog $peptide,"\t",$full_accn,"\tfrom unknown database\n";}
-
-	
-
 	my @splitInterPros;
-	my $databaseID = $idextract{$accn};
+	my $databaseID = $idextract{$full_accn};
+	my $Database;
 	#catch the new SwissProt entries
 	if( $databaseID =~ /CAEEL/){
 	  $Database = "SwissProt";
 	}
+	else {
+	  if ($databaseID =~ m/[OPQ]\d\w{4}/ ) {
+	    $Database = "TrEMBL";
+	  }
+	  else {
+	    if( $databaseID =~ m/((AA\p{IsUpper})|(CAD))\d{5}/ ) {
+	      $Database = "TrEMBLnew";
+	    }
+	    else {print $errorLog $peptide,"\t",$full_accn,"\tfrom unknown database\n";}
+	  }
+	}
+	
 	if(defined($databaseID))
 	  {
-	    #remove any old InterPro entries for any proteins with SP / Tr Id's
-	    #print $old_ip_output "Protein : \"WP:$peptide\"\n";
-	    #print $old_ip_output "-D Motif_homol\t\"INTERPRO:\"\n";
-	    #print $old_ip_output "\n";#object separator
-
 	    print $ace_output "Protein : \"WP:$peptide\"\n";
-	    print $ace_output "Database \"$Database\" \"$databaseID\" \"$accn\"\n";
+	    print $ace_output "Database \"$Database\" \"$databaseID\" \"$full_accn\"\n";
 	    
 	    if (defined($interpro{$databaseID}))
 	      {
@@ -279,7 +258,7 @@ sub GetNoAccPeps
 	push(@AAAs,$aaaID);
       }
     print "@AAAs";
-    my $submitString = "pfetch "." @AAAs";#get full Fasta record (includes Interpro motifs)
+    my $submitString = "pfetch "." @AAAs";
     my %idextract;
 
     #create the fasta record in /wormsrv2/tmp dir (and remove it after use)
@@ -292,70 +271,35 @@ sub GetNoAccPeps
     my $fasta_output_clean = "$fasta_output"."_clean";
     `grep -F '>' $fasta_output > $fasta_output_clean`;
 
-    my %CE_acc;
-    my %newSwiss;
-    my %newTrEMBL;
-    my %TrEMBLnew;
-    my $foundID;
+
     open (FH, "<$fasta_output_clean");
-    open (NEWIDS ,">/wormsrv2/tmp/found_IDs");
       while(<FH>)
 	{
-	  if( $_ =~ m/((AA\p{IsUpper})|(CAD))\d{5}\.\d*/ )   #matched AAM23424.2 or CAD23525.1 stylee
+	  # while global match as some proteins have multiple ids
+	  while( $_ =~ m/(((AA\p{IsUpper})|(CAD))\d{5})\.\d*/g )   #matched AAM23424.2 or CAD23525.1 stylee
 	    {
-	      $aaaID = $&;
-	      if( $_ =~ m/^>(\w+)/ )
-		{   #get ID 
-		  $foundID = $1;
-		
-		  if ( defined($noSWALL{$aaaID}) )  #if the $aaaID is one we found earlier
-		    {
-		      # this is an AAMXXXXX.X style id that we know about
-		      $CE = $noSWALL{$aaaID};
-		  
-		      #assign ID to peptide
-		      if( $foundID =~ m/_CAEEL/ ) {
-			$newSwiss{$CE} = $foundID;
-		      }
-		      else {
-			if( $foundID =~ m/[OPQ]\d\w{4}/ ) {
-			  $newTrEMBL{$CE} = $foundID;
-			}
-			else {
-			  $TrEMBLnew{$CE} = $foundID;
-			}
-		      }
-		      #put in to hash to check for IP's and put in to .ace file
-		      $wormpep_acc{$CE} = $foundID;
-		    }
-		  else {
-		    print  "Cant find $aaaID in hash\n";
+	      $aaaID = $1;
+	      if ( defined($noSWALL{$aaaID}) )  #if the $aaaID is one we found earlier
+		{
+		  # this is an AAMXXXXX.X style id that we know about
+		  $CE = $noSWALL{$aaaID};
+		  if( $_ =~ m/([OPQ]\d\w{4})\s/ ) {
+		    $noswall_acc{$CE} = $1;
 		  }
+		  else {
+		    $noswall_acc{$CE} = $aaaID;
+		  }
+		  last;
 		}
-#	      else {
-#		print NEWIDS "Cant find $aaaID in hash\n";
-#	      }
-#	      else{
-#		print NEWIDS "Cant match anything in $_\n";
-#	      }
+	      else {
+		print LOG  "Cant find $aaaID in hash\n";
+	      }
 	    }
 	}
     close FH;
-    
-    print NEWIDS "Here are the new SwissProt entries\n-------------------------------------------\n";
-    foreach $pep (keys %newSwiss)
+    foreach my $CE (keys %noswall_acc)
       {
-	print NEWIDS "$pep $newSwiss{$pep}\n";
+	push(@accession, $noswall_acc{$CE});
+	$wormpep_acc{$CE} = $noswall_acc{$CE};
       }
-    print NEWIDS "Here are the new TrEMBL entries\n-------------------------------------------\n";
-    foreach $pep (keys %newTrEMBL)
-      {
-	print NEWIDS "$pep $newTrEMBL{$pep}\n";
-      }
-    print NEWIDS "Here are the TrEMBLnew entries\n-------------------------------------------\n";
-    foreach $pep (keys %TrEMBLnew)
-      {
-	print NEWIDS "$pep $TrEMBLnew{$pep}\n";
-      }
-    close NEWIDS;
   }
