@@ -6,8 +6,8 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: wormpub $
-# Last updated on: $Date: 2005-01-14 16:55:31 $
+# Last updated by: $Author: mt3 $
+# Last updated on: $Date: 2005-01-21 11:18:17 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -215,8 +215,8 @@ sub process_gene_class{
   # this tells you if a gene id is linked to > 1 sequences
   foreach my $gene_name ($db->fetch(-query=>"Find Gene_name WHERE COUNT Sequence_name_for > 1")){
 
-    # skip hard-coded exceptions for eat-18/lev-10 & cha-1/unc-17
-    next if ($gene_name eq "Y105E8A.7" || $gene_name eq "ZC416.8");
+    # skip hard-coded exceptions for eat-18/lev-10, cha-1/unc-17 & B0564.1/tin-9.2 
+    next if ($gene_name eq "Y105E8A.7" || $gene_name eq "ZC416.8" || $gene_name eq "B0564.1");
 
     my @gene_ids = $gene_name->Sequence_name_for;
     print LOG "ERROR: $gene_name is connected to multiple gene IDs: @gene_ids\n";
