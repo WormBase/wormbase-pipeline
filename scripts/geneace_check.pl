@@ -6,8 +6,8 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-10-17 11:47:27 $
+# Last updated by: $Author: ck1 $
+# Last updated on: $Date: 2002-10-23 13:56:58 $
 
 use Ace;
 use lib "/wormsrv2/scripts/"; 
@@ -22,6 +22,7 @@ our $erichlog;
 our $locus_errors = 0;
 our $lab_errors = 0;
 our $allele_errors = 0;
+our $strain_update = 0;
 
 # open a connection to geneace
 our $tace = glob("~wormpub/ACEDB/bin.ALPHA_4/tace");   # tace executable path
@@ -33,11 +34,11 @@ my $db = Ace->connect(-path  => '/wormsrv1/geneace/',
 &process_locus_class;
 &process_laboratory_class;
 &process_allele_class;
+&process_strain_class;
 
-
-##########################################
-# Tidy up and mail relevant log files
-##########################################
+#######################################
+# Tidy up and mail relevant log files #
+#######################################
 
 $db->close;
 close(LOG);
@@ -51,12 +52,10 @@ my $interested ="krb\@sanger.ac.uk, emsch\@its.caltech.edu, ck1\@sanger.ac.uk";
 exit(0);
 
 
+#######################
+# Process Locus class #
+#######################
 
-
-
-###################################
-# Process Locus class
-###################################
 sub process_locus_class{
 
   my @loci = $db->fetch(-class => 'Locus',
@@ -68,7 +67,7 @@ sub process_locus_class{
   print "\nChecking loci for errors:\n";
   print LOG "\nChecking Locus class for errors\n";
   foreach my $locus (@loci){
-    print "$locus\n";
+    #print "$locus\n";
     my $warnings;
     my $erich_warnings;
     ($warnings, $erich_warnings) = &test_locus_for_errors($locus);
@@ -83,9 +82,10 @@ sub process_locus_class{
   print LOG "\nThere were $locus_errors errors in $size loci.\n";
 }
 
-#################################
-# Process Laboratory class
-###################################
+############################
+# Process Laboratory class #
+############################
+
 sub process_laboratory_class{
 
   print "\n\nChecking Laboratory class for errors:\n";
@@ -94,35 +94,115 @@ sub process_laboratory_class{
   my @labs = $db->fetch(-class => 'Laboratory',
 		      -name  => '*');
 
-  # test for Allele_designation tag
+  # test for Allele_designation and Representative tags
   foreach my $lab (@labs){
-    if(!defined($lab->at('CGC.Allele_designation'))){  
+    if(!defined($lab->at('CGC.Allele_designation')) && $lab ne "CGC"){  
       print LOG "$lab has no Allele_designation tag present\n";
+      #print  "$lab has no Allele_designation tag present\n"; 
       $lab_errors++;
     }    
+    if(!defined($lab->at('CGC.Representative')) && $lab ne "CGC"){  
+      print LOG "$lab has no Representative tag present\n";
+      #print  "$lab has no Representative tag present\n";
+      $lab_errors++;
+    }  
   }
   print LOG "\nThere were $lab_errors errors in Laboratory class\n";
+  #print "\nThere were $lab_errors errors in Laboratory class\n";
 }
+ 
+########################
+# Process Allele class #
+########################
 
-#################################
-# Process Allele class
-###################################
 sub process_allele_class{
   print"\n\nChecking Allele class for errors:\n";
   print LOG "\n\nChecking Allele class for errors:\n";
   #grab allele details
   my @alleles = $db->fetch(-class => 'Allele',
-		      -name  => '*');
+		           -name  => '*');
 
-  # test for Location tag
+  # test for Location tag and if an allele is connected to multiple loci
+
+  my %allele_gene;
+
   foreach my $allele (@alleles){
     if(!defined($allele->at('Location'))){  
       print LOG "$allele has no Location tag present\n";
+     # print  "$allele has no Location tag present\n";
       $allele_errors++;
-    }    
+    }   
+    if($allele -> Gene(1)){
+      my @loci=$allele->Gene(1);
+      #print @loci, "\n";
+      push(@{$allele_gene{$allele}}, @loci); 
+    }
+  }
+
+  foreach (keys %allele_gene){
+    if ((scalar @{$allele_gene{$_}}) > 1){
+      print LOG "$_ is connected to more than one Loci: @{$allele_gene{$_}}\n";
+      $allele_errors++; 
+    }
   }
   print LOG "\nThere were $allele_errors errors in Allele class\n";
+  #print "\nThere were $allele_errors errors in Allele class\n";
 }
+
+########################
+# Process Strain class #  
+########################
+
+sub process_strain_class {
+
+  # Check if sequence name of a strain genotype is now connected to a locus
+
+  my (@strains, @seqs, @genotype, $genotype, @genes, $genes, $seq, $strain);
+
+  print"\n\nChecking Strain class for errors:\n";
+  print LOG "\n\nChecking Strain class for errors:\n";
+  @strains = $db->fetch('Strain','*');
+  @seqs = $db->fetch('Sequence','*');
+
+  my %seqs;
+  foreach (@seqs){
+    $seqs{$_}++;
+  }
+
+  foreach $strain (@strains){
+    if ($strain->Genotype){
+      $genotype = $strain->Genotype(1);
+      if($genotype =~ /.+\(\w+\).+/){
+	#print $&, "\n";
+	$genotype=$&;
+	$genotype=~ s/\(\w+\)//g;
+	$genotype=~ s/\(\w+;\w+;\)//g;
+	$genotype=~ s/\(.+\)//g;
+	$genotype=~ s/X|I|II|III|IV|V|VI|;|\+|:|\]|\[|\?/ /g;
+	$genotype=~ s/\// /g;
+	$genotype=~ s/\[|\]/ /g;
+	$genotype=~ s/  / /g;
+	$genotype=~ s/\.$//;
+	#print  $genotype, "\n";
+	@genes=split(/ /,$genotype);
+	# print @genes, "\n"; 
+	foreach (@genes){
+	  #print $_, "\n";
+	  if($seqs{$_}){
+	    my $seq = $db->fetch('Sequence', $_);
+	    if ($seq->Locus_genomic_seq){
+	      my @loci=$seq->Locus_genomic_seq(1);
+	      print LOG "Strain $strain has sequence_name $_ in Genotype, which can now become @loci.\n";
+	      $strain_update++; 
+	    }  
+	  }
+	}
+      }
+    }
+  }
+  print LOG "\nThere are $strain_update genotypes to be updated in Strain class.\n";
+  #print "\nThere are $strain_update genotypes to be updated in Strain class.\n";
+} 
 
 ################################################
 sub find_new_loci_in_current_DB{
@@ -145,8 +225,6 @@ sub find_new_loci_in_current_DB{
   }
   print LOG "\n$warnings\n" if $warnings;;
 }
-
-
 
 ###############################################
 
