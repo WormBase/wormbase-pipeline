@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.0 -w
+#!/usr/local/bin/perl5.6.1 -w
 #
 # check_EMBL_submissions.pl
 # dl
@@ -7,7 +7,7 @@
 # clones. Entries which have failed to load or return are highlighted
 # and changes in sequence version are notified.
 
-# Last updated on: $Date: 2002-12-18 13:35:20 $
+# Last updated on: $Date: 2002-12-18 13:38:39 $
 # Last updated by: $Author: ck1 $
 
 
