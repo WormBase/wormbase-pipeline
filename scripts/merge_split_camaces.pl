@@ -4,8 +4,8 @@
 # 
 # dl
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2003-09-08 15:47:31 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2003-09-09 09:25:25 $
 
 use strict;
 use lib "/wormsrv2/scripts/";   
@@ -210,22 +210,22 @@ sub update_camace {
     $ENV{'ACEDB'} = $current;
 
     if ($dan || $all) {
-	&loadace("$directory/sequence_diff_dl1.ace",'dl1');
-	&loadace("$directory/transcript_diff_dl1.ace",'dl1');
-	&loadace("$directory/feature_diff_dl1.ace",'dl1');
-	&loadace("$directory/pseudogene_diff_dl1.ace",'dl1');
+	&loadace("$directory/update_sequence_dl1.ace",'dl1');
+	&loadace("$directory/update_transcript_dl1.ace",'dl1');
+	&loadace("$directory/update_feature_dl1.ace",'dl1');
+	&loadace("$directory/update_pseudogene_dl1.ace",'dl1');
     }
     if ($ant || $all) {
-	&loadace("$directory/sequence_diff_ar2.ace",'ar2');
-	&loadace("$directory/transcript_diff_ar2.ace",'ar2');
-	&loadace("$directory/feature_diff_ar2.ace",'ar2');
-	&loadace("$directory/pseudogene_diff_ar2.ace",'ar2');
+	&loadace("$directory/update_sequence_ar2.ace",'ar2');
+	&loadace("$directory/update_transcript_ar2.ace",'ar2');
+	&loadace("$directory/update_feature_ar2.ace",'ar2');
+	&loadace("$directory/update_pseudogene_ar2.ace",'ar2');
     }
     if ($paul || $all) {
-	&loadace("$directory/sequence_diff_pad.ace",'pad');
-	&loadace("$directory/transcript_diff_pad.ace",'pad');
-	&loadace("$directory/feature_diff_pad.ace",'pad');
-	&loadace("$directory/pseudogene_diff_pad.ace",'pad');
+	&loadace("$directory/update_sequence_pad.ace",'pad');
+	&loadace("$directory/update_transcript_pad.ace",'pad');
+	&loadace("$directory/update_feature_pad.ace",'pad');
+	&loadace("$directory/update_pseudogene_pad.ace",'pad');
     }
 
     # uplaod new mRNAs into camace
