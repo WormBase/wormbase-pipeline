@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-01-21 17:52:35 $
+# Last updated on: $Date: 2003-01-22 14:59:07 $
 
 
 use strict;
@@ -20,14 +20,34 @@ use Getopt::Long;
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug);
+my ($help, $debug, $database, $class);
 my $maintainers = "All";
 our $tace = &tace;   # tace executable path
 our ($log, $erichlog);
 
 GetOptions ("help"      => \$help,
-            "debug=s"   => \$debug);
+            "debug=s"   => \$debug,
+	    "db=s"      => \$database,
+	    "class=s"   => \$class
+           );
 
+##############################################
+# choose database to query: default is Geneace
+##############################################
+
+my $default_db;
+
+if ($database eq ""){
+  $default_db = "/wormsrv1/geneace"; 
+  print "\nUsing Geneace as default database\n\n";
+}
+
+if ($database){
+  if ($database =~ /[aA]utoace/){
+    $default_db = "/wormsrv2/autoace/";
+    print "\nUsing $database as default database\n\n";
+  }
+}
 
 # Display help if required
 &usage("Help") if ($help);
@@ -40,10 +60,10 @@ if($debug){
 
 &create_log_files;
 
-my $ga_dir="/wormsrv1/geneace";
 
 # open a connection to geneace
-my $db = Ace->connect(-path  => '/wormsrv1/geneace/',
+my $db = Ace->connect(-path  => $default_db,
+#my $db = Ace->connect(-path  => '/wormsrv1/geneace/',
 		      -program =>$tace) || do { print LOG "Connection failure: ",Ace->error; die();};
 
 
@@ -60,13 +80,26 @@ our $rearrangement_errors = 0;
 our $sequence_errors = 0;
 
 
-# Process various classes looking for errors
-&process_locus_class;
-&process_laboratory_class;
-&process_allele_class;
-&process_strain_class;
-&process_rearrangement;
-&process_sequence;
+###################################################################
+# Process various classes looking for errors: choose class to check
+###################################################################
+
+$class = lc($class);  # command line option is case-insensitive
+
+if ($class eq "") {
+  &process_locus_class;
+  &process_laboratory_class;
+  &process_allele_class;
+  &process_strain_class;
+  &process_rearrangement;
+  &process_sequence;
+}
+if ($class =~ /locus/)                     {&process_locus_class}
+if ($class =~ /(laboratory|lab)/)       {&process_laboratory_class}
+if ($class =~ /allele/)                    {&process_allele_class}
+if ($class =~ /strain/)                    {&process_strain_class}
+if ($class =~ /(rearrangement|rearr)/) {&process_rearrangement}
+if ($class =~ /(sequence|seq)/)         {&process_sequence}
 
 
 #######################################
@@ -129,13 +162,13 @@ EOF
   Table-maker -p "/wormsrv1/geneace/wquery/locus_has_other_name.def" quit
 EOF
   
-  loci_as_other_name($locus_has_other_name, $ga_dir, $db);
+  loci_as_other_name($locus_has_other_name, $default_db, $db);
 
   my $locus_to_CDS=<<EOF;
   Table-maker -p "/wormsrv1/geneace/wquery/locus_to_CDS.def" quit
 EOF
 
-  loci_point_to_same_CDS($locus_to_CDS, $ga_dir);
+  loci_point_to_same_CDS($locus_to_CDS, $default_db);
 
   # check CGC_approved loci is XREF to existing Gene_Class   
   # check locus in geneace that are connected to CDS but not CGC_approved
@@ -151,7 +184,7 @@ EOF
   Table-maker -p "/wormsrv1/geneace/wquery/locus_to_CDS_but_not_CGC_approved.def" quit
 EOF
     
-  locus_CGC($cgc_loci_not_linked_to_geneclass, $get_all_gene_class, $locus_to_CDS_but_not_CGC_approved, $ga_dir);
+  locus_CGC($cgc_loci_not_linked_to_geneclass, $get_all_gene_class, $locus_to_CDS_but_not_CGC_approved, $default_db);
   
   print LOG "\nThere are $locus_errors errors in $size loci.\n";
 
@@ -246,13 +279,13 @@ sub process_allele_class{
   Table-maker -p "/wormsrv1/geneace/wquery/allele_has_flankSeq_and_no_seq.def" quit
 EOF
 
-  allele_has_flankSeq_and_no_seq($allele_has_flankSeq_and_no_seq, $ga_dir);
+  allele_has_flankSeq_and_no_seq($allele_has_flankSeq_and_no_seq, $default_db);
 
   my $allele_has_predicted_gene_and_no_seq=<<EOF;
   Table-maker -p "/wormsrv1/geneace/wquery/allele_has_predicted_gene_and_no_seq.def" quit
 EOF
 
-  allele_has_predicted_gene_and_no_seq($allele_has_predicted_gene_and_no_seq, $ga_dir);
+  allele_has_predicted_gene_and_no_seq($allele_has_predicted_gene_and_no_seq, $default_db);
 
   print LOG "\nThere are $allele_errors errors in Allele class\n";
 }
@@ -362,7 +395,7 @@ sub process_rearrangement {
 
 sub process_sequence {
 
-  print"\n\nSequence class for errors:\n";
+  print"\n\nChecking Sequence class for errors:\n";
   print LOG "\n\nChecking sequence class for errors:\n";
   print LOG "----------------------------------------\n";
 
@@ -513,7 +546,7 @@ sub locus_CGC {
       $gc = $_;
       $gc =~ s/-\d+//;
       if ($gc{$gc}){ 
-	print LOG "WARNING: $_ is CGC_approved but not XREF to existing $gc Gene_Class\n"; 
+	print LOG "ERROR: $_ is CGC_approved but not XREF to existing $gc Gene_Class\n"; 
 	$locus_errors++; 
       }
     }
@@ -523,8 +556,10 @@ sub locus_CGC {
     chomp($_);
     if ($_ =~ /^\"/){
       $_ =~ s/\"//g;
-      print LOG "WARNING: $_ is linked to coding sequence but not CGC_approved\n"; 
-      $locus_errors++; 
+      if ($_ !~ /^[A-Z]/){
+	print LOG "WARNING: $_ is linked to coding sequence but not CGC_approved\n"; 
+	$locus_errors++; 
+      }
     }
   }
 }
