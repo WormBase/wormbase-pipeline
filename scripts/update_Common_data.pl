@@ -5,7 +5,7 @@
 # by Anthony Rogers
 #
 # Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2004-04-28 11:17:52 $
+# Last updated on: $Date: 2004-05-19 09:30:12 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -256,8 +256,8 @@ sub write_EST  {
     $NDBaccession2est{$f[1]} = $f[0];
 
     # EST orientation
-    $estorientation{$f[1]} = 5 if ($f[3]);
-    $estorientation{$f[1]} = 3 if ($f[4]);
+    $estorientation{$f[0]} = 5 if ($f[3]);
+    $estorientation{$f[0]} = 3 if ($f[4]);
 
 #    print "// Assign $NDBaccession2est{$f[0]} as WormBase name for $f[1]\t\tOrientation $estorientation{$f[1]}\n";
 
