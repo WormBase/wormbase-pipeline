@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-06-04 10:21:08 $
+# Last edited on: $Date: 2004-06-11 14:40:37 $
 
 
 
@@ -304,7 +304,7 @@ if ($addblat){
 &make_wormpep      if ($buildpep);
 
 # add DB_remarks
-&run_command( "$scriptdir/get_pfam.pl -build")  if ( $remarks );
+&run_command( "$scriptdir/get_pfam.pl --database /wormsrv2/autoace")  if ( $remarks );
 
 # D4:Build_wormrna                    
 &make_wormrna      if ($buildrna);
