@@ -2,7 +2,7 @@
 #
 # EMBLDump.pl :  makes EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2005-03-07 10:01:15 $
+#  Last updated on: $Date: 2005-03-22 11:24:09 $
 #  Last updated by: $Author: dl1 $
 
 use strict;
@@ -51,7 +51,7 @@ system ("touch $basedir/logs/history/$0.`date +%y%m%d`");
 #############################################
 
 
-my $query = "query find Genome_sequence From_laboratory = HX AND Finished AND DNA\ngif EMBL $outfilename\n";
+my $query = "nosave\nquery find CDS where Method = \"Genefinder\"\nkill\nquery find CDS where Method = \"twinscan\"\nkill\nquery find Genome_sequence From_laboratory = HX AND Finished AND DNA\ngif EMBL $outfilename\nquit\nn\n";
 $query = "query find Genome_sequence AH6\ngif EMBL $outfilename\n" if $test;
 
 open(READ, "echo '$query' | $giface $dbdir |") or die ("Could not open $giface $dbdir\n"); 
