@@ -47,7 +47,7 @@ use Wormbase;
 use IPC::Open2;
 use IO::Handle;
 use Getopt::Std;
-use vars qw( $opt_n $opt_s $opt_e $opt_p $opt_d $opt_h);
+use vars qw( $opt_n $opt_s $opt_e $opt_d $opt_h);
 
  ##############################
  # Script variables (run)     #
@@ -65,14 +65,11 @@ my $version = &get_cvs_version('/wormsrv2/scripts/make_acefiles');
 my $autoace_config = "/wormsrv2/autoace_config/autoace.config";
 my $basedir        = "/wormsrv2/wormbase";
 my $miscdir        = "$basedir/misc";
-my $pepdir         = "$basedir/peptides";
-my $tremblfile     = "$pepdir/trembl";
-my $wormpepfile    = "$pepdir/wormpep";
-my $swissfile      = "$pepdir/swissprot";
-my $peptidefile    = "$miscdir/misc_peptides.ace";
 my $estfile        = "$miscdir/misc_nonelegansests.ace";
 my $tace           = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
 my $autodir        = "/wormsrv2/autoace";
+
+
 
  ##############################
  # command-line options       #
@@ -81,15 +78,14 @@ my $autodir        = "/wormsrv2/autoace";
 $opt_n = "";       # write acefiles from autoace.config file
 $opt_s = "";       # => single database mode
 $opt_e = "";       # write non-elegans EST dataset
-$opt_p = "";       # write peptide dataset
 $opt_d = "";       # debug mode (maintainer = dl1)
 $opt_h = "";       # Help/Usage page
 
-getopts ('nedphs:');
+getopts ('nedhs:');
 # help page
 &usage(0) if ($opt_h);
 # no option supplied
-&usage(1) if ((!$opt_n)&&(!$opt_e)&&(!$opt_p));
+&usage(1) if ((!$opt_n)&&(!$opt_e));
 # single database mode
 if ($opt_s) {
 &usage(2) unless (($opt_s eq "camace") || ($opt_s eq "stlace") || ($opt_s eq "briggsae") || ($opt_s eq "geneace"));
@@ -129,7 +125,6 @@ print LOG "=====================================================================
 print LOG " -n : Write .ace files\n"                            if ($opt_n);
 print LOG "    : from database $opt_s\n"                        if ($opt_s);
 print LOG " -e : Write non-elegans nematode EST data sets\n"    if ($opt_e);
-print LOG " -p : Write peptide data sets\n"                     if ($opt_p);
 print LOG "======================================================================\n";
 print LOG "\n";
 print LOG "Starting make_acefiles .. \n\n";
@@ -140,7 +135,6 @@ print LOG "Starting make_acefiles .. \n\n";
 
 &mknewacefiles   if ($opt_n);
 &nonelegansests  if ($opt_e);
-&producepeptides if ($opt_p);
 
 my $endtime = `date +%H:%M:%S`; chomp $endtime;
 print LOG "Ended make_acefiles @ $endtime\n";
@@ -430,69 +424,6 @@ sub nonelegansests {
 
 
 
-#######################################################################
-# Produce petides file                                                #
-#######################################################################
-
-sub producepeptides {
-    
-    my ($textace,$protein);
-
-    system ("/bin/rm $tremblfile");
-    system ("/bin/rm $wormpepfile");
-    system ("/bin/rm $swissfile");
-    system ("/bin/rm $peptidefile");
-    open(TREMBL,">$tremblfile");
-    open(WORMPEP,">$wormpepfile");
-    open(SWISSPROT,">$swissfile");
-    $textace = "$tace $autodir ";
-# Retrieve the list of proteins from autoace
-
-    open2('READ','WRITE',$textace) or do {print "Addpeptides: Could not open $textace\n"; exit 0}; 
-
-
-    my $command=<<END;
-find protein 
-list -a 
-quit
-END
-    print WRITE $command;
-    close WRITE;
-    while (<READ>) {
-	if (/^Protein\s+:\s+"(\S+)"/) {
-	    $protein=$1;
-	    if ($protein=~/TR:(\S+)/) {$protein=~s/TR/SPTREMBL/; print TREMBL "$protein\n";}
-	    if ($protein=~/WP:(\S+)\.\w+/) {$protein=~s/WP/WORMPEP/; print WORMPEP "$protein\n";}
-	    if ($protein=~/SW:(\S+)/) {$protein=~s/SW/SWISSPROT/; print SWISSPROT "$protein\n";}
-	}  
-    }		    
-    close READ;
-    close TREMBL;
-    close WORMPEP;
-    close SWISSPROT;
-    print LOG "Made $tremblfile\n";
-    print LOG "Made $wormpepfile\n";
-    print LOG "made $swissfile\n";
-# Produce the .ace file with all the protein sequences
-    open(PEPTIDE,">$peptidefile");
-    open (GETZTREMBL,"/usr/local/pubseq/bin/getz6 -d -sf fasta \'\@$tremblfile\' |");
-    while (<GETZTREMBL>) {
-	if (/^>(\w+)/) {$protein="TR:"."$1"; print PEPTIDE "\nPeptide $protein\n"; next;} else {print PEPTIDE $_;next;}
-    }
-    close GETZTREMBL;
-    open (GETZWP,"/usr/local/pubseq/bin/getz6 -d -sf fasta \'\@$wormpepfile\' |");
-    while (<GETZWP>) {
-	if (/^>(\S+\.\w+)/) {$protein="WP:"."$1"; print PEPTIDE "\nPeptide $protein\n"; next;} else {print PEPTIDE $_; next;}
-    }
-    close GETZWP;
-    open (GETZSWISS,"/usr/local/pubseq/bin/getz6 -d -sf fasta \'\@$swissfile\' |");
-    while (<GETZSWISS>) {
-	if (/^>(\w+)/) {$protein="SW:"."$1";print PEPTIDE "\nPeptide $protein\n"; next;} else {print PEPTIDE $_; next;}
-    }
-    close GETZSWISS;
-    close PEPTIDE;
-    print LOG "Made $peptidefile\n";
-}
 
 
 ########################################################################
@@ -539,7 +470,6 @@ sub run_details {
     print "======================================================================\n";
     print " -n : Write .ace files\n" if ($opt_n);
     print " -e : Write non-elegans nematode EST data sets\n" if ($opt_e);
-    print " -p : Write peptide data sets\n" if ($opt_p);
     print "======================================================================\n";
     print "\n\n";
 }
@@ -554,7 +484,6 @@ sub usage {
 	print "Usage: make_acefiles [-options]\n";
 	print " -n : Write .ace files\n";
 	print " -e : Write non-elegans nematode EST data sets\n";
-	print " -p : Write peptide data sets\n\n";
 	exit(0);
     }
     elsif($error == 2) {
@@ -584,15 +513,13 @@ __END__
 
 =back
 
-make_acefiles is the first step in a WS build. It has 3 functions:
+make_acefiles is the first step in a WS build. It has 2 functions:
 
 to write a number of .acefiles which are data dumps from the respective
 ACEDB databases which make up the full C.elegans release (i.e. camace,
 stlace, geneace, brigace)
 
 to make a non-elegans nematode EST data set using getz
-
-to make a peptide data set from all similarity data in autoace
 
 make_acrefiles mandatory arguments:
 
@@ -611,18 +538,6 @@ make_acefiles OPTIONAL arguments:
 =item -s text, single database mode. Only dumps acefiles for the named database
 
 =item -e, make non-elegans est files
-
-=item -p, make peptides
-
-=back
-
-Example
-
-=over 4
-
-=item make_acefiles -nep will re-make all the needed ace files
-
-=item make_acefiles -p will re-create only peptide files
 
 =back
 
