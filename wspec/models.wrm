@@ -284,11 +284,12 @@
 
 
 ?Locus  Evidence #Evidence
-	Name    Other_name ?Gene_name XREF Other_name #Evidence // now links to ?Gene_name
+	Name    Other_name ?Gene_name XREF Other_name_for #Evidence // now links to ?Gene_name
                 Gene_Class  ?Gene_Class XREF Loci 
-		CGC_name ?Gene_name XREF CGC_name //new tag
-		Non_CGC_name ?Gene_name XREF Non_CGC_name //new tag
-		Sequence_name ?Gene_name XREF Sequence_name // new tag
+		CGC_name ?Gene_name XREF CGC_name_for //new tag
+		Non_CGC_name ?Gene_name XREF Non_CGC_name_for //new tag
+		Sequence_name ?Gene_name XREF Sequence_name_for // new tag
+		Transcript_name ?Gene_name XREF Transcript_name_for // new link
 	Gene_information Description ?Text #Evidence // added by krb [020802]
 			 Provisional_description ?Text #Evidence // added for Erich [020322 krb]
 			 Detailed_description ?Text #Evidence  // added for Erich [020322 krb]
@@ -345,12 +346,12 @@
 //
 // [krb 030124]
 
-?Gene_name Gene CGC_name ?Locus XREF CGC_name // these two fields won't be needed under new gene model
-		Non_CGC_name ?Locus XREF Non_CGC_name  // 
-		Sequence_name ?Locus XREF Sequence_name // optional whether to use this and link to 
-							// Transcript and Genomic_sequence names
-		Other_name ?Locus XREF Other_name // main reason for this class
-
+?Gene_name Gene CGC_name_for ?Locus XREF CGC_name // these two fields won't be needed under new gene model
+		Non_CGC_name_for ?Locus XREF Non_CGC_name  // 
+		Sequence_name_for ?Locus XREF Sequence_name 
+		Transcript_name_for ?Locus XREF Transcript_name // new for Transcript names
+		Other_name_for ?Locus XREF Other_name // main reason for this class
+		
 
 ?Balancer From_left_end
           To_right_end
