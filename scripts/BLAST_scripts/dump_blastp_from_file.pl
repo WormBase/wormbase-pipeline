@@ -242,7 +242,7 @@ while (<BLAST>) {
   $current_pep = $proteinId;
 
   next if $analysis > 9; #PFAM etc 
-  next if( ( defined $type_count{$analysis} ) and ( $type_count{$analysis} > 9 ) );
+  next if( ( defined $type_count{$analysis} ) and ( $type_count{$analysis} > 9 ) and ( $e ne "NULL") );
 
   $e = 1000 if( $e eq "NULL"); # mysql gives -log10(v small no) as NULL 
 
@@ -304,7 +304,7 @@ while (<BLAST>) {
   #Protein : AGO1_ARATH line CE32063 wublastp_slimswissprot 187.468521 633 882 747 1014 Align 773 903
   #Protein : AGO1_ARATH line CE32063 wublastp_slimswissprot 187.468521 633 882 747 1014 Align 870 1002
 
-  my $current_pep;
+  undef $current_pep;
   while (<SORT>) {
     chomp;
     my @info = split(/line/,$_);
