@@ -52,8 +52,8 @@ my $version = &get_cvs_version($0);
 ##############################
 # command-line options       #
 ##############################
-use vars qw/ $opt_d $opt_h /;
-getopts ("hd");
+use vars qw/ $opt_d $opt_h $opt_w $opt_m/;
+getopts ("hdwm");
 &usage(0) if ($opt_h);
 my $debug = $opt_d;
 
@@ -96,8 +96,9 @@ print LOG "\n";
 my $db = Ace->connect(-path=>$dbpath,
 		      -program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
 
-
 print LOG "CamCheck run STARTED at $runtime\n\n";
+print LOG "** Weekly edition **\n\n"  if ($opt_w);
+print LOG "** Monthly edition **\n\n" if ($opt_m);
 
 
 #####################################################################
@@ -211,9 +212,11 @@ while(defined($line=<CLONEFILE>)){
   # Check Sequence versions with EMBL                                  #
   ######################################################################
 
-#  print " | Sequence versions" if ($debug);
-#  &check_sequence_version($obj);
-
+  if ($opt_w) {
+      print " | Sequence versions" if ($debug);
+      &check_sequence_version($obj);
+  }
+  
   ######################################################################
   # last check complete, tidy up                                       #
   ######################################################################
@@ -230,9 +233,9 @@ while(defined($line=<CLONEFILE>)){
 close(CLONEFILE);
 
 
-########################
-# Check predicted genes
-########################
+#########################
+# Check predicted genes #
+#########################
 
 # need to close and reopen existing log filehandle either side of system call
 close(LOG);
@@ -245,9 +248,9 @@ open (LOG,">>$log");
 LOG->autoflush();
 
 
-##########################################################
-# Check that each clone only belongs to one (Sequence) map
-##########################################################
+############################################################
+# Check that each clone only belongs to one (Sequence) map #
+############################################################
 
 my @multimap_clones= $db->fetch(-query=>'find Clone COUNT Map > 1');
 if (@multimap_clones){
@@ -256,8 +259,8 @@ if (@multimap_clones){
   }
 }
 
-##################
-# LINK objects 
+###################
+# LINK objects    #
 ###################
 
 my $i = $db->fetch_many(-query=> 'find Sequence "*LINK*"');  
@@ -280,13 +283,11 @@ close LOG;
 
 &mail_maintainer("camcheck Report:",$maintainers,$log);
 
-
 ##############################
 # Write log to wormpub intweb
 ##############################
 
 &writehtml;
-
 
 ##############################
 # hasta luego                #
@@ -571,7 +572,8 @@ sub writehtml {
     my (@subsequence);
     my (@link);
     my (@clone);
-    
+    my (@seqversion);
+
     my $logdir="/nfs/disk100/wormpub/LocalWWW";
 
 my $HTML_START=<<START;
@@ -598,6 +600,7 @@ END
 	push (@annotated,$_)   if (/^FINISHED_BUT_NOT_ANNOTATED/);
 	push (@date,$_)        if (/^DATE/);
 	push (@sequence,$_)    if (/^SEQUENCE/);
+	push (@seqversion,$_)  if (/^Sequence version/);
 	push (@subsequence,$_) if (/^The subsequence/);
 	push (@subsequence,$_) if (/^Gene error - /);
 	push (@link,$_)        if (/^SUPERLINK/);
@@ -612,7 +615,6 @@ END
 	print OUTHTML "<TR><TD><FONT SIZE=\"-1\">$_</FONT></TD></TR>\n";
     }
     print OUTHTML "</TABLE></P>\n";
-
 
     # Not Annotated
     print OUTHTML "<TABLE BORDER=\"0\" WIDTH=\"100%\">\n";
@@ -634,6 +636,12 @@ END
     print OUTHTML "<TABLE BORDER=\"0\" WIDTH=\"100%\">\n";
     print OUTHTML "<TH BGCOLOR=\"darkblue\"><TD><FONT COLOR=\"white\">Genomic sequences</FONT></TD></TH>\n";
     foreach (@sequence) {
+	print OUTHTML "<TR><TD><FONT SIZE=\"-1\">$_</FONT></TD></TR>\n";
+    }
+    print OUTHTML "<TR>&nbsp;</TR>\n";
+
+    # Sequence version Mismatch (problem)
+    foreach (@seqversion) {
 	print OUTHTML "<TR><TD><FONT SIZE=\"-1\">$_</FONT></TD></TR>\n";
     }
     print OUTHTML "</TABLE></P>\n";
@@ -670,6 +678,7 @@ END
     undef (@annotated);
     undef (@date);
     undef (@sequence);
+    undef (@seqversion);
     undef (@subsequence);
     undef (@link);
     undef (@clone);
@@ -740,6 +749,10 @@ all Genome_sequences and LINK* objects.
 
 =item -d, Debug/Verbose mode
 
+=item -w, Weekly checks are active
+
+=item -m, Montly checks are active
+
 =back
 
 =head1 DOCUMENTATION
@@ -777,6 +790,11 @@ the date directory and the sequence extracted from ACEDB.
 
 For details of how the date dirtectory structure works:
  http://intweb.sanger.ac.uk/Projects/C_elegans/MANUAL
+
+=head2 Sequence version synchrony with EMBL (Weekly)
+
+=head3 Sequence version (SV) field in EMBL files should be in
+synchrony with the DB_info Database fields.
 
 =head2 Gene Models
 
