@@ -1876,16 +1876,16 @@
 // to mean that they are currently active at that particular role
 // added for Juancarlos by krb October 2003
 
-#Role   Phd		DateType DateType
-        Postdoc		DateType DateType
-        Masters		DateType DateType
-        Undergrad	DateType DateType
-        Highschool	DateType DateType
-        Sabbatical	DateType DateType
-        Lab_visitor	DateType DateType
-        Collaborated	DateType DateType
-        Research_staff  DateType DateType
-        Unknown		DateType DateType
+#Role   Phd		DateType UNIQUE DateType
+        Postdoc		DateType UNIQUE DateType
+        Masters		DateType UNIQUE DateType
+        Undergrad	DateType UNIQUE DateType
+        Highschool	DateType UNIQUE DateType
+        Sabbatical	DateType UNIQUE DateType
+        Lab_visitor	DateType UNIQUE DateType
+        Collaborated	DateType UNIQUE DateType
+        Research_staff  DateType UNIQUE DateType
+        Unknown		DateType UNIQUE DateType
 
 
 
