@@ -4,8 +4,8 @@
 # 
 # dl
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2003-09-09 09:25:25 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2003-09-11 13:50:15 $
 
 use strict;
 use lib "/wormsrv2/scripts/";   
@@ -230,7 +230,7 @@ sub update_camace {
 
     # uplaod new mRNAs into camace
     print "Upload new mRNAs in /wormsrv1/camace\n";
-    &loadace("/nfs/disk100/wormpub/analysis/ESTs/C.elegans_nematode_mRNAs.ace",'NDB_data'); 
+    &loadace("/nfs/disk100/wormpub/analysis/ESTs/elegans_mRNAs.ace",'NDB_data'); 
 
 
     # upload BLAT results to database
