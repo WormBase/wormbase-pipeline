@@ -5,7 +5,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2004-09-23 11:34:02 $
+# Last updated on: $Date: 2004-09-29 14:23:45 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -226,7 +226,8 @@ foreach $file (@gff_files) {
 						       push (@{$GFF{$file}{BLAT_TRANSCRIPT_BEST}},$_);}
     elsif (/BLAT_OST_OTHER/)                          {push (@{$GFF{$file}{BLAT_OST_OTHER}},$_);}
     # BLAT_mRNA
-    elsif (/BLAT_mRNA_BEST/)                          {push (@{$GFF{$file}{BLAT_mRNA_BEST}},$_);}
+    elsif (/BLAT_mRNA_BEST/)                          {push (@{$GFF{$file}{BLAT_mRNA_BEST}},$_);
+						       push (@{$GFF{$file}{BLAT_TRANSCRIPT_BEST}},$_);}
     elsif (/BLAT_mRNA_OTHER/)                         {push (@{$GFF{$file}{BLAT_mRNA_OTHER}},$_);}
     # BLAT_EMBL
     elsif (/BLAT_EMBL_BEST/)                          {push (@{$GFF{$file}{BLAT_EMBL_BEST}},$_);}
