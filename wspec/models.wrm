@@ -734,8 +734,8 @@
 		// a dummy sequence object, say "-".  This ensures that when a real
 		// sequence appears, its length dominates.
 	  SMap S_Parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF Genomic_non_canonical 
-	                       Genomic_parent UNIQUE ?Sequence XREF Nongenomic
-			       AGP_parent UNIQUE ?Sequence XREF AGP_fragment // added to hold briggsae data [krb 020726]
+	                       Genomic_parent   UNIQUE ?Sequence XREF Nongenomic
+			       AGP_parent       UNIQUE ?Sequence XREF AGP_fragment // added to hold briggsae data [krb 020726]
 	       S_Child Homol_data ?Homol_data XREF Sequence UNIQUE Int UNIQUE Int #SMap_info
 		       Feature_data ?Feature_data XREF Sequence UNIQUE Int UNIQUE Int #SMap_info
 		       Genomic_non_canonical ?Sequence XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info
@@ -983,7 +983,7 @@
 //
 ///////////////////////////////////////////////////////////////////
 
-?Transcript     SMap S_parent Sequence UNIQUE ?Sequence XREF Transcript_child      
+?Transcript     SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF Transcript_child      
                 Structure Source_exons Int UNIQUE Int
 		DB_info DB_remark ?Text #Evidence // was missing from first draft of Transcript class krb
 			Database ?Database ?Text ?Accession_number XREF Transcript UNIQUE Int // added for Lincoln [030228 krb]
@@ -1033,7 +1033,7 @@
 
 
 ?Pseudogene     Evidence #Evidence
-                SMap S_Parent Sequence UNIQUE ?Sequence XREF Pseudogene      
+                SMap S_Parent UNIQUE Sequence UNIQUE ?Sequence XREF Pseudogene      
                 Structure Source_exons Int UNIQUE Int
                 DB_info DB_remark ?Text #Evidence
                         Database ?Database ?Text ?Accession_number XREF Pseudogene UNIQUE Int 
@@ -1065,14 +1065,14 @@
 
 
 
-?Homol_data SMap S_Parent Sequence UNIQUE ?Sequence
+?Homol_data SMap S_Parent UNIQUE Sequence UNIQUE ?Sequence
 	    Homol DNA_homol ?Sequence XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		  Pep_homol ?Protein XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		  Motif_homol ?Motif XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		  Homol_homol ?Homol_data XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 	    // keep the standard model structure, so same code works
 
-?Feature_data SMap S_Parent Sequence UNIQUE ?Sequence
+?Feature_data SMap S_Parent UNIQUE Sequence UNIQUE ?Sequence
 	      Feature ?Method Int Int UNIQUE Float UNIQUE Text #Feature_info
               Method ?Method // added for Lincoln RNAi [001213 dl]
 	      Splices	Confirmed_intron  Int Int #Splice_confirmation
@@ -1080,7 +1080,7 @@
 			Predicted_3 ?Method Int Int UNIQUE Float // (x, x+1) or (x, x-1)
                // keep the same model as in Sequence, so same code works
 
-?Feature SMap S_Parent Sequence UNIQUE ?Sequence
+?Feature SMap S_Parent UNIQUE Sequence UNIQUE ?Sequence
          Flanking_sequences UNIQUE ?Sequence UNIQUE Text UNIQUE Text
          Visible	    Description ?Text
 			    Remark ?Text #Evidence
@@ -1292,7 +1292,7 @@
 // NEW Expr_profile and SK_map classes added at request of Raymond [010912 krb]
 // more tweaks added [010927 krb]
 
-?Expr_profile SMap S_parent PCR_product UNIQUE ?PCR_product XREF Expr_profile
+?Expr_profile SMap S_parent UNIQUE PCR_product UNIQUE ?PCR_product XREF Expr_profile
               Method UNIQUE ?Method
               Expr_map ?SK_map XREF Expr_profile
               Reference ?Paper XREF Expr_profile
@@ -1577,7 +1577,7 @@
 
 // New Class from Lincoln [010226]
 
-?PCR_product SMap S_Parent Canonical_parent UNIQUE ?Sequence XREF PCR_product
+?PCR_product SMap S_Parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF PCR_product
  		  S_Child RNAi ?RNAi XREF PCR_product UNIQUE Int UNIQUE Int #SMap_info
 			  Expr_profile ?Expr_profile XREF PCR_product UNIQUE Int UNIQUE Int #SMap_info// added for new Expr_profile class [010912 krb]
  	     Method UNIQUE ?Method
@@ -1610,7 +1610,7 @@
 
 // New Class to handle operon data [010928 dl]
 
-?Operon SMap S_Parent Canonical_parent UNIQUE ?Sequence XREF Operon
+?Operon SMap S_Parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF Operon
 	Species ?Species
 	Contains_CDS ?Sequence XREF Contained_in_operon  #Trans_splice_leader
 	Contains_pseudogene ?Pseudogene XREF Contained_in_operon  #Trans_splice_leader // new [030801 krb]
@@ -1620,9 +1620,11 @@
 #Trans_splice_leader SL1 ?Text
                      SL2 ?Text
 
+
 // New Class to handle Transposon data [020128 dl]
 
-?Transposon SMap S_Parent Canonical_parent UNIQUE ?Sequence XREF Transposon
+?Transposon SMap S_Parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF Transposon
+	    Source_exons Int UNIQUE Int // added for consistency with other 'gene' classes
             LTR_region UNIQUE Int UNIQUE Int
             Remark ?Text #Evidence
             Method UNIQUE ?Method
@@ -1688,7 +1690,7 @@
 
 //Will eventually replace Microarray_aff class. 
 //Used for Affymetrix and other oligo-based arrays. 
-?Oligo_set      SMap S_Parent Canonical_parent UNIQUE ?Sequence XREF Oligo_set
+?Oligo_set      SMap S_Parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF Oligo_set
                 Microarray_results ?Microarray_results XREF Oligo_set 
                 Oligo ?Oligo     //used in case oligos are specified
                 Remark ?Text    #Evidence
@@ -1699,7 +1701,7 @@
 
 
 
-?Microarray_aff SMap S_Parent Canonical_parent UNIQUE ?Sequence XREF Microarray_aff
+?Microarray_aff SMap S_Parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF Microarray_aff
                 Microarray_result ?Microarray_result XREF Microarray_aff // Added to merge with SMD microarray.
 		Reference ?Paper //Describes the design of the chip
                 Remark ?Text #Evidence
@@ -1783,7 +1785,7 @@
 
 // New UTR data model for Lincoln's UTR data.  [krb 020729]
 
-?UTR SMap S_Parent Canonical_parent UNIQUE ?Sequence XREF UTR
+?UTR SMap S_Parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF UTR
      Source_Exons Int UNIQUE Int // start at 1
      Matching_CDS ?Sequence XREF Matching_UTR
      Properties 5_UTR #Evidence
