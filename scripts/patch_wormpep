@@ -121,8 +121,8 @@ sub changed {
     print "$seq\n\n";
     
     # write fasta file to update log
-    print LOG ">WP:$new_acc";
-    print LOG "$seq\n\n";
+    print LOG ">WP:";
+    print LOG "$seq\n";
 }
 
 ###################################################
@@ -169,8 +169,8 @@ sub new {
     print "$seq\n\n";
 
     # write fasta file to update log
-    print LOG ">WP:$new_acc";
-    print LOG "$seq\n\n";
+    print LOG ">WP:";
+    print LOG "$seq\n";
 }
 
 
