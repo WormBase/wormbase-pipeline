@@ -6,8 +6,8 @@
 #
 # Usage : make_keysets.pl [-options]
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2002-10-25 12:39:16 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2002-11-07 13:06:01 $
 
 #################################################################################
 # variables                                                                     #
@@ -26,7 +26,8 @@ use Socket;
 # command-line options       #
 ##############################
 
-use vars qw/ $all $rnai $expr $history $pcr $go $touched $noload $debug $help/;
+
+use vars qw/ $all $rnai $expr $history $pcr $go $touched $noload $debug $help $test/;
 GetOptions (
 	    "all"       => \$all,
 	    "rnai"      => \$rnai,
