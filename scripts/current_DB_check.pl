@@ -7,13 +7,13 @@
 # Script to run consistency checks on the current_DB database
 # to look for bogus sequence entries
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2002-11-13 17:48:01 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2002-11-20 12:44:21 $
 
-use Ace;
+use strict;
 use lib "/wormsrv2/scripts/"; 
 use Wormbase;
-use strict;
+use Ace;
 use Getopt::Std;
  
 ##############################
@@ -81,12 +81,14 @@ foreach my $seq (@genome_seqs){
   foreach my $subseq (@subseqs){
     my $category = 0;
 
-    if(!defined($subseq->at('Visible.Corresponding_protein'))&&defined($subseq->at('Properties.Coding.CDS'))){  
-      my $tag = "Origin";
-      my $timestamp = &get_timestamp($class, $subseq, $tag);
-      $problems{$timestamp}{$class.":".$subseq} = ["\"No Corresponding_protein set for this sequence\""];
-      print "$timestamp $class:$subseq \"No Corresponding_protein tag\"\n" if $verbose;
-      $category = 1;
+    if(!defined($subseq->at('Visible.Corresponding_protein'))){
+	if(defined($subseq->at('Properties.Coding.CDS'))){  
+	   my $tag = "Origin";	
+           my $timestamp = &get_timestamp($class, $subseq, $tag);
+           $problems{$timestamp}{$class.":".$subseq} = ["\"No Corresponding_protein set for this sequence\""];
+           print "$timestamp $class:$subseq \"No Corresponding_protein tag\"\n" if $verbose;
+           $category = 1;
+         }
     }
     
     # only look for some specific errors if no Source tag present
