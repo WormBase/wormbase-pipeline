@@ -7,7 +7,7 @@
 # This maps alleles to the genome based on their flanking sequences
 #
 # Last updated by: $Author: ar2 $                      
-# Last updated on: $Date: 2004-08-06 15:42:25 $        
+# Last updated on: $Date: 2004-08-06 16:16:37 $        
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -327,7 +327,7 @@ sub outputAllele{
 	print OUT "Gene $WBGene\n";
 
 	if( defined($geneace_alleles{$to_dump}) and $geneace_alleles{$to_dump}->name ne $WBGene ) {
-	  print LOG "Geneace Gene error $ko : Geneace $geneace_alleles{$ko}  Mapping $WBGene\n";
+	  print LOG "Geneace Gene error $to_dump : Geneace $geneace_alleles{$to_dump}  Mapping $WBGene\n";
 	}
       }
     }
