@@ -1,0 +1,351 @@
+#!/bin/csh
+# INSTALL for 4_3 July 1996
+# $Id: INSTALL,v 1.1 2004-11-19 12:59:15 wormpub Exp $
+##########################################################################
+#################      A C.elegans database    ###########################
+#################   R.Durbin and J.Thierry-Mieg  #########################
+#################                                #########################
+#################   Installation script, june 91 #########################
+##########################################################################
+#
+# To install ACeDB, this file and the appropriate distribution tar.Z files
+# should be in the same directory. See the NOTES file to find out which
+# distribution tar.Z files you need for your site. You must have write
+# access in the directory to be able to run the INSTALL script.
+#
+# We can provide executables for most X11-Unix platforms, like SUN
+# DEC stations, Next, Alliant, Silicon Graphics, IBM
+# and for PC-compatibles running the freeware Unix-OS called LINUX
+#
+# Go to the directory and, omitting the leading #, type the command
+#  source  INSTALL
+#
+###################################################################
+
+echo ' '
+echo ' ACEDB installation script'
+echo ' '
+
+if ($USER == "root") then
+  echo ' You should not be root when installing ACEDB'
+  echo ' su to some other user name and try again'
+  exit
+endif
+
+echo -n " $USER"
+echo ' will be known as the acedb-administrator'
+echo ' '
+
+echo ' We are going to install the acedb system in the present directory: '
+echo -n "      "
+pwd
+echo ' This is your available disk space in this directory: '
+df -k .
+echo " The amount of space you need will depend on what data you are installing."
+echo " For the source code and binary, you need around 15 Mb."
+echo -n " Should we proceed?  Please answer yes/no : "
+
+switch("$<")
+case "yes":
+case "y":
+	breaksw
+default:
+	echo ' You did not answer yes, I quit'
+        exit
+        breaksw	
+endsw
+
+echo ' '
+echo ' Starting the installation'
+
+if (-e wspec/passwd.wrm ) then 
+  echo ' I save the old wspec/passwd.wrm file as wspec/passwd.old'	
+  \mv wspec/passwd.wrm  wspec/passwd.old
+  echo ' '
+endif
+
+# next items fix problems in the tar.Z files
+if (-d wdoc/code) then
+  chmod 755 wdoc/code
+endif
+if (-d wmake/others) then
+  chmod 755 wmake/others
+endif
+
+if (-d wspec) then	# save active database wspec
+  if (-d wspec.save) then
+    \rm -r wspec.save
+  endif
+  mv wspec wspec.save
+endif
+
+foreach i ( 20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0b4 0 )
+ foreach a ( m l k j i h g f e d c b a '')
+  if (-e source.4_$i$a.tar.gz) then
+    echo -n ' Restoring files from '
+    echo source.4_$i$a.tar.gz
+    gzip -d source.4_$i$a.tar.gz | tar xf -
+    goto ok1;
+  endif
+ end
+end
+
+ok1:
+
+chmod u+w w*/*		# in case w* comes from CVS without write access
+
+if (-d wspec) then	# put wspec from source distribution into wspec.source
+  if (-d wspec.source) then
+    \rm -r wspec.source
+  endif
+  mv wspec wspec.source
+endif
+
+foreach i ( 20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0 )
+  if (-e doc.4_$i.tar.gz) then
+    echo -n ' Restoring files from '
+    echo doc.4_$i.tar.gz
+    gzip -d doc.4_$i.tar.gz | tar xf -
+    break
+  endif
+end
+
+chmod u+w w*/*		# in case w* comes from CVS without write access
+
+setenv ace_version 4
+foreach i ( 20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0b4 0 )
+  foreach a ( z y x w v u t s r q p o n m l k j i h g f e d c b a '')  
+    foreach ff (`ls bin.*.4_$i$a.tar.gz |& grep -v match`)
+      if (-e $ff) then   # use * to name all versions
+        echo " Restoring files from $ff "
+        if (-e bin) \rm -r bin
+        gzip -d $ff | tar xf -
+        setenv ace_version 4_$i$a
+        goto ok2
+      endif
+    end
+  end
+end
+
+ok2:
+
+chmod u+w w*/*		# in case w* comes from CVS without write access
+
+if (-d wspec) then	# put wspec from bin distribution into wspec.bin
+  if (-d wspec.bin) then
+    \rm -r wspec.bin
+  endif
+  mv wspec wspec.bin
+endif
+
+if (-d wspec.save) then	# restore active database wspec
+  mv wspec.save wspec
+endif
+
+foreach ff (`ls database.*.gz`)
+  echo restoring $ff
+  gunzip -c $ff | tar xf -
+end
+
+foreach i ( 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 \
+		23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 )
+  if (-e update.4-$i.tar.Z && ! -e rawdata/update.4-$i) then
+    echo -n ' Restoring files from '
+    echo update.4-$i.tar.Z
+    ( zcat update.4-$i.tar.Z | tar xf - ) && \rm update.4-$i.tar.Z
+  endif
+  foreach a (WS50 WS49 WS48 WS47 WS46 WS45 WS44 WS43 WS42 WS41  \
+             WS40 WS39 WS38 WS37 WS36 WS35 WS34 WS33 WS32 WS31  \
+             WS30 WS29 WS28 WS27 WS26 WS25 WS24 WS23 WS22 WS21  \
+             WS20 WS19 WS18 WS17 WS16 WS15 WS14 WS13 WS12 WS11  \
+             WS10 WS9 WS8 WS7 WS6 WS5 WS4 WS3 WS2 WS1)
+    if (-e database.$a.4-$i.tar.Z && ! -e rawdata/update.$a.4-$i) then
+      echo -n ' Restoring files from '
+      echo database.$a.4-$i.tar.Z
+      ( zcat database.$a.4-$i.tar.Z | tar xf - ) && \rm database.$a.4-$i.tar.Z
+      goto ok3
+    endif
+    if (-e update.$a.4-$i.tar.Z && ! -e rawdata/update.$a.4-$i) then
+      echo -n ' Restoring files from '
+      echo update.$a.4-$i.tar.Z
+      ( zcat update.$a.4-$i.tar.Z | tar xf - ) && \rm update.$a.4-$i.tar.Z
+    endif
+  end
+ok3:
+end
+
+chmod u+w w*/*		# in case w* comes from CVS without write access
+
+echo ' '
+echo -n ' All files have been restored.  Hit return to proceed'
+switch("$<")
+default:
+        breaksw	
+endsw
+
+### extra files, directories etc.
+
+if (! -d database) mkdir database
+touch database/log.wrm
+echo -n "ACEDB installed " >> database/log.wrm
+echo `date` >> database/log.wrm
+
+if (-e 'wspec/passwd.old' ) then 
+  echo ' '	
+  echo ' I restore the old passwd file'
+  \mv wspec/passwd.old wspec/passwd.wrm  
+endif
+
+# Add administrator to the passwd file
+
+if (-e wspec/passwd.wrm) then
+  setenv ADMIN `whoami`
+  grep ^${ADMIN}$ wspec/passwd.wrm >! /dev/null
+  if ($status) then
+    echo ' '
+    echo " I add $ADMIN to the password file"
+    echo ' ' >> wspec/passwd.wrm
+    echo -n $ADMIN >> wspec/passwd.wrm
+    echo '  // Login name of the administrator installing acedb' >> wspec/passwd.wrm
+  endif
+endif
+
+if (-d bin) chmod 755 bin
+if (-d database) chmod 755 database
+foreach i (w*)
+  chmod 755 $i
+end
+
+# next lines remove SCCS stuff, and unlock any locked files
+foreach i (w*)
+  if (-e $i/SCCS) \rm -r $i/SCCS
+  if (-e $i/CVS) \rm -r $i/CVS
+end
+foreach i (w*)		# by directory so glob list not too large
+  if (-d $i) chmod u+w $i/*
+end
+
+# old possible subdirectories of w* (not in ace4)
+if (-d wdoc/code) chmod 755 wdoc/code
+if (-d wmake/others) chmod 755 wmake/others
+
+if (-e 'bin/xace') chmod 755 bin/xace 
+if (-e 'bin/tace') chmod 755 bin/tace 
+if (-e 'bin/fetch') chmod 755 bin/fetch 
+if (-d wscripts) chmod 755 wscripts/*
+if (-e INSTALL) chmod 755 INSTALL
+
+if (-e xace) \rm xace
+if (-e tace) \rm tace
+if (-e makefile) \rm makefile
+if (-d wmake && -e wmake/makefile) ln -s wmake/makefile makefile
+
+# Prepare shell scripts that should eventually be moved into /usr/local/bin
+
+echo '#\!/bin/csh' >! acedb
+echo "setenv ACEDB $cwd" >> acedb
+echo "setenv DBDIR $cwd/database/" >> acedb
+echo "set path = ($cwd/bin"' $path)' >> acedb
+echo "xace" >> acedb
+chmod 755 acedb
+
+echo '#\!/bin/csh' >!  textace
+echo "setenv ACEDB $cwd" >> textace
+echo '$ACEDB/bin/tace' >> textace
+chmod 755 textace
+
+echo ' '
+echo ' I have just created the files "acedb" and "textace" to run the'
+echo ' graphical and command-line versions of acedb respectively.'
+echo " These commands should be placed in each user's path.  To do this"
+echo ' either the users can add the following to the end of their .cshrc file:'
+echo -n '   set path = ($path '
+echo "`pwd`)"
+echo ' or preferably root should move them to /usr/local/bin by:'
+echo '   mv acedb textace /usr/local/bin'
+echo ' '
+echo ' If you added update.* files, when you first run acedb you should choose the'
+echo ' "Add Update" option from the main menu to load the updates into the database.'
+echo ' '
+
+if (-d wspec.source) then
+  echo ' If you want to recompile you must set two environment variables:'
+  echo -n "   setenv ACEDB_SRC "
+  echo `pwd`
+  echo '   setenv ACEDB_MACHINE one of SUN_4, SGI_4 etc, see wmake/truemake'
+  echo ' then type "make all".  More details in the manual.'
+endif
+if (! -e 'bin/xace') then 
+  echo " No executables - you will have to recompile." 
+endif
+
+echo ' '
+echo ' If users other than yourself need write access, add their'
+echo ' login names into wspec/passwd.wrm.'
+echo ' '
+echo ' For more information :'
+echo '  a) Use the on-line help (help key or F1 or F10), while running acedb'
+echo '  b) Read the manuals in directory doc if you have it'
+echo '  c) Look at the WWW site: http://probe.nalusda.gov:8000/acedocs/.'
+echo '  d) Use e-mail :  mieg@kaa.cnrs-mop.fr or rd@sanger.ac.uk'
+echo ' '
+
+## Report attempt to Acedb authors 
+
+echo " If you do not object, a report of the installation will now be mailed"
+echo ' to the developers of ACEDB.  This lets us track installations, which'
+echo ' helps give you a better service.'
+echo -n ' Should we mail this report (default yes)? '
+switch("$<")
+case "no":
+case "n":
+case "NO":
+case "N":
+	goto finis
+	breaksw	
+default:
+        breaksw	
+endsw
+
+## did not go to finis - mail
+
+echo "acedb $ace_version install attempt" > ! toto
+echo `uname -a` >> toto
+echo `date` >> toto
+echo `whoami` >> toto
+echo `pwd` >> toto
+ls bin.*.Z source.*.Z update.*.Z >> toto
+
+if (-x Mail) then
+  Mail -s install.$ace_version  mieg@ncbi.nlm.nih.gov  < toto
+  Mail -s install.$ace_version  rd@sanger.ac.uk  < toto
+else
+  mail -s install.$ace_version  mieg@ncbi.nlm.nih.gov  < toto
+  mail -s install.$ace_version  rd@sanger.ac.uk  < toto
+endif
+
+echo 'This is an automatically generated report of the installation of'  >! toto1
+echo 'the ACEDB database and software.' >> toto1
+echo ' ' >> toto1
+
+cat toto >> toto1
+
+echo ' ' >> toto1
+echo 'With the permission of the installer, this report was also sent to' >> toto1
+echo 'the developers of ACEDB, so that they can track installations to help' >> toto1
+echo 'support users.' >> toto1
+
+mail root < toto1
+
+\rm toto toto1
+
+finis:
+
+echo ' '
+echo ' The installation is complete.'
+echo ' After testing the program, you can archive and remove the tar.Z files.'
+echo ' Please let us know if this installation script does not work.'
+echo ' '
+echo ' Au revoir'
+
+## end of Installation script ##
