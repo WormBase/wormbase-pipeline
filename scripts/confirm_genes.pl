@@ -8,10 +8,10 @@
 # if the whole model is confirmed
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-12-01 11:54:25 $      
+# Last updated on: $Date: 2003-12-09 17:02:07 $      
 
 
-use strict;
+#use strict;
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
 use Wormbase;
 use Carp;
@@ -85,26 +85,28 @@ foreach my $todo (@todo) {
   }
   
   foreach my $chrom (@chrom) {
-    
+
+    print &runtime, " : Getting coordinates of 'coding_exon' features for chromosome $chrom\n" if ($verbose);
     my @refgen  = &read_gff('coding_exon',$chrom);
     my %gen     = %{$refgen[0]}; 
     my @genlist = @{$refgen[1]};
-    
+    print &runtime, " : Finished getting coordinates\n\n" if ($verbose);    
+
     ########################
     # get EST and/or cDNAs #
     ########################
     
+    print &runtime, " : Getting $todo feature coordinates for chromosome $chrom\n"  if ($verbose);
     my @refest  = &read_gff($todo,$chrom);
     my %est     = %{$refest[0]};
     my @estlist = @{$refest[1]};
-    print "Got the ESTs for chrom $chrom\n"  if (($todo =~ /BLAT_TRANSCRIPT_BEST/) && ($verbose));
-    print "Got the cDNAs for chrom $chrom\n" if (($todo =~ /BLAT_mRNA_BEST/) && ($verbose));
+    print &runtime, " : Finished getting coordinates\n\n"  if ($verbose);
     
     ###############
     # check exons #
     ###############
     
-    print "Checking exons\n" if ($verbose);
+    print &runtime, " : Checking exons\n" if ($verbose);
     my %confirm = %{&find_match($exon,\%est,\@estlist,\%gen,\@genlist)};
     
     #check for exon confirmation
@@ -129,7 +131,7 @@ foreach my $todo (@todo) {
 	}    
       }
     }    
-    print "Checked exon confirmation\n" if ($verbose);
+    print &runtime, " : Finished checking\n\n" if ($verbose);
     
     # save space
     foreach my $old (keys %confirm) {
@@ -149,7 +151,7 @@ foreach my $todo (@todo) {
     undef %gen;
     undef %est;
     
-    print "Checking introns\n" if ($verbose);
+    print &runtime, " : Checking introns\n" if ($verbose);
     %confirm = %{&find_match($intron,\%inest,\@estlist,\%ingen,\@genlist)};
     
     if  (($verbose) && ($todo =~ /BLAT_TRANSCRIPT_BEST/)) {
@@ -182,9 +184,11 @@ foreach my $todo (@todo) {
       }
     }        
   }        
+  close(ACE);
 }
 
 
+exit(0);
 
 ####################################################################################################################
 
@@ -193,8 +197,6 @@ foreach my $todo (@todo) {
 ################
 #     subs     #
 ################
-
-
 
 sub read_gff {
   my $filename = shift;
@@ -238,6 +240,8 @@ sub read_gff {
     }
   }
   my @list = sort { $hash{$a}->[0][0] <=> $hash{$b}->[0][0] || $a cmp $b } keys %hash;  
+
+  close(GFF);
   return (\%hash,\@list);
 }
 
@@ -269,7 +273,7 @@ sub find_match {
   my @genelist = @{shift;};
   my $lastfail = 0;
   my %store_match = ();
-  print "Start searching, modus $status\n" if ($verbose);
+  print &runtime, " : Start searching, modus $status\n" if ($verbose);
   
   
   ##################
@@ -277,16 +281,15 @@ sub find_match {
   ##################
   
  GENE:for (my $y = 0; $y < @genelist; $y++) {
-   
+
    my $testgene   = $genelist[$y];
-	next if $unconf{$testgene};
+   next if $unconf{$testgene};
    
    my $geneblocks = (scalar @{$genes{$testgene}})-1; # -1 for array pos last exon
    my $genestart = $genes{$testgene}->[0][0];
    my $geneend   = $genes{$testgene}->[$geneblocks][1];
    
  EST:for (my $x = $lastfail; $x < @ESTlist; $x++) {
-   
    my $testest   = $ESTlist[$x];
    my $estblocks = (scalar @{$ESTs{$testest}})-1;  # -1 for array pos last exon
    my $eststart  = $ESTs{$testest}->[0][0];
@@ -294,7 +297,7 @@ sub find_match {
    
    if ($verbose) {
      foreach my $try (@trygene) { 
-       print "Testing $testgene against $testest\n" if $testgene =~ $try;
+       print "Testing $testgene against $testest\n" if ($testgene =~ $try);
      }
      foreach my $tryest (@tryest) {
        if ($testest =~ $tryest) {
@@ -411,9 +414,9 @@ sub find_match {
 	   if ($verbose) {
 	     foreach my $tryest (@tryest) {
 	       if ($testest =~ $tryest) {
-                                                print "Missed and overlap for eststart:\tgene $testgene\tEST $testest\n";
-                                                print "Coordinates:\tgene $CDS_exon_start\tEST $est_exon_start\tgene $CDS_exon_end\tEST $est_exon_end\tEST $v\tgene $w\n\n";
-					      }
+		 print "Missed and overlap for eststart:\tgene $testgene\tEST $testest\n";
+		 print "Coordinates:\tgene $CDS_exon_start\tEST $est_exon_start\tgene $CDS_exon_end\tEST $est_exon_end\tEST $v\tgene $w\n\n";
+	       }
 	     }
 	   }             
 	 }
