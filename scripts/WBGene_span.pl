@@ -6,8 +6,8 @@
 #
 # Creates SMapped Gene spans for Gene objects
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-08-09 15:34:58 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2004-08-10 09:06:35 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -17,19 +17,21 @@ use Getopt::Long;
 use Log_files;
 
 my $database = "/wormsrv2/autoace";
-my ($test, $gff, $no_ace, $debug);
+my ($test, $gff, $no_ace, $debug, $gff_file);
 GetOptions (
 	    'database=s' => \$database,
 	    'test'       => \$test,
 	    'gff'        => \$gff,
 	    'no_ace'     => \$no_ace,
-	    'debug=s'    => \$debug
+	    'debug=s'    => \$debug,
+	    'gff_file=s'      => \$gff_file
 	   );
 
 my $log = Log_files->make_build_log($debug);
 
 $log->write_to("Generating WBGene spans from database $database\n");
 
+die "$gff_file doesnt exist" if ($gff_file and !(-e $gff_file) );
 
 my %CDS_data;
 my $cds;
@@ -50,7 +52,7 @@ while (<FH>) {
   my @data = split;
   next unless $data[1];
   my $gene = shift @data;
-  $gene2seq{$gene} = [@data];
+  push (@{$gene2seq{$gene}},@data);
 }
 
 close FH;
@@ -61,7 +63,8 @@ my @chromosomes = qw( I II III IV V X MtDNA);
 @chromosomes = qw(III) if $test;
 foreach my $chrom ( @chromosomes ) {
   my %gene_coords;
-  open (GFF,"<$database/CHROMOSOMES/CHROMOSOME_${chrom}.gff") or die "cant open GFF $chrom\n";
+  $gff_file = "$database/CHROMOSOMES/CHROMOSOME_${chrom}.gff" unless $gff_file;
+  open (GFF,"<$gff_file") or die "cant open GFF $gff_file\n";
   while ( <GFF> ) {
     my @data = split;
     if ( ($data[1] eq "Coding_transcript") or
@@ -80,8 +83,8 @@ foreach my $chrom ( @chromosomes ) {
 	 ($data[1] eq "snRNA")
        ) {
       next if ( $data[2] eq "exon" or $data[2] eq "coding_exon" or $data[2] eq "intron" );
-      my ($gene) = $data[9] =~ /\"(\w+\.\w+?)/;
-      $gene_coords{$gene} = [($data[3], $data[4], $data[6]) ];
+      my ($gene) = $data[9] =~ /\"(\w+\.\w+)/;
+      push(@{$gene_coords{$gene}},[($data[3], $data[4], $data[6]) ]);
     }
   }
   close GFF;
@@ -89,16 +92,18 @@ foreach my $chrom ( @chromosomes ) {
  WBG:foreach my $WBgene ( keys %gene2seq ){
     foreach my $CDS ( @{$gene2seq{$WBgene}} ) {
       next WBG unless $gene_coords{$CDS};
-      if ( !(defined $gene_span{$WBgene}) ) {
-	$gene_span{$WBgene}->{'min'}    = $gene_coords{$CDS}->[0];
-	$gene_span{$WBgene}->{'max'}    = $gene_coords{$CDS}->[1];
-	$gene_span{$WBgene}->{'strand'} = $gene_coords{$CDS}->[2];
-      } else {
-	if ( $gene_coords{$CDS}->[0] < $gene_span{$WBgene}->{'min'} ) {
-	  $gene_span{$WBgene}->{'min'}    = $gene_coords{$CDS}->[0];
-	}
-	if ( $gene_span{$WBgene}->{'max'} < $gene_coords{$CDS}->[1] ) {
-	  $gene_span{$WBgene}->{'max'}    = $gene_coords{$CDS}->[1];
+      foreach my $transcript ( @{$gene_coords{$CDS}} ) {
+	if ( !(defined $gene_span{$WBgene}) ) {
+	  $gene_span{$WBgene}->{'min'}    = $transcript->[0];
+	  $gene_span{$WBgene}->{'max'}    = $transcript->[1];
+	  $gene_span{$WBgene}->{'strand'} = $transcript->[2];
+	} else {
+	  if ( $transcript->[0] < $gene_span{$WBgene}->{'min'} ) {
+	    $gene_span{$WBgene}->{'min'}    = $transcript->[0];
+	  }
+	  if ( $gene_span{$WBgene}->{'max'} < $transcript->[1] ) {
+	    $gene_span{$WBgene}->{'max'}    = $transcript->[1];
+	  }
 	}
       }
     }
@@ -130,10 +135,10 @@ foreach my $chrom ( @chromosomes ) {
   close ACE;
   close OUTGFF;
   &load_to_database("$database","$acefile","WBGene_span") unless ( $no_ace ); # I know this would be better done all together but . . 
+  last if $gff_file;
 }
 
-
-
+$log->mail;
 
 exit(0); 
 
