@@ -1,0 +1,69 @@
+package CDS;
+
+use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'} ;
+use Carp;
+use Modules::SequenceObj;
+use Modules::Transcript;
+
+@ISA = qw( SequenceObj );
+
+sub new
+  {
+    my $class = shift;
+    my $name = shift;
+    my $exon_data = shift;
+    my $strand = shift;
+
+    my $self = SequenceObj->new($name, $exon_data, $strand);
+    my $transcript = Transcript->new( $name, $exons_data, $strand);
+
+    push (@{$self->{'transcripts'}},$transcript);
+
+    bless ( $self, $class );
+    return $self;
+  }
+
+# $CDS->map_cDNA results in calls to Transcript->map_cDNA for each transcript. One of which will be derived from the initial CDS structure.
+sub map_cDNA
+  {
+    my $self = shift;
+    my $cdna = shift;
+
+    # check strandedness
+    return 0 if $self->strand ne $cdna->strand;
+
+    #this must overlap - check exon matching
+
+    my $matches_me = 0;
+    foreach $transcript ( $self->transcripts ) {
+      $matches_me = 1 if ($transcripts->map_cDNA( $cdna ) == 1);
+    }
+
+    if( $matches_me == 0 ) {
+      # check against just CDS structure
+      if( $self->check_exon_match( $cdna ) ) {
+	# if this cdna matches the CDS but not the existing transcripts create a new one
+	my $transcript = Transcript->new( $self->$name, $self->exon_data, $self->strand);
+	$transcript->add_matching_cDNA(cdna);
+
+	$self->transcripts($transcript);
+	$matches_me = 1
+      }
+    }
+
+    return $matches_me;
+  }
+
+sub transcripts
+  {
+    my $self = shift;
+    my $transcript = shift;
+
+    # if a new one is passed add
+    if( $transcript ) {
+      push (@{$self->{'transcripts'}},$transcript);
+    }
+    return @{$self->{'transcripts'};
+  }
+
+1;

@@ -1,0 +1,94 @@
+package SequenceObj;
+
+use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'} ;
+use Carp;
+
+# new 
+# expects name , %-ref of exon start/ends and strand ( +/- )
+
+sub new
+  {
+    my $class = shift;
+    my $name = shift;
+    my $exon_data = shift; # \%
+    my $strand = shift;
+
+    my $self = {};
+    $self->{'name'}   = $name;
+
+    my ($start, $end);
+    my @tmp;
+    foreach ( keys %{$exon_data} ) {
+      if( !(defined $start) or $start > $_ ) {
+	$start = $_;
+      }
+      if( !(defined $end) or $end < $$exon_data{$_} ) {
+	$end = $$exon_data{$_};
+      }
+      $self->{'exons'}->{$_} = $$exon_data{$_};
+      push(@tmp,[($_,$$exon_data{$_})]);
+    }
+    @{$self->{'sorted_exons'}} = sort { $a->[0] <=> $b->[0] } @tmp;
+    $self->{'start'} = $start;
+    $self->{'end'}   = $end;
+    $self->{'strand'}= $strand ;
+
+    bless ( $self, $class );
+    return $self;
+  }
+
+# expects coord of exon end to compare. Returns start of exon if match , or else 0 
+sub _exon_that_ends
+  {
+    my $self = shift;
+    my $exon_end = shift;
+    foreach (keys %{$self->exon_data} ) {
+      return $_ if( $self->exon_data->{$_} == $exon_end );
+    }
+    return 0;
+  }
+
+sub exon_data
+  {
+    my $self = shift;
+    return $self->{'exons'};
+  }
+
+sub first_exon 
+  {
+    my $self = shift;
+    return $self->{'sorted_exons'}->[0];
+  }
+
+sub last_exon 
+  {
+    my $self = shift;
+    return $self->{'sorted_exons'}->[-1];
+  }
+
+sub start 
+  {
+    my $self = shift;
+    return $self->{'start'};
+  }
+
+sub end 
+  {
+    my $self = shift;
+    return $self->{'end'};
+  }
+
+sub name
+  {
+    my $self = shift;
+    return $self->{'name'};
+  }
+
+sub strand
+  {
+    my $self = shift;
+    return $self->{'strand'};
+  }
+
+
+1;
