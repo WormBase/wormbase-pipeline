@@ -1,4 +1,4 @@
-#!/usr/local/ensembl/bin/perl -w
+#!/usr/local/bin/perl -w
 
 # Marc Sohrmann (ms2@sanger.ac.uk)
 # Amended by Keith Bradnam (krb@sanger.ac.uk)
