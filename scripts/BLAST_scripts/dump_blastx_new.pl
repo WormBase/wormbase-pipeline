@@ -181,7 +181,7 @@ close COS;
 # populating %accession2name (maps embl accession to contig name)
 ####################################################################
 
-# this could use Common_data.pm - will investigate
+# this could use Common_data.pm - will investigate -  the file acc2clone.data will need to be copied over 
 my %accession2name;
 
 unless ($opt_m) {
@@ -238,7 +238,7 @@ while (my @row = $sth->fetchrow_array) {
         elsif ($1 =~ /slimswissprot/) {$org = "slimSwissProt";}
         elsif ($1 =~ /slimtrembl/)    {$org = "slimTrEMBL";}
 	elsif ($1 =~ /human/)         {$org = "ipi_human";}
-	elsif ($1 =~ /briggsae/)      {$org = "briggsae";}
+	elsif ($1 =~ /brigpep/)      {$org = "briggsae";}
         $analysis2org{$row[0]} = $org;
     }
 }
