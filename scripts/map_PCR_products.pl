@@ -152,23 +152,22 @@ foreach my $chromosome (@chromosomes) {
   }
   close(GFF_in);
 
-
-#  # Get exon info from split transcript exon GFF file
-#  open (GFF_in, "<$gffdir/CHROMOSOME_${chromosome}.exon_noncoding.gff") || die "Failed to open exon_noncoding gff file\n\n";
-#  while (<GFF_in>) {
-#    chomp;	     
-#    s/\#.*//;
-#    next unless /\S/;
-#    @f = split /\t/;
-#
-#    my ($name) = ($f[8] =~ /\"(\S+)\"/);
-#    $exoncount{$name}++;
-#    my $exonname = $name.".".$exoncount{$name};
-#    $exon{$exonname} = [$f[3],$f[4]];
-#    $genetype{$name} = "Transcript" if ($f[1] eq "Non_coding_transcript");
-#    print "Gene : '$name' [$genetype{$name}] exon $exoncount{$name}\n" if ($verbose);
-#  }
-#  close(GFF_in);
+  # Get exon info from split transcript exon GFF file
+  open (GFF_in, "<$gffdir/CHROMOSOME_${chromosome}.exon_noncoding.gff") || die "Failed to open exon_noncoding gff file\n\n";
+  while (<GFF_in>) {
+      chomp;	     
+      s/\#.*//;
+      next unless /\S/;
+      @f = split /\t/;
+      
+      my ($name) = ($f[8] =~ /\"(\S+)\"/);
+      $exoncount{$name}++;
+      my $exonname = $name.".".$exoncount{$name};
+      $exon{$exonname} = [$f[3],$f[4]];
+      $genetype{$name} = "Transcript" if ($f[1] eq "Non_coding_transcript");
+      print "Gene : '$name' [$genetype{$name}] exon $exoncount{$name}\n" if ($verbose);
+  }
+  close(GFF_in);
   
 
   print "Finished GFF loop\n" if ($verbose);
@@ -265,24 +264,24 @@ open (OUTACE, ">/wormsrv2/autoace/MAPPINGS/PCR_mappings.$db_version.ace");
 
 foreach my $mapped (sort keys %finaloutput) {
     
-  print OUT "$mapped\t@{$finaloutput{$mapped}}\n";
+    print OUT "$mapped\t@{$finaloutput{$mapped}}\n";
   
-  for (my $n = 0; $n < (scalar @{$finaloutput{$mapped}}); $n++) {
-    my $gene = $finaloutput{$mapped}->[$n];
+    for (my $n = 0; $n < (scalar @{$finaloutput{$mapped}}); $n++) {
+	my $gene = $finaloutput{$mapped}->[$n];
     
-    if ($genetype{$gene} eq "CDS") {
-      print OUTACE "CDS : \"$gene\"\n";
-      print OUTACE "Corresponding_PCR_product \"$mapped\"\n\n";
+	if ($genetype{$gene} eq "CDS") {
+	    print OUTACE "CDS : \"$gene\"\n";
+	    print OUTACE "Corresponding_PCR_product \"$mapped\"\n\n";
+	}
+	elsif ($genetype{$gene} eq "Pseudogene") {
+	    print OUTACE "Pseudogene : \"$gene\"\n";
+	    print OUTACE "Corresponding_PCR_product \"$mapped\"\n\n";
+	}
+	elsif ($genetype{$gene} eq "Transcript") {
+	    print OUTACE "Transcript : \"$gene\"\n";
+	    print OUTACE "Corresponding_PCR_product \"$mapped\"\n\n";
+	}
     }
-    elsif ($genetype{$gene} eq "Pseudogene") {
-      print OUTACE "Pseudogene : \"$gene\"\n";
-      print OUTACE "Corresponding_PCR_product \"$mapped\"\n\n";
-    }
-#    elsif ($genetype{$gene} eq "Transcript") {
-#      print OUTACE "Transcript : \"$gene\"\n";
-#      print OUTACE "Corresponding_PCR_product \"$mapped\"\n\n";
-#    }
-  }
 } 
 close(OUT);
 close(OUTACE);
