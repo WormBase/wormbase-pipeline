@@ -149,13 +149,7 @@ my %name2id;
 
 print LOG "get the name 2 id mapping for the wormpep proteins [".&now."]\n\n";
 
-open (WP , "$wormpep_file") || die "cannot read $wormpep_file";
-while (<WP>) {
-  next unless /^>/;
-  /^>(\S+)\s+(\S+)/;
-  $name2id{$1} = $2;
-}
-close WP;
+FetchData("CDS2wormpep",\%name2id,"/nfs/acari/wormpipe/dumps");
 
 
 ####################################################################
@@ -213,22 +207,7 @@ close COS;
 
 # this could use Common_data.pm - will investigate -  the file acc2clone.data will need to be copied over 
 my %accession2name;
-
-unless ($map) {
-  print LOG "loading the accession 2 name mappings for the AceDB contigs\n";
-  print LOG "using file ~/dumps/accession2clone.list [".&now."]\n\n";
-
-  open(ACCESSION,"/nfs/acari/wormpipe/dumps/accession2clone.list") || die "Could not open accession2clone file\n";
-  while (<ACCESSION>) {
-    chomp;
-    if (/(\S+)\s+(\S+)/) {
-      $accession2name{$1} = $2;
-      print "Output: \"$1\"\t\"$2\"\n";
-    }
-  }
-  close ACCESSION;
-}
-
+FetchData("accession2clone",\%accession2name,"/nfs/acari/wormpipe/dumps");
 
 # Open DBM to find out database of HID
 dbmopen my %ACC2DB, "/acari/work2a/wormpipe/dumps/acc2db.dbm", 0666 or die "cannot open acc2db \n";
@@ -659,7 +638,7 @@ foreach my $aref (@$ref) {
 	  } else {
 	    $prefix = ${org2acedb{$org};
 	  }
-	  ;
+	  
 	}
 	if (@cigars == 1) {
 	  print $output "Pep_homol\t\"$prefix$hid\" \"wublastx_$org\" ";
