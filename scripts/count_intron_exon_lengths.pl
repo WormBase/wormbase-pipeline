@@ -1,7 +1,9 @@
 #!/usr/local/bin/perl
 
 
-open (GFF, "</wormsrv2/autoace/CHROMOSOMES/CHROMOSOME_X.gff");
+my $chromo = shift;
+
+open (GFF, "</wormsrv2/autoace/CHROMOSOMES/CHROMOSOME_${chromo}.gff");
 while (<GFF>) {
 
     if (/\#\#sequence-region (\S+) (\d+) (\d+)/) {
@@ -28,11 +30,11 @@ close (GFF);
 
 $remainder = $end - $intron_length  - $exon_length;
 
-print "\n\n";
+print "\nCHROMOSOME_$chromo\n";
 print "# sequence\t\t$end\n";
 print "# intron\t$intron\t$intron_length\n";
 print "# exon   \t$exon\t$exon_length\n";
 print "# intergenic\t\t$remainder\n\n";
 
-exit 0;
+exit (0);
 
