@@ -8,7 +8,7 @@
 # Usage : make_agp_file.pl
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2002-09-03 15:53:43 $
+# Last edited on: $Date: 2002-09-03 16:07:47 $
 
 
 #################################################################################
@@ -148,8 +148,7 @@ foreach my $chromosome (@gff_files) {
     # fudge to try to get sequence version using pfetch if getz fails
     if($seqver{$acc} eq ""){
       my $getz_acc = `/usr/local/pubseq/bin/pfetch $acc | grep ">"`;
-      $getz_acc =~ s/.*\.//;
-      $getz_acc =~ s/ Caenorh*//;
+      $getz_acc =~ s/.*\.(\d+)\s+.*/$1/;
       $ver{$1} = $getz_acc;
     }
     else{
