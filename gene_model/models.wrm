@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.45 2002-03-07 17:36:26 kj2 Exp $
+// CVS info:  $Id: models.wrm,v 1.46 2002-03-08 13:21:43 kj2 Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -1054,6 +1054,8 @@
 	DB_info	Database ?Database Text ?Accession_number XREF Motif // ID  Accession_number
 	  	DB_remark ?Text
 		DB_text ?LongText
+                Template ?URL
+                Web_location ?WWW_server
 	Substrate UNIQUE DNA
 			 Peptide
 	Homol	DNA_homol ?Sequence XREF Motif_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
