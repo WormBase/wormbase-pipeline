@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder [-options]
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2003-04-22 09:40:57 $
+# Last edited by: $Author: wormpub $
+# Last edited on: $Date: 2003-04-23 17:01:45 $
 
 
 #################################################################################
@@ -21,6 +21,7 @@ use lib "/wormsrv2/scripts/";
 use Wormbase;
 use strict;
 use vars;
+use Carp;
 
 &test_user_wormpub;
 
