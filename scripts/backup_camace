@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl
+#!/usr/local/bin/perl5.6.0
 #
 # backup_camace
 # v 0.1
@@ -7,8 +7,8 @@
 
 # Usage : backup_camace
 
-# v0.1
-# 001211 : dl  : PP version
+# Last updated by: $Author: dl1 $
+# Last updated on: $Date: 2002-08-12 12:42:10 $
 
 #################################################################################
 # variables                                                                     #
@@ -17,7 +17,9 @@
 $|=1;
 use Cwd;
 use IO::Handle;
-require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
+use lib "/wormsrv2/scripts/";
+use Wormbase;
+use strict;
 
  ##############################
  # Script variables (run)     #
@@ -27,7 +29,6 @@ my $maintainer = "dl1\@sanger.ac.uk";
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
 my $logfile = "/wormsrv2/logs/backup_camace.$rundate.$$";
-my $version = &get_script_version(backup_camace);
 
  ##############################
  # paths for I/O files        #
@@ -35,8 +36,8 @@ my $version = &get_script_version(backup_camace);
 
 my $campath    = "/wormsrv2/camace";
 my $backuppath = "/nfs/disk100/wormpub/acedb/ace4/cam/dumps";
-$tace          = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
-$giface        = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/giface";
+my $tace       = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
+my $giface     = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/giface";
 
  ##############################
  # open logfile               #
@@ -56,18 +57,17 @@ print LOGFILE "\n";
  # copy the tar.gz file from the ftp site #
  ##########################################
 
+# move to database directory
 chdir $campath;
 my $dir = cwd();
 print "Move to directory: '$dir'\n";
 
-$command=<<END;
-dump
-END
-
+# tace command to dump the database
+my $command = "dump -T\nquit\n";
 &DbWrite($command,$tace,$campath,"Dump");
-
 print "Dump files to be compressed:\n";
 
+my $file;
 opendir(LIST, $campath) or die ("Could not opendir $datadir");
 while (defined($file=readdir(LIST))) {
     next unless ($file =~ /dump\S+.+\.ace/);
@@ -112,6 +112,35 @@ sub DbWrite {
   print WRITEDB $command;
   close WRITEDB;
 }
+
+__END__
+
+=pod
+
+=head2   NAME - backup_camace
+
+=head1 USAGE
+
+=over 4
+
+=item backup_camace
+
+=back
+
+backup_camace makes an acedump of the camace database from /wormsrv1 to
+/nfs/disk100/wormpub.
+
+=back
+
+=head1 AUTHOR
+
+=over 4
+
+=item Dan Lawson (dl1@sanger.ac.uk)
+
+=back
+
+=cut
 
 
 
