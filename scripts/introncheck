@@ -72,7 +72,7 @@ foreach my $chromosome (@chromosomes) {
   #######################################
 
   print "Make a hash for all introns on chromosome $chromosome\n";
-  open (GFF_in, "/wormsrv2/scripts/gff_sort $gffdir/GFF_SPLITS/CHROMOSOME_${chromosome}.intron.gff |") || die "Failed to open gff file\n\n";
+  open (GFF_in, "/wormsrv2/scripts/gff_sort $gffdir/GFF_SPLITS/CHROMOSOME_${chromosome}.intron.gff |") || die "Failed to open gff file in $gffdir/GFF_SPLITS/\n\n";
 
   while (<GFF_in>) {
     chomp;
@@ -89,7 +89,7 @@ foreach my $chromosome (@chromosomes) {
   # print "Cycle through introns in .gff file\n\n"; #
   ###################################################
 
-  open (GFF, "<$gffdir/../CHROMOSOMES/CHROMOSOME_${chromosome}.gff") || die "Failed to open gff file\n\n";
+  open (GFF, "<$gffdir/../CHROMOSOMES/CHROMOSOME_${chromosome}.gff") || die "Failed to open gff file in $gffdir/../CHROMOSOMES/CHROMOSOME \n\n";
 
   while (<GFF>) {       	
     chomp;
