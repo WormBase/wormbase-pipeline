@@ -22,6 +22,9 @@ use Symbol 'gensym';
 my @chrom = qw ( I II III IV V X ); 
 my $cvsversion = &get_cvs_version('/wormsrv2/copy2web.pl');
 my $WSversion  = &get_wormbase_version;
+    my ($newnumber) = ($WSversion =~ /(\d+$)/);
+    my $oldnumber = $newnumber -1;
+my $oldWSversion = "WS".$oldnumber;
 my $maintainers = "dl1\@sanger.ac.uk kj2\@sanger.ac.uk";
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
@@ -47,6 +50,8 @@ print LOG "copying files from /wormsrv2/autoace/CHECKS/ to /nfs/WWW/htdocs/Proje
 
 system("mkdir /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/$WSversion") && die "Cannot create web $WSversion dir $!\n";
 system("mkdir /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/$WSversion/Checks") && die "Cannot create web $WSversion/Checks dir $!\n";
+system("cp -f /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/$oldWSversion/Checks/index.shtml /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/$WSversion/Checks/")
+    && die "Cannot copy index.shtml $!\n";
 
 foreach my $chrom (@chrom) {
     foreach my $file (@filenames) {
@@ -76,10 +81,6 @@ for (my $n = 0; $n < @filenames; $n++) {
 ####################### 
 
 print LOG "Generating new html files in /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/$WSversion/Checks/\n";
-
-my ($newnumber) = ($WSversion =~ /(\d+$)/);
-my $oldnumber = $newnumber -1;
-my $oldWSversion = "WS".$oldnumber;
 
 for (my $m = 0; $m < @filenames; $m++) {    
     my $fh     = gensym();
