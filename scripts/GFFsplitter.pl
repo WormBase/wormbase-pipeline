@@ -5,7 +5,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2003-10-29 12:23:16 $
+# Last updated on: $Date: 2003-10-29 12:35:33 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -229,8 +229,8 @@ foreach $file (@gff_files) {
     # BLAT_EMBL
     elsif (/BLAT_EMBL_BEST/)                          {push (@{$GFF{$file}{BLAT_EMBL_BEST}},$_);}
     elsif (/BLAT_EMBL_OTHER/)                         {push (@{$GFF{$file}{BLAT_EMBL_OTHER}},$_);}
-    # BLATX_NEMATODE
-    elsif (/BLATX_NEMATODE/)                          {push (@{$GFF{$file}{BLATX_NEMATODE}},$_);}
+    # BLAT_NEMATODE
+    elsif (/BLAT_NEMATODE/)                           {push (@{$GFF{$file}{BLAT_NEMATODE}},$_);}
     # Expr_profile
     elsif (/Expr_profile/)                            {push (@{$GFF{$file}{Expr_profile}},$_);}
     # UTR         
@@ -515,7 +515,7 @@ BLAT_mRNA_BEST
 BLAT_mRNA_OTHER
 BLAT_EMBL_BEST
 BLAT_EMBL_OTHER
-BLATX_NEMATODE
+BLAT_NEMATODE
 Expr_profile
 UTR
 BLASTX
