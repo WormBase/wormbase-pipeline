@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.8.0                   
+#!/usr/local/bin/perl5.8.0 -w          
 #
 # map_features.pl
 #
@@ -8,8 +8,8 @@
 # Uses Ant's Feature_mapper.pm module
 #
 #
-# Last updated by: $Author: dl1 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2004-08-12 12:23:30 $        # quickly see when script was last changed and by whom
+# Last updated by: $Author: krb $                      # These lines will get filled in by cvs and helps us
+# Last updated on: $Date: 2004-10-14 14:23:21 $        # quickly see when script was last changed and by whom
 
 
 $|=1;
@@ -32,12 +32,14 @@ my $SL2;                     #  SL2 trans-splice leader acceptors
 my $polyA_site;              #  polyA_site
 my $polyA_signal;            #  polyA_signal
 my $adhoc;                   # Run against a file, output to screen
+my $build;                   # specify build mode, will write to acefiles and then load data
 my $start;
 my $stop;
+my $log = Log_files->make_build_log();
+my $maintainers = "All"; # log file recipients
 
 
-GetOptions (
-	    "all"          => \$all,
+GetOptions ("all"          => \$all,
 	    "SL1"          => \$SL1,
 	    "SL2"          => \$SL2,
 	    "polyA_site"   => \$polyA_site,
@@ -45,8 +47,8 @@ GetOptions (
 	    "adhoc=s"      => \$adhoc,
             "debug=s"      => \$debug,
             "verbose"      => \$verbose,
-	    "help"         => \$help
-           );
+	    "build"        => \$build,
+	    "help"         => \$help);
 
 # Help pod if needed
 &usage(0) if ($help);
@@ -55,10 +57,13 @@ GetOptions (
 # ACEDB and databases #
 #######################
 
-our $tace   = &tace; 
-our $outdir = "/wormsrv2/autoace/FEATURES";
-our $dbdir  = "/wormsrv2/autoace";
+my $tace   = &tace; 
+
+my $outdir = "/wormsrv2/autoace/acefiles";
+my $dbdir  = "/wormsrv2/autoace";
 $dbdir = "/nfs/disk100/wormpub/DATABASES/current_DB" if ($debug);
+
+$log->write_to("-build specified, writing to /wormsrv2/autoace/acefiles\n\n") if ($build);
 
 
 # WS version for output files
@@ -92,83 +97,99 @@ push (@features2map, "polyA_site")    if (($polyA_site) || ($all));
 
 foreach my $query (@features2map) {
 
-    print "// mapping $query features\n" if ($verbose);
+  $log->write_to("Mapping $query features\n");
     
-    # open output files
+  # open output files
+  # use /tmp if not in build mode
+  if($build){
+    open (OUTPUT, ">$outdir/feature_${query}.ace") or die "Failed to open output file\n" unless ($adhoc);
+  }
+  else{
+    open (OUTPUT, ">/tmp/feature_${query}.ace") or die "Failed to open output file\n" unless ($adhoc);
+  }
 
-    open (OUTPUT, ">$outdir/${WS_version}_feature_${query}.ace") or die "Failed to open output file\n" unless ($adhoc);
-    open (ERRORS, ">$outdir/${WS_version}_feature_${query}.err") or die "Failed to open error file\n" unless ($adhoc);
+  # start tace session for input data (or find file for adhoc run)
+  if ($adhoc) {
+    open (TACE, "<$adhoc") or die "Failed to open input file: $adhoc\n";
+    print "// Opening a file for input: $adhoc\n" if ($verbose);
+  }
+  else {
+    open (TACE, "echo 'Table-maker -p $dbdir/wquery/feature_${query}.def\nquit\n' | $tace $dbdir | ");
+  }
+  while (<TACE>) {
+    
+    # when it finds a good line
+    if (/^\"(\S+)\"\s+\"(\S+)\"\s+\"(\S+)\"\s+\"(\S+)\"/) {
+      ($feature,$clone,$flanking_left,$flanking_right) = ($1,$2,$3,$4);
+      
+      my @coords = $mapper->map_feature($clone,$flanking_left,$flanking_right);
+      
+      $start = $coords[1];
+      $stop  = $coords[2];
+      
+      # munge returned coordinates to get the span of the mapped feature
+      
+      # Deal with polyA_signal features
+      if ($polyA_signal) {
+	if ($start < $stop) {
+	  $start++;
+	  $stop--;
+	  $span = $stop - $start + 1;
+	}
+	else {
+	  $start--;
+	  $stop++;
+	  $span = $start - $stop + 1;
+	}
+      }
+      # else deal with butt-ended features (e.g. SL1, SL2 & polyA_site)
+      elsif ($start > $stop) {
+	$span = $start - $stop - 1;
+      }
+      else {
+	$span = $stop - $start - 1;
+      }
+      
+      # check feature span is sane
+      
+      if ($span == $sanity{$query}) {
+	
+	if ($adhoc) {
+	  print "$feature maps to $clone $start -> $stop, feature span is $span bp\n";
+	}
+	else {
+	  print OUTPUT "//$feature maps to $clone $start -> $stop, feature span is $span bp\n";
+	  print OUTPUT "\nSequence : \"$clone\"\n";
+	  print OUTPUT "Feature_object $feature $start  $stop\n\n";
+	}
+      }
+      else {
+	$log->write_to("$feature maps to $clone $start -> $stop, feature span is $span bp\n");
+      }
+    } #_ if match line
+  }
+  close TACE;
 
-    # start tace session for input data (or find file for adhoc run)
-    if ($adhoc) {
-	open (TACE, "<$adhoc") or die "Failed to open input file: $adhoc\n";
-	print "// Opening a file for input: $adhoc\n" if ($verbose);
-    }
-    else {
-	open (TACE, "echo 'Table-maker -p $dbdir/wquery/feature_${query}.def\nquit\n' | $tace $dbdir | ");
-    }
-    while (<TACE>) {
-
-	# when it finds a good line
-	if (/^\"(\S+)\"\s+\"(\S+)\"\s+\"(\S+)\"\s+\"(\S+)\"/) {
-	    ($feature,$clone,$flanking_left,$flanking_right) = ($1,$2,$3,$4);
-
-	    my @coords = $mapper->map_feature($clone,$flanking_left,$flanking_right);
-
-	    $start = $coords[1];
-	    $stop  = $coords[2];
-
-	    # munge returned coordinates to get the span of the mapped feature
-
-	    # Deal with polyA_signal features
-	    if ($polyA_signal) {
-		if ($start < $stop) {
-		    $start++;
-		    $stop--;
-		    $span = $stop - $start + 1;
-		}
-		else {
-		    $start--;
-		    $stop++;
-		    $span = $start - $stop + 1;
-		}
-	    }
-	    # else deal with butt-ended features (e.g. SL1, SL2 & polyA_site)
-	    elsif ($start > $stop) {
-		$span = $start - $stop - 1;
-	    }
-	    else {
-		$span = $stop - $start - 1;
-	    }
-
-	    # check feature span is sane
-	    
-	    if ($span == $sanity{$query}) {
-		
-		if ($adhoc) {
-		    print "$feature maps to $clone $start -> $stop, feature span is $span bp\n";
-		}
-		else {
-		    print OUTPUT "//$feature maps to $clone $start -> $stop, feature span is $span bp\n";
-		    print OUTPUT "\nSequence : \"$clone\"\n";
-		    print OUTPUT "Feature_object $feature $start  $stop\n\n";
-		}
-	    }
-	    else {
-		print ERRORS "// $feature maps to $clone $start -> $stop, feature span is $span bp\n" unless ($adhoc);
-	    }
-	} #_ if match line
-    }
-    close TACE;
+  # load data to autoace if -load specified
+  if($build){
+    
+    my $command = "autoace_minder.pl -load $outdir/feature_${query}.ace -tsuser feature_${query}_data";
+ 
+    my $status = system($command);
+    if(($status >>8) != 0){
+      $log->write_to("Loading failed \$\? = $status\n");
+    } 
+  }
 }
 
 close OUTPUT unless ($adhoc);
-close ERRORS unless ($adhoc);
+
 
 ###############
 # hasta luego #
 ###############
 
+$log->mail("$maintainers");
 exit(0);
 
 
@@ -238,6 +259,11 @@ map polyA signal sequence sites (6 bp feature)
 =item -debug <user> 
 
 Queries current_DB rather than autoace
+
+=item -build
+
+Assumes you are building, so therefore loads data into autoace and writes acefiles to
+/wormsrv2/autoace/acefiles
 
 =item -adhoc <file> 
 

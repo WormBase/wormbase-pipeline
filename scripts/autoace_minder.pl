@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-10-13 10:33:05 $
+# Last edited on: $Date: 2004-10-14 14:23:21 $
 
 
 
@@ -1292,15 +1292,7 @@ sub map_features {
   my $file;
 
   # features
-  &run_command("$scriptdir/map_features.pl -all");
-
-  # these should be folded into a loop or into the script itself [dl]
-  #Loads feature data into autoace with tsuser set to feature type.
-  my @features = ("SL1", "SL2", "polyA_site", "polyA_signal",);
-  foreach my $feature (@features) {
-    $file = "$basedir/autoace/FEATURES/WS${WS_version}_feature_${feature}.ace";
-    &load($file,"feature_${feature}");
-  }
+  &run_command("$scriptdir/map_features.pl -all -build");
   
   # PCR products
   &run_command("$scriptdir/map_PCR_products.pl");
