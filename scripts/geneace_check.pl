@@ -6,8 +6,8 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-03-11 19:04:14 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2003-03-21 15:22:39 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -175,6 +175,7 @@ sub process_locus_class{
     print LOG "$warnings" if(defined($warnings));
     #Erich Schwarz wants some of these - emsch@its.caltech.edu
     print ERICHLOG "$erich_warnings" if(defined($erich_warnings));
+    undef($locus);
   }
 
   # Look for loci in current_DB not in geneace
@@ -185,7 +186,7 @@ sub process_locus_class{
   Table-maker -p "/wormsrv1/geneace/wquery/get_all_seq_with_pseudogene_and_locus.def" quit
 EOF
  
-  find_new_loci_in_current_DB($get_seg_with_pseudogene_locus, $db);
+  &find_new_loci_in_current_DB($get_seg_with_pseudogene_locus, $db);
    
   #Look for loci that are other_names and still are obj of ?Locus -> candidate for merging
  
@@ -193,13 +194,13 @@ EOF
   Table-maker -p "/wormsrv1/geneace/wquery/locus_has_other_name.def" quit
 EOF
   
-  loci_as_other_name($locus_has_other_name, $default_db, $db);
+  &loci_as_other_name($locus_has_other_name, $default_db, $db);
 
   my $locus_to_CDS=<<EOF;
   Table-maker -p "/wormsrv1/geneace/wquery/locus_to_CDS.def" quit
 EOF
 
-  loci_point_to_same_CDS($locus_to_CDS, $default_db);
+  &loci_point_to_same_CDS($locus_to_CDS, $default_db);
 
   my $cgc_approved_and_non_cgc_name=<<EOF;
   Table-maker -p "/wormsrv1/geneace/wquery/cgc_approved_and_non_cgc_name.def" quit
@@ -208,7 +209,7 @@ EOF
   Table-maker -p "/wormsrv1/geneace/wquery/cgc_approved_has_no_cgc_name.def" quit
 EOF
   
-  gene_name_class($cgc_approved_and_non_cgc_name, $cgc_approved_has_no_cgc_name, $default_db); 
+  &gene_name_class($cgc_approved_and_non_cgc_name, $cgc_approved_has_no_cgc_name, $default_db); 
 
   # check CGC_approved loci is XREF to existing Gene_Class   
   # check locus in geneace that are connected to CDS but not CGC_approved
@@ -223,7 +224,7 @@ EOF
   Table-maker -p "/wormsrv1/geneace/wquery/locus_to_CDS_but_not_CGC_approved.def" quit
 EOF
     
-  locus_CGC($cgc_loci_not_linked_to_geneclass, $get_all_gene_class, $locus_to_CDS_but_not_CGC_approved, $default_db);
+  &locus_CGC($cgc_loci_not_linked_to_geneclass, $get_all_gene_class, $locus_to_CDS_but_not_CGC_approved, $default_db);
 
   my $cds_of_each_locus=<<EOF;
   Table-maker -p "/wormsrv1/geneace/wquery/cds_of_each_locus.def" quit
@@ -232,18 +233,20 @@ EOF
   Table-maker -p "/wormsrv1/geneace/wquery/seq_name_of_each_locus.def" quit
 EOF
   
-  cds_name_to_seq_name($cds_of_each_locus, $seq_name_of_each_locus, $default_db);
+  &cds_name_to_seq_name($cds_of_each_locus, $seq_name_of_each_locus, $default_db);
 
  my $no_remark_in_geneclass_for_merged_loci=<<EOF;
   Table-maker -p "/wormsrv1/geneace/wquery/no_remark_in_geneclass_for_merged_loci.def" quit
 EOF
 
-  add_remark_for_merged_loci_in_geneclass($no_remark_in_geneclass_for_merged_loci, $default_db);
+  &add_remark_for_merged_loci_in_geneclass($no_remark_in_geneclass_for_merged_loci, $default_db);
 
     
   print LOG "\nThere are $locus_errors errors in $size loci.\n";
 
 }
+
+##############################################################
 
 sub add_remark_for_merged_loci_in_geneclass {
   my ($def, $db)=@_;
@@ -265,6 +268,11 @@ sub add_remark_for_merged_loci_in_geneclass {
     }
   }
 }
+
+
+
+##############################################################
+
 
 sub gene_name_class {
   my ($def1, $def2, $db) = @_;
@@ -298,6 +306,8 @@ sub gene_name_class {
     }
   }    
 }
+
+##############################################################
 
 sub cds_name_to_seq_name {
 
@@ -368,6 +378,7 @@ sub process_laboratory_class{
 	$lab_errors++;
       }
     }  
+    undef($lab);
   }
   print LOG "\nThere are $lab_errors errors in Laboratory class\n";
 }
@@ -439,7 +450,8 @@ EOF
 	  }
 	}
       }
-    }  
+    }
+    undef($allele);
   }
 
   $cdb->close;
@@ -455,22 +467,25 @@ EOF
   Table-maker -p "/wormsrv1/geneace/wquery/allele_has_flankSeq_and_no_seq.def" quit
 EOF
 
-  allele_has_flankSeq_and_no_seq($allele_has_flankSeq_and_no_seq, $default_db);
+  &allele_has_flankSeq_and_no_seq($allele_has_flankSeq_and_no_seq, $default_db);
 
   my $allele_has_predicted_gene_and_no_seq=<<EOF;
   Table-maker -p "/wormsrv1/geneace/wquery/allele_has_predicted_gene_and_no_seq.def" quit
 EOF
 
-  allele_has_predicted_gene_and_no_seq($allele_has_predicted_gene_and_no_seq, $default_db);
+  &allele_has_predicted_gene_and_no_seq($allele_has_predicted_gene_and_no_seq, $default_db);
 
   my $allele_methods=<<EOF;
   Table-maker -p "/wormsrv1/geneace/wquery/allele_methods.def" quit
 EOF
 
-  check_missing_allele_method($allele_methods, $default_db);
+  &check_missing_allele_method($allele_methods, $default_db);
 
   print LOG "\nThere are $allele_errors errors in Allele class\n";
 }
+
+
+#################################################################
 
 sub allele_location {
   my ($def, $dir)=@_;
@@ -485,6 +500,8 @@ sub allele_location {
   return %location_desig;
 }
   
+#################################################################
+
 sub allele_has_flankSeq_and_no_seq {
       
   my ($def, $dir) = @_;
@@ -498,6 +515,9 @@ sub allele_has_flankSeq_and_no_seq {
     }
   }
 }
+
+
+#################################################################
 
 sub allele_has_predicted_gene_and_no_seq {
           
@@ -526,7 +546,7 @@ sub allele_has_predicted_gene_and_no_seq {
         if ($ace){
           print ACE "\n\nAllele : \"$allele\"\n";
           print ACE "-D Sequence \"$seq\"\n";
-          get_parent_seq($cds, $allele);
+          &get_parent_seq($cds, $allele);
         }
       }
       if ($seq ne $cds && $seq !~ /SUPERLINK.+/){
@@ -556,6 +576,8 @@ sub allele_has_predicted_gene_and_no_seq {
     return $parent;
   }
 }
+
+#################################################################
 
 sub check_missing_allele_method {
   my ($def, $dir) = @_;
@@ -668,6 +690,8 @@ EOF
   print LOG "\nThere are $strain_errors errors in Strain class.\n";
 }
 
+#################################################################
+
 sub cgc_loci {
   my ($def, $db) = @_;
   my (@cgc_loci, %cgc_loci);
@@ -741,6 +765,9 @@ EOF
   print LOG "\n\nThere are $sequence_errors errors in Sequence class\n";
 }   
 
+
+#############################################
+
 sub check_genetics_coords_mapping {
   print "\nChecking discrepancies in genetics/coords mapping:\n\n";
   print LOG "\nChecking discrepancies in genetics/coords mapping:\n\n";
@@ -751,6 +778,8 @@ sub check_genetics_coords_mapping {
     print JAHLOG $_;
   }
 }
+
+##############################################
 
 sub chech_reverse_physicals {
   system ("/wormsrv2/scripts/get_interpolated_gmap.pl -reverse");
@@ -1061,25 +1090,6 @@ sub test_locus_for_errors{
     $locus_errors++;
   }
 
-
-# This test no longer needed as we don't have New_name tag now  
-  # test for New_name tag and other information apart from Gene and Species
-#  if(defined($locus->at('Name.New_name'))){
-#    if(defined($locus->at('Species')) && defined($locus->at('Type.Gene'))){
-#      # check for any other info in object
-#      my @tags = $locus->tags();
-#      if(scalar(@tags)>3){
-#	$warnings .= "ERROR 12: $locus has New_name tag + extra info. Transfer into new gene?\n";
-#	$locus_errors++;
-#      }
-#    }
-#    else{
-#      $warnings .= "ERROR 13: $locus has no species and/or Gene tag present\n";
-#      $locus_errors++;
-#    }
-#  }
-
-  
 
   # Test for Polymorphisms with no P in their title
   #if(defined($locus->at('Type.Polymorphism'))){
