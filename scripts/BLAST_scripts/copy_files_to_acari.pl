@@ -17,7 +17,7 @@ use vars qw($opt_c $opt_w);
 getopts ('cw');
 
 my $maintainers = "All";
-my $dir = "/nfs/acari/wormpipe/BlastDB";
+my $dir = glob("~wormpipe/BlastDB");
 my $rundate     = `date +%y%m%d`; chomp $rundate;
 my $runtime     = `date +%H:%M:%S`; chomp $runtime;
 my $log = "/wormsrv2/logs/copy_file_to_acari.$rundate.$runtime";
@@ -46,7 +46,8 @@ if ( $opt_c )
     foreach my $chrom (@CHROMOSOME) {
       print LOG "Chromosome $chrom . . . ";
       print "about to get Chromosome $chrom\n";
-      &test_system_command( system ("scp -r wormpub\@wormsrv2:/wormsrv2/autoace/CHROMOSOMES/CHROMOSOME_$chrom.dna $dir/") );
+      # &test_system_command( system ("scp -r wormpub\@wormsrv2:/wormsrv2/autoace/CHROMOSOMES/CHROMOSOME_$chrom.dna $dir/") );
+      &test_system_command( system ("/usr/bin/rcp /wormsrv2/autoace/CHROMOSOMES/CHROMOSOME_$chrom.dna $dir/") );
       print LOG "\nProcess chromsome $chrom\n";
       print LOG "\treplacing padding characters by N's in chromosome consensus DNA (if necessary ! ). .";
       &test_system_command( system ("cat $dir/CHROMOSOME_$chrom.dna | perl -n -e 's/\-/n/g;print' > $dir/tmp_file") );
@@ -69,7 +70,8 @@ if( $opt_w )
     my $wp_old  = "wormpep" . ($WS_version - 1) . ".pep";
     
     print LOG "copying wormpep version $WS_version . . ";
-    &test_system_command( system ("scp wormpub\@wormsrv2:/wormsrv2/WORMPEP/wormpep$WS_version/wormpep$WS_version $dir/") );
+    # &test_system_command( system ("scp wormpub\@wormsrv2:/wormsrv2/WORMPEP/wormpep$WS_version/wormpep$WS_version $dir/") );
+    &test_system_command( system ("/usr/bin/rcp /wormsrv2/WORMPEP/wormpep$WS_version/wormpep$WS_version $dir/") );
     print LOG "Renaming to wormpep$WS_version.pep\n";
     &test_system_command( system ("mv $dir/wormpep$WS_version $dir/wormpep$WS_version.pep"));
 
@@ -90,7 +92,6 @@ print LOG "\n\nfinished at ",`date`,"\n";
 close LOG;
 #### use Wormbase.pl to mail Log ###########
 my $name = qw(Copy_files_to_acari.pl);
-$maintainers = "ar2\@sanger.ac.uk";
 &mail_maintainer ($name,$maintainers,$log);
 #########################################
 
