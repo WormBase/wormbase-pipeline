@@ -268,13 +268,8 @@ close LOG;
 # mail $maintainer report    #
 ##############################
 
-open (OUTLOG,"|/usr/bin/mailx -s camcheck_report $maintainers ");
-open (READLOG, "<$log") || die "Couldn't open $log for reading\n";
-while (<READLOG>) {
-    print OUTLOG "$_";
-}
-close READLOG;
-close OUTLOG;
+&mail_maintainer("camcheck Report:",$maintainers,$log);
+
 
 ##############################
 # Write log to wormpub intweb
