@@ -1,11 +1,11 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/bin/perl5.8.0 -w
 #
-# merge_split_camaces
+# merge_split_camaces.pl
 # 
 # dl
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-08-20 15:34:40 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2003-09-08 15:47:31 $
 
 use strict;
 use lib "/wormsrv2/scripts/";   
@@ -73,7 +73,7 @@ if ($merge) {
     print "Make a new directory : '$directory'\n" if ($debug);
     mkdir $directory;
 
-    # dump the Sequence and Transcript class from the database
+    # dumps the Sequence, Transcript, Feature and Pseudogene classes from the database
     
     # copy to camace_orig (always do this)
     &dump_camace_orig;
@@ -122,6 +122,16 @@ if ($merge) {
     system ("acediff $path_orig $path_dl1 > $directory/feature_diff_dl1.ace") if ($dan  || $all);
     system ("acediff $path_orig $path_pad > $directory/feature_diff_pad.ace") if ($paul || $all);
     system ("acediff $path_orig $path_ar2 > $directory/feature_diff_ar2.ace") if ($ant  || $all);
+
+    # Pseudogene
+    $path_orig = $directory . '/pseudogene_orig.ace';
+    $path_dl1  = $directory . '/pseudogene_dl1.ace';
+    $path_pad  = $directory . '/pseudogene_pad.ace';
+    $path_ar2  = $directory . '/pseudogene_ar2.ace';
+    
+    system ("acediff $path_orig $path_dl1 > $directory/pseudogene_diff_dl1.ace") if ($dan  || $all);
+    system ("acediff $path_orig $path_pad > $directory/pseudogene_diff_pad.ace") if ($paul || $all);
+    system ("acediff $path_orig $path_ar2 > $directory/pseudogene_diff_ar2.ace") if ($ant  || $all); 
     
 
     ###################################################
@@ -134,16 +144,19 @@ if ($merge) {
 	system ("reformat_acediff $directory/sequence_diff_dl1.ace   > $directory/update_sequence_dl1.ace");
 	system ("reformat_acediff $directory/transcript_diff_dl1.ace > $directory/update_transcript_dl1.ace");
 	system ("reformat_acediff $directory/feature_diff_dl1.ace    > $directory/update_feature_dl1.ace");
+	system ("reformat_acediff $directory/pseudogene_diff_dl1.ace > $directory/update_pseudogene_dl1.ace");
     }
     if ($paul || $all) {
 	system ("reformat_acediff $directory/sequence_diff_pad.ace   > $directory/update_sequence_pad.ace");
 	system ("reformat_acediff $directory/transcript_diff_pad.ace > $directory/update_transcript_pad.ace");
 	system ("reformat_acediff $directory/feature_diff_pad.ace    > $directory/update_feature_pad.ace");
+	system ("reformat_acediff $directory/pseudogene_diff_pad.ace > $directory/update_pseudogene_pad.ace");
     }
     if ($ant || $all) {
 	system ("reformat_acediff $directory/sequence_diff_ar2.ace   > $directory/update_sequence_ar2.ace");
         system ("reformat_acediff $directory/transcript_diff_ar2.ace > $directory/update_transcript_ar2.ace");
 	system ("reformat_acediff $directory/feature_diff_ar2.ace    > $directory/update_feature_ar2.ace");
+	system ("reformat_acediff $directory/pseudogene_diff_ar2.ace > $directory/update_pseudogene_ar2.ace");
     }
 
     print "acediff's done and files can be found in $directory\n";
@@ -160,6 +173,7 @@ print "hasta luego\n";
 
 exit(0);
 
+###################################################################################################
 
 sub dumpace {
     my $class    = shift;
@@ -199,16 +213,19 @@ sub update_camace {
 	&loadace("$directory/sequence_diff_dl1.ace",'dl1');
 	&loadace("$directory/transcript_diff_dl1.ace",'dl1');
 	&loadace("$directory/feature_diff_dl1.ace",'dl1');
+	&loadace("$directory/pseudogene_diff_dl1.ace",'dl1');
     }
     if ($ant || $all) {
 	&loadace("$directory/sequence_diff_ar2.ace",'ar2');
 	&loadace("$directory/transcript_diff_ar2.ace",'ar2');
 	&loadace("$directory/feature_diff_ar2.ace",'ar2');
+	&loadace("$directory/pseudogene_diff_ar2.ace",'ar2');
     }
     if ($paul || $all) {
 	&loadace("$directory/sequence_diff_pad.ace",'pad');
 	&loadace("$directory/transcript_diff_pad.ace",'pad');
 	&loadace("$directory/feature_diff_pad.ace",'pad');
+	&loadace("$directory/pseudogene_diff_pad.ace",'pad');
     }
 
     # uplaod new mRNAs into camace
@@ -259,7 +276,10 @@ sub dump_camace_orig {
     print "dumped Feature class from camace_orig\n" if ($debug);
     $path = $directory . '/feature_orig.ace';
     &dumpace('Feature',$path);
-    
+
+    print "dumped Pseudogene class from camace_orig\n" if ($debug);
+    $path = $directory . '/pseudogene_orig.ace';
+    &dumpace('Pseudogene',$path);  
 }
 
 sub dump_camace_dl1 {
@@ -279,6 +299,10 @@ sub dump_camace_dl1 {
     print "dumped Feature class from camace_dl1\n" if ($debug);
     $path = $directory . '/feature_dl1.ace';
     &dumpace('Feature',$path);
+
+    print "dumped Pseudogene class from camace_dl1\n" if ($debug);
+    $path = $directory . '/pseudogene_dl1.ace';
+    &dumpace('Pseudogene',$path);
 }
 
 sub dump_camace_pad {
@@ -298,6 +322,10 @@ sub dump_camace_pad {
     print "dumped Feature class from camace_pad\n" if ($debug);
     $path = $directory . '/feature_pad.ace';
     &dumpace('Feature',$path);
+
+    print "dumped Pseudogene class from camace_pad\n" if ($debug);
+    $path = $directory . '/pseudogene_pad.ace';
+    &dumpace('Pseudogene',$path);
 }
 
 sub dump_camace_ar2 {
@@ -317,8 +345,11 @@ sub dump_camace_ar2 {
     print "dumped Feature class from camace_ar2\n" if ($debug);
     $path = $directory . '/feature_ar2.ace';
     &dumpace('Feature',$path);
-}
 
+    print "dumped Pseudogene class from camace_ar2\n" if ($debug);
+    $path = $directory . '/pseudogene_ar2.ace';
+    &dumpace('Pseudogene',$path);
+}
 
 sub usage {
     my $error = shift;
