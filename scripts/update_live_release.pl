@@ -5,8 +5,8 @@
 # by Anthony Rogers
 #
 # Updates the local webpages in synch with the main website
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-06-23 15:37:04 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2004-07-09 08:44:24 $
 
 
 use strict;
@@ -17,7 +17,7 @@ use Getopt::Long;
 
 my $release;
 my $errors;
-Getoptions ("release:s" => \$release );
+GetOptions ("release:s" => \$release );
 
 die "you must give a release version ( just numbers eg -release 125 )\n" unless $release;
 
@@ -30,11 +30,11 @@ my $www = "/nfs/WWWdev/htdocs/Projects/C_elegans";
 my $wormpub_dir = "/nfs/disk100/wormpub/WORMPEP";
 my $wormpep_ftp_root = glob("~ftp/pub/databases/wormpep");
 my $wp_ftp_dir = "$wormpep_ftp_root/wormpep${release}";
-my @wormpep_files = &wormpep_file;
+my @wormpep_files = &wormpep_files;
 my $log  = "/wormsrv2/logs/update_live_release.${release}.$$";
 
 open (LOG, ">$log") || die "Couldn't open log file\n";;
-print LOG &runtime " : starting script\n";
+print LOG &runtime, " : starting script\n";
 
 
 # update new live wormpep release from ftp_site to /disk100/wormpub
