@@ -62,25 +62,24 @@ if ((!$opt_r)&&(!$opt_d)&&(!$opt_c)) { &PrintHelp; }
  # ACEDB executables                            #
  ################################################
 
-$tace="/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
-$giface="/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/giface";
+$tace   = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
+$giface = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/giface";
 
  ################################################
  # database paths                               #
  ################################################
    
-$basedir = "/wormsrv2";
-$autoacedir = "$basedir/autoace";
-$stlacedir = "$basedir/stlace";
-$camacedir = "$basedir/camace";
+$basedir     = "/wormsrv2";
+$autoacedir  = "$basedir/autoace";
+$stlacedir   = "$basedir/stlace";
+$camacedir   = "$basedir/camace";
 $wormbasedir = "$basedir/wormbase";
-
 
  ################################################
  # others                                       #
  ################################################
 
-$configfile = "/wormsrv2/autoace_config/autoace.config";
+$configfile     = "/wormsrv2/autoace_config/autoace.config";
 $makeChromLinks = "/wormsrv2/scripts/makeChromLinks.pl -l $autodir";
 
  ################################################

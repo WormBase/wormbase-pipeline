@@ -126,7 +126,7 @@ our @chrom = ('I','II','III','IV','V','X');
 
 our $logdir     = "/wormsrv2/autoace/logs";
 our $WSver_file = "/wormsrv2/autoace/wspec/database.wrm";
-our $tace      =  "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
+our $tace      =  "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
 our ($WS_version,$WS_previous);
 $WS_version = &get_WS_version;
 my $scriptdir  = "/wormsrv2/scripts";                                            # specify location of scripts
