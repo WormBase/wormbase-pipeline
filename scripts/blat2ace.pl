@@ -120,9 +120,9 @@ while (<BLAT>) {
 	my $lastvirt  = int($slsize/100000) + 1; 
 	
     
-	#############################################################
+    #############################################################
     # replace EST name (usually accession number) by yk... name #
-	#############################################################
+    #############################################################
 	
     my $est = $f[9];
     if ((!$opt_m) && (!$opt_x) && (exists $ESTs{$est})) {
@@ -166,7 +166,7 @@ while (<BLAT>) {
 		next;
 	}
     
-	###################
+    ###################
     # calculate score #
     ###################
 	
@@ -179,7 +179,7 @@ while (<BLAT>) {
     
     my @exons = ();
 
-	#########################
+    #########################
     # calculate coordinates #
     #########################
 	
@@ -194,7 +194,7 @@ while (<BLAT>) {
 			$virtualstart = ($slinkstarts[$x] +1)%100000;
 		}
 		elsif ($calc == ($newcalc-1)) {
-			$virtualstart = (($slinkstarts[$x] +1)%100000) + 100000;
+		        $virtualstart = (($slinkstarts[$x] +1)%100000) + 100000;
 		}
 		my $virtualend   = $virtualstart + $lengths[$x] -1;
 		my ($eststart,$estend);

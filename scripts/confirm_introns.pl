@@ -151,9 +151,27 @@ while (<CI>) {
 				# check introns #
 				#################
 				
-				my $one = $f[1]%100000;
-				my $two = $f[2]%100000;
-				if (((($start eq 'gt') || ($start eq 'gc')) && ($end eq 'ag')) ||
+                                my $firstcalc = int($f[1]/100000);
+                                my $seccalc   = int($f[2]/100000);
+                                print STDERR "Problem with $test\n" unless (defined $firstcalc && defined $seccalc); 
+                                my ($one,$two);
+                                if ($firstcalc == $seccalc) {
+                                    $one = $f[1]%100000;
+				    $two = $f[2]%100000;
+				}
+                                elsif ($firstcalc == ($seccalc-1)) {
+                                    $one = $f[1]%100000;
+				    $two = $f[2]%100000 + 100000;
+                                    print STDERR "$virtual: $one $two\n";
+                                }
+                                elsif (($firstcalc-1) == $seccalc) {
+                                    $one = $f[1]%100000 + 100000;
+				    $two = $f[2]%100000;
+                                    print STDERR "$virtual: $one $two\n";
+                                } 
+                                print STDERR "Problem with $test\n" unless (defined $one && defined $two); 
+                                
+                                if (((($start eq 'gt') || ($start eq 'gc')) && ($end eq 'ag')) ||
 		    		 (($start eq 'ct') && (($end eq 'ac') || ($end eq 'gc')))) {	 
 					print GOOD "Feature_data : \"$virtual\"\n";
 					print GOOD "Confirmed_intron $one $two EST\n\n";
