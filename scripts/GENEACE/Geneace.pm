@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-04-29 10:29:14 $
+# Last updated on: $Date: 2004-04-30 10:32:11 $
 
 package Geneace;
 
@@ -47,7 +47,6 @@ sub gene_info {
   shift;
 
   $db = "/wormsrv1/geneace" if !$db;
-  print $db, "++++++++++++++++++++\n";
 
   my $outfile = "/tmp/gene_info.tmp";
   my %gene_info;
@@ -95,6 +94,36 @@ sub gene_info {
     $public_name =~ s/\"//g;
     $gene_info{$gene}{'Public_name'} = $public_name if $public_name;
     $gene_info{$public_name}{'Gene'} = $gene        if $public_name;
+  }
+
+  @gene_info = `cut -f 1-6 $outfile`;
+  foreach (@gene_info){
+    chomp $_;
+    my ($gene, $cds) = split(/\s+/, $_);
+    $gene =~ s/\"//g;
+    $cds =~ s/\"//g;
+    push(@{$gene_info{$gene}{'CDS'}}, $cds) if $cds;
+    $gene_info{$cds}{'Gene'} = $gene if $cds;
+  }
+
+  @gene_info = `cut -f 1-7 $outfile`;
+  foreach (@gene_info){
+    chomp $_;
+    my ($gene, $trans) = split(/\s+/, $_);
+    $gene =~ s/\"//g;
+    $trans =~ s/\"//g;
+    push(@{$gene_info{$gene}{'Transcript'}}, $trans) if $trans;
+    $gene_info{$trans}{'Gene'} = $gene if $trans;
+  }
+
+  @gene_info = `cut -f 1-8 $outfile`;
+  foreach (@gene_info){
+    chomp $_;
+    my ($gene, $pseudo) = split(/\s+/, $_);
+    $gene =~ s/\"//g;
+    $pseudo =~ s/\"//g;
+    push(@{$gene_info{$gene}{'Pseudogene'}}, $pseudo) if $pseudo;
+    $gene_info{$pseudo}{'Gene'} = $gene if $pseudo;
   }
   return %gene_info;
 }
@@ -214,7 +243,7 @@ sub get_clone_chrom_coords {
     chomp;
     my ($chrom, $start, $end, $ninth) = split(/\t+/, $_);
     $chrom =~ s/[A-Z]+_//;
-    $ninth =~ /S.+\s+\"(.+)\".+/;
+    $nineth =~ /S.+\s+\"(.+)\".+/;
     my $clone = $1;
     push(@{$clone_info{$clone}}, $chrom, $start, $end);
   }

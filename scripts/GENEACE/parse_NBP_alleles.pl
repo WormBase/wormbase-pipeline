@@ -2,10 +2,10 @@
 
 # Author: Chao-Kung Chen
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-03-19 15:27:03 $ 
+# Last updated on: $Date: 2004-04-30 10:32:11 $ 
 
 use strict;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'}; 
+use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
 use Ace;
 use GENEACE::Geneace;
@@ -35,6 +35,11 @@ my $ga = init Geneace();
 my $database = $ga->curr_db;
 my $tace = &tace;
 my $allele_dir = "/wormsrv1/geneace/ALLELE_DATA";
+my $rundate = &rundate;
+
+# ----- prepare a locus to gene_id conversion hash
+
+my %Gene_info = $ga->gene_info();
 
 # ----- prepare clone coords from GFF file
 my %clone_info = $ga->get_clone_chrom_coords(); # key is clone, values: chrom, start_coord, end_coord
@@ -55,10 +60,9 @@ foreach(@NBP){
     $allele = $1.$2;	
   }
 
-  $pheno    = "NA" if !$pheno; $pheno =~ s/\"//g; # get rid of " from strange flatfile exported from filemaker 
+  $pheno    = "NA" if !$pheno; $pheno =~ s/\"//g; # get rid of " from strange flatfile exported from filemaker
   $mapper   = "Mitani S" if $mapper;
   $mapper   = "NA" if !$mapper;
-    
 
   # initialization
   my $L_clone=(); ; my $R_clone=(); my $site_L =(); my $site_R =(); my $remark_1 =(); my $insert=(); my @indel_info=();
@@ -69,11 +73,11 @@ foreach(@NBP){
 
   if ($indel =~ /(\[(.+)\]|([A-Z0-9]+):)*\s*\d+\s*\/\s*(\d+)\s*-\s*(\[(.+)\]|([A-Z0-9]+):)*\s*(\d+)\s*\/\s*\d+\s*\((.+)\)/){
     if($9){
-      $L_clone  = $2 if $2; 
+      $L_clone  = $2 if $2;
       $L_clone  = $3 if $3;
       $site_L   = $4;
       $R_clone  = $6 if $6;
-      $R_clone  = $7 if $7; 
+      $R_clone  = $7 if $7;
       $site_R   = $8;
       $remark_1 = $9;
     }
@@ -85,12 +89,12 @@ foreach(@NBP){
   }
   elsif ($indel =~ /(\[(.+)\]|([A-Z0-9]+):)*\s*\d+\s*\/\s*(\d+)\s*[-|+]\s*([\d\+atcgnACGTN\?]+)\s*[-|+]\s*(\[(.+)\]|([A-Z0-9]+):)*\s*(\d+)\s*\/\s*\d+\s*\((.+)\)/){
     if ($10){
-      $L_clone  = $2 if $2; 
+      $L_clone  = $2 if $2;
       $L_clone  = $3 if $3;
       $site_L   = $4;
       $insert   = $5;
       $R_clone  = $7 if $7;
-      $R_clone  = $8 if $8; 
+      $R_clone  = $8 if $8;
       $site_R   = $9;
       $remark_1 = $10;
     }
@@ -102,10 +106,9 @@ foreach(@NBP){
     }
   }
   else {
-    print CHECK "$allele -> $indel  \n" if $indel ne "deletion_site";  # this needs hand check as the format is quite versatile 
-  
+    print CHECK "$allele -> $indel  \n" if $indel ne "deletion_site";  # this needs hand check as the format is quite versatile
   }
-  
+
   $insert  = "NA" if !$insert;
   $L_clone = "NA" if !$L_clone;
   $R_clone = "NA" if !$R_clone;
@@ -113,9 +116,9 @@ foreach(@NBP){
 
   #----- process primers info in $primer (4 primers)
   my ($ext_f, $int_b, $ext_b, $int_f) = split(/,/, $primers);
-  
+
   # ----- get rid of hidden/strange space and double quotes
-  $ext_f =~ s/\s|\"//g; 
+  $ext_f =~ s/\s|\"//g;
   $ext_b =~ s/\s|\"//g;
   $int_f =~ s/\s|\"//g;
   $int_b =~ s/\s|\"//g;
@@ -135,22 +138,22 @@ foreach(@NBP){
 # ----- acefile name and location
 
 my $acefile = $input;
-$acefile =~ s/txt/ace/;
+$acefile =~ /.+\/(.+)\.txt/;
+$acefile = $1.".ace";
 
 open(ACE, ">$allele_dir/$acefile") || die $!;
 
-get_30_bp_flanks($database);
-
-# ----- upload data to Geneace
-
-my $rundate = &rundate;
 my $log = "/wormsrv2/logs/$acefile.$rundate";
 `rm -f $log` if -e $log;
 
 open(LOG, ">$log") || die $!;
-print LOG "\n\nLoaded $acefile to Geneace . . .\n";
+print LOG "\n\nLoaded $acefile to Geneace . . .\n" if !$debug;
 print LOG "\n\nLoaded $acefile to CK1_testDB . . .\n" if $debug;
-print LOG "--------------------------------------------------\n\n";    
+print LOG "--------------------------------------------------\n\n";
+
+get_30_bp_flanks($database);
+
+# ----- upload data to Geneace
 
 my $command=<<END;
 pparse $acefile
@@ -158,12 +161,14 @@ save
 quit
 END
 
+print LOG "\n\n";
 $ga->upload_database($ga->geneace, $command, "NBP_allele", $log);
 $ga->upload_database($ga->test_geneace, $command, "NBP_allele", $log) if $debug;
 
 # ----- mail notice
 
 my $recipients = "ck1\@sanger.ac.uk, krb\@sanger.ac.uk";
+$recipients = "ck1\@sanger.ac.uk" if $debug;
 mail_maintainer("Loading NBP_allele", $recipients, $log);
 
 
@@ -192,9 +197,9 @@ sub get_30_bp_flanks {
     my $superlink;
 
     foreach my $allele (@{$chrom_NBP_allele{$chrom}}){
-    
+
       print ACE "\nAllele : \"$allele\"\n";
-      
+
       my @indel_info = @{$NBP_info{$allele}->[2]};
       my $L_clone = $indel_info[4];
       my $R_clone = $indel_info[5];
@@ -204,16 +209,18 @@ sub get_30_bp_flanks {
 
       my $DNA_R =substr($line, $clone_info{$NBP_info{$allele}->[1]}->[1] + $indel_info[1]-1,     30) if $R_clone eq "NA";
          $DNA_R =substr($line, $clone_info{$R_clone}->[1] + $indel_info[1]-1,     30)                if $R_clone ne "NA";
-  
+
       print ACE "Sequence \"$NBP_info{$allele}->[1]\"\n";
 
       if ( $NBP_info{$allele}->[0] =~ /\w{3,3}-.+/ ){
-	print ACE "Gene \"$NBP_info{$allele}->[0]\"\n";
+	my $locus = lc($NBP_info{$allele}->[0]);  # NBP data often use capitalized locus name
+	print ACE "Gene \"$Gene_info{$locus}{'Gene'}\"  \/\/$NBP_info{$allele}->[0]\n" if exists $Gene_info{$locus}{'Gene'};
+	print LOG "$allele is linked to non-existent locus ($locus)\n" if !exists $Gene_info{$locus}{'Gene'};
       }
       else {
 	print ACE "Predicted_gene \"$NBP_info{$allele}->[0]\"\n";
       }
-      
+
       # ----- remove tm and use the rest in as allele id to link back to NBP allele webpage
       my $allele_id = $allele;
       $allele_id =~ s/tm//;
@@ -239,7 +246,7 @@ sub get_30_bp_flanks {
       print ACE "MAP \"$chrom\"\n"; 
       print ACE "Remark \"Mutations at cosmid coordinates: $indel_info[6]\"\n";
       print ACE "Remark \"<A href='http:\\/\/www.grs.nig.ac.jp\/c.elegans\/MutantsDetails\?lang=english&seq=$allele_id' target=_new> more on $allele...<\/A>\"\n";
-     
+
 
       # ----- only for those tm allele having primer information
       if (scalar @{$NBP_info{$allele}->[4]} != 1){
@@ -258,7 +265,7 @@ sub get_30_bp_flanks {
 	print ACE "Sequence \"$NBP_info{$allele}->[4]->[3]\"\n"; 
 	print ACE "Length ", length($NBP_info{$allele}->[4]->[3]), "\n";
         print ACE "PCR_product \"$allele"."_external\"\n";
-        
+
         print ACE "\nPCR_product : $allele"."_internal\n";
         print ACE "Oligo $allele"."_internal_f\n";
         print ACE "Oligo $allele"."_internal_b\n";

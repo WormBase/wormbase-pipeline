@@ -2,7 +2,7 @@
 
 # Author: Chao-Kung Chen
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-04-29 10:29:14 $ 
+# Last updated on: $Date: 2004-04-30 10:32:11 $ 
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'}; 
@@ -186,7 +186,7 @@ sub update_inferred_multi_pt {
   `chmod 777 /tmp/updated_multi_pt_flanking_loci_$autoace_version`;
 
   my ($center_Gene, $allele, $L_locus, $R_locus);
-print "@inferred_multi_objs\n";
+
   foreach (@inferred_multi_objs){
     $center_Gene = $_ -> Combined(5);
 
