@@ -7,10 +7,8 @@
 # A script to finish the last part of the weekly build by updating all of the
 # relevant WormBase and Wormpep web pages.
 #
-# Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-04-09 13:07:21 $      
-
-
+# Last updated by: $Author: dl1 $     
+# Last updated on: $Date: 2003-05-22 16:18:26 $      
 
 
 #################################################################################
@@ -281,21 +279,76 @@ sub create_top_level_web_pages{
   print LOG "Creating $www/$WS_name/dbcomp.shtml\n";
 
   system ("cp /wormsrv2/autoace/COMPARE/current.out $wwwdata/WS.dbcomp_output") && croak "Couldn't copy current.out\n";
+  my $dbcomplen;
+  
+  open (DBCOMP, "wc -l /wormsrv2/autoace/COMPARE/current.dbcomp |");
+  while (<DBCOMP>) {
+      ($dbcomplen) = (/^\s+(\d+)/);
+  }
+  close DBCOMP;
+  
+  $dbcomplen = $dbcomplen -2;     # six lines of rubbish in the file but need 4 in the html
+
 
   open (DB_comp, ">$www/$WS_name/dbcomp.shtml") || croak "Couldn't create dbcomp.shtml\n\n";
   print DB_comp "<P>\n";
   print DB_comp "<SPACER TYPE=\"horizontal\" SIZE=\"50\">\n";
-  print DB_comp "<TABLE WIDTH=\"40%\" CELLSPACING=\"0\" CELLWIDTH=\"0\" BORDER=\"1\"><TR BGCOLOR=\"yellow\" ><TH>Class</TH> <TH>$WS_previous_name</TH> <TH>$WS_name</TH> <TH>Diff</TH></TR>\n";
+  print DB_comp "<TABLE WIDTH=\"40%\" CELLSPACING=\"0\" CELLWIDTH=\"0\" BORDER=\"0\">\n";
+
+  print DB_comp "\n<tr VALIGN=\"top\">\n";
+  print DB_comp "  <td rowspan=\"$dbcomplen\" class=\"grey1\"> <img src=\"/icons/blank.gif\" width=\"1\"   height=\"1\"></td>\n";
+  print DB_comp "  <td colspan=\"9\" class=\"grey1\"> <img src=\"/icons/blank.gif\" width=\"250\" height=\"1\"></td>\n";
+  print DB_comp "  <td rowspan=\"$dbcomplen\" class=\"grey1\"> <img src=\"/icons/blank.gif\" width=\"1\"   height=\"1\"></td>\n";
+  print DB_comp "</tr>\n\n";
+
+  print DB_comp "<tr class=\"violet3\">\n";
+  print DB_comp "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+  print DB_comp "  <th>Class</th>\n";
+  print DB_comp "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+  print DB_comp "  <th>$WS_previous_name</th>\n";
+  print DB_comp "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+  print DB_comp "  <th>$WS_name</th>\n";
+  print DB_comp "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+  print DB_comp "  <th>Diff</th>\n";
+  print DB_comp "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+  print DB_comp "</tr>\n";
+
+
+  print DB_comp "<tr valign=\"top\">\n";
+  print DB_comp "  <td colspan=\"11\" class=\"grey1\"><img src=\"/icons/blank.gif\" width=\"1\" height=\"1\"></td>\n";
+  print DB_comp "</tr>\n";
+
+  
+  my $dbcompcount = 0;
 
   open (COMP, "</wormsrv2/autoace/COMPARE/current.dbcomp") || croak "Failed to open composition.all\n\n";
   while (<COMP>) {
-    next if (/\+/);
-    next if (/ACEDB/);
-    next if (/change/);
+      next if (/\+/);
+      next if (/ACEDB/);
+      next if (/change/);
+      
+      my ($nowt,$class,$count_1,$count_2,$diff) = split (/\|/,$_);
+      $class =~ s/^\s+//g;
+      
+      if ($dbcompcount % 2 == 0) {
+	  print DB_comp "<tr class=\"blue\">\n";
+      }
+      else {
+	  print DB_comp "<tr class=\"violet2\">\n";
+      }
+      
+      print DB_comp "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+      print DB_comp "  <td align=\"RIGHT\"><A  href=\"/cgi-bin/Projects/C_elegans/wormbase_dbcomp.pl?class=$class\" TARGET=\"_blank\">$class</A></td>\n";
+      print DB_comp "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+      print DB_comp "  <td ALIGN=\"RIGHT\">$count_1</td>\n";
+      print DB_comp "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+      print DB_comp "  <td ALIGN=\"RIGHT\">$count_2</td>\n";
+      print DB_comp "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+      print DB_comp "  <td ALIGN=\"RIGHT\">$diff</td>\n";
+      print DB_comp "</tr>\n";
+      print DB_comp "\n\n";
 
-    my ($nowt,$class,$count_1,$count_2,$diff) = split (/\|/,$_);
-    $class =~ s/^\s+//g;
-    print DB_comp "<TR> <TD ALIGN=\"RIGHT\"><A  href=\"/cgi-bin/Projects/C_elegans/wormbase_dbcomp.pl?class=$class\" TARGET=\"_blank\">$class</A></TD> <TD ALIGN=\"RIGHT\">$count_1</TD> <TD ALIGN=\"RIGHT\">$count_2</TD> <TD ALIGN=\"RIGHT\">$diff</TD> </TR>\n";
+      $dbcompcount++;
 
   }
   close (COMP);
