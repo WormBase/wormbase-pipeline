@@ -5,7 +5,7 @@
 # backup database and compare to last backed up database to look for lost data
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-04-13 18:56:44 $      
+# Last updated on: $Date: 2003-04-15 09:04:01 $      
 
 use strict;
 use lib '/wormsrv2/scripts';
@@ -140,7 +140,7 @@ sub compare_backups{
   my $db1 = "${backup_dir}/${db}_backup\.${date}";
   my $db2 = "${backup_dir}/${db}_backup\.${backups[0]}";
   my $db_name1 = "${db}\.${date}";
-  my $db_name2 = "${db}\.${backups[1]}";
+  my $db_name2 = "${db}\.${backups[0]}";
 
 
   print LOG "First database:  $db_name1\n";
