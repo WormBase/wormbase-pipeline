@@ -320,7 +320,7 @@
         Hide_under ?Locus XREF Representative_for
         Representative_for ?Locus XREF Hide_under
 	Positive Inside_rearr ?Rearrangement XREF Locus_inside ?Author
-		 Positive_clone ?Clone XREF Positive_locus ?Author
+		 Positive_clone ?Clone XREF Positive_locus #Evidence
 	Negative Outside_rearr ?Rearrangement XREF Locus_outside ?Author
 		 Negative_clone ?Clone XREF Negative_locus ?Author
 	Mapping_data	Well_ordered		// "on the line"
@@ -817,7 +817,7 @@
 	  Visible	Title UNIQUE ?Text
 	  		Other_name ?Text	        // for repeats
 			Matching_Genomic ?Sequence XREF Matching_cDNA
-		 	Matching_cDNA ?Sequence XREF Matching_Genomic
+		 	Matching_cDNA ?Sequence XREF Matching_Genomic #Evidence
 			Matching_UTR ?UTR XREF Matching_CDS // added for UTR model [krb 020729]
 			Matching_transcript ?Transcript XREF Matching_cDNA // for new gene model [krb 021126]
 			Matching_pseudogene ?Pseudogene XREF Matching_cDNA // for ESTs that match Pseudogenes [krb 030801]
@@ -1016,7 +1016,7 @@
 			// Not ready for these two yet
 			Allele ?Allele XREF Transcript // added to fit two alleles of RNA genes [021127 krb]
 			Orthologue ?Transcript XREF Orthologue ?Species #Evidence  // [030310 krb]
-                        Matching_cDNA ?Sequence XREF Matching_transcript
+                        Matching_cDNA ?Sequence XREF Matching_transcript #Evidence
                         Remark ?Text #Evidence
                         Confidential_remark ?Text
                         Brief_identification UNIQUE Text                           // [020306 kj]
@@ -1069,7 +1069,7 @@
                 //      Gene_info Gene UNIQUE ?Gene XREF CDS // when live 
                 //                Gene_history UNIQUE ?Gene XREF CDS_history // when dead
                 Visible Contained_in_operon ?Operon XREF Contains_pseudogene
-                        Matching_cDNA ?Sequence XREF Matching_pseudogene
+                        Matching_cDNA ?Sequence XREF Matching_pseudogene #Evidence
                         Brief_identification UNIQUE ?Text #Evidence
                         Corresponding_PCR_product ?PCR_product XREF Overlaps_pseudogene 
                         RNAi_result ?RNAi XREF Pseudogene
