@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-06-01 14:14:44 $
+# Last edited on: $Date: 2004-06-02 14:17:02 $
 
 
 use DBI;
@@ -735,6 +735,7 @@ sub get_updated_database_list
 ############################################################################################
 sub create_log_files{
 
+  my $rundate    = `date +%y%m%d`; chomp $rundate;
   # create main log ile using script name for
   $log        = "/nfs/acari/wormpipe/logs/wormBLAST.${WS_version}.${rundate}.$$";
 
