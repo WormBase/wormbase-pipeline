@@ -755,7 +755,7 @@ sub confirm_gene_models {
     system ("$scriptdir/confirm_genes.pl -e");
     system ("$scriptdir/confirm_genes.pl -m");
 
-$command=<<END;
+my $command=<<END;
 pparse /wormsrv2/wormbase/misc/misc_confirmed_by_EST.ace
 pparse /wormsrv2/wormbase/misc/misc_confirmed_by_mRNA.ace
 save 
