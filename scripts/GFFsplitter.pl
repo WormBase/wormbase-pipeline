@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-09-20 10:04:07 $
+# Last updated by: $Author: dl1 $
+# Last updated on: $Date: 2003-10-29 12:10:42 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -154,7 +154,7 @@ foreach $file (@gff_files) {
     # Pseudogenes
     elsif ( ($method eq "Pseudogene")        && (($feature eq "Sequence")  || ($feature eq "Pseudogene")))      {push (@{$GFF{$file}{pseudogenes}},$_);}
     # RNA genes 
-    elsif ((($method eq "RNA")    || ($method eq "tRNAscan-SE-1.11") ||
+    elsif ((($method eq "RNA")    || ($method eq "tRNAscan-SE-1.23") ||
 	    ($method eq "rRNA")   || ($method eq "scRNA") ||
 	    ($method eq "snRNA")  || ($method eq "snoRNA") || 
 	    ($method eq "miRNA")  || ($method eq "stRNA")) 
@@ -166,7 +166,7 @@ foreach $file (@gff_files) {
     elsif ((($method eq "curated") 
 	    || ($method eq "provisional")) 
 	   && ($feature eq "exon"))                   {push (@{$GFF{$file}{exon}},$_);}
-    elsif (($method eq "tRNAscan-SE-1.11") 
+    elsif (($method eq "tRNAscan-SE-1.23") 
 	   && ($feature eq "exon"))                   {push (@{$GFF{$file}{exon_tRNA}},$_);}
     elsif (($method eq "Pseudogene") 
 	   && ($feature eq "exon"))                   {push (@{$GFF{$file}{exon_pseudogene}},$_);}
@@ -174,7 +174,7 @@ foreach $file (@gff_files) {
     elsif ((($method eq "curated") 
 	    || ($method eq "provisional")) 
 	   && ($feature eq "intron"))                 {push (@{$GFF{$file}{intron}},$_);}
-    elsif (($method eq "tRNAscan-SE-1.11") 
+    elsif (($method eq "tRNAscan-SE-1.23") 
 	   && ($feature eq "intron"))                 {push (@{$GFF{$file}{intron_tRNA}},$_);}
     elsif (($method eq "Pseudogene") 
 	   && ($feature eq "intron"))                 {push (@{$GFF{$file}{intron_pseudogene}},$_);}
