@@ -7,7 +7,7 @@
 # Ashwin Hajarnavis ah3@sanger.ac.uk  August 2002
 #
 # Last updated by: $Author: dl1 $                 
-# Last updated on: $Date: 2002-08-21 12:25:07 $   
+# Last updated on: $Date: 2002-09-27 10:28:19 $   
 
 use strict;
 use Getopt::Std;
@@ -54,7 +54,8 @@ my $mrna_file = "BLAT_mRNA_BEST.gff";
 
 log_file($opt_r, $dbdir) if $opt_r;
 
-my %link_coordinate;
+my %link_coordinate_start;
+my %link_coordinate_end;
 my %link_chrom;
 my @chromosome = ('CHROMOSOME_I','CHROMOSOME_II','CHROMOSOME_III','CHROMOSOME_IV','CHROMOSOME_V','CHROMOSOME_X');
 my $chrom2parse;
@@ -67,12 +68,19 @@ while (<LINK>) {
 	next;
     }
 
-    if (/Subsequence\s+\"(\S+)\"\s+(\d+)/) {
-	$link_coordinate{$1} = $2;
-	$link_chrom{$1}      = $chrom2parse;
+    if (/Subsequence\s+\"(\S+)\"\s+(\d+)\s+(\d+)/) {
+	$link_coordinate_start{$1} = $2;
+	$link_coordinate_end{$1}   = $3;
+	$link_chrom{$1}            = $chrom2parse;
     }
 }
 close LINK;
+
+# checks
+foreach my $link (keys %link_coordinate_start) {
+    print "\n$link\t[$link_chrom{$link} starts at $link_coordinate_start{$link} to $link_coordinate_end{$link}]\n";
+}
+
 
 # check to see if EST hash data exists
 # make it via tablemaker queries if absent
@@ -229,17 +237,26 @@ sub print_ace {
    print ACEFILE "Species\t\"Caenorhabditis elegans\"\n";
    print ACEFILE "Method\t\"UTR\"\n\n";
 
+   print "CDS $gene_id on chromosome $gene_chrom [$five_end - $three_end]\n\n";
+
    my $link; my $rel_five_end; my $rel_three_end;
-   foreach $link (keys %link_chrom) {
+   foreach $link (sort {$link_coordinate_start{$a} <=> $link_coordinate_start{$b}} keys %link_coordinate_start) {
+       print "$link is on chromosome $link_chrom{$link} from $link_coordinate_start{$link} to $link_coordinate_end{$link}\n";
        next unless ($link_chrom{$link} eq $gene_chrom); 
-#       print "Checking $link [$link_chrom{$link} $link_coordinate{$link}]\n";
-       next if ($five_end  < $link_coordinate{$link});  # start is before link begins
-       $rel_five_end  = $five_end  - $link_coordinate{$link} + 1;
-       $rel_three_end = $three_end - $link_coordinate{$link} + 1;
+
+       print "Checking $link [$link_chrom{$link} $link_coordinate_start{$link} - $link_coordinate_end{$link}]\n\n";
+
+
+       next unless ( ($five_end  > $link_coordinate_start{$link}) && ($three_end < $link_coordinate_end{$link}) ); 
+
+       $rel_five_end  = $five_end  - $link_coordinate_start{$link} + 1;
+       $rel_three_end = $three_end - $link_coordinate_start{$link} + 1;
+
        print ACEFILE "Sequence :\t\"$link\"\n";
        print ACEFILE "UTR\t\"$type:$gene_id\"\t$rel_five_end\t$rel_three_end\n\n";
        print ACEFILE "//Found match - UTR maps to $link at $rel_five_end - $rel_three_end [abs: $five_end $three_end]\n\n";
-#       print "Found match - UTR maps to $link at $rel_five_end - $rel_three_end\n\n";
+
+       print "Found match - UTR maps to $link at $rel_five_end - $rel_three_end\n\n";
        last;
    }
 } 
