@@ -7,7 +7,7 @@
 # checks EMBL for new EST or mRNA entries
 #
 # Last updated by: $Author: dl1 $                      
-# Last updated on: $Date: 2002-12-09 12:52:21 $        
+# Last updated on: $Date: 2002-12-09 13:51:00 $        
 
 $|=1;
 use strict;
@@ -21,10 +21,13 @@ use Wormbase;
 
 my $maintainers = "All";
 my $rundate     = `date +%y%m%d`; chomp $rundate;
+my $name;
 
 # touch logfile for run details
-$0 =~ m/\/([^\/]+)$/;
-system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
+if ($0 =~ /\//) {($name) = $0 =~ m/\/([^\/]+)$/;}
+else {$name = $0;}
+system ("touch /wormsrv2/logs/history/$name.`date +%y%m%d`");
+my $logfile = "/wormsrv2/logs/whats_new_in_EMBL.$rundate.$$";
 	   
  ##############################
  # command-line options       #
@@ -58,7 +61,6 @@ my $new_EST  = 0;
  # Open logfile                         #
  ########################################
 
-my $logfile = "/wormsrv2/logs/whats_new_in_EMBL.$rundate.$$";
 system ("/bin/touch $logfile");
 open (LOG,">>$logfile") or die ("Could not create logfile\n");
 
