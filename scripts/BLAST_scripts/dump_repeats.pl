@@ -31,6 +31,9 @@ open (OUT,">$output") or die "cant open $output\n";
 my %acc2clone;
 &FetchData("acc2clone",\%acc2clone);
 
+my %clonesize;
+&FetchData("clonesize", \%clonesize);
+
 # mysql database parameters
 my $dbhost = "ecs1f";
 my $dbuser = "wormro";
@@ -89,6 +92,8 @@ foreach my $repeat (@$ref_results) {
     if( "$clone" ne "$current_clone" ) {
       $current_clone = $clone;
       print OUT "\nSequence : \"$clone\"\n";
+      print OUT "Homol_data $clone:RepeatMasker 1 $clonesize{$clone}\n\n";
+      print OUT "Homol_data : $clone:RepeatMasker\n";      
     }
     print OUT "Motif_homol $hid RepeatMasker $score $seq_start $seq_end";
     if( $strand == 1 ){
