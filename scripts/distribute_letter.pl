@@ -9,7 +9,7 @@
 #                          /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/current/release_notes.txt/
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-07-06 14:13:41 $
+# Last updated on: $Date: 2004-07-06 15:29:59 $
 
 
 use strict;
@@ -93,8 +93,8 @@ print LOG "Updating some WormBase webpages to live site\n";
 chdir("$www/WORMBASE") || print LOG "Couldn't run chdir\n";
 
 # update development_release symbolic link 
-&run_command("rm -f development_release");
-&run_command("ln -fs $release development_release");
+&run_command("rm -f $www/WORMBASE/development_release");
+&run_command("ln -fs $www/WORMBASE/$release $www/WORMBASE/development_release");
 
 # Now update WORMBASE pages
 # these won't be seen until current symlink is also updated
