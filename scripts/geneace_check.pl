@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-08-12 11:39:27 $
+# Last updated on: $Date: 2003-08-12 11:54:31 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -1442,15 +1442,26 @@ sub test_locus_for_errors{
     }    
   }
   
-  # test for no Type tag
+  # test for no Type tag but check to see if it is also an Other_name for another Locus
   if(!defined($locus->at('Type'))){  
-    $warnings .= "ERROR 3: $locus has no Type tag present\n";
-    if ($ace){
-      print ACE "\n\nLocus : \"$locus\"\n" if ($ace);
-      print ACE "Gene\n" if ($ace);
-      print ACE "Non_CGC_name \"$locus\"\n" if ($ace);
-    }
     $locus_errors++;
+
+    # Is this gene being used as Other_name for something else?
+    # If not then can write acefile output to add basic info
+    my ($gene_name) = $db->fetch(-class=>'Gene_name',-name=>"$locus");
+
+    if(defined($gene_name->at('Gene.Other_name_for'))){
+      my $other_gene = $locus->at('Gene.Other_name_for');
+      $warnings .= "ERROR 3a: $locus has no Type tag but this Locus is listed as Other_name for $other_gene\n";
+    }
+    else{
+      $warnings .= "ERROR 3b: $locus has no Type tag present and is not an Other_name for something else\n";
+      if ($ace){
+	print ACE "\n\nLocus : \"$locus\"\n" if ($ace);
+	print ACE "Gene\n" if ($ace);
+	print ACE "Non_CGC_name \"$locus\"\n" if ($ace);
+      }
+    }
   }
 
   # test for Gene AND !Species 
