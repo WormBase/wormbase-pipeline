@@ -16,7 +16,7 @@ use Getopt::Std;
 use lib "/wormsrv2/scripts/";
 use Wormbase;
 use strict;
-use vars qw ($opt_a $opt_w $opt_b $opt_1 $opt_2 $opt_3 $opt_c $opt_p $opt_q $opt_f $opt_z $opt_d $opt_h $opt_g $opt_m $opt_i $opt_u $opt_y );
+use vars qw ($opt_a $opt_w $opt_b $opt_1 $opt_2 $opt_3 $opt_c $opt_p $opt_q $opt_f $opt_z $opt_d $opt_s $opt_h $opt_g $opt_m $opt_i $opt_u $opt_y );
 
  ##############################
  # Script variables (run)     #
@@ -51,9 +51,10 @@ my $scriptdir   = "/wormsrv2/scripts";
 # $opt_h="";   # Help/Usage page
 # $opt_g="";   # chromosome_dump.pl -g
 # $opt_m="";   # map PCR, RNAi and WTP
+# $opt_s="";   # map similarities (BLAT jobs)
 # $opt_y="";   # make agp files for the yellow brick road
 
-getopts ('awbchipqfzdrguym123');
+getopts ('awbchipqfzdrsguym123');
 &usage(0) if ($opt_h);
 
 # -d debug mode modifies $maintainers to reduce e-mail load
@@ -65,6 +66,9 @@ our $build_flag = "$logdir/build_in_progress";
 our $WSver_file = "/wormsrv2/autoace/wspec/database.wrm";
 
 our ($WS_version,$WS_previous);
+
+our $tace =  "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
+
 
 # are you building a new database?
 &initiate_build if ($opt_i);
@@ -121,10 +125,16 @@ if ($opt_a) {
  &make_DNA              if ($opt_2);
  &make_release          if ($opt_3);
 
-&check_release         if ($opt_c);
+# checks
+&check_release          if ($opt_c);
 
+# similarity matches
+&blat_jobs              if ($opt_s);
+
+# wormpep and protein work
 &make_wormpep          if ($opt_p);
 &pepace_stuff          if ($opt_q);
+
 &make_FTP_wormbase     if ($opt_f);
 &make_anonymous_FTP    if ($opt_z);
 &dump_GFFs             if ($opt_g);
@@ -353,6 +363,7 @@ sub last_versions {
 #################################################################################
 
 sub make_acefiles {
+
     system ("$scriptdir/make_acefiles -ne") && die "Couldn't run make_acefiles\n";
     print LOG " Write acefiles to disk\n";
     print LOG " => 'make_acefiles -ne'\n\n";
@@ -367,8 +378,16 @@ sub make_acefiles {
 #################################################################################
 # make_autoace                                                                  #
 #################################################################################
+# 
+# requires: acefiles in /wormsrv2/wormbase directories
+#           config file to drive loading of data (autoace.config)
+#
 
 sub make_autoace {
+
+    # quit if make_acefiles has not been run
+    &usage(8) unless (-e "$logdir/wrote_acefiles_to_wormbase");
+	
     system ("$scriptdir/make_autoace -p /wormsrv2/autoace -rc") && die "Couldn't run autoace -rc\n";
     print LOG " Build autoace (database/CHROMOSOMES/release)\n";
     print LOG " =>'make_autoace -p /wormsrv2/autoace -rc'\n\n";
@@ -387,11 +406,7 @@ sub make_DB {
 sub make_DNA {
     system ("$scriptdir/chromosome_dump.pl -dce")  && die "Couldn't run chromosome_dump.pl -dce\n";
     print LOG " Build autoace (CHROMOSOMES)\n";
-    print LOG " =>'chromosome_dump.pl -dce'\n\n";
-
-#    system ("$scriptdir/test_dna_dump /wormsrv2/autoace/CHROMOSOMES");
-#    print LOG " test chromosomal DNA dumps\n";
-#    print LOG " =>'test_dna_dump /wormsrv2/autoace/CHROMOSOMES'\n\n";
+    print LOG " =>'chromosome_dump.pl -dc'\n\n";
 }
 
 sub make_release {
@@ -429,6 +444,70 @@ sub check_release {
 	print LOG " => 'dbcomp -f /wormsrv2/WS${WS_previous}'\n\n";
     }
 }
+
+#################################################################################
+# similarity mapping                                                            #
+#################################################################################
+
+sub blat_jobs {
+    
+    local (*WRITEDB);
+
+    # run the blat jobs
+
+# blat_them_all -e
+system ("$scriptdir/blat_them_all -nbsve") && die "Couldn't blat_them_all -nbsve\n";
+
+# blat_them_all -m
+system ("$scriptdir/blat_them_all -bsm") && die "Couldn't blat_them_all -nbsve\n";
+
+# blat_them_all -o
+system ("$scriptdir/blat_them_all -bso") && die "Couldn't blat_them_all -nbsve\n";
+
+# blat_them_all -x
+system ("$scriptdir/blat_them_all -bsx") && die "Couldn't blat_them_all -nbsve\n";
+
+    # quit if blat_them_all has not been run
+    &usage(9) unless (-e "$logdir/blat_transcript_data");
+
+    # read in the ace files (autoace only)
+
+my $command=<<END;
+pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLAT_EST.ace 
+pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLAT_mRNA.ace 
+pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLAT_EMBL.ace 
+pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLATX_NEMATODE.ace 
+pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.EST.ace 
+pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.mRNA.ace 
+pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.EMBL.ace 
+save
+pparse /wormsrv2/autoace/BLAT/autoace.blat.EST.ace            
+save
+pparse /wormsrv2/autoace/BLAT/autoace.blat.mRNA.ace 
+save
+pparse /wormsrv2/autoace/BLAT/autoace.blat.EMBL.ace 
+save
+pparse /wormsrv2/autoace/BLAT/autoace.blat.nematode.ace 
+save
+pparse /wormsrv2/autoace/BLAT/autoace.good_introns.EST.ace 
+save
+pparse /wormsrv2/autoace/BLAT/autoace.good_introns.mRNA.ace 
+save
+pparse /wormsrv2/autoace/BLAT/autoace.good_introns.EMBL.ace 
+save 
+quit
+END
+
+    open (WRITEDB, "| $tace -tsuser Sanger_BLAT_data /wormsrv2/autoace |") || die "Couldn't open pipe to autoace\n";
+    print WRITEDB $command;
+    close WRITEDB;
+    
+    # make a make_autoace log file in /logs
+    system ("touch $logdir/loaded_BLAT_similarities");
+
+
+}
+
 
 #################################################################################
 # make_wormpep                                                                  #
@@ -619,6 +698,16 @@ sub usage {
     elsif ($error == 7) {
 	# Check build prior to building
 	print "You haven't built the database yet!\n";
+	exit(0);
+    }
+    elsif ($error == 8) {
+	# Check acefile dump prior to building
+	print "You haven't written up-to-date .acefiles yet!\n";
+	exit(0);
+    }
+    elsif ($error == 9) {
+	# Check blat run
+	print "You haven't run blat_them_all.\n";
 	exit(0);
     }
     elsif ($error == 10) {
