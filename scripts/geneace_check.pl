@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-02-25 12:07:14 $
+# Last updated on: $Date: 2003-02-26 13:05:01 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -437,6 +437,13 @@ EOF
 EOF
 
   allele_has_predicted_gene_and_no_seq($allele_has_predicted_gene_and_no_seq, $default_db);
+
+  my $allele_methods=<<EOF;
+  Table-maker -p "/wormsrv1/geneace/wquery/allele_methods.def" quit
+EOF
+
+  check_missing_allele_method($allele_methods, $default_db);
+
   print LOG "\nThere are $allele_errors errors in Allele class\n";
 }
 
@@ -525,6 +532,37 @@ sub allele_has_predicted_gene_and_no_seq {
   }
 }
 
+sub check_missing_allele_method {
+  my ($def, $dir) = @_;
+  my ($allele, $tag);
+      
+  open (FH, "echo '$def' | tace $dir | ") || die "Couldn't access geneace\n";
+  while (<FH>){
+    chomp($_);
+    if ($_ =~ /^\"(.+)\"\s+\"(.+)\"/){
+      $allele_errors++;
+      $allele = $1;
+      $tag = $2;
+      if ($tag eq "KO_consortium_allele"){$tag = "Knockout_allele"}
+      if ($tag eq "Transposon_insertion"){$tag = "Transposonn_insertion"}
+      if ($ace){output($allele, $tag, "ace")}
+      else {output($allele, $tag)}		    
+    }
+    if ($_ =~ /^\"(.+)\"\s$/){
+      if ($ace){output($allele, "Allele", "ace")}
+      else {output($allele, "Allele")}		    
+    }
+  }
+  sub output {
+    my ($allele, $tag, $ace) = @_;
+    print LOG "ERROR: Allele $allele has no Method $tag\n";
+    if ($ace ne ""){
+      print ACE "\n\nAllele : \"$allele\"\n";
+      print ACE "Method \"$tag\"\n";
+    }
+  }
+}
+
 ########################
 # Process Strain class #  
 ########################
@@ -546,10 +584,23 @@ sub process_strain_class {
   foreach (@seqs){
     $seqs{$_}++;
   }
+
+  my $cgc_approved_loci=<<EOF;
+  Table-maker -p "/wormsrv1/geneace/wquery/cgc_approved_loci.def" quit
+EOF
+  
+  my %cgc_loci=cgc_loci($cgc_approved_loci, $default_db);
+  my $e;
+
   foreach $strain (@strains){
     if (!$strain->Location){
       print LOG "WARNING: Strain $strain has no location tag\n";
       $strain_errors++; 
+      if ($ace){
+	$strain =~ /([A-Z]+)\d+/;
+	print ACE "\n\nStrain : \"$strain\"\n";
+	print ACE "Location \"$1\"\n";
+      }
     }
     else { 
       my $cgc=$strain->Location;
@@ -567,13 +618,21 @@ sub process_strain_class {
 	    my $seq = $db->fetch('Sequence', $_);
 	    if ($seq->Locus_genomic_seq){
 	      my @loci=$seq->Locus_genomic_seq(1);
-	      if ($cgc eq "CGC"){	
-		print LOG "WARNING: CGC Strain $strain has sequence_name $_ in Genotype, which can now become @loci.\n";
-		$strain_errors++; 
+	      if ($cgc eq "CGC"){
+		foreach $e (@loci){
+		  if ($cgc_loci{$e}){
+		    print LOG "WARNING: CGC Strain $strain has sequence_name $_ in Genotype, which can now become $e\n";
+		    $strain_errors++; 
+		  }
+                }  
 	      }
 	      else {
-		print LOG "WARNING: Non_CGC Strain $strain has sequence_name $_ in Genotype, which can now become @loci.\n";
-		$strain_errors++; 
+		foreach $e (@loci){
+		  if ($cgc_loci{$e}){  
+		    print LOG "WARNING: Non_CGC Strain $strain has sequence_name $_ in Genotype, which can now become $e\n";
+		    $strain_errors++; 
+                  }
+		}  
 	      }  
 	    }
 	  }
@@ -583,6 +642,21 @@ sub process_strain_class {
   }
   print LOG "\nThere are $strain_errors errors in Strain class.\n";
 }
+
+sub cgc_loci {
+  my ($def, $db) = @_;
+  my (@cgc_loci, %cgc_loci);
+  open (FH, "echo '$def' | tace $db | ") || die "Couldn't access $db\n"; 
+   
+  while (<FH>){
+    chomp $_;
+    if ($_ =~ /^\"(.+)\"/){
+      push(@cgc_loci, $1);
+    }
+  }
+  foreach (@cgc_loci){$cgc_loci{$_}++}
+  return %cgc_loci;
+} 
 
 ###############################
 # Process Rearrangement class #
@@ -711,8 +785,8 @@ sub loci_as_other_name {
       $other_name =~ s/\\//g;
       $other_name = $db->fetch('Locus', $other_name); 
       
-      #######################################################
-      
+      #######################################################    
+      # hard coded loci for no main name / other_name merging 
       #######################################################
       @exceptions = 
       qw (aka-1 cas-1 clh-2 clh-3 ctl-1 ctl-2 egl-13 evl-20 gst-4 mig-1 
