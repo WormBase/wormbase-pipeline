@@ -8,7 +8,7 @@
 # This makes the autoace database from its composite sources.
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2004-02-05 10:29:38 $
+# Last edited on: $Date: 2004-02-18 11:22:23 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -131,6 +131,7 @@ sub REAPER {
 # Create the directory structure                 #
 ##################################################
 
+  &makechromlink();
 &buildautoace if($buildautoace);
 &buildrelease if($buildrelease);
 
@@ -420,8 +421,8 @@ sub parseconfig {
 
 sub reinitdb {
 
-  &delete_file_from("$dbpath/database/new","*","-") or print LOG "Problems removing files from $dbpath/database/new\n";
-  &delete_file_from("$dbpath/database/touched","*","-") or print LOG "Problems removing files from $dbpath/database/touched\n";
+  &delete_files_from("$dbpath/database/new","*","-") or print LOG "Problems removing files from $dbpath/database/new\n";
+  &delete_files_from("$dbpath/database/touched","*","-") or print LOG "Problems removing files from $dbpath/database/touched\n";
 
 
   if (-e "$dbpath/database/lock.wrm") {
@@ -432,7 +433,7 @@ sub reinitdb {
   my $status = move("$dbpath/database/log.wrm", "$dbpath/database/log.old");  
   print "ERROR: Couldn't move file: $!\n" if ($status == 0);
 
-  &delete_file_from("$dbpath/database",".\.wrm","-") or print LOG "Problems removing files from $dbpath/database\n";
+  &delete_files_from("$dbpath/database",".\.wrm","-") or print LOG "Problems removing files from $dbpath/database\n";
   
   my $command = "y\n";
   print LOG "* Reinitdb: reinitializing the database ..\n";
