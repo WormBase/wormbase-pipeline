@@ -6,9 +6,11 @@
 #
 # Ashwin Hajarnavis ah3@sanger.ac.uk  August 2002
 #
-# Last updated by: $Author: krb $                 
-# Last updated on: $Date: 2002-11-19 14:02:07 $   
+# Last updated by: $Author: ck1 $                 
+# Last updated on: $Date: 2002-12-18 15:53:19 $   
 
+# touch logfile for run details
+$0 =~ m/\/*([^\/]+)$/; system("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
 
 use strict;
 use lib "/wormsrv2/scripts/";
