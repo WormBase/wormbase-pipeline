@@ -1,4 +1,4 @@
-!/usr/local/bin/perl5.8.0 -w
+#!/usr/local/bin/perl5.8.0 -w
 #
 # autoace_minder
 # 
@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-06-04 10:19:38 $
+# Last edited on: $Date: 2004-06-04 10:21:08 $
 
 
 
