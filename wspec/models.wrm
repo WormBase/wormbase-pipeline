@@ -979,7 +979,8 @@
 		     UTR	
 			 
 #Gene_confirmation cDNA
-                   EST	
+                   EST
+				   pers_comm #Evidence // added 020405 kj	
 
 
 // Homol and Feature info
