@@ -10,7 +10,7 @@
 #                after submission and use Perl5.6 with strict
 #
 # Last updated by: $Author: dl1 $                      
-# Last updated on: $Date: 2002-12-09 15:01:23 $        
+# Last updated on: $Date: 2002-12-13 12:57:41 $        
 
 $|=1;
 use strict;
@@ -43,16 +43,13 @@ my $help;       # Help perdoc
 my $debug;      # Debug mode, verbose output to dl1 only
 
 GetOptions (
-            "debug:s"   => \$debug,
+            "debug=s"   => \$debug,
             "help"      => \$help
             );
 
 # help page	   
 &usage("Help") if ($help);
 	   
-# no debug name
-&usage("Debug") if (!defined $debug);
-
 # assign $maintainers if $debug set
 if ($debug) {
     $maintainers = $debug . "\@sanger.ac.uk";
@@ -121,11 +118,6 @@ sub usage {
     if ($error eq "Help") {
         # Normal help menu
         system ('perldoc',$0);
-        exit (0);
-    }
-    elsif ($error eq "Debug") {
-        # No debug bod named
-        print "You haven't supplied your name\nI won't run in debug mode until i know who you are\n";
         exit (0);
     }
 }
