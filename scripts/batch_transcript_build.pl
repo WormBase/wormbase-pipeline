@@ -1,14 +1,15 @@
 #!/usr/bin/perl -w
 
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{CVS_DIR};
+use lib $ENV{CVS_DIR};
 use Wormbase;
 use Getopt::Long;
 use strict;
+use Coords_converter;
 
 my @chroms = qw( I II III IV V X );
 my $dump_dir;
 my $database;
-my $builder_script = glob("~ar2/wormbase/scripts/transcript_builder.pl");
+my $builder_script = $ENV{CVS_DIR}."/transcript_builder.pl";
 my $scratch_dir = "/tmp";
 my $chrom_choice;
 my $gff_dir;
@@ -26,15 +27,17 @@ GetOptions (
 my @chromosomes = split(/,/,join(',',$chrom_choice));
 
 $database = glob("~wormpub/TRANSCRIPTS") unless $database;
-$gff_dir  = "$database/GFF" unless $gff_dir;
-$dump_dir = "$database/ACE" unless $dump_dir;
+$gff_dir  = "$database/CHROMOSOMES" unless $gff_dir;
+$dump_dir = "$database/TRANSCRIPTS" unless $dump_dir;
 @chromosomes = qw(I II III IV V X) unless @chromosomes;
 
+# make a Coords_converter to write the coords files. Otherwise all 6 processes try and do it.
+my $coords = Coords_converter->invoke($database,1);
 
 my $cmd = "select cdna, pair from cdna in class cDNA_sequence where exists_tag cdna->paired_read, pair in cdna->paired_read";
 my $tace = &tace;
 my $pairs = "$database/EST_pairs.txt";
-      
+
 open (TACE, "echo '$cmd' | $tace $database |") or die "cant open tace to $database using $tace\n";
 open ( PAIRS, ">$pairs") or die "cant open $pairs :\t$!\n";
 while ( <TACE> ) {
@@ -44,9 +47,6 @@ while ( <TACE> ) {
   print PAIRS "$data[0]\t$data[1]\n";
 }
 close PAIRS;
-   
-
-  
 
 foreach my $chrom ( @chromosomes ) {
   my $err = "$scratch_dir/transcipt_builder.$chrom.err.$$";
@@ -55,7 +55,6 @@ foreach my $chrom ( @chromosomes ) {
   print "$bsub\n";
   system("$bsub");
 }
-
 
 sub checkLSF 
   {

@@ -7,7 +7,7 @@
 # Script to make ?Transcript objects
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2004-06-24 13:35:51 $
+# Last updated on: $Date: 2004-06-24 14:30:54 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -79,7 +79,7 @@ die unless $log;
 my $coords;
 # write out the transcript objects
 # get coords obj to return clone and coords from chromosomal coords
-$coords = Coords_converter->invoke($database, $new_coords);
+$coords = Coords_converter->invoke($database);
 
 
 #Load in Feature_data : cDNA associations from COMMON_DATA
