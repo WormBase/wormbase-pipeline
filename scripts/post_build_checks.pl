@@ -104,12 +104,12 @@ exit(0);
 ###############
 
 sub runestcheck {
-    system ("/wormsrv2/scripts/estcheck") && die "Cannot execute estcheck $!\n";
+    system ("/wormsrv2/scripts/estcheck \&") && die "Cannot execute estcheck $!\n";
     print LOG "Run estcheck\n";
 }
 
 sub runintroncheck {
-    system ("/wormsrv2/scripts/introncheck") && die "Cannot execute introncheck $!\n";
+    system ("/wormsrv2/scripts/introncheck \&") && die "Cannot execute introncheck $!\n";
     print LOG "Run introncheck\n";
 }
 
@@ -119,12 +119,12 @@ sub runoverlapcheck {
 }
  
 sub runcopy2web {
-    system ("/wormsrv2/scripts/copy2web.pl") && die "Cannot execute copy2web.pl $!\n";
+    system ("/wormsrv2/scripts/copy2web.pl \&") && die "Cannot execute copy2web.pl $!\n";
     print LOG "Run copy2web.pl\n";
 }
 
 sub run_list_loci_designations {
-    system ("/wormsrv2/scripts/list_loci_designations") && die "Cannot execute list_loci_desinations $!\n";
+    system ("/wormsrv2/scripts/list_loci_designations \&") && die "Cannot execute list_loci_desinations $!\n";
     print LOG "Run list_loci_designations\n";
 }
   
