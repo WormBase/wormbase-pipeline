@@ -5,7 +5,7 @@
 # completely rewritten by Keith Bradnam from list_loci_designations
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-08-18 09:15:58 $      
+# Last updated on: $Date: 2003-08-18 09:32:50 $      
 #
 # This script should be run under a cron job and simply update the webpages that show
 # current gene names and sequence connections.  Gets info from geneace.  
@@ -72,29 +72,33 @@ foreach my $locus (@loci){
     print HTML "<TD>";
     foreach my $i (@genomic_sequences){
       print HTML "<A HREF=\"http://www.wormbase.org/db/seq/sequence?name=${i}\">${i}</a> ";
-      print TEXT "$i ,,,";
+      print TEXT "$i ";
     }
+    print TEXT ",,,";
     print HTML "</TD><TD>&nbsp</TD><TD>&nbsp</TD>";
   }
 
   # get transcript connections
   elsif(defined($locus->at('Molecular_information.Transcript'))){
-    print HTML "<TD>&nbsp</TD>";
+    print HTML "<TD>&nbsp</TD><TD>";
     my @transcripts = $locus->Transcript;
     print HTML "<TD>";
+    print TEXT ",";
     foreach my $i (@transcripts){
       print HTML "<A HREF=\"http://www.wormbase.org/db/seq/sequence?name=${i}\">${i}</a> ";
-      print TEXT ",,$i ,";
+      print TEXT "$i ";
     }
+    print TEXT ",,";
     print HTML "</TD><TD>&nbsp</TD>";
   }
   # get pseudogene connections
   elsif(defined($locus->at('Molecular_information.Pseudogene'))){
     my @pseudogenes = $locus->Pseudogene;
-    print HTML "<TD>&nbsp</TD><TD>&nbsp</TD>";
+    print HTML "<TD>&nbsp</TD><TD>&nbsp</TD><TD>";
+    print TEXT ",,";
     foreach my $i (@pseudogenes){
       print HTML "<A HREF=\"http://www.wormbase.org/db/seq/sequence?name=${i}\">${i}</a> ";
-      print TEXT ",,,$i ";
+      print TEXT "$i ";
     }
     print HTML "</TD>";
   }
