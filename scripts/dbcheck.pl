@@ -7,8 +7,12 @@
 #
 # Usage: dbcheck [-options]
 #
-# Last updated on: $Date: 2002-12-18 14:54:40 $
+# Last updated on: $Date: 2002-12-18 15:46:23 $
 # Last updated by: $Author: ck1 $
+
+# touch logfile for run details
+$0 =~ m/\/*([^\/]+)$/; system("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
+
 
 #################################################################################
 # variables                                                                     #
