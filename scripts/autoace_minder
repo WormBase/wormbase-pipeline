@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder [-options]
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-02-20 17:36:49 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2003-03-11 10:57:26 $
 
 
 #################################################################################
@@ -1289,18 +1289,13 @@ sub make_wormpep {
   }
   else {
     # Get protein IDs (this step writes to ~wormpub/analysis/SWALL
-    $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Started getSwissTrembldata.pl at $runtime\n";
-    system("getSwissTrembldata.pl") && die "Couldn't run getSwissTrembldata.pl";
-    $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Finished getSwissTrembldata.pl at $runtime\n";
-    
-    # Now process this information to get...protein IDs ????
-    $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Started GetIDandAC.pl at $runtime\n";
-    system("GetIDandAC.pl") && die "Couldn't run GetIDandAC.pl";
-    $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Finished GetIDandAC.pl at $runtime\n";
+    $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Started getProteinID at $runtime\n";
+    system("getProteinID") && die "Couldn't run getProteinID";
+    $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Finished getProteinID at $runtime\n";
     
     # load into autoace
     my $command = "pparse /wormsrv2/autoace/wormpep_ace/WormpepACandIDs.ace\nsave\nquit\n"; 
-    open (WRITEDB, "| $tace -tsuser protein_id_data /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
+    open (WRITEDB, "| $tace -tsuser Protein_ID /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
     print WRITEDB $command;
     close WRITEDB;
     $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Finished loading proteinID info into autoace at $runtime\n";
