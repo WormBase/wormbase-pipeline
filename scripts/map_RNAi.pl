@@ -6,8 +6,8 @@
 #
 # by Kerstin Jekosch
 #
-# Last updated by: $Author: krb $                      
-# Last updated on: $Date: 2004-04-26 10:36:39 $        
+# Last updated by: $Author: ar2 $                      
+# Last updated on: $Date: 2004-07-13 09:12:42 $        
 
 use strict;
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
@@ -57,6 +57,12 @@ GetOptions ("debug=s"   => \$debug,
 if($debug){
   print "DEBUG = \"$debug\"\n\n";
   ($maintainers = $debug . '\@sanger.ac.uk');
+}
+
+if( $test ) {
+  $dbdir       = glob("~wormpub/TEST_BUILD/autoace");                    # Database path
+  $gffdir      = glob("~wormpub/TEST_BUILD/autoace/GFF_SPLITS/GFF_SPLITS");        # GFF_SPLITS directory
+  @chromosomes = qw( III );
 }
 
 &create_log_files;
@@ -325,8 +331,8 @@ foreach my $mess (sort keys %output2) {
 # produce output files #
 ########################
 
-open (OUT,    ">/wormsrv2/autoace/MAPPINGS/RNAi_mappings.$db_version");
-open (OUTACE, ">/wormsrv2/autoace/MAPPINGS/RNAi_mappings.$db_version.ace");
+open (OUT,    ">$dbdir/MAPPINGS/RNAi_mappings.$db_version");
+open (OUTACE, ">$dbdir/MAPPINGS/RNAi_mappings.$db_version.ace");
 
 # Produce connections for RNAi->Genes
 
@@ -458,13 +464,15 @@ exit(0);
 sub create_log_files{
 
   # Create history logfile for script activity analysis
-  $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
+  $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`") unless $test;
 
   # create main log file using script name for
   my $script_name = $1;
   $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
   my $rundate = &rundate;
-  $log        = "/wormsrv2/logs/$script_name.$rundate.$$";
+  my $root = defined $test ? "/tmp/logs" : "/wormsrv2/logs";
+  mkdir $root unless ( -e $root );
+  $log        = "$root/$script_name.$rundate.$$";
 
   open (LOG, ">$log") or die "cant open $log";
   print LOG "$script_name\n";
