@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.101 2003-01-06 09:32:44 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.102 2003-01-06 09:47:51 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -1130,6 +1130,8 @@
 		Max_mag UNIQUE Float	// don't show if more bases per line
 		Min_mag UNIQUE Float	// don't show if fewer bases per line
 		Show_text      // only put text in right-hand column if set
+ 		Gapped // draw sequences or homols with gaps
+                Join_blocks // link up all blocks of a single feature with lines
 	Blastn		// can calculate percent from score if blastn
 	Blixem  Blixem_X
 		Blixem_N
