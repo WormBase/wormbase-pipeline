@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-09-01 14:29:26 $
+# Last edited on: $Date: 2004-09-03 09:56:09 $
 
 
 
@@ -1219,7 +1219,7 @@ sub make_wormpep {
     &run_command("$scriptdir/GetPFAM_motifs.pl -load");
 
     # get interpro domains (this step loads resulting ace file to autoace)
-    &run_command("$scriptdir/GetInterpro_motifs.pl -load");
+    &run_command("$scriptdir/GetInterPro_motifs.pl -load");
 
     # make interpro2go connections (to be used by getProteinID)
     &run_command("$scriptdir/make_Interpro2GO_mapping.pl");
