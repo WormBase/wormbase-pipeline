@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-03-19 11:59:03 $
+# Last updated on: $Date: 2004-04-27 14:20:47 $
 
 package Geneace;
 
@@ -14,7 +14,9 @@ use strict;
 my $def_dir = "/wormsrv1/geneace/wquery/";
 my $curr_db = "/nfs/disk100/wormpub/DATABASES/current_DB";
 my $geneace_dir = "/wormsrv1/geneace";
-my $tace = &tace;
+#my $tace = &tace;
+my $tace = glob("~wormpub/ACEDB/bin_ALPHA/tace");
+
 
 sub init {
   my $class = shift;
@@ -38,6 +40,57 @@ sub test_geneace {
   my $this = shift;
   my $test_dir = "/nfs/disk100/wormpub/DATABASES/TEST_DBs/CK1TEST";
   return $test_dir;
+}
+
+sub gene_info {
+  my $this = shift;
+  my %gene_info;
+
+  my $gene_info=<<EOF;
+  Table-maker -o /tmp/gene_info.tmp -p "/wormsrv1/geneace/wquery/geneace_gene_info.def" quit
+EOF
+  open (FH, "echo '$gene_info' | $tace $geneace_dir |") || die "Couldn't access $curr_db\n";
+
+  my @gene_info = `cut -f 1-2 /tmp/gene_info.tmp`;
+  foreach (@gene_info){
+    chomp $_;
+    my ($gene, $cgc_name) = split(/\s+/, $_);
+    $gene =~ s/\"//g;
+    $cgc_name =~ s/\"//g;
+    $gene_info{$gene}{'CGC_name'} = $cgc_name if $cgc_name;
+    $gene_info{$cgc_name}{'Gene'} = $gene     if $cgc_name;
+  }
+
+  @gene_info = `cut -f 1-3 /tmp/gene_info.tmp`;
+  foreach (@gene_info){
+    chomp $_;
+    my ($gene, $seq_name) = split(/\s+/, $_);
+    $gene =~ s/\"//g;
+    $seq_name =~ s/\"//g;
+    $gene_info{$gene}{'Sequence_name'} = $seq_name if $seq_name;
+    $gene_info{$seq_name}{'Gene'}      = $gene     if $seq_name;
+  }
+
+  @gene_info = `cut -f 1-4 /tmp/gene_info.tmp`;
+  foreach (@gene_info){
+    chomp $_;
+    my ($gene, $other_name) = split(/\s+/, $_);
+    $gene =~ s/\"//g;
+    $other_name =~ s/\"//g;
+    $gene_info{$gene}{'Other_name'} = $other_name if $other_name;
+    $gene_info{$other_name}{'Gene'} = $gene       if $other_name;
+  }
+
+  @gene_info = `cut -f 1-5 /tmp/gene_info.tmp`;
+  foreach (@gene_info){
+    chomp $_;
+    my ($gene, $public_name) = split(/\s+/, $_);
+    $gene =~ s/\"//g;
+    $public_name =~ s/\"//g;
+    $gene_info{$gene}{'Public_name'} = $public_name if $public_name;
+    $gene_info{$public_name}{'Gene'} = $gene        if $public_name;
+  }
+  return %gene_info;
 }
 
 sub parse_inferred_multi_pt_obj {
@@ -120,7 +173,7 @@ EOF
 
 sub upload_database {
   my($this, $db_dir, $command, $tsuser, $log) = @_;
-  open (Load_GA,"| $tace -tsuser \"$tsuser\" $db_dir >> $log") || die "Failed to upload to Geneace";
+  open (Load_GA,"| $tace -tsuser \"$tsuser\" $db_dir >> $log") || die "Failed to upload to $db_dir";
   print Load_GA $command;
   close Load_GA;
 }
