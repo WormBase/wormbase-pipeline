@@ -64,7 +64,7 @@ $giface = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/giface";
    
 $basedir     = "/wormsrv2";
 $autoacedir  = "/wormsrv2/autoace";
-$pepacedir   = "/nfs/disk100/wormpub/acedb/ace4/pepace";
+$pepacedir   = "/wormsrv2/pepace";
 $wormbasedir = "/wormsrv2/wormbase";
 
  ################################################
