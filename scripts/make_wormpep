@@ -38,7 +38,7 @@
 
 $| = 1;
 #use strict;
-use vars qw($opt_r $opt_d $opt_h);
+use vars qw($opt_r $opt_d $opt_h $opt_t);
 use Getopt::Std;
 use IO::Handle;
 use Ace;
@@ -60,7 +60,7 @@ my $version    = get_cvs_version($0);
  # command-line options                #
  #######################################
 
-getopts ('dhr:');
+getopts ('dhtr:');
 
  #######################################
  # sanity checks for the input         #
@@ -93,11 +93,12 @@ my $wpdir     = "/wormsrv2/WORMPEP/wormpep$old_release";
 my $new_wpdir = "/wormsrv2/WORMPEP/wormpep$release";
 my $tace      = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
 
-# tmp version to use to get around Smap/Schild problems
-# my $tace = "/nfs/griffin2/rd/acedb/bin.ALPHA_4/tace";
+if ($opt_t) {
+    $dbdir     = "/wormsrv2/current_DB";
+    $new_wpdir = "/wormsrv2/WORMPEP/wormpep${release}_test";
+}
 
 $ENV{'ACEDB'} = $dbdir;
-
 
  ########################################
  # Open logfile                         #
@@ -378,64 +379,91 @@ print F "GET $request HTTP/1.0\n\n";
 print F "Accept: */*\n";
 print F "User-Agent: socketsrs/1.0\n\n";
 
-
-
-my $GENE ; my $GENE_1 ; my $SPT ; my $SWISS;
-my %SPTREMBL ; my %SWISS_PROT ; my %PROTEIN;
+my $GENE ;    my $GENE_1 ;     my $SPT ;    my $SWISS;
+my $PROTEIN;  my $PRODUCT;     
+my %SPTREMBL; my %SWISS_PROT ; my %PROTEIN;
 
 # Parsing annotation
-
 
 my $genes_parsed=0;
 
 while (my $return_line=<F>) {
-  if ($return_line =~ /ID\s+(\w+)/) {
-     undef $GENE;
-     undef $GENE_1;
-     undef $SPT;
-     undef $SWISS;
-  }
-  if ($return_line =~ /CDS/) {
-     undef $GENE;
-     undef $GENE_1;
-     undef $SPT;
-     undef $SWISS; 
-  }
-  if ($return_line =~ /db_xref=\"SPTREMBL\:(\w+)/) {
-      $SPT = $1;
-  }      
-  if ($return_line =~ /db_xref=\"SWISS-PROT\:(\w+)/) {
-      $SWISS = $1;
-  }
-  if ($return_line =~ /note=\"(\w+\.\w+)\;/) {
-    $GENE_1=$1;
-  }
-  if ($return_line =~ /gene=/) {
-    $GENE=$';
-    chomp $GENE;
-    $GENE=~s/\"//g;
-    $GENE=~s/\s+//g; 
-    
-    if ($GENE =~ /^[A-Z0-9]+\.t[1-9]/) {   # get rid of tRNA's!!
-        next;
+    if ($return_line =~ /ID\s+(\w+)/) {
+	undef $GENE;
+	undef $GENE_1;
+	undef $SPT;
+	undef $SWISS;
+	undef $PRODUCT;
     }
-    if ($GENE =~ /\-/) {   # in some cases the gene tag contains the locus name, gene is in note tag!!
-       $GENE = $GENE_1; 
+    if ($return_line =~ /CDS/) {
+	undef $GENE;
+	undef $GENE_1;
+	undef $SPT;
+	undef $SWISS;
+	undef $PSEUDO;
+	undef $PROTEIN;
+	undef $PRODUCT;
     }
+    if ($return_line =~ /db_xref=\"SPTREMBL\:(\w+)/) {
+	$SPT = $1;
+    }      
+    if ($return_line =~ /db_xref=\"SWISS-PROT\:(\w+)/) {
+	$SWISS = $1;
+    }
+    if ($return_line =~ /note=\"(\w+\.\w+)\;/) {
+	$GENE_1=$1;
+    }
+    if ($return_line =~ /pseudo/) {
+	$PSEUDO = 1;
+    }
+    if ($return_line =~ /gene=/) {
+	$GENE=$';
+	chomp $GENE;
+	$GENE=~s/\"//g;
+	$GENE=~s/\s+//g; 
+	
+	if ($GENE =~ /^[A-Z0-9]+\.t[1-9]/) {   # get rid of tRNA's
+	    next;
+	}
+	if ($GENE =~ /\-/) {   # in some cases the gene tag contains the locus name, gene is in note tag!!
+	    $GENE = $GENE_1; 
+	}
+	if ($PSEUDO == 1) {                    # get rid of psudogenes
+	    next;
+	}
+	
+	$genes_parsed++;
+	# assign SPTREMBL/SWISSPROT hash entries
+	$SPTREMBL{$GENE} = $SPT;
+	$SWISS_PROT{$GENE} = $SWISS;
+    }
+    if ($return_line =~ /product=/) {
+	$PRODUCT=$';
+	chomp $PRODUCT;
+	$PRODUCT =~ s/\"//g;
+	$PRODUCT =~ s/^\s+//g;
+	$PRODUCT =~ s/Hypothetical protein //g;
+	$PRODUCT{$GENE}=$PRODUCT;
 
-    $genes_parsed++;
-    
-    $SPTREMBL{$GENE} = $SPT;
-    $SWISS_PROT{$GENE} = $SWISS;
- 
- }
-  if ($return_line =~ /protein_id=/) {
-     my $PROTEIN=$';
-     chomp $PROTEIN;
-     $PROTEIN=~s/\"//g;
-     $PROTEIN=~s/\s+//g;
-     $PROTEIN{$GENE}=$PROTEIN;
-  }
+	# Alternative splice form handling
+	# reassign $GENE to data from $PRODUCT
+	# and add new SPTREMBL/SWISSPROT hash entries
+
+	if ($PRODUCT =~ /[a-z]$/) {
+#	    print "Alternative splice form. ?Sequence name is $PRODUCT\n";
+	    $GENE = $PRODUCT;
+	    $SPTREMBL{$GENE} = $SPT;
+	    $SWISS_PROT{$GENE} = $SWISS;
+	}
+
+    }
+    if ($return_line =~ /protein_id=/) {
+	$PROTEIN=$';
+	chomp $PROTEIN;
+	$PROTEIN =~ s/\"//g;
+	$PROTEIN =~ s/\s+//g;
+	$PROTEIN{$GENE} = $PROTEIN;
+    }
 }
 close F;
 
