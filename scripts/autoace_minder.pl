@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-09-12 15:39:23 $
+# Last edited on: $Date: 2003-09-16 08:45:12 $
 
 
 #################################################################################
@@ -865,14 +865,19 @@ sub blat_jobs{
     print LOG "Finishing blat_them_all.pl -virtual -$job at ",&runtime,"\n\n";
     
     # Run aceprocess to make cleaner files
+    # slight difference for nematode files as there is no best/other distinction or intron files
     print LOG "Starting acecompress.pl at ",&runtime,"\n\n";
-    system ("$scriptdir/acecompress.pl -homol autoace.blat.$job.ace > autoace.blat.${job}lite.ace");
-    system ("mv -f autoace.blat.${job}lite.ace autoace.blat.$job.ace");
-    unless($job eq "nematode"){
-      # don't need to do this for nematode ESTs
+    if($job eq "nematode"){
+      system ("$scriptdir/acecompress.pl -homol autoace.$job.ace > autoace.${job}lite.ace");
+      system ("mv -f autoace.blat.${job}lite.ace autoace.blat.$job.ace");
+    }
+    else{
+      system ("$scriptdir/acecompress.pl -homol autoace.blat.$job.ace > autoace.blat.${job}lite.ace");
+      system ("mv -f autoace.blat.${job}lite.ace autoace.blat.$job.ace");
       system ("$scriptdir/acecompress.pl -feature autoace.good_introns.$job.ace > autoace.good_introns.${job}lite.ace");
       system ("mv -f autoace.good_introns.${job}lite.ace autoace.good_introns.$job.ace");
     }
+
     print LOG "Finishing acecompress.pl at ",&runtime,"\n\n";
       
     # make blat job specific lock file
