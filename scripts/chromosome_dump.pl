@@ -21,6 +21,7 @@ $|=1;
 my $cvs_version = &get_cvs_version("$0");
 
 our $tace   = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
+our $giface = "/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_4/giface";
 our $database = "/wormsrv2/autoace";
 our $dump_dir = "/wormsrv2/autoace/CHROMOSOMES";
 our ($opt_d,$opt_g,$opt_z,$opt_h);
@@ -95,7 +96,7 @@ dna -f $dump_dir/CHROMOSOME_X.dna
 quit
 END
 
-  &execute_tace_command($command,$tace,$database);
+  &execute_ace_command($command,$tace,$database);
 }
 
 
@@ -115,18 +116,18 @@ gif seqget CHROMOSOME_X ; seqfeatures -version 2 -file $dump_dir/CHROMOSOME_X.gf
 quit
 END
 
-  &execute_tace_command($command,$tace,$database);
+  &execute_ace_command($command,$giface,$database);
 }
 
 
 #####################################################
-# execute tace command
+# execute ace command: tace or giface
 #####################################################
 
-sub execute_tace_command {
+sub execute_ace_command {
   my ($command,$exec,$dir)=@_;
   open (WRITEDB,"| $exec $dir >> $logfile") or do {
-    print LOGFILE "execute_tace_command failed\n";
+    print LOGFILE "execute_ace_command failed\n";
     close(LOGFILE); 
     die();
   };
