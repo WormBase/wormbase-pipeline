@@ -1,15 +1,13 @@
 #!/usr/local/bin/perl5.6.0 -w
-
+#
 # GFFsplitter
 # 
-# v 0.1
+# Usage GFFsplitter [-options]
 # 
-# Written by Dan the Man
-# Usage : GFFsplitter
-
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-08-09 15:45:21 $
-
+# dl
+#
+# Last updated by: $Author: dl1 $
+# Last updated on: $Date: 2002-08-22 13:51:52 $
 
 #################################################################################
 # variables                                                                     #
@@ -17,7 +15,7 @@
 
 $|=1;
 use IO::Handle;
-use Getopt::Std;
+use Getopt::Long;
 use lib '/wormsrv2/scripts';
 use Wormbase;
 use strict;
@@ -31,7 +29,6 @@ my $rundate = `date +%y%m%d`; chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
 my $WS_version = &get_wormbase_version_name;
 
-
  ##############################
  # Paths etc                  #
  ##############################
@@ -43,27 +40,37 @@ if (! -e "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS"){
   system("mkdir /wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS") && die "Couldn't create directory\n";
 }
 
-
  ##############################
  # command-line options       #
  ##############################
 
-our $opt_h = "";   # Help/Usage page
-our $opt_a = "";   # archive GFF_splits directory into a WSxx directory
-our $opt_s = "";   # silent running
-getopts ('has');
-&usage if ($opt_h);
+my $help;      # Help/Usage page
+my $archive;   # archive GFF_splits directory into a WSxx directory
+my $silent;    # silent running
+my $debug;     # debug
 
+GetOptions (
+	    "help"      => \$help,
+	    "archive"   => \$archive,
+	    "silent"    => \$silent,
+	    "debug"     => \$debug
+	    );
+
+# help 
+&usage if ($help);
+
+# debug mode modifies $maintainers to reduce e-mail load
+($maintainers = "dl1\@sanger.ac.uk") if ($debug);
 
 ##########################################################
 # Archive the GFF_splits directory into a WSxx directory
 ##########################################################
 
 # runs only if -a is specified
-if($opt_a){
-  print "Renaming $datadir/GFF_SPLITS to $datadir/$WS_version\n";
-  system("mv $datadir/GFF_SPLITS ${datadir}/${WS_version}") && die "Couldn't rename directory\n";
-  exit(0);
+if($archive){
+    print "Renaming $datadir/GFF_SPLITS to $datadir/$WS_version\n";
+    system("mv $datadir/GFF_SPLITS ${datadir}/${WS_version}") && die "Couldn't rename directory\n";
+    exit(0);
 }
 
  ########################################
@@ -85,768 +92,207 @@ print LOG "\n";
 
 # prepare array of file names and sort names
 our @files = (
-	  'CHROMOSOME_I.gff',
-	  'CHROMOSOME_II.gff',
-	  'CHROMOSOME_III.gff',
-	  'CHROMOSOME_IV.gff',
-	  'CHROMOSOME_V.gff',
-	  'CHROMOSOME_X.gff',
-	  );
+	      'CHROMOSOME_I',
+	      'CHROMOSOME_II',
+	      'CHROMOSOME_III',
+	      'CHROMOSOME_IV',
+	      'CHROMOSOME_V',
+	      'CHROMOSOME_X',
+	      );
 
 our @gff_files = sort @files; 
 undef @files; 
+
+our @gff_classes;
+
+# prepare array of data types to dump
+READARRAY:   while (<DATA>) {
+    chomp $_;
+    last READARRAY if $_ =~ /END/;
+    push (@gff_classes,$_);
+}
+
 
 ############################################################
 # loop through each GFF file                               #
 ############################################################
 
 our $debug = 1;
+my %GFF;
+my $file;
 
-foreach (@gff_files) {
+foreach $file (@gff_files) {
     
-    next if ($_ eq "");
-    my $file = $_;
-    my ($file_prefix) = (/^(\S+.+)\.gff/);
-    print LOG "File $file   \tName : $file_prefix\n";
+    next if ($file eq "");
+    
+    print LOG "# File $file\n";
+    print     "# File $file\n" if ($debug);
+
     my $line_count = 0;
-
-    #########################################################
-    # initialise some files to write out data               #
-    #########################################################
-
-    my $gff_clone_path           = $file_prefix . "\.clone_path\.gff";
-    my $gff_genes                = $file_prefix . "\.genes\.gff";
-    my $gff_pseudogenes          = $file_prefix . "\.pseudogenes\.gff";
-    my $gff_rna                  = $file_prefix . "\.rna\.gff";
-    my $gff_rest                 = $file_prefix . "\.rest\.gff";
-    my $gff_CDS_exon             = $file_prefix . "\.CDS_exon\.gff";
-    my $gff_exon                 = $file_prefix . "\.exon\.gff";
-    my $gff_exon_tRNA            = $file_prefix . "\.exon_tRNA\.gff";
-    my $gff_exon_pseudogene      = $file_prefix . "\.exon_pseudogene\.gff";
-    my $gff_intron               = $file_prefix . "\.intron\.gff";
-    my $gff_intron_tRNA          = $file_prefix . "\.intron_tRNA\.gff";
-    my $gff_intron_pseudogene    = $file_prefix . "\.intron_pseudogene\.gff";
-    my $gff_intron_confirmed_CDS = $file_prefix . "\.intron_confirmed_CDS\.gff";
-    my $gff_intron_confirmed_UTR = $file_prefix . "\.intron_confirmed_UTR\.gff";
-    my $gff_repeats              = $file_prefix . "\.repeats\.gff";
-    my $gff_tc_insertions        = $file_prefix . "\.tc_insertions\.gff";
-    my $gff_blastx               = $file_prefix . "\.blastx\.gff";
-    my $gff_tblastx_briggsae     = $file_prefix . "\.tblastx_briggsae\.gff";
-    my $gff_assembly_tags        = $file_prefix . "\.assembly_tags\.gff";
-    my $gff_prosite              = $file_prefix . "\.prosite\.gff";
-    my $gff_oligos               = $file_prefix . "\.oligos\.gff";
-    my $gff_alleles              = $file_prefix . "\.alleles\.gff";
-    my $gff_clone_ends           = $file_prefix . "\.clone_ends\.gff";
-    my $gff_ts_site              = $file_prefix . "\.ts_site\.gff";
-    my $gff_RNAi                 = $file_prefix . "\.RNAi\.gff";
-    my $gff_genepair             = $file_prefix . "\.genepair\.gff";
-    my $gff_PCR_products         = $file_prefix . "\.PCR_products\.gff";
-    my $gff_cDNA_for_RNAi        = $file_prefix . "\.cDNA_for_RNAi\.gff";
-    my $gff_BLAT_EST_BEST        = $file_prefix . "\.BLAT_EST_BEST\.gff";
-    my $gff_BLAT_EST_OTHER       = $file_prefix . "\.BLAT_EST_OTHER\.gff";
-    my $gff_BLAT_mRNA_BEST       = $file_prefix . "\.BLAT_mRNA_BEST\.gff";
-    my $gff_BLAT_mRNA_OTHER      = $file_prefix . "\.BLAT_mRNA_OTHER\.gff";
-    my $gff_BLATX_NEMATODE       = $file_prefix . "\.BLATX_NEMATODE\.gff";
-    my $gff_Expr_profile         = $file_prefix . "\.Expr_profile\.gff";
-    my $gff_UTR                  = $file_prefix . "\.UTR\.gff";
-
-    
-    open (GFF_CLONE_PATH, ">$datadir/GFF_SPLITS/$gff_clone_path");
-    print GFF_CLONE_PATH  "##date $rundate\n";
-
-    open (GFF_GENES, ">$datadir/GFF_SPLITS/$gff_genes");
-    print GFF_GENES  "##date $rundate\n";
-
-    open (GFF_PSEUDOGENES, ">$datadir/GFF_SPLITS/$gff_pseudogenes");
-    print GFF_PSEUDOGENES  "##date $rundate\n";
-
-    open (GFF_RNA, ">$datadir/GFF_SPLITS/$gff_rna");
-    print GFF_RNA  "##date $rundate\n";
-
-    open (GFF_REST, ">$datadir/GFF_SPLITS/$gff_rest");
-    print GFF_REST  "##date $rundate\n";
-
-    open (GFF_CDS_EXON, ">$datadir/GFF_SPLITS/$gff_CDS_exon");
-    print GFF_CDS_EXON  "##date $rundate\n";
-
-    open (GFF_EXON, ">$datadir/GFF_SPLITS/$gff_exon");
-    print GFF_EXON  "##date $rundate\n";
-
-    open (GFF_EXON_tRNA, ">$datadir/GFF_SPLITS/$gff_exon_tRNA");
-    print GFF_EXON_tRNA  "##date $rundate\n";
-
-    open (GFF_EXON_PSEUDOGENE, ">$datadir/GFF_SPLITS/$gff_exon_pseudogene");
-    print GFF_EXON_PSEUDOGENE  "##date $rundate\n";
-
-    open (GFF_INTRON, ">$datadir/GFF_SPLITS/$gff_intron");
-    print GFF_INTRON  "##date $rundate\n";
-
-    open (GFF_INTRON_tRNA, ">$datadir/GFF_SPLITS/$gff_intron_tRNA");
-    print GFF_INTRON_tRNA  "##date $rundate\n";
-
-    open (GFF_INTRON_PSEUDOGENE, ">$datadir/GFF_SPLITS/$gff_intron_pseudogene");
-    print GFF_INTRON_PSEUDOGENE  "##date $rundate\n";
-
-    open (GFF_INTRON_CONFIRMED_CDS, ">$datadir/GFF_SPLITS/$gff_intron_confirmed_CDS");
-    print GFF_INTRON_CONFIRMED_CDS  "##date $rundate\n";
-
-    open (GFF_INTRON_CONFIRMED_UTR, ">$datadir/GFF_SPLITS/$gff_intron_confirmed_UTR");
-    print GFF_INTRON_CONFIRMED_UTR  "##date $rundate\n";
-
-    open (GFF_REPEATS, ">$datadir/GFF_SPLITS/$gff_repeats");
-    print GFF_REPEATS  "##date $rundate\n";
-
-    open (GFF_TC_INSERTIONS, ">$datadir/GFF_SPLITS/$gff_tc_insertions");
-    print GFF_TC_INSERTIONS  "##date $rundate\n";
-
-    open (GFF_BLASTX, ">$datadir/GFF_SPLITS/$gff_blastx");
-    print GFF_BLASTX  "##date $rundate\n";
-
-    open (GFF_TBLASTX_BRIGGSAE, ">$datadir/GFF_SPLITS/$gff_tblastx_briggsae");
-    print GFF_TBLASTX_BRIGGSAE  "##date $rundate\n";
- 
-    open (GFF_ASSEMBLY_TAGS, ">$datadir/GFF_SPLITS/$gff_assembly_tags");
-    print GFF_ASSEMBLY_TAGS  "##date $rundate\n";
-
-    open (GFF_TS_SITE, ">$datadir/GFF_SPLITS/$gff_ts_site");
-    print GFF_TS_SITE  "##date $rundate\n";
-
-    open (GFF_PROSITE, ">$datadir/GFF_SPLITS/$gff_prosite");
-    print GFF_PROSITE  "##date $rundate\n";
-
-    open (GFF_OLIGOS, ">$datadir/GFF_SPLITS/$gff_oligos");
-    print GFF_OLIGOS  "##date $rundate\n";
-
-    open (GFF_ALLELES, ">$datadir/GFF_SPLITS/$gff_alleles");
-    print GFF_ALLELES  "##date $rundate\n";
-
-    open (GFF_CLONE_ENDS, ">$datadir/GFF_SPLITS/$gff_clone_ends");
-    print GFF_CLONE_ENDS  "##date $rundate\n";
-
-    open (GFF_RNAi, ">$datadir/GFF_SPLITS/$gff_RNAi");
-    print GFF_RNAi  "##date $rundate\n";
-
-    open (GFF_GENEPAIR, ">$datadir/GFF_SPLITS/$gff_genepair");
-    print GFF_GENEPAIR  "##date $rundate\n";
-
-    open (GFF_PCR_PRODUCTS, ">$datadir/GFF_SPLITS/$gff_PCR_products");
-    print GFF_PCR_PRODUCTS  "##date $rundate\n";
-
-    open (GFF_CDNA_FOR_RNAI,  ">$datadir/GFF_SPLITS/$gff_cDNA_for_RNAi");
-    print GFF_CDNA_FOR_RNAI   "##date $rundate\n";
-
-    open (GFF_BLAT_EST_BEST,  ">$datadir/GFF_SPLITS/$gff_BLAT_EST_BEST");
-    print GFF_BLAT_EST_BEST   "##date $rundate\n";
-
-    open (GFF_BLAT_EST_OTHER, ">$datadir/GFF_SPLITS/$gff_BLAT_EST_OTHER");
-    print GFF_BLAT_EST_OTHER  "##date $rundate\n";
-
-    open (GFF_BLAT_MRNA_BEST,     ">$datadir/GFF_SPLITS/$gff_BLAT_mRNA_BEST");
-    print GFF_BLAT_MRNA_BEST     "##date $rundate\n";
-
-    open (GFF_BLAT_MRNA_OTHER,    ">$datadir/GFF_SPLITS/$gff_BLAT_mRNA_OTHER");
-    print GFF_BLAT_MRNA_OTHER     "##date $rundate\n";
-
-    open (GFF_BLATX_NEMATODE,     ">$datadir/GFF_SPLITS/$gff_BLATX_NEMATODE");
-    print GFF_BLATX_NEMATODE      "##date $rundate\n";
-
-    open (GFF_EXPR_PROFILE,    ">$datadir/GFF_SPLITS/$gff_Expr_profile");
-    print GFF_EXPR_PROFILE     "##date $rundate\n";
-
-    open (GFF_UTR,    ">$datadir/GFF_SPLITS/$gff_UTR");
-    print GFF_UTR     "##date $rundate\n";
-
-
 
     #########################################################
     # open the gff file                                     #
     #########################################################
     
-    my $gff_length = file_size("/wormsrv2/autoace/CHROMOSOMES/$file") - 3;
-    print LOG "File contains $gff_length lines\n";
-    my $running_total = -1;
+    my $running_total = 0;
+    my ($name,$feature,$method,$start,$stop,$score,$strand,$other);
+    my @header = "";
 
-    open (GFF, "</wormsrv2/autoace/CHROMOSOMES/$file");
+    open (GFF, "</wormsrv2/autoace/CHROMOSOMES/$file.gff");
     while (<GFF>) {
-      my $found_a_home;
 	chomp;
 	$line_count++;
+	
+	print "." if (($line_count % 5000) == 0);
 
-	if (/\#\#sequence-region/) {
-	    print GFF_REST                 "$_\n";
-	    print GFF_CLONE_PATH           "$_\n";
-	    print GFF_GENES                "$_\n";
-	    print GFF_PSEUDOGENES          "$_\n";
-	    print GFF_RNA                  "$_\n";
-	    print GFF_CDS_EXON             "$_\n";
-	    print GFF_EXON                 "$_\n";
-	    print GFF_EXON_tRNA            "$_\n";
-	    print GFF_EXON_PSEUDOGENE      "$_\n";
-	    print GFF_INTRON               "$_\n";
-	    print GFF_INTRON_tRNA          "$_\n";
-	    print GFF_INTRON_PSEUDOGENE    "$_\n";
-	    print GFF_INTRON_CONFIRMED_CDS "$_\n";
-	    print GFF_INTRON_CONFIRMED_UTR "$_\n";
-	    print GFF_REPEATS              "$_\n";
-	    print GFF_TC_INSERTIONS        "$_\n";
-	    print GFF_BLASTX               "$_\n";
-	    print GFF_TBLASTX_BRIGGSAE     "$_\n";
-	    print GFF_ASSEMBLY_TAGS        "$_\n";
-	    print GFF_TS_SITE              "$_\n";
-	    print GFF_PROSITE              "$_\n";
-	    print GFF_OLIGOS               "$_\n";
-	    print GFF_ALLELES              "$_\n";
-	    print GFF_CLONE_ENDS           "$_\n";
-	    print GFF_RNAi                 "$_\n";
-	    print GFF_GENEPAIR             "$_\n";
-	    print GFF_PCR_PRODUCTS         "$_\n";
-	    print GFF_CDNA_FOR_RNAI        "$_\n";
-	    print GFF_BLAT_EST_BEST        "$_\n";
-	    print GFF_BLAT_EST_OTHER       "$_\n";
-	    print GFF_BLAT_MRNA_BEST       "$_\n";
-	    print GFF_BLAT_MRNA_OTHER      "$_\n";
-	    print GFF_BLATX_NEMATODE       "$_\n";
-	    print GFF_EXPR_PROFILE         "$_\n";
-	    print GFF_UTR                  "$_\n";
-	    next;
-	}
 	#skip header lines of file
-	next if($_ =~ /^\#/);
-        my ($name,$feature,$method,$start,$stop,$score,$strand,$other);
-	($name,$method,$feature,$start,$stop,$score,$strand,$other,$name) = split (/\t/,$_);
-	     
-	undef $found_a_home;
+	if (/^\#/) {push (@header,$_); next;}
 
-	################################
-	# Clone path                   #
-	################################
+	($name,$method,$feature,$start,$stop,$score,$strand,$other,$name) = split /\t/;
 
-	if (($method eq "Genomic_canonical") && ($feature eq "Sequence")) {
-	    print GFF_CLONE_PATH "$_\n";
-	    $found_a_home = 1;
-	}
-	
-	################################
-	# Genes
-	################################
-	
-#	if (  (($method eq "curated")          && ($feature eq "transcription")) || 
-#	      (($method eq "provisional")      && ($feature eq "transcription")) || 
-#	      (($method eq "tRNAscan-SE-1.11") && ($feature eq "Sequence"))    ) {
-
-	if (  (($method eq "curated")          && ($feature eq "Sequence")) || 
-	      (($method eq "provisional")      && ($feature eq "Sequence")) || 
-	      (($method eq "tRNAscan-SE-1.11") && ($feature eq "Sequence"))    ) {
-
-
-	    print GFF_GENES "$_\n";
-	    $found_a_home = 1;
-	}
-
-	if (  ($method eq "Pseudogene") && ($feature eq "Sequence")  ) {
-	    print GFF_PSEUDOGENES "$_\n";
-	    $found_a_home = 1;
-	}
-	
-	################################
-	# RNA genes
-	################################
-
-	if ( (($method eq "RNA") || ($method eq "tRNAscan-SE-1.11")) && ($feature eq "Sequence") ) {
-	    
-#	    print "$_\n" if ($debug);
-	    print GFF_RNA "$_\n";
-	    $found_a_home = 1;
-	}
-
-	################################
-	# CDS Exon
-	################################
-
-	if ((($method eq "curated") || ($method eq "provisional")) && ($feature eq "CDS")) {
-#	    print "$_\n" if ($debug);
-	    print GFF_CDS_EXON "$_\n";
-	    $found_a_home = 1;
-	}
-	################################
-	# Exon
-	################################
-
-	if ((($method eq "curated") || ($method eq "provisional")) && ($feature eq "exon")) {
-#	    print "$_\n" if ($debug);
-	    print GFF_EXON "$_\n";
-	    $found_a_home = 1;
-	}
-	    
-	if (($method eq "tRNAscan-SE-1.11") && ($feature eq "exon")) {
-	    print GFF_EXON_tRNA "$_\n";
-	    $found_a_home = 1;
-	}
-	    
-	if (($method eq "Pseudogene") && ($feature eq "exon")) {
-	    print GFF_EXON_PSEUDOGENE "$_\n";
-	    $found_a_home = 1;
-	}
-	    
-	################################
-	# Intron
-	################################
-
-	if ((($method eq "curated") || ($method eq "provisional")) && ($feature eq "intron")) {
-#	    print "$_\n" if ($debug);
-	    print GFF_INTRON "$_\n";
-	    $found_a_home = 1;
-	}
-	if (($method eq "tRNAscan-SE-1.11") && ($feature eq "intron")) {
-	    print GFF_INTRON_tRNA "$_\n";
-	    $found_a_home = 1;
-	}
-	if (($method eq "Pseudogene") && ($feature eq "intron")) {
-	    print GFF_INTRON_PSEUDOGENE "$_\n";
-	    $found_a_home = 1;
-	}
-	
-	################################
+	# Clone path
+	if (($method eq "Genomic_canonical") 
+	    && ($feature eq "Sequence"))                  {push ( @{$GFF{$file}{clone_path}},$_);}
+	# Genes     
+	elsif ( (($method eq "curated") 
+		 && ($feature eq "Sequence")) 
+		|| (($method eq "provisional")
+		    && ($feature eq "Sequence")) 
+		|| (($method eq "tRNAscan-SE-1.11")
+		    && ($feature eq "Sequence")) )        {push (@{$GFF{$file}{genes}},$_);}
+	elsif ( ($method eq "Pseudogene") 
+		&& ($feature eq "Sequence"))              {push (@{$GFF{$file}{pseudogenes}},$_);}
+	# RNA genes 
+	elsif ((($method eq "RNA") 
+		|| ($method eq "tRNAscan-SE-1.11")) 
+	       && ($feature eq "Sequence"))               {push (@{$GFF{$file}{rna}},$_);}
+	# CDS Exon  
+	elsif ( (($method eq "curated") || 
+                 ($method eq "provisional")) 
+		&& ($feature eq "CDS"))                   {push (@{$GFF{$file}{CDS_exon}},$_);}
+	# Exon      
+	elsif ((($method eq "curated") 
+		|| ($method eq "provisional")) 
+	       && ($feature eq "exon"))                   {push (@{$GFF{$file}{exon}},$_);}
+       	elsif (($method eq "tRNAscan-SE-1.11") 
+	       && ($feature eq "exon"))                   {push (@{$GFF{$file}{exon_tRNA}},$_);}
+	elsif (($method eq "Pseudogene") 
+	       && ($feature eq "exon"))                   {push (@{$GFF{$file}{exon_pseudogene}},$_);}
+	# Intron    
+	elsif ((($method eq "curated") 
+		|| ($method eq "provisional")) 
+	       && ($feature eq "intron"))                 {push (@{$GFF{$file}{intron}},$_);}
+	elsif (($method eq "tRNAscan-SE-1.11") 
+	       && ($feature eq "intron"))                 {push (@{$GFF{$file}{intron_tRNA}},$_);}
+	elsif (($method eq "Pseudogene") 
+	       && ($feature eq "intron"))                 {push (@{$GFF{$file}{intron_pseudogene}},$_);}
 	# Intron confirmed by ESTs
-	################################
-
-	if (/Confirmed_by_EST/) {
-	    print GFF_INTRON_CONFIRMED_CDS "$_\n";
-	    $found_a_home = 1;
-	}
-
-
-	if (/Confirmed_by_cDNA/) {
-	    print GFF_INTRON_CONFIRMED_CDS "$_\n";
-	    $found_a_home = 1;
-	}
-
-	if (/Confirmed_in_UTR/) {
-	    print GFF_INTRON_CONFIRMED_UTR "$_\n";
-	    $found_a_home = 1;
-	}
-
-	################################
+	elsif (/Confirmed_by_EST/)                        {push (@{$GFF{$file}{intron_confirmed_CDS}},$_);}
+	elsif (/Confirmed_by_cDNA/)                       {push (@{$GFF{$file}{intron_confirmed_CDS}},$_);}
+	elsif (/Confirmed_in_UTR/)                        {push (@{$GFF{$file}{intron_confirmed_UTR}},$_);}
         # Repeats
-	################################
-	
-	if (($method eq "tandem") || ($method eq "inverted") || ($method eq "hmmfs.3") || ($method eq "scan") || ($feature eq "repeat_region")) {
-#	    print "$_\n" if ($debug);
-	    print GFF_REPEATS "$_\n";
-	    $found_a_home = 1;
-	}
-
-
-	################################
+	elsif (($method eq "tandem") 
+            || ($method eq "inverted") 
+            || ($method eq "hmmfs.3") 
+            || ($method eq "scan") 
+            || ($feature eq "repeat_region"))             {push (@{$GFF{$file}{repeats}},$_);}
    	# TC1 insertions
-	################################
-
-	if ($method eq "BLASTN_TC1") {
-#	    print "$_\n" if ($debug);
-	    print GFF_TC_INSERTIONS "$_\n";
-	    $found_a_home = 1;
-	}
-	
-	################################
+	elsif ($method eq "BLASTN_TC1")                   {push (@{$GFF{$file}{tc_insertions}},$_);}
    	# Protein similarities
-	################################
-
-	if ($method eq "BLASTX") {
-#	    print "$_\n" if ($debug);
-	    print GFF_BLASTX "$_\n";
-	    $found_a_home = 1;
-	}
-	
-
-	################################
-   	# C.briggsae similarities 
-	################################
-
-	if (($method eq "TBLASTX_briggsae") || ($method eq "BLASTN_EST_briggsae") || ($method eq "TBLASTX_C.briggsae") || ($method eq "BLASTN_briggsae_cosmid")  || ($method eq "BLASTN_eleg_brig")) {
-#	    print "$_\n" if ($debug);
-	    print GFF_TBLASTX_BRIGGSAE "$_\n";
-	    $found_a_home = 1;
-	}
-	
-	################################
+	elsif ($method eq "BLASTX")                       {push (@{$GFF{$file}{BLASTX}},$_);}
+   	# C.briggsae similarities
+	elsif (($method eq "WABA_coding") 
+	       || ($method eq "WABA_strong")
+               || ($method eq "WABA_weak"))               {push (@{$GFF{$file}{WABA_BRIGGSAE}},$_);}
    	# Assembly tags
-	################################
-
-	if ($method eq "assembly_tag") {
-#	    print "$_\n" if ($debug);
-	    print GFF_ASSEMBLY_TAGS "$_\n";
-	    $found_a_home = 1;
-	}
-	
-	################################
-   	# TS site
-	################################
-
-	if ((/misc_feature/) && (/trans-splice site/)) {
-#	    print "$_\n" if ($debug);
-	    print GFF_TS_SITE "$_\n";
-	    $found_a_home = 1;
-	}
-	
-	################################
-   	# Prosite
-	################################
-
-	if ($method eq "Queryprosite") {
-#	    print "$_\n" if ($debug);
-	    print GFF_PROSITE "$_\n";
-	    $found_a_home = 1;
-	}
-	
-
-	################################
-   	# Oligo mapping 
-	################################
-
-	if ($feature eq "OLIGO") {
-#	    print "$_\n" if ($debug);
-	    print GFF_OLIGOS "$_\n";
-	    $found_a_home = 1;
-	}
-	
-	################################
-   	# RNAi 
-	################################
-
-	if ($method eq "RNAi") {
-#	    print "$_\n" if ($debug);
-	    print GFF_RNAi "$_\n";
-	    $found_a_home = 1;
-	}
-	
-	################################
+	elsif ($method eq "assembly_tag")                 {push (@{$GFF{$file}{assembly_tags}},$_);}
+	# TS site
+	elsif ((/misc_feature/) && 
+               (/trans-splice site/))                     {push (@{$GFF{$file}{ts_site}},$_);}
+   	# Oligo mapping
+	elsif ($feature eq "OLIGO")                       {push (@{$GFF{$file}{oligos}},$_);}
+   	# RNAi
+	elsif ($method eq "RNAi")                         {push (@{$GFF{$file}{RNAi}},$_);}
    	# GENEPAIR
-	################################
-
-	if ($method eq "GenePair_STS") {
-#	    print "$_\n" if ($debug);
-	    print GFF_GENEPAIR "$_\n";
-	    $found_a_home = 1;
-	}
-	
-	################################
+	elsif ($method eq "GenePair_STS")                 {push (@{$GFF{$file}{genepair}},$_);}
    	# Alleles
-	################################
-
-	if (/Allele/) {
-#	    print "$_\n" if ($debug);
-	    print GFF_ALLELES "$_\n";
-	    $found_a_home = 1;
-	}
-	
-
-	################################
+	elsif (/Allele/)                                  {push (@{$GFF{$file}{allele}},$_);}
    	# Clone ends
-	################################
-
-	if ((/Clone_left_end/) || (/Clone_right_end/)) {
-#	    print "$_\n" if ($debug);
-	    print GFF_CLONE_ENDS "$_\n";
-	    $found_a_home = 1;
-	}
-
-
-	################################
+	elsif ((/Clone_left_end/)  
+               || (/Clone_right_end/))                    {push (@{$GFF{$file}{clone_ends}},$_);}
    	# PCR Products
-	################################
-
-	if (/PCR_product/) {
-	  #	    print "$_\n" if ($debug);
-	  print GFF_PCR_PRODUCTS "$_\n";
-	  $found_a_home = 1;
-	}
-
-	################################
+	elsif (/PCR_product/)                             {push (@{$GFF{$file}{PCR_products}},$_);}
    	# cDNA for RNAi
-	################################
-
-	if (/cDNA_for_RNAi/) {
-	  #	    print "$_\n" if ($debug);
-	  print GFF_CDNA_FOR_RNAI "$_\n";
-	  $found_a_home = 1;
-	}
-
-	################################
-   	# BLAT
-	################################
-
-
-	if (/BLAT_EST_BEST/) {
-	  #	    print "$_\n" if ($debug);
-	  print GFF_BLAT_EST_BEST "$_\n";
-	  $found_a_home = 1;
-	}
-
-	if (/BLAT_EST_OTHER/) {
-	  #	    print "$_\n" if ($debug);
-	  print GFF_BLAT_EST_OTHER "$_\n";
-	  $found_a_home = 1;
-	}
-
-
-	################################
-   	# BLAT_mRNA 
-	################################
-
-	if (/BLAT_mRNA_BEST/) {
-	  #	    print "$_\n" if ($debug);
-	  print GFF_BLAT_MRNA_BEST "$_\n";
-	  $found_a_home = 1;
-	}
-
-	if (/BLAT_mRNA_OTHER/) {
-	  #	    print "$_\n" if ($debug);
-	  print GFF_BLAT_MRNA_OTHER "$_\n";
-	  $found_a_home = 1;
-	}
-
-
-	################################
+	elsif (/cDNA_for_RNAi/)                           {push (@{$GFF{$file}{cDNA_for_RNAi}},$_);}
+   	# BLAT_EST
+	elsif (/BLAT_EST_BEST/)                           {push (@{$GFF{$file}{BLAT_EST_BEST}},$_);}
+	elsif (/BLAT_EST_OTHER/)                          {push (@{$GFF{$file}{BLAT_EST_OTHER}},$_);}
+   	# BLAT_mRNA
+	elsif (/BLAT_mRNA_BEST/)                          {push (@{$GFF{$file}{BLAT_mRNA_BEST}},$_);}
+	elsif (/BLAT_mRNA_OTHER/)                         {push (@{$GFF{$file}{BLAT_mRNA_OTHER}},$_);}
+   	# BLAT_EMBL
+	elsif (/BLAT_EMBL_BEST/)                          {push (@{$GFF{$file}{BLAT_EMBL_BEST}},$_);}
+	elsif (/BLAT_EMBL_OTHER/)                         {push (@{$GFF{$file}{BLAT_EMBL_OTHER}},$_);}
    	# BLATX_NEMATODE
-	################################
-
-	if (/BLATX_NEMATODE/) {
-	  #	    print "$_\n" if ($debug);
-	  print GFF_BLATX_NEMATODE "$_\n";
-	  $found_a_home = 1;
-	}
-
-	################################
+	elsif (/BLATX_NEMATODE/)                          {push (@{$GFF{$file}{BLATX_NEMATODE}},$_);}
    	# Expr_profile
-	################################
-
-	if (/Expr_profile/) {
-	  #	    print "$_\n" if ($debug);
-	  print GFF_EXPR_PROFILE "$_\n";
-	  $found_a_home = 1;
-	}
-
-	################################
-   	# UTR
-	################################
-
-	if (/UTR/) {
-	  #	    print "$_\n" if ($debug);
-	  print GFF_UTR "$_\n";
-	  $found_a_home = 1;
-	}
-
-
-	print GFF_REST "$_\n" unless ($found_a_home); 
-	$running_total++ if ($found_a_home); 
-	    
-      }
-
-    close GFF;    
-    close GFF_REST;
-    close GFF_CLONE_PATH;
-    close GFF_GENES;
-    close GFF_PSEUDOGENES;
-    close GFF_RNA;
-    close GFF_CDS_EXON;
-    close GFF_EXON;
-    close GFF_EXON_tRNA;
-    close GFF_EXON_PSEUDOGENE;
-    close GFF_INTRON;
-    close GFF_INTRON_tRNA;
-    close GFF_INTRON_PSEUDOGENE;
-    close GFF_INTRON_CONFIRMED_CDS;
-    close GFF_INTRON_CONFIRMED_UTR;
-    close GFF_REPEATS;
-    close GFF_TC_INSERTIONS;
-    close GFF_BLASTX;
-    close GFF_TBLASTX_BRIGGSAE;
-    close GFF_ASSEMBLY_TAGS;
-    close GFF_TS_SITE;
-    close GFF_PROSITE;
-    close GFF_OLIGOS;
-    close GFF_ALLELES;
-    close GFF_CLONE_ENDS;
-    close GFF_PCR_PRODUCTS;
-    close GFF_CDNA_FOR_RNAI;
-    close GFF_BLAT_EST_BEST;
-    close GFF_BLAT_EST_OTHER;
-    close GFF_BLAT_MRNA_BEST;
-    close GFF_BLAT_MRNA_OTHER;
-    close GFF_BLATX_NEMATODE;
-    close GFF_EXPR_PROFILE;
-    close GFF_UTR;
+	elsif (/Expr_profile/)                            {push (@{$GFF{$file}{Expr_profile}},$_);}
+   	# UTR         
+	elsif (/UTR/)                                     {push (@{$GFF{$file}{UTR}},$_);}
+	# REST OF LINES
+	else                                              {push (@{$GFF{$file}{rest}},$_); $running_total--;}
+	
+	# increment no of lines sorted to bin
+	$running_total++; 
+	
+    }
 
     ########################################
     # count file lengths for all GFF files #
-    ###########################################
+    ########################################
 
-    unless ($opt_s) {
+    # dropped for the moment
 
-	my $total_lines = 0;
-	print "\n\nGFF file lengths\n\n";
-	
-	my $gff_length_clone_path = file_size("$datadir/GFF_SPLITS/$gff_clone_path") - 3;
-	$total_lines = $total_lines + $gff_length_clone_path;
-	print "$gff_clone_path\t: $gff_length_clone_path\n";
-	
-	my $gff_length_genes = file_size("$datadir/GFF_SPLITS/$gff_genes") - 3;
-	$total_lines = $total_lines + $gff_length_genes;
-	print "$gff_genes   \t\t: $gff_length_genes\n";
-	
-	my $gff_length_pseudogenes = file_size("$datadir/GFF_SPLITS/$gff_pseudogenes") - 3;
-	$total_lines = $total_lines + $gff_length_pseudogenes;
-	print "$gff_pseudogenes   \t\t: $gff_length_pseudogenes\n";
-	
-	my $gff_length_rna = file_size("$datadir/GFF_SPLITS/$gff_rna") - 3;
-	$total_lines = $total_lines + $gff_length_rna;
-	print "$gff_rna     \t\t: $gff_length_rna\n";
-	
-	my $gff_length_CDS_exon = file_size("$datadir/GFF_SPLITS/$gff_CDS_exon") - 3;
-	$total_lines = $total_lines + $gff_length_CDS_exon;
-	print "$gff_CDS_exon   \t\t: $gff_length_CDS_exon\n";
-	
-	my $gff_length_exon = file_size("$datadir/GFF_SPLITS/$gff_exon") - 3;
-	$total_lines = $total_lines + $gff_length_exon;
-	print "$gff_exon   \t\t: $gff_length_exon\n";
-	
-	my $gff_length_exon_tRNA = file_size("$datadir/GFF_SPLITS/$gff_exon_tRNA") - 3;
-	$total_lines = $total_lines + $gff_length_exon_tRNA;
-	print "$gff_exon_tRNA   \t\t: $gff_length_exon_tRNA\n";
-	
-	my $gff_length_exon_pseudogene = file_size("$datadir/GFF_SPLITS/$gff_exon_pseudogene") - 3;
-	$total_lines = $total_lines + $gff_length_exon_pseudogene;
-	print "$gff_exon_pseudogene   \t: $gff_length_exon_pseudogene\n";
+    ########################################
+    # write some output                    #
+    ########################################
 
-	my $gff_length_intron = file_size("$datadir/GFF_SPLITS/$gff_intron") - 3;
-	$total_lines = $total_lines + $gff_length_intron;
-	print "$gff_intron   \t\t: $gff_length_intron\n";
-    
-	my $gff_length_intron_tRNA = file_size("$datadir/GFF_SPLITS/$gff_intron_tRNA") - 3;
-	$total_lines = $total_lines + $gff_length_intron_tRNA;
-	print "$gff_intron_tRNA   \t\t: $gff_length_intron_tRNA\n";
-	
-	my $gff_length_intron_pseudogene = file_size("$datadir/GFF_SPLITS/$gff_intron_pseudogene") - 3;
-	$total_lines = $total_lines + $gff_length_intron_pseudogene;
-	print "$gff_intron_pseudogene   \t: $gff_length_intron_pseudogene\n";
-	
-	my $gff_length_intron_confirmed_CDS = file_size("$datadir/GFF_SPLITS/$gff_intron_confirmed_CDS") - 3;
-	$total_lines = $total_lines + $gff_length_intron_confirmed_CDS;
-	print "$gff_intron_confirmed_CDS\t: $gff_length_intron_confirmed_CDS\n";
-	
-	my $gff_length_intron_confirmed_UTR = file_size("$datadir/GFF_SPLITS/$gff_intron_confirmed_UTR") - 3;
-	$total_lines = $total_lines + $gff_length_intron_confirmed_UTR;
-	print "$gff_intron_confirmed_UTR\t: $gff_length_intron_confirmed_UTR\n";
-	
-	my $gff_length_repeats = file_size("$datadir/GFF_SPLITS/$gff_repeats") - 3;
-	$total_lines = $total_lines + $gff_length_repeats;
-	print "$gff_repeats   \t\t: $gff_length_repeats\n";
-	
-	my $gff_length_tc_insertions = file_size("$datadir/GFF_SPLITS/$gff_tc_insertions") - 3;
-	$total_lines = $total_lines + $gff_length_tc_insertions;
-	print "$gff_tc_insertions   \t: $gff_length_tc_insertions\n";
-	
-	my $gff_length_blastx = file_size("$datadir/GFF_SPLITS/$gff_blastx") - 3;
-	$total_lines = $total_lines + $gff_length_blastx;
-	print "$gff_blastx   \t\t: $gff_length_blastx\n";
-	
-	my $gff_length_tblastx_briggsae = file_size("$datadir/GFF_SPLITS/$gff_tblastx_briggsae") - 3;
-	$total_lines = $total_lines + $gff_length_tblastx_briggsae;
-	print "$gff_tblastx_briggsae    \t: $gff_length_tblastx_briggsae\n";
-	
-	my $gff_length_assembly_tags = file_size("$datadir/GFF_SPLITS/$gff_assembly_tags") - 3;
-	$total_lines = $total_lines + $gff_length_assembly_tags;
-	print "$gff_assembly_tags   \t: $gff_length_assembly_tags\n";
-	
-	my $gff_length_ts_site = file_size("$datadir/GFF_SPLITS/$gff_ts_site") - 3;
-	$total_lines = $total_lines + $gff_length_ts_site;
-	print "$gff_ts_site   \t\t: $gff_length_ts_site\n";
-	
-	my $gff_length_prosite = file_size("$datadir/GFF_SPLITS/$gff_prosite") - 3;
-	$total_lines = $total_lines + $gff_length_prosite;
-	print "$gff_prosite   \t\t: $gff_length_prosite\n";
-	
-	my $gff_length_oligos = file_size("$datadir/GFF_SPLITS/$gff_oligos") - 3;
-	$total_lines = $total_lines + $gff_length_oligos;
-	print "$gff_oligos   \t\t: $gff_length_oligos\n";
-	
-	my $gff_length_alleles = file_size("$datadir/GFF_SPLITS/$gff_alleles") - 3;
-	$total_lines = $total_lines + $gff_length_alleles;
-	print "$gff_alleles   \t\t: $gff_length_alleles\n";
-	
-	my $gff_length_clone_ends = file_size("$datadir/GFF_SPLITS/$gff_clone_ends") - 3;
-	$total_lines = $total_lines + $gff_length_clone_ends;
-	print "$gff_clone_ends   \t\t: $gff_length_clone_ends\n";
-	
-	my $gff_length_RNAi = file_size("$datadir/GFF_SPLITS/$gff_RNAi") - 3;
-	$total_lines = $total_lines + $gff_length_RNAi;
-	print "$gff_RNAi   \t\t: $gff_length_RNAi\n";
-	
-	my $gff_length_genepair = file_size("$datadir/GFF_SPLITS/$gff_genepair") - 3;
-	$total_lines = $total_lines + $gff_length_genepair;
-	print "$gff_genepair   \t\t: $gff_length_genepair\n";
-	
-	my $gff_length_PCR_products = file_size("$datadir/GFF_SPLITS/$gff_PCR_products") - 3;
-	$total_lines = $total_lines + $gff_length_PCR_products;
-	print "$gff_PCR_products   \t\t: $gff_length_PCR_products\n";
-	
-	my $gff_length_cDNA_for_RNAi = file_size("$datadir/GFF_SPLITS/$gff_cDNA_for_RNAi") - 3;
-	$total_lines = $total_lines + $gff_length_cDNA_for_RNAi;
-	print "$gff_cDNA_for_RNAi   \t\t: $gff_length_cDNA_for_RNAi\n";
-	
-	my $gff_length_BLAT_EST_BEST   = file_size("$datadir/GFF_SPLITS/$gff_BLAT_EST_BEST") - 3;
-	$total_lines = $total_lines + $gff_length_BLAT_EST_BEST;
-	print "$gff_BLAT_EST_BEST   \t\t: $gff_length_BLAT_EST_BEST\n";
-	
-	my $gff_length_BLAT_EST_OTHER = file_size("$datadir/GFF_SPLITS/$gff_BLAT_EST_OTHER") - 3;
-	$total_lines = $total_lines + $gff_length_BLAT_EST_OTHER;
-	print "$gff_BLAT_EST_OTHER   \t\t: $gff_length_BLAT_EST_OTHER\n";
-	
-	my $gff_length_BLAT_MRNA_BEST = file_size("$datadir/GFF_SPLITS/$gff_BLAT_mRNA_BEST") - 3;
-	$total_lines = $total_lines + $gff_length_BLAT_MRNA_BEST;
-	print "$gff_BLAT_mRNA_BEST   \t\t: $gff_length_BLAT_MRNA_BEST\n";
-	
-	my $gff_length_BLAT_MRNA_OTHER = file_size("$datadir/GFF_SPLITS/$gff_BLAT_mRNA_OTHER") - 3;
-	$total_lines = $total_lines + $gff_length_BLAT_MRNA_OTHER;
-	print "$gff_BLAT_mRNA_OTHER   \t\t: $gff_length_BLAT_MRNA_OTHER\n";
-	
-	my $gff_length_BLATX_NEMATODE = file_size("$datadir/GFF_SPLITS/$gff_BLATX_NEMATODE") - 3;
-	$total_lines = $total_lines + $gff_length_BLATX_NEMATODE;
-	print "$gff_BLATX_NEMATODE   \t\t: $gff_length_BLATX_NEMATODE\n";
-	
-	my $gff_length_Expr_profile = file_size("$datadir/GFF_SPLITS/$gff_Expr_profile") - 3;
-	$total_lines = $total_lines + $gff_length_Expr_profile;
-	print "$gff_Expr_profile   \t\t: $gff_length_Expr_profile\n";
+    foreach my $tag (@gff_classes) {
+	print "# $file $tag\n";
 
-	my $gff_length_UTR = file_size("$datadir/GFF_SPLITS/$gff_UTR") - 3;
-	$total_lines = $total_lines + $gff_length_UTR;
-	print "$gff_UTR   \t\t: $gff_length_UTR\n";
+	open (OUT, ">$datadir/GFF_SPLITS/$file.$tag.gff") or die "Can't open file\n";
 
-
+	# gff header lines
+	foreach my $line (@header) {
+	    next if ($line eq "");
+	    print OUT "$line\n";
+	}
 	
-	my $gff_length_rest = file_size("$datadir/GFF_SPLITS/$gff_rest") - 3;
-	$total_lines = $total_lines + $gff_length_rest;
-	print "$gff_rest   \t\t: $gff_length_rest\n";
-	
-	
-	my $lines_split = int ((($running_total / $gff_length) * 100) + 0.5);
-	my $discarded_lines = $gff_length - $total_lines;
-	print "\nLine parsed to files : $gff_length $running_total [$lines_split %]\n";
-	print "Discarded lines       : $discarded_lines\n";
-	print "\n\n";
+	# gff split data lines
+	foreach my $line (@{$GFF{$file}{$tag}}) {
+	    next if ($line eq "");
+	    print OUT "$line\n";
+	}
+	close OUT;
     }
-
+    
+    
     #########################################
     # Alter clone file to include accession #
     #########################################
    
-    system ("GFF_with_accessions $datadir/GFF_SPLITS/${file_prefix}.clone_path.gff > $datadir/GFF_SPLITS/${file_prefix}.clone_acc.gff");
-    system ("GFF_with_wormpep_accessions $datadir/GFF_SPLITS/${file_prefix}.genes.gff > $datadir/GFF_SPLITS/${file_prefix}.genes_acc.gff");
-    system ("mv -f $datadir/GFF_SPLITS/${file_prefix}.genes_acc.gff $datadir/GFF_SPLITS/${file_prefix}.genes.gff");
+    # GFF clone_path with EMBL accessions and sequence versions
+    system ("GFF_with_accessions $datadir/GFF_SPLITS/$file.clone_path.gff > $datadir/GFF_SPLITS/$file.clone_acc.gff");
+
+    # GFF genes with wormpep CE accessions
+    system ("GFF_with_wormpep_accessions $datadir/GFF_SPLITS/$file.genes.gff > $datadir/GFF_SPLITS/$file.genes_acc.gff");
+    system ("mv -f $datadir/GFF_SPLITS/$file.genes_acc.gff $datadir/GFF_SPLITS/$file.genes.gff");
+    
+    # GFF UTRs with CDS names
+    system ("GFF_with_UTR_name $datadir/GFF_SPLITS/$file.UTR.gff > $datadir/GFF_SPLITS/$file.UTR_CDS.gff");
+    system ("mv -f $datadir/GFF_SPLITS/$file.UTR_CDS.gff $datadir/GFF_SPLITS/$file.UTR.gff");
     
 }
-
-
 close LOG;
 
 
@@ -868,8 +314,11 @@ close OUTLOG;
 
 exit 0;
 
-sub file_size {
+###############################
+# subroutines                 #
+###############################
 
+sub file_size {
     my $file = shift;
     my $file_length;
     open (FILE_SIZE, "/bin/cat $file | wc -l |");
@@ -882,4 +331,48 @@ sub file_size {
     print LOG "Counting No. of lines in file '$file' : $file_length\n" if ($debug);
     return $file_length;
 }
+
+__DATA__
+clone_path
+genes
+pseudogenes
+rna
+CDS_exon
+exon
+exon_tRNA
+exon_pseudogene
+intron
+intron_tRNA
+intron_pseudogene
+intron_confirmed_CDS
+intron_confirmed_UTR
+repeats
+tc_insertions
+BLASTX
+WABA_BRIGGSAE
+assembly_tags
+ts_site
+oligos
+RNAi
+genepair
+alleles
+clone_ends
+PCR_products
+cDNA_for_RNAi
+BLAT_EST_BEST
+BLAT_EST_OTHER
+BLAT_mRNA_BEST
+BLAT_mRNA_OTHER
+BLAT_EMBL_BEST
+BLAT_EMBL_OTHER
+BLATX_NEMATODE
+Expr_profile
+UTR
+rest
+__END__
+
+
+
+
+
 
