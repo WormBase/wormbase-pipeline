@@ -6,8 +6,8 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-05-06 09:19:09 $
+# Last updated by: $Author: ck1 $
+# Last updated on: $Date: 2003-05-12 16:25:12 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -212,7 +212,6 @@ show -a -T -f /tmp/multi_pt_dump.ace
 find Pos_neg_data *
 show -a -T -f /tmp/posneg_dump.ace
 
-save
 quit
 END
 
@@ -1054,11 +1053,10 @@ EOF
 
 sub check_genetics_coords_mapping {
 
-  print "\nChecking discrepancies in genetics/coords mapping:\n\n";
+  print "\nChecking discrepancies in genetics/coords mapping of each CDS/Transcript:\n\n";
   print LOG "\nChecking discrepancies in genetics/coords mapping:\n\n";
   print JAHLOG "\nChecking discrepancies in genetics/coords mapping:\n\n";
-
-  system ("/wormsrv2/scripts/get_interpolated_gmap.pl -diff");
+  system ("/wormsrv2/scripts/get_interpolated_gmap.pl -db /wormsrv1/geneace -map");
   my $infile = "/wormsrv2/logs/mapping_diff.".$rundate;
   open(IN, $infile) || die $!;
   while(<IN>){
@@ -1071,8 +1069,9 @@ sub check_genetics_coords_mapping {
 
 sub chech_reverse_physicals {
   
-  system ("/wormsrv2/scripts/get_interpolated_gmap.pl -reverse");
-  my $infile = "/wormsrv2/logs/reverse_physicals.".$rundate;
+  print "\nChecking reverse physicals of gmap marker loci in Geneace:\n\n";
+  system ("/wormsrv2/scripts/get_interpolated_gmap.pl -db /wormsrv1/geneace -reverse");
+  my $infile = `echo /wormsrv2/logs/reverse_physicals_WS*.$rundate`;
   open(IN, $infile) || die $!;
   while(<IN>){
     print LOG $_;
