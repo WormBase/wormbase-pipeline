@@ -1678,7 +1678,7 @@
                 Last_name     UNIQUE  ?Person_name XREF Last_name_of    // prefered last name
                 Standard_name UNIQUE  ?Person_name XREF Full_name_of   // name to be used for displays
                                               // default is "First_name Last_name"
-                Also_known_as   Text
+                Also_known_as   ?Person_name XREF Other_name_of // new XREF added [030310 krb]
         CGC_representative_for UNIQUE ?Laboratory XREF Representative
         Laboratory UNIQUE ?Laboratory XREF Person
         Address #Address
@@ -1722,9 +1722,9 @@
 //
 ///////////////////////
 
-?Person_name Name Full_name_of ?Person XREF Standard_name
-		  Last_name_of ?Person XREF Last_name
-
+?Person_name Name Full_name_of  ?Person XREF Standard_name
+		  Last_name_of  ?Person XREF Last_name
+		  Other_name_of ?Person XREF Also_known_as // added [030310 krb]
 
 //////////////////
 // Author class //
