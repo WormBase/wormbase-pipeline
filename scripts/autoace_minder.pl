@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2004-06-25 16:01:01 $
+# Last edited on: $Date: 2004-06-28 16:19:49 $
 
 
 
@@ -71,7 +71,7 @@ my $tsuser;             # tsuser setting to go with -load
 my $am_option;          # track which option has been used (for logging purposes)
 my $errors = 0;         # keep track of errors in each step (from bad system calls), use in subject line of email 
 my $remarks;
-
+my $postblatgff;        # dump and split GFF files post BLAT load.
 
 GetOptions (
 	    "agp"	     => \$agp,
@@ -112,6 +112,7 @@ GetOptions (
 	    "test"           => \$test,
 	    "quicktest"      => \$quicktest,
 	    "remarks"        => \$remarks,
+	    "postblatgff"    => \$postblatgff,
 );
 
 # Help pod if needed
@@ -298,7 +299,8 @@ if ($addblat){
 # Requires: A1,A4,A5,B1
 &confirm_gene_models   if ($confirm);
 
-
+# Post BLAT GFF steps
+&postblatgff if ($postblatgff);
 
 #__ ANCILLIARY DATA SECTION __#
 
@@ -1314,6 +1316,21 @@ sub map_features {
 #__ end map_features __#
 
 #################################################################################
+# Post BLAT GFF issues                                                          #
+#################################################################################
+
+sub postblatgff {
+  $am_option = "-postblatgff";
+
+  # GFF files need to be dumped again (will now have blat data)
+  # also needs GFF files to be split again
+  &dump_GFFs;
+  &split_GFFs;
+}
+
+#__ end postblatgff __#
+
+#################################################################################
 # confirm_gene models                                                           #
 #################################################################################
 
@@ -1322,8 +1339,8 @@ sub confirm_gene_models {
 
   # GFF files need to be dumped again (will now have blat data)
   # also needs GFF files to be split again
-  &dump_GFFs;
-  &split_GFFs;
+  #&dump_GFFs;
+  #&split_GFFs;
 
   # confirm_genes from EST&OST (-est) and mRNA (-mrna) data sets
   &run_command("$scriptdir/confirm_genes.pl --est --mrna");
