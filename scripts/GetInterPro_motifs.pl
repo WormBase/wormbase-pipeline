@@ -6,8 +6,8 @@
 #
 # Gets latest Interpro:GO mappings from XXXX and puts info in to ace file
 #
-# Last updated by: $Author: krb $                      
-# Last updated on: $Date: 2004-09-01 13:50:57 $         
+# Last updated by: $Author: pad $                      
+# Last updated on: $Date: 2004-09-03 10:54:48 $         
 
 use strict;                                     
 use lib "/wormsrv2/scripts/";                    
@@ -49,7 +49,7 @@ print LOG &runtime, ": Running 'wget' to get interpro file from EBI\n";
 
 
 open (I2G,"<$motifs") or die "cant open $motifs\n";
-open (IPDESC,">/wormsrv2/wormbase/acefiles/interpro_motifs.ace") or die "cant write /wormsrv2/autoace/acefiles/interpro_motifs.ace\n";
+open (IPDESC,">/wormsrv2/autoace/acefiles/interpro_motifs.ace") or die "cant write /wormsrv2/autoace/acefiles/interpro_motifs.ace\n";
 my %interpro_des;   #IPR000018 => "P2Y4 purinoceptor"
 my $text;
 my $ip;
