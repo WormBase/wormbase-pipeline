@@ -1,16 +1,33 @@
 #!/usr/local/bin/perl5.6.0 -w
+#
+# GetSwissIdandInterpro.pl
+# 
+# by Anthony Rogers
+#
+# This script parses the current wormpep.table file and extracts SwissProt /TrEMBL accn no.s. It then pfetches the
+# full FASTA record and extracts any Database IDs (eg XXX_CAEEL ) and Interpro motifs.
+# Output is a .ace file as such ;
+#
+# "Protein : "WP:CE05236"
+# Database "SwissProt" "FLO1_CAEEL" "Q17766"
+# Motif_homol     "INTERPRO:IPR002666"
+#
+# pfetch is done in batches of 2000, any greater and nothing comes back!
+#
+# Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs 
+# Last updated on: $Date: 2002-07-22 13:34:16 $        # quickly see when script was last changed and by whom
+
 use strict;
 use Wormbase;
 use Ace;
 
 my $maintainer = "All";
 my $rundate    = `date +%y%m%d`; chomp $rundate;
-my $wmpep_ver = &get_wormbase_version();
+my $wmpep_ver = &get_wormbase_version();# -1 for testing during builds
 my $wormpepdir = "/wormsrv2/WORMPEP/wormpep$wmpep_ver";
-my $log = "/wormsrv2/logs/GetSwissIDandInterpro.WB$wmpep_ver.$rundate";#"$wormpepdir/error_report";#error log (email to All)
+my $log = "/wormsrv2/logs/GetSwissIDandInterpro.WB$wmpep_ver.$rundate";#error log (email to All)
 my $temp_acefile = "$wormpepdir/SwissprotIDs.ace";
 my $temp_clearOldInterPro = "$wormpepdir/clearOldInterPros.ace";# file to clean up old InterPro domains from the database
-my $pepace = "/wormsrv2/pepace";
 
 my $ace_output = *ACE_OUTPUT;
 my $old_ip_output =*OLD_IP_OUTPUT;
@@ -20,7 +37,6 @@ my $errorLog = *LOG;
 print LOG "#$0\n";
 print LOG "\n";
 print LOG "Wormpep version  :$wmpep_ver\n\n";
-print LOG "Only using 78 until latest build version is correct\n" if ($wmpep_ver == 78);
 print LOG "=============================================\n";
 print LOG "\n";
 
@@ -43,10 +59,9 @@ my %wormpep_acc;
 my $count;
 $count = 0;
 
-#open file with linkin data
-open (INPUT, "$wormpepdir/wormpep.table$wmpep_ver")|| print "SubGetSwiss.pl cant find file wormpep.table$wmpep_ver";
+#open file with linking data
+open (INPUT, "$wormpepdir/wormpep.table$wmpep_ver")|| print "$0 cant find file wormpep.table$wmpep_ver";
 
-my $db = Ace->connect(-path  =>  $pepace) || print "Couldn't connect to $pepace\n", Ace->error;
 my $accn_holder;
 while (<INPUT>)
   {
@@ -54,9 +69,6 @@ while (<INPUT>)
     if ($_ =~ m /(CE\d+)/)#find wormpep id
       {
 	$protein[$count] = $1;
-
-	#get the accession no (this is done before checking pepace so that $_ is not the grep output#
-	#print "$_\n";
 	if($_ =~ m/(SW:\w+|TR:\w+)/)#any "words" prefixed with SW: or TR:
 	  {
 	    $accn_holder = $1;
@@ -73,7 +85,7 @@ while (<INPUT>)
 	    print LOG "no TR: SW: accn in $_\n";
 	  }
 	
-#	if($count == 2000)
+#	if($count == 20)
 #	  {
 #	    #DEBUG########################################
 #	    last;#only included for testing on small sample sets
@@ -107,16 +119,16 @@ outputToAce(\%wormpep_acc, \@array_chunk, \$ace_output, \$old_ip_output, \$error
 
 close OLD_IP_OUTPUT;
 close ACE_OUTPUT;
-$db->close();
 
 print LOG "Files available -\n $temp_acefile\n
 $temp_clearOldInterPro\n";
+print LOG "\nNOTE! - This script no longer parses the outputs to a database\n\n";
 print LOG "SubGetSwissId finished at ",`date`,"\n";
 
 close LOG;
 #### use Wormbase.pl to mail Log ###########
 my $name = "Update Swiss ID's and Interpro motifs";
-$maintainer = "ar2\@sanger.ac.uk";
+#$maintainer = "ar2\@sanger.ac.uk";
 &mail_maintainer ($name,$maintainer,$log);
 #########################################
 
@@ -133,7 +145,7 @@ sub outputToAce #(\%wormpep_acc, \@accession \$ace_output, \$errorLog)
     #create the fasta record in wormpep dir (and remove it after use)
     my $ver = &get_wormbase_version();
     print "\n\n$submitString\n";
-    my $fasta_output = "~/fasta_output";#"/wormsrv2/WORMPEP/wormpep$ver/fasta_output";
+    my $fasta_output = "/wormsrv2/WORMPEP/wormpep$ver/fasta_output";
     open (FASTA,">$fasta_output")||die " cant open fasta_output";# > clears before each use 
     #this submits request and put results in file
     print FASTA `$submitString`;
@@ -141,7 +153,7 @@ sub outputToAce #(\%wormpep_acc, \@accession \$ace_output, \$errorLog)
     
     #build hash of accession : Swissprot/Trembl ID
     open (FASTA,"<$fasta_output")|| die "cant open fasta record";#read
-    #print FASTA "This is a temp file created by SubGetSwissId.pl and can be removed -unless script is running!";
+    print FASTA "This is a temp file created by $0 and can be removed -unless script is running!";
     my %interpro;
     my $proteinID;
     my $acc;
