@@ -1,4 +1,13 @@
-#!/usr/local/perl -w
+#!/usr/local/bin/perl5.8.0 -w
+#
+# WBGene_span.pl
+#
+# by Anthony Rogers
+#
+# Creates SMapped Gene spans for Gene objects
+#
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2004-08-05 16:47:43 $
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -10,11 +19,11 @@ use Log_files;
 my $database = "/wormsrv2/autoace";
 my ($test, $gff, $no_ace, $debug);
 GetOptions (
-	    'database:s' => \$database,
+	    'database=s' => \$database,
 	    'test'       => \$test,
 	    'gff'        => \$gff,
 	    'no_ace'     => \$no_ace,
-	    'debug:s'    => \$debug
+	    'debug=s'    => \$debug
 	   );
 
 my $log = Log_files->make_build_log($debug);
