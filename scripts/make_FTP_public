@@ -38,6 +38,8 @@
 
 $|=1;
 use Getopt::Long;
+use lib '/wormsrv2/scripts';
+use Wormbase;
 
 my $sourcedir          = "";    # [Text] Directory in which the latest WS release resides
 my $targetdir          = "";    # [Text] Directory in which to build the new release
@@ -61,12 +63,14 @@ if (length ($targetdir)==0) {
     $targetdir = "/nfs/disk69/ftp/pub/wormbase";
 }
 
-# Can't sum letters and numbers !
-#$wormpep = $release + 10;
 
 $wormpep = $release;
 $wormpep =~ s/WS//;
 $wormpep+=10;
+
+$old_WS_release = $release;
+$old_WS_release =~ s/WS//;
+$old_WS_release -= 1;
 
 if ($debug) {
     print "# make_FTP_public\n#\n";
@@ -74,6 +78,8 @@ if ($debug) {
     print "# Target directory : $targetdir\n";
     print "# WS release No.   : $release\n";
 }
+
+
 
 #################################################################################
 # Main Loop                                                                     #
@@ -141,12 +147,14 @@ print "move the contents of the wspec directory\n" if ($debug);
 
 system "mkdir $targetdir/$release/pictures" unless -e "$targetdir/$release/pictures";
 print "make a new pictures directory : '$targetdir/$release/pictures'\n" if ($debug);
+system("cp /nfs/disk67/sylvia/geneace/pictures/* $targetdir/$release/pictures");
+print "copying picture files from ~sylvia/geneace to $targetdir/$release/pictures\n" if ($debug);
 
  # make a tar gzip file of pictures
 
-system "/bin/tar -cf $targetdir/$release/pictures/pictures.tar $sourcedir/pictures";
-system "/bin/gzip $targetdir/$release/pictures/pictures.tar";
-print "Archived the pictures in $targetdir/$release/pictures/pictures.tar";
+#system "/bin/tar -cf $targetdir/$release/pictures/pictures.tar $sourcedir/pictures";
+#system "/bin/gzip $targetdir/$release/pictures/pictures.tar";
+#print "Archived the pictures in $targetdir/$release/pictures/pictures.tar.gz\n";
 
  # make a new additional_files directory
 
@@ -164,6 +172,13 @@ print "make a new additional_files directory : '$targetdir/$release/additional_f
 
 system "cp /wormsrv2/autoace_config/INSTALL $targetdir/$release/";
 system "cp /wormsrv2/autoace_config/PICTURES.doc $targetdir/$release/";
+system "cp /wormsrv2/autoace/COMPARE/WS${old_WS_release}-${release}.dbcomp $targetdir/$release/";
+print "copying some miscellaneous file across\n" if ($debug);
+
+ # tar up the latest wormpep release and copy across
+system ("/wormsrv2/scripts/tar_wormpep $wormpep");
+system ("cp /wormsrv2/WORMPEP/wormpep${wormpep}/wormpep${wormpep}.tar.gz $targetdir/$release");
+print "running tar_wormpep and copying across to ftp site\n" if ($debug);
 
  # delete the old symbolic link and make the new one
 
@@ -173,7 +188,7 @@ print "deleted the old sym_link and create the new one\n" if ($debug);
 
  # deal with the wormpep side of things
 
-system "/nfs/disk100/wormpub/analysis/scripts/make_FTP_wormpep -r $wormpep";
+system "/wormsrv2/scripts/make_FTP_wormpep -r $wormpep";
 print "make the wormpep FTP release for wormpep${wormpep}\n" if ($debug);
 
  # delete the old WS release version
