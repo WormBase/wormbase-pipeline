@@ -41,14 +41,24 @@ if ($opt_s && $opt_t) {
     die "$usage";
 }
 elsif ($opt_s) {
-    dbmopen %ORG, "$output_dir/swissprot2org", 0666 or die "cannot open DBM file";
-    dbmopen %DES, "$output_dir/swissprot2des", 0666 or die "cannot open DBM file";
-    dbmopen %KEY, "$output_dir/swissprot2key", 0666 or die "cannot open DBM file";
+  
+  `rm $output_dir/swissprot2org` if (-e "$output_dir/swissprot2org" );
+  `rm $output_dir/swissprot2des` if (-e "$output_dir/swissprot2des" );
+  `rm $output_dir/swissprot2key` if (-e "$output_dir/swissprot2key" );
+  
+  dbmopen %ORG, "$output_dir/swissprot2org", 0666 or die "cannot open DBM file";
+  dbmopen %DES, "$output_dir/swissprot2des", 0666 or die "cannot open DBM file";
+  dbmopen %KEY, "$output_dir/swissprot2key", 0666 or die "cannot open DBM file";
 }
 elsif ($opt_t) {
-    dbmopen %ORG, "$output_dir/trembl2org", 0666 or die "cannot open DBM file";
-    dbmopen %DES, "$output_dir/trembl2des", 0666 or die "cannot open DBM file";
-    dbmopen %KEY, "$output_dir/trembl2key", 0666 or die "cannot open DBM file";
+  
+  `rm $output_dir/trembl2org` if (-e "$output_dir/trembl2org" );
+  `rm $output_dir/trembl2des` if (-e "$output_dir/trembl2des" );
+  `rm $output_dir/trembl2key` if (-e "$output_dir/trembl2key" );
+  
+  dbmopen %ORG, "$output_dir/trembl2org", 0666 or die "cannot open DBM file";
+  dbmopen %DES, "$output_dir/trembl2des", 0666 or die "cannot open DBM file";
+  dbmopen %KEY, "$output_dir/trembl2key", 0666 or die "cannot open DBM file";
 }
 else {
     die "$usage";
