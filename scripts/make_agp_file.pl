@@ -16,7 +16,7 @@ $|=1;
 #use strict;
 use vars qw ($debug $seq_len $sv_acc $sv_ver $opt_d $opt_h);
 use Getopt::Std;
-use lib '/nfs/griffin2/dl1/wormbase/wormbase/scripts';
+use lib '/wormsrv2/scripts';
 use Wormbase;
 
  ##############################
