@@ -4,10 +4,10 @@
 #
 # by Anthony Rogers
 #
-# This maps alleles to the genome based on their flanking sequence
+# This maps alleles to the genome based on their flanking sequences
 #
-# Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2004-04-27 15:29:45 $        # quickly see when script was last changed and by whom
+# Last updated by: $Author: krb $                      
+# Last updated on: $Date: 2004-07-26 16:04:27 $        
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -16,49 +16,45 @@ use Wormbase;
 use Ace;
 use Getopt::Long;
 
+
 #######################################
 # command-line options                #
 #######################################
 
-my ($debug, $update, $limit);
-my $database;
-my $ver;
-my $verbose;
-my $restart = "go";
-my $help;
-my $no_geneace;
-my $no_parse;
-my $list;
-my $gff;
-my $geneace;
+my $debug;          # debug mode, output goes to /tmp
+my $limit;          # limit number of alleles to map
+my $database;       # specify database to map alleles in, default is autoace
+my $ver;            # specify release number, defaults to current release number
+my $help;           # help mode, show perldoc
+my $restart = "go"; # specify an allele name from which to start mapping
+my $no_parse;       # turn off loading of data to $database
+my $list;           # read in alleles to map from file rather than from database
+my $gff;            # option to print output in GFF format as well
+my $verbose;        # verbose mode, extra output to screen
 
-# $debug   -  all output goes to ar/allele_mapping
 
-GetOptions( "debug:s"    => \$debug,
-	    "limit=s"    => \$limit,
+GetOptions( "debug=s"    => \$debug,
+	    "limit=i"    => \$limit,
 	    "database=s" => \$database,
-	    "WS=s"       => \$ver,
+	    "WS=i"       => \$ver,
 	    "help"       => \$help,
 	    "restart=s"  => \$restart,
 	    "no_parse"   => \$no_parse,
 	    "list=s"     => \$list,
-	    "no_geneace" => \$no_geneace,
 	    "gff"        => \$gff,
 	    "verbose"    => \$verbose,
-	    "geneace=s"  => \$geneace
 	  );
 
 if ($help) { print `perldoc $0`;exit;}
 
-##############
-# variables  #
-##############
 
-# Most checking scripts should produce a log file that is a) emailed to us all
-#                                                         b) copied to /wormsrv2/logs
+
+###################
+# misc variables  #
+###################
 
 my $maintainers = "All";
-my $rundate     = `date +%y%m%d`; chomp $rundate;
+my $rundate     = &rundate;
 my $runtime     = &runtime;
 my $log;
 $ver = &get_wormbase_version unless defined $ver;
@@ -66,7 +62,6 @@ my $tace = &tace;
 
 my $data_dump_dir;
 my $ace_file;
-my $strain_file;
 my $gff_file;
 my $mapping_dir;
 
@@ -88,67 +83,58 @@ else {
     $database    = "/wormsrv2/autoace/" unless $database;
 }
 
-# geneace selectable for dev
-$geneace = "/wormsrv2/geneace" unless $geneace;
 
-##########  File handles etc #############
-open (LOG,">$log") or die "cant open $log\n\n";
-print LOG "$0 start at $runtime on $rundate\n----------------------------------\n\n";
-
-my $geneace_update        = "$mapping_dir/map_alleles_geneace_update.WS$ver.ace";
-my $geneace_update_delete = "$mapping_dir/map_alleles_geneace_update_delete.WS$ver.ace";
-my %geneace_alleles;
-
-my $cshl_update           = "$mapping_dir/map_alleles_cshl_update.WS$ver.ace";
-my $cshl_update_delete    = "$mapping_dir/map_alleles_cshl_update_delete.WS$ver.ace";
-
-my $KO_overlap_genes      = "$mapping_dir/KO_genes_overlap";
-
-unless ($no_geneace) {
-  open (GENEACE,">$geneace_update") or die "can't open $geneace_update: $!\n";
-  open (GEN_DEL,">$geneace_update_delete") or die "can't open $geneace_update_delete\n";
-
-  open (CSHLACE,">$cshl_update") or die "can't open $cshl_update: $!\n";
-  open (CSHL_DEL,">$cshl_update_delete") or die "can't open $cshl_update_delete\n";
-
-  open (KOC, ">$KO_overlap_genes") or die "can't open $KO_overlap_genes\n";
-  
-  # get list of alleles from geneace to check against for feedback files
-  my $g_db = Ace->connect(-path => $geneace) || do { print  "$database Connection failure: ",Ace->error; die();};
-  my @g_alleles = $g_db->fetch(-query =>'Find Allele;flanking_sequences');
-  foreach ( @g_alleles ) {
-    my $G_name = $_->name;
-    $geneace_alleles{$G_name} = 1;
-  }
-  $g_db->close;
-}
-open (OUT,">$ace_file") or die "cant open $ace_file\n";
-open (GFF,">$gff_file") or die "cant open $gff_file\n" if $gff;
-#open (STR,">$strain_file") or die "cant open $strain_file\n";
-
-
-########### database accesss ####################
-
-#get allele info from database
-my $db = Ace->connect(-path  => $database) || do { print  "$database Connection failure: ",Ace->error; die();};
-my @alleles = $db->fetch(-query =>'Find Allele;flanking_sequences');
-my @KO_alleles = $db->fetch(-query => 'Find Allele; KO_consortium_allele');
-my %KO_alleles;
-%KO_alleles = map {$_ => 1} @KO_alleles;
-
-# read in list of alleles to map if specified #######################
+# read in list of alleles to map if -list is specified #######################
 my %to_map;
+
 if ( $list ) {
   open (LIST, "<$list");
   while (<LIST>) {
     chomp;
     $to_map{$_} = 1;
   }
+  close(LIST);
 }
 
 
 
-####### allele mapping loop ######################
+
+########## get list of alleles from geneace ####################
+
+my $geneace_update        = "$mapping_dir/map_alleles_geneace_update.WS$ver.ace";
+my %geneace_alleles;
+
+# list of alleles will be used later check against for feedback files
+my $geneace_db = Ace->connect(-path => "/wormsrv2/geneace") || do { print  "$database Connection failure: ",Ace->error; die();};
+my @geneace_alleles = $geneace_db->fetch(-query =>'Find Allele WHERE Flanking_sequences');
+foreach ( @geneace_alleles ) {
+  my $G_name = $_->name;
+  $geneace_alleles{$G_name} = 1;
+}
+$geneace_db->close;
+
+
+##########  File handles etc #############
+
+open (LOG,">$log") or die "cant open $log\n\n";
+print LOG "$0 start at $runtime on $rundate\n----------------------------------\n\n";
+open (GENEACE,">$geneace_update") or die "can't open $geneace_update: $!\n";
+open (OUT,">$ace_file") or die "cant open $ace_file\n";
+open (GFF,">$gff_file") or die "cant open $gff_file\n" if $gff;
+
+
+
+
+#########################################################
+#                                                       #
+#             Main allele mapping loop                  #
+#                                                       #
+#########################################################
+
+# First get allele info from database
+my $db = Ace->connect(-path  => $database) || do { print  "$database Connection failure: ",Ace->error; die();};
+my @alleles = $db->fetch(-query =>'Find Allele WHERE Flanking_sequences');
+
 
 my %allele_data;   #  allele => [ (0)type, (1)5'flank_seq , (2)3'flank_seq, (3)CDS, (4)end of 5'match, (5)start of 3'match , (6)clone, (7)chromosome, (8)strains]
 my $error_count = 0; # for tracking alleles that don't map
@@ -159,7 +145,6 @@ my $name;
 my $left;
 my $right;
 my $go = 0;
-my $KO_allele;
 my %allele2gene;
 my @affects_genes;
 
@@ -167,14 +152,17 @@ my $mapper = Feature_mapper->new( $database);
 
 ALLELE:
 foreach my $allele (@alleles) {
-  undef $KO_allele;
   $name = $allele->name;
+
+  print "Mapping $name\n" if $verbose;
+
 
   # debug facility - this bit is so that it can restart from given allele name
   unless ("$restart" eq "go"){
     if ("$restart" eq "$name") {
       $restart = "go";
-    } else { 
+    } 
+    else { 
       print "skipping $name\n" if $verbose;
       next;
     }
@@ -189,29 +177,54 @@ foreach my $allele (@alleles) {
     next unless defined $to_map{$name};
   }
 
-  # lets get going . . . 
-  $left     = lc $allele->Flanking_sequences->name;
-  $right    = lc $allele->Flanking_sequences->right->name;  
+  # grab both flanking sequences from $database
+  $left  = lc $allele->Flanking_sequences->name;
+  $right = lc $allele->Flanking_sequences->right->name;  
 
-  next unless ($left and $right);
-  print "mapping $name\n" if $verbose;
-
-  $sequence = $allele->Sequence;
-  unless (defined $sequence and defined $sequence->Source) {
-    print LOG "ERROR: $name has no sequece or its invalid sequence\n";
+  # warn if flanking sequence is missing
+  unless ($left and $right){
+    print LOG "ERROR: $name does not have two flanking sequences\n";
     $error_count++;
     next ALLELE;
   }
 
+
+  # check that allele is attached to a valid sequence object
+  $sequence = $allele->Sequence;
+  if(!defined $sequence){    
+    print LOG "ERROR: $name has missing Sequence tag\n";
+    $error_count++;
+    next ALLELE;
+  }
+  elsif(!defined $sequence->Source) {
+    printt LOG "ERROR: $name connects to Sequence $sequence which has no Source tag\n";
+    $error_count++;
+    next ALLELE;
+  }
+
+
   $allele_data{$name}[1] = $left;
   $allele_data{$name}[2] = $right;
 
+  # map allele using Feature_mapper.pm, store results of map in @map, warn if mapping failed
   my @map = $mapper->map_feature($sequence->name,$left, $right);
   if( "$map[0]" eq "0" ) {
     print LOG "ERROR: Couldn't map $name with $left and $right to seq $sequence\n";
     $error_count++;
     next ALLELE;
   }
+
+  #map position on genome
+  #(0)type, 
+  #(1)5'flank_seq ,
+  #(2)3'flank_seq
+  #(3)CDS
+  #(4)end of 5'match
+  #(5)start of 3'match
+  #(6)clone
+  #(7)chromosome
+  #(8)strains containing this allele
+  
 
   # get coords of allele not 1st / last base of flanks
   if( $map[2] > $map[1] ) {
@@ -231,25 +244,19 @@ foreach my $allele (@alleles) {
   print "$name hits @affects_genes\n" if $verbose;
   $allele2gene{"$name"} = \@affects_genes if ($affects_genes[0]);
 
-  # this identified KO_consortium alleles so they can be fed back to KOAC
-  my $method = $allele->Method;
-  if ("$method" eq "Knockout_allele") {
-    $KO_allele = 1;
-  }
   &outputAllele($name);
 }
 
-  print "\nWARNING: $error_count alleles failed to map\n\n";
+print "\nWARNING: $error_count alleles failed to map\n\n";
 
-print LOG "\nUpdate files for geneace allele mappings are available - \n$geneace_update\n$geneace_update_delete\n\n" unless $no_geneace;
+print LOG "\nUpdate files for geneace allele mappings are available - \n$geneace_update\n";
 
 $db->close;
 
 
 close OUT;
 close GFF if $gff;
-close GEN_DEL unless $no_geneace;
-close GENEACE unless $no_geneace;
+close GENEACE;
 
 ##############################
 # read acefiles into autoace #
@@ -258,7 +265,6 @@ unless ( $no_parse ) {
   print LOG "\nStart parsing $ace_file in to $database\n\n";
 
   my $command =<<END;
-pparse $geneace_update_delete
 pparse $ace_file
 save
 quit
@@ -276,16 +282,18 @@ END
     print LOG "successfully finished parsing\n";
   }
 }
+
+
 # close LOG and send mail
 
 print LOG "ERROR: $error_count alleles failed to map\n" if ($error_count > 0);
 print LOG "$0 end at ",&runtime," \n-------------- END --------------------\n\n";
 close LOG;
 if($error_count > 0){
-  &mail_maintainer("BUILD REPORT: map_alleles.pl $error_count ERRORS!","$maintainers","$log");
+  &mail_maintainer("BUILD REPORT: map_Alleles.pl $error_count ERRORS!","$maintainers","$log");
 }
 else{
-  &mail_maintainer("BUILD REPORT: map_alleles.pl","$maintainers","$log");
+  &mail_maintainer("BUILD REPORT: map_Alleles.pl","$maintainers","$log");
 }
 exit(0);
 
@@ -295,76 +303,38 @@ exit(0);
 #                                     #
 #######################################
 
-sub outputAllele
-  {
-    my $to_dump = shift;
-    print KOC "$to_dump @affects_genes\n" if ( defined $KO_alleles{$to_dump} and defined $affects_genes[0]);
-    if( $allele_data{$to_dump}[6] and $allele_data{$to_dump}[4] and  $allele_data{$to_dump}[5]) { 
+sub outputAllele{
+  my $to_dump = shift;
+
+  if( $allele_data{$to_dump}[6] and $allele_data{$to_dump}[4] and  $allele_data{$to_dump}[5]) { 
       
-      print OUT "\nSequence : \"$allele_data{$to_dump}[6]\"\nAllele $to_dump $allele_data{$to_dump}[4] $allele_data{$to_dump}[5]\n";
-      print GFF "\n$allele_data{$to_dump}[6]\tAllele\tTEST\t$allele_data{$to_dump}[4]\t$allele_data{$to_dump}[5]\t.\t+\t.\tAllele \"$to_dump\"" if $gff;
-      if( $allele2gene{$to_dump} ) {
-	my @affects_genes = split(/\s/,"@{$allele2gene{$to_dump}}");
-	
-	# in CDS object
-	foreach my $ko (@affects_genes) {
-	  print OUT "\nCDS : \"$ko\"\nAlleles $to_dump\n";
-	}
-
-	# in Allele object
-	print OUT "\nAllele : $to_dump\n";
-	unless ($no_geneace ) {
-	  if ( defined $geneace_alleles{$to_dump} ) {
-	    print GEN_DEL "\nAllele : $to_dump\n-D Predicted_gene\n-D Sequence\n"; # remove current sequence and predicted genes from Geneace
-	    print GENEACE "\nAllele : \"$to_dump\"\nSequence \"$allele_data{$to_dump}[6]\"\n"; # allele -> sequence
-	  } else {
-	    print CSHL_DEL "\nAllele : $to_dump\n-D Predicted_gene\n-D Sequence\n"; # remove current sequence and predicted genes from Geneace
-	    print CSHLACE "\nAllele : \"$to_dump\"\nSequence \"$allele_data{$to_dump}[6]\"\n";
-	  }
-	}
-	foreach my $ko (@affects_genes) {
-	  #allele - CDS connection
-	  print OUT "Predicted_gene $ko\n";
-	  unless ($no_geneace ) {
-	    if ( defined $geneace_alleles{$to_dump} ) {
-	      print GENEACE "Predicted_gene $ko\n"; # update geneace with allele -> CDS
-	    } else {
-	      print CSHLACE "Predicted_gene $ko\n";
-	    }
-	  }
-	}
-      }
-      else {
-	print "no overlapping gene for $to_dump\n" if $verbose;
+    print OUT "\nSequence : \"$allele_data{$to_dump}[6]\"\nAllele $to_dump $allele_data{$to_dump}[4] $allele_data{$to_dump}[5]\n";
+    print GFF "\n$allele_data{$to_dump}[6]\tAllele\tTEST\t$allele_data{$to_dump}[4]\t$allele_data{$to_dump}[5]\t.\t+\t.\tAllele \"$to_dump\"" if $gff;
+    if( $allele2gene{$to_dump} ) {
+      my @affects_genes = split(/\s/,"@{$allele2gene{$to_dump}}");
+      
+      # in CDS object
+      foreach my $ko (@affects_genes) {
+	print OUT "\nCDS : \"$ko\"\nAlleles $to_dump\n";
       }
 
-      #map position on genome
-      #(0)type, 
-      #(1)5'flank_seq ,
-      #(2)3'flank_seq
-      #(3)CDS
-      #(4)end of 5'match
-      #(5)start of 3'match
-      #(6)clone
-      #(7)chromosome
-      #(8)strains containing this allele
-
+      # in Allele object
+      print OUT "\nAllele : $to_dump\n";
+      if ( defined $geneace_alleles{$to_dump} ) {
+	print GENEACE "\nAllele : \"$to_dump\"\nSequence \"$allele_data{$to_dump}[6]\"\n"; # allele -> sequence
+      } 	
+      foreach my $ko (@affects_genes) {
+	#allele - CDS connection
+	print OUT "Predicted_gene $ko\n";
+      }
     }
+    else {
+      print "no overlapping gene for $to_dump\n" if $verbose;
+    }
+
+    
   }
-
-
-
-
-
-
-
-
-
-
-# Add perl documentation in POD format
-# This should expand on your brief description above and add details of any options
-# that can be used with the program.  Such documentation can be viewed using the perldoc
-# command.
+}
 
 
 
@@ -372,13 +342,13 @@ __END__
 
 =pod
 
-=head2 NAME - map_alleles.pl
+=head2 NAME - map_Alleles.pl
 
 =head1 USAGE
 
 =over 4
 
-=item map_alleles.pl  [-debug -limit -database=s -WS=s -verbose -restart=s -list=s -no_parse -no_geneace]
+=item map_alleles.pl  [-debug -limit -database=s -WS=s -verbose -restart=s -list=s -no_parse]
 
 =back
 
@@ -393,7 +363,7 @@ Also writes two files for updating allele->Sequence and Allele->CDS in geneace, 
 
 Outputs acefiles which are loaded in to the same database.
 
-map_alleles.pl MANDATORY arguments:
+map_Alleles.pl MANDATORY arguments:
 
 =over 4
 
@@ -401,7 +371,7 @@ map_alleles.pl MANDATORY arguments:
 
 =back
 
-map_alleles.pl  OPTIONAL arguments:
+map_Alleles.pl  OPTIONAL arguments:
 
 =over 4
 
