@@ -60,10 +60,6 @@ sub invoke
     my $database = shift;
     my $refresh = shift;
 
-    print "Class is $class\n";
-    print "Database is $database\n";
-    print "Refresh is $refresh\n";
-
     if( $database ) {
       croak "$database does not exist\n" unless( -d "$database" );
     }
@@ -96,6 +92,10 @@ EOF
 	show -a subsequence -f $clone_coords_file
 EOF
 
+      print "Tace is $tace\n";
+      print "database is $database\n";
+      print "com1 is $command[0]\n";
+      print "com2 is $command[1]\n";
 
       foreach (@command) {
 	open (ACE,"| $tace $database") or croak "cant open $database\n";
