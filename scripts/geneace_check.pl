@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-07-22 15:48:30 $
+# Last updated on: $Date: 2003-07-23 11:10:00 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -600,6 +600,14 @@ EOF
 
   &add_remark_for_merged_loci_in_geneclass($no_remark_in_geneclass_for_merged_loci, $default_db);
 
+  my @map_error = `echo "table-maker -p /wormsrv1/geneace/wquery/locus_has_multiple_maps.def" | $tace $default_db`;
+  foreach (@map_error){
+    chomp;
+    if ($_ =~ /^\"(.+)\"/){
+      $locus_errors++; 
+      print LOG "ERROR: $1 has multiple maps attached\n";
+    }  
+  }
     
   print LOG "\nThere are $locus_errors errors in $size loci.\n";
 
@@ -1111,8 +1119,8 @@ EOF
 	  $locus = $1; $allele = $2; 
 	  if ((defined @{$allele_locus{$allele}}) && ("@{$allele_locus{$allele}}" ne "$locus")){
 	    $strain_errors++;
-  	    print LOG "ERROR: Strain $strain has allele $allele linked to $locus in genotype ";
-	    print LOG "which should now become @{$allele_locus{$allele}}\n";
+  	    print LOG "ERROR: Strain $strain has $locus($allele) in genotype: ";
+	    print LOG "change each $locus to @{$allele_locus{$allele}}\n";
           }
 	}
       }
