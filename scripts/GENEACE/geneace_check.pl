@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-03-04 13:27:54 $
+# Last updated on: $Date: 2005-03-04 13:29:29 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -464,7 +464,8 @@ sub get_event {
        $vc = $vc->right;
      }
      else {
-       print $gene->name," has data missing from the Version_change info\n";
+       print LOG $gene->name," has data missing from the Version_change info\n";
+       return 
      }
      $right_step++;
    }while( $right_step < 4 );
