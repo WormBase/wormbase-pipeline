@@ -8,7 +8,7 @@
 # sorts output for stl and cam clones
 #
 # Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2004-03-25 10:10:28 $
+# Last updated on: $Date: 2004-03-25 15:34:01 $
 
 use strict;
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
@@ -247,7 +247,7 @@ foreach my $chrom (@chrom) {
     warn "problem with genematch  reference\n" if ref(\@camgenes) ne 'ARRAY';
     foreach my $pair (sort keys %finalgenescamace) {
         my @single = split (/:/, $pair); 
-        print CAMOL "Gene $single[1]\toverlaps with gene $single[0]\n";
+        print CAMOL "Gene $single[1]\toverlaps with gene $single[0]\n" if ($single[0] ne $single[1]);
     } 
 	
     # output for stlace    
@@ -256,7 +256,7 @@ foreach my $chrom (@chrom) {
     warn "problem with genematch  reference\n" if ref(\@stlgenes) ne 'ARRAY';
     foreach my $pair (sort keys %finalgenesstlace) {
 	my @single = split (/:/, $pair); 
-	print STLOL "Gene $single[1]\toverlaps with gene $single[0]\n";
+	print STLOL "Gene $single[1]\toverlaps with gene $single[0]\n" if ($single[0] ne $single[1]);;
     } 
 
 
