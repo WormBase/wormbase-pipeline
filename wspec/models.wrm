@@ -684,46 +684,12 @@
 	 Remark ?Text #Evidence
 
 
-
 //Affiliation Text	// Authors' affiliation if available
 //usually comes with wbg abstracts and worm meeting abstracts
 //new ones used the hash structure, some old ones probably still use this
 
-//
-// Cell models 
-//
-// Updated from geneace copy [010723 dl]
 
 
-?Cell   Main_name ?Cell                  //Put in for Paul
-	Other_name Text
-        Brief_id ?Text                   //put in for Raymond and Paul, equivalent to old Remark but shorter
-	Fate	 Cell_type  ?Text        // e.g. muscle, neuron,hypodermis, gland
-		 Program ?Text           //division, differentiation, death, and differs between sexes
-		 Syncitial_cell ?Cell_group XREF Nucleus //see Cell_group,
-	Summary Text                     // the whole of old remark plus more to be added by Raymond
-        Embryo_division_time Text
-        Remark        ?Text #Evidence
-        Lineage Parent  UNIQUE  ?Cell XREF Daughter
-                Daughter      ?Cell XREF Parent
-                Lineage_name    Text
-                Equivalence_fate ?Cell XREF Equivalence_origin
-                Equivalence_origin ?Cell XREF Equivalence_fate
-		Sex_dimorphism Herm_origin ?Cell XREF Herm_fate // Added according to Sylvia 5/06/2000
-			       Herm_fate ?Cell XREF Herm_origin
-			       Male_origin ?Cell XREF Male_fate
-			       Male_fate ?Cell XREF Male_origin
-	Cell_group ?Cell_group XREF Cell
-	Life_stage ?Life_stage XREF Cell
-        Tree_Node ?TreeNode XREF Cell
-        Reference ?Paper XREF Cell
-        GO_term ?GO_term XREF Cell ?GO_code #Evidence
-	Data	Expr_pattern ?Expr_pattern XREF Cell
-		Reconstruction ?Reconstruction XREF Cell #ReconCellInfo
-	        Neurodata ?Cell #Neurodata
-        Atlas ?Atlas XREF Cell
-        Link_diagram Text
- 
 // MODEL FOR WORMBASE ATLAS (VIRTUAL WORM)
 // 000824 added for Lincoln
 
@@ -1350,9 +1316,50 @@
 	 Remark ?Text #Evidence				// also new 
 
 
-// Updated from geneace copy [010723 dl]
 
-?Cell_group	Other_name ?Text                 //new, put in for Paul, this could become ?Cell_group for pseudo-aliasing
+
+//////////////////////////////////////////////////////////////////////////////////////////////
+//
+//
+//   Cells and things
+//
+//
+//////////////////////////////////////////////////////////////////////////////////////////////
+
+
+?Cell   Main_name ?Anatomy_name XREF Name_for_cell #Evidence
+        Other_name ?Anatomy_name XREF Synonym_for_cell #Evidence
+        Brief_id ?Text                   //put in for Raymond and Paul, equivalent to old Remark but shorter
+	Fate	 Cell_type  ?Text        // e.g. muscle, neuron,hypodermis, gland
+		 Program ?Text           //division, differentiation, death, and differs between sexes
+		 Syncitial_cell ?Cell_group XREF Nucleus //see Cell_group,
+	Summary Text                     // the whole of old remark plus more to be added by Raymond
+        Embryo_division_time Text
+        Remark        ?Text #Evidence
+        Lineage Parent  UNIQUE  ?Cell XREF Daughter
+                Daughter      ?Cell XREF Parent
+                Lineage_name    Text
+                Equivalence_fate ?Cell XREF Equivalence_origin
+                Equivalence_origin ?Cell XREF Equivalence_fate
+		Sex_dimorphism Herm_origin ?Cell XREF Herm_fate // Added according to Sylvia 5/06/2000
+			       Herm_fate ?Cell XREF Herm_origin
+			       Male_origin ?Cell XREF Male_fate
+			       Male_fate ?Cell XREF Male_origin
+	Cell_group ?Cell_group XREF Cell
+	Life_stage ?Life_stage XREF Cell
+        Tree_Node ?TreeNode XREF Cell
+        Reference ?Paper XREF Cell
+        GO_term ?GO_term XREF Cell ?GO_code #Evidence
+	Data	Expr_pattern ?Expr_pattern XREF Cell
+		Reconstruction ?Reconstruction XREF Cell #ReconCellInfo
+	        Neurodata ?Cell #Neurodata
+        Atlas ?Atlas XREF Cell
+        Link_diagram Text
+ 
+
+
+?Cell_group	Main_name ?Anatomy_name XREF Name_for_cell_group #Evidence
+		Other_name ?Anatomy_name XREF Synonym_for_cell_group #Evidence
 		Fate ?Text	
 		Remark	?Text #Evidence
 		Contains	Cell ?Cell XREF Cell_group
@@ -1370,6 +1377,17 @@
 		Group_derivation Expression_experiment          //groups made by experimenters in their reports
                                  Top_down_modelling             // sylvia's anatomy modelling shown on dendrograms starting with whole animal and working downwards
                                  Bottom_up_modelling            // for Raymond in the future for cell upwards approach
+
+
+
+// new naming model for Raymond, krb [030916]
+
+?Anatomy_name   Primary Name_for_cell ?Cell XREF Main_name
+                        Name_for_cell_group ?Cell_group XREF Main_name
+                Secondary Synonym_for_cell ?Cell XREF Other_name
+                          Synonym_for_cell_group ?Cell_group XREF Other_name
+
+
 
 ?Life_stage	Contains Cell ?Cell XREF Life_stage
 			 Cell_group ?Cell_group XREF Life_stage
