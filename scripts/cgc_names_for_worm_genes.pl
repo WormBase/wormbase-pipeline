@@ -7,8 +7,8 @@
 #
 # written by Keith Bradnam (based on locus2seq.pl)
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2004-05-10 10:55:32 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2005-01-11 14:49:17 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -108,7 +108,7 @@ close (LOG);
 &mail_maintainer($0,"$maintainers",$log);
 
 # Send reminder to St. Louis (unless in debug mode)
-my $notify = "jspieth\@watson.wustl.edu,dblasiar\@watson.wustl.edu,krb\@sanger.ac.uk";
+my $notify = "jspieth\@watson.wustl.edu,dblasiar\@watson.wustl.edu";
 if($debug){
   &mail_maintainer($0,"$maintainers",$stlouis_log);
 }
