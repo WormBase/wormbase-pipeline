@@ -134,6 +134,15 @@ Visible
 Is_a_subclass_of Allele
 Filter "NBP_allele"
 
+// Gene subclasses
+
+// capture just C. elegans genes that are live
+
+Class total_genes
+Visible
+Is_a_subclass_of Gene
+Filter "Live AND Species = "Caenorhabditis elegans"
+
 
 // Other Misc. subclasses
 
