@@ -8,7 +8,7 @@
 # build to check the current build
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-06-09 10:42:48 $      
+# Last updated on: $Date: 2004-06-09 14:29:37 $      
 
 
 use strict;
@@ -99,6 +99,8 @@ print LOG "I.e. tRNAs not attached properly to parent sequence.  This has happen
 print LOG "should notify the responsible group (HX or RW) to fix them for next build\n\n";
 
 print LOG "6) Check all Protein objects have a Species tag set\n\n";
+
+print LOG "7) Check all PFAM Motif objects have a title tag\n";
 
 print LOG "\nThat's all...for now!  If you are satisfied the build is ok, please inform the person\n";
 print LOG "building the database. Please continue to add to this list as appropriate\n";
