@@ -614,7 +614,7 @@ sub release_wormpep       #($number_cds $number_total $number_alternate )
     #get no of coding bases from log file
     open (THIS_LOG,"/wormsrv2/WORMPEP/wormpep$ver/wormpep_current.log");
     while(<THIS_LOG>){
-	if( $_ =~ m/(\d+(,\d+)*)\s+letter/){
+	if( $_ =~ /No\. of sequences \(letters\) written:\s+\d+\,\d+\s+\((.*)\)/ ){
 	 $codingDNA = $1;}
       }
 
@@ -637,7 +637,7 @@ The $number_total sequences contain $codingDNA base pairs in total.\n\n";
     open (OLD_LOG,"/wormsrv2/WORMPEP/wormpep$old_ver/wormpep_current.log");
     my $oldCDS;
     while(<OLD_LOG>){
-      if( $_ =~ m/(\d+,?\d+)\s+seque/){
+	if( $_ =~ /No\. of sequences \(letters\) written:\s+(\d+\,\d+)\s+\(.*\)/ ){
 	$oldCDS = $1;
 	$oldCDS =~ s/,//g;
       }
