@@ -7,8 +7,8 @@
 # Script to convert cgc strain file into ace file for geneace
 # Page download and update upload to geneace has been automated [ck1]
 
-# Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2004-05-26 12:16:11 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2004-11-30 13:49:18 $
 
 use strict;
 use Getopt::Std;
@@ -32,7 +32,7 @@ if ($user ne "wormpub"){
 # command-line options
 ######################
 
-our $opt_h = "";      # help
+my $opt_h = "";      # help
 getopts ('h');
 &usage if ($opt_h);
 
@@ -44,23 +44,50 @@ getopts ('h');
 $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
 
 
-my $rundate = `date +%y%m%d`; chomp $rundate;
+my $rundate = &rundate;
+
+# set main path
+my $path = "/wormsrv1/geneace/STRAIN_INFO";
+
 
 
 ##########################
 # Download CGC strain list
 ##########################
 
-my $input_file = "/wormsrv1/geneace/STRAIN_INFO/cgc_strain_list_$rundate";
+my $input_file = "$path/cgc_strain_list_$rundate";
 
-system("wget -O $input_file http://biosci.umn.edu/CGC/Strains/gophstrnt.txt") && die "Unable to download from the web page specified!\n\n";
+system("wget -O $input_file http://biosci.umn.edu/CGC/Strains/gophstrnt.txt") && die "Unable to download strain data file from CGC website\n\n";
+
+
+###############################################
+# Download Paper IDs from Caltech to build hash
+###############################################
+
+my $paper_IDs = "$path/caltech_paper_IDs.$rundate.txt";
+system("wget -O $paper_IDs http://minerva.caltech.edu/~acedb/paper2wbpaper.txt") && die "Unable to download paper ID file from Caltech website\n\n";
+
+# now build hash linking cgc IDs to WBPaper IDs
+my %cgc2paperID;
+
+open(PAPER, "<$paper_IDs") || die "Can't open paper ID input file\n";
+while(<PAPER>){
+  # grab old and new identifiers, only add CGC IDs to hash as key
+  my ($cgc,$paperID) = split;
+  if ($cgc =~ m/^cgc/){
+    #just use number as key
+    $cgc =~ s/cgc//;
+    $cgc2paperID{$cgc} = $paperID;
+  }
+}
+close(PAPER);
 
 
 ########################################################################
 # extract info of each strain obj and make ace file: cgc_strain_info.ace
 ######################################################################## 
 
-chdir ("/wormsrv1/geneace/STRAIN_INFO");
+chdir ("$path");
 
 open(INPUT, $input_file) || die "Can't open inputfile!"; 
 open(DELETE_STRAIN,">cgc_strain_info_$rundate.delete.ace") || die "can't create output file\n";
@@ -275,8 +302,11 @@ while(<INPUT>){
   my $reference;
   if(m/Reference: CGC \#(\d{1,4})\s+/){
     $reference = $1;
-    $ace_object .= "Reference \"[cgc$reference]\"\n" unless ($reference eq "");
-    $delete_ace_object .= "-D Reference \"[cgc$reference]\"\n" unless ($reference eq "");
+    # is there a WBpaper ID for this?
+    if (exists $cgc2paperID{$reference}){
+      $ace_object .= "Reference \"$cgc2paperID{$reference}\"\n";
+      $delete_ace_object .= "-D Reference \"$cgc2paperID{$reference}\"\n";
+    }
   }
 
   my $made_by;
@@ -316,7 +346,7 @@ close(STRAIN);
 close(DELETE_STRAIN);
 
 
-my $backup_file ="/wormsrv1/geneace/STRAIN_INFO/All_strain_TS_dump_$rundate.ace";
+my $backup_file ="$path/All_strain_TS_dump_$rundate.ace";
 
 ##################################################
 # 1. backup strain class with timestamp
@@ -326,7 +356,7 @@ my $backup_file ="/wormsrv1/geneace/STRAIN_INFO/All_strain_TS_dump_$rundate.ace"
 
 my (@dir, @deleteACE, $last_delete_ace);
 
-opendir(DIR, '/wormsrv1/geneace/STRAIN_INFO/') || die "Can't read directory";
+opendir(DIR, '$path/') || die "Can't read directory";
 @dir=readdir DIR;
 closedir (DIR);
 foreach (@dir){
