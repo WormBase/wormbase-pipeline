@@ -12,6 +12,11 @@ Visible
 Is_a_subclass_of Locus
 Filter "NOT Gene"
 
+Class Briggsae_loci
+Visible
+Is_a_subclass_of Locus
+Filter "Gene AND (Species = C*briggsae)"
+
 Class Genome_Sequence
 Visible
 Is_a_subclass_of Sequence
