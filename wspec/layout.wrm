@@ -13,7 +13,7 @@
 			Transcript		Expr_profile
  Allele			 elegans_RNA_genes	
   Insertion_allele	 briggsae_RNA_genes	Feature
-  Deletion_allele	 Coding_transcripts	Motif
+  Deletion_allele	 auto_transcripts	Motif
   Substitution_allele				UTR
   KO_allele		Pseudogene		Operon
 			 elegans_pseudogenes	
