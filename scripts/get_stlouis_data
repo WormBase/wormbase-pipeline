@@ -18,6 +18,7 @@
 #
 
 # v0.2
+# 011203 : dl  : Added third FTP directory from St Louis to include missing data
 # 001122 : dl  : Reformat code to generic structure
 # 001122 : dl  : Added some more error-trapping and modified logging procedure
 
@@ -46,7 +47,8 @@ my $version = &get_script_version(get_stlouis_data);
 $fin_dir                = "/wormsrv2/ftp_site/finished";
 $unfin_dir              = "/wormsrv2/ftp_site/unfinished";
 $inlogfile              = "/wormsrv2/ftp_site/get_stlouis_data.$rundate.$$";
-$stl_fin_ftpsite        = "ftp://genome.wustl.edu/pub/gsc1/sequence/st.louis/elegans/genbank";
+$stl_fin_ftpsite1       = "ftp://genome.wustl.edu/pub/gsc1/sequence/st.louis/elegans/genbank";
+$stl_fin_ftpsite2       = "ftp://genome.wustl.edu/pub/gsc1/sequence/st.louis/elegans/finish";
 $stl_unfin_ftpsite      = "ftp://genome.wustl.edu/pub/gsc1/sequence/st.louis/elegans/preliminary";
 $fin_ftpsite            = "/nfs/disk69/ftp/pub/wormbase/sequences/FINISHED_SEQUENCES/STLOUIS_FINISHED";
 $unfin_ftpsite          = "/nfs/disk69/ftp/pub/wormbase/sequences/UNFINISHED_SEQUENCES/STLOUIS_UNFINISHED";
@@ -166,8 +168,13 @@ sub cleanup {
 sub getsequences {
 
     # get StLouis FINISHED
-    $g_fin = system ("/usr/local/bin/wget $wget_opt -a \"$inlogfile\" -P \"$fin_dir\" -A \"$file_ext\" \"$stl_fin_ftpsite\" ");
-    print LOG "St Louis finished sequences transferred .. \n\n";
+    $g_fin1 = system ("/usr/local/bin/wget $wget_opt -a \"$inlogfile\" -P \"$fin_dir\" -A \"$file_ext\" \"$stl_fin_ftpsite1\" ");
+    print LOG "St Louis genbank sequences transferred .. \n\n";
+
+    $g_fin2 = system ("/usr/local/bin/wget $wget_opt -a \"$inlogfile\" -P \"$fin_dir\" -A \"$file_ext\" \"$stl_fin_ftpsite2\" ");
+    print LOG "St Louis finish sequences transferred .. \n\n";
+    
+    $g_fin = $g_fin1 + $g_fin2;
 
     # get StLouis UNFINISHED
     $g_unfin = system ("/usr/local/bin/wget $wget_opt -a \"$inlogfile\" -P \"$unfin_dir\" -A \"$file_ext\" \"$stl_unfin_ftpsite\" ");
