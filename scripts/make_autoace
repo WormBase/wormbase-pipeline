@@ -572,7 +572,7 @@ pparse $autoacedir/physical_map/cen2hs.ace
 save    
 quit
 END
-  &DbWrite($command,$tace,$autodir,"ContigC");
+  &DbWrite($command,"$tace -tsuser Coulson",$autodir,"ContigC");
 }
 
 
