@@ -1,5 +1,5 @@
 #!/usr/local/bin/perl5.6.1 -w
-
+###
 # get_interpolated_gmap.pl
 
 # by Chao-Kung Chen [030512]
@@ -8,7 +8,7 @@
 # Output ace file of such information and upload to autoace during each build
 # Output also other files related. See POD
 
-# Last updated on: $Date: 2003-09-19 09:19:09 $
+# Last updated on: $Date: 2003-09-19 09:24:56 $
 # Last updated by: $Author: ck1 $
 
 use strict;
