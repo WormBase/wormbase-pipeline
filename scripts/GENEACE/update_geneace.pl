@@ -342,8 +342,9 @@ sub geneclass_loci_other_name {
       push(@Update, "CGC_name\t\"$1\"\n");
       push(@Update, "Gene_class\t\"$2\"\n");
       push(@Update, "Species\t\"Caenorhabditis elegans\"\n");
+      push(@Update, "Live\n");
       push(@Update, "Version  1\n");
-      push(@Update, "Version_change   1 now \"WBPerson1845\" Created\n");
+      push(@Update, "Version_change   1 now \"WBPerson1971\" Created\n");
 
       $locus = $1;
       $rest = $3;
