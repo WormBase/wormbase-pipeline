@@ -777,12 +777,12 @@
 	       S_Child Homol_data ?Homol_data XREF Sequence UNIQUE Int UNIQUE Int #SMap_info
 		       Feature_data ?Feature_data XREF Sequence UNIQUE Int UNIQUE Int #SMap_info
 		       Genomic_non_canonical ?Sequence XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info
-		       PCR_product ?PCR_product XREF Canonical_parent Int UNIQUE Int #SMap_info      // added for Lincoln RNAi [010226 dl]
-		       Nongenomic ?Sequence XREF Genomic_parent Int UNIQUE Int #SMap_info            // added for Lincoln RNAi [010226 dl]
-		       RNAi ?RNAi XREF Sequence UNIQUE Int UNIQUE Int #SMap_info                     // added for Lincoln RNAi [001213 dl]
-		       WTP ?WTP XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info               // added for Mieg WTP data [001623 rd]
-		       Operon ?Operon XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info         // added for Operon data
-		       Transposon ?Transposon XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info // added for transposons [020128 dl]
+		       PCR_product ?PCR_product XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info      // added for Lincoln RNAi  [010226 dl]
+		       Nongenomic ?Sequence XREF Genomic_parent UNIQUE Int UNIQUE Int #SMap_info            // added for Lincoln RNAi  [010226 dl]
+		       RNAi ?RNAi XREF Sequence UNIQUE Int UNIQUE Int #SMap_info                            // added for Lincoln RNAi  [001213 dl]
+		       WTP ?WTP XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info                      // added for Mieg WTP data [001623 rd]
+		       Operon ?Operon XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info                // added for Operon data   [dl]
+		       Transposon ?Transposon XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info        // added for transposons   [020128 dl]
 	  Structure  From	Source UNIQUE ?Sequence XREF Subsequence
 				Source_Exons Int UNIQUE Int // start at 1
 		     Subsequence ?Sequence XREF Source UNIQUE Int UNIQUE Int
@@ -844,7 +844,7 @@
 		// tag2 system: names of all objects following next tag are shown in the 
 		//   general annotation display column as "tag:objname"
 	  Properties    Pseudogene Text		                                 // explanation
-			Genomic_canonical UNIQUE Int                             // added tag for dot name tracking [020128 dl]
+			Genomic_canonical Gene_count UNIQUE Int                  // added tag for dot name tracking [020128 dl]
                         Briggsae_canonical
 			Wormpep  
 			cDNA cDNA_EST
@@ -1456,12 +1456,13 @@
  		  S_Child RNAi ?RNAi XREF PCR_product UNIQUE Int UNIQUE Int #SMap_info
 			  Expr_profile ?Expr_profile XREF PCR_product UNIQUE Int UNIQUE Int #SMap_info// added for new Expr_profile class [010912 krb]
  	     Method ?Method
- 	     Overlaps_CDS ?Sequence XREF Corresponding_PCR_product   // added for Dan PCR mappings [010419 dl]
+ 	     Overlaps_CDS ?Sequence XREF Corresponding_PCR_product  // added for Dan PCR mappings [010419 dl]
 	     Oligo ?Oligo XREF PCR_product UNIQUE Int UNIQUE Int
  	     Assay_conditions ?LongText
+	     From_Laboratory ?Laboratory                            // added for Lincoln Orfeome attribution [020304 dl]
 	     Amplified Int
 	     Remark ?Text
-	     SNP_locus ?Locus XREF SNP_assay	// added for Todd [171001 krb]
+	     SNP_locus ?Locus XREF SNP_assay	                    // added for Todd [171001 krb]
 
 ?Phenotype Description UNIQUE ?Text
            Assay UNIQUE ?Text
