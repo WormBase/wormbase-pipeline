@@ -9,9 +9,10 @@ use Exporter;
 use Carp;
 use Ace;
 use Log_files;
+use File::Path;
 @ISA       = qw(Exporter);
 
-@EXPORT    = qw(get_wormbase_version get_wormbase_version_name get_wormbase_release_date copy_check mail_maintainer celeaccession tace gff_sort dbfetch clones_in_database open_TCP DNA_string_reverse DNA_string_composition release_databases find_file_last_modified FetchData release_composition release_wormpep test_user_wormpub runtime rundate tace giface check_write_access Map_feature scan MapFeature);
+@EXPORT    = qw(get_wormbase_version get_wormbase_version_name get_wormbase_release_date copy_check mail_maintainer celeaccession tace gff_sort dbfetch clones_in_database open_TCP DNA_string_reverse DNA_string_composition release_databases find_file_last_modified FetchData release_composition release_wormpep test_user_wormpub runtime rundate tace giface check_write_access Map_feature scan MapFeature delete_files_from);
  
 
 
@@ -871,6 +872,44 @@ sub check_write_access{
   $write_access = "no" if (-e "${database}/database/lock.wrm");
   return($write_access);
 
+}
+
+
+####################################
+# Delete files from directory
+####################################
+sub delete_files_from {
+  my ($directory,$pattern,$folder)  = @_;
+  my $file;
+  my $delete_count = 0;
+  my $fail_warn = 1;
+
+  return undef unless (-e $directory );
+
+  if ( $folder eq "+" ) {
+    print "Removing entire dir and subdirs of $directory\n";
+    $delete_count = rmtree($directory);
+  } 
+  else {
+    opendir (TO_GO,$directory) or die "cant get listing of $directory:\t$!\n";
+#   $pattern = "." if $pattern eq "*";
+
+    $pattern = "." unless $pattern;
+    $pattern =~ s/\*/\./g;
+
+    while ( $file = readdir(TO_GO)) {
+      next if( $file eq "." or $file eq "..") ;
+      if ( $file =~ /$pattern/ ) {
+	if( unlink ("$directory/$file") ) {
+	  $delete_count++;
+	}else {
+	   warn "couldn't unlink $directory/$file :\t$!\n";
+	   undef $fail_warn;
+	 }
+      }
+    }
+  }
+  return $fail_warn ? $delete_count : $fail_warn ; # undef if failed else no. files removed;
 }
 
 ################################################################################

@@ -13,7 +13,7 @@
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2004-02-02 12:24:20 $
+# Last updated on: $Date: 2004-02-03 11:02:38 $
 
 
 use strict;
@@ -163,30 +163,7 @@ sub create_log_files{
 # remove non-essential files from old database directory                        #
 #################################################################################
 
-sub delete_files_from {
-  my ($directory,$pattern,$folder)  = @_;
-  my @list;
-  my $file;
 
-  if ( $folder eq "+" ) {
-    print LOG "Removing entire dir and subdirs of $directory\n" if $verbose;
-    rmtree($directory);
-  } 
-  else {
-    
-    opendir (TO_GO,$directory) or die "cant get listing of $directory\n";;
-    $pattern = "." if $pattern eq "*";
-    while ( $file = readdir(TO_GO)) {
-      next if( $file eq "." or $file eq "..") ;
-      if ( $file =~ /$pattern/ ) {
-	print LOG "Deleting $file\n" if ($verbose);
-	unlink ("$directory/$file");
-      } else {
-	print LOG "Leaving $file\n" if $verbose;
-      }
-    }
-  }
-}
 
 sub archive_old_releases{
   print LOG "\n\n";
