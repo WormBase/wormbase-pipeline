@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-03-02 13:34:24 $
+# Last edited on: $Date: 2004-03-03 10:30:59 $
 
 
 #################################################################################
@@ -797,7 +797,7 @@ sub check_make_autoace {
     }
   }
   close BUILDLOG;
-  print LOG &runtime, ": Leaving check_make_autoace subroutine\n\n";
+  print LOG &runtime, ": Finished subroutine\n\n";
 
   return ($builderrors);
 }

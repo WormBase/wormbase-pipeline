@@ -8,7 +8,7 @@
 # This makes the autoace database from its composite sources.
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-03-02 15:20:46 $
+# Last edited on: $Date: 2004-03-03 10:30:59 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -178,17 +178,16 @@ sub buildautoace{
 
   # Parse config file                            
   &parseconfig;
-  
+
 
   # Re-initialize the database                      
   # Re-initializing database is more complex as the .acefiles will be spread over a number of
   # directories - use the config file to find them all
   &reinitdb();
-
   
+
   # remove temp genes
   &rmtempgene();
-  
   
 
   # Read in the physical map and make all maps   
@@ -293,6 +292,7 @@ sub createdirs {
   foreach (@dirarray) {	
     my $present_dir = $_;
     if (-d $present_dir) {
+      print LOG "\t** $present_dir - already present\n";
       print "** Skipping $present_dir - already present\n";
       next;
     }
@@ -303,7 +303,8 @@ sub createdirs {
   my $argsize = scalar (@args1);
   if ($argsize == 0) {
     print "** No new directories to create .. end mkdirectories\n";
-    print LOG &runtime, ": Finished.\n\n";
+    print LOG "\t** No new directories to create\n";
+    print LOG &runtime, ": Finished\n\n";
     return;
   }
   my $command = "@args2 @args1";
@@ -323,7 +324,7 @@ sub createdirs {
   }
   &run_command("/bin/ln -s $basedir/geneace/pictures $pictures");
 
-  print LOG &runtime, ": Finished.\n\n";
+  print LOG &runtime, ": Finished\n\n";
   return;
 }
 
@@ -372,6 +373,7 @@ sub parseconfig {
       }
       else{
 	push (@filenames,"$wormbasedir"."/$dbname/"."$filename");
+	print LOG "* Parse config file : file $wormbasedir/$dbname/$filename noted ..\n";
       }
     } 
     else {
@@ -382,7 +384,7 @@ sub parseconfig {
     
   }
   close(CONFIG);
-  print LOG &runtime, ": Finished.\n\n";
+  print LOG &runtime, ": Finished\n\n";
 }
 
 
@@ -404,9 +406,6 @@ sub reinitdb {
 
   print LOG &runtime, ": Starting reinitdb subroutine\n";
 
-  &delete_files_from("$dbpath/database/new","*","-") or print LOG "ERROR: Problems removing files from $dbpath/database/new\n";
-  &delete_files_from("$dbpath/database/touched","*","-") or print LOG "ERROR: Problems removing files from $dbpath/database/touched\n";
-
 
   if (-e "$dbpath/database/lock.wrm") {
     print LOG "*Reinitdb error - lock.wrm file present..\n";
@@ -414,17 +413,18 @@ sub reinitdb {
     die();
   }
 
-  &delete_files_from("$dbpath/database",".\.wrm","-") or print LOG "ERROR: Problems removing files from $dbpath/database\n";
+  &delete_files_from("$dbpath/database",".\.wrm","-");
   
   my $command = "y\n";
   print LOG &runtime, ": reinitializing the database\n";
   &DbWrite($command,$tace,$dbpath,"ReInitDB");
- 
+
+
   foreach my $filename (@filenames) {
     my $command = "pparse $filename\nsave\nquit\n";
     if (-e $filename) {
       my $runtime = &runtime;
-      print LOG &runtime, ": parsing $filename\n";
+      print LOG "* Reinitdb: started parsing $filename at $runtime\n";
       LOG->autoflush();
       my ($tsuser) = $filename =~ (/^\S+\/(\S+)\_/);
       &DbWrite($command,"$tace -tsuser $tsuser",$dbpath,"ParseFile");
@@ -506,8 +506,8 @@ sub makechromlink {
 
   print LOG &runtime, ": starting makechromlink subroutine\n";
   unlink "$wormbasedir/misc/misc_chromlinks.ace" or print LOG "ERROR: Couldn't unlink file: $!\n";
-  my $command = "$basedir/scripts/makeChromLinks.pl > $wormbasedir/misc/misc_chromlinks.ace";
-  $command = "$basedir/scripts/makeChromLinks.pl -test > $wormbasedir/misc/misc_chromlinks.ace" if ($test);
+  my $command = "$basedir/scripts/makeChromLinks.pl >! $wormbasedir/misc/misc_chromlinks.ace";
+  $command = "$basedir/scripts/makeChromLinks.pl -test >! $wormbasedir/misc/misc_chromlinks.ace" if ($test);
   &run_command("$command"); 
 
   if (-z "$wormbasedir/misc/misc_chromlinks.ace") {
