@@ -384,7 +384,7 @@ sub get_WS_version {
 sub prepare_primaries {
 
     # exit unlessif build_in_progress flag is present
-    &usage(12) unless (-e $logdir/$flag{'A1'});
+    &usage(12) unless (-e "$logdir/$flag{'A1'}");
 
     # exit if the Primary_databases_used_in_build is absent
     &usage(13) unless (-e "$logdir/Primary_databases_used_in_build");
@@ -552,10 +552,10 @@ sub last_versions {
 sub make_acefiles {
     
     # exit unless build_in_progress flag is present
-    &usage(12) unless (-e $logdir/$flag{'A1'});
+    &usage(12) unless (-e "$logdir/$flag{'A1'}");
 
     # exit unless A4:Primary_databases_on_wormsrv2
-    &usage(12) unless (-e $logdir/$flag{'A4'});
+    &usage(12) unless (-e "$logdir/$flag{'A4'}");
 
     system ("$scriptdir/make_acefiles -ne") && die "Couldn't run make_acefiles\n";
     print LOG " Write acefiles to disk\n";
