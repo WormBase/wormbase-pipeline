@@ -22,6 +22,7 @@ my $run_pipeline;
 my $dont_SQL;
 my $dump_data;
 my $mail;
+my $test_pipeline;
 my $WPver;   #  Wormpep version is passed as command line option
 
 GetOptions("chromosomes" => \$chromosomes,
@@ -33,6 +34,7 @@ GetOptions("chromosomes" => \$chromosomes,
 	   "nosql"       => \$dont_SQL,
 	   "dump"        => \$dump_data,
 	   "mail"        => \$mail,
+	   "testpipe"    => \$test_pipeline
 	   "version=s"   => \$WPver
 	  );
 
@@ -417,6 +419,16 @@ if( $dump_data )
     `$scripts_dir/dump_blastx_new.pl -w $wormpipe_dir/BlastDB/wormpep$WPver.pep -a ~/Elegans/WS$WPver.agp -g ~/Elegans/cds$WPver.gff -c ~/Elegans/cos$WPver.gff -m`;
     `$scripts_dir/dump_motif.pl`;
   }
+
+if( $test_pipeline ){
+  my $jobsleft = `bjobs | wc -l`;
+  if( $jobsleft == 0 ){
+    print "pipeline finished\n" ;
+  }
+  else {
+    print "$jobsleft = jobsleft\n";
+}
+}
 
 exit(0);
 
