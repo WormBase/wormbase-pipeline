@@ -1,0 +1,36 @@
+#!/usr/local/bin/perl5.6.1 -w
+
+my $gene = shift;
+unless ($gene) {
+  print "enter gene . .\n";
+  $gene = <STDIN>;
+  chomp $gene;
+}
+
+$gene =~ /(\w+)\.\w+/;
+my $clone = $1;
+
+my $wormpipe = glob("~wormpipe");
+my $acc = `grep $clone $wormpipe/dumps/accession2clone.list`;
+my @data = split(/\s+/,$acc);
+print `pfetch -F $data[0] | less`;
+
+
+__END__
+
+=pod
+
+=head2   NAME - pfetch_gene
+
+
+=head1 USAGE
+
+=over 4
+
+
+  pfetch_name gene
+  eq pfetch_gene AH6.1a will pfetch the record for clone AH6.
+  The accession is looked up from the file ~wormpipe/dumps/accession2clone.txt
+
+
+  This utility is to quickly pfetch the clone EMBL record for any particular gene.
