@@ -1,5 +1,5 @@
-#!/usr/local/bin/perl 
-#
+#!/usr/local/bin/perl
+
 # make_trackace
 # v 0.2
 #
@@ -17,7 +17,9 @@ use Bio::Seq;
 use Getopt::Std;
 use IO::Handle;
 use Ace;
-require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
+use lib '/wormsrv2/scripts';
+use Wormbase;
+
 
 #################################################################################
 # Initialise variables                                                          #
@@ -25,15 +27,14 @@ require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
 
 $|=1;
 
- ##############################
+  ##############################
  # paths for I/O files        #
  ##############################
 
 $tace                  = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
-$Wormbase_release_file = "/wormsrv2/autoace_config/WormBase_release_version";
 $rundate = `date +%y%m%d`; chomp $rundate;
 $runtime = `date +%H:%M:%S`; chomp $runtime;
-$version               = &get_script_version(make_trackace);
+$version               = &get_cvs_version($0);
 $trackacepath          = "/wormsrv2/trackace";
 #$WormBasepath         = "/wormsrv2/autoace";
 $WormBasepath          = "/wormsrv2/TESTDB";
@@ -54,12 +55,9 @@ getopts ('dh');
  # get release versions       #
  ##############################
 
-open (WormBase_release, "<$Wormbase_release_file");
-while (<WormBase_release>) {
-    chomp;
-    $next_release = substr($_,2);
-}
-close (WormBase_release);
+
+
+$next_release = &get_wormbase_version;
 
 
 $next_release = 17;
@@ -869,26 +867,26 @@ sub update_sequence {
 
     if ($debug) {print LOG "Write .acefile '$acefile'\n";}
     
-    open (update, ">$acefile") || print LOG "Failed to open acefile: '$acefile'\n";
-    print update "Genomic_canonical : \"$seq\"\n";
-    print update "Current_version $new_version\n";
-    print update "Current_sequence \"$new_sequence\"\n";
-    print update "Sequence_version \"$new_sequence\"\n";
-    print update "Is_active\n\n";
+    open (UPDATE, ">$acefile") || print LOG "Failed to open acefile: '$acefile'\n";
+    print UPDATE "Genomic_canonical : \"$seq\"\n";
+    print UPDATE "Current_version $new_version\n";
+    print UPDATE "Current_sequence \"$new_sequence\"\n";
+    print UPDATE "Sequence_version \"$new_sequence\"\n";
+    print UPDATE "Is_active\n\n";
     
-    print update "Sequence : \"$old_sequence\"\n";
-    print update "Release $data{rel_1} $WS_previous\n\n";
+    print UPDATE "Sequence : \"$old_sequence\"\n";
+    print UPDATE "Release $data{rel_1} $WS_previous\n\n";
 
-    print update "Sequence : \"$new_sequence\"\n";
-    print update "Checksum $wormbase_chk\n";
-    print update "Version_of $seq\n";
-    print update "Flipped\n" if ($flipped);
-    print update "Release $WS_release\n";
+    print UPDATE "Sequence : \"$new_sequence\"\n";
+    print UPDATE "Checksum $wormbase_chk\n";
+    print UPDATE "Version_of $seq\n";
+    print UPDATE "Flipped\n" if ($flipped);
+    print UPDATE "Release $WS_release\n";
     
-    print update "\nDNA \"$new_sequence\"\n";
-    print update "$wormbase_dna\n\n";
+    print UPDATE "\nDNA \"$new_sequence\"\n";
+    print UPDATE "$wormbase_dna\n\n";
     
-    close (update);
+    close (UPDATE);
     
     if ($debug) {print LOG "Read .acefile  '$acefile'\n\n";}
     
