@@ -182,12 +182,12 @@ sub dbfetch {
 
 sub find_database {
 
-    my @clones = @{$_[0]};
-    my $handle = @{$_[1]};
-    my @clones = ();
-    my $name   = "";
-    my %count  = ();
-    my @output = ();
+    my @clones   = @{$_[0]};
+    my $handle   = @{$_[1]};
+    my @dbclones = ();
+    my $name     = "";
+    my %count    = ();
+    my @output   = ();
     carp "find_database not called with references\n" if (ref($_[0]) ne 'ARRAY' || ref($_[1]) ne 'HASH');
 
 
@@ -199,8 +199,8 @@ sub find_database {
     }           
 
 
-    my $db     = Ace->connect(-path => '/wormsrv2/$name/') || die "Couldn't connect to $name\n", Ace->error;
-    my @clones = $db->fetch(-query => 'FIND Genome_Sequence');
+    my $db       = Ace->connect(-path => '/wormsrv2/$name/') || die "Couldn't connect to $name\n", Ace->error;
+    my @dbclones = $db->fetch(-query => 'FIND Genome_Sequence');
     foreach my $clone (@clones) {
 	my $string = $clone->Confidential_remark(1);
 	if ((defined $string) && (($string =~ /Louis/) || ($string =~ /not in Cambridge/))) {
