@@ -528,7 +528,10 @@ foreach (@dotnames) {
 close USERFASTA;
 close USERTABLE;
 
-system ("/nfs/disk100/wormpub/bin.ALPHA/seqpress -a $new_wpdir/wormpep_unwrap$release > $new_wpdir/wormpep$release");
+system ("rewrap $new_wpdir/wormpep_unwrap$release > $new_wpdir/wormpep$release");
+
+
+#system ("/nfs/disk100/wormpub/bin.ALPHA/seqpress -a $new_wpdir/wormpep_unwrap$release > $new_wpdir/wormpep$release");
 #chmod (0444 , "$new_wpdir/wormpep$release") || print LOG "cannot chmod $new_wpdir/wormpep$release\n";
 
 if( $opt_f ){
