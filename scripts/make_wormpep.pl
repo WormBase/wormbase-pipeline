@@ -7,7 +7,7 @@
 # Builds a wormpep data set from the current autoace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-12-02 09:32:07 $
+# Last updated on: $Date: 2003-12-04 14:07:00 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -33,7 +33,7 @@ my $test;                # for running in test environment ~wormpub/TEST_BUILD
 GetOptions ("help"        => \$help,
             "debug=s"     => \$debug,
 	    "verbose"     => \$verbose,
-            "intitial"    => \$initial,
+            "initial"     => \$initial,
 	    "final"       => \$final,
             "test"        => \$test
            );
@@ -57,7 +57,7 @@ if($debug){
 # misc. variables                     #
 #######################################
 
-my $tace      = &tace; 
+my $tace = &tace; 
 my $release; 
 if($test){
   $release = "666";
@@ -71,7 +71,7 @@ my $old_release = $release-1;
 my %peptide2number;   # peptide sequence is key, CE number (and just the number) is value
 my @number2peptide;   # stores peptide sequence at array positions corresponding to CE numbers
 my @number2accession; # stores full Wormpep accessions (e.g. CE04323) in array, indexed as above
-my %cds2num;          #
+my %cds2number;       # stores cds name (e.g. AH6.1) as key, Wormpep number (e.g. 4323) as value
 my @dotnames;         #
 my @c_dotnames;       #
 my $wpmax = 0;        # holds highest CE number in Wormpep (old release proteins + new)
@@ -91,8 +91,6 @@ $basedir      = glob("~wormpub")."/TEST_BUILD" if ($test);
 my $dbdir     = "$basedir/autoace";
 my $wpdir     = "$basedir/WORMPEP/wormpep$old_release";
 my $new_wpdir = "$basedir/WORMPEP/wormpep$release";
-$ENV{'ACEDB'} = $dbdir;
-
 
 
 
@@ -109,10 +107,12 @@ $ENV{'ACEDB'} = $dbdir;
 &create_log_files;
 
 # create directory structure and read wp.fasta file from previous release
-&setup;
+#&setup;
 
 # now query autoace to get details of latest set of CDSs
 &process_cds_class;
+
+
 
 # files in wormpep directory
 #   wp.fasta            all sequences ever assigned (wpid and sequence)
@@ -165,7 +165,7 @@ our %Protein_id     = "";
 our %Protein_ac     = "";
 our %Protein_db     = "";
 
-$ENV{'ACEDB'} = $dbdir;
+
 my $command=<<EOF;
 Table-maker -p "$dbdir/wquery/wormpep.def"
 quit
@@ -210,22 +210,6 @@ while (<TACE>) {
 }
 close TACE;
 
-my $command1=<<EOF;
-Table-maker -p "$dbdir/wquery/wormpep2.def"
-quit
-EOF
-    
-open (TACE, "echo '$command1' | $tace | ");
-while (<TACE>) {
-    chomp;
-    next if ($_ eq "");
-    next if (/\/\//);
-    s/acedb\>//g;
-    s/\"//g;
-    my ($clone,$lab) = (/^(\S+)\s(\S+)$/);
-    $laboratory{$clone} = $lab;
-}
-close TACE;
 
 print LOG &runtime, ": finished retrieving data from autoace for each CDS\n\n";
 
@@ -250,7 +234,7 @@ foreach (@dotnames) {
     my $cds = $_;
     my $c_dot = $cds;
 #    $c_dot =~ tr/a-z/A-Z/;
-    my $wpid = $cds2num{$c_dot};
+    my $wpid = $cds2number{$c_dot};
     my $wpid_pad = sprintf "%05d" , $wpid;
     my $pepseq = $number2peptide[$wpid];
 
@@ -397,12 +381,12 @@ while (my $line = <OLDHISTORY>) {
     my $c_dot = $cdsname;
     $wpid =~ /CE0*([1-9]\d*)/ ; my $num = $1;
     $line{$c_dot} = $line;
-    if ((!exists ($cds2num{$c_dot}) && ($end eq ""))) {
+    if ((!exists ($cds2number{$c_dot}) && ($end eq ""))) {
        print HISTORY "$c_dot\t$wpid\t$start\t$release\n";
        print DIFF "lost:\t$c_dot\t$wpid\n";
-   } elsif (($cds2num{$c_dot} ne $num) && ($end eq "")) {
+   } elsif (($cds2number{$c_dot} ne $num) && ($end eq "")) {
         print HISTORY "$c_dot\t$wpid\t$start\t$release\n";
-        my $new_num = $cds2num{$c_dot};
+        my $new_num = $cds2number{$c_dot};
         my $new_pad = sprintf "%05d" , $new_num;
         print HISTORY "$c_dot\tCE$new_pad\t$release\t$end\n";
         print DIFF "changed:\t$c_dot\t$wpid --> CE$new_pad\n";
@@ -411,11 +395,11 @@ while (my $line = <OLDHISTORY>) {
        }
 }
 
-foreach (keys (%cds2num)) {
+foreach (keys (%cds2number)) {
     my $empty = "";
     my $c_dot = $_;
     if (!exists ($line{$c_dot})) {
-        my $num = $cds2num{$c_dot};
+        my $num = $cds2number{$c_dot};
         my $pad = sprintf "%05d" , $num;
         print HISTORY "$c_dot\tCE$pad\t$release\t$empty\n";
         print DIFF "new:\t$c_dot\tCE$pad\n";
@@ -424,7 +408,7 @@ foreach (keys (%cds2num)) {
     my $cdsname = ""; my $wpid = ""; my $start = ""; my $end = "";
     ($cdsname , $wpid , $start , $end) = split (/\t/ , $line{$c_dot});
     if ($end ne "") {   
-        my $new_num = $cds2num{$c_dot};
+        my $new_num = $cds2number{$c_dot};
         my $new_pad = sprintf "%05d" , $new_num;
         print HISTORY "$c_dot\tCE$new_pad\t$release\t$empty\n";
         print DIFF "reappeared:\t$c_dot\tCE$new_pad\n";
@@ -451,7 +435,10 @@ unlink ("$new_wpdir/wormpep_unwrap$release")  || print LOG "cannot delete $new_w
 close LOG;
 
 #Email log
-&mail_maintainer("WormBase Build Report: make_wormpep",$maintainers,$log);
+my $subject = "WormBase Build Report: make_wormpep.pl";
+$subject = "TEST MODE: WormBase Build Report: make_wormpep.pl" if ($test);
+
+&mail_maintainer("$subject",$maintainers,$log);
 
 
 # write the release letter (also does some checks)
@@ -752,12 +739,12 @@ sub process_cds_class{
     unless (exists ($peptide2number{$peptide_seq})){
       $number2peptide[++$wpmax] = $peptide_seq; # adds new sequence to array, increases $wpmax
       $peptide2number{$peptide_seq} = $wpmax;
-      $cds2num{$c_dot} = $wpmax;
+      $cds2number{$c_dot} = $wpmax;
       my $pad = sprintf "%05d" , $wpmax;
       $number2accession[$wpmax] = "CE$pad\t$c_dot";
     } 
     else {
-      $cds2num{$c_dot} = $peptide2number{$peptide_seq};
+      $cds2number{$c_dot} = $peptide2number{$peptide_seq};
       my $number = $peptide2number{$peptide_seq};
       $number2accession[$number] .= "\t$c_dot";
     }             

@@ -5,13 +5,13 @@
 # by Dan Lawson (dl1@sanger.ac.uk)
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-12-04 13:12:39 $
+# Last edited on: $Date: 2003-12-04 14:07:00 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
-use File::Copy qw(mv cp);
+use File::Copy;
 
 
 #################################
@@ -207,7 +207,9 @@ foreach my $chromosome (@gff_files) {
     }
   }
   # copy agp file to correct directory
-  cp("$file", "$basedir/autoace/CHROMOSOMES/") or print LOG "ERROR: Couldn't copy file: $!\n";
+  # copy command returns 0 for failed
+  my $status = copy("$file", "$basedir/autoace/CHROMOSOMES/"); 
+  print LOG "ERROR: Couldn't copy file: $!\n" if ($status == 0);
 
   close LOG;
   close OUT;

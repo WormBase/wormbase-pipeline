@@ -18,14 +18,14 @@
 #
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-12-03 10:57:16 $      
+# Last updated on: $Date: 2003-12-04 14:07:00 $      
 
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
-use File::Copy qw(mv cp);
+use File::Copy;
 
 ##############
 # variables  #
@@ -125,9 +125,11 @@ while (<IN>) {
       print "Shall I make a $cosmid.embl file and make this the $cosmid.current.file and submit? (y or n)\n";
       my $answer=<STDIN>;
       if ($answer eq "y\n") {
-	cp("temp$$", "/nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.embl");
+	my $status = copy("temp$$", "/nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.embl");
+	print LOG "ERROR: Couldn't copy file: $!\n" if ($status == 0);
 	system "ln -s /nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.embl /nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.current.embl";
-	cp("temp$$", "/nfs/disk100/wormpub/analysis/TO_SUBMIT/$cosmid.$datestamp.embl");	 
+	copy("temp$$", "/nfs/disk100/wormpub/analysis/TO_SUBMIT/$cosmid.$datestamp.embl");	 
+	print LOG "ERROR: Couldn't copy file: $!\n" if ($status == 0);
       } 
       else {
 	print "** WARNING - COSMID $cosmid DOES NOT HAVE A $cosmid.embl FILE AND HAS NOT BEEN SUBMITTED\n";
@@ -167,9 +169,11 @@ while (<IN>) {
     # Report the change and place in TO_SUBMIT directory. 
 
     if ($compare==1) {
-      cp("temp$$", "/nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.$datestamp.embl");
+      my $status copy("temp$$", "/nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.$datestamp.embl");
+      print LOG "ERROR: Couldn't copy file: $!\n" if ($status == 0);
       system "ln -fs /nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.$datestamp.embl /nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.current.embl";
-      mv("temp$$", "/nfs/disk100/wormpub/analysis/TO_SUBMIT/$cosmid.$datestamp.embl");
+      $status = move("temp$$", "/nfs/disk100/wormpub/analysis/TO_SUBMIT/$cosmid.$datestamp.embl");
+      print LOG "ERROR: Couldn't move file: $!\n" if ($status == 0);
       print "$cosmid should be resubmitted and is in TO_SUBMIT.\n";
     } 
     else {

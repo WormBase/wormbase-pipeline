@@ -8,7 +8,7 @@
 # This makes the autoace database from its composite sources.
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-12-01 11:54:26 $
+# Last edited on: $Date: 2003-12-04 14:07:00 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -17,7 +17,7 @@ use IO::Handle;
 use POSIX qw(:signal_h :errno_h :sys_wait_h);
 use Getopt::Long;
 use Cwd;
-use File::Copy qw(mv cp);
+use File::Copy;
 
 
 #################################
@@ -333,7 +333,8 @@ sub createdirs {
   foreach my $made_dir (@args1) {
     if ($made_dir =~ /wspec/) {
       print "** Copying wspec from $autoacedir .. \n";
-      cp("$autoacedir/wspec/*", "$wspec/.") or print LOG "ERROR: Couldn't copy files: $!\n";
+      my $status = copy("$autoacedir/wspec/*", "$wspec/.");
+      print "ERROR: Couldn't copy file: $!\n" if ($status == 0);
     }
     if (!-d $made_dir) {
       print " ** mkdir for $made_dir failed ** \n\n";
@@ -428,7 +429,9 @@ sub reinitdb {
     close LOG;
     die();
   }
-  mv("$dbpath/database/log.wrm", "$dbpath/database/log.old") or print LOG "ERROR: Couldn't rename file: $!\n";  
+  my $status = move("$dbpath/database/log.wrm", "$dbpath/database/log.old");  
+  print "ERROR: Couldn't move file: $!\n" if ($status == 0);
+
 
   unlink glob("$dbpath/database/*.wrm") or print LOG "ERROR: Couldn't unlink files: $!\n";
 
@@ -485,7 +488,9 @@ sub makemaps {
 sub setdate {
   my @t   = localtime ; while ($t[5] >= 100) { $t[5] -= 100 ; }
   my $dat = sprintf "%02d\/%02d\/%02d", $t[3], $t[4]+1, $t[5] ;
-  mv("$dbpath/wspec/displays.wrm", "$dbpath/wspec/displays.old") or print LOG "ERROR: Couldn't rename file: $!\n";;
+  my $status = move("$dbpath/wspec/displays.wrm", "$dbpath/wspec/displays.old");
+  print "ERROR: Couldn't move file: $!\n" if ($status == 0);
+
 
   open(FILE,"$dbpath/wspec/displays.old") or do { print LOG "failed to open $dbpath/wspec/displays.old\n"; return 1;};
   open(NEWFILE,">$dbpath/wspec/displays.wrm") or do { print LOG "failed to open $dbpath/wspec/displays.wrm\n"; return 1;};

@@ -8,7 +8,7 @@
 # autoace.
 #
 # Last updated by: $Author: krb $                     
-# Last updated on: $Date: 2003-12-01 11:54:26 $       
+# Last updated on: $Date: 2003-12-04 14:07:00 $       
 
 #################################################################################
 # Variables                                                                     #
@@ -20,7 +20,7 @@ use Wormbase;
 use IPC::Open2;
 use IO::Handle;
 use Getopt::Long;
-use File::Copy qw(mv cp);
+use File::Copy;
 
 ##############################
 # command-line options       #
@@ -370,8 +370,9 @@ sub process_ace_file{
     }
     close(INPUT);
     close(OUTPUT);
-    mv("${filename}.tmpfile", "$filename") or print LOG "ERROR: couldn't rename file: $!\n";
-}
+    my $status = move("${filename}.tmpfile", "$filename");
+    print "ERROR: Couldn't move file: $!\n" if ($status == 0);
+  }
 
 
 #######################################################################

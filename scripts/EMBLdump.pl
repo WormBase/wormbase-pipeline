@@ -2,14 +2,14 @@
 #
 # EMBLDump.pl :  makes EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2003-12-03 11:11:28 $
+#  Last updated on: $Date: 2003-12-04 14:07:00 $
 #  Last updated by: $Author: krb $
 
 use strict;
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
-use File::Copy qw(mv);
+use File::Copy;
 
 
 
@@ -185,7 +185,9 @@ close EMBL;
 close OUT;
                                                           
 # copy modified copy back onto output file
-mv("/nfs/disk100/wormpub/tmp/EMBLdump.mod","$outfilename.embl");
+
+my $status = move("/nfs/disk100/wormpub/tmp/EMBLdump.mod","$outfilename.embl");
+print "ERROR: Couldn't move file: $!\n" if ($status == 0);
 
 print "\nOutfile is $outfilename\n\n";
 

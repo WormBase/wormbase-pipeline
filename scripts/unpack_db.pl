@@ -13,7 +13,7 @@
 # the Caltech database (citace)
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-12-02 13:58:48 $
+# Last updated on: $Date: 2003-12-04 14:07:01 $
 
 
 #################################################################################
@@ -26,7 +26,7 @@ use Cwd;
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
-use File::Copy qw(mv cp);
+use File::Copy;
 
 ##############################
 # Script variables (run)     #
@@ -158,7 +158,9 @@ sub unpack_stuff{
 
 
   # copy database.tar.gz file & check size
-  cp("$ftp/".$dbname."_$today.tar.gz", ".") or print LOG "ERROR: Couldn't copy file: $!\n";
+  my $status = copy("$ftp/".$dbname."_$today.tar.gz", ".");
+  print "ERROR: Couldn't copy file: $!\n" if ($status == 0);
+
 
   my $match = &copy_check("${ftp}/${dbname}_${today}.tar.gz","${dbname}_${today}.tar.gz");
   print LOGFILE "Copy '".$dbname."_$today.tar.gz' to $unpack_dir successful\n" if ($match == 1); 
@@ -189,7 +191,9 @@ sub unpack_stuff{
   # modify displays.wrm for rebuild #
   ###################################
 
-  mv("$dbdir/wspec/displays.wrm", "$dbdir/wspec/displays.old") or print LOG "ERROR: Couldn't rename file: $!\n";
+  $status = move("$dbdir/wspec/displays.wrm", "$dbdir/wspec/displays.old");
+  print "ERROR: Couldn't move file: $!\n" if ($status == 0);
+
 
   open (FILE_OLD,"$dbdir/wspec/displays.old") || do { 
     print LOGFILE "failed to open $dbdir/wspec/displays.old\n"; 
@@ -222,7 +226,8 @@ sub unpack_stuff{
   unlink glob("$dbdir/database/new/*") or print LOG "ERROR: Couldn't unlink file: $!\n";
   unlink glob("$dbdir/database/touched/*") or print LOG "ERROR: Couldn't unlink file: $!\n";
 
-  mv("$dbdir/database/log.wrm", "$dbdir/database/log.old") or print LOG "Couldn't rename file: $!\n";
+  $status = move("$dbdir/database/log.wrm", "$dbdir/database/log.old");
+  print "ERROR: Couldn't move file: $!\n" if ($status == 0);
   unlink glob("$dbdir/database/*.wrm") or print LOG "ERROR: Couldn't run rm command: $!\n";
 
   my $command="y\n";

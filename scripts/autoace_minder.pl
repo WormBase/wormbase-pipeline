@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-12-04 09:16:03 $
+# Last edited on: $Date: 2003-12-04 14:07:00 $
 
 
 #################################################################################
@@ -20,7 +20,7 @@ use Wormbase;
 use IO::Handle;
 use Getopt::Long;
 use vars;
-use File::Copy qw(mv cp);
+use File::Copy;
 
 # is this script being run as user wormpub???
 &test_user_wormpub;
@@ -391,8 +391,9 @@ sub initiate_build {
 
   # update database.wrm using cvs
   &run_command("sed 's/WS${WS_version}/WS${WS_new_name}/' < $cvs_file > ${cvs_file}.new");
-  mv("$db_path/wspec/database.wrm.new", "$cvs_file") or print LOG "ERROR: renaming file: $!";
-  
+  my $status = move("$db_path/wspec/database.wrm.new", "$cvs_file") or print LOG "ERROR: renaming file: $!";
+  print LOG "ERROR: Couldn't move file: $!\n" if ($status == 0);
+
   # make a log file in $basedir/autoace/logs
   system("touch $logdir/$flag{'A2'}");
 
@@ -741,8 +742,8 @@ sub make_autoace {
     }
     close MD5SUM_IN;
     close MD5SUM_OUT;
-    mv("$basedir/autoace/release/md5sum.temp", "$basedir/autoace/release/md5sum.WS${WS_version}")
-	or print LOG "ERROR: couldn't rename file: $!\n";
+    my $status = move("$basedir/autoace/release/md5sum.temp", "$basedir/autoace/release/md5sum.WS${WS_version}");
+    print LOG "ERROR: Couldn't move file: $!\n" if ($status == 0);
   }
 }
 #__ end make_autoace __#
@@ -943,14 +944,17 @@ sub blat_jobs{
     # slight difference for nematode files as there is no best/other distinction or intron files
     if($job eq "nematode"){
       &run_command("$scriptdir/acecompress.pl -homol ${blat_dir}/autoace.$job.ace > ${blat_dir}/autoace.blat.${job}lite.ace");
-      mv("${blat_dir}/autoace.blat.${job}lite.ace", "${blat_dir}/autoace.blat.$job.ace") or print LOG "ERROR: Couldn't rename file: $!\n";
+      my $status = move("${blat_dir}/autoace.blat.${job}lite.ace", "${blat_dir}/autoace.blat.$job.ace");
+      print "ERROR: Couldn't move file: $!\n" if ($status == 0);      
     }
     else{
       &run_command("$scriptdir/acecompress.pl -homol ${blat_dir}/autoace.blat.$job.ace > ${blat_dir}/autoace.blat.${job}lite.ace");
-      mv("${blat_dir}/autoace.blat.${job}lite.ace", "${blat_dir}/autoace.blat.$job.ace") or print LOG "ERROR: Couldn't rename file: $!\n";
+      my $status = move("${blat_dir}/autoace.blat.${job}lite.ace", "${blat_dir}/autoace.blat.$job.ace");
+      print "ERROR: Couldn't move file: $!\n" if ($status == 0);
       &run_command("$scriptdir/acecompress.pl -feature ${blat_dir}/autoace.good_introns.$job.ace > ${blat_dir}/autoace.good_introns.${job}lite.ace");
-      mv("${blat_dir}/autoace.good_introns.${job}lite.ace", "${blat_dir}/autoace.good_introns.$job.ace") 
-	 or print LOG "ERROR: Couldn't rename file: $!\n";
+      $status = move("${blat_dir}/autoace.good_introns.${job}lite.ace", "${blat_dir}/autoace.good_introns.$job.ace");
+      print "ERROR: Couldn't move file: $!\n" if ($status == 0);
+
     }
 
     print LOG "Finishing acecompress.pl at ",&runtime,"\n\n";
