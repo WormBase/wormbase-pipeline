@@ -41,6 +41,7 @@ while (<GENEACE>)
     @entry = split(/\s+/,$_);
     $locus = $entry[0];
     $seq = $entry[1];
+    print "$entry[0]\t$entry[1]\n";
 
     #this statement is to take in to account the acedb> prompt that is included in the GENACE data
     if (scalar(@entry) > 2)
@@ -53,7 +54,7 @@ while (<GENEACE>)
     if ((defined($locus))&&($locus =~ m/(\w{3}\-\d+\.*\d*)/)) #validate cgc naming convention (a v. few genes have ***-*.* eg hmg-1.2
       {
         $locus = $1;#this strips the "'s 
-	if ($count > 1 ){last;}
+	#if ($count > 1 ){last;}
 	if ($seq =~ m/([QWERTYUIOPLKJHGFDSAZXCVBNM0123657894]{2,}\.\w+)/)  #validate sequence name eg XNXNX.XN
 	  {
 	    $seq = $1;
@@ -181,9 +182,9 @@ $maintainer = "ar2";
 
 #copy the ace files to the FTP site
 
-`gzip /$autoace_acefiles_dir/STL_locus_seq.ace` && print LOG "gzip failed on STL";
-`gzip /$autoace_acefiles_dir/CAM_locus_seq.ace` && print LOG "gzip failed on CAM";
-`gzip /$autoace_acefiles_dir/ALL_locus_seq.ace` && print LOG "gzip failed on ALL";
+`gzip -f /$autoace_acefiles_dir/STL_locus_seq.ace` && print LOG "gzip failed on STL";
+`gzip -f /$autoace_acefiles_dir/CAM_locus_seq.ace` && print LOG "gzip failed on CAM";
+`gzip -f /$autoace_acefiles_dir/ALL_locus_seq.ace` && print LOG "gzip failed on ALL";
 
 `cp /$autoace_acefiles_dir/CAM_locus_seq.ace.gz /nfs/privateftp/ftp-wormbase/pub/data/updated_locus2seq/`;
 `cp /$autoace_acefiles_dir/STL_locus_seq.ace.gz /nfs/privateftp/ftp-wormbase/pub/data/updated_locus2seq/`;
