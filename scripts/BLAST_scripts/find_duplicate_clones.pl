@@ -8,17 +8,29 @@
 
 use strict;
 use DBI;
+use Getopt::Long;
 
 
 ####################################################################
 # set some parameters
 ####################################################################
 # mysql database
-my $dbhost = "ecs1f";
-my $dbuser = "wormadmin";
-my $dbname = "worm01";
-my $dbpass = "worms";
+my $dbhost;
+my $dbuser;
+my $dbname;
+my $dbpass;
 
+GetOptions(
+    "dbname=s"    => \$dbname,
+    "dbuser=s"    => \$dbuser,
+    "dbhost=s"    => \$dbhost,
+    "dbpass=s"    => \$dbpass
+	  );
+
+$dbhost = "ecs1f" unless $dbhost;
+$dbuser = "wormadmin" unless $dbuser;
+$dbname = "worm01" unless $dbname;
+$dbpass = "worms" unless $dbpass;
 
 ####################################################################
 # connect to the Mysql database
