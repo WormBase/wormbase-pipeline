@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-09-08 14:18:55 $
+# Last updated on: $Date: 2003-09-09 08:56:29 $
 
 
 use strict;
@@ -552,7 +552,7 @@ sub test_locus_for_errors{
   # Remind of outstanding CGC_unresolved tags
   if(defined($locus->CGC_unresolved)){
     my ($unresolved_details) = $locus->at('Type.Gene.CGC_unresolved');
-    $warnings .= "ERROR 30: $locus has CGC_unresolved tag: \"$unresolved_details\"\n" if $locus ne "arl-qury";
+    $warnings .= "ERROR 30: $locus has CGC_unresolved tag: \"$unresolved_details\"\n" if $locus ne "arl-query";
     $warnings .= "ERROR 30: $locus has CGC_unresolved tag: \"$unresolved_details\"\n" if $verbose;
   }
 
