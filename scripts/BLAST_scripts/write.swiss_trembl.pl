@@ -32,16 +32,18 @@ my $output_trembl = "$wormpipe_dump/tremblproteins.ace";
 my $db_files = "/acari/work2a/wormpipe/swall_data";
 my $swiss_list_txt = "$wormpipe_dump/swisslist.txt";
 my $trembl_list_txt = "$wormpipe_dump/trembllist.txt";
-my  $blastx_file = "$wormpipe_dump/blastx_ensembl.ace";
-my  $blastp_file = "$wormpipe_dump/blastp_ensembl.ace";
+my $blastx_file = "$wormpipe_dump/blastx_ensembl.ace";
+my $blastp_file = "$wormpipe_dump/blastp_ensembl.ace";
+my $ensembl_info_file = "$wormpipe_dump/ensembl_protein_info.ace";
 
 if ( $species ) {
   $output_swiss = "$wormpipe_dump/${species}_swissproteins.ace";
   $output_trembl = "$wormpipe_dump/${species}_tremblproteins.ace";
-  $swiss_list_txt = "$wormpipe_dump$/{species}_swisslist.txt";
+  $swiss_list_txt = "$wormpipe_dump/${species}_swisslist.txt";
   $trembl_list_txt = "$wormpipe_dump/${species}_trembllist.txt";
-  $blastx_file = "$wormpipe_dump/${species}_blastx_ensembl.ace";
+  $blastx_file = "";#$wormpipe_dump/${species}_blastx_ensembl.ace";
   $blastp_file = "$wormpipe_dump/${species}_blastp_ensembl.ace";
+  $ensembl_info_file = "$wormpipe_dump/${species}_ensembl_protein_info.ace";
 }
 
 # extract and write lists of which proteins have matches
@@ -116,12 +118,15 @@ if ($trembl) {
   dbmclose %DES;
 }
 
+system("cat $output_swiss $output_trembl > $ensembl_info_file");
+
+exit(0);
     
 
 sub output_list
   {
     my $list = shift;
-    my $parameters = shift;  
+    my $parameters = shift;
     my $db = $$parameters[1];
     my $fetch_db = $$parameters[3].".gsi";
     my $prefix = $$parameters[2];
@@ -190,8 +195,6 @@ sub output_list
 	}
       }  
     }
-    #copy file over to wormsrv2
-    `usr/bin/rcp $outfile wormsrv2:/wormsrv2/wormbase/ensembl_dumps/`;
   }
 
 
