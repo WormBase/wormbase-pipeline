@@ -9,7 +9,7 @@
 # 
 #
 # Last updated by: $Author: ar2 $                     
-# Last updated on: $Date: 2002-07-25 13:10:53 $     
+# Last updated on: $Date: 2002-07-26 10:13:07 $     
 
 
 use strict;                                     
@@ -35,14 +35,24 @@ open( LOG, ">$log") || die "cant open $log";
 print LOG "build_pepace log file $rundate $runtime using wormpep$ver and perl version $]\n---------------------------------------------------\n\n";
 
 
+#read file in 
+#my $history_file = "/nfs/disk56/ar2/test_history";
+#open (HISTORY, "$history_file") || die "cant open $history_file";
 open (HISTORY, "$wormpepdir/wormpep.history$ver") || die "wormpep.history$ver";
 
-#read file in 
+ 
 our ($gene, $CE, $in, $out);
-my %CE_history;
-my %CE_gene;
+my %CE_history;      # hash of hashes of hashes!  eg CE00100 => 8  => gene1.1 => Created
+                     #                                                gene3.4 => Removed
+                     #
+                     #                                          16 => gene1.1 => converted to isoform
+                     #                                                gene3.4 => Reappeared
+
+
+my %CE_gene;         # hash of arrays eg  CE00100 => (gene1.1  gene3.4 gene2.1)  - contains all genes in history
 my %gene_CE;
 my %CE_live;
+my %CE_corr_DNA;     # hash of arrays eg  CE00100 => (gene1.1   gene2.1)  - contains only genes of Live peptides
 
 my $stem;
 my $isoform;
@@ -50,85 +60,96 @@ my $existingCE;
 my $existingGene;
 my %multicodedPeps;
 
+my $handled = 0;
 my $count;
 while(<HISTORY>)
       {
 	my @data = split(/\s+/,$_);
 	($gene, $CE, $in, $out) = @data;
 
-
 	if( defined( $CE_gene{$CE} ) )
 	  {
-	    $existingGene = $CE_gene{$CE};
-	    if( "$gene" eq "$existingGene" )
+	    $handled = 0;
+	    my $i;
+	    for $i (0 .. $#{ $CE_gene{$CE} })
 	      {
-		if( $CE_live{$CE} == 1 ) {
-		    print LOG "$CE is being replaced by $gene when not dead\n";
-		  }
-		else {
-		  #reappeared protein
-		  &reappearedPeptide;
-		}
-
-	      }
-	    #is this an isoform of a pre-exisiting gene?
-	    elsif( $gene =~ m/((\w+\.\d+)\w*)/)
-	      {
-		$stem = $2;     #eg FK177.8
-		$isoform = $1;  #eg FK177.8a
-		
-		if( $existingGene =~ m/^($stem)\w*/ )
+		$existingGene = $CE_gene{$CE}[$i];
+		if( "$gene" eq "$existingGene" )
 		  {
-		    #$gene is isoform
-		    if( $CE_live{$CE} == 1 )
+		    #		    if( (&multiCoded == 0) && ($CE_live{$CE} == 1) ) {
+		    #		      print LOG "$CE is being replaced by $gene when not dead\n";
+		    #		    }
+		    #		    else {
+		    #reappeared protein
+		    $handled =  &reappearedPeptide;
+		    last;
+		    #		    }
+		    
+		  }
+		#is this an isoform of a pre-exisiting gene?
+		elsif( $gene =~ m/((\w+\.\d+)\w*)/)
+		  {
+		    $stem = $2;     #eg FK177.8
+		    $isoform = $1;  #eg FK177.8a
+		    
+		    if( $existingGene =~ m/^($stem)\w*/ )
 		      {
-			#Became isoform
-			# ZK177.8  CE02097 8 
-			# ZK177.8a CE02097 11
-			&becameIsoform; 
+			#$gene is isoform
+			if( $CE_live{$CE} == 1 )
+			  {
+			    #Became isoform
+			    # ZK177.8  CE02097 8 
+			    # ZK177.8a CE02097 11
+			    $handled = &becameIsoform; 
+			    last;
+			  }
+			else
+			  {
+			    #Reappeared as isoform to 
+			    # ZK177.8  CE02097 8 11
+			    # ZK177.8a CE02097 12
+			    $handled = &reappearedAsIsoform;
+			    last;
+			  }		    
 		      }
-		    else
-		      {
-			#Reappeared as isoform to 
-			# ZK177.8  CE02097 8 11
-			# ZK177.8a CE02097 12
-			&reappearedAsIsoform;
-		      }		    
 		  }
 		else
 		  {
-		    if( $CE_live{$CE} == 1 )
+		    if ( &oldStyleName($gene) )
 		      {
-			#peptide coded by multiple genes
-			if( defined( $out ) ) {
-			  print LOG "$CE temporarily mulitcoded $in - $out\n";
-			}
-			else {
-			  &addMultiCoded;
-			}
+			if( $CE_live{$CE} == 1 )
+			  {
+			    #peptide coded by multiple genes
+			    print LOG "$CE strange oldstyle name stuff $gene\n"
+			  }
+			else
+			  {
+			    #peptide was previously coded by a different gene
+			    $handled =&changePepGene;
+			    last;
+			  } 
 		      }
-		    else
-		      {
-			#peptide was previously coded by a different gene
-			&changePepGene;
-		      }	
-	
-		  }			
+		  }
+		
 	      }
-	    else
+	    if( $handled == 0)
 	      {
-		if ( &oldStyleName($gene) )
+		# the peptide has a previous entry but none of the above circumstances can account for it
+		# must be another gene coding for the same peptide.
+		if( $CE_live{$CE} == 1 )
 		  {
-		    if( $CE_live{$CE} == 1 )
-		    {
-		      #peptide coded by multiple genes
-		      print LOG "$CE strange oldstyle name stuff $gene\n"
+		    #peptide coded by multiple genes
+		    if( defined( $out ) ) {
+		      print LOG "$CE temporarily mulitcoded $in - $out\n";
 		    }
-		    else
-		      {
-			#peptide was previously coded by a different gene
-			&changePepGene;
-		      } 
+		    else {
+		      &addNewPeptide;
+		    }
+		  }
+		else
+		  {
+		    #peptide was previously coded by a different gene
+		    &changePepGene;
 		  }
 	      }
 	  }
@@ -165,7 +186,7 @@ while(<HISTORY>)
 		  }
 		else 
 		  {
-		    if( $gene =~ m/\w+\.\w+/ )#one of the pain in the arse old named genes eg Y53F4B.AA orY53F4B.A - both exist! 
+		    if( $gene =~ m/\w+\.\w+/ )#one of the pain in the arse old named genes eg Y53F4B.AA orY5823F4B.A - both exist! 
 		      {
 			&addNewPeptide; #just add it
 		      }
@@ -176,19 +197,22 @@ while(<HISTORY>)
 	
 #	if( $count == 3000 ){
 #	  last;
-#      }
+#	}
       }
 close HISTORY;
-my $release;
+
 foreach my $key(sort keys %CE_history)
 {
   print "$key";
-  foreach $release(sort byRelease keys %{ $CE_history{$key} })
+  foreach my $release(sort byRelease keys %{ $CE_history{$key} })
     {
-      print "\t$release $CE_history{$key}{$release}\n";
+      foreach my $genehis(sort keys %{ $CE_history{$key}{$release} })
+	{
+	  print "\t\t$release\t$genehis $CE_history{$key}{$release}{$genehis}\n";
+	}
     } 
   if( $CE_live{$key} == 1 ){
-    print "\tLive \n\n";
+    print "Live \n\n";
   }
   else{
     print "\n";
@@ -197,28 +221,28 @@ foreach my $key(sort keys %CE_history)
 
 
 ###check multicodedPeps is true# # 
-print "About to check multis\n\n\n\n\n\n\n\n\n\n\n\n";
-my $db =Ace->connect('/wormsrv2/current_DB') || die "cant connect to current_DB\n\n";
-print "connected\n";
-foreach my $multigene( keys %multicodedPeps ){
-  my $testgene = "WP:"."$multigene";
-  print $testgene;
-  my $DBpep = $db->fetch(Protein => "$testgene");
-  if( defined($DBpep) )
-    {
-      my @corresponding_DNA = $DBpep->at('Visible.Corresponding_DNA');
-      my $corresponding_DNA_COUNT = @corresponding_DNA;
-      if ($corresponding_DNA_COUNT > 1){
-	print LOG "$multigene correctly id'd as multicoded ($corresponding_DNA_COUNT X)\n";
-      }
-      else{
-	print LOG "$multigene has $corresponding_DNA_COUNT coresponding_DNA's\n";
-      }
-    }
-}
+#print "About to check multis\n\n\n\n\n\n\n\n\n\n\n\n";
+#my $db =Ace->connect('/wormsrv2/current_DB') || die "cant connect to current_DB\n\n";
+#print "connected\n";
+#foreach my $multigene( keys %multicodedPeps ){
+#  my $testgene = "WP:"."$multigene";
+#  print $testgene;
+#  my $DBpep = $db->fetch(Protein => "$testgene");
+#  if( defined($DBpep) )
+#    {
+#      my @corresponding_DNA = $DBpep->at('Visible.Corresponding_DNA');
+#      my $corresponding_DNA_COUNT = @corresponding_DNA;
+#      if ($corresponding_DNA_COUNT > 1){
+#	print LOG "$multigene correctly id'd as multicoded ($corresponding_DNA_COUNT X)\n";
+#      }
+#      else{
+#	print LOG "$multigene has $corresponding_DNA_COUNT coresponding_DNA's\n";
+#      }
+#    }
+#}
 
 
-$db->close;
+#$db->close;
 close LOG;
 #### use Wormbase.pl to mail Log ###########
 my $name = "$0";
@@ -236,32 +260,37 @@ sub byRelease
 sub addNewPeptide
   {
     # 1st occurance of peptide
-    $CE_history{$CE}{$in} = "created"; #.= "Created $in\t" ;
-    $CE_gene{$CE} = $gene;
+    $CE_history{$CE}{$in}{$gene} = "created"; #.= "Created $in\t" ;
+    #$CE_gene{$CE} .= "$gene ";
+    push( @{ $CE_gene{$CE} }, "$gene");
     $CE_live{$CE} = 1;   #assume live when put in unless explicitly killed
     $gene_CE{$gene} = $CE;
     if (defined ($out) ){
-      $CE_history{$CE}{$out} = "removed";#.= "Removed $out\t" ;
-      $CE_live{$CE} = 0;
+      $CE_history{$CE}{$out}{$gene} = "removed";#.= "Removed $out\t" ;
+      if( &multiCoded == 0){
+	$CE_live{$CE} = 0;
+      }
     } 
+    return 1;
   }
 
 sub replacePeptide
   {
     $CE_live{$existingCE} = 0;
-    $CE_history{$existingCE}{$in} = "replaced_by $CE";# .= "$in Replaced_by $CE\t";
-    $CE_history{$CE}{$in} = "Created to replace $existingCE";#.= "$in Replaces $existingCE\t";
+    $CE_history{$existingCE}{$in}{$gene} = "replaced_by $CE";# .= "$in Replaced_by $CE\t";
+    $CE_history{$CE}{$in}{$gene} = "Created to replace $existingCE";#.= "$in Replaces $existingCE\t";
   }
 
 sub reappearedPeptide
   {
-    $CE_live{$CE} = 1;
-    $CE_history{$CE}{$in} = "reappeared" ;#.= "$in Reappeared\t";
+    $CE_live{$CE} = 1;      
+    $CE_history{$CE}{$in}{$gene} = "reappeared" ;#.= "$in Reappeared\t";
     if( $out )
       {
 	$CE_live{$CE} = 0;
-	$CE_history{$CE}{$out} = "removed";# .= "$out Removed\t";
+	$CE_history{$CE}{$out}{$gene} = "removed";# .= "$out Removed\t";
       }
+    return 1;
     #gene is same as was previously if this routine called
   }
 
@@ -269,45 +298,54 @@ sub reappearedAsIsoform
   {
     $CE_live{$CE} = 1;
     #check if becoming isoform is same release as removal - if so modify history to show conversion rather than reappearance
-    if( (defined("$CE_history{$CE}{$in}") ) && ("$CE_history{$CE}{$in}" eq "removed") ) { 
-      $CE_history{$CE}{$in} = "converted to isoforom of $stem";
+    if( (defined("$CE_history{$CE}{$in}{$stem}") ) && ("$CE_history{$CE}{$in}{$stem}" eq "removed") ) { 
+      $CE_history{$CE}{$in}{$stem} = "converted to isoforom $gene";
     }
     else{
-      $CE_history{$CE}{$in} = "reappeared as isoform to $stem";# .= "$in Reappeared as isoform to $stem \t"; 
+      $CE_history{$CE}{$in}{$stem} = "reappeared as isoform $gene";# .= "$in Reappeared as isoform to $stem \t"; 
     }
     
-    $CE_gene{$CE} = $gene;
+    #$CE_gene{$CE} = $gene;
+    #should remove old gene from array?
+    push( @{ $CE_gene{$CE} }, "$gene");
+
     $gene_CE{$CE} = $CE;
     if( $out )
       {
 	$CE_live{$CE} = 0;
-	$CE_history{$CE}{$out} = "removed";# .= "$out Removed\t";
+	$CE_history{$CE}{$out}{$gene} = "removed";# .= "$out Removed\t";
       }
+    return 1;
   }
 
 sub becameIsoform
   {
     $CE_live{$CE} = 1;
-    $CE_history{$CE}{$in} = "became isoform to $stem";#  .= "$in became isoform to $stem \t"; 
-    $CE_gene{$CE} = $gene;
+    $CE_history{$CE}{$in}{$gene} = "became isoform to $stem";#  .= "$in became isoform to $stem \t"; 
+    #$CE_gene{$CE} = $gene;
+    push( @{ $CE_gene{$CE} }, "$gene");
     $gene_CE{$CE} = $CE;
     if( $out )
       {
 	$CE_live{$CE} = 0;
-	$CE_history{$CE}{$out} = "removed";# .= "$out Removed\t";
+	$CE_history{$CE}{$out}{$gene} = "removed";# .= "$out Removed\t";
       }   
+    return 1;
   }
 
 sub changePepGene
   {
     $CE_live{$CE} = 1;
-    $CE_gene{$CE} = $gene;
-    $CE_history{$CE}{$in} = "reappeared coded by another gene";# .= "$in reappeared coded by another gene\t";
+    my $oldgene = $CE_gene{$CE};
+    #$CE_gene{$CE} = $gene;
+    push( @{ $CE_gene{$CE} }, "$gene");
+    $CE_history{$CE}{$in}{$gene} = "reappeared coded by another gene $gene";# .= "$in reappeared coded by another gene\t";
     if( $out )
       {
 	$CE_live{$CE} = 0;
-	$CE_history{$CE}{$out} = "removed";# .= "$out Removed\t";
+	$CE_history{$CE}{$out}{$gene} = "removed";# .= "$out Removed\t";
       } 
+    return 1;
   }
  sub oldStyleName
   {
@@ -319,18 +357,19 @@ sub changePepGene
     }
   }
 
-sub addMultiCoded
+sub multiCoded
   {
-    $multicodedPeps{$CE}++;
-    $CE_gene{$CE} .= " $gene";
-    $gene_CE{$gene} = $CE;
+    # if the peptide is coded by multiple genes returns 1 else 0
+    my @mul = $CE_gene{$CE};
+    my $lastIndex = $#mul;
+    if ($lastIndex > 0){
+      return 1;
+    }
+    else{
+      return 0;
+    }
   }
 
-
-# Add perl documentation in POD format
-# This should expand on your brief description above and add details of any options
-# that can be used with the program.  Such documentation can be viewed using the perldoc
-# command.
 
 
 __END__
