@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-03-04 12:51:33 $
+# Last edited on: $Date: 2004-03-04 14:34:58 $
 
 
 #################################################################################
@@ -1362,7 +1362,7 @@ sub load {
   unless($flag == 1){
     my $command = "pparse $file\nsave\nquit\n";
     
-    print LOG &runtime,": adding $file info to autoace\n";  
+    print LOG &runtime,": adding $file info to autoace\n\n";  
     open (WRITEDB, "| $tace -tsuser $tsuser $basedir/autoace ") || die "Couldn't open pipe to autoace\n";
     print WRITEDB $command;
     close (WRITEDB);
