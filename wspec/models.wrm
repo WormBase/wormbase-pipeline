@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: krb $
-// Last edited on: $Date: 2004-08-31 14:11:16 $
+// Last edited on: $Date: 2004-09-03 15:18:17 $
  
 
 
@@ -200,8 +200,9 @@
                          Flanking_sequences UNIQUE Text UNIQUE Text
 			 Flanking_PCR_product ?PCR_product XREF Flanks_deletion // KO data has PCR info
 			 // What is the nature of the Allele, based on sequence data?
-                         Allele_type UNIQUE Substitution UNIQUE Text #Evidence // for simple base substitution alleles
-								     // e.g. [A/T], [AA/GG]
+                         Allele_type UNIQUE Substitution Text #Evidence // for simple base substitution alleles
+								        // e.g. [a/t], [aa/gg]
+									// use multiple fields for allels with multiple substitutions 
 					    Insertion UNIQUE Text    #Evidence  // when nothing is deleted, Text field optionally
 								     // captures insertion sequence
 					    Deletion UNIQUE Text #Evidence  // optionally store deleted sequence, a little pointless maybe? krb 030108
