@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2002-11-27 17:15:51 $
+# Last updated on: $Date: 2002-11-29 17:05:01 $
 
 use Ace;
 use lib "/wormsrv2/scripts/"; 
@@ -79,10 +79,16 @@ sub process_locus_class{
     #Erich Schwarz wants some of these - emsch@its.caltech.edu
     print ERICHLOG "$erich_warnings" if(defined($erich_warnings));
   }
-  
+
   # Look for loci in current_DB not in geneace
+  # Look for sequence in current_DB that is a pseudogene and has locus connection
   print "\nLooking for new loci in /wormsrv2/current_DB:\n\n";
-  &find_new_loci_in_current_DB($db);
+
+  my $get_seg_with_pseudogene_locus=<<EOF;
+  Table-maker -p "/wormsrv1/geneace/wquery/get_all_seq_with_pseudogene_and_locus.def" quit
+EOF
+
+  &find_new_loci_in_current_DB($db, $get_seg_with_pseudogene_locus);
   print LOG "\nThere were $locus_errors errors in $size loci.\n";
 }
 
@@ -243,14 +249,30 @@ sub rearrangement {
 } 
 
 ################################################
+
 sub find_new_loci_in_current_DB{
-  my $db = shift;
+  my ($db, $def) = @_;
   my $warnings;
+  my @genes=();
+  my $dir="/wormsrv2/current_DB";
+  my $locus_errors=0;
 
   # open a database connection to current_DB and grab all loci names (excluding polymorphisms)
   my $new_db = Ace->connect(-path  => '/wormsrv2/current_DB',
 		    -program =>$tace) || do { print LOG "Connection failure: ",Ace->error; die();};
   my @current_DB_loci = $db->fetch(-query=>'Find Locus;!Polymorphism');
+
+  open (FH, "echo '$def' | tace $dir | ") || die "Couldn't access geneace\n";
+  while (<FH>){
+    chomp($_);
+    if ($_ =~ /^\"/){
+      $_ =~ s/\"|//g;
+      $_ =~ s/\s+/ /g;
+      my @items=split(/ /, $_);
+      push (@genes, $items[2]);
+    }
+  }
+    
   $new_db->close;
 
   #cross reference in geneace
@@ -261,7 +283,16 @@ sub find_new_loci_in_current_DB{
       $locus_errors++;
     }
   }
-  print LOG "\n$warnings\n" if $warnings;;
+  print LOG "\n$warnings\n" if $warnings;
+
+  # check geneace locus w/o pseudogene tag
+  foreach (@genes){
+    my $gene = $db->fetch('Locus',$_);
+    if (!$gene->at('Type.Gene.Pseudogene')){
+      $locus_errors++;
+      print LOG "$gene has no Pseudogene tag, but its corresponding seq does.\n";
+    }
+  }
 }
 
 ###############################################
