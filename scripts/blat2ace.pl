@@ -20,7 +20,7 @@
 # 010905 by Kerstin Jekosch
 
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-04-01 13:19:03 $
+# Last edited on: $Date: 2003-04-01 13:21:21 $
 
 
 use strict;
@@ -351,6 +351,7 @@ foreach my $found (sort keys %best) {
 	# produce confirmed introns #
 	#############################
 	
+	# this section 'produce confirmed introns'
 	if ($opt_i) {
 	  print LOG "Producing confirmed introns\n";
 	  my ($n) = ($virtual =~ /\S+_(\d+)$/);
@@ -387,12 +388,11 @@ foreach my $found (sort keys %best) {
 	    }
 	  }
 	}
-	# this section 'produce confirmed introns'
       }	
     }
   }
 }
-close(AUTBEST;
+close(AUTBEST);
 close(CAMBEST);
 close(STLBEST);
 
