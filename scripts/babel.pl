@@ -168,7 +168,7 @@ sub mail_maintainer {
 #################################################################################
 
 sub celeaccession {
-    local (*textace);
+    local (*text_ace);
     my $seq = shift;
     local($exec);
     $exec="/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_4/tace";
@@ -181,11 +181,11 @@ sub celeaccession {
     quit
 EOF
 
-open(textace, "echo '$command' | $exec  | ");
-while (<textace>) {
+open(text_ace, "echo '$command' | $exec  | ");
+while (<text_ace>) {
     if (/\s+Database\s+EMBL\s+\S+\s+(\S+)\n/) {$accession=$1;}
     }
-close textace;
+close text_ace;
 return $accession;
 }
 
