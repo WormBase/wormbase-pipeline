@@ -1686,9 +1686,9 @@
 		Full_name     UNIQUE  ?Person_name XREF Full_name_of // New field for just storing long name [030321 krb]
                 Also_known_as   ?Person_name XREF Other_name_of // new XREF added [030310 krb]
         CGC_representative_for UNIQUE ?Laboratory XREF Representative
-        Laboratory UNIQUE ?Laboratory XREF Person
+        Laboratory UNIQUE ?Laboratory XREF Registered_lab_members
         Address #Address
-        Tracking        Old_laboratory ?Laboratory XREF Past_lab_member
+        Tracking        Old_laboratory ?Laboratory XREF Past_lab_members
                                 // Lab(s) the person previously worked in
                         Last_verified UNIQUE DateType
                                 // Last time the name/contact information
@@ -1739,7 +1739,7 @@
 
 ?Author Full_name Text
         Also_known_as Text
-        Laboratory UNIQUE ?Laboratory XREF Staff
+        Laboratory UNIQUE ?Laboratory XREF Unregistered_lab_members
 // Need to keep Laboratory connected to Author since People haven't
 // been connected to Labs yet
         Old_lab ?Laboratory
@@ -1836,19 +1836,15 @@
 // control of Laboratory data, so anything parsed here won't be read.
 // If Keith or someone with control of Laboratory data wants to parse
 // it into #Address, please do so
-              CGC     Representative  UNIQUE  ?Person XREF CGC_representative_for
-// Added this line instead of replacing the line above because People
-// haven't been connected to labs yet
+              CGC     Representative ?Person XREF CGC_representative_for
                       Strain_designation UNIQUE Text
                       Allele_designation UNIQUE Text
                       Alleles ?Allele XREF Location
                       Gene_classes ?Gene_Class XREF Designating_laboratory
-              Staff   ?Author XREF Laboratory
-// Put this back in instead of replacing with following line because 
-// People haven't been connected to Labs yet
-              Person  ?Person XREF Laboratory
-              Past_lab_member ?Person XREF Old_laboratory // I think this is useful and
-                                                          // anyway, the reverse is track.
+	      // new tidier staff section by krb 030523
+	      Staff   Registered_lab_members ?Person XREF Laboratory   // for people with WormBase Person IDs
+        	      Unregistered_lab_members ?Author XREF Laboratory // for those without IDs
+        	      Past_lab_members ?Person XREF Old_laboratory     // for anyone who has left the field, or the circle of life
 	      Remark ?Text #Evidence
 
 
