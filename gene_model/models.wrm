@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.6 2001-08-13 15:22:29 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.7 2001-09-07 08:54:42 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -773,6 +773,7 @@
 			Coding	CDS UNIQUE Int UNIQUE Int
 				CDS_predicted_by ?Method Float // score of method
 				Precursor
+				Confirmed_by #Gene_confirmation      
 			End_not_found
 			Start_not_found
 			Show_in_reverse_orientation    // Draw 3' reads in reverse orientation [010423 dl]
@@ -836,6 +837,9 @@
                      EST
 		     Homology
 		     UTR	
+
+#Gene_confirmation cDNA
+                   EST  
 
 ?CDS	SMap S_parent Canonical_parent ?Sequence XREF CDS_child
 	Structure Source_exons Int UNIQUE Int
