@@ -524,7 +524,7 @@
 // Map data classes
 //
 
-?Two_point_data   Evidence #Evidence
+?Two_point_data Evidence #Evidence
 		Genotype  UNIQUE Text
 		Results  UNIQUE Text
 		Experiment	Mapper ?Author
