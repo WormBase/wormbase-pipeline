@@ -5,7 +5,7 @@
 # completely rewritten by Keith Bradnam from list_loci_designations
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-11-08 16:40:41 $      
+# Last updated on: $Date: 2004-11-09 09:52:02 $      
 #
 # This script should be run under a cron job and simply update the webpages that show
 # current gene names and sequence connections.  Gets info from geneace.  
@@ -46,7 +46,7 @@ my $database;
 # Set up log file
 
 open(LOG,">$log") || carp "Couldn't open tmp log file\n";
-print LOG "Running update_web_gene_names.pl on $rundate\n\n";
+print LOG &runtime, " :Started running update_web_gene_names.pl\n\n";
 
 die "Can't run both -weekly and -daily at the same time!\n" if ($weekly && $daily);
 
@@ -77,6 +77,8 @@ if($weekly){
   system("/usr/local/bin/webpublish -f -q *.shtml") && print LOG "Couldn't run webpublish on html files\n";
 }
 system("/usr/local/bin/webpublish -f -q *.txt") && print LOG "Couldn't run webpublish on text file\n";
+
+print LOG &runtime, " : Finished running script\n";
 
 &mail_maintainer("update_web_gene_names.pl","mt3\@sanger.ac.uk","$log");
 
