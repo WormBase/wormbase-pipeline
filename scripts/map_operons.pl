@@ -2,8 +2,8 @@
 #
 # map_operons.pl
 
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2004-07-12 09:43:01 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2004-08-09 15:19:21 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -150,7 +150,7 @@ sub acedump_operons {
 	    if ($gene_count == 1) {
 #		print "// searching for start\n";
 		$operon_start = 0;
-		open (GFF_1, "grep -w '$gene_lookup' $gff/CHROMOSOME_${operon{$operon_lookup}->{CHROMOSOME}}.WBgene.gff |");
+		open (GFF_1, "grep -w '$gene_lookup' $gff/CHROMOSOME_${operon{$operon_lookup}->{CHROMOSOME}}_WBgene.gff |");
 		while (<GFF_1>) {
 		    @f = split /\t/;
 		    if ($f[6] eq "+") {$operon_start = $f[3];}
@@ -163,7 +163,7 @@ sub acedump_operons {
 	    elsif ($gene_count == $operon{$operon_lookup}->{NO_GENES}) {
 #		print "// searching for stop\n";
 		$operon_stop = 0;
-		open (GFF_2, "grep -w '$gene_lookup' $gff/CHROMOSOME_${operon{$operon_lookup}->{CHROMOSOME}}.WBgene.gff |");
+		open (GFF_2, "grep -w '$gene_lookup' $gff/CHROMOSOME_${operon{$operon_lookup}->{CHROMOSOME}}_WBgene.gff |");
 		while (<GFF_2>) {
 		    @f = split /\t/;
 		    ($operon_stop = $f[4]) if ($f[6] eq "+");
