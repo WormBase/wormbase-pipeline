@@ -2,7 +2,9 @@
 #
 # makesuperlinks
 #
-
+# constructs superlink objects for camace based on Overlap_right tags
+# dl
+#
 use Ace ;
 use Getopt::Long ;
 
@@ -24,8 +26,6 @@ use Getopt::Long ;
 	        "F21D5"   => "IV",
 	        "F07D3"   => "V",
 	        "B0272"   => "X",
-	        "6R55"    => "6R55",
-		"cTel52S" => "cTel52S"
 		) ;
 
 # get data from camace
@@ -39,7 +39,7 @@ $it = $camdb->fetch_many(Genome_sequence => '*') ;
 while ($obj = $it->next) {
     $isGenomeSequence{$obj} = 1 ;
     $length{$obj}           = $obj->DNA(2) ;
-    if (!$length{$obj}) { warn "No length for $obj\n" ; }
+    if (!$length{$obj})  { warn "No length for $obj\n" ; }
     $right{$obj}            = $obj->Overlap_right ;
     $rightOffset{$obj}      = $obj->Overlap_right(2) ;
     $left{$obj}             = $obj->Overlap_left ;
@@ -62,11 +62,6 @@ while ($obj = $it->next) {
     }
 }
 
-
-# FIX
-
-#$currSource{"Y66A7A.8"} = "Y66A7AR";
-
 ###########################################
 # make links
 ###########################################
@@ -85,7 +80,7 @@ foreach $seq (keys %isGenomeSequence) {
 
 
 				# print LINK header
-    $lk = "SUPERLINK_$clone2super{$seq}" ;
+    $lk = "SUPERLINK_CB_$clone2super{$seq}" ;
     print "\nSequence $lk\n" ;
     print "From_laboratory HX\n" ;
 
@@ -103,7 +98,7 @@ foreach $seq (keys %isGenomeSequence) {
 }
 
 ###########################################
-#Re-map subsequences back onto the new links 
+# Re-map subsequences back onto the new links 
 ###########################################
 
 foreach $seq (keys %currStart) {
@@ -114,9 +109,11 @@ foreach $seq (keys %currStart) {
 
     if ($seq eq "Y66A7A.8") {$parent = "Y66A7AR";}
 
-    if (!$currStart{$parent}) { warn "no coord in link for parent $parent of $seq\n" ; next ; }
+    if (!$currStart{$parent})                         { warn "no coord in link for parent $parent of $seq\n" ; next ; }
     if (!($currSource{$seq} eq $currSource{$parent})) { warn "parent $parent and child $seq in different links\n" ; next ; }
-    if (!$link{$parent}) { warn "no new link for parent $parent of $seq\n" ; next ; }
+    if (!$link{$parent})                              { warn "no new link for parent $parent of $seq\n" ; next ; }
+
+    next if ($seq =~ /^SUPERLINK/);
 
     $start{$seq} = $start{$parent} - $currStart{$parent} + $currStart{$seq} ;
     $end{$seq} = $start{$parent} - $currStart{$parent} + $currEnd{$seq} ;
@@ -126,46 +123,12 @@ foreach $seq (keys %currStart) {
 }
 
 ###########################################
-#Do a quick check to make sure that everything 
-#that was in a link has been put back in one
+# Do a quick check to make sure that everything 
+# that was in a link has been put back in one
 ###########################################
 
 foreach $seq (keys %currSource) {
     if (!$link{$seq}) { warn "$seq not put back into a link\n" ; }
-}
-
-###########################################
-# make superlinks
-###########################################
-
-
-foreach $chrom (keys %superinfo) {
-    print "\nSequence SUPERLINK_CB_$chrom\n" ;
-    print "From_laboratory HX\n" ;
-    $pos = 1 ;
-    $seq = $superinfo{$chrom} ;
-    while ($seq) {
-	if ($link{$seq}) {
-	    $lk = $link{$seq} ;
-	    while ($seq && $lk eq $link{$seq}) {
-		$end = $end{$seq} ;
-		$seq = $right{$seq} ;
-	    }
-	    $end += $pos - 1 ;
-	    print "Subsequence $lk $pos $end\n" ;
-	} elsif ($isLinkCandidate{$seq}) {
-	    $end = $pos - 1 + $length{$seq} ;
-	    print "Subsequence $seq $pos $end\n" ;
-	    $seq = $right{$seq} ;
-	} elsif (!$isExternal{$seq}) {
-	    $end = $pos - 1 + 1000 ;
-	    print "Subsequence $seq $pos $end\n" ;
-	    $seq = $right{$seq} ;
-	} else {
-	    last ;
-	}
-	$pos = $end + 101 ;
-    }
 }
 
 ############# end of file ################
