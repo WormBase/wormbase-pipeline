@@ -23,35 +23,42 @@ use vars;
  ##############################
 
 my $initial;		# Start the build process 
-my $unpack;			# unpack primaries	
-my $gff;			# chromosome_dump.pl -g
-my $agp;			# make agp files for the yellow brick road
+my $unpack;		# unpack primaries	
+my $gffdump;		# dump gff files
+my $gffsplit;           # split gff files
+my $agp;		# make agp files for the yellow brick road
 my $buildpep;		# Build wormpep
 my $addpep; 		# prepare pepace and then dump from pepace into autoace
-my $blat;			# map similarities (BLAT jobs)
+my $buildrna;		# Build wormrna
+my $blat;		# map similarities (BLAT jobs)
 my $addblat;		# parse blat files
-my $map;			# map PCR, RNAi and WTP
-my $full;			# Full release (used to do all the following)
+my $addhomol;            # parse similarity data from /ensembl_dump
+my $map;		# map PCR, RNAi and WTP
+my $full;		# Full release (used to do all the following)
 my $acefile;		# Write .acefiles
-my $build;			# Build autoace 
+my $build;		# Build autoace 
 my $builddb;		# Build autoace : DB only
 my $buildchrom;		# Build autoace : CHROMOSOMES directory	
 my $buildrelease;	# Build autoace : Release directory
-my $secure;			# copy autoace before blatting
-my $check;			# Check DB consistency
-my $ftp;			# Public release to FTP site
-my $debug;			# Verbose debug mode
-my $help;			# Help/Usage page
+my $secure;		# copy autoace before blatting
+my $check;		# Check DB consistency
+my $confirm;            # Confirm gene models (EST|mRNA)
+my $ftp;		# Public release to FTP site
+my $debug;		# Verbose debug mode
+my $help;		# Help/Usage page
 
 GetOptions (
 	    "initial"      => \$initial,
 	    "unpack"       => \$unpack,
-	    "gff"          => \$gff,
+	    "gffdump"      => \$gffdump,
+	    "gffsplit"     => \$gffsplit,
 	    "agp"          => \$agp,
 	    "buildpep"     => \$buildpep,
 	    "addpep"       => \$addpep,
+	    "buildrna"     => \$buildrna,
 	    "blat"         => \$blat,
 	    "addblat"      => \$addblat,
+	    "addhomol"     => \$addhomol,
 	    "map"          => \$map,
 	    "full"         => \$full,
 	    "acefile"      => \$acefile,
@@ -61,10 +68,11 @@ GetOptions (
 	    "buildrelease" => \$buildrelease,
 	    "secure"       => \$secure,
 	    "check"        => \$check,
+	    "confirm"      => \$confirm,
 	    "ftp"          => \$ftp,
 	    "debug"        => \$debug,
 	    "help"         => \$help,
-		"h"	           => \$help
+	    "h"	           => \$help
 );
 
  ##############################
@@ -130,7 +138,7 @@ LOG->autoflush();
  ########################################
 
 if ($full) {
-    $acefile = 1; $build = 1; $check = 1; $buildpep = 1; $addpep = 1; $gff = 1; $map = 1; $agp = 1;
+    $acefile = 1; $build = 1; $check = 1; $buildpep = 1; $addpep = 1; $gffdump = 1; $map = 1; $agp = 1;
 }
 
 #################################################################################
@@ -142,12 +150,7 @@ if ($full) {
 
 # build
 &make_acefiles         if ($acefile);
-&make_autoace          if ($build);
-
-# sub list to do fine work within build
- &make_DB               if ($builddb);
- &make_DNA              if ($buildchrom);
- &make_release          if ($buildrelease);
+&make_autoace          if ($build | $builddb || $buildchrom || $buildrelease);
 
 # checks
 &check_release          if ($check);
@@ -156,16 +159,26 @@ if ($full) {
 &pre_blat_copy          if ($secure);
 &blat_jobs              if ($blat);
 &parse_blat_files       if ($blat || $addblat);
+&parse_homol_data       if ($addhomol);
 
 # wormpep and protein work
 &make_wormpep          if ($buildpep);
 &pepace_stuff          if ($addpep);
 
+# wormrna work
+&make_wormrna          if ($buildrna);
+
 # &make_FTP_wormbase     if ($opt_f); deprecated 19.02.02 kj
 &make_anonymous_FTP    if ($ftp);
-&dump_GFFs             if ($gff);
+
+# GFF files
+&dump_GFFs             if ($gffdump);
+&split_GFFs            if ($gffsplit);
+
 &map_PCR_RNAi_and_WTP  if ($map);
 &make_agp              if ($agp);
+
+&confirm_gene_models   if ($confirm);
 
  ##############################
  # mail $maintainer report    #
@@ -190,6 +203,14 @@ exit(0);
 #################################################################################
 # initiate autoace build                                                        #
 #################################################################################
+# Requirements : None
+#
+# Checks       : [01] - Fail if the build_in_progess flag is present.
+#
+# Does         : [01] - updates the WS version in database.wrm (under CVS)
+#              : [02] - writes the WS version to the build_flag (writes to /wormsrv2/autoace/logs)
+#              : [03] - writes log file A1:Update_WS_version to /wormsrv2/autoace/logs
+
 
 sub initiate_build {
 
@@ -213,7 +234,11 @@ sub initiate_build {
     open (FLAG, ">>$build_flag"); 
     print FLAG "WS$WS_new_name\n";
     close FLAG;
- 
+
+    # tidy up the log directory
+    system ("/usr/bin/rm -f /wormsrv2/autoace/logs/A*");           # Prepare section
+    system ("/usr/bin/rm -f /wormsrv2/autoace/logs/B*");           # Build section
+    
     # make sure that the database.wrm file is younger
     sleep 10;
     
@@ -224,14 +249,31 @@ sub initiate_build {
     system ("mv /wormsrv2/autoace/wspec/database.wrm.new $cvs_file")                                   && die "Couldn't update $cvs_file\n";
     system ("cvs -d '/nfs/ensembl/cvsroot/' commit -m 'updating $cvs_file to $WS_new_name' $cvs_file") && die "Couldn't 'cvs commit' $cvs_file\n";
 
+    # make a log file in /wormsrv2/autoace/logs
+    system ("touch $logdir/A1:Updated_WS_version");
+
 }
+# end initiate_build
 
 #################################################################################
 # prepare primary databases                                                     #
 #################################################################################
+# Requirements : [01] - Presence of the Primary_databases_used_in_build file
+
+# Checks       : [01] - Fail if the build_in_progess flag is absent.
+#              : [02] - Fail if the Primary_databases_used_in_build file is absent
+
+# Does         : [01] - checks the Primary_database_used_in_build data
+#              : [03] - writes log file A1:Update_WS_version to /wormsrv2/autoace/logs
 
 sub prepare_primaries {
-    
+
+    # exit if build_in_progress flag is present
+    &usage(12) unless (-e $build_flag);
+
+    # exit if the Primary_databases_used_in_build is absent
+    &usage(13) unless (-e "/wormsrv2/autoace/logs/Primary_databases_used_in_build");
+
     local (*LAST_VER);
     my ($stlace_date,$brigdb_date,$citace_date,$cshace_date) = &FTP_versions;
     my ($stlace_last,$brigdb_last,$citace_last,$cshace_last) = &last_versions;
@@ -267,7 +309,7 @@ sub prepare_primaries {
  
     print "\n\nrunning unpack_db.pl $options\n";
  
-    # confirm unpack_db details, execute and update Primary_databases_used_in_build file
+    # confirm unpack_db details, execute and update 'Primary_databases_used_in_build' file
     unless ($options eq "") {
 	
 	print "Do you want to unpack these databases ?\n";
@@ -285,6 +327,9 @@ sub prepare_primaries {
 	close LAST_VER;
     }
 
+    # make a unpack_db.pl log file in /logs
+    system ("touch $logdir/A2:Unpack_FTP_databases");
+
     # transfer /wormsrv1/camace to /wormsrv2/camace 
     
     system("TransferDB -start /wormsrv1/camace -end /wormsrv2/camace -database -wspec -name camace")
@@ -296,11 +341,10 @@ sub prepare_primaries {
 	&& die "Couldn't run TransferDB for geneace\n";
 
     # check that all databases are present and working
-    #
     # do we need this? 
 
     # make a unpack_db.pl log file in /logs
-    system ("touch $logdir/primary_databases_on_wormsrv2");
+    system ("touch $logdir/A3:Primary_databases_on_wormsrv2");
 
 }
 
@@ -381,6 +425,8 @@ sub last_versions {
     return($stlace_last,$brigdb_last,$citace_last,$cshace_last);
 
 }
+#__ end prepare_primaries __#
+
 
 
 
@@ -395,51 +441,68 @@ sub make_acefiles {
     print LOG " => 'make_acefiles -ne'\n\n";
 
     # make a make_acefiles log file in /logs
-    system ("touch $logdir/wrote_acefiles_to_wormbase");
+    system ("touch $logdir/A4:Wrote_acefiles_to_wormbase");
 
 }
-
+#__ end make_acefiles __#
 
 
 #################################################################################
 # make_autoace                                                                  #
 #################################################################################
-# 
-# requires: acefiles in /wormsrv2/wormbase directories
-#           config file to drive loading of data (autoace.config)
-#
+# Requirements : [01] acefiles in /wormsrv2/wormbase directories
+#                [02] config file to drive loading of data (autoace.config)
+
+# Checks       : [01] - Fail if the build_in_progess flag is absent.
+#              : [02] - Fail if the Primary_databases_used_in_build file is absent
+
+# Does         : [01] - checks the Primary_database_used_in_build data
+#              : [03] - writes log file A1:Update_WS_version to /wormsrv2/autoace/logs
+
+
 
 sub make_autoace {
 
     # quit if make_acefiles has not been run
-    &usage(8) unless (-e "$logdir/wrote_acefiles_to_wormbase");
+    &usage(8) unless (-e "$logdir/A4:Wrote_acefiles_to_wormbase");
 	
-    system ("$scriptdir/make_autoace -p /wormsrv2/autoace -rc") && die "Couldn't run autoace -rc\n";
-    print LOG " Build autoace (database/CHROMOSOMES/release)\n";
-    print LOG " =>'make_autoace -p /wormsrv2/autoace -rc'\n\n";
+    if ($build || $builddb) { 
+	system ("$scriptdir/make_autoace -p /wormsrv2/autoace -r") && die "Couldn't run autoace -rc\n";
+	print LOG " Build autoace (database)\n";
+	print LOG " =>'make_autoace -p /wormsrv2/autoace -r'\n\n";
+	
+	# make a make_autoace log file in /logs
+	system ("touch $logdir/B1:Build_autoace_database");
+    }
 
-    # make a make_autoace log file in /logs
-    system ("touch $logdir/make_autoace_complete");
+    if ($build || $buildchrom) {
+	system ("$scriptdir/chromosome_dump.pl -dc") && die "Couldn't run chromosome_dump -dc\n" ;
+	print LOG " Build autoace (CHROMOSOMES)\n";
+	print LOG " => 'chromosome_dump.pl -dc'\n\n";
+
+	# make a make_autoace log file in /logs
+	system ("touch $logdir/B2:Dump_DNA_files");
+    }
+
+    if ($buildrelease) {
+
+	# quit if the build is not complete
+	&usage(13) unless (-e "$logdir/B1:Build_autoace_database");
+	
+	system ("$scriptdir/make_autoace -p /wormsrv2/autoace -d")  && die "Couldn't run autoace -d\n"; 
+	print LOG " Build autoace (release)\n";
+	print LOG " => 'make_autoace -p /wormsrv2/autoace -d'\n\n";
+
+	# make a make_autoace log file in /logs
+	system ("touch $logdir/D1:Make_release_files");
+    }
 
 }
+#__ end make_autoace __#
 
-sub make_DB {
-    system ("$scriptdir/make_autoace -p /wormsrv2/autoace -r") && die "Couldn't run autoace -r\n" ;
-    print LOG " Build autoace (database)\n";
-    print LOG " => 'make_autoace -p /wormsrv2/autoace -r'\n\n";
-}
 
-sub make_DNA {
-    system ("$scriptdir/chromosome_dump.pl -dce")  && die "Couldn't run chromosome_dump.pl -dce\n";
-    print LOG " Build autoace (CHROMOSOMES)\n";
-    print LOG " =>'chromosome_dump.pl -dc'\n\n";
-}
 
-sub make_release {
-    system ("$scriptdir/make_autoace -p /wormsrv2/autoace -d")  && die "Couldn't run autoace -d\n"; 
-    print LOG " Build autoace (release)\n";
-    print LOG " => 'make_autoace -p /wormsrv2/autoace -d'\n\n";
-}
+
 
 #################################################################################
 # check_release                                                                 #
@@ -452,7 +515,7 @@ sub check_release {
 
     # have you run GFFsplitter ?
     # if no then this is about checking the DNA/agp files
-    unless ((-e "$logdir/GFF_files_split") && (-e "$logdir/made_agp_files")) {
+    unless ((-e "$logdir/C2:Split_GFF_files") && (-e "$logdir/B3:Made_agp_files")) {
 	
 	&dump_GFFs;
 	system ("$scriptdir/check_DNA.pl") && die "Couldn't run check_DNA.pl\n";
@@ -470,6 +533,7 @@ sub check_release {
 	print LOG " => 'dbcomp -f /wormsrv2/WS${WS_previous}'\n\n";
     }
 }
+#__ end check_release __#
 
 #################################################################################
 # similarity mapping                                                            #
@@ -485,9 +549,7 @@ sub pre_blat_copy {
     print LOG " Copy autoace prior to BLAT analysis\n";
     
     # make a make_autoace log file in /logs
-    system ("touch $logdir/copy_autoace_before_BLAT_run");
-
-    
+    system ("touch $logdir/copy_autoace_before_BLAT_run");  
 }
 
 sub blat_jobs {
@@ -552,6 +614,59 @@ END
 
 
 }
+#__ end parse_blat_files __#
+
+sub parse_homol_data {
+    
+    my $command;
+
+$command=<<END;
+pparse /wormsrv2/wormbase/ensembl_dumps/blastp_ensembl.ace 
+save 
+quit
+END
+
+    open (WRITEDB, "| $tace -tsuser wublastp_data /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
+    print WRITEDB $command;
+    close WRITEDB;
+
+$command=<<END;
+pparse /wormsrv2/wormbase/ensembl_dumps/blastx_ensembl.ace 
+save 
+quit
+END
+
+    open (WRITEDB, "| $tace -tsuser wublastx_data /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
+    print WRITEDB $command;
+    close WRITEDB;
+
+$command=<<END;
+pparse /wormsrv2/wormbase/ensembl_dumps/blast_ensembl.peptides.ace 
+save 
+quit
+END
+
+    open (WRITEDB, "| $tace -tsuser wublast_protein_info /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
+    print WRITEDB $command;
+    close WRITEDB;
+
+$command=<<END;
+pparse /wormsrv2/wormbase/ensembl_dumps/waba.ace
+save 
+quit
+END
+
+    open (WRITEDB, "| $tace -tsuser waba_data /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
+    print WRITEDB $command;
+    close WRITEDB;
+
+    # make a make_autoace log file in /logs
+#    system ("touch $logdir/loaded_BLAT_similarities");
+
+
+}
+#__ end parse_homol_data __#
+
 
 
 #################################################################################
@@ -564,6 +679,19 @@ sub make_wormpep {
     print LOG " =>'make_wormpep -r $WS_version'\n\n";
 
 }
+
+#################################################################################
+# make_wormrna                                                                  #
+#################################################################################
+
+sub make_wormrna {
+    system ("$scriptdir/make_wormrna -r $WS_version") && die "Couldn't run make_wormrna -r\n";
+    print LOG " Build wormrna release $WS_version\n";
+    print LOG " =>'make_wormrna -r $WS_version'\n\n";
+
+}
+#__ end make_wormrna __#
+
 
 #################################################################################
 # pepace stuff - run patch_pepace.pl then pepace2autoace                        #
@@ -587,8 +715,18 @@ sub dump_GFFs {
     print LOG " Dumped GFF files for $WS_version\n";
     print LOG " =>'chromosome_dump.pl -g'\n\n";
 
+    # make dumped_GFF_file in /logs
+    system ("touch $logdir/C1:Dumped_GFF_files");
 }
 
+sub split_GFFs {
+    system ("$scriptdir/GFFsplitter -s") && die "Couldn't split GFF files\n";
+    print LOG " Split GFF files for $WS_version\n";
+    print LOG " =>'GFFsplitter -s'\n\n";
+
+    # make GFF_splitter file in /logs
+    system ("touch $logdir/C2:Split_GFF_files");
+}
 
 #################################################################################
 # map PCR, RNAi and WTP                                                         #
@@ -606,6 +744,33 @@ sub map_PCR_RNAi_and_WTP {
     print LOG " =>'map_WTP.pl'\n\n";
 }
 
+#################################################################################
+# confirm_gene models                                                           #
+#################################################################################
+
+sub confirm_gene_models {
+
+
+    # confirm_genes from EST (-e) and mRNA (-m) data sets
+    system ("$scriptdir/confirm_genes.pl -e");
+    system ("$scriptdir/confirm_genes.pl -m");
+
+$command=<<END;
+pparse /wormsrv2/wormbase/misc/misc_confirmed_by_EST.ace
+pparse /wormsrv2/wormbase/misc/misc_confirmed_by_mRNA.ace
+save 
+quit
+END
+   
+    open (WRITEDB, "| $tace -tsuser confirmed_genes /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
+    print WRITEDB $command;
+    close WRITEDB;
+
+    # make dumped_GFF_file in /logs
+    system ("touch $logdir/C4:Confirm_gene_models");
+
+}
+#__ end confirm_gene_models __#
 
 #################################################################################
 # make agp file for yellow brick road                                           #
@@ -662,10 +827,12 @@ print LOG "  -buildrelease : Build autoace : Release directory\n"               
 print LOG "  -check        : Check DB consistency and diffs from previous version\n"                if ($check);
 print LOG "  -buildpep     : Build wormpep database\n"                                              if ($buildpep);
 print LOG "  -addpep       : Running patch_pepace.pl and pepace2autoace\n"                          if ($addpep);
-#print LOG "  -f : Move WS release to the ftp-wormbase site (WormBase private release)\n" if ($opt_f);
+print LOG "  -buildrna     : Build wormrna database\n"                                              if ($buildrna);
+print LOG "  -addhomol     : Load blast data into autoace\n"                                        if ($addhomol);
 print LOG "  -ftp          : Move WS release to the external FTP site (Full public release)\n"      if ($ftp);
 print LOG "  -debug        : Verbose/Debug mode\n"                                                  if ($debug);
-print LOG "  -gff          : chromosome_dump.pl -g\n"                                               if ($gff);
+print LOG "  -gffdump      : Dump GFF files\n"                                                      if ($gffdump);
+print LOG "  -gffsplit     : Split GFF files\n"                                                     if ($gffsplit);
 print LOG "  -map          : map PCR, RNAi and WTP\n"                                               if ($map);
 print LOG "  -agp          : make agp files for yellow brick road\n"                                if ($agp);
 print LOG "======================================================================\n";
@@ -685,20 +852,22 @@ sub run_details {
     print "WormBase version : WS${WS_version}\n";
     print "Wormpep version  : wormpep${WS_version}\n";
     print "\n";
-    print "  -full         : Full WS release (executes all of the following -wbcp)\n" if ($full);
-    print "  -acefile      : Write .acefiles from WormBase copies of the databases\n" if ($acefile);
-    print "  -build        : Build autoace\n" if ($build);
-    print "  -builddb      : Build autoace : DB only\n" if ($builddb);
-    print "  -buildchrom   : Build autoace : DNA data\n" if ($buildchrom);
-    print "  -buildrelease : Build autoace : Release directory\n" if ($buildrelease);
-    print "  -check        : Check DB consistency and diffs from previous version\n" if ($check);
-    print "  -buildpep     : Build wormpep database\n" if ($buildpep);
-#    print "  -f : Move WS release to the ftp-wormbase site (WormBase private release)\n" if ($opt_f);
+    print "  -full         : Full WS release (executes all of the following -wbcp)\n"          if ($full);
+    print "  -acefile      : Write .acefiles from WormBase copies of the databases\n"          if ($acefile);
+    print "  -build        : Build autoace\n"                                                  if ($build);
+    print "  -builddb      : Build autoace : DB only\n"                                        if ($builddb);
+    print "  -buildchrom   : Build autoace : DNA data\n"                                       if ($buildchrom);
+    print "  -buildrelease : Build autoace : Release directory\n"                              if ($buildrelease);
+    print "  -check        : Check DB consistency and diffs from previous version\n"           if ($check);
+    print "  -buildpep     : Build wormpep database\n"                                         if ($buildpep);
+    print "  -buildrna     : Build wormrna database\n"                                         if ($buildrna);
+    print "  -addhomol     : Load blast data into autoace\n"                                   if ($addhomol);
     print "  -ftp          : Move WS release to the external FTP site (Full public release)\n" if ($ftp);
-    print "  -debug        : Verbose/Debug mode\n" if ($debug);
-    print "  -gff          : chromosome_dump.pl -g\n" if ($gff);
-    print "  -map          : map PCR, RNAi and WTP\n" if ($map);
-    print "  -agp          : make agp file for yellow brick road\n" if ($agp);
+    print "  -debug        : Verbose/Debug mode\n"                                             if ($debug);
+    print "  -gffdump      : Dump GFF files\n"                                                 if ($gffdump);
+    print "  -gffsplit     : Split GFF files\n"                                                if ($gffsplit);
+    print "  -map          : map PCR, RNAi and WTP\n"                                          if ($map);
+    print "  -agp          : make agp file for yellow brick road\n"                            if ($agp);
     print "\n\n";
 }
 
@@ -770,6 +939,20 @@ sub usage {
 	print "Check that the WS version number is correct\n\n";
 	exit(0);
     }
+    elsif ($error == 12) {
+	# Build_in_progress flag is absent when preparing primaries
+	print "\nautoace build aborted:\n";
+	print "The 'build_in_progress' flag is absent. \n";
+	print "You can't overwrite the primary databases on wormsrv2 prior to a new build.\n\n";
+	exit(0);
+    }
+    elsif ($error == 13) {
+	# B2:Build_autoace_database absent when making release .tar.gz files
+	print "\nautoace build aborted:\n";
+	print "The 'Build_autoace_database' flag is absent. \n";
+	print "You can't write the release .tar.gz files prior to a completing the  build.\n\n";
+	exit(0);
+    }
     elsif ($error == 0) {
 	# Normal help menu
 	exec ('perldoc',$0);
@@ -828,7 +1011,9 @@ autoace_minder OPTIONAL arguments:
 
 =item -debug, Verbose/Debug mode
 
-=item -gff, dump GFF files
+=item -gffdump, dump GFF files
+
+=item -gffsplit, split GFF files
 
 =item -map, map PCR, RNAi and WTP
 
