@@ -93,7 +93,7 @@ foreach $chromosome (@chromosomes) {
         next unless /\S/;
         @f = split /\t/;
 
-	if (($f[1] eq "RNAi") || ( $f[1] eq "cDNA_for_RNAi")) {
+	if ($f[1] eq "RNAi") {
 	    my ($name) = ($f[8] =~ /\"(.*)\"$/);
             $RNAicount{$name}++;
             my $RNAiname = $name.".".$RNAicount{$name};
