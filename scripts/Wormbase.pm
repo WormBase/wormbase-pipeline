@@ -14,11 +14,13 @@ use File::Path;
 
 @EXPORT    = qw(get_wormbase_version get_wormbase_version_name get_wormbase_release_date copy_check mail_maintainer celeaccession tace gff_sort dbfetch clones_in_database open_TCP DNA_string_reverse DNA_string_composition release_databases find_file_last_modified FetchData release_composition release_wormpep test_user_wormpub runtime rundate giface check_write_access Map_feature scan MapFeature delete_files_from load_to_database wormpep_files);
 
+
 # set these variables once outside of subroutines otherwise, each call to subroutine
 # iterates through the results of the glob function.  This means second calls to subroutines
 # lose the tace path 
 my $tace = glob("~wormpub/ACEDB/bin_ALPHA/tace");
 my $giface = glob("~wormpub/ACEDB/bin_ALPHA/giface");
+my $common_data_dir = (-e "/wormsrv2") ? "/wormsrv2/autoace/COMMON_DATA" : glob("~wormpub/TEST_BUILD/autoace/COMMON_DATA") ;
 
 #################################################################################
 
@@ -118,7 +120,7 @@ sub FetchData {
 
     # directory to load from can be passed in so that /acari can load files copied over
     unless( $dir ) {
-      $dir = (-e "/wormsrv2") ? "/wormsrv2/autoace/COMMON_DATA" : glob("~wormpub/TEST_BUILD/autoace/COMMON_DATA") ;
+      $dir = $common_data_dir;
     }
     print "using $dir for COMMON_DATA\n";
     open (FH, "<$dir/$file.dat") or die "can't open $dir/$file.dat\t:$!";
