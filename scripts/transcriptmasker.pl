@@ -8,7 +8,7 @@
 # 031023 dl1
 
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2004-09-08 10:56:16 $
+# Last edited on: $Date: 2004-09-08 10:58:18 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -79,7 +79,7 @@ our %EST_name = &FetchData('NDBaccession2est');
 print "// Finished reading EST_names.dat hash\n\n" if ($verbose);
 
 # which database
-my $dbdir = "/wormsrv2/WS131";
+my $dbdir = "/wormsrv2/autoace";
 my $tace  = &tace;                                    # tace executable path
 
 my $acc;                                              # accession for the entry
