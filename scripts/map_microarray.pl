@@ -7,7 +7,7 @@
 # by Anon
 #
 # Last updated by: $Author: dl1 $                      
-# Last updated on: $Date: 2003-11-10 10:28:54 $        
+# Last updated on: $Date: 2003-11-10 10:31:50 $        
 
 
 $|=1;
@@ -25,8 +25,7 @@ use Ace;
 ######################################
 
 my $tace        = &tace;                                  # tace executable path
-#my $dbdir       = "/wormsrv2/autoace";                    # Database path
-my $dbdir       = "/wormsrv2/WS112";                    # Database path
+my $dbdir       = "/wormsrv2/autoace";                    # Database path
 
 my $maintainers = "All";
 my $rundate = `date +%y%m%d`; chomp $rundate;
