@@ -7,9 +7,11 @@
 # clones. Entries which have failed to load or return are highlighted
 # and changes in sequence version are notified.
 
-# Last updated on: $Date: 2002-12-18 13:38:39 $
+# Last updated on: $Date: 2002-12-18 15:48:10 $
 # Last updated by: $Author: ck1 $
 
+# touch logfile for run details
+$0 =~ m/\/*([^\/]+)$/; system("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
 
 use strict;
 use Getopt::Std;
