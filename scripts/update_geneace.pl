@@ -421,9 +421,9 @@ sub geneclass_loci_other_name {
 		foreach (@persons){
 		  $_ =~ s/^\s//;
 		  push(@Update, "Sequence_name\t\"$seq\"\n");   
-		  push(@Update, "Genomic_sequence\t\"$seq\"\tPerson_evidence\t\"$_\"\n");
-		  push(@Update, "Evidence\tPerson_evidence\t\"$_\"\n");
-		  #print "Genomic_sequence\t\"$seq\"\tPerson_evidence\t\"$_\"\n";
+		  push(@Update, "Genomic_sequence\t\"$seq\"\tAuthor_evidence\t\"$_\"\n");
+		  push(@Update, "Evidence\tAuthor_evidence\t\"$_\"\n");
+		  #print "Genomic_sequence\t\"$seq\"\tAuthor_evidence\t\"$_\"\n";
                 }
 	      }
 	    }
@@ -459,9 +459,9 @@ sub geneclass_loci_other_name {
 	      foreach (@persons){
 		$_ =~ s/^\s//;
 		push(@Update, "Sequence_name\t\"$seq\"\n");
-		push(@Update, "Genomic_sequence\t\"$seq\"\tPerson_evidence\t\"$_\"\n");
-		push(@Update, "Evidence\tPerson_evidence\t\"$_\"\n");
-		#print "Genomic_sequence\t\"$seq\"\tPerson_evidence\t\"$_\"\n";
+		push(@Update, "Genomic_sequence\t\"$seq\"\tAuthor_evidence\t\"$_\"\n");
+		push(@Update, "Evidence\tAuthor_evidence\t\"$_\"\n");
+		#print "Genomic_sequence\t\"$seq\"\tAuthor_evidence\t\"$_\"\n";
               }
 	    }
 	  }
@@ -490,7 +490,7 @@ sub geneclass_loci_other_name {
 	  push(@Update, "Other_name\t\"$other_name\"\tPaper_evidence\t\"[$paper]\"\n");
 	}
       }
-      if ($3 =~ /Person_evidence\s+(.+)/){
+      if ($3 =~ /Person__evidence\s+(.+)/){
 	
 	$person = $1;
 	$person =~ s/\[|\]//g;
@@ -498,7 +498,7 @@ sub geneclass_loci_other_name {
 	foreach (@persons){
 	  $person = $_;
 	  $person =~ s/^\s//;
-	  push(@Update, "Other_name\t\"$other_name\"\tPerson_evidence\t\"$person\"\n");
+	  push(@Update, "Other_name\t\"$other_name\"\tAuthor_evidence\t\"$person\"\n");
 	}
       }
     }
