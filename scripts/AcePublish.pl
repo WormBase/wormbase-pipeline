@@ -1,22 +1,38 @@
-#!/usr/local/bin/perl
-# AcePublish will produce a new cgcace
-# version from autoace or will produce diff files 
+#!/usr/local/bin/perl5.6.1 -w
+#
+# AcePublish.pl
+#
+# by Alessandro Guffanti
+#
+# Last updated on: $Date: 2002-12-09 11:55:05 $
+# Last updated by: $Author: krb $
+#
+# AcePublish.pl will produce a new cgcace version from autoace or will produce diff files 
 # between two different versions of the database
-# [ag3 02102000]
 
-use Getopt::Std;
+use lib "/wormsrv2/scripts/";
+use Wormbase;
+
 use Cwd;
 use IPC::Open2;
 use POSIX qw(:signal_h :errno_h :sys_wait_h);
 use IO::Handle;
 use File::Basename;
 use File::Find;
-use lib "/wormsrv2/scripts/";
-use Wormbase;
+use Getopt::Std;
+
+getopts ('nuv:');
+
+
+# Create touch file to record script activity
+$0 =~ m/\/([^\/]+$)/;
+system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d'");
+
+
 
 $|=1;
 
-getopts ('nuv:');
+
 
 # Avoid filling process table with zombies
 $SIG{CHLD} = \&REAPER;
@@ -33,7 +49,8 @@ my $PRESENT_DIR = cwd;
 $PRESENT_DIR =~ s/\/tmp_mnt//;
 my $LOGFILE = "$PRESENT_DIR"."/"."$LOG";
 
-$tace = &tace;#"/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_4/tace";
+$tace = &tace; 
+#"/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_4/tace";
 $autoace = "$tace /nfs/disk100/wormpub/autoace";
 $cgcace = "$tace /nfs/disk100/wormpub/acedb/ace4/cgc";
 
@@ -92,7 +109,7 @@ READARRAY: while (<DATA>) {
   print LOGFILE "\n *5) Producing the update raw data file ..\n\n";
   &RawData($diffdir);
 # The end
-  my $TODAY=&GetTime;
+  $TODAY=&GetTime;
   print LOGFILE "\nAcePublish Finished OK $TODAY\n";
   close LOGFILE;
   exit 0;
@@ -117,7 +134,7 @@ READARRAY: while (<DATA>) {
    my $e_chrdir="/nfs/disk69/ftp/pub2/acedb/celegans/new_release/CHROMOSOMES."."$version";
   open (LOGFILE,">$LOGFILE");
   LOGFILE->autoflush();
-  my $TODAY=&GetTime;
+  $TODAY=&GetTime;
   print LOGFILE "AcePublish new version procedure STARTED at $TODAY\n";  
 
 # Transfer AUTOACE distribution compressed files to ftp directory 
@@ -201,12 +218,12 @@ sub MoveAce {
     if ($c_filename =~ /($updatedir\/AUTO\_)/){
       $c_filename =~ s/$1//;
       $count{$c_filename}++;
-      push (@autofiles,$c_filename);
+#      push (@autofiles,$c_filename);
     }
     if ($c_filename =~ /($updatedir\/CGC\_)/){
       $c_filename =~ s/$1//;
       $count{$c_filename}++; 
-      push (@cgcfiles,$c_filename);
+#      push (@cgcfiles,$c_filename);
     }
   },@DIRLIST;
 # Select only the ace dump files which are common between CGC and AUTO
@@ -306,7 +323,7 @@ sub RawData {
   
   print LOGFILE "* Beginning remote tar on ics-sparc1 ..\n";
   my $remove1 = `\\rm $rawdatadir/*.tar.Z 2>/dev/null`;
-  $rs = `rsh ics-sparc1 \"cd $newdiffdir; tar -hcf $newupdfile.tar rawdata wspec pictures \"`;
+#  $rs = `rsh ics-sparc1 \"cd $newdiffdir; tar -hcf $newupdfile.tar rawdata wspec pictures \"`;
   print LOGFILE "Made tar file $newupdfile.tar\n";
   print LOGFILE "Compressing relase files\n";
   system ("compress -f $newdiffdir/$newupdfile.tar");
