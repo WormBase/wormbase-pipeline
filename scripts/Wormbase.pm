@@ -7,8 +7,9 @@ package Wormbase;
 
 use Exporter;
 use Carp;
+use Ace;
 @ISA       = qw(Exporter);
-@EXPORT    = qw(get_cvs_version get_wormbase_version get_old_wormbase_version copy_check mail_maintainer celeaccession tace gff_sort dbfetch find_database);
+@EXPORT    = qw(get_cvs_version get_wormbase_version get_old_wormbase_version copy_check mail_maintainer celeaccession tace gff_sort dbfetch clones_in_database);
 @EXPORT_OK = qw(get_script_version); 
 
 
@@ -182,36 +183,33 @@ sub dbfetch {
 
 # pass a list of clones and cam or stl
 
-sub find_database {
+sub clones_in_database {
 
-    my @clones   = @{$_[0]};
-    my $handle   = @{$_[1]};
-    my $name     = "";
+    my $handle   = @{$_[0]};
     my %count    = ();
     my @output   = ();
-    carp "find_database not called with references\n" if (ref($_[0]) ne 'ARRAY' || ref($_[1]) ne 'HASH');
-
-
+    my $db;
     if ($handle eq 'cam') {
-        my $name = 'camace';
+        $db       = Ace->connect(-path => '/wormsrv2/camace') || die "Couldn't connect to $name\n", Ace->error;
     }
     elsif ($handle eq 'stl') {
-        my $name = 'stlace';
-    }           
-
-
-    my $db       = Ace->connect(-path => '/wormsrv2/$name/') || die "Couldn't connect to $name\n", Ace->error;
-    my @dbclones = $db->fetch(-query => 'FIND Genome_Sequence');
-    foreach my $clone (@clones) {
-	my $string = $clone->Confidential_remark(1);
-	if ((defined $string) && (($string =~ /Louis/) || ($string =~ /not in Cambridge/))) {
-		next;
-	}
-	else {$count{$clone} = 1;}
+        $db       = Ace->connect(-path => '/wormsrv2/stlace') || die "Couldn't connect to $name\n", Ace->error;
     }
-    foreach my $clone (@clones) {
-        push (@output, $clone) if (exists ($count{$clone})); 
-    }    
+    else {
+        $db       = Ace->connect(-path => '/wormsrv2/current_DB') || die "Couldn't connect to $name\n", Ace->error;
+    }
+    my @dbclones = $db->fetch(-query => 'FIND Genome_Sequence');
+    
+    foreach my $clone (@dbclones) {
+	if ($name eq 'cam') {
+            my $string = $clone->Confidential_remark(1);
+	    if ((defined $string) && (($string =~ /Louis/) || ($string =~ /not in Cambridge/))) {
+		    next;
+	    }
+	    else {push @output, $clone;}
+        }
+        else {push @output, $clone;}    
+    }
     return @output;   
 
 }
