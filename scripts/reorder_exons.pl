@@ -6,8 +6,8 @@
 #
 # This script checks the exon order and corrects them if needed
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-07-24 13:45:20 $
+# Last updated by: $Author: ck1 $
+# Last updated on: $Date: 2003-09-09 15:28:29 $
 
 
 
@@ -155,7 +155,7 @@ close(ACE);
 # Only upload if working with autoace
 if($db_name eq "autoace"){
   my $command = "pparse /wormsrv2/autoace/acefiles/sorted_exons.ace";
-  $command .= "save\nquit\n";
+  $command .= "\nsave\nquit\n";
   print "\nUploading sorted exon info to autoace\n";
   open (WRITEDB, "| $tace -tsuser reorder_exons /wormsrv2/autoace |") || die "Couldn't open pipe to autoace\n";
   print WRITEDB $command;
