@@ -8,7 +8,7 @@ package Wormbase;
 use Exporter;
 use Carp;
 @ISA       = qw(Exporter);
-@EXPORT    = qw(get_cvs_version get_wormbase_version copy_check mail_maintainer celeaccession tace gff_sort dbfetch find_database);
+@EXPORT    = qw(get_cvs_version get_wormbase_version get_old_wormbase_version copy_check mail_maintainer celeaccession tace gff_sort dbfetch find_database);
 @EXPORT_OK = qw(get_script_version); 
 
 
