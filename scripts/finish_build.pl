@@ -12,8 +12,8 @@
 # 3) Archives old GFF_SPLITS directory
 # 4) Makes wormsrv2/current_DB point at latest release
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-11-11 11:38:56 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2002-11-28 12:13:39 $
 
 
 
@@ -24,6 +24,7 @@ use Wormbase;
 use IO::Handle;
 use Getopt::Std;
 use vars qw($opt_h);
+use Commom_data;
 
 #################################################################################
 # variables                                                                     #
@@ -86,6 +87,12 @@ system("GFFsplitter -a") && die "Couldn't run GFFsplitter -a\n";
 print LOG "Running locus2seq.pl\n\n";
 system("locus2seq.pl -c ") && die "Couldn't run locus2seq.pl -a\n";
 
+
+# update all Common_data files - see Commom_data.pm
+system("Common_data.pl -update -build -all") && die "Couldn't run Common_data.pl -update -build -all\n";
+
+# update "Confirmed Introns" webpage (introns to be addressed)
+system("/nfs/intweb/cgi-bin/wormpub/confirmed_introns/parse_gff.pl") && warn "Couldn't run parse_gff.pl\n"
 
 ##################
 # End
