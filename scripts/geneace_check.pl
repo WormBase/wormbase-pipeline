@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-05-23 16:21:01 $
+# Last updated on: $Date: 2003-05-29 16:05:24 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -213,6 +213,9 @@ show -a -T -f /tmp/multi_pt_dump.ace
 find Pos_neg_data *
 show -a -T -f /tmp/posneg_dump.ace
 
+find Laboratory *
+show -a -T -f /tmp/lab_dump.ace
+
 quit
 END
 
@@ -220,9 +223,9 @@ END
   print DUMP $command;
   close DUMP;
 
-  system ("cat /tmp/locus_dump.ace /tmp/allele_dump.ace /tmp/strain_dump.ace /tmp/2_pt_dump.ace /tmp/multi_pt_dump.ace /tmp/posneg_dump.ace /tmp/geneclass_dump.ace > /tmp/class_dump.ace");
+  system ("cat /tmp/locus_dump.ace /tmp/allele_dump.ace /tmp/strain_dump.ace /tmp/2_pt_dump.ace /tmp/multi_pt_dump.ace /tmp/posneg_dump.ace /tmp/geneclass_dump.ace /tmp/lab_dump.ace> /tmp/class_dump.ace");
 
-  my @dumps = qw (locus_dump.ace allele_dump.ace strain_dump.ace geneclass_dump.ace 2_pt_dump.ace multi_pt_dump.ace posneg_dump.ace class_dump.ace);  
+  my @dumps = qw (locus_dump.ace allele_dump.ace strain_dump.ace geneclass_dump.ace 2_pt_dump.ace multi_pt_dump.ace posneg_dump.ace class_dump.ace lab_dump.ace);  
  
   foreach (@dumps){system ("chmod 777 /tmp/$_")}
 
@@ -242,7 +245,8 @@ END
     if ($_ =~ /^(2_point_data) : \"(.+)\" -O .+/){$class = $1; $obj = $2}     
     if ($_ =~ /^(Multi_pt_data) : \"(.+)\" -O .+/){$class = $1; $obj = $2}  
     if ($_ =~ /^(Pos_neg_data) : \"(.+)\" -O .+/){$class = $1; $obj = $2}  
-    
+    if ($_ =~ /^(Laboratory) : \"(.+)\" -O .+/){$class = $1; $obj = $2}  
+
     if ($_ =~ /((\w+)\s+.+)Person_evidence -O .+\"(.+)\" -O.+/){
       $ori = $_;
       $b4_evi = $1;	
@@ -286,6 +290,19 @@ END
       $updates += $counters[1];
       $info_num += $counters[2]; 
     }
+    if ($_ =~ /(Unregistered_lab_members)\s+-O\s\"\d+.+_\w+\" \"(.+)\" -O .+/){
+    
+      $ori = $_;
+      $tag = $1;
+      $author = $2;
+      #print $author, "#\n";
+      # print "$author, $class, $obj, $tag, $ori@\n";
+      @counters = get_WBPerson_ID($author, $class, $obj, $tag, $ori); 
+      $evid_errors += $counters[0];
+      $updates += $counters[1];
+      $info_num += $counters[2]; 
+    }
+    
   }
   print LOG "\n\nThere are $evid_errors Evidence errors in 7 classes checked\n";
   print LOG "\n$updates Authors can be converted to Persons\n";
@@ -336,13 +353,18 @@ END
       if (!defined $conversion){
 	($last_name, $initials) = split(/ /, $name);
 	$last_name =~ s/,//;
-	print LOG "\nERROR: $class $obj has $name (Author_evidence) under main tag $tag\n";
+	print LOG "\nERROR: $class $obj has $name (Author) under main tag $tag\n";
 	print LOG"=====>Correct $name as $last_name $initials\n";
 	if ($ace){
 	  print ACE "\n$class_obj\n";
 	  print ACE "-D $ori\n\n";
 	  print ACE "\n$class_obj\n";
-	  print ACE "$b4_evi Author_evidence \"$last_name $initials\"\n";
+	  if (defined $b4_evi){
+	    print ACE "$b4_evi Author_evidence \"$last_name $initials\"\n";
+	  }
+	  else {
+	    print ACE "$tag \"$last_name $initials\"\n";
+	  }
 	}
       }
     }
@@ -356,13 +378,15 @@ END
       }
       if ($info && !defined $conversion){
 	$info_count++; 
-	print LOG "\nINFO: $class $obj has $name (Author_evidence under $tag tag): NOT yet a Person\n";
+	print LOG "\nINFO: $class $obj has $name (Author under $tag tag): NOT yet a Person\n";
       }
       if ($ace && defined $conversion){
 	print ACE "\n$class_obj\n";
 	print ACE "-D $ori\n\n";
 	print ACE "\n$class_obj\n";
-	print ACE "$b4_evi Author_evidence \"$last_name $initials\"\n";
+	if (defined $b4_evi){
+	  print ACE "$b4_evi Author_evidence \"$last_name $initials\"\n";
+	}
       }
     }
 
@@ -373,7 +397,7 @@ END
 	if ($initials eq @{$L_name_F_WBP{$last_name}}->[$i]){
 	  $convert++;
 	  if (!defined $conversion){
-	    print LOG "\nUPDT: $class $obj has $name (Author_evidence) under $tag tag\n";
+	    print LOG "\nUPDT: $class $obj has $name (Author) under $tag tag\n";
           }
 	  if ($num == 2){
 	    print LOG "=====>$name can now be Person @{$L_name_F_WBP{$last_name}}->[$i+1]\n";   
@@ -381,7 +405,12 @@ END
               print ACE "\n$class_obj\n";
               print ACE "-D $ori\n\n";
 	      print ACE "\n$class_obj\n";
-              print ACE "$b4_evi"." Person_evidence \"@{$L_name_F_WBP{$last_name}}->[$i+1]\"\n";
+	      if (defined $b4_evi){
+		print ACE "$b4_evi"." Person_evidence \"@{$L_name_F_WBP{$last_name}}->[$i+1]\"\n";
+	      }
+	      else {
+		print ACE "Registered_lab_members \"@{$L_name_F_WBP{$last_name}}->[$i+1]\"\n";
+	      }	
             }
 	  }
 	  else {
@@ -390,7 +419,12 @@ END
               print ACE "\n$class_obj\n";
               print ACE "-D $ori\n\n";
 	      print ACE "\n$class_obj\n";
-              print ACE "$b4_evi"." Person_evidence \"@{$L_name_F_WBP{$last_name}}->[$i+1]\"\n";
+	      if (defined $b4_evi){
+		print ACE "$b4_evi"." Person_evidence \"@{$L_name_F_WBP{$last_name}}->[$i+1]\"\n";
+	      }
+	      else {
+		print ACE "Registered_lab_members \"@{$L_name_F_WBP{$last_name}}->[$i+1]\"\n";
+	      }	
             }
 	  }
 	}
@@ -405,7 +439,7 @@ END
             $initials eq @{$L_name_F_M_WBP{$last_name}}->[$i+1] ){
           $convert++;
           if (!defined $conversion){
-	    print LOG "\nUPDT: $class $obj has $name (Author_evidence) under $tag tag\n";
+	    print LOG "\nUPDT: $class $obj has $name (Author) under $tag tag\n";
           }
        	  if ($num == 3){
 	    print LOG "=====>$name can now be Person @{$L_name_F_M_WBP{$last_name}}->[$i+2]\n";
@@ -413,7 +447,12 @@ END
               print ACE "\n$class_obj\n";
               print ACE "-D $ori\n\n";
 	      print ACE "\n$class_obj\n";
-              print ACE "$b4_evi"." Person_evidence \"@{$L_name_F_M_WBP{$last_name}}->[$i+2]\"\n";
+	      if (defined $b4_evi){
+		print ACE "$b4_evi"." Person_evidence \"@{$L_name_F_M_WBP{$last_name}}->[$i+2]\"\n";
+	      }
+	      else {
+		print ACE "Registered_lab_members \"@{$L_name_F_M_WBP{$last_name}}->[$i+2]\"\n";
+	      } 
             }
 	  }
 	  else {
@@ -422,7 +461,12 @@ END
               print ACE "\n$class_obj\n";
               print ACE "-D $ori\n\n";
 	      print ACE "\n$class_obj\n";
-	      print ACE "$b4_evi"." Person_evidence \"@{$L_name_F_M_WBP{$last_name}}->[$i+2]\"\n";
+	      if (defined $b4_evi){
+		print ACE "$b4_evi"." Person_evidence \"@{$L_name_F_M_WBP{$last_name}}->[$i+2]\"\n";
+	      }
+	      else {
+		print ACE "Registered_lab_members \"@{$L_name_F_M_WBP{$last_name}}->[$i+2]\"\n";
+	      } 
             }
 	  }
 	}
