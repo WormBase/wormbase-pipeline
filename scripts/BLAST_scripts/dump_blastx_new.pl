@@ -8,21 +8,20 @@
 use strict;
 use DBI;
 use Getopt::Std;
-use vars qw($opt_w $opt_a $opt_g $opt_c $opt_m $opt_o);
+use vars qw($opt_w $opt_a $opt_g $opt_c $opt_v $opt_o $opt_m);
 
-getopts ("w:a:g:c:mo");
+getopts ("v:w:a:g:c:mo");
 
 my $usage = "dump_blastx.pl\n";
 $usage .= "-w [wormpep file, same version as database used in blast searches]\n";
 $usage .= "-a [agp file], checks for up-to-date sequence version number before dumping\n";
 $usage .= "-g [gff file of cds coordinates relative to chromosomes], needed to exclude self matches\n";
 $usage .= "-c [gff file of cosmid coordinates relative to chromosomes], needed to exclude self matches\n";
-$usage .= "-m map accessions to names, needed for elegans\n";
+$usage .= "-m map accessions to names, needed for elegans select if DONT want clone names. Default is to output clone names\n";
 $usage .= "-o dump only worm matches\n";
 
-unless ($opt_w) {
-    die "$usage";
-}
+my $version = $opt_v;
+die "Please enter version no \n" unless $version;
 
 ####################################################################
 # set some parameters
@@ -56,6 +55,18 @@ my $searchspace = 10000000;
 sub now {
     return sprintf ("%04d-%02d-%02d %02d:%02d:%02d",
                      sub {($_[5]+1900, $_[4]+1, $_[3], $_[2], $_[1], $_[0])}->(localtime));
+}
+
+# input files
+my $helper_files_dir = glob("~wormpipe/Elegans");
+my $agp_file = "$helper_files_dir/WS$version.agp";
+my $cds_file = "$helper_files_dir/cds$version.gff";
+my $cos_file = "$helper_files_dir/cos$version.gff";
+my $wormpep_file = glob("~wormpipe/BlastDB/wormpep$version.pep");
+
+unless ( -e $agp_file and -e $wormpep_file and -e $cds_file and -e $cos_file ) {
+  print "missing helper file please check these exist : \n$agp_file\n$cds_file\n$cos_file\n$wormpep_file\n";
+  die;
 }
 
 # create output files
@@ -174,7 +185,7 @@ if ($opt_c) {
 # this could use Common_data.pm - will investigate
 my %accession2name;
 
-if ($opt_m) {
+unless ($opt_m) {
     print LOG "loading the accession 2 name mappings for the AceDB contigs\n";
     print LOG "using file ~/dumps/accession2clone.list [".&now."]\n\n";
 
