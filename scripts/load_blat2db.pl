@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.0 -w
+#!/usr/local/bin/perl5.6.1 -w
 #
 # usage load_blat2db.pl <-options: load/delete or none for both> -dbdir <path to your database> 
 #
@@ -16,12 +16,16 @@ my ($load,$delete,$dbdir,$help);
 GetOptions (
 	    "load"    => \$load,
 	    "delete"  => \$delete,
-		"dbdir=s" => \$dbdir,
-		"h"	      => \$help,
-);
+	    "dbdir=s" => \$dbdir,
+	    "h"	      => \$help);
 
 print STDERR "Give the full path for the database you want to modify!\n" unless ($dbdir);
 print STDERR "usage load_blat2db.pl <-options: load/delete or none for both> -dbdir <path to your database>\n" if ($help);
+
+#Can you get write access?
+my $access = &check_write_access($dbdir);
+die "You do not have write access for $dbdir\n" if ($access eq "no");
+
 
 my $dbname;
 if ($dbdir =~ /\/(\w+ace)/) {
