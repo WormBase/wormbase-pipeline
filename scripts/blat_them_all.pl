@@ -33,7 +33,7 @@
 # 02.04.08 dl: old style logging for autoace.fa check, prevented complete run of subs
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2002-08-20 13:21:50 $
+# Last edited on: $Date: 2002-11-15 18:21:35 $
 
 use strict;
 use Ace;
@@ -41,7 +41,7 @@ use lib "/wormsrv2/scripts/";
 use Wormbase;
 use Getopt::Std;
 use IO::Handle;
-use vars qw($opt_e $opt_m $opt_x $opt_b $opt_s $opt_o $opt_v $opt_n $opt_h $opt_d);
+use vars qw($opt_e $opt_m $opt_x $opt_b $opt_s $opt_o $opt_v $opt_n $opt_h $opt_d $opt_c);
 $|=1;
 
 
@@ -49,16 +49,20 @@ $|=1;
 # directories #
 ###############
 
-our $dbdir  = '/wormsrv2/autoace';
-my $bin     = '/wormsrv2/scripts';
+our $dbdir = "/wormsrv2/autoace";
+our $seq   = "/wormsrv2/autoace/BLAT/autoace.fa";               
+our $chrom = "/wormsrv2/autoace/BLAT/chromosome.ace";
+our $blat  = "/wormsrv2/autoace/BLAT";
 
+
+
+my $bin     = "/wormsrv2/scripts";
 my $db;
+
 our %homedb;
-our $seq     = '/wormsrv2/autoace/BLAT/autoace.fa';               
-our $chrom   = '/wormsrv2/autoace/BLAT/chromosome.ace';
 our $blatex  = '/nfs/disk100/wormpub/blat/blat';
-our $blat    = '/wormsrv2/autoace/BLAT';
-our $giface  = '/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/giface';
+#our $giface  = '/nfs/disk100/wormpub/ACEDB/bin.ALPHA/giface';
+our $giface  = '/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_5/giface';
 our $data;
 our %word = (
 	     EST      => 'BLAT_EST',
@@ -71,7 +75,15 @@ our %word = (
 # command-line options & ramifications #
 ########################################
 
-getopts('emxbsvonhd');
+getopts('emxbsvonhdc');
+
+if ($opt_c) {
+    $dbdir = "/wormsrv1/camace";
+    $seq   = "/wormsrv1/camace/BLAT/autoace.fa";               
+    $chrom = "/wormsrv1/camace/BLAT/chromosome.ace";
+    $blat  = "/wormsrv1/camace/BLAT";
+}
+
 
 # Help pod documentation
 &usage(0) if ($opt_h);
@@ -137,13 +149,6 @@ print LOG "Starting blat process .. \n\n";
 # Main loop               #
 ###########################
 
-    
-# CHECK: 
-&usage(11) unless (-e "/wormsrv2/autoace/BLAT/superlinks.ace");
-    
-# assign contigs to laboratory
-%homedb = &which_db;
-
 # Write sequence data from autoace
 if ($opt_n) {
     
@@ -151,18 +156,24 @@ if ($opt_n) {
     # HOW??? - 
 
     &dump_dna;
-}
+}  
+
+# CHECK: 
+&usage(11) unless (-e "/wormsrv2/autoace/BLAT/superlinks.ace");
+    
+# assign contigs to laboratory
+%homedb = &which_db;
 
 # BLAT the query data type 
 if ($opt_b) {
 
     # CHECK: does the autoace.fa exist
     # exit if autoace.fa file is absent
-    &usage(5) unless (-e "/wormsrv2/autoace/BLAT/autoace.fa");
+    &usage(5) unless (-e "$seq");
     
     # CHECK: how old is the autoace.fa file ?
     # exit if autoace.fa file created prior to start of (re)build 
-    &usage(6) if (-M "/wormsrv2/autoace/logs/A1:Build_in_progress" < -M "/wormsrv2/autoace/BLAT/autoace.fa");
+    &usage(6) if ( (-M "/wormsrv2/autoace/logs/A1:Build_in_progress" < -M "/wormsrv2/autoace/BLAT/autoace.fa") && (!$opt_c) );
    
     print LOG "running blat and putting the result in $blat/${data}_out.psl\n";
 
@@ -185,17 +196,33 @@ if ($opt_s) {
 
 	# map BEST hits for whole genome
 	print "Mapping blat data to autoace\n";
-	system("$bin/blat2ace.pl -ei") && die "Mapping failed\n"; 
+	
+	unless ($opt_c) {
+	    system("$bin/blat2ace.pl -ei") && die "Mapping failed\n"; 
+	}
+	else {
+	    system("$bin/blat2ace.pl -eiz") && die "Mapping failed\n"; 
+	}
     }
 
     if ($opt_m) {
 	print "Mapping blat data to autoace\n";
-	system("$bin/blat2ace.pl -mi") && die "Mapping failed\n"; 
+	unless ($opt_c) {
+	    system("$bin/blat2ace.pl -mi") && die "Mapping failed\n"; 
+	}
+	else {
+	    system("$bin/blat2ace.pl -miz") && die "Mapping failed\n"; 
+	}
     }
 
     if ($opt_o) {
 	print "Mapping blat data to autoace\n";
-	system("$bin/blat2ace.pl -oi") && die "Mapping failed\n"; 
+	unless ($opt_c) {
+	    system("$bin/blat2ace.pl -oi") && die "Mapping failed\n"; 
+	}
+	else {
+	    system("$bin/blat2ace.pl -oiz") && die "Mapping failed\n"; 
+	}
     }
 
     if ($opt_x) {
@@ -278,23 +305,33 @@ sub dump_dna {
 
     local (*CHANGE,*NEW);
 
-my $command=<<EOF;
-query find Sequence "CHROMOSOME*"
-show -a -f /wormsrv2/autoace/BLAT/chromosome.ace
-follow subsequence
-show -a -f /wormsrv2/autoace/BLAT/superlinks.ace
-dna -f /wormsrv2/autoace/BLAT/autoace.first
-quit
-EOF
+my $command;
+
+    unless ($opt_c) {
+	$command  = "query find Sequence \"CHROMOSOME*\"\nshow -a -f /wormsrv2/autoace/BLAT/chromosome.ace\n";
+	$command .= "follow subsequence\nshow -a -f /wormsrv2/autoace/BLAT/superlinks.ace\n";
+	$command .= "dna -f /wormsrv2/autoace/BLAT/autoace.first\nquit\n";
+    }
+    else {
+	$command  = "query find Sequence \"SUPERLINK*\"\nshow -a -f /wormsrv1/camace/BLAT/superlinks.ace\n";
+	$command .= "dna -f /wormsrv1/camace/BLAT/autoace.first\nquit\n";
+    }
 
     my ($sequence,$name);
     
     # tace dump chromosome consensus sequences
     system("echo '$command' | $giface $dbdir") && &usage(5);
     
+
     # move '-'s into 'n's => blat excludes '-'
-    open (CHANGE, "</wormsrv2/autoace/BLAT/autoace.first");
-    open (NEW,    ">/wormsrv2/autoace/BLAT/autoace.fa");
+    # [021115 dl] Do we need this anymore? no more '-' in sequence
+    unless ($opt_c) {
+	open (CHANGE, "</wormsrv2/autoace/BLAT/autoace.first");
+    }
+    else {
+	open (CHANGE, "</wormsrv1/camace/BLAT/autoace.first");
+    }
+    open (NEW, ">$seq");
     while (<CHANGE>) {
 	chomp;
 	$sequence = $_;
@@ -304,8 +341,12 @@ EOF
     close CHANGE;
 
     # remove intermediary sequence file
-    unlink ('/wormsrv2/autoace/BLAT/autoace.first') if (-e '/wormsrv2/autoace/BLAT/autoace.first');
-
+    unless ($opt_c) {
+	unlink ('/wormsrv2/autoace/BLAT/autoace.first') if (-e '/wormsrv2/autoace/BLAT/autoace.first');
+    }
+    else {
+	unlink ('/wormsrv1/camace/BLAT/autoace.first') if (-e '/wormsrv1/camace/BLAT/autoace.first');
+    }
 }
 
 
