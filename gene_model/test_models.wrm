@@ -379,17 +379,19 @@
 		  Rescued_by_transgene ?Transgene	
 		  In_cluster ?Locus XREF Contains // new way of linking to Clusters in locus class
 		  GO_term ?GO_term XREF Gene ?GO_code #Evidence
-        Molecular_info	  CDS ?CDS XREF Gene #Evidence // to link to live CDSs
-			  CDS_history ?CDS XREF Gene_history // to link to history CDSs
-			  Gene_count UNIQUE Int	// how many CDSs, RNA genes, or Pseudogenes???
+        Molecular_info	  CDS ?CDS XREF Gene #Evidence		// to link to live CDSs
+			  CDS_history ?CDS XREF Gene_history	// to link to history CDSs
+			  Transcript ?Transcript XREF Gene #Evidence
+			  Transcript_history ?Transcript XREF Gene_history
+			  Pseudogene ?Pseudogene XREF Gene #Evidence
+			  Pseudogene_history ?Pseudogene XREF Gene_history
+			  Gene_variant_count UNIQUE Int	// how many isoforms have been made (including Pseudogenes and non coding)
+							// intended for acedb code to look at this when suggesting new gene names
 
 // Checked up to here
 
                         Description ?Text #Evidence // to be absorbed by other Description tags by Erich [040122 krb]
 
-
-                        Transcript ?Transcript XREF Gene #Evidence
-			Pseudogene ?Pseudogene XREF Gene #Evidence
                         Protein ?Protein XREF Gene
                         Other_sequence ?Sequence XREF Gene_other_seq #Evidence    // dl 001128 // RD 0107 leave for now
                         Product ?Text
@@ -1051,8 +1053,8 @@
 	DB_info Database ?Database ?Database_field UNIQUE ?Accession_number XREF CDS
 		Protein_id ?Sequence UNIQUE Text UNIQUE Int // DB_info tag added [011030 krb]
 		DB_remark ?Text #Evidence
-	Gene_info Gene		UNIQUE ?Gene XREF CDS // when live 
-		  Gene_history	UNIQUE ?Gene XREF CDS_history // when dead
+	Gene_info Gene		UNIQUE ?Gene XREF CDS	      // when CDS is live 
+		  Gene_history	UNIQUE ?Gene XREF CDS_history // when CDS is dead
 	Origin	From_laboratory UNIQUE ?Laboratory
 		Species UNIQUE ?Species
 		Genetic_code UNIQUE ?Genetic_code // needed for one gene with selenocysteine!
@@ -1077,6 +1079,7 @@
 		Contained_in_operon ?Operon XREF Contains_CDS
 		GO_term ?GO_term XREF CDS ?GO_code #Evidence
 		Allele ?Allele XREF Predicted_gene // replaces Has_allele tag in ?Sequence
+		Interpolated_map_position UNIQUE ?Map UNIQUE Float 
 		Microarray_results ?Microarray_results XREF CDS      //added for Microarray_results
 		Antibody ?Antibody XREF CDS // added [031120 krb]
 	  	Reference ?Paper XREF CDS // added [011030 krb]
@@ -1087,7 +1090,6 @@
 		Confidential_remark ?Text
 		Remark ?Text #Evidence
 	Sequence_features ?Feature XREF Part_of_gene #Evidence            // Feature data model [dl 030304]
- 	Interpolated_map_position UNIQUE ?Map UNIQUE Float 
 	Drives_transgene  ?Transgene XREF Driven_by_CDS_promoter
 	Transgene_product ?Transgene XREF CDS
         Method UNIQUE ?Method
@@ -1115,10 +1117,9 @@
 			Database ?Database ?Database_field UNIQUE ?Accession_number XREF Transcript
                 Origin  From_laboratory UNIQUE ?Laboratory                         // [020306 kj]
                         Species UNIQUE ?Species                                    // [020306 kj]
-                Visible Locus ?Locus XREF Transcript // new to fit existing Locus class
-			// Gene ?Gene XREF Transcript
-			// Not ready for these two yet
-			Allele ?Allele XREF Transcript // added to fit two alleles of RNA genes [021127 krb]
+		Gene_info Gene	       UNIQUE ?Gene XREF Transcript         // when Transcript is live
+			  Gene_history UNIQUE ?Gene XREF Transcript_history // when Transcript is dead
+                Visible Allele ?Allele XREF Transcript // added to fit two alleles of RNA genes [021127 krb]
 			Orthologue ?Transcript XREF Orthologue ?Species #Evidence  // [030310 krb]
                         Matching_cDNA ?Sequence XREF Matching_transcript #Evidence // to attach non-coding RNA genes to matching ESTs
 			Corresponding_CDS UNIQUE ?CDS XREF Corresponding_transcript // new tag for 1-2-1 relationships with coding genes
@@ -1171,12 +1172,10 @@
                 Type    UNIQUE Coding_pseudogene Text // [110803 dl] 
                                RNA_pseudogene Text    // Text can store type of RNA (probably tRNA)
                                Transposon
-                Genetics Locus UNIQUE ?Locus XREF Pseudogene
-                         Allele ?Allele XREF Pseudogene 
-                         Interpolated_map_position ?Map UNIQUE Float 
-                //      Gene_info Gene UNIQUE ?Gene XREF CDS // when live 
-                //                Gene_history UNIQUE ?Gene XREF CDS_history // when dead
-                Visible Contained_in_operon ?Operon XREF Contains_pseudogene
+                Gene_info Gene	       UNIQUE ?Gene XREF Pseudogene	    // when Pseudogene is live
+			  Gene_history UNIQUE ?Gene XREF Pseudogene_history // when Pseudogene is dead      
+                Visible Allele ?Allele XREF Pseudogene 
+			Contained_in_operon ?Operon XREF Contains_pseudogene
                         Matching_cDNA ?Sequence XREF Matching_pseudogene #Evidence
                         Brief_identification UNIQUE ?Text #Evidence
                         Corresponding_PCR_product ?PCR_product XREF Overlaps_pseudogene 
@@ -1187,6 +1186,7 @@
                         Concise_description ?Text #Evidence
                         GO_term ?GO_term XREF Pseudogene ?GO_code #Evidence
                         Reference ?Paper XREF Pseudogene // added [011030 krb]
+			Interpolated_map_position ?Map UNIQUE Float 
                 Confidential_remark ?Text
                 Remark ?Text #Evidence
                 Method UNIQUE ?Method
