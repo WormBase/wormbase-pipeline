@@ -573,7 +573,7 @@ if( $cleanup ) {
 ##############################################
 
 my $rundate    = `date +%y%m%d`; chomp $rundate;
-print LOG "\n# autoace_minder finished at: $rundate ",&runtime,"\n";
+print LOG "\n# wormBLAST.pl finished at: $rundate ",&runtime,"\n";
 close LOG;
 
 # warn about errors in subject line if there were any
