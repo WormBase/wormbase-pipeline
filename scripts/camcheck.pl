@@ -6,8 +6,8 @@
 #
 # Usage: camcheck.pl
 #
-# Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2004-05-18 15:15:14 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2004-07-01 10:36:04 $
 #
 # see pod documentation (i.e. 'perldoc camcheck.pl') for more information.
 #
@@ -31,8 +31,6 @@ use Socket;
 ##############################
 
 my $maintainers = "All";
-my $rundate     = `date +%y%m%d`; chomp $rundate;
-my $runtime     = `date +%H:%M:%S`; chomp $runtime;
 
 ##############################
 # command-line options       #
@@ -91,6 +89,8 @@ print "// Verbose mode selected\n\n" if ($verbose);
 ########################################
 my $dbname = $dbpath;
 $dbname =~ s/.*camace(.*)/camace$1/;
+my $rundate = &rundate;
+my $runtime = &runtime;
 my $log="/wormsrv2/logs/camcheck.$dbname.$rundate.$$";
 
 
@@ -119,13 +119,15 @@ print LOG "** Monthly edition **\n\n" if ($opt_m);
 
 &CloneTests;
 
+&check_worm_genes;
+
 &CheckPredictedGenes;
 
 &SingleSequenceMap;
 
 &LinkObjects;
 
-$runtime = `date +%H:%M:%S`; chomp $runtime;
+$runtime = &runtime;
 print LOG "\nCamCheck run ENDED at $runtime\n\n";
 
 close LOG;
@@ -291,6 +293,24 @@ sub CloneTests {
     
     close(CLONEFILE);
 }
+
+
+
+####################################
+# Check worm_genes composite class #
+####################################
+
+sub check_worm_genes{
+
+  # look for objects with no Gene tag
+  my @genes= $db->fetch(-query=>'find worm_genes NOT Gene');
+    if(@genes){
+      foreach (@genes){
+	print LOG "ERROR: $_ has no Gene tag, please add valid Gene ID from geneace\n";
+      }
+    }
+}
+
 
 #########################
 # Check predicted genes #
