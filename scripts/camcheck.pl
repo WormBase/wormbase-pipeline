@@ -6,8 +6,8 @@
 #
 # Usage: camcheck.pl
 #
-# Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2002-08-12 08:37:22 $
+# Last updated by: $Author: dl1 $
+# Last updated on: $Date: 2002-08-12 09:45:58 $
 #
 # see pod documentation (i.e. 'perldoc camcheck.pl') for more information.
 #
@@ -19,10 +19,7 @@
 #################################################################################
 
 $|=1;
-#BEGIN {
- # unshift (@INC,"/nfs/disk92/PerlSource/Bioperl/Releases/bioperl-0.05");
-#}
-#use Bio::Seq;
+
 use IO::Handle;
 use Getopt::Std;
 use Ace;
@@ -47,7 +44,6 @@ getopts ("hdwm");
 &usage(0) if ($opt_h);
 my $debug = $opt_d;
 
-
 ##############################
 # Paths etc                  #
 ##############################
@@ -55,7 +51,7 @@ my $debug = $opt_d;
 my $clonepath = "/nfs/disk100/wormpub/analysis/cosmids";
 my $clonefile = "$clonepath"."/current.versions";
 my $tace      = glob("~wormpub/ACEDB/bin.ALPHA_4/tace");   # tace executable path
-my $dbpath = "/wormsrv1/camace";                           # Database path
+my $dbpath    = "/wormsrv1/camace";                           # Database path
 
 
 # only tell Dan if running debug mode
@@ -307,43 +303,40 @@ sub dateseq {
 ################################################
 
 sub chksum {
-    my $seq_file = shift;
-    my $seq_ace = shift;
-    my $clone = shift;
+    my ($seq_file,$seq_ace,$clone) = @_;
     my ($checksum, $index, $char);
 
-    $seq_file =~ tr/a-z/A-Z/;
-    $seq_ace =~ tr/a-z/A-Z/;
+    # calculate checksum routines from Chao-Kung
 
-    foreach $char ( split(/[\.\-]*/, $seq_file)) {
-        $index++;
-        $checksum += ($index * (unpack("c",$char) || 0) );
-        if( $index ==  57 ) {
-            $index = 0;
-        }
-    }
-    my $chk1 = $checksum % 10000;
-    $checksum=();
+    my $chk1 = &calculate_chksum($seq_file);
+    my $chk2 = &calculate_chksum($seq_ace);
 
-    foreach $char ( split(/[\.\-]*/, $seq_ace)) {
-        $index++;
-        $checksum += ($index * (unpack("c",$char) || 0) );
-        if( $index ==  57 ) {
-            $index = 0;
-        }
-    }
-    my $chk2 = $checksum % 10000;
-    $checksum=(); 
-
-    #my $bioseq1 = Bio::Seq->new(-seq=>$seq_file,-ffmt=>'Fasta',-type=>'Dna',);
-    #my $bioseq2 = Bio::Seq->new(-seq=>$seq_ace,-ffmt=>'Fasta',-type=>'Dna',);
-    #my $chk1 = $bioseq1->GCG_checksum;
-    #my $chk2 = $bioseq2->GCG_checksum;
     if ($chk1 != $chk2) {
 	print LOG "SEQUENCE mismatch in $clone; dir $chk1 acedb $chk2\t";
 	print LOG "=> dir: " . length ($seq_file) . " ace: " . length ($seq_ace) . "\n";
 
     }
+}
+
+
+sub calculate_chksum {
+    my $seq = shift;
+    my ($checksum, $index, $char,$chk);
+    
+    $index = 0;
+    
+    foreach $char ( split(/[\.\-]*/, $seq)) {
+        $index++;
+        $checksum += ($index * (unpack("c",$char) || 0) );
+        if( $index ==  57 ) {
+            $index = 0;
+        }
+    }
+
+    $chk = $checksum % 10000;
+    $checksum=(); 
+
+    return ($chk);
 }
 
 
