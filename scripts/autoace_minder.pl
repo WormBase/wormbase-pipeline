@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2003-09-24 13:34:14 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2003-09-24 16:38:53 $
 
 
 #################################################################################
@@ -62,7 +62,7 @@ my $help;		# Help/Usage page
 my $test;               # Test routine 
 my $dbcomp;		# runs dbcomp script
 my $am_option;          # track which option has been used (for logging purposes)
-my $errors = 0;         # keep track of errors resulting from bad system calls, use in subject line of email 
+my $errors = 0;         # keep track of errors in each step (mostly from bad system calls), use in subject line of email 
 
 
 GetOptions (
@@ -287,22 +287,19 @@ exit(0);
 
 
 #################################################################################
-### Subroutines                                                               ###
+#                                                                               #
+#                                                                               # 
+#                T  H  E     S  U  B  R  O  U  T  I  N  E  S                    #
+#                                                                               #
+#                                                                               #
 #################################################################################
+
+
+
 
 #################################################################################
 # initiate autoace build                                                        #
 #################################################################################
-# Requirements : None
-#
-# Checks       : [01] - Fail if the build_in_progess flag is present.
-#
-# Does         : [01] - updates the WS version in database.wrm
-#              : [02] - writes the WS version to the build_flag (writes to /wormsrv2/autoace/logs)
-#              : [03] - writes log file A2:Update_WS_version to /wormsrv2/autoace/logs
-#
-# Requirements :
-#
 
 sub initiate_build {
   $am_option = "-initial";
@@ -313,13 +310,10 @@ sub initiate_build {
   # exit if build_in_progress flag is present
   &usage(1) if (-e "$logdir/$flag{'A1'}");
     
-  # commit to new build ..............
+  # get old build version number, exit if no WS version is returned
+  # add 1 for new build number
   $WS_version = &get_wormbase_version;
-    
-  # exit if no WS version is returned
   &usage("No_WormBase_release_number") if (!defined($WS_version));
-    
-  # manipulate to assign last WS release version
   my $WS_new_name = $WS_version +1;
  
   # make new build_in_process flag
@@ -332,9 +326,9 @@ sub initiate_build {
   sleep 10;
 
   # update database.wrm using cvs
-  print "Updating $cvs_file to include new WS number - using sed\n\n";
-  system ("sed 's/WS${WS_version}/WS${WS_new_name}/' < $cvs_file > ${cvs_file}.new");
-  system ("mv /wormsrv2/autoace/wspec/database.wrm.new $cvs_file");
+  print LOG "Updating $cvs_file to include new WS number - using sed\n\n";
+  &run_command("sed 's/WS${WS_version}/WS${WS_new_name}/' < $cvs_file > ${cvs_file}.new");
+  &run_command("mv /wormsrv2/autoace/wspec/database.wrm.new $cvs_file");
   
   # make a log file in /wormsrv2/autoace/logs
   system ("touch $logdir/$flag{'A2'}");
@@ -592,9 +586,15 @@ sub make_autoace {
     print EMAIL "Yours sincerely,\nOtto\n";
     close (EMAIL);
 
+    print LOG "Started make_autoace at ",&runtime," - ";
+    my $status = system ("$scriptdir/make_autoace --database /wormsrv2/autoace --buildautoace");
+    print LOG "finished running at ",&runtime,"\n";
 
-    system ("$scriptdir/make_autoace --database /wormsrv2/autoace --buildautoace") && die "Couldn't run make_autoace\n";
-    print LOG "Finished running make_autoace at ",&runtime,"\n";
+    if($status != 0){
+      print LOG "ERROR: $errors) make_autoace failed, non-zero system return value\n";
+      $errors++;
+    }
+
     
     # test the build for loading errors
     my $builderrors = &test_build;
@@ -609,8 +609,12 @@ sub make_autoace {
     system ("touch $logdir/$flag{'B1'}");
 
     # Update Common_data clone2accession info
-    system ("Common_data.pm -in_build -update -accession");
-    
+    $status = system ("Common_data.pm -in_build -update -accession");
+    if($status != 0){
+      print LOG "ERROR: $errors) Common_data.pm failed, non-zero system return value\n";
+      $errors++;
+    }    
+
   }
   
   if ($build || $buildchrom) {
@@ -778,15 +782,13 @@ sub make_agp {
   }
     
   # Errors?
-  if ($agp_errors > 1) {
-  # make 'agp_files_errors' log file in /logs
-  # this will halt the process if you are running blat
-    system ("touch $logdir/$flag{'B3:ERROR'}");
-  }
+  # make 'agp_files_errors' log file in /logs this will halt the process if you are running blat
+  system ("touch $logdir/$flag{'B3:ERROR'}") if ($agp_errors > 1);
         
 }
 
 #__ end make_agp __#
+
 
 #################################################################################
 # run dbcomp.pl                                                                 #
@@ -813,10 +815,13 @@ sub prepare_for_blat{
   
   # TransferDB the current autoace to safe directory 
   print LOG "Starting TransferDB at ",&runtime,"\n";
-  system("TransferDB.pl -start /wormsrv2/autoace -end /wormsrv2/autoace_midway -database -wspec -name autoace_midway")
-    && die "Couldn't run TransferDB for autoace\n";
+  my $status = system("TransferDB.pl -start /wormsrv2/autoace -end /wormsrv2/autoace_midway -database -wspec -name autoace_midway");
   print LOG "Finished TransferDB at ",&runtime,"\n";
-  
+
+  if ($status != 0){
+    print LOG "ERROR: TransferDB for autoace failed.  Non-zero system return call\n";
+    $errors++;
+  }
   # make a copy_autoace_midway log file in /logs
   system ("touch $logdir/$flag{'B5'}");  
 
@@ -1325,6 +1330,25 @@ sub logfile_details {
   print LOG "======================================================================\n\n";
 
 }
+
+##################################################################################
+#
+# Simple routine which will run commands via system calls but also check the 
+# return status of a system call and complain if non-zero, increments error check 
+# count, and prints a log file error
+#
+##################################################################################
+
+sub run_command{
+  my $command = shift;
+  my $status = system($command);
+  if($status != 0){
+    $errors++;
+    print LOG "ERROR: $command failed\n";
+  }
+
+}
+
 
 #######################################################################
 # Help and error trap outputs                                         #
