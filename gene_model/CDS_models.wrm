@@ -309,7 +309,7 @@
 				Detection_method Text
 		PCR_product	Primers  Text
 				Length   Int	// bp
-        Molecular_information	Genomic_sequence ?Sequence XREF Locus_genomic_seq #Evidence // Split genomic and other XREFs
+        Molecular_information	CDS ?CDS XREF Locus #Evidence // Split genomic and other XREFs
                                 Other_sequence ?Sequence XREF Locus_other_seq #Evidence    // dl 001128
 				Transcript ?Transcript XREF Locus #Evidence // en route to new gene model [021126 krb]
 				Pseudogene ?Pseudogene XREF Locus #Evidence // new [030801 krb]
@@ -511,6 +511,7 @@
         pMap UNIQUE Int UNIQUE Int         // extremities in pMap units
 	Clone ?Clone XREF pMap
 
+
 ?Species Common_name ?Text
          Phylogeny Kingdom UNIQUE Text
 		   Phylum UNIQUE Text
@@ -520,9 +521,14 @@
 		   Family UNIQUE Text 
 		   Genus UNIQUE Text
          Protein ?Protein XREF Species
+
+
+
+///////////////////////////////
 //
-// Map data classes
+//  Map data classes
 //
+///////////////////////////////
 
 ?Two_point_data Evidence #Evidence
 		Genotype  UNIQUE Text
@@ -807,6 +813,7 @@
 			Corresponding_transcript UNIQUE ?Transcript XREF Corresponding_CDS // to link coding genes to new style 
 											   // ar2 Transcripts, 1-2-1 relationship
 		  	Clone ?Clone XREF Sequence 
+			GO_term ?GO_term XREF Sequence #Evidence
 			Locus_other_seq ?Locus XREF Other_sequence       // dl 001128
 			Paired_read ?Sequence XREF Paired_read          // dl 020110
 	  		Reference ?Paper XREF Sequence
@@ -971,7 +978,8 @@
 	Gene_regulation Trans_regulator ?Gene_regulation XREF Trans_regulator_seq // new for Wen [030804 krb]
                         Trans_target    ?Gene_regulation XREF Trans_regulated_seq // new for Wen
                         Cis_target      ?Gene_regulation XREF Cis_regulated_seq  // new for Wen
-	Visible Corresponding_transcript UNIQUE ?Transcript XREF Corresponding_CDS // links CDS' to new-style ?Transcript
+	Visible Locus ?Locus XREF CDS
+		Corresponding_transcript UNIQUE ?Transcript XREF Corresponding_CDS // links CDS' to new-style ?Transcript
                                                                                    // objects, 1-to-1 relationship
 		Corresponding_protein UNIQUE ?Protein XREF Corresponding_CDS
 		Corresponding_PCR_product ?PCR_product XREF Overlaps_CDS // added for PCR mappings [010419 dl]
@@ -979,12 +987,11 @@
 		Matching_UTR ?UTR XREF Matching_CDS // added for UTR model [krb 020729]
 		Orthologue ?CDS XREF Orthologue ?Species #Evidence  // dl 030304
 		Expr_pattern ?Expr_pattern XREF Sequence
-                RNAi_result ?RNAi XREF Predicted_gene // added for Lincoln RNAi [001213 dl]
-        	Drives_transgene ?Transgene XREF Driven_by_CDS
-		Transgene_product ?Transgene XREF Worm_CDS
+                RNAi_result ?RNAi XREF CDS // added for Lincoln RNAi [001213 dl]
 		Contained_in_operon ?Operon XREF Contains_CDS
 		GO_term ?GO_term XREF CDS #Evidence
 		Allele ?Allele XREF CDS // replaces Has_allele tag in ?Sequence
+		Microarray_results ?Microarray_results XREF CDS      //added for Microarray_results
 	  	Reference ?Paper XREF CDS // added [011030 krb]
 		Brief_identification UNIQUE ?Text #Evidence
 		Confidential_remark ?Text
@@ -1207,11 +1214,11 @@
           Homol DNA_homol ?Sequence XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int  #Homol_info
                 Pep_homol ?Protein XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int  #Homol_info
                 Motif_homol ?Motif XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int  #Homol_info
-                Align_homol ?Alignment XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
                 Homol_homol ?Homol_data XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
           Feature ?Method Int Int UNIQUE Float  // display according to method
                                         // double-click shows the method
 	  Remark ?Text #Evidence
+
 
 // A tiny class to support ?Protein.  The Remark should explain a bit more about what the Database_field object
 // refers to
@@ -1233,7 +1240,6 @@
 	DB_info	Database ?Database Text ?Accession_number XREF Motif // ID  Accession_number
 	  	DB_remark ?Text #Evidence
 		DB_text ?LongText
-		Template ?Url //old way of making and clling URLs
 		Web_location ?WWW_server
 	Substrate UNIQUE DNA
 			 Peptide
@@ -1243,6 +1249,8 @@
 		Homol_homol ?Homol_data XREF Motif_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 	GO_term ?GO_term XREF Motif ?GO_code #Evidence
 
+
+
 ?Accession_number  Entry Sequence ?Sequence
 			 Protein ?Protein
 			 Motif ?Motif
@@ -1250,20 +1258,7 @@
 			 Pseudogene ?Pseudogene 
 		   Web_location ?Database // use for WWW display
 
-// The following is the model supported by wwwDisplay() in w4/display.c
-// UNIQUE URL UNIQUE Text
-//	  Web_location UNIQUE ?<class> // class should have the Build_URL submodel
-//	  Build_URL Reference_tag Text Text // tag class(optional)
-//		        // use Text following tag if exists
-//		        // restricted to class if specified
-//		    Use_name Text // class(optional)
-//		        // applies only if no Reference_tag found
-//		        // restrict to class if specified
-//		      // one of Reference_tag or Use_name must succeed		      
-//		    Rewrite Text UNIQUE Text Text UNIQUE Text
-//		      // prefix_to_add postfix_to_add   prefix_to_remove postfix_to_remove
-//		      // once (optional) prefix and postfix are removed, escape necessary chars
-//		      // then add specified prefix and postfix
+
 
 ?Database	Name ?Text // Full name
 		Contents ?Text // Description of material included
@@ -1271,8 +1266,18 @@
 		    Use_name Text // class(optional)
 		    Rewrite Text UNIQUE Text Text UNIQUE Text
 		      // prefix_to_add postfix_to_add   prefix_to_remove postfix_to_remove
-		
-// Method
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////
+//		
+// Method class
+//
+// Used a lot by acedb code for displaying data (on the FMap) and dumping data (via GFF)
+//
+///////////////////////////////////////////////////////////////////////////////////////////
+
 
 ?Method	Remark ?Text #Evidence
 	  // the Display information controls how the column looks.
@@ -1482,55 +1487,6 @@
 		Curated_by UNIQUE Text // added for Sylvia [010928 krb]
 
 
-//
-// Alignment models
-//
-
-?Alignment Description ?Text
-	   Consensus UNIQUE Verbatim UNIQUE Text
-	   Alignment	Sequence ?Sequence XREF In_alignment Int UNIQUE Int #Align_component  // Member_Alignment
-			Include_alignment ?Alignment XREF In_alignment UNIQUE Int UNIQUE Int #Align_component
-	   In_alignment #Alignment
-	   Parent ?Alignment XREF Child
-	   Child ?Alignment XREF Parent Int UNIQUE Int #Align_component
-	   Is_subalign
-	   Homol Pep_homol ?Protein XREF Align_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
-
-#Align_component  Verbatim UNIQUE Text				// use this not extracted seq if present
-		  Extract UNIQUE DNA #Extract_info
-				 Peptide #Extract_info
-				 Translate #Extract_info
-				 Alignment #Extract_info
-		  Partial UNIQUE Int UNIQUE Int			// start, end of self
-                  Properties  Is_frame_shifted
-			      Has_introns
-			      Checked
-			      Core
-				 
-#Extract_info UNIQUE Gap UNIQUE Int #Extract_info
-		     Seg UNIQUE Int UNIQUE Int #Extract_info
-		     Insert UNIQUE Int #Extract_info		// add X's, not .'s
-
-#Match_seg UNIQUE Int UNIQUE Int UNIQUE Int UNIQUE Int #Match_seg  // Start, End of Aligment;  Start, End of Subject
-
-
-
-
-// URL and WWW
-
-?Url    Url UNIQUE Text // Simple, text of URL
-        Template UNIQUE ?Url // use this object as a generic template
-        Reference_tag UNIQUE Text // look for this tag in the reffing object for url
-        Remove_prefix UNIQUE Text // prefix to remove to make url
-        Remove_postfix UNIQUE Text // postfix to remove to make url
-        Prepend UNIQUE Text // then add this to the beginning
-        Append UNIQUE Text // then add this to the end
-	Web_location UNIQUE ?WWW_server
-
-?WWW_server	Url UNIQUE Text // Simple, text of URL 	
-		Use_name Text // (optional) Classname
-		Rewrite Text UNIQUE Text Text UNIQUE Text 
-		Reference_tag UNIQUE Text // look for this tag in the reffing object for url
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -1572,9 +1528,8 @@
                          Hide_Bootstraps         // Hide all bootstraps in subtree...
                          Show_Bootstrap          // ... except those with the "Show_Bootstrap" tag set
                 Contains Taxon                //    UNIQUE ?Taxon    XREF Tree_Node
-			 Sequence UNIQUE ?Sequence XREF Tree_Node
                          Cell     UNIQUE ?Cell     XREF Tree_Node
-                         Cell_group UNIQUE ?Cell_group  XREF Tree_Node     //URL UNIQUE ?Url XREF Tree_Node
+                         Cell_group UNIQUE ?Cell_group  XREF Tree_Node 
                          Pick_me_to_call UNIQUE Text Text
                          Embedded_Tree ?Tree
 //              Positive Has_Gene_Function           ?Gene_Function XREF PosTreeNode
@@ -1582,6 +1537,9 @@
 //              Negative Does_NOT_Have_Gene_Function ?Gene_Function XREF NegTreeNode
 //                       NOT_Family_Member           ?Gene_Family XREF NegTreeNode
 //              Map ?Map XREF      Tree_Node #Map_Position  // Leaf node ordinate
+
+
+
 
 // Jade model for Lincoln/Jean added by rd 000307
 
@@ -1730,7 +1688,7 @@
 ?Microarray_results     Sequence_info   UNIQUE  PCR_product     UNIQUE ?PCR_product     XREF Microarray_results
                                                 Oligo_set       UNIQUE ?Oligo_set       XREF Microarray_results
                         Locus           ?Locus XREF Microarray_results #Evidence        //should be mapped during the build
-                        Predicted_gene  ?Sequence XREF Microarray_results #Evidence     //should be mapped during the build
+                        CDS		?CDS XREF Microarray_results #Evidence     //should be mapped during the build
                         Transcript      ?Transcript XREF Microarray_results #Evidence   //should be mapped during the build
                         Microarray      ?Microarray XREF Microarray_results
                         Remark          ?Text   #Evidence
