@@ -5,7 +5,7 @@
 # written by Anthony Rogers (ar2@sanger.ac.uk)
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-07-03 13:50:09 $
+# Last updated on: $Date: 2002-07-03 14:04:45 $
 
 
 use strict;
@@ -30,7 +30,7 @@ if ($opt_d){
 else{
   $geneace_dir = "/wormsrv2/geneace";
 }
-
+print "\nUsing $geneace_dir as target geneace database\n";
 
 my $maintainer = "All";
 my $rundate    = `date +%y%m%d`; chomp $rundate;
@@ -38,14 +38,10 @@ my $rundate    = `date +%y%m%d`; chomp $rundate;
 my $log = "/wormsrv2/logs/locus2seq.log.$rundate";
 open(LOG,">$log")|| die "cant open $log";
 print LOG "$0\n";
-print LOG "$rundate\n";
-print LOG "=============================================\n";
+print LOG "Date: $rundate\n";
+print LOG "Databases compared: $geneace_dir /wormsrv2/current_DB\n";
+print LOG "=====================================================\n";
 
-
-my $autoace_acefiles_dir = "/wormsrv2/autoace/acefiles";
-open (CAMOUT,">$autoace_acefiles_dir/CAM_locus_seq.ace") || die "cant open CAMOUT";
-open (STLOUT,">$autoace_acefiles_dir/STL_locus_seq.ace") || die "cant open STLOUT";
-open (ALLOUT,">$autoace_acefiles_dir/ALL_locus_seq.ace") || die "cant open ALLOUT";
 
 
 #get locus with confirmed CGC names and the corresponding seq
@@ -60,6 +56,12 @@ my $count;$count = 0;
 my @entry;
 my $seq;
 my $locus;
+
+
+###############################################
+# Grab locus->sequence connections from geneace
+################################################
+
 open (GENEACE, "echo '$command1' | tace $geneace_dir | ") || die "Couldn't open pipe to $geneace_dir\n";
 while (<GENEACE>)
   { 
@@ -68,14 +70,11 @@ while (<GENEACE>)
     $seq = $entry[1];
     print "$entry[0]\t$entry[1]\n";
 
-    #this statement is to take in to account the acedb> prompt that is included in the GENACE data
-    if (scalar(@entry) > 2)
-      {
-	$locus = $entry[1];
-	$seq = $entry[2];
-      }
-    #######################################
-
+    #this statement is to take in to account the acedb> prompt that is included in the GENEACE data
+    if (scalar(@entry) > 2){
+      $locus = $entry[1];
+      $seq = $entry[2];
+    }
     if ((defined($locus))&&($locus =~ m/(\w{3}\-\d+\.*\d*)/)) #validate cgc naming convention (a v. few genes have ***-*.* eg hmg-1.2
       {
         $locus = $1;#this strips the "'s 
@@ -91,15 +90,25 @@ while (<GENEACE>)
       }
     elsif(scalar(@entry) == 2)#entry no test is to exclude AceDB startup text
       {
-	print LOG "$locus is incorrectly marked as cgc approved in genace\n";
+	print LOG "$locus is incorrectly marked as cgc approved in geenace\n";
       }
   }
+close(GENEACE);
 
 
-close GENEACE;
+
+##########################################
+# Compare data to /wormsrv2/current_DB
+##########################################
+
+my $autoace_acefiles_dir = "/wormsrv2/autoace/acefiles";
+open (CAMOUT,">$autoace_acefiles_dir/CAM_locus_seq.ace") || die "cant open CAMOUT";
+open (STLOUT,">$autoace_acefiles_dir/STL_locus_seq.ace") || die "cant open STLOUT";
+open (ALLOUT,">$autoace_acefiles_dir/ALL_locus_seq.ace") || die "cant open ALLOUT";
+
+
+
 my $sequence;
-
-
 my $database = "/wormsrv2/current_DB";
 my $autoace = Ace->connect($database) || die "cant open $database\n";
 my $retrved_seq;
