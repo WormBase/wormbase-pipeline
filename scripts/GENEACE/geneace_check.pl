@@ -6,8 +6,8 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2004-06-11 10:04:33 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2004-06-23 09:45:09 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -56,7 +56,7 @@ GetOptions ("h|help"        => \$help,
 
 #__END__
 ##################################################
-# other varialbes                                #
+# other variables                                #
 ##################################################
 
 # Display help if required
@@ -452,21 +452,8 @@ sub test_locus_for_errors{
     }
   }
 
-  # checks that a Gene has a live tag (works together with 'Merged_into' and/or 'Killed' tags)
-  if ( !defined $gene_id->at('Identity.Live') && ($gene_id->Merged_into || $gene_id->History(6)) ){
-    print "." if ($verbose);
 
-    my @merge = $gene_id->Merged_into;
-    if (@merge){
-      $warnings .= "INFO: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has no 'Live' tag as it has been merged into $merge[-1] ($Gene_info{$merge[-1]}{'Public_name'})\n";
-    }
-
-    if ( $gene_id->History ){
-      my $tag = get_event($gene_id);
-      $warnings .= "INFO: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has no 'Live' tag as it has a 'Killed' tag\n" if $tag eq "Killed";
-    }
-  }
-
+  # Look for Genes with no Live tag but also no Merged_into or Killed tags
   if ( !defined $gene_id->at('Identity.Live') && !defined $gene_id->Merged_into ){
     print "." if ($verbose);
     my $tag = get_event($gene_id);
@@ -479,6 +466,8 @@ sub test_locus_for_errors{
     }
   }
 
+
+  # Look for genes with Live tag but also with Merged_into or Killed tags
   if ( defined $gene_id->at('Identity.Live') && ($gene_id->Merged_into || $gene_id->History(6)) ){
     print "." if ($verbose);
     my @merge =  $gene_id->Merged_into;
@@ -489,7 +478,7 @@ sub test_locus_for_errors{
 	print ACE "-D Live\n";
       }
     }
-
+    
     if ( $gene_id->History ){
       my $tag = get_event($gene_id);
       if ($tag eq "Killed"){
@@ -1467,9 +1456,11 @@ sub int_map_to_map_loci {
   my $int_loci  = "find Gene * where !mapping_data & allele & (CDS|transcript|pseudogene) & interpolated_map_position & species =\"*elegans\"";
   my %INT_loci;
 
-  # create a list of "promoted" loci
-  open(INT_map_TO_MAP, ">/wormsrv1/geneace/JAH_DATA/MULTI_PT_INFERRED/loci_become_genetic_marker_for_WS$next_build_ver") || die $!;
+  # need to increment again because this is run before autoace_minder -initial is run so build hasn't actually started
+  my $version = $next_build_ver +1;
+  open(INT_map_TO_MAP, ">/wormsrv1/geneace/JAH_DATA/MULTI_PT_INFERRED/loci_become_genetic_marker_for_WS$version") || die $!;
 
+  # create a list of "promoted" loci
   push( my @int_loci, $db->find($int_loci) );
   my %Alleles = $ga->get_non_Transposon_alleles($db); # all Geneace alleles which have no Transposon_insertion tag
 
