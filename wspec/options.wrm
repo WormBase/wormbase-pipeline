@@ -59,7 +59,7 @@ _VTranscript	   -V -D FMAP
 _VClone            -V -D PMAP
 
 _VAuthor           -V 
-_VPerson	   -V
+_VPerson	   -V -T Standard_name
 _VJournal          -V
 _VPaper            -V -T Brief_citation
 _VDatabase         -V
