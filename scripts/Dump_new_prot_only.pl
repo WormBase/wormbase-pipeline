@@ -6,6 +6,14 @@ use lib "/wormsrv2/scripts/";
 use Wormbase;
 use Getopt::Long;
 
+my $maintainers = "All";
+my $rundate    = `date +%y%m%d`; chomp $rundate;
+my $runtime    = `date +%H:%M:%S`; chomp $runtime;
+my $log = "/wormsrv2/logs/Dump_new_prot_only.pl.$rundate";
+open( LOG, ">$log") || die "cant open $log";
+print LOG "Dump_new_prot_only.pl log file $rundate ",&runtime,"\n";
+print LOG "-----------------------------------------------------\n\n";
+
 #######################################
 # command-line options                #
 #######################################
@@ -19,7 +27,16 @@ my @sample_peps = @_;
 
 my $wormpipe_dir = glob("~wormpipe");
 my $WPver = &get_wormbase_version;
-$WPver-- if $test;
+my $acedb_database;
+if( $test ) {
+  $WPver-- ;
+  $acedb_database = "/wormsrv1/antace";
+  $maintainers = "ar2\@sanger.ac.uk";
+}
+else {
+  $acedb_database = "/wormsrv2/autoace";
+}
+  
 
 
 #|          7 | yeast2.pep          | 
@@ -46,18 +63,19 @@ my %processIds2prot_analysis = ( 11 => "wublastp_worm",
 			       );
 
 
-my $runtime    = `date +%H:%M:%S`; chomp $runtime;
 
 #get list of wormpeps to dump from wormpep.diffXX or wormpep.tableXX depending on wether u want to dump all or just new
 my @peps2dump;
 my $pep;
 my $pep_input = shift;
 while ( $pep_input ) {
+  print LOG "Dumping blastp results for $pep_input\n";
   push(@peps2dump, $pep_input);
   $pep_input = shift;
 }
 unless (@peps2dump)  {
   if( $all ) {
+    print LOG &runtime," : Dumping all current wormpep proteins ( Wormpep$WPver )\n";
     open( DIFF,"</wormsrv2/WORMPEP/wormpep$WPver/wormpep.table$WPver") or die "cant opne diff file\n";
     while(<DIFF>) {
       chomp;
@@ -67,6 +85,7 @@ unless (@peps2dump)  {
   }
   else {
     open( DIFF,"</wormsrv2/WORMPEP/wormpep$WPver/wormpep.diff$WPver") or die "cant opne diff file\n";
+    print LOG &runtime," : Dumping updated proteins ( wormpep.diff$WPver )\n";
     while (<DIFF>)
       {
 	if( /new/ ){
@@ -87,10 +106,11 @@ unless (@peps2dump)  {
 
 # mysql database parameters
 my $dbhost = "ecs1f";
-#my $dbuser = "wormadmin";
 my $dbuser = "wormro";
 my $dbname = "wormprot";
 my $dbpass = "";
+$runtime    = `date +%H:%M:%S`; chomp $runtime;
+print LOG "\n",&runtime," : Connecting to database : $dbname on $dbhost as $dbuser\n";
 
 my @results;
 my $query = "";
@@ -110,11 +130,10 @@ my $sth_f = $wormprot->prepare ( q{ SELECT proteinId,analysis,
                                 WHERE proteinId = ? and -log10(evalue) > 40
                              ORDER BY hId
 	  	  	     } );
-
-open (OUT,">wublastp.ace") or die "cant open out file\n";
-my $recip_file = "wublastp_recip.ace";
+my $output = "/wormsrv2/wormbase/ensembl_dumps/wublastp_data.ace";
+open (OUT,">$output") or die "cant open $output\n";
+my $recip_file = "/wormsrv2/tmp/wublastp_recip.ace";
 open (RECIP,">$recip_file") or die "cant open recip file\n";
-print OUT "$runtime\n";
 my $count;
 
 our %CE2gene = &CE2gene;
@@ -164,19 +183,20 @@ foreach $pep (@peps2dump)
     &dumpData ($pep,\%worm_matches,\%human_matches,\%fly_matches,\%yeast_matches,\%swiss_matches,\%trembl_matches) if (%worm_matches or %human_matches or %fly_matches or %yeast_matches or %swiss_matches or %trembl_matches);
   }
 
-$runtime    = `date +%H:%M:%S`; chomp $runtime;
-print OUT "$runtime\n";
 close OUT;
 close RECIP;
 
+print LOG &runtime," : Data extraction complete\n\n";
+
+
 #process the recip file so that proteins are grouped
-
-#open(TEST,"ls -l $outdir | grep $clone.dna |");
-
+print LOG &runtime," : processing the reciprocal data file for efficient loading.\n";
 open (SORT,"sort -t \" \" -k2 $recip_file | ");
-open (RS,">recip_sorted.ace") or die "rs";
+open (RS,">>$output") or die "rs"; #append this sorted data to the main homols file and load together.
 
+print RS "\n\n"; # just to make sure we're not adding to last object.
 
+#sample from reciprocal match file
 #Protein : AGO1_ARATH line CE32063 wublastp_slimswissprot 187.468521 633 882 747 1014 Align 694 822
 #Protein : AGO1_ARATH line CE32063 wublastp_slimswissprot 187.468521 633 882 747 1014 Align 773 903
 #Protein : AGO1_ARATH line CE32063 wublastp_slimswissprot 187.468521 633 882 747 1014 Align 870 1002
@@ -201,6 +221,22 @@ while (<SORT>) {
   }
 }
   
+my $wormpub = glob("~wormpub");
+my $tace =  "$wormpub/ACEDB/bin.ALPHA_4/tace";
+my $command;
+
+#parse homology data
+print LOG &runtime," : Adding $output file to $acedb_database\n";
+$command = "pparse $output\nsave\nquit\n"; 
+open (AUTOACE, "| $tace $acedb_database  |") || die "Couldn't open pipe to $acedb_database\n";
+print AUTOACE $command;
+print LOG &runtime ," : finished adding $output file to $acedb_database\n";  close AUTOACE;
+print LOG &runtime," : finished\n\n______END_____";
+
+close LOG;
+`rm -f $recip_file`;
+
+&mail_maintainer("Dump_new_proteins_only.pl",$maintainers,$log);
 
 exit(0);
 
@@ -224,7 +260,7 @@ sub dumpData
 	    #need to convert form gene name to CE id for worms (they are stored as genes to compare isoforms)
 	    if( "$$data[1]" eq "wublastp_worm" ) {
 	      my $gene = $$data[4]; 
-	      $$data[4] = $gene2CE{"$gene"};
+	      $$data[4] = "WP:".$gene2CE{"$gene"};
 	    }
 	    
 	    foreach (@cigar){
@@ -244,8 +280,8 @@ sub dumpData
 	      
 	      
 	      #and print out the reciprocal homology to different file
-	      print RECIP "Protein : WP:$$data[4] line "; #  matching peptide
-	      print RECIP "$pid ";              #worm protein
+	      print RECIP "Protein : $$data[4] line "; #  matching peptide
+	      print RECIP "WP:$pid ";              #worm protein
 	      print RECIP "$$data[1] ";   #  analysis
 	      print RECIP "$$data[7] ";   #  e value
 	      print RECIP "$$data[2] ";   #  HomolStart
@@ -391,3 +427,59 @@ sub justGeneName
       return "$test";
     }
   }
+
+
+__END__
+
+=pod
+
+=head2 NAME - Dump_new_prot_only.pl
+
+=head1 USAGE 
+
+=over 4
+
+=item Dump_new_prot_only.pl
+
+=back
+
+This script is to extract blastp results from the mysql database.
+You can choose to get all of current Wormpep proteins, just those updated in the last build or any specified on the command line.
+
+=over 4
+
+=item none
+
+=back
+
+OPTIONAL arguments:
+
+default is just updated proteins
+
+-all get all of current Wormpep proteins
+
+Dump_new_prot_only.pl CE00095 - get result for only this peptide
+
+=over 4
+
+=item none
+
+=back
+
+=head1 REQUIREMENTS
+
+=over 4
+
+=item This script must run on a machine which can see the /wormsrv2 disk.
+
+=back
+
+=head1 AUTHOR
+
+=over 4
+
+=item Anthony Rogers (ar2@sanger.ac.uk)
+
+=back
+
+=cut
