@@ -30,11 +30,27 @@ my $db_files = "/acari/work2a/wormpipe/swall_data";
 my $swiss_list_txt = "$wormpipe_dump/swisslist.txt";
 my $trembl_list_txt = "$wormpipe_dump/trembllist.txt";
 
-`cat $wormpipe_dump/blastp_ensembl.ace $wormpipe_dump/blastx_ensembl.ace | perl -n -e 'if (/Pep_homol\s+\"SW:(\S+)\"/) {print $1."\n";}' | sort -u > swisslist.txt`
 
-`cat $wormpipe_dump/blastp_ensembl.ace $wormpipe_dump/blastx_ensembl.ace | perl -n -e 'if (/Pep_homol\s+\"TR:(\S+)\"/) {print $1."\n";}' | sort -u > $trembllist.txt`;
+# extract lists of which proteins have matches
+open (SWISS,">$swiss_list_txt");
+open (TREMBL,">$trembl_list_txt");
+open (DATA,"| cat $wormpipe_dump/blastp_ensembl.ace $wormpipe_dump/blastp_ensembl.ace |");
+while (<DATA>) {
+  if (/Pep_homol\s+\"/) {
+    if( /SW:(\S+)\"/ ) {
+      print SWISS "$1\n";
+    }
+    elsif( /Pep_homol\s+\"TR:(\S+)\"/ ) {
+      print TREMBL "$1\n";
+    }
+  }
+}
+    
+close SWISS;
+close TREMBL;
+close DATA;
 
-
+# now extract info from dbm files and write ace files
 
 my @lists_to_dump;
 $db_files = "$database" if defined $database;  # can use other database files if desired
