@@ -13,8 +13,8 @@
 #
 # pfetch is done in batches of 2000, any greater and nothing comes back!
 #
-# Last updated by: $Author: krb $                  
-# Last updated on: $Date: 2002-09-05 15:45:53 $    
+# Last updated by: $Author: ar2 $                  
+# Last updated on: $Date: 2002-09-06 12:25:35 $    
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -22,10 +22,10 @@ use Wormbase;
 
 my $maintainer   = "All";
 my $rundate      = `date +%y%m%d`; chomp $rundate;
-my $wmpep_ver    = &get_wormbase_version() -1;# for testing during builds
+my $wmpep_ver    = &get_wormbase_version();# for testing during builds
 my $log          = "/wormsrv2/logs/GetIDandAC.$rundate";#error log (email to All)
 my $wormpepdir   = "/wormsrv2/WORMPEP/wormpep$wmpep_ver";
-my $temp_acefile = "/wormsrv2/autoace/wormpep_ace/WormpepACandIDs.ace";
+my $acefile = "/wormsrv2/autoace/wormpep_ace/WormpepACandIDs.ace";
 
 open(LOG,">$log")|| die "cant open $log";
 my $errorLog = *LOG;
@@ -35,9 +35,7 @@ print LOG "=============================================\n";
 print LOG "\n";
 
 #create temp ace file to output to |open and close to ensure new file (as output of data appends)
-open (ACE_OUTPUT,">$temp_acefile") || die "cant open $temp_acefile";
-close ACE_OUTPUT;
-open (ACE_OUTPUT,">>$temp_acefile" || die "cant open $temp_acefile");
+open (ACE_OUTPUT,">$acefile") || die "cant open $acefile";
 
 #open file with linking data
 open (INPUT, "/nfs/disk100/wormpub/analysis/SWALL/output_autoace")|| print "$0 cant find file";
@@ -137,8 +135,6 @@ while ( $lower <= $last_ind )
   }
 
 #write the ace file
-open (ERROR,">/nfs/disk56/ar2/no_match") or warn "cant open errors file\n";
-print ERROR "pfetch ";
 my $printcount;
 foreach my $key (keys %protid_data)
   {
@@ -160,11 +156,7 @@ foreach my $key (keys %protid_data)
 	print ACE_OUTPUT "Protein_id \"$protid_data{$key}[4]\" \"$key\" \"$protid_data{$key}[1]\"\n";
 	print ACE_OUTPUT "\n";
       }
-    else {
-      print ERROR "$key ";
-    }
   }
-close ERROR;
 close ACE_OUTPUT;
 close LOG;
 
@@ -172,6 +164,6 @@ print "processed $count defined IDs\n";
 print "printed $printcount objects\n\n";
 #### use Wormbase.pl to mail Log ###########
 my $name = "Update Swiss ID's and Interpro motifs";
-$maintainer = "ar2\@sanger.ac.uk";
+#$maintainer = "ar2\@sanger.ac.uk";
 &mail_maintainer ($name,$maintainer,$log);
 #########################################
