@@ -19,6 +19,6 @@ save
 quit
 END
  
-open (TACE,"| $tace /wormsrv2/pepace") || die "Couldn't open pipe to tace\n";};
+open (TACE,"| $tace /wormsrv2/pepace") || die "Couldn't open pipe to tace\n";
 print TACE $command;
 close (TACE);
