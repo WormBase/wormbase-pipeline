@@ -225,11 +225,11 @@
 	Derivative ?Allele XREF Derived_from
         Strain ?Strain XREF Allele
         Genetics        Map ?Map #Map_position
-                        Mapping_data    Two_point ?Two_point_data
+                        Mapping_data    2_point ?2_point_data
                                         Multi_point ?Multi_pt_data
 	                                Pos_neg_data ?Pos_neg_data
 				// above three are for mapping on its own behalf
-	                                In_two_point ?Two_point_data
+	                                In_2_point ?2_point_data
                                         In_multi_point ?Multi_pt_data
 	                                In_pos_neg_data ?Pos_neg_data
 				// these are for when the locus is mapped
@@ -325,7 +325,7 @@
 	Negative Outside_rearr ?Rearrangement XREF Locus_outside ?Author
 		 Negative_clone ?Clone XREF Negative_locus ?Author
 	Mapping_data	Well_ordered		// "on the line"
-			Two_point ?Two_point_data
+			2_point ?2_point_data
                         Multi_point ?Multi_pt_data
 			Pos_neg_data ?Pos_neg_data
         Allele  ?Allele XREF Gene #Evidence
@@ -386,7 +386,7 @@
 			 Clone_outside ?Clone XREF Outside_rearr ?Author
                          Rearr_outside ?Rearrangement
 		Mapping_data	Pos_neg_data ?Pos_neg_data
-				Two_point ?Two_point_data
+				2_point ?2_point_data
         	                Multi_point ?Multi_pt_data
 		Display	Hide_under UNIQUE ?Rearrangement XREF Hides
 			Hides ?Rearrangement	// no XREF on purpose
@@ -530,21 +530,21 @@
 //
 ///////////////////////////////
 
-?Two_point_data Evidence #Evidence
+?2_point_data Evidence #Evidence
 		Genotype  UNIQUE Text
 		Results  UNIQUE Text
 		Experiment	Mapper ?Author
 				Laboratory ?Laboratory
 				Date  UNIQUE DateType
 				Temperature UNIQUE Text
-		Point_1 UNIQUE Locus_1	UNIQUE ?Locus XREF Two_point UNIQUE ?Allele XREF In_two_point
-			       Allele_1 UNIQUE ?Allele XREF Two_point
-			       Rearrangement_1 UNIQUE ?Rearrangement XREF Two_point
-                               Transgene_1 UNIQUE ?Transgene XREF Two_point
-		Point_2 UNIQUE Locus_2	UNIQUE ?Locus XREF Two_point UNIQUE ?Allele XREF In_two_point
-			       Allele_2 UNIQUE ?Allele XREF Two_point
-			       Rearrangement_2 UNIQUE ?Rearrangement XREF Two_point
-                               Transgene_2 UNIQUE ?Transgene XREF Two_point
+		Point_1 UNIQUE Locus_1	UNIQUE ?Locus XREF 2_point UNIQUE ?Allele XREF In_2_point
+			       Allele_1 UNIQUE ?Allele XREF 2_point
+			       Rearrangement_1 UNIQUE ?Rearrangement XREF 2_point
+                               Transgene_1 UNIQUE ?Transgene XREF 2_point
+		Point_2 UNIQUE Locus_2	UNIQUE ?Locus XREF 2_point UNIQUE ?Allele XREF In_2_point
+			       Allele_2 UNIQUE ?Allele XREF 2_point
+			       Rearrangement_2 UNIQUE ?Rearrangement XREF 2_point
+                               Transgene_2 UNIQUE ?Transgene XREF 2_point
 			// Point_1 and Point_2 are tag2 for the mapped loci
 			// for now to use this on a map both must be on it with Position type Map info.
 		Calculation UNIQUE Full UNIQUE Int UNIQUE Int UNIQUE Int UNIQUE Int // WT X Y XY
@@ -1584,7 +1584,7 @@
 		Location ?Laboratory #Lab_Location //Which Labs have the transgene.
 		Strain ?Strain XREF Transgene //All strains in CGC with the transgene.
 		Map ?Map  #Map_position 
-		Mapping_data Two_point ?Two_point_data 
+		Mapping_data 2_point ?2_point_data 
 			     Multi_point ?Multi_pt_data
 		Phenotype	?Text	//Phenotype should be described as "Unc. With other ..."
 		Rescue ?Locus XREF Rescued_by_Transgene ?Allele XREF Rescued_by_Transgene
