@@ -54,7 +54,7 @@ system("TransferDB -start /wormsrv2/autoace -end /wormsrv2/$WS_name -all -name $
 
 # Transfer /wormsrv1/camace to /wormsrv2/camace
 print LOG "Transferring /wormsrv1/camace into /wormsrv2/camace\n";
-system("TransferDB -start /wormsrv1/camace -end /wormsrv2/camace -all -name camace")
+system("TransferDB -start /wormsrv1/camace -end /wormsrv2/camace -database -wspec -name camace")
   && die "Couldn't run TransferDB for camace\n";
 
 # update symbolic link for 'current_DB'
