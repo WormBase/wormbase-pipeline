@@ -1,13 +1,13 @@
-#!/usr/local/bin/perl5.6.0 -w                   
+#!/usr/local/bin/perl5.6.1 -w                   
 #
-# make_Interpro2GO_mapping.pl 
+# GetPFAM_motifs.pl 
 # 
 # by Anthony Rogers
 #
-# Gets latest Interpro:GO mappings from XXXX and puts info in to ace file
+# Gets latest PFAM motifs from sanger/pub and puts info in to ace file
 #
 # Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2002-08-20 16:26:49 $                        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2002-09-06 12:30:17 $                        # quickly see when script was last changed and by whom
 
 
 use strict;                                     
@@ -50,10 +50,10 @@ unless (defined($opt_d))
     my $pfam_motifs_gz = "/wormsrv2/tmp/Pfam_motifs.gz";
     print LOG "Attempting to wget the latest version\n";
     print "Attempting to wget the latest version\n";
-    #`wget -O $pfam_motifs_gz ftp://ftp.sanger.ac.uk/pub/databases/Pfam/Pfam-A.full.gz` and die "$0 Couldnt get Pfam-A.full.gz \n";
+    `wget -O $pfam_motifs_gz ftp://ftp.sanger.ac.uk/pub/databases/Pfam/Pfam-A.full.gz` and die "$0 Couldnt get Pfam-A.full.gz \n";
     print LOG "...... got it!\nUnzipping . .";
     print "...... got it!\nUnzipping . .";
-    #`gunzip $pfam_motifs_gz` and die "gunzip failed\n";
+    `gunzip $pfam_motifs_gz` and die "gunzip failed\n";
     print LOG "DONE\n";
     print "DONE\n";
   }
