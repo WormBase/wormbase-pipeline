@@ -20,6 +20,8 @@ $|=1;
 use Socket;
 #use strict;
 use vars qw ($debug $seq_len $sv_acc $sv_ver);
+use lib '/wormsrv2/scripts';
+use Wormbase;
 
  ##############################
  # Script variables (run)     #
@@ -44,7 +46,7 @@ foreach my $chromosome (@gff_files) {
 
     my $i = 1;
     my ($start,$stop,$clone,$acc,$gap_span,$offset,$span,$gpseq,$gspan,$last_stop,$last_start);
-    @reports = "";
+#    @reports = "";
 
     $file = "$outdir/CHROMOSOME_$chromosome.agp";
     $last_stop = 2;
