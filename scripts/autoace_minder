@@ -16,7 +16,7 @@ use Getopt::Std;
 use lib "/wormsrv2/scripts/";
 use Wormbase;
 use strict;
-use vars qw ($opt_a $opt_w $opt_b $opt_1 $opt_2 $opt_3 $opt_c $opt_p $opt_q $opt_f $opt_z $opt_n $opt_d $opt_s $opt_h $opt_g $opt_m $opt_i $opt_u $opt_y );
+use vars qw ($opt_a $opt_w $opt_b $opt_1 $opt_2 $opt_3 $opt_c $opt_p $opt_q $opt_f $opt_z $opt_n $opt_d $opt_s $opt_x $opt_h $opt_g $opt_m $opt_i $opt_u $opt_y );
 
  ##############################
  # Script variables (run)     #
@@ -54,6 +54,7 @@ my $scriptdir   = "/wormsrv2/scripts";
 
 # $opt_n="";   # copy autoace before blatting
 # $opt_s="";   # map similarities (BLAT jobs)
+# $opt_x="";   # parse blat files
 
 # $opt_y="";   # make agp files for the yellow brick road
 
@@ -134,6 +135,7 @@ if ($opt_a) {
 # similarity matches
 &pre_blat_copy          if ($opt_n);
 &blat_jobs              if ($opt_s);
+&parse_blat_files       if ($opt_s || $opt_x);
 
 # wormpep and protein work
 &make_wormpep          if ($opt_p);
@@ -491,6 +493,9 @@ sub blat_jobs {
     &usage(9) unless (-e "$logdir/blat_transcript_data");
 
     # read in the ace files (autoace only)
+}
+
+sub parse_blat_files {
 
 my $command=<<END;
 pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLAT_EST.ace 
