@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-07-21 13:25:53 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2004-08-06 10:53:30 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -39,6 +39,7 @@ my $worm_gene2cgc;  # Hash: %worm_gene2cgc_name  Key: CGC name                  
 my $estdata;        # Hash: %NDBaccession2est    Key: GenBank/EMBL accession            Value: EST name (WormBase)  
                     # Hash: %estorientation      Key: EST name (WormBase)               Value: EST_5 = 5, EST_3 = 3
 my $feature_list;   # Hash: %Featurelist         Key: EST name (WormBase)               Value: Feature name (WormBase)
+my $CDS2gene_id;     # Hash: %CDS2gene_id         Key: CDS name                          Value: WBGene_id
 
 
 GetOptions("build"         => \$build,
@@ -51,6 +52,7 @@ GetOptions("build"         => \$build,
 	   "worm_gene2cgc" => \$worm_gene2cgc,
 	   "est"           => \$estdata,
 	   "feature"       => \$feature_list,
+	   "gene_id"       => \$CDS2gene_id,
 	   "all"           => \$all,
 	   "test"          => \$test
 	   );
@@ -62,7 +64,7 @@ GetOptions("build"         => \$build,
 # Set up top level base directory which is different if in test mode
 # Make all other directories relative to this
 my $basedir   = "/wormsrv2";
-$basedir      = glob("~wormpub")."/TEST_BUILD" if ($test); 
+$basedir      = glob("~wormpub")."/TEST_BUILD" if ($test);
 
 my $data_dir   = "$basedir/autoace/COMMON_DATA";
 my $wquery_dir = "$basedir/autoace/wquery";
@@ -95,6 +97,7 @@ else {
 &write_worm_gene2cgc   if ($worm_gene2cgc);
 &write_EST             if ($estdata || $all);
 &write_Feature         if ($feature_list || $all);
+&write_Gene_id         if ($CDS2gene_id || $all);
 # hasta luego
 
 exit(0);
@@ -454,6 +457,43 @@ sub write_worm_gene2cgc  {
   close CGC;
 
 }
+
+sub write_Gene_id
+  {
+    #my $data_dir   = "$basedir/autoace/COMMON_DATA";
+    #my $wquery_dir = "$basedir/autoace/wquery";
+    #my $ace_dir = "/nfs/disk100/wormpub/DATABASES/current_DB";
+    my %CDS2gene;
+    my %gene2CDS;
+
+    my $query = "select CDS, CDS->Gene from CDS in class CDS where CDS->method = \"curated\"";
+    open (TACE, "echo 'select CDS, CDS->Gene from CDS in class CDS where CDS->method = \"curated\"' | $tace $ace_dir |") or die "cant open tace connection :Gene_id\t$!\n";
+    while( <TACE> ) {
+      next if ($_ eq "");
+      next if (/acedb\>/);
+      last if (/\/\//);
+
+      s/\"//g;
+      my ($cds,$gene) = split;
+      if( defined $gene and $gene ne "NULL" ) {
+	$cds =~ s/CDS://;
+	$gene =~ s/Gene://;
+
+	$CDS2gene{$cds} = $gene;
+	push(@{$gene2CDS{$gene}},$cds);
+      }
+    }
+
+    #now dump data to file
+    open (C2G, ">$data_dir/cds2wbgene_id.dat") or die "cant write $data_dir/cds2wbgene_id.dat :$!";
+    open (G2C, ">$data_dir/wbgene_id2cds.dat") or die "cant write $data_dir/wbgene_id2cds.dat :$! ";
+
+    print C2G Data::Dumper->Dump([\%CDS2gene]);
+    print G2C Data::Dumper->Dump([\%gene2CDS]);
+
+    close C2G;
+    close G2C;
+  }
 
 ###########################################################################################################
 
