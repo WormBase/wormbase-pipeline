@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2004-03-11 11:09:44 $
+# Last updated on: $Date: 2004-05-07 11:28:54 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -75,7 +75,7 @@ if ($debug) {
 
 &make_yk2ORF_list;       # make file of yk EST -> ORF connections and add to FTP site
 
-&copy_homol_data;        # copy blat and blast data to private ftp site for St. Louis
+#&copy_homol_data;        # copy blat and blast data to private ftp site for St. Louis
 
 
 
@@ -216,77 +216,19 @@ sub copy_misc_files{
 sub copy_wormpep_files{
 
 
-  # move wormpep release from /wormsrv2 to /disk100/wormpub
   my $wormpub_dir = "/nfs/disk100/wormpub/WORMPEP";
-
-
-  unlink("$wormpub_dir/wormpep_current")           || print LOG "ERROR: Cannot delete files in $wormpub_dir\n";
-  unlink("$wormpub_dir/wormpep.accession_current") || print LOG "ERROR: Cannot delete files in $wormpub_dir\n";
-  unlink("$wormpub_dir/wormpep.dna_current")       || print LOG "ERROR: Cannot delete files in $wormpub_dir\n";
-  unlink("$wormpub_dir/wormpep.history_current")   || print LOG "ERROR: Cannot delete files in $wormpub_dir\n";
-  unlink("$wormpub_dir/wp.fasta_current")          || print LOG "ERROR: Cannot delete files in $wormpub_dir\n";
-
-
-  my $new_wpdir = "/wormsrv2/WORMPEP/wormpep${wormpep}";
-  &run_command("scp $new_wpdir/wormpep_current $wormpub_dir/wormpep_current");
-  &run_command("scp $new_wpdir/wormpep.accession$wormpep $wormpub_dir/wormpep.accession_current");
-  &run_command("scp $new_wpdir/wormpep.dna$wormpep $wormpub_dir/wormpep.dna_current");
-  &run_command("scp $new_wpdir/wormpep.history$wormpep $wormpub_dir/wormpep.history_current");
-  &run_command("scp $new_wpdir/wp.fasta$wormpep $wormpub_dir/wp.fasta_current");
-  &run_command("/usr/local/pubseq/bin/setdb $wormpub_dir/wormpep_current");
-  &run_command("chmod +rw $new_wpdir/*");
-
-  # tar up the latest wormpep release and copy across
-  &run_command("/bin/tar -c -h -P \"/wormsrv2/WORMPEP/\" -f $wormpub_dir/wormpep${wormpep}.tar $new_wpdir/wormpep${wormpep} $new_wpdir/wormpep.accession${wormpep} $new_wpdir/wormpep.diff${wormpep} $new_wpdir/wormpep.dna${wormpep} $new_wpdir/wormpep.history${wormpep} $new_wpdir/wormpep.table${wormpep} $new_wpdir/wp.fasta${wormpep}");
-  &run_command("/bin/gzip $wormpub_dir/wormpep${wormpep}.tar");
-  &run_command("mv $wormpub_dir/wormpep${wormpep}.tar.gz $targetdir/$release");
-
-
   my $wp_source_dir = "/wormsrv2/WORMPEP/wormpep${wormpep}";
-  my $wp_ftp_dir = glob("~ftp/pub/databases/wormpep");
-  my $wp_old_release = "old_wormpep"."$old_release";
+  my $wormpep_ftp_root = glob("~ftp/pub/databases/wormpep");
+  my $wp_ftp_dir = "$wormpep_ftp_root/wormpep${wormpep}";
+  mkdir $wp_ftp_dir unless -e $wp_ftp_dir;
 
-  &run_command("mkdir $wp_ftp_dir/$wp_old_release") unless -e "$wp_ftp_dir/$wp_old_release";
-
-
-  # move the actual files to old_ directory
-
-  &run_command("mv $wp_ftp_dir/wormpep.accession $wp_ftp_dir/$wp_old_release/wormpep.accession$old_release");
-  &run_command("mv $wp_ftp_dir/wormpep.diff $wp_ftp_dir/$wp_old_release/wormpep.diff$old_release");
-  &run_command("mv $wp_ftp_dir/wormpep.dna $wp_ftp_dir/$wp_old_release/wormpep.dna$old_release"); 
-  &run_command("mv $wp_ftp_dir/wormpep.history $wp_ftp_dir/$wp_old_release/wormpep.history$old_release");  
-  &run_command("mv $wp_ftp_dir/wormpep.table $wp_ftp_dir/$wp_old_release/wormpep.table$old_release");   
-  &run_command("mv $wp_ftp_dir/wormpep${old_release} $wp_ftp_dir/$wp_old_release/");
-  &run_command("mv $wp_ftp_dir/wp.fasta $wp_ftp_dir/$wp_old_release/wp.fasta$old_release");
-
-
+  foreach my $file ( &wormpep_files ){
   # copy the wormpep release files across
-  &run_command("scp $wp_source_dir/wormpep.accession$wormpep $wp_ftp_dir/wormpep.accession");
-  &CheckSize("$wp_source_dir/wormpep.accession$wormpep","$wp_ftp_dir/wormpep.accession");
-  
-  &run_command("scp $wp_source_dir/wormpep.diff$wormpep $wp_ftp_dir/wormpep.diff");
-  &CheckSize("$wp_source_dir/wormpep.diff$wormpep","$wp_ftp_dir/wormpep.diff");
-  
-  &run_command("scp $wp_source_dir/wormpep.dna$wormpep $wp_ftp_dir/wormpep.dna");
-  &CheckSize("$wp_source_dir/wormpep.dna$wormpep","$wp_ftp_dir/wormpep.dna");
-  
-  &run_command("scp $wp_source_dir/wormpep.history$wormpep $wp_ftp_dir/wormpep.history");
-  &CheckSize("$wp_source_dir/wormpep.history$wormpep","$wp_ftp_dir/wormpep.history");
-  
-  &run_command("scp $wp_source_dir/wormpep.table$wormpep $wp_ftp_dir/wormpep.table");
-  &CheckSize("$wp_source_dir/wormpep.table$wormpep","$wp_ftp_dir/wormpep.table");
-  
-  &run_command("scp $wp_source_dir/wormpep${wormpep} $wp_ftp_dir/wormpep${wormpep}");
-  &CheckSize("$wp_source_dir/wormpep${wormpep}","$wp_ftp_dir/wormpep${wormpep}");
-  
-  &run_command("scp $wp_source_dir/wp.fasta$wormpep $wp_ftp_dir/wp.fasta");
-  &CheckSize("$wp_source_dir/wp.fasta$wormpep","$wp_ftp_dir/wp.fasta");
-  
+    &run_command("scp $wp_source_dir/$file$wormpep $wp_ftp_dir/$file");
+    &CheckSize("$wp_source_dir/$file$wormpep","$wp_ftp_dir/$file");
+  }
 
-  # delete the old symbolic link and make the new one  
-  &run_command("cd $wp_ftp_dir; ln -fs wormpep$wormpep wormpep");
-  &run_command("cd $wp_ftp_dir; ln -fs $wp_old_release/wormpep$old_release wormpep.prev");
-
+  &run_command("cd $wormpep_ftp_root; ln -fs $wp_ftp_dir wormpep_dev");
 }
 
 
@@ -391,24 +333,6 @@ sub copy_homol_data{
   my $blast_dir = "/wormsrv2/wormbase/ensembl_dumps";
   my $private_ftp = "/nfs/privateftp/ftp-wormbase/pub/data/st_louis_homol_data";
   &run_command("rm -f $private_ftp/*gz");
-  
-  &run_command("scp $blat_dir/stlace.blat.est.ace                  $private_ftp/${release}_stlace.blat.EST.ace");
-  &run_command("scp $blat_dir/stlace.blat.ost.ace                  $private_ftp/${release}_stlace.blat.OST.ace");
-  &run_command("scp $blat_dir/stlace.blat.mrna.ace                 $private_ftp/${release}_stlace.blat.mRNA.ace");
-  &run_command("scp $blat_dir/stlace.blat.embl.ace                 $private_ftp/${release}_stlace.blat.EMBL.ace");
-  &run_command("scp $blat_dir/stlace.good_introns.est.ace          $private_ftp/${release}_stlace.blat.good_introns.EST.ace");
-  &run_command("scp $blat_dir/stlace.good_introns.ost.ace          $private_ftp/${release}_stlace.blat.good_introns.OST.ace");
-  &run_command("scp $blat_dir/stlace.good_introns.mrna.ace         $private_ftp/${release}_stlace.blat.good_introns.mRNA.ace");
-  &run_command("scp $blat_dir/stlace.good_introns.embl.ace         $private_ftp/${release}_stlace.blat.good_introns.EMBL.ace");
- 
-  &run_command("scp $blat_dir/virtual_objects.stlace.blat.est.ace  $private_ftp/${release}_virtual_objects.stlace.BLAT_EST.ace");
-  &run_command("scp $blat_dir/virtual_objects.stlace.blat.ost.ace  $private_ftp/${release}_virtual_objects.stlace.BLAT_OST.ace");
-  &run_command("scp $blat_dir/virtual_objects.stlace.blat.mrna.ace $private_ftp/${release}_virtual_objects.stlace.BLAT_mRNA.ace");
-  &run_command("scp $blat_dir/virtual_objects.stlace.blat.embl.ace $private_ftp/${release}_virtual_objects.stlace.BLAT_EMBL.ace");
-  &run_command("scp $blat_dir/virtual_objects.stlace.ci.est.ace    $private_ftp/${release}_virtual_objects.stlace.ci.EST.ace");
-  &run_command("scp $blat_dir/virtual_objects.stlace.ci.ost.ace    $private_ftp/${release}_virtual_objects.stlace.ci.OST.ace");
-  &run_command("scp $blat_dir/virtual_objects.stlace.ci.mrna.ace   $private_ftp/${release}_virtual_objects.stlace.ci.mRNA.ace");
-  &run_command("scp $blat_dir/virtual_objects.stlace.ci.embl.ace   $private_ftp/${release}_virtual_objects.stlace.ci.EMBL.ace");
 
 
   &run_command("/bin/gzip -f $blast_dir/worm_pep_blastp.ace");
@@ -416,11 +340,6 @@ sub copy_homol_data{
   &run_command("/bin/gzip -f $blast_dir/worm_dna_blastx.ace");
   &run_command("/bin/gzip -f $blast_dir/worm_pep_motif_info.ace");
   &run_command("/bin/gzip -f $blast_dir/worm_brigpep_motif_info.ace");
-
-  &run_command("scp $blast_dir/worm_pep_blastp.ace.gz           $private_ftp/${release}_blastp_data.ace.gz");
-  &run_command("scp $blast_dir/worm_dna_blastx.ace.gz           $private_ftp/${release}_blastx_data.ace.gz");
-  &run_command("scp $blast_dir/worm_pep_motif_info.ace.gz       $private_ftp/${release}_protein_motif_data.ace.gz");
-  &run_command("scp $blast_dir/worm_brigpep_motif_info.ace.gz   $private_ftp/${release}_brig_protein_motif_data.ace.gz");
 
   &run_command("/bin/gzip -f $blast_dir/worm_pep_best_blastp_hits");
   &run_command("/bin/gzip -f $blast_dir/worm_brigpep_best_blastp_hits");
