@@ -7,7 +7,7 @@
 # Usage : autoace_minder [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2002-12-16 14:56:08 $
+# Last edited on: $Date: 2003-01-13 09:02:37 $
 
 
 #################################################################################
@@ -446,11 +446,11 @@ sub prepare_primaries {
   system ("touch $logdir/$flag{'A3'}");
   
   # transfer /wormsrv1/camace to /wormsrv2/camace 
-  system("TransferDB -start /wormsrv1/camace -end /wormsrv2/camace -database -name camace")
+  system("TransferDB.pl -start /wormsrv1/camace -end /wormsrv2/camace -database -name camace")
     && die "Couldn't run TransferDB for camace\n";
   
   # transfer /wormsrv1/geneace to /wormsrv2/geneace 
-    system("TransferDB -start /wormsrv1/geneace -end /wormsrv2/geneace -database -name geneace")
+    system("TransferDB.pl -start /wormsrv1/geneace -end /wormsrv2/geneace -database -name geneace")
       && die "Couldn't run TransferDB for geneace\n";
 
   #################################################
@@ -788,7 +788,7 @@ sub pre_blat_copy {
   
   # TransferDB the current autoace to safe directory 
   $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Starting TransferDB at $runtime\n\n";
-  system("TransferDB -start /wormsrv2/autoace -end /wormsrv2/autoace_midway -database -wspec -name autoace_midway")
+  system("TransferDB.pl -start /wormsrv2/autoace -end /wormsrv2/autoace_midway -database -wspec -name autoace_midway")
     && die "Couldn't run TransferDB for autoace\n";
   $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Finished TransferDB at $runtime\n\n";
   
