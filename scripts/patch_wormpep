@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl
+#!/usr/local/bin/perl -w
 #
 # patch_wormpep
 # v 0.2
@@ -23,7 +23,9 @@ $|=1;
 use IO::Handle;
 use Getopt::Std;
 use Cwd;
-require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
+use lib '/wormsrv2/scripts';
+use Wormbase;
+
 
  ##############################
  # command-line options       #
@@ -44,7 +46,7 @@ $release = $opt_r;
 my $maintainer = "dl1\@sanger.ac.uk";
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
-my $version = &get_script_version(patch_wormpep);
+my $cvs_version = &get_cvs_version($0);
 my $log="/wormsrv2/logs/patch_wormpep${release}.${rundate}.$$";
 
 
@@ -102,7 +104,7 @@ sub changed {
     print "Replaces WP:$old_acc\n";
     print "\n";
 
-    print "Peptide : ";
+    print "Peptide : WP:";
     &dbfetch($new_acc,$dbfile);
     print "\n\n";
     
@@ -162,7 +164,7 @@ sub error {
         print LOGFILE "No wormpep release number supplied.\n";
         print LOGFILE "Exiting early at $rundate $runtime\n";
         close LOGFILE;
-        &mail_maintainer("WormBase Report: patch_wormpep",$maintainer,$logfile);
+        &mail_maintainer("WormBase Report: patch_wormpep",$maintainer,$log);
     }
     exit(1);
 }
