@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder [-options]
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-01-29 14:52:16 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2003-02-03 10:03:53 $
 
 
 #################################################################################
@@ -1377,6 +1377,12 @@ sub map_features {
   $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "map_PCR_RNAi.pl started at $runtime\n";  
   system("$scriptdir/map_RNAi.pl") && die "Couldn't run map_RNAi.pl\n";
   $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "map_PCR_RNAi.pl finished at $runtime\n";  
+
+  # alleles
+  print LOG "map_alleles.pl started at ",&runtime,"\n";  
+  system("$scriptdir/map_alleles.pl") && die "Couldn't run map_alleles.pl\n";
+  print LOG "map_alleles.pl finished at ",&runtime,"\n";  
+
 
 }
 #__ end map_features __#
