@@ -378,8 +378,8 @@ sub geneclass_loci_other_name {
       push(@Update,"CGC_approved\n");
       push(@Update,"Phenotype \"$2\"\n");
     }
- 
-    if ($_ =~ /^(\w{3,3})\s+(\w+)\s+(.+)/ && $_ !~ /^New|NEW/ ) {  
+
+    if ($_ =~ /^(\w{3,3})\s+([A-Z]+)\s+(.+)/ && $_ !~ /^New|NEW/ ) {  
       $gene_class = $1;
       push(@Update,"\n\nGene_Class : \"$gene_class\"\n");
       #@parts = split(/\s{2,}/, $2);
@@ -388,6 +388,13 @@ sub geneclass_loci_other_name {
       push(@Update,"Designating_laboratory\t\"$2\"\n");
       push(@Update,"CGC_approved\n");
       #print "Designating_laboratory\t\"$parts[0]\"\n";
+    }
+    
+    if ($_ =~ /^(\w{3,3})\s+see\s+(.+)/ && $_ !~ /^New|NEW/ ) {  
+      $gene_class = $1;
+      push(@Update,"\n\nGene_Class : \"$1\"\n"); 
+      push(@Update,"Description\t\"See $2\"\n");
+      push(@Update,"CGC_approved\n");
     }
 
     if ($_ =~ /^((\w{3,3})-\d+)\s+=\s+(\w+\..+)/) {
