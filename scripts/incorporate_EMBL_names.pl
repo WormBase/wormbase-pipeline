@@ -10,8 +10,8 @@
 
 
 # Author: Chao-Kung Chen
-# Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-03-16 17:36:02 $ 
+# Last updated by $Author: krb $
+# Last updated on: $Date: 2004-06-14 12:09:56 $ 
 
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
@@ -323,11 +323,11 @@ my (@wormpep_tbl, %GA_info);
 
 if (!$debug){
   my $wormpep_ver = get_wormbase_version() - 1;
-  @wormpep_tbl = `cut -f 1,3,7 /wormsrv2/WORMPEP/wormpep$wormpep_ver/wormpep.table$wormpep_ver`;
+  @wormpep_tbl = `cut -f 1,4,8 /wormsrv2/WORMPEP/wormpep$wormpep_ver/wormpep.table$wormpep_ver`;
 }
 
 if ($debug){
-  @wormpep_tbl = `cut -f 1,3,7 $output_dir/wormpep.table120`;
+  @wormpep_tbl = `cut -f 1,4,8 $output_dir/wormpep.table120`;
 }
 
 foreach (@wormpep_tbl){
