@@ -8,8 +8,8 @@
 #
 # N.B. Previously called gffcheck
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2002-11-22 10:08:16 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2003-01-23 16:18:21 $
 
 
 use Getopt::Std;
@@ -97,19 +97,19 @@ exit(0);
 
 sub runestcheck {
     print LOG "Starting estcheck\n";
-    system ("/wormsrv2/scripts/estcheck");
+    system ("/wormsrv2/scripts/estcheck") && die "Can't run estcheck\n";
     print LOG "Finished running estcheck\n";
 }
 
 sub runintroncheck {
     print LOG "Starting introncheck\n";
-    system ("/wormsrv2/scripts/introncheck") or die "cant run /wormsrv2/scripts/introncheck\n";
+    system ("/wormsrv2/scripts/introncheck") && die "cant run /wormsrv2/scripts/introncheck\n";
     print LOG "Finished running introncheck\n";
 }
 
 sub runoverlapcheck {
     print LOG "Starting overlapcheck.pl\n";
-    system ("/wormsrv2/scripts/overlapcheck.pl");
+    system ("/wormsrv2/scripts/overlapcheck.pl") && die "Can't run overlapcheck.pl\n";
     print LOG "Finished running overlapcheck.pl\n";
 }
    
