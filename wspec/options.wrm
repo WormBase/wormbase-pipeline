@@ -60,12 +60,14 @@ _VClone            -V -D PMAP
 
 _VAuthor           -V 
 _VPerson	   -V -T Standard_name
+_VPerson_name	   -V
 _VJournal          -V
 _VPaper            -V -T Brief_citation
 _VDatabase         -V
 
 _VGene_Class       -V
 _VLocus            -V -D GMAP 
+_VGene_name	   -V
 _VRearrangement    -V -D GMAP
 
 _VAllele           -V
