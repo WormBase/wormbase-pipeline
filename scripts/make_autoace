@@ -8,7 +8,7 @@
 # This makes the autoace database from its composite sources.
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-02-12 13:08:18 $
+# Last edited on: $Date: 2003-02-12 13:47:34 $
 
 
 $|=1;
@@ -176,13 +176,6 @@ sub buildautoace{
   $now = `date +%H:%M:%S`; chomp $now;
   print LOG "* Parsed config file at $now\n\n";
   
-  ################################################
-  # Remove confidential remarks                  *
-  ################################################
-
-  &rmconfremark();  
-  $now = `date +%H:%M:%S`; chomp $now;
-  print LOG "* Removed confidential remarks at $now\n\n";
 
   ################################################
   # Re-initialize the database                      
@@ -406,24 +399,6 @@ sub parseconfig {
 }
 
 
-###################################################
-# Remove confidential remarks from certain files  
-
-sub rmconfremark { 
-  my @remove_confid=("stlace/stlace_Sequence.ace","camace/camace_Sequence.ace","briggsae/briggsae_Sequence.ace");
-  
-  foreach my $confid (@remove_confid) {
-    my $this_acefile="$wormbasedir"."/$confid";
-    open(TEMP,">$dbpath/acefiles/temp$$");
-    open(ACEFILE,"$this_acefile");
-    while(<ACEFILE>) {
-      (print TEMP $_) unless (/^Visible.*Confidential_remark/);
-    }
-    close ACEFILE;
-    close TEMP;
-    system("\\mv -f $dbpath/acefiles/temp$$ $this_acefile") && print LOG "ERROR: can't overwrite original acefile with stripped-down acefile\n";
-  }
-}
 
 
 ###################################################
