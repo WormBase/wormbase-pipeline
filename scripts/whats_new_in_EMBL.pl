@@ -7,7 +7,7 @@
 # checks EMBL for new EST or mRNA entries
 #
 # Last updated by: $Author: dl1 $                      
-# Last updated on: $Date: 2004-12-07 13:09:12 $        
+# Last updated on: $Date: 2004-12-07 13:17:36 $        
 
 use strict;
 use Getopt::Long;
@@ -47,6 +47,8 @@ if($debug){
 # MAIN BODY OF SCRIPT
 ##########################
 
+our $buildtime        = 21;   # length of build in days
+
 my $date     = &get_date;
 
 my $new_elegans_mRNA = 0;
@@ -54,8 +56,6 @@ my $new_elegans_EST  = 0;
 my $new_nematode_EST = 0;
 my $non_elegans_ESTs = 0;
 my $new_EMBL_CDS     = 0;
-my $buildtime        = 21;   # length of build in days
-
 
 # Elegans mRNA entries
 open (NEW_SEQUENCES, "$getz -c \'([embl-div:inv] & [embl-mol:*rna] & [embl-org:Caenorhabditis elegans] & [emblnew-DateCreated#$date:])\' |");
@@ -227,8 +227,6 @@ sub get_date {
     
   }
 
-  print "$date\n";
-  exit;
   return ($date);
 }
 
