@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl
+#!/usr/local/bin/perl5.6.1 -w
 
 # ms2@sanger.ac.uk
 
