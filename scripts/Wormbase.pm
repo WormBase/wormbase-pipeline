@@ -41,7 +41,9 @@ sub get_old_wormbase_version {
     chomp($WS_version);
     $WS_version =~ s/NAME //;    
     $WS_version =~ s/ +$//;
-    my ($newnumber) = ($WSversion =~ /(\d+$)/);
+    print $WS_version, "\n";
+    my ($newnumber) = ($WS_version =~ /WS(\d+)/);
+    print $newnumber, "\n";
     my $oldnumber = $newnumber -1;
     my $oldWSversion = "WS".$oldnumber;
     return($oldWSversion);
