@@ -20,7 +20,7 @@ use Symbol 'gensym';
 #####################
 
 my @chrom = qw ( I II III IV V X ); 
-my $cvsversion = &get_cvs_version('copy2web');
+my $cvsversion = &get_cvs_version('/wormsrv2/copy2web.pl');
 my $WSversion  = &get_wormbase_version;
 my $maintainers = "dl1\@sanger.ac.uk kj2\@sanger.ac.uk";
 my $rundate = `date +%y%m%d`; chomp $rundate;
