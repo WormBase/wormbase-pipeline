@@ -8,7 +8,7 @@
 # autoace.
 #
 # Last updated by: $Author: dl1 $                     
-# Last updated on: $Date: 2002-07-17 16:16:44 $       
+# Last updated on: $Date: 2002-07-17 16:33:19 $       
 
 #################################################################################
 # Variables                                                                     #
@@ -50,11 +50,12 @@ GetOptions (
  # Paths etc                  #
  ##############################
 
+# Temporary measure. Need to move to main branch asap
 # my $tace           = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
-# my $autoace_config = "/wormsrv2/autoace_config/autoace_test.config";
-
 my $tace           = glob ('~edgrif') . "/TEST/DAN/tace";
-my $autoace_config = "/wormsrv1/dan/autoace_test.config";
+
+
+my $autoace_config = "/wormsrv2/autoace_config/autoace_test.config";
 my $basedir        = "/wormsrv2/wormbase";
 my $miscdir        = "$basedir/misc";
 
@@ -92,10 +93,10 @@ my $logfile = "/wormsrv2/logs/make_acefiles.${WS_version}.$rundate.$$";
 system ("/bin/touch $logfile");
 open (LOG,">>$logfile") or die ("Could not create logfile\n");
 LOG->autoflush();
-#open (STDOUT,">>$logfile");
-#STDOUT->autoflush();
-#open (STDERR,">>$logfile"); 
-#STDERR->autoflush();
+open (STDOUT,">>$logfile");
+STDOUT->autoflush();
+open (STDERR,">>$logfile"); 
+STDERR->autoflush();
 
 print LOG "# make_acefiles\n\n";     
 print LOG "# run details    : $rundate $runtime\n";
@@ -148,14 +149,9 @@ close LOG;
 # hasta luego
 exit (0);
 
-
-
-
-
 #################################################################################
 ### Subroutines                                                               ###
 #################################################################################
-
 
 #################################################################################
 # Erases old acefiles and make new ones                                         #
@@ -290,7 +286,6 @@ sub mknewacefiles {
 	print "Made file $filename\n";
 	
 	# process database dumps to add database names into time stamps
-	# rather than keeping the existing 'wormpub', 'lstein' etc.  name
 	&process_ace_file($filename,$dbname);
 
 	next;
