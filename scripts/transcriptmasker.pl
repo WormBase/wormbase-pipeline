@@ -1,5 +1,5 @@
 #!/usr/local/bin/perl5.8.0 -w
-
+#
 # transcriptmasker.pl
 #
 # masks out ?Feature data spans in mRNA/ESTs prior to the BLAT analysis
@@ -8,7 +8,7 @@
 # 031023 dl1
 
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2004-05-11 13:02:41 $
+# Last edited on: $Date: 2004-05-12 15:19:56 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -35,6 +35,7 @@ my $debug;              # debug mode
 my $verbose;            # verbose mode
 my $help;               # Help/Usage page
 my $mrna;               # mRNA data
+my $ncrna;              # ncRNA data
 my $est;                # EST data
 my $ost;                # OST data
 my $all;                # all of the above
@@ -42,6 +43,7 @@ my $all;                # all of the above
 GetOptions (
 	    "all"            => \$all,
 	    "mrna"           => \$mrna,
+	    "ncrna"          => \$ncrna,
 	    "est"            => \$est,
 	    "ost"            => \$ost,
             "debug:s"        => \$debug,
@@ -64,14 +66,13 @@ if ($debug) {
 
 # datafiles for input
 our %datafiles = (
-		  "mrna" => "/nfs/disk100/wormpub/analysis/ESTs/elegans_mRNAs",
-		  "est"  => "/nfs/disk100/wormpub/analysis/ESTs/elegans_ESTs",
-		  "ost"  => "/nfs/disk100/wormpub/analysis/ESTs/elegans_OSTs"
+		  "mrna"  => "/nfs/disk100/wormpub/analysis/ESTs/elegans_mRNAs",
+		  "ncrna" => "/nfs/disk100/wormpub/analysis/ESTs/elegans_ncRNAs",
+		  "est"   => "/nfs/disk100/wormpub/analysis/ESTs/elegans_ESTs",
+		  "ost"   => "/nfs/disk100/wormpub/analysis/ESTs/elegans_OSTs"
 		  );
 
-# transcript accessions to names from a hash
-# !! need to deal with making this .dat file etc 
-#
+# transcript accessions to names from a hash in common data
 
 print "// Reading EST_names.dat hash\n\n" if ($verbose);
 our %EST_name = &FetchData('NDBaccession2est');
@@ -91,27 +92,44 @@ my ($type,$start,$stop,$length,$remark);              #
 my ($cut_to,$cut_from,$cut_length,$newseq);           #
 my $seqmasked;                                        #
 my $seqlength;                                        #
-
+my $masked;                                           # No of entries masked
 
 # which data file to parse
-print LOG &runtime, ": masking mRNA sequences\n" if ($mrna || $all);
-&masksequence($datafiles{mrna}) if ($mrna || $all);
+$masked = &MaskSequence($datafiles{mrna}) if ($mrna || $all);
+print LOG &runtime, ": masked $masked mRNA sequences\n" if ($mrna || $all);
 
-print LOG &runtime, ": masking EST sequences\n" if ($est || $all);
-&masksequence($datafiles{est})  if ($est || $all);
+$masked = &MaskSequence($datafiles{ncrna}) if ($ncrna || $all);
+print LOG &runtime, ": masked $masked ncRNA sequences\n" if ($ncrna || $all);
 
-print LOG &runtime, ": masking OST sequences\n" if ($ost || $all);
-&masksequence($datafiles{ost})  if ($ost || $all);
+$masked = &MaskSequence($datafiles{est})  if ($est || $all);
+print LOG &runtime, ": masked $masked EST sequences\n" if ($est || $all);
 
+$masked = &MaskSequence($datafiles{ost})  if ($ost || $all);
+print LOG &runtime, ": masked $masked OST sequences\n" if ($ost || $all);
+
+print LOG "\n";
+print LOG "=============================================\n";
+print LOG "\n";
 close LOG;
+
+#########################################
+# hasta luego                           #
+#########################################
+
 exit(0);
 
 
-###############################################################
+############################################################
+######################## Subroutines #######################
+############################################################
 
+#_ MaskSequence -#
+# 
+# pass type of transcript data to be masked (e.g. mRNA, EST etc)
 
-sub masksequence {
-    my $data = shift;
+sub MaskSequence {
+    my $data   = shift;
+    my $masked = 0;
   
     # connect to database
     print  "Opening database for masking $data ..\n" if ($debug);
@@ -161,6 +179,7 @@ sub masksequence {
 	}
 	
 	@features = $obj->Feature_data(1);
+	
 	if ( scalar (@features) == 0) {
 	    print "ERROR: No Features to parse \n" if ($debug);
 	}
@@ -169,24 +188,29 @@ sub masksequence {
 		print "\n// parse $feature\n" if ($verbose);
 		
 		$type  = $obj->Feature_data->Feature(1);         # Feature type (e.g. SL1,SL2,polyA)
-		if(defined($type)){
-		  $start = $obj->Feature_data->Feature(2);         # start coord
-		  $stop  = $obj->Feature_data->Feature(3);         # stop coord
+		if (defined($type)) {
+		    $start = $obj->Feature_data->Feature(2);         # start coord
+		    $stop  = $obj->Feature_data->Feature(3);         # stop coord
 		  
-		  $cut_to     = $start - 1;                        # manipulations for clipping 
-		  $cut_from   = $stop;
-		  $cut_length = $stop - $start + 1;
-		  
-		  if ($cut_to < 0 ) {$cut_to = 0;}                 # fudge to ensure non-negative clipping coords
-		  
-		  print "$acc [$id]: '$type' $start -> $stop [$cut_to : $cut_from ($cut_length)]\n" if ($debug);
-		  print "// # $acc [$id] $type:" . (substr($seq,$cut_to,$cut_length)) . " [$start - $stop]\n\n" if ($verbose);
-		      $newseq = (substr($seqmasked,0,$cut_to)) . ('n' x $cut_length)  . (substr($seqmasked,$cut_from));
-		  $seqmasked = $newseq;
+		    $cut_to     = $start - 1;                        # manipulations for clipping 
+		    $cut_from   = $stop;
+		    $cut_length = $stop - $start + 1;
+		    
+		    if ($cut_to < 0 ) {$cut_to = 0;}                 # fudge to ensure non-negative clipping coords
+		    
+		    print "$acc [$id]: '$type' $start -> $stop [$cut_to : $cut_from ($cut_length)]\n" if ($debug);
+		    print "// # $acc [$id] $type:" . (substr($seq,$cut_to,$cut_length)) . " [$start - $stop]\n\n" if ($verbose);
+		    $newseq = (substr($seqmasked,0,$cut_to)) . ('n' x $cut_length)  . (substr($seqmasked,$cut_from));
+		    $seqmasked = $newseq;
 		}
-	    } 
+	    }
+
+	    # increment count of sequences masked
+	    $masked++;
+	    
 	}
 	
+	# output masked sequence
 	print OUTPUT ">$acc $id\n$seqmasked\n";
 	
 	# close object
@@ -196,10 +220,11 @@ sub masksequence {
     close INPUT;
     $/ = "\n";
 
-    
     close OUTPUT;
-}
 
+    return ($masked);
+}
+#_ end MaskSequence _#
 
 ###############################################################
 
@@ -210,11 +235,12 @@ sub create_log_files{
 
   # create main log file using script name for
   my $script_name = $1;
-  $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
+  $script_name    =~ s/\.pl//; # don't really need to keep perl extension in log name
   my $rundate     = `date +%y%m%d`; chomp $rundate;
-  $log        = "/wormsrv2/logs/$script_name.$rundate.$$";
+  $log            = "/wormsrv2/logs/$script_name.$rundate.$$";
 
   open (LOG, ">$log") or die "cant open $log";
+  print LOG "=============================================\n";
   print LOG "$script_name\n";
   print LOG "started at ",`date`,"\n";
   print LOG "=============================================\n";
