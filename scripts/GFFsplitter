@@ -147,10 +147,10 @@ foreach (@gff_files) {
     $gff_WTP                  = $file_prefix . "\.WTP\.gff";
     $gff_PCR_products         = $file_prefix . "\.PCR_products\.gff";
     $gff_cDNA_for_RNAi        = $file_prefix . "\.cDNA_for_RNAi\.gff";
-    $gff_BLAT_EST_GENOME      = $file_prefix . "\.BLAT_EST_GENOME\.gff";
     $gff_BLAT_EST_BEST        = $file_prefix . "\.BLAT_EST_BEST\.gff";
     $gff_BLAT_EST_OTHER       = $file_prefix . "\.BLAT_EST_OTHER\.gff";
     $gff_mRNA_GENOME          = $file_prefix . "\.mRNA_GENOME\.gff";
+    $gff_Expr_profile         = $file_prefix . "\.Expr_profile\.gff";
 
     
     open (GFF_CLONE_PATH, ">$datadir/GFF_SPLITS/$gff_clone_path");
@@ -277,10 +277,6 @@ foreach (@gff_files) {
     print GFF_CDNA_FOR_RNAI   "##Version: $cvs_version\n";
     print GFF_CDNA_FOR_RNAI   "##date $rundate\n";
 
-    open (GFF_BLAT_EST_GENOME,">$datadir/GFF_SPLITS/$gff_BLAT_EST_GENOME");
-    print GFF_BLAT_EST_GENOME "##Version: $cvs_version\n";
-    print GFF_BLAT_EST_GENOME "##date $rundate\n";
-
     open (GFF_BLAT_EST_BEST,  ">$datadir/GFF_SPLITS/$gff_BLAT_EST_BEST");
     print GFF_BLAT_EST_BEST   "##Version: $cvs_version\n";
     print GFF_BLAT_EST_BEST   "##date $rundate\n";
@@ -292,6 +288,10 @@ foreach (@gff_files) {
     open (GFF_MRNA_GENOME,    ">$datadir/GFF_SPLITS/$gff_mRNA_GENOME");
     print GFF_MRNA_GENOME     "##Version: $cvs_version\n";
     print GFF_MRNA_GENOME     "##date $rundate\n";
+
+    open (GFF_EXPR_PROFILE,    ">$datadir/GFF_SPLITS/$gff_Expr_profile");
+    print GFF_EXPR_PROFILE     "##Version: $cvs_version\n";
+    print GFF_EXPR_PROFILE     "##date $rundate\n";
 
 
 
@@ -348,7 +348,6 @@ foreach (@gff_files) {
 	    print GFF_WTP                  "$_\n";
 	    print GFF_PCR_PRODUCTS         "$_\n";
 	    print GFF_CDNA_FOR_RNAI        "$_\n";
-	    print GFF_BLAT_EST_GENOME      "$_\n";
 	    print GFF_BLAT_EST_BEST        "$_\n";
 	    print GFF_BLAT_EST_OTHER       "$_\n";
 	    print GFF_MRNA_GENOME          "$_\n";
@@ -647,11 +646,6 @@ foreach (@gff_files) {
    	# BLAT
 	################################
 
-	if (/BLAT_EST_GENOME/) {
-	  #	    print "$_\n" if ($debug);
-	  print GFF_BLAT_EST_GENOME "$_\n";
-	  $found_a_home = 1;
-	}
 
 	if (/BLAT_EST_BEST/) {
 	  #	    print "$_\n" if ($debug);
@@ -672,10 +666,19 @@ foreach (@gff_files) {
 
 	if (/mRNA_GENOME/) {
 	  #	    print "$_\n" if ($debug);
-	  print GFF_MRNA_GENOME "$_\n";
+	  print GFF_EXPR_PROFILE "$_\n";
 	  $found_a_home = 1;
 	}
 
+	################################
+   	# Expr_profile
+	################################
+
+	if (/Expr_profile/) {
+	  #	    print "$_\n" if ($debug);
+	  print GFF_EXPR_PROFILE "$_\n";
+	  $found_a_home = 1;
+	}
 
 	print GFF_REST "$_\n" unless ($found_a_home); 
 	$running_total++ if ($found_a_home); 
@@ -715,10 +718,10 @@ foreach (@gff_files) {
     close GFF_WTP;
     close GFF_PCR_PRODUCTS;
     close GFF_CDNA_FOR_RNAI;
-    close GFF_BLAT_EST_GENOME;
     close GFF_BLAT_EST_BEST;
     close GFF_BLAT_EST_OTHER;
     close GFF_MRNA_GENOME;
+    close GFF_EXPR_PROFILE;
 
     ########################################
     # count file lengths for all GFF files #
@@ -847,10 +850,6 @@ foreach (@gff_files) {
     $total_lines = $total_lines + $gff_length_cDNA_for_RNAi;
     print "$gff_cDNA_for_RNAi   \t\t: $gff_length_cDNA_for_RNAi\n";
 
-    $gff_length_BLAT_EST_GENOME = file_size("$datadir/GFF_SPLITS/$gff_BLAT_EST_GENOME") - 3;
-    $total_lines = $total_lines + $gff_length_BLAT_EST_GENOME;
-    print "$gff_BLAT_EST_GENOME   \t\t: $gff_length_BLAT_EST_GENOME\n";
-
     $gff_length_BLAT_EST_BEST   = file_size("$datadir/GFF_SPLITS/$gff_BLAT_EST_BEST") - 3;
     $total_lines = $total_lines + $gff_length_BLAT_EST_BEST;
     print "$gff_BLAT_EST_BEST   \t\t: $gff_length_BLAT_EST_BEST\n";
@@ -862,6 +861,10 @@ foreach (@gff_files) {
     $gff_length_MRNA_GENOME = file_size("$datadir/GFF_SPLITS/$gff_mRNA_GENOME") - 3;
     $total_lines = $total_lines + $gff_length_MRNA_GENOME;
     print "$gff_mRNA_GENOME   \t\t: $gff_length_MRNA_GENOME\n";
+
+    $gff_length_Expr_profile = file_size("$datadir/GFF_SPLITS/$gff_Expr_profile") - 3;
+    $total_lines = $total_lines + $gff_length_Expr_profile;
+    print "$gff_Expr_profile   \t\t: $gff_length_Expr_profile\n";
 
     $gff_length_rest = file_size("$datadir/GFF_SPLITS/$gff_rest") - 3;
     $total_lines = $total_lines + $gff_length_rest;
