@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-07-25 11:02:39 $
+# Last updated on: $Date: 2003-09-11 14:34:44 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -424,19 +424,23 @@ sub copy_homol_data{
   my $private_ftp = "/nfs/privateftp/ftp-wormbase/pub/data/st_louis_homol_data";
   system("rm -f $private_ftp/*gz");
   
-  system("cp $blat_dir/stlace.blat.EST.ace                  $private_ftp/${release}_stlace.blat.EST.ace");
-  system("cp $blat_dir/stlace.blat.OST.ace                  $private_ftp/${release}_stlace.blat.OST.ace");
-  system("cp $blat_dir/stlace.blat.mRNA.ace                 $private_ftp/${release}_stlace.blat.mRNA.ace");
-  system("cp $blat_dir/stlace.good_introns.EST.ace          $private_ftp/${release}_stlace.blat.good_introns.EST.ace");
-  system("cp $blat_dir/stlace.good_introns.OST.ace          $private_ftp/${release}_stlace.blat.good_introns.OST.ace");
-  system("cp $blat_dir/stlace.good_introns.mRNA.ace         $private_ftp/${release}_stlace.blat.good_introns.mRNA.ace");
+  system("cp $blat_dir/stlace.blat.est.ace                  $private_ftp/${release}_stlace.blat.EST.ace");
+  system("cp $blat_dir/stlace.blat.ost.ace                  $private_ftp/${release}_stlace.blat.OST.ace");
+  system("cp $blat_dir/stlace.blat.mrna.ace                 $private_ftp/${release}_stlace.blat.mRNA.ace");
+  system("cp $blat_dir/stlace.blat.embl.ace                 $private_ftp/${release}_stlace.blat.EMBL.ace");
+  system("cp $blat_dir/stlace.good_introns.est.ace          $private_ftp/${release}_stlace.blat.good_introns.EST.ace");
+  system("cp $blat_dir/stlace.good_introns.ost.ace          $private_ftp/${release}_stlace.blat.good_introns.OST.ace");
+  system("cp $blat_dir/stlace.good_introns.mrna.ace         $private_ftp/${release}_stlace.blat.good_introns.mRNA.ace");
+  system("cp $blat_dir/stlace.good_introns.embl.ace         $private_ftp/${release}_stlace.blat.good_introns.EMBL.ace");
   
-  system("cp $blat_dir/virtual_objects.stlace.BLAT_EST.ace  $private_ftp/${release}_virtual_objects.stlace.BLAT_EST.ace");
-  system("cp $blat_dir/virtual_objects.stlace.BLAT_OST.ace  $private_ftp/${release}_virtual_objects.stlace.BLAT_OST.ace");
-  system("cp $blat_dir/virtual_objects.stlace.BLAT_mRNA.ace $private_ftp/${release}_virtual_objects.stlace.BLAT_mRNA.ace");
-  system("cp $blat_dir/virtual_objects.stlace.ci.EST.ace    $private_ftp/${release}_virtual_objects.stlace.ci.EST.ace");
-  system("cp $blat_dir/virtual_objects.stlace.ci.OST.ace    $private_ftp/${release}_virtual_objects.stlace.ci.OST.ace");
-  system("cp $blat_dir/virtual_objects.stlace.ci.mRNA.ace   $private_ftp/${release}_virtual_objects.stlace.ci.mRNA.ace");
+  system("cp $blat_dir/virtual_objects.stlace.blat.est.ace  $private_ftp/${release}_virtual_objects.stlace.BLAT_EST.ace");
+  system("cp $blat_dir/virtual_objects.stlace.blat.ost.ace  $private_ftp/${release}_virtual_objects.stlace.BLAT_OST.ace");
+  system("cp $blat_dir/virtual_objects.stlace.blat.mrna.ace $private_ftp/${release}_virtual_objects.stlace.BLAT_mRNA.ace");
+  system("cp $blat_dir/virtual_objects.stlace.blat.embl.ace $private_ftp/${release}_virtual_objects.stlace.BLAT_EMBL.ace");
+  system("cp $blat_dir/virtual_objects.stlace.ci.est.ace    $private_ftp/${release}_virtual_objects.stlace.ci.EST.ace");
+  system("cp $blat_dir/virtual_objects.stlace.ci.ost.ace    $private_ftp/${release}_virtual_objects.stlace.ci.OST.ace");
+  system("cp $blat_dir/virtual_objects.stlace.ci.mrna.ace   $private_ftp/${release}_virtual_objects.stlace.ci.mRNA.ace");
+  system("cp $blat_dir/virtual_objects.stlace.ci.embl.ace   $private_ftp/${release}_virtual_objects.stlace.ci.EMBL.ace");
   
   system("cp $blast_dir/blastp_ensembl.ace          $private_ftp/${release}_blastp_data.ace");
   system("cp $blast_dir/blastx_ensembl.ace          $private_ftp/${release}_blastx_data.ace");
