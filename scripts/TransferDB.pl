@@ -4,7 +4,7 @@
 
 # by ag3 [991221]
 #
-# Last updated on: $Date: 2003-01-13 18:10:17 $
+# Last updated on: $Date: 2003-04-11 08:54:13 $
 # Last updated by: $Author: krb $
 
 
@@ -78,9 +78,8 @@ GetOptions (
 my $DEBUG = 0;
 my $OK=0;
 our $DB=0;
-my $PRESENT_DIR = cwd;
-$PRESENT_DIR =~ s/\/tmp_mnt//;
-my $LOGFILE = "$PRESENT_DIR"."/"."TransferDB.log.$$";
+my $date = `date +%y%m%d`; chomp $date;
+my $LOGFILE = "/wormsrv2/logs/TransferDB.${date}.$$";
 my %SIG;
 
 $SIG{INT}= sub {print LOGFILE ".. INTERRUPT ..\n"; close LOGFILE; die()};
