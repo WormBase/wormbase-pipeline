@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-02-26 13:05:01 $
+# Last updated on: $Date: 2003-02-26 16:00:14 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -236,9 +236,37 @@ EOF
 EOF
   
   cds_name_to_seq_name($cds_of_each_locus, $seq_name_of_each_locus, $default_db);
+
+ my $no_remark_in_geneclass_for_merged_loci=<<EOF;
+  Table-maker -p "/wormsrv1/geneace/wquery/no_remark_in_geneclass_for_merged_loci.def" quit
+EOF
+
+  add_remark_for_merged_loci_in_geneclass($no_remark_in_geneclass_for_merged_loci, $default_db);
+
     
   print LOG "\nThere are $locus_errors errors in $size loci.\n";
 
+}
+
+sub add_remark_for_merged_loci_in_geneclass {
+  my ($def, $db)=@_;
+  my ($locus, $other, $gc);
+  open (FH, "echo '$def' | tace $db | ") || die "Couldn't access $db\n";
+  while (<FH>){
+    chomp $_;
+    if ($_ =~ /^\"(.+)\"\s+\"(.+)\"\s+\"(.+)\"/){
+      $locus_errors++;
+      $locus = $1;
+      $other = $2;
+      $gc = $3;
+      $locus =~ s/\\//g;  # get rid of \ in locus like AAH\/1 from table maker
+      print LOG "$locus became an other_name of $other and no remark is added in Gene_class $gc\n";
+      if ($ace){
+	print ACE "\n\nGene_Class : \"$gc\"\n";
+	print ACE "Remark \"$locus became an other_name of $other [$rundate ck1]\"\n";
+      }
+    }
+  }
 }
 
 sub gene_name_class {
