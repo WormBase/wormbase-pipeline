@@ -12,8 +12,8 @@
 # the Cold Spring Harbor Laboratory database (cshace)
 # the Caltech database (citace)
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2002-11-13 17:48:02 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2003-07-14 09:51:40 $
 
 
 #################################################################################
@@ -146,7 +146,7 @@ sub unpack_stuff{
   system ("/bin/gzip -d ".$dbname."_$today.tar.gz") && die "Couldn't run gzip command\n";
   print LOGFILE "uncompress file\n";
 
-  system ("/bin/tar -xvf ".$dbname."_$today.tar") && die "Couldn't run tar command\n";
+  system ("/bin/tar -xvf ".$dbname."_$today.tar");
   print LOGFILE "untar file\n\n";
 
   print LOGFILE "Database files to be loaded:\n";
