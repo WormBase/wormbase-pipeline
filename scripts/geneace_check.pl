@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-08-12 09:49:13 $
+# Last updated on: $Date: 2003-08-12 11:39:27 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -59,7 +59,7 @@ if ($help){&usage("Help")}
 
 # Use debug mode?
 if($debug){
-  print "DEBUG = \"$debug\"\n\n";
+  print "\nDEBUG = \"$debug\"\n\n";
   ($maintainers = "$debug" . '\@sanger.ac.uk');
 }
 
@@ -68,14 +68,8 @@ if($debug){
 # choose database to query: default is /wormsrv1/geneace #
 ##########################################################
 
-my $default_db;
-
-if ($database eq ""){
-  $default_db = "/wormsrv1/geneace"; 
-}
-else {
-  $default_db = $database;
-}
+my $default_db = "/wormsrv1/geneace";
+($default_db = $database) if ($database);
 print "\nUsing $default_db as default database.\n\n";
 
 
