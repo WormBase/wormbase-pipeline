@@ -5,7 +5,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-01-17 12:45:31 $
+# Last updated on: $Date: 2003-01-17 15:28:41 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -292,12 +292,14 @@ foreach $file (@gff_files) {
 
 
     # GFF genes with wormpep CE accessions
-    system ("GFF_with_wormpep_accessions.pl $datadir/GFF_SPLITS/$file.genes.gff > $datadir/GFF_SPLITS/$file.genes_acc.gff");
-    $input_file = "$datadir/GFF_SPLITS/$file.genes.gff";
-    $output_file = "$datadir/GFF_SPLITS/$file.genes_acc.gff";
-    &GFF_genes_with_accessions("$input_file", "$output_file");
-    system ("mv -f $output_file $input_file");
-
+    # Shouldn't do this unless Wormpep has been made else no Corresponding_protein tags in database
+    unless(-e "$lockdir/D1:Build_wormpep_final"){
+      system ("GFF_with_wormpep_accessions.pl $datadir/GFF_SPLITS/$file.genes.gff > $datadir/GFF_SPLITS/$file.genes_acc.gff");
+      $input_file = "$datadir/GFF_SPLITS/$file.genes.gff";
+      $output_file = "$datadir/GFF_SPLITS/$file.genes_acc.gff";
+      &GFF_genes_with_accessions("$input_file", "$output_file");
+      system ("mv -f $output_file $input_file");
+    }
     
     # GFF UTRs with CDS names
     # Shouldn't attempt to do this if UTR data has not been generated
