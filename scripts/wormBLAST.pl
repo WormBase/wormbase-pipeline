@@ -4,8 +4,8 @@
 # 
 # written by Anthony Rogers
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2004-02-04 16:25:38 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2004-02-19 09:50:01 $
 
 use DBI;
 use strict;
@@ -729,7 +729,7 @@ sub run_command{
     $errors++;
     print LOG "ERROR: $command failed\n";
   }
-  print LOG &runtime, ": finished running $command\n";
+  print LOG &runtime, ": finished running\n\n";
 
   # for optional further testing by calling subroutine
   return($status);
