@@ -7,7 +7,7 @@
 # This script calculates interpolated genetic map positions for CDS, Transcripts 
 # and Pseudogenes lying between and outside genetic markers.
 #
-# Last updated on: $Date: 2004-02-06 12:35:57 $
+# Last updated on: $Date: 2004-03-10 13:42:23 $
 # Last updated by: $Author: ck1 $
 
 use strict;
@@ -48,7 +48,7 @@ if (!defined @ARGV){system ("perldoc /wormsrv2/scripts/get_interpolated_gmap.pl"
 
 # set WS version number
 my $current = `grep "NAME WS" $curr_db/wspec/database.wrm`; $current =~ s/NAME WS//; chomp $current;
-my $version = $current+1;  
+my $version = $current+1;
 
 
 # Use specified database for path but default to using autoace if -database not specified
@@ -198,31 +198,33 @@ foreach (@gff_files_cds){
 print "\nParsing transcript coords from gff files . . .\n"; 
 
 foreach (@gff_files_rna){
-  @data = `egrep "RNA.+(Transcript).+" $_ | cut -f 1,3,4,5,9`;
+
+  @data = `egrep "Transcript.+" $_ | cut -f 1,3,4,5,9`;
+
   foreach (@data){
     chomp;
-    if ($_ !~ /\[.+\].+/ && $_ !~ /mRNA.+/){
-
-      $rna_count++;
-      my ($chrom, $type, $left, $right, $junk, $RNA)= split(/\s+/,$_);
-      $RNA =~ s/(.+):.+/$1/;
+ 
+    $rna_count++;
+    my ($chrom, $type, $left, $right, $junk, $RNA)= split(/\s+/,$_);
+    if ($type =~ /Transcript/i ){ # $type is the feature of transcript obj
+#     print "$chrom -> $type -> $left -> $right -> $junk -> $RNA  RRR\n";	
       $RNA =~ s/\"//g;
       my $ori = $RNA;  
       $chrom =~ s/CHROMOSOME_//;
-      if ($type eq "Transcript"){
-	if ($RNA =~ /(.+\.\d+)\D+/){
-	  $RNA = $1;
-	  $variants++;
-	  push(@{$CDS_variants{$RNA}}, $ori); #parent of isoforms
-	  push(@{$CDS_isoforms_mapping{$RNA}}, $chrom, $left, $right, "RNA");
-	}
-	else {
-	  push(@{$CDS_mapping{$RNA}}, $chrom, $left, $right, "RNA");
-	}	
-      }      
+      if ($RNA =~ /(.+\.\d+)\D+/){
+	$RNA = $1;
+	$variants++;
+	push(@{$CDS_variants{$RNA}}, $ori); #parent of isoforms
+	push(@{$CDS_isoforms_mapping{$RNA}}, $chrom, $left, $right, "RNA");
+      }
+      else {
+	push(@{$CDS_mapping{$RNA}}, $chrom, $left, $right, "RNA");
+      }	
     }
   }
 }
+
+
 print "\nParsing pseudogene coords from gff files . . .\n"; 
 
 foreach (@gff_files_pseudogene){
@@ -248,7 +250,7 @@ foreach (@gff_files_pseudogene){
   }
 }
 
-print "\nProcessing gmap positions and corresponding physical coordinates . . .\n";
+print "\nDoing interpolation . . .\n";
 
 ###########################################################################################
 # get mean value of chrom coords of each CDS/Transcript from GFF files (genes|rna|rest.gff)
@@ -281,12 +283,21 @@ foreach (sort keys %CDS_isoforms_mapping){
     push(@coords, $CDS_isoforms_mapping{$_}->[$i+1], $CDS_isoforms_mapping{$_}->[$i+2]);  # get coords of all isoforms
   }
   @coords = sort {$a <=> $b} @coords;
+
   $mean_coords = ($coords[-1] + $coords[0]) / 2;
+
   push(@{$cds_mean{$_}}, $mean_coords, $CDS_isoforms_mapping{$_}->[3]);# key: cds(w/ isoform) value: mean coords
   $chromo = $CDS_isoforms_mapping{$_}->[0];
   push (@{$chrom_mean_coord_cds{$chromo}}, $mean_coords, $_);
   @coords =();
 }
+
+#if ($debug){
+#  foreach (sort keys %chrom_mean_coord_cds){
+#    print "$_ => @{$chrom_mean_coord_cds{$_}} MEAN\n";
+#  }
+#}
+
 
 ##################################################################################
 # retrieve marker loci (linked to CDS/Transcript/Pseudogene and have map position)
@@ -302,7 +313,7 @@ my $cmp_file = "$output/cmp_gmap_with_coord_order_"."WS$version.$rundate.$$";
 if ($reverse) {
   open(CMP, ">$cmp_file") || die $!;
   system ("chmod 755 $cmp_file");
-  print CMP "\nGFF file version from $gff_location\n\n";
+  print CMP "\nGFF file version from WS$version\n\n";
 }
 
 open (FH, "echo '$marker_gmap_of_each_chrom' | tace $database |") || die "Couldn't access $database\n";
@@ -456,7 +467,7 @@ if ($debug){
     print CL "$_ -> $CDS_isoforms_mapping{$_}->[3] PARENT (1)\n"; # [3] is type (DNA, RNA or psdudo)
   }
   foreach (keys %CDS_variants){
-    print CL "$_ -> $CDS_variants{$_} ISO (1)\n";
+    print CL "$_ -> @{$CDS_variants{$_}} ISO (1)\n";
   }
 }
 
@@ -489,7 +500,6 @@ foreach $chrom (@chroms){
 
     # multiple loci may have same gmap before correction 
     push(@{$pos_order_to_mean_coord_locus_cds{$pos}}, $mean_coord, $locus, $cds); 
-
     push(@all_mean_of_each_chrom, $mean_coord); # duplication due to isoforms
   }
 
@@ -555,7 +565,7 @@ foreach $chrom (@chroms){
   print INFO "Chrom $chrom: $L_tip -> $R_tip | $L_mean_coord -> $R_mean_coord | $L_end to $R_end\n";
 
   foreach (@all_coords){
-    
+ 
     # get interpolated map if mean coord is not that of a marker loci 
     if (!$all_mean_of_each_chrom{$_}){ 
 
@@ -655,13 +665,13 @@ foreach $chrom (@chroms){
 
       # multiple loci may have a same gmap position before correction
       foreach (my $i = 0; $i < scalar @{ $pos_order_to_mean_coord_locus_cds{$gmap_down}}; $i=$i+3){
-	
+
 	my $locus1 = $pos_order_to_mean_coord_locus_cds{$gmap_down}->[$i+1];
 	$locusf = $locus1;
 	$locusf = sprintf("%10s", $locusf);
 	$down_mean_coord = $pos_order_to_mean_coord_locus_cds{$gmap_down}->[$i];
-	
-	my $dnmcoord =  $down_mean_coord;
+
+	my $dnmcoord = $down_mean_coord;
 	$dnmcoord = sprintf("%12.1f", $dnmcoord);
 	$up_mean_coord = $pos_order_to_mean_coord_locus_cds{$gmap_up}->[$i];
 	$cds = $pos_order_to_mean_coord_locus_cds{$gmap_down}->[$i+2];
@@ -669,13 +679,11 @@ foreach $chrom (@chroms){
 	$cdsf = sprintf("%-15s", $cdsf);
 
 	print CMP "$chrom\t$gmdn\t$locusf\t$cdsf\t$dnmcoord\n";
-	
 	if ($down_mean_coord eq "NA") {
-	  print REV "\n** Gmap marker $cds ($locus1) on $chrom has no coordinate **\n";
+	  print REV "\n** Gmap marker $cds ($locus1) on $chrom has no coordinate : [$down_mean_coord] **\n";
 	}
 
 	if ($down_mean_coord ne "NA" && $up_mean_coord ne "NA" && ($down_mean_coord > $up_mean_coord)){
-          print "$down_mean_coord > $up_mean_coord\n"; 
 	  if (exists $CDS_variants{$cds}){
 	    $rev_phys++;
 	    $error_check = 1;
@@ -746,10 +754,8 @@ END
   close LOAD_A;
  
   system("chmod 777 $log");
-  
   print "\nCheck $log to double check file uploading to $database went OK\n";
 }
-
 
 # Finish and exit
 if($error_check == 1){
@@ -757,32 +763,36 @@ if($error_check == 1){
   system("perl5.6.1 $script_dir\/update_rev_physicals.pl -panel $count_rev -rev $revfile -comp $cmp_file -v $version");
  # system("perl5.6.1 \/nfs\/team71\/worm\/ck1\/WORMBASE_CVS\/scripts\/update_rev_physicals.pl -panel $count_rev -rev $revfile -comp $cmp_file -v $version -d");
 }
+
 else {
 
   my ($jah, $recipients);
-  my $rev_update = glob("$output/rev_physical_CGC_WS$version");
-  if ($rev_update){
-    $jah = $revfile;
-    my @CGC = `cat $rev_update`;
-    open(JAH, ">$jah") || die $!;
-    
-    print JAH "get_interpolated_map.pl started  at $start\n","                        finished at ", &runtime,"\n\n";
-    print JAH "WS$version modifications to genetics map according to reverse physicals\n";
-    print JAH "============================================================================\n\n";
-    $recipients = "All";  
-    $recipients = "ck1\@sanger.ac.uk" if $debug;
-    
-    print JAH @CGC;
-    print JAH "\n\nBelow is a list of full WS$version genetics map update\n";
-    print JAH "------------------------------------------------------\n\n";
-    print JAH `cat $cmp_file`;
-    mail_maintainer("WS$version genetics map modification", $recipients, $jah);
-    print "Genetics Map update has been mailed to CGC (JAH)\n\n" if !$debug;
+  $recipients = "All";  
+  $recipients = "ck1\@sanger.ac.uk" if $debug;
+  
+  my @rev = `cat $revfile`;
+
+  $jah = $revfile;
+  open(JAH, ">$jah") || die $!;
+  
+  print JAH "get_interpolated_map.pl started  at $start\n","                        finished at ", &runtime,"\n\n";
+  print JAH "WS$version reverse physicals / genetic map modifications\n";
+  print JAH "===================================================\n\n";
+  
+  if ( -e glob("$output/rev_physical_CGC_WS$version") ) {
+    my $rev_update = glob("$output/rev_physical_CGC_WS$version");
+    print JAH `cat $rev_update`;
   }
   else {
-    print "Failed to mail Genetics Map update to CGC (JAH)\n\n";
-    print "Script finished at ",&runtime,"\n";
+    print JAH "\n", @rev;
   }
+  print JAH "\n\nBelow is a list of full WS$version genetics map update\n";
+  print JAH "------------------------------------------------------\n\n";
+  print JAH `cat $cmp_file`;
+  mail_maintainer("WS$version genetics map modification & update", $recipients, $jah);
+  close JAH;
+  print "\n\n* * * No reverse physicals found * * *\n";
+  print "Genetics Map update has been mailed to CGC (JAH)\n\n" if !$debug;
 }
 
 exit(0);
