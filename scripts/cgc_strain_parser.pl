@@ -6,30 +6,67 @@
 #
 # Script to convert cgc strain file into ace file for geneace
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-07-22 11:18:03 $
+# Last updated by: $Author: ck1 $
+# Last updated on: $Date: 2003-01-27 18:11:26 $
 
 use strict;
 use Getopt::Std;
+use lib "/wormsrv2/scripts";
+use Wormbase;
+use Cwd 'chdir';
 
-##############################
-# command-line options       #
-##############################
-our $opt_i = "";      # input file
+#######################
+# check user is wormpub
+#######################
+
+my $user = `whoami`; chomp $user;
+if ($user ne "wormpub"){
+  print "\nYou have to be wormpub to run this script!\n\n";
+  exit(0);
+}
+
+######################
+# command-line options
+######################
+
 our $opt_h = "";      # help
-getopts ('i:h');
+getopts ('h');
 &usage if ($opt_h);
 
-# set up two output streams, one to add ace file information, and one to delete information
-# should you need to remove it in future.
 
-my $rundate    = `date +%y%m%d`; chomp $rundate;
+###############################
+# touch logfile for run details
+###############################
+
+$0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
+
+
+my $rundate = `date +%y%m%d`; chomp $rundate;
+
+
+##########################
+# Download CGC strain list
+##########################
+
+my $input_file = "/wormsrv1/geneace/STRAIN_INFO/cgc_strain_list_$rundate";
+
+system("wget -O $input_file http://www.cbs.umn.edu/CGC/Strains/gophstrn") && die "Unable to download from the web page specified!\n\n";
+
+
+########################################################################
+# extract info of each strain obj and make ace file: cgc_strain_info.ace
+######################################################################## 
+
+chdir ("/wormsrv1/geneace/STRAIN_INFO");
+
+open(INPUT, $input_file) || die "Can't open inputfile!"; 
+open(DELETE_STRAIN,">cgc_strain_info_$rundate.delete.ace") || die "can't create output file\n";
 open(STRAIN,">cgc_strain_info_$rundate.ace") || die "cant create output file1\n";
-open(DELETE_STRAIN,">cgc_strain_info_$rundate.delete.ace") || die "cant create output file2\n";
-open(INPUT, "<$opt_i") || die "Couldn't open input file\n";
+
+my $current_strain_ace = "cgc_strain_info_$rundate.ace";
 
 # Count how many strains to loop through
-my $strain_count = `grep Strain: $opt_i | wc -l`;
+my $strain_count = `grep Strain: $input_file | wc -l`;
 
 # loop through input file using following record separator
 $/ = "--------------------";
@@ -49,11 +86,19 @@ while(<INPUT>){
   s/\012//g;
 
   my $strain;
-  m/\s+Strain: (.*?)Genotype:/;
+  m/\s+Strain: (.*?)Species:/;
   $strain = $1;
   $strain =~ s/\s+//g;
   $ace_object = "Strain : \"$strain\"\n";
-  $delete_ace_object = "Strain : \"$strain\"\n";
+  $delete_ace_object = "\n\nStrain : \"$strain\"\n";
+
+  my $species;
+  m/\s+Species: (.+)Genotype:/;
+  $species = $1;
+  $species =~ s/\s+$//g;
+  $ace_object .= "Species : \"$species\"\n";
+  $delete_ace_object .= "Species : \"$species\"\n";
+  
  
   my $genotype;
   m/Genotype: (.*?)Description:/;
@@ -127,9 +172,6 @@ while(<INPUT>){
     $counter++;
   }
   
-
-
-
   foreach my $i (@loci) {$ace_object .= "Gene $i\n";}
   foreach my $i (@loci2) {$ace_object .= "Gene $i\n";}
   foreach my $i (@alleles){$ace_object .= "Allele $i\n";}
@@ -146,8 +188,6 @@ while(<INPUT>){
   foreach my $i (@rearrangements){$delete_ace_object .= "-D Rearrangement $i\n";}
   foreach my $i (@transgenes){$delete_ace_object .= "-D Transgene $i\n";}
 #  print "AFTER:  $genotype\n\n";
-
-
 
   my $description;
   m/Description: (.*?)Mutagen:/;
@@ -174,8 +214,8 @@ while(<INPUT>){
   $outcrossed = $1;
   $outcrossed =~ s/\s{2,}/ /g;
   $outcrossed =~ s/\s+$//g;
-  $ace_object .= "Outcrossed\n";
-  $delete_ace_object .= "-D Outcrossed\n";
+  $ace_object .= "Outcrossed\t\"$outcrossed\"\n" unless ($outcrossed eq "");
+  $delete_ace_object .= "-D Outcrossed\n" unless ($outcrossed eq "");
 
   my $reference;
   if(m/Reference: CGC \#(\d{1,4})\s+/){
@@ -218,7 +258,50 @@ close(INPUT);
 close(STRAIN);
 close(DELETE_STRAIN);
 
-#################################################################
+
+my $backup_file ="/wormsrv1/geneace/STRAIN_INFO/All_strain_TS_dump_$rundate.ace";
+
+##################################################
+# 1. backup strain class with timestamp
+# 2. grep last delete.ace file and load to Geneace
+# 3. load updated CGC strain genotype to Geneace
+##################################################
+
+my (@dir, @deleteACE, $last_delete_ace);
+
+opendir(DIR, '/wormsrv1/geneace/STRAIN_INFO/') || die "Can't read directory";
+@dir=readdir DIR;
+closedir (DIR);
+foreach (@dir){
+  if ($_ =~ /^cgc_strain_info_\d+.delete.ace/){
+    push(@deleteACE, $_);
+  }
+}
+@deleteACE=sort @deleteACE;
+$last_delete_ace=$deleteACE[-2];
+print "\n\nDelete_ace file from last update: $last_delete_ace\n\n";
+       
+my $command=<<END;
+find strain "*"
+show -a -T -f $backup_file
+pparse $last_delete_ace
+pparse $current_strain_ace
+save
+quit
+END
+
+my $tace = &tace;
+
+my $geneace_dir="/wormsrv1/geneace/";
+open (FH,"| $tace $geneace_dir ") || die "Failed to upload to test_Geneace";
+print FH $command;
+close FH;
+
+
+
+############
+# subroutine
+############
 
 sub usage {
     system ('perldoc',$0);
