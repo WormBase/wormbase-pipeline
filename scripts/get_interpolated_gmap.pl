@@ -8,7 +8,7 @@
 # Output ace file of such information and upload to autoace during each build
 # Output also other files related. See POD
 
-# Last updated on: $Date: 2003-06-19 10:05:52 $
+# Last updated on: $Date: 2003-06-26 13:46:49 $
 # Last updated by: $Author: ck1 $
 
 use strict;
@@ -601,7 +601,8 @@ sub dataset {
   closedir (DIR);
         
   if ($query eq "folder"){foreach (@dir){if ($_ =~ /^WS(\d+)/){push(@vers, $1)}} return @vers}    
-  if ($query eq "genes"){foreach (@dir){if ($_ =~ /^CHROMOSOME_(I|II|III|IV|V|X).genes.gff/){push(@files, $&)}} return @files}
+  if ($query eq "genes"){foreach (@dir){if ($_ =~ /^CHROMOSOME_(I|II|III|IV|V|X).genes.gff/ ||
+					    $_ =~ /^CHROMOSOME_(I|II|III|IV|V|X).clone_path.gff/){push(@files, $&)}} return @files}
   if ($query eq "rna"){foreach (@dir){if ($_ =~ /^CHROMOSOME_(I|II|III|IV|V|X).(rna|rest).gff/){push(@files, $&)}} return @files}
 }
 
@@ -614,6 +615,7 @@ sub ace_output {
 
   my ($cds, $chrom, $gmap, $mean_coord, $feature)=@_;
   
+  $gmap = sprintf("%.4f", $gmap);
   if (exists $CDS_variants{$cds}){
    
     foreach (@{$CDS_variants{$cds}}){
