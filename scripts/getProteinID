@@ -8,7 +8,7 @@
 # dl
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2003-05-01 10:28:06 $
+# Last edited on: $Date: 2003-05-07 09:01:08 $
 
 use lib "/wormsrv2/scripts/";
 use Wormbase;
@@ -74,17 +74,19 @@ while (<FILE>) {
 
     my @interpro = "";
     ($dbxref_ac,$dbxref_id,$dbxref_db,@interpro) = &get_from_protein_id($f[2]);
-
-    if( $interpro[0] ) {
-      my $protein = $gene2CE{$f[6]};
-      if( $protein ) {
-	print OUT "\nProtein : WP:$protein\n";
-	foreach (@interpro) {
-	  print OUT "Motif_homol\t\"INTERPRO:$_\"\n"
-	}
+    print "$f[6]\t";
+    my $protein = $gene2CE{$f[6]};
+    if( $protein ) {
+      print "$protein";
+      print OUT "\nProtein : WP:$protein\n";
+      print OUT "Database $databases{$dbxref_db} $dbxref_id $dbxref_ac\n";
+      foreach (@interpro) {
+	print OUT "Motif_homol\t\"INTERPRO:$_\"\n"
       }
-      else {print "gene $f[6] has no protein (has common_data been updated ?)\n";}
     }
+    else {print "gene $f[6] has no protein (has common_data been updated ?)\n";}
+
+    print "\n";
 
     print OUT "\nSequence : \"$f[6]\"\n";
     print OUT "Database $databases{$dbxref_db} $dbxref_id $dbxref_ac\n";
