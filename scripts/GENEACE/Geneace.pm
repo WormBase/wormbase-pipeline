@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 
-# Last updated by $Author: krb $
-# Last updated on: $Date: 2004-12-02 10:19:42 $
+# Last updated by $Author: ar2 $
+# Last updated on: $Date: 2005-02-11 16:11:29 $
 
 package Geneace;
 
@@ -247,7 +247,7 @@ sub get_non_Transposon_alleles {
   my ($this, $db) = @_;
   my (%Alleles, @alleles);
 
-  push(@alleles, $db->find("Find Allele * where !Transposon_insertion") );
+  push(@alleles, $db->find("Find Variation * where !Transposon_insertion") );
   foreach (@alleles){$Alleles{$_}++}
   return %Alleles;
 }
