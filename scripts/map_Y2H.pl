@@ -6,8 +6,8 @@
 #
 # by Dan Lawson
 #
-# Last updated by: $Author: krb $                      
-# Last updated on: $Date: 2004-08-06 15:55:28 $        
+# Last updated by: $Author: ar2 $                      
+# Last updated on: $Date: 2004-09-20 08:32:47 $        
 
 use strict;
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
@@ -162,6 +162,7 @@ foreach my $Y2H (@Y2H) {
     
 }
 
+$db->close;
 
 close (OUTPUT);      # close the output filehandle
 
