@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-09-25 14:56:47 $
+# Last edited on: $Date: 2003-09-26 12:30:23 $
 
 
 #################################################################################
@@ -44,7 +44,6 @@ my $blat_all;           # run all five types of blat jobs
 my $addblat;		# parse (all) blat files
 my $addbriggsae;        # add briggsae ace files
 my $addhomol;           # parse similarity data from /ensembl_dump
-my $addnematode;        # parse parastic nematode EST file
 my $utrs;               # generate UTR dataset
 my $map;		# map PCR and RNAi
 my $acefile;		# Write .acefiles
@@ -56,10 +55,14 @@ my $buildtest;          # Test autoace build
 my $agp;		# make/check agp files
 my $confirm;            # Confirm gene models (EST|mRNA)
 my $ftp;		# Public release to FTP site
-my $debug;		# Verbose debug mode
+my $debug;		# debug mode
+my $verbose;            # verbose mode - more output to screen
 my $help;		# Help/Usage page
 my $test;               # Test routine 
 my $dbcomp;		# runs dbcomp script
+my $operon;             # generate operon data
+my $load;               # generic file loading routine
+my $tsuser;             # tsuser setting to go with -load
 my $am_option;          # track which option has been used (for logging purposes)
 my $errors = 0;         # keep track of errors in each step (from bad system calls), use in subject line of email 
 
@@ -82,7 +85,6 @@ GetOptions (
 	    "addblat"        => \$addblat,
 	    "addbriggsae"    => \$addbriggsae,
 	    "addhomol"       => \$addhomol,
-	    "addnematode"    => \$addnematode,
 	    "utrs"           => \$utrs,
 	    "map"            => \$map,
 	    "acefile"        => \$acefile,
@@ -93,7 +95,11 @@ GetOptions (
             "buildtest"      => \$buildtest,
 	    "confirm"        => \$confirm,
 	    "dbcomp"	     => \$dbcomp,
-	    "debug"          => \$debug,
+	    "debug:s"        => \$debug,
+	    "verbose"        => \$verbose,
+	    "operon"         => \$operon,
+	    "load:s"         => \$load,
+	    "tsuser:s"       => \$tsuser,
 	    "help"           => \$help,
 	    "h"	             => \$help,
 	    "test"           => \$test
@@ -103,11 +109,22 @@ GetOptions (
 &usage(0) if ($help);
 
 
+
 ##############################
 # Script variables (run)     #
 ##############################
 
+# double check if -tsuser not set
+$tsuser = "assumed_wormpub" if (!$tsuser);
+
 my $maintainers = "All";
+
+# Use debug mode?
+if($debug){
+  print "DEBUG = \"$debug\"\n\n";
+  ($maintainers = $debug . '\@sanger.ac.uk');
+}
+
 
 our $rundate    = `date +%y%m%d`; chomp $rundate;
 my $scriptdir   = "/wormsrv2/scripts";                   # specify location of scripts
@@ -137,6 +154,7 @@ our %flag = (
 	     'B8'          => 'B8:Upload_wublast_data',
 	     'B9'          => 'B9:Upload_briggsae_data',
 	     'B10'         => 'B10:Generate_UTR_data',
+	     'B11'         => 'B11:Generate_operon_data',
 	     'C1'          => 'C1:Dumped_GFF_files',
 	     'C1:ERROR'    => 'C1:ERROR_in_dumping_GFF_files',
 	     'C2'          => 'C2:Split_GFF_files',
@@ -163,9 +181,6 @@ open (LOG,">$logfile");
 LOG->autoflush();
 # print logfile header
 &logfile_details;
-
-# debug mode modifies $maintainers to reduce e-mail load
-($maintainers = "dl1\@sanger.ac.uk") if ($debug);
 
 #__ PREPARE SECTION __#
 
@@ -196,9 +211,6 @@ LOG->autoflush();
 &make_agp		if ($agp);
 
 
-# Add parasitic nematode ESTs
-&add_nematode_ESTs      if ($addnematode);
-
 # B5:Copy_to_midway
 # Run blat_them_all.pl -dump
 # Requires: A1,A4,A5,B1
@@ -228,6 +240,13 @@ if ($addblat){
 # B10:Generate_UTR_data
 # Requires: A1,A4,A5,B1,B6,B7
 &generate_utrs          if ($utrs);
+
+
+# B11:Generate operon data
+# Requires: B10
+&make_operons           if ($operon);
+
+
 
 
 #__ PROCESS SECTION __#
@@ -268,6 +287,9 @@ if ($addblat){
 #__ RELEASE SECTION __#
 
 
+#__ LOAD DATA FILE __#
+&load($load,$tsuser) if ($load);
+
 
 ##############################################
 # close log file and mail $maintainer report #
@@ -280,6 +302,9 @@ close LOG;
 # warn about errors in subject line if there were any
 if($errors == 0){
   &mail_maintainer("WormBase Report: $am_option",$maintainers,$logfile);
+}
+elsif ($errors ==1){
+  &mail_maintainer("WormBase Report: $am_option : $errors ERROR!",$maintainers,$logfile);
 }
 else{
   &mail_maintainer("WormBase Report: $am_option : $errors ERRORS!!!",$maintainers,$logfile);
@@ -365,8 +390,8 @@ sub get_WS_version {
     # exit if no WS version is returned
     &usage("No_WormBase_release_number") if (!defined($WS_version));
 
-    print "$logdir/$flag{'A1'} : " . (-M "$logdir/$flag{'A1'}") . "\n" if ($debug);
-    print "$WSver_file : "         . (-M "$WSver_file") . "\n" if ($debug);
+    print "$logdir/$flag{'A1'} : " . (-M "$logdir/$flag{'A1'}") . "\n" if ($verbose);
+    print "$WSver_file : "         . (-M "$WSver_file") . "\n" if ($verbose);
 
 
 
@@ -665,7 +690,7 @@ sub test_build {
 
   print LOG "Entering test_build subroutine at ",&runtime,"\n";
 
-  print "Looking at log file: /wormsrv2/logs/make_autoace.WS${WS_version}*\n" if ($debug);
+  print "Looking at log file: /wormsrv2/logs/make_autoace.WS${WS_version}*\n" if ($verbose);
   
   open (BUILDLOOK, "ls /wormsrv2/logs/make_autoace.WS${WS_version}* |") || die "Couldn't list logfile out\n";
   while (<BUILDLOOK>) {
@@ -674,7 +699,7 @@ sub test_build {
   }
   close BUILDLOOK;
   
-  print "Open log file $logfile\n" if ($debug);
+  print "Open log file $logfile\n" if ($verbose);
   
   my ($parsefile,$parsefilename);
   my $builderrors = 0;
@@ -685,7 +710,7 @@ sub test_build {
       $parsefile = $1;
     }
     if ((/^\/\/ objects processed: (\d+) found, (\d+) parsed ok, (\d+) parse failed/) && ($parsefile ne "")) {
-      (printf "%6s parse failures of %6s objects from file: $parsefile\n", $3,$1) if $debug;
+      (printf "%6s parse failures of %6s objects from file: $parsefile\n", $3,$1) if $verbose;
       if ($3 > 0) {
 	$parsefilename = substr($parsefile,18);
 	printf LOG "%6s parse failures of %6s objects from file: $parsefilename\n", $3,$1;
@@ -890,16 +915,21 @@ sub load_blat_results{
   
   foreach my $type (@blat_types){    
     print LOG "Adding BLAT $type data to autoace at ",&runtime,"\n";
-    my $command =  "pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.blat.$type.ace\n";
+    my $file =  "/wormsrv2/autoace/BLAT/virtual_objects.autoace.blat.$type.ace";
+    &load($file,"virtual_objects_$type");
+
     # Don't need to add confirmed introns from nematode data (because there are none!)
-    $command .= "pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.$type.ace\n" unless ($type eq "nematode");
-    $command .= "pparse /wormsrv2/autoace/BLAT/autoace.good_introns.$type.ace\n"       unless ($type eq "nematode");
-    $command .= "pparse /wormsrv2/autoace/BLAT/autoace.blat.$type.ace\n";           
-    $command .= "save\nquit\n";
-    open (WRITEDB, "| $tace -tsuser Sanger_BLAT_data /wormsrv2/autoace ") || die "Couldn't open pipe to autoace\n";
-    print WRITEDB $command;
-    close WRITEDB;
-    print LOG "Finished adding BLAT $type data at ",&runtime,"\n";  
+    unless($type eq "nematode"){
+      $file = "/wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.$type.ace"; 
+      &load($file,"blat_confirmed_introns_$type");
+
+      $file = "/wormsrv2/autoace/BLAT/autoace.good_introns.$type.ace";
+      &load($file,"blat_good_introns_$type");
+    }
+
+    $file = "/wormsrv2/autoace/BLAT/autoace.blat.$type.ace";           
+    &load($file,"blat_${type}_data");
+
   }
   system("touch $logdir/$flag{'B7'}"); 
 
@@ -929,21 +959,9 @@ sub parse_homol_data {
 		   );
 
   foreach my $file ( @files2Load ) {
-    print LOG "Adding $file at ",&runtime,"\n";
 
-    # make sure file exists
-    unless ( -e "/wormsrv2/wormbase/ensembl_dumps/$file" ) {
-      print LOG "ERROR *** $file doesn't exist \n\n";
-      next;
-    }
-
-    # tsuser cant contain '.' so strip of .ace
-    my $tsuser = substr($file,0,-4);
-
-    $command = "pparse /wormsrv2/wormbase/ensembl_dumps/$file\nsave\nquit\n";
-    open (WRITEDB, "| $tace -tsuser $tsuser /wormsrv2/autoace ") || warn  "Couldn't open pipe to autoace while loading $file\n";
-    print WRITEDB $command;
-    close WRITEDB;
+    my $newfile = "/wormsrv2/wormbase/ensembl_dumps/$file";
+    &load($newfile,$tsuser);
   }
  
   # upload_homol data log file in /logs
@@ -953,25 +971,6 @@ sub parse_homol_data {
 #__ end parse_homol_data __#
 
 
-##################################
-# load nematode EST data
-#################################
-
-
-sub add_nematode_ESTs {
-  $am_option = "-addnematode";
-  
-  print LOG "Adding nematode EST data files at ",&runtime,"\n";
-  my $command = "pparse /wormsrv2/wormbase/misc/misc_other_nematode_ESTs.ace\nsave\nquit\n";
-  open (WRITEDB, "| $tace -tsuser nematode_ESTs /wormsrv2/autoace ") || die "Couldn't open pipe to autoace\n";
-  print WRITEDB $command;
-  close WRITEDB;
-  print LOG "Finished adding nematode EST data files at ",&runtime,"\n";
-}
-
-#__ end add_nematode_ESTs_data __#
-
-
 
 
 ##################################
@@ -979,66 +978,43 @@ sub add_nematode_ESTs {
 #################################
 
 sub parse_briggsae_data {
-  my $command;
   $am_option = "-addbriggsae";
 
-  # load four raw briggsae data files		   
-  print LOG "Adding raw briggsae assembly data files at ",&runtime,"\n";
-  $command = "pparse /wormsrv2/wormbase/briggsae/briggsae_cb25.agp8_DNA.ace\nsave\nquit\n"; 
-  open (WRITEDB, "| $tace -tsuser briggsae_assembly_data /wormsrv2/autoace ") || die "Couldn't open pipe to autoace\n";
-  print WRITEDB $command;
-  close WRITEDB;
+  my $file;
   
-  $command = "pparse /wormsrv2/wormbase/briggsae/briggsae_cb25.agp8_fosmid.ace\nsave\nquit\n"; 
-  open (WRITEDB, "| $tace -tsuser briggsae_assembly_data /wormsrv2/autoace ") || die "Couldn't open pipe to autoace\n";
-  print WRITEDB $command;
-  close WRITEDB;
+  # load raw briggsae data files		   
+  $file = "/wormsrv2/wormbase/briggsae/briggsae_cb25.agp8_DNA.ace";
+  &load($file,"briggsae_DNA");
+
+  $file = "/wormsrv2/wormbase/briggsae/briggsae_cb25.agp8_fosmid.ace"; 
+  &load($file,"briggsae_fosmids");
   
-  $command = "pparse /wormsrv2/wormbase/briggsae/briggsae_cb25.agp8_agplink.ace\nsave\nquit\n"; 
-  open (WRITEDB, "| $tace -tsuser briggsae_assembly_data /wormsrv2/autoace ") || die "Couldn't open pipe to autoace\n";
-  print WRITEDB $command;
-  close WRITEDB;
+  $file = "/wormsrv2/wormbase/briggsae/briggsae_cb25.agp8_agplink.ace"; 
+  &load($file,"briggsae_links");
+
+  $file = "/wormsrv2/wormbase/briggsae/briggsae_cb25.agp8_sequence.ace"; 
+  &load($file,"briggsae_sequence");
   
-  $command = "pparse /wormsrv2/wormbase/briggsae/briggsae_cb25.agp8_sequence.ace\nsave\nquit\n"; 
-  open (WRITEDB, "| $tace -tsuser briggsae_assembly_data /wormsrv2/autoace ") || die "Couldn't open pipe to autoace\n";
-  print WRITEDB $command;
-  close WRITEDB;
-  print LOG "Finished adding raw briggsae assembly data files at ",&runtime,"\n";
-  
+
   # load gene prediction sets
-  print LOG "Adding briggsae gene prediction data files at ",&runtime,"\n";
-  
-  $command = "pparse /wormsrv2/wormbase/briggsae/briggsae_cb25.agp8_genefinder.ace\nsave\nquit\n"; 
-  open (WRITEDB, "| $tace -tsuser briggsae_gene_prediction_data /wormsrv2/autoace ") || die "Couldn't open pipe to autoace\n";
-  print WRITEDB $command;
-  close WRITEDB;
-  
-  $command = "pparse /wormsrv2/wormbase/briggsae/briggsae_cb25.agp8_fgenesh.ace\nsave\nquit\n"; 
-  open (WRITEDB, "| $tace -tsuser briggsae_gene_prediction_data /wormsrv2/autoace ") || die "Couldn't open pipe to autoace\n";
-  print WRITEDB $command;
-  close WRITEDB;
-  
-  $command = "pparse /wormsrv2/wormbase/briggsae/briggsae_cb25.agp8_twinscan.ace\nsave\nquit\n"; 
-  open (WRITEDB, "| $tace -tsuser briggsae_gene_prediction_data /wormsrv2/autoace ") || die "Couldn't open pipe to autoace\n";
-  print WRITEDB $command;
-  close WRITEDB;
-  
-  $command = "pparse /wormsrv2/wormbase/briggsae/briggsae_cb25.agp8_ensembl.ace\nsave\nquit\n"; 
-  open (WRITEDB, "| $tace -tsuser briggsae_gene_prediction_data /wormsrv2/autoace ") || die "Couldn't open pipe to autoace\n";
-  print WRITEDB $command;
-  close WRITEDB;
+  $file = "/wormsrv2/wormbase/briggsae/briggsae_cb25.agp8_genefinder.ace"; 
+  &load($file,"briggsae_genefinder_genes");
 
-  $command = "pparse /wormsrv2/wormbase/briggsae/briggsae_cb25.agp8_hybrid.ace\nsave\nquit\n"; 
-  open (WRITEDB, "| $tace -tsuser briggsae_gene_prediction_data /wormsrv2/autoace ") || die "Couldn't open pipe to autoace\n";
-  print WRITEDB $command;
-  close WRITEDB;
+  $file = "/wormsrv2/wormbase/briggsae/briggsae_cb25.agp8_fgenesh.ace"; 
+  &load($file,"briggsae_fgenesh_genes");
 
-  $command = "pparse /wormsrv2/wormbase/briggsae/briggsae_cb25.agp8_rna.ace\nsave\nquit\n"; 
-  open (WRITEDB, "| $tace -tsuser briggsae_gene_prediction_data /wormsrv2/autoace ") || die "Couldn't open pipe to autoace\n";
-  print WRITEDB $command;
-  close WRITEDB;
+  $file = "/wormsrv2/wormbase/briggsae/briggsae_cb25.agp8_twinscan.ace"; 
+  &load($file,"briggsae_twinscan_genes");
 
-  print LOG "Finished adding briggsae gene prediction data files at ",&runtime,"\n";
+  $file = "/wormsrv2/wormbase/briggsae/briggsae_cb25.agp8_ensembl.ace"; 
+  &load($file,"briggsae_ensembl_genes");
+
+  $file = "/wormsrv2/wormbase/briggsae/briggsae_cb25.agp8_hybrid.ace"; 
+  &load($file,"briggsae_hybrid_genes");
+
+  $file = "/wormsrv2/wormbase/briggsae/briggsae_cb25.agp8_rna.ace"; 
+  &load($file,"briggsae_rna_genes");
+
   # upload_homol data log file in /logs
   system("touch $logdir/$flag{'B9'}");
   
@@ -1064,11 +1040,9 @@ sub generate_utrs {
   # run find_utrs.pl to generate data
   &run_command("find_utrs.pl -d autoace -r /wormsrv2/autoace/UTR");
 
-  print LOG "Adding UTRs.ace file to autoace at ",&runtime,"\n";
-  my $command = "pparse /wormsrv2/autoace/UTR/UTRs.ace\nsave\nquit\n"; 
-  open (WRITEDB, "| $tace -tsuser utr_data /wormsrv2/autoace ") || die "Couldn't open pipe to autoace\n";
-  print WRITEDB $command;
-  close WRITEDB;
+  # load data
+  my $file = "/wormsrv2/autoace/UTR/UTRs.ace"; 
+  &load($file,"utrs");
 
   # make a log file in /autoace/logs
   system("touch $logdir/B10:Generate_UTR_data");
@@ -1076,8 +1050,31 @@ sub generate_utrs {
 #__ end generate_utrs __#
 
 
+
 #################################################################################################################
 
+
+#################################################################################
+# make_operons                                                                  #
+#################################################################################
+
+sub make_operons {
+  $am_option = "-operon";
+  
+  # needs split gff files for this step, so should only run if UTRs have been
+  # generated (which will make split GFF files
+  &usage(20) unless (-e "$logdir/$flag{'B10'}");
+
+
+  # run find_utrs.pl to generate data
+  &run_command("$scriptdir/operon_wizard -x > /wormsrv2/autoace/OPERONS/operons.WS${WS_version}.ace");
+
+  # make a log file in /autoace/logs
+  system("touch $logdir/B11:Generate_operon_data");
+}
+#__ end generate_utrs __#
+
+##########################################################################################################
 
 sub make_wormpep {
   $am_option = "-buildpep";
@@ -1099,11 +1096,8 @@ sub make_wormpep {
     &run_command("$scriptdir/getProteinID");
 
     # load into autoace
-    my $command = "pparse /wormsrv2/autoace/wormpep_ace/WormpepACandIDs.ace\nsave\nquit\n"; 
-    open (WRITEDB, "| $tace -tsuser Protein_ID /wormsrv2/autoace ") || die "Couldn't open pipe to autoace\n";
-    print WRITEDB $command;
-    close WRITEDB;
-    print LOG "Finished loading proteinID info into autoace at ",&runtime,"\n";
+    my $file = "/wormsrv2/autoace/wormpep_ace/WormpepACandIDs.ace"; 
+    &load($file,"wormpep_acs_and_Ids");
     
     # make wormpep
     &run_command("$scriptdir/make_wormpep -f");
@@ -1188,14 +1182,12 @@ sub confirm_gene_models {
 
   &run_command("$scriptdir/confirm_genes.pl -m");
 
-  my $command = "pparse /wormsrv2/wormbase/misc/misc_confirmed_by_EST.ace\n";
-  $command   .= "pparse /wormsrv2/wormbase/misc/misc_confirmed_by_mRNA.ace\n";
-  $command   .= "save\nquit\n";
+  # load files
+  my $file = "/wormsrv2/wormbase/misc/misc_confirmed_by_EST.ace";
+  &load($file,"genes_confirmed_by_EST");
 
-  print LOG "Adding confirmed genes info to autoace at ",&runtime,"\n";  
-  open (WRITEDB, "| $tace -tsuser confirmed_genes /wormsrv2/autoace ") || die "Couldn't open pipe to autoace\n";
-  print WRITEDB $command;
-  close WRITEDB;
+  $file = "/wormsrv2/wormbase/misc/misc_confirmed_by_mRNA.ace";
+  &load($file,"genes_confirmed_by_mrna");
   
   # make dumped_GFF_file in /logs
   system("touch $logdir/C4:Confirm_gene_models");
@@ -1206,6 +1198,37 @@ sub confirm_gene_models {
 #__ end confirm_gene_models __#
 
 
+#################################################################################
+# load  - generic subroutine for loading data into autoace                      #
+#################################################################################
+
+sub load {
+  $am_option = "-load" if ($load);
+
+  my $file = shift;
+  
+  # tsuser is optional but if set, should replace any dots with underscores just in case 
+  my $tsuser = shift; 
+  $tsuser =~ s/\./_/g;
+
+  my $flag = 0;
+  unless (-e "$file"){
+    $errors++;
+    print LOG "ERROR: Couldn't find file named: $file\n";    
+    # set flag to skip loading step
+    $flag = 1;
+  }
+
+  unless($flag == 1){
+    my $command = "pparse $file\nsave\nquit\n";
+    
+    print LOG &runtime,": adding $file info to autoace\n";  
+    open (WRITEDB, "| $tace -tsuser $tsuser /wormsrv2/autoace ") || die "Couldn't open pipe to autoace\n";
+    print WRITEDB $command;
+    close (WRITEDB);
+  }
+
+}
 
 #################################################################################
 # Open logfile                                                                  #
@@ -1237,7 +1260,9 @@ sub logfile_details {
   print LOG "#  -addhomol     : Load blast data into autoace\n"                                        if ($addhomol);
   print LOG "#  -addbriggsae  : Load briggsae data into autoace\n"                                     if ($addbriggsae);
   print LOG "#  -utrs         : Generates and load UTR data into autoace\n"                            if ($utrs);
-  print LOG "#  -debug        : Verbose/Debug mode\n"                                                  if ($debug);
+  print LOG "#  -operon       : Generates operon dataset\n"                                            if ($operon);
+  print LOG "#  -debug        : Debug mode\n"                                                          if ($debug);
+  print LOG "#  -verbose      : Verbose mode\n"                                                        if ($verbose);
   print LOG "#  -gffdump      : Dump GFF files\n"                                                      if ($gffdump);
   print LOG "#  -gffsplit     : Split GFF files\n"                                                     if ($gffsplit);
   print LOG "#  -map          : map PCR and RNAi\n"                                                    if ($map);
@@ -1255,13 +1280,14 @@ sub logfile_details {
 
 sub run_command{
   my $command = shift;
-  print LOG "Started running $command",&runtime,"\n";
+  print LOG &runtime, ": started running $command\n";
   my $status = system($command);
   if($status != 0){
     $errors++;
     print LOG "ERROR: $command failed\n";
   }
-  print LOG "Finished running $command at ",&runtime,"\n\n";
+  print LOG &runtime, ": finished running $command\n";
+
   # for optional further testing by calling subroutine
   return($status);
 }
@@ -1413,6 +1439,13 @@ sub usage {
       print "If you didn't need to run BLAT then you must create this file before you can upload BLAT results.\n\n";
       exit(0);
     }
+    elsif ($error == 20) {
+      # tried loading blat results without first runnning blat
+      print "\nautoace build aborted:\n";
+      print "The '$flag{'B10'} flag is not present indicating that UTRs have not been made, hence GFF files. \n";
+      print "have not been split.  You need split GFF files to make operons.\n\n";
+      exit(0);
+    }
     elsif ($error == 0) {
 	# Normal help menu
 	exec ('perldoc',$0);
@@ -1465,7 +1498,9 @@ autoace_minder.pl OPTIONAL arguments:
 
 =item -ftp, Move WS release to the external FTP site (Full public release)
 
-=item -debug, Verbose/Debug mode
+=item -debug <user>, Debug mode - log file only goes to named user
+
+=item -verbose, Verbose mode toggle on extra command line output
 
 =item -agp, creates and checks agp files
 
@@ -1494,7 +1529,13 @@ autoace_minder.pl OPTIONAL arguments:
 =item -addbriggsae, parse briggsae assembly data and briggsae gene predictions
 
 =item -utrs, generate UTR datatset and add to autoace
+
+=item -operon, make operons
  
+=item -load <file>, load filename into autoace...filename should be valid acefile
+
+=item -tsuser <name>, to be used in conjunction with -load (optional)
+
 =back
 
 =cut
