@@ -7,11 +7,10 @@
 # A script to convert ?Locus objects into the new ?Gene object
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-02-27 17:42:43 $   
+# Last updated on: $Date: 2004-03-01 16:50:30 $   
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
-use Wormbase;
 use Ace;
 use Getopt::Long;
 
@@ -303,17 +302,40 @@ if($post_process5){
   # This query gets all Multi_pt_data objects which link to Locus objects using old CGC style names,
   my $query = "Find Multi_pt_data * WHERE Results";
   push(my @multipoints, $db->find($query));
+
   foreach my $multipoint (@multipoints){
     print "$multipoint\n";
-    # grab row data if it exists
-    (my @row1 = $multipoint->at("Results.Combined")->row) if ($multipoint->at("Results.Combined"));
-    (my @row2 = $multipoint->at("Results.A_non_B")->row) if ($multipoint->at("Results.A_non_B"));
-    (my @row3 = $multipoint->at("Results.B_non_A")->row) if ($multipoint->at("Results.B_non_A"));
-    print "@row1\n" if (@row1);
-    print "@row2\n" if (@row2);
-    print "@row3\n" if (@row3);
-  }
 
+    # Store results in @row array
+    my @rows;
+
+    # grab row data if it exists
+    (push(@rows, $multipoint->at("Results.Combined")->row)) if ($multipoint->at("Results.Combined"));
+    (push(@rows, $multipoint->at("Results.A_non_B")->row)) if ($multipoint->at("Results.A_non_B"));
+    (push(@rows, $multipoint->at("Results.B_non_A")->row)) if ($multipoint->at("Results.B_non_A"));
+
+    # Loop through loop elements changing Locus for Gene and substituting Gene IDs for locus names
+    foreach (my $i=0; $i<@rows;$i++){
+#      print "$rows[$i] *";
+      if(($rows[$i] eq "Locus") && ($rows[$i+1] eq "act-123")){
+	$i += 2;
+	next;
+      }
+      $rows[$i] = "Gene" if ($rows[$i] eq "Locus");
+      if($rows[$i] =~ m/\w+\-.*/){
+	my ($obj) = $db->fetch(-class=>'Gene_name',-name=>"$rows[$i]");
+	my $gene_id = $obj->Public_name_for;
+	$rows[$i] = $gene_id;
+      }
+    }
+    if(@rows){
+      print OUT "Multi_pt_data : \"$multipoint\"\n";
+      print OUT "-D Results\n\n";
+      
+      print OUT "Multi_pt_data : \"$multipoint\n";
+      print OUT "@rows\n\n";
+    }
+  }
   $db->close;  
   close(OUT);
 }
