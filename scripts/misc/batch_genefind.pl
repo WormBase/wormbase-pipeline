@@ -11,10 +11,12 @@ my $database;     # for coordinate info
 my $chromosome;   # so that Coords converter can give clone details
 my $window;
 my $chunksize = 1000000;
+my $out_dir;
 
 GetOptions ( 
 	    "database:s"    => \$database,
 	    "chromosome:s"  => \$chromosome,
+	    "out_dir:s"     => \$out_dir,
 	    "config:s"      => \$config,
 	    "window:s"      => \$window,
 	    "chunk:s"       => \$chunksize
@@ -31,6 +33,7 @@ my $errdir = glob("~wormpub/BSUB_ERRORS");
 while( -e $test_file ) {
 
   my $bsub = $ENV{'CVS_DIR'}."/misc/genefinder.pl -config $config -chromosome $chromosome -min $min -max $max";
+  $bsub .= " -out_dir $out_dir" if $out_dir;
   my $error_file = "$errdir/$files[0]_${min}_${max}.err";
   print "$bsub\n";
   system("bsub -e $error_file $bsub");

@@ -22,6 +22,7 @@ my $config;       #text file to specify parameters
 
 my $database;
 my $chromosome;   # so that Coords converter can give clone details
+my $out_dir;
 
 our %score;
 my $window = 200;
@@ -35,12 +36,14 @@ GetOptions (
 	    "config:s"      => \$config,
 	    "window:s"      => \$window,
 	    "min:s"         => \$min,
-	    "max:s"         => \$max
+	    "max:s"         => \$max,
+	    "out_dir:s"     => \$out_dir
 	   );
 
 die unless $chromosome;
 
 die if ( ( ($max and !$min) and ( $min != 0) ) or ($min and !$max ));
+$out_dir = $out_dir ? $out_dir : ".";
 
 if ($config) {
   &parse_config($config);
@@ -103,7 +106,7 @@ FEATURE: foreach my $feature (@features) {
 
 # output hits
 print "outputting  . . . \n\n";
-my $output = "gene_find_${chromosome}_${min}_${max}";
+my $output = "$out_dir/gene_find_${chromosome}_${min}_${max}";
 open( OUT ,">$output") or die "cant open $output: $!\n";
 my $coords = Coords_converter->invoke($database);
 my $count = 0;
