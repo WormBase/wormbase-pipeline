@@ -805,9 +805,6 @@
 			DB_annotation ?Database UNIQUE ?LongText
 			EMBL_dump_info #EMBL_dump_info
 	  Web_location  ?Url 
-	  Annotation	SwissProt_DE	UNIQUE	Text
-			EC_number	?Url
-			Pfam	UNIQUE	Text
 	  Origin  From_Database UNIQUE ?Database UNIQUE Int	// release number
 		  From_Author ?Author XREF Sequence
 		  From_Laboratory UNIQUE ?Laboratory
