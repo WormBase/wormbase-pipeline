@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.36 2002-03-05 09:53:54 kj2 Exp $
+// CVS info:  $Id: models.wrm,v 1.37 2002-03-05 18:06:11 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -218,7 +218,10 @@
 		  Mapping_data	Two_pt ?Two_pt_data
 				Multi_point ?Multi_pt_data
 				Pos_neg_data ?Pos_neg_data
-		  In_cluster ?Locus XREF Cluster_contains // rd 0107 renamed from Contained_in
+		  In_cluster ?Gene_name // fudge to get data in for now krb 05/04/03
+		  Cluster_contains ?Gene_name // rd 0107 renamed from Contains
+		  //In_cluster ?Gene XREF Cluster_contains // rd 0107 renamed from Contained_in
+		  //Cluster_contains ?Gene XREF In_cluster // rd 0107 renamed from Contains
 	Remark ?Text
 	Laboratory ?Laboratory
         Reference ?Paper XREF Gene
@@ -246,7 +249,6 @@
 	Method UNIQUE ?Method
 	Remark ?Text
 	Reference ?Paper XREF Locus
-	Cluster_contains ?Gene XREF In_cluster // rd 0107 renamed from Contains
 	Strain ?Strain XREF Locus
 
 #Gene_history_action Event  Created
