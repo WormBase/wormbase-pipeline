@@ -6,5 +6,5 @@
  Allele          Briggsae_genomic   Lineage
  Gene_class     Protein             Pathway
  Strain          Wormpep            RNAi
- Clone          Phenotype
+ Clone          Phenotype	    WTP
  Clone_grid      Oligo            Keyset    Model
