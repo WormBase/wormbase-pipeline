@@ -5,7 +5,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2004-04-29 10:23:32 $
+# Last updated on: $Date: 2004-08-19 15:25:30 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -20,7 +20,6 @@ use Wormbase;
 use IO::Handle;
 use Getopt::Long;
 use Ace;
-
 
 ##################################################
 # Script variables and command-line options      #
@@ -53,23 +52,43 @@ if($debug){
 
 &create_log_files;
 
-
 ##############################
 # Paths etc                  #
 ##############################
 
 my $datadir = "/wormsrv2/autoace/GFF_SPLITS";
+my $gffdir  = "/wormsrv2/autoace/CHROMOSOMES";
+
+# prepare array of file names and sort names
+our @files = (
+	      'CHROMOSOME_I',
+	      'CHROMOSOME_II',
+	      'CHROMOSOME_III',
+	      'CHROMOSOME_IV',
+	      'CHROMOSOME_V',
+	      'CHROMOSOME_X',
+	      );
+
+our @gff_files = sort @files; 
+undef @files; 
+
+our @gff_classes;
+
 
 # create GFF_SPLITS subdirectory if it doesn't already exist
-if (! -e "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS"){
+if (! -e "$datadir/GFF_SPLITS"){
   system("mkdir /wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS") && die "Couldn't create directory\n";
 }
 
 # check to see if full chromosome gff dump files exist
-if (! -e "/wormsrv2/autoace/CHROMOSOMES/CHROMOSOME_I.gff"){
-  print "chromosome_dump.pl may have failed/n";
+foreach my $file (@gff_files) {
+    unless (-e "$gffdir/$file.gff") {
+	&usage("No GFF file");
+    }
+    if (-e -z "$gffdir/$file.gff") {
+	&usage("Zero length GFF file");
+    }
 }
-
 
 
 ##########################################################
@@ -86,22 +105,6 @@ if($archive){
 #################################################################################
 # Main Loop                                                                     #
 #################################################################################
-
-
-# prepare array of file names and sort names
-our @files = (
-	      'CHROMOSOME_I',
-	      'CHROMOSOME_II',
-	      'CHROMOSOME_III',
-	      'CHROMOSOME_IV',
-	      'CHROMOSOME_V',
-	      'CHROMOSOME_X',
-	      );
-
-our @gff_files = sort @files; 
-undef @files; 
-
-our @gff_classes;
 
 # prepare array of data types to dump
 READARRAY:   while (<DATA>) {
@@ -149,8 +152,10 @@ foreach $file (@gff_files) {
     
     # Clone path
     if    ( ($source eq "Genomic_canonical")    && ($feature eq "region"))      {push (@{$GFF{$file}{clone_path}},$_);}
+    # Genes (WBGene)
+    elsif ($source eq "gene")                                                   {push (@{$GFF{$file}{WBGene}},$_);}
     # Genes (CDSs)  
-    elsif ((($source eq "curated")              && ($feature eq "CDS")))        {push (@{$GFF{$file}{genes}},$_);
+    elsif ((($source eq "curated")              && ($feature eq "CDS")))        {push (@{$GFF{$file}{CDS}},$_);
 									         push (@{$GFF{$file}{worm_genes}},$_);}
     # Pseudogenes
     elsif ( ($source eq "Pseudogene")           && ($feature eq "Pseudogene"))  {push (@{$GFF{$file}{pseudogenes}},$_);
@@ -158,6 +163,11 @@ foreach $file (@gff_files) {
     # RNA genes 
     elsif ($feature =~ m/_primary_transcript/)                                  {push (@{$GFF{$file}{rna}},$_);
 									         push (@{$GFF{$file}{worm_genes}},$_);}
+    # Transposon
+    elsif ($source eq "Transposon")                                             {push (@{$GFF{$file}{transposon}},$_);}
+
+    # Coding_transcripts
+    elsif ($source eq "Coding_transcript")                                      {push (@{$GFF{$file}{Coding_transcript}},$_);}
     # coding_exon (used to be CDS)
     elsif (($source eq "curated")               && ($feature eq "coding_exon")) {push (@{$GFF{$file}{coding_exon}},$_);}
     # Exon      
@@ -172,13 +182,25 @@ foreach $file (@gff_files) {
     # all other introns
     elsif ($feature eq "intron")                                                {push (@{$GFF{$file}{intron_all}},$_);}
 
+    # Genefinder predictions
+    elsif ($source eq "Genefinder")                                             {push (@{$GFF{$file}{Genefinder}},$_);}
+    # History predictions
+    elsif ($source eq "history")                                                {push (@{$GFF{$file}{history}},$_);}
     # Repeats
-    elsif ($source eq "RepeatMasker")                                           {push (@{$GFF{$file}{repeats}},$_);}
+    elsif ( ($source eq "RepeatMasker") || ($source eq "inverted") || ($source eq "tandem"))  {push (@{$GFF{$file}{repeats}},$_);}
 
     # Assembly tags
     elsif ($source eq "assembly_tag")                                           {push (@{$GFF{$file}{assembly_tags}},$_);}
+    
+    ## Features ##
+
     # SL1/SL2 acceptor sites
-    elsif ($feature =~ m/_acceptor_site/)                                       {push (@{$GFF{$file}{ts_site}},$_);}
+    elsif ( ($source eq "SL1") || ($source eq "SL2") )                          {push (@{$GFF{$file}{TSL_site}},$_);}
+
+    # polyA signal and polyA sites
+    elsif ( ($source eq "polyA_signal_sequence") || ($source eq "polyA_site") ) {push (@{$GFF{$file}{polyA}},$_);}
+
+
     # Oligo mapping
     elsif ($feature eq "OLIGO")                                                 {push (@{$GFF{$file}{oligos}},$_);}
     # RNAi
@@ -213,6 +235,10 @@ foreach $file (@gff_files) {
     elsif (/BLAT_NEMATODE/)                           {push (@{$GFF{$file}{BLAT_NEMATODE}},$_);}
     # BLAT_TC1_BEST
     elsif (/BLAT_TC1_BEST/)                           {push (@{$GFF{$file}{BLAT_TC1_BEST}},$_);}
+    elsif (/BLAT_TC1_OTHER/)                          {push (@{$GFF{$file}{BLAT_TC1_OTHER}},$_);}
+    # BLAT_ncRNA_BEST
+    elsif (/BLAT_ncRNA_BEST/)                         {push (@{$GFF{$file}{BLAT_ncRNA_BEST}},$_);}
+    elsif (/BLAT_ncRNA_OTHER/)                        {push (@{$GFF{$file}{BLAT_ncRNA_OTHER}},$_);}
     # Expr_profile
     elsif (/Expr_profile/)                            {push (@{$GFF{$file}{Expr_profile}},$_);}
     # UTR         
@@ -220,7 +246,14 @@ foreach $file (@gff_files) {
     # Protein similarities
     elsif (/wublastx/)                                {push (@{$GFF{$file}{BLASTX}},$_);}
     # C. briggsae
-    elsif (/:waba/)                                   {push (@{$GFF{$file}{WABA_BRIGGSAE}},$_);}
+    elsif ($source =~ /waba/)                         {push (@{$GFF{$file}{WABA_BRIGGSAE}},$_);}
+
+    # TEC_RED similarities
+    elsif ($source eq "TEC_RED")                      {push (@{$GFF{$file}{TEC_RED}},$_);}
+    # SAGE transcript
+    elsif ($source eq "SAGE_transcript")              {push (@{$GFF{$file}{SAGE}},$_);}
+
+
 
     # REST OF LINES
     else                                              {push (@{$GFF{$file}{rest}},$_); $running_total--;}
@@ -292,9 +325,6 @@ exit(0);
 
 
 
-
-
-
 ###############################
 # subroutines                 #
 ###############################
@@ -345,10 +375,19 @@ sub usage {
     system ('perldoc',$0);
     exit (0);
   }
+  elsif ($error eq "No GFF file") {
+      # No GFF file to work from
+      print "One (or more) GFF files are absent from $gffdir\n\n";
+      exit(0);
+  }
+  elsif ($error eq "Zero length GFF file") {
+      # Zero length GFF file
+      print "One (or more) GFF files are zero length. The GFF dump may not have worked\n\n";
+      exit(0);
+  }
   elsif ($error eq "Debug") {
     # No debug person named
-    print "You haven't supplied your name\nI won't run in debug mode
-         until I know who you are\n";
+    print "You haven't supplied your name\nI won't run in debug mode until I know who you are\n\n";
     exit (0);
   }
 }
@@ -479,10 +518,13 @@ sub GFF_genes_with_accessions{
 
 __DATA__
 clone_path
-genes
+CDS
+WBGene
 pseudogenes
+transposon
 rna
 worm_genes
+Coding_transcript
 coding_exon
 exon
 exon_tRNA
@@ -490,11 +532,16 @@ exon_pseudogene
 exon_noncoding
 intron
 intron_all
+Genefinder
+history
 repeats
 assembly_tags
-ts_site
+TSL_site
+polyA
 oligos
 RNAi
+TEC_RED
+SAGE
 allele
 clone_ends
 PCR_products
@@ -510,6 +557,9 @@ BLAT_EMBL_BEST
 BLAT_EMBL_OTHER
 BLAT_NEMATODE
 BLAT_TC1_BEST
+BLAT_TC1_OTHER
+BLAT_ncRNA_BEST
+BLAT_ncRNA_OTHER
 Expr_profile
 UTR
 BLASTX
