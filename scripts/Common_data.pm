@@ -4,7 +4,7 @@
 # by Anthony Rogers                             
 #
 # Last updated by: $Author: ar2 $               
-# Last updated on: $Date: 2002-11-05 10:18:06 $         
+# Last updated on: $Date: 2002-11-05 10:25:49 $         
 
 use strict;                    
 use lib "/wormsrv2/scripts/";
@@ -64,7 +64,6 @@ sub write_clone2acc
 sub write_gene2CE
   {
     my $WPver = &get_wormbase_version;
-    $WPver--;
     open (FH,"</wormsrv2/WORMPEP/wormpep$WPver/wormpep$WPver") or die "cant open wormpep$WPver\n";
     my %gene2CE;
     my %CE2gene;
@@ -76,12 +75,11 @@ sub write_gene2CE
 	  # >2L52.1 CE32090   Zinc finger, C2H2 type status:Predicted TR:Q9XWB3
 	  my $pep = $data[1];
 	  my $gene = substr("$data[0]",1);
-	    $gene2CE{$gene} = $pep;
-	    $CE2gene{$pep} .= "$gene ";
-	  }
+	  $gene2CE{$gene} = $pep;
+	  $CE2gene{$pep} .= "$gene ";
 	}
       }
-
+    
     #now dump data to file
     open (C2G, ">$sub2file{'CE2gene'}") or die "$sub2file{'CE2gene'}";
     open (G2C, ">$sub2file{'gene2CE'}") or die "$sub2file{'gene2CE'}";
