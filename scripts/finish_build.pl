@@ -13,7 +13,7 @@
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-04-26 10:36:39 $
+# Last updated on: $Date: 2004-07-06 15:47:33 $
 
 
 use strict;
@@ -126,7 +126,7 @@ print LOG "Running cgc_names_for_worm_genes.pl\n\n";
 system("cgc_names_for_worm_genes.pl -update_camace ") && die "Couldn't run cgc_names_for_worm_genes.pl -a\n";
 
 # update all Common_data files - see Commom_data.pm
-system("update_Common_data.pl -update -in_build -all") && die "Couldn't run update_Common_data.pl -update -in_build -all\n";
+system("update_Common_data.pl -build -all") && die "Couldn't run update_Common_data.pl -update -in_build -all\n";
 
 # update "Confirmed Introns" webpage (introns to be addressed)
 system("/nfs/intweb/cgi-bin/wormpub/confirmed_introns/parse_gff.pl") && warn "Couldn't run parse_gff.pl\n";
