@@ -93,7 +93,7 @@ print LOG "# make_wormrna\n";
 print LOG "# version        : $version\n";
 print LOG "# run details    : $rundate $runtime\n";
 print LOG "\n";
-print LOG "Wormpep version  : wormpep$opt_r\n\n";
+print LOG "Wormrna version  : wormrna$opt_r\n\n";
 print LOG "=============================================\n";
 print LOG "\n";
 
@@ -341,21 +341,21 @@ __END__
 
 =pod
 
-=head2   NAME - make_wormpep
+=head2   NAME - make_wormrna
 
 
 =head1 USAGE
 
 =over 4
 
-=item make_wormpep [-options]
+=item make_wormrna [-options]
 
 =back
 
-make_wormpep will generate a peptide data set from the autoace
+make_wormrna will generate a rna data set from the autoace
 database directory.
 
-autoace_minder mandatory arguments:
+make_wormrna mandatory arguments:
 
 =over 4
 
@@ -363,7 +363,7 @@ autoace_minder mandatory arguments:
 
 =back
 
-autoace_minder OPTIONAL arguments:
+make_wormrna OPTIONAL arguments:
 
 =over 4
 
@@ -377,11 +377,11 @@ autoace_minder OPTIONAL arguments:
 
 =over 4
 
-=item make_wormpep -r 40
+=item make_wormrna -r 4
 
 =back
 
-Creates a new wormpep data set in the (new) /wormsrv2/WORMPEP/wormpep40 directory
+Creates a new wormrna data set in the (new) /wormsrv2/WORMRNA/wormrna4 directory
 
 =cut
 
