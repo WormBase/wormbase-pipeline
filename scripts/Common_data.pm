@@ -4,13 +4,60 @@
 # by Anthony Rogers                             
 #
 # Last updated by: $Author: ar2 $               
-# Last updated on: $Date: 2002-11-21 14:15:48 $         
+# Last updated on: $Date: 2002-11-28 12:10:23 $         
 
 use strict;                    
 use lib "/wormsrv2/scripts/";
 use Wormbase;
 use Data::Dumper;
-my $data_dir = "/wormsrv2/autoace/COMMON_DATA";
+use Getopt::Long;
+
+my $update;
+my $build;
+my $a2c;
+my $c2g;
+my $g2p;
+my $all;
+my $test;
+
+GetOptions("update"     => \$update,
+	   "in_build"   => \$build,
+	   "accession"  => \$a2c,
+	   "ce"         => \$c2g,
+	   "pid"        => \$g2p,
+	   "all"        => \$all,
+	   "test"       => \$test
+	  );
+
+if( $all ) {
+  $c2g = 1;
+  $a2c = 1;
+  $g2p = 1;
+}
+
+my $this_file = "/wormsrv2/scripts/Common_data.pm";
+our $data_dir = "/wormsrv2/autoace/COMMON_DATA";
+$data_dir = "/wormsrv2/tmp" if $test;
+our $ace_dir;
+our $wquery_dir = "/wormsrv2/autoace/wquery";
+our $tace = &tace;
+
+if( $update ) {
+  print "Updating $data_dir data files ";
+
+  # AceDB data
+  if( $build ) {
+    $ace_dir = "/wormsrv2/autoace";
+    print "during build so using $ace_dir - ensure that the data you are updating is actually in the database.\n";
+  }
+  else {
+    $ace_dir = "/wormsrv2/current_DB";
+    print "- NOT as part of build so using $ace_dir. If this is part of the build data MAY be stale\n";
+  }
+  &Common_data_update;
+}
+
+
 
 our %sub2file = ( 'gene2CE' => "$data_dir/gene2CE.dat",
 		  'CE2gene' => "$data_dir/CE2gene.dat",
@@ -21,14 +68,22 @@ our %sub2file = ( 'gene2CE' => "$data_dir/gene2CE.dat",
 		);
 
 
+sub Common_data_update
+  {
+    &write_gene2pid if $g2p;
+    &write_clone2acc if $a2c;
+    &write_gene2CE if $c2g;
+  }
+
 # Data writing routines - actually create and dump the data
 ##################################
 sub write_gene2pid
   {
-    # AceDB database
-    my $ace_dir = "/wormsrv2/autoace";
-    my $wquery_dir = "/wormsrv2/autoace/wquery";
-    my $tace = &tace;
+    unless( $update ) {
+      print "please update using the script ie Common_data.pm -update -pid\n";
+      `perldoc $this_file`;
+      exit(1);
+    }
 
     my %gene2pid;
     my %pid2gene;
@@ -39,9 +94,10 @@ sub write_gene2pid
     ####################################################################
     my $command="Table-maker -p $wquery_dir/gene2pid.def\nquit";
     
-    open (TACE, "echo '$command' | $tace /wormsrv2/autoace |");
+    open (TACE, "echo '$command' | $tace $ace_dir |");
     while (<TACE>) {
       #gene pid version
+      print;
       chomp;
       if (/\"(\S+)\"\s+\"(\S+)\"\s+(\d)/) {
 	my $pid = "$2".".$3";
@@ -65,11 +121,12 @@ sub write_gene2pid
   }
 
 sub write_clone2acc
-  {
-    # AceDB database
-    my $ace_dir = "/wormsrv2/autoace";
-    my $wquery_dir = "/wormsrv2/autoace/wquery";
-    my $tace = &tace;
+  {   
+    unless( $update ) {
+      print "please update using the script ie Common_data.pm -update -accession\n";
+      `perldoc $this_file`;
+      exit(1);
+    }
 
     my %clone2acc;
     my %acc2clone;
@@ -103,7 +160,12 @@ sub write_clone2acc
   }
 
 sub write_gene2CE
-  {
+  {   
+    unless( $update ) {
+      print "please update using the script ie Common_data.pm -update -ce\n";
+      exec ('perldoc', $this_file);
+      exit(1);
+    }
     my $WPver = &get_wormbase_version;
     open (FH,"</wormsrv2/WORMPEP/wormpep$WPver/wormpep$WPver") or die "cant open wormpep$WPver\n";
     my %gene2CE;
@@ -207,7 +269,7 @@ __END__
 The Common_data.pm gives quick easy acces to a variety of data frequently used in Wormbase scripts.
 It comprises of two parts
 
-  Part One generates the data and writes it to a file using the Data::Dumper module.
+Part One generates the data and writes it to a file using the Data::Dumper module.
 Part Two is the rapid retrieval of this data ( rather than recreating it multiple times in different scripts)
 
 
@@ -264,3 +326,32 @@ my $histone = $hash_of_genes_2_CEs{'F08G2.2'}
 =item
 
 returns 'CE04501'
+
+=item UPDATING THE DATA
+
+=over4
+
+We need to be very careful about updating this data.  Depending in wether it is being updated during the build or otherwise we need to use autoace or current_DB. 
+
+If you have just generated new accession to clone information in the build, autoace should be used by adding the -build option ie
+
+=item 
+
+Common_data.pm -update -build -a2c
+
+However if the build is underway and you want to write out the gene 2 CE info but that is not yet in the building database you need to use current_DB. so dont include -build ie 
+
+=item
+
+Common_data.pm -update -a2c
+
+
+At the end of the build ( in finish_build.pl) all data will be refreshed to be in synch with the current release ie
+
+=item
+
+Common_data.pm -update -build -all.
+
+There shouldn't really be any need to alter this apart from actually during the next build itself.  Scripts that generate the data that is included in Common_data will call the updating routines themselves - so you wont have to ! 
+
+BTW If you try and call the updating routines directly they will complain.
