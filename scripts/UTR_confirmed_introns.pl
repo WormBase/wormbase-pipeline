@@ -22,8 +22,10 @@ my @chromosomes = qw(CHROMOSOME_I CHROMOSOME_II CHROMOSOME_III CHROMOSOME_IV CHR
 $database = glob("~wormpub/DATABASES/WS98_allele_fix") unless $database;
 $gff_dir = glob("~wormpub/DATABASES/WS98_allele_fix") unless $gff_dir;
 my $acefile = "$database/utr.ace";
+my $errfile = "$database/err.ace";
 
 open (ACE,">$acefile") or die "cant write $acefile\n";
+open (ERR,">$errfile") or die "cant write $errfile\n";
 
 # this bit is to separate wrongly attached cDNAs to centre specific acefile output
 my $STL_bad_mcDNAs = "$database/STL_bad_matching_cDNA.ace";
@@ -188,6 +190,7 @@ foreach ( @chromosomes ) {
 print "\n\nEND\n" if $track;
 
 close ACE;
+close ERR;
 close STLBAD;
 close CAMBAD;
 $db->close;
@@ -210,8 +213,9 @@ sub fwd5UTR_introns
     print ACE "Source_exons 1 ";
 
     foreach (sort keys %$utr5) {
+      #check for intron end on ATG
       if($$utr5{$_} +1 == $genes_span{$$gene}[0] ) {
-	print "$$gene - UTR intron without exon\n";
+	print ERR "$$gene - UTR intron without exon\n";
 	next;
       }
       print ACE $_ - $$extremes[0] ,"\nSource_exons ",$$utr5{$_} +1 - $$extremes[0] + 1," ";
@@ -238,6 +242,11 @@ sub rev5UTR_introns
     print ACE "Source_exons 1 ";
 
     foreach (sort {$$utr5{$b}<=>$$utr5{$a}} keys %$utr5) {
+      #check for intron end on ATG
+      if($_ - 1 == $genes_span{$$gene}[1] ) {
+	print ERR "$$gene - UTR intron without exon\n";
+	next;
+      }
       print ACE $$extremes[1] - ($$utr5{$_}),"\nSource_exons ", ($$extremes[1] +1) - ($_ - 1)," ";
     }
     print ACE $$extremes[1] - $genes_span{$$gene}[1] ,"\n";
@@ -259,6 +268,11 @@ sub fwd3UTR_introns
     print ACE "Source_exons 1 ";
 
     foreach (sort keys %$utr3) {
+      #check for intron end on ATG
+      if($$utr3{$_} - 1 == $genes_span{$$gene}[1] ) {
+	print ERR "$$gene - UTR intron without exon\n";
+	next;
+      }
       print ACE ($_)  - ($genes_span{$$gene}[1] + 1) ,"\nSource_exons ",($$utr3{$_} +1) -($genes_span{$$gene}[1])," ";
     }
     print ACE $$extremes[1] - $genes_span{$$gene}[1] ,"\n";
@@ -281,6 +295,11 @@ sub rev3UTR_introns
     print ACE "Source_exons 1 ";
 
     foreach (sort {$$utr3{$b}<=>$$utr3{$a}} keys %$utr3) {
+      #check for intron end on ATG
+      if($_ + 1 == $genes_span{$$gene}[0] ) {
+	print ERR "$$gene - UTR intron without exon\n";
+	next;
+      }
       print ACE ($genes_span{$$gene}[0] - 1) - $$utr3{$_} ,"\nSource_exons ",($genes_span{$$gene}[0] ) - ($_ - 1)," ";
     }
     print ACE $genes_span{$$gene}[0] - $$extremes[0] ,"\n";
@@ -314,8 +333,9 @@ sub FindExtremes
    my $mcDNA = shift;
    my $gene = shift;
 
-   if( ( ($$extremes[0] - $cDNA{$$mcDNA}[0]) > 20000 ) || 
-       ( ($cDNA{$$mcDNA}[1] - $$extremes[1]) > 20000) )  {
+   if( ( ($$extremes[0] - $cDNA{$$mcDNA}[0]) > 20000 ) ||
+       ( ($cDNA{$$mcDNA}[1] - $$extremes[1]) > 20000)) {
+
      # this determines which file to print to via %BAD_FH based on the gene.
      print {$BAD_FH{ $gene2centre{$$gene} } } "\nSequence : \"$$gene\"\n-D Matching_cDNA \"$$mcDNA\"\n";
    }

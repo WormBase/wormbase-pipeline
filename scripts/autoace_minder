@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder [-options]
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-07-22 12:55:35 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2003-07-22 14:13:08 $
 
 
 #################################################################################
@@ -1484,7 +1484,7 @@ sub map_features {
 sub confirm_gene_models {
   $am_option = "-confirm";
 
-  # confirm_genes from EST (-e) and mRNA (-m) data sets
+  # confirm_genes from EST (-e) and mRNA (-m) data sets and OST (-o)
   $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "confirm_genes.pl -e started at $runtime\n";  
   system ("$scriptdir/confirm_genes.pl -e");
   $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "confirm_genes.pl -e finished at $runtime\n";  
