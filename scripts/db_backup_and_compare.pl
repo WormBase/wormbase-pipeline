@@ -5,7 +5,7 @@
 # backup database and compare to last backed up database to look for lost data
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-04-08 12:30:17 $      
+# Last updated on: $Date: 2003-04-10 11:00:32 $      
 
 use strict;
 use lib '/wormsrv2/scripts';
@@ -112,9 +112,14 @@ sub find_and_make_backups{
   else{
     # keep TransferDB logs in backup directory
     chdir("$backup_dir") || print LOG "Couldn't cd to $backup_dir\n";
-      print LOG "Making new backup - ${db}_backup\.${date}\n";
-    system("TransferDB.pl -start /wormsrv1/$db -end ${backup_dir}/${db}_backup\.${date} -database -wspec -name ${db}\.${date}") 
-	&& print LOG "ERROR: Couldn't run TransferDB.pl correctly.  Check log\n";
+    print LOG "Making new backup - ${db}_backup\.${date}\n";
+    my $return = system("TransferDB.pl -start /wormsrv1/$db -end ${backup_dir}/${db}_backup\.${date} -database -wspec -name ${db}\.${date}"); 
+    if($return != 0){
+      print LOG "ERROR: Couldn't run TransferDB.pl correctly.  Check log\n";
+      close(LOG);
+      &mail_maintainer("$db backup and comparison",$maintainers,$log);    
+      exit;
+    }
     # Now need to remove the oldest database (assuming that there are now five backups).
     if (scalar(@backups) == "4"){
       print LOG "Removing oldest backup - ${db}_backup\.${backups[3]}\n\n";
