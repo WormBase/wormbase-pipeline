@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-07-11 16:43:25 $
+# Last updated on: $Date: 2003-07-21 16:10:06 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -1005,7 +1005,7 @@ sub process_strain_class {
 
   my (@strains, @seqs, $genotype, @genes, $seq, $strain, $extract);
 
-  print"\n\nChecking Strain class for errors:\n";
+ # print"\n\nChecking Strain class for errors:\n";
   print LOG "\n\nChecking Strain class for errors:\n";
   print LOG "---------------------------------\n";
 
@@ -1073,81 +1073,54 @@ EOF
     }
   }
   
-  my ($locus, %locus_strain, $cds, %locus_cds, $main, $other_name, %other_main);
- 
-  my $get_loci_in_strain=<<EOF;
-  Table-maker -p "/wormsrv1/geneace/wquery/locus_in_strain.def" quit 
+  my ($locus, %allele_locus, %strain_genotype, $cds, %locus_cds, $main, $other_name, %other_main, $allele);
+
+  my $strain_genotype=<<EOF;
+  Table-maker -p "/wormsrv1/geneace/wquery/strain_genotype.def" quit 
 EOF
 
-  my $locus_has_other_name_to_cds=<<EOF;
-Table-maker -p "/wormsrv1/geneace/wquery/locus_has_other_name_to_cds.def" quit
+  my $allele_to_locus=<<EOF;
+Table-maker -p "/wormsrv1/geneace/wquery/allele_to_locus.def" quit
 EOF
-  my $locus_to_CDS=<<EOF;
-Table-maker -p "/wormsrv1/geneace/wquery/locus_to_CDS.def" quit
-EOF
+    
 
-  my $locus_to_trans=<<EOF;
-Table-maker -p "/wormsrv1/geneace/wquery/locus_to_Transcripts.def" quit
-EOF
-  
-  open (FH1, "echo '$get_loci_in_strain' | tace $default_db | ") || die $!;
-  open (FH2, "echo '$locus_has_other_name_to_cds' | tace $default_db | ") || die $!;
-  open (FH3, "echo '$locus_to_CDS' | tace $default_db | ") || die $!;
-  open (FH4, "echo '$locus_to_trans' | tace $default_db | ") || die $!;
+  open (FH1, "echo '$strain_genotype' | tace $default_db | ") || die $!;
+  open (FH2, "echo '$allele_to_locus' | tace $default_db | ") || die $!;
 
-  while (<FH1>){
+
+  while(<FH1>){
     chomp;
+    
     if ($_ =~ /\"(.+)\"\s+\"(.+)\"/){
-      $strain = $1; $locus = $2;
-      push(@{$locus_strain{$locus}}, $strain);
+      $strain_genotype{$1} = $2;
     }
-  }   
-
- 
+  }  
+  
   while (<FH2>){
     chomp $_;
-    if ($_ =~ /\"(.+)\"\s+\"(.+)\"\s+\"(.+)\"/){
-      $main = $1;
-      $other_name = $2;
-      $other_name =~ s/\\//;
-      if ($3){
-	$cds = $3;
-	push(@{$other_main{$other_name}}, $main, $cds);
-      }
-      else {
-	push(@{$other_main{$other_name}}, $main);
+    if ($_ =~ /\"(.+)\"\s+\"(.+)\"/){
+      $locus = $2;
+      $locus =~ s/\\//;
+      push(@{$allele_locus{$1}}, $locus);
+    }
+  }    
+
+  foreach my $strain (keys %strain_genotype){
+    my @matches = ($strain_genotype{$strain} =~ /(\w{3,3}-\d+\(.+\d+\))/g);
+    foreach (@matches){
+      my @locus_allele = split(/\s+/, $_);
+      foreach (@locus_allele){
+	$_ =~ /(\w{3,3}-\d+)\((.+\d+)\)/;
+	$locus = $1; $allele = $2; 
+	if ((defined @{$allele_locus{$allele}}) && ("@{$allele_locus{$allele}}" ne "$locus")){
+	  $strain_errors++;
+	  print LOG "ERROR: Strain $strain has allele $allele linked to $locus in genotype which should now become @{$allele_locus{$allele}}\n";
+
+	}
       }
     }
   }
-
-  while (<FH3>){
-    chomp $_;
-    if ($_ =~ /\"(.+)\"\s+\"(.+)\"/){
-      $locus = $1;
-      $locus =~ s/\\//;
-      $cds = $2;
-      push(@{$locus_cds{$locus}}, $cds);
-    }
-  } 
-  
-  
-  while (<FH4>){
-    chomp $_;
-    if ($_ =~ /\"(.+)\"\s+\"(.+)\"/){
-      $locus = $1;
-      $locus =~ s/\\//;
-      $cds = $2;
-      push(@{$locus_cds{$locus}}, $cds);
-    }
-  } 
-  
-  foreach (keys %locus_strain){
-    if(exists $other_main{$_} ){ 
-      $strain_errors++;
-      print LOG "WARNING: $_ (@{$other_main{$_}}->[1]) in genotype of strain @{$locus_strain{$_}} can now be ";
-      print LOG "@{$other_main{$_}}->[0] (@{$locus_cds{@{$other_main{$_}}->[0]}}) -> main name\n";
-    }
-  } 
+         
   print LOG "\nThere are $strain_errors errors in Strain class.\n";
 }
 
