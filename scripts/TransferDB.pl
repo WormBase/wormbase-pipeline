@@ -4,7 +4,7 @@
 #
 # by ag3 [991221]
 #
-# Last updated on: $Date: 2003-11-18 14:52:02 $
+# Last updated on: $Date: 2003-11-18 17:20:26 $
 # Last updated by: $Author: ar2 $
 
 
@@ -338,7 +338,7 @@ sub process_file {
       #loop to retry copying on failure
       my $success = 0;
     ATTEMPT:
-      for(my $i = 1; $i < $retry ; $i++) {
+      for(my $i = 1; $i <= $retry ; $i++) {
 	my $cp_chk = "0";
 	my $cp_val;
 	if($filename =~ m/models\.wrm$/){
@@ -414,15 +414,17 @@ sub usage {
 sub create_log_files{
 
   # Create history logfile for script activity analysis
+  my $ws2 = 1;
+  $ws2 = 0 if ( -e /wormsrv2 ); # cant always see wormsrv2
   $0 =~ m/\/*([^\/]+)$/; 
-  system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`") unless $debug;
+  system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`") unless ($debug or $ws2 == 0);
 
   # create main log file using script name for
   my $script_name = $1;
   $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
   my $rundate     = `date +%y%m%d`; chomp $rundate;
   $log        = "/wormsrv2/logs/$script_name.$rundate.$$";
-  $log = "/tmp/logs/$script_name.$rundate.$$" if $debug;
+  $log = "/tmp/$script_name.$rundate.$$" if ( $debug or $ws2 == 0 );
 
   open (LOG, ">$log") or die "cant open $log";
   print LOG "$script_name process $$ started at ",&runtime,"\n";
