@@ -7,8 +7,8 @@
 # Script to run consistency checks on the current_DB database
 # to look for bogus sequence entries
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-05-06 16:07:52 $
+# Last updated by: $Author: ck1 $
+# Last updated on: $Date: 2004-06-07 16:11:29 $
 
 
 use strict;
@@ -16,11 +16,15 @@ use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
 use Wormbase;
 use Ace;
 use Getopt::Long;
+use lib "/nfs/team71/worm/ck1/WORMBASE_CVS/scripts/";
+use GENEACE::Geneace;
+
+
 
 ##############################
 # command-line options       #
 ##############################
- 
+
 my $help;                # Help/Usage page
 my $verbose;             # turn on extra output
 my $database;            # path to database
@@ -54,6 +58,7 @@ if($debug){
 $database = "/nfs/disk100/wormpub/DATABASES/current_DB/" if (!$database);
 
 my $tace = &tace;   # tace executable path
+
 my $db = Ace->connect(-path  => "$database",
 		      -program =>$tace) || do { print ALL_LOG "Connection failure: ",Ace->error; die();};
 
@@ -64,8 +69,10 @@ print "Checking $database\n\n";
 ##############################################
 # Initialise variables, set up log files
 ###############################################
-my %problems; # store problems in a double hash, first key being timestamp name
-my @other; # store uncategorised problems
+
+my %problems;         # store problems in a double hash, first key being timestamp name
+my @other;            # store uncategorised problems
+my @gene_id_error;    # store out-of-date gene id in acefiles of each group for the build: subdir of /wormsrv2/wormbase
 
 # make one global log file but also split for different groups
 my $all_log;
@@ -102,6 +109,8 @@ print "\nLooking for spurious sequences\n";
 # Search everything else, one sequence at a time
 &process_sequences;
 
+# Check out-of-date gene id
+&find_out_of_date_gene_id;
 
 # Count problems and print output
 
@@ -113,17 +122,14 @@ foreach my $i (@other){
   $sanger_counter++;
 }
 
-  
-
 foreach my $j (keys(%problems)){
   foreach my $k (keys(%{$problems{$j}})){
     print ALL_LOG "$j $k @{${$problems{$j}}{$k}}\n";
     if ($j ne "caltech" && $j ne "csh" && $j ne "stlace" && $j ne "brigace"){
-      print SANGER_LOG "$j $k @{${$problems{$j}}{$k}}\n";      
+      print SANGER_LOG "$j $k @{${$problems{$j}}{$k}}\n";
       $sanger_counter++;
       $all_counter++;
     }
-    
     if ($j eq "csh"){
       print CSHL_LOG "$k @{${$problems{$j}}{$k}}\n";
       $cshl_counter++;
@@ -139,9 +145,18 @@ foreach my $j (keys(%problems)){
       $stlouis_counter++;
       $all_counter++;
     }
-    
     #    print "$j $k @{${$problems{$j}}{$k}}\n";
   }
+}
+
+foreach (@gene_id_error){
+  print ALL_LOG $_;
+  print $_ if $verbose;
+  $all_counter++;
+  if ($_ =~ /^csh/ ){ $cshl_counter++; print CSHL_LOG $_ }
+  if ($_ =~ /^camace|^misc/ ){ $sanger_counter++; print SANGER_LOG $_ }
+  if ($_ =~ /^caltech/ ){ $caltech_counter++; print CALTECH_LOG $_ }
+  if ($_ =~ /^stlace/ ){ $stlouis_counter++; print STLOUIS_LOG $_ }
 }
 
 print "\n$all_counter problems found\n" if $verbose;
@@ -186,8 +201,6 @@ exit(0);
 
 
 
-
-
 ####################################################################
 #
 #  T H E    S U B R O U T I N E S
@@ -207,14 +220,14 @@ sub process_sequences{
   my $class = "CDS";
 
   # loop through each subseq-style name
-  
+
   foreach my $seq (@genome_seqs){
 
     my @CDSs = $db->fetch(-class=>'CDS',-name=>"$seq.*");
-    
+
     foreach my $CDS (@CDSs){
       our $category = 0;
-      
+
       # only look for some errors for CDS objects with no Method (most likely to be errant objects)
       if(!defined($CDS->at('Method'))){  
 	if(defined($CDS->at('DB_info.Database'))){
@@ -426,13 +439,69 @@ sub process_sequences{
 	  push(@other,$CDS);
 	  print "$CDS - Other problem\n" if $verbose;
 	}
-      }  
+      }
       undef($CDS);
     }
     undef($seq);
   }
- 
-  
+}
+
+sub find_out_of_date_gene_id {
+
+  my @models = `cat /wormsrv2/autoace/wspec/models.wrm`;
+  my ($class, %class_has_Gene);
+
+  # ----- checks which ?class used ?Gene in model.wrm file and build a hash
+  foreach my $line (@models) {
+    chomp $line;
+    if ($line =~ /^\?(\w+)\s+.+/) {
+      $class = $1;
+    }
+    if ($line =~ /\?Gene.+/) {
+      $class_has_Gene{$class}++;
+    }
+  }
+
+  # ----- get latest live gene id / non_live gene id from geneace
+  my $ga = init Geneace();
+  my ($Live_gene_id, $Non_Live_gene_id) = $ga -> gene_id_is_live(); # hash ref
+
+  # ----- loop through each acefile of all groups subdir of at /wormsrv2/wormbase and
+  #       see if there is WBGxxxxxxx. If yes, check if gene id is up-to-date
+
+  foreach my $group ("stlace", "camace", "csh", "caltech", "misc") {
+    my @config = `cat /wormsrv2/autoace_config/autoace.config`;
+    my $error =();
+    my ($acefile, $exist, $obj);
+    foreach my $line (@config){
+      if ($line =~ /^$group\s+(.+\.ace)\s+(\w+)\s+/){
+	$acefile = $1;
+	$acefile =~ s/\s+//g;
+	$acefile = "/wormsrv2/wormbase/$group/$acefile";
+	$exist = `grep "WBGene" $acefile`; # check only acefiles that have WBGxxxxxxx info
+	
+	if ( exists $class_has_Gene{$2} && $exist ){  # $2 is ?class
+	  $class = ();
+	  my @acefile = `cat $acefile`;
+	  foreach my $line (@acefile){
+	    chomp $line;
+	    if ( $line =~ /(\w+) : \"(.+)\" -O.+/ ){
+	      $class = $1;
+	      $obj = $2;
+	    }
+	    if ( $line =~ /(WBGene\d+)/ ){
+	      if ( !exists $Live_gene_id->{$1} && exists $Non_Live_gene_id->{$1} ){
+		push (@gene_id_error, "$group $class: $obj \"attached gene id $1 has been merged into $Non_Live_gene_id->{$1}\"\n");
+	      }
+	      if ( !exists $Live_gene_id->{$1} && !exists $Non_Live_gene_id->{$1} ){
+		push (@gene_id_error, "$group $class: $obj \"attached gene id $1 is invalid\"\n");
+	      }
+	    }
+	  }
+	}
+      }
+    }
+  }
 }
 
 ##########################################################################
