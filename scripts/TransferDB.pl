@@ -1,11 +1,11 @@
-#!/usr/local/bin/perl5.6.1 -w
-
+#!/usr/local/bin/perl5.8.0 -w
+#
 # TransferDB.pl
-
+#
 # by ag3 [991221]
 #
-# Last updated on: $Date: 2003-05-08 12:41:07 $
-# Last updated by: $Author: ck1 $
+# Last updated on: $Date: 2003-09-22 17:01:02 $
+# Last updated by: $Author: krb $
 
 
 # transferdb moves acedb database files across filesystems.
@@ -13,188 +13,220 @@
 # Checks after every copy on return value and file size
 # Updates display.wrm
 
-# touch logfile for run details
-$0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
-
 use strict;
+use lib "/wormsrv2/scripts/";
+use Wormbase;
+
+use Carp;
 use IO::Handle;
 use File::Find;
 use File::Path;
-use Mail::Mailer;
 use Getopt::Long;
 use Cwd;
 
-my $start="";
-my $end="";
-my $name="";
-my $log="";
-my $bck="";
-my $mail="";
-my $database="";
-my $all="";
-my $wspec="";
-my $wgf="";
-my $wscripts="";
-my $wquery="";
-my $wtools="";
-my $whelp="";
-my $wdata="";
-my $chromosomes="";
-my $release="";
+##############################
+# command-line options       #
+##############################
 
-my ($srcdir,$enddir,$backup,$printlog,$S_database,
-    $S_all,$S_wspec,$S_wgf,$S_wscripts,$S_wquery,$S_wtools,$S_whelp,
-    $S_wdata,$S_chromosomes,$S_release,$file);   
-
-our $dbname;
+my $help;              # Help/Usage page
+my $verbose;           # turn on extra command-line output
+my $debug;             # For sending log file output to just one person
+my $dbname;            # -name: name of the database (will be overwritten in displays.wrm)
+my $srcdir;            # -start: Location of source database, mandatory option
+my $enddir;            # -end: Location of target database, mandatory option
+my $backup;            # -bck: will specify that script keep .BCK directory
+my $S_database;        # -database: will copy database dir
+my $S_wspec;           # -wspec
+my $S_wgf;             # -wgf
+my $S_wscripts;        # -wscripts
+my $S_wquery;          # -wquery
+my $S_wtools;          # -wtools
+my $S_whelp;           # -whelp
+my $S_wdata;           # -wdata ??? what is this
+my $S_chromosomes;     # -chromosomes: copies CHROMOSOMES dir
+my $S_release;         # -release 
+my $S_all;             # -all: all of the above
+my $file;              # ???
 
 GetOptions (
-	    "start=s"   => \$srcdir,
-	    "end=s"     => \$enddir,
-	    "name=s"    => \$dbname,
-	    "bck"       => \$backup,
-	    "mail=s"    => \$mail,
-	    "printlog"  => \$printlog,
-	    "database"  => \$S_database,
-	    "all"       => \$S_all,
-	    "wspec"     => \$S_wspec,
-	    "wgf"       => \$S_wgf,
-	    "wscripts"  => \$S_wscripts,
-	    "wquery"    => \$S_wquery,
-	    "wtools"    => \$S_wtools,
-	    "whelp"     => \$S_whelp,
-	    "wdata"     => \$S_wdata,
-	    "chromosomes"     => \$S_chromosomes,
+	    "start=s"     => \$srcdir,
+	    "end=s"       => \$enddir,
+	    "name=s"      => \$dbname,
+	    "bck"         => \$backup,
+	    "database"    => \$S_database,
+	    "all"         => \$S_all,
+	    "wspec"       => \$S_wspec,
+	    "wgf"         => \$S_wgf,
+	    "wscripts"    => \$S_wscripts,
+	    "wquery"      => \$S_wquery,
+	    "wtools"      => \$S_wtools,
+	    "whelp"       => \$S_whelp,
+	    "wdata"       => \$S_wdata,
+	    "chromosomes" => \$S_chromosomes,
 	    "release"     => \$S_release,
-);
+	    "help"        => \$help,
+	    "verbose"     => \$verbose,
+	    "debug=s"     => \$debug
+	    );
 
-# warn if mandatory command line arguments not set
-&PrintHelp if(!$srcdir);
-&PrintHelp if(!$enddir);
-&PrintHelp if ($S_all && !$dbname);
+##################################
+#set up log files and debug mode
+##################################
+my $log; 
+my $maintainers = "All";
+
+# Use debug mode?
+if($debug){
+  print "DEBUG = \"$debug\"\n\n";
+  ($maintainers = $debug . '\@sanger.ac.uk');
+}
+&create_log_files;
 
 
 
-my $DEBUG = 0;
-my $OK=0;
-our $DB=0;
-my $date = `date +%y%m%d`; chomp $date;
-my $LOGFILE = "/wormsrv2/logs/TransferDB.${date}.$$";
+#########################################################
+# Help pod if needed
+# or warn if mandatory command line arguments not set
+##########################################################
+&usage("Help") if ($help);
+&usage("1")    if (!$srcdir || !$enddir);
+&usage("2")    if ($S_all && !$dbname);
+
+if ($srcdir =~ /^\~/) {
+  my $tmp = glob ($srcdir);  $srcdir = $tmp;
+} 
+&usage("1")    if (!-d $srcdir);
+
+
+
+###########################
+# catch signal interrupts
+###########################
 my %SIG;
 
-$SIG{INT}= sub {print LOGFILE ".. INTERRUPT ..\n"; close LOGFILE; die()};
-$SIG{TERM}= sub {print LOGFILE ".. INTERRUPT ..\n"; close LOGFILE; die()}; 
-$SIG{QUIT}= sub {print LOGFILE ".. INTERRUPT ..\n"; close LOGFILE; die()};
-
-open (LOGFILE,">$LOGFILE");
-LOGFILE->autoflush;
-
-my $datestamp=&GetTime();
-my ($s_dir, $e_dir);
-
-print LOGFILE "TransferDB run $$ started at $datestamp\n\n"; 
-
-# set source directory - $s_dir
-if ($srcdir =~ /^\~/) {
-  $s_dir = glob ($srcdir);
-  print LOGFILE "SOURCE DIR : $s_dir\n";
-} 
-else {
-  $s_dir=$srcdir;
-  print LOGFILE "SOURCE DIR: $s_dir\n";
-}
-if (!-d $s_dir) {&SendMail ("ERROR: Could not found directory $s_dir\n");}
+$SIG{INT}  = sub {print LOG ".. INTERRUPT ..\n"; close LOG; die()};
+$SIG{TERM} = sub {print LOG ".. INTERRUPT ..\n"; close LOG; die()}; 
+$SIG{QUIT} = sub {print LOG ".. INTERRUPT ..\n"; close LOG; die()};
 
 
-# set target directory - $e_dir
+#######################################################################
+# set target directory - $enddir
+# if leading ~ specified, need to use glob
+# create directory if it doesn't exist
+#######################################################################
+
 if ($enddir =~ /^\~/) {
-  $e_dir = glob ($enddir);
-  print LOGFILE "TARGET DIR: $e_dir\n\n";
+  my $tmp = glob ($enddir);
+  $enddir = $tmp;
 } 
 else {
-  $e_dir=$enddir;
-  if ($e_dir !~ /^\//) {
+  if ($enddir !~ /^\//) {
     my $cwd;
-    $e_dir="$cwd"."/$e_dir";
+    $enddir="$cwd"."/$enddir";
   }
-  print LOGFILE "TARGET DIR: $e_dir\n\n";
 }
+# does it exist?
+if (!-d $enddir){ 
+  print "$enddir doesn't exist, will try to create it\n";
+  print LOG "$enddir doesn't exist, will try to create it\n";
+  mkdir($enddir,07777) or &usage("3");
+} 
 
-my $new_subdir="$e_dir"."/database";
-my $bck_subdir="$e_dir"."/database.BCK";
-$database = "$s_dir"."/database";
-$wspec = "$s_dir"."/wspec";
-$wgf = "$s_dir"."/wgf";
-$wscripts = "$s_dir"."/wscripts";
-$wquery = "$s_dir"."/wquery";
-$wtools = "$s_dir"."/wtools";
-$whelp = "$s_dir"."/whelp";
-$wdata = "$s_dir"."/data";
-$chromosomes = "$s_dir"."/CHROMOSOMES";
-$release = "$s_dir"."/release";
 
+print LOG "SOURCE DIR: $srcdir\n";
+print LOG "TARGET DIR: $enddir\n\n";
+
+my $new_subdir  = "$enddir"."/database";
+my $bck_subdir  = "$enddir"."/database.BCK";
+my $database    = "$srcdir"."/database";
+my $wspec       = "$srcdir"."/wspec";
+my $wgf         = "$srcdir"."/wgf";
+my $wscripts    = "$srcdir"."/wscripts";
+my $wquery      = "$srcdir"."/wquery";
+my $wtools      = "$srcdir"."/wtools";
+my $whelp       = "$srcdir"."/whelp";
+my $wdata       = "$srcdir"."/data";
+my $chromosomes = "$srcdir"."/CHROMOSOMES";
+my $release     = "$srcdir"."/release";
+
+# store what to copy in @TOBEMOVED
 my @TOBEMOVED;
 
-$S_all && do {@TOBEMOVED=("$database","$wspec","$wgf","$wscripts","$wtools","$whelp","$wdata","$chromosomes","$release");$OK=1;$DB=1;};
-$S_database && do {push (@TOBEMOVED,"$database");$OK=1;};
-$S_wspec && do {push (@TOBEMOVED,"$wspec");$OK=1;$DB=1;};
-$S_wgf && do {push (@TOBEMOVED,"$wgf");$OK=1;};
-$S_wscripts && do {push (@TOBEMOVED,"$wscripts");$OK=1;};
-$S_wquery && do {push (@TOBEMOVED,"$wquery");$OK=1;};
-$S_wtools && do {push (@TOBEMOVED,"$wtools");$OK=1;};
-$S_whelp && do {push (@TOBEMOVED,"$whelp");$OK=1;};
-$S_wdata && do {push (@TOBEMOVED,"$wdata");$OK=1;};
-$S_chromosomes && do {push (@TOBEMOVED,"$chromosomes");$OK=1;};
-$S_release && do {push (@TOBEMOVED,"$release");$OK=1;};
-if ($OK == "0") {&PrintHelp;};
+# flag to decide whether you are copying the database dir
+my $DB =0;
+$S_all && do {@TOBEMOVED=("$database","$wspec","$wgf","$wscripts","$wtools","$whelp","$wdata","$chromosomes","$release");$DB=1;};
+$S_database    && do {push (@TOBEMOVED,"$database");$DB=1};
+$S_wspec       && do {push (@TOBEMOVED,"$wspec");}; # why set $DB here ???
+$S_wgf         && do {push (@TOBEMOVED,"$wgf");};
+$S_wscripts    && do {push (@TOBEMOVED,"$wscripts");};
+$S_wquery      && do {push (@TOBEMOVED,"$wquery");};
+$S_wtools      && do {push (@TOBEMOVED,"$wtools");};
+$S_whelp       && do {push (@TOBEMOVED,"$whelp");};
+$S_wdata       && do {push (@TOBEMOVED,"$wdata");};
+$S_chromosomes && do {push (@TOBEMOVED,"$chromosomes");};
+$S_release     && do {push (@TOBEMOVED,"$release");};
 
-print LOGFILE "Directories to be copied: @TOBEMOVED \n";
 
-# Make the backup directory
-# if we requested to copy over database directory also
+print LOG "Directories to be copied: @TOBEMOVED \n";
+
+
+
+#############################################################################
+# Make a backup database subdirectory
+# Only do this if -database/-all specified and target database subdir exists
+##############################################################################
 
 my @OLDDATABASE;
 
-if ($DB==1) {
-  if (!-d $e_dir){ 
-    mkdir($e_dir,07777) or &SendMail("ERROR 1: Could not mkdir $e_dir: $!\n");
-    print LOGFILE "CREATED TARGET DIR: $e_dir\n";
-  } 
-  else {
-    if (-d $new_subdir) {
-      @OLDDATABASE = ("$database");
-      print LOGFILE "Making backup copy of old database ...\n";
-      find (\&backup_db,@OLDDATABASE);
-    } 
-  }
+if ($DB==1 && -d $new_subdir) {
+  @OLDDATABASE = ("$database");
+  print LOG "Making backup copy of old database ...\n";
+  find (\&backup_db,@OLDDATABASE); 
 }
 
 
+###############################################
 # Move the actual acedb tree structure
+###############################################
 find (\&process_file,@TOBEMOVED);
 
+
+######################################################################
 # Remove the backup database directory, unless bck switch specified
+######################################################################
+
 if ((!$backup) && (-d $bck_subdir)) {
-  print LOGFILE "REMOVING BACKUP TREE $bck_subdir\n";
-  rmtree ($bck_subdir) if !$DEBUG;
-  print LOGFILE "$0 ended SUCCESSFULLY\n";
-  close LOGFILE;
+  print LOG "REMOVING BACKUP TREE $bck_subdir\n";
+  rmtree ($bck_subdir);
 } 
 elsif ($backup &&(-d $bck_subdir)) {
-  print LOGFILE "Backup database directory is in $bck_subdir\n";
+  print LOG "Backup database directory is in $bck_subdir\n";
 }
 
-
-my $body = "SUCCESS: Your transferdb process $$ has ended succesfully.\n";
-&SendMail($body);
-
+# Finish script cleanly
+print LOG "\n=============================================\n";
+print LOG "TransferDB process $$ ended SUCCESSFULLY at ",&runtime,"\n";
+close(LOG);
+&mail_maintainer("TransferDB.pl",$maintainers,$log);
 exit 0;
 
-#----------------------------------------
-# Makes a backup copy of the old database
-# directory. Checks on return value and 
-# file size
+
+###############################################################################
 #
+#
+#     T H E    S U B R O U T I N E S
+#
+#
+###############################################################################
+
+
+##############################################################################
+# backup_db
+#
+# Makes a backup copy of the old database directory. Checks on return value and 
+# file size
+###############################################################################
+
 sub backup_db {
   my $filename=$_;
   chomp $filename;
@@ -203,8 +235,8 @@ sub backup_db {
   if (-d $file) {
     $file=~s/$database/$bck_subdir/;
     if (!-d $file){
-      mkdir($file,07777) or &SendMail ("Could not mkdir backup directory $file: $!");
-      print LOGFILE "CREATED backup directory $file\n";
+      mkdir($file,07777) or print LOG "Could not mkdir backup directory $file: $!";
+      print LOG "CREATED backup directory $file\n";
     }
   } 
   else {
@@ -212,58 +244,70 @@ sub backup_db {
     $newfile=~s/$database/$bck_subdir/;
     if ($file !~ /^\./) {
       $bk_chk="0";
-      $bk_val=system("\/usr/apps/bin/scp $file $newfile") if !$DEBUG;
+      $bk_val=system("\/usr/apps/bin/scp $file $newfile");
       $bk_chk=$bk_val >> 8;
       $O_SIZE = (stat($file))[7];
       $N_SIZE = (stat($newfile))[7];
       if (($bk_chk != 0)||($O_SIZE != $N_SIZE)) {
-	\&SendMail ("Copy of backup $file FAILED") if !$DEBUG;
+	print LOG "Copy of backup $file FAILED\n";
       } else {
-	print LOGFILE "CREATED BACKUP copy - $newfile ..\n";
+	print LOG "CREATED BACKUP copy - $newfile ..\n";
       }      
     } else {
-      print LOGFILE "SKIPPING BACKUP copy - $file ..\n";
+      print LOG "SKIPPING BACKUP copy - $file ..\n";
     }
   }
 }
 
-#---------------------------------
-# General copy-over subroutine.
-# Checks return value and 
-# file size comparing with source.
-# Also updates display.wrm
+############################################################################################
+# 
+# process_file
 #
+# General copy-over subroutine. Checks return value and 
+# file size comparing with source. Also updates display.wrm
+#
+############################################################################################
+
 sub process_file {
   my $filename=$_;
 
-#  print "File is $file\n";
   my $s_subdir="$File::Find::dir";
+
   if (!-d $s_subdir) {
-    &SendMail ("ERROR: Could not read $s_subdir\n");
+    print LOG "ERROR: Could not read $s_subdir\n";
+    croak "ERROR: Could not read $s_subdir\n";
   }
-  $s_subdir=~s/$s_dir//;
+  $s_subdir =~ s/$srcdir//;
 
   my $s_file="$File::Find::name";
-  my $e_subdir="$e_dir"."$s_subdir";
+  my $e_subdir="$enddir"."$s_subdir";
   $e_subdir =~ s/\/\//\//;
 
   if (!-d $e_subdir){
-    mkdir($e_subdir,07777) or &SendMail ("ERROR: Could not mkdir subdir $e_subdir: $!\n");
-    print LOGFILE "CREATED SUBDIR $e_subdir\n";
+    unless(mkdir($e_subdir,07777)){
+      print LOG "ERROR: Could not mkdir subdir $e_subdir: $!\n";
+      close(LOG);
+      croak "ERROR: Could not mkdir subdir $e_subdir: $!\n";
+    }
+    print LOG "CREATED SUBDIR $e_subdir\n";
   }
   my $e_file="$e_subdir"."/"."$filename";
 
+
   if ((-d $s_file) || ($filename =~ /^\./) || ($filename =~ /lock.wrm/)){ 
-    print LOGFILE " .. SKIPPING file $filename \n";
+    print LOG " .. SKIPPING file $filename \n";
   } 
   else {
-    if (($filename =~ m/displays.wrm$/) && ($DB==1)){
-      print LOGFILE "Updating displays.wrm ...\n";
+    # if you are copying displays.wrm and -dbname was specified, you can update
+    # the contents of the file itself to add the new name
+    if (($filename =~ m/displays.wrm$/) && $dbname){
+      print LOG "Updating displays.wrm ...\n";
       open (INFILE,"cat $s_file|");
       open (OUTFILE,">$e_file");
       while (<INFILE>) {
 	if ($_ =~ /DDtMain/) {
-	  my $string="_DDtMain -g TEXT_FIT -t \"$dbname $datestamp\"  -w .46 -height .32 -help acedb";
+	  my $rundate = `date +%y%m%d`; chomp $rundate;
+	  my $string="_DDtMain -g TEXT_FIT -t \"$dbname $rundate\"  -w .46 -height .32 -help acedb";
 	  print OUTFILE $string;
 	} 
 	else {
@@ -277,86 +321,91 @@ sub process_file {
       my $cp_chk = "0";
       my $cp_val;
       if($filename =~ m/models\.wrm$/){
-	$cp_val = system("\/usr/bin/cp -R $s_file $e_file") if !$DEBUG;
+	$cp_val = system("\/usr/bin/cp -R $s_file $e_file");
       }
       else{
-	$cp_val = system("\/usr/apps/bin/scp $s_file $e_file") if !$DEBUG;
+	$cp_val = system("\/usr/apps/bin/scp $s_file $e_file");
       }
       $cp_chk = $cp_val >> 8;
+
       my $S_SIZE = (stat($s_file))[7];
       my $E_SIZE = (stat($e_file))[7];
       if (($cp_chk != 0)||($S_SIZE != $E_SIZE)){
-	\&SendMail ("ERROR: COPY of $s_file FAILED\n") if !$DEBUG;
+	print LOG "ERROR: COPY of $s_file FAILED\n";
+	croak "ERROR: COPY of $s_file FAILED\n";
       }
       else {
-	print LOGFILE "COPIED - $e_file .. \n";
+	print LOG "COPIED - $e_file .. \n";
       }     
     } 
     else {
-      print LOGFILE "SKIPPING COPY of $s_file .. \n";
+      print LOG "SKIPPING COPY of $s_file .. \n";
     };
   }
 }
 
-#-------------------------------
-# Update log with error message;
-# Send  mail with log
-#
-sub SendMail {
-  my $mailbody = shift @_;
-  $mailbody.="\n\n";
-  my $maintainer = "$mail\@sanger.ac.uk";
-  my $from = "TransferDB";
-  my $subj = "TransferDB Job $$";
-  print LOGFILE $mailbody;
-  close LOGFILE;
-  if (length ($mail)!=0) {
-    open (LOGFILE,"cat $LOGFILE |");
-    while (<LOGFILE>) {
-      $mailbody .= $_;
-    }
-    close LOGFILE;
-    my $mailer = Mail::Mailer->new();
-    $mailer->open({From => $from,
-		   To   => $maintainer,
-		   Subject => $subj,
-		  }) or die "Can't open: $!\n";
-    print $mailer $mailbody;
-    $mailer->close();
+
+#######################################################################
+# Help and error trap outputs                                         #
+#######################################################################
+
+sub usage {
+  my $error = shift;
+  if ($error eq "Help") {
+    # Normal help menu
+    exec ('perldoc',$0);
   }
-  if ($printlog) {
-    open (LOGFILE,"cat $LOGFILE |");
-    while (<LOGFILE>) {
-      print $_;
-    }
-    close LOGFILE;
-    unlink $LOGFILE;
-  } 
-exit 0;
+  elsif($error == 1){
+    print "You must specify:\n";
+    print "-start <database_path> and\n";
+    print "-end <database_path>\n";
+    print "Both database paths must be valid ones\n\n";
+    print LOG "-start and/or -end not specified, or -start describes an invalid database path\n";
+    print LOG "TransferDB prematurely quitting at",&runtime,"\n";
+    close(LOG);
+    exit(1);
+  }
+  elsif($error == 2){
+    print "If -all is specified you must also specify -dbname\n";
+    print LOG "-all specified but -dbname not specified\n";
+    print LOG "TransferDB prematurely quitting at",&runtime,"\n";
+    close(LOG);
+    exit(1);
+  }
+  elsif($error == 3){
+    print "ERROR: Could not run mkdir for directory specified by -end\n";
+    print LOG "ERROR: Could not run mkdir for directory specified by -end\n";
+    print LOG "TransferDB prematurely quitting at",&runtime,"\n";
+    close(LOG);
+    exit(1);
+  }
+
+
+
 }
 
-#------------------------
-# Get time coordinates
-#
-sub GetTime {
-  my @time = localtime();
-  my ($SECS,$MINS,$HOURS,$DAY,$MONTH,$YEAR)=(localtime)[0,1,2,3,4,5];
-  if ($time[1]=~/^\d{1,1}$/) {
-    $time[1]="0"."$time[1]";
-  }
-  my $REALMONTH=$MONTH+1;
-  my $REALYEAR=$YEAR+1900;
-  my $TODAY = "$DAY $REALMONTH $REALYEAR at $HOURS:$MINS";
-  my $NOW="$time[2]"."$time[1]";
-  return $TODAY;
+#############################################################################################
+
+sub create_log_files{
+
+  # Create history logfile for script activity analysis
+  $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
+
+  # create main log file using script name for
+  my $script_name = $1;
+  $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
+  my $rundate     = `date +%y%m%d`; chomp $rundate;
+  $log        = "/wormsrv2/logs/$script_name.$rundate.$$";
+
+  open (LOG, ">$log") or die "cant open $log";
+  print LOG "$script_name process $$ started at ",&runtime,"\n";
+  print LOG "=============================================\n";
+  print LOG "\n";
+
 }
 
-#---------------------------
-# Prints help and disappears
-#
-sub PrintHelp {
-   exec ('perldoc',$0);
-}
+
+
 
 __END__
 
@@ -395,9 +444,9 @@ TransferDB OPTIONAL arguments:
 
 =item -bck, if you want to keep a backup copy of the database directory
 
-=item -mail username, if you want the log mailed to username
+=item -debug <username>, if you want the log mailed to username
 
-=item -printlog, if you want to dump the log to STDOUT (useful in scripts)
+=item -verbose, not really used yet, but will give more output to command line
 
 =back
 
