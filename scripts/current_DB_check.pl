@@ -8,7 +8,7 @@
 # to look for bogus sequence entries
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-11-20 12:44:21 $
+# Last updated on: $Date: 2002-11-22 16:19:38 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -230,7 +230,15 @@ foreach my $seq (@genome_seqs){
 	print "$timestamp $class:$subseq \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
 	$category = 1;
       }
-      if ($category == 0){
+      if(defined($subseq->at('Visible.Clone'))){
+	my $tag = "Clone";
+	my $timestamp = &get_timestamp($class, $subseq, $tag);
+	my $comment = &splice_variant_check($subseq);
+	$problems{$timestamp}{$class.":".$subseq} = ["\"$tag tag is creating this sequence. $comment\""];
+	print "$timestamp $class:$subseq \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
+	$category = 1;
+      }
+       if ($category == 0){
 	push(@other,$subseq);
 	print "$subseq - Other problem\n" if $verbose;
       }
@@ -411,6 +419,8 @@ sub get_timestamp{
     ($tag = "Locus_genomic_seq")      if ($tag eq "Genomic_sequence");
     ($class = "RNAi")                 if ($tag eq "RNAi_result");
     ($tag = "Predicted_gene")         if ($tag eq "RNAi_result");
+    ($class = "Clone")                if ($tag eq "Clone");
+    ($tag = "Sequence")               if ($tag eq "Clone");
    
 
     my $aql_query = "select s,s->${tag}.node_session from s in object(\"$class\",\"$value\")";
