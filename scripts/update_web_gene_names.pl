@@ -5,7 +5,7 @@
 # completely rewritten by Keith Bradnam from list_loci_designations
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-10-08 12:29:32 $      
+# Last updated on: $Date: 2004-11-08 16:35:01 $      
 #
 # This script should be run under a cron job and simply update the webpages that show
 # current gene names and sequence connections.  Gets info from geneace.  
@@ -59,7 +59,7 @@ if($weekly){
 
 # make lists of gene2molecular_name and molecular_name2gene
 if($daily){
-  print LOG "Making gene2molecular_name lists\n";
+  print LOG "Making daily update lists\n";
   $database = "/wormsrv1/geneace";
   &make_gene_lists;
 }
@@ -78,7 +78,7 @@ if($weekly){
 }
 system("/usr/local/bin/webpublish -f -q *.txt") && print LOG "Couldn't run webpublish on text file\n";
 
-&mail_maintainer("update_web_gene_names.pl","krb\@sanger.ac.uk","$log");
+&mail_maintainer("update_web_gene_names.pl","mt3\@sanger.ac.uk","$log");
 
 close(LOG);
 exit(0);
@@ -258,7 +258,8 @@ sub make_gene_lists{
 
   my %molecular_name2gene;
   my %gene2molecular_name;
-
+  my %transposon_genes;
+  
   # connect to AceDB using TableMaker, 
   my $command="Table-maker -p /wormsrv1/geneace/wquery/gene2molecular_name.def\nquit\n";
   open (TACE, "echo '$command' | $tace /wormsrv1/geneace |") || print LOG "ERROR: Can't open tace connection to /wormsrv1/geneace\n";
@@ -290,21 +291,49 @@ sub make_gene_lists{
   close TACE;
     
 
+  # now fire off second query to get dead genes which were made into Transposons
+  # this is to help Darin
+  $command = "Table-maker -p /wormsrv1/geneace/wquery/genes_made_into_transposons.def\nquit\n";
+  open (TACE, "echo '$command' | $tace /wormsrv1/geneace |") || print LOG "ERROR: Can't open tace connection to /wormsrv1/geneace\n";
+  while (<TACE>) {
+    chomp;
+    # skip any acedb banner text (table maker output has all fields surrounded by "")
+    next if ($_ !~ m/^\"/);
+    # skip acedb prompts
+    next if (/acedb/);
+    # skip empty fields
+    next if ($_ eq "");
+                                                                                           
+    # get rid of quote marks
+    s/\"//g;
+                                                                                           
+    # split the line into various fields
+    my ($gene,$public_name) = split(/\t/, $_) ;
+    $transposon_genes{$gene} = $public_name;
+  }
 
-  # set up two output files which are reverse of each other 
 
-  open (GENE2MOL, ">$www/genes2molecular_names.txt") || print LOG "Couldn't open genes2molecular_names.txt\n";
+  # set up various output files (first two are reverse of each other)
+
+  open (GENE2MOL, ">$www/genes2molecular_names.txt") || print LOG "ERROR: Couldn't open genes2molecular_names.txt\n";
   foreach my $key (sort keys %gene2molecular_name){
     print GENE2MOL "$key\t$gene2molecular_name{$key}\n";	      
   }
+  close(GENE2MOL);
 
-  open (MOL2GENE, ">$www/molecular_names2genes.txt") || croak "Couldn't open molecular_names2genes.txt\n";
+
+  open (MOL2GENE, ">$www/molecular_names2genes.txt") || print LOG "ERROR: Couldn't open molecular_names2genes.txt\n";
   foreach my $key (sort keys %molecular_name2gene){
     print MOL2GENE "$key\t$molecular_name2gene{$key}\n";
   }
-
-  close(GENE2MOL);
   close(MOL2GENE);
+
+  open (TRANSPOSONS, ">$www/tranposon_genes.txt") || print LOG  "ERROR: Couldn't open transposon_genes.txt\n";
+  foreach my $key (sort keys %transposon_genes){
+    print TRANSPOSONS "$key\t$transposon_genes{$key}\n";
+  }
+  close(TRANSPOSONS);
+
 }
 
 
