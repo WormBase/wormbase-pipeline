@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-02-03 09:32:43 $
+# Last updated on: $Date: 2003-02-04 09:17:09 $
 
 
 use strict;
@@ -300,7 +300,7 @@ sub process_allele_class{
   print"\n\nChecking Allele class for errors:\n";
   print LOG "\n\nChecking Allele class for errors:\n";
   print LOG "---------------------------------\n";
-
+=start
   my @alleles = $db->fetch('Allele','*');
   my ($allele, %allele_gene, $gene, $seq_name, @seq1, @seq2, @seqs, $cdb);
 
@@ -349,7 +349,8 @@ sub process_allele_class{
       $allele_errors++; 
     }
   }
-
+=end
+=cut
   my $allele_has_flankSeq_and_no_seq=<<EOF;
   Table-maker -p "/wormsrv1/geneace/wquery/allele_has_flankSeq_and_no_seq.def" quit
 EOF
@@ -373,23 +374,88 @@ sub allele_has_flankSeq_and_no_seq {
     chomp($_);
     if ($_ =~ /^\"/){
       $_ =~ s/\"//g;
-      print LOG "WARNING: Allele $_ has flanking sequences but is NOT connected to sequence\n"; 
+      print LOG "WARNING: Allele $_ has flanking sequences but is NOT connected to parent sequence\n"; 
       $allele_errors++; 
     }
   }
 }
 
 sub allele_has_predicted_gene_and_no_seq {
-  
+  if ($ace){open (ALLELE, ">>$acefile") || die "Can't write to file!"}
   my ($def, $dir, $db) = @_;
+  my ($allele, $seq, %allele_cds_seq, %allele_cds, $cds, %all_cds, %all_seq);
+
   open (FH, "echo '$def' | tace $dir | ") || die "Couldn't access geneace\n";
   while (<FH>){
     chomp($_);
-    if ($_ =~ /^\"/){
-      $_ =~ s/\"//g;
-       print LOG "WARNING: Allele $_ has predicted gene but is NOT connected to sequence\n"; 
+    if ($_ =~ /\"(.+)\"\s+\"(.+)\"\s$/) {   
+      $allele = $1;
+      $cds = $2;  
+      print LOG "WARNING: Allele $allele has predicted gene but is NOT connected to parent sequence\n"; 
       $allele_errors++; 
+      if ($ace){	
+        get_parent_seq($cds, $allele);
+      }  
     }
+    else {   
+      if ($_ =~ /\"(.+)\"\s+\"(.+)\"\s+\"(.+)\"/){
+	$allele = $1;
+	$cds = $2;
+	$seq = $3;
+	push(@{$allele_cds_seq{$allele}}, $cds, $seq);
+      }	
+    }
+  } 
+  if (%allele_cds_seq){
+    foreach $allele (sort keys %allele_cds_seq){
+      foreach (@{$allele_cds_seq{$allele}}[0]){$all_cds{$_}++}
+      foreach $seq (@{$allele_cds_seq{$allele}}[1]){	
+	if ($all_cds{$seq}){
+	  print LOG "ERROR: Allele $allele has a parent sequence the same as its predicted gene\n";  
+	  $allele_errors++;
+	  if ($ace){ 
+	    print ALLELE "\n\nAllele : \"$allele\"\n";
+	    print ALLELE "-D Sequence \"$seq\"\n";
+	    get_parent_seq($seq, $allele);
+          }
+	}  
+	if (!$all_cds{$seq}){
+	  for (my $i = 0; $i < scalar @{$allele_cds_seq{$allele}}; ){
+	    $cds = @{$allele_cds_seq{$allele}}[$i];
+            $i=$i+2;
+	    $cds=get_parent_seq($seq, $allele, $cds);  # $seq is $predict in sub
+	    if ($cds ne $seq){
+	      if ($cds eq ""){$cds = @{$allele_cds_seq{$allele}}[$i-2]}
+	      print LOG "ERROR: Allele $allele has an incorrect parent sequence ($seq) with respect to its predicted gene ($cds)\n";
+	      print "ERROR: Allele $allele has an incorrect sequence ($seq) with respect to its predicted gene ($cds)\n"; 
+	      $allele_errors++; 
+	    }  
+          }
+        }  
+      }
+    }
+  }     
+  sub get_parent_seq {
+    my ($predict, $allele, $seq) = @_;	
+    my ($parent, $cds);
+    if ($predict =~ /(.+)\.(\d+)[a-z]/){
+      $parent =  $1.".". $2; 
+    }  
+    if ($predict !~ /(.+)\.\d+[a-z]/ && $predict =~ /(.+)\.(\d+)/){
+      if ($seq && $seq  =~ /(.+)\.(\d+)[a-z]/){ 
+        $cds = $1.".".$2; return $cds;
+      }
+      else {$parent = $1}
+    }  
+    if ($predict !~ /(.+)\.\d+[a-z]/ && $predict !~ /(.+)\.(\d+)/){
+      if ($seq && $seq =~ /(.+)\.(\d+)/){
+        $cds = $1; return $cds;
+      }
+    } 
+    if(!$seq){
+      print ALLELE "\n\nAllele : \"$allele\"\n";
+      print ALLELE "Sequence \"$parent\"\n";
+    }  
   }
 }
 
