@@ -24,6 +24,8 @@ my $dump_data;
 my $mail;
 my $test_pipeline;
 my $WPver;   #  Wormpep version is passed as command line option
+my $blastx;
+my $blastp;
 
 GetOptions("chromosomes" => \$chromosomes,
 	   "wormpep"     => \$wormpep,
@@ -34,9 +36,16 @@ GetOptions("chromosomes" => \$chromosomes,
 	   "nosql"       => \$dont_SQL,
 	   "dump"        => \$dump_data,
 	   "mail"        => \$mail,
-	   "testpipe"    => \$test_pipeline
-	   "version=s"   => \$WPver
+	   "testpipe"    => \$test_pipeline,
+	   "version=s"   => \$WPver,
+	   "blastp"      => \$blastp,
+	   "blastx"      => \$blastx
 	  );
+
+# you can do either or both blast anaylses
+if( $run_pipeline ) {
+  $blastx = 1; $blastp =1;
+}
 
 #$WPver = &get_wormbase_version unless $WPver;
 die "please give a build version number ie  wormBLAST -version 00\n" unless $WPver;
@@ -170,7 +179,7 @@ if( $mail )
     my $maintainer = "ar2\@sanger.ac.uk";
     print "mailing distibution request to $maintainer\n";
     &mail_maintainer($name,$maintainer,$letter);
-}
+  }
 
 
 
@@ -190,41 +199,41 @@ if( $update_mySQL )
   {
     print "Updating mysql databases\n";
     #make worm01 connection
-     $worm01 = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
+    $worm01 = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
       || die "cannot connect to db, $DBI::errstr";
     
     #internal_id number of the last clone in the worm01
-     #in case this routine is being run twice the clone id is stored and checked
-     my $last_clone;
-     my $update;
-     open (NEW_DB,"<$database_to_use") or die "cant read updated $database_to_use during update_mySQL";
+    #in case this routine is being run twice the clone id is stored and checked
+    my $last_clone;
+    my $update;
+    open (NEW_DB,"<$database_to_use") or die "cant read updated $database_to_use during update_mySQL";
     
     #this bits logic seems wrong - but it works so I'll fix it later - ar2
-     while(<NEW_DB>){
-       if( /last_clone\s(\w+)/ ){
-	 $last_clone = $1;
-	 last;
-       }
-       else {
-	 $query = "select * from clone order by internal_id desc limit 1";
-	 @results = &single_line_query( $query, $worm01 );
-	 $last_clone = $results[0];
-	 $update = 1;
-       }
-     }
-     close NEW_DB;
-     
-     if( $update ){   # first time writing for this build
-       open (NEW_DB,">>$database_to_use") or die "cant read updated $database_to_use during update_mySQL - last_clone";
-       print NEW_DB "last_clone $last_clone\n";
-     }
-     print "last_clone = $last_clone\n";
-     
-     #Make a concatenation of all six agp files from the last release to ~/Elegans  e.g.
+    while(<NEW_DB>){
+      if( /last_clone\s(\w+)/ ){
+	$last_clone = $1;
+	last;
+      }
+      else {
+	$query = "select * from clone order by internal_id desc limit 1";
+	@results = &single_line_query( $query, $worm01 );
+	$last_clone = $results[0];
+	$update = 1;
+      }
+    }
+    close NEW_DB;
+    
+    if( $update ){   # first time writing for this build
+      open (NEW_DB,">>$database_to_use") or die "cant read updated $database_to_use during update_mySQL - last_clone";
+      print NEW_DB "last_clone $last_clone\n";
+    }
+    print "last_clone = $last_clone\n";
+    
+    #Make a concatenation of all six agp files from the last release to ~/Elegans  e.g.
     print "\tconcatenating agp files\n";
     `cat /wormsrv2/autoace/CHROMOSOMES/*.agp > $wormpipe_dir/Elegans/WS$WPver.agp`;
-     
-     #load information about any new clones
+    
+    #load information about any new clones
     print "\tloading information about any new clones\n";
     `$scripts_dir/agp2ensembl.pl -dbname worm01 -dbhost ecs1f -dbuser wormadmin -dbpass worms -agp $wormpipe_dir/Elegans/WS$WPver.agp -write -v -strict`;
     
@@ -256,7 +265,7 @@ clones = $clone_count\ncontigs = $contig_count\ndna = $dna_count\n";
     @results = &single_line_query( $query, $worm01 );
     my $new_last_clone = $results[0];
     print "\tnew_last_clone = $new_last_clone\n";
-
+    
     if( $last_clone != $new_last_clone )
       {
 	$query = "select id from contig where internal_id > $last_clone into outfile '$wormpipe_dir/Elegans/ids.txt'";
@@ -265,43 +274,43 @@ clones = $clone_count\ncontigs = $contig_count\ndna = $dna_count\n";
 	`$scripts_dir/InputIdManager.pl -dbname worm01 -dbhost ecs1f -dbuser wormadmin -dbpass worms -insert -analysis SubmitContig -class contig -file $wormpipe_dir/Elegans/ids.txt`;
 	
       }
-     $worm01->disconnect;
-
+    $worm01->disconnect;
+    
     print "\tchecking for duplicate clones\n";
     `$scripts_dir/find_duplicate_clones.pl`;
-
-
-     #add new peptides to MySQL database
+    
+    
+    #add new peptides to MySQL database
     print "\n\nAdding new peptides to wormprot\n";
-     #make wormprot connection
-     $dbname = "wormprot";
-     $wormprot = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
-       || die "cannot connect to db, $DBI::errstr";
-
-     $query = "select * from protein order by proteinId desc limit 1";
-     @results = &single_line_query( $query, $wormprot );
-     my $old_topCE = $results[0];
-
+    #make wormprot connection
+    $dbname = "wormprot";
+    $wormprot = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
+      || die "cannot connect to db, $DBI::errstr";
+    
+    $query = "select * from protein order by proteinId desc limit 1";
+    @results = &single_line_query( $query, $wormprot );
+    my $old_topCE = $results[0];
+    
     if (-e "/wormsrv2/WORMPEP/wormpep$WPver/new_entries.WS$WPver"){
       `$scripts_dir/worm_pipeline.pl -f /wormsrv2/WORMPEP/wormpep$WPver/new_entries.WS$WPver`;
     }
     else {
       die "new_entries.WS$WPver does not exist! \nThis should have been made in autoace_minder -buildpep\n";
     }
-
-
-     #check for updated ids
-     @results = &single_line_query( $query, $wormprot );
-     my $new_topCE = $results[0];
-     if( "$old_topCE" eq "$new_topCE" ) {
-       print "\tNO new peptides were added to the wormprot mysql database\n";
-     }
-     else {
-       print "\tnew highest proteinId is $new_topCE (old was $old_topCE )\n";
-     }
-
-     $wormprot->disconnect;
-   }
+    
+    
+    #check for updated ids
+    @results = &single_line_query( $query, $wormprot );
+    my $new_topCE = $results[0];
+    if( "$old_topCE" eq "$new_topCE" ) {
+      print "\tNO new peptides were added to the wormprot mysql database\n";
+    }
+    else {
+      print "\tnew highest proteinId is $new_topCE (old was $old_topCE )\n";
+    }
+    
+    $wormprot->disconnect;
+  }
 
 
 
@@ -318,16 +327,16 @@ if( $setup_mySQL )
     #make worm01 connection
     $worm01 = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
       || die "cannot connect to db, $DBI::errstr";
-
+    
     &get_updated_database_list;
-
-
-#   mysql -h ecs1f -u wormadmin -p worm01
-#   delete from InputIdAnalysis where analysisId = 23; (DNA clones BLASTX'd against wormpep)
-#   delete from feature where analysis = 23;
-#   use wormprot;
-#   delete from InputIdAnalysis where analysisId = 11 (wormpep proteins BLASTP'd against other proteins)
-#   delete from protein_feature where analysis = 11
+    
+    
+    #   mysql -h ecs1f -u wormadmin -p worm01
+    #   delete from InputIdAnalysis where analysisId = 23; (DNA clones BLASTX'd against wormpep)
+    #   delete from feature where analysis = 23;
+    #   use wormprot;
+    #   delete from InputIdAnalysis where analysisId = 11 (wormpep proteins BLASTP'd against other proteins)
+    #   delete from protein_feature where analysis = 11
     
     #update mysql with which databases need to be run against
     foreach my $database (@updated_DBs)
@@ -339,37 +348,37 @@ if( $setup_mySQL )
 	$query = "update analysisprocess set db = \"$db_file\" where analysisId = $analysis";
 	print $query,"\n";
 	&update_database( $query, $worm01 );
-
+	
 	$query = "update analysisprocess set db_file = \"/data/blastdb/Worms/$db_file\" where analysisId = $analysis";
 	print $query,"\n\n";
 	&update_database( $query, $worm01 );
-
+	
 	#delete entries so they get rerun
 	$query = "delete from InputIdAnalysis where analysisId = $analysis";
 	print $query,"\n";
 	&update_database( $query, $worm01 );
-
+	
 	$query = "delete from feature where analysis = $analysis";
 	print $query,"\n";
 	&update_database( $query, $worm01 );
 	
 	
-
+	
 	print "doing wormprot updates . . . \n";
 	$analysis = $wormprotprocessIds{$database};
 	$query = "update analysisprocess set db = \"$db_file\" where analysisId = $analysis";
 	print $query,"\n";
-
+	
 	&update_database( $query, $wormprot );
 	$query = "update analysisprocess set db_file = \"/data/blastdb/Worms/$db_file\" where analysisId = $analysis";
 	print $query,"\n";
 	&update_database( $query, $wormprot );
-
+	
 	#delete entries so they get rerun
 	$query = "delete from InputIdAnalysis where analysisId = $analysis";
 	print $query,"\n";
 	&update_database( $query, $wormprot );
-
+	
 	$query = "delete from protein_feature where analysis = $analysis";
 	print $query,"\n";
 	&update_database( $query, $wormprot );
@@ -377,17 +386,18 @@ if( $setup_mySQL )
     
     $worm01->disconnect;
     $wormprot->disconnect;
-
+    
   }
 my $bdir = "/nfs/farm/Worms/EnsEMBL/branch-ensembl-121/ensembl-pipeline/modules/Bio/EnsEMBL/Pipeline";
-if( $run_pipeline )
+if( $blastx ) 
   {   
+    die "can't run pipeline whilst wormsrv2 is mounted - please exit and try again\n" if (-e "/wormsrv2");
     #make sure we have the databases to work on.
     &get_updated_database_list;
     #run worm01 stuff
-   
+    
     `cp -f $bdir/pipeConf.pl.worm01 $bdir/pipeConf.pl` and die "cant copy pipeConf worm01 file\n";
-
+    
     #any updated databases
     # worm01 stuff
     foreach (@updated_DBs)
@@ -396,9 +406,19 @@ if( $run_pipeline )
 	`perl $bdir/RuleManager3.pl -once -flushsize 5 -analysis $analysis`;
       }
     `perl $bdir/RuleManager3.pl -once -flushsize 5`;#finish off anything that didn't work
+    
+    &wait_for_pipeline_to_finish if $blastp;
+  }
 
+if( $blastp )
+  {
+    die "can't run pipeline whilst wormsrv2 is mounted - please exit and try again\n" if (-e "/wormsrv2");
+    #make sure we have the databases to work on.
+    &get_updated_database_list;
+    
     #run wormpep stuff
     `cp -f $bdir/pipeConf.pl.wormprot $bdir/pipeConf.pl` and die "cant copy pipeConf wormprot file\n";   
+    
     #for anything updated
     foreach (@updated_DBs)
       {
@@ -414,23 +434,34 @@ if( $dump_data )
     `cat /wormsrv2/autoace/CHROMOSOMES/*.gff | $scripts_dir/gff2cds.pl > /nfs/acari/wormpipe/Elegans/cds$WPver.gff`;
     `cat /wormsrv2/autoace/CHROMOSOMES/*.gff | $scripts_dir/gff2cos.pl > /nfs/acari/wormpipe/Elegans/cos$WPver.gff`;
     `$scripts_dir/prepare_dump_blastx.pl > $wormpipe_dir/dumps/accession2clone.list`;
-
+    
     `$scripts_dir/dump_blastp.pl -w $wormpipe_dir/BlastDB/wormpep$WPver.pep -s`;
     `$scripts_dir/dump_blastx_new.pl -w $wormpipe_dir/BlastDB/wormpep$WPver.pep -a ~/Elegans/WS$WPver.agp -g ~/Elegans/cds$WPver.gff -c ~/Elegans/cos$WPver.gff -m`;
     `$scripts_dir/dump_motif.pl`;
   }
 
-if( $test_pipeline ){
-  my $jobsleft = `bjobs | wc -l`;
-  if( $jobsleft == 0 ){
-    print "pipeline finished\n" ;
-  }
-  else {
-    print "$jobsleft = jobsleft\n";
-}
-}
+&wait_for_pipeline_to_finish if $test_pipeline;
 
 exit(0);
+
+sub wait_for_pipeline_to_finish
+  {
+    my $finished = 0;
+    while( $finished == 0 ) {
+      my $jobsleft = `bjobs | wc -l`;
+      chomp $jobsleft;
+      if( $jobsleft == 0 ){
+	$finished = 1;
+	print "pipeline finished\n" ;
+      }
+      else {
+	print "$jobsleft jobsleft (Im going to sleep for that long! )\n";
+	sleep $jobsleft;
+      }
+    }
+    print "Pipeline finished\n";
+    return;
+  }
 
 sub update_database
   {
@@ -551,6 +582,8 @@ This script is a collection of subroutines that automate the BLAST part of the W
 
 I<wormBLAST.pl  OPTIONAL arguments:>
 
+B<-version XX>    Certain parts of this script dont work if wormsrv2 is mounted which makes getting the current build version via Wormbase.pm difficult!  So, now Wormbase.pm is not used at all and you have to enter the version of the database being built on the command line.  If you dont the script will stop and tell you so.
+
 B<-chromosomes> Runs ~wormpipe/Pipeline/copy_files_to_acari.pl -c to copy the newly formed chromosomes from /wormsrv2 and cats them in to one
 
 B<-wormpep>      Runs ~wormpipe/Pipeline/copy_files_to_acari.pl -c to take the new wormpepXX file from /wormsrv2/WORMPEP and creates a BLASTable database (setdb)
@@ -563,11 +596,18 @@ B<-updatemysql>    Updates any new databases to be used in MySQL.
 
 B<-setup>          Prepares MySQL for the pipeline run.  Performs the 'delete' commands so that new data is included in the run
 
+B<you must NOT have wormsrv2 mounted when running blast jobs>
+
 B<-run>            Actually starts the BLAST analyses.  Does a single analysis at a time based on what new databases are being used, plus a couple of "do everything runs" to finish it all off.
+The BLAST pipeline is limited so that we can only have one RuleManager running at a time.  These means that even if all the balstx jobs have been submitted we cant start the blastp run until they have all gone through.  Therefore the script allows the running of these separately by using the -blastx and -blastp options.  Both can be entered together (same as -run).  If this is done the script will monitor the progress of the blastx jobs (done 1st) and only start the blastp run when this has finished.
 
-B<-dump>           Dumps data from MySQL after anaylsis is complete.
+B<-blastx>      Submits blastx jobs based on updated databases
 
-B<-nosql>            Debug option where SQL calls to databases are not performed. 
+B<-blastp>      Submits blastp jobs based on updated databases
+
+B<-dump>        Dumps data from MySQL after anaylsis is complete.
+
+B<-nosql>       Debug option where SQL calls to databases are not performed. 
 
 =back
 
