@@ -8,7 +8,7 @@
 # to look for bogus sequence entries
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-12-01 11:54:25 $
+# Last updated on: $Date: 2004-03-11 17:08:46 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -191,7 +191,7 @@ sub process_sequences{
   
   foreach my $seq (@genome_seqs){
 
-    my @CDSs = $db->fetch(-class=>'elegans_CDS',-name=>"$seq.*");
+    my @CDSs = $db->fetch(-class=>'CDS',-name=>"$seq.*");
     
     foreach my $CDS (@CDSs){
       my $category = 0;
