@@ -7,7 +7,7 @@
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-09-04 17:23:49 $
+# Last edited on: $Date: 2003-09-05 09:37:27 $
 
 
 use strict;
@@ -77,11 +77,18 @@ our %word = (
 # Help pod documentation
 &usage(0) if ($help);
 
+
 # Exit if no data type choosen [EST|mRNA|EMBL|NEMATODE|OST]
 # or if multiple data types are chosen
-
 &usage(1) unless ($est || $mrna || $ost || $nematode || $embl); 
-&usage(2) if (($est + $mrna + $ost + $nematode || $embl) > 1);
+my $flags = 0;
+$flags++ if $est;
+$flags++ if $ost;
+$flags++ if $mrna;
+$flags++ if $embl;
+$flags++ if $nematode;
+&usage(2) if ($flags > 1);
+
 
 # assign type variable
 ($type = 'EST')      if ($est);
@@ -388,19 +395,26 @@ open (OUT_camace,  ">$blat_dir/camace.blat.$type.ace")  or die "$!";
 open (OUT_stlace,  ">$blat_dir/stlace.blat.$type.ace")  or die "$!";
 
 
-my (%line);
+
+
+# Change input separator to paragraph mode, but store what it old mode in $temp
 my $temp = $/;
 $/ = "";
 
+
+my (%line);
 my $superlink = "";
 
 # assign 
 open(ABEST,  "<$blat_dir/autoace.best.$type.ace");
 while (<ABEST>) {
   if ($_ =~ /^Homol_data/) {
+    # flag each blat hit which is best (all of them) - set $line{$_} to 1
+    # %line thus stores keys which are combos of virtual object name + blat hit details
     $line{$_} = 1;
     ($superlink) = (/\"BLAT\_$type\:(\S+)\_\d+\"/);
-    
+
+    # Print blat best hits to final output file
     print OUT_autoace "// Source $superlink\n\n";
     print OUT_autoace $_;
     
@@ -417,15 +431,22 @@ while (<ABEST>) {
 close ABEST;
 
 
+# Now look through original output file (where everything is set to BLAT_OTHER) to
+# output those blat OTHER hits which are not flagged as BLAT_BEST in the .best.ace file
+# Does this by comparing entries in %line hash
+
 open(AOTHER, "<$blat_dir/autoace.$type.ace");
 while (<AOTHER>) {
   if ($_ =~ /^Homol_data/) {
     my $line = $_;
+    # for comparison to %line hash, need to change OTHER to BEST in $_
     s/BLAT_EST_OTHER/BLAT_EST_BEST/g unless ($mrna || $embl || $nematode || $ost);
     s/BLAT_OST_OTHER/BLAT_OST_BEST/g     if ($ost); 
     s/BLAT_mRNA_OTHER/BLAT_mRNA_BEST/g   if ($mrna);
     s/BLAT_EMBL_OTHER/BLAT_EMBL_BEST/g   if ($embl);
     
+    # Only output BLAT_OTHER hits in first output file which we now know NOT to
+    # really be BEST hits
     unless (exists $line{$_}) {
       print OUT_autoace $line;
       
@@ -443,6 +464,7 @@ while (<AOTHER>) {
 }
 close AOTHER;
 
+# reset input line separator
 $/= $temp;
 
 ###################################
@@ -646,19 +668,6 @@ sub create_log_files{
 
 ###################################
 
-#
-# -i  : get confirmed introns
-#
-# -c  : get best matches for camace
-# -s  : get best matches for stlace
-#
-# -e  : create output for ESTs 
-# -y  : create output for OSTs 
-# -m  : create output for mRNAs 
-# -x  : create output for parasitic nematode ESTs (blatx)
-# -o  : create output for other CDS
-#
-# -h  : print help
 
 
 
