@@ -14,7 +14,7 @@ use IO::Handle;
 use Getopt::Long;
 $|=1;
 
-my @chrom = qw(III);
+my @chrom = qw(I II III IV V X);
 my (%structure, %feature, %genes, %camace, %stlace);
 
 my $structure="";
@@ -237,7 +237,7 @@ __END__
 
 =over 4
 
-=item  find_match.pl -f <feature> -s <intron/exon> -d <dir>
+=item  find_match.pl -options
 
 =back
 
@@ -248,11 +248,11 @@ autoace_minder mandatory arguments:
 
 =over 4
 
-=item -f feature (takes second field GFF definitions, e.g. EST_GENOME for ESTs) 
+=item -feature (takes second field GFF definitions, e.g. EST_GENOME for ESTs) 
 
-=item -s structure to compare to (exon or intron)
+=item -structure (to compare to, exon or intron)
 
-=item -d output directory
+=item -dir (output directory)
 
 =back
 
