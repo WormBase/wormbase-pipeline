@@ -26,35 +26,14 @@ use lib '/wormsrv2/scripts/';
 use Wormbase;
 
 
-##################################################
-# Script variables (run)                         #
-##################################################
-
-my $maintainers = "dl1\@sanger.ac.uk krb\@sanger.ac.uk kj2\@sanger.ac.uk";
-my $rundate = `date +%y%m%d`; chomp $rundate;
-my $runtime = `date +%H:%M:%S`; chomp $runtime;
-
-my $CWD = cwd;
-
-
 ################################################
-# ACEDB executables                            #
+# Some variables                               #
 ################################################
 
 $tace   = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
-
-
-################################################
-# database paths                               #
-################################################
-  
 $wormbasedir = "/wormsrv2/wormbase";
-
-################################################
-# others                                       #
-################################################
-
 $configfile = "/wormsrv2/autoace_config/pepace.config";
+
 
 ################################################
 # Avoid filling process table with zombies     #
@@ -124,15 +103,34 @@ sub mknewacefiles {
 	print TACE $command;
 	close TACE;
 	print "Made file $filename\n\n";
-
+	
+	&load_into_autoace($filename);
+	
     }
     close CONFIG;
 }
 
+sub load_into_autoace{
+
+  my $filename = shift;
+
+  my $command=<<END;
+pparse $filename
+save
+quit
+END
+
+  print "Loading $filename into autoace\n\n";
+  open (TACE,"| $tace /wormsrv2/autoace") || die "Couldn't open pipe to autoace\n";
+  print TACE $command;
+  close (TACE);
+
+
+}
 
 sub make_command {
 
-    $filename="$targetdir/".$dbname."_".$object.$criterianoasterisk.".ace";
+  $filename="$targetdir/".$dbname."_".$object.$criterianoasterisk.".ace";
     
 $command=<<END;
 find $object $criteria
