@@ -521,6 +521,7 @@ sub release_composition
     my $ver = &get_wormbase_version;
     my $old_ver = $ver -1;
     my %old_data;
+    $old_data{"-"} = 0; # initialise to avoid problems later if no gaps
     my $old_letter ="/wormsrv2/WS$old_ver/CHROMOSOMES/composition.all";
     open (OLD, "<$old_letter") || die "cant open data file - $old_letter";
     while (<OLD>) {
@@ -535,11 +536,10 @@ sub release_composition
     }
     close (OLD);
     
-
-    print "\n\n$ver data\n";
-    #now get the new stuff to compare
+    #now get the new stuff to compare  
     my $new_letter ="/wormsrv2/autoace/CHROMOSOMES/composition.all";
     my %new_data;
+    $new_data{"-"} = 0; # initialise to avoid problems later if no gaps
     open (NEW, "<$new_letter") || die "cant open data file - $new_letter";
     while (<NEW>) {
       chomp;
@@ -548,7 +548,7 @@ sub release_composition
       }
       elsif ($_ =~ m/^\s+([\w-]{1})\s+(\d+)/){
 	$new_data{"$1"} = $2;
-      }1
+      }
     }
     close NEW;
 
