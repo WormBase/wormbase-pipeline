@@ -7,7 +7,7 @@
 # checks EMBL for new EST or mRNA entries
 #
 # Last updated by: $Author: dl1 $                      
-# Last updated on: $Date: 2002-12-09 13:51:00 $        
+# Last updated on: $Date: 2002-12-09 15:02:30 $        
 
 $|=1;
 use strict;
@@ -38,7 +38,7 @@ my $debug;      # Debug mode, verbose output to dl1 only
 my $days;       # No. of days to check for new entries
 
 GetOptions (
-            "debug=s"   => \$debug,
+            "debug:s"   => \$debug,
             "help"      => \$help,
 	    "days=s"    => \$days
             );

@@ -10,12 +10,11 @@
 #                after submission and use Perl5.6 with strict
 #
 # Last updated by: $Author: dl1 $                      
-# Last updated on: $Date: 2002-12-09 13:48:07 $        
+# Last updated on: $Date: 2002-12-09 15:01:23 $        
 
 $|=1;
 use strict;
 use Getopt::Long;
-use vars qw/ $opt_d $opt_h/;
 use lib "/wormsrv2/scripts/";   
 use Wormbase;
 
@@ -44,7 +43,7 @@ my $help;       # Help perdoc
 my $debug;      # Debug mode, verbose output to dl1 only
 
 GetOptions (
-            "debug=s"   => \$debug,
+            "debug:s"   => \$debug,
             "help"      => \$help
             );
 

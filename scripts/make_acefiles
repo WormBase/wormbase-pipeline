@@ -8,7 +8,7 @@
 # autoace.
 #
 # Last updated by: $Author: dl1 $                     
-# Last updated on: $Date: 2002-12-09 14:37:06 $       
+# Last updated on: $Date: 2002-12-09 15:00:29 $       
 
 #################################################################################
 # Variables                                                                     #
@@ -45,7 +45,7 @@ my $debug;      # Debug mode, verbose output to runner only
 my $dev;        # Write to development stream (/wormsrv1/ not /wormsrv2/)
 
 GetOptions (
-	    "debug=s"   => \$debug,
+	    "debug:s"   => \$debug,
 	    "help"      => \$help,
 	    "db=s"      => \$db,
 	    "dev"       => \$dev
