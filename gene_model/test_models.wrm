@@ -31,6 +31,7 @@
 	Map ?Map XREF Map_shown #Map_position  // Include all objects in these maps (must be mapped and have extents)
 	Includes ?Map
 	Contains Locus ?Locus XREF Map
+		 Gene  ?Gene XREF Map
         	 Rearrangement ?Rearrangement XREF Map
 		 Contig ?Contig XREF Map
 		 Clone ?Clone XREF Map
@@ -386,30 +387,31 @@
 			  Pseudogene ?Pseudogene XREF Gene #Evidence
 			  Pseudogene_history ?Pseudogene XREF Gene_history
 			  Gene_variant_count UNIQUE Int	// how many isoforms have been made (including Pseudogenes and non coding)
-							// intended for acedb code to look at this when suggesting new gene names
-
-// Checked up to here
-
-                        Description ?Text #Evidence // to be absorbed by other Description tags by Erich [040122 krb]
-
-                        Protein ?Protein XREF Gene
-                        Other_sequence ?Sequence XREF Gene_other_seq #Evidence    // dl 001128 // RD 0107 leave for now
-                        Product ?Text
-        Map_info  Map ?Map XREF Gene #Map_position
+							// intended for acedb code to look at this when suggesting new gene name
+			  Protein ?Protein XREF Gene
+			  Other_sequence ?Sequence XREF Gene #Evidence  // for linking to mRNAs etc. that correspond to a gene
+        Map_info  Map UNIQUE ?Map XREF Gene #Map_position
                   Well_ordered          // "on the line"
                   Hide_under ?Gene XREF Representative_for
                   Representative_for ?Gene XREF Hide_under
-                  Positive Inside_rearr ?Rearrangement XREF Gene_inside ?Author
-                           Positive_clone ?Clone XREF Positive_gene ?Author
-                  Negative Outside_rearr ?Rearrangement XREF Gene_outside ?Author
-                           Negative_clone ?Clone XREF Negative_gene ?Author
+
+// Checked up to here
+
+                  Positive Inside_rearr ?Rearrangement XREF Gene_inside #Evidence
+                           Positive_clone ?Clone XREF Positive_gene #Evidence
+                  Negative Outside_rearr ?Rearrangement XREF Gene_outside #Evidence
+                           Negative_clone ?Clone XREF Negative_gene #Evidence
                   Mapping_data  Two_pt ?Two_pt_data
                                 Multi_point ?Multi_pt_data
                                 Pos_neg_data ?Pos_neg_data
-        Remark ?Text
+
+
+
+
+
         Laboratory ?Laboratory
         Reference ?Paper XREF Gene
-
+        Remark ?Text #Evidence
 
 #Gene_history_action Event  Created
                             Killed
@@ -892,22 +894,22 @@
 		  Date DateType Text			// Text for comments on operation
 		  Date_directory UNIQUE Text	        // date of this version for cosmids, changed sdm 000731 to text
 		  Species UNIQUE ?Species
-	  Visible	Title UNIQUE ?Text
-			Matching_CDS ?CDS XREF Matching_cDNA
-			Matching_transcript ?Transcript XREF Matching_cDNA // to link ESTs/mRNAs to RNA genes
-			Matching_pseudogene ?Pseudogene XREF Matching_cDNA // for ESTs that match Pseudogenes [krb 030801]
-			Corresponding_transcript UNIQUE ?Transcript XREF Corresponding_CDS // to link coding genes to new style 
-											   // ar2 Transcripts, 1-2-1 relationship
-		  	Clone ?Clone XREF Sequence 
-			GO_term ?GO_term XREF Sequence ?GO_code #Evidence
-			Locus_other_seq ?Locus XREF Other_sequence       // dl 001128
-			Paired_read ?Sequence XREF Paired_read          // dl 020110
-	  		Reference ?Paper XREF Sequence
-			Expr_pattern ?Expr_pattern XREF Sequence
-			Interacts_with_sequence ?Sequence XREF Interacts_with_sequence #Evidence // for future interaction data [020704 krb]
-			Interacts_with_protein ?Protein XREF Interacts_with_sequence #Evidence // for future interaction data [020704 krb]
-			Confidential_remark ?Text
-			Remark ?Text #Evidence
+	  Visible Title UNIQUE ?Text
+		  Matching_CDS ?CDS XREF Matching_cDNA
+		  Matching_transcript ?Transcript XREF Matching_cDNA // to link ESTs/mRNAs to RNA genes
+		  Matching_pseudogene ?Pseudogene XREF Matching_cDNA // for ESTs that match Pseudogenes [krb 030801]
+		  Corresponding_transcript UNIQUE ?Transcript XREF Corresponding_CDS // to link coding genes to new style 
+										     // ar2 Transcripts, 1-2-1 relationship
+		  Clone ?Clone XREF Sequence 
+		  GO_term ?GO_term XREF Sequence ?GO_code #Evidence
+		  Gene ?Gene XREF Other_sequence       // for where mRNAs etc. correspond to a gene
+		  Paired_read ?Sequence XREF Paired_read          // dl 020110
+		  Reference ?Paper XREF Sequence
+		  Expr_pattern ?Expr_pattern XREF Sequence
+		  Interacts_with_sequence ?Sequence XREF Interacts_with_sequence #Evidence // for future interaction data [020704 krb]
+		  Interacts_with_protein ?Protein XREF Interacts_with_sequence #Evidence // for future interaction data [020704 krb]
+		  Confidential_remark ?Text
+		  Remark ?Text #Evidence
 		// tag2 system: names of all objects following next tag are shown in the 
 		//   general annotation display column as "tag:objname"
 	  Properties    Genomic_canonical Gene_count UNIQUE Int                  // added tag for dot name tracking [020128 dl]
@@ -1354,12 +1356,13 @@
 		   Brigpep // 
 		   History Int Text ?Text //new history logging [020801 krb]
                    Live       // new tag to replace use of 'Inactive' krb 06/12/01
-          Visible       Corresponding_CDS ?CDS XREF Corresponding_protein
-                        Reference ?Paper XREF Protein
-                        Expr_pattern ?Expr_pattern XREF Protein
-                        Interacts_with_sequence ?Sequence XREF Interacts_with_protein #Evidence // for future interaction data [020704 krb]
-                        Interacts_with_protein ?Protein XREF Interacts_with_protein #Evidence // for future interaction data [020704 krb]
-			Homology_group ?Homology_group XREF Protein // added [031120 krb]
+          Visible  Gene ?Gene XREF Protein
+		   Corresponding_CDS ?CDS XREF Corresponding_protein
+		   Reference ?Paper XREF Protein
+                   Expr_pattern ?Expr_pattern XREF Protein
+                   Interacts_with_sequence ?Sequence XREF Interacts_with_protein #Evidence // for future interaction data [020704 krb]
+                   Interacts_with_protein ?Protein XREF Interacts_with_protein #Evidence // for future interaction data [020704 krb]
+		   Homology_group ?Homology_group XREF Protein // added [031120 krb]
           Homol DNA_homol ?Sequence XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int  #Homol_info
                 Pep_homol ?Protein XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int  #Homol_info
                 Motif_homol ?Motif XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int  #Homol_info
