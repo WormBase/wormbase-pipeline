@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl
+#!/usr/local/bin/perl5.6.1
 
 # Marc Sohrmann (ms2@sanger.ac.uk)
 
@@ -8,9 +8,12 @@
 use strict;
 use Getopt::Std;
 use DB_File;
-use vars qw($opt_s $opt_t);
+use vars qw($opt_s $opt_t $opt_v);
 
-getopts ("st");
+getopts ("stv");
+my $verbose = $opt_v;
+
+my $output_dir = "/acari/work2a/wormpipe/swall_data";
 
 my %ORG;
 my %DES;
@@ -37,14 +40,14 @@ if ($opt_s && $opt_t) {
     die "$usage";
 }
 elsif ($opt_s) {
-    dbmopen %ORG, "swissprot2org", 0666 or die "cannot open DBM file";
-    dbmopen %DES, "swissprot2des", 0666 or die "cannot open DBM file";
-    dbmopen %KEY, "swissprot2key", 0666 or die "cannot open DBM file";
+    dbmopen %ORG, "$output_dir/swissprot2org", 0666 or die "cannot open DBM file";
+    dbmopen %DES, "$output_dir/swissprot2des", 0666 or die "cannot open DBM file";
+    dbmopen %KEY, "$output_dir/swissprot2key", 0666 or die "cannot open DBM file";
 }
 elsif ($opt_t) {
-    dbmopen %ORG, "trembl2org", 0666 or die "cannot open DBM file";
-    dbmopen %DES, "trembl2des", 0666 or die "cannot open DBM file";
-    dbmopen %KEY, "trembl2key", 0666 or die "cannot open DBM file";
+    dbmopen %ORG, "$output_dir/trembl2org", 0666 or die "cannot open DBM file";
+    dbmopen %DES, "$output_dir/trembl2des", 0666 or die "cannot open DBM file";
+    dbmopen %KEY, "$output_dir/trembl2key", 0666 or die "cannot open DBM file";
 }
 else {
     die "$usage";
@@ -99,32 +102,32 @@ while (my $line = <>) {
 	    }
             $org .= join (";", @tmp);
             if (exists $ORG{$id}) {
-                print "ORG PRESENT\t$id\t($org)\n";
+                print "ORG PRESENT\t$id\t($org)\n" if $verbose;
             }
             else {
                 $ORG{$id} = $org;
-                print "ORG ADDED\t$id\t($org)\n";
+                print "ORG ADDED\t$id\t($org)\n" if $verbose;
             }
             #
             chomp $des;
             $des =~ s/\n/\s/g;
 	    $des =~ s/\"//g;
             if (exists $DES{$id}) {
-                print "DES PRESENT\t$id\t($des)\n";
+                print "DES PRESENT\t$id\t($des)\n" if $verbose;
             }
             else {
                 $DES{$id} = $des;
-                print "DES ADDED\t$id\t($des)\n";
+                print "DES ADDED\t$id\t($des)\n" if $verbose;
             }
             #
             chomp $key;
             $key =~ s/\n/\s/g;
             if (exists $KEY{$id}) {
-                print "KEY PRESENT\t$id\t($key)\n";
+                print "KEY PRESENT\t$id\t($key)\n" if $verbose;
             }
             else {
                 $KEY{$id} = $key;
-                print "KEY ADDED\t$id\t($key)\n";
+                print "KEY ADDED\t$id\t($key)\n" if $verbose;
             }
 	}
         else {
