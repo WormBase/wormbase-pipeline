@@ -2,9 +2,8 @@
 
 use DBI;
 use strict;
-my $antdir = glob("~ar2");
-#use lib "/wormsrv2/scripts/";
-use lib "/nfs/team71/worm/ar2/wormbase_cvs/scripts/";
+my $wormpipe_dir = glob("~wormpipe");
+use libs "$wormpipe_dir/wormbase/scripts/"
 use Wormbase;
 use Getopt::Long;
 
@@ -33,10 +32,9 @@ GetOptions("chromosomes" => \$chromosomes,
 	   "mail"        => \$mail
 	  );
 
-my $wormpipe_dir = glob("~wormpipe");
 my $WPver = &get_wormbase_version;
 my $WP_old = $WPver - 1;
-
+my $scripts_dir = "$wormpipe_dir/wormbase/scripts/BLAST_scripts";
 #process Ids
 
 #|         18 | gadfly3.pep         |
@@ -71,12 +69,12 @@ my %wormprotprocessIds = ( wormpep => 11,
 
 if( $chromosomes ) {
   #get new chromosomes
-  `$wormpipe_dir/Pipeline/copy_files_to_acari.pl -c`;
+  `$scripts_dir/copy_files_to_acari.pl -c`;
 }
 
 if( $wormpep ) {
   #get new wormpep
-  `$wormpipe_dir/Pipeline/copy_files_to_acari.pl -w`;
+  `$scripts_dir/copy_files_to_acari.pl -w`;
 }
 
 my %currentDBs;   #ALSO used in setup_mySQL 
@@ -209,10 +207,10 @@ if( $update_mySQL )
      print "last_clone = $last_clone\n";
      
      #Make a concatenation of all six agp files from the last release to ~/Elegans  e.g.
-     `cat /wormsrv2/current_DB/CHROMOSOMES/*.agp > $wormpipe_dir/Elegans/WS$WPver.agp`;
+     `cat /wormsrv2/autoace/CHROMOSOMES/*.agp > $wormpipe_dir/Elegans/WS$WPver.agp`;
      
      #load information about any new clones
-    `$wormpipe_dir/Pipeline/agp2ensembl.pl -dbname worm01 -dbhost ecs1f -dbuser wormadmin -dbpass worms -agp $wormpipe_dir/Elegans/WS$WPver.agp -write -v -strict`;
+    `$scripts_dir/agp2ensembl.pl -dbname worm01 -dbhost ecs1f -dbuser wormadmin -dbpass worms -agp $wormpipe_dir/Elegans/WS$WPver.agp -write -v -strict`;
     
     #check that the number of clones in the clone table equals the number of contigs and dna objects
     my ($clone_count, $contig_count, $dna_count);
@@ -244,11 +242,11 @@ clones = $clone_count\ncontigs = $contig_count\ndna = $dna_count\n";
 	$query = "select id from contig where internal_id > $last_clone into outfile '$wormpipe_dir/Elegans/ids.txt'";
 	print &update_database( $query, $worm01 );
 	
-	`$wormpipe_dir/Pipeline/InputIdManager.pl -dbname worm01 -dbhost ecs1f -dbuser wormadmin -dbpass worms -insert -analysis SubmitContig -class contig -file $wormpipe_dir/Elegans/ids.txt`;
+	`$scripts_dir/InputIdManager.pl -dbname worm01 -dbhost ecs1f -dbuser wormadmin -dbpass worms -insert -analysis SubmitContig -class contig -file $wormpipe_dir/Elegans/ids.txt`;
 	
       }
      $worm01->disconnect;
-    `$wormpipe_dir/Pipeline/find_duplicate_clones.pl`;
+    `$scripts_dir/find_duplicate_clones.pl`;
 
 
      #add new peptides to MySQL database
@@ -260,7 +258,7 @@ clones = $clone_count\ncontigs = $contig_count\ndna = $dna_count\n";
      $query = "select * from protein order by proteinId desc limit 1";
      @results = &single_line_query( $query, $wormprot );
      my $old_topCE = $results[0];
-     `$wormpipe_dir/Pipeline/worm_pipeline.pl -f /wormsrv2/WORMPEP/wormpep$WPver/new_entries.WS$WPver`;
+     `$scripts_dir/worm_pipeline.pl -f /wormsrv2/WORMPEP/wormpep$WPver/new_entries.WS$WPver`;
      
      #check for updated ids
      @results = &single_line_query( $query, $wormprot );
@@ -382,13 +380,13 @@ if( $run_pipeline )
 if( $dump_data )
   {
     # prepare helper files
-    `cat /wormsrv2/autoace/CHROMOSOMES/*.gff | /nfs/acari/wormpipe/Pipeline/gff2cds.pl > /nfs/acari/wormpipe/Elegans/cds$WPver.gff`;
-    `cat /wormsrv2/autoace/CHROMOSOMES/*.gff | /nfs/acari/wormpipe/Pipeline/gff2cos.pl > /nfs/acari/wormpipe/Elegans/cos$WPver.gff`;
-    `$wormpipe_dir/Pipeline/prepare_dump_blastx.pl > $wormpipe_dir/dumps/accession2clone.list`;
+    `cat /wormsrv2/autoace/CHROMOSOMES/*.gff | $scripts_dir/gff2cds.pl > /nfs/acari/wormpipe/Elegans/cds$WPver.gff`;
+    `cat /wormsrv2/autoace/CHROMOSOMES/*.gff | $scripts_dir/gff2cos.pl > /nfs/acari/wormpipe/Elegans/cos$WPver.gff`;
+    `$scripts_dir/prepare_dump_blastx.pl > $wormpipe_dir/dumps/accession2clone.list`;
 
-    `$wormpipe_dir/Pipeline/dump_blastp.pl -w $wormpipe_dir/BlastDB/wormpep$WPver.pep -s`;
-    `$wormpipe_dir/Pipeline/dump_blastx_new.pl -w $wormpipe_dir/BlastDB/wormpep$WPver.pep -a ~/Elegans/WS$WPver.agp -g ~/Elegans/cds$WPver.gff -c ~/Elegans/cos$WPver.gff -m`;
-    `$wormpipe_dir/Pipeline/dump_motif.pl`;
+    `$scripts_dir/dump_blastp.pl -w $wormpipe_dir/BlastDB/wormpep$WPver.pep -s`;
+    `$scripts_dir/dump_blastx_new.pl -w $wormpipe_dir/BlastDB/wormpep$WPver.pep -a ~/Elegans/WS$WPver.agp -g ~/Elegans/cds$WPver.gff -c ~/Elegans/cos$WPver.gff -m`;
+    `$scripts_dir/dump_motif.pl`;
   }
 
 exit(0);
