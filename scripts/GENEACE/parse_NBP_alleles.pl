@@ -2,7 +2,7 @@
 
 # Author: Chao-Kung Chen
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-05-25 12:49:00 $ 
+# Last updated on: $Date: 2004-05-28 09:45:33 $ 
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -231,11 +231,7 @@ sub get_30_bp_flanks {
 	my $locus = lc($NBP_info{$allele}->[0]);  # NBP data often use capitalized locus name
 	print ACE "Gene \"$Gene_info{$locus}{'Gene'}\"  \/\/$NBP_info{$allele}->[0]\n" if exists $Gene_info{$locus}{'Gene'};
 	print ACE_del "-D Gene \"$Gene_info{$locus}{'Gene'}\"  \/\/$NBP_info{$allele}->[0]\n" if exists $Gene_info{$locus}{'Gene'};
-	print LOG "$allele is linked to non-existent locus ($locus)\n" if !exists $Gene_info{$locus}{'Gene'};
-      }
-      else {
-	print ACE "Predicted_gene \"$NBP_info{$allele}->[0]\"\n";
-	print ACE_del "-D Predicted_gene \"$NBP_info{$allele}->[0]\"\n";
+	print LOG "$allele is linked to a locus ($locus) which does not associate with a Gene id\n" if !exists $Gene_info{$locus}{'Gene'};
       }
 
       # ----- remove tm and use the rest in as allele id to link back to NBP allele webpage
