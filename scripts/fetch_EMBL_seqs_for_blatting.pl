@@ -7,7 +7,7 @@
 # Attempt to unify all of the diverse scripts to fetch ESTs, OSTs, mRNAs etc. used by blat 
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-09-22 08:59:17 $
+# Last edited on: $Date: 2003-09-22 09:05:09 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -143,6 +143,10 @@ sub make_ests{
   # grab everything which is C. elegans species in EST division of EMBL (=emblrelease + emblnew)
   open (SEQUENCES, "$getz -sf fasta -f \"id acc des seq sv\" \'([embl-org:caenorhabditis elegans] \& [embl-div:est])\' |") ;
 
+  # reset variables
+  $id = "";
+  $acc = "";
+  $sv = "";
 
   while (<SEQUENCES>) {
 
