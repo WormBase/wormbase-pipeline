@@ -282,10 +282,10 @@ my $sth_f = $dbh->prepare ( q{ SELECT id,
                                       seq_start, seq_end,
                                       hid, hstart, hend,  
                                       score, evalue, strand, cigar
-                                 FROM feature
-                                WHERE contig = ?
-                             ORDER BY seq_start and seq_end
-	  	  	     } );
+					FROM feature
+					  WHERE contig = ?
+					      ORDER BY seq_start and seq_end
+					    } );
 
 
 ####################################################################
