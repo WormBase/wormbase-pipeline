@@ -7,7 +7,7 @@
 # This maps alleles to the genome based on their flanking sequence
 #
 # Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2003-01-22 16:27:28 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2003-01-22 16:55:57 $        # quickly see when script was last changed and by whom
 
 
 use strict;
@@ -25,6 +25,7 @@ my $database;
 my $ver;
 my $verbose;
 my $restart = "go";
+my $help; { `perldoc $0`;};
 
 # $debug   -  all output goes to ar/allele_mapping
 
@@ -33,8 +34,11 @@ GetOptions( "debug"     => \$debug,
 	    "database=s"=> \$database,
 	    "WS=s"      => \$ver,
 	    "verbose"   => \$verbose,
+	    "help"      => \$help,
 	    "restart=s" => \$restart
 	  );
+
+if ($help) { print `perldoc $0`;exit;}
 
 ##############
 # variables  #
@@ -674,12 +678,20 @@ __END__
 
 =over 4
 
-=item map_alleles.pl  [-options]
+=item map_alleles.pl  [-debug -limit -database=s -WS=s -verbose -restart=s]
 
 =back
 
 This script:
 
+Gets alleles with flanking sequence from designated database and maps them to a clone or superlink using SCAN, then checks which if any CDSs they overlap with.
+
+Also requires that the allele has as a "seed" sequence either a Sequence or Predicted_gene (a locus with an associated
+genomic_sequence will also work).
+
+Also writes two files for updating allele->Sequence and Allele->Predicted_gene in geneace, one to remove the current connections and one to enter the new ones.
+
+Outputs acefiles which are loaded in to the same database.
 
 map_alleles.pl MANDATORY arguments:
 
@@ -693,15 +705,72 @@ map_alleles.pl  OPTIONAL arguments:
 
 =over 4
 
-=item -h, Help
+=item -help
+
+this stuff
 
 =back
+
+=over 4
+
+=item -debug 
+   
+output goes to ar2 and uses current_DB
+
+=back
+
+=over 4
+
+=item -limit 
+
+limt the number of alleles mapped (debug tool)
+
+=back
+
+=over 4
+
+=item -database 
+
+specify which database to read info from and load mapping results in to
+
+=back
+
+=over 4
+
+=item -restart 
+
+choose which allele to start with. all preceding (alphabetically) alleles will be skipped
+
+=back
+
+=over 4
+
+=item -verbose 
+
+greater indication of what procedured are being used to map the allele
+
+=back
+
+=over 4
+
+=item -ver 
+
+select a version of the database other than that being built
+
+=back
+
+
+
 
 =head1 REQUIREMENTS
 
 =over 4
 
 =item This script must run on a machine which can see the /wormsrv2 disk.
+
+=item
+
+=item Must be run AFTER gff splitting has produced CHROMOSOME_*.genes.gff
 
 =back
 
