@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam aged 12 and a half
 #
-# Last updated on: $Date: 2004-11-08 10:45:46 $
+# Last updated on: $Date: 2004-11-17 14:02:58 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
@@ -152,9 +152,19 @@ foreach my $gene_model (@Predictions){
     push(@error3, "ERROR: $gene_model contains an invalid Isoform tag\n") if $Isoform;
   }
 
-##############################################
-#Checks that All gene predictions should have#
-##############################################
+  #############################
+  # Pseudogene Specific       #
+  #############################
+  
+  # check that Pseudogenes have a type tag.
+  if ($method_test eq "Pseudogene" && $gene_model->name =~ (/\w+\d+\.\d+\Z/)) {
+    my $prob_prediction = $gene_model->at('Type');
+    push(@error3, "ERROR: The Pseudogene $gene_model does not have a Type Tag!\n") if (!defined($prob_prediction));
+  }
+
+  ###################################
+  #All gene predictions should have #
+  ###################################
 
   # check that 'Sequence' tag is present and if so then grab parent sequence details
   my $source = $gene_model->Sequence;
@@ -179,43 +189,36 @@ foreach my $gene_model (@Predictions){
   push(@error3, "ERROR: $gene_model does not have From_laboratory tag\n") if (!defined($laboratory));
   print "ERROR: $gene_model does not have From_laboratory tag\n" if (!defined($laboratory) && $verbose);
 
-  # check that history genes have the Gene_history populated.
-  if ($gene_model->name =~ (/\w+\.\w+\:\w+/)){
-    my $prob_historyGene = $gene_model->at('Visible.Gene_history');
-    push(@error3, "ERROR: $gene_model does not have the Gene_history populated\n") if (!defined($prob_historyGene));
-  }
-
-  # check that non-history gene predictions have a Gene ID.
-  if ($gene_model->name =~ (/\w+\d+\.\d+\Z/)) {
-    my $prob_prediction = $gene_model->at('Visible.Gene');
-    push(@error3, "ERROR: $gene_model does not have a Gene ID!\n") if (!defined($prob_prediction));
-  }
+   # check that history genes have a history method.
+  if ($method_test ne "history" && $gene_model->name =~ /\w+\.\w+\:\w+/) {
+    push(@error3, "ERROR: $gene_model history object doesn't have a history method.\n");
+  } 
 
   # check that history genes are renamed.
   if ($method_test eq "history" && $gene_model->name =~ /\w+\.\d\Z/) {
     push(@error3, "ERROR: $gene_model needs to be renamed as it is part of history.\n");
   }
 
-  # check that history genes have a history method.
-  if ($method_test ne "history" && $gene_model->name =~ /\w+\.\w+\:\w+/) {
-    push(@error3, "ERROR: $gene_model history object doesn't have a history method.\n");
-  }
-
-# check that Gene ID contained in gene models only an 8 digit number.
+  # check Gene IDs are populated in predictions and are valid.
   if ($gene_model->name =~ (/\w+\d+\.\d+\Z/)) {
-    my $Gene_ID = $gene_model->at('Visible.Gene.Down');
-    if ((defined $Gene_ID) && ($Gene_ID ne /^WBGene[0-9]{8}/)) {
-      push(@error3, "ERROR: The Gene ID $Gene_ID in $gene_model is invalid!\n");
+    my $Gene_ID = $gene_model->at('Visible.Gene.[1]');
+    if (defined $Gene_ID) {
+      push(@error2, "ERROR: The Gene ID '$Gene_ID' in $gene_model is invalid!\n") unless ($Gene_ID =~ /WBGene[0-9]{8}/);
+    }
+    elsif (!defined $Gene_ID) {push(@error2, "ERROR: $gene_model does not have a Gene ID!\n");
     }
   }
+
   if ($gene_model->name =~ (/\w+\.\w+\:\w+/)) {
-    my $Genehist_ID = $gene_model->at('Visible.Gene_history.Down');
-    if ((defined $Genehist_ID && $Genehist_ID ne /^WBGene[0-9]{8}/)) {
-      push(@error3, "ERROR: The Gene ID $Genehist_ID in $gene_model is invalid!\n");
+    my $Genehist_ID = $gene_model->at('Visible.Gene_history.[1]');
+    if (defined $Genehist_ID) {
+      push(@error2, "ERROR: The Gene ID '$Genehist_ID' in $gene_model is invalid!\n") unless ($Genehist_ID =~ /WBGene[0-9]{8}/);
+    }
+    elsif (!defined $Genehist_ID) {push(@error2, "ERROR: $gene_model does not have the Gene_history populated\n");
     }
   }
-
-
+  
+###################################################################################################################
 
   # then run misc. sequence integrity checks
   my $dna = $gene_model->asDNA();
