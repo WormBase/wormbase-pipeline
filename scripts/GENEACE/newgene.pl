@@ -7,7 +7,7 @@
 # simple script for creating new (sequence based) Gene objects 
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-09-20 10:25:14 $
+# Last edited on: $Date: 2004-09-20 13:23:20 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -212,14 +212,18 @@ sub process_gene{
   # gene object doesn't exist need to make it!
   else{
    
-    # increase gene ID unless -id was specified
-    unless($id){      
-      $gene_max++;
-      $gene_id = $gene_max;
+    # get new gene ID, unless specified by -id
+    if($id){
+      $gene_id = "WBGene" . sprintf("%08d",$id);
     }
-    print "$seq does not exist, creating new Gene object WBGene000$gene_id\n";
+    else{
+      $gene_max++;
+      $gene_id = "WBGene" . sprintf("%08d",$gene_max);
+    }
+
+    print "$seq does not exist, creating new Gene object $gene_id\n";
     
-    print OUT "Gene WBGene000$gene_id\n";
+    print OUT "Gene : $gene_id\n";
     print OUT "Live\n";
     print OUT "Version 1\n";
     print OUT "Sequence_name $seq\n";
@@ -259,7 +263,7 @@ sub process_gene{
       $email = "\n\nYou requested a new gene ID for $seq, but this gene already exists as $gene\n\n";
     }
     else{
-      $email = "\n\nYou requested a new gene ID for $seq, this Gene ID is WBGene000$gene_id\n\n";
+      $email = "\n\nYou requested a new gene ID for $seq, this Gene ID is $gene_id\n\n";
     }
     $email .= "This email was generated automatically, please reply to krb\@sanger.ac.uk\n";
     $email .= "if there are any problems\n";
