@@ -9,39 +9,69 @@
 # mysql database prior for the pre-build pipeline.
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-10-01 08:13:20 $
+# Last updated on: $Date: 2003-12-05 16:05:12 $
 
 
 #################################################################################
 # variables                                                                     #
 #################################################################################
 
-$|=1;
-use IO::Handle;
-use Getopt::Std;
-use Cwd;
-use lib '/wormsrv2/scripts';
-use Wormbase;
 use strict;
+use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use Wormbase;
+use IO::Handle;
+use Getopt::Long;
+use Cwd;
 
- ##############################
- # command-line options       #
- ##############################
+##############################
+# command-line options       #
+##############################
 
-my $opt_h = "";      # Help/Usage page
-getopts ('h');
-&usage if ($opt_h);
+my $help;                # Help/Usage page
+my $test;                # for running in test environment ~wormpub/TEST_BUILD
+
+GetOptions ("help"        => \$help,
+            "test"        => \$test
+           );
+
+
+&usage if ($help);
 
 
  ##############################
  # Script variables (run)     #
  ##############################
-my $release_name = &get_wormbase_version_name;
-my $release      = &get_wormbase_version;
+
+my $release; 
+if($test){
+  $release = "666";
+}
+else{
+  $release = &get_wormbase_version; 
+}
 my $old_release  = $release -1;
 
-our $dbfile     = "/wormsrv2/WORMPEP/wormpep${release}/wp.fasta${release}";
-our $old_dbfile = "/wormsrv2/WORMPEP/wormpep${old_release}/wp.fasta${old_release}";
+my $release_name; 
+if($test){
+  $release_name = "666";
+}
+else{
+  $release_name = &get_wormbase_version_name; 
+}
+
+
+
+##########################################
+# Set up database paths                  #
+##########################################
+
+# Set up top level base directory which is different if in test mode
+# Make all other directories relative to this
+my $basedir   = "/wormsrv2";
+$basedir      = glob("~wormpub")."/TEST_BUILD" if ($test); 
+
+our $dbfile     = "$basedir/WORMPEP/wormpep${release}/wp.fasta${release}";
+our $old_dbfile = "$basedir/WORMPEP/wormpep${old_release}/wp.fasta${old_release}";
 
 # make a hash of wormpep IDs -> peptide sequence for current and previous versions
 # of wormpep
@@ -65,8 +95,8 @@ my %proteins_outputted;
  # Main Loop                   #
  ###############################
 
-open (LOG,  ">/wormsrv2/WORMPEP/wormpep${release}/new_entries.$release_name") || die "Couldn't write output file\n";;
-open (DIFF, "</wormsrv2/WORMPEP/wormpep${release}/wormpep.diff${release}") || die "Couldn't read from diff file\n";
+open (LOG,  ">$basedir/WORMPEP/wormpep${release}/new_entries.$release_name") || die "Couldn't write output file\n";;
+open (DIFF, "<$basedir/WORMPEP/wormpep${release}/wormpep.diff${release}") || die "Couldn't read from diff file\n";
 while (<DIFF>) {    
   my ($new_acc,$seq);
     if( (/changed:\t\S+\s+\S+ --> (\S+)/) || (/new:\t\S+\s+(\S+)/) || (/reappeared:\t\S+\s+(\S+)/)) {

@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-12-04 14:07:00 $
+# Last edited on: $Date: 2003-12-05 16:05:12 $
 
 
 #################################################################################
@@ -1155,14 +1155,21 @@ sub make_wormpep {
   $am_option = "-buildpep";
   # make wormpep database but also perform all the other related protein steps in the build
   unless( -e "$logdir/D1A:Build_wormpep_initial" ) {
-    # make wormpep -i
-    &run_command("$scriptdir/make_wormpep.pl -initial");
+    # make wormpep -initial
+    my $command = "$scriptdir/make_wormpep.pl -initial";
+    $command .= " -test" if ($test);
+    &run_command("$command");
    
     #generate file to ad new peptides to mySQL database.
-    &run_command("$scriptdir/new_wormpep_entries.pl");
+    $command = "$scriptdir/new_wormpep_entries.pl";
+    $command .= " -test" if ($test);
+    &run_command("$command");
 
     # update common data
-    &run_command("$scriptdir/update_Common_data.pl -update -in_build -ce");
+    $command = "$scriptdir/update_Common_data.pl -update -in_build -ce";
+    $command .= " -test" if ($test);
+    &run_command("$command");
+
     
     system("touch $logdir/D1A:Build_wormpep_initial");
   }
@@ -1174,9 +1181,12 @@ sub make_wormpep {
     my $file = "$basedir/autoace/wormpep_ace/WormpepACandIDs.ace"; 
     &load($file,"wormpep_acs_and_Ids");
     
-    # make wormpep
-    &run_command("$scriptdir/make_wormpep.pl -final");
-    
+    # make wormpep -final
+    my $command = "$scriptdir/make_wormpep.pl -final";
+    $command .= " -test" if ($test);
+    &run_command("$command");
+   
+    #
     # make acefile of peptides etc to add to autoace (replacement for pepace)
     &run_command("$scriptdir/build_pepace.pl");
 
