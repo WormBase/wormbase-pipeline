@@ -7,8 +7,8 @@
 #
 # dl
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2003-05-07 09:01:08 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2003-06-23 14:07:01 $
 
 use lib "/wormsrv2/scripts/";
 use Wormbase;
@@ -17,7 +17,7 @@ use strict;
 use Data::Dumper;
 
 my %acc2clone = &FetchData('acc2clone');
-my %gene2CE = &FetchData('gene2CE');
+my %gene2CE   = &FetchData('gene2CE');
 my %Ip2Go;
 
  # get the InterPro => GOterm mapping ( space separated ie 'IPR004794' => 'GO:0008703 GO:0008835 GO:0009231 ')
@@ -40,6 +40,7 @@ GetOptions (
 	    "debug"     => \$debug,
 	    "go"        => \$no_go
 	    );
+
 unless ($no_go) {
   system("make_Interpro2GO_mapping.pl") and die "cant update the interpro to GO term mappings\n";
   %Ip2Go = &FetchData('interpro2go');
@@ -51,8 +52,6 @@ if (! defined $file) {
     $file = "/nfs/disk100/wormpub/protein_ID.mail";
 }
 
-
-
 my $ace_file = "/wormsrv2/autoace/wormpep_ace/WormpepACandIDs.ace";
 $ace_file = "/tmp/WormpepACandIDs.ace" if ($debug);
 
@@ -60,6 +59,20 @@ open (OUT, ">$ace_file");
 
 my @f = "";
 my ($dbxref_ac,$dbxref_id,$dbxref_db);
+
+# File format for protein_ID file
+#
+# <acc>          <ver>    <proteinID>   <ver>     <checksum>     <gene_name>  <swall> <standard_name>
+#
+# non-genome entry (e.g. from a mRNA) 
+#
+# AB000913        2       BAA21715        1       2898126014      unc-14      O15940   
+#
+# genome entry
+#
+# AC006633        10      AAK68374        1       3313183671      F35B3.3     Q966K1   F35B3.3
+
+
 
 open (FILE, "<$file") || die "Can't open the protein_ID file\n";
 while (<FILE>) {
@@ -73,33 +86,44 @@ while (<FILE>) {
     next unless (defined $acc2clone{$f[0]});
 
     my @interpro = "";
+
+    # get database, id and acc and interpro hits from getz call
     ($dbxref_ac,$dbxref_id,$dbxref_db,@interpro) = &get_from_protein_id($f[2]);
-    print "$f[6]\t";
-    my $protein = $gene2CE{$f[6]};
-    if( $protein ) {
-      print "$protein";
-      print OUT "\nProtein : WP:$protein\n";
-      print OUT "Database $databases{$dbxref_db} $dbxref_id $dbxref_ac\n";
-      foreach (@interpro) {
-	print OUT "Motif_homol\t\"INTERPRO:$_\"\n"
-      }
+
+    # standard name
+    print "$f[7]\t";
+    my $protein = $gene2CE{$f[7]};                      # incremented array slice to handle new SWALL column
+    
+    if ($dbxref_ac ne $f[6]) { 
+	print "// mismatch between getz and EBI for $protein [EBI:$f[6]|GETZ:$dbxref_ac)\n";
     }
-    else {print "gene $f[6] has no protein (has common_data been updated ?)\n";}
+
+    if ($protein) {
+	print "$protein";
+	print OUT "\nProtein : WP:$protein\n";
+	print OUT "Database $databases{$dbxref_db} $dbxref_id $dbxref_ac\n";
+	foreach (@interpro) {
+	    print OUT "Motif_homol\t\"INTERPRO:$_\"\n"
+	    }
+    }
+    else {
+	print "gene $f[7] has no protein (has common_data been updated ?)\n";
+    }
 
     print "\n";
-
-    print OUT "\nSequence : \"$f[6]\"\n";
+    
+    print OUT "\nSequence : \"$f[7]\"\n";
     print OUT "Database $databases{$dbxref_db} $dbxref_id $dbxref_ac\n";
     print OUT "Protein_id \"$acc2clone{$f[0]}\" $f[2] $f[3]\n";
-
+    
     # assign GO terms based on InterPro Motifs
     unless ($no_go) {
-      foreach my $ip (@interpro) {
-	my @GOterms = split(/\s/,$Ip2Go{$ip});
-	foreach my $go (@GOterms) {
-	  print OUT "GO_term\t\"$go\" \"IEA\"\n"
+	foreach my $ip (@interpro) {
+	    my @GOterms = split(/\s/,$Ip2Go{$ip});
+	    foreach my $go (@GOterms) {
+		print OUT "GO_term\t\"$go\" \"IEA\"\n"
+		}
 	}
-      }
     }
 }
 
@@ -119,15 +143,17 @@ sub get_from_protein_id {
     my $db;
     my @interpro;
 
-    open (LOOK, "/usr/local/pubseq/bin/pfetch -F $protein_id | grep -E '^ID|^AC|InterPro' |");
+#  cbi1c[hrh]53: getz "[swall-proteinID:CAB54233]"
+
+#   open (LOOK, "/usr/local/pubseq/bin/pfetch -F $protein_id | grep -E '^ID|^AC|InterPro' |");
+    open (LOOK, "/usr/local/pubseq/bin/getzc -e \"[SWALL-proteinID:$protein_id]\" | grep -E '^ID|^AC|InterPro' |");
     while (<LOOK>) {
-	($acc = $1) if (/^AC\s+(\S+);/);
-	($id  = $1) if (/^ID\s+(\S+)/);
-	push (@interpro, $1) if(/^DR\s+InterPro;\s(\w+)/ );#DR   InterPro; IPR008160
+	($id  = $1) if (/^ID\s+(\S+)/);                           # ID   Q95YB2      PRELIMINARY;      PRT;   409 AA.
+	($acc = $1) if (/^AC\s+(\S+);/);                          # AC   Q95YB2;
+	push (@interpro, $1) if(/^DR\s+InterPro;\s(\w+)/ );       # DR   InterPro; IPR006089; Acyl-CoA_dh.
     }
     close LOOK;
     
-    # assign database based on length of accession and SWISSPROT species
     if ((length ($acc)) == 8) {	$db = "TN"; }
     elsif ($id =~ /_CAEEL/)   { $db = "SW"; }
     else                      {	$db = "TR"; }
