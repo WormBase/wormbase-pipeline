@@ -192,7 +192,7 @@
 		Qualifier Text	    // sd, sm, ts etc.  Not systematic just now
 		Rearrangement ?Rearrangement XREF Allele
 	Gene_class ?Gene_Class XREF Allele
-	Sequence_details SMap S_Parent UNIQUE Sequence UNIQUE ?Sequence XREF Allele // Allele becomes SMapped now [krb 021216]
+	Sequence_details SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF Allele // Allele becomes SMapped now [krb 021216]
                          Flanking_sequences UNIQUE Text UNIQUE Text
 			 Flanking_PCR_product ?PCR_product XREF Flanks_deletion // KO data has PCR info
 			 // What is the nature of the Allele, based on sequence data?
@@ -205,10 +205,9 @@
 										 // is deleted and something else is 
 										 // also inserted
 	Affects Gene ?Locus XREF Allele  // New tag structure to handle allele cross-links [krb 021217]
-		Predicted_gene ?Sequence XREF Has_allele // Can't XREF to Allele tag
+		CDS ?CDS XREF Allele // Replaces linking to Has_allele tag in ?Sequence class
 		Transcript ?Transcript XREF Allele // added for two cases of RNA genes with alleles [021126 krb]
 		//Gene ?Gene XREF Allele  // what this will becomee
-		//CDS ?CDS XREF Allele  // awaiting gene model change
         Reference_Allele
 	Isolation	Author	Text	// Isolator - should be ?Author
 			Date	DateType
@@ -226,11 +225,11 @@
 	Derivative ?Allele XREF Derived_from
         Strain ?Strain XREF Allele
         Genetics        Map ?Map #Map_position
-                        Mapping_data    2_point ?2_point_data
+                        Mapping_data    Two_point ?Two_point_data
                                         Multi_point ?Multi_pt_data
 	                                Pos_neg_data ?Pos_neg_data
 				// above three are for mapping on its own behalf
-	                                In_2_point ?2_point_data
+	                                In_two_point ?Two_point_data
                                         In_multi_point ?Multi_pt_data
 	                                In_pos_neg_data ?Pos_neg_data
 				// these are for when the locus is mapped
@@ -326,7 +325,7 @@
 	Negative Outside_rearr ?Rearrangement XREF Locus_outside ?Author
 		 Negative_clone ?Clone XREF Negative_locus ?Author
 	Mapping_data	Well_ordered		// "on the line"
-			2_point ?2_point_data
+			Two_point ?Two_point_data
                         Multi_point ?Multi_pt_data
 			Pos_neg_data ?Pos_neg_data
         Allele  ?Allele XREF Gene #Evidence
@@ -387,7 +386,7 @@
 			 Clone_outside ?Clone XREF Outside_rearr ?Author
                          Rearr_outside ?Rearrangement
 		Mapping_data	Pos_neg_data ?Pos_neg_data
-				2_point ?2_point_data
+				Two_point ?Two_point_data
         	                Multi_point ?Multi_pt_data
 		Display	Hide_under UNIQUE ?Rearrangement XREF Hides
 			Hides ?Rearrangement	// no XREF on purpose
@@ -525,21 +524,21 @@
 // Map data classes
 //
 
-?2_point_data   Evidence #Evidence
+?Two_point_data   Evidence #Evidence
 		Genotype  UNIQUE Text
 		Results  UNIQUE Text
 		Experiment	Mapper ?Author
 				Laboratory ?Laboratory
 				Date  UNIQUE DateType
 				Temperature UNIQUE Text
-		Point_1 UNIQUE Locus_1	UNIQUE ?Locus XREF 2_point UNIQUE ?Allele XREF In_2_point
-			       Allele_1 UNIQUE ?Allele XREF 2_point
-			       Rearrangement_1 UNIQUE ?Rearrangement XREF 2_point
-                               Transgene_1 UNIQUE ?Transgene XREF 2_point
-		Point_2 UNIQUE Locus_2	UNIQUE ?Locus XREF 2_point UNIQUE ?Allele XREF In_2_point
-			       Allele_2 UNIQUE ?Allele XREF 2_point
-			       Rearrangement_2 UNIQUE ?Rearrangement XREF 2_point
-                               Transgene_2 UNIQUE ?Transgene XREF 2_point
+		Point_1 UNIQUE Locus_1	UNIQUE ?Locus XREF Two_point UNIQUE ?Allele XREF In_two_point
+			       Allele_1 UNIQUE ?Allele XREF Two_point
+			       Rearrangement_1 UNIQUE ?Rearrangement XREF Two_point
+                               Transgene_1 UNIQUE ?Transgene XREF Two_point
+		Point_2 UNIQUE Locus_2	UNIQUE ?Locus XREF Two_point UNIQUE ?Allele XREF In_two_point
+			       Allele_2 UNIQUE ?Allele XREF Two_point
+			       Rearrangement_2 UNIQUE ?Rearrangement XREF Two_point
+                               Transgene_2 UNIQUE ?Transgene XREF Two_point
 			// Point_1 and Point_2 are tag2 for the mapped loci
 			// for now to use this on a map both must be on it with Position type Map info.
 		Calculation UNIQUE Full UNIQUE Int UNIQUE Int UNIQUE Int UNIQUE Int // WT X Y XY
@@ -666,13 +665,14 @@
                Component ?GO_term XREF Component_of
 	 Parent Instance_of ?GO_term XREF Instance
                 Component_of ?GO_term XREF Component
-	 Attributes_of Cell ?Cell XREF GO_term
-		       Reference ?Paper XREF GO_term
-		       Motif ?Motif XREF GO_term
-		       Sequence ?Sequence XREF GO_term   // added for Erich, [011210 krb]
+	 Attributes_of Cell       ?Cell       XREF GO_term
+		       Reference  ?Paper      XREF GO_term
+		       Motif      ?Motif      XREF GO_term
+		       CDS        ?CDS        XREF GO_term
+		       Sequence   ?Sequence   XREF GO_term   // added for Erich, [011210 krb]
 		       Transcript ?Transcript XREF GO_term // new for consistancy [030411 krb]
 		       Pseudogene ?Pseudogene XREF GO_term // new [030801 krb]
-		       Phenotype ?Phenotype XREF GO_term // added for Erich, [020128 dl]
+		       Phenotype  ?Phenotype  XREF GO_term // added for Erich, [020128 dl]
 		       Index Ancestor   ?GO_term XREF Descendent // added for Lincoln [020709 [krb]
                	             Descendent ?GO_term XREF Ancestor
 		       Locus ?Locus XREF GO_term // added by krb 020905
@@ -756,25 +756,26 @@
 ?Sequence DNA UNIQUE ?DNA UNIQUE Int		// Int is the length
 		// if you want to register a length without a DNA sequence, then use a dummy sequence object, e.g. "-"  
 		// This ensures that when a real sequence appears, its length dominates.
-	  SMap S_Parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF Genomic_non_canonical 
-	                       Genomic_parent   UNIQUE ?Sequence XREF Nongenomic
+	  SMap S_parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF Genomic_non_canonical 
+			       Genomic_parent   UNIQUE ?Sequence XREF Nongenomic
 			       AGP_parent       UNIQUE ?Sequence XREF AGP_fragment // added to hold briggsae data [krb 020726]
-	       S_Child Homol_data ?Homol_data XREF Sequence UNIQUE Int UNIQUE Int #SMap_info
-		       Feature_data ?Feature_data XREF Sequence UNIQUE Int UNIQUE Int #SMap_info
+	       S_child CDS        ?CDS        XREF Sequence UNIQUE Int UNIQUE Int #SMap_info  // For new ?CDS class [031104 krb]
+		       Transcript ?Transcript XREF Sequence UNIQUE Int UNIQUE Int #SMap_info  // for new ?Transcript class [021126 krb]
+		       Pseudogene ?Pseudogene XREF Sequence UNIQUE Int UNIQUE Int #SMap_info  // For new ?Pseudogene class [030801 krb]
+		       Transposon ?Transposon XREF Sequence UNIQUE Int UNIQUE Int #SMap_info  // for transposons   [020128 dl]
 		       Genomic_non_canonical ?Sequence XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info
-		       PCR_product ?PCR_product XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info      // for Lincoln RNAi  [010226 dl]
 		       Nongenomic ?Sequence XREF Genomic_parent UNIQUE Int UNIQUE Int #SMap_info            // for Lincoln RNAi  [010226 dl]
+		       PCR_product ?PCR_product XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info      // for Lincoln RNAi  [010226 dl]
 		       RNAi ?RNAi XREF Sequence UNIQUE Int UNIQUE Int #SMap_info                            // for Lincoln RNAi  [001213 dl]
 		       Operon ?Operon XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info                // for Operon data   [dl]
-		       Transposon ?Transposon XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info        // for transposons   [020128 dl]
+     		       AGP_fragment ?Sequence XREF AGP_parent Int UNIQUE Int #SMap_info			     // added for Briggsae data [020726 krb]
+     		       UTR ?UTR XREF Canonical_parent Int UNIQUE Int #SMap_info				     // added for new UTR model [020729 krb]
+		       Allele ?Allele XREF Sequence UNIQUE Int UNIQUE Int #SMap_info			     // New SMapped Allele class [021217 krb]
 		       Microarray_aff ?Microarray_aff XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info //for Wen's Affymetrix model [020614 krb] 
 		       Oligo_set ?Oligo_set XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info	     //added for Oligo_set class
-     		       AGP_fragment ?Sequence XREF AGP_parent Int UNIQUE Int #SMap_info			     // added for Briggsae data [020726 krb]
                        Feature_object ?Feature XREF Sequence UNIQUE Int UNIQUE Int #SMap_info		     // dl feature play
-     		       UTR ?UTR XREF Canonical_parent Int UNIQUE Int #SMap_info				     // added for new UTR model [020729 krb]
-		       Transcript_child ?Transcript XREF Sequence UNIQUE Int UNIQUE Int #SMap_info	     // for new ?Transcript class [021126 krb]
-		       Allele ?Allele XREF Sequence UNIQUE Int UNIQUE Int #SMap_info			     // New SMapped Allele class [021217 krb]
-		       Pseudogene ?Pseudogene XREF Sequence UNIQUE Int UNIQUE Int #SMap_info		     // For new ?Pseudogene class [030801 krb]
+		       Feature_data ?Feature_data XREF Sequence UNIQUE Int UNIQUE Int #SMap_info
+		       Homol_data ?Homol_data XREF Sequence UNIQUE Int UNIQUE Int #SMap_info
 	  Structure  From Source UNIQUE ?Sequence XREF Subsequence
 			  Source_exons Int UNIQUE Int // start at 1 
 			  // WARNING: is this still needed when ?CDS class is present???
@@ -809,7 +810,7 @@
 			Locus_other_seq ?Locus XREF Other_sequence       // dl 001128
 			Paired_read ?Sequence XREF Paired_read          // dl 020110
 	  		Reference ?Paper XREF Sequence
-			Expr_pattern ?Expr_pattern XREF 
+			Expr_pattern ?Expr_pattern XREF Sequence
 			Interacts_with_sequence ?Sequence XREF Interacts_with_sequence #Evidence // for future interaction data [020704 krb]
 			Interacts_with_protein ?Protein XREF Interacts_with_sequence #Evidence // for future interaction data [020704 krb]
 			Confidential_remark ?Text
@@ -847,12 +848,10 @@
 			Predicted_3 ?Method Int Int UNIQUE Float // (x, x+1) or (x, x-1)
 	  Map ?Map XREF Sequence #Map_position		// use in particular for Genomic_canonical
 	  Interpolated_map_position UNIQUE ?Map UNIQUE Float // new for updated CDS-based interpolated map positions [krb 030502]
-          Drives_transgene ?Transgene XREF Driven_by_sequence
-	  Transgene_product ?Transgene XREF Worm_sequence
           Oligo ?Oligo XREF In_sequence Int UNIQUE Int  // for OSP and human mapping mostly
 	  Defines_feature ?Feature XREF Defined_by_sequence #Evidence       // Feature data model [dl 030304]
-	  Sequence_features ?Feature XREF Part_of_gene #Evidence            // Feature data model [dl 030304]
 	  Assembly_tags	Text Int Int Text                                   // type, start, stop, comment
+	  Gene_regulation Cis_regulator    ?Gene_regulation XREF Cis_regulator_seq // new for Wen
 	  Homol	DNA_homol ?Sequence XREF DNA_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		Pep_homol ?Protein XREF DNA_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		Motif_homol ?Motif XREF DNA_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
@@ -861,6 +860,8 @@
 			// distinct Worm_EST and Worm_genomic columns, use ?Method objects
 			// Worm_EST_Blastn and Worm_genomic_Blastn.
           Method UNIQUE ?Method
+
+
 
 /////////////////////////////////////////////
 //
@@ -952,24 +953,31 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-?CDS	SMap S_parent Sequence UNIQUE ?Sequence XREF CDS_child      // changed into S_parent Sequence UNIQUE [020311 kj]
-	     S_child PCR_product ?PCR_product XREF Sequence Int UNIQUE Int #SMap_info // added [011030 krb]
-                     RNAi ?RNAi XREF Expressed_seq UNIQUE Int UNIQUE Int #SMap_info   // added [011210 krb]
+?CDS	Evidence #Evidence
+	SMap S_parent Sequence UNIQUE ?Sequence XREF CDS      // changed into S_parent Sequence UNIQUE [020311 kj]
 	Structure Source_exons Int UNIQUE Int
 	DB_info Protein_id ?Sequence UNIQUE Text UNIQUE Int // DB_info tag added [011030 krb]
 		DB_remark ?Text #Evidence
-	Gene_info Gene UNIQUE ?Gene XREF CDS // when live 
-		  Gene_history UNIQUE ?Gene XREF CDS_history // when dead
+//	Gene_info Gene UNIQUE ?Gene XREF CDS // when live 
+//		  Gene_history UNIQUE ?Gene XREF CDS_history // when dead
 	Origin	From_laboratory UNIQUE ?Laboratory
 		Species UNIQUE ?Species
 		Genetic_code UNIQUE ?Genetic_code // needed for one gene with selenocysteine!
+	Properties Coding CDS UNIQUE Int UNIQUE Int
+			  CDS_predicted_by ?Method Float // score of method
+			  Confirmed_by #Gene_confirmation       // added [011030 krb]
+		   Start_not_found
+		   End_not_found
+	Gene_regulation Trans_regulator ?Gene_regulation XREF Trans_regulator_seq // new for Wen [030804 krb]
+                        Trans_target    ?Gene_regulation XREF Trans_regulated_seq // new for Wen
+                        Cis_target      ?Gene_regulation XREF Cis_regulated_seq  // new for Wen
 	Visible Corresponding_transcript UNIQUE ?Transcript XREF Corresponding_CDS // links CDS' to new-style ?Transcript
                                                                                    // objects, 1-to-1 relationship
 		Corresponding_protein UNIQUE ?Protein XREF Corresponding_CDS
 		Corresponding_PCR_product ?PCR_product XREF Overlaps_CDS // added for PCR mappings [010419 dl]
 		Matching_cDNA ?Sequence XREF Matching_CDS
 		Matching_UTR ?UTR XREF Matching_CDS // added for UTR model [krb 020729]
-		Orthologue ?Sequence XREF Orthologue ?Species #Evidence  // dl 030304
+		Orthologue ?CDS XREF Orthologue ?Species #Evidence  // dl 030304
 		Expr_pattern ?Expr_pattern XREF Sequence
                 RNAi_result ?RNAi XREF Predicted_gene // added for Lincoln RNAi [001213 dl]
         	Drives_transgene ?Transgene XREF Driven_by_CDS
@@ -981,19 +989,10 @@
 		Brief_identification UNIQUE ?Text #Evidence
 		Confidential_remark ?Text
 		Remark ?Text #Evidence
+	Sequence_features ?Feature XREF Part_of_gene #Evidence            // Feature data model [dl 030304]
  	Interpolated_map_position UNIQUE ?Map UNIQUE Float 
-	Gene_regulation Trans_regulator  ?Gene_regulation XREF Trans_regulator_seq // new for Wen [030804 krb]
-                        Cis_regulator    ?Gene_regulation XREF Cis_regulator_seq // new for Wen
-                        Trans_target     ?Gene_regulation XREF Trans_regulated_seq // new for Wen
-                        Cis_target       ?Gene_regulation XREF Cis_regulated_seq  // new for Wen
-	Properties	Coding	CDS UNIQUE Int UNIQUE Int
-				CDS_predicted_by ?Method Float // score of method
-				Confirmed_by #Gene_confirmation       // added [011030 krb]
-			End_not_found
-			Start_not_found
-	Homol Homol_homol ?Homol_data XREF DNA_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
-	// Homol tag is just here for now to deal with CDS objects being created from BLAT_EMBL...there may be
-	// a better way of dealing with this [krb 031103]
+	Drives_transgene  ?Transgene XREF Driven_by_CDS
+	Transgene_product ?Transgene XREF Worm_CDS
         Method UNIQUE ?Method
 
 
@@ -1012,7 +1011,8 @@
 //
 ///////////////////////////////////////////////////////////////////
 
-?Transcript     SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF Transcript_child      
+?Transcript     Evidence #Evidence
+		SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF Transcript
                 Structure Source_exons Int UNIQUE Int
 		DB_info DB_remark ?Text #Evidence // was missing from first draft of Transcript class krb
 			Database ?Database ?Text ?Accession_number XREF Transcript UNIQUE Int // added for Lincoln [030228 krb]
@@ -1024,7 +1024,7 @@
 			Allele ?Allele XREF Transcript // added to fit two alleles of RNA genes [021127 krb]
 			Orthologue ?Transcript XREF Orthologue ?Species #Evidence  // [030310 krb]
                         Matching_cDNA ?Sequence XREF Matching_transcript #Evidence // to attach non-coding RNA genes to matching ESTs
-			Corresponding_CDS UNIQUE ?Sequence XREF Corresponding_transcript // new tag for 1-2-1 relationships with coding genes
+			Corresponding_CDS UNIQUE ?CDS XREF Corresponding_transcript // new tag for 1-2-1 relationships with coding genes
                         Reference ?Paper XREF Transcript                           // [020306 kj]
 			RNAi_result ?RNAi XREF Transcript //was missing from model [021126 krb]
 			GO_term ?GO_term XREF Transcript ?GO_code #Evidence // [030411 krb]
@@ -1061,7 +1061,7 @@
 
 
 ?Pseudogene     Evidence #Evidence
-                SMap S_Parent UNIQUE Sequence UNIQUE ?Sequence XREF Pseudogene      
+                SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF Pseudogene      
                 Structure Source_exons Int UNIQUE Int
                 DB_info DB_remark ?Text #Evidence
                         Database ?Database ?Text ?Accession_number XREF Pseudogene UNIQUE Int 
@@ -1099,7 +1099,8 @@
 ///////////////////////////////////////////////////////////////////////////
 
 
-?Transposon SMap S_Parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF Transposon
+?Transposon Evidence #Evidence
+	    SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF Transposon
 	    Source_exons Int UNIQUE Int // added for consistency with other 'gene' classes
 	    Species UNIQUE ?Species
             LTR_region UNIQUE Int UNIQUE Int
@@ -1110,7 +1111,7 @@
 
 
 
-?Homol_data SMap S_Parent UNIQUE Sequence UNIQUE ?Sequence
+?Homol_data SMap S_parent UNIQUE Sequence UNIQUE ?Sequence
 	    Homol DNA_homol ?Sequence XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		  Pep_homol ?Protein XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		  Motif_homol ?Motif XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
@@ -1118,7 +1119,7 @@
 
 
 
-?Feature_data SMap S_Parent UNIQUE Sequence UNIQUE ?Sequence
+?Feature_data SMap S_parent UNIQUE Sequence UNIQUE ?Sequence
 	      Feature ?Method Int Int UNIQUE Float UNIQUE Text #Feature_info
               Method ?Method // added for Lincoln RNAi [001213 dl]
 	      Splices	Confirmed_intron  Int Int #Splice_confirmation
@@ -1127,15 +1128,15 @@
                // keep the same model as in Sequence, so same code works
 
 
-?Feature SMap S_Parent UNIQUE Sequence UNIQUE ?Sequence
+?Feature SMap S_parent UNIQUE Sequence UNIQUE ?Sequence
          Flanking_sequences UNIQUE ?Sequence UNIQUE Text UNIQUE Text
-         Visible	    Description ?Text
-			    Remark ?Text #Evidence
+         Visible    Description ?Text
+		    Remark ?Text #Evidence
 	 Defined_by Defined_by_sequence ?Sequence XREF Defines_feature #Evidence
-		    Defined_by_paper ?Paper XREF Feature #Evidence
-		    Defined_by_person ?Person
-		    Defined_by_author ?Author
-	 Part_of_gene ?Sequence XREF Sequence_features  #Evidence
+		    Defined_by_paper    ?Paper XREF Feature #Evidence
+		    Defined_by_person   ?Person
+		    Defined_by_author   ?Author
+	 Part_of_gene ?CDS XREF Sequence_features  #Evidence
 	 Annotation UNIQUE ?LongText		// added for data attribution [030220 dl]
          Method UNIQUE ?Method
 
@@ -1193,7 +1194,7 @@
           Origin   Species UNIQUE ?Species   //XREF Protein in geneace
                    Wormpep History Int Text ?Text //new history logging [020801 krb]
                    Live       // new tag to replace use of 'Inactive' krb 06/12/01
-          Visible       Corresponding_DNA ?Sequence XREF Corresponding_protein
+          Visible       Corresponding_CDS ?CDS XREF Corresponding_protein
                         Reference ?Paper XREF Protein
                         Expr_pattern ?Expr_pattern XREF Protein
                         Interacts_with_sequence ?Sequence XREF Interacts_with_protein #Evidence // for future interaction data [020704 krb]
@@ -1338,7 +1339,8 @@
 // removed localisation tag [010927 krb]
 // Added 'Curated_by' line for Sylvia [010927 krb]
 
-?Expr_pattern	Expression_of	Sequence ?Sequence XREF Expr_pattern
+?Expr_pattern	Expression_of	CDS        ?CDS XREF Expr_pattern // for coding genes
+				Sequence   ?Sequence XREF Expr_pattern // for clones???
 				Pseudogene ?Pseudogene XREF Expr_pattern // new [030801 krb]
 				Clone ?Clone XREF Expr_pattern
 				Locus ?Locus XREF Expr_pattern
@@ -1591,13 +1593,13 @@
 
 ?Transgene      Evidence #Evidence
 		Summary UNIQUE ?Text //Searchable description of the transgene
-		Driven_by Driven_by_Sequence ?Sequence XREF Drives_transgene Text //driving promoter
-			  Driven_by_Locus    ?Locus    XREF Drives_transgene	
+		Driven_by Driven_by_CDS   ?CDS   XREF Drives_transgene Text //driving promoter
+			  Driven_by_Locus ?Locus XREF Drives_transgene	
 		Reporter_product GFP
 				 LacZ
 			         Other_reporter ?Text
 				 Worm_gene ?Locus XREF Transgene_product Text
-				 Worm_sequence ?Sequence XREF Transgene_product Text
+				 Worm_CDS  ?CDS   XREF Transgene_product Text
 		Isolation Author ?Author
 			  Clone ?Clone XREF Transgene Text //injected clone conc.
 			  Fragment Text Text //injected DNA fragment conc. 
@@ -1612,7 +1614,7 @@
 		Location ?Laboratory #Lab_Location //Which Labs have the transgene.
 		Strain ?Strain XREF Transgene //All strains in CGC with the transgene.
 		Map ?Map  #Map_position 
-		Mapping_data 2_point ?2_point_data 
+		Mapping_data Two_point ?Two_point_data 
 			     Multi_point ?Multi_pt_data
 		Phenotype	?Text	//Phenotype should be described as "Unc. With other ..."
 		Rescue ?Locus XREF Rescued_by_Transgene ?Allele XREF Rescued_by_Transgene
@@ -1624,7 +1626,7 @@
 
 // RNAi from Lincoln Stein 001213
 
-?RNAi   SMap S_Parent UNIQUE Sequence UNIQUE ?Sequence XREF RNAi       // canonical parent (reliable)
+?RNAi   SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF RNAi       // canonical parent (reliable)
 			     PCR_product UNIQUE ?PCR_product XREF RNAi // primer pair (reliable)
         Method UNIQUE ?Method
         Experiment      Laboratory ?Laboratory
@@ -1635,7 +1637,7 @@
                                             Injection              //RL [010327]
                                             Soaking                //RL [010327]
                                             Transgene_expression   //RL [010327]
-        Inhibits	Predicted_gene ?Sequence XREF RNAi_result  #Evidence // "gene" parent (unreliable)
+        Inhibits	CDS ?CDS XREF RNAi_result  #Evidence // "gene" parent (unreliable)
 			Locus ?Locus   XREF RNAi_result #Evidence           //RL [010327]
 			Transcript ?Transcript XREF RNAi_result #Evidence // krb [021126]
 			Pseudogene ?Pseudogene XREF RNAi_result #Evidence // new [030801 krb]
@@ -1654,15 +1656,15 @@
 
 // New Class from Lincoln [010226]
 
-?PCR_product SMap S_Parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF PCR_product
- 		  S_Child RNAi ?RNAi XREF PCR_product UNIQUE Int UNIQUE Int #SMap_info
+?PCR_product SMap S_parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF PCR_product
+ 		  S_child RNAi ?RNAi XREF PCR_product UNIQUE Int UNIQUE Int #SMap_info
 			  Expr_profile ?Expr_profile XREF PCR_product UNIQUE Int UNIQUE Int #SMap_info// added for new Expr_profile class [010912 krb]
  	     Method UNIQUE ?Method
- 	     Overlaps_CDS ?Sequence XREF Corresponding_PCR_product  // added for Dan PCR mappings [010419 dl]
+ 	     Overlaps_CDS ?CDS XREF Corresponding_PCR_product  // added for Dan PCR mappings [010419 dl]
 	     Overlaps_pseudogene ?Pseudogene XREF Corresponding_PCR_product // new [030801 krb]
 	     Oligo ?Oligo XREF PCR_product UNIQUE Int UNIQUE Int
  	     Assay_conditions ?LongText
-	     From_laboratory ?Laboratory                            // added for Lincoln Orfeome attribution [020304 dl]
+	     From_laboratory UNIQUE ?Laboratory                            // added for Lincoln Orfeome attribution [020304 dl]
 	     Amplified Int
 	     Remark ?Text #Evidence
 	     SNP_locus ?Locus XREF SNP_assay	                    // added for Todd [171001 krb]
@@ -1687,9 +1689,9 @@
 
 // New Class to handle operon data [010928 dl]
 
-?Operon SMap S_Parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF Operon
+?Operon SMap S_parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF Operon
 	Species UNIQUE ?Species
-	Contains_CDS ?Sequence XREF Contained_in_operon  #Trans_splice_leader
+	Contains_CDS ?CDS XREF Contained_in_operon  #Trans_splice_leader
 	Contains_pseudogene ?Pseudogene XREF Contained_in_operon  #Trans_splice_leader // new [030801 krb]
 	Reference ?Paper XREF Operon
 	Method UNIQUE ?Method
@@ -1760,7 +1762,7 @@
 
 //Will eventually replace Microarray_aff class. 
 //Used for Affymetrix and other oligo-based arrays. 
-?Oligo_set      SMap S_Parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF Oligo_set
+?Oligo_set      SMap S_parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF Oligo_set
                 Microarray_results ?Microarray_results XREF Oligo_set 
                 Oligo ?Oligo     //used in case oligos are specified
                 Remark ?Text    #Evidence
@@ -1771,7 +1773,7 @@
 
 
 
-?Microarray_aff SMap S_Parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF Microarray_aff
+?Microarray_aff SMap S_parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF Microarray_aff
                 Microarray_result ?Microarray_result XREF Microarray_aff // Added to merge with SMD microarray.
 		Reference ?Paper //Describes the design of the chip
                 Remark ?Text #Evidence
@@ -1855,9 +1857,9 @@
 
 // New UTR data model for Lincoln's UTR data.  [krb 020729]
 
-?UTR SMap S_Parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF UTR
-     Source_Exons Int UNIQUE Int // start at 1
-     Matching_CDS ?Sequence XREF Matching_UTR
+?UTR SMap S_parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF UTR
+     Source_exons Int UNIQUE Int // start at 1
+     Matching_CDS ?CDS XREF Matching_UTR
      Properties 5_UTR #Evidence
                 3_UTR #Evidence
      Species UNIQUE ?Species
@@ -2009,6 +2011,7 @@
                   Allele ?Allele XREF Reference #Evidence
                   Rearrangement ?Rearrangement XREF Reference #Evidence
                   Sequence ?Sequence XREF Reference #Evidence
+		  CDS ?CDS XREF Reference #Evidence
 		  Transcript ?Transcript XREF Reference #Evidence
 		  Pseudogene ?Pseudogene XREF Reference #Evidence // new [030801 krb]
                   Strain ?Strain XREF Reference #Evidence
@@ -2016,8 +2019,6 @@
                   Protein ?Protein XREF Reference #Evidence
                   Expr_pattern ?Expr_pattern XREF Reference #Evidence
                   Expr_profile ?Expr_profile XREF Reference #Evidence
-                                // Added to fit new Expr_profile class
-                                // [010912 krb]
                   Cell ?Cell XREF Reference #Evidence
                   Cell_group ?Cell_group XREF Reference #Evidence
                   Life_stage ?Life_stage XREF Reference #Evidence
@@ -2114,15 +2115,15 @@
                            Other_method    ?Text
                  Regulator Regulator_info  Allele                  ?Allele 
                                            RNAi                    ?RNAi
-                           Trans_regulator_locus   ?Locus          XREF    Trans_regulator #Boolean
-                           Trans_regulator_seq     ?Sequence       XREF    Trans_regulator #Boolean
-                           Cis_regulator_seq       ?Sequence       XREF    Cis_regulator   #Boolean
-                           Other_regulator         ?Text                                   #Boolean        
-                 Target    Target_info     Expr_pattern            ?Expr_pattern
-                           Trans_regulated_locus   ?Locus          XREF    Trans_target    #Boolean
-                           Trans_regulated_seq     ?Sequence       XREF    Trans_target    #Boolean
-                           Cis_regulated_seq       ?Sequence       XREF    Cis_target      #Boolean
-                           Other_regulated         ?Text                                   #Boolean
+                           Trans_regulator_locus   ?Locus     XREF    Trans_regulator #Boolean
+                           Trans_regulator_seq     ?CDS       XREF    Trans_regulator #Boolean
+                           Cis_regulator_seq       ?Sequence  XREF    Cis_regulator   #Boolean
+                           Other_regulator         ?Text                              #Boolean        
+                 Target    Target_info     Expr_pattern  ?Expr_pattern
+                           Trans_regulated_locus   ?Locus     XREF    Trans_target    #Boolean
+                           Trans_regulated_seq     ?CDS       XREF    Trans_target    #Boolean
+                           Cis_regulated_seq       ?CDS       XREF    Cis_target      #Boolean
+                           Other_regulated         ?Text                              #Boolean
                  Result    Positive_regulate #GR_condition
                            Negative_regulate #GR_condition
                  Remark    ?Text #Evidence
