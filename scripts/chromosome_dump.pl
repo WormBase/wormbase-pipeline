@@ -24,16 +24,15 @@ our $tace   = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
 our $giface = "/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_4/giface";
 our $database = "/wormsrv2/autoace";
 our $dump_dir = "/wormsrv2/autoace/CHROMOSOMES";
-our ($opt_d,$opt_g,$opt_z,$opt_h);
-getopts("dgzh");
+our ($opt_d,$opt_g,$opt_e,$opt_h);
+getopts("dgeh");
 
 
 #############################
 # display help if required  #
 #############################
 
-&show_help if ($opt_h);
-&show_help if (!$opt_h && !$opt_d && !$opt_g && !$opt_z);
+&show_help if (!$opt_d && !$opt_e && !$opt_g && !$opt_h);
 
 ##################################################
 # Open logfile                                   #
@@ -57,7 +56,7 @@ print LOGFILE "\n\n";
 
 &dump_dna  if ($opt_d);
 &dump_gff  if ($opt_g);
-&zip_files if ($opt_z);
+&zip_files if ($opt_e || $opt_h);
 
 
 # say goodnight Barry
@@ -97,6 +96,7 @@ quit
 END
 
   &execute_ace_command($command,$tace,$database);
+  print LOGFILE "Finished dumping DNA\n\n";
 }
 
 
@@ -117,6 +117,34 @@ quit
 END
 
   &execute_ace_command($command,$giface,$database);
+  print LOGFILE "Finished dumping GFF files\n\n";
+}
+
+##########################
+# zip up files
+###########################
+
+sub zip_files{
+	foreach my $chr ("I", "II", "III", "IV", "V", "X"){
+		my $dna_file = "$dump_dir"."/CHROMOSOME_".$chr.".dna";
+		my $gff_file = "$dump_dir"."/CHROMOSOME_".$chr.".gff";
+		if ($opt_e){
+			if (-e $dna_file."gz"){
+				print LOGFILE "Removing existing *.dna.gz file\n";
+				system ("rm -f $dna_file") && die "Couldn't remove files\n";
+			}
+			print LOGFILE "Compressing $dna_file\n";
+			system ("/bin/gzip $dna_file") if ($opt_e);
+		}
+		if ($opt_h){
+ 			if (-e $gff_file."gz"){
+                        	print LOGFILE "Removing existing *.gff.gz file\n";
+                        	system ("rm -f $gff_file") && die "Couldn't remove files\n";
+	                }
+			print LOGFILE "Compressing $gff_file\n";
+                        system ("/bin/gzip $gff_file") if ($opt_h);
+		}
+	}	
 }
 
 
@@ -138,7 +166,7 @@ sub execute_ace_command {
 ######################################################
 
 sub show_help {
-  system ('perldoc',$0);
+  system ('perldoc',$0) && die "Couldn't execute perldoc\n";
   exit(0);
 }
 
@@ -186,8 +214,15 @@ chromosome_dump.pl arguments:
 
 =item *
 
-<-z> (optional) compresses all dna and gff files using gzip (will remove 
+<-e> (optional) compresses any dna files using gzip (will remove 
 any existing files first).
+
+=back
+
+=item *
+                        
+<-h> (optional) compresses any gff files using gzip (will remove        
+any existing files first).      
 
 =back
 
