@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam aged 12 and a half
 #
-# Last updated on: $Date: 2002-12-18 11:13:11 $
+# Last updated on: $Date: 2003-03-27 14:12:40 $
 # Last updated by: $Author: krb $
 #
 # see pod documentation at end of file for more information about this script
@@ -370,13 +370,15 @@ check_predicted_genes.pl -database /wormsrv2/camace
 
 =over 4
 
-=item OPTIONAL arguments: -log <logfile>, -verbose
+=item OPTIONAL arguments: -log <logfile>, -verbose, -basic
 
 If the file specified by -log already exists, the script will append the output to that file.
 Otherwise it will attempt to write to a new file by that name.  If no log file is specified,
 the script will generate a log file in /wormsrv2/logs.
 
 If -verbose is specified, output will be written to screen as well as to the log file
+
+If -basic is specified, the script will skip some simple size checks (small introns and small genes)
 
 =back
 
