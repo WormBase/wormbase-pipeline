@@ -14,7 +14,7 @@
 # pfetch is done in batches of 2000, any greater and nothing comes back!
 #
 # Last updated by: $Author: ar2 $                  
-# Last updated on: $Date: 2003-02-19 13:46:40 $    
+# Last updated on: $Date: 2003-03-27 17:05:38 $    
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -98,15 +98,15 @@ while ( $lower <= $last_ind )
 		  $count++;
 		  # this is an AAMXXXXX.X style id that we know about
 		  if( $_ =~ m/\w+_CAEEL/) {
-		    $protid_data{$aaaID}[3] = $&;
-		    if( $_ =~ m/([OPQ]\d\w{4})\s/ ) {
-		      $protid_data{$aaaID}[2] = $1;
+		    $protid_data{$aaaID}[3] = $&;           # ID
+		    if( $_ =~ m/\s([OPQ]\d\w{4})\s/ ) {
+		      $protid_data{$aaaID}[2] = $1;         # AC 
 		    }
 		    else {
-		      print LOG "$aaaID has swissprot but no AC\n";
+		      print LOG "$aaaID has SwissProt ID but no AC\n";
 		    }
 		  }
-		  elsif( $_ =~ m/([OPQ]\d\w{4})\s/ ) {
+		  elsif( $_ =~ m/>([OPQ]\d\w{4})\s/ ) {
 		    $protid_data{$aaaID}[2] = $1;
 		    $protid_data{$aaaID}[3] = $1;
 		  }
