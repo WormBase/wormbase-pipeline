@@ -12,8 +12,8 @@
 # 3) Archives old GFF_SPLITS directory
 # 4) Makes wormsrv2/current_DB point at latest release
 #
-# Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2002-08-23 15:44:41 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2002-11-11 11:38:56 $
 
 
 
@@ -84,7 +84,7 @@ system("GFFsplitter -a") && die "Couldn't run GFFsplitter -a\n";
 
 # run locus2seq.pl
 print LOG "Running locus2seq.pl\n\n";
-system("locus2seq.pl") && die "Couldn't run locus2seq.pl -a\n";
+system("locus2seq.pl -c ") && die "Couldn't run locus2seq.pl -a\n";
 
 
 ##################
