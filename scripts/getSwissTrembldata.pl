@@ -5,7 +5,7 @@
 # dl
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2002-09-05 12:08:08 $
+# Last edited on: $Date: 2002-09-05 12:12:46 $
 
 
 use lib "/wormsrv2/scripts/";
@@ -35,7 +35,7 @@ open (OUTPUT,   ">/nfs/disk100/wormpub/analysis/SWALL/output_autoace");
 
 # Grab accessions and sequence versions from autoace
 my $command=<<EOF;
-Table-maker -p "$dbdir/wquery/accesssion2clone.def"
+Table-maker -p "$dbdir/wquery/accession2clone.def"
 quit
 EOF
 
