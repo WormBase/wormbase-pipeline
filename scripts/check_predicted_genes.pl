@@ -236,7 +236,7 @@ sub test_gene_sequence_for_errors{
       my $previous_sequence = substr($dna, $j-11,10);
       my $following_sequence = substr($dna, $j+2, 10);
       my $offending_codon = substr($dna, $j-1, 3);
-      print "Gene error - $gene: contains internal stop codon at position $j ...$previous_sequence $offending_codon $following_sequence...\n";      
+      print "Gene error - $gene: internal stop codon at position $j ...$previous_sequence $offending_codon $following_sequence...\n";      
     }
   }			       
 
