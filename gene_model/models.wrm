@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.9 2001-09-12 12:56:18 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.10 2001-09-19 09:26:21 dl1 Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -611,14 +611,15 @@
 
 //
 // GO_term class added 5/1/01 Lincoln Stein
+// modified 19/09/01 dl
 // 
 
 ?GO_term Name ?Text
 	 Definition ?Text
          Term ?Text
-	 Type UNIQUE Process
-                     Subcellular_location
-		     Function
+	 Type UNIQUE Biological_process
+                     Cellular_component
+		     Molecular_function
 	 Child Instance ?GO_term XREF Instance_of
                Component ?GO_term XREF Component_of
 	 Parent Instance_of ?GO_term XREF Instance
