@@ -19,7 +19,7 @@ use strict;
 ###########
 # options #
 ###########
-#our($opt_a,$opt_o,$opt_e,$opt_i,$opt_w,$opt_l,$opt_h);
+#our($opt_a,$opt_o,$opt_e,$opt_i,$opt_l,$opt_h);
 
 use vars qw / $opt_a $opt_o $opt_e $opt_i $opt_h /;
 
@@ -60,10 +60,10 @@ print LOG "# cvs version: $cvs_version\n\n";
 print LOG "WormBase version : WS${WS_version}\n";
 
 print LOG "======================================================================\n";
-print LOG "  -a : executes all of the following -eiolw\n" if ($opt_a);
-print LOG "  -e : executes estcheck\n"                  if ($opt_e);
-print LOG "  -i : executes introncheck\n"               if ($opt_i);
-print LOG "  -o : executes overlapcheck\n"              if ($opt_o);
+print LOG "  -a : executes all of the following -e -i -o\n" if ($opt_a);
+print LOG "  -e : executes estcheck\n"                      if ($opt_e);
+print LOG "  -i : executes introncheck\n"                   if ($opt_i);
+print LOG "  -o : executes overlapcheck\n"                  if ($opt_o);
 print LOG "======================================================================\n";
 print LOG "\n";
 
