@@ -6,8 +6,8 @@
 #
 # by Dan Lawson
 #
-# Last updated by: $Author: krb $                      
-# Last updated on: $Date: 2004-10-20 12:03:04 $        
+# Last updated by: $Author: pad $                      
+# Last updated on: $Date: 2004-11-01 10:46:52 $        
 
 use strict;
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
@@ -156,8 +156,8 @@ close (OUTPUT);      # close the output filehandle
 ###############
 if($load){
   $log->write_to("Loading file to autoace\n");
-  my $command = "autoace_minder.pl -load $dbdir/acefiles/gene_confirmation_status.ace -tsuser interpro_motifs";
- 
+  my $command = "autoace_minder.pl -load $dbdir/acefiles/Y2H_connections.ace -tsuser interpro_motifs";
+
   my $status = system($command);
   if(($status >>8) != 0){
     $log->write_to("ERROR: Loading Y2H_connections.ace file failed \$\? = $status\n");
