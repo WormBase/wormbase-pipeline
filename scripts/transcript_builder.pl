@@ -6,8 +6,8 @@
 #
 # Script to make ?Transcript objects
 #
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2003-10-30 17:12:06 $  
+# Last updated by: $Author: krb $     
+# Last updated on: $Date: 2003-11-10 16:08:40 $  
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -232,7 +232,7 @@ foreach my $chrom ( @chromosomes ) {
       my($source, $x, $y ) = $coords->LocateSpan("CHROMOSOME_$chrom",$exons[0],$transcript{$exons[-1]});
       $transcript_span{"$gene.trans"} = [ ($exons[0],$transcript{$exons[-1]}) ];
       print ACE "Sequence \"$source\"\n";
-      print ACE "Method \"transcript\"\n";
+      print ACE "Method \"Coding_transcript\"\n";
 
       # parent object
       print ACE "\nSequence : \"$source\"\n";
