@@ -8,8 +8,8 @@
 #
 # N.B. Previously called gffcheck
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-08-13 10:05:13 $
+# Last updated by: $Author: dl1 $
+# Last updated on: $Date: 2004-10-08 12:31:08 $
 
 
 use Getopt::Std;
@@ -23,17 +23,18 @@ use strict;
 # options #
 ###########
 
-use vars qw / $opt_a $opt_o $opt_e $opt_i $opt_h /;
+use vars qw / $opt_a $opt_o $opt_e $opt_i $opt_t $opt_h /;
 
 $opt_a="";   # does all the following
 $opt_o="";   # performs overlapcheck.pl
 $opt_e="";   # performs estcheck 
 $opt_i="";   # performs introncheck
+$opt_t = ""; # performs TSL checks
 $opt_h="";   # Help/Usage page
 
 getopts ('aeioh');
 &usage if ($opt_h);
-if ($opt_a) { $opt_e = 1; $opt_i = 1; $opt_o = 1;}
+if ($opt_a) { $opt_e = 1; $opt_i = 1; $opt_t = 1; $opt_o = 1;}
 
 #################
 # set variables #
@@ -57,6 +58,7 @@ our $log;
 
 &runoverlapcheck if ($opt_o);
 
+&runTSLcheck     if ($opt_t);
 
 ##############################
 # Tidy up                    #
@@ -100,6 +102,12 @@ sub create_log_files{
 sub runestcheck {
   print LOG &runtime, ": Starting estcheck\n";
   system ("/wormsrv2/scripts/estcheck") && die "Can't run estcheck\n";
+  print LOG &runtime, ": Finished running\n\n";
+}
+
+sub runTSLcheck {
+  print LOG &runtime, ": Starting TSLcheck.pl\n";
+  system ("/wormsrv2/scripts/TSLcheck.pl") && die "Can't run TSLcheck.pl\n";
   print LOG &runtime, ": Finished running\n\n";
 }
 
@@ -155,6 +163,8 @@ post_build_checks.pl OPTIONAL arguments:
 =item -a, executes all of the following -eiowl
 
 =item -e, executes estcheck
+
+=item -t, executes TSLcheck
 
 =item -i, executes introncheck 
 
