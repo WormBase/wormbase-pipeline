@@ -17,7 +17,7 @@ our($verbose,$db_path,$log);
 
 GetOptions ("verbose"    => \$verbose,
 	    "database=s" => \$db_path,    
-	    "log"        => \$log);
+	    "log=s"        => \$log);
 
 # verbose mode
 # toggle reporting of genes with improper stop/start codons and/or genes which have length's 
