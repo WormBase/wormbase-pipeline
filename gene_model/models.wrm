@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.53 2002-05-03 08:47:19 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.54 2002-05-03 16:09:56 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -697,8 +697,9 @@
 			In_book #Paper
 			Contained_in ?Paper XREF Contains	// old form
 			Medline_acc UNIQUE Int
-			PMID UNIQUE Int				// added for Juan Carlos
+			PMID UNIQUE Int				// added for Juan Carlos		
         Author ?Author XREF Paper #Affiliation
+	Full_author_name ?Text  // added for Eimear [krb 020403]
 	Affiliation Text	// Authors' affiliation if available
         Brief_citation UNIQUE Text
         Abstract ?LongText
