@@ -266,7 +266,7 @@ sub findmatch {
             }
 
             else {
-                for (my $z = 1; $z < $count{$testmaster}; $z++) {
+                for (my $z = 1; $z <= $count{$testmaster}; $z++) {
                     my $masterstart = $structure{"$testmaster.$z"}->[0];
 		    my $masterend   = $structure{"$testmaster.$z"}->[1];
 		    my $slavestart  = $slave{$testslave}->[0];
@@ -282,7 +282,7 @@ sub findmatch {
     return @output;
 }
     
-###############
+#################
 
 sub find_database {
     
@@ -299,7 +299,7 @@ sub find_database {
     return @output;   
 }	
 
-###############
+#################
 
 sub sort_by_gene {  
 
