@@ -19,7 +19,7 @@ GetOptions (
 
 die "I need the password, please - try something like - \nbackup_mysql.pl -dbpass  xxxxxxxx\n" unless $dbpass;
 
-unless ( defined $dump_worm_dna or defined $dump_wormpep or defined $dump_brigpep ) {
+unless ( defined $dump_worm_dna or defined $dump_worm_pep or defined $dump_brigpep ) {
   $dump_worm_dna = 1; 
   $dump_worm_pep = 1;
   $dump_brigpep = 1;
