@@ -7,7 +7,7 @@
 # Script to convert cgc allele/lab links into ace file for geneace
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-12-10 10:16:04 $
+# Last updated on: $Date: 2002-12-17 12:40:56 $
 
 use strict;
 use lib "/wormsrv2/scripts/";                    
@@ -18,7 +18,7 @@ use Ace;
 ##############################
 # command-line options       #
 ##############################
-our ($help,$debug,$input);
+our ($help,$debug,$input,$log);
 my $maintainers = "All";
 
 GetOptions ("help"      => \$help,
@@ -38,6 +38,11 @@ if($debug){
 
 
 $|=1;
+
+
+&create_log_files;
+
+
 
 # hash to store allele 2 letter code and lab 2 letter codes
 my %alleles_labs;
@@ -69,11 +74,36 @@ foreach my $key (sort keys %alleles_labs){
 $db->close;
 
 
-
+close(LOG);
 exit(0);
 
+##############################################################
+#
+# Subroutines
+#
+##############################################################
 
-###########################################################
+sub create_log_files{
+
+  # Create history logfile for script activity analysis
+  $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
+
+  # create main log file using script name for
+  my $script_name = $1;
+  $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
+  my $rundate     = `date +%y%m%d`; chomp $rundate;
+  $log        = "/wormsrv2/logs/$script_name.$rundate.$$";
+
+  open (LOG, ">$log") or die "cant open $log";
+  print LOG "$script_name\n";
+  print LOG "started at ",`date`,"\n";
+  print LOG "=============================================\n";
+  print LOG "\n";
+
+}
+
+##########################################
+
 
 sub usage {
   my $error = shift;
@@ -102,20 +132,18 @@ __END__
 
 =back
 
-This script will convert the CGC file of strain information into ace format.
+This script will convert the CGC file of Laboratory/Allele information into ace format.
 It should be run against the file available at
 
-http://www.cbs.umn.edu/CGC/Strains/gophstrn
+http://www.cbs.umn.edu/CGC/Nomenclature/allele.htm
 
-The script will write two ace files to your current directory, one to be loaded 
-into geneace, and a second to be archived in /wormsrv1/geneace which will have 
-delete instructions for removing all the data you have just added.
+The script checks geneace for extra information and writes output to standard out.
 
 =over 4
 
 =item MANDATORY arguments:
 
--input Specify input file (CGC strain file)
+-input Specify input file (CGC Lab/allele info)
 
 =back
 
