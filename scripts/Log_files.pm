@@ -100,13 +100,13 @@ sub write_to
     print $fh "$string";
   }
 
+
 sub mail
   {
    my ($self, $recipient) = @_;
 
    my $fh = $self->{"FH"};
-   print $fh "\n\n-----------------------------------\n"   
-   print $fh "Finished at ",&Wormbase::runtime,"\n"; 
+   print $fh "\nFinished at ",&Wormbase::runtime,"\n\n***********************************\n\n"; 
    close $fh;
 
    $recipient = "All" unless $recipient;
@@ -114,5 +114,6 @@ sub mail
    my $script = $self->{"SCRIPT"};
    &Wormbase::mail_maintainer($script,$recipient,$file);
   }
+
 
 1;
