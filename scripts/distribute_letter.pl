@@ -9,7 +9,7 @@
 #                          /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/current/release_notes.txt/
 #
 # Last updated by: $Author: krb $                       
-# Last updated on: $Date: 2003-04-09 13:07:20 $         
+# Last updated on: $Date: 2004-03-18 17:43:05 $         
 
 
 use strict;                                     
@@ -70,8 +70,8 @@ print LOG "Updating symlink on FTP site\n";
 my $targetdir = "/nfs/disk69/ftp/pub/wormbase";  # default directory, can be overidden
 
 # delete the old symbolic link and make the new one
-system "rm -f $targetdir/current_release";
-system "cd $targetdir; ln -s $release current_release";
+system "rm -f $targetdir/development_release";
+system "cd $targetdir; ln -s $release development_release";
 
 ##############################################
 # Update pages using webpublish
