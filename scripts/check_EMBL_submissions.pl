@@ -7,6 +7,10 @@
 # clones. Entries which have failed to load or return are highlighted
 # and changes in sequence version are notified.
 
+# Last updated on: $Date: 2002-12-18 13:35:20 $
+# Last updated by: $Author: ck1 $
+
+
 use strict;
 use Getopt::Std;
 use IO::Handle;
