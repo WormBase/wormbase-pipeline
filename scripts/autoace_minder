@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.0 -w
+#!/usr/local/bin/perl5.6.1 -w
 #
 # autoace_minder
 # dl
@@ -6,7 +6,7 @@
 # Usage : autoace_minder [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2002-09-03 08:42:10 $
+# Last edited on: $Date: 2002-09-03 14:07:45 $
 
 
 #################################################################################
@@ -35,6 +35,7 @@ my $buildrna;		# Build wormrna
 my $blat;		# map similarities (BLAT jobs)
 my $addblat;		# parse (all) blat files
 my $addblatpartial;	# parse (EST|mRNA|EMBL) blat files
+my $addbriggsae;        # add briggsae ace files
 my $addhomol;           # parse similarity data from /ensembl_dump
 my $map;		# map PCR, RNAi and WTP
 my $full;		# Full release (used to do all the following)
@@ -65,6 +66,7 @@ GetOptions (
 	    "blat"           => \$blat,
 	    "addblat"        => \$addblat,
 	    "addblatpartial" => \$addblatpartial,
+	    "addbriggsae   " => \$addbriggsae,
 	    "addhomol"       => \$addhomol,
 	    "map"            => \$map,
 	    "full"           => \$full,
@@ -126,6 +128,7 @@ our %flag = (
 	     'B7'  => 'B7:Upload_BLAT_data',
 	     'B7A' => 'B7a:Upload_partial_BLAT_data',
 	     'B8'  => 'B8:Upload_wublast_data',
+	     'B9'  => 'B9:Upload_briggsae_data',
 	     'C1'  => 'C1:Dumped_GFF_files',
 	     'C2'  => 'C2:Split_GFF_files',
 	     'C3'  => 'C3:Map_PCR_products',
@@ -145,7 +148,7 @@ our ($WS_version,$WS_previous) = &get_WS_version;
 
 # deal with logfile issues
 our $logfile = "/wormsrv2/logs/autoace_minder.WS${WS_version}.${rundate}";
-our $logtype = "";
+our $logtype = "$ARGV[0]";
 open (LOG,">$logfile");
 LOG->autoflush();
 
@@ -208,11 +211,11 @@ $time = 1;
 &parse_blat_files_other if ($addblatpartial);
 &parse_blat_files       if ($addblat);
 
-# B7:Upload_wublast_data
+# B8:Upload_wublast_data & B9:Upload_briggsae_data
 # Requires: A1,A4,A5,B1
 
 &parse_homol_data       if ($addhomol);
-
+&parse_briggsae_data    if ($addbriggsae);
 
 
 #__ PROCESS SECTION __#
@@ -266,17 +269,20 @@ $time = 1;
 
 &make_agp          if ($agp);
 
- ##############################
- # mail $maintainer report    #
- ##############################
+##############################################
+# close log file and mail $maintainer report #
+##############################################
 
+$rundate    = `date +%y%m%d`; chomp $rundate;
+$runtime    = `date +%H:%M:%S`; chomp $runtime;
+print LOG "# Script finished    : $rundate $runtime\n";
 close LOG;
 
 &mail_maintainer("WormBase Report: $logtype",$maintainers,$logfile);
 
- ##############################
- # hasta luego                #
- ##############################
+##############################
+# hasta luego                #
+##############################
 
 exit(0);
 
@@ -1098,6 +1104,9 @@ sub parse_blat_files_nematode {
 #__ end parse_blat_files_nematode __#
 
 
+##################################
+# load BLASTX data
+#################################
 sub parse_homol_data {
     
     my $command;
@@ -1132,6 +1141,65 @@ sub parse_homol_data {
 
 }
 #__ end parse_homol_data __#
+
+
+##################################
+# load briggsae data
+#################################
+sub parse_briggsae_data {
+    
+    my $command;
+
+    # load four raw briggsae data files		   
+    $command = "pparse /wormsrv2/wormbase/briggsae/briggsae_cb25.agp8_DNA.ace\nsave\nquit\n"; 
+    open (WRITEDB, "| $tace -tsuser briggsae_assembly_data /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
+    print WRITEDB $command;
+    close WRITEDB;
+    
+    $command = "pparse /wormsrv2/wormbase/briggsae/briggsae_cb25.agp8_fosmid.ace\nsave\nquit\n"; 
+    open (WRITEDB, "| $tace -tsuser briggsae_assembly_data /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
+    print WRITEDB $command;
+    close WRITEDB;
+
+    $command = "pparse /wormsrv2/wormbase/briggsae/briggsae_cb25.agp8_agplink.ace\nsave\nquit\n"; 
+    open (WRITEDB, "| $tace -tsuser briggsae_assembly_data /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
+    print WRITEDB $command;
+    close WRITEDB;
+
+    $command = "pparse /wormsrv2/wormbase/briggsae/briggsae_cb25.agp8_sequence.ace\nsave\nquit\n"; 
+    open (WRITEDB, "| $tace -tsuser briggsae_assembly_data /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
+    print WRITEDB $command;
+    close WRITEDB;
+
+    # load gene prediction sets
+
+    $command = "pparse /wormsrv2/wormbase/briggsae/briggsae_cb25.agp8_genefinder.ace\nsave\nquit\n"; 
+    open (WRITEDB, "| $tace -tsuser briggsae_gene_prediction_data /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
+    print WRITEDB $command;
+    close WRITEDB;
+
+    $command = "pparse /wormsrv2/wormbase/briggsae/briggsae_cb25.agp8_fgenesh.ace\nsave\nquit\n"; 
+    open (WRITEDB, "| $tace -tsuser briggsae_gene_prediction_data /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
+    print WRITEDB $command;
+    close WRITEDB;
+
+    $command = "pparse /wormsrv2/wormbase/briggsae/briggsae_cb25.agp8_twinscan.ace\nsave\nquit\n"; 
+    open (WRITEDB, "| $tace -tsuser briggsae_gene_prediction_data /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
+    print WRITEDB $command;
+    close WRITEDB;
+
+    $command = "pparse /wormsrv2/wormbase/briggsae/briggsae_cb25.agp8_ensembl.ace\nsave\nquit\n"; 
+    open (WRITEDB, "| $tace -tsuser briggsae_gene_prediction_data /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
+    print WRITEDB $command;
+    close WRITEDB;
+
+    # upload_homol data log file in /logs
+    system ("touch $logdir/$flag{'B9'}");
+
+}
+#__ end parse_briggsae_data __#
+
+
 
 
 
@@ -1279,7 +1347,7 @@ sub logfile_details {
 
 
     print LOG "# autoace_minder\n\n";     
-    print LOG "# run details    : $rundate $runtime\n";
+    print LOG "# Script started    : $rundate $runtime\n";
     print LOG "\n";
     print LOG "WormBase version : WS${WS_version}\n";
     print LOG "Wormpep version  : wormpep${WS_version}\n\n";
@@ -1298,6 +1366,7 @@ sub logfile_details {
     print LOG "  -buildpep     : Build wormpep database\n"                                              if ($buildpep);
     print LOG "  -buildrna     : Build wormrna database\n"                                              if ($buildrna);
     print LOG "  -addhomol     : Load blast data into autoace\n"                                        if ($addhomol);
+    print LOG "  -addbriggsae  : Load briggsae data into autoace\n"                                     if ($addbriggsae);
     print LOG "  -ftp          : Move WS release to the external FTP site (Full public release)\n"      if ($ftp);
     print LOG "  -debug        : Verbose/Debug mode\n"                                                  if ($debug);
     print LOG "  -time         : Verbose/Timing mode\n"                                                 if ($time);
@@ -1335,6 +1404,7 @@ sub run_details {
     print "  -buildpep     : Build wormpep database\n"                                         if ($buildpep);
     print "  -buildrna     : Build wormrna database\n"                                         if ($buildrna);
     print "  -addhomol     : Load blast data into autoace\n"                                   if ($addhomol);
+    print "  -addbriggsae  : Load briggsae data into autoace\n"                                if ($addbriggsae);
     print "  -ftp          : Move WS release to the external FTP site (Full public release)\n" if ($ftp);
     print "  -debug        : Verbose/Debug mode\n"                                             if ($debug);
     print "  -time         : Verbose/Timing mode\n"                                            if ($time);
@@ -1539,6 +1609,10 @@ autoace_minder OPTIONAL arguments:
 =item -blat, map similarities (BLAT jobs)
 
 =item -addblat, parse BLAT files
+
+=item -addhomol, parse BLASTX and BLASTP data from pre-build
+
+=item -addbriggsae, parse briggsae assembly data and briggsae gene predictions
  
 =back
 
