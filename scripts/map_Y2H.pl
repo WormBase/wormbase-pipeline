@@ -1,13 +1,13 @@
-#!/usr/local/bin/perl5.8.0 
+#!/usr/local/bin/perl5.8.0 -w
 #
 # map_Y2H.pl
 #
-# Add information to Y2H objectsvia aceperl follows....
+# Add information to Y2H objects via aceperl follows....
 #
 # by Dan Lawson
 #
-# Last updated by: $Author: dl1 $                      
-# Last updated on: $Date: 2004-08-02 10:12:58 $        
+# Last updated by: $Author: krb $                      
+# Last updated on: $Date: 2004-08-06 10:02:06 $        
 
 use strict;
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
@@ -56,7 +56,7 @@ if($debug){
 
 if ($test) {
     $dbdir       = glob("~wormpub/TEST_BUILD/autoace");                    # Database path
-    $output      = $dbdir/acefiles/misc_Y2H_connections.ace;               # output file path
+    $output      = "$dbdir/acefiles/misc_Y2H_connections.ace";               # output file path
     print "// Test mode:\n// searching against $dbdir\n// output written to $output\n\n";
 
 }
@@ -86,7 +86,7 @@ open (OUTPUT, ">$output") || die "Can't open output file $output\n";
 #####################
 
 my $db = Ace->connect(-path  => "$dbdir",
-                      -program =>$tace) || do { print ALL_LOG "Connection failure: ",Ace->error; die();};
+                      -program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
                                                                                                                        
 my @Y2H = $db->fetch(-class => 'Y2H',
                                -name  => '*');
