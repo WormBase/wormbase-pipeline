@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-09-24 09:37:30 $
+# Last edited on: $Date: 2003-09-24 10:41:37 $
 
 
 #################################################################################
@@ -61,7 +61,9 @@ my $debug;		# Verbose debug mode
 my $help;		# Help/Usage page
 my $test;               # Test routine 
 my $dbcomp;		# runs dbcomp script
-our $am_option;         # track which option has been used (for logging purposes)
+my $am_option;          # track which option has been used (for logging purposes)
+my $errors = 0;         # keep track of errors resulting from bad system calls, use in subject line of email 
+
 
 GetOptions (
 	    "agp"	     => \$agp,
@@ -120,11 +122,11 @@ our %flag = (
 	     'A4'          => 'A4:Primary_databases_on_wormsrv2',
 	     'A5'          => 'A5:Wrote_acefiles_to_wormbase', 
 	     'B1'          => 'B1:Made_autoace_database',
-	     'B1:ERROR'    => 'B1:Errors_in_loaded_acefiles',
+	     'B1:ERROR'    => 'B1:ERROR_in_loaded_acefiles',
 	     'B2'          => 'B2:Dump_DNA_files',
-	     'B2:ERROR'    => 'B2:Errors_in_dumping_DNA',
+	     'B2:ERROR'    => 'B2:ERROR_in_dumping_DNA',
  	     'B3'          => 'B3:Made_agp_files',
-	     'B3:ERROR'    => 'B3:Errors_in_agp_files',
+	     'B3:ERROR'    => 'B3:ERROR_in_agp_files',
 	     'B5'          => 'B5:Copy_to_midway',
 	     'B6'          => 'B6:BLAT_analysis',
 	     'B6_est'      => 'B6a:BLAT_analysis_EST',
@@ -137,7 +139,7 @@ our %flag = (
 	     'B9'          => 'B9:Upload_briggsae_data',
 	     'B10'         => 'B10:Generate_UTR_data',
 	     'C1'          => 'C1:Dumped_GFF_files',
-	     'C1:ERROR'    => 'C1:Errors_dumping_GFF_files',
+	     'C1:ERROR'    => 'C1:ERROR_in_dumping_GFF_files',
 	     'C2'          => 'C2:Split_GFF_files',
 	     'C3'          => 'C3:Map_PCR_products',
 	     'C4'          => 'C4:Confirm_gene_models',
@@ -268,7 +270,13 @@ $rundate    = `date +%y%m%d`; chomp $rundate;
 print LOG "\n# autoace_minder finished at: $rundate ",&runtime,"\n";
 close LOG;
 
-&mail_maintainer("WormBase Report: $am_option",$maintainers,$logfile);
+# warn about errors in subject line if there were any
+if($errors == 0){
+  &mail_maintainer("WormBase Report: $am_option",$maintainers,$logfile);
+}
+else{
+  &mail_maintainer("WormBase Report: $am_option : $errors ERRORS!!!",$maintainers,$logfile);
+}
 
 ##############################
 # hasta luego                #
@@ -618,6 +626,7 @@ sub make_autoace {
       print LOG "ERROR: Couldn't run chromsome_dump.pl --dna --composition  : ";
       print LOG "Check that all chromosome sequences dumped correctly.\n";      
       system ("touch $logdir/$flag{'B2:ERROR'}");
+      $errors++;
     }
     print LOG " Finished running chromosome_dump.pl at ",&runtime,"\n";
     
@@ -741,36 +750,35 @@ sub make_agp {
   my $status = system ("$scriptdir/check_DNA.pl");
   print LOG "check_DNA.pl finished at ",&runtime,"\n";  
   print LOG "ERROR: check_DNA.pl did not run correctly\n" if ($status != 0);  
-
+  $errors++ if ($status != 0);
 
   $status = system ("$scriptdir/make_agp_file.pl");
   print LOG "make_agp_file.pl finished at ",&runtime,"\n";  
   print LOG "ERROR: Couldn't run make_agp_file.pl\n" if ($status != 0);
-
+  $errors++ if ($status != 0);
 
   $status = system ("$scriptdir/agp2dna.pl");
   print LOG "agp2dna.pl finished at ",&runtime,"\n";  
   print LOG "ERROR: Couldn't run agp2dna.pl\n" if ($status != 0);
-
+  $errors++ if ($status != 0);
 
   # make a B3 log file if this is first run of -agp (i.e. no B3 log file there)
   system ("touch $logdir/$flag{'B3'}") unless ((-e "$logdir/$flag{'B3'}"));
 
   # check for errors in the agp file 
   local (*AGP);
-  my $chrom;
-  my @errors;
+  my $agp_errors = 0;
   
-  foreach $chrom (@chrom) {
+  foreach my $chrom (@chrom) {
     open (AGP, "</wormsrv2/autoace/yellow_brick_road/CHROMOSOME_${chrom}.agp_seq.log") or die "Couldn't open agp file : $!";
     while (<AGP>) {
-      push (@errors,$_) if (/ERROR/);
+      $agp_errors++ if (/ERROR/);
     }
     close AGP;
   }
     
-  # No errors
-  if (scalar @errors > 1) {
+  # Errors?
+  if ($agp_errors > 1) {
   # make 'agp_files_errors' log file in /logs
   # this will halt the process if you are running blat
     system ("touch $logdir/$flag{'B3:ERROR'}");
@@ -1108,25 +1116,36 @@ sub make_wormpep {
   unless( -e "$logdir/D1A:Build_wormpep_initial" ) {
     # make wormpep -i
     print LOG "Running make_wormpep -i at ",&runtime,"\n";
-    system ("$scriptdir/make_wormpep -i") && die "Couldn't run make_wormpep -i\n";
+    my $status = system ("$scriptdir/make_wormpep -i");
     print LOG "Finished running make_wormpep -i at ",&runtime,"\n"; 
+    print LOG "ERROR: Couldn't run make_wormpep -i, non-zero system return call\n" if ($status != 0);
+    $errors++ if ($status != 0);
+
    
     #generate file to ad new peptides to mySQL database.
     print LOG "\nRunning new_wormpep_entries.pl at ",&runtime,"\n";
-    system ("$scriptdir/new_wormpep_entries.pl") and die "Couldn't run new_wormpep_entries.pl\n";
+    $status = system ("$scriptdir/new_wormpep_entries.pl");
     print LOG "Finished running new_wormpep_entries.pl at ",&runtime,"\n";
-    print "Updating CE2gene COMMON_DATA : ",&runtime,"\n";
-    system ("$scriptdir/update_Common_data.pl -update -in_build -ce") and carp "Update of COMMON_DATA CE2gene failed.\n";
-    print "DONE : ",&runtime,"\n\n";
+    print LOG "ERROR: Couldn't run new_wormpep_entries.pl, non-zero system return call\n" if ($status !=0);
+    $errors++ if ($status != 0);
 
+    # update common data
+    print "Running update_Common_data.pl at ",&runtime,"\n";
+    $status = system ("$scriptdir/update_Common_data.pl -update -in_build -ce");
+    print "Finished running update_Common_data.pl finished at ",&runtime,"\n\n";
+    print LOG "ERROR: update_Common_data.pl failed, non-zero system return call\n" if ($status != 0);
+    $errors++ if ($status != 0);
+    
     system ("touch $logdir/D1A:Build_wormpep_initial");
   }
   else {
     # Get protein IDs (this step writes to ~wormpub/analysis/SWALL
     print LOG "Started getProteinID at ",&runtime,"\n";
-    system("getProteinID") && die "Couldn't run getProteinID";
+    my $status = system("getProteinID");
     print LOG "Finished getProteinID at ",&runtime,"\n";
-    
+    print LOG "ERROR: Couldn't run getProteinID, non-zero system return call\n" if ($status != 0);
+    $errors++ if ($status != 0);
+
     # load into autoace
     my $command = "pparse /wormsrv2/autoace/wormpep_ace/WormpepACandIDs.ace\nsave\nquit\n"; 
     open (WRITEDB, "| $tace -tsuser Protein_ID /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
@@ -1136,21 +1155,23 @@ sub make_wormpep {
     
     # make wormpep
     print LOG "Running make_wormpep -f at ",&runtime,"\n";
-    system ("$scriptdir/make_wormpep -f") && die "Couldn't run make_wormpep -f\n";
+    $status = system ("$scriptdir/make_wormpep -f");
     print LOG "Finished running make_wormpep -f at ",&runtime,"\n";
- 
+    print LOG "ERROR: Couldn't run make_wormpep -f, non-zero system return value\n" if ($status != 0);
+    $errors++ if ($status != 0);
     
     # make acefile of peptides etc to add to autoace (replacement for pepace)
-    print LOG &runtime," : Running build_pepace.pl\n";
-    system ("$scriptdir/build_pepace.pl") && die "Couldn't run build_pepace.pl\n";
-    print LOG &runtime," : Finished running build_pepace.pl\n";
+    print LOG "Running build_pepace.pl at ",&runtime,"\n";
+    $status = system ("$scriptdir/build_pepace.pl");
+    print LOG "Finished running build_pepace.pl at ",&runtime,"\n";
+    print LOG "ERROR:  build_pepace.pl failed, non-zero system return value\n" if ($status != 0);
+    $errors++ if ($status != 0);
 
-    print "Updating gene2pid COMMON_DATA : ",&runtime,"\n";
-    system ("$scriptdir/update_Common_data.pl -update -in_build -pid") and carp "Update of COMMON_DATA gene2pid failed.\n";
-    print "DONE : ",&runtime,"\n\n";
-
-    system ("touch $logdir/D1A:Build_wormpep_initial");
-   
+    print "Running update_Common_data.pl -update -in_build -pid at ",&runtime,"\n";
+    $status = system ("$scriptdir/update_Common_data.pl -update -in_build -pid");
+    print "Finished running update_Common_data.pl finished at ",&runtime,"\n\n";
+    print LOG "ERROR: update_Common_data.pl failed, non-zero system return call\n" if ($status != 0);
+    $errors++ if ($status != 0);
     
     # make a make_autoace log file in /logs
     system ("touch $logdir/D1:Build_wormpep_final");
