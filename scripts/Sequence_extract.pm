@@ -1,3 +1,36 @@
+=pod 
+
+=head1 NAME
+
+Sequence_extract
+
+=head1 SYNOPSIS
+
+ my $seq_obj      = Sequence_extract->invoke($database, $refresh);
+ my $seq          = "AH6";
+ my $sub_sequence = $seq_obj->Sub_sequence($seq,50,100);
+
+
+=head1 DESCRIPTION
+
+This object is used to get DNA subsequence of any S_Mapped sequence object in the database
+
+Inherits from Coords_converter
+
+=head1 CONTACT
+
+Anthony  ar2@sanger.ac.uk
+
+=head1 APPENDIX
+
+The rest of the documentation details each of the object methods. 
+Internal methods are usually preceded with a _
+
+=cut
+
+
+
+
 package Sequence_extract;
 
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"
@@ -9,6 +42,20 @@ use Coords_converter;
 
 @ISA = ('Coords_converter');
 
+
+=head2 invoke
+
+  Title   :   invoke
+  Usage   :   my $extractor = Sequence_extract->invoke($database,1);
+  Function:   Creates the object and loads in the data (generates fresh if requested)
+  Returns :   ref to self
+  Args    :   Database  (optional) - which database to use. Default is current_DB
+              refresh   default is NULL - connect to the database and update coordinates
+ Requires:    Database must have CHROMOSOMES directory with dna of each chromosome in CHROMOSOME_*.dna (FASTA format)
+
+=cut
+
+
 sub invoke 
   {
     my $class = shift;
@@ -19,7 +66,6 @@ sub invoke
     my $self = Coords_converter->invoke($database,$refresh);
 
     bless $self, $class;
-    print "now doing $class (Seq_ex) constructor\n\n\n";
 
     # get the chromosomal sequences
     my $tace = &tace;
@@ -40,7 +86,6 @@ EOF
       close ACE;
     }
     foreach (@chromosome) {
-      print "reading chromosome $_\n";
       # read seq into $self
       $/ = "";
       open (SEQ, "$database/CHROMOSOMES/CHROMOSOME_$_.dna") or croak "cant open the dna file for $_:$!\n";
@@ -53,6 +98,24 @@ EOF
     }
     return $self;
   }
+
+
+=head2 Sub_sequence
+
+  Title   :   Sub_sequence
+  Usage   :   $seq_obj->Sub_sequence($seq)          - whole DNA sequence of that object
+              $seq_obj->Sub_sequence($seq,50,100)   - 100 bases of $seq starting at base 50
+              $seq_obj_>Sub_sequence($seq,50,+100)  - DNA sequence of that object from base 50 to 100 bases past the end
+              $seq_obj_>Sub_sequence($seq,-50)      - whole DNA sequence of that object with 50 bases at the start ie -50 to end
+              $seq_obj_>Sub_sequence($seq,-50, 500) - 500 bases of $seq starting 50 bases before clone ie -50 to 450
+
+  Function:   Extract a DNA subsequence
+  Returns :   DNA sequence as string
+  Args    :   Sequence object  (req)
+              start coord  - means upstream of seq obj start
+              start coord  + means downstream of seq obj end
+
+=cut
 
 sub Sub_sequence
   {
@@ -67,7 +130,6 @@ sub Sub_sequence
 #    # to extend past end of a seq obj use "+" and no of bases.
     if( $length and $length =~ /\+/) {
       $extend = substr($length,1);
-      $start -= $extend;
       undef $length;
     }
 
@@ -77,9 +139,10 @@ sub Sub_sequence
     if( $seq =~ /SUPERLINK/ ) {
       my $sl = $seq;
       $chrom = $self->_getChromFromSlink("$seq");
+      $seq = $chrom; # gets processed as chromosome below
 
       # modify the starting coordinate
-      $start += $self->{"$chrom"}->{SUPERLINK}->{"$sl"}->[0] - 1;
+      $start += $self->{"$chrom"}->{SUPERLINK}->{"$sl"}->[0];
       $length = $self->{"$chrom"}->{SUPERLINK}->{"$sl"}->[1] - $self->{"$chrom"}->{SUPERLINK}->{"$sl"}->[0] unless $length;
     }
 
@@ -94,11 +157,11 @@ sub Sub_sequence
 	    $chrom = $self->_getChromFromSlink("$slink");
 
 	    # modify the starting coordinate
-	    $start += $self->{"$chrom"}->{SUPERLINK}->{$slink}->[0] -1 ; # superlink base coords
+	    $start += $self->{"$chrom"}->{SUPERLINK}->{$slink}->[0] - 1; # superlink base coords 
 	    $start += $self->{SUPERLINK}->{"$slink"}->{"$clone"}->[0] - 1; # clone base coords
 	    
 	    # length is entire obj length unless specified
-	    $length = $self->{SUPERLINK}->{"$slink"}->{"$clone"}->[1] - $self->{SUPERLINK}->{"$slink"}->{"$clone"}->[0] unless $length;
+	    $length = 1 + $self->{SUPERLINK}->{"$slink"}->{"$clone"}->[1] - $self->{SUPERLINK}->{"$slink"}->{"$clone"}->[0] unless $length;
 	    last SLINKS;
 	  } 
 	}
@@ -109,8 +172,27 @@ sub Sub_sequence
     }
 
     $length = length($self->{SEQUENCE}->{"$chrom"}) unless $length; #full sequence of object.
-    $subseq = substr( ($self->{SEQUENCE}->{"$chrom"} ),$start, $length+$extend );
+    $subseq = substr( ($self->{SEQUENCE}->{"$chrom"} ),$start, $length+(2*$extend) ); #extend either end
+
+    if ($subseq ) {
+      return $subseq;
+    }
+    else {
+      carp "subsequence invalid : seq = $seq\tstart = $start\n\tlength = $length\n\textend = $extend\n";
+    }
   }
+
+
+=head2
+
+  Title   :   DNA_revcomp
+  Usage   :   my $revcomp = $seq_obj->($seq)
+  Function:   revcomp DNA seq
+  Returns :   DNA sequence as string
+  Args    :   DNA sequence as string
+
+=cut
+
 
 sub DNA_revcomp
   {
@@ -124,9 +206,5 @@ sub DNA_revcomp
     $revseq =~ tr/x/c/;
     return ($revseq);
   }
-
-
-
-
 
 1;

@@ -2,24 +2,20 @@
 
 =head1 NAME
 
-Coords_converter
+ Coords_converter
 
 =head1 SYNOPSIS
 
-my $coords       = Coords_converter->invoke
-
-my $superlink    = $coords->GetSuperlinkFromCoord("I", 10000000)
-
-my $clone        = $coords->GetCloneFromCoord( "I", 1000000 )
-
-$clone           = $coords->GetCloneFromCoord( "SUPERLINK_RW1", 100000 )
-
-my @clone_coords = $coords->LocateSpan("I",5239404,5271341 )
+ my $coords       = Coords_converter->invoke
+ my $superlink    = $coords->GetSuperlinkFromCoord("I", 10000000)
+ my $clone        = $coords->GetCloneFromCoord( "I", 1000000 )
+ $clone           = $coords->GetCloneFromCoord( "SUPERLINK_RW1", 100000 )
+ my @clone_coords = $coords->LocateSpan("I",5239404,5271341 )
 
 =head1 DESCRIPTION
 
-This object can be used to get from chromosomal coordinates eg those in gff file to clone or superlink coordinates.
-Can also give a clone or superlink from specified chromosome coordinates
+ This object can be used to get from chromosomal coordinates eg those in gff file to clone or superlink coordinates.
+ Can also give a clone or superlink from specified chromosome coordinates
 
 =head1 CONTACT
 
@@ -27,13 +23,10 @@ Anthony  ar2@sanger.ac.uk
 
 =head1 APPENDIX
 
-The rest of the documentation details each of the object methods. 
-Internal methods are usually preceded with a _
+ The rest of the documentation details each of the object methods. 
+ Internal methods are usually preceded with a _
 
 =cut
-
-
-
 
 package Coords_converter;
 
@@ -139,6 +132,8 @@ sub invoke
 			    "5" => "V",
 			    "X" => "X"
 			  );
+
+    $self->{'DATABASE'} = $database;
 			
     bless( $self, $class);
     return $self;
@@ -218,7 +213,7 @@ sub GetCloneFromCoord
 
     Title   :   LocateSpan
     Usage   :   my @data = $coords->LocateSpan("CHROMOSOME_I", 100000, 101000);
-    Function:   Returns smallest sequence object containing the given coordinate ie clone, slink or csome and the coordinates relative to that sequence.
+    Function:   Returns smallest sequence object containing the given coordinates and the coordinates relative to that sequence.
     Returns :   Clone as string eg "V"; coordinates relative to clone obj 
     Args    :   Sequence obj (CHROMOSOME or SUPERLINK)  and two coordinates within that eg ("CHROMOSOME_I", 3000, 3100)
 
@@ -233,8 +228,7 @@ sub LocateSpan
 
     #this doesn't handle single letter style chromosome names
 
-
-    # if anything other than chromsome or superlink is passed you get back what you put in
+    # if a clone is passed (handles negative coords eg AH6, -500, 12000)
     unless( $chrom =~ /CHROMOSOME/ or $chrom =~ /SUPERLINK/ ) { 
       my ($superlink, $chromosome, $seq);
       $seq = $chrom;
@@ -327,6 +321,16 @@ sub swap
     $$y = $tmp;
   }
 
+=head2 get_Chrom_from_clone
+
+    Title   :   get_Chrom_from_clone
+    Usage   :   my $chromosome = $coords->get_Chrom_from_clone("AH6");
+    Function:   get chromosome for given clone
+    Returns :   chromosome for given clone eq "CHROMOSOME_I"
+    Args    :   clone name as string
+
+=cut
+
 sub get_Chrom_from_clone
   {
     my $self = shift;
@@ -338,6 +342,14 @@ sub get_Chrom_from_clone
     return $chrom;
   }
 
+=head2 _getChromFromSlink
+
+    Title   :   _getChromFromSlink
+    Usage   :   my $chromosome = $self->get_ChromFromSlink("SUPERLINK_CB_I");
+    Returns :   chromosome for given clone eg "CHROMOSOME_I"
+    Args    :   superlink as string
+
+=cut
 
 sub _getChromFromSlink
   {
@@ -346,5 +358,76 @@ sub _getChromFromSlink
 
     return $self->{SUPERLINK2CHROM}->{"$sl"};
   }
+
+=head2 
+
+    Title   :   seq_obj_to_chrom
+    Usage   :   my $chromosome = $coords->seq_obj_to_chrom("$seq")
+    Function:   find the chromosome when you dont know what type of sequence object youre dealing with
+    Returns :   Chromosome for given $seq eg "CHROMOSOME_I"
+    Args    :   any sequence obj and string
+
+=cut
+
+sub seq_obj_to_chrom
+  {
+    my ($self, $seq) = @_;
+    my $chromosome;
+    # find which chromosome passed seq obj is on
+    if( $seq =~ /CHROMOSOME/ ){
+      $chromosome = $seq;
+    }
+    elsif( ($chromosome = $self->_getChromFromSlink($seq) ) ){
+    }
+    else {
+      $chromosome = $self->get_Chrom_from_clone($seq);
+    }
+    if( $chromosome ) {
+      return $chromosome;
+    }
+    else {
+      carp "cant find chromosome for $seq\n";
+      return 0;
+    }
+  }
+
+=head2 Coords_2chrom_coords
+
+    Title   :   Coords_2chrom_coords
+    Usage   :   $coords->Coords_2chrom_coords("AH6", 2343);
+    Function:   convert non-chromosomal coordinates to chromosome relative coords
+    Returns :   chromosome as string, coordinate relative to that chromosome
+    Args    :   any sequence obj as string
+                coordinate relative to seq obj
+
+=cut
+
+sub Coords_2chrom_coords
+  {
+    my ($self, $seq, $coord) = @_;
+    my $chrom = $self->seq_obj_to_chrom($seq);
+
+    if( $seq =~ /CHROMOSOME/ ) {
+      # do nothing passed args are output
+    }
+    elsif( $seq =~ /SUPERLINK/ ) {
+      $coord += $self->{"$chrom"}->{'SUPERLINK'}->{$seq}->[0] - 1;
+    }
+    else {
+    SLINKS:
+      foreach my $slink (keys %{$self->{'SUPERLINK'}} ) {
+	foreach my $clone (keys %{$self->{SUPERLINK}->{$slink}} ) {
+
+	  if( "$clone" eq "$seq" ) {
+	    $coord += $self->{"$chrom"}->{SUPERLINK}->{"$slink"}->[0] -1 ; # superlink base coords
+	    $coord += $self->{SUPERLINK}->{"$slink"}->{"$clone"}->[0] - 1; # clone base coords
+	    last SLINKS;
+	  } 
+	}
+      }
+    }
+    return ($chrom, $coord);
+  }
+
 
 return 1;
