@@ -657,7 +657,7 @@
         Paper ?Paper
 	Sequence ?Sequence XREF From_author
         Keyword ?Keyword
-	Details_confirmed DateType // Added for Juancarlos [020322 krb]
+	Contact_details_confirmed DateType // Added for Juancarlos [020322 krb]
 
 ?Journal Paper ?Paper XREF Journal
 
