@@ -6,8 +6,8 @@
 #
 # Builds a wormpep data set from the current autoace database
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-08-15 12:14:02 $
+# Last updated by: $Author: dl1 $
+# Last updated on: $Date: 2004-10-06 16:09:54 $
 
 
 use strict;
@@ -39,7 +39,6 @@ GetOptions ("help"        => \$help,
 	    "final"       => \$final,
             "test"        => \$test
            );
-
 
 #########################################
 # sanity checks on command-line options #
@@ -485,7 +484,7 @@ sub retrieve_cds_data{
     next if (/\/\//);
     s/\"//g;
     (/^(\S+)\s/);
-    my ($cds,$prot_id_parent,$prot_id,$prot_id_ver,$prot_db,$prot_ac,$gene,$cgc_name,$confirmed,$est,$brief_id) = split /\t/;
+    my ($cds,$prot_id_parent,$prot_id,$prot_id_ver,$prot_db,$prot_ac,$gene,$cgc_name,$confirmed,$partial,$brief_id) = split /\t/;
 
     # load hashes with data
     ($cds2cgc_name{$cds} = $cgc_name) if (defined($cgc_name));
@@ -504,7 +503,7 @@ sub retrieve_cds_data{
 	$cds_status{$cds} = "Confirmed";
       }
       # supported CDS - [EST] data
-      elsif ($est > 0) {
+      elsif ($partial) {
 	$cds_status{$cds} = "Partially_confirmed";
       }
       # predicted CDS - no data
