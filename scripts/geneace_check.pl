@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.0 -w
+#!/usr/local/bin/perl5.6.1 -w
 # 
 # geneace_check.pl
 #
@@ -6,8 +6,8 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2002-09-12 13:31:53 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2002-10-17 11:47:27 $
 
 use Ace;
 use lib "/wormsrv2/scripts/"; 
@@ -16,36 +16,23 @@ use strict;
 
 our $log;
 our $erichlog;
-our $errors;
 &create_log_files;
 
-# open a connection to geneace and grab list of loci
+# track errors in each class
+our $locus_errors = 0;
+our $lab_errors = 0;
+our $allele_errors = 0;
+
+# open a connection to geneace
 our $tace = glob("~wormpub/ACEDB/bin.ALPHA_4/tace");   # tace executable path
 my $db = Ace->connect(-path  => '/wormsrv1/geneace/',
 		      -program =>$tace) || do { print LOG "Connection failure: ",Ace->error; die();};
 
-my @loci = $db->fetch(-class => 'Locus',
-		      -name  => '*');
 
-my $size =scalar(@loci);
-
-# Loop through loci checkingfor various potential errors in the Locus object
-print "\nChecking loci for errors:\n";
-foreach my $locus (@loci){
-  print "$locus\n";
-  my $warnings;
-  my $erich_warnings;
-  ($warnings, $erich_warnings) = &test_locus_for_errors($locus);
-  print LOG "$warnings" if(defined($warnings));
-  #Erich Schwarz wants some of these - emsch@its.caltech.edu
-  print ERICHLOG "$erich_warnings" if(defined($erich_warnings));
-}
-
-# Look for loci in current_DB not in geneace
-print "\nLooking for new loci in /wormsrv2/current_DB:\n\n";
-&find_new_loci_in_current_DB($db);
-
-print LOG "\nThere were $errors errors in $size loci.\n";
+# Process various classes looking for errors
+&process_locus_class;
+&process_laboratory_class;
+&process_allele_class;
 
 
 ##########################################
@@ -63,6 +50,80 @@ my $interested ="krb\@sanger.ac.uk, emsch\@its.caltech.edu, ck1\@sanger.ac.uk";
 &mail_maintainer($0,"$interested",$erichlog);
 exit(0);
 
+
+
+
+
+###################################
+# Process Locus class
+###################################
+sub process_locus_class{
+
+  my @loci = $db->fetch(-class => 'Locus',
+		      -name  => '*');
+  
+  my $size =scalar(@loci);
+  
+  # Loop through loci checking for various potential errors in the Locus object
+  print "\nChecking loci for errors:\n";
+  print LOG "\nChecking Locus class for errors\n";
+  foreach my $locus (@loci){
+    print "$locus\n";
+    my $warnings;
+    my $erich_warnings;
+    ($warnings, $erich_warnings) = &test_locus_for_errors($locus);
+    print LOG "$warnings" if(defined($warnings));
+    #Erich Schwarz wants some of these - emsch@its.caltech.edu
+    print ERICHLOG "$erich_warnings" if(defined($erich_warnings));
+  }
+  
+  # Look for loci in current_DB not in geneace
+  print "\nLooking for new loci in /wormsrv2/current_DB:\n\n";
+  &find_new_loci_in_current_DB($db);
+  print LOG "\nThere were $locus_errors errors in $size loci.\n";
+}
+
+#################################
+# Process Laboratory class
+###################################
+sub process_laboratory_class{
+
+  print "\n\nChecking Laboratory class for errors:\n";
+  print LOG "\n\nChecking Laboratory class for errors:\n";
+  #grab lab details
+  my @labs = $db->fetch(-class => 'Laboratory',
+		      -name  => '*');
+
+  # test for Allele_designation tag
+  foreach my $lab (@labs){
+    if(!defined($lab->at('CGC.Allele_designation'))){  
+      print LOG "$lab has no Allele_designation tag present\n";
+      $lab_errors++;
+    }    
+  }
+  print LOG "\nThere were $lab_errors errors in Laboratory class\n";
+}
+
+#################################
+# Process Allele class
+###################################
+sub process_allele_class{
+  print"\n\nChecking Allele class for errors:\n";
+  print LOG "\n\nChecking Allele class for errors:\n";
+  #grab allele details
+  my @alleles = $db->fetch(-class => 'Allele',
+		      -name  => '*');
+
+  # test for Location tag
+  foreach my $allele (@alleles){
+    if(!defined($allele->at('Location'))){  
+      print LOG "$allele has no Location tag present\n";
+      $allele_errors++;
+    }    
+  }
+  print LOG "\nThere were $allele_errors errors in Allele class\n";
+}
+
 ################################################
 sub find_new_loci_in_current_DB{
   my $db = shift;
@@ -79,7 +140,7 @@ sub find_new_loci_in_current_DB{
     my $new_loci = $db->fetch(-class=>'Locus',-name=>"$loci");
     unless(defined($new_loci)){
       $warnings .= "ERROR 19: $new_loci in current_DB is not in /wormsrv1/geneace\n";
-      $errors++;
+      $locus_errors++;
     }
   }
   print LOG "\n$warnings\n" if $warnings;;
@@ -99,7 +160,7 @@ sub test_locus_for_errors{
     my $map = $locus->Map;
     if (!defined($map)){
       $warnings .= "ERROR 1: $locus has a 'Map' tag but that tag has no map value!\n";
-      $errors++;
+      $locus_errors++;
     }
   }
 
@@ -108,38 +169,38 @@ sub test_locus_for_errors{
     my @gene_classes = $locus->at('Name.Gene_Class');
     if(scalar(@gene_classes) > 1){
       $warnings .= "ERROR 2: $locus has more than one Gene_class\n";
-      $errors++;
+      $locus_errors++;
     }    
   }
   
   # test for no Type tag
   if(!defined($locus->at('Type'))){  
     $warnings .= "ERROR 3: $locus has no Type tag present\n";
-    $errors++;
+    $locus_errors++;
   }
 
   # test for Gene AND !Species 
   if(defined($locus->at('Type.Gene')) && !defined($locus->at('Species'))){
     $warnings .= "ERROR 4: $locus has a 'Gene' tag but not a 'Species' tag\n";;
-    $errors++;
+    $locus_errors++;
   }
 
   # test for !Gene AND Gene_class 
   if(!defined($locus->at('Type.Gene')) && defined($locus->at('Name.Gene_class'))){
     $warnings .= "ERROR 5: $locus has a 'Gene_class' tag but not a 'Gene' tag\n";
-    $errors++;
+    $locus_errors++;
   }
   
   # test for no Gene tag AND Genomic_sequence tag
   if(!defined($locus->at('Type.Gene')) && defined($locus->at('Molecular_information.Genomic_sequence'))){
     $warnings .= "ERROR 6: $locus has 'Genomic_sequence' tag but no 'Gene' tag\n";
-    $errors++;
+    $locus_errors++;
   }
 
   # test for Genomic_sequence tag but no value   
   if(defined($locus->at('Molecular_information.Genomic_sequence')) && !defined($locus->Genomic_sequence)){
     $warnings .= "ERROR 7: $locus has 'Genomic_sequence' tag but no associated value\n";
-    $errors++;
+    $locus_errors++;
   }
 
   # test for more than one Genomic_sequence tag, but need to allow for splice variants. A bit tricky this
@@ -152,7 +213,7 @@ sub test_locus_for_errors{
       foreach my $problem (@problems){
 	if ($problem !~ m/[\w\d]+\.\d+[a-z]/){
 	  $warnings .= "ERROR 8: $locus has multiple 'Genomic_sequence' tags (see $problem)\n";
-	  $errors++;
+	  $locus_errors++;
 	}
       }
     }
@@ -165,7 +226,7 @@ sub test_locus_for_errors{
 	 defined($newseq->at('Visible.Concise_description')) ||
 	 defined($newseq->at('Visible.Detailed_description'))){  
 	$erich_warnings .= "$seq has attached functional annotation which should now be attached to $locus\n";
-	$errors++;
+	$locus_errors++;
       }
     }
   }
@@ -173,19 +234,19 @@ sub test_locus_for_errors{
   # test for Polymorphism AND Gene tags both present
   if(defined($locus->at('Type.Gene')) && defined($locus->at('Type.Polymorphism'))){  
     $warnings .= "ERROR 9: $locus has a 'Polymorphism' tag AND 'Gene' tag\n";
-    $errors++;
+    $locus_errors++;
   }
 
   # test for Enzyme tag (doesn't fit in with new Gene model)
   if(defined($locus->at('Molecular_information.Enzyme'))){  
     $warnings .= "ERROR 10: $locus has an 'Enzyme' tag\n";
-    $errors++;
+    $locus_errors++;
   }
 
   # test for Canonical_gene tag present
   if(defined($locus->at('Molecular_information.Canonical_gene'))){  
     $warnings .= "ERROR 11: $locus has a 'Canonical_gene' tag\n";
-    $errors++;
+    $locus_errors++;
   }
   
   # test for New_name tag and other information apart from Gene and Species
@@ -195,12 +256,12 @@ sub test_locus_for_errors{
       my @tags = $locus->tags();
       if(scalar(@tags)>3){
 	$warnings .= "ERROR 12: $locus has New_name tag + extra info. Transfer into new gene?\n";
-	$errors++;
+	$locus_errors++;
       }
     }
     else{
       $warnings .= "ERROR 13: $locus has no species and/or Gene tag present\n";
-      $errors++;
+      $locus_errors++;
     }
   }
 =start  
@@ -208,7 +269,7 @@ sub test_locus_for_errors{
   if(defined($locus->at('Type.Polymorphism'))){
     if($locus !~ /P/){
       $warnings .= "ERROR 14: $locus has no 'P' in title\n";
-      $errors++;
+      $locus_errors++;
     }
   }
 =end
@@ -217,14 +278,14 @@ sub test_locus_for_errors{
   if(!defined($locus->at('Type.Gene'))){
     if(defined($locus->at('Name.Gene_class'))){
       $warnings .= "ERROR 15: $locus has Gene_class tag but it is not a gene!\n";
-      $errors++;
+      $locus_errors++;
     }
   }
   
   # test for Other_name tag but no value   
   if(defined($locus->at('Name.Other_name')) && !defined($locus->Other_name)){
     $warnings .= "ERROR 16: $locus has 'Other_name' tag but no associated value\n";
-    $errors++;
+    $locus_errors++;
   }
 =start
   # test for Other_name value which is also a Locus name in its own right
@@ -236,7 +297,7 @@ sub test_locus_for_errors{
       if(defined($newloci)){
 	unless($newloci->at('Name.New_name')){
 	  $warnings .= "ERROR 17: $locus has Other_name: $other_name which is also a separate locus object\n";
-	  $errors++;
+	  $locus_errors++;
 	}   
       }
     }
@@ -247,7 +308,7 @@ sub test_locus_for_errors{
   if(defined($locus->CGC_unresolved)){
     my ($unresolved_details) = $locus->at('Type.Gene.CGC_unresolved');
     $warnings .= "ERROR 18: $locus has CGC_unresolved tag: \"$unresolved_details\"\n";
-    $errors++;
+    $locus_errors++;
   }
 
   return($warnings, $erich_warnings);
