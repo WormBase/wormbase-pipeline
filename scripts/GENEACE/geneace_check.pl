@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-06-23 09:45:09 $
+# Last updated on: $Date: 2004-07-07 13:02:07 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -25,11 +25,11 @@ use GENEACE::Geneace;
 my $tace = glob("~wormpub/ACEDB/bin_ALPHA/tace");          # tace executable path
 my $curr_db = "/nfs/disk100/wormpub/DATABASES/current_DB"; # Used for some cross checking with geneace
 my $def_dir = "/wormsrv1/geneace/wquery";                  # where lots of table-maker definitions are kept
-my $test_def_dir ="/nfs/disk100/wormpub/ck1";             # where lots of table-maker definitions are kept for running this script not on wormsrv2
+my $test_def_dir ="/nfs/disk100/wormpub/ck1";              # where lots of table-maker definitions are kept for running this script not on wormsrv2
 my $machine = ();
 $machine = "+" if `ls /wormsrv1/`;                         # if sees wormsrv1 then $machine is defined, else it remains undef: for running on cbi1, eg
 
-my $rundate = `date +%y%m%d`; chomp $rundate;              # Used by various parts of script for filename creation
+my $rundate = &rundate;                                    # Used by various parts of script for filename creation
 my $maintainers = "All";                                   # Default for emailing everyone logfile
 my $caltech_errors = 0;                                    # counter for tracking errors going into Caltech email
 my $jah_errors = 0;                                        # counter for tracking errors going into Caltech email
@@ -38,23 +38,21 @@ my $caltech_log;                                           # Additional log file
 my $jah_log;                                               # Additional log file for problems to be sent to Jonathan Hodgkin at CGC
 my (%L_name_F_WBP, %L_name_F_M_WBP);                       # hashes for checking Person and Author merging?
 
+
 ###################################################
 # command line options                            # 
 ###################################################
 
 my ($help, $debug, $class, @classes, $database, $ace, $verbose);
 
-GetOptions ("h|help"        => \$help,
-            "d|debug=s"     => \$debug,
-	    "c|class=s"     => \@classes,
-	    "db|database=s" => \$database,
-            "a|ace"         => \$ace,
-	    "v|verbose"     => \$verbose
-           );
+GetOptions ("help"        => \$help,
+            "debug=s"     => \$debug,
+	    "class=s"     => \@classes,
+	    "database=s" => \$database,
+            "ace"         => \$ace,
+	    "verbose"     => \$verbose);
 
-#print @classes, "\n" if ($classes[0] eq lc("ps") || $classes[0] eq lc("pseudo"));
 
-#__END__
 ##################################################
 # other variables                                #
 ##################################################
@@ -113,22 +111,22 @@ my $non_CGC_non_seq = 0;
 
 # Process separate classes if specified on the command line else process all classes, EXCEPT "pseudo", see
 # /wormsrv1/geneace/JAH_DATA/MULTI_PT_INFERRED/README for detailed description
-@classes = ("gene", "laboratory", "evidence", "allele", "strain", "rearrangement", "mapping", "xref", "multipt") if (!@classes);
+@classes = ("gene", "laboratory", "evidence", "allele", "strain", "rearrangement", "mapping", "xref", "multipoint") if (!@classes);
 
 foreach $class (@classes){
-  if ( $class =~ m/gene/i )                {&process_gene_class}
-  if ( $class =~ m/laboratory|lab/i )      {&process_laboratory_class}
-  if ( $class =~ m/evidence|evi/i )        {&check_evidence}
-  if ( $class =~ m/allele/i )              {&process_allele_class}
-  if ( $class =~ m/strain/i )              {&process_strain_class}
-  if ( $class =~ m/rearrangement|rearr/i ) {&process_rearrangement}
-  if ( $class =~ m/mapping/i )             {&check_genetics_coords_mapping}
-  if ( $class =~ m/xref/i )                {&check_bogus_XREF}
-  if ( $class =~ m/multipt|mui/i )         {&check_dubious_multipt_gene_connections}
+  if ($class =~ m/gene/i)          {&process_gene_class}
+  if ($class =~ m/laboratory/i)    {&process_laboratory_class}
+  if ($class =~ m/evidence/i)      {&check_evidence}
+  if ($class =~ m/allele/i)        {&process_allele_class}
+  if ($class =~ m/strain/i)        {&process_strain_class}
+  if ($class =~ m/rearrangement/i) {&process_rearrangement}
+  if ($class =~ m/mapping/i)       {&check_genetics_coords_mapping}
+  if ($class =~ m/xref/i)          {&check_bogus_XREF}
+  if ($class =~ m/multipoint/i)    {&check_dubious_multipt_gene_connections}
 
   # this will not fire off even if no class is specified see also http://intweb.sanger.ac.uk/Projects/C_elegans/DOCS/geneace_duties.shtml
   # section "Load CGC approved pseudo genetic markers to geneace before at start of a build"
-  if ( $class =~ m/pseudo|ps/i )           {&int_map_to_map_loci}
+  if ($class =~ m/pseudo/i)        {&int_map_to_map_loci}
 }
 
 #######################################
@@ -143,19 +141,24 @@ close(ACE) if ($ace);
 
 
 # Always mail to $maintainers (which might be a single user under debug mode)
-mail_maintainer($0,$maintainers,$log);
+&mail_maintainer($0,$maintainers,$log);
 
 
 # Also mail to Erich unless in debug mode or unless there is no errors
 my $interested ="krb\@sanger.ac.uk, emsch\@its.caltech.edu, kimberly\@minerva.caltech.edu";
-mail_maintainer($0,"$interested",$caltech_log) unless ($debug || $caltech_errors == 0);
+&mail_maintainer($0,"$interested",$caltech_log) unless ($debug || $caltech_errors == 0);
 
 
 # Email Jonathan Hodgkin subset of errors that he might be able to help with unless
 # in debug mode or no errors
-mail_maintainer($0,"cgc\@wormbase.org, jonathan.hodgkin\@bioch.ox.ac.uk",$jah_log) unless ($debug || $jah_errors == 0);
+&mail_maintainer($0,"cgc\@wormbase.org",$jah_log) unless ($debug || $jah_errors == 0);
 
-mail_maintainer("Pseudo genetic marker(s) to approve for WS$next_build_ver", "cgc\@wormbase.org, jonathan.hodgkin\@bioch.ox.ac.uk", $jah_log) if ($classes[0] eq lc("ps") || $classes[0] eq lc("pseudo"));
+
+if ($classes[0] eq lc("pseudo"){
+  my $version = $next_build_ver +1;
+  &mail_maintainer("Pseudo genetic marker(s) to approve for WS$version", "cgc\@wormbase.org", $jah_log);
+      
+}
 
 
 exit(0);
@@ -163,7 +166,7 @@ exit(0);
 #--------------------------------------------------------------------------------------------------------------------
 
                           ###########################################################
-                          #             SUBROUTINES FOR -c gene option              #
+                          #         SUBROUTINES FOR -class gene option              #
                           ###########################################################
 
 sub process_gene_class{
@@ -274,7 +277,8 @@ sub test_locus_for_errors{
   }
 
   # test for discrepancy betw. CGC_name and Gene_class name, ie, for aap-1, the gene_class should be aap
-  # The idea is that when two Gene objects are merged, the latter one will overwrite the first one, as the gene_class field is UNOQUE
+  # The idea is that when two Gene objects are merged, the latter one will overwrite the first one, 
+  # as the gene_class field is UNIQUE
 
   if( defined $gene_id->Gene_class && defined $gene_id->CGC_name ){
     my $cgc_name = $gene_id->CGC_name;
@@ -539,7 +543,8 @@ sub get_event {
   return $tag;
 }
 
-# looks for seq. (predictted_gene, transcript) link to an allele, but which gene ids don't => make gene id -> allele connection
+
+# looks for seq. (predicted_gene, transcript) link to an allele, but which gene ids don't => make gene id -> allele connection
 sub link_seq_to_Gene_based_on_allele {
 
   my $db = shift;
@@ -588,7 +593,7 @@ sub find_seqs_with_multiple_Gene_ids {
 
 
                           #############################################################
-                          #             SUBROUTINES FOR -c evidence option            #
+                          #         SUBROUTINES FOR -class evidence option            #
                           #############################################################
 
 sub check_evidence {
@@ -917,7 +922,7 @@ END
 }	
 
                           ###############################################################
-                          #             SUBROUTINES FOR -c laboratory option            #
+                          #         SUBROUTINES FOR -class laboratory option            #
                           ###############################################################
 
 
@@ -952,7 +957,7 @@ sub process_laboratory_class{
 
 
                           ###########################################################
-                          #             SUBROUTINES FOR -c allele option            #
+                          #         SUBROUTINES FOR -class allele option            #
                           ###########################################################
 
 
@@ -1175,7 +1180,7 @@ sub process_allele_class{
 
 
                           ###########################################################
-                          #             SUBROUTINES FOR -c strain option            #
+                          #         SUBROUTINES FOR -class strain option            #
                           ###########################################################
 
 
@@ -1280,7 +1285,7 @@ sub process_strain_class {
 }
 
                           ##################################################################
-                          #             SUBROUTINES FOR -c rearrangement option            #
+                          #         SUBROUTINES FOR -class rearrangement option            #
                           ##################################################################
 
 
@@ -1305,7 +1310,7 @@ sub process_rearrangement {
 }
 
                           ###########################################################
-                          #             SUBROUTINES FOR -c xref option              #
+                          #         SUBROUTINES FOR -class xref option              #
                           ###########################################################
 
 
@@ -1416,7 +1421,7 @@ sub check_bogus_XREF {
   }
 }
                           ############################################################
-                          #             SUBROUTINES FOR -c mapping option            #
+                          #         SUBROUTINES FOR -class mapping option            #
                           ############################################################
 
 
@@ -1437,7 +1442,7 @@ sub check_genetics_coords_mapping {
 }
 
                           #######################################################
-                          #             SUBROUTINES FOR -c ps option            #
+                          #     SUBROUTINES FOR -class pseudo option            #
                           #######################################################
 
 sub int_map_to_map_loci {
@@ -1495,7 +1500,7 @@ sub int_map_to_map_loci {
 
 
                           ############################################################
-                          #             SUBROUTINES FOR -c multipt option            #
+                          #      SUBROUTINES FOR -class multipoint option            #
                           ############################################################
 
 
@@ -1571,9 +1576,8 @@ __END__
 =head3 <USAGE>
 
 
-=head2 Options: [h or help] [d or debug] [c or class] [a or ace]
+=head2 Options: [help] [debug] [class] [ace]
 
-            All options have single letter or wordy aliases
 
 B<-help:>
             Displays usage of the script: surprised?
@@ -1601,15 +1605,15 @@ B<-class:>
                mapping
                xref
                gmap
-               multipt
+               multipoint
 
-            For example: -c allele -c locus OR -class sequence -class rearrangment
+            For example: -class allele -class gene OR -class sequence -class rearrangment
 
-B<-databse:>
+B<-database:>
             Allows specifying path to a specific database.
             Default database path is /wormsrv1/geneace without this option.
 
-            For example: -db /wormsrv2/autoace or -database /wormsrv1/someone/Test_DB
+            For example: -database /wormsrv2/autoace or -database /wormsrv1/someone/Test_DB
 
 
 B<-ace:>
@@ -1617,7 +1621,7 @@ B<-ace:>
             this checking script.
             Default location and filename of ace file:
             /wormsrv1/geneace/CHECKS/geneace_check.rundate.processid.ace
-            For example: -a or -ace
+            For example: -ace
 
 
 B<-verbose:>
