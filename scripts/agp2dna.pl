@@ -159,7 +159,7 @@ sub rubbish {
     my $acc = shift;
     my ($EMBL_acc,$EMBL_sv,$EMBL_seq);
     
-    open (SEQUENCE, "getz -d -sf fasta -f \'seqversion\' \"[emblnew-acc:$acc] | [embl-acc:$acc]\" |");
+    open (SEQUENCE, "getz -d -sf fasta -f \'seqversion\' \"[emblnew-acc:$acc] > [embl-acc:$acc]\" |");
     while (<SEQUENCE>) {
 	chomp;
 	if (/^SV\s+(\S+)\.(\d+)/) {
