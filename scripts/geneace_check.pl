@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-02-04 13:48:18 $
+# Last updated on: $Date: 2003-02-07 22:05:52 $
 
 
 use strict;
@@ -50,7 +50,6 @@ if ($database eq ""){
   $default_db = "/wormsrv1/geneace"; 
   print "\nUsing Geneace as default database\n\n";
 }
-
 else {
   $default_db = $database;
   print "\nUsing $database as default database path\n\n";
@@ -64,7 +63,6 @@ if($debug){
 }
 
 &create_log_files;
-
 
 # open a connection to geneace
 my $db = Ace->connect(-path  => $default_db,
@@ -131,7 +129,6 @@ close(JAHLOG);
 # Always mail to $maintainers (which might be a single user under debug mode)
 mail_maintainer($0,$maintainers,$log);
 
-
 # Also mail to Erich unless in debug mode
 my $interested ="krb\@sanger.ac.uk, emsch\@its.caltech.edu, ck1\@sanger.ac.uk";
 
@@ -148,14 +145,13 @@ my $CGC = "ck1\@sanger.ac.uk, krb\@sanger.ac.uk";
 
 open(MAIL2, "$jahlog") || die "Can't read in file $erichlog";
 
-my @CGC=<MAIL2>;
+@CGC=<MAIL2>;
 $cgc=join('', @CGC);
 if ($cgc eq $JAHmsg){   
   mail_maintainer($0,$CGC,$jahlog) unless $debug;
 }
   
 exit(0);
-
 
 #######################
 # Process Locus class #
@@ -191,9 +187,10 @@ sub process_locus_class{
   Table-maker -p "/wormsrv1/geneace/wquery/get_all_seq_with_pseudogene_and_locus.def" quit
 EOF
  
-  &find_new_loci_in_current_DB($get_seg_with_pseudogene_locus, $db);
+  find_new_loci_in_current_DB($get_seg_with_pseudogene_locus, $db);
    
   #Look for loci that are other_names and still are obj of ?Locus -> candidate for merging
+ 
   my $locus_has_other_name=<<EOF;
   Table-maker -p "/wormsrv1/geneace/wquery/locus_has_other_name.def" quit
 EOF
@@ -204,12 +201,11 @@ EOF
   Table-maker -p "/wormsrv1/geneace/wquery/locus_to_CDS.def" quit
 EOF
 
-  #loci_point_to_same_CDS($locus_to_CDS, $default_db);
+  loci_point_to_same_CDS($locus_to_CDS, $default_db);
 
   # check CGC_approved loci is XREF to existing Gene_Class   
   # check locus in geneace that are connected to CDS but not CGC_approved
-  
-  
+    
   my $cgc_loci_not_linked_to_geneclass=<<EOF;
   Table-maker -p "/wormsrv1/geneace/wquery/CGC_loci_not_linked_to_geneclass.def" quit
 EOF
@@ -315,7 +311,7 @@ sub process_allele_class{
   print"\n\nChecking Allele class for errors:\n";
   print LOG "\n\nChecking Allele class for errors:\n";
   print LOG "---------------------------------\n";
-=start
+
   my @alleles = $db->fetch('Allele','*');
   my ($allele, %allele_gene, $gene, $seq_name, @seq1, @seq2, @seqs, $cdb);
 
@@ -364,8 +360,8 @@ sub process_allele_class{
       $allele_errors++; 
     }
   }
-=end
-=cut
+
+
   my $allele_has_flankSeq_and_no_seq=<<EOF;
   Table-maker -p "/wormsrv1/geneace/wquery/allele_has_flankSeq_and_no_seq.def" quit
 EOF
@@ -646,15 +642,15 @@ sub loci_as_other_name {
 
   open (FH, "echo '$def' | tace $dir | ") || die "Couldn't access geneace\n";
   while (<FH>){
-    chomp($_);
+    chomp $_;
     if ($_ =~ /^\"/){
       $_ =~ s/\"//g;
       $_ =~ /(\w+-\d+|\w+-\d+\.[\d\w]+|.+)\s+(.+)/;
-     # print "$1 -> $2\n";
+      print "$1 -> $2\n";
       $main = $1;
       $other_name = $2;
-      $other_name =~ s/\//g;
-      $other_name = $db->fetch('Locus', "$other_name"); 
+      $other_name =~ s/\\//g;
+      $other_name = $db->fetch('Locus', $other_name); 
       if ($other_name){
 	$locus_errors++;
 	print LOG "WARNING: $main has $other_name as Other_name...$other_name is still a separate Locus object\n";
@@ -668,27 +664,29 @@ sub loci_as_other_name {
 sub loci_point_to_same_CDS {
  
    my ($def, $dir) = @_;
-   my (%CDS_loci);
+   my (%CDS_loci, $mo);
 
-   open (FH, "echo '$def' | tace $dir | ") || die "Couldn't access geneace\n";
+   open (FH, "echo '$def' | tace $dir |") || die "Couldn't access geneace\n";
    while (<FH>){
-     chomp($_);
+     chomp $_;
      if ($_ =~ /^\"/){
-       $_ =~ s/\"//g;
-       $_ =~  /(\w+-\d+|\w+-\d+\.[\d\w]+|.+)\s+(.+)/;
+       $mo = $1;	
+       $mo =~ s/\"//g;
+       $mo =~ /(.+)\s(.+)/;
+       #$_ =~ /(\w+-\d+|\w+-\d+\.[\d\w]+|.+)\s+(.+)/;
        push(@{$CDS_loci{$2}}, $1);
      }
    }
    foreach (keys %CDS_loci){
      if (scalar @{$CDS_loci{$_}} > 1){
        $locus_errors++;
-       print LOG "ERROR: $_ is connected to @{$CDS_loci{$_}}: case of merging?\n";
-       print JAHLOG "ERROR: $_ is connected to @{$CDS_loci{$_}}: case of merging?\n";
+       print LOG "ERROR: $_ is connected to @{$CDS_loci{$_}}: case of merging\?\n";
+       print JAHLOG "ERROR: $_ is connected to @{$CDS_loci{$_}}: case of merging\?\n";
      }
    }
 
 } 
-  
+
 ##############################
 
 sub locus_CGC {
@@ -888,7 +886,7 @@ sub test_locus_for_errors{
       my ($newloci) = $db->fetch(-class=>'Locus',-name=>"$other_name");
       if(defined($newloci)){
 	unless($newloci->at('Name.New_name')){
-	  $warnings .= "ERROR 17: $locus has Other_name: $other_name which is also a separate locus object\n";
+	  $warnings .= "ERROR 17: $locus hasa Other_name: $other_name which is also a separate locus object\n";
 	  $locus_errors++;
 	}   
       }
@@ -903,8 +901,7 @@ sub test_locus_for_errors{
     $locus_errors++;
   }
 
-  
-  return($warnings, $erich_warnings);
+   return($warnings, $erich_warnings);
 
 }
 
