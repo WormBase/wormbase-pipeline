@@ -7,8 +7,8 @@
 # Script to convert cgc strain file into ace file for geneace
 # Page download and update upload to geneace has been automated [ck1]
 
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2005-01-11 15:59:28 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2005-02-21 11:51:37 $
 
 use strict;
 use Getopt::Long;
@@ -362,13 +362,13 @@ sub check_details{
 
   # First thing is to make Strain->Allele connection (this assumes that the allele name
   # will link to a valid ?Allele object)
-  print STRAIN "Allele \"$allele\"\n";
-  print DELETE_STRAIN  "-D Allele \"$allele\"\n";  
+  print STRAIN "Variation \"$allele\"\n";
+  print DELETE_STRAIN  "-D Variation \"$allele\"\n";  
 
   # if the gene name corresponds to a valid Gene object, add a Gene->Allele and Strain->Gene connections
   if(defined($Gene_info{$gene}{'Gene'})){
     print GENE2ALLELE "Gene : $Gene_info{$gene}{'Gene'}\n";
-    print GENE2ALLELE "Allele $allele Inferred_automatically \"From strain object: $strain\"\n\n";
+    print GENE2ALLELE "Variation $allele Inferred_automatically \"From strain object: $strain\"\n\n";
 
     print STRAIN "Gene \"$Gene_info{$gene}{'Gene'}\"\n";
     print DELETE_STRAIN "-D Gene \"$Gene_info{$gene}{'Gene'}\"\n";  
@@ -397,7 +397,7 @@ sub check_details{
       print NEWGENES "Other_name \"$gene\"\n";
       print NEWGENES "Public_name \"$gene\"\n";
     }
-    print NEWGENES "Allele \"$allele\" Inferred_automatically \"From strain object: $strain\"\n\n";
+    print NEWGENES "Variation \"$allele\" Inferred_automatically \"From strain object: $strain\"\n\n";
 
   } 
 }
