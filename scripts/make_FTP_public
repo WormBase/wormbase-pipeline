@@ -147,7 +147,12 @@ print "move the contents of the wspec directory\n" if ($debug);
  
 
 # copy the pictures directory to a tarball
-system "/bin/tar -cf $targetdir/$release/pictures.tar /nfs/disk67/sylvia/geneace/pictures/*";
+system "/bin/tar -c -f $targetdir/$release/pictures.tar /nfs/disk67/sylvia/geneace/pictures/[A-Z]*";
+system "/bin/tar -u -f $targetdir/$release/pictures.tar /nfs/disk67/sylvia/geneace/pictures/[0-9]*";
+system "/bin/tar -u -f $targetdir/$release/pictures.tar /nfs/disk67/sylvia/geneace/pictures/[a-h]*";
+system "/bin/tar -u -f $targetdir/$release/pictures.tar /nfs/disk67/sylvia/geneace/pictures/[i-q]*";
+system "/bin/tar -u -f $targetdir/$release/pictures.tar /nfs/disk67/sylvia/geneace/pictures/[r-z]*";
+
 system "/bin/gzip $targetdir/$release/pictures.tar";
 print "make the pictures.tar.gz file in the FTP directory\n" if ($debug);
 
