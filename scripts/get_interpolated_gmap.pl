@@ -8,7 +8,7 @@
 # Output ace file of such information and upload to autoace during each build
 # Output also other files related. See POD
 
-# Last updated on: $Date: 2003-06-02 09:27:15 $
+# Last updated on: $Date: 2003-06-05 14:11:18 $
 # Last updated by: $Author: ck1 $
 
 use strict;
@@ -81,7 +81,7 @@ my ($cds, $parts, @coords, $i, $mean_coords, %cds_mean, %mean_coord_cds, %chrom_
 
 my $version = $order[-1]+1; # autoace
 my $acefile="$output/interpolated_gmap_"."WS$version.$rundate.ace";
-my $gacefile = "$output/interpolated_gmap_to_geneace"."WS$version.$rundate.ace";
+my $gacefile = "$output/interpolated_gmap_to_geneace_"."WS$version.$rundate.ace";
 
 if ($map){
   open (ACE, ">$acefile") || die "Can't output file!\n";
@@ -659,10 +659,11 @@ __END__
             It can generate the following files:
 
             (1) /wormsrv2/autoace/MAPPINGS/G_MAP/reverse_physicals_WSXXX.yymmdd.pid
-            (2) /wormsrv2/autoace/MAPPINGS/G_MAP/cmp_gmap_with_coord_order_WSXX.yymmdd.pid (list of marker loci with gmap and coords)
+            (2) /wormsrv2/autoace/MAPPINGS/G_MAP/cmp_gmap_with_coord_order_WSXXX.yymmdd.pid (list of marker loci with gmap and coords)
             (3) /wormsrv2/logs/mapping_diff.yymmdd (not run for the build, but called by geneace_check.pl)  
             (4) /wormsrv2/autoace/MAPPINGS/G_MAP/interpolated_gmap_WSXXX.yymmdd 
-            (5) /wormsrv2/autoace/MAPPINGS/G_MAP/gmap_info_WS*yymmdd (information might be interesting in case data looks strange) 
+            (5) /wormsrv2/autoace/MAPPINGS/G_MAP/interpolated_gmap_to_geneace_WSXXX.yymmdd.ace";
+            (6) /wormsrv2/autoace/MAPPINGS/G_MAP/gmap_info_WS*yymmdd (information might be interesting in case data looks strange) 
             
 
 =head3 <USAGE> 
