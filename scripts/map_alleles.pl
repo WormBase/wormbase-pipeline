@@ -7,7 +7,7 @@
 # This maps alleles to the genome based on their flanking sequence
 #
 # Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2003-01-22 16:55:57 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2003-01-24 17:20:39 $        # quickly see when script was last changed and by whom
 
 
 use strict;
@@ -26,6 +26,7 @@ my $ver;
 my $verbose;
 my $restart = "go";
 my $help; { `perldoc $0`;};
+my $no_geneace;
 
 # $debug   -  all output goes to ar/allele_mapping
 
@@ -35,7 +36,8 @@ GetOptions( "debug"     => \$debug,
 	    "WS=s"      => \$ver,
 	    "verbose"   => \$verbose,
 	    "help"      => \$help,
-	    "restart=s" => \$restart
+	    "restart=s" => \$restart,
+	    "no_geneace"=> \$no_geneace
 	  );
 
 if ($help) { print `perldoc $0`;exit;}
@@ -105,8 +107,10 @@ print LOG "$0 start at $runtime on $rundate\n----------------------------------\
 
 my $geneace_update = "/wormsrv2/autoace/MAPPINGS/map_alleles_geneace_update$ver.ace";
 my $geneace_update_delete = "/wormsrv2/autoace/MAPPINGS/map_alleles_geneace_update_delete$ver.ace";
-open (GENEACE,">$geneace_update") or die "cant open $geneace_update: $!\n";
-open (GEN_DEL,">$geneace_update_delete") or die "cant open $geneace_update_delete\n";
+unless ($no_geneace) {
+  open (GENEACE,">$geneace_update") or die "cant open $geneace_update: $!\n";
+  open (GEN_DEL,">$geneace_update_delete") or die "cant open $geneace_update_delete\n";
+}
 open (OUT,">$ace_file") or die "cant open $ace_file\n";
 #open (STR,">$strain_file") or die "cant open $strain_file\n";
 
@@ -135,6 +139,9 @@ my @chromosomes = qw( I II III IV V X );
 my $i = 0;
 foreach (@chromosomes) {
   my $gff = "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS/CHROMOSOME_$_.genes.gff";
+  if ($debug ) {
+    $gff = "/wormsrv2/autoace/GFF_SPLITS/WS94/CHROMOSOME_$_.genes.gff";
+  }
   my $chrom2gene = $hashrefs[$i];
   open (GFF,"<$gff") or die "cant open $gff\n";
   while(<GFF>) {
@@ -184,6 +191,9 @@ my %roman2num = ( I   => '0',
 		  X   => '5' 
 		);
 
+my %superlink_coords;
+&UpdateSuperlinkCoords;
+
 ####### allele mapping loop ######################
 
 my %allele_data;   #  allele => [ (0)type, (1)5'flank_seq , (2)3'flank_seq, (3)CDS, (4)end of 5'match, (5)start of 3'match , (6)clone, (7)chromosome, (8)strains]
@@ -204,12 +214,12 @@ my $type;
 my $left;
 my $right;
 my $allele;
-
+my $onSuperlink;
 my $go = 0;
 ALLELE:
 foreach $allele (@alleles)
   {
-
+    undef $onSuperlink;
     $name = $allele->name;
 
     # debug facility - this bit is so that it can restart from given allele name
@@ -317,55 +327,52 @@ foreach $allele (@alleles)
 	$source = $db->fetch(Sequence => "$clone");	
 	$SEQspan = $source->asDNA;
 	
-	if( &MapAllele == 1){
-	  #allele mapped to clone
-	  print "Did $allele with clone\n" if $verbose;
-	}
-	
-	#try and map to Superlink sequence
-	else
+	$onSuperlink = 1 if ($sequence =~ /SUPER/);
+	if ($onSuperlink != 1) 
 	  {
-	    # try mapping to reverse strand
-	   
-	    if( &MapAllele('r') == 1 ) {
-	      # need to make some coordinate adjustments to account for - strand
-	      # get clone details by getting csome and using chromo_clones_refs array to retrieve correct hash of clone positions
-	      my $csome_index = $roman2num{ $allele_data{$name}[7] };
-	      my $clone_info  = $chromo_clones_refs[ $csome_index ]{"$clone"};
-	      my $clone_length = $$clone_info[1] - $$clone_info[0] + 2; # add 2 to deal with aceDB seq starting at -1 (i think thats why!) 
-
-	      my $new_5 = $clone_length - $allele_data{$name}[5];
-	      my $new_3 = $clone_length - $allele_data{$name}[4];
-	      
-	      $allele_data{$name}[4] = $new_5;
-	      $allele_data{$name}[5] = $new_3;
+	    if(  &MapAllele == 1 ) { #only try and map to clone if sequence isn't a SUPERLINK
+	      # allele mapped to clone
+	      print "Did $allele with clone\n" if $verbose;
 	    }
-	    else {
-	      #$source is a clone obj
-	      if( $source )
-		{
-		  my $superlink = $source->Source;
-		  $SEQspan = $superlink->asDNA;
+	    
+	    #try and map to reverse strand
+	    else
+	      {
+		# try mapping to reverse strand
+		if( &MapAllele('r') == 1 ) {
+		  # need to make some coordinate adjustments to account for - strand
+		  # get clone details by getting csome and using chromo_clones_refs array to retrieve correct hash of clone positions
+		  my $csome_index = $roman2num{ $allele_data{$name}[7] };
+		  my $clone_info  = $chromo_clones_refs[ $csome_index ]{"$clone"};
+		  my $clone_length = $$clone_info[1] - $$clone_info[0] + 2; # add 2 to deal with aceDB seq starting at -1 (i think thats why!) 
 		  
+		  my $new_5 = $clone_length - $allele_data{$name}[5];
+		  my $new_3 = $clone_length - $allele_data{$name}[4];
 		  
-		  if( &MapAllele == 1 ) {
-		    #allele mapped to superlink
-		    $allele_data{$name}[6] = $superlink->name;
-		    print "Did $allele with superlink\n" ;
-		  }
-		  else {
-		    print LOG "$name failed mapping\n";
-		    print  "$name failed mapping\n";
-		    
-		  }
-		  
+		  $allele_data{$name}[4] = $new_5;
+		  $allele_data{$name}[5] = $new_3;
 		}
-	      else {
-		print LOG "$allele $sequence has no Source\n";
-		next;
+		else {
+		  print LOG "$name failed mapping\n";
+		  print  "$name failed mapping\n";
+		}
 	      }
-	    }
 	  }
+	else {
+	  #$source is a clone obj
+	  if( $source )
+	    {	    
+	      if( &MapAllele == 1 ) {
+		#allele mapped to superlink
+		$allele_data{$name}[6] = $source->name;
+		print "Did $allele with superlink\n" ;
+	      }
+	    }	
+	  else {
+	    print LOG "$allele $sequence has no Source\n";
+	    next;
+	  }
+	}
 
 	&findOverlapGenes($name);
 	&outputAllele($name);
@@ -383,24 +390,25 @@ $db->close;
 
 
 close OUT;
-close GEN_DEL;
-close GENEACE;
+close GEN_DEL unless $no_geneace;
+close GENEACE unless $no_geneace;
 
 ##############################
 # read acefiles into autoace #
 ##############################
-print LOG "\nStart parsing $ace_file in to $database\n\n";
-my $command =<<END;
+unless ( $debug ) {
+  print LOG "\nStart parsing $ace_file in to $database\n\n";
+  my $command =<<END;
 pparse $ace_file
 save
 quit
 END
-my $tace = &tace;
-open (TACE,"| $tace -tsuser map_allele $database") || die "Couldn't open tace connection to $database\n";
-print TACE $command;
-close (TACE);
-print LOG "finished parsing\n";
-
+  my $tace = &tace;
+  open (TACE,"| $tace -tsuser map_allele $database") || die "Couldn't open tace connection to $database\n";
+  print TACE $command;
+  close (TACE);
+  print LOG "finished parsing\n";
+}
 # close LOG and send mail
 close LOG;
 print LOG "$0 end at ",&runtime," \n-------------- END --------------------\n\n";
@@ -450,16 +458,16 @@ sub outputAllele
 
 	# in Allele object
 	print OUT "\nAllele : $to_dump\n";
-	print GEN_DEL "\nAllele : $to_dump\n-D Predicted_gene\n-D Sequence\n";# remove current sequence and predicted genes from Geneace
+	print GEN_DEL "\nAllele : $to_dump\n-D Predicted_gene\n-D Sequence\n" unless $no_geneace;# remove current sequence and predicted genes from Geneace
 
-	print GENEACE "\nAllele : \"$to_dump\"\nSequence \"$allele_data{$to_dump}[6]\"\n";# allele -> sequence
+	print GENEACE "\nAllele : \"$to_dump\"\nSequence \"$allele_data{$to_dump}[6]\"\n" unless $no_geneace;# allele -> sequence
 	if( $allele_data{$to_dump}[8] ) {
 	  @myStrains = split(/\*\*\*/,"$allele_data{$to_dump}[8]");
 	}
 	foreach my $ko (@affects_genes) {
 	  #allele - seq connection
 	  print OUT "Predicted_gene $ko\n";
-	  print GENEACE "Predicted_gene $ko\n";# update geneace with allele -> Predicted_genes
+	  print GENEACE "Predicted_gene $ko\n" unless $no_geneace;# update geneace with allele -> Predicted_genes
 
 
 #         NOT DOING THIS ANY MORE
@@ -624,6 +632,22 @@ sub UpdateHashes #(hash, file)
       }
   }
 
+sub UpdateSuperlinkCoords
+  {
+    #this creates a hash of SUPERLINK => [start, end] for determining overlapping genes#
+    my @chromosomes = $db->fetch(Sequence => 'CHROMO*');
+    foreach (@chromosomes) {
+      my @superlinks = $_->Subsequence;
+      foreach (@superlinks) {
+	my $SLstart = $_->right->name;
+	my $SLend = $_->right(2)->name;
+	$superlink_coords{$_->name} = [$SLstart, $SLend];
+	print "@{$superlink_coords{$_}}\n" ;
+      }
+    }
+  }
+
+
 sub findOverlapGenes
   {
     my $allele = shift;
@@ -632,9 +656,20 @@ sub findOverlapGenes
     my $clone =  $allele_data{$allele}[6];
     my $clone_pos =  $chromo_clones_refs[ $roman2num{"$chromosome"} ];
     my $genelist= $arrayrefs[ $roman2num{"$chromosome"} ];
-    
-    my $chromosomal_coords_5 = $$clone_pos{"$clone"}[0] + $allele_data{$allele}[4];
-    my $chromosomal_coords_3 = $$clone_pos{"$clone"}[0] + $allele_data{$allele}[5];
+    my $chromosomal_coords_5;
+    my $chromosomal_coords_3;
+
+    if( $onSuperlink ) {
+     #get coords from the SUPERLINKS
+      my $Superlink_start = $superlink_coords{$clone}[0];
+      $chromosomal_coords_5 = $Superlink_start + $allele_data{$allele}[4];
+      $chromosomal_coords_3 = $Superlink_start + $allele_data{$allele}[5];
+    }
+    else {
+      # get from clone hashes
+      $chromosomal_coords_5 = $$clone_pos{"$clone"}[0] + $allele_data{$allele}[4];
+      $chromosomal_coords_3 = $$clone_pos{"$clone"}[0] + $allele_data{$allele}[5];
+    }
     
     # if allele of > 1bp on - strand 3' coord will be bigger than 5'
     if ($chromosomal_coords_5 < $chromosomal_coords_3) {
@@ -642,6 +677,7 @@ sub findOverlapGenes
       $chromosomal_coords_3 = $chromosomal_coords_5;
       $chromosomal_coords_5 = $tmp;
     }
+      
     
     foreach my $gene ( @$genelist ) {
       if(
