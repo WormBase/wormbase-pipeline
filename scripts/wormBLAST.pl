@@ -4,8 +4,8 @@
 # 
 # written by Anthony Rogers
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2004-02-19 10:01:57 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2004-03-10 16:55:15 $
 
 use DBI;
 use strict;
@@ -547,7 +547,7 @@ if( $cleanup ) {
 
   print "\nRemoving the $wormpipe_dir/DUMP_PREP_RUN lock file\n"; system("rm -f $wormpipe_dir/DUMP_PREP_RUN") && warn "cant remove $wormpipe_dir/DUMP_PREP_RUN\n";
 
-  print "\nRemoving farm output and error files from /acari/scatch5/ensembl/Worms/*\n"; system("rm -rf /acari/scratch5/ensembl/Worms/*") && warn "cant clear up /acari/scatch5/ensembl/Worms/*\n";
+  print "\nRemoving farm output and error files from /acari/scatch5/ensembl/Worms/*\n"; system("rm -rf /acari/scratch5/ensembl/Worms/*/*") && warn "cant clear up /acari/scatch5/ensembl/Worms/*\n";
 
   print "\n\nCLEAN UP COMPLETED\n\n";
 }
