@@ -225,7 +225,6 @@ my $runtime = `date +%H:%M:%S`; chomp $runtime;
 print LOG "# $runtime : write wormpep.dna file\n\n";
 
 my $obj = "";
-my %est = "";
 
 open (DNA , ">$new_wpdir/wormpep.dna$release") || &error(7); # die "cannot create $new_wpdir/wormpep.dna$release\n";
 my (%dot2num , @dotnames , @c_dotnames);
@@ -241,7 +240,6 @@ foreach my $dot (@dotnames_1) {
     }
     undef (my $dna);
     undef (my $method);
-    undef (my $est_match);
 
 
 ##    $method = $dot -> at ('Method.[1]');
@@ -252,13 +250,13 @@ foreach my $dot (@dotnames_1) {
 
     $obj = $db->fetch(Sequence=>"$dot");
     
-    $est_match = $obj->Matching_cDNA();
-    if (defined ($est_match))  {
-	$est{$dot} = 1;
-    }
-    else {
-	$est{$dot} = 0;
-    }
+#    $est_match = $obj->Matching_cDNA();
+#    if (defined ($est_match))  {
+#	$est{$dot} = 1;
+#    }
+#    else {
+#	$est{$dot} = 0;
+#    }
 
     $dna = $obj->asDNA();
     if ((!defined ($dna)) || ($dna eq "")) {
@@ -479,7 +477,7 @@ my %CDS_lab        = "";
 my %laboratory     = "";
 my %CDS_status     = "";
 my @CDS            = "";
-
+my %EST            = "";
 
 
 $ENV{'ACEDB'} = $dbdir;
@@ -496,17 +494,26 @@ while (<TACE>) {
     next if (/\/\//);
     s/\"//g;
     (/^(\S+)\s/);
-    ($cds,$parent,$loci,$brief_id,$confirmed) = split /\t/;
+    ($cds,$parent,$loci,$brief_id,$confirmed,$est) = split /\t/;
     $CDS_locus{$cds} = $loci;
     $CDS_id{$cds} = $brief_id;
     $CDS_lab{$cds} = $parent;
+    $EST{$cds} = $est;
+    
+    # confirmed CDS - [EST|mRNA] data
     if ($confirmed) {
 	$CDS_status{$cds} = "Confirmed";
     }
     else {
-	$CDS_status{$cds} = "Predicted";
+	# supported CDS - [EST] data
+	if ($est > 0) {
+	    $CDS_status{$cds} = "Partially_confirmed";
+	}
+	# predicted CDS - no data
+	else {
+	    $CDS_status{$cds} = "Predicted";
+	}
     }
-
 }
 close TACE;
 
@@ -560,11 +567,7 @@ foreach (@dotnames) {
     my $pepseq = $num2seq[$wpid];
 
     if ($CDS_locus{$cds} ne "") {$locus_1 = "locus\:".$CDS_locus{$cds};}
-    
-    if ($est{$cds} == 1) {
-	$CDS_status{$cds} = "Partially_confirmed";
-    }
-        
+            
 #    if ($laboratory{$CDS_lab{$cds}} eq "RW") {$lab = "ST.LOUIS";}
 #    if ($laboratory{$CDS_lab{$cds}} eq "HX") {$lab = "HINXTON";}
     
