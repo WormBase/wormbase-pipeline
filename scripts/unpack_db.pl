@@ -11,6 +11,9 @@
 # the St. Louis database (stlace)
 # the Cold Spring Harbor Laboratory database (cshace)
 # the Caltech database (citace)
+#
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2002-04-23 16:45:22 $
 
 
 #################################################################################
