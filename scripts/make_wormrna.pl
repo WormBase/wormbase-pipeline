@@ -7,7 +7,7 @@
 # Builds a wormrna data set from the current autoace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-05-14 16:31:55 $
+# Last updated on: $Date: 2003-08-01 15:26:29 $
 
 
 #################################################################################
@@ -82,7 +82,8 @@ $runtime = `date +%H:%M:%S`; chomp $runtime;
 print LOG "# $runtime : connect to primary database\n";
 
 my $db = Ace->connect (-path => $dbdir, -program => $tace) || die "Couldn't connect to $dbdir\n";
-my @transcripts = $db->fetch (-query => 'FIND Transcript WHERE Species = "Caenorhabditis elegans"');
+# Get RNA genes, but not other Transcript objects
+my @transcripts = $db->fetch (-query => 'FIND Transcript WHERE Species = "Caenorhabditis elegans" AND NOT Method = "Transcript"');
 
 @transcripts = sort @transcripts;
 my $count = scalar(@transcripts);
@@ -274,7 +275,9 @@ __END__
 =back
 
 make_wormrna.pl will generate a rna data set from the autoace
-database directory.
+database directory.  Finds RNA genes in Transcript class, but filters out 
+any other Transcript objects which represent full length transcripts of
+coding genes (i.e. where Method = Transcript)
 
 make_wormrna.pl mandatory arguments:
 
