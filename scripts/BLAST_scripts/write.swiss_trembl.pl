@@ -30,6 +30,12 @@ my $db_files = "/acari/work2a/wormpipe/swall_data";
 my $swiss_list_txt = "$wormpipe_dump/swisslist.txt";
 my $trembl_list_txt = "$wormpipe_dump/trembllist.txt";
 
+`cat $wormpipe_dump/blastp_ensembl.ace $wormpipe_dump/blastx_ensembl.ace | perl -n -e 'if (/Pep_homol\s+\"SW:(\S+)\"/) {print $1."\n";}' | sort -u > swisslist.txt`
+
+`cat $wormpipe_dump/blastp_ensembl.ace $wormpipe_dump/blastx_ensembl.ace | perl -n -e 'if (/Pep_homol\s+\"TR:(\S+)\"/) {print $1."\n";}' | sort -u > $trembllist.txt`;
+
+
+
 my @lists_to_dump;
 $db_files = "$database" if defined $database;  # can use other database files if desired
 
@@ -139,4 +145,31 @@ sub output_list
   }
 
 
- #used to be in fetch.pl
+
+__END__
+
+=pod
+
+=head2   NAME - write.swiss_trembl.pl
+
+=head1 USAGE
+
+=over 4
+
+=item write.swiss_trembl.pl [-options]
+
+-swiss  get SwissProt entries
+
+-trembl get TrEMBL  entries
+
+-debug  read/write to different directory
+
+-database specify a non-default .gsi directory to use
+
+=back
+
+This script creates ace files containing the details of any proteins that have blast matches.
+
+The input list are simply a list of ID's of matching proteins.
+
+The .gsi databases are written by fasta2gsi.pl -f /acari/work2a/wormpipe/swall_data/slimswissprot whenever the swissprot/trembl are updated.
