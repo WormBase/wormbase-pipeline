@@ -6,8 +6,8 @@
 
 # Author: Chao-Kung Chen
 
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-07-09 13:30:02 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2005-02-14 11:47:42 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'}; 
@@ -95,13 +95,13 @@ open(OUT, ">>$acefile") || die $!;
 #print $acefile, "################\n";
 
 if ($MU_codon[0] ne $WT_codon[0] && $MU_codon[1] eq $WT_codon[1] && $MU_codon[2] eq $WT_codon[2]){
-  $mut_site=1; print OUT "\n\nAllele : \"$Allele\"\nSubstitution \"[", lc($WT_codon[0]),"/", lc($MU_codon[0]), "]\"\n"; 
+  $mut_site=1; print OUT "\n\nVariation : \"$Allele\"\nSubstitution \"[", lc($WT_codon[0]),"/", lc($MU_codon[0]), "]\"\n"; 
 }
 if ($MU_codon[0] eq $WT_codon[0] && $MU_codon[1] ne $WT_codon[1] && $MU_codon[2] eq $WT_codon[2]){
-  $mut_site=2; print OUT "\n\nAllele : \"$Allele\"\nSubstitution \"[", lc($WT_codon[1]),"/", lc($MU_codon[1]), "]\"\n"; 
+  $mut_site=2; print OUT "\n\nVariation : \"$Allele\"\nSubstitution \"[", lc($WT_codon[1]),"/", lc($MU_codon[1]), "]\"\n"; 
 }
 if ($MU_codon[0] eq $WT_codon[0] && $MU_codon[1] eq $WT_codon[1] && $MU_codon[2] ne $WT_codon[2]){
-  $mut_site=3; print OUT "\n\nAllele : \"$Allele\"\nSubstitution \"[", lc($WT_codon[2]),"/", lc($MU_codon[2]), "]\"\n"; 
+  $mut_site=3; print OUT "\n\nVariation : \"$Allele\"\nSubstitution \"[", lc($WT_codon[2]),"/", lc($MU_codon[2]), "]\"\n"; 
 }
 
 
