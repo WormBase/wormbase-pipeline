@@ -1,4 +1,13 @@
-#!/usr/bin/perl -w
+#!/usr/local/bin/perl5.8.0 -w
+#
+# batch_transcript_builder.pl
+#
+# by Anthony Rogers
+#
+# wrapper script for running transcript_builder.pl
+#
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2004-08-05 13:54:01 $
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
