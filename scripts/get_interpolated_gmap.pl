@@ -8,7 +8,7 @@
 # Output ace file of such information and upload to autoace during each build
 # Output also other files related. See POD
 
-# Last updated on: $Date: 2003-05-14 16:58:34 $
+# Last updated on: $Date: 2003-05-16 10:17:55 $
 # Last updated by: $Author: ck1 $
 
 use strict;
@@ -24,12 +24,13 @@ my $rundate = `date +%y%m%d`; chomp $rundate;
 # variables and command-line options with aliases #
 ###################################################
 
-my ($diff, $reverse, $database, $gff_location, $help, $map, $gmap_marker_dir, $gff_dir, $curr_db);
+my ($diff, $reverse, $database, $gff_location, $help, $map, $comp, $gmap_marker_dir, $gff_dir, $curr_db);
 
 GetOptions ("diff"          => \$diff,
             "rev|reverse"   => \$reverse,
 	    "db|database=s" => \$database,
 	    "map"           => \$map,
+	    "comp"          => \$comp, 
 	    "h|help"        => \$help 
            );
 
@@ -42,14 +43,14 @@ my @versions=dataset($gff_dir, "folder");
 
 my @order = sort {$a <=> $b} @versions;
 
-$gff_location = "/wormsrv2/autoace/GFF_SPLITS/WS"."$order[-1]";
-
 if (!defined $database){
+  $gff_location = "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS";
   $gmap_marker_dir = "/wormsrv2/autoace"; 
   print "\nUsing $gmap_marker_dir as database path for genetics marker loci . . .\n";
 } 
 
 if (defined $database){
+  $gff_location = "/wormsrv2/autoace/GFF_SPLITS/WS"."$order[-1]";
   $gmap_marker_dir = $database;
   print "\nUsing $gmap_marker_dir as database path for genetics marker loci . . .\n";
 }
@@ -57,15 +58,15 @@ if (defined $database){
 my ($revfile, $diffile);
 
 if ($reverse){
-  $revfile = "/wormsrv2/logs/reverse_physicals_"."WS$order[-1].$rundate";
+  $revfile = "/wormsrv2/logs/reverse_physicals_"."WS$order[-1].$rundate.$$";
   open(REV, ">$revfile") || die $!;
-  system("chmod 755 $revfile");
+  system("chmod 777 $revfile");
 }
 
 if ($diff){
   $diffile = "/wormsrv2/logs/mapping_diff.".$rundate;
   open(DIFF, ">$diffile") || die $!;
-  system("chmod 755 $diffile");
+  system("chmod 777 $diffile");
 }
 
 chdir $gff_location;
@@ -74,11 +75,12 @@ my (@data, %CDS_mapping, %CDS_isoforms_mapping, %CDS_variants, %predicted_gene_t
 my (%chrom_meanCoord, %genetics_mapping);
 my ($cds, $parts, @coords, $i, $mean_coords, %cds_mean, %mean_coord_cds, %chrom_mean_coord_cds);
 
-my $acefile="/wormsrv2/autoace/MAPPINGS/interpolated_gmap_"."WS$order[-1].$rundate.ace";
+my $version = $order[-1]+1; # autoace
+my $acefile="/wormsrv2/autoace/MAPPINGS/interpolated_gmap_"."WS$version.$rundate.ace";
 
 if ($map){
   open (ACE, ">$acefile") || die "Can't output file!\n";
-  system("chmod 755 $acefile");
+  system("chmod 777 $acefile");
 }
 
 ######################################################
@@ -114,10 +116,26 @@ while (<FH2>){
 }
 close FH1; close FH2;
 
-open (INFO, ">/wormsrv2/logs/gmap_info_"."WS$order[-1].$rundate") || die $!;
+my %locus_map;
+
+if($comp){
+  open(IN, "/wormsrv1/geneace/gMAP/interpolated_gmap_based_on_contig_map_out.all") || die $!;
+  open (MAPCOMP, ">/wormsrv2/logs/compare_gmap_WS$version.$rundate") || die $!;
+  system("chmod 777 /wormsrv2/logs/compare_gmap_WS*.$rundate");
+  while (<IN>){
+    chomp;
+    my ($locus, $LG, $map) = split (/\s+/, $_);
+    $locus_map{$locus} = $map;
+  }
+  close IN; 
+}
+
+open (INFO, ">/wormsrv2/logs/gmap_info_"."WS$version.$rundate") || die $!;
 system("chmod 777 /wormsrv2/logs/gmap_info_WS*.$rundate");
 
 print INFO "\nAll CDS/transcript linked to locus in $curr_db ", scalar keys %predicted_gene_to_locus,"\n\n";
+
+
 
  
 ########################################################################################
@@ -235,7 +253,7 @@ Table-maker -p "/wormsrv1/geneace/wquery/marker_gmap_of_each_chrom.def" quit
 EOF
   
 my ($mean_coord, %chrom_pos);
-my $cmp_file = "/wormsrv2/logs/cmp_gmap_with_coord_order_"."WS$order[-1].$rundate";
+my $cmp_file = "/wormsrv2/logs/cmp_gmap_with_coord_order_"."WS$version.$rundate.$$";
 
 if ($reverse) {
   open(CMP, ">$cmp_file") || die $!;
@@ -514,7 +532,7 @@ foreach $chrom (@chroms){
     }  
   }  
   if ($reverse){
-    print REV "--->$rev_phys reverse physicals on Chromosom $chrom\n\n";
+    print REV "--->$rev_phys reverse physical(s) on Chromosom $chrom\n\n";
     my $gmap = $unique_pos_order[-1];
     my $locus = @{$pos_order_to_mean_coord_locus_cds{$gmap}}->[1];
     $mean_coord = @{$pos_order_to_mean_coord_locus_cds{$gmap}}->[0];
@@ -564,23 +582,31 @@ sub ace_output {
   my ($cds, $chrom, $gmap, $mean_coord, $feature)=@_;
   
   if (exists $CDS_variants{$cds}){
+   
     foreach (@{$CDS_variants{$cds}}){
+    
       if ($feature eq "DNA"){print ACE "\nSequence : \"$_\"\n"}
       if ($feature eq "RNA"){print ACE "\nTranscript : \"$_\"\n"}
-      print ACE "Interpolated_map_position\t\"$chrom\"\tPosition\t$gmap\t\/\/$mean_coord (iso)\n";
+      print ACE "Interpolated_map_position\t\"$chrom\"\t$gmap\t\/\/$mean_coord (iso)\n";
       if (exists $predicted_gene_to_locus{$_}){
         print ACE "\nLocus : \"$predicted_gene_to_locus{$_}\"\n";
-        print ACE "Interpolated_map_position\t\"$chrom\"\tPosition\t$gmap\t\/\/$mean_coord (iso)\n";
+        print ACE "Interpolated_map_position\t\"$chrom\"\t$gmap\t\/\/$mean_coord (iso)\n";
+	if ($comp && $locus_map{$predicted_gene_to_locus{$_}}){
+        print MAPCOMP "$predicted_gene_to_locus{$_}\t\"$chrom\"\tCoords:\t$gmap\tContig:\t$locus_map{$predicted_gene_to_locus{$_}}\n";
+      }
       }  
     }
   }
   else {
     if ($feature eq "DNA"){print ACE "\nSequence : \"$cds\"\n"}
     if ($feature eq "RNA"){print ACE "\nTranscript : \"$cds\"\n"}
-    print ACE "Interpolated_map_position\t\"$chrom\"\tPosition\t$gmap\t\/\/$mean_coord\n";
+    print ACE "Interpolated_map_position\t\"$chrom\"\t$gmap\t\/\/$mean_coord\n";
     if (exists $predicted_gene_to_locus{$cds}){
       print ACE "\nLocus : \"$predicted_gene_to_locus{$cds}\"\n";
-      print ACE "Interpolated_map_position\t\"$chrom\"\tPosition\t$gmap\t\/\/$mean_coord\n";
+      print ACE "Interpolated_map_position\t\"$chrom\"\t$gmap\t\/\/$mean_coord\n";
+      if ($comp && exists $locus_map{$predicted_gene_to_locus{$cds}}){
+	print MAPCOMP "$predicted_gene_to_locus{$cds}\t\"$chrom\"\tCoords:\t$gmap\tContig:\t$locus_map{$predicted_gene_to_locus{$cds}}\n";
+      }
     }
   }
 }
@@ -594,8 +620,8 @@ __END__
             This script is run at end of build to calculate interpolated map positions for all CDS and Transcripts.
             It can generate the following files:
 
-            (1) /wormsrv2/logs/reverse_physicals_WSXXX.yymmdd
-            (2) /wormsrv2/logs/cmp_gmap_with_coord_order_WSXX.yymmdd (list of marker loci with gmap and coords)
+            (1) /wormsrv2/logs/reverse_physicals_WSXXX.yymmdd.pid
+            (2) /wormsrv2/logs/cmp_gmap_with_coord_order_WSXX.yymmdd.pid (list of marker loci with gmap and coords)
             (3) /wormsrv2/logs/mapping_diff.yymmdd (not run for the build, but called by geneace_check.pl)  
             (4) /wormsrv2/autoace/MAPPINGS/interpolated_gmap_WSXXX.yymmdd 
             (5) /wormsrv2/logs/gmap_info_WS*yymmdd (information might be interesting in case data looks strange) 
@@ -605,7 +631,9 @@ __END__
 
 =head2 Mandatory Options for the build
 
-            get_interpolated_gmap -rev -map
+            get_interpolated_gmap -rev -map or
+            get_interpolated_gmap -rev -map -comp (if want to compare the difference between gmap based on 
+                                                   seq. coordinates and contig maps)
 
 
 =head2 Optional switches for calling from geneace-check.pl
@@ -618,7 +646,7 @@ __END__
 
             Some options have single letter or wordy aliases 
   
-            [diff] [rev or reverse] [db or databases] [map]
+            [diff] [rev or reverse] [db or databases] [map] [comp]
 
 B<-h: / -help:>     
             Displays usage of the script: surprised?
@@ -636,10 +664,14 @@ B<-db: / -databse:>
             Eg. 
                 -db /wormsrv1/geneace 
 
-                if this option is omitted, ie, when this script is run at end of build, it points to the fresh WS release
+                if this option is omitted, ie, when this script is run at end of build, it points to autoace
                                 
 B<-map:>    
-            Output interpolated map positions as ace file. Requeires -rev
+            Output interpolated map positions as ace file. Requeires -rev to check for reverse physicals
            
 
-
+B<-comp:>
+             
+            Output a list that compares interpolated gmap of CDS/transcripts links to locus based on 
+            (1) sequence coordinates 
+            (2) physical contig maps, which can be view in gmap
