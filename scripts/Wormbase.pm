@@ -24,16 +24,8 @@ sub get_cvs_version{
 
 sub get_wormbase_version {
 
-    my $Wormbase_release_file = "/wormsrv2/autoace_config/WormBase_release_version";
-    my $WS_version            = "";
-
-    open (WormBase_release, $Wormbase_release_file) || warn "Can't open file\n\n";
-    while (<WormBase_release>) {
-	chomp;
-	$WS_version = $_;
-    }
-    close (WormBase_release);
-    
+    my $WS_version = 'grep "NAME WS" /wormsrv2/autoace/wspec/database.wrm';
+    $WS_version =~ s/NAME //;    
     return($WS_version);
 }
 
