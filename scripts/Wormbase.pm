@@ -664,6 +664,7 @@ sub test_user_wormpub
   {
     my $name = `whoami`;
     if( "$name" eq "wormpub" ){
+      print "running scripts as user wormpub . . . \n\n";
       return;
     }
     else {
