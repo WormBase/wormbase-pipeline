@@ -90,7 +90,7 @@ my %processIds2prot_analysis = ( '2' => "wublastp_worm",
 
 our %org_prefix = ( 'wublastp_worm'          => 'WP',
 		    'wublastp_ensembl'       => 'ENSEMBL',
-		    'wublastp_fly'           => 'GADFLY',
+		    'wublastp_fly'           => 'FLYBASE',
 		    'wublastp_yeast'         => 'SGD',
 		    'wublastp_slimswissprot' => 'SW',
 		    'wublastp_slimtrembl'    => 'TR',
