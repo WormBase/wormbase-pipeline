@@ -10,7 +10,7 @@ use Wormbase;
 my $tace = &tace;
 my $rundate = `date +%y%m%d`; chomp $rundate;
 
-my $log = &make_log_file; 
+my $log = &make_build_log; 
 
 #open(FH, ">/wormsrv2/logs/transcript_builder_$rundate") || die $!;
 #my $log = (*FH);
