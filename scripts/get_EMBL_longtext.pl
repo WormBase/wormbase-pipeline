@@ -8,7 +8,7 @@
 # Author: Chao-Kung Chen Jan 24 2003
 
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-03-15 12:37:43 $ 
+# Last updated on: $Date: 2004-03-16 17:36:02 $ 
 
 use strict;
 use Getopt::Long;
@@ -30,8 +30,6 @@ GetOptions ("i|input=s"       => \$input,
 # read in EMBL ACs from file
 ############################
 
-print "\n\nStart to parse out EMBL accessions .....\n\n";
-
 if ($input){
   open(IN, $input) || die "Can't read file $input";
   while (<IN>){
@@ -40,14 +38,14 @@ if ($input){
     # $2 = locus
     # $3 = ID
     # $4 = SV
-    # $5 = Prot_id
+    # $5 = Prot_id (prefix.suffix)
     # $6 = DE
     # $7 = species
 
     if ($_ =~ /^(.+)\t(.+)\t(.+)\t(.+)\t(.+)\t(.+)\t(.+)/){
       push(@ACs, $1);
       push(@{$AC_info{$1}}, $2, $3, $4, $5, $6, $7);
-      print "$1\t$2\t$3\t$4\t$5\t$6\n";
+    #  print "$1\t$2\t$3\t$4\t$5\t$6\n";
     }
   } 
 
@@ -85,8 +83,8 @@ foreach (@all_longtext){
     print "Can't pfetch $ACs[$num]\n"; $num++; next
   }
 
-  if ($_ =~ /^ID\s+(\w+)\s+.+/ ){$id = $1; print $id, "##\n"};
-  if ($_ =~ /^SV\s+(\w+\.(\d+))/ ){$sv = $1; $version = $2; print $version, "\n" }
+  if ($_ =~ /^ID\s+(\w+)\s+.+/ ){$id = $1};
+  if ($_ =~ /^SV\s+(\w+\.(\d+))/ ){$sv = $1; $version = $2}
 
   if ($_ !~ /^SQ.+|^\s+/ && $_ !~ /^\/\// && $_ !~ /^no match\n/){
     push(@{$ac_longtext{$ACs[$num]}}, $_) if !$ac; 
@@ -101,7 +99,7 @@ foreach (@all_longtext){
 # output acefile for longtext
 #############################
 
-print "\nWriting ace file .....\n\n";
+print "\nWriting longtext ace file .....\n\n";
 
 open(FH, ">$output") || die $!;
 
@@ -123,7 +121,7 @@ foreach (keys %ac_longtext){
     print FH "Locus_other_seq  \"$locus\"\n";
   }
   else {
-    print $pid = $AC_info{$_}->[3], "\n";
+   # print $pid = $AC_info{$_}->[3], "\n";
     $pid = $AC_info{$_}->[3];
     $pid =~ /(.+)\.(\d+)/;
     $pid = $1; $version = $2;
@@ -154,8 +152,7 @@ foreach (keys %ac_longtext){
 close FH;
 
 $end = `date +%H:%M:%S`; chomp $end;
-print "\nJob started at $start\n";
-print "Job finished at $end\n";
+print "\n$0 started at $start, finished at $end\n";
 
 print "\n########## You need to manually enter Protein_id info ##########\n\n" if $ac;
 __END__
