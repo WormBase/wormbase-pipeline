@@ -112,6 +112,10 @@ foreach my $chromosome (@chromosomes) {
 
 	if ($f[1] eq "GenePair_STS" or $f[1] eq "Orfeome_project") {
 	    my ($name) = ($f[8] =~ /PCR_product \"(.*)\"$/);
+	    unless ($name) {
+	      print LOG "Cant get name from $f[8]\n";
+	      next;
+	    }
             $PCRcount{$name}++;
             my $PCRname = $name.".".$PCRcount{$name};
             $PCR{$PCRname} = [$f[3],$f[4]];
@@ -152,7 +156,7 @@ foreach my $chromosome (@chromosomes) {
 
     my @exonlist= sort { $exon{$a}->[0]  <=> $exon{$b}->[0]  } keys %exon;
     my @genelist= sort { $genes{$a}->[0] <=> $genes{$b}->[0] } keys %genes;
-    my @PCRlist = sort { $PCR{$a}->[0]   <=> $PCR{$b}->[0] || $a cmp $b } keys %PCR;     
+    my @PCRlist = sort { $PCR{$a}->[0]   <=> $PCR{$b}->[0] || $a cmp $b } keys %PCR;
 
     ##########
     # map it #
