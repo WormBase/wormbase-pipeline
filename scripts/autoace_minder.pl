@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-09-09 08:16:12 $
+# Last edited on: $Date: 2003-09-10 07:26:13 $
 
 
 #################################################################################
@@ -155,6 +155,7 @@ our $tace         =  &tace;
 our ($WS_version,$WS_previous) = &get_WS_version;
 
 # deal with logfile issues
+$rundate    = `date +%y%m%d`; chomp $rundate;
 our $logfile = "/wormsrv2/logs/autoace_minder.WS${WS_version}.${rundate}.$$";
 open (LOG,">$logfile");
 LOG->autoflush();
@@ -1259,8 +1260,8 @@ END
 #################################################################################
 
 sub logfile_details {
-  
-  print LOG "# autoace_minder.pl started at: $rundate $runtime\n";
+  $rundate    = `date +%y%m%d`; chomp $rundate;
+  print LOG "# autoace_minder.pl started at: $rundate ",&runtime,"\n";
   print LOG "# WormBase/Wormpep version: WS${WS_version}\n\n";  
   print LOG "#  -initial      : Prepare for a new build, update WSnn version number\n"                 if ($initial);
   print LOG "#  -unpack       : Unpack databases from FTP site and copy Sanger dbs\n"                  if ($unpack);
