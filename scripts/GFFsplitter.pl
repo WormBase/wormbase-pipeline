@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2004-09-06 15:06:25 $
+# Last updated by: $Author: dl1 $
+# Last updated on: $Date: 2004-09-23 11:34:02 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -241,8 +241,6 @@ foreach $file (@gff_files) {
     elsif (/BLAT_ncRNA_OTHER/)                        {push (@{$GFF{$file}{BLAT_ncRNA_OTHER}},$_);}
     # Expr_profile
     elsif (/Expr_profile/)                            {push (@{$GFF{$file}{Expr_profile}},$_);}
-    # UTR         
-    elsif (/UTR/)                                     {push (@{$GFF{$file}{UTR}},$_);}
     # Protein similarities
     elsif (/wublastx/)                                {push (@{$GFF{$file}{BLASTX}},$_);}
     # C. briggsae
@@ -304,14 +302,6 @@ foreach $file (@gff_files) {
     $output_file = "$datadir/GFF_SPLITS/$file.CDS_acc.gff";
     &GFF_CDS_with_accessions("$input_file", "$output_file");
     system ("mv -f $output_file $input_file");
-  }
-  
-  # GFF UTRs with CDS names
-  # Shouldn't attempt to do this if UTR data has not been generated
-  if(-e "$lockdir/B10:Generate_UTR_data" ) {
-    my $utr_file = "$datadir/GFF_SPLITS/$file.UTR.gff";
-    my $utr_cds_file = "$datadir/GFF_SPLITS/$file.UTR_CDS.gff";
-    &GFF_with_UTR("$utr_file","$utr_cds_file");
   }
   
 }
@@ -397,26 +387,6 @@ sub usage {
 # Post-processing GFF routines
 #
 ################################################
-
-sub GFF_with_UTR{
-  my $utr = shift;
-  my $utr_cds = shift;
-  open( UTR, "<$utr" );
-  open( UTR_CDS, ">$utr_cds");
-  while (<UTR>) {
-    if (/^\#/){
-      print UTR_CDS $_;
-    }
-    else{
-      (/_UTR:(\S+)\"/);
-      print UTR_CDS "$`" . "_UTR:$1\" CDS=\"$1\"\n";
-    }
-  }
-  close UTR;
-  close UTR_CDS;
-  
-  system ("mv -f $utr_cds $utr");
-}
 
 ########################################
 
@@ -561,7 +531,6 @@ BLAT_TC1_OTHER
 BLAT_ncRNA_BEST
 BLAT_ncRNA_OTHER
 Expr_profile
-UTR
 BLASTX
 WABA_BRIGGSAE
 operon
