@@ -483,6 +483,10 @@ if( $dump_data )
     # Dump extra info for SWALL proteins that have matches. Info retrieved from the dbm databases on /acari/work2a/wormpipe/
     print "Creating acefile of SWALL proteins with homologies\n";
     `$scripts_dir/write.swiss_trembl.pl -swiss -trembl`;
+
+    print "Creating acefile of matched IPI proteins\n"
+    `$scripts_dir/BLAST_scripts/write_ipi_info.pl`;
+      
   }
 
 if( $cleanup ) {
