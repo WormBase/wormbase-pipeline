@@ -44,6 +44,9 @@ getopts('emxbsvo');
 
 my $dbdir  = '/wormsrv2/autoace';
 my $bin    = '/wormsrv2/scripts';
+
+#my $bin    = '/nfs/griffin2/dl1/wormbase/wormbase/scripts';
+
 my $query;
 $query     = '/nfs/disk100/wormpub/analysis/ESTs/C.elegans_nematode_ESTs'    if ($opt_e); # EST data set
 $query     = '/wormsrv2/mRNA_GENOME/NDB_mRNAs.fasta'                         if ($opt_m); # mRNA data set
@@ -171,9 +174,9 @@ unless ($opt_v) {
     }
     if ($opt_o) {
 	print "Mapping blat data to autoace\n";
-	print "Putting results to $blat/autoace.blat.miscPep.ace and $blat/autoace.ci.mRNA.ace\n";
-	print "Putting results to $blat/camace.blat.miscPep.ace and $blat/camace.ci.mRNA.ace\n";
-	system("$bin/blat2ace.pl -a -x -c") && die "Mapping failed\n"; 
+	print "Putting results to $blat/autoace.blat.miscPep.ace and $blat/autoace.ci.miscPep.ace\n";
+	print "Putting results to $blat/camace.blat.miscPep.ace and $blat/camace.ci.miscPep.ace\n";
+	system("/nfs/griffin2/dl1/wormbase/wormbase/scripts/blat2ace.pl -a -o -c") && die "Mapping failed\n"; 
     }
     if ($opt_x) {
 	print "Mapping blat data to autoace\n";
@@ -200,12 +203,12 @@ unless ($opt_v) {
 	print "Producing confirmed introns in $blat/camace.good_introns.mRNA.ace\n";
 	system("$bin/confirm_introns.pl -c -m") && die "Intron confirmation failed\n";
     }
-#    if ($opt_o) {
-#	print "Producing confirmed introns in $blat/autoace.good_introns.miscPep.ace\n";
-#	system("$bin/confirm_introns.pl -a -m") && die "Intron confirmation failed\n";
-#	print "Producing confirmed introns in $blat/camace.good_introns.miscPep.ace\n";
-#	system("$bin/confirm_introns.pl -c -m") && die "Intron confirmation failed\n";
-#    }
+    if ($opt_o) {
+	print "Producing confirmed introns in $blat/autoace.good_introns.EMBL.ace\n";
+	system("$bin/confirm_introns.pl -a -o") && die "Intron confirmation failed\n";
+	print "Producing confirmed introns in $blat/camace.good_introns.EMBL.ace\n";
+	system("$bin/confirm_introns.pl -c -o") && die "Intron confirmation failed\n";
+    }
 }
 
 #########################################
@@ -255,15 +258,25 @@ if ($opt_m) {
 	&& die "Producing virtual objects for confirmed introns failed\n"; 
 }
 if ($opt_o) {
-    print "Producing files for the virtual objects in autoace: $blat/virtual_objects.autoace.BLAT_miscPep.ace\n";
-    unlink "$blat/virtual_objects.autoace.BLAT_miscPep.ace" if (-e "$blat/virtual_objects.autoace.BLAT_miscPep.ace");
-    system("$bin/superlinks.blat.pl -x $chrom > $blat/virtual_objects.autoace.BLAT_miscPep.ace")
+    print "Producing files for the virtual objects in autoace: $blat/virtual_objects.autoace.BLAT_EMBL.ace\n";
+    unlink "$blat/virtual_objects.autoace.BLAT_EMBL.ace" if (-e "$blat/virtual_objects.autoace.BLAT_EMBL.ace");
+    system("$bin/superlinks.blat.pl -o $chrom > $blat/virtual_objects.autoace.BLAT_EMBL.ace")
 	&& die "Producing virtual objects for blat failed\n";
     
-    print "Producing files for the virtual objects in camace: $blat/virtual_objects.camace.BLAT_miscPep.ace\n";
-    unlink "$blat/virtual_objects.camace.BLAT_miscPep.ace" if (-e "$blat/virtual_objects.camace.BLAT_miscPep.ace");
-    system("$bin/superlinks.blat.pl -x -c $chrom > $blat/virtual_objects.camace.BLAT_miscPep.ace")
+    print "Producing files for the virtual objects in camace: $blat/virtual_objects.camace.BLAT_EMBL.ace\n";
+    unlink "$blat/virtual_objects.camace.BLAT_EMBL.ace" if (-e "$blat/virtual_objects.camace.BLAT_EMBL.ace");
+    system("$bin/superlinks.blat.pl -o -c $chrom > $blat/virtual_objects.camace.BLAT_EMBL.ace")
 	&& die "Producing virtual objects for blat failed\n";
+
+    print "Producing files for the virtual objects in autoace: $blat/virtual_objects.autoace.ci.EMBL.ace\n";
+    unlink "$blat/virtual_objects.autoace.ci.EMBL.ace" if (-e "$blat/virtual_objects.autoace.ci.EMBL.ace");
+    system("$bin/superlinks.confirmed_introns.pl -m $chrom > $blat/virtual_objects.autoace.ci.EMBL.ace")
+	&& die "Producing virtual objects for confirmed introns failed\n"; 
+    
+    print "Producing files for the virtual objects in camace: $blat/virtual_objects.camace.ci.EMBL.ace\n";
+    unlink "$blat/virtual_objects.camace.ci.EMBL.ace" if (-e "$blat/virtual_objects.camace.ci.EMBL.ace");
+    system("$bin/superlinks.confirmed_introns.pl -m -c $chrom > $blat/virtual_objects.camace.ci.EMBL.ace")
+	&& die "Producing virtual objects for confirmed introns failed\n"; 
 }
 if ($opt_x) {
     print "Producing files for the virtual objects in autoace: $blat/virtual_objects.autoace.BLATX_NEMATODE.ace\n";
