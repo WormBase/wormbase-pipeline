@@ -8,7 +8,7 @@
 # Will discard matches to isoforms (Warning).
 #
 # Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2004-09-14 15:47:51 $
+# Last updated on: $Date: 2004-10-08 15:56:54 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
@@ -70,8 +70,8 @@ my $log = Log_files->make_build_log();
 foreach $chromosome (@chromosomes) {
  
     # open output files
-    open (CAM, ">$outdir/CHROMOSOME_${chromosome}.overlapping_TSL_cam.gff");
-    open (STL, ">$outdir/CHROMOSOME_${chromosome}.overlapping_TSL_stl.gff");
+    open (CAM, ">$outdir/CHROMOSOME_${chromosome}.overlapping_TSL_cam");
+    open (STL, ">$outdir/CHROMOSOME_${chromosome}.overlapping_TSL_stl");
     
     # input lines are processed GFF (see below)
     # CHROMOSOME_X    curated exon    2089999 2090139 .       +       .       CDS "F49H12.1" intersect(CHROMOSOME_X.TSL_site.gff)=(21)
