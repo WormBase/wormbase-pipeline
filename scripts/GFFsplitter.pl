@@ -5,7 +5,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2003-06-17 13:33:42 $
+# Last updated on: $Date: 2003-06-20 14:39:07 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -209,9 +209,6 @@ foreach $file (@gff_files) {
     elsif (/PCR_product/)                             {push (@{$GFF{$file}{PCR_products}},$_);}
     # cDNA for RNAi
     elsif (/cDNA_for_RNAi/)                           {push (@{$GFF{$file}{cDNA_for_RNAi}},$_);}
-    # BLAT_OST
-    elsif (/BLAT_OST_BEST/)                           {push (@{$GFF{$file}{BLAT_OST_BEST}},$_);}
-    elsif (/BLAT_OST_OTHER/)                          {push (@{$GFF{$file}{BLAT_OST_OTHER}},$_);}
     # BLAT_EST
     elsif (/BLAT_EST_BEST/)                           {push (@{$GFF{$file}{BLAT_EST_BEST}},$_);
 						       push (@{$GFF{$file}{BLAT_TRANSCRIPT_BEST}},$_);}
@@ -503,8 +500,6 @@ allele
 clone_ends
 PCR_products
 cDNA_for_RNAi
-BLAT_OST_BEST
-BLAT_OST_OTHER
 BLAT_EST_BEST
 BLAT_EST_OTHER
 BLAT_OST_BEST
