@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2004-05-21 10:36:38 $
+# Last edited on: $Date: 2004-05-28 16:19:41 $
 
 
 use DBI;
@@ -385,7 +385,7 @@ if( $setup_mySQL )
 	
 	# LOCKing the tables should considerably increase the DELETE speed
 	my $lock_statement = "LOCK TABLES input_id_analysis WRITE, dna_align_feature WRITE;";
-	&single_line_query("$lock_statement", $worm_dna);
+	&update_database("$lock_statement", $worm_dna);
 
 	#delete entries so they get rerun
 	$query = "delete from input_id_analysis where analysis_id = $analysis";
@@ -397,7 +397,7 @@ if( $setup_mySQL )
 	&update_database( $query, $worm_dna );
 	
 	#release WRITE LOCKS
-	&single_line_query("UNLOCK TABLES;", $worm_dna);
+	&update_database("UNLOCK TABLES;", $worm_dna);
 
 	# lock protein tables 
 	$lock_statement = "LOCK TABLES input_id_analysis WRITE, protein_feature WRITE;";
@@ -429,8 +429,8 @@ if( $setup_mySQL )
 	&update_database( $query, $worm_brigpep );
 
 	# release WRITE locks
-	&single_line_query("UNLOCK TABLES;", $worm_brigpep);
-	&single_line_query("UNLOCK TABLES;", $worm_pep);
+	&update_database("UNLOCK TABLES;", $worm_brigpep);
+	&update_database("UNLOCK TABLES;", $worm_pep);
       }
 
     $worm_dna->disconnect;
