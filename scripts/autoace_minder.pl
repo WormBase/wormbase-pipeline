@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2004-10-07 09:57:59 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2004-10-11 13:36:04 $
 
 
 
@@ -416,9 +416,6 @@ sub initiate_build {
   print LOG "Please tell camace and geneace curators to update their database to use the new models!!!\n\n";
   print LOG "Please also check following 'top' output to see if there are stray processes that should\n";
   print LOG "be removed:\n$top\n\n";
-
-  # this will force a refresh of the coordinate files.
-  my $coords = Coords_converter->invoke($db_path,1);
     
 }
 #__ end initiate_build __#
@@ -693,6 +690,10 @@ sub make_autoace {
       system("touch $logdir/$flag{'B1:ERROR'}");
       &usage("Errors_in_loaded_acefiles");
     }
+
+    # this will force a refresh of the coordinate files.
+    my $coords = Coords_converter->invoke($db_path,1);
+
     
     # make a make_autoace log file in /logs
     system("touch $logdir/$flag{'B1'}");
