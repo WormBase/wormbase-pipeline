@@ -21,7 +21,6 @@
 $|=1;
 use IO::Handle;
 use POSIX qw(:signal_h :errno_h :sys_wait_h);
-use Getopt::Std;
 use Cwd;
 use lib '/wormsrv2/scripts/';
 use Wormbase;
@@ -34,34 +33,21 @@ use Wormbase;
 my $maintainers = "dl1\@sanger.ac.uk krb\@sanger.ac.uk kj2\@sanger.ac.uk";
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
-my $cvs_version = &get_cvs_version($0);
 
 my $CWD = cwd;
 
-##################################################
-# Get the new target database directory          #
-# and all the run options                        #
-##################################################
-
-$opt_p="";
-getopts ('r');
-
-$release = $opt_r;
 
 ################################################
 # ACEDB executables                            #
 ################################################
 
 $tace   = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
-$giface = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/giface";
+
 
 ################################################
 # database paths                               #
 ################################################
-   
-$basedir     = "/wormsrv2";
-$autoacedir  = "/wormsrv2/autoace";
-$pepacedir   = "/wormsrv2/pepace";
+  
 $wormbasedir = "/wormsrv2/wormbase";
 
 ################################################
@@ -81,41 +67,12 @@ sub REAPER {
   $SIG{CHLD}=\&REAPER;
 }
 
-##################################################
-# Open logfile                                   #
-##################################################
-
-#my $logfile = "$autodir"."/pepace2autoace.$rundate.$$";
-#system ("/bin/touch $logfile");
-#open (LOGFILE,">>$logfile");
-#LOGFILE->autoflush;
-
-#print LOGFILE "# make_autoace\n\n";     
-#print LOGFILE "# version        : $cvs_version\n";
-#print LOGFILE "# run details    : $rundate $runtime\n";
-#print LOGFILE "\n";
-#print LOGFILE "WormBase version : ${WS_version}\n";
-#print LOGFILE "\n";
-
-#my $now = `date +%H:%M:%S`; chomp $now;
-#print LOGFILE "* Directory stucture created for $autodir at $now\n\n";
-  
 ################################################
 # Parse config file                            
 ################################################
   
 &mknewacefiles;
 
-#$now = `date +%H:%M:%S`; chomp $now;
-#print LOGFILE "* Parsed config file at $now\n\n";
-
-################################################
-# Send emails to group                         #
-################################################
-
-#$now = `date +%H:%M:%S`; chomp $now;
-#print LOGFILE "* Send END mail at $now\n\n";
-#close LOGFILE;
 
 ###############
 # hasta luego #
@@ -127,74 +84,6 @@ exit (0);
 ################## SUBROUTINES #################
 ################################################
 
-
-###################################################
-# Subroutine for writing to a given database      
-
-sub DbWrite {
-  my ($command,$exec,$dir,$name)=@_;
-  open (WRITEDB,"| $exec $dir >> $logfile") or do {print LOGFILE "$name DbWrite failed\n";close LOGFILE; die();};
-  print WRITEDB $command;
-  close WRITEDB;
-}
-
-
-###################################################
-# Get time coordinates                            
-
-sub GetTime {
-  my ($SECS,$MINS,$HOURS,$DAY,$MONTH,$YEAR)=(localtime)[0,1,2,3,4,5];
-  if ($MINS=~/^\d{1,1}$/) {
-    $MINS="0"."$MINS";
-  }
-  my $REALMONTH=$MONTH+1;
-  my $REALYEAR=$YEAR+1900;
-  my $NOW = "$DAY-$REALMONTH-$REALYEAR:$HOURS:$MINS";
-  return $NOW;
-} 
-
-###################################################
-# Parses the lists from the config files     
-
-sub parseconfig {
-    open(config,"$configfile");
-    while(<config>) {
-	s/^\s+//;s/\s+$//;   
-	if (/^#/ || /^$/) {
-	 next;
-	}	 
-	if (/^P\s+(\S+)\s+(\S+)$/) {
-	 $dbname = $1;
-         $dbdir = $2;
-	 $targetdir="$wormbasedir"."/$dbname";
-         next;
-	}
-        if (/^\S+\s+(\S+)$/) {
-         $object=$1; $criteria="";$criterianoasterisk="";
-        } elsif (/^\S+\s+(\S+)\s+(\S+)$/) {
-         $object=$1; $criteria=$2;
-         $criteria=~/(\S+)\*/;
-         $criterianoasterisk=$1;
-        } 
- 
-	# filename look-up
-	
-	if ($criteria eq "DNA") {
-	    $filename="$targetdir/".$dbname."_".DNA.".ace";
-	}
-	else {
-	    $filename="$targetdir/".$dbname."_".$object.$criterianoasterisk.".ace";
-	}
-
-	if (-e $filename) {
-	 push (@filenames,$filename);
-	 print LOGFILE "* Parse config file : file $filename noted ..\n";
-	} else {
-	 print LOGFILE "** Warning - file $filename is not existent !\n";
-	 next;
-	}
-    }
-}
 
 #################################################################################
 # Erases old acefiles and make new ones                                         #
@@ -229,15 +118,12 @@ sub mknewacefiles {
 	&make_command;
 
 	print "Filename: $filename\n";
-#	print LOG "Filename: $filename\n";
 	
         print "Command: 'find $object $criteria' in $dbname\n";
-#        print LOG "Command: 'find $object $criteria' in $dbname\n";
 	open (TACE,"| $exe");
 	print TACE $command;
 	close TACE;
 	print "Made file $filename\n\n";
-#	print LOG "Made file $filename\n\n";
 
     }
     close CONFIG;
@@ -263,7 +149,6 @@ END
 
 sub PrintHelp {
    exec ('perldoc',$0);
-   exit;	
 }
 
 
