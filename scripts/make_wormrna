@@ -132,11 +132,11 @@ print LOG "# $runtime : finished connection to database\n\n";
  ###########################################################################
  
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
-print LOG "# $runtime : write wormrna.dna file\n\n";
+print LOG "# $runtime : write wormrna.rna file\n\n";
 
 my $obj = "";
 
-open (DNA , ">$new_wrdir/wormrna.dna$release") || &error(7); # die "cannot create $new_wrdir/wormrna.dna$release\n";
+open (DNA , ">$new_wrdir/wormrna$release.rna") || &error(7); # die "cannot create $new_wrdir/wormrna$release.rna\n";
 my (%dot2num , @dotnames , @c_dotnames);
 foreach my $dot (@dotnames_1) {
     
@@ -193,10 +193,10 @@ foreach my $dot (@dotnames_1) {
 }   
 
 close DNA;
-chmod (0444 , "$new_wrdir/wormrna.dna$release") || print LOG "cannot chmod $new_wrdir/wormrna.dna$release\n";
+chmod (0444 , "$new_wrdir/wormrna$release.rna") || print LOG "cannot chmod $new_wrdir/wormrna$release.rna\n";
 
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
-print LOG "# $runtime : finished writing wormrna.dna file\n\n";
+print LOG "# $runtime : finished writing wormrna.rna file\n\n";
 
  ##############################
  # mail $maintainer report    #
