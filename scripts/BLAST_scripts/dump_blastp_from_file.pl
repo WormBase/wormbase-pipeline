@@ -74,8 +74,7 @@ my %wormprotprocessIds = ( 'wormpep'       => '2',
 			   'yeast'         => '5',
 			   'gadfly'        => '6',
 			   'slimswissprot' => '7',
-			   'slimtrembl_1'  => '8',
-			   'slimtrembl_2'  => '9',
+			   'slimtrembl'    => '8',
 			 );
 
 my %processIds2prot_analysis = ( '2' => "wublastp_worm",
@@ -85,7 +84,6 @@ my %processIds2prot_analysis = ( '2' => "wublastp_worm",
 				 '6' => "wublastp_fly",
 				 '7' => "wublastp_slimswissprot",
 				 '8' => "wublastp_slimtrembl",
-				 '9' => "wublastp_slimtrembl", # slimtrembl is too large so is split
 			       );
 
 our %org_prefix = ( 'wublastp_worm'          => 'WP',
@@ -259,7 +257,7 @@ while (<BLAST>) {
       $added = &addData ( \%yeast_matches, \@data );
     } elsif ( $analysis == $wormprotprocessIds{'slimswissprot'}  ) { # others dont have isoforms so let adding routine deal with them
       $added = &addData ( \%swiss_matches, \@data );
-    } elsif ( ( $analysis == $wormprotprocessIds{'slimtrembl_1'} ) || ( $analysis == $wormprotprocessIds{'slimtrembl_2'} ) ) { # others dont have isoforms so let adding routine deal with them
+    } elsif ( $analysis == $wormprotprocessIds{'slimtrembl'} ) { # others dont have isoforms so let adding routine deal with them
       $added = &addData ( \%trembl_matches, \@data );
     } elsif ( $analysis == $wormprotprocessIds{'ipi_human'}  ) { # others dont have isoforms so let adding routine deal with them
       $added = &addData ( \%human_matches, \@data );

@@ -65,8 +65,7 @@ my %worm_dna_processIds = ( 'worm'          => '2',
 			    'yeast'         => '5',
 			    'fly'           => '6',
 			    'slimswissprot' => '7',
-			    'slimtrembl_1'  => '8',
-			    'slimtrembl_2'  => '9',
+			    'slimtrembl'    => '8',
 			  );
 
 my %anal2db; 
