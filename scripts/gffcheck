@@ -1,7 +1,6 @@
 #!/usr/local/bin/perl -w
 #
 # wrapper to call introncheck, estcheck and overlapcheck on gff files, recommended after database rebuilt
-#
 # by Kerstin Jekosch
 # 13/07/01
 
