@@ -191,7 +191,7 @@
 		// for revertants and deletions from Transposon alleles
 			Isolated_for ?Author  
 		// person requesting allele -- for transposon insertion
-        Location ?Laboratory #Lab_Location
+        Location ?Laboratory XREF Alleles #Lab_Location
 	Derivative ?Allele XREF Derived_from
         Strain ?Strain XREF Allele
         Genetics        Map ?Map #Map_position
@@ -682,6 +682,7 @@
                 CGC     Representative UNIQUE ?Author XREF Laboratory
                         Strain_designation Text
                         Allele_designation Text
+			Alleles ?Allele XREF Location
                         Gene_classes ?Gene_Class XREF Designating_laboratory
                 Staff   ?Author XREF Laboratory
                 Staff_person    ?Person XREF Laboratory // added for Juancarlos 021010
