@@ -223,19 +223,10 @@ sub mknewacefiles {
 	close TACE;
 	print LOG "Made file $filename\n";
 
-	if ($filename eq "/wormsrv2/wormbase/stlace/stlace_Protein.ace") {
+	if ($filename eq "/wormsrv2/wormbase/briggsae/briggsae_Protein.ace") {
 	    $outfile = "$targetdir/".$dbname."_".$object.$criterianoasterisk.".ace";
 	    &strip_protein("$outfile","\"WP:");
 	}
-	elsif ($filename eq "/wormsrv2/wormbase/camace/camace_Protein.ace") {
-	    $outfile = "$targetdir/".$dbname."_".$object.$criterianoasterisk.".ace";
-	    &strip_protein("$outfile","\"WP:");
-	}
-	elsif ($filename eq "/wormsrv2/wormbase/briggsae/briggsae_Protein.ace") {
-	    $outfile = "$targetdir/".$dbname."_".$object.$criterianoasterisk.".ace";
-	    &strip_protein("$outfile","\"WP:");
-	}
-
 
 	if ($filename eq "/wormsrv2/wormbase/stlace/stlace_Sequence.ace") {
 	    $outfile = "$targetdir/".$dbname."_".$object.$criterianoasterisk.".ace";
@@ -248,7 +239,7 @@ sub mknewacefiles {
 	    $outfile = "$targetdir/".$dbname."_".$object.$criterianoasterisk.".ace";
 	    &strip_sequence("$outfile","\"WP:");
 	    &strip_sequence('$outfile','(Pep|DNA|Motif)_homol\s\-O\s+\"[\d:+\w-\.]+\"$');
-}
+	  }
 	elsif ($filename eq "/wormsrv2/wormbase/briggsae/briggsae_Sequence.ace") {
 	    $outfile = "$targetdir/".$dbname."_".$object.$criterianoasterisk.".ace";
 	    &strip_sequence("$outfile","\"WP:");
