@@ -45,17 +45,17 @@ foreach my $stlclone (@stlclones) {
 foreach my $chrom (@chrom) {
 
     open (GFF, "/wormsrv2/autoace/CHROMOSOMES/CHROMOSOME_$chrom.gff"); 
-    open (CAMOL, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.overlapping_genes.cam") 
+    open (CAMOL, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.overlapping_genes_cam.gff") 
 	|| die "Cannot open output file $chrom $!\n"; 
-    open (CAMEST, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.EST_in_intron.cam") 
+    open (CAMEST, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.EST_in_intron_cam.gff") 
 	|| die "Cannot open output file $chrom $!\n"; 
-    open (CAMREP, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.repeat_in_exon.cam") 
+    open (CAMREP, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.repeat_in_exon_cam.gff") 
 	|| die "Cannot open output file $chrom $!\n"; 
-    open (STLOL, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.overlapping_genes.stl") 
+    open (STLOL, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.overlapping_genes_stl.gff") 
 	|| die "Cannot open output file $chrom $!\n"; 
-    open (STLEST, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.EST_in_intron.stl") 
+    open (STLEST, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.EST_in_intron_stl.gff") 
 	|| die "Cannot open output file $chrom $!\n"; 
-    open (STLREP, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.repeat_in_exon.stl") 
+    open (STLREP, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.repeat_in_exon_stl.gff") 
 	|| die "Cannot open output file $chrom $!\n"; 
 	
     %exon  = %est = %genes = %intron = (); 
