@@ -340,7 +340,7 @@
         Drives_Transgene ?Transgene XREF Driven_by_Locus	
 	Transgene_product ?Transgene XREF Worm_gene
 	Rescued_by_Transgene ?Transgene XREF Rescue
-	GO_term ?GO_term XREF Locus ?GO_code #Evidence // Added by krb 020905
+	GO_term ?GO_term XREF Locus #Evidence // Added by krb 020905
 
 
 
@@ -726,7 +726,7 @@
 	Life_stage ?Life_stage XREF Cell
         Tree_Node ?TreeNode XREF Cell
         Reference ?Paper XREF Cell
-        GO_term ?GO_term XREF Cell ?GO_code #Evidence
+        GO_term ?GO_term XREF Cell #Evidence
 	Data	Expr_pattern ?Expr_pattern XREF Cell
 		Reconstruction ?Reconstruction XREF Cell #ReconCellInfo
 	        Neurodata ?Cell #Neurodata
@@ -851,7 +851,7 @@
 			Corresponding_PCR_product ?PCR_product XREF Overlaps_CDS // added for PCR mappings [010419 dl]
 			Corresponding_WTP ?WTP XREF Overlaps_CDS                 // [010623 rd]
 			RNAi_result ?RNAi XREF Predicted_gene                    // added for Lincoln RNAi [001213 dl]
-			GO_term ?GO_term XREF Sequence ?GO_code #Evidence                 // added for Erich [011210 krb]
+			GO_term ?GO_term XREF Sequence #Evidence                 // added for Erich [011210 krb]
                         Contained_in_operon ?Operon XREF Contains_CDS            // added for Operons [020128 dl]
 			Provisional_description ?Text #Evidence			 // added for Erich [020322 krb]
 			Detailed_description ?Text #Evidence			 // added for Erich [020322 krb]
@@ -1122,7 +1122,7 @@
 		Pep_homol ?Protein XREF Motif_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		Motif_homol ?Motif XREF Motif_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		Homol_homol ?Homol_data XREF Motif_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
-	GO_term ?GO_term XREF Motif ?GO_code #Evidence
+	GO_term ?GO_term XREF Motif #Evidence
 
 ?Accession_number  Entry Sequence ?Sequence
 			 Protein ?Protein
@@ -1503,7 +1503,7 @@
                               Similar_to ?Phenotype XREF Similar_to
            Attribute_of       RNAi ?RNAi XREF Phenotype
                               Locus ?Locus XREF Controlled_phenotype
-			      GO_term ?GO_term XREF Phenotype ?GO_code #Evidence  // added for Erich, [020128 dl]
+			      GO_term ?GO_term XREF Phenotype #Evidence  // added for Erich, [020128 dl]
 
 ?Phenotype_Assay Description ?Text
 		 
