@@ -6,7 +6,7 @@
 # Compares this number to those from a second database.
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-06-10 16:45:10 $      
+# Last updated on: $Date: 2003-08-01 14:22:14 $      
 
 
 use strict;
@@ -372,6 +372,7 @@ Phenotype
 Picture
 Pos_neg_data
 Protein
+Pseudogene
 Rearrangement
 Reference
 Repeat_Info
