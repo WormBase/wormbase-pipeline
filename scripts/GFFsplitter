@@ -801,7 +801,7 @@ foreach (@gff_files) {
     $total_lines = $total_lines + $gff_length_BLAT_EST_GENOME;
     print "$gff_BLAT_EST_GENOME   \t\t: $gff_length_BLAT_EST_GENOME\n";
 
-    $gff_length_MRNA_GENOME = file_size("$datadir/GFF_SPLITS/$gff_MRNA_GENOME") - 3;
+    $gff_length_MRNA_GENOME = file_size("$datadir/GFF_SPLITS/$gff_mRNA_GENOME") - 3;
     $total_lines = $total_lines + $gff_length_MRNA_GENOME;
     print "$gff_MRNA_GENOME   \t\t: $gff_length_MRNA_GENOME\n";
 
