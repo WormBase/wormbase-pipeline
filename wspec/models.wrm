@@ -1068,8 +1068,8 @@
                         Database ?Database ?Text ?Accession_number XREF Sequence UNIQUE Int 
                 Origin  From_laboratory UNIQUE ?Laboratory
                         Species UNIQUE ?Species
-                Type    UNIQUE Coding_pseudogene
-                               RNA_pseudogene Text // Text can store type of RNA (probably tRNA)
+                Type    UNIQUE Coding_pseudogene Text // [110803 dl] 
+                               RNA_pseudogene Text    // Text can store type of RNA (probably tRNA)
                                Transposon
                 Genetics Locus UNIQUE ?Locus XREF Pseudogene
                          Allele ?Allele XREF Pseudogene 
