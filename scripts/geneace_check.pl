@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2004-01-14 13:15:46 $
+# Last updated on: $Date: 2004-01-21 11:29:46 $
 
 
 use strict;
@@ -1739,16 +1739,13 @@ sub int_map_to_map_loci {
     my $int_pos = $_ -> Interpolated_map_position(2);
     print LOG "$_ has interpolated_map which can now use Map tag at position $int_pos\n";
     print JAHLOG "$_ has interpolated_map which can now use Map tag at position $int_pos\n";
-    print ACE "\nLocus : \"$_\"\n"; 
-    print ACE "-D Interpolated_map_position \n";
-    print ACE "\nLocus : \"$_\"\n";
-    print ACE "Map \"$int_map\" Position $int_pos\n";
 
     # keep a copy here
     print INT_map_TO_MAP "\nLocus : \"$_\"\n"; 
     print INT_map_TO_MAP "-D Interpolated_map_position \n";
     print INT_map_TO_MAP "\nLocus : \"$_\"\n";
     print INT_map_TO_MAP "Map \"$int_map\" Position $int_pos\n";
+    print INT_map_TO_MAP "Remark \"Map position created from combination of previous interpolated map position (based on known location of sequence) and allele information.  Therefore this is not a genetic map position based on recombination frequencies or genetic experiments.  This was done on advice of the CGC.\" CGC_data_submission\n";
   }
 
   print LOG    "No such locus found\n\n" if $error == 0;
