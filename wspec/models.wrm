@@ -856,6 +856,7 @@
 	  		Other_name ?Text	        // for repeats
 			Matching_Genomic ?Sequence XREF Matching_cDNA
 		 	Matching_cDNA ?Sequence XREF Matching_Genomic
+			Matching_UTR ?UTR XREF Matching_CDS // added for UTR model [krb 020729]
                         Spliced_cDNA ?Sequence XREF Component_of Int UNIQUE Int UNIQUE Int UNIQUE Int
                         Component_of ?Sequence XREF Spliced_cDNA
 			Corresponding_protein UNIQUE ?Protein XREF Corresponding_DNA
