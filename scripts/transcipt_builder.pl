@@ -126,6 +126,10 @@ foreach my $chrom ( @chromosomes ) {
     last if $est;
   }
 
+
+  #This is the place to check for paired reads that dont overlap a gene model
+
+
   # get coords obj to return clone and coords from chromosomal coords
   my $coords = Coords_converter->invoke;
 
@@ -150,10 +154,10 @@ foreach my $chrom ( @chromosomes ) {
 
 	  next if( defined $transcript{$cExon} and  $transcript{$cExon} == $cDNA{$cdna}->{$cExon} ); #skip if the cDNA exon is same as one in transcript
 	
-	  # if exon outside range of gene add it to the transcript UTR
-	  if( $cExon > $genes_span{$gene}->[1] or  $cDNA{$cdna}->{$cExon} < $genes_span{$gene}->[0] ){
-	    $transcript{$cExon} = $cDNA{$cdna}->{$cExon};
-	  }
+#	  # if exon outside range of gene add it to the transcript UTR
+#	  if( $cExon > $genes_span{$gene}->[1] or  $cDNA{$cdna}->{$cExon} < $genes_span{$gene}->[0] ){
+#           $transcript{$cExon} = $cDNA{$cdna}->{$cExon};
+#	  }
 
 	  # iterate thru existing transcript exons and check for overlaps
 	  foreach my $transExon (keys %transcript ) {
@@ -183,9 +187,8 @@ foreach my $chrom ( @chromosomes ) {
 	  print ACE "source_exons ",$transcript{$exons[-1]} - $transcript{$_} + 1 ," ",$transcript{$exons[-1]} - $_ + 1 ," \n"; # - strand
 	}
       }
-
+      ($chrom) = $gff =~ /CHROMOSOME_(\w+)/ if $gff;
       my($source, $x, $y ) = $coords->LocateSpan("$chrom",$exons[0],$transcript{$exons[-1]});
-    #  my($source, $x, $y ) = $coords->LocateSpan("SUPERLINK_CB_I",$exons[0],$transcript{$exons[-1]});
       $transcript_span{"$gene.trans"} = [ ($exons[0],$transcript{$exons[-1]}) ];
       print ACE "Sequence $source\n";
       print ACE "method transcript\n";
@@ -193,15 +196,15 @@ foreach my $chrom ( @chromosomes ) {
       # parent object
       print ACE "\nSequence : $source\n";
       if( $genes_span{$gene}->[2] eq "+"){
-	print ACE "transcript_child $gene.trans $x $y\n"; # + strand
+	print ACE "transcript_child $gene $x $y\n"; # + strand
       }
       else {
-	print ACE "transcript_child $gene.trans $y $x\n"; # - strand
+	print ACE "transcript_child $gene $y $x\n"; # - strand
       }   
 
       #link gene to transcript
       print ACE "\nSequence $gene\n";
-      print ACE "Matching_transcript $gene.trans\n" 
+      print ACE "Corresponding_transcript $gene\n" 
     }
   }
   close ACE if $transcript;
@@ -548,7 +551,7 @@ sub check_opts {
       $show_matches = 1;
       $load_transcripts = 1;
       $load_matches = 1;
-      $overlap = 1;
+      $overlap_check = 1;
     }
   }
 
