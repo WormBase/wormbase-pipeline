@@ -681,7 +681,6 @@
                   Life_stage ?Life_stage XREF Reference
                   RNAi ?RNAi XREF Reference  // added for Lincoln RNAi [001213 dl]
                   Transgene ?Transgene XREF Reference
-	          Gene ?Gene XREF Reference
 		  Operon ?Operon XREF Reference      // added for operon data [010928 dl]
                   GO_term ?GO_term XREF Reference
         Keyword ?Keyword
