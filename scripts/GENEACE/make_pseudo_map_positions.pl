@@ -7,7 +7,7 @@
 # Script to identify genes which can have their Interpolated_map_position tag promoted to a Map position
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-12-14 16:15:56 $
+# Last updated on: $Date: 2004-12-16 14:45:16 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -155,6 +155,17 @@ $log->mail("$maintainers", "BUILD REPORT: $0");
 $log->mail("cgc\@wormbase.org", "list of promoted map positions");
 
 exit(0);
+
+
+sub usage {
+  my $error = shift;
+  if ($error == 0) {
+    # Normal help menu
+    exec ('perldoc',$0);
+  }
+}
+
+
 
 #--------------------------------------------------------------------------------------------------------------------
 
