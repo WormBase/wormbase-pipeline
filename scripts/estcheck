@@ -152,11 +152,11 @@ foreach $EST (sort keys %EST_clone) {
     undef ($first_match);
     undef ($first_read);
 
-    print "# $EST  \t  [$EST_clone{$EST}\b]\n";
+#    print "# $EST  \t  [$EST_clone{$EST}\b]\n";
     @reads = split (/ /, $EST_clone{$EST});
     foreach $read (@reads) {
 	next if ($read eq "");
-	print "$read\t$EST_acc{$read}\t$EST_len{$read}\t$EST_match{$read}\n";
+#	print "$read\t$EST_acc{$read}\t$EST_len{$read}\t$EST_match{$read}\n";
 	print EST_total "$read\t$EST_acc{$read}\t$EST_len{$read}\t$EST_match{$read}\n";
 
 	# No accession
@@ -184,7 +184,7 @@ foreach $EST (sort keys %EST_clone) {
 	$first_read  = $read;
 	$first_match = $EST_match{$read};
     }
-    print "\n";
+#    print "\n";
 
 }
 
