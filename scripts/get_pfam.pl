@@ -7,8 +7,8 @@
 # This script interogates an ACEDB database and returns all pfam/Interpro/blastx 
 # data as appropriate and generates a suitable DB_remark
 #
-# Last updated on: $Date: 2004-09-10 09:53:02 $
-# Last updated by: $Author: krb $
+# Last updated on: $Date: 2004-11-09 13:00:52 $
+# Last updated by: $Author: pad $
 
 
 ### DB_remark is generated as follows:  ###
@@ -294,9 +294,10 @@ SUBSEQUENCE: foreach my $cds (@CDSs) {
     if ($cgc_name) {		# don't always take a peptide match, so can't add "; " above, must add here
       $full_string .= "; ";
     }
-    $full_string .= "contains similarity to $best_species $best_description; $best_match";
+    if ((defined $best_species) && (defined $best_description) && (defined $best_match)) {
+      $full_string .= "contains similarity to $best_species $best_description; $best_match";
+    }
     goto PRINTIT;
-
   }
 
  PRINTIT:
