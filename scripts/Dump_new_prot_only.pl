@@ -8,7 +8,7 @@ use DB_File;
 #######################################
 # command-line options                #
 #######################################
-my ($test, $debug, $verbose, $help, $all, $WPver, $analysisTOdump, $just_matches, $matches, $list, $brigprot);
+my ($test, $debug, $verbose, $help, $all, $WPver, $analysisTOdump, $just_matches, $matches, $list, $species);
 GetOptions ("debug=s"      => \$debug,
 	    "verbose"      => \$verbose,
 	    "test"         => \$test,
@@ -19,7 +19,7 @@ GetOptions ("debug=s"      => \$debug,
 	    "just_matches" => \$just_matches,
 	    "matches"      => \$matches,
 	    "dumplist=s"   => \$list,
-	    "brigprot"     => \$brigprot
+	    "species=s"     => \$species
            );
 
 my @sample_peps = @_;
@@ -36,12 +36,12 @@ my $wormpipe = glob("~wormpipe");
 my $output = "$wormpipe_dir/dumps/blastp_ensembl.ace";
 my $recip_file = "$wormpipe_dir/dumps/wublastp_recip.ace";
 
-if ($brigprot) {
-  $ipi_file .= "_brigprot";
-  $best_hits .= "_brigprot";
-  $dbname = "worm_brigprot";
-  $output = "$wormpipe_dir/dumps/brigprot_blastp_ensembl.ace";
-  $recip_file = "$wormpipe_dir/dumps/brigprot_wublastp_recip.ace";
+if ($species) {
+  $ipi_file .= "_$species";
+  $best_hits .= "_$species";
+  $dbname = "worm_$species";
+  $output = "$wormpipe_dir/dumps/${species}_blastp_ensembl.ace";
+  $recip_file = "$wormpipe_dir/dumps/${species}_wublastp_recip.ace";
 }
 open (BEST, ">$best_hits") or die "cant open $best_hits for writing\n";
 
@@ -138,10 +138,10 @@ while ( $pep_input ) {
   $pep_input = shift;
 }
 unless (@peps2dump)  {
-  
-  if( $brigprot ) {  # get all the briggsaea proteins
+  # this is not generic for when 3rd species arrives.
+  if( $species ) {  # get all the briggsae proteins
     print LOG " : Dumping all current brigpep proteins\n";
-    open (BRIGPEP,"<$wormpipe/BlastDB/brigpep1.pep") or die "cant find brigpep1.pep file - has it been updated?\n";
+    open (BRIGPEP,"<$wormpipe/BlastDB/brigpep2.pep") or die "cant find brigpep2.pep file - has it been updated?\n";
     while (<BRIGPEP>) {
       if( />(CBP\d+)/ ) {
 	push( @peps2dump, $1);
@@ -368,7 +368,7 @@ sub dumpData
     my $pid = shift;
     my %BEST;
     my $prot_pref = "WP";
-    $prot_pref = "BP" if $brigprot;
+    $prot_pref = "BP" if $species; # not generic for when 3rd species arrives
     print OUT "\nProtein : \"$prot_pref:$pid\"\n";
     while( $matches = shift) {   #pass reference to the hash to dump
       #write ace info
@@ -510,7 +510,7 @@ sub addWormData
     my $homol = $$data[4];
     my $homol_gene = &justGeneName( $homol );
 
-    unless( $brigprot ) {
+    unless( $species ) {
       my $my_gene = &justGeneName( $CE2gene{ $$data[0] } ) ;
       return if ("$homol_gene" eq "$my_gene"); # self match or isoform of same gene
     }
