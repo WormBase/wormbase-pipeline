@@ -193,8 +193,8 @@
 	Name	Other_name ?Text #Evidence
 		Qualifier Text	    // sd, sm, ts etc.  Not systematic just now
 		Rearrangement ?Rearrangement XREF Allele
-	Source	UNIQUE Gene ?Locus XREF Allele
-	               Gene_class ?Gene_Class XREF Allele
+	Source	Gene ?Locus XREF Allele
+	        Gene_class ?Gene_Class XREF Allele
 	Sequence_details Sequence ?Sequence XREF Allele #Evidence
                          Flanking_sequences UNIQUE Text UNIQUE Text
                          Allelic_difference UNIQUE ?Text #Evidence
