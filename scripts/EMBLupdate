@@ -85,7 +85,7 @@ while (<>) {
  }
 
 # for some clones with long names the clone name cannot be got from the ID
- if (/^DE.+(\S+)$/) { $cosmid=$1; }
+ if (/^DE\s+Caenorhabditis elegans\s+\S+\s(\S+)$/) { $cosmid=$1; }
 
 # printout the whole file
  print TEMP $_;
@@ -161,7 +161,7 @@ close CURRENT;
  if ($compare==1) {
    system "cp temp$$ /nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.$datestamp.embl";
    system "ln -fs /nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.$datestamp.embl /nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.current.embl";
-   system "\mv temp$$ /nfs/disk100/wormpub/analysis/TO_SUBMIT/$cosmid.$datestamp.embl";
+   system "mv temp$$ /nfs/disk100/wormpub/analysis/TO_SUBMIT/$cosmid.$datestamp.embl";
    print "$cosmid should be resubmitted and is in TO_SUBMIT.\n";
  } else {
    print "Cosmid $cosmid is up to date\n";
@@ -184,7 +184,7 @@ exit(0);
 #
 sub detectdifference {		 
     local($difference);
-    open(diffout,"diff temp$$ /nfs/disk100/wormpub/analysis/cosmids/$_[0]/$_[1]/embl/$cosmid.current.embl |");
+    open (diffout,"diff temp$$ /nfs/disk100/wormpub/analysis/cosmids/$_[0]/$_[1]/embl/$cosmid.current.embl |");
     $difference=0;
     while (<diffout>) {
 	if ($_ ne "") {
