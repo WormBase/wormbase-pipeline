@@ -5,7 +5,7 @@
 # dl1
 # 
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2003-06-04 14:28:19 $
+# Last edited on: $Date: 2003-06-13 09:28:26 $
 
 $|=1;
 use lib "/wormsrv2/scripts/";
@@ -18,8 +18,10 @@ use strict;
 ##############################
 
 my $help;               # Help/Usage page
+my $ace;                # Dump acefile
 
 GetOptions (
+	    "ace"            => \$ace,
             "help"           => \$help
 	    );
 
@@ -32,12 +34,16 @@ GetOptions (
 
 my $acc;      # EMBL accession
 my $id;       # EMBL ID   
+my $sv;       # EMBL sequence version
 my $def;      # EMBL description
 my $OST;      # tag for OST/EST split
 
 open (OUT_EST, ">/nfs/disk100/wormpub/analysis/ESTs/C.elegans_nematode_ESTs");
 open (OUT_OST, ">/nfs/disk100/wormpub/analysis/ESTs/C.elegans_nematode_OSTs");
 
+if ($ace) {
+    open (OUT_ACE, ">/nfs/disk100/wormpub/analysis/ESTs/C.elegans_nematode_ESTs.ace");
+}
 open (SEQUENCES, "/usr/local/pubseq/bin/getzc -sf fasta -f \"id acc des seq\" \'([embl-org:caenorhabditis elegans] \& [embl-div:est])\' |") ;
 
 while (<SEQUENCES>) {
@@ -45,7 +51,9 @@ while (<SEQUENCES>) {
     } 
     else {
 	print OUT_EST  if ($OST == 0);
+	print OUT_ACE  if (($OST == 0) && ($ace));
 	print OUT_OST  if ($OST == 1);
+
     }
     
     if (/^AC\s+(\S+);/) {
@@ -53,6 +61,9 @@ while (<SEQUENCES>) {
     }
     if (/^ID\s+(\S+)/)  {
 	$id = $1;
+    }
+    if (/^SV\s+\S+\.(\d+)/) {
+	$sv  = $1;
     }
     if (/^DE\s+(.+)/)   {
 	$def = $def." ".$1;
@@ -67,21 +78,32 @@ while (<SEQUENCES>) {
     if (/^>/) {
 	if ($OST == 0) {
 	    print OUT_EST ">$acc $id $def\n";
-	    $def="";
-	    $id="";
-	    $acc="";
+	    
+	    if ($ace) {
+		print OUT_ACE "\nSequence : \"$acc\"\nDatabase EMBL $id $acc $sv\n";
+		print OUT_ACE   "Species \"Caenorhabditis elegans\"\n";
+		print OUT_ACE   "Title \"$def\"\nMethod EST_elegans\n";
+		print OUT_ACE   "\nDNA \"$acc\"\n";
+	    }
+
+	    $def = "";
+	    $id  = "";
+	    $sv  = "";
+	    $acc = "";
 	} 
 	else {
 	    print OUT_OST ">$acc $id $def\n";
-	    $def="";
-	    $id="";
-	    $acc="";
+	    $def = "";
+	    $id  = "";
+	    $sv  = "";
+	    $acc = "";
 	}
     }
 }
 close SEQUENCES;
 close OUT_EST;
 close OUT_OST;
+close OUT_ACE if ($ace);
 
 
 #######################################################################
