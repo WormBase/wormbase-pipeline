@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.0 -w                   
+#!/usr/local/bin/perl5.8.0 -w                   
 #
 # build_pepace.pl
 # 
@@ -9,8 +9,8 @@
 # solely in the wormpep.history file.
 # 
 #
-# Last updated by: $Author: ar2 $                     
-# Last updated on: $Date: 2003-06-16 09:41:12 $     
+# Last updated by: $Author: krb $                     
+# Last updated on: $Date: 2003-10-01 08:09:41 $     
 
 use strict;                                     
 use lib "/wormsrv2/scripts/";                  
