@@ -122,8 +122,10 @@ sub changed {
     &dbfetch($new_acc,$dbfile);
     print "\n\n";
     
-    print LOG "Full analysis: $new_acc\n"; 
-
+    # write fasta file to update log
+    print LOG ">WP:$new_acc";
+    &dbfetch($new_acc,$dbfile);
+    print LOG "\n\n";
 }
 
 ###################################################
@@ -168,7 +170,10 @@ sub new {
     &dbfetch($new_acc,$dbfile);
     print "\n\n";
 
-    print LOG "Full analysis: $new_acc\n"; 
+    # write fasta file to update log
+    print LOG ">WP:$new_acc";
+    &dbfetch($new_acc,$dbfile);
+    print LOG "\n\n";
 }
 
 
