@@ -1,0 +1,52 @@
+#!/usr/local/bin/perl
+
+#created 25/4/94 Steve Jones
+
+
+#Script to create ace file to take finished dates from all the
+#cosmids in current.versions and allow this field to be updated in
+#acedb
+
+$currentversions= "/nfs/disk100/wormpub/analysis/cosmids/current.versions";
+
+open (current, $currentversions) || die "Cannot find current.versions file";
+
+
+while (<current>) {
+
+
+
+       #need to remove the line return fron $_
+
+        chop;
+
+
+#split the current.version into cosmid and date
+
+
+                ($cosmid, $datefinished) = split (/\//,$_);
+
+		$datefinished=~/(\d\d)(\d\d)(\d\d)/;
+		
+                print "Sequence $cosmid\n";
+	#print "Referring_URL humsrv1.sanger.ac.uk:8080/cgi-bin/display?db=cgcace&class=Sequence&object=$cosmid\n";
+	        print "Genomic_canonical\n";
+	        print "Species \"Caenorhabditis elegans\"\n";
+	        print "EMBL_dump_info EMBL_dump_method worm_EMBL-dump\n";
+		print "Finished 19$1-$2-$3\n";
+	        #print "-D Keyword \"HTGS\"\n";
+	        print "Keyword \"HTG\"\n";
+	        
+	        #set up the URL object for the EMBL entry. Don't remake the embl entry otherwise
+	        #the acc no will be lost; dbinfo tag is filled in aceprep1.
+	        print "\n\nUrl CE$cosmid\n";
+                print "Url \"http:\\/\\/srs.ebi.ac.uk:5000\/srs5bin\/cgi-bin\/wgetz?-e+[EMBL-ID:'CE$cosmid']\"\n\n";
+
+}
+
+
+
+
+
+
+

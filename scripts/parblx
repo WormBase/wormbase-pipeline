@@ -1,0 +1,39 @@
+#!/bin/csh 
+# runs Erik's new parblastx for standard cosmid dir structure.
+# i.e. run with cosmid name in date directory.
+
+switch (`hostname`)
+  case "al": 
+    breaksw
+  default:
+    echo 'parblx can only be run on the alliant'
+    exit 1
+endsw
+
+switch ($#argv)
+  case "1": 
+	breaksw
+  default: 
+	echo 'Usage: parblx COSMID' ; 
+	echo '  you should be in the directory containing COSMID.seq'
+	exit 2
+endsw
+
+set seqfile = ${1}.seq
+
+if (! -e $seqfile) then
+  echo "Sequence file $seqfile does not exist"
+  exit
+endif
+
+if (! -d blast) then
+  echo "making blast subdirectory"
+  mkdir blast
+  cp $seqfile blast/${1}
+endif
+
+cd blast
+
+parblastx swir $1
+
+exit

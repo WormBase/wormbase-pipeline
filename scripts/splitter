@@ -1,0 +1,39 @@
+#!/usr/local/bin/perl 
+#
+#Split a database into a number of segments 
+#
+#
+if ($#ARGV!=2) {die "usage <database> <entries #> <name for files>";}
+
+open(database,"$ARGV[0]");
+
+while(<database>) {
+        if (/^>(\S+)\s+/) {$name=$1;push(@names,$name);}
+        $sequence{$name}=$sequence{$name}.$_;
+}
+
+print STDERR "Database has ",$#names+1," entries\n";
+
+$filenum=1;
+$filename="$ARGV[2]."."$filenum";
+open(output,">$filename");
+
+
+foreach $name (@names) {
+
+    #$tot++;print "doing $name $tot\n";
+if ($number >= $ARGV[1]) {close output;
+			 $filenum++;
+		         $filename="$ARGV[2]."."$filenum";
+			 print STDERR "opening new file $filenum\n";
+			 open(output,">$filename");
+			 $number=0;
+			}
+
+
+print output $sequence{$name}; 
+
+$number++;
+}
+
+

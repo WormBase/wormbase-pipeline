@@ -1,0 +1,247 @@
+#!/bin/csh  -f
+############################################################################
+############################################################################
+##  File: xcl
+# This file is part of the ACEDB package
+#  Author: J Thierry-Mieg, (mieg@kaa.crbm.cnrs-mop.fr)
+#  Copyright (C) R.Dubin & Thierry-Mieg, 1997
+#-------------------------------------------------------------------
+# Usage: xcl host port
+#  example: xcl beta 20000100
+#-------------------------------------------------------------------
+# Description: 
+#   Launches a graphic acedb xace working as a client on an ace-server
+#
+# @(#)xcl	1.9 5/23/97
+############################################################################
+############################################################################
+## Check for correct the existence of the server
+
+setenv ici `pwd`
+
+if ($1 == "") goto usage
+
+setenv PORT 536871169
+if ($2 != "") setenv PORT $2
+
+############################################################################
+# Check the client_update directory
+
+if (-e clientUpdate) then
+ setenv wcu `wc clientUpdate | awk '{print $1}'`
+ if ($wcu != "0") then
+  echo ' '
+  echo 'ERROR'
+  echo There exist a file './clientUpdate'
+  echo ' '
+  echo Either a separate client code is already running in this direstoty
+  echo or the last one failed to complete
+  echo possibly, some data were not transmitted bsck to the server
+  echo Please verify the content of the `pwd`/clientUpdate
+  echo Then remove it and restart
+  echo ' '
+  exit 1
+ endif
+endif
+
+touch clientUpdate
+
+############################################################################
+if (-x /bin/env) then
+ setenv BINENV /bin/env
+else
+ if (-x /usr/bin/env) setenv BINENV /usr/bin/env
+else setenv BINENV env
+endif
+
+echo trying to connect to aceserver $1 $PORT
+
+$BINENV aceclient $1 -port $PORT << END >! ___getserver___ || goto noconnect
+status 
+END
+
+setenv SERVER_DIR `grep directory  ___getserver___ | awk '{dd=$4; i = length(dd); print substr(dd,1,i-2);}'`
+\rm -rf  ___getserver___
+echo Successful connection to aceserver $1 $PORT
+echo Server directory: $SERVER_DIR
+
+############################################################################
+## Without write access, simply start xace
+
+
+############################################################################
+# Create a local copy of the wspec directory
+
+cd $ici
+
+if !(-d wspec.xclient) then
+ mkdir wspec.xclient 
+ touch wspec.xclient/XCLIENT.$1.$PORT
+ \rm -rf wspec.xclient/server.wrm
+ echo EXTERNAL_SERVER $1 >!  wspec.xclient/server.wrm
+ echo EXTERNAL_PORT   $PORT >>  wspec.xclient/server.wrm
+ setenv ADMIN `whoami`
+  echo ' '
+  echo " I add $ADMIN to the password file"
+  echo ' ' >! wspec.xclient/passwd.wrm
+  echo -n $ADMIN >> wspec.xclient/passwd.wrm
+  echo '  // Login name of the user starting the xclient' >> wspec.xclient/passwd.wrm
+  echo ' '
+  echo 'I uncomment NOLOCK, in passwd.wrm because locking is missing on many machines'
+  echo 'NOLOCK // uncommented by wtools/xcl'  >> wspec.xclient/passwd.wrm
+  echo ' ' >> wspec.xclient/passwd.wrm
+endif
+
+############################################################################
+# Verify that we run from the correct server
+
+check.wspec:
+cd $ici
+if (-e wspec) then
+ cd wspec
+ if !(-e XCLIENT.$1.$PORT) then
+  echo Cannot find file wspec/XCLIENT.$1.$PORT
+  echo This means that the local wspec directory does not
+  echo correspond to the server invoked
+  echo I quit
+  goto usage
+ endif
+ cd $ici
+else 
+ ln -s wspec.xclient wspec
+endif
+
+echo local wspec directory verified
+############################################################################
+# import the current wspec from the server
+
+cd $ici
+$BINENV aceclient $1 -port $PORT << END >! wspec/___getspec___ || goto noconnect
+wspec
+END
+cd wspec
+chmod 644 ___getspec___
+uudecode ___getspec___
+chmod 644 server.wspec.tar
+tar xf server.wspec.tar
+\rm -rf  ___getspec___
+
+echo current models imported
+############################################################################
+# Possibly, reinitialise and seed the database
+
+cd $ici
+if ! (-d database) mkdir database
+
+setenv ACEDB `pwd`
+setenv ACEDB_NO_BANNER 1
+
+if !(-e database/ACEDB.wrm) then
+ echo Initialising a local database
+$BINENV tace << END || goto notace
+y   // do reinitialise
+pparse  $SERVER_DIR/xclient.data.ace
+save
+quit
+END
+else
+$BINENV tace << END || goto notace
+read-models
+save
+quit
+END
+endif
+
+if !(-e database/ACEDB.wrm) then
+ echo Sorry, I was not able to create a local database
+ echo I quit
+ goto usage
+endif
+
+############################################################################
+# Start the graphic interface
+
+echo Connected to aceserver: $1 $PORT
+echo Starting the xaceclient graphic interface
+
+if ($3 == "gcc") then
+ cd ~/ace
+ gdb bin.$ACEDB_MACHINE/xaceclient
+else
+ $BINENV xaceclient || goto noxaceclient
+endif
+
+cd $ici
+echo Graphic session finished,
+if (-e clientUpdate) then
+ setenv nb `wc clientUpdate | awk '{print $1}'`
+ if ($nb == "0") then
+  \rm clientUpdate
+ endif
+endif
+
+if (-e clientUpdate.done) then
+ echo '########################################'
+ echo '### The following data were sent to the server'
+ echo
+ cat clientUpdate.done 
+ echo '########################################'
+ echo
+endif
+if (-e clientUpdate) then
+ echo '########################################'
+ echo '### The following editions were not saved to the server'
+ echo
+ cat clientUpdate
+ echo
+ echo '########################################'
+ ask:
+ echo  should I save these additional editions on the server, please answer yes/no
+  switch("$<")
+    case "yes"
+     echo I try to save to host $1 port $PORT
+     $BINENV aceclient $1 -port $PORT -ace_in < clientUpdate || goto noconnect
+     touch clientUpdate.done
+     cat clientUpdate >> clientUpdate.done
+     breaksw
+    case "no"
+     echo ok, i do not save your editions, but i keep them temporarilly
+     echo as $ici/clientUpdate.old.ace
+     mv clientUpdate clientUpdate.notDone
+     breaksw
+    default:
+     echo please answer yes or no
+     goto ask
+    endsw 
+endif
+echo
+echo done
+exit 0
+
+############################################################################
+## Usage
+notace:
+ echo sorry, cannot find tace in the current path
+ echo ' '
+ goto usage
+
+noxaceclient:
+ echo sorry, cannot find xaceclient in the current path
+ echo ' '
+ goto usage
+
+noconnect:
+ echo cannot connect to $1 $PORT sorry
+ if (-e ___getserver___) then
+  echo error message: 
+  cat  ___getserver___	
+  \rm -rf  ___getserver___	
+ endif
+usage:
+echo 'Usage:     xcl host port'
+echo 'example:   xcl beta.crbm.cnrs-mop.fr 20000100'
+exit 1
+
+############################################################################
+############################################################################
+

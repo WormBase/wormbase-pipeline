@@ -1,0 +1,77 @@
+#!/bin/csh 
+
+# 960522: The version was changed so that it would 
+#	force new wspec files etc to be linked in.
+#
+#
+#
+#
+
+
+switch (`ostype`)
+  case "Irix": 
+	set prog = ~wormpub/acedb/ace4/bin.SGI_4/tace
+	breaksw
+  case "SunOS": 
+	set prog = ~wormpub/acedb/ace4/bin.SUN_4/tace
+	breaksw
+  case "OSF1":
+	set prog = ~wormpub/acedb/ace4/bin.ALPHA_4/tace
+	breaksw
+endsw
+
+
+
+if (! -d acedb_4) then
+  mkdir acedb_4
+endif
+
+
+if (! -d acedb_4/database) then
+  mkdir acedb_4/database
+endif
+
+
+#if (! -e acedb_4/wspec) then
+\rm acedb_4/wspec ;  ln -s ~wormpub/acedb/ace4/wspec acedb_4/wspec
+#endif
+
+
+#if (! -e acedb_4/wquery) then
+\rm acedb_4/wquery ;  ln -f -s ~wormpub/acedb/ace4/wquery acedb_4/wquery
+#endif
+
+
+#if (! -e acedb_4/wgf) then
+\rm acedb_4/wgf ; ln -f -s ~wormpub/acedb/ace4/wgf acedb_4/wgf
+#endif
+
+
+#if (! -e methods.ace) then
+\rm methods.ace ; ln -s ~wormpub/acedb/ace4/methods.ace .
+#endif
+
+setenv ACEDB `pwd`/acedb_4
+
+if (! -e acedb_4/database/ACEDB.wrm) then
+  $prog <<EOF
+y
+
+EOF
+endif
+
+
+foreach i (*.ace)
+  $prog <<EOF
+parse $i
+save
+quit
+EOF
+end
+
+
+
+
+
+
+

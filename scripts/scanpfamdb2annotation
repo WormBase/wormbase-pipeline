@@ -1,0 +1,243 @@
+#!/usr/local/bin/perl 
+#
+# Takes the output of scanpfamdb and converts to ace readable format
+# and makes annotation entries for acedb 
+# 
+# Steven Jones, Sanger Centre 1998.
+
+
+require glob('~sjj/scripts/sanger.pl');
+$|=1;
+
+$pfam=glob('~wormpub/analysis/annotation/');
+#&get_loci;
+
+###################################################################
+#Read in the scanpfamdb output
+###################################################################
+
+open(scanpfam,"$ARGV[0]");
+while (<scanpfam>) {
+	if (!/#/ && /^(\S+)\s+(\d+)\s+(\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).+\s+(\S+)$/) {
+	    $gene=$1;$start=$2;$end=$3;$acc=$4;$modelstart=$5;$modelend=$6;$score=$7;$id=$8;  
+	    #don't know why I put this in - probably because of wormpep
+	    #$gene=~tr/a-z/A-Z/;
+	    $found{$gene}=1;
+	    $found=0;
+	    foreach $domain (@$gene) {if ($domain eq $id) {$found=1;}}
+            if ($found==0) {push(@$gene,$id);}
+	    $domainnumber{$id,$gene}++;
+	    $found=0;
+	    foreach $genelist (@genes) {if ($genelist eq $gene) {$found=1;}}
+	    if ($found==0) {push(@genes,$gene);}
+
+	    #get the PFAM info just once for each domain 
+	    $found=0;
+	    foreach $domain (@domains) {if ($id eq $domain) {$found=1;}}
+	    if ($found==0) {&getinfo($id);push(@domains,$id);}
+	}
+    }
+close scanpfam;
+
+##################################################################
+#Read in protein file. 
+##################################################################
+
+open(proteins,"$ARGV[1]");
+while (<proteins>) {
+    if (/^>(\S+)/) {$name=$1;}
+    $peptide{$name}=$peptide{$name}.$_;
+}
+close proteins;
+
+###################################################################
+#Make annotation
+###################################################################
+
+foreach $gene (@genes) {
+    if ($found{$gene}==1) {
+    print "\n\nSequence $gene\n";
+    print "-D Brief_identification\n";
+    print "-D Annotated\n";
+    print "Remark \"Annotated using Pfam\"\n";
+    print "Annotated ",&date2ace,"\n";
+
+    if ($locus{$gene} ne "") {print "Brief_identification \"";
+			      #have stopped putting loci in the brief_id for now
+                              #print "Brief_identification \"$locus{$gene}: ";
+    }
+	                      
+    else {print "Brief_identification \"";}
+
+    $started=0;
+    foreach $domain (@$gene) {
+	
+        #does this domain have further characterisation
+        $directory=$pfam.$domain;
+	$pfamplusannot="";
+	if (-d $directory) {$pfamplusannot=&pfamplus($gene,$directory,$domain,@$gene)};
+        #&getinfo($domain);
+	if ($pfamplusannot eq "ignore") {next;}
+
+        #print a comma between domain entries. 
+	if ($started eq "1") {print ", ";}
+
+	#print out the annotation for no pfamplus annotation
+	if ($pfamplusannot eq "") {
+	if ($domainnumber{$domain,$gene}==1) {print "$de{$domain}";}
+	else 
+	{print "$de{$domain} ($domainnumber{$domain,$gene} domains)";}
+    }
+	#or if their is a pfamplusannot. 
+       else 
+
+      {if ($domainnumber{$domain,$gene}==1) {print "$pfamplusannot";}
+	else 
+	{print "$pfamplusannot ($domainnumber{$domain,$gene} domains)";}
+    }
+	$started="1";
+
+
+    }
+    print "\"\n";
+}
+}
+
+###########################################################
+#subroutines
+###########################################################
+
+
+sub getinfo {
+	open(getz,"getz5 -t  \"[pfam31-id:$_[0]]\" |");
+	while (<getz>) {
+	                if (/^AC\s+(\S+)/) {$ac{$_[0]}=$1;}
+			if (/^DE\s+(\S+.+)/) {$de{$_[0]}=$1;$de{$_[0]}=~s/\s+$//;}
+			if (/^ID\s+(.+)$/) {$id{$_[0]}=$1;}
+				    }
+    
+}
+
+
+#############################################################
+
+
+sub date2ace {
+	local($date);
+	($sec,$min,$hour,$mday,$mon,$year)=localtime(time);
+	$mon++;$year+=1900;
+	$date=$year."-".$mon."-".$mday;
+	return $date;	
+    }
+
+
+#############################################################
+
+sub pfamplus {
+    local($mapfile);
+    local($annotation);
+    local($highscore);
+    local($hit);
+    local($mapgene);
+    local(@thresholds);
+    local($threshold);
+    local($found);
+    local(@ignore);
+    local($domain);
+
+    #write a temp protein
+    open(proteinseq,">/tmp/protein$$");
+    print proteinseq $peptide{$_[0]};
+    close proteinseq;
+   
+    #read in the map file
+    $mapfile=$directory."/".$_[2].".map";
+    open(mapfile,"$mapfile");
+
+    while(<mapfile>) {if (/^#/) {next;}
+		      #should the hits to this family be ignored? i.e. does another family supercede?
+		      if (/^ignore:(\S+)/i) {push(@ignore,$1);}	  
+	if (/^(\S+)\s+(\d+)\s+(.+)/) {	  
+	                                  $mapgene=$1;$threshold=$2;
+					  #don't know why this was here but it shouldn't really 
+                                          #$gene=~tr/a-z/A-Z/;
+				          $annotation{$mapgene,$threshold}=$3;
+
+                                      #a gene in the map file can have > 1 threshold (with a different annotation);
+
+				      $found=0;
+					  foreach $mappedthreshold (@thresholds) {if ($threshold eq $mappedthreshold) {$found=1;}}
+					  if ($found==0) {push(@thresholds,$threshold);}
+					  
+				      }
+		      }
+
+    #see whether this annotation should be ignored
+		      foreach $domain (@$gene) {
+			  foreach $ig (@ignore) {
+			      if ($domain eq $ig) {return "ignore";}
+			  }
+		      }
+
+
+    #we now have the thresholds for the genes and their annotations
+    #sort the thresholds starting highest first;
+    sub descending {$b <=> $a;}	
+    @orderedthresholds=sort descending @thresholds;	
+ 
+    #if there is no fasta bait file then probably the map file
+    # was just to set up ignore statements
+
+    if (! -e  "$directory/$_[2].fasta") {return;}
+    
+
+    #do the blast comparison
+    open(blast,"wublastp $directory/$_[2].fasta /tmp/protein$$ B=1 V=1 |");
+    $highscore=0;
+while (<blast>) {
+	if (/^>(\S+)/) {$hit=$1;}
+	if (/^\s+Score\s+=\s+(\d+)/) {if ($1 > $highscore) {$highscore=$1;}}
+    }
+    #now get the annotation for the $highscore
+foreach $threshold (@orderedthresholds) {#print "testing threshold $threshold\n";
+    if ($highscore>=$threshold && $annotation{$hit,$threshold} ne "") {$annotation=$annotation{$hit,$threshold};last;}
+}
+    return $annotation;
+	
+    unlink "/tmp/protein$$";
+}
+
+###################################################################
+
+
+sub get_loci {
+
+        local($exec);
+        local($command);
+        local(@array);
+        undef @array;
+        $exec=&tace;
+        $ENV{'ACEDB'}="/nfs/disk100/wormpub/acedb/ace4/cgc";     
+        $command=<<EOF;
+        find  locus  
+	follow sequence
+        show -a locus
+        quit
+EOF
+open(textace, "echo '$command' | $exec |");
+while (<textace>) {if (/^Sequence\s+:\s+\"(\S+)"/) {$sequence=$1;}
+                   if (/^Locus\s+\"(\S+)\"/) {$locus{$sequence}=$1;
+                                              $locus{$sequence}=~tr/a-z/A-Z/;
+                                              }
+                   }
+}
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,27 @@
+#!/usr/local/bin/gawk -f
+#
+# exblx2ace1 - awk script to produce ace lines for the Pep_homol's from an exblx file
+
+
+{
+	if (!started) {
+
+		if (cosmid == "") { 
+			print "Usage: exblx2ace1 cosmid=<cosmid name> file.exblx"
+			exit
+		}
+
+		print ""
+		print "Sequence : " cosmid
+		started = 1
+	}
+
+	if ( $7 ~ "_" )
+	  db = "SP:"
+	else if ( $7 ~ /\./ )
+	  db = "WP:"
+	else 
+	  db = "PIR:"
+
+	print "Homol", db $7, "BlastX", $1, $3, $4, $5, $6
+}

@@ -1,0 +1,47 @@
+#!/usr/local/bin/perl 
+##########################################################
+#Script to dump out status tables for ncbi and ebi to 
+#pick up. 
+#Relies on taql binary to run an AQL script
+#
+#Tony Cox, 1998, Sanger Centre. 
+##########################################################
+
+my $home = "/nfs/disk100/wormpub/avc";
+my $db = "/nfs/disk100/wormpub/acedb/ace4/cam";    
+my @CHROM = ("Sequence-I","Sequence-II","Sequence-III","Sequence-IV","Sequence-V","Sequence-X");
+
+foreach $chromosome (@CHROM){
+
+	open (QUERY, ">$home/make_status_tables.aql") or die "Cannot write query file: $!";
+
+print QUERY <<END;
+select mapleft, map, seq, emblno, cleft, cleft_pos
+from map in object("Map", "$chromosome"),
+  seq in map->sequence,
+  cleft in seq->overlap_right,
+  cleft_pos in cleft[1],
+  emblno in seq->database[3],
+  m in seq->Map,
+  mapleft in m[left]
+order_by :mapleft
+END
+
+	close (QUERY);
+
+	open (AQL, "$home/taql -q  $db < $home/make_status_tables.aql |") or die "Cannot open AQL query\n";
+
+	$chromosome =~ s/Sequence-//i;
+
+	open (OUT, ">/nfs/disk69/ftp/pub/databases/C.elegans_sequences/STATUS_TABLES/$chromosome.table") or die "Cannot write status table: $!";
+	while (<AQL>){
+		print OUT $_;
+	}
+	close (OUT);
+	close (AQL);
+}
+
+unlink ("$home/make_status_tables.aql");	# clean up after ourselves
+exit (0);
+
+

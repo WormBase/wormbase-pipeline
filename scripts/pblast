@@ -1,0 +1,10 @@
+#! /bin/csh
+# runs blastp - search aa sequence against swissprot
+# writes output to standard output
+
+set ncbidir="/nfs/al/cb0/wormpub/BioSW/ncbi"
+
+$ncbidir/blast/blastp $ncbidir/db/swissprot ${1} \
+	-M$ncbidir/PAM120
+
+exit

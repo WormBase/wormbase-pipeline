@@ -1,0 +1,32 @@
+#!/usr/local/bin/perl
+
+$file_of_sequences = shift;    # List of CDS to retrieve 
+$database = shift;             # Path of wormpep release
+
+open (FILE, "<$file_of_sequences") || die "Can't open the list of gene names\n";
+while (<FILE>) {
+    next if ($_ eq "");   # ignore empty lines
+    chomp;
+    $file = $_;
+    &dbfetch($file,$database);
+}
+close FILE;
+exit(0);
+
+sub dbfetch {
+    local ($file,$database) = @_;
+    $/=">";
+    open (SHOTGUN, "<$database");
+    while (<SHOTGUN>) {
+	chop $_;
+	/^(\S+)\s+/;
+	if ($file eq $1) {
+	    print ">", $_;
+	    last;
+	}
+    }
+    close SHOTGUN;
+    $/="\n";
+}
+
+

@@ -1,0 +1,33 @@
+#!/usr/local/bin/perl
+
+####################################################
+# avc: 29.9.99
+# This file is now obsolete - its functionality
+# has been moved to the "Maintain_ftp_site" script
+# in ~wormpub/analysis/scripts
+# It can still be run from the cmd line however...
+####################################################
+
+require glob('~sjj/scripts/sanger.pl');
+
+$wormpub=&tilda(wormpub);
+$ftp=&tilda(ftp);
+
+# avc: this is all the documentation I can find....
+# The stlcmid file is fetched from STL each night (cronjob: wormpub on ics1a) by: 
+# ~wormpub/analysis/scripts/get_stlouis_data
+
+open (FILE, "$wormpub/analysis/stlcosmids/stlcmid");
+
+while (<FILE>){
+	if (/^>(\w+)\//) {
+		$cosmid=$1;
+		$cosmid=~tr/a-z/A-Z/;
+		close OUTPUT;
+		open (OUTPUT, "> $ftp/pub/databases/C.elegans_sequences/FINISHED_SEQUENCES/$cosmid.seq");		
+		print STDOUT "Processing $cosmid.seq...\n";
+	}
+	print OUTPUT "\U$_";
+}
+
+close (FILE);

@@ -1,0 +1,75 @@
+#!/usr/local/bin/perl
+
+#created 25/4/94 Steve Jones
+
+
+#Script for updating the submitted dates of cosmids from the actual
+#embl entries.  Date is judged from the actual date the embl entry was
+#created. 
+#The date is parsed from the date in the ftp site which should represent the 
+#correct submission date. 
+
+
+open (current, <~wormpub/analysis/cosmids/current.versions>) || die "Cannot find current.versions file";
+
+
+while (<current>) {
+
+        chop;
+        ($cosmid, $datefinished) = split (/\//,$_);
+	
+        if (-e "/nfs/disk69/ftp/pub/databases/C.elegans_sequences/EMBL_FORMAT/UNSORTED/$cosmid.embl") {
+	open(dateline, "/nfs/disk69/ftp/pub/databases/C.elegans_sequences/EMBL_FORMAT/UNSORTED/$cosmid.embl");
+
+
+	while (<dateline>) {
+
+	   if (/^DT\s+(\S+).+Created\)$/)  {
+
+	   ($date, $month, $year)= split (/-/,$1);
+	   $month =~ s/JAN/01/;
+	   $month =~ s/FEB/02/;
+	   $month =~ s/MAR/03/;
+	   $month =~ s/APR/04/;
+	   $month =~ s/MAY/05/;
+	   $month =~ s/JUN/06/;
+	   $month =~ s/JUL/07/;
+	   $month =~ s/AUG/08/;
+	   $month =~ s/SEP/09/;
+	   $month =~ s/OCT/10/;
+	   $month =~ s/NOV/11/;
+	   $month =~ s/DEC/12/;
+	   $year=~ s/19//;
+	   print "Sequence $cosmid\nSubmitted $year-$month-$date\n\n"; 
+			   }
+
+       }
+	close dateline;
+
+    }
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

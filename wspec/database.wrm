@@ -1,0 +1,75 @@
+// /* @(#)database.wrm	1.2    7/29/95  */
+
+// on the line in interpreted according to the keyword.
+// Current Keywords : PART, NAME
+//
+// PART = partition
+//   partition types :
+//     UNIX_FILE_SYSTEM  = 1
+//     RAW_FILE_SYSTEM   = 2
+//   hostname :
+//   partition_name : full path or "ACEDB" if relative to ACEDB variable.
+//   file_name : only for unix file system : name of the partition file.
+//     for other types, "NONE"
+// NAME is name used in main window title, and in update file names
+// 
+// note :
+// - lines beginning by // are comments
+// - a line don't exeed 512 characters.
+//
+//Keyword : type hostname partition_name file_name          max_size offset
+PART :       1   local    ACEDB          block1.wrm  5000      0
+PART :       1   local    ACEDB          block2.wrm  20000     0
+PART :       1   local    ACEDB          block3.wrm  50000     0
+PART :       1   local    ACEDB          block4.wrm  50000     0
+PART :       1   local    ACEDB          block5.wrm  50000     0
+PART :       1   local    ACEDB          block6.wrm  50000     0
+PART :       1   local    ACEDB          block7.wrm  50000     0
+PART :       1   local    ACEDB          block8.wrm  50000     0
+PART :       1   local    ACEDB          block9.wrm  50000     0
+PART :       1   local    ACEDB          block10.wrm  50000    0
+PART :       1   local    ACEDB          block11.wrm  50000    0
+PART :       1   local    ACEDB          block12.wrm  50000    0
+PART :       1   local    ACEDB          block13.wrm  50000    0
+PART :       1   local    ACEDB          block14.wrm  50000    0
+PART :       1   local    ACEDB          block15.wrm  50000    0
+PART :       1   local    ACEDB          block16.wrm  50000    0
+PART :       1   local    ACEDB          block17.wrm  50000    0
+PART :       1   local    ACEDB          block18.wrm  50000    0
+PART :       1   local    ACEDB          block19.wrm  50000    0
+PART :       1   local    ACEDB          block20.wrm  50000    0
+PART :       1   local    ACEDB          block21.wrm  50000    0
+PART :       1   local    ACEDB          block22.wrm  50000    0
+PART :       1   local    ACEDB          block23.wrm  50000    0
+PART :       1   local    ACEDB          block24.wrm  50000    0
+PART :       1   local    ACEDB          block25.wrm  50000    0
+PART :       1   local    ACEDB          block26.wrm  50000    0
+PART :       1   local    ACEDB          block27.wrm  50000    0
+PART :       1   local    ACEDB          block28.wrm  50000    0
+PART :       1   local    ACEDB          block29.wrm  50000    0
+PART :       1   local    ACEDB          block30.wrm  50000    0
+PART :       1   local    ACEDB          block31.wrm  50000    0
+PART :       1   local    ACEDB          block32.wrm  50000    0
+PART :       1   local    ACEDB          block33.wrm  50000    0
+PART :       1   local    ACEDB          block34.wrm  50000    0
+PART :       1   local    ACEDB          block35.wrm  50000    0
+PART :       1   local    ACEDB          block36.wrm  50000    0
+PART :       1   local    ACEDB          block37.wrm  50000    0
+PART :       1   local    ACEDB          block38.wrm  50000    0
+PART :       1   local    ACEDB          block39.wrm  50000    0
+PART :       1   local    ACEDB          block40.wrm  50000    0
+PART :       1   local    ACEDB          block41.wrm  50000    0
+PART :       1   local    ACEDB          block42.wrm  50000    0
+PART :       1   local    ACEDB          block43.wrm  50000    0
+PART :       1   local    ACEDB          block44.wrm  50000    0
+PART :       1   local    ACEDB          block45.wrm  50000    0
+PART :       1   local    ACEDB          block46.wrm  50000    0
+PART :       1   local    ACEDB          block47.wrm  50000    0
+PART :       1   local    ACEDB          block48.wrm  50000    0
+PART :       1   local    ACEDB          block49.wrm  50000    0
+PART :       1   local    ACEDB          block50.wrm  50000    0
+//
+NAME WS42
+TITLE C.elegans database
+//
+///////////////// end of file

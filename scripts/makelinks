@@ -1,0 +1,221 @@
+#!/usr/local/bin/perl
+
+##########################################################
+#
+# Makelinks program which will link up cosmid sequences and 
+# spanning subsequences based on Overlap_left/right info and
+# the current LINK_*.  Makes one LINK_XXX for each set of
+# entries with DNA and Overlap_right set non-zero and
+# no Confidential_remark "not in Cambridge LINK".  XXX is 
+# the leftmost entry name.  SUPERLINK_CB_* are also made 
+# based on a hardwired table of left ends.
+#
+# Performs a number of checks to make sure of the integrity 
+# of the new links
+#
+# 1) Will check that all sequences that previously were in a link
+#    are put back into a link.
+# 2) Will check that all subsequences from links are put back into 
+#    links.
+#
+#    WARNING: Current implementation relies on the fact that 
+#    all current primary links have names starting with "LINK".
+#
+# RD 990712 total rewrite of Steven Jones original using AcePerl
+# now handle reversed sequences with Flipped tag set.
+# -dump and -load options to separate reading database from making result.
+# -flip_subseqs option a bit subtle - when attaching spanning subsequences
+#    based on flipped sequences, reverse attachment info.  This is correct
+#    only once, when sequences are newly flipped (but how to know that in
+#    the future?).
+#
+##########################################################
+# 000618 : dl : Altered script to accomodate change of lab 'CB' -> 'HX'
+# 000929 : dl : Altered script to reflect new path for camace database
+
+use Getopt::Long ;
+
+&GetOptions("dump!","load=s", "flip_subseqs!") ;
+
+if ($opt_load) {
+    open (FILE, "$opt_load") || die "failed to open dump file $opt_load\n" ;
+    while (<FILE>) {
+	chop ;
+	($type, $seq, @a) = split /\t/ ;
+	if ($type eq "SEQ") {
+	    ($length{$seq}, $right{$seq}, $rightOffset{$seq}, $left{$seq},
+	     $isFlipped{$seq}, $isExternal{$seq}, $isLinkCandidate{$seq}) = @a ;
+	    $isGenomeSequence{$seq} = 1 ;
+	} elsif ($type == "LINK") {
+	    ($currSource{$seq}, $currStart{$seq}, $currEnd{$seq}) = @a ;
+	} else {
+	    die "bad line in load file: $type\t$seq\t$_\n" ;
+	}
+    }
+} else {
+
+	# get data from camace
+
+    use Ace ;
+    $campath = "/wormsrv2/camace" ;
+    $camdb = Ace->connect(-path=>"$campath") || 
+	die "failed to connect to database\n" ;
+
+	# first get lots of info about Genome_sequence objects
+
+    $it = $camdb->fetch_many(Genome_sequence => '*') ;
+    while ($obj = $it->next) {
+	$isGenomeSequence{$obj} = 1 ;
+	$length{$obj} = $obj->DNA(2) ;
+	if (!$length{$obj}) { warn "No length for $obj\n" ; }
+	$right{$obj} = $obj->Overlap_right ;
+	$rightOffset{$obj} = $obj->Overlap_right(2) ;
+	$left{$obj} = $obj->Overlap_left ;
+	if ($obj->at('Structure.Flipped')) { $isFlipped{$obj} = 1 ; }
+	foreach ($obj->Confidential_remark) {
+	    if (/^not in Cambridge LINK$/) { $isExternal{$obj} = 1 ; }
+	}
+	$isLinkCandidate{$obj} = (!$isExternal{$obj} && $length{$obj} > 0) ;
+    }
+
+	# then some info about current links
+
+    $it = $camdb->fetch_many(Sequence => 'LINK*') ;
+    while ($obj = $it->next) {
+	foreach $a ($obj->at('Structure.Subsequence')) {
+	    ($seq, $start, $end) = $a->row ;
+	    $currSource{$seq} = $obj ;
+	    $currStart{$seq} = $start ;
+	    $currEnd{$seq} = $end ;
+	}
+    }
+}
+
+if ($opt_dump) {
+    foreach $obj (keys %length) {
+	print "SEQ\t$obj\t$length{$obj}\t$right{$obj}\t$rightOffset{$obj}\t$left{$obj}\t" ;
+	print "$isFlipped{$obj}\t$isExternal{$obj}\t$isLinkCandidate{$obj}\n" ;
+    }
+    foreach $seq (keys %currSource) {
+	print "LINK\t$seq\t$currSource{$seq}\t$currStart{$seq}\t$currEnd{$seq}\n" ;
+    }
+
+    exit 0 ;		# exit after dumping
+}
+
+###########################################
+# make links
+###########################################
+
+foreach $seq (keys %isGenomeSequence) {
+				# only keep seeds
+    next if (!$isLinkCandidate{$seq} ||
+	     ($left{$seq} && $isLinkCandidate{$left{$seq}} && $rightOffset{$left{$seq}}) ||
+	     !$rightOffset{$seq} ||
+	     !$isLinkCandidate{$right{$seq}}) ;
+
+				# print LINK header
+    $lk = "LINK_$seq" ;
+    print "\nSequence $lk\n" ;
+    print "From_laboratory HX\n" ;
+
+				# loop over subsequences
+    $startright=1 ;
+    while ($isLinkCandidate{$seq}) {
+	if ($isFlipped{$seq}) {
+	    $start{$seq} = $startright + $length{$seq} - 1 ; 
+	    $end{$seq} = $startright ; 
+	} else {
+	    $start{$seq} = $startright ; 
+	    $end{$seq} = $startright + $length{$seq} - 1 ;
+	}
+	print "Subsequence $seq $start{$seq} $end{$seq}\n" ;
+	$link{$seq} = $lk ;
+	if (!$rightOffset{$seq}) { last ; } # POSS EXIT FROM LOOP
+	$startright = $startright + $rightOffset{$seq} - 1 ;
+	$seq = $right{$seq} ;
+    }		
+}
+
+###########################################
+#Re-map subsequences back onto the new links 
+###########################################
+
+foreach $seq (keys %currStart) {
+    next if ($isGenomeSequence{$seq}) ;
+
+    if ($seq =~ /(\S+)\.\d+/) { $parent = $1 ; }
+    else { warn "no dot in subsequence name $seq\n" ; next ; }
+
+    if (!$currStart{$parent}) { warn "no coord in link for parent $parent of $seq\n" ; next ; }
+    if (!($currSource{$seq} eq $currSource{$parent})) { warn "parent $parent and child $seq in different links\n" ; next ; }
+    if (!$link{$parent}) { warn "no new link for parent $parent of $seq\n" ; next ; }
+    if ($isFlipped{$parent} && $opt_flip_subseqs)  {
+	$start{$seq} = $start{$parent} + $currStart{$parent} - $currStart{$seq} ;
+	$end{$seq} =  $start{$parent} + $currStart{$parent} - $currEnd{$seq} ;
+    } else {
+	$start{$seq} = $start{$parent} - $currStart{$parent} + $currStart{$seq} ;
+	$end{$seq} = $start{$parent} - $currStart{$parent} + $currEnd{$seq} ;
+    }
+    print "\nSequence $link{$parent}\n";
+    print "Subsequence $seq $start{$seq} $end{$seq}\n" ;
+    $link{$seq} = $link{$parent} ;
+}
+
+###########################################
+#Do a quick check to make sure that everything 
+#that was in a link has been put back in one
+###########################################
+
+foreach $seq (keys %currSource) {
+    if (!$link{$seq}) { warn "$seq not put back into a link\n" ; }
+}
+
+###########################################
+# make superlinks
+###########################################
+
+%superinfo = ( "I" => "H06O01",		# left ends of superlinks
+	       "IR" => "Y95D11A",
+	       "II" => "T05A6",
+	       "IIIL" => "F45H7",
+	       "IIIR" => "K01F9",
+	       "IV" => "F21D5",
+	       "V" => "F07D3",
+	       "X" => "B0272"
+	       ) ;
+
+foreach $chrom (keys %superinfo) {
+    print "\nSequence SUPERLINK_CB_$chrom\n" ;
+    print "From_laboratory HX\n" ;
+    $pos = 1 ;
+    $seq = $superinfo{$chrom} ;
+    while ($seq) {
+	if ($link{$seq}) {
+	    $lk = $link{$seq} ;
+	    while ($seq && $lk eq $link{$seq}) {
+		$end = $end{$seq} ;
+		$seq = $right{$seq} ;
+	    }
+	    $end += $pos - 1 ;
+	    print "Subsequence $lk $pos $end\n" ;
+	} elsif ($isLinkCandidate{$seq}) {
+	    $end = $pos - 1 + $length{$seq} ;
+	    if ($isFlipped{$seq}) {
+		print "Subsequence $seq $end $pos\n" ;
+	    } else {
+		print "Subsequence $seq $pos $end\n" ;
+	    }
+	    $seq = $right{$seq} ;
+	} elsif (!$isExternal{$seq}) {
+	    $end = $pos - 1 + 1000 ;
+	    print "Subsequence $seq $pos $end\n" ;
+	    $seq = $right{$seq} ;
+	} else {
+	    last ;
+	}
+	$pos = $end + 101 ;
+    }
+}
+
+############# end of file ################

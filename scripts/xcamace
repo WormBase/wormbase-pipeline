@@ -1,0 +1,13 @@
+#!/bin/csh -f
+
+setenv dir `pwd`
+
+if (-e ~/XCLIENT) then 
+cd ~/XCLIENT
+xcl wormsrv1 100100
+cd $dir 
+else 
+echo no ~/XCLIENT directory
+exit  
+endif 
+

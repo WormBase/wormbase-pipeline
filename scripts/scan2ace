@@ -1,0 +1,38 @@
+#!/usr/local/bin/perl
+
+
+#to parse the output of scan  to ace format
+#950203
+#Steven Jones
+
+
+if ($#ARGV != 2) {print "usage: scan2ace  outputfile threshold repeatname\n";exit;}
+
+open (output, "$ARGV[0]");
+
+
+while (<output>) {
+
+	s/^\s+//;
+	if (/^(\S+)\s+(\d+)\s+(\d+)\s+\d+\s+\d+\s+(\d+)/) {
+
+	if ($4 >= $ARGV[1]) {
+
+
+		if ($2 > $3) {$length=$2-$3;} else  {$length=$3-$2;}
+			      print "Sequence $1\n";
+			      print "Homol $ARGV[2] scan $4 $2 $3 1 $length\n\n";
+	                      print "Sequence $ARGV[2]\n";
+			      
+
+
+		if ($2 > $3)  {print "Homol $1 scan $4 $length 1 $3 $2\n\n";}
+				else {print "Homol $1 scan $4 1 $length $2 $3\n\n";}
+			     } 
+
+	
+
+		}
+			
+}
+

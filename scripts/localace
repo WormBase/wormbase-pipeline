@@ -1,0 +1,89 @@
+#!/bin/csh  
+
+#  970923: A new version of localace. Which will   
+#  make a new database from the files in the current 
+#  directory and will also import the current methods.ace 
+#  file. It will detory the database one closed. 
+#
+#  currently only looks for .ace files. Therefore 
+#  will not work on older projects. 
+
+
+switch (`ostype`)
+  case "Irix": 
+	set prog = ~wormpub/acedb/ace4/bin.SGI_4/tace
+	set xprog = ~wormpub/acedb/ace4/bin.SGI_4/xace
+	breaksw
+  case "SunOS": 
+	set prog = ~wormpub/acedb/ace4/bin.SUN_4/tace
+	set xprog = ~wormpub/acedb/ace4/bin.SUN_4/xace
+	breaksw
+  case "OSF1":
+	set prog = ~wormpub/acedb/ace4/bin.ALPHA_4/tace
+	set xprog = ~wormpub/acedb/ace4/bin.ALPHA_4/xace
+	breaksw
+ case "Linux":
+	set prog = ~wormpub/acedb/ace4/bin.LINUX/tace
+	set xprog = ~wormpub/acedb/ace4/bin.LINUX/xace
+	breaksw
+endsw
+
+#can't make localace if files are for acedb_2
+ls -l *_0.ace >& /dev/null
+if ($status == 0) then
+echo "The files for this cosmid are too old to be used for a localace"
+echo "Please look in camace for more up to date data"
+exit;
+endif
+
+mkdir /tmp/acedb_4$$
+mkdir /tmp/acedb_4$$/database
+
+cp -r  ~wormpub/acedb/ace4/wspec /tmp/acedb_4$$/wspec
+ln -f -s ~wormpub/acedb/ace4/wquery /tmp/acedb_4$$/wquery
+ln -f -s ~wormpub/acedb/ace4/wgf /tmp/acedb_4$$/wgf
+
+\rm /tmp/acedb_4$$/wspec/passwd.wrm 
+whoami > /tmp/acedb_4$$/wspec/passwd.wrm 
+#somehow need this for the load sharing.
+echo "root" >> /tmp/acedb_4$$/wspec/passwd.wrm 
+
+setenv ACEDB /tmp/acedb_4$$
+
+#parse in the acefiles 
+
+if (! -e /tmp/acedb_4$$/database/ACEDB.wrm) then
+  $prog <<EOF
+y
+
+EOF
+endif
+
+
+foreach i (*.ace)
+  echo $i
+  $prog <<EOF
+
+parse $i
+save
+quit
+EOF
+end
+
+#read in the models file 
+ $prog <<EOF
+parse /nfs/disk100/wormpub/acedb/ace4/methods.ace
+save 
+quit
+EOF
+
+$xprog  /tmp/acedb_4$$
+
+
+
+#remove the directory 
+#edit this line very carefully 
+
+\rm -r  /tmp/acedb_4$$ 
+
+

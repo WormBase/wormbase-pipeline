@@ -1,0 +1,8 @@
+#!/usr/local/bin/gawk -f
+{
+  if (match($6,/\./))
+    $6 = substr($6,1,RSTART-1)
+
+	printf ("Feature tandem %d %d %d \"%d copies of %dmer\"\n", $2, $3, $6,  ($3-$2)/$4, $4)
+
+}

@@ -1,0 +1,13 @@
+#!/bin/csh
+#
+# run on the alliant to check if blastx jobs are still running
+
+switch (`hostname`)
+  case "al": 
+    breaksw
+  default:
+    echo 'parbltest should only be run on the alliant'
+    exit 1
+endsw
+
+ps -x | grep blast

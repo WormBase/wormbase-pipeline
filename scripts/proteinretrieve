@@ -1,0 +1,60 @@
+#!/usr/local/bin/perl
+# Test for using ythe new getz6 dumping option
+
+#use efetch for now. The files made are for getz when the bug is fixed
+
+undef @proteins;
+
+$command=<<EOF;
+	find protein 
+	list -a 
+        quit
+EOF
+open(trembl,">$autodir/peptides/trembl");
+open(wormpep,">$autodir/peptides/wormpep");
+open(swissprot,">$autodir/peptides/swissprot");
+open(textace, "echo '$command' | tace $autodir |");
+while (<textace>) {
+    if (/^Protein\s+:\s+"(\S+)"/) {$protein=$1;if ($protein=~/WP/ || $protein=~/TR/ || $protein=~/SW/) 
+				                                          {push (@proteins,$protein);}
+				     if ($protein=~/TR:(\S+)/) {print trembl "$protein\n";}
+				     if ($protein=~/WP:(\S+)/) {print wormpep "$protein\n";}
+				     if ($protein=~/SW:(\S+)/) {print swissprot "$protein\n";}
+					      }
+}
+close trembl;
+close wormpep;
+close swissprot;
+open(peptide,">$autodir/acefiles/peptides.ace");
+foreach $protein (@proteins) {
+    open(efetch,"efetch -f $protein |");
+    while(<efetch>) {if (/^Warning/) {next;}
+	             if (/^>/) {print peptide "\nPeptide $protein\n"} else {print peptide $_;}}
+}
+
+#0 1 * * * echo '/nfs/disk100/wormpub/analysis/scripts/make_claires_table' \
+| csh -
+#0 2 * * * echo '/nfs/disk100/wormpub/analysis/scripts/Maintain_ftp_site' |\
+ csh  -
+# Disabled 05-11-1999 ag3
+#0 3 * * * /nfs/disk100/wormpub/analysis/scripts/make_map_gifs
+#30 3 * * * echo '/usr/bin/rm -f /nfs/WWW/htdocs/Projects/C_elegans/Knockou\
+t/gene_list.shtml' | csh
+#31 3 * * * echo '/nfs/disk100/wormpub/analysis/scripts/gene_list_to_html >\
+/nfs/WWW/htdocs/Projects/C_elegans/Knockout/gene_list.shtml' | csh
+#0 4 * * 3 echo '/nfs/disk100/wormpub/analysis/scripts/make_status_tables' \
+| csh -
+#0 5 * * 2 echo '/nfs/disk100/wormpub/analysis/ESTs/auto-make-non_C.elegans\
+_nematode_ESTs' | csh -
+#0 6 * * 2 echo '/nfs/disk100/wormpub/analysis/scripts/Maintain_EMBL_in_FTP\
+_site' | csh -
+#0 7 * * * echo '/nfs/disk100/wormpub/analysis/scripts/get_stlouis_briggsae\
+' | csh -
+#0 8 * * * echo '/nfs/disk100/wormpub/analysis/scripts/get_stlouis_data' | \
+csh -
+#0 9 * * * echo '/nfs/disk100/wormpub/analysis/scripts/get_stlouis_unfin' |\
+ csh -
+#30 05 * * * /nfs/disk100/wormpub/analysis/scripts/worm-unannotated >/dev/n\
+ull 2>&1
+#30 00 * * * /nfs/disk100/wormpub/analysis/scripts/camcheck.pl
+

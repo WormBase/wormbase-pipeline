@@ -1,0 +1,25 @@
+#!/usr/local/bin/perl
+#
+# accesssion_no2ace
+#
+# script to take the mailed output from Matteo and make an ace file
+# 
+# [dl1 05/96]
+#
+# usage: accession_no filename
+#
+# 1997-03-19: sjj: added genomic canonical
+
+
+
+while (<>) {
+
+    if (($embl,$acc_no,$update)=(/^(\S+)\s+(\S+)\s+(\d+)\s+/)) {
+    $cosmid = substr ($embl, 2);
+    if ($update != 1) {next};
+#    open (OUT, ">>accession_nos.ace") || die "Can't open output file\n";
+    print  "\nSequence : \"$cosmid\"\nDatabase \"EMBL\" \"$embl\" \"$acc_no\"\n";
+    print  "Genomic_canonical\n\n";
+    }
+}
+

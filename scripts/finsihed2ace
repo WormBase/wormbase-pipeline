@@ -1,0 +1,18 @@
+#! /bin/csh
+
+cat >! finished.ace << EOF
+
+Sequence $1 
+Finished $2
+EOF
+
+setenv ACEDB ~wormpub/acedb/cam
+~wormpub/acedb/bin/tace.SGI <<EOF
+parse finished.ace
+save 
+quit
+EOF
+
+
+
+\rm finished.ace

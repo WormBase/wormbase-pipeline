@@ -1,0 +1,126 @@
+#!/usr/local/bin/perl
+#
+# make_FTP_wormpep
+# v 0.1
+#
+# dl
+#
+# Usage : make_FTP_wormpep [-options] <version_number,e.g. 28>
+#
+# A PERL wrapper to automate the process of building the wormpep FTP site.
+#
+# 000910 ag3: introduced arguments
+# 001005 ag3: introduced check on copy over FTP site
+# 001004 ag3: fixed symlinks
+# 000927 dl : PP version
+
+$|=1;
+use Getopt::Std;
+
+#################################################################################
+# variables                                                                     #
+#################################################################################
+
+getopt('dr');
+
+if (length($opt_r)==0) {
+    &usage;
+}
+
+my $release=$opt_r;
+print "Release $opt_r\n\n" if $opt_d;
+
+my $old_release  = $release - 1;                           # [Int]  Internally generated release number ($release -1)
+my $wp_release = "wormpep"."$release";
+my $wp_old_release = "old_wormpep"."$old_release";
+
+my $sourcedir    = "/wormsrv2/WORMPEP/$wp_release";  # [Text] Directory in which the latest Wormpep release resides
+my $targetdir    =  glob ("~ftp/pub/databases/wormpep");   # [Text] Directory in which to build the new release
+
+if ($opt_d) {
+    print "# make_FTP_wormpep\n#\n";
+    print "# Source directory    : $sourcedir \n";
+    print "# Target directory    : $targetdir\n";
+    print "# Wormpep release No. : $release\n";
+}
+
+#################################################################################
+# Main Loop                                                                     #
+#################################################################################
+
+ # make a new directory for the old wormpep release
+
+if (-e "$targetdir/$wp_old_release") {
+    print "'$targetdir/$wp_old_release' directory already exists\n";
+    exit (0);
+}
+
+system "mkdir $targetdir/$wp_old_release";
+print "make a directory for the old wormpep release : '$targetdir/$wp_old_release'\n" if ($opt_d);
+
+ # move the actual files to old_ directory
+
+system "mv $targetdir/wormpep.accession $targetdir/$wp_old_release/wormpep.accession$old_release";
+system "mv $targetdir/wormpep.diff $targetdir/$wp_old_release/wormpep.diff$old_release";
+system "mv $targetdir/wormpep.dna $targetdir/$wp_old_release/wormpep.dna$old_release";
+system "mv $targetdir/wormpep.history $targetdir/$wp_old_release/wormpep.history$old_release";
+system "mv $targetdir/wormpep.table $targetdir/$wp_old_release/wormpep.table$old_release";
+system "mv $targetdir/wormpep${old_release} $targetdir/$wp_old_release/";
+system "mv $targetdir/wp.fasta $targetdir/$wp_old_release/wp.fasta$old_release";
+
+ # copy the wormpep release files across
+
+system "rcp wormsrv2:$sourcedir/wormpep.accession$release wormsrv2:$targetdir/wormpep.accession";
+&CheckSize("$sourcedir/wormpep.accession$release","$targetdir/wormpep.accession");
+system "cp $sourcedir/wormpep.diff$release $targetdir/wormpep.diff";
+&CheckSize("$sourcedir/wormpep.diff$release","$targetdir/wormpep.diff");
+system "cp $sourcedir/wormpep.dna$release $targetdir/wormpep.dna";
+&CheckSize("$sourcedir/wormpep.dna$release","$targetdir/wormpep.dna");
+system "cp $sourcedir/wormpep.history$release $targetdir/wormpep.history";
+&CheckSize("$sourcedir/wormpep.history$release","$targetdir/wormpep.history");
+system "cp $sourcedir/wormpep.table$release $targetdir/wormpep.table";
+&CheckSize("$sourcedir/wormpep.table$release","$targetdir/wormpep.table");
+system "cp $sourcedir/wormpep$release $targetdir/wormpep${release}";
+&CheckSize("$sourcedir/wormpep$release","$targetdir/wormpep${release}");
+system "cp $sourcedir/wp.fasta$release $targetdir/wp.fasta";
+&CheckSize("$sourcedir/wp.fasta$release","$targetdir/wp.fasta");
+
+ # delete the old symbolic link and make the new one
+
+system "cd $targetdir; ln -fs wormpep$release wormpep";
+system "cd $targetdir; ln -fs $wp_old_release/wormpep$old_release wormpep.prev";
+print "deleted the old sym_link and created the new one\n" if ($opt_d);
+
+exit (0);
+
+#################################################################################
+# Subroutines                                                                   #
+#################################################################################
+
+sub CheckSize {
+    my ($first,$second)=@_;
+    $F_SIZE = (stat("$first"))[7];
+    $S_SIZE = (stat("$second"))[7];
+    if ($F_SIZE != $S_SIZE) {
+     print "*Error - file $first not transferred regularly - please check\n";
+     die();
+    } else {
+     print "Copied filename: $first SRC: $F_SIZE TGT: $S_SIZE\n";
+    }
+}
+
+sub usage {
+    print "make_FTP_wormpep v0.1\n";
+    print "Usage : make_FTP_wormpep [-options]\n";
+    print " -r ##       : release no. ##\n";
+    print " [-d]        : verbose mode\n\n";
+    exit(0);
+}
+
+
+
+
+
+
+
+

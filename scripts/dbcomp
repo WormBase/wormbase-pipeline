@@ -1,0 +1,336 @@
+#!/usr/local/bin/perl
+#
+# object_count.pl
+# v 1.1
+# dl
+#
+# Usage : dbcomp.pl [-options]
+#
+# Counts the number of objects in an ACEDB database for each Class stated in the config file
+
+# v1.1
+# 001109 : dl1 : change output style to reflect WWW WormBase pages
+  
+
+# v1.0
+# 001009 : ag3 : now accepts command-line arguments 
+# 001009 : ag3 : hard-wired the queries in the script
+# 000822 : dl  : PP version
+
+$|=1;
+use IO::Handle;
+use Getopt::Std;
+require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
+
+ ##############################
+ # Script variables (run)     #
+ ##############################
+
+my $maintainer = "dl1\@sanger.ac.uk";
+my $rundate = `date +%y%m%d`; chomp $rundate;
+my $runtime = `date +%H:%M:%S`; chomp $runtime;
+my $version = &get_script_version(dbcomp);
+
+##################################################
+# Connect with acedb database                    #
+##################################################
+
+ ##############################
+ # command-line options       #
+ ##############################
+
+$opt_f="";   # First database path
+$opt_s="";   # Second database path    
+$opt_h="";   # Help/Usage page
+
+getopts ('hf:s:');
+&usage(0) if ($opt_h);
+&usage(1) if (!$opt_f);
+
+ ##############################
+ # Paths etc                  #
+ ##############################
+
+my $db_1  = $opt_f;
+my $db_2  = (($opt_s)||("/wormsrv2/autoace"));
+my $oblist = 1;
+$exec=&tace;
+
+#################################################################################
+# Get the WS version number and set the wormpep release number                  #
+#################################################################################
+
+my $Wormbase_release_file = "/wormsrv2/autoace_config/WormBase_release_version";
+&usage(2) unless (-e $Wormbase_release_file);
+open (WormBase_release, $Wormbase_release_file);
+while (<WormBase_release>) {
+    chomp;
+    $WS_current = substr ($_,2);
+}
+close (WormBase_release);
+
+# only for test
+#my $WS_current = $WS_current - 1;
+
+my $WS_previous = $WS_current - 1;
+
+my $dbname_1 = "WS${WS_previous}";
+my $dbname_2 = "WS${WS_current}";
+
+ ########################################
+ # Open logfile                         #
+ ########################################
+
+my $logfile = "/wormsrv2/logs/dbcomp.$rundate.$$";
+my $errfile = "/wormsrv2/autoace/COMPARE/WS${WS_previous}-WS${WS_current}.out";
+my $outfile = "/wormsrv2/autoace/COMPARE/WS${WS_previous}-WS${WS_current}.dbcomp";
+
+system ("/bin/touch $logfile");
+open (LOG,">>$logfile") or die ("Could not create logfile\n");
+LOG->autoflush();
+
+print LOG "# dbcomp\n#\n";     
+print LOG "# version        : $version\n";
+print LOG "# run details    : $rundate $runtime\n";
+print LOG "\n";
+print LOG "Previous db      : $dbname_1 '$db_1'\n";
+print LOG "Current db       : $dbname_2 '$db_2'\n";
+print LOG "\n\n";
+
+##################################################
+# Main Loop                                      #
+##################################################
+
+open (OUT, ">$outfile");
+open (ERR, ">$errfile");
+
+print OUT  " +------------------------------------------+\n";
+print OUT  " | Class              |    ACEDB database   |\n";
+print OUT  " |                    +----------+----------+--------+\n";
+printf OUT " |                    | %8s | %8s | change |\n", $dbname_1,$dbname_2;
+print OUT  " +--------------------+----------+----------+--------+\n";
+
+# The complete set of classes to dump is between the DATA and END tokens
+
+ READARRAY:   while (<DATA>) {
+     chomp $_;
+     last READARRAY if $_ =~ /END/;
+     push (@TotalClasses,$_);
+}
+
+$classnum = scalar @TotalClasses;
+
+foreach $query (@TotalClasses) {
+    $|=1;
+    next if ($query eq "");
+    &mk_command;
+    
+    printf OUT " | %18s |", $query;
+    print LOG  " Counting '$query'\n";
+    
+ ##################################################
+ # DB1 - previous version                         #
+ ##################################################
+    
+    $ENV{'ACEDB'}="$db_1";
+    $out = "/tmp/dbcomp_A_${oblist}";
+    &count($out);
+    $count_1 = $active;
+    
+    printf OUT "%9s",$active;
+    print OUT " | ";
+    
+    print LOG " Counting $dbname_1 : $active\n";
+ 
+ ##################################################
+ # DB2 - current version                          #
+ ##################################################
+
+    $ENV{'ACEDB'}="$db_2";
+    $out = "/tmp/dbcomp_B_${oblist}";
+    &count($out);
+    $count_2 = $active;
+
+    printf OUT "%9s",$active;
+
+    print LOG " Counting $dbname_2 : $active\n\n";
+    
+    my $diff = $count_2 - $count_1;
+    if ($diff != 0) {
+	printf OUT "| %6s |\n",$diff;
+	&diff($oblist);
+    }
+    else {
+	print OUT "|      0 |\n";
+    }
+    $oblist++;
+}
+
+print OUT " +--------------------+----------+----------+--------+\n";
+
+close OUT;
+close ERR;
+close LOG;
+
+ ##############################
+ # tidy up class count files  #
+ ##############################
+
+system ("rm -f /tmp/dbcomp*");
+
+ ##############################
+ # mail $maintainer report    #
+ ##############################
+
+open (mailLOG, "|/usr/bin/mailx -s \"WormBase Report: dbcomp\" $maintainer ");
+open (readLOG, "<$logfile");
+while (<readLOG>) {
+    print mailLOG $_;
+}
+close readLOG;
+close mailLOG;
+
+ ##############################
+ # hasta luego                #
+ ##############################
+
+exit (0);
+
+#################################################################################
+### Subroutines                                                               ###
+#################################################################################
+
+
+sub diff {
+    my ($oblist) = @_;
+    system ("cat /tmp/dbcomp_A_${oblist} | sort > /tmp/look-1");
+    system ("cat /tmp/dbcomp_B_${oblist} | sort > /tmp/look-2");
+    open (COMM, "comm -3 /tmp/look-1 /tmp/look-2 |");
+    while (<COMM>) {
+	print ERR " <- $dbname_1 $1\n" if (/^(\S+.+)/);
+	print ERR " -> $dbname_2 $1\n" if (/^\s+(\S+.+)/);
+    }
+    close (COMM);
+    system ("rm -f /tmp/look-1");
+    system ("rm -f /tmp/look-2");
+}
+
+sub count {
+    my ($out) = @_;
+    open (COUNT, ">$out");
+    open (textace, "echo '$command' | $exec  | ");
+    while (<textace>) {
+	($found = $1)  if (/^\/\/ Found (\d+) objects/);
+	($active = $1) if (/^\/\/ (\d+) Active Objects/);
+	(print COUNT "$_") if (/\:/);
+    }
+    close (textace);
+    close COUNT;
+    return ($active);
+}
+
+sub mk_command {
+$command=<<EOF;
+query find $query 
+list -a 
+quit
+EOF
+}
+
+
+#######################################################################
+# Help and error trap outputs                                         #
+#######################################################################
+ 
+sub run_details {
+    print "# dbcomp\n#\n";     
+    print "# version        : $version\n";
+    print "# run details    : $rundate $runtime\n";
+    print "\n";
+    print "Previous db      : $dbname_1 '$db_1'\n";
+    print "Current db       : $dbname_2 '$db_2'\n";
+    print "\n\n";
+}
+
+sub usage {
+    my $error = shift;
+    
+    if ($error == 1) {
+	# No -f database to compare 
+	print "\nNo database to compare to autoace\n\n";
+	print "Usage: dbcomp [-options]\n";
+	print " -f : first_database_path\n";
+	print " -s : second_database_path\n";
+	print " -h : help\n\n";
+	exit(0);
+    }
+    elsif($error == 2) {
+	# No WormBase release number file
+	print "\nThe WormBase release number cannot be parsed\n";
+	print "Check File: '$Wormbase_release_file'\n\n";
+	&run_details;
+	exit(0);
+    }
+    elsif ($error == 0) {
+	# Normal help menu
+	exec ('perldoc',$0);
+	exit (0);
+    }
+}
+
+__DATA__
+2_point_data
+Accession_number
+Allele
+Author
+Cell
+Cell_group
+Class
+Clone
+Comment
+Contig
+Database
+Display
+Expr_Pattern
+Gene_Class
+Journal
+Keyword
+Laboratory
+Life_stage
+Locus
+Map
+Method
+Motif
+Multi_pt_data
+Paper
+PCR_product
+Picture
+Pos_neg_data
+Protein
+Rearrangement
+Reference
+Repeat_Info
+RNAi
+Sequence
+Session
+Species
+Strain
+Table
+Tag
+Url
+__END__
+
+
+=pod
+
+=head2   NAME - dbcomp
+
+=head1 USAGE
+
+=over 4
+
+=item dbcomp [-options]
+
+=back
+
+=cut

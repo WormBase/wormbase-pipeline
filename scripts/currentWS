@@ -1,0 +1,72 @@
+#!/usr/local/bin/perl -w
+
+my $db = "/wormsrv2/current_DB";
+
+open (DISPLAY, 'printenv HOST |');
+while (<DISPLAY>) {
+    chomp;
+    $host = $_;
+}
+close DISPLAY;
+
+if ($host ne "wormsrv2") {
+    print "You can only access the current worm database  from wormsrv2\nLog into that machine to run this database\n\n";   
+    exit(0);
+}
+
+system ("/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/xace $db");
+
+exit (0);
+
+#######################################################################
+# Prints help and disappears                                          #
+#######################################################################
+
+sub usage {
+    exec ('perldoc',$0);
+}
+
+__END__
+
+=pod
+
+=head2   NAME - currentWS
+
+=head1 USAGE
+
+=over 4
+
+=item autoace
+
+=back
+
+currentWS is a PERL wrapper which opens an xace session to the last
+WS release of the Worm database.
+
+!! You must run this script from wormsrv2 !!
+
+update_totals mandatory arguments:
+
+=over 4
+
+=item none
+
+=back
+
+update_totals OPTIONAL arguments:
+
+=over 4
+
+=item none
+
+=back
+
+=head1 CRON
+
+=over 4
+
+=item No
+
+
+=cut
+

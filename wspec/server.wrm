@@ -1,0 +1,89 @@
+// $Id: server.wrm,v 1.1 2001-06-08 10:53:32 jws Exp $
+
+// This file contains information needed to
+// control the credentials of the clients connecting
+// to the acedb server
+
+//////////////////////////////////////////////////////////////////
+// DATA_VERSION
+// If data_version is larger than the one encountered previously
+// the graphic clients will attempt to refresh their data
+// If you run a rather static server, for distant clients
+//  reset this number only after every major data change
+// If you run a continuous server on which clients have write access
+// set this number to zero, then the session number of the server
+// will be used to trigger refresh,
+// anyway all objects on the client are refreshed before any edition
+
+DATA_VERSION 0  // ZERO for continuous refresh mode
+
+//////////////////////////////////////////////////////////////////
+// WRITE ACCESS:
+// You must specify a directory that will be readable by
+// any client to which you want to grant access
+
+WRITE_ACCESS_DIRECTORY  /nfs/disk100/wormpub/SERVER_WRITES
+
+// On first connection from a client
+// the server will write there very short temporary pass file 640
+// The client must read this file before his second connection
+// the server then destroys it.
+
+// hence the correct way to set up things is to 
+// ensure that all users and the server process 
+// belong to the same group and that the client can mount the
+// WRITE_ACCESS_DIRECTORY. 
+// This effectivelly restrict access to a set of user on trusted 
+// machines.
+
+// Since the pass file is dynamic and modified each time
+// you cannot crack it by multiple retries.
+
+// Example
+//  WRITE_ACCESS_DIRECTORY  /tmp
+// everybody logged on the server machine can write
+//
+// ATTENTION
+//  /tmp is not a good choice, because clients on other machine will wait
+//  for a few seconds for the pass file to appear in their own /tmp
+//  A more fancy directory name is likely to be absent on the client
+//  machine, and the client will proceed without waiting
+
+//////////////////////////////////////////////////////////////////
+// READ ACCESS:
+// There are 3 possibilities:
+// 1: If you set READ_ACCESS_DIRECTORY PUBLIC
+
+READ_ACCESS_DIRECTORY PUBLIC
+
+// any client will have read access
+
+// 2: If you specify a READ_ACCESS_DIRECTORY directory
+//   for example READ_ACCESS_DIRECTORY /tmp
+// The same strategy as for write access is used, and
+// you can therefore limit read access to those users who
+// can read a given directory.
+
+// 3: If you set READ_ACCESS_DIRECTORY RESTRICTED 
+//   or if the READ_ACCESS_DIRECTORY clause is missing
+//   only client with write access will have read access.
+
+// Example
+//  READ_ACCESS_DIRECTORY  /tmp
+// everybody logged on the server machine can read
+//////////////////////////////////////////////////////////////////
+// The following lines are used by the xclient
+// To run this system, you need to have rpc installed on your
+// UNIX machine. 
+// Normally these lines are automatically filled
+// by the script wtools/xcl which as of may 97 is the way
+// to start the graphic xclient
+// 
+// As an example we give here the Montpellier worm server address
+
+// EXTERNAL_SERVER 193.49.189.62
+// EXTERNAL_PORT   20000100
+
+// In case of problems or comments mail mieg@kaa.crbm.cnrs-mop.fr 
+//////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////

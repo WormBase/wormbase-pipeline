@@ -1,0 +1,138 @@
+#!/usr/local/bin/perl -w
+
+$|=1;
+use IPC::Open2;
+use IO::Handle;
+use Getopt::Std;
+require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
+
+
+ ##############################
+ # command-line options       #
+ ##############################
+
+$opt_n="";   # write acefiles from autoace.config file
+$opt_s="";   # => single database mode
+$opt_e="";   # write non-elegans EST dataset
+$opt_p="";   # write peptide dataset
+$opt_h="";   # Help/Usage page
+
+getopts ('nephs:');
+&usage(0) if ($opt_h);
+&usage(1) if ((!$opt_n)&&(!$opt_e)&&(!$opt_p));
+&usage(2) unless ( ($opt_s eq "camace") || ($opt_s eq "stlace") || ($opt_s eq "briggsae") );
+
+
+print "$opt_s\n";
+
+exit(0);
+
+##################
+
+
+sub run_details {
+    print "# make_acefiles\n#\n";     
+    print "# version        : $version\n";
+    print "# run details    : $rundate $runtime\n";
+    print "\n";
+    print "WormBase version : ${WS_version}\n";
+    print "\n";
+    print "======================================================================\n";
+    print " -n : Write .ace files\n" if ($opt_n);
+    print " -e : Write non-elegans nematode EST data sets\n" if ($opt_e);
+    print " -p : Write peptide data sets\n" if ($opt_p);
+    print "======================================================================\n";
+    print "\n\n";
+}
+
+sub usage {
+    my $error = shift;
+    
+    if ($error == 1) {
+	# No command-line options
+	print "\nNo command line options given\n\n";
+	print "Usage: make_acefiles [-options]\n";
+	print " -n : Write .ace files\n";
+	print " -e : Write non-elegans nematode EST data sets\n";
+	print " -p : Write peptide data sets\n\n";
+	exit(0);
+    }
+    elsif($error == 2) {
+	# Single database mode: database name not recognised
+	print "\nNo database of this name exists ('$opt_s')\n";
+	print "Check database names in config file\n\n";
+	exit(0);
+    }
+    elsif($error == 3) {
+	# No WormBase release number file
+	print "\nThe WormBase release number cannot be parsed\n";
+	print "Check File: '$Wormbase_release_file'\n\n";
+	&run_details;
+	exit(0);
+    }   
+    elsif ($error == 0) {
+	# Normal help menu
+	exec ('perldoc',$0);
+#	exit (0);
+    }
+}
+
+__END__
+
+=pod
+
+=head2   NAME - make_acefiles
+
+=head1 USAGE
+
+=over 4
+
+=item make_acefiles [-options]
+
+=back
+
+make_acefiles is the first step in a WS build. It has 3 functions:
+
+to write a number of .acefiles which are data dumps from the respective
+ACEDB databases which make up the full C.elegans release (i.e. camace,
+stlace, geneace, brigace)
+
+to make a non-elegans nematode EST data set using getz
+
+to make a peptide data set from all similarity data in autoace
+
+make_acrefiles mandatory arguments:
+
+=over 4
+
+=item none, (but it will not do anything)
+
+=back
+
+make_acefiles OPTIONAL arguments:
+
+=over 4
+
+=item -n, make new acefiles
+
+=item -s text, single database mode. Only dumps acefiles for the named database
+
+=item -e, make non-elegans est files
+
+=item -p, make peptides
+
+=back
+
+Example
+
+=over 4
+
+=item make_acefiles -nep will re-make all the needed ace files
+
+=item make_acefiles -p will re-create only peptide files
+
+=back
+
+=cut
+
+

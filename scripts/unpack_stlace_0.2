@@ -1,0 +1,281 @@
+#!/usr/local/bin/perl -w
+#
+# unpack_stlace
+# v 0.2
+#
+# dl
+#
+# Usage : unpack_stlace [-options]
+# A PERL wrapper to automate the extraction and building of the C.elegans database
+#
+# This script does :
+#
+# [01] - copy the stlace.tar.gz file from the private-ftp site
+# [02] - unzip and untar stlace.tar.gz file
+# [03] - modify the displays.wrm file for the run date
+# [04] - initialise the database and overwrite with new dump.ace files
+# [05] - remove all uploaded .ace files and the original stlace.tar file
+# [06] - exit gracefully
+#
+
+# v0.2 
+# 001214 : dl  : Added in removal of the .tar file and .ace files
+#              : Stops accumulation of unwanted files
+# 001214 : dl  : Added error & usage subroutines
+
+# v0.1
+# 001214 : dl  : Reformat line in logfile
+# 001127 : dl  : Added mail to $maintainer code
+# 001116 : dl  : PP version
+# 
+
+#################################################################################
+# variables                                                                     #
+#################################################################################
+
+$|=1;
+use IO::Handle;
+use Getopt::Std;
+use Cwd;
+#use strict;
+require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
+
+ ##############################
+ # Script variables (run)     #
+ ##############################
+
+my $maintainer = "dl1\@sanger.ac.uk";
+my $rundate    = `date +%y%m%d`; chomp $rundate;
+my $runtime    = `date +%H:%M:%S`; chomp $runtime;
+my $logfile    = "/wormsrv2/logs/unpack_stlace.$rundate.$$";
+my $version    = &get_script_version("unpack_stlace");
+
+ ##############################
+ # Paths for I/O files        #
+ ##############################
+
+my $ftp     = "/nfs/privateftp/ftp-wormbase/pub/incoming/stl";
+my $dbdir   = "/wormsrv2/stlace";
+my $tace    = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
+my $giface  = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/giface";
+
+my @filenames = "";
+my $filename  = "";
+
+ ##############################
+ # command-line options       #
+ ##############################
+
+$opt_h = "";   # Help/Usage page
+$opt_r = "";   # Release date of database.tar.gz files
+
+getopts ('hr:');
+&usage if ($opt_h);
+
+&error(1) if ((length $opt_r) != 6);
+my $today = "20" . substr($opt_r,0,2) . "-" . substr($opt_r,2,2) . "-" . substr($opt_r,4,2);
+
+
+
+ ##############################
+ # open logfile               #
+ ##############################
+
+system ("/bin/touch $logfile");
+open (LOGFILE,">>$logfile");
+LOGFILE->autoflush;
+
+print LOGFILE "# unpack_stlace\n#\n";
+print LOGFILE "# version             : $version\n";
+print LOGFILE "# run details         : $rundate $runtime\n";
+print LOGFILE "# Source directory    : $ftp\n";
+print LOGFILE "# Target directory    : $dbdir\n#\n";
+print LOGFILE "# Source file         : stlace_$today.tar.gz\n";
+print LOGFILE "\n";
+
+ ##########################################
+ # copy the tar.gz file from the ftp site #
+ ##########################################
+
+chdir $dbdir;
+my $dir = cwd();
+print LOGFILE "Move to directory: '$dir'\n";
+
+ # copy database.tar.gz file & check size
+system ("cp -f $ftp/stlace_$today.tar.gz .");
+my $match = &copy_check("$ftp/stlace_$today.tar.gz","$dbdir/stlace_$today.tar.gz");
+print LOGFILE "Copy 'stlace_$today.tar.gz' to $dbdir successful\n" if ($match == 1); 
+
+print LOGFILE "Copy 'stlace_$today.tar.gz' to $dbdir failed\n" if ($match == 0);
+ 
+system ("/bin/gzip -d stlace_$today.tar.gz");
+print LOGFILE "uncompress file\n";
+
+system ("/bin/tar -xvf stlace_$today.tar");
+print LOGFILE "untar file\n\n";
+
+print LOGFILE "Database files to be loaded:\n";
+open (LIST, "/bin/ls *ace |");
+while (<LIST>) {
+    chomp;
+    push (@filenames,"$_");
+    print LOGFILE "$_\n";
+}
+close LIST;
+print LOGFILE "\n\n";
+
+ ###################################
+ # modify displays.wrm for rebuild #
+ ###################################
+
+system ("mv $dbdir/wspec/displays.wrm $dbdir/wspec/displays.old") ;
+open (FILE_OLD,"$dbdir/wspec/displays.old") || do { 
+    print LOGFILE "failed to open $dbdir/wspec/displays.old\n"; 
+    die(1);
+};
+open (FILE_NEW,">$dbdir/wspec/displays.wrm") || do { 
+    print LOGFILE "failed to open $dbdir/wspec/displays.wrm\n"; 
+    die(1);
+};
+while (<FILE_OLD>) { 
+    if (/^_DDtMain/) {
+	print FILE_NEW "_DDtMain -g TEXT_FIT -t \"stlace $rundate\"  -w .43 -height .23 -help acedb\n";
+    } else {
+	print FILE_NEW $_;}
+}
+close FILE_OLD;
+close FILE_NEW;
+unlink "$dbdir/wspec/displays.old" ;
+
+ ####################################
+ # Re-initialise the ACEDB database #
+ ####################################
+
+system ("\\rm $dbdir/database/new/*");
+system ("\\rm $dbdir/database/touched/*");
+if (-e "$dbdir/database/lock.wrm") {
+    print LOGFILE "*Reinitdb error - lock.wrm file present..\n";
+    close LOGFILE;
+    die();
+}
+system ("\\mv $dbdir/database/log.wrm $dbdir/database/log.old");  
+system ("\\rm $dbdir/database/*.wrm");
+unlink "$dbdir/database/ACEDB.wrm";
+$command=<<EOF;
+y
+EOF
+    
+print LOGFILE "* Reinitdb: reinitializing the database ..\n";
+&DbWrite($command,$tace,$dbdir,"ReInitDB");
+
+ ##############################
+ # Upload the .ace dump files #
+ ##############################
+
+foreach $filename (@filenames) {
+    
+my $command=<<END;
+pparse $filename
+save 
+quit
+END
+    
+if (-e $filename) {
+    print LOGFILE "* Reinitdb: reading in new database  $filename\n";
+    &DbWrite($command,$tace,$dbdir,"ParseFile");
+} else {
+    print LOGFILE "* Reinitdb: $filename is not existent - skipping ..\n";
+    next;
+}
+}
+
+###############################
+# Tidy up old ace files       #
+###############################
+
+system ("/bin/rm -f stlace_$today.tar");
+print LOGFILE "\ndelete tar file from current directory\n\n";
+
+print LOGFILE "Database files to be removed:\n";
+foreach $filename (@filenames) {
+    print LOGFILE "$filename\n";
+    unlink $filename;
+}
+
+$runtime = `date +%H:%M:%S`; chomp $runtime;
+print LOGFILE "\nstlace build complete at $rundate $runtime\n";
+
+close LOGFILE;
+
+###############################
+# Mail log to curator         #
+###############################
+
+&mail_maintainer("WormBase Report: unpack_stlace",$maintainer,$logfile);
+
+###############################
+# hasta luego                 #
+###############################
+
+exit(0);
+
+###################################################
+# Subroutine for writing to a given database      #   
+###################################################
+
+sub DbWrite {
+  my ($command,$exec,$dir,$name)=@_;
+  open (WRITEDB,"| $exec $dir >> $logfile") or do {print LOGFILE "$name DbWrite failed\n";close LOGFILE; die();};
+  print WRITEDB $command;
+  close WRITEDB;
+}
+
+###################################################
+# Errors and pod documentation
+
+sub error {
+    my $error = shift;
+    # Error 1 - date directory (opt_r) is of incorrect length 
+    if ($error == 1) {
+	print "The database.tar.gz file date is incorrect (must be a 6-figure integer e.g. 001106)\n\n";
+	$runtime = `date +%H:%M:%S`; chomp $runtime;
+	print LOGFILE "The database.tar.gz file date is incorrect.\n";
+	print LOGFILE "Exiting early at $rundate $runtime\n";
+	close LOGFILE;
+	&mail_maintainer("WormBase Report: unpack_stlace",$maintainer,$logfile);
+    }
+    exit(1);
+}
+
+sub usage {
+    system ('perldoc',$0);
+    exit;	
+}
+
+__END__
+
+=pod
+
+=head1 NAME - unpack_stlace
+
+=head2 USAGE
+
+unpack_stlace will move the database dump files from the
+incoming FTP site to the appropriate wormsrv2 directory. It 
+then unpacks the tar.gz file and re-initialises the ACEDB 
+database. After uploading the dump files the directory is
+cleaned of all uploaded .ace files and the .tar file.
+
+unpack_stlace arguments:
+
+=over 4
+
+=item *
+
+<date> 6-figure datestamp (e.g. 001106)
+
+=back
+
+=cut
+
+

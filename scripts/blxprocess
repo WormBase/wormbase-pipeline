@@ -1,0 +1,2 @@
+#!/bin/csh
+exdbblx $1  | sort -rn | topexdb |  sort +6 -7 +0r

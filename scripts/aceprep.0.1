@@ -1,0 +1,330 @@
+#!/bin/csh
+#
+# aceprep2
+# script to make an ace file for a cosmid - trnascan and blast
+# should be run on Silicon Graphics
+# prosite_homology added 940504
+# make fasta format sequence added 941102
+# logfile and status outputs added 941111
+
+
+# WANT THE ACEPREP2 SCRIPT TO RUN AS A CHILD 
+# SO THAT THE EXIT STATUS CAN BE OBTAINED
+############################################
+
+
+if (! $?child) then
+
+
+#Check correct architecture and arguments
+
+if  ($#argv != 2) then 
+  echo 'Usage: aceprep2 COSMID USER_NAME'
+  exit 1
+endif
+
+if (! -e $1.seq) then
+  echo "You must be working in a directory containing $1.seq"
+  exit 1
+endif
+
+if ( `uname` != IRIX && `uname` != OSF1) then
+  echo "You must run this script on an SGI or DEC machine."
+  exit 1
+endif
+
+
+#start up child process
+
+  setenv child 1
+
+  if (! -e analysis_logfile) touch analysis_logfile  
+
+  
+  $0 $* >&  errors$$
+
+
+  if ($status != 0) then 
+ 
+    echo `date +%H:%M:%S` " : ACEPREP2 FAILED " >> analysis_logfile
+  else
+    echo `date +%H:%M:%S` " : ACEPREP2 COMPLETED " >> analysis_logfile	
+  endif
+
+
+#report errors to logfile
+
+  
+if (-z errors$$) then 
+	echo "NO ERRORS REPORTED" >> analysis_logfile
+else
+  echo "  ERRORS" >> analysis_logfile
+  cat errors$$ >> analysis_logfile
+endif  
+\rm errors$$
+
+
+
+  echo "" >> analysis_logfile
+
+#mail the report to the user - may not want to make this a perm.
+#feature -see what the response to this is
+set dir = `pwd`
+rsh jura Mail $2 < $dir/analysis_logfile
+
+exit
+
+endif
+
+
+
+#TRUE BEGINNING OF ACEPREP2 #
+#############################
+
+
+set acefile = $1_2.ace
+set swir = swir8
+set dat = `date +%y%m%d` 
+
+
+
+#WRITE DETAILS OF THIS SESSION TO LOGFILE
+#############################################
+
+if (! -e analysis_logfile) touch analysis_logfile
+
+echo "" >> analysis_logfile
+echo "Script: ACEPREP2" >> analysis_logfile
+echo "Sequence: $1" >> analysis_logfile
+echo "Started on: $dat" >> analysis_logfile
+echo "Time: `date +%H:%M:%S`" >> analysis_logfile
+echo "Run on machine: $HOST" >> analysis_logfile
+echo "Executed by: $2" >> analysis_logfile 
+echo "Process ID: $$" >> analysis_logfile
+
+
+#MAKE FASTA FORMAT OF THE SEQUENCE#
+###################################
+
+
+echo -n ">" >! $1.fasta
+echo $1 >> $1.fasta
+cat $1.seq >> $1.fasta
+
+
+#BLASTN Celegans ESTs#
+######################
+
+
+
+if (! -e blast/$1.cdna.bln) then
+  echo `date +%H:%M:%S` " : Running cdnasearch" >> analysis_logfile 
+  cdnasearch $1 
+  echo `date +%H:%M:%S` " : cDNAsearch completed : exit status=$status" >> analysis_logfile
+else 
+  echo `date +%H:%M:%S` " : cDNAsearch not executed, blastn file already exists" >> analysis_logfile 
+endif
+echo `date +%H:%M:%S` " : Adding cdna hits to ace file" >> analysis_logfile
+echo "Sequence " $1 >! $acefile
+MSPcrunch -x blast/$1.cdna.bln | \
+  gawk '{print "Homol", $7, "BlastN", $1, $3, $4, $5, $6}'  >> $acefile
+  echo `date +%H:%M:%S` " : cDNA hits added to $acefile : exit status=$status" >> analysis_logfile
+echo "" >> $acefile
+
+#tRNA scan#
+###########
+
+
+if (! -e tRNA/$1.tRNA) then
+  echo `date +%H:%M:%S` " : Running trnascan" >> analysis_logfile
+  mkdir tRNA
+  cd tRNA
+  echo ';' >! $1
+  cat ../$1.seq >> $1
+  ln -s ~pubseq/src/trnascan/TPCsignal .
+  ln -s ~pubseq/src/trnascan/Dsignal .
+  trnascan $1 $1.tRNA >& /dev/null
+  echo `date +%H:%M:%S` " : trnascan run : exit status=$status " >> ../analysis_logfile
+  cd ..
+else
+  echo `date +%H:%M:%S` " : trnascan not run, output file already exists" >> analysis_logfile
+endif
+trnascan2ace cosmid=$1 tRNA/$1.tRNA >> $acefile
+echo `date +%H:%M:%S` " : Added tRNAs to $acefile : exit status=$status " >> analysis_logfile
+
+
+# BLAST SWIR#
+#############
+
+
+if (! -e blast/$1.$swir.gz && ! -e blast/$1.$swir ) then
+  echo `date +%H:%M:%S`  " : Running blastx " >> analysis_logfile 
+  #950309 changed blastx to use $1.fasta instead of $1.seq
+  nice blastx swir $1.fasta B=1000000 S=50 S2=50 M=BLOSUM62-12 V=0 H=0 >! blast/$1.$swir 
+  echo `date +%H:%M:%S` " : Blastx run : exit status=$status" >> analysis_logfile
+  if (-e blast/$1.exblx) \rm blast/$1.exblx
+else
+  echo `date +%H:%M:%S` " : Blastx not run, blastx file already exists" >> analysis_logfile 	
+endif
+
+
+if (-e blast/$1.$swir.gz) gzip -d blast/$1.$swir.gz
+
+if (! -e blast/$1.exblx) then
+  echo `date +%H:%M:%S` " : Running MSPcrunch" >> analysis_logfile
+  MSPcrunch -x blast/$1.$swir >! blast/$1.exblx
+  echo `date +%H:%M:%S` " : MSPcrunch completed : exit status=$status" >> analysis_logfile 
+else 
+  echo `date +%H:%M:%S` " : MSPcrunch not run, exblx file already exists" >> analysis_logfile
+endif
+
+
+echo `date +%H:%M:%S` " : Adding blastx hits to ace file" >> analysis_logfile
+
+exblx2ace $1  blast/$1.exblx >> $acefile
+echo `date +%H:%M:%S` " : Completed exblx2ace : exit status=$status" >> analysis_logfile
+
+gzip blast/$1.$swir
+
+#TBLASTX EST DATABASE WITH CELEGANS ESTs REMOVED (gbest-no-elegans)#
+####################################################################
+
+if (! -e blast/$1.ests.tblastx) then
+  echo `date +%H:%M:%S` " : Running tblastx" >> analysis_logfile
+  nice tblastx gbest-no-elegans $1.fasta >! blast/$1.ests.tblastx
+  echo `date +%H:%M:%S` " : TBlastx completed : exit status=$status" >> analysis_logfile
+  if (-e blast/$1.ests.exblx) \rm blast/$1.ests.exblx
+else 
+ 	echo `date +%H:%M:%S` " : TBlastx not run, tblastx file already exists " >> analysis_logfile
+endif
+
+if (! -e blast/$1.ests.exblx) then 
+  MSPcrunch -x  blast/$1.ests.tblastx > blast/$1.ests.exblx
+  echo `date +%H:%M:%S` " : MSPcrunch completed of tblastx file : exit status=$status" >> analysis_logfile
+else 
+  echo `date +%H:%M:%S` " : MSPcrunch of tblastx file not run, tblastx file exists " >> analysis_logfile
+endif
+
+
+echo `date +%H:%M:%S` " : Converting exblx file to ace format " >> analysis_logfile
+cat     blast/$1.ests.exblx | exblx2ace1 cosmid=$1 >! est.temp$$
+echo `date +%H:%M:%S` " : Completed exblx2ace1 : exit status=$status" >> analysis_logfile
+sort +6 blast/$1.ests.exblx | exblx2ace2 cosmid=$1 >> est.temp$$
+echo `date +%H:%M:%S` " : Completed exblx2ace2 : exit status=$status" >> analysis_logfile
+
+
+#note exblx2ace1 and 2 do not handle gbest output well 
+#have to stream edit a number of features
+
+sed 's/ BlastX / TBlastX /;s/ PIR:/ GB:/;s/^Library PIR/Library Genbank/;s/^Peptide/DNA/' \
+est.temp$$ >>$acefile 
+echo `date +%H:%M:%S` " : Completed adding tblastx hits to $acefile : exit status=$status" >> analysis_logfile
+\rm est.temp$$
+
+
+#TBLASTX C. Briggsae ESTs - may not need this in the future when these ESTS are in gbest#
+# to do this though the CB:* seq objects in acedb could then be removed
+#########################################################################################
+
+
+if (! -e blast/$1.CBESTs.tblastx) then
+  echo `date +%H:%M:%S` " : Running tblastx versus C.Briggsae ESTs" >> analysis_logfile
+  nice tblastx CBESTs $1.fasta >! blast/$1.CBESTs.tblastx
+  echo `date +%H:%M:%S` " : TBlastx versus C.Briggsae ESTs completed : exit status=$status" >> analysis_logfile
+  if (-e blast/$1.CBESTs.exblx) \rm blast/$1.CBESTs.exblx
+else 
+ 	echo `date +%H:%M:%S` " : TBlastx versus C. Briggsae ESTs not run, tblastx file already exists " >> analysis_logfile
+endif
+
+if (! -e blast/$1.CBESTs.exblx) then
+ 
+  MSPcrunch -x  blast/$1.CBESTs.tblastx > blast/$1.CBESTs.exblx
+  echo `date +%H:%M:%S` " : MSPcrunch completed of tblastx C.Briggsae ESTs file : exit status=$status" >> analysis_logfile
+else 
+  echo `date +%H:%M:%S` " : MSPcrunch of C. Brigsae ESTs tblastx file not run, exblx  file exists " >> analysis_logfile
+endif
+
+
+echo `date +%H:%M:%S` " : Converting exblx file to ace format " >> analysis_logfile
+cat     blast/$1.CBESTs.exblx | exblx2ace1 cosmid=$1 >! CBESTs.temp$$
+echo `date +%H:%M:%S` " : Completed exblx2ace1 : exit status=$status" >> analysis_logfile
+sort +6 blast/$1.CBESTs.exblx | exblx2ace2 cosmid=$1 >> CBESTs.temp$$
+echo `date +%H:%M:%S` " : Completed exblx2ace2 : exit status=$status" >> analysis_logfile
+
+
+#note exblx2ace1 and 2 do not handle gbest output well 
+#have to stream edit a number of features
+
+sed 's/BlastX /TBlastX /; s/WP://; /^Peptide.*$/d; /^Library.*$/d'  CBESTs.temp$$ >> $acefile
+
+echo `date +%H:%M:%S` " : Completed adding C. Briggsae tblastx hits to $acefile : exit status=$status" >> analysis_logfile
+
+\rm CBESTs.temp$$
+
+ 	
+# Add prosite homology hits #
+#############################
+
+if (! -e prosite) mkdir prosite
+
+echo `date +%H:%M:%S` " : Adding Prosite hits to $acefile" >> analysis_logfile
+prosite_homology $1 >> $acefile 
+echo `date +%H:%M:%S` " : Prosite hits added to $acefile : exit status=$status" >> analysis_logfile
+
+
+# Search for repeat families #
+##############################
+
+echo "" >>  $acefile
+echo `date +%H:%M:%S` " : Searching repeat families, adding to $acefile" >> analysis_logfile
+Search_Repeat_Families $1.fasta ~wormpub/analysis/Repeat_Families/Repeat_Families_lookup_table >>  $acefile 
+echo `date +%H:%M:%S` " : Repeat families added to $acefile : exit status=$status" >> analysis_logfile
+echo "" >>  $acefile
+
+
+#MAKE EMBL DIRECTORY#
+#####################
+
+if (! -e embl) mkdir embl
+
+
+#BLASTN AGAINST CMID#
+#####################
+
+echo `date +%H:%M:%S` " : Blasting cosmid sequence vs all other cosmids (Results file=$1.cmid)" >> analysis_logfile
+blastn ~wormpub/analysis/cosmids/cmid $1.fasta >! $1.cmid
+echo `date +%H:%M:%S` " : Blast vs cmid complete : exit status=$status" >> analysis_logfile
+
+
+#MAKE A LOCALACE VERSION#
+#must appear after all programs which write to ace files#
+#########################################################
+
+
+echo `date +%H:%M:%S` " : Making localace" >>  analysis_logfile
+mklocalace >& /dev/null 
+echo `date +%H:%M:%S` " : mklocalace complete : exit status=$status" >> analysis_logfile
+
+
+
+# DOTTER #
+##########
+
+if (! -e $1.dotter.gz && ! -e $1.dotter) then
+  echo `date +%H:%M:%S` " : Running dotter, you dont have to wait for this to finish to run localace" >> analysis_logfile
+  nice dotter -b $1.dotter $1.seq $1.seq > /dev/null
+  echo `date +%H:%M:%S` " : Dotter complete : exit status=$status" >> analysis_logfile
+  gzip  $1.dotter
+endif
+
+
+
+
+
+
+
+
+
+
+
+

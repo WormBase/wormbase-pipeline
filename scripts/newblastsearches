@@ -1,0 +1,305 @@
+#!/usr/local/bin/perl -w
+
+# newblastsearches: launches blast searches using LSF
+# Keeps indexes of launched and successfully ended jobs
+# Max. No. of jobs at any time will be 11
+# AG3 Ver.2 May - June 2000
+
+$swir = "swir21";
+$COMMAND="";
+$BLASTDB="/data/blastdb";
+$QUEUE="longblastq";
+$WP="/nfs/disk100/wormpub";
+$SOURCEFILE="/nfs/disk100/wormpub/analysis/cosmids/current.versions.30";
+$SOURCEDIR="/nfs/disk100/wormpub/analysis/cosmids";
+$LOGDIR = "$WP"."/logs";
+$LOGFILE = "$LOGDIR"."/newblastsearches.log";
+$L_OFLAUNCHED =  "$LOGDIR"."/listoflaunched";
+$L_OFBLASTED = "$LOGDIR"."/listofblasted";
+if (!-d $LOGDIR) {
+    system ("mkdir $LOGDIR");
+}
+
+$time = localtime;
+@tarray = localtime;
+chomp ($tarray[2]);
+chomp ($tarray[1]);
+if ($tarray[1]=~/^\d{1,1}$/) {
+  $tarray[1]="0"."$tarray[1]";
+}
+$tcounter="$tarray[2]"."$tarray[1]";
+if (($tcounter>810)&&($tcounter<1850)){
+  $queue="longblastq"; 
+  $secs=300;
+} else {
+  $queue="local_blastq";
+  $secs=600;
+}
+$hostname = `uname -n`;
+chomp $hostname;
+$hostname =~ tr/a-z/A-Z/;
+
+# Create logs if non-existent
+if (!-e $L_OFBLASTED) {
+    system ("touch $L_OFBLASTED");
+}
+if (!-e $L_OFLAUNCHED) {
+    system ("touch $L_OFLAUNCHED");
+}
+if (!-e $LOGFILE) {
+    system ("touch $LOGFILE");
+}
+
+open (STDOUT,">>$LOGFILE");
+open (STDERR,">>$LOGFILE");
+
+print "# WBLS JOB No $$ From $hostname Queue $queue Time $time Vtime $tcounter\n";
+
+&checkproc;
+&countstat;
+
+eval "&tobesearched";
+print "ERROR: tobesearched : $@\n" if ($@);
+eval "&lsflaunch";
+print "ERROR: lsflaunch : $@\n" if ($@);
+print "Go to sleep\n";
+eval "&buonanotte";
+print "ERROR: buonanotte: $@\n" if ($@);
+
+close STDERR;
+close STDOUT;
+
+exit 0;
+
+#---------------------------------------------------------------
+# sub checkproc - checks if another process is already existing;
+# if this is the case, exit without doing anything
+#
+sub checkproc {
+#---------------------------------------------------------------
+  $noofprocesses=0;
+  $noofprocesses=`ps -ef | grep newblastsearches | wc -l`;
+  chomp $noofprocesses;
+  $noofprocesses=~s/^\s+//mg;
+  print "Number of processes:  $noofprocesses\n";
+  if ($noofprocesses>4) {
+    print "Another Process Already Running .. dying ..\n"; 
+    close (STDERR);
+    close (STDOUT);
+    die();
+  }
+}
+
+# ------------------------------------------------------------
+# countstat - counts how many jobs are actually waiting in the
+# queue system and tune up the number of jobs which should be 
+# launched. Maximum is 11 jobs for each run.
+#
+sub countstat {
+#-------------------------------------------------------------
+  $LSF2=$LSF=0;
+  $LSF=`/usr/local/lsf/bin/bjobs -q $QUEUE | grep \"WBLS\" | wc -l`;
+  $LSF =~ s/\n//;
+  $LSF =~ s/^\s+//;
+  print "COUNTSTAT: number of existing LSF jobs on queue $queue is $LSF\n";
+  if ($LSF>5) { $LSF=5; }
+  $LSF2 = (5-$LSF);
+  print "COUNTSTAT: number of new LSF jobs to be launched on queue $queue is $LSF2\n";
+  if ($LSF2==0) {
+    print "Nothing to do for now - $$ goes to sleeeep ..\n";
+    &buonanotte;
+  }
+}
+
+#--------------------------------------------------------
+# tobesearched reads the index file; produces an array of 
+# blast jobs @tobeblasted which should be launched
+#  
+sub tobesearched {
+#--------------------------------------------------------
+  @blastlist=@querylist=@tobeblasted=();
+  %seen = ();  
+
+# Slurps in *all* the sequences to be searched
+  open (SOURCEFILE,"$SOURCEFILE");
+  while (<SOURCEFILE>) {
+      chomp $_;
+      push @querylist,$_;
+  }
+  close (SOURCEFILE);
+
+# Slurps in all the sequences already blasted
+  open (L_OFBLAST,"$L_OFBLASTED");
+  while (<L_OFBLAST>) {
+      chomp $_;
+      push @blastlist,$_; 
+  }
+  close (L_OFBLAST);
+
+# Records an array of sequences which should be searched
+  foreach $item (@blastlist) { $seen{$item}=1; }
+  foreach $item (@querylist) {
+    unless ($seen{$item}) {
+      push (@tobeblasted,$item);
+    }
+  }
+  $blastlength=@tobeblasted;
+  if ($blastlength==0) {
+      print "No more blast searches to launch .. \n";
+      close STDERR;
+      close STDOUT;
+      exit 0;
+  }
+}       
+
+#-------------------------------------------------------
+# lsflaunch - writes and launches the LSF command script
+# updates the index file
+# PRE and POST processing is available
+#
+sub lsflaunch { 
+#-------------------------------------------------------
+ $counter=1;
+ open (L_OFBLAST2,">>$L_OFBLASTED");
+
+ foreach (@tobeblasted) {
+   /^\s+\n$/ && next;
+   $jobname=$_;
+   chomp $jobname;
+
+   if ($counter<=$LSF2){
+     ($currseq,$date)=split (/\//, $jobname);       
+     $SEQID="WBLS"."$$"."$counter";
+     $TGTDIR="$SOURCEDIR"."/$jobname/new_blast";
+     print "Targetdir is $TGTDIR\n";
+     if (!-d $TGTDIR) {
+	 $retvalue = system("mkdir $TGTDIR");
+	 chomp $retvalue;
+	 $sysvalue = 0xffff & $retvalue;
+	 if ($sysvalue != 0) {
+	     print "Could not create directory $TGTDIR\n";
+	     next;
+	 } else {       
+	     print "Directory $TGTDIR created\n";
+	 }   
+     }
+     $tobeblasted = "$SOURCEDIR"."/"."$jobname"."/"."$currseq.fasta";
+     $BLASTERR="$TGTDIR"."/$currseq.err";
+     $BLASTOUT="$TGTDIR"."/$currseq.blastx";
+     $SEARCHSTRING = "/usr/local/pubseq/bin/blastx $swir $tobeblasted B\=1000000 -span1 -matrix /data/blastdb/BLOSUM62 V\=0 H\=0 ";
+     $commandfile="$TGTDIR"."/$currseq.cmd.$$";
+     open (OUTFILE,">$commandfile");
+ 
+#----------------------
+# Begin of command file
+#
+
+     $COMMAND=<<COMMANDEND;
+#!/usr/local/bin/perl
+#BSUB -q $QUEUE
+#BSUB -J $SEQID
+#BSUB -o $BLASTERR -e $BLASTERR
+
+
+\$\|=1;
+\$CURRHOST=\$ENV{LSB_HOSTS};
+\$NOW=scalar(localtime);
+\$ENV{BLASTDB}="$BLASTDB";
+\$ERROR=0;
+\$FINISHED=0;
+\$SUBJ=$SEQID;
+\$EXBLX="$BLASTOUT".".exblx";
+
+my \$PREMESSAGE=<<ENDMESSAGE;
+Job run \$NOW
+Current Host : \$CURRHOST
+Query Sequence File: $jobname
+Query Sequence ID: $SEQID
+ENDMESSAGE
+
+open BLASTOUT, ">$BLASTOUT";
+open BLAST, "$SEARCHSTRING 2> $BLASTERR |";
+BLOOP: while (<BLAST>) {
+ if (/FATAL/g) {
+  \$ERROR=1;
+  last BLOOP;
+ } elsif (/Posted date:/){
+   \$FINISHED=1;
+   print BLASTOUT;
+   last BLOOP;
+ } else {
+   print BLASTOUT;
+ }
+}
+close BLAST;
+close BLASTOUT;
+ 
+ if ((\$ERROR=="1")||(\$FINISHED=="0")) {  
+    \&Error(\"BLAST\");
+ }
+
+ \$retvalue = system ("/usr/local/pubseq/bin/MSPcrunch -x $BLASTOUT \> \$EXBLX");
+ chomp \$retvalue;
+ \$sysvalue = 0xffff & \$retvalue;
+ if (\$sysvalue != 0) {
+    \&Error(\"MSPcrunch\");
+ }
+
+
+sub Error {
+   \$ERRTYPE=shift();
+   \$ERRMESSAGE=`cat $BLASTERR`;
+   \$ERRMESSAGE.="ERROR \$sysvalue : \$ERRTYPE : \$ERROR FINISHED: \$FINISHED";
+   open (MAIL,\"|/usr/sbin/sendmail -t wormpub \");
+   print MAIL \"Subject: \$SUBJ\";
+   print MAIL \"\$PREMESSAGE\";
+   print MAIL \"\$ERRMESSAGE\";
+   close MAIL;
+}
+
+#     unlink \"$commandfile\";
+
+COMMANDEND
+
+#-------------------
+# End of commandfile
+
+    print OUTFILE $COMMAND;
+    close OUTFILE;
+
+    $retvalue = system ("/usr/local/lsf/bin/bsub < $commandfile");
+    chomp $retvalue;
+    $sysvalue = 0xffff & $retvalue;
+    if ($sysvalue != 0) {
+      print "Bsub of job $tobeblasted ** failed **\n\n";
+      next;
+     } else {
+      print "Bsub of job $tobeblasted ** suceeded **\n";
+      print L_OFBLAST2  "$jobname\n";
+      $counter ++;
+      next;
+  }
+ }
+}
+  close (L_OFBLAST2);
+} # end sub
+
+
+#----------------------------------------------------------------
+# sub buonanotte - just waits, eventually spawns a child and dies
+#
+sub buonanotte {
+#----------------------------------------------------------------
+  print "Go to sleep for $secs seconds; replaces itself with itself\n";
+  close (STDERR);
+  close (STDOUT);
+  sleep($secs);
+  exec ("/nfs/disk100/wormpub/analysis/scripts/newblastsearches &");
+}
+
+
+
+
+
+
+

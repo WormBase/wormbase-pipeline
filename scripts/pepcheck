@@ -1,0 +1,28 @@
+#!/usr/local/bin/perl
+# 
+# Pepcheck
+#
+# script to check for stop codons in .pep file
+#
+# [dl 01/96]
+
+
+open (ls, "ls |");
+
+while (<ls>) {
+	($cosmid, $number)=split (/\./,$_);
+	chop;
+	if (/\.pep$/) {
+		print $cosmid,".",$number," : ";
+
+		open (FILE, "$_") || die "File doesn't exist";
+		$sum=0;
+		while (<FILE>) {
+			$sum = $sum + (tr /*/*/);
+		}
+		close (FILE);
+
+	print $sum,"\n";
+	}
+}
+

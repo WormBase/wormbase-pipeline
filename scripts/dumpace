@@ -1,0 +1,156 @@
+#!/usr/local/bin/perl 
+
+# Dumps out ace files for either camace or stlace.
+# Utilises the "write" option of textace to write
+# the acefiles, for sequence, DNA, protein and motif objects
+# The "write" function is probably the most robust way
+# of getting the acefiles. Complications arise with parsing
+# out confidential remarks, and so tempfiles are required.
+# Confidential remarks are parsed out of protein objects 
+# and motif objects just in case as well as sequence objects.
+
+#1997-02-28 Changed so that multi-line confidential remarks are 
+#coped with 
+
+#Steven Jones, Sanger Centre, 1995. 
+
+if ($#ARGV != 0 
+    || ($ARGV[0] ne "cam" && $ARGV[0] ne "stl" && $ARGV[0] ne "seq" && $ARGV[0] ne "mini" && $ARGV[0] ne "nano")
+   ) 
+
+{ die "Usage: $0 database (cam or stl or seq or mini or nano)\n";}
+
+#Get the correct executable to use
+require glob('~sjj/scripts/sanger.pl');
+$exec=&tace;
+
+if ($ARGV[0] eq "cam") {$ENV{'ACEDB'}="/nfs/disk100/wormpub/acedb/ace4/cam";}
+if ($ARGV[0] eq "stl") {$ENV{'ACEDB'}="/nfs/disk100/wormpub/acedb/ace4/stl";}
+if ($ARGV[0] eq "seq") {$ENV{'ACEDB'}="/nfs/disk67/sylvia/seqace98";}
+if ($ARGV[0] eq "mini") {$ENV{'ACEDB'}="/nfs/disk67/sylvia/miniace";}
+if ($ARGV[0] eq "nano") {$ENV{'ACEDB'}="/nfs//disk67/sylvia/nanoace";}
+
+($sec,$min,$hour,$mday,$mon,$year)=localtime(time);
+#increment month as default january=0
+$mon++;
+
+#################################################
+#Remove any output files that exist, hmmm, is this ok?
+#################################################
+
+if (-e $ARGV[0].seq.$year.$mon.$mday.ace) {unlink "$ARGV[0].seq.$year.$mon.$mday.ace";}
+if (-e $ARGV[0].dna.$year.$mon.$mday.ace) {unlink "$ARGV[0].dna.$year.$mon.$mday.ace";}
+if (-e $ARGV[0].protein.$year.$mon.$mday.ace) {unlink "$ARGV[0].protein.$year.$mon.$mday.ace";}
+if (-e $ARGV[0].motif.$year.$mon.$mday.ace) {unlink "$ARGV[0].motif.$year.$mon.$mday.ace";}
+
+#################################################
+#dump of sequence objects
+#################################################
+
+$command=<<EOF;
+        find sequence
+        write tempsequence$$
+        quit
+EOF
+system ("echo '$command' | $exec  - >/dev/null"); 
+if ($?==0) 
+{
+   print "Acefile for Sequence objects made - OK\n"
+} 
+else 
+{
+   die "Making sequence objects acefile failed - aborted\n";
+}
+
+open(output,">$ARGV[0].seq.$year.$mon.$mday.ace");
+open (temp,"tempsequence$$");
+$confidential=0;
+while(<temp>) 
+{
+    if (/^Confidential_remark/)   { $confidential=1; }
+    if ($confidential !=1) { print output $_; }
+    if (/"$/ && !/\\"$/) { $confidential=0; }
+
+}
+close temp;
+close output;
+
+unlink "tempsequence$$";
+
+#################################################
+#dump of DNA objects
+#################################################
+
+$command=<<EOF;
+        find DNA 
+        write $ARGV[0].dna.$year.$mon.$mday.ace
+        quit
+EOF
+system ("echo '$command' | $exec  - >/dev/null"); 
+if ($?==0) 
+{
+  print "Acefile for DNA objects made - OK\n"
+} 
+else 
+{
+   die "Making DNA objects acefile failed - aborted\n";
+}
+
+#################################################
+#dump of protein objects
+#################################################
+
+$command=<<EOF;
+        find protein 
+        write tempprotein$$
+        quit
+EOF
+system ("echo '$command' | $exec  - >/dev/null"); 
+if ($?==0) {print "Acefile for Protein objects made - OK\n"} 
+			else {die "Making Protein objects acefile failed - aborted\n";}
+system ("grep -v Confidential_remark tempprotein$$ > $ARGV[0].protein.$year.$mon.$mday.ace");
+if ($? ==0) {print "Confidential remarks removed from Protein objects - OK\n"} 
+			else {die "Confidential remarks not removed from Protein objects - aborted\n";} 
+unlink "tempprotein$$";
+
+################################################
+#dump of motif objects
+################################################
+
+$command=<<EOF;
+        find motif 
+        write tempmotif$$
+        quit
+EOF
+system ("echo '$command' | $exec  - >/dev/null"); 
+if ($?==0) 
+{
+ print "Acefile for Motif  objects made - OK\n"
+} 
+else 
+{
+   die "Making Motif objects acefile failed - aborted\n";
+}
+system ("grep -v Confidential_remark tempmotif$$ > $ARGV[0].motif.$year.$mon.$mday.ace");
+if ($? ==0) 
+{
+ print "Confidential remarks removed from Motif objects - OK\n"
+} 			
+else 
+{
+  die "Confidential remarks not removed from Motif objects - aborted\n";
+} 
+unlink "tempmotif$$";
+
+######################################END
+
+
+
+
+
+
+
+
+
+
+

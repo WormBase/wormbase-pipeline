@@ -1,0 +1,75 @@
+#!/usr/local/bin/perl
+
+# new_Stl_AC_corr: this script will retrieve all
+# St louis entries which do not have an accession
+# number and try to retrieve it from EMBL.
+# ag3 Aug 2000
+
+use Ace;
+$|=1;
+
+$db = Ace->connect(-path=>'/wormsrv2/stlace') or die ("Could not connect to stlace");
+      
+$i = $db->fetch_many(Genome_sequence, "*");  
+while ($obj = $i->next) {
+
+      undef $dna;
+      undef $species;
+      undef $tag;
+      undef $db;
+      undef $db_ID;
+      undef $db_AC;
+      undef $version;
+
+########################################
+# DNA                                  #
+########################################
+
+    $dna = $obj->DNA;
+    if ($dna eq "") {
+	next;
+    }
+
+########################################
+# Species                              #
+########################################
+    
+    $species = $obj->Species;
+    if ($species ne "Caenorhabditis elegans") {
+	next;
+    }
+
+########################################
+# Database information                 #
+########################################
+
+    $name = ($obj);
+    ($tag,$db,$db_ID,$db_AC,$version) = ($obj->DB_info->row()) or next;
+    if (length($tag)==0) {
+       next;
+     }
+    if (length($db_AC)==0) {
+      if (length($db) == 0) {
+	  $db = "EMBL";
+      }
+      open(SEQUENCE,"getz -f ACC  \"([EMBLNEW-all:waterston*]&[EMBLNEW-des:$name]&[EMBLNEW-org:Caenorhabditis elegans]) \| (([EMBL-all:waterston*]&[EMBL-des:$name]&[EMBL-org:Caenorhabditis elegans]) \! (EMBL < EMBLNEW))\" |") or die ("Could not open getz .. \n");	 
+      while (<SEQUENCE>) {
+	    if ($_=~/AC/) {
+       	       $db_AC=$_;
+	       $db_AC=~s/AC\s+//g;
+	       $db_AC=~s/\;//;
+	       print "$db_AC\n";
+	    }
+	}
+	if (length($db_ID) ==0) {
+	   $db_ID = $db_AC;
+	   }
+	print "\nSequence $name\n";
+	print "-D DB_info Database\n";
+	print "DB_Info Database $db $db_ID $db_AC\n\n";
+  };
+}
+
+exit;
+
+

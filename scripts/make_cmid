@@ -1,0 +1,23 @@
+#! /bin/csh 
+#
+# script to make the cmid database
+#
+
+set datadir     = ~wormpub/analysis/cosmids
+
+cd $datadir
+
+foreach i (`cat current.versions`)
+  set root = $i:h
+  if (-e $i/$root.seq) then
+    echo ">$i" >> cosmidseq
+    cat $i/$root.seq >> cosmidseq
+  endif
+end
+
+\rm cmid*
+seqpress < cosmidseq > cmid
+pressdb cmid
+
+
+exit

@@ -1,0 +1,694 @@
+#!/usr/local/bin/perl 
+
+# Takes the names of a gene a works out 
+# a nested pair of oligos for making deletions
+
+#990406 changed so that oligos are picked from sequences not 
+#in links (this was previously done so that we have alot of DNA either side 
+#of the genes) but we really need to primers for these.
+
+#990514 changed so that neither of the oligos previously selected can be used
+#990514 changed so that primer quality is relaxed to be 1 not 0.6 
+#990804 Extensively changed to use aceperl 
+
+$|=1;
+
+BEGIN {
+    push(@INC,"/usr/lib/perl5/site_perl/5.005/");
+}
+use GFF;
+use Ace::Sequence; 
+
+#########################################################
+#parse command line 
+#########################################################
+require "getopts.pl";
+
+&Getopts('eg:w:r:s:p:i:na:b:');
+
+print "#Selecting oligo pairs for $opt_g\n";
+print "#Selecting oligo pairs to give a wild type band of $opt_w -/+ $opt_r\n";
+if ($opt_s ne "") {print "#Selecting second set of internal primers $opt_s bp from external primers\n"; }
+if ($opt_p eq "") {$primersize=20;} else {$primersize=$opt_p;}
+print "#Optimum primer size=$primersize\n";
+if ($opt_g eq "" || $opt_w eq "" || $opt_r eq "") {&help;exit;}
+if (($opt_a=~/\S+/ && $opt_b eq "") || ($opt_b=~/\S+/ && $opt_a eq "")) {print "-a and -b switches need both be filled\n";die;}
+print "#Previous primer slections $opt_a $opt_b\n";
+
+
+#########################################################
+#get the gff info 
+#########################################################
+
+$db = Ace->connect(-path => '/home/pubseq/acedb/elegans');
+$obj = $db->fetch(Sequence => $opt_g);
+
+#if gene cannot not be found it could be alternatively spliced
+if ($obj eq  "")  {print "#gene not found trying to see if it is now alternatively spliced\n";
+		   $opt_g=$opt_g."a";
+		   $obj = $db->fetch(Sequence => $opt_g);
+}
+if ($obj eq  "")  {print "#gene not found, exiting\n";exit;}
+
+$seq = Ace::Sequence->new($obj);
+$length=$seq->end;
+$length=$length+(($opt_w+$opt_r)*2);
+
+
+$offset=0-$opt_w-$opt_r;
+print "$offset $length\n";
+
+$region = Ace::Sequence->new(-name=>$opt_g,-db=>$db,-offset=>$offset,-length=>$length);
+
+$gff= new GFF;
+$gff= $region->GFF;
+
+#$gff->dump();
+
+$targetsequence=$region->dna;
+$targetsequence=~s/-/N/g;
+
+##########################################################
+#filters and gff objects 
+##########################################################
+
+$gffgene=new GFF;
+$gffexons=new GFF;
+$gffrepeats=new GFF;
+
+
+$filter_exons=sub {my $self=shift;if ($self->feature eq "exon" && ${$self->group->{Sequence}}[0] eq $opt_g) {1;} else {0;}};
+$filter_repeat_families=sub {my $self = shift;if (${$self->group->{Target}}[0]=~/motif:CeRep/i) {1;} else {0;}};
+$filter_repeats=sub {my $self = shift;if (${$self->group->{Target}}[0]=~/motif:CeRep/i  || $self->source eq "inverted" || $self->source eq "tandem") {1;} else {0;}};
+
+
+$filter_gene=sub {my $self=shift;if (($self->source eq "Coding" || $self->source eq "stl-preliminary"|| $self->source eq "stl-confirmed" || $self->source eq "hand_built" || $self->source eq "Genefinder") && $self->feature eq "Sequence") {1;} else {0;}};
+
+$filter_confirmed_introns= sub {my $self=shift;if ($self->feature eq "intron" && ${$self->group->{Confirmed_by_EST}}[0]) {1;} else {0;}};
+
+$filter_blastx=sub {my $self=shift;if ($self->feature eq "similarity" && $self->source eq "BLASTX") {1;} else {0;}};
+
+
+$gffgene=$gff->filter($filter_gene);
+$gffexons=$gff->filter($filter_exons);
+$gffrepeats=$gff->filter($filter_repeats);
+$gffrepeat_families=$gff->filter($filter_repeat_families);
+$gffconfirmed_introns=$gff->filter($filter_confirmed_introns);
+$gffblastx=$gff->filter($filter_blastx);
+
+
+@exons=$gffexons->eachGeneFeature();
+@genes=$gffgene->eachGeneFeature();
+@repeats=$gffrepeats->eachGeneFeature();
+
+
+###########################################################
+#map the blastthits 
+##########################################################
+
+@blasthits=$gffblastx->eachGeneFeature();
+foreach $blasthit (@blasthits) {
+    $blasthitstart=$blasthit->start;if ($blasthitstart<0) {$blasthitstart=0;}
+    $blasthitend=$blasthit->end;
+   for ($i=$blasthitstart;$i<=$blasthitend;$i++) {$hit[$i]=1};
+}
+
+###########################################################
+#calcualte the postions of the right and left genes 
+###########################################################
+
+
+print "#Calculating genes either side\n";
+foreach $gene (@genes) {
+    $gene->dump();
+	foreach $group (@{$gene->group()->{Sequence}}) 
+	{if ($group eq $opt_g) {$start_gene=$gene->start;$end_gene=$gene->end;$strand_gene=$gene->strand;}
+	$start{$group}=$gene->start;
+	$end{$group}=$gene->end;
+	$strand{$group}=$gene->strand;
+     }
+}
+
+if ($start_gene eq "") {print "#warning could not find target in GFF file exiting\n";exit;}
+print "#$opt_g starts at $start_gene and ends at $end_gene and is on the $strand_gene strand\n";
+
+
+$lowest_left=100000000;
+$lowest_right=100000000;
+foreach $gene (@genes) {
+    foreach $group (@{$gene->group()->{Sequence}}) {
+	if ($group eq $opt_g) {next;}
+	if ($end{$group} < $start_gene && $start_gene-$end{$group} < $lowest_left) {
+		$lowest_left=$start_gene-$end{$group};
+		$left_gene=$group;}
+
+	if ($start{$group} > $end_gene && $start{$group}-$end_gene < $lowest_right) {
+		$lowest_right=$start{$group}-$end_gene;
+		$right_gene=$group;}
+
+    }
+}
+
+if ($left_gene ne "") {print "#Gene on left is $left_gene\n";
+		       print "#Distance to gene on left is $lowest_left\n";
+		       if ($lowest_left < 500) {print "#WARNING distance to gene on left is < 500bp\n";}
+		   } 
+else {print "#No gene in this region to the left\n";
+}
+if ($right_gene ne "") {print "#Gene on right is $right_gene\n";
+			print "#Distance to gene on right is $lowest_right\n";
+			if ($lowest_right < 500) {print "#WARNING distance to gene on right is < 500bp\n";}} 
+else {print "#No gene in this region to the right\n";}
+
+#the range for primers will be half the distance between the genes
+#print "looking for primers in the sequences\n";
+
+#I used to take the region of interest as the gene plus half the distance either side 
+#to the next gene. This is too restrictive and won't allow lots of decent size primer pairs 
+#to be used. Therefore use the entire region. But it is important for oligos for chips not 
+#to go near other genes to avoid UTRs etc. Therefore this is now set by the -i option.
+
+if ($opt_i ne "") {$start_sequence=$start_gene-int($lowest_left/$opt_i);} 
+else {$start_sequence=$start_gene-$lowest_left;}
+
+#there are problems if the left and right genes are far away. 
+#if you give too much sequence to primer then it chokes and dies.
+
+#just make sure you give the program enough to play with if there is no left gene
+if ($left_gene eq "") {$start_sequence=$start_gene-$opt_w-$opt_r;}
+if ($start_sequence<1) {$start_sequence=1;}
+
+if ($opt_i ne "") {$end_sequence=$end_gene+int($lowest_right/$opt_i);} 
+else {$end_sequence=$end_gene+$lowest_right;}
+
+#again if there is no right gene ...give the program enough to play with.
+if ($right_gene eq "") {$end_sequence=$end_gene+$opt_w+$opt_r;}
+#hmm.. what happens if $end_sequence is greater than the sequence available - prob. won't happend :-)
+
+#Overide things here so that primers can go into neighbouring
+#genes if otherwise the sequence available is too small to get good primers
+
+if ($opt_n==1) {print "#Warning -n option invoked, primers may extend into neighbouring genes\n";
+		$start_sequence=$start_gene-$opt_w-$opt_r;
+		$end_sequence=$end_gene+$opt_w+$opt_r;
+	    }
+
+print "#Region of interest is $start_sequence to $end_sequence (",$end_sequence-$start_sequence,"bp)\n";
+
+#is the region of interest big enough for the size specified
+if ($end_sequence-$start_sequence < $opt_w+$opt_r) {print "gene is too small for the band
+size specified, try with a smaller wild type band and/or range\n";exit;}
+
+#could overide things here so that primers can go into neighbouring
+#genes if otherwise the sequence available is too small to get good primers
+
+
+#####################################################
+#is there a known repeat in the region? Exclude these
+#####################################################
+
+print "#looking up repeats\n";
+foreach $repeat (@repeats) {$repstart="";$repend="";
+if ($start_sequence < $repeat->start && $end_sequence > $repeat->start) {
+	$repstart=$repeat->start;
+	#print "#WARNING ",$repeat->dump()," repeat starts at ",$repeat->start,"\n";
+}
+if ($start_sequence < $repeat->end && $end_sequence > $repeat->end) {
+	$repend=$repeat->end;
+	#print "#WARNING ",$repeat->dump()," repeat ends at ",$repeat->end,"\n";
+}
+if ($repstart ne "" && $repend ne "") {
+	$exregion=$repend-$repstart; 
+	#modify repstart to correlate with excised sequence
+	$repstart=$repstart-$start_sequence;
+	$excluded=$excluded." $repstart,$exregion ";
+	if ($opt_e) {$excluded="";}
+            }
+			}
+
+####################################################
+#calculate the number of coding bases for the gene.
+####################################################
+
+print "#looking up exons\n";
+foreach $exon (@exons) {
+    $exonlength=($exon->end-$exon->start)+1;
+    $totexonlength+=$exonlength;
+}
+
+######################################################
+#calculate the exon coordinates and calculate the number 
+#of coding bases for the gene. 
+######################################################
+
+$included="";
+$bestcodingqual="100";
+print "#this gene has ",$#exons+1," exons\n";
+foreach $exon (@exons) {
+	$exonstart=$exon->start;
+	$exonlength=$exon->end-$exon->start;
+	
+	#make the target the exon. 
+	if ($exonlength - $opt_w > -200 ) {print "#Exon target is near or more than wild type band ";
+					   $included=" ".(int($exonstart+($exonlength/2)))-$start_sequence.",1";
+					   print "included is now $included\n";
+				       } 
+	else {$included= $exonstart-$start_sequence.",$exonlength";}
+
+#########################################################
+#Print out the primer file for each exon
+#########################################################
+
+#open file for the primer3 config file
+open(primer3,"| /usr/local/bin/primer3  >| /tmp/primer$$");
+
+
+
+#we want the target sequence to be the whole region we have the gff file for
+#$targetsequence=join('',@sequence);
+#$targetsequence=join('',@sequence[$start_sequence..$end_sequence]);
+
+print primer3 "PRIMER_OPT_SIZE=$primersize\n";
+print primer3 "PRIMER_SEQUENCE_ID=$opt_g\n";
+
+$lower=$opt_w-$opt_r;$higher=$opt_w+$opt_r;
+print primer3 "PRIMER_PRODUCT_SIZE_RANGE=$lower-$higher\n";
+
+if ($excluded ne "") {
+	print primer3 "EXCLUDED_REGION=$excluded\n"; 
+	#print "EXCLUDED_REGION=$excluded\n";
+}
+if ($included ne "") {
+	print primer3 "TARGET=$included\n"; 
+	#print "TARGET=$included\n";
+}
+
+print primer3 "SEQUENCE=$targetsequence\n=\n";
+#print "SEQUENCE=$targetsequence\n=\n";
+
+close primer3;
+
+######################################################
+#parse the primer3 results
+######################################################
+
+$numexon++;
+
+print "\n#Primers for exon $numexon length=",$exonlength+1,"\n";
+
+open(primer3out,"/tmp/primer$$");
+
+	while(<primer3out>) {
+        if (/^PRIMER_PAIR_QUALIT\S+=(\S+)/) {$qual=$1;}
+        if (/^PRIMER_LEFT\S+SEQUENC\S+=(\S+)/) {$left=$1;}
+        if (/^PRIMER_RIGHT\S+SEQUENC\S+=(\S+)/) {$right=$1;}
+        if (/^PRIMER_LEFT=(\d+),(\d+)/  || /^PRIMER_LEFT_\d+=(\d+),(\d+)/) {$startleft=$1;}
+        if (/^PRIMER_RIGHT=(\d+),(\d+)/ || /^PRIMER_RIGHT_\d+=(\d+),(\d+)/) {$startright=$1;}
+	if (/^PRIMER_LEFT_TM=(\S+)/ || /^PRIMER_LEFT_\d+_TM=(\S+)/) {$tmleft=int($1);}
+	if (/^PRIMER_RIGHT_TM=(\S+)/ || /^PRIMER_RIGHT_\d+_TM=(\S+)/) {$tmright=int($1);}
+	if (/^PRIMER_PRODUCT_SIZ\S+=(\S+)/ && !/RANGE/) {print "Q=$qual $opt_g.el1=$left $tmleft $opt_g.er1=$right $tmright\nProduct=$1 ";$productsize=$1;                         
+
+	####################################################################################				         #find out how much of the product is coding
+	####################################################################################
+        ($exonshit,$basescoding)=&is_coding($gffexons,$startleft,$startright,$start_sequence);
+	$percentcoding=int(($basescoding/$productsize)*100);
+
+	##################################################################################### 
+	#find something about these hit exons e.g. are they confirmed
+        #####################################################################################
+	($exonends,$confirmed)=&confirmed_by_EST($gffexons,$startleft,$startright,$start_sequence,$gffconfirmed_introns);
+
+	##################################################################################### 
+        #find out how many of the exonic fragments are hit with blasthomologies 
+	#####################################################################################
+	($blastexons)=&confirmed_by_Blast($gffexons,$startleft,$startright,$start_sequence);
+
+
+        print "\texons=$exonshit/",$#exons+1,"\tconfexonends=$confirmed/$exonends\tbases=$basescoding\tcoding=$percentcoding% blastxexons=$blastexons/$exonshit\tcdnalength=$totexonlength\n";
+							 
+	#need to know whether the region between the primers has a repetitive element						    $repetitive="";						 
+        $repetitive=&is_repeat($startleft,$startright,$gffrepeat_families);							 
+	if ($repetitive ne "") {print "primers have a repetive region (repeat familiy) between them\n";} 
+
+	###################################################################################
+        #calculate here the best primers for various criteria. 
+	#best % coding for product if two sets have the same % go for the set with the best quality.  	 
+	#this is set up to select primers for stuart kim.
+	#
+	# This was changed to give 600bp of coding not 60%. As this seemed more approp. to stuart
+	# therefore will pick the primers with the best quality with > 600bp coding
+	# Only accept primer with a minimum qual of 0.4  - 981004 - changed to 0.6						 
+							#- 990514 - changed to 1
+
+	#this was changed to just give the most bases with a minimum qual. 		
+	#but also to report the number of bases the actual gene has  						 
+
+	#this was also changed to take into account the -a -b options. i.e. if a primer set did not work. We would look for
+	#a second set, this allows us to specify the previous primers and avoid them being used again.						 
+
+        ###################################################################################
+ 
+	   if (($repetitive eq "" && $qual <=1 && $basescoding > 1 && $bestcodingqual==100) || ($repetitive eq "" && $qual <=1 && $basescoding > $bestbasescoding)) {
+
+	 #this was changed so that neither of the previous primers were selected       
+	 if ($opt_a=~/$left/ || $opt_b=~/$right/) {print "#Ignoring $left $right pair as these have failed previously\n";}
+	 else {   $bestcodingleft=$left;
+		  $bestcodingright=$right;
+		  $bestcodingtmleft=$tmleft;
+		  $bestcodingtmright=$tmright;
+		  $bestcodingsize=$productsize;
+		  $bestcodingqual=$qual;
+		  $bestbasescoding=$basescoding;
+	      }
+     }
+
+########################################################################################
+
+	#is there is a second primer pair required for deletion series:-
+        if ($opt_s ne "") {($secondqual,$secondleft,$tmleft,$secondright,$tmright,$secondexonshit,$secondcoding,$secondproduct)=&secondpair($startleft,$startright,$excluded,$targetsequence,$start_sequence);
+			   #print "$startleft,$startright\n";
+			   #calculate the smallest deletions guarenteed to remove coding features. 
+			   #this gives a out of memory error wirh some genes may need to be scrapped 
+			   #does nt work anyway 
+			   #($mindel,$mindelexon)=&mindel($startleft,$startright,$gffexons,$exon);
+
+			   print "Internal Primers:\nQ=$secondqual $opt_g.il1=$secondleft ";
+			   print "$tmleft $opt_g.ir1=$secondright $tmright\nProduct=$secondproduct";
+			   print "\texons=$secondexonshit/",$#exons+1;
+                           print "\tbases=$basescoding\tcoding=",int(($secondcoding/$productsize)*100),"%";
+                           print "\tgene=",int(($secondcoding/$totexonlength)*100),"%";
+			   print "\n\n";
+                           #print "Minimum deletion guaranteed to remove any coding sequence=$mindel\n\n";
+			   # bugged!! print "Minimum deletion guaranteed to remove part/all of targetexon=$mindelexon\n\n";
+		       }
+						     }
+			 }
+	close primer3out;
+    }
+
+unlink "/tmp/primer$$";
+
+#add on some information about whether the primer has been made before but failed.
+#i.e. only the previous pair is discounted, any one of the pair may be reselected but not both, so we will flagged the reselected one. 
+
+if ($bestcodingleft eq $opt_a) {$bestcodingleft.="*";}
+if ($bestcodingright eq $opt_b) {$bestcodingright.="*";}
+
+print "\nBest Primers based on coding bases:left=$bestcodingleft $bestcodingtmleft right=$bestcodingright $bestcodingtmright product=$bestcodingsize bases_coding=$bestbasescoding qual=$bestcodingqual cdnalength:$totexonlength\n"; 
+
+
+######################################################
+#Subroutines
+######################################################
+
+###########################################################
+#how much of the distance between $_[1] and $_[2] is coding
+#returns the number of exons hit and how many bases
+###########################################################
+
+
+sub is_coding {
+
+    my @exons;
+    my $exon;
+    my $self=shift;
+    my $start=shift;
+    my $end=shift;
+    my $offset=shift;
+    my $i;
+    my $hit;
+    my $exonshit;
+    my $bases=0;
+    my $coding;
+
+    $start+=$offset;
+    $end+=$offset;
+    
+    @exons=$self->eachGeneFeature();
+    foreach $exon (@exons) {
+        #calculate number of exons hit
+        $hit="";
+        if ($exon->start >= $start && $exon->start < $end) {$hit="yes";}
+        if ($exon->end > $start && $exon->end <= $end) {$hit="yes";}
+        if ($hit eq "yes") {$exonshit++;}
+
+	#calc the number of bases coding 
+	for($i=$exon->start;$i<=$exon->end;$i++) {
+            if ($i >=$start && $i<=$end) {$bases++;}
+        }
+    }
+    return($exonshit,$bases);
+}
+
+#####################################################################
+#How may of the exons included are confirmed by EST data
+####################################################################
+
+sub confirmed_by_EST {
+    my @exons; 
+    my $self=shift;
+    my $start=shift;
+    my $end=shift;
+    my $offset=shift;
+    my @introns;
+    my $introngff=shift;
+    my $confirmed;
+    my $exonends=0;
+    my $confexonends=0;
+    $start+=$offset;
+    $end+=$offset;
+
+    @exons=$self->eachGeneFeature();
+    @introns=$introngff->eachGeneFeature();
+
+    #mark the confirmed exons ends 
+    foreach $intron (@introns) {#$intron->dump();
+			$confirmed{$intron->start-1}=1;	
+			$confirmed{$intron->end+1}=1;	
+			    }
+
+    foreach $exon (@exons) {
+	if (($exon->end > $start && $exon->end <=$end) || ($exon->start >=$start && $exon->start < $end))
+	{$exonends+=2;
+	 if ($confirmed{$exon->end} ==1) {$confexonends++;}
+	 if ($confirmed{$exon->start}==1) {$confexonends++;}
+     }
+    }
+    return($exonends,$confexonends);
+}
+
+######################################################################
+#How many exons are confirmed with blastx hits 
+######################################################################
+
+sub confirmed_by_Blast {
+
+    my @exons; 
+    my $self=shift;
+    my $start=shift;
+    my $end=shift;
+    my $offset=shift;
+    my $confirmed;
+    my $exon;
+    my $exons=0;
+    my $confexons=0;
+    $start+=$offset;
+    $end+=$offset;
+    my $i;
+
+    @exons=$self->eachGeneFeature();
+    foreach $exon (@exons) {#$exon->dump();
+	if (($exon->end > $start && $exon->end <=$end) || ($exon->start >=$start && $exon->start < $end)) {
+	    for ($i=$exon->start;$i<=$exon->end;$i++) {if ($hit[$i]==1) {$confexons++;last;}}
+	}
+    }
+    return($confexons);
+}
+
+######################################################################
+#Given the coords of the first primers design a second set.
+#The second set will exclude the 1st and last 20bp so that the primer  
+#pair is not the same as the first set.
+#The distance of the second pair from the first is dictacted by the 
+#-s option.
+######################################################################
+
+sub secondpair {
+    my $start;
+    my $end;
+    my $lower;
+    my $higher;
+    my $targetlength;
+    my $targetstart;
+    my $startleft;
+    my $startright;
+    my $exonshit;
+    my $basescoding;
+    my $left;
+    my $right;
+    my $qual;
+    my $product;
+    my $tmleft;
+    my $tmright;
+    my $excluded;
+    my $targetsequence;
+    my $endlength;
+
+    #adjust the start and end to exclude the initial primer sites. 
+    $start=$_[0]+$primersize;
+    $end=$_[1]-$primersize;
+
+    open(primer3secondset,"| /usr/local/bin/primer3  > /tmp/primersecondset$$");
+    #print "2nd primer site must be within $opt_s from the first primer.\n";
+    #print "adjusted start end = $start $end\n";			 
+
+    $excluded=$_[2];
+    $targetsequence=$_[3];
+
+    #adjust $excluded so that nothing before the $start and afer $end is included.
+    $excluded="1,$start ".$excluded;
+    $endlength=length($targetsequence)-$end;
+    $excluded=$excluded."$end,$endlength";
+
+    $higher=($end-$start);
+    $lower=$higher-($opt_s*2);	
+
+    $targetstart=$opt_s+$start;
+    $targetlength=$end-$targetstart-$opt_s;
+    
+    #$targetlength=($end-$opt_s)-($start+$opt_s);
+    #print "Sequence is ",$end-$start," long looking for primers flanking $start $end\n";
+    #print "target is $targetstart to ", $targetstart+$targetlength,"\n";
+    print primer3secondset "PRIMER_SEQUENCE_ID=$opt_g\n";
+    #print "PRIMER_SEQUENCE_ID=$opt_g secondpair\n";
+    print primer3secondset "PRIMER_OPT_SIZE=$primersize\n";
+    print primer3secondset  "TARGET=$targetstart,$targetlength\n"; 
+    #print "TARGET=$targetstart,$targetlength\n";
+    print primer3secondset "PRIMER_PRODUCT_SIZE_RANGE=$lower-$higher\n";
+    #print "PRIMER_PRODUCT_SIZE_RANGE=$lower-$higher\n";
+    if ($excluded ne "") {
+	print primer3secondset "EXCLUDED_REGION=$excluded\n"; 
+	#print "EXCLUDED_REGION=$excluded\n";
+    }
+    print primer3secondset "SEQUENCE=$targetsequence\n=\n";
+    close primer3secondset;
+
+    open(primersecondset,"/tmp/primersecondset$$");
+    while(<primersecondset>) {
+	if (/^PRIMER_PAIR_QUALITY=(\S+)/) {$qual=$1;}
+	if (/^PRIMER_LEFT_SEQUENCE=(\S+)/) {$left=$1;}
+	if (/^PRIMER_RIGHT_SEQUENCE=(\S+)/) {$right=$1;}
+	if (/^PRIMER_LEFT=(\d+),(\d+)/) {$startleft=$1;}
+        if (/^PRIMER_RIGHT=(\d+),(\d+)/) {$startright=$1;}
+	if (/^PRIMER_LEFT_TM=(\S+)/) {$tmleft=$1;}
+	if (/^PRIMER_RIGHT_TM=(\S+)/) {$tmright=$1;
+	$product=$startright-$startleft;
+	($exonshit,$basescoding)=&is_coding($gffexons,$startleft,$startright,$_[4]);
+								   }
+    }
+    close primersecondset;
+    return($qual,$left,$tmleft,$right,$tmright,$exonshit,$basescoding,$product,);
+}
+#####################################################################################
+#help
+#####################################################################################
+sub help {
+    print STDERR "Oligo design for deletion mutants\n";
+    print STDERR "Usage $0 args\n";
+    print STDERR "[-g %s]\tName of gene to design primers for REQUIRED\n"; 
+    print STDERR "[-w %d]\tSize of wild type pcr band required (base pairs) REQUIRED \n";
+    print STDERR "[-r %d]\tPermitted range that the wild type band can vary (base pairs) REQUIRED \n";
+    print STDERR "[-p %d]\tDesired size of primer OPTIONAL default=20\n";
+    print STDERR "[-s %d]\tNumber of base pairs from the first set of primers to design an second internal pair (base pairs) OPTIONAL\n";
+    print STDERR "[-i %d]\tFraction of the intergenic region to be used. e.g. if this 2 then use half the region. Important when making oligos for probes chips etc\n";
+    print STDERR "[-n ]\tDo not take neighbouring genes into account when making primers. Needed if the target is small and surrounded by close genes\n";
+    print STDERR "[-a,-b]\tavoid making primers which contain BOTH these primers \n";
+    print STDERR "[-e ]\tIgnore repeat elements\n";
+}
+
+#######################################################################################
+#takes two corrdinates and a gff object containing the genes exons and works out the 
+#minimum deletion required to guarrentee an exon being partially or wholly deleted.
+#######################################################################################
+
+sub mindel {
+    my $start;
+    my $end;
+    my $gene;
+    my @exons;
+    my $exon;
+    my $mindel=0;
+    my $mindelexon=0;
+    my @coding;
+    my $i;
+    my $noncoding;
+    my $targetexon;
+    my $targetnoncoding;
+    my $last;
+
+    $start=$_[0]+$primersize;
+    $end=$_[1]-$primersize;
+    $gene=$_[2];
+    $targetexon=$_[3];
+    @exons=$gene->eachGeneFeature();
+    #calculate coding bases
+    foreach $exon (@exons) {
+	for ($i=$exon->start;$i<=$exon->end;$i++) {#map the coding of all exons
+	                                           $coding[$i]=1;
+						   #map the coding of the target exon;
+						   if ($exon->start eq $targetexon->start) {$targetexoncoding[$i]=1;}
+					       }
+    }
+    #calculate largest non-coding region
+    foreach ($i=$start;$i<=$end;$i++) {#print "coding[$i] $coding[$i] non=$noncoding\n";
+				       if ($coding[$i] != 1) {$noncoding++;}
+				       else {if ($last eq "") {if ($noncoding > $mindel) 
+							       {$mindel=$noncoding;$noncoding=0;}}}
+				       $last=$coding[$i];
+				   }
+    if ($noncoding > $mindel) {$mindel=$noncoding;$noncoding=0;}
+
+    #get the largest non-target exon region
+    #print "targetexon ",$targetexon->start," ",$targetexon->end,"\n";
+    foreach ($i=$start;$i<=$end;$i++) {if ($targetexoncoding[$i] != 1) {$targetnoncoding++;}
+				       else {if ($last eq "") {if ($targetnoncoding > $mindelexon) 
+							       {$mindelexon=$targetnoncoding;$targetnoncoding=0;}}}
+				       $last=$targetexoncoding[$i];
+				      				   }
+    if ($targetnoncoding > $mindelexon) {$mindelexon=$targetnoncoding;}
+
+    #find out how much deletion needed to knock out the target exon;
+    #print "target start",$targetexon->start," end",$targetexon->end,"\n";
+    return ($mindel+1,$mindelexon+1);
+}
+
+###################################################################
+# is there a repeat between two coordinates 
+###################################################################
+
+
+sub is_repeat {
+    my $start=shift;
+    my $end=shift;
+    my $self=shift;
+    my $repetitive;
+    my $repeat;
+
+    #$self->dump();
+    @repeats=$self->eachGeneFeature();
+    foreach $repeat (@repeats) {#$repeat->dump();
+	#print "$start $end ",$repeat->start," ",$repeat->end," ",$repeat->group,"\n";
+	if (($repeat->start >= $start && $repeat->start < $end) || ($repeat->end > $start && $repeat->end <= $end)) 
+	{$repetitive="yes";}
+    }
+    #print "returning $repetitive\n";
+    return $repetitive;
+}
+
+
+
+
+
+
+
+

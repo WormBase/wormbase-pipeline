@@ -1,0 +1,522 @@
+#!/usr/local/bin/perl
+#
+# make_acefiles will make all the acefiles for autoace building
+#
+# v 1.2
+#
+# dl1
+#
+# Usage : make_acefiles [-options]
+#
+
+# v1.2
+# 010102 : dl1 : Add alternative config files to generate acefiles from a 
+#                subsets of databases (e.g. camace only)
+# 010102 : dl1 : Changed the way in which can be dumped. You can alter the
+#                config file such that the criteria is 'DNA'. This will use
+#                a 'find object; follow DNA' tace command to dump only 
+
+
+# v1.1
+# 001108 : dl1 : Add better logging and general tidy up
+
+# v1.0
+# 000925 ag3 dl1 Fixed problem with wormpep protein names 
+# all assigned to clone names previously !
+
+#################################################################################
+# Variables                                                                     #
+#################################################################################
+
+$|=1;
+use IPC::Open2;
+use IO::Handle;
+use Getopt::Std;
+require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
+
+ ##############################
+ # Script variables (run)     #
+ ##############################
+
+my $maintainer = "dl1\@sanger.ac.uk";
+my $rundate = `date +%y%m%d`; chomp $rundate;
+my $runtime = `date +%H:%M:%S`; chomp $runtime;
+my $version = &get_script_version(make_acefiles);
+
+ ##############################
+ # Paths etc                  #
+ ##############################
+
+$autoace_config = "/wormsrv2/autoace_config/autoace.config";
+
+$basedir        = "/wormsrv2/wormbase";
+$miscdir        = "$basedir/misc";
+$pepdir         = "$basedir/peptides";
+$tremblfile     = "$pepdir/trembl";
+$wormpepfile    = "$pepdir/wormpep";
+$swissfile      = "$pepdir/swissprot";
+$peptidefile    = "$miscdir/misc_peptides.ace";
+$estfile        = "$miscdir/misc_nonelegansests.ace";
+$tace           = "/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_4/tace";
+$autodir        = "/wormsrv2/autoace";
+
+ ##############################
+ # command-line options       #
+ ##############################
+
+$opt_n="";   # write acefiles from autoace.config file
+$opt_s="";   # => single database mode
+$opt_e="";   # write non-elegans EST dataset
+$opt_p="";   # write peptide dataset
+$opt_h="";   # Help/Usage page
+
+getopts ('nephs:');
+&usage(0) if ($opt_h);
+&usage(1) if ((!$opt_n)&&(!$opt_e)&&(!$opt_p));
+
+# turn off today
+#&usage(2) unless (($opt_s eq "camace") || ($opt_s eq "stlace") || ($opt_s eq "briggsae")|| ($opt_s eq "geneace"));
+
+#################################################################################
+# Get the WS version number and set the wormpep release number                  #
+#################################################################################
+
+my $Wormbase_release_file = "/wormsrv2/autoace_config/WormBase_release_version";
+&usage(3) unless (-e $Wormbase_release_file);
+open (WormBase_release, $Wormbase_release_file) || die "Can't open file\n\n";
+while (<WormBase_release>) {
+    chomp;
+    $WS_version = $_;
+}
+close (WormBase_release);
+
+ ########################################
+ # Open logfile                         #
+ ########################################
+
+my $logfile = "/wormsrv2/logs/make_acefiles.${WS_version}.$rundate.$$";
+system ("/bin/touch $logfile");
+open (LOG,">>$logfile") or die ("Could not create logfile\n");
+LOG->autoflush();
+open (STDOUT,">>$logfile");
+STDOUT->autoflush();
+open (STDERR,">>$logfile"); 
+STDERR->autoflush();
+
+print LOG "# make_acefiles\n\n";     
+print LOG "# version        : $version\n";
+print LOG "# run details    : $rundate $runtime\n";
+print LOG "\n";
+print LOG "WormBase version : ${WS_version}\n";
+print LOG "\n";
+print LOG "======================================================================\n";
+print LOG " -n : Write .ace files\n" if ($opt_n);
+print LOG " -e : Write non-elegans nematode EST data sets\n" if ($opt_e);
+print LOG " -p : Write peptide data sets\n" if ($opt_p);
+print LOG "======================================================================\n";
+print LOG "\n";
+print LOG "Starting make_acefiles .. \n\n";
+
+#################################################################################
+# Main Loop                                                                     #
+#################################################################################
+
+if ($opt_n) {
+    &mknewacefiles;
+}
+if ($opt_e) {
+    &nonelegansests;
+}
+if ($opt_p) {
+    &producepeptides;
+}
+
+
+my $endtime = `date +%H:%M:%S`; chomp $endtime;
+print LOG "Ended make_acefiles @ $endtime\n";
+close STDERR;
+close STDOUT;
+close LOG;
+
+ ##############################
+ # mail $maintainer report    #
+ ##############################
+
+open (mailLOG, "|/usr/bin/mailx -s \"WormBase Report: make_acefiles\" $maintainer ");
+open (readLOG, "<$logfile");
+while (<readLOG>) {
+    print mailLOG $_;
+}
+close readLOG;
+close mailLOG;
+
+ ##############################
+ # hasta luego                #
+ ##############################
+
+exit (0);
+
+
+#################################################################################
+### Subroutines                                                               ###
+#################################################################################
+
+
+
+#################################################################################
+# Erases old acefiles and make new ones                                         #
+#################################################################################
+
+sub mknewacefiles {
+    open (CONFIG, "$autoace_config");
+    while (<CONFIG>) {
+	s/^\s+//;s/\s+$//;    
+	
+	next if (/^\#/  || /^$/);            # comments in file
+
+# turn off today
+#	next unless (/$opt_s/);              # single database mode
+	
+
+	if (/^P\s+(\S+)\s+(\S+)$/) {
+	    $dbname = $1;
+	    $dbdir = $2;
+	    $targetdir = "$basedir"."/$dbname";
+	    $exe = "$tace $dbdir";
+	    next;
+	}
+	if ($dbname =~ /misc/) {next;}
+	
+	# nuts and bolts of acefile generation
+	# format:  database object criteria
+	
+	if (/^\S+\s+(\S+)$/) {
+	    $object=$1; $criteria="";$criterianoasterisk="";
+	} elsif (/^\S+\s+(\S+)\s+(\S+)$/) {
+	    $object=$1; $criteria=$2;
+	    $criteria=~/(\S+)\*/;
+	    $criterianoasterisk=$1;
+	} 
+
+	# v1.2 - patch for the briggsae-stlace DNA mismatch bug
+	# DNA is now handled in a different way using a 'find & follow' command
+	# The subroutines will set the $command and $filename variables
+
+	if ($criteria eq "DNA") {
+	    &make_command_DNA;
+	}
+	else {
+	    &make_command;
+	}
+
+	print LOG "Filename: $filename\n";
+#	system ("mv -f $filename $filename.OLD");
+	
+        print LOG "Command: 'find $object $criteria' in $dbname\n";
+	open (TACE,"| $exe");
+	print TACE $command;
+	close TACE;
+	print LOG "Made file $filename\n\n";
+
+	if ($filename eq "/wormsrv2/wormbase/stlace/stlace_Protein.ace") {
+	    $outfile = "$targetdir/".$dbname."_".$object.$criterianoasterisk.".ace";
+	    &strip_protein("$outfile","\"WP:");
+	}
+	elsif ($filename eq "/wormsrv2/wormbase/camace/camace_Protein.ace") {
+	    $outfile = "$targetdir/".$dbname."_".$object.$criterianoasterisk.".ace";
+	    &strip_protein("$outfile","\"WP:");
+	}
+	elsif ($filename eq "/wormsrv2/wormbase/briggsae/briggsae_Protein.ace") {
+	    $outfile = "$targetdir/".$dbname."_".$object.$criterianoasterisk.".ace";
+	    &strip_protein("$outfile","\"WP:");
+	}
+
+	if ($filename eq "/wormsrv2/wormbase/stlace/stlace_Sequence.ace") {
+	    $outfile = "$targetdir/".$dbname."_".$object.$criterianoasterisk.".ace";
+	    &strip_sequence("$outfile","\"WP:");
+	}
+	elsif ($filename eq "/wormsrv2/wormbase/camace/camace_Sequence.ace") {
+	    $outfile = "$targetdir/".$dbname."_".$object.$criterianoasterisk.".ace";
+	    &strip_sequence("$outfile","\"WP:");
+	}
+	elsif ($filename eq "/wormsrv2/wormbase/briggsae/briggsae_Sequence.ace") {
+	    $outfile = "$targetdir/".$dbname."_".$object.$criterianoasterisk.".ace";
+	    &strip_sequence("$outfile","\"WP:");
+	}
+	
+	next;
+    }
+    close CONFIG;
+}
+
+
+sub make_command {
+
+    $filename="$targetdir/".$dbname."_".$object.$criterianoasterisk.".ace";
+
+$command=<<END;
+find $object $criteria
+write $filename
+quit
+END
+
+}
+
+
+
+sub make_command_DNA {
+
+    $filename="$targetdir/".$dbname."_".DNA.".ace";
+
+$command=<<END;
+find $object
+follow DNA
+write $filename
+quit
+END
+
+}
+
+#######################################################################
+# Strip unwanted lines from the acefiles                              #
+#######################################################################
+
+sub strip_protein {
+    my ($filename,$strip) = @_;
+
+    $/ = "Protein :";
+    
+    open (OUT, ">${filename}.rm");
+    open (FILE, "<$filename");
+    
+    while (<FILE>) {
+	
+	if (/$strip/) {
+	    next;
+	}
+	else {
+	    print OUT "$_";
+	} 
+    }
+    close FILE;
+    close OUT;
+    $/ = "\n";
+    system ("mv -f ${filename}.rm $filename");
+}
+
+sub strip_sequence {
+    my ($filename,$strip) = @_;
+
+    open (OUT, ">${filename}.rm");
+    open (FILE, "<$filename");
+    
+    while (<FILE>) {
+	
+	if (/$strip/) {
+	    next;
+	}
+	else {
+	    print OUT "$_";
+	} 
+    }
+    close FILE;
+    close OUT;
+    $/ = "\n";
+    system ("mv -f ${filename}.rm $filename");
+
+}
+
+
+#######################################################################
+# Make the non-celegans ESTs                                          #
+#######################################################################
+
+sub nonelegansests {
+    system ("/bin/rm $estfile");
+    open (ESTFILE, ">$estfile");
+    open (SEQUENCES, "/usr/local/pubseq/bin/getz -d  -f \"id acc org des\" \'([emblnew-org:nematoda\! caenorhabditis elegans] \& [emblnew-key:est]) | ([embl-org:nematoda\! caenorhabditis elegans] \& [embl-key:est])\' |");
+    while (<SEQUENCES>) {
+	if (/^ID\s+(\S+)/) {$id=$1;}
+	if (/^AC\s+(\S+);/) {print ESTFILE "\nSequence EMBL:$id\ncDNA_EST\nAC_number $1\nDatabase EMBL $id $1\n";}
+	if (/^OS\s+(.+)/) {print ESTFILE "Species \"$1\"\n";}        
+	if (/^DE\s+(.+)/) {$def=$def." ".$1;}
+	if (/^SQ\s+/) {$def=~s/^\s+//;print ESTFILE "Title \"$def\"\n";$def="";}
+    }
+    close SEQUENCES;
+    close ESTFILE;
+    print LOGFILE "Made $estfile\n";
+    return;
+}
+
+
+
+#######################################################################
+# Produce petides file                                                #
+#######################################################################
+
+sub producepeptides {
+    system ("/bin/rm $tremblfile");
+    system ("/bin/rm $wormpepfile");
+    system ("/bin/rm $swissfile");
+    system ("/bin/rm $peptidefile");
+    open(TREMBL,">$tremblfile");
+    open(WORMPEP,">$wormpepfile");
+    open(SWISSPROT,">$swissfile");
+    $textace = "$tace $autodir ";
+# Retrieve the list of proteins from autoace
+    open2(READ,WRITE,$textace) or do {print "Addpeptides: Could not open $textace\n"; exit 0}; 
+    my $command=<<END;
+find protein 
+list -a 
+quit
+END
+    print WRITE $command;
+    close WRITE;
+    while (<READ>) {
+	if (/^Protein\s+:\s+"(\S+)"/) {
+	    $protein=$1;
+	    if ($protein=~/TR:(\S+)/) {$protein=~s/TR/SPTREMBL/; print TREMBL "$protein\n";}
+	    if ($protein=~/WP:(\S+)\.\w+/) {$protein=~s/WP/WORMPEP/; print WORMPEP "$protein\n";}
+	    if ($protein=~/SW:(\S+)/) {$protein=~s/SW/SWISSPROT/; print SWISSPROT "$protein\n";}
+	}  
+    }		    
+    close READ;
+    close TREMBL;
+    close WORMPEP;
+    close SWISSPROT;
+    print LOGFILE "Made $tremblfile\n";
+    print LOGFILE "Made $wormpepfile\n";
+    print LOGFILE "made $swissfile\n";
+# Produce the .ace file with all the protein sequences
+    open(PEPTIDE,">$peptidefile");
+    open (GETZTREMBL,"/usr/local/pubseq/bin/getz6 -d -sf fasta \'\@$tremblfile\' |");
+    while (<GETZTREMBL>) {
+	if (/^>(\w+)/) {$protein="TR:"."$1"; print PEPTIDE "\nPeptide $protein\n"; next;} else {print PEPTIDE $_;next;}
+    }
+    close GETZTREMBL;
+    open (GETZWP,"/usr/local/pubseq/bin/getz6 -d -sf fasta \'\@$wormpepfile\' |");
+    while (<GETZWP>) {
+	if (/^>(\S+\.\w+)/) {$protein="WP:"."$1"; print PEPTIDE "\nPeptide $protein\n"; next;} else {print PEPTIDE $_; next;}
+    }
+    close GETZWP;
+    open (GETZSWISS,"/usr/local/pubseq/bin/getz6 -d -sf fasta \'\@$swissfile\' |");
+    while (<GETZSWISS>) {
+	if (/^>(\w+)/) {$protein="SW:"."$1";print PEPTIDE "\nPeptide $protein\n"; next;} else {print PEPTIDE $_; next;}
+    }
+    close GETZSWISS;
+    close PEPTIDE;
+    print LOGFILE "Made $peptidefile\n";
+}
+
+
+
+#######################################################################
+# Help and error trap outputs                                         #
+#######################################################################
+ 
+sub run_details {
+    print "# make_acefiles\n#\n";     
+    print "# version        : $version\n";
+    print "# run details    : $rundate $runtime\n";
+    print "\n";
+    print "WormBase version : ${WS_version}\n";
+    print "\n";
+    print "======================================================================\n";
+    print " -n : Write .ace files\n" if ($opt_n);
+    print " -e : Write non-elegans nematode EST data sets\n" if ($opt_e);
+    print " -p : Write peptide data sets\n" if ($opt_p);
+    print "======================================================================\n";
+    print "\n\n";
+}
+
+sub usage {
+    my $error = shift;
+    
+    if ($error == 1) {
+	# No command-line options
+	print "\nNo command line options given\n\n";
+	print "Usage: make_acefiles [-options]\n";
+	print " -n : Write .ace files\n";
+	print " -e : Write non-elegans nematode EST data sets\n";
+	print " -p : Write peptide data sets\n\n";
+	exit(0);
+    }
+    elsif($error == 2) {
+	# Single database mode: database name not recognised
+	print "\nNo database of this name exists ('$opt_s')\n";
+	print "Check database names in config file\n\n";
+	exit(0);
+    }
+    elsif($error == 3) {
+	# No WormBase release number file
+	print "\nThe WormBase release number cannot be parsed\n";
+	print "Check File: '$Wormbase_release_file'\n\n";
+	&run_details;
+	exit(0);
+    }   
+    elsif ($error == 0) {
+	# Normal help menu
+	exec ('perldoc',$0);
+	exit (0);
+    }
+}
+
+__END__
+
+=pod
+
+=head2   NAME - make_acefiles
+
+=head1 USAGE
+
+=over 4
+
+=item make_acefiles [-options]
+
+=back
+
+make_acefiles is the first step in a WS build. It has 3 functions:
+
+to write a number of .acefiles which are data dumps from the respective
+ACEDB databases which make up the full C.elegans release (i.e. camace,
+stlace, geneace, brigace)
+
+to make a non-elegans nematode EST data set using getz
+
+to make a peptide data set from all similarity data in autoace
+
+make_acrefiles mandatory arguments:
+
+=over 4
+
+=item none, (but it will not do anything)
+
+=back
+
+make_acefiles OPTIONAL arguments:
+
+=over 4
+
+=item -n, make new acefiles
+
+=item -s text, single database mode. Only dumps acefiles for the named database
+
+=item -e, make non-elegans est files
+
+=item -p, make peptides
+
+=back
+
+Example
+
+=over 4
+
+=item make_acefiles -nep will re-make all the needed ace files
+
+=item make_acefiles -p will re-create only peptide files
+
+=back
+
+=cut
+
+

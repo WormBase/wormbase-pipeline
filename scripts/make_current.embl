@@ -1,0 +1,32 @@
+#!/usr/local/bin/perl
+
+# This script will look in all the most up to date cosmid directory
+# and check if there is a cosmid.current.embl link. If not it will
+# link the cosmid.embl file to it (This is always the initial embl
+# submission), however, if there is no cosmid.embl file to link it
+# will report this. 
+#
+# Steven Jones, Sanger Centre, November 1995.
+
+
+open(cosmids,<~wormpub/analysis/cosmids/current.versions>);
+
+while (<cosmids>) {
+if (/(\S+)\/(\d+)/) {$cosmid=$1;$date=$2;}
+
+#Does the cosmid already have a current.embl file
+if (-e "/nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.current.embl") {
+    print "cosmid $cosmid has a current.embl file\n";
+} else {print "$cosmid does not have a current.embl file\n";
+
+if (-e "/nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.embl") {
+    print "$cosmid has a $cosmid.embl file\n";
+#If there is no current.embl file but a cosmid.embl
+#then link the cosmid.embl file the current.embl
+    print "attempting to link $cosmid.embl to $cosmid.current.embl\n";
+    system("ln -s /nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.embl /nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.current.embl");
+} else {
+    print "** Warning - $cosmid does not have a $cosmid.embl file\n";}
+    }
+}
+

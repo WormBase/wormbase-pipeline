@@ -1,0 +1,240 @@
+#!/usr/local/bin/perl
+#
+# Maintain_EMBL_in_FTP_site
+# v3.0
+# dl + ag3
+# uses AcePerl to make a list of finished projects and then extracts the latest
+# EMBL flatfiles for these entries. These are then copied to the FTP site.
+#
+#
+################################################################################
+# 000124 dl : complete re-write of old sjj script
+# 000215 ag3: added interpolated_gMap tag to chromosome sort
+# 000819 ag3: modified MapChrome so that it uses AcePerl
+################################################################################
+
+use Ace;
+$|=1;
+
+$ftppath = "/nfs/disk69/ftp/pub2/wormbase/sequences/EMBL_FORMAT";
+my $maintainer = "ag3\@sanger.ac.uk";
+my $logfile = "/wormsrv2/logs/Maintain_EMBL_in_FTP_site.log.$$";
+my $dtfile = "/wormsrv2/logs/DTfile.$$";
+my $dtfile2 = "/wormsrv2/logs/DTfile2.$$";
+my $old_dtfile = "/wormsrv2/logs/DTfile2.OLD";
+open (LOG,">$logfile");
+
+# Map sequences to chromosomes 
+#&map_Chromes;
+
+# Retrieve AC_Nos and all the stuff
+&retr_AC;
+
+# Identify and dump out diffs
+&dump_DIFF;
+
+close LOG;
+
+#&maillog;
+
+
+exit;
+
+
+
+####################################################
+# Build the hash for associating chromosome<>clone #
+####################################################
+#
+# Map clones to chromosomes
+#
+sub map_Chromes {
+ $db = Ace->connect(-path=>'/wormsrv2/autoace') or &DieHard ("Could not connect to autoace");
+ print LOG "\n\nFirst database connection successful\n\n";
+  my ($query1);
+  my ($query2);
+  my (%CHROME);
+  undef %CHROME;
+  my ($map);
+  $query1=<<END;
+find genome_sequence *
+show -a Interpolated_gMap
+END
+  $query2=<<END3;
+quit
+END3
+ my $t=$db->raw_query($query1);
+ my $t=$db->raw_query($query2);
+ @text = split /\n/, $t;
+ foreach (@text) {
+   if (/^Sequence\s+:\s+\"(\w+)\"/)  {
+      $sequence=$1;
+   }
+   if (/^Interpolated_gMap\s+\"(\S+)\"\s+/)  {
+      $map=$1;
+      $CHROME{$sequence}=$map;
+      print LOG "$sequence $CHROME{$sequence}\n";
+   }
+ }
+}
+#
+#Retrieve accession numbers
+#
+sub retr_AC {
+$db = Ace->connect(-path=>'/wormsrv2/autoace') or &DieHard("Could not connect to autoace");
+print LOG "\nDatabase connection successful\n\n";
+open (DTFILE,">$dtfile");
+# For every genome sequence in autoace ..
+$i = $db->fetch_many(Genome_Sequence, "*");  
+while ($obj = $i->next) {
+   undef $mapping;
+   $project = $obj;
+   $sequence = ${project};
+   $mapping = $CHROME{$sequence};
+   chomp $mapping;
+# .. skip sequences without DB_info ..
+   $status = $obj->at('DB_info');
+   if ($status eq "") {
+    print LOG "** Warning: $sequence has NO DB INFO \n\n";
+    next;
+   }
+# .. skip sequences without DNA ..
+   $dna = $obj->DNA;
+   if ($dna eq "") {
+    print LOG " ** Warning: $sequence has NO DNA \n\n";
+    next;
+   }
+# .. skip sequences where species is not C.elegans
+   $species = $obj->Species;
+   if ($species ne "Caenorhabditis elegans") { next; }
+# .. retrieve and store database information; skip sequences without AC
+   ($db_info,$tag,$db,$db_ID,$db_AC,$version) = $obj->DB_info->row();
+   print LOG "$tag,$db,$db_ID,$db_AC,$version\n";
+   $db_AC =~ s/\s+//mg;
+   chomp $db_AC;
+   if ($db_AC eq "") {
+    print LOG " ** Warning : $sequence has no AC\n"; 
+    next;
+   }
+   undef $embl;
+   $embl=`/usr/local/pubseq/bin/getz \'[EMBLNEW-acc:$db_AC]\'`;
+   if ($embl eq "") {
+         $embl=`/usr/local/pubseq/bin/getz \'[EMBL-acc:$db_AC]\'`; 
+     }
+   chomp $embl;
+if ($embl eq "") {
+    print LOG "Entry $db_AC is not represented in EMBL\n";
+    next;
+   }
+   print DTFILE "$embl\n"; 
+}
+close DTFILE;
+open (DTFILE2,">$dtfile2") or die ("Could not open $dtfile2");
+open (DTLINE,"/usr/local/pubseq/bin/getz -f id -f crlu \@$dtfile |");
+   while (<DTLINE>) {
+     $line =$_;
+     chomp $line;
+     print DTFILE2 "$line\n";
+     if ($line =~ /^ID\s+(\w+)\s+/) {
+	 $key=$1;
+     }
+     if ($line =~ /^DT/) {
+	 $DT{$key}.="$line\n";
+     }
+   }
+close (DTLINE);
+close DTFILE2;
+unlink $dtfile;
+}
+
+#
+# Retrieve the differences
+#
+sub dump_DIFF {
+open (OLDTFILE,"<$old_dtfile") or die ("No old file to open\n");
+while (<OLDTFILE>) {
+    $old_line=$_;
+    if ($old_line =~ /^ID\s+(\w+)\s+/) {
+	 $old_key=$1;
+     }
+     if ($old_line =~ /^DT/) {
+	 $OLD_DT{$key}.="$line\n";
+     }
+}
+close OLDTFILE;
+# compare and create list with differences
+foreach $testkey (keys %DT) {
+    if ($DT{$testkey} ne $OLD_DT{$testkey}) {
+	$DIFF_DT{$testkey}=$DT{$testkey};
+    }
+}
+# print out diff result; overwrite entry in FTP site
+foreach $sequence (keys %DIFF_DT) {    
+    print LOG "DIFF: $sequence $DIFF_DT{$sequence}\n";
+    $this_subdir=$CHROME{$sequence};
+    $this_subdir=~s/\s+//mg;
+    my $curr_dir = "$ftppath"."/"."$this_subdir";
+    my $curr_file = "$sequence".".embl";
+#    system ("/bin/rm $curr_dir/$curr_file");
+    print LOG "Erased $curr/dir $curr_file ..\n";
+}
+unlink $old_dtfile;
+system ("/bin/mv $dtfile $old_dtfile");
+}
+
+sub DieHard {
+    my $message = shift @_;
+    print LOG "$message";
+    close LOG;
+    exit;
+    }
+
+sub maillog {
+      open(MAIL, "| Mail -s \"new_Maintain_EMBL_in_FTP_site\" $maintainer");
+      open (INLOG,"/bin/cat $logfile |");
+      while (<INLOG>) {
+	print MAIL $_;
+      }
+      close INLOG;
+      close MAIL;
+      unlink $logfile;
+  }
+
+sub extractEMBL {
+    print LOG "getting entry $db_ID [$db_AC]\n";
+    open(SEQUENCE,"getz -e  \"([EMBLNEW-acc:$db_AC]) \| (([EMBL-acc:$db_AC]) \! (EMBL < EMBLNEW))\" |") or die ("Could not open getz .. \n");
+    if (length($mapping)>0) {
+     print LOG "Sequence $sequence mapping $mapping\n";
+     open(OUTPUT2, ">$ftppath/$mapping/$sequence.embl");
+     OUTPUT2->autoflush;
+    }
+    open(OUTPUT, ">$ftppath/UNSORTED/$sequence.embl");
+    OUTPUT->autoflush;
+    while (<SEQUENCE>) {
+     print  OUTPUT $_;
+     print OUTPUT2 $_;
+    }
+    close OUTPUT;
+    close OUTPUT2;
+    close SEQUENCE;
+}
+
+__END__
+
+=head1 NAME - Maintain_EMBL_in_FTP_site.pl
+
+=head1 SYNOPSIS
+
+    new_Maintain_EMBL_in_FTP_site retrieves all Genome_sequence objects from autoace which
+    have DNA and are from C.elegans. These are copied to the FTP site and then sorted by
+    chromosome, besides being placed in the UNSORTED directory
+
+
+
+
+
+
+
+
+
+

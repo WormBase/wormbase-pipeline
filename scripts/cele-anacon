@@ -1,0 +1,174 @@
+#! /bin/csh
+#
+# script to make an analysis subdirectory for a finished sequence
+#
+#950704 Adapted by sjj to use -M option (Smart option) to use
+#	finsh_left and finish_right tags for consensus output
+#	If numbers are not given at the command line then the -M is invoked
+#951030 changed to run on OSF machines
+#951116 Fixed a bug in the making of cmid ie cosmid M7 would remove
+#	the entry for M79 etc....
+#960827 Changed to save old versions of current.versions 
+#960903 Commented out the updating of allcmid 
+#960906 Changed to make fasta file and put fasta file on ftp site 
+#971110 Added -check worm to mkcon-gap call
+
+set scriptsdir  = ~wormpub/analysis/scripts
+set datadir     = ~wormpub/analysis/cosmids
+
+set user        = wormpub
+
+switch ($#argv)
+  case "2":
+	set seq = $1
+	set proj = $2
+	breaksw
+  case "1":
+	set seq = $1
+	set proj = $1
+	breaksw
+  default: 
+	echo 'Usage: cele-anacon <sequence> [<project>]'
+	echo "-- run as user $user."
+	exit 2
+endsw
+
+if ( `uname` != OSF1 ) then
+  echo "You must run this script on an OSF1 machine"
+  exit 1
+endif
+
+if (`whoami` != $user) then
+  echo "This script must be run when logged in as $user"
+  exit 2
+endif
+
+set dat = `date +%y%m%d`
+set fuldat = `date +%y%m%d_%OH:%M:%S`
+
+cd $datadir
+if (! -d $seq) mkdir $seq
+cd $seq
+if (-d $dat) \rm -r $dat
+mkdir $dat
+
+###########################
+#
+# Set project directory...
+#
+###########################
+
+set condir = `pfind -q -u $proj`
+
+# Check project directory exists.
+if (! -d  $condir) then
+  echo "Can't find project directory: $condir"
+  exit 2
+endif
+
+cd $condir
+
+echo Making consensus for sequence $seq in project $proj version 0 from directory $condir
+
+mkcon-gap -bayesian -gestapo -c 0 -a -M -n $seq -p $proj -o $datadir/$seq/$dat/${seq}_0.ace
+
+if ($status != 0) then 
+	echo "$0 aborted with status $status"
+	exit 3
+endif
+
+cd $datadir/$seq/$dat
+
+# remove pads
+perl -pi -e 's/\*//g ;' ${seq}_0.ace
+# remove explicit newlines in tag comments
+perl -pi -e 's/\\n/ /g ;' ${seq}_0.ace
+sed -f $scriptsdir/toseq.sed < ${seq}_0.ace | seqpress | sed -e '/^>$/d' >! ${seq}.seq
+# RD 000922 added "| sed -e '/^>$/d'" since now seqpress adds a blank > line!
+
+# Make a fasta version of the file 
+
+echo -n ">" >! $seq.fasta
+echo $seq >> $seq.fasta
+cat $seq.seq >> $seq.fasta
+
+echo "Have made $seq/$dat/${seq}.seq and .fasta"
+
+###############################################
+# do bookkeeping in analysis/cosmids
+###############################################
+
+cd $datadir 
+
+# Update current.versions
+
+cp current.versions old_current.versions/current.versions.$fuldat
+sed -e "/^$seq\//d" < current.versions >! junk
+\mv junk current.versions
+cat >> current.versions <<END
+$seq/$dat
+END
+
+# update cmid
+
+if (-e cosmidseq) \mv cosmidseq cosmidseq.old
+touch cosmidseq
+
+foreach i (`cat current.versions`)
+  set root = $i:h
+  if (-e $i/$root.seq) then
+    echo ">$i" >> cosmidseq
+    cat $i/$root.seq >> cosmidseq
+  endif
+end
+
+\rm cmid*
+seqpress < cosmidseq > cmid
+pressdb cmid
+
+# copy to drop directory for moving display in reception
+
+\cp $seq/$dat/$seq.fasta /nfs/disk2/sign/poll/$seq.seq 
+
+###################DO SOME CHECKS ON COSMID INTEGRITY ###################
+
+#940808 - HAVE CHANGED THIS SCRIPT TO CHECK AND RETURN THE NUMBER OF
+# N'S IN THIS SEQUENCE
+
+echo -n "The number of N's in this sequence is:"
+cat $seq/$dat/$seq.seq | sed 's/n/N/g' | tr -cd 'N' | wc -c
+
+#941005 - ADDED TO THIS SCRIPT SO THAT IT WILL REPORT IF THE 
+#SEQUENCE DOES NOT BEGIN WITH GATC
+
+if ("`head -1 $seq/$dat/$seq.seq  | grep -i '^GATC'`" == "") then
+	echo  "  THIS SEQUENCE DOES NOT POSSESS GATC AT ITS BEGINNING"
+	echo  "  PLEASE CONFIRM WITH THE FINISHER THAT THIS IS APPROPRIATE"
+	echo  ""
+endif
+
+#940495 - THE SCRIPT WILL NOW CHECK THAT THE LEFT AND RIGHT END CLONE
+# TAGS HAVE BEEN ADDED TO THE DATABASE
+
+if ("`grep 'Clone left end' $datadir/$1/$dat/${1}_0.ace | head -1 `" =="") then 
+	echo "  THIS SEQUENCE DOES NOT HAVE A CLONE LEFT END TAG"
+	echo "  PLEASE CONFIRM WITH THE FINISHER THAT THIS IS APPROPRIATE"
+	echo ""
+endif 
+
+if ("`grep 'Clone right end' $datadir/$1/$dat/${1}_0.ace | head -1 `" =="") then 
+	echo " THIS SEQUENCE DOES NOT HAVE A CLONE RIGHT END TAG"
+	echo " PLEASE CONFIRM WITH THE FINISHER THAT THIS IS APPROPRIATE"
+	echo ""
+endif 
+
+#####END OF CHECKS 
+
+echo "Have made $1/$dat/${1}.seq and updated current.versions and cmid"
+
+####################################################################
+
+exit 0
+
+
+

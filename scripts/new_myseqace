@@ -1,0 +1,24 @@
+#!/bin/csh -f
+
+setenv ACEDB_NO_BANNER
+setenv ACEDB /nfs/disk100/wormpub2/ag3/new_myseqace
+
+switch (`uname`)
+  case "IRIX":
+	~wormpub/acedb/ace4/bin.SGI_4/xace $ACEDB
+	breaksw
+  case "OSF1":
+	~wormpub/acedb/ace4/bin.ALPHA_4/xace $ACEDB
+	breaksw
+  case "SunOS":
+	switch (`ostype`)
+	  case "SunOS":
+		~wormpub/acedb/ace4/bin.SUN_4/xace $ACEDB
+		breaksw
+	  case "Solaris":
+#		~wormpub/acedb/ace4/bin.SUN_4/xace $ACEDB
+		~wormpub/acedb/ace4/bin.SOLARIS_4/xace $ACEDB
+		breaksw
+	endsw
+	breaksw
+endsw

@@ -1,0 +1,26 @@
+#!/usr/local/bin/perl 
+#
+# Short and simple script to convert acefiles with 
+# old style acefiles to those which support Matchtables
+#
+# Steven Jones 961127
+#
+# Hopefully MSPcrunch output will replace this soon. 
+
+
+while (<>) {
+
+if (/^Protein\s+(\S+)/) {$protein=$1;};
+if (/^Sequence\s+(\S+)/) {$sequence=$1;};
+
+
+if (/DNA_homol/ && /BLASTX/) {s/^DNA_homol\s+/MatchTable Protein-$protein\nSequence /;}
+if (/DNA_homol/ && (/BLASTN || TBLASTX)/) {s/^DNA_homol\s+/MatchTable Sequence-$sequence\nSequence /;}
+
+
+s/^Pep_homol\s+/MatchTable Sequence-$sequence\nProtein /;
+
+print;
+
+}
+

@@ -1,0 +1,88 @@
+#!/usr/local/bin/perl -w
+#Wed Oct 21 14:38:04 BST 1998 (as1)
+# 
+#######################################################################
+# This software has been created by Genome Research Limited (GRL).    # 
+# GRL hereby grants permission to use, copy, modify and distribute    # 
+# this software and its documentation for non-commercial purposes     # 
+# without fee at the user's own risk on the basis set out below.      #
+# GRL neither undertakes nor accepts any duty whether contractual or  # 
+# otherwise in connection with the software, its use or the use of    # 
+# any derivative, and makes no representations or warranties, express #
+# or implied, concerning the software, its suitability, fitness for   #
+# a particular purpose or non-infringement.                           #
+# In no event shall the authors of the software or GRL be responsible # 
+# or liable for any loss or damage whatsoever arising in any way      # 
+# directly or indirectly out of the use of this software or its       # 
+# derivatives, even if advised of the possibility of such damage.     #
+# Our software can be freely distributed under the conditions set out # 
+# above, and must contain this copyright notice.                      #
+#######################################################################
+use strict;
+use OORepository;
+my $wild_project;
+my $quiet;
+my $unique;
+# 
+# U S A G E;
+#
+my $usage = "\nUsage: pfind -q [quiet mode] -u [unique] <projectname> || -a [displays all projects]\n";
+
+if( $ARGV[0] eq '-a' ){
+	$wild_project = "";
+}
+else{
+    my $arg ;
+    foreach $arg (@ARGV) {
+	if ($arg eq '-u') { $unique = 1 ; }
+	elsif ($arg eq '-q') { $quiet = 1 ; }
+	else { 
+	    $wild_project = $arg ;
+	    $wild_project =~ s/\*//g;
+	    chomp($wild_project);
+	}
+    }
+}
+
+if (! defined $wild_project) { die $usage ; }
+
+eval{
+	my $repos = new OORepository;
+	#$repos->read_project_table();
+
+	my $test_string = ($unique) ? $wild_project : "%" . $wild_project . "%" ;
+	my $projects = $repos->{DB}->fetch_all("select 
+									projectname 
+								from 
+									project 
+								where 
+									projectname 
+								like
+									'$test_string'
+							");
+
+	if( scalar(@{$projects}) == 0 ){
+			print STDERR "Project $wild_project doesn't exist in the repository\n";
+			exit(1);
+	}
+
+	foreach my $project_ref (@{$projects}){ 
+		
+		my $project = $project_ref->[0];
+	
+		$repos->get_online_path_from_project($project);
+
+		if(defined $repos->{online_path}){
+			if( defined $quiet ){
+				print STDOUT "$repos->{online_path}";
+			}else{
+				print STDOUT "Location of $project is $repos->{online_path}\n";
+			}
+		}else{
+			print STDERR "Project $project doesn't have an online_path\n";
+		}
+	}
+};
+if( $@ ){
+	print STDERR "An error occurred:\n $@\n";
+}	

@@ -1,0 +1,209 @@
+#!/usr/local/bin/perl
+
+# [ag3] This script makes the unfinished cosmids file make_unfincmid
+
+$|=1;
+
+# List of unfinished clones
+@clones = (Y105E8A,Y105E8B,Y111B2C,Y11B2E,Y111B2G,Y39B6A,Y39B6B,Y67H2A);
+
+# Minimum contig length which we want to include in the unfinished cosmid list
+my $mincontig = 100;
+my $wormpub="/nfs/disk100/wormpub";
+$log="/wormsrv2/tmp/make_unfincmid.$$";
+my $unfincmid = "$wormpub/analysis/Sequence_Databases/unfincmid";
+my $chrom_pos="/nfs/disk100/wormpub/analysis/scripts/clone_iMap_position";
+
+if (!-e $unfincmid) {
+    unlink $unfincmid;
+    system ("touch $unfincmid");
+}
+
+open (LOG,">$log");
+
+&Map_Chrom_Position;
+
+&FindCosmidPosition;
+
+&PressDb;
+
+close (LOG);
+
+&email_log;
+
+exit 0;
+
+
+#-------------------------
+# Find cosmid position for
+# each cosmid
+#
+sub FindCosmidPosition {
+    open (OUTPUT,">>$unfincmid");
+CLONE:foreach $clone (@clones){
+    print LOG "1) #########\nEntering with clone $clone\n";
+# This is the counter for the clone (see below)
+    $switch = "OFF";
+    open (TESTSQUR,"/usr/local/badger/bin/pfind $clone' |");
+    while (<TESTSQUR>) {
+      s/\s+$//;
+      if (/(\S+)$/) {$user="jes";$userpath=$1;}
+    }
+    close  TESTSQUR;   
+    print LOG "2) I think user for $clone = $user\n";
+    if ($user eq "" || $user eq "unknown"){
+      print LOG "$clone=no squirrel info\n";
+      next CLONE;
+    }
+   $author="Sulston J";
+   $chromosome=$chrome{$clone};
+   if ($chromosome eq "") {
+      print LOG "3) !! Clone $clone has no interpolated gmap position !!\n";
+      $count{UNSORTED}++;
+   } else {
+      print LOG "3) Cosmid $clone ==> Chromosome $chromosome\n";
+   }
+
+   # Need to make an entry in the status file whether cosmid is updated or not
+     print LOG "4) attempting dump of $clone\n";
+     $/=">";
+     open (DNA, "dump2fasta -depad -clone $clone |") or die ("Could not open dump2fasta");
+     $dumped="no";
+     while (<DNA>) {
+       if (/\S+/) {
+         $dumped="yes";
+       }
+       $_=~s/\>//;
+
+   # Record contig name	and activate print
+       if (/^(\d+)/) {
+	 $switch = "ON";  
+         $contig=$1;
+         s/^\d+.+\n//;
+	 print LOG "Contig Name: $contig\n";
+       }
+       $sequence=$_;
+#      if (($switch eq "ON") && ($length > $mincontig)) {
+       if ($switch eq "ON") {
+	  $moddate=&time2ace(time);
+	  $switch="OFF";
+	  $length=length($sequence);
+	  print OUTPUT ">$clone Contig ID=$contig; Length=$length; Order=Unknown; Status=Cambridge-Unfinished; Author=$author; LastModification=$moddate; EMBL acc=",&celeaccession($cosmid),"\n";
+	  print OUTPUT $sequence;
+       } else {
+	  print OUTPUT $sequence;
+       }
+     }
+    # Did the dump2fasta fail?  
+      if ($dumped eq "no") {
+	print LOG "dump of $cosmid ($user) unsuccessful\n";
+      } 
+     close DNA;
+     $/="\n";
+ } 
+    close OUTPUT;
+}
+
+
+#---------------------------------------------
+# Map chromosome position, building an hash 
+# that maps clones to their chromosome numbers
+#
+sub Map_Chrom_Position {
+    open (CHROMPOS, "$chrom_pos");
+    while (<CHROMPOS>) {
+	(/^(\S+)\s+(\S+)/);
+	if ($2 ne "unmapped") {
+	    $chrome{$1}=$2;
+	}
+    }
+    close (CHROMPOS);
+}
+
+#--------------------
+# 
+#
+sub PressDB {
+    $retvalue = system ("pressdb $unfincmid");
+    $sysvalue = 0xffff & $retvalue;
+    if ($sysvalue != 0) {
+	print LOG "*** Warning - pressdb failed ***\n";
+    } else {
+	print "Pressdb successful\n";
+    }
+    return;
+}
+
+
+#------------------------------------
+# Get the date of a file modification
+#
+sub mod {
+    local(@date);
+    @date=stat $_[0];
+    return $date[9];
+}
+
+
+#---------------------------------
+# Translate the time to ace format
+#
+sub time2ace {
+    local($time) = @_;
+    local(@lt);
+    @lt = localtime($time);
+#   yy -> yyyy
+#   if ($lt[5] < 100) { $lt[5] += 1900; }
+#   elsif ($lt[5] >= 100) { $lt[5] += 2000; }
+    $lt[5]+=1900;
+    sprintf("%4d-%02d-%02d_%02d:%02d:%02d",$lt[5],$lt[4]+1,$lt[3],$lt[2],$lt[1],$lt[0]);
+}
+
+#----------------------
+# Returns the accession 
+# number for the given
+# cosmid
+#
+sub celeaccession {
+    my $seq = shift;
+    local($exec);
+    $exec="/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_4/tace";
+    local($command);
+    local($accession);
+    $ENV{'ACEDB'}="/nfs/disk100/wormpub/acedb/ace4/cam";
+    $command=<<EOF;
+    find sequence $seq
+    show DB_info
+    quit
+EOF
+
+open(textace, "echo '$command' | $exec  | ");
+while (<textace>) {
+    if (/\s+Database\s+EMBL\s+\S+\s+(\S+)\n/) {$accession=$1;}
+    }
+close textace;
+return $accession;
+}
+
+
+#------------------------------
+# Email the log file to wormpub
+#
+sub email_log {
+    open(MAIL, "| Mail -s \"make_unfincmid log $$\" ag3\@sanger.ac.uk");
+    open (INLOG,"/bin/cat $log |");
+    while (<INLOG>) {
+	print MAIL $_;
+    }
+    close INLOG;
+    close MAIL;
+    unlink $log;
+    return;
+}
+
+
+
+
+
+
+

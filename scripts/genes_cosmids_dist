@@ -1,0 +1,24 @@
+#!/usr/local/bin/perl
+# very rough way of finding how many genes are on cosmids.
+# Could be changed to have a minimun size for the cosmid
+# Also, these are not full cosmids but just unique bits. 
+#so its not very good at all.
+
+#Steven Jones 
+
+#takes as input an embl dump file
+
+while (<>) {
+
+if (/^\/\//) {$cosmids++;$number{$num}++;$num=0;}
+if (/^FT\s+CDS\s+/) {$num++;}
+}
+
+
+print "total cosmids = $cosmids\n";
+
+for ($i=0;$i<26;$i++) {
+print "$i $number{$i}\n";
+}
+
+

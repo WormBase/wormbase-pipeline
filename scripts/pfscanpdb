@@ -1,0 +1,23 @@
+#!/usr/local/bin/perl 
+#
+# Wrapper to pfscanp to search protein databases. 
+#
+#
+open(proteins,"$ARGV[0]");
+
+while (<proteins>) {
+	if (/>(\S+)/) {$sequence=$1;push(@sequences,$1);} else {s/[^a-zA-Z\n]//g;}
+	$sequence{$1}=$sequence{$1}.$_;
+}
+
+
+foreach $peptide  (@sequences) {
+    open(temp,">/tmp/temppfscanpdb$$");
+    print temp $sequence{$peptide}; 
+    close temp;
+    open(pfscanp,"pfscanp -a /tmp/temppfscanpdb$$ |");
+    while (<pfscanp>) {print;}
+}
+
+unlink '/tmp/temppfscanpdb$$'
+

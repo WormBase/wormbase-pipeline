@@ -1,0 +1,37 @@
+#!/usr/local/bin/perl 
+
+require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
+
+my $text = shift;
+if ($text eq "") {exit;}
+
+my $script = "";
+my $version = "";
+
+open (LIST, "/bin/ls -F | /bin/grep '\@' |");
+while (<LIST>) {
+    chomp;
+    s/\@//g;
+    $script = $_;
+    next if ($script eq "wspec");
+    next if ($script eq "xcl");
+    next if ($script eq "fixsuperlink");
+    next if ($script eq "makecen2hs.pl");
+    next if ($script eq "localace.old");
+
+    $version = &get_script_version("$script");
+    print "// -$script $version\n\n";
+    
+    open (LOOK, "/bin/grep '$text' ${script}_${version} |");
+    while (<LOOK>) {
+	next if (/\#/);
+	print "$_";
+    }
+    close LOOK;
+    print "\n";
+
+}
+close LIST;
+
+exit(0);
+

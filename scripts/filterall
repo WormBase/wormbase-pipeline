@@ -1,0 +1,30 @@
+#! /bin/csh
+#
+# metascript to run a filter on all subdirectories
+#
+
+switch ($#argv)
+  case "3": 
+	breaksw
+  default: 
+	echo 'Usage: forall filter end1 end2'
+	echo 'on each sequence subdirectory looks for .end1 and if it'
+	echo 'exists, runs filter to give .end2 (removes .end2 if empty).'
+	exit 2
+endsw
+
+set count = 0
+foreach i (`ls`)
+  if (-e $i/$i.$2 && ! -e $i/$i.$3) then
+    $1 < $i/$i.$2 > $i/$i.$3
+    if (-z $i/$i.$3) then
+      \rm $i/$i.$3
+    else
+      echo "$i"
+      @ count += 1
+    endif
+  endif
+end
+
+echo "Made $count new .$3 files"
+exit

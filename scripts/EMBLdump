@@ -1,0 +1,73 @@
+#!/usr/local/bin/perl
+# EMBLDump makes EMBL dumps from camace.
+# [ag3 000221]
+# [dl1 000618] : Altered script to accomodate change of lab 'CB' -> 'HX'
+#
+use IO::Handle;
+use IPC::Open2;
+use POSIX qw(:signal_h :errno_h :sys_wait_h);
+
+# Avoid filling process table with zombies
+
+$SIG{CHLD} = \&REAPER;
+sub REAPER {
+  my $pid;
+  $pid=waitpid(-1,&WNOHANG);
+  $SIG{CHLD}=\&REAPER;
+}
+
+#my $exec = "/nfs/griffin2/rd/worm/bin.ALPHA_4/giface ";
+my $exec = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/giface ";
+my $dbdir = "/wormsrv2/camace";
+my $giface = "$exec $dbdir";
+my $outfilename = "/nfs/disk100/wormpub/tmp/EMBLdump.$$";
+
+# Dump the EMBL file from camace
+
+open2(READ,WRITE,$giface) or die ("Could not open $giface\n"); 
+my $query=<<END;
+Query Find Genome_Sequence From_Laboratory = HX AND Finished AND DNA
+gif EMBL $outfilename
+END
+print "Query = $query\n";
+print "Exec = $giface\n";
+print WRITE $query;
+close WRITE;
+while (<READ>) {
+  if ($_ =~ /\/\//) {next};
+  if ($_ =~ /acedb/) {next};
+}		    
+close READ;
+
+print "Outfile is $outfilename";
+exit;
+
+
+# [ag3] 062100 this should be useless now thanks to rd modifications
+#
+## Reformat for the author field
+#open (REFORMATFILE,">$reformatfile");
+#open (INFILE,"<$outfilename");
+#while ($line=<INFILE>) {
+#  if ($line =~ /Consortium/) {
+#	print $line;
+#    $line =~ s/RA/RC/;
+#    $line =~ s/Consortium/Consortium\./;
+#    print REFORMATFILE $line;
+#    print REFORMATFILE "RA   none;\n";
+#    next;
+#  }
+#  print REFORMATFILE $line;	
+#}
+#close INFILE;
+#close REFORMATFILE;
+
+
+
+
+
+
+
+
+
+

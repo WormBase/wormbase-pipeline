@@ -1,0 +1,32 @@
+#!/usr/local/bin/perl
+#
+#
+#
+#
+#
+#
+#
+
+
+
+
+$dbdir = "/wormsrv2/autoace";
+$composition = "$dbdir/CHROMOSOMES/composition.all";
+$debug = 1;
+$|=0;
+
+#################################################################################
+# DNA                                                                           #
+#################################################################################
+
+print "generate DNA report : '$dbdir/CHROMOSOMES/composition.all'\n" if ($debug);
+open (COMPOSITION, "$composition") || die "Can't open composition file\n\n";
+while (<COMPOSTION>) {
+    chomp;
+    print "$_\n";
+#    if (/residue/) {last};
+#    print "$_\n";
+}
+close (COMPOSITION);
+
+exit (0);

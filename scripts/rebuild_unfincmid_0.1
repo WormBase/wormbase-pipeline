@@ -1,0 +1,165 @@
+#!/usr/local/bin/perl
+#
+# [ag3] This script provides the framework for making
+# the Sanger unfinished cosmids file - ~wormpub/analysys/Sequence_Databases/unfincmid
+
+#
+# 001006 ag3 Complete rewrite
+#
+
+
+$|=1;
+use IO::Handle;
+
+@clones = (Y105E8,Y39B6,Y67H2);
+
+my %CHROME = ("Y105E8","I","Y39B6","V","Y67H2","");
+my %CLONES;
+
+push (@{$CLONES{Y105E8}},("Y105E8A","Y105E8B"));
+# RD 001012 Y39B6B won't dump just now
+# dl 001018 Y39B6 should be sorted
+push (@{$CLONES{Y39B6}},("Y39B6A","Y39B6B"));
+push (@{$CLONES{Y67H2}},("Y67H2A","Y67H2B"));
+
+my $wormpub="/nfs/disk100/wormpub";
+my $log="/wormsrv2/logs/rebuild_unfincmid.$$";
+my $unfincmid = "$wormpub/analysis/Sequence_Databases/unfincmid";
+if (-e $unfincmid) {
+    unlink $unfincmid;
+}
+system ("/bin/touch $unfincmid");
+open (LOG,">$log");
+LOG->autoflush();
+&Find_Cosmid_Position();
+close (LOG);
+exit 0;
+
+######################################################################
+# Subroutines                                                        #
+######################################################################
+
+#-------------------------
+# Find cosmid position for
+# each cosmid
+#
+sub Find_Cosmid_Position {
+    open (OUTPUT,">>$unfincmid");
+    OUTPUT->autoflush();
+
+CLONE:foreach $clone (@clones){
+     print LOG "1) ######### Entering with clone $clone\n";
+     open (TESTSQUR,"pfind $clone' |");
+     while (<TESTSQUR>) {
+      s/\s+$//;
+      if (/(\S+)$/) {$user="jes";$userpath=$1;}
+     }
+     close  TESTSQUR;   
+     print LOG "2) User path for $clone is $userpath\n";
+     print LOG "   I think user for $clone = $user\n";
+     if ($user eq "" || $user eq "unknown"){
+      print LOG "$clone=no squirrel info\n";
+      next CLONE;
+     }
+     $author="Sulston J";
+     $chromosome=$CHROME{$clone};
+     if ($chromosome eq "") {
+      print LOG "3) !! Clone $clone has no interpolated gmap position !!\n";
+      $count{UNSORTED}++;
+     } else {
+      print LOG "3) Cosmid $clone ==> Chromosome $chromosome\n";
+     }
+     print LOG "4) attempting dump of $clone\n";
+     foreach (@{$CLONES{$clone}}) {
+     $seq=$_;
+     print LOG "   Now attempting dump of sequence $seq\n";
+     if (-e "/tmp/$seq.cons") {
+	 unlink ("/tmp/$seq.cons");
+     }
+     system("cd $userpath; /usr/local/badger/bin/mkcon-gap -bayesian -gestapo -c 0 -a -M -n $seq -p $clone -o /tmp/$seq.cons"); 
+     if (-z "/tmp/$seq.cons") {
+	 print LOG "**Warning - file /tmp/$seq.cons is of zero size .. **\n";
+	 next;
+     } else {	 
+	 print LOG "   File /tmp/$seq.cons dumped .. \n";
+	 open (INTMPFILE,"</tmp/$seq.cons");
+	 while (<INTMPFILE>) {
+	     $line = $_;
+	     if ($line =~ /(DNA\s+)/){
+		 $line =~ s/$1/\>/;
+		 $line =~ s/\"//mg;
+	     }
+	     if (($line=~/Assembly_Tags/)||($line=~/Clone/)||($line=~/Sequence/)||($line=~/^\s+$/)) {
+		 next;
+	     }
+	     print OUTPUT $line;
+	 }
+	 close INTMPFILE;	  
+         print LOG "   .. file /tmp/$seq.cons added to $unfincmid \n";
+         unlink("/tmp/$seq.cons");
+     }
+     }
+  }
+     close OUTPUT;
+    system ("/usr/local/pubseq/bin/pressdb $unfincmid");
+}
+
+
+#------------------------------------
+# Get the date of a file modification
+#
+sub mod {
+    local(@date);
+    @date=stat $_[0];
+    return $date[9];
+}
+
+
+#---------------------------------
+# Translate the time to ace format
+#
+sub time2ace {
+    local($time) = @_;
+    local(@lt);
+    @lt = localtime($time);
+    # yy -> yyyy
+    if ($lt[5] < 70) { $lt[5] += 2000; }
+    elsif ($lt[5] < 100) { $lt[5] += 1900; }
+    sprintf("%4d-%02d-%02d_%02d:%02d:%02d",$lt[5],$lt[4]+1,$lt[3],$lt[2],$lt[1],$lt[0]);
+}
+
+#----------------------
+# Returns the accession 
+# number for the given
+# cosmid
+#
+sub celeaccession {
+    my $seq = shift;
+    local($exec);
+    $exec="/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_4/tace";
+    local($command);
+    local($accession);
+    $ENV{'ACEDB'}="/wormsrv2/camace";
+    $command=<<EOF;
+    find sequence $seq
+    show DB_info
+    quit
+EOF
+
+open(textace, "echo '$command' | $exec  | ");
+while (<textace>) {
+    if (/\s+Database\s+EMBL\s+\S+\s+(\S+)\n/) {$accession=$1;}
+    }
+close textace;
+return $accession;
+}
+
+
+
+
+
+
+
+
+
+

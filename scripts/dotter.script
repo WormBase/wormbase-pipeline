@@ -1,0 +1,11 @@
+#!/bin/csh
+
+# cd to analysis/cosmids before running this script
+# Then type dotter.script current.version (or other file)
+
+foreach i ( `cat  $1` )
+  if (! -e $i/$i:h.dotter.gz && ! -e $i/$i:h.dotter ) then 
+    nice dotter -b $i/$i:h.dotter $i/$i:h.seq $i/$i:h.seq
+    # gzip  $i/$i:h.dotter
+  endif
+end

@@ -1,0 +1,29 @@
+#!/usr/local/bin/perl
+
+require glob('~sjj/scripts/sanger.pl');
+
+$wormpub=&tilda(wormpub);
+$ftp=&tilda(ftp);
+
+
+open (file, "$wormpub/analysis/Sequence_Databases/stlandcam-cmid");
+
+
+while (<file>)
+
+		{
+		if (/^>(\w+)/) {$cosmid=$1;
+				$cosmid=~tr/a-z/A-Z/;
+				close output;
+		open (output, "> $ftp/pub/databases/C.elegans_sequences/FINISHED_SEQUENCES/$cosmid.seq");
+		
+		}
+
+				print output "\U$_";
+				
+		
+}
+
+
+
+

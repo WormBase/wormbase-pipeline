@@ -1,0 +1,223 @@
+#!/usr/local/bin/perl
+#
+# unpack_stlace
+#
+# v 0.1
+#
+# dl
+#
+##
+
+# v0.1
+# 001214 : dl  : Reformat line in logfile
+# 001127 : dl  : Added mail to $maintainer code
+# 001116 : dl  : PP version
+# 
+
+#################################################################################
+# variables                                                                     #
+#################################################################################
+
+$|=1;
+#use Getopt::Long;
+use Cwd;
+use IO::Handle;
+require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
+
+$indate = shift;
+if ((length $indate) != 6) {
+    print "wrong length\n";
+    exit(0);
+}
+
+$today = substr($indate,0,2) . "-" . substr($indate,2,2) . "-" . substr($indate,4,2);
+
+ ##############################
+ # Script variables (run)     #
+ ##############################
+
+my $maintainer = "dl1\@sanger.ac.uk";
+my $rundate = `date +%y%m%d`; chomp $rundate;
+my $runtime = `date +%H:%M:%S`; chomp $runtime;
+my $logfile = "/wormsrv2/logs/unpack_stlace.$rundate.$$";
+my $version = &get_script_version(unpack_stlace);
+
+ ##############################
+ # paths for I/O files        #
+ ##############################
+
+my $private_ftp = "/nfs/privateftp/ftp-wormbase/pub/incoming/stl";
+my $stlpath = "/wormsrv2/stlace";
+$tace="/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
+$giface="/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/giface";
+
+ ##############################
+ # open logfile               #
+ ##############################
+
+open (LOGFILE,">$logfile");
+LOGFILE->autoflush;
+
+print LOGFILE "# unpack_stlace\n#\n";
+print LOGFILE "# version             : $version\n";
+print LOGFILE "# run details         : $rundate $runtime\n";
+print LOGFILE "# Source directory    : $private_ftp\n";
+print LOGFILE "# Target directory    : $stlpath\n#\n";
+print LOGFILE "# Source file         : stlace_$today.tar.gz\n";
+print LOGFILE "\n";
+
+ ##########################################
+ # copy the tar.gz file from the ftp site #
+ ##########################################
+
+chdir $stlpath;
+my $dir = cwd();
+print LOGFILE "Move to directory: '$dir'\n";
+
+system ("cp -f $private_ftp/stlace_$today.tar.gz .");
+&copy_check("$private_ftp/stlace_$today.tar.gz","$stlpath/stlace_$today.tar.gz");
+print LOGFILE "Copy 'stlace_$today.tar.gz' to $stlpath successful\n" if ($match == 1); 
+print LOGFILE "Copy 'stlace_$today.tar.gz' to $stlpath failed\n" if ($match == 0);
+ 
+system ("/bin/gzip -d stlace_$today.tar.gz");
+print LOGFILE "uncompress file\n";
+
+system ("/bin/tar -xvf stlace_$today.tar");
+print LOGFILE "untar file\n\n";
+
+print LOGFILE "Database files to be loaded:\n";
+open (LIST, "/bin/ls *ace |");
+while (<LIST>) {
+    chomp;
+    push (@filenames,"$_");
+    print LOGFILE "$_\n";
+}
+close LIST;
+print LOGFILE "\n\n";
+
+ ###################################
+ # modify displays.wrm for rebuild #
+ ###################################
+
+system ("mv $stlpath/wspec/displays.wrm $stlpath/wspec/displays.old") ;
+open (FILE_OLD,"$stlpath/wspec/displays.old") || do { 
+    print LOGFILE "failed to open $stlpath/wspec/displays.old\n"; 
+    die(1);
+};
+open (FILE_NEW,">$stlpath/wspec/displays.wrm") || do { 
+    print LOGFILE "failed to open $stlpath/wspec/displays.wrm\n"; 
+    die(1);
+};
+while (<FILE_OLD>) { 
+    if (/^_DDtMain/) {
+	print FILE_NEW "_DDtMain -g TEXT_FIT -t \"stlace $rundate\"  -w .43 -height .23 -help acedb\n";
+    } else {
+	print FILE_NEW $_;}
+}
+close FILE_OLD;
+close FILE_NEW;
+unlink "$stlpath/wspec/displays.old" ;
+
+ ####################################
+ # Re-initialise the ACEDB database #
+ ####################################
+
+system ("\\rm $stlpath/database/new/*");
+system ("\\rm $stlpath/database/touched/*");
+if (-e "$stlpath/database/lock.wrm") {
+    print LOGFILE "*Reinitdb error - lock.wrm file present..\n";
+    close LOGFILE;
+    die();
+}
+system ("\\mv $stlpath/database/log.wrm $stlpath/database/log.old");  
+system ("\\rm $stlpath/database/*.wrm");
+unlink "$stlpath/database/ACEDB.wrm";
+$command=<<EOF;
+y
+EOF
+    
+print LOGFILE "* Reinitdb: reinitializing the database ..\n";
+&DbWrite($command,$tace,$stlpath,"ReInitDB");
+
+ ##############################
+ # Upload the .ace dump files #
+ ##############################
+
+foreach $filename (@filenames) {
+    my $command=<<END;
+pparse $filename
+save 
+quit
+END
+    
+if (-e $filename) {
+    print LOGFILE "* Reinitdb: reading in new database  $filename\n";
+    &DbWrite($command,$tace,$stlpath,"ParseFile");
+} else {
+    print LOGFILE "* Reinitdb: $filename is not existent - skipping ..\n";
+    next;
+}
+}
+
+$runtime = `date +%H:%M:%S`; chomp $runtime;
+print LOGFILE "\nstlace build complete at $rundate $runtime\n";
+
+close LOGFILE;
+
+
+###############################
+# Tidy up old ace files       #
+###############################
+
+foreach $filename (@filenames) {
+    unlink $filename;
+}
+
+###############################
+# Mail log to curator         #
+###############################
+
+open (OUTLOG,  "|/usr/bin/mailx -s \"WormBase Report: unpack_stlace\" $maintainer ");
+open (READLOG, "<$logfile");
+while (<READLOG>) {
+    print OUTLOG "$_";
+}
+close READLOG;
+close OUTLOG;
+
+###############################
+# hasta luego                 #
+###############################
+
+exit(0);
+
+
+###################################################
+# Subroutine for checking the size of the file    #
+###################################################
+
+sub copy_check {
+    my ($file1,$file2) = @_;
+    
+    $O_SIZE = (stat("$file1"))[7];
+    $N_SIZE = (stat("$file2"))[7];
+    
+    if ($O_SIZE != $N_SIZE) {
+	$match = 0;
+    } else {
+	$match = 1;
+    }
+    return($match);
+}
+
+###################################################
+# Subroutine for writing to a given database      #   
+###################################################
+
+sub DbWrite {
+  my ($command,$exec,$dir,$name)=@_;
+  open (WRITEDB,"| $exec $dir >> $logfile") or do {print LOGFILE "$name DbWrite failed\n";close LOGFILE; die();};
+  print WRITEDB $command;
+  close WRITEDB;
+}
+

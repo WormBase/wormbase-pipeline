@@ -1,0 +1,98 @@
+#!/usr/local/bin/perl 
+#
+# Takes the output of scanpfamdb and converts to ace readable format.
+# Can use results of scanpfamdb againt wormpep. Have to use function
+# to convert gene.numbers to CE000?? wormpep accessions. 
+# Steven Jones, Sanger Centre 1998.
+
+
+require glob('~sjj/scripts/sanger.pl');
+
+
+
+#&getwormpepacc;
+
+while (<>) {
+	if (!/#/ && /^(\S+)\s+(\d+)\s+(\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/) {
+	$gene=$1;$start=$2;$end=$3;$id=$4;$modelstart=$5;$modelend=$6;$score=$7;
+	$gene=~s/_/:/;
+
+	if ($ac{$id} eq "") {&getinfo($id);}
+
+	print "\nMotif PFAM:$ac{$id}\n";
+	print "Title \"$de{$id}\"\n";
+	print "DB_info Database Pfam $id $ac{$id}\n";
+	print "Template Pfam\n";
+    
+	#print "\nUrl $id\n";
+	#print "Url \"www.sanger.ac.uk/cgi-bin/Pfam/getacc?$ac{$id}\"\n\n";    
+
+	#print "\nProtein $wormpep{$gene}\n";
+	print "\nProtein $gene\n";
+	print "Motif_homol PFAM:$ac{$id} pfam-hmm $score $start $end $modelstart $modelend\n";
+	print "Analysis_history pfam-hmm ", &date2ace,"\n";
+    
+} 
+}
+    
+
+###########################################################
+
+sub getwormpepacc {
+	local($exec);
+        local($command);
+	$exec=&tace;
+	$ENV{'ACEDB'}="/nfs/disk100/wormpub/acedb/ace4/cam";     
+        $command=<<EOF;
+	find protein WP:CE*
+	show -a Corresponding_DNA
+EOF
+	open(textace, "echo '$command' | $exec |");
+	while (<textace>) {tr/a-z/A-Z/;
+                   if (/^$/) {$object=0;}
+		   if (/PROTEIN\s+:\s+\"(\S+)\"/) {$protein=$1;$object=1;}
+		   if (/CORRESPONDING_DNA\s+\"(\S+)\"/ && $object==1) {$wormpep{$1}=$protein;}
+}
+}
+############################################################
+
+sub getinfo {
+	open(getz,"getz -t '[pfam-id:$_[0]]' |");
+	while (<getz>) {if (/^AC\s+(\S+)/) {$ac{$_[0]}=$1;}
+			if (/^DE\s+(.+)$/) {$de{$_[0]}=$1;}
+			if (/^ID\s+(.+)$/) {$id{$_[0]}=$1;}
+		    }
+}
+
+
+#############################################################
+
+
+sub date2ace {
+	local($date);
+	($sec,$min,$hour,$mday,$mon,$year)=localtime(time);
+	$mon++;$year+=1900;
+	$date=$year."-".$mon."-".$mday;
+	return $date;	
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

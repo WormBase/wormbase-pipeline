@@ -1,0 +1,38 @@
+#!/usr/local/bin/gawk -f
+#
+
+{ 
+	pep = $8
+
+	if (pep != prevpep)
+	{ 
+
+	   	if ( pep ~ "_" )
+		  { db = "SP:"; lib = "SwissProt" }
+		else if ( pep ~ /\./ ) 
+		  { db = "WP:"; lib = "WormPep" }
+	      	else 
+		  { db = "PIR:"; lib = "PIR" }
+
+		print ""
+		print "Sequence", db pep
+
+		if (NF+0 > 10)  {
+			printf ("Title \"")
+			for (i = 10 ; i < NF ; ++i) {
+				# Get rid of double quotes 
+				a = $i
+				if (substr(a,1,1) == "\"") a = substr(a,2)
+				if (substr(a,length(a),1) == "\"") a = substr(a,1, length(a)-1)
+			       	printf ("%s ", a)
+			}
+			printf ("%s\"\n", $NF)
+		}
+		print "Library", lib, pep, $9
+		print "Peptide"
+	
+		prevpep = pep
+	}
+
+	print "Homol", $5, "BlastX", $1, $6, $7, $3, $4
+}

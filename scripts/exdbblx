@@ -1,0 +1,60 @@
+#!/usr/local/bin/gawk -f
+# awk script to extract all alignments with score >= 75 or 
+#	multiple hits with some score >= 60 from blastx output.
+# Creates output lines of form:
+#    score  percent%  query_start query_end q.id <-> db_start db_end db_id db_desc
+
+BEGIN { score = 0 ; query = 0 ; score = 0 ;}
+
+{ if ($1 == "Query=")
+    { if (query && score >= 75 || num_hits_this_gene > 1)
+      report()
+      score = 0
+      num_hits_this_gene = 0
+      q_name = $2
+      first=1
+      next
+    }
+  a = substr($1,1,1)
+  if (a == ">") {
+	if (score >= 75 || num_hits_this_gene > 1)
+      	report()
+	#$1 = ""
+	locus = $0
+	num_hits_this_gene = 0
+	query = 0 ;
+	count++ ;  
+  }
+  if ($1=="Score") {
+	if (num_hits_this_gene)
+      	report()
+	score = $3
+	if (score >= 60)
+	  ++num_hits_this_gene
+	query = 0 ;
+  }
+  if ($1=="Identities") {
+	percent = substr($4,2,length($4)-4)
+  }
+  if ($1=="Query:") {
+	query++
+	if (query == 1) q_start = $2
+	q_end = $4
+  }
+  if ($1=="Sbjct:") {
+	if (query == 1) db_start=$2
+	db_end=$4
+  }
+}
+
+END {	if (query > 0 && (score > 75 || num_hits_this_gene > 1))
+      	  report()
+}
+
+
+function report()
+{
+  if (first) {print""; first=0}
+  printf ("%4d %3d%%  %5d %5d >%-12s <-> %5d %5d %s\n", \
+	  score, percent, q_start, q_end, q_name, db_start, db_end, locus)
+}

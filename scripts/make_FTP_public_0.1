@@ -1,0 +1,208 @@
+#!/usr/local/bin/perl
+#
+# make_FTP_public
+# v 0.1
+#
+# dl
+#
+# Usage : make_FTP_public [-options]
+#
+# A PERL wrapper to automate the process of building the wormbase FTP site.
+#
+#
+# This script does :
+#
+# [01] - make a new directory for the WS release
+# [02] - copy the WS release files to the target directory
+# [03] - make a new directory for the chromosome DNA/GFF files
+# [04] - copy the chromosome DNA/GFF files to the target directory
+# [05] - make a new directory for the wspec files
+# [06] - copy the wspec files to the target directory
+# [07] - make a new directory for the pictures files
+# [08] - copy the pictures files to the target directory
+# [09] - make a new directory for the additional files
+# [10] - copy the additional files to the target directory
+# [11] - delete the old symbolic link and make the new one
+# [12] - delete the old WS release version directory
+# [13] - exit gracefully
+
+
+# 010103 : dl  : mended command-line for make_FTP_wormpep call
+# 001004 : ag3 : changed symlink
+# 001004 : ag3 : added check on the copy of release and CHROMOSOMES files
+# 000927 : dl  : PP version
+
+#################################################################################
+# variables                                                                     #
+#################################################################################
+
+$|=1;
+use Getopt::Long;
+
+my $sourcedir          = "";    # [Text] Directory in which the latest WS release resides
+my $targetdir          = "";    # [Text] Directory in which to build the new release
+my $release            = "";    # [Text] Release number (e.g. WS16)
+my $old_release        = "";    # [Text] Internally generated release number ($release -2 , e.g. WS14)
+my $old_release_number = "";    # [Int]  Internally generated release number 
+my $debug              = "";    #        on/off flag for verbose mode
+my $clean              = "";    #        on/off flag for removing old WS directories from the FTP site
+
+GetOptions (
+            "source=s"       => \$sourcedir,
+            "target=s"       => \$targetdir,
+	    "WS_release=s"   => \$release,
+	    "debug"          => \$debug,
+	    "clean"          => \$clean,
+);
+
+length ($sourcedir)==0 && &usage;
+length ($release)==0 && &usage;
+if (length ($targetdir)==0) {
+    $targetdir = "/nfs/disk69/ftp/pub/wormbase";
+}
+
+# Can't sum letters and numbers !
+#$wormpep = $release + 10;
+
+$wormpep = $release;
+$wormpep =~ s/WS//;
+$wormpep+=10;
+
+if ($debug) {
+    print "# make_FTP_public\n#\n";
+    print "# Source directory : $sourcedir \n";
+    print "# Target directory : $targetdir\n";
+    print "# WS release No.   : $release\n";
+}
+
+#################################################################################
+# Main Loop                                                                     #
+#################################################################################
+
+ # make a new directory for the WS release
+
+system "mkdir $targetdir/$release" unless -e "$targetdir/$release";
+print "make a new WS release directory : '$targetdir/$release'\n" if ($debug);
+
+ # copy the WS release files across and check on the size
+ # The FTP disk tends to be unstable
+
+opendir (RELEASE,"$sourcedir/release") or die ("Could not open directory $sourcedir/release");
+while (defined($filename = readdir(RELEASE))) {
+ if (($filename eq ".")||($filename eq "..")) { next;}
+ if (($filename =~ /letter/)||($filename =~ /dbcomp/)) { next;}
+ system "cp $sourcedir/release/$filename $targetdir/$release/$filename";
+ $O_SIZE = (stat("$sourcedir/release/$filename"))[7];
+ $N_SIZE = (stat("$targetdir/$release/$filename"))[7];
+ if ($O_SIZE != $N_SIZE) {
+   print "*Error - file $filename not transferred regularly - please check\n";
+   die();
+ } else {
+   print "Copied filename: $filename SRC: $O_SIZE TGT: $N_SIZE\n" if ($debug);
+ }
+}
+closedir RELEASE;
+print "copied the release directory to FTP site\n" if ($debug);
+
+ # make a new /CHROMOSOMES directory for the chromosome DNA/GFF
+
+system "mkdir $targetdir/$release/CHROMOSOMES" unless -e "$targetdir/$release/CHROMOSOMES";
+print "make a new CHROMOSOMES directory : '$targetdir/$release/CHROMOSOMES'\n" if ($debug);
+
+ # copy the DNA/GFF files across
+
+opendir (DNAGFF,"$sourcedir/CHROMOSOMES") or die ("Could not open directory $sourcedir/CHROMOSOMES");
+while (defined($filename = readdir(DNAGFF))) {
+ if (($filename eq ".")||($filename eq "..")) { next;}
+ system "cp $sourcedir/CHROMOSOMES/$filename $targetdir/$release/CHROMOSOMES/$filename";
+ $O_SIZE = (stat("$sourcedir/CHROMOSOMES/$filename"))[7];
+ $N_SIZE = (stat("$targetdir/$release/CHROMOSOMES/$filename"))[7];
+ if ($O_SIZE != $N_SIZE) {
+   print "*Error - file $filename not transferred regularly - please check\n";
+   die();
+ } else {
+   print "Copied filename: $filename SRC: $O_SIZE TGT: $N_SIZE\n" if ($debug);
+ }
+}
+closedir DNAGFF;
+print "moved the contents of the CHROMOSOMES directory\n" if ($debug);
+
+ # make a new wspec directory
+
+system "mkdir $targetdir/$release/wspec" unless -e "$targetdir/$release/wspec";
+print "make a new wspec directory : '$targetdir/$release/wspec'\n" if ($debug);
+
+ # copy the wspec/* files across
+
+system "cp $sourcedir/wspec/* $targetdir/$release/wspec/";
+print "move the contents of the wspec directory\n" if ($debug);
+ 
+ # make a new pictures directory
+
+system "mkdir $targetdir/$release/pictures" unless -e "$targetdir/$release/pictures";
+print "make a new pictures directory : '$targetdir/$release/pictures'\n" if ($debug);
+
+ # make a tar gzip file of pictures
+
+system "/bin/tar -cf $targetdir/$release/pictures/pictures.tar $sourcedir/pictures";
+system "/bin/gzip $targetdir/$release/pictures/pictures.tar";
+print "Archived the pictures in $targetdir/$release/pictures/pictures.tar";
+
+ # make a new additional_files directory
+
+system "mkdir $targetdir/$release/additional_files" unless -e "$targetdir/$release/additional_files";
+print "make a new additional_files directory : '$targetdir/$release/additional_files'\n" if ($debug);
+
+ # copy the additional_files across
+
+# SOURCE :  Genes_with_ESTs
+#           Genes_with_ESTs.PREV
+#           oligo.ace
+#           All_Genome_Seqs.gff.Z
+
+ # copy some miscellaneous files across
+
+system "cp /wormsrv2/autoace_config/INSTALL $targetdir/$release/";
+system "cp /wormsrv2/autoace_config/PICTURES.doc $targetdir/$release/";
+
+ # delete the old symbolic link and make the new one
+
+system "rm -f $targetdir/current_release";
+system "cd $targetdir; ln -s $release current_release";
+print "deleted the old sym_link and create the new one\n" if ($debug);
+
+ # deal with the wormpep side of things
+
+system "/nfs/disk100/wormpub/analysis/scripts/make_FTP_wormpep -r $wormpep";
+print "make the wormpep FTP release for wormpep${wormpep}\n" if ($debug);
+
+ # delete the old WS release version
+
+if ($clean) {
+    $old_release_number = $release =~ s/WS//g;
+    $old_release_number = $old_release_nubmber - 2;
+    $old_release = "WS" . $old_release_number;
+
+    system "rm -rf $targetdir/$old_release";
+    print "deleted the old WS release version from the FTP site\n" if ($debug);
+}
+
+
+exit (0);
+
+#################################################################################
+# Subroutines                                                                   #
+#################################################################################
+
+sub usage {
+
+    print "make_FTP_public v0.1\n";
+    print "Usage : make_FTP_public [-options]\n";
+    print " -source       : source directory from which to copy database release\n";
+    print "[-target]      : target directory on the FTP site to place release\n";
+    print "               : default is /nfs/disk69/ftp/pub/wormbase\n";
+    print " -WS_release   : WS release (e.g. WS16)\n";
+    print "[-debug]        : verbose mode\n\n";
+    exit(0);
+}
+

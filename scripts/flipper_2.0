@@ -1,0 +1,302 @@
+#!/usr/local/bin/perl
+#
+# Flipper 
+# v 2.0                       
+#                                    
+# script to reverse cosmid ace files 
+#                                    
+# dl 961210                          
+#                                    
+
+
+# Take an ace dump and modify the subsequence
+# coordinates to reflect either :
+# A/ reverse complement 
+# B/ insertion of a base
+# C/ deletion of a base
+#
+
+######## 
+# vars #
+########
+
+$flipper = 0;
+
+sub usage  {
+    print "\nFlipper v2.0\t[dl 961210]\n\n";
+    print "Requires a dumped ace file for the cosmid to be flipped.\n\n"; 
+    print "Usage : flipper -options cosmid_name\n\n";
+    print "-r   : reverse sequence\n";
+    exit;
+}
+
+#########################################################################
+
+$cosmid = shift;
+if ($cosmid eq "") {&usage;}
+
+#############################
+# Load ace file into memory #
+#############################
+
+#$debug = 1;
+
+my $line_count = 0;
+my $new_count = 0;
+
+open (file, "<$cosmid.ace") || die "No ace file for cosmid $cosmid\n\n";
+while (<file>) {
+    chomp;
+    next if (/\/\//);
+    next if ($_ eq "");
+    
+    push (@acefile,"$_\n");
+    $line_count++;
+}
+close file;
+
+print "// Flipping $cosmid.ace [$line_count lines]\n\n";
+
+foreach (@acefile) {
+    chomp;
+    $line = $_;
+
+    print " # $line #\n" if ($debug);
+
+    # SEQUENCE
+    if (/^Sequence :\s+\"(\S+)\"/) {
+	print "$_\n";
+	$new_count++;
+    }
+
+    # DNA length 
+    if (/^DNA\s+\S+\s+(\d+)/) {
+	$cos_len = $1;
+	$cos_len++;
+	print "=> DNA\n" if ($debug);
+	$new_count++;
+    }
+   
+    # SOURCE 
+    if (/Source\s+\S+/) {
+	print "$_\n";
+	$new_count++;
+    }
+
+    # SUBSEQUENCE coordinates
+    if (/Subsequence\s+\"(\S+)\"\s+(\d+)\s+(\d+)/) {
+	
+	# parse gene number
+	chomp;
+	($cos,$gene) = split (/\./,$1);
+	chop ($gene);
+	$new_5 = $cos_len - $2;
+	$new_3 = $cos_len - $3;
+	print  "Subsequence\t\"$1\" $new_5 $new_3\n";
+	$new_count++;
+    }
+
+    # OVERLAP_RIGHT name
+    if (/^Overlap_right\s+(\S+)\s+(\d+)/) {
+	print "Overlap_left\t$1\n";
+	$new_count++;
+    }
+
+    # OVERLAP_LEFT name
+    if (/^Overlap_left\s+(\S+)/) {
+	$overlap_right = $1;
+	$overlap_right =~ s/\"//g;
+	print "=>Overlap_left\n" if ($debug);
+	$new_count++;
+    }
+
+    # CLONE_LEFT_END names
+    if (/^Clone_left_end\s+(\S+)\s+(\d+)/) {
+
+	$clone_right = $1;
+	$coord = $2;
+	$clone_right =~ s/\"//g;
+	$clone_right_end = $cos_len - $coord;
+	print "Clone_right_end\t\"$clone_right\" $clone_right_end\n";
+	$new_count++;
+    }
+
+   # CLONE_RIGHT_END names
+    if (/^Clone_right_end\s+(\S+)\s+(\d+)/) {
+	$clone_left = $1;
+	$coord = $2;
+	$clone_left =~ s/\"//g;
+	$clone_left_end = $cos_len - $coord;  
+	print  "Clone_left_end\t \"$clone_left\" $clone_left_end\n";
+	$new_count++;
+	if ($clone_left eq $overlap_right) {	  
+	    print "Overlap_right\t\"${overlap_right}\"\t$clone_left_end\n";
+	$new_count++;
+	}
+    }
+
+    # FLIPPED
+    if (/^Flipped/) {
+	# delete this line
+	print "=> Flipped\n" if ($debug);
+	$new_count++;
+    }
+    
+    # DATABASE
+    if (/^Database\s+\S+\s+\S+\s+\S+/) {
+	print "$_\n";
+	$new_count++;
+    }
+
+    # KEYWORD
+    if (/^Keyword/) {
+	print "$_\n";
+	$new_count++;
+    }
+
+    # EMBL_DUMP_INFO
+    if (/^EMBL_dump_info/) {
+	print "$_\n";
+	$new_count++;
+    }
+
+    # FROM_AUTHOR & FROM_LABORATORY
+    if ((/^From_author/) || (/^From_Laboratory/)) {
+	print "$_\n";
+	$new_count++;
+    }
+
+    # DATE_DIRECTORY
+    if (/^Date_directory\s+\S+/) {
+	&get_date_stamp;
+	print "Date_directory\t$date_stamp\n";
+	$new_count++;
+    }
+
+    # Species
+    if (/^Species\s+/) {
+	print "$_\n";
+	$new_count++;
+    }
+
+   # MAP coordinates
+    if ((/^Map/) || (/^Interpolated_gMap/)) {
+	print "$_\n";
+	$new_count++;
+    }
+
+    # CLONE name
+    if (/^Clone\s+\S+/) {
+	print "$_\n";
+	$new_count++;
+    }
+
+    # GENOMIC_CANONICAL
+    if (/^Genomic_canonical/) {
+	print "$_\n";
+	$new_count++;
+    }
+    
+    # FINISHED date
+    if ((/^Finished/) || (/^Submitted/) || (/^Annotated/)) {
+	print "$_\n";
+	$new_count++;
+    }
+
+    # OLIGO
+    if (/^Oligo\s+\"(\S+)\"\s+(\d+)\s+(\d+)/) {
+	$new_5 = $cos_len - $2;
+	$new_3 = $cos_len - $3;
+	print  "Oligo\t\"$1\" $new_5 $new_3\n";
+	$new_count++;
+    }
+
+    # CONFIRMED INTRONS 
+    if (/^Confirmed_intron\s+(\d+)\s+(\d+)\s+(\S+)/) {
+	$new_5 = $cos_len - $1;
+	$new_3 = $cos_len - $2;
+	print "Confirmed_intron\t$new_5 $new_3 $3\n";
+	$new_count++;
+    }
+
+    
+    # ASSEMBLY TAGS
+    if (/^Assembly_tags/) {
+	print "$_\n" if ($debug);
+	$new_count++;
+    }
+    
+    # ANALYSIS_HISTORY
+    if (/^Analysis_history/) {
+	print "$_\n";
+	$new_count++;
+    }
+    
+    # DNA HOMOL
+    if (/^DNA_homol\s+\"(\S+)\"\s+\"(\S+.+)\"\s+(\S+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/) {
+	$new_5 = $cos_len - $4;
+	$new_3 = $cos_len - $5;
+	print  "DNA_homol\t\"$1\" \"$2\" $3 $new_5 $new_3 $6 $7\n";
+	$new_count++;
+    }
+
+    # PEP HOMOL
+    if (/^Pep_homol\s+\"(\S+)\"\s+\"(\S+.+)\"\s+(\S+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/) {
+	$new_5 = $cos_len - $4;
+	$new_3 = $cos_len - $5;
+	print  "Pep_homol\t\"$1\" \"$2\" $3 $new_5 $new_3 $6 $7\n";
+	$new_count++;
+    }
+
+    # MOTIF HOMOL
+    if (/^Motif_homol\s+\"(\S+)\"\s+\"(\S+.+)\"\s+(\S+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/) {
+	$new_5 = $cos_len - $4;
+	$new_3 = $cos_len - $5;
+	print  "Motif_homol\t\"$1\" \"$2\" $3 $new_5 $new_3 $6 $7\n";
+	$new_count++;
+    }
+
+    # Feature
+    if (/^Feature\s+\"(\S+)\"\s+(\d+)\s+(\d+)\s+(\S+)\s+\"(\S+.+)\"/) {
+	$new_5 = $cos_len - $2;
+	$new_3 = $cos_len - $3;
+	print  "Feature\t\"$1\" $new_5 $new_3 $4 \"$5\"\n";
+	$new_count++;
+    }
+
+    # Method
+    if (/^Method\s+/) {
+	print "$_\n";
+	$new_count++;
+    }
+
+    # THE END #
+
+}
+
+print "\n\n// ${cosmid}_flipper.ace [$new_count lines]\n";
+
+unless ($line_count == $new_count) {
+    print "// !! line counts do not match !!\n\n";
+}
+
+
+exit;
+
+
+sub get_date_stamp {
+    
+    open (current, "/nfs/disk100/wormpub/analysis/cosmids/current.versions") || die "Can't open current.versions\n";
+    while (<current>) {
+	($cos,$date) = (/^(\S+)\/(\S+)/);
+	if ($cos eq $cosmid) {
+	    $date_stamp = $date;
+	    return;
+	}
+    }
+    close (current);
+}
+
+
+
+

@@ -1,0 +1,45 @@
+#!/bin/sh
+#
+# blastpdb - for blasting a whole database
+
+[ $# = 2 ] || { echo >&2 "Usage: blastxdb <db> <querydb>"; exit 1; }
+
+
+IFS='
+        '
+
+query=$2.seq
+
+
+nawk < $2 '
+
+BEGIN { 
+	first=1;
+	db = "'$1'";
+	qdb = "'$2'"; 
+    }
+
+/\>/ {
+        if (!first) {
+            close("'$query'");
+
+# Only for self-comp            system("setdb '" $tmp"' ");
+
+	system("nice tblastn '"$1 $query"' H=0 V=0 B=1000");
+        } else {
+            first = 0;
+        }
+    }
+
+    {
+        print > "'$query'";
+    }
+
+
+END {
+        close("'$query'");
+        system("nice tblastn '"$1 $query"' H=0 V=0 B=1000");
+    }
+
+
+

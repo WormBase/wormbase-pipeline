@@ -1,0 +1,71 @@
+#!/usr/local/bin/gawk -f
+# PARSWISS2BLAST - Reformats distribution SWISSPROT to MANY BLAST database files.
+# Based on SWISS2BLAST
+# Created by Erik Sonnhammer, 92-11-16
+#
+
+BEGIN { dbfile = 1; outfile = "sw"dbfile; seqnr = 0; 
+
+	print "parswiss2blast - split seq-database up in chunks";
+	print "Only to be used on FLAT DISTRIBUTION FILE!!!";
+}
+
+($1 == "//") { 
+
+	seq = 0; 
+	if (seqnr == 2000) {
+		close(outfile);
+		system( "setdb " outfile);
+		system( "rm " outfile);
+		seqnr = 0;
+		dbfile++;
+		outfile = "sw"dbfile;
+	} 
+	next;
+}
+
+(seq == 1) { print $0 > outfile; next;}
+
+($1 == "ID") {
+
+	seqnr++;
+	name = $2;
+	frag = 0;
+	descr = "";
+	next;
+}
+
+
+($1 == "AC") {  # Add Accession number to descr
+
+	descr = substr( $2, 1, length($2)-1 )
+	next;
+}
+
+
+($1 == "DE") { 
+
+	#if ($0 ~ "FRAGMENT") { frag = 1; }  # Don't use this sequence
+
+	# Append the DE fields to one string
+	#else 
+
+	descr = descr" "substr( $0, 6, length($0) - 5);
+
+	next;
+}
+
+
+($1 == "SQ" && !frag) {
+
+	print ">"name" "descr > outfile;
+	seq = 1;
+}
+
+
+END {
+
+	close(outfile);
+	system( "setdb " outfile);
+	system( "rm " outfile);
+}

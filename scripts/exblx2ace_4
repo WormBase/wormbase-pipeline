@@ -1,0 +1,63 @@
+#!/usr/local/bin/perl
+
+#Script to convert exblx files to ace4 format
+#Steven Jones, Sanger Centre, 1995
+
+
+if ($#ARGV!=4) {print STDERR "Usage: $0 <Sequence name> <Query_Homol_type> <Subject_Homol_type> <Method> <file.exblx>\n";exit;} 
+
+
+print "\nSequence $ARGV[0]\n";
+
+open (exblxfile, "$ARGV[4]");
+while (<exblxfile>) {
+
+s/^\s+//;	
+if (($score, $qstart, $qstop, $sstart, $sstop, $id)=/^(\d+)\s+\S+\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\S+)/) {
+	
+
+		print "Homol $ARGV[1] $id\t$ARGV[3] $score\t$qstart\t$qstop\t$sstart\t$sstop\n";
+		
+	}
+
+}
+close exblxfile;
+
+
+$name='';
+open (exblxfile, "sort +6 $ARGV[4] |");
+while  (<exblxfile>) {
+
+s/^\s+//;
+s/\"//g;
+if (($score, $qstart, $qstop, $sstart, $sstop, $id, $acc, $title)=/^(\d+)\s+\S+\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\S+)\s+(\S+)\s+(.+)/) {
+
+	if ($id ne $name) {$name=$id;
+			 
+			print "\n\n";
+
+			#calculate the class of object
+			if ($ARGV[1] eq "Pep_homol")  {print "Protein $name\n"}
+			if ($ARGV[1] eq "DNA_homol")   {print "Sequence $name\n"}
+			if ($ARGV[1] eq "Motif_homol") {print "Motif $name\n"}
+			
+			print "Title \"$title\"\n";
+			 
+			#Specific Switches for homol type
+			if ($ARGV[1] eq "Pep_homol") {print "Peptide $id\n"}
+			
+			#database types
+			if ($id=~/SW:(.+)/) {print "DB_info Database SWISSPROT $1 $acc \n"}
+			if ($id=~/WP:(.+)/) {print "DB_info Database WORMPEP $1 $acc \n"}
+			if ($id=~/PIR:(.+)/){print "DB_info Database PIR $1 $acc \n"}
+			if ($id=~/EMBL:(.+)/){print "DB_info Database EMBL $1 $acc \n"}
+			if ($id=~/TR:(.+)/){print "DB_info Database TREMBL $1 $acc \n"}
+						
+			}
+			#Print homolgies
+			print "Homol $ARGV[2] $ARGV[0] $ARGV[3] $score\t$sstart\t$sstop\t$qstart\t$qstop\n";
+	}
+}
+
+
+

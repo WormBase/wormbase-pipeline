@@ -1,0 +1,14 @@
+#!/bin/csh
+#
+# Usage: blastcurrent <current.2blast>
+
+setenv BLASTDB  /nfs/disk3/people/esr/db/
+setenv BLASTMAT /nfs/disk3/people/esr/db/
+
+cd
+cd analysis/cosmids
+
+foreach i (`cat current.2blast`);
+  cd $i/blast
+  ( /bin/nice -19 blastx swir1 $i:h H=0 V=0 S=60 > $i:h.swir1 ) >>& swir1.log
+end

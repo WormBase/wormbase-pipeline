@@ -1,0 +1,197 @@
+#!/usr/local/bin/perl
+#
+# Queryprosite - hacked Perlscript to search for Prosite patterns
+#
+# dl [960125]
+
+####################################
+# Define prosite pattern file path #
+####################################
+
+$pattern_file = "$ENV{'PROSITEDIR'}/prosite.regex.perl";
+
+#############################################
+# command line switch for genomic sequences #
+#############################################
+
+while ($ARGV[0] =~ /^-/) {
+    $_=shift;
+    if (/^-g(.*)/) {
+	$genomic=1;
+    }
+    elsif (/^-s(.*)/) {
+	$stop=1;
+    }
+    elsif (/^-d(.*)/) {
+	$default=1;
+    }
+    else {
+	&usage;
+    }
+}
+
+$seq_file=shift;
+if ($seq_file eq "") {&usage;}
+
+####################
+# usage subroutine #
+####################
+
+sub usage {
+    print "Usage: queryprosite [-options] filename\n\n";
+    print "Options:\n";
+    print "-d   Don't print annotation\n";
+    print "-g   Search genomic sequence\n";
+    print "-s   Allow internal stops\n";
+    exit;
+}
+
+################################
+# make $seq file from sequence #
+################################
+
+$seq = "";
+
+open (SEQ, "$seq_file") || die "Can't open sequence file: \"$seq_file\": $!\n";
+
+while (<SEQ>) {
+
+    chomp;
+    if (substr ($_,0,1) eq '>') {
+	$seqname = substr($_,1);
+	next;
+    }else {
+    $seq .= $_;
+}
+}
+
+#####################
+# search subroutine #
+#####################
+
+$hits=0;
+
+open (PATT, "$pattern_file") || die "Can't open pattern file: \"$pattern_file\": $!\n";
+
+while (<PATT>) {
+
+
+###############################################################################
+# Command line switch for genomic sequence strips start/end of string markers #
+###############################################################################
+
+    if ($genomic == 1) {
+	s/^\^//g;
+	s/\$//g;
+    }
+
+######################################
+# read .regex file entry for prosite #
+######################################
+ 
+   ($accno,$pattern,$name)=(/^(\S+)\s+(\S+)\s+(\S+)/);
+    $nowseq = $seq;
+    $multihit = 0;
+
+    while ($multihit == 0) { 
+	&search;
+	if ($end == 0) {
+	    $multihit = 1;
+	    next;
+	}
+	    $nowseq = $newnowseq;
+    } 
+}
+
+#####################
+# search subroutine #
+#####################
+
+sub search {
+
+    if ($nowseq =~/($pattern)/g) {
+	$target = $1;
+	$rlength = length ($1);
+	$rstart = length ($`);
+	$rend = $rstart + $rlength;
+
+############
+# mask hit #
+############
+
+       	$Xs = 'X' x $rlength;
+	$newnowseq = ($` . $Xs . $');
+
+#########################################################
+# command line switch to reject matches with stop codon #
+#########################################################
+
+	if ($stop ==0) {
+	    if (($target =~ tr /*/*/) > 0) {next;}
+	}
+
+#########################################
+# print header if this is the first hit #
+#########################################
+
+	if ($hits == 0) {
+	    print "Queryprosite - searching Prosite patterns\n";
+	    print "Query= $seqname\n";
+	    print "Access#   From->To       Name                    Pattern / Sequence\n";
+	    print "-------   ----------    ---------------------   --------------------\n";
+	}
+
+#################
+# print results #
+#################
+
+	$repstart = $rstart +1;
+	$repname = $name . "                    ";
+	$repname = substr($repname,0,20);
+
+	print "$accno   $repstart->$rend\t$repname\t$pattern\n";
+	print "\t\t\t\t\t\t$target\n";
+	push (@match,$accno);
+	$hits++;
+	$end = 1;
+
+    }else {$end = 0;}
+}
+
+##############################################
+# command lined switch to supress annotation #
+##############################################
+
+if ($default == 1) {exit;}
+if ($hits ==0) {exit;}
+
+print  "-------   ----------    ---------------------   --------------------\n";
+
+@sorted = sort (@match);
+
+foreach (@sorted) {
+    if ($_ eq $last) {next;}
+    $call = "PS:" . $_;
+    system ("efetch $call");
+    $last=$_;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

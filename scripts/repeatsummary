@@ -1,0 +1,17 @@
+#!/usr/local/bin/gawk -f
+
+/DNA/ { bp += $3 }
+
+($2 == "Inverted" && $5 == "Loop") { loop += $6 ; ++nInv }
+
+($2 == "Inverted" && $5 == "Unit_Length") { inv_unit += $6 }
+
+($2 == "Tandem" && $5 == "Unit_Length") { tan_unit += $6 ; ++nTan
+					  tan_copy += ($4 - $3) / $6 }
+
+END { printf ("%d tandem repeats in %d bp - 1 per %d bp\n", nTan, bp, bp/nTan)
+printf ("  Average unit size %f, average copy number %f\n", tan_unit/nTan, tan_copy/nTan)
+printf ("%d inverted repeats in %d bp - 1 per %d bp\n", nInv, bp, bp/nInv)
+printf ("  Aveage unit size %f, average loop %f\n", inv_unit/nInv, loop/nInv)
+}
+

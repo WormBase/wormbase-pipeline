@@ -1,0 +1,72 @@
+#!/usr/local/bin/perl
+#
+#
+#
+#
+
+
+my $gene = shift;
+
+open (LOOK, "/bin/grep -w '$gene' *gene* |");
+while (<LOOK>) {
+    chomp;
+    print "# $_\n";
+    ($file,$start,$stop,$strand) = (/^(\S+):\S+\t+\S+\t+\S+\t+(\d+)\t+(\d+)\t+\S+\t+(\S+)/);
+    print "# $gene is in file '$file' running on the $strand strand from $start => $stop\n";
+}
+close LOOK;
+
+$seq = "";
+
+@list = split (/\./,$file);
+$dna_file = $list[0] . ".dna";
+
+print "Reading in DNA file $dna_file ....";
+
+$!=1;
+
+open (DNA, "<$dna_file");
+while (<DNA>) {
+    next if (/>/);
+    chomp;
+    $seq .= $_;
+}
+close DNA;
+$seq_len = length ($seq);
+print "finished ($seq_len) bp\n\n";
+
+print "Extract sequence from position $start => $stop\n";
+$seg_len = $stop - $start + 1;
+
+$segment = substr($seq,$start-1,$seg_len);
+
+if ($strand eq "+") {
+#    print "$segment\n\n";
+    print "START : " . substr($segment,0,3) . "\n";
+    print "STOP  : " . substr($segment,-3) . "\n";
+
+
+}
+else {
+    $rev_segment = &revcomp($segment);
+#    print "$rev_segment\n\n";
+    print "START : " . substr($rev_segment,0,3) . "\n";
+    print "STOP  : " . substr($rev_segment,-3) . "\n";
+
+
+}
+
+sub revcomp {
+            local(@sequence);
+            local($output);
+            local($intron);
+            $intron=$_[0];
+            $intron=~tr/A-Z/a-z/;
+            $intron=~s/g/C/g;
+            $intron=~s/c/G/g;
+            $intron=~s/a/T/g;
+            $intron=~s/t/A/g;
+            @sequence=split(//,$intron);
+            $output=join('',reverse(@sequence));
+            return $output;
+}

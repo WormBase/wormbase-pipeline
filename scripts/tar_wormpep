@@ -1,0 +1,17 @@
+#!/bin/csh
+
+switch ($#argv)
+  case "1":
+        breaksw
+  default:
+        echo 'Example usage: tar_wormpep 25' ; exit 1
+endsw
+
+cd /wormsrv2/WORMPEP/wormpep$1
+
+/bin/tar -hcf wormpep$1.tar wormpep.accession$1 wormpep.diff$1 wormpep.dna$1 wormpep.history$1 wormpep.table$1 wormpep$1 wp.log$1
+
+/bin/gzip wormpep$1.tar
+
+
+

@@ -1,0 +1,102 @@
+#!/usr/local/bin/perl
+# make_autoace 
+#  
+# This makes the autoace database from
+# its composite sources.
+# The steps marked with * are mandatory, i.e.
+# their failure will abort this job.
+# The switch -C will create the database
+# The switch -F will move the current database
+# to the anonymous ftp repository
+
+use IO::Handle;
+use Getopt::Std;
+use File::Find;
+use File::Path;
+use POSIX qw(:signal_h :errno_h :sys_wait_h);
+use IPC::Open2;
+
+$|=1;
+$tace="/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_4/tace";
+$giface="/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_4/giface";
+$makeChromLinks="/nfs/disk100/wormpub/analysis/scripts/makeChromLinks.pl -a";
+$maintainer = "wormpub\@sanger.ac.uk";
+$autodir = glob("~wormpub/acedb/ace4/autoace") ;
+$acedir = glob ("~wormpub/acedb/ace4");
+$logfile = "$autodir"."/make_autoace.log";
+$gzfile = "$logfile".".gz";
+
+# Avoid filling process table with zombies
+$SIG{CHLD} = \&REAPER;
+sub REAPER {
+  my $pid;
+  $pid=waitpid(-1,&WNOHANG);
+  $SIG{CHLD}=\&REAPER;
+}
+
+
+# Remove the genewise objects [rd 990427] *
+  &rmgenewise();
+# Remove the halfwise objects [ag3 000209] *
+#  &rmhalfwise();
+
+
+# RD 990718 temporary exit
+  exit 0;
+
+
+############ SUBROUTINES ###########
+
+#-----------------
+# Remove GeneWise 
+# 
+#
+sub rmgenewise {
+  my $command=<<END;
+find sequence *.gw.*
+show
+quit
+END
+  my $camace = "$acedir/cam";
+  print LOGFILE "*Rmgenewise: deleting genewise objects\n";
+  &DbWrite($command,$tace,$camace,"RmGeneWise");
+}
+
+#----------------------------
+# All-purpouse subroutine for 
+# writing to a given database
+#
+sub DbWrite {
+  my ($command,$exec,$dir,$name)=@_;
+  open (WRITEDB,"| $exec $dir >/dev/null") or do {print LOGFILE "$name DbWrite failed\n";close LOGFILE; die();};
+  print WRITEDB $command;
+  close WRITEDB;
+}
+
+
+__END__
+
+=pod
+
+=head1   NAME - make_autoace
+
+=head2 USAGE
+
+make_autoace makes the autoace file from its composite sources. 
+It alternatively transfers autoace compressed files to the ftp 
+repository in /nfs/disk69/ftp/pub2/acedb/celegans/
+
+make_autoace mandatory arguments:
+
+=over 4
+
+=item *
+-C creates the new autoace database
+
+=item *
+-F transfers the autoace package to the ftp site
+
+=back
+
+=cut
+

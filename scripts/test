@@ -1,0 +1,44 @@
+#!/usr/local/bin/perl
+#
+#
+#
+#
+# gffcheck
+# v 0.1
+#
+# Cronjob integrity check controls for generic ACEDB database.
+#
+# Usage: gffcheck [-options]
+#
+
+#####################################################################################################
+
+
+#################################################################################
+# variables                                                                     #
+#################################################################################
+
+$|=1;
+require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
+
+my $tace = glob("~acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace");    # tace executable path
+my $dbdir  = "/wormsrv2/autoace";                                  # Database path
+my $gffdir = "/wormsrv2/autoace/CHROMOSOMES";
+ 
+my @chromosomes = ('VI','I','II','III','IV', 'V','X');
+
+ ########################################
+   
+foreach $chromosome (@chromosomes) {
+
+    print "Checking GFF file: 'CHROMOSOME_${chromosome}'\n";
+    
+    open (GFF_in, "<$gffdir/CHROMOSOME_${chromosome}.gff") || (print "Can't do this\n"; next;);
+
+
+    while (<GFF_in>) {
+	
+	print $_;
+    }
+
+}

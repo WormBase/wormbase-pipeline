@@ -1,0 +1,348 @@
+#!/usr/local/bin/perl
+#
+# blast-peps v1.3
+#
+# [dl1 07/96]
+#
+# 971016 Search trnew for up-to-date homologies
+
+
+
+##################
+# Some variables #
+##################
+
+$report_MSPhits = 12;
+
+$blastp = 1;
+$queryprosite = 1;
+$querypfam = 1;
+
+#############################################
+# command line switch for genomic sequences #
+#############################################
+
+while ($ARGV[0] =~ /^-/) {
+    $_=shift;
+    if (/^-d(.*)/) {
+        $multi_file = 1;
+    }
+    elsif (/^-s(.*)/) {
+        $single_file = 1;
+	$file_pep = shift;
+    }
+    elsif (/^-b(.*)/) {
+        $queryprosite = 0;
+        $querypfam = 0;
+    }
+    elsif (/^-m(.*)/) {
+        $report_MSPhits = shift;
+    }
+    elsif (/^-q(.*)/) {
+        $querypfam = 0;
+        $blastp = 0;
+    }
+    elsif (/^-p(.*)/) {
+	$queryprosite = 0;
+	$blastp = 0;
+    }
+    elsif (/^-h(.*)/) {
+        &usage;
+    }
+}
+
+################
+# Single query #
+################
+
+if ($single_file == 1) {
+     ($cosmid, $number) = split (/\./,$file_pep);
+     $gene = $cosmid . "." . $number;
+     print "$gene\n";
+     &stops;
+     push (@report,$gene);
+     if ($blastp == 1) {
+	 &blastp;
+     }
+     if ($queryprosite == 1) {
+	 &queryprosite;
+     }
+     if ($querypfam == 1) {
+	 &querypfam;
+     }
+     &results;
+     exit;
+ }
+
+#########################################
+# Make files from all the fasta entries #
+#########################################
+
+if ($multi_file != 1) {
+    &makefile;
+    $multi_file = 1;
+}
+
+####################
+# Multiple queries #
+####################
+
+if ($multi_file == 1) {
+
+    &stops;
+    
+    open (ls, "ls |");
+    while (<ls>) {
+	if (/\.pep$/) {
+	    chomp;
+	    $file_pep = $_;
+	    ($cosmid, $number)=split (/\./,$_);
+	    $gene = $cosmid . "." . $number;
+	    print "$gene\n";
+	    push (@report,$gene);
+	    if ($blastp == 1) {
+		&blastp;
+	    }
+	    if ($queryprosite == 1) {
+		&queryprosite;
+	    }
+	    if ($querypfam == 1) {
+		&querypfam;
+	    }
+	    &results;
+	}
+    }
+}
+exit;
+
+###########################################################################
+######################          Subroutines          ######################   
+###########################################################################
+
+##########
+# blastp #
+##########
+
+sub blastp {
+    print "blastp v swir..\n";
+    
+    system ("blastp swir $file_pep > temp.swir");
+    system ("blastp trnew $file_pep > temp.trnew");
+    
+    print "MSPcrunch the output..\n";
+    
+    system ("MSPcrunch -P -F temp.swir > temp.msp1");
+    system ("MSPcrunch -P -F temp.trnew > temp.msp2");
+    
+    $i = 0;
+    open (MSP1, "temp.msp1");
+    while (<MSP1>) {
+	if ($i == $report_MSPhits) {
+	    last;
+	}
+	if ($_ ne "\n") {
+	    push (@report,$_);
+	    $i++;
+	}
+    }
+    close (MSP1);
+    
+    $i = 0;
+    open (MSP2, "temp.msp2");
+    while (<MSP2>) {
+	if ($i == $report_MSPhits) {
+	    last;
+	}
+	if ($_ ne "\n") {
+	    push (@report,$_);
+	    $i++;
+	}
+    }
+    close (MSP2);
+    
+    system ("rm -f temp.swir");
+    system ("rm -f temp.trnew");
+    system ("rm -f temp.msp1");
+    system ("rm -f temp.msp2");
+}
+
+##########################################
+# make individual pep files from all.pep #
+##########################################
+
+sub makefile {
+
+    $no = 0;
+    
+    open (PEPFILE, "all.pep") || die "Can't find all.pep file";
+    
+    while (<PEPFILE>) {
+	if (substr($_,0,1) eq ">") {
+	    s/^\>//g;
+	    (/\s+/);
+	    $gene = $`;
+	    $no++;
+	    open (OUT, ">$gene.pep");
+	    print OUT ">$gene\n";
+	    next;
+	}	
+	print OUT $_;
+    }
+    close (OUT);
+    system ("rm -f all.pep");
+    close (PEPFILE);
+}
+
+###############
+# pfam search #
+###############
+
+sub querypfam {
+    print "pfam query...\n";
+    
+    open (SEQ, "$file_pep");
+    while (<SEQ>) {
+	s/\*//g;
+	open (PEP, ">>temp.pep");
+	print PEP $_;
+    }
+    
+    close (SEQ);
+
+    system ("hmmPfam temp.pep > temp.pfam");
+    
+    open (PFAM, "temp.pfam");
+    while (<PFAM>) {
+	push (@report,$_);
+    }
+    close (PFAM);
+    system ("rm -f temp.pep");
+    system ("rm -f temp.pfam");
+}
+################
+# prosite hits #
+################
+
+sub queryprosite {
+    print "queryprosite..\n";
+    
+    system ("queryprosite -d $file_pep > temp.prosite");
+    
+    open (PROSITE, "temp.prosite");
+    while (<PROSITE>) {
+	push (@report,$_);
+    }
+    close (PROSITE);
+    system ("rm -f temp.prosite");
+}
+
+####################
+# usage subroutine #
+####################
+
+sub usage {
+    print "Usage: blast-peps [-options]\n\n";
+    print "Options:\n";
+    print "-d       No all.pep file, analyse all *.pep files in directory\n";
+    print "-s file  No all.pep file, analyse single pepfile\n";
+    print "-b       Perform blastp only\n";
+    print "-m x     Report x matches in MSPcrunch output\n";
+    print "-q       Perform queryprosite only\n";
+    print "-p       Perform pfam search only\n";
+    print "-h       Help summary\n";
+    exit;
+}
+
+###########
+# results #
+###########
+
+sub results {
+	 print "and write the results out.\n";
+
+	 open (REPORT, ">>$gene.report");
+	 foreach (@report) {
+	     print REPORT "$_";
+	 }
+	 @report = "";
+     }
+	
+#######################
+# trap internal stops #
+#######################
+	 
+sub stops {
+
+    
+    $stops = 0;
+
+    open (ls, "ls |");
+
+    while (<ls>) {
+
+        if (/\.pep$/) {
+	    
+	    chomp;
+	    $gene_stop = $_;
+	    ($cosmid, $number)=split (/\./,$_);
+	    
+	    open (FILE, "$_") || die "File $_ cannot be opened";
+	    $sum=0;
+	    while (<FILE>) {
+		$sum = $sum + (tr /*/*/);
+	    }
+	    close (FILE);   
+
+	    if ($sum >1) {
+		$stops = 1;
+		push (@stop,$gene_stop);
+	    }
+	}
+	
+    }
+ 
+    close (ls);
+
+    if ($stops == 1) {
+	print "Internal stops found in :\n";
+	foreach (@stop) {
+	    print "\t\t\t  $_\n";
+	}
+	exit;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

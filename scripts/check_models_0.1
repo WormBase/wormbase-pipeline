@@ -1,0 +1,187 @@
+#!/usr/local/bin/perl
+
+
+#################################################################################
+# variables                                                                     #
+#################################################################################
+
+$|=1;
+use IO::Handle;
+use Getopt::Std;
+require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
+
+
+################################
+# Database and model variables #
+################################
+
+$database1 = "autoace";
+$database2 = "geneace";
+
+$models1 = "/wormsrv2/autoace/wspec/models.wrm";
+$models2 = "/wormsrv2/geneace_models.wrm";
+
+#$models2 = "/nfs/disk67/sylvia/geneace/wspec/models.wrm";
+ 
+ ##############################
+ # command-line options       #
+ ##############################
+
+#$opt_h = "";   # Help/Usage page
+$opt_v = 0;   # Show whitespace errors
+$opt_c = 0;   # Show comments
+
+getopts ('hvc');
+#&usage if ($opt_h);
+
+print "Comments : $opt_c\n";
+print "Whitespace : $opt_v\n";
+
+
+ ###############################
+ # read model to array         #
+ ###############################
+
+@classes_DB_A = &readarray($models1);
+@classes_DB_B = &readarray($models2);
+
+#$no_classes_DB_A = $#classes_DB_A;
+#$no_classes_DB_B = $#classes_DB_B;
+
+%class_types = "";
+@seen_types = "";
+$found = 0;
+$classno = 0;
+
+for $i (0 .. $#classes_DB_A) {
+    $found = 0;
+#    print "[$classes_DB_A[$i][0]]\n";
+    foreach (@seen_types) {
+	next if ($_ eq "");
+	if ($classes_DB_A[$i][0] eq $_) {
+	    $found = 1;
+	    last;
+	}
+    }
+    
+    unless ($found == 1) {
+	$class_types{$classno} = "$classes_DB_A[$i][0]";   
+	push @seen_types, "$classes_DB_A[$i][0]";   
+	$classno++;
+    }
+}    
+
+for $i (0 .. $#classes_DB_B) {
+    $found = 0;
+    foreach (@seen_types) {
+	next if ($_ eq "");
+	if ($classes_DB_B[$i][0] eq $_) {
+	    $found = 1;
+	    last;
+	}
+    }
+    unless ($found == 1) {
+	$class_types{$classno} = "$classes_DB_B[$i][0]"; 
+	push @seen_types, "$classes_DB_A[$i][0]";   
+	$classno++;
+    }
+}
+    
+
+print "Sorted classes : " . $classno. "\n\n\n";
+
+######################
+# iterate over models
+#######################
+
+foreach $class (sort keys %class_types) {
+    print "Start ?$class_types{$class} [$class]\n";
+    next if ($class eq "");
+    
+    $nolines_DB_A = scalar (@{$classes_DB_A[$class]});
+    $nolines_DB_B = scalar (@{$classes_DB_B[$class]});
+    
+    print "Class : $classes_DB_A[$class][0]\nLines $database1: $nolines_DB_A\t$database2: $nolines_DB_B\n";
+    
+    $max2 = $nolines_DB_A;
+    if ($nolines_DB_A < $nolines_DB_B) {
+	$max2 = $nolines_DB_B;
+    }
+
+    for $j (0 .. $max2) {
+	$line_A = $classes_DB_A[$class][$j];
+	$line_B = $classes_DB_B[$class][$j];
+	
+	# Strip out comments 
+	if (($opt_c == 0) && (($line_A =~ /\/\//) || ($line_B =~ /\/\//))) {
+	    ($text_A,$comment_A) = split (/\/\//, $line_A);
+	    ($text_B,$comment_B) = split (/\/\//, $line_B);
+	    $line_A = $text_A;
+	    $line_B = $text_B;
+	}
+
+	# Strip out whitespace 
+	if ($opt_v == 0) {
+	    $line_A =~ s/^\s+//g;
+	    $line_B =~ s/^\s+//g;
+	    $line_A =~ s/\s+/ /g;
+	    $line_B =~ s/\s+/ /g;
+	    $line_A =~ s/\s+$//g;
+	    $line_B =~ s/\s+$//g;
+	}
+	
+	if ($line_A ne $line_B) {
+	    print "\n=> mismatch in Class ?$classes_DB_A[$class][0] line\n";	
+#	    print "[$database1] ['$line_A']\n";
+#	    print "[$database2] ['$line_B']\n";
+	    print "[$database1] '$classes_DB_A[$class][$j]'\n";
+	    print "[$database2] '$classes_DB_B[$class][$j]'\n\n";
+	}
+    }
+
+    print "End ?$class_types{$class} [$class]\n";
+    print "\n";
+}
+
+
+exit(0);
+
+
+sub readarray {
+    
+    my ($file) = @_;
+    my $class_pointer = -1;
+    my @classes = "";
+    
+    open (FILE, "<$file");
+    while (<FILE>) {
+
+	chomp;
+	
+	# End of class
+	if ($_ eq "") {
+	    $class = "";
+	    next;
+	}
+	if ((/^\/\//) || (/^\s+\/\//)) {
+	    next;
+	}
+	
+	# New class
+	if (/^\?(\S+)/) {
+	    $class = $1;
+	    $class_pointer++;
+	    $classes[$class_pointer][0] = "$class";
+	    push @{ $classes[$class_pointer] }, "$_";
+	    next;
+	}
+	
+	# push to array
+	push @{ $classes[$class_pointer] }, "$_";
+	
+    }
+    close FILE;
+
+    return (@classes);
+
+}

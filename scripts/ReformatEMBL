@@ -1,0 +1,25 @@
+#!/usr/local/bin/perl
+# Script to reformat the outupt of ReformatEMBL
+
+$toreformat = $ARGV[0];
+chomp ($toreformat);
+$reformatfile="$toreformat".".ref";
+
+# Reformat for the author field
+open (REFORMATFILE,">$reformatfile");
+open (INFILE,"<$toreformat");
+while ($line=<INFILE>) {
+  if ($line =~ /Consortium/) {
+        print $line;
+    $line =~ s/RA/RC/;
+    $line =~ s/Consortium/Consortium\./;
+    print REFORMATFILE $line;
+    print REFORMATFILE "RA   none;\n";
+    next;
+  }
+  print REFORMATFILE $line;
+}
+close INFILE;
+close REFORMATFILE;
+
+

@@ -1,0 +1,40 @@
+// $Id: passwd.wrm,v 1.1 2001-06-08 10:53:32 jws Exp $
+//
+//  wspec/passwd.wrm
+//
+//  password file to the ACeDB system
+//
+//  //comments out the line
+//
+//  the names of user with write access must be listed here
+//  each one on a new line
+//
+//  This file should belong to the acedb administrator
+//  and have permission 644 or possibly 600
+//
+
+wormpub
+
+// On some platforms, the unix command getLogin fails,
+// In this case, anyone will have write access if you
+//  uncomment the next line by removing the leading //
+
+//getLoginFailed  
+
+// On some platforms the Unix lockf system is either not 
+// enabled or is bugged. In this case you may want to
+// uncomment the next line by removing the leading //.
+// Note that this disables one of the multiple access
+// checks. It therefore makes corruption of the database 
+// by simultaneous access over the network more possible.
+// This is particularly a problem with an nfs mounted 
+// database, because NFS buffering can bypass the other
+// acedb protections.
+
+// NOLOCK
+
+
+// end of file
+ 
+// Login name of the administrator installing acedb 
+

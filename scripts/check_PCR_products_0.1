@@ -1,0 +1,84 @@
+#!/usr/local/bin/perl
+#
+# check_PCR_products
+# v 0.1
+#
+#
+#
+#
+
+
+#################################################################################
+# variables                                                                     #
+#################################################################################
+
+$| = 1;
+#use strict;
+use vars qw($opt_r $opt_d $opt_h);
+use Getopt::Std;
+use IO::Handle;
+use Ace;
+use Socket;
+require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
+
+   
+ #######################################
+ # Script variables (run)              #
+ #######################################
+
+my $maintainer = "dl1\@sanger.ac.uk";
+my $rundate = `date +%y%m%d`; chomp $rundate;
+my $runtime = `date +%H:%M:%S`; chomp $runtime;
+my $version = &get_script_version("check_PCR_products");
+
+ #######################################
+ # command-line options                #
+ #######################################
+
+getopts ('dhr:');
+
+ #######################################
+ # AcePerl query in autoace            #
+ #######################################
+
+my $acepath="/wormsrv2/autoace";
+
+print"PCR_product     Oligo_1         Oligo_2          RNAi\n======================================================\n";
+
+$db = Ace->connect(-path=>$acepath) || do { print "Connection failure: ",Ace->error; die();};
+
+$i = $db->fetch_many(-query=> 'find PCR_product');  
+while ($obj = $i->next) {
+
+    undef (@oligo);
+    undef (@RNAi);
+    undef ($RNAiexp);
+
+    my $PCR = $obj;
+
+
+
+    ####################################
+    # Oligos                           #
+    ####################################
+    
+    @oligo = $obj->Oligo(1);
+    @RNAi  = $obj->RNAi(1);
+
+    if (scalar @RNAi == 1) {
+	$RNAiexp = $RNAi[0];
+    }
+
+    printf "%-16s %-18s %-18s %-15s\n", $PCR, $oligo[0], $oligo[1], $RNAiexp;
+
+    
+    $obj->DESTROY;
+
+}
+
+
+exit(0);
+
+
+
+sub map

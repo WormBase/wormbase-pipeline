@@ -1,0 +1,66 @@
+#!/usr/local/bin/perl
+
+%stlcmid = "";
+%GSC_finish = "";
+%GSC_genbank = "";
+
+
+open (OUT, ">clone_list");
+
+open (jj, "<look_stlcmid");
+while (<jj>) {
+      chomp;
+      $clone = $_;
+      
+#      push (@ALLCMID, $clone);
+      print OUT "$clone\n";
+      $stlcmid{$clone} = $clone;
+  }
+close jj;
+
+   
+open (kk, "<look_stl_fincmid");
+while (<kk>) {
+      chomp;
+      $clone = $_;
+      
+#      push (@ALLCMID, $clone);
+      print OUT "$clone\n";
+      $GSC_genbank{$clone} = $clone;
+  }
+close kk;
+
+   
+open (ll, "<look_finish");
+while (<ll>) {
+      chomp;
+      $clone = $_;
+      
+      print OUT "$clone\n";
+#      push (@ALLCMID, $clone);
+      $GSC_finish{$clone} = $clone;
+  }
+close ll;
+
+close OUT;
+
+system ("cat clone_list | sort -u > new_clone_list");
+
+open (pp, "<new_clone_list");
+while (<pp>) {
+    chomp;
+    $clone = $_;
+
+#    print "| $stlcmid{$_}   \t| $GSC_genbank{$_}   \t| $GSC_finish{$_}   \t|\n";
+    printf "| %10s | %25s |%25s |\n", $stlcmid{$_},$GSC_genbank{$_},$GSC_finish{$_};
+
+}
+close pp;
+
+exit (0);
+
+
+
+   
+
+

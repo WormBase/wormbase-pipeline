@@ -1,0 +1,118 @@
+#!/usr/local/bin/perl
+#
+# backup_camace
+# v 0.1
+# 
+# dl
+
+# Usage : backup_camace
+
+# v0.1
+# 001211 : dl  : PP version
+
+#################################################################################
+# variables                                                                     #
+#################################################################################
+
+$|=1;
+use Cwd;
+use IO::Handle;
+require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
+
+ ##############################
+ # Script variables (run)     #
+ ##############################
+
+my $maintainer = "dl1\@sanger.ac.uk";
+my $rundate = `date +%y%m%d`; chomp $rundate;
+my $runtime = `date +%H:%M:%S`; chomp $runtime;
+my $logfile = "/wormsrv2/logs/backup_camace.$rundate.$$";
+my $version = &get_script_version(backup_camace);
+
+ ##############################
+ # paths for I/O files        #
+ ##############################
+
+my $campath = "/wormsrv2/camace";
+my $backuppath = "/nfs/disk100/wormpub/acedb/ace4/cam/dumps";
+$tace   = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
+$giface = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/giface";
+
+ ##############################
+ # open logfile               #
+ ##############################
+
+open (LOGFILE,">$logfile");
+LOGFILE->autoflush;
+
+print LOGFILE "# backup_camace\n#\n";
+print LOGFILE "# version             : $version\n";
+print LOGFILE "# run details         : $rundate $runtime\n";
+print LOGFILE "# Source directory    : $campath\n";
+print LOGFILE "# Target directory    : $backuppath\n#\n";
+print LOGFILE "\n";
+
+ ##########################################
+ # copy the tar.gz file from the ftp site #
+ ##########################################
+
+chdir $campath;
+my $dir = cwd();
+print "Move to directory: '$dir'\n";
+
+$command=<<END;
+dump
+END
+
+&DbWrite($command,$tace,$campath,"Dump");
+
+print "Dump files to be compressed:\n";
+
+opendir(LIST, $campath) or die ("Could not opendir $datadir");
+while (defined($file=readdir(LIST))) {
+    next unless ($file =~ /dump\S+.+\.ace/);
+    print "compressing $file ... \n";
+    print LOGFILE "compressing $file ... \n";
+    system ("/bin/gzip $file");
+    system ("/usr/bin/mv $file.gz $backuppath/");
+    print " and moving to /nfs/disk100/wormpub ..\n";
+    print LOGFILE " and moving to /nfs/disk100/wormpub ..\n";
+}
+close LIST;
+
+print LOGFILE "\narchive procedure complete\n";
+print LOGFILE "\n\n";
+close LOGFILE;
+
+###############################
+# Mail log to curator         #
+###############################
+
+open (OUTLOG,  "|/usr/bin/mailx -s \"WormBase Report: backup_camace\" $maintainer ");
+open (READLOG, "<$logfile");
+while (<READLOG>) {
+    print OUTLOG "$_";
+}
+close READLOG;
+close OUTLOG;
+
+###############################
+# hasta luego                 #
+###############################
+
+exit(0);
+
+###################################################
+# Subroutine for writing to a given database      #   
+###################################################
+
+sub DbWrite {
+  my ($command,$exec,$dir,$name)=@_;
+  open (WRITEDB,"| $exec $dir >> $logfile") or do {print LOGFILE "$name DbWrite failed\n";close LOGFILE; die();};
+  print WRITEDB $command;
+  close WRITEDB;
+}
+
+
+
+

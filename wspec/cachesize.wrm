@@ -1,0 +1,35 @@
+// @(#)cachesize.wrm	1.3    5/10/95
+//  acedb auxiliary file : wspec/cachesize.wrm
+// 
+//  This file indicates the size of the 2 caches
+//
+//  It is read once during initialisation of the program,
+//  If this file is absent or cannot be read, the values
+//  defaults as indicated in the source code blocksubs.c
+//  i.e. 1000 and 1000 as of release 1-8
+//
+//  Cache1 is an image of the disk
+//  It contains exactly CACHE1 blocks of size BLOC_SIZE
+//  defined as 1024 (as of 1-8) in disk_.h
+//  Very big objects are spread on several blocs but must be read
+//  in a single call, therefore CACHE1 must be big enough to
+//  accomodate the largest object (most probably Voc[_VText])
+//
+//  Cache2 contains the develloped image of the B objects.
+//  It is handled as a shared memory between the various pieces of
+//  the code accessing the objects and keeps a count of the handles.
+//  If the total size of the of objects exceeds CACHE2, it will destroy the
+//  unreferenced ones. Hence, if you loop on bsCreate() and never 
+//  bsDestroy, cache2 extends until you run out of memory.
+//  Even if CACHE2 is very small, the code will allways run, just
+//  much slower, since you will more often have to access cache1 
+//  and possibly the disk.
+
+
+CACHE1 = 16000     // Size of first cache, as used in w5/blocksubs.c
+CACHE2 = 32000     // Size of second cache, as used in w5/objcache.c
+DISK =  4000     // Initial size of database on disk at creation
+
+//  end of the cachesize.wrm file
+
+

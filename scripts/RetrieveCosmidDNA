@@ -1,0 +1,64 @@
+#!/usr/local/bin/perl
+# Script to retrieve all the cosmid DNAs
+# from a given database
+
+use Ace;
+use Getopt::Std;
+$|=1;
+
+getopts ('d:');
+chomp $opt_d;
+
+$HELP=<<END;
+RetrieveCosmidCoords will retrieve all the 
+cosmid coordinates relative to chromosome sequences
+
+Usage:
+RetrieveCosmidCoords -d dbname
+dbname will be one of the following: cgcace, autoace, camace
+
+END
+
+if (!$opt_d){
+  print $HELP;
+  exit(0);
+}
+
+# cgcace => port 210203
+# autoace => port 210202
+# camace => port 100100
+
+if ($opt_d =~ /cgcace/) {
+  $db = Ace->connect(-host=>'wormsrv1',-port=>'210203') or die ("Can not connect with database $opt_d on port 210203\n");
+}
+elsif ($opt_d =~ /autoace/) {
+  $db = Ace->connect(-host=>'wormsrv1',-port=>'210202') or die ("Can not connect with database $opt_d on port 210202\n");
+}
+elsif ($opt_d =~ /camace/) {
+  $db = Ace->connect(-host=>'wormsrv1',-port=>'100100') or die ("Can not connect with database $opt_d on port 100100\n");
+} else {
+  print "Sorry - $opt_d is not a recognized database\n";
+  exit;
+}
+
+open (OUTLOG,">/nfs/disk100/wormpub2/ag3/RetrieveCosmidDNA.log.$$");
+print OUTLOG "Connection with database  $opt_d successful\n\n";
+$i = $db->fetch_many(Genome_sequence,"*");
+while ($seqobj = $i->next) {
+  $canonical = $seqobj->at('Properties.Genomic_canonical');
+  if ($canonical !~ /Genomic_canonical/) {
+   print OUTLOG "## NOT genomic_canonical $seqname\n";
+    next;
+  }
+  $accno = $seqobj->at('DB_info.Database[3]');
+  $DNA = $seqobj->asDNA;
+  if ($DNA =~ /\>(\w+)\n/) {
+     $match=$1;
+     $DNA=~s/$match/$match acc\=$accno/;
+  }
+  print $DNA;	
+}	# end while
+close OUTLOG;
+exit(0);
+
+

@@ -1,0 +1,66 @@
+#!/usr/local/bin/gawk -f
+#
+# EXBLASTNDB
+#
+# awk script to extract alignments from blastx output.
+#	all hits with score >= 75
+#	If multiple hits with best score >= 60: all hits
+#
+# Creates output lines of form:
+#    score poisson query_start query_end  db_start db_end  query_name gene_desciptor
+
+BEGIN { score = 0 ; query = 0 ; score = 0 ;}
+
+{
+  if ($1=="Query=") {
+	report()
+	split($2, a, "/")
+	q_name = a[1];
+	num_hits_this_gene = 0
+	query = 0
+  }
+  else if (substr($1,1,1) == ">") {
+	report()
+	if (substr($2,length($2)) == ";")
+          $2 = substr($2,1,length($2)-1)
+	locus = substr($0,2) 
+  	num_hits_this_gene = 0 
+	query = 0 
+  }
+  else if ($1=="Score") {
+	if (num_hits_this_gene) num_hits_this_gene++	# second or more hit
+	report()
+	score = $3
+	if (substr(score, length(score)) == "*") {
+		score = substr(score, 1, length(score)-1)
+		print "Asterisk score: " score
+	}
+	poisson = substr($8, 1, length($8)-1)
+	if (score + .0 >= 60)
+	  ++num_hits_this_gene ;
+	query = 0 ;
+  }
+  else if ($1=="Identities") {
+	frame = $NF ;
+  }
+  else if ($1=="Query:") {
+	query++;
+	if (query == 1) q_start = $2 ;
+	q_end = $4 ;
+  }
+  else if ($1=="Sbjct:") {
+	if (query == 1) db_start=$2;
+	db_end=$4;
+  }
+}
+
+END { report() }
+
+function report()
+{
+	if (query > 0 && (score >= 75 || num_hits_this_gene > 1))
+      	  printf ("%3d %8s %s %6d %6d  %4d %4d  %s\n", \
+		  score, poisson, q_name, q_start, q_end, db_start, db_end, locus) ;
+
+}
+

@@ -1,0 +1,285 @@
+#!/usr/local/bin/gawk -f
+# script to convert EMBL worm entries to ace files
+# updated by ESR 930927 but doesn't work :(
+
+BEGIN { TRUE = "1" ; FALSE = "" 
+	simple_features["misc_feature"] = "1"
+	simple_features["promoter"] = "1"
+	simple_features["misc_signal"] = "1"
+	simple_features["repeat_region"] = "1"
+	simple_features["repeat_unit"] = "1"
+	simple_features["mat_peptide"] = "1"
+	simple_features["polyA_signal"] = "1"
+	simple_features["polyA_site"] = "1"
+	simple_features["mutation"] = "1"
+	simple_features["TATA_signal"] = "1"
+      }
+
+      { text = $0 }
+
+/^ID/ { printf("\n")
+	name = substr($2,3)
+	print "Sequence :", name
+	print "Length", $6
+	print "From_library EMBL"
+	title = ""
+	next
+      }
+
+/^AC/ { for (i = 2 ; i <= NF ; ++i)
+	  print "Library EMBL CE" name, substr($i,1,length($i)-1)
+	next
+      }
+
+/^DT/ { print "Date", $2
+	next
+      }
+
+/^DE/ { start = 2
+	sub("ancoding","encoding")		# VIT601 typo
+	if (!title)
+	  { if ($2 ~ "elegans") start = 3
+	    if ($3 ~ "elegans") start = 4
+	    if ($start ~ "nematode") start += 1		# for COL2G
+	    title = $start
+	    start += 1
+	  }
+	for (i = start ; i < NF ; ++i)
+	  title = title " " $i
+	sub("\\.","",$NF)	# trailing period
+	title = title " " $NF
+	last = 0 
+	gsub("GPA","gpa",text)		# for GPA-1,3 genes
+	while (match(text,"[^a-z][a-z][a-z][a-z]-[0-9]+") > 0)
+	  { print "Gene", substr(text,RSTART+1,RLENGTH-1)
+	    text = substr(text,RSTART+1)
+	  }
+	next
+      }
+
+/^KW/ { sub("phophatase","phosphatase",text) 	# PTPA* typo
+	sub("\.$","",text)	# trailing period
+	sub("KW   ","",text)	# line tag
+	split(text,kwords,"; ?")
+	for (i in kwords)
+	  { if (!kwords[i])
+	       continue
+	    if (match (title, kwords[i]))
+	      continue
+	    isP = TRUE
+	    if (match(kwords[i],"[^a-z][a-z][a-z][a-z]-[0-9]+"))
+	      { gene = substr(kwords[i],RSTART+1,RLENGTH-1)
+		print "Gene", gene
+	        if (kwords[i] ~ "^" gene)
+		  { isP = FALSE
+		    print "-", NR, name, "Unprinted keyword:", kwords[i]
+		  }
+	      }
+	    if (isP)
+	      print "Keyword \"" kwords[i] "\""
+	  }
+	next
+      }
+
+/^OS/ { print "Title \"" title "\"" }
+
+/^DR/ { sub(/[;\.]/,"")
+	if ($2 != "SWISS-PROT")
+	  print "-", NR, name, $0
+	else
+	  print "Library SwissProt", substr($4,1,length($4)-1), \
+					substr($3,1,length($3)-1)
+	next
+      }
+
+# references - (a) what name to give them
+#	       (b) how to handle Journal names
+#	       (c) homo
+
+# special case comments
+
+/CC   shock protein, exon 3 116 116 numbered 1 in/ \
+      { print "Has_Pseudogene HSP201.ps 116 1331"
+	printf("\n")
+	print "Sequence : HSP201.ps"
+	print "Pseudogene"
+	print "Source HSP201"
+	base = 115
+	print "Source_Exons", 116-base, 320-base
+	print "Source_Exons", 372-base, 914-base
+	print "Source_Exons", 1100-base, 1331-base
+	HSP201 = TRUE
+	next
+      }	
+
+/CC   See J05066 for overlapping seqeunce./ \
+      { print "Related_sequence COL2AA -C overlapping"
+	next
+      }
+
+# regular comment handling
+
+function writeCommentLine()
+{ if (inComment)
+    printf(" \\\n\t%s", substr($0,6))
+  else
+    printf("DB_remark \"%s", substr($0,6))
+  inComment = TRUE
+}
+
+/^CC/ { if (match($0,"Draft entry"))
+	  { inDraft = TRUE
+	    if (RSTART > 6)
+	      { $0 = substr($0,1,RSTART-2)
+		writeCommentLine()
+	      }
+	  }
+	if (inDraft)
+	  next
+	if ($2 == "*source:")
+	  next
+	if ($0 ~ "Data kindly reviewed")
+	  next
+	writeCommentLine()
+      }
+
+/^XX/ { inDraft = FALSE
+	if (inComment)
+	  printf("\n")
+	inComment = FALSE
+      }
+
+	# FH line is required, so print accumulated stuff here,
+	# and check weird comments
+/^FH/ { if (name == "HSP201" && !HSP201)
+	  print "- ", NR, "HSP201 changed - check by hand"
+	feat = ""
+	isCDS = FALSE
+      }
+
+/^FT   [^ ]/ \
+      { if (feat)
+	  process_feature()
+	feat = $2
+	feat_text = ""
+      }
+
+/^FT/ { feat_text = feat_text " " substr($0,22) }
+
+/^XX/ { if (feat)
+	  process_feature()
+	feat = ""
+      }
+
+/^SQ/ { if ($13 != "0")
+	  print "- ", NR, name, $13, "non a,g,c,t bases"
+	printf("\n")
+	print "DNA :", name
+	next
+      }
+
+/^     / \
+      { gsub(" ","")	# DNA
+	print 
+      }
+
+############################
+
+function process_feature()
+{
+  text = feat_text
+
+# first extract the location
+
+  if (i = index(text, "/"))
+  {
+    location = substr(text, 1, i-1)
+  }
+  else
+    location = text
+
+  gsub(" ", "", location)
+  locSolved = FALSE
+  locInvert = FALSE
+  if (location ~ "^complement(.*)$")
+    { locInvert = TRUE
+      location = substr(location,12,length(location)-12)
+    }
+  if (location ~ "[0-9]+\.\.[0-9]+")
+    { i = index(location,"\.")
+      loc1 = substr(location,1,i-1)
+      loc2 = substr(location,i+2)
+      if (locInvert) { temp = loc1 ; loc1 = loc2 ; loc2 = temp }
+      locSolved = TRUE
+    }
+
+# next the qualifiers
+
+  nqual = 0 
+  for (i in qual_type)		# clear current arrays
+    { delete qual_type[i]
+      delete qual_text[i]
+    }
+  while (match(text,"/[a-z_]+"))
+    { ++nqual
+      qual_type[nqual] = substr(text,RSTART+1,RLENGTH-1)
+      text = substr(text,RSTART+RLENGTH)
+      if (substr(text,1,1) == "=")
+        if (substr(text,2,1) == "\"")
+	  { text = substr(text,3)
+	    if (match(text,"\""))
+	      qual_text[nqual] = substr(text,1,RSTART-1)
+	    else
+	      print "-", NR, name, "bad qual_text:", text
+	  }
+	else
+	  { text = substr(text,2)
+	    if (match(text," "))
+	      qual_text[nqual] = substr(text,1,RSTART-1)
+	    else
+	      qual_text[nqual] = text
+	  }	     
+    }
+
+#  printf("%s\t%s\n", feat, location)
+#  for (i = 1 ; i <= nqual ; ++i)
+#    printf("    %s\t%s\n", qual_type[i], qual_text[i]) ;
+
+# now process features 
+# - how to handle mRNA/prim_transcript info?
+
+  if (feat == "CDS" || feat == "mRNA" || \
+	feat == "prim_transcript" || feat == "tRNA" || \
+	feat == "snRNA" || feat == "transposon")
+    { if (feat == "CDS") 
+	isCDS = TRUE
+      print "-", feat, location
+      for (i = 1 ; i <= nqual ; ++i)
+        print "-    ", qual_type[i], qual_text[i]
+    }
+  else if ((feat == "intron" || feat == "exon") && isCDS)
+    return
+  else if (!locSolved)
+    { print "-", NR, name, "bad location:", location
+      return
+    }
+  else if (feat in simple_features)
+    { printf("%s %d %d", feat, loc1, loc2) ;
+      for (i = 1 ; i <= nqual ; ++i)
+	if (qual_type[i] == "note")
+	  printf(" \"%s\"", qual_text[i])
+        else
+	  printf("\n- %d %s bad qualifier: %s", NR, name, qual_type[i])
+      printf("\n")
+    }
+  else
+    { print "-", feat, location
+      for (i = 1 ; i <= nqual ; ++i)
+        print "-    ", qual_type[i], qual_text[i]
+#    ++feature[feat]
+    }
+}
+
+END { for (i in feature)
+        print "-", i, feature[i]
+    }

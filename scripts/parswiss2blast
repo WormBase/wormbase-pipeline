@@ -1,0 +1,37 @@
+#!/usr/local/bin/gawk -f
+# PARSWISS2BLAST - Reformats distribution SWISSPROT to MANY BLAST database files.
+# Based on SWISS2BLAST
+# Created by Erik Sonnhammer, 92-11-16
+#
+
+BEGIN { dbnr = 1; 
+	dbname = "swir"; 
+	outfile = dbname dbnr; 
+	seqnr = 0;
+
+	print "parswiss2blast - split seq-database up in chunks";
+	print "Only to be used on BLAST formatted databases";
+}
+
+{
+
+	if ($1 ~ ">") { 
+
+		if (seqnr++ == 4000) {
+			close(outfile);
+			system( "setdb " outfile);
+			#system( "\\rm " outfile);
+			seqnr = 1;
+			dbnr++;
+			outfile = dbname dbnr;
+		} 
+	}
+	print $0 > outfile;
+}
+
+END {
+
+	close(outfile);
+	system( "setdb " outfile);
+	#system( "\\rm " outfile);
+}

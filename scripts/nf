@@ -1,0 +1,11 @@
+<!--#config timefmt="%d-%b-%C%y, %I:%M %p" -->
+<!--#set var="title" value="C.elegans Knockout Targets" -->
+<!--#set var="icon" value="worm.gif" --> 
+<!--#set var="author" value="sjj" -->
+
+<!--#exec cgi="/cgi-bin/header" -->
+
+</TABLE><H1>Gene Knockout Targets</H1>
+<TABLE width=60% BORDER>
+<TR>
+<TH>Gene</TH><TH>Description</TH></TR>

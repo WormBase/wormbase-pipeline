@@ -1,0 +1,210 @@
+#!/usr/local/bin/perl
+#
+# unpack_briggsae
+#
+# v 0.1
+#
+# dl
+#
+##
+
+# v0.1
+# 001127 : dl  : Added mail to $maintainer code
+# 001116 : dl  : PP version
+# 
+
+#################################################################################
+# variables                                                                     #
+#################################################################################
+
+$|=1;
+#use Getopt::Long;
+use Cwd;
+use IO::Handle;
+require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
+
+$indate = shift;
+if ((length $indate) != 6) {
+    print "wrong length\n";
+    exit(0);
+}
+
+$today = substr($indate,0,2) . "-" . substr($indate,2,2) . "-" . substr($indate,4,2);
+
+ ##############################
+ # Script variables (run)     #
+ ##############################
+
+my $maintainer = "dl1\@sanger.ac.uk";
+my $rundate = `date +%y%m%d`; chomp $rundate;
+my $runtime = `date +%H:%M:%S`; chomp $runtime;
+my $logfile = "/wormsrv2/logs/unpack_briggsae.$rundate.$$";
+my $version = &get_script_version(unpack_briggsae);
+
+ ##############################
+ # paths for I/O files        #
+ ##############################
+
+my $private_ftp = "/nfs/privateftp/ftp-wormbase/pub/incoming/stl";
+my $dbdir = "/wormsrv2/brigace";
+$tace="/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
+$giface="/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/giface";
+
+ ##############################
+ # open logfile               #
+ ##############################
+
+open (LOGFILE,">$logfile");
+LOGFILE->autoflush;
+
+print LOGFILE "# unpack_stlace\n#\n";
+print LOGFILE "# version             : $version\n";
+print LOGFILE "# run details         : $rundate $runtime\n";
+print LOGFILE "# Source directory    : $private_ftp\n";
+print LOGFILE "# Target directory    : $dbdir\n#\n";
+print LOGFILE "# Source file         : brigdb_$today.tar.gz\n";
+print LOGFILE "\n";
+
+ ##########################################
+ # copy the tar.gz file from the ftp site #
+ ##########################################
+
+chdir $dbdir;
+my $dir = cwd();
+print LOGFILE "Move to directory: '$dir'\n";
+
+system ("cp -f $private_ftp/brigdb_$today.tar.gz .");
+&copy_check("$private_ftp/brigdb_$today.tar.gz","$dbdir/brigdb_$today.tar.gz");
+print LOGFILE "Copy 'brigdb_$today.tar.gz' to $dbdir successful\n" if ($match == 1); 
+print LOGFILE "Copy 'brigdb_$today.tar.gz' to $dbdir failed\n" if ($match == 0);
+ 
+system ("/bin/gzip -d brigdb_$today.tar.gz");
+print LOGFILE "uncompress file\n";
+
+system ("/bin/tar -xvf brigdb_$today.tar");
+print LOGFILE "untar file\n\n";
+
+print LOGFILE "Database files to be loaded:\n";
+open (LIST, "/bin/ls *ace |");
+while (<LIST>) {
+    chomp;
+    push (@filenames,"$_");
+    print LOGFILE "$_";
+}
+close LIST;
+print LOGFILE "\n\n";
+
+ ###################################
+ # modify displays.wrm for rebuild #
+ ###################################
+
+system ("mv $dbdir/wspec/displays.wrm $dbdir/wspec/displays.old") ;
+open (FILE_OLD,"$dbdir/wspec/displays.old") || do { 
+    print LOGFILE "failed to open $dbdir/wspec/displays.old\n"; 
+    die(1);
+};
+open (FILE_NEW,">$dbdir/wspec/displays.wrm") || do { 
+    print LOGFILE "failed to open $dbdir/wspec/displays.wrm\n"; 
+    die(1);
+};
+while (<FILE_OLD>) { 
+    if (/^_DDtMain/) {
+	print FILE_NEW "_DDtMain -g TEXT_FIT -t \"C.briggsae $rundate\"  -w .43 -height .23 -help acedb\n";
+    } else {
+	print FILE_NEW $_;}
+}
+close FILE_OLD;
+close FILE_NEW;
+unlink "$dbdir/wspec/displays.old" ;
+
+ ####################################
+ # Re-initialise the ACEDB database #
+ ####################################
+
+system ("\\rm $dbdir/database/new/*");
+system ("\\rm $dbdir/database/touched/*");
+if (-e "$dbdir/database/lock.wrm") {
+    print LOGFILE "*Reinitdb error - lock.wrm file present..\n";
+    close LOGFILE;
+    die();
+}
+system ("\\mv $dbdir/database/log.wrm $dbdir/database/log.old");  
+system ("\\rm $dbdir/database/*.wrm");
+unlink "$dbdir/database/ACEDB.wrm";
+$command=<<EOF;
+y
+EOF
+    
+print LOGFILE "* Reinitdb: reinitializing the database ..\n";
+&DbWrite($command,$tace,$dbdir,"ReInitDB");
+
+ ##############################
+ # Upload the .ace dump files #
+ ##############################
+
+foreach $filename (@filenames) {
+    my $command=<<END;
+pparse $filename
+save 
+quit
+END
+    
+if (-e $filename) {
+    print LOGFILE "* Reinitdb: reading in new database  $filename\n";
+    &DbWrite($command,$tace,$dbdir,"ParseFile");
+} else {
+    print LOGFILE "* Reinitdb: $filename is not existent - skipping ..\n";
+    next;
+}
+}
+
+close LOGFILE;
+
+###############################
+# Mail log to curator         #
+###############################
+
+open (OUTLOG,  "|/usr/bin/mailx -s \"WormBase Report: unpack_briggsae\" $maintainer ");
+open (READLOG, "<$logfile");
+while (<READLOG>) {
+    print OUTLOG "$_";
+}
+close READLOG;
+close OUTLOG;
+
+###############################
+# hasta luego                 #
+###############################
+
+exit(0);
+
+
+###################################################
+# Subroutine for checking the size of the file    #
+###################################################
+
+sub copy_check {
+    my ($file1,$file2) = @_;
+    
+    $O_SIZE = (stat("$file1"))[7];
+    $N_SIZE = (stat("$file2"))[7];
+    
+    if ($O_SIZE != $N_SIZE) {
+	$match = 0;
+    } else {
+	$match = 1;
+    }
+    return($match);
+}
+
+###################################################
+# Subroutine for writing to a given database      #   
+###################################################
+
+sub DbWrite {
+  my ($command,$exec,$dir,$name)=@_;
+  open (WRITEDB,"| $exec $dir >> $logfile") or do {print LOGFILE "$name DbWrite failed\n";close LOGFILE; die();};
+  print WRITEDB $command;
+  close WRITEDB;
+}
+

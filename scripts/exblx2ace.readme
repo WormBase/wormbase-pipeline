@@ -1,0 +1,4 @@
+foreach i (`cat current.finished`)
+? exblx2ace1 cosmid=$i:h $i/blast/$i:h.swir1exblx >> tmp
+? exblx2ace2 cosmid=$i:h $i/blast/$i:h.swir1exblx >> tmp
+? end

@@ -1,0 +1,239 @@
+#!/usr/local/bin/perl
+#
+# object_count.pl
+# v0.1 2000-08-22
+# dl
+#
+# Counts the number of objects in an ACEDB database for each Class stated in the config file
+#
+#
+#
+########
+#
+# 001009 : ag3 : now accepts command-line arguments 
+# 001009 : ag3 : hard-wired the queries in the script
+# 000822 : dl : PP version
+#
+
+use Getopt::Std;
+
+##################################################
+# Connect with acedb database                    #
+##################################################
+
+getopts ('hf:s:');
+if ((!$opt_f)||($opt_h)) {
+    $MESSAGE=<<END;
+Usage: dbcomp.pl -f first_database_path [-s second_database_path] [-h help, this message]
+If -s is not included, it will consider /wormsrv2/autoace as
+the database to compare.
+END
+    die ($MESSAGE);
+}
+
+my $acedb2 = (($opt_s)||("/wormsrv2/autoace"));
+my $acedb  = $opt_f;
+my $error = "/wormsrv2/logs/obcomp2_error.$$";
+my $debug = 0;
+my $oblist = 1;
+$|=1;
+$exec=&tace;
+
+##################################################
+# Main Loop                                      #
+##################################################
+
+print "# object_comp.pl\n# Db-1 = '$acedb'\n# Db-2 = '$acedb2'\n\n" if ($debug);
+
+my $db1 = $acedb;
+my $db2 = $acedb2;
+$db1 =~ s/\/wormsrv2\///;
+$db2 =~ s/\/wormsrv2\///;
+
+#print "DB-1 : '$acedb'\nDB-2 : '$acedb2'\n\n";
+
+print  " +------------------------------------------+\n";
+print  " | Class              |    ACEDB database   |\n";
+print  " |                    +----------+----------+--------+\n";
+printf " |                    | %8s | %8s | change |\n", $db1,$db2;
+print  " +--------------------+----------+----------+--------+\n";
+
+
+open (ERROR,  ">$error")  || die "Failed to open error file '$config'\n\n";
+
+# The complete set of classes to dump is between the DATA and END tokens
+READARRAY: while (<DATA>) {
+    chomp $_;
+    last READARRAY if $_ =~ /END/;
+    push (@TotalClasses,$_);
+}
+
+foreach (@TotalClasses) {
+    chomp;
+    next if ($_ eq "");
+    $query = $_;
+    &mk_command;
+
+    printf " | %18s |", $query;
+
+    ########
+    # DB-1 #
+    ########
+
+    $ENV{'ACEDB'}="$acedb";
+    $out = "DB-1_${oblist}";
+    &count($out);
+    $count_1 = $active;
+
+    print " | ";
+
+    ########
+    # DB-2 #
+    ########
+
+    $ENV{'ACEDB'}="$acedb2";
+    $out = "DB-2_${oblist}";
+    &count($out);
+    $count_2 = $active;
+
+#    print " | ";
+# printf "%6s",$active) if ($found == $active);
+   
+    my $diff = $count_2 - $count_1;
+    if ($diff != 0) {
+	printf "| %6s |\n",$diff;
+	print ERROR "--> $query\n";
+	&diff($oblist);
+    }
+    else {
+	print "|      0 |\n";
+    }
+    $oblist++;
+}
+print  " +--------------------+----------+----------+--------+\n";
+
+
+###########
+# TIDY UP #
+###########
+
+system ("rm -f DB-1*");
+system ("rm -f DB-2*");
+
+exit (0);
+
+
+#---------------- subroutines ----------------------- 
+
+sub diff {
+    my ($oblist) = @_;
+    system ("cat DB-1_${oblist} | sort > look-1");
+    system ("cat DB-2_${oblist} | sort > look-2");
+    open (COMM, "comm -3 look-1 look-2 |");
+    while (<COMM>) {
+	print ERROR " -> DB-1 $1\n" if (/^(\S+.+)/);
+	print ERROR " -> DB-2 $1\n" if (/^\s+(\S+.+)/);
+    }
+    close (COMM);
+    system ("rm -f look-1");
+    system ("rm -f look-2");
+}
+
+sub count {
+    my ($out) = @_;
+    open (out, ">$out");
+    open (textace, "echo '$command' | $exec  | ");
+    while (<textace>) {
+	($found = $1)  if (/^\/\/ Found (\d+) objects/);
+	($active = $1) if (/^\/\/ (\d+) Active Objects/);
+	(print out "$_") if (/\:/);
+    }
+    close (textace);
+    (printf "%9s",$active) if ($found == $active);
+    close (out);
+    return ($active);
+}
+
+sub mk_command {
+$command=<<EOF;
+query find $query 
+list -a 
+quit
+EOF
+}
+
+sub tace {
+   local($prog);
+   local($name); 
+   $name=`uname -sr`;
+    if ($name=~/^SunOS/)    {($prog)=<~wormpub/acedb/ace4/bin.SUN_4/tace>;}
+    elsif ($name=~/^IRIX/)  {($prog)=<~wormpub/acedb/ace4/bin.SGI_4/tace>;}
+    elsif ($name=~/^OSF/)   {($prog)=<~wormpub/acedb/ace4/bin.ALPHA_4/giface>;}
+    elsif ($name=~/^Linux/) {($prog)=<~wormpub/acedb/ace4/bin.LINUX/tace>;}
+    else {print STDERR "No known binary for $uname\n";exit;}
+    return $prog;
+}
+
+
+__DATA__
+2_point_data
+Accession_number
+Allele
+Author
+Balancer
+Cell
+Cell_group
+Class
+Clone
+Comment
+Contig
+Database
+Display
+EMBL_dump_info
+EMBL_info
+Enzyme
+Expr_Pattern
+Gene_Class
+Jade
+Journal
+Keyword
+Laboratory
+Life_stage
+Locus
+ManyMap
+Map
+Metabolite
+Method
+Motif
+MultiMap
+Multi_counts
+Multi_pt_data
+Neurodata
+Paper
+Pathway
+PathwayDiagram
+Picture
+Pos_neg_data
+Protein
+ReactantInfo
+Rearrangement
+Reference
+RegulatorInfo
+Repeat_Info
+Sequence
+Session
+Species
+Strain
+Table
+Table_definition
+Tag
+Text
+Tree
+TreeNode
+Url
+UserSession
+View
+View_tags
+WWW_server
+__END__
+

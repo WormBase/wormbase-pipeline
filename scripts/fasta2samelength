@@ -1,0 +1,39 @@
+#!/usr/local/bin/perl
+
+
+while (<>) {
+
+
+	if (/^>/) {
+		$count=0;
+		for ($x=0;$x<=$#sequence;$x++) {
+		print $sequence[$x];
+		if ($count==79) {print "\n";$count=0;} else {$count++;}
+						}
+		if ($count !=0) {print "\n";}
+	undef @sequence;
+	print;
+	} 
+
+	else {s/\n//;s/\s+//g;
+	      undef @newline;
+	      @newline=split(//,$_);
+	      push(@sequence,@newline);
+	      }
+
+}
+
+
+	#print out last entry	
+        $count=0;
+	for ($x=0;$x<=$#sequence;$x++) {
+	print $sequence[$x];
+	if ($count==79) {print "\n";$count=0;} else {$count++;}
+	}
+	print "\n";
+
+
+
+
+
+

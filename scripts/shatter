@@ -1,0 +1,12 @@
+#!/usr/local/bin/perl
+#
+# shatter fasta file into separate sequences
+#
+
+while (<>) {
+    if (/^>(\S+)/) {
+	close FILE if (FILE) ;
+	open (FILE, ">$1") || die "can't open file $1\n" ;
+    }
+    print FILE ;
+}

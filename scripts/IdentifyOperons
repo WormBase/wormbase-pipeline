@@ -1,0 +1,164 @@
+#!/usr/local/bin/perl
+# Script for predictive operon identification. 
+# Input: parsed_eleborated files coming from Elaborate_Intersect_Parsed
+#
+# Version 2, February 2000, ag3
+
+
+use Getopt::Std;
+$| = 1;
+getopts ('i:n:d:');
+
+if (!$opt_i) {
+  $HELP=<<END;
+IdentifyOperons
+Options: 
+-i input file from Elaborate_Intersect_Parsed
+[-d intergenic delta, i.e. the nt distance between two contiguous genes to be considered as parts of an operon (default is 500)]
+[-n minimal number of genes required to define an operon (default is 2) ]
+The output file will be input_file.operons.delta
+END
+  print $HELP;
+  exit;
+}
+
+if (!$opt_n) {
+  $thresh = 2;
+} else {
+  $thresh = $opt_n;
+}
+if (!$opt_d) {
+  $delta = 500;
+} else {
+  $delta = $opt_d;
+}
+
+$opt_i =~ (/^(\w+)\./) && do {$root = $1;};
+$operonfile = "$root".".operons."."$delta";
+
+open (INLIST,$opt_i);
+$pluscounter=$minuscounter=0;
+while ($line=<INLIST>) {
+  if ($line =~ /\%\%/) {
+    @myfields = split (/\s+/,$line);
+    $gene = $myfields[1];
+    $start = $myfields[2];
+    $end = $myfields[3];
+    $strand = $myfields[4];
+# Search operons with genes on plus strand
+    if ($strand =~/\+/) {
+      $pluscounter++;
+      &MakePlusOperons($start,$end,$gene,$pluscounter);
+    }
+# Search operons with genes on minus strand
+    if ($strand =~/\-/) {
+      $minuscounter++; 
+      &MakeMinusOperons($start,$end,$gene,$minuscounter); 
+    }
+  }
+}
+close INLIST;
+
+# Dump everything
+
+&OperonDump();
+
+exit;
+
+
+#------------------------------------
+# Create one hash of putative operons
+# on PLUS strand
+#
+sub MakePlusOperons {
+ my ($START,$END,$SEQNAME,$COUNTER) = @_ ;
+ my $PREVCOORDS = $PLUSSTORAGE[$COUNTER-1];
+ @PREV_ARRAY=split(/\s/,$PREVCOORDS);
+ next if ($PREV_ARRAY[0] =~ /^ $/);
+ $PLUSSTORAGE[$COUNTER] = "$START $END $SEQNAME";
+ my $DIFF=$START-$PREV_ARRAY[1];
+ next if ($DIFF < 0);
+# We choose as operon name the name of the first gene in the sequence.
+# An operon is defined as "finished" when the intergenic distance is 
+# greater than delta.
+ if ($DIFF < $delta) {
+    push (@{$PLUSOPERONS{$PLUSFIRSTGENE}},$SEQNAME); 
+ } else {
+# Build a new operon hash, and give it the name of the first gene 
+  $PLUSFIRSTGENE=$SEQNAME;
+  push (@{$PLUSOPERONS{$PLUSFIRSTGENE}},$SEQNAME);
+ }
+}
+
+
+#------------------------------------
+# Create one hash of putative operons
+# on MINUS strand
+#
+sub MakeMinusOperons {   
+ my ($START,$END,$SEQNAME,$COUNTER) = @_ ;
+ my $PREVCOORDS = $MINUSSTORAGE[$COUNTER-1];
+ @PREV_ARRAY=split(/\s/,$PREVCOORDS);
+ next if ($PREV_ARRAY[0] =~ /^ $/);
+ $MINUSSTORAGE[$COUNTER] = "$START $END $SEQNAME";
+ my $DIFF=$START-$PREV_ARRAY[1];
+ next if ($DIFF < 0);
+# An operon is defined as "finished" when the intergenic distance is 
+# greater than delta.
+ if ($DIFF < $delta) {
+    push (@{$MINUSOPERONS{$MINUSFIRSTGENE}},$SEQNAME); 
+ } else {
+# Build a new operon hash, and give it the name of the first gene 
+   $MINUSFIRSTGENE=$SEQNAME;
+   push (@{$MINUSOPERONS{$MINUSFIRSTGENE}},$SEQNAME);
+ }
+}
+
+
+#----------------------------------
+# Dump operon hashes. An operon is 
+# dumped only if it does have a 
+# number of genes > threshold
+#
+sub OperonDump {
+ open (OUTOPERON,">$operonfile") or die ("Could not open $operonfile\n");
+ foreach $OPRNAME (sort keys %PLUSOPERONS) {
+  if (@{$PLUSOPERONS{$OPRNAME}} < $thresh) {
+    next;
+  } else {
+    $PLUSFIRSTGENE = shift (@{$PLUSOPERONS{$OPRNAME}});    
+    $seqname = $PLUSFIRSTGENE;
+    foreach (@{$PLUSOPERONS{$OPRNAME}}) {
+	$seqname.=" $_ ";
+    }
+    $seqname .= " + \n";
+    print OUTOPERON $seqname;
+    }
+}
+
+  foreach $OPRNAME (sort keys %MINUSOPERONS) {
+    if (@{$MINUSOPERONS{$OPRNAME}} < $thresh) {
+      next;
+    } else {
+# Reverse the hash because the first gene of the operon
+# is actually the last, when looking at the minus strand .
+      @ORIGOPERONS = @{$MINUSOPERONS{$OPRNAME}};
+      @MINUSOPERONS = reverse (@ORIGOPERONS);
+      $MINUSFIRSTGENE = shift (@MINUSOPERONS);    
+      $seqname = $MINUSFIRSTGENE;
+      foreach (@MINUSOPERONS) {
+	  $seqname.= " $_ ";
+      }
+      $seqname .= " - \n";
+      print OUTOPERON $seqname;
+    }
+  }
+  close OUTOPERON;
+}
+
+
+
+
+
+
+

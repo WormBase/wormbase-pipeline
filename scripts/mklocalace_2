@@ -1,0 +1,42 @@
+#!/bin/csh
+
+switch (`ostype`)
+  case "Irix": 
+	set prog = ~wormpub/acedb/bin/tace.SGI
+	breaksw
+  case "SunOS": 
+	set prog = ~wormpub/acedb/bin/tace.SUN
+	breaksw
+endsw
+
+if (! -d acedb) then
+  mkdir acedb
+endif
+if (! -d acedb/database) then
+  mkdir acedb/database
+endif
+if (! -e acedb/wspec) then
+  ln -s ~wormpub/acedb/wspec acedb/wspec
+endif
+if (! -e acedb/PS) then
+  ln -s ~wormpub/acedb/PS acedb/PS
+endif
+
+setenv ACEDB `pwd`/acedb
+
+if (! -e acedb/database/ACEDB.wrm) then
+  $prog <<EOF
+y
+EOF
+endif
+
+ln -s ~wormpub/acedb/methods.ace methods.ace
+ln -s ~wormpub/acedb/restriction.ace restriction.ace
+
+foreach i (`ls *.ace | grep -v .ace `)
+  $prog <<EOF
+parse $i
+save
+quit
+EOF
+end

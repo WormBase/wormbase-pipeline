@@ -1,0 +1,73 @@
+#!/usr/local/bin/perl
+
+#Script to report how many cosmids each finisher has done.
+#
+#Steven Jones, Sanger Centre 
+#Created 960822
+
+#usage=  $0 [finisher login]
+#adding the login prints out the cosmids for that finisher.
+
+if ($ARGV[0] eq "") {print  "Usage $0 <finisher>\n";exit;}
+
+require glob('~sjj/scripts/sanger.pl');
+$dir=&tilda(wormpub);
+
+open (current,"$dir/analysis/cosmids/current.versions");
+
+while (<current>) {
+	($cosmid)=split(/\//,$_);
+
+	open(finisher,"find-project $cosmid |");	
+
+		#Sometimes find-project will report 2 lines must not 
+		#let the program count these as 2 cosmids finished. 
+		$counted=0;
+	while (<finisher>) {
+		if (/(\S+)$/) {$finisher=$1;}
+		#if ($counted!=0) {print STDERR "Skipping $cosmid\n";}
+		if ($counted==0) {$total{$finisher}++;$totalcosmids++;$counted++;
+				 if (($ARGV[0] ne "") && ($ARGV[0] eq $finisher)) {print "$finisher $cosmid\n";}
+			      }
+		#do we have this finisher in the array
+		$logged=0;
+		foreach $loggedfinisher (@finishers) {
+			if ($finisher eq $loggedfinisher) {$logged=1;}
+			}
+		if ($logged==0) {push(@finishers,$finisher);}
+		}
+	close finisher;
+
+
+	
+}
+
+
+
+print "\nFinisher totals....\n";
+foreach $finisher (@finishers) {
+	#get real name
+	$name="unknown";
+	open (name,"finger $finisher |");
+	while (<name>) {
+		if (/^Login name:\s+(\S+)\s+In real life:\s+(.+)/) {if ($1 eq $finisher) {$name=$2;}}
+	}
+	close name;
+	print "$total{$finisher}\t$finisher\t$name\n";
+	
+}
+
+print "\n\nTotal number of cosmids accounted = $totalcosmids\n";
+
+
+
+
+
+
+
+
+
+
+
+
+

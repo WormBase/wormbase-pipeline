@@ -1,0 +1,146 @@
+#!/usr/local/bin/perl
+#
+# adapted from other acepreps by RD 990528 
+# for reasonably fast processing of unfinished sequence
+#
+# 000618 : dl : Altered script to accomodate change of lab 'CB' -> 'HX'
+#
+
+use Getopt::Long ;
+
+&GetOptions("basic!") ;
+
+$| = 1 ;			# set autoflush on STDOUT
+
+$cosdir = glob ("~wormpub/analysis/cosmids") ;
+
+($sec,$min,$hour,$mday,$mon,$year) = localtime(time) ;
+$acedat = "20".$year."-".($mon+1)."-".($mday+1) ;
+
+$usage = "Usage: unfinished-aceprep [-basic] <seq>|<seq/date>\n" ;
+
+($seq = shift @ARGV) || die $usage ;
+#(`uname` eq "OSF1") || die "can only run on DEC alpha\n$usage" ;
+
+if ($seq =~ /(.+)\/(u\d+)/) {
+    $datedir = $2 ;
+    $seq = $1 ;
+} else {
+    chdir $cosdir || die "can't find analysis/cosmids/\n" ;
+    open (UV,"unfinished.versions") || die "can't open unfinished.versions\n" ;
+    while (<UV>) {
+	chop ;
+	($s, $dd) = split /\// ;
+	if ($s eq $seq) {
+	    $datedir = $dd ;
+	    last ;
+	}
+    }
+    if (! defined $datedir) { die "can't find $seq in unfinished.versions\n" ; }
+}
+
+$fulldir  =  "$cosdir/$seq/$datedir" ;
+chdir $fulldir ;
+
+print "\nunfinished-aceprep in $fulldir at $acedat\n" ;
+
+# basic info
+############
+
+$ddir = $datedir ;
+$ddir =~ s/u// ;
+
+if (! -f "$seq.basic.ace") {
+    print "making basic .ace file\n" ;
+    open (ACE, ">$seq.basic.ace") ;
+    print ACE "\nSequence $seq\n" ;
+    print ACE "Genomic_canonical\n" ;
+    print ACE "From_laboratory HX\n" ;
+    print ACE "Clone $seq\n" ;
+    print ACE "Remark  \"unfinished fragment\"\n" ;
+    print ACE "Date_directory $ddir\n" ;
+    print ACE "Analysis_history basic " . &acetime . "\n\n" ;
+    close ACE ;
+}
+
+if ($opt_basic) { exit 0 ; }
+
+# remove the assembly tags that are not wanted
+##############################################
+
+if (! -f "$seq.na.ace") {
+    print "removing excess tags" ;
+    $rs = system ("cd $fulldir ; rmassemblytags $seq > $seq.na.ace") ;
+    $t = &acetime ; system ("echo \"\nSequence $seq\nAnalysis_history rmassemblytags $t\n\n\" >> $seq.na.ace") ;
+    printf (" - return value %d - signal %x at %s\n", 
+	    $rs >> 8, $rs & 0xff, scalar localtime) ;
+    unlink "$seq.na.ace" if $rs ;
+}
+
+# run genefinder
+################
+
+if (! -f "$seq.gf.ace") {
+    print "running genefinder" ;
+    $gfexec = glob "~wormpub/BioSW/gf_980506/genefinder/bin/genefinder" ;
+    $gftab = glob "~wormpub/BioSW/gf_980506/nemtables" ;
+    $rs = system ("cd $fulldir ; $gfexec -tablenamefile $gftab/sanger.tablenamefile.cod -intronPenalty $gftab/intron_penalty.lookup -exonPenalty $gftab/exon_penalty.lookup $seq.fasta | genefinder2ace  - $seq > $seq.gf.ace") ;
+    $t = &acetime ; system ("echo \"\nSequence $seq\nAnalysis_history Genefinder $t\n\n\" >> $seq.gf.ace") ;
+    printf (" - return value %d - signal %x at %s\n", 
+	    $rs >> 8, $rs & 0xff, scalar localtime) ;
+    unlink "$seq.gf.ace" if $rs ;
+}
+
+# est_genome C. elegans ESTs
+############################
+
+if (! -f "$seq.eg.ace") {
+    print "searching ESTs" ;
+    $allcdna = glob "~wormpub/analysis/cdna/allcdna" ;
+    $rs = system ("cd $fulldir ; est_genome2ace -ci $allcdna $seq.fasta > $seq.eg.ace") ;
+    $t = &acetime ; system ("echo \"\nSequence $seq\nAnalysis_history EST_GENOME $t\n\n\" >> $seq.eg.ace") ;
+    printf (" - return value %d - signal %x at %s\n", 
+	    $rs >> 8, $rs & 0xff, scalar localtime) ;
+    unlink "$seq.eg.ace" if $rs ;
+}
+
+# local repeats
+###############
+
+if (! -f "$seq.lr.ace") {
+    printf "finding local repeats" ;
+    $rs = system ("cd $fulldir ; repeatsearch $seq") ;
+    $rs |= system ("echo \"Sequence $seq\" > $seq.lr.ace") ;
+    $rs |= system ("cd $fulldir ; exinv < repeats/$seq.inv | inv2ace_4 >> $seq.lr.ace") ;
+    $rs |= system ("cd $fulldir ; tan2ace_4 < repeats/$seq.tan >> $seq.lr.ace") ;
+    $t = &acetime ; 
+        system ("echo \"\nSequence $seq\nAnalysis_history inverted $t\n\n\" >> $seq.lr.ace") ;
+        system ("echo \"\nSequence $seq\nAnalysis_history tandem $t\n\n\" >> $seq.lr.ace") ;
+    printf (" - return value %d - signal %x at %s\n", 
+	    $rs >> 8, $rs & 0xff, scalar localtime) ;
+    unlink "$seq.lr.ace" if $rs ;
+}
+
+# Search for repeat families
+############################
+
+if (! -f "$seq.rf.ace") {
+    printf "searching repeat families" ;
+    $reptable = glob ("~wormpub/analysis/Repeat_Families/Repeat_Families_lookup_table") ;
+    $rs = system ("cd $fulldir ; Search_Repeat_Families $seq.fasta $reptable > $seq.rf.ace") ;
+    $t = &acetime ; system ("echo \"\nSequence $seq\nAnalysis_history CeRep_search $t\n\n\" >> $seq.rf.ace") ;
+    printf (" - return value %d - signal %x at %s\n", 
+	    $rs >> 8, $rs & 0xff, scalar localtime) ;
+    unlink "$seq.rf.ace" if $rs ;
+}
+
+exit 0 ;
+
+sub acetime {
+    my ($sec,$min,$hour,$mday,$mon,$year) = localtime(time) ; $year += 1900 ;
+    return sprintf ("%4d-%02d-%02d_%02d:%02d:%02d", $year, ($mon+1), $mday, $hour, $min, $sec) ;
+}
+
+###############
+# end of file #
+###############

@@ -1,0 +1,302 @@
+#!/usr/local/bin/perl
+# camcheck.pl
+# v 0.2
+#
+# Cronjob integrity check controls for camace database.
+#
+#
+#
+# [ag3] finished, unfinished, finished but not annotated
+# [ag3 ms2] check for N's and bad chars
+# [ag3] compares date and sequences db <> directory
+# [ms2 ag3] correct gene structure ?
+# 000717 dl1 : put a patch to solve the AcePerl bug regarding fetching large datasets 
+#       which involves a seperate tace call for some date_dir
+#       !! This can come out when AcePerl is updated to a patched newer version !!
+
+
+BEGIN {
+  unshift (@INC,"/nfs/disk92/PerlSource/Bioperl/Releases/bioperl-0.05");
+}
+use Bio::Seq;
+use Ace;
+
+# Local confs
+my $maintainer="wormpub\@sanger.ac.uk";
+my $clonepath="/nfs/disk100/wormpub/analysis/cosmids";
+my $clonefile="$clonepath"."/current.versions";
+# added 000717 dl
+my $tace = glob("~acedb/RELEASE.SUPPORTED/bin.ALPHA_4/tace"); # tace executable path
+my $db = glob("~wormpub/acedb/ace4/cam");                     # Database path
+my $exec="$tace $db";     
+
+# Connect with acedb server on wormsrv1
+$ENV{ACEDB_HOST}="wormsrv1";
+$ENV{ACEDB_PORT}="100100";
+use constant HOST =>  'wormsrv1';
+use constant PORT =>  100100;
+$|=1;
+$LOG{LOG}= "Opening the camace database on wormsrv1 ....\n";
+my $db = Ace->connect(-host=>HOST,-port=>PORT)
+  || do {$LOG{LOG}.="Connection failure: ",Ace->error; &maillog; die();};
+$LOG{LOG}.="Connection OK.\n\n";
+
+$SIG{'ALRM'} = \&timed_out;
+my $STARTTIME = &gettime;
+$LOG{LOG}.="CamCheck run $$ STARTED $STARTTIME\n\n";
+
+# Do the following for every sequence in current.cosmid
+open (CLONEFILE,"<$clonefile");
+eval {
+  alarm(9800);
+  while($line=<CLONEFILE>) {
+    $seq1=$seq2="";
+    chomp ($line);
+    $line =~ m/(\w+)\/(\w+)/;
+    $seqname=$1;
+# Retrieve the first sequence and date FROM DIRECTORY and push sequence -> $seq1
+    $d_date=$2;
+     $seqpath="$clonepath"."/"."$line"."/"."$seqname.seq";
+    open SEQPATH,"<$seqpath" || do {$seqerror .= "NOT_IN_DIRECTORY $seqpath\n" ;next;};
+    while ($line1=<SEQPATH>) {  
+      chomp($line1);
+      $seq1.="$line1";
+    }
+    close SEQPATH;
+    $seq1=~tr/a-z/A-Z/;
+    $seq1=~s/\>\w+//;
+    $seq1=~s/\W+//mg;
+    if ($seq1 =~ /[^ACGTUMRWSYKVHDBXN]/img) {
+      $LOG{SEQ}.= "DIRSEQ for $seqname contains bad characters\n";
+      $seq1=~s/[^ACGTUMRWSYKVHDBXN]//img;
+    }
+# Retrieve the second sequence and date FROM ACEDB .. 
+    $obj = $db->fetch(Sequence=>$seqname);
+    if (!defined ($obj)) {
+      $LOG{SEQ}.= "Could not fetch sequence $seqname\n";
+      next;
+    }
+# .. skipping the non-canonical genomic sequences    
+    $canonical=$obj->Properties(1);
+    if ($canonical !~ /Genomic_canonical/) {
+      next;
+    }
+# Push the sequence as string in $seq2
+    $seq2=$obj->asDNA();
+    if (!$seq2) {
+      $LOG{SEQ}.= "NOT_IN_ACEDB $seqname\n" ;
+      next;
+    }
+    $seq2=~s/\>\w+//mg;
+    $seq2=~tr/a-z/A-Z/;
+    $seq2=~s/\W+//mg;
+# Finished ? Annotated ?
+    &finannot;
+# Check for N's in FINISHED sequences
+    &checkchars;
+# Compare date and checksum
+    &dateseq;
+# Check correctness of gene structure
+    &checkgenes;
+# Get rid of this sequence object
+    $obj->DESTROY();
+  }
+  alarm(0);
+};
+				# end eval
+close(CLONEFILE);
+
+$ENDTIME = &gettime;
+$LOG{LOG}.="CamCheck run $$ ENDED on $ENDTIME\n\n";
+# Mail log to the maintainer
+&maillog;
+# Write log to wormpub intweb
+&writehtml;
+
+die();
+
+####### Subs ######
+
+#----------------------------
+# Timeout subroutine for 
+# avoiding dandling processes
+#
+sub timed_out {
+ $log.="*** Timeout - the process took more than 5000 seconds to complete\n";
+}
+
+#------------------
+# Get current time
+#
+sub gettime {
+  my @time = localtime();
+  my ($MINS,$HOURS,$DAY,$MONTH,$YEAR)=(localtime)[1,2,3,4,5];
+  if ($MINS=~/^\d{1}$/) {
+    $MINS="0"."$MINS";
+  }
+  my $REALMONTH=$MONTH+1;
+  my $REALYEAR=$YEAR+1900;
+  my $TODAY = "$DAY $REALMONTH $REALYEAR at $HOURS:$MINS";
+  return $TODAY;
+}
+
+#---------------------------
+# Coherency check between 
+# directory and database
+#
+sub dateseq {
+  $a_date=$obj->at('Origin.Date_directory[1]');
+
+  select((select(STDOUT),$|=1)[0]);
+  print STDOUT "$seqname; dir '$d_date' acedb '$a_date'\n";
+
+  # nasty subroutine to patch aceperl problem
+  if ($a_date eq "") {&tace_it};
+  if ($d_date!=$a_date) {
+    $LOG{SEQ}.= "DATE mismatch in $seqname; dir $d_date acedb $a_date\n";
+  }
+
+ $bioseq1 = Bio::Seq->new(-seq=>$seq1,-ffmt=>'Fasta',-type=>'Dna',);
+ $bioseq2 = Bio::Seq->new(-seq=>$seq2,-ffmt=>'Fasta',-type=>'Dna',);
+ $chk1=$bioseq1->GCG_checksum;
+ $chk2=$bioseq2->GCG_checksum;
+ if ($chk1 != $chk2) {
+   $LOG{SEQ}.= "SEQUENCE mismatch in $seqname; dir $chk1 acedb $chk2\n";
+ }
+ undef $bioseq1;
+ undef $bioseq2;
+}
+
+sub tace_it {
+
+my $command=<<EOF;
+find Genome_sequence $seqname
+show -a Date_directory
+quit
+EOF
+
+    open(textace, "echo '$command' | $exec -| ");
+    while (<textace>) {
+     chomp;
+     next if ($_ eq "");
+     next if (/acedb/);
+     next if (/\/\//);
+     s/\"//g;
+     if (/Date_directory\s+(\S+)/) {
+	 $a_date = $1;
+     }
+ }
+close (textace);
+return ($a_date);
+}
+
+#--------------------------
+# Finished / Annotated
+#
+sub finannot {
+    my $finished=$obj->Finished(1);
+    my $annotated=$obj->Annotated(1);
+    if (!$finished) {
+      $LOG{ANNOT}.= "NOT_FINISHED $seqname\n";
+    }    
+    if (($finished)&&(!$annotated)){
+      $LOG{ANNOT}.= "FINISHED_BUT_NOT_ANNOTATED $seqname\n";
+    }
+    undef $finished;
+    undef $annotated;
+}
+
+#----------------------
+# Odd chars and N's in
+# finished sequences
+#
+sub checkchars {
+  if ($seq2 =~ /[^ACGTUMRWSYKVHDBXN]/img) {
+    $LOG{SEQ}.= "ACEDBSEQ for $seqname contains bad characters\n";
+    $seq2=~s/[^ACGTUMRWSYKVHDBXN]//img;
+  }
+  if (($seq2 =~ /N/g)&&($finished)){ 
+    $LOG{SEQ}.= "ACEDBSEQ FINISHED SEQUENCE for $seqname contains N \n";
+  }
+}
+
+#----------------------------
+# Gene length as declared
+# is subsequence and in exons
+# list
+#
+sub checkgenes {
+  foreach my $child ($obj->Subsequence) {
+    undef my @num;
+    my ($seq, $start, $end) = $child->row();
+    my $diff = $end - $start;
+    if ($diff < 0) {
+      $diff = $start - $end;
+    }
+    my $subseq = $db->fetch(Sequence => "$child");
+    if (!defined ($subseq)) {
+      $LOG{SUBSEQ}.= "Cannot fetch subsequence $child\n";
+      next;
+    }
+    @num = $subseq ->at ('Structure.From.Source_Exons[2]');
+    if (!defined (@num)) {
+      next;
+    }
+    my $index = $#num;
+    my $length = ($num[$index])-1;
+    if ($diff != $length) {
+      $LOG{SUBSEQ}.="The subsequence $child belonging to $seqname has diff=$diff and length=$length\n";
+    }
+    $subseq->DESTROY();
+    $child->DESTROY();
+    $diff="";
+    $length="";
+  }
+}
+
+#-----------------------------
+# Mail final log to maintainer
+#
+sub maillog {
+  open (OUTLOG,"|/usr/bin/mailx -s camcheck_report $maintainer ");
+  foreach $KEY (keys %LOG) {
+    print OUTLOG "Log for $KEY:\n";
+    print OUTLOG $LOG{$KEY};
+  }
+  close OUTLOG;
+}
+
+#---------------------------------
+# Write HTML page with maintenance
+# job results
+#
+sub writehtml {
+$logdir="/nfs/disk100/wormpub/LocalWWW";
+`mv $logdir/camchecklog.html $logdir/oldcamchecklog.html`;
+$HTML_START=<<START;
+<HTML>
+<HEAD>
+<TITLE>Camace Automated db Maintenance log</TITLE>
+</HEAD>
+<BODY BGCOLOR="WHITE">
+START
+
+$HTML_END=<<END;
+</BODY>
+</HTML>
+END
+
+open (OUTHTML,">$logdir/camchecklog.html");
+print OUTHTML $HTML_START;
+print OUTHTML "<TABLE BORDER=1 WIDTH=100%>\n";
+foreach $KEY (keys %LOG) {
+  $LOG{$KEY}=~s/\n/\<BR\>/mg;
+  print OUTHTML "<TR>\n";
+  print OUTHTML "<TD><CENTER><B>$KEY</B></CENTER>\n";
+  print OUTHTML "<TD>$LOG{$KEY}\n";
+  print OUTHTML "</TR>\n";
+}
+print OUTHTML "</TABLE>\n";
+print OUTHTML $HTML_END;
+close OUTHTML;
+}

@@ -1,0 +1,360 @@
+#!/usr/local/bin/perl
+#
+# pepace2autoace
+#
+# v 0.1
+#
+# Usage : pepace2autoace [-options]
+#
+# This dumps the required classes from pepace for inclusion in autoace
+#
+###########################################################################################
+
+# v0.1 (010419)
+# 000824 : dl  : PP version  
+
+
+###########################################################################################
+# Variables                                                                               #
+###########################################################################################
+
+BEGIN  {
+ unshift (@INC,"/nfs/disk100/wormpub/analysis/scripts");
+}
+
+$|=1;
+use IO::Handle;
+use POSIX qw(:signal_h :errno_h :sys_wait_h);
+use Getopt::Std;
+use Cwd;
+require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
+
+
+ ##################################################
+ # Script variables (run)                         #
+ ##################################################
+
+my $maintainer = "dl1\@sanger.ac.uk";
+my $rundate = `date +%y%m%d`; chomp $rundate;
+my $runtime = `date +%H:%M:%S`; chomp $runtime;
+my $version = &get_script_version(pepace2autoace);
+
+my $CWD = cwd;
+
+ ##################################################
+ # Get the new target database directory          #
+ # and all the run options                        #
+ ##################################################
+
+$opt_p="";
+getopts ('r');
+
+$release = $opt_r;
+
+ ################################################
+ # ACEDB executables                            #
+ ################################################
+
+$tace   = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
+$giface = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/giface";
+
+ ################################################
+ # database paths                               #
+ ################################################
+   
+$basedir     = "/wormsrv2";
+$autoacedir  = "/wormsrv2/autoace";
+$pepacedir   = "/nfs/disk100/wormpub/acedb/ace4/pepace";
+$wormbasedir = "/wormsrv2/wormbase";
+
+ ################################################
+ # others                                       #
+ ################################################
+
+$configfile = "/wormsrv2/autoace_config/pepace.config";
+
+ ################################################
+ # Avoid filling process table with zombies     #
+ ################################################
+
+$SIG{CHLD} = \&REAPER;
+sub REAPER {
+    my $pid;
+    $pid=waitpid(-1,&WNOHANG);
+    $SIG{CHLD}=\&REAPER;
+}
+
+ ##################################################
+ # Open logfile                                   #
+ ##################################################
+
+#my $logfile = "$autodir"."/pepace2autoace.$rundate.$$";
+#system ("/bin/touch $logfile");
+#open (LOGFILE,">>$logfile");
+#LOGFILE->autoflush;
+
+#print LOGFILE "# make_autoace\n\n";     
+#print LOGFILE "# version        : $version\n";
+#print LOGFILE "# run details    : $rundate $runtime\n";
+#print LOGFILE "\n";
+#print LOGFILE "WormBase version : ${WS_version}\n";
+#print LOGFILE "\n";
+
+#my $now = `date +%H:%M:%S`; chomp $now;
+#print LOGFILE "* Directory stucture created for $autodir at $now\n\n";
+  
+   ################################################
+   # Parse config file                            
+   ################################################
+  
+&mknewacefiles;
+
+#$now = `date +%H:%M:%S`; chomp $now;
+#print LOGFILE "* Parsed config file at $now\n\n";
+
+ ################################################
+ # Send emails to group                         #
+ ################################################
+
+#$now = `date +%H:%M:%S`; chomp $now;
+#print LOGFILE "* Send END mail at $now\n\n";
+#close LOGFILE;
+
+ ###############
+ # hasta luego #
+ ###############
+ 
+exit (0);
+
+   ################################################
+   ################## SUBROUTINES #################
+   ################################################
+
+
+###################################################
+# Email the log file to wormpub                   
+
+sub sendmails {
+    $SUBJ = shift @_;
+    open(MAIL, "| Mail -s \"make_autoace $SUBJ\" $maintainer ");
+
+
+    print MAIL "make_autoace $$ has $SUBJ\n\n";
+    
+    print MAIL "=============================================\n";
+    print MAIL "# make_autoace\n\n";     
+    print MAIL "# version        : $version\n";
+    print MAIL "# run details    : $rundate $runtime\n";
+    print MAIL "\n";
+    print MAIL "WormBase version : ${WS_version}\n";
+    print MAIL "=============================================\n";
+    print MAIL "\n";
+
+    close MAIL;
+    return;
+}
+
+
+###################################################
+# Subroutine for writing to a given database      
+
+sub DbWrite {
+  my ($command,$exec,$dir,$name)=@_;
+  open (WRITEDB,"| $exec $dir >> $logfile") or do {print LOGFILE "$name DbWrite failed\n";close LOGFILE; die();};
+  print WRITEDB $command;
+  close WRITEDB;
+}
+
+
+###################################################
+# Get time coordinates                            
+
+sub GetTime {
+  my ($SECS,$MINS,$HOURS,$DAY,$MONTH,$YEAR)=(localtime)[0,1,2,3,4,5];
+  if ($MINS=~/^\d{1,1}$/) {
+    $MINS="0"."$MINS";
+  }
+  my $REALMONTH=$MONTH+1;
+  my $REALYEAR=$YEAR+1900;
+  my $NOW = "$DAY-$REALMONTH-$REALYEAR:$HOURS:$MINS";
+  return $NOW;
+} 
+
+###################################################
+# Parses the lists from the config files     
+
+sub parseconfig {
+    open(config,"$configfile");
+    while(<config>) {
+	s/^\s+//;s/\s+$//;   
+	if (/^#/ || /^$/) {
+	 next;
+	}	 
+	if (/^P\s+(\S+)\s+(\S+)$/) {
+	 $dbname = $1;
+         $dbdir = $2;
+	 $targetdir="$wormbasedir"."/$dbname";
+         next;
+	}
+        if (/^\S+\s+(\S+)$/) {
+         $object=$1; $criteria="";$criterianoasterisk="";
+        } elsif (/^\S+\s+(\S+)\s+(\S+)$/) {
+         $object=$1; $criteria=$2;
+         $criteria=~/(\S+)\*/;
+         $criterianoasterisk=$1;
+        } 
+ 
+	# filename look-up
+	
+	if ($criteria eq "DNA") {
+	    $filename="$targetdir/".$dbname."_".DNA.".ace";
+	}
+	else {
+	    $filename="$targetdir/".$dbname."_".$object.$criterianoasterisk.".ace";
+	}
+
+	if (-e $filename) {
+	 push (@filenames,$filename);
+	 print LOGFILE "* Parse config file : file $filename noted ..\n";
+	} else {
+	 print LOGFILE "** Warning - file $filename is not existent !\n";
+	 next;
+	}
+    }
+}
+
+#################################################################################
+# Erases old acefiles and make new ones                                         #
+#################################################################################
+
+sub mknewacefiles {
+    open (CONFIG, "<$configfile");
+    while (<CONFIG>) {
+	s/^\s+//;s/\s+$//;    
+	
+	next if (/^\#/  || /^$/);            # comments in file
+
+	if (/^P\s+(\S+)\s+(\S+)$/) {
+	    $dbname = $1;
+	    $dbdir = $2;
+	    $targetdir = "$wormbasedir"."/$dbname";
+	    $exe = "$tace $dbdir";
+	    next;
+	}
+	
+	# nuts and bolts of acefile generation
+	# format:  database object criteria
+	
+	if (/^\S+\s+(\S+)$/) {
+	    $object=$1; $criteria="";$criterianoasterisk="";
+	} elsif (/^\S+\s+(\S+)\s+(\S+)$/) {
+	    $object=$1; $criteria=$2;
+	    $criteria=~/(\S+)\*/;
+	    $criterianoasterisk=$1;
+	} 
+
+	&make_command;
+
+	print "Filename: $filename\n";
+#	print LOG "Filename: $filename\n";
+	
+        print "Command: 'find $object $criteria' in $dbname\n";
+#        print LOG "Command: 'find $object $criteria' in $dbname\n";
+	open (TACE,"| $exe");
+	print TACE $command;
+	close TACE;
+	print "Made file $filename\n\n";
+#	print LOG "Made file $filename\n\n";
+
+    }
+    close CONFIG;
+}
+
+
+sub make_command {
+
+    $filename="$targetdir/".$dbname."_".$object.$criterianoasterisk.".ace";
+    
+$command=<<END;
+find $object $criteria
+write $filename
+quit
+END
+
+}
+
+
+
+###################################################
+# Prints help and disappears                      
+
+sub PrintHelp {
+   exec ('perldoc',$0);
+   exit;	
+}
+
+
+__END__
+
+=pod
+
+=head1 NAME - make_autoace
+
+=head2 USAGE
+
+make_autoace  makes the autoace database in a given directory.
+
+make_autoace  arguments:
+
+=over 4
+
+=item *
+
+-p path_of_database => location of the new autoace directory
+
+=item *
+
+-r => rebuild the database, excluding distribution and CHROMOSOMES (.dna/.gff) files; and/or
+
+=item *
+
+-d => creates only the distribution files; and/or
+
+=item *
+
+-c => creates only the CHROMOSOMES (.dna/.gff) files; and/or
+
+=back
+ 
+Examples:
+
+make_autoace -p /wormsrv2/WS15 -d 
+Creates the distribution files of the database in subdirectory /wormsrv2/WS15
+
+make_autoace -p WS15 -rdc
+Creates the new database in the WS15 subdirectory of the current path.
+Creates the whole database, including distribution and CHROMOSOME files.
+
+make_autoace -p ~wormpub/new_databases/WS15 -r
+Creates the new database in the /new_databases/WS15 subdirectory of the ~wormpub user.
+Re-create only the database files, not the distribution or the CHROMOSOME files
+
+
+=back
+=cut
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

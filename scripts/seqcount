@@ -1,0 +1,13 @@
+#!/usr/local/bin/perl
+
+
+while (<>) {
+	s/>.+\n//g;
+	s/\W//g;
+	# print;
+	$length=$length+length($_);
+
+}
+
+print $length,"\n";
+

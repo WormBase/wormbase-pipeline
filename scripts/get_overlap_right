@@ -1,0 +1,80 @@
+#!/usr/local/bin/perl
+
+
+#Calculates the start position of the sequence of the cosmid 
+#overlapping on the right
+
+
+require glob('~sjj/scripts/sanger.pl');
+
+$rightcosmid=&rightcosmid($ARGV[0]);
+if ($rightcosmid eq "") {print STDERR "cannot find any overlap info for $ARGV[0]\n";exit;}
+
+open(tempfile,">/tmp/rightseq$$");
+print tempfile ">$rightcosmid\n"; 
+#print "$rightcosmid\n";
+@sequence=&celeseq($rightcosmid);
+$seq=join('',@sequence[0..100]);
+#print "seq $seq\n";
+
+
+
+print tempfile $seq;
+close tempfile;
+undef @sequence;
+
+
+open(tempfile,">/tmp/seq$$");
+print tempfile ">$ARGV[0]\n"; 
+@sequence=&celeseq($ARGV[0]);
+foreach $base (@sequence) {
+
+   $i++;if ($i==100) {print tempfile "\n";$i=1;}
+   print tempfile $base;	
+}
+close tempfile;
+
+system("pressdb /tmp/seq$$ > /dev/null");
+open(blast,"blastn /tmp/seq$$ /tmp/rightseq$$ N=-4 X=3|");
+while (<blast>) {print STDERR;
+		if (/^Query:\s+(\d+)\s+/) {$query=$1;}
+		if ($query==1 && /^Sbjct:\s+(\d+)/) {$overlap=$1;last;}  
+		}
+
+if ($overlap ne "") {print "\nSequence $ARGV[0]\noverlap_right $rightcosmid $overlap\n\n";}
+		else {print STDERR "overlap not found\n";}
+	
+
+unlink "/tmp/seq$$.csq";
+unlink "/tmp/seq$$.nhd";
+unlink "/tmp/seq$$.ntb";
+unlink "/tmp/seq$$";
+unlink "/tmp/rightseq$$";
+
+exit;
+
+sub rightcosmid {
+        local($exec);
+        local($command);
+        $exec=&tace;
+	local($cosmid);
+        $ENV{'ACEDB'}="/nfs/disk100/wormpub/acedb/ace4/cam";     
+        $command=<<EOF;
+        Query Find genome_sequence $_[0]
+        show -a overlap_right
+        quit
+EOF
+open(textace, "echo '$command' | $exec  |");
+	while (<textace>) {
+	if (/overlap_right\s+\"(\S+)\"/i) {$cosmid=$1;}
+        }
+
+if ($cosmid eq "") {return;} else {return $cosmid;}
+
+}
+
+
+
+
+
+

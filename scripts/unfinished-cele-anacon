@@ -1,0 +1,114 @@
+#! /bin/csh
+#
+# script to make an analysis subdirectory for an unfinished sequence
+#
+#Adapted 950704 by sjj to use -M option (Smart option) to use
+#finsh_left and finish_right tags for consensus output
+#If numbers are not given at the command line then the -M is invoked
+
+set scriptsdir  = ~wormpub/analysis/scripts
+set datadir     = ~wormpub/analysis/cosmids
+
+set user        = wormpub
+
+switch ($#argv)
+  case "2":
+	set seq = $1
+	set proj = $2
+	breaksw
+  case "1":
+	set seq = $1
+	set proj = $1
+	breaksw
+  default: 
+	echo 'Usage: unfinished-cele-anacon <sequence> [<project>]'
+	echo "-- run as user $user."
+	exit 2
+endsw
+
+if ( `uname` != OSF1 ) then
+  echo "You must run this script on an OSF1 machine"
+  exit 1
+endif
+
+if (`whoami` != $user) then
+  echo "This script must be run when logged in as $user"
+  exit 2
+endif
+
+#date is prefixed with u for unfinished
+set dat = `date +u%y%m%d`
+
+cd $datadir
+if (! -d $seq) mkdir $seq
+cd $seq
+if (-d $dat) \rm -r $dat
+mkdir $dat
+
+###########################
+#
+# Set project directory...
+#
+###########################
+
+set condir = `pfind -q -u $proj`
+
+# Check project directory exists.
+if (! -d  $condir) then
+  echo "Can't find project directory: $condir"
+  exit 2
+endif
+
+cd $condir
+
+echo Making consensus for sequence $seq in project $proj version 0 from directory $condir
+
+mkcon-gap -bayesian -gestapo -c 0 -a -M -n $seq -p $proj -o $datadir/$seq/$dat/${seq}_0.ace
+
+if ($status != 0) then 
+	echo "$0 aborted with status $status"
+	exit 3
+endif
+
+cd $datadir/$seq/$dat
+
+# remove pads
+perl -pi -e 's/\*//g ;' ${seq}_0.ace
+# remove explicit newlines in tag comments
+perl -pi -e 's/\\n/ /g ;' ${seq}_0.ace
+sed -f $scriptsdir/toseq.sed < ${seq}_0.ace | seqpress | sed -e '/^>$/d' >! ${seq}.seq
+# RD 000922 added "| sed -e '/^>$/d'" since now seqpress adds a blank > line!
+
+# Make a fasta version of the file 
+
+echo -n ">" >! $seq.fasta
+echo $seq >> $seq.fasta
+cat $seq.seq >> $seq.fasta
+
+########################################################################
+# should check if  different from previous version - if not, remove
+########################################################################
+
+echo "Have made $seq/$dat/${seq}.seq and .fasta"
+
+########################################################################
+# update unfinished.versions
+########################################################################
+
+cd $datadir
+sed -e "/^$seq\//d" < unfinished.versions >! junk
+\mv junk unfinished.versions
+cat >> unfinished.versions <<END
+$seq/$dat
+END
+
+###################DO SOME CHECKS ON COSMID INTEGRITY ###################
+
+echo -n "Composition: "
+composition $datadir/$seq/$dat/${seq}.fasta 
+echo ' '
+
+#####END OF CHECKS 
+####################################################################
+
+exit 0

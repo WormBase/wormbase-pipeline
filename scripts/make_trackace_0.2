@@ -1,0 +1,992 @@
+#!/usr/local/bin/perl 
+#
+# make_trackace
+# v 0.2
+#
+# dl
+#
+# Usage :
+#
+# v 0.1
+# 001024 : dl  : PP version
+
+BEGIN {
+  unshift (@INC,"/nfs/disk92/PerlSource/Bioperl/Releases/bioperl-0.05");
+}
+use Bio::Seq;
+use Getopt::Std;
+use IO::Handle;
+use Ace;
+require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
+
+#################################################################################
+# Initialise variables                                                          #
+#################################################################################
+
+$|=1;
+
+ ##############################
+ # paths for I/O files        #
+ ##############################
+
+$tace                  = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
+$Wormbase_release_file = "/wormsrv2/autoace_config/WormBase_release_version";
+$rundate = `date +%y%m%d`; chomp $rundate;
+$runtime = `date +%H:%M:%S`; chomp $runtime;
+$version               = &get_script_version(make_trackace);
+$trackacepath          = "/wormsrv2/trackace";
+#$WormBasepath         = "/wormsrv2/autoace";
+$WormBasepath          = "/wormsrv2/TESTDB";
+  
+ ##############################
+ # deal with command line     #
+ ##############################
+
+$opt_d="";   # Verbose debug mode
+$opt_h="";   # Help/Usage page
+
+getopts ('dh');
+
+&usage if ($opt_h);
+($debug = 99) if ($opt_d);
+
+ ##############################
+ # get release versions       #
+ ##############################
+
+open (WormBase_release, "<$Wormbase_release_file");
+while (<WormBase_release>) {
+    chomp;
+    $next_release = substr($_,2);
+}
+close (WormBase_release);
+
+
+$next_release = 17;
+
+
+$WS_next     = "WS".$next_release;
+$next_release--;
+$WS_release  = "WS".$next_release;
+$next_release--;
+$WS_previous = "WS".$next_release;
+undef $next_release;
+
+#################################################################################
+# Main Loop                                                                     #
+#################################################################################
+
+#$logfile               = "/wormsrv2/logs/make_trackace.$rundate.$$";
+$logfile               = "/wormsrv2/trackace/make_trackace.$rundate.$$";
+open (LOG,">$logfile");
+LOG->autoflush();
+
+if ($debug) {
+    print LOG "# make_trackace\n";
+    print LOG "# version          : $version\n";
+    print LOG "# run details      : $rundate $runtime\n";
+    print LOG "# WS_release       : $WS_release\n";
+    print LOG "#\n";
+}
+
+ ####################################################
+ # open database connections  (WormBase & trackace) #
+ ####################################################
+
+if ($debug) {print LOG "Opening WormBase @ '$WormBasepath' ....\n";}
+$wormbase = Ace->connect(-path=>$WormBasepath) 
+    || do { print LOG "Connection failure to $WormBasepath: ",Ace->error; die();};
+if ($debug) {print LOG "Connection to WormBase OK\n\n";}
+
+if ($debug) {print LOG "Opening trackace @ '$trackacepath' ....\n";}
+$trackace = Ace->connect(-path=>$trackacepath) 
+    || do { print LOG "Connection failure to $trackacepath: ",Ace->error; die();};
+if ($debug) {print LOG "Connection to trackace OK\n\n";}
+
+ ##############################
+ # Clean trackace             #
+ ##############################
+
+&clean_trackace;
+
+&loop_genome_sequence_update;
+
+&loop_genome_sequence_overlaps;
+
+close (LOG);
+exit(0);
+
+
+sub loop_genome_sequence_update {
+
+ ################################################################################
+ # Loop through all the Genomic_canonical                                       #
+ ################################################################################
+ #
+ # 
+
+    if ($debug) {
+	$count = $wormbase->fetch(-query=> 'find Genome_sequence *');
+	print LOG "checking $count Genome_sequence objects\n\n";
+    }
+
+    $i = $wormbase->fetch_many(-query=> 'find Genome_sequence *');  
+    while ($obj = $i->next) {
+	
+	$genome_sequence = $obj;
+	
+	print "// $genome_sequence\n\n" if ($debug);
+
+	#######################
+	# fetch from WormBase #
+	#######################
+
+        ($wormbase_dna,$wormbase_chk,$wormbase_lab,$flipped) = "";
+	&get_data($genome_sequence,wormbase);
+	
+	$wormbase_dna = $data{seq_dna};
+	$wormbase_chk = $data{chk_sum};
+	$wormbase_lab = $data{seq_lab};
+	$flipped      = $data{flipped};
+
+	print LOG "\nGenomic_canonical : $genome_sequence    \t$data{seq_len} \t$data{chk_sum}\t$data{seq_lab}\n";
+   	
+	print LOG "Total: $data{seq_len}\t";
+	print LOG "G:" . $data{seq_dna} =~ tr /G/G/ . "\t";
+	print LOG "A:" . $data{seq_dna} =~ tr /A/A/ . "\t";
+	print LOG "T:" . $data{seq_dna} =~ tr /T/T/ . "\t";
+	print LOG "C:" . $data{seq_dna} =~ tr /C/C/ . "\n\n";
+	print LOG "DNA: " . substr($data{seq_dna},0,30) . "\n\n";
+	
+	
+	#######################
+	# check in trackace   #
+	#######################
+	
+	&get_data($genome_sequence,trackace);
+    
+	if ($data{found} == 0) {
+	    # Object is non-existent in trackace
+	    print LOG "Not present in database currently. Make a new object\n";
+	    print LOG "Calling &new_Genomic_canonical($genome_sequence)\n\n";
+	    &new_Genomic_canonical($genome_sequence,0);
+	    print "\n";
+	    next;
+	}
+	elsif ($data{found} == 2) {
+	    # No Sequence object
+	    print LOG "No useable ?Sequence in database currently.\n";
+	    print LOG "Move onto the next Genome_sequence\n\n";
+	    next;
+	}
+	elsif ($data{found} == 3) {
+	    # No Overlap object
+	    print LOG "No useable ?Overlap in database currently.\n";
+	    print LOG "Move onto the next Genome_sequence\n\n";
+	    next;
+	}
+	
+	$trackace_chk = $data{chk_sum};
+
+	# checksums match
+	if ($trackace_chk == $wormbase_chk) {
+	    print LOG "Sequence versions are identical\nJust make it 'Is_active'\n";
+	    &make_active($genome_sequence,$trackace);
+	}
+	else {
+	    print LOG "Sequence versions are different [WormBase: $wormbase_chk v Trackace: $trackace_chk]\n";
+ 
+	    print LOG "Total: $data{seq_len}\t";
+	    print LOG "G:" . $data{seq_dna} =~ tr /G/G/ . "\t";
+	    print LOG "A:" . $data{seq_dna} =~ tr /A/A/ . "\t";
+	    print LOG "T:" . $data{seq_dna} =~ tr /T/T/ . "\t";
+	    print LOG "C:" . $data{seq_dna} =~ tr /C/C/ . "\n\n";
+	    print LOG "DNA: " . substr($data{seq_dna},0,30) . "\n\n";
+
+	    print LOG "Update and make 'Is_active\n\n";
+       	
+	    #&update_sequence($genome_sequence);
+	}
+	
+	$obj->DESTROY();
+
+	print "\n";
+
+    } # end object loop    
+    
+    if ($debug) {
+	my $db = Ace->connect(-path=>$trackacepath) || do { print "Connection failure: ",Ace->error; die();};
+	my $count = $db->fetch(-query=> 'find Golden_path');
+	print LOG "\nGolden_path contains $count Genome_sequence objects\n\n";
+    }
+    
+    print LOG "=================================================================\n";
+    
+} # end of sub 'loop_genome_sequence_update'
+
+
+sub loop_genome_sequence_overlaps {
+    
+#################################################################################
+# Overlaps                                                                      #
+#################################################################################
+#
+# foreach Genomic_canonical in the new release (
+#
+#
+#   
+    # these are variables based on a fresh set of ?Overlap objects per build
+    # need to implement some look-ups in trackace 
+
+    my $ol_acefile = "/wormsrv2/trackace/data/overlap.ace";
+    my $ol_errors  = "/wormsrv2/trackace/errors.$rundate.$$";
+
+    open (ACE, ">$ol_acefile") || die "Can't open file $ol_acefile\n\n";
+    open (ERR, ">$ol_errors") || die "Can't open file $ol_errors\n\n";
+
+    ##############################
+    # Connect to WormBase        #
+    ##############################
+
+    if ($debug) {print LOG "Opening WormBase @ '$WormBasepath' ....\n";}
+    $wormbase = Ace->connect(-path=>$WormBasepath) 
+	|| do { print LOG "Connection failure to $WormBasepath: ",Ace->error; die();};
+    if ($debug) {print LOG "Opening trackace @ '$trackacepath' ....\n";}
+    $trackace = Ace->connect(-path=>$trackacepath) 
+	|| do { print "Connection failure to $trackacepath: ",Ace->error; die();};
+    if ($debug) {print LOG "Connections OK\n\n";}
+
+
+    #############################
+    # Find the next Overlap tag #
+    #############################
+
+    $overlap_no = $trackace->fetch(-query=> 'find Overlap *');
+
+    print LOG "There are $overlap_no ?Overlap_no objects in trackace\n\n";
+    $overlap_no++;
+    
+    ################################################################################
+    # Loop through all the Genomic_canonical                                       #
+    ################################################################################
+
+    $i = $wormbase->fetch_many(-query=> 'find Genome_sequence *');  
+    while ($obj = $i->next) {
+
+	$current_genomic = $obj;
+	print LOG "\nGenomic_canonical : $current_genomic    \t";
+	
+	$current_dna = $obj->asDNA();
+	if (!$current_dna) {print LOG "NOT_IN_ACEDB $current_genomic\n"; next;}
+	$current_dna=~s/\>\w+//mg;
+	$current_dna=~tr/a-z/A-Z/;
+	$current_dna=~s/\W+//mg;
+	
+	$len = length($current_dna);
+	$lab = $obj->From_Laboratory(1);
+	$ol_clone_right = $obj->Overlap_right(1);
+	$ol_int_right = $obj->Overlap_right(2);
+	
+	$ol_len = ($len - $ol_int_right) + 1;
+	
+	print  LOG"$len \t[$lab]\t$ol_clone_right    \t$ol_int_right\t=> o/l $ol_len\n";
+	
+	if ($ol_clone_right eq "") {
+	    print LOG "\n!! No overlap_right present !!\n\n";
+	    next;
+	}
+
+	$j = $wormbase->fetch(Sequence=>$ol_clone_right);
+	if (!defined ($j)) {
+	    print LOG "Could not fetch sequence $ol_clone_right\n";
+	    next;
+	}
+	$overlap_sequence = $j;
+	print LOG "Overlap_sequence : $overlap_sequence    \t";
+	$right_dna = $j->asDNA();
+	if (!$right_dna) {print LOG "NOT_IN_ACEDB $overlap_sequence\n"; next;}
+	$right_dna=~s/\>\w+//mg;
+	$right_dna=~tr/a-z/A-Z/;
+	$right_dna=~s/\W+//mg;
+	$right_len = length($right_dna);
+	$right_lab = $j->From_Laboratory(1);
+
+	print LOG "$right_len \t[$right_lab]\n\n";
+	
+	$olseq_parent = substr($current_dna,($ol_int_right-1));
+	$olseq_right  = substr($right_dna,0,$ol_len);
+
+
+	# print the actual sequence overlap strings
+#	print LOG "$current_genomic:    \t$olseq_parent\n";
+#	print LOG "$overlap_sequence:   \t$olseq_right\n\n";
+
+	if ($olseq_parent ne $olseq_right) {
+	    print LOG "Sequences do not match\n\n";
+	    print ERR "No overlap object made for Sequence: '$current_genomic'\n";
+	}
+	else {
+	    print LOG "=> Overlap is valid \n\n";
+
+	    #####################
+	    # check in trackace #
+	    #####################
+
+	    print LOG "Open Trackace => Genomic_canonical '$current_genomic'\n";
+
+	    $trackace_genomic_canonical = $trackace->fetch(Genomic_canonical=>"$current_genomic");
+	    if (!$trackace_genomic_canonical) {
+		print LOG "$trackace_genomic_canonical is not present in trackace\nWhoops\n\n";
+#		exit(1);
+	    }
+	    $trackace_seq_version = $trackace_genomic_canonical->Current_version(1);
+	    $trackace_current_seq = $current_genomic . "~" . $trackace_seq_version;
+	
+	    print LOG "Open Trackace => Sequence $trackace_current_seq\n";
+		    
+	    $trackace_sequence = $trackace->fetch(Sequence=>"$trackace_current_seq");
+	    if (!$trackace_sequence) {
+		print LOG "$trackace_current_seq is not present in trackace\nWhoops\n\n";
+#		exit(1);
+	    }
+	    
+	    print LOG "Open Trackace => Overlap $trackace_overlap\n";
+	    $trackace_overlap = $trackace_sequence->Current_right_overlap();
+	    if (!$trackace_overlap) {
+		print LOG "$trackace_current_sequence has no current overlap object\n";
+
+
+		$trackace_ol_genomic = $trackace->fetch(Genomic_canonical=>"$overlap_sequence");
+		if (!$trackace_ol_genomic) {
+		    print LOG "$trackace_ol_genomic is not present in trackace\nWhoops\n\n";
+#		exit(1);
+		}
+		$trackace_ol_seq     = $trackace_ol_genomic->Current_version(1);
+		$trackace_ol_current = $overlap_sequence . "~" . $trackace_ol_seq;
+
+		print LOG "\n# Current\n";
+		print LOG "Sequence_left \"$trackace_current_seq\"\n";
+		print LOG "Sequence_right \"$trackace_ol_current\"\n";
+		print LOG "Overlap_length $ol_len\n";
+		print LOG "Evidence \"Sequence match\"\n\n"; 
+		
+		printf ACE "Overlap : \"OL%.4d\"\n", $overlap_no;
+		print ACE "Sequence_left \"$trackace_current_seq\"\n";
+		print ACE "Sequence_right \"$trackace_ol_current\"\n";
+		print ACE "Overlap_length $ol_len\n";
+		print ACE "Evidence \"Sequence match\"\n\n"; 
+		
+		print  ACE "Sequence : \"$trackace_current_seq\"\n";
+		printf ACE "Current_right_overlap \"OL%.4d\"\n\n", $overlap_no;
+		
+		print  ACE "Sequence : \"$trackace_ol_current\"\n";
+		printf ACE "Current_left_overlap \"OL%.4d\"\n\n", $overlap_no;
+		
+		$overlap_no++;
+		
+	    }
+	    else {
+		$ta_sequence_left   = $trackace_overlap->Sequence_left(1);
+		$ta_sequence_right  = $trackace_overlap->Sequence_right(1);
+		$ta_sequence_length = $trackace_overlap->Overlap_length(1);
+		$ta_sequence_gap    = $trackace_overlap->Gap_length(1);
+		
+		print LOG "\n";
+		print LOG "# Trackace\n";
+		print LOG "Overlap : \"$trackace_overlap\"\n";
+		print LOG "Sequence_left \"$ta_sequence_left\"\n";
+		print LOG "Sequence_right \"$ta_sequence_right\"\n";
+		print LOG "Overlap_length $ta_sequence_length\n\n";
+		
+		print LOG "# Current\n";
+		print LOG "Sequence_left \"$current_genomic\"\n";
+		print LOG "Sequence_right \"$overlap_sequence\"\n";
+		print LOG "Overlap_length $ol_len\n";
+		print LOG "Evidence \"Sequence match\"\n\n"; 
+		
+		printf ACE "Overlap : \"OL%.4d\"\n", $overlap_no;
+		print  ACE "Sequence_left \"$current_genomic\"\n";
+		print  ACE "Sequence_right \"$overlap_sequence\"\n";
+		print  ACE "Overlap_length $ol_len\n";
+		print  ACE "Evidence \"Sequence match\"\n\n"; 
+		
+		print  ACE "Sequence : \"$trackace_current_seq\"\n";
+		printf ACE "Current_right_overlap \"OL%.4d\"\n\n", $overlap_no;
+		
+		print  ACE "Sequence : \"$trackace_ol_current\"\n";
+		printf ACE "Current_left_overlap \"OL%.4d\"\n\n", $overlap_no;
+
+		$overlap_no++;
+	    
+		$trackace_overlap->DESTROY();
+		$trackace_sequence->DESTROY();
+		$trackace_genomic_canonical->DESTROY();
+	    }
+	}
+	$j->DESTROY();
+	$obj->DESTROY();
+    }
+    
+    close ERR;
+    close ACE;
+    
+    my $command=<<END;
+pparse $ol_acefile
+save
+quit
+END
+    
+    if (-e $ol_acefile) {
+	&DbWrite($command,$tace,$trackacepath,"ParseFile");
+    }
+    else {
+	print LOG "$ol_acefile is non-existent - skipping ..\n";
+    }
+    unlink ($ol_acefile);
+
+    print LOG "Save db\n\n";
+
+
+
+
+}
+
+#################################################################################
+# step through the Chromosome links                                             #
+#################################################################################
+
+
+
+
+
+
+close (LOG);
+exit (0);
+
+
+
+#################################################################################
+# Subroutines                                                                   #
+#################################################################################
+
+
+ ################################################################################
+ # get data from acedb  #
+ ################################################################################
+ #
+ # In  : <object_name> <database> 
+ #
+ # Out : %array
+ #         (trackace_sequence_version 
+ #         (trackace_
+ #
+
+ # if <database> is WormBase then return:
+ #      ?Sequence:DNA
+ #      ?Sequence:Chksum
+ #      ?Sequence:Overlap_right
+ #      ?Sequence:Overlap_right int
+ #      ?Sequence:Gap_right
+ #      ?Sequence:Laboratory
+ #      
+
+ # if <database> is trackace then return:
+ #      ?Genomic_canonical:Current_version
+ #      ?Genomic_canonical:Current_sequence
+ #      ?Genomic_canonical:Is_active
+ #
+ #      => Current_sequence
+ #
+ #      ?Sequence:DNA
+ #      ?Sequence:Chksum
+ #      ?Sequence:Current_Overlap_right
+ #      ?Sequence:Current_Overlap_right int
+ #      Flipped
+ #      Telomere
+ #
+ #      => Overlap
+ #
+ #      ?Overlap:Sequence_left
+ #      ?Overlap:Sequence_right
+ #      ?Overlap:Overlap_length
+ #      ?Overlap:Gap_length
+
+
+sub get_data {
+
+    my ($which,$db) = @_;
+    %data = "";
+    my $dna = "";
+    
+    if ($db eq "wormbase") {
+	
+	print "searching $db for object $which  \t";
+	my $obj = $wormbase->fetch(Genome_sequence=>"$which");
+	
+	# DNA
+	$dna = $obj->asDNA();
+	$dna=~s/\>\w+//mg;
+	$dna=~tr/a-z/A-Z/;
+	$dna=~s/\W+//mg;
+    
+	$data{seq_len} = $obj->DNA(2);
+	$data{seq_dna} = $dna;
+
+	print LOG "$which: " . substr ($dna,0,30) . "\n";
+    
+	# Laboratory
+	$data{seq_lab} = $obj->From_Laboratory(1);
+
+        # Make bioseq
+	my $bioseq = Bio::Seq->new(-seq=>$dna,-ffmt=>'Fasta',-type=>'Dna',);
+    	$data{chk_sum} = $bioseq->GCG_checksum;
+	 
+	# Overlap
+	$data{ovl_rgt} = $obj->Overlap_right(1);
+	$data{ovl_len} = $obj->Overlap_right(2);
+	$data{gap_rgt} = $obj->Gap_right(1);
+	$data{gap_len} = $obj->Gap_right(2);
+	
+	# Misc
+	$data{flipped}  = $obj->Flipped;
+	
+	$obj->DESTROY();
+
+	if ($debug) {
+	    print "\n========================================================\n";
+	    print "Sequence      : $which\n";
+	    print "Lab           : $data{seq_lab}\n";
+	    print "Flipped       : Yes\n" if ($data{flipped});
+	    print "DNA           : Len : $data{seq_len} Chk:$data{chk_sum}\n";
+	    print "Overlap Right : $data{ovl_rgt} $data{ovl_len}\n";
+	    print "Gap Right     : $data{gap_rgt} $data{gap_len}\n" if ($data{gap_rgt});
+	    print "========================================================\n\n";
+	}
+	
+	return (%data);
+    }
+    elsif ($db eq "trackace") {
+
+	print "searching trackace for object $which  \t";
+	my $obj = $trackace->fetch(Genomic_canonical=>"$which");
+	
+	if (!$obj) {
+	    $data{found} = 0 ;
+	    if ($debug) {
+		print "\n========================================================\n";
+		print "Genomic_canonical  : $which\n";
+		print "========================================================\n\n";
+	    }
+	    return (%data);
+	}
+	
+	$data{found} = 1;
+	$data{cur_ver} = $obj->Current_version(1);
+	$data{cur_seq} = $obj->Current_sequence(1);
+	$data{seq_lab} = $obj->From_laboratory(1);
+
+
+	if ($debug) {
+	    print "\n========================================================\n";
+	    print "Genomic_canonical : $which\n";
+	    print "Lab               : $data{seq_lab}\n";
+	    print "Current_version   : $data{cur_ver}\n";
+	    print "Current_sequence  : $data{cur_seq}\n"; 
+	    print "========================================================\n\n";
+	}
+	
+
+#	print "Genomic_canonical : '$which'\nCurrent_sequence => '$data{cur_seq}'\n\n" if ($debug);
+
+	if (!$data{cur_seq}) {
+	    print "No current sequence for $which => can do no more look ups\n";
+	    $data{found} = 2;
+	    return (%data);
+	}    
+	
+	$obj->DESTROY();
+	
+	my $obj2 = $trackace->fetch(Sequence=>"$data{cur_seq}");
+	if (!$obj2) {
+	    print "No data for '$data{cur_seq}' => can do no more look ups\n";
+	    $data{found} = 2;
+	    return (%data);
+	}    
+
+	print "Sequence : '$data{cur_seq}'\n\n" if ($debug);	
+
+        # DNA
+	$dna = $obj2->asDNA();
+	$dna=~s/\>\w+//mg;
+	$dna=~tr/a-z/A-Z/;
+	$dna=~s/\W+//mg;
+	
+	$data{seq_dna} = $dna;
+	$data{seq_len} = $obj2->DNA(2);
+
+	# Make bioseq
+	my $bioseq = Bio::Seq->new(-seq=>$dna,-ffmt=>'Fasta',-type=>'Dna',);
+    	my $chk = $bioseq->GCG_checksum;
+	 
+	$data{chk_sum} = $chk;
+
+	# Release history
+	my $release_begin = $obj2->Release(1);
+	my $release_end   = $obj2->Release(2);
+
+	$data{rel_1}   = $release_begin;
+	$data{rel_2}   = $release_end;
+
+        # Overlap
+	my $current_overlap_right = $obj2->Current_right_overlap(1);
+	my $current_overlap_left = $obj2->Current_left_overlap(1);
+
+	$data{ovl_right}=$current_overlap_right;
+	$data{ovl_left}=$current_overlap_left;
+
+	my $flipped = $obj2->Flipped;
+	my $telomere = $obj2->Telomere;
+	
+	$data{flipped} = $flipped;
+	$data{telomere} = $telomere;
+
+	$obj2->DESTROY();
+
+	if (!$current_overlap_right) {
+	    # no overlap data
+	    print "No overlap data, finish here\n";
+	    $data{found} = 3;
+	    return(%data);
+	}    
+
+	my $obj3 = $trackace->fetch(Overlap=>"$current_overlap_right");
+	
+	my $sequence_left = $obj3->Sequence_left(1);
+	my $sequence_right = $obj3->Sequence_right(1);
+	my $overlap_length = $obj3->Overlap_length(1);
+	my $gap_length = $obj3->Gap_length(1);
+
+	$obj3->DESTROY();
+	
+	$data{cur_ver} = $current_version;
+	$data{cur_seq} = $current_sequence;
+
+	$data{dna_seq}=$dna;
+	$data{dna_len}=$len;
+	$data{chk_sum}=$chk;
+	$data{seq_lab}=$lab;
+	$data{ovl_right}=$current_overlap_right;
+	$data{ovl_left}=$current_overlap_left;
+	
+	$data{rel_1}   = $release_begin;
+	$data{rel_2}   = $release_end;
+	
+
+	$data{seq_right}=$sequence_right;
+	$data{seq_left}=$sequence_left;
+	$data{ovl_len}=$overlap_length;
+	$data{gap_len}=$gap_length;	
+
+	$data{flipped} = $flipped;
+	$data{telomere} = $telomere;
+
+
+
+	return (%data);
+    }
+}
+
+ ################################################################################
+ # Data types to retrieve                                                       #
+ ################################################################################
+
+sub get_DNA {
+
+    my $dna = $obj->asDNA();
+    $dna=~s/\>\w+//mg;
+    $dna=~tr/a-z/A-Z/;
+    $dna=~s/\W+//mg;
+    
+    $data{seq_dna} = $dna;
+    $data{seq_len} = length($dna);
+    
+} # end of sub 'get_DNA'
+
+
+
+
+
+
+
+
+
+
+
+
+ ################################################################################
+ # Prepare DB by removing all Is_active tags                                    #
+ ################################################################################
+
+sub clean_trackace {
+
+    my $deleted = 0;
+    my $acefile = "$trackacepath/data/remove_Is_active.ace";
+    open (rm_tags, ">$acefile");
+    $count = $trackace->fetch(-query=> 'find Golden_path');
+    print LOG "Golden_path contains $count Genome_sequence objects\n\n";   
+
+    my $i = $trackace->fetch_many(-query=>'find Golden_path');  
+    while ($obj = $i->next) {
+	my $seq = $obj;
+	print rm_tags "Genomic_canonical : \"$seq\"\n-D Is_active\n\n";
+        if ($debug) {
+	    print LOG "Deleted Is_active from ?Genomic_canonical : '$seq'\n";
+	}
+	$deleted++;
+	$obj->DESTROY();
+    }
+    close (rm_tags);
+
+    print "\n";
+    my $command=<<END;
+pparse $acefile
+save
+quit
+END
+    &DbWrite($command,$tace,$trackacepath,"Rm_Tags");
+    unlink ($acefile);
+    print LOG "Deleted Is_active from $deleted ?Genomic_canonical entries\n\n";
+    
+    if ($debug) {
+	$db = Ace->connect(-path=>$trackacepath) || do { print "Connection failure: ",Ace->error; die();};
+	my $count = $trackace->fetch(-query=> 'find Golden_path');
+	print LOG "Golden_path contains $count Genome_sequence objects\n\n";
+    }
+}
+
+#################################################################################
+# new_Genomic_canonical                                                         #
+#################################################################################
+# create object G
+# set From_Laboratory in G
+# set Current_version to 1 in G
+# make new Sequence_version C
+# add DNA and checksum to C
+# make C Current_sequence of G
+# set Flipped if necessary in C
+# set Release with first text in C
+# *LOG* that a new sequence has appeared
+
+
+sub new_Genomic_canonical {
+
+    my ($sequence,$version_no) = @_;
+    my $acefile = "$trackacepath/data/make_trackace.$sequence.ace";   
+    
+
+    my $new_version  = $version_no + 1;
+    my $new_sequence = $sequence . "~" . $new_version;
+    my $old_sequence = $sequence . "~" . $version_no;
+
+    print LOG "Write .acefile '$acefile'\n";
+    
+    if ($debug == 99) {
+	print LOG "========================================================\n";
+	print LOG " .ace file to upload\n";
+	print LOG "========================================================\n";
+	print LOG "Genomic_canonical \"$sequence\"\n";
+	print LOG "Current_version $new_version\n";
+	print LOG "Current_sequence \"${sequence}~${new_version}\"\n";
+	print LOG "Sequence_version \"${sequence}~${new_version}\"\n";
+	print LOG "From_laboratory $wormbase_lab\n";
+	print LOG "Is_active\n";
+	print LOG "\n";
+	print LOG "Sequence \"${sequence}~${new_version}\"\n";
+	print LOG "Checksum $wormbase_chk\n";
+	print LOG "Version_of $sequence\n";
+	print LOG "Flipped\n" if ($flipped);
+	print LOG "Release $WS_release\n";
+	print LOG "========================================================\n\n";
+    }
+
+    open (create_obj, ">$acefile") || die "Can't make tmp file\n\n";
+    print create_obj "Genomic_canonical \"$sequence\"\n";
+    print create_obj "Current_version $new_version\n";
+    print create_obj "Current_sequence \"${sequence}~${new_version}\"\n";
+    print create_obj "Sequence_version \"${sequence}~${new_version}\"\n";
+    print create_obj "From_laboratory $wormbase_lab\n";
+    print create_obj "Is_active\n";
+    
+    print create_obj "\nSequence \"${sequence}\~${new_version}\"\n";
+    print create_obj "Checksum $wormbase_chk\n";
+    print create_obj "Version_of $sequence\n";
+    print create_obj "Flipped\n" if ($flipped);
+    print create_obj "Release $WS_release\n";
+    
+    print create_obj "\nDNA \"${sequence}\~${new_version}\"\n";
+    print create_obj "$wormbase_dna\n";
+    close create_obj;
+
+    print LOG "Read .acefile  '$acefile'\n";
+
+    my $command=<<END;
+pparse $acefile
+save
+quit
+END
+    
+    if (-e $acefile) {
+	&DbWrite($command,$tace,$trackacepath,"ParseFile");
+    }
+    else {
+	print LOG "$acefile is non-existent - skipping ..\n";
+    }
+#    unlink ($acefile);
+
+    print LOG "Save db\n\n";
+}
+
+###################################################
+# Subroutine for updating a sequence version      # 
+###################################################
+#set second Release Text in C
+#	  increment Current_version in G
+#	  make new Sequence_version C' in G
+#        add DNA and Checksum to C'
+#        make C' Current_sequence of G
+#        set Flipped if necessary in C'
+#        set Release with first text in C'
+#	  *LOG* that a sequence update has taken place
+
+
+sub update_sequence {
+    my ($seq) = @_;
+    my $acefile = "/wormsrv2/trackace/data/update.ace";
+    
+    my $new_version  = $data{cur_ver} + 1;
+    my $new_sequence = $seq . "\~" . $new_version;
+    my $old_sequence = $seq . "\~" . $data{cur_ver};
+
+    if ($debug) {print LOG "Write .acefile '$acefile'\n";}
+    
+    open (update, ">$acefile") || print LOG "Failed to open acefile: '$acefile'\n";
+    print update "Genomic_canonical : \"$seq\"\n";
+    print update "Current_version $new_version\n";
+    print update "Current_sequence \"$new_sequence\"\n";
+    print update "Sequence_version \"$new_sequence\"\n";
+    print update "Is_active\n\n";
+    
+    print update "Sequence : \"$old_sequence\"\n";
+    print update "Release $data{rel_1} $WS_previous\n\n";
+
+    print update "Sequence : \"$new_sequence\"\n";
+    print update "Checksum $wormbase_chk\n";
+    print update "Version_of $seq\n";
+    print update "Flipped\n" if ($flipped);
+    print update "Release $WS_release\n";
+    
+    print update "\nDNA \"$new_sequence\"\n";
+    print update "$wormbase_dna\n\n";
+    
+    close (update);
+    
+    if ($debug) {print LOG "Read .acefile  '$acefile'\n\n";}
+    
+    my $command=<<END;
+pparse $acefile
+save
+quit
+END
+    
+    if (-e $acefile) {
+	&DbWrite($command,$tace,$trackacepath,"Update sequence");
+    }
+    else {
+	print LOG "$acefile is non-existent - skipping ..\n";
+    }
+    
+    unlink ($acefile);
+
+    if ($debug) {
+	print LOG "Save db\n\n";
+	print LOG "Updated ?Genomic_canonical : \"$seq\" to Sequence version $new_version\n";
+	print LOG "Updated ?Sequence : \"$old_sequence\" with final WS_release $WS_previous\n";
+	print LOG "Created ?Sequence : \"$new_sequence\" with first WS_release $WS_release\n\n";
+    }
+
+}
+
+###################################################
+# Subroutine for writing to a given database      # 
+###################################################
+
+sub DbWrite {
+    my ($command,$exec,$dir,$name)=@_;
+    open (WRITEDB,"| $exec $dir >> $logfile") || do {
+	print LOGFILE "$name DbWrite failed\n";
+	close LOGFILE;
+	die();
+    };
+    print WRITEDB $command;
+    close WRITEDB;
+}
+
+#########################################################
+# Subroutine for making a Genomic_canonical 'Is_active' # 
+#########################################################
+
+sub make_active {
+
+    my ($seq,$db) = @_;
+    my $acefile = "$trackacepath/data/add_Is_active.ace";
+    open (add_tag, ">$acefile");
+    print add_tag "Genomic_canonical : \"$seq\"\nIs_active\n\n";
+    close (add_tag);
+    my $command=<<END;
+pparse $acefile
+save
+quit
+END
+    &DbWrite($command,$tace,$trackacepath,"Add_tag");
+    unlink ($acefile);
+}
+
+#########################################################
+# Subroutine for making a Genomic_canonical 'Is_active' # 
+#########################################################
+
+
+
+
+
+
+
+
+#################################################################################
+# Usage                                                                         #
+#################################################################################
+
+sub usage {
+    exec ('perldoc',$0);
+    print "make_trackace\n\n";
+    print "Usage : make_trackace [-options]\n";
+    print "\n";
+    exit (0);
+}
+
+
+__END__
+
+=pod
+
+=head2   NAME - make_trackace
+
+=head1 USAGE
+
+=over 4
+
+=item make_trackace [-options] 
+
+=back
+
+=cut

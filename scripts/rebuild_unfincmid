@@ -1,0 +1,294 @@
+#!/usr/local/bin/perl -w
+#
+# rebuild_unfincmid
+# v 0.2
+#
+# ag3/dl
+
+# Usage : rebuild_unfincmid
+#
+# [ag3] This script provides the framework for making
+# the Sanger unfinished cosmids file - ~wormpub/analysys/Sequence_Databases/unfincmid
+#
+
+# v0.2
+# 001103 : dl  : Added some more error-trapping and modified logging procedure
+
+# v0.1
+# 001006 : ag3 : Complete rewrite
+
+
+#################################################################################
+# variables                                                                     #
+#################################################################################
+
+$|=1;
+use IO::Handle;
+use Getopt::Std;
+require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
+
+ ##############################
+ # Script variables (run)     #
+ ##############################
+
+my $maintainer = "dl1\@sanger.ac.uk";
+my $rundate = `date +%y%m%d`; chomp $rundate;
+my $runtime = `date +%H:%M:%S`; chomp $runtime;
+my $version = &get_script_version(rebuild_unfincmid);
+my $log="/wormsrv2/logs/rebuild_unfincmid.$rundate.$$";
+
+ ##############################
+ # Paths etc                  #
+ ##############################
+
+my $wormpub="/nfs/disk100/wormpub";
+my $unfincmid = "$wormpub/analysis/Sequence_Databases/unfincmid";
+
+ ##############################
+ # command-line options       #
+ ##############################
+
+$opt_h = "";   # Help/Usage page
+getopts ('h');
+&usage if ($opt_h);
+
+ ##############################
+ # Projects 2B dumped         #
+ ##############################
+
+@clones = (Y105E8,Y39B6,Y67H2,Y10G11);
+
+my %CHROME = ("Y105E8","I","Y39B6","V","Y67H2","IV","Y10G11","IV");
+my %CLONES;
+
+push (@{$CLONES{Y105E8}},("Y105E8A"));
+push (@{$CLONES{Y39B6}}, ("Y39B6A","Y39B6B"));
+push (@{$CLONES{Y67H2}}, ("Y67H2A","Y67H2B"));
+push (@{$CLONES{Y10G11}},("Y10G11A"));
+
+###############################
+# Archive old version         #
+###############################
+
+if (-e $unfincmid) {
+    system ("cp -f $unfincmid $unfincmid.OLD");
+    unlink $unfincmid;
+}
+
+system ("/bin/touch $unfincmid");
+open (LOG,">$log");
+LOG->autoflush();
+&Find_Cosmid_Position();
+
+###############################
+# Check for zero file size    #
+###############################
+
+if (-z $unfincmid) {
+    system ("cp -f $unfincmid.OLD $unfincmid");
+    print LOG "\n\n!! unfincmid is zero length !!\n!! Using OLD version of build !!\n\n";
+}
+close (LOG);
+
+###############################
+# Mail log to curator         #
+###############################
+
+open (OUTLOG,  "|/usr/bin/mailx -s \"WormBase Report: rebuild_unfincmid\" $maintainer ");
+open (READLOG, "<$log");
+while (<READLOG>) {
+    print OUTLOG "$_";
+}
+close READLOG;
+close OUTLOG;
+
+###############################
+# hasta luego                 #
+###############################
+
+exit 0;
+
+#####################################################################################################
+#
+# Subroutines:
+#
+# Find_Cosmid_Position
+#
+#####################################################################################################
+
+
+
+#######################################################################
+# Find cosmid position for each cosmid                                #
+#######################################################################
+
+sub Find_Cosmid_Position {
+    open (OUTPUT,">>$unfincmid");
+    OUTPUT->autoflush();
+
+CLONE:foreach $clone (@clones){
+     print LOG "1) ######### Entering with clone $clone\n";
+     open (TESTSQUR,"pfind $clone' |");
+     while (<TESTSQUR>) {
+      s/\s+$//;
+      if (/(\S+)$/) {$user="jes";$userpath=$1;}
+     }
+     close  TESTSQUR;   
+     print LOG "2) User path for $clone is $userpath\n";
+     print LOG "   I think user for $clone = $user\n";
+     if ($user eq "" || $user eq "unknown"){
+      print LOG "$clone=no squirrel info\n";
+      next CLONE;
+     }
+     $chromosome=$CHROME{$clone};
+     if ($chromosome eq "") {
+	 print LOG "3) !! Clone $clone has no interpolated gmap position !!\n";
+     } else {
+	 print LOG "3) Cosmid $clone ==> Chromosome $chromosome\n";
+     }
+     print LOG "4) attempting dump of $clone\n";
+     foreach (@{$CLONES{$clone}}) {
+     $seq=$_;
+     print LOG "   Now attempting dump of sequence $seq\n";
+     if (-e "/tmp/$seq.cons") {
+	 unlink ("/tmp/$seq.cons");
+     }
+     system("cd $userpath; /usr/local/badger/bin/mkcon-gap -bayesian -gestapo -c 0 -a -M -n $seq -p $clone -o /tmp/$seq.cons"); 
+     if (-z "/tmp/$seq.cons") {
+	 print LOG "**Warning - file /tmp/$seq.cons is of zero size .. **\n";
+	 next;
+     } else {	 
+	 print LOG "   File /tmp/$seq.cons dumped .. \n";
+	 open (INTMPFILE,"</tmp/$seq.cons");
+	 while (<INTMPFILE>) {
+	     $line = $_;
+	     if ($line =~ /(DNA\s+)/){
+		 $line =~ s/$1/\>/;
+		 $line =~ s/\"//mg;
+	     }
+	     if (($line=~/Assembly_Tags/)||($line=~/Clone/)||($line=~/Sequence/)||($line=~/^\s+$/)) {
+		 next;
+	     }
+	     print OUTPUT $line;
+	 }
+	 close INTMPFILE;	  
+         print LOG "   .. file /tmp/$seq.cons added to $unfincmid \n";
+         unlink("/tmp/$seq.cons");
+     }
+     }
+  }
+     close OUTPUT;
+    system ("/usr/local/pubseq/bin/pressdb $unfincmid");
+}
+
+#######################################################################
+# Prints help and disappears                                          #
+#######################################################################
+
+sub usage {
+    exec ('perldoc',$0);
+}
+
+__END__
+
+=pod
+
+=head2   NAME - rebuild_unfincmid
+
+=head1 USAGE
+
+=over 4
+
+=item rebuild_unfincmid [-options]
+
+=back
+
+rebuild_unfincmid dumps DNA from the current unfinished projects and write to
+the unfincmid file.
+
+
+update_totals mandatory arguments:
+
+=over 4
+
+=item none
+
+=back
+
+update_totals OPTIONAL arguments:
+
+=over 4
+
+=item -h, Help
+
+=back
+
+=head1 CRON
+
+=over 4
+
+=item Yes, (Daily)
+
+=back
+
+=head1 INPUT
+
+The following files are required:
+
+=over 4
+
+=item none
+
+=back
+
+=head1 OUTPUT
+
+The following files are produced:
+
+=over 4
+
+=item /nfs/disk100/wormpub/analysis/Sequence_Databases/unfincmid
+
+=back
+
+=head1 REPORT LOGGING
+
+The script writes a logfile which is both written to disk and mailed to the maintainer
+
+=head1 AUTHOR
+
+=over 4
+
+=item Daniel Lawson (dl1@sanger.ac.uk)
+
+=back
+
+=head1 VERSIONS
+
+=over 4
+
+=item v0.2
+
+=back
+
+Added some more error-trapping and modified logging procedure
+
+=over 3
+
+=item v0.1
+
+001006 : ag3 : Complete rewrite
+
+=back
+
+=cut
+
+
+
+
+
+
+
+
+
+

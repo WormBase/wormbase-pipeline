@@ -1,0 +1,25 @@
+#!/usr/local/bin/perl
+#script to convert ouput from exinv to ace4 format 
+#Steven Jones, Sanger Centre 
+
+
+while (<>)
+	{
+if (/(\S+)\s+\d+\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/) {
+		$loop=$6-$4;$loop--;
+		
+		if ($3==1) {print "Feature $1\t$4\t$5\t$2\t\"loop $loop, $3 gap\"\n";
+				print "Feature $1\t$6\t$7\t$2\t\"loop $loop, $3 gap\"\n"} 
+		
+
+		if ($3>1) {print "Feature $1\t$4\t$5\t$2\t\"loop $loop, $3 gaps\"\n";
+                                print "Feature $1\t$6\t$7\t$2\t\"loop $loop, $3 gaps\"\n";}
+
+
+		if ($3==0) {print "Feature $1\t$4\t$5\t$2\t\"loop $loop\"\n";
+				     print "Feature $1\t$6\t$7\t$2\t\"loop $loop\"\n"}
+
+	}
+}
+
+

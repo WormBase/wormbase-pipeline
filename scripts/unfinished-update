@@ -1,0 +1,204 @@
+#!/usr/local/bin/perl
+#
+# script to read in a new version of a sequence from a new (unfinished) data directory
+#
+# RD 9901027
+
+use Ace;
+
+############################################
+# set up some variables
+
+$camdir = "/wormsrv2/camace" ;
+$cosdir = glob "~wormpub/analysis/cosmids" ;
+
+############################################
+
+$seq = shift @ARGV || die "Usage: updateCam.pl <seqname>" ;
+
+$version = `grep $seq $cosdir/unfinished.versions` || die "can't find $seq in current.versions\n" ;
+chomp $version ;
+($s,$date) = split(/\//, $version) ;
+
+$seqdir = "$cosdir/$seq" ;
+$datedir = "$seqdir/$date" ;
+$date =~ s/u// ;		# remove u prefix for unfinished sequences
+
+if (! -d $datedir) { die "date directory $datedir missing\n" ; }
+
+# check Date_directory contains required .ace files
+
+$acefile = "$datedir/$seq" . "_0.ace" ; if (! -e $acefile) { die "file $acefile missing\n" ; }
+$acefile = "$datedir/$seq" . ".basic.ace" ; if (! -e $acefile) { die "file $acefile missing\n" ; }
+
+###############
+# open database
+
+ $db = Ace->connect (-path => $camdir) || die "can't open camace\n" ;
+#$db = Ace->connect (-host => "wormsrv1", -port => 100100) || die "can't open camace\n" ;
+
+$response = $db->raw_query("save") ;
+if ($response =~ /(\w+) \(session (\d+)\) already has write access/) {
+    die "can't get write access - $1 locking session $2\n" ;
+}
+
+###############################
+# get object
+
+$seqobj = $db->fetch(Sequence => $seq) || die "can't find $seq in database\n" ;
+
+$acedate = $seqobj->Date_directory(1) ;
+if (! $acedate) {
+    $acedate = "empty" ;
+}
+
+###############
+# open log file
+
+if ($acedate eq $date) {
+    open (LOG, ">>$seqdir/update.$date.updates") || die "can't open update file\n" ;
+} else {
+    open (LOG, ">$seqdir/update.$acedate-$date") || die "can't open update file\n" ;
+}
+print LOG "\n--------------------- unfinished-update " ;
+print LOG scalar localtime(time) ;
+print LOG "\n" ;
+
+###############
+# do some checks
+
+if ($date eq $acedate) {
+
+    print LOG "updating $seq version $date - no sequence change requred\n" ;
+
+} else {
+
+    print LOG "updating sequence $seq from acedate $acedate to current version $date\n\n" ;
+
+        # must be very careful about curated info affected by coordinate changes
+
+    if ($seqobj->Flipped(0)) { print LOG "sequence $seq is currently flipped\n" ; }
+
+    $oright = $seqobj->Overlap_right(1) ;
+    $oright_num = $seqobj->Overlap_right(2) ;
+    print LOG "current Overlap_right $oright $oright_num\n" ;
+
+    print LOG "current length " . $seqobj->DNA(2) ."\n" ;
+    $composition = `composition $datedir/$seq.seq` ;
+    if ($composition =~ /(\d+) total/) { print LOG "new length $1\n" ; }
+
+    @subseq = $seqobj->Subsequence ;
+    @checked = grep { /^$seq\.[1-9]/ } @subseq ;
+    if (@checked > 0) { 
+	print "Annotated subsequences @checked\n" ;
+	die "Sorry - do not deal with annotated subsequences yet\n" ;
+    }
+    foreach $obj (@subseq) {
+	if ($obj =~ /^$seq\.[1-9a-z]/) {
+	    print LOG "\n$obj " . $obj->asAce . $obj->fetch->asAce . $obj->asDNA ;
+	}
+    }
+
+    @children = $seqobj->S_Child(2) ;
+    @checked = grep { /^$seq\.[1-9]/ } @children ;
+    if (@checked > 0) { 
+	print "Annotated children @checked\n" ;
+	die "Sorry - do not deal with annotated children yet\n" ;
+    }
+    foreach $obj (@children) {
+	if ($obj =~ /^$seq\.[1-9a-z]/) {
+	    print LOG "\n$obj " . $obj->asAce . $obj->fetch->asAce . $obj->asDNA ;
+	}
+    }
+
+    # Confirmed_intron UTR data
+    # Allele data
+
+    ###############################################
+    # now delete old information and add in the new
+
+    # first remove data from the object itself
+
+    $db->parse(<<END) ;
+Sequence $seq
+-D DNA
+-D Source
+-D S_Parent
+-D Clone_left_end
+-D Clone_right_end
+-D Remark "unfinished fragment"
+-D Assembly_tags
+-D Splices
+-D Allele
+-D Analysis_details
+-D Homol
+-D Feature
+END
+
+    if ($oright_num) {
+	$db->parse(<<END) ;
+Sequence $seq
+-D Overlap_right $oright $oright_num
+Overlap_right $oright
+END
+    }
+
+    # next kill any subsequences/children
+
+    foreach $obj (@subseq) { if (! defined $obj->kill) { die "failed to kill subsequence $obj\n" ; } }
+    foreach $obj (@children) { if (! defined $obj->kill) { die "failed to kill child $obj\n" ; } }
+
+    # finally read in new _0 file
+
+    if (! $db->parse_file ("$datedir/$seq" . "_0.ace")) { die $db->error() . "\n" ; }
+
+    $db->raw_query("save") ;
+
+	# get new copy of sequence object reflecting changes
+
+    $seqobj = $db->fetch(Sequence => $seq) || die "can't find $seq in database\n" ;
+}
+
+############################################
+# now read in any more recent analysis files
+
+if (! -d "$datedir/PARSED_FILES") {
+    system ("mkdir $datedir/PARSED_FILES") || die "can't make PARSED_FILES directory\n" ;
+}
+
+foreach $file (glob "$datedir/$seq.*.ace") {
+    $command = "grep Analysis_history $file" ;
+    $hrec = `$command` || die "\"$command\" did not work\n" ;
+    undef $mdate ;
+    ($tag, $method, $mdate) = split ("", $hrec) ;
+    if (!$mdate) {
+	warn "grep gave $hrec" ;
+	warn "Can't find Analysis_history in $file\n" ;
+	next ;
+    }
+    $sdate = $seqobj->get("Analysis_history" => "$method") ;
+    if ($mdate gt $sdate) {
+        if (! $db->parse_file ("$file")) { die $db->error() . "\n" ; }
+    } else {
+	system ("mv $file $datedir/PARSED_FILES") || die "can't move $file into PARSED_FILES\n" ;
+    }
+}
+
+$db->raw_query("save") ;
+
+close LOG ;
+exit 0 ;
+
+############### end of file
+
+
+
+
+
+
+
+
+
+
+
+

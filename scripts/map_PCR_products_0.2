@@ -1,0 +1,161 @@
+#!/usr/local/bin/perl
+#
+# map_PCR_products
+# v 0.1
+#
+# Cronjob integrity check controls for generic ACEDB database.
+#
+# Usage: map_PCR_products [-options]
+#
+
+#####################################################################################################
+
+
+#################################################################################
+# variables                                                                     #
+#################################################################################
+
+$|=1;
+BEGIN {
+  unshift (@INC,"/nfs/disk92/PerlSource/Bioperl/Releases/bioperl-0.05");
+}
+use Bio::Seq;
+use IO::Handle;
+use Getopt::Std;
+use Cwd;
+use Ace;
+require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
+
+ ##############################
+ # Script variables (run)     #
+ ##############################
+
+my $maintainer = "dl1\@sanger.ac.uk";
+my $rundate = `date +%y%m%d`; chomp $rundate;
+my $runtime = `date +%H:%M:%S`; chomp $runtime;
+my $version = &get_script_version(map_PCR_products);
+
+ ##############################
+ # command-line options       #
+ ##############################
+
+$opt_d="";   # Verbose debug mode
+$opt_h="";   # Help/Usage page
+$opt_s="";   # check Status tags
+
+getopts ('hd');
+&usage(0) if ($opt_h);
+my $debug = $opt_d;
+
+ ##############################
+ # Paths etc                  #
+ ##############################
+
+my $tace = glob("~acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace");    # tace executable path
+my $dbdir  = "/wormsrv2/autoace";                                  # Database path
+my $gffdir = "/wormsrv2/autoace/CHROMOSOMES";
+ 
+#my @chromosomes = ('I','II','III','IV', 'V','X');
+my @chromosomes = ('I');
+
+ ########################################
+ # Open logfile                         #
+ ########################################
+
+#my $log="./PCR_mappings.$rundate";
+my $log="/wormsrv2/logs/map_PCR_products.$rundate";
+
+open (LOG,">$log");
+LOG->autoflush();
+
+print LOG "# map_PCR_products\n";     
+print LOG "# version        : $version\n";
+print LOG "# run details    : $rundate $runtime\n";
+print LOG "\n";
+
+ ########################################
+   
+foreach $chromosome (@chromosomes) {
+
+    undef (@PCR);
+    undef (%exon);
+    undef $count;
+  
+    print "Checking GFF file: 'CHROMOSOME_${chromosome}'\n";
+    
+    open (GFF_in, "<$gffdir/CHROMOSOME_${chromosome}.gff") || die "Failed to open gff file\n\n";
+    while (<GFF_in>) {
+        chomp;
+        s/\#.*//;
+        next unless /\S/;
+        @f = split /\t/;
+
+#	$f[8] =~ / ^Sequence \"(\S+)\"/;
+
+	if ($f[1] eq "GenePair_STS") {
+	    $f[8] =~ s/PCR_product \"(\S+)\"//;
+#	    print "PCR_product $1 [$f[3] => $f[4]]\n";
+	    push (@PCR, "$f[3] $f[4] $1");
+	}
+	if ($f[2] eq "exon") {
+	    $f[8] =~ s/Sequence \"(\S+)\"//;
+#	    print "Exon $1 [$f[3] => $f[4]]\n";
+	    $exon{$count}= [$f[3],$f[4],$1,$f[6]];
+	    $count++;
+	}
+	last if (/similarity/);
+
+    }
+    close GFF_in;
+    
+    @list = sort { ${$exon{$a}}[0] <=> ${$exon{$b}}[0] } keys %exon;
+
+
+##for ($x =1; $x < @list; $x++) {
+#    print "$x : '$exon{$x}[2]' '$exon{$x}[0]'  '$exon{$x}[1]' '$exon{$x}[3]'  \n";
+#}
+
+    # Loop through every PCR_product
+
+    foreach (@PCR) {
+	($start,$stop,$name)  = (/(\S+)\s+(\S+)\s+(\S+)/);
+	print "\n$name      \t[$start => $stop]\n";
+
+
+	for (my $x =1; $x < @list; $x++) {
+	    
+	    # ignore NDB_CDS objects
+	    next if ($exon{$x}[2] =~ /-/);
+
+
+#	    print "\n$exon{$x}[2] : $exon{$x}[0] $exon{$x}[1]\n";
+
+	    # check overlaps
+	    if ( ($exon{$x}[1] > $start) && ($exon{$x}[0] < $start) ) {
+		print "left o/l\t$exon{$x}[2] $exon{$x}[0] - $exon{$x}[1]\n";
+	    }
+	    if ( ($exon{$x}[0] > $start) && ($exon{$x}[1] < $stop) ) {
+		print "internal\t$exon{$x}[2] $exon{$x}[0] - $exon{$x}[1]\n";
+	    }
+	    if ( ($exon{$x}[0] < $stop) && ($exon{$x}[1] > $stop) ) {
+		print "right o/l\t$exon{$x}[2] $exon{$x}[0] - $exon{$x}[1]\n";
+	    }
+
+	}
+    }
+
+}
+
+close LOG;
+
+exit(0);
+
+
+
+
+
+
+
+
+
+

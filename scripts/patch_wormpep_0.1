@@ -1,0 +1,203 @@
+#!/usr/local/bin/perl
+#
+# patch_wormpep
+# v 0.1
+# dl
+#
+# Usage : patch_wormpep [-options]
+#
+#
+# v0.1
+# 010219 : dl  : PP version
+# 010418 : dl  : Added error and usage subroutines
+
+#################################################################################
+# variables                                                                     #
+#################################################################################
+
+$|=1;
+use IO::Handle;
+use Getopt::Std;
+#use Cwd;
+require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
+
+ ##############################
+ # command-line options       #
+ ##############################
+
+$opt_h = "";      # Help/Usage page
+$opt_r = "";      # wormpep release number
+
+getopts ('hr:');
+&usage if ($opt_h);
+
+$release = $opt_r; 
+
+ ##############################
+ # Script variables (run)     #
+ ##############################
+
+my $maintainer = "dl1\@sanger.ac.uk";
+my $rundate = `date +%y%m%d`; chomp $rundate;
+my $runtime = `date +%H:%M:%S`; chomp $runtime;
+my $version = &get_script_version(patch_wormpep);
+my $log="/wormsrv2/logs/patch_wormpep${release}.${rundate}.$$";
+
+
+ ###############################
+ # Main Loop                   #
+ ###############################
+
+open (LOG,  ">/wormsrv2/WORMPEP/wormpep${release}/Analysis_to_do.$rundate");
+open (DIFF, "</wormsrv2/WORMPEP/wormpep${release}/wormpep.diff${release}");
+while (<DIFF>) {    
+    if (/changed:\t(\S+)\s+(\S+) --> (\S+)/) {
+	&changed($1,$2,$3);
+    }
+    if (/lost:\t(\S+)\s+(\S+)/) {
+	&lost($1,$2);
+    }
+    if (/new:\t(\S+)\s+(\S+)/) {
+	&new($1,$2);
+    }
+}
+close DIFF;
+close LOG;
+
+ ###############################
+ # hasta luego                 #
+ ###############################
+
+exit(0);
+
+
+###################################################
+# Subroutine for changed entries                  #   
+###################################################
+
+sub changed {
+    
+    my($CDS,$old_acc,$new_acc)= @_;
+
+    # Delete old entry
+    print "Protein : \"WP:$old_acc\"\n";
+    print "-D Corresponding_DNA $CDS\n";
+    print "-D Wormpep\n";
+    print "DB_Remark \"[wormpep${release}] Altered GeneModel, new accession is $new_acc\n";
+    print "Replaced_by WP:$new_acc\n";
+    print "\n";
+
+    # Add new entry
+    print "Protein : \"WP:$new_acc\"\n";
+    print "Database WORMPEP $CDS $new_acc\n";
+    print "Corresponding_DNA $CDS\n";
+    print "Species \"Caenorhabditis elegans\"\n";
+    print "Wormpep\n";
+    print "DB_Remark \"[wormpep${release}] Altered GeneModel, old accession was $old_acc\n";
+    print "Replaces WP:$old_acc\n";
+    print "\n";
+
+    open (PEP, "/bin/grep -p '$new_acc' wp.fasta${release} | ") || die "Can't fetch new sequence\n";
+    while (<PEP>) {
+	s/>(\S+)/Peptide : \"WP:$1\"/;
+ 	print $_;
+    }
+    close PEP;
+    
+
+    print LOG "Full analysis: $new_acc\n"; 
+
+}
+
+###################################################
+# Subroutine for lost entries                     #   
+###################################################
+
+sub lost {
+    my($CDS,$old_acc)= @_;
+
+    # Delete old entry
+    print "Protein : \"WP:$old_acc\"\n";
+    print "-D Corresponding_DNA $CDS\n";
+    print "-D Wormpep\n";
+    print "DB_Remark \"[wormpep${release}] Deleted GeneModel\n";
+    print "\n";
+
+}
+
+###################################################
+# Subroutine for new entries                      #   
+###################################################
+
+sub new {
+    my($CDS,$new_acc)= @_;
+
+    # Add new entry
+    print "Protein : \"WP:$new_acc\"\n";
+    print "Database WORMPEP $CDS $new_acc\n";
+    print "Corresponding_DNA $CDS\n";
+    print "Species \"Caenorhabditis elegans\"\n";
+    print "Wormpep\n";
+    print "DB_Remark \"[wormpep${release}] New GeneModel\n";
+    print "\n";
+    
+    open (PEP, "/bin/grep -p '$new_acc' wp.fasta${release} | ") || die "Can't fetch new sequence\n";
+    while (<PEP>) {
+	s/>(\S+)/Peptide : \"WP:$1\"/;
+ 	print $_;
+    }
+    close PEP;
+
+    print LOG "Full analysis: $new_acc\n"; 
+}
+
+###################################################
+# Errors and pod documentation                    #
+###################################################
+
+sub error {
+    my $error = shift;
+    # Error 1 - no release number (opt_r)
+    if ($error == 1) {
+        print "No wormpep release number supplied\n\n";
+        $runtime = `date +%H:%M:%S`; chomp $runtime;
+        print LOGFILE "No wormpep release number supplied.\n";
+        print LOGFILE "Exiting early at $rundate $runtime\n";
+        close LOGFILE;
+        &mail_maintainer("WormBase Report: patch_wormpep",$maintainer,$logfile);
+    }
+    exit(1);
+}
+
+sub usage {
+    system ('perldoc',$0);
+    exit;
+}
+
+
+__END__
+
+=pod
+
+=head1 NAME - patch_wormpep
+
+=head2 USAGE
+
+patch_wormpep takes the current wormpep release and compares
+it with the previous release to make a patch file for an
+ACEDB tracking database. It relies on the wormpep.diff file
+for the changes. The resulting .ace file can be uploaded into
+pepace prior to dumping classes for the main autoace build.
+
+
+patch_wormpep arguments:
+
+=over 4
+
+=item *
+
+-r Wormpep release number (e.g. 48)
+
+=back
+
+=cut

@@ -1,0 +1,129 @@
+#!/usr/local/bin/perl
+# ESTchecks
+# If a 5' and 3' end of a give EST clone exist in
+# the database and are mapped, they should belong 
+# to the same gene.
+# [ag3 dl1 991116]
+
+BEGIN {
+  unshift (@INC,"/nfs/disk92/PerlSource/Bioperl/Releases/bioperl-0.05");
+}
+use Bio::Seq;
+use Ace;
+$|=1;
+# Need to dump this file from camace
+$file="/nfs/disk100/wormpub/ag3/EST_Matching.ace";
+# Connect with acedb server on wormsrv1
+$ENV{ACEDB_HOST}="wormsrv1";
+$ENV{ACEDB_PORT}="100100";
+use constant HOST =>  'wormsrv1';
+use constant PORT =>  100100;
+$|=1;
+print "Opening the camace database on wormsrv1 ....\n"; 
+$LOG{LOG}= "Opening the camace database on wormsrv1 ....\n";
+$DB = Ace->connect(-host=>HOST,-port=>PORT)
+  || do {$LOG{LOG}.="Connection failure: ",Ace->error; die();};
+$LOG{LOG}.="Connection OK.\n\n";
+print "Connection OK.\n\n";
+
+# Local confs
+my $maintainer="ag3\@sanger.ac.uk";
+my $STARTTIME = &gettime;
+$LOG{LOG}.="ESTchecks run $$ STARTED $STARTTIME\n\n";
+
+&Get_EST;
+
+foreach (@ESTNAMES) {
+  $thisclone=shift(@ESTNAMES);
+# Kohara ESTs
+  if ($thisclone=~/(yk\w+)\.(\d+)/){
+    $clonename=$1;
+    if ($2 =~ /5/){ $num="3"; } else { $num="5"; }
+    $nextclone="$clonename"."."."$num";
+    &Find_Ends($thisclone,$nextclone);
+  }
+  # CE clones
+  if ($thisclone=~/(CE\w+\d+)(\w+)/){
+    $clonename=$1;
+    if ($2 =~ /F\w*/){ $num="R"; } else { $num="F"; }
+    $nextclone="$clonename"."$num";
+    &Find_Ends($thisclone,$nextclone);
+  }
+}
+
+$ENDTIME = &gettime;
+$LOG{LOG}.="ESTchecks run $$ ENDED on $ENDTIME\n\n";
+
+#------------------
+# Get current time
+#
+sub gettime {
+  my @time = localtime();
+  my ($MINS,$HOURS,$DAY,$MONTH,$YEAR)=(localtime)[1,2,3,4,5];
+  if ($MINS=~/^\d{1}$/) {
+    $MINS="0"."$MINS";
+  }
+  my $REALMONTH=$MONTH+1;
+  my $REALYEAR=$YEAR+1900;
+  my $TODAY = "$DAY $REALMONTH $REALYEAR at $HOURS:$MINS";
+  return $TODAY;
+}
+
+#-------------------
+# Get all ESTs from
+# dumped ace file
+#
+sub Get_EST { 
+  open (FILE,"<$file");
+  while (<FILE>) {
+    /KeySet/ && next; 
+    s/Sequence \: //;
+    s/\"//mg;
+    s/\s+//;
+    push (@ESTNAMES,$_);
+  }
+  return @ESTNAMES;
+  close FILE;
+}
+
+#--------------------
+# Find Matching Ends
+# And shorten array
+#
+sub Find_Ends {
+  my ($thisclone,$nextclone) = @_;
+  my ($i,$match_idx);
+  for ($i=0;$i<@ESTNAMES;$i++) {
+    if($ESTNAMES[$i] eq "$nextclone") {
+      $match_idx=$i;
+      undef $i;
+      &Check_Clones ($thisclone,$ESTNAMES[$i]);	
+      last;
+    }
+  }
+  if (defined $match_idx) {
+    $spliced=splice (@ESTNAMES,$match_idx,1);
+    undef $match_idx;
+  }
+}
+
+#-------------------------
+# Matching EST <> Genomic 
+# Regions ?
+#
+sub Check_Clones {
+  my ($firstname,$secondname)=@_;
+  $EST1=$DB->fetch(Sequence=>"$firstname");
+  $MATCH1=$EST1->at("Visible.Matching_Genomic[1]");
+  $EST2=$DB->fetch(Sequence=>"$secondname");
+  $MATCH2=$EST2->at("Visible.Matching_Genomic[1]");
+#  print "Checking $firstname and $secondname ... \n";
+  if ($MATCH1 !~ /$MATCH2/) { 
+    print "** Mismatched Genomic Match for Clone $firstname is: $MATCH1\n";
+    print "** Mismatched Genomic Match For Clone $secondname is: $MATCH2\n";
+  }
+  undef $EST1;
+  undef $EST2;
+  undef $MATCH1;
+  undef $MATCH2;
+}

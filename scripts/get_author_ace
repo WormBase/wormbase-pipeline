@@ -1,0 +1,54 @@
+#!/usr/local/bin/perl 
+
+# Takes the name of cosmid and produces an ace format output 
+# which contains the author entry for this sequence. 
+#
+# usage = $0 cosmid_name 
+# [ag3 000524] Modified to adapt to sanger.pl 
+
+require glob('~/analysis/scripts/WORKING/sanger.pl');
+  
+open (finisher,"finisher_cosmid $ARGV[0] |");
+$finisher = &finisher_cosmid($ARGV[0]);
+$finisher =~ s/\s+$//;
+$fullname=&fullname($finisher);
+if ($fullname eq "")  {
+      print STDERR "\nWhoooaaa.... Cannot find finisher info for $ARGV[0]\n";
+      print STDERR "Please inform Steve or Daniel with the\n";
+      print STDERR "full name of this person before continuing\n";
+      exit (1);
+} else {
+      print "\nSequence $ARGV[0]\nFrom_author $fullname\n\n";
+      exit (0);
+}
+
+#######################################
+
+sub fullname {
+	local($name);
+	local($exec);
+        local($command);
+	$exec=&tace;
+        $ENV{'ACEDB'}="/nfs/disk100/wormpub/acedb/ace4/cam";     
+        $command=<<EOF;
+        Query Find author E_mail=$_[0]\@sanger.ac.uk
+        list -f -  
+        quit
+EOF
+	open(textace, "echo '$command' | $exec  | ");
+
+	while (<textace>) {
+	if (/^Author\s+:\s+(.+)/) {$name=$1;}
+	}
+return $name;
+}
+
+
+
+
+
+
+
+
+
+

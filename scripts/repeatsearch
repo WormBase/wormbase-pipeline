@@ -1,0 +1,44 @@
+#!/bin/csh
+#
+# script to look for repeats in a cosmid
+
+switch ($#argv)
+  case "1": 
+	breaksw
+  default: 
+	echo 'Usage: repeatsearch COSMID'
+	echo '  you should be in the directory containing COSMID.seq'
+	exit 2
+endsw
+
+set seqfile = ${1}.seq
+
+if (! -e $seqfile) then
+  echo "Sequence file $seqfile does not exist"
+  exit
+endif
+
+if (! -d repeats) then
+  #echo "making repeats subdirectory"
+  mkdir repeats
+  cd repeats
+  ln -s ../$seqfile ${1}
+else
+  cd repeats
+  ln -fs ../$seqfile ${1}  
+endif
+
+
+quicktandem ${1} >! ${1}.quick
+if (-e ${1}.tan) then
+  \rm ${1}.tan
+endif
+touch ${1}.tan
+foreach i (`nawk '{ if ($4 >= 2 && !($4 in xx)) print $4 ; xx[$4] = $1 }'  ${1}.quick`)
+# foreach i (`perl -ne '@a = split ; if ($a[3] >= 2 && !$x{$a[3]}) { print "$4 " ; } ++$x{$a[3]} ;'  ${1}.quick`)
+tandem ${1} $i $i >> ${1}.tan
+end
+
+inverted ${1} >! ${1}.inv
+
+exit

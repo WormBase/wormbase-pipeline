@@ -1,0 +1,46 @@
+#!/usr/local/bin/perl
+#
+# Rewriting of update_embl, the original script 
+# from sjj for re-submitting EMBL entries.
+#
+# This program will:-
+#	
+#	1) Check to see if the new version is different to before
+#
+#	2) If different, will write the new version into the cosmid/embl
+#	 e.g. ZK1058.951111.embl and symbolically link this to ZK1058.current.embl
+#		 	
+#       3) Copy the version to ~wormpub/analysis/TO_SUBMIT.  
+#
+
+
+($sec,$min,$hour,$mday,$mon,$year)=localtime(time);
+#increment month as default january=0
+$mon++;
+if ($mon < 10) {$mon="0".$mon;}
+if ($mday < 10) {$mday="0".$mday;}
+$year = $year+1900;
+
+
+if ($ARGV[0] eq "" ) {
+$HELP=<<END;
+Usage: $0 embl_file
+END
+
+    die ($HELP);
+}
+
+
+
+#----------------------------
+# Detect whether the new file 
+# is different from the old one
+# using diff
+#
+sub detectdifference {		 
+    local($difference);
+    open(diffout,"diff temp$$ /nfs/disk100/wormpub/analysis/cosmids/$_[0]/$_[1]/embl/$cosmid.current.embl |");
+    $difference=0;
+    while (<diffout>) {if ($_ ne "") {$difference=1;}}
+    return($difference);					   
+}

@@ -1,0 +1,263 @@
+#! /usr/local/bin/perl
+
+#Script to create an .ace file to add prosite homologies for cosmid data
+
+#940427 Steve Jones
+
+#Takes about 6 minutes per cosmid
+
+
+
+
+# set some variables
+
+$currentversions= "/nfs/disk9/wormpub/analysis/cosmids/current.versions";
+$outputfilename="prosite_homology_update.ace";
+
+
+
+#create new update file and status file
+
+
+
+                open (output, "> $outputfilename");
+
+
+		select((select(output), $|=1)[0]);
+
+
+#create temp filenames for each DNA file which is to be translated
+
+
+		open (temp_file, "> temp_file");
+
+
+#take sequence data form each cosmid
+
+
+	open (current, $currentversions) || die "Cannot find current.versions file";
+
+
+
+	while (<current>) {
+
+
+
+        #need to remove the line return fron $_
+
+        chop;
+
+
+
+
+#split the current.version into cosmid and date
+
+
+                ($cosmid, $datefinished) = split (/\//,$_);
+
+
+#open a directory in each cosmid directory to output prosite results to
+
+
+system (" mkdir /nfs/disk9/wormpub/analysis/cosmids/$cosmid/$datefinished/prosite");
+
+
+
+
+#need to take each cosmid an place in arrays - one for each frame
+
+
+
+        #enable paragraph mode
+
+                $/="";
+
+
+
+	open(sequence, "/nfs/disk9/wormpub/analysis/cosmids/$cosmid/$datefinished/$cosmid.seq");
+
+
+		while(<sequence>) {
+
+		
+	#make series of cosmid sequences with 0 -> 2 bases removed		
+
+         $cosmid_sequence[0]=$_;
+	 s/^\w//;  $cosmid_sequence[1]=$_;
+	 s/^\w//;  $cosmid_sequence[2]=$_;
+
+						}
+
+
+	#need to make an array containing the reverse complement of the seqeunce
+
+
+
+
+ open(revcomp, "revcomp /nfs/disk9/wormpub/analysis/cosmids/$cosmid/$datefinished/$cosmid.seq |");
+
+while (<revcomp>) {
+
+
+                 #make series of cosmid sequences with 0 -> 2 bases removed
+
+		
+		 $cosmid_sequence[3]=$_;
+        	 s/^\w//;  $cosmid_sequence[4]=$_;
+        	 s/^\w//;  $cosmid_sequence[5]=$_;
+
+
+
+			}
+
+
+
+#disable paragraph mode
+
+		$/="\n";
+
+		$i=-1;
+
+#Now need to translate in each frame ready for the prosearch and print out the 
+#prosite results and the data for each prosite match
+
+
+
+
+foreach $sequence (@cosmid_sequence) {$i++;
+
+
+
+
+	   open (temp_file, "> temp_file");
+
+	print temp_file $sequence;
+
+
+
+system("translate temp_file >temp_file.pep");
+
+
+system("nice prosearch temp_file.pep -d > proresults"); 
+
+system("cp proresults /nfs/disk9/wormpub/analysis/cosmids/$cosmid/$datefinished/prosite/Prosearch-$cosmid-$i");
+
+close temp_file;
+
+
+open(pro, "proresults");
+
+
+
+READPRORESULTSLINE:  while (<pro>) { if (/^PS/) { ($accessnumber, $location, $name) = split (/\s+/,$_);
+
+
+				#Strip out PS00013 here since it is too common
+				#hopefully this will not matter
+
+				if ($accessnumber eq "PS00013") {next READPRORESULTSLINE;};
+
+
+				($start, $finish) =split (/->/,$location);	
+
+			        #for some reason this difference between start and
+                                #finish one more than it should be , therefore
+
+                                $finish--;
+
+
+
+				#work out actual co-ordinates
+
+				if ($i==0){ $startdna=($start*3)-2;$finishdna=($finish*3)-2;}
+				if ($i==1){ $startdna=($start*3)-1;$finishdna=($finish*3)-1;}
+				if ($i==2){ $startdna=($start*3);$finishdna=($finish*3);}
+
+				#work out dna coordinates for the reverse-complement
+				
+				@cosmid_length=split(/\w/, $cosmid_sequence[0]);
+
+				
+				if ($i==3){ $revstartdna=($start*3)-2;$revfinishdna=($finish*3)-2;
+						$startdna=($#cosmid_length-$revstartdna)+1;
+						$finishdna=($#cosmid_length-$revfinishdna)+1;}
+
+                                if ($i==4){ $revstartdna=($start*3)-1;$revfinishdna=($finish*3)-1;
+                                                 $startdna=($#cosmid_length-$revstartdna)+1;
+						$finishdna=($#cosmid_length-$revfinishdna)+1;}
+
+                                if ($i==5){ $revstartdna=($start*3);$revfinishdna=($finish*3);
+                                                  $startdna=($#cosmid_length-$revstartdna)+1;
+						  $finishdna=($#cosmid_length-$revfinishdna)+1;}
+				
+
+
+				#can calculate the length of the prosite match from startdna and finish 
+
+				$length_prosite=(($startdna-$finishdna)/3);$length_prosite=~s/-//;
+				$length_prosite++;	
+
+
+				#need to get the info_count and expected from the prosite entry
+
+				open(entry,"fetch PS:$accessnumber|");
+
+					while(<entry>) {  if (/INFO_CONT=/) {s/^CC\s+//;s/\/INFO_CONT=//;s/\/EXPECTED=//;
+									         ($info_count, $expected)=split(/\s/,$_);
+									
+										}
+								
+							  if (/^DE\s+/) {chop;s/^DE\s+//;s/\.//;$title=$_;}
+
+							}  
+
+
+
+
+
+				
+
+
+				print output "Sequence $cosmid\n";
+     	                        print output "Homol PS:$accessnumber Prosite $info_count $startdna $finishdna 1 $length_prosite\n\n";
+					
+				
+				
+
+
+
+				#need to make sequence file for the prosite homology
+
+				$pro = "Sequence : PS:$accessnumber \nTitle  \"$title\" \nLibrary PROSITE $accessnumber $accessnumber \nPeptide\nHomol $cosmid Prosite $info_count 1 $length_prosite $startdna $finishdna \n\n\n\n"; 
+				print output $pro;}
+				
+			}
+							
+
+
+
+
+}
+
+}
+
+# output file now has the cosmid homologies
+
+#need to tidy up
+
+system("\rm temp_file");
+system("\rm temp_file.pep");
+system("\rm proresults");
+
+
+
+
+
+
+
+
+
+
+
+
+

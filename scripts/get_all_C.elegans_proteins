@@ -1,0 +1,32 @@
+#!/usr/local/bin/perl
+
+#Script to pull out all the Brugia Malayi ESTs
+#
+#Steven Jones, Sanger Centre
+
+
+#"everything in EMNEW from B.m that is also in dbEST
+#plus ('or') everything in EMBL
+#that is not also in EMNEW.
+
+open (sequences, "getz -d -f \'acc def\' \"[swissprot-org:Caenorhabditis elegans] | [sptrembl-org:Caenorhabditis elegans]\" |");
+while (<sequences>) {
+	
+	if (/^AC\s+/ || /^DE\s+/ || /^GN\s+/ || /^entry:/ || /^>/) {} else {print;}
+	if (/^entry:\s+(\S+)/) {$entry=$1;}
+	if (/^AC\s+(\S+);/) {$acc=$1;}
+	if (/^DE\s+(.+)/) {$def=$def." ".$1;}
+	if (/^GN\s+(.+)/) {$def=$def." GENE=".$1;}
+	if (/^>/) {print ">$entry $acc $def\n";$def="";} 
+}
+
+exit;
+
+
+
+
+
+
+
+
+

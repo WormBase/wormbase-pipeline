@@ -1,0 +1,173 @@
+#!/usr/local/bin/perl
+#
+#
+# Program to take an file of EMBL files and resubmit
+#
+# Program will:-
+#	
+#	1) Check to see if the new version is different to before
+#
+#	2) If different, will write the new version into the cosmid/embl
+#	 e.g. ZK1058.951111.embl and symbolically link this to ZK1058.current.embl
+#		 	
+#       3) Copy the version to ~wormpub/analysis/TO_SUBMIT.  
+#
+#	4) The software won't email anything as yet - not checked enough
+#	  
+#
+#	EMBL submission protcol
+#
+#	i) Make an file of embl submissions from a keyset.  This should 
+#          be made from JUST submitted cosmids.
+#
+#	ii) All the new files wil be ~wormpub/analysis/TO_SUBMIT and therefore 
+#          can be mailed to the EBI
+#
+#
+#
+
+($sec,$min,$hour,$mday,$mon,$year)=localtime(time);
+#increment month as default january=0
+$mon++;
+
+#make sure mon and day have two digits
+if ($mon < 10) {$mon="0".$mon;}
+if ($mday < 10) {$mday="0".$mday;}
+
+if ($ARGV[0] eq "" ) {die "NO INPUT FILE\n";}
+
+while (<>) {
+
+#if detect the beginning of an entry start a new file
+ if (/^ID\s+CE(\S+)/) {$cosmid=$1;
+   open(temp,">temp$$");
+   $cosnum++;
+}
+
+#for some clones with long names the clone name cannot be got from
+#the ID
+
+if (/^DE.+cosmid\s+(\S+)$/) {$cosmid=$1;}
+print temp $_;
+
+#if detect the end of an entry
+if (/^\/\/$/) { close temp;
+
+
+#####################################################################			
+# Get the current date for the cosmid
+#####################################################################
+
+open(current, "grep ^$cosmid\/  /nfs/disk100/wormpub/analysis/cosmids/current.versions  |"); 
+while (<current>) {if (/^\S+\/(\d+)/) {$date=$1;} 
+else  {print "WARNING - NO CURRENT VERSIONS ENTRY FOR $cosmid\n";}
+
+
+#######################################################################
+# If there never has been a cosmid entry so far then may wish to make one
+#######################################################################
+	       
+if (!-e "/nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.embl") {
+     print "This cosmid has not been submitted before\n";
+     print "Shall I make a $cosmid.embl file and make this the $cosmid.current.file and submit? (y or n)\n";
+     $answer=<STDIN>;
+if ($answer eq "y\n") {system "cp temp$$ /nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.embl";
+   system "ln -s /nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.embl /nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.current.embl";
+  system "cp temp$$ /nfs/disk100/wormpub/analysis/TO_SUBMIT/$cosmid.$year$mon$mday.embl";
+				       } 
+  else {die "aborted\n";}
+ }
+
+
+######################################################################
+# Is there a current.embl file for this sequence in the appropriate place
+# if not quit now and sort this out 	
+######################################################################
+
+if (-e "/nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.current.embl") 
+{ print "Current file for $cosmid found (number $cosnum)\n";
+} else {
+     print "NO CURRENT FILE FOR COSMID $cosmid\n";
+     print "Program has stopped. Cosmids which need resubmission up until now have been placed\n"; 
+     print "in ~wormpub/analysis/TO_SUBMIT\n"; 
+     print "You may need to just run make_current.embl to sort this out\n";
+     unlink "temp$$";
+     exit;
+}
+
+
+######################################################################
+#Is this difference from the current.embl version 
+######################################################################
+
+$compare=&detectdifference($cosmid,$date);
+if ($compare==1) {print "$cosmid differs\n";} 
+
+#######################################################################
+#If there is a difference then copy the temp file to the approp. dir
+#and make a symbolic link to cosmid.current.embl
+#Report the change and place in TO_SUBMIT directory. 
+#######################################################################
+
+if ($compare==1) {system "cp temp$$ /nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.$year$mon$mday.embl";
+system "ln -fs /nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.$year$mon$mday.embl                                                      /nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.current.embl";
+system "\mv temp$$ /nfs/disk100/wormpub/analysis/TO_SUBMIT/$cosmid.$year$mon$mday.embl";
+print "$cosmid should be resubmitted and is in TO_SUBMIT.\n";
+} else {
+print "Cosmid $cosmid is up to date\n";
+unlink "temp$$";
+} 
+}
+}
+
+###################################################
+# Subroutines
+###################################################
+
+#Subroutine to detect whether the new file is different to the old one
+#
+
+sub detectdifference {
+		 
+		local($difference);
+		open(diffout,"diff temp$$ /nfs/disk100/wormpub/analysis/cosmids/$_[0]/$_[1]/embl/$cosmid.current.embl |");
+		$difference=0;
+		while (<diffout>) {if ($_ ne "") {$difference=1;}}
+		return($difference);					   
+		
+				}
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

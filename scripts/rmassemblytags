@@ -1,0 +1,75 @@
+#!/usr/local/bin/perl
+
+# script to remove unwanted assembly tags from cosmid 
+# must run from within a cosmid date directory
+# [04/96 dl]
+
+#########################
+# array of tags to keep #
+#########################
+
+@tags = (
+    "Clone",
+    "Finished",
+    "annotation",
+    );
+
+############################
+# Command line cosmid name #
+############################
+
+$cosmid=shift;
+if ($cosmid eq "") {
+    print "No cosmid name";
+    exit;
+}
+
+#############################
+# make string for file path #
+#############################
+
+$cosmid_path = $cosmid . "_0.ace";
+
+#################
+# start of file #
+#################
+
+print (STDOUT "\n",'Sequence "',$cosmid,'"',"\n");
+
+#####################
+# loop through file #
+#####################
+
+open (COSMID_0_FILE, $cosmid_path) || die "no cosmid_0.ace file";
+
+LOOP: while (<COSMID_0_FILE>) {
+
+    $line = $_;
+    s/\"//g;
+    ($tag,$tag_type) = (/^(\S+)\s+(\S+)/);
+    
+  # next if not an assembly tag
+
+    if ($tag ne 'Assembly_Tags') {
+	next LOOP;;
+    }
+
+  # next if a tag to be kept
+   
+    foreach (@tags) {
+
+	if ($tag_type eq $_) {
+	    next LOOP;;
+	}
+    }
+
+  # so these are the tags to remove
+
+    print (STDOUT "-D ",$line);
+}
+
+
+
+
+
+

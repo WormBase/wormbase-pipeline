@@ -1,0 +1,33 @@
+#! /bin/csh 
+# parblnclean - reintegrates after parbln
+
+switch ($#argv)
+  case "1": 
+	breaksw
+  default: 
+	echo 'Usage: parblnclean seqfile' ; exit 2
+endsw
+
+if (-d blast) cd blast
+
+pwd
+
+if (! -e ${1}.0) then
+  echo "Sequence file ${1} does not exist"
+  exit
+endif
+
+/pubseq/pubseq/outhouse/blast_local/blastnum ${1}	# reintegrate things
+mv ${1}.bl ${1}.embl.bln
+
+awk -f ~wormpub/analysis/alscripts/exblastn.awk \
+	< ${1}.embl.bln >! ${1}.embl.exbln
+
+\rm -r ${1}.[0-9]*
+
+echo "The full blast output is in blast/${1}.embl.bln"
+echo "            a summary is in blast/${1}.embl.exbln"
+
+exit
+
+

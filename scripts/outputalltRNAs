@@ -1,0 +1,14 @@
+#!/usr/local/bin/perl
+
+
+open (cosmids, "/nfs/disk100/wormpub/analysis/cosmids/current.versions");
+
+
+while(<cosmids>) {
+        chop;
+        ($cosmid, $date) = split(/\//,$_);
+	system ("trnascan2ace cosmid=$cosmid /nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/tRNA/$cosmid.tRNA");
+
+}
+
+

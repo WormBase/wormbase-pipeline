@@ -1,0 +1,76 @@
+#!/usr/local/bin/perl
+# CDS_to_LAB: a generic tool to associate gene name or EST name
+# with source laboratory
+# ag3 052000
+# 000618 : dl1 : Altered script to accomodate change of lab 'CB' -> 'HX'
+
+use Ace;
+use Getopt::Std;
+
+getopts('g:e:s');
+
+$MSG1=<<END1;
+CDS_to_LAB: generic tool to associate a CDS with the source laboratory
+or EST with Matching Genomic sequence and source laboratory.
+Source database is autoace
+Usage: CDS_to_LAB -g genename or CDS_to_LAB -e estname -s (minimal output)
+END1
+
+$MSG2 =<<END2;
+Uncorrect gene name format
+END2
+
+$l_optg=length($opt_g);
+$l_opte=length($opt_e);
+
+if (($l_optg == 0)&&($l_opte == 0)) {
+&Exit($MSG1);
+}
+if (($opt_g !~ /\w+\.\w+/)&&(!$opt_e)) {
+&Exit($MSG2);
+}
+
+$db = Ace->connect(-path=>'/wormsrv2/autoace') or die ("Could not connect to autoace\n");
+if ($opt_g) {
+   $sequence = $db->fetch(Sequence=>$opt_g);
+   ($sourcename) = $sequence->at('Structure[3]');
+   $sourceseq = $db->fetch(Sequence=>$sourcename);
+   ($from_lab)=$sourceseq->at('Origin.From_Laboratory[1]');
+   if (!$opt_s) {
+       print "Input Gene: $opt_g\n";
+       print "Source Name: $sourcename\n";
+   }
+}
+if ($opt_e) {
+    $est_seq = $db->fetch(Sequence=>$opt_e);  
+    ($match_genomic) = $est_seq->at('Visible.Matching_Genomic');
+    $match_sequence = $db->fetch(Sequence=>$match_genomic);
+    ($sourcename) = $match_sequence->at('Structure[3]');
+    $sourceseq = $db->fetch(Sequence=>$sourcename);
+    ($from_lab)=$sourceseq->at('Origin.From_Laboratory[1]');
+    if (!$opt_s) {
+	print "Input EST sequence: $est_seq\n";
+	print "Matching_Genomic: $match_genomic\n";
+	print "From_Laboratory: $from_lab\n";
+    }
+}
+if ($from_lab eq "HX") {
+   $database = "Camace";
+} elsif ($from_lab eq "RW") {
+  $database = "Stlace";
+}
+print "Database: $database\n";
+exit 0;
+
+sub Exit {
+$MSG=shift;
+print $MSG;
+exit (0);
+}
+
+
+
+
+
+
+

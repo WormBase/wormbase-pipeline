@@ -1,0 +1,132 @@
+#!/usr/local/bin/perl
+
+# make a link a starting from cosmid $ARGV[0]
+#
+#
+#
+#
+
+require glob('~sjj/scripts/sanger.pl');
+
+#get overlap right and link information
+&getinfo(\%overlap_right_clone,\%length,\%overlap_right,\%source);
+
+#we have a file with some estimated clone sizes 
+open(sizes,"estimated_sizes");
+while(<sizes>) {s/^\s+//;
+		if (/^(\S+).+\s+(\d+)$/) {$estimated{$1}=($2*1000);} 
+	    }
+
+
+$current=$ARGV[0];
+
+print "Sequence $ARGV[1]\n";
+
+$start=1;
+
+while ($current ne "") {
+
+    ######################################################
+    #print out the link or the clone
+
+	if ($source{$current} ne "") {
+	    ($linklast,$linklength)=&get_end_link($source{$current});
+	    #print STDERR "linklast=$linklast $linklength\n";
+	    $end=$start+$linklength-1;
+	    print "Subsequence\t$source{$current}\t$start\t$end\n";
+	    $current=$linklast;
+	}    
+
+	else {
+	    if ($length{$current} ne "") {$end=$start+$length{$current}-1;}
+	    else {if ($estimated{$current} ne "") {$end=$start+$estimated{$current};}}
+	    if ($length{$current} eq "" &&  $estimated{$current} eq "") {$end=$start+30000;}
+
+	print "Subsequence\t$current\t$start\t$end\n";
+        }
+
+    #######################################################
+    #calculate the start of the next clone
+
+	#$nextclone=$overlap_right_clone{$current};
+
+	#if the overlap right coord is known then we know exactly when the next clone starts
+	#print "o/right $overlap_right{$current}\n";
+	if ($overlap_right{$current} ne "" && $source{$current} eq "") {$start=$start+$overlap_right{$current}-1;}
+	
+
+	#otherwise the next (unfinished) clone should start at the next base
+	else {$start=$end+1;}
+
+	$last=$current;
+	$current=$overlap_right_clone{$current};	
+	#print STDERR "current = $current next=$overlap_right_clone{$current}\n"; 
+
+    #########################################################
+
+}
+
+print  "\n\/\/ last clone added was $last\n\n";
+exit;
+
+################################################
+#subroutines 
+################################################
+
+sub getinfo  {
+
+	local($overlap_right_clone=$_[0]);
+	local($length=$_[1]);
+	local($overlap_right=$_[2]);
+	local($source=$_[3]);
+
+	local($sequence);
+
+	$ENV{'ACEDB'}="/nfs/disk100/wormpub/acedb/ace4/cam";
+	$exec=&tace;
+	$command=<<EOF;
+	find Genome_sequence 
+        show -a overlap_right
+	show -a DNA  
+	show -a Source    
+        quit
+EOF
+   open(textace, "echo '$command' | $exec  | ");
+     while (<textace>) {if (/^Sequence\s+:\s+\"(\S+)\"/) {$sequence=$1;}
+			if (/^Overlap_right\s+\"(\S+)\"/) {$overlap_right_clone->{$sequence}=$1;}
+			if (/^Overlap_right\s+\S+\s+(\d+)/) {$overlap_right->{$sequence}=$1;}
+			if (/^DNA\s+\S+\s+(\d+)/) {$length->{$sequence}=$1;}
+			if (/^Source\s+\"(\S+)\"/) {$source->{$sequence}=$1;}
+	}
+}
+
+
+
+sub get_end_link {
+
+        local($length=-1);
+	local($last);
+        $ENV{'ACEDB'}="/nfs/disk100/wormpub/acedb/ace4/cam";
+	$exec=&tace;
+	$command=<<EOF;
+	find sequence $_[0]
+        show subsequence
+        quit
+EOF
+   open(textace, "echo '$command' | $exec  | ");
+	while (<textace>) {if (/\./ || /\/\//) {next;}
+			   
+			   if (/^\s+(\S+)\s+\d+\s+(\d+)/) {; 
+			       if ($2 > $length) {$length=$2;$last=$1;}
+						       }
+			   #print "sub $last $length\n";
+		       }
+	#print "length of $_[0] is $length\n";
+	return ($last,$length);
+}
+
+
+
+
+
+

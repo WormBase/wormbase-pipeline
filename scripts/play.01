@@ -1,0 +1,33 @@
+#!/usr/local/bin/perl 
+#
+
+BEGIN {
+  unshift (@INC,"/nfs/disk92/PerlSource/Bioperl/Releases/bioperl-0.05");
+}
+use Bio::Seq;
+use Getopt::Std;
+use IO::Handle;
+use Ace;
+require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
+
+$|=1;
+
+$WormBasepath          = "/wormsrv2/archive/WS16";
+$wormbase = Ace->connect(-path=>$WormBasepath);
+
+  $i = $wormbase->fetch_many(-query=> 'find Genome_sequence *');  
+    while ($obj = $i->next) {
+
+        # DNA
+	my $dna = $obj->asDNA();
+
+	print "$dna\n";
+
+	$dna=~s/\>\w+//mg;
+	$dna=~tr/a-z/A-Z/;
+	#$dna=~s/\W+//mg;
+	
+	print "$dna\n";
+}
+
+exit(0);

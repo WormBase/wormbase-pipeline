@@ -1,0 +1,10 @@
+#!/usr/local/bin/gawk -f
+
+(NF == 8) {
+#  printf ("\nSequence %s\n", $1)
+  print "Inverted", $5, $7, "Score +3-4-12", $2
+  print "Inverted", $5, $7, "Percent_Identity", $3
+  print "Inverted", $5, $7, "N_Gaps", $4
+  print "Inverted", $5, $7, "Unit_Length", $6 - $5 + 1
+  print "Inverted", $5, $7, "Loop", $8 - $6 - 1
+}

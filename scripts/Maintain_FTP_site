@@ -1,0 +1,620 @@
+#!/usr/local/bin/perl
+#
+# Maintain_FTP_site
+#
+# v 3.1
+#
+# ag3/dl
+#
+# Script to maintain the C.elegans ftp site
+# Original version by Steve Jones
+# dl modified 2000-05-26
+# ag3 modified 2000-10
+# Relies on the integrity of cmid and unfincmid for Sanger data
+# cmid is produced by celeanacon when a new finished clone is added; 
+# unfincmid is produced by rebuild_unfincmid.
+# Relies on the integrity of stl_fincmid and stl_unfincmid for GSC data
+# Both stl_fincmid and stl_unfincmid are produced by get_stlouis_all.pl
+# Produces a new Blastable version of allcmid at every run
+
+# v3.1
+# 
+# 001122 : dl  : Mended chromosomal bin sorting of UNFINISHED data (.seq => .shg typo)
+# 001122 : dl  : Modified logging/error procedures
+
+
+#################################################################################
+# variables                                                                     #
+#################################################################################
+
+$|=1;
+use Ace;
+use IO::Handle;
+use Getopt::Std;
+require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
+
+ ##############################
+ # Script variables (run)     #
+ ##############################
+
+my $maintainer = "dl1\@sanger.ac.uk";
+my $rundate = `date +%y%m%d`; chomp $rundate;
+my $runtime = `date +%H:%M:%S`; chomp $runtime;
+my $version = &get_script_version(Maintain_FTP_site);
+
+ ##############################
+ # command-line options       #
+ ##############################
+
+$opt_h = "";   # Help/Usage page
+$opt_a = "";   # FTP site maintenance only
+$opt_b = "";   # Blast database rebuilding
+getopts (abh);
+
+&usage(0) if ($opt_h);
+&usage(1) if ((!$opt_a)&&(!$opt_b));
+
+ ##############################
+ # Paths etc                  #
+ ##############################
+
+my $wormpub="/nfs/disk100/wormpub";
+my $log = "/wormsrv2/logs/Maintain_FTP_site.$rundate.$$";
+my $CE_FTPDIR = "/nfs/disk69/ftp/pub/wormbase/sequences";
+my $CD_DBDIR = "$wormpub/analysis/Sequence_Databases";
+my $SCRIPT_DIR = "/nfs/disk100/wormpub/analysis/scripts";
+
+%count = (
+	  'I',        '0',
+	  'II',       '0',
+	  'III',      '0',
+	  'IV',       '0',
+	  'V',        '0',
+	  'X',        '0',
+	  'UNSORTED', '0',
+	  );
+
+@FINISHED_DIRS = (
+		  "$CE_FTPDIR/FINISHED_SEQUENCES/UNSORTED",
+		  "$CE_FTPDIR/FINISHED_SEQUENCES/I",
+		  "$CE_FTPDIR/FINISHED_SEQUENCES/II",
+		  "$CE_FTPDIR/FINISHED_SEQUENCES/III",
+		  "$CE_FTPDIR/FINISHED_SEQUENCES/IV",
+		  "$CE_FTPDIR/FINISHED_SEQUENCES/V",
+		  "$CE_FTPDIR/FINISHED_SEQUENCES/X"
+		  );
+
+@UNFINISHED_DIRS = (
+		    "$CE_FTPDIR/UNFINISHED_SEQUENCES/UNSORTED",
+		    "$CE_FTPDIR/UNFINISHED_SEQUENCES/I",
+		    "$CE_FTPDIR/UNFINISHED_SEQUENCES/II",
+		    "$CE_FTPDIR/UNFINISHED_SEQUENCES/III",
+		    "$CE_FTPDIR/UNFINISHED_SEQUENCES/IV",
+		    "$CE_FTPDIR/UNFINISHED_SEQUENCES/V",
+		    "$CE_FTPDIR/UNFINISHED_SEQUENCES/X"
+		    );
+
+ ########################################
+ # Open logfile                         #
+ ########################################
+
+my $logfile = "/wormsrv2/logs/Maintain_FTP_site.${rundate}.$$";
+open (LOG,">$logfile");
+LOG->autoflush();
+
+print LOG "# Maintain_FTP_site \n\n";
+print LOG "# version        : $version\n";
+print LOG "# run details    : $rundate $runtime\n";
+print LOG "\n";
+print LOG "======================================================================\n";
+print LOG "  -a : Build FTP site\n" if ($opt_a);
+print LOG "  -b : Build Blast databases\n" if ($opt_b);
+print LOG "======================================================================\n";
+print LOG "\n";
+
+#################################################################################
+# Main Loop                                                                     #
+#################################################################################
+ 
+ #######################################
+ # Build FTP directories               #
+ #######################################
+
+if ($opt_a) {
+
+    $now = `date +%H:%M:%S`; chomp $now;
+    print LOG  "# [$now] Build a hash for the clone / chromosome number\n";
+    &map_chromosome_position;
+    foreach (@FINISHED_DIRS) {
+	&clean_dirs($_);
+    }
+    foreach (@UNFINISHED_DIRS) {
+	&clean_dirs($_);
+    }
+    
+    $now = `date +%H:%M:%S`; chomp $now;
+    print LOG "\n# [$now] getting Cambridge clones from <cmid> & <unfincmid>\n\n";
+    &get_cambridge_data;
+    $now = &gettime;
+    print LOG "# [$now] copied $sanger_clone clones from Cambridge sections\n\n";
+    $now = &gettime;
+    print LOG "\n# [$now] move *FINISHED* clones to appropriate chromosome bin\n\n";
+    &bin_finished_clones;
+    $now = &gettime;
+    print LOG "\n# [$now] deal with the *FINISHED* data -> check consistency\n\n";
+    &check_finished_clones;
+    $now = &gettime;
+    print LOG "\n# [$now] move *UNFINISHED* clones to appropriate chromosome bin\n\n";
+    &bin_unfinished_clones;
+    $now = &gettime;
+    print LOG "\n# [$now] deal with the *UNFINISHED* data -> check consistency\n\n";
+    &check_unfinished_clones;
+}  
+
+if ((($opt_a)&&($opt_b))||($opt_b)) {
+    $now = `date +%H:%M:%S`; chomp $now;
+    print LOG "\n# [$now] Maintain blastable databases\n\n";
+    &maintain_blast_dbs;
+}
+
+$now = `date +%H:%M:%S`; chomp $now;
+print LOG "\n# [$now] The end of the story .. bye .. \n\n";
+close (LOG);
+
+&email_log;
+
+exit (0);
+
+###########################################################################################
+# SUBROUTINES                                                                             #
+###########################################################################################
+
+###########################################################################################
+# Get current time                                                                        #
+###########################################################################################
+
+sub gettime {
+  my @time = localtime();
+  my ($MINS,$HOURS,$DAY,$MONTH,$YEAR)=(localtime)[1,2,3,4,5];
+  if ($MINS=~/^\d{1}$/) {
+    $MINS="0"."$MINS";
+  }
+  my $REALMONTH=$MONTH+1;
+  my $REALYEAR=$YEAR+1900;
+  my $TODAY = "$HOURS:$MINS";
+  return $TODAY;
+}
+
+############################################################################################
+# Map all clones to chromosomes                                                            #
+############################################################################################
+
+sub map_chromosome_position {
+    $db = Ace->connect(-path=>"/wormsrv2/autoace") or &DieHard ("Could not connect to autoace");
+    print LOG "\n\nFirst database connection successful\n\n";
+    my ($query1);
+    my ($query2);
+    undef %CHROME;
+    my ($map);
+    $query1=<<END;
+find genome_sequence *
+show -a Interpolated_gMap
+END
+  $query2=<<END3;
+quit
+END3
+    my $t=$db->raw_query($query1);
+    my $t=$db->raw_query($query2);
+    @text = split /\n/, $t;
+    foreach (@text) {
+	if (/^Sequence\s+:\s+\"(\w+)\"/)  {
+	    $sequence=$1;
+	    $sequence=~tr/a-z/A-Z/;
+	}
+	if (/^Interpolated_gMap\s+\"(\S+)\"\s+/)  {
+	    $map=$1;
+	    $CHROME{$sequence}=$map;
+	}
+    }
+} # end sub 'map_chromosome_position'
+
+############################################################################################
+# get_cambridge_data                                                                       #
+# This subroutine gets  all the  *finished* and *unfinished* Cambridge sequences           #
+# The *finished cmid file is maintained by celeanacon                                      #
+# The *unfinised unfincmid file is maintained by rebuild_unfincmid                         #
+############################################################################################
+
+sub get_cambridge_data {
+
+    # set vars for the CAMBRIDGE data
+    $sanger_clone = 0;
+
+    # Copy *CAMBRIDGE FINISHED* to UNSORTED
+    open (CAMB_FINISHED, "$wormpub/analysis/Sequence_Databases/cmid") || die ("Could not open $wormpub/analysis/cosmids/cmid\n");
+    while (<CAMB_FINISHED>){
+	if (/^>(\w+)/) {
+	    my $cosmid=$1;
+	    $cosmid=~tr/a-z/A-Z/;
+	    close OUTPUT;
+	    open (OUTPUT, ">$CE_FTPDIR/FINISHED_SEQUENCES/UNSORTED/$cosmid.seq");
+	    $sanger_clone++;
+	    print LOG "[#$sanger_clone] : copy SANGER $cosmid to FINISHED/UNSORTED directory\n";
+	}
+	print OUTPUT "\U$_";
+    }
+    close (CAMB_FINISHED);
+    close OUTPUT;
+
+    # Copy *CAMBRIDGE UNFINISHED* to UNSORTED
+    open (CAMB_UNFINISHED, "$wormpub/analysis/Sequence_Databases/unfincmid") || die ("Could not open $wormpub/analysis/Sequence_Databases/unfincmid\n");
+    # Maintain all the unfinished cosmids of a clone in the same file
+    while (<CAMB_UNFINISHED>){
+	if (/^>([A-Za-z0-9]+)/) {
+	    my $cosmid=$1;
+	    $cosmid=~tr/a-z/A-Z/;
+	    if (!$SEEN{$cosmid}) {
+		$SEEN{$cosmid}++;
+		close OUTPUT;
+		open (OUTPUT, ">$CE_FTPDIR/UNFINISHED_SEQUENCES/UNSORTED/$cosmid.shg");
+		$sanger_clone++;
+		print LOG "[#$sanger_clone] : copy SANGER $cosmid to UNFINISHED/UNSORTED directory\n";
+	    }
+	}
+	print OUTPUT "\U$_";
+    }
+    close (CAMB_UNFINISHED);
+    close OUTPUT;
+}
+
+
+############################################################################################
+# Put anything from the FINISHED UNSORTED Sanger directory in the correct chromosome bin   #
+############################################################################################
+
+sub bin_finished_clones {
+    
+    opendir(LOOK_FIN,"$CE_FTPDIR/FINISHED_SEQUENCES/UNSORTED") or die ("Could not open /FINISHED_SEQUENCES/UNSORTED");
+    while (defined($filename=readdir(LOOK_FIN))) {
+	if ($filename =~ /^(\S+).seq/) {
+	    $cosmid = $1;
+	    $chromosome=$CHROME{$cosmid};
+            $now = &gettime;
+
+	    if ($chromosome eq "") {
+		$count{UNSORTED}++;
+		print LOG "[$now] !! Clone $cosmid has no interpolated gmap position !!\n";
+		next;
+	    } 
+	    else {
+		$count{$chromosome}++;
+		print LOG "[$now] [$chromosome:$count{$chromosome}] : copy $cosmid.seq to bin $chromosome\n";
+		system("/bin/cp $CE_FTPDIR/FINISHED_SEQUENCES/UNSORTED/$cosmid.seq $CE_FTPDIR/FINISHED_SEQUENCES/$chromosome/$cosmid.seq");
+	    }
+	}
+    }
+    closedir LOOK_FIN;
+} # end of sub 'bin_finished_clone'
+
+
+############################################################################################
+# Put anything from the UNFINISHED UNSORTED Sanger directory in the  proper chromosome bin #
+############################################################################################
+
+sub bin_unfinished_clones {
+    #Put anything in UNFINISHED directory in the proper chromosome bin
+    opendir(LK_UNFIN,"$CE_FTPDIR/UNFINISHED_SEQUENCES/UNSORTED") or die ("Could not open /UNFINISHED_SEQUENCES/UNSORTED");
+    while (defined($filename=readdir(LK_UNFIN))) {
+	if ($filename=~/^(\S+).shg/) {
+	    $cosmid = $1;
+	    $chromosome=$CHROME{$cosmid};
+	    print LOG "Unfinished cosmid $cosmid Chromosome $CHROME{$cosmid}\n";
+	    # if chromosomal position was not found, try again ..  
+	    if ($chromosome eq "") {
+		print LOG "!! Clone $cosmid has no interpolated gmap position !!\n";
+		$count{UNSORTED}++;
+		next;
+	    } else {
+		print LOG "UNFINISHED:$cosmid ==> Chromosome $chromosome\n";
+      	    # Copy the unsorted sequence to the appropriate bin
+		$now = &gettime;
+		$count{$chromosome}++;
+		print LOG "[$now] [$chromosome:$count{$chromosome}] : copy $cosmid.shg to bin $chromosome\n";
+		system("/bin/cp $CE_FTPDIR/UNFINISHED_SEQUENCES/UNSORTED/$cosmid.shg $CE_FTPDIR/UNFINISHED_SEQUENCES/$chromosome/$cosmid.shg");
+		chomp $retvalue;
+	    }
+	}
+    }
+    closedir (LK_UNFIN);
+}
+
+############################################################################################
+# This subroutine will clean up all the finished sequences before binning                  #
+############################################################################################
+
+sub clean_dirs {
+    my $DIR=shift;
+    print LOG "Directory $DIR\n";
+    opendir (DIRHANDLE,"$DIR") or print LOG "Could not open directory $DIR";
+    while (defined($filename = readdir(DIRHANDLE))) {
+	unlink "$DIR/$filename";
+    }
+    closedir DIRHANDLE;
+    $now = &gettime;
+    print LOG "[$now] : cleaned directory $DIR\n";
+}
+
+
+###########################################################################################
+# Make statistics after finished clones                                                   #
+###########################################################################################
+
+sub check_finished_clones {
+    $tot_clone = $sanger_clone;
+    $tot_binned = $count{I} + $count{II} + $count{III} + $count{IV} + $count{V} + $count{X} + $count{UNSORTED};
+    print LOG "Total Clones\t$tot_clone\nSANGER\t$sanger_clone\n\n";
+    print LOG "Total Binned\t$tot_binned\n\n";
+    print LOG "CHROMOSOME BIN : I          $count{I}\n";
+    print LOG "CHROMOSOME BIN : II         $count{II}\n";
+    print LOG "CHROMOSOME BIN : III        $count{III}\n";
+    print LOG "CHROMOSOME BIN : IV         $count{IV}\n";
+    print LOG "CHROMOSOME BIN : V          $count{V}\n";
+    print LOG "CHROMOSOME BIN : X          $count{X}\n";
+    print LOG "CHROMOSOME BIN : UNSORTED   $count{UNSORTED}\n";
+    if ($tot_binned =! $tot_clone) {
+	print LOG "## Mismatch in clone numbers\n\n";
+    }
+}
+
+
+###########################################################################################
+# Make statistics after unfinished clones                                                 #
+###########################################################################################
+
+sub check_unfinished_clones {
+    $tot_clone = $sanger_clone;
+    $tot_binned = $count{I} + $count{II} + $count{III} + $count{IV} + $count{V} + $count{X} + $count{UNSORTED};
+    print LOG "Total Clones\tSANGER\t$sanger_clone\n\n";
+    print LOG "Total Binned\t$tot_binned\n\n";
+    print LOG "CHROMOSOME BIN : I          $count{I}\n";
+    print LOG "CHROMOSOME BIN : II         $count{II}\n";
+    print LOG "CHROMOSOME BIN : III        $count{III}\n";
+    print LOG "CHROMOSOME BIN : IV         $count{IV}\n";
+    print LOG "CHROMOSOME BIN : V          $count{V}\n";
+    print LOG "CHROMOSOME BIN : X          $count{X}\n";
+    print LOG "CHROMOSOME BIN : UNSORTED   $count{UNSORTED}\n";
+    if ($tot_binned =! $tot_clone) {
+	print LOG "## Mismatch in clone numbers\n\n";
+    }
+}
+
+
+###########################################################################################
+# Maintain the allcmid Blast database in ~wormpub/analysis/Sequence_databases             #
+###########################################################################################
+
+sub maintain_blast_dbs {
+    
+    $orig_number=$number=0;
+    
+
+    ################################################
+    # Save existing allcmid in case of a meltdown  # 
+    ################################################
+
+    system("/bin/cp $CD_DBDIR/allcmid $CD_DBDIR/allcmid.from.yesterday");
+
+    ################################################
+    # Record existing number of sequence entries   #
+    ################################################
+    
+    $orig_number = `grep \'\>\' $CD_DBDIR/allcmid \| wc \-l`;
+    
+    ################################################
+    # clean up from previous sessions              #
+    ################################################
+
+    unlink "$CD_DBDIR/stlandcam-cmid"; 
+    unlink "$CD_DBDIR/allcmid3";
+    unlink "$CD_DBDIR/allcmid3.csq";
+    unlink "$CD_DBDIR/allcmid3.nhd";
+    unlink "$CD_DBDIR/allcmid3.ntb";
+    unlink "$CD_DBDIR/tempallcmid";
+
+    ################################################
+    # Add the finished data                        #
+    ################################################
+
+    system("$SCRIPT_DIR/clean_up_cmid -i $CD_DBDIR/cmid | /usr/local/pubseq/bin/seqpress > $CD_DBDIR/stlandcam-cmid"); 
+    system("$SCRIPT_DIR/clean_up_cmid -i $CD_DBDIR/stl_fincmid | /usr/local/pubseq/bin/seqpress >> $CD_DBDIR/stlandcam-cmid");
+
+    ################################################
+    # Add the unfinished data                      #
+    ################################################
+
+    system("cat $CD_DBDIR/unfincmid | /usr/local/pubseq/bin/seqpress >> $CD_DBDIR/stlandcam-cmid");
+    system("cat $CD_DBDIR/stl_unfincmid | /usr/local/pubseq/bin/seqpress >> $CD_DBDIR/stlandcam-cmid");
+
+    
+    ################################################
+    # Record new number of sequence entries        #
+    ################################################
+
+    $number = `grep \'\>\' $CD_DBDIR/stlandcam-cmid \| wc \-l`;
+    chomp $number;
+
+    $now = `date +%H:%M:%S`; chomp $now;
+    print LOG "\n# [$now] stlandcam-cmid built with $number entries\n";
+
+    ################################################
+    # Modify FASTA headers that are not unique     # 
+    ################################################
+
+    # adding the contig number to the name (avc: 17.6.99)
+
+    open (ALLCMID, "$CD_DBDIR/stlandcam-cmid") or die "Can't modify fasta headers: $!\n";
+    open (TEMPCMID, ">$CD_DBDIR/tempallcmid") or die "Can't create temp allcmid file: $!\n";
+    while (<ALLCMID>){
+	if (/>/){
+	    if (/Contig ID=(\w*)\s*/i){
+		my $ctg = ".ctg$1";
+		$_ =~ s/^>(\w*)(\s*)(.*)/>$1$ctg$2$3/i;
+	    }
+	}
+	$_=~tr/a-z/A-Z/;
+	print TEMPCMID $_;
+    }
+     close (TEMPCMID);
+     close (ALLCMID);
+
+#    unlink ("$CD_DBDIR/stlandcam-cmid");
+
+    ################################################
+    # Record new number of sequence entries        #
+    ################################################
+
+    $number = `grep \'\>\' $CD_DBDIR/tempallcmid \| wc \-l`;
+    chomp $number;
+    
+    $now = `date +%H:%M:%S`; chomp $now;
+    print LOG "\n# [$now] Tempallcmid has now $number entries\n";
+
+    ################################################
+    # Reformat & pressdb                           #
+    ################################################
+
+    system ("/usr/local/pubseq/bin/reformat -d fasta $CD_DBDIR/tempallcmid > $CD_DBDIR/allcmid3");
+    $number = `grep \'\>\' $CD_DBDIR/allcmid3 \| wc \-l`;
+    chomp $number;
+
+    $now = `date +%H:%M:%S`; chomp $now;
+    print LOG "\n# [$now] Reformat tempallcmid -> allcmid3 successful with $number entries\n";
+    unlink ("$CD_DBDIR/tempallcmid");
+    
+    $now = `date +%H:%M:%S`; chomp $now;
+    if ($number < $orig_number) {
+	print LOG "\n# [$now] Warning - allcmid3 contains $number entries, allcmid contains $orig_number entries - allcmid left unaltered\n";
+	return;
+    } else {
+	system("/usr/local/pubseq/bin/pressdb $CD_DBDIR/allcmid3");
+    }
+    
+    ################################################
+    # Sanity check for pressdb & blast databases   #
+    ################################################
+
+    opendir (DIR, "$CD_DBDIR");
+    foreach $filename (readdir(DIR)){
+	if ( -z $filename ){
+	    push(@filenames, $filename);
+	}
+    }
+    closedir(DIR);
+
+    if ( $#filenames >= 0 ){
+	 open(MAIL, "| Mail -s \"Maintain_FTP_Site: pressdb failed on ALLCMID\" $maintainer\@sanger.ac.uk");
+	 print MAIL "\nThe following files have zero length:\n\n@filenames\n";
+	 close MAIL;
+	 $now = &gettime;
+	 print LOG "\n# [$now] pressdb *failed* on allcmid\n";
+	 return;
+    } else {
+	 $now = &gettime;
+	 print LOG "\n# [$now] pressdb *suceeded* on allcmid\n";
+	 $tot=$mv1=$mv2=$mv3=$mv4=0;
+	 unlink ("$CD_DBDIR/allcmid");
+	 unlink ("$CD_DBDIR/allcmid.csq");
+	 unlink ("$CD_DBDIR/allcmid.nhd");
+	 unlink ("$CD_DBDIR/allcmid.ntb");
+	 system ("/bin/mv $CD_DBDIR/allcmid3 $CD_DBDIR/allcmid");
+	 system ("/bin/mv $CD_DBDIR/allcmid3.csq $CD_DBDIR/allcmid.csq");
+	 system ("/bin/mv $CD_DBDIR/allcmid3.nhd $CD_DBDIR/allcmid.nhd");
+         system ("/bin/mv $CD_DBDIR/allcmid3.ntb $CD_DBDIR/allcmid.ntb");
+	 system ("/bin/touch $CD_DBDIR/allcmid");
+	 system ("/bin/touch $CD_DBDIR/allcmid.csq");
+	 system ("/bin/touch $CD_DBDIR/allcmid.nhd");
+	 system ("/bin/touch $CD_DBDIR/allcmid.ntb");
+	 $now = &gettime;
+	 print LOG "\n# [$now] New database move successful\n";
+	 $number = `grep \'\>\' $CD_DBDIR/allcmid \| wc \-l`;
+	 print LOG "\n# [$now] Number of entries for allcmid: $number\n";
+	 system ("/bin/cp $CD_DBDIR/allcmid $CE_FTP_DIR/ALL_COSMIDS/allcmid");
+	 system ("/bin/gzip $FTP_DIR/ALL_COSMIDS/allcmid");
+	 $now = &gettime;
+	 print LOG "\n# [$now] copied and gzipped allcmid \n";
+     }
+    return;
+}
+
+###########################################################################################
+# Email the log file to maintainer                                                        #
+###########################################################################################
+
+
+sub email_log {
+    open(MAIL, "| Mail -s \"FTP-Blast Report: Maintain_FTP_Site\" $maintainer");
+    open (INLOG,"/bin/cat $log |");
+    while (<INLOG>) {
+	print MAIL $_;
+    }
+    close INLOG;
+    close MAIL;
+#    unlink $log;
+    return;
+}
+
+
+
+
+
+sub usage {
+    my $error = shift;
+
+    if ($error == 1) {
+        exit(0);
+    }
+    elsif ($error == 0) {
+        # Normal help menu
+        exec ('perldoc',$0);
+        exit (0);
+    }
+}
+
+
+__END__
+
+=pod
+
+
+
+
+=head2   NAME - get_stlouis_all
+
+=head1 USAGE
+
+=over 4
+
+=item get_stlouis_all [-options]
+
+=back
+
+get_stlouis_all is a wrapper to drive the various scripts involved in
+fetch finished and unfinished sequence data from the GSC.
+
+get_stlouis_all  mandatory arguments:
+
+=over 4
+
+=item none,
+
+=back
+
+get_stlouis_all OPTIONAL arguments:
+
+=over 4
+
+=item -h, Help mode
+
+=back
+
+=cut

@@ -1,0 +1,22 @@
+#!/usr/local/bin/perl 
+
+open(swissprot,"getz -f 'acc def' \"[swissprot-org:Caenorhabditis elegans] < wormpep\"|");
+
+while (<swissprot>) {#print;
+	if (/^AC\s+(\S+);/) {$swissprot=$1;push(@swiss,$1);}
+	if (/^DE\s+(.+)/) {$def{$swissprot}=$def{$swissprot}.$1;}
+
+}
+
+close swissprot;
+
+foreach $protein (@swiss) {
+
+	open(swissprot,"getz -t  \"wormpep < [swissprot-acc:$protein]\"|");
+	while(<swissprot>) {
+	if (/>\S+\s+(CE\d+)/) {print "\nProtein WP:$1\nDB_remark \"$def{$protein}\"\n";}
+	}
+	#print "Sequence"; 			
+	
+}
+

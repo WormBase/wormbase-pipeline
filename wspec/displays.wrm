@@ -1,0 +1,163 @@
+/* @(#)displays.wrm	1.19    8/18/95 */ 
+
+  /* wspec/displays.wrm
+     
+     This file is read only at execution time
+
+     It holds the display definitions necessary to the 
+     graphic interface.
+
+     You can freely edit this file without recompiling
+     but it must remain consistent with the other wspec files
+     and you must never change the graphType (-g) of a class
+     unless you modify the corresponding application source code.
+
+     Line starting with _DDispayType are parsed, they are expected
+     to contain a la Unix a set of -Option parameters.
+     DisplayTypes must match their enumeration in wspec/disptype.wrm
+	
+     Options names can be abbreviated, recognized options are
+     -GraphType : One of PLAIN TEXT_SCROLL TEXT_FIT MAP_SCROLL as
+	          enumerated in wh/graph.h. You cannot change that
+                  parameter unless you change the way the graph is
+                  used in the source code.
+     -Title text : A default title for that graph, sometimes overridden
+                  by the applications.
+     -Width w -Height h -Xposition x -Yposition y : 
+                  Real numbers in the following range 
+                  0 < x,w  < 1.3   ;  0 < y,h < 1.0
+                  They indicate the initial proportion of the sreen width and height 
+                  used to display objects of that class in their preferred display type. 
+	          The full screen is normallized to 1, 1.3
+     -Menu text   Provide this display type, under name text, in the
+                  keyset "display as" menu.
+     -Help section : The correct section of wspec/help.wrm, 
+
+     GraphType default as TEXT_FIT. x and y as 0, w h as .3 .5
+
+     The displays can be registered as the preferred display type of
+     a class in the file wspec/options.wrm. In that case, you must
+     provide a displayFunction and register it in wspec/quovadis.wrm.	
+  */
+
+
+_DDtMain -g TEXT_FIT -t "C.elegans database 21/05/01"  -w .43 -height .23 -help acedb
+.23 -help acedb
+
+_DDtChrono -g TEXT_SCROLL -t "Chrono" -x .0125 -y .25 -w 0.6 \
+	-height 0.74 -help Chronometer
+
+_DDtFile_Chooser  -g TEXT_SCROLL -t "File chooser" -w 0.5 -height 0.7 \
+	-help File_Chooser
+
+_DDtHelp -g TEXT_SCROLL -t "Help" -x .5 -y .15 -w  .9 -hei .8 -help Help
+
+_DDtAce_Parser -g TEXT_SCROLL -t ".ace file parser" -x 0.4 -w 0.5 \
+	-heig 0.3 -help Read_files
+
+_DDtDump -g TEXT_SCROLL -t Dump  -x .65 -y .04 -w 0.6 -height 0.6 \
+	-help Dump
+
+_DDtKeySet -g TEXT_FIT -t KeySet -x .0001 -y 0.25 -w 0.44 -height 0.4 -help KeySet
+
+_DDtSession -g TEXT_FULL_SCROLL -t "Session Control" -x  0.41 -w 0.64 \
+	-height 0.64  -help  "Session_control"
+
+_DDtStatus  -g TEXT_SCROLL -t "Status" -x .25 -y .4 -w 0.8 -heig 0.7 \
+	-help Status
+
+_DDtUpdate -g TEXT_SCROLL -t "Update" -x .65 -y .04 -w 0.6 -hei 0.6 \
+	-help "Official_Update"
+
+_DDtLongText  -g TEXT_SCROLL -t "Text" - y 0.3 -w 0.75 -height 0.68 \
+	 -help "Long-Text"
+
+_DDtQuery   -g TEXT_SCROLL -t "Query" -w .65  -height 0.35 -help Query
+
+_DDtQueryBuilder   -g TEXT_SCROLL -t "Query, by Gary Aochi" -w .73  -height 0.35 -help GaryQuery
+
+_DDtQueryByExample   -g TEXT_SCROLL -t "Query by Example" -w .55  -height 0.35 -help Query_By_Example
+
+_DDtSpreadSheet   -g TEXT_FULL_SCROLL -t "Table_Maker" -w .60  -height 0.35 -help Table_Maker
+
+_DDtMULTIMAP   -g TEXT_FIT -t "Multi-map" -w 1.15  -height 0.65 -help Multi_Map
+
+_DDtAction    -g TEXT_FIT -t "Action" -w .45  -height 0.65 -help Action
+
+_DTREE  -g TEXT_SCROLL -w 0.55 -height 0.35   -x .2 -y .3 -help Tree -m Text
+
+_DDtBiblio  -g TEXT_SCROLL -t Biblio -x 0.72 -y 0.22 -w 0.7 -height 0.75 -help Bibliography
+
+_DCMAP  -g TEXT_FIT -t Chromosome -y 0.3 -w 0.6 -height  0.75  -help Chromosome-map
+
+_DFMAP -g TEXT_FIT -t Features -y  0.3 -w 0.80 -height 0.93 \
+	-help Feature-map
+
+_DPEPMAP -g TEXT_FIT -t Protein -y  0.3 -w 0.80 -height 0.93 \
+	-help Protein-map
+
+_DDtColControl -g TEXT_FIT -t "Column Control" -w .75 -height .5 \
+	-help Column-control
+
+_DDtGel  -g TEXT_FIT -t "Agarose Gel" -y 0.3 -w 0.35 -height 0.68 \
+	-help Agarose-Gels
+
+_DGMAP -g TEXT_FIT -y 0.3 -w 0.75 -height 0.68 -help Genetic-map -m Genetic-map
+
+_DVMAP -g TEXT_FIT -y 0.3 -w 0.75 -height 0.80 -help Vertical-map
+
+_DGRID -g TEXT_FULL_SCROLL -w 0.54 -height 0.78 -help Grid -m Grid 
+
+_DPMAP -g TEXT_FIT -x 0.41 -w 0.88 -height 0.7 -help Physical-map
+
+_DDtPmapPadSheet -g TEXT_SCROLL -t "Autoposition Clones" -w 0.70 \
+	-height 0.30 -help Contig-editor
+
+_DDtPmapFingerprint -g TEXT_SCROLL -t "Fingerprint" -w 0.50 \
+	-height 0.93 -x .1 -y .03 -help Gel-Patterns
+
+_DDtAlign  -g TEXT_SCROLL -t Align -y .64 -w 0.55 -height 0.40 \
+	-help Make_maps
+
+_DDtCodons -g TEXT_FIT -t "Codon Usage" -x .1 -y .5 -w .7  \
+	-height .85 -help Codon_usage
+
+_DDtDnaTool -g TEXT_SCROLL -t DNA_Analysis  -y .91 -w 0.42 \
+	-height 0.68 -help  DNA_analysis
+
+_DDtAlias -g TEXT_FIT -t "Add/Delete/Rename/Alias Objects" -w 0.5 \
+	-height 0.25 -help Add_New_Objects
+
+_DDtHistogram -g TEXT_FIT -t "Histogram" -x .01 -y .33 -w .5 \
+	-height .33 -help Histogram
+
+_DDtMultiTrace -g TEXT_FIT -t "Traces" -x .01 -y .03 -w .9 \
+	-height .93 -help Traces
+
+_DDtImage -g PIXEL_SCROLL -t "Image" -width .6 -height .4 -help Image
+
+_DMETAB -g TEXT_FULL_SCROLL -t "Pathways" -width .6 -height .4 \
+	-help Pathways
+
+_DDtAlignment -g TEXT_FULL_SCROLL -t "Alignment" -width .6 -height .4 \
+	-help Alignment
+
+_DDtForest -g TEXT_FIT -x 0.05 -y 0.05 -w 1.2 -height 0.92 -help forest
+
+_DWWW -m "Web page"
+
+_DDtDendrogram -g TEXT_FULL_SCROLL -x 0.1 -y 0.01 -w 0.8 -height 0.5 -help dendrogram
+
+/* all below added by jld for comparative maps */
+
+_DOXGRID -g TEXT_FULL_SCROLL -t "Oxford Grid" -w 0.9 -height 0.9 -help Comparative_Maps   
+          
+_DPAIRMAP -g TEXT_FULL_SCROLL -t "PairMap"-w 0.8 -height 0.9 -help Comparative_Maps
+    
+_DO2MMAP -g TEXT_FULL_SCROLL -t "One-to-ManyMap" -w 1.10 -height 1.0 -help Comparative_Maps
+
+_DOxgridChoose -g TEXT_FIT -t "Comparative Map Chooser" -w 0.5 -height 0.35 -help Comparative_Maps
+
+_DSPECGRID -g TEXT_FULL_SCROLL -t "Species Grid" -w 1.0 -height 0.95 -help Comparative_Maps
+
+

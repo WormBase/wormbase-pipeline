@@ -1,0 +1,30 @@
+#!/bin/csh -f
+
+setenv ACEDB ~wormpub/acedb/ace4/cam
+
+switch (`uname`)
+  case "IRIX":
+	~wormpub/acedb/ace4/bin.SGI_4/tace $ACEDB
+	breaksw
+  case "OSF1":
+	~wormpub/acedb/ace4/bin.ALPHA_4/tace $ACEDB
+	breaksw
+  case "Linux":
+        ~wormpub/acedb/ace4/bin.LINUX/aceclient 193.62.206.91 -port  210300 -time_out 50 
+        breaksw
+  case "SunOS":
+	switch (`ostype`)
+	  case "SunOS":
+		~wormpub/acedb/ace4/bin.SUN_4/tace $ACEDB
+		breaksw
+	  case "Solaris":
+		~wormpub/acedb/ace4/bin.SOLARIS_4/tace $ACEDB
+		breaksw
+	endsw
+	breaksw
+endsw
+
+
+
+
+

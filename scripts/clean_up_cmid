@@ -1,0 +1,144 @@
+#!/usr/local/bin/perl
+#
+# Takes cmid and stlcmid and tidies them up and adds the accession if known
+#
+# sjj
+#
+########################################
+#
+# 000508 : dl : reformat and add pod documentation
+# 000613 : ag3 : introduced command-line switches
+
+use Getopt::Std;
+$|=1;
+require glob('~wormpub/analysis/scripts/WORKING/sanger.pl');
+
+getopts ('i:');
+if (!$opt_i) {
+    die "Usage: $0 -i stlcmid or $0 -i cmid\n";
+}
+
+&get_accession ;
+
+open (INFILE,"$opt_i");
+while (<INFILE>) {
+    if (/>([A-Za-z0-9]+)/) {
+	$sequence=$1;
+	$sequence=~tr/a-z/A-Z/;
+	print ">$sequence acc=$acc{$sequence}\n";
+    } else {
+	print;
+    }
+}
+close INFILE;
+
+
+exit 0;
+
+#########################################
+
+
+sub get_accession {
+
+    #################################################
+    # get accessions from  stl                      #
+    #################################################
+
+if ($opt_i =~ /\bstl_fincmid/) {
+    local($exec);
+    local($command);
+    local(@array);
+    undef @array;
+    $exec=&tace;
+    $ENV{'ACEDB'}="/wormsrv2/stlace";     
+    $command=<<EOF;
+    find genome_sequence
+    show -a Database
+    quit
+EOF
+
+    open(TEXTACE, "echo '$command' | $exec |");
+    while (<TEXTACE>) {
+	if (/^Sequence\s+:\s+"(\S+)"/) {
+	    $sequence=$1;
+	}
+	if (/^Database\s+("EMBL"|"GenBank")\s+\S+\s+"(\S+)"/i) {
+	    $acc{$sequence}=$2;
+	}
+    }
+    close (TEXTACE);
+}
+
+    ###################################################
+    # get accessions from cam                         #
+    ###################################################
+
+ elsif ($opt_i =~ /\bcmid\b/) {
+    local($exec);
+    local($command);
+    local(@array);
+    undef @array;
+    $exec=&tace;
+    $ENV{'ACEDB'}="/wormsrv2/camace";     
+    $command=<<EOF;
+    find genome_sequence
+    show -a Database
+    quit
+EOF
+
+    open(TEXTACE, "echo '$command' | $exec | ");
+    while (<TEXTACE>) {
+	if (/^Sequence\s+:\s+"(\S+)"/) {
+	    $sequence=$1;
+	}
+	if (/^Database\s+("EMBL"|"GENBANK")\s+\S+\s+"(\S+)"/i) {
+	    $acc{$sequence}=$2;
+	}
+    }
+    close (TEXTACE);
+}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

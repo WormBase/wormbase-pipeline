@@ -1,0 +1,80 @@
+#!/usr/local/bin/gawk -f
+# awk script to pull genes out of new genefinder output
+# Possible_exon abolished by esr 940104
+# Richard added "CDS_predicted_by Genefinder" 940228
+#980402 sjj added a few more possible gene suffixes - this is not a good strategy for 
+#clones with lots of gene - arrghh
+
+BEGIN { type = "" ; FS = "[ \t]*|/" ; j = 0 ; 
+	split ("a b c d e f g h i j k l m n o p q r s t u v w x y z aa bb cc dd ee ff gg hh jj kk ll mm nn oo pp ", letters) 
+      }
+
+/^Sequence/ { name = $2 }	# NB picks up correct name since /C is first
+
+/^Predicted/ { type = "CDS" }
+
+/^Omitted/ { type = "exon" }
+
+/^ORF/ { type = "" }
+
+($2 == "A") { score = $1 }
+($3 == "A") { score = $2 }
+
+/\.\./ { for (i = 1 ; i <= NF ; ++i)
+	   if ($i ~ /\.\./)
+	     { if ($i ~ /(,|\\)$/)
+	         isFinal = ""
+	       else
+		 isFinal = "TRUE"
+	       gsub(/\(/,"",$i)
+	       gsub(/\)/,"",$i)
+	       gsub(/\\/,"",$i)
+	       gsub(/,/,"",$i)
+	       if (split($i, ends, "\\.\\.") != 2)
+		 print "Something funny on line " NR
+	       start[j] = ends[1]
+	       end[j] = ends[2]
+#	       print type, j, start[j], end[j], isFinal
+	       if (type == "exon")
+	         { ++nexon
+		   exonS[nexon] = start[j]
+		   exonE[nexon] = end[j]
+		   j = 0
+		 }
+	       else if (isFinal)
+		 { ++ngene
+		   printf ("\n")
+		   print "Sequence " name "." letters[ngene]
+		   print "CDS"
+		   print "CDS_predicted_by Genefinder " score
+		   print "Method Genefinder"  
+		   geneS[ngene] = start[0]
+		   geneE[ngene] = end[j]
+		   if (start[0] < end[j])
+		     { origin = start[0] - 1
+		       for (k = 0 ; k <= j ; ++k)
+			 printf ("Source_Exons %10d %10d\n", \
+				 start[k] - origin, end[k] - origin)
+		     }
+		   else
+		     { origin = start[0] + 1
+		       for (k = 0 ; k <= j ; ++k)
+		         printf ("Source_Exons %10d %10d\n", \
+				origin - start[k], origin - end[k])
+		     }
+		   j = 0
+		 }
+	       else
+		 j = j+1
+	     }
+       }
+
+END { if (ngene || nexon)
+	{ printf ("\n")
+	  print "Sequence " name
+	  for (i = 1 ; i <= ngene ; ++i)
+	    printf ("Subsequence %10s %10d %10d\n", name "." letters[i], geneS[i], geneE[i])
+	  #for (i = 1 ; i <= nexon ; ++i)
+	  #  printf ("Possible_exon %10d %10d\n", exonS[i], exonE[i])
+	}
+    }

@@ -1,0 +1,46 @@
+#!/usr/local/bin/gawk -f
+# awk script to extract all alignments with scores > minscore or 
+# multiple hits from a blastn output.  Creates output lines of form:
+#    score  poisson query_start query_end  db_start db_end  gene_desciptor
+
+BEGIN { query = 0 ; minscore = 100 ; }
+
+{ a = substr($1,1,1) ;
+  if (a == ">") {
+	if (query > 0 && score > minscore)
+	  printf ("%4d %8.1g %3d  %5d %5d   %5d %5d   %s\n", \
+		  score, poisson, matches, \
+		  q_start, q_end, db_start, db_end, locus) ;
+	locus = $0 ;
+	query = 0 ;
+	count++ ;  
+  }
+  if ($1=="Score") {
+	if (query > 0 && score > minscore)
+      	  printf ("%4d %8.1g %3d  %5d %5d   %5d %5d   %s\n", \
+		  score, poisson, matches, \
+		  q_start, q_end, db_start, db_end, locus) ;
+	for (i = length($3) ; !int(substr($3,1,i)) ; --i) ;
+	score = int(substr($3,1,i)) ;
+	poisson = $NF
+	query = 0 ;
+  }
+  if ($1=="Identities") {
+	matches = substr($4,2,length($4)-4) ;
+  }
+  if ($1=="Query:") {
+	query++;
+	if (query == 1) q_start = $2 ;
+	q_end = $4 ;
+  }
+  if ($1=="Sbjct:") {
+	if (query == 1) db_start=$2;
+	db_end=$4;
+  }
+}
+
+END {	if (query > 0 && score > minscore)
+      	  printf ("%4d %8.1g %3d  %5d %5d   %5d %5d   %s\n", \
+		  score, poisson, matches, \
+		  q_start, q_end, db_start, db_end, locus) ;
+}

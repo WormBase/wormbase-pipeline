@@ -1,0 +1,2559 @@
+/* @(#)help.wrm	1.1    1/20/94 */ 
+
+      /***************************************************************/
+      /***************************************************************/
+      /**  File wspec/help.wrm :                                    **/
+      /**  Provides an online help for the ACeDB program.           **/
+      /***************************************************************/
+      /***************************************************************/
+      /*                                                             */
+      /*         R.Durbin & J.Thierry-Mieg.                          */
+      /*                    last modified  22/9/91  by JTM.          */
+      /*                                                             */
+      /***************************************************************/
+
+
+**acedb
+
+    **************************************************************
+    ****           acedb: A C. elegans Database               ****
+    **** Richard Durbin (MRC, UK) rd@mrc-lmba.cam.ac.uk       ****
+    **** Jean Thierry-Mieg (CNRS, France) mieg@kaa.cnrs-mop.fr****
+    **************************************************************
+
+This help page provides basic information for the whole program.
+For specific help on the Main Window press the "Page Down" button.
+
+Exit:
+  To exit the program choose Quit from the menu in the main window.
+
+Help:
+  The F1 or F10 or Help key invokes the on line help related to the
+  window to which the mouse points.  Some of these keys may not work on
+  some machines or under some window managers, but one should!
+  There is also a help entry in most menus.
+
+Printing:
+  The F2 or F9 key creates a post-script file in the
+  subdirectory PS of $ACEDB.  It will then try to print it using 
+  "lpr".  If the environment variable ACEDB_LPR is set (e.g. 
+  setenv ACEDB_LPR "lpr -Pmyprinter"),  then that print command is
+  used instead.  Setting it to an empty string will prevent
+  automatic printing.  There is also a print option in most menus.
+
+Color, Gray, Black and White screens:
+  In principle, under X11, acedb will autodetect the type of screen
+  you are using. In case of problem, you can try to setenv one of
+  ACEDB_MONO, ACEDB_GREY, ACEDB_GRAY, ACEDB_COLOR, ACEDB_COLOUR.
+
+Mouse:
+  The left button is used to pick windows or objects. Usually, picking
+  once changes the color of the box, picking a second time initiates
+  and action.
+  The mid button is used in some graphic windows to recenter (single
+  click) or to zoom and recenter (by dragging in horizontal and
+  vertical directions). On the Next, press both buttons to emulate
+  the mid button. 
+  The right button is used to access menus.
+
+Menu:
+  Under X windows (Openwin) you get the menu for any acedb window by
+  pressing the right mouse button when the cursor is in the window.
+  Under SunView you must press the right mouse button when the
+  cursor is in the title bar of the window.
+
+Text entry boxes:
+  The yellow and green boxes are micro text editors. Only one of
+  them is active (yellow) in a given window. To activate one, pick
+  it with the left mouse button, this will position the cursor.
+  Recognised commands are: Return key, Insert key (a toggle), Delete
+  and BackSpace keys, Home and End key, the left and right arrows,
+  a set of usual control keys to move (^f: forward, ^b: backward,
+  ^a: to beginning, ^e: to end of line) and delete (^d: a char, ^w:
+  a word, ^k: to end of line, ^u: whole line) and Tab which
+  autocompletes the names when the class is known. 
+ 		
+General info:
+  The release number is available using Status in the main menu.	
+
+  You may redistribute this program and database subject to the
+  conditions in the following copyright notice.  Anyone interested in
+  maintaining an up to date version should contact one of the authors
+  at the above email addresses.
+
+/* Copyright (C) 1991 R Durbin and J Thierry-Mieg. All rights reserved.
+ * Written by Jean Thierry Mieg and Richard Durbin, 1990, 1991.
+ * Redistribution and use in source and binary forms are freely
+ * permitted provided that the above copyright notice and 
+ * attribution and date of work and this paragraph are duplicated 
+ * in all such forms and that neither this software nor software
+ * based in whole or in part on this software is sold for profit.
+ * THIS SOFTWARE IS PROVIDED "AS IS" AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR 
+ * PURPOSE.
+ */
+
+#################################################################
+
+**Main_Window
+
+  For general information about the program, how to get on line
+help, how to use the mouse, how to print windows, authorship,
+distribution, copyright etc, press the page_up button.
+
+ ** To exit the program choose Quit from the menu in the main window. **
+
+The main window lets you find objects in the database in two
+different ways:
+
+(1) You can pick a class by clicking with the left mouse button.
+Clicking again will give a list of all objects in that class in the
+Selection Window.  You can restrict this list by typing a template
+in the Template box.  When you press the Return key you activate the
+search.  Name recognition is not case sensitive.  A '*' in the
+template will match anything; e.g. "S*" will match all names
+beginning with 'S', "*S*" will match all names containing an 'S',
+"*a*b" all names containing an 'A' and ending with a 'B'.  To
+actually display the object you must pick its names twice in the
+Selection Window (see help for Selection Window).
+
+(2) You can type a text string in the Text Search box (first click
+on it with the left button to make it yellow).  This will find all
+the objects in the database which contain the search text.  More
+precisely, we find all objects whose name contains the search
+string, all objects they refer to, and all containing Text (or other
+X class data) containing the search string.
+
+In addition the Main Window menu allows access to many other
+applications and functions of acedb.
+
+Menu entries:
+Quit	              Quits entire program
+Help                  Gets the on line Help
+Program Status        Info on the database
+Clean up              Kills all acedb windows except main
+Add update file       To read the official data updates 
+Query                 Starts a window which has its own  help.    
+Deficiencies          Primitive tool to analyse deficiency data.
+Genetics              Run the get buttons to preprocess Mapping data
+DNA                   Starts a window which has its own  help.    
+Wild Worms            Starts an OPEN-WINDOWS screen saver if available
+
+  Toggle entry (you only see one of these at a time)
+Write Access          Select this to get write access to the
+                      database. If you are not registered
+                      in wspec/passwd, you will not be offered this option.
+Save                  Saves all changes permanently and releases write access.
+   
+  The following entries only exist if you have Super-User access
+Add/Alias/Rename      Starts a window which has its own  help.    
+Read .ace files       Starts a window which has its own  help.    
+Align maps            Starts a window which has its own  help.    
+Read Models           Run this after modifying wspec/models.wrm
+Dump asn models       Produces an asn definition file.
+Dump                  Dumps the whole databse in ace format. Slow.
+Debugger              Calls the function "invokeDebugger()", set a
+                      break on this function in your favorite debugger.
+Test subroutine       Calls acedbtest(), for use to test new code.
+
+#################################################################
+
+**Tacedb
+
+    **************************************************************
+    ****           acedb: A C. elegans Database               ****
+    **** Richard Durbin (MRC, UK) rd@mrc-lmba.cam.ac.uk       ****
+    **** Jean Thierry-Mieg (CNRS, France) mieg@kaa.cnrs-mop.fr****
+    **************************************************************
+
+This help page provides basic information for the line oriented
+version of the acedb program.
+
+Exit:
+  To exit the program type Quit, or simply q 
+
+Help:
+  Type ?, or help, or help topic.
+
+  You may redistribute this program and database subject to the
+  conditions in the following copyright notice.  Anyone interested in
+  maintaining an up to date version should contact one of the authors
+  at the above email addresses.
+
+/* Copyright (C) 1991 R Durbin and J Thierry-Mieg. All rights reserved.
+ * Written by Jean Thierry Mieg and Richard Durbin, 1990, 1991.
+ * Redistribution and use in source and binary forms are freely
+ * permitted provided that the above copyright notice and 
+ * attribution and date of work and this paragraph are duplicated 
+ * in all such forms and that neither this software nor software
+ * based in whole or in part on this software is sold for profit.
+ * THIS SOFTWARE IS PROVIDED "AS IS" AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR 
+ * PURPOSE.
+ */
+
+#################################################################
+
+**Help  
+
+  The online help is in the file wspec/help.wrm
+  Each sections of the help menu starts by **section_name
+  To register a help section with a display, just edit the file
+  wspec/displays.wrm, do not recompile.
+
+Menu:
+	Gives the table of content.
+
+Page Up : Page Down :
+	Let you read the help file in consecutive order.
+
+Push: 
+        Enter the section in the help ring.
+
+Pop:
+        Circle backwards around the help ring.
+	This ring contains the page accessed automatically from
+	another window, those picked from the menu and those
+	explicitly pushed into the ring. Not those you have
+	been browsing through using page up/down.
+	The ring is reinitialised if you kill the help window.
+
+#################################################################
+
+**File_Chooser
+
+  Interactive File Chooser
+
+  You can type a directory name in the top box and a file template
+  in the second and third box. Or pick them from the current list
+  which appears underneath.
+
+#################################################################
+
+**No_help
+
+  For this display, no help was specified in wspec/displays.wrm
+
+#################################################################
+
+**Chronometer
+
+  Integrated profiler.
+
+  This profiler will run only if the code is compiled with the
+option -DCHRONO (see in the file wmake/truemake) and will only
+profile those functions which include a balanced pair of calls
+
+chronoStart("Function name") ; chronoReturn() ;
+
+To use it open the Chronometer from the main menu,
+pick Start from the chrono menu
+	do whatever you want, i.e. parse a file,
+        may be interspacing your work with commands
+	Start and Stop from the chrono menu
+	when you are done
+pick Show from the chrono menu
+
+Print will copy the content of the chrono window to
+	./PS/chronometer#.PS  
+or simply
+	./chronometer#.PS  
+if you do not have a PS subdirectory in your current directory.
+
+This output is in PostScript.
+
+#################################################################
+
+**Status
+
+Displays information about the usage of the memory and the disk.
+
+The first line indicates explicitly the session number,
+this number is updated whenever new data are entered and saved,
+the login name of the user, and his present write access state.
+
+The line On disk  concerns  the file database/blocks.wrm
+It indicates the number of blocks really used
+by the database, followed by the number of blocks still available.
+You may want to monitor these figures from time to time. The
+number of used blocks should grow substantially only when you
+parse a lot of new data or when you multiply the number of
+different sessions kept available. It should decrease when you
+destroy old sessions.
+If at some point this file becomes full, the program will ask
+permission to extend it as needed. If you refuse, the current
+session will be lost and you will simply restart on the statu quo
+ante.
+
+The number of lexiques corresponds to the number of different
+classes as defined in wspec/classes.wrm. The number of keys
+is the number of independent objects known to the database, the
+number of char is the cumulated length of their names and of
+the entries in class Text.
+
+The number of nodes and arrays gives an indication on the
+usage of the memory. They may be useful to debug a new piece of
+code and check, for example that all the arrays created for a given
+purpose get destroyed when they should.
+
+You should have 
+	used objects = locked + known
+and locked droping to zero after a clean up
+
+The number of modified objects should drop to 0 after a *Save.
+
+In the local menu you will find
+Quit
+	Destroys the window.
+Help
+	Invoke this page of the present file.
+Update
+	Refreshes the data displayed in the status window
+More on lexiques
+	shows how many objects there are in each class
+BlockShow
+	Gives some detail on the content of the first cache
+	This info is only useful to debug or optimize
+	the kernel of the acedb program.
+
+#################################################################
+
+**Cloning
+
+Hopefully, this will turn into a full fledged tool to recompute
+the physical map and assess its reliability. At present, it
+does very little.
+This option is not linked in release 1.4
+
+Select project:
+This  will look for a 
+ binary file    $ACEDB_DATA/sulston/whatever_you_enter.bnd
+if it does not exist the program will try to create it from the
+ascii file    $ACEDB_DATA/sulston/whatever_you_enter.cor
+which should contain the rawdata of the physical map, one integer
+by line
+
+Histogram:
+Plots the histogram of the raw data just read.
+
+Calcul:
+Does nothing interesting yet (jan 1991), sorry.
+
+####################################################################
+
+**Linear_correlation
+
+A small utility to compute and plot a linear regression
+The prototype is :
+
+typedef struct point {double x, y ;} Point ;
+void plotCorrel(char *title, Array a)
+
+Print;
+	outputs the window as usual to ./PS/correl#.PS
+
+Statistics:
+	Not yet available. Sorry. 
+	Should hopefully give likelihoods of the regression.
+
+####################################################################
+
+**Genetics
+
+A tool to compute the genetic map.
+Still in embryonic form, sorry.
+Not linked in release 1.4
+
+####################################################################
+
+**Add_New_Objects
+
+This window lets you perform various operations on whole objects.
+Currently you add new objects, delete entire objects, and rename
+objects.  You must have acquired write access for it to work.
+
+First choose the class that you want to add to by picking
+on it.  Then type the name of the object in the text entry box, then
+select the operation you want to perform from the menu.  If you hit
+return and the object already exists it is displayed in tree mode
+(useful for confirming before renaming or destroying).
+
+Double clicking on the classes does nothing.  All actions
+are initiated from the menu.
+
+Menu items:
+
+Create: creates a new entry and displays and empty tree window for
+it so you can get update mode and add data if you want.
+
+Rename/Fuse: prompts for a new name.  Fuse does not work yet.
+
+Delete: deletes object with all its data
+
+####################################################################
+
+**KeySet
+
+Selecting a class in the acedb Main Window pops up a selection list.
+
+It contains a list of keys which can be manipulated in many ways.
+You can select any displayed key by  clicking it with the
+left mouse button, it then reverts color. If you select it a second
+time (double click without time-out), the corresponding object is
+popped if it is known in the database. A clone will be displayed
+as part of the physical map, a chromosome as a genetic map, most
+other objects as text trees. You can overide this display type by
+selecting it (one click) and choosing one of the options Tree or Dump
+from the local menu.
+
+Quit:
+	Destroys the window.
+Help:
+	Invoke this page of the present file.
+
+Add Key:  lets you add a key to the current list by picking.  You can
+ 	build up a heterogeneous list of object keys, e.g. for dumping,
+	this way.
+Copy:
+	Copies the selection list to a new window. You should use this
+	option to save the result of a previous selection before
+	reactivating the Main Window.
+Save:
+	Saves the selection list as a new permanent object belonging
+	to the class KeySet.
+
+AND: OR: XOR:
+	You must first pick with the left mouse button the
+	background of another keySet window. Then these 3 options
+	will perform the logical mix of your window and the other one
+	and  present the result in the former.
+	AND takes the intersection of the 2 sets,
+	OR their union.
+	XOR is the exclusive OR.
+
+Ace Dump:
+	Dumps all the selected objects into ascii file in the
+	.ace format that you or some program (including acedb itself)
+	can read.  This file could be transfered over the network 
+	and read by the acedb program on another machine.  Also it
+	is a convenient way to make a standard file containing the
+	information in acedb about a set of objects.
+Name Dump:
+	Dumps the current list as a KeySet object (ace format).
+FastA dump:
+	this creates a file of DNA sequence data in the standard
+	fastA format containing sequence for all objects in the 
+	current list with DNA sequence attached.
+  All the Dump options prompt you for a file name in an interactive
+  window.
+
+Tree:
+	Displays the object as a text Tree if possible, as opposed to
+	displaying it in its default display type (possibly graphic).
+	This is useful to enter comments or update the objects by
+	hand in some other way.
+Biblio:
+	Pops a window with all the papers related to the selected
+	list : the paper themselves which are part of the list,
+	those written by the authors of the list, those quoting the
+	genes of the list, etc. The Biblio window can then be printed.
+Debug:
+	Interpreted binary dump of the relevant disk blocks.
+	Only useful to debug the kernel if need be.
+	No documentation provided, contact the authors and/or study 
+        the directories w5 and w6.
+
+###################################################################
+
+**Query
+
+Loads and execute external programs which sift through the data.
+The idea is to prepare in a directory $ACEDB/wquery a set of program
+files named xxx.qry containing sets of useful commands for selecting 
+data.
+
+The syntax of the acedb query language is a little complex but quite
+powerful. It is explained in the Query_syntax help section and in
+the latex document doc/query_syntax, and allows you to write command
+files with parameters. An easier, but less powerful, interface is
+provided by the Query_Builder, and Query_by_example which can be
+acessed from the main acedb menu. The related Table_Maker allows the
+contruction of relational tables.
+
+########################
+The Buttons have the following options :
+########################
+
+Quit:
+	Quits this window with an option to save
+	your current file of commands, provided
+	you have given a file name.
+
+Help:
+	Invokes this section of the help file.
+
+Print:
+	Print this window to a postscript file and send to 
+	printer (ACEDB_LPR).
+
+Clear:
+	Clears all the user-entry boxes on the window.
+
+New KeySet:
+	Calls up a new, blank keyset window titled "Query Answer".
+
+By Example:
+	Call up the Query-by-example window.
+
+Builder:
+	Call up the Query Builder window.
+
+Load:
+	Loads the file Directory/FileName.qry if it
+	exists. The ending .qry is added automatically	
+
+Save:
+	Saves the present set of commands into
+	the file Directory/FileName.qry 
+	if you have write access to Directory.
+	The ending .qry is added automatically	
+
+Search Locally:
+	Execute the current query on the local database and put 
+	the found and selected objects in the Keyset (selection list).
+
+Search IGD:
+	Execute the current query for IGD and put the found
+	and selected objects in the Keyset (selection list).
+
+Search Server:
+	Execute the current query on a remote ACEDB server and put
+	the found and selected objects in the Keyset (selection list).
+
+Undo:
+	Cancels the last command and redisplays
+	the previous Keyset (selection list).
+
+########################
+In addition to the commands above, the Menu have the following options :
+########################
+
+Print Window:
+	Same as Print Button:
+	Print this window to a postscript file and send to 
+	printer (ACEDB_LPR).
+
+Refresh:
+	Redraws the window.
+
+Clear Entries:
+	Same as Clear Button:
+	Clears all the user-entry boxes on the window.
+
+Query By Example:
+	Same as the By Example Button.
+	Call up the Query-by-example window.
+
+Query Builder:
+	Same as the Builder Button.
+	Call up the Query Builder window.
+
+Load From File:
+	Same as Load Button:
+	Loads the file Directory/FileName.qry if it
+	exists. The ending .qry is added automatically	
+
+Save To File:	
+	Same as Save Button:
+	Saves the present set of commands into
+	the file Directory/FileName.qry 
+	if you have write access to Directory.
+	The ending .qry is added automatically	
+
+Send:
+	Same as Send Button:
+	Not used widely yet. (For Otto Ritter)
+	This command sends the query to a remote 
+	distributed database.
+
+Enable Autosave:
+Disable Autosave:
+	When enabled (either by setenv ACEDB_AUTOSAVE or 
+	from menu on query window), this function will save 
+	the current series of query commands by appending 
+	the it to the end of a time-stamp labelled file in 
+	wquery/.  These files can be later edited (using a 
+	simple text editor) and/or loaded.  The backup save 
+	occurs whenever a Find (query search) is executed.
+
+Search Locally:
+	Same as Search Locally Button:
+	Execute the current query and put the found
+	and selected objects in the Keyset (selection list).
+
+Search IGD:
+	Same as Search IGD Button:
+	Execute the current query for IGD and put the found
+	and selected objects in the Keyset (selection list).
+
+Search Server:
+	Same as Search Server Button:
+	Execute the current query on a remote ACEDB server and put
+	the found and selected objects in the Keyset (selection list).
+
+Undo Search:
+	Same as Undo Button:
+	Cancels the last command and redisplays
+	the previous Keyset (selection list).
+
+########################
+In addition to the commands above, the Menu have the following options :
+########################
+
+Refresh:
+	Redraws the window.
+
+Autosave:
+	When enabled (either by setenv ACEDB_AUTOSAVE or 
+	from menu on query window), this function will save 
+	the current series of query commands by appending 
+	the it to the end of a time-stamp labelled file in 
+	wquery/.  These files can be later edited (using a 
+	simple text editor) and/or loaded.  The backup save 
+	occurs whenever a Find (query search) is executed.
+
+########################
+Other details :
+########################
+
+Direct Query Commands (allows the  FULL query syntax)
+	   Please select Query_syntax or page down for more details.
+        Edit these boxes the same as the User Entry Boxes (pick with
+	mouse, use keyboard).  Execute a query command by clicking
+	(again) on the left mouse button or hitting the RETURN key. 
+
+	If you edit the last command line a new, blank box is created 
+	for the next input query command.
+	
+Scope:
+	If the query starts as: FIND my_class, the whole class
+        my_class is searched; otherwise the query commands act on 
+        the active Keyset (selection list).
+	To select another key set, pick it once.
+
+
+###################################################################
+
+**Query_syntax of the commands
+
+A detailled description is presented in the manual doc/query_language_guide.tex
+
+There are 3 possibilities
+Find  Class  xxxxxx     
+	The command xxx is applied to all the keys of the (sub)Class
+        Abbreviation: >?Class xxxxxx
+Follow Tag   xxxx
+	The command xxx is applied to all the keys following
+	tag in the objects of the active key set.
+        Abbreviation: > Tag xxxxxx
+xxxx
+	The command xxx is applied directly to the active key set.
+
+A command is a logical expression evaluating to True or False.
+	it is applied to a key which is discarded or retained
+	in the resulting list.
+
+A composite query can be formed by chaining a series of queries
+separated by semicolons, in which case the active keyset obtained so
+far is passed into the next query.
+
+Recognised operators are, in order of increasing precedence:
+	|    OR
+	^    XOR
+	&    AND
+	!    NOT
+        #    Jumps in constructed types.
+        <    <=    >    >=  to compare numbers
+	=    to compare numbers or match the left hand side to a
+	 	template, i.e  a word with wild chars *, ?.
+        COUNT  Counts the number or entries to the right of its rhs
+        IS  xxx  Checks if the name of the active object matches xxx
+        CLASS xxx Checks if the active object belongs to (sub)class xxx
+
+Parentheses of all sorts "([" can be used freely, but must be matched.
+
+Words are matched to a tag or treated just as text.
+	They must be put in "double quotes" if they include
+	spaces or any operator &, |, ^, <, >, =, (, ), [, ], {, }.
+Wild chars can be used in words but then they are not
+	at present matched to tags except in a redirection
+Numbers are parsed as floats.
+
+Examples (as given in $ACEDB/wquery/examples.qry)
+
+ >?Chrom*               will list all chromosomes 
+ >?Author s* | a*       all authors whose name begins with s or a
+ >?Au*  s?s* OR b*s*    all authors whose name matches s?s* or b*s*
+ >Pap*  Journal = N* OR Year > 1987 
+        Checks the previous list : redirect to papers and lists
+	all their papers published in N(ature) or after 1987
+ Year = 1988            Restricts to the papers of exactly 1987 
+ >?Gen* myo* Clone      All the cloned myosin genes
+Find Author IS "Sulston JE" ; >Paper ; >Author
+			Finds all the coauthors of papers by Sulston.
+
+Subfields
+	To find the value of subfields you must first
+	locate yourself on the tag then move right from it
+	using NEXT (move right) or HERE (move here) for multiple checks.
+	For example the genes to the end of
+	chromosome X are found with
+
+Find Gene gMap = X AND NEXT > 12 AND HERE < 19 ;
+	
+	Warning
+	This is clearly hard to read, also it will be evaluated
+	at execution left to right as it should only if the
+	precedence of the operators allows it. Be careful.
+
+Subtypes
+       To locate a tag in a subtytpe, you must indicate the path
+       using the operator #, example:
+
+ Find Gene Lab AND NEXT#freezer = 4
+      To find all the genes in your freezer number 4	
+
+COUNT
+     To count entries, example, find prolific authors:
+ 
+ Find Author COUNT Paper > 100
+
+
+###################################################################
+
+**Query_Builder
+
+The interface in this window is a little complex but it offers
+a great processing power.
+
+You can use the menu or act directly in the display, using either
+the user-friendly entry boxes (top) or direct query syntax (on 
+bottom line(s)).  
+
+If you pick the Black triangles, then you will get a BLOCKING, scrollable
+selector to choose from a long list of choices.  Please don't forget to
+you must dismiss this window by either Cancel-ling with the button or menu,
+or by double-clicking to select a choice.
+
+The First Box on the First Line specifies what class you are seaching WITHIN.
+
+On the Second Line (and successive lines), the First Box is the Attribute
+that you are matching to.  The Second Box is the Operator which may differ
+depending on the type of query you are performing (less than, equals, text).
+The Third Box is the Value you are matching to the Attribute.  The Fourth
+(and last) Box is a conjunction to allow for more Conditions (as formed
+on the second line) to be specified.
+
+########################
+User Entry Box Details
+########################
+
+Class-Tag Box:
+	(The box with the default "ANY CLASS" in top left.)
+	Use this box to select the class you are searching within.
+	This entry determines the list of attributes for the Attributes box.
+
+Pre-Class Box:
+	(Usually Hidden, ignored, this box will appear in the top right area
+	 when the "Show More" option on the menu has been chosen.)
+	Use this box for Secondary/indirect queries wherein you wish to
+	find refer to this entry first, find a specific class within this
+	entry's model, and search for objects within that second, specific
+	class (which is specified by the Class-Tag Box).
+
+Attribute Box:
+	(First box to the right of the text "where").
+	Use this box to list any attributes within a class' model which
+	you wish to test for.
+	On both the Selector and the Popup menu for the Attribute Box,
+	you may see the choice "USE TAG CHOOSER" which will call up 
+	a model-display for the current class and you can double-click
+	on a tag label to choose a tag within this context.
+
+Condition Box:
+	(Second Box on line beginning with "where")
+	This box presents a list of operators which will be applied 
+	to the attribute.
+	>Some operators (exists, does not exist) do not take any arguments.
+	In the top set of choices on the pop-up menu, "contains", "begins
+	with", and "ends with" merely combine wildcards (such as "?" and
+	"*") with the equality operator.
+	>Equality and inequality can be tested for using the middle set of
+	choices on the pop-up menu.
+	>The bottom set of choices allows you to query on the number of
+	instances of data (a REPEAT list) associated with the current
+	Attribute in the data objects.
+
+Value Box:
+	(Third box from right on "where" line.)
+	Later, this may supply more hints as metadata becomes available.
+	Currently, enter the arguments for the comparisons used in the
+	Conditions box here.  "?" (single character) and "*" (0 or more
+	characters) are valid wildcards and quoted strings are accepted.
+
+Conjunction Box:
+	(Last box, far right, on "where" line.)
+	Use this box to form conjunctive query conditions, to use the
+	"#" (and-submodel) function, and to demark the end of a query
+	with the special word "END".
+
+########################
+The Buttons have the following options :
+########################
+
+(Most of the button and main menu commands are the same as the 
+	Query Commands window.)
+
+Quit:
+	Quits this window with an option to save
+	your current file of commands, provided
+	you have given a file name.
+
+Help:
+	Invokes this section of the help file.
+
+Print:
+	Print this window to a postscript file and send to 
+	printer (ACEDB_LPR).
+
+Clear:
+	Clears all the user-entry boxes on the window.
+
+New KeySet:
+	Calls up a new, blank keyset window.
+
+By Example:
+	Call up the Query-by-example window.
+
+Command Edit:
+	Call up the Query Commands window.
+
+Search Locally:
+	Execute the current query and put the found
+	and selected objects in the Keyset (selection list).
+
+Undo:
+	Cancels the last command and redisplays
+	the previous Keyset (selection list).
+
+########################
+In addition to the commands above, the Menu have the following options :
+########################
+
+Print Window:
+	Same as Print Button:
+	Print this window to a postscript file and send to 
+	printer (ACEDB_LPR).
+
+Refresh:
+	Redraws the window.
+
+Clear Entries:
+	Same as Clear Button:
+	Clears all the user-entry boxes on the window.
+
+Show More:
+Show Less:
+	For more advanced users, this option will display (hide in case
+	of Show Less) a box allowing the user to choose where to begin
+	a query.  ALL DATA is default.  Otherwise, a query can begin
+	from a class and search it's subclasses.  A subclass of a
+	class is a particular attribute (tag) within the class model 
+	and is named the same as a corresponding, separate class.
+
+Query By Example:
+	Same as By Example Button.
+	Call up the Query-by-example window.
+
+Query Command Edit:
+	Same as Command Edit Button.
+	Call up the Query Commands window.
+
+Search Locally:
+	Same as Search Locally Button.
+	Execute the current query and put the found
+	and selected objects in the Keyset (selection list).
+
+Undo Search:
+	Same as Undo Button:
+	Cancels the last command and redisplays
+	the previous Keyset (selection list).
+
+########################
+Other details :
+########################
+
+Query Builder (User Entry Boxes) :
+        You activate an entry box by picking it (click with the left
+	mouse button).  It turns yellow (dark grey on monochrome) 
+	and all keyboard-input will then enter into that box.
+
+	Use the right mouse button to bring up pop-up menus containing
+	appropriate choices for each user-entry box.
+
+	Not all functionality of the query language is implemented in
+	the query builder.
+
+	By some of these boxes, there is a triangle that can be clicked
+	on with the mouse.  This will activate a selector menu with
+	a scroll bar in case the popup menu does not fit on the screen.
+	"Cancel" must be pressed (button) or chosen (popup menu on 
+	selector window) or a selection must be made (double-click on
+	an entry) to dismiss.
+
+Scope:
+	The query commands modify the active Keyset (selection list).
+	To select another key set, pick it once or use the New KeySet 
+	option on the menu.
+
+Query Commands Display:
+	If the Query Commands window is open, the syntax formed by the
+	Query Builder will be shown on a command edit line there.
+
+   Please select Query_syntax or page down for more details.
+
+###################################################################
+
+**Query_By_Example
+
+Based upon a fill-in-the-blank and toggle-button style of entry, 
+this window allows the user to fill in values in a class model-display.
+
+These values are then used in a conjunctive query command
+to retrieve data objects from the database.  
+
+This window can be used in conjunction with or independently of the
+Query Window. (see Query);
+
+>> -*- IMPORTANT: Note that some attribute-tags are used in a boolean 
+>> *+* exists/does_not_exist fashion.  See Boolean Attributes below.
+>> -*- Also, to execute a query formed in this window, use the FIND button.
+
+N.B.  If you Read Models and update the models, you may have to restart
+the ACEDB program for the correct QBE display to appear.
+
+########################
+The Buttons have the following options :
+########################
+
+Quit:
+	Exits the window.
+
+Help:
+	Invokes this section of the help file.
+
+Clear:
+	Clears the entry boxes and redraws the window from scratch.
+
+New KeySet:
+	Calls up a new, blank keyset window.
+
+Command Edit: 
+	Call up the Query Commands window.
+
+Search Locally:
+	Execute the current query and put the found
+	and selected objects in the Key Set.
+
+Undo:
+	Cancels the last command and redisplays
+	the previous Keyset (selection list).
+
+>From Selector/ Change Query Search Box:
+	Actually a menu (activate by right mouse button), this 
+	allows the user to use the current keyset as the base for
+	a query or to use the current class shown.
+	Simple clicking of the left mouse button will "step" 
+	through the menu selections.
+
+Class Selector/ Change Class Status Box:
+	Actually a menu (activate by right mouse button), this 
+	allows the model being currently shown to be changed to any
+	class in the database.  Simple clicking of the left mouse
+	button will "step" through the menu selections.
+
+########################
+In addition the the above functions, the Menu has the following options:
+########################
+
+Print:
+	Print this window to a postscript file and send to 
+	printer (ACEDB_LPR).
+
+Refresh:
+	Redraws the window.
+
+Query Builder:
+	Same as the Builder Button.
+	Call up the Query Builder window.
+
+Query Command Edit:
+	Same as Command Edit Button.
+	Call up the Query Commands window.
+
+AND, OR :
+	The various tags and fields are connected via the conjunctions
+	AND (&) and OR (|) as selected on the menu.  Use the Query Builder
+	window to view the composed query command.
+
+Show Full Description:
+	Calls up the metadata associated with the last picked (left 
+	mouse button) label or entry-box on the display.
+
+Show Long Description:
+	Calls up the ?LongText metadata associated with the last picked 
+	(left mouse button) label or entry-box on the display.
+
+Search Locally:
+	Same as Search Locally Button.
+	Execute the current query and put the found
+	and selected objects in the Keyset (selection list).
+
+Undo Search:
+	Same as Undo Button:
+	Cancels the last command and redisplays
+	the previous Keyset (selection list).
+
+########################
+Other details :
+########################
+
+User Entry Boxes:
+        You activate an entry box by picking it (click with the left
+	mouse button).  It turns yellow (dark grey on monochrome) 
+	and all keyboard-input will then enter into that box.
+
+	On a carriage-return (CR), the entry is processed for 
+	correctness and, if the Query window is up, will output
+	a formed query to the current query command line. 
+	Any subsequent call to the Find button will re-process
+	the every entry's current contents, form the query on the
+	Query window (if appropriate), and execute the query.
+	
+ITEM NAME:
+	This is a special box at the top which can be activated to
+	query using the names of items within the current class.
+
+Valued Attributes:
+	(also called attribute, field, tag, subclass)
+	All valid attributes will have an Entry Box to the right of it's
+	name.  Simply pick and edit a box for it to be folded into the
+	current query command.  
+	Sub-conditions, such as "< 100.1", "> fred", and "!= gene21"
+	are allowed in these lines.  For the numeric entries, the user
+	will receive a warning that the syntax is not numeric, which
+	can be ignored at the user's choice.
+	
+All Attributes:
+	If you wish to deactivate or activate only the tag, the 
+	attribute labels can be toggled on or off regardless of
+	whether or not a corresponding attribute field is empty 
+	or filled.
+
+Scope:
+	The query commands will modify the active Keyset (selection list).
+	To select another key set, pick it once or use the New KeySet
+	command.
+
+Query Commands Display:
+	If the Query Commands window is open, the syntax formed by the
+	Query-By-Example window will be shown on a command edit line there.
+
+   Please select Query or page up for more details.
+
+###################################################################
+
+**Table_Maker
+
+This facility is related to the Query system discribed above.
+It allows the construction of tables, or tuples, of object names
+and field values and the construction of multiple-maps (see below).
+
+This system uses 3 windows, the definition window explained here,
+which allows you to define your table, the data window which reuses
+the same space and is explained in the next section, and the
+multimap window which is created by pressing the map button in the
+data window.
+
+The interface in the definition window tries to be more user
+friendly than the interface in Query. Once constructed, the
+definition of a table is stored in the directory ./wquery as **.def.
+It is however unwise to edit the def file by hand and we recommand
+that you edit it via the interface.
+
+
+MAJOR BUG: As of 1-9, you can only access the first line and first
+column to the right of a tag. For example, if you try to list all
+exons in a sequence, you correctly obtain the start of each exons,
+but it is then wrongly followed each time by the end of the Fisrt
+exon.
+
+########################
+The menu has the following options :
+########################
+Quit:
+	Quits this window with an option to save
+	your current file of commands, provided
+	you have given a file name.
+
+Help:
+	Invokes this section of the help file.
+
+Print:
+        Prints out this window as is.
+
+Save:
+	Saves the present set of definitions into
+	the file Directory/FileName.qry 
+	if you have write access to Directory.
+	The ending .def is added automatically	
+
+Load:
+	Loads the file Directory/FileName.def if it
+	exists. The ending .def is added automatically	
+
+Create definition:
+        Creates space for a new definition. See below.
+
+Suppress definition:
+	Suppresses the active definition. You activate a definition
+        by picking one of its boxes, for example the hidden/visible
+        buttton.
+ 
+Show All Data:
+        If you have just changed the definitions, initiates a search
+	of the whole database according to your definitions  and
+	display the results.
+	Else re displays the same data, even if they were contructed
+	from the active KeySet. 
+	In particular, modifying the width of a column or its
+	visible/hidden status does not initiate a new search.
+
+Show Active KeySet:
+        Initiates a search of the objects enumerated in the
+	Active-KeySet according to your definitions  and
+	displays the results. 
+
+
+##################################
+A Definition consists of:
+
+Its number, which is used in the "Constructed from" field of the
+other definitions.
+
+A widht box, which you can edit after picking it with the left mouse
+button. It indicates the widht of the column of data when displayed.
+Press return to fix, the value. 
+
+A visible/hidden button. You can rotate it with the left mouse
+button by picking or directly with the rigth mouse button and a
+pull-down menu. If a definition is hidden, the corresponding data
+will not show in the data-display. This will reduce the number of
+columns of the data display, but most probably, also the number of
+lines. For example, if you show a paper in column 1, and its authors
+in collone 2, you will get as many lines as authors, by hiding
+author, you keep only one line. 
+
+An optional/mandatory button. You can rotate it with the left mouse
+button by picking or directly with the rigth mouse button and a
+pull-down menu. If a definition is mandatory, only the lines
+satisfying it will be kept. This restriction applies even if the
+corresponding definition is hidden.
+
+The Class field. In column 1, Class is a pull-down menu which can be
+activated with the right mouse button. It lists all the visible
+classes, but you should only select a B-class. When you then press
+the show all data button, only the corresponding class wil be
+explored.
+
+The Constructed from field. Tells the system where-from it should
+recover its data.
+
+The Tag button. By pressing the tag button, the model of the class of
+the definition you are "constructing from" is displayed. Double pick
+an entry there. You active definiton will be updated accordindly.
+There are 3 possibilities: Tag, Object,Value.
+For example, the Gene Class model has a line:
+   gMap ?Chromosome Float Float
+Picking gMap, the column will be Boolean, with entry TRUE or FALSE,
+depending if gMap is present or not in the corresponding gene.
+Picking ?Chromosome, the column will be Class Chromosome, and you
+will be able to use it as a from from a follow up definition.
+Picking the first or second Float, the column will display the
+corresponding number, in this case a position on the genetic map and
+may use this column of number to draw a multiple map.
+
+You may also edit the tag field manually, following the Query-syntax
+explained in the preceeding page, but this will not edit the Class
+field of the definition which must be set either by editing the .def
+file manually or by using first the tag button and choosing the same
+sort of field.
+
+The condition field is applied at last to the selected object.
+
+In fact the query system is applied twice in every definition, once
+using the tag field, to select the piece of data you want, a second
+time, using the condition field, applied to the picked object. The
+best is to srudy and edit the exampleds provided and/or complain to
+the authors.
+
+BUG: At present, you cannot restrict a number to a given range using
+the condition field, sorry, this should be fixed later.
+
+###################################################################
+
+**Table_Maker_Data
+
+
+
+Quit:
+	Quits this window with an option to save
+	your current file of commands, provided
+	you have given a file name.
+
+Help:
+	Invokes this section of the help file.
+
+Print:
+        Prints out this window as is.
+
+Switch:
+	First touch an element in some column, then press Switch,
+this will exchange the active column with the one immediatly to its
+right. At the same time, the line are reordered so that they always
+reamin in alphanumerical order left to right. By Putting the genes
+left of their position, you get them in alphbetic order, by putting
+first the chromosome, then the position, then the gene, you get them
+in genetic map order.
+
+Export KeySet:
+	Exports the active column, if it contains keys.
+
+Define Table:
+	Returns to the Table_Maker definition window.
+
+Map:
+	Construct a multiple map based on the visible numerical
+columns. See next help-page.
+
+Ascii Dump:
+        Dump the table in Ascii format.
+
+###################################################################
+
+**Multi_Map
+
+This facility is invoked by the Map button of the table_Maker.
+
+Then interface is modelled on the genetic map display.
+Each numerical column of the table corresponds to a map. Each entry
+is shown as a yellow square which you may pick. Squares
+corresponding to a single line of the table are linked together,
+ending on the name of the object in column 1 of the definition of
+the table. Note that by switching the columns in the table, yous
+witch the maps but you cannot change the name shown. This is because
+only the name in column 1 is garanteed to be unique. 
+
+When you pick a name or a square, the corresponding line in the
+Table is lighted. 
+
+Quit-Help-Print: as usual.
+
+Zoom all/Zoom active: 
+Using the wwhole and zoom in/out buttons you
+zoom either the active map or all of them at the same time.
+
+Recenter:
+You can recenter the active map with the mid mouse button.
+
+Zoom and recenter:
+With the mid mouse button in the left part of the graph, you can
+zoom and recenter at the same time by dragging in x-y. This action
+applies to the active map only.
+
+With these functionality it is easy to realign a given region of the
+mutimap. A good exaple is given in g2pmap which you can load from
+the table maker definition window.
+
+
+
+###################################################################
+
+**Histogram
+
+An embryonic graphical tool.
+
+Prototype: void plotHisto(char *title, Array a)  ;
+
+Plots the histogram of the array of integers a.
+
+Print:
+	Outputs the result to the Post Script file ./PS/histo#.PS
+
+The histogram itself is plotted in blue. 
+
+In the top right corner:
+	total indicates the cumulated sum, i.e. the integral of y(x),
+	max y(xm) = ymax indicates the coordinates (xm,ymax) of the maximum.
+	max x is the maximal x value.
+
+In the top left corner, the pair of number indicates the coordinates
+of the center of the black reticule. Picking anywhere with the left
+mouse button, you can move the reticule and get its new coordinates.
+
+Statistics:
+  Primitive: just gives the average and  the variance of the plot.
+
+
+###################################################################
+
+**Plot_Curve
+
+Another  embryonic graphical tool.
+
+Prototype: void plotCurve(char *title, Array a)  ;
+
+Plots the curve described in A as an Array of pairs of float:
+	x1, y1, x2, y2 ....
+
+Print:
+	Outputs the result to the Post Script file ./PS/histo#.PS
+
+The histogram itself is plotted in blue. 
+
+###################################################################
+
+**Bibliography
+
+Displays the bibliography related to a KeySet. This tool
+is called from another display window by invoking there
+the menu entry Biblio.
+
+Print:
+	Outputs the result to the Post Script file ./PS/biblio#.PS
+
+
+###################################################################
+
+**Tree
+
+This represent a typical Text object (class B)
+
+Buttons
+*******
+
+Quit, destroys this window.
+
+Tables... : this button is only present if a table_maker command file
+has been registered with the class of the urrent object in the file
+wspec/table.menu.wrm. If present, the button contains a submenu with the
+list of these tables which are selected with the right mouse button.
+
+The main menu has the following entries:
+
+Help, displays this help page.
+
+Print, prepares a Post Script file pmapxxx.PS in ./PS
+	You can then print it on your local laser printer.
+
+Update:
+	Lets you edit the object, only if you have write access.
+	Please select Update or page down for more details.	
+
+Biblio:
+	Pops a window with all the papers related to the object
+	The paper themselves which are part of the list,
+	those written by the authors of the list, those quoting the
+	genes of the list, etc. The Biblio window can then be printed.
+Tree:
+	Displays the active box a s tree if possible, rather than
+	graphically as may happen when you double click a box.
+
+Image display and other system calls:
+	There is a special Tag: Pick_me_to_call
+	present in particular in class Image. Picking twice this tag
+	will call an external program defined just after the
+	File tag, the second parameter beeing a file name suppose
+	to exist in the subdirectory externalFiles.
+	For example, we could have
+	 Pick_me_to_call iconedit myIcon
+	Resulting in the call
+	   system(cd externalFiles ; iconedit myIcon) ;
+	
+###################################################################
+
+**Update
+
+Lets you alter and modify any text object.  Double click on anything
+to add/change.  Objects in blue are part of the model, i.e. new
+things that you could add.  If you double click on part of the
+exisiting object you will be able to edit it, if on the model you
+will be asked to add a new entry.  
+
+If the entry is for an object name then you have a number of
+options.  You can double click on the object name in another window
+if you have it displayed.  Alternatively you can type in the name of
+the object.  If you type in a partial name and hit the TAB key then
+a list of possible completions will be given in the Main Selection
+Window, and your entry in the update window will be automatically
+completed up to the first ambiguous letter.  In particular if there
+is a unique existing completion then it will be expanded in full.
+
+Quit, destroys this window.
+
+Help, displays this help page.
+
+Save, saves the updated object to the database. 
+	From then on, the new values will be used in the
+	current session. The changes will become permanent only
+	if you also Save the session from the main ACEDB menu.
+
+Add comment,  let you add a comment anywhere in a an object, 
+	irrespectively of the model. You can even attach your
+	comment to the third number of a list of five. The comment
+	will be lost if the entry it is attached to is deleted.
+	
+Delete: Deletes the selected entry (tag, data or object - pick it
+	first) and anything to the right of it.  You can delete
+	whole subtrees.
+
+Cancel:	Cancel the current command (Add, Edit, or Add Comment).
+
+Edit:	lets you edit an exisiting entry (equivalent to just double
+	clicking on it).
+
+###################################################################
+
+**Dump
+
+Dumps the whole data base into an ace file.
+
+The dump file  can be edited by hand, parsed back in an empty system
+(provided you split out the copy of the tags and classes files)
+or use with diff to compare 2 sessions.
+
+At the same time, Dump checks the integrity of the whole
+database, verifies the existence of all the XREF's.
+
+Dump dumps all the Visible A and B(not X) classes  
+this information is sufficient for a complete reconstruction.
+
+###################################################################
+
+**Physical-map
+
+This display represent the alignement of clones into contigs
+Next help page explains the clone types
+
+Picking in the Yellow bar (when present) moves you to the sequence.
+
+Picking in the lower Green  bar moves you to the genetic map by local
+linear interpolation btween the nearest localised clones.
+
+Quit, destroys this window.
+
+Help, displays this help page.
+
+Print, prepares a Post Script file pmapxxx.PS in ./PS
+	You can then print it on your local laser printer.
+
+Preserve, insure that the next pmap will be displayed
+	in a different window, otherwise the present one 
+	will be reused.
+
+Redraw, useful from time to time if the window gets
+	clogged accidentally after moving the window 
+	or following arrows.
+
+Recalculate, recomputes the display from the map data.
+	Otherwise, the same display is shown again 
+	and again. We could make the recalculation automatic
+	after any update of the clone tress
+	but it would slow the program if you alter
+	some data which do not actually influence the drawing.
+
+Show All Remarks, there are three categories of comments: General_,
+	PCR_ and Y_.  Typically, PCR_ and Y_ comments were used by 
+	John and Alan to help build the map (as are many General_
+	ones) and are not very useful to the rest of us.  This 
+	switch is a toggle - turning on and off showing the extra 
+	comments.
+
+To Genetic Map: Moved to the real or estimated genetic position
+	of the selected item.
+
+Apart from the menu options, you can pick any clone and
+	obtain it in text form, or pick the comments and
+	the genes that may appear under the map.
+	Using the arrow keys, you will move from 
+	one clone, comment or gene to the next.
+
+The mid button recenter the display, slowly in the upper part of the
+window, faster in the lower part where a back bone of the physical
+map is shown.
+	
+NB Page down to get a list of clone types
+
+###################################################################
+
+**Clone-types
+
+Clone types in the physical map of Caenorhabditis elegans.
+
+   Most clones are defined by their initial letter(s), according to
+the table below.
+   The principal exceptions are:-
+(1) Clones given laboratory designations (2 letters followed by #)
+(2) MIT clones, which have 1, 2 or 3 identical letters, followed by 
+       any letter from A to H, followed by a number from 1 to 12.  Vector 
+       is pHC79.
+
+
+  Clone		Vector:
+    name:
+
+  A		Lambda 2001  Sau3AI partial
+ ZL		Lambda 2001  Sau3AI partial   probed
+YSL		Lambda 2001  YAC subclones, Sau3AI partial
+
+
+  B		pJB8	serial  Sau3AI partial
+  C		pJB8	gridded in microtitre plates  Sau3AI partial
+  D		pJB8	gridded on filters  Sau3AI partial
+  E		pJB8	EcoK minus  Sau3AI partial
+  R		pJB8	RI partial
+  M		pJB8	MboI partial
+ ZC		pJB8	probed
+
+
+  K		LoristB	    Sau3AI partial
+  T		Lorist2     Sau3AI partial
+  W		Lorist4     NotI plus Sau3AI partial
+  F		Lorist6     Sau3AI partial
+ ZK 15- 56	Lorist6     Sau3AI partial   probed
+    57-130	Lorist2       "	      " 	"
+   131-164	Lorist6       "	      " 	"
+   165-177	Lorist2       "	      " 	"
+   178-192	Lorist6       "	      " 	"
+   193-344	Lorist2       "	      " 	"
+   345-354	Lorist6       "	      " 	"
+   355-514	Lorist2       "	      " 	"
+   515-552	Lorist6       "	      " 	"
+   553-596	Lorist2       "	      " 	"
+   597-616	Lorist?       "	      " 	"
+   617-626	Lorist2       "	      " 	"
+   627-692	Lorist6       "	      " 	"
+   693-756	Lorist2       "	      " 	"
+   757 onwards	Lorist6       "	      " 	"
+
+
+  Y		pYAC4   RI partial
+
+
+###################################################################
+
+**Contig-editor
+
+Picking on displayed entities follows the paradigms of the physical map.
+
+In addition there is a control bar at the top of the graph, containing menu-
+buttons, and a cue.  The editor has four menus, which can be selected by picking 
+on the menu buttons.
+
+The control bar has a yellow window displaying the latest-visited
+position of the scrolling cursor (middle mouse button) in 
+band coordinates.
+
+Cues and information messages are displayed on the right of the control bar.
+
+The map has a scale calibrated in band units.
+
+SETTING AND USING MARKS
+
+A mark is a labelled position on the contig. It is represented by a vertical
+line through the map, labelled with a band position.  The current mark is
+highlit (yellow).
+Most editing operations are carried out relative to a mark.  Marks
+can be set anywhere in the contig, and used to snap to a given part of
+the contig, which may be off-screen.  The simplest way of setting a mark
+is to line up the scrolling cursor with a feature on the map, and select 
+"Set Mark At Cursor Position".
+
+MARKS MENU
+
+- Set Mark At Cursor Position: set a mark at the current cursor position
+- Mark Centre: set a mark at the current centre of graph
+- Mark Centre Of Cosmid: set a mark at the centre of the current cosmid
+- Set Mark: set a mark at a specified band coordinate
+
+- Zero Scale To Mark: recalibrate the scale with current mark=0 - this 
+    does not change the model
+- Set Scale At Mark: recalibrate the scale with current mark= specified band
+    coordinate - this does not change the model
+- Reset Scale: restore original calibration of the scale
+
+- Snap To Mark: display graph centred on current mark
+- Snap To Previous Mark: display graph centred on previous mark: this allows
+    toggling repeatedly between the latest two marks set
+- Visit Mark: display graph centred on each mark set, in turn, in reverse order
+- Delete Mark: delete current mark (this will occur even if it is off-screen)
+- Delete All Marks: you guessed it
+
+UTILITIES
+
+- Overview Physical Map: peek at the default physical map display, preserving the
+    state of the editor - useful for fast scrolling using the physical map's 
+    mini-contig
+- Finished Edit: finish editing session, and revert to the default physical map
+- Quit: quit this physical map - like Quit on the default map
+- Help: what you are reading
+- Print: PostScript dump of the edit panel
+- Preserve: as elsewhere
+- Redraw: as elsewhere
+- Remarks: vary the density of remarks displayed in the edit panel: this is a 
+    switch with three states
+- Recalculate: as elsewhere
+- Unhighlight, Revert: clean the edit panel - remove all highlighting, editing
+    marks, etc and restore the default level of remarks
+
+EDITING CLONES
+
+- Left End Of Clone To Mark: move the currently-selected clone so that its left
+    end abuts the current mark
+- Right End Of Clone To Mark: move the currently-selected clone so that its right
+    end abuts the current mark
+- Extend Left End Of Clone To Mark: extend the currently-selected clone so that its 
+    left end abuts the current mark
+- Extend Right End Of Clone To Mark: extend the currently-selected clone so that its
+    right end abuts the current mark
+- Show Buried Clones Of Clone: show buried clones of currently-selected clone - 
+    they are not automatically positioned at present
+- Show All Buried Clones: show all buried clones of the contig - 
+    they are not automatically positioned at present
+- Attach Clone: introduce a YAC or cosmid into the contig
+- Detach Clone: detach the currently-selected YAC or cosmid from the contig
+
+CONTIG-WIDE OPERATIONS
+
+- Open Contig: The contig is cut at the current mark, and one side
+    positioned relative to the other by dragging it left or right with 
+    the left mouse button down, to compress or extend the contig at the
+    mark.  A crosshair marks the current cursor position. The current position 
+    of the moving side of the cut is displayed in the cue, and the current
+    position of the cross-hair cursor is displayed in the 
+    yellow position box in the control bar. When the contig
+    is recalculated, a new mark is placed automatically at the final position
+    of the moving side of the cut, and the position of all affected marks
+    is updated.
+    F4 has the function of an UNDO key for this operation: you can interrupt
+    and back off this operation.
+
+
+AUTOPOSITIONING
+
+Operates on two keysets: one specifying the domain of interest for matching, 
+the other the new clones. Generates a report of results which has operations
+defined on it for surveying and editing positioned clones. After running the 
+autoposition function, the internal cache representing the domain set, and the
+data of the results of the autoposition function can be saved in separate
+files for future use. The default domain is the entire database of clones -
+this does not have to be specified explicitly; and its internal representation
+can be saved for future use.  Generating the internal representation of the
+domain is a slow operation for large keysets.
+
+The results are displayed on a pad with sensitive areas. This allows picking
+clones of interest. A pick on a matched clone in the context of the pad
+causes the clone of interest (the "subject") to be positioned against the
+match on its contig.  The result of this operation can be Edited, Accepted,
+Rejected, or Bury-ed beneath its match.
+
+Use of accelerators: the following have been defined on the pad, and on the
+edit panel when autopositioning is in progress.
+
+UP, DOWN arrow keys - previous, next match for the current subject
+LEFT, RIGHT arrow keys - skip to results for previous, next subject 
+'a' - accept this match (adds subject to the contig)
+'r' - reject this match
+'e' - add the subject to the contig as displayed, for manual edit
+'b' - bury the clone under its match
+
+Fingerprints can be displayed on a separate window, which acts as a scrollable
+log file.
+
+AUTOPOSITIONING - AUTO MENU ON EDIT PANEL
+
+- Autoposition Clones from Keyset: use current keyset 
+- Set Autoposition Domain: use current keyset to define domain of Autoposition 
+  operation 
+- Load Domain: load internal representation of domain from named file 
+- Use Whole Database: implicit argument 
+- Save Domain: in a named file 
+- Load Results: load data of previous Autoposition from named file
+  A results file cannot be loaded without loading an appropriate domain file.
+- Save Results: in a named file 
+- Fingerprint: show fingerprint of the currently-selected clone
+
+AUTOPOSITIONING - REPORT PAD MENU
+
+- Quit
+- Help
+- Print
+- Preserve
+- Save Results
+- Save Domain
+- Tree
+
+Switches -
+- Set to Edit: the default behaviour of the accelerator keys is to advance to
+  the next match (or next subject's first match) and position against that: when
+  this switch is set, the latest match is displayed on the edit panel after
+  using the accelerators, instead
+- Show Fingerprints: when this switch is set, clone fingerprints are displayed
+  automatically in the Fingerprint window whenever a clone on the report is 
+  selected, or the accelerators are used
+
+Edit operations -
+- Accept
+- Reject
+- Edit
+- Bury Clone
+
+- Fingerprint: show fingerprint of the currently-selected clone
+
+FINGERPRINT WINDOW MENU
+
+- Quit
+- Help
+- Print
+as default.
+
+###################################################################
+
+**Genetic-map
+
+This display represent the genetic map.  You can pick most things.
+
+The contigs are displayed past their last gene -- in many
+cases they extend much further, but we don't really know how far in
+genetic units so take our estimate estimate with caution.
+	  If you double click on the contig it interpolates
+to the physical map using the nearest two genes for which there is
+genetic map data.  Sometimes if the relative order is wrong this
+can be confusing.  All this will improve in the future.
+
+MENU:
+Quit, destroys this window.
+
+Help, displays this help page.
+
+Print, prepares a Post Script file pmapxxx.PS in ./PS
+	You can then print it on your local laser printer.
+
+Preserve, ensure that the next gmap will be displayed
+	in a different window, otherwise the present one 
+	will be reused.
+
+Recalculate, recomputes the display from the map data.
+	Otherwise, the same display is shown again 
+	and again. We could make the recalculation automatic
+	after any update of the clone tress
+	but it would slow the program if you alter
+	some data which do not actually influence the drawing.
+
+Highlight Selected Objects/Show Selected Objects/Show All Objects
+	Highlight or restrict to only those objects belonging to the
+	map and the selected keyset (normally the list in the Main
+	Selection Window, or one made by the Query facility).  All
+	reverts to the complete unhighlighted map, and removes any
+	highlighting from the GMap Data button option.
+
+Load/Save Private Map
+	After editing a map you can save and retrieve it later.  The
+	saved map does not appear in the standard chromosome list.
+
+BUTTONS: 
+Whole Chromosome, Zoom In/Out affect the amount of the map being
+displayed. They are equivalent to the continuous centering and
+zooming that you get by picking with the middle button in the left
+column of the map and dragging up-down to recenter, left-right to
+zoom.
+
+GMap Data: Shows CGC map data in graphical form.  You can click on
+the 2point and 3point data entries to see the actual data.
+
+Highlight/Some/All: Equivalent of the menu entries to highlight or
+show selected or all objects.
+
+Drag Gene: Pick a gene or a def-dup, press this button, then drag
+the gene with the mid mouse button. Useful to edit the map. You can
+then save your private version.
+
+COLOR CODE when using the "GMap Data" button.
+
+Red   : The active object.
+Yellow: Contact to the physical map.
+        Yellow genes are cloned.
+	The little yellow boxes are direct hooks to these clones.
+	The long yellow bar is the contig. Picking it moves
+	you to the corresponding place in the contig.
+Grey  : Background to the name of the colored rearrangement.
+Green : Those genes covered by the red rearrangement.
+	Those rearrangements covering a red gene.
+	The gene mapped 2_points relative to the red gene.
+Blue  : Those genes not covered by the red rearrangement.
+	Those rearrangements not covering a red gene.
+	The gene mapped 3_points relative to the red gene.
+Magenta : Objects explicitly highlighted with the Highlight option.
+
+The All button removes green, blue and magenta colours.
+
+The ZOOM buttons act on the whole map around the
+center represented by the little green box.
+
+DRAGGING.
+You can recenter the display by pressing with the centre mouse
+button and dragging, or by picking with the left mouse button and
+dragging either
+  - the small  black box sitting on the scale.
+  - or the long green box at the left of the picture.
+
+###################################################################
+
+**Chromosome-map
+		
+This display represent the the Chromosome in physical units.
+
+The little squares are clones. You must import them from a keyset
+using the menu. You can import anything whose position is known in
+physical units such as clones, cDna, clone genes etc.
+ 
+MENU:
+Quit, destroys this window.
+
+Help, displays this help page.
+
+Print, prepares a Post Script file pmapxxx.PS in ./PS
+	You can then print it on your local laser printer.
+
+Preserve, insure that the next gmap will be displayed
+	in a different window, otherwise the present one 
+	will be reused.
+
+###################################################################
+
+**Feature-map     
+		Click page-down for more information.
+This display represents the the sequence.  You can pick most things.
+
+GENEFINDER
+  Much of the functionality of Phil Green's genefinder package is
+built into ACEDB.  A reference is given when you first use the
+package.  To access genefinder functions, use the right mouse button
+on the indicated box to get at the submenu.  You must get "Genefinder
+features" first.  Then "Autofind Gene" will act in the current active
+zone.  It will attempt to find the best predicted gene including all
+features currently selected (indicated in LIGHTGREEN).  If you have
+write access it will create a working gene model, called "Temp_gene".
+Selected features can be hand-edited by using the submenu attached to
+each feature.  "Fix temp_gene" allows you to make temp_gene into a
+permanently stored gene prediction.  "Gene->selected" allows you to
+set the selected features from a previously determined gene.
+"Selected->temp_gene" lets you convert the currently selected features
+into a gene structure.  One common cause of problems is that some
+features are selected somewhere else in the sequence (perhaps the
+other strand!) -- use the "Clear" button to reset everything.
+
+Genefinder uses tables of codons frequencies etc which are part
+of the acedb distribution in the wgf subdirectory. The environment
+variable GF_TABLES will overide the $ACEDB/wgf default and let you
+use your own tables.
+
+DISPLAY CONTROL BUTTON
+  This gives access to a menu of display options.  All the options can
+be toggled by picking on them.  e.g. select "DNA Sequence" to see the
+DNA. Note that, to see the DNA, you should zoom in quite a lot. 
+Otherwise the bits of sequence ends with ... on each line. 
+
+MENU:
+Quit, destroys this window.
+
+Help, displays this help page.
+
+Print Screen / Print whole Map
+	Prepares a Post Script file pmapxxx.PS in ./PS
+	You can then print it on your local laser printer.
+
+Preserve, insure that the next gmap will be displayed
+	in a different window, otherwise the present one 
+	will be reused.
+
+Clear DNA,
+	Uncolors the DNA 
+
+Hide Header
+        Hides the buttons etc, useful before printing. The poo up
+        menu remains available to toggle back.
+
+Color exons
+        Shows the exons on the DNA sequence if present.
+
+Export translation
+       Export the translation of the active gene as an Ascii file
+       in Fasta format
+
+Export translations
+       Export the translation of all teh genes of the active map
+       in a singel file in Fasta format
+
+Export Sequence
+       Export the active DNA zone in fasta format.
+
+Statistics
+       Prints on the console some statistics on genes, exons etc.
+
+Analysis window, opens a new window called dna-analysis
+	with its own help entry (the next page).
+
+
+TOP LINE The last sequence you touched is the Selected fMap, this
+shows in red in the top left corner. This is the sequence used by dna
+analysis and gels. You can have several sequence on the screen if you
+use the Preserve option in the menu.
+
+ZOOMING
+The Zooming works as in the genetic map. It is controlled by
+the 3 buttons, whole(when you are lost!), zoom in, zoom out, and
+the mid mouse button: to recentre slowly if the mouse is rigth of
+the scale bar, or recenter fast and zoom continuously by dragging the
+mid button starting left of the scale bar.
+
+
+ACTIVE-ZONE and ORIGIN
+You can reset the origin by picking the origin value box, typing a
+number and RETURN. Alternatively, pick the Origin button then a
+gene.
+The active zone, indicated in the same coordinate system limits
+the scope of the Anaylsis window, Genefinder, Fasta Dumps etc. 
+It then shows as blue Shutter lon the left side of the yellow bar.
+
+CLEAR
+Clears the colourings, genefinder selections etc.
+
+REVERSE-COMPLEMENT
+Pick it with the left button to reverse complement the sequence.
+But if you press the right mouse button, you get a sub-menu that
+lets you independently complement or reverse the sequence. This may
+be useful to compare the features of both strands. On the top right
+corner of the window, the staus REVERSED or COMPLEMENT is recalled.
+
+
+Introns-exons are shown as rectangular boxes (the exons) connected
+by springs, the introns. The one on the right go downwards, the one
+on the left of the scale go upwards, i.e. they belong to the other
+strand. They correspond to the negative reading frames of the
+analysis menu.
+Picking the subsequences move you to their text value.
+Picking the clone box which may occur at the top will move you to
+the physical map.
+In the case of cDna you will get a text hybridize to Yacs...,
+picking one of these yacs will put you on the physical map.
+
+###################################################################
+
+**DNA_analysis
+       Click page down for the genetic code.
+
+This window is a command tool. It acts:
+  either on the active sequence window 
+  or, if you press the "Search active Keyset" button, on all the
+sequences listed in the currently active keyset. That button is a
+toggle and turns RED when activated.
+
+Searches on the dna result in coloration of the sequence, which shows
+on the bases and amino acids, if shown, and on the yellow strip.
+
+Quit, destroys this window.
+
+Help, displays this help page.
+
+Print, prepares a Post Script file xxx.PS in ./PS
+	You can then print it on your local laser printer.
+
+Finger print:
+	 Restricts with the enzymes used for the C.e. physical map
+         hindIII and  sau3aI. You get prompted for the name of a
+         file where the result of the search may be exported.
+         The sites are shown in 2 colors in the feature window.
+
+Restriction Key_Set
+         Will import a list of restriction enzymes that can then be
+         searched for in the active sequence or KeySet of sequences.
+
+Restrict Site Text-editor: 
+	Searches for AA motifs or Bases restriction sites.
+	You can give the sequence you search for or
+	the name of a set of known restriction enzymes,
+	(list the class Restrict to see them).
+	The sites are shown in the sequnce window, and recorded
+	at the end of the Dnacpt window. 
+	The use of ambiguous letters such as R is allowed
+	To activate the search type return..
+               Try also the Show Gel Button.
+
+Dump Sequence:
+       If UseKeySet is set, dumps in fasta format all sequences of
+       the active keyset (or selection list).
+       Else, dumps in fasta format the active region of the active
+       sequence window, e.g. you can fasta dumps bases 3800 to 7000 of a 
+       given sequence.
+	
+poly R/ poly Y:
+	 looks for 12 or more contiguous AG or TC segments, and prints
+	out the result of the search. This is equivalent
+	to search for a restriction of 12 R or 12 Y (r is a-g, y: t-c), but
+	the print out is more precise.  
+
+Splice Concensus:
+	Gives the 5' and 3' splice concensus sequences around the
+	introns exons  boundaries in the sequences of the active
+        keyset. The result is shown in the Dnacpt window itself.
+        Resize the window to see it.
+
+Codon Usage:
+	Gives the codon usage in the sequences of the active
+        keyset. The result is shown in a new window. Note that the 
+        genetic code is recalled in the next page of this help.
+
+Lengths:
+	Gives the histogram of the lengths of the individual
+	sequences in the active KeySet.
+
+Show Gel:
+	Pops a Gel Tool with its own help page.
+	
+Clear:
+	Clears the Dnacpt window, useful before using Splice
+        concensus or restrict buttons.
+   
+###################################################################
+
+**DNA_and_amino_acids_nomenclature
+
+          		             DNA
+G	Guanine
+A	Adenine 
+T	Thymine
+C	Cytosine
+R	Purine                  A,G
+Y	Pyramidine              T,C
+M	Amino                   A,C
+K	Ketone                  G,T
+S	Strong interaction      C,G
+W	Weak interaction        A,T
+H	not-G                   A,C,T
+B	not-A                   G,C,T
+V	not-T                   A,C,G
+D	not-C                   A,G,T
+N	any                     G,A,T,C
+
+
+
+                                    AMINO ACIDS
+
+          Here is a list of the standard one-letter amino acid codes and their
+     three-letter  equivalents.   The synonymous codons and their depiction in
+     the IUB codes are shown.  You should recognize that the codons  following
+     semicolons  (;)  are  not  sufficiently specific to define a single amino
+     acid even though they represent the best possible back  translation  into
+     the IUB codes!  All of the relationships in this list can be redefined by
+     the user in a local data file described below.
+
+         Symbol 3-letter  Meaning      Codons                Depiction
+
+           A    Ala       Alanine      GCT,GCC,GCA,GCG         !GCN
+           B    Asp,Asn   Aspartic,
+                          Asparagine   GAT,GAC,AAT,AAC         !RAY
+           C    Cys       Cysteine     TGT,TGC                 !TGY
+           D    Asp       Aspartic     GAT,GAC                 !GAY
+           E    Glu       Glutamic     GAA,GAG                 !GAR
+           F    Phe     Phenylalanine  TTT,TTC                 !TTY
+           G    Gly       Glycine      GGT,GGC,GGA,GGG         !GGN
+           H    His       Histidine    CAT,CAC                 !CAY
+           I    Ile       Isoleucine   ATT,ATC,ATA             !ATH
+           K    Lys       Lysine       AAA,AAG                 !AAR
+           L    Leu       Leucine      TTG,TTA,CTT,CTC,CTA,CTG !TTR,CTN,YTR;YTN
+           M    Met       Methionine   ATG                     !ATG
+           N    Asn       Asparagine   AAT,AAC                 !AAY
+           P    Pro       Proline      CCT,CCC,CCA,CCG         !CCX
+           Q    Gln       Glutamine    CAA,CAG                 !CAR
+	   R    Arg       Arginine     CGT,CGC,CGA,CGG,AGA,AGG !CGX,AGR,MGR;MGN
+           S    Ser       Serine       TCT,TCC,TCA,TCG,AGT,AGC !TCX,AGY;WSN
+           T    Thr       Threonine    ACT,ACC,ACA,ACG         !ACN
+           V    Val       Valine       GTT,GTC,GTA,GTG         !GTN
+           W    Trp       Tryptophan   TGG                     !TGG
+           X    Xxx       Unknown                              !NNN
+           Y    Tyr       Tyrosine     TAT, TAC                !TAY
+           Z    Glu,Gln   Glutamic,
+                          Glutamine    GAA,GAG,CAA,CAG         !SAR
+           *    End       Terminator   TAA, TAG, TGA           !TAR,TRA;TRR
+
+
+###################################################################
+
+**Useful_sequences
+
+Trans splices leaders:
+	 SL1 = "ggtttaattacccaagtttgag" ;
+         SL2 = "ggttttaacccagttactcaag" ;
+
+
+###################################################################
+
+**Codon_usage
+
+This windows gives the codon usage for the sequences of the active KeySet
+
+
+###################################################################
+
+**Agarose-Gels
+
+This display is intended to help you interpret a restriction gel 
+that you could run on a mutant by showing the expected wild type
+gel. You can type in the entry boxes the name of one or several
+restriction enzymes separated the semi columns, or little sequences.
+Ambiguous bases like n, w, s etc are reconised (see help on
+DNA_nomenclature). The lane will correspond to the active DNA
+window. If you click a band, you light the corresponding part of the
+sequence and the overlapping bands in the other lanes of the same
+gel.
+ The distance is a log funtion of the lenght of the dna-segment
+as given in:
+		figure 6.1 page 6.5 ; Molecular cloning, a laboratory manual
+		second ed. Sambrook, Fritsch, Maniatis
+		ColdSping Harbor lab. press, 1989
+
+      distance  = 3.5 * ( 4 - log10(length) ) ; 
+
+The MENU has the 3 standard entries:
+Quit, destroys this window.
+
+Help, displays this help page.
+
+Print, prepares a Post Script file xxx.PS in ./PS
+	You can then print it on your local laser printer.
+
+ZOOMING
+The Zooming works as in the genetic map. It is controlled by
+the 3 buttons, whole(when you are lost!), zoom in, zoom out, and
+the mid mouse button: to recentre slowly if the mouse is rigth of
+the scale bar, or recenter fast and zoom continuously by dragging the
+mid button starting left of the scale bar.
+
+OTHER BUTTONS
+The coordinate button is a toggle that prints its length directly
+above each band, in base pairs.
+
+We hope to introduce soon other commands to add or remove a site
+at a given place
+
+PICKING A BAND
+If you click once on a band, its exact length is shown in the left
+top yellow 'Position' box.
+
+If you click again, you will color the corresponding band on the
+sequence display. If the sequence is no longer the one used to
+produce the gel band, the program is suppose to realise it, but
+we have not tested all possible cases.
+At the same time, you will color the matching bands in the other
+lanes. To restore the normal colors, select the same digestion box
+and type Enter.
+
+MORE ON DIGESTIONS
+To perform a digestion, select a sequence window, select the origin
+and length of the bit of sequence you wish to digest. Then pick
+one of the text boxes top right in the Gel display. It turns yellow.
+Type in your restriction enzymes separated by semi columns (names or
+little sequences). Then type return. A typo will display the help
+page on the genetic code.
+
+As many lanes as you wish can be displayed. The window resizes
+properly. Different lanes may correspond to different sequences, but
+then we are not to sure that the recoloring trick is bug free. So
+you may have to clear the display from time to time.
+
+###################################################################
+
+**Clone-Grid
+
+This display is designed to display hybridisation data from the YAC
+polytene filters (and other gridded filters), and provide a tool for
+people to go between such data and the map, even when they don't
+have write access to the database.
+
+You see a set of squares layed out in the same pattern as the clones
+on the filter.  To help orient you, the rectangle at left containing
+"LABEL" corresponds to where the numerical label is written on the
+filter.
+
+The current active box (after you have clicked once in a box) has a
+cross in it and is outlined in red.  The name of the corresponding
+YAC is shown in the "Gridded Clone" text entry box at the top.  If
+you click on this to make it yellow, and type in the name of a YAC
+on the grid, that will be indicated with a cross/outlined in red.
+You can also click on the "Gridded Clone" button, in which case you
+can pick on YAC's elsewhere, such as in a physical map window.  This
+is useful for finding where neighbouring YAC's on the map are on the
+grid.
+
+There are two modes: Edit Mode and Map Mode.  The mode with the
+coloured box is current.  You can switch by picking the other box.
+
+Map Mode: when you click twice on a box you go to the physical map.
+If it is an empty box, then you will go to the corresponding YAC.  If
+it is filled then it, and all the other filled boxes representing
+YACs that overlap, are highlighted in red, and you go to the average
+position on the map that they define.  i.e. if a number of boxes are
+filled (positive) then map mode splits them into groups, each of
+which corresponds to one potential map locus.
+
+The grouping is done by taking all YAC's within some range into a
+cluster.  This range is 20 by default.  It can be changed with the
+menu entry "Set Cluster Range".
+
+Edit mode: this lets you define a pattern.  Click with the left
+mouse.  One click in a box gives a dark blue fill, a second makes it
+pale blue (signifying a weak signal), and a third will clear it.
+
+Probes: we now recognize two sorts of probes: simple clones, and
+pools.  Pools can contain collections of clone probes and subpools.
+The hybridisation pattern for a pool is the union of the patterns
+for all its clones and subpools, together with any data attached
+specifically to itself.  You can type the name of a probe into the
+text entry box (after activating it to yellow by clicking on it), or
+you can press the Probe button and pick your probe from another
+window (e.g. a phytsical map window).
+
+The Clear button clears any current pattern, deletes a clone name if
+ones is present, puts you in edit mode, and prepares the "Pattern for
+clone" entry box for you to type in a clone name.  This does not
+affect any pattern stored as a "surround" for comparison (see below).
+
+The arrow keys also work to let you move the active box (outlined in
+red) around the grid.  Hitting the return key corresponds to clicking
+on the current active box.
+
+Menu items are:
+
+Quit, Help, Print: as normal.
+
+Preserve: as in the phsyical map display.  If you select POLY1 again
+after choosing this option then you get a new window, rather than
+reusing this one.
+
+Center<->Surround: this places the current pattern in a surround to
+each highlighted box.  You can then load a new pattern and compare
+it to the one stored in the surround.  The clear function only
+affects the central pattern, not the surround, so to clear the
+surround select Center<->Surround then Clear.
+
+Names: shows YAC names at all locations, rather than square boxes.
+To see the ones at the right you will have to stretch the box very
+wide (sorry no scrolling yet).  If you print when stretched out you
+get an index sheet for the filter like the one sent out with it.
+
+Display probe as tree: shows the current probe in a separate window
+in tree (plain text) form.
+
+Save data with probe: only valid if you have write access and are
+entering hybridisation data for probes.  This lets you save the
+current pattern with the probe whose name is in the Probe text entry
+box.  Data that is set as weak (light blue) will be saved with
+"Weak" following the YAC name.  When reading in data, if any text is
+found following the clone name the box will be displayed in light
+blue, so you could edit this text in a tree update window to be more
+informative if you wanted.
+
+Set cluster range: This value is used to cluster individual
+hybridizing YAC's into groups that are supposed to correspond to
+individual loci.  The current algorithm essentially tries to find
+loci such that the centres of all the positive YAC's are within the
+defined range.  This is not strictly correct.  The units are
+physical map bands.  Larger values allow more spread out clusters.
+
+Stats on KeySet: Applies to current keyset, which should contain
+probes with hybridisation data.  It returns stats on how many
+clusters of various sorts there are, as a line on the terminal.
+
+Change Gridded Clone: doesn't do anything yet.
+
+###################################################################
+
+**Read_files
+
+Quit, destroys this window.
+
+Open File : allows you to choose any file with ending .ace
+
+Read until CTRL/C in home window:
+	Reads the whole file or until you type ^C in the window
+	from where you started ACEDB. Under Sunview, ^C does not
+	always work. Why ?
+
+Read one item:
+	READS the next object, i.e. until the next empty line.
+
+Read one line:
+	Reads just a single line, usually the value of a tag
+
+Skip to next item: skips.
+
+
+Double click a file to parse it or use the keyboard
+      to edit the name of the directory.
+      You get those files of the directory ending with .ace
+      or the content of acemenu.wrm if such a file exists
+      in that directory (useful for automatic redirection
+      to subdirectories).
+
+###################################################################
+
+**Make_maps
+
+The idea is to establish a correspondance between the
+       genetic map and the physical map. This is used later
+       to jump between maps by continuous interpolation
+       between the cloned genes. This function should
+       be run whenever the genetic map, the clone map
+       or the amount of known sequences have changed
+       appreciably.
+
+Quit, destroys this window.
+
+Help, displays this help page.
+
+Print, prepares a Post Script file pmapxxx.PS in ./PS
+       You can then print it on your local laser printer.
+
+Make pMaps recalculates the display of all the contigs
+	for future fast access. 
+
+Make gMaps recalculates the display of all the chromosomes
+	for future fast access. 
+
+Align contigs : tries to align the contigs on the
+	chromosomes and report inconsistencies.
+
+Bump contigs : bumps them for a nicer, not necessarilly more
+	accurate, display.
+
+####################################################################
+
+**Physical_map_calculation
+
+This program tries to analyse the clone map, also called physical map
+It is quite primitive and not linked in distribution 1.4
+
+Quit:	Destroys this window.
+
+Help:	Displays this help page.
+
+Print:	Prepares a Post Script file defdata.PS in ./PS
+        You can then print it on your local laser printer.
+
+Make pMaps should be used to recalculate the contigs after
+        updating the clones
+
+Align maps is itself a subprogram
+
+The other buttons as a whole make a program and should be used
+       in sequence.
+
+##################################################################
+
+**Deficiency_map
+
+This program tries to compute a genetic map using deficiency data.
+
+Quit: 
+	Destroys this window.
+
+Help:
+	Displays this help page.
+
+Print:
+	Prepares a Post Script file defdata.PS in ./PS
+	You can then print it on your local laser printer.
+
+Parse database:
+	Must be run once, when you have changed the 2_point_data
+        It looks for deficiency data and reorgaizes them internally
+	for later use by this package. In particular, genes and
+	def are sorted into contigs defined as a set of genes and
+	deficiencies tested against each other.
+
+Read file:
+	This allows you to run the same analysis on some data
+	that you do not want to parse into your database.
+	The data file should consist of ND+1 lines of NM symbols 1 or 0
+	where NM is the number of markers and ND the number of 
+	deficiencies. A 1 indicates that the deficiency uncovers
+	the gene.
+	The first line indicates which genes to take into account.
+	It should have NM 1 to use everything, any 0 will discard the
+	corresponding column. i.e. gene from the analysis.
+	One can also impose the order of subgroups and block some
+	genes together. An example input file is given in the next
+	help page.
+
+Get contig:
+	Ask for a contig number. If you give a bad answer, it does not
+	matter. The number of contigs is specified when you Parse
+	the database. 
+
+Cost:
+	Gives the cost of the running order of the marker,
+	The cost function is n for a deficiency splitted in
+	n+1 discontinuous pieces
+        There is also a way to impose the order of some of the
+	markers, but I this is
+	not yet done in a smooth way.
+
+Shuffle:
+	Reshuffles the markers before a new try.
+
+Monte Carlo;
+	Inserts the markers one by one in an expanding list. It tries
+	to keep the cost to a minimum and remembers n previous configurations,
+	n is a parameter asked from the user. We had fast and good results with
+	NM = ND = about 20 and   n = 5
+	This is a monte carlo, so you must repeat the search several times.
+	Once a good solution is found, it will no longer print the bad ones.
+        With NM = ND around 100, n = 8, it was very slow but the
+	results were rather good.
+	
+Intrinsic tree:
+	This is an independant fast and innacurate algorithm to
+	reorder the genes. It should be completed by the next
+	button:
+
+Refine tree:
+	This should better the results of the preceeding button but
+	is not yet available.
+
+Map:
+	Creates a new window with a useful graphic presentation of the
+	data. It is interesting even on the standard data, before 
+	selecting the order option. The Map graph has its own menu
+	with the usual options Quit-Help-Print. The Help is the same
+	one. Quit quits the application. Print prepares defmapxxx.PS.
+	With NM = ND = 100, the resulting graph will not be printed on
+	my laser, probably it is a font problem, sorry.
+
+Histo:
+	Plots the marginal ditributions :
+	Histogram of the number of deficiencies carrying a given
+	number of markers and vice versa
+
+####################################################################
+
+**Example_of_a_def_dup_data_file
+
+ Charles Theillet,
+ le 18 septembre 1991,
+	donnees de genetique humaine analysables par acedb
+	
+1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 
+0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 0 0 0 0 
+0 0 0 0 0 1 0 1 0 0 0 0 0 0 1 1 1 1 1 0 1 1 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 0 1 0 0 
+0 0 0 0 1 0 0 0 1 1 0 0 1 1 1 1 1 1 1 1 1 1 0 0 
+0 0 0 0 0 0 1 1 0 0 1 1 1 1 1 1 1 0 0 1 0 0 1 0 
+0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 0 0 0 0 0 
+0 0 0 0 0 0 0 1 0 0 1 1 1 1 1 1 1 0 0 1 1 1 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 0 0 0 1 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 0 0 0 0 0 
+0 0 0 0 0 1 0 0 1 1 1 0 1 1 1 1 1 1 1 1 1 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 0 0 0 0 0 
+0 0 0 0 0 1 1 0 0 0 1 1 1 1 1 1 1 1 1 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 0 0 0 0 0 
+0 0 0 0 0 0 0 0 1 1 0 0 1 1 1 1 1 1 1 0 1 0 0 0 
+0 0 0 0 1 0 1 0 1 0 0 1 1 1 1 1 1 1 1 1 1 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 0 0 0 0 0 
+0 0 0 1 0 0 0 1 1 0 0 0 1 1 1 1 1 1 1 0 0 0 0 0 
+0 0 0 0 0 1 0 1 1 1 0 1 1 1 1 1 1 1 1 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 0 0 0 1 0 
+
+BLOCKS       these blocks are ordered left to right in the present code
+ 0,2  12,18
+
+ORDER
+ 0,2,3,11  3,11,12,18  12,18,19,23 
+
+
+####################################################################
+
+**WCS
+
+    WCS is the Worm Community System of Schatz et al. (Arizona)
+	Mail schatz@cs.arizona.edu to get further info on WCS.
+	To access WCS from ACEDB, you must run under X-windows,
+	and start both ACEDB and WCS.
+	Whenever the 2 programs run on the same X server (i.e. your 
+	terminal), even if from different clients (for example acedb
+	running in Cambridge and WCS in Arizona, your terminal 
+	being in New York) the main ACEDB menu changes and you get
+	3 more entries as follows.
+	
+
+WCS Annotate : Sends an annotation to WCS.
+WCS Show     : Asks WCS for an eventual annotation.
+WCS Search   : Use an object name as a search string in WCS
+
+####################################################################
+
+**Official_Update
+
+The one functional button is "Next Update", which adds the next
+official update if it is in $ACEDB_DATA, or if that is not defined,
+in $ACEDB/rawdata.
+
+A record of what is going on will appear in the window.  If the
+system runs out of space in its disk file it will ask you for more.
+You can add several updates in a row if you have them.  If there are
+any problems then you will be thrown out of the whole program, with
+an error message.
+
+You must have write access, i.e. your login name must be listed in
+the file $ACEDB/wspec/passwd.wrm to run this function.
+
+####################################################################
+
+**Long-Text
+
+A simple tool to store and display texts longer than a few lines
+
+###################################################################
+
+**Session_control
+
+Not yet publicly released.
+
+####################################################################
+###################################################################

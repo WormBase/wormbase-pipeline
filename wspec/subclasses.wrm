@@ -1,0 +1,94 @@
+// %W%    %G%
+// subclasses.wrm
+// this is in standard ace file format
+
+Class Gene
+Visible
+Is_a_subclass_of Locus
+Filter Gene
+
+Class Other_Locus
+Visible
+Is_a_subclass_of Locus
+Filter "NOT Gene"
+
+Class Genome_Sequence
+Visible
+Is_a_subclass_of Sequence
+Filter "Genomic_Canonical AND (Species = C*elegans)"
+
+Class Briggsae_genomic
+Visible
+Is_a_subclass_of Sequence
+Filter "Genomic_Canonical AND (Species = C*briggsae)"
+
+Class cDNA_Sequence
+Visible
+Is_a_subclass_of Sequence
+Filter "Method = EST_elegans"
+
+Class nematode_ESTs
+Visible
+Is_a_subclass_of Sequence
+Filter "(Method = EST_briggsae) OR (Method = EST_nematode)"
+
+Class Repeat_Sequence
+Hidden
+Is_a_subclass_of Sequence
+Filter Repeat_consensus
+
+Class Predicted_gene
+Visible
+Is_a_subclass_of Sequence
+Filter "((Method = curated) OR (Method = provisional)) AND (Species = C*elegans)"
+
+Class Briggsae_predicted
+Visible
+Is_a_subclass_of Sequence
+Filter "((Method = curated) OR (Method = provisional)) AND (Species = C*briggsae)"
+
+Class NDB_Sequence
+Visible
+Is_a_subclass_of Sequence
+Filter "Method = NDB"
+
+Class Wormpep
+Visible
+Is_a_subclass_of Protein
+Filter "Wormpep"
+
+Class Genetic_map
+Visible
+Is_a_subclass_of Map
+Filter "NOT IS *Sequence*"
+
+Class Sequence_map
+Visible
+Is_a_subclass_of Map
+Filter "IS *Sequence*"
+
+Class Clone_Grid
+Visible
+Is_a_subclass_of Grid
+Filter "IS *POLY*"
+
+Class Restrict_enzyme
+Visible
+Is_a_subclass_of Motif
+Filter "Restriction"
+
+Class Lineage
+Visible
+Is_a_subclass_of Tree
+Filter "Cell_Lineage"
+
+// extra indexing for sequence class
+
+Class Sequence
+Index Overlap_right
+Index Source_exons
+Index CDS
+Index DNA
+Index Genomic_canonical
+Index Remark
+Index Flipped

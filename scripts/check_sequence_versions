@@ -1,0 +1,176 @@
+#!/usr/local/bin/perl
+#
+# check_sequence_versions
+# v 0.1
+#
+# dl
+#
+# Usage : check_sequence_versions [-options]
+# Opens a socket to the EBI SRS server and polls
+#
+
+$| = 1;
+
+use IO::Handle;
+use Getopt::Std;
+use Socket;
+require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
+
+ ##############################
+ # Script variables (run)     #
+ ##############################
+
+my $maintainer = "dl1\@sanger.ac.uk";
+my $rundate    = `date +%y%m%d`; chomp $rundate;
+my $runtime    = `date +%H:%M:%S`; chomp $runtime;
+my $logfile    = "/wormsrv2/logs/check_sequence_versions.$rundate.$$";
+my $version    = &get_script_version("check_sequence_versions");
+
+ ##############################
+ # Paths for I/O files        #
+ ##############################
+
+$ENV{'ACEDB'}="/wormsrv2/camace";    
+my $server = "srs.ebi.ac.uk";
+my $tace = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
+my $command=<<EOF;
+Table-Maker -f /wormsrv2/camace/wquery/sequence_versions.def 
+quit
+EOF
+
+ ##############################
+ # command-line options       #
+ ##############################
+
+$opt_h = "";   # Help/Usage page
+
+getopts ('h');
+&usage if ($opt_h);
+
+ ##############################
+ # open logfile               #
+ ##############################
+
+system ("/bin/touch $logfile");
+open (LOGFILE,">>$logfile");
+LOGFILE->autoflush;
+
+print LOGFILE "# check_sequence_versions\n#\n";
+print LOGFILE "# version             : $version\n";
+print LOGFILE "# run details         : $rundate $runtime\n";
+print LOGFILE "\n";
+
+ ##################################################
+ # Main Loop - run tablemaker query on camace     #
+ ##################################################
+open (ACE,  ">/wormsrv2/camace/sequence_versions_update.$rundate.ace");
+open (LIST, "echo '$command' | $tace  | ");
+while (<LIST>) {
+    chomp;
+    s/\"//g;
+    ($clone,$id,$acc,$ver) = split (/\t/,$_);
+    print LOGFILE "Sequence : $clone  \t[$id|$acc|$ver]\n";
+
+
+    $querycontent="-e+([EMBLNEW-acc:'$acc'])|(([EMBL-acc:'$acc'])!(EMBL<EMBLNEW))";
+    $request = "/srsbin/cgi-bin/wgetz?$querycontent";
+
+    if (!defined(open_TCP(*F,$server,80))) {
+	print "Error connecting to server at \n";
+	exit(-1);
+    }
+    print F "GET $request HTTP/1.0\n\n";
+    print F "Accept: */*\n";
+    print F "User-Agent: socketsrs/1.0\n\n";
+    
+    while (my $return_line=<F>) {
+#    print "$return_line";
+	if ($return_line =~ /^SV\s+(\S+)\.(\d+)/) {
+	    ($EM_acc,$EM_seqver) = ($1,$2);
+	    print LOGFILE "Sequence version $EM_seqver\n";
+	}
+	if ($return_line =~ /^DT\s+(\S+)\s+\(Rel. (\d+)\, Last updated\, Version (\d+)\)/) {
+	    ($EM_rel,$EM_ver,$EM_sub) = ($2,$3,$1);
+	    print LOGFILE "Latest version : Rel. $EM_rel Ver. $EM_ver [$EM_sub] \n";
+
+	    # Updated sequence version
+	    if ($EM_seqver != $ver) {
+		print ACE "\nSequence : \"$clone\"\n";
+		print ACE "Database EMBL $id $acc $EM_seqver\n";
+	    }
+
+	}
+	
+    }
+    close F;
+    print LOGFILE "\n";
+}
+
+close LOGFILE;
+close ACE;
+
+###############################
+# Mail log to curator         #
+###############################
+
+&mail_maintainer("camace report: check_sequence_versions",$maintainer,$logfile);
+
+###############################
+# hasta luego                 #
+###############################
+
+exit(0);
+
+########################################################
+# Output: successful network connection in file handle #
+########################################################
+
+sub open_TCP  {
+    my ($FS,$dest,$port) = @_;
+    my $proto = getprotobyname ('tcp');
+    socket ($FS,PF_INET,SOCK_STREAM,$proto);
+    my $sin = sockaddr_in($port,inet_aton($dest));
+    connect($FS,$sin) || return undef;
+    my $old_fh = select($FS);
+    $| = 1;
+    select($old_fh);
+}
+
+###################################################
+# Errors and pod documentation                    #
+###################################################
+
+sub error {
+    my $error = shift;
+    # Error 1 - date directory (opt_r) is of incorrect length 
+    if ($error == 1) {
+    }
+    exit(1);
+}
+
+sub usage {
+    system ('perldoc',$0);
+    exit;	
+}
+
+__END__
+
+
+=pod
+
+=head1 NAME - check_sequence_versions
+
+=head2 USAGE
+
+check_sequence_versions arguments:
+
+=over 4
+
+=item *
+
+none
+
+=back
+
+=cut
+

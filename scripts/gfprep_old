@@ -1,0 +1,32 @@
+#!/bin/csh
+#
+# gfprep
+# script to run genefinder and make an ace file of the results
+#
+
+switch ($#argv)
+  case "1":
+        breaksw
+  default:
+        echo 'Usage: gfprep COSMID' ; exit 1
+endsw
+
+if (! -e $1.seq) then
+  echo "You must be working in a directory containing $1.seq"
+  exit 1
+endif
+
+if (! -d gf) then
+  mkdir gf
+endif
+
+cat >! gf/$1.gfseq << END
+>In:$1
+END
+
+cat $1.seq >> gf/$1.gfseq 
+
+cd gf
+#genefinder $1.gfseq   -tablenamefile /nfs/disk100/wormpub/BioSW/gf/tables/wormtables >! gf.out
+/nfs/disk100/wormpub/BioSW/gf_970716/genefinder/bin/genefinder -tablenamefile  /nfs/disk100/wormpub/BioSW/gftables/wormtables $1.gfseq 2> /dev/null >! gf.out
+exit 0

@@ -1,0 +1,60 @@
+#! /bin/csh 
+# largeblast -- for running blast on large sequences and creating a
+# single coherent output file
+# arg1 = testsequence
+# arg2 = protein database
+# the output and error log files are named after the testsequence
+
+switch ($#argv)
+  case "2": 
+	breaksw
+  default: 
+	echo 'Usage: largeblast seqfile database' ; exit 2
+endsw
+
+set scripts = /nfs/al/cb0/wormpub/analysis/scripts
+set ncbi = /nfs/al/cb0/wormpub/BioSW/ncbi
+
+if (! -e ${1}) then
+  echo "Sequence file ${1} does not exist"
+  exit
+endif
+
+echo "Sequence file: ${1}   Database: ${2}"
+
+if (! -d blast) then
+  mkdir blast
+  echo "making blast subdirectory"
+endif
+
+# make a copy of the sequence file, removing comments following
+# a "#" or ";"
+
+sed -e '/^#/d' -e '/^;/d' -e 's/#.*$//' -e 's/;.*$//' -e 's/-/N/g' ${1} >! blast/${1}
+cd blast
+echo "Blastx log for sequence ${1} - database ${2}" >! ${1:r}.logx
+echo "Started at" `date` >> ${1:r}.logx
+$scripts/seqsplit ${1}		# split up the file into format ${1}.<n>
+#now run blast on each split piece
+
+foreach i ( 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40)
+	set filename = ${1}.$i
+	if (-e $filename ) then
+		echo "Processing sequence ${1}.$i"
+		echo "Processing sequence ${1}.$i" >> ${1:r}.logx
+		( $ncbi/blast/blastx $ncbi/db/${2} $filename -M$ncbi/PAM120 >! \
+			 $filename.bl ) >>&! ${1:r}.logx ;
+	endif
+end
+
+$ncbi/blastnum ${1}	# reintegrate things
+mv ${1}.bl ${1:r}.blx
+
+awk -f $scripts/exblastx.awk < ${1:r}.blx >! ${1:r}.exblx
+
+echo "Finished at" `date` >> ${1:r}.logx
+
+\rm -r ${1}.[0-9]*
+
+exit
+

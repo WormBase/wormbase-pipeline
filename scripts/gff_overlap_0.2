@@ -1,0 +1,35 @@
+#!/usr/local/bin/perl
+#
+
+$file = shift;
+
+open FILE, $file or die "$file: $!";
+while (<FILE>) {
+
+($line,@features) = getline(*FILE,$file,\$n);
+#print "$line: ";
+foreach (@features) {
+    print "$_ ";
+}
+
+}
+close FILE;
+exit(0);
+
+
+
+
+
+sub getline {
+    local (*FH) = shift;
+    my ($file,$nref) = @_;
+    my $line;
+    while (!defined($line) || $line !~ /\S/) { $line = <FH>; $line =~ s/\#.*//; ++$$nref; last if !defined($line) }
+    my @f = split(/\t/,$line,9);
+    if (@f == 0) { return (undef) }
+    if (!$shutit) {
+        if (@f < 9) { warn "Warning: fewer than 9 fields at $file line $$nref\n" }
+        if (join("",@f[0..7]) =~ / /) { warn "Warning: space in tab-delimited field at $file line $$nref\n" }
+    }
+    ($line,@f);
+}

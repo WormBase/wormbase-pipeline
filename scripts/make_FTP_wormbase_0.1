@@ -1,0 +1,158 @@
+#!/usr/local/bin/perl
+#
+# make_FTP_wormbase
+# v 0.1
+#
+# dl
+#
+# Usage : make_FTP_wormbase [-options]
+# A PERL wrapper to automate the process of building the wormbase FTP site.
+#
+# This script does :
+#
+# [01] - make a new directory for the WS release
+# [02] - make the tar file for the chromosomes
+# [03] - copy the WS release files to the target directory
+# [04] - copy the models.wrm file to the target directory
+# [05] - tar and move the wormpep release to the target directory
+# [06] - delete the old symbolic link and make the new one
+# [07] - delete the old WS release version directory
+# [08] - exit gracefully
+#
+# 000926 dl : PP version
+# 000927 dl : Added creation of flag file so that Tony picks up new version for the AceBrowser
+# 001004 ag3 : corrected path for symbolic link; added check for copying over of distr. files
+
+#################################################################################
+# variables                                                                     #
+#################################################################################
+
+$|=1;
+use Getopt::Long;
+
+my $sourcedir          = "";    # [Text] Directory in which the latest WS release resides
+my $targetdir          = "";    # [Text] Directory in which to build the new release
+my $release            = "";    # [Text] Release number (e.g. WS16)
+my $old_release        = "";    # [Text] Internally generated release number ($release -2 , e.g. WS14)
+my $old_release_number = "";    # [Int]  Internally generated release number 
+my $wormpep            = "";    # [Int]  wormpep release number  (e.g. 26)
+my $debug              = "";    #        on/off flag for verbose mode
+my $clean              = "";    #        on/off flag for removing old WS directories from the FTP site
+
+GetOptions (
+            "source=s"       => \$sourcedir,
+            "target=s"       => \$targetdir,
+	    "WS_release=s"   => \$release,
+	    "WP_release=s"   => \$wormpep,
+	    "debug"          => \$debug,
+	    "clean"          => \$clean,
+);
+
+length ($sourcedir)==0 && &usage;
+length ($release)==0 && &usage;
+length ($wormpep)==0 && &usage;
+if (length($targetdir)==0) {
+    $targetdir="/nfs/disk100/wormpub/private_ftp";
+}
+
+if ($debug) {
+    print "# make_FTP_wormbase\n#\n";
+    print "# Source directory : $sourcedir \n";
+    print "# Target directory : $targetdir\n";
+    print "# WS release No.   : $release\n";
+    print "# wormpep release  : $wormpep\n\n";
+}
+
+#################################################################################
+# Main Loop                                                                     #
+#################################################################################
+
+ # make a new directory for the WS release
+
+system "mkdir $targetdir/$release" unless -e "$targetdir/$release";
+print "make a new WS release directory : '$targetdir/$release'\n" if ($debug);
+
+ # make the tar file for the chromosomes
+
+system "tar -cf $targetdir/$release/chromosomes.$release.tar $sourcedir/CHROMOSOMES/";
+system "gzip $targetdir/$release/chromosomes.$release.tar";
+print "tar and gzip the CHROMOSOMES directory .... and move\n" if ($debug);
+ 
+ # copy the WS release files across and check on the size
+ # The FTP disk tends to be unstable
+
+opendir (SOURCE,"$sourcedir/release") or die ("Could not open directory $sourcedir/release");
+while (defined($filename = readdir(SOURCE))) {
+    if (($filename eq ".")||($filename eq "..")) { next;}
+ system "cp $sourcedir/release/$filename $targetdir/$release/$filename";
+ $O_SIZE = (stat("$sourcedir/release/$filename"))[7];
+ $N_SIZE = (stat("$targetdir/$release/$filename"))[7];
+ if ($O_SIZE != $N_SIZE) {
+   print "*Error - file $filename not transferred regularly - please check\n";
+   die();
+ } else {
+   print "Copied filename: $filename SRC: $O_SIZE TGT: $N_SIZE\n" if ($debug);
+ }
+}
+closedir SOURCE;
+print "copied the release directory to FTP site\n" if ($debug);
+
+ # copy the models.wrm file across
+
+system "cp $sourcedir/wspec/models.wrm $targetdir/$release/";
+print "copied the models.wrm file to FTP site\n" if ($debug);
+
+ # tar and move the wormpep release
+
+system "/nfs/disk100/wormpub/analysis/scripts/tar_wormpep $wormpep ";
+system "mv /wormsrv2/WORMPEP/wormpep${wormpep}/wormpep${wormpep}.tar.gz $targetdir/$release/";
+print "tarred and gzipped the Wormpep release .... and moved\n" if ($debug);
+
+ # delete the old symbolic link and make the new one
+
+system "rm -f $targetdir/current_database";
+system "cd $targetdir; ln -s $release current_database";
+print "delete the old sym_link and create the new one\n" if ($debug);
+
+
+ # commit this release for upgrade of Sanger AceBrowser
+ # This must be the final step - ag3
+
+system "touch $sourcedir/OK_TO_COPY";
+print "made 'OK_TO_COPY' flag in : '$sourcedir'\n" if ($debug);
+
+ # delete the old WS release version
+
+if ($clean) {
+    $old_release_number = $release =~ s/WS//g;
+    $old_release_number = $old_release_nubmber - 2;
+    $old_release = "WS" . $old_release_number;
+
+    system "/bin/rm -rf $targetdir/$old_release";
+    print "delete the old WS release version from the FTP site\n" if ($debug);
+}
+
+
+exit (0);
+
+#################################################################################
+# Subroutines                                                                   #
+#################################################################################
+
+sub usage {
+
+    print "make_FTP_wormbase v0.1\n";
+    print "Usage : make_FTP_wormbase [-options]\n";
+    print " -source       : source directory from which to copy database release\n";
+    print " [-target]     : target directory on the FTP site to place release\n";
+    print "               : /nfs/disk100/wormpub/private_ftp as default\n";  
+    print " -WS_release   : WS release number (e.g. WS16)\n";
+    print " -WP_release   : wormpep  release number (e.g. 26)\n";
+    print "[-debug]       : verbose mode\n\n";
+    exit(0);
+}
+
+
+
+
+

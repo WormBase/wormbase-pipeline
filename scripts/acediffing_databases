@@ -1,0 +1,249 @@
+#!/usr/local/bin/perl -w- -*-Perl-*-
+#perl seq_updating3.p
+# dumping and diffing\seqace for update.
+#############################################################################
+#step 10.  human step : look at seqace before dumping. 
+##########################################################################
+#step 11. dump seqace.
+# step 11 dump seqace  with dumpace as seq, dna, motif and protein.  
+# same as step1 & step 2 just change the names and paths
+
+sub step11
+{
+    print "======================================================\n";
+    print "\nstep11. dumping seqace with dumpace as seq,dna,motif and protein.\n\n";
+    chdir ("/nfs/disk76/sylvia3/SEQACE/") || die "can't find or get to dir seqs/";
+    system("pwd");
+    $olddir = "/nfs/disk76/sylvia3/SEQACE/old";
+    opendir (DIR,"$olddir") || die "can't open SEQACE/old";			  
+    # remove any old seq, dna, prot, mot files from sylvia3/SEQACE which may be confused with new dumps
+    while ($file =  readdir(DIR))
+    {
+         if ($file =~ /\.ace/)
+         {
+               print "acefile = $file\n";
+               ($file =~ /seq|dna|protein|motif|Peptide/)
+               && chdir ("/nfs/disk76/sylvia3/SEQACE")
+               && unlink($file)
+	       && push (@result,"bad file $file removed\n")
+               && chdir("/nfs/disk76/sylvia3/SEQACE/");
+         } #end if
+     }	# end while
+
+     foreach $i (0..$#result)
+     {
+          print "$result[$i]\n";
+     }
+
+     #now call dumpace for the current directory (DIR) in this case SEQACE
+     chdir ("/nfs/disk76/sylvia3/SEQACE");		           
+     use Cwd;
+     $where = cwd();
+     print "where = $where\n";
+     if (($where =~ /SEQACE/) && ($where !~ /old|new|diffs/))
+     { 
+          #must be in correct place for dumping;
+          print "/nfs/disk76/sylvia3/dumpace9707 seq\n";
+	  system("/nfs/disk76/sylvia3/dumpace9707 seq");
+
+     }
+     #dumpaceI has old version for confidential_remark removing 
+     #dumpaceII has steve's experimental method
+     #dumpace has new version for confidential_remark removing
+     #dumpace9707 has new confidential_remark removing mechanism and is spaced out better
+
+    
+} # END SUB STEP 11
+
+#################################################################
+#step12 tidying /work/seqs/SEQ dirs and moving files before acediffing in the next step.
+#seqace dumps were put into /work/seqs/SEQ and need moving
+#to new, whereas new need to go to old; and old to the trash
+sub step12
+{
+     print "==================================================\n";
+     print "\nstep 12. removing old files, moving new files across and\n";
+     print "putting new dumps into new before acediffing\n\n";
+     chdir ("/nfs/disk76/sylvia3/SEQACE")|| die "can't find or get to dir seqs/SEQ";
+     system("pwd");
+     $olddir = "/nfs/disk76/sylvia3/SEQACE/old";
+     $newdir = "/nfs/disk76/sylvia3/SEQACE/new";
+     $diffsdir = "/nfs/disk76/sylvia3/SEQACE/diffs";
+
+    chdir ("/nfs/disk76/sylvia3/SEQACE/old")|| die "can't find or get to dir SEQACE/old"; 
+    system("pwd");
+    print "\nlooking at files in SEQACE/old/ \n";
+    foreach $file (<seq.*.ace*>)
+    {
+      print "\noldfile = $file\n";
+      unlink ($file) 
+      && print "file $file deleted\n" ||  die "can't find file $file";
+    }
+                         #move last time's new files to this times old files.  
+  chdir("/nfs/disk76/sylvia3/SEQACE/new") ||  die "can't find /new";;
+  system("pwd");
+  print "\nlooking at files in SEQACE/new/ \n";
+  foreach $file (<seq.*.ace*>)
+  {
+    print "\nnewfile = $file\n";
+    print "mv /nfs/disk76/sylvia3/SEQACE/new/$file /nfs/disk76/sylvia3/SEQACE/old/\n";
+    system ("mv /nfs/disk76/sylvia3/SEQACE/new/$file /nfs/disk76/sylvia3/SEQACE/old/");
+  }
+  
+  print "testing for files still left in new dir\n";
+  foreach $file (<seq.*.ace*>)
+  {
+      print "newfile = $file\n";
+  }
+
+  #a test section only
+  print "testing for files successfully  moved to old dir\n";
+  chdir("/nfs/disk76/sylvia3/SEQACE/old") ||  die "can't find dir";
+  foreach $file (<seq.*.ace*>)
+  {
+       print "new_oldfile = $file\n";
+  }
+
+   #then check and remove files from diffs directory
+  system("pwd");
+  chdir("$diffsdir"); 
+  print "\nlooking at files in SEQACE/diffs/ \n";
+  foreach $file (<*diff*ace*>)
+  {
+      print "\ndiff_file = $file\n";
+      unlink ($file) 
+      && print "file $file deleted\n" ||  die "can't find file $file";
+  }
+} # end of step 12
+###################################################################
+#step 13 clearing out PEP directories
+sub step13
+{
+    #removed for now just a repeat of the sequence stuff
+} # end sub13     
+##################################################
+#diff seqace old to new and transfer to updates/  
+#same as step 3 just change the names and paths  
+sub step14
+{
+    print "==================================================\n";
+    print "\nstep 14. ACEdiffing old to new seq files.\n\n";	
+    
+    chdir ("/nfs/disk76/sylvia3/SEQACE")|| die "can't find or get to dir SEQACE";
+    system("pwd");
+    
+    $olddir = "/nfs/disk76/sylvia3/SEQACE/old";
+    $newdir = "/nfs/disk76/sylvia3/SEQACE/new";
+    $diffsdir = "/nfs/disk76/sylvia3/SEQACE/diffs";
+
+    opendir(OLD,$olddir) || warn "couldn't open $olddir";
+    opendir(NEW,$newdir) || warn "couldn't open $newdir";
+    opendir(DIFF,$diffsdir) || warn "couldn't open $diffsdir";
+
+    print "\nlooking at files in SEQ/old/ \n";
+    while ($file =  readdir(OLD))
+    {
+         #if ($file =~ /seq\.(\w+)\.(\d+)\.(\d+)\.(\d+)\.ace/)
+         if ($file =~ /seq\.(\w+)\.([0-9\.]{1,})\.ace/)
+         {
+	     $type = $1;
+             $file =~ /\.Z/ && system ("uncompress $olddir/$file") #####; #&& $file =~ s/.Z//g;
+	     && print "uncompressing $file\n";
+             print "type = $type\n";
+             print "file = $file\n";
+	     push (@oldfiles, $type);
+             $oldfiles{$type} = $file;
+	 }	       
+    }      
+    
+    print "\nlooking at files in SEQ/new/ \n";
+    while ($file =  readdir(NEW))
+    {
+         if ($file =~ /newseq\.(\w+)\..+\.ace/)
+         {
+	     $type = $1;
+             $file =~ /\.Z/ && system ("uncompress $newdir/$file"); # && $file =~ s/.Z//g;
+             print "type = $type\n";
+             print "file = $file\n";
+	     push (@newfiles, $type);
+             $newfiles{$type} = $file;
+	 }	       
+    }
+       
+   foreach $checkfile (sort @newfiles)
+   {
+       $checknew = $newfiles{$checkfile} ;
+       $checkold = $oldfiles{$checkfile} ;
+       if ($checkold eq "") { warn "$checknew NOT found in OLD\n"; }
+       print "\nfile-type is $checkfile & newfile is $checknew\n";
+       print "\nfile-type is $checkfile & oldfile is $checkold\n"; 
+
+       print "\nacediff $olddir/$checkold $newdir/$checknew > $diffsdir/seqdiff.$checkfile.ace\n";
+       system ("acediff $olddir/$checkold $newdir/$checknew > $diffsdir/seqdiff.$checkfile.ace");
+       
+           
+   } # end foreach
+#system ("compress $checkold"); #this doesn't work says can't find file
+ #system ("compress $checknew"); #this doesn't work says can't find file
+system ("compress $olddir/*");
+system ("compress $newdir/*");
+
+} # end sub14    
+##################################################
+#diff seqace old PEPTIDE to new and transfer to updates/  
+#same as step 3 just change the names and paths  
+sub step15   #NEEDS PATHWAYS ALTERING
+{
+   #removed for brevity, same as sequence diffing etc.
+}# END SUB STEP 15
+##################################################
+#diff seqace old to new and transfer to updates/  
+#same as step 3 just change the names and paths  
+sub step16
+{
+    print "==================================================\n";
+    print "\nstep 16. MOVING FILES TO UPDATE DIRS\n\n";	
+    
+    chdir ("/nfs/disk76/sylvia3/SEQACE")|| die "can't find or get to dir SEQACE";
+    system("pwd");
+ #  opendir(UP,$updatedir) || warn "couldn't open $updatedir";
+#went wrong somewhere here last time needs fixing.................
+ #   while ($oldfile = readdir(DIFF))
+ #   {
+	#if ($oldfile =~ /diff/)
+	#{
+	#    print "oldfile= $oldfile\n";
+	#    push(@diff_files, $oldfile);
+	#}
+   # }
+
+   # foreach $f (0..$#diff_files)
+   # {
+	#print "the diff_file is $diff_files[$f]\n";
+	#print "mv $diffdir/$diff_files[$f] $updatedir/$diff_files[$f]\n";
+	#system ("mv $diffdir/$diff_files[$f] $updatedir/$diff_files[$f]"); 
+   # }
+
+}# END SUB STEP 16
+#######################################################################
+#MAIN PROGRAM
+
+print "have you made this months update dir and /or changed the program ?\n ";
+print "answer yes or no.................  ";
+$answer = <STDIN>;
+chop ($answer); #USE FOR STEPS NEEDING UPDATE DIRS
+if($answer eq "yes")
+{
+   #&step10(); a human step checking seqace and correcting sequences/authors etc.
+   #&step11(); # dump seqace inc peptide
+   #&step12(); # tidying SEQ directories
+   #&step13(); # tidying PEP directories THIS IS USELESS
+ 
+   #&step14(); # diff seqace, put into update dir  
+   #&step15(); # diff peptide  put into update dir 
+   #&step16(); # MOVING FILES TO CURRENT UPDATE DIR
+}
+#embl longtexts left out of all this
+
+
+

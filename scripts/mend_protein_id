@@ -1,0 +1,60 @@
+#!/usr/local/bin/perl
+#
+# mend_protein_id
+# v0.1
+# 2000-08-17
+# dl
+#
+# Usage : mend_protein_id <file>
+#
+# <file> is a list of ?Sequence objects with corrupted protein_id's
+#
+###########################################################
+#
+
+my $stlacepath="/wormsrv2/stlace";
+
+while (<>) {
+    
+    ($CDS) = (/^Sequence : \"(\S+)\"/);
+    next unless $CDS;
+    print "\nSequence : \"$CDS\"\n-D Protein_id\n\nSequence : \"$CDS\"\n";
+    
+    ($clone,$dot) = split (/\./,$CDS);
+
+$command=<<EOF;
+query find Sequence $CDS
+show -a Protein_id
+quit
+EOF
+
+    open (textace, "echo '$command' | /nfs/disk100/wormpub/acedb/ace4/bin.ALPHA_4/giface $stlacepath |");
+    while (<textace>) {
+	chomp;
+	$|=0;
+	if (/Protein_id\s+\"(\S+)\"\s+\"(\d+)\"/) {
+	    print "Protein_id  \"$clone\" $1 $2\n";
+	}
+	undef $CDS;
+    }
+}
+exit(0);
+
+
+__END__
+
+=pod
+
+=head1 NAME - mend_protein_id
+
+=head2 USAGE
+
+mend_protein_id <file>
+
+=head2 DESCRIPTION
+
+mend_protein_id runs against an ACEDB database with corrupted 
+protein_id fields. The input for the script is an .ace name
+file of objects in the database with corrupted protein_id
+fields.
+

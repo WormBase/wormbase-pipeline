@@ -1,0 +1,240 @@
+#!/usr/local/bin/perl
+#
+# submit_TO_SUBMIT
+# v 0.2
+#
+# dl
+
+# Usage : submit_TO_SUBMIT
+#
+# This script will mail the contents of ~wormpub/analysis/TO_SUBMIT
+# to celegans@ebi.ac.uk.
+#
+
+# v0.2
+# 001103 : dl1 : Added some error-trapping and logging
+# 001108 : dl1 : Mended bug => trailing newline in STDIN input
+# 001108 : dl1 : Mended bug => opendir line for assigning .embl files to @filenames
+
+# v0.1
+# Steven Jones, 1995, Sanger Centre.
+
+$|=1;
+use IO::Handle;
+use Getopt::Std;
+require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
+
+ ##############################
+ # command-line options       #
+ ##############################
+
+$opt_e = "";   # e-mail account to submit to (Default celegans)
+$opt_h = "";   # Help/Usage page
+getopts ('eh');
+&usage if ($opt_h);
+
+if (!$opt_e) {
+    $EMBL_email = "celegans\@ebi.ac.uk";
+}
+else {
+    $EMBL_email = shift;
+}
+
+unless ($EMBL_email =~ /\@/) {
+    print "E-mail address is not valid\n";
+    &usage;
+}
+
+ ##############################
+ # Script variables (run)     #
+ ##############################
+
+my $maintainer = "dl1\@sanger.ac.uk";
+my $rundate = `date +%y%m%d`; chomp $rundate;
+my $runtime = `date +%H:%M:%S`; chomp $runtime;
+my $version = &get_script_version(submit_TO_SUBMIT_contents);
+my $log="/wormsrv2/logs/submit_TO_SUBMIT.$rundate.$$";
+
+ ##############################
+ # Paths etc                  #
+ ##############################
+
+my $embl_files = "/nfs/disk100/wormpub/analysis/TO_SUBMIT";
+my $total      = "0";
+my $verify     = "0";
+
+ ##############################
+ # Paths etc                  #
+ ##############################
+
+open (LOG,">$log");
+LOG->autoflush();
+print LOG "# submit_TO_SUBMIT\n";
+print LOG "# version         : $version\n";
+print LOG "# run details     : $rundate $runtime\n";
+print LOG "# E-mail account  : $EMBL_email\n\n";
+
+opendir(DIR,"$embl_files");
+@filenames = grep(/\.embl$/,readdir(DIR));
+close DIR;
+
+foreach $file (@filenames) {
+    print "$file\n";
+    $total++;
+}
+
+print LOG "$total cosmids found in $embl_files\n\n";
+
+print "\n$total cosmids found in $embl_files\n";
+print "\nAll of these will be submitted to $EMBL_email\n\n";
+print "Do you wish to proceed???(y or n)\n\n";
+
+my $answer=<STDIN>;
+chop($answer);
+if ($answer ne "y") {
+    print LOG "Submission Aborted\n\n";
+    die "\nSubmission aborted\n";
+}
+
+open(files, "ls $embl_files |");
+while (<files>) {
+    chop;
+    if (/embl$/) { 
+	print "Mailing $embl_files/$_\n";
+	print LOG "Mailing $embl_files/$_\n";
+	$verify++;
+	system ("/usr/ucb/Mail $EMBL_email < $embl_files/$_");
+    }
+}
+close files;
+
+print LOG "\nSubmission complete\n";
+print LOG "$verify cosmids submissions in $embl_files\n\n";
+close LOG;
+
+###############################
+# a extremidade               #
+###############################
+
+exit(0);
+
+#####################################################################################################
+#
+# Subroutines:
+#
+# usage
+#
+#####################################################################################################
+
+
+
+#######################################################################
+# Prints help and disappears                                          #
+#######################################################################
+
+sub usage {
+    exec ('perldoc',$0);
+}
+
+__END__
+
+=pod
+
+=head2   NAME - submit_TO_SUBMIT_contents
+
+=head1 USAGE
+
+=over 4
+
+=item submit_TO_SUBMIT_contents [-options]
+
+=back
+
+submit_TO_SUBMIT_contents will mail the contents of the /TO_SUBMIT directory to the
+EMBL e-mail submission process
+
+update_totals mandatory arguments:
+
+=over 4
+
+=item none
+
+=back
+
+update_totals OPTIONAL arguments:
+
+=over 4
+
+=item -h, Help
+
+=back
+
+=head1 CRON
+
+=over 4
+
+=item No
+
+=back
+
+=head1 INPUT
+
+The following files are required:
+
+=over 4
+
+=item none
+
+=back
+
+=head1 OUTPUT
+
+The following files are produced:
+
+=over 4
+
+=item none
+
+=back
+
+=head1 REPORT LOGGING
+
+The script writes a logfile which is both written to disk
+
+=head1 AUTHOR
+
+=over 4
+
+=item Steve Jones (sjj@sanger.ac.uk)
+
+=back
+
+=head1 VERSIONS
+
+=over 4
+
+=item v0.2
+
+=back
+
+Added some more options within the script for logging etc [dl]
+
+=over 3
+
+=item v0.1
+
+Steve's original script
+
+=back
+
+=cut
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,79 @@
+#!/usr/local/bin/perl 
+
+#Script to dump out status tables for ncbi and ebi to 
+#pick up. 
+#
+#Tony Cox, 1998, Sanger Centre. 
+
+my (@I,@II,@III,@IV,@V,@X) = (); 
+my $home = "/nfs/disk100/wormpub/avc";
+my $db = "/nfs/disk100/wormpub/acedb/ace4/cam";    
+
+
+
+
+#print "Running: $home/taql -q  $db < $home/aql_query.chrom1\n";
+
+open(AQL, "$home/taql -q  $db < $home/aql_query2 |") or die "Cannot open AQL query\n";
+@results = <AQL>;
+close (AQL);
+
+
+foreach $line (@results){
+
+
+	if ($line =~ /\w/){	#line contains stuff
+
+		chop($line);
+
+		my @f = split /\t/, $line, 6;
+		$newline = join("\t",@f),"\n";
+
+		if ($newline =~ /Sequence-I\b/){ push (@I,$newline);}
+		if ($newline =~ /Sequence-II\b/){ push (@II,$newline);}
+		if ($newline =~ /Sequence-III\b/){ push (@III,$newline);}
+		if ($newline =~ /Sequence-IV\b/){ push (@IV,$newline);}
+		if ($newline =~ /Sequence-V\b/){ push (@V,$newline);}
+		if ($newline =~ /Sequence-X\b/){ push (@X,$newline);}
+		
+	}
+}
+
+open (TABLE, ">/nfs/disk69/ftp/pub/databases/C.elegans_sequences/STATUS_TABLES/I.table") or die "Cannot open I:$!\n";
+foreach $line (@I){
+	print TABLE "$line\n";
+}
+close (TABLE);
+
+open (TABLE, ">/nfs/disk69/ftp/pub/databases/C.elegans_sequences/STATUS_TABLES/II.table") or die "Cannot open II:$!\n";
+foreach $line (@II){
+	print TABLE "$line\n";
+}
+close (TABLE);
+
+open (TABLE, ">/nfs/disk69/ftp/pub/databases/C.elegans_sequences/STATUS_TABLES/III.table") or die "Cannot open III:$!\n";
+foreach $line (@III){
+	print TABLE "$line\n";
+}
+close (TABLE);
+
+open (TABLE, ">/nfs/disk69/ftp/pub/databases/C.elegans_sequences/STATUS_TABLES/IV.table") or die "Cannot open IV:$!\n";
+foreach $line (@IV){
+	print TABLE "$line\n";
+}
+close (TABLE);
+
+open (TABLE, ">/nfs/disk69/ftp/pub/databases/C.elegans_sequences/STATUS_TABLES/V.table") or die "Cannot open V:$!\n";
+foreach $line (@V){
+	print TABLE "$line\n";
+}
+close (TABLE);
+
+open (TABLE, ">/nfs/disk69/ftp/pub/databases/C.elegans_sequences/STATUS_TABLES/X.table") or die "Cannot open X:$!\n";
+foreach $line (@X){
+	print TABLE "$line\n";
+}
+close (TABLE);
+
+exit(0);
+

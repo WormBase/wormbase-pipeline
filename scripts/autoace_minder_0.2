@@ -1,0 +1,336 @@
+#!/usr/local/bin/perl
+#
+# autoace_minder
+# v 0.2
+#
+# dl
+#
+# Usage : autoace_minder [-options]
+#
+
+# v0.2 
+# 001109 : dl  : Added 'dbcomp' into the check subroutine
+# 001020 : dl  : Modified '-2' option to just dump the DNA
+#              : simpler and quicker for checking 
+#              : still run full DNA/GFF dump as part of the -b build
+
+# v0.1
+# 001006 : ag3 : fixed variable WS_version
+# 000926 : dl  : PP version
+
+#################################################################################
+# Initialise variables                                                          #
+#################################################################################
+
+$|=1;
+use IO::Handle;
+use Getopt::Std;
+require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
+
+ ##############################
+ # Script variables (run)     #
+ ##############################
+
+my $maintainer = "dl1\@sanger.ac.uk";
+my $rundate = `date +%y%m%d`; chomp $rundate;
+my $runtime = `date +%H:%M:%S`; chomp $runtime;
+my $version = &get_script_version(autoace_minder);
+
+ ##############################
+ # command-line options       #
+ ##############################
+
+$opt_a="";   # Full release (does all the following)
+$opt_w="";   # Write .acefiles
+$opt_b="";   # Build autoace 
+$opt_1="";   # Build autoace : DB only
+$opt_2="";   # Build autoace : CHROMOSOMES directory
+$opt_3="";   # Build autoace : Release directory
+$opt_c="";   # Check DB consistency
+$opt_p="";   # Build wormpep
+$opt_f="";   # Wormbase release to FTP site
+$opt_z="";   # Public release to FTP site
+$opt_d="";   # Verbose debug mode
+$opt_h="";   # Help/Usage page
+
+getopts ('awbchpfzdrg123');
+&usage(0) if ($opt_h);
+
+#################################################################################
+# Get the WS version number and set the wormpep release number                  #
+#################################################################################
+
+$Wormbase_release_file = "/wormsrv2/autoace_config/WormBase_release_version";
+$scriptdir = glob "~wormpub/analysis/scripts" ;
+
+&usage(1) unless (-e $Wormbase_release_file);
+open (WormBase_release, $Wormbase_release_file);
+while (<WormBase_release>) {
+    chomp;
+    $WS_version = substr ($_,2);
+}
+close (WormBase_release);
+
+$WS_previous = $WS_version -1;
+$WP_version = $WS_version + 10;
+
+ ########################################
+ # if all then set all flags            #
+ ########################################
+
+if ($opt_a) {
+    $opt_w = 1; $opt_b = 1; $opt_c = 1; $opt_p = 1;
+}
+
+ ########################################
+ # Open logfile                         #
+ ########################################
+
+my $logfile = "/wormsrv2/logs/autoace_minder.WS${WS_version}.${rundate}.$$";
+open (LOG,">$logfile");
+LOG->autoflush();
+
+print LOG "# autoace_minder\n\n";     
+print LOG "# version        : $version\n";
+print LOG "# run details    : $rundate $runtime\n";
+print LOG "\n";
+print LOG "WormBase version : WS${WS_version}\n";
+print LOG "Wormpep version  : wormpep${WP_version}\n\n";
+
+print LOG "======================================================================\n";
+print LOG "  -a : Full WS release (executes all of the following -wbcp)\n" if ($opt_a);
+print LOG "  -w : Write .acefiles from WormBase copies of the databases\n" if ($opt_w);
+print LOG "  -b : Build autoace\n" if ($opt_b);
+print LOG "  -1 : Build autoace : DB only\n" if ($opt_1);
+print LOG "  -2 : Build autoace : DNA data\n" if ($opt_2);
+print LOG "  -3 : Build autoace : Release directory\n" if ($opt_3);
+print LOG "  -c : Check DB consistency and diffs from previous version\n" if ($opt_c);
+print LOG "  -p : Build wormpep database\n" if ($opt_p);
+print LOG "  -f : Move WS release to the ftp-wormbase site (WormBase private release)\n" if ($opt_f);
+print LOG "  -z : Move WS release to the external FTP site (Full public release)\n" if ($opt_z);
+print LOG "  -d : Verbose/Debug mode\n" if ($opt_d);
+print LOG "======================================================================\n";
+print LOG "\n";
+
+#################################################################################
+# Main Loop                                                                     #
+#################################################################################
+
+&make_acefiles      if ($opt_w);
+&make_autoace       if ($opt_b);
+&make_DB            if ($opt_1);
+&make_DNA           if ($opt_2);
+&make_release       if ($opt_3);
+&check_release      if ($opt_c);
+&make_wormpep       if ($opt_p);
+&make_FTP_wormbase  if ($opt_f);
+&make_anonymous_FTP if ($opt_z);
+
+ ##############################
+ # mail $maintainer report    #
+ ##############################
+
+close LOG;
+
+open (mailLOG, "|/usr/bin/mailx -s \"WormBase Report: autoace_minder\" $maintainer ");
+open (readLOG, "<$logfile");
+while (<readLOG>) {
+    print mailLOG $_;
+}
+close readLOG;
+close mailLOG;
+
+ ##############################
+ # hasta luego                #
+ ##############################
+
+exit(0);
+
+
+
+#################################################################################
+### Subroutines                                                               ###
+#################################################################################
+
+
+
+#################################################################################
+# make_acefiles                                                                 #
+#################################################################################
+
+sub make_acefiles {
+    system ("$scriptdir/make_acefiles -nep");
+    print LOG " Write acefiles to disk\n";
+    print LOG " => 'make_acefiles -nep'\n\n";
+}
+
+#################################################################################
+# make_autoace                                                                  #
+#################################################################################
+
+sub make_autoace {
+    system ("$scriptdir/make_autoace -p /wormsrv2/autoace -rdc");
+    print LOG " Build full autoace (database/CHROMOSOMES/release)\n";
+    print LOG " =>'make_autoace -p /wormsrv2/autoace -rdc'\n\n";
+}
+
+sub make_DB {
+    system ("$scriptdir/make_autoace -p /wormsrv2/autoace -r");
+    print LOG " Build autoace (database)\n";
+    print LOG " => 'make_autoace -p /wormsrv2/autoace -r'\n\n";
+}
+
+sub make_DNA {
+    system ("$scriptdir/dna_dump /wormsrv2/autoace");
+    print LOG " Build autoace (CHROMOSOMES)\n";
+    print LOG " =>'dna_dump /wormsrv2/autoace'\n\n";
+
+}
+
+sub make_release {
+    system ("$scriptdir/make_autoace -p /wormsrv2/autoace -d");
+    print LOG " Build autoace (release)\n";
+    print LOG " => 'make_autoace -p /wormsrv2/autoace -d'\n\n";
+}
+
+#################################################################################
+# check_release                                                                 #
+#################################################################################
+
+sub check_release {
+
+    system ("$scriptdir/dbcomp -f /wormsrv2/WS${WS_previous}");
+    print LOG " Make dbcomp report\n";
+    print LOG " => 'dbcomp -f /wormsrv2/WS${WS_previous}'\n\n";
+
+}
+
+#################################################################################
+# make_wormpep                                                                  #
+#################################################################################
+
+sub make_wormpep {
+    system ("$scriptdir/make_wormpep $WP_version");
+    print LOG " Build wormpep release\n";
+    print LOG " =>'make_wormpep $WP_version'\n\n";
+}
+
+#################################################################################
+# make_FTP_wormbase                                                             #
+#################################################################################
+
+sub make_FTP_wormbase {
+    system ("$scriptdir/make_FTP_wormbase");
+    print LOG " Move version to ftp-wormbase\n";
+    print LOG " => 'make_FTP_wormbase\n\n";
+}
+
+#################################################################################
+# make_anonymous_FTP
+#################################################################################
+
+sub make_anonymous_FTP {
+
+
+
+}
+
+
+#######################################################################
+# Help and error trap outputs                                         #
+#######################################################################
+
+sub run_details {
+    print "# autoace_minder\n\n";     
+    print "# version        : $version\n";
+    print "# run details    : $rundate $runtime\n";
+    print "\n";
+    print "WormBase version : WS${WS_version}\n";
+    print "Wormpep version  : wormpep${WP_version}\n";
+    print "\n";
+    print "  -a : Full WS release (executes all of the following -wbcp)\n" if ($opt_a);
+    print "  -w : Write .acefiles from WormBase copies of the databases\n" if ($opt_w);
+    print "  -b : Build autoace\n" if ($opt_b);
+    print "  -1 : Build autoace : DB only\n" if ($opt_1);
+    print "  -2 : Build autoace : DNA data\n" if ($opt_2);
+    print "  -3 : Build autoace : Release directory\n" if ($opt_3);
+    print "  -c : Check DB consistency and diffs from previous version\n" if ($opt_c);
+    print "  -p : Build wormpep database\n" if ($opt_p);
+    print "  -f : Move WS release to the ftp-wormbase site (WormBase private release)\n" if ($opt_f);
+    print "  -z : Move WS release to the external FTP site (Full public release)\n" if ($opt_z);
+    print "  -d : Verbose/Debug mode\n" if ($opt_d);
+    print "\n\n";
+}
+
+sub usage {
+    my $error = shift;
+
+    if ($error == 1) {
+	# No WormBase release number file
+	print "The WormBase release number cannot be parsed\n";
+	print "Check File: '$Wormbase_release_file'\n\n";
+	&run_details;
+	exit(0);
+    }
+    elsif ($error == 0) {
+	# Normal help menu
+	exec ('perldoc',$0);
+	exit (0);
+    }
+}
+
+
+__END__
+
+=pod
+
+=head2   NAME - autoace_minder
+
+=head1 USAGE
+
+=over 4
+
+=item autoace_minder [-options]
+
+=back
+
+autoace_minder is a wrapper to drive the various scripts utilised in the
+build of a C.elegans WS database release.
+
+autoace_minder mandatory arguments:
+
+=over 4
+
+=item none, (but it won't do anything)
+
+=back
+
+autoace_minder OPTIONAL arguments:
+
+=over 4
+
+=item -a, Full WS release (executes all of the following -wbcp)
+
+=item -w, Write .acefiles from WormBase copies of the databases
+
+=item -b, Build autoace
+
+=item -1, Build autoace : Database only
+
+=item -2, Build autoace : Dump DNA
+
+=item -3, Build autoace : release directory
+
+=item -c, Check DB consistency and diffs from previous version
+
+=item -p, Build wormpep database
+
+=item -f, Move WS release to the ftp-wormbase site (WormBase private release)
+
+=item -z, Move WS release to the external FTP site (Full public release)
+
+=item -d, Verbose/Debug mode
+
+=back
+
+=cut

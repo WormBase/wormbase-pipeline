@@ -1,0 +1,21 @@
+#!/usr/local/bin/perl
+
+
+$database = shift;
+
+$/=">";
+
+open (SHOTGUN, "$database") || die "Can't access database file";
+while (<SHOTGUN>) {
+
+    chop $_;
+    
+    ($clone) = /^(\S+)\s+/;
+    print "dumping Genome sequence: '$clone'\n";
+    open (OUT, ">${clone}.seq");
+    print OUT ">$_";
+    close OUT;
+}
+
+$/="\n";
+exit;

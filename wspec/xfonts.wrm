@@ -1,0 +1,40 @@
+// @(#)xfonts.wrm	1.3    8/3/94
+
+// xfonts to be used by xace
+// So far, the format is free, 
+// Just put the font names in "" if they contain special characters.
+//
+// To list fonts available on your computer first type
+// xset -display $DISPLAY q      #This will show you the font path +more
+// xset -display $DISPLAY fp = more_font_path    # To add more paths
+// xlsfonts   # to list the available fonts
+//
+// Now copy part of that list in this file
+
+// You MUST list 24 fonts since the code expects them.
+// These 24 fonts are referred internally as:
+
+// enum FONTTYPE { F8x13,  F5x8,  F6x9,  F6x10,  F6x12,  F9x15,
+//		   F8x13I, F5x8I, F6x9I, F6x10I, F6x12I, F9x15I, 
+//		   F8x13B, F5x8B, F6x9B, F6x10B, F6x12B, F9x15B, 
+//                 G13,    G6,    G8,    G10,    G12,    G15 }
+
+// Standard
+8x13  5x8 6x9 6x10 6x12 9x15
+
+// Italic
+"-schumacher-clean-medium-i-normal--12-120-75-75-c-60-iso8859-1"
+"-schumacher-clean-medium-i-normal--8-80-75-75-c-80-iso8859-1"
+"-schumacher-clean-medium-i-normal--12-120-75-75-c-60-iso8859-1"
+"-schumacher-clean-medium-i-normal--8-80-75-75-c-80-iso8859-1"
+"-schumacher-clean-medium-i-normal--12-120-75-75-c-60-iso8859-1"
+"-schumacher-clean-medium-i-normal--8-80-75-75-c-80-iso8859-1"
+// c12iluci is a good italic font under openwin (Cartinhour)
+
+// Bold
+8x13bold 5x8 6x9 6x10 6x13bold 9x15bold
+
+// Greek
+// symbol10 symbol8 symbol10 symbol12 symbol18 symbol24 // on Dec
+8x13 5x8 6x9 6x10 6x12 9x15 // no good general solution
+

@@ -1,0 +1,15 @@
+#! /bin/csh
+# script to clean a file 
+
+switch ($#argv)
+  case "2": 
+	breaksw
+  default: 
+	echo 'Usage: seqclean confile cleanfile'
+	exit 2
+endsw
+
+sed -f ~wormpub/analysis/scripts/toseq.sed < $1 | seqpress >! $2
+
+exit
+

@@ -1,0 +1,32 @@
+#!/usr/local/bin/perl
+
+
+$query = shift;
+
+#open (sequences, "/usr/local/pubseq/bin/getz -d  -f \"id acc org des\" \'([emblnew-org:nematoda\! caenorhabditis elegans] \& [emblnew-key:est]) | ([embl-org:nematoda\! caenorhabditis elegans] \& [embl-key:est])\' |");
+
+
+# just the sequence
+# open (sequences, "/usr/local/pubseq/bin/getz -d \"[libs={emblnew embl}-ProtID_e:$query]\" |");
+
+# just the feature table
+ open (sequences, "/usr/local/pubseq/bin/getz -t \"[libs={swissnew swissprot}-prd:$query]\" |");
+
+
+# full entry of parent 
+# open (sequences, "/usr/local/pubseq/bin/getz -e \"[libs={emblnew embl}-ProtID_e:$query]\" |");
+
+
+
+while (<sequences>) {
+	
+if (/entry/) {next;}
+print $_;	
+
+}
+
+exit;
+
+
+
+# CAA88054.1

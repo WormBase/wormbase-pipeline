@@ -1,0 +1,57 @@
+#!/bin/csh -f
+
+unlimit
+
+switch ($#argv)
+  case "1":
+        breaksw
+  default:
+        echo 'Usage: chrom_dump_3.0 autoace_directory' ; exit 1
+endsw
+
+
+cd $1
+
+/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_4/giface . >! CHROMOSOMES/chrom_dump.log <<EOF
+find sequence CHROMOSOME_I
+dna -f CHROMOSOMES/CHROMOSOME_I.dna
+find sequence CHROMOSOME_II
+dna -f CHROMOSOMES/CHROMOSOME_II.dna
+find sequence CHROMOSOME_III
+dna -f CHROMOSOMES/CHROMOSOME_III.dna
+find sequence CHROMOSOME_IV
+dna -f CHROMOSOMES/CHROMOSOME_IV.dna
+find sequence CHROMOSOME_V
+dna -f CHROMOSOMES/CHROMOSOME_V.dna
+find sequence CHROMOSOME_X
+dna -f CHROMOSOMES/CHROMOSOME_X.dna
+gif seqget CHROMOSOME_I ; seqfeatures -version 2 -file CHROMOSOMES/CHROMOSOME_I.gff
+gif seqget CHROMOSOME_II ; seqfeatures -version 2 -file CHROMOSOMES/CHROMOSOME_II.gff
+gif seqget CHROMOSOME_III ; seqfeatures -version 2 -file CHROMOSOMES/CHROMOSOME_III.gff
+gif seqget CHROMOSOME_IV ; seqfeatures -version 2 -file CHROMOSOMES/CHROMOSOME_IV.gff
+gif seqget CHROMOSOME_V ; seqfeatures -version 2 -file CHROMOSOMES/CHROMOSOME_V.gff
+gif seqget CHROMOSOME_X ; seqfeatures -version 2 -file CHROMOSOMES/CHROMOSOME_X.gff
+EOF
+
+cd CHROMOSOMES
+/bin/cat *.dna | /nfs/disk100/wormpub/bin.ALPHA/composition >! composition.all
+/usr/local/bin/perl -ne 'if (/(\d+) total/) { $t = $1 ; print $t ; } if (/- (\d+)/) { $t -= $1 ; print " $t\n" ; }' composition.all >! totals
+
+\rm *.dna.gz
+\rm *.gff.gz
+/bin/gzip CHROMOSOME_I.dna
+/bin/gzip CHROMOSOME_I.gff
+/bin/gzip CHROMOSOME_II.dna
+/bin/gzip CHROMOSOME_II.gff
+/bin/gzip CHROMOSOME_III.dna
+/bin/gzip CHROMOSOME_III.gff
+/bin/gzip CHROMOSOME_IV.dna
+/bin/gzip CHROMOSOME_IV.gff
+/bin/gzip CHROMOSOME_V.dna
+/bin/gzip CHROMOSOME_V.gff
+/bin/gzip CHROMOSOME_X.dna
+/bin/gzip CHROMOSOME_X.gff
+
+
+
+
