@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w                  
 #
-# Last updated by: $Author: wormpipe $     
-# Last updated on: $Date: 2004-01-27 17:15:56 $      
+# Last updated by: $Author: ar2 $     
+# Last updated on: $Date: 2004-08-17 15:37:09 $      
 
 use strict;
 use Getopt::Long;
@@ -39,6 +39,9 @@ open (FASTA, ">$fasta") or die "cant write $fasta\n";
 #LHAVSLEQHLLDQIRIVFPKAIFPVWVDQQTYIFIQIVALIPAASYGRLETDTKLLIQPK
 #TRRAKENTFSKADAEYKKLHSYGRDQKGMMKELQTKQLQSNTVGITESNENESEIPVDSS
 #SVASLWTMIGSIFSFQSEKKQETSWGLTEINAFKNMQSKVVPLDNIFRVCKSQPPSIYNA
+
+# new UniProt style 
+# UniProt/Swiss-Prot:O95180-2|UniProt/TrEMBL:Q9NYY7;Q9NYY6
 
 # remove previous versions of the databases
 `rm -f $output_dir/acc2db.dbm` if ( -e "$output_dir/acc2db.dbm" );
@@ -81,6 +84,7 @@ while (<DATA>) {
 	  next;
 	}	      
       }
+      $db =~ s/UniProt\///;
       $databases{$db} = $acc;
     }
     # select primary database
@@ -88,13 +92,13 @@ while (<DATA>) {
       $prim_DB = "ENSEMBL";
       $prim_DB_id = $databases{'ENSEMBL'};
     }
-    elsif( $databases{'SWISS-PROT'} ) {
+    elsif( $databases{'Swiss-Prot'} ) {
       $prim_DB = "SW";
-      $prim_DB_id = $databases{'SWISS-PROT'};
+      $prim_DB_id = $databases{'Swiss-Prot'};
     }
-    elsif( $databases{'TREMBL'} ){
+    elsif( $databases{'TrEMBL'} ){
       $prim_DB = "TR";
-      $prim_DB_id = $databases{'TREMBL'};
+      $prim_DB_id = $databases{'TrEMBL'};
     }
     else {
       $dont_read_pep = 1;
