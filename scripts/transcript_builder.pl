@@ -7,7 +7,7 @@
 # Script to make ?Transcript objects
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2004-06-24 14:30:54 $
+# Last updated on: $Date: 2004-09-01 11:01:37 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -72,9 +72,8 @@ if ( $test ) {
 #setup directory for transcript
 my $transcript_dir = "$database/TRANSCRIPTS";
 &run_command("mkdir $transcript_dir") unless -e "$transcript_dir";
-&run_command("rm -f $transcript_dir/*");
 
-die unless $log;
+die "cant create log file\n\n" unless $log;
 
 my $coords;
 # write out the transcript objects
@@ -114,7 +113,7 @@ foreach my $chrom ( @chromosomes ) {
 
   $gff_file = $gff ? $gff : "$gff_dir/CHROMOSOME_$chrom.gff";
 
-  open (GFF,"<$gff_file") or die "gff_file\n";
+  open (GFF,"<$gff_file") or $log->log_and_die("gff_file\n");
   $log->write_to("reading gff file $gff_file\n");
 
   # parse GFF file to get CDS, exon and cDNA info
@@ -337,7 +336,7 @@ foreach my $chrom ( @chromosomes ) {
 
   my $out_file = "$transcript_dir/chromosome_$chrom.ace";
   print "writing output to $out_file\n";
-  open (FH,">$out_file") or die "cant open $out_file\n";
+  open (FH,">$out_file") or $log->log_and_die("cant open $out_file\n");
   foreach my $cds (@cds_objs ) {
     print "reporting : ",$cds->name,"\n" if $debug;
     $cds->report(*FH, $coords, $transformer);
@@ -467,7 +466,7 @@ sub load_EST_data
     my $pairs = "$database/EST_pairs.txt";
     
     if ( -e $pairs ) {
-      open ( PAIRS, "<$pairs") or die "cant open $pairs :\t$!\n";
+      open ( PAIRS, "<$pairs") or $log->log_and_die("cant open $pairs :\t$!\n");
       while ( <PAIRS> ) {
 	chomp;
 	s/\"//g;
