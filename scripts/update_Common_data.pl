@@ -1,11 +1,11 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/bin/perl5.8.0 -w
 #
 # update_Common_data.pl
 # 
 # by Anthony Rogers
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-04-04 18:01:42 $
+# Last updated on: $Date: 2003-10-01 08:11:52 $
 
 #################################################################################
 # Initialise variables                                                          #

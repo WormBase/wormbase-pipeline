@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/bin/perl5.8.0 -w
 #
 # new_wormpep_entries.pl
 #
@@ -9,7 +9,7 @@
 # mysql database prior for the pre-build pipeline.
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-02-27 15:39:05 $
+# Last updated on: $Date: 2003-10-01 08:13:20 $
 
 
 #################################################################################
