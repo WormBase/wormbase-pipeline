@@ -1,13 +1,29 @@
 #!/usr/local/bin/perl5.6.0 
 #
+# blat2ace.pl
+# kj2
+#
 # Exporter to map blat data to acedb and to find the best match for each EST
+#
+# -i  : get confirmed introns
+#
+# -c  : get best matches for camace
+# -s  : get best matches for stlace
+#
+# -e  : create output for ESTs 
+# -m  : create output for mRNAs 
+# -x  : create output for parasitic nematode ESTs (blatx)
+# -o  : create output for other CDS
+#
+# -h  : print help
+#
 # 010905 by Kerstin Jekosch
 
 use strict;
+use Data:Dumper;
 use Ace;
 use Getopt::Std;
-use vars qw($opt_i $opt_h $opt_a $opt_c $opt_m $opt_x);
-
+use vars qw($opt_i $opt_h $opt_s $opt_c $opt_e $opt_m $opt_o $opt_x);
 $| = 1;
 
 #############################
@@ -16,79 +32,93 @@ $| = 1;
  
 my $dir	      = "/wormsrv2/autoace/BLAT";
 my $dbdir     = "/wormsrv2/autoace";
-my $tace      = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace /wormsrv1/camace";
-my $autotace  = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace /wormsrv2/current_DB";
-my (%ESTs,%camace,%hash,%best,%other,%bestclone,%match,%ci,%dir);
+my $tace      = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace /wormsrv2/autoace";
+
+my %EST_name;    # EST accession => name
+my %EST_dir;     # EST accession => orientation [5|3]
+
+my %hash;
+my (%best,%other,%bestclone,%match,%ci);
+
+my %camace;
+my %stlace;
+
+our $type = "";
+our $db   = "";
+our %word = (
+	     EST      => 'BLAT_EST',
+	     mRNA     => 'BLAT_mRNA',
+	     EMBL     => 'BLAT_EMBL',
+	     NEMATODE => 'BLATX_NEMATODE',
+	     );
+
 open (LOG, ">$dir/blat2ace.log");
 
-$opt_i=""; # get confirmed introns
-$opt_a=""; # get best matches for autoace
-$opt_c=""; # get best matches for camace
-$opt_m=""; # do it for mRNAs (default is ESTs)  
-$opt_x=""; # do it for parasitic nematode ESTs (blatx)
-$opt_h=""; # print help
-getopts ('ihacmx');
-&printhelp if ($opt_h);
+ ########################################
+ # command-line options & ramifications #
+ ########################################
 
-#################
-# get EST names #
-#################
+getopts ('csemxoih');
 
-unless ($opt_m || $opt_x) {
-	print LOG "Making table query for EST names\n\n"; 
-	my $command1=<<EOF;
-	Table-maker -p "$dbdir/wquery/ESTacc2names.def"
-	quit
-EOF
-	open (TACE, "echo '$command1' | $tace | ");
-	while (<TACE>) {
-		chomp;
-		next if ($_ eq "");
-    	next if (/\/\//);
-    	s/acedb\>\s//g;
-    	s/\"//g;
-		s/EMBL://g;
-		my ($acc,$name) = ($_ =~ /^(\S+)\s(\S+)/);
-		unless ($name) {
-			$name = $acc;
-		} 
-		$ESTs{$acc} = $name;
-	}
-	close TACE;
+# Help pod documentation
+&usage(0) if ($opt_h);
+
+# Exit if no data type choosen [EST|mRNA|EMBL|NEMATODE]
+&usage(1) unless ($opt_e || $opt_m || $opt_o || $opt_x); 
+
+# Exit if multiple data types choosen [EST|mRNA|EMBL|NEMATODE]
+&usage(2) if (($opt_e + $opt_m + $opt_o + $opt_x) > 1);
+
+# assign type variable
+($type = 'EST')      if ($opt_e);
+($type = 'mRNA')     if ($opt_m);
+($type = 'EMBL')     if ($opt_o);
+($type = 'NEMATODE') if ($opt_x);
+
+# if no database option given then do both.
+# (i know but oranges are not the only fruit)
+($db = "camace")  if ($opt_c);
+($db = "stlace")  if ($opt_s);
+($db = "autoace") if (!$opt_c && !$opt_s);
+
+############################################
+# EST data from autoace (name,orientation) #
+############################################
+
+# check to see if EST hash data exists
+# make it via tablemaker queries if absent
+unless (-e /wormsrv2/autoace/BLAT/EST.dat) {
+    (%EST_name,%EST_dir) = &make_EST_hash;
+}
+# else read it into memory
+else {
+    open (FH, "</wormsrv2/autoace/BLAT/EST.dat") or die "EST.dat : $!\n";
+    undef $/;
+    $data = <FH>;
+    eval $data;
+    die if $@;
+    $/ = "\n";
+    close FH;
 }
 
-######################################
-# get orientation of ESTs (.3 or .5) #
-######################################
+#########################################
+# get links for database                #
+#########################################
 
-if ($opt_i && !$opt_m && !$opt_x) {
-	print LOG "Making table query for EST names\n\n"; 
-	my $command2=<<EOF;
-	Table-maker -p "$dbdir/wquery/ESTorient.def"
-	quit
-EOF
-	open (TACE, "echo '$command2' | $tace | ");
-	while (<TACE>) {
-		chomp;
-		next if ($_ eq "");
-    	next if (/\/\//);
-    	s/acedb\>\s//g;
-		s/\"//g;
-		my ($name,$orient) = ($_ =~ /^(\S+)\s+EST_(\d)/);
-		if ($orient) {
-			$dir{$name} = $orient;
-		}
-	}
-	close TACE;
-}
-
-###########################
-# get all links in camace #
-###########################
-
-my @camclones = qw(cTel3X cTel4X CTEL7X cTel33B CTEL54X LINK_6R55 LINK_cTel52S SUPERLINK_CB_I SUPERLINK_CB_II SUPERLINK_CB_IIIL SUPERLINK_CB_IIIR SUPERLINK_CB_IR SUPERLINK_CB_IV SUPERLINK_CB_V SUPERLINK_CB_X); 
-foreach my $camclone (@camclones) {
+# parse links for camace
+if ($opt_c) {
+    my @camclones = qw(cTel3X cTel4X cTel7X cTel33B cTel54X LINK_6R55 LINK_cTel52S SUPERLINK_CB_I SUPERLINK_CB_II SUPERLINK_CB_IIIL SUPERLINK_CB_IIIR SUPERLINK_CB_IR SUPERLINK_CB_IV SUPERLINK_CB_V SUPERLINK_CB_X); 
+    foreach my $camclone (@camclones) {
 	$camace{$camclone} = 1;
+    }
+}
+
+# parse links for stlace
+if ($opt_s) {
+    my @stlclones = qw(SUPERLINK_RW1 SUPERLINK_RW1R SUPERLINK_RW2 SUPERLINK_RW3A SUPERLINK_RW3B SUPERLINK_RW4 SUPERLINK_RW5 SUPERLINK_RWXL SUPERLINK_RWXR);
+    foreach my $stlclone (@stlclones) {
+	$stlace{$stlclone} = 1;
+    }
 }
 
 ############################
@@ -96,83 +126,68 @@ foreach my $camclone (@camclones) {
 ############################
 
 print LOG "Start mapping\n\n";
-if ($opt_m) {
-	open(BLAT,"$dir/mRNA_out.psl");
-	open(ACE,">$dir/autoace.mRNA.ace");
-	open(CCE,">$dir/camace.mRNA.ace") if ($opt_c);
-}
-elsif ($opt_x) {
-	open(BLAT,"$dir/nematode_out.psl");
-	open(ACE,">$dir/autoace.blat.nematode.ace");
-	open(CCE,">$dir/camace.blat.nematode.ace") if ($opt_c);
-}
-else {
-	open(BLAT,"$dir/est_out.psl");
-	open(ACE,">$dir/autoace.EST.ace");
-	open(CCE,">$dir/camace.EST.ace") if ($opt_c);
-}
+
+# output filehandle
+open(ACE,  ">$dir/${db}.$type.ace")  or die "Cannot open $dir/${db}.${type}.ace $!\n";
+
+# input filehandle
+open(BLAT, "<$dir/${type}_out.psl")  or die "Cannot open $dir/${type}_out.psl $!\n";
 while (<BLAT>) {
     next unless (/^\d/);
-
     my @f         = split "\t";
     my $superlink = $f[13];
-	my $slsize    = $f[14];
-	my $lastvirt  = int($slsize/100000) + 1; 
-	
+    my $slsize    = $f[14];
+    my $lastvirt  = int($slsize/100000) + 1; 
     
     #############################################################
     # replace EST name (usually accession number) by yk... name #
     #############################################################
 	
     my $est = $f[9];
-    if ((!$opt_m) && (!$opt_x) && (exists $ESTs{$est})) {
-		my $estname  = $ESTs{$est};
-		if ($est ne $estname) {
-	    	$est = $estname;
-	    	print LOG "EST name $est was replaced by $estname\n\n";
-		}
+    if (($opt_e)  && (exists $EST_name{$est})) {
+	my $estname  = $EST_name{$est};
+	if ($est ne $estname) {
+	    $est = $estname;
+	    print LOG "EST name $est was replaced by $estname\n\n";
+	}
     }
     my @lengths     = split (/,/, $f[18]);
     my @eststarts   = split (/,/, $f[19]);
     my @slinkstarts = split (/,/, $f[20]);
 
-	my $matchstart  = $f[15];
-	my $matchend    = $f[16];
+    my $matchstart  = $f[15];
+    my $matchend    = $f[16];
 
 	###############################
 	# find virtual superlink part #
 	###############################
 	
-	my ($virtual,$startvirtual,$endvirtual);
-	if ((int($matchstart/100000) +1) > $lastvirt) { $startvirtual = $lastvirt;}
-	else {$startvirtual = int($matchstart/100000) +1;}  
-	
-	if ((int($matchend/100000) +1) > $lastvirt) { $endvirtual = $lastvirt;}
-	else {$endvirtual = int($matchend/100000) +1;}  
-	
-	if ($startvirtual == $endvirtual) {
-		$virtual = "BLAT_EST:".$superlink."_".$startvirtual unless ($opt_m || $opt_x);
-		$virtual = "BLAT_mRNA:".$superlink."_".$startvirtual    if ($opt_m);
-		$virtual = "BLATX_NEMATODE:".$superlink."_".$startvirtual   if ($opt_x);
-	}	
-	elsif (($startvirtual == ($endvirtual - 1)) && (($matchend%100000) <= 50000)) {
-		$virtual = "BLAT_EST:".$superlink."_".$startvirtual unless ($opt_m || $opt_x);
-		$virtual = "BLAT_mRNA:".$superlink."_".$startvirtual    if ($opt_m);
-		$virtual = "BLATX_NEMATODE:".$superlink."_".$startvirtual   if ($opt_x);
-	}
-	else {
-		print LOG "$est wasn't assigned to a virtual object as match size was too big\n";
-		print LOG "Start is $matchstart, end is $matchend on $superlink\n\n";
-		next;
-	}
+    my ($virtual,$startvirtual,$endvirtual);
+    if ((int($matchstart/100000) +1) > $lastvirt) { $startvirtual = $lastvirt;}
+    else {$startvirtual = int($matchstart/100000) +1;}  
+    
+    if ((int($matchend/100000) +1) > $lastvirt) { $endvirtual = $lastvirt;}
+    else {$endvirtual = int($matchend/100000) +1;}  
+    
+    if ($startvirtual == $endvirtual) {
+	$virtual = "$word{$type}:${superlink}_${startvirtual}";
+    }	
+    elsif (($startvirtual == ($endvirtual - 1)) && (($matchend%100000) <= 50000)) {
+	$virtual = "$word{$type}:${superlink}_${startvirtual}";
+    }
+    else {
+	print LOG "$est wasn't assigned to a virtual object as match size was too big\n";
+	print LOG "Start is $matchstart, end is $matchend on $superlink\n\n";
+	next;
+    }
     
     ###################
     # calculate score #
     ###################
-	
-	my $sum 		= 0;
+
+    my $sum   = 0;
     foreach my $length (@lengths) {
-		$sum = $sum + $length;
+	$sum = $sum + $length;
     }	
     my $match = $f[0];
     my $score = $match/$sum*100;
@@ -182,201 +197,183 @@ while (<BLAT>) {
     #########################
     # calculate coordinates #
     #########################
+    
+    # need to allow for est exons in the next virtual object, otherwise they get remapped to the start 
+    # of the virtual by performing %100000
+    
+    my $calc = int(($slinkstarts[0]+1)/100000);
+    
+    for (my $x = 0;$x < $f[17]; $x++) {
+	my $newcalc      = int(($slinkstarts[$x]+1)/100000);
+	my $virtualstart;
+	if ($calc == $newcalc) {	
+	    $virtualstart = ($slinkstarts[$x] +1)%100000;
+	}
+	elsif ($calc == ($newcalc-1)) {
+	    $virtualstart = (($slinkstarts[$x] +1)%100000) + 100000;
+	}
+	my $virtualend   = $virtualstart + $lengths[$x] -1;
+	my ($eststart,$estend);
 	
-	# need to allow for est exons in the next virtual object, otherwise they get remapped to the start 
-	# of the virtual by performing %100000
-	my $calc = int(($slinkstarts[0]+1)/100000);
-	
-	for (my $x = 0;$x < $f[17]; $x++) {
-		my $newcalc      = int(($slinkstarts[$x]+1)/100000);
-		my $virtualstart;
-		if ($calc == $newcalc) {	
-			$virtualstart = ($slinkstarts[$x] +1)%100000;
+	# blatx 6-frame translation v 6-frame translation
+	if ($opt_x) {
+	    my $temp;
+	    if (($f[8] eq '++') || ($f[8] eq '-+')) {
+		$eststart   = $eststarts[$x] +1;
+		$estend     = $eststart + $lengths[$x] -1;
+		if ($f[8] eq '-+') {
+		    $temp     = $estend;
+		    $estend   = $eststart;
+		    $eststart = $temp; 
 		}
-		elsif ($calc == ($newcalc-1)) {
-		        $virtualstart = (($slinkstarts[$x] +1)%100000) + 100000;
+	    }
+	    elsif (($f[8] eq '--') || ($f[8] eq '+-')) {
+		$temp         = $virtualstart;
+		$virtualstart = $virtualend;
+		$virtualend   = $temp;
+		$eststart     = $f[10] - $eststarts[$x];
+		$estend       = $eststart - $lengths[$x] +1;
+		if ($f[8] eq '--') {
+		    $temp     = $estend;
+		    $estend   = $eststart;
+		    $eststart = $temp; 
 		}
-		my $virtualend   = $virtualstart + $lengths[$x] -1;
-		my ($eststart,$estend);
-		if ($opt_x) {
-			my $temp;
-			if (($f[8] eq '++') || ($f[8] eq '-+')) {
-	    		$eststart   = $eststarts[$x] +1;
-	    		$estend     = $eststart + $lengths[$x] -1;
-				if ($f[8] eq '-+') {
-					$temp     = $estend;
-					$estend   = $eststart;
-					$eststart = $temp; 
-				}
-			}
-			elsif (($f[8] eq '--') || ($f[8] eq '+-')) {
-				$temp         = $virtualstart;
-				$virtualstart = $virtualend;
-				$virtualend   = $temp;
-	    		$eststart     = $f[10] - $eststarts[$x];
-	    		$estend       = $eststart - $lengths[$x] +1;
-				if ($f[8] eq '--') {
-					$temp     = $estend;
-					$estend   = $eststart;
-					$eststart = $temp; 
-				}
-			}			
-		}
-		else {
-			if ($f[8] eq '+'){
-	    		$eststart   = $eststarts[$x] +1;
-	    		$estend     = $eststart + $lengths[$x] -1;
-			}
-			elsif ($f[8] eq '-') {
-	    		$eststart   = $f[10] - $eststarts[$x];
-	    		$estend     = $eststart - $lengths[$x] +1;
-			}		
-		}		
-		print LOG "$est was mapped to $virtual\n\n";
-		print ACE "Homol_data : \"$virtual\"\n";
-		printf ACE "DNA_homol\t\"%s\"\t\"BLAT_EST_OTHER\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$est,$score,$virtualstart,$virtualend,$eststart,$estend unless ($opt_m || $opt_x);
-		printf ACE "DNA_homol\t\"%s\"\t\"BLAT_mRNA_OTHER\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$est,$score,$virtualstart,$virtualend,$eststart,$estend     if ($opt_m);
-		printf ACE "DNA_homol\t\"%s\"\t\"BLATX_NEMATODE\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$est,$score,$virtualstart,$virtualend,$eststart,$estend    if ($opt_x);
-		if (($opt_c) && (exists $camace{$superlink})) {
-	    	print CCE "Homol_data : \"$virtual\"\n";
-	    	printf CCE "DNA_homol\t\"%s\"\t\"BLAT_EST_OTHER\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$est,$score,$virtualstart,$virtualend,$eststart,$estend unless ($opt_m|| $opt_x);
-	    	printf CCE "DNA_homol\t\"%s\"\t\"BLAT_mRNA_OTHER\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$est,$score,$virtualstart,$virtualend,$eststart,$estend    if ($opt_m);
-	    	printf CCE "DNA_homol\t\"%s\"\t\"BLATX_NEMATODE\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$est,$score,$virtualstart,$virtualend,$eststart,$estend   if ($opt_x);
-		}
+	    }			
+	}
+	else {
+	    if ($f[8] eq '+'){
+		$eststart   = $eststarts[$x] +1;
+		$estend     = $eststart + $lengths[$x] -1;
+	    }
+	    elsif ($f[8] eq '-') {
+		$eststart   = $f[10] - $eststarts[$x];
+		$estend     = $eststart - $lengths[$x] +1;
+	    }		
+	}		
+	print LOG "$est was mapped to $virtual\n\n";
 
-		push @exons, [$virtualstart,$virtualend,$eststart,$estend];				
+	# write to output file
+	print  ACE "Homol_data : \"$virtual\"\n";
+	printf ACE "DNA_homol\t\"%s\"\t\"$word{$type}_OTHER\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$est,$score,$virtualstart,$virtualend,$eststart,$estend;
+
+	push @exons, [$virtualstart,$virtualend,$eststart,$estend];				
     }
-	
-   	########################
-	# collect best matches #
-	########################
-	
+    
+    ########################
+    # collect best matches #
+    ########################
+    
     if (exists $best{$est}) {
-		if ($score >= $best{$est}->{'score'}) {
-	    	if ( ($score > $best{$est}->{'score'}) || ($match > $best{$est}->{'match'})) { 
-	    		$best{$est}->{'score'} = $score;
-				$best{$est}->{'match'} = $match;
-				@{$best{$est}->{'entry'}} = ({'clone' => $virtual,'link' => $superlink,'exons' => \@exons});
-	    	}
-	    	elsif ($match == $best{$est}->{'match'}) {
-	    		$best{$est}->{'score'} = $score;
-				push @{$best{$est}->{'entry'}}, {'clone' => $virtual,'link' => $superlink,'exons' => \@exons};
-	    	}
-		}
+	if ($score >= $best{$est}->{'score'}) {
+	    if ( ($score > $best{$est}->{'score'}) || ($match > $best{$est}->{'match'})) { 
+		$best{$est}->{'score'} = $score;
+		$best{$est}->{'match'} = $match;
+		@{$best{$est}->{'entry'}} = ({'clone' => $virtual,'link' => $superlink,'exons' => \@exons});
+	    }
+	    elsif ($match == $best{$est}->{'match'}) {
+		$best{$est}->{'score'} = $score;
+		push @{$best{$est}->{'entry'}}, {'clone' => $virtual,'link' => $superlink,'exons' => \@exons};
+	    }
+	}
     }
     else {
-		$best{$est}->{'match'} = $match;
-		$best{$est}->{'score'} = $score;
-		@{$best{$est}->{'entry'}} = ({'clone' => $virtual,'link' => $superlink,'exons' => \@exons});
+	$best{$est}->{'match'} = $match;
+	$best{$est}->{'score'} = $score;
+	@{$best{$est}->{'entry'}} = ({'clone' => $virtual,'link' => $superlink,'exons' => \@exons});
     }
 }
 close BLAT;
 close ACE;
-close CCE if ($opt_c);
 
-    
+#########################################
+# 
+#########################################
+
+
 ####################################
 # produce outfile for best matches #
 ####################################
 
-if ($opt_m) {
-	open(AUTBEST,">$dir/autoace.best.mRNA.ace");
-	open(CAMBEST,">$dir/camace.best.mRNA.ace") if ($opt_c);
-}
-else {
-	open(AUTBEST,">$dir/autoace.best.EST.ace");
-	open(CAMBEST,">$dir/camace.best.EST.ace") if ($opt_c);
-}
-if (!$opt_x) {
-	foreach my $found (sort keys %best) {
-    	if (exists $best{$found}) {
-			foreach my $entry (@{$best{$found}->{'entry'}}) {
-				if (@{$best{$found}->{'entry'}} < 2) {
-					my $virtual   = $entry->{'clone'};
-					my $superlink = $entry->{'link'};
-					foreach my $ex (@{$entry->{'exons'}}) {
-						my $score        = $best{$found}->{'score'};
-						my $virtualstart = $ex->[0];
-						my $virtualend   = $ex->[1];
-						my $eststart     = $ex->[2];
-						my $estend       = $ex->[3];
-						print  AUTBEST "Homol_data : \"$virtual\"\n";
-						printf AUTBEST "DNA_homol\t\"%s\"\t\"BLAT_EST_BEST\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$found,$score,$virtualstart,$virtualend,$eststart,$estend unless ($opt_m || $opt_x);
-						printf AUTBEST "DNA_homol\t\"%s\"\t\"BLAT_mRNA_BEST\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$found,$score,$virtualstart,$virtualend,$eststart,$estend    if ($opt_m);
-						if (($opt_c) && (exists $camace{$superlink})) {
-		    				print  CAMBEST "Homol_data : \"$virtual\"\n";
-		    				printf CAMBEST "DNA_homol\t\"%s\"\t\"BLAT_EST_BEST\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$found,$score,$virtualstart,$virtualend,$eststart,$estend unless ($opt_m || $opt_x);
-		    				printf CAMBEST "DNA_homol\t\"%s\"\t\"BLAT_mRNA_BEST\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$found,$score,$virtualstart,$virtualend,$eststart,$estend    if ($opt_m);
-						} 
-		    		}
+&usage(20) if ($opt_x);
 
-					#############################
-					# produce confirmed introns #
-					#############################
+open (AUTBEST, ">$dir/$db.best.$type.ace");
 
-					if ($opt_i) {
-						my ($n) = ($virtual =~ /\S+_(\d+)$/);
-						for (my $y = 1; $y < @{$entry->{'exons'}}; $y++) {
-							my $last   = $y-1;
-							my $first  = (${$entry->{'exons'}}[$last][1] + 1) + (($n-1)*100000);
-							my $second = (${$entry->{'exons'}}[$y][0] -1) + (($n-1)*100000);
-							$dir{$found} = 5 if ($opt_m);
-							if (${$entry->{'exons'}}[0][2] < ${$entry->{'exons'}}[0][3]) {
-								if ((${$entry->{'exons'}}[$y][2] == ${$entry->{'exons'}}[$last][3] + 1) && (($second - $first) > 2)) {
-									if (exists $dir{$found} && $dir{$found} eq '3') {
-										push @{$ci{$superlink}}, [$second,$first];
-									}
-									elsif (exists $dir{$found} && $dir{$found} eq '5') {
-										push @{$ci{$superlink}}, [$first,$second];
-									}
-									else {
-										print LOG "WARNING: Direction not found for $found\n\n";
-									}
-								}
-							}
-							elsif (${$entry->{'exons'}}[0][2] > ${$entry->{'exons'}}[0][3]) {
-								if ((${$entry->{'exons'}}[$last][3] == ${$entry->{'exons'}}[$y][2] + 1) && (($second - $first) > 2)) {
-									if (exists $dir{$found} && $dir{$found} eq '3') {
-										push @{$ci{$superlink}}, [$first,$second];
-									}
-									elsif (exists $dir{$found} && $dir{$found} eq '5') {
-										push @{$ci{$superlink}}, [$second,$first];
-									}
-									else {
-										print LOG "WARNING: Direction not found for $found\n\n";
-									}	
-								}
-							}
-						}
-					}
+foreach my $found (sort keys %best) {
+    if (exists $best{$found}) {
+	foreach my $entry (@{$best{$found}->{'entry'}}) {
+	    if (@{$best{$found}->{'entry'}} < 2) {
+		my $virtual   = $entry->{'clone'};
+		my $superlink = $entry->{'link'};
+		foreach my $ex (@{$entry->{'exons'}}) {
+		    my $score        = $best{$found}->{'score'};
+		    my $virtualstart = $ex->[0];
+		    my $virtualend   = $ex->[1];
+		    my $eststart     = $ex->[2];
+		    my $estend       = $ex->[3];
+		    
+		    # print line
+		    print  AUTBEST "Homol_data : \"$virtual\"\n";
+		    printf AUTBEST "DNA_homol\t\"%s\"\t\"$word{$type}_BEST\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$found,$score,$virtualstart,$virtualend,$eststart,$estend;
+		}
+		    
+		#############################
+		# produce confirmed introns #
+		#############################
+		
+		if ($opt_i) {
+		    my ($n) = ($virtual =~ /\S+_(\d+)$/);
+		    for (my $y = 1; $y < @{$entry->{'exons'}}; $y++) {
+			my $last   = $y-1;
+			my $first  = ${$entry->{"exons"}}[$last][1] + 1 + (($n-1)*100000);
+		    my $second =   (${$entry->{'exons'}}[$y][0]    - 1) + (($n-1)*100000);
+		$EST_dir{$found} = 5 if ($opt_m || $opt_o);
+		if (${$entry->{'exons'}}[0][2] < ${$entry->{'exons'}}[0][3]) {
+	    if ((${$entry->{'exons'}}[$y][2] == ${$entry->{'exons'}}[$last][3] + 1) && (($second - $first) > 2)) {
+	if (exists $EST_dir{$found} && $EST_dir{$found} eq '3') {
+					push @{$ci{$superlink}}, [$second,$first];
+				    }
+				    elsif (exists $EST_dir{$found} && $EST_dir{$found} eq '5') {
+					push @{$ci{$superlink}}, [$first,$second];
+				    }
+				    else {
+					print LOG "WARNING: Direction not found for $found\n\n";
+				    }
 				}
-			}	
-    	}
-	}
+                            }
+                            elsif (${$entry->{'exons'}}[0][2] > ${$entry->{'exons'}}[0][3]) {
+                                if ((${$entry->{'exons'}}[$last][3] == ${$entry->{'exons'}}[$y][2] + 1) && (($second - $first) > 2)) {
+		                    if (exists $EST_dir{$found} && $EST_dir{$found} eq '3') {
+                                        push @{$ci{$superlink}}, [$first,$second];
+                                    }
+                                    elsif (exists $EST_dir{$found} && $EST_dir{$found} eq '5') {
+                                        push @{$ci{$superlink}}, [$second,$first]; 
+                                    }
+                                    else {
+                                        print LOG "WARNING: Direction not found for $found\n\n";
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    # this section 'produce confirmed introns'
+
+
+            }	
+        }
+    }
 }
 close AUTBEST;
-close CAMBEST if $opt_c;
 
 ########################################################
 # produce final BLAT output (including BEST and OTHER) #
 ########################################################
 
-if ($opt_m) {
-	open(AOTHER,"$dir/autoace.mRNA.ace");
-	open(COTHER,"$dir/camace.mRNA.ace") if ($opt_c);
-	open(ABEST,"$dir/autoace.best.mRNA.ace");
-	open(CBEST,"$dir/camace.best.mRNA.ace") if ($opt_c);
-	open(AOUT,">$dir/autoace.blat.mRNA.ace");
-	open(COUT,">$dir/camace.blat.mRNA.ace") if ($opt_c);
-}
-elsif (!$opt_x) {	
-	open(AOTHER,"$dir/autoace.EST.ace");
-	open(COTHER,"$dir/camace.EST.ace") if ($opt_c);
-	open(ABEST,"$dir/autoace.best.EST.ace");
-	open(CBEST,"$dir/camace.best.EST.ace") if ($opt_c);
-	open(AOUT,">$dir/autoace.blat.EST.ace");
-	open(COUT,">$dir/camace.blat.EST.ace") if ($opt_c);
-}
+&usage(20) if ($opt_x);
+
+open(AOTHER, "$dir/${db}.$type.ace");
+open(ABEST,  "$dir/${db}.best.$type.ace");
+open(AOUT,  ">$dir/${db}.blat.$type.ace");
+
 
 my (%line);
 my $temp = $/;
@@ -393,33 +390,15 @@ while (<AOTHER>) {
 #	print $_;
 	if ($_ =~ /^Homol_data/) {
 		my $line = $_;
-		s/BLAT_EST_OTHER/BLAT_EST_BEST/g unless ($opt_m || $opt_x);
+		s/BLAT_EST_OTHER/BLAT_EST_BEST/g unless ($opt_m || $opt_o || $opt_x);
 		s/BLAT_mRNA_OTHER/BLAT_mRNA_BEST/g   if ($opt_m);
+		s/BLAT_EMBL_OTHER/BLAT_EMBL_BEST/g   if ($opt_o);
 		unless (exists $line{$_}) {
 			print AOUT $line;
 		}	
 	}
 }
 
-while (<CBEST>) {
-#	print $_;
-	if ($_ =~ /^Homol_data/) {
-		$line{$_} = 1;
-		print COUT $_;
-	}
-}
-
-while (<COTHER>) {
-#	print $_;
-	if ($_ =~ /^Homol_data/) {
-		my $line = $_;
-		s/BLAT_EST_OTHER/BLAT_EST_BEST/g unless ($opt_m || $opt_x);
-		s/BLAT_mRNA_OTHER/BLAT_mRNA_BEST/g   if ($opt_m);
-		unless (exists $line{$_}) {
-			print COUT $line;
-		}	
-	}
-}
 $/= $temp;
 
 ###################################
@@ -427,43 +406,141 @@ $/= $temp;
 ###################################
 
 if ($opt_i) {
-	if ($opt_m) {
-		open(ACI,">$dir/autoace.ci.mRNA.ace");
-		open(CCI,">$dir/camace.ci.mRNA.ace") if ($opt_c);
-	}
-	elsif (!$opt_x) {
-		open(ACI,">$dir/autoace.ci.EST.ace");
-		open(CCI,">$dir/camace.ci.EST.ace") if ($opt_c);
-	}
-	foreach my $superlink (sort keys %ci) {
-		my %double;
-		print ACI "Sequence : \"$superlink\"\n";
-		print CCI "Sequence : \"$superlink\"\n" if (($opt_c) && (exists $camace{$superlink}));
-		for (my $i = 0; $i < @{$ci{$superlink}}; $i++) {
-			my $merge = $ci{$superlink}->[$i][0].":".$ci{$superlink}->[$i][1];
-			if (!exists $double{$merge}) {
-				if ($opt_m) {
-					printf ACI "Confirmed_intron %d %d mRNA\n", $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1];
-					printf CCI "Confirmed_intron %d %d mRNA\n", $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1] if (($opt_c) && (exists $camace{$superlink}));
-				}
-				else {
-					printf ACI "Confirmed_intron %d %d EST\n", $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1];
-					printf CCI "Confirmed_intron %d %d EST\n", $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1] if (($opt_c) && (exists $camace{$superlink}));
-				}
-				$double{$merge} = 1;
-			}
+    open(ACI,">$dir/${db}.ci.${type}.ace");
+    foreach my $superlink (sort keys %ci) {
+	my %double;
+	print ACI "Sequence : \"$superlink\"\n";
+	for (my $i = 0; $i < @{$ci{$superlink}}; $i++) {
+	    my $merge = $ci{$superlink}->[$i][0].":".$ci{$superlink}->[$i][1];
+	    if (!exists $double{$merge}) {
+		if ($opt_m) {
+		    printf ACI "Confirmed_intron %d %d mRNA\n", $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1];
 		}
-		print ACI "\n";
-		print CCI "\n" if (($opt_c) && (exists $camace{$superlink}));
+		elsif ($opt_o) {
+		    printf ACI "Confirmed_intron %d %d Homol\n", $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1];
+		}
+		else {
+		    printf ACI "Confirmed_intron %d %d EST\n", $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1];
+		}
+		$double{$merge} = 1;
+	    }
 	}
+	    print ACI "\n";
+    }
 }
+
+##############################
+# hasta luego                #
+##############################
+
+exit(0);
+
+#################################################################################
+### Subroutines                                                               ###
+#################################################################################
+
+#########################################
+# get EST names  (-e option only)       #
+#########################################
+
+sub commands {
+    
+my $command1=<<EOF;
+Table-maker -p "/wormsrv2/autoace/wquery/ESTacc2names.def"
+quit
+EOF
+
+my $command2=<<EOF;
+Table-maker -p "/wormsrv2/autoace/wquery/ESTorient.def"
+quit
+EOF
+
+    return($command1,$command2);
+
+}
+
+sub make_EST_hash {
+    
+    my ($command1,$command2) = &commands;
+    my ($acc,$name,$orient);
+
+    my %EST_name = ();
+    my %EST_dir  = ();
+
+    # get EST names  (-e option only)       #
+    open (TACE, "echo '$command1' | $tace | ");
+    while (<TACE>) {
+	chomp;
+	next if ($_ eq "");
+	next if (/\/\//);
+	s/acedb\>\s//g;
+    	s/\"//g;
+	s/EMBL://g;
+	($acc,$name) = ($_ =~ /^(\S+)\s(\S+)/);
+	$name = $acc unless ($name);
+	$EST_name{$acc} = $name;
+    }
+    close TACE;
+
+    # get EST orientation (5' or 3')    #
+    open (TACE, "echo '$command2' | $tace | ");
+    while (<TACE>) {
+	chomp;
+	next if ($_ eq "");
+	next if (/\/\//);
+	s/acedb\>\s//g;
+	s/\"//g;
+	($name,$orient) = ($_ =~ /^(\S+)\s+EST_(\d)/);
+	$EST_dir{$name} = $orient if ($orient);
+    }
+    close TACE;
+
+    return (%EST_name,%EST_dir);
+
+    # Data::Dumper write hash to /wormsrv2/autoace/BLAT/EST.dat
+    open (OUT, ">/wormsrv2/autoace/BLAT/EST.dat") or die "EST.dat : $!";
+    print OUT Data::Dumper->Dump([\%EST_name],['*EST_name']);
+    print OUT Data::Dumper->Dump([\%EST_dir],['*EST_dir']);
+    close OUT;
+}
+
+
+
 
 
 ###################################
 
-sub printhelp {
-	exec('perldoc',$0);
-	exit;	
+sub usage {
+    my $error = shift;
+    
+    if ($error == 1) {
+	# No data-type choosen
+	print "\nNo data option choosen [-e|m|o|x]\n";
+	print "Run with one of the above options\n\n";
+	exit(0);
+    }
+    if ($error == 2) {
+	# 'Multiple data-types choosen
+	print "\nMultiple data option choosen [-e|m|o|x]\n";
+	print "Run with one of the above options\n\n";
+	exit(0);
+    }
+    if ($error == 3) {
+	# 'chromosome.ace' file is not there or unreadable
+	print "\nThe WormBase 'chromosome.ace' file you specified does not exist or is non-readable.\n";
+	print "Check File: ''\n\n";
+	exit(0);
+    }
+    if ($error == 20) {
+	# 
+	print "\Don't want to do this for the -x option.\n";
+	print "hasta luego\n\n";
+	exit(0);
+    }
+    elsif ($error == 0) {
+	# Normal help menu
+	exec ('perldoc',$0);
+    }
 }
 
 ###################################
@@ -502,6 +579,10 @@ blat2ace.pl  arguments:
 -m => perform everything for mRNAs (default is EST)
 
 =back
+
+=head1 AUTHOR
+
+Kerstin Jekosch (kj2@sanger.ac.uk)
 
 =cut
 
