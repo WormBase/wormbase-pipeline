@@ -8,7 +8,7 @@
 # and virtual objects to hang the data onto
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-09-04 09:46:48 $
+# Last edited on: $Date: 2003-09-04 13:20:34 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -136,10 +136,8 @@ $query   .= 'C.elegans_nematode_miscPep'  if ($embl); # Other CDS data set, DNA 
 
 
 # Write sequence data (chromsomes) from autoace/camace
-# Also assigns laboratories to each superlink object (stores in %homedb)
 &dump_dna if ($dump);
     
-
 
 # BLAT the query data type 
 if ($blat) {
@@ -261,6 +259,10 @@ if ($process) {
 if ($virtual) {
   my $runtime = &runtime;
   print LOG "$runtime: Producing $data files for the virtual objects\n";
+
+  # First assign laboratories to each superlink object (stores in %homedb)
+  &sequence_to_lab;
+
   &virtual_objects_blat($data);
 }
 
@@ -286,8 +288,32 @@ exit(0);
 #                                                                               #
 #################################################################################
 
-
-
+sub sequence_to_lab{
+  # Connect superlink objects to their corresponding laboratory object
+  # store in global %homedb
+  local (*LINK);
+  my $name;
+  
+  print LOG "Assign LINK* objects to laboratory\n\n";
+  # deal with the superlink objects
+  open (LINK, "<$blat_dir/superlinks.ace") || croak "Couldn't open superlinks.ace $!";
+  while (<LINK>) {
+    if (/^Sequence\s+\:\s+\"(\S+)\"/) {
+      $name = $1;
+      next;
+    }
+    if (/^From_Laboratory\s+\"(\S+)\"/) {
+      $homedb{$name} = $1;
+      print LOG "assigning $1 to $name\n";
+      undef ($name);
+      next;
+    }
+  }
+  close(LINK);
+  
+  print LOG "\n";
+  
+}
 
 
 #############################################################################
@@ -343,32 +369,7 @@ sub dump_dna {
 
 
 
-  # Now connect superlink objects to their corresponding laboratory object
-  # store in global %homedb
-  local (*LINK);
-  my $name;
-  
-  print LOG "Assign LINK* objects to laboratory\n\n";
-  # deal with the superlink objects
-  open (LINK, "<$blat_dir/superlinks.ace") || croak "Couldn't open superlinks.ace $!";
-  while (<LINK>) {
-    if (/^Sequence\s+\:\s+\"(\S+)\"/) {
-      $name = $1;
-      next;
-    }
-    if (/^From_Laboratory\s+\"(\S+)\"/) {
-      $homedb{$name} = $1;
-      print LOG "assigning $1 to $name\n";
-      undef ($name);
-      next;
-    }
-  }
-  close(LINK);
-  
-  print LOG "\n";
-  
 }
-
 
 #########################################################################################################
 
@@ -558,17 +559,19 @@ sub virtual_objects_blat {
       $name   = $1;
       $length = $3 - $2 + 1;
       $total = int($length/100000) +1;
-      
       # autoace
       print OUT_autoace_homol "Sequence : \"$name\"\n";
       print OUT_autoace_feat  "Sequence : \"$name\"\n";
-      # camace
-      print OUT_camace_homol  "Sequence : \"$name\"\n" if ($homedb{$name} eq "HX");
-      print OUT_camace_feat   "Sequence : \"$name\"\n" if ($homedb{$name} eq "HX");
-      # stlace
-      print OUT_stlace_homol  "Sequence : \"$name\"\n" if ($homedb{$name} eq "RW");
-      print OUT_stlace_feat   "Sequence : \"$name\"\n" if ($homedb{$name} eq "RW");
-      
+
+      # Have to ignore MTCE sequence as there is no lab (RW or HX) associated with it
+      unless($name eq "MTCE"){
+	# camace
+	print OUT_camace_homol  "Sequence : \"$name\"\n" if ($homedb{$name} eq "HX");
+	print OUT_camace_feat   "Sequence : \"$name\"\n" if ($homedb{$name} eq "HX");
+	# stlace
+	print OUT_stlace_homol  "Sequence : \"$name\"\n" if ($homedb{$name} eq "RW");
+	print OUT_stlace_feat   "Sequence : \"$name\"\n" if ($homedb{$name} eq "RW");
+      }
       for ($n = 0; $n <= $total; $n++) {
 	$m      = $n + 1;
 	$first  = ($n*100000) + 1;
@@ -578,12 +581,15 @@ sub virtual_objects_blat {
 	  # autoace
 	  print OUT_autoace_homol "S_Child Homol_data $word{$data}:$name"."_$m $first $second\n";
 	  print OUT_autoace_feat  "S_Child Feature_data Confirmed_intron_$data:$name"."_$m $first $second\n";
-	  # camace
-	  print OUT_camace_homol  "S_Child Homol_data $word{$data}:$name"."_$m $first $second\n"             if ($homedb{$name} eq "HX");
-	  print OUT_camace_feat   "S_Child Feature_data Confirmed_intron_$data:$name"."_$m $first $second\n" if ($homedb{$name} eq "HX");
-	  # stlace
-	  print OUT_stlace_homol  "S_Child Homol_data $word{$data}:$name"."_$m $first $second\n"             if ($homedb{$name} eq "RW");
-	  print OUT_stlace_feat   "S_Child Feature_data Confirmed_intron_$data:$name"."_$m $first $second\n" if ($homedb{$name} eq "RW");
+
+	  unless($name eq "MTCE"){
+	    # camace
+	    print OUT_camace_homol  "S_Child Homol_data $word{$data}:$name"."_$m $first $second\n"             if ($homedb{$name} eq "HX");
+	    print OUT_camace_feat   "S_Child Feature_data Confirmed_intron_$data:$name"."_$m $first $second\n" if ($homedb{$name} eq "HX");
+	    # stlace
+	    print OUT_stlace_homol  "S_Child Homol_data $word{$data}:$name"."_$m $first $second\n"             if ($homedb{$name} eq "RW");
+	    print OUT_stlace_feat   "S_Child Feature_data Confirmed_intron_$data:$name"."_$m $first $second\n" if ($homedb{$name} eq "RW");
+	  }
 	  last;
 	}					
 	else {
@@ -601,10 +607,13 @@ sub virtual_objects_blat {
       }
       print OUT_autoace_homol "\n";
       print OUT_autoace_feat  "\n";
-      print OUT_camace_homol  "\n" if ($homedb{$name} eq "HX");
-      print OUT_camace_feat   "\n" if ($homedb{$name} eq "HX");
-      print OUT_stlace_homol  "\n" if ($homedb{$name} eq "RW");
-      print OUT_stlace_feat   "\n" if ($homedb{$name} eq "RW");
+
+      unless($name eq "MTCE"){
+	print OUT_camace_homol  "\n" if ($homedb{$name} eq "HX");
+	print OUT_camace_feat   "\n" if ($homedb{$name} eq "HX");
+	print OUT_stlace_homol  "\n" if ($homedb{$name} eq "RW");
+	print OUT_stlace_feat   "\n" if ($homedb{$name} eq "RW");
+      }
     }
   }
   close ACE;
