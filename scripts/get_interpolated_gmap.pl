@@ -7,8 +7,8 @@
 # This script calculates interpolated genetic map positions for CDS, Transcripts 
 # and Pseudogenes lying between and outside genetic markers.
 #
-# Last updated on: $Date: 2003-12-01 11:26:09 $
-# Last updated by: $Author: krb $
+# Last updated on: $Date: 2003-12-15 10:58:49 $
+# Last updated by: $Author: ck1 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -440,6 +440,12 @@ if ($debug){
   foreach (sort keys %class){
     print CL "$_ -> $class{$_}\n";
   }
+  foreach (keys %CDS_isoforms_mapping){
+    print CL "$_ -> $CDS_isoforms_mapping{$_}->[3] PARENT\n";
+  }
+  foreach (keys %CDS_variants){
+    print CL "$_ -> $CDS_variants{$_} ISO\n";
+  }
 }
 
 ##################################################################
@@ -734,14 +740,14 @@ if($error_check == 1){
 else {
 
   my ($jah, $recipients);
-  my $existfile = glob("$output/rev_physical_CGC_WS$version");
+ # my $existfile = glob("$output/rev_physical_CGC_WS$version");
+  my $existfile = $revfile;
   if ($existfile){
-
     $jah = $existfile;
     my @CGC = `cat $jah`;
     open(JAH, ">$jah") || die $!;
     
-    print JAH "get_interpolated_map.pl started at $start\n","Finished at ", &runtime,"\n\n";
+    print JAH "get_interpolated_map.pl started  at $start\n","                        finished at ", &runtime,"\n\n";
     print JAH "WS$version modifications to genetics map according to reverse physicals\n";
     print JAH "============================================================================\n\n";
     $recipients = "All";  
@@ -751,9 +757,8 @@ else {
     print JAH "\n\nBelow is a list of full WS$version genetics map update\n";
     print JAH "------------------------------------------------------\n\n";
     print JAH `cat $cmp_file`;
-
     mail_maintainer("WS$version genetics map modification", $recipients, $jah);
-    print "Genetics Map update has been mailed to CGC (JAH)\n\n";
+    print "Genetics Map update has been mailed to CGC (JAH)\n\n" if !$debug;
   }
   else {
     print "Failed to mail Genetics Map update to CGC (JAH)\n\n";
@@ -828,7 +833,7 @@ sub ace_output {
     foreach (@{$CDS_variants{$cds}}){
       $type = $class{$_};
 
-      print "$_ -> $type\n";
+      print CL "$_ -> $type\n" if $debug;
  
       my $cdsf = $_;
       $cdsf = sprintf ("%-15s", "$cdsf");
