@@ -12,8 +12,8 @@
 # 3) Archives old GFF_SPLITS directory
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-07-09 15:53:57 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2004-07-19 08:51:35 $
 
 
 use strict;
@@ -79,6 +79,14 @@ my $old_wormpep = "$basedir/WORMPEP/wormpep".($WS_current-3);
 
 &archive_old_releases;
 
+# run cgc_names_for_worm_genes.pl
+print LOG "Running cgc_names_for_worm_genes.pl\n\n";
+system("cgc_names_for_worm_genes.pl") && die "Couldn't run cgc_names_for_worm_genes.pl -a\n";
+
+# update all Common_data files - see Commom_data.pm
+system("update_Common_data.pl -build -all") && die "Couldn't run update_Common_data.pl -update -in_build -all\n";
+
+
 # Transfer autoace to WSxx
 print LOG "Transferring autoace into /wormsrv2/$WS_name\n";
 system("TransferDB.pl -start /wormsrv2/autoace -end /wormsrv2/$WS_name -database -release -wspec -chromosomes -name $WS_name") 
@@ -120,13 +128,6 @@ unlink("$basedir/autoace/logs/UTR_gff_dump");
 # archive old GFF splits directory'
 print LOG "Archiving GFFsplits directory using GFFsplitter.pl -a\n\n";
 system("GFFsplitter.pl -a") && die "Couldn't run GFFsplitter.pl -a\n";
-
-# run cgc_names_for_worm_genes.pl
-print LOG "Running cgc_names_for_worm_genes.pl\n\n";
-system("cgc_names_for_worm_genes.pl") && die "Couldn't run cgc_names_for_worm_genes.pl -a\n";
-
-# update all Common_data files - see Commom_data.pm
-system("update_Common_data.pl -build -all") && die "Couldn't run update_Common_data.pl -update -in_build -all\n";
 
 # update "Confirmed Introns" webpage (introns to be addressed)
 system("/nfs/intweb/cgi-bin/wormpub/confirmed_introns/parse_gff.pl") && warn "Couldn't run parse_gff.pl\n";
