@@ -206,7 +206,7 @@ print LOG "# $runtime : connect to primary database\n";
 my $db = Ace->connect (-path => $dbdir, -program => $tace) 
     || &error(6); # die "cannot connect to autoace\n";
 my @dotnames_1 = $db->fetch (-query => 'FIND Genome_sequence ; FOLLOW Subsequence ; where (Method = curated) OR (Method=provisional)');
-my @dotnames_2 = $db->fetch (-query => 'FIND Sequence *LINK* ; FOLLOW Subsequence ; where (Method = curated) OR (Method=provisional)');
+my @dotnames_2 = $db->fetch (-query => 'FIND Sequence LINK* ; FOLLOW Subsequence ; where (Method = curated) OR (Method=provisional)');
 
 push (@dotnames_1 , @dotnames_2);
 @dotnames_1 = sort @dotnames_1;
@@ -808,6 +808,8 @@ system ("cp $new_wpdir/wormpep.dna$release $wormpub_dir/wormpep.dna_current")   
 system ("cp $new_wpdir/wormpep.history$release $wormpub_dir/wormpep.history_current")     || print LOG "Cannot copy file to $wormpub_dir\n";
 system ("cp $new_wpdir/wp.fasta$release $wormpub_dir/wp.fasta_current")                   || print LOG "Cannot copy file to $wormpub_dir\n";
 system ("/usr/local/pubseq/bin/setdb $wormpub_dir/wormpep_current")                       || print LOG "Cannot index wormpep file in $wormpub_dir\n";
+system ("chmod +rw $new_wpdir/*");
+
 
 close LOG;
 
