@@ -116,13 +116,6 @@ foreach my $gene (@predicted_genes){
     }
   }
 
-  my $parent = $db->fetch(Sequence=>$source);
-  
-  # check to see if any predicted gene belongs to superlink object...they shouldn't
-  if ($parent =~ m/SUPERLINK/){
-    print "Gene error - $gene: belongs to a superlink object ($parent)\n";
-  }
-
 
   # check that 'Start_not_found' and 'End_not_found' tags present?
   my $start_tag = "";
