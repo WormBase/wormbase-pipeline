@@ -8,7 +8,7 @@
 # This makes the autoace database from its composite sources.
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-10-17 10:24:12 $
+# Last edited on: $Date: 2003-10-31 15:42:28 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -656,7 +656,7 @@ sub run_command{
     $errors++;
     print LOG "ERROR: $command failed\n";
   }
-  print LOG &runtime, ": finished running $command\n";
+  print LOG &runtime, ": finished running\n\n";
 
   # for optional further testing by calling subroutine
   return($status);
