@@ -7,7 +7,7 @@
 # Script to make ?Transcript objects
 #
 # Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2003-09-24 15:02:19 $  
+# Last updated on: $Date: 2003-09-25 09:39:00 $  
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -53,6 +53,11 @@ my %cDNA_span;
 my %transcript_span;
 my $gff_file;
 my @ordered_genes;
+
+#setup directory for transcript
+my $transcript_dir = "$database/TRANSCRIPTS";
+system("mkdir $transcript_dir") unless -e "$transcript_dir";
+system("rm -f $transcript_dir/*");
 
 $gff_file = $gff if $gff;
 
@@ -144,21 +149,20 @@ foreach my $chrom ( @chromosomes ) {
   my $coords;
   # write out the transcript objects
   if( $transcript ) {
-    system("mkdir $database/TRANSCRIPTS") unless -e "$database/TRANSCRIPTS";
-    open (ACE,">$database/TRANSCRIPTS/transcripts_$chrom.ace") or die "transcripts\n";
+    open (ACE,">$transcript_dir/transcripts_$chrom.ace") or die "transcripts\n";
     # get coords obj to return clone and coords from chromosomal coords
     $coords = Coords_converter->invoke($database);
   }
   
   foreach my $gene (keys %gene2cdnas) {
     print  "$gene matching cDNAs => @{$gene2cdnas{$gene}}\n" if $report;
-    print "$_ matches ",scalar(@{$gene2cdnas{$gene}}),"\n" if $count;
+    print "$gene matches ",scalar(@{$gene2cdnas{$gene}}),"\n" if $count;
     if( $transcript ) {
       # next unless $genes_span{$_}->[2] eq "-"; #just do forward for now
 
       # put the gene model in to the transcript
       my %transcript;
-      %transcript = %{$genes_exons{$gene}};   
+      %transcript = %{$genes_exons{$gene}};
       my @transcript_span = @{ $genes_span{$gene} };
 
       #transcript object
@@ -231,13 +235,12 @@ foreach my $chrom ( @chromosomes ) {
   close ACE if $transcript;
 
   if ($show_matches) { 
-    system("mkdir $database/TRANSCRIPTS") unless -e "$database/TRANSCRIPTS";
-    open(MATCHES,">$database/TRANSCRIPTS/chromosome${chrom}_matching_cDNA.dat");
-    print $log "writing Matching_cDNA file $database/TRANSCRIPTS/chromosome${chrom}_matching_cDNA.dat\n";
+    open(MATCHES,">$transcript_dir/chromosome${chrom}_matching_cDNA.dat") or die "cant open $transcript_dir/chromosome${chrom}_matching_cDNA.dat :$!\n" ;
+    print $log "writing Matching_cDNA file $transcript_dir/chromosome${chrom}_matching_cDNA.dat\n";
     print MATCHES Data::Dumper->Dump([\%gene2cdnas]);
     close MATCHES;
 
-    open (CDNAS, ">$database/TRANSCRIPTS/chromosome${chrom}_matching_cDNA.ace") or die "output ace for chromosome $chrom\n";
+    open (CDNAS, ">$transcript_dir/chromosome${chrom}_matching_cDNA.ace") or die "cant open output ace for chromosome $chrom:$!\n";
     foreach my $gene ( keys %gene2cdnas ) {
       print CDNAS "\nSequence : \"$gene\"\n";
       foreach my $cdna ( @{$gene2cdnas{$gene}} ) {
@@ -255,14 +258,14 @@ foreach my $chrom ( @chromosomes ) {
 
 if( $load_transcripts ) {
   print $log "loading transcripts file to $database\n";
-  system("cat $database/TRANSCRIPTS/transcripts_*.ace >! $database/TRANSCRIPTS/transcripts_all.ace");
-  system("echo \"pparse $database/TRANSCRIPTS/transcripts_all.ace\nsave\nquit\" | $tace -tsuser transcripts $database");
+  system("cat $transcript_dir/transcripts_*.ace > $transcript_dir/transcripts_all.ace");
+  system("echo \"pparse $transcript_dir/transcripts_all.ace\nsave\nquit\" | $tace -tsuser transcripts $database");
 }
 
 if( $load_matches ) {
   print $log "loading matching_cDNA file to $database\n";
-  system("cat $database/TRANSCRIPTS/chromosome*_matching_cDNA.ace >! $database/TRANSCRIPTS/matching_cDNA_all.ace");
-  system("echo \"parse $database/TRANSCRIPTS/matching_cDNA_all.ace\nsave\nquit\" | $tace -tsuser matching_cDNA $database");
+  system("cat $transcript_dir/chromosome*_matching_cDNA.ace > $transcript_dir/matching_cDNA_all.ace");
+  system("echo \"parse $transcript_dir/matching_cDNA_all.ace\nsave\nquit\" | $tace -tsuser matching_cDNA $database");
 }
   
 print $log "$0 finished at ",&runtime,"\n";
@@ -514,7 +517,7 @@ sub checkOverlappingTranscripts  {
 
   my $trans_count = scalar (@ordered_transcripts);
 
-  open (OLT,">$database/TRANSCRIPTS/overlapping_transcripts_$chrom") or warn "cant open $database/TRANSCRIPTS/overlapping_transcripts\n";
+  open (OLT,">$transcript_dir/overlapping_transcripts_$chrom") or warn "cant open $transcript_dir/overlapping_transcripts\n";
   TRANS:
     for( my $i = 0;$i < $trans_count; $i++) {
       for( my $j = 1; $j < 6; $j++ ) {
