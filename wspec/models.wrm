@@ -218,7 +218,7 @@
                         Paternal
 	Remark	?Text
         Reference ?Paper XREF Allele               // Mary
-        Rescued_by_Transgene ?Transgene XREF Rescue
+        Rescued_by_Transgene ?Transgene
 
 ?Gene_Class     Phenotype ?Text
                 Designating_laboratory UNIQUE ?Laboratory XREF Gene_classes
