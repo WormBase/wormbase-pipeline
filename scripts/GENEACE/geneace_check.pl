@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-11-30 17:04:13 $
+# Last updated on: $Date: 2004-12-08 10:30:06 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -1172,6 +1172,7 @@ sub int_map_to_map_loci {
 	  print INT_map_TO_MAP "\nGene : \"$_\" \/\/ $Gene_info{$_}{'CGC_name'}\n";
 	  print INT_map_TO_MAP "-D Interpolated_map_position \n";
 	  print INT_map_TO_MAP "\nGene : \"$_\"\n";
+	  print INT_map_TO_MAP "Pseudo_map_position\n";
 	  print INT_map_TO_MAP "Map \"$int_map\" Position $int_pos\n";
 	  print INT_map_TO_MAP "Remark \"Map position created from combination of previous interpolated map position (based on known location of sequence) and allele information.  Therefore this is not a genetic map position based on recombination frequencies or genetic experiments.  This was done on advice of the CGC.\" CGC_data_submission\n";
 	  last;
