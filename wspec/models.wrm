@@ -188,7 +188,6 @@
 ///////////////////////////////////////////////////////////////////////////////////
 
 ?Allele Evidence #Evidence
-	Properties Allele // added for Ed, magic tag [krb 031024]
 	Name	Other_name ?Text #Evidence
 		Qualifier Text	    // sd, sm, ts etc.  Not systematic just now
 		Rearrangement ?Rearrangement XREF Allele
@@ -1039,7 +1038,6 @@
 
 ?Pseudogene     Evidence #Evidence
                 SMap S_Parent UNIQUE Sequence UNIQUE ?Sequence XREF Pseudogene      
-	        Properties Pseudogene // not used yet, but added for consistency [krb 031024]
                 Structure Source_exons Int UNIQUE Int
                 DB_info DB_remark ?Text #Evidence
                         Database ?Database ?Text ?Accession_number XREF Pseudogene UNIQUE Int 
@@ -1077,7 +1075,6 @@
 
 
 ?Transposon SMap S_Parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF Transposon
-	    Properties Transposon // not used yet, but added for consistency [krb 031024]
 	    Source_exons Int UNIQUE Int // added for consistency with other 'gene' classes
             LTR_region UNIQUE Int UNIQUE Int
             Remark ?Text #Evidence
