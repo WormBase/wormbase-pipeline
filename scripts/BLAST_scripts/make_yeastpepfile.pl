@@ -5,20 +5,39 @@
 # converts yeastX.pep file with yeast peptide entries into ace file
 # Puts SGDID as Accssion in Database field.
 
+my $dir = glob("~wormpipe/BlastDB");
+my $acefile = "$dir/yeast.ace";
+
+my $source_file = shift;
+my $pepfile = shift;
 use strict;
 
-while (<>) {
-	if (/\>ORFP:([\w-]+)\s+([\w-',\(\)]+)\s+SGDID:(\w+)/) {
-		print "\nProtein : \"SGD:$1\"\n";
-		print "Peptide \"SGD:$1\"\n";
-		print "Species \"Saccharomyces cerevisiae\"\n";
-		print "DB_remark \"SGD gene name is $2\"\n";
-		print "Database \"SGD\" \"$1\" \"$3\"\n\n";
-		print "Peptide : \"SGD:$1\"\n"; 	
-	}
-	else { 
-		print $_;
-	}
+
+open (SOURCE,"<$source_file");
+open (PEP,">$pepfile");
+open (ACE,">$acefile");
+
+while (<SOURCE>) {
+  if( />/ ) { 
+    if (/ORFP:(\S+)\s+(\S+)\s+SGDID:(\w+)/) {
+      my $ID = $1;
+      print ACE "\nProtein : \"SGD:$ID\"\n";
+      print ACE "Peptide \"SGD:$ID\"\n";
+      print ACE "Species \"Saccharomyces cerevisiae\"\n";
+      print ACE "DB_remark \"SGD gene name is $2\"\n";
+      print ACE "Database \"SGD\" \"$ID\" \"$3\"\n\n";
+      print ACE "Peptide : \"SGD:$ID\"\n"; 	
+      
+      print PEP "\>$ID\n";
+    }
+    else {
+      print $_;
+    }
+  }
+  else { 
+    print PEP $_;
+    print ACE $_;
+  }
 }
 
 __END__
