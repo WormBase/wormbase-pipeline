@@ -97,8 +97,8 @@ Expr_pattern class gets new GO_term tag to link to ?GO_term and each tag under t
 use of a new hash.
 
 
-21st October
-------------
+21st October 2004
+-----------------
 Added History_name tag to ?RNAi model to store old names before we change object names to WBRNAi....
 
 Major update to ?Feature model, some changed tag name (Sequence_features is no more) and lots of new
@@ -106,3 +106,21 @@ tags to take account of.
 
 New Interaction model for Andrei's gene interaction data...Need to ideally pick up the new Interaction tag in 
 the Gene class to see when there is interaction data.
+
+
+
+19th November 2004
+------------------
+
+Removed CGC_approved tag from ?Gene_class as it is redundant.  Hope nothing on the web uses this.
+
+
+Added #Evidence hash after CGC_name tag in ?Gene...this will be populated in the near future
+
+New Pseudo_map_position tag in ?Gene model - don't think website needs to do anything with this unless
+you want to flag those genes which have an artificial map position.
+
+Revamped ?RNAi class, no longer SMapped to sequence or PCR_product but uses Homol_data class.  Not
+sure how the website uses RNAi data...but I assume that something will change somewhere as a result
+of this new model
+
