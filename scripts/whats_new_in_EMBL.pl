@@ -7,9 +7,8 @@
 # checks EMBL for new EST or mRNA entries
 #
 # Last updated by: $Author: krb $                      
-# Last updated on: $Date: 2003-09-05 16:41:16 $        
+# Last updated on: $Date: 2003-09-08 09:14:39 $        
 
-$|=1;
 use strict;
 use Getopt::Long;
 use lib "/wormsrv2/scripts/";   
@@ -97,7 +96,7 @@ print "There are $non_elegans_ESTs non C. elegans ESTs since $date\n" if ($debug
 
 
 # New EMBL CDS entries
-open (NEW_SEQUENCES, "/usr/local/pubseq/bin/getz -c \'([emblnew-Division:inv] & [emblnew-Molecule:DNA*] & [emblnew-DateCreated#20030101:] & [emblnew-org:Caenorhabditis elegans*] ! [emblnew-Keywords:HTG*]) | ([emblrelease-Division:inv] & [emblrelease-Molecule:DNA*] & [emblrelease-DateCreated#$date:] & [emblrelease-org:Caenorhabditis elegans*] ! [emblrelease-Keywords:HTG*])\' |");
+open (NEW_SEQUENCES, "/usr/local/pubseq/bin/getz -c \'(([emblnew-Division:inv] & [emblnew-Molecule:DNA*] & [emblnew-DateCreated#$date:] & [emblnew-org:Caenorhabditis elegans*] ! [emblnew-Keywords:HTG*]) & ([emblnew-FtKey:cds] > emblnew)) | (([emblrelease-Division:inv] & [emblrelease-Molecule:DNA*] & [emblrelease-DateCreated#$date:] & [emblrelease-org:Caenorhabditis elegans*] ! [emblrelease-Keywords:HTG*]) & ([emblrelease-FtKey:cds] >emblrelease))\' |");
 while(<NEW_SEQUENCES>){
   chomp;
   $new_EMBL_CDS = $_;
@@ -113,7 +112,7 @@ print "There are $new_EMBL_CDS new C. elegans non-WormBase CDS entries since $da
 print LOG "EMBL entries created since $date\n";
 print LOG "There are $new_elegans_mRNA new C. elegans mRNA entries\n";
 print LOG "There are $new_elegans_EST new C. elegans EST entries\n";
-print LOG "There are $non_elegans_ESTs new non-C. elegans nematode ESTs since $date\n\n";
+print LOG "There are $non_elegans_ESTs new non-C. elegans nematode ESTs since $date\n";
 print LOG "There are $new_EMBL_CDS new C. elegans non-WormBase CDS entries\n";
 
 
