@@ -4,7 +4,7 @@
 #
 # by Chao-Kung Chen [030625]
 
-# Last updated on: $Date: 2004-08-18 14:23:06 $
+# Last updated on: $Date: 2004-08-18 14:33:34 $
 # Last updated by: $Author: krb $
 
 use Tk;
@@ -540,13 +540,13 @@ sub run {
     $ace_window->insert('end', "\nGene : \"$Gene_info{$locus}{'Gene'}\"  \/\/$locus\n");
     $ace_window->insert('end', "\/\/Allele \"$allele\" Paper_evidence \"\"\n");
     $ace_window->insert('end', "\nAllele : \"$allele\"\n");
-    $ace_window->insert('end', "\/\/Evidence Paper_evidence \"WBPaper000\"\n");
+    $ace_window->insert('end', "\/\/Evidence Paper_evidence \"WBPaper${info[1]}\"\n");
     $ace_window->insert('end', "Sequence \"$seq\"\n");
     $ace_window->insert('end', "\/\/Substitution \"[\/]\"\n");
     $ace_window->insert('end', "\/\/Deletion \"[\/]\"\n");
     $ace_window->insert('end', "Flanking_sequences \"$dna_L\" \"$dna_R\"\n");
     $ace_window->insert('end', "Species \"Caenorhabditis elegans\"\n");
-    $ace_window->insert('end', "\/\/Remark \"\" Paper_evidence \"WBPaper000\"\n");
+    $ace_window->insert('end', "\/\/Remark \"\" Paper_evidence \"WBPaper${info[1]}\"\n");
     $ace_window->insert('end', "\/\/Remark \"\" Curator_confirmed \"WBPerson2861\"\n");
     $ace_window->insert('end', "\/\/Method \"Substitution_allele\"\n");
     $ace_window->insert('end', "\/\/Method \"Allele\"\n");
@@ -992,11 +992,11 @@ sub write_ace {
   my ($Lf, $Rf, $allele, $locus, $seq) = @_;
 
   $ace_window->insert('end', "\nGene : \"$Gene_info{$locus}{'Gene'}\"\n");
-  $ace_window->insert('end', "Allele \"$allele\" Paper_evidence \"WBPaper${info}[1]\"\n");
+  $ace_window->insert('end', "Allele \"$allele\" Paper_evidence \"WBPaper${info[1]}\"\n");
   
 
   $ace_window->insert('end', "\nAllele : \"$allele\"\n");
-  $ace_window->insert('end', "Evidence Paper_evidence \"WBPaper${info}[1]\"\n");
+  $ace_window->insert('end', "Evidence Paper_evidence \"WBPaper${info[1]}\"\n");
   
 
   $ace_window->insert('end', "Sequence \"$seq\"\n");
