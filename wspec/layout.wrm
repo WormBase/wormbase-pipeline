@@ -8,6 +8,7 @@
    Other_locus   Briggsae_genomic       Oligo
  Rearrangement				PCR_product
 		Transcript
+		Pseudogene
  Clone					Expr_profile 
  Strain		Protein			Expr_pattern
 		  Wormpep			
