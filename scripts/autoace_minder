@@ -180,9 +180,9 @@ exit(0);
 #################################################################################
 
 sub make_acefiles {
-    system ("$scriptdir/make_acefiles -nep") && die "Couldn't run make_acefiles\n";
+    system ("$scriptdir/make_acefiles -ne") && die "Couldn't run make_acefiles\n";
     print LOG " Write acefiles to disk\n";
-    print LOG " => 'make_acefiles -nep'\n\n";
+    print LOG " => 'make_acefiles -ne'\n\n";
 }
 
 #################################################################################
