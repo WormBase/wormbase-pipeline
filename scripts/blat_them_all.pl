@@ -34,7 +34,7 @@
 # 02.04.08 dl: old style logging for autoace.fa check, prevented complete run of subs
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2003-06-04 14:13:50 $
+# Last edited on: $Date: 2003-06-13 12:14:31 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -506,8 +506,8 @@ sub confirm_introns {
     my ($link,@introns,$dna,$switch,$tag);
 
     ($tag = "cDNA") if ($opt_m || $opt_o);
-    ($tag = "EST")  if ($opt_e);
-    ($tag = "OST")  if ($opt_y);
+    ($tag = "EST")  if ($opt_e || $opt_y); 
+
     
     $/ = "";
     open (CI, "<$blat/${db}.ci.${data}.ace")      or die "Cannot open $blat/$db.ci.$data.ace $!\n";
