@@ -8,7 +8,7 @@
 # Output ace file of such information and upload to autoace during each build
 # Output also other files related. See POD
 
-# Last updated on: $Date: 2003-06-26 15:37:53 $
+# Last updated on: $Date: 2003-07-03 14:00:02 $
 # Last updated by: $Author: ck1 $
 
 use strict;
@@ -24,7 +24,7 @@ my $rundate = `date +%y%m%d`; chomp $rundate;
 # variables and command-line options with aliases #
 ###################################################
 
-my ($diff, $reverse, $database, $gff_location, $help, $debug, $map, 
+my ($diff, $reverse, $database, $gff_location, $help, $noUpload, $map, 
     $comp, $gmap_marker_dir, $gff_dir, $curr_db, $output);
 
 GetOptions ("diff"          => \$diff,
@@ -33,7 +33,7 @@ GetOptions ("diff"          => \$diff,
 	    "map"           => \$map,
 	    "comp"          => \$comp, 
 	    "h|help"        => \$help, 
-	    "d|debug"       => \$debug
+	    "n|noUpload"    => \$noUpload
            );
 
 $gff_dir = "/wormsrv2/autoace/GFF_SPLITS/";
@@ -80,13 +80,15 @@ my (%chrom_meanCoord, %genetics_mapping);
 my ($cds, $parts, @coords, $i, $mean_coords, %cds_mean, %mean_coord_cds, %chrom_mean_coord_cds);
 
 my $version = $order[-1]+1; # autoace
-my $acefile="$output/interpolated_gmap_"."WS$version.$rundate.ace";
-my $gacefile = "$output/interpolated_gmap_to_geneace_"."WS$version.$rundate.ace";
+my $acefile = "$output/interpolated_map_"."WS$version.$rundate.ace";
+my $gacefile = "$output/interpolated_map_to_geneace_"."WS$version.$rundate.ace";
+my $download = "$output/"."WS$version"."_interpolated_map.txt";
 
 if ($map){
   open (ACE, ">$acefile") || die "Can't output file!\n";
   open (GACE, ">$gacefile") || die "Can't output file!\n";
-  system("chmod 777 $acefile $gacefile");
+  open (DNLD, ">$download") || die "Can't output file!\n";
+  system("chmod 777 $acefile $gacefile $download");
 }
 
 ######################################################
@@ -175,7 +177,7 @@ foreach (@gff_files_cds){
   }
 }
 
-print "\nEgrepping transcripts in huge CHROMOSOME_*.rest.gff files . . .\n"; 
+print "\nEgrepping transcripts in gff files . . .\n"; 
 
 foreach (@gff_files_rna){
   @data = `egrep "(RNA|UNKNOWN).+(Transcript|Sequence).+" $_ | cut -f 1,2,4,5,9`;
@@ -351,6 +353,8 @@ foreach (sort keys %chrom_length){print INFO "$_ -> $chrom_length{$_} bp\n"}
 # sorting gmap positions of marker loci from left tip to right tip 
 ##################################################################
 
+print "Generating ace files . . .\n";
+
 my (@chroms, $chrom, $ea, @pos_order, $part, @unique_pos_order, %pos_order_to_mean_coord_locus_cds, 
     @mean_coords_order, $units, $bp_length_per_unit, @all_mean_of_each_chrom, @unique_all_mean_of_each_chrom,
     %all_mean_of_each_chrom);
@@ -438,7 +442,7 @@ foreach $chrom (@chroms){
       $position = $length_diff / $bp_length_per_unit;
       $position = $L_tip - $position;
       if ($map){
-	ace_output($mean_coord_cds{$_}, $chrom, $position, $_, $feature);
+	ace_output($mean_coord_cds{$_}, $chrom, $position, $_, $feature, \%predicted_gene_to_locus);
 	next;
       }	
     }
@@ -449,7 +453,7 @@ foreach $chrom (@chroms){
       $position = $length_diff / $bp_length_per_unit;
       $position = $R_tip + $position;
       if ($map){
-	ace_output($mean_coord_cds{$_}, $chrom, $position, $_, $feature);
+	ace_output($mean_coord_cds{$_}, $chrom, $position, $_, $feature, \%predicted_gene_to_locus);
 	next; 
       }	
     }
@@ -495,7 +499,7 @@ foreach $chrom (@chroms){
           $position = $length_diff / $baseline;
           $position = $gmap_down + $position;
 	  if (!$all_mean_of_each_chrom{$_} && $map){
-            ace_output($mean_coord_cds{$_}, $chrom, $position, $_, $feature);       
+            ace_output($mean_coord_cds{$_}, $chrom, $position, $_, $feature, \%predicted_gene_to_locus);       
           }
           last;        
         }
@@ -510,18 +514,28 @@ foreach $chrom (@chroms){
   #          list of reverse physicals
   #######################################################
 
+  my $locusf;
+
   if ($reverse){
     
     for ($i=0; $i < (scalar @unique_pos_order)-1; $i++){      
-
+      
       $gmap_down = $unique_pos_order[$i];
+      my $gmdn =  $gmap_down;
+      $gmdn = sprintf("%8.4f", $gmdn);
       $gmap_up =   $unique_pos_order[$i+1];
       my $locus1 = @{$pos_order_to_mean_coord_locus_cds{$gmap_down}}->[1];
+      $locusf = $locus1;
+      $locusf = sprintf("%10s", $locusf);
       $down_mean_coord = @{$pos_order_to_mean_coord_locus_cds{$gmap_down}}->[0];
+      my $dnmcoord =  $down_mean_coord;
+      $dnmcoord = sprintf("%12.1f", $dnmcoord);
       $up_mean_coord = @{$pos_order_to_mean_coord_locus_cds{$gmap_up}}->[0];
       $cds = @{$pos_order_to_mean_coord_locus_cds{$gmap_down}}->[2];
+      my $cdsf = $cds;
+      $cdsf = sprintf("%-15s", $cdsf);
 
-      print CMP "$chrom\t$gmap_down\t$locus1\t$cds\t$down_mean_coord\n";
+      print CMP "$chrom\t$gmdn\t$locusf\t$cdsf\t$dnmcoord\n";
       if ($down_mean_coord eq "NA") {print REV "\n** Gmap marker $cds ($locus1) on $chrom has no coordinate **\n"}
 
       if ($down_mean_coord ne "NA" && $up_mean_coord ne "NA" && ($down_mean_coord > $up_mean_coord)){
@@ -539,17 +553,26 @@ foreach $chrom (@chroms){
   if ($reverse){
     print REV "--->$rev_phys reverse physical(s) on Chromosom $chrom\n\n";
     my $gmap = $unique_pos_order[-1];
+    my $gm = $gmap;
+    $gm = sprintf("%8.4f", $gm);
     my $locus = @{$pos_order_to_mean_coord_locus_cds{$gmap}}->[1];
+    $locusf = $locus; 
+    $locusf = sprintf("%10s", $locusf);
     $mean_coord = @{$pos_order_to_mean_coord_locus_cds{$gmap}}->[0];
+    my $mc = $mean_coord;
+    $mc = sprintf("%12.1f", $mc);
     $cds = @{$pos_order_to_mean_coord_locus_cds{$gmap}}->[2];
-    print CMP "$chrom\t$gmap\t$locus\t$cds\t$mean_coord\n"; 
+    my $cdsf = $cds;
+    $cdsf = sprintf("%-15s", $cdsf);
+
+    print CMP "$chrom\t$gm\t$locusf\t$cdsf\t$mc\n"; 
   }
 
   @pos_order=(); @unique_pos_order=(); @all_coords=(); %pos_order_to_mean_coord_locus_cds=(); 
   $rev_phys=(); @all_mean_of_each_chrom=(); @unique_all_mean_of_each_chrom=(); %all_mean_of_each_chrom=();
 }
 
-if (!$debug){
+if (!$noUpload){
   print "\n\nDeleting old interpolated map and uploading new ones to autolace . . .\n\n";
 
   my $tace = &tace;
@@ -617,46 +640,58 @@ sub ace_output {
   # also write Map position to locus objects
   #########################################################
 
-  my ($cds, $chrom, $gmap, $mean_coord, $feature)=@_;
+  my ($cds, $chrom, $gmap, $mean_coord, $feature, $predicted_gene_to_locus)=@_;
+ 
+  %predicted_gene_to_locus = %$predicted_gene_to_locus;
   
-  $gmap = sprintf("%.4f", $gmap);
+  $gmap = sprintf("%8.4f", $gmap);
+  my $cdsf = $cds; 
+  $cdsf = sprintf ("%-15s", "$cdsf");
+
   if (exists $CDS_variants{$cds}){
-   
+
     foreach (@{$CDS_variants{$cds}}){
-    
-      if ($feature eq "DNA"){print ACE "\nSequence : \"$_\"\n"}
-      if ($feature eq "RNA"){print ACE "\nTranscript : \"$_\"\n"}
+      
+      my $cdsf = $_;
+      $cdsf = sprintf ("%-15s", "$cdsf");
+   
+      if ($feature eq "DNA"){print ACE "\nSequence : \"$_\"\n"; print DNLD "$cdsf\t"}
+      if ($feature eq "RNA"){print ACE "\nTranscript : \"$_\"\n"; print DNLD "$cdsf\t"}
       print ACE "Interpolated_map_position\t\"$chrom\"\t$gmap\t\/\/$mean_coord (iso)\n";
+      print DNLD "\t$chrom\t$gmap\t";
       if (exists $predicted_gene_to_locus{$_}){
         print ACE "\nLocus : \"$predicted_gene_to_locus{$_}\"\n";
 	print GACE "\nLocus : \"$predicted_gene_to_locus{$_}\"\n";
+	print DNLD "$predicted_gene_to_locus{$_}\n";
         print ACE "Interpolated_map_position\t\"$chrom\"\t$gmap\t\/\/$mean_coord (iso)\n";
 	print GACE "Interpolated_map_position\t\"$chrom\"\t$gmap\t\/\/$mean_coord (iso)\n";
 	if ($comp && $locus_map{$predicted_gene_to_locus{$_}}){
-        print MAPCOMP "$predicted_gene_to_locus{$_}\t\"$chrom\"\tCoords:\t$gmap\tContig:\t$locus_map{$predicted_gene_to_locus{$_}}\n";
+	  print MAPCOMP "$predicted_gene_to_locus{$_}\t\"$chrom\"\tCoords:\t$gmap\tContig:\t$locus_map{$predicted_gene_to_locus{$_}}\n";
+	}
       }
-      }  
+      else {print DNLD "-\n"}	
     }
-  }
+  }  
   else {
-    if ($feature eq "DNA"){print ACE "\nSequence : \"$cds\"\n"}
-    if ($feature eq "RNA"){print ACE "\nTranscript : \"$cds\"\n"}
+    if ($feature eq "DNA"){print ACE "\nSequence : \"$cds\"\n"; print DNLD "$cdsf\t"}
+    if ($feature eq "RNA"){print ACE "\nTranscript : \"$cds\"\n"; print DNLD "$cdsf\t"}
     print ACE "Interpolated_map_position\t\"$chrom\"\t$gmap\t\/\/$mean_coord\n";
+    print DNLD "\t$chrom\t$gmap\t";
     if (exists $predicted_gene_to_locus{$cds}){
       print ACE "\nLocus : \"$predicted_gene_to_locus{$cds}\"\n";
       print GACE "\nLocus : \"$predicted_gene_to_locus{$cds}\"\n";
+      print DNLD "$predicted_gene_to_locus{$cds}\n";
       print ACE "Interpolated_map_position\t\"$chrom\"\t$gmap\t\/\/$mean_coord\n";
       print GACE "Interpolated_map_position\t\"$chrom\"\t$gmap\t\/\/$mean_coord\n";
       if ($comp && exists $locus_map{$predicted_gene_to_locus{$cds}}){
 	print MAPCOMP "$predicted_gene_to_locus{$cds}\t\"$chrom\"\tCoords:\t$gmap\tContig:\t$locus_map{$predicted_gene_to_locus{$cds}}\n";
       }
     }
+    else {print DNLD "-\n"}
   }
 }
 
-
 __END__
-
 =head2 NAME - get_interpolated_gmap.pl  
 
 =head3 <SCRIPT DESCRIPTION> 
@@ -668,38 +703,12 @@ __END__
             (2) /wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/cmp_gmap_with_coord_order_WSXXX.yymmdd.pid (list of marker loci with gmap and coords)
             (3) /wormsrv2/logs/mapping_diff.yymmdd (not run for the build, but called by geneace_check.pl)  
             (4) /wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/interpolated_gmap_WSXXX.yymmdd 
-            (5) /wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/interpolated_gmap_to_geneace_WSXXX.yymmdd.ace";
-            (6) /wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/gmap_info_WS*yymmdd (information might be interesting in case data looks strange) 
+            (5) /wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/interpolated_gmap_to_geneace_WSXXX.yymmdd.ace
+            (6) /wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/WSXXX_interpolated_map.txt
+            (7) /wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/gmap_info_WS*yymmdd (information might be interesting in case data looks strange) 
             
 
 =head3 <USAGE> 
-
-=head2 Mandatory Options for the build
-
-            get_interpolated_gmap -rev -map or
-            get_interpolated_gmap -rev -map -comp (if want to compare the difference between gmap based on 
-                                                   seq. coordinates and contig maps)
-
-
-=head2 Optional switches for calling from geneace-check.pl
-     
-            get_interpolated_gmap -db /wormsrv1/geneace -rev (for checking reverse physicals) OR
-            get_interpolated_gmap -db /wormsrv1/geneace -diff (for checking discrepancy of chrom. location)
-            
-
-=head3 <DESCRIPTION OF COMMAND LINE OPTIONS>
-
-            Some options have single letter or wordy aliases 
-  
-            [diff] [rev or reverse] [db or databases] [map] [comp] [debug]
-
-B<-h: / -help:>     
-            Displays usage of the script: surprised?
-
-B<-diff:>   
-            Compare discrepancy of chrom. location of a CDS/Transcript by genetics and by gff coordinates
-
-B<-rev: / -reverse:>   
 
             Output reverse physicals of marker loci. Ie, check if the marker loci for genetics map are aligned lineally by gff coordinates.
 
@@ -722,8 +731,6 @@ B<-comp:>
             (2) physical contig maps, which can be view in gmap
 
 
-B<-d: / debug:>
+B <-n / -noUpload):
   
-            In debug mode, interpolated_map_positions will not be uploaded to autoace.
-
-
+            Interpolated_map_positions will not be uploaded to autoace.
