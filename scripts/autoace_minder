@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder [-options]
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2002-10-30 11:36:13 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2002-10-31 14:04:23 $
 
 
 #################################################################################
@@ -1263,7 +1263,7 @@ sub generate_utrs {
 sub make_wormpep {
   $am_option = "-buildpep";
   # make wormpep database but also perform all the other related protein steps in the build
-  if( -e "$logdir/D1A:Build_wormpep_initial" ) {
+  unless( -e "$logdir/D1A:Build_wormpep_initial" ) {
     # make wormpep -i
     $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Running make_wormpep -i at $runtime\n";
     system ("$scriptdir/make_wormpep -i") && die "Couldn't run make_wormpep -i\n";
