@@ -7,7 +7,7 @@
 # This script calculates interpolated genetic map positions for CDS, Transcripts 
 # and Pseudogenes lying between and outside genetic markers.
 #
-# Last updated on: $Date: 2003-10-10 09:23:58 $
+# Last updated on: $Date: 2003-10-13 13:27:32 $
 # Last updated by: $Author: ck1 $
 
 use strict;
@@ -283,7 +283,6 @@ foreach (sort keys %CDS_isoforms_mapping){
   @coords = sort {$a <=> $b} @coords;
   $mean_coords = ($coords[-1] + $coords[0]) / 2;
   push(@{$cds_mean{$_}}, $mean_coords, $CDS_isoforms_mapping{$_}->[3]);# key: cds(w/ isoform) value: mean coords
-
   $chromo = $CDS_isoforms_mapping{$_}->[0];
   push (@{$chrom_mean_coord_cds{$chromo}}, $mean_coords, $_);
   @coords =();
@@ -310,15 +309,16 @@ open (FH, "echo '$marker_gmap_of_each_chrom' | tace $database |") || die "Couldn
 while (<FH>){
   chomp($_);
   # $4=cds/transcript/pseudogene, $2=chrom, $1=locus, $3=gmap position
-  if ($_ =~ /^\"(.+)\"\s+\"(.+)\"\s+(-\d+\.\d+|\d+\.\d+|\d+|-\d+)\s+\"(.+)\"/ || 
-      $_ =~ /^\"(.+)\"\s+\"(.+)\"\s+(-\d+\.\d+|\d+\.\d+|\d+|-\d+)\s+\"(.+)\"\s+\"(.+)\"$/ || 
-      $_ =~ /^\"(.+)\"\s+\"(.+)\"\s+(-\d+\.\d+|\d+\.\d+|\d+|-\d+)\s+\"(.+)\"\s+\"(.+)\"\s+\"(.+)\"$/ ){   # 0 & postive & negative values
+  if ($_ =~ /^\"(.+)\"\s+\"(.+)\"\s+(-\d+\.\d+|\d+\.\d+|\d+|-\d+)\s+\"(.+)\"\s+.+/){
+#  if ($_ =~ /^\"(.+)\"\s+\"(.+)\"\s+(-\d+\.\d+|\d+\.\d+|\d+|-\d+)\s+\"(.+)\"/ || 
+#      $_ =~ /^\"(.+)\"\s+\"(.+)\"\s+(-\d+\.\d+|\d+\.\d+|\d+|-\d+)\s+\"(.+)\"\s+\"(.+)\"$/ || 
+#      $_ =~ /^\"(.+)\"\s+\"(.+)\"\s+(-\d+\.\d+|\d+\.\d+|\d+|-\d+)\s+\"(.+)\"\s+\"(.+)\"\s+\"(.+)\"$/ ){   # 0 & postive & negative values
 
     my $locus = $1;
     my $chrom = $2;
     my $gmap = $3;
     my $cds = $4;
-
+      
     ##################
     # CDS has isoforms
     ##################
@@ -328,7 +328,7 @@ while (<FH>){
       $mean_coord=$cds_mean{$cds}->[0];
       if (defined $mean_coord){push(@{$genetics_mapping{$cds}}, $chrom, $locus, $gmap, $mean_coord)}
       else {push(@{$genetics_mapping{$cds}}, $chrom, $locus, $gmap, "NA")}
-      if (defined $mean_coord){push(@{$chrom_pos{$chrom}}, $gmap, $mean_coord, $locus, $cds)}
+      if (defined $mean_coord){push(@{$chrom_pos{$chrom}}, $gmap, $mean_coord, $locus, $cds)}   
       else {push(@{$chrom_pos{$chrom}}, $gmap, "NA", $locus, $cds)}
     }
   
@@ -455,7 +455,9 @@ foreach $chrom (@chroms){
     my $mean_coord = $chrom_pos{$chrom}->[$i+1]; 
     my $locus = $chrom_pos{$chrom}->[$i+2];      
     $cds = $chrom_pos{$chrom}->[$i+3];           
-    push(@{$pos_order_to_mean_coord_locus_cds{$pos}}, $mean_coord, $locus, $cds); # key is gmap
+    push(@{$pos_order_to_mean_coord_locus_cds{$pos}}, $mean_coord, $locus, $cds) 
+      
+    if !exists $pos_order_to_mean_coord_locus_cds{$pos} && $mean_coord ne ""; # key is gmap
     push(@all_mean_of_each_chrom, $mean_coord); # duplication due to isoforms
   }
 
@@ -621,6 +623,7 @@ foreach $chrom (@chroms){
       $locusf = $locus1;
       $locusf = sprintf("%10s", $locusf);
       $down_mean_coord = $pos_order_to_mean_coord_locus_cds{$gmap_down}->[0];
+
       my $dnmcoord =  $down_mean_coord;
       $dnmcoord = sprintf("%12.1f", $dnmcoord);
       $up_mean_coord = $pos_order_to_mean_coord_locus_cds{$gmap_up}->[0];
@@ -629,7 +632,10 @@ foreach $chrom (@chroms){
       $cdsf = sprintf("%-15s", $cdsf);
 
       print CMP "$chrom\t$gmdn\t$locusf\t$cdsf\t$dnmcoord\n";
-      if ($down_mean_coord eq "NA") {print REV "\n** Gmap marker $cds ($locus1) on $chrom has no coordinate **\n"}
+
+      if ($down_mean_coord eq "NA") {
+	print REV "\n** Gmap marker $cds ($locus1) on $chrom has no coordinate **\n";
+      }
 
       if ($down_mean_coord ne "NA" && $up_mean_coord ne "NA" && ($down_mean_coord > $up_mean_coord)){
 	if (exists $CDS_variants{$cds}){
