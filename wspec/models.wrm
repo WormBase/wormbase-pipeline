@@ -228,6 +228,7 @@
                 Main_name  ?Gene_Class XREF Other_name
 		Other_name ?Gene_Class XREF Main_name
 		CGC_approved // added by krb 24/01/02
+		CGC_unresolved // added by krb 28/01/02
                 Remark Text
 
 ?Locus  Name    Other_name ?Text
@@ -241,6 +242,7 @@
 			Complementation_data Text
                         Controlled_phenotype ?Phenotype XREF Locus          // added for Lincoln RNAi [001213 dl]
 			CGC_approved	     // added by krb 24/01/02
+			CGC_unresolved // added by krb 28/01/02
 		Polymorphism    SNP  Text		// SNP stuff added for Todd [171001 krb]
 				Status Text
 				SNP_assay ?PCR_product XREF SNP_locus ?Text
