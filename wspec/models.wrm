@@ -595,6 +595,7 @@
 
 #Evidence Paper_evidence ?Paper
 	  Person_evidence ?Person
+	  Author_evidence ?Author UNIQUE Text
 	  Similarity_evidence ?Sequence
 	  PMID_evidence Text //added for Erich's gene function data krb 02/04/09
 	  Accession_evidence ?Accession_number // added for and by krb 020422
