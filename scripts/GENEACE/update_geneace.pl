@@ -3,9 +3,9 @@
 use Tk;
 use strict;
 use Cwd;
-use lib "/wormsrv2/scripts";
+use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
-
+use GENEACE::Geneace;
 
 ################
 # database paths
@@ -36,12 +36,16 @@ $mw->configure (title => "Geneace Update Accelerator   by Chao-Kung Chen   Versi
 my $btn_frame = $mw ->Frame(relief => 'groove', borderwidth => 2)
                     ->pack(side => 'top', anchor => 'n', expand => 1, fill => 'x');
 
+my $input_frame = $mw ->Frame(relief => 'groove', borderwidth => 2)
+                    ->pack(after => $btn_frame, side => 'top', anchor => 'n', expand => 1, fill => 'x');
+
+
 my $txt_frame = $mw->Frame(relief => 'groove', borderwidth => 2,
                            width => 735, height => 750,
 			   #label => 'Genetics update'
 			   )
-                    ->pack(in => $btn_frame,
-			   after => $btn_frame,
+                    ->pack(#in => $btn_frame,
+			   after => $input_frame,
 			   side => 'top',
 			   anchor => 'n',
 			   expand => 1, fill => 'x'
@@ -55,7 +59,7 @@ my $txt_frame = $mw->Frame(relief => 'groove', borderwidth => 2,
 
 my $menu_File=$btn_frame->Menubutton(text => 'File', relief => 'groove', borderwidth => 2)->pack (side => 'left', anchor => 'n', fill => 'x');
 $menu_File->AddItems(
-		     ["command" => "Open Update file", "accelerator" => "Ctrl-u", command => \&open_update_file],
+		     ["command" => "Open Update file", "accelerator" => "Ctrl-o", command => \&open_update_file],
 		     ["command" => "Save Update file", command => \&save_update_file],
                      ["command" => "Open ace file", "accelerator" => "Ctrl-a", command => \&open_ace_file],
 		     ["command" => "Save ace file", command => \&save_ace_file],
@@ -68,16 +72,28 @@ $menu_File->AddItems(
                      ["command" => "Quit", "accelerator" => "Ctrl-q", command => sub{exit}]
                     );
 
-$mw->bind('<Control-Key-u>' => \&open_update_file);
+$mw->bind('<Control-Key-o>' => \&open_update_file);
 $mw->bind('<Control-Key-a>' => \&open_ace_file);
-$mw->bind('<Control-Key-g>' => \&upload_ace);
+$mw->bind('<Control-Key-s>' => \&save_ace_file);
+$mw->bind('<Control-Key-t>' => \&upload_ace_test);
+$mw->bind('<Control-Key-g>' => \&upload_ace_GA);
+$mw->bind('<Control-Key-r>' => \&show_format);
 $mw->bind('<Control-Key-q>' => sub{exit});
 
-my $menu_GA=$btn_frame->Menubutton(text => 'Correct Geneace_check', relief => 'groove')->pack (side => 'left', anchor => 'n', fill => 'x');
-$menu_GA->AddItems(
-		     ["command" => "Add loci to Gene_class obj", command => \&add_loci_to_geneclass],
-		     ["command" => "Add location to Allele obj", command => \&add_location_to_allele]
-		  );
+my $clear_txt = $btn_frame->Menubutton(text => 'Window', relief => 'groove', borderwidth => 2)->pack (side => 'left', anchor => 'n', fill => 'x');
+$clear_txt->AddItems(["command" => "Clear upper window", "accelerator" => "Ctrl-u", command => \&clear_up],
+                       ["command" => "Clear lower window", "accelerator" => "Ctrl-l", command => \&clear_down],
+                      );
+
+$mw->bind('<Control-Key-u>' => \&clear_up);
+$mw->bind('<Control-Key-l>' => \&clear_down);
+
+
+#my $menu_GA=$btn_frame->Menubutton(text => 'Correct Geneace_check', relief => 'groove')->pack (side => 'left', anchor => 'n', fill => 'x');
+#$menu_GA->AddItems(
+#		     ["command" => "Add loci to Gene_class obj", command => \&add_loci_to_geneclass],
+#		     ["command" => "Add location to Allele obj", command => \&add_location_to_allele]
+#		  );
 
 
 my $menu_Option=$btn_frame->Menubutton(text => 'Options', relief => 'groove')->pack (side => 'left', anchor => 'n', fill => 'x');
@@ -85,23 +101,19 @@ $menu_Option->AddItems(
 		       ["command" => "Gene_class/Gene/Other_name assignment -> .ace", command => \&geneclass_loci_other_name],
 		       ["command" => "Genetics mapping -> .ace", command => \&gene_mapping],
                        ["command" => "Lab / Allele / PI -> .ace", command => \&update_lab],
-		       "-",
-	               ["command" => "CGC strain -> .ace", command => \&update_strain],
-		       "-",
-                       ["command" => "St. Louis isoforms update -> .ace", command => \&cds_has_isoforms],
 		      );
 
 my $clear = $btn_frame->Photo(-file =>"/wormsrv1/chaokung/DOCS/empty.gif");
 my $btn_ClearBench=$btn_frame->Button(text    => 'Clear_Bench',
 				      image   => $clear,
-				      command => \&clear_bench
+				      command => \&clear_up_down_window
 				     )
                              ->pack (side => 'left', anchor => 'n', fill => 'x');
 
 my($filename, $info, $btn_save, $mesg);
 
-$btn_frame->Label(text => 'Filename')->pack(side => 'left', anchor => 'w');
-$btn_frame->Entry(textvariable => \$filename)->pack(side => 'left', anchor => 'w', fill => 'x', expand => 1);
+$input_frame->Label(text => 'Filename')->pack(side => 'left', anchor => 'w');
+$input_frame->Entry(textvariable => \$filename)->pack(side => 'left', anchor => 'w', fill => 'x', expand => 1);
 
 my $open_update = $btn_frame->Photo(-file =>"/wormsrv1/chaokung/DOCS/open_update.gif");
 $btn_frame->Button(text => 'Open Updt', 
@@ -120,6 +132,9 @@ my ($input_window_lbl, $input_window, $ace_window_lbl, $ace_window, $scroll, $in
 
 &create_windows_and_lbl;
 
+my $ga = init Geneace();
+my %Gene_info = $ga -> gene_info();
+
 
 #open (IN, $filename) || die "Can't read in file!";
 #chomp (@content = <IN>);
@@ -131,98 +146,22 @@ MainLoop();
 # subroutines
 #############
 
-sub cds_has_isoforms {
-  open (IN, $filename) || die "Can't read in $filename";
-  my ($locus, $seq, $iso, $database, $acc, @Update, $type);
-  while (<IN>){
-    chomp;
-    if ($_ =~ /(.+)\s+\((\w{3,3}-\d+)\)\sis now:/){
-      $locus = $2;
-      $seq = $1;
-      push(@Update, "\n\nLocus : \"$locus\"\n");
-    }
-    if ($_ =~ /(.+)\s+\((\w+)\s(\w+)\)\s+(CDS|Transcript)/){
-      $iso = $1;
-      $database = $2;
-      if ($database eq "GB") {$database = "GenBank"}
-      $acc = $3;
-      $type = $4;
-      $iso =~ /$seq/;
-      if ("$seq" eq "$&"){
-	push(@Update, "CDS \"$iso\" Accession_evidence \"$database\" \"$acc\"\n") if $type eq "CDS";
-	push(@Update, "Transcript \"$iso\" Accession_evidence \"$database\" \"$acc\"\n") if $type eq "Transcript";
-      }
-    }
-  }
-  foreach (@Update){
-    print $_,;
-    $ace_window -> insert('end',"$_");
-  }   
-}  
- 
-sub add_location_to_allele {
-
-  my $allele_designation_to_LAB=<<EOF;
-Table-maker -p "/wormsrv1/geneace/wquery/allele_designation_to_LAB.def" quit
-EOF
-      
-  my ($allele_desig, $lab, %allele_desig_lab, @correction);
-  open (FH, "echo '$allele_designation_to_LAB.def' | $tace $ga_dir | ") || die "Couldn't access geneace\n";
-  while (<FH>){  
-    chomp($_); 
-    if ($_ =~ /^\"/){
-      $_ =~ s/\"//g;
-      ($lab, $allele_desig)=split(/\s+/, $_);
-      $allele_desig_lab{$allele_desig} = $lab;
-    }
-  } 
-  
-  open (IN, $filename) || die "Can't read in $filename";
-  while (<IN>){
-    if ($_ =~ /^ERROR:\s(.+)\shas\s.+/){
-      if ($1 !~ /^[A-Z].+/){
-	my $allele = $1; my $symbol = $1;
-	$symbol =~ s/\d+//;
-	push(@correction, "\n\nAllele : \"$allele\"\n");
-	push(@correction, "Location\t\"$allele_desig_lab{$symbol}\"\n");
-      }  
-    }
-  }
-  foreach (@correction){
-    $ace_window -> insert('end',"$_");  
-  }  
+sub clear_up {
+  $input_window->delete('1.0', 'end')
 }
 
-sub add_loci_to_geneclass {
-
-  my($locus, $gene_class, @gc_loci);
-
-  open (IN, $filename) || die "Can't read in $filename";
-  while (<IN>){
-    if ($_ =~ /^ERROR:\s(.+)\sis\sCGC_.+/){
-      $locus = $1;
-      $gene_class = $1;
-      $gene_class =~ s/-\d+//;
-      push(@gc_loci, "\n\nGene_class : \"$gene_class\"\n");
-      push(@gc_loci, "Loci\t\"$locus\"\n");
-    }
-    foreach (@gc_loci){
-      $ace_window -> insert('end',"$_");
-    } 
-  }
+sub clear_down {
+  $ace_window->delete('1.0', 'end')
 }
 
-sub clear_bench {
-  $input_window_lbl -> destroy();
-  $input_window -> destroy();
-  $ace_window_lbl -> destroy();
-  $ace_window -> destroy();
-  &create_windows_and_lbl;
+sub clear_up_down_window {
+   $input_window->delete('1.0', 'end');
+   $ace_window->delete('1.0', 'end')
 }
 
 sub show_format {
   $filename = "/wormsrv1/chaokung/JAH/JAH_data_format";
-  
+
   $input_window->delete ('1.0', 'end');
   if (!open(IN, "$filename")){
     $input_window->insert('end', "ERROR: $!\n");
@@ -233,24 +172,25 @@ sub show_format {
   }
   close IN;
   return;
-} 
+}
 
 sub open_update_file {
   $filename=$btn_frame->getOpenFile(
 			  -filetypes        =>
 			  [
-			   ['Perl Scripts',     '.pl'            ],
-			   ['ace Files',        '.ace'],
-			   ['Text Files',       ['.txt', '.text']],
-			   ['All Files',        '*',             ],
+			     ['All Files',      '*'              ],
+			     ['ace Files',      '.ace'           ],
+			     ['Text Files',     ['.txt', '.text']],
+			     ['Perl Scripts',   '.pl'            ],
 			  ],
-			 # -initialdir       => Cwd::cwd(),	    
+			 # -initialdir       => Cwd::cwd(),
 			  -initialdir       => chdir "/wormsrv1/chaokung/wormdata/ACE/",
 			  #-initialfile      => "getopenfile",
 			  -title            => "Open update file",
 			 ),
+
   #$info = "Loading file $filename";
- 
+
   $input_window->delete ('1.0', 'end');
   if (!open(IN, "$filename")){
     $input_window->insert('end', "ERROR: $!\n");
@@ -267,7 +207,7 @@ sub open_update_file {
 
 sub type_update_file {
   #$info = "Loading file $filename";
-  
+
   $input_window->delete ('1.0', 'end');
   if (!open(IN, "$filename")){
     $input_window->insert('end', "ERROR: $!\n");
@@ -302,7 +242,7 @@ sub open_ace_file {
 			  #-initialfile      => "getopenfile",
 			  -title            => "Open ace file",
 			 ),
-  
+
   $info = "Loading file $filename";
   $ace_window->delete ('1.0', 'end');
   if (!open(IN, "$filename")){
@@ -341,18 +281,19 @@ sub save_ace_file {
 }
 
 sub upload_ace_test {
-  my $command=<<EOF;
-pparse $filename
-save
-quit
-EOF
 
-  my $test_db_dir="/wormsrv1/chaokung/wormdata/CK1_GENEACE/";
-  open (Load_testGA,"| tace $test_db_dir ") || die "Failed to upload to test_Geneace";
-  print Load_testGA $command;
-  close Load_testGA;
-  print "Done\n";
+  if (!$filename){
+    my $command="pparse $filename\nsave\nquit\n";
+    my $test_db_dir="/nfs/disk100/wormpub/DATABASES/TEST_DBs/CK1TEST/";
 
+    open (Load_testGA,"| tace $test_db_dir ") || die "Failed to upload to test_Geneace";
+    print Load_testGA $command;
+    close Load_testGA;
+    print "Done\n";
+  }
+  else {
+    print "Save your ace file first before upload\n";
+  }
 }
 
 sub upload_ace_GA {
@@ -373,38 +314,35 @@ sub geneclass_loci_other_name {
   while(<IN>){
     if ($_ =~ ""){}
     #if ($_ =~ /^(\w{3,3})\s{2,}(\w+)\s{2,}(.+)/) {
-    if ($_ =~ /^(\w{3,3})\s+\[phenotype: (.+)\]/ ) { 
-      push(@Update,"\n\nGene_class : \"$1\"\n"); 
+    if ($_ =~ /^(\w{3,3})\s+\[phenotype: (.+)\]/ ) {
+      push(@Update,"\n\nGene_class : \"$1\"\n");
       push(@Update,"CGC_approved\n");
       push(@Update,"Phenotype \"$2\"\n");
     }
 
-    if ($_ =~ /^(\w{3,3})\s+([A-Z]+)\s+(.+)/ && $_ !~ /^New|NEW/ ) {  
+    if ($_ =~ /^(\w{3,3})\s+([A-Z]+)\s+(.+)/ && $_ !~ /^New|NEW/ ) {
       $gene_class = $1;
       push(@Update,"\n\nGene_class : \"$gene_class\"\n");
       #@parts = split(/\s{2,}/, $2);
       #print "Description\t\"$parts[1]\"\n";
       push(@Update,"Description\t\"$3\"\n");
       push(@Update,"Designating_laboratory\t\"$2\"\n");
-      push(@Update,"CGC_approved\n");
       #print "Designating_laboratory\t\"$parts[0]\"\n";
     }
-    
+
     if ($_ =~ /^(\w{3,3})\s+see\s+(.+)/ && $_ !~ /^New|NEW/ ) {  
       $gene_class = $1;
       push(@Update,"\n\nGene_Class : \"$1\"\n"); 
       push(@Update,"Description\t\"See $2\"\n");
-      push(@Update,"CGC_approved\n");
     }
 
     if ($_ =~ /^((\w{3,3})-\d+)\s+=\s+(\w+\..+)/) {
-      push(@Update, "\n\nLocus : \"$1\"\n");
-      push(@Update, "Gene\n");
+      push(@Update, "\n\nGene : \"$Gene_info{$1}{'Gene'}\"\n");
       push(@Update, "CGC_name\t\"$1\"\n");
-      print $2, "\n";
       push(@Update, "Gene_class\t\"$2\"\n");
-      push(@Update, "CGC_approved\n");
       push(@Update, "Species\t\"Caenorhabditis elegans\"\n");
+      push(@Update, "Version  1\n");
+      push(@Update, "Version_change   1 now \"WBPerson1845\" Created\n");
 
       $locus = $1;
       $rest = $3;
@@ -519,7 +457,7 @@ sub geneclass_loci_other_name {
       push(@Update, "\n-R Locus : \"$2\" \"$1\"\n");
       push(@Update, "\nLocus : \"$1\"\n");
       #@evidence = split(/\s+/, $evidence);
-       
+
       if ($evidence =~ /Paper_evidence\s+(.+)/){
 	#print $evidence[1], "\n";
 	$paper = $1;
@@ -592,24 +530,24 @@ sub gene_mapping {
   $dialog->Entry(textvariable => \$pos_neg_count)->pack(side => 'top', anchor => 'w', fill => 'x', expand => 1);
 
   $dialog->Show();
-   
+
   ############################
   # date of update: for remark
   ############################
-  
+
   $date = `date +%y%m%d`; chomp $date;
-  
+
   #####################################
   # parses updates of gene mapping data
   #####################################
-  
+
   while (<IN>){
     chomp;
-    
+
     ######################
     # parse multip_pt_data
     ######################
-    
+
     if ($_ =~ /^\/\/Multi[_-]pt.+/){
       $multi_pt_count++;
       write_ace($multi_pt_count, "\n\nMulti_pt_data : ", $multi_pt_count);
@@ -620,7 +558,7 @@ sub gene_mapping {
     }
     if ($_ =~ /^Multi[_-]pt_[cC]ombined_results(:|\s:)\s+(.+)/){
       @distances = split(/\s+/, $2);
-      $combined = "Locus \"$distances[0]\" $distances[1] Locus \"$distances[2]\" $distances[3] Locus \"$distances[4]\"";
+      $combined = "Gene \"$Gene_info{$distances[0]}{'Gene'}\" $distances[1] Gene \"$Gene_info{$distances[2]}{'Gene'}\" $distances[3] Gene \"$Gene_info{$distances[4]}{'Gene'}\"";
       write_ace($multi_pt_count, "Combined", $combined)}
     if ($_ =~ /^Multi[_-]pt_[gG]enotype(:|\s:)\s+(.+)/){write_ace($multi_pt_count, "Genotype", $2)}
     if ( ($_ =~ /^Multi[_-]pt_[mM]apper(:|\s:)\s+(.+)/) || ($_ =~ /Multi_pt_Data_provider(:|\s:)\s+(.+)/) ){
@@ -634,24 +572,24 @@ sub gene_mapping {
       @yr_mon = split(/\//, $2);
       write_ace($multi_pt_count, "Date", "$yr_mon[1]-$yr_mon[0]");
     }
-    if ($_ =~ /^Multi[_-]pt_GeneA(:|\s:)\s+(.+)/){write_ace($multi_pt_count, "Locus_A", $2)}
-    if ($_ =~ /^Multi[_-]pt_GeneB(:|\s:)\s+(.+)/){write_ace($multi_pt_count, "Locus_B", $2)}
+    if ($_ =~ /^Multi[_-]pt_GeneA(:|\s:)\s+(.+)/){write_ace($multi_pt_count, "Gene_A", $2)}
+    if ($_ =~ /^Multi[_-]pt_GeneB(:|\s:)\s+(.+)/){write_ace($multi_pt_count, "Gene_B", $2)}
 
     if ($_ =~ /^Multi[_-]pt_A_non_B_results(:|\s:)\s+(.+)/){
       @distances = split(/\s+/, $2);
-      $A_non_B = "Locus \"$distances[0]\" $distances[1] Locus \"$distances[2]\" $distances[3] Locus \"$distances[4]\"";
+      $A_non_B = "Gene \"$Gene_info{$distances[0]}{'Gene'}\" $distances[1] Gene \"$Gene_info{$distances[2]}{'Gene'}\" $distances[3] Gene \"$Gene_info{$distances[4]}{'Gene'}\"";
       write_ace($multi_pt_count, "A_non_B", $A_non_B);
     }
     if ($_ =~ /^Multi[_-]pt_B_non_A_results(:|\s:)\s+(.+)/){
       @distances = split(/\s+/, $2);
-      $B_non_A = "Locus \"$distances[0]\" $distances[1] Locus \"$distances[2]\" $distances[3] Locus \"$distances[4]\"";
+      $B_non_A = "Genes \"$Gene_info{$distances[0]}{'Gene'}\" $distances[1] Gene \"$Gene_info{$distances[2]}{'Gene'}\" $distances[3] Gene \"$Gene_info{$distances[4]}{'Gene'}\"";
       write_ace($multi_pt_count, "B_non_A", $B_non_A);
     }
-    
+
     #################
     # parse 2_pt_data
     #################
-    
+ 
     if ($_ =~ /^\/\/2_[pP]oint.+/){
       $two_pt_count++;
       write_ace($two_pt_count, "\n\n2_point_data : ", $two_pt_count);
@@ -659,8 +597,8 @@ sub gene_mapping {
     if ($_ =~ /^2_point_[tT]emp(:|\s:)\s+(.+)/){$temp = $2; $temp =~ s/°//; write_ace($two_pt_count, "Temperature", $temp)}
     if ($_ =~ /^2_point_[mM]apped_genes(:|\s:)\s+(.+)/){
       @genes = split(/,/, $2);
-      write_ace($two_pt_count, "Locus_1", $genes[0]);
-      write_ace($two_pt_count, "Locus_2", $genes[1]);
+      write_ace($two_pt_count, "Gene_1", $Gene_info{$genes[0]}{'Gene'});
+      write_ace($two_pt_count, "Gene_2", $Gene_info{$genes[1]}{'Gene'});
     }
     if ($_ =~ /^2_point_[gG]enotype(:|\s:)\s+(.+)/){write_ace($two_pt_count, "Genotype", $2)}
     if ($_ =~ /^2_point_[rR]esults(:|\s:)\s+(.+)/){write_ace($two_pt_count, "Results", $2)}
@@ -679,11 +617,11 @@ sub gene_mapping {
       $remark = $2; $remark =~ s/^\s//; #$remark .= " [$date ck1]";
       write_ace($two_pt_count, "Remark", "$remark\"\t\"CGC_data_submission");
     }
-    
+
     ####################
     # parse pos_neg_data
     ####################
-    
+
     if ($_ =~ /^\/\/Df[\/|_]Dp.+/){
       $pos_neg_count++; write_ace($pos_neg_count, "\n\nPos_neg_data : ", $pos_neg_count);
     }
@@ -705,24 +643,22 @@ sub gene_mapping {
       $ga = $2; $ga =~ s/\)$//;
       @gene_allele = split(/\(/, $ga);
       if ($gene_allele[1] ne ""){
-	write_ace($pos_neg_count, "Locus_1", "$gene_allele[0]\" \"$gene_allele[1]"); # w/ allel info
+	write_ace($pos_neg_count, "Gene_1", "$Gene_info{$gene_allele[0]}{'Gene'}", "$gene_allele[1]"); # w/ allel info
       }
-      else {write_ace($pos_neg_count, "Locus_1", "$gene_allele[0]")}; # w/o allele info
+      else {write_ace($pos_neg_count, "Gene_1", "$Gene_info{$gene_allele[0]}{'Gene'}")}; # w/o allele info
     }
-    
-    
+
+
     ##################
-    # parse locus data
+    # parse Gene data
     ##################
-    
+
     if ( ($_ =~ /^Locus_[lL]ocus_[nN]ame(:|\s:)\s+(.+)/) ||
 	 ($_ =~ /^Locus_[gG]ene_[nN]ame(:|\s:)\s+(.+)/) ){
       $locus = $2;
       $gene_class = $2;
       $gene_class =~ s/-.+//;
-      print "$locus ; $gene_class\n";
-      write_ace($locus, "\n\nLocus : ", $locus);
-      write_ace($locus, "CGC_approved");
+      write_ace($locus, "\n\nGene : ", $Gene_info{$locus}{'Gene'});
       write_ace($locus, "Gene_class", $gene_class);
     }
     if ($_ =~ /^Locus_[sS]equence(:|\s:)\s+(.+)/){$seq = uc($2); write_ace($locus, "CDS", $seq)}
@@ -758,7 +694,7 @@ sub gene_mapping {
     if ($_ =~ /^Locus_(d|D)ata_provider(:|\s:)\s+(.+)/){
       @providers = split(/,|and/, $3);
     }
- 
+
     if ($_ =~ /^Locus_[dD]escription(:|\s:)\s+(.+)/){
       my $des = $2;
       foreach $person (@providers){
@@ -767,7 +703,7 @@ sub gene_mapping {
 	write_ace($locus, "Description", "$des\"\tAuthor_evidence\t\"$person");
       }
     }
-     
+
     if ($_ =~ /^Locus_[cC]hromosome(:|\s:)\s+(.+)/){write_ace($locus, "Map", $2)}
 
     if ($_ =~ /^Locus_[aA]llele(:|\s:)\s+(.+)/){
@@ -783,7 +719,7 @@ sub gene_mapping {
     ###############################
     # parse breakpt (rearrangement)
     ###############################
-    
+
     if ($_ =~ /^Breakpt_Rearrangement(:|\s:)\s+(.+)/){$rearr = $2; write_ace($2, "\n\nRearrangement : ", $2)}
     if ($_ =~ /^Breakpt_Comment(:|\s:)\s+(.+)/){
       $remark = $2; $remark =~ s/^\s//; #$remark .= " [$date ck1]";
@@ -814,7 +750,7 @@ sub gene_mapping {
     ##################
     # parse gene_class
     ##################
-    
+
     if ($_ =~ /GeneClass_[gG]ene_name(:|\s:)\s+(.+)/){
       $gene_class = $1; 
       write_ace($1, "\n\nGene_class : ", $1);
@@ -827,19 +763,19 @@ sub gene_mapping {
       write_ace($gene_class, "Remark", "$remark\"\tCGC_data_submission");
     }
   }
-  
+
   sub update_lab {
     open (IN, $filename) || die "Can't read in file!";
-    
+
     my ($gene_class, @Update, $locus, $seq, $rest, @parts, $num_parts,$cgc_paper, $paper,
 	$head, $tail, @variants, $i, $person, $pmid, $other_name, @evidence, $evidence, @persons);
-    
+
     while(<IN>){
       if ($_ =~ ""){}
 
       # 2-letter lab
       if ( $_ =~ /^([A-Z]{2,2})\s+(\w{2,2}|--|\w{1,1})\s+(\w{1,} \w{1,},\s\w{1,}|\w{1,}-\w{1,},\s\w{1,}|\w{1,}-\w{1,},\s\w{1,}-\w{1,}|\w{1,},\s\w{1,}|\w{1,},\s\w{1,}-\w{1,})\s+(.+)$/ ) { 
-     
+
      #  if ( $_ =~ /^([A-Z]{2,2})\s+.+/ ) { 	
 	push(@Update,"\n\nLaboratory : \"$1\"\n"); 
 	push(@Update,"Allele_designation \"$2\"\n");
@@ -880,7 +816,7 @@ sub gene_mapping {
     else {
       push(@{$obj_info{$obj}}, "$tag\t\"$value\""); # quotation different
     }
-    
+
     foreach (keys %obj_info){
       #print @{$obj_info{$obj}};
       $ace_window -> insert('end',"@{$obj_info{$_}");  # next line is at end of previous one
