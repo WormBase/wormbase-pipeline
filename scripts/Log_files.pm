@@ -64,13 +64,16 @@ sub make_build_log
   {
     my $class = shift;
     my $debug = shift;
-    my $ver = &Wormbase::get_wormbase_version_name;
+    my $ver = &Wormbase::get_wormbase_version;
     $ver = $debug unless $ver;  #if wormsrv2 not accessible then Wormbase module wont get version
     my $filename;
     $0 =~ /([^\/]*$)/ ? $filename = $0 :  $filename = $1 ; # get filename (sometimes $0 includes full path if not run from its dir )
 
     my $path = "/wormsrv2/autoace/logs";
-    $path = "/tmp/logs" if $debug;
+    if( defined $debug ) {
+      $path = "/tmp/logs" ;
+      system("mkdir $path") unless (-e $path);
+    }
 
     my $log_file = "$path/$filename".".$ver.".$$;
     my $log;
@@ -97,15 +100,16 @@ sub write_to
 
 sub mail
   {
-   my ($self, $recepient) = @_;
+   my ($self, $recipient) = @_;
 
    my $fh = $self->{"FH"};
    print $fh "\nFinished at ",&Wormbase::runtime,"\n\n***********************************\n\n"; 
    close $fh;
 
+   $recipient = "All" unless $recipient;
    my $file = $self->{"FILENAME"};
    my $script = $self->{"SCRIPT"};
-   &Wormbase::mail_maintainer($script,$recepient,$file);
+   &Wormbase::mail_maintainer($script,$recipient,$file);
   }
 
 1;
