@@ -52,7 +52,12 @@ Visible
 Is_a_subclass_of Sequence
 Filter "Method = NDB"
 
-Class Wormpep
+Class Wormpep_active
+Visible
+Is_a_subclass_of Protein
+Filter "Wormpep NOT Inactive"
+
+Class Wormpep_all
 Visible
 Is_a_subclass_of Protein
 Filter "Wormpep"
