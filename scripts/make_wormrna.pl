@@ -7,7 +7,7 @@
 # Builds a wormrna data set from the current autoace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-01-22 14:45:53 $
+# Last updated on: $Date: 2003-01-28 09:33:10 $
 
 
 #################################################################################
@@ -82,7 +82,7 @@ $runtime = `date +%H:%M:%S`; chomp $runtime;
 print LOG "# $runtime : connect to primary database\n";
 
 my $db = Ace->connect (-path => $dbdir, -program => $tace) || die "Couldn't connect to $dbdir\n";
-my @transcripts = $db->fetch (-query => 'FIND Transcript');
+my @transcripts = $db->fetch (-query => 'FIND Transcript WHERE Species = \"Caenorhabditis elegans\"');
 
 @transcripts = sort @transcripts;
 my $count = scalar(@transcripts);
