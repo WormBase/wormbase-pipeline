@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-03-05 16:08:03 $
+# Last updated by: $Author: dl1 $
+# Last updated on: $Date: 2004-03-25 09:29:41 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -171,7 +171,7 @@ foreach $file (@gff_files) {
     elsif ($feature eq "intron")                                                {push (@{$GFF{$file}{intron_all}},$_);}
 
     # Repeats
-    elsif ($feature =~ m/_repeat/)                                              {push (@{$GFF{$file}{repeats}},$_);}
+    elsif ($source eq "RepeatMasker")                                              {push (@{$GFF{$file}{repeats}},$_);}
 
     # Assembly tags
     elsif ($source eq "assembly_tag")                                           {push (@{$GFF{$file}{assembly_tags}},$_);}
