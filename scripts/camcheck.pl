@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/bin/perl5.8.0 -w
 #
 # camcheck.pl
 #
@@ -7,7 +7,7 @@
 # Usage: camcheck.pl
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-03-28 09:30:49 $
+# Last updated on: $Date: 2003-11-28 11:22:34 $
 #
 # see pod documentation (i.e. 'perldoc camcheck.pl') for more information.
 #
@@ -68,8 +68,14 @@ if( $opt_s ){
 }
 
 # only email a specific person responsible for a database
-$maintainers = $opt_e if $opt_e;
-
+if($opt_e){
+  if(($opt_e eq "ar2") || ($opt_e eq "pad") || ($opt_e eq "dl1")){ 
+     $maintainers = $opt_e;
+  }
+  else{
+     $maintainers = "wormbase\@sanger.ac.uk";
+  }
+}
 
 # Use debug mode?
 if($debug){
