@@ -836,6 +836,7 @@
 			Coding	CDS UNIQUE Int UNIQUE Int
 				CDS_predicted_by ?Method Float // score of method
 				Precursor
+				Confirmed_by #Gene_confirmation
 			End_not_found
 			Start_not_found
 			Show_in_reverse_orientation    // Draw 3' reads in reverse orientation [010423 dl]
@@ -952,7 +953,9 @@
                      EST
 		     Homology
 		     UTR	
-
+			 
+#Gene_confirmation cDNA
+                   EST	
 
 
 // Homol and Feature info
