@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.3 2001-08-06 09:20:31 rd Exp $
+// CVS info:  $Id: models.wrm,v 1.4 2001-08-07 13:22:16 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -668,6 +668,7 @@
 			In_book #Paper
 			Contained_in ?Paper XREF Contains	// old form
 			Medline_acc UNIQUE Int
+			PMID UNIQUE Int				// added for Juan Carlos
         Author ?Author XREF Paper #Affiliation
 	Affiliation Text	// Authors' affiliation if available
         Brief_citation UNIQUE Text
@@ -1197,6 +1198,9 @@
 ?Picture Description ?Text
 	 Pick_me_to_call Text Text
 	 Expr_pattern ?Expr_pattern XREF Picture
+	 RNAi ?RNAi XREF Picture                // new, added for Lincoln.  krb [010807]
+         Remark ?Text                           // also new
+
 
 //
 // WWW_server
@@ -1327,7 +1331,9 @@
                                             Transgene_expression   //RL [010327]
         Inhibits	Predicted_gene ?Sequence XREF RNAi_result  // "gene" parent (unreliable)
 			Gene ?Gene   XREF RNAi_result            //RL [010327]
-        Reference ?Paper XREF RNAi
+        Supporting_data Movie ?Movie XREF RNAi                   // added for Lincoln, krb [010807]
+                        Picture ?Picture XREF RNAi		 // added for Lincoln, krb [010807]
+	Reference ?Paper XREF RNAi
         Phenotype ?Phenotype XREF RNAi #Phenotype_info
         Remark ?Text
 
@@ -1362,6 +1368,14 @@
  	     Method ?Method
  	     Overlaps_CDS ?CDS XREF Corresponding_WTP  // added for Dan PCR mappings [010419 dl]
 	     Contact_information Text
+
+
+// New movie class added for Lincoln's movies, krb [010807]
+
+?Movie Description ?Text
+       Pick_me_to_call Text Text
+       RNAi ?RNAi XREF Movie
+       Remark ?Text
 
 // end of file
 
