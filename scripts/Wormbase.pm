@@ -717,7 +717,102 @@ sub giface {
   my $giface = glob("~wormpub/ACEDB/bin_ALPHA/giface");
   return $giface;
 }
+################################################################################
+# Map features to a given sequence
+################################################################################
 
+sub Map_feature
+  {
+    # Expects raw DNA sequence (no FASTA stlye header), and 2 flanking sequences
+    # Returns 2 element array ref containing the coordinates of the bases adjacent to the feature
+    #
+    # returned coords       V                       V
+    # DNA seq ***************XXXXXXXXXXXXXXXXXXXXXXX*******************
+    #
+    # Returns undef if feature not mapped
+    # If mapping to exact sequence passed it will automatically try the reverse strand and return coordinates
+    # will reflect this.
+
+
+    my ($target, $flank_1, $flank_2) = @_;
+
+    # write target seq to file
+    my $target_fa = "/tmp/target.fa";
+    open (GFA,">$target_fa" ) or die "cant write target sequence file for $target_fa\n";
+    print GFA uc "\>target\n$target";
+    close GFA;
+
+    # write flanking seqs to file
+    my $flank_fa = "/tmp/flank.fa";
+    open (FFA,">$flank_fa" ) or die "cant write flanking sequence file for $flank_fa\n";
+    print FFA uc "\>flank_1\n$flank_1\n\>flank_2\n$flank_2\n";
+    close FFA;
+
+    my $scoreCutoff;
+    # calc score cuttoff as 2 shorter than the shortest flanking seq
+    if( length $flank_1 < length $flank_2 ) {
+      $scoreCutoff = (length $flank_1) - 2;
+    }
+    else {
+      $scoreCutoff = (length $flank_2) - 2;
+    }
+
+    # run SCAN
+    # &scan returns array ref [5', 3']
+    my $result = &scan($target_fa,$flank_fa, $scoreCutoff ) ;
+
+    unless ($result) {
+      # try reverse strand
+      `revcomp $target_fa > $target_fa._tmp; mv $target_fa._tmp $target_fa`;
+
+      $result = &scan($target_fa,$flank_fa, $scoreCutoff) ;
+      if ($result){
+	push(@$result,( shift(@$result) ) ); # swap coords as rev comped
+      }
+      else {
+	return;
+      }
+    }
+
+    return $result;
+  }
+
+
+sub scan
+  {
+    # SCAN 
+    my $scan = "/usr/local/pubseq/bin/scan -f -t";
+    my @data;
+    my @results;
+    
+    open (SCAN, "$scan $_[2] $_[0] $_[1] |") or warn "cant pipe SCAN : $!\n";
+    while (<SCAN>)
+      {
+	# scan output-  flank_1       1     30  56424 56453     30  100 % match, 0 copies, 0 gaps
+	s/^\s+//;  #remove any space at begining - some have it some dont f's up where things split to! 
+	my @data = split(/\s+/,$_);
+	if( defined( $data[0]) )
+	  {
+	    if( $data[0] =~ /(\S+)_([1,2])/ )
+	      {
+		push(@results,$data[3] );
+		push(@results,$data[4] );
+	      }
+	  }
+      }
+    close SCAN;
+
+    if( scalar (@results ) == 4)
+      {
+	# mapping has worked 
+	@results = sort{ $a <=> $b } @results; # sort accending
+	shift @results;
+	pop @results;
+	
+	return \@results;
+    }
+    else { return; }
+  }
 
 ################################################################################
 #Return a true value
@@ -902,6 +997,43 @@ Compiles release stats of the current Wormpep and writes to a file, later used i
 =item *
 gff_sort, tace, and dbfetch
 
-Don't know what these do, sorry.
+Dont know what these do, sorry.
+
+=back 
+
+=over 4
+
+=item *
+
+=back
+
+* Map_feature
+
+This a generic subroutine for mapping any feature to a specified DNA sequence using SCAN to locate specified flanking sequences.
+
+(uses the Wormbase::scan sub)
+
+Expects raw DNA sequence (no FASTA stlye header), and 2 flanking sequences
+
+Returns 2 element array ref containing the coordinates of the bases adjacent to the feature
+
+
+returned coords       V                       V
+
+DNA seq ***************XXXXXXXXXXXXXXXXXXXXXXX*******************
+
+Returns undef if feature not mapped
+
+If mapping to exact sequence passed fails it will automatically try the reverse strand and return coordinates will reflect this.
+
+
+example usage
+
+my $map = &Map_feature($DNAseq, $flank_a, $flank_b);
+
+my $coord_5 = $$map[0];
+
+my $coord_3 = $$map[1];
+
 
 =cut
