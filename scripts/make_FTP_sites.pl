@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-10-03 14:30:36 $
+# Last updated on: $Date: 2003-10-03 15:27:43 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -412,7 +412,7 @@ sub copy_homol_data{
   &run_command("cp $blast_dir/blastp_ensembl.ace          $private_ftp/${release}_blastp_data.ace");
   &run_command("cp $blast_dir/blastx_ensembl.ace          $private_ftp/${release}_blastx_data.ace");
   &run_command("cp $blast_dir/wormprot_motif_info.ace     $private_ftp/${release}_protein_motif_data.ace");
-  &run_command("cp $blast_dir/worm_brigprot_motif_info.ace    $private_ftp/${release}brig_protein_motif_data.ace");
+  &run_command("cp $blast_dir/worm_brigprot_motif_info.ace    $private_ftp/${release}_brig_protein_motif_data.ace");
 
   &run_command("cp $blast_dir/best_blastp_hits  $targetdir/$release/best_blastp_hits.$release");
   &run_command("cp $blast_dir/best_blastp_hits_brigprot  $targetdir/$release/best_blastp_hits_brigprot.$release");
