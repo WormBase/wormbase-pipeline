@@ -7,7 +7,7 @@
 # Gets latest PFAM motifs from sanger/pub and puts info in to ace file
 #
 # Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2002-09-06 12:30:17 $                        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2002-09-16 14:53:38 $                        # quickly see when script was last changed and by whom
 
 
 use strict;                                     
@@ -53,7 +53,7 @@ unless (defined($opt_d))
     `wget -O $pfam_motifs_gz ftp://ftp.sanger.ac.uk/pub/databases/Pfam/Pfam-A.full.gz` and die "$0 Couldnt get Pfam-A.full.gz \n";
     print LOG "...... got it!\nUnzipping . .";
     print "...... got it!\nUnzipping . .";
-    `gunzip $pfam_motifs_gz` and die "gunzip failed\n";
+    `gunzip -f $pfam_motifs_gz` and die "gunzip failed\n";
     print LOG "DONE\n";
     print "DONE\n";
   }
@@ -81,6 +81,7 @@ my $pfam;
 
 print LOG "\treading data . . . \n";
 print "\treading data . . . \n";
+my $pfcount = 0;
 while (<PFAM>)
   {
     chomp;
@@ -88,6 +89,7 @@ while (<PFAM>)
       {
 	if (defined $pfam)
 	  {
+	    $pfcount++;
 	    print "$pfam went fine\n";
 	    print PFAMOUT "Motif : \"PFAM:$pfam\"\n";
 	    print PFAMOUT "Title \"$text\"\n";
@@ -113,9 +115,9 @@ while (<PFAM>)
       }      
   }
 
-
-print LOG "finsihed at ",`date`,"\n";
-print "finsihed at ",`date`,"\n";
+print LOG "added $pfcount PFAM motifs\n";
+print LOG "finished at ",`date`,"\n";
+print "finished at ",`date`,"\n";
 close PFAM;
 close PFAMOUT;
 close LOG;
