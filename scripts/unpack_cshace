@@ -143,6 +143,29 @@ close FILE_OLD;
 close FILE_NEW;
 unlink "$dbdir/wspec/displays.old" ;
 
+ ###################################
+ # modify passwd.wrm for rebuild #
+ ###################################
+
+system ("mv $dbdir/wspec/passwd.wrm $dbdir/wspec/passwd.old") ;
+open (FILE_OLD,"$dbdir/wspec/passwd.old") || do { 
+    print LOGFILE "failed to open $dbdir/wspec/passwd.old\n"; 
+    die(1);
+};
+open (FILE_NEW,">$dbdir/wspec/passwd.wrm") || do { 
+    print LOGFILE "failed to open $dbdir/wspec/passwd.wrm\n"; 
+    die(1);
+};
+while (<FILE_OLD>) { 
+    if (/\/\/ NOLOCK/) {
+	print FILE_NEW "\\ NOLOCK\n\nwormpub\ndl1\n\n";
+    } else {
+	print FILE_NEW $_;}
+}
+close FILE_OLD;
+close FILE_NEW;
+unlink "$dbdir/wspec/passwd.old" ;
+
  ####################################
  # Re-initialise the ACEDB database #
  ####################################
