@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.0 -w
+#!/usr/local/bin/perl5.6.1 -w
 #
 # introncheck
 #
@@ -6,9 +6,8 @@
 #
 # Usage: introncheck [-options]
 #
-
-#####################################################################################################
-
+# Last updated by: $Author: dl1 $     
+# Last updated on: $Date: 2003-02-20 14:06:40 $      
 
 #################################################################################
 # variables                                                                     #
@@ -64,8 +63,8 @@ foreach my $chromosome (@chromosomes) {
 
   print "Checking GFF file: 'CHROMOSOME_${chromosome}'\n";
 
-  open (OUT_CAM, ">$gffdir/../CHECKS/CHROMOSOME_${chromosome}.check_intron_cam.gff");
-  open (OUT_STL, ">$gffdir/../CHECKS/CHROMOSOME_${chromosome}.check_intron_stl.gff");
+  open (OUT_CAM, ">$dbdir/CHECKS/CHROMOSOME_${chromosome}.check_intron_cam.gff");
+  open (OUT_STL, ">$dbdir/CHECKS/CHROMOSOME_${chromosome}.check_intron_stl.gff");
 
   #######################################
   # make a hash for all curated introns #
@@ -89,7 +88,7 @@ foreach my $chromosome (@chromosomes) {
   # print "Cycle through introns in .gff file\n\n"; #
   ###################################################
 
-  open (GFF, "<$gffdir/../CHROMOSOMES/CHROMOSOME_${chromosome}.gff") || die "Failed to open gff file in $gffdir/../CHROMOSOMES/CHROMOSOME \n\n";
+  open (GFF, "<$dbdir/CHROMOSOMES/CHROMOSOME_${chromosome}.gff") || die "Failed to open gff file in $dbdir/CHROMOSOMES/CHROMOSOME \n\n";
 
   while (<GFF>) {       	
     chomp;
@@ -110,6 +109,10 @@ foreach my $chromosome (@chromosomes) {
     }
     
     # Confirmed_introns not in gene models
+
+    # ignore those marked as false
+    next if (($f[8] =~ /Confirmed_as_FALSE/) || ($f[8] =~ /Confirmed_as_Inconsistent/));
+
     if ( (($f[2] eq "intron") && ($f[1] eq "") && (not $f[8] =~ /Confirmed_in_UTR/) ) || ( ($f[1] eq "NDB_CDS") && (($f[8] =~ /Confirmed_by_EST/) || ($f[8] =~ /Confirmed_by_cDNA/))) ) {
           
       my $line = $_;      
