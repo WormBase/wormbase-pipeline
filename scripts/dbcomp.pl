@@ -6,7 +6,7 @@
 # Compares this number to those from a second database.
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-05-19 13:21:39 $      
+# Last updated on: $Date: 2004-07-07 08:24:03 $      
 
 
 use strict;
@@ -407,6 +407,7 @@ SAGE_experiment
 Sequence
 Session
 SK_map
+SO_term
 Species
 Strain
 Table
