@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: krb $
-// Last edited on: $Date: 2004-11-19 11:28:23 $
+// Last edited on: $Date: 2004-11-19 11:53:22 $
  
 
 
@@ -328,7 +328,7 @@
 ?Gene   Evidence #Evidence
 	SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF Gene_child
         Identity  Version UNIQUE Int
-                  Name  CGC_name        UNIQUE ?Gene_name XREF CGC_name_for
+                  Name  CGC_name        UNIQUE ?Gene_name XREF CGC_name_for #Evidence
                         Sequence_name   UNIQUE ?Gene_name XREF Sequence_name_for // captures main CDS name without isoforms
 			Molecular_name         ?Gene_name XREF Molecular_name_for  // for linking to full CDS names, wormpep etc.
                         Other_name             ?Gene_name XREF Other_name_for #Evidence // other unapproved CGC-style gene names
