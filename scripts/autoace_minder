@@ -6,7 +6,7 @@
 # Usage : autoace_minder [-options]
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2002-08-19 15:16:33 $
+# Last edited on: $Date: 2002-08-20 16:35:12 $
 
 
 #################################################################################
@@ -118,6 +118,10 @@ our %flag = (
 	     'B4'  => 'B4:Errors_in_agp_files',
 	     'B5'  => 'B5:Copy_to_midway',
 	     'B6'  => 'B6:BLAT_analysis',
+	     'B6A' => 'B6a:BLAT_analysis_EST',
+	     'B6B' => 'B6b:BLAT_analysis_mRNA',
+	     'B6C' => 'B6c:BLAT_analysis_EMBL',
+	     'B6D' => 'B6d:BLAT_analysis_NEMATODE',
 	     'B7'  => 'B7:Upload_BLAT_data',
 	     'B7A' => 'B7a:Upload_partial_BLAT_data',
 	     'B8'  => 'B8:Upload_wublast_data',
@@ -844,6 +848,7 @@ sub blat_jobs {
 	    print LOG "Starting BLAT v EST at $runtime\n\n" if ($time);
 	    $i = system ("$scriptdir/blat_them_all.pl -bse");
 	    $i = system ("$scriptdir/blat_them_all.pl -ve"); 
+	    system ("touch $logdir/$flag{'B6A'}");  
 	    $runtime = 'date +%H:%M:%S'; chomp $runtime;
 	    print LOG "Finished BLAT v EST at $runtime\n\n" if ($time);
 
@@ -852,6 +857,7 @@ sub blat_jobs {
 	    print LOG "Starting BLAT v mRNA at $runtime\n\n" if ($time);
 	    $i = system ("$scriptdir/blat_them_all.pl -bsm");
 	    $i = system ("$scriptdir/blat_them_all.pl -vm"); 
+	    system ("touch $logdir/$flag{'B6B'}");  
 	    $runtime = 'date +%H:%M:%S'; chomp $runtime;
 	    print LOG "Finished BLAT v mRNA at $runtime\n\n" if ($time);
 
@@ -860,6 +866,7 @@ sub blat_jobs {
 	    print LOG "Starting BLAT v EMBL at $runtime\n\n" if ($time);
 	    $i = system ("$scriptdir/blat_them_all.pl -bso");
 	    $i = system ("$scriptdir/blat_them_all.pl -vo"); 
+	    system ("touch $logdir/$flag{'B6C'}");  
 	    $runtime = 'date +%H:%M:%S'; chomp $runtime;
 	    print LOG "Finished BLAT v EMBL at $runtime\n\n" if ($time);
 
@@ -867,11 +874,9 @@ sub blat_jobs {
 	    $runtime = 'date +%H:%M:%S'; chomp $runtime;
 	    print LOG "Starting uploading BLAT data at $runtime\n\n" if ($time);
 	    $i = system ("scriptdir/autoace_minder -addblatpartial"); 
+	    system ("touch $logdir/$flag{'B7A'}");  
 	    $runtime = 'date +%H:%M:%S'; chomp $runtime;
 	    print LOG "Finished uploading BLAT data at $runtime\n\n" if ($time);
-	    
-	    # make a file in /logs
-	    system ("touch $logdir/$flag{'B7a'}");  
 	    
 	    # dump gff from the database
 	    $runtime = 'date +%H:%M:%S'; chomp $runtime;
@@ -880,7 +885,6 @@ sub blat_jobs {
 	    system ("$scriptdir/GFFsplitter -s")        && die "Couldn't split GFF files\n";
 	    $runtime = 'date +%H:%M:%S'; chomp $runtime;
 	    print LOG "Finished GFF dump #2 at $runtime\n\n" if ($time);
-
 	    exit 0;
 	}
 	exit 0;
@@ -892,6 +896,7 @@ sub blat_jobs {
     print LOG "Starting BLATX v NEMATODE at $runtime\n\n" if ($time);
     system ("$scriptdir/blat_them_all.pl -bsx") && die "Couldn't blat_them_all -bsx\n";
     system ("$scriptdir/blat_them_all.pl -vx")  && die "Couldn't blat_them_all -vx\n";
+    system ("touch $logdir/$flag{'B6D'}");  
     $runtime = 'date +%H:%M:%S'; chomp $runtime;
     print LOG "Finished BLATX v NEMATODE at $runtime\n\n" if ($time);
 
@@ -933,7 +938,7 @@ pparse /wormsrv2/autoace/BLAT/autoace.blat.mRNA.ace
 save
 pparse /wormsrv2/autoace/BLAT/autoace.blat.EMBL.ace 
 save
-pparse /wormsrv2/autoace/BLAT/autoace.blat.NEMATODE.ace 
+pparse /wormsrv2/autoace/BLAT/autoace.NEMATODE.ace 
 save
 pparse /wormsrv2/autoace/BLAT/autoace.good_introns.EST.ace 
 save
@@ -953,10 +958,17 @@ END
 }
 #__ end parse_blat_files __#
 
+#######################################################################
+# load blat results from [EST|mRNA|EMBL] data runs                    #
+#######################################################################
+
 sub parse_blat_files_other {
 
+
 # quit if blat_them_all has not been run
-&usage(9) unless (-e "$logdir/$flag{'B6'}");
+&usage(9) unless (-e "$logdir/$flag{'B6A'}");
+&usage(9) unless (-e "$logdir/$flag{'B6B'}");
+&usage(9) unless (-e "$logdir/$flag{'B6C'}");
 
 my $command=<<END;
 pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLAT_EST.ace 
@@ -986,18 +998,18 @@ END
     close WRITEDB;
     
     # make a make_autoace log file in /logs
-    system ("touch $logdir/$flag{'B7'}");
+    system ("touch $logdir/$flag{'B7A'}");
 }
 #__ end parse_blat_files_other __#
 
 sub parse_blat_files_nematode {
 
 # quit if blat_them_all has not been run
-&usage(9) unless (-e "$logdir/$flag{'B6'}");
+&usage(9) unless (-e "$logdir/$flag{'B6D'}");
 
 my $command=<<END;
 pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLATX_NEMATODE.ace 
-pparse /wormsrv2/autoace/BLAT/autoace.blat.NEMATODE.ace 
+pparse /wormsrv2/autoace/BLAT/autoace.NEMATODE.ace 
 save
 quit
 END
