@@ -1492,7 +1492,7 @@
 
 ?PCR_product SMap S_Parent Canonical_parent UNIQUE ?Sequence XREF PCR_product
  		  S_Child RNAi ?RNAi XREF PCR_product UNIQUE Int UNIQUE Int #SMap_info
-		  S_Child Expr_profile ?Expr_profile XREF PCR_product // added for new Expr_profile class [010912 krb]
+			  Expr_profile ?Expr_profile XREF PCR_product // added for new Expr_profile class [010912 krb]
  	     Method ?Method
  	     Overlaps_CDS ?Sequence XREF Corresponding_PCR_product  // added for Dan PCR mappings [010419 dl]
 	     Oligo ?Oligo UNIQUE Int UNIQUE Int
