@@ -7,16 +7,17 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2004-02-26 17:16:21 $
+# Last updated on: $Date: 2004-03-11 16:50:38 $
 
 
 use strict;
-use lib "/wormsrv2/scripts/"; 
+use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
 use Ace;
 use Carp;
 use Getopt::Long;
-
+use lib "/nfs/team71/worm/ck1/WORMBASE_CVS/scripts/";
+use Geneace;
 
 
 ###################################################
@@ -48,6 +49,7 @@ my @exceptions =
 my %exceptions;
 foreach (@exceptions){$exceptions{$_}++}; 
 
+my $ga = init Geneace();
 
 ###################################################
 # command line options                            # 
@@ -108,6 +110,7 @@ if ($ace){
 my $db = Ace->connect(-path  => $default_db,
 		      -program =>$tace) || do { print LOG "Connection failure: ",Ace->error; die();};
 
+
 # Process separate classes if specified on the command line else process all classes
 @classes = ("locus","laboratory","allele","strain","rearrangement","sequence","mapping","evidence", "xref", "gmap") if (!@classes);
 
@@ -122,7 +125,6 @@ foreach $class (@classes){
   if ($class =~ m/(evidence)/i)      {&check_evidence}
   if ($class =~ m/(xref)/i)          {&check_bogus_XREF}
   if ($class =~ m/(multipt)/i)       {&int_map_to_map_loci}
-  
 }  
 
 
@@ -1086,6 +1088,12 @@ EOF
   # get a hash of allele-desig (key) and lab-desig (value)
   if ($ace){%location=allele_location($allele_designation_to_LAB, $default_db)};
   
+  my %other_main = $ga->other_name($db, "other_main");
+  
+  my @exceptions = $ga ->cgc_name_is_also_other_name($db);
+  my %exceptions;
+  foreach (@exceptions){$exceptions{$_}++};
+  
   foreach $allele (@alleles){
    
     # check allele has not location tag
@@ -1133,12 +1141,20 @@ EOF
 
     if($allele -> Gene){
       my @loci=$allele->Gene(1);
+
       if (scalar @loci > 1){
 	print LOG "ERROR: $allele is connected to more than one Loci: @loci\n";
+	foreach my $e (@loci){
+	  if ($exceptions{$e}){
+	    print "WARNING: $e is both CGC_name and Other_name\n";
+	  }
+	  if ( exists $other_main{$e} && !exists $exceptions{$e} ){
+	    print "WARNING: $allele is connected to $e(other), which should now be $other_main{$e}(main)\n";
+	  }
+	}
       }
     }
   }
-
   # check when an allele has a predicted_gene and no gene (locus); if that predicted_gene is already links to a locus
   # make allele-locus link
   
@@ -1725,12 +1741,13 @@ sub int_map_to_map_loci {
 
   my $error=0;
 
-  print "\n\nChecking loci without map & mapping_data but have allele & seq. connection & interpolated_map_position\n\n";
+  print "\n\nChecking loci without map & mapping_data but have allele & seq. connection & interpolated_map_position\n";
+  print "------------------------------------------------------------------------------------------------------\n";
   print LOG "\n\nChecking loci without map & mapping_data but have allele & seq. connection & interpolated_map_position\n";
   print LOG "------------------------------------------------------------------------------------------------------\n";
   print JAHLOG "\n\nChecking loci without map & mapping_data but have allele & seq. connection & interpolated_map_position\n";
   print JAHLOG "------------------------------------------------------------------------------------------------------\n";
-  my $int_loci  = "find Locus * where (!map OR (map & !(map AND NEXT AND NEXT = \"position\"))) & !mapping_data & allele & (CDS|transcript|pseudogene) & interpolated_map_position & species =\"*elegans\"";
+  my $int_loci  = "find Locus * where !mapping_data & allele & (CDS|transcript|pseudogene) & interpolated_map_position & species =\"*elegans\"";
   my %INT_loci;
   
   my $autoace_version = get_wormbase_version() +1 ;
@@ -1738,7 +1755,7 @@ sub int_map_to_map_loci {
   open(INT_map_TO_MAP, ">/wormsrv1/geneace/JAH_DATA/MULTI_PT_INFERRED/loci_become_genetic_marker_for_WS$autoace_version.$rundate") || die $!;
 
   push( my @int_loci, $db->find($int_loci) );
-  print "@int_loci\n";
+
   foreach (@int_loci){
     $error++;
     my $int_map = $_ -> Interpolated_map_position(1);
@@ -1756,6 +1773,18 @@ sub int_map_to_map_loci {
 
   print LOG    "No such locus found\n\n" if $error == 0;
   print JAHLOG "No such locus found\n\n" if $error == 0;
+
+  print "\n\nChecking dubious multi-pt obj. linked to locus (ie, checking for wrong association)\n";
+  print "-----------------------------------------------------------------------------------\n";
+  print LOG "\n\nChecking dubious multi-pt obj. linked to locus (ie, checking for wrong association)\n";
+  print LOG "-----------------------------------------------------------------------------------\n";
+
+ # system("perl5.8.0 /wormsrv2/scripts/check_dubious_multi_pt_2_locus.pl");
+  system("perl5.8.0 /nfs/team71/worm/ck1/WORMBASE_CVS/scripts/check_dubious_multi_pt_2_locus.pl");
+  print LOG `cat /wormsrv2/logs/dubious_multiPt_2_locus.$rundate`;
+  print JAHLOG `cat /wormsrv2/logs/dubious_multiPt_2_locus.$rundate`;
+  print ACE `cat /wormsrv1/geneace/CHECKS/multiPt_2_locus.ace` if $ace;
+  `rm -f /wormsrv1/geneace/CHECKS/multiPt_2_locus.ace`;
 
 }
 

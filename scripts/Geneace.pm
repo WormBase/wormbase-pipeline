@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-03-01 17:51:52 $
+# Last updated on: $Date: 2004-03-11 16:50:38 $
 
 package Geneace;
 
@@ -62,15 +62,22 @@ sub parse_inferred_multi_pt_obj {
 
 sub other_name {
   my ($this, $db, $option) = @_; # $db is db handle
-  my %main_other;
+  my (%main_other, %other_main);
+
   push( my @result, $db->find("Find Gene_name * where Other_name_for AND !(Cb-* OR Cr-*)") );
-  if ($option eq "hash"){
+  if ($option eq "main_other"){
     foreach(@result){
       push(@{$main_other{$_ -> Other_name_for(1)}}, $_);
     }
     return %main_other;
   }
-  if ($option eq "array"){
+  if ($option eq "other_main"){
+    foreach(@result){
+      push( @{$other_main{$_}}, $_ -> Other_name_for(1) );
+    }
+    return %other_main;
+  }
+  if ($option eq "other"){
     return @result;
   }
   if (!$option){
@@ -79,19 +86,19 @@ sub other_name {
 }
 sub cgc_name_is_also_other_name {
   my ($this, $db) = @_; # $db is db handle
-  push( my @exceptions, $db->find("Find Gene_name * where CGC_name_for; Other_name_for") );
+  push( my @exceptions, $db->find("Find Gene_name * CGC_name_for & Other_name_for") );
   return @exceptions;
 }
 
 sub loci_have_multi_pt {
   my ($this, $db) = @_;
-  push( my @loci_has_multi, $db->find("Find Locus * where Multi_point") );
+  push( my @locus_has_multi, $db->find("Find Locus * where Multi_point") );
 
-  my %loci_2_multi;
-  foreach (@loci_has_multi){
-    push(@{$loci_2_multi{$_}}, $_ -> Multi_point(1) );
+  my %locus_2_multi;
+  foreach (@locus_has_multi){
+    push(@{$locus_2_multi{$_}}, $_ -> Multi_point(1) );
   }
-  return %loci_2_multi;
+  return %locus_2_multi;
 }
 
 sub clone_to_lab {
@@ -117,13 +124,6 @@ sub upload_database {
   print Load_GA $command;
   close Load_GA;
 }
-
-#sub other_name_exceptions {
-#  # list of loci which is used as other_name and CGC_name
-#  my $this = shift;
-#  my $db = &database;
-#  push(my @exceptions, $db->
-#     }
 
 sub array_comp {
 
@@ -189,5 +189,9 @@ EOF
   return %overlapped_clone;
 }
 
+sub convert_2_WBPaper {
+
+
+}  
 
 1;
