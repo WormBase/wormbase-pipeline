@@ -7,7 +7,7 @@
 # A script to take ?Sequence objects and make ?CDS objects
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-11-07 10:32:34 $     
+# Last updated on: $Date: 2003-11-07 17:00:17 $     
 
 use strict;
 use Getopt::Long;
@@ -69,6 +69,10 @@ while(<IN>){
   else{
     s/Structure\s+$ts\s+Subsequence\s+$ts/CDS/g;
     s/Visible\s+$ts\s+Matching_Genomic/Matching_CDS/g;
+    
+    # Transcript_child tag now just called Transcript
+    s/Transcript_child/Transcript/;
+
     # print to ?Sequence file
     print SEQ;
   }
