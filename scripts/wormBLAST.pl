@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2004-04-07 11:23:53 $
+# Last edited on: $Date: 2004-04-07 14:24:08 $
 
 use DBI;
 use strict;
@@ -301,8 +301,9 @@ clones = $clone_count\ncontigs = $contig_count\ndna = $dna_count\n";
     
     if( $last_clone != $new_last_clone )
       {
-	$query = "select contig_id from contig where contig_id > $last_clone into outfile '$wormpipe_dir/Elegans/ids.txt'";
+	$query = "select contig_id from contig where contig_id > $last_clone into outfile '/tmp/ids.txt'";
 	print &update_database( $query, $worm_dna );
+	system("cp /tmp/ids.txt $wormpipe_dir/Elegans/ids.txt");
 	
 	&run_command("perl5.6.1 $scripts_dir/InputIdManager.pl -dbname worm_dna -dbhost ecs1f -dbuser wormadmin -dbpass worms -insert -analysis SubmitContig -class contig -file $wormpipe_dir/Elegans/ids.txt");
 	
