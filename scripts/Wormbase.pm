@@ -446,10 +446,6 @@ sub release_databases
     @date = &find_file_last_modified("/wormsrv2/camace/database/block1.wrm");
     $dates{genace} = $date[0];
     
-    foreach my $key( keys %dates)
-      {
-	print "$key $dates{$key}\n";
-      }
 
     #PARSE THE RELEASE LETTER FOR LAST BUILD INFO
     my $old_ver = &get_wormbase_version -1;
@@ -486,7 +482,7 @@ sub release_databases
 	  print WRITE "you're using a older version of $key than for WS$old_ver ! ! \n";
 	}
 	else{
-	  print "\n";
+	  print WRITE "\n";
 	}
       }
     close WRITE;
@@ -537,11 +533,9 @@ sub release_composition
 	  $old_data{Total} = $1;
 	}
 	elsif ($_ =~ m/^\s+([\w-]{1})\s+(\d+)/){
-	  print "adding to old_data $1  $2\n";
 	  $old_data{"$1"} = $2;
 	}
     }
-    print "keys are ",(keys %old_data),"\n";
     close (OLD);
     
 
@@ -556,7 +550,6 @@ sub release_composition
 	$new_data{Total} = $1;
       }
       elsif ($_ =~ m/^\s+([\w-]{1})\s+(\d+)/){
-	print "adding to new_data $1  $2\n";
 	$new_data{"$1"} = $2;
       }1
     }
@@ -804,13 +797,59 @@ celeaccession
 Pass this subroutine the name of a clone and it will return the 
 corresponding accession number
 
-= item *
+=item *
 find_database
 
 Pass a list of clones and 'cam' or 'stl' and it will return the clones 
 in camace / stlace
 
 =back
+
+=over 4
+
+=item *
+
+release_databases
+
+writes a file detailing the databases used in the current build. 
+The contents of this are included in the release letter.
+Checks that databases used are not older than those used in previous build.
+Emails output and warns if problems
+
+=back
+
+=over 4
+
+=item *
+
+find_file_last_modified
+
+Passed a filename, this returns the date yyyy-mm-dd and time
+
+=back
+
+=over 4
+
+=item *
+
+release_composition
+
+writes a file detailing the sequence composition in the current build.
+This is used in the release letter.
+Checks the sequence composition of the current genome compared to the last one.
+Does various checks on data integrity and flags any problems in the mail sent.
+
+=back
+
+=over 4
+
+=item *
+
+release_wormpep
+
+Compiles release stats of the current Wormpep and writes to a file, later used in release letter.
+
+=back 
 
 =over 4
 
