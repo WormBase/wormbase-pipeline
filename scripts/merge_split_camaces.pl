@@ -2,10 +2,10 @@
 #
 # merge_split_camaces.pl
 # 
-# dl
+# A script to make multiple copies of camace for curation, and merge them back again
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2003-09-17 16:10:28 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2003-09-18 09:07:25 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -77,97 +77,90 @@ if ($merge) {
   print "Make a new directory : '$directory'\n" if ($debug);
   mkdir $directory;
 
-  # dumps the Pseudogene, Transcript, Feature and Sequence classes from the database
-
-  # always push orig into @databases
+  # load @databases array with users to create split databases for
   push(@databases,"orig");
-
-  # dumps from camace_ar2 when (-ant) used
   push(@databases,"ar2") if ($ant || $all);
-
-  # dumps from camace_dl1 when (-dan) used
   push(@databases,"dl1") if ($dan || $all);
-
-  # dumps from camace_pad when (-paul) used
-  push(@databases,"pad",) if ($paul || $all);
+  push(@databases,"pad") if ($paul || $all);
 
   print "You are merging Data from @databases\n\n";
 
+  # dumps the Pseudogene, Transcript, Feature and Sequence classes from the database
   &dump_camace;
 
-    ###################################################
-    #   All of the raw data is now dumped to files    #
-    ###################################################
+  ###################################################
+  #   All of the raw data is now dumped to files    #
+  ###################################################
+  
+  # run acediff on the files
+  
+  # Sequence
+  my $path_orig = $directory . '/Sequence_orig.ace';
+  my $path_dl1  = $directory . '/Sequence_dl1.ace';
+  my $path_pad  = $directory . '/Sequence_pad.ace';
+  my $path_ar2  = $directory . '/Sequence_ar2.ace';
 
-    # run acediff on the files
-
-    # Sequence
-    my $path_orig = $directory . '/Sequence_orig.ace';
-    my $path_dl1  = $directory . '/Sequence_dl1.ace';
-    my $path_pad  = $directory . '/Sequence_pad.ace';
-    my $path_ar2  = $directory . '/Sequence_ar2.ace';
-
-    system ("acediff $path_orig $path_dl1 > $directory/sequence_diff_dl1.ace") if ($dan  || $all);
-    system ("acediff $path_orig $path_pad > $directory/sequence_diff_pad.ace") if ($paul || $all);
-    system ("acediff $path_orig $path_ar2 > $directory/sequence_diff_ar2.ace") if ($ant  || $all);
-
-    # Transcript
-    $path_orig = $directory . '/Transcript_orig.ace';
-    $path_dl1  = $directory . '/Transcript_dl1.ace';
-    $path_pad  = $directory . '/Transcript_pad.ace';
-    $path_ar2  = $directory . '/Transcript_ar2.ace';
-
-    system ("acediff $path_orig $path_dl1 > $directory/transcript_diff_dl1.ace") if ($dan  || $all);
-    system ("acediff $path_orig $path_pad > $directory/transcript_diff_pad.ace") if ($paul || $all);
-    system ("acediff $path_orig $path_ar2 > $directory/transcript_diff_ar2.ace") if ($ant  || $all);
-
-    # Feature
-    $path_orig = $directory . '/Feature_orig.ace';
-    $path_dl1  = $directory . '/Feature_dl1.ace';
-    $path_pad  = $directory . '/Feature_pad.ace';
-    $path_ar2  = $directory . '/Feature_ar2.ace';
-
-    system ("acediff $path_orig $path_dl1 > $directory/feature_diff_dl1.ace") if ($dan  || $all);
-    system ("acediff $path_orig $path_pad > $directory/feature_diff_pad.ace") if ($paul || $all);
-    system ("acediff $path_orig $path_ar2 > $directory/feature_diff_ar2.ace") if ($ant  || $all);
-
-    # Pseudogene
-    $path_orig = $directory . '/Pseudogene_orig.ace';
-    $path_dl1  = $directory . '/Pseudogene_dl1.ace';
-    $path_pad  = $directory . '/Pseudogene_pad.ace';
-    $path_ar2  = $directory . '/Pseudogene_ar2.ace';
-
-    system ("acediff $path_orig $path_dl1 > $directory/pseudogene_diff_dl1.ace") if ($dan  || $all);
-    system ("acediff $path_orig $path_pad > $directory/pseudogene_diff_pad.ace") if ($paul || $all);
-    system ("acediff $path_orig $path_ar2 > $directory/pseudogene_diff_ar2.ace") if ($ant  || $all); 
-
-
-    ###################################################
-    # all of the acediffs are now complete            #
-    ###################################################
-
-    # tidy up and reformat the diff files ready to be loaded
-
-    if ($dan || $all) {
-	system ("reformat_acediff $directory/sequence_diff_dl1.ace   > $directory/update_sequence_dl1.ace");
-	system ("reformat_acediff $directory/transcript_diff_dl1.ace > $directory/update_transcript_dl1.ace");
-	system ("reformat_acediff $directory/feature_diff_dl1.ace    > $directory/update_feature_dl1.ace");
-	system ("reformat_acediff $directory/pseudogene_diff_dl1.ace > $directory/update_pseudogene_dl1.ace");
-    }
-    if ($paul || $all) {
-	system ("reformat_acediff $directory/sequence_diff_pad.ace   > $directory/update_sequence_pad.ace");
-	system ("reformat_acediff $directory/transcript_diff_pad.ace > $directory/update_transcript_pad.ace");
-	system ("reformat_acediff $directory/feature_diff_pad.ace    > $directory/update_feature_pad.ace");
-	system ("reformat_acediff $directory/pseudogene_diff_pad.ace > $directory/update_pseudogene_pad.ace");
-    }
-    if ($ant || $all) {
-	system ("reformat_acediff $directory/sequence_diff_ar2.ace   > $directory/update_sequence_ar2.ace");
-        system ("reformat_acediff $directory/transcript_diff_ar2.ace > $directory/update_transcript_ar2.ace");
-	system ("reformat_acediff $directory/feature_diff_ar2.ace    > $directory/update_feature_ar2.ace");
-	system ("reformat_acediff $directory/pseudogene_diff_ar2.ace > $directory/update_pseudogene_ar2.ace");
-    }
-
-    print "acediff's done and files can be found in $directory\n";
+  system ("acediff $path_orig $path_dl1 > $directory/sequence_diff_dl1.ace") if ($dan  || $all);
+  system ("acediff $path_orig $path_pad > $directory/sequence_diff_pad.ace") if ($paul || $all);
+  system ("acediff $path_orig $path_ar2 > $directory/sequence_diff_ar2.ace") if ($ant  || $all);
+  
+  # Transcript
+  $path_orig = $directory . '/Transcript_orig.ace';
+  $path_dl1  = $directory . '/Transcript_dl1.ace';
+  $path_pad  = $directory . '/Transcript_pad.ace';
+  $path_ar2  = $directory . '/Transcript_ar2.ace';
+  
+  system ("acediff $path_orig $path_dl1 > $directory/transcript_diff_dl1.ace") if ($dan  || $all);
+  system ("acediff $path_orig $path_pad > $directory/transcript_diff_pad.ace") if ($paul || $all);
+  system ("acediff $path_orig $path_ar2 > $directory/transcript_diff_ar2.ace") if ($ant  || $all);
+  
+  # Feature
+  $path_orig = $directory . '/Feature_orig.ace';
+  $path_dl1  = $directory . '/Feature_dl1.ace';
+  $path_pad  = $directory . '/Feature_pad.ace';
+  $path_ar2  = $directory . '/Feature_ar2.ace';
+  
+  system ("acediff $path_orig $path_dl1 > $directory/feature_diff_dl1.ace") if ($dan  || $all);
+  system ("acediff $path_orig $path_pad > $directory/feature_diff_pad.ace") if ($paul || $all);
+  system ("acediff $path_orig $path_ar2 > $directory/feature_diff_ar2.ace") if ($ant  || $all);
+  
+  # Pseudogene
+  $path_orig = $directory . '/Pseudogene_orig.ace';
+  $path_dl1  = $directory . '/Pseudogene_dl1.ace';
+  $path_pad  = $directory . '/Pseudogene_pad.ace';
+  $path_ar2  = $directory . '/Pseudogene_ar2.ace';
+  
+  system ("acediff $path_orig $path_dl1 > $directory/pseudogene_diff_dl1.ace") if ($dan  || $all);
+  system ("acediff $path_orig $path_pad > $directory/pseudogene_diff_pad.ace") if ($paul || $all);
+  system ("acediff $path_orig $path_ar2 > $directory/pseudogene_diff_ar2.ace") if ($ant  || $all); 
+  
+  
+  ###################################################
+  # all of the acediffs are now complete            #
+  ###################################################
+  
+  # tidy up and reformat the diff files ready to be loaded
+  
+  if ($dan || $all) {
+    system ("reformat_acediff $directory/sequence_diff_dl1.ace   > $directory/update_sequence_dl1.ace");
+    system ("reformat_acediff $directory/transcript_diff_dl1.ace > $directory/update_transcript_dl1.ace");
+    system ("reformat_acediff $directory/feature_diff_dl1.ace    > $directory/update_feature_dl1.ace");
+    system ("reformat_acediff $directory/pseudogene_diff_dl1.ace > $directory/update_pseudogene_dl1.ace");
+  }
+  if ($paul || $all) {
+    system ("reformat_acediff $directory/sequence_diff_pad.ace   > $directory/update_sequence_pad.ace");
+    system ("reformat_acediff $directory/transcript_diff_pad.ace > $directory/update_transcript_pad.ace");
+    system ("reformat_acediff $directory/feature_diff_pad.ace    > $directory/update_feature_pad.ace");
+    system ("reformat_acediff $directory/pseudogene_diff_pad.ace > $directory/update_pseudogene_pad.ace");
+  }
+  if ($ant || $all) {
+    system ("reformat_acediff $directory/sequence_diff_ar2.ace   > $directory/update_sequence_ar2.ace");
+    system ("reformat_acediff $directory/transcript_diff_ar2.ace > $directory/update_transcript_ar2.ace");
+    system ("reformat_acediff $directory/feature_diff_ar2.ace    > $directory/update_feature_ar2.ace");
+    system ("reformat_acediff $directory/pseudogene_diff_ar2.ace > $directory/update_pseudogene_ar2.ace");
+  }
+  
+  print "acediff's done and files can be found in $directory\n";
 }
 
 
