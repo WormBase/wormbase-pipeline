@@ -803,7 +803,6 @@
      		       AGP_fragment ?Sequence XREF AGP_parent Int UNIQUE Int #SMap_info		       // for Briggsae data [020726 krb]
      		       UTR ?UTR XREF Canonical_parent Int UNIQUE Int #SMap_info			       // for new UTR model [020729 krb]
 		       Allele ?Allele XREF Sequence UNIQUE Int UNIQUE Int #SMap_info		       // New SMapped Allele class [021217 krb]
-		       Microarray_aff ?Microarray_aff XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info //for Affymetrix model [020614 krb] 
 		       Oligo_set ?Oligo_set XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info     //added for Oligo_set class
                        Feature_object ?Feature XREF Sequence UNIQUE Int UNIQUE Int #SMap_info	       // dl feature play
 		       Feature_data ?Feature_data XREF Sequence UNIQUE Int UNIQUE Int #SMap_info
@@ -1829,7 +1828,6 @@
 	     Remark ?Text #Evidence
 	     SNP_locus ?Locus XREF SNP_assay	                    // added for Todd [171001 krb]
 	     Flanks_deletion ?Allele XREF Flanking_PCR_product // For KO allele data [krb 021217]
-	     Microarray_result  ?Microarray_result  XREF PCR_product 
 	     Microarray_results ?Microarray_results XREF PCR_product //added for Microarray_results class
 	     Clone ?Clone XREF PCR_product  // added [krb 031126]
  	     Method UNIQUE ?Method
@@ -1936,57 +1934,6 @@
 
 
 
-
-
-?Microarray_aff SMap S_parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF Microarray_aff
-                Microarray_result ?Microarray_result XREF Microarray_aff // Added to merge with SMD microarray.
-		Reference ?Paper //Describes the design of the chip
-                Remark ?Text #Evidence
-		Method UNIQUE ?Method
-
-// Microarray_result data model is created for Data types from Stanford Microarray Database
-// and from Affymetrix
-// Each Microarray_result object is one spot in one experiment. 
-// If SMD microarray, use PCR_product
-// If Affymetrix Microarray, use Microarray_aff
-// The tag "Sample_A" describes what is sample A(Red or Green labelled). The "Condition" object 
-// contains information on life
-// stage, genotype,preparation precedure ... etc. of the sample. The ?Condition model is used for 
-// Affymetrix microarray data, Gene regulaton data and SMD microarray data, so some of the tags 
-// in ?Condition model do not relate to SMD_result. 
-// The tag "Sample_B" describes what is sample B(Green or Red labelled). The "Condition" object 
-// contains information on life stage, genotype, ... etc. of the spot.
-// The tag "R_vs_G_ratio" is the average value of "R/G normalized (mean)" from several chips.
-// The tag "R_vs_G_sd" is the Standard Deviation from averaging from R/G ratio from several chips.
-// The tag "P_value" is the P_value calculated from the paper on the result.
-// "Frequency" is for Affymetrix Microarray. 
-// The tag "P_value" applies for both SMD and Affymetrix.
-// "Presence" is for Affymetrix
-// "Chip_type" specifies the chip type, Affymetrix or SMD.
-// "Chip_info" describes more details on chip information. 
-
-
-?Microarray_result Sequence_info    PCR_product    ?PCR_product    XREF Microarray_result
-				    Microarray_aff ?Microarray_aff XREF Microarray_result
-                   Sample           Sample_A     UNIQUE      ?Condition
-				    Sample_B     UNIQUE      ?Condition
-                                    Affymetrix_sample UNIQUE ?Condition
-		   Result           A_vs_B_log_ratio UNIQUE Float               
-                                    A_vs_B_SD        UNIQUE Float               
-                                    Frequency        UNIQUE Int
-                   Confidence       P_value  UNIQUE Float
-                                    Presence UNIQUE PA
-                                                    PS
-                                                    NP
-                   Cluster    ?Cluster XREF Microarray_result
-                   Chip_type  UNIQUE Affymetrix
-                                     SMD
-                   Chip_info  ?Text   //Describes batch number of the chip created the result ... etc.
-                   Reference  ?Paper
-                   Remark     ?Text #Evidence
-
-
-
 // Cluster data model is created for microarray data clustering results.
 // The tag "Description" refers to Biological meaning of this cluster group
 // The tag "Algorithm" refers to the algorithm that was used to get this clustering result.
@@ -1995,7 +1942,6 @@
 
 ?Cluster Description   ?Text
          Algorithm     ?Text
-         Microarray_result  ?Microarray_result XREF Cluster
 	 Microarray_results ?Microarray_results     //added for Microarray_results model
          Reference     ?Paper XREF Cluster 
 	 SAGE_results ?SAGE_results
@@ -2275,7 +2221,6 @@
                   Transgene ?Transgene XREF Reference #Evidence
                   GO_term ?GO_term XREF Reference ?GO_code #Evidence
                   Operon ?Operon XREF Reference #Evidence
-		  //Microarray_result ?Microarray_result XREF Reference  //added for Microarray_result [030127 krb]
                   Cluster ?Cluster XREF Reference #Evidence
 		  Feature ?Feature XREF Defined_by_paper                 // added [030424 dl]
 		  Gene_regulation ?Gene_regulation XREF Reference // added [030804 krb]
@@ -2378,6 +2323,7 @@
                            Other_regulated         ?Text                              #Boolean
                  Result    Positive_regulate #GR_condition
                            Negative_regulate #GR_condition
+			   Does_not_regulate // addded to capture negative data [040220 krb]
                  Remark    ?Text #Evidence
                  Reference ?Paper XREF Gene_regulation
 
