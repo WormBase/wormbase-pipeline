@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2004-10-08 12:28:07 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2004-10-22 09:18:46 $
 #
 # Usage GFFmunger.pl [-options]
 
@@ -92,12 +92,15 @@ foreach my $file (@gff_files) {
     }
 }
 
+
+
+
 #################################################################################
 # Main Loop                                                                     #
 #################################################################################
 
 
-if ($CDS) {
+if ($CDS || $all) {
     print LOG "# Overloading CDS lines\n";
     system ("overload_GFF_CDS_lines.pl $WS_version");                     # generate *.CSHL.gff files
 }
@@ -118,21 +121,21 @@ foreach my $file (@gff_files) {
   print LOG "# File $file\n";
   
 
-  if ($landmark) {
-      print LOG "# Adding ${file}.landmarks.gff file\n";
-      $addfile = "$datadir/${file}.landmarks.gff";
-      &addtoGFF($addfile,$gffpath);
+  if ($landmark || $all) {
+    print LOG "# Adding ${file}.landmarks.gff file\n";
+    $addfile = "$datadir/${file}.landmarks.gff";
+    &addtoGFF($addfile,$gffpath);
   }
 
-  if ($UTR) {
-      print LOG "# Adding ${file}.UTR.gff file\n";
-      $addfile = "$datadir/${file}.UTR.gff";
-      &addtoGFF($addfile,$gffpath);
+  if ($UTR || $all) {
+    print LOG "# Adding ${file}.UTR.gff file\n";
+    $addfile = "$datadir/${file}.UTR.gff";
+    &addtoGFF($addfile,$gffpath);
   }
 
 
-  if ($CDS) {
-      system ("mv -f $gffdir/$file.CSHL.gff $gffdir/$file.gff");        # copy *.CSHL.gff files back to *.gff name
+  if ($CDS || $all) {
+    system ("mv -f $gffdir/$file.CSHL.gff $gffdir/$file.gff");        # copy *.CSHL.gff files back to *.gff name
   }
   
   
