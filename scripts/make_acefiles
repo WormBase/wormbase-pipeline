@@ -15,6 +15,8 @@
 #                Object names do not have the EMBL: prefix
 # 010724 : dl  : Fixed bug for local filehandle in sub mknewacefiles
 # 010730 : dl  : Fixed bug regarding logfiles and single database dumping
+# 010731 : dl  : Fixed bug regarding non_elegans est file - getz query did not
+#                return the SV line and hence the parser failed
 
 # v1.2
 # 010102 : dl  : Add alternative config files to generate acefiles from a 
@@ -362,12 +364,12 @@ sub nonelegansests {
 
     system ("/bin/rm $estfile");
     open (ESTFILE,   ">$estfile");
-    open (SEQUENCES, "/usr/local/pubseq/bin/getz -d  -f \"id acc org des\" \'([emblnew-org:nematoda\! caenorhabditis elegans] \& [emblnew-key:est]) | ([embl-org:nematoda\! caenorhabditis elegans] \& [embl-key:est])\' |");
+    open (SEQUENCES, "/usr/local/pubseq/bin/getz -d  -f \"id acc sv org des\" \'([emblnew-org:nematoda\! caenorhabditis elegans] \& [emblnew-key:est]) | ([embl-org:nematoda\! caenorhabditis elegans] \& [embl-key:est])\' |");
     while (<SEQUENCES>) {
 	if (/^ID\s+(\S+)/) {
 	    $id=$1;
 	}
-	if (/^SV\s+(\S+);/) {
+	if (/^SV\s+(.+)/) {
 	    ($ac,$sv) = split (/\./,$1);
 	    print ESTFILE "\nSequence : \"$ac\"\nDatabase EMBL $id $ac $sv\n";
 	}
@@ -385,7 +387,7 @@ sub nonelegansests {
 	}
 	if (/^SQ\s+/) {
 	    $def=~s/^\s+//;
-	    print ESTFILE "Title \"$def\"\ncDNA_EST\nMethod $method\n";
+	    print ESTFILE "Title \"$def\"\ncDNA_EST\nMethod $method\n\n";
 	    $def="";
 	}
     }
