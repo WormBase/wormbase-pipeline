@@ -420,7 +420,7 @@
 ?Balancer From_left_end
           To_right_end
           Locus ?Locus
-
+	  Gene ?Gene
 
 ?Rearrangement 	Evidence #Evidence
 		Name    Other_name ?Text
