@@ -6,8 +6,8 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-07-30 12:45:58 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2003-08-11 09:15:36 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -1350,18 +1350,7 @@ sub find_new_loci_in_current_DB{
   }
   print LOG "\n$warnings\n" if $warnings;
 
-  # check geneace locus w/o pseudogene tag
-  foreach (@genes){
-    my $gene = $db->fetch('Locus',$_);
-    if (!$gene->at('Type.Gene.Pseudogene')){
-      $locus_errors++;
-      print LOG "WARNING: $gene has no Pseudogene tag, but its corresponding seq does.\n";
-      if ($ace){ 
-        print ACE "\n\nLocus : \"$gene\"\n"; 
-        print ACE "Pseudogene\n";
-      }
-    }
-  }
+
 }
 
 #############################
