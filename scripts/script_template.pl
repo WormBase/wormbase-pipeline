@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.0 -w                  
+#!/usr/local/bin/perl5.6.1 -w                  
 #
 # script_template.pl                           
 # 
@@ -7,7 +7,7 @@
 # This is a example of a good script template   
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2002-12-09 17:04:50 $      
+# Last updated on: $Date: 2003-01-24 15:47:53 $      
 
 use strict;                                      
 use lib "/wormsrv2/scripts/";                    
@@ -52,6 +52,8 @@ if($debug){
 
 
 # Close log files and exit
+
+&mail_maintainer("script template",$maintainers,$log);
 close(LOG);
 exit(0);
 
