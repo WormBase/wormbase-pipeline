@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2003-06-16 11:19:50 $
+# Last updated by: $Author: dl1 $
+# Last updated on: $Date: 2003-06-17 13:33:42 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -187,13 +187,13 @@ foreach $file (@gff_files) {
 	   || ($method eq "inverted") 
 	   || ($method eq "hmmfs.3") 
 	   || ($method eq "scan") 
-	   || ($feature eq "repeat_region"))             {push (@{$GFF{$file}{repeats}},$_);}
+	   || ($feature eq "repeat_region"))          {push (@{$GFF{$file}{repeats}},$_);}
     # TC1 insertions
     elsif ($method eq "BLASTN_TC1")                   {push (@{$GFF{$file}{tc_insertions}},$_);}
     # Assembly tags
     elsif ($method eq "assembly_tag")                 {push (@{$GFF{$file}{assembly_tags}},$_);}
     # TS site
-    elsif (/trans-splice_acceptor/)                     {push (@{$GFF{$file}{ts_site}},$_);}
+    elsif (/trans-splice_acceptor/)                   {push (@{$GFF{$file}{ts_site}},$_);}
     # Oligo mapping
     elsif ($feature eq "OLIGO")                       {push (@{$GFF{$file}{oligos}},$_);}
     # RNAi
@@ -201,7 +201,7 @@ foreach $file (@gff_files) {
     # GENEPAIR
     elsif ($method eq "GenePair_STS")                 {push (@{$GFF{$file}{genepair}},$_);}
     # Alleles
-    elsif ($method eq "Allele")                                  {push (@{$GFF{$file}{allele}},$_);}
+    elsif ($method eq "Allele")                       {push (@{$GFF{$file}{allele}},$_);}
     # Clone ends
     elsif ((/Clone_left_end/)  
 	   || (/Clone_right_end/))                    {push (@{$GFF{$file}{clone_ends}},$_);}
@@ -213,8 +213,13 @@ foreach $file (@gff_files) {
     elsif (/BLAT_OST_BEST/)                           {push (@{$GFF{$file}{BLAT_OST_BEST}},$_);}
     elsif (/BLAT_OST_OTHER/)                          {push (@{$GFF{$file}{BLAT_OST_OTHER}},$_);}
     # BLAT_EST
-    elsif (/BLAT_EST_BEST/)                           {push (@{$GFF{$file}{BLAT_EST_BEST}},$_);}
+    elsif (/BLAT_EST_BEST/)                           {push (@{$GFF{$file}{BLAT_EST_BEST}},$_);
+						       push (@{$GFF{$file}{BLAT_TRANSCRIPT_BEST}},$_);}
     elsif (/BLAT_EST_OTHER/)                          {push (@{$GFF{$file}{BLAT_EST_OTHER}},$_);}
+    # BLAT_OST
+    elsif (/BLAT_OST_BEST/)                           {push (@{$GFF{$file}{BLAT_OST_BEST}},$_);
+						       push (@{$GFF{$file}{BLAT_TRANSCRIPT_BEST}},$_);}
+    elsif (/BLAT_OST_OTHER/)                          {push (@{$GFF{$file}{BLAT_OST_OTHER}},$_);}
     # BLAT_mRNA
     elsif (/BLAT_mRNA_BEST/)                          {push (@{$GFF{$file}{BLAT_mRNA_BEST}},$_);}
     elsif (/BLAT_mRNA_OTHER/)                         {push (@{$GFF{$file}{BLAT_mRNA_OTHER}},$_);}
@@ -502,6 +507,9 @@ BLAT_OST_BEST
 BLAT_OST_OTHER
 BLAT_EST_BEST
 BLAT_EST_OTHER
+BLAT_OST_BEST
+BLAT_OST_OTHER
+BLAT_TRANSCRIPT_BEST
 BLAT_mRNA_BEST
 BLAT_mRNA_OTHER
 BLAT_EMBL_BEST
