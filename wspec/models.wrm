@@ -861,6 +861,8 @@
 			Provisional_description ?Text #Evidence // added for Erich [020322 krb]
 			Detailed_description ?Text #Evidence  // added for Erich [020322 krb]
 			Concise_description ?Text #Evidence  // added for Erich [020523 krb]
+			Interacts_with_sequence ?Sequence XREF Interacts_with_sequence #Evidence // for future interaction data [020704 krb]
+			Interacts_with_protein ?Protein XREF Interacts_with_sequence #Evidence // for future interaction data [020704 krb]
 		// tag2 system: names of all objects following next tag are shown in the 
 		//   general annotation display column as "tag:objname"
 	  Properties    Pseudogene Text		                                 // explanation
@@ -1087,6 +1089,8 @@
 	  Visible	Corresponding_DNA ?Sequence XREF Corresponding_protein
 			Reference ?Paper XREF Protein
 			Expr_pattern ?Expr_pattern XREF Protein
+			Interacts_with_sequence ?Sequence XREF Interacts_with_protein #Evidence // for future interaction data [020704 krb]
+			Interacts_with_protein ?Protein XREF Interacts_with_protein #Evidence // for future interaction data [020704 krb]
 		// tag2 system.  For now I have not populated this column.  For C. elegans
 		// wormpep we want to get the information from the ?Corresponding_DNA 
 		// object.  Because those objects have long term continuity, while wormpep
