@@ -6,8 +6,8 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: mt3 $
-# Last updated on: $Date: 2005-01-21 11:18:17 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2005-01-24 09:52:10 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -1149,7 +1149,7 @@ sub check_dubious_multipt_gene_connections {
   print LOG `cat /wormsrv2/logs/dubious_multiPt_2_locus.$rundate`;
   print JAHLOG `cat /wormsrv2/logs/dubious_multiPt_2_locus.$rundate`;
   print ACE `cat /wormsrv1/geneace/CHECKS/multiPt_2_locus.ace` if $ace;
-  `rm -f /wormsrv1/geneace/CHECKS/multiPt_2_locus.ace`;
+  #`rm -f /wormsrv1/geneace/CHECKS/multiPt_2_locus.ace`;
 }
 
 sub usage {
