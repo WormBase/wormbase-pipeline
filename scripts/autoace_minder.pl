@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-09-22 18:53:08 $
+# Last edited on: $Date: 2003-09-23 17:24:02 $
 
 
 #################################################################################
@@ -449,11 +449,11 @@ sub prepare_primaries {
   system ("touch $logdir/$flag{'A3'}");
   
   # transfer /wormsrv1/camace to /wormsrv2/camace 
-  system("TransferDB.pl -start /wormsrv1/camace -end /wormsrv2/camace -database -name camace")
+  system("TransferDB.pl -start /wormsrv1/camace -end /wormsrv2/camace -database -wspec -name camace")
     && die "Couldn't run TransferDB for camace\n";
   
   # transfer /wormsrv1/geneace to /wormsrv2/geneace 
-    system("TransferDB.pl -start /wormsrv1/geneace -end /wormsrv2/geneace -database -name geneace")
+    system("TransferDB.pl -start /wormsrv1/geneace -end /wormsrv2/geneace -database -wspec -name geneace")
       && die "Couldn't run TransferDB for geneace\n";
 
   #################################################
