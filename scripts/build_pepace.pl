@@ -9,7 +9,7 @@
 # 
 #
 # Last updated by: $Author: ar2 $                     
-# Last updated on: $Date: 2002-07-30 14:43:56 $     
+# Last updated on: $Date: 2002-07-30 14:49:18 $     
 
 
 use strict;                                     
@@ -28,7 +28,7 @@ my $rundate     = `date +%y%m%d`; chomp $rundate;
 my $runtime     = `date +%H:%M:%S`; chomp $runtime;
 our $log        = "/wormsrv2/logs/build_pepace.$rundate";
 
-my $ver = 81;#&get_wormbase_version();
+my $ver = &get_wormbase_version();
 my $wormpepdir = "/wormsrv2/WORMPEP/wormpep$ver";
 
 open( LOG, ">$log") || die "cant open $log";
