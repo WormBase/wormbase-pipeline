@@ -6,8 +6,8 @@
 #
 # checks EMBL for new EST or mRNA entries
 #
-# Last updated by: $Author: krb $                      
-# Last updated on: $Date: 2003-09-11 17:17:25 $        
+# Last updated by: $Author: dl1 $                      
+# Last updated on: $Date: 2004-12-07 13:09:12 $        
 
 use strict;
 use Getopt::Long;
@@ -42,6 +42,7 @@ if($debug){
 
 
 
+
 ##########################
 # MAIN BODY OF SCRIPT
 ##########################
@@ -53,7 +54,7 @@ my $new_elegans_EST  = 0;
 my $new_nematode_EST = 0;
 my $non_elegans_ESTs = 0;
 my $new_EMBL_CDS     = 0;
-
+my $buildtime        = 21;   # length of build in days
 
 
 # Elegans mRNA entries
@@ -201,24 +202,33 @@ sub get_date {
   # Otherwise find out date when last build was started
   else{
     my $last_release_date = &get_wormbase_release_date("short");
+    
     print "Last release date was $last_release_date\n" if $debug;
     print LOG "\nLast release date was $last_release_date\n";
+
     my ($day, $month, $year) = split(/\//,$last_release_date);
+    $month--;
+ 
     my $time = timelocal("0","0","0","$day","$month","$year");
-    my $start_build_time = $time - (10*86400);
+
+    my $start_build_time = $time - ($buildtime  * 86400);
     my ($start_day, $start_month, $start_year) = (localtime($start_build_time))[3,4,5];
     
-    $start_day   = sprintf("%02d", $start_day % 100);
+    $start_day   = sprintf("%02d", $start_day   % 100);
     $start_month = sprintf("%02d", $start_month % 100);
-#    $start_year  = sprintf("%02d", $start_year % 100);
+
+    $start_month++;
     $start_year += 1900;
-    print "Therefore last build started roughly $start_day/$start_month/$start_year\n" if $debug;
+
+    print     "Therefore last build started roughly $start_day/$start_month/$start_year\n" if $debug;
     print LOG "Therefore last build started roughly $start_day/$start_month/$start_year\n\n";
     
     $date  = "$start_year"."$start_month"."$start_day";
     
   }
 
+  print "$date\n";
+  exit;
   return ($date);
 }
 
