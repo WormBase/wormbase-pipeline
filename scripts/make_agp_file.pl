@@ -8,7 +8,7 @@
 # Usage : make_agp_file.pl
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-01-14 14:48:17 $
+# Last edited on: $Date: 2003-01-14 16:13:41 $
 
 
 #################################################################################
@@ -87,25 +87,21 @@ foreach my $chromosome (@gff_files) {
   our %ver=();
   my @report="";
 
-
   my $i = 1;
   my ($start,$stop,$clone,$acc,$gap_span,$offset,$span,$gpseq,$gspan,$limit,$span2get,$unique_stop) = "";
 
-
   my ($last_stop,$last_start);
-  $last_stop =0;
   $last_start =0;
-
+  $last_stop = 2;
 
   my $file = "$outdir/CHROMOSOME_$chromosome.agp";
-  $last_stop = 2;
 
   &error(1,$chromosome) unless ("-e $datadir/CHROMOSOME_${chromosome}.clone_acc.gff");
   
   # read data from gff file
   open (GFF, "<$datadir/CHROMOSOME_$chromosome.clone_acc.gff");
   while (<GFF>) {
-	
+    
     $seq_len = "";
     $sv_acc  = "";
     $sv_ver  = "";

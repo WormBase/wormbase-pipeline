@@ -6,7 +6,7 @@
 #
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-01-14 13:46:35 $      
+# Last updated on: $Date: 2003-01-14 16:13:41 $      
 
 use strict;                                      
 use lib "/wormsrv2/scripts/";                    
@@ -39,7 +39,7 @@ while (<GFF>) {
   
   my @acc = $obj->DB_info->row();
     
-  print "$_ acc=$acc[4] ver=$acc[5]\n";
+  print "$_ acc=$acc[3] ver=$acc[4]\n";
 
   $obj->DESTROY();
 
