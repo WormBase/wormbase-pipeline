@@ -127,9 +127,26 @@ END
 ###################################
 
 sub composition{
-	print LOGFILE "Generating composition.all\n";	
-	system("/bin/cat *.dna | /nfs/disk100/wormpub/bin.ALPHA/composition > composition.all");
 
+	print LOGFILE "Generating composition.all\n";	
+
+	system("/bin/cat *.dna | /nfs/disk100/wormpub/bin.ALPHA/composition > composition.all") && die "Couldn't create composition file\n";
+	print LOGFILE "Generating totals file\n";
+	my ($total, $minus, $final_total);
+	open(IN,"$dump_dir/composition.all") || die "Couldn't open composition.all\n";
+		while(<IN>){
+			if(/.*, (\d*) total/){
+				$total = $1;
+				next;
+			}			
+			if(/.*\- (\d*)/){
+				$minus = $1; 
+				last;
+			}
+		}
+	close(IN);
+	$final_total = $total - $minus;
+	system("echo $total $final_total > totals") && die "Couldn't create totals file\n";
 
 }
 
