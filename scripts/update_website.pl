@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl5.6.0
 #
-# unpdate_website.pl
+# update_website.pl
 # 
 # by Keith Bradnam aged 12 and half
 #
@@ -89,7 +89,7 @@ system("ln -s $www/$WS_name/ $www/current") && die "Couldn't create new symlink\
 print LOG "\n\nC'est finis\n\n";
 
 # mail log
-&mail_maintainer("WormBase Report: unpdate_website.pl",$maintainers,$log);
+&mail_maintainer("WormBase Report: update_website.pl",$maintainers,$log);
 
 close(LOG);
 exit(0);
