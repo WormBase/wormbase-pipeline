@@ -216,6 +216,7 @@
                         Maternal	Strictly_Maternal
 					With_Maternal_Effect
                         Paternal
+			Insertion	// Added for Todd [171001 krb]
 	Remark	?Text
         Reference ?Paper XREF Allele               // Mary
         Rescued_by_Transgene ?Transgene
@@ -238,7 +239,10 @@
                         RNAi_result   ?RNAi XREF Locus                       //RL [010327]
 			Complementation_data Text
                         Controlled_phenotype ?Phenotype XREF Locus          // added for Lincoln RNAi [001213 dl]
-		Polymorphism    RFLP	Text
+		Polymorphism    SNP  Text		// SNP stuff added for Todd [171001 krb]
+				Status Text
+				SNP_assay ?PCR_product XREF SNP_locus ?Text
+				RFLP	Text
 				Transposon_insertion  Text
 				Detection_method Text
 		PCR_product	Primers  Text
@@ -1509,6 +1513,7 @@
  	     Assay_conditions ?LongText
 	     Amplified Int
 	     Remark ?Text
+	     SNP_locus ?Locus XREF SNP_assay	// added for Todd [171001 krb]
 
 ?Phenotype Description UNIQUE ?Text
            Assay UNIQUE ?Text
