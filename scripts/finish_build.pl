@@ -13,7 +13,7 @@
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-04-04 18:01:42 $
+# Last updated on: $Date: 2003-04-07 08:06:45 $
 
 
 
@@ -61,7 +61,7 @@ getopts ('h');
 
 # Transfer autoace to WSxx
 print LOG "Transferring autoace into /wormsrv2/$WS_name\n";
-system("TransferDB.pl -start /wormsrv2/autoace -end /wormsrv2/$WS_name -all -name $WS_name") 
+system("TransferDB.pl -start /wormsrv2/autoace -end /wormsrv2/$WS_name -database -wspec -chromosomes -name $WS_name") 
   && die "couldn't run TransferDB for autoace\n";
 
 # Remove redundant files from /wormsrv2/autoace/release and /wormsrv2/autoace/CHROMOSOMES
