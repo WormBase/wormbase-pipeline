@@ -8,7 +8,7 @@
 # Page download and update upload to geneace has been automated [ck1]
 
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-12-03 17:13:18 $
+# Last updated on: $Date: 2005-01-11 15:51:53 $
 
 use strict;
 use Getopt::Long;
@@ -434,11 +434,23 @@ http://www.cbs.umn.edu/CGC/Strains/gophstrn
 
 The script will write two ace files to your current directory, one to be loaded 
 into geneace, and a second to be archived in /wormsrv1/geneace which will have 
-delete instructions for removing all the data you have just added.
+delete instructions for removing all the data you have just added.  Some files 
+will be loaded automatically (strain objects in one, and Gene->Allele connections 
+in another).  
 
-Some files will be loaded automatically (strain objects in one, and Gene->Allele
-connections in another.  A third file (potential_new_genes.ace) needs to be
-checked by hand and modified to add Gene IDs (if data is ok)
+A third file (potential_new_genes.ace) needs to be checked by hand and modified to 
+add Gene IDs (if data is ok).  This file may contain allele names (that appear in 
+the strain data file) that we do not yet have in geneace.  These are probably KO 
+consortium alleles that will be in our next allele update, but which have strain 
+data already submitted to the CGC.
+
+For these, you will probably find the name of the CDS that the allele deletes in the 
+strain file.  This will then allow you to determine the relevant gene ID and then 
+connect the allele name and strain name to that gene ID.  If you believe that we 
+should have received details of these alleles already, chase this up with Mark Edgley.
+
+Other items in this file to check by hand will concern alleles of C. briggsae genes
+which will already have a gene ID.  
 
 =over 4
 
