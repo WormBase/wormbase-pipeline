@@ -1,11 +1,11 @@
-#!/usr/local/bin/perl5.6.1
+#!/usr/local/bin/perl5.6.1 -w
 #
 # merge_split_camaces
 # 
 # dl
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2003-08-15 09:22:26 $
+# Last edited on: $Date: 2003-08-15 09:32:41 $
 
 use strict;
 use lib "/wormsrv2/scripts/";   
@@ -40,7 +40,7 @@ GetOptions (
 	    );
 
 # Help pod if needed
-&usage(0) if ($help);
+&usage("Help") if ($help);
 
 our $tace       = &tace;
 our $WS_version = &get_wormbase_version;
