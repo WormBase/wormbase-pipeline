@@ -33,7 +33,7 @@
 # 02.04.08 dl: old style logging for autoace.fa check, prevented complete run of subs
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2002-07-22 11:18:36 $
+# Last edited on: $Date: 2002-08-19 15:15:08 $
 
 use strict;
 use Ace;
@@ -51,7 +51,6 @@ $|=1;
 
 our $dbdir  = '/wormsrv2/autoace';
 my $bin     = '/wormsrv2/scripts';
-#my $bin    = '/nfs/griffin2/dl1/wormbase/wormbase/scripts';
 
 my $db;
 our %homedb;
@@ -77,6 +76,8 @@ getopts('emxbsvonhd');
 # Help pod documentation
 &usage(0) if ($opt_h);
 
+(our $debug = 1) if ($opt_d);
+
 # Exit if no option choosen [n|b|s|v]
 &usage(1) unless ($opt_n || $opt_b || $opt_s || $opt_v); 
 
@@ -98,14 +99,12 @@ $query      = '/nfs/disk100/wormpub/analysis/ESTs/C.elegans_nematode_mRNAs'    i
 $query      = '/nfs/disk100/wormpub/analysis/ESTs/non_C.elegans_nematode_ESTs' if ($opt_x); # ParaNem EST data set
 $query      = '/nfs/disk100/wormpub/analysis/ESTs/C.elegans_nematode_miscPep'  if ($opt_o); # Other CDS data set
 
-#$query      = '/wormsrv2/autoace/BLAT/nematode.fa'                            if ($opt_x); # ParaNem EST data set
-
 #############
 # LOG stuff #
 #############
 
 my $maintainer = "All";
-#$maintainer = "dl1\@sanger.ac.uk"; 
+$maintainer = "dl1\@sanger.ac.uk" if ($debug);
 
 my $rundate    = `date +%y%m%d`;   chomp $rundate;
 my $runtime    = `date +%H:%M:%S`; chomp $runtime;
@@ -171,11 +170,13 @@ if ($opt_b) {
     if ($opt_x) {
 	system("$blatex $seq $query -t=dnax -q=dnax $blat/${data}_out.psl") && die "Blat failed\n";
     }
+    elsif ($opt_o) {
+	system("$blatex $seq $query -q=prot -t=dnax $blat/${data}_out.psl") && die "Blat failed\n";
+    }
     else {
 	system("$blatex $seq $query $blat/${data}_out.psl") && die "Blat failed\n";
     }
 }
-
 
 # map to autoace #
 if ($opt_s) {
@@ -286,12 +287,6 @@ dna -f /wormsrv2/autoace/BLAT/autoace.first
 quit
 EOF
 
-#my $command2=<<EOF;
-#query find nematode_ESTs where Remark = "*Blaxter*"
-#dna -f /wormsrv2/autoace/BLAT/nematode.fa
-#quit
-#EOF
-
     my ($sequence,$name);
     
     # tace dump chromosome consensus sequences
@@ -311,8 +306,6 @@ EOF
     # remove intermediary sequence file
     unlink ('/wormsrv2/autoace/BLAT/autoace.first') if (-e '/wormsrv2/autoace/BLAT/autoace.first');
 
-    # tace dump parasitic nematode consensus
-#    system("echo '$command2' | $giface $dbdir ");
 }
 
 
