@@ -699,12 +699,13 @@
               CGC     Representative UNIQUE ?Person XREF CGC_representative_for
                       Strain_designation UNIQUE Text
                       Allele_designation UNIQUE Text
+		      Alleles ?Allele XREF Location
                       Gene_classes ?Gene_Class XREF Designating_laboratory
               Person  ?Person XREF Laboratory
               Past_lab_member ?Person XREF Old_laboratory 
                                 // I think this is useful and
                                 // anyway, the reverse is tracked.
-
+	      
 
 // Author class
 // updated for Juancarlos 021029
