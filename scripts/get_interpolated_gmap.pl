@@ -8,7 +8,7 @@
 # Output ace file of such information and upload to autoace during each build
 # Output also other files related. See POD
 
-# Last updated on: $Date: 2003-05-12 17:17:28 $
+# Last updated on: $Date: 2003-05-14 16:58:34 $
 # Last updated by: $Author: ck1 $
 
 use strict;
@@ -24,7 +24,7 @@ my $rundate = `date +%y%m%d`; chomp $rundate;
 # variables and command-line options with aliases #
 ###################################################
 
-my ($diff, $reverse, $database, $gff_location, $help, $map, $ga_dir, $gff_dir, $curr_db);
+my ($diff, $reverse, $database, $gff_location, $help, $map, $gmap_marker_dir, $gff_dir, $curr_db);
 
 GetOptions ("diff"          => \$diff,
             "rev|reverse"   => \$reverse,
@@ -36,7 +36,7 @@ GetOptions ("diff"          => \$diff,
 $gff_dir = "/wormsrv2/autoace/GFF_SPLITS/";
 $curr_db = "/nfs/disk100/wormpub/DATABASES/current_DB/"; 
 
-if (!defined @ARGV){system ("perldoc /wormsrv1/chaokung/my-scripts/test_gmap.pl"); exit(0)}
+if (!defined @ARGV or $help){system ("perldoc /wormsrv1/chaokung/my-scripts/test_gmap.pl"); exit(0)}
 
 my @versions=dataset($gff_dir, "folder");
 
@@ -45,13 +45,13 @@ my @order = sort {$a <=> $b} @versions;
 $gff_location = "/wormsrv2/autoace/GFF_SPLITS/WS"."$order[-1]";
 
 if (!defined $database){
-  $ga_dir = "/nfs/disk100/wormpub/DATABASES/current_DB"; 
-  print "\nUsing /nfs/disk100/wormpub/DATABASES/current_DB as database path for genetics marker loci . . .\n";
+  $gmap_marker_dir = "/wormsrv2/autoace"; 
+  print "\nUsing $gmap_marker_dir as database path for genetics marker loci . . .\n";
 } 
 
-if (defined $database && $database eq "/wormsrv1/geneace"){
-  $ga_dir = $database;
-  print "\nUsing $database as database path for genetics marker loci . . .\n";
+if (defined $database){
+  $gmap_marker_dir = $database;
+  print "\nUsing $gmap_marker_dir as database path for genetics marker loci . . .\n";
 }
 
 my ($revfile, $diffile);
@@ -71,8 +71,7 @@ if ($diff){
 chdir $gff_location;
 
 my (@data, %CDS_mapping, %CDS_isoforms_mapping, %CDS_variants, %predicted_gene_to_locus);
-my (%chrom_meanCoord, %genetics_mapping, %I_gmap_cds_locus, %II_gmap_cds_locus, %III_gmap_cds_locus,
-    %IV_gmap_cds_locus, %V_gmap_cds_locus, %X_gmap_cds_locus);
+my (%chrom_meanCoord, %genetics_mapping);
 my ($cds, $parts, @coords, $i, $mean_coords, %cds_mean, %mean_coord_cds, %chrom_mean_coord_cds);
 
 my $acefile="/wormsrv2/autoace/MAPPINGS/interpolated_gmap_"."WS$order[-1].$rundate.ace";
@@ -115,8 +114,8 @@ while (<FH2>){
 }
 close FH1; close FH2;
 
-open (INFO, ">/wormsrv2/logs/gmap_info_"."WS$order[-1].$rundate.ace") || die $!;
-system("chmod 777 /tmp/gmap_info");
+open (INFO, ">/wormsrv2/logs/gmap_info_"."WS$order[-1].$rundate") || die $!;
+system("chmod 777 /wormsrv2/logs/gmap_info_WS*.$rundate");
 
 print INFO "\nAll CDS/transcript linked to locus in $curr_db ", scalar keys %predicted_gene_to_locus,"\n\n";
 
@@ -155,13 +154,15 @@ foreach (@gff_files_cds){
   }
 }
 
+print "\nEgrepping transcripts in huge CHROMOSOME_*.rest.gff files . . .\n"; 
 foreach (@gff_files_rna){
   @data = `egrep "(RNA|UNKNOWN).+(Transcript|Sequence).+" $_ | cut -f 1,2,4,5,9`;
   foreach (@data){
     chomp;
-    if ($_ !~ /miRNA.+/ && $_ !~ /\[.+\].+/){
+    if ($_ !~ /miRNA.+/ && $_ !~ /\[.+\].+/ && $_ !~ /mRNA.+/){
       $rna_count++;
       my ($chrom, $type, $left, $right, $junk, $RNA)= split(/\s+/,$_);
+      $RNA =~ s/(.+):.+/$1/;
       $RNA =~ s/\"//g;
       my $ori = $RNA;  
       $chrom =~ s/CHROMOSOME_//;
@@ -178,10 +179,12 @@ foreach (@gff_files_rna){
   }
 }
 
+print INFO "Thinkgs fetched from gff files:\n";
 print INFO "Number of CDS/transcript without isoforms: ", scalar keys %CDS_mapping, "\n";
 print INFO "Number of CDS/transcript with isoforms: ", scalar keys %CDS_isoforms_mapping, "\n";
 print INFO "Number of CDS/transcript variants: ", $variants, "\n";
 print INFO "Total CDS/transcript: ", $cds_count + $rna_count, "\n";
+print "Processing gmap positions and coordinates . . .\n";
      
 ###########################################################################################
 # get mean value of chrom coords of each CDS/Transcript from GFF files (genes|rna|rest.gff)
@@ -244,7 +247,7 @@ if ($reverse) {
 # including CDS and Transcript 
 ############################## 
 
-open (FH, "echo '$marker_gmap_of_each_chrom' | tace $ga_dir | ") || die "Couldn't access $ga_dir\n";
+open (FH, "echo '$marker_gmap_of_each_chrom' | tace $gmap_marker_dir | ") || die "Couldn't access $gmap_marker_dir\n";
 while (<FH>){
   chomp($_);
   # $4=cds/transcript, $2=chrom, $1=locus, $3=gmap position
@@ -261,8 +264,10 @@ while (<FH>){
     if ($cds =~ /(.+\.\d+)\D+/){ 
       my $cds = $1;
       $mean_coord=@{$cds_mean{$cds}}->[0];
-      push(@{$genetics_mapping{$cds}}, $chrom, $locus, $gmap, $mean_coord);
-      push(@{$chrom_pos{$chrom}}, $gmap, $mean_coord, $locus, $cds);
+      if (defined $mean_coord){push(@{$genetics_mapping{$cds}}, $chrom, $locus, $gmap, $mean_coord)}
+      else {push(@{$genetics_mapping{$cds}}, $chrom, $locus, $gmap, "NA")}
+      if (defined $mean_coord){push(@{$chrom_pos{$chrom}}, $gmap, $mean_coord, $locus, $cds)}
+      else {push(@{$chrom_pos{$chrom}}, $gmap, "NA", $locus, $cds)}
     }
   
     #####################
@@ -271,8 +276,10 @@ while (<FH>){
 
     else {
       $mean_coord=@{$cds_mean{$cds}}->[0];
-      push(@{$genetics_mapping{$cds}}, $chrom, $locus, $gmap, $mean_coord);
-      push(@{$chrom_pos{$chrom}}, $gmap, $mean_coord, $locus, $cds);
+      if (defined $mean_coord){push(@{$genetics_mapping{$cds}}, $chrom, $locus, $gmap, $mean_coord)}
+      else {push(@{$genetics_mapping{$cds}}, $chrom, $locus, $gmap, "NA")}
+      if (defined $mean_coord){push(@{$chrom_pos{$chrom}}, $gmap, $mean_coord, $locus, $cds)}
+      else {push(@{$chrom_pos{$chrom}}, $gmap, "NA", $locus, $cds)}	    
     }
   }
 }
@@ -327,7 +334,6 @@ my (@chroms, $chrom, $ea, @pos_order, $part, @unique_pos_order, %pos_order_to_me
 
 @chroms=qw(I II III IV V X);
 foreach $chrom (@chroms){
-
   $parts=scalar @{$chrom_pos{$chrom}};
   for (my $i=0; $i< $parts; $i=$i+4){
     push(@pos_order, @{$chrom_pos{$chrom}}->[$i]);  # $i=gmap, duplication due to isoforms
@@ -340,14 +346,13 @@ foreach $chrom (@chroms){
   }
 
   @pos_order = sort {$a <=>$b} @pos_order;  # sorting gmap positions of markers from left tip to right tip      
-  print "$chrom ->\n", scalar @pos_order, "\n";
   
   my %seen=();
   foreach (@pos_order){push(@unique_pos_order, $_) unless $seen{$_}++}
   foreach (@all_mean_of_each_chrom){push(@unique_all_mean_of_each_chrom, $_) unless $seen{$_}++}
   foreach (@unique_all_mean_of_each_chrom){$all_mean_of_each_chrom{$_}++}
 
-  print INFO "Unique markers $chrom: ", scalar @unique_pos_order,"\n";
+  print INFO "\nUnique markers $chrom: ", scalar @unique_pos_order,"\n";
 
   ###########################################
   # Left/Right tip gmap
@@ -398,13 +403,13 @@ foreach $chrom (@chroms){
   my $L_end = $all_coords[0];  # shortes mean coord of CDS/transcript on each chrom
   my $R_end = $all_coords[-1]; # longest mean coord of CDS/transcript on each chrom
 
-  print INFO "\nChrom $chrom: $L_tip -> $R_tip | $L_mean_coord -> $R_mean_coord | $L_end to $R_end\n";
+  print INFO "Chrom $chrom: $L_tip -> $R_tip | $L_mean_coord -> $R_mean_coord | $L_end to $R_end\n";
 
   foreach (@all_coords){
  
    my $feature = @{$cds_mean{$mean_coord_cds{$_}}}->[1];
      
-    if ($_ < $L_mean_coord){
+    if ($_ ne "NA" && $_ < $L_mean_coord){
       $outside_L++;
       $length_diff = $L_mean_coord - $_;
       $position = $length_diff / $bp_length_per_unit;
@@ -415,7 +420,7 @@ foreach $chrom (@chroms){
       }	
     }
 
-    if ($_ > $R_mean_coord){ 
+    if ($_ ne "NA" && $_ > $R_mean_coord){ 
       $outside_R++;
       $length_diff = $_ - $R_mean_coord;  
       $position = $length_diff / $bp_length_per_unit;
@@ -430,7 +435,7 @@ foreach $chrom (@chroms){
     # get interpolated gmap for CDSes lying in between 2 markers
     ############################################################
   
-    if (($_ > $L_mean_coord) && ($_ < $R_mean_coord)){
+    if (($_ ne "NA") && $_ > $L_mean_coord && $_ < $R_mean_coord){
       
       for ($i=0; $i < (scalar @unique_pos_order) - 1; $i++){
          
@@ -439,9 +444,9 @@ foreach $chrom (@chroms){
         $down_mean_coord = @{$pos_order_to_mean_coord_locus_cds{$gmap_down}}->[0];
         $up_mean_coord = @{$pos_order_to_mean_coord_locus_cds{$gmap_up}}->[0];
 
-        if (($down_mean_coord < $_) && ($_ < $up_mean_coord)){
+        if (($down_mean_coord ne "NA" && $up_mean_coord ne "NA") && 
+           ($down_mean_coord < $_ && $_ < $up_mean_coord)){
           $length_diff = $_ - $down_mean_coord;
-          print "$chrom: $down_mean_coord #### $_ ### $up_mean_coord\n";
 
           ################################
           # negative gmap VS negative gmap
@@ -475,7 +480,7 @@ foreach $chrom (@chroms){
     } 
   }
   print INFO "There are ", scalar @all_coords, " CDS/transcript (w/o counting isoforms) on $chrom:\n";
-  print INFO "Outside: L-end ($outside_L) R-end ($outside_R)\n";
+  print INFO "Outside: L-end ($outside_L) R-end ($outside_R). Total: ",$outside_L + $outside_R,"\n";
 
   #######################################################
   # output:  list of gmap position and corresponding info
@@ -493,9 +498,10 @@ foreach $chrom (@chroms){
       $up_mean_coord = @{$pos_order_to_mean_coord_locus_cds{$gmap_up}}->[0];
       $cds = @{$pos_order_to_mean_coord_locus_cds{$gmap_down}}->[2];
 
-      print CMP "$chrom\t$gmap_down\t$locus1\t$cds\t$down_mean_coord\n";      
+      print CMP "$chrom\t$gmap_down\t$locus1\t$cds\t$down_mean_coord\n";
+      if ($down_mean_coord eq "NA") {print REV "\n** Gmap marker $cds ($locus1) on $chrom has no coordinate **\n"}
 
-      if ($down_mean_coord > $up_mean_coord){
+      if ($down_mean_coord ne "NA" && $up_mean_coord ne "NA" && ($down_mean_coord > $up_mean_coord)){
 	if (exists $CDS_variants{$cds}){
 	  $rev_phys++;
 	  if ($reverse) {print REV "Reverse physical: $chrom\t$gmap_down\t$locus1\t$cds\[@{$CDS_variants{$cds}}\]\t$down_mean_coord\n"}
@@ -504,11 +510,11 @@ foreach $chrom (@chroms){
 	  $rev_phys++;
 	  if ($reverse) {print REV "Reverse physical: $chrom\t$gmap_down\t$locus1\t$cds\t$down_mean_coord\n"}
 	}
-      }        
+      }  
     }  
   }  
   if ($reverse){
-    print REV "--->There are $rev_phys reverse physicals on Chromosom $chrom\n\n";
+    print REV "--->$rev_phys reverse physicals on Chromosom $chrom\n\n";
     my $gmap = $unique_pos_order[-1];
     my $locus = @{$pos_order_to_mean_coord_locus_cds{$gmap}}->[1];
     $mean_coord = @{$pos_order_to_mean_coord_locus_cds{$gmap}}->[0];
@@ -516,13 +522,8 @@ foreach $chrom (@chroms){
     print CMP "$chrom\t$gmap\t$locus\t$cds\t$mean_coord\n"; 
   }
 
-  @pos_order=();
-  @unique_pos_order=();
-  @all_coords=();
-  %pos_order_to_mean_coord_locus_cds=();
-  $rev_phys=0;
-  @all_mean_of_each_chrom=(); @unique_all_mean_of_each_chrom=(); %all_mean_of_each_chrom=();
-  
+  @pos_order=(); @unique_pos_order=(); @all_coords=(); %pos_order_to_mean_coord_locus_cds=(); 
+  $rev_phys=(); @all_mean_of_each_chrom=(); @unique_all_mean_of_each_chrom=(); %all_mean_of_each_chrom=();
 }
 
 my $end=`date +%H:%M:%S`; chomp $end;
@@ -593,11 +594,11 @@ __END__
             This script is run at end of build to calculate interpolated map positions for all CDS and Transcripts.
             It can generate the following files:
 
-            (1) /wormsrv2/logs/reverse_physicals_WSXXX.$rundate
-            (2) /wormsrv2/logs/cmp_gmap_with_coord_order_WSXX.$rundate (list of marker loci with gmap and coords)
-            (3) /wormsrv2/logs/mapping_diff.$rundate (not run for the build, but called by geneace_check.pl)  
-            (4) /wormsrv2/autoace/MAPPINGS/interpolated_gmap_WSXXX.$rundate.ace 
-            (5) /wormsrv2/logs/gmap_info (information might be interesting in case data looks strange) 
+            (1) /wormsrv2/logs/reverse_physicals_WSXXX.yymmdd
+            (2) /wormsrv2/logs/cmp_gmap_with_coord_order_WSXX.yymmdd (list of marker loci with gmap and coords)
+            (3) /wormsrv2/logs/mapping_diff.yymmdd (not run for the build, but called by geneace_check.pl)  
+            (4) /wormsrv2/autoace/MAPPINGS/interpolated_gmap_WSXXX.yymmdd 
+            (5) /wormsrv2/logs/gmap_info_WS*yymmdd (information might be interesting in case data looks strange) 
             
 
 =head3 <USAGE> 
@@ -638,7 +639,7 @@ B<-db: / -databse:>
                 if this option is omitted, ie, when this script is run at end of build, it points to the fresh WS release
                                 
 B<-map:>    
-            Output interpolated map positions as ace file
+            Output interpolated map positions as ace file. Requeires -rev
            
 
 
