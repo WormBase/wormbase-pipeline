@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.1 -w 
+#!/usr/local/bin/perl5.8.0 -w 
 #
 # reorder_exons.pl
 #
@@ -6,8 +6,8 @@
 #
 # This script checks the exon order and corrects them if needed
 #
-# Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-05-14 17:06:18 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2003-07-24 13:45:20 $
 
 
 
@@ -71,56 +71,56 @@ my @seqoutoforder;
 my @tranoutoforder;
 
 foreach (@sequences) {
-    my $clone = $_;
-    my $obj = $db->fetch(Sequence => $clone);
-    my @subsequences = $obj->Subsequence(1);
-    my @transcripts = $obj->Transcript_child(1);
-
+  my $clone = $_;
+  my $obj = $db->fetch(Sequence => $clone);
+  my @subsequences = $obj->Subsequence(1);
+  my @transcripts = $obj->Transcript_child(1);
+  
 #######################################
 # check objects of %subsequencehash   #
 #######################################
 
-    foreach(@subsequences) {
-	my $clone = $_;
-	my $obj = $db->fetch(Sequence => $clone);
-	my @exons = $obj->Source_Exons(1);
-	
-	my $oldleft = 0;
-	foreach(@exons) {
-	    my ($a, $b) = $_->row;
-	    my @ends = ($a, $b);
-	    if($a < $oldleft) {
+  foreach(@subsequences) {
+    my $clone = $_;
+    my $obj = $db->fetch(Sequence => $clone);
+    my @exons = $obj->Source_Exons(1);
+    
+    my $oldleft = 0;
+    foreach(@exons) {
+      my ($a, $b) = $_->row;
+      my @ends = ($a, $b);
+      if($a < $oldleft) {
 #		print "exons out of order in $clone\n";
-		push(@seqoutoforder, $clone);
-	    }
-	    $oldleft = $a;
-	    push(@{$subsequencehash{$clone}}, @ends);
-	}
+	push(@seqoutoforder, $clone);
+      }
+      $oldleft = $a;
+      push(@{$subsequencehash{$clone}}, @ends);
     }
-
-
+  }
+  
+  
 ######################################
 # check objects of %transcripthash   #
 ######################################
-
-    foreach(@transcripts) {
-        
-	my $clone = $_;
-	my $obj = $db->fetch(Transcript => $clone);
-	my @exons = $obj->Source_Exons(1);
-	
-	my $oldleft = 0;
-	foreach(@exons) {
-	    my ($a, $b) = $_->row;
-	    my @ends = ($a, $b);
-	    if($a < $oldleft) {
+  
+  foreach(@transcripts) {
+    
+    my $clone = $_;
+    my $obj = $db->fetch(Transcript => $clone);
+    my @exons = $obj->Source_Exons(1);
+    
+    my $oldleft = 0;
+    foreach(@exons) {
+      my ($a, $b) = $_->row;
+      my @ends = ($a, $b);
+      if($a < $oldleft) {
 	#	print "exons out of order for $clone\n";
-		push(@tranoutoforder, $clone);
-	    }
-	    $oldleft = $a;
-	    push(@{$transcripthash{$clone}}, @ends);
-	}
+	push(@tranoutoforder, $clone);
+      }
+      $oldleft = $a;
+      push(@{$transcripthash{$clone}}, @ends);
     }
+  }
 }
 
 
@@ -132,23 +132,39 @@ foreach (@sequences) {
 
 if($seqoutoforder[0]) {
 
-    my $seqoutoforder_ref = \@seqoutoforder;
-    my $subsequence_ref = \%subsequencehash;
-
-    &seq_fix_order($seqoutoforder_ref, $subsequence_ref);
+  my $seqoutoforder_ref = \@seqoutoforder;
+  my $subsequence_ref = \%subsequencehash;
+  
+  &seq_fix_order($seqoutoforder_ref, $subsequence_ref);
 }
 
 if($tranoutoforder[0]) {
 
-    my $tranoutoforder_ref = \@tranoutoforder;
-    my $transcript_ref = \%transcripthash;
-
-    &tran_fix_order($tranoutoforder_ref, $transcript_ref);
+  my $tranoutoforder_ref = \@tranoutoforder;
+  my $transcript_ref = \%transcripthash;
+  
+  &tran_fix_order($tranoutoforder_ref, $transcript_ref);
 }
 
+##############################################
+# Upload to autoace, tidy up and exit cleanly
+##############################################
+$db->close;
+close(ACE);
 
+# Only upload if working with autoace
+if($db_name eq "autoace"){
+  my $command = "pparse /wormsrv2/autoace/acefiles/sorted_exons.ace";
+  $command .= "save\nquit\n";
+  print "\nUploading sorted exon info to autoace\n";
+  open (WRITEDB, "| $tace -tsuser reorder_exons /wormsrv2/autoace |") || die "Couldn't open pipe to autoace\n";
+  print WRITEDB $command;
+  close WRITEDB;
 
+}
 
+print "\nFinished\n";
+exit(0);
 
 #################################
 # SUBROUTINES    ################
