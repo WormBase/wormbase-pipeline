@@ -5,7 +5,7 @@
 
 # Author: Chao-Kung Chen
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-05-25 12:49:00 $ 
+# Last updated on: $Date: 2004-05-27 13:16:35 $ 
 
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
@@ -543,7 +543,7 @@ sub check_other_name_and_seq_ver {
 	  print DEBUG "\n(D) Add EMBL $embl_name as an Other_name & the AC $embl_ac as an Other_sequence for $locus ($Gene_info{$locus}{'Gene'})\n";
 	
 	  print UPDT "\nGene : \"$Gene_info{$locus}{'Gene'}\"\n";
-	  print UPDT "Other_name \"$embl_name\" Accession_evidence \"EMBL\" $embl_ac\"\n";
+	  print UPDT "Other_name \"$embl_name\" Accession_evidence \"EMBL\" \"$embl_ac\"\n";
 	  push (@new_ACs, $embl_ac." ($embl_name) to $locus ($Gene_info{$locus}{'Gene'})\n");
 	  push (@new_Other_names, $embl_name." ($embl_ac) to $locus ($Gene_info{$locus}{'Gene'})\n");
 	
