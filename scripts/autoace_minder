@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder [-options]
 #
-# Last edited by: $Author: wormpub $
-# Last edited on: $Date: 2003-06-09 10:39:30 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2003-06-10 16:11:26 $
 
 
 #################################################################################
@@ -1190,36 +1190,33 @@ sub parse_homol_data {
   my $command;
   my $runtime;
 
-  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Adding wublastp data at $runtime\n";
-  $command = "pparse /wormsrv2/wormbase/ensembl_dumps/blastp_ensembl.ace\nsave\nquit\n"; 
-  open (WRITEDB, "| $tace -tsuser ensembl_pipeline_wublastp_data /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
-  print WRITEDB $command;
-  close WRITEDB;
-  
-  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Adding wublastx data at $runtime\n";
-  $command = "pparse /wormsrv2/wormbase/ensembl_dumps/blastx_ensembl.ace\nsave\nquit\n"; 
-  open (WRITEDB, "| $tace -tsuser ensembl_pipeline_wublastx_data /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
-  print WRITEDB $command;
-  close WRITEDB;
-  
-  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Adding protein info data at $runtime\n";
-  $command = "pparse /wormsrv2/wormbase/ensembl_dumps/ensembl_protein_info.ace\nsave\nquit\n"; 
-  open (WRITEDB, "| $tace -tsuser ensembl_pipeline_protein_info /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
-  print WRITEDB $command;
-  close WRITEDB;
+  my @files2Load = (
+		    "blastp_ensembl.ace",
+		    "blastx_ensembl.ace",
+		    "ensembl_protein_info.ace",
+		    "waba.ace",
+		    "wormprot_motif_info.ace",
+		    "brigprot_motif_info.ace",
+		    "brigprot_blastp_ensembl.ace"
+		   );
 
-  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Adding waba data at $runtime\n";
-  $command = "pparse /wormsrv2/wormbase/ensembl_dumps/waba.ace\nsave\nquit\n"; 
-  open (WRITEDB, "| $tace -tsuser waba_data /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
-  print WRITEDB $command;
-  close WRITEDB;
-  
-  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Adding motif data at $runtime\n";
-  $command = "pparse /wormsrv2/wormbase/ensembl_dumps/ensembl_motif_info.ace\nsave\nquit\n"; 
-  open (WRITEDB, "| $tace -tsuser ensembl_pipeline_motif_info /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
-  print WRITEDB $command;
-  close WRITEDB;
-  
+  foreach my $file ( @files2Load ) {
+    print LOG "Adding $file at ",&runtime,"\n";
+
+    # make sure file exists
+    unless ( -e "/wormsrv2/wormbase/ensembl_dumps/$file" ) {
+      print LOG "ERROR *** $file doesn't exist \n\n";
+    }
+
+    # tsuser cant contain '.' so strip of .ace
+    my $tsuser = substr($file,0,-4);
+
+    $command = "pparse /wormsrv2/wormbase/ensembl_dumps/$file\nsave\nquit\n";
+    open (WRITEDB, "| $tace -tsuser $tsuser /wormsrv2/autoace  |") || warn  "Couldn't open pipe to autoace while loading $file\n";
+    print WRITEDB $command;
+    close WRITEDB;
+  }
+ 
   # upload_homol data log file in /logs
   system ("touch $logdir/$flag{'B8'}");
 
