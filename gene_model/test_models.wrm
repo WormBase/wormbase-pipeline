@@ -671,6 +671,7 @@
 				  Rearrangement_A UNIQUE ?Rearrangement
                                   Transgene_A UNIQUE ?Transgene XREF Multi_point
 			 B UNIQUE Gene_B UNIQUE ?Gene UNIQUE ?Allele XREF In_multi_point
+				  Locus_B UNIQUE ?Locus UNIQUE ?Allele XREF In_multi_point
 				  Allele_B UNIQUE ?Allele
 				  Rearrangement_B UNIQUE ?Rearrangement
                                   Transgene_B UNIQUE ?Transgene XREF Multi_point 
