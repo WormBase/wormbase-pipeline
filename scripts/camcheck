@@ -68,15 +68,14 @@ my $clonepath="/nfs/disk100/wormpub/analysis/cosmids";
 my $clonefile="$clonepath"."/current.versions";
 my $tace = glob("~acedb/RELEASE.SUPPORTED/bin.ALPHA_4/tace");   # tace executable path
 
-#my $dbpath = "/wormsrv2/camace";                                       # Database path
-my $dbpath = "/wormsrv2/WS44";                                       # Database path
+my $dbpath = "/wormsrv2/camace";                                       # Database path
+
 
  ########################################
  # Open logfile                         #
  ########################################
 
-#my $log="/wormsrv2/logs/camcheck.$rundate";
-my $log="/nfs/europa2/krb/camcheck.$rundate";
+my $log="/wormsrv2/logs/camcheck.$rundate";
 
 open (LOG,">$log");
 LOG->autoflush();
