@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2004-11-11 16:26:26 $
+# Last updated on: $Date: 2004-11-22 12:44:57 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -71,7 +71,7 @@ if ($debug) {
 }
 
 # using -all option?
-($release=$chroms=$misc=$wormpep=$genes=$cDNA=$geneIDs=$pcr=$homols 1) if ($all);
+($release=$chroms=$misc=$wormpep=$genes=$cDNA=$geneIDs=$pcr=$homols) if ($all);
 
 
 #################################################################################
@@ -281,23 +281,13 @@ sub extract_confirmed_genes{
   $log->write_to("$runtime: Extracting confirmed genes\n");
 
   my $db = Ace->connect(-path  => "/wormsrv2/autoace/");
-  my $query = "Find elegans_CDS; Confirmed_by";
+  my $query = "Find elegans_CDS; Confirmed";
   my @confirmed_genes   = $db->fetch(-query=>$query);
-
 
   open(OUT,">${targetdir}/$WS_name/confirmed_genes.$WS_name") || croak "Couldn't write to ${targetdir}/$WS_name/confirmed_genes.$WS_name\n";
 
   foreach my $seq (@confirmed_genes){
     my $dna = $seq->asDNA();
-    
-    my (@type) = $seq->get('Confirmed_by');
-    
-    if(defined($type[1])){
-      $dna =~ s/(>\w+\.\w+)/$1 Confirmed_by_EST_and_cDNA/;    
-    }       
-    else{
-      $dna =~ s/(>\w+\.\w+)/$1 Confirmed_by_$type[0]/;        
-    }       
     print OUT "$dna";
   }
 
@@ -309,7 +299,6 @@ sub extract_confirmed_genes{
   $runtime = &runtime;
   $log->write_to("$runtime: Finished extracting\n\n");
   return(0);
-
 }
 
 ################################################################################
