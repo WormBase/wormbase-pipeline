@@ -7,11 +7,14 @@
 # This maps alleles to the genome based on their flanking sequence
 #
 # Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2003-06-20 15:00:04 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2003-09-15 14:45:08 $        # quickly see when script was last changed and by whom
 
 
 use strict;
-use lib "/wormsrv2/scripts/";
+
+use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"
+  : glob("~ar2/wormbase/scripts");
+
 use Wormbase;
 use Ace;
 
@@ -25,7 +28,7 @@ my $database;
 my $ver;
 my $verbose;
 my $restart = "go";
-my $help; { `perldoc $0`;};
+my $help;# { `perldoc $0`;};
 my $no_geneace;
 my $no_parse;
 my $list;
@@ -80,7 +83,7 @@ my $strain_file;
 
 if( $debug )  {
   
-  $data_dump_dir = "tmp/";
+  $data_dump_dir = "/tmp";
   $allele_fa_file = "$data_dump_dir/alleles.fa";
   $genome_fa_file = "$data_dump_dir/genome.fa";
   $log        = "$data_dump_dir/map_alleles.$rundate";
@@ -166,9 +169,9 @@ my @chromosomes = qw( I II III IV V X );
 my $i = 0;
 foreach (@chromosomes) {
   my $gff = "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS/CHROMOSOME_$_.genes.gff";
-  if ($debug ) {
-    $gff = "/wormsrv2/autoace/GFF_SPLITS/WS94/CHROMOSOME_$_.genes.gff";
-  }
+#  if ($debug ) {
+#    $gff = "/wormsrv2/autoace/GFF_SPLITS/WS94/CHROMOSOME_$_.genes.gff";
+#  }
   my $chrom2gene = $hashrefs[$i];
   open (GFF,"<$gff") or die "cant open $gff\n";
   while(<GFF>) {
@@ -349,6 +352,7 @@ foreach $allele (@alleles)
     
     if ( $sequence )
       {
+	$onSuperlink = 1 if $sequence =~ /SUPERLINK/;
 	$allele_data{$name}[7] = &findChromosome( $sequence );
 	
 	#make the allele.fa file
@@ -407,6 +411,15 @@ foreach $allele (@alleles)
 		      $allele_data{$name}[6] = $source->name;
 		      print "Did $allele with superlink\n" ;
 		    }
+		    elsif( &MapAllele('r') == 1 ) {
+		      my $sl_length = length($SEQspan);
+		      my $new_5 = $sl_length - $allele_data{$name}[5];
+		      my $new_3 = $sl_length - $allele_data{$name}[4];
+			  
+		      $allele_data{$name}[4] = $new_5;
+		      $allele_data{$name}[5] = $new_3;	      
+		    }
+		    
 		    else {
 		      print LOG "$name failed mapping\n";
 		      print  "$name failed mapping\n";
