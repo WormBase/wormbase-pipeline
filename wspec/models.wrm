@@ -593,14 +593,15 @@
 
 //
 // GO_term class added 5/1/01 Lincoln Stein
+// modified 19/09/01 dl
 // 
 
 ?GO_term Name ?Text
 	 Definition ?Text
          Term ?Text
-	 Type UNIQUE Process
-                     Subcellular_location
-		     Function
+	 Type UNIQUE Biological_process
+                     Cellular_component
+		     Molecular_function
 	 Child Instance ?GO_term XREF Instance_of
                Component ?GO_term XREF Component_of
 	 Parent Instance_of ?GO_term XREF Instance
