@@ -6,8 +6,8 @@
 #
 # Author: Chao-Kung CHen
 #
-# Last updated by: $Author: wormpub $                      
-# Last updated on: $Date: 2004-06-03 15:25:20 $        
+# Last updated by: $Author: ar2 $                      
+# Last updated on: $Date: 2004-08-03 13:49:20 $        
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -26,6 +26,8 @@ my @files        = ("worm_pep_blastp.ace",
 		    "ipi_hits.ace",
 		    "worm_pep_best_blastp_hits",
 		    "worm_brigpep_best_blastp_hits",
+		    "TRF.ace",
+		    "repeat_homologies.ace"
 		   );
 
 
@@ -36,6 +38,9 @@ chdir "$wormsrv2_dir";
 
 # backup each file first, then copy across new file
 foreach my $file (@files){
+  if( ( $file eq "TRF.ace" or $file eq "repeat_homologies.ace") and !(-e $file) ){
+    next;
+  }
   &run_command("mv -f $file ${wormsrv2_dir}/BACKUP/$file");
   &run_command("/usr/apps/bin/scp ${acari_dir}/${file} wormsrv2:${wormsrv2_dir}/${file}");
 }
