@@ -6,7 +6,7 @@
 # Usage : autoace_minder [-options]
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2002-06-10 12:55:13 $
+# Last edited on: $Date: 2002-07-02 11:53:20 $
 
 
 #################################################################################
@@ -563,9 +563,9 @@ sub make_acefiles {
     # exit unless A4:Primary_databases_on_wormsrv2
     &usage(12) unless (-e "$logdir/$flag{'A4'}");
 
-    system ("$scriptdir/make_acefiles -ne") && die "Couldn't run make_acefiles\n";
+    system ("$scriptdir/make_acefiles") && die "Couldn't run make_acefiles\n";
     print LOG " Write acefiles to disk\n";
-    print LOG " => 'make_acefiles -ne'\n\n";
+    print LOG " => 'make_acefiles'\n\n";
 
     # make a make_acefiles log file in /logs
     system ("touch $logdir/$flag{'A5'}");
