@@ -8,7 +8,7 @@
 # to look for bogus sequence entries
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-01-27 18:57:21 $
+# Last updated on: $Date: 2003-03-21 15:48:37 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -366,7 +366,9 @@ sub process_sequences{
 	  print "$subseq - Other problem\n" if $verbose;
 	}
       }    
+      undef($subseq);
     }
+    undef($seq);
   }
 
 
