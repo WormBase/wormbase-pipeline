@@ -7,7 +7,7 @@
 # Gets latest Interpro:GO mappings from XXXX and puts info in to ace file
 #
 # Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2002-09-16 14:51:49 $                        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2003-02-10 10:03:00 $                        # quickly see when script was last changed and by whom
 
 
 use strict;                                     
@@ -38,7 +38,7 @@ print LOG "\n";
 #Get the latest version
 my $motifs = "/wormsrv2/tmp/interpro_motifs.html";
 print LOG "Attempting to wget the latest version\n";
-`wget -O $motifs http://www.ebi.ac.uk/interpro/listing.html` and die "$0 Couldnt get listing.html\n";
+`wget -O $motifs ftp://ftp.ebi.ac.uk/pub/databases/interpro/entry.list` and die "$0 Couldnt get listing.html\n";
 print LOG "...... got it!\n";
 
 print LOG "\n\nOpening file $motifs . . \n";
@@ -48,27 +48,21 @@ my %interpro_des;   #IPR000018 => "P2Y4 purinoceptor"
 my $text;
 my $ip;
 
+# IPR000177 Apple domain
 print LOG "\treading data . . . \n";
-# <a href="http://www.ebi.ac.uk/interpro/IEntry?ac=IPR000159">IPR000159</a> RA domain<br>
 while (<I2G>)
   {
-    if( $_ =~ m/IEntry\?ac=(IPR\d{6})/ ) 
-      {
-	$ip = $1;
-	if( $_ =~ m/a>\s(.*)<br>?/ ) #for some reason they all start with a space
-	  {
-	    $text = $1;
-	    #Motif : "INTERPRO:IPR000006"
-	    #Title    "Class I metallothionein"
-	    #Database         "INTERPRO" "IPR000006" "IPR000006"
-	    print IPDESC "Motif : \"INTERPRO:$ip\"\n";
-	    print IPDESC "Title  \"$text\"\n";
-	    print IPDESC "Database  \"INTERPRO\" \"$ip\"\n";
-	    print IPDESC "\n";
-	  }
-	else {
-	  print LOG "Cant find a description for $ip ($_)\n";}
-      }
+    chomp;
+    my @info = split;
+    $ip = shift @info;
+    next if( ("$info[0]" eq "entries") or (!defined $ip) ); # header lines
+    #Motif : "INTERPRO:IPR000006"
+    #Title    "Class I metallothionein"
+    #Database         "INTERPRO" "IPR000006" "IPR000006"
+    print IPDESC "Motif : \"INTERPRO:$ip\"\n";
+    print IPDESC "Title  \"@info\"\n";
+    print IPDESC "Database  \"INTERPRO\" \"$ip\"\n";
+    print IPDESC "\n";
   }
 
 ############################################################
