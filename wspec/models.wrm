@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: krb $
-// Last edited on: $Date: 2004-09-17 15:29:20 $
+// Last edited on: $Date: 2004-09-17 15:47:59 $
  
 
 
@@ -768,6 +768,7 @@
                	             Descendent ?GO_term XREF Ancestor
 		       Anatomy_term ?Anatomy_term XREF GO_term // added [031107 krb]
 		       Homology_group ?Homology_group XREF GO_term // added [031120 krb]
+		       Expr_pattern ?Expr_pattern XREF GO_term
  	 Version UNIQUE Text UNIQUE Text // added for Lincoln, to store version number of GO
 					 // only to be attached to three parent GO_terms [krb 031028]
 
@@ -1598,10 +1599,11 @@
 				Protein ?Protein XREF Expr_pattern
                                 Protein_description Text   // stores information for Expr_patterns
 							   // with unknown antigens [031105 krb]
-		Expressed_in	Cell ?Cell XREF Expr_pattern
-				Cell_group ?Cell_group XREF Expr_pattern
-				Life_stage ?Life_stage XREF Expr_pattern
-				Anatomy_term ?Anatomy_term XREF Expr_pattern
+		Expressed_in	Cell         ?Cell         XREF Expr_pattern #Qualifier
+				Cell_group   ?Cell_group   XREF Expr_pattern #Qualifier
+				Life_stage   ?Life_stage   XREF Expr_pattern #Qualifier
+				Anatomy_term ?Anatomy_term XREF Expr_pattern #Qualifier
+				GO_term      ?GO_term      XREF Expr_pattern #GR_condition
                 Subcellular_localization ?Text
 		Type	Reporter_gene ?Text
 			In_situ Text
@@ -1621,6 +1623,15 @@
 		Antibody_info ?Antibody XREF Expr_pattern // This applies to both Western & Antibody staining
                                                           // added [031120 krb]
 		Curated_by UNIQUE Text // Hinxton (HX) or Caltech (CIT)
+
+
+//Qualifer hash will be used for Expr_pattern curation to specify the reliability of data.
+                                                                                                 
+#Qualifier Certain   Text
+           Uncertain Text    //For faint or variable expression
+           Partial   Text    //For expression of unidentified cell in a cell group
+                                                                                                 
+                                                                                                 
 
 
 // NEW Expr_profile and SK_map classes added at request of Raymond [010912 krb]
