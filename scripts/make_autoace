@@ -384,10 +384,13 @@ sub createdirs {
 sub parseconfig {
     open(CONFIG,"$configfile");
     while(<CONFIG>) {
-	s/^\s+//;s/\s+$//;   
-	if (/^#/ || /^$/) {
-	    next;
-	}	 
+	
+        # some formating, remove leading and trailing whitespace
+	s/^\s+//;
+	s/\s+$//;   
+	
+	# next if comment line
+	next if (/^\#/ || /^$/);
 	
 	# parse database information
 	if (/^P\s+(\S+)\s+(\S+)$/) {
@@ -399,8 +402,7 @@ sub parseconfig {
 	
 	# parse file name
 	if (/^\S+\s+(\S+)/) {
-	    $object=$1; 
-	    $filename="$targetdir/".$dbname."_".$object.".ace";
+	    $filename = $1;
 	}
 	
 	# next if no filename parsed
