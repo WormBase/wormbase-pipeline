@@ -98,14 +98,20 @@ if ($help || not $ok) {
     exec("perldoc $0");
 }
 
+my $log = Log_files->make_build_log;
+
 unless ($dbname && $dbuser && $dbhost) {
     print STDERR "Must specify all DB parameters\n";
+    $log->write_to("database parameters not specified\nReq -dbhost -dbname -dbuser\n\n");
+    $log->mail;
     &usage;
     exit 1;
 }
 
 unless ($agp) {
     print STDERR "Must specify apg file\n";
+    $log->write_to("agp file required\n");
+    $log->mail;
     exit 1;
 }
 
@@ -116,6 +122,7 @@ if (defined $phase && ($phase < 0 || $phase > 4)) {
 }
 $phase = -1 unless defined $phase;
 
+$log->write_to("Using $dbname and $agp\n");
 
 # open connection to EnsEMBL DB
 my $dbobj;
@@ -130,11 +137,14 @@ if ($dbpass) {
 }
 else {
     $dbobj = Bio::EnsEMBL::DBSQL::Pipeline::DBAdaptor->new(
-        '-host'   => $dbhost,
-        '-user'   => $dbuser,
-        '-dbname' => $dbname
-    ) or die "Can't connect to DB $dbname on $dbhost as $dbuser"; # Do we need password as well?
-}
+							   '-host'   => $dbhost,
+							   '-user'   => $dbuser,
+							   '-dbname' => $dbname
+							  ) or do {
+							    $log->write_to("Can't connect to DB $dbname on $dbhost as $dbuser\n");
+							    die "Can't connect to DB $dbname on $dbhost as $dbuser"; # Do we need password as well?
+							  }
+							}
 
 my $clone_adaptor = $dbobj->get_CloneAdaptor();
 my $sic = $dbobj->get_StateInfoContainer();
@@ -151,7 +161,11 @@ if ($fasta) {
 }
 
 
-open AGP, "< $agp" or die "Can't open AGP file $agp";
+open (AGP, "< $agp") or do {
+  $log->write_to("Cant open AGP file $agp");
+  $log->mail; 
+  die "Can't open AGP file $agp";
+};
 while (<AGP>) {
     chomp;
     my @fields = split;
@@ -173,6 +187,7 @@ while (<AGP>) {
     }
     elsif ( &update_existing_clone($clone_adaptor, $sv) == 1) {
       print "Found old version of $sv; updated\n";
+      $log->write_to("Updated $sv\n");
       next;
     }
 
@@ -240,17 +255,21 @@ while (<AGP>) {
         };
         if ($@) {
             print "Error writing clone $sv\n"; 
+            $log->write_to("Error writing clone $sv\n");
         }
 	else {
 	  $sic->store_input_id_analysis($contig->name,$submitted_analysis) ;
 	  if( $@ ) {
 	    print "Error update input_id_analysis table for ",$contig->name,"\n";
+	    $log->write_to("Error update input_id_analysis table for $sv\n");
 	  }
 	  else {
 	    print "\tadded ",$contig->name,"\n";
+	    $log->write_to("\tadded $sv\n");
 	  }
 	}
     }
+    $log->mail;
 }
 
 
@@ -394,9 +413,9 @@ sub is_in_db {
     };
     if (defined $clone) {
       my $dbseq = lc $clone->get_all_Contigs->[0]->seq;
-      my $fasta_seq = $seqs{$acc};
+      my $fasta_seq = $seqs{ $acc2clone{$acc} };
 
-      print "$acc seq different in worm_dna and fasta\n" unless "$dbseq" eq "$fasta_seq";
+      $log->write_to("$acc seq different in worm_dna and fasta\n") unless "$dbseq" eq "$fasta_seq";
       return 1;
     }
     else {
