@@ -8,10 +8,10 @@
 # This makes the autoace database from its composite sources.
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2004-11-24 15:06:56 $
+# Last edited on: $Date: 2004-11-26 15:28:04 $
 
 use strict;
-use lib  $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use IO::Handle;
 use POSIX qw(:signal_h :errno_h :sys_wait_h);
@@ -92,16 +92,16 @@ my $errors = 0; # for tracking system call related errors
 # Re-initialize the database
 # Re-initializing database is more complex as the .acefiles will be spread over a number of
 # directories - use the config file to find them all
-#reinitdb();
+&reinitdb();
 
 # remove temp genes
-#&rmtempgene();
+&rmtempgene();
 
 # Read in the physical map and make all maps
-#&physical_map_stuff();
+&physical_map_stuff();
 
 # Make the chromosomal links
-#&makechromlink();
+&makechromlink();
 
 &check_make_autoace;
 
