@@ -167,6 +167,10 @@ while (<AGP>) {
         print "Found $sv; skipping\n";
         next;
     }
+    elsif ( &update_existing_clone($clone_adaptor, $sv) ) {
+      print "Found old version of $sv; updated\n";
+      next;
+    }
 
     if ($fasta) {
         my $seq_str = $seqs{$acc};
@@ -282,7 +286,74 @@ sub fetch_seq {
         -seq    => $seq_str,
         );
     return $seq;
-}    
+}
+
+# If clone already exists in database we can update rather than add the new version
+sub update_existing_clone
+  {
+    my $clone_adaptor = shift;
+    my $sv = shift;
+    $sv =~ /(\w+)\.(\d+)/;
+
+    my $acc = $1;
+    my $ver = $2;
+
+    my $clone = $clone_adaptor->_generic_sql_fetch(qq{ WHERE name = '$acc' });# I know this is bad :)
+    if ($clone ) {
+      my $old_ver = $clone->embl_version();
+
+      if ($old_ver and ($ver > $old_ver) ) {
+	# update clone in database
+
+	#update the clone version and embl_version
+	my $db_ver = $clone->version();
+	$db_ver++;
+	my $time = time;
+
+	&make_SQL_query($dbobj,"UPDATE clone SET version = $db_ver WHERE name = \"$acc\"");
+	&make_SQL_query($dbobj,"UPDATE clone SET embl_version = $ver WHERE name = \"$acc\"");
+	&make_SQL_query($dbobj,"UPDATE clone SET modified = FROM_UNIXTIME($time) WHERE name = \"$acc\"");
+
+	#update contig
+	my $contigs = $clone->get_all_Contigs();
+	#each clone has only one contig
+	foreach my $contig ( @{$contigs} ) { 
+	
+	  # update the DNA 
+	  my $dna = $seqs{$acc};
+	  my $dna_id = $contig->dna_id();
+	  &make_SQL_query($dbobj,"UPDATE dna SET sequence = \"$dna\" WHERE dna_id = $dna_id");
+
+	  # update the contig
+	  my $length = length($dna);
+	  my $name = "$acc."."$ver."."1."."$length";
+	  my $contig_id = $contig->dbID;
+
+	  &make_SQL_query($dbobj,"UPDATE contig SET name = \"$name\" WHERE contig_id = $contig_id");
+	  $contig->length($length);
+	  &make_SQL_query($dbobj,"UPDATE contig SET length = $length WHERE contig_id = $contig_id");
+	  return 1;
+	}
+      }
+      else {
+	print "clone $acc already has an equal or newer verion (database ver = $old_ver ) in the database\n";
+	return 1;
+      }
+    }
+    else {
+      return 0;
+    }
+  }
+
+sub make_SQL_query
+  {
+    my ($dbobj,$sql) = @_;
+    my $sth = $dbobj->prepare($sql);
+    $sth->execute;
+
+    print "done\n";
+  }
+
 
 
 sub is_in_db {
