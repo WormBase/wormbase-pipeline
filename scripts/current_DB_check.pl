@@ -7,8 +7,8 @@
 # Script to run consistency checks on the current_DB database
 # to look for bogus sequence entries
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-11-22 16:28:50 $
+# Last updated by: $Author: ck1 $
+# Last updated on: $Date: 2002-12-05 16:24:59 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -93,7 +93,6 @@ foreach my $seq (@genome_seqs){
     
     # only look for some specific errors if no Source tag present
     if(!defined($subseq->at('Structure.From.Source'))){  
-      
       if(defined($subseq->at('DB_info.Database'))){
 	my $tag = "Database";
 	my $timestamp = &get_timestamp($class, $subseq, $tag);
@@ -238,7 +237,17 @@ foreach my $seq (@genome_seqs){
 	print "$timestamp $class:$subseq \"$tag tag is creating this sequence. $comment\"\n" if $verbose;
 	$category = 1;
       }
-       if ($category == 0){
+      if(defined($subseq->at('Visible.Locus_genomic_seq'))){
+	my $tag = "Locus_genomic_seq";
+	my $timestamp = &get_timestamp($class, $subseq, $tag);
+	my @loci=$subseq->Locus_genomic_seq(1);
+        if (scalar @loci > 1){
+	  $problems{$timestamp}{$class.":".$subseq} = ["\"$tag tag is connected to multiple loci\""];
+	  print "$timestamp $class:$subseq \"$tag tag is connected to multiple loci\n";
+        }
+	$category = 1;
+      }
+      if ($category == 0){
 	push(@other,$subseq);
 	print "$subseq - Other problem\n" if $verbose;
       }
