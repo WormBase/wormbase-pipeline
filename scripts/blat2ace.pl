@@ -7,7 +7,7 @@
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-09-05 09:37:27 $
+# Last edited on: $Date: 2003-09-08 16:55:00 $
 
 
 use strict;
@@ -58,11 +58,11 @@ our %stlace;
 
 our $type = "";
 our %word = (
-	     EST      => 'BLAT_EST',
-	     OST      => 'BLAT_OST',
-	     mRNA     => 'BLAT_mRNA',
-	     EMBL     => 'BLAT_EMBL',
-	     NEMATODE => 'BLATX_NEMATODE',
+	     est      => 'BLAT_EST',
+	     ost      => 'BLAT_OST',
+	     mrna     => 'BLAT_mRNA',
+	     embl     => 'BLAT_EMBL',
+	     nematode => 'BLAT_NEMATODE',
 	     );
 
 
@@ -91,11 +91,11 @@ $flags++ if $nematode;
 
 
 # assign type variable
-($type = 'EST')      if ($est);
-($type = 'OST')      if ($ost);
-($type = 'mRNA')     if ($mrna);
-($type = 'EMBL')     if ($embl);
-($type = 'NEMATODE') if ($nematode);
+($type = 'est')      if ($est);
+($type = 'ost')      if ($ost);
+($type = 'mrna')     if ($mrna);
+($type = 'embl')     if ($embl);
+($type = 'nematode') if ($nematode);
 
 
 ############################################
@@ -264,7 +264,7 @@ while (<BLAT>) {
     
     # write to output file
     print ACE "Homol_data : \"$virtual\"\n";
-    if ($type eq "NEMATODE") {
+    if ($type eq "nematode") {
       printf ACE "DNA_homol\t\"%s\"\t\"$word{$type}\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$query,$score,$virtualstart,$virtualend,$query_start,$query_end;
     }
     else {

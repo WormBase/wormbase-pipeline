@@ -8,7 +8,7 @@
 # and virtual objects to hang the data onto
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-09-04 13:20:34 $
+# Last edited on: $Date: 2003-09-08 16:55:00 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -33,11 +33,11 @@ our %homedb; # for storing superlink->lab connections
 our $blatex  = '/nfs/disk100/wormpub/bin.ALPHA/blat';
 our $giface  = &giface;
 our %word = (
-	     EST      => 'BLAT_EST',
-	     mRNA     => 'BLAT_mRNA',
-	     EMBL     => 'BLAT_EMBL',
-	     NEMATODE => 'BLATX_NEMATODE',
-	     OST      => 'BLAT_OST',
+	     est      => 'BLAT_EST',
+	     mrna     => 'BLAT_mRNA',
+	     embl     => 'BLAT_EMBL',
+	     nematode => 'BLAT_NEMATODE',
+	     ost      => 'BLAT_OST',
 	     );
 
 
@@ -106,11 +106,11 @@ unless($dump){
 
 # assign type variable
 my $data;
-($data = 'EST')      if ($est);
-($data = 'OST')      if ($ost);
-($data = 'mRNA')     if ($mrna);
-($data = 'EMBL')     if ($embl);
-($data = 'NEMATODE') if ($nematode);
+($data = 'est')      if ($est);
+($data = 'ost')      if ($ost);
+($data = 'mrna')     if ($mrna);
+($data = 'embl')     if ($embl);
+($data = 'nematode') if ($nematode);
 
 
 # Select the correct set of query sequences for blat
@@ -544,13 +544,13 @@ sub virtual_objects_blat {
   my ($name,$length,$total,$first,$second,$m,$n);
   
   # autoace
-  open (OUT_autoace_homol, ">$blat_dir/virtual_objects.autoace.$word{$data}.ace") or die "$!";
+  open (OUT_autoace_homol, ">$blat_dir/virtual_objects.autoace.blat.$data.ace") or die "$!";
   open (OUT_autoace_feat,  ">$blat_dir/virtual_objects.autoace.ci.$data.ace")     or die "$!";
   # camace
-  open (OUT_camace_homol,  ">$blat_dir/virtual_objects.camace.$word{$data}.ace")  or die "$!";
+  open (OUT_camace_homol,  ">$blat_dir/virtual_objects.camace.blat.$data.ace")  or die "$!";
   open (OUT_camace_feat,   ">$blat_dir/virtual_objects.camace.ci.$data.ace")      or die "$!";
   # stlace
-  open (OUT_stlace_homol,  ">$blat_dir/virtual_objects.stlace.$word{$data}.ace")  or die "$!";
+  open (OUT_stlace_homol,  ">$blat_dir/virtual_objects.stlace.blat.$data.ace")  or die "$!";
   open (OUT_stlace_feat,   ">$blat_dir/virtual_objects.stlace.ci.$data.ace")      or die "$!";
   
   open (ACE, "<$blat_dir/chromosome.ace") || die &usage(11);
