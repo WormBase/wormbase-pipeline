@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-05-12 17:14:08 $
+# Last updated on: $Date: 2003-05-13 12:59:24 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -289,6 +289,7 @@ END
   print LOG "\n\nThere are $evid_errors Evidence errors in 7 classes checked\n";
   print LOG "\n$updates Authors can be converted to Persons\n";
   print LOG "\n$info_num Authors are not Persons\n";
+  system ("rm -f /tmp/*_dump.ace");
 
   #################################################################
   # subroutines for checking evidence & converting Author to Person
