@@ -5,7 +5,7 @@
 # Anthony Rogers
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2005-02-18 17:12:27 $
+# Last edited on: $Date: 2005-03-11 11:56:59 $
  
 
 use strict;
@@ -104,7 +104,7 @@ if ( $process or $virtual ) {
   }
 } # end loop for $process or $virtual 
 
-$log->mail($log,"BUILD REPORT: batch_BLAT.pl","all");
+$log->mail($log,"BUILD REPORT: batch_BLAT.pl","All");
 
 exit (0);
 
