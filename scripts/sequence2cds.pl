@@ -7,7 +7,7 @@
 # A script to take ?Sequence objects and make ?CDS (and ?Pseudogene) objects
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-08-04 16:11:07 $     
+# Last updated on: $Date: 2003-08-05 14:26:50 $     
 
 use strict;
 use Carp;
@@ -112,7 +112,7 @@ close(PSEUDOGENES);
 # 'Pseudogene' for those things which will be pseudogenes
 
 # Need new output file
-open(IN,"<${dbdir}krb_${db}_Sequence.ace") || carp "Can't open input file\n";
+open(IN,"<${dbdir}krb_${db}_Sequence.ace") || croak "Can't open input file\n";
 
 open(OUT,">${dbdir}krb2_${db}_Sequence.ace") || croak "Couldn't open output file\n";
 
@@ -133,6 +133,8 @@ while(<IN>){
 
 close(IN);
 close(OUT);
+
+system("mv ${dbdir}krb2_${db}_Sequence.ace ${dbdir}krb_${db}_Sequence.ace") && croak "Couldn't overwrite file\n";
 
 exit(0);
 
