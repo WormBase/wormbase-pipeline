@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.1 -w                    
+#!/usr/local/bin/perl5.8.0 -w                    
 #
 # map_alleles.pl
 #
@@ -6,14 +6,11 @@
 #
 # This maps alleles to the genome based on their flanking sequence
 #
-# Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2003-11-26 15:31:52 $        # quickly see when script was last changed and by whom
-
+# Last updated by: $Author: krb $                      # These lines will get filled in by cvs and helps us
+# Last updated on: $Date: 2003-12-01 11:36:47 $        # quickly see when script was last changed and by whom
 
 use strict;
-use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"
-  : glob("~ar2/wormbase/scripts");
-
+use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Feature_mapper;
 use Wormbase;
 use Ace;
@@ -98,12 +95,12 @@ $geneace = "/wormsrv2/geneace" unless $geneace;
 open (LOG,">$log") or die "cant open $log\n\n";
 print LOG "$0 start at $runtime on $rundate\n----------------------------------\n\n";
 
-my $geneace_update        = "$mapping_dir/map_alleles_geneace_update$ver.ace";
-my $geneace_update_delete = "$mapping_dir/map_alleles_geneace_update_delete$ver.ace";
+my $geneace_update        = "$mapping_dir/map_alleles_geneace_update.WS$ver.ace";
+my $geneace_update_delete = "$mapping_dir/map_alleles_geneace_update_delete.WS$ver.ace";
 my %geneace_alleles;
 
-my $cshl_update           = "$mapping_dir/map_alleles_cshl_update$ver.ace";
-my $cshl_update_delete    = "$mapping_dir/map_alleles_cshl_update_delete$ver.ace";
+my $cshl_update           = "$mapping_dir/map_alleles_cshl_update.WS$ver.ace";
+my $cshl_update_delete    = "$mapping_dir/map_alleles_cshl_update_delete.WS$ver.ace";
 
 my $KO_overlap_genes      = "$mapping_dir/KO_genes_overlap";
 
@@ -252,21 +249,23 @@ close GENEACE unless $no_geneace;
 ##############################
 unless ( $no_parse ) {
   print LOG "\nStart parsing $ace_file in to $database\n\n";
+
   my $command =<<END;
 pparse $geneace_update_delete
 pparse $ace_file
 save
 quit
 END
+
   my $tace = &tace;
-  eval {
+  eval{
     open (TACE,"| $tace -tsuser map_allele $database") || warn "Couldn't open tace connection to $database\n";
     print TACE $command;
     close (TACE);
+  };
+  if ( $@ ) {
+    print LOG "parse failure . . \n$@\n";
   }
-    if ( $@ ) {
-      print LOG "parse failure . . \n$@\n";
-    }
   else {
     print LOG "successfully finished parsing\n";
   }
@@ -297,9 +296,9 @@ sub outputAllele
       if( $allele2gene{$to_dump} ) {
 	my @affects_genes = split(/\s/,"@{$allele2gene{$to_dump}}");
 	
-	# in Predicted gene object
+	# in CDS object
 	foreach my $ko (@affects_genes) {
-	  print OUT "\nSequence : \"$ko\"\nHas_allele $to_dump\n";
+	  print OUT "\nCDS : \"$ko\"\nAllele $to_dump\n";
 	}
 
 	# in Allele object
@@ -314,11 +313,11 @@ sub outputAllele
 	  }
 	}
 	foreach my $ko (@affects_genes) {
-	  #allele - seq connection
+	  #allele - CDS connection
 	  print OUT "Predicted_gene $ko\n";
 	  unless ($no_geneace ) {
 	    if ( defined $geneace_alleles{$to_dump} ) {
-	      print GENEACE "Predicted_gene $ko\n"; # update geneace with allele -> Predicted_genes
+	      print GENEACE "Predicted_gene $ko\n"; # update geneace with allele -> CDS
 	    } else {
 	      print CSHLACE "Predicted_gene $ko\n";
 	    }
@@ -377,10 +376,10 @@ This script:
 
 Gets alleles with flanking sequence from designated database and maps them to a clone or superlink using SCAN, then checks which if any CDSs they overlap with.
 
-Also requires that the allele has as a "seed" sequence either a Sequence or Predicted_gene (a locus with an associated
+Also requires that the allele has as a "seed" sequence either a Sequence or CDS (a locus with an associated
 genomic_sequence will also work).
 
-Also writes two files for updating allele->Sequence and Allele->Predicted_gene in geneace, one to remove the current connections and one to enter the new ones.
+Also writes two files for updating allele->Sequence and Allele->CDS in geneace, one to remove the current connections and one to enter the new ones.
 
 Outputs acefiles which are loaded in to the same database.
 
