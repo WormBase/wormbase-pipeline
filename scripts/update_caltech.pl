@@ -4,7 +4,7 @@
 
 # by Chao-Kung Chen [030113]
 
-# Last updated on: $Date: 2003-02-12 15:38:04 $
+# Last updated on: $Date: 2003-02-12 16:43:54 $
 # Last updated by: $Author: ck1 $
 
 
@@ -35,8 +35,6 @@ if ($user ne "wormpub"){
   print "\nYou have to be wormpub to run this script!\n\n";
   exit(0);
 }
-
-# if ($debug){$recipients ="$debug\@sanger.ac.uk"}
 
 ###############################
 # touch logfile for run details
@@ -82,35 +80,6 @@ else {
   $recipients ="ck1\@sanger.ac.uk, krb\@sanger.ac.uk";
   mail_maintainer($script, $recipients, $log) unless $debug;
   exit(0);
-}
-
-sub dataset {
-  my $dir = shift;
-  my ($date, $name);
-  opendir(DIR, $dir) || die "Can't read directory";
-  my @dir=readdir DIR;
-  splice(@dir, 0,2);
-  closedir (DIR);
-  foreach (@dir){
-    if ($_ =~ /^annots-(\d+)(\w{3,3})(\d+)/){
-      $name = $_;
-      my $mon = $2;
-      if ($mon eq "jan"){$mon = "01"}
-      if ($mon eq "feb"){$mon = "02"}
-      if ($mon eq "mar"){$mon = "03"}
-      if ($mon eq "apr"){$mon = "04"}
-      if ($mon eq "may"){$mon = "05"}
-      if ($mon eq "jun"){$mon = "06"} 
-      if ($mon eq "jul"){$mon = "07"}
-      if ($mon eq "aug"){$mon = "08"}
-      if ($mon eq "sep"){$mon = "09"}
-      if ($mon eq "oct"){$mon = "10"}
-      if ($mon eq "nov"){$mon = "11"}
-      if ($mon eq "dec"){$mon = "12"}
-      $date = $1.$mon.$3;
-    }
-  }
-  return $date, $name; 
 }
 
 ###############################################
@@ -180,7 +149,7 @@ print LOG "These have been changed in $ftp_date[1],\n";
 print LOG "but Caltech needs to update on their side. THANKS.\n\n";
 
 system("rm $caltech/*");
-#=start
+
 my $command=<<END;
 find sequence * where concise_description OR detailed_description OR provisional_description
 show -a -T -f /wormsrv1/geneace/ERICHS_DATA/seq_TS_dump.ace
@@ -216,12 +185,18 @@ if($!){
   print "##########################################\n\n"; 
 }
 else{
-  print "#################################\n";
+  print "######################################\n";
   print "Mission not 100% successful, Mr. Bond!\n";
-  print "#################################\n\n";
+  print "######################################\n\n";
 }
 
+######################################
+# move modified file to ARCHIVE folder
+######################################
+
 system("mv $last_date[1].modified ARCHIVE/");
+
+exit(0);
 
 ##################################################
 # Mail log file
@@ -233,6 +208,36 @@ mail_maintainer($script, $recipients, $log) unless $debug;
 #############
 # subroutines
 #############
+
+sub dataset {
+  my $dir = shift;
+  my ($date, $name);
+  opendir(DIR, $dir) || die "Can't read directory";
+  my @dir=readdir DIR;
+  splice(@dir, 0,2);
+  closedir (DIR);
+  foreach (@dir){
+    if ($_ =~ /^annots-(\d+)(\w{3,3})(\d+)/){
+      $name = $_;
+      my $mon = $2;
+      if ($mon eq "jan"){$mon = "01"}
+      if ($mon eq "feb"){$mon = "02"}
+      if ($mon eq "mar"){$mon = "03"}
+      if ($mon eq "apr"){$mon = "04"}
+      if ($mon eq "may"){$mon = "05"}
+      if ($mon eq "jun"){$mon = "06"} 
+      if ($mon eq "jul"){$mon = "07"}
+      if ($mon eq "aug"){$mon = "08"}
+      if ($mon eq "sep"){$mon = "09"}
+      if ($mon eq "oct"){$mon = "10"}
+      if ($mon eq "nov"){$mon = "11"}
+      if ($mon eq "dec"){$mon = "12"}
+      $date = $1.$mon.$3;
+    }
+  }
+  return $date, $name; 
+}
+
 
 sub loci_as_other_name {
 
