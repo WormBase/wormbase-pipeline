@@ -12,8 +12,8 @@
 # the Cold Spring Harbor Laboratory database (cshace)
 # the Caltech database (citace)
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2002-05-24 09:52:13 $
+# Last updated by: $Author: dl1 $
+# Last updated on: $Date: 2002-08-06 17:15:14 $
 
 
 #################################################################################
@@ -53,7 +53,7 @@ my $giface = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/giface";
 our ($opt_h,$opt_b,$opt_c,$opt_s,$opt_i);
 
 #options with arguments
-getopt("bcsi");
+getopt("b:c:s:i:");
 #boolean options
 getopts("h");
 
