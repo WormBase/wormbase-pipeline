@@ -652,10 +652,11 @@
 	  Inferred_automatically Text // used by some scripts for things like gene->cDNA connections
 
 
-//
-// GO_term class added 5/1/01 Lincoln Stein
+////////////////////////////////////////////////////////
+// ?GO_term class 
 // modified 19/09/01 dl
 // 
+///////////////////////////////////////////////////////
 
 ?GO_term Name ?Text
 	 Definition ?Text
@@ -677,6 +678,7 @@
 		       Index Ancestor   ?GO_term XREF Descendent // added for Lincoln [020709 [krb]
                	             Descendent ?GO_term XREF Ancestor
 		       Locus ?Locus XREF GO_term // added by krb 020905
+		       Anatomy_term ?Anatomy_term XREF GO_term // added [031107 krb]
  	 Version UNIQUE Text UNIQUE Text // added for Lincoln, to store version number of GO
 					 // only to be attached to three parent GO_terms [krb 031028]
 
@@ -1290,6 +1292,7 @@
 		Expressed_in	Cell ?Cell XREF Expr_pattern
 				Cell_group ?Cell_group XREF Expr_pattern
 				Life_stage ?Life_stage XREF Expr_pattern
+				Anatomy_term ?Anatomy_term XREF Expr_pattern
                 Subcellular_localization ?Text
 		Type	Reporter_gene ?Text
 			In_situ Text
@@ -1367,6 +1370,7 @@
 			       Male_fate ?Cell XREF Male_origin
 	Cell_group ?Cell_group XREF Cell
 	Life_stage ?Life_stage XREF Cell
+	Anatomy_term ?Anatomy_term XREF Cell
         Tree_Node ?TreeNode XREF Cell
         Reference ?Paper XREF Cell
         GO_term ?GO_term XREF Cell ?GO_code #Evidence
@@ -1392,6 +1396,7 @@
                                 Lineage //put in for Lilncoln some time ago
 		Expr_pattern ?Expr_pattern XREF Cell_group	
 		Life_stage ?Life_stage XREF Cell_group
+		Anatomy_term ?Anatomy_term XREF Cell_group
                 Reference ?Paper XREF Cell_group
                 Tree_Node ?TreeNode XREF Cell_group
 		Group_derivation Expression_experiment          //groups made by experimenters in their reports
@@ -1402,10 +1407,48 @@
 
 // new naming model for Raymond, krb [030916]
 
-?Anatomy_name   Primary Name_for_cell ?Cell XREF Main_name
-                        Name_for_cell_group ?Cell_group XREF Main_name
-                Secondary Synonym_for_cell ?Cell XREF Other_name
-                          Synonym_for_cell_group ?Cell_group XREF Other_name
+?Anatomy_name   Primary   Name_for_cell            ?Cell XREF Main_name
+                          Name_for_cell_group      ?Cell_group XREF Main_name
+			  Name_for_anatomy_term    ?Anatomy_term XREF Term
+                Secondary Synonym_for_cell         ?Cell XREF Other_name
+                          Synonym_for_cell_group   ?Cell_group XREF Other_name
+			  Synonym_for_anatomy_term ?Anatomy_term XREF Synonym
+
+
+///////////////////////////////////////////////////////////////////////
+//
+// ?Anatomy_term
+//
+// a model to store cell and anatomy ontology terms and relationships
+// ?Anatomy_term object names should be in the form of WBca:1234567
+//
+////////////////////////////////////////////////////////////////////////
+
+?Anatomy_term   Evidence #Evidence
+		Version UNIQUE Int UNIQUE Int
+                Definition UNIQUE ?Text #Evidence
+                Term UNIQUE ?Anatomy_name XREF Name_for_anatomy_term #Evidence
+                Synonym ?Anatomy_name XREF Synonym_for_anatomy_term #Evidence
+                Legacy Cell ?Cell XREF Anatomy_term
+                       Cell_group ?Cell_group XREF Anatomy_term
+                Child   PART_OF_c       ?Anatomy_term   XREF    PART_OF_p
+                        IS_A_c  ?Anatomy_term   XREF    IS_A_p
+                        DESCENDENT_OF_c ?Anatomy_term   XREF    DESCENDENT_OF_p
+                        DESC_IN_HERM_c  ?Anatomy_term   XREF    DESC_IN_HERM_p
+                        DESC_IN_MALE_c  ?Anatomy_term   XREF    DESC_IN_MALE_p
+                        DEVELOPS_FROM_c ?Anatomy_term   XREF    DEVELOPS_FROM_p
+                Parent  PART_OF_p       ?Anatomy_term   XREF    PART_OF_c
+                        IS_A_p  ?Anatomy_term   XREF    IS_A_c
+                        DESCENDENT_OF_p ?Anatomy_term   XREF    DESCENDENT_OF_c
+                        DESC_IN_HERM_p  ?Anatomy_term   XREF    DESC_IN_HERM_c
+                        DESC_IN_MALE_p  ?Anatomy_term   XREF    DESC_IN_MALE_c
+                        DEVELOPS_FROM_p ?Anatomy_term   XREF    DEVELOPS_FROM_c
+                Attribute_of    Expr_pattern    ?Expr_pattern   XREF    Anatomy_term
+                                GO_term ?GO_term XREF Anatomy_term ?GO_code #Evidence
+                                Reference       ?Paper  XREF Anatomy_term
+                Index   Ancestor ?Anatomy_term XREF Descendent  //store ancestors of relationship IS_A and PART_OF
+                        Descendent ?Anatomy_term XREF Ancestor  //store descendents of relationship IS_A and PART_OF
+                Remark  ?Text #Evidence
 
 
 
@@ -1421,6 +1464,9 @@
 		Other_name ?Text // added for Wen [020607 krb]
                 Reference ?Paper XREF Life_stage
 		Curated_by UNIQUE Text // added for Sylvia [010928 krb]
+
+
+
 
 
 //
@@ -1973,6 +2019,7 @@
 		  Feature ?Feature XREF Defined_by_paper                 // added [030424 dl]
 		  Gene_regulation ?Gene_regulation XREF Reference // added [030804 krb]
 		  Microarray_experiment ?Microarray_experiment XREF Reference //added for Microarray_experiment model
+		  Anatomy_term ?Anatomy_term XREF Reference #Evidence
         Keyword ?Keyword
 
 
