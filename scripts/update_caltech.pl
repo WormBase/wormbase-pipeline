@@ -4,7 +4,7 @@
 
 # by Chao-Kung Chen [030113]
 
-# Last updated on: $Date: 2003-02-24 01:51:17 $
+# Last updated on: $Date: 2003-04-04 16:04:58 $
 # Last updated by: $Author: ck1 $
 
 
@@ -40,13 +40,14 @@ if ($debug){
 ##################################################
 # check user is wormpub otherwise script won't run
 ##################################################
-
+=start
 my $user = `whoami`; chomp $user;
 if ($user ne "wormpub"){
   print "\nYou have to be wormpub to run this script!\n\n";
   exit(0);
 }
-
+=end
+=cut
 ###############################
 # touch logfile for run details
 ###############################
@@ -92,33 +93,42 @@ if ($last_date[0] == $ftp_date[0]){
   exit(0);
 }
 
-################################################
-# check if locus is now CGC_approved other_name
-# if yes, replace by main_name in ace file
-# if not, output to LOG file and updates geneace
-################################################
+########################################
+# process locus / other_name information
+########################################
 
 my $ga_dir = "/wormsrv1/geneace";
 
-my $locus_has_other_name=<<EOF;
-Table-maker -p "/wormsrv1/geneace/wquery/locus_has_other_name.def" quit
+my $locus_has_other_name_to_cds=<<EOF;
+Table-maker -p "/wormsrv1/geneace/wquery/locus_has_other_name_to_cds.def" quit
 EOF
-my $cgc_approved_loci=<<EOF;
-Table-maker -p "/wormsrv1/geneace/wquery/cgc_approved_loci.def" quit
+my $locus_to_CDS=<<EOF;
+Table-maker -p "/wormsrv1/geneace/wquery/locus_to_CDS.def" quit
 EOF
 
-
-my @other_main=loci_as_other_name($locus_has_other_name,  $cgc_approved_loci, $ga_dir);
+my @other_main=CGC_loci_and_other_name($locus_has_other_name_to_cds, $locus_to_CDS, $ga_dir);
 
 my %other_main=%{$other_main[0]};
+my %locus_cds=%{$other_main[1]};
 
-my %main;
-my @main=@{$other_main[1]}; foreach (@main){$main{$_}++};
 
-my %cgc_loci=%{$other_main[2]};
+my $count=0;
+my (@exceptions, %exceptions, @other_names, %other_names);
 
-my $change=0;
-my ($other_name_as_object, $cgc_other_name);
+foreach (sort keys %other_main){
+  my $locus = @{$other_main{$_}}->[0];
+  my @cds = @{$other_main{$_}}->[1];
+
+  if (exists $locus_cds{$_}){
+     push(@exceptions, $_);
+  }
+  else {
+    push(@other_names, $_);
+  }
+}
+
+foreach (@exceptions){$exceptions{$_}++}
+foreach (@other_names){$other_names{$_}++}
 
 open (IN, "$updatedir/$ftp_date[1]");
 
@@ -129,21 +139,48 @@ open(OUT, ">$modify");
 
 while(<IN>){
   if ($_ =~ /^Locus : \"(.+)\"/){
-
+   
     ######################################################### 
     # check if locus is an other_name and also a locus object
     #########################################################
 
-    if ($other_main{$1} && $main{$1} && $cgc_loci{$1}){    
-      $other_name_as_object .= "$1 - this is a valid CGC gene name, but has also been used as an other name for @{$other_main{$1}}\n";
-    }  
-    if ($other_main{$1} && $main{$1} && !exists $cgc_loci{$1}){    
-      $other_name_as_object .= "$1 - this is a non_CGC gene name, but has also been used as an other name for @{$other_main{$1}}\n";
-    }  
-    if ($other_main{$1} && !$main{$1}){     # check if locus is an other_name and also not a locus object  
-      $cgc_other_name .= "\n$1 is now an other_name of @{$other_main{$1}}";
-      print OUT "Locus : \"@{$other_main{$1}}\"\n";
-      $change++;
+    if ($exceptions{$1}){
+      print $1, "\n";
+      $count++;
+      my $locus = @{$other_main{$1}}->[0];
+      my @cds = @{$other_main{$1}}->[1]; 
+      if (@{$other_main{$1}}->[1]){
+	print LOG "$1 (@{$locus_cds{$1}}) is different from $1 which is an other_name of $locus (@cds)\n";
+	print LOG "Functional annotation is assigned to $1 (@{$locus_cds{$1}})\n\n";
+	print OUT "Locus : \"$1\"\n";
+      }
+      else {
+	print LOG "$1 (@{$locus_cds{$1}}) is different from $1 which is an other_name of $locus (no CDS connection yet)\n";
+	print LOG "Functional annotation is assigned to $1 (@{$locus_cds{$1}})\n\n";
+	print OUT "\nLocus : \"$1\"\n";
+      }
+    }
+
+    ##################################################################### 
+    # check if locus is should become an other_name of a CGC locus object
+    #####################################################################
+
+    elsif ($other_names{$1}){
+      $count++;
+      my $locus = @{$other_main{$1}}->[0];
+      my @cds = @{$other_main{$1}}->[1];
+      if (@{$other_main{$1}}->[1]){
+	print LOG "$1 is an other_name of $locus (@cds)\n";
+	print LOG "Functional annotation is assigned to $locus\n\n";
+	print OUT "\nLocus : \"$locus\"\n";
+	print OUT "Other_name \"$1\"\n";
+      }
+      else {
+	print LOG "$1 is an other_name of $locus (no CDS connection yet)\n";
+	print LOG "Functional annotation is assigned to $locus\n\n";
+	print OUT "\nLocus : \"$locus\"\n";
+	print OUT "Other_name \"$1\"\n";
+      }
     }
     else {
       print OUT "$_";
@@ -153,16 +190,10 @@ while(<IN>){
     print OUT "$_";
   }
 }
-print LOG "Functional annotations are attached to the following genes which\n";
-print LOG "*possibly* should be attached to different genes:\n\n";
-print LOG "$other_name_as_object\n\n";
 
-print LOG "Functional annotations are attached to the following gene names\n";
-print LOG "which are no longer valid CGC names, and should be attached to new names as follows:\n";
-print LOG "$cgc_other_name\n\n";
-print LOG "There are $change change(s)\n";
-print LOG "These have been changed in $ftp_date[1],\n";
-print LOG "but Caltech needs to update on their side. THANKS.\n\n";
+print LOG "There are $count change(s).\n\n";
+print LOG "These have been changed in $ftp_date[1], but Caltech needs to update on their side.\n";
+print LOG "THANKS.\n\n";
 
 my $command=<<END;
 find sequence * where concise_description OR detailed_description OR provisional_description
@@ -218,6 +249,7 @@ system("mv $last_date[1]* ARCHIVE/");
 mail_maintainer($script, $recipients, $log);
 exit(0);
 
+
 #############
 # subroutines
 #############
@@ -251,33 +283,41 @@ sub dataset {
   return $date, $name; 
 }
 
-
-sub loci_as_other_name {
+sub CGC_loci_and_other_name {
 
   my ($def1, $def2, $dir) = @_;
-  my ($main, @main, $other_name, %other_main, @cgc_loci, $cgc_loci);
+  my ($main, $other_name, %other_main, $locus, $cds, %locus_cds);
   
   open (FH1, "echo '$def1' | tace $dir |") || die "Couldn't access geneace\n";
   while (<FH1>){
     chomp $_;
-    if ($_ =~ /\"(.+)\"\s+\"(.+)\"/){
+    if ($_ =~ /\"(.+)\"\s+\"(.+)\"\s+\"(.+)\"/){
       $main = $1;
       $other_name = $2;
-      $other_name =~ s/\\//g;
-      push(@{$other_main{$other_name}}, $main);
-      push(@main, $main);
+      $other_name =~ s/\\//;
+      if ($3){
+	$cds = $3;
+	push(@{$other_main{$other_name}}, $main, $cds);
+      }
+      else {
+	push(@{$other_main{$other_name}}, $main);
+      }
     }
   }
+ 
   open (FH2, "echo '$def2' | tace $dir |") || die "Couldn't access geneace\n";
   while (<FH2>){
     chomp $_;
-    if ($_ =~ /\"(.+)\"/){
-      push(@cgc_loci,  $1);
+    if ($_ =~ /\"(.+)\"\s+\"(.+)\"/){
+      $locus = $1;
+      $locus =~ s/\\//;
+      $cds = $2;
+      push(@{$locus_cds{$locus}}, $cds);
     }
   }
-  foreach (@cgc_loci){$cgc_loci{$_}++};
-  return \%other_main, \@main, \%cgc_loci;
+  return \%other_main, \%locus_cds;
 }
+
 
 __END__
 
