@@ -19,8 +19,8 @@
 #
 # 010905 by Kerstin Jekosch
 
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2002-11-13 17:48:00 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2002-11-15 16:14:40 $
 
 
 use strict;
@@ -29,7 +29,7 @@ use Ace;
 use lib "/wormsrv2/scripts/";
 use Wormbase;
 use Getopt::Std;
-use vars qw($opt_i $opt_h $opt_s $opt_c $opt_e $opt_m $opt_o $opt_x);
+use vars qw($opt_i $opt_h $opt_s $opt_c $opt_e $opt_m $opt_o $opt_x $opt_z);
 $| = 1;
 
 #############################
@@ -67,10 +67,17 @@ open (LOG, ">/wormsrv2/logs/blat2ace.log.$rundate.$$") || die "Couldn't write to
  # command-line options & ramifications #
  ########################################
 
-getopts ('csemxoih');
+getopts ('csemxoihz');
 
 # Help pod documentation
 &usage(0) if ($opt_h);
+
+# camace run paths
+if ($opt_z) {
+    $dir       = "/wormsrv1/camace/BLAT";
+    $dbdir     = "/wormsrv1/camace";
+    $tace      = &tace." /wormsrv1/camace";
+}
 
 # Exit if no data type choosen [EST|mRNA|EMBL|NEMATODE]
 &usage(1) unless ($opt_e || $opt_m || $opt_o || $opt_x); 
@@ -109,7 +116,7 @@ else {
 #########################################
 
 # parse links for camace
-my @camclones = qw(cTel3X cTel4X cTel7X cTel33B cTel54X LINK_6R55 LINK_cTel52S SUPERLINK_CB_I SUPERLINK_CB_II SUPERLINK_CB_IIIL SUPERLINK_CB_IIIR SUPERLINK_CB_IR SUPERLINK_CB_IV SUPERLINK_CB_V SUPERLINK_CB_X); 
+my @camclones = qw(cTel3X cTel4X cTel7X cTel33B cTel54X 6R55 SUPERLINK_CB_I SUPERLINK_CB_II SUPERLINK_CB_IIIL SUPERLINK_CB_IIIR SUPERLINK_CB_IR SUPERLINK_CB_IV SUPERLINK_CB_V SUPERLINK_CB_X); 
 foreach my $camclone (@camclones) {
     $camace{$camclone} = 1;
 }
