@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2004-04-07 14:24:08 $
+# Last edited on: $Date: 2004-04-21 08:26:47 $
 
 use DBI;
 use strict;
@@ -268,7 +268,7 @@ if( $update_mySQL )
     
     #load information about any new clones
     print "\tloading information about any new clones in to $dbname\n";
-    &run_command("perl5.6.1 $scripts_dir/agp2ensembl.pl -dbname worm_dna -dbhost ecs1f -dbuser wormadmin -dbpass worms -agp $wormpipe_dir/Elegans/WS$WS_version.agp -write -v -strict");
+    &run_command("perl5.6.1 $scripts_dir/agp2ensembl.pl -dbname worm_dna -dbhost ecs1f -dbuser wormadmin -dbpass worms -agp $wormpipe_dir/Elegans/WS$WS_version.agp -write -v -strict -fasta /wormsrv2/autoace/allcmid");
     
     #check that the number of clones in the clone table equals the number of contigs and dna objects
     my ($clone_count, $contig_count, $dna_count);
@@ -283,7 +283,7 @@ if( $update_mySQL )
     $query = "select count(*) from dna";
     @results = &single_line_query( $query, $worm_dna );
     $dna_count = $results[0];
-    
+
     print "checking clone contig and dna counts . . .";
     if( ($clone_count != $contig_count) or ($contig_count != $dna_count ) ){
       print "\nthe number of clones, contigs and DNAs is inconsistant\n
@@ -293,26 +293,17 @@ clones = $clone_count\ncontigs = $contig_count\ndna = $dna_count\n";
     else {
       print "OK\n";
     }
-    
+
     $query = "select * from clone order by clone_id desc limit 1";
     @results = &single_line_query( $query, $worm_dna );
     my $new_last_clone = $results[0];
     print "\tnew_last_clone = $new_last_clone\n";
-    
-    if( $last_clone != $new_last_clone )
-      {
-	$query = "select contig_id from contig where contig_id > $last_clone into outfile '/tmp/ids.txt'";
-	print &update_database( $query, $worm_dna );
-	system("cp /tmp/ids.txt $wormpipe_dir/Elegans/ids.txt");
-	
-	&run_command("perl5.6.1 $scripts_dir/InputIdManager.pl -dbname worm_dna -dbhost ecs1f -dbuser wormadmin -dbpass worms -insert -analysis SubmitContig -class contig -file $wormpipe_dir/Elegans/ids.txt");
-	
-      }
+
     $worm_dna->disconnect;
 
+    # shouldn't be needed anymore but Im leaving it for extra safety - ar2
     print "\tchecking for duplicate clones\n";
     &run_command("perl5.6.1 $scripts_dir/find_duplicate_clones.pl");
-
 
     #add new peptides to MySQL database
     print "\n\nAdding new peptides to $dbname\n";
