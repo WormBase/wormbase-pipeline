@@ -7,9 +7,7 @@
 
 $|=1;
 
-#open (SEQUENCES, "/usr/local/pubseq/bin/getz -sf fasta -f \"id acc des seq\" \'([{emblrelease emblnew}-org:caenorhabditis elegans] \& [{emblrelease emblnew}-div:est]) | ([emblrelease-org:caenorhabditis elegans] \& [emblrelease-div:est]) < emblnew)\' |") ;
-
-open (SEQUENCES, "/usr/local/pubseq/bin/getz -sf fasta -f \"id acc des seq\" \'([emblrelease-org:caenorhabditis elegans] \& [emblrelease-div:est])\' |") ;
+open (SEQUENCES, "/usr/local/pubseq/bin/getzc -sf fasta -f \"id acc des seq\" \'([emblrelease-org:caenorhabditis elegans] \& [emblrelease-div:est])\' |") ;
 
 while (<SEQUENCES>) {
 	if (/^AC\s+/ || /^DE\s+/ || /^>/ || /^ID\s+/) {} else {print;}

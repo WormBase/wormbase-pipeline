@@ -7,7 +7,7 @@
 # dl
 #
 # Last updated by: $Author: dl1 $                      
-# Last updated on: $Date: 2003-01-21 16:34:59 $        
+# Last updated on: $Date: 2003-01-27 11:13:44 $        
 
 use strict;
 use Getopt::Long;
@@ -104,7 +104,7 @@ foreach my $species (@species_list) {
 
     my $species_count = 0;
 
-    open (SEQUENCES, "/usr/local/pubseq/bin/getz -e \'([embl-org:$species*]) \& ([embl-key:est])' |") ;
+    open (SEQUENCES, "/usr/local/pubseq/bin/getzc -e \'([embl-org:$species*]) \& ([embl-key:est])' |") ;
     while (<SEQUENCES>) {
 	chomp;
 	
