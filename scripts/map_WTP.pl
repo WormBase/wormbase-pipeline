@@ -8,6 +8,8 @@
 #
 # 03.12.01 Kerstin Jekosch
 #
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2002-04-24 16:11:59 $
 #############################################################################################
 
 
@@ -51,6 +53,7 @@ my $debug = $opt_d;
 #############
 # Paths etc #
 #############
+
 
 my $tace = glob("~wormpub/ACEDB/bin.ALPHA_4/tace");    # tace executable path
 my $dbdir  = "/wormsrv2/autoace";                                  # Database path
