@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl
 #
 # camcheck
-# v 0.3
+# v 0.4
 #
 # Cronjob integrity check controls for camace database.
 #
@@ -18,6 +18,10 @@
 
 # v0.3
 # 010316 : dl  : Added highlight in red for SUPERLINK child problems
+
+# v0.4
+# 010618 : krb : Added a call to the check_predicted_genes.pl script to check all
+# predicted genes for a number of possible errors
 
 #####################################################################################################
 
@@ -212,6 +216,13 @@ while($line=<CLONEFILE>) {
 }
 
 close(CLONEFILE);
+
+
+########################
+# Check predicted genes
+########################
+
+system("/wormsrv2/scripts/check_predicted_genes.pl $dbpath $log");
 
 
 ##################
@@ -497,6 +508,7 @@ END
 	push (@date,$_)        if (/^DATE/);
 	push (@sequence,$_)    if (/^SEQUENCE/);
 	push (@subsequence,$_) if (/^The subsequence/);
+	push (@subsequence,$_) if (/^Gene error - /);
 	push (@link,$_)        if (/^SUPERLINK/);
     }
     close READLOG;
