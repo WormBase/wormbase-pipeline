@@ -14,8 +14,11 @@ use File::Path;
 
 @EXPORT    = qw(get_wormbase_version get_wormbase_version_name get_wormbase_release_date copy_check mail_maintainer celeaccession tace gff_sort dbfetch clones_in_database open_TCP DNA_string_reverse DNA_string_composition release_databases find_file_last_modified FetchData release_composition release_wormpep test_user_wormpub runtime rundate giface check_write_access Map_feature scan MapFeature delete_files_from load_to_database wormpep_files);
 
- 
-
+# set these variables once outside of subroutines otherwise, each call to subroutine
+# iterates through the results of the glob function.  This means second calls to subroutines
+# lose the tace path 
+my $tace = glob("~wormpub/ACEDB/bin_ALPHA/tace");
+my $giface = glob("~wormpub/ACEDB/bin_ALPHA/giface");
 
 #################################################################################
 
@@ -192,7 +195,6 @@ sub celeaccession {
     local (*text_ace);
     my $seq = shift;
     local($exec);
-    $exec="/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_5/tace";
     local($command);
     local($accession);
     $ENV{'ACEDB'}="/wormsrv2/autoace";
@@ -202,7 +204,7 @@ sub celeaccession {
     quit
 EOF
 
-    open(text_ace, "echo '$command' | $exec  | ");
+    open(text_ace, "echo '$command' | $tace  | ");
     while (<text_ace>) {
         if (/\s+Database\s+EMBL\s+NDB_AC\s+(\S+)/) {
             $accession=$1;
@@ -710,12 +712,10 @@ sub rundate{
 ###################################################
 # subs to get the correct version of ACEDB binaries
 sub tace {
-  my $tace = glob("~wormpub/ACEDB/bin_ALPHA/tace");
   return $tace;
 }
 
 sub giface {
-  my $giface = glob("~wormpub/ACEDB/bin_ALPHA/giface");
   return $giface;
 }
 
@@ -793,10 +793,9 @@ sub load_to_database {
   unless (-e "$file"){
     die " Couldn't find file named: $file\n";
   }
-  my $exe = glob("~wormpub/ACEDB/bin_ALPHA/tace");
   my $command = "pparse $file\nsave\nquit\n";
  
-  open (WRITEDB, "| $exe -tsuser $tsuser $database ") || die "Couldn't open pipe to database\n";
+  open (WRITEDB, "| $tace -tsuser $tsuser $database ") || die "Couldn't open pipe to database\n";
   print WRITEDB $command;
   close (WRITEDB);
 }
