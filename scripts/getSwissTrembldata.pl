@@ -5,7 +5,7 @@
 # Originally crafted by Dan Lawson
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2002-09-05 12:50:08 $
+# Last edited on: $Date: 2002-10-31 13:59:36 $
 
 
 use lib "/wormsrv2/scripts/";
@@ -56,7 +56,7 @@ while (<TACE>) {
   my $CDS_found_count = 0;
   
 
-  my ($CDS_dbxref,$CDS_gene,$CDS_protein,$CDS_prod,$CDS_name,$pid,$ver,$db,$EMBL_acc,$CDS_xref_count);
+  my ($CDS_dbxref,$CDS_gene,$CDS_protein,$CDS_prod,$CDS_name,$pid,$ver,$db,$EMBL_acc);
   my ($CDS_on,$CDS_dbxref_ac,$CDS_dbxref_id,$CDS_dbxref_db);
   my $carryover = 0;
   open (PFETCH, "/usr/local/pubseq/bin/pfetch -F $acc |");
