@@ -20,7 +20,7 @@
 # 010905 by Kerstin Jekosch
 
 use strict;
-use Data:Dumper;
+use Data::Dumper;
 use Ace;
 use Getopt::Std;
 use vars qw($opt_i $opt_h $opt_s $opt_c $opt_e $opt_m $opt_o $opt_x);
@@ -87,14 +87,14 @@ getopts ('csemxoih');
 
 # check to see if EST hash data exists
 # make it via tablemaker queries if absent
-unless (-e /wormsrv2/autoace/BLAT/EST.dat) {
+unless (-e "/wormsrv2/autoace/BLAT/EST.dat") {
     (%EST_name,%EST_dir) = &make_EST_hash;
 }
 # else read it into memory
 else {
     open (FH, "</wormsrv2/autoace/BLAT/EST.dat") or die "EST.dat : $!\n";
     undef $/;
-    $data = <FH>;
+    my $data = <FH>;
     eval $data;
     die if $@;
     $/ = "\n";
@@ -323,11 +323,11 @@ foreach my $found (sort keys %best) {
 		if ($opt_i) {
 		    my ($n) = ($virtual =~ /\S+_(\d+)$/);
 		    for (my $y = 1; $y < @{$entry->{'exons'}}; $y++) {
-			my $last   = $y-1;
-			my $first  = ${$entry->{"exons"}}[$last][1] + 1 + (($n-1)*100000);
-		    my $second =   (${$entry->{'exons'}}[$y][0]    - 1) + (($n-1)*100000);
-		$EST_dir{$found} = 5 if ($opt_m || $opt_o);
-		if (${$entry->{'exons'}}[0][2] < ${$entry->{'exons'}}[0][3]) {
+			my $last   = $y - 1;
+			my $first  =  ${$entry->{"exons"}}[$last][1] + 1 + (($n-1)*100000);
+		        my $second = (${$entry->{'exons'}}[$y][0]   - 1) + (($n-1)*100000);
+		        $EST_dir{$found} = 5 if ($opt_m || $opt_o);
+		        if (${$entry->{'exons'}}[0][2] < ${$entry->{'exons'}}[0][3]) {
 	    if ((${$entry->{'exons'}}[$y][2] == ${$entry->{'exons'}}[$last][3] + 1) && (($second - $first) > 2)) {
 	if (exists $EST_dir{$found} && $EST_dir{$found} eq '3') {
 					push @{$ci{$superlink}}, [$second,$first];
@@ -413,15 +413,9 @@ if ($opt_i) {
 	for (my $i = 0; $i < @{$ci{$superlink}}; $i++) {
 	    my $merge = $ci{$superlink}->[$i][0].":".$ci{$superlink}->[$i][1];
 	    if (!exists $double{$merge}) {
-		if ($opt_m) {
-		    printf ACI "Confirmed_intron %d %d mRNA\n", $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1];
-		}
-		elsif ($opt_o) {
-		    printf ACI "Confirmed_intron %d %d Homol\n", $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1];
-		}
-		else {
-		    printf ACI "Confirmed_intron %d %d EST\n", $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1];
-		}
+		(printf ACI "Confirmed_intron %d %d mRNA\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($opt_m);
+		(printf ACI "Confirmed_intron %d %d Homol\n", $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($opt_o);
+		(printf ACI "Confirmed_intron %d %d EST\n",   $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($opt_e);
 		$double{$merge} = 1;
 	    }
 	}
@@ -495,13 +489,15 @@ sub make_EST_hash {
     }
     close TACE;
 
-    return (%EST_name,%EST_dir);
-
     # Data::Dumper write hash to /wormsrv2/autoace/BLAT/EST.dat
     open (OUT, ">/wormsrv2/autoace/BLAT/EST.dat") or die "EST.dat : $!";
     print OUT Data::Dumper->Dump([\%EST_name],['*EST_name']);
     print OUT Data::Dumper->Dump([\%EST_dir],['*EST_dir']);
     close OUT;
+
+    return (%EST_name,%EST_dir);
+
+
 }
 
 
