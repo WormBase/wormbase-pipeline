@@ -6,7 +6,7 @@
 # Usage : autoace_minder [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2002-07-31 08:51:32 $
+# Last edited on: $Date: 2002-07-31 09:31:22 $
 
 
 #################################################################################
@@ -803,9 +803,8 @@ sub blat_jobs {
 
 sub parse_blat_files {
 
-# 
-#    # quit if blat_them_all has not been run
-#    &usage(9) unless (-e "$logdir/$flag{'B6'}");
+# quit if blat_them_all has not been run
+&usage(9) unless (-e "$logdir/$flag{'B6'}");
 
 my $command=<<END;
 pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLAT_EST.ace 
