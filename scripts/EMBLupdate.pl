@@ -18,7 +18,7 @@
 #
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-12-03 10:45:17 $      
+# Last updated on: $Date: 2003-12-03 10:57:16 $      
 
 
 use strict;
@@ -81,7 +81,9 @@ my $datestamp = "0" . $year . $mon . $mday;
 
 my($cosmid, $cosnum);
 
-while (<>) {
+open(IN,"<$file") || die "Could not open $file\n";
+
+while (<IN>) {
   # if detect the beginning of an entry start a new file
   if (/^ID\s+CE(\S+)/) {
     $cosmid=$1;
@@ -178,6 +180,7 @@ while (<>) {
   }
   
 }
+close(IN);
 print LOG "$0 finished at ",&runtime, "\n";
 close LOG;
 &mail_maintainer("EMBLupdate",$maintainers,"$log");
