@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.42 2002-03-06 17:11:52 kj2 Exp $
+// CVS info:  $Id: models.wrm,v 1.43 2002-03-06 18:42:34 kj2 Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -786,7 +786,6 @@
 			Gene_other_seq ?Gene XREF Other_sequence       // dl 001128
 			Remark ?Text
 			Confidential_remark ?Text
-                        Brief_identification UNIQUE ?Text              // [020306 kj]  	  		
                         Reference ?Paper XREF Sequence
 			Expr_pattern ?Expr_pattern XREF Sequence
                         RNAi_result ?RNAi XREF Predicted_gene // added for Lincoln RNAi [001213 dl]
