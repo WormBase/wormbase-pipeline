@@ -129,6 +129,10 @@ Visible
 Is_a_subclass_of Allele
 Filter "KO_consortium_allele"
 
+Class NBP_allele
+Visible
+Is_a_subclass_of_Allele
+Filter "NBP_allele"
 
 
 // Other Misc. subclasses
