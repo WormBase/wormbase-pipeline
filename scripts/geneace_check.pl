@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-03-11 17:27:06 $
+# Last updated on: $Date: 2003-03-11 19:04:14 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -98,6 +98,7 @@ if(!@class){
   &process_rearrangement;
   &process_sequence;
   &check_genetics_coords_mapping;
+  &chech_reverse_physicals;
  }
  
 else{
@@ -110,6 +111,7 @@ else{
     if ($class =~ /(rearrangement|rearr)/) {&process_rearrangement}
     if ($class =~ /(sequence|seq)/)        {&process_sequence}
     if ($class =~ /(mapping|map)/)         {&check_genetics_coords_mapping}
+    if ($class =~ /(reverse|rev)/)         {&chech_reverse_physicals}
   }  
 }
 
@@ -744,6 +746,15 @@ sub check_genetics_coords_mapping {
   print LOG "\nChecking discrepancies in genetics/coords mapping:\n\n";
   system ("/wormsrv2/scripts/get_interpolated_gmap.pl -diff");
   open(IN, "/wormsrv2/logs/mapping_diff") || die $!;
+  while(<IN>){
+    print LOG $_;
+    print JAHLOG $_;
+  }
+}
+
+sub chech_reverse_physicals {
+  system ("/wormsrv2/scripts/get_interpolated_gmap.pl -reverse");
+  open(IN, "/wormsrv2/logs/reverse_physicals") || die $!;
   while(<IN>){
     print LOG $_;
     print JAHLOG $_;
