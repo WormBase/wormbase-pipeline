@@ -114,21 +114,32 @@ foreach my $gene (@predicted_genes){
 
 
   # check coordinate system exons in relation to each other
+  my @exon_coord1 = $gene_object->get('Source_Exons',1);
+  my @exon_coord2 = $gene_object->get('Source_Exons',2);
+
+  my $i;
+  my $j;
+  for($i=0; $i<@exon_coord1; $i++){
+    my $start = $exon_coord1[$i];
+    my $end = $exon_coord2[$i];
+    for ($j=$i+1;$j<@exon_coord1;$j++){
+      if(($end > $exon_coord1[$j]) && ($start < $exon_coord2[$j])){
+	print "Gene error - $gene: exon inconsistency, exons overlap\n";
+      }
+    }
+  }
+
+  # check coordinates system of exons in relation to parent
+  #
+  # haven't done this bit yet
   if ($parent !~ m/LINK/){    
     my ($parent_length) = $parent->DNA(2);
     $parent_length = 0 if (!defined($parent_length));
-    my $i = 0;
-    my $max_coordinate = 0;
-
-    my @exon_coord1 = $gene_object->get('Source_Exons',1);
-    my @exon_coord2 = $gene_object->get('Source_Exons',2);
-
-    for($i=0; $i<@exon_coord1; $i++){
-      $max_coordinate = $exon_coord1[$i] if ($exon_coord1[$i] > $max_coordinate);
-      $max_coordinate = $exon_coord2[$i] if ($exon_coord2[$i] > $max_coordinate);
-      print "Gene error - $gene: exon inconsistency, overlapping exons?\n" if (($exon_coord1[$i] < $exon_coord2[$i-1]) && ($i>0));
-    }
   }
+
+
+
+
 
   # check that 'Start_not_found' and 'End_not_found' tags present?
   my $start_tag = "";
