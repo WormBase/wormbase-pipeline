@@ -369,6 +369,22 @@ sub dumpData
       #write ace info
       my $output_count = 0;
       my $best = 0; #flag for best matches resets for each analysis
+
+###############################################
+#      debug loop
+
+ #     my $stop;
+#      next unless (%$matches);
+#      foreach my $wormpep_d (keys %$matches ) {
+#	foreach my $match_d (@{$$matches{$wormpep_d}} ){
+#	  print "@{$match_d}\n";
+#	  print "no e @{$match_d}->[0]"."@{$match_d}->[4]\n" unless @{$match_d}->[7];
+#	}
+#      }
+
+#     end debug loop  
+###############################################
+
     HOMOLOGUES:
 #Use of uninitialized value in numeric comparison (<=>) at /nfs/team71/worm/ar2/wormbase/scripts/Dump_new_prot_only.pl line 291.
 
@@ -459,7 +475,6 @@ sub addFlyData
 
     my $i = 0;
     foreach (keys %$match ) { # check against all previously matched if there is a matching protein
-      next unless $$match{$_}[0]->[0]; # previously removed isoforms still have valid keys
       my $existing_gene = &justGeneName( "$_" );
       my $homol_gene = &justGeneName( "$homol" );
 
@@ -469,7 +484,7 @@ sub addFlyData
 	my $this_e = $$data[7];
 
 	if( $this_e > $existing_e ) { #replace what is currently stored for this homology
-	  delete $$match{$_}[0];
+	  delete $$match{$_};
 	  $$match{$homol}[0] = [ @$data ];
 	}
 	elsif( $this_e == $existing_e )  {
@@ -505,7 +520,7 @@ sub addWormData
 	my $this_e = $$data[7];
 
 	if( $this_e > $existing_e ) { #replace what is currently stored for this homology
-	  delete $$match{$_}[0];
+	  delete $$match{$_};
 	  $$match{$homol}[0] = [ @$data ];
 	}
 	elsif( $this_e == $existing_e )  {
