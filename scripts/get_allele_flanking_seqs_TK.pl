@@ -4,7 +4,7 @@
 
 # by Chao-Kung Chen [030625]
 
-# Last updated on: $Date: 2003-06-25 11:01:19 $
+# Last updated on: $Date: 2003-07-14 12:04:50 $
 # Last updated by: $Author: ck1 $
 
 use Tk;
@@ -865,14 +865,24 @@ sub get_1_site_flanks{
       $ace_window->insert('end', "\/\/Evidence PMID_evidence \"\"\n");
       $ace_window->insert('end', "Sequence \"$seq\"\n");
       $ace_window->insert('end', "\/\/Substitution \"[\/]\"\n");
-      $ace_window->insert('end', "\/\/Deletion \"[\/]\"\n");
+      $ace_window->insert('end', "\/\/Deletion \n");
+      $ace_window->insert('end', "\/\/Insertion\n");
+      $ace_window->insert('end', "\/\/Deletion_with_insertion\n");
       $ace_window->insert('end', "Flanking_sequences \"$1\" \"$2\"\n");
+      $ace_window->insert('end', "Gene  \"$locus\"\n");
+      $ace_window->insert('end', "Predicted_gene  \"$cds\"\n");
       $ace_window->insert('end', "Species \"Caenorhabditis elegans\"\n");
+      $ace_window->insert('end', "\/\/Reference \"\"\n");
+      $ace_window->insert('end', "\/\/Nonsense \"Amber_UAG\"\n");
+      $ace_window->insert('end', "\/\/Nonsense \"Ochre_UAA\"\n");
+      $ace_window->insert('end', "\/\/Nonsense \"Opal_UGA\"\n");
+      $ace_window->insert('end', "\/\/Missense\n");
       $ace_window->insert('end', "\/\/Remark \"\" Paper_evidence \"\"\n");
       $ace_window->insert('end', "\/\/Remark \"\" PMID_evidence \"\"\n");
       $ace_window->insert('end', "\/\/Remark \"\" Curator_confirmed \"WBPerson1845\"\n");
       $ace_window->insert('end', "\/\/Method \"Allele\"\n");
       $ace_window->insert('end', "\/\/Method \"Deletion_allele\"\n");
+      $ace_window->insert('end', "\/\/Method \"Transposon_insertion\"\n");
     }
   }
 }
@@ -893,14 +903,24 @@ sub get_2_site_flanks{
       $ace_window->insert('end', "\/\/Evidence PMID_evidence \"\"\n");
       $ace_window->insert('end', "Sequence \"$seq\"\n");
       $ace_window->insert('end', "\/\/Substitution \"[\/]\"\n");
-      $ace_window->insert('end', "\/\/Deletion \"[\/]\"\n");
+      $ace_window->insert('end', "\/\/Deletion\n");
+      $ace_window->insert('end', "\/\/Insertion\n");
+      $ace_window->insert('end', "\/\/Deletion_with_insertion\n");
       $ace_window->insert('end', "Flanking_sequences \"$1\" \"$2\"\n");
+      $ace_window->insert('end', "Gene  \"$locus\"\n");
+      $ace_window->insert('end', "Predicted_gene  \"$cds\"\n");
       $ace_window->insert('end', "Species \"Caenorhabditis elegans\"\n");
+      $ace_window->insert('end', "\/\/Reference \"\"\n");
+      $ace_window->insert('end', "\/\/Nonsense \"Amber_UAG\"\n");
+      $ace_window->insert('end', "\/\/Nonsense \"Ochre_UAA\"\n");
+      $ace_window->insert('end', "\/\/Nonsense \"Opal_UGA\"\n");
+      $ace_window->insert('end', "\/\/Missense\n");
       $ace_window->insert('end', "\/\/Remark \"\" Paper_evidence \"\"\n");
       $ace_window->insert('end', "\/\/Remark \"\" PMID_evidence \"\"\n");
       $ace_window->insert('end', "\/\/Remark \"\" Curator_confirmed \"WBPerson1845\"\n");
       $ace_window->insert('end', "\/\/Method \"Allele\"\n");
       $ace_window->insert('end', "\/\/Method \"Deletion_allele\"\n");
+      $ace_window->insert('end', "\/\/Method \"Transposon_insertion\"\n");
     }
   }
 }
@@ -921,14 +941,24 @@ sub get_3_site_flanks{
       $ace_window->insert('end', "\/\/Evidence PMID_evidence \"\"\n");
       $ace_window->insert('end', "Sequence \"$seq\"\n");
       $ace_window->insert('end', "\/\/Substitution \"[\/]\"\n");
-      $ace_window->insert('end', "\/\/Deletion \"[\/]\"\n");
+      $ace_window->insert('end', "\/\/Deletion \n");
+      $ace_window->insert('end', "\/\/Insertion\n");
+      $ace_window->insert('end', "\/\/Deletion_with_insertion\n");
       $ace_window->insert('end', "Flanking_sequences \"$1\" \"$2\"\n");
+      $ace_window->insert('end', "Gene  \"$locus\"\n");
+      $ace_window->insert('end', "Predicted_gene  \"$cds\"\n");
       $ace_window->insert('end', "Species \"Caenorhabditis elegans\"\n");
+      $ace_window->insert('end', "\/\/Reference \"\"\n");
+      $ace_window->insert('end', "\/\/Nonsense \"Amber_UAG\"\n");
+      $ace_window->insert('end', "\/\/Nonsense \"Ochre_UAA\"\n");
+      $ace_window->insert('end', "\/\/Nonsense \"Opal_UGA\"\n");
+      $ace_window->insert('end', "\/\/Missense\n");
       $ace_window->insert('end', "\/\/Remark \"\" Paper_evidence \"\"\n");
       $ace_window->insert('end', "\/\/Remark \"\" PMID_evidence \"\"\n");
       $ace_window->insert('end', "\/\/Remark \"\" Curator_confirmed \"WBPerson1845\"\n");
       $ace_window->insert('end', "\/\/Method \"Allele\"\n");
       $ace_window->insert('end', "\/\/Method \"Deletion_allele\"\n");
+      $ace_window->insert('end', "\/\/Method \"Transposon_insertion\"\n");
     }
   }
 }
@@ -949,14 +979,24 @@ sub get_codon_flanks{
       $ace_window->insert('end', "\/\/Evidence PMID_evidence \"\"\n");
       $ace_window->insert('end', "Sequence \"$seq\"\n");
       $ace_window->insert('end', "\/\/Substitution \"[\/]\"\n");
-      $ace_window->insert('end', "\/\/Deletion \"[\/]\"\n");
+      $ace_window->insert('end', "\/\/Deletion \n");
+      $ace_window->insert('end', "\/\/Insertion\n");
+      $ace_window->insert('end', "\/\/Deletion_with_insertion\n");
       $ace_window->insert('end', "Flanking_sequences \"$1\" \"$2\"\n");
+      $ace_window->insert('end', "Gene  \"$locus\"\n");
+      $ace_window->insert('end', "Predicted_gene  \"$cds\"\n");
       $ace_window->insert('end', "Species \"Caenorhabditis elegans\"\n");
+      $ace_window->insert('end', "\/\/Reference \"\"\n");
+      $ace_window->insert('end', "\/\/Nonsense \"Amber_UAG\"\n");
+      $ace_window->insert('end', "\/\/Nonsense \"Ochre_UAA\"\n");
+      $ace_window->insert('end', "\/\/Nonsense \"Opal_UGA\"\n");
+      $ace_window->insert('end', "\/\/Missense\n");
       $ace_window->insert('end', "\/\/Remark \"\" Paper_evidence \"\"\n");
       $ace_window->insert('end', "\/\/Remark \"\" PMID_evidence \"\"\n");
       $ace_window->insert('end', "\/\/Remark \"\" Curator_confirmed \"WBPerson1845\"\n");
       $ace_window->insert('end', "\/\/Method \"Allele\"\n");
       $ace_window->insert('end', "\/\/Method \"Deletion_allele\"\n");
+      $ace_window->insert('end', "\/\/Method \"Transposon_insertion\"\n");
     }
   }
 }
