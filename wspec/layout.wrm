@@ -12,8 +12,8 @@
  Strain		Protein			Expr_pattern
 		  Wormpep			
  Allele					Feature
-   Insertion_allele			UTR
+   Insertion_allele	RNAi		UTR
    Deletion_allele
-   Substitution_allele			Model
+   Substitution_allele	Operon		Model
    KO_allele				Method
 					Keyset
