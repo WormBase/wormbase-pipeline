@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.10 2001-09-19 09:26:21 dl1 Exp $
+// CVS info:  $Id: models.wrm,v 1.11 2001-09-27 09:04:07 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -1178,6 +1178,10 @@
 		Remark	?Text
                 Reference ?Paper XREF Life_stage
 
+
+// Localisation tag removed as it has been superceded by subcellular_localization
+// also added Curated_by line for Sylvia [010927 krb]
+
 ?Expr_pattern	Expression_of	Sequence ?Sequence XREF Expr_pattern
 				Clone ?Clone XREF Expr_pattern
 //                                Protein_description Text   // dl1 010307 from geneace 
@@ -1187,7 +1191,6 @@
 		Expressed_in	Cell ?Cell XREF Expr_pattern
 				Cell_group ?Cell_group XREF Expr_pattern
 				Life_stage ?Life_stage XREF Expr_pattern
-                Localisation ?Text
                 Subcellular_localization ?Text
 		Type	Reporter_gene ?Text
 			In_situ ?Text
@@ -1201,14 +1204,15 @@
 				Strain UNIQUE ?Strain
 		Reference ?Paper XREF Expr_pattern
                 Transgene ?Transgene XREF Expr_pattern
-
+		Curated_by UNIQUE Text // Either HX or CT (Caltech)
 
 // NEW Expr_profile and SK_map classes added at request of Raymond [010912 krb]
+// fixes made [010927 krb]
 
 ?Expr_profile SMap S_parent PCR_product UNIQUE ?PCR_product XREF Expr_profile
               Method ?Method
-              Expr_map ?SK_map
-              Reference ?Paper //XREF Expr_profile
+              Expr_map ?SK_map ?SK_map XREF Expr_profile
+              Reference ?Paper XREF Expr_profile
               Remark ?Text
 
 ?SK_map       X_coord UNIQUE Float
@@ -1216,7 +1220,7 @@
               Mountain UNIQUE Int
               Date UNIQUE DateType
               Remark ?Text
-
+	      Attribute_of Expr_profile ?Expr_profile XREF Expr_map
 
 ?Picture Description ?Text
 	 Pick_me_to_call Text Text
@@ -1365,11 +1369,11 @@
                 Temperature_sensitive Int UNIQUE Int    // temperature (degrees C), penetrance
                 Quantity UNIQUE Int UNIQUE Int          // for quantitative phenotypes low/high
 
-// New Class from Lincoln [010226]
+// New Class from Lincoln [010226], tweaks made [010927 krb]
 
 ?PCR_product SMap S_parent Canonical_parent UNIQUE ?Sequence XREF PCR_product
  		  S_child RNAi ?RNAi XREF PCR_product UNIQUE Int UNIQUE Int #SMap_info
-			  Expr_profile ?Expr_profile XREF PCR_product // for new Expr_profile class [010912 krb]
+			  Expr_profile ?Expr_profile XREF PCR_product UNIQUE Int UNIQUE Int #SMap_info // for new Expr_profile class [010912 krb]
  	     Method ?Method
  	     Overlaps_CDS ?CDS XREF Corresponding_PCR_product  // added for Dan PCR mappings [010419 dl]
 	     Oligo ?Oligo UNIQUE Int UNIQUE Int
