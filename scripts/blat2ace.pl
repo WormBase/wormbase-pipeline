@@ -20,7 +20,7 @@
 # 010905 by Kerstin Jekosch
 
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-04-01 09:21:50 $
+# Last edited on: $Date: 2003-04-01 09:52:21 $
 
 
 use strict;
@@ -137,27 +137,27 @@ open(ACE,  ">$dir/autoace.$type.ace")  or die "Cannot open $dir/autoace.${type}.
 # input filehandle
 open(BLAT, "<$dir/${type}_out.psl")  or die "Cannot open $dir/${type}_out.psl $!\n";
 while (<BLAT>) {
-    next unless (/^\d/);
-    my @f         = split "\t";
-    my $superlink = $f[13];
-    my $slsize    = $f[14];
-    my $lastvirt  = int($slsize/100000) + 1; 
+  next unless (/^\d/);
+  my @f         = split "\t";
+  my $superlink = $f[13];
+  my $slsize    = $f[14];
+  my $lastvirt  = int($slsize/100000) + 1; 
     
-    #############################################################
-    # replace EST name (usually accession number) by yk... name #
-    #############################################################
+  #############################################################
+  # replace EST name (usually accession number) by yk... name #
+  #############################################################
 	
-    my $est = $f[9];
-    if (($opt_e)  && (exists $EST_name{$est})) {
-	my $estname  = $EST_name{$est};
-	if ($est ne $estname) {
-	    $est = $estname;
-	    print LOG "EST name '$est' was replaced by '$estname'\n\n";
-	}
+  my $est = $f[9];
+  if (($opt_e)  && (exists $EST_name{$est})) {
+    my $estname  = $EST_name{$est};
+    if ($est ne $estname) {
+      print LOG "EST name '$est' was replaced by '$estname'\n\n";
+      $est = $estname;
     }
-    my @lengths     = split (/,/, $f[18]);
-    my @eststarts   = split (/,/, $f[19]);
-    my @slinkstarts = split (/,/, $f[20]);
+  }
+  my @lengths     = split (/,/, $f[18]);
+  my @eststarts   = split (/,/, $f[19]);
+  my @slinkstarts = split (/,/, $f[20]);
 
 
 #    print "$est maps to $superlink [currentDB: $db => $camace{$superlink} | $stlace{$superlink}]\n";
@@ -169,136 +169,136 @@ while (<BLAT>) {
 #    print "$est will be processed\n";
 
 
-    my $matchstart  = $f[15];
-    my $matchend    = $f[16];
+  my $matchstart  = $f[15];
+  my $matchend    = $f[16];
 
-	###############################
-	# find virtual superlink part #
-	###############################
+  ###############################
+  # find virtual superlink part #
+  ###############################
 	
-    my ($virtual,$startvirtual,$endvirtual);
-    if ((int($matchstart/100000) +1) > $lastvirt) { $startvirtual = $lastvirt;}
-    else {$startvirtual = int($matchstart/100000) +1;}  
+  my ($virtual,$startvirtual,$endvirtual);
+  if ((int($matchstart/100000) +1) > $lastvirt) { $startvirtual = $lastvirt;}
+  else {$startvirtual = int($matchstart/100000) +1;}  
     
-    if ((int($matchend/100000) +1) > $lastvirt) { $endvirtual = $lastvirt;}
-    else {$endvirtual = int($matchend/100000) +1;}  
+  if ((int($matchend/100000) +1) > $lastvirt) { $endvirtual = $lastvirt;}
+  else {$endvirtual = int($matchend/100000) +1;}  
+  
+  if ($startvirtual == $endvirtual) {
+    $virtual = "$word{$type}:${superlink}_${startvirtual}";
+  }	
+  elsif (($startvirtual == ($endvirtual - 1)) && (($matchend%100000) <= 50000)) {
+    $virtual = "$word{$type}:${superlink}_${startvirtual}";
+  }
+  else {
+    print LOG "$est wasn't assigned to a virtual object as match size was too big\n";
+    print LOG "Start is $matchstart, end is $matchend on $superlink\n\n";
+    next;
+  }
     
-    if ($startvirtual == $endvirtual) {
-	$virtual = "$word{$type}:${superlink}_${startvirtual}";
-    }	
-    elsif (($startvirtual == ($endvirtual - 1)) && (($matchend%100000) <= 50000)) {
-	$virtual = "$word{$type}:${superlink}_${startvirtual}";
+  ###################
+  # calculate score #
+  ###################
+  
+  my $sum   = 0;
+  foreach my $length (@lengths) {
+    $sum = $sum + $length;
+  }	
+  my $match = $f[0];
+  my $score = $match/$sum*100;
+  
+  my @exons = ();
+  
+  #########################
+  # calculate coordinates #
+  #########################
+    
+  # need to allow for est exons in the next virtual object, otherwise they get remapped to the start 
+  # of the virtual by performing %100000
+  
+  my $calc = int(($slinkstarts[0]+1)/100000);
+  
+  for (my $x = 0;$x < $f[17]; $x++) {
+    my $newcalc      = int(($slinkstarts[$x]+1)/100000);
+    my $virtualstart;
+    if ($calc == $newcalc) {	
+      $virtualstart = ($slinkstarts[$x] +1)%100000;
+    }
+    elsif ($calc == ($newcalc-1)) {
+      $virtualstart = (($slinkstarts[$x] +1)%100000) + 100000;
+    }
+    my $virtualend   = $virtualstart + $lengths[$x] -1;
+    my ($eststart,$estend);
+    
+    # blatx 6-frame translation v 6-frame translation
+    if ($opt_x) {
+      my $temp;
+      if (($f[8] eq '++') || ($f[8] eq '-+')) {
+	$eststart   = $eststarts[$x] +1;
+	$estend     = $eststart + $lengths[$x] -1;
+	if ($f[8] eq '-+') {
+	  $temp     = $estend;
+	  $estend   = $eststart;
+	  $eststart = $temp; 
+	}
+      }
+      elsif (($f[8] eq '--') || ($f[8] eq '+-')) {
+	$temp         = $virtualstart;
+	$virtualstart = $virtualend;
+	$virtualend   = $temp;
+	$eststart     = $f[10] - $eststarts[$x];
+	$estend       = $eststart - $lengths[$x] +1;
+	if ($f[8] eq '--') {
+	  $temp     = $estend;
+	  $estend   = $eststart;
+	  $eststart = $temp; 
+	}
+      }			
     }
     else {
-	print LOG "$est wasn't assigned to a virtual object as match size was too big\n";
-	print LOG "Start is $matchstart, end is $matchend on $superlink\n\n";
-	next;
-    }
+      if ($f[8] eq '+'){
+	$eststart   = $eststarts[$x] +1;
+	$estend     = $eststart + $lengths[$x] -1;
+      }
+      elsif ($f[8] eq '-') {
+	$eststart   = $f[10] - $eststarts[$x];
+	$estend     = $eststart - $lengths[$x] +1;
+      }		
+    }		
+    print LOG "$est was mapped to $virtual\n\n";
     
-    ###################
-    # calculate score #
-    ###################
-
-    my $sum   = 0;
-    foreach my $length (@lengths) {
-	$sum = $sum + $length;
-    }	
-    my $match = $f[0];
-    my $score = $match/$sum*100;
-    
-    my @exons = ();
-
-    #########################
-    # calculate coordinates #
-    #########################
-    
-    # need to allow for est exons in the next virtual object, otherwise they get remapped to the start 
-    # of the virtual by performing %100000
-    
-    my $calc = int(($slinkstarts[0]+1)/100000);
-    
-    for (my $x = 0;$x < $f[17]; $x++) {
-	my $newcalc      = int(($slinkstarts[$x]+1)/100000);
-	my $virtualstart;
-	if ($calc == $newcalc) {	
-	    $virtualstart = ($slinkstarts[$x] +1)%100000;
-	}
-	elsif ($calc == ($newcalc-1)) {
-	    $virtualstart = (($slinkstarts[$x] +1)%100000) + 100000;
-	}
-	my $virtualend   = $virtualstart + $lengths[$x] -1;
-	my ($eststart,$estend);
-	
-	# blatx 6-frame translation v 6-frame translation
-	if ($opt_x) {
-	    my $temp;
-	    if (($f[8] eq '++') || ($f[8] eq '-+')) {
-		$eststart   = $eststarts[$x] +1;
-		$estend     = $eststart + $lengths[$x] -1;
-		if ($f[8] eq '-+') {
-		    $temp     = $estend;
-		    $estend   = $eststart;
-		    $eststart = $temp; 
-		}
-	    }
-	    elsif (($f[8] eq '--') || ($f[8] eq '+-')) {
-		$temp         = $virtualstart;
-		$virtualstart = $virtualend;
-		$virtualend   = $temp;
-		$eststart     = $f[10] - $eststarts[$x];
-		$estend       = $eststart - $lengths[$x] +1;
-		if ($f[8] eq '--') {
-		    $temp     = $estend;
-		    $estend   = $eststart;
-		    $eststart = $temp; 
-		}
-	    }			
-	}
-	else {
-	    if ($f[8] eq '+'){
-		$eststart   = $eststarts[$x] +1;
-		$estend     = $eststart + $lengths[$x] -1;
-	    }
-	    elsif ($f[8] eq '-') {
-		$eststart   = $f[10] - $eststarts[$x];
-		$estend     = $eststart - $lengths[$x] +1;
-	    }		
-	}		
-	print LOG "$est was mapped to $virtual\n\n";
-
-	# write to output file
-	print  ACE "Homol_data : \"$virtual\"\n";
-	if ($type eq "NEMATODE") {
-	    printf ACE "DNA_homol\t\"%s\"\t\"$word{$type}\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$est,$score,$virtualstart,$virtualend,$eststart,$estend;
-	}
-	else {
-	    printf ACE "DNA_homol\t\"%s\"\t\"$word{$type}_OTHER\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$est,$score,$virtualstart,$virtualend,$eststart,$estend;
-	}
-	push @exons, [$virtualstart,$virtualend,$eststart,$estend];				
-    }
-    
-    ########################
-    # collect best matches #
-    ########################
-    
-    if (exists $best{$est}) {
-	if ($score >= $best{$est}->{'score'}) {
-	    if ( ($score > $best{$est}->{'score'}) || ($match > $best{$est}->{'match'})) { 
-		$best{$est}->{'score'} = $score;
-		$best{$est}->{'match'} = $match;
-		@{$best{$est}->{'entry'}} = ({'clone' => $virtual,'link' => $superlink,'exons' => \@exons});
-	    }
-	    elsif ($match == $best{$est}->{'match'}) {
-		$best{$est}->{'score'} = $score;
-		push @{$best{$est}->{'entry'}}, {'clone' => $virtual,'link' => $superlink,'exons' => \@exons};
-	    }
-	}
+    # write to output file
+    print  ACE "Homol_data : \"$virtual\"\n";
+    if ($type eq "NEMATODE") {
+      printf ACE "DNA_homol\t\"%s\"\t\"$word{$type}\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$est,$score,$virtualstart,$virtualend,$eststart,$estend;
     }
     else {
-	$best{$est}->{'match'} = $match;
+      printf ACE "DNA_homol\t\"%s\"\t\"$word{$type}_OTHER\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$est,$score,$virtualstart,$virtualend,$eststart,$estend;
+    }
+    push @exons, [$virtualstart,$virtualend,$eststart,$estend];				
+  }
+    
+  ########################
+  # collect best matches #
+  ########################
+  
+  if (exists $best{$est}) {
+    if ($score >= $best{$est}->{'score'}) {
+      if ( ($score > $best{$est}->{'score'}) || ($match > $best{$est}->{'match'})) { 
 	$best{$est}->{'score'} = $score;
+	$best{$est}->{'match'} = $match;
 	@{$best{$est}->{'entry'}} = ({'clone' => $virtual,'link' => $superlink,'exons' => \@exons});
+      }
+      elsif ($match == $best{$est}->{'match'}) {
+	$best{$est}->{'score'} = $score;
+	push @{$best{$est}->{'entry'}}, {'clone' => $virtual,'link' => $superlink,'exons' => \@exons};
+      }
     }
+  }
+  else {
+    $best{$est}->{'match'} = $match;
+    $best{$est}->{'score'} = $score;
+    @{$best{$est}->{'entry'}} = ({'clone' => $virtual,'link' => $superlink,'exons' => \@exons});
+  }
 }
 close BLAT;
 close ACE;
@@ -319,79 +319,79 @@ open (STLBEST, ">$dir/stlace.best.$type.ace");
 open (CAMBEST, ">$dir/camace.best.$type.ace");
 
 foreach my $found (sort keys %best) {
-    if (exists $best{$found}) {
-	foreach my $entry (@{$best{$found}->{'entry'}}) {
-	    if (@{$best{$found}->{'entry'}} < 2) {
-		my $virtual   = $entry->{'clone'};
-		my $superlink = $entry->{'link'};
-		foreach my $ex (@{$entry->{'exons'}}) {
-		    my $score        = $best{$found}->{'score'};
-		    my $virtualstart = $ex->[0];
-		    my $virtualend   = $ex->[1];
-		    my $eststart     = $ex->[2];
-		    my $estend       = $ex->[3];
-		    
-		    # print line for autoace
-		    print  AUTBEST "Homol_data : \"$virtual\"\n";
-		    printf AUTBEST "DNA_homol\t\"%s\"\t\"$word{$type}_BEST\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$found,$score,$virtualstart,$virtualend,$eststart,$estend;
-		    # camace
-		    if ($camace{$superlink}) {
-			print  CAMBEST "Homol_data : \"$virtual\"\n";
-			printf CAMBEST "DNA_homol\t\"%s\"\t\"$word{$type}_BEST\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$found,$score,$virtualstart,$virtualend,$eststart,$estend;
-		    }
-		    # and stlace
-		    elsif ($stlace{$superlink}) {
-			print  STLBEST "Homol_data : \"$virtual\"\n";
-			printf STLBEST "DNA_homol\t\"%s\"\t\"$word{$type}_BEST\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$found,$score,$virtualstart,$virtualend,$eststart,$estend;
-		    }
-		    
+  if (exists $best{$found}) {
+    foreach my $entry (@{$best{$found}->{'entry'}}) {
+      if (@{$best{$found}->{'entry'}} < 2) {
+	my $virtual   = $entry->{'clone'};
+	my $superlink = $entry->{'link'};
+	foreach my $ex (@{$entry->{'exons'}}) {
+	  my $score        = $best{$found}->{'score'};
+	  my $virtualstart = $ex->[0];
+	  my $virtualend   = $ex->[1];
+	  my $eststart     = $ex->[2];
+	  my $estend       = $ex->[3];
+	  
+	  # print line for autoace
+	  print  AUTBEST "Homol_data : \"$virtual\"\n";
+	  printf AUTBEST "DNA_homol\t\"%s\"\t\"$word{$type}_BEST\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$found,$score,$virtualstart,$virtualend,$eststart,$estend;
+	  # camace
+	  if ($camace{$superlink}) {
+	    print  CAMBEST "Homol_data : \"$virtual\"\n";
+	    printf CAMBEST "DNA_homol\t\"%s\"\t\"$word{$type}_BEST\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$found,$score,$virtualstart,$virtualend,$eststart,$estend;
+	  }
+	  # and stlace
+	  elsif ($stlace{$superlink}) {
+	    print  STLBEST "Homol_data : \"$virtual\"\n";
+	    printf STLBEST "DNA_homol\t\"%s\"\t\"$word{$type}_BEST\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$found,$score,$virtualstart,$virtualend,$eststart,$estend;
+	  }
+	  
+	}
+	
+	#############################
+	# produce confirmed introns #
+	#############################
+	
+	if ($opt_i) {
+	  print LOG "Producing confirmed introns\n";
+	  my ($n) = ($virtual =~ /\S+_(\d+)$/);
+	  for (my $y = 1; $y < @{$entry->{'exons'}}; $y++) {
+	    my $last   = $y - 1;
+	    my $first  =  (${$entry->{"exons"}}[$last][1] + 1) + (($n-1)*100000);
+	    my $second =  (${$entry->{'exons'}}[$y][0]    - 1) + (($n-1)*100000);
+	    $EST_dir{$found} = 5 if ($opt_m || $opt_o);
+            if (${$entry->{'exons'}}[0][2] < ${$entry->{'exons'}}[0][3]) {
+               if ((${$entry->{'exons'}}[$y][2] == ${$entry->{'exons'}}[$last][3] + 1) && (($second - $first) > 2)) {
+                  if (exists $EST_dir{$found} && $EST_dir{$found} eq '3') {
+		    push @{$ci{$superlink}}, [$second,$first];
+		  }
+		  elsif (exists $EST_dir{$found} && $EST_dir{$found} eq '5') {
+		    push @{$ci{$superlink}}, [$first,$second];
+		  }
+		  else {
+		    print LOG "WARNING: Direction not found for $found\n\n";
+		  }
 		}
-		    
-		#############################
-		# produce confirmed introns #
-		#############################
-		
-		if ($opt_i) {
-		    my ($n) = ($virtual =~ /\S+_(\d+)$/);
-		    for (my $y = 1; $y < @{$entry->{'exons'}}; $y++) {
-			my $last   = $y - 1;
-			my $first  =  ${$entry->{"exons"}}[$last][1] + 1 + (($n-1)*100000);
-		        my $second = (${$entry->{'exons'}}[$y][0]   - 1) + (($n-1)*100000);
-		        $EST_dir{$found} = 5 if ($opt_m || $opt_o);
-		        if (${$entry->{'exons'}}[0][2] < ${$entry->{'exons'}}[0][3]) {
-	    if ((${$entry->{'exons'}}[$y][2] == ${$entry->{'exons'}}[$last][3] + 1) && (($second - $first) > 2)) {
-	if (exists $EST_dir{$found} && $EST_dir{$found} eq '3') {
-					push @{$ci{$superlink}}, [$second,$first];
-				    }
-				    elsif (exists $EST_dir{$found} && $EST_dir{$found} eq '5') {
-					push @{$ci{$superlink}}, [$first,$second];
-				    }
-				    else {
-					print LOG "WARNING: Direction not found for $found\n\n";
-				    }
-				}
-                            }
-                            elsif (${$entry->{'exons'}}[0][2] > ${$entry->{'exons'}}[0][3]) {
-                                if ((${$entry->{'exons'}}[$last][3] == ${$entry->{'exons'}}[$y][2] + 1) && (($second - $first) > 2)) {
-		                    if (exists $EST_dir{$found} && $EST_dir{$found} eq '3') {
-                                        push @{$ci{$superlink}}, [$first,$second];
-                                    }
-                                    elsif (exists $EST_dir{$found} && $EST_dir{$found} eq '5') {
-                                        push @{$ci{$superlink}}, [$second,$first]; 
-                                    }
-                                    else {
-                                        print LOG "WARNING: Direction not found for $found\n\n";
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    # this section 'produce confirmed introns'
+            }
+            elsif (${$entry->{'exons'}}[0][2] > ${$entry->{'exons'}}[0][3]) {
+	       if ((${$entry->{'exons'}}[$last][3] == ${$entry->{'exons'}}[$y][2] + 1) && (($second - $first) > 2)) {
+	          if (exists $EST_dir{$found} && $EST_dir{$found} eq '3') {
+		    push @{$ci{$superlink}}, [$first,$second];
+		  }
+		  elsif (exists $EST_dir{$found} && $EST_dir{$found} eq '5') {
+		    push @{$ci{$superlink}}, [$second,$first]; 
+		  }
+		  else {
+		    print LOG "WARNING: Direction not found for $found\n\n";
+		  }
+		}
+	      }
+	  }
+      }
+    # this section 'produce confirmed introns'
 
-
-            }	
-        }
-    }
+  }	
+}
+}
 }
 close AUTBEST;
 close CAMBEST;
