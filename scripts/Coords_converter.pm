@@ -115,7 +115,7 @@ sub invoke
     }
 
     undef $parent;
-    open (CLONE,"</$database/clone_coords.ace") or croak "cant open clone coordinate file";
+    open (CLONE,"</$database/clone_coords.ace") or croak "cant open clone coordinate file $database/clone_coords.ace\t$!";
     while(<CLONE>) {
       if(/Sequence.*\"(SUPERLINK_\w+)/) {
 	$parent = $1;
