@@ -4,8 +4,8 @@
 #
 # completely rewritten by Keith Bradnam from list_loci_designations
 #
-# Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-11-09 09:52:02 $      
+# Last updated by: $Author: ar2 $     
+# Last updated on: $Date: 2005-03-31 08:54:16 $      
 #
 # This script should be run under a cron job and simply update the webpages that show
 # current gene names and sequence connections.  Gets info from geneace.  
@@ -35,7 +35,7 @@ GetOptions ("weekly" => \$weekly,
 ##############################
 
 my $tace  = &tace;
-my $www = "/nfs/WWWdev/htdocs/Projects/C_elegans/LOCI"; # where output will be going
+my $www = "/nfs/WWWdev/SANGER_docs/htdocs/Projects/C_elegans/LOCI"; # where output will be going
 
 my $rundate = &rundate;
 my $log = "/tmp/update_web_gene_names";
