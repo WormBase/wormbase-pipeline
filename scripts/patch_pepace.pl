@@ -11,8 +11,6 @@ my $WP_previous = $WP_number -1;
 my $tace = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
 
 my $command=<<END;
-query Find Protein; Live
-edit -D Live
 pparse /wormsrv2/WORMPEP/wormpep${WP_number}/patch_wormpep.${WP_number}-${WP_previous}.ace
 save
 quit
