@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/bin/perl5.8.0 -w
 #
 # check_EMBL_submissions.pl
 # dl
@@ -7,8 +7,8 @@
 # clones. Entries which have failed to load or return are highlighted
 # and changes in sequence version are notified.
 
-# Last updated on: $Date: 2002-12-18 15:48:10 $
-# Last updated by: $Author: ck1 $
+# Last updated on: $Date: 2003-12-01 14:50:46 $
+# Last updated by: $Author: krb $
 
 # touch logfile for run details
 $0 =~ m/\/*([^\/]+)$/; system("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
@@ -16,7 +16,7 @@ $0 =~ m/\/*([^\/]+)$/; system("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
 use strict;
 use Getopt::Std;
 use IO::Handle;
-use lib "/wormsrv2/scripts/";
+use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
 use vars qw/ $opt_d $opt_h $opt_f/;
 
@@ -25,8 +25,8 @@ use vars qw/ $opt_d $opt_h $opt_f/;
  ########################################
 
 my $maintainer = "dl1\@sanger.ac.uk";
-my $rundate = `date +%y%m%d`; chomp $rundate;
-my $runtime = `date +%H:%M:%S`; chomp $runtime;
+my $rundate = &rundate;
+my $runtime = &runtime;
 my $log="/wormsrv2/logs/check_EMBL_submissions.$rundate.$$";
 
  ########################################
@@ -88,9 +88,9 @@ while (<TACE>) {
     next if (/\/\//);
 
     s/\"//g;
-    if (/(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/) {
-	$clone2id{$1} = $2;                     # ACEDB_clone => EMBL_ID  
-	$id2sv{$2}    = $4;                     # EMBL_ID => EMBL_SV
+    if (/(\S+)\s+(\S+)\s+(\S+)/) {
+      ($clone2id{$1} = $3) if ($2 eq "NDB_ID"); # ACEDB_clone => NDB_ID  
+      ($id2sv{$2}    = $3) if ($2 eq "NDB_SV"); # NDB_ID => NDB_SV
     }
 }
 close TACE;
