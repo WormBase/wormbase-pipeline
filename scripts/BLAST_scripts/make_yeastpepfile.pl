@@ -6,8 +6,8 @@
 # 
 # Converts yeastX.pep file to ace file, copies to wormsrv2, adds SGD as Accession field
 #
-# Last edited by: $Author: wormpipe $
-# Last edited on: $Date: 2004-01-27 17:15:56 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2004-02-04 16:24:21 $
 
 
 use strict;
@@ -75,7 +75,7 @@ open (ACE,">$acefile");
 
 while (<SOURCE>) {
   if( />/ ) { 
-    if (/ORFP:(\S+)\s+(\S+)\s+SGDID:(\w+)/) {
+    if (/>(\S+)\s+(\S+)\s+SGDID:(\w+)/) {
       my $ID = $1;
       print ACE "\nProtein : \"SGD:$ID\"\n";
       print ACE "Peptide \"SGD:$ID\"\n";
