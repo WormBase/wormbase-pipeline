@@ -6,8 +6,8 @@
 #
 # dl
 #
-# Last updated by: $Author: dl1 $                      
-# Last updated on: $Date: 2003-01-27 11:13:44 $        
+# Last updated by: $Author: ck1 $                      
+# Last updated on: $Date: 2003-07-07 08:38:37 $        
 
 use strict;
 use Getopt::Long;
@@ -35,9 +35,12 @@ GetOptions (
 
 my $fasta_file = "/nfs/disk100/wormpub/analysis/ESTs/non_C.elegans_nematode_ESTs";
 my $ftp_file   = "/nfs/disk69/ftp/pub/wormbase/sequences/ESTS/non_C.elegans_nematode_ESTs";
+my $ace_file   = "/nfs/disk100/wormpub/analysis/ESTs/non_C.elegans_nematode_ESTs.ace";
 
 # remove old file
+
 system ("/bin/rm -f $fasta_file");
+system ("/bin/rm -f $ace_file");
 
 # open filehandles for output files 
 open (OUTPUT_fasta, ">>$fasta_file");
