@@ -259,14 +259,14 @@
 						Hypermorph #Evidence
 						Neomorph #Evidence
 						Uncharacterised_gain_of_function #Evidence     	       		
-			Nonsense UNIQUE	Amber_UAG
-					Ochre_UAA
-					Opal_UGA
+			Nonsense UNIQUE	Amber_UAG Text
+					Ochre_UAA Text
+					Opal_UGA  Text
                         Missense Text // text fields stored details of codon change
 			Silent Text
 			Splice_site Donor Text
 				    Acceptor Text
-                        Frameshift   // added sdm
+                        Frameshift Text  // added sdm
                         Maternal	Strictly_Maternal
 					With_Maternal_Effect
                         Paternal
@@ -1033,7 +1033,7 @@
                 Concise_description ?Text #Evidence
 		Brief_identification UNIQUE ?Text #Evidence
 		Confidential_remark ?Text
-		SAGE_transcript ?SAGE_transcript XREF CDS // new for SAGE data
+		SAGE_transcript ?SAGE_transcript XREF Gene // new for SAGE data
 		Remark ?Text #Evidence
 	Sequence_features ?Feature XREF Part_of_gene #Evidence            // Feature data model [dl 030304]
  	Interpolated_map_position UNIQUE ?Map UNIQUE Float 
@@ -1229,7 +1229,7 @@
 
 
 
-?Feature_data SMap S_parent UNIQUE Sequence UNIQUE ?Sequence
+?Feature_data SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF Feature_data
 	      Feature ?Method Int Int UNIQUE Float UNIQUE Text #Feature_info
 	      Splices	Confirmed_intron  Int Int #Splice_confirmation
 			Predicted_5 ?Method Int Int UNIQUE Float // (x, x+1) or (x, x-1)
@@ -1238,7 +1238,7 @@
               Method UNIQUE ?Method // added for Lincoln RNAi [001213 dl]
 
 
-?Feature SMap S_parent UNIQUE Sequence UNIQUE ?Sequence
+?Feature SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF Feature_object
          Flanking_sequences UNIQUE ?Sequence UNIQUE Text UNIQUE Text
          Visible    Description ?Text
 		    Remark ?Text #Evidence
@@ -2030,7 +2030,7 @@
                  Unique_to_tag     //boolean; describes whether the transcript is unique to the corresponding tag; 
 				   // complements Unambiguously_mapped tag in SAGE_tag model for ease of querying
                  Corresponds_to Locus           ?Locus XREF SAGE_transcript #Evidence           //these connections are made 
-                                CDS             ?CDS XREF SAGE_transcript #Evidence             //based on SAGE tag mapping
+                                Gene            ?CDS XREF SAGE_transcript #Evidence             //based on SAGE tag mapping
                                 Transcript      ?Transcript XREF SAGE_transcript #Evidence      //
                                 Pseudogene      ?Pseudogene XREF SAGE_transcript #Evidence
                  Remark ?Text   #Evidence
