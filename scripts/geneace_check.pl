@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-06-06 16:48:19 $
+# Last updated on: $Date: 2003-06-06 17:03:08 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -1103,7 +1103,7 @@ EOF
   foreach (keys %locus_strain){
     if(exists $other_main{$_} ){ 
       $strain_errors++;
-      print LOG "WARNING: $_ (@{$other_main{$_}}->[1]) of strain @{$locus_strain{$_}} can now be ";
+      print LOG "WARNING: $_ (@{$other_main{$_}}->[1]) in genotype of strain @{$locus_strain{$_}} can now be ";
       print LOG "@{$other_main{$_}}->[0] (@{$locus_cds{@{$other_main{$_}}->[0]}}) -> main name\n";
     }
   } 
