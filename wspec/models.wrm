@@ -1661,10 +1661,8 @@
                         Contained_in ?Paper XREF Contains       // old form
                         Medline_acc UNIQUE Int
                         PMID UNIQUE Int                     
-//        Author ?Author XREF Paper #Affiliation        // replaced by:
-        Author ?Author UNIQUE ?Person XREF Paper
-// Eimear wants to replace this line to keep #Affiliation, and test it
-// to see that it doesn't cause problems.
+        Author ?Author XREF Paper #Affiliation        // replaced by:
+//        Author_to_person ?Author UNIQUE ?Person XREF Paper
         Person ?Person XREF Paper
         Affiliation Text        // Authors' affiliation if available
         Brief_citation UNIQUE Text
