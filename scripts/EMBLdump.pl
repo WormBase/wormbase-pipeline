@@ -2,7 +2,7 @@
 #
 # EMBLDump.pl :  makes EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2003-05-19 15:15:59 $
+#  Last updated on: $Date: 2003-05-20 15:36:35 $
 #  Last updated by: $Author: dl1 $
 
 
@@ -89,6 +89,7 @@ while (<EMBL>) {
 	print EMBL2 "$_";
 	print EMBL2 "FT                   /strain=\"Bristol N2\"\n";
 	print EMBL2 "FT                   /mol_type=\"genomic DNA\"\n";
+	next;
     }
     
     print EMBL2;
