@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl -w
+#!/usr/local/bin/perl5.6.1 -w
 #
 # make_agp_file.pl
 # v0.3
@@ -13,7 +13,7 @@
 
 
 $|=1;
-#use strict;
+use strict;
 use vars qw ($debug $seq_len $sv_acc $sv_ver $opt_d $opt_h);
 use Getopt::Std;
 use lib '/wormsrv2/scripts';
@@ -52,20 +52,28 @@ $debug = 1;
 # ID   AF016448   standard; DNA; INV; 44427 BP.
 # SV   AF016448.1
 
-%seqver = ();
-%seqlen = ();
+our %seqver = ();
+our %seqlen = ();
 
-open (sequences, "getz -f \'id seqversion\' \"([emblnew-org:Caenorhabditis elegans] \& [emblnew-div:INV]) | ([embl-org:Caenorhabditis elegans] \& [embl-div:INV])\" |");
-while (<sequences>) {
+open (SEQUENCES, "getz -f \'id seqversion\' \"([emblnew-org:Caenorhabditis elegans] \& [emblnew-div:INV]) | ([embl-org:Caenorhabditis elegans] \& [embl-div:INV])\" |");
+while (<SEQUENCES>) {
+  my $getz_id = "";
 #    print "$_";
     if (/^ID\s+(\S+)\s+standard\; DNA\; INV\; (\d+)/) {
 	$seqlen{$1} = $2;
+	$getz_id = $1;
     }
     if (/^SV\s+(\S+)\.(\d+)/) {
-	$seqver{$1} = $2;
+      $seqver{$1} = $2;
+      if($2 eq ""){
+	my $getz_acc = `/usr/local/pubseq/bin/pfetch $getz_id | grep ">"`;
+	$getz_acc =~ s/.*\.//;
+	$getz_acc =~ s/ Caenorh*//;
+	$seqver{$1} = $getz_acc;
+      }
     }
 }
-close sequences;
+close(SEQUENCES);
 
 print "Finished assigning to hash\n";
 
@@ -73,15 +81,24 @@ print "Finished assigning to hash\n";
 # Main Loop                                                                     #
 #################################################################################
 
-$last_start = 0;
+#my $last_start = 0;
 
 foreach my $chromosome (@gff_files) {
 
-    my $i = 1;
-    my ($start,$stop,$clone,$acc,$gap_span,$offset,$span,$gpseq,$gspan,$last_stop,$last_start);
+  our %stop=();
+  our %start=();
+  our %span=();
+  our %acc=();
+  our %clone=();
+  our %ver=();
+  my @report="";
+
+
+  my $i = 1;
+  my ($start,$stop,$clone,$acc,$gap_span,$offset,$span,$gpseq,$gspan,$last_stop,$last_start,$limit,$span2get,$unique_stop) = "";
 #    @reports = "";
 
-    $file = "$outdir/CHROMOSOME_$chromosome.agp";
+    my $file = "$outdir/CHROMOSOME_$chromosome.agp";
     $last_stop = 2;
 
     &error(1,$chromosome) unless ("-e $datadir/CHROMOSOME_${chromosome}.clone_acc.gff");
@@ -106,7 +123,7 @@ foreach my $chromosome (@gff_files) {
 		push (@report,"Putative butt-end join\n");
 	    }
 	    else {
-		print "[ " . ($stop{$i-1}+1) . " : " . ($start-1) ."] so insert padding characters over the gap\n" if ($debug);
+	      print "[ " . ($stop{$i-1}+1) . " : " . ($start-1) ."] so insert padding characters over the gap\n" if ($debug);
 		push (@report, "$chromosome\t$stop{$i-1}\t" . ($start - 1) . "\t$i\tN\t$gap_span\n");
 		$start{$i}  = $stop{$i-1} + 1;
 		$stop{$i}   = $start-1;
