@@ -245,6 +245,7 @@
 			CGC_approved	     // added by krb 24/01/02
 			CGC_unresolved Text // added by krb 28/01/02
 			Pseudogene Text // added by krb 28/02/02
+			RNA_gene Text // added by krb 11/03/02
 		Gene_cluster	Contains ?Locus XREF Contained_in
 		Polymorphism    SNP  Text		// SNP stuff added for Todd [171001 krb]
 				Status Text
