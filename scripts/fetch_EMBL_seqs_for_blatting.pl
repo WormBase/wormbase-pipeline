@@ -6,8 +6,8 @@
 # 
 # Attempt to unify all of the diverse scripts to fetch ESTs, OSTs, mRNAs etc. used by blat 
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-05-05 13:46:03 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2004-05-10 13:45:54 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -26,12 +26,13 @@ my $blastdb;             # make blast database using pressdb?
 my $ftp;                 # also copy to ftp site
 my $debug;               # For sending output to just one person
 my $maintainers = "All"; # log file recipients
-my ($est, $mrna, $ost, $nematode, $embl); # the main options
+my ($est, $mrna, $ncrna, $ost, $nematode, $embl); # the main options
 
 
 GetOptions (
 	    "est"      => \$est,
 	    "mrna"     => \$mrna,
+	    "ncrna"    => \$ncrna,
 	    "ost"      => \$ost,
 	    "nematode" => \$nematode,
 	    "embl"     => \$embl,
@@ -85,6 +86,7 @@ my $getz   = "/usr/local/pubseq/bin/getzc";                 # getz binary
 &create_log_files;
 &make_ests          if ($est || $ost);
 &make_mrnas         if ($mrna);
+&make_ncrnas        if ($ncrna);
 &make_embl_cds      if ($embl);
 &make_nematode_ests if ($nematode);
 
@@ -249,7 +251,86 @@ sub make_mrnas{
     
     # Grab all RNA sequences (mRNA, pre-mRNA, unassigned RNA, and other RNA) from C. elegans sequences which are not in 
     # EST division from EMBL (= emblrelease + emblnew)
-    open (SEQUENCES, "$getz -f \"acc\" \'([embl-org:Caenorhabditis elegans] & [embl-mol:*rna] ! [embl-div:EST])\' |") ;
+    open (SEQUENCES, "$getz -f \"acc\" \'([embl-org:Caenorhabditis elegans] & [embl-mol:mrna] ! [embl-div:EST])\' |") ;
+
+    while (<SEQUENCES>) {
+	chomp;
+	($acc) = (/^AC\s+(\S+)\;/);
+	print "Parsing EMBL accession: '$acc'\n" if ($verbose);
+	next if ($acc eq "");
+	
+	# pfetch each sequence individually
+	open (LOOK, "/usr/local/pubseq/bin/pfetch -F $acc |");
+	while (<LOOK>) {
+	    print if ($verbose);
+	    
+	    if (/^\s/) {
+		s/\s+//g;
+		s/\d+//g;
+		print OUT_MRNA "$_\n";
+		print OUT_ACE  "$_\n" if ($ace);
+	    }
+	    # grab various details out of EMBL entry
+	    if (/^ID\s+(\S+)/)                         {$id  = $1;}
+	    if (/^SV\s+(\S+\.\d+)/)                    {$sv  = $1;}
+	    if (/^DE\s+(.+)/)                          {$def = $def." ".$1;}
+	    if (/^FT\s+\/protein_id=\"(\S+)\.(\d+)\"/) {$protid=$1; $protver=$2;}
+	    if (/^SQ/) {
+		
+		# remove any offending '>' from def line. This is required by transcriptmasker.pl
+		$def =~ s/\>//g;
+
+		print OUT_MRNA ">$acc $id $def\n";
+		if ($ace) {
+		  print OUT_ACE "\nSequence : \"$acc\"\n";
+		  print OUT_ACE "Database EMBL NDB_AC $acc\n";
+		  print OUT_ACE "Database EMBL NDB_ID $id\n";
+		  print OUT_ACE "Database EMBL NDB_SV $sv\n";
+		  print OUT_ACE "Protein_id $acc $protid $protver\n";
+		  print OUT_ACE "Species \"Caenorhabditis elegans\"\n";
+		  print OUT_ACE "Title \"$def\"\nMethod NDB\n";
+		  print OUT_ACE "\nDNA \"$acc\"\n";
+		}
+		# reset vars
+		$def = ""; $id = ""; $acc = ""; $sv = ""; $protid = ""; $protver ="";
+	    }
+	}
+    }
+    # close filehandles
+    close (SEQUENCES);  
+    close(OUT_MRNA);
+    close(OUT_ACE) if ($ace);
+    
+
+  
+  # make blast database?
+  if($blastdb){
+    print LOG "Making blast database\n";
+    system ("/usr/local/pubseq/bin/pressdb $dir/$file > /dev/null");
+  }
+  
+  # push to ftp site?
+  if($ftp){
+    print LOG "Copying to FTP site\n";
+    system ("/bin/rm -f $ftpdir/$file.gz");
+    system ("cp $dir/elegans_ESTs $ftpdir/$file");
+    system ("/bin/gzip $ftpdir/$file");
+  }
+
+}
+
+sub make_ncrnas{
+
+    print LOG "Fetching ncRNA sequences\n";
+    
+    # open filehandles for output files 
+    my $file = "elegans_ncRNAs";
+    open (OUT_MRNA, ">$dir/$file");
+    open (OUT_ACE,  ">$dir/$file.ace") if ($ace);
+    
+    # Grab all ncRNA sequences (unassigned RNA, and other RNA) from C. elegans sequences which are not in 
+    # EST division from EMBL (= emblrelease + emblnew)
+    open (SEQUENCES, "$getz -f \"acc\" \'([embl-organism:Caenorhabditis elegans] & (((((((([embl-molecule:other rna] | [embl-molecule:pre-rna]) | [embl-molecule:rrna]) | [embl-molecule:scrna]) | [embl-molecule:genomic rna]) | [embl-molecule:snorna]) | [embl-molecule:snrna]) | [embl-molecule:trna]) | [embl-molecule:unassigned rna]) )\' |") ;
 
     while (<SEQUENCES>) {
 	chomp;
