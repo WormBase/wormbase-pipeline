@@ -4,8 +4,8 @@
 # 
 # A script to make multiple copies of camace for curation, and merge them back again
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2003-11-24 14:53:20 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2003-12-05 14:03:58 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -49,6 +49,16 @@ my $WS_previous = $WS_version - 1;
 print "WS_version : $WS_version\tWS_previous : $WS_previous\n" if ($debug);
 
 my @databases; #array to store what splits are to be merged.
+my $path_new = ();
+my $path_ref = ();
+
+  # load @databases array with user database names.
+  push(@databases,"orig");
+  push(@databases,"ar2") if ($ant || $all);
+  push(@databases,"dl1") if ($dan || $all);
+  push(@databases,"pad") if ($paul || $all);
+
+my @classes = ('Transposon', 'Transcript', 'Sequence', 'CDS', 'Feature', 'Pseudogene');
 
 # directory paths for the split databases
 
@@ -64,13 +74,7 @@ our $camace_ar2  = "/nfs/disk100/wormpub/camace_ar2";
 if ($merge) {
 
   print "Make a new directory : '$directory'\n" if ($debug);
-  mkdir $directory;
-
-  # load @databases array with users to create split databases for
-  push(@databases,"orig");
-  push(@databases,"ar2") if ($ant || $all);
-  push(@databases,"dl1") if ($dan || $all);
-  push(@databases,"pad") if ($paul || $all);
+  mkdir ($directory) or die "Failed to create ${directory}\n";
 
   print "You are merging Data from " . (join '-',@databases) ."\n\n";
 
@@ -81,90 +85,41 @@ if ($merge) {
   #   All of the raw data is now dumped to files    #
   ###################################################
 
-  # run acediff on the files
+  #remove 1st element of array
+  shift (@databases);
+  # run acediff on the files tidy up and reformat the diff files ready to be loaded
 
-  # Sequence
-  my $path_orig = $directory . '/Sequence_orig.ace';
-  my $path_dl1  = $directory . '/Sequence_dl1.ace';
-  my $path_pad  = $directory . '/Sequence_pad.ace';
-  my $path_ar2  = $directory . '/Sequence_ar2.ace';
+  foreach my $database (@databases) {
 
-  system ("acediff $path_orig $path_dl1 > $directory/sequence_diff_dl1.ace") if ($dan  || $all);
-  system ("acediff $path_orig $path_pad > $directory/sequence_diff_pad.ace") if ($paul || $all);
-  system ("acediff $path_orig $path_ar2 > $directory/sequence_diff_ar2.ace") if ($ant  || $all);
+    foreach my $class (@classes) {
 
-  # Transcript
-  $path_orig = $directory . '/Transcript_orig.ace';
-  $path_dl1  = $directory . '/Transcript_dl1.ace';
-  $path_pad  = $directory . '/Transcript_pad.ace';
-  $path_ar2  = $directory . '/Transcript_ar2.ace';
+      my $path_new = $directory . "/${class}_${database}.ace";
+      my $path_ref = $directory . "/${class}_orig.ace";
 
-  system ("acediff $path_orig $path_dl1 > $directory/transcript_diff_dl1.ace") if ($dan  || $all);
-  system ("acediff $path_orig $path_pad > $directory/transcript_diff_pad.ace") if ($paul || $all);
-  system ("acediff $path_orig $path_ar2 > $directory/transcript_diff_ar2.ace") if ($ant  || $all);
-
-  # Feature
-  $path_orig = $directory . '/Feature_orig.ace';
-  $path_dl1  = $directory . '/Feature_dl1.ace';
-  $path_pad  = $directory . '/Feature_pad.ace';
-  $path_ar2  = $directory . '/Feature_ar2.ace';
-
-  system ("acediff $path_orig $path_dl1 > $directory/feature_diff_dl1.ace") if ($dan  || $all);
-  system ("acediff $path_orig $path_pad > $directory/feature_diff_pad.ace") if ($paul || $all);
-  system ("acediff $path_orig $path_ar2 > $directory/feature_diff_ar2.ace") if ($ant  || $all);
-
-  # Pseudogene
-  $path_orig = $directory . '/Pseudogene_orig.ace';
-  $path_dl1  = $directory . '/Pseudogene_dl1.ace';
-  $path_pad  = $directory . '/Pseudogene_pad.ace';
-  $path_ar2  = $directory . '/Pseudogene_ar2.ace';
-
-  system ("acediff $path_orig $path_dl1 > $directory/pseudogene_diff_dl1.ace") if ($dan  || $all);
-  system ("acediff $path_orig $path_pad > $directory/pseudogene_diff_pad.ace") if ($paul || $all);
-  system ("acediff $path_orig $path_ar2 > $directory/pseudogene_diff_ar2.ace") if ($ant  || $all); 
-
-
-  ###################################################
-  # all of the acediffs are now complete            #
-  ###################################################
-
-  # tidy up and reformat the diff files ready to be loaded
-
-  if ($dan || $all) {
-    system ("reformat_acediff $directory/sequence_diff_dl1.ace   > $directory/update_sequence_dl1.ace");
-    system ("reformat_acediff $directory/transcript_diff_dl1.ace > $directory/update_transcript_dl1.ace");
-    system ("reformat_acediff $directory/feature_diff_dl1.ace    > $directory/update_feature_dl1.ace");
-    system ("reformat_acediff $directory/pseudogene_diff_dl1.ace > $directory/update_pseudogene_dl1.ace");
-  }
-  if ($paul || $all) {
-    system ("reformat_acediff $directory/sequence_diff_pad.ace   > $directory/update_sequence_pad.ace");
-    system ("reformat_acediff $directory/transcript_diff_pad.ace > $directory/update_transcript_pad.ace");
-    system ("reformat_acediff $directory/feature_diff_pad.ace    > $directory/update_feature_pad.ace");
-    system ("reformat_acediff $directory/pseudogene_diff_pad.ace > $directory/update_pseudogene_pad.ace");
-  }
-  if ($ant || $all) {
-    system ("reformat_acediff $directory/sequence_diff_ar2.ace   > $directory/update_sequence_ar2.ace");
-    system ("reformat_acediff $directory/transcript_diff_ar2.ace > $directory/update_transcript_ar2.ace");
-    system ("reformat_acediff $directory/feature_diff_ar2.ace    > $directory/update_feature_ar2.ace");
-    system ("reformat_acediff $directory/pseudogene_diff_ar2.ace > $directory/update_pseudogene_ar2.ace");
+      system ("acediff $path_ref $path_new > $directory/${class}_diff_${database}.ace") && die "Failed to run acediff for ${path_new}\n";
+      system ("reformat_acediff $directory/${class}_diff_${database}.ace   > $directory/update_${class}_${database}.ace") && die "Failed to run reformat ace file for $directory/${class}_diff_${database}.ace\n";
+     }
   }
 
-  print "acediff's done and files can be found in $directory\n";
+  print "Phase 1 finished and all files can be found in $directory\n";
 }
-
 
 ## (2) synchronises /wormsrv1/camace with the split versions ##
 if ($update) {
-    &update_camace;
+  shift (@databases);
+  &update_camace;
+  print "Phase 2 finished wormsrv1/camace is now updated\n";
 }
-
 
 ## (3) TransferDB calls to move /wormsrv1/camace to the split databases ##
 if ($split) {
-    print "Removing old split databases and Copying /wormsrv1/database to the split camaces\n";
-    &split_databases;
-    exit(0);
+  print "Removing old split databases and Copying /wormsrv1/database to the split camaces\n";
+  &split_databases;
+  print "Phase 3 finished. All ~wormpub split camaces can now be used\n\nCheck all TransferDB log files for \"ended SUCCESSFULLY\"\n";
+  exit(0);
 }
+
+$0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
 
 print "hasta luego\n";
 
@@ -173,11 +128,10 @@ exit(0);
 ###################################################################################################
 ###################################################################################################
 
+#(1)dump files from camace splits#
 sub dump_camace {
   #dumps out subset of classes from camace splits and processes the files to be loaded back to /wormsrv1/camace
   #array of classes to be dumped
-  my @classes = ('Pseudogene', 'Transcript', 'Feature', 'Sequence');
-
   my $camace_path;
   my $path;
 
@@ -196,6 +150,7 @@ sub dump_camace {
   }
 }
 
+#(1a)data retrieval#
 sub dumpace {
     my $class    = shift;
     my $filepath = shift;
@@ -204,11 +159,12 @@ sub dumpace {
 
     # dump out from ACEDB
     print "\nFilename: $filepath\n";
-    open (TACE,"| $tace");
+    open (TACE,"| $tace") or die "Failed to open database connection\n";
     print TACE $command;
     close TACE;
 }
 
+#(2)data upload#
 sub loadace {
     my $filepath = shift;
     my $tsuser   = shift;
@@ -217,65 +173,55 @@ sub loadace {
 
     # dump out from ACEDB
     print "\nFilename: $filepath\n";
-    open (TACE,"| $tace -tsuser $tsuser");
+    open (TACE,"| $tace -tsuser $tsuser") or die "Failed to open database connection\n";
     print TACE $command;
     close TACE;
 }
 
+#(2a)upload data to wormsrv1/camace#
 sub update_camace {
     # upload processed diff files into /wormsrv1/camace
     print "Upload diff files to /wormsrv1/camace";
     $ENV{'ACEDB'} = $current;
 
-    if ($dan || $all) {
-	&loadace("$directory/update_sequence_dl1.ace",'dl1');
-	&loadace("$directory/update_transcript_dl1.ace",'dl1');
-	&loadace("$directory/update_feature_dl1.ace",'dl1');
-	&loadace("$directory/update_pseudogene_dl1.ace",'dl1');
+    foreach my $database (@databases) {
+      foreach my $class (@classes) {
+	&loadace("$directory/update_${class}_${database}.ace","${database}");
+      }
     }
-    if ($ant || $all) {
-	&loadace("$directory/update_sequence_ar2.ace",'ar2');
-	&loadace("$directory/update_transcript_ar2.ace",'ar2');
-	&loadace("$directory/update_feature_ar2.ace",'ar2');
-	&loadace("$directory/update_pseudogene_ar2.ace",'ar2');
-    }
-    if ($paul || $all) {
-	&loadace("$directory/update_sequence_pad.ace",'pad');
-	&loadace("$directory/update_transcript_pad.ace",'pad');
-	&loadace("$directory/update_feature_pad.ace",'pad');
-	&loadace("$directory/update_pseudogene_pad.ace",'pad');
-    }
-
     # uplaod new mRNAs into camace
     print "Upload new mRNAs in /wormsrv1/camace\n";
-    &loadace("/nfs/disk100/wormpub/analysis/ESTs/elegans_mRNAs.ace",'NDB_data');
+    &loadace("/nfs/disk100/wormpub/analysis/ESTs/elegans_mRNAs.ace",'NDB_data') or die "Failed to load new mRNA data";
 
     # upload BLAT results to database
     print "Update BLAT results in /wormsrv1/camace\n";
-    system ("load_blat2db.pl -all -dbdir $current");
+    system ("load_blat2db.pl -all -dbdir $current") && die "Failed to run load_blat2db.pl\n";
 
     # synchronize the locus - sequence connections
     print  "Update locus2sequence connections in /wormsrv1/camace\n";
-    system ("locus2seq.pl -camace -update");
+    system ("locus2seq.pl -camace -update") && die "Failed to run locus2seq.pl\n";
 }
 
+#(3)Data dispersion#
 sub split_databases {
+
     # it has been decided that it is better to remove the database directory to make transfer db more stable #
+
     # initialise/copy to camace_orig (always do this)
     system("rm -rf /nfs/disk100/wormpub/camace_orig/database") && die "Failed to remove camace_orig/database\n";
     system ("TransferDB.pl -start /wormsrv1/camace -end $camace_orig -database -wspec -name camace_orig_WS$WS_version");
 
     # initialise/copy to camace_ar2 (-ant or -all)
     system("rm -rf /nfs/disk100/wormpub/camace_ar2/database") && die "Failed to remove camace_ar2/database\n";
-    system ("TransferDB.pl -start /wormsrv1/camace -end $camace_ar2 -database -wspec -name camace_ar2_WS$WS_version") if ($ant || $all);
+    system ("TransferDB.pl -start $camace_orig -end $camace_ar2 -database -wspec -name camace_ar2_WS$WS_version") if ($ant || $all);
 
     # initialise/copy to camace_dl1 (-dan or -all)
     system("rm -rf /nfs/disk100/wormpub/camace_dl1/database") && die "Failed to remove camace_dl1/database\n";
-    system ("TransferDB.pl -start /wormsrv1/camace -end $camace_dl1 -database -wspec -name camace_dl1_WS$WS_version") if ($dan || $all);
+    system ("TransferDB.pl -start $camace_orig -end $camace_dl1 -database -wspec -name camace_dl1_WS$WS_version") if ($dan || $all);
 
     # initialise/copy to camace_pad (-paul or -all)
     system("rm -rf /nfs/disk100/wormpub/camace_pad/database") && die "Failed to remove camace_pad/database\n";
-    system ("TransferDB.pl -start /wormsrv1/camace -end $camace_pad  -database -wspec -name camace_pad_WS$WS_version") if ($paul || $all);
+    system ("TransferDB.pl -start $camace_orig -end $camace_pad  -database -wspec -name camace_pad_WS$WS_version") if ($paul || $all);
 
     print "CAMACE SPLITS UPDATED";
 }
