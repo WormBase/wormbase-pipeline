@@ -4,7 +4,7 @@
 
 # by Chao-Kung Chen [030113]
 
-# Last updated on: $Date: 2003-02-21 14:15:45 $
+# Last updated on: $Date: 2003-02-21 16:04:12 $
 # Last updated by: $Author: ck1 $
 
 
@@ -21,14 +21,14 @@ use Getopt::Long;
 #######################
 
 my $user = `whoami`; chomp $user;
-if ($user ne "ck1"){
+if ($user ne "wormpub"){
   print "\nYou have to be wormpub to run this script!\n\n";
   exit(0);
 }
 
 # touch logfile for run details
 $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
-print $0, "\n";
+
 ####################################
 # variables and command line options
 ####################################
