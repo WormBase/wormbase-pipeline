@@ -40,8 +40,8 @@ clone.version and loads clone as a single contig.
 
 =head1 CONTACT
 
-Simon Potter: scp@sanger.ac.uk
-Kerstin Jekosch : ar2@sanger.ac.uk
+Simon Potter   : scp@sanger.ac.uk
+Anthony Rogers : ar2@sanger.ac.uk
 
 =head1 BUGS
 
@@ -50,6 +50,8 @@ Insert list of bugs here!
 
 =cut
 
+use lib '/nfs/farm/Worm/Ensembl/ensembl';
+use lib '/nfs/farm/Worm/Ensembl/ensembl-pipeline';
 use lib '/nfs/disk100/humpub/modules/PerlModules';
 
 use strict;
@@ -58,8 +60,8 @@ use Bio::Root::RootI;
 use Bio::Seq;
 use Bio::SeqIO;
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
-use Bio::EnsEMBL::PerlDB::Clone;
-use Bio::EnsEMBL::PerlDB::Contig;
+use Bio::EnsEMBL::Clone;
+use Bio::EnsEMBL::RawContig;
 use Hum::NetFetch qw( wwwfetch );
 use Hum::EMBL;
 
@@ -68,6 +70,10 @@ my($agp, $single, $seqio, $seq);
 my($dbname, $dbhost, $dbuser, $dbpass);
 my($help, $info, $write, $replace, $verbose);
 
+#write modifed clones to file for dumping
+my $helper_files_dir = glob("~wormpipe/Elegans");
+my $modified_clones_file "$helper_files_dir/modified_clones";
+open (MODS,">$modified_clones_file") or die "cant open $modified_clones_file to record modified clone DBids\n";
 
 $Getopt::Long::autoabbrev = 0;   # personal preference :)
 $dbuser = 'wormadmin';           # default
@@ -102,7 +108,7 @@ unless ($agp) {
     exit 1;
 }
 
-if ($phase < 0 && $phase > 4) {
+if( (defined $phase) and ($phase < 0 && $phase > 4) ){
 
     print STDERR "Phase should be 1, 2, 3 or 4\n";
     exit 1;
@@ -129,6 +135,7 @@ else {
     ) or die "Can't connect to DB $dbname on $dbhost as $dbuser"; # Do we need password as well?
 }
 
+my $clone_adaptor = $dbobj->get_CloneAdaptor();
 
 open AGP, "< $agp" or die "Can't open AGP file $agp";
 while (<AGP>) {
@@ -141,32 +148,36 @@ while (<AGP>) {
         next;
     }
 
-    if (&is_in_db($dbobj, $sv)) {
-        print "Found $sv; skipping\n";
+    if (&is_in_db($dbobj, $acc, $ver)) {
+        print "Found $acc $ver; skipping\n";
         next;
     }
-    $seq = fetch_seq($acc, $ver);
+    my $seq_obj  = fetch_seq($acc, $ver);
+    $seq = $seq_obj->seq;
     unless ($seq) {
         print STDERR "Can't fetch $sv\n";
         next;
 
     }
 
-    my $clone = new Bio::EnsEMBL::PerlDB::Clone;
-    my $contig = new Bio::EnsEMBL::PerlDB::Contig;
-    my $length = $seq->length;
+    my $clone = new Bio::EnsEMBL::Clone;
+    my $contig = new Bio::EnsEMBL::RawContig;
+    my $length = $seq_obj->length;
+    my $time = &runtime;
 
     $clone->id          ($acc);
     $clone->htg_phase   ($phase);
     $clone->embl_id     ($acc);
     $clone->version     (1);
     $clone->embl_version($ver);
-    $contig->id         ("$acc.$ver.1.$length");
+    $clone->created ($time);
+    $clone->modified ($time);
+    $contig->name        ("$acc.$ver.1.$length");
     $contig->embl_offset(1);
     $contig->length     ($length);
     $contig->seq        ($seq);
-    $contig->version    (1);
-    $contig->embl_order (1);
+    # $contig->version    (1);
+    # $contig->embl_order (1);
 
     print "Clone ", $clone->id, "\n";
     if ($verbose) {
@@ -175,13 +186,13 @@ while (<AGP>) {
         print "\temblversion ", $clone->embl_version, "\n";
         print "\thtg_phase   ", $clone->htg_phase, "\n";
     }
-    print "Contig ", $contig->id, "\n";
+    print "Contig ", $contig->name, "\n";
     if ($verbose) {
         print "\toffset: ", $contig->embl_offset, "\n";
         print "\tlength: ", $contig->length, "\n";
         print "\tend:    ", ($contig->embl_offset + $contig->length - 1), "\n";
-        print "\tversion:", $contig->version, "\n";
-        print "\torder:  ", $contig->embl_order, "\n";
+        # print "\tversion:", $contig->version, "\n";
+        # print "\torder:  ", $contig->embl_order, "\n";
         print "\tlength: ", $contig->length, "\n";
     }
     print "\n";
@@ -190,13 +201,15 @@ while (<AGP>) {
 
     if ($write) {
         eval {
-            $dbobj->write_Clone($clone);
+            my $newID = $clone_adaptor->store($clone);
+	    print MODS "$newID\n";
         };
         if ($@) {
             print STDERR "Error writing clone $sv\n"; 
         }
     }
-}
+    close MODS;
+  }
 
 
 
@@ -223,25 +236,25 @@ sub fetch_seq {
     my $embl_str = wwwfetch($acc)
         or die "Can't fetch '$acc'";
     my $embl = Hum::EMBL->parse(\$embl_str);
-    
+
     my $embl_sv = $embl->SV->version;
     die "EMBL SV '$embl_sv' doesn't match SV '$sv' for clone '$acc'" unless $sv == $embl_sv;
-    
+
     my $seq_str = $embl->Sequence->seq;
     my $seq = Bio::Seq->new(
         -id     => $acc,
         -seq    => $seq_str,
         );
     return $seq;
-}    
+}
 
 
 sub is_in_db {
-    my ($dbobj, $sv) = @_;
+    my ($dbobj, $acc, $ver) = @_;
     my $clone;
 
     eval {
-        $clone = $dbobj->get_Clone($sv);
+        $clone = $clone_adaptor->fetch_by_accession_version($acc, $ver);
     };
     if (defined $clone) {
         return 1;
@@ -249,4 +262,13 @@ sub is_in_db {
     else {
         return 0;
     }
+}
+
+sub runtime {
+  my $runtime = `date +%Y-%Om-%d`;
+  chomp $runtime;
+  $runtime   .= " ".`date +%H:%M:%S`;
+  chomp $runtime;
+  $runtime = time;
+  return $runtime;
 }
