@@ -7,7 +7,7 @@
 # This maps alleles to the genome based on their flanking sequence
 #
 # Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2003-02-04 16:09:18 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2003-02-04 16:51:45 $        # quickly see when script was last changed and by whom
 
 
 use strict;
@@ -28,6 +28,7 @@ my $restart = "go";
 my $help; { `perldoc $0`;};
 my $no_geneace;
 my $no_parse;
+my $list;
 
 # $debug   -  all output goes to ar/allele_mapping
 
@@ -39,6 +40,7 @@ GetOptions( "debug"     => \$debug,
 	    "help"      => \$help,
 	    "restart=s" => \$restart,
 	    "no_parse"  => \$no_parse,
+	    "list=s"    => \$list,
 	    "no_geneace"=> \$no_geneace
 	  );
 
@@ -196,6 +198,18 @@ my %roman2num = ( I   => '0',
 my %superlink_coords;
 &UpdateSuperlinkCoords;
 
+# read in list of alleles to map if specified #######################
+my %to_map;
+if ( $list ) {
+  open (LIST, "<$list");
+  while (<LIST>) {
+    chomp;
+    $to_map{$_} = 1;
+  }
+}
+
+
+
 ####### allele mapping loop ######################
 
 my %allele_data;   #  allele => [ (0)type, (1)5'flank_seq , (2)3'flank_seq, (3)CDS, (4)end of 5'match, (5)start of 3'match , (6)clone, (7)chromosome, (8)strains]
@@ -238,6 +252,10 @@ foreach $allele (@alleles)
     # debug facility - after the restart means you can specify where to start and how many to do 
     if( $limit ) {
       last if $count++ > $limit;
+    }
+
+    if( $list ) {
+      next unless defined $to_map{$name};
     }
 
     $left = $allele->Flanking_sequences->name;
@@ -697,7 +715,7 @@ __END__
 
 =over 4
 
-=item map_alleles.pl  [-debug -limit -database=s -WS=s -verbose -restart=s]
+=item map_alleles.pl  [-debug -limit -database=s -WS=s -verbose -restart=s -list=s -no_parse -no_geneace]
 
 =back
 
@@ -743,6 +761,14 @@ output goes to ar2 and uses current_DB
 =item -limit 
 
 limt the number of alleles mapped (debug tool)
+
+=back
+
+=over 4
+
+=item -list 
+
+list the alleles you want mapped (debug tool) - as filename ie -list "/wormsrv2/autoace/MAPPINGS/to_map"
 
 =back
 
