@@ -153,26 +153,26 @@ END
 
 sub composition{
 
-	print LOGFILE "Generating composition.all\n";	
-
-	system("/bin/cat *.dna | /nfs/disk100/wormpub/bin.ALPHA/composition > composition.all") && die "Couldn't create composition file\n";
-	print LOGFILE "Generating totals file\n";
-	my ($total, $minus, $final_total);
-	open(IN,"$dump_dir/composition.all") || die "Couldn't open composition.all\n";
-		while(<IN>){
-			if(/.*, (\d*) total/){
-				$total = $1;
-				next;
-			}			
-			if(/.*\- (\d*)/){
-				$minus = $1; 
-				last;
-			}
-		}
-	close(IN);
-	$final_total = $total - $minus;
-	system("echo $total $final_total > totals") && die "Couldn't create totals file\n";
-
+  print LOGFILE "Generating composition.all\n";	
+  
+  system("/bin/cat *.dna | /nfs/disk100/wormpub/bin.ALPHA/composition > composition.all") && die "Couldn't create composition file\n";
+  print LOGFILE "Generating totals file\n";
+  my ($total, $minus, $final_total);
+  open(IN,"$dump_dir/composition.all") || die "Couldn't open composition.all\n";
+  while(<IN>){
+    if(/.*, (\d*) total/){
+      $total = $1;
+      next;
+    }			
+    if(/.*\- (\d*)/){
+      $minus = $1; 
+      last;
+    }
+  }
+  close(IN);
+  $final_total = $total - $minus;
+  system("echo $total $final_total > totals") && die "Couldn't create totals file\n";
+  
 }
 
 ##########################
@@ -180,26 +180,18 @@ sub composition{
 ###########################
 
 sub zip_files{
-	foreach my $chr ("I", "II", "III", "IV", "V", "X"){
-		my $dna_file = "$dump_dir"."/CHROMOSOME_".$chr.".dna";
-		my $gff_file = "$dump_dir"."/CHROMOSOME_".$chr.".gff";
-		if ($opt_e){
-			if (-e $dna_file."gz"){
-				print LOGFILE "Removing existing *.dna.gz file\n";
-				system ("rm -f $dna_file") && die "Couldn't remove files\n";
-			}
-			print LOGFILE "Compressing $dna_file\n";
-			system ("/bin/gzip $dna_file") if ($opt_e);
-		}
-		if ($opt_h){
- 			if (-e $gff_file."gz"){
-                        	print LOGFILE "Removing existing *.gff.gz file\n";
-                        	system ("rm -f $gff_file") && die "Couldn't remove files\n";
-	                }
-			print LOGFILE "Compressing $gff_file\n";
-                        system ("/bin/gzip $gff_file") if ($opt_h);
-		}
-	}	
+  foreach my $chr ("I", "II", "III", "IV", "V", "X"){
+    my $dna_file = "$dump_dir"."/CHROMOSOME_".$chr.".dna";
+    my $gff_file = "$dump_dir"."/CHROMOSOME_".$chr.".gff";
+    if ($opt_e){
+      print LOGFILE "Compressing $dna_file\n";
+      system ("/bin/gzip -f $dna_file") if ($opt_e);
+    }
+    if ($opt_h){
+      print LOGFILE "Compressing $gff_file\n";
+      system ("/bin/gzip -f $gff_file") if ($opt_h);
+    }
+  }	
 }
 
 
