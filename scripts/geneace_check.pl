@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-01-22 14:59:07 $
+# Last updated on: $Date: 2003-01-22 15:58:37 $
 
 
 use strict;
@@ -25,10 +25,10 @@ my $maintainers = "All";
 our $tace = &tace;   # tace executable path
 our ($log, $erichlog);
 
-GetOptions ("help"      => \$help,
-            "debug=s"   => \$debug,
-	    "db=s"      => \$database,
-	    "class=s"   => \$class
+GetOptions ("help"       => \$help,
+            "debug=s"    => \$debug,
+	    "class=s"    => \$class,
+	    "database=s" => \$database
            );
 
 ##############################################
@@ -42,11 +42,9 @@ if ($database eq ""){
   print "\nUsing Geneace as default database\n\n";
 }
 
-if ($database){
-  if ($database =~ /[aA]utoace/){
-    $default_db = "/wormsrv2/autoace/";
-    print "\nUsing $database as default database\n\n";
-  }
+else {
+  $default_db = $database;
+  print "\nUsing $database as default database path\n\n";
 }
 
 # Display help if required
@@ -63,7 +61,6 @@ if($debug){
 
 # open a connection to geneace
 my $db = Ace->connect(-path  => $default_db,
-#my $db = Ace->connect(-path  => '/wormsrv1/geneace/',
 		      -program =>$tace) || do { print LOG "Connection failure: ",Ace->error; die();};
 
 
