@@ -667,8 +667,8 @@
 		       Motif ?Motif XREF GO_term
 		       Sequence ?Sequence XREF GO_term   // added for Erich, [011210 krb]
 		       Phenotype ?Phenotype XREF GO_term // added for Erich, [020128 dl]
-		       Index Ancestor ?GO_term XREF Descendent // added for Lincoln [020709 [krb]
-               	       Descendent ?GO_term XREF Ancestor
+		       Index Ancestor   ?GO_term XREF Descendent // added for Lincoln [020709 [krb]
+               	             Descendent ?GO_term XREF Ancestor
 		       Locus ?Locus XREF GO_term // added by krb 020905
 
 //
