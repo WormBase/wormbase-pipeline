@@ -6,8 +6,8 @@
 # 
 # Attempt to unify all of the diverse scripts to fetch ESTs, OSTs, mRNAs etc. used by blat 
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-10-01 09:49:21 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2003-11-03 16:45:27 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -250,58 +250,62 @@ sub make_ests{
 
 sub make_mrnas{
 
-  print LOG "Fetching mRNA sequences\n";
+    print LOG "Fetching mRNA sequences\n";
+    
+    # open filehandles for output files 
+    my $file = "elegans_mRNAs";
+    open (OUT_MRNA, ">$dir/$file");
+    open (OUT_ACE,  ">$dir/$file.ace") if ($ace);
+    
+    # Grab all RNA sequences (mRNA, pre-mRNA, unassigned RNA, and other RNA) from C. elegans sequences which are not in 
+    # EST division from EMBL (= emblrelease + emblnew)
+    open (SEQUENCES, "$getz -f \"acc\" \'([embl-org:Caenorhabditis elegans] & [embl-mol:*rna] ! [embl-div:EST])\' |") ;
 
-  # open filehandles for output files 
-  my $file = "elegans_mRNAs";
-  open (OUT_MRNA, ">$dir/$file");
-  open (OUT_ACE,  ">$dir/$file.ace") if ($ace);
+    while (<SEQUENCES>) {
+	chomp;
+	($acc) = (/^AC\s+(\S+)\;/);
+	print "Parsing EMBL accession: '$acc'\n" if ($verbose);
+	next if ($acc eq "");
+	
+	# pfetch each sequence individually
+	open (LOOK, "/usr/local/pubseq/bin/pfetch -F $acc |");
+	while (<LOOK>) {
+	    print if ($verbose);
+	    
+	    if (/^\s/) {
+		s/\s+//g;
+		s/\d+//g;
+		print OUT_MRNA "$_\n";
+		print OUT_ACE  "$_\n" if ($ace);
+	    }
+	    # grab various details out of EMBL entry
+	    if (/^ID\s+(\S+)/)                         {$id  = $1;}
+	    if (/^SV\s+\S+\.(\d+)/)                    {$sv  = $1;}
+	    if (/^DE\s+(.+)/)                          {$def = $def." ".$1;}
+	    if (/^FT\s+\/protein_id=\"(\S+)\.(\d+)\"/) {$protid=$1; $protver=$2;}
+	    if (/^SQ/) {
+		
+		# remove any offending '>' from def line. This is required by transcriptmasker.pl
+		$def =~ s/\>//g;
 
-  # Grab all RNA sequences (mRNA, pre-mRNA, unassigned RNA, and other RNA) from C. elegans sequences which are not in 
-  # EST division from EMBL (= emblrelease + emblnew)
-  open (SEQUENCES, "$getz -f \"acc\" \'([embl-org:Caenorhabditis elegans] & [embl-mol:*rna] ! [embl-div:EST])\' |") ;
-
-  while (<SEQUENCES>) {
-    chomp;
-    ($acc) = (/^AC\s+(\S+)\;/);
-    print "Parsing EMBL accession: '$acc'\n" if ($verbose);
-    next if ($acc eq "");
-
-    # pfetch each sequence individually
-    open (LOOK, "/usr/local/pubseq/bin/pfetch -F $acc |");
-    while (<LOOK>) {
-      print if ($verbose);
-      
-      if (/^\s/) {
-	s/\s+//g;
-	s/\d+//g;
-	print OUT_MRNA "$_\n";
-	print OUT_ACE  "$_\n" if ($ace);
-      }
-      # grab various details out of EMBL entry
-      if (/^ID\s+(\S+)/)                         {$id  = $1;}
-      if (/^SV\s+\S+\.(\d+)/)                    {$sv  = $1;}
-      if (/^DE\s+(.+)/)                          {$def = $def." ".$1;}
-      if (/^FT\s+\/protein_id=\"(\S+)\.(\d+)\"/) {$protid=$1; $protver=$2;}
-      if (/^SQ/) {
-	print OUT_MRNA ">$acc $id $def\n";
-	if ($ace){
-	  print OUT_ACE   "\nSequence : \"$acc\"\nDatabase EMBL $id $acc $sv\n";
-	  print OUT_ACE   "Protein_id $acc $protid $protver\n";
-	  print OUT_ACE   "Species \"Caenorhabditis elegans\"\n";
-	  print OUT_ACE   "Title \"$def\"\nMethod NDB\n";
-	  print OUT_ACE   "\nDNA \"$acc\"\n";
+		print OUT_MRNA ">$acc $id $def\n";
+		if ($ace) {
+		    print OUT_ACE   "\nSequence : \"$acc\"\nDatabase EMBL $id $acc $sv\n";
+		    print OUT_ACE   "Protein_id $acc $protid $protver\n";
+		    print OUT_ACE   "Species \"Caenorhabditis elegans\"\n";
+		    print OUT_ACE   "Title \"$def\"\nMethod NDB\n";
+		    print OUT_ACE   "\nDNA \"$acc\"\n";
+		}
+		# reset vars
+		$def = ""; $id = ""; $acc = ""; $sv = ""; $protid = ""; $protver ="";
+	    }
 	}
-	# reset vars
-	$def = ""; $id = ""; $acc = ""; $sv = ""; $protid = ""; $protver ="";
-      }
     }
-  }
-  # close filehandles
-  close (SEQUENCES);  
-  close(OUT_MRNA);
-  close(OUT_ACE) if ($ace);
-
+    # close filehandles
+    close (SEQUENCES);  
+    close(OUT_MRNA);
+    close(OUT_ACE) if ($ace);
+    
 
   
   # make blast database?
