@@ -667,7 +667,7 @@ sub test_user_wormpub
       return;
     }
     else {
-      print "You are doing this as $name NOT wormpub ! \n\n If you are going to alter autoace in any way it will break.\nDo you want to continue? (y/n). . "
+      print "You are doing this as $name NOT wormpub ! \n\n If you are going to alter autoace in any way it will break.\nDo you want to continue? (y/n). . ";
 	my $response = <STDIN>;
       if( "$response" eq "n" ){
 	die "probably for the best !\n";
