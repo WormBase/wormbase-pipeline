@@ -1515,7 +1515,7 @@
 	     Remark ?Text
 	     SNP_locus ?Locus XREF SNP_assay	                    // added for Todd [171001 krb]
 	     Flanks_deletion ?Allele XREF Flanking_PCR_product // For KO allele data [krb 021217]
-	     SMD_result ?SMD_result XREF PCR_product // added [krb 030127]
+	     Microarray_result ?Microarray_result XREF PCR_product // added [krb 030127]
 
 
 ?Phenotype Description UNIQUE ?Text
@@ -1574,7 +1574,8 @@
 
 ?Microarray_aff SMap S_Parent Canonical_parent UNIQUE ?Sequence XREF Microarray_aff
                 Result ?Affymetrix_result XREF Microarray_aff
-                Reference ?Paper //Describes the design of the chip
+                Microarray_result ?Microarray_result XREF Microarray_aff // Added to merge with SMD microarray.
+Reference ?Paper //Describes the design of the chip
                 Remark ?Text
 
 
@@ -1590,9 +1591,11 @@
                    Remark          ?Text
 
 
-// SMD_result data model is created for Data types from Stanford Microarray Database.
-// Each SMD_result object is one spot in one experiment. All experiments performed using the 
-// same PCR_product are under the same SMD_spot, which is mapped to genome dynamically. 
+// Microarray_result data model is created for Data types from Stanford Microarray Database
+// and from Affymetrix
+// Each Microarray_result object is one spot in one experiment. 
+// If SMD microarray, use PCR_product
+// If Affymetrix Microarray, use Microarray_aff
 // The tag "Sample_A" describes what is sample A(Red or Green labelled). The "Condition" object 
 // contains information on life
 // stage, genotype,preparation precedure ... etc. of the sample. The ?Condition model is used for 
@@ -1603,27 +1606,43 @@
 // The tag "R_vs_G_ratio" is the average value of "R/G normalized (mean)" from several chips.
 // The tag "R_vs_G_sd" is the Standard Deviation from averaging from R/G ratio from several chips.
 // The tag "P_value" is the P_value calculated from the paper on the result.
+// "Frequency" is for Affymetrix Microarray. 
+// The tag "P_value" applies for both SMD and Affymetrix.
+// "Presence" is for Affymetrix
+// "Chip_type" specifies the chip type, Affymetrix or SMD.
+// "Chip_info" describes more details on chip information. 
 
-?SMD_result PCR_product ?PCR_product XREF SMD_result      
-            Sample_A UNIQUE ?Condition
-            Sample_B UNIQUE ?Condition
-            Result A_vs_B_log_ratio UNIQUE Float               
-                   A_vs_B_sd        UNIQUE Float               
-                   P_value          UNIQUE Float
-            Cluster    ?Cluster XREF SMD_result
-            Reference  ?Paper   XREF SMD_result
-            Remark     ?Text
+
+?Microarray_result Sequence_info    PCR_product    ?PCR_product    XREF Microarray_result
+				    Microarray_aff ?Microarray_aff XREF Microarray_result
+                   Sample           Sample_A     UNIQUE      ?Condition
+				    Sample_B     UNIQUE      ?Condition
+                                    Affymetrix_sample UNIQUE ?Condition
+		   Result           A_vs_B_log_ratio UNIQUE Float               
+                                    A_vs_B_SD        UNIQUE Float               
+                                    Frequency        UNIQUE Int
+                   Confidence       P_value  UNIQUE Float
+                                    Presence UNIQUE PA
+                                                    PS
+                                                    NP
+                   Cluster    ?Cluster XREF Microarray_result
+                   Chip_type  UNIQUE Affymetrix
+                                     SMD
+                   Chip_info  ?Text   //Describes batch number of the chip created the result ... etc.
+                   Reference  ?Paper      XREF        Microarray_result
+                   Remark     ?Text
+
 
 
 // Cluster data model is created for microarray data clustering results.
 // The tag "Description" refers to Biological meaning of this cluster group
 // The tag "Algorithm" refers to the algorithm that was used to get this clustering result.
-// The tag "SMD_result" refers to all experimental results included in the cluster.
+// The tag "Microarray_result" refers to all experimental results included in the cluster.
 // The tag "Reference" refers to the paper performed this clustering analysis
 
 ?Cluster Description   ?Text
          Algorithm     ?Text
-         SMD_result    ?SMD_result     XREF    Cluster
+         Microarray_result    ?Microarray_result     XREF    Cluster
          Reference     ?Paper          XREF    Cluster 
          Remark        ?Text
                   
@@ -1631,8 +1650,8 @@
 
 
 ?Condition Life_stage      ?Life_stage
-	   Strain	   ?Strain // added for SMD_result [030127 krb]
-	   Preparation	   ?Text // added for SMD_result [030127 krb]
+	   Strain	   ?Strain // added for Microarry_result [030127 krb]
+	   Preparation	   ?Text // added for Microarray_result [030127 krb]
            Temperature     Int
            Genotype        ?Text
            Other           ?Text
@@ -1778,7 +1797,7 @@
                   Transgene ?Transgene XREF Reference
                   GO_term ?GO_term XREF Reference
                   Operon ?Operon XREF Reference      // added for operon data [010928 dl]
-		  SMD_result ?SMD_result XREF Reference //added for SMD_result [030127 krb]
+		  Microarray_result ?Microarray_result XREF Reference //added for Microarray_result [030127 krb]
                   Cluster ?Cluster XREF Reference //added for SMD_result [030127 krb]
         Keyword ?Keyword
 
