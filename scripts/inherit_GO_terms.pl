@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl -w
+#!/usr/local/bin/perl5.6.0 -w
 #
 # inherit_GO_terms.pl
 #
@@ -25,7 +25,6 @@ my $runtime = `date +%H:%M:%S`; chomp $runtime;
 # grab version number from cvs
 my $version = &get_cvs_version($0);
 
-
 ##############################
 # command-line options       #
 ##############################
@@ -48,7 +47,7 @@ $maintainers = "dl1\@sanger.ac.uk" if ($debug);
 # Paths etc                  #
 ##############################
 
-my $tace      = "/nfs/disk100/wormpub/acedb/ace4/bin.ALPHA_4/tace");      # tace executable path
+my $tace      = "/nfs/disk100/wormpub/acedb/ace4/bin.ALPHA_4/tace";      # tace executable path
 my $dbpath    = "/wormsrv2/autoace";                                      # Database path
 
 ########################################
@@ -164,3 +163,47 @@ sub motif {
 
 sub phenotype {
 }
+
+
+
+__END__
+
+=pod
+
+=head2   NAME - inherit_GO_terms.pl
+
+
+=head1 USAGE
+
+=over 4
+
+=item inherit_GO_terms.pl [-options]
+
+=back
+
+inherit_GO_terms.pl assigns GO terms to sequences based on Interpro motifs
+and RNAi phenotypes.
+
+inherit_GO_terms.pl mandatory arguments:
+
+=over 4
+
+=item none, (but it won\'t do anything)
+
+=back
+
+inherit_GO_terms.pl OPTIONAL arguments:
+
+=over 4
+
+=item -m, parse Interpro motif data
+
+=item -p, parse phenotype data
+
+=item -d, debug
+
+=item -h, help
+
+=back
+
+=cut
