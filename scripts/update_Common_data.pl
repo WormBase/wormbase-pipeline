@@ -5,7 +5,7 @@
 # by Anthony Rogers
 #
 # Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2005-02-18 16:02:07 $
+# Last updated on: $Date: 2005-03-03 14:14:06 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -27,6 +27,7 @@ my $all;               # performs all of the below options:
      
 my $clone2accession;   # Hash: %clone2accession     Key: Genomic_canonical                 Value: GenBank/EMBL accession
                        # Hash: %accession2clone     Key: GenBank/EMBL accession            Value: Genomic_canonical
+my $clonesize;         # Hash: %clonesize           Key: Genomic_canonical                 Value: DNA length
 my $cds2wormpep;       # Hash: %cds2wormpep         Key: CDS name                          Value: Wormpep ID
                        # Hash: %wormpep2cds         Key: Wormpep ID                        Value: CDS name
 my $cds2protein_id;    # Hash: %cds2protein_id      Key: CDS name                          Value: Protein_ID
@@ -46,6 +47,7 @@ my $CDS2gene_id;       # Hash: %CDS2gene_id         Key: CDS name               
 
 GetOptions("build"              => \$build,
 	   "clone2acc"          => \$clone2accession,
+	   "clonesize"          => \$clonesize,
 	   "cds2wormpep"        => \$cds2wormpep,
 	   "cds2pid"            => \$cds2protein_id,
 	   "CDS_list"           => \$CDS_list,
@@ -92,10 +94,11 @@ else {
 
 
 # run the various options depending on command line arguments
-&write_cds2protein_id   if ($cds2protein_id || $all );
-&write_clone2accession  if ($clone2accession || $all );
-&write_cds2wormpep      if ($cds2wormpep || $all );
-&write_CDSlist          if ($CDS_list || $all );
+&write_cds2protein_id   if ($cds2protein_id || $all);
+&write_clone2accession  if ($clone2accession || $all);
+&write_clonesize        if ($clonesize || $all);
+&write_cds2wormpep      if ($cds2wormpep || $all);
+&write_CDSlist          if ($CDS_list || $all);
 &write_clones2seq       if ($clone2seq || $all);
 &write_genes2lab        if ($genes2lab || $all);
 &write_worm_gene2class  if ($worm_gene2class || $all);
@@ -187,6 +190,36 @@ sub write_clone2accession  {
   
   close C2A;
   close A2C;
+  
+}
+
+########################################################################################################
+
+sub write_clonesize  {   
+
+  my %clonesize;
+    
+  # connect to AceDB using TableMaker,
+  my $command="Table-maker -p $wquery_dir/clonesize.def\nquit\n";
+  
+  open (TACE, "echo '$command' | $tace $ace_dir |");
+  while (<TACE>) {
+    chomp;
+    next if ($_ eq "");
+    next if (/acedb\>/);
+    last if (/\/\//);
+    if (/\"(\S+)\"\s+(\d+)/) {
+      $clonesize{$1} = $2;
+    }
+    }
+  close TACE;
+  
+  #now dump data to file
+  open (CLONESIZE, ">$data_dir/clonesize.dat") or die "cant write $data_dir/clonesize.dat :$!";
+  
+  print CLONESIZE Data::Dumper->Dump([\%clonesize]);
+
+  close CLONESIZE;
   
 }
 
@@ -614,6 +647,10 @@ This module updates the following data sets:
 =item *
 
 %clone2accession
+
+=item *
+
+%clonesize - list of DNA lengths for each genome sequence
 
 =item *
 
