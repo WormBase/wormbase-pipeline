@@ -1,9 +1,11 @@
+
+
 #!/usr/local/bin/perl5.8.0 -w
 #
 # map_operons.pl
 
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2003-12-16 13:49:44 $
+# Last edited on: $Date: 2003-12-16 16:14:56 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -19,7 +21,7 @@ use Ace;
 ##############################
 
 # who will receive log file?
-my $maintainers = "dl1";
+my $maintainers = "All";
 
 our $dir    = "/wormsrv2/autoace/OPERONS";
 our $gff    = "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS";
