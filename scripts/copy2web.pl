@@ -69,7 +69,7 @@ print LOG "get number of reports\n";
 
 for (my $n = 0; $n < @filenames; $n++) {
     foreach my $chrom (@chrom) {
-        print LOG "Calculating line nummbers for CHROMOSOME_$chrom.$filenames[$n]\n";
+        print LOG "Calculating line numbers for CHROMOSOME_$chrom.$filenames[$n]\n";
         my $line = `wc -l /wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.$filenames[$n]`;
         my ($new) = ($line =~ /(\d+)/);
         push @{$output[$n]}, $new;
