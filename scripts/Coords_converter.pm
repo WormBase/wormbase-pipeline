@@ -122,6 +122,7 @@ EOF
       }
       elsif( /Subsequence\s+\"(SUPERLINK_\w+)\"\s+(\d+)\s+(\d+)/ ) {
 	$self->{"$parent"}->{'SUPERLINK'}->{"$1"} = [$2,$3];
+	$self->{'SUPERLINK2CHROM'}->{"$1"} = "$parent";
       }
     }
 
@@ -133,6 +134,7 @@ EOF
       }
       elsif( /Subsequence\s+\"(\w+)\"\s+(\d+)\s+(\d+)/ ){
 	$self->{'SUPERLINK'}->{"$parent"}->{"$1"} = [$2,$3];
+	$self->{'CLONE2CHROM'}->{"$1"} = $self->{'SUPERLINK2CHROM'}->{"$parent"};
       }
     }
     %{$self->{"numerals"}} = ( "1" => "I",
@@ -157,21 +159,25 @@ EOF
 
 =cut
 
-sub GetSuperlinkFromCoord
+  sub GetSuperlinkFromCoord
   {
     my $self = shift;
     my $chrom = shift;
     my $coord = shift;
 
-    foreach my $slink ( keys %{$self->{"CHROMOSOME_$chrom"}->{'SUPERLINK'}} ) {
-      if($self->{"CHROMOSOME_$chrom"}->{'SUPERLINK'}->{$slink}->[0] < $coord and 
-	 $self->{"CHROMOSOME_$chrom"}->{'SUPERLINK'}->{$slink}->[1] > $coord
+    $chrom = "CHROMOSOME_$chrom" unless $chrom =~ /CHROMOSOME/;
+
+    foreach my $slink ( keys %{$self->{"$chrom"}->{'SUPERLINK'}} ) {
+      if($self->{"$chrom"}->{'SUPERLINK'}->{$slink}->[0] < $coord and
+	 $self->{"$chrom"}->{'SUPERLINK'}->{$slink}->[1] > $coord
 	) {
 	return $slink;
       }
     }
     return 0;
   }
+
+
 
 =head2 GetCloneFromCoord
 
@@ -190,16 +196,18 @@ sub GetCloneFromCoord
     my $coord = shift;
     my $chrom;
 
-    if( length("$parent") < 5 ) {
-      # parent is a chromosome number so lets find the right slink
+    unless( "$parent" =~ /SUPER/ ) {
+      # parent is a chromosome so lets find the right slink
       $chrom = $parent;
+      $chrom = "CHROMOSOME_$chrom" unless $chrom =~ /CHROMOSOME/;
+
       $parent = &GetSuperlinkFromCoord($self,"$parent", $coord);
-      my $sl_start = $self->{"CHROMOSOME_$chrom"}->{'SUPERLINK'}->{"$parent"}->[0];
+      my $sl_start = $self->{"$chrom"}->{'SUPERLINK'}->{"$parent"}->[0];
       $coord -= $sl_start;
     }
 
     # get data with SUPERLINK as parent
-    $chrom = &_getChromFromSlink($self,"$parent") unless $chrom;
+    $chrom = $self->{SUPERLINK2CHROM}->{"$parent"} unless $chrom;
 
     foreach $clone (keys %{$self->{'SUPERLINK'}->{"$parent"}} ) {
       if( $self->{'SUPERLINK'}->{"$parent"}->{"$clone"}->[0] < $coord and
@@ -210,32 +218,6 @@ sub GetCloneFromCoord
     }
   }
 
-=head2 _getChromFromSlink
-
-    Title   :   _getChromFromSlink
-    Usage   :   _getChromFromSlink('superlink_name')
-    Function:   Internal usage : determine what chromosome a superlink is in
-    Returns :   Chromosome as string eg "V"
-    Args    :   Superlink as string eg "SUPERLINK_CB_V"
-
-=cut
-
-sub _getChromFromSlink
-  {
-    my $self = shift;
-    my $sl = shift;
-    return 0 unless defined $sl;
-
-    if( $sl =~ /SUPERLINK_CB_(\w+)/) {
-      return $1;
-    }
-    elsif( $sl =~ /SUPERLINK_RW(\w+)/) {
-      return $self->{'numerals'}->{"$1"};
-    }
-    else{
-      return 0;
-    }
-  }
 
 =head2 LocateSpan
 
@@ -254,11 +236,35 @@ sub LocateSpan
     my $x = shift;
     my $y = shift;
 
+    # if anything other than chromsome or superlink is passed you get back what you put in
+    unless( $chrom =~ /CHROMOSOME/ or $chrom =~ /SUPERLINK/ ) { 
+      my ($superlink, $chromosome, $seq);
+      $seq = $chrom;
+      undef $chrom;
+    SLINKS:
+      foreach my $slink (keys %{$self->{'SUPERLINK'}} ) {
+	foreach my $clone (keys %{$self->{SUPERLINK}->{$slink}} ) {
+
+	  if( "$clone" eq "$seq" ) {
+	    $chrom = $self->_getChromFromSlink("$slink");
+
+	    # modify the starting coordinate
+	    my $offset = $self->{"$chrom"}->{SUPERLINK}->{"$slink"}->[0] -1 ; # superlink base coords
+	    $offset += $self->{SUPERLINK}->{"$slink"}->{"$clone"}->[0] - 1; # clone base coords
+	
+	    $x += $offset;
+	    $y += $offset;
+	    last SLINKS;
+	  } 
+	}
+      }
+    }
+
     if( $chrom =~ /SUPERLINK/ ) {
       my $slink = $chrom;
-      $chrom = $self->_getChromFromSlink($slink);
-      $x += $self->{"CHROMOSOME_$chrom"}->{'SUPERLINK'}->{$slink}->[0] - 1;
-      $y += $self->{"CHROMOSOME_$chrom"}->{'SUPERLINK'}->{$slink}->[0] - 1;
+      $chrom = $self->{SUPERLINK2CHROM}->{"$slink"};
+      $x += $self->{"$chrom"}->{'SUPERLINK'}->{$slink}->[0] - 1;
+      $y += $self->{"$chrom"}->{'SUPERLINK'}->{$slink}->[0] - 1;
     }
 
     my $strand = "+";
@@ -267,11 +273,12 @@ sub LocateSpan
     # set strand and make sure $x is always lower coord
     if( $y < $x ) {
       $strand = "-";
-      &_swap(\$x, \$y);
+      $self->swap(\$x, \$y);
     }
 
+    $chrom = "CHROMOSOME_$chrom" unless $chrom =~ /CHROMOSOME/;
     my $x_slink = &GetSuperlinkFromCoord( $self, $chrom, $x); # need this whatever
-    my $sl_start = $self->{"CHROMOSOME_$chrom"}->{'SUPERLINK'}->{"$x_slink"}->[0];
+    my $sl_start = $self->{"$chrom"}->{'SUPERLINK'}->{"$x_slink"}->[0];
 
     # see if the span is within a clone
     my $x_clone = &GetCloneFromCoord( $self, $chrom, $x);
@@ -294,32 +301,52 @@ sub LocateSpan
       else { # spans superlink so goes on to the chromosome
 	$rel_x = $x; 
 	$rel_y = $y;
-	$seq = "CHROMOSOME_$chrom";
+	$seq = "$chrom";
       }
     }
-    if( $strand eq "-" ){&_swap(\$rel_x,\$rel_y)}
+    if( $strand eq "-" ){$self->swap(\$rel_x,\$rel_y)}
     return ($seq, $rel_x, $rel_y);
   }
 
-=head2 _swap
+=head2 swap
 
-    Title   :   _swap
-    Usage   :   _swap(\$x,\$y);
+    Title   :   swap
+    Usage   :   swap(\$x,\$y);
     Function:   swaps values of variables passed in
     Returns :   nothing
     Args    :   references to two coordinates
 
 =cut
 
-sub _swap
+sub swap
   {
+    my $self = shift;
     my $x = shift;
     my $y = shift;
-    carp "undefined values passed to _swap \n" unless ($$x and $$y);
+    carp "undefined values passed to swap \n" unless ($$x and $$y);
     my $tmp = $$x;
     $$x = $$y;
     $$y = $tmp;
   }
 
+sub get_Chrom_from_clone
+  {
+    my $self = shift;
+    my $clone = shift; 
+
+    my $chrom = $self->{"CLONE2CHROM"}->{$clone} ? $self->{"CLONE2CHROM"}->{$clone} : undef;
+    carp "unknown clone \"$clone\" requesting chromosome info" unless $chrom;
+
+    return $chrom;
+  }
+
+
+sub _getChromFromSlink
+  {
+    my $self = shift;
+    my $sl = shift;
+
+    return $self->{SUPERLINK2CHROM}->{"$sl"};
+  }
 
 return 1;
