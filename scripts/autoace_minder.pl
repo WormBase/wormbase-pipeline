@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-09-16 08:45:12 $
+# Last edited on: $Date: 2003-09-16 10:50:54 $
 
 
 #################################################################################
@@ -981,7 +981,7 @@ sub add_nematode_ESTs {
     my $command;
     
     $runtime = &runtime; print LOG "Adding nematode EST data files at $runtime\n";
-    $command = "pparse /wormsrv2/wormbase/misc/misc_nonelegansests.ace\nsave\nquit\n";
+    $command = "pparse /wormsrv2/wormbase/misc/misc_other_nematode_ESTs.ace\nsave\nquit\n";
     open (WRITEDB, "| $tace -tsuser nematode_ESTs /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
     print WRITEDB $command;
     close WRITEDB;
