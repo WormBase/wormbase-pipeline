@@ -10,7 +10,7 @@
 # 
 #
 # Last updated by: $Author: ar2 $                     
-# Last updated on: $Date: 2002-10-21 09:34:20 $     
+# Last updated on: $Date: 2002-10-21 09:49:32 $     
 
 use strict;                                     
 use lib "/wormsrv2/scripts/";                  
@@ -259,7 +259,7 @@ print LOG "\n   . . about to start GetSwissIDandInterpro.pl\n";
 #load files in to autoace.
 my $tace =  "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
 my $command;
-if( -e "/wormsrv2/autoace/UTR/pepace.ace" ) {
+if( -e "/wormsrv2/autoace/wormpep_ace/pepace.ace" ) {
   $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Adding pepace.ace file to autoace at $runtime\n";
   $command = "pparse /wormsrv2/autoace/wormpep_ace/pepace.ace\nsave\nquit\n"; 
   open (AUTOACE, "| $tace -tsuser pepace /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
