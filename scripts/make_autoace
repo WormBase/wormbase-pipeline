@@ -631,9 +631,8 @@ sub setdate {
 
 sub makedistr {
 
-
   # Remove old release files if present
-  if (-e "$autodir/release/database.WS"."$WS_previous"."4-0.tar.gz"){
+  if (-e "$autodir/release/database.WS"."$WS_previous".".4-0.tar.gz"){
     print LOGFILE "Older WS version files exist, removing them\n";
     system("rm -f $autodir/release/*WS"."$WS_previous"."*") && die "Can't remove old release files\n";
   }
