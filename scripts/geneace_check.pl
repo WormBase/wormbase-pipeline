@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-05-12 16:25:12 $
+# Last updated on: $Date: 2003-05-12 17:14:08 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -1056,7 +1056,7 @@ sub check_genetics_coords_mapping {
   print "\nChecking discrepancies in genetics/coords mapping of each CDS/Transcript:\n\n";
   print LOG "\nChecking discrepancies in genetics/coords mapping:\n\n";
   print JAHLOG "\nChecking discrepancies in genetics/coords mapping:\n\n";
-  system ("/wormsrv2/scripts/get_interpolated_gmap.pl -db /wormsrv1/geneace -map");
+  system ("/wormsrv2/scripts/get_interpolated_gmap.pl -db /wormsrv1/geneace -diff");
   my $infile = "/wormsrv2/logs/mapping_diff.".$rundate;
   open(IN, $infile) || die $!;
   while(<IN>){
