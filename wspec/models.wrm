@@ -224,22 +224,31 @@
 	                                In_pos_neg_data ?Pos_neg_data
 				// these are for when the locus is mapped
 			Covers Text // from MRC allele list
-	Description     Phenotype       ?Text
+	Description     Phenotype       ?Text #Evidence
 			Recessive
-                        Dominant
 			Semi_dominant
-			Weak
-                        Temperature_sensitive	Heat_sensitive
-						Cold_sensitive
-			Amber
-                        Ochre
-                        Opal
+                        Dominant		       
+			Penetrance UNIQUE Complete
+					  Partial Text // percentage of animals displaying phenotype
+                        Temperature_sensitive Heat_sensitive #Evidence
+					      Cold_sensitive #Evidence
+			Loss_of_function UNIQUE Haplo_insufficient #Evidence //new section krb 021210
+						Hypomorph #Evidence
+						Amorph #Evidence
+						Uncharacterised_loss_of_function #Evidence
+			Gain_of_function UNIQUE Dominant_negative #Evidence //new section krb 021210
+						Hypermorph #Evidence
+						Neomorph #Evidence
+						Uncharacterised_gain_of_function #Evidence     	       		
+			Nonsense UNIQUE	Amber_UAG
+					Ochre_UAA
+					Opal_UGA
                         Missense
-                        Deletion     // added sdm for consistency 0101
                         Frameshift   // added sdm
                         Maternal	Strictly_Maternal
 					With_Maternal_Effect
                         Paternal
+                        Deletion     // added sdm for consistency 0101
 			Insertion	// Added for Todd [171001 krb]
 	Remark	?Text
         Reference ?Paper XREF Allele               // Mary
