@@ -7,7 +7,7 @@
 # Builds a wormpep data set from the current autoace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-06-10 11:43:26 $
+# Last updated on: $Date: 2004-06-14 11:58:29 $
 
 
 use strict;
@@ -76,6 +76,7 @@ my @number2accession; # stores full Wormpep accessions (e.g. CE04323) in array, 
 my @CDSs;             # stores list of CDS object names from autoace
 my %cds2number;       # stores cds name (e.g. AH6.1) as key, Wormpep number (e.g. 4323) as value
 my %cds2cgc_name;     # cds name and corresponding CGC name name
+my %cds2gene;         # cds name and corresponding Gene ID (e.g. WBGene00012312)
 my %cds2id;           # 'Brief_identification' field for each CDS
 my %cds_status;       # 'Confirmed', 'Partially_confirmed', 'Predicted' status for each CDS
 my %cds2protein_id;   # protein ID for each CDS
@@ -485,8 +486,11 @@ sub retrieve_cds_data{
     s/\"//g;
     (/^(\S+)\s/);
     my ($cds,$prot_id_parent,$prot_id,$prot_id_ver,$prot_db,$prot_ac,$gene,$cgc_name,$confirmed,$est,$brief_id) = split /\t/;
-    ($cds2cgc_name{$cds} = $cgc_name)  if (defined($cgc_name));
-    ($cds2id{$cds} = $brief_id) if (defined($brief_id));
+
+    # load hashes with data
+    ($cds2cgc_name{$cds} = $cgc_name) if (defined($cgc_name));
+    ($cds2id{$cds} = $brief_id)       if (defined($brief_id));
+    ($cds2gene{$cds} = $gene)         if (defined($gene));
 
     # can only work with some of this data in full wormpep mode, not in initial
     if($final){
@@ -508,7 +512,7 @@ sub retrieve_cds_data{
 	$cds_status{$cds} = "Predicted";
       }
     }
-    print "$cds Locus:$cds2cgc_name{$cds} Protein_ID:$cds2protein_id{$cds} Protein_AC:$cds2protein_ac{$cds} Protein_DB:$cds2protein_db{$cds} Brief_ID:$cds2id{$cds}\n\n" if ($verbose);
+    print "$gene $cds Locus:$cds2cgc_name{$cds} Protein_ID:$cds2protein_id{$cds} Protein_AC:$cds2protein_ac{$cds} Protein_DB:$cds2protein_db{$cds} Brief_ID:$cds2id{$cds}\n\n" if ($verbose);
     
   }
   close(TACE);
@@ -574,7 +578,8 @@ sub write_main_wormpep_and_table{
     
     # set the fields to be printed depending on whether they exist
     my $output = ">$cds CE$wpid_pad";
-    ($output .= " locus\:".$cds2cgc_name{$cds})           if ($cds2cgc_name{$cds});
+    ($output .= " $cds2gene{$cds}")                    if ($cds2gene{$cds});
+    ($output .= " locus\:".$cds2cgc_name{$cds})        if ($cds2cgc_name{$cds});
     ($output .= " $cds2id{$cds}")                      if ($cds2id{$cds});
     ($output .= " status\:".$cds_status{$cds})         if ($cds_status{$cds});
 
