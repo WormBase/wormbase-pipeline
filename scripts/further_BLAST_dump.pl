@@ -6,8 +6,8 @@
 #
 # Author: Chao-Kung CHen
 #
-# Last updated by: $Author: ar2 $                      
-# Last updated on: $Date: 2004-01-22 11:05:00 $        
+# Last updated by: $Author: wormpub $                      
+# Last updated on: $Date: 2004-06-03 15:25:20 $        
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -43,7 +43,7 @@ foreach my $file (@files){
 
 # Also move big ensembl_protein file to BACKUP dir before making new one.
 &run_command("mv -f $wormsrv2_dir/ensembl_protein_info.ace $wormsrv2_dir/BACKUP/ensembl_protein_info.ace.backup");
-&run_command("cat ipi_hits.ace gadfly.ace yeast.ace swissproteins.ace tremblproteins.ace brigpep.ace > ensembl_protein_info.ace");
+&run_command("cat ipi_hits.ace flybase.ace yeast.ace swissproteins.ace tremblproteins.ace brigpep.ace > ensembl_protein_info.ace");
 
 exit(0);
 
