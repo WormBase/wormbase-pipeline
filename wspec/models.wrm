@@ -896,6 +896,7 @@
 						tRNA UNIQUE Text
 						rRNA UNIQUE Text
 						snRNA UNIQUE Text
+						snoRNA UNIQUE Text // [030102 krb]
 						scRNA UNIQUE Text
 						stRNA UNIQUE Text         // [010723 dl]
 						miRNA UNIQUE Text         // [011129 dl]
