@@ -1,4 +1,3 @@
-
 #!/usr/local/bin/perl5.8.0 -w
 #
 # update_live_release.pl
@@ -7,7 +6,7 @@
 #
 # Updates the local webpages in synch with the main website
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-07-20 15:55:34 $
+# Last updated on: $Date: 2004-07-20 15:56:37 $
 
 
 use strict;
