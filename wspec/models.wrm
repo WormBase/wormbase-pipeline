@@ -1,17 +1,13 @@
 // %W%    %G%
-// models.wrm - main file defining tree class structures
+// models.wrm - main file defining tree class structures for the WormBase database
 // This file is read only when starting a new database or when you select 
 // "Read Models" or "Add Update File" from the main menu.
 
-// [010226 dl]  Added updates for RNAi and PCR_product classes from Lincoln Stein
-// [010912 krb] Added new classes Expr_profile and SK_map to allow new microarray data
-// from Stuart Kim
 
-// [020412] Details of all model changes made through cvs now get sent to wormbase-dev@wormbase.org
 
-//
-// Basic Map classes
-//
+////////////////////////
+// Basic map classes  //
+////////////////////////
 
 ?Map	No_cache // Don't cache segs for this map.
         Display Non_graphic  // Prevents a graphic display!
@@ -31,8 +27,7 @@
  	Main_Marker Main_Locus ?Locus     // XREF Main_Marker removed to
 					// allow tag2 system
 		// tag2 system for items shown left of locator
-	Map ?Map XREF Map_shown #Map_position
-// Include all objects in these maps (must be mapped and have extents)
+	Map ?Map XREF Map_shown #Map_position  // Include all objects in these maps (must be mapped and have extents)
 	Includes ?Map
 	Contains Locus ?Locus XREF Map
         	 Rearrangement ?Rearrangement XREF Map
@@ -45,6 +40,8 @@
 		// tag2 system for items shown in main region
 	EMBL_chromosome UNIQUE Text
 
+
+
 ?Map_position UNIQUE	Position UNIQUE Float #Map_error
 			Ends Left UNIQUE Float #Map_error
 			     Right UNIQUE Float #Map_error
@@ -54,9 +51,12 @@
 				    With_clone UNIQUE ?Clone #Map_offset
 				// tag2 system for "burying"
 
+
 ?Map_error Error UNIQUE Float
 
+
 ?Map_offset Relative #Map_position
+
 
 ?MultiMap Map ?Map
           Min Int // keep loci appearing on at least min maps. Default = 2 
@@ -67,9 +67,11 @@
 
 ?ManyMap Map ?Map UNIQUE ?View
 
-//
-// Views and Columns
-//
+
+
+///////////////////////
+// Views and Columns //
+///////////////////////
 
 ?View 	Type 	UNIQUE 	Pepmap
 			Fmap
@@ -96,6 +98,8 @@
                 Hide_header     // No headers and footers 
 	Name 	UNIQUE 	Text
 	Columns	Text UNIQUE Int #Column	// Int is BOOL for Hidden/Visible
+
+
 
 ?Column	UNIQUE	Scale Scale_unit UNIQUE Float	// minimum increment
 		      Cursor Cursor_on
@@ -157,9 +161,11 @@
 				HOM_NAME_width Int
                 pepActiveZone
 
+
 ?View_tags	Colour #Colour
 		Surround_colour #Colour	// colour when surround
 		Tag Text		// could be many tags
+
 
 ?Interval_col_conf 	Query UNIQUE Text // Query
 			Names_on
@@ -173,7 +179,18 @@
 			Nne #Colour // negative, no error
                 	Ne  #Colour // negative, error
 
-?Allele Name	Other_name ?Text #Evidence
+
+/////////////////////////  CLASSICAL GENETICS STUFF ///////////////////////////////
+//
+// ?Locus, ?Allele
+//
+///////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+?Allele Evidence #Evidence
+	Name	Other_name ?Text #Evidence
 		Qualifier Text	    // sd, sm, ts etc.  Not systematic just now
 		Rearrangement ?Rearrangement XREF Allele
 	Source	UNIQUE Gene ?Locus XREF Allele
@@ -227,7 +244,10 @@
         Reference ?Paper XREF Allele               // Mary
         Rescued_by_Transgene ?Transgene
 
-?Gene_Class     Phenotype ?Text
+
+
+?Gene_Class     Evidence #Evidence
+		Phenotype ?Text
 		Description ?Text // [krb 020614]
                 Designating_laboratory UNIQUE ?Laboratory XREF Gene_classes
                 Allele ?Allele	XREF Gene_class
@@ -238,7 +258,9 @@
 		CGC_unresolved Text // added by krb 28/01/02
                 Remark Text
 
-?Locus  Name    Other_name ?Text #Evidence
+
+?Locus  Evidence #Evidence
+	Name    Other_name ?Text #Evidence
                 Gene_Class  ?Gene_Class XREF Loci
                 Old_name ?Locus XREF New_name
                 New_name ?Locus XREF Old_name
@@ -293,11 +315,14 @@
 	GO_term ?GO_term XREF Locus #Evidence // Added by krb 020905
 
 
+
 ?Balancer From_left_end
           To_right_end
           Locus ?Locus
 
-?Rearrangement 	Name    Other_name ?Text
+
+?Rearrangement 	Evidence #Evidence
+		Name    Other_name ?Text
 			Allele ?Allele XREF Rearrangement
 		Type    Deletion
 			Duplication	Free_dup
@@ -330,7 +355,8 @@
 	        Strain   ?Strain XREF Rearrangement
         	Reference ?Paper XREF Rearrangement
       
-?Strain  Genotype Text
+?Strain  Evidence #Evidence
+	 Genotype Text
 	 Contains  Gene	 ?Locus XREF Strain
 	  	   Allele  ?Allele XREF Strain 
 		   Rearrangement	 ?Rearrangement XREF Strain
@@ -357,7 +383,8 @@
 //worm physical map classes
 //
 
-?Clone  Remark  General_remark ?Text
+?Clone  Evidence #Evidence
+	Remark  General_remark ?Text
 		Y_remark ?Text
 		PCR_remark ?Text
 	Position  Map ?Map XREF Clone #Map_position
@@ -458,7 +485,8 @@
 // Map data classes
 //
 
-?2_point_data   Genotype  UNIQUE Text
+?2_point_data   Evidence #Evidence
+		Genotype  UNIQUE Text
 		Results  UNIQUE Text
 		Experiment	Mapper ?Author
 				Laboratory ?Laboratory
@@ -508,7 +536,8 @@
 	// code uses Point_1, Point_2, Calculation and all its subtags, all the Calc subtags,
 	// and most of the Simple_distance subtags.
 		
-?Pos_neg_data	Genotype  UNIQUE Text
+?Pos_neg_data	Evidence #Evidence
+		Genotype  UNIQUE Text
 		Results  UNIQUE Text
 		Experiment Mapper ?Author
 			   Laboratory ?Laboratory
@@ -526,7 +555,9 @@
 		Remark ?Text
 	// code uses Item_1, Item_2, Positive and Negative
 
-?Multi_pt_data	Genotype  UNIQUE Text
+
+?Multi_pt_data	Evidence #Evidence
+		Genotype  UNIQUE Text
 		Experiment  Mapper ?Author
 			    Laboratory ?Laboratory
 			    Date  UNIQUE DateType
@@ -545,6 +576,7 @@
 		Old_CGC_results Text
 		Remark ?Text
 	// code uses all the Results subtags, and the #Multi_counts structure
+
 
 ?Multi_counts	UNIQUE Locus UNIQUE ?Locus XREF Multi_point UNIQUE Int #Multi_counts
 		       Allele UNIQUE ?Allele XREF Multi_point UNIQUE Int #Multi_counts
@@ -1023,6 +1055,7 @@
         In_sequence ?Sequence XREF Oligo
 	PCR_product ?PCR_product XREF Oligo //added 15/02/2002 krb
 
+
 // Protein class
 
 ?Protein  Title UNIQUE ?Text
@@ -1373,7 +1406,8 @@
 
 //transgene from Wen Chen 12/00
 
-?Transgene      Summary UNIQUE ?Text //Searchable description of the transgene
+?Transgene      Evidence #Evidence
+		Summary UNIQUE ?Text //Searchable description of the transgene
 		Driven_by Driven_by_Sequence ?Sequence XREF Drives_Transgene Text //driving promoter
 			  Driven_by_Locus    ?Locus    XREF Drives_Transgene	
 		Reporter_product UNIQUE	     GFP
@@ -1403,6 +1437,7 @@
 		Remark ?Text //More comments on the transgene
 		Reference ?Paper XREF Transgene //papers refered to the transgene.
 		Species UNIQUE ?Species // added by krb for consistency with other classes 021030
+
 
 // RNAi from Lincoln Stein 001213
 
