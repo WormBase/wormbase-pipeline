@@ -4,7 +4,7 @@
 
 # by Chao-Kung Chen [030625]
 
-# Last updated on: $Date: 2003-09-15 15:44:50 $
+# Last updated on: $Date: 2003-09-17 12:49:28 $
 # Last updated by: $Author: ck1 $
 
 use Tk;
@@ -866,40 +866,42 @@ sub exons_to_codons {
 }
 
 sub get_1_site_flanks{
-  my @ace = $label_1->cget("text");
+  my $ace = $label_1->cget("text");
   my $allele = $label_2->cget("text");
   my $locus = $label_3->cget("text");
   my $seq = $label_4->cget("text");
-
-  write_ace(@ace);
+  my ($first, $Lf1, $Rf1, $second, $Lf2, $Rf2, $third, $Lf3, $Rf3, $fourth, $Lf4, $Rf4,) = split(/\s+/, $ace);
+  write_ace($Lf1, $Rf1, $allele, $locus, $seq);
 }
   
 sub get_2_site_flanks{
-  my @ace = $label_1->cget("text");
+  my $ace = $label_1->cget("text");
   my $allele = $label_2->cget("text");
   my $locus = $label_3->cget("text");
   my $seq = $label_4->cget("text");
-
-  write_ace(@ace);
+  my ($first, $Lf1, $Rf1, $second, $Lf2, $Rf2, $third, $Lf3, $Rf3, $fourth, $Lf4, $Rf4,) = split(/\s+/, $ace);
+  write_ace($Lf2, $Rf2, $allele, $locus, $seq);
+  
 }
   
 
 sub get_3_site_flanks{
-  my @ace = $label_1->cget("text");
+  my $ace = $label_1->cget("text");
   my $allele = $label_2->cget("text");
   my $locus = $label_3->cget("text");
   my $seq = $label_4->cget("text");
-  write_ace(@ace);
+  my ($first, $Lf1, $Rf1, $second, $Lf2, $Rf2, $third, $Lf3, $Rf3, $fourth, $Lf4, $Rf4,) = split(/\s+/, $ace);
+  write_ace($Lf3, $Rf3, $allele, $locus, $seq);
 }
   
 
 sub get_codon_flanks{
-  my @ace = $label_1->cget("text");
+  my $ace = $label_1->cget("text");
   my $allele = $label_2->cget("text");
   my $locus = $label_3->cget("text");
-  my $seq = $label_4->cget("text");
-
-  write_ace(@ace);
+  my $seq = $label_4->cget("text");  
+  my ($first, $Lf1, $Rf1, $second, $Lf2, $Rf2, $third, $Lf3, $Rf3, $fourth, $Lf4, $Rf4,) = split(/\s+/, $ace);
+  write_ace($Lf4, $Rf4, $allele, $locus, $seq);
 }
 
 # get DNA triplet of a specified amino acid based on source exons processed in the above routine
@@ -956,61 +958,57 @@ sub codon_to_seq {
 }
 
 sub write_ace {
-
-  my @ace = @_;
-  my $seq;
-
-  foreach (@ace){
-    if ($_ =~ /1st (\w+) (\w+)/){
-      $ace_window->insert('end', "\nLocus : \"$locus\"\n");
-      if ($info[1] =~ /\[.+\]/){ 
-	$ace_window->insert('end', "Allele \"$allele\" Paper_evidence \"$info[1]\"\n");
-      }
-      else{
-	$ace_window->insert('end', "Allele \"$allele\" PMID_evidence \"$info[1]\"\n");
-      }
-      $ace_window->insert('end', "\nAllele : \"$allele\"\n");
-      if ($info[1] =~ /\[.+\]/){ 
-	$ace_window->insert('end', "Evidence Paper_evidence \"$info[1]\"\n");
-      }
-      else {
-	$ace_window->insert('end', "Evidence PMID_evidence \"$info[1]\"\n");
-      }
-      $ace_window->insert('end', "Sequence \"$seq\"\n");
-      $ace_window->insert('end', "\/\/Substitution \"[\/]\"\n");
-      $ace_window->insert('end', "\/\/Deletion \n");
-      $ace_window->insert('end', "\/\/Insertion\n");
-      $ace_window->insert('end', "\/\/Deletion_with_insertion\n");
-      $ace_window->insert('end', "Flanking_sequences \"$1\" \"$2\"\n");
-      $ace_window->insert('end', "Gene  \"$locus\"\n");
-      $ace_window->insert('end', "Predicted_gene  \"$cds\"\n");
-      $ace_window->insert('end', "Species \"Caenorhabditis elegans\"\n");
-      $ace_window->insert('end', "\/\/Reference \"\"\n");
-      if ($info[0] eq "X"){
-	$ace_window->insert('end', "\/\/Nonsense \"Amber_UAG\"\n");
-	$ace_window->insert('end', "\/\/Nonsense \"Ochre_UAA\"\n");
-	$ace_window->insert('end', "\/\/Nonsense \"Opal_UGA\"\n");
-      }
-      else {
-	$ace_window->insert('end', "Missense\n");
-      }
-      if ($info[1] =~ /\[.+\]/){ 
-	$ace_window->insert('end', "Remark \"$allele is a $info[2] to $info[0] mutation\" Paper_evidence \"$info[1]\"\n");
-      }
-      else {
-	$ace_window->insert('end', "Remark \"$allele is a $info[2] to $info[0] mutation\" PMID_evidence \"$info[1]\"\n");
-      }
-      $ace_window->insert('end', "\/\/Remark \"\" Curator_confirmed \"WBPerson1845\"\n");
-      $ace_window->insert('end', "\/\/Method \"Allele\"\n");
-      $ace_window->insert('end', "\/\/Method \"Deletion_allele\"\n");
-      $ace_window->insert('end', "\/\/Method \"Transposon_insertion\"\n");
-    }
+  
+  my ($Lf, $Rf, $allele, $locus, $seq) = @_;
+  
+  $ace_window->insert('end', "\nLocus : \"$locus\"\n");
+  if ($info[1] =~ /\[.+\]/){ 
+    $ace_window->insert('end', "Allele \"$allele\" Paper_evidence \"$info[1]\"\n");
   }
-}
+  else{
+    $ace_window->insert('end', "Allele \"$allele\" PMID_evidence \"$info[1]\"\n");
+  }
+  $ace_window->insert('end', "\nAllele : \"$allele\"\n");
+  if ($info[1] =~ /\[.+\]/){ 
+    $ace_window->insert('end', "Evidence Paper_evidence \"$info[1]\"\n");
+  }
+  else {
+    $ace_window->insert('end', "Evidence PMID_evidence \"$info[1]\"\n");
+  }
+  $ace_window->insert('end', "Sequence \"$seq\"\n");
+  $ace_window->insert('end', "\/\/Substitution \"[\/]\"\n");
+  $ace_window->insert('end', "\/\/Deletion \n");
+  $ace_window->insert('end', "\/\/Insertion\n");
+  $ace_window->insert('end', "\/\/Deletion_with_insertion\n");
+  $ace_window->insert('end', "Flanking_sequences \"$Lf\" \"$Rf\"\n");
+  $ace_window->insert('end', "Gene  \"$locus\"\n");
+  $ace_window->insert('end', "Predicted_gene  \"$cds\"\n");
+  $ace_window->insert('end', "Species \"Caenorhabditis elegans\"\n");
+  $ace_window->insert('end', "\/\/Reference \"\"\n");
+  if ($info[0] eq "X"){
+    $ace_window->insert('end', "\/\/Nonsense \"Amber_UAG\"\n");
+    $ace_window->insert('end', "\/\/Nonsense \"Ochre_UAA\"\n");
+    $ace_window->insert('end', "\/\/Nonsense \"Opal_UGA\"\n");
+  }
+  else {
+    $ace_window->insert('end', "Missense\n");
+  }
+  if ($info[1] =~ /\[.+\]/){ 
+    $ace_window->insert('end', "Remark \"$allele is a $info[2] to $info[0] mutation\" Paper_evidence \"$info[1]\"\n");
+  }
+  else {
+    $ace_window->insert('end', "Remark \"$allele is a $info[2] to $info[0] mutation\" PMID_evidence \"$info[1]\"\n");
+  }
+  $ace_window->insert('end', "\/\/Remark \"\" Curator_confirmed \"WBPerson1845\"\n");
+  $ace_window->insert('end', "\/\/Method \"Allele\"\n");
+  $ace_window->insert('end', "\/\/Method \"Deletion_allele\"\n");
+  $ace_window->insert('end', "\/\/Method \"Transposon_insertion\"\n");
+}      
+
 
 __END__
-
-#Output: G(45 )= g (590) g (591) g (640) [full-length aa of this gene = 255]
+  
+  #Output: G(45 )= g (590) g (591) g (640) [full-length aa of this gene = 255]
 
 =head2 NAME - get_allele_flank_seq.pl  
 
