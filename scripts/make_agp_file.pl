@@ -42,6 +42,8 @@ my $datadir   = "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS";
 # Main Loop                                                                     #
 #################################################################################
 
+$last_start = 0;
+
 foreach my $chromosome (@gff_files) {
 
     my $i = 1;
@@ -73,7 +75,7 @@ foreach my $chromosome (@gff_files) {
 		push (@report,"Putative butt-end join\n");
 	    }
 	    else {
-#		print "[ " . ($stop{$i-1}+1) . " : " . ($start-1) ."] so insert padding characters over the gap\n" if ($debug);
+		print "[ " . ($stop{$i-1}+1) . " : " . ($start-1) ."] so insert padding characters over the gap\n" if ($debug);
 		push (@report, "$chromosome\t$stop{$i-1}\t" . ($start - 1) . "\t$i\tN\t$gap_span\n");
 		$start{$i}  = $stop{$i-1} + 1;
 		$stop{$i}   = $start - 1;
@@ -98,8 +100,11 @@ foreach my $chromosome (@gff_files) {
 	$acc{$i}   = $acc;
 	$span{$i}  = $stop - $start + 1;
 
-#	printf "%8s [%8d => %8d : %6d] $acc{$i}\n", $clone{$i}, $start{$i}, $stop{$i}, $span{$i};
-	&getseq($acc,$chromosome);	
+	for ($j=1;$j < 100;$j++) {
+	    unless ($sv_ver ne "") {&getseq($acc,$chromosome);next;}
+	}	
+
+#	printf "%8s [%8d => %8d : %6d] $acc{$i}.$sv_ver\n", $clone{$i}, $start{$i}, $stop{$i}, $span{$i};
 	$ver{$i}    = $sv_ver;
 #	$len{$i}    = $seq_len;
 	$last_stop  = $stop;
@@ -121,7 +126,7 @@ foreach my $chromosome (@gff_files) {
     foreach (@report) {
 	print LOG $_;
     }
-    
+    @report = "";      # clean the report up
 
     open (OUT, ">$file");
     for ($i=1; $i<$limit;$i++) {
@@ -179,8 +184,8 @@ sub getseq {
     
     undef ($absent);
     while (my $return_line=<F>) {
-	if ($return_line =~ /Your query retrieved no entries/) {
-#	    print "Query returned no entry : '$request2'\n" if ($debug);
+	if ($return_line =~ /error/) {
+#	    print "Query returned no entry : '$request2'\n";
 	    $absent = 1;
 	    last;
 	}
@@ -194,6 +199,8 @@ sub getseq {
 	    exit(-1);
 	} 
 	
+#	print "Query [$j]: '$request1'\n";
+	
 	print G "GET $request1 HTTP/1.0\n\n";
 	print G "Accept: */*\n";
 	print G "User-Agent: socketsrs/1.0\n\n";
@@ -203,6 +210,8 @@ sub getseq {
 	    print "Error connecting to server \n";
 	    exit(-1);
 	} 
+
+#	print "Query [$j]: '$request2'\n";
 	
 	print G "GET $request2 HTTP/1.0\n\n";
 	print G "Accept: */*\n";
@@ -212,10 +221,13 @@ sub getseq {
 # Parsing annotation
     
     while (my $return_line=<G>) {
-
+#	print "$return_line";
+	
     # Sequence version
     # SV   AL032679.2
-	if ($return_line =~ /SV\s+(\S+)/) {
+	if ($return_line =~ /^SV\s+(\S+)/) {
+#	    print "parsing SV line : $return_line";
+	    
 	    ($sv_acc,$sv_ver) = split (/\./, $1);
 	}
     
@@ -223,6 +235,7 @@ sub getseq {
     # SQ   Sequence 2679 BP; 882 A; 510 C; 415 G; 872 T; 0 other;
 
 	if ($return_line =~ /^SQ\s+Sequence\s(\d+)\sBP/) {
+#	    print "parsing SQ line : $return_line";
 	    $seq_len = $1;
 	    return ($sv_acc,$sv_ver,$seq_len);
 	    last;
