@@ -7,7 +7,7 @@
 # This maps alleles to the genome based on their flanking sequences
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-03-02 12:08:41 $
+# Last updated on: $Date: 2005-03-31 15:54:35 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -192,7 +192,7 @@ sub map_alleles{
     
     # debug facility - after the restart means you can specify where to start and how many to do 
     if ( $limit ) {
-      last if ++$error_count >= $limit;
+      last if $error_count++ >= $limit;
     }
     
     if ( $list ) {
@@ -249,15 +249,18 @@ sub map_alleles{
     #(8)strains containing this allele
     
     
-    # get coords of allele not 1st / last base of flanks
-    if( $map[2] > $map[1] ) {
-      # maps to fwd strand
-      $map[1]++; $map[2]--;
+    unless( ( $allele->Type_of_mutation and $allele->Type_of_mutation eq "Insertion" ) or
+	    ( $allele->Variation_type   and $allele->Variation_type   eq "Transposon_insertion")) {
+      # get coords of allele not 1st / last base of flanks
+      if( $map[2] > $map[1] ) {
+	# maps to fwd strand
+	$map[1]++; $map[2]--;
+      }
+      else {
+	$map[1]--; $map[2]++;
+      }
     }
-    else {
-      $map[1]--; $map[2]++;
-    }
-    
+
     $allele_data{$name}[4] = $map[1];
     $allele_data{$name}[5] = $map[2];
     $allele_data{$name}[6] = $map[0];
@@ -349,14 +352,14 @@ sub outputAllele{
 	}
 	elsif ($worm_gene2class{$cds} eq "CDS"){
 	  print OUT "\nCDS : \"$cds\"\n";
-	  print OUT "Alleles $allele\n\n";
+	  print OUT "Variation $allele\n\n";
 
 	  print OUT "Variation : $allele\n";
-	  print OUT "Predicted_gene $cds\n";
+	  print OUT "Predicted_CDS $cds\n";
 	}
 	elsif ($worm_gene2class{$cds} eq "Transcript"){
 	  print OUT "\nTranscript : \"$cds\"\n";
-	  print OUT "Alleles $allele\n\n";
+	  print OUT "Variation $allele\n\n";
 
 	  print OUT "Variation : $allele\n";
 	  print OUT "Transcript $cds\n";
