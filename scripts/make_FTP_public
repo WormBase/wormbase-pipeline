@@ -228,7 +228,7 @@ sub extract_confirmed_genes{
   my @confirmed_genes   = $db->fetch(-query=>$query);
 
 
-  open(OUT,">/wormsrv2/tmp/confirmed_genes.${release}") || die "Couldn't write to /wormsrv2/tmp/confirmed_genes.${release}\n";
+  open(OUT,">${targetdir}/${release}/confirmed_genes.${release}") || die "Couldn't write to ${targetdir}/${release}/confirmed_genes.${release}\n";
 
   foreach my $seq (@confirmed_genes){
     my $dna = $seq->asDNA();
@@ -246,9 +246,9 @@ sub extract_confirmed_genes{
 
   close(OUT);
 
-  system("/bin/gzip /wormsrv2/tmp/confirmed_genes.${release}") && die "Couldn't gzip confirmed_genes file\n";
+  system("/bin/gzip ${targetdir}/${release}/confirmed_genes.${release}");
   print "gzipping confirmed_genes.${release}\n" if ($debug);
-  system("/bin/mv /wormsrv2/tmp/confirmed_genes.${release}.gz $targetdir/$release/confirmed_genes.${release}.gz") && die "Couldn't move confirmed_genes file to FTP site\n";
+
   
   return(0);
 
