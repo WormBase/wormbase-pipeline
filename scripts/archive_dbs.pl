@@ -25,7 +25,6 @@ my $maintainers = "All";
 my $rundate     = `date +%y%m%d`; chomp $rundate;
 my $runtime     = `date +%H:%M:%S`; chomp $runtime;
 our $log        = "/wormsrv2/logs/archive_dbs.$rundate";
-my $cvs_version = &get_cvs_version("$0");
 
 
 my $WS_name     = &get_wormbase_version_name;
@@ -84,7 +83,6 @@ sub create_log_file{
   print LOG "# update_website.pl\n\n";     
   print LOG "# run details    : $rundate $runtime\n";
   print LOG "# WormBase version : $WS_name\n";
-  print LOG "# cvs version      : $cvs_version\n";
   print LOG "\n\n";
 
 }

@@ -21,7 +21,6 @@ use vars qw/ $opt_d $opt_h $opt_f/;
 my $maintainer = "dl1\@sanger.ac.uk";
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
-my $cvs_version = &get_cvs_version($0);
 my $log="/wormsrv2/logs/check_EMBL_submissions.$rundate.$$";
 
  ########################################
@@ -60,7 +59,6 @@ open (LOG,">>$log");
 LOG->autoflush;
 
 print LOG "# check_EMBL_submissions\n\n";     
-print LOG "# version        : $cvs_version\n";
 print LOG "# run details    : $rundate $runtime\n";
 print LOG "\n";
 

@@ -26,7 +26,6 @@ use Wormbase;
 my $maintainers = "All";
 my $rundate     = `date +%y%m%d`;   chomp $rundate;
 my $runtime     = `date +%H:%M:%S`; chomp $runtime;
-my $version     = &get_cvs_version("$0");
 
 my @gff_files = ('I','II','III','IV','V','X');
 

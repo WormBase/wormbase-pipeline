@@ -52,7 +52,6 @@ my $clean             = "";  #        on/off flag for removing old WS directorie
 my $maintainer = "All";
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
-my $cvs_version = &get_cvs_version($0);
 
 
  ##############################
@@ -97,7 +96,6 @@ LOG->autoflush();
 
 if ($debug) {
     print LOG "# make_FTP_wormbase\n";
-    print LOG "# version          : $cvs_version\n";
     print LOG "# run details      : $date $time\n#\n";
 
     print LOG "# Source directory : $sourcedir \n";

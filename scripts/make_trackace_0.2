@@ -34,7 +34,6 @@ $|=1;
 $tace                  = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
 $rundate = `date +%y%m%d`; chomp $rundate;
 $runtime = `date +%H:%M:%S`; chomp $runtime;
-$version               = &get_cvs_version($0);
 $trackacepath          = "/wormsrv2/trackace";
 #$WormBasepath         = "/wormsrv2/autoace";
 $WormBasepath          = "/wormsrv2/TESTDB";
@@ -81,7 +80,6 @@ LOG->autoflush();
 
 if ($debug) {
     print LOG "# make_trackace\n";
-    print LOG "# version          : $version\n";
     print LOG "# run details      : $rundate $runtime\n";
     print LOG "# WS_release       : $WS_release\n";
     print LOG "#\n";

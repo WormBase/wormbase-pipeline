@@ -8,7 +8,7 @@
 # Usage : GFFsplitter
 
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-07-30 13:58:39 $
+# Last updated on: $Date: 2002-08-09 15:45:21 $
 
 
 #################################################################################
@@ -29,7 +29,6 @@ use strict;
 my $maintainers = "All";
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
-my $cvs_version = &get_cvs_version($0);
 my $WS_version = &get_wormbase_version_name;
 
 
@@ -76,7 +75,6 @@ open (LOG,">$logfile");
 LOG->autoflush();
 
 print LOG "# GFFsplitter\n\n";     
-print LOG "# version        : $cvs_version\n";
 print LOG "# run details    : $rundate $runtime\n";
 print LOG "\n";
 
@@ -154,143 +152,108 @@ foreach (@gff_files) {
 
     
     open (GFF_CLONE_PATH, ">$datadir/GFF_SPLITS/$gff_clone_path");
-    print GFF_CLONE_PATH  "##Version: $cvs_version\n";
     print GFF_CLONE_PATH  "##date $rundate\n";
 
     open (GFF_GENES, ">$datadir/GFF_SPLITS/$gff_genes");
-    print GFF_GENES  "##Version: $cvs_version\n";
     print GFF_GENES  "##date $rundate\n";
 
     open (GFF_PSEUDOGENES, ">$datadir/GFF_SPLITS/$gff_pseudogenes");
-    print GFF_PSEUDOGENES  "##Version: $cvs_version\n";
     print GFF_PSEUDOGENES  "##date $rundate\n";
 
     open (GFF_RNA, ">$datadir/GFF_SPLITS/$gff_rna");
-    print GFF_RNA  "##Version: $cvs_version\n";
     print GFF_RNA  "##date $rundate\n";
 
     open (GFF_REST, ">$datadir/GFF_SPLITS/$gff_rest");
-    print GFF_REST  "##Version: $cvs_version\n";
     print GFF_REST  "##date $rundate\n";
 
     open (GFF_CDS_EXON, ">$datadir/GFF_SPLITS/$gff_CDS_exon");
-    print GFF_CDS_EXON  "##Version: $cvs_version\n";
     print GFF_CDS_EXON  "##date $rundate\n";
 
     open (GFF_EXON, ">$datadir/GFF_SPLITS/$gff_exon");
-    print GFF_EXON  "##Version: $cvs_version\n";
     print GFF_EXON  "##date $rundate\n";
 
     open (GFF_EXON_tRNA, ">$datadir/GFF_SPLITS/$gff_exon_tRNA");
-    print GFF_EXON_tRNA  "##Version: $cvs_version\n";
     print GFF_EXON_tRNA  "##date $rundate\n";
 
     open (GFF_EXON_PSEUDOGENE, ">$datadir/GFF_SPLITS/$gff_exon_pseudogene");
-    print GFF_EXON_PSEUDOGENE  "##Version: $cvs_version\n";
     print GFF_EXON_PSEUDOGENE  "##date $rundate\n";
 
     open (GFF_INTRON, ">$datadir/GFF_SPLITS/$gff_intron");
-    print GFF_INTRON  "##Version: $cvs_version\n";
     print GFF_INTRON  "##date $rundate\n";
 
     open (GFF_INTRON_tRNA, ">$datadir/GFF_SPLITS/$gff_intron_tRNA");
-    print GFF_INTRON_tRNA  "##Version: $cvs_version\n";
     print GFF_INTRON_tRNA  "##date $rundate\n";
 
     open (GFF_INTRON_PSEUDOGENE, ">$datadir/GFF_SPLITS/$gff_intron_pseudogene");
-    print GFF_INTRON_PSEUDOGENE  "##Version: $cvs_version\n";
     print GFF_INTRON_PSEUDOGENE  "##date $rundate\n";
 
     open (GFF_INTRON_CONFIRMED_CDS, ">$datadir/GFF_SPLITS/$gff_intron_confirmed_CDS");
-    print GFF_INTRON_CONFIRMED_CDS  "##Version: $cvs_version\n";
     print GFF_INTRON_CONFIRMED_CDS  "##date $rundate\n";
 
     open (GFF_INTRON_CONFIRMED_UTR, ">$datadir/GFF_SPLITS/$gff_intron_confirmed_UTR");
-    print GFF_INTRON_CONFIRMED_UTR  "##Version: $cvs_version\n";
     print GFF_INTRON_CONFIRMED_UTR  "##date $rundate\n";
 
     open (GFF_REPEATS, ">$datadir/GFF_SPLITS/$gff_repeats");
-    print GFF_REPEATS  "##Version: $cvs_version\n";
     print GFF_REPEATS  "##date $rundate\n";
 
     open (GFF_TC_INSERTIONS, ">$datadir/GFF_SPLITS/$gff_tc_insertions");
-    print GFF_TC_INSERTIONS  "##Version: $cvs_version\n";
     print GFF_TC_INSERTIONS  "##date $rundate\n";
 
     open (GFF_BLASTX, ">$datadir/GFF_SPLITS/$gff_blastx");
-    print GFF_BLASTX  "##Version: $cvs_version\n";
     print GFF_BLASTX  "##date $rundate\n";
 
     open (GFF_TBLASTX_BRIGGSAE, ">$datadir/GFF_SPLITS/$gff_tblastx_briggsae");
-    print GFF_TBLASTX_BRIGGSAE  "##Version: $cvs_version\n";
     print GFF_TBLASTX_BRIGGSAE  "##date $rundate\n";
  
     open (GFF_ASSEMBLY_TAGS, ">$datadir/GFF_SPLITS/$gff_assembly_tags");
-    print GFF_ASSEMBLY_TAGS  "##Version: $cvs_version\n";
     print GFF_ASSEMBLY_TAGS  "##date $rundate\n";
 
     open (GFF_TS_SITE, ">$datadir/GFF_SPLITS/$gff_ts_site");
-    print GFF_TS_SITE  "##Version: $cvs_version\n";
     print GFF_TS_SITE  "##date $rundate\n";
 
     open (GFF_PROSITE, ">$datadir/GFF_SPLITS/$gff_prosite");
-    print GFF_PROSITE  "##Version: $cvs_version\n";
     print GFF_PROSITE  "##date $rundate\n";
 
     open (GFF_OLIGOS, ">$datadir/GFF_SPLITS/$gff_oligos");
-    print GFF_OLIGOS  "##Version: $cvs_version\n";
     print GFF_OLIGOS  "##date $rundate\n";
 
     open (GFF_ALLELES, ">$datadir/GFF_SPLITS/$gff_alleles");
-    print GFF_ALLELES  "##Version: $cvs_version\n";
     print GFF_ALLELES  "##date $rundate\n";
 
     open (GFF_CLONE_ENDS, ">$datadir/GFF_SPLITS/$gff_clone_ends");
-    print GFF_CLONE_ENDS  "##Version: $cvs_version\n";
     print GFF_CLONE_ENDS  "##date $rundate\n";
 
     open (GFF_RNAi, ">$datadir/GFF_SPLITS/$gff_RNAi");
-    print GFF_RNAi  "##Version: $cvs_version\n";
     print GFF_RNAi  "##date $rundate\n";
 
     open (GFF_GENEPAIR, ">$datadir/GFF_SPLITS/$gff_genepair");
-    print GFF_GENEPAIR  "##Version: $cvs_version\n";
     print GFF_GENEPAIR  "##date $rundate\n";
 
     open (GFF_PCR_PRODUCTS, ">$datadir/GFF_SPLITS/$gff_PCR_products");
-    print GFF_PCR_PRODUCTS  "##Version: $cvs_version\n";
     print GFF_PCR_PRODUCTS  "##date $rundate\n";
 
     open (GFF_CDNA_FOR_RNAI,  ">$datadir/GFF_SPLITS/$gff_cDNA_for_RNAi");
-    print GFF_CDNA_FOR_RNAI   "##Version: $cvs_version\n";
     print GFF_CDNA_FOR_RNAI   "##date $rundate\n";
 
     open (GFF_BLAT_EST_BEST,  ">$datadir/GFF_SPLITS/$gff_BLAT_EST_BEST");
-    print GFF_BLAT_EST_BEST   "##Version: $cvs_version\n";
     print GFF_BLAT_EST_BEST   "##date $rundate\n";
 
     open (GFF_BLAT_EST_OTHER, ">$datadir/GFF_SPLITS/$gff_BLAT_EST_OTHER");
-    print GFF_BLAT_EST_OTHER  "##Version: $cvs_version\n";
     print GFF_BLAT_EST_OTHER  "##date $rundate\n";
 
     open (GFF_BLAT_MRNA_BEST,     ">$datadir/GFF_SPLITS/$gff_BLAT_mRNA_BEST");
-    print GFF_BLAT_MRNA_BEST     "##Version: $cvs_version\n";
     print GFF_BLAT_MRNA_BEST     "##date $rundate\n";
 
     open (GFF_BLAT_MRNA_OTHER,    ">$datadir/GFF_SPLITS/$gff_BLAT_mRNA_OTHER");
-    print GFF_BLAT_MRNA_OTHER     "##Version: $cvs_version\n";
     print GFF_BLAT_MRNA_OTHER     "##date $rundate\n";
 
     open (GFF_BLATX_NEMATODE,     ">$datadir/GFF_SPLITS/$gff_BLATX_NEMATODE");
-    print GFF_BLATX_NEMATODE      "##Version: $cvs_version\n";
     print GFF_BLATX_NEMATODE      "##date $rundate\n";
 
     open (GFF_EXPR_PROFILE,    ">$datadir/GFF_SPLITS/$gff_Expr_profile");
-    print GFF_EXPR_PROFILE     "##Version: $cvs_version\n";
     print GFF_EXPR_PROFILE     "##date $rundate\n";
 
     open (GFF_UTR,    ">$datadir/GFF_SPLITS/$gff_UTR");
-    print GFF_UTR     "##Version: $cvs_version\n";
     print GFF_UTR     "##date $rundate\n";
 
 

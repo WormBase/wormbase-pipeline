@@ -31,7 +31,6 @@ use Wormbase;
 my $maintainers = "All";
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
-my $cvs_version = &get_cvs_version($0);
 
 ##################################################
 # Connect with acedb database                    #
@@ -82,7 +81,6 @@ open (LOG,">>$logfile") or die ("Could not create logfile\n");
 LOG->autoflush();
 
 print LOG "# dbcomp\n#\n";     
-print LOG "# cvs version        : $cvs_version\n";
 print LOG "# run details    : $rundate $runtime\n";
 print LOG "\n";
 print LOG "Previous db      : $dbname_1 '$db_1'\n";
@@ -248,7 +246,6 @@ EOF
  
 sub run_details {
     print "# dbcomp\n#\n";     
-    print "# cvs version        : $cvs_version\n";
     print "# run details    : $rundate $runtime\n";
     print "\n";
     print "Previous db      : $dbname_1 '$db_1'\n";

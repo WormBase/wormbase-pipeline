@@ -23,8 +23,6 @@ $|=1;
 # Script variables           #
 ##############################
 
-my $cvs_version = &get_cvs_version("$0");
-
 our $tace   = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
 
 
@@ -86,7 +84,6 @@ our $logfile = "/wormsrv2/logs/chromosome_dump.${rundate}.$$";
 open (LOGFILE,">$logfile") || die "Couldn't create $logfile\n";
 LOGFILE->autoflush();
 print LOGFILE "# chromosome_dump.pl\n\n";     
-print LOGFILE "# version        : $cvs_version\n";
 print LOGFILE "# run details    : $rundate $runtime\n";
 print LOGFILE "\n\n";
 

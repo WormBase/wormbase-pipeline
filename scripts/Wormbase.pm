@@ -9,25 +9,8 @@ use Exporter;
 use Carp;
 use Ace;
 @ISA       = qw(Exporter);
-@EXPORT    = qw(get_cvs_version get_wormbase_version get_wormbase_version_name get_wormbase_release_date copy_check mail_maintainer celeaccession tace gff_sort dbfetch clones_in_database open_TCP DNA_string_reverse DNA_string_composition release_databases find_file_last_modified release_composition release_wormpep);
+@EXPORT    = qw(get_wormbase_version get_wormbase_version_name get_wormbase_release_date copy_check mail_maintainer celeaccession tace gff_sort dbfetch clones_in_database open_TCP DNA_string_reverse DNA_string_composition release_databases find_file_last_modified release_composition release_wormpep);
 @EXPORT_OK = qw(get_script_version); 
-
-
-#################################################################################
-
-sub get_cvs_version{
-  my $script_name = shift;
-  chdir ("/wormsrv2/scripts");
-  open (CVS, "/usr/local/bin/cvs status $script_name |");
-  my $version;
-  while (<CVS>) {
-   $version .= $_;
-  }
-  close CVS;
-
-  $version =~ s/.* +Repository revision:\s+([\d\.]*)\s+.*/$1/s; 
-  return($version);
-}
 
 
 #################################################################################
@@ -690,22 +673,6 @@ to access some common subroutines for general Wormbase development
 work.  
 
 This module provides access to the following subroutines:
-
-=over 4
-
-=item *
-
-get_cvs_version
-
-If you pass the name of a script to this subroutine, it will return the
-cvs version number.  It is safest to pass the $0 variable but only if
-your script is present in /wormsrv2/scripts.  I.e. the script calling
-get_cvs_version must be present in a CVS checked-out directory.
-Returns the latest CVS version number.
-
-This subroutine replaces the (deprecated) get_script_version (see below).
-
-=back
 
 =over 4
 

@@ -23,7 +23,6 @@ use vars qw( $opt_n $opt_s $opt_e $opt_p $opt_d $opt_h);
 my $maintainer = "All";
 my $rundate = `date +%y%m%d`;   chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
-#my $version = &get_cvs_version('/wormsrv2/scripts/make_acefiles');
 
 $tace = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
 
@@ -62,7 +61,6 @@ open (STDERR,">>$logfile");
 STDERR->autoflush();
 
 print LOG "# rough_check\n\n";     
-print LOG "# version        : $version\n";
 print LOG "# run details    : $rundate $runtime\n";
 print LOG "\n";
 print LOG "WormBase version : ${WS_version}\n";

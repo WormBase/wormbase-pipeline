@@ -12,8 +12,8 @@
 # the Cold Spring Harbor Laboratory database (cshace)
 # the Caltech database (citace)
 #
-# Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2002-08-06 17:15:14 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2002-08-09 15:45:22 $
 
 
 #################################################################################
@@ -35,7 +35,6 @@ use Wormbase;
 my $maintainers = "All";
 my $rundate    = `date +%y%m%d`; chomp $rundate;
 my $runtime    = `date +%H:%M:%S`; chomp $runtime;
-my $version = &get_cvs_version("$0");
 
 ##############################
 # Paths for I/O files        #
@@ -118,7 +117,6 @@ sub unpack_stuff{
 
 
   print LOGFILE "# unpack_db.pl - $database\n#\n";
-  print LOGFILE "# version             : $version\n";
   print LOGFILE "# run details         : $rundate $runtime\n";
   print LOGFILE "# Source directory    : $ftp\n";
   print LOGFILE "# Target directory    : $dbdir\n#\n";

@@ -8,8 +8,8 @@
 #
 # 03.12.01 Kerstin Jekosch
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2002-05-24 09:52:13 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2002-08-09 15:45:22 $
 #############################################################################################
 
 
@@ -59,7 +59,6 @@ my $tace = glob("~wormpub/ACEDB/bin.ALPHA_4/tace");    # tace executable path
 my $dbdir  = "/wormsrv2/autoace";                                  # Database path
 my $gffdir = "/wormsrv2/autoace/CHROMOSOMES";
 my @chromosomes = qw( I II III IV V X );
-my $version = &get_cvs_version($0);
 my $db_version = &get_wormbase_version_name;
  
 ################
@@ -73,7 +72,6 @@ LOG->autoflush();
 
 print LOG "# map_WTP_products\n";     
 print LOG "# run details    : $rundate $runtime\n";
-print LOG "# version        : $version\n";
 print LOG "\n";
 
 ###########################################

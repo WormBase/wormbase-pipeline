@@ -32,7 +32,6 @@ use SangerWeb;
 my $maintainers      = "All";
 my $rundate          = `date +%y%m%d`; chomp $rundate;
 my $runtime          = `date +%H:%M:%S`; chomp $runtime;
-my $cvs_version      = &get_cvs_version("$0");
 my @chrom            = qw ( I II III IV V X ); 
 my $WS_current       = &get_wormbase_version;
 my $release_date     = &get_wormbase_release_date("long");
@@ -115,7 +114,6 @@ sub create_log_file{
   print LOG "# update_website.pl\n\n";     
   print LOG "# run details    : $rundate $runtime\n";
   print LOG "# WormBase version : $WS_name\n";
-  print LOG "# cvs version      : $cvs_version\n";
   print LOG "\n\n";
 
 }

@@ -29,7 +29,6 @@ use Wormbase;
 
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
-my $cvs_version = &get_cvs_version($0);
 
  ##############################
  # command-line options       #
@@ -62,7 +61,6 @@ open (LOG,">$log");
 LOG->autoflush();
 
 print LOG "# estcheck\n";     
-print LOG "# version        : $cvs_version\n";
 print LOG "# run details    : $rundate $runtime\n";
 print LOG "\n";
 

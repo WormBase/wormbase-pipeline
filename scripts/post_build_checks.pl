@@ -8,8 +8,8 @@
 #
 # N.B. Previously called gffcheck
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2002-05-24 09:52:13 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2002-08-09 15:45:22 $
 
 
 use Getopt::Std;
@@ -44,8 +44,6 @@ my $maintainers = "All";
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
 
-# grab version number from cvs
-my $cvs_version = &get_cvs_version($0);
 
 my $WS_version = &get_wormbase_version;
 
@@ -59,7 +57,6 @@ LOG->autoflush();
 
 print LOG "# post_build_checks.pl\n\n";     
 print LOG "# run details    : $rundate $runtime\n";
-print LOG "# cvs version: $cvs_version\n\n";
 print LOG "WormBase version : WS${WS_version}\n";
 
 print LOG "======================================================================\n";
