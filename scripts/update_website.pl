@@ -8,7 +8,7 @@
 # relevant WormBase and Wormpep web pages.
 #
 # Last updated by: $Author: dl1 $     
-# Last updated on: $Date: 2004-10-08 15:22:03 $      
+# Last updated on: $Date: 2004-10-08 16:11:53 $      
 
 
 #################################################################################
@@ -199,7 +199,7 @@ sub copy_overlapcheck_files{
   print LOG "-----------------------\n";
 
   # list of files to be copied
-  my @filenames = qw( overlapping_TSL.cam overlapping_TSL.stl overlapping_genes_cam overlapping_genes_stl EST_in_intron_cam EST_in_intron_stl repeat_in_exon_cam repeat_in_exon_stl );
+  my @filenames = qw( overlapping_TSL_cam overlapping_TSL_stl overlapping_genes_cam overlapping_genes_stl EST_in_intron_cam EST_in_intron_stl repeat_in_exon_cam repeat_in_exon_stl );
 
   print LOG "copying files from /wormsrv2/autoace/CHECKS/ to $www/$WS_name/Checks\n"; 
   system("cp -f $www/$WS_previous_name/Checks/index.shtml $www/$WS_name/Checks/") && warn "Cannot copy index.shtml $!\n";
@@ -824,7 +824,7 @@ sub update_wormpep_pages{
   
   # copy over static files that don't change
   print LOG "copying static wormpep files\n"; 
-  system("cp -f $www/$WS_previous_name/wormpep.html $www/$WS_name/") && warn "Cannot copy wormpep.html $!\n";
+  system("cp -f $www/$WS_previous_name/wormpep.shtml $www/$WS_name/") && warn "Cannot copy wormpep.shtml $!\n";
   system("cp -f $www/$WS_previous_name/wormpep_changes.shtml $www/$WS_name/") && warn "Cannot copy wormpep_changes.shtml $!\n";
   system("cp -f $www/$WS_previous_name/wormpep_download.shtml $www/$WS_name/") && warn "Cannot copy wormpep_download.shtml $!\n";
   system("cp -f $www/$WS_previous_name/wormpep_format.shtml $www/$WS_name/") && warn "Cannot copy wormpep_format.shtml $!\n";
