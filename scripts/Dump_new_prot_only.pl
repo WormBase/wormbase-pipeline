@@ -2,35 +2,54 @@
 
 use DBI;
 use strict;
-#use lib "/wormsrv2/scripts/";
-my $lib = glob("~ar2/wormbase/scripts");
-use lib "$lib/";
+use lib "/wormsrv2/scripts/";
 use Wormbase;
 use Common_data;
 use Getopt::Long;
 
+#######################################
+# command-line options                #
+#######################################
+my ($test, $debug, $help, $all);
+GetOptions ("debug"   => \$debug,
+	    "test"    => \$test,
+	    "help"    => \$help,
+	    "all"     => \$all
+           );
+
 my $maintainers = "All";
 my $rundate    = `date +%y%m%d`; chomp $rundate;
-my $runtime    = `date +%H:%M:%S`; chomp $runtime;
+my $runtime    = &runtime;
 my $log = "/wormsrv2/logs/Dump_new_prot_only.pl.$rundate";
 open( LOG, ">$log") || die "cant open $log";
 print LOG "Dump_new_prot_only.pl log file $rundate ",&runtime,"\n";
 print LOG "-----------------------------------------------------\n\n";
 
-#######################################
-# command-line options                #
-#######################################
-my $test;
-my $all;
+# touch logfile for run details
+$0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
+my $logfile = "/wormsrv2/logs/$1.`date +%y%m%d`.$$";
 
-GetOptions("test"     => \$test,
-	   "all"      => \$all
-	  );
+
+
+# help page
+&usage("Help") if ($help);
+
+# no debug name
+print "DEBUG = \"$debug\"\n\n" if $debug;
+&usage("Debug") if ((defined $debug) && ($debug eq ""));
+
+# assign $maintainers if $debug set
+($maintainers = $debug . '\@sanger.ac.uk') if ($debug);
+
+
 my @sample_peps = @_;
 
 my $wormpipe_dir = glob("~wormpipe");
 my $WPver = &get_wormbase_version;
 my $acedb_database;
+my $output = "/wormsrv2/wormbase/ensembl_dumps/blastp_ensembl.ace";
+my $recip_file = "/wormsrv2/tmp/wublastp_recip.ace";
+
 if( $test ) {
   $WPver-- ;
   $acedb_database = "/wormsrv1/antace";
@@ -148,14 +167,12 @@ my $sth_f = $wormprot->prepare ( q{ SELECT proteinId,analysis,
                                 WHERE proteinId = ? and -log10(evalue) > 1
                              ORDER BY hId
 	  	  	     } );
-my $output = "/wormsrv2/wormbase/ensembl_dumps/blastp_ensembl.ace";
 open (OUT,">$output") or die "cant open $output\n";
 
 # reciprocals of matches ie if CE00000 matches XXXX_CAEEL the homology details need to be written for XXXX_CAEEL 
 # as well.  These are put in a separate file and post processed so that all matches for XXXX_CAEEL are loaded 
 # in one go for efficient loading ( cf acecompress.pl )
 
-my $recip_file = "/wormsrv2/tmp/wublastp_recip.ace";
 open (RECIP,">$recip_file") or die "cant open recip file\n";
 
 my $count;
@@ -424,6 +441,21 @@ sub justGeneName
     }
   }
 
+sub usage {
+     my $error = shift;
+
+     if ($error eq "Help") {
+         # Normal help menu
+         system ('perldoc',$0);
+         exit (0);
+     }
+     elsif ($error eq "Debug") {
+         # No debug bod named
+         print "You haven't supplied your name\nI won't run in debug mode
+         until i know who you are\n";
+        exit (0);
+    }
+}
 
 __END__
 
