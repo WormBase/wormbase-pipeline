@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: krb $
-// Last edited on: $Date: 2004-10-21 09:07:25 $
+// Last edited on: $Date: 2004-10-21 10:03:37 $
  
 
 
@@ -362,6 +362,8 @@
                        Corresponding_pseudogene ?Pseudogene XREF Gene #Evidence
                        Corresponding_pseudogene_history ?Pseudogene XREF Gene_history
                        Other_sequence ?Sequence XREF Gene #Evidence  // for linking to mRNAs etc. that correspond to a gene		   
+		       Associated_feature ?Feature XREF Associated_with_gene #Evidence
+		       Gene_product_binds ?Feature XREF Bound_by_product_of
         Experimental_info RNAi_result ?RNAi XREF Gene
                           Expr_pattern ?Expr_pattern XREF Gene
                           Drives_Transgene ?Transgene XREF Driven_by_gene
@@ -1146,7 +1148,7 @@
 		Y2H_target ?Y2H XREF Target_overlapping_CDS
 		3d_data ?3d_data XREF CDS
 		Remark ?Text #Evidence
-	Sequence_features ?Feature XREF Part_of_gene #Evidence            // Feature data model [dl 030304]
+	Associated_feature ?Feature XREF Associated_with_CDS #Evidence
 	Drives_transgene  ?Transgene XREF Driven_by_CDS_promoter
 	Transgene_product ?Transgene XREF CDS
         Method UNIQUE ?Method
@@ -1201,7 +1203,7 @@
 		           Isoform #Evidence
                            Start_not_found                                   // [020306 kj]
                            End_not_found                                     // [020306 kj]
-		Sequence_features ?Feature XREF Part_of_transcript #Evidence  
+		Associated_feature ?Feature XREF Associated_with_transcript #Evidence
                 Method UNIQUE ?Method                  
 
 
@@ -1244,6 +1246,7 @@
                         Interpolated_map_position ?Map UNIQUE Float 
 			Microarray_results ?Microarray_results XREF Pseudogene  //added for Microarray_results
 			Remark ?Text #Evidence	  
+		Associated_feature ?Feature XREF Associated_with_pseudogene #Evidence
                 Confidential_remark ?Text
                 Method UNIQUE ?Method
 
@@ -1262,6 +1265,7 @@
 	    Species UNIQUE ?Species
             LTR_region UNIQUE Int UNIQUE Int
 	    From_laboratory UNIQUE ?Laboratory
+	    Associated_feature ?Feature XREF Associated_with_transposon #Evidence	
             Remark ?Text #Evidence
             Method UNIQUE ?Method
 
@@ -1365,16 +1369,24 @@
 
 ?Feature SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF Feature_object
          Flanking_sequences UNIQUE ?Sequence UNIQUE Text UNIQUE Text
+	 DNA_text UNIQUE ?Text       // for storing the sequence of the feature...can use IUPAC codes to be able
+				     // store consensus sequences, e.g. binding site consensus sequence
+	 Origin     Species UNIQUE ?Species  //added by pad, as we are moving towards multi species readyness.
          Visible    Description ?Text
-		    Remark ?Text #Evidence
 		    SO_term ?SO_term XREF Feature
 	 Defined_by Defined_by_sequence ?Sequence XREF Defines_feature #Evidence
 		    Defined_by_paper    ?Paper XREF Feature #Evidence
 		    Defined_by_person   ?Person
 		    Defined_by_author   ?Author
-	 Part_of_gene       ?CDS        XREF Sequence_features #Evidence
-	 Part_of_transcript ?Transcript XREF Sequence_features #Evidence
+	 Associations Associated_with_gene	 ?Gene	     XREF Associated_feature #Evidence // richard
+                      Associated_with_CDS	 ?CDS	     XREF Associated_feature #Evidence  // richard
+                      Associated_with_transcript ?Transcript XREF Associated_feature #Evidence  // richard
+                      Associated_with_pseudogene ?Pseudogene XREF Associated_feature #Evidence // richard
+                      Associated_with_transposon ?Transposon XREF Associated_feature #Evidence //richard
+	 Bound_by_product_of ?Gene XREF Gene_product_binds #Evidence //pad added this to show what gene it binds
 	 Annotation UNIQUE ?LongText		// added for data attribution [030220 dl]
+	 Confidential_remark ?Text //pad
+	 Remark ?Text #Evidence
          Method UNIQUE ?Method
 
 
