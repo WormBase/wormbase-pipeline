@@ -8,8 +8,8 @@
 # 030507 : dl  : Update tace queries to restrict deleted/uploaded Homol_data and Feature data class objects
 # 030507 : dl  : Upload OST data as part of script
 
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-09-10 16:05:27 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2003-11-14 16:47:35 $
 
 use strict;
 use Getopt::Long;
@@ -18,15 +18,16 @@ use Wormbase;
 
 my $tace =  &tace;
 
-my ($load,$delete,$dbdir,$help);
+my ($load,$delete,$dbdir,$help,$all);
 GetOptions (
 	    "load"    => \$load,
 	    "delete"  => \$delete,
+	    "all"     => \$all,
 	    "dbdir=s" => \$dbdir,
 	    "h"	      => \$help);
 
 print STDERR "Give the full path for the database you want to modify!\n" unless ($dbdir);
-print STDERR "usage load_blat2db.pl <-options: load/delete or none for both> -dbdir <path to your database>\n" if ($help);
+print STDERR "usage load_blat2db.pl <-options: load/delete or all for both> -dbdir <path to your database>\n" if ($help);
 
 #Can you get write access?
 my $access = &check_write_access($dbdir);
@@ -41,8 +42,8 @@ else {
 	die print STDERR "$dbdir not valid\n";
 }
 
-&delete($dbname) if ($delete);
-&load($dbname)   if ($load);
+&delete($dbname) if ($delete || $all);
+&load($dbname)   if ($load   || $all);
 
 exit(0);
 
