@@ -2212,6 +2212,8 @@
                         Year UNIQUE Int
                         In_book #Paper
                         Contained_in ?Paper XREF Contains       // old form
+			Medline_acc UNIQUE Int 
+			PMID UNIQUE Int 
         Author ?Author XREF Paper #Affiliation        // replaced by:
 //        Author_to_person ?Author UNIQUE ?Person XREF Paper
         Person ?Person XREF Paper
