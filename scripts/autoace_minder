@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder [-options]
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2002-09-05 13:39:01 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2002-09-05 14:11:28 $
 
 
 #################################################################################
@@ -813,9 +813,9 @@ sub blat_jobs {
       # process them to cleaner files
       $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Starting acecompress.pl at $runtime\n\n";
       $i = system ("$scriptdir/acecompress.pl -homol autoace.blat.EST.ace > autoace.blat.ESTlite.ace");
-      $i = system ("mv -f autoace.blat.ESTlite.ace > autoace.blat.EST.ace");
+      $i = system ("mv -f autoace.blat.ESTlite.ace autoace.blat.EST.ace");
       $i = system ("$scriptdir/acecompress.pl -feature autoace.good_introns.EST.ace > autoace.good_introns.ESTlite.ace");
-      $i = system ("mv -f autoace.good_introns.ESTlite.ace > autoace.good_introns.EST.ace");
+      $i = system ("mv -f autoace.good_introns.ESTlite.ace autoace.good_introns.EST.ace");
       $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Finishing acecompress.pl at $runtime\n\n";
 
       # tidy
@@ -836,10 +836,10 @@ sub blat_jobs {
 
       # process them to cleaner files
       $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Starting acecompress.pl at $runtime\n\n";
-      $i = system ("$scriptdir/acecompress.pl -homol   autoace.blat.mRNA.ace > autoace.blat.mRNAlite.ace");
-      $i = system ("mv -f autoace.blat.mRNAlite.ace >  autoace.blat.mRNA.ace");
+      $i = system ("$scriptdir/acecompress.pl -homol autoace.blat.mRNA.ace > autoace.blat.mRNAlite.ace");
+      $i = system ("mv -f autoace.blat.mRNAlite.ace  autoace.blat.mRNA.ace");
       $i = system ("$scriptdir/acecompress.pl -feature autoace.good_introns.mRNA.ace > autoace.good_introns.mRNAlite.ace");
-      $i = system ("mv -f autoace.good_introns.mRNAlite.ace >  autoace.good_introns.mRNA.ace");
+      $i = system ("mv -f autoace.good_introns.mRNAlite.ace autoace.good_introns.mRNA.ace");
       $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Finishing acecompress.pl at $runtime\n\n";
       # tidy
       system ("touch $logdir/$flag{'B6B'}");  
@@ -859,9 +859,9 @@ sub blat_jobs {
       # process them to cleaner files
       $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Starting acecompress.pl at $runtime\n\n";
       $i = system ("$scriptdir/acecompress.pl -homol autoace.blat.EMBL.ace > autoace.blat.EMBLlite.ace");
-      $i = system ("mv -f autoace.blat.EMBL.ace > autoace.blat.EMBL.ace");
+      $i = system ("mv -f autoace.blat.EMBL.ace autoace.blat.EMBL.ace");
       $i = system ("$scriptdir/acecompress.pl -feature autoace.good_introns.EMBL.ace > autoace.good_introns.EMBLlite.ace");
-      $i = system ("mv -f autoace.good_introns.EMBLlite.ace >  autoace.good_introns.EMBL.ace");
+      $i = system ("mv -f autoace.good_introns.EMBLlite.ace autoace.good_introns.EMBL.ace");
       $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Finishing acecompress.pl at $runtime\n\n";
 
       # tidy
@@ -899,7 +899,7 @@ sub blat_jobs {
   # process them to cleaner files
   $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Starting acecompress.pl at $runtime\n\n";
   system ("$scriptdir/acecompress.pl -homol autoace.NEMATODE.ace > autoace.NEMATODElite.ace");
-  system ("mv -f autoace.NEMATODElite.ace > autoace.NEMATODE.ace");
+  system ("mv -f autoace.NEMATODElite.ace autoace.NEMATODE.ace");
   # tidy
   system ("touch $logdir/$flag{'B6D'}");  
   $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Finishing acecompress.pl at $runtime\n\n";
