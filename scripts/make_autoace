@@ -614,12 +614,11 @@ sub setdate {
 
 ###################################################
 # make the database files for distribution        
+#
+# 010927 : dl : md5sum file is named based on the release i.e. md5sum.WS56
 
 sub makedistr {
-    
-    system ("/bin/touch $autodir/release/files_in_tar");
-    system ("/bin/touch $autodir/release/md5sum_tests");
-    
+
     open (DBWRM,"<$autodir/wspec/database.wrm");
     while (<DBWRM>) {
 	if ($_ =~ /^NAME\s+(\S+)/) {
@@ -628,6 +627,11 @@ sub makedistr {
     }
     close DBWRM;
     print LOGFILE "makedistr: dbname $dbname\n\n";
+
+    system ("/bin/touch $autodir/release/files_in_tar");
+    system ("/bin/touch $autodir/release/md5sum.${dbname}");
+
+
     $tarfiles[0] = "wspec/cachesize.wrm  wspec/constraints.wrm wspec/copyright wspec/database.wrm wspec/displays.wrm wspec/help.wrm wspec/layout.wrm wspec/models.wrm wspec/options.wrm wspec/passwd.wrm wspec/psfonts.wrm wspec/subclasses.wrm wspec/xfonts.wrm wgf wquery wscripts  pictures database/log.wrm database/database.map database/ACEDB.wrm" ;
     for ($i = 1 ; -e "$autodir/database/block$i.wrm" ; ++$i) {
 	$tarfiles[($i+4)/5] .= " database/block$i.wrm" ;
@@ -653,21 +657,9 @@ sub makedistr {
 	system ("/bin/gzip -t $autodir/release/database.$dbname.4-$i.tar.gz >> $autodir/release/files_in_tar");
 
 	# calculate md5sum for the gzip file
-	system ("/nfs/disk100/wormpub/bin.ALPHA/md5sum $autodir/release/database.$dbname.4-$i.tar.gz >> $autodir/release/md5sum_tests");
-	
-	
+	system ("/nfs/disk100/wormpub/bin.ALPHA/md5sum $autodir/release/database.$dbname.4-$i.tar.gz >> $autodir/release/md5sum.$dbname");
 	
     }
-
-
-
-
-#  # tar the release files
-#  print LOGFILE "* Makedistr: compressing release files\n";
-#  system ("/bin/gzip -t $autodir/release/*.tar");
-#  # make md5sum for the release files
-#  open (md5sum, ">$autodir/release/md5sum_tests");
-#  system ("/nfs/disk100/wormpub/bin.ALPHA/md5sum
 
 }
 
