@@ -362,6 +362,8 @@ sub create_wormpep_page{
   print WORMPEP "<TABLE WIDTH=\"40%\" CELLSPACING=\"0\" CELLWIDTH=\"0\" BORDER=\"1\"><TR BGCOLOR=\"yellow\" ><TH>Release</TH> <TH>Sequences</TH> <TH>Letters</TH> <TH>Alt. Splices</TH></TR>\n";
 
 
+  print LOG "Opening log file '/wormsrv2/WORMPEP/wormpep$WS_current/wormpep_current.log'\n";
+
   my ($wp_seq,$wp_let);
   open (WP_1, "</wormsrv2/WORMPEP/wormpep$WS_current/wormpep_current.log") || die "Failed to open wormpep.log\n";
   while (<WP_1>) {
@@ -374,7 +376,7 @@ sub create_wormpep_page{
   
   # get details from last wormpep log file
   my $wp_alt;
-  my @possible_logs = `ls -t /wormsrv2/logs/make_wormpep.${WS_current}*`;
+  my @possible_logs = `ls -t /wormsrv2/logs/make_wormpep_full.${WS_current}*`; # added new logfile name 
   my $wormpeplog  = "$possible_logs[0]";
   open (WP_2, "<$wormpeplog") || die "Failed to open wormpep.log\n";
   while (<WP_2>) {
