@@ -108,7 +108,6 @@ sub runoverlapcheck {
 sub usage {
     system("perldoc /wormsrv2/scripts/gffcheck") && die "Cannot help you, sorry $!\n";
     exit (0);
-    }
 }
 __END__
 
