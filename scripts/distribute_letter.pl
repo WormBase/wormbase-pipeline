@@ -8,8 +8,8 @@
 #                          /wormsrv2/autoace/release/
 #                          /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/current/release_notes.txt/
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2004-09-07 15:17:12 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2004-12-03 17:00:28 $
 
 
 use strict;
@@ -91,8 +91,9 @@ my $wormpep_dir = glob("~ftp/pub/databases/wormpep");
 print LOG "Updating some WormBase webpages to live site\n"; 	 
 
 # update development_release symbolic link 
-&run_command("rm -f $www/WORMBASE/development_release");
-&run_command("cd $www/WORMBASE; ln -fs $release development_release");
+chdir("$www/WORMBASE");
+&run_command("rm -f development_release");
+&run_command("ln -fs $release development_release");
 
 # Now update WORMBASE pages
 # these won't be seen until current symlink is also updated
