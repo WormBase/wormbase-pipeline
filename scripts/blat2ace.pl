@@ -6,8 +6,8 @@
 #
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-09-10 16:05:26 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2003-10-28 11:01:15 $
 
 
 use strict;
@@ -144,6 +144,7 @@ print LOG "$runtime: Start mapping\n\n";
 # open input and output filehandles
 open(ACE,  ">$blat_dir/autoace.$type.ace")  or die "Cannot open $blat_dir/autoace.${type}.ace $!\n";
 open(BLAT, "<$blat_dir/${type}_out.psl")  or die "Cannot open $blat_dir/${type}_out.psl $!\n";
+#open(OUTBLAT, ">$blat_dir/${type}_parsed.psl")  or die "Cannot open $blat_dir/${type}_parsed.psl $!\n";
 
 # loop through each blat hit
 while (<BLAT>) {
@@ -163,8 +164,6 @@ while (<BLAT>) {
   my @query_starts = split (/,/, $f[19]);      # start coordinates of each query block
   my @slink_starts = split (/,/, $f[20]);      # start coordinates of each target (superlink) block
 
-
-
   # replace EST name (usually accession number) by yk... name 
   if (( $est || $ost )  && (exists $EST_name{$query})) {
     my $estname  = $EST_name{$query};
@@ -174,35 +173,40 @@ while (<BLAT>) {
     }
   }
 
-
   ###############################
   # find virtual superlink part #
   ###############################
 	
   my ($virtual,$startvirtual,$endvirtual);
-  if ((int($matchstart/100000) +1) > $lastvirt) { $startvirtual = $lastvirt;}
-  else {$startvirtual = int($matchstart/100000) +1;}  
+  
+  if ((int($matchstart/100000) + 1) > $lastvirt) { 
+      $startvirtual = $lastvirt;
+  }
+  else {
+      $startvirtual = int($matchstart/100000) +1;
+  }  
     
   if ((int($matchend/100000) +1) > $lastvirt) { $endvirtual = $lastvirt;}
   else {$endvirtual = int($matchend/100000) +1;}  
   
   if ($startvirtual == $endvirtual) {
     $virtual = "$word{$type}:${superlink}_${startvirtual}";
+#    print OUTBLAT "[1 : $startvirtual $endvirtual " . ($matchend%100000) . "] $_";
   }	
   elsif (($startvirtual == ($endvirtual - 1)) && (($matchend%100000) <= 50000)) {
     $virtual = "$word{$type}:${superlink}_${startvirtual}";
+#    print OUTBLAT "[2 : $startvirtual $endvirtual " . ($matchend%100000) . "] $_";
   }
   else {
     print LOG "$query wasn't assigned to a virtual object as match size was too big\n";
     print LOG "Start is $matchstart, end is $matchend on $superlink\n\n";
+#    print OUTBLAT "[3] : $startvirtual $endvirtual " . ($matchend%100000) . "] $_";
     next;
   }
 
-    
   # calculate (acedb) score for each blat match
   # new way of calculating score, divide by query size rather than sum of matching blocks, 
   my $score = ($match/$query_size)*100;
-  
   
   #########################
   # calculate coordinates #
@@ -216,42 +220,63 @@ while (<BLAT>) {
   for (my $x = 0;$x < $block_count; $x++) {
     my $newcalc = int(($slink_starts[$x]+1)/100000);
     my $virtualstart;
+
     if ($calc == $newcalc) {	
-      $virtualstart = ($slink_starts[$x] +1)%100000;
+      $virtualstart =  ($slink_starts[$x] +1)%100000;
     }
-    elsif ($calc == ($newcalc-1)) {
+    elsif ($calc == ($newcalc - 1)) {
       $virtualstart = (($slink_starts[$x] +1)%100000) + 100000;
     }
+
+
     my $virtualend = $virtualstart + $lengths[$x] -1;
+
+    if ($calc != $newcalc) {
+	print LOG "// MISMATCH: $query [$strand] $virtualstart $virtualend :: [virtual slice $calc -> $newcalc, offset ". ($matchend%100000) . "}\n\n";
+    }
+#    else {
+#	print "// VIEW: $query [$strand] $virtualstart $virtualend ::  [virtual slice $calc -> $newcalc, offset ". ($matchend%100000) . "}\n";
+#    }
+
+    ##### Sometimes $calc = $new_calc - 2 !!!!!!
+
+    if (!defined $virtualstart) {
+	print LOG "$query will be discarded as the match is too long\n";
+	print LOG "$query [$strand] $virtualstart $virtualend  [virtual slice $calc -> $newcalc, offset ". ($matchend%100000) . "}\n\n";
+	next;
+    }
+
     my ($query_start,$query_end);
     
-    # blatx 6-frame translation v 6-frame translation
+        # blatx 6-frame translation v 6-frame translation
     if ($nematode) {
-      my $temp;
-      if (($strand eq '++') || ($strand eq '-+')) {
-	$query_start = $query_starts[$x] +1;
-	$query_end   = $query_start + $lengths[$x] -1;
-	if ($strand eq '-+') {
-	  $temp        = $query_end;
-	  $query_end   = $query_start;
-	  $query_start = $temp; 
+	my $temp;
+	if (($strand eq '++') || ($strand eq '-+')) {
+	    $query_start = $query_starts[$x] +1;
+	    $query_end   = $query_start + $lengths[$x] -1;
+	    if ($strand eq '-+') {
+		$temp        = $query_end;
+		$query_end   = $query_start;
+		$query_start = $temp; 
+	    }
 	}
-      }
-      elsif (($strand eq '--') || ($strand eq '+-')) {
-	$temp         = $virtualstart;
-	$virtualstart = $virtualend;
-	$virtualend   = $temp;
-	$query_start  = $query_size - $query_starts[$x];
-	$query_end    = $query_start - $lengths[$x] +1;
-	if ($strand eq '--') {
-	  $temp        = $query_end;
-	  $query_end   = $query_start;
-	  $query_start = $temp; 
-	}
-      }			
+	elsif (($strand eq '--') || ($strand eq '+-')) {
+	    $temp         = $virtualstart;
+	    $virtualstart = $virtualend;
+	    $virtualend   = $temp;
+	    
+	    $query_start  = $query_size  - $query_starts[$x];
+	    $query_end    = $query_start - $lengths[$x] +1;
+
+	    if ($strand eq '--') {
+		$temp        = $query_end;
+		$query_end   = $query_start;
+		$query_start = $temp; 
+	    }
+	}			
     }
     else {
-      if ($strand eq '+'){
+	if ($strand eq '+'){
 	$query_start   = $query_starts[$x] +1;
 	$query_end     = $query_start + $lengths[$x] -1;
       }
@@ -266,6 +291,9 @@ while (<BLAT>) {
     print ACE "Homol_data : \"$virtual\"\n";
     if ($type eq "nematode") {
       printf ACE "DNA_homol\t\"%s\"\t\"$word{$type}\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$query,$score,$virtualstart,$virtualend,$query_start,$query_end;
+      
+#      print "// ERROR: $query [$strand] $virtualstart $virtualend $query_start $query_end ::: [$debug_start,$debug_end]  $newcalc - $calc {$slink_starts[$x]}\n" unless ((defined $virtualstart) && (defined $virtualend));
+
     }
     else {
       printf ACE "DNA_homol\t\"%s\"\t\"$word{$type}_OTHER\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$query,$score,$virtualstart,$virtualend,$query_start,$query_end;
@@ -298,7 +326,7 @@ while (<BLAT>) {
 }
 close(BLAT);
 close(ACE);
-
+#close (OUTBLAT);
 
 ####################################
 # produce outfile for best matches #
