@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-12-09 15:57:48 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2002-12-09 17:13:56 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -292,6 +292,10 @@ foreach $file (@gff_files) {
     system ("mv -f $datadir/GFF_SPLITS/$file.genes_acc.gff $datadir/GFF_SPLITS/$file.genes.gff");
     
     # GFF UTRs with CDS names
+    my $utr_file = "GFF_with_UTR_name $datadir/GFF_SPLITS/$file.UTR.gff";
+    my $utr_cds_file = "$datadir/GFF_SPLITS/$file.UTR_CDS.gff";
+    &GFF_with_UTR("$utr_file","$utr_cds_file");
+
     system ("GFF_with_UTR_name $datadir/GFF_SPLITS/$file.UTR.gff > $datadir/GFF_SPLITS/$file.UTR_CDS.gff");
     system ("mv -f $datadir/GFF_SPLITS/$file.UTR_CDS.gff $datadir/GFF_SPLITS/$file.UTR.gff");
     
@@ -352,6 +356,25 @@ sub usage {
     exit (0);
   }
 }
+
+sub GFF_with_UTR
+  {
+    my $utr = shift;
+    my $utr_cds = shift;
+    open( UTR, "$utr" );
+    open( UTR_CDS, "$utr_cds");
+    while (<UTR>) {
+      
+      print UTR_CDS $_ if (/^\#/);
+      (/_UTR:(\S+)\"/);
+      print UTR_CDS "$`" . "_UTR:$1\" CDS=\"$1\"\n";
+    }
+    close UTR;
+    close UTR_CDS;
+
+    system ("mv -f $utr_cds $utr");
+  }
+
 
 
 __DATA__
