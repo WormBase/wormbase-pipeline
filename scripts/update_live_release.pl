@@ -5,8 +5,8 @@
 # by Anthony Rogers
 #
 # Updates the local webpages in synch with the main website
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2004-07-09 08:44:24 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2004-07-20 09:21:50 $
 
 
 use strict;
@@ -40,7 +40,7 @@ print LOG &runtime, " : starting script\n";
 # update new live wormpep release from ftp_site to /disk100/wormpub
 foreach my $file ( @wormpep_files ) {
   unlink("$wormpub_dir/${file}_current") || print LOG "ERROR: Cannot delete file $wormpub_dir/${file}_current :\t$!\n";
-  &run_command("scp $wp_ftp_dir/$file $wormpub_dir/${file}_current");
+  &run_command("scp $wp_ftp_dir/${file}${release} $wormpub_dir/${file}_current");
 }
 &run_command("/usr/local/pubseq/bin/setdb $wormpub_dir/wormpep_current");
 
