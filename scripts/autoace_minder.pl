@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-12-05 16:05:12 $
+# Last edited on: $Date: 2003-12-08 16:40:33 $
 
 
 #################################################################################
@@ -1113,7 +1113,9 @@ sub generate_utrs {
   }
 
   # run find_utrs.pl to generate data
-  &run_command("$scriptdir/find_utrs.pl -d autoace -r $basedir/autoace/UTR");
+  my $command = "$scriptdir/find_utrs.pl -database autoace -output_dir $basedir/autoace/UTR";
+  ($command .= " -test") if ($test);
+  &run_command($command);
 
   # load data
   my $file = "$basedir/autoace/UTR/UTRs.ace"; 

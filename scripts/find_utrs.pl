@@ -2,72 +2,79 @@
 #
 # find_utrs.pl
 #
-# usage find_utrs.pl -d <database> -r <output dir>
+# usage find_utrs.pl -database <database> -output_dir <output dir>
 #
 # Ashwin Hajarnavis ah3@sanger.ac.uk  August 2002
 #
 # Last updated by: $Author: krb $                 
-# Last updated on: $Date: 2003-12-01 11:54:26 $   
+# Last updated on: $Date: 2003-12-08 16:40:33 $   
 
-# touch logfile for run details
-$0 =~ m/\/*([^\/]+)$/; system("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
 
 use strict;
-use lib "/wormsrv2/scripts/";
+use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
-use Getopt::Std;
+use Getopt::Long;
 use Data::Dumper;
-use vars qw($opt_d $opt_r);
 
-$|=0;
+#################################
+# Command-line options          #
+#################################
 
- ##############################
- # command-line options       #
- ##############################
+my ($debug, $database, $output_dir, $test);
 
-getopts ('d:r:');
+GetOptions ("debug=s"      => \$debug,
+            "database=s"   => \$database,
+            "output_dir=s" => \$output_dir,
+            "test"         => \$test);
 
-my $usage = $0;
-$usage .= " -d [WS\#\#] -r [path to output directory](for Ace file, gff file, error file)";
 
-unless ($opt_d) {
-    die "$usage";
-}
+my $usage = "find_utrs.pl -database [WS\#\#] -output_dir [path to output directory] (for Ace file, gff file, error file)\n";
+die "$usage" unless ($database);
 
-my $gff_dir            = "/wormsrv2/autoace/GFF_SPLITS/$opt_d";
-my $best_results_files = $opt_r;
 
- ##############################
- # Paths etc                  #
- ##############################
+# database/file paths and locations
+my $basedir  = "/wormsrv2";
+$basedir     = glob("~wormpub")."/TEST_BUILD" if ($test); 
+my $gff_dir  = "$basedir/autoace/GFF_SPLITS/$database";
+my $dbdir    = "$basedir/$database/";
 
-my $dbdir ="/wormsrv2/$opt_d/";
-if ($opt_d eq "current_DB") {
-    my $WS = get_wormbase_version($dbdir);
-    $gff_dir = "/wormsrv2/autoace/GFF_SPLITS/WS$WS";
-}
-elsif ($opt_d eq "autoace") {
-    my $WS = get_wormbase_version($dbdir);
-    $gff_dir = "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS";
-}
+# touch logfile for run details
+$0 =~ m/\/*([^\/]+)$/; system("touch $basedir/logs/history/$1.`date +%y%m%d`");
 
 my $tace      = &tace;
 
-my $query_def = "/wormsrv2/autoace/wquery/cDNA_CDS_EST5_EST3_METHOD.def";
+
+##############################
+# Paths etc                  #
+##############################
+
+
+if ($database eq "current_DB") {
+    my $WS = &get_wormbase_version($dbdir);
+    $gff_dir = "$basedir/autoace/GFF_SPLITS/WS$WS";
+}
+elsif ($database eq "autoace") {
+    my $WS = &get_wormbase_version($dbdir);
+    $WS = "WS666" if ($test);
+    $gff_dir = "$basedir/autoace/GFF_SPLITS/GFF_SPLITS";
+}
+
+
+
+my $query_def = "$basedir/autoace/wquery/cDNA_CDS_EST5_EST3_METHOD.def";
 my $genes     = "genes.gff";
 my $est_file  = "BLAT_EST_BEST.gff";
 my $mrna_file = "BLAT_mRNA_BEST.gff";
 
-log_file($opt_r, $dbdir) if $opt_r;
+&log_file($output_dir, $dbdir) if $output_dir;
 
 my %link_coordinate_start;
 my %link_coordinate_end;
 my %link_chrom;
-my @chromosome = ('CHROMOSOME_I','CHROMOSOME_II','CHROMOSOME_III','CHROMOSOME_IV','CHROMOSOME_V','CHROMOSOME_X');
 my $chrom2parse;
 
 # Link data
-open (LINK, "</wormsrv2/autoace/BLAT/chromosome.ace") || die "whoops $!";
+open (LINK, "<$basedir/autoace/BLAT/chromosome.ace") || die "whoops $!";
 while (<LINK>) {
   if (/^Sequence \: \"CHROMOSOME_(\S+)\"/) {
     $chrom2parse = $1;
@@ -82,11 +89,6 @@ while (<LINK>) {
 }
 close LINK;
 
-# checks
-foreach my $link (keys %link_coordinate_start) {
-  print "\n$link\t[$link_chrom{$link} starts at $link_coordinate_start{$link} to $link_coordinate_end{$link}]\n";
-}
-
 
 # check to see if EST hash data exists
 # make it via tablemaker queries if absent
@@ -95,13 +97,13 @@ my %ESTacc2ESTname;
 my %EST_name;
 my %EST_dir;
 
-unless (-e "/wormsrv2/autoace/BLAT/EST.dat") {
+unless (-e "$basedir/autoace/BLAT/EST.dat") {
     (%EST_name,%EST_dir) = &make_EST_hash;
 }
 # else read it into memory
 else {
     print "Read hash from file EST.dat\n";
-    open (FH, "</wormsrv2/autoace/BLAT/EST.dat") or die "EST.dat : $!\n";
+    open (FH, "<$basedir/autoace/BLAT/EST.dat") or die "EST.dat : $!\n";
     undef $/;
     my $data = <FH>;
     eval $data;
@@ -132,17 +134,19 @@ $est_data = read_gff($gff_dir, $mrna_file, $est_data);
  # Write output               #
  ##############################
 
-if ($opt_r)  {
-    open(OUTFILE, ">$opt_r/ALL.UTRs.tmp")|| die "Cannot open outfile $opt_r\n";
-    open (ERRORFILE, ">$opt_r/data_errors.txt")|| die "Cannot dump errors\n";
-    open(ACEFILE, ">$opt_r/UTRs.ace")||die "Cannot open ace file\n";
+if ($output_dir)  {
+  open(OUTFILE, ">$output_dir/ALL.UTRs.tmp")|| die "Cannot open outfile $output_dir\n";
+  open(ERRORFILE, ">$output_dir/data_errors.txt")|| die "Cannot dump errors\n";
+  open(ACEFILE, ">$output_dir/UTRs.ace")||die "Cannot open ace file\n";
 }
 
-find_transcript($gene_est_map, $gene_data, $est_data);
+&find_transcript($gene_est_map, $gene_data, $est_data);
 
-if ($opt_r) {
-    close (OUTFILE);
-    gff_sort();
+if ($output_dir) {
+  close(OUTFILE);
+  close(ERRORFILE);
+  close(ACEFILE);
+  &sort_gff();
 }
  
 
@@ -164,14 +168,14 @@ sub find_transcript {
     my $ests;
     while (($gene_id, $ests) = each (%{$gene_est_map})) {
 	unless (defined($gene_data->{$gene_id})) {
-	    print ERRORFILE "$gene_id is not in GFF\n" if $opt_r;  ### gene_id appears in tablemaker query but not in GFF
+	    print ERRORFILE "$gene_id is not in GFF\n" if $output_dir;  ### gene_id appears in tablemaker query but not in GFF
 	    next;
 	}
 	
 	if ($gene_id =~ /(.*)([a-z])$/) {
 	    if ($2 ne "a") {
 		unless (defined($gene_data->{$1.$a})) {
-		    print ERRORFILE "$gene_id exists but $1"."a does not\n" if $opt_r;  ### for cases where there appears to be a .b variant, but no .a variant in GFF.
+		    print ERRORFILE "$gene_id exists but $1"."a does not\n" if $output_dir;  ### for cases where there appears to be a .b variant, but no .a variant in GFF.
 		    next;
 		}
 	    }
@@ -186,7 +190,7 @@ sub find_transcript {
 	my ($transcript_start, $transcript_end, $min_cdna, $max_cdna) = find_extent($ests, $est_data, $gene_chrom, $gene_start, $gene_end, $gene_id, $gene_strand);
 	my $comments;
 	if (($transcript_start == 1.e12) || ($transcript_end == -1.e12)) {
-	    print ERRORFILE "cDNAs associated with $gene_id not found in BEST.GFF\n" if $opt_r; ### if none of the cDNAs associated with a CDS are BEST matches.
+	    print ERRORFILE "cDNAs associated with $gene_id not found in BEST.GFF\n" if $output_dir; ### if none of the cDNAs associated with a CDS are BEST matches.
 	    next;
 	}
 		
@@ -203,12 +207,12 @@ sub find_transcript {
 	    $three_start = $gene_end +1;
 	    $three_end   = $transcript_end;
 	    if ($five_start < $gene_start) {
-		print OUTFILE "CHROMOSOME_$gene_chrom\tfind_utrs\t5_UTR\t$five_start\t$five_end\t.\t$gene_strand\t.\t$comments\n" if $opt_r;
-		print_ace("5_UTR", $gene_id, $min_cdna, $gene_chrom, $five_start, $five_end) if $opt_r;
+		print OUTFILE "CHROMOSOME_$gene_chrom\tfind_utrs\t5_UTR\t$five_start\t$five_end\t.\t$gene_strand\t.\t$comments\n" if $output_dir;
+		print_ace("5_UTR", $gene_id, $min_cdna, $gene_chrom, $five_start, $five_end) if $output_dir;
 	    }
 	    if ($three_end > $gene_end) {
-		print OUTFILE "CHROMOSOME_$gene_chrom\tfind_utrs\t3_UTR\t$three_start\t$three_end\t.\t$gene_strand\t.\t$comments\n" if $opt_r;
-		print_ace("3_UTR", $gene_id, $max_cdna, $gene_chrom, $three_start, $three_end) if $opt_r;
+		print OUTFILE "CHROMOSOME_$gene_chrom\tfind_utrs\t3_UTR\t$three_start\t$three_end\t.\t$gene_strand\t.\t$comments\n" if $output_dir;
+		print_ace("3_UTR", $gene_id, $max_cdna, $gene_chrom, $three_start, $three_end) if $output_dir;
 	    }
 	}   
 	
@@ -218,12 +222,12 @@ sub find_transcript {
 	    $three_start = $transcript_start;
 	    $three_end   = $gene_start -1;
 	    if ($five_end > $gene_end) {
-		print OUTFILE "CHROMOSOME_$gene_chrom\tfind_utrs\t5_UTR\t$five_start\t$five_end\t.\t$gene_strand\t.\t$comments\n" if $opt_r;
-		print_ace("5_UTR", $gene_id, $max_cdna, $gene_chrom, $five_end, $five_start) if $opt_r;
+		print OUTFILE "CHROMOSOME_$gene_chrom\tfind_utrs\t5_UTR\t$five_start\t$five_end\t.\t$gene_strand\t.\t$comments\n" if $output_dir;
+		print_ace("5_UTR", $gene_id, $max_cdna, $gene_chrom, $five_end, $five_start) if $output_dir;
 	    }
 	    if ($three_start < $gene_start) {
-		print OUTFILE "CHROMOSOME_$gene_chrom\tfind_utrs\t3_UTR\t$three_start\t$three_end\t.\t$gene_strand\t.\t$comments\n" if $opt_r;
-		print_ace("3_UTR", $gene_id, $min_cdna, $gene_chrom, $three_end, $three_start) if $opt_r;
+		print OUTFILE "CHROMOSOME_$gene_chrom\tfind_utrs\t3_UTR\t$three_start\t$three_end\t.\t$gene_strand\t.\t$comments\n" if $output_dir;
+		print_ace("3_UTR", $gene_id, $min_cdna, $gene_chrom, $three_end, $three_start) if $output_dir;
 	    }
 	}   
     }
@@ -277,33 +281,33 @@ sub find_extent {
     my $i;
     foreach (@{$ests}) {
 	unless (defined($est_data->{$_}->[0])) {
-	    print ERRORFILE"$_ is not found in BLAT_EST_BEST or BLAT_mRNA_BEST\n" if $opt_r;
+	    print ERRORFILE"$_ is not found in BLAT_EST_BEST or BLAT_mRNA_BEST\n" if $output_dir;
 	    next;
 	}
 	unless(defined($est_data->{$_}->[3])) {
-	    print ERRORFILE "$_ has not been allocated a method\n" if ($opt_r);
+	    print ERRORFILE "$_ has not been allocated a method\n" if ($output_dir);
 	    next;
 	}
 	unless ($gene_chrom eq $est_data->{$_}->[0]) {
-	    print ERRORFILE "$gene_id on chromosome $gene_chrom, best $_ match is on  $est_data->{$_}->[0]\n" if $opt_r;
+	    print ERRORFILE "$gene_id on chromosome $gene_chrom, best $_ match is on  $est_data->{$_}->[0]\n" if $output_dir;
 	    next;
 	}
 	 
 	if ($est_data->{$_}->[3] eq "EST_3") {
 	    if($est_data->{$_}->[2] eq  $gene_strand) {
-		print ERRORFILE "$_ is an $est_data->{$_}->[3], ($est_data->{$_}->[2]) but appears on the same strand as $gene_id ($gene_strand)\n" if ($opt_r);
+		print ERRORFILE "$_ is an $est_data->{$_}->[3], ($est_data->{$_}->[2]) but appears on the same strand as $gene_id ($gene_strand)\n" if ($output_dir);
 		next;
 	    }
 	}
 	elsif ($est_data->{$_}->[3] eq "EST_5") {
 	    if($est_data->{$_}->[2] ne  $gene_strand) {
-		print  ERRORFILE "$_ is an $est_data->{$_}->[3], ($est_data->{$_}->[2]) but appears on the other strand to $gene_id ($gene_strand)\n" if ($opt_r);
+		print  ERRORFILE "$_ is an $est_data->{$_}->[3], ($est_data->{$_}->[2]) but appears on the other strand to $gene_id ($gene_strand)\n" if ($output_dir);
 		next;
 	    }
 	}
 	elsif ($est_data->{$_}->[3] eq "NDB") {
 	    if($est_data->{$_}->[2] ne $gene_strand) {
-		print ERRORFILE "$_ is an $est_data->{$_}->[3], ($est_data->{$_}->[2]) but appears on the other strand to $gene_id ($gene_strand)\n" if ($opt_r);
+		print ERRORFILE "$_ is an $est_data->{$_}->[3], ($est_data->{$_}->[2]) but appears on the other strand to $gene_id ($gene_strand)\n" if ($output_dir);
 		next;
 	    }
 	} 
@@ -311,7 +315,7 @@ sub find_extent {
 	for($i=0; $i<scalar(@{$est_data->{$_}->[1]}); $i++) {
 	#    print "$_\t $est_data->{$_}->[0] $est_data->{$_}->[1]->[$i]->[0]\t $est_data->{$_}->[1]->[$i]->[1]\t $i\n";
 	    if ((($gene_start - $est_data->{$_}->[1]->[$i]->[0]) > 10000) || ($est_data->{$_}->[1]->[$i]->[1] - $gene_end) >10000) {
-		print ERRORFILE "cDNA $_\t$est_data->{$_}->[0]\t$est_data->{$_}->[1]->[$i]->[0]\t$est_data->{$_}->[1]->[$i]->[1]\tis matched to $gene_id\t$gene_start\t$gene_end\n" if $opt_r;
+		print ERRORFILE "cDNA $_\t$est_data->{$_}->[0]\t$est_data->{$_}->[1]->[$i]->[0]\t$est_data->{$_}->[1]->[$i]->[1]\tis matched to $gene_id\t$gene_start\t$gene_end\n" if $output_dir;
 		next;
 	    }
 	    
@@ -431,6 +435,7 @@ sub parse_table {
 	}
     }
     print "Tablemaker query complete.\n";
+    close(TACE);
     return (\%cds_est, $est_data);
 }
 
@@ -454,29 +459,31 @@ sub printtest {
 sub log_file {
     my ($file,$dbdir) = @_;
     my $WS = get_wormbase_version($dbdir);
-    open (README, ">>$file/resultslog.txt")|| die "Cannot open README.txt\n";
-    print README "\n\n\n##################################################\n";
-    print README "$file/CHROMOSOME_n_.transcripts.gff  CREATED BY $0 \n\n";
-    print README "Connecting to WS$WS\nperl $0 -d $opt_d -r $opt_r\n\nON ";
-    print README  `date`;
-    print README "BY ";
-    print README `whoami`;
+    $WS = "WS666" if ($test);
+    open (LOG, ">>$file/resultslog.txt")|| die "Cannot open LOG.txt\n";
+    print LOG "\n\n\n##################################################\n";
+    print LOG "$file/CHROMOSOME_n_.transcripts.gff  CREATED BY $0 \n\n";
+    print LOG "Connecting to WS$WS\nperl $0 -database $database -output_dir $output_dir\n\nON ";
+    print LOG  `date`;
+    print LOG "BY ";
+    print LOG `whoami`;
+    close(LOG);
 }
 
 
 
-sub gff_sort {
+sub sort_gff {
     
     my (@a, @n, @s, @e, @st, @f, $f, $i, $fh);
     
-    open(OUTFILE, "<$opt_r/ALL.UTRs.tmp")|| die "Cannot open outfile $opt_r\n";
+    open(OUTFILE, "<$output_dir/ALL.UTRs.tmp")|| die "Cannot open outfile $output_dir\n";
 
-    open(ONEFILE,   ">$opt_r/CHROMOSOME_I.UTRs.gff")   || die "Cannot open final file in  $opt_r\n";
-    open(TWOFILE,   ">$opt_r/CHROMOSOME_II.UTRs.gff")  || die "Cannot open final file in  $opt_r\n";
-    open(THREEFILE, ">$opt_r/CHROMOSOME_III.UTRs.gff") || die "Cannot open final file in  $opt_r\n";
-    open(FOURFILE,  ">$opt_r/CHROMOSOME_IV.UTRs.gff")  || die "Cannot open final file in  $opt_r\n";
-    open(FIVEFILE,  ">$opt_r/CHROMOSOME_V.UTRs.gff")   || die "Cannot open final file in  $opt_r\n";
-    open(XFILE,     ">$opt_r/CHROMOSOME_X.UTRs.gff")   || die "Cannot open final file in  $opt_r\n";
+    open(ONEFILE,   ">$output_dir/CHROMOSOME_I.UTRs.gff")   || die "Cannot open final file in  $output_dir\n";
+    open(TWOFILE,   ">$output_dir/CHROMOSOME_II.UTRs.gff")  || die "Cannot open final file in  $output_dir\n";
+    open(THREEFILE, ">$output_dir/CHROMOSOME_III.UTRs.gff") || die "Cannot open final file in  $output_dir\n";
+    open(FOURFILE,  ">$output_dir/CHROMOSOME_IV.UTRs.gff")  || die "Cannot open final file in  $output_dir\n";
+    open(FIVEFILE,  ">$output_dir/CHROMOSOME_V.UTRs.gff")   || die "Cannot open final file in  $output_dir\n";
+    open(XFILE,     ">$output_dir/CHROMOSOME_X.UTRs.gff")   || die "Cannot open final file in  $output_dir\n";
     
     while (<OUTFILE>) {
 	s/\#.*//;
@@ -497,6 +504,13 @@ sub gff_sort {
 	print FIVEFILE  "$a[$i]" if ($a[$i] =~ /CHROMOSOME_V\t/);
 	print XFILE     "$a[$i]" if ($a[$i] =~ /CHROMOSOME_X\t/);
     }     
+    close(OUTFILE);
+    close(ONEFILE);
+    close(TWOFILE);
+    close(THREEFILE);
+    close(FOURFILE);
+    close(FIVEFILE);
+    close(XFILE);
 }
 
 sub get_wormbase_version {

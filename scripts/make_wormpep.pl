@@ -7,7 +7,7 @@
 # Builds a wormpep data set from the current autoace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-12-05 16:42:03 $
+# Last updated on: $Date: 2003-12-08 16:40:33 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -137,7 +137,7 @@ my $new_wpdir = "$basedir/WORMPEP/wormpep$release";
 
 
 # write the wormep.historyXXX and the wormpep.diffXXX files
-&write_wormpep_history_and_diff;
+#&write_wormpep_history_and_diff;
 
 
 # count the isoforms of each CDS (stats for release letter)
@@ -566,28 +566,39 @@ sub write_main_wormpep_and_table{
   
   foreach my $cds (@CDSs) {
     # reset all fields
-    my ($locus,$status,$protein_id,$db_prefix,$brief_id,$protein_ac) = "";
 
     my $wpid = $cds2number{$cds};
     my $wpid_pad = sprintf "%05d" , $wpid;
     my $pepseq = $number2peptide[$wpid];
     
     # set the fields to be printed depending on whether they exist
-    ($locus      = "locus\:".$cds2locus{$cds})           if ($cds2locus{$cds});
-    ($status     = "status\:".$cds_status{$cds})         if ($cds_status{$cds});
-    ($protein_id = "protein_id\:".$cds2protein_id{$cds}) if ($cds2protein_id{$cds});
-    ($db_prefix  = "SW:")                                if ($cds2protein_db{$cds} eq "SwissProt");
-    ($db_prefix  = "TR:")                                if ($cds2protein_db{$cds} eq "TREMBL");
-    ($db_prefix  = "TN:")                                if ($cds2protein_db{$cds} eq "TREMBLNEW");
-    ($brief_id   = $cds2id{$cds})                        if ($cds2id{$cds});
-    ($protein_ac = $cds2protein_ac{$cds})                if ($cds2protein_ac{$cds});
-
-    
-    print FASTA ">$cds CE$wpid_pad $locus $brief_id $status ${db_prefix}$protein_ac $protein_id\n$pepseq\n";
+    my $output = ">$cds CE$wpid_pad";
+    ($output .= " locus\:".$cds2locus{$cds})           if ($cds2locus{$cds});
+    ($output .= " $cds2id{$cds}")                      if ($cds2id{$cds});
+    ($output .= " status\:".$cds_status{$cds})         if ($cds_status{$cds});
+    ($output .= " SW:$cds2protein_ac{$cds}")           if (($cds2protein_db{$cds} eq "SwissProt") && defined($cds2protein_ac{$cds}));
+    ($output .= " TR:$cds2protein_ac{$cds}")           if (($cds2protein_db{$cds} eq "TREMBL")    && defined($cds2protein_ac{$cds}));
+    ($output .= " TN:$cds2protein_ac{$cds}")           if (($cds2protein_db{$cds} eq "TREMBLNEW") && defined($cds2protein_ac{$cds}));
+    ($output .= " protein_id\:".$cds2protein_id{$cds}) if ($cds2protein_id{$cds});
+    $output .= "\n$pepseq\n";
+    print FASTA "$output";
     
     # only print to table in -final mode
     if($final){
-      print TABLE "$cds\tCE$wpid_pad\t$cds2locus{$cds}\t$brief_id\t$cds_status{$cds}\t${db_prefix}:$protein_ac\t$protein_id\n";
+      my $output = ">$cds\tCE$wpid_pad";
+      $output .= "\t";
+      ($output .= "$cds2locus{$cds}")          if ($cds2locus{$cds});
+      $output .= "\t";
+      ($output .= "$cds2id{$cds}")             if ($cds2id{$cds});
+      $output .= "\t";
+      ($output .= "$cds_status{$cds}")         if ($cds_status{$cds});
+      $output .= "\t";
+      ($output .= "SW:$cds2protein_ac{$cds}")  if (($cds2protein_db{$cds} eq "SwissProt") && ($cds2protein_ac{$cds}));
+      ($output .= "TR:$cds2protein_ac{$cds}")  if (($cds2protein_db{$cds} eq "TREMBL")    && ($cds2protein_ac{$cds}));
+      ($output .= "TN:$cds2protein_ac{$cds}")  if (($cds2protein_db{$cds} eq "TREMBLNEW") && ($cds2protein_ac{$cds}));
+      $output .= "\t";
+      ($output .= "$cds2protein_id{$cds}")     if ($cds2protein_id{$cds});
+      print TABLE "$output\n";
     } 
   } 
   
@@ -631,6 +642,7 @@ sub write_wormpep_history_and_diff{
     ($cds , $wpid , $start , $end) = split (/\t/ , $line);
     $wpid =~ /CE0*([1-9]\d*)/ ; my $num = $1;
     $line{$cds} = $line;
+    print "$line\n";
     if ((!exists ($cds2number{$cds}) && ($end eq ""))) {
       print HISTORY "$cds\t$wpid\t$start\t$release\n";
       print DIFF "lost:\t$cds\t$wpid\n";
