@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers                             
 #
-# Last updated by: $Author: krb $               
-# Last updated on: $Date: 2004-09-16 13:35:23 $         
+# Last updated by: $Author: dl1 $               
+# Last updated on: $Date: 2005-03-24 11:50:56 $         
 
 # Generates a release letter at the end of build.
 #
@@ -70,31 +70,31 @@ if( defined($opt_l)) {
   print RL "WS$ver was built by \n";
   print RL "======================================================================\n\n";
   print RL "This directory includes:\n";
-  print RL "i)\tdatabase.WS$ver.*.tar.gz    -   compressed data for new release\n";
-  print RL "ii)\tmodels.wrm.WS$ver           -   the latest database schema (also in above database files)\n";
-  print RL "iii)\tCHROMOSOMES/subdir         -   contains 3 files (DNA, GFF & AGP per chromosome)\n";
-  print RL "iv)\tWS$ver-WS$old_ver.dbcomp         -   log file reporting difference from last release\n";
-  print RL "v)\twormpep$ver.tar.gz          -   full Wormpep distribution corresponding to WS$ver\n";
-  print RL "vi)\twormrna$ver.tar.gz          -   latest WormRNA release containing non-coding RNA's in the genome\n";
-  print RL "vii)\tconfirmed_genes.WS$ver.gz   -   DNA sequences of all genes confirmed by EST &/or cDNA\n";
-  print RL "viii)\tcDNA2orf.WS$ver.gz            -   Latest set of ORF connections to each cDNA (EST, OST, mRNA)\n";
-  print RL "ix)\tgene_interpolated_map_positions.WS$ver.gz    - Interpolated map positions for each coding/RNA gene\n";
-  print RL "x)\tclone_interpolated_map_positions.WS$ver.gz   - Interpolated map positions for each clone\n";
-  print RL "xi)\tbest_blastp_hits.WS$ver.gz  - for each C. elegans WormPep protein, lists Best blastp match to
+  print RL "i)   database.WS$ver.*.tar.gz    -   compressed data for new release\n";
+  print RL "ii)  models.wrm.WS$ver           -   the latest database schema (also in above database files)\n";
+  print RL "iii) CHROMOSOMES/subdir         -   contains 3 files (DNA, GFF & AGP per chromosome)\n";
+  print RL "iv)  WS$ver-WS$old_ver.dbcomp         -   log file reporting difference from last release\n";
+  print RL "v)   wormpep$ver.tar.gz          -   full Wormpep distribution corresponding to WS$ver\n";
+  print RL "vi)   wormrna$ver.tar.gz          -   latest WormRNA release containing non-coding RNA's in the genome\n";
+  print RL "vii)  confirmed_genes.WS$ver.gz   -   DNA sequences of all genes confirmed by EST &/or cDNA\n";
+  print RL "viii) cDNA2orf.WS$ver.gz           -   Latest set of ORF connections to each cDNA (EST, OST, mRNA)\n";
+  print RL "ix)   gene_interpolated_map_positions.WS$ver.gz    - Interpolated map positions for each coding/RNA gene\n";
+  print RL "x)    clone_interpolated_map_positions.WS$ver.gz   - Interpolated map positions for each clone\n";
+  print RL "xi)   best_blastp_hits.WS$ver.gz  - for each C. elegans WormPep protein, lists Best blastp match to
                             human, fly, yeast, C. briggsae, and SwissProt & TrEMBL proteins.\n";
 
-  print RL "xii)\tbest_blastp_hits_brigprot.WS$ver.gz   - for each C. briggsae protein, lists Best blastp match to
+  print RL "xii)  best_blastp_hits_brigprot.WS$ver.gz   - for each C. briggsae protein, lists Best blastp match to
                                      human, fly, yeast, C. elegans, and SwissProt & TrEMBL proteins.\n";  
 
-  print RL "xiii)\tgeneIDs.WS$ver.gz   - list of all current gene identifiers with CGC & molecular names (when known)\n";
-  print RL "xiv)\tPCR_product2gene.WS$ver.gz   - Mappings between PCR products and overlapping Genes\n";
+  print RL "xiii) geneIDs.WS$ver.gz   - list of all current gene identifiers with CGC & molecular names (when known)\n";
+  print RL "xiv)  PCR_product2gene.WS$ver.gz   - Mappings between PCR products and overlapping Genes\n";
 
   print RL "\n\n";
   print RL "Release notes on the web:\n-------------------------\n";
   print RL "http://www.sanger.ac.uk/Projects/C_elegans/WORMBASE\n\n\n\n";
   
   my $release_dir   = ("/wormsrv2/autoace/REPORTS");
-  my @release_files = ("$release_dir/dbases","$release_dir/composition","$release_dir/wormpep");
+  my @release_files = ("$release_dir/dbases","$release_dir/composition","$release_dir/genedata","$release_dir/wormpep");
   
   #include all the pre-generated reports
   my $file = shift(@release_files);
