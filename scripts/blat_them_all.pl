@@ -56,7 +56,7 @@ our $seq     = '/wormsrv2/autoace/BLAT/autoace.fa';
 our $chrom   = '/wormsrv2/autoace/BLAT/chromosome.ace';
 our $blatex  = '/nfs/disk100/wormpub/blat/blat';
 our $blat    = '/wormsrv2/autoace/BLAT';
-our $giface  = '/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_4/giface';
+our $giface  = '/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/giface';
 our $data;
 our %word = (
 	     EST      => 'BLAT_EST',

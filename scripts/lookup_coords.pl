@@ -32,7 +32,7 @@ my $dbdir;
 $dbdir   = '/wormsrv1/camace'   if ($camace);
 $dbdir   = '/wormsrv2/stlace'   if ($stlace);
 $dbdir   = '/wormsrv2/autoace/' if ($autoace);
-my $tace = glob("~acedb/RELEASE.SUPPORTED/bin.ALPHA_4/tace"); 
+my $tace = glob("~wormpub/ACEDB/bin.ALPHA_4/tace"); 
 
 ###################
 # be really fancy #
