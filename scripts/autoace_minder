@@ -6,7 +6,7 @@
 # Usage : autoace_minder [-options]
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2002-08-19 13:36:06 $
+# Last edited on: $Date: 2002-08-19 15:16:33 $
 
 
 #################################################################################
@@ -33,7 +33,8 @@ my $agp;		# make agp files for the yellow brick road
 my $buildpep;		# Build wormpep
 my $buildrna;		# Build wormrna
 my $blat;		# map similarities (BLAT jobs)
-my $addblat;		# parse blat files
+my $addblat;		# parse (all) blat files
+my $addblatpartial;	# parse (EST|mRNA|EMBL) blat files
 my $addhomol;           # parse similarity data from /ensembl_dump
 my $map;		# map PCR, RNAi and WTP
 my $full;		# Full release (used to do all the following)
@@ -54,34 +55,35 @@ my $test;               # Test routine
 my $suggest;            # Suggestion
 
 GetOptions (
-	    "initial"      => \$initial,
-	    "unpack"       => \$unpack,
-	    "gffdump"      => \$gffdump,
-	    "gffsplit"     => \$gffsplit,
-	    "agp"          => \$agp,
-	    "buildpep"     => \$buildpep,
-	    "buildrna"     => \$buildrna,
-	    "blat"         => \$blat,
-	    "addblat"      => \$addblat,
-	    "addhomol"     => \$addhomol,
-	    "map"          => \$map,
-	    "full"         => \$full,
-	    "acefile"      => \$acefile,
-	    "build"        => \$build,
-	    "builddb"      => \$builddb,
-	    "buildchrom"   => \$buildchrom,
-	    "buildrelease" => \$buildrelease,
-            "buildtest"    => \$buildtest,
-	    "secure"       => \$secure,
-	    "check"        => \$check,
-	    "confirm"      => \$confirm,
-	    "ftp"          => \$ftp,
-	    "suggest"      => \$suggest,
-	    "debug"        => \$debug,
-	    "time"         => \$time,
-	    "help"         => \$help,
-	    "h"	           => \$help,
-	    "test"         => \$test
+	    "initial"        => \$initial,
+	    "unpack"         => \$unpack,
+	    "gffdump"        => \$gffdump,
+	    "gffsplit"       => \$gffsplit,
+	    "agp"            => \$agp,
+	    "buildpep"       => \$buildpep,
+	    "buildrna"       => \$buildrna,
+	    "blat"           => \$blat,
+	    "addblat"        => \$addblat,
+	    "addblatpartial" => \$addblatpartial,
+	    "addhomol"       => \$addhomol,
+	    "map"            => \$map,
+	    "full"           => \$full,
+	    "acefile"        => \$acefile,
+	    "build"          => \$build,
+	    "builddb"        => \$builddb,
+	    "buildchrom"     => \$buildchrom,
+	    "buildrelease"   => \$buildrelease,
+            "buildtest"      => \$buildtest,
+	    "secure"         => \$secure,
+	    "check"          => \$check,
+	    "confirm"        => \$confirm,
+	    "ftp"            => \$ftp,
+	    "suggest"        => \$suggest,
+	    "debug"          => \$debug,
+	    "time"           => \$time,
+	    "help"           => \$help,
+	    "h"	             => \$help,
+	    "test"           => \$test
 );
 
 # Help pod if needed
@@ -117,6 +119,7 @@ our %flag = (
 	     'B5'  => 'B5:Copy_to_midway',
 	     'B6'  => 'B6:BLAT_analysis',
 	     'B7'  => 'B7:Upload_BLAT_data',
+	     'B7A' => 'B7a:Upload_partial_BLAT_data',
 	     'B8'  => 'B8:Upload_wublast_data',
 	     'C1'  => 'C1:Dumped_GFF_files',
 	     'C2'  => 'C2:Split_GFF_files',
@@ -180,29 +183,30 @@ $time = 1;
 # B1:Make_autoace_database & B2:Dump_DNA_files
 # Requires: A1,A4,A5
 
-&make_autoace      if ($build || $builddb || $buildchrom || $buildrelease);
-&test_build        if ($buildtest);
+&make_autoace           if ($build || $builddb || $buildchrom || $buildrelease);
+&test_build             if ($buildtest);
 
 # B3:Make_agp_files
 # Requires: A1,A4,A5,B1
 
-&check_release     if ($check);
+&check_release          if ($check);
 
 # B5:Copy_to_midway
 # Requires: A1,A4,A5,B1
 
-&pre_blat_copy     if ($secure);
+&pre_blat_copy          if ($secure);
 
 # B6:Blat_analysis
 # Requires: A1,A4,A5,B1
 
-&blat_jobs         if ($blat);
-&parse_blat_files  if ($blat || $addblat);
+&blat_jobs              if ($blat);
+&parse_blat_files_other if ($addblatpartial);
+&parse_blat_files       if ($addblat);
 
 # B7:Upload_wublast_data
 # Requires: A1,A4,A5,B1
 
-&parse_homol_data  if ($addhomol);
+&parse_homol_data       if ($addhomol);
 
 
 
@@ -859,6 +863,16 @@ sub blat_jobs {
 	    $runtime = 'date +%H:%M:%S'; chomp $runtime;
 	    print LOG "Finished BLAT v EMBL at $runtime\n\n" if ($time);
 
+	    # upload .acefiles to autoace
+	    $runtime = 'date +%H:%M:%S'; chomp $runtime;
+	    print LOG "Starting uploading BLAT data at $runtime\n\n" if ($time);
+	    $i = system ("scriptdir/autoace_minder -addblatpartial"); 
+	    $runtime = 'date +%H:%M:%S'; chomp $runtime;
+	    print LOG "Finished uploading BLAT data at $runtime\n\n" if ($time);
+	    
+	    # make a file in /logs
+	    system ("touch $logdir/$flag{'B7a'}");  
+	    
 	    # dump gff from the database
 	    $runtime = 'date +%H:%M:%S'; chomp $runtime;
 	    print LOG "Starting GFF dump #2 at $runtime\n\n" if ($time);
@@ -881,8 +895,15 @@ sub blat_jobs {
     $runtime = 'date +%H:%M:%S'; chomp $runtime;
     print LOG "Finished BLATX v NEMATODE at $runtime\n\n" if ($time);
 
+    # check whether the child has finished
+    &usage("Child BLAT not finished") unless (-e "$logdir/$flag{'B7A'}");
+	
+    # load BLATX nematode files to autoace
     $runtime = 'date +%H:%M:%S'; chomp $runtime;
-    print LOG "Starting BLAT v EST at $runtime\n\n" if ($time);
+    print LOG "Starting uploading BLATX data at $runtime\n\n" if ($time);
+    &parse_blat_files_nematode;
+    $runtime = 'date +%H:%M:%S'; chomp $runtime;
+    print LOG "Finished uploading BLATX data at $runtime\n\n" if ($time);
 
     # time logging
     $runtime = 'date +%H:%M:%S'; chomp $runtime;
@@ -931,6 +952,65 @@ END
     system ("touch $logdir/$flag{'B7'}");
 }
 #__ end parse_blat_files __#
+
+sub parse_blat_files_other {
+
+# quit if blat_them_all has not been run
+&usage(9) unless (-e "$logdir/$flag{'B6'}");
+
+my $command=<<END;
+pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLAT_EST.ace 
+pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLAT_mRNA.ace 
+pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLAT_EMBL.ace 
+pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.EST.ace 
+pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.mRNA.ace 
+pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.EMBL.ace 
+save
+pparse /wormsrv2/autoace/BLAT/autoace.blat.EST.ace            
+save
+pparse /wormsrv2/autoace/BLAT/autoace.blat.mRNA.ace 
+save
+pparse /wormsrv2/autoace/BLAT/autoace.blat.EMBL.ace 
+save
+pparse /wormsrv2/autoace/BLAT/autoace.good_introns.EST.ace 
+save
+pparse /wormsrv2/autoace/BLAT/autoace.good_introns.mRNA.ace 
+save
+pparse /wormsrv2/autoace/BLAT/autoace.good_introns.EMBL.ace 
+save 
+quit
+END
+
+    open (WRITEDB, "| $tace -tsuser Sanger_BLAT_data /wormsrv2/autoace |") || die "Couldn't open pipe to autoace\n";
+    print WRITEDB $command;
+    close WRITEDB;
+    
+    # make a make_autoace log file in /logs
+    system ("touch $logdir/$flag{'B7'}");
+}
+#__ end parse_blat_files_other __#
+
+sub parse_blat_files_nematode {
+
+# quit if blat_them_all has not been run
+&usage(9) unless (-e "$logdir/$flag{'B6'}");
+
+my $command=<<END;
+pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLATX_NEMATODE.ace 
+pparse /wormsrv2/autoace/BLAT/autoace.blat.NEMATODE.ace 
+save
+quit
+END
+
+    open (WRITEDB, "| $tace -tsuser Sanger_BLAT_data /wormsrv2/autoace |") || die "Couldn't open pipe to autoace\n";
+    print WRITEDB $command;
+    close WRITEDB;
+    
+    # make a make_autoace log file in /logs
+    system ("touch $logdir/$flag{'B7'}");
+}
+#__ end parse_blat_files_nematode __#
+
 
 sub parse_homol_data {
     
@@ -1332,6 +1412,13 @@ sub usage {
 	print "\nautoace build aborted:\n";
 	print "The '$flag{'B5'} flag is absent indicating that the copy of autoace has not been made. \n";
 	print "You must add this file if you want to run the BLAT analysis or run autoace_minder -secure.\n\n";
+	exit(0);
+    }
+    elsif ($error eq "Child BLAT not finished") {
+	# atempted BLATX_NEMATODE upload before the child process has finished
+	print "\nautoace build aborted:\n";
+	print "The '$flag{'B7A'} flag is absent indicating that the child BLAT_[EST|mRNA|EMBL], GFF dump is not complete.\n";
+	print "You have to go commando from here on in. When the child is finished, load the blat file be hand.\n\n";
 	exit(0);
     }
     elsif ($error == 0) {
