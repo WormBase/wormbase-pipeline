@@ -79,7 +79,7 @@ foreach my $clone ( @{$clones} ) {
       #    4688 ggtctgagctttaaagcgctataagcccagtttttatgacattaaccccagagctgtgctgtgcaaaaacgctttaagctcgtccgcacgtggaaatttcttatgacattaaagttt 4572    
 
 
-      if ( /Score\s\d+:\s.*\s(\d+)%.*(\d+)\sgaps/ ) {
+      if ( /Score\s\d+:\s.*(\d+)%.*(\d+)\sgaps/ ) {
 	if ( $perc_ident ) {
 	  my $loop = $R_start - $L_start -1;
 	  $loop .= ", $gaps gaps" if ( $gaps != 0 );
