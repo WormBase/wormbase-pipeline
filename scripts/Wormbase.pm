@@ -111,9 +111,11 @@ sub get_wormbase_release_date{
 
 sub FetchData {
 
-    my ($file,$ref) = @_;
-    
-    open (FH, "</wormsrv2/autoace/COMMON_DATA/$file.dat") or die "can't open $file.dat\t:$!";
+    my ($file,$ref, $dir) = @_;
+
+    # directory to load from can be passed in so that /acari can load files copied over
+    $dir = "/wormsrv2/autoace/COMMON_DATA" unless $dir;
+    open (FH, "<$dir/$file.dat") or die "can't open $dir/$file.dat\t:$!";
     undef $/;
     my $VAR1;
     my $data = <FH>;
