@@ -7,7 +7,7 @@
 # This maps alleles to the genome based on their flanking sequence
 #
 # Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2003-02-05 09:38:24 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2003-02-18 14:42:56 $        # quickly see when script was last changed and by whom
 
 
 use strict;
@@ -112,9 +112,16 @@ print LOG "$0 start at $runtime on $rundate\n----------------------------------\
 my $geneace_update = "/wormsrv2/autoace/MAPPINGS/map_alleles_geneace_update$ver.ace";
 my $geneace_update_delete = "/wormsrv2/autoace/MAPPINGS/map_alleles_geneace_update_delete$ver.ace";
 my %geneace_alleles;
+
+my $cshl_update = "/wormsrv2/autoace/MAPPINGS/map_alleles_cshl_update$ver.ace";
+my $cshl_update_delete = "/wormsrv2/autoace/MAPPINGS/map_alleles_cshl_update_delete$ver.ace";
+
 unless ($no_geneace) {
   open (GENEACE,">$geneace_update") or die "cant open $geneace_update: $!\n";
   open (GEN_DEL,">$geneace_update_delete") or die "cant open $geneace_update_delete\n";
+
+  open (CSHLACE,">$cshl_update") or die "cant open $cshl_update: $!\n";
+  open (CSHL_DEL,">$cshl_update_delete") or die "cant open $cshl_update_delete\n";
   
   # get list of alleles from geneace to check against for feedback files
   my $geneace = "/wormsrv2/geneace";
@@ -415,7 +422,7 @@ foreach $allele (@alleles)
 
 print "$count alleles\n";
 
-print LOG "Update files for geneace allele mappings are available - \n$geneace_update\n$geneace_update_delete\n\n";
+print LOG "Update files for geneace allele mappings are available - \n$geneace_update\n$geneace_update_delete\n\n" unless $no_geneace;
 
 $db->close;
 
@@ -490,16 +497,27 @@ sub outputAllele
 
 	# in Allele object
 	print OUT "\nAllele : $to_dump\n";
-	print GEN_DEL "\nAllele : $to_dump\n-D Predicted_gene\n-D Sequence\n" if defined $geneace_alleles{$to_dump};# remove current sequence and predicted genes from Geneace
-
-	print GENEACE "\nAllele : \"$to_dump\"\nSequence \"$allele_data{$to_dump}[6]\"\n" if defined $geneace_alleles{$to_dump};# allele -> sequence
+	if ( defined $geneace_alleles{$to_dump} ) {
+	  print GEN_DEL "\nAllele : $to_dump\n-D Predicted_gene\n-D Sequence\n";# remove current sequence and predicted genes from Geneace
+	  print GENEACE "\nAllele : \"$to_dump\"\nSequence \"$allele_data{$to_dump}[6]\"\n";# allele -> sequence
+	}
+	else {
+	  print CSHL_DEL "\nAllele : $to_dump\n-D Predicted_gene\n-D Sequence\n";# remove current sequence and predicted genes from Geneace
+	  print CSHLACE "\nAllele : \"$to_dump\"\nSequence \"$allele_data{$to_dump}[6]\"\n";
+	}
+	  
 	if( $allele_data{$to_dump}[8] ) {
 	  @myStrains = split(/\*\*\*/,"$allele_data{$to_dump}[8]");
 	}
 	foreach my $ko (@affects_genes) {
 	  #allele - seq connection
 	  print OUT "Predicted_gene $ko\n";
-	  print GENEACE "Predicted_gene $ko\n" if defined $geneace_alleles{$to_dump};# update geneace with allele -> Predicted_genes
+	  if( defined $geneace_alleles{$to_dump} ) {
+	    print GENEACE "Predicted_gene $ko\n";# update geneace with allele -> Predicted_genes
+	  }
+	  else {
+	    print CSHLACE "Predicted_gene $ko\n";
+	  }
 
 
 #         NOT DOING THIS ANY MORE
