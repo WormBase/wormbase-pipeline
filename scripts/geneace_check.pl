@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-01-22 15:58:37 $
+# Last updated on: $Date: 2003-01-22 17:56:18 $
 
 
 use strict;
@@ -20,15 +20,16 @@ use Getopt::Long;
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $database, $class);
+my ($help, $debug, $database, $class, @class);
 my $maintainers = "All";
 our $tace = &tace;   # tace executable path
 our ($log, $erichlog);
 
-GetOptions ("help"       => \$help,
-            "debug=s"    => \$debug,
-	    "class=s"    => \$class,
-	    "database=s" => \$database
+GetOptions ("help"        => \$help,
+            "debug=s"     => \$debug,
+	    "class=s"     => \@class,
+	    "database=s"  => \$database
+
            );
 
 ##############################################
@@ -77,26 +78,28 @@ our $rearrangement_errors = 0;
 our $sequence_errors = 0;
 
 
-###################################################################
-# Process various classes looking for errors: choose class to check
-###################################################################
+##################################################
+# Process various classes looking for errors: 
+# choose class to check - multiple classes allowed
+##################################################
 
-$class = lc($class);  # command line option is case-insensitive
-
-if ($class eq "") {
-  &process_locus_class;
-  &process_laboratory_class;
-  &process_allele_class;
-  &process_strain_class;
-  &process_rearrangement;
-  &process_sequence;
-}
-if ($class =~ /locus/)                     {&process_locus_class}
-if ($class =~ /(laboratory|lab)/)       {&process_laboratory_class}
-if ($class =~ /allele/)                    {&process_allele_class}
-if ($class =~ /strain/)                    {&process_strain_class}
-if ($class =~ /(rearrangement|rearr)/) {&process_rearrangement}
-if ($class =~ /(sequence|seq)/)         {&process_sequence}
+foreach $class (@class){
+  $class = lc($class);  # command line option is case-insensitive
+  if ($class eq "") {
+    &process_locus_class;
+    &process_laboratory_class;
+    &process_allele_class;
+    &process_strain_class;
+    &process_rearrangement;
+    &process_sequence;
+  }
+  if ($class =~ /locus/)                 {&process_locus_class}
+  if ($class =~ /(laboratory|lab)/)      {&process_laboratory_class}
+  if ($class =~ /allele/)                {&process_allele_class}
+  if ($class =~ /strain/)                {&process_strain_class}
+  if ($class =~ /(rearrangement|rearr)/) {&process_rearrangement}
+  if ($class =~ /(sequence|seq)/)        {&process_sequence}
+}  
 
 
 #######################################
