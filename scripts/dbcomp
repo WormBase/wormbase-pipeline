@@ -288,6 +288,7 @@ DNA
 Expr_pattern
 Expr_profile
 Gene_Class
+Gene_name
 GO_term
 Homol_data
 Journal
@@ -302,8 +303,11 @@ Motif
 Movie
 Multi_pt_data
 Oligo
+Operon
 Paper
 PCR_product
+Peptide
+Person
 Phenotype
 Picture
 Pos_neg_data
