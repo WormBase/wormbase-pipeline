@@ -1527,7 +1527,7 @@
 		Expr_pattern ?Expr_pattern XREF Transgene //Related Expr_pattern
 		Remark ?Text //More comments on the transgene
 		Reference ?Paper XREF Transgene //papers refered to the transgene.
-
+		Species UNIQUE ?Species // added by krb for consistency with other classes 021030
 
 // RNAi from Lincoln Stein 001213
 
