@@ -4,9 +4,8 @@
 #
 # by ag3 [991221]
 #
-# Last updated on: $Date: 2003-11-20 09:42:49 $
-# Last updated by: $Author: ar2 $
-
+# Last updated on: $Date: 2003-12-01 11:18:28 $
+# Last updated by: $Author: krb $
 
 # transferdb moves acedb database files across filesystems.
 # Creates a temporary database.BCK 
@@ -14,7 +13,7 @@
 # Updates display.wrm
 
 use strict;
-use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
+use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
 
 use Carp;
@@ -48,7 +47,9 @@ my $S_chromosomes;     # -chromosomes: copies CHROMOSOMES dir
 my $S_release;         # -release 
 my $S_all;             # -all: all of the above
 my $file;              # ???
-my $retry = 5;
+my $retry = 5;         # for making repeat attempts to copy a file
+my $test;              # test mode, logs go to ~wormpub/TEST_BUILD/logs
+
 
 GetOptions (
 	    "start=s"     => \$srcdir,
@@ -70,8 +71,8 @@ GetOptions (
 	    "verbose"     => \$verbose,
 	    "debug=s"     => \$debug,
 	    "mail"        => \$mail,
-	    "retry=i"     => \$retry
-	    );
+	    "retry=i"     => \$retry,
+	    "test"        => \$test);
 
 ##################################
 #set up log files and debug mode
@@ -79,12 +80,17 @@ GetOptions (
 my $log; 
 my $maintainers = "All";
 
+# Set top level path for build, different if in test mode
+my $basedir   = "/wormsrv2";
+$basedir   = glob("~wormpub")."/TEST_BUILD" if ($test); 
+
 # Use debug mode?
 if($debug){
   print "DEBUG = \"$debug\"\n\n";
   ($maintainers = $debug . '\@sanger.ac.uk');
 }
 &create_log_files;
+
 
 
 
@@ -414,17 +420,12 @@ sub usage {
 sub create_log_files{
 
   # Create history logfile for script activity analysis
-  my $ws2 = 1;
-  $ws2 = 0 if ( -e "/wormsrv2" ); # cant always see wormsrv2
-  $0 =~ m/\/*([^\/]+)$/; 
-  system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`") unless ($debug or $ws2 == 0);
-
+  $0 =~ m/\/*([^\/]+)$/; system ("touch $basedir/logs/history/$1.`date +%y%m%d`");
   # create main log file using script name for
   my $script_name = $1;
   $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
   my $rundate     = `date +%y%m%d`; chomp $rundate;
-  $log        = "/wormsrv2/logs/$script_name.$rundate.$$";
-  $log = "/tmp/$script_name.$rundate.$$" if ( $debug or $ws2 == 0 );
+  $log        = "$basedir/logs/$script_name.$rundate.$$";
 
   open (LOG, ">$log") or die "cant open $log";
   print LOG "$script_name process $$ started at ",&runtime,"\n";
@@ -480,6 +481,8 @@ TransferDB OPTIONAL arguments:
 =item -mail, if set will email log file to everyone (default) or just to user specified by -debug
 =back
 
+=item -test, if building in -test mode this script will write logs to ~wormpub/TEST_BUILD/logs
+
 Choose one or more of the following switches if you 
 want to copy only a subset of the acedb directories, 
 in alternative to the -all switch:
@@ -505,7 +508,6 @@ in alternative to the -all switch:
 =item -chromosomes =>  CHROMOSOMES subdir
 
 =item -release =>  release subdir
-
 
 =back
 
