@@ -8,7 +8,7 @@
 # dl
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2003-03-11 10:56:51 $
+# Last edited on: $Date: 2003-03-11 12:45:11 $
 
 use lib "/wormsrv2/scripts/";
 use Wormbase;
@@ -36,14 +36,16 @@ GetOptions (
 # Display help if required
 &usage("Help") if ($help);
 
-&usage("Help") if (! defined $file);
+if (! defined $file) {
+    $file = "/nfs/disk100/wormpub/protein_ID.mail";
+}
 
 open (OUT, ">/wormsrv2/autoace/wormpep_ace/WormpepACandIDs.ace");
 
 my @f = "";
 my ($dbxref_ac,$dbxref_id,$dbxref_db);
 
-open (FILE, "<$file");
+open (FILE, "<$file") || die "Can't open the protein_ID file\n";
 while (<FILE>) {
     chomp;
     next if ($_ eq "");
