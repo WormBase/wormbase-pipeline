@@ -32,7 +32,7 @@ $| = 1;
  
 my $dir	      = "/wormsrv2/autoace/BLAT";
 my $dbdir     = "/wormsrv2/autoace";
-my $tace      = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace /wormsrv2/autoace";
+my $tace      = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace /wormsrv2/autoace";
 
 my %EST_name;    # EST accession => name
 my %EST_dir;     # EST accession => orientation [5|3]

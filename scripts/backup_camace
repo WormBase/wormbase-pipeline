@@ -33,10 +33,10 @@ my $version = &get_script_version(backup_camace);
  # paths for I/O files        #
  ##############################
 
-my $campath = "/wormsrv2/camace";
+my $campath    = "/wormsrv2/camace";
 my $backuppath = "/nfs/disk100/wormpub/acedb/ace4/cam/dumps";
-$tace   = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
-$giface = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/giface";
+$tace          = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
+$giface        = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/giface";
 
  ##############################
  # open logfile               #

@@ -8,7 +8,7 @@ switch (`uname`)
 	~wormpub/acedb/ace4/bin.SGI_4/xace $ACEDB
 	breaksw
   case "OSF1":
-	~acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/xace $ACEDB
+	~wormpub/ACEDB/bin.ALPHA_4/xace $ACEDB
 	breaksw
   case "SunOS":
 	switch (`ostype`)

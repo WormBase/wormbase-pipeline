@@ -30,9 +30,9 @@ use Wormbase;
 # Some variables                               #
 ################################################
 
-$tace   = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
+$tace        = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
 $wormbasedir = "/wormsrv2/wormbase";
-$configfile = "/wormsrv2/autoace_config/pepace.config";
+$configfile  = "/wormsrv2/autoace_config/pepace.config";
 
 
 ################################################

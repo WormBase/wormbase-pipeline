@@ -33,7 +33,7 @@ my $autoace_config = "/wormsrv2/autoace_config/autoace.config";
 my $basedir        = "/wormsrv2/wormbase";
 my $miscdir        = "$basedir/misc";
 my $estfile        = "$miscdir/misc_nonelegansests.ace";
-my $tace           = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
+my $tace           = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
 my $autodir        = "/wormsrv2/autoace";
 
  ##############################
