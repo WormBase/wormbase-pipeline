@@ -6,8 +6,8 @@
 #
 # This maps alleles to the genome based on their flanking sequences
 #
-# Last updated by: $Author: krb $                      
-# Last updated on: $Date: 2004-08-06 15:25:27 $        
+# Last updated by: $Author: ar2 $                      
+# Last updated on: $Date: 2004-08-06 15:42:25 $        
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -326,7 +326,7 @@ sub outputAllele{
 	my $WBGene = $CDS2gene{$ko};
 	print OUT "Gene $WBGene\n";
 
-	if( $geneace_alleles{$to_dump}->name ne $WBGene ) {
+	if( defined($geneace_alleles{$to_dump}) and $geneace_alleles{$to_dump}->name ne $WBGene ) {
 	  print LOG "Geneace Gene error $ko : Geneace $geneace_alleles{$ko}  Mapping $WBGene\n";
 	}
       }
