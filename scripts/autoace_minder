@@ -5,8 +5,8 @@
 #
 # Usage : autoace_minder [-options]
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2002-08-22 15:30:35 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2002-09-03 08:42:10 $
 
 
 #################################################################################
@@ -99,6 +99,7 @@ if ($full) {
  ##############################
 
 my $maintainers = "All";
+
 our $rundate    = `date +%y%m%d`; chomp $rundate;
 our $runtime    = `date +%H:%M:%S`; chomp $runtime;
 my $scriptdir   = "/wormsrv2/scripts";                   # specify location of scripts
@@ -496,7 +497,7 @@ sub prepare_primaries {
     system ("touch $logdir/$flag{'A4'}");
 
     # time logging
-    $runtime = 'date +%H:%M:%S'; chomp $runtime;
+    $runtime = `date +%H:%M:%S`; chomp $runtime;
     print LOG "Ending 'autoace_minder -prepare' at $runtime\n\n" if ($time);
 
 }
@@ -579,7 +580,7 @@ sub make_acefiles {
     &usage("Build_in_progress_absent") unless (-e "$logdir/$flag{'A4'}");
 
     # time logging
-    $runtime = 'date +%H:%M:%S'; chomp $runtime;
+    $runtime = `date +%H:%M:%S`; chomp $runtime;
     print LOG "Starting 'autoace_minder -acefile' at $runtime\n\n" if ($time);
 
     system ("$scriptdir/make_acefiles") && die "Couldn't run make_acefiles\n";
@@ -589,7 +590,7 @@ sub make_acefiles {
     system ("touch $logdir/$flag{'A5'}");
 
     # time logging
-    $runtime = 'date +%H:%M:%S'; chomp $runtime;
+    $runtime = `date +%H:%M:%S`; chomp $runtime;
     print LOG "Finished 'autoace_minder -acefile' at $runtime\n\n" if ($time);
 
 }
@@ -616,7 +617,7 @@ sub make_autoace {
     &usage(8) unless (-e "$logdir/$flag{'A5'}");
 
     # time logging
-    $runtime = 'date +%H:%M:%S'; chomp $runtime;
+    $runtime = `date +%H:%M:%S`; chomp $runtime;
     print LOG "Starting 'autoace_minder -build' at $runtime\n\n" if ($time);
 
     if ($build || $builddb) { 
@@ -685,7 +686,7 @@ sub make_autoace {
     }
 
     # time logging
-    $runtime = 'date +%H:%M:%S'; chomp $runtime;
+    $runtime = `date +%H:%M:%S`; chomp $runtime;
     print LOG "Finished 'autoace_minder -build' at $runtime\n\n" if ($time);
 
 }
@@ -805,7 +806,7 @@ sub pre_blat_copy {
     &usage(15) if (-e "$logdir/$flag{'B4'}");
 
     # time logging
-    $runtime = 'date +%H:%M:%S'; chomp $runtime;
+    $runtime = `date +%H:%M:%S`; chomp $runtime;
     print LOG "Starting 'autoace_minder -secure' at $runtime\n\n" if ($time);
 
     # TransferDB the current autoace to safe directory 
@@ -817,7 +818,7 @@ sub pre_blat_copy {
     system ("touch $logdir/$flag{'B5'}");  
 
     # time logging
-    $runtime = 'date +%H:%M:%S'; chomp $runtime;
+    $runtime = `date +%H:%M:%S`; chomp $runtime;
     print LOG "Finished 'autoace_minder -secure' at $runtime\n\n" if ($time);
 
 }
@@ -830,7 +831,7 @@ sub blat_jobs {
     local (*WRITEDB);
 
     # time logging
-    $runtime = 'date +%H:%M:%S'; chomp $runtime;
+    $runtime = `date +%H:%M:%S`; chomp $runtime;
     print LOG "Starting 'autoace_minder -blat' at $runtime\n\n" if ($time);
 
     # run the blat jobs
@@ -844,7 +845,7 @@ sub blat_jobs {
 	    sleep 1 until getppid == 1;
 	    my $i;
 	    # blat_them_all -e {EST}
-	    $runtime = 'date +%H:%M:%S'; chomp $runtime;
+	    $runtime = `date +%H:%M:%S`; chomp $runtime;
 	    print LOG "Starting BLAT v EST at $runtime\n\n" if ($time);
 	    # do the blats
 	    $i = system ("$scriptdir/blat_them_all.pl -bse");
@@ -856,11 +857,11 @@ sub blat_jobs {
 	    $i = system ("mv -f autoace.good_introns.ESTlite.ace > autoace.good_introns.EST.ace");
 	    # tidy
 	    system ("touch $logdir/$flag{'B6A'}");  
-	    $runtime = 'date +%H:%M:%S'; chomp $runtime;
+	    $runtime = `date +%H:%M:%S`; chomp $runtime;
 	    print LOG "Finished BLAT v EST at $runtime\n\n" if ($time);
 
 	    # blat_them_all -m {mRNA}
-	    $runtime = 'date +%H:%M:%S'; chomp $runtime;
+	    $runtime = `date +%H:%M:%S`; chomp $runtime;
 	    print LOG "Starting BLAT v mRNA at $runtime\n\n" if ($time);
 	    # do the blats
 	    $i = system ("$scriptdir/blat_them_all.pl -bsm");
@@ -872,11 +873,11 @@ sub blat_jobs {
 	    $i = system ("mv -f autoace.good_introns.mRNAlite.ace >  autoace.good_introns.mRNA.ace");
 	    # tidy
 	    system ("touch $logdir/$flag{'B6B'}");  
-	    $runtime = 'date +%H:%M:%S'; chomp $runtime;
+	    $runtime = `date +%H:%M:%S`; chomp $runtime;
 	    print LOG "Finished BLAT v mRNA at $runtime\n\n" if ($time);
 
 	    # blat_them_all -o {EMBL}
-	    $runtime = 'date +%H:%M:%S'; chomp $runtime;
+	    $runtime = `date +%H:%M:%S`; chomp $runtime;
 	    print LOG "Starting BLAT v EMBL at $runtime\n\n" if ($time);
 	    # do the blats
 	    $i = system ("$scriptdir/blat_them_all.pl -bso");
@@ -888,23 +889,23 @@ sub blat_jobs {
 	    $i = system ("mv -f autoace.good_introns.EMBLlite.ace >  autoace.good_introns.EMBL.ace");
 	    # tidy
 	    system ("touch $logdir/$flag{'B6C'}");  
-	    $runtime = 'date +%H:%M:%S'; chomp $runtime;
+	    $runtime = `date +%H:%M:%S`; chomp $runtime;
 	    print LOG "Finished BLAT v EMBL at $runtime\n\n" if ($time);
 
 	    # upload .acefiles to autoace
-	    $runtime = 'date +%H:%M:%S'; chomp $runtime;
+	    $runtime = `date +%H:%M:%S`; chomp $runtime;
 	    print LOG "Starting uploading BLAT data at $runtime\n\n" if ($time);
 	    $i = system ("scriptdir/autoace_minder -addblatpartial"); 
 	    system ("touch $logdir/$flag{'B7A'}");  
-	    $runtime = 'date +%H:%M:%S'; chomp $runtime;
+	    $runtime = `date +%H:%M:%S`; chomp $runtime;
 	    print LOG "Finished uploading BLAT data at $runtime\n\n" if ($time);
 	    
 	    # dump gff from the database
-	    $runtime = 'date +%H:%M:%S'; chomp $runtime;
+	    $runtime = `date +%H:%M:%S`; chomp $runtime;
 	    print LOG "Starting GFF dump #2 at $runtime\n\n" if ($time);
 	    system ("$scriptdir/chromosome_dump.pl -g") && die "Couldn't make GFF files\n";
 	    system ("$scriptdir/GFFsplitter -s")        && die "Couldn't split GFF files\n";
-	    $runtime = 'date +%H:%M:%S'; chomp $runtime;
+	    $runtime = `date +%H:%M:%S`; chomp $runtime;
 	    print LOG "Finished GFF dump #2 at $runtime\n\n" if ($time);
 	    exit 0;
 	}
@@ -913,7 +914,7 @@ sub blat_jobs {
     #__ end of child __#
 
     # blast_them_all -x {NEMATODE}
-    $runtime = 'date +%H:%M:%S'; chomp $runtime;
+    $runtime = `date +%H:%M:%S`; chomp $runtime;
     print LOG "Starting BLATX v NEMATODE at $runtime\n\n" if ($time);
     # do the blats
     system ("$scriptdir/blat_them_all.pl -bsx") && die "Couldn't blat_them_all -bsx\n";
@@ -923,21 +924,21 @@ sub blat_jobs {
     system ("mv -f autoace.NEMATODElite.ace > autoace.NEMATODE.ace");
     # tidy
     system ("touch $logdir/$flag{'B6D'}");  
-    $runtime = 'date +%H:%M:%S'; chomp $runtime;
+    $runtime = `date +%H:%M:%S`; chomp $runtime;
     print LOG "Finished BLATX v NEMATODE at $runtime\n\n" if ($time);
 
     # check whether the child has finished
     &usage("Child BLAT not finished") unless (-e "$logdir/$flag{'B7A'}");
 	
     # load BLATX nematode files to autoace
-    $runtime = 'date +%H:%M:%S'; chomp $runtime;
+    $runtime = `date +%H:%M:%S`; chomp $runtime;
     print LOG "Starting uploading BLATX data at $runtime\n\n" if ($time);
     &parse_blat_files_nematode;
-    $runtime = 'date +%H:%M:%S'; chomp $runtime;
+    $runtime = `date +%H:%M:%S`; chomp $runtime;
     print LOG "Finished uploading BLATX data at $runtime\n\n" if ($time);
 
     # time logging
-    $runtime = 'date +%H:%M:%S'; chomp $runtime;
+    $runtime = `date +%H:%M:%S`; chomp $runtime;
     print LOG "Finished 'autoace_minder -blat' at $runtime\n\n" if ($time);
 
     # make a file in /logs
