@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-10-02 14:33:11 $
+# Last updated on: $Date: 2003-10-03 09:57:09 $
 
 
 use strict;
@@ -925,36 +925,36 @@ END
       $num = scalar @{$L_name_F_WBP{$last_name}};
       
       for (my $i=0; $i< $num; $i=$i+2){
-	if ($initials eq @{$L_name_F_WBP{$last_name}}->[$i]){
+	if ($initials eq ${@{$L_name_F_WBP{$last_name}}}[$i]){
 	  $convert++;
 	  if (!defined $conversion){
 	    print LOG "\nUPDT: $class $obj has $name (Author) under $tag tag\n";
           }
 	  if ($num == 2){
-	    print LOG "=====>$name can now be Person @{$L_name_F_WBP{$last_name}}->[$i+1]\n";   
+	    print LOG "=====>$name can now be Person ${@{$L_name_F_WBP{$last_name}}}[$i+1]\n";   
 	    if ($ace){
               print ACE "\n$class_obj\n";
               print ACE "-D $ori\n\n";
 	      print ACE "\n$class_obj\n";
 	      if (defined $b4_evi){
-		print ACE "$b4_evi"." Person_evidence \"@{$L_name_F_WBP{$last_name}}->[$i+1]\"\n";
+		print ACE "$b4_evi"." Person_evidence \"${@{$L_name_F_WBP{$last_name}}}[$i+1]\"\n";
 	      }
 	      else {
-		print ACE "Registered_lab_members \"@{$L_name_F_WBP{$last_name}}->[$i+1]\"\n";
+		print ACE "Registered_lab_members \"${@{$L_name_F_WBP{$last_name}}}[$i+1]\"\n";
 	      }	
             }
 	  }
 	  else {
-	    print LOG "=====>$name might be Person @{$L_name_F_WBP{$last_name}}->[$i+1]\n"; 
+	    print LOG "=====>$name might be Person ${@{$L_name_F_WBP{$last_name}}}[$i+1]\n"; 
 	    if ($ace){
               print ACE "\n$class_obj\n";
               print ACE "-D $ori\n\n";
 	      print ACE "\n$class_obj\n";
 	      if (defined $b4_evi){
-		print ACE "$b4_evi"." Person_evidence \"@{$L_name_F_WBP{$last_name}}->[$i+1]\"\n";
+		print ACE "$b4_evi"." Person_evidence \"${@{$L_name_F_WBP{$last_name}}}[$i+1]\"\n";
 	      }
 	      else {
-		print ACE "Registered_lab_members \"@{$L_name_F_WBP{$last_name}}->[$i+1]\"\n";
+		print ACE "Registered_lab_members \"${@{$L_name_F_WBP{$last_name}}}[$i+1]\"\n";
 	      }	
             }
 	  }
@@ -966,37 +966,37 @@ END
       $num = scalar @{$L_name_F_M_WBP{$last_name}};
       
       for (my $i=0; $i< $num; $i=$i+3){
-	if ($initials eq @{$L_name_F_M_WBP{$last_name}}->[$i] || 
-            $initials eq @{$L_name_F_M_WBP{$last_name}}->[$i+1] ){
+	if ($initials eq ${@{$L_name_F_M_WBP{$last_name}}}[$i] || 
+            $initials eq ${@{$L_name_F_M_WBP{$last_name}}}[$i+1] ){
           $convert++;
           if (!defined $conversion){
 	    print LOG "\nUPDT: $class $obj has $name (Author) under $tag tag\n";
           }
        	  if ($num == 3){
-	    print LOG "=====>$name can now be Person @{$L_name_F_M_WBP{$last_name}}->[$i+2]\n";
+	    print LOG "=====>$name can now be Person ${@{$L_name_F_M_WBP{$last_name}}}[$i+2]\n";
             if ($ace){
               print ACE "\n$class_obj\n";
               print ACE "-D $ori\n\n";
 	      print ACE "\n$class_obj\n";
 	      if (defined $b4_evi){
-		print ACE "$b4_evi"." Person_evidence \"@{$L_name_F_M_WBP{$last_name}}->[$i+2]\"\n";
+		print ACE "$b4_evi"." Person_evidence \"${@{$L_name_F_M_WBP{$last_name}}}[$i+2]\"\n";
 	      }
 	      else {
-		print ACE "Registered_lab_members \"@{$L_name_F_M_WBP{$last_name}}->[$i+2]\"\n";
+		print ACE "Registered_lab_members \"${@{$L_name_F_M_WBP{$last_name}}}[$i+2]\"\n";
 	      } 
             }
 	  }
 	  else {
-	    print LOG "=====>$name might be Person @{$L_name_F_M_WBP{$last_name}}->[$i+2]\n";
+	    print LOG "=====>$name might be Person ${@{$L_name_F_M_WBP{$last_name}}}[$i+2]\n";
             if ($ace){
               print ACE "\n$class_obj\n";
               print ACE "-D $ori\n\n";
 	      print ACE "\n$class_obj\n";
 	      if (defined $b4_evi){
-		print ACE "$b4_evi"." Person_evidence \"@{$L_name_F_M_WBP{$last_name}}->[$i+2]\"\n";
+		print ACE "$b4_evi"." Person_evidence \"${@{$L_name_F_M_WBP{$last_name}}}[$i+2]\"\n";
 	      }
 	      else {
-		print ACE "Registered_lab_members \"@{$L_name_F_M_WBP{$last_name}}->[$i+2]\"\n";
+		print ACE "Registered_lab_members \"${@{$L_name_F_M_WBP{$last_name}}}[$i+2]\"\n";
 	      } 
             }
 	  }
@@ -1048,7 +1048,6 @@ sub process_allele_class{
 
   my @alleles = $db->fetch('Allele','*');
   my ($allele, $desig, $desig2, $main_allele, %allele_gene, $gene);
-  my $allele_error = 0;
 
   my $allele_designation_to_LAB=<<EOF;
   Table-maker -p "$def_dir/allele_designation_to_LAB.def" quit
@@ -1064,11 +1063,9 @@ EOF
     if(!defined($allele->at('Location'))){
       # catch non-standard upper-case allele name
       if ($allele =~ /^[A-Z].+/){ 
-	$allele_error++;
 	print LOG "ERROR: $allele has no Location tag present (no info available)\n";
       }
       else {
-	$allele_error++;
 	print LOG "ERROR: $allele has no Location tag present\n";
 
 	# acefile output for normal or double alleleles having no location tag
@@ -1108,12 +1105,47 @@ EOF
     if($allele -> Gene){
       my @loci=$allele->Gene(1);
       if (scalar @loci > 1){
-	$allele_error++;
 	print LOG "ERROR: $allele is connected to more than one Loci: @loci\n";
       }
     }
   }
+
+  # check when an allele has a predicted_gene and no gene (locus); if that predicted_gene is already links to a locus
+  # make allele-locus link
   
+  my $query_allele = "find allele * where predicted_gene & !gene";
+  my @allele_predict_no_gene;
+  push(@allele_predict_no_gene, $db->find($query_allele));
+  
+  # hash set for quick search
+  my%allele_predict_no_gene;
+  foreach (@allele_predict_no_gene){$allele_predict_no_gene{$_}++};
+  
+  my @Allele_gene;
+  my $query_cds_locus_has_allele = "find sequence * where (Locus_genomic_seq | Locus) & has_allele";
+  push(@Allele_gene, $db->find($query_cds_locus_has_allele));
+  
+  foreach (@Allele_gene){
+    if (defined $_->Locus_genomic_seq(1)){
+      my $gene = $_->Locus_genomic_seq(1); 
+      my $allele = $_->Has_allele(1);
+      if (exists $allele_predict_no_gene{$allele}){
+	print LOG "WARNING: Allele $allele is not linked to $gene\n";
+	print ACE "\nAllele: \"$allele\"\n" if $ace;
+	print ACE "Gene \"$gene\"\n" if $ace;
+      }
+    }
+    elsif (defined $_->Locus(1)){
+      my $gene = $_->Locus(1); 
+      my $allele = $_->Has_allele(1);
+      if (exists $allele_predict_no_gene{$allele}){
+	print LOG "WARNING: Allele $allele is not linked to $gene\n";
+	print ACE "\nAllele: \"$allele\"\n" if $ace;
+	print ACE "Gene \"$gene\"\n" if $ace;
+      }
+    }
+  }
+
   my $allele_has_flankSeq_and_no_seq=<<EOF;
   Table-maker -p "$def_dir/allele_has_flankSeq_and_no_seq.def" quit
 EOF
@@ -1132,7 +1164,6 @@ EOF
   
   check_missing_allele_method($allele_has_no_methods, $default_db);
 
-  print LOG "\nThere are $allele_error errors in Allele class\n";
 
   ##################################################
   # subroutines for process_allele_class routine
@@ -1159,7 +1190,6 @@ EOF
       chomp($_);
       if ($_ =~ /^\"/){
 	$_ =~ s/\"//g;
-	$allele_error++;
 	print LOG "ERROR: Allele $_ has flanking sequences but has no parent sequence\n";
       }
     }
@@ -1177,7 +1207,6 @@ EOF
       if ($_ =~ /^\"(.+)\"\s+\"(.+)\"\s$/) {
 	$allele = $1;
 	$cds = $2;
-	$allele_error++;
 	print LOG  "ERROR: Allele $allele has predicted gene but has no parent sequence\n";
 	if ($ace){
 	  get_parent_seq($cds, $allele);
@@ -1188,7 +1217,6 @@ EOF
 	$cds = $2;
 	$seq = $3;
 	if ($seq eq $cds){
-	  $allele_error++;
 	  # temporarily commented out to see if suitable to automate this part
 	  print LOG "ERROR: $allele has a different parent sequence ($seq) based on its predicted gene ($cds) (overlapped clones?)\n";
 	  if ($ace){
@@ -1200,7 +1228,6 @@ EOF
 	if ($seq ne $cds && $seq !~ /SUPERLINK.+/){
 	  $parent=get_parent_seq($cds, $allele, "getparent");
 	  if ($parent ne $seq){
-	    $allele_error++;
 	    print LOG "ERROR: $allele has a different parent sequence ($seq) based on its predicted gene ($cds) (overlapped clones?)\n";
 	    if ($ace){
 	      # temporarily commented out to see if suitable to automate this part
@@ -1247,12 +1274,11 @@ EOF
 	print $1, "\n";
 	$allele = $1;
 	if ($ace){output($allele, "Allele", "ace")}
-	else {$allele_error++; print LOG "ERROR: Allele $allele has no Method \"Allele\"\n"}		    
+	else {print LOG "ERROR: Allele $allele has no Method \"Allele\"\n"}		    
       }
     }
     sub output {
       my ($allele, $tag, $ace) = @_;
-      $allele_error++;
       print LOG "ERROR: Allele $allele has no Method $tag\n";
       if ($ace ne ""){
 	# output acefile for correct type of method of an allele
