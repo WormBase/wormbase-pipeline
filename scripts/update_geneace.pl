@@ -337,14 +337,14 @@ sub upload_ace_GA {
 
 sub geneclass_loci_other_name {
   open (IN, $filename) || die "Can't read in file!";
-  #open (IN, "/wormsrv1/chaokung/wormdata/JAH/$filename") || die "Can't read in file!"; 
 
   my ($gene_class, @Update, $locus, $seq, $rest, @parts, $num_parts,$cgc_paper, $paper,
       $head, $tail, @variants, $i, $person, $pmid, $other_name, @evidence, $evidence, @persons);
 
   while(<IN>){
     if ($_ =~ ""){}
-    if ($_ =~ /^(\w{3,3})\s{2,}(\w+)\s{2,}(.+)/) {
+    #if ($_ =~ /^(\w{3,3})\s{2,}(\w+)\s{2,}(.+)/) {
+    if ($_ =~ /^(\w{3,3})\s+(\w+)\s+(.+)/) {  
       $gene_class = $1;
       push(@Update,"\n\nGene_Class : \"$gene_class\"\n");
       #@parts = split(/\s{2,}/, $2);
@@ -358,6 +358,7 @@ sub geneclass_loci_other_name {
     if ($_ =~ /^((\w{3,3})-\d+)\s+=\s+(\w+\..+)/) {
       push(@Update, "\n\nLocus : \"$1\"\n");
       push(@Update, "Gene\n");
+      push(@Update, "CGC_name\t\"$1\"\n");
       print $2, "\n";
       push(@Update, "Gene_Class\t\"$2\"\n");
       push(@Update, "CGC_approved\n");
@@ -371,15 +372,15 @@ sub geneclass_loci_other_name {
       $num_parts = scalar @parts;
       if ($num_parts == 1){
 	$seq = uc($seq);
-	push(@Update, "Genomic_sequence\t\"$seq\"\n"); 
+	push(@Update, "Genomic_sequence\t\"$seq\"\n");
+	push(@Update, "Sequence_name\t\"$seq\"\n");
 	print "Genomic_sequence\t\"$seq\"\n";  
       }
       if ($num_parts > 1){
 	$head = $seq;
 	$tail = $seq;
 	$head =~ /[\w\d]+\.\d+/; # get seq. names like C18H9.7 or M01E5.5 from M01E5.5a,b
-	$head = $&;
-	$tail =~ s/$head//;  # would retrieve a,b from M01E5.5a,b
+	$head = $&;	$tail =~ s/$head//;  # would retrieve a,b from M01E5.5a,b
 	$head = uc($head);
 	$seq=$head.$tail;
 	#print $head, "##1##\n";
@@ -398,6 +399,7 @@ sub geneclass_loci_other_name {
 		  $pmid =~ s/PMID:\s|\[|\]|//;
 		  $pmid =~ s/\]//;		
 		  print $pmid, "\n";
+		  push(@Update, "Sequence_name\t\"$seq\"\n");
 		  push(@Update, "Genomic_sequence\t\"$seq\"\tPMID_evidence\t\"$pmid\"\n");
 		  push(@Update, "Evidence\tPMID_evidence\t\"$pmid\"\n");
 		  #print "Genomic_sequence\t\"$seq\"\t$1\t\"$pmid\"\n";	
@@ -405,7 +407,7 @@ sub geneclass_loci_other_name {
 		else {
 		  $cgc_paper=$2;
                   $cgc_paper =~ s/\[|\]//g;
-
+		  push(@Update, "Sequence_name\t\"$seq\"\n");
 		  push(@Update, "Genomic_sequence\t\"$seq\"\tPaper_evidence\t\"[$cgc_paper]\"\n");
 		  push(@Update, "Evidence\tPaper_evidence\t\"[$cgc_paper]\"\n");
 		}
@@ -418,6 +420,7 @@ sub geneclass_loci_other_name {
 		@persons = split(/,/, $person);
 		foreach (@persons){
 		  $_ =~ s/^\s//;
+		  push(@Update, "Sequence_name\t\"$seq\"\n");   
 		  push(@Update, "Genomic_sequence\t\"$seq\"\tPerson_evidence\t\"$_\"\n");
 		  push(@Update, "Evidence\tPerson_evidence\t\"$_\"\n");
 		  #print "Genomic_sequence\t\"$seq\"\tPerson_evidence\t\"$_\"\n";
@@ -435,6 +438,7 @@ sub geneclass_loci_other_name {
 		  $pmid =~ s/PMID:\s|\[|\]|//;
 		  $pmid =~ s/\]//;		
 		  print $pmid, "\n";
+		  push(@Update, "Sequence_name\t\"$seq\"\n");
 		  push(@Update, "Genomic_sequence\t\"$seq\"\tPMID_evidence\t\"$pmid\"\n");
 		  push(@Update, "Evidence\tPMID_evidence\t\"$pmid\"\n");
 		  #print "Genomic_sequence\t\"$seq\"\t$1\t\"$pmid\"\n";	
@@ -442,7 +446,7 @@ sub geneclass_loci_other_name {
 	      else {
 		$cgc_paper=$2;
                 $cgc_paper =~ s/\[|\]//g;
-
+		push(@Update, "Sequence_name\t\"$seq\"\n");
 		push(@Update, "Genomic_sequence\t\"$seq\"\tPaper_evidence\t\"[$cgc_paper]\"\n");
 		push(@Update, "Evidence\tPaper_evidence\t\"[$cgc_paper]\"\n");
 	      }
@@ -454,6 +458,7 @@ sub geneclass_loci_other_name {
 	      @persons = split(/,/, $person);
 	      foreach (@persons){
 		$_ =~ s/^\s//;
+		push(@Update, "Sequence_name\t\"$seq\"\n");
 		push(@Update, "Genomic_sequence\t\"$seq\"\tPerson_evidence\t\"$_\"\n");
 		push(@Update, "Evidence\tPerson_evidence\t\"$_\"\n");
 		#print "Genomic_sequence\t\"$seq\"\tPerson_evidence\t\"$_\"\n";
