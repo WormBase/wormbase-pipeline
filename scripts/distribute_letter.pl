@@ -1,13 +1,15 @@
-#!/usr/local/bin/perl5.6.0 -w                   
+#!/usr/local/bin/perl5.6.1 -w                   
+#
 # distribute_letter.pl                            
+#
 # by Anthony Rogers                               
 #
 # copies release letter to ~ftp/pub/wormbase/WSxx
 #                          /wormsrv2/autoace/release/
 #                          /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/current/release_notes.txt/
 #
-# Last updated by: $Author: ar2 $                       # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2002-10-01 14:41:22 $                        # quickly see when script was last changed and by whom
+# Last updated by: $Author: krb $                       
+# Last updated on: $Date: 2003-01-06 10:15:30 $         
 
 
 use strict;                                     
@@ -29,7 +31,8 @@ my $maintainers = "All";
 my $rundate     = `date +%y%m%d`; chomp $rundate;
 my $runtime     = `date +%H:%M:%S`; chomp $runtime;
 our $log        = "/wormsrv2/logs/distribute_letter.$rundate";
-my $ver = &get_wormbase_version;
+my $ver         = &get_wormbase_version;
+
 
 open (LOG, ">$log");
 print LOG "about to spread the word . . . \n";
@@ -55,10 +58,28 @@ my $release_letter = "/wormsrv2/autoace/RELEASE_LETTERS/letter.WS$ver";
 if( &mail_maintainer($name,$to,$release_letter) == 1 ) {
   print LOG "DONE.\n\n\n  Go and have a cuppa !\n";}
 else {
-  print LOG "! mailing failed !\n\n\nIs this devine intervention?  A last chance to fix something?\n
+  print LOG "! mailing failed !\n\n\nIs this divine intervention?  A last chance to fix something?\n
 whatever - something is wrong.\n"; }
 
+
+###################################
+# Make data on FTP site available
+###################################
+
+# FTP site data is there but sym link needs to be updated so people can easily point to it
+
+print LOG "Updating symlink on FTP site\n";
+
+my $targetdir = "/nfs/disk69/ftp/pub/wormbase";  # default directory, can be overidden
+my $release   = &get_wormbase_version_name(); # e.g. WS89
+
+# delete the old symbolic link and make the new one
+system "rm -f $targetdir/current_release";
+system "cd $targetdir; ln -s $release current_release";
+
+
 print LOG "$0 finished at ",`date`,"\n\n";
+
 
 # Always good to cleanly exit from your script
 exit(0);
@@ -90,6 +111,8 @@ copies the release letter to the ftp site, website and autoace/release
 
 mails release letter to wormbase-dev
 
+Finally, when release letter is emailed it updates the symlink on the FTP
+site to make current_release point to the latest release directory.
 
 script_template.pl MANDATORY arguments:
 

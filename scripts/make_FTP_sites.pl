@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-12-16 13:23:40 $
+# Last updated on: $Date: 2003-01-06 10:15:30 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -74,11 +74,6 @@ if($debug){
 &extract_confirmed_genes; # make file of confirmed genes from autoace and copy across
 
 &copy_homol_data;        # copy blat and blast data to private ftp site for St. Louis
-
-# delete the old symbolic link and make the new one
-system "rm -f $targetdir/current_release";
-system "cd $targetdir; ln -s $release current_release";
-print LOG "deleted the old sym_link and create the new one\n";
 
 $runtime = &runtime;
 print LOG "\n\n\nmake_FTP_public.pl finished at $runtime\n";
