@@ -7,11 +7,11 @@
 # A script to find (and classify) potentially short, spurious genes (default = <50 aa)
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-12-01 11:54:26 $     
+# Last updated on: $Date: 2004-03-24 09:57:04 $     
 
 
 use strict;
-use lib "/wormsrv2/scripts/";
+use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
 use Ace;
 use Getopt::Long;
@@ -37,6 +37,7 @@ my $verbose;             # turn on extra output
 my $debug;               # For sending output to just one person
 my $database;            # which database to use?
 my $cutoff;              # what length of gene should you use as the cutoff?
+my $test;                # use test environment
 my $html;                # Also produce html files for website?
 
 GetOptions ("database=s" => \$database,
@@ -45,7 +46,8 @@ GetOptions ("database=s" => \$database,
             "debug=s"    => \$debug,
             "help"       => \$help,
 	    "build"      => \$build,
-	    "html"       => \$html
+	    "html"       => \$html,
+	    "test"       => \$test
             );
 
 
@@ -59,13 +61,21 @@ if($debug){
   ($maintainers = $debug . '\@sanger.ac.uk');
 }
 
+
+# database/file paths and locations
+my $basedir     = "/wormsrv2";
+$basedir        = glob("~wormpub")."/TEST_BUILD" if ($test);
+ 
+
+
 # set default cutoff to 50 amino acids if not specified on command line
 if(!defined($cutoff)){
   $cutoff = 50;        
 }
 
+
 # specify different path if using build mode
-$dir = "/wormsrv2/autoace/CHECKS" if ($build);
+$dir = "$basedir/autoace/CHECKS" if ($build);
 
 
 
@@ -106,17 +116,17 @@ foreach my $gene (@genes){
   # when debugging can reduce this if you want less output to speed up script
   last if ($counter > 50000);  $counter++;
   
-  # get protein information, and make sure that there is a protein object!
-  my ($protein) = $gene->at("Visible.Corresponding_protein");
-  next if !($protein);  
-  $protein = $db->fetch(Protein => "$protein") || die "Cannot fetch protein\n";
-  my $length = $protein->at("Peptide")->right(2);
+  # get protein length information from translation of gene
+  my $peptide = $gene->asPeptide();
+
+  # trim FASTA header and remove new lines, and grab length
+  $peptide =~ /^>\S+\s+([\w\*].*)/s;
+  my $peptide_seq = $1 ; 
+  $peptide_seq =~ s/\s//g;
+  my $length = length($peptide);
 
   # ignore proteins longer than cutoff value
-  if ($length > $cutoff){
-    $protein->DESTROY();
-    next;
-  }
+  next if ($length > $cutoff);
 
 
   # Get confirmed/partially_confirmed etc. status
@@ -207,7 +217,6 @@ foreach my $gene (@genes){
 
   # kill AcePerl objects
   $gene->DESTROY();
-  $protein->DESTROY();
 }
 
 close(OUT);
@@ -291,8 +300,8 @@ if($html){
 # Tidy up and exit             #
 ################################
 
-# only mail if running as part of build
-$log->mail("$maintainers") if ($build);
+# only mail if running as part of build or if debugging
+$log->mail("$maintainers") if ($build || $debug);
 exit;
 
 
@@ -377,6 +386,12 @@ Toggles a little extra output on the command line when running the script
 
 =back
 
+
+=item -test
+
+Use test environment (~wormpub/TEST_BUILD) rather than /wormsrv2
+
+=back
 
 =head1 AUTHOR Keith Bradnam (krb@sanger.ac.uk) 
 
