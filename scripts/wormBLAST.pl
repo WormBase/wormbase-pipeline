@@ -3,6 +3,7 @@
 use DBI;
 use strict;
 my $wormpipe_dir = glob("~wormpipe");
+# no longer use wormbase.pm routines are in here. Script doesn't like it if wormsrv2 mounted !
 #use libs "$wormpipe_dir/wormbase/scripts/"
 #use lib "/wormsrv2/scripts/";
 #use Wormbase;
@@ -21,6 +22,7 @@ my $run_pipeline;
 my $dont_SQL;
 my $dump_data;
 my $mail;
+my $WPver;   #  Wormpep version is passed as command line option
 
 GetOptions("chromosomes" => \$chromosomes,
 	   "wormpep"     => \$wormpep,
@@ -30,10 +32,12 @@ GetOptions("chromosomes" => \$chromosomes,
 	   "run"         => \$run_pipeline,
 	   "nosql"       => \$dont_SQL,
 	   "dump"        => \$dump_data,
-	   "mail"        => \$mail
+	   "mail"        => \$mail,
+	   "version=s"   => \$WPver
 	  );
 
-my $WPver = &get_wormbase_version;
+#$WPver = &get_wormbase_version unless $WPver;
+die "please give a build version number ie  wormBLAST -version 00\n" unless $WPver;
 my $WP_old = $WPver - 1;
 my $scripts_dir = "$wormpipe_dir/scripts/BLAST_scripts";
 #process Ids
@@ -193,7 +197,7 @@ if( $update_mySQL )
      my $update;
      open (NEW_DB,"<$database_to_use") or die "cant read updated $database_to_use during update_mySQL";
     
-    #this bits logic seems wrong - but it works so I'l fix it later - ar2
+    #this bits logic seems wrong - but it works so I'll fix it later - ar2
      while(<NEW_DB>){
        if( /last_clone\s(\w+)/ ){
 	 $last_clone = $1;
