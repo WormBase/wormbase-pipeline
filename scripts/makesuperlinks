@@ -1,0 +1,179 @@
+#!/usr/local/bin/perl
+#
+# makesuperlinks
+#
+
+use Ace ;
+use Getopt::Long ;
+
+%superinfo = ( "I"    => "H06O01",   # left ends of superlinks
+	       "IR"   => "Y95D11A",
+	       "II"   => "T05A6",
+	       "IIIL" => "F45H7",
+	       "IIIR" => "K01F9",
+	       "IV"   => "F21D5",
+	       "V"    => "F07D3",
+	       "X"    => "B0272"
+	       ) ;
+
+%clone2super = ("H06O01"  => "I",
+	        "Y95D11A" => "IR",
+	        "T05A6"   => "II",
+	        "F45H7"   => "IIIL",
+	        "K01F9"   => "IIIR",
+	        "F21D5"   => "IV",
+	        "F07D3"   => "V",
+	        "B0272"   => "X",
+	        "6R55"    => "6R55",
+		"cTel52S" => "cTel52S"
+		) ;
+
+# get data from camace
+
+$campath = "/wormsrv1/camace";
+$camdb   = Ace->connect(-path=>"$campath") || die "failed to connect to database\n";
+
+# first get lots of info about Genome_sequence objects
+
+$it = $camdb->fetch_many(Genome_sequence => '*') ;
+while ($obj = $it->next) {
+    $isGenomeSequence{$obj} = 1 ;
+    $length{$obj}           = $obj->DNA(2) ;
+    if (!$length{$obj}) { warn "No length for $obj\n" ; }
+    $right{$obj}            = $obj->Overlap_right ;
+    $rightOffset{$obj}      = $obj->Overlap_right(2) ;
+    $left{$obj}             = $obj->Overlap_left ;
+
+    foreach ($obj->Confidential_remark) {
+	if (/^not in Cambridge LINK$/) { $isExternal{$obj} = 1; }
+    }
+    $isLinkCandidate{$obj}  = (!$isExternal{$obj} && $length{$obj} > 0);
+}
+
+# then some info about current links
+
+$it = $camdb->fetch_many(Sequence => 'SUPERLINK*') ;
+while ($obj = $it->next) {
+    foreach $a ($obj->at('Structure.Subsequence')) {
+	($seq, $start, $end) = $a->row ;
+	$currSource{$seq}    = $obj ;
+	$currStart{$seq}     = $start ;
+	$currEnd{$seq}       = $end ;
+    }
+}
+
+
+# FIX
+
+#$currSource{"Y66A7A.8"} = "Y66A7AR";
+
+###########################################
+# make links
+###########################################
+
+foreach $seq (keys %isGenomeSequence) {
+				# only keep seeds
+    next if (!$isLinkCandidate{$seq} ||
+	     ($left{$seq} && $isLinkCandidate{$left{$seq}} && $rightOffset{$left{$seq}}) ||
+	     !$rightOffset{$seq} ||
+	     !$isLinkCandidate{$right{$seq}}) ;
+
+
+    # don't make link objects for these clones
+    # these should be in St Louis SUPERLINKS
+    next if (($seq eq "6R55") || ($seq eq "F38A1") || ($seq eq "cTel52S"));
+
+
+				# print LINK header
+    $lk = "SUPERLINK_$clone2super{$seq}" ;
+    print "\nSequence $lk\n" ;
+    print "From_laboratory HX\n" ;
+
+				# loop over subsequences
+    $startright=1 ;
+    while ($isLinkCandidate{$seq}) {
+	$start{$seq} = $startright ; 
+	$end{$seq} = $startright + $length{$seq} - 1 ;
+	print "Subsequence $seq $start{$seq} $end{$seq}\n" ;
+	$link{$seq} = $lk ;
+	if (!$rightOffset{$seq}) { last ; } # POSS EXIT FROM LOOP
+	$startright = $startright + $rightOffset{$seq} - 1 ;
+	$seq = $right{$seq} ;
+    }		
+}
+
+###########################################
+#Re-map subsequences back onto the new links 
+###########################################
+
+foreach $seq (keys %currStart) {
+    next if ($isGenomeSequence{$seq}) ;
+
+    if ($seq =~ /(\S+)\.\d+/) { $parent = $1 ; }
+    else { warn "no dot in subsequence name $seq\n" ; next ; }
+
+    if ($seq eq "Y66A7A.8") {$parent = "Y66A7AR";}
+
+    if (!$currStart{$parent}) { warn "no coord in link for parent $parent of $seq\n" ; next ; }
+    if (!($currSource{$seq} eq $currSource{$parent})) { warn "parent $parent and child $seq in different links\n" ; next ; }
+    if (!$link{$parent}) { warn "no new link for parent $parent of $seq\n" ; next ; }
+
+    $start{$seq} = $start{$parent} - $currStart{$parent} + $currStart{$seq} ;
+    $end{$seq} = $start{$parent} - $currStart{$parent} + $currEnd{$seq} ;
+    print "\nSequence $link{$parent}\n";
+    print "Subsequence $seq $start{$seq} $end{$seq}\n" ;
+    $link{$seq} = $link{$parent} ;
+}
+
+###########################################
+#Do a quick check to make sure that everything 
+#that was in a link has been put back in one
+###########################################
+
+foreach $seq (keys %currSource) {
+    if (!$link{$seq}) { warn "$seq not put back into a link\n" ; }
+}
+
+###########################################
+# make superlinks
+###########################################
+
+
+foreach $chrom (keys %superinfo) {
+    print "\nSequence SUPERLINK_CB_$chrom\n" ;
+    print "From_laboratory HX\n" ;
+    $pos = 1 ;
+    $seq = $superinfo{$chrom} ;
+    while ($seq) {
+	if ($link{$seq}) {
+	    $lk = $link{$seq} ;
+	    while ($seq && $lk eq $link{$seq}) {
+		$end = $end{$seq} ;
+		$seq = $right{$seq} ;
+	    }
+	    $end += $pos - 1 ;
+	    print "Subsequence $lk $pos $end\n" ;
+	} elsif ($isLinkCandidate{$seq}) {
+	    $end = $pos - 1 + $length{$seq} ;
+	    print "Subsequence $seq $pos $end\n" ;
+	    $seq = $right{$seq} ;
+	} elsif (!$isExternal{$seq}) {
+	    $end = $pos - 1 + 1000 ;
+	    print "Subsequence $seq $pos $end\n" ;
+	    $seq = $right{$seq} ;
+	} else {
+	    last ;
+	}
+	$pos = $end + 101 ;
+    }
+}
+
+############# end of file ################
+
+
+
+
+
+
+
+
