@@ -182,6 +182,7 @@ sub composition{
   $final_total = $total - $minus;
   system("echo $total $final_total > totals") && die "Couldn't create totals file\n";
   
+  &release_composition;
 }
 
 ##########################
