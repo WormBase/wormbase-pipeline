@@ -7,7 +7,7 @@
 # This script calculates interpolated genetic map positions for CDS, Transcripts 
 # and Pseudogenes lying between and outside genetic markers.
 #
-# Last updated on: $Date: 2004-08-19 15:09:59 $
+# Last updated on: $Date: 2004-09-02 12:04:18 $
 # Last updated by: $Author: dl1 $
 
 
@@ -778,8 +778,8 @@ if($error_check == 1){
 else {
 
   my ($jah, $recipients);
-  $recipients = "ck1\@sanger.ac.uk, krb\@sanger.ac.uk, jah\@bioch.ox.ac.uk, ar2\@sanger.ac.uk, dl1\@sanger.ac.uk, pad\@sanger.ac.uk";
-  $recipients = "ck1\@sanger.ac.uk" if $debug;
+  $recipients = "krb\@sanger.ac.uk, jah\@bioch.ox.ac.uk, ar2\@sanger.ac.uk, dl1\@sanger.ac.uk, pad\@sanger.ac.uk";
+  $recipients = "krb\@sanger.ac.uk" if $debug;
 
   my @rev = `cat $revfile`;
 
@@ -832,14 +832,14 @@ sub dataset {
   splice(@dir, 0,2);
   closedir (DIR);
 
-  if ($query eq "folder"){foreach (@dir){if ($_ =~ /^WS(\d+)/){push(@vers, $1)}} return @vers}
+  if ($query eq "folder") {foreach (@dir){if ($_ =~ /^WS(\d+)/){push(@vers, $1)}} return @vers}
 
-  if ($query eq "genes"){foreach (@dir){if ($_ =~ /^CHROMOSOME_(I|II|III|IV|V|X).CDS.gff/ ||
+  if ($query eq "CDS") {foreach (@dir){if ($_ =~ /^CHROMOSOME_(I|II|III|IV|V|X).CDS.gff/ ||
 					    $_ =~ /^CHROMOSOME_(I|II|III|IV|V|X).clone_path.gff/){push(@files, $&)}} return @files}
 
-  if ($query eq "rna"){foreach (@dir){if ($_ =~ /^CHROMOSOME_(I|II|III|IV|V|X).(rna|rest).gff/){push(@files, $&)}} return @files}
+  if ($query eq "rna") {foreach (@dir){if ($_ =~ /^CHROMOSOME_(I|II|III|IV|V|X).(rna|rest).gff/){push(@files, $&)}} return @files}
 
-  if ($query eq "pseudogene"){foreach (@dir){if ($_ =~ /^CHROMOSOME_(I|II|III|IV|V|X).pseudogenes.gff/){push(@files, $&)}} return @files}
+  if ($query eq "pseudogene") {foreach (@dir){if ($_ =~ /^CHROMOSOME_(I|II|III|IV|V|X).pseudogenes.gff/){push(@files, $&)}} return @files}
 }
 
 
