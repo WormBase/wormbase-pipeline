@@ -6,8 +6,8 @@
 #
 # This maps alleles to the genome based on their flanking sequence
 #
-# Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2004-03-11 11:09:13 $        # quickly see when script was last changed and by whom
+# Last updated by: $Author: pad $                      # These lines will get filled in by cvs and helps us
+# Last updated on: $Date: 2004-03-22 10:44:49 $        # quickly see when script was last changed and by whom
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -299,7 +299,7 @@ sub outputAllele
 	
 	# in CDS object
 	foreach my $ko (@affects_genes) {
-	  print OUT "\nCDS : \"$ko\"\nAllele $to_dump\n";
+	  print OUT "\nCDS : \"$ko\"\nAlleles $to_dump\n";
 	}
 
 	# in Allele object
