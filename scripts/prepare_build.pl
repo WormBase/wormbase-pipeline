@@ -18,6 +18,8 @@ use strict;
 use lib "/wormsrv2/scripts/";
 use Wormbase;
 use IO::Handle;
+use Getopt::Std;
+use vars qw($opt_h);
 
 #################################################################################
 # variables                                                                     #
@@ -40,6 +42,14 @@ my $WS_old_path = "$db_path"."/$WS_old_name";
 
 my $wormpep_ver = &get_wormpep_version;
 my $old_wormpep = "$db_path/WORMPEP/wormpep".($wormpep_ver-3);
+
+ ##############################
+ # command-line options       #
+ ##############################
+
+$opt_h = "";   # Help/Usage page
+getopts ('h');
+&usage if ($opt_h);
 
 #####################################################################################
 
@@ -153,13 +163,68 @@ sub archive_old_releases{
 
 
 #################################################################################
-# Archive oldest WS release into archive directory                              #
+# Prints help and disappears                                                    #
 #################################################################################
 
+sub usage {
+    exec ('perldoc',$0);
+}
 
 
+__END__
 
+=pod
 
+=head2 NAME - prepare_build.pl
 
+=head1 USAGE
 
+=over 4
 
+=item prepare_build.pl  [-options]
+
+=back
+
+This script replaces archive_dbs.pl, the script that would be run at the 
+start of the build.
+
+ It does what that script used to do, i.e.
+
+ 1) checks to see if there are three existing (and unpacked) WS releases 
+ in /wormsrv2. If there are, then it archives the oldest release away into 
+ /wormsrv2/wormbase_archive
+ 2) Does a similar thing with Wormpep releases in /wormsrv2/WORMPEP
+ but it also does a few more things that have to be done before the build 
+ proper can start.
+
+prepare_build.pl MANDATORY arguments:
+
+=over 4
+
+=item none
+
+=back
+
+prepare_build.pl  OPTIONAL arguments:
+
+=over 4
+
+=item -h, Help
+
+=back
+
+=head1 REQUIREMENTS
+
+This script must run on a machine which can see the /wormsrv2 disk.
+
+=back
+
+=head1 AUTHOR
+
+=over 4
+
+=item Keith Bradnam (krb@sanger.ac.uk)
+
+=back
+
+=cut
