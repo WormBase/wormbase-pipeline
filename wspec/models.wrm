@@ -2181,11 +2181,29 @@
 
 
 
-//////////////////
-// Paper class  //
-//////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//                  Paper class  
+//
+// New revised paper class tracks papers via an ID-based system and an associated ?Paper_name class
+// object names will be WBPaperXXXXXX, existing CGC numbers will be used as ID number where possible
+// krb 040223
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-?Paper  Reference       Title UNIQUE ?Text
+
+
+?Paper  Original_timestamp Datetype // temporary tag in transition period [krb 040223]
+	Name    CGC_name ?Paper_name XREF CGC_name_for
+		PMID     ?Paper_name XREF PMID_for
+		Medline_name ?Paper_name XREF Medline_name_for
+		Meeting_abstract ?Paper_name XREF Meeting_abstract_name
+		WBG_abstract    ?Paper_name XREF WBG_abstract_name
+		Old_WBPaper ?Paper_name XREF Old_WBPaper_name
+		Other_name ?Paper_name XREF Other_name_for // e.g. agriola etc ...
+	Nematode_paper ?Species // for flagging worm specific papers, ?Species part is optional
+	Erratum #Paper
+	Reference       Title UNIQUE ?Text
                         Journal UNIQUE ?Journal XREF Paper
                         Publisher UNIQUE Text
                         Editor ?Text            //used for books put in as whole objects
@@ -2194,8 +2212,6 @@
                         Year UNIQUE Int
                         In_book #Paper
                         Contained_in ?Paper XREF Contains       // old form
-                        Medline_acc UNIQUE Int
-                        PMID UNIQUE Int                     
         Author ?Author XREF Paper #Affiliation        // replaced by:
 //        Author_to_person ?Author UNIQUE ?Person XREF Paper
         Person ?Person XREF Paper
@@ -2233,6 +2249,18 @@
 		  Antibody ?Antibody XREF Reference #Evidence // added [031120 krb]
 		  SAGE_experiment ?SAGE_experiment XREF Reference
         Keyword ?Keyword
+
+
+// new supporting class to index various paper names
+
+?Paper_name CGC_name_for ?Paper XREF CGC_name
+            PMID_for ?Paper XREF PMID
+            Medline_name_for ?Paper XREF Medline_name
+            Meeting_abstract_name ?Paper XREF Meeting_abstract
+            WBG_abstract_name     ?Paper XREF WBG_abstract
+	    Old_WBPaper_name      ?Paper XREF Old_WBPaper
+            Other_name_for ?Paper XREF Other_name
+
 
 
 #Affiliation Affiliation_address UNIQUE Text
