@@ -40,7 +40,6 @@ my $runtime = `date +%H:%M:%S`; chomp $runtime;
 
 $opt_d="";   # Verbose debug mode
 $opt_h="";   # Help/Usage page
-$opt_s="";   # check Status tags
 
 getopts ('hd');
 &usage(0) if ($opt_h);
@@ -256,8 +255,6 @@ introncheck searches for confirmed introns which aren't part of a gene model yet
 =item -h, Help
 
 =item -d, Debug/Verbose mode
-
-=item -s, check Status tags
 
 =back
 
