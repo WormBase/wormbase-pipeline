@@ -379,7 +379,6 @@
 		  Transgene_product ?Transgene XREF Gene
 		  Rescued_by_transgene ?Transgene	
 		  In_cluster ?Locus XREF Contains // new way of linking to Clusters in locus class
-		  GO_term ?GO_term XREF Gene ?GO_code #Evidence
         Molecular_info	  CDS ?CDS XREF Gene #Evidence		// to link to live CDSs
 			  CDS_history ?CDS XREF Gene_history	// to link to history CDSs
 			  Transcript ?Transcript XREF Gene #Evidence
@@ -394,24 +393,18 @@
                   Well_ordered          // "on the line"
                   Hide_under ?Gene XREF Representative_for
                   Representative_for ?Gene XREF Hide_under
-
-// Checked up to here
-
-                  Positive Inside_rearr ?Rearrangement XREF Gene_inside #Evidence
+                  Positive Inside_rearr   ?Rearrangement XREF Gene_inside #Evidence
                            Positive_clone ?Clone XREF Positive_gene #Evidence
-                  Negative Outside_rearr ?Rearrangement XREF Gene_outside #Evidence
+                  Negative Outside_rearr  ?Rearrangement XREF Gene_outside #Evidence
                            Negative_clone ?Clone XREF Negative_gene #Evidence
                   Mapping_data  Two_pt ?Two_pt_data
                                 Multi_point ?Multi_pt_data
                                 Pos_neg_data ?Pos_neg_data
-
-
-
-
-
-        Laboratory ?Laboratory
-        Reference ?Paper XREF Gene
+	GO_term ?GO_term XREF Gene ?GO_code #Evidence
+	Laboratory ?Laboratory
+	Reference ?Paper XREF Gene
         Remark ?Text #Evidence
+
 
 #Gene_history_action Event  Created
                             Killed
@@ -461,12 +454,14 @@
 				Date DateType
 				Mutagen UNIQUE Text UNIQUE Text // Text is dose
                 Map     ?Map XREF Rearrangement #Map_position
-		Positive Locus_inside ?Locus XREF Inside_rearr ?Author
-			 Clone_inside  ?Clone XREF Inside_rearr ?Author
-                         Rearr_inside ?Rearrangement
-		Negative Locus_outside ?Locus XREF Outside_rearr ?Author
-			 Clone_outside ?Clone XREF Outside_rearr ?Author
-                         Rearr_outside ?Rearrangement
+		Positive Locus_inside ?Locus XREF Inside_rearr #Evidence
+			 Gene_inside  ?Gene  XREF Inside_rearr #Evidence
+			 Clone_inside ?Clone XREF Inside_rearr #Evidence
+                         Rearr_inside ?Rearrangement #Evidence
+		Negative Locus_outside ?Locus XREF Outside_rearr #Evidence
+			 Gene_outside  ?Gene  XREF Outside_rearr #Evidence
+			 Clone_outside ?Clone XREF Outside_rearr #Evidence
+                         Rearr_outside ?Rearrangement #Evidence
 		Mapping_data	Pos_neg_data ?Pos_neg_data
 				2_point ?2_point_data
         	                Multi_point ?Multi_pt_data
@@ -2226,7 +2221,8 @@
                                 //monograph, news, book,
                                 //meeting_abstract
         Contains ?Paper XREF Contained_in
-        Refers_to Locus ?Locus XREF Reference #Evidence
+        Refers_to Gene ?Gene XREF Reference #Evidence
+		  Locus ?Locus XREF Reference #Evidence
                   Allele ?Allele XREF Reference #Evidence
                   Rearrangement ?Rearrangement XREF Reference #Evidence
                   Sequence ?Sequence XREF Reference #Evidence
