@@ -1,10 +1,17 @@
+
  Genetic_map    Sequence_map        Author
- Locus          Sequence            Paper
-  Gene           Genome_sequence    Predicted_gene   
+ Gene_class			    Paper
+ Locus          Sequence                 
+  Gene           Genome_sequence    Expr_profile                 
   Other_locus    cDNA_sequence      Expr_pattern
- Rearrangement   EMBL_sequence      Cell
- Allele          Briggsae_genomic   Lineage
- Gene_class     Protein             Pathway
- Strain          Wormpep            RNAi
- Clone          Phenotype	    WTP
- Clone_grid      Oligo            Keyset    Model
+ Rearrangement   Briggsae_genomic   RNAi       
+		 Predicted_gene	     Phenotype
+ Allele                              PCR_product
+ Strain	        Protein               Oligo
+                  Wormpep           
+ Cell_group
+ Cell		WTP
+ Lineage			    Model
+ Life_stage	Clone		    Method
+		Clone_grid	    Keyset
+
