@@ -1,0 +1,39 @@
+#!/usr/local/bin/perl5.6.1 -w
+
+
+my $initial = 0;
+my $seq;
+
+# load strung to memory
+my $file = shift;
+
+open (FASTA, "<$file");
+while (<FASTA>) {
+      chomp;
+      if (/^>(\S+.+)/) {
+	  &rewrite($seq) unless ($initial == 0);  
+	  print ">$1\n";
+	  $initial++;
+	  $seq = "";
+	  next;
+      }
+      $seq .= $_;
+}
+close FASTA;
+
+&rewrite($seq);
+
+exit(0);
+
+
+
+sub rewrite {
+    my $seq   = shift;
+    $size     = length ($seq);
+    $no_lines = int ($size / 60) +1;
+    for ($i = 0; $i < $no_lines; $i++) {
+	$linestart = $i * 60;
+	$newline   = substr($seq,$linestart,60);
+	print "$newline\n";
+    }
+}
