@@ -6,8 +6,8 @@
 #
 # Script to make ?Transcript objects
 #
-# Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-09-30 08:19:50 $  
+# Last updated by: $Author: ar2 $     
+# Last updated on: $Date: 2003-10-09 11:20:43 $  
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -51,7 +51,7 @@ if($debug){
 }
 
 
-my $log = &make_build_log($debug);
+my $log = Log_files->make_build_log()
 
 exit(0);
 
@@ -98,7 +98,7 @@ foreach my $chrom ( @chromosomes ) {
   }
 
   open (GFF,"<$gff_file") or die "gff_file\n";
-  print $log "reading gff file $gff_file\n";
+  $log->write_to("reading gff file $gff_file\n");
   # C43G2	  curated	  exon         10841   10892   .       +       .       Sequence "C43G2.4"
   # C43G2   curated         CDS          10841   10892   .       +       0       Sequence "C43G2.4"
   # C43G2   curated         Sequence     10841   13282   .       +       .       Sequence "C43G2.4"
@@ -254,7 +254,7 @@ foreach my $chrom ( @chromosomes ) {
 
   if ($show_matches) { 
     open(MATCHES,">$transcript_dir/chromosome${chrom}_matching_cDNA.dat") or die "cant open $transcript_dir/chromosome${chrom}_matching_cDNA.dat :$!\n" ;
-    print $log "writing Matching_cDNA file $transcript_dir/chromosome${chrom}_matching_cDNA.dat\n";
+    $log->write_to("writing Matching_cDNA file $transcript_dir/chromosome${chrom}_matching_cDNA.dat\n");
     print MATCHES Data::Dumper->Dump([\%gene2cdnas]);
     close MATCHES;
 
@@ -283,14 +283,8 @@ if( $load_matches ) {
   &run_command("cat $transcript_dir/chromosome*_matching_cDNA.ace > $transcript_dir/matching_cDNA_all.ace");
   &run_command("echo \"pparse $transcript_dir/matching_cDNA_all.ace\nsave\nquit\" | $tace -tsuser matching_cDNA $database");
 }
-  
 
-# Finish and tidy up
-print $log "$0 finished at ",&runtime,"\n";
-&mail_maintainer("BUILD REPORT: $0",$maintainers,$log);
-close($log);
-
-
+$log->mail("All");
 
 exit(0);
 
