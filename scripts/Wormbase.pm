@@ -443,7 +443,7 @@ sub release_databases
     #get the Cambridge dates directly from block file 1
     my @date = &find_file_last_modified("/wormsrv2/camace/database/block1.wrm");
     $dates{camace} = $date[0];
-    @date = &find_file_last_modified("/wormsrv2/genace/database/block1.wrm");
+    @date = &find_file_last_modified("/wormsrv2/geneace/database/block1.wrm");
     $dates{genace} = $date[0];
     
 
