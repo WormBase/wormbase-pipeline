@@ -7,13 +7,13 @@
 # Usage : finish_build.pl [-options]
 #
 # 1) checks to see if there are three existing (and unpacked) WS releases in /wormsrv2
-#    If there are, then it archives the oldest release away into /wormsrv2/wormbase_archive
+#    If there are, then it archives the oldest release away into /nfs/wormarchive
 # 2) Does a similar thing with Wormpep releases in /wormsrv2/WORMPEP
 # 3) Archives old GFF_SPLITS directory
 # 4) Makes wormsrv2/current_DB point at latest release
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-01-28 10:23:49 $
+# Last updated on: $Date: 2003-03-10 13:26:33 $
 
 
 
@@ -148,12 +148,12 @@ sub archive_old_releases{
     }    
   }
 
-  # turn the old release into a tarball, move into wormbase_archive and remove old directory
+  # turn the old release into a tarball, move into /nfs/wormarchive and remove old directory
   print LOG "\nCreating $WS_old_path.tar.gz\n";
   system ("tar -cvf $WS_old_path.tar $WS_old_path/") && die "Couldn't create tar file\n";
   system ("gzip $WS_old_path.tar") && die "Couldn't create gzip file\n";
-  print LOG "Moving archive to /wormsrv1/WORMBASE_ARCHIVE and removing $WS_old_path\n";
-  system ("mv $WS_old_path.tar.gz /wormsrv1/WORMBASE_ARCHIVE/") && die "Couldn't move to /wormsrv1/WORMBASE_ARCHIVE\n";
+  print LOG "Moving archive to /nfs/wormarchive and removing $WS_old_path\n";
+  system ("mv $WS_old_path.tar.gz /nfs/wormarchive/") && die "Couldn't move to /nfs/wormarchive\n";
   system ("rm -rf $WS_old_path") && die "Couldn't remove old directory\n";
   
   # archive old wormpep version
