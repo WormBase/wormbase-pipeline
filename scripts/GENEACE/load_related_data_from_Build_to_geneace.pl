@@ -8,7 +8,7 @@
 # RUN this script anytime during the build or after the build when get_interpolated_map 
 # and update_inferred multi-pt data are done
 #
-# Last updated on: $Date: 2004-11-26 13:13:14 $
+# Last updated on: $Date: 2004-12-16 15:30:16 $
 # Last updated by: $Author: krb $
 
 
@@ -39,15 +39,29 @@ my $log = Log_files->make_build_log();
 # ----- preparing data -----
 ##############################
 
+# (1) Promoted map positions
+$log->write_to("Loading pseudo map positions\n");
+my $file = "/wormsrv2/autoace/acefiles/pseudo_map_positions.ace";
+
+my $command = <<END;
+pparse $file
+save
+quit
+END
+
+open (Load_GA,"| $tace -tsuser \"pseudo_map_positions_from_autoace\" $geneace_dir") || die "Failed to upload to Geneace\n";
+print Load_GA $command;
+close Load_GA;
 
 
-# (1) interpolated map data
+
+# (2) interpolated map data
 $log->write_to("Loading interpolated map data\n");
 my @map = glob("/wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/interpolated_map_to_geneace_$release.*ace");
 my $map = $map[-1];
 
 # need to first remove existing data before uploading new file
-my $command = <<END;
+$command = <<END;
 Find Gene * where Interpolated_map_position
 edit -D Interpolated_map_position
 pparse $map
@@ -55,49 +69,50 @@ save
 quit
 END
 
-open (Load_GA,"| $tace -tsuser \"update_from_autoace\" $geneace_dir") || die "Failed to upload to Geneace\n";
+open (Load_GA,"| $tace -tsuser \"interpolated_map_positions_from_autoace\" $geneace_dir") || die "Failed to upload to Geneace\n";
 print Load_GA $command;
 close Load_GA;
 
 
-# (2) corrected reverse physicals
+
+# (3) corrected reverse physicals
 my $rev_phys = glob("/wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/rev_physical_update_$release");
 # load if file exists
 if(-e $rev_phys){
-  $log->write_to("Loading reverse physicals\n");
-  
+  $log->write_to("Loading reverse physicals\n"); 
   $command = "pparse $rev_phys\nsave\nquit\n";
-open (Load_GA,"| $tace -tsuser \"update_from_autoace\" $geneace_dir") || die "Failed to upload to Geneace\n";
-print Load_GA $command;
-close Load_GA;
+  open (Load_GA,"| $tace -tsuser \"reverse_physicals_from_autoace\" $geneace_dir") || die "Failed to upload to Geneace\n";
+  print Load_GA $command;
+  close Load_GA;
 }
 else{
   $log->write_to("$rev_phys file did not exist\n");
 }
 
-# (3) new multipt obj created for pseudo markers
-my $multi = glob("/wormsrv1/geneace/JAH_DATA/MULTI_PT_INFERRED/inferred_multi_pt_obj_$release");
-if(-e $multi){
-  $log->write_to("Loading multipoint objects for pseudo map markers \n");
-  
-  $command = "pparse $multi\nsave\nquit\n";
-open (Load_GA,"| $tace -tsuser \"update_from_autoace\" $geneace_dir") || die "Failed to upload to Geneace\n";
-print Load_GA $command;
-close Load_GA;
-}
-else{
-  $log->write_to("$multi file did not exist\n");
-}
 
-# (4) existing multipt obj with updated flanking marker loci
-$log->write_to("Updating existing multipoint data with corrected flanking marker loci\n");
-my $multi_update = glob("/wormsrv1/geneace/JAH_DATA/MULTI_PT_INFERRED/updated_multi_pt_flanking_loci_$release");
-$command = "pparse $multi_update\nsave\nquit\n";
-open (Load_GA,"| $tace -tsuser \"update_from_autoace\" $geneace_dir") || die "Failed to upload to Geneace\n";
+
+# (4) new multipt obj created for pseudo markers
+$log->write_to("Loading multipoint objects for new pseudo map markers \n");
+$file = "/wormsrv2/autoace/acefiles/new_pseudo_multi_point_data.ace";
+$command = "pparse $file\nsave\nquit\n";
+
+open (Load_GA,"| $tace -tsuser \"new_pseudo_multi_point_data_from_autoace\" $geneace_dir") || die "Failed to upload to Geneace\n";
 print Load_GA $command;
 close Load_GA;
 
-# (5) updated geneace with person/person_name data from Caltech
+
+
+# (5) existing multipt obj with updated flanking marker loci
+$log->write_to("Loading corrections to existing multipoint data with corrected flanking marker loci\n");
+$file = "/wormsrv2/autoace/acefiles/updated_pseudo_multi_point_data.ace";
+$command = "pparse $file\nsave\nquit\n";
+
+open (Load_GA,"| $tace -tsuser \"updated_pseudo_multi_point_data_from_autoace\" $geneace_dir") || die "Failed to upload to Geneace\n";
+print Load_GA $command;
+close Load_GA;
+
+
+# (6) updated geneace with person/person_name data from Caltech
 # can use dumped Person class in /wormsrv2/wormbase/caltech/caltech_Person.ace
 $log->write_to("Updating person name information from caltech_Person.ace file\n");
 
@@ -119,7 +134,7 @@ save
 quit
 END
 
-open (Load_GA,"| $tace -tsuser \"update_from_autoace\" $geneace_dir") || die "Failed to upload to Geneace\n";
+open (Load_GA,"| $tace -tsuser \"person_update_from_autoace\" $geneace_dir") || die "Failed to upload to Geneace\n";
 print Load_GA $command;
 close Load_GA;
 
@@ -129,7 +144,7 @@ $log->write_to("Adding new person data\n");
 my $person = "/wormsrv2/wormbase/caltech/caltech_Person.ace";
 
 $command= "pparse $person\nsave\nquit\n";
-open (Load_GA,"| $tace -tsuser \"update_from_autoace\" $geneace_dir") || die "Failed to upload to Geneace\n";
+open (Load_GA,"| $tace -tsuser \"person_update_from_autoace\" $geneace_dir") || die "Failed to upload to Geneace\n";
 print Load_GA $command;
 close Load_GA;
 
