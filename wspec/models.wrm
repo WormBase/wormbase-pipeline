@@ -966,7 +966,7 @@
 
 // SMap stuff
 
-#SMap_info Method ?Method    // methods used in child (optional)
+#SMap_info Method UNIQUE ?Method    // methods used in child (optional)
 	   Content Homol_only // useful for -nohomol gff option
 		   Feature_only // useful for -nofeature gff option
 	   Mapping Align Int UNIQUE Int UNIQUE Int 
@@ -1022,7 +1022,7 @@
                                 Start_not_found                                   // [020306 kj]
                                 End_not_found                                     // [020306 kj]
                                 Pseudogene Text                                   // [020306 kj]
-                Method ?Method                  
+                Method UNIQUE ?Method                  
 
 ?Homol_data SMap S_Parent Sequence UNIQUE ?Sequence
 	    Homol DNA_homol ?Sequence XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
@@ -1049,7 +1049,7 @@
 		    Defined_by_author ?Author
 	 Part_of_gene ?Sequence XREF Sequence_features  #Evidence
 	 Annotation UNIQUE ?LongText		// added for data attribution [030220 dl]
-         Method ?Method
+         Method UNIQUE ?Method
 
 ?Oligo  Sequence UNIQUE Text  // verbatim sequence 
         Length UNIQUE Int
@@ -1251,7 +1251,7 @@
 // more tweaks added [010927 krb]
 
 ?Expr_profile SMap S_parent PCR_product UNIQUE ?PCR_product XREF Expr_profile
-              Method ?Method
+              Method UNIQUE ?Method
               Expr_map ?SK_map XREF Expr_profile
               Reference ?Paper XREF Expr_profile
 	      RNAi_result ?RNAi XREF Expr_profile // Connection made by script during build [030106 krb]
@@ -1457,7 +1457,7 @@
 
 ?RNAi   SMap S_Parent UNIQUE Sequence UNIQUE ?Sequence XREF RNAi       // canonical parent (reliable)
 			     PCR_product UNIQUE ?PCR_product XREF RNAi // primer pair (reliable)
-        Method ?Method
+        Method UNIQUE ?Method
         Experiment      Laboratory ?Laboratory
                         Author ?Author
                         Date UNIQUE DateType
@@ -1487,7 +1487,7 @@
 ?PCR_product SMap S_Parent Canonical_parent UNIQUE ?Sequence XREF PCR_product
  		  S_Child RNAi ?RNAi XREF PCR_product UNIQUE Int UNIQUE Int #SMap_info
 			  Expr_profile ?Expr_profile XREF PCR_product UNIQUE Int UNIQUE Int #SMap_info// added for new Expr_profile class [010912 krb]
- 	     Method ?Method
+ 	     Method UNIQUE ?Method
  	     Overlaps_CDS ?Sequence XREF Corresponding_PCR_product  // added for Dan PCR mappings [010419 dl]
 	     Oligo ?Oligo XREF PCR_product UNIQUE Int UNIQUE Int
  	     Assay_conditions ?LongText
@@ -1520,7 +1520,7 @@
 	Species ?Species
 	Contains_CDS ?Sequence XREF Contained_in_operon  #Trans_splice_leader
 	Reference ?Paper XREF Operon
-	Method ?Method
+	Method UNIQUE ?Method
 
 #Trans_splice_leader SL1 ?Text
                      SL2 ?Text
@@ -1530,7 +1530,7 @@
 ?Transposon SMap S_Parent Canonical_parent UNIQUE ?Sequence XREF Transposon
             LTR_region UNIQUE Int UNIQUE Int
             Remark ?Text #Evidence
-            Method ?Method
+            Method UNIQUE ?Method
 
 
 // New movie class for Lincoln's movies.
@@ -1648,7 +1648,7 @@
      Properties 5_UTR #Evidence
                 3_UTR #Evidence
      Species ?Species
-     Method ?Method
+     Method UNIQUE ?Method
 
 
 
