@@ -7,7 +7,7 @@
 # A script to take ?Sequence objects and make ?CDS objects
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-11-17 14:46:23 $     
+# Last updated on: $Date: 2003-11-17 14:55:08 $     
 
 use strict;
 use Getopt::Long;
@@ -54,13 +54,13 @@ while(<IN>){
     s/^Sequence :/CDS :/;
 
     # Need to add tags for SMap
-    s/Structure\s+$ts\s+From\s+$ts\s+Source/Sequence/;
+    s/Structure\s+$ts\s+From\s+$ts\s+Source/Sequence/g;
 
     # Get rid of this line (now removed in camace)
     s/Properties\s+$ts\s+Status\s+$ts\s+Annotated\s+$ts\s+\d{4}-\d{2}-\d{2}\s+$ts\s//g;
 
     # Change Has_allele tag
-    s/Has_allele/Allele/;
+    s/Has_allele/Allele/g;
     
     # output to ?CDS file
     print CDS;
@@ -74,7 +74,7 @@ while(<IN>){
     s/Visible\s+$ts\s+Matching_Genomic/Matching_CDS/g;
     
     # Transcript_child tag now just called Transcript
-    s/Transcript_child/Transcript/;
+    s/Transcript_child/Transcript/g;
 
     # print to ?Sequence file
     print SEQ;
