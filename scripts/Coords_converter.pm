@@ -108,8 +108,9 @@ EOF
       close NEW;
       close FH;
 
-      `mv -f $clone_coords_file.bk $clone_coords_file`;
-      `chmod 777 $clone_coords_file`;
+      system("mv -f $clone_coords_file.bk $clone_coords_file") and croak "cant mv $clone_coords_file.bk\n" ;
+      system("chmod 777 $clone_coords_file") and carp "cant chmod on $clone_coords_file - This could cause problems in future" ;
+
     }
 
     my $self = {};
