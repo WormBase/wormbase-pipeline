@@ -1,8 +1,8 @@
 #!/usr/local/bin/perl5.8.0 -w
 
 # Author: Chao-Kung Chen
-# Last updated by $Author: krb $
-# Last updated on: $Date: 2004-02-23 13:29:44 $ 
+# Last updated by $Author: ck1 $
+# Last updated on: $Date: 2004-02-23 15:27:57 $ 
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'}; 
@@ -27,7 +27,9 @@ my $user = `whoami`; chomp $user;
 my $rundate = &rundate;
 my $autoace = "/wormsrv2/autoace";
 my $tace = &tace;   
+my $autoace_version = "WS".get_wormbase_version();
 my $multi_dir = "/wormsrv1/geneace/JAH_DATA/MULTI_PT_INFERRED";
+
 my $log = "/wormsrv2/logs/update_inferred_multi_pt.$rundate";
 open(LOG, ">$log") || die $!;
 print LOG "# $0 started at ", runtime(), "\n\n";;
@@ -62,8 +64,9 @@ my $db = Ace->connect(-path  => $database,
 
 my (%locus_allele, %locus_order, %order_locus);
 
-&int_map_to_map_loci;
-&make_inferred_multi_pt_obj; 
+my @update = &int_map_to_map_loci;
+
+&make_inferred_multi_pt_obj if @update ne "NA";
 &update_inferred_multi_pt;
 
 #-------------------------
@@ -71,11 +74,15 @@ my (%locus_allele, %locus_order, %order_locus);
 #-------------------------
 
 sub int_map_to_map_loci {
-
-  my $autoace_version = get_wormbase_version();
-  # get a list of "promoted" loci from geneace_check output to here
-  my @int_loci = `cat $multi_dir/loci_become_genetic_marker_for_WS$autoace_version*`;
  
+  # get a list of "promoted" loci from geneace_check output to here
+  my @int_loci;
+  @int_loci = `cat $multi_dir/loci_become_genetic_marker_for_$autoace_version*`;
+  if (!@int_loci){
+    return "NA";
+    last;
+  }
+
   # test file
   #my @int_loci = `cat $multi_dir/inferred_multi_pt_obj_WS117`;
 
@@ -100,6 +107,7 @@ sub int_map_to_map_loci {
       }
     }
   }
+  return @int_loci;
 }
 
 sub make_inferred_multi_pt_obj {
@@ -110,11 +118,9 @@ sub make_inferred_multi_pt_obj {
   my $last_multi = $multi_objs[-1];
   my $multi = $last_multi -1; $multi++;
   
-  # check autoace version
-  my $autoace_version = get_wormbase_version_name(); # return WSXX
-
   # get loci order from cmp_gmap_with_coord_order_WSXXX.yymmdd.pid file
   my @map_file = glob("/wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/cmp_gmap_with_coord_order_$autoace_version*");
+
   my $count = 0;
   open(IN, $map_file[-1]) || die $!;
   while(<IN>){
@@ -130,8 +136,8 @@ sub make_inferred_multi_pt_obj {
   }
 
   # write inferred multi_obj acefile
-  open(NEW, ">/tmp/inferred_multi_pt_obj_to_make") || die $!;
-
+  open(NEW, ">/tmp/inferred_multi_pt_obj_$autoace_version") || die $!;
+  `chmod 777 /tmp/inferred_multi_pt_obj_$autoace_version`;
   foreach (keys %locus_allele){ 
     $multi++;
     my $L_locus = $order_locus{$locus_order{$_}-1};
@@ -153,7 +159,8 @@ sub update_inferred_multi_pt {
   my $query  = "find Multi_pt_data * where remark AND NEXT AND NEXT = \"inferred_automatically\"";
   push( my @inferred_multi_objs, $db->find($query) );
 
-  open(UPDATE, ">/tmp/updated_multi_pt_flanking_loci") || die $!;
+  open(UPDATE, ">/tmp/updated_multi_pt_flanking_loci_$autoace_version") || die $!;
+  `chmod 777 /tmp/updated_multi_pt_flanking_loci_$autoace_version`;
   my (@center_locus, $locus);
 
   foreach (@inferred_multi_objs){
@@ -183,18 +190,29 @@ sub update_inferred_multi_pt {
 
   print LOG "\n\n";
 
-  # output a updated multi-pt temp file and upload it to database specified
-  
-  my $command=<<END;
-pparse /tmp/updated_multi_pt_flanking_loci
-pparse /tmp/inferred_multi_pt_obj_to_make
+  # output temp file and upload it to database specified and copy $num_multi to $multi_dir
+  my $new_multi = "inferred_multi_pt_obj_$autoace_version";
+  my $updated   = "updated_multi_pt_flanking_loci_$autoace_version";
+  `cp $new_multi $multi_dir`;
+
+  my $cmd1=<<END;
+pparse /tmp/$new_multi
+pparse /tmp/$updated
+save
+quit
+END
+
+  my $cmd2=<<END;
+pparse /tmp/$updated
 save
 quit
 END
 
   my $ga = init Geneace();
-  $ga->upload_database($ckdb, $command, "Inferred_multi_pt_data", $log) if $debug;
-  $ga->upload_database($database, $command, "Inferred_multi_pt_data", $log) if !$debug;
+  $ga->upload_database($ckdb, $cmd1, "Inferred_multi_pt_data", $log) if ($debug && @update ne "NA");
+  $ga->upload_database($ckdb, $cmd2, "Inferred_multi_pt_data", $log) if ($debug && @update eq "NA");
+  $ga->upload_database($database, $cmd1, "Inferred_multi_pt_data", $log) if (!$debug && @update ne "NA");
+  $ga->upload_database($database, $cmd2, "Inferred_multi_pt_data", $log) if (!$debug && @update eq "NA");
 }
 
 print LOG "Make sure that all file parsings are OK . . . . .\n\n";
