@@ -8,7 +8,7 @@
 # relevant WormBase and Wormpep web pages.
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-06-23 12:43:18 $      
+# Last updated on: $Date: 2004-06-24 08:37:42 $      
 
 
 #################################################################################
@@ -212,6 +212,9 @@ sub copy_overlapcheck_files{
   print LOG "copying short genes file /wormsrv2/autoace/CHECKS/ to $www/$WS_name/Checks\n"; 
   system("cp -f /wormsrv2/autoace/CHECKS/short_spurious_genes.$WS_name.csv.html $www/$WS_name/Checks/short_genes.html") && warn "Cannot copy short_genes file $!\n";
 
+  print LOG "Creating symbolic link for header.ini file\n";
+  chdir("$www/$WS_name/Checks") || print LOG "Couldn't chdir to $www/$WS_name/Checks\n";
+  system("ln -s ../../header.ini header.ini") && croak "Couldn't create new symlink\n";
 
   foreach my $file (@filenames) {
     my $line_total;
