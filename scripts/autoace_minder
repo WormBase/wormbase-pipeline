@@ -6,7 +6,7 @@
 # Usage : autoace_minder [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2002-07-25 15:53:34 $
+# Last edited on: $Date: 2002-07-31 08:51:32 $
 
 
 #################################################################################
@@ -995,11 +995,6 @@ sub map_features {
     system("$scriptdir/map_RNAi.pl") && die "Couldn't run map_RNAi.pl\n";
     print LOG " Mapped RNAi experiments for $WS_version\n";
     print LOG " =>'map_RNAi.pl'\n\n";
-
-    # GO terms
-    system ("$scriptdir/inherit_GO_terms.pl -m") && die "Couldn't run inherit_GO_terms.pl\n";
-    print LOG " Assign GO terms based on Interpro motifs for$WS_version\n";
-    print LOG " =>'inherit_GO_terms.pl'\n\n";
 
 }
 #__ end map_features __#
