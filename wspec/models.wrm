@@ -346,7 +346,7 @@
 // [krb 030124]
 
 ?Gene_name Gene CGC_name ?Locus XREF CGC_name // these two fields won't be needed under new gene model
-		Non_CGC_name ?Locus XREF CGC_name  // 
+		Non_CGC_name ?Locus XREF Non_CGC_name  // 
 		Sequence_name ?Locus XREF Sequence_name // optional whether to use this and link to 
 							// Transcript and Genomic_sequence names
 		Other_name ?Locus XREF Other_name // main reason for this class
