@@ -5,7 +5,7 @@
 # completely rewritten by Keith Bradnam from list_loci_designations
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-11-08 16:35:01 $      
+# Last updated on: $Date: 2004-11-08 16:40:41 $      
 #
 # This script should be run under a cron job and simply update the webpages that show
 # current gene names and sequence connections.  Gets info from geneace.  
@@ -328,7 +328,7 @@ sub make_gene_lists{
   }
   close(MOL2GENE);
 
-  open (TRANSPOSONS, ">$www/tranposon_genes.txt") || print LOG  "ERROR: Couldn't open transposon_genes.txt\n";
+  open (TRANSPOSONS, ">$www/transposon_genes.txt") || print LOG  "ERROR: Couldn't open transposon_genes.txt\n";
   foreach my $key (sort keys %transposon_genes){
     print TRANSPOSONS "$key\t$transposon_genes{$key}\n";
   }
