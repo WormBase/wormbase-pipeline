@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-07-07 13:57:00 $
+# Last updated on: $Date: 2004-07-07 16:56:16 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -69,7 +69,7 @@ if($debug){
 # choose database to query: default is /wormsrv1/geneace
 my $default_db = "/wormsrv1/geneace";
 ($default_db = $database) if ($database);
-print "\nUsing $default_db as default database.\n\n";
+print "Using $default_db as default database.\n\n";
 
 # Open file for acefile output?
 my $acefile;
@@ -176,6 +176,97 @@ sub process_gene_class{
   print "Checking Gene class for errors:\n";
   print LOG "\nChecking Gene class for errors:\n--------------------------------\n";
 
+
+  # check that there is a Version tag
+  foreach my $gene ($db->fetch(-query=>'Find Gene WHERE NOT Version')){
+    print LOG "ERROR 1: $gene ($Gene_info{$gene}{'Public_name'}) has no Version number\n";    
+  }
+
+  # test for Other_name tag but no value
+  foreach my $gene ($db->fetch(-query=>'Find Gene WHERE Other_name AND NOT NEXT')){
+    print LOG "ERROR 2: $gene ($Gene_info{$gene}{'Public_name'}) has 'Other_name' tag without value\n";
+  }
+
+  # checks that when a Gene belongs to a Gene_class, it should have a CGC_name
+  foreach my $gene ($db->fetch(-query=>'Find Gene WHERE Gene_class AND NOT CGC_name')){
+    my $gc = $gene->Gene_class;
+    if(!defined($gc)){
+      print LOG "ERROR 3: $gene ($Gene_info{$gene}{'Public_name'}) has no CGC_name but has an unpopulated Gene_class tag\n";
+    }
+    else{
+      print LOG "ERROR 3: $gene ($Gene_info{$gene}{'Public_name'}) has no CGC_name but links to Gene_class $gc\n";
+    }
+  }
+
+  # checks existence of a CGC name but no gene_class
+  foreach my $gene ($db->fetch(-query=>'Find Gene WHERE CGC_name AND NOT Gene_class')){
+    my $cgc_name = $gene->CGC_name;
+    print  "ERROR 4: $gene has CGC name ($cgc_name) but is not linked to its Gene_class\n";
+    print JAHLOG "ERROR 4: $gene has CGC name ($cgc_name) but is not linked to its Gene_class\n";
+    $jah_errors++;
+  }
+
+  # checks Genes that do not have a map position nor an interpolated_map_position but has sequence info
+  my $query = "Find Gene WHERE !(Map | Interpolated_map_position) & (CS|Transcript|Pseudogene) & Species=\"*elegans\" & !Sequence_name=\"MTCE*\"";
+  foreach my $gene ($db->fetch(-query=>"$query")){
+    print LOG "ERROR 5: $gene ($Gene_info{$gene}{'Public_name'}) has neither Map nor Interpolated_map_position info\n";
+  }
+
+  # test for Map tag and !NEXT
+  foreach my $gene ($db->fetch(-query=>"Find Gene WHERE Map AND NOT NEXT")){
+    print LOG "ERROR 6: $gene ($Gene_info{$gene}{'Public_name'}) has a 'Map' tag without a value\n";
+  }
+
+  # test for Interpolated_map_position tag and !NEXT
+  foreach my $gene ($db->fetch(-query=>"Find Gene WHERE Interpolated_map_position AND NOT NEXT")){
+    print LOG "ERROR 6: $gene ($Gene_info{$gene}{'Public_name'}) has an 'Interpolated_map_position' tag without a value\n";
+  }
+
+  # test for CDS tag and no value
+  foreach my $gene ($db->fetch(-query=>"Find CDS AND NOT NEXT")){
+    print LOG "ERROR 7(a): $gene ($Gene_info{$gene}{'Public_name'}) has CDS tag but no associated value\n";
+    if ($ace){print ACE "\n\nGene : \"$gene\"\n-D CDS\n";}
+  }
+
+  # test for Transcript tag and no value
+  foreach my $gene ($db->fetch(-query=>"Find Transcript AND NOT NEXT")){
+    print LOG "ERROR 8(a): $gene ($Gene_info{$gene}{'Public_name'}) has Transcript tag but no associated value\n";
+    if ($ace){print ACE "\n\nGene : \"$gene\"\n-D Transcript\n";}
+  } 
+
+  # test for Pseudogene tag and no value
+  foreach my $gene ($db->fetch(-query=>"Find Pseudogene AND NOT NEXT")){
+    print LOG "ERROR 9(a): $gene ($Gene_info{$gene}{'Public_name'}) has Pseudogene tag but no associated value\n";
+    if ($ace){print ACE "\n\nGene : \"$gene\"\n-D Pseudogene\n";}
+  }
+  
+  # test for Other_sequence tag and no value
+  foreach my $gene ($db->fetch(-query=>"Find Other_sequence AND NOT NEXT")){
+    print LOG "ERROR 10(a): $gene ($Gene_info{$gene}{'Public_name'}) has Other_sequence tag but no associated value\n";
+    if ($ace){print ACE "\n\nGene : \"$gene\"\n-D Other_sequence\n";}
+  }
+
+
+  # A seq. should normally be linked to only one gene id: there are cases where .a is WBGenex and .b is WBGy (eg, ZC416.8a/b)
+  # The query is to find sequences (CDS/Transcript/Pseudogene) that have more than one Sequence_name_for values
+  # this tells you if a gene id is linked to > 1 sequences
+  foreach my $gene_name ($db->fetch(-query=>"Find Gene_name WHERE COUNT Sequence_name_for > 1")){
+    my @gid = $gene_name->Sequence_name_for;
+    print "ERROR 11: $gene_name is connected to multiple gene IDs: @gid\n";
+    print JAHLOG "ERROR 11: $gene_name is connected to multiple gene IDs: @gid\n";
+    $jah_errors++;
+  }
+
+  # test for CDS AND Pseudogene tags both present
+  foreach my $gene ($db->fetch(-query=>"Find Gene WHERE CDS AND Pseudogene")){
+    print "CHECK 1: $gene has both 'CDS' tag AND 'Pseudogene' tags\n";
+  }
+
+  # test for Pseudogene AND Transcript tags both present
+  foreach my $gene ($db->fetch(-query=>"Find Gene WHERE Pseudogene AND Transcript")){
+    print "CHECK 2: $gene has both 'Pseudogene' tag AND 'Transcript' tags\n";
+  }
+
   foreach my $gene_id (@gene_ids){
     # useful to see where you are in the script if running on command line
     print "$gene_id: $Gene_info{$gene_id}{'Public_name'}" if ($verbose);
@@ -184,13 +275,11 @@ sub process_gene_class{
     &test_locus_for_errors($gene_id);
     print "\n" if ($verbose);
   }
+
   
-  # looks for seq. (predictted_gene, transcript) link to an allele, but which gene ids don't => make gene id -> allele connection
+  # looks for seq. (predicted_gene, transcript) link to an allele, but which gene ids don't => make gene id -> allele connection
   &link_seq_to_Gene_based_on_allele($db);
 
-  # Find sequences (CDS/Trans/Pseudo) linkd to multiple gene_ids
-  print "Looking for sequences (CDS/Trans/Pseudo) connected to multiple gene ids\n" if ($verbose);
-  &find_seqs_with_multiple_Gene_ids($db);
 
   # check highest gene id number = gene obj. number
   my $last_gene_id = $gene_ids[-1];
@@ -200,23 +289,14 @@ sub process_gene_class{
     print LOG "ERROR 25: The highest gene id ($last_gene_id) is not equal to total number of Gene objects (", scalar @gene_ids, ")";
   }
 
-  # checks gene_id that does not have a map position nor an interpolated_map_position with conditions in the query
-  my $map_query = "Find gene * where !(map | interpolated_map_position) & (cds|transcript|pseudogene) & species=\"*elegans\" & !sequence_name=\"MTCE*\"";
-  push(my @gene_id_has_no_map_info, $db->find($map_query));
-  foreach my $gene (@gene_id_has_no_map_info){
-    print LOG "ERROR 26: $gene ($Gene_info{$gene}{'Public_name'}) has neither Map nor Interpolated_map_position info\n";
-  }
+
 }
+
 
 sub test_locus_for_errors{
   my $gene_id = shift;
   my $warnings;
 
-  # check existence of Gene version
-  if ( !defined $gene_id->Version ){
-    $warnings .= "ERROR 1: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has no Version number\n";
-    print "." if ($verbose);
-  }
 
   # check the number of version and Version_change of a Gene is identical
   if ( defined $gene_id->Version && defined $gene_id->Version_change ){
@@ -228,11 +308,7 @@ sub test_locus_for_errors{
     }
   }
 
-  # test for Other_name tag but no value
-  if ( defined($gene_id->at('Name.Other_name')) && !defined $gene_id->Other_name ){
-    $warnings .= "ERROR 3: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has 'Other_name' tag without value\n";
-    print "." if ($verbose);
-  }
+
 
   # test for Public_name is different from CGC_name
   if ( defined $gene_id->CGC_name && defined $gene_id->Public_name ){				
@@ -284,21 +360,8 @@ sub test_locus_for_errors{
     }
   }
 
-  # checks that when a Gene belongs to a Gene_class, it should have a CGC_name
-  if ( defined $gene_id->Gene_class && !defined $gene_id->CGC_name ){
-    my $gc = $gene_id->Gene_class;
-    $warnings .= "ERROR 8: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has no CGC_name but links to Gene_class $gc\n";
-    print "." if ($verbose);
-  }
 
 
-  # checks existence of a CGC name but no gene_class
-  if ( defined $gene_id->CGC_name && !defined $gene_id->Gene_class ){
-    my $cgc_name = $gene_id->CGC_name;
-    $warnings .= "ERROR 10: $gene_id has CGC name ($cgc_name) but is not linked to its Gene_class\n";
-    print "." if ($verbose);
-    print JAHLOG "ERROR 10: $gene_id has CGC name ($cgc_name) but is not linked to its Gene_class\n";
-  }
 
   # test for missing Species tag
   if ( !defined $gene_id->Species ){
@@ -321,25 +384,9 @@ sub test_locus_for_errors{
     }
   }
 
-  # test for Map tag and !NEXT
-  if ( $gene_id->at('Map_info.Map') && !defined $gene_id->Map ){
-    $warnings .= "ERROR 12: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has a 'Map' tag without a value\n";
-    print "." if ($verbose);
-  }
-  if ( $gene_id->at('Map_info.Interpolated_map_position') && !defined $gene_id->Interpolated_map_position ){
-    $warnings .= "ERROR 12.1: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has an 'Interpolated_map_position' tag without a value\n";
-    print "." if ($verbose);
-  }
 
 
-  # test for CDS/Transcript/Pseudogene/Other_sequence tag and no value
-  foreach my $tag ("CDS", "Transcript", "Pseudogene", "Other_sequence"){
-    if( defined $gene_id->at('Molecular_info.$tag') && !defined $gene_id->$tag ){
-      $warnings .= "ERROR 13(a): $gene_id ($Gene_info{$gene_id}{'Public_name'}) has '$tag' tag but no associated value\n";
-      print "." if ($verbose);
-      if ($ace){print ACE "\n\nGene : \"$gene_id\"\n"; print ACE "-D $tag\n"}
-    }
-  }
+
 
   # checks that for each CDS/Transcript/Pseudogene tag, if linked to multiple sequences, they should be splice variants of a same gene
   foreach my $tag ("CDS", "Transcript", "Pseudogene"){
@@ -411,17 +458,7 @@ sub test_locus_for_errors{
     }
   }
 
-  # test for CDS AND Pseudogene tags both present
-  if( defined $gene_id->at('Molecular_info.CDS') && defined $gene_id->at('Molecular_info.Pseudogene') ){
-    $warnings .= "CHECK: $gene_id has both 'CDS' tag AND 'Pseudogene' tag\n";
-    print "." if ($verbose);
-  }
 
-  # test for Pseudogene AND Transcript tags both present
-  if( defined $gene_id->at('Molecular_info.Pseudogene') && defined $gene_id->at('Molecular_info.Transcript') ){
-    $warnings .= "CHECK: $gene_id has both 'Pseudogene' tag AND 'Transcript' tag\n";
-    print "." if ($verbose);
-  }
 
   # Look for Genes with no Positive_clone info but which can be derived from its sequence info
   foreach my $tag ("CDS", "Transcript", "Pseudogene"){
@@ -557,20 +594,7 @@ sub link_seq_to_Gene_based_on_allele {
   }
 }
 
-# A seq. should normally be linked to only one gene id: there are cases where .a is WBGenex and .b is WBGy (eg, ZC416.8a/b)
-# The query is to find sequences (CDS/Transcript/Pseudogene) that have more than one Sequence_name_for values
-# this tells you if a gene id is linked to > 1 sequences
-sub find_seqs_with_multiple_Gene_ids {
-  my $db = shift;
 
-  my @CDSs = $db->fetch(-query=>'Find Gene_name * where COUNT Sequence_name_for > 1');
-  foreach my $cds (@CDSs){
-    my @gid = $cds->Sequence_name_for;
-    print LOG "ERROR 24: $cds is connected to multiple gene ids: @gid\n";
-    print JAHLOG "ERROR 24: $cds is connected to multiple gene ids: @gid\n";
-    $jah_errors++;
-  }
-}
 
 
                           #############################################################
@@ -1527,7 +1551,9 @@ sub create_log_files{
   print LOG "\n";
 
   unless ($classes[0] eq lc("pseudo")){
-    print LOG "The (a) following ERROR, or UPDT, eg, indicates ace output \n$acefile for direct upload to correct problems.\n\n";
+    if($ace){
+      print LOG "The (a) following ERROR, or UPDT, eg, indicates ace output \n$acefile for direct upload to correct problems.\n\n";
+    }
   }
 
   $jah_log = "/wormsrv2/logs/$script_name.jahlog.$rundate.$$" if $machine;
