@@ -6,8 +6,8 @@
 #
 # Ashwin Hajarnavis ah3@sanger.ac.uk  August 2002
 #
-# Last updated by: $Author: ar2 $                 
-# Last updated on: $Date: 2004-02-05 14:05:07 $   
+# Last updated by: $Author: dl1 $                 
+# Last updated on: $Date: 2004-04-28 10:37:00 $   
 
 
 use strict;
@@ -93,27 +93,9 @@ close LINK;
 # check to see if EST hash data exists
 # make it via tablemaker queries if absent
 
-my %ESTacc2ESTname;
-my %EST_name;
-my %EST_dir;
-
-unless (-e "$basedir/autoace/BLAT/EST.dat") {
-    (%EST_name,%EST_dir) = &make_EST_hash;
-}
-# else read it into memory
-else {
-    print "Read hash from file EST.dat\n";
-    open (FH, "<$basedir/autoace/BLAT/EST.dat") or die "EST.dat : $!\n";
-    undef $/;
-    my $data = <FH>;
-    eval $data;
-    die if $@;
-    $/ = "\n";
-    close FH;
-}
-
-print "Reverse key/value for EST_name hash .....";
-%ESTacc2ESTname = reverse %EST_name;
+my %NDBaccession2est = &FetchData('NDBaccession2est');
+print "Reverse key/value for NDBaccession2est hash .....";
+my %ESTacc2ESTname = reverse %NDBaccession2est;
 print "OK.\n";
 
 #
@@ -135,9 +117,9 @@ $est_data = read_gff($gff_dir, $mrna_file, $est_data);
  ##############################
 
 if ($output_dir)  {
-  open(OUTFILE, ">$output_dir/ALL.UTRs.tmp")|| die "Cannot open outfile $output_dir\n";
-  open(ERRORFILE, ">$output_dir/data_errors.txt")|| die "Cannot dump errors\n";
-  open(ACEFILE, ">$output_dir/UTRs.ace")||die "Cannot open ace file\n";
+  open(OUTFILE,   ">$output_dir/ALL.UTRs.tmp")    || die "Cannot open outfile $output_dir\n";
+  open(ERRORFILE, ">$output_dir/data_errors.txt") || die "Cannot dump errors\n";
+  open(ACEFILE,   ">$output_dir/UTRs.ace")        || die "Cannot open ace file\n";
 }
 
 &find_transcript($gene_est_map, $gene_data, $est_data);
