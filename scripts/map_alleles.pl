@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.1 -w                    # perl5.6.0 and -w flag
+#!/usr/local/bin/perl5.6.1 -w                    
 #
 # map_alleles.pl
 #
@@ -7,7 +7,7 @@
 # This maps alleles to the genome based on their flanking sequence
 #
 # Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2002-11-13 17:43:44 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2003-01-15 11:30:47 $        # quickly see when script was last changed and by whom
 
 
 use strict;
@@ -15,15 +15,25 @@ use lib "/wormsrv2/scripts/";
 use Wormbase;
 use Ace;
 
-use Getopt::Std;
+use Getopt::Long;
 #######################################
 # command-line options                #
 #######################################
 
-use vars qw($opt_d $opt_c $opt_l);
-# $opt_d debug   -  all output goes to ar/allele_mapping
+my ($debug, $update, $limit);
+my $database;
+my $ver;
+my $verbose;
 
-getopts ('lcd');
+# $debug   -  all output goes to ar/allele_mapping
+
+GetOptions( "debug"     => \$debug,
+	    "update"    => \$update,
+	    "limit=s"   => \$limit,
+	    "database=s"=> \$database,
+	    "WS=s"      => \$ver,
+	    "verbose"   => \$verbose
+	  );
 
 ##############
 # variables  #
@@ -36,12 +46,11 @@ my $maintainers = "All";
 my $rundate     = `date +%y%m%d`; chomp $rundate;
 my $runtime     = `date +%H:%M:%S`; chomp $runtime;
 my $log;
-my $ver = &get_wormbase_version;
+$ver = &get_wormbase_version unless defined $ver;
 
 my $allele_fa_file;
 my $genome_fa_file;
 my $scan_file;
-my $database;
 
 my (%chromosomeI_clones, %chromosomeII_clones, %chromosomeIII_clones, %chromosomeIV_clones, %chromosomeV_clones, %chromosomeX_clones);
 
@@ -54,31 +63,24 @@ my @chromo_clones_refs = (
 			  \%chromosomeX_clones
 			 );
 
-if( defined($opt_d) ) {
+if( $debug )  {
   $allele_fa_file = glob("~ar2/allele_mapping/alleles.fa");
   $genome_fa_file = glob("~ar2/allele_mapping/genome.fa");
   $scan_file = glob("~ar2/allele_mapping/alleles.scan");
   $log        = glob("~ar2/allele_mapping/map_alleles.$rundate");
  # $database = glob("~ar2/testace/");
-  $database = "/wormsrv2/current_DB/";
+  $database = "/wormsrv2/current_DB/" unless $database;
   $ver--;
-  our $count;
 }
 else { 
   $log        = "/wormsrv2/logs/map_alleles.$rundate";
   $scan_file = glob("~ar2/allele_mapping/alleles.scan");
   $allele_fa_file = "/wormsrv2/autoace/BLATS/alleles.fa";
-  $database = "/wormsrv2/autoace/";
+  $database = "/wormsrv2/autoace/" unless $database;
 }
 
-if( $opt_c ){
+if( $update ){
   #update clone position hashes
-#  &UpdateHashes(\%chromosomeI_clones, "CHROMOSOME_I.clone_ends.gff");
-#  &UpdateHashes(\%chromosomeII_clones, "CHROMOSOME_II.clone_ends.gff");
-#  &UpdateHashes(\%chromosomeIII_clones, "CHROMOSOME_III.clone_ends.gff");
-#  &UpdateHashes(\%chromosomeIV_clones, "CHROMOSOME_IV.clone_ends.gff");
-#  &UpdateHashes(\%chromosomeV_clones, "CHROMOSOME_V.clone_ends.gff");
-#  &UpdateHashes(\%chromosomeX_clones, "CHROMOSOME_X.clone_ends.gff");
   &UpdateHashes(\%chromosomeI_clones, "CHROMOSOME_I.clone_path.gff");
   &UpdateHashes(\%chromosomeII_clones,  "CHROMOSOME_II.clone_path.gff");
   &UpdateHashes(\%chromosomeIII_clones, "CHROMOSOME_III.clone_path.gff");
@@ -86,8 +88,9 @@ if( $opt_c ){
   &UpdateHashes(\%chromosomeV_clones, "CHROMOSOME_V.clone_path.gff");
   &UpdateHashes(\%chromosomeX_clones, "CHROMOSOME_X.clone_path.gff");
 }
-open (LOG,">$log");
+open (LOG,">$log") or die "cant open $log\n\n";
 print LOG "$0 start at $runtime on $rundate\n----------------------------------\n\n";
+
 #get allele info from database
 my $db = Ace->connect(-path  => $database) || do { print  "$database Connection failure: ",Ace->error; die();};
 my @alleles = $db->fetch(-query =>'Find Allele;flanking_sequences');
@@ -111,25 +114,53 @@ my $type;
 my $left;
 my $right;
 my $allele;
-my $limit = shift;
 
+my $go = 0;
+ALLELE:
 foreach $allele (@alleles)
   {
-    if( $opt_l ) {
+    if( $limit ) {
       last if $count++ > $limit;
     }
-    $name = $allele->name;print "$name\n";
-    #next unless( "$allele" eq "ok377");
-    $type = $allele->Allelic_difference->name;
+    $name = $allele->name;
+
+    
+   # unless ($go == 1){
+#      if ("$name" eq "e1124") {
+#	$go = 1;
+#      }
+#      else { next;}
+#    }
+
     $left = $allele->Flanking_sequences->name;
     $right = $allele->Flanking_sequences->right->name;
-    
+
+    next unless ($left and $right);
+    $type = $allele->Allele_type->name;
+    print "mapping $name\n";
     $allele_data{$name}[0] = $type;
     $allele_data{$name}[1] = $left;
     $allele_data{$name}[2] = $right;
-
+    
+    $scoreCutoff = (length $left) - 2; #allow 2 bp mismatch in mapping
     #get to the sequence object
+
     $sequence = $allele->Sequence;
+    
+    unless( $sequence ) {
+      # allele has no Sequence Tag - should not happen
+      # for 1st run get seq from Predicted_gene
+      my $p_gene = $allele->Predicted_gene;
+      $p_gene =~ /(\S+)\./;
+      $sequence = $1;
+      $sequence = $db->fetch(Sequence => "$sequence");
+      unless( $sequence ) {
+	print LOG "$name - cant get a Sequence from Sequence tag or Predicted_gene\n";
+	next ALLELE;
+      }
+    }     
+
+
     #if seq is not valid )ie no source check for other sequences
     unless ($sequence->Source) {
       $sequence = $allele->Sequence(1)->down;
@@ -171,42 +202,29 @@ foreach $allele (@alleles)
 	if( &MapAllele == 1){
 	  #allele mapped to clone
 	  $allele_data{$name}[6] = $source->name;
-	  print "Did $allele with clone\n";
+	  print "Did $allele with clone\n" if $verbose;
 	}
 	
-	#try and map to OverlapLeft - Clone - OverLapRight concatenated sequence
+	#try and map to Superlink sequence
 	else
 	  {
 	    #$source is a clone obj
 	    if( $source )
 	      {
-		$sourceSeq = $source->asDNA();
-		    $allele_data{$name}[6] = $source->name;  #set 5' DNA to allele source in case of no OLL
-		
-		$OLR = $source->Overlap_Right;
-		$OLL = $source->Overlap_Left;
-		
-		if( $OLL ) {
-		  $OLLseq = $OLL->asDNA();
-		  $allele_data{$name}[6] = $OLL->name;   #set 5' DNA to clone left of allele clone
-		}
-		else {
-		  print LOG "$allele $source has no OLL\n";
-		}
-		
-		if( $OLR ) {
-		  $OLRseq = $OLR->asDNA();
-		}
-		else {
-		  print LOG "$allele $source has no OLR\n";
-		}
-		
-		$SEQspan = $OLLseq.$sourceSeq.$OLRseq;
-		$SEQspan = &FASTAformat( $SEQspan );
-		if( &MapAllele == 0 ) {
-		  print LOG "$name cannot be mapped\n";
+		my $superlink = $source->Source;
+		$SEQspan = $superlink->asDNA;
 		  
+
+		if( &MapAllele == 1 ) {
+		  #allele mapped to superlink
+		  $allele_data{$name}[6] = $source->name;
+		  print "Did $allele with superlink\n" ;
 		}
+		else {
+		  print LOG "$name failed mapping\n";
+		  print  "$name failed mapping\n";
+		}
+		
 	      }
 	    else {
 	      print LOG "$allele $sequence has no Source\n";
@@ -231,7 +249,7 @@ my @hashrefs = (
 my @chromosomes = qw( I II III IV V X );
 my $i = 0;
 foreach (@chromosomes) {
-  my $gff = "/wormsrv2/autoace/GFF_SPLITS/WS$ver/CHROMOSOME_$_.genes.gff";
+  my $gff = "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS/CHROMOSOME_$_.genes.gff";
   my $chrom2gene = $hashrefs[$i];
   open (GFF,"<$gff") or die "cant open $gff\n";
   while(<GFF>) {
@@ -289,8 +307,8 @@ foreach $allele (keys %allele_data) {
   my $clone_pos =  $chromo_clones_refs[ $roman2num{"$chromosome"} ];
   my $genelist= $arrayrefs[ $roman2num{"$chromosome"} ];
 
-  my $chromosomal_coords_5 = $$clone_pos{"$clone"} + $allele_data{$allele}[4];
-  my $chromosomal_coords_3 = $$clone_pos{"$clone"} + $allele_data{$allele}[5];
+  my $chromosomal_coords_5 = $$clone_pos{"$clone"}[0] + $allele_data{$allele}[4];
+  my $chromosomal_coords_3 = $$clone_pos{"$clone"}[0] + $allele_data{$allele}[5];
   
   foreach my $gene ( @$genelist ) {
     if(
@@ -313,19 +331,26 @@ foreach (keys %allele_data )
   {
     if( $allele_data{$_}[3] and $allele_data{$_}[4] and  $allele_data{$_}[5]) { 
       
-      print OUT "\nSequence : \"$allele_data{$_}[6]\"\nAllele $_ $allele_data{$_}[4] $allele_data{$_}[5] $allele_data{$_}[0] \n\n";
+      print OUT "\nSequence : \"$allele_data{$_}[6]\"\nAllele $_ $allele_data{$_}[4] $allele_data{$_}[5]\n";
       #print OUT "\nAllele : \"$_\"\nSequence $allele_data{$_}[6] $allele_data{$_}[4] $allele_data{$_}[5] $allele_data{$_}[0] \n";
      
       if( $allele2gene{$_} ) {
 	my @myStrains;
-	my @ko_genes = split(/\s/,"$allele2gene{$_}");
-	print OUT "Allele : $_\n";
-	if( $allele_data{$_}[7] ) {
+	my @affects_genes = split(/\s/,"$allele2gene{$_}");
+	
+	# in Predicted gene object
+	foreach my $ko (@affects_genes) {
+	  print OUT "\nSequence : \"$ko\"\nHas_allele $_\n";
+	}
+
+	# in Allele object
+	print OUT "\nAllele : $_\n";
+	if( $allele_data{$_}[8] ) {
 	  @myStrains = split(/\*\*\*/,"$allele_data{$_}[8]");
 	}
-	foreach my $ko (@ko_genes) {
+	foreach my $ko (@affects_genes) {
 	  #allele - seq connection
-	  print OUT "CDS $ko\n";
+	  print OUT "Predicted_gene $ko\n";
 	  foreach my $str (@myStrains) {
 	    #strain - seq connection
 	    print STR "Strain : \"$str\"\n";
@@ -334,7 +359,7 @@ foreach (keys %allele_data )
 	}
       }
       else {
-	print "no overlapping gene for $_\n";
+	print "no overlapping gene for $_\n" if $verbose;
       }
 
       #map position on genome
@@ -388,7 +413,7 @@ sub MapAllele
 
 
     &makeTargetfile;
-    print "Starting $name SCAN with score cutoff $scoreCutoff\n";
+    print "Starting $name SCAN with score cutoff $scoreCutoff\n" if $verbose;
 
     my $scan = "/usr/local/pubseq/bin/scan -f -t";
     open (SCAN, ">$scan_file") or die "cant write $scan_file\n";
@@ -434,7 +459,7 @@ sub MapAllele
 sub makeTargetfile
   {
     open (GFA,">$genome_fa_file" ) or die "cant open genome file for $allele\n";
-    print GFA "$SEQspan";
+    print GFA uc "$SEQspan";
     close GFA;
   }
 
@@ -500,7 +525,8 @@ sub UpdateHashes #(hash, file)
 	unless( $data[0] =~m/\#/ )
 	  {
 	    $data[9] =~ s/\"//g;
-	    $$hash{$data[9]} = $data[3];
+	    $$hash{$data[9]}[0] = $data[3];
+	    $$hash{$data[9]}[1] = $data[4];
 	  }
       }
   }
@@ -509,6 +535,7 @@ sub UpdateHashes #(hash, file)
 # This should expand on your brief description above and add details of any options
 # that can be used with the program.  Such documentation can be viewed using the perldoc
 # command.
+
 
 
 __END__
