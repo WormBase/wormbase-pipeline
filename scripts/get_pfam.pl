@@ -7,7 +7,7 @@
 # This script interogates an ACEDB database and returns all pfam/Interpro/blastx 
 # data as appropriate and generates a suitable DB_remark
 #
-# Last updated on: $Date: 2004-08-02 17:09:44 $
+# Last updated on: $Date: 2004-09-10 09:53:02 $
 # Last updated by: $Author: krb $
 
 
@@ -64,10 +64,6 @@
 # miRNA genes
 #	w/locus { "C. elegans microRNA $locus"; }
 #	w/o locus { "C. elegans predicted micro RNA"; }
-#    
-# stRNA genes
-#	w/locus { "C. elegans regulatory RNA $locus"; }
-#	w/o locus { "C. elegans predicted regulatory RNA"; }
 #    
 # scRNA genes
 #	w/locus { "C. elegans small cytoplasmic RNA $locus"; }
@@ -472,13 +468,6 @@ TRANSCRIPT: foreach my $transcript (@transcripts) {
     } 
     else {
       $full_string .= "C. elegans predicted micro RNA";
-    }
-  } 
-  elsif ($type eq 'stRNA') { # stRNA genes
-    if ($cgc_name) {
-      $full_string .= "C. elegans regulatory RNA $cgc_name";
-    } else {
-      $full_string .= "C. elegans predicted regulatory RNA";
     }
   } 
   elsif ($type eq 'scRNA') { # scRNA genes

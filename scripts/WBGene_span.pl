@@ -6,8 +6,8 @@
 #
 # Creates SMapped Gene spans for Gene objects
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2004-08-25 10:31:27 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2004-09-10 09:53:02 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -79,7 +79,6 @@ foreach my $chrom ( @chromosomes ) {
 	 ($data[1] eq "scRNA") or
 	 ($data[1] eq "snoRNA") or
 	 ($data[1] eq "tRNA") or
-	 ($data[1] eq "stRNA") or
 	 ($data[1] eq "snRNA")
        ) {
       next if ( $data[2] eq "exon" or $data[2] eq "coding_exon" or $data[2] eq "intron" );
