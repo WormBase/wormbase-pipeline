@@ -65,10 +65,10 @@ system("ln -s $db_path/$WS_name/ $db_path/current_DB") && die "Couldn't create n
 # update database.wrm using cvs
 my $cvs_file = "$db_path/autoace/wspec/database.wrm";
 print LOG "Updating $cvs_file to include new WS number - using CVS\n\n";
-system("cvs edit $cvs_file") && die "Couldn't 'cvs edit' $cvs_file\n";
+system("cvs -d '/nfs/ensembl/cvsroot/' edit $cvs_file") && die "Couldn't 'cvs edit' $cvs_file\n";
 system("sed 's/$WS_name/$WS_new_name/' < $cvs_file > ${cvs_file}.new") && die "Couldn't edit $cvs_file\n";
 system("mv /wormsrv2/autoace/wspec/database.wrm.new $cvs_file") && die "Couldn't update $cvs_file\n";
-system("cvs commit -m 'updating $cvs_file to $WS_new_name' $cvs_file") && die "Couldn't 'cvs commit' $cvs_file\n";
+system("cvs -d /nfs/ensembl/cvsroot/' commit -m 'updating $cvs_file to $WS_new_name' $cvs_file") && die "Couldn't 'cvs commit' $cvs_file\n";
 
 
 ##################
