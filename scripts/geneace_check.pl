@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-05-23 13:36:28 $
+# Last updated on: $Date: 2003-05-23 16:21:01 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -28,7 +28,7 @@ my (%L_name_F_WBP, %L_name_F_M_WBP);
 
 
 our $tace = &tace;   # tace executable path
-our ($log, $erichlog, $jahlog, $JAHmsg, $Emsg, $caltech, @CGC, $cgc);
+our ($log, $erichlog, $jahlog, $JAHmsg, $Emsg, $caltech, @CGC, $cgc, $reverse_log, $map_diff);
 
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $acefile = "/wormsrv2/logs/geneace_check_ACE.$rundate.$$";
@@ -157,6 +157,8 @@ $cgc=join('', @CGC);
 if ($cgc ne $JAHmsg){   
   mail_maintainer($0,$CGC,$jahlog) unless $debug;
 }
+
+system("chmod 777 $acefile $log $jahlog $JAHmsg $erichlog $Emsg $reverse_log, $map_diff");
 
 exit(0);
 
@@ -1057,8 +1059,8 @@ sub check_genetics_coords_mapping {
   print LOG "\nChecking discrepancies in genetics/coords mapping:\n\n";
   print JAHLOG "\nChecking discrepancies in genetics/coords mapping:\n\n";
   system ("/wormsrv2/scripts/get_interpolated_gmap.pl -db /wormsrv1/geneace -diff");
-  my $infile = "/wormsrv2/logs/mapping_diff.".$rundate;
-  open(IN, $infile) || die $!;
+  my $map_diff = "/wormsrv2/logs/mapping_diff.".$rundate;
+  open(IN, $map_diff) || die $!;
   while(<IN>){
     print LOG $_;
     print JAHLOG $_;
@@ -1068,11 +1070,11 @@ sub check_genetics_coords_mapping {
 ##############################################
 
 sub chech_reverse_physicals {
-  print "#$rundate#\n";
+
   print "\nChecking reverse physicals of gmap marker loci in Geneace:\n\n";
   system ("/wormsrv2/scripts/get_interpolated_gmap.pl -db /wormsrv1/geneace -reverse");
-  my $infile = `echo /wormsrv2/logs/reverse_physicals_WS*.$rundate.*`;
-  open(IN, $infile) || die $!;
+  my $reverse_log = `echo /wormsrv2/logs/reverse_physicals_WS*.$rundate.*`;
+  open(IN, $reverse_log) || die $!;
   while(<IN>){
     print LOG $_;
     print JAHLOG $_;
