@@ -168,6 +168,7 @@ sub Sub_sequence
       }
     }
     else {
+      $chrom = $seq;
       $start--; # chromosome coords start at 1, substr assumes 0 for 1st char.
     }
 

@@ -87,7 +87,7 @@ while (<SOURCE>){
       print ACE "Database \"Flybase\" FlyBase_gn \"$FBgn\"\n" if ($FBgn);
       print ACE "Database \"Gadfly\" Gadfly_ID \"$gadID\"\n" if $gadID;
       print ACE "DB_remark \"Flybase gene name is $FBname\"\n" if $FBname;
-      print ACE "Peptide : \"GADFLY:$gadID\"\n";
+      print ACE "\nPeptide : \"GADFLY:$gadID\"\n";
 
       #write database file
       print PEP ">$gadID\n";

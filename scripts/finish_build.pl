@@ -13,7 +13,7 @@
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2004-02-02 12:21:25 $
+# Last updated on: $Date: 2004-02-02 12:24:20 $
 
 
 use strict;
@@ -94,7 +94,7 @@ print LOG "Removing old files in /wormsrv2/autoace/CHROMOSOMES/\n";
 # Remove redundant files from /wormsrv2/autoace/logs
 print LOG "Removing old files in /wormsrv2/autoace/logs\n";
 
-&delete_files_from("$basedir/autoace/logs","*:*","-");
+&delete_files_from("$basedir/autoace/logs",":","-");
 unlink("$basedir/autoace/logs/UTR_gff_dump");             # Why do we need this exception?
 
 # archive old GFF splits directory'

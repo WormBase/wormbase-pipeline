@@ -1,4 +1,5 @@
-#!/gsc/bin/perl 
+#!/usr/local/bin/perl -w
+
 #
 ##################
 # get_pfam.pl    #

@@ -1,13 +1,13 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
-# transcript_builder.pl                           
+# transcript_builder.pl
 # 
-# by Anthony Rogers                       
+# by Anthony Rogers
 #
 # Script to make ?Transcript objects
 #
-# Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-12-01 11:54:28 $  
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2004-02-02 12:24:20 $
 
 use strict;
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
@@ -41,7 +41,7 @@ GetOptions ( "debug:s"          => \$debug,
 	     "load_transcripts" => \$load_transcripts,
 	     "load_matches"     => \$load_matches,
 	     "build"            => \$build,
-	     "new_coords"           => \$new_coords
+	     "new_coords"       => \$new_coords
 	   ) ;
 
 # Who will log be emailed to?
@@ -56,7 +56,7 @@ my $log = Log_files->make_build_log();
 
 &check_opts; # if -build set, this will set all relevant opts to works as if in build. Will NOT overwrite the others (eg -count)
 
-$database = glob("~wormpub/DATABASES/TEST_DBs/transcripts") unless $database;
+die "no database\n" unless $database;
 
 
 my %genes_exons;
@@ -66,6 +66,9 @@ my %cDNA_span;
 my %transcript_span;
 my $gff_file;
 my @ordered_genes;
+my %3_matches;
+
+my %EST_pairs;
 
 #setup directory for +transcript
 my $transcript_dir = "$database/TRANSCRIPTS";
@@ -127,6 +130,7 @@ foreach my $chrom ( @chromosomes ) {
       # keep min max span of cDNA
       if( !(defined($cDNA_span{$data[9]}[0])) or ($cDNA_span{$data[9]}[0] > $data[3]) ) {
 	$cDNA_span{$data[9]}[0] = $data[3];
+	$cDNA_span{$data[9]}[2] = $data[6]; #store strand of cDNA
       } 
       if( !(defined($cDNA_span{$data[9]}[1])) or ($cDNA_span{$data[9]}[1] < $data[4]) ) {
 	$cDNA_span{$data[9]}[1] = $data[4];
@@ -139,6 +143,7 @@ foreach my $chrom ( @chromosomes ) {
   &checkData(\$gff); # this just checks that there is some BLAT and gene data in the GFF file
 
   &eradicateSingleBaseDiff;
+  &getESTpairs;
 
   # generate ordered array of genes to use as keys in sub findOverlappingGenes
   foreach ( sort { $genes_span{$a}[0]<=>$genes_span{$b}[0]  } keys %genes_span ) {
@@ -300,9 +305,23 @@ sub findOverlappingGene
   {
     my $cdna = shift;
     my @overlap_genes;
+    my $index = -1; #can then ++ it at start of loop ( multiple exit points )
     foreach ( @ordered_genes ) { # use this ordered array instead of sorting hash for every gene.
       print "testing overlap $_ $$cdna\n" if $verbose;
-      if ($cDNA_span{$$cdna}[0] > $genes_span{$_}[1] ) { next; } #
+      $index++;
+      if ($cDNA_span{$$cdna}[0] > $genes_span{$_}[1] ) {
+	# see if this cDNA overlaps the next gene
+	my $next_gene = $ordered_genes[$index+1];
+	if ( $cDNA_span{$$cdna}[1] > $genes_span{"$next_gene"}[0] ) {
+	  # part of next gene
+	  next;
+	}
+	elsif ( $cDNA_span{$$cdna}[0] - $genes_span{$_}[1] < 3000 ) {
+	  # could be 3' EST not overlapping CDS
+	  print "adding $$cdna to $_ as 3'UTR\n";
+	  push( @{$3_matches{$gene}}, $_);
+	}
+      }
       elsif( ($cDNA_span{$$cdna}[0] < $genes_span{$_}[0]) and ($cDNA_span{$$cdna}[1] > $genes_span{$_}[0]) ) { # cDNA starts B4 gene and ends after gene start
 	# overlaps 
 	push( @overlap_genes, $_);
@@ -619,6 +638,32 @@ sub checkData
     die "There's no BLAT data in the gff file $$file\n" if scalar keys %cDNA_span == 0;
     die "There are no genes in the gff file $$file\n" if scalar keys %genes_span == 0;
   }
+
+
+sub getESTpairs
+  {
+    unless ( -e "$database/wquery/cDNApairs.def") {
+      warn "$database/wquery/cDNApairs.def does not exist - inclusion of 3'EST not overlapping CDS will fail  . . ."  ;
+      return 1;
+    }
+
+    my $command="Table-maker -p $database/wquery/cDNApairs.def/\nquit\n";    
+    open (TACE, "echo '$command' | $tace $ace_dir |");
+    while (<TACE>) {
+      chomp;
+      s/\"//g;
+      my @data = split;
+      $ESTpairs{$data[0]} = $data[1] ? $data[1] : undef;
+    }
+    close TACE;
+  }
+
+sub possible_3_UTR
+  {
+    my $cdna, $index,
+  }
+
+
 
 ###################################################################################
 

@@ -46,7 +46,7 @@ if ($opt_g) {
 ###################################
 # get the mapping of internal_id to id
 my %internal2id;
-my $sth_c = $dbh->prepare ( q{ SELECT id, internal_id, length
+my $sth_c = $dbh->prepare ( q{ SELECT name, contig_id, length
                                  FROM contig
 			     } );
 $sth_c->execute;
@@ -60,22 +60,22 @@ foreach my $aref (@$ref) {
 # get the features, and write the gff file
 my $sth;
 if ($opt_s) {
-    $sth = $dbh->prepare ( q{ SELECT contig, seq_start, seq_end,
-                                     hid, hstart, hend,
-                                     score, perc_id, strand,
+    $sth = $dbh->prepare ( q{ SELECT contig_id, seq_start, seq_end,
+                                     hit_name, hit_start, hit_end,
+                                     score, perc_ident, strand,
                                      state, cigar
                                 FROM waba_feature
-                               WHERE analysis = ?
-                            ORDER BY hid,hstart,hend
+                               WHERE analysis_id = ?
+                            ORDER BY hit_name,hit_start,hit_end
 			    } );
 }
 else {
-    $sth = $dbh->prepare ( q{ SELECT contig, seq_start, seq_end,
-                                     hid, hstart, hend,
-                                     score, perc_id, strand
+    $sth = $dbh->prepare ( q{ SELECT contig_id, contig_start, contig_end,
+                                     hit_name, hit_start, hit_end,
+                                     score, perc_ident, strand
                                 FROM waba_fset
-                               WHERE analysis = ?
-                            ORDER BY hid,hstart,hend
+                               WHERE analysis_id = ?
+                            ORDER BY hit_name,hit_start,hit_end
                             } );
 }
 

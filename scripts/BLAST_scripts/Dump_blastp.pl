@@ -50,14 +50,20 @@ my $ipi_file     = "$wormpipe_dir/dumps/$database/blastp_ipi";
 # make sure these dir exist;
 my @dirs = ($output_dir, $best_hit_dir,$wormpipe_dir ) ;
 foreach ( @dirs ){
-  &mkpath( $_) unless ( -e $_ );
+ # &mkpath( $_) unless ( -e $_ );
 }
+
+# set up output file handles;
+my %output;
+my %recip_output;
+my %best_output;
 
 &generate_full_file if $final; # this option will just cat all the files together ready for transfer
 
 my $log          = "$wormpipe/logs/dump_blastp.pl.$dbname.$rundate.$$"; $log.= ".test" if $test;
 open ( LOG, ">$log") || die "cant open $log";
-print LOG "$0 log file $rundate\n";
+print LOG "$0 log file $rundate at, ", time,"\n";
+print LOG "Dumping analysis @analysisTOdump\n";
 print LOG "-----------------------------------------------------\n\n";
 
 my $count;
@@ -218,79 +224,80 @@ unless (@peps2dump)  {
 
 print LOG "got ",scalar( @peps2dump )," proteins to dump\n";
 
-
+my $recip_file;
+my $output;
+my $best_hits;
 ###################     retreive data from mysql  ######################
-
  
-my  $sth_f = $db->prepare ( q{ SELECT protein_id,analysis_id,
-				     seq_start, seq_end,
-				     hit_id, hit_start, hit_end,
-				     -log10(evalue), cigar
-				       FROM protein_feature
-					 WHERE protein_id = ? and (-log10(evalue) > 1 or evalue = 0)
-					   AND analysis_id = ?
-					   ORDER BY hit_id
-				   } );  
+dbmopen our %ACC2DB, "$wormpipe_dir/dumps/acc2db.dbm", 0666 or warn "cannot open acc2db: $!\n";
+my  $sth_f = $db->prepare ( &build_SQL );  
 
+foreach ( @peps2dump) { 
+#  print LOG "\nQuery for $_ start at ",time,"\n";
+  $sth_f->execute($_);  
+#  print LOG "\nQuery return at ",time,"\n\n";
 
+  my %matches;
 
-dbmopen our %ACC2DB, "$wormpipe_dir/dumps/acc2db.dbm", 0666 or warn "cannot open acc2db \n";
+  my $last_pep;
+  my $last_analysis;
 
-foreach my $anal ( @analysisTOdump ) {
+  my $ref_results = $sth_f->fetchall_arrayref;
 
-  # reciprocals of matches ie if CE00000 matches XXXX_CAEEL the homology details need to be written for XXXX_CAEEL 
-  # as well.  These are put in a separate file and post processed so that all matches for XXXX_CAEEL are loaded 
-  # in one go for efficient loading ( cf acecompress.pl )
-  # write out reciprocal data
-
-  my $recip_file = "$output_dir/${processIds2prot_analysis{$anal}}_recip.line";
-  my $output = "$output_dir/${processIds2prot_analysis{$anal}}.ace";
-  my $best_hits = "$best_hit_dir/${processIds2prot_analysis{$anal}}_best_hits";
-
-  if ( $new_peps ) { # append
-    open (OUT,">>$output")       or die "cant open $output:\t$!\n";
-    open (RECIP,">>$recip_file") or die "cant open recip file $recip_file: $!\n";
-    open (BEST, ">>$best_hits")  or die "cant open $best_hits for writing:\t$!\n";
-    open (IPI_HITS,">>$ipi_file") or die "cant open $ipi_file:\t$!\n" if( $anal == $wormprotprocessIds{'ipi_human'}) ;
-  }
-  else {    # start afresh
-    open (OUT,">$output")       or die "cant open $output\n";
-    open (RECIP,">$recip_file") or die "cant open recip file $recip_file: $!\n";
-    open (BEST, ">$best_hits")  or die "cant open $best_hits for writing:\t$!\n";
-    open (IPI_HITS,">$ipi_file") or die "cant open $ipi_file:\t$!\n" if( $anal == $wormprotprocessIds{'ipi_human'}) ;
-  }
-
-  foreach $pep (@peps2dump) {
-    $sth_f->execute($pep, $anal);
-    my %matches;
-
-    my $ref_results = $sth_f->fetchall_arrayref;
+  foreach my $result_row (@$ref_results) {
     my ($proteinId, $analysis,  $myHomolStart, $myHomolEnd, $homolID, $pepHomolStart, $pepHomolEnd, $e, $cigar);
-    foreach my $result_row (@$ref_results) {
-      ($proteinId, $analysis,  $myHomolStart, $myHomolEnd, $homolID, $pepHomolStart, $pepHomolEnd, $e, $cigar) = @$result_row;
-      unless( defined $e) {
-	$e = 1000;
-      }
-      # mysql gives -log10(v small no) as NULL 
-      my @data = ($proteinId, $processIds2prot_analysis{$analysis},  $myHomolStart, $myHomolEnd, $homolID, $pepHomolStart, $pepHomolEnd, $e, $cigar);
-      my $add_data_sub = $addDataSubs{$analysis};
-      $add_data_sub->( \%matches, \@data );
-
+    ($proteinId, $analysis,  $myHomolStart, $myHomolEnd, $homolID, $pepHomolStart, $pepHomolEnd, $e, $cigar) = @$result_row;
+    next unless $CE2gene{$proteinId};
+    unless( defined $e) {
+      $e = 1000;
     }
-    &dumpData ($pep,\%matches) if (%matches);
+
+    #  # if we are moving on to a new protein - dump the last one.
+    #  if ( defined ($last_pep ) and ( $last_pep ne $proteinId) ) {
+    #    &dumpData ($last_pep,$last_analysis,\%matches) if (%matches);
+    #    %matches = ();
+    #    undef $last_pep;
+    #    undef $last_analysis;
+    #  }
+
+      # if we are moving on to a new analysis - dump the last one
+      if ( defined ($last_analysis) and ( $last_analysis != $analysis )) {
+        &dumpData ($proteinId, $last_analysis,\%matches) if (%matches);
+        %matches = ();
+        undef $last_analysis;
+      }
+
+    #  # upate tracking vars
+    #  $last_pep = $proteinId;
+    #  $last_analysis = $analysis;
+
+    # mysql gives -log10(v small no) as NULL 
+    my @data = ($proteinId, $processIds2prot_analysis{$analysis},  $myHomolStart, $myHomolEnd, $homolID, $pepHomolStart, $pepHomolEnd, $e, $cigar);
+    my $add_data_sub = $addDataSubs{$analysis};
+    $add_data_sub->( \%matches, \@data );
+
+    $last_analysis = $analysis;
   }
-
-  close OUT;
-  close RECIP;
-  close BEST;
-
-  &process_reciprocal_file("$recip_file");
+  &dumpData ($_,$last_analysis,\%matches) if (%matches);
+  %matches = ();
+  undef $last_analysis;
 }
+
+#close the output file
+foreach (keys %output) {
+  close $output{$_};
+  close $best_output{$_};
+  close $recip_output{$_};
+}
+
+
+#&process_reciprocal_file("$recip_file");
+
 
 close IPI_HITS;
 
 print LOG " : Data extraction complete\n\n";
-print LOG " : finished\n\n______END_____";
+print LOG " : finished at ",time,"\n\n______END_____";
 
 close LOG;
 dbmclose %ACC2DB;
@@ -303,8 +310,22 @@ sub dumpData
     my $pid = shift;
     my %best;
     my $prot_pref = $database2prefix{$database};
+    my $this_anal = shift;
+    my $org =$processIds2prot_analysis{$this_anal} ;
 
-    print OUT "\nProtein : \"$prot_pref:$pid\"\n";
+    unless ($output{$org}) {
+      my $mode =  defined ($all) ? ">" : ">>" ; # append or overwrite
+      my $ace = "$output_dir/${org}_blastp.ace";
+      open( $output{$org},     ,$mode, "$ace")               or die "cant open $ace: $!\n";
+      open( $recip_output{$org},$mode, "${ace}_recip")       or die "cant open ${ace}_recip: $!\n";
+      open( $best_output{$org} ,$mode, "${org}_best_blastp") or die "cant open ${org}_best_blastp: $!\n";
+    }
+
+    my $output_FH = $output{$org};
+    my $best_FH = $best_output{$org};
+    my $recip_FH = $recip_output{$org};
+      
+    print $output_FH "\nProtein : \"$prot_pref:$pid\"\n";
     while( $matches = shift) {   #pass reference to the hash to dump
       my $output_count = 0;
 
@@ -338,35 +359,35 @@ sub dumpData
 	    }
 
 	    foreach (@cigar){
-	      #print OUT "Pep_homol \"$homolID\" $processIds2prot_analysis{$analysis} $e $myHomolStart $myHomolEnd $pepHomolStart $pepHomolEnd Align ";
-	      print OUT "Pep_homol ";
-	      print OUT "\"$prefix:$$data[4]\" ";   #  homolID
-	      print OUT "$$data[1] ";   #  analysis
-	      print OUT "$$data[7] ";   #  e value
-	      print OUT "$$data[2] ";   #  HomolStart
-	      print OUT "$$data[3] ";   #  HomolEnd
-	      print OUT "$$data[5] ";   #  pepHomolStar
-	      print OUT "$$data[6] ";   #  pepHomolEnd
-	      print OUT "Align ";
+	      #print $output_FH "Pep_homol \"$homolID\" $processIds2prot_analysis{$analysis} $e $myHomolStart $myHomolEnd $pepHomolStart $pepHomolEnd Align ";
+	      print $output_FH "Pep_homol ";
+	      print $output_FH "\"$prefix:$$data[4]\" ";   #  homolID
+	      print $output_FH "$$data[1] ";   #  analysis
+	      print $output_FH "$$data[7] ";   #  e value
+	      print $output_FH "$$data[2] ";   #  HomolStart
+	      print $output_FH "$$data[3] ";   #  HomolEnd
+	      print $output_FH "$$data[5] ";   #  pepHomolStar
+	      print $output_FH "$$data[6] ";   #  pepHomolEnd
+	      print $output_FH "Align ";
 	
 	      my @align = split(/\,/,$_);
-	      print OUT "$align[0] $align[1]\n";
+	      print $output_FH "$align[0] $align[1]\n";
 	
 	      unless ("$$data[1]" eq "wublastp_worm")  #no need for WORMPEP
 		{		
 		  #and print out the reciprocal homology to different file
 		  #prints out on single line. "line" is used to split after sorting
 
-		  print RECIP "Protein : \"$prefix:$$data[4]\" line "; #  matching peptide
-		  print RECIP "\"$prot_pref:$pid\" ";              #worm protein
-		  print RECIP "$$data[1] ";   #  analysis
-		  print RECIP "$$data[7] ";   #  e value
-		  print RECIP "$$data[5] ";   #  HomolStart
-		  print RECIP "$$data[6] ";   #  HomolEnd
-		  print RECIP "$$data[2] ";   #  pepHomolStar
-		  print RECIP "$$data[3] ";   #  pepHomolEnd
-		  print RECIP "Align ";
-		  print RECIP "$align[1] $align[0]\n";
+		  print $recip_FH "Protein : \"$prefix:$$data[4]\" line "; #  matching peptide
+		  print $recip_FH "\"$prot_pref:$pid\" ";              #worm protein
+		  print $recip_FH "$$data[1] ";   #  analysis
+		  print $recip_FH "$$data[7] ";   #  e value
+		  print $recip_FH "$$data[5] ";   #  HomolStart
+		  print $recip_FH "$$data[6] ";   #  HomolEnd
+		  print $recip_FH "$$data[2] ";   #  pepHomolStar
+		  print $recip_FH "$$data[3] ";   #  pepHomolEnd
+		  print $recip_FH "Align ";
+		  print $recip_FH "$align[1] $align[0]\n";
 
 		}
 	    }
@@ -374,16 +395,17 @@ sub dumpData
 	}
       }
     }
-    # output best matches
-    print BEST "$pid,";
+    # output best matches 
+
+    print $best_FH "$pid,";
     if (%best) {
       my $e = 10**(-$best{'score'});
-      print BEST $best{'id'},","; printf BEST "%g",$e,", \n";
+      print $best_FH $best{'id'},","; printf $best_FH "%g",$e,", \n";
     }
     else {
-      print BEST ",,";
+      print $best_FH ",,";
     }
-    print BEST "\n";
+    print$best_FH "\n";
   }
 
 
@@ -668,6 +690,44 @@ sub generate_best_hits
     exit(0);
   }
 
+sub build_SQL
+  {
+     my $sql = "SELECT protein_id,analysis_id, seq_start, seq_end, hit_id, hit_start, hit_end, -log10(evalue), cigar
+		FROM protein_feature
+		WHERE (-log10(evalue) > 1 or evalue = 0) " ;
+
+     # add protein_ids unless we're doing all of 'em
+     unless ( $all ) {
+       $sql .= "AND ( ";
+       my $or_protein_id = join(' OR protein_id = ',map('"'.$_.'"',@peps2dump));
+       $sql .= "protein_id = $or_protein_id ) ";
+     }
+
+     # specify which analyses to do
+     if ( @analysisTOdump ) {
+       my  $x = join(" OR analysis_id = ",@analysisTOdump);
+       $sql .= " AND ( analysis_id = $x )";
+     }
+
+     $sql .= " ORDER BY protein_id,analysis_id,hit_id";
+#########################################################################
+     #trying getting per protein
+     $sql = "SELECT protein_id,analysis_id, seq_start, seq_end, hit_id, hit_start, hit_end, -log10(evalue), cigar
+		FROM protein_feature
+		WHERE (-log10(evalue) > 1 or evalue = 0) 
+                AND  protein_id = ? ";
+
+     # specify which analyses to do
+     if ( @analysisTOdump ) {
+       my  $x = join(" OR analysis_id = ",@analysisTOdump);
+       $sql .= " AND ( analysis_id = $x )";
+     }
+
+     $sql .= " ORDER BY analysis_id, hit_id";
+
+
+     return $sql;
+  }
 
 sub make_dir_struct
   {
