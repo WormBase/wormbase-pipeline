@@ -8,7 +8,7 @@
 # and virtual objects to hang the data onto
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-09-04 09:32:59 $
+# Last edited on: $Date: 2003-09-04 09:46:48 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -91,7 +91,13 @@ if($debug){
 # Exit if multiple data types choosen [EST|mRNA|EMBL|NEMATODE|OST]
 # ignore if -dump is being run
 unless($dump){
-  &usage(3) if (($est + $mrna + $ost + $embl + $nematode) > 1);
+  my $flags = 0;
+  $flags++ if $est;
+  $flags++ if $ost;
+  $flags++ if $mrna;
+  $flags++ if $embl;
+  $flags++ if $nematode;
+  &usage(3) if ($flags > 1);
 }
 
 # Exit if -fine option is being used without -mrna
