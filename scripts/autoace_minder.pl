@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-03-04 14:34:58 $
+# Last edited on: $Date: 2004-03-05 13:47:06 $
 
 
 #################################################################################
@@ -1286,7 +1286,7 @@ sub split_GFFs {
 sub map_features {
   $am_option = "-map";
   # PCR products
-  &run_command("$scriptdir/map_PCR_products");
+  &run_command("$scriptdir/map_PCR_products.pl");
   
   # RNAi experiments
   &run_command("$scriptdir/map_RNAi.pl");
