@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.103 2003-01-06 12:06:11 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.104 2003-01-24 17:21:22 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -457,10 +457,9 @@
 	           Transgene ?Transgene XREF Strain // RD 0107 moved under Contains
 	 Properties  Males Text
 		     Reference_strain Text
-		     Outcrossed
+		     Outcrossed Text
 		     Mutagen Text
 		     CGC_received DateType
-	 Knocks_out ?CDS XREF Knock_out_strain // for new KO allele data [krb 021114]
          Location ?Laboratory
 	 Made_by Text
 	 Remark	?Text
@@ -924,7 +923,6 @@
 	  		Reference ?Paper XREF CDS // added [011030 krb]
 			GO_term ?GO_term XREF CDS #Evidence
 			Knock_out_allele ?Allele XREF Knocks_out // for new KO allele data [krb 021114]
-			Knock_out_strain ?Strain XREF Knocks_out
 	Properties	Coding	CDS UNIQUE Int UNIQUE Int
 				CDS_predicted_by ?Method Float // score of method
 				Confirmed_by #Gene_confirmation       // added [011030 krb]
