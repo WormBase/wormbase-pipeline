@@ -4,7 +4,11 @@
 #
 # splits acediff output into tag deletions and tag insertions
 #
-# dl 
+# dl
+# 
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2004-08-13 12:22:43 $
+ 
 
 use strict;
 
@@ -51,6 +55,14 @@ while (<FILE>) {
     }    
     elsif (($line =~/^Feature \"(\S+)\"/) && ($in_block == 0)) {
 	$class = "Feature";
+	$name = $1;
+	&report unless ($oldname eq "nill");
+	$in_block = 1;
+	$oldname = $name;
+	next;
+    }    
+    elsif (($line =~/^Feature_data \"(\S+)\"/) && ($in_block == 0)) {
+	$class = "Feature_data";
 	$name = $1;
 	&report unless ($oldname eq "nill");
 	$in_block = 1;
