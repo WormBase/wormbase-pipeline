@@ -114,7 +114,10 @@ sub FetchData {
     my ($file,$ref, $dir) = @_;
 
     # directory to load from can be passed in so that /acari can load files copied over
-    $dir = "/wormsrv2/autoace/COMMON_DATA" unless $dir;
+    unless( $dir ) {
+      $dir = (-e "/wormsrv2") ? "/wormsrv2/autoace/COMMON_DATA" : glob("~wormpub/TEST_BUILD/autoace/COMMON_DATA") ;
+    }
+    print "using $dir for COMMON_DATA\n";
     open (FH, "<$dir/$file.dat") or die "can't open $dir/$file.dat\t:$!";
     undef $/;
     my $VAR1;
