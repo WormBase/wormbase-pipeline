@@ -2,239 +2,339 @@
 
 # Author: Chao-Kung Chen
 # Last updated by $Author: krb $
-# Last updated on: $Date: 2004-08-24 09:07:13 $ 
+# Last updated on: $Date: 2004-12-16 14:47:37 $ 
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
 use Ace;
-use GENEACE::Geneace;
 use Getopt::Long;
 
-#--------------------
-# global variables
-#--------------------
 
-my ($help, $database, $debug, $load, $update);
+##########################################
+# command line options
+##########################################
+
+my ($help, $database, $debug, $load, $test);
 
 GetOptions ("help"         => \$help,
-	    "database=s"  => \$database,   # can specify db for debug purpose (required also when not debug)
+	    "database=s"   => \$database,   # can specify db for debug purpose (required also when not debug)
 	    "debug=s"      => \$debug,
-	    "load"         => \$load,       # load CGC approved pseudo map markers
-	    "update"       => \$update,
+	    "test"         => \$test,       # use test build environment
+	    "load"         => \$load,       # load data to autoace
            );
 
+
+##############################
+# check command line options
+###############################
+
+# Display help if required
+if ($help){&usage("Help")}
+
+
 my $user = `whoami`; chomp $user;
-my $rundate = &rundate;
-my $tace = glob("~wormpub/ACEDB/bin_ALPHA/tace");          # tace executable path
-my $autoace_version = "WS".get_wormbase_version();
-my $multi_dir = "/wormsrv1/geneace/JAH_DATA/MULTI_PT_INFERRED";
 
-my $log = "/wormsrv2/logs/new_inferred_multi_pt.$rundate"; `rm -f $log`;
-open(LOG, ">>$log") || die $!;
-print LOG "# $0 started at ", runtime(), "\n\n";;
-print LOG "=============================================================================================\n\n";
+# set a default database if not specified
+($database = "/wormsrv2/autoace") if (!$database);
 
-if (!$database){print "\nDatabase path not specified..exit.\n"; exit(0)}
 if (!$debug && $user ne "wormpub"){print "\nYou need to be wormpub to proceed..exit\n"; exit(0)};
+
+my $maintainers = "All";
+$maintainers = $debug if ($debug);
+
 
 print "\nTarget database for genetic map and multi-pt data uploading is $database...\n\n";
 
 
+
+#############################
+#
+# Misc variables
+#
+#############################
+
+my $tace = &tace;          # tace executable path
+
+# Set up top level base directory which is different if in test mode
+# Make all other directories relative to this
+my $basedir   = "/wormsrv2";
+$basedir      = glob("~wormpub")."/TEST_BUILD" if ($test);
+my $outdir = "$basedir/autoace/acefiles";
+
+
+# log file information
+my $log = Log_files->make_build_log();
+
+
+# Need input file with genes which have had their Interpolated_map_position promoted to a Map position
+# this should have been created by previous build step
+# Also need to create two output files, one for new multi point data and one for updated multi point data
+
+my $pseudo_map_positions = "$outdir/pseudo_map_positions.ace";
+my $new_output           = "$outdir/new_pseudo_multi_point_data.ace";
+my $updated_output       = "$outdir/updated_pseudo_multi_point_data.ace";
+
+# open acedb connection via tace
 my $db = Ace->connect(-path    => $database,
                       -program => $tace) || do { print "Connection failure: ",Ace->error; die();};
 
-my $ga = init Geneace();
 
-my %Alleles = $ga->get_non_Transposon_alleles($db); # all Geneace alleles which have no Transposon_insertion tag
-                                                    # as many of these are silent and convey no info of gene function
 
-my (%Gene_info, %gene_id_allele, %locus_order, %order_locus);
+my %gene2allele; # gene ID is key, first allele attached to that gene is the value
+my %locus_order; # key is CGC gene name, value is ordinal position on map
+my %order_locus; # reverse of above, key is a integer position, value is CGC gene name
 
-# file with CGC approved promoted loci
-my $new_multi_file = `ls $multi_dir/loci_become_genetic_marker_for_$autoace_version`;
-chomp $new_multi_file;
 
-#--------------------------------------------------------------------
-#   make inferred multi-pt obj for promoted loci during the build
-#   update flanking loci of existing old inferred multi-pt obj
-#--------------------------------------------------------------------
 
-if ($update){
+# find out the respective order of genes on genetic map
+&get_flanking_loci;
 
-  %Gene_info = $ga -> gene_info($database);   # spcified db
 
-  &get_flanking_loci;
+# now make new multi point data objects
+# assumes that promoted map position file has been made earlier in the build
+&make_new_inferred_multi_pt_obj; 
 
-  &make_inferred_multi_pt_obj if $new_multi_file; # do this only if there is new inferred_multi pt obj
-  &update_inferred_multi_pt;
+
+# now update existing multi point data objects where necessary
+&update_existing_inferred_multi_pt;
+
+
+#load to database if -load specified
+if($load){
+  $log->write_to("Loading new pseudo multi point data to $database");
+  my $command = "autoace_minder.pl -load $new_output -tsuser new_pseudo_multi_pt_data";
+
+  $log->write_to("Loading updated pseudo multi point data to $database");
+  $command = "autoace_minder.pl -load $updated_output -tsuser updated_pseudo_multi_pt_data";
+
 }
 
-print LOG "\n$0 finished at ", runtime(), "\n\n";
-mail_maintainer("Update inferred multi-pt objects", "ALL", $log) if !$debug;
-mail_maintainer("Update inferred multi-pt objects", "$debug\@sanger.ac.uk", $log) if $debug;
+
+################################################
+#
+# tidy up and exit
+#
+################################################
+
+$db->close;
+$log->mail("$maintainers", "BUILD REPORT: $0");
+exit(0);
 
 
-#-------------------------
-# s u b r o u t i n e s
-#-------------------------
 
 
-sub make_inferred_multi_pt_obj {   # run during the build, when approved pseudo markers are available
+################################################
+#
+#            S U B R O U T I N E S
+#
+################################################
 
-  open(F, "$new_multi_file") || die $!;
 
-  my $locus;
-  while (<F>){
-    chomp;
-    #---- first create a hash of gene_id (key) to allele (value)
-    #     and also verify that each inferred marker is linked to an allele
-
-    if ($_ =~ /Gene : \"(.+)\"/){
-      my $gene_id = $1;
-      $gene_id = $db->fetch(-class => 'Gene',
-			    -name  => $gene_id);
-      if (defined $gene_id -> CGC_name(1)){
-	if (defined $gene_id -> Allele(1)){
-	  my @alleles = $gene_id -> Allele(1);
-	  foreach my $e (@alleles){
-	    if (exists $Alleles{$e} ){
-	      $gene_id_allele{$gene_id} = $e; # grep only the allele which has no Transposon_insertion tag
-	      #print "$gene_id => $e (1)\n";
-	      last;
-	    }
-	  }
-	}
-	else {
-	  print LOG "ERROR: $gene_id has now NO allele attached . . . corresponding multi-pt obj needs update. . .\n";
-	}
-      }
-    }
-  }
-  close F;
-
-  # get last multipt obj
-  my $multipt = "find Multi_pt_data *";
-  my @multi_objs = $db->find($multipt);
-  my $last_multi = $multi_objs[-1];
-  my $multi = $last_multi -1; $multi++;  # last number of multi_pt obj
-  my $error = 0;
-
-  # write inferred multi_obj acefile
-  open(NEW, ">$multi_dir/inferred_multi_pt_obj_$autoace_version") || die $!;
-
-  foreach (keys %gene_id_allele){
-
-    $multi++;
-    my $L_locus = $order_locus{ $locus_order{ $Gene_info{$_}{'Public_name'} } -1 } if exists $Gene_info{$_}{'Public_name'};
-    print $L_locus, " (L)\n";
-    my $R_locus = $order_locus{ $locus_order{ $Gene_info{$_}{'Public_name'} } +1 } if exists $Gene_info{$_}{'Public_name'};
-    print $R_locus, " (R)\n";
-
-    print NEW "\n\nGene : \"$_\"\n";
-    print NEW "Multi_point $multi\n";
-    print NEW "\n\nMulti_pt_data : $multi\n";
-    print NEW "Gene_A \"$_\" \"$gene_id_allele{$_}\"\n";
-    print NEW "Gene \"$_\" \"$gene_id_allele{$_}\"\n";
-    if ($L_locus && $R_locus){
-      print NEW "Combined Gene \"$Gene_info{$L_locus}{'Gene'}\" 1 Gene \"$_\" 1 Gene \"$Gene_info{$R_locus}{'Gene'}\"\n";
-      print NEW "Remark \"Data inferred from $gene_id_allele{$_}, sequence of $Gene_info{$_}{'CGC_name'} and interpolated map position (which became genetics map)\" Inferred_automatically\n";
-    }
-    elsif (!$L_locus | !$R_locus){
-      $error = 1;
-      $L_locus = "NA" if !$L_locus;
-      $R_locus = "NA" if !$R_locus;
-      print LOG "ERROR: Multi-pt obj $multi has incomplete flanking loci [(L) $L_locus (R) $R_locus] information for $Gene_info{$_}{'CGC_name'}($_)\n";
-    }
-    elsif (!$gene_id_allele{$_}){
-      print LOG "ERROR: Multi-pt obj $multi has NO allele [NA] information\n";
-    }
-  }
-  close NEW;
-
-  print LOG "\nInfo: for incomplete flanking loci: check that they should be the end marker of a chromosome: back to JAH.\n" if ($error ==1);
-
-  # load $multi_dir/inferred_multi_pt_obj_$autoace_version to autoace
-  my $upload = "pparse $multi_dir/inferred_multi_pt_obj_$autoace_version\nsave\nquit\n";
-  $ga->upload_database($database, $upload, "pseudo_mapping_data", $log) if !$debug;
-}
-
-sub update_inferred_multi_pt {
-
-  my $query  = "find Multi_pt_data * where remark AND NEXT AND NEXT = \"inferred_automatically\"";
-  push( my @inferred_multi_objs, $db->find($query) );
-
-  open(UPDATE, ">$multi_dir/updated_multi_pt_flanking_loci_$autoace_version") || die $!;
-
-  my ($center_Gene, $allele, $L_locus, $R_locus);
-
-  foreach (@inferred_multi_objs){
-    $center_Gene = $_ -> Combined(5);
-
-    my $gene_id = $db->fetch(-class => 'Gene',
-			     -name  => $center_Gene );
-
-    $allele =(); my @alleles =();
-    if (defined $gene_id -> Allele(1)){
-      @alleles = $gene_id -> Allele(1);
-      foreach my $e (@alleles){
-	if (exists $Alleles{$e} ){
-	  $allele = $e; # grep only the allele which has no Transposon_insertion tag
-	  last;
-	}
-      }
-    }
-
-    $L_locus = $order_locus{ $locus_order{ $Gene_info{$gene_id}{'Public_name'}} -1 };
-    $R_locus = $order_locus{ $locus_order{ $Gene_info{$gene_id}{'Public_name'}} +1 };
-
-    print UPDATE "\nMulti_pt_data : \"$_\"\n";
-    print UPDATE "-D Combined\n";
-    print UPDATE "-D Remark\n";
-    print UPDATE "\nMulti_pt_data : \"$_\"\n";
-    if ($L_locus && $R_locus && $allele){
-      print UPDATE "Combined Gene \"$Gene_info{$L_locus}{'Gene'}\" 1 Gene \"$center_Gene\" 1 Gene \"$Gene_info{$R_locus}{'Gene'}\"\n";
-      print UPDATE "Remark \"Data inferred from $allele, sequence of $Gene_info{$center_Gene}{'CGC_name'} and interpolated map position (which became genetics map)\" Inferred_automatically\n" if exists $Gene_info{$center_Gene}{'CGC_name'};
-      print UPDATE "Remark \"Data inferred from $allele, sequence of $Gene_info{$center_Gene}{'Other_name'} and interpolated map position (which became genetics map)\" Inferred_automatically\n" if !exists $Gene_info{$center_Gene}{'CGC_name'};
-    }
-    elsif (!$L_locus | !$R_locus) {
-      $L_locus = "NA" if !$L_locus;
-      $R_locus = "NA" if !$R_locus;
-      print LOG "ERROR: Multi-pt obj $_ has incomplete flanking loci [(L) $L_locus (R) $R_locus] information for $center_Gene\n";
-    }
-    elsif (!$allele) {
-      $allele  = "NA" if !$allele;
-      print LOG "ERROR: Multi-pt obj $_ has NO allele [$allele] information\n";
-    }
-  }
-
-  print LOG "\n\n";
-
-  my $cmd= "pparse $multi_dir/updated_multi_pt_flanking_loci_$autoace_version\nsave\nquit\n";
-  $ga->upload_database($database, $cmd, "Inferred_multi_pt_data", $log) if !$debug;
-}
 
 sub get_flanking_loci {
 
-  # get loci order from last cmp_gmap_with_coord_order_WSXXX.yymmdd.pid file
-  my @map_file = glob("/wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/cmp_gmap_with_coord_order_$autoace_version*");
+  # get gene order from last cmp_gmap_with_coord_order_WSXXX.yymmdd.pid file
+  my @map_file = glob("$basedir/autoace/MAPPINGS/INTERPOLATED_MAP/cmp_gmap_with_coord_order_*");
+
+  print "Getting flanking loci information from $map_file[-1]\n";
 
   my $count = 0;
-  open(MAP, $map_file[-1]) || die $!;
+  open(MAP, $map_file[-1]) || die "Can't find $map_file[-1]\n";
 
   while(<MAP>){
     chomp;
-
     if ($_ =~ /^(I|V|X)/){
-      my($a, $b, $c, $d, $e) = split(/\s+/, $_);
-      my $locus = $c;
+      my($chrom, $map_position, $gene, $cds, $chrom_position) = split(/\s+/, $_);
       $count++;
-      $locus_order{$locus} = $count if $locus;
-      $order_locus{$count} = $locus if $locus;
+      if(defined($gene)){       
+	$locus_order{$gene}  = $count;
+	$order_locus{$count} = $gene;
+      }
     }
   }
-  close MAP;
+  close(MAP);
 }
+
+
+
+#########################################################################################################
+
+sub make_new_inferred_multi_pt_obj {   # run during the build, when approved pseudo markers are available
+
+  $log->write_to("Creating NEW multi-point data objects\n\n");
+
+  open(PSEUDO, "$pseudo_map_positions") || die $!;
+
+  while (<PSEUDO>){
+    chomp;
+
+    #---- first create a hash of gene_id (key) to allele (value)
+    #     and also verify that each inferred marker is linked to an allele
+    if ($_ =~ /Gene : \"(.+)\"/){
+      my $gene_id = $1;
+      $gene_id = $db->fetch(-class => 'Gene', -name  => $gene_id);
+
+      if (defined $gene_id->Allele(1)){
+	my @alleles = $gene_id->Allele(1);
+	foreach my $allele (@alleles){
+	  
+	  # only want to consider alleles which are not Transposon insertions or SNPs
+	  next if(defined($allele->Transposon_insertion));
+	  
+	  my $method = $allele->Method;
+	  next if(defined($method) && ($method eq "SNP" || $method eq "Transposon_insertion"));
+	  
+	  # now add allele to hash
+	  $gene2allele{$gene_id} = $allele; 
+	  last;
+	}	  
+      }
+      else {
+	$log->write_to("ERROR: $gene_id now has NO allele attached . . . corresponding multi-pt obj needs update. . .\n");
+      }      
+    }
+  }
+  close(PSEUDO);
+
+
+  # get last multipt obj
+  my @multi_objs = $db->find('Find Multi_pt_data *');
+  my $last_multi = $multi_objs[-1];
+
+  my $multi = $last_multi -1; $multi++;  # last number of multi_pt obj
+
+  # write inferred multi_obj acefile
+  open(NEW, ">$new_output") || die $!;
+
+
+  foreach (keys %gene2allele){
+
+    # store left and right flanking loci
+    my $L_locus;
+    my $R_locus;
+
+    my $gene = $db->fetch(-class => 'Gene',
+			  -name  => $_ );
+    my $cgc_name = $gene->CGC_name;
+    $multi++;
+
+    # find the loci that are to the left and right of the current locus
+    if (defined($cgc_name) && defined($locus_order{$cgc_name})){
+      $L_locus = $order_locus{($locus_order{$cgc_name} -1) };
+      $R_locus = $order_locus{($locus_order{$cgc_name} +1 )};
+    }
+
+    print NEW "\n\nGene : \"$_\"\n";
+    print NEW "Multi_point $multi\n\n";
+
+    print NEW "Multi_pt_data : $multi\n";
+    print NEW "Gene_A \"$_\" \"$gene2allele{$_}\"\n";
+    print NEW "Gene   \"$_\" \"$gene2allele{$_}\"\n";
+
+
+    # now grab gene IDs for flanking markers based on CGC name
+    if ($L_locus && $R_locus){
+      my ($L_gene_id)= $db->fetch(-query=>"Find Gene_name $L_locus; Follow CGC_name_for");
+      my ($R_gene_id) = $db->fetch(-query=>"Find Gene_name $R_locus; Follow CGC_name_for");
+      print NEW "Combined Gene \"$L_gene_id\" 1 Gene \"$_\" 1 Gene \"$R_gene_id\"\n";
+      print NEW "Remark \"Data inferred from $gene2allele{$_}, sequence of $cgc_name and interpolated map position (which became genetics map)\" Inferred_automatically\n";
+
+    }
+    elsif (!$L_locus){
+      $log->write_to("ERROR: Multi-point object $multi has missing left flanking locus for $cgc_name.  Is gene at end of chromosome?\n");
+    }
+    elsif (!$R_locus){
+      $log->write_to("ERROR: Multi-point object $multi has missing right flanking locus for $cgc_name.  Is gene at end of chromosome?\n");
+    }
+
+    elsif (!$gene2allele{$_}){
+      $log->write_to("ERROR: Multi-point object $multi has no allele information\n");
+    }
+  }
+  close NEW;
+}
+
+
+#############################################################################################################
+
+sub update_existing_inferred_multi_pt {
+
+  $log->write_to("Updating EXISTING multi-point data objects\n\n");
+
+  my $query  = "Find Multi_pt_data * WHERE Remark AND NEXT AND NEXT = \"Inferred_automatically\"";
+  push( my @inferred_multi_objs, $db->find($query) );
+
+  open(UPDATE, ">$updated_output") || die $!;
+
+  my ($center_gene, $allele, $L_locus, $R_locus);
+
+  foreach (@inferred_multi_objs){
+    $center_gene = $_ -> Combined(5);
+
+    if(!defined($center_gene)) {
+      $log->write_to("ERROR: Multi-point object $_ has missing main gene after Combined tag (should be three genes)\n");
+    }
+
+    my $gene_id = $db->fetch(-class => 'Gene',
+			     -name  => $center_gene );
+
+    my $cgc_name = $gene_id->CGC_name;
+    if(!defined($cgc_name)){
+      $log->write_to("ERROR: Multi-point object $_ has a gene ($gene_id) which does not have a CGC name\n");
+    }
+
+    # get allele associated with center gene
+    my $allele = $_ ->Gene(2);
+    if(!defined($allele)){
+      $log->write_to("ERROR: Multi-point object $_ has a gene ($gene_id) which does not have an allele\n");
+    }
+
+
+    # get flanking gene details from real updated genetic map data 
+    # note that this might be different to the existing multi point data if
+    # new map markers have been created, e.g. gene order A->B->C is now A->B->D->C
+    # where D is a new gene.  Therefore multipoint data for genes B and C have to be
+    # updated to reflect new flanking marker
+
+    $L_locus = $order_locus{$locus_order{$cgc_name} -1 };
+    $R_locus = $order_locus{$locus_order{$cgc_name} +1 };
+    my ($L_gene_id) = $db->fetch(-query=>"Find Gene_name $L_locus; Follow CGC_name_for");
+    my ($R_gene_id) = $db->fetch(-query=>"Find Gene_name $R_locus; Follow CGC_name_for");
+    
+    # Remove old data
+    print UPDATE "\nMulti_pt_data : \"$_\"\n";
+    print UPDATE "-D Combined\n";
+    print UPDATE "-D Remark\n";
+
+    # print new data
+    print UPDATE "\nMulti_pt_data : \"$_\"\n";
+    if ($L_gene_id && $R_gene_id && $center_gene && $allele){
+      print UPDATE "Combined Gene \"$L_gene_id\" 1 Gene \"$center_gene\" 1 Gene \"$R_gene_id\"\n";
+      print UPDATE "Remark \"Data inferred from $allele, sequence of $cgc_name and interpolated map position (which became genetics map)\" Inferred_automatically\n";
+    }
+    elsif (!$L_gene_id) {
+      $log->write_to("ERROR: Multi-point object $_ has missing left flanking locus for $gene_id\n");
+    }
+    elsif (!$R_gene_id) {
+      $log->write_to("ERROR: Multi-point object $_ has missing right flanking locus for $gene_id\n");
+    }
+  }
+
+  close(UPDATE);
+}
+
+#####################################################################################################
+
+sub usage {
+  my $error = shift;
+  if ($error == 0) {
+    # Normal help menu
+    exec ('perldoc',$0);
+  }
+}
+
+
 
 
 __END__
@@ -242,83 +342,70 @@ __END__
 
 =head2 NAME - update_inferred_multi_pt.pl
 
-=head3 <USAGE>
- 
-=head2 Options: [h or help] [db or database]
+=head1 USAGE
+                                                                                                       
+=over 4
+                                                                                                       
+=item make_pseudo_map_positions.pl -[options]
+                                                                                                       
+                                                                                                       
+=back
+                                                                                                       
+=head1 DESCRIPTION
 
-            -h to display this POD
-            -db specify db to upload data
-            -d(debug) user: send email to debugger only
-            -l upload approved pseudo markers 
+An earlier build script (make_pseudo_map_positions.pl) would have 'promoted' certain genes to have a 'Map'
+position.  These would have been genes with CGC-names, alleles, and interpolated map positions.  However,
+all true map markers, should have associated mapping data stored in Multi_pt_data objects.  These objects
+minimally store the name of the gene, an allele used to define it as a mapped marker, and the two markers
+that lie either side of the gene.
+
+This script makes two files (in /wormsrv2/autoace/acefiles/).  The first (new_pseudo_multi_point_data.ace)
+will contain new multi point data objects to go with the genes with newly promoted markers.  The second 
+file (updated_pseudo_multi_point_data.ace) contains modifications to existing multi point objects.  This 
+step is necessary because new markers will now lie between markers that were previously flanking markers.
+
+E.g.  assume that gene B is an existing marker which has an associated multi point data object which 
+describes two flanking markers (gene A and gene C):
+
+gene A - gene B - gene C
+
+now assume that a new marker (gene D) is added to the map between the positions of gene B and gene D:
+
+gene B - gene D - gene C
+
+the existing multi point data for gene B is now incorrect in stating that gene C is the right hand 
+marker.  This second file makes these corrections to multi point data objects.
 
 
-=head3 <DESCRITION>
+=back
+                                                                                                       
+=head1 MANDATORY arguments: <none>
+                                                                                                       
+=back
 
-Flowchart of creating inferred multi_pt_data [all these steps are taken care of by script, except steps 2].
-All files are created in the directory /wormsrv1/geneace/JAH_DATA/MULTI_PT_INFERRED/
+=head1 OPTIONAL arguments: -help, -database, -verbose, -test, -load
 
-There are "before-the-build" and "during-the-build" procedures.
+=over 4
 
-   ################### BEFORE THE BUILD ###################
+=item -help
 
-   run the script geneace_check.pl -c ps, which
+Displays this help
 
-B<1.>
- identify loci which
-        (a) have Interpolated_map_position (ie, no Map data)
-        (b) have allele info (excluding non specified Tc1 insertion alleles, ie, no mutation info)
-        (c) have no mapping_data
-        (d) belongs to C. elegans
-        (e) are linked to sequence (CDS or Transcript or Pseudogene)
-   And gives CGC roughly 2 weeks time to approve the pseudo markers on the list
-   /wormsrv1/geneace/JAH_DATA/MULTI_PT_INFERRED/loci_become_genetic_marker_for_WSxxx (so the release number is
-   for the NEXT build; this acefile has already upgraded interpolated_map_positino to Map).
+=item -database
 
-B<2.>
- Send the geneace_check output in step 1 (loci_become_genetic_marker_for_WSxxx: next release number) to JAH
-   for approval of promoted loci to be used for the next build.
+Specify a path to a valid acedb database to query (defaults to /wormsrv2/autoace)
 
-B<3.>
- Modified the file of step 1 (loci_become_genetic_marker_for_WSxxx: current release number -
-   created at start of last build) to include only info for the approved loci.
-   Load this file (loci_become_genetic_marker_for_WSxxx; current release number) to Geneace by
-   update_inferred_multi_pt.pl -db /wormsrv1/geneace/ -l
-   -------------------------------------------------------------------------------------------------------
-   Note: this file of step 1 (with only approved ones, loci_become_genetic_marker_for_WSxxx: current release number)
-         must already be loaded into Geneace before the build begins, otherwise autoace will not have new pseudo markers
-         with map positions (appear in /wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/cmp_gmap_with_coord_order_WS120.yymmdd.psid),
-         and later during the build, loci in this approved file will still be picked up and new multip-pt obj generated,
-         since the script looks for loci_become_genetic_marker_for_WSxxx (current release number) which is available.
+=item -test
 
-         Consequence(1): an inferred multi-pt obj will be created accordingly, but the pseudo marker, say abc-1 will have
-                         no left and right flanking loci that Jonathan (CGC) wants, because abc-1 is not yet on the list
-                         of markers without rev. physicals
-                         (/wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/cmp_gmap_with_coord_order_WSxxx.yymmdd.psid).
-         Consequence(2): you will need to remove those inferred multi-pt obj. with incomplete information.
-         TO AVOID this: if CGC has not yet approved any marker from the list, then you need to DELETE the file
-                        (loci_become_genetic_marker_for_WSxxx; current release number) created in step 1 at start of
-                        the last build.
-   -------------------------------------------------------------------------------------------------------
+Use the test build environment
 
-   ###################### DURING THE BUILD #####################
+=item -load
 
-B<4.>
- Create inferred multi_pt object for promoted loci based on loci_become_genetic_marker_for_WSxxx (current release)
-   from step 3 with minimal "combined results" information with the immediate left and right flanking cloned loci
-   as multi_pt A and B (see eg, multi_pt object 4134).
-   This is done by: "update_inferred_multi_pt.pl -db /wormsrv2/autoace/ -u" (if approved pseudo markers are available),
-   which creates the file inferred_multi_pt_obj_WSxxx, otherwise, it is absent.
+Load the resulting acefile to autoace (or database specified by -database)
 
-   Step 4 depends on cmp_gmap_with_coord_order_WSxxx.yymmdd.pid file generated by get_interpolated_map.pl during
-   the build
+=back
 
-B<5.>
- Update flanking loci of all inferred multi-pt objects (also done by "update_inferred_multi_pt.pl -db /wormsrv2/autoace/ -u",
-   which generates updated_multi_pt_flanking_loci_WSxxx file). This is run even no new approved pseudo markers are there for
-   current build.
+=head1 AUTHOR Keith Bradnam (krb@sanger.ac.uk) - heavily rewritten from a Chao-Kung original
 
-B<6.>
- Both inferred_multi_pt_obj_WSxxx and updated_multi_pt_flanking_loci_WSxxx will also be uploaded back to geneace by
-   running /nfs/team71/worm/ck1/WORMBASE_CVS/scripts/GENEACE/load_related_data_from_Build_to_geneace.pl
-   after step "update_inferred_multi_pt.pl -db /wormsrv2/autoace/ -u" of the build guide
 
+=cut
