@@ -7,8 +7,8 @@
 # checks whether genes overlap, ESTs match introns and repeats match exons                                   
 # sorts output for stl and cam clones
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-12-21 10:26:11 $
+# Last updated by: $Author: dl1 $
+# Last updated on: $Date: 2004-03-25 10:10:28 $
 
 use strict;
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
@@ -159,7 +159,7 @@ foreach my $chrom (@chrom) {
       ###################
 
       
-      elsif (($fields[5] ne ".") && ($fields[1] =~ /hmmfs/) && ($fields[5] > $repth)) {
+      elsif (($fields[5] ne ".") && ($fields[1] eq"RepeatMasker") && ($fields[5] > $repth)) {
 	my @descr = split (/ /);
 	$descr[1] =~ /\"Motif:(\S+)\"/; 
 	$name = $1;
@@ -208,41 +208,41 @@ foreach my $chrom (@chrom) {
   # get "index" lists #
   #####################
   
-  my @exonlist   = sort { ${$exon{$a}}[0]     <=> ${$exon{$b}}[0]   || $a cmp $b  } keys %exon;
-  my @estlist    = sort { ${$est{$a}}[0]      <=> ${$est{$b}}[0]    || $a cmp $b  } keys %est;
-  my @genelist   = sort { ${$genes{$a}}[0]    <=> ${$genes{$b}}[0]  || $a cmp $b  } keys %genes;
+  my @exonlist    = sort { ${$exon{$a}}[0]     <=> ${$exon{$b}}[0]   || $a cmp $b  } keys %exon;
+  my @estlist        = sort { ${$est{$a}}[0]        <=> ${$est{$b}}[0]    || $a cmp $b  } keys %est;
+  my @genelist    = sort { ${$genes{$a}}[0]    <=> ${$genes{$b}}[0]  || $a cmp $b  } keys %genes;
   my @repeatlist = sort { ${$repeat{$a}}[0]   <=> ${$repeat{$b}}[0] || $a cmp $b  } keys %repeat; 
-  my @intronlist = sort { ${$intron{$a}}[0]   <=> ${$intron{$b}}[0] || $a cmp $b  } keys %intron; 
+  my @intronlist  = sort { ${$intron{$a}}[0]   <=> ${$intron{$b}}[0] || $a cmp $b  } keys %intron; 
 
 
   ###############################
   # III. find overlapping genes #
   ###############################
-	
-  my @geneoutput = ();
-  for (my $x = 0; $x < @exonlist; $x++) {
-    for (my $y = $x + 1; $y < @exonlist; $y++) {
-      my $name  = $exonlist[$x];
-      my $other = $exonlist[$y];
-      undef my $one; undef my $two;
-      ($one) = ($name  =~ /(\S.*?\.\d+)[a-z]\./);
-      ($two) = ($other =~ /(\S.*?\.\d+)[a-z]\./);
-      if (!$one) {$one = "n/a";}
-      if (!$two) {$two = "n/b";}
-      if ($name eq $other || $one eq $two) {
-	next;
-      }
-      elsif (${$exon{$name}}[1] >= ${$exon{$other}}[0])  {
-         (my $onename)    = ($name  =~ /(\S.*?\.\S.*?)\./);
-         (my $othername)  = ($other =~ /(\S.*?\.\S.*?)\./);
-	 push (@geneoutput, [sort ($onename,$othername)] );
-       }   
-      else {last;}
+    
+    my @geneoutput = ();
+    for (my $x = 0; $x < @exonlist; $x++) {
+	for (my $y = $x + 1; $y < @exonlist; $y++) {
+	    my $name  = $exonlist[$x];
+	    my $other = $exonlist[$y];
+	    undef my $one; undef my $two;
+	    ($one) = ($name  =~ /(\S.*?\.\d+)[a-z]\./);
+	    ($two) = ($other =~ /(\S.*?\.\d+)[a-z]\./);
+	    if  (!$one)  {$one = "n/a";}
+	    if  (!$two)  {$two = "n/b";}
+	    if  (($name eq $other) || ($one eq $two)) {                          # this should shortcut self matches!
+		next;
+	    }
+	    elsif (${$exon{$name}}[1] >= ${$exon{$other}}[0])  {
+		(my $onename)    = ($name  =~ /(\S.*?\.\S.*?)\./);
+		(my $othername)  = ($other =~ /(\S.*?\.\S.*?)\./);
+		push (@geneoutput, [sort ($onename,$othername)] );
+	    }   
+	    else {last;}
+	}
     }
-  }
-
+    
  # output for camace
-  my @camgenes         = find_database(\@geneoutput,\%camace);   
+    my @camgenes         = find_database(\@geneoutput,\%camace);   
     my %finalgenescamace = sort_by_gene(\@camgenes);
     warn "problem with genematch  reference\n" if ref(\@camgenes) ne 'ARRAY';
     foreach my $pair (sort keys %finalgenescamace) {
@@ -255,8 +255,8 @@ foreach my $chrom (@chrom) {
     my %finalgenesstlace = sort_by_gene(\@stlgenes);
     warn "problem with genematch  reference\n" if ref(\@stlgenes) ne 'ARRAY';
     foreach my $pair (sort keys %finalgenesstlace) {
-       my @single = split (/:/, $pair); 
-       print STLOL "Gene $single[1]\toverlaps with gene $single[0]\n";
+	my @single = split (/:/, $pair); 
+	print STLOL "Gene $single[1]\toverlaps with gene $single[0]\n";
     } 
 
 
