@@ -29,7 +29,6 @@ my $runtime     = `date +%H:%M:%S`; chomp $runtime;
 our $log        = "/wormsrv2/logs/prepare_build.$rundate";
 my $cvs_version = &get_cvs_version("$0");
 
-
 my $db_path     = "/wormsrv2";
 my $WS_name     = &get_wormbase_version_name;
 my $WS_current  = &get_wormbase_version;
@@ -51,6 +50,12 @@ my $old_wormpep = "$db_path/WORMPEP/wormpep".($wormpep_ver-3);
 print LOG "Transferring autoace into /wormsrv2/$WS_name\n";
 system("TransferDB -start /wormsrv2/autoace -end /wormsrv2/$WS_name -all -name $WS_name") 
   && die "couldn't run TransferDB for autoace\n";
+
+# Remove redundant files from /wormsrv2/autoace/release and /wormsrv2/autoace/CHROMOSOMES
+print LOG "Removing old files in /wormsrv2/autoace/release/\n";
+system("rm -f $db_path/autoace/release/*") && die "Couldn't remove old release files\n";
+print LOG "Removing old files in /wormsrv2/autoace/CHROMOSOMES/\n";
+system("rm -f $db_path/autoace/CHROMOSOMES/*") && die "Couldn't remove old CHROMOSOME files\n";
 
 # Transfer /wormsrv1/camace to /wormsrv2/camace
 print LOG "Transferring /wormsrv1/camace into /wormsrv2/camace\n";
