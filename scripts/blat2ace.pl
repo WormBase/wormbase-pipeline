@@ -19,6 +19,10 @@
 #
 # 010905 by Kerstin Jekosch
 
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2002-08-22 15:28:17 $
+
+
 use strict;
 use Data::Dumper;
 use Ace;
@@ -257,8 +261,12 @@ while (<BLAT>) {
 
 	# write to output file
 	print  ACE "Homol_data : \"$virtual\"\n";
-	printf ACE "DNA_homol\t\"%s\"\t\"$word{$type}_OTHER\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$est,$score,$virtualstart,$virtualend,$eststart,$estend;
-
+	if ($type eq "NEMATODE") {
+	    printf ACE "DNA_homol\t\"%s\"\t\"$word{$type}\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$est,$score,$virtualstart,$virtualend,$eststart,$estend;
+	}
+	else {
+	    printf ACE "DNA_homol\t\"%s\"\t\"$word{$type}_OTHER\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$est,$score,$virtualstart,$virtualend,$eststart,$estend;
+	}
 	push @exons, [$virtualstart,$virtualend,$eststart,$estend];				
     }
     
