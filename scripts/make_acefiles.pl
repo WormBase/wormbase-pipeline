@@ -7,15 +7,15 @@
 # Generates the .acefiles from the primary databases as a prelim for building
 # autoace.
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2004-11-24 15:06:50 $
+# Last updated by: $Author: dl1 $
+# Last updated on: $Date: 2004-12-06 15:23:36 $
 
 #################################################################################
 # Variables                                                                     #
 #################################################################################
 
 use strict;
-use lib -e $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use IPC::Open2;
 use IO::Handle;
