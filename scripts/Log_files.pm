@@ -63,14 +63,14 @@ sub make_build_log
   {
     my $class = shift;
     my $debug = shift;
-    my $ver = &Wormbase::get_wormbase_version;
+    my $ver = &Wormbase::get_wormbase_version if ( -e "/wormsrv2" );
     $ver = $debug unless $ver;  #if wormsrv2 not accessible then Wormbase module wont get version
     my $filename;
     $0 =~ m/([^\/]*$)/ ? $filename = $0 :  $filename = $1 ; # get filename (sometimes $0 includes full path if not run from its dir )
 
     # Create history logfile for script activity analysis
     $0 =~ m/\/*([^\/]+)$/; 
-    system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`") unless $debug;
+    #system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`") unless $debug;
 
     my $path = "/wormsrv2/logs";
     if( defined $debug ) {
@@ -78,6 +78,7 @@ sub make_build_log
       system("mkdir $path") unless (-e $path);
     }
 
+    $path = "/tmp" unless ( -e "/wormsrv2");
     my $log_file = "$path/$filename".".$ver.".$$;
     my $log;
     open($log,">$log_file") or croak "cant open file $log_file : $!";
@@ -98,6 +99,7 @@ sub make_build_log
 sub write_to
   {
     my $self = shift;
+    return if $self->{'end'};
     my $string = shift;
     my $fh = $self->{"FH"};
     print $fh "$string";
@@ -107,6 +109,7 @@ sub write_to
 sub mail
   {
    my ($self, $recipient) = @_;
+    return if $self->{'end'};
 
    my $fh = $self->{"FH"};
    print $fh "\n\n-----------------------------------\n";
@@ -117,6 +120,14 @@ sub mail
    my $file = $self->{"FILENAME"};
    my $script = $self->{"SCRIPT"};
    &Wormbase::mail_maintainer($script,$recipient,$file);
+  }
+
+sub end
+  {
+    my $self = shift;
+    my $fh = $self->{"FH"};
+    close $fh;
+    $self->{'end'} = 1;
   }
 
 
