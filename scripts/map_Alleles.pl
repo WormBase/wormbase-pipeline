@@ -7,15 +7,15 @@
 # This maps alleles to the genome based on their flanking sequence
 #
 # Last updated by: $Author: krb $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2003-12-16 15:09:25 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2003-12-16 16:22:12 $        # quickly see when script was last changed and by whom
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Feature_mapper;
 use Wormbase;
 use Ace;
-
 use Getopt::Long;
+
 #######################################
 # command-line options                #
 #######################################
@@ -25,7 +25,7 @@ my $database;
 my $ver;
 my $verbose;
 my $restart = "go";
-my $help;# { `perldoc $0`;};
+my $help;
 my $no_geneace;
 my $no_parse;
 my $list;
@@ -150,8 +150,7 @@ if ( $list ) {
 ####### allele mapping loop ######################
 
 my %allele_data;   #  allele => [ (0)type, (1)5'flank_seq , (2)3'flank_seq, (3)CDS, (4)end of 5'match, (5)start of 3'match , (6)clone, (7)chromosome, (8)strains]
-my $count = 0;
-my $fail_count = 0;
+my $error_count = 0; # for tracking alleles that don't map
 my $sequence;
 my $clone;
 my $chromosome;
@@ -182,7 +181,7 @@ foreach my $allele (@alleles) {
 
   # debug facility - after the restart means you can specify where to start and how many to do 
   if ( $limit ) {
-    last if ++$count >= $limit;
+    last if ++$error_count >= $limit;
   }
 
   if ( $list ) {
@@ -207,12 +206,10 @@ foreach my $allele (@alleles) {
 
   my @map = $mapper->map_feature($sequence->name,$left, $right);
   if( "$map[0]" eq "0" ) {
-    print LOG "couldn't map $name with $left and $right to seq $sequence\n";
-    $fail_count++;
-    $count--;
+    print LOG "ERROR: Couldn't map $name with $left and $right to seq $sequence\n";
+    $error_count++;
     next ALLELE;
   }
-  #print "allele $name = @map\n" if $debug;
 
   $allele_data{$name}[4] = $map[1];
   $allele_data{$name}[5] = $map[2];
@@ -231,7 +228,7 @@ foreach my $allele (@alleles) {
   &outputAllele($name);
 }
 
-  print "$count alleles\n";
+  print "$error_count alleles\n";
 
 print LOG "Update files for geneace allele mappings are available - \n$geneace_update\n$geneace_update_delete\n\n" unless $no_geneace;
 
@@ -271,7 +268,7 @@ END
 }
 # close LOG and send mail
 
-print LOG "mapped $count alleles\n\n";
+print LOG "ERROR: $error_count alleles failed to map\n" if ($error_count > 0);
 print LOG "$0 end at ",&runtime," \n-------------- END --------------------\n\n";
 close LOG;
 &mail_maintainer("map_alleles","$maintainers","$log");

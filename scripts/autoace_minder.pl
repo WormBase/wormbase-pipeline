@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2003-12-16 13:57:17 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2003-12-16 16:22:11 $
 
 
 #################################################################################
@@ -1374,7 +1374,7 @@ sub logfile_details {
   print LOG "#  -gffsplit     : Split GFF files\n"                                                     if ($gffsplit);
 
   print LOG "#  -map          : map PCR and RNAi\n"                                                    if ($map);
-  print LOG "#  -test         : running in test mode\n"                                                if ($map);
+  print LOG "#  -test         : running in test mode\n"                                                if ($test);
   print LOG "======================================================================\n\n";
 
 }
