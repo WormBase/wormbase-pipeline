@@ -20,7 +20,7 @@ my $log = Log_files->make_build_log("$debug");
 # mysql database parameters
 my $dbhost = "ecs1f";
 my $dbuser = "wormadmin";
-my $dbname = "wormprot";
+my $dbname = "worm_pep";
 my $dbpass = "worms";
 
 my %ws_id2length;
