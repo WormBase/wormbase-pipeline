@@ -4,8 +4,8 @@
 #
 # Dumps protein motifs from ensembl mysql (protein) database to an ace file
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-11-05 13:53:39 $
+# Last updated by: $Author: wormpipe $
+# Last updated on: $Date: 2003-01-15 13:41:12 $
 
 
 use strict;
@@ -28,8 +28,10 @@ sub now {
 }
 
 # create output files
-open (LOG, ">motifs_dump.log") || die "cannot create log file";
-open (ACE, ">motifs_dump.ace") || die "cannot create ace file";
+my $dump_dir = glob("~wormpipe/dumps");
+open(ACE,">$dump_dir/ensembl_motif_info.ace") || die "cannot create ace file";
+
+open(LOG,">$dump_dir/ensembl_motif_info.log") || die "cannot create log file";
 
 # make the LOG filehandle line-buffered
 my $old_fh = select(LOG);
