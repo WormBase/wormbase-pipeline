@@ -2,13 +2,13 @@
 #
 # update_website.pl
 # 
-# by Keith Bradnam aged 12 and half
+# by Keith Bradnam aged 12 and half (is this the reincarnation of Peter Pan?)
 #
 # A script to finish the last part of the weekly build by updating all of the
 # relevant WormBase and Wormpep web pages.
 #
 # Last updated by: $Author: dl1 $     
-# Last updated on: $Date: 2003-05-22 16:18:26 $      
+# Last updated on: $Date: 2003-05-23 15:29:28 $      
 
 
 #################################################################################
@@ -19,13 +19,45 @@ use strict;
 use lib "/wormsrv2/scripts/";
 use Wormbase;
 use IO::Handle;
-use Getopt::Std;
+use Getopt::Long;
 use Cwd;
 use Symbol 'gensym';
 use Ace;
 use lib "/nfs/WWW/perl";
 use SangerWeb;
 use Carp;
+
+##############################
+# command-line options       #
+##############################
+
+
+my $debug;              # Verbose debug mode
+my $help;               # Help/Usage page
+my $all;                # option all - do everything
+my $header;             # create release_header.shtml
+my $dna;                # create DNA.shtml
+my $finished;           # create finished.shtml
+my $dbcomp;             # create dbcomp.shtml
+my $wormpep_diff;       # diff log for wormpep releases
+my $copyGFF;            # copy GFF files to WWW site 
+my $test;               # test run (requires a release number)
+
+
+GetOptions (
+            "all"            => \$all,
+	    "header"         => \$header,
+	    "dna"            => \$dna,
+	    "finished"       => \$finished,
+            "dbcomp"         => \$dbcomp,
+            "wormpepdiff"    => \$wormpep_diff,
+	    "copygff"        => \$copyGFF,
+            "debug"          => \$debug,
+	    "test=s"         => \$test,
+            "help"           => \$help,
+            "h"              => \$help
+);
+
 
 ##############################
 # Script variables           #
@@ -53,27 +85,49 @@ my $dbpath           = "/wormsrv2/autoace";
 our $log             = "/wormsrv2/logs/update_website.$rundate";
 
 
+#############
+# TEST MODE
+############
+
+if (defined $test) {
+    $WS_current       = $test;
+    $WS_previous      = $test - 1;
+    $WS_name          = "WS".$WS_current;
+    $WS_previous_name = "WS".$WS_previous;
+}
+
+# debug mode modifies $maintainers to reduce e-mail load
+($maintainers = $debug . "\@sanger.ac.uk") if ($debug);
+
+# check for command-line options if none given then you do everything
+if (scalar ($ARGV[0]) < 1) {
+    $all = 1;
+}
+
 ###########################################################################################################
 # Main subroutine calls    
 ###########################################################################################################
 
-&create_log_file;
+&create_log_file               if ($all);
 
-&create_web_directories;
+&create_web_directories        if ($all);
 
-&create_top_level_web_pages; # e.g. release_header.shtml, finished_seqs.shtml, etc.
+&create_release_header         if ($all || $header);    # makes release_header.shtml
+&create_DNA_table              if ($all || $dna);       # makes DNA.shtml
+&create_finished_seq           if ($all || $finished);  # makes finished_seqs.shtml
+&create_dbcomp                 if ($all || $dbcomp);    # makes dbcomp.shtml
 
-&create_wormpep_page; # the wormpep page accessible from the main wormbase page
+&create_wormpep_page           if ($all || $wormpep_diff); # the wormpep page accessible from the main wormbase page
 
-&copy_overlapcheck_files; # copies files created in /wormsrv2/autoace/CHECKS and converts to HTML etc.
+&copy_overlapcheck_files       if ($all); # copies check files/wormsrv2/autoace/CHECKS and converts to HTML etc.
 
-&copy_EST_files; # copies EST_analysis.html and then edits this file then copies other EST files
+&copy_EST_files                if ($all); # copies EST_analysis.html and then edits this file then copies other EST files
 
-&copy_GFF_files; # copies some of the GFF files in /wormsrv2/autoace/GFF_SPLITS
+&copy_GFF_files                if ($all || $copyGFF); # copies some of the GFF files in /wormsrv2/autoace/GFF_SPLITS
 
-&create_GFF_intron_files; # copies the GFF_introns_confirmed_CDS* files from previous WS release, updates totals
+&create_GFF_intron_files       if ($all); # copies the GFF_introns_confirmed_CDS* files from previous WS release, updates totals
 
-&update_wormpep_pages; # update the main wormpep web pages
+&update_wormpep_pages          if ($all); # update the main wormpep web pages
 
 
 
@@ -81,11 +135,9 @@ our $log             = "/wormsrv2/logs/update_website.$rundate";
 # final bit of tidying up
 #########################
 
-# update 'current' symlink
-print LOG "\nChanging 'current symbolic link to point to new release\n";
-system("rm -f $www/current") && croak "Couldn't remove 'current' symlink\n";
-system("ln -s $wwwlive/$WS_name/ $www/current") && croak "Couldn't create new symlink\n";
 
+# update 'current' symlink
+&create_sym_link              if ($all);
 print LOG "\n\nC'est finis\n\n";
 
 # mail log
@@ -96,7 +148,16 @@ close(LOG);
 exit(0);
 
 
+###########################################################################################################
+# Create new symbolic link    
+###########################################################################################################
 
+sub create_sym_link {
+
+    print LOG "\nChanging 'current symbolic link to point to new release\n";
+    system("rm -f $www/current") && croak "Couldn't remove 'current' symlink\n";
+    system("ln -s $wwwlive/$WS_name/ $www/current") && croak "Couldn't create new symlink\n";
+}
 
 
 
@@ -211,27 +272,45 @@ sub copy_overlapcheck_files{
 # dbcomp.shtml, and wormpep.shtml
 ###########################################################################################################
 
-sub create_top_level_web_pages{
+sub create_release_header {
 
   # create release_header.shtml  
   print LOG "\ncreate_top_level_web_pages\n";
   print LOG "--------------------------\n";
   
-
   print LOG "Creating $www/$WS_name/release_header.shtml\n";
-  open (RELEASE_HEADER, ">$www/$WS_name/release_header.shtml") || croak "Couldn't create release_header.shtml\n";
-  print RELEASE_HEADER  "<P>\n";
-  print RELEASE_HEADER  "<FONT SIZE=+2 COLOR=purple><B>$WS_name release</B></FONT><BR>\n";
-  print RELEASE_HEADER  "<FONT SIZE=-2 COLOR=red><B>Last updated $release_date.</B></FONT>\n";
-  print RELEASE_HEADER  "</P>\n";
+  open  (RELEASE_HEADER, ">$www/$WS_name/release_header.shtml") || croak "Couldn't create release_header.shtml\n";
+  print  RELEASE_HEADER  "<b>$WS_name release, updated $release_date.</b>\n";
   close (RELEASE_HEADER);
 
+}
 
+sub create_DNA_table {
 
   # create DNA.table.shtml
   print LOG "Creating $www/$WS_name/DNA.table.shtml\n";
-  my ($DNA_tot, $DNA_d, $DNA_dp, $DNA_n, $DNA_np, $DNA_g, $DNA_gp, $DNA_a, $DNA_ap, $DNA_t, $DNA_tp, $DNA_c, $DNA_cp);
-  open (DNA_table, ">$www/$WS_name/DNA_table.shtml") || croak "Couldn't create DNA_table.shtml\n\n";
+
+  my $DNA_tot;   # total DNA length
+
+  my $DNA_d  = 0;
+  my $DNA_dp = 0;
+
+  my $DNA_n  = 0;
+  my $DNA_np = 0;
+
+  my $DNA_g  = 0;
+  my $DNA_gp = 0;
+
+  my $DNA_a  = 0;
+  my $DNA_ap = 0;
+
+  my $DNA_t  = 0;
+  my $DNA_tp = 0;
+
+  my $DNA_c  = 0;
+  my $DNA_cp = 0;
+
+  open (DNA_table, ">$www/$WS_name/DNA_table.shtml") || croak "Couldn't create '$www/$WS_name/DNA_table.shtml'\n\n";
   print DNA_table "<P>\n";
   
   open (COMPOSITION, "</wormsrv2/autoace/CHROMOSOMES/composition.all") || croak "Failed to open composition.all\n";
@@ -246,19 +325,104 @@ sub create_top_level_web_pages{
   }
   close (COMPOSITION);
     
-  print DNA_table "<SPACER TYPE=\"horizontal\" SIZE=\"50\">\n";
-  print DNA_table "<TABLE WIDTH=\"40%\" CELLSPACING=\"0\" CELLWIDTH=\"0\" BORDER=\"1\"><TR BGCOLOR=\"yellow\"><TH>&nbsp</TH> <TH>No. bases</TH> <TH>%</TH></TR>\n";
-  print DNA_table "<TR> <TD ALIGN=\"CENTER\">Total</TD> <TD ALIGN=\"RIGHT\">$DNA_tot</TD> <TD ALIGN=\"RIGHT\">100</TD>     </TR>\n";
-  print DNA_table "<TR> <TD ALIGN=\"CENTER\">-</TD>     <TD ALIGN=\"RIGHT\">$DNA_d</TD>   <TD ALIGN=\"RIGHT\">$DNA_dp</TD> </TR>\n";
-  print DNA_table "<TR> <TD ALIGN=\"CENTER\">G</TD>     <TD ALIGN=\"RIGHT\">$DNA_g</TD>   <TD ALIGN=\"RIGHT\">$DNA_gp</TD> </TR>\n";
-  print DNA_table "<TR> <TD ALIGN=\"CENTER\">A</TD>     <TD ALIGN=\"RIGHT\">$DNA_a</TD>   <TD ALIGN=\"RIGHT\">$DNA_ap</TD> </TR>\n";
-  print DNA_table "<TR> <TD ALIGN=\"CENTER\">T</TD>     <TD ALIGN=\"RIGHT\">$DNA_t</TD>   <TD ALIGN=\"RIGHT\">$DNA_tp</TD> </TR>\n";
-  print DNA_table "<TR> <TD ALIGN=\"CENTER\">C</TD>     <TD ALIGN=\"RIGHT\">$DNA_c</TD>   <TD ALIGN=\"RIGHT\">$DNA_cp</TD> </TR>\n";
-  print DNA_table "<TR> <TD ALIGN=\"CENTER\">N</TD>     <TD ALIGN=\"RIGHT\">$DNA_n</TD>   <TD ALIGN=\"RIGHT\">$DNA_np</TD> </TR>\n";
-  print DNA_table "</TABLE>\n";
-  print DNA_table "</P>\n";
-  close (DNA_table);
 
+  print DNA_table "<p>\n";
+  print DNA_table "<!--#include virtual=\"/SSI/tabletop.shtml\"-->\n";
+  print DNA_table "<table WIDTH=\"350\" CELLSPACING=\"0\" CELLWIDTH=\"0\" BORDER=\"0\">\n";
+
+  print DNA_table "<tr class=\"h2bg\">\n";
+  print DNA_table "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+  print DNA_table "  <th align=\"center\" class=\"barialw\">&nbsp;</th>\n";
+  print DNA_table "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+  print DNA_table "  <th align=\"center\" class=\"barialw\">No. bases</th>\n";
+  print DNA_table "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+  print DNA_table "  <th align=\"center\" class=\"barialw\">%</th>\n";
+  print DNA_table "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+  print DNA_table "</tr>\n";
+
+  print DNA_table "<tr class=\"violet1\">\n";
+  print DNA_table "  <td colspan=\"7\"><img src=\"/icons/blank.gif\" width=\"10\" height=\"10\"></td>\n";
+  print DNA_table "</tr>\n";
+
+  print DNA_table "<tr class=\"violet3\">\n";
+  print DNA_table "  <td><img src=\"/icons/blank.gif\" width=\"15\" height=\"22\"></td>\n";
+  print DNA_table "  <td align=\"center\">Total</td>\n";
+  print DNA_table "  <td><img src=\"/icons/blank.gif\" width=\"15\" height=\"22\"></td>\n";
+  print DNA_table "  <td align=\"right\" >$DNA_tot</td>\n";
+  print DNA_table "  <td><img src=\"/icons/blank.gif\" width=\"15\" height=\"22\"></td>\n";
+  print DNA_table "  <td align=\"right\" >100</td>\n";   
+  print DNA_table "  <td><img src=\"/icons/blank.gif\" width=\"15\" height=\"22\"></td>\n";
+  print DNA_table "</tr>\n";
+
+  print DNA_table "<tr class=\"violet2\">\n";
+  print DNA_table "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+  print DNA_table "  <td align=\"center\">-</td>\n";
+  print DNA_table "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+  print DNA_table "  <td align=\"right\" >$DNA_d</td>\n";
+  print DNA_table "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+  print DNA_table "  <td align=\"right\" >$DNA_dp</td>\n";   
+  print DNA_table "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+  print DNA_table "</tr>\n";
+
+  print DNA_table "<tr class=\"violet3\">\n";
+  print DNA_table "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+  print DNA_table "  <td align=\"center\">G</td>\n";
+  print DNA_table "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+  print DNA_table "  <td align=\"right\" >$DNA_g</td>\n";
+  print DNA_table "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+  print DNA_table "  <td align=\"right\" >$DNA_gp</td>\n";   
+  print DNA_table "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+  print DNA_table "</tr>\n";
+
+  print DNA_table "<tr class=\"violet2\">\n";
+  print DNA_table "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+  print DNA_table "  <td align=\"center\">A</td>\n";
+  print DNA_table "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+  print DNA_table "  <td align=\"right\" >$DNA_a</td>\n";
+  print DNA_table "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+  print DNA_table "  <td align=\"right\" >$DNA_ap</td>\n";   
+  print DNA_table "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+  print DNA_table "</tr>\n";
+
+  print DNA_table "<tr class=\"violet3\">\n";
+  print DNA_table "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+  print DNA_table "  <td align=\"center\">T</td>\n";
+  print DNA_table "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+  print DNA_table "  <td align=\"right\" >$DNA_t</td>\n";
+  print DNA_table "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+  print DNA_table "  <td align=\"right\" >$DNA_tp</td>\n";   
+  print DNA_table "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+  print DNA_table "</tr>\n";
+
+  print DNA_table "<tr class=\"violet2\">\n";
+  print DNA_table "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+  print DNA_table "  <td align=\"center\">C</td>\n";
+  print DNA_table "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+  print DNA_table "  <td align=\"right\" >$DNA_c</td>\n";
+  print DNA_table "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+  print DNA_table "  <td align=\"right\" >$DNA_cp</td>\n";   
+  print DNA_table "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+  print DNA_table "</tr>\n";
+
+  print DNA_table "<tr class=\"violet3\">\n";
+  print DNA_table "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+  print DNA_table "  <td align=\"center\">N</td>\n";
+  print DNA_table "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+  print DNA_table "  <td align=\"right\" >$DNA_n</td>\n";
+  print DNA_table "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+  print DNA_table "  <td align=\"right\" >$DNA_np</td>\n";   
+  print DNA_table "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+  print DNA_table "</tr>\n";
+
+  print DNA_table "</table>\n";
+  print DNA_table "<!--#include virtual=\"/SSI/tablebottom.shtml\"-->\n";
+
+  print DNA_table "</p>\n";
+  close (DNA_table);
+}
+
+
+sub create_finished_seq {
 
   # create finished_seqs.shtml
   print LOG "Creating $www/$WS_name/finished_seqs.shtml\n";
@@ -270,10 +434,11 @@ sub create_top_level_web_pages{
   print FINISHED_SEQS "$count projects\n";
   print FINISHED_SEQS  "</P>\n";
   close (FINISHED_SEQS);
+  $db->close;
 
+}
 
-
-
+sub create_dbcomp {
 
   # create dbcomp.shtml
   print LOG "Creating $www/$WS_name/dbcomp.shtml\n";
@@ -313,7 +478,6 @@ sub create_top_level_web_pages{
   print DB_comp "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
   print DB_comp "</tr>\n";
 
-
   print DB_comp "<tr valign=\"top\">\n";
   print DB_comp "  <td colspan=\"11\" class=\"grey1\"><img src=\"/icons/blank.gif\" width=\"1\" height=\"1\"></td>\n";
   print DB_comp "</tr>\n";
@@ -352,11 +516,14 @@ sub create_top_level_web_pages{
 
   }
   close (COMP);
+
+  print DB_comp "<tr valign=\"top\">\n";
+  print DB_comp "  <td colspan=\"11\" class=\"grey1\"><img src=\"/icons/blank.gif\" width=\"1\" height=\"1\"></td>\n";
+  print DB_comp "</tr>\n";
+
   print DB_comp "</TABLE>\n";
   print DB_comp "</P>\n";
   close (DB_comp);
-  $db->close;
-
 }
 
 
@@ -377,8 +544,24 @@ sub create_wormpep_page{
   open (WORMPEP, ">$www/$WS_name/wormpep.shtml") || croak "Failed to create wormpep.shtml\n\n";
   print WORMPEP "<P>\n";
   print WORMPEP "<SPACER TYPE=\"horizontal\" SIZE=\"50\">\n";
-  print WORMPEP "<TABLE WIDTH=\"40%\" CELLSPACING=\"0\" CELLWIDTH=\"0\" BORDER=\"1\"><TR BGCOLOR=\"yellow\" ><TH>Release</TH> <TH>Sequences</TH> <TH>Letters</TH> <TH>Alt. Splices</TH></TR>\n";
 
+  print WORMPEP "<TABLE WIDTH=\"40%\" CELLSPACING=\"0\" CELLWIDTH=\"0\" BORDER=\"0\">\n";
+
+  print WORMPEP "<tr class=\"h2bg\">\n";
+  print WORMPEP "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+  print WORMPEP "  <th align=\"center\" class=\"barialw\">Release</th>\n";
+  print WORMPEP "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+  print WORMPEP "  <th align=\"center\" class=\"barialw\">Sequences</th>\n";
+  print WORMPEP "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+  print WORMPEP "  <th align=\"center\" class=\"barialw\">Letters</th>\n";
+  print WORMPEP "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+  print WORMPEP "  <th align=\"center\" class=\"barialw\">Isoforms</th>\n";
+  print WORMPEP "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+  print WORMPEP "</tr>\n";
+
+  print WORMPEP "<tr class=\"violet1\">\n";
+  print WORMPEP "  <td colspan=\"9\"><img src=\"/icons/blank.gif\" width=\"10\" height=\"10\"></td>\n";
+  print WORMPEP "</tr>\n";
 
   print LOG "Opening log file '/wormsrv2/WORMPEP/wormpep$WS_current/wormpep_current.log'\n";
 
@@ -403,8 +586,19 @@ sub create_wormpep_page{
     }
   }
   close (WP_2);
-  print WORMPEP "<TR><TD>wormpep${WS_current}</TD> <TD>$wp_seq</TD> <TD>$wp_let</TD> <TD>$wp_alt</TD> </TR>\n";
-  print WORMPEP "</TABLE>\n";
+
+  print WORMPEP "<tr class=\"violet3\">\n";
+  print WORMPEP "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+  print WORMPEP "  <td align=\"center\">wormpep${WS_current}</td>\n";
+  print WORMPEP "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+  print WORMPEP "  <td align=\"center\">$wp_seq</td>\n";
+  print WORMPEP "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+  print WORMPEP "  <td align=\"center\" >$wp_let</td>\n";
+  print WORMPEP "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+  print WORMPEP "  <td align=\"center\" >$wp_alt</td>\n";
+  print WORMPEP "  <td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
+
+  print WORMPEP "</table>\n";
   print WORMPEP "</P><PRE>\n";
   
 
@@ -544,7 +738,7 @@ sub copy_GFF_files{
   print LOG "Copying across GFF files from /wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS\n";
 
   #simple double foreach loop to loop through each chromosome and file name
-  my @gff_files = ("clone_ends", "clone_path", "exon","intron_confirmed_CDS", "clone_acc", "genes", "repeats", "intron", "rna");
+  my @gff_files = ("clone_ends", "clone_path", "exon","intron_confirmed_CDS", "clone_acc", "genes", "repeats", "intron", "rna", "UTR");
   foreach my $chrom (@chrom) {
     foreach my $file (@gff_files){
       system("sort -u $gff/CHROMOSOME_$chrom.$file.gff | gff_sort > $www/$WS_name/GFF/CHROMOSOME_$chrom.$file.gff")
