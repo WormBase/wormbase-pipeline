@@ -7,21 +7,21 @@
 
 use strict;
 use DBI;
-use Getopt::Std;
+use Getopt::Long;
 use DB_File;
-use vars qw($opt_w $opt_a $opt_g $opt_c $opt_v $opt_o $opt_m);
 
-getopts ("v:w:a:g:c:mo");
+my ($version, $map, $worm, $start_clone);
+GetOptions ("version=s" => \$version,
+	    "map"       => \$map,
+	    "worm"      => \$worm,
+	    "restart=s" => \$start_clone  
+	   );
+
 
 my $usage = "dump_blastx.pl\n";
-$usage .= "-w [wormpep file, same version as database used in blast searches]\n";
-$usage .= "-a [agp file], checks for up-to-date sequence version number before dumping\n";
-$usage .= "-g [gff file of cds coordinates relative to chromosomes], needed to exclude self matches\n";
-$usage .= "-c [gff file of cosmid coordinates relative to chromosomes], needed to exclude self matches\n";
-$usage .= "-m map accessions to names, needed for elegans select if DONT want clone names. Default is to output clone names\n";
-$usage .= "-o dump only worm matches\n";
+$usage .= "-map  map accessions to names, needed for elegans select if DONT want clone names. Default is to output clone names\n";
+$usage .= "-worm  dump only worm matches\n";
 
-my $version = $opt_v;
 die "Please enter version no \n" unless $version;
 
 ####################################################################
@@ -34,7 +34,7 @@ my $dbname = "worm01";
 my $dbpass = "";
 
 # define the organisms we deal with
-my @species = qw(fly human slimSwissProt slimTrEMBL worm yeast ipi_human briggsae);
+my @species = qw(fly human slimSwissProt slimTrEMBL worm yeast briggsae);
 
 # define the AceDB protein prefixes for the organisms used
 my %org2acedb;
@@ -46,6 +46,7 @@ $org2acedb{yeast} = "SGD:";
 $org2acedb{slimSwissProt} = "SW:";
 $org2acedb{slimTrEMBL} = "TR:";
 $org2acedb{briggsae} = "BP:";
+$org2acedb{human} = "never_used";  #this should always be done in sub getPrefix. This is here to check for valid analysis selection
 
 # set an evalue threshold (as -log base 10)
 my $e_threshold = 6;
@@ -146,7 +147,7 @@ while (<CDS>) {
     $cds{$name} = [$start, $end];
   }
   else {
-    die "cannot process $opt_g";
+    die "cannot process $cds_file";
   }
 }
 close CDS;
@@ -170,7 +171,7 @@ while (<COS>) {
     $cos{$name} = [$start, $end];
   }
   else {
-    die "cannot process $opt_c";
+    die "cannot process $cos_file";
   }
 }
 close COS;
@@ -184,7 +185,7 @@ close COS;
 # this could use Common_data.pm - will investigate -  the file acc2clone.data will need to be copied over 
 my %accession2name;
 
-unless ($opt_m) {
+unless ($map) {
     print LOG "loading the accession 2 name mappings for the AceDB contigs\n";
     print LOG "using file ~/dumps/accession2clone.list [".&now."]\n\n";
 
@@ -237,7 +238,7 @@ while (my @row = $sth->fetchrow_array) {
         elsif ($1 =~ /yeast/)         {$org = "yeast";}
         elsif ($1 =~ /slimswissprot/) {$org = "slimSwissProt";}
         elsif ($1 =~ /slimtrembl/)    {$org = "slimTrEMBL";}
-	elsif ($1 =~ /human/)         {$org = "ipi_human";}
+	elsif ($1 =~ /human/)         {$org = "human";}
 	elsif ($1 =~ /brigpep/)      {$org = "briggsae";}
         $analysis2org{$row[0]} = $org;
     }
@@ -251,12 +252,24 @@ print LOG "\n";
 # prepare sql queries
 ####################################################################
 # contig table
-my $sth_c = $dbh->prepare ( q{ SELECT contig.internal_id, contig.id, contig.length, clone.embl_version
-                                 FROM contig, clone
-#                                WHERE contig.internal_id = clone.internal_id and contig.internal_id = 1
-                                WHERE contig.internal_id = clone.internal_id
-                             ORDER BY internal_id
-                             } );
+my $sth_c;
+if ($start_clone) {
+  $sth_c = $dbh->prepare ( q{ SELECT contig.internal_id, contig.id, contig.length, clone.embl_version
+				FROM contig, clone
+				    WHERE contig.internal_id = clone.internal_id and contig.internal_id >= ? 
+				      ORDER BY internal_id
+				  } );
+}
+else {
+  $sth_c = $dbh->prepare ( q{ SELECT contig.internal_id, contig.id, contig.length, clone.embl_version
+				FROM contig, clone
+				  WHERE contig.internal_id = clone.internal_id
+				    ORDER BY internal_id
+				  } );
+}
+
+
+
 
 # feature table
 my $sth_f = $dbh->prepare ( q{ SELECT id,
@@ -282,7 +295,12 @@ my $sth_f = $dbh->prepare ( q{ SELECT id,
 
 print LOG "get all the features (per contig) [".&now."]:\n";
 
-$sth_c->execute;
+if ($start_clone) {
+  $sth_c->execute($start_clone);
+}
+else {
+  $sth_c->execute;
+}
 my $ref = $sth_c->fetchall_arrayref;
 foreach my $aref (@$ref) {
     # get sequence info
@@ -294,7 +312,7 @@ foreach my $aref (@$ref) {
     }
     my $name;
     # map accession 2 name
-    unless ($opt_m) {
+    unless ($map) {
         if (exists $accession2name{$id}) {
             $name = $accession2name{$id};
             print LOG "\n\tprocessing $name $id $version ($internal_id) of length $length , $fragment_number 50bp fragments [".&now."]\n";
@@ -309,11 +327,11 @@ foreach my $aref (@$ref) {
         print LOG "\n\tprocessing $name $version ($internal_id) of length $length , $fragment_number 50bp fragments [".&now."]\n";
     }
     # check that we have the current version
-    if ($opt_a) {
+ #   if ($opt_a) {
         if ($version < $accession2version{$id}) {
             print LOG "\nold version ($version) of $id, current one is $accession2version{$id} -> skip it\n\n";
             next;
-        }
+ #       }
     }
     # %hsp:      stores all mysql column ref's keyed by org, hid and feature_id
     # %accepted: stores all accepted hsp's, keyed by org, hid and feature_id
@@ -337,25 +355,24 @@ foreach my $aref (@$ref) {
 	}
         # worm: change gene name to protein id (e.g. AH6.2 to CE01456), and reject self-matches
         if ($org eq "worm") {
-            if ($opt_g && $opt_c) {
-                my $gene_name = $aref->[4];
-                $gene_name =~ /^(\S+)\.\S+$/;
-                my $parent = $1;
-                my $match_start = $cos{$name}->[0]+$aref->[2]+1;
-                my $match_end = $cos{$name}->[0]+$aref->[3]+1;
-
-#                print $aref->[0]." $gene_name $parent  ".$cos{$parent}->[0]." $match_start  $match_end \n";
-
-                if (($match_start > $cds{$gene_name}->[0] && $match_start < $cds{$gene_name}->[1]) || ($match_end > $cds{$gene_name}->[0] && $match_end < $cds{$gene_name}->[1])) {
-
-#                    print LOG "reject self match: ".$aref->[0]." $gene_name $parent\n";
-
-                    next;
-	        }
-	    }
-            unless ($aref->[4] = $name2id{$aref->[4]}) {
-                die "no mapping of protein name ".$aref->[4]." to id";
-	    }
+	  my $gene_name = $aref->[4];
+	  $gene_name =~ /^(\S+)\.\S+$/;
+	  my $parent = $1;
+	  my $match_start = $cos{$name}->[0]+$aref->[2]+1;
+	  my $match_end = $cos{$name}->[0]+$aref->[3]+1;
+	  
+	  #                print $aref->[0]." $gene_name $parent  ".$cos{$parent}->[0]." $match_start  $match_end \n";
+	  
+	  if (($match_start > $cds{$gene_name}->[0] && $match_start < $cds{$gene_name}->[1]) || ($match_end > $cds{$gene_name}->[0] && $match_end < $cds{$gene_name}->[1])) {
+	    
+	    #                    print LOG "reject self match: ".$aref->[0]." $gene_name $parent\n";
+	    
+	    next;
+	  }
+	  
+	  unless ($aref->[4] = $name2id{$aref->[4]}) {
+	    die "no mapping of protein name ".$aref->[4]." to id";
+	  }
 	}
         # store the hsp's that are part of the best sum statistics (strand independent)
         unless (exists $min_sum{$org}->{$aref->[4]}) {
@@ -533,7 +550,7 @@ foreach my $aref (@$ref) {
     }
     # loop over all the matches, printing the accepted ones to an ACE file
     print LOG "\t\toutput\n";
-    if ($opt_o) {
+    if ($worm) {
         @species = qw(worm);
     }
     foreach my $org (@species) {
@@ -585,7 +602,7 @@ foreach my $aref (@$ref) {
                     # write the HSP info to the ACE file
                     my @cigars = split (/:/, $cigar);
 		    my $prefix;
-		    if ("$org" eq "ipi_human") {
+		    if ("$org" eq "human") {
 		      $prefix = &getPrefix($hid);
 		    }
 		    else {
@@ -626,10 +643,8 @@ close ACE;
 close IPI_LIST;
 
 
-print "\nEnd of dump - moving $ace to /wormsrv2\n";
+print "\nEnd of dump \n";
 
-# Copy resulting file to wormsrv2 - leave in original place for subsequent script write.swiss_trembl
-# `/usr/bin/rcp $ace /wormsrv2/wormbase/ensembl_dumps/`;
 
 
 exit 0;
