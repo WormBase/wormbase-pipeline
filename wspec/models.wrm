@@ -286,6 +286,7 @@
 		CGC_name ?Gene_name XREF CGC_name_for //new tag
 		Non_CGC_name ?Gene_name XREF Non_CGC_name_for //new tag
 		Sequence_name ?Gene_name XREF Sequence_name_for // new tag
+		Pseudogene_name ?Gene_name XREF Pseudogene_name_for // new tag to work with Pseudogene model
 		Transcript_name ?Gene_name XREF Transcript_name_for // new link
 	Gene_information Description ?Text #Evidence // added by krb [020802]
 			 Provisional_description ?Text #Evidence // added for Erich [020322 krb]
@@ -351,6 +352,7 @@
 ?Gene_name Gene CGC_name_for ?Locus XREF CGC_name // these two fields won't be needed under new gene model
 		Non_CGC_name_for ?Locus XREF Non_CGC_name  // 
 		Sequence_name_for ?Locus XREF Sequence_name 
+		Pseudogene_name_for ?Locus XREF Pseudogene_name // new for Pseudogene model
 		Transcript_name_for ?Locus XREF Transcript_name // new for Transcript names
 		Other_name_for ?Locus XREF Other_name // main reason for this class
 		
