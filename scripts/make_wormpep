@@ -42,8 +42,6 @@ getopts ('dhtif:');
 
 &error(0) if ($opt_h);
 &error(1) if ($opt_i and $opt_f);
-&error(2) if (!($opt_i or $opt_f));
-
 
  #######################################
  # release data                        #
@@ -77,6 +75,17 @@ if ($opt_t) {
 
 $ENV{'ACEDB'} = $dbdir;
 
+
+#no parameters passed so work it out for myself based on presence of wormpepXX file
+if (!($opt_i or $opt_f)) {
+  my $testfile = "wormpep$release";
+  if( -e "$new_wpdir/$testfile" ) {
+    $opt_f = 1;
+  }
+  else {
+    $opt_i = 1; 
+  }
+}
  ########################################
  # Open logfile                         #
  ########################################
