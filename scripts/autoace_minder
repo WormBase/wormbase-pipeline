@@ -76,17 +76,15 @@ $scriptdir = "/wormsrv2/scripts";
 # Get the WS version number and set the wormpep release number                  #
 #################################################################################
 
-# grab version as a string, e.g. WSxx
-$Wormbase_release_version = &get_wormbase_version;
+$WS_version = &get_wormbase_version;
 
-&usage(1) if (!defined($Wormbase_release_version));
+&usage(1) if (!defined($WS_version));
 
-# get just the number
-$WS_version = substr ($Wormbase_release_version,2);
-
-# manipulate to assign last WS release version and this wormpep version
+# manipulate to assign last WS release version
 $WS_previous = $WS_version -1;
-$WP_version = $WS_version + 10;
+
+# grab wormpep version
+$WP_version = &get_wormpep_version;
 
 
  ########################################
