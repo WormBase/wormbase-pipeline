@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam aged 12 and a half
 #
-# Last updated on: $Date: 2004-10-25 13:38:09 $
+# Last updated on: $Date: 2004-11-01 10:57:36 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
@@ -121,7 +121,7 @@ foreach my $gene_model (@Predictions){
     for ($j=$i+1;$j<@exon_coord1;$j++){
       if(($end > $exon_coord1[$j]) && ($start < $exon_coord2[$j])){
 	print "ERROR: $gene_model exon inconsistency, exons overlap\n" if $verbose;
-	push(@error1,"ERROR: $gene_model exon inconsistency, exons overlap\n");
+	push(@error1,"ERROR: $gene_model exon inconsistency, exons overlap\n") if ($method_test ne 'history');
       }
     }
   }
@@ -135,7 +135,7 @@ foreach my $gene_model (@Predictions){
     push(@error2,"ERROR: $gene_model Start_not_found tag present\n") unless ($basic);
     print "ERROR: $gene_model Start_not_found tag present\n" if $verbose;
   }
-  
+
   if (($gene_model->get('End_not_found')) && ($method_test eq 'curated')){
     $end_tag = "present";
     push(@error2,"ERROR: $gene_model End_not_found tag present\n") unless ($basic);
@@ -143,13 +143,13 @@ foreach my $gene_model (@Predictions){
   }
 
   #All Isoforms should have the Isoform tag set. (CDS specific)
-  if (($gene_model->name =~ (/\w+\.\d[a-z]$/)) && ($method_test eq 'curated')){
+  if (($gene_model->name =~ (/\w+\.\d+[a-z]$/)) && ($method_test ne 'history')){
     my $Isoform = $gene_model->at('Properties.Isoform');
     push(@error3, "ERROR: $gene_model requires an Isoform\n") if !$Isoform;
   }
-  
+
   #Test for erroneous Isoform tags.(CDS specific)
-  if (($gene_model->name =~ (/\b\w+\.[0-9]{1,2}\b/)) && ($method_test eq 'curated')){
+  if (($gene_model->name =~ (/\b\w+\.[0-9]{1,2}\b/)) && ($method_test ne 'history')){
     my $Isoform = $gene_model->at('Properties.Isoform');
     push(@error3, "ERROR: $gene_model contains an invalid Isoform tag\n") if $Isoform;
   }
@@ -169,7 +169,7 @@ foreach my $gene_model (@Predictions){
   # check species is correct
   my $species = "";
   ($species) = ($gene_model->get('Species'));
-  push(@error3,"ERROR: $gene_model species is $species\n") if ($species ne "Caenorhabditis elegans");  
+  push(@error3,"ERROR: $gene_model species is $species\n") if ($species ne "Caenorhabditis elegans");
   print "ERROR: $gene_model species is $species\n" if ($species ne "Caenorhabditis elegans" && $verbose);
 
   # check Method isn't 'hand_built'
@@ -202,6 +202,22 @@ foreach my $gene_model (@Predictions){
   if ($method_test ne "history" && $gene_model->name =~ /\w+\.\w+\:\w+/) {
     push(@error3, "ERROR: $gene_model history object doesn't have a history method.\n");
   }
+
+# check that Gene ID contained in gene models only an 8 digit number.
+  if ($gene_model->name =~ (/\w+\d+\.\d+\Z/)) {
+    my $Gene_ID = $gene_model->at('Visible.Gene.Down');
+    if ((defined $Gene_ID) && ($Gene_ID ne /^WBGene[0-9]{8}/)) {
+      push(@error3, "ERROR: The Gene ID $Gene_ID in $gene_model is invalid!\n");
+    }
+  }
+  if ($gene_model->name =~ (/\w+\.\w+\:\w+/)) {
+    my $Genehist_ID = $gene_model->at('Visible.Gene_history.Down');
+    if ((defined $Genehist_ID && $Genehist_ID ne /^WBGene[0-9]{8}/)) {
+      push(@error3, "ERROR: The Gene ID $Genehist_ID in $gene_model is invalid!\n");
+    }
+  }
+
+
 
   # then run misc. sequence integrity checks
   my $dna = $gene_model->asDNA();
