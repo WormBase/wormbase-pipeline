@@ -4,7 +4,7 @@
 
 # by ag3 [991221]
 #
-# Last updated on: $Date: 2003-04-11 08:54:13 $
+# Last updated on: $Date: 2003-05-02 16:18:03 $
 # Last updated by: $Author: krb $
 
 
@@ -212,7 +212,7 @@ sub backup_db {
     $newfile=~s/$database/$bck_subdir/;
     if ($file !~ /^\./) {
       $bk_chk="0";
-      $bk_val=system("\/usr/bin/cp $file $newfile") if !$DEBUG;
+      $bk_val=system("\/usr/apps/bin/scp $file $newfile") if !$DEBUG;
       $bk_chk=$bk_val >> 8;
       $O_SIZE = (stat($file))[7];
       $N_SIZE = (stat($newfile))[7];
@@ -275,10 +275,10 @@ sub process_file {
       my $cp_chk = "0";
       my $cp_val;
       if($filename =~ m/models\.wrm$/){
-	$cp_val = system("\/usr/bin/cp -R $s_file $e_file") if !$DEBUG;
+	$cp_val = system("\/usr/apps/bin/scp -R $s_file $e_file") if !$DEBUG;
       }
       else{
-	$cp_val = system("\/usr/bin/cp $s_file $e_file") if !$DEBUG;
+	$cp_val = system("\/usr/apps/bin/scp $s_file $e_file") if !$DEBUG;
       }
       $cp_chk = $cp_val >> 8;
       my $S_SIZE = (stat($s_file))[7];
