@@ -17,7 +17,7 @@ my $old_ip_output =*OLD_IP_OUTPUT;
 
 open(LOG,">$log")|| die "cant open $log";
 my $errorLog = *LOG;
-print LOG "# SubGetSwissId\n";
+print LOG "#$0\n";
 print LOG "\n";
 print LOG "Wormpep version  :$wmpep_ver\n\n";
 print LOG "Only using 78 until latest build version is correct\n" if ($wmpep_ver == 78);
@@ -130,7 +130,7 @@ print LOG "SubGetSwissId finished at ",`date`,"\n";
 close LOG;
 #### use Wormbase.pl to mail Log ###########
 my $name = "SubGetSwissId";
-$maintainer = "ar2\@sanger.ac.uk";
+#$maintainer = "ar2\@sanger.ac.uk";
 &mail_maintainer ($name,$maintainer,$log);
 #########################################
 
