@@ -55,7 +55,7 @@
 
   Todd Harris (harris@cshl.org) 
   DATE : 05 May 2003 
-  VERSION : $Id: best_mutuals.pl,v 1.2 2004-07-06 14:26:39 ar2 Exp $
+  VERSION : $Id: best_mutuals.pl,v 1.3 2004-09-27 11:17:40 ar2 Exp $
 
 =head1 TODO
 
@@ -157,7 +157,7 @@ sub parse_blast {
   open(IN,"$file") || die "Couldn't open $file: $!\n";
   while (my $line = <IN>) {
     my ($query,$subject,$evalue) = parse_line($line);
-    $query =~ tr/[a-z]/[A-Z]/;
+#    $query =~ tr/[a-z]/[A-Z]/;
     
     # Parse out the true elegans name from alternative splices
     # Need to flip flop based on directionality of the blast
@@ -181,8 +181,8 @@ sub parse_line {
   my $line = shift;
   chomp $line;
   my @temp = split(/\s+/,$line);
-  
-  my $evalue  = 10 * exp(-$temp[10]);
+  $temp[9] = 300 if ($temp[9] == 1000);
+  my $evalue  = 10 **(-$temp[9]);
   if (substr($evalue,0,1) eq 'e') { $evalue = "1".$evalue;}
   my $query   = $temp[6];
   my $subject = $temp[1];
