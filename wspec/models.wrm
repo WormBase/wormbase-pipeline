@@ -645,6 +645,8 @@
 	  Accession_evidence ?Database ?Accession_number // added for and by krb 020422
 	  Protein_id_evidence ?Text // added to cope with protein id's [krb 020726]
 	  CGC_data_submission // new way of flagging information from CGC [krb 030207]
+	  CGC_disapproved Text #Evidence // for flagging bad gene names that are in use even as
+                                         // 'Other_name' which never had CGC backing [krb 031024]
 	  Curator_confirmed ?Person // new tag to help flag evidence we believe in! [krb 030307]
 	  Inferred_automatically Text
 
