@@ -8,7 +8,7 @@
 # dl
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-12-01 11:24:06 $
+# Last edited on: $Date: 2003-12-17 16:04:59 $
 
 use lib "/wormsrv2/scripts/";
 use Wormbase;
@@ -121,7 +121,7 @@ while (<FILE>) {
 
     print "\n" if ($verbose);
     
-    print OUT "\nSequence : \"$f[7]\"\n";
+    print OUT "\nCDS : \"$f[7]\"\n";
     print OUT "Database $databases{$dbxref_db} TrEMBL_AC $dbxref_ac\n";
     print OUT "Database $databases{$dbxref_db} TrEMBL_ID $dbxref_id\n";
     print OUT "Protein_id \"$acc2clone{$f[0]}\" $f[2] $f[3]\n";
