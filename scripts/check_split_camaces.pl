@@ -5,15 +5,17 @@
 # Cronjob integrity check controls for split camace databases.
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2002-12-05 10:55:10 $
+# Last updated on: $Date: 2002-12-13 17:08:20 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
 use Wormbase;
+my $rundate = `date +%y%m%d`; chomp $rundate;
+my $runtime = &runtime;
 
 my $wormpub_dir = glob("~wormpub");
-
-open (LOG,">/wormsrv2/scripts/check_split_camaces") or &mail_maintainer("check_split_camaces.pl didnt work","ar2\@sanger.ac.uk");
+my $log = "/wormsrv2/logs/check_split_camaces$rundate$runtime";
+open (LOG,">$log") or &mail_maintainer("LOG failed in check_split_camaces.pl","ar2\@sanger.ac.uk");
 
 opendir (DIR,"$wormpub_dir") or die "cant read $wormpub_dir\n";
 my @ll =  readdir (DIR);
@@ -28,3 +30,5 @@ foreach my $database (@ll) {
     }
   }
 }
+
+close LOG;

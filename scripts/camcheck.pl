@@ -7,7 +7,7 @@
 # Usage: camcheck.pl
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2002-12-05 10:55:10 $
+# Last updated on: $Date: 2002-12-13 17:08:20 $
 #
 # see pod documentation (i.e. 'perldoc camcheck.pl') for more information.
 #
@@ -84,7 +84,7 @@ open (LOG,">$log");
 LOG->autoflush();
 
 print LOG "# camcheck.pl\n";     
-print LOG "# run details    : $rundate $runtime\n";
+print LOG "# run details $dbname  : $rundate $runtime\n";
 print LOG "\n";
 
 
