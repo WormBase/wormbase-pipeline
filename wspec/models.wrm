@@ -314,7 +314,6 @@
                                 Other_sequence ?Sequence XREF Locus_other_seq #Evidence    // dl 001128
 				Transcript ?Transcript XREF Locus #Evidence // en route to new gene model [021126 krb]
 				Pseudogene ?Pseudogene XREF Locus #Evidence // new [030801 krb]
-				Product ?Text
 	Gene_regulation         Trans_regulator ?Gene_regulation XREF Trans_regulator_locus // new for Wen [030804 krb]
                                 Trans_target    ?Gene_regulation XREF Trans_regulated_locus // new for Wen [030804 krb]
 	Remark ?Text #Evidence
