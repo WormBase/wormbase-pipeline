@@ -8,7 +8,7 @@
 # to look for bogus sequence entries
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-07-18 15:52:22 $
+# Last updated on: $Date: 2002-07-18 16:07:01 $
 
 use Ace;
 use lib "/wormsrv2/scripts/"; 
@@ -19,13 +19,15 @@ use Getopt::Std;
 ##############################
 # command-line options       #
 ##############################
-our $opt_d = "";      # Help/Usage page
-our $opt_v = "";
-getopts ('d:v');
+our $opt_d = "";      # specify database to run against
+our $opt_v = "";      # verbose mode
+our $opt_h = "";      # display help
+getopts ('d:vh');
 
-# set which database to check
+&usage if ($opt_h);
+
+# set which database to check, default is /wormsrv2/current_DB
 my $database;
-
 if ($opt_d){
   $database = $opt_d;
 }
@@ -33,20 +35,18 @@ else{
   $database = "/wormsrv2/current_DB/";
 }
 
-
-our $log;
-&create_log_files($database);
-
-
-# toggle verbose mode
+# toggle verbose mode (turns on reporting of errors, but doesn't email people)
 my $verbose;
 if ($opt_v){
   $verbose = "ON";
 }
 
+
 ############################################
 # Initialise variables
 ############################################
+our $log;
+&create_log_files($database);
 
 my $errors;
 my %problems; # store problems in a double hash, first key being timestamp name
@@ -54,6 +54,7 @@ my @other; # store uncategorised problems
 
 print "Checking $database\n\n";
 
+# connect to database and grab list of genome sequence names
 our $tace = glob("~wormpub/ACEDB/bin.ALPHA_4/tace");   # tace executable path
 my $db = Ace->connect(-path  => "$database",
 		      -program =>$tace) || do { print LOG "Connection failure: ",Ace->error; die();};
@@ -61,11 +62,20 @@ my $db = Ace->connect(-path  => "$database",
 my @genome_seqs = $db->fetch(-class => 'Genome_sequence',
 		      -name  => '*');
 
+
+############################################################
+# Start main part of script
+############################################################
+
 print "\nLooking for spurious sequences\n";
+
+# loop through each subseq-style name
 
 foreach my $seq (@genome_seqs){
   my @subseqs = $db->fetch(-class=>'Sequence',-name=>"$seq.*");
   foreach my $subseq (@subseqs){
+
+    # only look for errors if no Source tag present
     if(!defined($subseq->at('Structure.From.Source'))){  
       $errors++;     
       my $category = 0;
@@ -183,6 +193,9 @@ foreach my $seq (@genome_seqs){
   }
 }
 
+###################################
+# Report errors to log file
+###################################
 print "\n$errors errors found\n" if $verbose;
 print LOG "\n$errors errors found\n\n";
 
@@ -206,7 +219,7 @@ print LOG "\n$0 ended at ",`date`,"\n";
 close(LOG);
 
 my $maintainer = "wormbase-dev\@wormbase.org";
-&mail_maintainer($0,$maintainer,$log);
+&mail_maintainer($0,$maintainer,$log) if $verbose;
 exit(0);
 
 ################################################
@@ -237,7 +250,6 @@ sub aql_query{
   my $pair_class = shift;
 
   my $aql_query = "select s,s->$tag.node_session from s in object(\"Sequence\",\"$subseq\")";
-#  print "$aql_query\n";
   my @aql = $db->aql($aql_query);
   my $source = $aql[0]->[1];
   $source =~ s/\d{4}\-\d{2}\-\d{2}_\d{2}:\d{2}:\d{2}_//;
@@ -251,6 +263,7 @@ sub aql_query{
   
   # if timestamp is wormpub, need to look at the corresponding object to see if that has 
   # more informative timestamp
+  # End up adding all information into %problems hash
   if ($source =~ m/wormpub/){
     if(defined($tag_pair) && defined($pair_class)){
       my $aql_query = "select s,s->${tag_pair}.node_session from s in object(\"$pair_class\",\"$value\")";
@@ -262,10 +275,83 @@ sub aql_query{
   }
   else{
     $problems{$source}{$subseq} = [$tag,$splice_check];
-#    print "@{$problems{$source}{$subseq}}\n";
   }
 
   print "$subseq \t$tag \t$source\n" if $verbose;   
 
   return($source);
 }
+###########################################
+sub usage {
+    system ('perldoc',$0);
+    exit;       
+}
+############################################
+
+
+
+
+__END__
+
+=pod
+
+=head2 NAME - current_DB_check.pl
+
+=head1 USAGE
+
+=over 4
+
+=item current_DB_check.pl  [-options]
+
+=back
+
+This script looks for errant sequence objects in current_DB database on 
+wormsrv2.  These are sequence objects which have a cosmid.number name format
+but do not have a Source tag.  From studying the timestamps and tags in the
+offending sequence object, the script sorts the problems based on timestamp
+information (i.e. from camace, cshace, build script etc.).  Script emails
+wormbase-dev the results.  To be run at the end of the build.
+
+current_DB_check.pl MANDATORY arguments:
+
+=over 4
+
+=item none
+
+=back
+
+current_DB_check.pl  OPTIONAL arguments:
+
+=over 4
+
+=item -d, database
+
+By default this script will check /wormsrv2/current_DB, but you can use the 
+-d flag to checkn another database (i.e. /wormsrv2/autoace)
+
+=item -v, verbose mode
+
+Turning on verbose mode will output errors to the screen as it finds them, it still
+writes a log file, but it doesn't email wormbase-dev
+
+=item -h, Help
+
+=back
+
+=head1 REQUIREMENTS
+
+=over 4
+
+=item This script must run on a machine which can see the /wormsrv2 disk.
+
+=back
+
+=head1 AUTHOR
+
+=over 4
+
+=item Keith Bradnam (krb@sanger.ac.uk)
+
+=back
+
+=cut
