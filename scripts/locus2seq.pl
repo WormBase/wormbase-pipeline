@@ -5,7 +5,7 @@
 # written by Anthony Rogers (ar2@sanger.ac.uk)
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-07-03 14:04:45 $
+# Last updated on: $Date: 2002-07-03 14:32:08 $
 
 
 use strict;
@@ -18,7 +18,7 @@ use Getopt::Std;
 ##############################
 our $opt_d = "";      # Help/Usage page
 our $opt_h = "";      # wormpep release number
-getopts ('dh');
+getopts ('d:h');
 &usage if ($opt_h);
 
 # choose geneace database
