@@ -413,7 +413,7 @@ sub parseconfig {
 
 	# check that file exists before adding to array
 	if (-e "$wormbasedir"."/$dbname/"."$filename") {
-	    push (@filenames,$filename);
+	    push (@filenames,"$wormbasedir"."/$dbname/"."$filename");
 	    print LOGFILE "* Parse config file : file $wormbasedir/$dbname/$filename noted ..\n";
 	} 
 	else {
