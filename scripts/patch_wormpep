@@ -46,11 +46,8 @@ $release = $opt_r;
 my $maintainer = "dl1\@sanger.ac.uk";
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
-my $cvs_version = &get_cvs_version($0);
 my $log="/wormsrv2/logs/patch_wormpep${release}.${rundate}.$$";
-
 my $db = Ace->connect(-path  =>  '/wormsrv2/pepace') || die "Couldn't connect to pepace\n", Ace->error;
-
 my $dbfile = "/wormsrv2/WORMPEP/wormpep${release}/wp.fasta${release}";
 
  ###############################
@@ -93,6 +90,7 @@ sub changed {
     my $sequence = $db->fetch(Protein => "WP:$old_acc");
     my @list = $sequence->Corresponding_DNA;
     my $length = scalar(@list);
+    my $seq = "";
 
     # Delete tags from old entry
     print "Protein : \"WP:$old_acc\"\n";
@@ -119,13 +117,12 @@ sub changed {
     print "\n";
 
     print "Peptide : WP:";
-    &dbfetch($new_acc,$dbfile);
-    print "\n\n";
+    $seq = &dbfetch($new_acc,$dbfile);
+    print "$seq\n\n";
     
     # write fasta file to update log
     print LOG ">WP:$new_acc";
-    &dbfetch($new_acc,$dbfile);
-    print LOG "\n\n";
+    print LOG "$seq\n\n";
 }
 
 ###################################################
@@ -155,6 +152,7 @@ sub lost {
 
 sub new {
     my($CDS,$new_acc)= @_;
+    my $seq = "";
 
     # Add new entry
     print "Protein : \"WP:$new_acc\"\n";
@@ -167,13 +165,12 @@ sub new {
     print "\n";
     
     print "Peptide : WP:";
-    &dbfetch($new_acc,$dbfile);
-    print "\n\n";
+    $seq = &dbfetch($new_acc,$dbfile);
+    print "$seq\n\n";
 
     # write fasta file to update log
     print LOG ">WP:$new_acc";
-    &dbfetch($new_acc,$dbfile);
-    print LOG "\n\n";
+    print LOG "$seq\n\n";
 }
 
 
@@ -183,6 +180,7 @@ sub new {
 
 sub reappeared {
     my($CDS,$new_acc)= @_;
+    my $seq = "";
 
     # Add new entry
     print "Protein : \"WP:$new_acc\"\n";
@@ -195,10 +193,10 @@ sub reappeared {
     print "\n";
     
     print "Peptide : WP:";
-    &dbfetch($new_acc,$dbfile);
-    print "\n\n";
+    $seq = &dbfetch($new_acc,$dbfile);
+    print "$seq\n\n";
 
-    print LOG "Full analysis: $new_acc\n"; 
+#    print LOG "Full analysis: $new_acc\n"; 
 }
 
 
