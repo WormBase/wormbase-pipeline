@@ -7,7 +7,7 @@
 # checks EMBL for new EST or mRNA entries
 #
 # Last updated by: $Author: dl1 $                      
-# Last updated on: $Date: 2004-12-07 13:17:36 $        
+# Last updated on: $Date: 2005-02-18 16:10:42 $        
 
 use strict;
 use Getopt::Long;
@@ -120,7 +120,7 @@ print LOG "$new_EMBL_CDS new C. elegans non-WormBase CDS entries\n";
 
 close LOG;
 
-&mail_maintainer("WormBase Report: whats new in EMBL",$maintainers,$log);
+&mail_maintainer("BUILD REPORT: whats new in EMBL",$maintainers,$log);
 
 
 ##############################

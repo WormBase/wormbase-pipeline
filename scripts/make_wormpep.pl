@@ -7,7 +7,7 @@
 # Builds a wormpep data set from the current autoace database
 #
 # Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2004-10-06 16:09:54 $
+# Last updated on: $Date: 2005-02-18 16:11:46 $
 
 
 use strict;
@@ -155,7 +155,7 @@ my $new_wpdir = "$basedir/WORMPEP/wormpep$release";
 close (LOG);
 
 #Email log
-my $subject = "WormBase Build Report: make_wormpep.pl";
+my $subject = "BUILD REPORT: make_wormpep.pl";
 $subject = "TEST MODE: WormBase Build Report: make_wormpep.pl" if ($test);
 
 &mail_maintainer("$subject",$maintainers,$log);
