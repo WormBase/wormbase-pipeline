@@ -8,7 +8,7 @@
 # Output ace file of such information and upload to autoace during each build
 # Output also other files related. See POD
 
-# Last updated on: $Date: 2003-06-12 12:46:01 $
+# Last updated on: $Date: 2003-06-19 10:05:52 $
 # Last updated by: $Author: ck1 $
 
 use strict;
@@ -568,7 +568,7 @@ save
 quit
 END
 
-  open (Load_A,"| $tace /wormsrv2/autoaceq/ >> $log") || die "Failed to upload to Geneace";
+  open (Load_A,"| $tace /wormsrv2/autoace/ >> $log") || die "Failed to upload to Geneace";
   print Load_A $command;
   close Load_A;
  
