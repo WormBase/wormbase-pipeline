@@ -6,8 +6,8 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-04-04 18:01:42 $
+# Last updated by: $Author: ck1 $
+# Last updated on: $Date: 2003-04-11 16:56:09 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -180,7 +180,7 @@ sub process_locus_class{
 
   # Look for loci in current_DB not in geneace
   # Look for sequence in current_DB that is a pseudogene and has locus connection
-  print "\nLooking for new loci in ~wormpub/DATABASES/current_DB:\n\n";
+  print "\nLooking for new loci in /nfs/disk100/wormpub/DATABASES/current_DB:\n\n";
 
   my $get_seg_with_pseudogene_locus=<<EOF;
   Table-maker -p "/wormsrv1/geneace/wquery/get_all_seq_with_pseudogene_and_locus.def" quit
@@ -809,7 +809,7 @@ sub find_new_loci_in_current_DB{
   my $locus_errors=0;
 
   # open a database connection to current_DB and grab all loci names (excluding polymorphisms)
-  my $new_db = Ace->connect(-path  => "$dir",
+  my $new_db = Ace->connect(-path  => '/nfs/disk100/wormpub/DATABASES/current_DB',
 		    -program =>$tace) || do { print LOG "Connection failure: ",Ace->error; die();};
   my @current_DB_loci = $db->fetch(-query=>'Find Locus;!Polymorphism');
 
