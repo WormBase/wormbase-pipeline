@@ -51,7 +51,7 @@ foreach my $chromosome (@gff_files) {
     $file = "$outdir/CHROMOSOME_$chromosome.agp";
     $last_stop = 2;
 
-    &usage(1) unless ("-e $datadir/CHROMOSOME_${chromosome}.clone_acc.gff");
+    &usage(1,$chromosome) unless ("-e $datadir/CHROMOSOME_${chromosome}.clone_acc.gff");
 
     # read data from gff file
     open (GFF, "<$datadir/CHROMOSOME_$chromosome.clone_acc.gff");
@@ -249,7 +249,8 @@ sub open_TCP {
 
 sub usage {
     my $error = shift;
-    if ($error == 1) {
+    my $chromosome = shift;
+    if ($error == 1){ 
 	# No gff file to work from
 	print "The gff file '$datadir/CHROMOSOME_${chromosome}.clone_acc.gff' doesn't exist.\n";
 	exit(0);
