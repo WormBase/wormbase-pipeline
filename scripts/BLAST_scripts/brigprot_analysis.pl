@@ -10,10 +10,11 @@ use Getopt::Long;
 #######################################
 
 
-my ($debug, $WPver, $mysql);
+my ($debug, $WPver, $mysql, $run, $dump);
 GetOptions("debug" => \$debug,
-	   "verison" => \$WPver,
-	   "mysql"   => \$mysql
+	   "version" => \$WPver,
+	   "mysql"   => \$mysql,
+	   "dump"    => \$dump
 	  );
 
 # mysql database parameters
@@ -24,60 +25,57 @@ my $dbpass = "worms";
 
 my @results;
 my $query = "";
-my $worm_brigprot
+my $worm_brigprot;
 
 
 $dbuser = "wormadmin";
 $dbpass = "worms";
-if( $mysql )
+if( $mysql )  
   {
     print "Setting up mysql ready for Blast run\n";
     #make wormprot connection
     my $worm_brigprot =  DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
       || die "cannot connect to db, $DBI::errstr";
-
+  
     #update mysql with new wormpep version
-
-	my $analysis = "11";
-	my $db_file = "wormpep".$WPver.".pep";
-	print "________________________________________________________________________________\n";
-	print "doing worm01 updates . . . \n";
-	$query = "update analysisprocess set db = \"$db_file\" where analysisId = $analysis";
-	print $query,"\n";
-	&update_database( $query, $worm_brigprot );
-	
-	$query = "update analysisprocess set db_file = \"/data/blastdb/Worms/$db_file\" where analysisId = $analysis";
-	print $query,"\n\n";
-	&update_database( $query, $wormbrig_prot );
-	
-	#delete entries so they get rerun
-	$query = "delete from InputIdAnalysis where analysisId = $analysis";
-	print $query,"\n";
-	&update_database( $query, $wormbrig_prot );
-	
-	$query = "delete from feature where analysis = $analysis";
-	print $query,"\n";
-	&update_database( $query, $wormbrig_prot );
-	
-      }
-
+    
+    my $analysis = "11";
+    my $db_file = "wormpep".$WPver.".pep";
+    print "________________________________________________________________________________\n";
+    print "doing worm01 updates . . . \n";
+    $query = "update analysisprocess set db = \"$db_file\" where analysisId = $analysis";
+    print $query,"\n";
+    &update_database( $query, $worm_brigprot );
+    
+    $query = "update analysisprocess set db_file = \"/data/blastdb/Worms/$db_file\" where analysisId = $analysis";
+    print $query,"\n\n";
+    &update_database( $query, $worm_brigprot );
+    
+    #delete entries so they get rerun
+    $query = "delete from InputIdAnalysis where analysisId = $analysis";
+    print $query,"\n";
+    &update_database( $query, $worm_brigprot );
+    
+    $query = "delete from feature where analysis = $analysis";
+    print $query,"\n";
+    &update_database( $query, $worm_brigprot );
+    
     $worm_brigprot->disconnect;
-
-
+    
   }
-my $bdir = "/nfs/farm/Worms/EnsEMBL/branch-ensembl-121/ensembl-pipeline/modules/Bio/EnsEMBL/Pipeline";
 
 if( $run )
   {
     die "can't run pipeline whilst wormsrv2 is mounted - please exit and try again\n" if (-e "/wormsrv2");
 
-    #run wormpep stuff
+    my $bdir = "/nfs/farm/Worms/EnsEMBL/branch-ensembl-121/ensembl-pipeline/modules/Bio/EnsEMBL/Pipeline";
+
     `cp -f $bdir/pipeConf.pl.worm_brigprot $bdir/pipeConf.pl` and die "cant copy pipeConf worm_brigprot file\n";   
 
     `perl $bdir/RuleManager3Prot.pl -once -flushsize 5`; # just do everything
   }
 
-if( $dump_data )
+if( $dump )
   {
     unless ( -e "$wormpipe_dir/DUMP_PREP_RUN" ) {
       print "Please run wormBLAST.pl -prep_dump version $WPver    before dumping\n\nTo dump you CAN NOT have wormsrv2 mounted\n\n";
@@ -85,9 +83,9 @@ if( $dump_data )
     }
     # Dump
     print "Dumping blastp\n";
-    `$wormpipe_dir/scripts/Dump_new_prot_only.pl -all -version $WPver -brigprot -analysis 11 -matches`;
+    `perl5.6.1 $wormpipe_dir/scripts/Dump_new_prot_only.pl -all -version $WPver -brigprot -analysis 11 -matches`;
     print "Dumping motifs\n";
-      `$scripts_dir/dump_motif.pl -database worm_brigprot`;
+      `perl5.6.1 $wormpipe_dir/scripts/BLAST_scripts/dump_motif.pl -database worm_brigprot`;
   }
 
 
@@ -97,33 +95,22 @@ exit(0);
 
 sub update_database
   {
-    if( $dont_SQL ){
-      return;
-    }
-    else{
-      my $query = shift;
-      my $db = shift;
-      my $sth = $db->prepare( "$query" );
-      $sth->execute();
-      return;
-    }
+    my $query = shift;
+    my $db = shift;
+    my $sth = $db->prepare( "$query" );
+    $sth->execute();
+    return;
   }
 
 sub single_line_query
   {
-    if( $dont_SQL ){
-      my @bogus = qw(3 3 3 3 3 3);
-      return @bogus;
-    }
-    else{
-      my $query = shift;
-      my $db = shift;
-      my $sth = $db->prepare( "$query" );
-      $sth->execute();
-      my @results = $sth->fetchrow_array();
-      $sth->finish();
-      return @results;
-    }
+    my $query = shift;
+    my $db = shift;
+    my $sth = $db->prepare( "$query" );
+    $sth->execute();
+    my @results = $sth->fetchrow_array();
+    $sth->finish();
+    return @results;
   }
 
 
