@@ -20,7 +20,7 @@ sub get_wormbase_version {
 
     my $WS_version = `grep "NAME WS" /wormsrv2/autoace/wspec/database.wrm`;
     chomp($WS_version);
-    $WS_version =~ s/.*WS//;    
+    $WS_version =~ s/.*WS//;
     return($WS_version);
 }
 
@@ -599,7 +599,7 @@ sub release_composition
     close COMP_ANALYSIS;
 
     my $name = "Sequence composition report";
-    my $maintainer = "ar2\@sanger.ac.uk";#"All";
+    my $maintainer = "All";
     &mail_maintainer($name,$maintainer,$compositionFile);
     
     return 1;
