@@ -7,7 +7,7 @@
 # Usage: camcheck.pl
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-12-19 16:20:19 $
+# Last updated on: $Date: 2003-12-19 17:16:18 $
 #
 # see pod documentation (i.e. 'perldoc camcheck.pl') for more information.
 #
@@ -417,7 +417,7 @@ sub checkchars {
 sub check_sequence_version {
     local (*F);
     my $obj = shift;
-    my $server = "srs.ebi.ac.uk";
+    my $server = "srs.sanger.ac.uk";
 
     # get details from camace
     my ($acc) = $obj->at('DB_info.Database.EMBL.NDB_AC');
@@ -429,7 +429,7 @@ sub check_sequence_version {
     my $request = "/srsbin/cgi-bin/wgetz?$querycontent";
 
     if (!defined(open_TCP_connection(*F,$server,80))) {
-	print "Error connecting to srs.ebi.ac.uk server for object $obj\n";
+	print "Error connecting to srs.sanger.ac.uk server for object $obj\n";
 	exit(-1);
     }
     print F "GET $request HTTP/1.0\n\n";
