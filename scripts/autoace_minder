@@ -6,7 +6,7 @@
 # Usage : autoace_minder [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2002-09-04 14:51:55 $
+# Last edited on: $Date: 2002-09-04 15:06:15 $
 
 
 #################################################################################
@@ -39,7 +39,6 @@ my $addbriggsae;        # add briggsae ace files
 my $addhomol;           # parse similarity data from /ensembl_dump
 my $utrs;               # generate UTR dataset
 my $map;		# map PCR, RNAi and WTP
-my $full;		# Full release (used to do all the following)
 my $acefile;		# Write .acefiles
 my $build;		# Build autoace 
 my $builddb;		# Build autoace : DB only
@@ -71,7 +70,6 @@ GetOptions (
 	    "addhomol"       => \$addhomol,
 	    "utrs"           => \$utrs,
 	    "map"            => \$map,
-	    "full"           => \$full,
 	    "acefile"        => \$acefile,
 	    "build"          => \$build,
 	    "builddb"        => \$builddb,
@@ -93,10 +91,6 @@ GetOptions (
 # Help pod if needed
 &usage(0) if ($help);
 
-# if all then set all flags
-if ($full) {
-    $acefile = 1; $build = 1; $check = 1; $buildpep = 1; $gffdump = 1; $map = 1; $agp = 1;
-}
 
  ##############################
  # Script variables (run)     #
@@ -280,7 +274,7 @@ $runtime    = `date +%H:%M:%S`; chomp $runtime;
 print LOG "# Script finished    : $rundate $runtime\n";
 close LOG;
 
-&mail_maintainer("WormBase Report: \"$logtype\"",$maintainers,$logfile);
+&mail_maintainer("WormBase Report: $logtype",$maintainers,$logfile);
 
 ##############################
 # hasta luego                #
@@ -1420,7 +1414,7 @@ sub logfile_details {
     print LOG "Wormpep version  : wormpep${WS_version}\n\n";
     
     print LOG "======================================================================\n";
-    print LOG "  -full         : Full WS release (executes all of the following -wbcp)\n"               if ($full);
+
     print LOG "  -initial      : Prepare for a new build, update WSnn version number\n"                 if ($initial);
     print LOG "  -unpack       : Unpack databases from FTP site and copy Sanger dbs\n"                  if ($unpack);
     print LOG "  -acefile      : Write .acefiles from WormBase copies of the databases\n"               if ($acefile);
@@ -1459,7 +1453,6 @@ sub run_details {
     print "Wormpep version  : wormpep${WS_version}\n";
     print "\n";
     print "======================================================================\n";
-    print "  -full         : Full WS release (executes all of the following -wbcp)\n"          if ($full);
     print "  -initial      : Prepare for a new build, update WSnn version number\n"            if ($initial);
     print "  -unpack       : Unpack databases from FTP site and copy Sanger dbs\n"             if ($unpack);
     print "  -acefile      : Write .acefiles from WormBase copies of the databases\n"          if ($acefile);
@@ -1648,8 +1641,6 @@ autoace_minder mandatory arguments:
 autoace_minder OPTIONAL arguments:
 
 =over 4
-
-=item -full, Full WS release (executes all of the following -wbcp)
 
 =item -acefile, Write .acefiles from WormBase copies of the databases
 
