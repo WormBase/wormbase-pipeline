@@ -8,7 +8,7 @@
 # and virtual objects to hang the data onto
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2004-05-10 14:24:40 $
+# Last edited on: $Date: 2004-07-21 12:06:11 $
 
 
 use strict;
@@ -338,7 +338,10 @@ sub dump_dna {
   # remove intermediary sequence file
   unlink ("${blat_dir}/autoace.first") if (-e "${blat_dir}/autoace.first");
 
-
+  # make back-up copies of the psl files
+  foreach my $type (sort keys %word) {
+      &run_command("cp -f $blat_dir/${type}_out.psl $blat_dir/${type}_old.psl");
+  }
 
 }
 
