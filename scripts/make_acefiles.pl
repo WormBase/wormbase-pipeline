@@ -8,7 +8,7 @@
 # autoace.
 #
 # Last updated by: $Author: dl1 $                     
-# Last updated on: $Date: 2004-12-07 09:42:37 $       
+# Last updated on: $Date: 2005-02-18 16:00:42 $       
 
 #################################################################################
 # Variables                                                                     #
@@ -34,8 +34,8 @@ my $test;        # If set, script will use TEST_BUILD directory under ~wormpub
 GetOptions ("debug=s"   => \$debug,
 	    "help"      => \$help,
 	    "db=s"      => \$db,
-	    "test"      => \$test);
-
+	    "test"      => \$test
+	    );
 
 ##############################
 # Script variables (run)     #
@@ -104,7 +104,7 @@ close(STDOUT);
 close(STDERR);
 close(LOG);
 
-&mail_maintainer("WormBase Report: make_acefiles.pl",$maintainers,$log);
+&mail_maintainer("BUILD REPORT: make_acefiles.pl",$maintainers,$log);
 
 exit (0);
 
@@ -139,7 +139,7 @@ sub create_log_files{
 
   print LOG "# make_acefiles.pl started at: $rundate ",&runtime,"\n";
   print LOG "# TEST MODE!!! Using $basedir/autoace\n" if ($test);
-  print LOG "# WormBase/Wormpep version: WS${WS_version}\n\n";
+  print LOG "# WormBase/Wormpep version: ${WS_version}\n\n";
   print LOG "======================================================================\n\n";
  
 
