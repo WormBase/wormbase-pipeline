@@ -5,19 +5,13 @@
 # dl
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2003-08-11 13:03:43 $
+# Last edited on: $Date: 2003-08-15 09:22:26 $
 
 use strict;
 use lib "/wormsrv2/scripts/";   
 use Wormbase;
 use Getopt::Long;
 
-my $debug = 1;
-our $tace       = &tace;
-our $WS_version = &get_wormbase_version;
-
-my $WS_previous = $WS_version - 1;
-print "WS_version : $WS_version\tWS_previous : $WS_previous\n" if ($debug);
 
 ##############################
 # command-line options       #
@@ -30,6 +24,8 @@ my $paul;                  # Use Paul's split
 my $merge;                 # Merging databases
 my $split;                 # Splitting databases
 my $update;                # Update current database
+my $debug;                 # Debug option
+my $help;                  # Help menu
 
 GetOptions (
             "all"        => \$all,
@@ -39,9 +35,18 @@ GetOptions (
 	    "merge"      => \$merge,
 	    "split"      => \$split,
 	    "update"     => \$update,
+	    "help"       => \$help,
 	    "debug"      => \$debug
 	    );
 
+# Help pod if needed
+&usage(0) if ($help);
+
+our $tace       = &tace;
+our $WS_version = &get_wormbase_version;
+
+my $WS_previous = $WS_version - 1;
+print "WS_version : $WS_version\tWS_previous : $WS_previous\n" if ($debug);
 
 # directory paths for the split databases
 
@@ -56,7 +61,7 @@ our $camace_ar2  = "/nfs/disk100/wormpub/camace_ar2";
 # TransferDB calls to move /wormsrv1/camace to the split databases
 if ($split) {
     print "Copying /wormsrv1/database to the split camaces\n";
-    &split_database;
+    &split_databases;
     exit(0);
 }
 
@@ -221,7 +226,7 @@ sub update_camace {
 		   
 }
 
-sub split {
+sub split_databases {
 
     # copy to camace_orig (always do this)
     system ("TransferDB.pl -start /wormsrv1/camace -end $camace_orig -all -name WS$WS_version");
@@ -313,3 +318,93 @@ sub dump_camace_ar2 {
     $path = $directory . '/feature_ar2.ace';
     &dumpace('Feature',$path);
 }
+
+
+sub usage {
+    my $error = shift;
+
+    if ($error eq "Help") {
+        # Normal help menu
+        system ('perldoc',$0);
+        exit (0);
+    }
+}
+
+__END__
+
+=pod
+
+=head2 NAME - merge_split_camaces
+
+=head1 USAGE:
+
+=over 4
+
+=item merge_split_camaces [-options]
+
+=back
+
+merge_split_camaces is a wrapper with options to automate the merging of the
+working split copies of camace, load the updates into the current version
+of camace (with some additional housekeeping), and finally running the
+TransferDB.pl jobs to (re)generate the working split copies of camace.
+
+merge_split_camaces mandatory arguments:
+
+=over 4
+
+=item none
+
+=back
+
+merge_split_camaces optional arguments:
+
+=over 4
+
+=item -merge, Generate diff files from split camace databases
+ 
+=item -update, Upload diff files to /wormsrv1/camace and add BLAT, Locus data
+
+=item -split, Transfer /wormsrv1/camace into split camace databases
+
+=item -all, Work on all splits, i.e. ar2,dl1,pad
+
+=item -ant, Work on split ar2 only
+
+=item -dan, Work on split dl1 only
+
+=item -paul, Work on split pad only
+
+=item -help, Help page
+
+=item -debug, Verbose/Debug mode
+
+=back
+
+=head1 RUN REQUIREMENTS:
+
+=back
+
+merge_split_camaces must be able to see the /wormsrv1 disk
+
+=head1 RUN OUTPUT:
+
+=back
+
+=head1 EXAMPLES:
+
+=over 4
+
+=item merge_split_camaces -merge -all 
+
+=back
+
+Dumps the relevant classes from camace_orig and the split databases, runs an
+acediff to calculate the changes. This acediff file is then reformated to take
+account of the acediff bug.
+
+=head1 AUTHOR - Daniel Lawson
+
+Email dl1@sanger.ac.uk
+
+=cut
