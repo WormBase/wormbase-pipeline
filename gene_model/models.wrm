@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.26 2001-12-10 10:03:56 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.27 2002-01-15 15:06:11 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -973,6 +973,7 @@
              Tm UNIQUE Float
              Pairwise_scores ?Oligo XREF Pairwise_scores UNIQUE Float Float // score and Tm
         In_sequence ?Sequence XREF Oligo
+	PCR_product ?PCR_product XREF Oligo // added 15/01/2002
 
 // Protein class
 
@@ -1396,7 +1397,7 @@
 			  Expr_profile ?Expr_profile XREF PCR_product UNIQUE Int UNIQUE Int #SMap_info // for new Expr_profile class [010912 krb]
  	     Method ?Method
  	     Overlaps_CDS ?CDS XREF Corresponding_PCR_product  // added for Dan PCR mappings [010419 dl]
-	     Oligo ?Oligo UNIQUE Int UNIQUE Int
+	     Oligo ?Oligo XREF PCR_product UNIQUE Int UNIQUE Int
  	     Assay_conditions ?LongText
 	     Amplified Int
 	     Remark ?Text
