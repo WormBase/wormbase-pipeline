@@ -6,7 +6,7 @@ use lib '/wormsrv2/scripts';
 use Wormbase;
 
 my $WS_number = &get_wormbase_version;
-my $WS_previous = $WP_number -1;
+my $WS_previous = $WS_number -1;
 
 my $tace = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
 
