@@ -188,7 +188,7 @@ if( $mail )
     close LETTER;
   
     my $name = "Wormpipe database distribution request";
-    my $maintainer = "ar2\@sanger.ac.uk";
+    my $maintainer = "ssg-isg\@sanger.ac.uk; ar2\@sanger.ac.uk";
     print "mailing distibution request to $maintainer\n";
     &mail_maintainer($name,$maintainer,$letter);
   }
@@ -474,7 +474,7 @@ if( $dump_data )
     }
     # Dump
     print "Dumping blastp\n";
-    `$wormpipe_dir/scripts/Dump_new_prot_only.pl -all -version $WPver`;
+    `$wormpipe_dir/scripts/Dump_new_prot_only.pl -all -version $WPver -matches`;
     print "Dumping blastx\n";
     `$scripts_dir/dump_blastx_new.pl -version $WPver`;
     print "Dumping motifs\n";
