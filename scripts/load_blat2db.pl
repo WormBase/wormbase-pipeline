@@ -65,7 +65,7 @@ $command=<<END;
 pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLAT_EST.ace 
 pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLAT_mRNA.ace 
 pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLAT_EMBL.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.automace.BLATX_NEMATODE.ace 
+pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLATX_NEMATODE.ace 
 pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.EST.ace 
 pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.mRNA.ace 
 pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.EMBL.ace 
