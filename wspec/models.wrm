@@ -331,8 +331,8 @@
 			2_point ?2_point_data
                         Multi_point ?Multi_pt_data
 			Pos_neg_data ?Pos_neg_data
-        Allele  ?Allele XREF Gene
-        Strain  ?Strain XREF Gene
+        Allele  ?Allele XREF Gene #Evidence
+        Strain  ?Strain XREF Gene #Evidence
 	Laboratory ?Laboratory
         Reference ?Paper XREF Locus
 	Expr_pattern ?Expr_pattern XREF Locus
