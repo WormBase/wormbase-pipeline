@@ -36,24 +36,72 @@ Internal methods are usually preceded with a _
 
 
 package Coords_converter;
-use Carp;
 
+use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"
+  : glob("~ar2/wormbase/scripts");
+
+use Carp;
+use Wormbase;
 
 =head2 invoke
 
     Title   :   invoke
-    Usage   :   Coords_converter->invoke
-    Function:   Creats the object and loads in the data fom gff files
+    Usage   :   Coords_converter->invoke($database,1);
+    Function:   Creates the object and loads in the data (generates fresh if requested)
     Returns :   ref to self
-    Args    :   none
+    Args    :   Database  (optional) - which database to use. Default is current_DB
+                refresh   default is NULL - connect to the database and update coordinates
 
 =cut
 
 sub invoke 
   {
     my $class = shift;
+    my $database = shift;
+    my $refresh = shift;
+
+    if( $database ) {
+      croak "$database does not exist\n" unless( -d "$database" );
+    }
+    else {
+      $database = glob("~wormpub/DATABASES/current_DB");
+      undef $refresh;
+    }
+
+    unless( -e "$database/SL_coords.ace" and -e "$database/clone_coords.ace") {
+      warn "\nno coordinate info was present - extracting new data\n"; 
+      $refresh = 1;
+    }
+
+    if( $refresh ) {
+      print "refreshing coordinates for $database\n";
+      my $tace = &tace;
+      my $SL_coords_file = "$database/SL_coords.ace";
+      my $clone_coords_file = "$database/clone_coords.ace";
+
+      my @command;
+      $command[0]=<<EOF;
+      find sequence CHROM*
+	show -a subsequence -f $SL_coords_file
+ 
+EOF
+
+      $command[1] =<<EOF;
+      clear
+      find sequence SUPER*
+	show -a subsequence -f $clone_coords_file
+EOF
+
+
+      foreach (@command) {
+	open (ACE,"| $tace $database") or croak "cant open $database\n";
+	print ACE $_;
+	close ACE;
+      }
+    }
+
     my $self = {};
-    open (SL,"</nfs/disk100/wormpub/DATABASES/TEST_DBs/ANT_matchingace/dump/superlink_coords") or croak "cant open superlinks";
+    open (SL,"<$database/SL_coords.ace") or croak "cant open superlink coordinate file ";
       my $parent;
     while (<SL>) {
       if(/Sequence.*(CHROMOSOME_\w+)/) {
@@ -65,7 +113,7 @@ sub invoke
     }
 
     undef $parent;
-    open (CLONE,"</nfs/disk100/wormpub/DATABASES/TEST_DBs/ANT_matchingace/dump/clone_coords") or croak "cant open clones";
+    open (CLONE,"</$database/clone_coords.ace") or croak "cant open clone coordinate file";
     while(<CLONE>) {
       if(/Sequence.*\"(SUPERLINK_\w+)/) {
 	$parent = $1;
@@ -182,7 +230,7 @@ sub _getChromFromSlink
     Usage   :   my @data = $coords->LocateSpan("CHROMOSOME_I", 100000, 101000);
     Function:   Returns smallest sequence object containing the given coordinate ie clone, slink or csome and the coordinates relative to that sequence.
     Returns :   Clone as string eg "V"; coordinates relative to clone obj 
-    Args    :   Sequence obj and two coordinates within that eg ("AH6", 3000, 3100)
+    Args    :   Sequence obj (CHROMOSOME or SUPERLINK)  and two coordinates within that eg ("CHROMOSOME_I", 3000, 3100)
 
 =cut
 
@@ -192,6 +240,13 @@ sub LocateSpan
     my $chrom = shift;
     my $x = shift;
     my $y = shift;
+
+    if( $chrom =~ /SUPERLINK/ ) {
+      my $slink = $chrom;
+      $chrom = $self->_getChromFromSlink($slink);
+      $x += $self->{"CHROMOSOME_$chrom"}->{'SUPERLINK'}->{$slink}->[0] - 1;
+      $y += $self->{"CHROMOSOME_$chrom"}->{'SUPERLINK'}->{$slink}->[0] - 1;
+    }
 
     my $strand = "+";
     my ($seq, $rel_x, $rel_y);  # coordinates relative to returned seq
@@ -210,8 +265,8 @@ sub LocateSpan
     my $y_clone = &GetCloneFromCoord( $self, $chrom, $y);
     if( $x_clone eq $y_clone ) {# span maps within clone
       my $clone_start = $self->{SUPERLINK}->{"$x_slink"}->{"$x_clone"}->[0];
-      $rel_x = $x - $sl_start - $clone_start +1;
-      $rel_y = $y - $sl_start - $clone_start +1;
+      $rel_x = $x - $sl_start - $clone_start + 2;  # add 2 -  1 for clone, 1 for slink numbering adjustment
+      $rel_y = $y - $sl_start - $clone_start + 2;
       $seq = $x_clone;
     }
     else {
