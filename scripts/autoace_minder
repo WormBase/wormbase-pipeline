@@ -7,7 +7,7 @@
 # Usage : autoace_minder [-options]
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2002-09-17 09:54:02 $
+# Last edited on: $Date: 2002-10-01 14:38:49 $
 
 
 #################################################################################
@@ -859,7 +859,7 @@ sub blat_jobs {
       # process them to cleaner files
       $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Starting acecompress.pl at $runtime\n\n";
       $i = system ("$scriptdir/acecompress.pl -homol autoace.blat.EMBL.ace > autoace.blat.EMBLlite.ace");
-      $i = system ("mv -f autoace.blat.EMBL.ace autoace.blat.EMBL.ace");
+      $i = system ("mv -f autoace.blat.EMBLlite.ace autoace.blat.EMBL.ace");
       $i = system ("$scriptdir/acecompress.pl -feature autoace.good_introns.EMBL.ace > autoace.good_introns.EMBLlite.ace");
       $i = system ("mv -f autoace.good_introns.EMBLlite.ace autoace.good_introns.EMBL.ace");
       $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Finishing acecompress.pl at $runtime\n\n";
@@ -1277,6 +1277,11 @@ sub make_wormpep {
   $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Running make_wormpep -r at $runtime\n";
   system ("$scriptdir/make_wormpep -r $WS_version") && die "Couldn't run make_wormpep -r\n";
   $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Finished running make_wormpep -r at $runtime\n";
+
+  #generate file to ad new peptides to mySQL database.
+  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "\nRunning new_wormpep_entries.pl at $runtime\n";
+  system ("$scriptdir/new_wormpep_entries.pl") and die "Couldn't run new_wormpep_entries.pl\n";
+  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Finished running new_wormpep_entries.pl at $runtime\n";
 
   # make a make_autoace log file in /logs
   system ("touch $logdir/D1:Build_wormpep");
