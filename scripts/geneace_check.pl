@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-02-07 22:05:52 $
+# Last updated on: $Date: 2003-02-07 22:17:53 $
 
 
 use strict;
@@ -664,16 +664,16 @@ sub loci_as_other_name {
 sub loci_point_to_same_CDS {
  
    my ($def, $dir) = @_;
-   my (%CDS_loci, $mo);
+   my %CDS_loci;
 
    open (FH, "echo '$def' | tace $dir |") || die "Couldn't access geneace\n";
    while (<FH>){
      chomp $_;
      if ($_ =~ /^\"/){
-       $mo = $1;	
-       $mo =~ s/\"//g;
-       $mo =~ /(.+)\s(.+)/;
-       #$_ =~ /(\w+-\d+|\w+-\d+\.[\d\w]+|.+)\s+(.+)/;
+       $_ = $1;	
+       $_ =~ s/\"//g;
+       $_ =~ /(.+)\s(.+)/;
+       $_ =~ /(\w+-\d+|\w+-\d+\.[\d\w]+|.+)\s+(.+)/;
        push(@{$CDS_loci{$2}}, $1);
      }
    }
