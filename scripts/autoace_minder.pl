@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-10-19 14:53:04 $
+# Last edited on: $Date: 2004-10-19 14:58:12 $
 
 
 
@@ -1314,7 +1314,7 @@ sub map_features {
   # microarray connections
   &run_command("$scriptdir/map_microarray.pl");
 
-  $file = "$basedir/wormbase/acefiles/microarray_mappings.ace";
+  $file = "$basedir/autoace/acefiles/microarray_mappings.ace";
   &load($file,"microarray_connections");
 
 }

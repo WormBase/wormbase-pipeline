@@ -7,7 +7,7 @@
 # by Anon
 #
 # Last updated by: $Author: krb $                      
-# Last updated on: $Date: 2004-10-19 14:53:03 $        
+# Last updated on: $Date: 2004-10-19 14:58:12 $        
 
 
 use strict;
@@ -35,7 +35,7 @@ my $debug;      # Debug mode, verbose output to user running script
 my $log = Log_files->make_build_log();
 my $verbose;    # verbose mode, extra output to screen
 
-my $outfile = "/wormsrv2/wormbase/acefiles/microarray_mappings.ace";
+my $outfile = "/wormsrv2/autoace/acefiles/microarray_mappings.ace";
 
 GetOptions ("debug=s"   => \$debug,
 	    "test"      => \$test,
