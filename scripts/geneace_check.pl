@@ -6,8 +6,8 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-12-24 12:34:05 $
+# Last updated by: $Author: ck1 $
+# Last updated on: $Date: 2003-01-15 17:36:05 $
 
 
 use strict;
@@ -35,7 +35,7 @@ GetOptions ("help"      => \$help,
 # Use debug mode?
 if($debug){
   print "DEBUG = \"$debug\"\n\n";
-  ($maintainers = $debug . '\@sanger.ac.uk');
+  ($maintainers = "$debug" . '\@sanger.ac.uk');
 }
 
 &create_log_files;
@@ -78,7 +78,7 @@ $db->close;
 close(LOG);
 close(ERICHLOG);
 
-# Alway mail to $maintainers (which might be a single user under debug mode)
+# Always mail to $maintainers (which might be a single user under debug mode)
 &mail_maintainer($0,$maintainers,$log);
 
 # Also mail to Erich unless in debug mode
@@ -96,7 +96,7 @@ exit(0);
 sub process_locus_class{
 
   my @loci = $db->fetch(-class => 'Locus',
-		      -name  => '*');
+		        -name  => '*');
   
   my $size =scalar(@loci);
   
@@ -109,7 +109,7 @@ sub process_locus_class{
     #print "$locus\n";
     my $warnings;
     my $erich_warnings;
-    ($warnings, $erich_warnings) = &test_locus_for_errors($locus);
+    #($warnings, $erich_warnings) = &test_locus_for_errors($locus);
     print LOG "$warnings" if(defined($warnings));
     #Erich Schwarz wants some of these - emsch@its.caltech.edu
     print ERICHLOG "$erich_warnings" if(defined($erich_warnings));
@@ -122,10 +122,21 @@ sub process_locus_class{
   my $get_seg_with_pseudogene_locus=<<EOF;
   Table-maker -p "/wormsrv1/geneace/wquery/get_all_seq_with_pseudogene_and_locus.def" quit
 EOF
-
+ 
   &find_new_loci_in_current_DB($db, $get_seg_with_pseudogene_locus);
+   
+  # Look for loci that are other_names and still are obj of ?Locus -> candidate for merging
+  my $locus_has_other_name=<<EOF;
+  Table-maker -p "/wormsrv1/geneace/wquery/locus_has_other_name.def" quit
+EOF
+  
+  my $ga_dir="/wormsrv1/geneace";
+  loci_as_other_name($locus_has_other_name, $ga_dir, $db);
+
   print LOG "\nThere are $locus_errors errors in $size loci.\n";
+
 }
+
 
 ############################
 # Process Laboratory class #
@@ -316,7 +327,7 @@ EOF
   print LOG "\n\nThere are $sequence_errors errors in Sequence class\n";
 }   
 
-################################################
+##############################
 
 sub find_new_loci_in_current_DB{
   my ($db, $def) = @_;
@@ -363,7 +374,33 @@ sub find_new_loci_in_current_DB{
   }
 }
 
-###############################################
+#############################
+
+sub loci_as_other_name {
+
+  my ($def, $dir, $db) = @_;
+  my ($main, $other_name);
+
+  open (FH, "echo '$def' | tace $dir | ") || die "Couldn't access geneace\n";
+  while (<FH>){
+    chomp($_);
+    if ($_ =~ /^\"/){
+      $_ =~ s/\"//g;
+      $_ =~ /(\w+-\d+|\w+-\d+\.[\d\w]+|.+)\s+(.+)/;
+     # print "$1 -> $2\n";
+      $main = $1;
+      $other_name = $2;
+      $other_name =~ s/\\//g;
+      $other_name = $db->fetch('Locus', "$other_name"); 
+      if ($other_name){
+	$locus_errors++;
+	print LOG "$other_name ($main) is still a Locus object: candidate for merging\n";
+      }
+    }
+  }
+}
+
+##############################
 
 sub test_locus_for_errors{
   my $locus = shift;
@@ -535,7 +572,7 @@ sub test_locus_for_errors{
 
 }
 
-#####################################################################
+##############################
 
 sub create_log_files{
 
@@ -564,7 +601,8 @@ sub create_log_files{
   print ERICHLOG "If you have any queries please email ar2\@sanger.ac.uk or krb\@sanger.ac.uk\n\n";
 }
 
-##########################################
+
+##############################
 
 sub usage {
   my $error = shift;
@@ -576,8 +614,7 @@ sub usage {
   }
 }
 
-
-##################################################################
+##############################
 
 sub Table_maker {
 
