@@ -95,9 +95,21 @@ EOF
 
       foreach (@command) {
 	open (ACE,"| $tace $database") or croak "cant open $database\n";
-	print ACE $_;
+	print ACE $_ ;
 	close ACE;
       }
+
+      # need to remove genes SMapped to slinks
+      open( FH, "$clone_coords_file") or die "bugger";
+      open( NEW,">$clone_coords_file.bk" ) or die "bugger2";
+      while (<FH>) {
+	print NEW unless /\./;
+      }
+      close NEW;
+      close FH;
+
+      `mv -f $clone_coords_file.bk $clone_coords_file`;
+      `chmod 777 $clone_coords_file`;
     }
 
     my $self = {};
