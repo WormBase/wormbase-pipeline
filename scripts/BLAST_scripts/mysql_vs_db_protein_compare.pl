@@ -1,16 +1,22 @@
 #!/usr/local/ensembl/bin/perl5.8.0 -w
 
+use lib $ENV{'CVS_DIR'};
+use lib "/nfs/farm/Worms/Ensembl/ensembl-pipeline/modules";
+
 use strict;
 use Getopt::Long;
 use DBI;
-use lib "/wormsrv2/scripts";
 use Wormbase;
+use Bio::PrimarySeq;
+use Bio::SeqIO;
+use Bio::EnsEMBL::Pipeline::DBSQL::Protein::DBAdaptor;
 
-my ($debug,$fasta);
+my ($debug,$fasta,$fix);
 
 GetOptions (
 	    "fasta=s" => \$fasta,
-	    "debug=s" => \$debug
+	    "debug=s" => \$debug,
+	    "fix"     => \$fix
 	   );
 
 die "cant find $fasta\n" unless ( -e "$fasta" );
@@ -23,50 +29,56 @@ my $dbuser = "wormadmin";
 my $dbname = "worm_pep";
 my $dbpass = "worms";
 
+
+my $msg = "checking $dbname against $fasta\n";
+$msg .= "will fix any errors found\n";
+$log->write_to("$msg");
+
 my %ws_id2length;
-my %ws_id2seq;
+my %fasta_pep;
 my %sql_id2length;
 my %sql_id2seq;
 
+#prepare file handles
+my $fix_file;
+my $miss_file;
+open( $fix_file,">mysql_fix") or die "cant open fix\n";
+open( $miss_file,">mysql_miss") or die "cant open miss\n";
+
 # get wormpep versions
-&read_fasta($fasta,\%ws_id2seq);
+&read_fasta($fasta,\%fasta_pep);
 
-foreach (keys %ws_id2seq ){
-  $ws_id2length{$_} = length ($ws_id2seq{$_});
-}
+my $db = Bio::EnsEMBL::Pipeline::DBSQL::Protein::DBAdaptor->new ( -host   => $dbhost,
+                                                                  -dbname => $dbname,
+                                                                  -user   => $dbuser,
+                                                                  -pass   => $dbpass,
 
-#get wormprot data and compare
-my $wormprot = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
-  || die "cannot connect to db, $DBI::errstr";
+                                                        );
 
-my $query = "select protein.proteinId, protein.length, peptide.peptide from protein, peptide where peptide.proteinId = protein.proteinId";
-
-my $sth = $wormprot->prepare( "$query" );
-$sth->execute();
-
-my $ref_results = $sth->fetchall_arrayref;
-
-foreach my $record (@$ref_results) {
-  my ($protein_id, $length, $seq) = @$record;
-  $sql_id2length{$protein_id} = $length;
-  $sql_id2seq{$protein_id} = $seq;
-
-  $log->write_to("ERROR:\tDifferent lengths for $protein_id\n") if( $length != $ws_id2length{$protein_id} );
-  $log->write_to("ERROR:\tDifferent sequence for $protein_id\n") if( $seq ne $ws_id2seq{$protein_id} );
-  
-}
+my $proteinAdaptor = $db->get_ProteinAdaptor;
 
 
-#check whats not in wormprot;
-open (MISSING,">proteins missing from wormprot") or die "cant write new missing file\n";
-foreach my $wp_protein (sort keys %ws_id2seq ) {
-  if( !($sql_id2seq{$wp_protein}) ) {
-    $log->write_to("MISSING : $wp_protein missing from $dbname\n");
-    print MISSING "\>$wp_protein\n$ws_id2seq{$wp_protein}\n";
+foreach my $id ( keys %fasta_pep ){
+  my $pep = $fasta_pep{$id};
+  my $dbpep = $proteinAdaptor->fetch_Peptide_by_dbid($pep->primary_id);
+
+  unless( $dbpep ){
+    $log->write_to($pep->primary_id." not in database\n");
+    &fix($pep, $miss_file);
+    next;
+  }
+  if( $pep->seq ne $dbpep->seq ){
+    $log->write_to($pep->primary_id." has discrepant sequences\n");
+    &fix($pep, $fix_file);
+    next;
   }
 }
 
-$log->mail($debug);
+close $fix_file;
+close $miss_file;
+
+
+$log->mail();
 
 exit (0);
 
@@ -75,27 +87,26 @@ sub read_fasta
     my $fasta = shift;
     my $id2seq = shift;
     my $count;
-    open (WS, "<$fasta") or die "$fasta\n";
-    my ($id,$seq);
-    my %id2seq;
-    while (<WS>) {
-      chomp;
-      if( /\>(\w+)/ ) {
-	if( defined $id ) {
-	  warn "WARNING \$seq is NULL" unless $seq;
-	  $$id2seq{$id} = $seq;
-	  undef $id;
-	  $seq = "";
-	}
-	$id = $1;
+
+    my $stream = Bio::SeqIO->new ( -file   => $fasta,
+				   -format => 'fasta',
+				 );
+    $stream->alphabet('protein');
+    while (my $pep = $stream->next_seq) {
+      if( $pep->description =~ /^(CE\d{5})/ ) {
+	my $CE = $1;
+	$pep->primary_id($CE);
+	$pep->primary_seq->primary_id($CE);
       }
-      else {
-	$seq .= $_;
-      }
+      $$id2seq{$pep->primary_id} = $pep;
     }
-    $$id2seq{$id} = $seq;
   }
 
+sub fix {
+  my $pep = shift;
+  my $file = shift;
+  print $file $pep->primary_id,"\n",$pep->seq,"\n";
+}
 
 =pod
 
