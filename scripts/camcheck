@@ -387,12 +387,15 @@ sub checkgenes {
 	if ((!defined ($source))) {
 	    print LOG "The subsequence $child has no Source\n";
 	}
-	# check to see if subsequence coordinates exceed length of parent clone
-	my ($source_length) = $source->DNA(2);
-	if (($start > $source_length) || ($end > $source_length)){
-	  print LOG "The subsequence $child has coordinates that exceed the length of its parent\n";
-	}
 
+	# check to see if subsequence coordinates exceed length of parent clone
+	# won't work for parents that are links (they have zero length)
+	if($source !~ m/LINK/){
+	  my ($source_length) = $source->DNA(2);
+	  if (($start > $source_length) || ($end > $source_length)){
+	    print LOG "The subsequence $child has coordinates that exceed the length of its parent\n";
+	  }
+	}
 
 	# Source Exons
 	#
