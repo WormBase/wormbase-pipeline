@@ -7,7 +7,7 @@
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-09-03 14:53:48 $
+# Last edited on: $Date: 2003-09-03 15:29:29 $
 
 
 use strict;
@@ -206,7 +206,11 @@ while (<BLAT>) {
     $sum = $sum + $length;
   }	
   my $match = $f[0];
-  my $score = $match/$sum*100;
+  my $query_size = $f[10];
+  # new way of calculating score, divide by query size rather than sum of matching blocks, 
+  # so short 30 bp polyA chunks will get 30/2000 rather than 30/30, should improve things
+  # that are currently assigned OTHER but should be BEST
+  my $score = ($match/$query_size)*100;
   
   my @exons = ();
   
