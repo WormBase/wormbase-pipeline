@@ -12,8 +12,8 @@
 # 3) Archives old GFF_SPLITS directory
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2004-07-19 08:51:35 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2004-07-28 16:32:33 $
 
 
 use strict;
@@ -78,10 +78,6 @@ my $old_wormpep = "$basedir/WORMPEP/wormpep".($WS_current-3);
 &create_log_files;
 
 &archive_old_releases;
-
-# run cgc_names_for_worm_genes.pl
-print LOG "Running cgc_names_for_worm_genes.pl\n\n";
-system("cgc_names_for_worm_genes.pl") && die "Couldn't run cgc_names_for_worm_genes.pl -a\n";
 
 # update all Common_data files - see Commom_data.pm
 system("update_Common_data.pl -build -all") && die "Couldn't run update_Common_data.pl -update -in_build -all\n";
