@@ -26,9 +26,9 @@ my (@todo,%unconf);
 getopts ('emhvx');
 &printhelp() unless ($opt_e || $opt_m);
 &printhelp() if ($opt_h);
-@todo = qw(BLAT_EST_BEST BLAT_mRNA_BEST) if ($opt_e && $opt_m);
-@todo = 'BLAT_EST_BEST'                  if ($opt_e && !$opt_m);
-@todo = 'BLAT_mRNA_BEST'                 if ($opt_m && !$opt_e); 
+@todo = qw(BLAT_EST_TRANSCRIPT BLAT_mRNA_BEST) if ($opt_e && $opt_m);
+@todo = 'BLAT_TRANSCRIPT_BEST'                 if ($opt_e && !$opt_m);
+@todo = 'BLAT_mRNA_BEST'                       if ($opt_m && !$opt_e); 
 my $exon   = 'exon';
 my $intron = 'intron';
 
@@ -55,7 +55,7 @@ my $outdir = "/wormsrv2/wormbase/misc";
 
 foreach my $todo (@todo) {
 
-    if  ($todo =~ /BLAT_EST_BEST/) {
+    if  ($todo =~ /BLAT_TRANSCRIPT_BEST/) {
         unlink("$outdir/misc_confirmed_by_EST.ace") if (-e "$outdir/misc_confirmed_by_EST.ace");
         open(ACE,">>$outdir/misc_confirmed_by_EST.ace") || die "Cannot open $outdir/misc_confirmed_by_EST.ace\n";
     }
@@ -77,7 +77,7 @@ foreach my $todo (@todo) {
         my @refest  = &read_gff($todo,$chrom);
         my %est     = %{$refest[0]};
         my @estlist = @{$refest[1]};
-        print "Got the ESTs for chrom $chrom\n" if (($todo =~ /BLAT_EST_BEST/) && ($opt_v || $opt_x));
+        print "Got the ESTs for chrom $chrom\n" if (($todo =~ /BLAT_TRANSCRIPT_BEST/) && ($opt_v || $opt_x));
         print "Got the cDNAs for chrom $chrom\n" if (($todo =~ /BLAT_mRNA_BEST/) && ($opt_v || $opt_x));
 
         ###############
@@ -132,7 +132,7 @@ foreach my $todo (@todo) {
         print "Checking introns\n" if ($opt_v || $opt_x);
         %confirm = %{&find_match($intron,\%inest,\@estlist,\%ingen,\@genlist)};
 
-        if  (($opt_v || $opt_x) && ($todo =~ /BLAT_EST_BEST/)) {
+        if  (($opt_v || $opt_x) && ($todo =~ /BLAT_TRANSCRIPT_BEST/)) {
             print "Checking intron confirmation and putting output for chrom $chrom into $outdir/misc_confirmed_by_EST.ace\n";
         }
         elsif (($opt_v || $opt_x) && ($todo =~ /BLAT_mRNA_BEST/)) {
@@ -157,7 +157,7 @@ foreach my $todo (@todo) {
             }
             if ($in == 1) {
                 print ACE "Sequence : \"$gene\"\n";
-                print ACE "Confirmed_by EST\n\n" if ($todo =~ /BLAT_EST_BEST/);
+                print ACE "Confirmed_by EST\n\n"  if ($todo =~ /BLAT_TRANSCRIPT_BEST/);
                 print ACE "Confirmed_by cDNA\n\n" if ($todo =~ /BLAT_mRNA_BEST/);
             }
         }        
