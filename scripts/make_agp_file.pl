@@ -5,7 +5,7 @@
 # by Dan Lawson (dl1@sanger.ac.uk)
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-12-01 11:54:26 $
+# Last edited on: $Date: 2003-12-04 13:12:39 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -55,7 +55,7 @@ if($test && $quicktest){
 my $basedir   = "/wormsrv2";
 $basedir      = "/nfs/disk100/wormpub/TEST_BUILD" if ($test); 
 my $outdir    = "$basedir/autoace/yellow_brick_road";
-my $datadir   = "$basedir/autoace/yellow_brick_road";
+
 
 
 my @gff_files = ('I','II','III','IV','V','X');
@@ -111,10 +111,10 @@ foreach my $chromosome (@gff_files) {
 
   my $file = "$outdir/CHROMOSOME_$chromosome.agp";
 
-  &error(1,$chromosome) unless ("-e $datadir/CHROMOSOME_${chromosome}.clone_acc.gff");
+  &error(1,$chromosome) unless ("-e $outdir/CHROMOSOME_${chromosome}.clone_acc.gff");
   
   # read data from gff file
-  open (GFF, "<$datadir/CHROMOSOME_$chromosome.clone_acc.gff");
+  open (GFF, "<$outdir/CHROMOSOME_$chromosome.clone_acc.gff");
   while (<GFF>) {
     
     $seq_len = "";
@@ -231,7 +231,7 @@ sub error {
   my $chromosome = shift;
   if ($error == 1){ 
     # No gff file to work from
-    print "The gff file '$datadir/CHROMOSOME_${chromosome}.clone_acc.gff' doesn't exist.\n";
+    print "The gff file '$outdir/CHROMOSOME_${chromosome}.clone_acc.gff' doesn't exist.\n";
     exit(0);
   }
   elsif ($error == 0) {
