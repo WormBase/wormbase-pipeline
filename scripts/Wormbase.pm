@@ -793,7 +793,7 @@ sub load_to_database {
   unless (-e "$file"){
     die " Couldn't find file named: $file\n";
   }
-  my $exe = &tace;
+  my $exe = glob("~wormpub/ACEDB/bin_ALPHA/tace");
   my $command = "pparse $file\nsave\nquit\n";
  
   open (WRITEDB, "| $exe -tsuser $tsuser $database ") || die "Couldn't open pipe to database\n";
