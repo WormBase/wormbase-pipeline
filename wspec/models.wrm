@@ -824,10 +824,12 @@
 			Matching_Genomic ?Sequence XREF Matching_cDNA
 		 	Matching_cDNA ?Sequence XREF Matching_Genomic #Evidence
 			Matching_UTR ?UTR XREF Matching_CDS // added for UTR model [krb 020729]
-			Matching_transcript ?Transcript XREF Matching_cDNA // for new gene model [krb 021126]
+			Matching_transcript ?Transcript XREF Matching_cDNA // to link ESTs/mRNAs to RNA genes
 			Matching_pseudogene ?Pseudogene XREF Matching_cDNA // for ESTs that match Pseudogenes [krb 030801]
                         Spliced_cDNA ?Sequence XREF Component_of Int UNIQUE Int UNIQUE Int UNIQUE Int
                         Component_of ?Sequence XREF Spliced_cDNA
+			Corresponding_transcript UNIQUE ?Transcript XREF Corresponding_CDS // to link coding genes to new style 
+											   // ar2 Transcripts, 1-2-1 relationship
 			Corresponding_protein UNIQUE ?Protein XREF Corresponding_DNA
 		  	Clone ?Clone XREF Sequence 
           	        Locus_genomic_seq ?Locus XREF Genomic_sequence   // Split genomic and other Locus XREFs
@@ -1026,7 +1028,8 @@
 			// Not ready for these two yet
 			Allele ?Allele XREF Transcript // added to fit two alleles of RNA genes [021127 krb]
 			Orthologue ?Transcript XREF Orthologue ?Species #Evidence  // [030310 krb]
-                        Matching_cDNA ?Sequence XREF Matching_transcript #Evidence
+                        Matching_cDNA ?Sequence XREF Matching_transcript #Evidence // to attach non-coding RNA genes to matching ESTs
+			Corresponding_CDS UNIQUE ?Sequence XREF Corresponding_transcript // new tag for 1-2-1 relationships with coding genes
                         Remark ?Text #Evidence
                         Confidential_remark ?Text
                         Brief_identification UNIQUE Text                           // [020306 kj]
