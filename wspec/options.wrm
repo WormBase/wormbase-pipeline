@@ -60,6 +60,7 @@ _VClone            -V -D PMAP
 _VAuthor           -V 
 _VJournal          -V
 _VPaper            -V -T Brief_citation
+-VDatabase         -V
 
 _VGene_Class       -V
 _VLocus            -V -D GMAP 
