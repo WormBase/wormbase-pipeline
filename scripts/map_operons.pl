@@ -2,8 +2,8 @@
 #
 # map_operons.pl
 
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2004-01-12 11:49:21 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2004-02-27 10:30:38 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -77,6 +77,9 @@ close OUTPUT;
 
 print "// end output file\n\n" if ($verbose);
 
+
+exit(0);
+
 # copy this file to correct place
 
 my $status = copy($output1, $output2);
@@ -126,7 +129,7 @@ sub acedump_operons {
     
     my $operon_start;
     my $operon_stop;
-    my $reset;
+    my $reset = 0;
     my $gene_count;
     my @f;
 
@@ -137,14 +140,15 @@ sub acedump_operons {
 	print OUTPUT "Operon : \"$operon_lookup\"\n";
 	print OUTPUT "Species \"Caenorhabditis elegans\"\n";
 
-	print "// Dump operon $operon_lookup\n";
+	print "\n// Dump operon $operon_lookup [$operon{$operon_lookup}->{CHROMOSOME}|$operon{$operon_lookup}->{NO_GENES}]\n";
 	
 	$gene_count = 1;
 	foreach my $gene_lookup (@{$operon{$operon_lookup}{CDS}}) {
 	    
-#	    print "// $gene_lookup\n";
+	    print "// Looking at $gene_lookup\t";
 
 	    if ($gene_count == 1) {
+#		print "// searching for start\n";
 		$operon_start = 0;
 		open (GFF_1, "grep -w '$gene_lookup' $gff/CHROMOSOME_${operon{$operon_lookup}->{CHROMOSOME}}.genes.gff |");
 		while (<GFF_1>) {
@@ -153,10 +157,11 @@ sub acedump_operons {
 		    if ($f[6] eq "-") {$operon_start = $f[4];}
 		}
 		close GFF_1;
-#		print "OP_start = $operon_start\n";
+		print "OP_start = $operon_start\n";
+		
 	    }
-	    
-	    if ($gene_count == $operon{$operon_lookup}->{NO_GENES}) {
+	    elsif ($gene_count == $operon{$operon_lookup}->{NO_GENES}) {
+#		print "// searching for stop\n";
 		$operon_stop = 0;
 		open (GFF_2, "grep -w '$gene_lookup' $gff/CHROMOSOME_${operon{$operon_lookup}->{CHROMOSOME}}.genes.gff |");
 		while (<GFF_2>) {
@@ -165,8 +170,12 @@ sub acedump_operons {
 		    ($operon_stop = $f[3]) if ($f[6] eq "-");
 		}
 		close GFF_2;
-#		print "OP_stop = $operon_stop\n";
+		print "OP_stop = $operon_stop\n";
 	    }
+	    else {
+		print "\n";
+	    }
+
 	    
 	    if (scalar (@{$cds{$gene_lookup}{SL1_EST}}) > 1) {
 		print OUTPUT "Contains_CDS \"$gene_lookup\" SL1 \"EST clones @{$cds{$gene_lookup}{SL1_EST}}\"\n";
@@ -199,6 +208,7 @@ sub acedump_operons {
 	print OUTPUT "\n";
 	
 	if (($operon_start == 0) || ($operon_stop == 0)) {
+	    print OUTPUT "\n//ERROR: MISSING COORDINATE for operon $operon{$operon_lookup}->{ACC}\n\n";
 	    print LOG "\n//ERROR: MISSING COORDINATE for operon $operon{$operon_lookup}->{ACC}\n\n";
 	    $errors++;
 	}
