@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 
 # Last updated by $Author: krb $
-# Last updated on: $Date: 2004-11-24 17:49:58 $
+# Last updated on: $Date: 2004-12-02 10:19:42 $
 
 package Geneace;
 
@@ -107,38 +107,6 @@ sub gene_info {
     $gene_info{$public_name}{'Gene'} = $gene        if $public_name;
   }
 
-  @gene_info = `cut -f 1,6 $outfile`;
-  foreach (@gene_info){
-    chomp $_;
-    my ($gene, $cds) = split(/\s+/, $_);
-    $gene =~ s/\"//g;
-    $cds =~ s/\"//g if $cds;
-    push(@{$gene_info{$gene}{'CDS'}}, $cds) if $cds;
-    $gene_info{$cds}{'Gene'} = $gene        if $cds;
-    push(@{$seqs_to_Gene_id{$cds}}, $gene)  if $cds;
-  }
-
-  @gene_info = `cut -f 1,7 $outfile`;
-  foreach (@gene_info){
-    chomp $_;
-    my ($gene, $trans) = split(/\s+/, $_);
-    $gene =~ s/\"//g;
-    $trans =~ s/\"//g if $trans;
-    push(@{$gene_info{$gene}{'Transcript'}}, $trans) if $trans;
-    $gene_info{$trans}{'Gene'} = $gene               if $trans;
-    push(@{$seqs_to_Gene_id{$trans}}, $gene)         if $trans;
-  }
-
-  @gene_info = `cut -f 1,8 $outfile`;
-  foreach (@gene_info){
-    chomp $_;
-    my ($gene, $pseudo) = split(/\s+/, $_);
-    $gene =~ s/\"//g;
-    $pseudo =~ s/\"//g if $pseudo;
-    push(@{$gene_info{$gene}{'Pseudogene'}}, $pseudo) if $pseudo;
-    $gene_info{$pseudo}{'Gene'} = $gene               if $pseudo;
-    push(@{$seqs_to_Gene_id{$pseudo}}, $gene)         if $pseudo;
-  }
   return (\%gene_info, \%seqs_to_Gene_id) if $option;
   return %gene_info if !$option;
 }
