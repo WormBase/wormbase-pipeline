@@ -7,8 +7,8 @@
 #
 # dl
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-04-26 10:36:39 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2004-05-05 11:10:49 $
 
 use lib "/wormsrv2/scripts/";
 use Wormbase;
@@ -100,6 +100,7 @@ while (<FILE>) {
     
     if ($swall{$f[2]}{Accession} ne $f[6]) { 
 	print "ERROR:  mismatch between getz and EBI for $protein [EBI:$f[6]|GETZ:$swall{$f[2]}{Accession})\n";
+	next;
     }
 
     if ($protein) {
@@ -116,6 +117,7 @@ while (<FILE>) {
     }
     else {
 	print "ERROR: gene $f[7] has no protein (has common_data been updated ?)\n";
+	next
     }
 
     print "\n" if ($verbose);
@@ -174,8 +176,8 @@ sub getswalldata {
 
     $/ = "ID";
 
-#    open (LOOK, "/usr/local/pubseq/bin/getzc -f 'id acc dbxref'  \"[SWALL-organism:Caenorhabditis elegans]\" |");
-    open (LOOK, "</nfs/disk100/wormpub2/dan/swall_all.txt");
+    open (LOOK, "/usr/local/pubseq/bin/getzc -f 'id acc dbxref'  \"[SWALL-organism:Caenorhabditis elegans]\" |");
+#    open (LOOK, "</nfs/disk100/wormpub2/dan/swall_all.txt");
     while (<LOOK>) {
 	$text = "ID" . $_;         # add the leading 'ID'
 	chop $text;                # remove the trailing 'ID'
@@ -214,7 +216,7 @@ sub getswalldata {
 		push (@{$swall{$i}{Interpro}},$j);
 	    }
 	    
-	    print "// Assign to proteinID $i [ID:$id\tAC:$acc\tDB:$db\tInterPro: " . (join ' ',@interpro) . "]\n";
+	    print "// Assign to proteinID $i [ID:$id\tAC:$acc\tDB:$db\tInterPro: " . (join ' ',@interpro) . "]\n" if $verbose;
 	}
 
 	@proteinID = "";
