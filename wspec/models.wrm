@@ -1,4 +1,3 @@
-
 // %W%    %G%
 // models.wrm - main file defining tree class structures
 // This file is read only when starting a new database or when you select 
@@ -25,9 +24,9 @@
 		Default_view UNIQUE ?View
 		Minimal_view UNIQUE ?View // use this when >1 map displayed
 		View ?View                // Columns to display
-        Inherits  From_map UNIQUE ?Map 	// To locally edit
-		  Author Text	// login name of who created it
- 	Main_Marker Main_Locus ?Locus 	// XREF Main_Marker removed to
+        Inherits  From_map UNIQUE ?Map    // To locally edit
+		  Author Text             // login name of who created it
+ 	Main_Marker Main_Locus ?Locus     // XREF Main_Marker removed to
 					// allow tag2 system
 		// tag2 system for items shown left of locator
 	Map ?Map XREF Map_shown #Map_position
@@ -388,6 +387,7 @@
   	     YAC
   	     cDNA
              Plasmid
+	     Other       // added to catch all clones 011017 dl
 	Transgene ?Transgene XREF Clone
         Derived_from	?Clone
 
