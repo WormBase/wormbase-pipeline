@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.25 2001-12-06 14:12:27 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.26 2001-12-10 10:03:56 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -855,6 +855,7 @@
 
 ?CDS	SMap S_parent Canonical_parent ?Sequence XREF CDS_child
 	S_child PCR_product ?PCR_product XREF Canonical_parent Int UNIQUE Int #SMap_info // added [011030 krb]
+                RNAi ?RNAi XREF Expressed_seq UNIQUE Int UNIQUE Int #SMap_info           // added [011210 krb]
 	Structure Source_exons Int UNIQUE Int
 	DB_info Protein_id ?Sequence UNIQUE Text UNIQUE Int // DB_info tag added [011030 krb]
 		DB_remark ?Text
@@ -1365,6 +1366,7 @@
 
 ?RNAi   SMap S_parent Sequence UNIQUE ?Sequence XREF RNAi       // canonical parent (reliable)
  		      PCR_product UNIQUE ?PCR_product XREF RNAi // primer pair (reliable)
+		      Expressed_seq ?CDS XREF RNAi		// added [011210 krb]
         Method ?Method
         Experiment      Laboratory ?Laboratory
                         Author ?Author
