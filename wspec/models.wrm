@@ -1272,7 +1272,7 @@
           DB_info  Database ?Database ?Database_field UNIQUE ?Accession_number XREF Protein
                    Gene_name  ?Text
                    Description   UNIQUE ?Text
-		   Molecular_weight Text #Evidence
+		   Molecular_weight Float #Evidence
           Origin   Species UNIQUE ?Species   //XREF Protein in geneace
                    Wormpep // for C. elegans or C. briggsae  proteins, used by subclass definitions
 		   Brigpep // 
