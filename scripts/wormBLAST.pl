@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2004-09-27 11:15:24 $
+# Last edited on: $Date: 2004-10-28 13:48:14 $
 
 
 use DBI;
@@ -151,7 +151,7 @@ if ( $update_databases ){
     if( /\/(gadfly|yeast|slimswissprot|slimtrembl_1|slimtrembl_2|wormpep|ipi_human|brigpep)/ ) {
       my $whole_file = "$1"."$'";  #match + stuff after match.
       if( $1 eq "wormpep" ) {
-	print "updating wormpep to version $WS_version anyway - make sure the data is there !\nCopying over will take care of setdb 'ing it\n";
+	print "updating wormpep to version $WS_version anyway - make sure the data is there !\nCopying over will take care of  formatting it\n";
 	$whole_file = "wormpep".$WS_version.".pep";
 	$currentDBs{$1} = "$whole_file";
 	next;
@@ -159,7 +159,7 @@ if ( $update_databases ){
       if( "$whole_file" ne "$currentDBs{$1}" ) {
 	#make blastable database
 	print "\tmaking blastable database for $1\n";
-	&run_command("setdb $wormpipe_dir/BlastDB/$whole_file");
+	&run_command("xdformat $wormpipe_dir/BlastDB/$whole_file");
 	push( @updated_DBs,$1 );
 	#change hash entry ready to rewrite external_dbs
 	$currentDBs{$1} = "$whole_file";
@@ -200,7 +200,7 @@ if( $mail )
     
     print LETTER "-------------------------------------------------------\n\nand replaced with the following files from ~wormpipe/BlastDB/\n\n";
     foreach (@updated_DBs){
-      print LETTER "$currentDBs{$_}\n$currentDBs{$_}.ahd\n$currentDBs{$_}.atb\n$currentDBs{$_}.bsq\n\n";
+      print LETTER "$currentDBs{$_}*\n\n";
     }
     
     #print LETTER "wormpep$WS_version.pep\nwormpep$WS_version.pep.ahd\nwormpep$WS_version.pep.atb\nwormpep$WS_version.pep.bsq\n\n";
