@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-04-15 14:27:10 $
+# Last updated on: $Date: 2003-04-16 17:29:06 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -20,7 +20,7 @@ use Getopt::Long;
 # variables and command-line options with aliases # 
 ###################################################
 
-my ($help, $debug, $database, $class, @class, $ace);
+my ($help, $debug, $database, $class, @class, $ace, $info);
 my $maintainers = "All";
 
 our $tace = &tace;   # tace executable path
@@ -33,7 +33,8 @@ GetOptions ("h|help"        => \$help,
             "d|debug=s"     => \$debug,
 	    "c|class=s"     => \@class,
 	    "db|database=s" => \$database,
-            "a|ace"         => \$ace,  
+            "a|ace"         => \$ace, 
+	    "i|info"        => \$info 
            );
 
 ################################################ 
@@ -41,6 +42,7 @@ GetOptions ("h|help"        => \$help,
 ################################################
 
 my $default_db;
+my $curr_db = "/nfs/disk100/wormpub/DATABASES/current_DB"; 
 
 # Display help if required
 &usage("Help") if ($help);
@@ -70,7 +72,6 @@ if ($ace){open (ACE, ">>$acefile") || die "Can't write to file!"}
 my $db = Ace->connect(-path  => $default_db,
 		      -program =>$tace) || do { print LOG "Connection failure: ",Ace->error; die();};
 
-
 ############## 
 # MAIN LOOPS #
 ##############
@@ -82,7 +83,6 @@ our $allele_errors = 0;
 our $strain_errors = 0;
 our $rearrangement_errors = 0;
 our $sequence_errors = 0;
-
 
 ####################################################
 # Process various classes looking for errors:      #
@@ -154,13 +154,23 @@ if ($cgc ne $JAHmsg){
 
 exit(0);
 
-##########################################
-# Checking misuse of Evidence in 7 classes
-##########################################
+#######################################
+# Check misuse of Evidence in 7 classes 
+# Convert Author to Person
+#######################################
+
+my (%L_name_F_WBP, %L_name_F_M_WBP);
+
 sub check_evidence {
 
-  print LOG "\nChecking misuse of Evidence:\n\n";
+my $WBPerson_F_M_L_names=<<EOF;
+Table-maker -p "/wormsrv1/geneace/wquery/WBperson_first_middle_last_names.def" quit
+EOF
 
+  my @WBPerson = &process_WBPerson_names($WBPerson_F_M_L_names, $curr_db);
+ 
+  print LOG "\nChecking misuse of Evidence and converting Authors to Persons:\n";
+  print LOG "--------------------------------------------------------------\n\n";
 my $command=<<END;
 find locus * 
 show -a -f /tmp/locus_dump.ace
@@ -196,7 +206,10 @@ END
   open(IN, "/tmp/class_dump.ace") || die $!;
 
   my $evid_errors = 0;
-  my ($class, $obj, $tag, $name, $paper, $author);
+  my $updates = 0;
+  my @counters;
+  my $info_num = 0;
+  my ($class, $obj, $tag, $name, $paper, $author, $last_name, $initials);
 
   while (<IN>){
     if ($_ =~ /^(Locus) : \"(.+)\"/){$class = $1; $obj = $2}
@@ -212,7 +225,10 @@ END
       $name = $2;
       if ($name !~ /WBPerson\d+/){
 	$evid_errors++;
-	print LOG "$class $obj has non-Person $name under main tag $tag\n";
+	print LOG "\nERROR: $class $obj has non-Person $name under main tag $tag\n";
+	@counters = get_WBPerson_ID($name, $class, $obj, $tag); 
+	$updates += $counters[1];
+	$info_num += $counters[2]; 
       }  
     }
     if ($_ =~ /(\w+)\s+.+Paper_evidence\s+\"(.+)\"/){
@@ -220,20 +236,120 @@ END
       $paper = $2;
       if ($paper !~ /\[.+]/){
         $evid_errors++;
-	print LOG "$class $obj has Paper $paper under main tag $tag\n";
+	print LOG "\nERROR: $class $obj has Paper $paper under main tag $tag\n";
       }  
     }
     if ($_ =~ /(\w+)\s+.+Author_evidence\s+\"(.+)\"/){
-       $tag = $1;
-       $author = $2;
-      if ($author =~ /\w+\,\w+/ || $author =~ /\w+\,\s+\w+/){
-	$evid_errors++;
-	print LOG "$class $obj has Author $author under main tag $tag\n";
-      }  
+      $tag = $1;
+      $author = $2;
+      @counters = get_WBPerson_ID($author, $class, $obj, $tag); 
+      $evid_errors += $counters[0];
+      $updates += $counters[1];
+      $info_num += $counters[2]; 
     }
   }
-  print LOG "There are $evid_errors Evidence errors in 7 classes checked\n";
-}
+  print LOG "\n\nThere are $evid_errors Evidence errors in 7 classes checked\n";
+  print LOG "\n$updates Authors can be converted to Persons\n";
+  print LOG "\n$info_num Authors are not Persons\n";
+
+  #################################################################
+  # subroutines for checking evidence & converting Author to Person
+  #################################################################
+
+  sub process_WBPerson_names {
+    my ($def, $db)=@_;
+    my ($WBPerson, $F_name, $M_name, $L_name, $F_char, $M_char);
+    open (FH1, "echo '$def' | tace $db | ") || die "Couldn't access current_DB\n";
+    while (<FH1>){
+      chomp($_);
+      if ($_ =~ /^\"(WBPerson\d+)\"\s+\"(\w+)\"\s+\"(\w+|\w+.)\"\s+\"(\w+|\w+-\w+)\"$/){ 
+	$WBPerson = $1;
+	$F_name = $2;
+	$M_name = $3;
+	$L_name = $4;
+	$F_char = substr ($F_name, 0, 1);
+	$M_char = substr ($M_name, 0, 1);
+	push (@{$L_name_F_M_WBP{$L_name}}, $F_char.$M_char, $F_char, $WBPerson);
+      }
+      if ($_ =~ /^\"(WBPerson\d+)\"\s+\"(\w+)\"\s+\"(\w+|\w+-\w+)\"$/){ 
+	$WBPerson = $1;
+	$F_name = $2;
+	$L_name = $3;
+	$F_char = substr ($F_name, 0, 1);
+	push (@{$L_name_F_WBP{$L_name}}, $F_char, $WBPerson);
+      } 
+      
+    }
+  }
+
+  sub get_WBPerson_ID {
+    my ($name, $class, $obj, $tag) = @_;
+    my ($last_name, $initials, $num);
+    my $convert = 0;
+    my $info_count = 0;
+    my $evid_errors = 0;
+
+    if ($name =~ /\w+\,\w+/ || $name =~ /\w+\,\s+\w+/){
+      $evid_errors++;
+      print LOG "\nERROR: $class $obj has Author $name under main tag $tag\n";
+      ($last_name, $initials) = split(/ /, $name);
+      $last_name =~ s/,//;
+    }
+    else {
+      ($last_name, $initials) = split(/ /, $name);
+    }
+    
+    if (!exists $L_name_F_WBP{$last_name} && !exists $L_name_F_M_WBP{$last_name}){
+      if ($info){
+	$info_count++;
+	print LOG "\nINFO: $class $obj has Author $name under main tag $tag: NOT a Person object\n";
+      }	
+    }
+    if (exists $L_name_F_WBP{$last_name}){
+      $num = scalar @{$L_name_F_WBP{$last_name}};
+      
+      for (my $i=0; $i< $num; $i=$i+2){
+	if ($initials eq @{$L_name_F_WBP{$last_name}}->[$i]){
+	  $convert++;
+	  print LOG "\nUPDT: $class $obj has Author $name under main tag $tag\n";
+	  if ($num == 2){
+	    print LOG "=====>Author $name can now be Person @{$L_name_F_WBP{$last_name}}->[$i+1]\n";   
+	  }
+	  else {
+	    print LOG "=====>Author $name might be Person @{$L_name_F_WBP{$last_name}}->[$i+1]\n";   
+	  }
+	}
+      }
+    }
+    
+    if (exists $L_name_F_M_WBP{$last_name}){
+      $num = scalar @{$L_name_F_M_WBP{$last_name}};
+      for (my $i=0; $i<scalar @{$L_name_F_M_WBP{$last_name}}; $i=$i+3){ 
+	if ($initials eq @{$L_name_F_M_WBP{$last_name}}->[$i]){   
+	  $convert++;
+	  print LOG "\nUPDT: $class $obj has Author $name under main tag $tag\n";
+	  if ($num == 3){
+	    print LOG "=====>Author $name can now be Person @{$L_name_F_M_WBP{$last_name}}->[$i+2]\n";
+	  }
+	  else {
+	    print LOG "=====>Author $name might be Person @{$L_name_F_M_WBP{$last_name}}->[$i+2]\n";
+	  }
+	}
+	if ($initials eq @{$L_name_F_M_WBP{$last_name}}->[$i+1]){
+	  $convert++;
+	  print LOG "\nUPDT: $class $obj has Author $name under main tag $tag\n";
+	  if ($num == 3){
+	    print LOG "=====>Author $name might be Person @{$L_name_F_M_WBP{$last_name}}->[$i+2]\n";
+	  }
+	  else {
+	    print LOG "=====>Author $name might be Person @{$L_name_F_M_WBP{$last_name}}->[$i+2]\n";
+	  }
+	}
+      }
+    }
+    return $evid_errors, $convert, $info_count;
+  }
+}	
 
 #######################
 # Process Locus class #
