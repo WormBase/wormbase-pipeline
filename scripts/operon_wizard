@@ -55,6 +55,9 @@ getopts ('abzqdcjyst:exwfmlr:p:k:n:');
 # w       : dump files for website generation
 
 
+# do everything in /wormsrv2/autoace/OPERONS
+chdir("/wormsrv2/autoace/OPERONS");
+
 &recreate_hashes;
 
 &report($opt_r) if ($opt_r);
