@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-05-30 08:49:53 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2003-06-18 14:59:29 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -98,7 +98,7 @@ sub create_log_file{
   my $rundate = `date +%y%m%d`; chomp $rundate;
   $runtime = &runtime;
   $log="/wormsrv2/logs/make_FTP_sites.pl.$rundate.$$";
-  open (LOG,">$log");
+ open (LOG,">$log");
   LOG->autoflush();
 
   print LOG "make_FTP_sites.pl started at $runtime\n\n";
@@ -384,7 +384,8 @@ sub copy_homol_data{
   
   system("cp $blast_dir/blastp_ensembl.ace          $private_ftp/${release}_blastp_data.ace");
   system("cp $blast_dir/blastx_ensembl.ace          $private_ftp/${release}_blastx_data.ace");
-  system("cp $blast_dir/ensembl_motif_info.ace      $private_ftp/${release}_protein_motif_data.ace");
+  system("cp $blast_dir/wormprot_motif_info.ace     $private_ftp/${release}_protein_motif_data.ace");
+  system("cp $blast_dir/worm_brigprot_motif_info.ace    $private_ftp/${release}brig_protein_motif_data.ace");
 
   system("/bin/gzip $private_ftp/*ace");
 
