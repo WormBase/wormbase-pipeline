@@ -4,22 +4,8 @@
 #
 # by Keith Bradnam aged 12 and a half
 # 15/06/01
-
-# This script is designed to check the predicted gene objects from any wormbase database
-# (specify the required database name on the command line).  The script will check for:
 #
-# 1)  Incorrect sequence length (not a multiple of three)
-# 2)  Improper start codon with no 'Start_not_found' tag present
-# 3)  Improper end codon with no 'End_not_found' tag present
-# 4)  Internal stop codons
-# 5)  Non ATCG characters in the sequence
-# 6)  Sequences which don't have a 'Species = Caenorhabditis elegans' tag-value pair
-# 7)  Subsequences which belong to superlink objects
-# 8)  Subsequences which have 'Method = hand_built'
-# 9) Presence of 'Source' tag
-# 10) Inconsistencies in exon coordinates, i.e. where adjacent exons might have overlapping 
-#     coordinates
-# 11) Checks for presence of 'From_laboratory' tag
+# see pod documentation at end of file for more information about this script
 
 use Ace;
 use IO::Handle;
@@ -258,4 +244,119 @@ sub test_gene_sequence_for_errors{
 
 }
 
+__END__
 
+=pod
+
+=head1 NAME - check_predicted_genes.pl
+
+=back
+
+
+=head1 USAGE
+
+=over 4
+
+=item check_predicted_genes.pl path_to_acedb_database [log_file] 
+
+=back
+
+This script is designed to check the validity of predicted gene objects from any wormbase (or
+other acedb) database.  The script will only analyse objects in the 'Predicted_gene' class.
+
+
+=over 4
+
+=item MANDATORY arguments:
+
+First argument must be a path to a valid acedb database, e.g.
+check_predicted_genes.pl /wormsrv2/camace
+
+=back
+
+=over 4
+
+=item OPTIONAL arguments:
+
+A log file can be named as a second optional argument.  If such a file already
+exists, output will be appended to it.  If it doesn't exist, then such a file will be 
+created.  If no log file is specified then all output will be sent to STDOUT as the 
+default.  
+
+=back
+
+
+
+=head1 DOCUMENTATION
+
+=over 4
+
+=back
+
+check_predicted_genes.pl performs a wide range of checks on predicted gene objects to ensure
+that they are valid objects and will behave properly within the database.  The script was
+written to be called from within the I<camcheck> script which performs a wider range of error
+checking on the camace database, but the script can also be run as a standalone program to check
+the status of other wormbase databases such as autoace, stlace etc.
+
+The script checks predicted genes for the following:
+
+=over 4
+
+=item 1.
+
+Incorrect sequence length (i.e. length in bp is not a multiple of three)
+
+=item 2.
+
+Improper start codon with no 'Start_not_found' tag present
+
+
+=item 3.
+
+Improper end codon with no 'End_not_found' tag present
+
+=item 4.
+
+Internal stop codons
+
+=item 5.
+
+Non ATCG characters in the sequence
+
+=item 6.
+
+Sequences which don't have a 'Species = Caenorhabditis elegans' tag-value pair
+
+=item 7.
+
+Subsequences which belong to superlink objects
+
+=item 8.
+
+Subsequences which have 'Method = hand_built'
+
+=item 9.
+
+Presence of 'Source' tag
+
+=item 10.
+
+Inconsistencies in exon coordinates, i.e. where the coordinates of any two exons in 
+a gene might overlap
+
+=item 11.
+
+Checks for presence of 'From_laboratory' tag
+
+
+=head1 SEE ALSO
+
+L<camcheck>
+
+
+=head1 AUTHOR - Keith Bradnam
+
+Email krb@sanger.ac.uk
+
+=cut
