@@ -7,7 +7,7 @@
 # Ashwin Hajarnavis ah3@sanger.ac.uk  August 2002
 #
 # Last updated by: $Author: ck1 $                 
-# Last updated on: $Date: 2003-02-17 11:18:42 $   
+# Last updated on: $Date: 2003-05-06 15:04:55 $   
 
 # touch logfile for run details
 $0 =~ m/\/*([^\/]+)$/; system("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
@@ -235,7 +235,7 @@ sub print_ace {
    print ACEFILE "\nUTR :\t\"$type:$gene_id\"\n";
    print ACEFILE "Matching_CDS\t$gene_id\n";
    if ($ESTacc2ESTname{$evidence} ne "") {
-       print ACEFILE "$type\tAccession_evidence\t\"$ESTacc2ESTname{$evidence}\"\n";
+       print ACEFILE "$type\tAccession_evidence\t\"EMBL\"\t\"$ESTacc2ESTname{$evidence}\"\n";
    }
    else {
        print ACEFILE "$type\n";
