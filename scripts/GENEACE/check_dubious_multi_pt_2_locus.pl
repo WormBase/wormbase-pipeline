@@ -2,14 +2,13 @@
 
 # Author: Chao-Kung Chen
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-05-12 16:04:34 $ 
+# Last updated on: $Date: 2004-05-12 16:07:41 $ 
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
 use Ace;
 use Getopt::Long;
-use lib "/nfs/team71/worm/ck1/WORMBASE_CVS/scripts";
 use GENEACE::Geneace;
 
 my $tace        = &tace;

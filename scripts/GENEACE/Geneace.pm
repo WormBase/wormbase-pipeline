@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-04-30 10:36:35 $
+# Last updated on: $Date: 2004-05-12 16:07:41 $
 
 package Geneace;
 
@@ -11,7 +11,11 @@ use Wormbase;
 use Coords_converter;
 use strict;
 
-my $def_dir = "/wormsrv1/geneace/wquery/";
+my $def_dir = "/wormsrv1/geneace/wquery";           # location of table-maker definitions
+my $test_def_dir ="/nfs/disk100/wormpub/ck1";       # location of table-maker definitions for running this script not on wormsrv2
+my $machine = ();
+$machine = "+" if `ls /wormsrv1/`;                  # if sees wormsrv1 then $machine is defined, else it remains undef: for running on cbi1, eg
+
 my $curr_db = "/nfs/disk100/wormpub/DATABASES/current_DB";
 my $geneace_dir = "/wormsrv1/geneace";
 #my $tace = &tace;
@@ -43,20 +47,22 @@ sub test_geneace {
 }
 
 sub gene_info {
-  my ($this, $db) = @_;
+  my ($this, $db, $option) = @_;
   shift;
 
   $db = "/wormsrv1/geneace" if !$db;
+  print "----- Gene id <-> Gene_name conversion based on $db -----\n\n";
 
-  my $outfile = "/tmp/gene_info.tmp";
-  my %gene_info;
+  my $outfile = "/tmp/gene_info.tmp"; `chmod 777 $outfile`;
+  my (%gene_info, %seqs_to_Gene_id);
 
-  my $gene_info="Table-maker -o $outfile -p \"/wormsrv1/geneace/wquery/geneace_gene_info.def\"\nquit\n";
+  my $gene_info="Table-maker -o $outfile -p \"$def_dir/geneace_gene_info.def\"\nquit\n" if $machine;
+     $gene_info="Table-maker -o $outfile -p \"$test_def_dir/geneace_gene_info.def\"\nquit\n" if !$machine;
 
   open (FH, "echo '$gene_info' | $tace $db |") || die "Couldn't access $db\n";
   while(<FH>){}
 
-  my @gene_info = `cut -f 1-2 $outfile`;
+  my @gene_info = `cut -f 1,2 $outfile`;
   foreach (@gene_info){
     chomp $_;
     my ($gene, $cgc_name) = split(/\s+/, $_);
@@ -66,7 +72,7 @@ sub gene_info {
     $gene_info{$cgc_name}{'Gene'} = $gene     if $cgc_name;
   }
 
-  @gene_info = `cut -f 1-3 $outfile`;
+  @gene_info = `cut -f 1,3 $outfile`;
   foreach (@gene_info){
     chomp $_;
     my ($gene, $seq_name) = split(/\s+/, $_);
@@ -76,17 +82,17 @@ sub gene_info {
     $gene_info{$seq_name}{'Gene'}      = $gene     if $seq_name;
   }
 
-  @gene_info = `cut -f 1-4 $outfile`;
+  @gene_info = `cut -f 1,4 $outfile`;
   foreach (@gene_info){
     chomp $_;
     my ($gene, $other_name) = split(/\s+/, $_);
     $gene =~ s/\"//g;
     $other_name =~ s/\"//g;
-    $gene_info{$gene}{'Other_name'} = $other_name if $other_name;
-    $gene_info{$other_name}{'Gene'} = $gene       if $other_name;
+    push(@{$gene_info{$gene}{'Other_name'}}, $other_name) if $other_name;
+    $gene_info{$other_name}{'Gene'} = $gene               if $other_name;
   }
 
-  @gene_info = `cut -f 1-5 $outfile`;
+  @gene_info = `cut -f 1,5 $outfile`;
   foreach (@gene_info){
     chomp $_;
     my ($gene, $public_name) = split(/\s+/, $_);
@@ -96,36 +102,40 @@ sub gene_info {
     $gene_info{$public_name}{'Gene'} = $gene        if $public_name;
   }
 
-  @gene_info = `cut -f 1-6 $outfile`;
+  @gene_info = `cut -f 1,6 $outfile`;
   foreach (@gene_info){
     chomp $_;
     my ($gene, $cds) = split(/\s+/, $_);
     $gene =~ s/\"//g;
-    $cds =~ s/\"//g;
+    $cds =~ s/\"//g if $cds;
     push(@{$gene_info{$gene}{'CDS'}}, $cds) if $cds;
-    $gene_info{$cds}{'Gene'} = $gene if $cds;
+    $gene_info{$cds}{'Gene'} = $gene        if $cds;
+    push(@{$seqs_to_Gene_id{$cds}}, $gene)  if $cds;
   }
 
-  @gene_info = `cut -f 1-7 $outfile`;
+  @gene_info = `cut -f 1,7 $outfile`;
   foreach (@gene_info){
     chomp $_;
     my ($gene, $trans) = split(/\s+/, $_);
     $gene =~ s/\"//g;
-    $trans =~ s/\"//g;
+    $trans =~ s/\"//g if $trans;
     push(@{$gene_info{$gene}{'Transcript'}}, $trans) if $trans;
-    $gene_info{$trans}{'Gene'} = $gene if $trans;
+    $gene_info{$trans}{'Gene'} = $gene               if $trans;
+    push(@{$seqs_to_Gene_id{$trans}}, $gene)         if $trans;
   }
 
-  @gene_info = `cut -f 1-8 $outfile`;
+  @gene_info = `cut -f 1,8 $outfile`;
   foreach (@gene_info){
     chomp $_;
     my ($gene, $pseudo) = split(/\s+/, $_);
     $gene =~ s/\"//g;
-    $pseudo =~ s/\"//g;
+    $pseudo =~ s/\"//g if $pseudo;
     push(@{$gene_info{$gene}{'Pseudogene'}}, $pseudo) if $pseudo;
-    $gene_info{$pseudo}{'Gene'} = $gene if $pseudo;
+    $gene_info{$pseudo}{'Gene'} = $gene               if $pseudo;
+    push(@{$seqs_to_Gene_id{$pseudo}}, $gene)         if $pseudo;
   }
-  return %gene_info;
+  return (\%gene_info, \%seqs_to_Gene_id) if $option;
+  return %gene_info if !$option;
 }
 
 sub parse_inferred_multi_pt_obj {
@@ -178,24 +188,24 @@ sub cgc_name_is_also_other_name {
   return @exceptions;
 }
 
-sub loci_have_multi_pt {
+sub gene_id_has_multi_pt {
   my ($this, $db) = @_;
-  push( my @locus_has_multi, $db->find("Find Locus * where Multi_point") );
+  push( my @gene_ids_have_multi, $db->find("Find Gene * where Multi_point") );
 
-  my %locus_2_multi;
-  foreach (@locus_has_multi){
-    push(@{$locus_2_multi{$_}}, $_ -> Multi_point(1) );
+  my %gene_id_2_multi;
+  foreach (@gene_ids_have_multi){
+    push(@{$gene_id_2_multi{$_}}, $_ -> Multi_point(1) );
   }
-  return %locus_2_multi;
+  return %gene_id_2_multi;
 }
 
 sub clone_to_lab {
   my $this = shift;
   my %clone_lab;
 
-  my $clone_to_lab=<<EOF;
-  Table-maker -p "/wormsrv1/geneace/wquery/clone_to_lab.def" quit
-EOF
+  my $clone_to_lab="Table-maker -p \"/$def_dir/clone_to_lab.def\"\nquit\n" if $machine;
+     $clone_to_lab="Table-maker -p \"/$test_def_dir/clone_to_lab.def\"\nquit\n" if !$machine;
+
   open (FH, "echo '$clone_to_lab' | $tace $curr_db |") || die "Couldn't access $curr_db\n";
   while (<FH>){
     chomp $_;
@@ -262,9 +272,9 @@ sub get_overlapped_clones {
   my $this = shift;
   my %overlapped_clone;
 
-  my $get_overlapped_clones=<<EOF;
-  Table-maker -p "/wormsrv1/geneace/wquery/get_overlapped_clones.def" quit
-EOF
+  my $get_overlapped_clones="Table-maker -p \"$def_dir/get_overlapped_clones.def\"\nquit\n" if $machine;
+     $get_overlapped_clones="Table-maker -p \"$test_def_dir/get_overlapped_clones.def\"\nquit\n" if !$machine;
+
   open (FH, "echo '$get_overlapped_clones' | $tace $curr_db |") || die "Couldn't access $curr_db\n";
   while (<FH>){
     chomp $_;
@@ -285,6 +295,42 @@ sub get_non_Transposon_alleles {
   foreach (@alleles){$Alleles{$_}++}
   return %Alleles;
 }
+
+sub allele_desig_to_lab {
+  my ($this, $db)=@_;
+  my %allele_desig_LAB;
+
+  my $def="Table-maker -p \"$def_dir/allele_designation_to_LAB.def\"\nquit\n" if $machine;
+     $def="Table-maker -p \"$test_def_dir/allele_designation_to_LAB.def\"\nquit\n" if !$machine;
+
+  open (FH, "echo '$def' | $tace $db | ") || die "Couldn't access geneace\n";
+  while (<FH>){
+    chomp$_;
+    if ($_ =~ /^\"(.+)\"\s+\"(.+)\"/){
+      $allele_desig_LAB{$2} = $1  # $2 is allele_designation $1 is LAB	
+    }
+  }
+  return %allele_desig_LAB;
+}
+
+sub allele_to_gene_id {
+  my ($this, $db)=@_;
+  my %allele_to_gene_id;
+
+  my $def="Table-maker -p \"$def_dir/allele_to_gene_id.def\"\nquit\n" if $machine;
+     $def="Table-maker -p \"$test_def_dir/allele_to_gene_id.def\"\nquit\n" if !$machine;
+
+  open (FH, "echo '$def' | $tace $db | ") || die "Couldn't access geneace\n";
+  while (<FH>){
+    chomp$_;
+    if ($_ =~ /^\"(.+)\"\s+\"(.+)\"/){
+      push(@{$allele_to_gene_id{$2}}, $1);  # $2 is allele_designation $1 is LAB	
+    }
+  }
+  return %allele_to_gene_id;
+
+}
+
 
 sub convert_2_WBPaper {
 
