@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-09-09 08:16:34 $
+# Last updated on: $Date: 2004-10-11 10:28:23 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -1192,7 +1192,7 @@ sub int_map_to_map_loci {
 
   # need to increment again because this is run before autoace_minder -initial is run so build hasn't actually started
   my $version = $next_build_ver +1;
-  open(INT_map_TO_MAP, ">/wormsrv1/geneace/JAH_DATA/MULTI_PT_INFERRED/loci_become_genetic_marker_for_WS$version") || die $!;
+  open(INT_map_TO_MAP, ">/wormsrv1/geneace/JAH_DATA/MULTI_PT_INFERRED/loci_become_genetic_marker_for_WS$version.ace") || die $!;
 
   # create a list of "promoted" loci
   push( my @int_loci, $db->find($int_loci) );
