@@ -7,7 +7,7 @@
 # Usage : autoace_minder [-options]
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2002-10-14 09:30:54 $
+# Last edited on: $Date: 2002-10-17 14:25:13 $
 
 
 #################################################################################
@@ -131,7 +131,8 @@ our %flag = (
 	     'C2'  => 'C2:Split_GFF_files',
 	     'C3'  => 'C3:Map_PCR_products',
 	     'C4'  => 'C4:Confirm_gene_models',
-	     'D1'  => 'D1:Build_wormpep',
+	     'D1A' => 'D1:Build_wormpep_initial',
+	     'D1'  => 'D1:Build_wormpep_final',
 	     'D2'  => 'D2:Update_pepace',
 	     'D3'  => 'D3:Add_protein_data_to_autoace',
 	     'D4'  => 'D4:Build_wormrna',
@@ -1262,36 +1263,46 @@ sub generate_utrs {
 sub make_wormpep {
   $am_option = "-buildpep";
   # make wormpep database but also perform all the other related protein steps in the build
+  if( -e "$logdir/D1A:Build_wormpep_initial" ) {
+    # make wormpep -i
+    $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Running make_wormpep -i at $runtime\n";
+    system ("$scriptdir/make_wormpep -i") && die "Couldn't run make_wormpep -i\n";
+    $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Finished running make_wormpep -i at $runtime\n"; 
+   
+    #generate file to ad new peptides to mySQL database.
+    $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "\nRunning new_wormpep_entries.pl at $runtime\n";
+    system ("$scriptdir/new_wormpep_entries.pl") and die "Couldn't run new_wormpep_entries.pl\n";
+    $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Finished running new_wormpep_entries.pl at $runtime\n";
 
-  # Get protein IDs (this step writes to ~wormpub/analysis/SWALL
-  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Started getSwissTrembldata.pl at $runtime\n";
-  system("getSwissTrembldata.pl") && die "Couldn't run getSwissTrembldata.pl";
-  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Finished getSwissTrembldata.pl at $runtime\n";
-
-  # Now process this information to get...protein IDs ????
-  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Started GetIDandAC.pl at $runtime\n";
-  system("GetIDandAC.pl") && die "Couldn't run GetIDandAC.pl";
-  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Finished GetIDandAC.pl at $runtime\n";
-  # load into autoace
-  my $command = "pparse /wormsrv2/autoace/wormpep_ace/WormpepACandIDs.ace\nsave\nquit\n"; 
-  open (WRITEDB, "| $tace -tsuser utr_data /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
-  print WRITEDB $command;
-  close WRITEDB;
-  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Finished loading proteinID info into autoace at $runtime\n";
-
-
-  # make wormpep
-  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Running make_wormpep -r at $runtime\n";
-  system ("$scriptdir/make_wormpep -r $WS_version") && die "Couldn't run make_wormpep -r\n";
-  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Finished running make_wormpep -r at $runtime\n";
-
-  #generate file to ad new peptides to mySQL database.
-  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "\nRunning new_wormpep_entries.pl at $runtime\n";
-  system ("$scriptdir/new_wormpep_entries.pl") and die "Couldn't run new_wormpep_entries.pl\n";
-  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Finished running new_wormpep_entries.pl at $runtime\n";
-
-  # make a make_autoace log file in /logs
-  system ("touch $logdir/D1:Build_wormpep");
+    system ("touch $logdir/D1A:Build_wormpep_initial");
+  }
+  else {
+    # Get protein IDs (this step writes to ~wormpub/analysis/SWALL
+    $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Started getSwissTrembldata.pl at $runtime\n";
+    system("getSwissTrembldata.pl") && die "Couldn't run getSwissTrembldata.pl";
+    $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Finished getSwissTrembldata.pl at $runtime\n";
+    
+    # Now process this information to get...protein IDs ????
+    $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Started GetIDandAC.pl at $runtime\n";
+    system("GetIDandAC.pl") && die "Couldn't run GetIDandAC.pl";
+    $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Finished GetIDandAC.pl at $runtime\n";
+    
+    # load into autoace
+    my $command = "pparse /wormsrv2/autoace/wormpep_ace/WormpepACandIDs.ace\nsave\nquit\n"; 
+    open (WRITEDB, "| $tace -tsuser utr_data /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
+    print WRITEDB $command;
+    close WRITEDB;
+    $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Finished loading proteinID info into autoace at $runtime\n";
+    
+    # make wormpep
+    $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Running make_wormpep -f at $runtime\n";
+    system ("$scriptdir/make_wormpep -f") && die "Couldn't run make_wormpep -f\n";
+    $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Finished running make_wormpep -f at $runtime\n";
+    
+    
+    # make a make_autoace log file in /logs
+    system ("touch $logdir/D1:Build_wormpep_final");
+  }
 }
 #__ end make_wormpep  __#
 
