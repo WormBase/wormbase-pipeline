@@ -13,10 +13,12 @@ my $output_name = shift;
 my $count = 0;
 my $output_count = 1;
 my $line;
-                                                                                                                            
-open (OUTPUT, ">${output_name}_${output_count}") || die "can't open file\n" ;
 
-open (FILE, "<$file");
+print "trying to shatter $file in to $bin_size called $output_name\n";
+
+open (OUTPUT, ">${output_name}_${output_count}") || die "can't open file ${output_name}_${output_count} :$! \n" ;
+
+open (FILE, "<$file") or die "cant open $file :$!\n";
 while (<FILE>) {
     $line = $_;
 
@@ -27,7 +29,7 @@ while (<FILE>) {
 
 	    $output_count++;
 
-	    open (OUTPUT, ">${output_name}_${output_count}") || die "can't open file\n" ;
+	    open (OUTPUT, ">${output_name}_${output_count}") || die "can't open file ${output_name}_${output_count} :$!\n" ;
 
 	    $count = 0;
 	}
