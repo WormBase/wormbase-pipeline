@@ -7,7 +7,7 @@
 # Usage : genestatsr.pl [-options]
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2005-03-24 11:42:38 $
+# Last edited on: $Date: 2005-03-24 11:49:16 $
  
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -43,10 +43,9 @@ $command .= "quit\n";
 
 # database connection
 
-open (TACE,"echo '$command' | $tace $db_path |");
+open (TACE,"echo '$command' | $tace $database |");
 while (<TACE>) {
     chomp;
-    print "$_\n" if ($verbose);
     if (/\/\/ Found (\d+) objects/) {
 	push (@values,$1);
     }
@@ -92,3 +91,51 @@ close OUT;
 
 # hasta luego
 exit(0);
+
+##########################################
+
+
+__END__
+
+=pod
+
+=head1 NAME 
+
+=over 4
+
+=item genestats.pl
+
+=back
+
+=head1 USAGE
+
+=over 4
+
+=item genestats.pl 
+
+=back
+
+Queries autoace to extract a number of counts for the Live gene class. Computes percentage values to 1 decimel place and
+write the report to /wormsrv2/autoace/REPORTS.
+
+=back
+
+=over 4
+
+=head1 REQUIREMENTS
+
+=over 4
+
+=item This script must run on a machine which can see the /wormsrv2 disk.
+
+=back
+
+=head1 AUTHOR
+
+=over 4
+
+=item Daniel Lawson (dl1@sanger.ac.uk)
+
+=back
+
+=cut
