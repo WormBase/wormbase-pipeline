@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.7 2001-09-07 08:54:42 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.8 2001-09-12 12:53:53 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -684,6 +684,7 @@
 		  Clone ?Clone XREF Reference
 		  Protein ?Protein XREF Reference
 		  Expr_pattern ?Expr_pattern XREF Reference
+		  Expr_profile ?Expr_profile XREF Reference // Added to fit new Expr_profile class [010912 krb]
                   Cell ?Cell XREF Reference
                   Cell_group ?Cell_group XREF Reference
                   Life_stage ?Life_stage XREF Reference
@@ -1200,6 +1201,22 @@
 		Reference ?Paper XREF Expr_pattern
                 Transgene ?Transgene XREF Expr_pattern
 
+
+// NEW Expr_profile and SK_map classes added at request of Raymond [010912 krb]
+
+?Expr_profile SMap S_parent PCR_product UNIQUE ?PCR_product XREF Expr_profile
+              Method ?Method
+              Expr_map ?SK_map
+              Reference ?Paper //XREF Expr_profile
+              Remark ?Text
+
+?SK_map       X_coord UNIQUE Float
+              Y_coord UNIQUE Float
+              Mountain UNIQUE Int
+              Date UNIQUE DateType
+              Remark ?Text
+
+
 ?Picture Description ?Text
 	 Pick_me_to_call Text Text
 	 Expr_pattern ?Expr_pattern XREF Picture
@@ -1351,6 +1368,7 @@
 
 ?PCR_product SMap S_parent Canonical_parent UNIQUE ?Sequence XREF PCR_product
  		  S_child RNAi ?RNAi XREF PCR_product UNIQUE Int UNIQUE Int #SMap_info
+			  Expr_profile ?Expr_profile XREF PCR_product // for new Expr_profile class [010912 krb]
  	     Method ?Method
  	     Overlaps_CDS ?CDS XREF Corresponding_PCR_product  // added for Dan PCR mappings [010419 dl]
 	     Oligo ?Oligo UNIQUE Int UNIQUE Int
