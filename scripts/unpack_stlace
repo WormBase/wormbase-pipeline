@@ -37,8 +37,8 @@ $|=1;
 use IO::Handle;
 use Getopt::Std;
 use Cwd;
-#use strict;
-require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
+use strict;
+require "/wormsrv2/scripts/babel.pl";
 
  ##############################
  # Script variables (run)     #
@@ -48,7 +48,10 @@ my $maintainer = "dl1\@sanger.ac.uk";
 my $rundate    = `date +%y%m%d`; chomp $rundate;
 my $runtime    = `date +%H:%M:%S`; chomp $runtime;
 my $logfile    = "/wormsrv2/logs/unpack_stlace.$rundate.$$";
-my $version    = &get_script_version("unpack_stlace");
+
+# grab cvs version number
+my $version = `cvs -d /nfs/ensembl/cvsroot/ status /wormsrv2/scripts/unpack_stlace`;
+$version =~ s/.* +Repository revision:\s+([\d\.]*)\s+.*/$1/s; 
 
  ##############################
  # Paths for I/O files        #
@@ -66,8 +69,8 @@ my $filename  = "";
  # command-line options       #
  ##############################
 
-$opt_h = "";   # Help/Usage page
-$opt_r = "";   # Release date of database.tar.gz files
+my $opt_h = "";   # Help/Usage page
+my $opt_r = "";   # Release date of database.tar.gz files
 
 getopts ('hr:');
 &usage if ($opt_h);
@@ -81,8 +84,9 @@ my $today = "20" . substr($opt_r,0,2) . "-" . substr($opt_r,2,2) . "-" . substr(
  # open logfile               #
  ##############################
 
-system ("/bin/touch $logfile");
-open (LOGFILE,">>$logfile");
+system ("/bin/touch $logfile") && die "Couldn't run touch. Exit status: $?\n";
+
+open (LOGFILE,">>$logfile") || die "Couldn't append to $logfile\n";
 LOGFILE->autoflush;
 
 print LOGFILE "# unpack_stlace\n#\n";
@@ -102,20 +106,20 @@ my $dir = cwd();
 print LOGFILE "Move to directory: '$dir'\n";
 
  # copy database.tar.gz file & check size
-system ("cp -f $ftp/stlace_$today.tar.gz .");
+system ("cp -f $ftp/stlace_$today.tar.gz .")  && die "Couldn't run cp. Exit status: $?\n";
 my $match = &copy_check("$ftp/stlace_$today.tar.gz","$dbdir/stlace_$today.tar.gz");
 print LOGFILE "Copy 'stlace_$today.tar.gz' to $dbdir successful\n" if ($match == 1); 
 
 print LOGFILE "Copy 'stlace_$today.tar.gz' to $dbdir failed\n" if ($match == 0);
  
-system ("/bin/gzip -d stlace_$today.tar.gz");
+system ("/bin/gzip -d stlace_$today.tar.gz")  && die "Couldn't run gzip. Exit status: $?\n";
 print LOGFILE "uncompress file\n";
 
-system ("/bin/tar -xvf stlace_$today.tar");
+system ("/bin/tar -xvf stlace_$today.tar") && die "Couldn't run tar. Exit status: $?\n";
 print LOGFILE "untar file\n\n";
 
 print LOGFILE "Database files to be loaded:\n";
-open (LIST, "/bin/ls *ace |");
+open (LIST, "/bin/ls *ace |") || die "Couldn't run ls\n";
 while (<LIST>) {
     chomp;
     push (@filenames,"$_");
@@ -128,7 +132,7 @@ print LOGFILE "\n\n";
  # modify displays.wrm for rebuild #
  ###################################
 
-system ("mv $dbdir/wspec/displays.wrm $dbdir/wspec/displays.old") ;
+system ("mv $dbdir/wspec/displays.wrm $dbdir/wspec/displays.old") && die "Couldn't run mv. Exit status: $?\n" ;
 open (FILE_OLD,"$dbdir/wspec/displays.old") || do { 
     print LOGFILE "failed to open $dbdir/wspec/displays.old\n"; 
     die(1);
@@ -151,17 +155,17 @@ unlink "$dbdir/wspec/displays.old" ;
  # Re-initialise the ACEDB database #
  ####################################
 
-system ("\\rm $dbdir/database/new/*");
-system ("\\rm $dbdir/database/touched/*");
+system ("\\rm $dbdir/database/new/*") && die "Couldn't run rm. Exit status: $?\n";
+system ("\\rm $dbdir/database/touched/*") && die "Couldn't run rm. Exit status: $?\n" ;
 if (-e "$dbdir/database/lock.wrm") {
     print LOGFILE "*Reinitdb error - lock.wrm file present..\n";
     close LOGFILE;
     die();
 }
-system ("\\mv $dbdir/database/log.wrm $dbdir/database/log.old");  
-system ("\\rm $dbdir/database/*.wrm");
+system ("\\mv $dbdir/database/log.wrm $dbdir/database/log.old") && die "Couldn't run mv. Exit status: $?\n";  
+system ("\\rm $dbdir/database/*.wrm") && die "Couldn't run rm. Exit status: $?\n";
 unlink "$dbdir/database/ACEDB.wrm";
-$command=<<EOF;
+my $command=<<EOF;
 y
 EOF
     
@@ -174,7 +178,7 @@ print LOGFILE "* Reinitdb: reinitializing the database ..\n";
 
 foreach $filename (@filenames) {
     
-my $command=<<END;
+$command=<<END;
 pparse $filename
 save 
 quit
@@ -193,7 +197,7 @@ if (-e $filename) {
 # Tidy up old ace files       #
 ###############################
 
-system ("/bin/rm -f stlace_$today.tar");
+system ("/bin/rm -f stlace_$today.tar")  && die "Couldn't run rm. Exit status: $?\n";
 print LOGFILE "\ndelete tar file from current directory\n\n";
 
 print LOGFILE "Database files to be removed:\n";
