@@ -233,7 +233,7 @@
 		CGC_unresolved Text // added by krb 28/01/02
                 Remark Text
 
-?Locus  Name    Other_name ?Text
+?Locus  Name    Other_name ?Text #Evidence
                 Gene_Class  ?Gene_Class XREF Loci
                 Old_name ?Locus XREF New_name
                 New_name ?Locus XREF Old_name
@@ -259,8 +259,8 @@
 				Detection_method Text
 		PCR_product	Primers  Text
 				Length   Int	// bp
-        Molecular_information	Genomic_sequence ?Sequence XREF Locus_genomic_seq // Split genomic and other XREFs
-                                Other_sequence ?Sequence XREF Locus_other_seq     // dl 001128
+        Molecular_information	Genomic_sequence ?Sequence XREF Locus_genomic_seq #Evidence // Split genomic and other XREFs
+                                Other_sequence ?Sequence XREF Locus_other_seq #Evidence    // dl 001128
 				Product ?Text
 				Canonical_gene ?Gene XREF Locus                   // Lincoln 010518
 	Remark ?Text
