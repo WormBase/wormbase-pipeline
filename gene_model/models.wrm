@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.68 2002-07-29 10:13:10 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.69 2002-08-01 15:21:43 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -1048,8 +1048,7 @@
 	  Origin  From_database ?Database UNIQUE Int	// release number
 		  Date DateType Text			// Text for comments on operation
 		  Species UNIQUE ?Species               // RD 0107 added UNIQUE
-		  Wormpep Replaces ?Protein XREF Replaced_by
-			  Replaced_by ?Protein XREF Replaces
+		  Wormpep History Int Text ?Text // logging history info [krb 020801]
 			  Live // added by krb 06/12/01
 	  Visible	Corresponding_CDS ?CDS XREF Corresponding_protein // RD 0107 was Corresponding_DNA
 			Reference ?Paper XREF Protein
