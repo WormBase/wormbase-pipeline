@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.105 2003-01-27 10:20:45 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.106 2003-02-03 17:37:11 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -822,16 +822,6 @@
 			End_not_found
 			Start_not_found
 			Show_in_reverse_orientation    // Draw 3' reads in reverse orientation [010423 dl]
-			Transcript	UNIQUE	mRNA	UNIQUE  Processed_mRNA
-								Unprocessed_mRNA
-						tRNA UNIQUE Text
-						rRNA UNIQUE Text
-						snRNA UNIQUE Text
-						snoRNA UNIQUE Text // [030102 krb]
-						scRNA UNIQUE Text
-						stRNA UNIQUE Text         // [010723 dl]
-						miRNA UNIQUE Text         // [011129 dl]
-						misc_RNA UNIQUE Text
 			Status	Received UNIQUE DateType
 				Library_construction UNIQUE DateType
 				Shotgun	UNIQUE DateType
