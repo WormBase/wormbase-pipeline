@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2005-01-14 17:15:54 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2005-03-07 10:01:56 $
 
 
 
@@ -1098,12 +1098,12 @@ sub parse_briggsae_data {
     &load($file,"briggsae_${Brigdata}");
   }
 		   
-  # load gene prediction sets
-  my @genepredicters =("genefinder", "fgenesh", "twinscan", "ensembl", "hybrid", "rna");
-  foreach my $genepredicters (@genepredicters) {
-    $file = "$basedir/wormbase/briggsae/briggsae_cb25.agp8_${genepredicters}.ace"; 
-    &load($file,"briggsae_${genepredicters}_genes");
-  }
+#  # load gene prediction sets
+#  my @genepredicters =("genefinder", "fgenesh", "twinscan", "ensembl", "hybrid", "rna");
+#  foreach my $genepredicters (@genepredicters) {
+#    $file = "$basedir/wormbase/briggsae/briggsae_cb25.agp8_${genepredicters}.ace"; 
+#    &load($file,"briggsae_${genepredicters}_genes");
+#  }
 
   # briggsae BAC end data
   $file = "/wormsrv1/briggsae/BAC_ENDS/briggsae_BAC_ends.fasta";
