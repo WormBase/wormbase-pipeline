@@ -7,7 +7,7 @@
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2004-04-28 10:23:43 $
+# Last edited on: $Date: 2004-05-10 14:27:27 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -18,11 +18,12 @@ use Getopt::Long;
 # Command line options  #
 #########################
 
-my ($help, $est, $mrna, $ost, $tc1, $nematode, $embl, $camace, $intron);
+my ($help, $est, $mrna, $ncrna, $ost, $tc1, $nematode, $embl, $camace, $intron);
 
 GetOptions ("help"       => \$help,
             "est"        => \$est,
             "mrna"       => \$mrna,
+            "ncrna"      => \$ncrna,
             "ost"        => \$ost,
             "tc1"        => \$tc1,
             "nematode"   => \$nematode,
@@ -61,6 +62,7 @@ our %word = (
 	     est      => 'BLAT_EST',
 	     ost      => 'BLAT_OST',
 	     mrna     => 'BLAT_mRNA',
+	     ncrna    => 'BLAT_ncRNA',
 	     embl     => 'BLAT_EMBL',
 	     tc1      => 'BLAT_TC1',
 	     nematode => 'BLAT_NEMATODE',
@@ -84,6 +86,7 @@ my $flags = 0;
 $flags++ if $est;
 $flags++ if $ost;
 $flags++ if $mrna;
+$flags++ if $ncrna;
 $flags++ if $embl;
 $flags++ if $tc1;
 $flags++ if $nematode;
@@ -93,6 +96,7 @@ $flags++ if $nematode;
 ($type = 'est')      if ($est);
 ($type = 'ost')      if ($ost);
 ($type = 'mrna')     if ($mrna);
+($type = 'ncrna')    if ($ncrna);
 ($type = 'embl')     if ($embl);
 ($type = 'tc1')      if ($tc1);
 ($type = 'nematode') if ($nematode);
@@ -442,9 +446,10 @@ while (<AOTHER>) {
   if ($_ =~ /^Homol_data/) {
     my $line = $_;
     # for comparison to %line hash, need to change OTHER to BEST in $_
-    s/BLAT_EST_OTHER/BLAT_EST_BEST/g unless ($mrna || $embl || $nematode || $ost || $tc1);
+    s/BLAT_EST_OTHER/BLAT_EST_BEST/g     if ($est);
     s/BLAT_OST_OTHER/BLAT_OST_BEST/g     if ($ost); 
     s/BLAT_mRNA_OTHER/BLAT_mRNA_BEST/g   if ($mrna);
+    s/BLAT_ncRNA_OTHER/BLAT_ncRNA_BEST/g if ($ncrna);
     s/BLAT_EMBL_OTHER/BLAT_EMBL_BEST/g   if ($embl);
     s/BLAT_TC1_OTHER/BLAT_TC1_BEST/g     if ($tc1);
     
@@ -651,6 +656,12 @@ blat2ace.pl  arguments:
 =item
 
 -mrna => perform everything for mRNAs
+
+=back
+
+=item
+
+-ncrna => perform everything for ncRNAs
 
 =back
 

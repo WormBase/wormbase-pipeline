@@ -8,7 +8,7 @@
 # and virtual objects to hang the data onto
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2004-05-07 15:27:50 $
+# Last edited on: $Date: 2004-05-10 14:24:40 $
 
 
 use strict;
@@ -23,7 +23,7 @@ use Carp;
 # Misc variables and paths   #
 ##############################
 
-my ($help, $debug, $verbose, $est, $mrna, $ost, $nematode, $embl, 
+my ($help, $debug, $verbose, $est, $mrna, $ncrna, $ost, $nematode, $embl, 
     $blat, $tc1, $process, $virtual, $dump, $camace, $fine);
 my $maintainers = "All";
 my $errors      = 0;
@@ -37,6 +37,7 @@ our $giface     = &giface;
 our %word = (
 	     est      => 'BLAT_EST',
 	     mrna     => 'BLAT_mRNA',
+	     ncrna    => 'BLAT_ncRNA',
 	     embl     => 'BLAT_EMBL',
 	     nematode => 'BLAT_NEMATODE',
 	     ost      => 'BLAT_OST',
@@ -53,6 +54,7 @@ GetOptions ("help"       => \$help,
 	    "verbose"    => \$verbose,
 	    "est"        => \$est,
 	    "mrna"       => \$mrna,
+	    "ncrna"      => \$ncrna,
 	    "ost"        => \$ost,
 	    "nematode"   => \$nematode,
 	    "embl"       => \$embl,
@@ -90,15 +92,16 @@ if($debug){
 &usage(1) unless ($dump || $process || $blat || $virtual); 
 
 # Exit if no data type choosen [EST|mRNA|EMBL|NEMATODE|OST] (or -dump not chosen)
-&usage(2) unless ($est || $mrna || $embl || $tc1 || $nematode || $ost || $dump); 
+&usage(2) unless ($est || $mrna || $ncrna || $embl || $tc1 || $nematode || $ost || $dump); 
 
-# Exit if multiple data types choosen [EST|mRNA|EMBL|NEMATODE|OST]
+# Exit if multiple data types choosen [EST|mRNA|ncRNA|EMBL|NEMATODE|OST]
 # ignore if -dump is being run
 unless($dump){
   my $flags = 0;
   $flags++ if $est;
   $flags++ if $ost;
   $flags++ if $mrna;
+  $flags++ if $ncrna;
   $flags++ if $embl;
   $flags++ if $tc1;
   $flags++ if $nematode;
@@ -114,6 +117,7 @@ my $data;
 ($data = 'est')      if ($est);
 ($data = 'ost')      if ($ost);
 ($data = 'mrna')     if ($mrna);
+($data = 'ncrna')    if ($ncrna);
 ($data = 'embl')     if ($embl);
 ($data = 'tc1')      if ($tc1);
 ($data = 'nematode') if ($nematode);
@@ -125,6 +129,7 @@ $query   .= 'elegans_ESTs.masked'  if ($est);      # EST data set
 $query   .= 'elegans_OSTs'         if ($ost);      # OST data set
 $query   .= 'elegans_TC1s'         if ($tc1);      # TC1 data set
 $query   .= 'elegans_mRNAs.masked' if ($mrna);     # mRNA data set
+$query   .= 'elegans_ncRNAs.masked'if ($ncrna);    # ncRNA data set
 $query   .= 'other_nematode_ESTs'  if ($nematode); # ParaNem EST data set
 $query   .= 'elegans_embl_cds'     if ($embl);     # Other CDS data set, DNA not peptide!
 
@@ -200,8 +205,8 @@ if ($process) {
     print "Producing confirmed introns in databases\n\n" if $verbose;
     print LOG "$runtime: Producing confirmed introns in databases\n";
 
-    # produce confirmed introns for all but nematode and tc1 data
-    unless ( ($nematode) || ($tc1) || ($embl) ) {
+    # produce confirmed introns for all but nematode, tc1, embl and ncRNA data
+    unless ( ($nematode) || ($tc1) || ($embl) || ($ncrna) ) {
 	print "Producing confirmed introns using $data data\n" if $verbose;
 	&confirm_introns('autoace',"$data");
 	&confirm_introns('camace', "$data");
@@ -520,13 +525,13 @@ sub virtual_objects_blat {
   
   # autoace
   open (OUT_autoace_homol, ">$blat_dir/virtual_objects.autoace.blat.$data.ace") or die "$!";
-  open (OUT_autoace_feat,  ">$blat_dir/virtual_objects.autoace.ci.$data.ace")     or die "$!";
+  open (OUT_autoace_feat,  ">$blat_dir/virtual_objects.autoace.ci.$data.ace")   or die "$!";
   # camace
   open (OUT_camace_homol,  ">$blat_dir/virtual_objects.camace.blat.$data.ace")  or die "$!";
-  open (OUT_camace_feat,   ">$blat_dir/virtual_objects.camace.ci.$data.ace")      or die "$!";
+  open (OUT_camace_feat,   ">$blat_dir/virtual_objects.camace.ci.$data.ace")    or die "$!";
   # stlace
   open (OUT_stlace_homol,  ">$blat_dir/virtual_objects.stlace.blat.$data.ace")  or die "$!";
-  open (OUT_stlace_feat,   ">$blat_dir/virtual_objects.stlace.ci.$data.ace")      or die "$!";
+  open (OUT_stlace_feat,   ">$blat_dir/virtual_objects.stlace.ci.$data.ace")    or die "$!";
   
   open (ACE, "<$blat_dir/chromosome.ace") || die &usage(11);
   while (<ACE>) {
@@ -603,7 +608,7 @@ sub virtual_objects_blat {
   # dl 040315 - this is crazy. we make all of the files and then delete the ones we don't want.
   #             don't rock the boat...
 
-  if ( ($data eq "nematode") || ($data eq "tc1") || ($data eq "embl") ) {
+  if ( ($data eq "nematode") || ($data eq "tc1") || ($data eq "ncrna") || ($data eq "embl") ) {
     unlink ("$blat_dir/virtual_objects.autoace.ci.$data.ace");
     unlink ("$blat_dir/virtual_objects.camace.ci.$data.ace");
     unlink ("$blat_dir/virtual_objects.stlace.ci.$data.ace");
@@ -717,6 +722,7 @@ sub create_log_files{
   print LOG "blat_them_all.pl query sequence options:\n";
   print LOG " -est      : perform blat for ESTs\n"                              if ($est);
   print LOG " -mrna     : perform blat for mRNAs\n"                             if ($mrna);
+  print LOG " -ncrna    : perform blat for ncRNAs\n"                            if ($ncrna);
   print LOG " -fine     : used with -mrna option\n"                             if ($fine);
   print LOG " -ost      : perform blat for OSTs\n"                              if ($ost);
   print LOG " -embl     : perform blat for misc. non-WormBase CDS from EMBL\n"  if ($embl);
@@ -798,6 +804,13 @@ run everything for mRNAs
 
 or
 
+=item -ncrna
+
+run everything for ncRNAs
+
+=back
+
+or
 =item -embl
 
 run everything for the CDSs of non-WormBase gene predictions in EMBL
