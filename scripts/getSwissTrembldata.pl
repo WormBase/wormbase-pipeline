@@ -5,7 +5,7 @@
 # dl
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2002-09-05 12:23:02 $
+# Last edited on: $Date: 2002-09-05 12:29:58 $
 
 
 use lib "/wormsrv2/scripts/";
@@ -42,25 +42,25 @@ EOF
 open (TACE, "echo '$command' | $tace | ") || die "Could not open pipe to tace\n";
 
 while (<TACE>) {
-  my $GSC = "";
-  my $CDS_xref_count  = 0;
-  my $CDS_found_count = 0;
   print;
   chomp;
   s/acedb\> //g;      # only need this is using 4_9i code, bug fixed in 4_9k onward (should be redundant)
   next if ($_ eq "");
   next if (/\/\//);
-
   s/\"//g;
-  my ($acename,$acc) = (/^(\S+)\s+(\S+)/);
 
+  my ($acename,$acc) = (/^(\S+)\s+(\S+)/);
   #    print "\n// Parsing genome sequence $acename [$acc]\n";
+  my $GSC = "";
+  my $CDS_xref_count = 0;
+  my $CDS_found_count = 0;
+  
+  my ($CDS_dbxref,$CDS_gene,$CDS_protein,$CDS_prod,$CDS_name,$pid,$ver,$db,$acc,$EMBL_acc,$CDS_xref_count);
+  my ($CDS_on,$CDS_dbxref_ac,$CDS_dbxref_id,$CDS_dbxref_db);
+  my $carryover = 0;
   
   open (PFETCH, "/usr/local/pubseq/bin/pfetch -F $acc |");
   while (<PFETCH>) {
-    my ($CDS_dbxref,$CDS_gene,$CDS_protein,$CDS_prod,$CDS_name,$pid,$ver,$db,$acc,$EMBL_acc,$CDS_xref_count);
-    my ($CDS_on,$CDS_dbxref_ac,$CDS_dbxref_id,$CDS_dbxref_db);
-    my $carryover = 0;
     chomp;
     if (/^SV\s+(\S+)\.\d+/) {$EMBL_acc = $1; next;}
     if (/^DR/)              {$CDS_xref_count++; next;}
