@@ -7,7 +7,7 @@
 # Creates SMapped Gene spans for Gene objects
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2004-08-10 11:10:47 $
+# Last edited on: $Date: 2004-08-25 10:31:27 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -91,7 +91,7 @@ foreach my $chrom ( @chromosomes ) {
   my %gene_span;
  WBG:foreach my $WBgene ( keys %gene2seq ){
     foreach my $CDS ( @{$gene2seq{$WBgene}} ) {
-      next WBG unless $gene_coords{$CDS};
+      next unless $gene_coords{$CDS};
       foreach my $transcript ( @{$gene_coords{$CDS}} ) {
 	if ( !(defined $gene_span{$WBgene}) ) {
 	  $gene_span{$WBgene}->{'min'}    = $transcript->[0];
