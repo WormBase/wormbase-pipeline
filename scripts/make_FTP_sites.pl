@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-11-08 19:42:52 $
+# Last updated on: $Date: 2002-11-08 20:08:56 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -74,7 +74,7 @@ $runtime = &runtime;
 print LOG "\n\n\nmake_FTP_public.pl finished at $runtime\n";
 
 close(LOG);
-&mail_maintainer("WormBase Report: mak_FTP_public.pl","All",$log);
+&mail_maintainer("WormBase Report: make_FTP_public.pl","All",$log);
 
 
 exit (0);
@@ -297,7 +297,7 @@ sub copy_wormpep_files{
   &CheckSize("$wp_source_dir/wormpep.table$wormpep","$wp_ftp_dir/wormpep.table");
   print LOG "move & rename wormpep.table$wormpep => wormpep.table\n";
   
-  system "cp $wp_source_dir/wormpep$wormpep $wp_ftp_dir/wormpep${release}";
+  system "cp $wp_source_dir/wormpep$wormpep $wp_ftp_dir/wormpep${wormpep}";
   &CheckSize("$wp_source_dir/wormpep$wormpep","$wp_ftp_dir/wormpep${release}");
   print LOG "move wormpep$wormpep =>  wormpep$wormpep\n";
   
