@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.73 2002-08-06 15:54:31 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.74 2002-08-06 16:02:00 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -275,25 +275,44 @@
 // I added Similarity targets as Lincoln suggested in the April
 // discussion.
 
-#Evidence  Source  UNIQUE  Author  ?Author
-                           Literature   Paper_evidence   ?Paper //updated krb 04/03/02
-			   		PMID_evidence    Text // added for Erich's gene function data 02/03/09
-                           Automated_method ?Method ?Database
-           Curator UNIQUE ?Curator
-	   Accession_evidence ?Text
-	   Protein_id_evidence ?Text
-	   GO_inference_type UNIQUE IC  Text // added for Erich 020723
-                             	    IDA Text
-                             	    IEA Text
-                             	    IEP Text
-                             	    IGI Text
-                             	    IMP Text
-                             	    IPI Text
-                             	    ISS Text
-                             	    NAS Text
-                             	    ND  Text
-                             	    TAS Text
-           Remark ?Text
+#Evidence Paper_evidence ?Paper
+          Person_evidence ?Person
+          Similarity_evidence ?Sequence
+          PMID_evidence Text //added for Erich's gene function data krb 02/04/09
+          Accession_evidence ?Accession_number // added for and by krb 020422
+          Protein_id_evidence ?Text // added to cope with protein id's [krb 020726]
+          GO_inference_type IC  Text
+                            IDA Text
+                            IEA Text
+                            IEP Text
+                            IGI Text
+                            IMP Text
+                            IPI Text
+                            ISS Text
+                            NAS Text
+                            ND  Text
+                            TAS Text
+
+
+//#Evidence  Source  UNIQUE  Author  ?Author
+//                          Literature   Paper_evidence   ?Paper //updated krb 04/03/02
+//			   		PMID_evidence    Text // added for Erich's gene function data 02/03/09
+//                           Automated_method ?Method ?Database
+//           Curator UNIQUE ?Curator
+//	   Accession_evidence ?Text
+//	   Protein_id_evidence ?Text
+//	   GO_inference_type UNIQUE IC  Text // added for Erich 020723
+//                             	    IDA Text
+//                             	    IEA Text
+//                             	    IEP Text
+//                             	    IGI Text
+//                             	    IMP Text
+//                             	    IPI Text
+//                             	    ISS Text
+//                             	    NAS Text
+//                            	    ND  Text
+//                             	    TAS Text
+//           Remark ?Text
 
 ?Allele Name	Rearrangement ?Rearrangement XREF Allele
 	Source	UNIQUE Gene ?Gene XREF Allele // RD 0107 Locus->Gene
