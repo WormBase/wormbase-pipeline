@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-10-02 14:13:03 $
+# Last updated on: $Date: 2003-10-02 14:33:11 $
 
 
 use strict;
@@ -1499,9 +1499,11 @@ sub check_bogus_XREF {
   foreach (keys %Seqs){
     if (scalar @{$Seqs{$_}} > 1){
       foreach my $e (@{$Seqs{$_}}){
-	$counter++;
-	print "Found $_\n" if $e eq "NA";
-	next;
+	if ($e eq "NA"){
+	  $counter++;
+	  print "Found $_\n";
+	  next;
+	}
       }
     }
   }
