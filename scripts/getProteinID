@@ -8,7 +8,7 @@
 # dl
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-12-17 16:04:59 $
+# Last edited on: $Date: 2004-01-21 10:30:42 $
 
 use lib "/wormsrv2/scripts/";
 use Wormbase;
@@ -122,8 +122,8 @@ while (<FILE>) {
     print "\n" if ($verbose);
     
     print OUT "\nCDS : \"$f[7]\"\n";
-    print OUT "Database $databases{$dbxref_db} TrEMBL_AC $dbxref_ac\n";
-    print OUT "Database $databases{$dbxref_db} TrEMBL_ID $dbxref_id\n";
+    print OUT "Database $databases{$dbxref_db} ",$db_ids_acc{$dbxref_db."_ac"}," $dbxref_ac\n";
+    print OUT "Database $databases{$dbxref_db} ",$db_ids_acc{$dbxref_db."_id"}," $dbxref_id\n";
     print OUT "Protein_id \"$acc2clone{$f[0]}\" $f[2] $f[3]\n";
     
     # assign GO terms based on InterPro Motifs
