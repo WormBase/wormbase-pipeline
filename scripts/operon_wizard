@@ -1,0 +1,980 @@
+#!/usr/local/bin/perl5.6.1
+#
+# operon_wizard
+#
+# builds/reads operon data structure
+#
+# dl
+#
+#
+# v0.1 :  dl : PP version
+#
+########################################################################################### 
+
+###########################################################################################
+# Variables                                                                               #
+###########################################################################################
+
+$!=1;
+use Data::Dumper;
+use Getopt::Std;
+use Ace;
+
+%tsl = (
+	'SL2k', 'GGTTTTAACCCAGTTAATTGAG',
+	);
+
+&formats;
+
+getopts ('abzqdcjyst:exwfmlr:p:k:n:');
+
+# b       : read hash from datafile [operon.dat]
+# d       : write hash to datafile  [operon.dat]
+# r <txt> : write report for an operon
+# c       : overview of operon analysis
+
+# l       : list all operons
+# k <int> : list all operons of length <int>
+# n <txt> : list all operons from chromosome <txt>
+
+# s       : simple list of operons (out)
+# t <txt> : simple list of operons (in)
+
+# x       : dump operons in .ace format
+# a       : SL file to hash  [SL2.dat] 
+# e       : hash to SL file  [SL2_other.dat]
+#
+# f       : position operons based on GFF files
+# q       : renumber operons  
+# z       : rename operons
+# p       : find operon
+# j       : check CDS names
+# y       : find CDS without operon
+# m       : find EST with no CDS
+
+# w       : dump files for website generation
+
+
+&recreate_hashes;
+
+&report($opt_r) if ($opt_r);
+
+&find_operon($opt_p) if ($opt_p);
+
+&ESTs_to_dumper('SL2.dat') if ($opt_a);
+&dumper_to_ESTs('SL2_other.dat') if ($opt_e);
+
+&count_operons if ($opt_c);
+
+&position_operons if ($opt_f);
+
+&check_CDS_names if ($opt_j);
+&find_CDS_orphans if ($opt_y);
+&find_unassigned_CDS if ($opt_m);
+
+&rename_operons if ($opt_z);
+
+&list_operons if ($opt_l);
+
+&simple_list_operons_out if ($opt_s);
+&simple_list_operons_in($opt_t) if ($opt_t);
+
+&list_operons_of_selected_length($opt_k) if ($opt_k);
+&list_operons_from_chromosome($opt_n) if ($opt_n);
+&acedump_operons if ($opt_x);
+
+&renumber_cds_in_operons if ($opt_q);
+
+&webpages if ($opt_w);
+
+&dump_hashes if ($opt_d);
+
+exit(0);
+
+
+
+######################################################################################################################################################
+&find_CDS_orphans if ($opt_y);
+
+sub report {
+    
+    $operon_lookup = shift;
+
+    print "\n";
+    print  "+=============+======================+\n";
+    printf "| OPERON_ACC  | %20s |\n", $operon{$operon_lookup}{ACC};
+    printf "| No_CDS      | %20s |\n", $operon{$operon_lookup}{NO_GENES};
+    printf "| CHROMOSOME  | %20s |\n", $operon{$operon_lookup}{CHROMOSOME};
+    printf "| POSITION    | %20s |\n", $operon{$operon_lookup}{POSITION};
+    print  "+=============+======================+\n";
+    print "\n";
+	
+    foreach $gene_lookup (@{$operon{$operon_lookup}{CDS}}) {
+	print " CDS        : $gene_lookup\n";
+	print " SL2_array  : $cds{$gene_lookup}->{SL2_MICROARRAY}\n";
+	
+	$no_SL2_est = scalar @{$cds{$gene_lookup}{SL2_EST}};
+	if ($cds{$gene_lookup}{SL2_EST}[0] eq "-") {
+	  $no_SL2_est--;
+	}
+	
+	$no_SL1_est = scalar @{$cds{$gene_lookup}{SL1_EST}};
+	if ($cds{$gene_lookup}{SL1_EST}[0] eq "-") {
+	  $no_SL1_est--;
+	}
+
+	print " SL1_est    : $no_SL1_est [" . join (' | ',@{$cds{$gene_lookup}->{SL1_EST}}) . "]\n";
+
+	# SL1 alignments
+	
+	my @alignment = ();
+	foreach $est_lookup (@{$cds{$gene_lookup}{SL1_EST}}) {
+	  next if ($est_lookup eq "-");
+	  $~ = "ESTLIST";
+	  write;
+	  push (@alignment, "$est_lookup [$est{$est_lookup}{SL_TYPE}] : $est{$est_lookup}{SEQUENCE}\n");
+	}
+	
+	# SL2 alignments 
+
+	print " SL2_est    : $no_SL2_est [" . join (' | ',@{$cds{$gene_lookup}->{SL2_EST}}) . "]\n";
+	
+	foreach $est_lookup (@{$cds{$gene_lookup}{SL2_EST}}) {
+	  next if ($est_lookup eq "-");
+	  $~ = "ESTLIST";
+	  write;
+	  push (@alignment, "$est_lookup [$est{$est_lookup}{SL_TYPE}] : $est{$est_lookup}{SEQUENCE}\n");
+	}
+	
+	unless (scalar @alignment < 1) {
+	  $~ = "ALIGNMENT";
+	  print "\n";
+	  print "  ================================================================================================================\n";
+	  foreach $align (@alignment) {
+	    next if ($align eq "");
+	    ($write_a,$write_b,$write_c) = $align =~ (/^(\S+)\s+\[(\S+)\]\s\:\s(\S+.+)$/);
+	    write;
+	  }
+	  undef (@alignment);
+	  print "  ================================================================================================================\n";
+	}
+        print "\n";
+      }
+    print "\n";
+  }
+
+
+#########################################################################################################################
+
+sub recreate_hashes {
+
+    open (FH, "<operon.dat") or die "operon.dat : $!";
+    undef $/;
+    $data = <FH>;
+    eval $data;
+    die if $@;
+    $/ = "\n";
+    close FH;
+}
+
+#########################################################################################################################
+
+sub dump_hashes {
+    open (OUT, ">operon.dat") or die "operon.dat : $!";
+    print OUT Data::Dumper->Dump([\%operon],['*operon']);
+    print OUT Data::Dumper->Dump([\%cds],['*cds']);
+    print OUT Data::Dumper->Dump([\%est],['*est']);
+    close OUT;
+}
+
+#########################################################################################################################
+
+sub count_operons {
+    
+    my $no_operons = (keys %operon);
+    my $no_cds     = (keys %cds);
+    my $no_EST     = (keys %est);
+    
+    # count attributes 
+
+    my (%operon_length,$cds_in_operons);
+    foreach my $operon_lookup (keys %operon) {
+      $operon_length{$operon{$operon_lookup}{NO_GENES}}++;
+      $cds_in_operons = $cds_in_operons + $operon{$operon_lookup}{NO_GENES};
+    }
+    my $mean_cds   = (int ( ($cds_in_operons/$no_operons) *10) ) / 10 ;
+    
+    # cds
+    my ($strong_SL2, $weak_SL2, $transcript_SL2,$num_EST,$unassigned_EST,$matched_EST,$mapped_EST);
+    foreach my $cds_lookup (keys %cds) {
+      
+      $strong_SL2++     if ($cds{$cds_lookup}{SL2_MICROARRAY} eq "++");         # increment strong microarray data
+      $weak_SL2++       if ($cds{$cds_lookup}{SL2_MICROARRAY} eq "+");          # increment weak microarrat data
+      
+      $num_SL2_EST = scalar @{$cds{$cds_lookup}{SL2_EST}};                        # assign number of SL2 EST clones
+      $num_SL2_EST--      if ($cds{$cds_lookup}{SL2_EST}[0] eq "-");              # decrement number of SL2 EST clones
+      $unassigned_EST++   if ($cds{$cds_lookup}{SL2_EST}[0] eq "(0) +");          # increment unassigned EST clones
+      $transcript_SL2++   if ($num_SL2_EST > 0);                                  # increment SL2 clones if $num_EST > 0 (i.e. +ve SL2 TSL)
+      
+      $num_SL1_EST = scalar @{$cds{$cds_lookup}{SL1_EST}};                        # assign number of SL1 EST clones
+      $num_SL1_EST--      if ($cds{$cds_lookup}{SL1_EST}[0] eq "-");              # decrement number of SL1 EST clones
+      $unassigned_EST++   if ($cds{$cds_lookup}{SL1_EST}[0] eq "(0) +");          # increment unassigned EST clones
+      $transcript_SL1++   if ($num_SL1_EST > 0);                                  # increment SL1 clones if $num_EST > 0 (i.e. +ve SL1 TSL)
+      
+    }
+
+
+    my ($SL1_awol,$SL2_awol);
+    
+    #est
+    foreach my $est_lookup (keys %est) {
+      $matched_EST++ if ($est{$est_lookup}{MAPS_TO_CDS});
+      $mapped_EST++  if ($est{$est_lookup}{MAPS_TO_GENOME});
+       
+      unless ($est{$est_lookup}{MAPS_TO_GENOME}) {
+	  $SL1_awol++ if ($est{$est_lookup}{SL_TYPE} eq "SL1");
+	  $SL2_awol++ if ($est{$est_lookup}{SL_TYPE} eq "SL2");
+      }
+    }
+
+    # calculate percentages
+    my ($strong_SL2_P, $weak_SL2_P, $transcript_SL2_P, $unassigned_EST_P, $matched_EST_P, $mapped_EST_P) = 0;
+    $strong_SL2_P     = (int (10000 * ($strong_SL2     / $no_cds) + 0.5) / 100);
+    $weak_SL2_P       = (int (10000 * ($weak_SL2       / $no_cds) + 0.5) / 100);
+    $transcript_SL1_P = (int (10000 * ($transcript_SL1 / $no_cds) + 0.5) / 100);
+    $transcript_SL2_P = (int (10000 * ($transcript_SL2 / $no_cds) + 0.5) / 100);
+    $unassigned_EST_P = (int (10000 * ($unassigned_EST / ($transcript_SL1 + $transcript_SL2)) + 0.5) / 100);
+    $matched_EST_P    = (int (10000 * ($matched_EST    / $no_EST) + 0.5) / 100);
+    $mapped_EST_P     = (int (10000 * ($mapped_EST     / $no_EST) + 0.5) / 100);
+    $unmapped_SL1_P   = (int (10000 * ($SL1_awol       / $no_EST) + 0.5) / 100);
+    $unmapped_SL2_P   = (int (10000 * ($SL2_awol       / $no_EST) + 0.5) / 100);
+
+format OPERONS =
++============================+=======+========+
+| Operons                                     |
++============================+=======+========+
+| No of operons              | @>>>> |      - | 
+                                $no_operons
+| No of CDS in operons       | @>>>> |      - |
+                                $cds_in_operons
+| Mean CDS/operon            |  @#.# |      - |
+                               $mean_cds
+|                            |       |        |
+| No of CDS                  | @>>>> |      - |
+                               $no_cds
+|                            |       |        |
+| CDS with strong microarray | @>>>> | @##.## |
+                               $strong_SL2, $strong_SL2_P
+| CDS with weak microarray   | @>>>> | @##.## |
+                               $weak_SL2,   $weak_SL2_P
+| CDS with SL1 transcript    | @>>>> | @##.## |
+                               $transcript_SL1, $transcript_SL1_P
+| CDS with SL2 transcript    | @>>>> | @##.## |
+                               $transcript_SL2, $transcript_SL2_P
+|   of which unassigned      | @>>>> | @##.## |
+                               $unassigned_EST, $unassigned_EST_P
+|                            |       |        |
+| No of EST/mRNAs            | @>>>> |      - |
+                               $no_EST
+|  of which map to CDS       | @>>>> | @##.## |  
+                               $matched_EST, $matched_EST_P
+|  of which map to GENOME    | @>>>> | @##.## | 
+                               $mapped_EST, $mapped_EST_P
+| SL1 unmapped               | @>>>> | @##.## |
+                               $SL1_awol, $unmapped_SL1_P
+| SL2 unmapped               | @>>>> | @##.## |
+                               $SL2_awol, $unmapped_SL2_P
++============================+=======+========+
+.
+
+format OPERON_LENGTHS =
++============================+
+| Operon Length              |
++================+===========+
+|   with 2 genes |     @>>>  |
+                 $operon_length{2}
+|   with 3 genes |     @>>>  |
+                 $operon_length{3}
+|   with 4 genes |     @>>>  |
+                 $operon_length{4}
+|   with 5 genes |     @>>>  |
+                 $operon_length{5}
+|   with 6 genes |     @>>>  |
+                 $operon_length{6}
+|   with 7 genes |     @>>>  |
+                 $operon_length{7}
+|   with 8 genes |     @>>>  |
+                 $operon_length{8}
++================+===========+
+.
+
+    $~ = "OPERONS";
+    print "\n";
+    write;
+    print "\n";
+}
+
+#########################################################################################################################
+
+sub list_operons {
+    my $look;
+    for $operon_lookup (keys %operon) {
+	&report($operon_lookup);
+    }
+    
+	    
+}
+#########################################################################################################################
+
+sub acedump_operons {
+    for $operon_lookup (keys %operon) {
+
+	print "\nOperon : \"$operon_lookup\"\n";
+	print "Species \"Caenorhabditis elegans\"\n";
+
+	my $gene_count = 1;
+	foreach $gene_lookup (@{$operon{$operon_lookup}{CDS}}) {
+	    
+#	    print " SL1_est    : @{$cds{$gene_lookup}{SL1_EST}}\n";
+#	    print " SL2_est    : @{$cds{$gene_lookup}{SL2_EST}}\n";
+#	    print " SL2_array  : $cds{$gene_lookup}{SL2_MICROARRAY}\n";
+
+	    if ($gene_count == 1) {
+	      $operon_start = 0;
+	      open (GFF_1, "grep -w '$gene_lookup' /wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS/CHROMOSOME_${operon{$operon_lookup}->{CHROMOSOME}}.genes.gff |");
+	      while (<GFF_1>) {
+		  @f = split /\t/;
+		  if ($f[6] eq "+") {$operon_start = $f[3];}
+		  if ($f[6] eq "-") {$operon_start = $f[4];}
+		}
+	      close GFF_1;
+#		print "OP_start = $operon_start\n";
+	    }
+	    
+	    if ($gene_count == $operon{$operon_lookup}->{NO_GENES}) {
+	      $operon_stop = 0;
+	      open (GFF_2, "grep -w '$gene_lookup' /wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS/CHROMOSOME_${operon{$operon_lookup}->{CHROMOSOME}}.genes.gff |");
+	      while (<GFF_2>) {
+		@f = split /\t/;
+		($operon_stop = $f[4]) if ($f[6] eq "+");
+		($operon_stop = $f[3]) if ($f[6] eq "-");
+	      }
+	      close GFF_2;
+#		print "OP_stop = $operon_stop\n";
+	    }
+	    
+	    if (scalar (@{$cds{$gene_lookup}{SL1_EST}}) > 1) {
+		print "Contains_CDS \"$gene_lookup\" SL1 \"EST clones @{$cds{$gene_lookup}{SL1_EST}}\"\n";
+		$reset = 1;
+	    }
+	    if (scalar (@{$cds{$gene_lookup}{SL2_EST}}) > 1) {
+		print "Contains_CDS \"$gene_lookup\" SL2 \"EST clones @{$cds{$gene_lookup}{SL2_EST}}\"\n";
+		$reset = 1;
+	    }
+	    if ($cds{$gene_lookup}{SL2_MICROARRAY} eq "++") {
+		print "Contains_CDS \"$gene_lookup\" SL2 \"Microarray strong\"\n";
+		$reset = 1;
+	    }
+	    elsif ($cds{$gene_lookup}{SL2_MICROARRAY} eq "+") {
+		print "Contains_CDS \"$gene_lookup\" SL2 \"Microarray weak\"\n";
+		$reset = 1;
+	    }
+	    	    
+	    unless ($reset == 1) {
+		print "Contains_CDS \"$gene_lookup\"\n";
+	    }
+	    
+	    $reset = 0;
+	    $gene_count++;
+	}
+	print "Method operon\n";
+	print "\n";
+	print "Sequence : \"CHROMOSOME_$operon{$operon_lookup}->{CHROMOSOME}\"\n";
+	print "S_child Operon $operon{$operon_lookup}->{ACC} $operon_start $operon_stop\n";
+	print "\n";
+
+	if (($operon_start == 0) || ($operon_stop == 0)) {
+	  print "\n// MISSING COORDINATE for operon $operon{$operon_lookup}->{ACC}\n\n";
+	}
+	
+	$gene_count = 1;
+	undef ($operon_start);
+	undef ($operon_stop);
+    }
+    
+}
+
+#########################################################################################################################
+
+sub list_operons_of_selected_length {
+
+  my $choosen = shift;
+  
+  foreach my $operon_lookup (keys %operon) {
+    push (@choosen, $operon_lookup) if ($operon{$operon_lookup}{NO_GENES} == $choosen);
+  }
+    
+  foreach $operon_lookup (@choosen) {
+    print "+=============+======================================+\n";
+    print "| OPERON_ACC  : $operon{$operon_lookup}->{ACC}\n";
+    print "| No_CDS      : $operon{$operon_lookup}->{NO_GENES}\n";
+    print "| CHROMOSOME  : $operon{$operon_lookup}->{CHROMOSOME}\n";
+    print "| POSITION    : $operon{$operon_lookup}->{POSITION}\n";
+    print "+=============+======================================+\n";
+    print "\n";
+  }
+  
+
+}
+sub simple_list_operons_out {
+
+  foreach my $operon_lookup (keys %operon) {
+
+      print "$operon{$operon_lookup}->{ACC} [$operon{$operon_lookup}->{CHROMOSOME}|$operon{$operon_lookup}->{NO_GENES}] ";
+
+      foreach $gene_lookup (@{$operon{$operon_lookup}{CDS}}) {
+	  print "$gene_lookup\t";
+      }
+   
+      print "\n";
+
+  }
+}
+
+sub simple_list_operons_in {
+
+    my $file = shift;
+    my ($operon_noCDS,$operon_chrom,$operon_acc,@operonCDS,$parse);
+    my ($limit);
+
+    open (LIST, "</nfs/disk100/wormpub/analysis/operons/$file") or die "$file : $!\n";
+    while (<LIST>) {
+
+	undef ($operon_noCDS);
+	undef ($operon_chrom);
+	undef ($operon_acc);
+	undef (@operonCDS);
+	undef ($parse);
+
+	($operon_acc,$operon_chrom,$operon_noCDS,$parse) = (/^(\S+)\s+\[(\S+)\|(\d+)\]\s+(\S+.+)/);
+	@operonCDS = split (/\s+/,$parse);
+
+	# print one line summary of operon
+	print "$operon_acc [$operon_chrom|$operon_noCDS] ";
+	$limit = scalar @operonCDS;
+	for ($i=0; $i<$limit; $i++) {
+	    print "$operonCDS[$i]\t";
+	}
+	print "\n";
+
+	
+	# clean any old data
+	$operon{$operon_acc}{ACC}        = "";
+	$operon{$operon_acc}{CHROMOSOME} = "";
+	$operon{$operon_acc}{NO_GENES}   = "";
+	$operon{$operon_acc}{POSITION}   = "";
+
+	undef @{$operon{$operon_acc}{CDS}};
+
+        # reassign operon list
+	$operon{$operon_acc}{ACC}        = $operon_acc;
+	$operon{$operon_acc}{CHROMOSOME} = $operon_chrom;
+	$operon{$operon_acc}{NO_GENES}   = $operon_noCDS;
+	for ($i=0; $i<$limit; $i++) {
+	    push @{$operon{$operon_acc}{CDS}},$operonCDS[$i];   # add CDS to operon
+	    $cds{$operonCDS[$i]}{OPERON} = $operon_acc;         # ensure that operon tag is set in CDS
+	    $cds{$operonCDS[$i]}{POSITION} = $i +1;              # ensure that postion tag is set in CDS
+	}
+    }
+
+    &dump_hashes
+
+}
+
+#######################
+
+sub list_operons_from_chromosome {
+
+  my $choosen = shift;
+  
+  foreach my $operon_lookup (keys %operon) {
+    push (@choosen, $operon_lookup) if ($operon{$operon_lookup}{CHROMOSOME} eq $choosen);
+  }
+    
+  foreach $operon_lookup (@choosen) {
+
+      print "$oprton_lookup \n";
+      system ("./parse_flatfile.pl ./CHROMOSOME_${choosen}/${acc}.dat > ./CHROMOSOME_${choosen}/${acc}.shtml");
+
+#    print "+=============+======================================+\n";
+#    print "| OPERON_ID   : $operon_lookup\n";
+#    print "| OPERON_ACC  : $operon{$operon_lookup}->{ACC}\n";
+#    print "| OLD_ACC     : $operon{$operon_lookup}->{ACC_OLD}\n";
+#    print "| CHROMOSOME  : $operon{$operon_lookup}->{CHROMOSOME}\n";
+#    print "| POSITION    : $operon{$operon_lookup}->{POSITION}\n";
+#    print "| No_CDS      : $operon{$operon_lookup}->{NO_GENES}\n";
+#    print "+=============+======================================+\n";
+#    print "\n";
+  }
+  
+
+}
+
+
+#########################################################################################################################
+
+sub check_CDS_names {
+  
+  my $acepath ="/wormsrv2/current_DB";
+  my $tace    = glob("~wormpub/ACEDB/bin.ALPHA_4/tace_4_9k");   # tace executable path
+   
+  my $db      = Ace->connect(-path=>$acepath,
+			     -program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
+
+  my ($obj,$method);
+
+  foreach my $cds_lookup (keys %cds) {
+    printf "%10s : ", $cds_lookup;
+    $obj = $db->fetch(Sequence=>$cds_lookup);
+    if (!$obj) {
+      print "Object is not present in autoace\n";
+      next;
+    }
+    $method = $obj->Method;
+    if ($method ne "curated") {
+      print "Object has an invalid method tag: $method\n";
+    }
+    else {
+      print "OK\n";
+    }
+    $obj->DESTROY();
+  }
+
+}
+
+#########################################################################################################################
+
+sub find_unassigned_CDS {
+  foreach my $cds_lookup (keys %cds) {
+    if ($cds{$cds_lookup}{SL2_EST}[0] eq "(0) +") {
+      printf "%10s has an SL2 +ve EST which is not referenced\n", $cds_lookup ;
+    }
+  }
+}
+
+#########################################################################################################################
+
+sub find_CDS_orphans {
+  foreach my $cds_lookup (keys %cds) {
+    unless (defined $cds{$cds_lookup}{OPERON}) {
+      printf "%10s is not part of an operon\n", $cds_lookup ;
+    }
+  }
+}
+
+#########################################################################################################################
+
+sub check_operon_names {
+  
+  foreach my $operon_lookup (keys %operon) {
+    print "$operon_lookup\n";
+  }
+}
+
+#########################################################################################################################
+
+sub position_operons {
+    for $operon_lookup (keys %operon) {
+	print "OPERON_ID   : $operon_lookup\n";
+	print "CHROMOSOME  : $operon{$operon_lookup}->{CHROMOSOME}\n";
+	print "POSITION    : $operon{$operon_lookup}->{POSITION}\n";
+	my $gff_data = &get_pos($operon{$operon_lookup}->{CHROMOSOME},$operon_lookup);
+	if ($gff_data eq "") {
+	    print "\n=> ERROR - no entry found in GFF file for $operon_lookup\n";
+	}
+	else {
+	    my ($start,$stop,$strand) = $gff_data =~ (/(\d+)\-(\d+) \[(\S)\]/);
+#	    print "RAW_DATA : $start - $stop [$strand] [$gff_data]\n";
+	    if ($strand eq "+") {
+		print "NEW_POSITION : $start\n";
+		$operon{$operon_lookup}->{POSITION} = $start;
+	    }
+	    else {
+		print "NEW_POSITION : $stop\n";
+		$operon{$operon_lookup}->{POSITION} = $stop;
+	    }
+	}
+	print "\n";
+    }
+
+
+    
+}
+
+######################################################################################################################################################
+
+sub rename_operons {
+
+    my %mappings;
+    open (NAMES, "</nfs/disk100/wormpub/analysis/operons/newnames");
+    while (<NAMES>) {
+	my ($name,$newname) = (/^(\S+)\s+\S+\s+(\S+)/);
+	$mappings{$name} = $newname;
+#	print "Assign $newname to $name\n";
+    }
+    close NAMES;
+
+    for $operon_lookup (keys %operon) {
+	print "$operon{$operon_lookup}{POSITION}   \t$operon{$operon_lookup}{CHROMOSOME}\t$operon_lookup  \t$mappings{$operon_lookup}\n";
+	$operon{$operon_lookup}{ACC} = $mappings{$operon_lookup};
+    }
+    print "\n";
+    &dump_hashes;
+    
+}
+
+######################################################################################################################################################
+
+sub renumber_cds_in_operons {
+    for my $operon_lookup (keys %operon) {
+	print "OPERON_ID   : $operon_lookup\n";
+	my $i = 1;
+	foreach $gene_lookup (@{$operon{$operon_lookup}{CDS}}) {
+	    $cds{$gene_lookup}{POSITION} = $i;
+	    $i++;
+	}
+	print "\n";
+    }
+    &dump_hashes;
+}
+
+######################################################################################################################################################
+
+sub find_operon {
+  
+  my $look = shift;
+
+  if ($cds{$look}{OPERON}) {
+    print "CDS $look is part of operon " . $cds{$look}{OPERON} . "\n";
+    &report($cds{$look}{OPERON});
+  }
+  else {
+    print "CDS $look is not currently part of an operon\n\n";
+    exit(0);
+  }
+
+}
+
+######################################################################################################################################################
+
+sub get_pos {
+    
+    my ($chromosome,$cds) = @_;
+    
+    my ($start,$stop,$strand,$coord) = "";
+    
+    open (GFF, "grep -w $cds /wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS/CHROMOSOME_$chromosome.genes.gff |");
+    while (<GFF>) {
+        ($start,$stop,$strand) = (/^\S+\s+\S+\s+\S+\s+(\S+)\s+(\S+)\s+\S+\s+(\S+)/);
+    }
+    close GFF;
+    $coord = $start . "-" . $stop . " [" . $strand . "]";
+    return ($coord);
+}
+
+##########################################################################################################################################
+
+sub ESTs_to_dumper {
+  
+  my $file = shift;
+  my ($EST_acc,$EST_name,$EST_type,$SL_type,$SL_len,$EST_seq,$tosearch,$EST_cds,$gen_DNA,$gen_start,$gen_stop,$splice);
+ 
+  
+  open (EST, "<$file") or die "$file : $!\n";
+  while (<EST>) {
+    
+    undef ($EST_acc);
+    undef ($EST_name);
+    undef ($EST_type);
+    undef ($SL_type);
+    undef ($SL_len);
+    undef ($EST_seq);
+    undef ($tosearch);
+    undef ($EST_cds);
+    undef ($gen_DNA);
+    undef ($gen_start);
+    undef ($gen_stop);
+    undef ($splice);
+    undef ($remark);
+    
+    $tosearch  = substr($_,183);
+    ($remark) = $tosearch =~ (/^(\S+.+)$/);
+    next if (substr($remark,0,9) eq "false +ve");
+    
+    ($EST_acc,$EST_name,$EST_type) = (/^(\S+)\s+(\S+)\s+\[(\S+)\]/);
+
+    $tosearch  = substr($_,29);
+    ($EST_cds) = $tosearch =~ (/^(\S+)\s/);
+
+    $tosearch  = substr($_,41);
+    ($SL_type) = $tosearch =~ (/\[(\S+)\s/);
+    next if ($SL_type eq "RT");                # Don't parse Read throughs
+    next if ($SL_type eq "SL");                # Don't parse Unknown SL types
+
+    $tosearch  = substr($_,47);
+    ($gen_DNA,$gen_start,$gen_stop,$SL_len) = $tosearch =~ (/^(\S+)\s+(\d+)\s+(\d+)\s+(\d+)/);
+
+    $tosearch  = substr($_,74);
+    ($splice)  = $tosearch =~ (/\[(\S+)\]/);
+
+    $tosearch  = substr($_,84);
+    ($EST_seq) = $tosearch =~ (/(\S+.+)$/);
+  
+#    print "$EST_cds [$gen_DNA\t$gen_start => $gen_stop]\t$splice\n";
+
+    $est{$EST_acc}{SEQUENCE}       = $EST_seq;
+    $est{$EST_acc}{EST_TYPE}       = $EST_type;
+    $est{$EST_acc}{NAME}           = $EST_name;
+    $est{$EST_acc}{SL_TYPE}        = $SL_type;
+    $est{$EST_acc}{SL_LENGTH}      = $SL_len;
+    
+    $est{$EST_acc}{MAPS_TO_CDS}    = $EST_cds;
+    
+    if ($EST_cds) {
+      # this is complex......
+      $arraypoint = -1;
+      $found_it   =  0;
+      if ($SL_type =~ /SL2/) {
+#	print "SL2 : $EST_acc $EST_type\t$EST_name\t$SL_type $SL_len\t$EST_seq\n";
+	foreach $est_look (@{$cds{$EST_cds}{SL2_EST}}) {
+	  $arraypoint ++;
+	  if ($est_look eq "(0) +") { 
+	    splice (@{$cds{$EST_cds}{SL2_EST}},$arraypoint,1);
+	    next;
+	  }
+	  if ($est_look eq "-") { 
+	    splice (@{$cds{$EST_cds}{SL2_EST}},$arraypoint,1);
+	    next;
+	  }
+	  if ($est_look eq $EST_acc) {
+	    $found_it = 1;
+	  }
+	}
+	if ($found_it == 0) {
+	  push (@{$cds{$EST_cds}{SL2_EST}},$EST_acc);
+	  print " => pushed $EST_acc to data structure\n";
+	}
+      }
+      elsif ($SL_type =~ /SL1/) {
+#	print "SL1 : $EST_acc $EST_type\t$EST_name\t$SL_type $SL_len\t$EST_seq\n";
+	foreach $est_look (@{$cds{$EST_cds}{SL1_EST}}) {
+	  $arraypoint ++;
+	  if ($est_look eq "-") { 
+	    splice (@{$cds{$EST_cds}{SL1_EST}},$arraypoint,1);
+	    next;
+	  }
+	  if ($est_look eq $EST_acc) {
+	    $found_it = 1;
+	  }
+	}
+	if ($found_it == 0) {
+	  push (@{$cds{$EST_cds}{SL1_EST}},$EST_acc);
+	  print " => pushed $EST_acc to data structure\n";
+	}
+      }
+      # end of loop
+    }
+    $est{$EST_acc}{MAPS_TO_GENOME} = $gen_DNA;
+    $est{$EST_acc}{GENOME_START}   = $gen_start;
+    $est{$EST_acc}{GENOME_END}     = $gen_stop;
+
+    if ($splice) {
+      $est{$EST_acc}{SPLICE}       = "+";
+      $est{$EST_acc}{SPLICE_SCORE} = $splice;
+    }
+  }
+  close EST;
+}
+
+
+######################################################################################################################################################
+
+sub dumper_to_ESTs {
+  
+  $~ = "ESTFILE";
+  
+  my $file = shift;
+  
+  open (EST, ">$file") or die "$file : $!\n";
+  for $est_lookup (keys %est) {
+    write;
+  }
+  close EST;
+  
+}
+
+######################################################################################################################################################
+
+
+sub webpages {
+  
+    my ($operon_lookup,$gene_lookup);
+    my $gene_position;
+
+    my $tace    = glob("~wormpub/ACEDB/bin.ALPHA_4/tace_4_9k");   # tace executable path
+   
+    my $db      = Ace->connect(-path=>"/wormsrv2/current_DB",
+			     -program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
+
+    for $operon_lookup (keys %operon) {
+
+	print "Writing .dat file for $operon{$operon_lookup}{ACC}\n";
+	open (OUT, ">./CHROMOSOME_${operon{$operon_lookup}{CHROMOSOME}}/${operon{$operon_lookup}{ACC}}.dat");
+
+	# declare which CDS form this operon
+	$operon_genes = join (' ', @{$operon{$operon_lookup}{CDS}});
+	
+	# reset gene position counter to 1
+	$gene_position = 1;
+
+	print OUT  "OP $operon{$operon_lookup}{ACC};\n";
+	print OUT  "ST Supported;\n";
+	print OUT  "CH $operon{$operon_lookup}{CHROMOSOME};\n";
+	print OUT  "NG $operon{$operon_lookup}{NO_GENES};\n";
+	print OUT  "GL $operon_genes;\n";
+	print OUT  "XX\n";
+	
+	my $last_stop = 0;
+	my $intergenic_span = 0;
+	my $CDS_span = 0;
+	my $obj;
+	my $whoops;
+	
+	foreach $gene_lookup (@{$operon{$operon_lookup}{CDS}}) {
+	    
+	    $obj = $db->fetch(Sequence => $gene_lookup);
+
+	    ($whoops = 1) if (!defined $obj);
+
+	    undef ($start);
+	    undef ($stop);
+	    undef ($strand);
+
+	    print OUT  "PO $gene_position/$operon{$operon_lookup}{NO_GENES};\n";
+	    print OUT  "GN $gene_lookup;\n";
+
+	    if ($whoops == 1) {
+		print OUT  "LC -;\n";
+		print OUT  "DE \"hypothetical [misname]\";\n";
+		undef ($whoops);
+	    }
+	    else {
+		$locus = $obj->Locus_genomic_seq(1);
+		($locus = "-") if (!defined $locus);
+		print OUT  "LC $locus;\n";
+		
+		$id = $obj->Brief_identification(1);
+		($id = "hypothetical") if (!defined $id);
+		print OUT  "DE \"$id\";\n";
+		$obj->DESTROY;
+	    }
+
+	    print OUT  "MY $cds{$gene_lookup}{SL2_MICROARRAY};\n";
+	    
+	    # SL1 alignments
+	    $no_SL1_est = scalar @{$cds{$gene_lookup}{SL1_EST}};
+	    if ($cds{$gene_lookup}{SL1_EST}[0] eq "-") {
+		$no_SL1_est--;
+	    }
+	    print OUT "S1 $no_SL1_est;\n";
+	    if ($no_SL1_est > 0) {
+#		print OUT  " SL1_est    : $no_SL1_est [" . join (' | ',@{$cds{$gene_lookup}->{SL1_EST}}) . "]\n";
+		foreach $est_lookup (@{$cds{$gene_lookup}{SL1_EST}}) {
+		    next if ($est_lookup eq "-");
+		    print OUT  "SL $est{$est_lookup}{SL_TYPE}; $est_lookup; [$est{$est_lookup}{EST_TYPE}]; \"$est{$est_lookup}{SEQUENCE}\";\n";
+		}
+	    }
+	    
+	    # SL2 alignments 
+	    $no_SL2_est = scalar @{$cds{$gene_lookup}{SL2_EST}};
+	    if ($cds{$gene_lookup}{SL2_EST}[0] eq "-") {
+		$no_SL2_est--;
+	    }
+	    print OUT "S2 $no_SL2_est;\n";
+	    if ($no_SL2_est > 0) {
+#		print OUT  " SL2_est    : $no_SL2_est [" . join (' | ',@{$cds{$gene_lookup}->{SL2_EST}}) . "]\n";
+		foreach $est_lookup (@{$cds{$gene_lookup}{SL2_EST}}) {
+		    next if ($est_lookup eq "-");
+		    print OUT  "SL $est{$est_lookup}{SL_TYPE}; $est_lookup; [$est{$est_lookup}{EST_TYPE}]; \"$est{$est_lookup}{SEQUENCE}\";\n";
+		}
+	    }
+	    
+	    my $gff_data = &get_pos($operon{$operon_lookup}{CHROMOSOME},$gene_lookup);
+	    if ($gff_data eq "") {
+		print OUT  "\n=> ERROR - no entry found in GFF file for $operon_lookup\n";
+	    }
+	    else {
+		my ($start,$stop,$strand) = $gff_data =~ (/(\d+)\-(\d+) \[(\S)\]/);
+		print OUT  "RAW_DATA : $start - $stop [$strand] [$gff_data]\n";
+		if ($strand eq "+") {
+#		    print OUT  "NEW_POSITION : $start\n";
+		    $CDS_span = $stop - $start + 1;
+		    unless ($last_stop == 0) {
+			$intergenic_span = $start - $last_stop + 1;
+		    }
+		    $last_stop = $stop;
+		}
+		else {
+#		    print OUT  "NEW_POSITION : $stop\n";
+		    $CDS_span = $stop - $start + 1;
+		    unless ($last_stop == 0) {
+			$intergenic_span = $last_stop - $stop + 1;
+		    }
+		    $last_stop = $start;
+		}
+	    }
+	    
+	    print OUT  "GS $CDS_span;\n";
+	    print OUT  "IS $intergenic_span;\n";
+	    print OUT  "XX\n";
+	    $gene_position++;
+	    
+	
+	}
+	    
+	print OUT  "\n";
+	close OUT;
+    }
+
+}
+
+	
+
+
+######################################################################################################################################################
+
+sub formats {
+
+ 
+format ESTLIST =
+  EST_Info  : @<<<<<<< [@<<<<] @<<<<<<<<<< @<<< [@<]    @>>>>> [@>>>>> - @>>>>>]   [@ : @<<<<<]
+$est_lookup, $est{$est_lookup}{EST_TYPE}, $est{$est_lookup}{NAME}, $est{$est_lookup}{SL_TYPE}, $est{$est_lookup}{SL_LENGTH},$est{$est_lookup}{MAPS_TO_GENOME}, $est{$est_lookup}{GENOME_START}, $est{$est_lookup}{GENOME_END}, $est{$est_lookup}{SPLICE}, $est{$est_lookup}{SPLICE_SCORE}
+.
+
+format ALIGNMENT =
+  @<<<<<<<< [@<<<] : @<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+$write_a, $write_b, $write_c
+.
+
+format ESTFILE =
+@<<<<<<< @<<<<<<<<<< [@<<<<] @<<<<<<<<< [@<<< @<<<<<<< @>>>>> @>>>>> @>] [@<<<<<<] @<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+$est_lookup, $est{$est_lookup}{NAME}, $est{$est_lookup}{EST_TYPE}, $est{$est_lookup}{MAPS_TO_CDS}, $est{$est_lookup}{SL_TYPE}, $est{$est_lookup}{MAPS_TO_GENOME}, $est{$est_lookup}{GENOME_START}, $est{$est_lookup}{GENOME_END}, $est{$est_lookup}{SL_LENGTH}, $est{$est_lookup}{SPLICE_SCORE}, $est{$est_lookup}{SEQUENCE} 
+.
+
+
+
+}
+
+
+######################################################################################################################################################
+
