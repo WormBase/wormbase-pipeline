@@ -245,6 +245,7 @@
 			CGC_approved	     // added by krb 24/01/02
 			CGC_unresolved Text // added by krb 28/01/02
 			Pseudogene Text // added by krb 28/02/02
+		Gene_cluster	Contains ?Locus XREF Contained_in
 		Polymorphism    SNP  Text		// SNP stuff added for Todd [171001 krb]
 				Status Text
 				SNP_assay ?PCR_product XREF SNP_locus ?Text
@@ -275,7 +276,6 @@
         Reference ?Paper XREF Locus
 	Expr_pattern ?Expr_pattern XREF Locus
         Contained_in ?Locus XREF Contains //sdm put in to accomodate HISTONE geneclusters
-        Contains ?Locus XREF Contained_in
         Drives_Transgene ?Transgene XREF Driven_by_Locus	
 	Transgene_product ?Transgene XREF Worm_gene
 	Rescued_by_Transgene ?Transgene XREF Rescue
