@@ -129,7 +129,7 @@ print LOG "SubGetSwissId finished at ",`date`,"\n";
 
 close LOG;
 #### use Wormbase.pl to mail Log ###########
-my $name = "SubGetSwissId";
+my $name = "Update Swiss ID's and Interpro motifs";
 #$maintainer = "ar2\@sanger.ac.uk";
 &mail_maintainer ($name,$maintainer,$log);
 #########################################
