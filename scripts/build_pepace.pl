@@ -9,7 +9,7 @@
 # 
 #
 # Last updated by: $Author: ar2 $                     
-# Last updated on: $Date: 2002-07-26 10:13:07 $     
+# Last updated on: $Date: 2002-07-26 15:34:40 $     
 
 
 use strict;                                     
@@ -28,7 +28,7 @@ my $rundate     = `date +%y%m%d`; chomp $rundate;
 my $runtime     = `date +%H:%M:%S`; chomp $runtime;
 our $log        = "/wormsrv2/logs/build_pepace.$rundate";
 
-my $ver = 80;#&get_wormbase_version();
+my $ver = 82;#&get_wormbase_version();
 my $wormpepdir = "/wormsrv2/WORMPEP/wormpep$ver";
 
 open( LOG, ">$log") || die "cant open $log";
@@ -61,6 +61,7 @@ my $existingGene;
 my %multicodedPeps;
 
 my $handled = 0;
+my $pepcount;
 my $count;
 while(<HISTORY>)
       {
@@ -138,13 +139,7 @@ while(<HISTORY>)
 		# must be another gene coding for the same peptide.
 		if( $CE_live{$CE} == 1 )
 		  {
-		    #peptide coded by multiple genes
-		    if( defined( $out ) ) {
-		      print LOG "$CE temporarily mulitcoded $in - $out\n";
-		    }
-		    else {
 		      &addNewPeptide;
-		    }
 		  }
 		else
 		  {
@@ -156,6 +151,7 @@ while(<HISTORY>)
 	#processing entry where CE not known
 	else
 	  {
+	    $pepcount++;
 	    if( defined( $gene_CE{$gene}) )
 	      {
 		# if peptide coded by >1 genes
@@ -201,48 +197,35 @@ while(<HISTORY>)
       }
 close HISTORY;
 
+
+#Protein : "WP:CE05214"
+#Database "SwissProt" "RR44_CAEEL" "Q17632"
+#Motif_homol     "INTERPRO:IPR001900"
+
+#write ace file
+my $ii;
 foreach my $key(sort keys %CE_history)
 {
-  print "$key";
+  print "Protein : \"WP:$key\"\n";
   foreach my $release(sort byRelease keys %{ $CE_history{$key} })
     {
       foreach my $genehis(sort keys %{ $CE_history{$key}{$release} })
 	{
-	  print "\t\t$release\t$genehis $CE_history{$key}{$release}{$genehis}\n";
+	  print "History \"$release\" \"$CE_history{$key}{$release}{$genehis}\" \"$genehis\"\n";
 	}
     } 
   if( $CE_live{$key} == 1 ){
-    print "Live \n\n";
+    print "Live\n";
+    print "Database \"WORMPEP\" \"$key\" \"WP:$key\"\n";
+   
+    for $ii (0 .. $#{ $CE_corr_DNA{$key} })
+      {
+	print "Corresponding_DNA \"$CE_corr_DNA{$key}[$ii]\"\n";
+      }
   }
-  else{
-    print "\n";
-  }
+  print "\n";
 }
 
-
-###check multicodedPeps is true# # 
-#print "About to check multis\n\n\n\n\n\n\n\n\n\n\n\n";
-#my $db =Ace->connect('/wormsrv2/current_DB') || die "cant connect to current_DB\n\n";
-#print "connected\n";
-#foreach my $multigene( keys %multicodedPeps ){
-#  my $testgene = "WP:"."$multigene";
-#  print $testgene;
-#  my $DBpep = $db->fetch(Protein => "$testgene");
-#  if( defined($DBpep) )
-#    {
-#      my @corresponding_DNA = $DBpep->at('Visible.Corresponding_DNA');
-#      my $corresponding_DNA_COUNT = @corresponding_DNA;
-#      if ($corresponding_DNA_COUNT > 1){
-#	print LOG "$multigene correctly id'd as multicoded ($corresponding_DNA_COUNT X)\n";
-#      }
-#      else{
-#	print LOG "$multigene has $corresponding_DNA_COUNT coresponding_DNA's\n";
-#      }
-#    }
-#}
-
-
-#$db->close;
 close LOG;
 #### use Wormbase.pl to mail Log ###########
 my $name = "$0";
@@ -258,15 +241,17 @@ sub byRelease
   }
 
 sub addNewPeptide
-  {
+  { 
     # 1st occurance of peptide
     $CE_history{$CE}{$in}{$gene} = "created"; #.= "Created $in\t" ;
     #$CE_gene{$CE} .= "$gene ";
+    push( @{ $CE_corr_DNA{$CE} }, "$gene");
     push( @{ $CE_gene{$CE} }, "$gene");
     $CE_live{$CE} = 1;   #assume live when put in unless explicitly killed
     $gene_CE{$gene} = $CE;
     if (defined ($out) ){
       $CE_history{$CE}{$out}{$gene} = "removed";#.= "Removed $out\t" ;
+      &removeGeneCorrDNA;
       if( &multiCoded == 0){
 	$CE_live{$CE} = 0;
       }
@@ -290,6 +275,9 @@ sub reappearedPeptide
 	$CE_live{$CE} = 0;
 	$CE_history{$CE}{$out}{$gene} = "removed";# .= "$out Removed\t";
       }
+    else {
+      push( @{ $CE_corr_DNA{$CE} }, "$gene");
+    }
     return 1;
     #gene is same as was previously if this routine called
   }
@@ -299,22 +287,22 @@ sub reappearedAsIsoform
     $CE_live{$CE} = 1;
     #check if becoming isoform is same release as removal - if so modify history to show conversion rather than reappearance
     if( (defined("$CE_history{$CE}{$in}{$stem}") ) && ("$CE_history{$CE}{$in}{$stem}" eq "removed") ) { 
-      $CE_history{$CE}{$in}{$stem} = "converted to isoforom $gene";
+      $CE_history{$CE}{$in}{$stem} = "converted to isoform $gene";
     }
     else{
       $CE_history{$CE}{$in}{$stem} = "reappeared as isoform $gene";# .= "$in Reappeared as isoform to $stem \t"; 
     }
     
-    #$CE_gene{$CE} = $gene;
-    #should remove old gene from array?
     push( @{ $CE_gene{$CE} }, "$gene");
-
     $gene_CE{$CE} = $CE;
     if( $out )
       {
 	$CE_live{$CE} = 0;
 	$CE_history{$CE}{$out}{$gene} = "removed";# .= "$out Removed\t";
       }
+    else {
+      push( @{ $CE_corr_DNA{$CE} }, "$gene");
+    }
     return 1;
   }
 
@@ -322,14 +310,17 @@ sub becameIsoform
   {
     $CE_live{$CE} = 1;
     $CE_history{$CE}{$in}{$gene} = "became isoform to $stem";#  .= "$in became isoform to $stem \t"; 
-    #$CE_gene{$CE} = $gene;
+    &removeGeneCorrDNA($stem);
     push( @{ $CE_gene{$CE} }, "$gene");
     $gene_CE{$CE} = $CE;
     if( $out )
       {
 	$CE_live{$CE} = 0;
 	$CE_history{$CE}{$out}{$gene} = "removed";# .= "$out Removed\t";
-      }   
+      } 
+    else {
+      push( @{ $CE_corr_DNA{$CE} }, "$gene");
+    }  
     return 1;
   }
 
@@ -345,6 +336,9 @@ sub changePepGene
 	$CE_live{$CE} = 0;
 	$CE_history{$CE}{$out}{$gene} = "removed";# .= "$out Removed\t";
       } 
+    else {
+      push( @{ $CE_corr_DNA{$CE} }, "$gene");
+    }
     return 1;
   }
  sub oldStyleName
@@ -368,6 +362,21 @@ sub multiCoded
     else{
       return 0;
     }
+  }
+sub removeGeneCorrDNA
+  {
+    my $g;
+    my $gene_to_remove = shift;
+    unless (defined($gene_to_remove)){
+      $gene_to_remove = $gene;
+    }
+    foreach $g (0 .. $#{ $CE_corr_DNA{$CE} })
+      {
+	if( "$gene_to_remove" eq "$CE_corr_DNA{$CE}[$g]" )
+	  {
+	    splice(@{ $CE_corr_DNA{$CE} } , $g, 1);# remove gene
+	  }
+      }
   }
 
 
