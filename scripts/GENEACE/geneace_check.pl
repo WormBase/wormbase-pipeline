@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-10-11 10:28:23 $
+# Last updated on: $Date: 2004-11-24 17:49:58 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -25,8 +25,6 @@ use GENEACE::Geneace;
 my $tace = &tace;          # tace executable path
 my $curr_db = "/nfs/disk100/wormpub/DATABASES/current_DB"; # Used for some cross checking with geneace
 my $def_dir = "/wormsrv1/geneace/wquery";                  # where lots of table-maker definitions are kept
-my $machine = ();
-$machine = "+" if `ls /wormsrv1/`;                         # if sees wormsrv1 then $machine is defined, else it remains undef: for running on cbi1, eg
 
 my $rundate = &rundate;                                    # Used by various parts of script for filename creation
 my $maintainers = "All";                                   # Default for emailing everyone logfile
@@ -73,8 +71,7 @@ print "Using $default_db as default database.\n\n";
 # Open file for acefile output?
 my $acefile;
 if ($ace){
-  $acefile = "/wormsrv1/geneace/CHECKS/geneace_check.$rundate.$$.ace" if $machine;
-  $acefile = "/nfs/disk100/wormpub/tmp/geneace_check.$rundate.ace" if !$machine;
+  $acefile = "/wormsrv1/geneace/CHECKS/geneace_check.$rundate.$$.ace";
   open(ACE, ">>$acefile") || croak $!;
   system("chmod 777 $acefile");
 }
@@ -849,77 +846,60 @@ sub process_allele_class{
   my @alleles = $db->fetch(-class => 'Allele',
                  	   -name  => '*');
 
-  my (%allele_desig_to_LAB, $allele, $desig, $desig2);
 
-  my %overlapped_clones = $ga->get_overlapped_clones();
+  # make hash of allele to lab connections
+  my %allele2lab;
+  my $def="Table-maker -p \"$def_dir/allele_designation_to_LAB.def\"\nquit\n";
 
-  %allele_desig_to_LAB = $ga -> allele_desig_to_lab($default_db);
+  open (FH, "echo '$def' | $tace $db | ") || die "Couldn't access $db\n";
+  while (<FH>){
+    chomp;
+    if ($_ =~ /^\"(.+)\"\s+\"(.+)\"/){
+      $allele2lab{$2} = $1  # $2 is allele_designation $1 is lab designation	
+    }
+  }
 
+
+  # now loop through all alleles looking for problems
   foreach my $allele (@alleles){
 
     # check allele has no location tag
-    if( !defined $allele->Location ){
+    if(!defined $allele->Location ){
       
-      # catch non-standard upper-case allele name
-      if ($allele =~ /^[A-Z]+/){
-	print LOG "ERROR: $allele has no Location (no info available)\n";
+      if(!$ace){
+	print LOG "ERROR: $allele has no Location tag\n";
       }
-      else {
-	print LOG "ERROR : $allele has no Location info\n";
+      else{
+	print LOG "ERROR(a): $allele has no Location tag\n";
 
-	# acefile output for normal or double alleleles having no location tag
-	if ($ace){
-	  if ($allele =~ /^([a-z]{1,})\d+$/){
-	    $desig = $1;
-	    &lab_assignment(\%allele_desig_to_LAB, $allele, $desig);
-	    next;
-	  }
+	# try to find lab designation for alleles with CGC-names (1 or 2 letters and then numbers)
+	if ($allele =~ /^([a-z]{1,2})\d+$/){
+	  my $allele_name = $1;	  
 
-	  ######################
-	  # catch double alleles
-          ######################
-
-	  if ($allele =~ /^([a-z]{1,})\d+([a-z]{1,})\d+$/){
-
-	    # double allele has same designation (eg, pk100pk123)
-	    $desig = $1; $desig2 = $2;
-	    &lab_assignment(\%allele_desig_to_LAB, $allele, $desig) if ("$desig" eq "$desig2");
-
-	    # double allele has diff designation
-	    if ("$desig" ne "$desig2"){
-	      &lab_assignment(\%allele_desig_to_LAB, $allele, $desig);
-	      &lab_assignment(\%allele_desig_to_LAB, $allele, $desig2);
-	    }
-	    next;
-	  }
-	}
+	  print ACE "\nAllele : \"$allele\"\n";
+	  print ACE "-D Location\n";
+	  print ACE "\nAllele : \"$allele\"\n";
+	  print ACE "Location \"$allele2lab{$allele_name}\"\n";
+	  next;
+	}	
       }
     }
-
-    # check that LAB desig to allele desig is correct
-    if ( defined $allele->Location ) {
+  
+  
+    # check that Lab designation (when present) is correct (for CGC named alleles)
+    if (defined $allele->Location) {
       my $lab = $allele->Location;
-      if ($allele =~ /^([a-z]{1,})\d+$/){
-	$desig = $1;
-	if ( $allele_desig_to_LAB{$desig} ne $lab ){
-	  print LOG "ERROR(a): $allele ($allele_desig_to_LAB{$desig}) is linked to wrong lab ($lab)\n";
-	  &lab_assignment(\%allele_desig_to_LAB, $allele, $desig, "correction") if $ace;
+      if ($allele =~ m/^([a-z]{1,2})\d+$/){
+	my $allele_name = $1;
+	if ( $allele2lab{$allele_name} ne $lab ){
+	  print LOG "ERROR: $allele is connected to $lab lab which is incorrect according to $allele2lab{$allele_name} lab info\n";
 	}
       }
     }
 
-    sub lab_assignment {
-      my ($allele_desig_to_LAB, $allele, $desig, $option) = @_;
-      my %allele_desig_to_LAB = %$allele_desig_to_LAB;
-
-      print ACE "\nAllele : \"$allele\"\n" if $option;
-      print ACE "-D Location\n"            if $option;
-      print ACE "\nAllele : \"$allele\"\n";
-      print ACE "Location \"$allele_desig_to_LAB{$desig}\"\n";
-    }
 
     # warn about alleles linked to more than one Gene (might be valid for deletion alleles)
-    if($allele -> Gene){
+    if(($allele -> Gene) && (($allele->Deletion) || ($allele -> Deletion_with_insertion))){
       my @geneids=$allele->Gene;
 
       if (scalar @geneids > 1){
@@ -927,95 +907,56 @@ sub process_allele_class{
       }
     }
 
+
     # All alleles with flanking sequences should be connected to a gene
     if($allele->Flanking_sequences && !defined $allele->Gene){
       print LOG "ERROR: $allele has flanking sequences but is not connected to a Gene object\n";
-
     }
 
-
-
-    # test allele has no method and/or method matches tags about an allele, eg, Deletion tag -> Deletion_allele
-    my $method =(); my $method_is =();
-    if    ( defined $allele -> Allele_type &&  $allele -> Allele_type eq "Insertion" && !defined $allele -> Transposon_insertion ){$method = "Insertion_allele"}
-    if    ( defined $allele -> Allele_type &&  $allele -> Allele_type eq "Transposon_insertion" )    {$method = "Transposon_insertion"}
-    elsif ( defined $allele -> Allele_type &&  $allele -> Allele_type eq "Deletion" )                {$method = "Deletion_allele"}
-    elsif ( defined $allele -> Allele_type &&  $allele -> Allele_type eq "Deletion_with_insertion" ) {$method = "Deletion_and_insertion_allele"}
-    elsif ( defined $allele -> Allele_type &&  $allele -> Allele_type eq "Substitution" )            {$method = "Substitution_allele"}
-
-    $method_is = $allele -> Method if defined $allele -> Method;
-
-    if (!$method_is){
-      print  LOG "ERROR(a): Allele $allele has no Method '$method'\n" if $method;
-      print  LOG "ERROR(a): Allele $allele has no Method 'Allele'\n" if !$method;
-      if ($ace){
-        print ACE "\nAllele : \"$allele\"\n";
-        print ACE "Method \"$method\"\n" if $method;
-        print ACE "Method \"Allele\"\n" if !$method;
-      }
+  
+    # Check for Method tag
+    if(!defined($allele->Method)){
+      print LOG "ERROR: $allele has no Method tag\n";
     }
-    else {
-      if (defined $method && $method ne $method_is){
-        print LOG "ERROR(a): $allele has wrong method ($method_is): change to $method\n";
-        if ($ace){
-          print ACE "\nAllele : \"$allele\"\n";
-          print ACE "-D Method\n";
-          print ACE "\nAllele : \"$allele\"\n";
-          print ACE "Method \"$method\"\n";
-        }
+
+    # check that Allele_type is set for all alleles with flanking sequences
+    if(defined($allele->Flanking_sequences) && !defined($allele->Allele_type)){
+      print LOG "ERROR: $allele has flanking sequences but no 'Allele_type' tag\n";  
+    }
+    
+
+    # test allele has method that matches Allele_type, eg, Deletion tag -> Deletion_allele
+    if(defined $allele->Allele_type){
+      my $expected_method; 
+      my $observed_method;
+      if    ($allele->Allele_type eq "Insertion" && !defined $allele->Transposon_insertion ){$expected_method = "Insertion_allele"}
+      if    ($allele->Allele_type eq "Transposon_insertion" )    {$expected_method = "Transposon_insertion"}
+      elsif ($allele->Allele_type eq "Deletion" )                {$expected_method = "Deletion_allele"}
+      elsif ($allele->Allele_type eq "Deletion_with_insertion")  {$expected_method = "Deletion_and_insertion_allele"}
+      elsif ($allele->Allele_type eq "Substitution" )            {$expected_method = "Substitution_allele"}
+      
+      ($observed_method = $allele->Method) if (defined $allele -> Method);
+      
+      # does $observed method tag agree with expected method tag (based on Allele_type tag)?
+      if ($expected_method ne $observed_method){
+	if ($ace){
+	  print LOG "ERROR(a): $allele has wrong method ($observed_method): change to $expected_method\n";
+	  print ACE "\nAllele : \"$allele\"\n";
+	  print ACE "-D Method\n";
+	  print ACE "\nAllele : \"$allele\"\n";
+	  print ACE "Method \"$expected_method\"\n";
+	}
+	else{
+	  print LOG "ERROR: $allele has method $observed_method which maybe should be $expected_method\n";
+	}
       }
     }
 
     # find alleles that have flanking_seqs but no SMAPPED sequence
     if ( $allele -> Flanking_sequences && ! defined $allele -> Sequence ){
-      print LOG "ERROR: Allele $allele has flanking sequences but has no parent sequence\n";
+      print LOG "ERROR: Allele $allele has Flanking_sequences tag but has no Sequence tag\n";
     }
-
-    foreach my $tag ("Predicted_gene", "Transcript"){
-
-      # find alleles linked to predicted_gene/transcript but no SMAPPED sequence 
-      if ( $allele -> $tag && ! defined $allele -> Sequence ){
-	my @genes = $allele -> $tag;
-	my $seq = $allele -> Sequence;
-
-	print LOG "ERROR(a): Allele $allele has $tag (@genes) but has no parent sequence\n";
-	if ($ace){
-	  if ( $genes[0] =~ /(.+)\..+/ ) { # only take first seq. if multiple
-	    my $parent =  $1;
-	    print ACE "\n\nAllele : \"$allele\"\n";
-	    print ACE "Sequence \"$parent\"\n";
-	  }
-	}
-      }
-
-      # find alleles which have unmatched parent sequence and seq. obj. names
-      if ( $allele -> $tag && $allele -> Sequence ){
-
-	my @genes = $allele -> $tag;
-	my $seq = $allele -> Sequence;
- 	my %overlaps;
-	
-	if ($seq !~ /SUPERLINK.+/){
-	  if ( $genes[0] =~ /(.+)\..+/ ){ # only take first seq. if multiple
-	    my $parent =  $1;
-	    if ( $parent ne $seq && exists $overlapped_clones{$seq} ){
-	      foreach my $e (@{$overlapped_clones{$seq}}){$overlaps{$e}++}
-	      if ( exists $overlaps{$seq} ){
-		print LOG "INFO: $allele has a different parent sequence ($seq) based on its sequence name(s) (@genes)(overlapped clones?)\n";
-	      }
-	    }
-	    if ( $parent ne $seq && !exists $overlapped_clones{$seq} ){
-	      print LOG  "ERROR(a): $allele has a different parent sequence ($seq) based on its sequence name(s) (@genes)\n";
-	      if ($ace){
-		print ACE "\n\nAllele : \"$allele\"\n";
-		print ACE "Sequence \"$parent\"\n";
-	      }
-	    }
-	  }
-	}
-      }
-    }
-  }
+  }  
 }
 
 
@@ -1259,14 +1200,13 @@ sub usage {
 sub create_log_files{
 
   # Create history logfile for script activity analysis
-  $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`")if $machine;
+  $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
 
   # create main log file using script name for
   my $script_name = $1;
   $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
 
-  $log = "/wormsrv2/logs/$script_name.$rundate.$$" if $machine;
-  $log = "/nfs/disk100/wormpub/tmp/$script_name.$rundate" if !$machine;
+  $log = "/wormsrv2/logs/$script_name.$rundate.$$";
 
   open (LOG, ">$log") or die "cant open $log";
   print LOG "$script_name\n";
@@ -1280,8 +1220,8 @@ sub create_log_files{
     }
   }
 
-  $jah_log = "/wormsrv2/logs/$script_name.jahlog.$rundate.$$" if $machine;
-  $jah_log = "/nfs/disk100/wormpub/tmp/$script_name.jahlog.$rundate" if !$machine;
+  $jah_log = "/wormsrv2/logs/$script_name.jahlog.$rundate.$$";
+
 
   open(JAHLOG, ">>$jah_log") || die "Can't open $jah_log\n";
   print JAHLOG "This mail is generated automatically for CGC on $rundate\n"; 
@@ -1289,8 +1229,7 @@ sub create_log_files{
   print JAHLOG "=========================================================================\n";
 
   # create separate log with errors for Erich
-  $caltech_log = "/wormsrv2/logs/geneace_check.caltech_log.$rundate.$$" if $machine;
-  $caltech_log = "/nfs/disk100/wormpub/tmp/$script_name.caltech_log.$rundate" if !$machine;
+  $caltech_log = "/wormsrv2/logs/geneace_check.caltech_log.$rundate.$$";
 
   open(CALTECHLOG,">$caltech_log") || die "cant open $caltech_log";
   print CALTECHLOG "$0 started at ",`date`,"\n";

@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 
-# Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-06-09 16:22:06 $
+# Last updated by $Author: krb $
+# Last updated on: $Date: 2004-11-24 17:49:58 $
 
 package Geneace;
 
@@ -18,9 +18,7 @@ $machine = "+" if `ls /wormsrv1/`;                  # if sees wormsrv1 then $mac
 
 my $curr_db = "/nfs/disk100/wormpub/DATABASES/current_DB";
 my $geneace_dir = "/wormsrv1/geneace";
-#my $tace = &tace;
-my $tace = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_5/tace";
-#my $tace = glob("~wormpub/ACEDB/bin_ALPHA/tace");
+my $tace = &tace;
 
 
 sub init {
@@ -276,24 +274,6 @@ sub get_unique_from_array {
   return @new_array_no_dup;
 }
 
-sub get_overlapped_clones {
-  my $this = shift;
-  my %overlapped_clone;
-
-  my $get_overlapped_clones="Table-maker -p \"$def_dir/get_overlapped_clones.def\"\nquit\n" if $machine;
-     $get_overlapped_clones="Table-maker -p \"$test_def_dir/get_overlapped_clones.def\"\nquit\n" if !$machine;
-
-  open (FH, "echo '$get_overlapped_clones' | $tace $curr_db |") || die "Couldn't access $curr_db\n";
-  while (<FH>){
-    chomp $_;
-    my @clones = split(/\s+/, $_) if $_ =~ /^\".+/;
-    for (my $i = 0; $i < scalar @clones; $i++){
-      $clones[$i] =~ s/\"//g;
-      push(@{$overlapped_clone{$clones[0]}}, $clones[$i]) if $i != 0;
-    }
-  }
-  return %overlapped_clone;
-}
 
 sub get_non_Transposon_alleles {
   my ($this, $db) = @_;
@@ -304,22 +284,6 @@ sub get_non_Transposon_alleles {
   return %Alleles;
 }
 
-sub allele_desig_to_lab {
-  my ($this, $db)=@_;
-  my %allele_desig_LAB;
-
-  my $def="Table-maker -p \"$def_dir/allele_designation_to_LAB.def\"\nquit\n" if $machine;
-     $def="Table-maker -p \"$test_def_dir/allele_designation_to_LAB.def\"\nquit\n" if !$machine;
-
-  open (FH, "echo '$def' | $tace $db | ") || die "Couldn't access geneace\n";
-  while (<FH>){
-    chomp$_;
-    if ($_ =~ /^\"(.+)\"\s+\"(.+)\"/){
-      $allele_desig_LAB{$2} = $1  # $2 is allele_designation $1 is LAB	
-    }
-  }
-  return %allele_desig_LAB;
-}
 
 sub allele_to_gene_id {
   my ($this, $db)=@_;
