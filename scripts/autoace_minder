@@ -32,7 +32,7 @@ my $addpep; 		# prepare pepace and then dump from pepace into autoace
 my $buildrna;		# Build wormrna
 my $blat;		# map similarities (BLAT jobs)
 my $addblat;		# parse blat files
-my $addhomol;            # parse similarity data from /ensembl_dump
+my $addhomol;           # parse similarity data from /ensembl_dump
 my $map;		# map PCR, RNAi and WTP
 my $full;		# Full release (used to do all the following)
 my $acefile;		# Write .acefiles
@@ -46,6 +46,7 @@ my $confirm;            # Confirm gene models (EST|mRNA)
 my $ftp;		# Public release to FTP site
 my $debug;		# Verbose debug mode
 my $help;		# Help/Usage page
+my $test;
 
 GetOptions (
 	    "initial"      => \$initial,
@@ -72,8 +73,17 @@ GetOptions (
 	    "ftp"          => \$ftp,
 	    "debug"        => \$debug,
 	    "help"         => \$help,
-	    "h"	           => \$help
+	    "h"	           => \$help,
+	    "test"         => \$test
 );
+
+# Help pod if needed
+&usage(0) if ($help);
+
+# if all then set all flags
+if ($full) {
+    $acefile = 1; $build = 1; $check = 1; $buildpep = 1; $addpep = 1; $gffdump = 1; $map = 1; $agp = 1;
+}
 
  ##############################
  # Script variables (run)     #
@@ -84,101 +94,173 @@ my $rundate     = `date +%y%m%d`; chomp $rundate;
 my $runtime     = `date +%H:%M:%S`; chomp $runtime;
 my $version     = &get_cvs_version("$0");
 
-# specify location of scripts
-my $scriptdir   = "/wormsrv2/scripts";
+# build flag path
 
-&usage(0) if ($help);
+our %flag = (
+	     'A1'  => 'A1:Build_in_progress',
+	     'A2'  => 'A2:Updated_WS_version',
+	     'A3'  => 'A3:Unpack_FTP_databases',
+	     'A4'  => 'A4:Primary_databases_on_wormsrv2',
+	     'A5'  => 'A5:Wrote_acefiles_to_wormbase', 
+	     'B1'  => 'B1:Made_autoace_database',
+	     'B2'  => 'B2:Dump_DNA_files',
+	     'B3'  => 'B3:Made_agp_files',
+	     'B4'  => 'B4:Errors_in_agp_files',
+	     'B5'  => 'B5:Copy_to_midway',
+	     'B6'  => 'B6:BLAT_analysis',
+	     'B7'  => 'B7:Upload_BLAT_data',
+	     'B8'  => 'B8:Upload_wublast_data',
+	     'C1'  => 'C1:Dumped_GFF_files',
+	     'C2'  => 'C2:Split_GFF_files',
+	     'C3'  => 'C3:Map_PCR_products',
+	     'C4'  => 'C4:Confirm_gene_models',
+	     'D1'  => 'D1:Build_wormpep',
+	     'D2'  => 'D2:Update_pepace',
+	     'D3'  => 'D3:Add_protein_data_to_autoace',
+	     'D4'  => 'D4:Build_wormrna',
+	     'Z1'  => 'Z1:Make_autoace_complete'
+	     );
+
+
+our @chrom = ('I','II','III','IV','V','X');
+
+our $logdir     = "/wormsrv2/autoace/logs";
+our $WSver_file = "/wormsrv2/autoace/wspec/database.wrm";
+our $tace      =  "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
+our ($WS_version,$WS_previous);
+my $scriptdir  = "/wormsrv2/scripts";                                            # specify location of scripts
+
+our $logfile = "/wormsrv2/logs/autoace_minder.WS${WS_version}.${rundate}";
+open (LOG,">$logfile");
+LOG->autoflush();
+
 
 # debug mode modifies $maintainers to reduce e-mail load
 ($maintainers = "dl1\@sanger.ac.uk") if ($debug);
 
-# build flag path
-our $logdir     = "/wormsrv2/autoace/logs";
-our $build_flag = "$logdir/build_in_progress";
-our $WSver_file = "/wormsrv2/autoace/wspec/database.wrm";
+#__ PREPARE SECTION __#
 
-our ($WS_version,$WS_previous);
+#######################################
+# A1:Build_in_progress                #
+# A2:Updated_WS_version               #
+#######################################
 
-our $tace =  "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
+&initiate_build    if ($initial);
 
+# fetch WS version number
+&get_WS_version;
 
-# are you building a new database?
-&initiate_build if ($initial);
-
- #######################################
- # fetch WS version number             #
- #######################################
-
-$WS_version = &get_wormbase_version;
-
-# exit if no WS version is returned
-&usage(1) if (!defined($WS_version));
-
-# exit if WS version (database.wrm) is older than build_in_process flag
-# i.e. the WS version has been changed since the start of the build
-&usage(11) if (-M $build_flag < -M $WSver_file);
-
-# manipulate to assign last WS release version
-$WS_previous = $WS_version -1;
-
- ########################################
- # logfiles                             #
- ########################################
-
-our $logfile = "/wormsrv2/logs/autoace_minder.WS${WS_version}.${rundate}";
-
-open (LOG,">$logfile");
-LOG->autoflush();
-
+# logfiles
 &logfile_details;
 
+&test if ($test);
 
- ########################################
- # if all then set all flags            #
- ########################################
 
-if ($full) {
-    $acefile = 1; $build = 1; $check = 1; $buildpep = 1; $addpep = 1; $gffdump = 1; $map = 1; $agp = 1;
-}
+#######################################
+# A3:Unpack_FTP_databases             #
+# A4:Primary_databases_on_wormsrv2    #
+#######################################
 
-#################################################################################
-# Main Loop                                                                     #
-#################################################################################
+&prepare_primaries if ($unpack);
 
-# prepare
-&prepare_primaries     if ($unpack);
+#######################################
+# A5:Wrote_acefiles_to_wormbase       #
+#######################################
 
-# build
-&make_acefiles         if ($acefile);
-&make_autoace          if ($build | $builddb || $buildchrom || $buildrelease);
+&make_acefiles     if ($acefile);
 
-# checks
-&check_release          if ($check);
+#__ BUILD SECTION __#
 
-# similarity matches
-&pre_blat_copy          if ($secure);
-&blat_jobs              if ($blat);
-&parse_blat_files       if ($blat || $addblat);
-&parse_homol_data       if ($addhomol);
+#######################################
+# B1:Make_autoace_database            #
+# B2:Dump_DNA_files                   #
+#######################################
 
-# wormpep and protein work
-&make_wormpep          if ($buildpep);
-&pepace_stuff          if ($addpep);
+&make_autoace      if ($build | $builddb || $buildchrom || $buildrelease);
 
-# wormrna work
-&make_wormrna          if ($buildrna);
+#######################################
+# B3:Make_agp_files                   #
+#######################################
 
-# &make_FTP_wormbase     if ($opt_f); deprecated 19.02.02 kj
-&make_anonymous_FTP    if ($ftp);
+&check_release     if ($check);
 
-# GFF files
-&dump_GFFs             if ($gffdump);
-&split_GFFs            if ($gffsplit);
+#######################################
+# B5:Copy_to_midway                   #
+#######################################
 
-&map_PCR_RNAi_and_WTP  if ($map);
-&make_agp              if ($agp);
+&pre_blat_copy     if ($secure);
+
+#######################################
+# B6:Blat_analysis                    #
+#######################################
+
+&blat_jobs         if ($blat);
+&parse_blat_files  if ($blat || $addblat);
+
+#######################################
+# B7:Upload_wublast_data              #
+#######################################
+
+&parse_homol_data  if ($addhomol);
+
+#__ PROCESS SECTION __#
+
+#######################################
+# C1:Dumped_GFF_files                 #
+#######################################
+
+&dump_GFFs         if ($gffdump);
+
+#######################################
+# C2:Split_GFF_files                  #
+#######################################
+
+&split_GFFs        if ($gffsplit);
+
+#######################################
+# C3:Map_PCR_products                 #
+#######################################
+
+&map_features      if ($map);
+
+#######################################
+# C4:Confirm_gene_models              #
+#######################################
 
 &confirm_gene_models   if ($confirm);
+
+#__ ANCILLIARY DATA SECTION __#
+
+#######################################
+# D1:Build_wormpep                    #
+#######################################
+
+&make_wormpep      if ($buildpep);
+
+#######################################
+# D2:Update_pepace                    #
+# D3:Add_protein_data_to_autoace      #
+#######################################
+
+&pepace_stuff      if ($addpep);
+
+#######################################
+# D4:Build_wormrna                    #
+#######################################
+
+&make_wormrna      if ($buildrna);
+
+#__ CHECK SECTION __#
+
+
+#__ RELEASE SECTION __#
+
+&make_FTP          if ($ftp);
+
+
+#__ FLOATING SUBS __#
+
+&make_agp          if ($agp);
 
  ##############################
  # mail $maintainer report    #
@@ -209,7 +291,7 @@ exit(0);
 #
 # Does         : [01] - updates the WS version in database.wrm (under CVS)
 #              : [02] - writes the WS version to the build_flag (writes to /wormsrv2/autoace/logs)
-#              : [03] - writes log file A1:Update_WS_version to /wormsrv2/autoace/logs
+#              : [03] - writes log file A2:Update_WS_version to /wormsrv2/autoace/logs
 
 
 sub initiate_build {
@@ -218,7 +300,7 @@ sub initiate_build {
     my $cvs_file = "/wormsrv2/autoace/wspec/database.wrm";
 
     # exit if build_in_progress flag is present
-    &usage(10) if (-e $build_flag);
+    &usage(10) if (-e $logdir/$flag{'A1'};
     
     # commit to new build ..............
     $WS_version = &get_wormbase_version;
@@ -230,14 +312,18 @@ sub initiate_build {
     my $WS_new_name = $WS_version +1;
  
     # make new build_in_process flag
-    system ("touch $build_flag");
-    open (FLAG, ">>$build_flag"); 
+    system ("touch $logdir/$flag{'A1'}");
+    open (FLAG, ">>$logdir/$flag{'A1'}"); 
     print FLAG "WS$WS_new_name\n";
     close FLAG;
 
     # tidy up the log directory
-    system ("/usr/bin/rm -f /wormsrv2/autoace/logs/A*");           # Prepare section
-    system ("/usr/bin/rm -f /wormsrv2/autoace/logs/B*");           # Build section
+    system ("/usr/bin/rm -f $logdir/A*");           # Prepare section
+    system ("/usr/bin/rm -f $logdir/B*");           # Build section
+    system ("/usr/bin/rm -f $logdir/C*");           # Procees section
+    system ("/usr/bin/rm -f $logdir/D*");           # Ancilliary dataset section
+    system ("/usr/bin/rm -f $logdir/E*");           # Check section
+    system ("/usr/bin/rm -f $logdir/F*");           # Release section
     
     # make sure that the database.wrm file is younger
     sleep 10;
@@ -250,10 +336,37 @@ sub initiate_build {
     system ("cvs -d '/nfs/ensembl/cvsroot/' commit -m 'updating $cvs_file to $WS_new_name' $cvs_file") && die "Couldn't 'cvs commit' $cvs_file\n";
 
     # make a log file in /wormsrv2/autoace/logs
-    system ("touch $logdir/A1:Updated_WS_version");
+    system ("touch $logdir/$flag{'A2'}");
 
 }
-# end initiate_build
+#__ end initiate_build __#
+
+#################################################################################
+# get_WS_version                                                                #
+#################################################################################
+# Requirements : [01] - Presence of the database.wrm file in wspec
+
+# Checks       : [01] - Fail if no WS_version is returned.
+
+# Does         : [01] - checks the build_in_progess flag is older than the version
+#              : [02] - assigns last WS version to WS_version - 1
+
+sub get_WS_version {
+
+    $WS_version = &get_wormbase_version;
+    
+    # exit if no WS version is returned
+    &usage(1) if (!defined($WS_version));
+
+    # exit if WS version (database.wrm) is older than build_in_process flag
+    # i.e. the WS version has been changed since the start of the build
+    &usage(11) if (-M $flag{'A1'} < -M $WSver_file);
+
+    # manipulate to assign last WS release version
+    $WS_previous = $WS_version -1;
+
+}
+#__ end get_WS_version __#
 
 #################################################################################
 # prepare primary databases                                                     #
@@ -264,15 +377,15 @@ sub initiate_build {
 #              : [02] - Fail if the Primary_databases_used_in_build file is absent
 
 # Does         : [01] - checks the Primary_database_used_in_build data
-#              : [03] - writes log file A1:Update_WS_version to /wormsrv2/autoace/logs
+#              : [03] - writes log file A2:Update_WS_version to /wormsrv2/autoace/logs
 
 sub prepare_primaries {
 
-    # exit if build_in_progress flag is present
-    &usage(12) unless (-e $build_flag);
+    # exit unlessif build_in_progress flag is present
+    &usage(12) unless (-e $logdir/$flag{'A1'});
 
     # exit if the Primary_databases_used_in_build is absent
-    &usage(13) unless (-e "/wormsrv2/autoace/logs/Primary_databases_used_in_build");
+    &usage(13) unless (-e "$logdir/Primary_databases_used_in_build");
 
     local (*LAST_VER);
     my ($stlace_date,$brigdb_date,$citace_date,$cshace_date) = &FTP_versions;
@@ -328,7 +441,7 @@ sub prepare_primaries {
     }
 
     # make a unpack_db.pl log file in /logs
-    system ("touch $logdir/A2:Unpack_FTP_databases");
+    system ("touch $logdir/$flag{'A3'}");
 
     # transfer /wormsrv1/camace to /wormsrv2/camace 
     
@@ -344,7 +457,7 @@ sub prepare_primaries {
     # do we need this? 
 
     # make a unpack_db.pl log file in /logs
-    system ("touch $logdir/A3:Primary_databases_on_wormsrv2");
+    system ("touch $logdir/$flag{'A4'}");
 
 }
 
@@ -435,13 +548,19 @@ sub last_versions {
 #################################################################################
 
 sub make_acefiles {
+    
+    # exit unless build_in_progress flag is present
+    &usage(12) unless (-e $logdir/$flag{'A1'});
+
+    # exit unless A4:Primary_databases_on_wormsrv2
+    &usage(12) unless (-e $logdir/$flag{'A4'});
 
     system ("$scriptdir/make_acefiles -ne") && die "Couldn't run make_acefiles\n";
     print LOG " Write acefiles to disk\n";
     print LOG " => 'make_acefiles -ne'\n\n";
 
     # make a make_acefiles log file in /logs
-    system ("touch $logdir/A4:Wrote_acefiles_to_wormbase");
+    system ("touch $logdir/$flag{'A5'}");
 
 }
 #__ end make_acefiles __#
@@ -464,7 +583,7 @@ sub make_acefiles {
 sub make_autoace {
 
     # quit if make_acefiles has not been run
-    &usage(8) unless (-e "$logdir/A4:Wrote_acefiles_to_wormbase");
+    &usage(8) unless (-e "$logdir/$flag{'A5'}");
 	
     if ($build || $builddb) { 
 	system ("$scriptdir/make_autoace -p /wormsrv2/autoace -r") && die "Couldn't run autoace -rc\n";
@@ -472,36 +591,69 @@ sub make_autoace {
 	print LOG " =>'make_autoace -p /wormsrv2/autoace -r'\n\n";
 	
 	# make a make_autoace log file in /logs
-	system ("touch $logdir/B1:Build_autoace_database");
+	system ("touch $logdir/$flag{'B1'}");
     }
 
     if ($build || $buildchrom) {
+	
+	# quit if make_acefiles has not been run
+	&usage(14) unless (-e "$logdir/$flag{'B1'}");
+	
 	system ("$scriptdir/chromosome_dump.pl -dc") && die "Couldn't run chromosome_dump -dc\n" ;
 	print LOG " Build autoace (CHROMOSOMES)\n";
 	print LOG " => 'chromosome_dump.pl -dc'\n\n";
 
 	# make a make_autoace log file in /logs
-	system ("touch $logdir/B2:Dump_DNA_files");
+	system ("touch $logdir/$flag{'B2'}");
     }
 
     if ($buildrelease) {
-
+    
 	# quit if the build is not complete
-	&usage(13) unless (-e "$logdir/B1:Build_autoace_database");
+	&usage(13) unless (-e "$logdir/$flag{'B1'}");
+	
+	local (*MD5SUM_IN,*MD5SUM_OUT);
 	
 	system ("$scriptdir/make_autoace -p /wormsrv2/autoace -d")  && die "Couldn't run autoace -d\n"; 
 	print LOG " Build autoace (release)\n";
 	print LOG " => 'make_autoace -p /wormsrv2/autoace -d'\n\n";
 
 	# make a make_autoace log file in /logs
-	system ("touch $logdir/D1:Make_release_files");
+	system ("touch $logdir/$flag{'D1'}");
+
+	# modify the md5sum output file to remove the Sanger specific path
+	open (MD5SUM_OUT, ">/wormsrv2/autoace/release/md5sum.temp")            || die "Couldn't open md5sum file out\n";
+	open (MD5SUM_IN, "</wormsrv2/autoace/release/md5sum.WS${WS_version}")  || die "Couldn't open md5sum file in\n";
+	while (<MD5SUM_IN>) {
+	    s/\/wormsrv2\/autoace\/release\///g;
+	    print MD5SUM_OUT $_;
+	}
+	close MD5SUM_IN;
+	close MD5SUM_OUT;
+	
+	system ("mv -f /wormsrv2/autoace/release/md5sum.temp /wormsrv2/autoace/release/md5sum.WS${WS_version}");
+	
     }
 
 }
 #__ end make_autoace __#
 
 
+sub test {
 
+    local (*MD5SUM_IN,*MD5SUM_OUT);
+    open (MD5SUM_OUT, ">/wormsrv2/autoace/release/md5sum.temp")             || die "Couldn't open md5sum file out\n";
+    open (MD5SUM_IN,  "</wormsrv2/autoace/release/md5sum.WS${WS_version}")  || die "Couldn't open md5sum file in\n";
+    while (<MD5SUM_IN>) {
+	s/\/wormsrv2\/autoace\/release\///g;
+	print MD5SUM_OUT $_;
+    }
+    close MD5SUM_IN;
+    close MD5SUM_OUT;
+    
+    system ("mv -f /wormsrv2/autoace/release/md5sum.temp /wormsrv2/autoace/release/md5sum.WS${WS_version}");
+    
+}
 
 
 #################################################################################
@@ -511,19 +663,41 @@ sub make_autoace {
 sub check_release {
 
     # exit if autoace has not been built
-    &usage(7) unless (-e "$logdir/make_autoace_complete");
+    &usage(7) unless (-e "$logdir/$flag{'Z1'}");
 
     # have you run GFFsplitter ?
     # if no then this is about checking the DNA/agp files
-    unless ((-e "$logdir/C2:Split_GFF_files") && (-e "$logdir/B3:Made_agp_files")) {
+    unless ((-e "$logdir/$flag{'C2'}") && (-e "$logdir/$flag{'B3'}")) {
 	
 	&dump_GFFs;
-	system ("$scriptdir/check_DNA.pl") && die "Couldn't run check_DNA.pl\n";
+	system ("$scriptdir/check_DNA.pl")     && die "Couldn't run check_DNA.pl\n";
 	system ("$scriptdir/make_agp_file.pl") && die "Couldn't run make_agp_file.pl\n";
-	system ("$scriptdir/agp2dna.pl") && die "Couldn't run agp2dna.pl\n";
+	system ("$scriptdir/agp2dna.pl")       && die "Couldn't run agp2dna.pl\n";
 	
 	# make a make_autoace log file in /logs
-	system ("touch $logdir/made_agp_files");
+	system ("touch $logdir/$flag{'B3'}");
+
+	# check for errors in the agp file
+	
+	local (*AGP);
+	my $chrom;
+	my @errors;
+
+	foreach $chrom (@chrom) {
+	    open (AGP, "</wormsrv2/autoace/yellow_brick_road/CHROMOSOME_${chrom}.agp_seq.log") or die "Couldn't open agp file : $!";
+	    while (<AGP>) {
+		push (@errors,$_) if (/ERROR/);
+	    }
+	    close AGP;
+	}
+
+	# No errors
+	if (scalar @errors > 1) {
+	    # make 'agp_files_errors' log file in /logs
+	    # this will halt the process if you are running blat
+	    system ("touch $logdir/$flag{'B4'}");
+	}
+	
 
     }
     # if yes then this is about checking the class counts
@@ -542,20 +716,24 @@ sub check_release {
 sub pre_blat_copy {
     # make a copy of the database so far
     # transfer /wormsrv1/geneace to /wormsrv2/geneace 
-    
+
+    &usage(15) if (-e "$logdir/$flag{'B4'}");
+
     system("TransferDB -start /wormsrv2/autoace -end /wormsrv2/autoace_midway -database -wspec -name autoace_midway")
 	&& die "Couldn't run TransferDB for autoace\n";
     
     print LOG " Copy autoace prior to BLAT analysis\n";
     
-    # make a make_autoace log file in /logs
-    system ("touch $logdir/copy_autoace_before_BLAT_run");  
+    # make a copy_autoace_midway log file in /logs
+    system ("touch $logdir/$flag{'B5'}");  
 }
 
 sub blat_jobs {
+
+    # quit if you haven't copied to autoace_midway
+    &usage(16) unless (-e "$logdir/$flag{'B5'}");
     
     local (*WRITEDB);
-
 
     # run the blat jobs
 
@@ -571,13 +749,14 @@ sub blat_jobs {
     # blat_them_all -x
     system ("$scriptdir/blat_them_all.pl -bsx") && die "Couldn't blat_them_all -nbsve\n";
 
-    # quit if blat_them_all has not been run
-    &usage(9) unless (-e "$logdir/blat_transcript_data");
-
-    # read in the ace files (autoace only)
+    # make a file in /logs
+    system ("touch $logdir/$flag{'B6'}");  
 }
 
 sub parse_blat_files {
+
+    # quit if blat_them_all has not been run
+    &usage(9) unless (-e "$logdir/$flag{'B6'}")
 
 my $command=<<END;
 pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLAT_EST.ace 
@@ -610,9 +789,7 @@ END
     close WRITEDB;
     
     # make a make_autoace log file in /logs
-    system ("touch $logdir/loaded_BLAT_similarities");
-
-
+    system ("touch $logdir/$flag{'B7'}");
 }
 #__ end parse_blat_files __#
 
@@ -660,9 +837,8 @@ END
     print WRITEDB $command;
     close WRITEDB;
 
-    # make a make_autoace log file in /logs
-#    system ("touch $logdir/loaded_BLAT_similarities");
-
+    # upload_homol data log file in /logs
+    system ("touch $logdir/$flag{'B8'}");
 
 }
 #__ end parse_homol_data __#
@@ -678,7 +854,10 @@ sub make_wormpep {
     print LOG " Build wormpep release $WS_version\n";
     print LOG " =>'make_wormpep -r $WS_version'\n\n";
 
+    # make a make_autoace log file in /logs
+    system ("touch $logdir/D1:Build_wormpep");
 }
+#__ end make_wormpep  __#
 
 #################################################################################
 # make_wormrna                                                                  #
@@ -706,6 +885,9 @@ sub pepace_stuff {
     print LOG " Dumping files from pepace and reading into autoace\n";
     print LOG " =>'pepace2autoace'\n\n";
 }
+#__ end pepeace_stuff __#
+
+
 #################################################################################
 # dump GFF files                                                                #
 #################################################################################
@@ -718,6 +900,7 @@ sub dump_GFFs {
     # make dumped_GFF_file in /logs
     system ("touch $logdir/C1:Dumped_GFF_files");
 }
+#__ end dump_GFFs __#
 
 sub split_GFFs {
     system ("$scriptdir/GFFsplitter -s") && die "Couldn't split GFF files\n";
@@ -727,22 +910,28 @@ sub split_GFFs {
     # make GFF_splitter file in /logs
     system ("touch $logdir/C2:Split_GFF_files");
 }
+#__ end split_GFFs __#
+
 
 #################################################################################
 # map PCR, RNAi and WTP                                                         #
 #################################################################################
 
-sub map_PCR_RNAi_and_WTP {
+sub map_features {
+
     system("$scriptdir/map_PCR_products") && die "Couldn't run map_PCR_products\n";
     print LOG " Mapped PCR products for $WS_version\n";
     print LOG " =>'map_PCR_products'\n\n";
+
     system("$scriptdir/map_RNAi.pl") && die "Couldn't run map_RNAi.pl\n";
     print LOG " Mapped RNAi experiments for $WS_version\n";
     print LOG " =>'map_RNAi.pl'\n\n";
+
     system("$scriptdir/map_WTP.pl") && die "Couldn't run map_WTP.pl\n";
     print LOG " Mapped WTP objects for $WS_version\n";
     print LOG " =>'map_WTP.pl'\n\n";
 }
+#__ end map_features __#
 
 #################################################################################
 # confirm_gene models                                                           #
@@ -782,23 +971,13 @@ sub make_agp {
     print LOG " Make agp files for $WS_version\n";
     print LOG " =>'make_agp_file.pl'\n\n";
 }
+#__ end make_agp __#
 
 #################################################################################
-# make_FTP_wormbase                                                             #
+# make_FTP
 #################################################################################
 
-# deprecated 19.02.02 kj
-#sub make_FTP_wormbase {
-#    system ("$scriptdir/make_FTP_wormbase") && die "Couldn't run make_FTP_wormbase\n";
-#    print LOG " Move version to ftp-wormbase\n";
-#    print LOG " => 'make_FTP_wormbase\n\n";
-#}
-
-#################################################################################
-# make_anonymous_FTP
-#################################################################################
-
-sub make_anonymous_FTP {
+sub make_FTP {
 
 
 
@@ -809,34 +988,35 @@ sub make_anonymous_FTP {
 
 sub logfile_details {
 
-print LOG "# autoace_minder\n\n";     
-print LOG "# version        : $version\n";
-print LOG "# run details    : $rundate $runtime\n";
-print LOG "\n";
-print LOG "WormBase version : WS${WS_version}\n";
-print LOG "Wormpep version  : wormpep${WS_version}\n\n";
 
-print LOG "======================================================================\n";
-print LOG "  -full         : Full WS release (executes all of the following -wbcp)\n"               if ($full);
-print LOG "  -initial      : Start an autoace build\n"                                              if ($initial);
-print LOG "  -acefile      : Write .acefiles from WormBase copies of the databases\n"               if ($acefile);
-print LOG "  -build        : Build autoace\n"                                                       if ($build);
-print LOG "  -builddb      : Build autoace : DB only\n"                                             if ($builddb);
-print LOG "  -buildchrom   : Build autoace : DNA data\n"                                            if ($buildchrom);
-print LOG "  -buildrelease : Build autoace : Release directory\n"                                   if ($buildrelease);
-print LOG "  -check        : Check DB consistency and diffs from previous version\n"                if ($check);
-print LOG "  -buildpep     : Build wormpep database\n"                                              if ($buildpep);
-print LOG "  -addpep       : Running patch_pepace.pl and pepace2autoace\n"                          if ($addpep);
-print LOG "  -buildrna     : Build wormrna database\n"                                              if ($buildrna);
-print LOG "  -addhomol     : Load blast data into autoace\n"                                        if ($addhomol);
-print LOG "  -ftp          : Move WS release to the external FTP site (Full public release)\n"      if ($ftp);
-print LOG "  -debug        : Verbose/Debug mode\n"                                                  if ($debug);
-print LOG "  -gffdump      : Dump GFF files\n"                                                      if ($gffdump);
-print LOG "  -gffsplit     : Split GFF files\n"                                                     if ($gffsplit);
-print LOG "  -map          : map PCR, RNAi and WTP\n"                                               if ($map);
-print LOG "  -agp          : make agp files for yellow brick road\n"                                if ($agp);
-print LOG "======================================================================\n";
-print LOG "\n";
+    print LOG "# autoace_minder\n\n";     
+    print LOG "# version        : $version\n";
+    print LOG "# run details    : $rundate $runtime\n";
+    print LOG "\n";
+    print LOG "WormBase version : WS${WS_version}\n";
+    print LOG "Wormpep version  : wormpep${WS_version}\n\n";
+    
+    print LOG "======================================================================\n";
+    print LOG "  -full         : Full WS release (executes all of the following -wbcp)\n"               if ($full);
+    print LOG "  -initial      : Start an autoace build\n"                                              if ($initial);
+    print LOG "  -acefile      : Write .acefiles from WormBase copies of the databases\n"               if ($acefile);
+    print LOG "  -build        : Build autoace\n"                                                       if ($build);
+    print LOG "  -builddb      : Build autoace : DB only\n"                                             if ($builddb);
+    print LOG "  -buildchrom   : Build autoace : DNA data\n"                                            if ($buildchrom);
+    print LOG "  -buildrelease : Build autoace : Release directory\n"                                   if ($buildrelease);
+    print LOG "  -check        : Check DB consistency and diffs from previous version\n"                if ($check);
+    print LOG "  -buildpep     : Build wormpep database\n"                                              if ($buildpep);
+    print LOG "  -addpep       : Running patch_pepace.pl and pepace2autoace\n"                          if ($addpep);
+    print LOG "  -buildrna     : Build wormrna database\n"                                              if ($buildrna);
+    print LOG "  -addhomol     : Load blast data into autoace\n"                                        if ($addhomol);
+    print LOG "  -ftp          : Move WS release to the external FTP site (Full public release)\n"      if ($ftp);
+    print LOG "  -debug        : Verbose/Debug mode\n"                                                  if ($debug);
+    print LOG "  -gffdump      : Dump GFF files\n"                                                      if ($gffdump);
+    print LOG "  -gffsplit     : Split GFF files\n"                                                     if ($gffsplit);
+    print LOG "  -map          : map PCR, RNAi and WTP\n"                                               if ($map);
+    print LOG "  -agp          : make agp files for yellow brick road\n"                                if ($agp);
+    print LOG "======================================================================\n";
+    print LOG "\n";
 
 }
 
@@ -951,6 +1131,27 @@ sub usage {
 	print "\nautoace build aborted:\n";
 	print "The 'Build_autoace_database' flag is absent. \n";
 	print "You can't write the release .tar.gz files prior to a completing the  build.\n\n";
+	exit(0);
+    }
+    elsif ($error == 14) {
+	# Dump_dna before the database is finished
+	print "\nautoace build aborted:\n";
+	print "The '$flag{'B1'} flag is absent. \n";
+	print "You can't write the chromosome DNA files prior to a completing the build.\n\n";
+	exit(0);
+    }
+    elsif ($error == 15) {
+	# attempted BLAT analysis with agp errors 
+	print "\nautoace build aborted:\n";
+	print "The '$flag{'B4'} flag is set indicating errors in the agp file. \n";
+	print "You must remove this file before you can run the BLAT analysis.\n\n";
+	exit(0);
+    }
+    elsif ($error == 15) {
+	# atempted BLAT analysis without copying to autoace_midway 
+	print "\nautoace build aborted:\n";
+	print "The '$flag{'B5'} flag is absent indicating that the copy of autoace has not been made. \n";
+	print "You must add this file if you want to run the BLAT analysis or run autoace_minder -secure.\n\n";
 	exit(0);
     }
     elsif ($error == 0) {
