@@ -4,8 +4,8 @@
 #
 # Originally crafted by Dan Lawson
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2002-11-21 10:23:44 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2003-01-02 16:16:59 $
 #
 # see pod documentation (i.e. 'perldoc getSwissTrembldata.pl') for more information.
 #
@@ -50,7 +50,7 @@ GetOptions (
  ##############################
  # output files               #
  ##############################
-
+$outdir = "/nfs/disk100/wormpub/analysis/SWALL_DEBUG" if (defined $debug);
 
 open (ACE_GSC,  ">$outdir/output_stl.ace") or die "Failed to open output file: $outdir/output_stl.ace\n";
 open (ACE_WTSI, ">$outdir/output_cam.ace") or die "Failed to open output file: $outdir/output_cam.ace\n";
@@ -100,6 +100,10 @@ while (<TACE>) {
 	    next;
 	}
 	
+	if (/^FT\s+\/standard_name=\"(\S+)\"/) {
+	  $CDS_name = $1;
+	}
+	
 	if (/^FT\s+\/product=\"(\S+.+)/) {
 	    $CDS_prod = $1;
 	    
@@ -137,7 +141,7 @@ while (<TACE>) {
 	if (/^FT\s+\/translation/) {
 	    if (substr($CDS_prod,-1) eq ")") {chop $CDS_prod};
 	    
-	    ($CDS_name) = $CDS_prod =~ (/(\S+)$/);
+	    ($CDS_name) = $CDS_prod =~ (/(\S+)$/) if !(defined $CDS_name); # should be filled thru "standard_name" field
 	    
 	    # check the entry from the protein_id directly
 	    
