@@ -163,7 +163,7 @@ foreach my $chrom (@chrom) {
             elsif (${$exon{$name}}[1] >= ${$exon{$other}}[0])  {
                 (my $onename)    = ($name  =~ /(\S.*?\.\S.*?)\./);
                 (my $othername)  = ($other =~ /(\S.*?\.\S.*?)\./);
-                push (@geneoutput, [sort ($onename,$othername)] );
+                push (@geneoutput, [sort ($onename,$othername,$x)] );
             }    
             else {last;}
         }
