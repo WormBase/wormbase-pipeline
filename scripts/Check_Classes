@@ -1,19 +1,66 @@
-#!/usr/local/bin/perl
-use Getopt::Std;
+#!/usr/local/bin/perl5.6.1 -w                    # perl5.6.1 and -w flag
+
+# Last updated by: $Author: ar2 $                     
+# Last updated on: $Date: 2002-12-09 15:02:42 $     
+
+use strict;                                     
+use lib "/wormsrv2/scripts/";                  
+use Wormbase;
+use Getopt::Long;
+
+##############
+# variables  #
+##############
+
 $|=1;
 
-getopts ('f:s:');
-if ((!$opt_f)||(!$opt_s)) {
-    print "$0 dumps a comparison of all the classes content between two acedb databases\n\n";
-    print "Usage: $0 -f first_database_path -s second_database_path\n\n";
-    exit;
+my $maintainers = "All";
+my $rundate     = `date +%y%m%d`; chomp $rundate;
+my $name;
+
+# touch logfile for run details
+$0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
+my $logfile = "/wormsrv2/logs/$1.`date +%y%m%d`.$$";
+
+my ( $first, $second ,$debug ,$help);
+GetOptions (
+	    "debug:s"   => \$debug,
+	    "help"      => \$help,
+	    "first=s"    => \$first,
+	    "second=s"   => \$second
+           );
+
+# help page
+&usage("Help") if ($help);
+
+# no debug name
+print "DEBUG = \"$debug\"\n\n" if $debug;
+&usage("Debug") if ((defined $debug) && ($debug eq ""));
+
+# assign $maintainers if $debug set
+($maintainers = $debug . '\@sanger.ac.uk') if ($debug);
+
+# open logfile
+system ("/bin/touch $logfile");
+open (LOG,">>$logfile") or die ("Could not create logfile\n");
+
+
+#this script doesn't write to a file so has no test option.
+	   
+# make sure two databases have been entered
+if ((!$first)||(!$second)) {
+  print "$0 dumps a comparison of all the classes content between two acedb databases\n\n";
+  print "Usage: $0 -f first_database_path -s second_database_path\n\n";
+  exit;
 } else {
-    print "First Database : $opt_f\n";
-    print "Second Database : $opt_s\n\n";
+  print "First Database : $first\n";
+  print "Second Database : $second\n\n";
+  print LOG "$1 start at", &runtime, " using $first and $second\n\n";
 }
-$tace=&findtace;
-$exec_f = "$tace $opt_f";
-$exec_s = "$tace $opt_s";
+
+my $tace = &tace;
+my $exec_f = "$tace $first";
+my $exec_s = "$tace $second";
 
 format STDOUT_TOP =
                  Classes Content Comparison
@@ -22,6 +69,9 @@ Class Name           First Db     Second Db    Second - First
 -------------------------------------------------------------
 .
 
+
+my( $class, $f_found, $s_found, $diff);
+my @TotalClasses;
 format STDOUT =
 @<<<<<<<<<<<<<<<<<<<<@<<<<<<<<<<<<@<<<<<<<<<<<<@<<<<<<<<<<<<
 $class,              $f_found,    $s_found,    $diff
@@ -60,19 +110,29 @@ EOF
     write;
 }
 
-sub findtace {
-   local($prog);
-   local($name); 
-   $name=`uname -sr`; 
-    if    ($name=~/^SunOS/) {($prog)=<~wormpub/acedb/ace4/bin.SUN_4/tace>;}
-    elsif ($name=~/^IRIX/)  {($prog)=<~wormpub/acedb/ace4/bin.SGI_4/tace>;}
-    elsif ($name=~/^OSF/)   {($prog)=<~acedb/RELEASE.SUPPORTED/bin.ALPHA_4/tace>;}
-    elsif ($name=~/^Linux/) {($prog)=<~wormpub/acedb/ace4/bin.LINUX/tace>;}
-    else {print STDERR "No known binary for $uname\n";exit;}
-    return $prog;
-}
+&mail_maintainer("Check_classes",$maintainers,$logfile);
+
+print LOG "finished at ", &runtime, "\n";
+close LOG;
 
 exit;
+
+
+sub usage {
+     my $error = shift;
+
+     if ($error eq "Help") {
+         # Normal help menu
+         system ('perldoc',$0);
+         exit (0);
+     }
+     elsif ($error eq "Debug") {
+         # No debug bod named
+         print "You haven't supplied your name\nI won't run in debug mode
+         until i know who you are\n";
+        exit (0);
+    }
+}
 
 __DATA__
 2_point_data
@@ -137,3 +197,29 @@ WWW_server
 __END__
 
 
+=pod
+
+
+=head2 NAME Check_Classes
+
+=over 4
+ 
+This script compares the two passed databases on a class by class basis.
+
+Used by make_autoace
+
+=item Check_Classes [ -test, -debug, -help, -first, -second ]
+  
+=back
+
+B<-first> compulsory
+
+First database to be compared  
+
+B<-second> compulsory
+
+Second database to be compared
+
+example usage:
+
+=item Check_Classes -first /wormsrv2/autoace -second /wormsrv2/current_DB
