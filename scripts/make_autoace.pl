@@ -8,13 +8,12 @@
 # This makes the autoace database from its composite sources.
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2004-12-02 09:58:42 $
+# Last edited on: $Date: 2004-12-02 11:47:28 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
 use IO::Handle;
-use POSIX qw(:signal_h :errno_h :sys_wait_h);
 use Getopt::Long;
 use Cwd;
 use File::Copy;
@@ -113,18 +112,6 @@ my $errors = 0; # for tracking system call related errors
 
 # Open logfile                                   
 &create_log_files;
-
-
-################################################
-# Avoid filling process table with zombies     #
-################################################
-
-$SIG{CHLD} = \&REAPER;
-sub REAPER {
-  my $pid;
-  $pid=waitpid(-1,&WNOHANG);
-  $SIG{CHLD}=\&REAPER;
-}
 
 
 ##################################################	
