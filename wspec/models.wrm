@@ -834,7 +834,7 @@
 			Paired_read ?Sequence XREF Paired_read          // dl 020110
 			Remark ?Text
 			Confidential_remark ?Text
-			Brief_identification UNIQUE ?Text
+			Brief_identification UNIQUE ?Text #Evidence     // dl 030219
 	  		Reference ?Paper XREF Sequence
 			Expression_construct ?Clone	// archaic
 			Expr_pattern ?Expr_pattern XREF Sequence
