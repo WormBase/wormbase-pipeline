@@ -1,24 +1,29 @@
-#!/usr/local/bin/perl
+#!/usr/local/bin/perl -w
 #
 # make_acefiles will make all the acefiles for autoace building
 #
-# v 1.2
+# v 1.3
 #
 # dl1
 #
 # Usage : make_acefiles [-options]
 #
 
+# v1.3
+# 010717 : dl  : Altered the SRS call for nematode EST sequences
+#                This will now add the Method tag to the object
+#                Object names do not have the EMBL: prefix
+
+
 # v1.2
-# 010102 : dl1 : Add alternative config files to generate acefiles from a 
+# 010102 : dl  : Add alternative config files to generate acefiles from a 
 #                subsets of databases (e.g. camace only)
-# 010102 : dl1 : Changed the way in which can be dumped. You can alter the
+# 010102 : dl  : Changed the way in which can be dumped. You can alter the
 #                config file such that the criteria is 'DNA'. This will use
 #                a 'find object; follow DNA' tace command to dump only 
 
-
 # v1.1
-# 001108 : dl1 : Add better logging and general tidy up
+# 001108 : dl  : Add better logging and general tidy up
 
 # v1.0
 # 000925 ag3 dl1 Fixed problem with wormpep protein names 
@@ -29,66 +34,70 @@
 #################################################################################
 
 $|=1;
+use lib "/wormsrv2/scripts/";   
+use strict;
+use Wormbase;
 use IPC::Open2;
 use IO::Handle;
 use Getopt::Std;
-require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
+use vars qw( $opt_n $opt_s $opt_e $opt_p $opt_d $opt_h);
 
  ##############################
  # Script variables (run)     #
  ##############################
 
-my $maintainer = "dl1\@sanger.ac.uk";
-my $rundate = `date +%y%m%d`; chomp $rundate;
+my $maintainer = "dl1\@sanger.ac.uk kj2\@sanger.ac.uk krb\@sanger.ac.uk";
+my $rundate = `date +%y%m%d`;   chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
-my $version = &get_script_version(make_acefiles);
+my $version = &get_cvs_version('/wormsrv2/scripts/make_acefiles');
 
  ##############################
  # Paths etc                  #
  ##############################
 
-$autoace_config = "/wormsrv2/autoace_config/autoace.config";
-
-$basedir        = "/wormsrv2/wormbase";
-$miscdir        = "$basedir/misc";
-$pepdir         = "$basedir/peptides";
-$tremblfile     = "$pepdir/trembl";
-$wormpepfile    = "$pepdir/wormpep";
-$swissfile      = "$pepdir/swissprot";
-$peptidefile    = "$miscdir/misc_peptides.ace";
-$estfile        = "$miscdir/misc_nonelegansests.ace";
-$tace           = "/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_4/tace";
-$autodir        = "/wormsrv2/autoace";
+my $autoace_config = "/wormsrv2/autoace_config/autoace.config";
+my $basedir        = "/wormsrv2/wormbase";
+my $miscdir        = "$basedir/misc";
+my $pepdir         = "$basedir/peptides";
+my $tremblfile     = "$pepdir/trembl";
+my $wormpepfile    = "$pepdir/wormpep";
+my $swissfile      = "$pepdir/swissprot";
+my $peptidefile    = "$miscdir/misc_peptides.ace";
+my $estfile        = "$miscdir/misc_nonelegansests.ace";
+my $tace           = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
+my $autodir        = "/wormsrv2/autoace";
 
  ##############################
  # command-line options       #
  ##############################
 
-$opt_n="";   # write acefiles from autoace.config file
-$opt_s="";   # => single database mode
-$opt_e="";   # write non-elegans EST dataset
-$opt_p="";   # write peptide dataset
-$opt_h="";   # Help/Usage page
+$opt_n = "";       # write acefiles from autoace.config file
+$opt_s = "";       # => single database mode
+$opt_e = "";       # write non-elegans EST dataset
+$opt_p = "";       # write peptide dataset
+$opt_d = "";       # debug mode (maintainer = dl1)
+$opt_h = "";       # Help/Usage page
 
 getopts ('nephs:');
+# help page
 &usage(0) if ($opt_h);
+# no option supplied
 &usage(1) if ((!$opt_n)&&(!$opt_e)&&(!$opt_p));
+# single database mode
+if ($opt_s) {
+&usage(2) unless (($opt_s eq "camace") || ($opt_s eq "stlace") || ($opt_s eq "briggsae") || ($opt_s eq "geneace"));
+}
 
-# turn off today
-#&usage(2) unless (($opt_s eq "camace") || ($opt_s eq "stlace") || ($opt_s eq "briggsae")|| ($opt_s eq "geneace"));
+
+# cheat for quiet debugging
+# set dl1 as only mail recipient if running debug mode
+$maintainer = "dl1\@sanger.ac.uk" if ($opt_d);
 
 #################################################################################
 # Get the WS version number and set the wormpep release number                  #
 #################################################################################
 
-my $Wormbase_release_file = "/wormsrv2/autoace_config/WormBase_release_version";
-&usage(3) unless (-e $Wormbase_release_file);
-open (WormBase_release, $Wormbase_release_file) || die "Can't open file\n\n";
-while (<WormBase_release>) {
-    chomp;
-    $WS_version = $_;
-}
-close (WormBase_release);
+my $WS_version = &get_wormbase_version;
 
  ########################################
  # Open logfile                         #
@@ -110,9 +119,10 @@ print LOG "\n";
 print LOG "WormBase version : ${WS_version}\n";
 print LOG "\n";
 print LOG "======================================================================\n";
-print LOG " -n : Write .ace files\n" if ($opt_n);
-print LOG " -e : Write non-elegans nematode EST data sets\n" if ($opt_e);
-print LOG " -p : Write peptide data sets\n" if ($opt_p);
+print LOG " -n : Write .ace files\n"                            if ($opt_n);
+print LOG "    : from database $opt_s\n"                        if ($opt_s);
+print LOG " -e : Write non-elegans nematode EST data sets\n"    if ($opt_e);
+print LOG " -p : Write peptide data sets\n"                     if ($opt_p);
 print LOG "======================================================================\n";
 print LOG "\n";
 print LOG "Starting make_acefiles .. \n\n";
@@ -121,16 +131,9 @@ print LOG "Starting make_acefiles .. \n\n";
 # Main Loop                                                                     #
 #################################################################################
 
-if ($opt_n) {
-    &mknewacefiles;
-}
-if ($opt_e) {
-    &nonelegansests;
-}
-if ($opt_p) {
-    &producepeptides;
-}
-
+&mknewacefiles   if ($opt_n);
+&nonelegansests  if ($opt_e);
+&producepeptides if ($opt_p);
 
 my $endtime = `date +%H:%M:%S`; chomp $endtime;
 print LOG "Ended make_acefiles @ $endtime\n";
@@ -142,19 +145,12 @@ close LOG;
  # mail $maintainer report    #
  ##############################
 
-open (mailLOG, "|/usr/bin/mailx -s \"WormBase Report: make_acefiles\" $maintainer ");
-open (readLOG, "<$logfile");
-while (<readLOG>) {
-    print mailLOG $_;
-}
-close readLOG;
-close mailLOG;
+&mail_maintainer("WormBase Report: make_acefiles ",$maintainer,$logfile);
 
- ##############################
- # hasta luego                #
- ##############################
-
+# hasta luego
 exit (0);
+
+
 
 
 #################################################################################
@@ -162,31 +158,38 @@ exit (0);
 #################################################################################
 
 
-
 #################################################################################
 # Erases old acefiles and make new ones                                         #
 #################################################################################
 
 sub mknewacefiles {
+    
+    my ($dbname,$dbdir,$targetdir,$exe,$object,$criteria,$criterianoasterisk);
+    my ($filename,$command,$outfile);
+
+
+    local (CONFIG*);
+
     open (CONFIG, "$autoace_config");
     while (<CONFIG>) {
 	s/^\s+//;s/\s+$//;    
 	
 	next if (/^\#/  || /^$/);            # comments in file
 
-# turn off today
-#	next unless (/$opt_s/);              # single database mode
+        # turn off today
+        next unless (/$opt_s/);              # single database mode
 	
-
 	if (/^P\s+(\S+)\s+(\S+)$/) {
-	    $dbname = $1;
-	    $dbdir = $2;
+	    $dbname    = $1;
+	    $dbdir     = $2;
 	    $targetdir = "$basedir"."/$dbname";
-	    $exe = "$tace $dbdir";
+	    $exe       = "$tace $dbdir";
 	    next;
 	}
-	if ($dbname =~ /misc/) {next;}
-	
+	next if ($dbname =~ /misc/);
+	# single database mode
+	next if (($opt_s) && ($opt_s ne "$dbname"));
+
 	# nuts and bolts of acefile generation
 	# format:  database object criteria
 	
@@ -203,10 +206,10 @@ sub mknewacefiles {
 	# The subroutines will set the $command and $filename variables
 
 	if ($criteria eq "DNA") {
-	    &make_command_DNA;
+	    $command = &make_command_DNA($object,$dbname,$targetdir);
 	}
 	else {
-	    &make_command;
+	    $command = &make_command($object,$dbname,$targetdir,$criteria,$criterianoasterisk);
 	}
 
 	print LOG "Filename: $filename\n";
@@ -257,13 +260,16 @@ sub mknewacefiles {
 
 sub make_command {
 
-    $filename="$targetdir/".$dbname."_".$object.$criterianoasterisk.".ace";
+   my ($object,$dbname,$targetdir,$criteria,$criterianoasterisk) = @_;
+   my $filename="$targetdir/".$dbname."_".$object.$criterianoasterisk.".ace";
 
-$command=<<END;
+my $command=<<END;
 find $object $criteria
 write $filename
 quit
 END
+
+    return ($command);
 
 }
 
@@ -271,14 +277,17 @@ END
 
 sub make_command_DNA {
 
-    $filename="$targetdir/".$dbname."_".DNA.".ace";
+    my ($object,$dbname,$targetdir) = @_;
+    my $filename = "$targetdir/" . $dbname . "_DNA.ace";
 
-$command=<<END;
+my $command=<<END;
 find $object
 follow DNA
 write $filename
 quit
 END
+
+    return ($command);
 
 }
 
@@ -335,17 +344,47 @@ sub strip_sequence {
 #######################################################################
 # Make the non-celegans ESTs                                          #
 #######################################################################
+# 
+# SRS call for ESTs in EMBL which are nematode but not C.elegans
+# makes an .acefile for the object which contains the db info
+# the species and def line. 
+# 
+# These have the method 'EST_nematode" 
+#
+# n.b this breaks the 
 
 sub nonelegansests {
+    
+    my ($id,$def,$ac,$sv,$method);
+
     system ("/bin/rm $estfile");
-    open (ESTFILE, ">$estfile");
+    open (ESTFILE,   ">$estfile");
     open (SEQUENCES, "/usr/local/pubseq/bin/getz -d  -f \"id acc org des\" \'([emblnew-org:nematoda\! caenorhabditis elegans] \& [emblnew-key:est]) | ([embl-org:nematoda\! caenorhabditis elegans] \& [embl-key:est])\' |");
     while (<SEQUENCES>) {
-	if (/^ID\s+(\S+)/) {$id=$1;}
-	if (/^AC\s+(\S+);/) {print ESTFILE "\nSequence EMBL:$id\ncDNA_EST\nAC_number $1\nDatabase EMBL $id $1\n";}
-	if (/^OS\s+(.+)/) {print ESTFILE "Species \"$1\"\n";}        
-	if (/^DE\s+(.+)/) {$def=$def." ".$1;}
-	if (/^SQ\s+/) {$def=~s/^\s+//;print ESTFILE "Title \"$def\"\n";$def="";}
+	if (/^ID\s+(\S+)/) {
+	    $id=$1;
+	}
+	if (/^SV\s+(\S+);/) {
+	    ($ac,$sv) = split (/\./,$1);
+	    print ESTFILE "\nSequence : \"$ac\"\nDatabase EMBL $id $ac $sv\n";
+	}
+	if (/^OS\s+(.+)/) {
+	    print ESTFILE "Species \"$1\"\n";
+	    if ($1 eq "Caenorhabditis briggsae") {
+		$method = "EST_briggsae";
+	    }
+	    else {
+		$method = "EST_nematode";
+	    }
+	}        
+	if (/^DE\s+(.+)/) {
+	    $def=$def." ".$1;
+	}
+	if (/^SQ\s+/) {
+	    $def=~s/^\s+//;
+	    print ESTFILE "Title \"$def\"\ncDNA_EST\nMethod $method\n";
+	    $def="";
+	}
     }
     close SEQUENCES;
     close ESTFILE;
@@ -360,6 +399,9 @@ sub nonelegansests {
 #######################################################################
 
 sub producepeptides {
+    
+    my ($textace,$protein);
+
     system ("/bin/rm $tremblfile");
     system ("/bin/rm $wormpepfile");
     system ("/bin/rm $swissfile");
@@ -369,7 +411,10 @@ sub producepeptides {
     open(SWISSPROT,">$swissfile");
     $textace = "$tace $autodir ";
 # Retrieve the list of proteins from autoace
-    open2(READ,WRITE,$textace) or do {print "Addpeptides: Could not open $textace\n"; exit 0}; 
+
+    open2('READ','WRITE',$textace) or do {print "Addpeptides: Could not open $textace\n"; exit 0}; 
+
+
     my $command=<<END;
 find protein 
 list -a 
@@ -452,16 +497,9 @@ sub usage {
 	print "Check database names in config file\n\n";
 	exit(0);
     }
-    elsif($error == 3) {
-	# No WormBase release number file
-	print "\nThe WormBase release number cannot be parsed\n";
-	print "Check File: '$Wormbase_release_file'\n\n";
-	&run_details;
-	exit(0);
-    }   
     elsif ($error == 0) {
 	# Normal help menu
-	exec ('perldoc',$0);
+	system ('perldoc',$0);
 	exit (0);
     }
 }
