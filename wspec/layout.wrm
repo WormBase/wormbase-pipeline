@@ -1,19 +1,19 @@
 
  Genetic_map	Accession_number	Author
 				    	Person
- Gene_class	Sequence		Paper
- Locus            Genome_sequence                 
-   Gene           cDNA_sequence    	Expr_profile                 
-   Other_locus    cDNA_sequence      	SK_map
- Rearrangement	 Briggsae_genomic   	Expr_pattern
-                 Predicted_gene     	RNAi       
-					Phenotype
- Clone		Transcript		PCR_product
- Strain					Oligo
-		Protein			
-		  Wormpep		UTR
- Allele		               	     	
-   Insertion_allele			Model
-   Deletion_allele			Method
-   Substitution_allele			Keyset
-   KO_allele
+ Gene_class	Sequence		Person_name
+ Gene_name	  Genome_sequence	
+ Locus            cDNA_sequence		Paper
+   Gene           Predicted_gene    	                 
+   Other_locus   Briggsae_genomic       Oligo
+ Rearrangement				PCR_product
+		Transcript
+ Clone					Expr_profile 
+ Strain		Protein			Expr_pattern
+		  Wormpep			
+ Allele					Feature
+   Insertion_allele			UTR
+   Deletion_allele
+   Substitution_allele			Model
+   KO_allele				Method
+					Keyset
