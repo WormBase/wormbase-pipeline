@@ -6,7 +6,7 @@
 #
 # Updates the local webpages in synch with the main website
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-07-20 09:44:36 $
+# Last updated on: $Date: 2004-07-20 15:40:02 $
 
 
 use strict;
@@ -62,10 +62,6 @@ my $prev_release = $release -1;
 ##############################################
 
 my $webpublish = "/usr/local/bin/webpublish";
-
-#First update wormpep subdirectory
-chdir($www) || print LOG "Couldn't run chdir\n";
-&run_command("$webpublish -f -q -r wormpep") && print LOG "Couldn't run webpublish on wormpep files\n";
 
 # Now update WORMBASE current link
 chdir("$www/WORMBASE") || print LOG "Couldn't run chdir\n";
