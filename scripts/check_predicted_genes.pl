@@ -25,9 +25,8 @@ my $db_path = $ARGV[0];
 
 # Specify which tace to use if you are using -program flag
 
-my $tace = glob("~acedb/RELEASE.SUPPORTED/bin.ALPHA_4/tace");
+my $tace = glob("~wormpub/ACEDB/bin.ALPHA_4/tace");
 
-#my $tace = glob("~acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace");
 my $db = Ace->connect(-path=>$db_path, -program=>$tace) || die "Couldn't connect to $db_path\n", Ace->error;
 
 #otherwise just use the default style of Ace database connection

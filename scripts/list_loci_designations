@@ -33,7 +33,7 @@ my $runtime = `date +%H:%M:%S`; chomp $runtime;
 my $cvs_version = &get_cvs_version($0);
 
 $dbdir = "/wormsrv2/autoace";
-$tace  = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
+$tace  = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
 $exec = $tace;
 $ENV{'ACEDB'}="$dbdir";
 $www = "/nfs/WWW/htdocs/Projects/C_elegans/Info/LOCI";

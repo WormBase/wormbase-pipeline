@@ -8,7 +8,7 @@
 use strict;
 use Getopt::Long;
 
-my $tace =  "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
+my $tace =  "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
 
 my ($load,$delete,$dbdir,$help);
 GetOptions (

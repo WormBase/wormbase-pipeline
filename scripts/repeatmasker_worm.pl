@@ -19,7 +19,7 @@ $|=1;
 my $campath = '/wormsrv2/camace';
 my $stlpath = '/wormsrv2/stlace';
 my $outdir  = '/nfs/disk100/wormpub/repeats';
-my $tace    = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace /wormsrv2/current_DB";
+my $tace    = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace /wormsrv2/current_DB";
 my (%cam,%stl,$infile,$outfile,$opt_c,$opt_s,%acc,$nolow,$low);
 &GetOptions( 'c'    => \$opt_c,
 		     's'    => \$opt_s,		

@@ -25,8 +25,8 @@ $|=1;
 
 my $cvs_version = &get_cvs_version("$0");
 
-our $tace   = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
-our $giface = "/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_4/giface";
+our $tace   = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
+our $giface = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/giface";
 our ($opt_d,$opt_g,$opt_e,$opt_h,$opt_c, $opt_p, $opt_q, $opt_t);
 getopts("dgehcp:q:t");
 our $database;

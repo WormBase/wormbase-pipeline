@@ -29,7 +29,7 @@ my $log="/wormsrv2/logs/check_EMBL_submissions.$rundate.$$";
  ########################################
 
 my $dbdir = glob "/wormsrv1/camace";
-my $tace = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
+my $tace = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
 my $submitted_file = "/nfs/disk100/wormpub/analysis/TO_SUBMIT/submitted_to_EMBL";
 
 my (%clone2id,%id2sv,%embl_acc,%embl_status,%embl_sv);
