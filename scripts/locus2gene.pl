@@ -7,7 +7,8 @@
 # A script to convert ?Locus objects into the new ?Gene object
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-01-19 16:35:24 $   
+# Last updated on: $Date: 2004-01-30 13:24:44 $   
+
 use strict;
 use lib "/wormsrv2/scripts/";
 use Wormbase;
@@ -24,9 +25,6 @@ system("cp bad_data.ace bad_data.backup");
 open(GOOD,">good_data.ace") || die "Couldn't write to 'good_data.ace'\n";
 open(BAD,">bad_data.ace") || die "Couldn't write to 'bad_data.ace'\n";
 
-
-# quickly check gene_class objects for errors
-#&test_gene_classes;
 
 ###################################################################
 # Main loop, grab loci objects and loop through each locus object #
@@ -63,11 +61,6 @@ foreach my $locus (@loci){
   ##########################################
   if(!defined($warnings)){
     
-    # skip Genes which have New_name tags, these will be picked up in the corresponding object
-    if(defined($locus->at('Type.Gene')) && defined($locus->at('Name.New_name'))){
-      next;
-    }
-
     ###############################################################################
     # Process if Gene, and try to catch anything that falls through if not a Gene
     ###############################################################################
@@ -112,20 +105,6 @@ exit(0);
 # The Subroutines!!!
 #####################################################################################
 
-
-sub test_gene_classes{
-  my @gene_classes = $db->fetch(-class => 'Gene_class',
-				-name  => '*');
-  foreach my $class (@gene_classes){
-    next if (defined($class->CGC_unresolved));
-    print BAD "GENE_CLASS ERROR: $class has no Phenotype information\n" if(!defined($class->Phenotype)  && (!defined($class->Main_name)));
-    print BAD "GENE_CLASS ERROR: $class has no Designating_laboratory\n" if(!defined($class->Designating_laboratory) && (!defined($class->Main_name)));
-    print BAD "GENE_CLASS ERROR: $class is not CGC_approved\n" if(!defined($class->at('CGC_approved')));
-  }
-
-}
-
-#######################################
 
 sub test_locus_for_errors{
   my $locus = shift;
@@ -180,20 +159,20 @@ sub test_locus_for_errors{
   }
 
   # test for Genomic_sequence tag but no value   
-  if(defined($locus->at('Molecular_information.Genomic_sequence')) && !defined($locus->Genomic_sequence)){
-    $warnings .= "ERROR 8: $locus has 'Genomic_sequence' tag but no associated value\n";
+  if(defined($locus->at('Molecular_information.CDS')) && !defined($locus->CDS)){
+    $warnings .= "ERROR 8: $locus has 'CDS' tag but no associated value\n";
     $errors++;
   }
 
   # test for more than one Genomic_sequence tag, but need to allow for splice variants. A bit tricky this
   # and I think my RE (which just looks for word.number.letter) might allow some errors to creep through.  
-  if(defined($locus->at('Molecular_information.Genomic_sequence'))){
-    my @genomic_sequences = $locus->Genomic_sequence;
+  if(defined($locus->at('Molecular_information.CDS'))){
+    my @genomic_sequences = $locus->CDS;
     if(scalar(@genomic_sequences)>1){
-      my @problems = $locus->at('Molecular_information.Genomic_sequence');
+      my @problems = $locus->at('Molecular_information.CDS');
       foreach my $problem (@problems){
 	if ($problem !~ m/[\w\d]+\.\d+[a-z]/){
-	  $warnings .= "ERROR 9: $locus has multiple 'Genomic_sequence' tags (see $problem)\n";
+	  $warnings .= "ERROR 9: $locus has multiple 'CDS' tags (see $problem)\n";
 	  $errors++;
 	}
       }
@@ -206,11 +185,6 @@ sub test_locus_for_errors{
     $errors++;
   }
 
-  # test for Enzyme tag (doesn't fit in with new Gene model)
-  if(defined($locus->at('Molecular_information.Enzyme'))){  
-    $warnings .= "ERROR 11: $locus has an 'Enzyme' tag\n";
-    $errors++;
-  }
 
   # test for Canonical_gene tag present
   if(defined($locus->at('Molecular_information.Canonical_gene'))){  
@@ -218,29 +192,6 @@ sub test_locus_for_errors{
     $errors++;
   }
   
-  # test for New_name tag and other information apart from Gene and Species
-  if(defined($locus->at('Name.New_name'))){
-    if(defined($locus->at('Species')) && defined($locus->at('Type.Gene'))){
-    # check for any other info in object
-      my @tags = $locus->tags();
-      if(scalar(@tags)>3){
-	$warnings .= "ERROR 13: New_name tag + extra info. Transfer into new gene?\n";
-	$errors++;
-      }
-    }
-    else{
-      $warnings .= "ERROR 14: No species and/or Gene tag present\n";
-      $errors++;
-    }
-  }
-  
-  # Test for Polymorphisms with no P in their title
-#  if(defined($locus->at('Type.Polymorphism'))){
-#    if($locus !~ /P/){
-#      $warnings .= "ERROR 15: No 'P' in title\n";
-#      $errors++;
-#    }
-#  }
 
   # Look for Gene_class tag in non-gene objects 
   if(!defined($locus->at('Type.Gene'))){
