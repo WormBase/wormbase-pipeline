@@ -280,42 +280,19 @@
 
 
 ?Locus  Evidence #Evidence
-	Name    Other_name ?Gene_name XREF Other_name_for #Evidence // now links to ?Gene_name
-                Gene_class  ?Gene_class XREF Loci 
-		CGC_name ?Gene_name XREF CGC_name_for //new tag
-		Non_CGC_name ?Gene_name XREF Non_CGC_name_for //new tag
-		Sequence_name ?Gene_name XREF Sequence_name_for // new tag
-		Pseudogene_name ?Gene_name XREF Pseudogene_name_for // new tag to work with Pseudogene model
-		Transcript_name ?Gene_name XREF Transcript_name_for // new link
-	Gene_information Description ?Text #Evidence // added by krb [020802]
-			 Provisional_description ?Text #Evidence // added for Erich [020322 krb]
-			 Detailed_description ?Text #Evidence  // added for Erich [020322 krb]
-			 Concise_description ?Text #Evidence  // added for Erich [020523 krb]
+	Name    Other_name ?Gene_name #Evidence // unidirectional link
 	Species UNIQUE ?Species // added by krb 15/02/02
-	Type	Gene	Reference_Allele ?Allele Text
-                        Phenotype ?Text #Evidence
-                        RNAi_result   ?RNAi XREF Locus                       //RL [010327]
-			Complementation_data Text
-                        Controlled_phenotype ?Phenotype XREF Locus          // added for Lincoln RNAi [001213 dl]
-			CGC_approved	     // added by krb 24/01/02
-			CGC_unresolved Text // added by krb 28/01/02
-			RNA_gene Text // added by krb 11/03/02
-		Gene_cluster	Contains ?Gene XREF In_cluster
+	Type	Gene_cluster	Contains ?Gene XREF In_cluster
 		Polymorphism    SNP  Text		// SNP stuff added for Todd [171001 krb]
 				Status Text
 				SNP_assay ?PCR_product XREF SNP_locus ?Text
 				RFLP	Text
 				Transposon_insertion  Text
 				Detection_method Text
-		PCR_product	Primers  Text
-				Length   Int	// bp
-        Molecular_information	CDS ?CDS XREF Locus #Evidence // Split genomic and other XREFs
-                                Other_sequence ?Sequence XREF Locus_other_seq #Evidence    // dl 001128
-				Transcript ?Transcript XREF Locus #Evidence // en route to new gene model [021126 krb]
-				Pseudogene ?Pseudogene XREF Locus #Evidence // new [030801 krb]
-	Gene_regulation         Trans_regulator ?Gene_regulation XREF Trans_regulator_locus // new for Wen [030804 krb]
-                                Trans_target    ?Gene_regulation XREF Trans_regulated_locus // new for Wen [030804 krb]
 	Map    UNIQUE ?Map XREF Locus #Map_position
+
+//checked to here
+
 	Interpolated_map_position UNIQUE ?Map UNIQUE Float // new for updated CDS-based interpolated map positions [krb 030502]
         Hide_under ?Locus XREF Representative_for
         Representative_for ?Locus XREF Hide_under
