@@ -90,7 +90,7 @@ foreach $chromosome (@chromosomes) {
 
 #	print "[$f[1]] [$f[2]]\n";
 
-	if ($f[1] eq "GenePair_STS") {
+	if ($f[1] eq "GenePairs") {
 	    push (@PCR, "$f[3] $f[4] $f[8]");
 	}
 	if ($f[2] eq "exon") {
