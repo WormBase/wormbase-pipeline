@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-01-15 17:36:05 $
+# Last updated on: $Date: 2003-01-15 17:56:09 $
 
 
 use strict;
@@ -109,7 +109,7 @@ sub process_locus_class{
     #print "$locus\n";
     my $warnings;
     my $erich_warnings;
-    #($warnings, $erich_warnings) = &test_locus_for_errors($locus);
+    ($warnings, $erich_warnings) = &test_locus_for_errors($locus);
     print LOG "$warnings" if(defined($warnings));
     #Erich Schwarz wants some of these - emsch@its.caltech.edu
     print ERICHLOG "$erich_warnings" if(defined($erich_warnings));
