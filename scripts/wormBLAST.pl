@@ -484,7 +484,7 @@ if( $dump_data )
     print "Creating acefile of SWALL proteins with homologies\n";
     `$scripts_dir/write.swiss_trembl.pl -swiss -trembl`;
 
-    print "Creating acefile of matched IPI proteins\n"
+    print "Creating acefile of matched IPI proteins\n";
     `$scripts_dir/BLAST_scripts/write_ipi_info.pl`;
       
   }
