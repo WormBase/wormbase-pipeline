@@ -6,8 +6,8 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-08-13 07:41:04 $
+# Last updated by: $Author: ck1 $
+# Last updated on: $Date: 2003-08-19 16:50:56 $
 
 
 use strict;
@@ -35,6 +35,18 @@ my $caltech_log;                                           # Additional log file
 my $jah_log;                                               # Additional log file for problems to be sent to Jonathan Hodgkin at CGC
 my (%L_name_F_WBP, %L_name_F_M_WBP);                       # hashes for checking Person and Author merging?
 
+# list of hard-coded loci with other-name(s) as valid independent loci (exceptions for main name / other_name merging) 
+# @exceptions and %exceptions are made global as they are used for checking both Locus and Strain classes
+my @exceptions = 
+  qw (aka-1 bar-1 cas-1 clh-2 clh-3 ctl-1 ctl-2 egl-13 evl-20 gst-4 mig-1 sle-1 slo-1 rap-1 rpy-1 dmo-1 mod-1 
+      old-1 plk-1 ptp-3 rab-18 rsp-1 rsp-2 rsp-4 rsp-5 rsp-6 sca-1 sus-1 twk-1 twk-2 twk-3 twk-4 twk-5 twk-6 twk-7 twk-8
+      twk-9 twk-10 twk-11 twk-12 twk-13 twk-14 twk-16 twk-17 twk-18 twk-20 twk-21 twk-22 twk-23 twk-24 twk-25 twk-26 
+      twk-32 unc-58 sup-9
+     );
+
+# load elements of @exceptions into hash for fast checking
+my %exceptions;
+foreach (@exceptions){$exceptions{$_}++}; 
 
 
 ###################################################
@@ -73,6 +85,7 @@ print "\nUsing $default_db as default database.\n\n";
 if ($ace){
   my $acefile = "/wormsrv1/geneace/CHECKS/geneace_check.$rundate.$$.ace";
   open(ACE, ">>$acefile") || croak $!;
+  system("chmod 777 $acefile");
 }
 
 
@@ -89,7 +102,6 @@ if ($ace){
 ##                                                                                                  ##
 ######################################################################################################
 ######################################################################################################
-
 
 # open a connection to database
 my $db = Ace->connect(-path  => $default_db,
@@ -283,6 +295,10 @@ sub test_locus_for_errors{
   # test for CGC_name AND Non_CGC_name
   if(defined($locus->at('Name.CGC_name')) && defined($locus->at('Name.Non_CGC_name'))){					       
     $warnings .= "ERROR 8: $locus has a 'CGC_name' tag *AND* a 'Non_CGC_name' tag\n";
+    if ($ace){
+      print ACE "\nLocus : \"$locus\"\n";
+      print ACE "-D Non_CGC_name\n";
+    }  
     print "." if ($verbose);
   }
 
@@ -290,32 +306,42 @@ sub test_locus_for_errors{
   # test for CGC_name AND !CGC_approved
   if(defined($locus->at('Name.CGC_name')) && !defined($locus->at('Type.Gene.CGC_approved'))){		    
     $warnings .= "ERROR 9: $locus has a 'CGC_name' tag but not a 'CGC_approved' tag\n";
+    if ($ace){
+      print ACE "\nLocus : \"$locus\"\n";
+      print ACE "CGC_approved\n";
+    } 
     print "." if ($verbose);
   }
 
+  # test for CGC_name AND CGC_unresolved
+  if(defined($locus->at('Name.CGC_name')) && defined($locus->at('Type.Gene.CGC_unresolved'))){		    
+    $warnings .= "ERROR 10: $locus has a 'CGC_name' tag but also has a 'CGC_unresolved' tag\n";
+    if ($ace){
+      print ACE "\nLocus : \"$locus\"\n";
+      print ACE "-D CGC_unresolved\n";
+    } 
+    print "." if ($verbose);
+  }
 
   # test for Non_CGC_name AND CGC_approved
   if(defined($locus->at('Name.Non_CGC_name')) && defined($locus->at('Type.Gene.CGC_approved'))){		    
-    $warnings .= "ERROR 10: $locus has a 'Non_CGC_name' tag *AND* a 'CGC_approved' tag\n";
+    $warnings .= "ERROR 11: $locus has a 'Non_CGC_name' tag *AND* a 'CGC_approved' tag\n";
+    if ($ace){
+      print ACE "\nLocus : \"$locus\"\n";
+      print ACE "-D CGC_approved\n";
+    } 
     print "." if ($verbose);
   }
-
-
-  # test for CGC_name AND Non_CGC_name
-  if(defined($locus->at('Name.CGC_name')) && defined($locus->at('Name.Non_CGC_name'))){					       
-    $warnings .= "ERROR 11: $locus has a 'CGC_name' tag *AND* a 'Non_CGC_name' tag\n";
-    print "." if ($verbose);
-  }
-
 
   # test for !Gene AND Gene_class 
   if(!defined($locus->at('Type.Gene')) && defined($locus->at('Name.Gene_class'))){
     $warnings .= "ERROR 12: $locus has a 'Gene_class' tag but not a 'Gene' tag\n";
     print "." if ($verbose);
-    print ACE "\n\nLocus : \"$locus\"\n" if ($ace);
-    print ACE "Gene\n" if ($ace);
+    if ($ace){
+      print ACE "\n\nLocus : \"$locus\"\n";
+      print ACE "Gene\n";
+    }
   }
-
 
   # test for CGC_approved but !Gene_class 
   if(defined($locus->at('Type.Gene.CGC_approved')) && !defined($locus->at('Name.Gene_class'))){
@@ -351,10 +377,6 @@ sub test_locus_for_errors{
 	print JAHLOG "ERROR: $locus has 'Genomic_sequence', 'Transcript', or 'Pseudogene' tag but no 'CGC_approved' tag\n";
 	$jah_errors++;
 	print "." if ($verbose);
-	if ($ace){
-	  print ACE "\n\nLocus : \"$locus\"\n";  
-	  print ACE "CGC_approved\n";
-	}
       }
     }
   }
@@ -549,18 +571,8 @@ sub test_locus_for_errors{
   # Also can test for where a Locus has an other name but this fact hasn't been added to parent Gene_class object
   # as a Remark
   if(defined($locus->at('Name.Other_name'))){
-
-    # list of hard-coded loci which are exceptions for main name / other_name merging 
-    my @exceptions = 
-	qw (aka-1 cas-1 clh-2 clh-3 ctl-1 ctl-2 egl-13 evl-20 gst-4 mig-1 sle-1 slo-1 rap-1 rpy-1 dmo-1 mod-1 
-	    old-1 plk-1 ptp-3 rab-18 rsp-1 rsp-2 rsp-4 rsp-5 rsp-6 sca-1 sus-1 twk-1 twk-2 twk-3 twk-4 twk-5 twk-6 twk-7 twk-8
-	    twk-9 twk-10 twk-11 twk-12 twk-13 twk-14 twk-16 twk-17 twk-18 twk-20 twk-21 twk-22 twk-23 twk-24 twk-25 twk-26 
-	    twk-32 unc-58 sup-9
-	    );
-
-    # load exceptions into hash for easy checking
-    my %exceptions;
-    foreach (@exceptions){$exceptions{$_}++};  
+    
+    foreach (@exceptions){$exceptions{$_}++};  # @exceptions and %exceptions are defined as global
 
     # get other names of locus
     my @other_names = $locus->Other_name;
@@ -569,9 +581,11 @@ sub test_locus_for_errors{
       # Does other_name exist as separate loci?
       if($db->fetch(-class=>'Locus',-name=>"$other_name")){
 	# Is it on exceptions list?
-	if($exceptions{$locus}){
+	if($exceptions{$locus}) {
 	  # no need for warning
-	  print LOG "INFO: $locus has $other_name as Other_name...$other_name is still a separate Locus object (exception)\n";
+	  if ($verbose){
+	    print LOG "INFO: $locus has $other_name as Other_name...$other_name is still a separate Locus object (exception)\n";
+	  }  
 	}
 	else{
 	  # can warn that this is potential problem
@@ -710,7 +724,7 @@ END
 
   open(IN, "/tmp/class_dump.ace") || die $!;
 
-# look for person/author names that needs to be converted
+# look for person/author names that needs to be converted in 8 classes (regardless of which tag as the scripts greps from string pattern
 
   my $evid_errors = 0;
   my $updates = 0;
@@ -734,10 +748,11 @@ END
       $tag = $2;
       $name = $3;
       if ($name !~ /WBPerson\d+/){
-	$evid_errors++;
+	#$evid_errors++;
 	print LOG "\nERROR: $class $obj has non-Person $name under main tag $tag\n";
 
 	@counters = get_WBPerson_ID($name, $class, $obj, $tag, $ori, $b4_evi, "PtoA");  
+	$evid_errors += $counters[0];
 	$updates += $counters[1];
 	$info_num += $counters[2]; 
       }  
@@ -759,10 +774,11 @@ END
 	  print ACE "$b4_evi Paper_evidence \"\[$paper$\]\"\n";
         }
       }
+     # Likely to be deleted, when Caltech is clear about rules of using cgc and pmid
      # if ($paper !~ /\[cgc\d+\]/ && $paper =~ /\[pmid(\d+)\]/){
 #	$evid_errors++;
 #	$paper = $1;
-#	print LOG "\nERROR: $class $obj has Paper $paper under main tag $tag\n";
+#	print LOG "\n: $class $obj has Paper $paper under main tag $tag\n";
 #	if ($ace){
 #	  print ACE "\n$class_obj\n";
 #	  print ACE "-D $ori\n\n";
@@ -1352,10 +1368,12 @@ EOF
     if ($_ =~ /\"(.+)\"\s+\"(.+)\"/){
       $locus = $2;
       $locus =~ s/\\//;
-      push(@{$allele_locus{$1}}, $locus);
+      if (!$exceptions{$locus}){
+	push(@{$allele_locus{$1}}, $locus);
+      }
     }
   } 
-  
+
   foreach my $strain (keys %strain_genotype){
     my @matches = ($strain_genotype{$strain} =~  /((Cb-\w{3,3}-\d+|Cr-\w{3,3}-\d+|\w{3,3}-\d+)\(\w+\d+\))/g);
     foreach (@matches){
@@ -1363,6 +1381,9 @@ EOF
       foreach (@la){
 	if ($_ =~ /(Cb-\w{3,3}-\d+|Cr-\w{3,3}-\d+|\w{3,3}-\d+)\((\w+\d+)\)/){
 	  $locus = $1; $allele = $2; 
+	  
+	  # diff allele->locus link in geneace and allele->locus in strain genotype
+	  # if diff, the print error LOG
 	  if ((defined @{$allele_locus{$allele}}) && ("@{$allele_locus{$allele}}" ne "$locus")){
   	    print LOG "ERROR: Strain $strain has $locus($allele) in genotype: ";
 	    print LOG "change each $locus to @{$allele_locus{$allele}}\n";
@@ -1468,7 +1489,7 @@ sub check_genetics_coords_mapping {
 sub loci_as_other_name {
 
   my ($def, $dir, $db) = @_;
-  my ($main, $other_name, @exceptions, %exceptions);
+  my ($main, $other_name);
 
   open (FH, "echo '$def' | $tace $dir | ") || die "Couldn't access geneace\n";
   while (<FH>){
@@ -1481,20 +1502,8 @@ sub loci_as_other_name {
       $other_name =~ s/\\//g;
       $other_name = $db->fetch('Locus', $other_name); 
       
-      #######################################################    
-      # hard coded loci for no main name / other_name merging 
-      #######################################################
-      @exceptions = 
-      qw (aka-1 cas-1 clh-2 clh-3 ctl-1 ctl-2 egl-13 evl-20 gst-4 mig-1 sle-1 slo-1 rap-1 rpy-1 dmo-1 mod-1 
-          old-1 plk-1 ptp-3 rab-18 rsp-1 rsp-2 rsp-4 rsp-5 rsp-6 sca-1 sus-1 twk-1 twk-2 twk-3 twk-4 twk-5 twk-6 twk-7 twk-8
-          twk-9 twk-10 twk-11 twk-12 twk-13 twk-14 twk-16 twk-17 twk-18 twk-20 twk-21 twk-22 twk-23 twk-24 twk-25 twk-26 
-          twk-32 unc-58 sup-9
-         );
-
-      foreach (@exceptions){$exceptions{$_}++};  
-
       if ($other_name){
-	if ($exceptions{$main}){
+	if ($exceptions{$main}){  # see global @exceptions and %exceptions
 	  print LOG "INFO: $main has $other_name as Other_name...$other_name is still a separate Locus object (exception)\n";
         }
         else {
