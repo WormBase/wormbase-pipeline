@@ -1455,11 +1455,11 @@
 		Summary UNIQUE ?Text //Searchable description of the transgene
 		Driven_by Driven_by_Sequence ?Sequence XREF Drives_Transgene Text //driving promoter
 			  Driven_by_Locus    ?Locus    XREF Drives_Transgene	
-		Reporter_product UNIQUE	     GFP
-					     LacZ
-					     Other_reporter ?Text
-					     Worm_gene ?Locus XREF Transgene_product Text
-					     Worm_sequence ?Sequence XREF Transgene_product Text
+		Reporter_product GFP
+				 LacZ
+			         Other_reporter ?Text
+				 Worm_gene ?Locus XREF Transgene_product Text
+				 Worm_sequence ?Sequence XREF Transgene_product Text
 		Isolation Author ?Author
 			  Clone ?Clone XREF Transgene Text //injected clone conc.
 			  Fragment Text Text //injected DNA fragment conc. 
