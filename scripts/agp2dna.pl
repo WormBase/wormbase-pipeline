@@ -11,7 +11,7 @@
 # Usage : agp2dna.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-12-03 13:52:08 $
+# Last edited on: $Date: 2003-12-04 12:52:39 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -193,7 +193,7 @@ foreach my $chromosome (@gff_files) {
  ########################################
  # hasta luego                          #
  ########################################
-
+print BUILD_LOG "Finished at ",&runtime,"\n";
 exit(0);
 
 
@@ -305,11 +305,10 @@ sub create_log_files{
   my $rundate     = `date +%y%m%d`; chomp $rundate;
   $log        = "$basedir/logs/$script_name.$rundate.$$";
 
-  open (LOG, ">$log") or die "cant open $log";
-  print LOG "$script_name\n";
-  print LOG "started at ",`date`,"\n";
-  print LOG "=============================================\n";
-  print LOG "\n";
+  open (BUILD_LOG, ">$log") or die "cant open $log";
+  print BUILD_LOG "$script_name\n";
+  print BUILD_LOG "started at ",&runtime,"\n";
+
 
 }
 
