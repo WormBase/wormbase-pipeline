@@ -64,8 +64,10 @@ my %wormprotprocessIds = ( wormpep => 11,
 			   gadfly  => 8,
 			   yeast => 7,
 			   slimswissprot => 13,
-			   slimtrembl =>14,
-			   ipi_human => 15
+			   slimtrembl_1 =>14,
+			   slimtrembl_2 =>16,
+			   ipi_human => 15,
+			   brigpep   => 17
 			 );
 
 my %processIds2prot_analysis = ( 11 => "wublastp_worm",
@@ -74,7 +76,9 @@ my %processIds2prot_analysis = ( 11 => "wublastp_worm",
 				 7  => "wublastp_yeast",
 				 13 => "wublastp_slimswissprot",
 				 14 => "wublastp_slimtrembl",
-				 15 => "wublastp_ipi_human"
+				 16 => "wublastp_slimtrembl",# slimtrembl is too large so is split
+				 15 => "wublastp_ipi_human",
+				 17 => "wublastp_briggsae"
 			       );
 
 our %org_prefix = ( 'wublastp_worm' => 'WP',
@@ -82,7 +86,8 @@ our %org_prefix = ( 'wublastp_worm' => 'WP',
 		    'wublastp_fly' => 'GADFLY',
 		    'wublastp_yeast' => 'SGD',
 		    'wublastp_slimswissprot' => 'SW',
-		    'wublastp_slimtrembl' => 'TR'
+		    'wublastp_slimtrembl' => 'TR',
+		    'wublastp_briggsae'  => 'BP'
 		  );
 # gene CE info from COMMON_DATA files copied to ~wormpipe/dumps in prep_dump
 undef $/;
@@ -184,6 +189,7 @@ else {
 				     -log10(evalue), cigar
 				       FROM protein_feature
 					 WHERE proteinId = ? and -log10(evalue) > 1
+					   AND analysis != 15 
 					   ORDER BY hId
 					 } );
 }
@@ -207,6 +213,7 @@ foreach $pep (@peps2dump)
     my %yeast_matches;
     my %swiss_matches;
     my %trembl_matches;
+    my %brig_matches;
 
 
     #retreive data from mysql
@@ -232,7 +239,7 @@ foreach $pep (@peps2dump)
 	  &addFlyData ( \%fly_matches, \@data );
 	}
 	elsif( $analysis == $wormprotprocessIds{'ensembl'}  ) { # others dont have isoforms so let adding routine deal with them
-	  &addData ( \%human_matches, \@data );
+	  #&addData ( \%human_matches, \@data ); superceded by ipi_human
 	}
 	elsif( $analysis == $wormprotprocessIds{'yeast'}  ) { # others dont have isoforms so let adding routine deal with them
 	  &addData ( \%yeast_matches, \@data );
@@ -240,16 +247,19 @@ foreach $pep (@peps2dump)
 	elsif( $analysis == $wormprotprocessIds{'slimswissprot'}  ) { # others dont have isoforms so let adding routine deal with them
 	  &addData ( \%swiss_matches, \@data );
 	}
-	elsif( $analysis == $wormprotprocessIds{'slimtrembl'}  ) { # others dont have isoforms so let adding routine deal with them
+	elsif( ( $analysis == $wormprotprocessIds{'slimtrembl_1'} ) || ( $analysis == $wormprotprocessIds{'slimtrembl_2'} ) ) { # others dont have isoforms so let adding routine deal with them
 	  &addData ( \%trembl_matches, \@data );
 	}
 	elsif( $analysis == $wormprotprocessIds{'ipi_human'}  ) { # others dont have isoforms so let adding routine deal with them
 	  &addData ( \%human_matches, \@data );
 	}
+	elsif( $analysis == $wormprotprocessIds{'brigpep'}  ) {
+	  &addData ( \%brig_matches, \@data );
+	}
       }
     
     
-    &dumpData ($pep,\%worm_matches,\%human_matches,\%fly_matches,\%yeast_matches,\%swiss_matches,\%trembl_matches) if (%worm_matches or %human_matches or %fly_matches or %yeast_matches or %swiss_matches or %trembl_matches);
+    &dumpData ($pep,\%worm_matches,\%human_matches,\%fly_matches,\%yeast_matches,\%swiss_matches,\%trembl_matches,\%brig_matches) if (%worm_matches or %human_matches or %fly_matches or %yeast_matches or %swiss_matches or %trembl_matches or %brig_matches);
   }
 
 close OUT;
@@ -340,12 +350,13 @@ sub dumpData
 	    if( "$$data[1]" eq "wublastp_worm" ) {
 	      my $gene = $$data[4]; 
 	      $$data[4] = $gene2CE{"$gene"};
+	      next unless $$data[4];
 	    }
 	    
 	    # sort out prefix - mainly for ipi_human where it can be ENS, SW, TR, LL etc
-	    elsif ( "$$data[1]" eq "wublastp_ipi_human" ) {
-	      $prefix = &getPrefix("$$data[4]");
-	    }
+	  #  elsif ( "$$data[1]" eq "wublastp_ipi_human" ) {
+#	      $prefix = &getPrefix("$$data[4]");
+#	    }
 	
 	    foreach (@cigar){
 	      #print OUT "Pep_homol \"$homolID\" $processIds2prot_analysis{$analysis} $e $myHomolStart $myHomolEnd $pepHomolStart $pepHomolEnd Align ";
@@ -498,6 +509,7 @@ sub getPrefix
       print IPI_HITS "$name\n";
       return $ACC2DB{$name} 
     }
+    # NOTE this is only the prefix - not the method (it will look like wublastp_ipi_human ENSEMBL:ENS00342342 etc)
     if( $name =~ /ENS\w+/ ) {
       return $org_prefix{'wublastp_ensembl'};
     }
