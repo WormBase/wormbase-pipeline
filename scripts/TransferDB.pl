@@ -4,7 +4,7 @@
 #
 # by ag3 [991221]
 #
-# Last updated on: $Date: 2003-09-22 17:06:27 $
+# Last updated on: $Date: 2003-09-22 17:41:53 $
 # Last updated by: $Author: krb $
 
 
@@ -149,23 +149,19 @@ my $wdata       = "$srcdir"."/data";
 my $chromosomes = "$srcdir"."/CHROMOSOMES";
 my $release     = "$srcdir"."/release";
 
-# store what to copy in @TOBEMOVED
+# set what is to be copiedin @TOBEMOVED
 my @TOBEMOVED;
 
-# flag to decide whether you are copying the database dir
-my $DB =0;
-$S_all && do {@TOBEMOVED=("$database","$wspec","$wgf","$wscripts","$wtools","$whelp","$wdata","$chromosomes","$release");$DB=1;};
-$S_database    && do {push (@TOBEMOVED,"$database");$DB=1};
-$S_wspec       && do {push (@TOBEMOVED,"$wspec");}; # why set $DB here ???
-$S_wgf         && do {push (@TOBEMOVED,"$wgf");};
-$S_wscripts    && do {push (@TOBEMOVED,"$wscripts");};
-$S_wquery      && do {push (@TOBEMOVED,"$wquery");};
-$S_wtools      && do {push (@TOBEMOVED,"$wtools");};
-$S_whelp       && do {push (@TOBEMOVED,"$whelp");};
-$S_wdata       && do {push (@TOBEMOVED,"$wdata");};
-$S_chromosomes && do {push (@TOBEMOVED,"$chromosomes");};
-$S_release     && do {push (@TOBEMOVED,"$release");};
-
+push (@TOBEMOVED,"$database")    if ($S_database    || $S_all);
+push (@TOBEMOVED,"$wspec")       if ($S_wspec       || $S_all);
+push (@TOBEMOVED,"$wgf")         if ($S_wgf         || $S_all);
+push (@TOBEMOVED,"$wscripts")    if ($S_wscripts    || $S_all);
+push (@TOBEMOVED,"$wquery")      if ($S_wquery      || $S_all);
+push (@TOBEMOVED,"$wtools")      if ($S_wtools      || $S_all);
+push (@TOBEMOVED,"$whelp")       if ($S_whelp       || $S_all);
+push (@TOBEMOVED,"$wdata")       if ($S_wdata       || $S_all);
+push (@TOBEMOVED,"$chromosomes") if ($S_chromosomes || $S_all);
+push (@TOBEMOVED,"$release")     if ($S_release     || $S_all);
 
 print LOG "Directories to be copied: @TOBEMOVED \n";
 
@@ -174,21 +170,25 @@ print LOG "Directories to be copied: @TOBEMOVED \n";
 #############################################################################
 # Make a backup database subdirectory
 # Only do this if -database/-all specified and target database subdir exists
-##############################################################################
+#############################################################################
 
-my @OLDDATABASE;
-
-if ($DB==1 && -d $new_subdir) {
-  @OLDDATABASE = ("$database");
+if (($S_database || $S_all) && -d $new_subdir) {
   print LOG "Making backup copy of old database ...\n";
-  find (\&backup_db,@OLDDATABASE); 
+  find (\&backup_db,$database); 
 }
 
 
-###############################################
-# Move the actual acedb tree structure
-###############################################
-find (\&process_file,@TOBEMOVED);
+#################################################################
+# Move the actual acedb tree structure, unless it doesn't exist!
+#################################################################
+foreach my $dir (@TOBEMOVED){
+  if (!-d $dir){
+    print LOG "$dir doesn't exist, skipping to next category\n";
+  }
+  else{
+    find (\&process_file,$dir);
+  }
+}
 
 
 ######################################################################
@@ -203,7 +203,9 @@ elsif ($backup &&(-d $bck_subdir)) {
   print LOG "Backup database directory is in $bck_subdir\n";
 }
 
+########################
 # Finish script cleanly
+########################
 print LOG "\n=============================================\n";
 print LOG "TransferDB process $$ ended SUCCESSFULLY at ",&runtime,"\n";
 close(LOG);
@@ -275,7 +277,6 @@ sub process_file {
 
   if (!-d $s_subdir) {
     print LOG "ERROR: Could not read $s_subdir\n";
-    croak "ERROR: Could not read $s_subdir\n";
   }
   $s_subdir =~ s/$srcdir//;
 
