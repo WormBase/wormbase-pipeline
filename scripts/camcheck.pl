@@ -1,17 +1,17 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
-# camcheck.pl
+# dbcheck.pl
 #
 # Cronjob integrity check controls for camace database.
 #
 # Usage: camcheck.pl
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2004-05-05 12:11:50 $
+# Last updated by: $Author: dl1 $
+# Last updated on: $Date: 2004-05-18 15:15:14 $
 #
 # see pod documentation (i.e. 'perldoc camcheck.pl') for more information.
 #
-##########################################################################################
+#################################################################################
 
 
 #################################################################################
@@ -31,17 +31,20 @@ use Socket;
 ##############################
 
 my $maintainers = "All";
-my $rundate = `date +%y%m%d`; chomp $rundate;
-my $runtime = `date +%H:%M:%S`; chomp $runtime;
+my $rundate     = `date +%y%m%d`; chomp $rundate;
+my $runtime     = `date +%H:%M:%S`; chomp $runtime;
 
 ##############################
 # command-line options       #
 ##############################
+
 use vars qw/ $opt_d $opt_h $opt_w $opt_m $opt_s $opt_l $opt_e $opt_v/;
 getopts ('hd:wms:le:v');
-&usage(0) if ($opt_h);
-my $debug = $opt_d;
-my $verbose = $opt_v; # for specifying more output
+
+&usage(0) if ($opt_h); # perldoc help message
+
+my $debug   = $opt_d;  # for debug options
+my $verbose = $opt_v;  # for specifying more output
 
 #  -h, Help
 #  -d, Debug, specify user name to receive email
@@ -55,14 +58,12 @@ my $verbose = $opt_v; # for specifying more output
 # Paths etc                  #
 ##############################
 
-my $clonepath = "/nfs/disk100/wormpub/analysis/cosmids";
-my $clonefile = "$clonepath"."/current.versions";
-my $tace      = &tace;   # tace executable path
-my $dbpath    = "/wormsrv1/camace";                           # Database path
+my $tace    = &tace;                            # tace executable path
+my $dbpath  = "/wormsrv1/camace";               # Database path
 
-if( $opt_s ){
-  $dbpath = $opt_s;
-  die "cant find $dbpath" unless (-e "$dbpath/database/ACEDB.wrm");
+if ($opt_s) {
+    $dbpath = $opt_s;
+    &usage('bad database path') unless (-e "$dbpath/database/ACEDB.wrm");
 }
 
 # only email a specific person responsible for a database
@@ -77,12 +78,12 @@ if($opt_e){
 
 # Use debug mode?
 if($debug){
-  print "DEBUG = \"$debug\"\n\n";
+  print "// Debug mode seleted, recipient is \"$debug\"\n\n";
   ($maintainers = $debug . '\@sanger.ac.uk');
 }
 
 # Verbose mode on?
-print "Verbose mode selected\n\n" if ($verbose);
+print "// Verbose mode selected\n\n" if ($verbose);
 
 
 ########################################
@@ -101,9 +102,9 @@ print LOG "# run details $dbname  : $rundate $runtime\n";
 print LOG "\n";
 
 
-########################################
-# Connect with acedb server            #
-########################################
+#########################################
+# Connect with acedb server             #
+#########################################
 
 my $db = Ace->connect(-path=>$dbpath,
 		      -program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
@@ -112,181 +113,17 @@ print LOG "CamCheck run STARTED at $runtime\n\n";
 print LOG "** Weekly edition **\n\n"  if ($opt_w);
 print LOG "** Monthly edition **\n\n" if ($opt_m);
 
+#########################################
+# Checks                                #
+#########################################
 
-#####################################################################
-# Do the following for every sequence in current.cosmid             #
-#####################################################################
+&CloneTests;
 
-open (CLONEFILE,"<$clonefile") || die "Couldn't open $clonefile for reading\n";
+&CheckPredictedGenes;
 
-my $line;
-while(defined($line=<CLONEFILE>)){
-  my $seq_file;
-  my $seq_ace;
-  chomp ($line);
-  $line =~ m/(\w+)\/(\w+)/;
-  my $clone = $1;
-  my $dir_date = $2;
-  
-  print "[$clone|$dir_date]    \t" if ($verbose);
+&SingleSequenceMap;
 
-  ######################################################################
-  # Retrieve the first sequence and date FROM DIRECTORY                #
-  ######################################################################
-    
-  my $seqpath = "$clonepath"."/"."$line"."/"."$clone.seq";
-
-  open SEQPATH,"<$seqpath" || do {print LOG "$clone  \t:NOT_IN_DIRECTORY $seqpath\n"; next; };
-  my $line1;
-  while (defined($line1=<SEQPATH>)) {  
-    chomp($line1);
-    $seq_file.="$line1";
-  }
-  close SEQPATH;
-  $seq_file =~ tr/a-z/A-Z/;
-  $seq_file =~ s/\>\w+//;
-  $seq_file =~ s/\W+//mg;
-  if ($seq_file =~ /[^ACGTUMRWSYKVHDBXN]/img) {
-    print LOG  "DIRSEQ for $clone contains bad characters\n";
-    $seq_file =~ s/[^ACGTUMRWSYKVHDBXN]//img;
-  }
-
-  ######################################################################
-  # Retrieve the second sequence and date FROM ACEDB                   #
-  ######################################################################
-
-  my $obj = $db->fetch(Sequence=>$clone);
-  if (!defined ($obj)) {
-    print LOG "Could not fetch sequence $clone\n";
-    next;
-  }
-
-  #####################################################################
-  # skipping the non-canonical genomic sequences                      #
-  #####################################################################
-	
-  my $canonical=$obj->Properties(1);
-  if ($canonical !~ /Genomic_canonical/) {
-    print LOG "Not Genomic_canonical sequence $clone\n";
-    next;
-  }
-  
-  #####################################################################
-  # Push the sequence as string in $seq2                              #
-  #####################################################################
-    
-  $seq_ace=$obj->asDNA();
-  if (!$seq_ace) {
-    print LOG "$clone NOT_IN_ACEDB $clone\n" ;
-    next;
-  }
-  $seq_ace =~ s/\>\w+//mg;
-  $seq_ace =~ tr/a-z/A-Z/;
-  $seq_ace =~ s/\W+//mg;
-    
-	
-  ######################################################################
-  # Iterative checks for each clone                                    #
-  ######################################################################
-
-  ######################################################################
-  # ?Sequence is Finished but not annotated                            #
-  ######################################################################
-    
-  print " [FINISHED/ANNOTATED" if ($verbose);
-  &finannot($obj);
-
-  ######################################################################
-  # Check for N's in FINISHED sequences                                #
-  ######################################################################
-	
-  print " | N's" if ($verbose);
-  &checkchars($obj,$seq_ace);
-
-  ######################################################################
-  # Compare date and checksum                                          #
-  ######################################################################
-
-  print " | DATE" if ($verbose);
-  &dateseq($obj,$dir_date);
-
-  print " | CHKSUM" if ($verbose);
-  &chksum($seq_file,$seq_ace,$clone);
-
-  ######################################################################
-  # Check correctness of gene structure                                #
-  ######################################################################
-
-  print " | CDS_coords" if ($verbose);
-  &check_CDSs($obj);
-
-  ######################################################################
-  # Check Sequence versions with EMBL                                  #
-  ######################################################################
-
-  if ($opt_w) {
-      print " | Sequence versions" if ($verbose);
-      &check_sequence_version($obj);
-  }
-  
-  ######################################################################
-  # last check complete, tidy up                                       #
-  ######################################################################
-
-  print "]\n" if ($verbose);
-
-  ######################################################################
-  # Get rid of this sequence object                                    #
-  ######################################################################
-
-  $obj->DESTROY();
-}
-
-close(CLONEFILE);
-
-
-#########################
-# Check predicted genes #
-#########################
-
-# need to close and reopen existing log filehandle either side of system call
-
-close(LOG);
-
-my $cpg_call = "/wormsrv2/scripts/check_predicted_genes.pl -database $dbpath -log $log";
-$cpg_call .= " -basic" if $opt_l;
-system("$cpg_call");
-warn "check_predicted_genes.pl did not run correctly: $?" if ($?);
-
-# now opened in append mode
-open (LOG,">>$log");
-LOG->autoflush();
-
-
-
-############################################################
-# Check that each clone only belongs to one (Sequence) map #
-############################################################
-
-my @multimap_clones= $db->fetch(-query=>'find Clone COUNT Map > 1');
-if (@multimap_clones){
-  foreach (@multimap_clones){
-    print LOG "Clone error - $_ contains two or more map objects\n";
-  }
-}
-
-###################
-# LINK objects    #
-###################
-
-my $i = $db->fetch_many(-query=> 'find Sequence "SUPERLINK*"');  
-while (my $obj = $i->next) {
-  my $link = $obj;
-  print "[$link]    \t" if ($verbose);
-  print " | CDS_coords" if ($verbose);
-  &check_CDSs($obj);
-  print "]\n" if ($verbose);
-}
+&LinkObjects;
 
 $runtime = `date +%H:%M:%S`; chomp $runtime;
 print LOG "\nCamCheck run ENDED at $runtime\n\n";
@@ -312,9 +149,202 @@ close LOG;
 $db->close;
 exit(0);
 
-########################################################################################
-####################################   Subroutines   ###################################
-########################################################################################
+#################################################################################
+################################   Subroutines   ################################
+#################################################################################
+
+
+
+#####################################################################
+# Do the following for every sequence in current.cosmid             #
+#####################################################################
+
+sub CloneTests {
+
+    my $clonepath = "/nfs/disk100/wormpub/analysis/cosmids";
+    my $clonefile = "$clonepath"."/current.versions";
+    
+    open (CLONEFILE,"<$clonefile") || die "Couldn't open $clonefile for reading\n";
+    
+    my $line;
+    while(defined($line=<CLONEFILE>)){
+	my $seq_file;
+	my $seq_ace;
+	chomp ($line);
+	$line =~ m/(\w+)\/(\w+)/;
+	my $clone = $1;
+	my $dir_date = $2;
+	
+	print "[$clone|$dir_date]    \t" if ($verbose);
+
+	######################################################################
+	# Retrieve the first sequence and date FROM DIRECTORY                #
+	######################################################################
+	
+	my $seqpath = "$clonepath"."/"."$line"."/"."$clone.seq";
+	
+	open SEQPATH,"<$seqpath" || do {print LOG "$clone  \t:NOT_IN_DIRECTORY $seqpath\n"; next; };
+	my $line1;
+	while (defined($line1=<SEQPATH>)) {  
+	    chomp($line1);
+	    $seq_file.="$line1";
+	}
+	close SEQPATH;
+	$seq_file =~ tr/a-z/A-Z/;
+	$seq_file =~ s/\>\w+//;
+	$seq_file =~ s/\W+//mg;
+	if ($seq_file =~ /[^ACGTUMRWSYKVHDBXN]/img) {
+	    print LOG  "DIRSEQ for $clone contains bad characters\n";
+	    $seq_file =~ s/[^ACGTUMRWSYKVHDBXN]//img;
+	}
+	
+	######################################################################
+	# Retrieve the second sequence and date FROM ACEDB                   #
+	######################################################################
+	
+	my $obj = $db->fetch(Sequence=>$clone);
+	if (!defined ($obj)) {
+	    print LOG "Could not fetch sequence $clone\n";
+	    next;
+	}
+	
+	#####################################################################
+	# skipping the non-canonical genomic sequences                      #
+	#####################################################################
+	
+	my $canonical=$obj->Properties(1);
+	if ($canonical !~ /Genomic_canonical/) {
+	    print LOG "Not Genomic_canonical sequence $clone\n";
+	    next;
+	}
+  
+	#####################################################################
+	# Push the sequence as string in $seq2                              #
+	#####################################################################
+	
+	$seq_ace=$obj->asDNA();
+	if (!$seq_ace) {
+	    print LOG "$clone NOT_IN_ACEDB $clone\n" ;
+	    next;
+	}
+	$seq_ace =~ s/\>\w+//mg;
+	$seq_ace =~ tr/a-z/A-Z/;
+	$seq_ace =~ s/\W+//mg;
+	
+	
+	######################################################################
+	# Iterative checks for each clone                                    #
+	######################################################################
+	
+	######################################################################
+	# ?Sequence is Finished but not annotated                            #
+	######################################################################
+	
+	print " [FINISHED/ANNOTATED" if ($verbose);
+	&CloneStatus($obj);
+	
+	######################################################################
+	# Check for N's in FINISHED sequences                                #
+	######################################################################
+	
+	print " | N's" if ($verbose);
+	&checkchars($obj,$seq_ace);
+	
+	######################################################################
+	# Compare date and checksum                                          #
+	######################################################################
+	
+	print " | DATE" if ($verbose);
+	&dateseq($obj,$dir_date);
+	
+	print " | CHKSUM" if ($verbose);
+	&chksum($seq_file,$seq_ace,$clone);
+	
+	######################################################################
+	# Check correctness of gene structure                                #
+	######################################################################
+	
+	print " | CDS_coords" if ($verbose);
+	&check_CDSs($obj);
+	
+	######################################################################
+	# Check Sequence versions with EMBL                                  #
+	######################################################################
+	
+	if ($opt_w) {
+	    print " | Sequence versions" if ($verbose);
+	    &check_sequence_version($obj);
+	}
+	
+	######################################################################
+	# last check complete, tidy up                                       #
+	######################################################################
+	
+	print "]\n" if ($verbose);
+	
+	######################################################################
+	# Get rid of this sequence object                                    #
+	######################################################################
+	
+	$obj->DESTROY();
+    }
+    
+    close(CLONEFILE);
+}
+
+#########################
+# Check predicted genes #
+#########################
+
+sub CheckPredictedGenes {
+    
+    # need to close and reopen existing log filehandle either side of system call
+
+    close(LOG);
+
+    my $cpg_call = "/wormsrv2/scripts/check_predicted_genes.pl -database $dbpath -log $log";
+    $cpg_call .= " -basic" if $opt_l;
+    system("$cpg_call");
+    warn "check_predicted_genes.pl did not run correctly: $?" if ($?);
+    
+# now opened in append mode
+    open (LOG,">>$log");
+    LOG->autoflush();
+    
+}
+
+
+############################################################
+# Check that each clone only belongs to one (Sequence) map #
+############################################################
+
+sub SingleSequenceMap {
+
+    my @multimap_clones= $db->fetch(-query=>'find Clone COUNT Map > 1');
+    if (@multimap_clones){
+	foreach (@multimap_clones){
+	    print LOG "Clone error - $_ contains two or more map objects\n";
+	}
+    }
+}
+
+###################
+# LINK objects    #
+###################
+
+sub LinkObjects {
+
+    my $i = $db->fetch_many(-query=> 'find Sequence "SUPERLINK*"');  
+    while (my $obj = $i->next) {
+	my $link = $obj;
+	print "[$link]    \t" if ($verbose);
+	print " | CDS_coords" if ($verbose);
+	&check_CDSs($obj);
+	print "]\n" if ($verbose);
+    }
+}
+
+
 
 ####################################
 # Coherency check between directory and database
@@ -377,7 +407,8 @@ sub calculate_chksum {
 # Finished / Annotated
 ####################################
 
-sub finannot {    
+sub CloneStatus {
+    
     my $obj =shift;
     my $finished  = $obj->Finished(1);
     my $annotated = $obj->Annotated(1);
@@ -389,8 +420,6 @@ sub finannot {
 	print LOG "FINISHED_BUT_NOT_ANNOTATED $obj\n";
     }
 }
-
-
 
 
 #######################################################################
@@ -736,8 +765,7 @@ sub usage {
 
     if ($error == 1) {
         # No WormBase release number file
-        print "The WormBase release number cannot be parsed\n";
-#        print "Check File: '$Wormbase_release_file'\n\n";
+        print "The WormBase release number cannot be parsed\n\n";
         &run_details;
         exit(0);
     }
@@ -745,6 +773,12 @@ sub usage {
         # Normal help menu
         exec ('perldoc',$0);
     }
+    elsif ($error eq "bad database path") {
+	print "The database path is invalid. No ACEDB.wrm file found at $opt_s\n\n";
+        &run_details;
+        exit(0);
+    }
+
 }
 
 
