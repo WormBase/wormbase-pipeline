@@ -248,7 +248,7 @@ sub extract_confirmed_genes{
 
   system("/bin/gzip /wormsrv2/tmp/confirmed_genes.${release}") && die "Couldn't gzip confirmed_genes file\n";
   print "gzipping confirmed_genes.${release}\n" if ($debug);
-  system("/bin/mv /wormsrv2/tmp/confirmed_genes.${release}.gz $targetdir/$release/") && die "Couldn't gzip confirmed_genes file\n";
+  system("/bin/mv /wormsrv2/tmp/confirmed_genes.${release}.gz $targetdir/$release/confirmed_genes.${release}.gz") && die "Couldn't move confirmed_genes file to FTP site\n";
   
   return(0);
 
