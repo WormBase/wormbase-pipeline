@@ -5,8 +5,8 @@ use Wormbase;
 use Getopt::Long;
 use strict;
 
-my ($help, $debug, $test, $quicktest, $database, @methods, @chromosomes, $dump_dir );
-
+my ($help, $debug, $test, $quicktest, $database, @methods, @chromosomes, $dump_dir, @clones );
+my @sequences;
 GetOptions (
 	    "help"          => \$help,
 	    "debug=s"       => \$debug,
@@ -19,7 +19,9 @@ GetOptions (
 	    "method:s"      => \@methods,
 	    "methods:s"     => \@methods,
 	    "chromosomes:s" => \@chromosomes,
-	    "chromosome:s"  => \@chromosomes
+	    "chromosome:s"  => \@chromosomes,
+	    "clone:s"       => \@clones,
+	    "clones:s"       => \@clones,
 	   );
 
 @methods     = split(/,/,join(',',@methods));
@@ -37,16 +39,16 @@ mkdir $dump_dir unless -e $dump_dir;
 # open database connection once
 open (WRITEDB,"| $giface $database") or die "failed to open giface connection to $database\n";
 
-foreach my $chromosome ( @chromosomes ) {
+foreach my $sequence ( @sequences ) {
   if ( @methods ) {
     foreach my $method ( @methods ) {
-      my $command = "gif seqget CHROMOSOME_$chromosome +method $method; seqfeatures -version 2 -file $dump_dir/CHROMOSOME_${chromosome}_${method}.gff\n";
+      my $command = "gif seqget $sequence +method $method; seqfeatures -version 2 -file $dump_dir/${sequence}_${method}.gff\n";
       print "$command";
       print WRITEDB $command;
     }
   }
   else { 
-    my $command = "gif seqget CHROMOSOME_$chromosome; seqfeatures -version 2 -file $dump_dir/CHROMOSOME_${chromosome}.gff";
+    my $command = "gif seqget $sequence; seqfeatures -version 2 -file $dump_dir/$sequence.gff";
     print WRITEDB $command;
   }
 }
@@ -58,21 +60,22 @@ exit(0);
 
 sub check_options {
 
-  # -method
-  unless ( $methods[0] ) {
-    die "You must specify at lease one method to dump\n";
-  }
 
-  # -chromosomes
-  my %chroms = qw(I 1 II 1 III 1 IV 1 V 1 X 1);
-  unless (@chromosomes ) {
-    @chromosomes = keys %chroms;
-    print "Dumping for all chromosomes\n";
-  } 
-  else {
-    foreach (@chromosomes) {
-      unless ( $chroms{$_} ) {
-	die "$_ is not a valid chromosome\n";
+  unless( @clones ) {
+    # -chromosomes
+    my %chroms = qw(I 1 II 1 III 1 IV 1 V 1 X 1);
+    unless (@chromosomes ) {
+      @sequences= map("CHROMOSOME_"."$_",@{keys %chroms});
+      print "Dumping for all chromosomes\n";
+    } 
+    else {
+      foreach (@chromosomes) {
+	if ( $chroms{$_} ) {
+	  push( @sequences,"CHROMOSOME_"."$_");
+	}
+	else {
+	  die "$_ is not a valid chromosome\n";
+	}
       }
     }
   }
