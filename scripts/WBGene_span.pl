@@ -7,7 +7,7 @@
 # Creates SMapped Gene spans for Gene objects
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2004-08-10 09:06:35 $
+# Last edited on: $Date: 2004-08-10 09:17:22 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -135,7 +135,6 @@ foreach my $chrom ( @chromosomes ) {
   close ACE;
   close OUTGFF;
   &load_to_database("$database","$acefile","WBGene_span") unless ( $no_ace ); # I know this would be better done all together but . . 
-  last if $gff_file;
 }
 
 $log->mail;
