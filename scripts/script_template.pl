@@ -1,38 +1,104 @@
-#!/usr/local/bin/perl5.6.0 -w                    # perl5.6.0 and -w flag
+#!/usr/local/bin/perl5.6.0 -w                  
 #
-# script_template.pl                             # insert name of script
+# script_template.pl                           
 # 
-# by Keith Bradnam                               # original author
+# by Keith Bradnam                         
 #
-# This is a example of a good script template    # Brief description of script
+# This is a example of a good script template   
 #
-# Last updated by: $Author: krb $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2002-06-17 12:21:08 $                        # quickly see when script was last changed and by whom
+# Last updated by: $Author: krb $     
+# Last updated on: $Date: 2002-12-09 17:04:50 $      
 
-
-use strict;                                      # always use
-use lib "/wormsrv2/scripts/";                    # Try to use Wormbase.pm where it useful to do so
+use strict;                                      
+use lib "/wormsrv2/scripts/";                    
 use Wormbase;
+use Getopt::Long;
 
 
+######################################
+# variables and command-line options # 
+######################################
 
-# Try to keep different parts of code cleanly separated using comments...
-
-##############
-# variables  #                                                                   #
-##############
-
-# Most checking scripts should produce a log file that is a) emailed to us all 
-# and b) copied to /wormsrv2/logs
-
+my ($help, $debug);
 my $maintainers = "All";
 my $rundate     = `date +%y%m%d`; chomp $rundate;
 my $runtime     = `date +%H:%M:%S`; chomp $runtime;
-our $log        = "/wormsrv2/logs/finish_build.$rundate";
+our $log;
+
+GetOptions ("help"      => \$help,
+            "debug=s"   => \$debug);
 
 
-# Always good to cleanly exit from your script
+# Display help if required
+&usage("Help") if ($help);
+
+# Use debug mode?
+if($debug){
+  print "DEBUG = \"$debug\"\n\n";
+  ($maintainers = $debug . '\@sanger.ac.uk');
+}
+
+&create_log_files;
+
+
+
+##########################
+# MAIN BODY OF SCRIPT
+##########################
+
+
+
+
+
+
+# Close log files and exit
+close(LOG);
 exit(0);
+
+
+
+
+
+
+##############################################################
+#
+# Subroutines
+#
+##############################################################
+
+sub create_log_files{
+
+  # Create history logfile for script activity analysis
+  $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
+
+  # create main log file using script name for
+  my $script_name = $1;
+  $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
+  my $rundate     = `date +%y%m%d`; chomp $rundate;
+  $log        = "/wormsrv2/logs/$script_name.$rundate.$$";
+
+  open (LOG, ">$log") or die "cant open $log";
+  print LOG "$script_name\n";
+  print LOG "started at ",`date`,"\n";
+  print LOG "=============================================\n";
+  print LOG "\n";
+
+}
+
+##########################################
+
+sub usage {
+  my $error = shift;
+
+  if ($error eq "Help") {
+    # Normal help menu
+    system ('perldoc',$0);
+    exit (0);
+  }
+}
+
+
+
 
 
 # Add perl documentation in POD format
