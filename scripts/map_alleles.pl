@@ -7,7 +7,7 @@
 # This maps alleles to the genome based on their flanking sequence
 #
 # Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2003-02-18 14:42:56 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2003-03-26 11:51:34 $        # quickly see when script was last changed and by whom
 
 
 use strict;
@@ -361,6 +361,7 @@ foreach $allele (@alleles)
 	}
 	else {
 	  $source = $sequence;
+	  $clone = $sequence->name;
 	}
 	if( $source )
 	  {	
