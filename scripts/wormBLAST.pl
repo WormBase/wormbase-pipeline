@@ -47,6 +47,8 @@ if( $run_pipeline ) {
   $blastx = 1; $blastp =1;
 }
 
+&check_wormsrv2_conflicts;
+
 #$WPver = &get_wormbase_version unless $WPver;
 die "please give a build version number ie  wormBLAST -version 00\n" unless $WPver;
 my $WP_old = $WPver - 1;
@@ -332,9 +334,9 @@ if( $setup_mySQL )
     
     # if the user passes WPversion greater than that in the current file update it anyway
     # (this means you can update the database before wormpep is made - ie during autoace_minder -build
-    $currentDBs{$1} =~ /wormpep(\d+);
+    $currentDBs{$1} =~ /wormpep(\d+)/;
     if( $1 and ( $1<$WPver ) ) {
-      push (@updated_DBs,"wormpep$WPVer\.pep");
+      push (@updated_DBs,"wormpep$WPver\.pep");
     }
     #   mysql -h ecs1f -u wormadmin -p worm01
     #   delete from InputIdAnalysis where analysisId = 23; (DNA clones BLASTX'd against wormpep)
@@ -417,6 +419,7 @@ if( $blastx )
 
 if( $blastp )
   {
+    &wait_for_pipeline_to_finish;
     die "can't run pipeline whilst wormsrv2 is mounted - please exit and try again\n" if (-e "/wormsrv2");
     #make sure we have the databases to work on.
     &get_updated_database_list;
@@ -436,6 +439,7 @@ if( $blastp )
 if( $dump_data )
   {
     # prepare helper files
+
     if( -e "/wormsrv2/autoace/CHROMOSOMES/*.gff") {
       `cat /wormsrv2/autoace/CHROMOSOMES/*.gff | $scripts_dir/gff2cds.pl > /nfs/acari/wormpipe/Elegans/cds$WPver.gff`;
       `cat /wormsrv2/autoace/CHROMOSOMES/*.gff | $scripts_dir/gff2cos.pl > /nfs/acari/wormpipe/Elegans/cos$WPver.gff`;
@@ -453,7 +457,6 @@ if( $dump_data )
       print " cant find GFF files at /wormsrv2/autoace/CHROMOSOMES/ \n ";
       exit(1);
     }
-    
   }
 
 &wait_for_pipeline_to_finish if $test_pipeline; # debug stuff
@@ -472,11 +475,26 @@ sub wait_for_pipeline_to_finish
       }
       else {
 	print "$jobsleft jobsleft (Im going to sleep for that long! )\n";
+	
 	sleep $jobsleft;
       }
     }
-    print "Pipeline finished\n";
+    print "Pipeline finished - waiting 60 secs to make sure everything is through\n";
+    sleep 60;
+    print "DONE\n\n";
     return;
+  }
+
+sub check_wormsrv2_conflicts
+  {
+    if( ($chromosomes || $wormpep ||  $dump_data || $update_databases || $update_mySQL) && ($blastx || $blastp) ) 
+      {
+	print "no can do - to run the blast pipeline wormsrv2 can NOT be mounted.  Your options conflict with this.\nthe following options REQUIRE wormsrv2 - \n\t-chromosomes\t-wormpep\t-updatemysql\t-dump\n\n";
+	exit (1);
+      }
+    else {
+      print "command line options checked and seem OK (in terms of wormsrv2 requirements )\n\n";
+    }
   }
 
 sub update_database
@@ -632,8 +650,6 @@ B<-nosql>       Debug option where SQL calls to databases are not performed.
 =head1 REQUIREMENTS
 
 =over 4
-
-=item This script must run on a machine which can see the /wormsrv2 disk.
 
 =back
 
