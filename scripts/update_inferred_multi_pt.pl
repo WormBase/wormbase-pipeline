@@ -2,7 +2,7 @@
 
 # Author: Chao-Kung Chen
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-05-18 10:01:51 $ 
+# Last updated on: $Date: 2004-05-28 12:58:19 $ 
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'}; 
@@ -182,8 +182,7 @@ sub update_inferred_multi_pt {
   my $query  = "find Multi_pt_data * where remark AND NEXT AND NEXT = \"inferred_automatically\"";
   push( my @inferred_multi_objs, $db->find($query) );
 
-  open(UPDATE, ">/tmp/updated_multi_pt_flanking_loci_$autoace_version") || die $!;
-  `chmod 777 /tmp/updated_multi_pt_flanking_loci_$autoace_version`;
+  open(UPDATE, ">$multi_dir/updated_multi_pt_flanking_loci_$autoace_version") || die $!;
 
   my ($center_Gene, $allele, $L_locus, $R_locus);
 
@@ -229,7 +228,7 @@ sub update_inferred_multi_pt {
 
   print LOG "\n\n";
 
-  my $cmd= "pparse /tmp/updated_multi_pt_flanking_loci_$autoace_version\nsave\nquit\n";
+  my $cmd= "pparse $multi_dir/updated_multi_pt_flanking_loci_$autoace_version\nsave\nquit\n";
   $ga->upload_database($database, $cmd, "Inferred_multi_pt_data", $log) if !$debug;
 }
 
