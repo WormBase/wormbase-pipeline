@@ -81,3 +81,17 @@ Reference_allele tag removed from ?Allele
 
 Added 'Landmark_gene' tag to Gene class (under Map tag) to flag those genes which will
 appear on the genetic map dispay part of Genome Browser
+
+
+17th September
+--------------
+Added Ortholog tag to Gene class which links to other ?Gene objects, removed unused Ortholog tag from ?CDS
+
+Three new tags (Predicted, Partially_confirmed, Confirmed) in ?CDS class to replace the existing
+Confirmed_by tag which is now removed along with the #Gene_confirmation.
+
+GFF_feature field in ?Method now links to ?SO_term rather than Text.  This *shouldn't* have any impact
+on the website but I guess you never know!  This is taking advantage of a new acedb feature.
+
+Expr_pattern class gets new GO_term tag to link to ?GO_term and each tag under the 'Expressed_in' tag make
+use of a new hash.
