@@ -963,7 +963,8 @@
 ?CDS	Evidence #Evidence
 	SMap S_parent Sequence UNIQUE ?Sequence XREF CDS      // changed into S_parent Sequence UNIQUE [020311 kj]
 	Structure Source_exons Int UNIQUE Int
-	DB_info Protein_id ?Sequence UNIQUE Text UNIQUE Int // DB_info tag added [011030 krb]
+	DB_info Database ?Database ?Text ?Accession_number XREF CDS UNIQUE Int 
+		Protein_id ?Sequence UNIQUE Text UNIQUE Int // DB_info tag added [011030 krb]
 		DB_remark ?Text #Evidence
 //	Gene_info Gene UNIQUE ?Gene XREF CDS // when live 
 //		  Gene_history UNIQUE ?Gene XREF CDS_history // when dead
@@ -1254,7 +1255,8 @@
 
 
 
-?Accession_number  Entry Sequence ?Sequence
+?Accession_number  Entry CDS ?CDS
+			 Sequence ?Sequence
 			 Protein ?Protein
 			 Motif ?Motif
 			 Transcript ?Transcript // added for Lincoln [030228 krb]
