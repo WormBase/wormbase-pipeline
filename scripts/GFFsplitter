@@ -292,17 +292,17 @@ foreach (@gff_files) {
     print GFF_MRNA_GENOME     "##Version: $cvs_version\n";
     print GFF_MRNA_GENOME     "##date $rundate\n";
 
-    open (BLAT_MRNA_BEST,     ">$datadir/GFF_SPLITS/$gff_BLAT_mRNA_BEST");
-    print BLAT_MRNA_BEST     "##Version: $cvs_version\n";
-    print BLAT_MRNA_BEST     "##date $rundate\n";
+    open (GFF_BLAT_MRNA_BEST,     ">$datadir/GFF_SPLITS/$gff_BLAT_mRNA_BEST");
+    print GFF_BLAT_MRNA_BEST     "##Version: $cvs_version\n";
+    print GFF_BLAT_MRNA_BEST     "##date $rundate\n";
 
-    open (BLAT_MRNA_OTHER,    ">$datadir/GFF_SPLITS/$gff_BLAT_mRNA_OTHER");
-    print BLAT_MRNA_OTHER     "##Version: $cvs_version\n";
-    print BLAT_MRNA_OTHER     "##date $rundate\n";
+    open (GFF_BLAT_MRNA_OTHER,    ">$datadir/GFF_SPLITS/$gff_BLAT_mRNA_OTHER");
+    print GFF_BLAT_MRNA_OTHER     "##Version: $cvs_version\n";
+    print GFF_BLAT_MRNA_OTHER     "##date $rundate\n";
 
-    open (BLATX_NEMATODE,     ">$datadir/GFF_SPLITS/$gff_BLATX_NEMATODE");
-    print BLATX_NEMATODE      "##Version: $cvs_version\n";
-    print BLATX_NEMATODE      "##date $rundate\n";
+    open (GFF_BLATX_NEMATODE,     ">$datadir/GFF_SPLITS/$gff_BLATX_NEMATODE");
+    print GFF_BLATX_NEMATODE      "##Version: $cvs_version\n";
+    print GFF_BLATX_NEMATODE      "##date $rundate\n";
 
     open (GFF_EXPR_PROFILE,    ">$datadir/GFF_SPLITS/$gff_Expr_profile");
     print GFF_EXPR_PROFILE     "##Version: $cvs_version\n";
@@ -684,13 +684,13 @@ foreach (@gff_files) {
 
 	if (/BLAT_mRNA_BEST/) {
 	  #	    print "$_\n" if ($debug);
-	  print BLAT_MRNA_BEST "$_\n";
+	  print GFF_BLAT_MRNA_BEST "$_\n";
 	  $found_a_home = 1;
 	}
 
 	if (/BLAT_mRNA_OTHER/) {
 	  #	    print "$_\n" if ($debug);
-	  print BLAT_MRNA_OTHER "$_\n";
+	  print GFF_BLAT_MRNA_OTHER "$_\n";
 	  $found_a_home = 1;
 	}
 
@@ -710,7 +710,7 @@ foreach (@gff_files) {
 
 	if (/BLATX_NEMATODE/) {
 	  #	    print "$_\n" if ($debug);
-	  print BLATX_NEMATODE "$_\n";
+	  print GFF_BLATX_NEMATODE "$_\n";
 	  $found_a_home = 1;
 	}
 
@@ -765,9 +765,9 @@ foreach (@gff_files) {
     close GFF_BLAT_EST_BEST;
     close GFF_BLAT_EST_OTHER;
     close GFF_MRNA_GENOME;
-    close BLAT_MRNA_BEST;
-    close BLAT_MRNA_OTHER;
-    close BLATX_NEMATODE;
+    close GFF_BLAT_MRNA_BEST;
+    close GFF_BLAT_MRNA_OTHER;
+    close GFF_BLATX_NEMATODE;
     close GFF_EXPR_PROFILE;
 
     ########################################
