@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2004-05-26 12:16:11 $
+# Last updated on: $Date: 2004-06-01 16:16:12 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -113,7 +113,8 @@ foreach (@exceptions){$exceptions{$_}++};
 # get other names to main name hash 
 my %other_main = $ga->other_name($db, "other_main");
 
-my $non_CGC_count = 0;
+my $non_CGC_to_seq = 0;
+my $non_CGC_non_seq = 0;
 
 # Process separate classes if specified on the command line else process all classes
 @classes = ("gene","laboratory","allele","strain","rearrangement","sequence","mapping","evidence", "xref", "multipt", ) if (!@classes);
@@ -180,7 +181,7 @@ sub process_gene_class{
     }
     my $warnings;
 
-    $non_CGC_count = &test_locus_for_errors($gene_id);
+    ($non_CGC_to_seq, $non_CGC_non_seq) = &test_locus_for_errors($gene_id);
     print "\n" if ($verbose);
   }
 
@@ -191,7 +192,8 @@ sub process_gene_class{
   print "Looking for sequences (CDS/Trans/Pseudo) connected to multiple gene ids\n" if ($verbose);
   &find_seqs_with_multiple_Gene_ids($db);
 
-  print LOG "ERROR 4: There are $non_CGC_count Gene_ids that do not have CGC_name\n" if $non_CGC_count > 0;
+  print LOG "INFO: $non_CGC_to_seq gene id(s) linked to sequence but not linked to CGC_name\n" if $non_CGC_to_seq > 0;
+  print LOG "INFO: $non_CGC_non_seq gene id(s) NOT linked to sequence AND CGC_name\n" if $non_CGC_non_seq > 0;
 
   my $last_gene_id = $gene_ids[-1];
   $last_gene_id =~ s/WBGene(0)+//;
@@ -225,13 +227,6 @@ sub test_locus_for_errors{
   # test for Other_name tag but no value
   if ( defined($gene_id->at('Name.Other_name')) && !defined $gene_id->Other_name ){
     $warnings .= "ERROR 3: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has 'Other_name' tag without value\n";
-    print "." if ($verbose);
-  }
-
-  # Remind of outstanding non-CGC_name genes
-  if ( !defined $gene_id->CGC_name && $gene_id->Other_name && $gene_id->Species =~ /elegans/ ){
-    $non_CGC_count++;
-    $warnings .= "ERROR 4: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has no CGC_name yet\n" if $verbose;
     print "." if ($verbose);
   }
 
@@ -291,11 +286,15 @@ sub test_locus_for_errors{
     print "." if ($verbose);
   }
 
-  # checks when a CGC name is linked to a sequence, it should also, ideally, linked to a Gene_class
-  if ( !defined $gene_id->CGC_name && defined $gene_id->Sequence_name && $gene_id->Species =~ /elegans/ ){
-    my $seq = $gene_id->Sequence_name;
-    $warnings .= "CHECK: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has seq connection ($seq) but is not linked to a CGC name\n" if $gene_id ne "WBGene00000193"; # hard coded exception
-    print JAHLOG "CHECK: $gene_id ($Gene_info{$gene_id}{'Public_name'}) has seq connection ($seq) but is not linked to a CGC name\n" if $gene_id ne "WBGene00000193"; # hard coded exception
+  # checks a CGC name is linked to a sequence but not yet to a CGC_name 
+  if ( !defined $gene_id->CGC_name && $gene_id->Sequence_name && $gene_id->Species =~ /elegans/ ){
+    $non_CGC_to_seq++;
+    print "." if ($verbose);
+  }
+
+  # checks a gene id is linked neither to a sequence nor a CGC name
+  if ( !$gene_id->CGC_name && !$gene_id->Sequence_name && $gene_id->Species =~ /elegans/ ){
+    $non_CGC_non_seq++;
     print "." if ($verbose);
   }
 
@@ -366,21 +365,11 @@ sub test_locus_for_errors{
     }
   }
 
-  # checks if functional annotation of a sequence should already be connected to a Gene obj.
-  foreach my $tag ("CDS", "Transcript", "Pseudogene"){
-    if( defined $gene_id->$tag ){
-      my @iso = $gene_id->$tag;
-      foreach (@iso){
-	my ($seq_func_annots) = $db->fetch(-class=>$tag, -name=>$_);
-	if ( defined $seq_func_annots -> Detailed_description(1) ||
-             defined $seq_func_annots -> Concise_description(1) || defined $seq_func_annots -> Provisional_description(1) ){
-
-	  # should be commented out
-	  $warnings .= "ERROR 15: $_ functional annotation should now be attached to $gene_id ($Gene_info{$gene_id}{'Public_name'})\n";
-	  print CALTECHLOG "$_ functional annotation should now be attached to $gene_id ($Gene_info{$gene_id}{'Public_name'})\n";
-	  $caltech_errors++;
-	}
-      }
+  # check that live gene id should not have wpxxx appended to its Sequence_name or CDS/Transcript/Pseudogene
+  foreach my $tag ("Sequence_name", "CDS", "Transcript", "Pseudogene", "Public_name"){
+    if ( $gene_id->$tag =~ /.+\:wp\d+/ && defined $gene_id->$tag && $gene_id->at('Identity.Live') ){
+      $warnings .= "ERROR 15: $gene_id has $tag with :wpxxx history name appended\n";
+      print "." if ($verbose);
     }
   }
 
@@ -513,7 +502,7 @@ sub test_locus_for_errors{
   }
 
   print LOG "$warnings" if(defined($warnings));
-  return($non_CGC_count);
+  return($non_CGC_to_seq, $non_CGC_non_seq);
 }
 
 sub get_event {
@@ -963,12 +952,13 @@ sub process_allele_class{
   print LOG "\n\nChecking Allele class for errors:\n";
   print LOG "---------------------------------\n";
 
-  # when an allele is linked to a predicted_gene and not a gene, is that predicted_gene already linked to a gene_id?
+  # when an allele is linked to a predicted_gene and not a gene, is that predicted_gene already linked to a gene_id 
+  # and has a CGC_name?
   # if yes, make allele-Gene connection
 
   foreach my $tag ("Predicted_gene", "Transcript"){
-    my $query_1 = "Find allele * where $tag & !Gene; > $tag; Gene";
-    my $query_2 = "Find allele * where $tag & !Gene";
+    my $query_1 = "Find allele * where $tag & !Gene; > $tag; Gene"; # but also checks predicted_gene/transcript is linked to Gene
+    my $query_2 = "Find allele * where $tag & !Gene";               # but does not check predicted_gene/transcript is linked to Gene
 
     my (@seqs_linked_to_allele_and_gene, %seqs_linked_to_allele_and_gene,
         @alleles_linked_to_seqs_and_not_gene, %alleles_linked_to_seqs_and_not_gene);
@@ -976,7 +966,7 @@ sub process_allele_class{
     push( @seqs_linked_to_allele_and_gene, $db->find($query_1) );
     push( @alleles_linked_to_seqs_and_not_gene, $db->find($query_2) );
 
-    # hash set for quick search
+    # hash set for quick lookup
     foreach (@seqs_linked_to_allele_and_gene){$seqs_linked_to_allele_and_gene{$_}++};
     foreach (@alleles_linked_to_seqs_and_not_gene){$alleles_linked_to_seqs_and_not_gene{$_}++};
 
@@ -985,12 +975,18 @@ sub process_allele_class{
       my @alleles = $seq -> Alleles;
       foreach my $e (@alleles){
 	if ( exists $alleles_linked_to_seqs_and_not_gene{$e} ){
-	  my @gene_ids = $ga -> get_unique_from_array( @{$seqs_to_gene_id{$SEQ{$seq}}} );
-	  print LOG "WARNING: $e should be linked to @gene_ids based on $seq of $e\n" if exists $seqs_to_gene_id{$SEQ{$seq}};
-	  if ($ace){
-	    foreach my $id(@gene_ids){
-	      print ACE "\nAllele : \"$e\"\n";
-	      print ACE "Gene \"$id\"\n";
+
+	  # a seq. maybe linked to > 1 gene ids
+	  my @gene_ids = $ga -> get_unique_from_array( @{$seqs_to_gene_id{$SEQ{$seq}}} ) if exists $seqs_to_gene_id{$SEQ{$seq}};
+	  foreach (@gene_ids){
+
+	    # check this gene id has also a CGC_name (given that some gene ids do not have CGC_name yet)
+	    if ( $Gene_info{$_}{'CGC_name'} ){
+	      print LOG "WARNING: $e should be linked to $_ ($Gene_info{$_}{'CGC_name'}) based on $seq of $e\n";
+	      if ($ace){
+		print ACE "\nAllele : \"$e\"\n";
+		print ACE "Gene \"$_\"\n";
+	      }
 	    }
 	  }
 	}
@@ -1199,15 +1195,15 @@ sub process_strain_class {
 	foreach (@items){
 	  if( exists $seqs_to_gene_id{$_} ){
 	    my @gene_ids= @{$seqs_to_gene_id{$_}};
-	    @gene_ids = $ga->get_unique_from_array(@gene_ids);
+	    @gene_ids = $ga->get_unique_from_array(@gene_ids); 
 	    if ($cgc eq "CGC"){
 	      foreach my $e (@gene_ids){
-		print LOG "WARNING: CGC Strain $strain has sequence_name $_ in Genotype, which can now become $Gene_info{$e}{'CGC_name'}\n";
+		print LOG "WARNING: CGC Strain $strain has sequence_name $_ in Genotype, which can now become $Gene_info{$e}{'CGC_name'}\n" if $Gene_info{$e}{'CGC_name'};
 	      }
 	    }
 	    else {
 	      foreach my $e (@gene_ids){
-		print LOG "WARNING: Non_CGC Strain $strain has sequence_name $_ in Genotype, which can now become $Gene_info{$e}{'CGC_name'}\n";
+		print LOG "WARNING: Non_CGC Strain $strain has sequence_name $_ in Genotype, which can now become $Gene_info{$e}{'CGC_name'}\n" if $Gene_info{$e}{'CGC_name'};
 	      }
 	    }
 	  }
