@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-08-31 16:11:46 $
+# Last updated on: $Date: 2004-09-09 08:16:34 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -386,6 +386,9 @@ sub test_locus_for_errors{
 
   # Look for Genes with no Positive_clone info but which can be derived from its sequence info
   if( !defined $gene_id->Positive_clone(1) && defined $gene_id->Sequence_name ){
+    # don't need to do this for C. briggsae genes
+    my $species = $gene_id->Species;
+    last if ($species eq "Caenorhabditis briggsae");
     my $seq = $gene_id->Sequence_name;
     
     # need to chop off the ending to just get clone part
