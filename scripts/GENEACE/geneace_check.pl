@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-03-03 17:04:04 $
+# Last updated on: $Date: 2005-03-04 13:27:54 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -448,23 +448,28 @@ sub test_locus_for_errors{
 
 
 sub get_event {
-  my $gene_id = shift;
+  my $gene = shift;
 
-  # fetch the last event of history changes based on the info of Version_change
-  # this look clumsy, but did not come up with a better solution yet,
-  # (generating a string of a series of down-> based on the number of verison change is easy, but did not work)
-  # 7 times hard coded version change should be enough to work find for a while, at least
-
-  my $version = $gene_id->Version;
-
+  my $version = $gene->Version;
   my $tag;
-  $tag = $gene_id->Version_change->right->right->right->right if scalar $version == 1;
-  $tag = $gene_id->Version_change->down->right->right->right->right if scalar $version == 2;
-  $tag = $gene_id->Version_change->down->down->right->right->right->right if scalar $version == 3;
-  $tag = $gene_id->Version_change->down->down->down->right->right->right->right if scalar $version == 4;
-  $tag = $gene_id->Version_change->down->down->down->down->right->right->right->right if scalar $version == 5;
-  $tag = $gene_id->Version_change->down->down->down->down->down->right->right->right->right if scalar $version == 6;
-  $tag = $gene_id->Version_change->down->down->down->down->down->down->right->right->right->right if scalar $version == 7;
+
+  my $vc = $gene->Version_change;
+  while ( $vc->down ){
+    $vc = $vc->down;
+  }
+
+  my $right_step = 0;
+   do { 
+     if( $vc->right ) {
+       $vc = $vc->right;
+     }
+     else {
+       print $gene->name," has data missing from the Version_change info\n";
+     }
+     $right_step++;
+   }while( $right_step < 4 );
+
+  $tag = $vc->name;
 
   return $tag;
 }
