@@ -30,8 +30,8 @@ $|=1;
 use IO::Handle;
 use Getopt::Std;
 use Cwd;
-#use strict;
-require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
+use strict;
+require "/wormsrv2/scripts/babel.pl";
 
  ##############################
  # Script variables (run)     #
@@ -41,7 +41,10 @@ my $maintainer = "dl1\@sanger.ac.uk";
 my $rundate    = `date +%y%m%d`; chomp $rundate;
 my $runtime    = `date +%H:%M:%S`; chomp $runtime;
 my $logfile    = "/wormsrv2/logs/unpack_cshace.$rundate.$$";
-my $version    = &get_script_version("unpack_cshace");
+
+# grab cvs version number
+my $version = `cvs -d /nfs/ensembl/cvsroot/ status /wormsrv2/scripts/unpack_cshace`;
+$version =~ s/.* +Repository revision:\s+([\d\.]*)\s+.*/$1/s; 
 
  ##############################
  # Paths for I/O files        #
@@ -59,8 +62,8 @@ my $filename  = "";
  # command-line options       #
  ##############################
 
-$opt_h = "";   # Help/Usage page
-$opt_r = "";   # Release date of database.tar.gz files
+my $opt_h = "";   # Help/Usage page
+my $opt_r = "";   # Release date of database.tar.gz files
 
 getopts ('hr:');
 &usage if ($opt_h);
@@ -75,7 +78,9 @@ my $today = "20" . substr($opt_r,0,2) . "-" . substr($opt_r,2,2) . "-" . substr(
  ##############################
 
 system ("/bin/touch $logfile");
-open (LOGFILE,">>$logfile");
+die "Couldn't touch $logfile: $?" if ($?);
+
+open (LOGFILE,">>$logfile") || die "Couldn't append to $logfile\n";
 LOGFILE->autoflush;
 
 print LOGFILE "# unpack_cshace\n#\n";
@@ -99,19 +104,23 @@ print LOGFILE "Move to directory: '$dir'\n";
  # copy database.tar.gz file & check size
  # cshl_dump_2001-06-13.tar.gz
 system ("cp -f $ftp/cshl_dump_$today.tar.gz .");
+die "Couldn't run cp: $?" if ($?);
+
 my $match = &copy_check("$ftp/cshl_dump_$today.tar.gz","$dbdir/cshl_dump_$today.tar.gz");
 print LOGFILE "Copy 'cshl_dump_$today.tar.gz' to $dbdir successful\n" if ($match == 1); 
 
 print LOGFILE "Copy 'cshl_dump_$today.tar.gz' to $dbdir failed\n" if ($match == 0);
  
 system ("/bin/gzip -d cshl_dump_$today.tar.gz");
+die "Couldn't run gzip: $?" if ($?);
 print LOGFILE "uncompress file\n";
 
 system ("/bin/tar -xvf cshl_dump_$today.tar");
+die "Couldn't run tar: $?" if ($?);
 print LOGFILE "untar file\n\n";
 
 print LOGFILE "Database files to be loaded:\n";
-open (LIST, "/bin/ls *ace |");
+open (LIST, "/bin/ls *ace |") || die "Couldn't open pipe\n";;
 while (<LIST>) {
     chomp;
     push (@filenames,"$_");
@@ -125,6 +134,7 @@ print LOGFILE "\n\n";
  ###################################
 
 system ("mv $dbdir/wspec/displays.wrm $dbdir/wspec/displays.old") ;
+die "Couldn't run mv: $?" if ($?);
 open (FILE_OLD,"$dbdir/wspec/displays.old") || do { 
     print LOGFILE "failed to open $dbdir/wspec/displays.old\n"; 
     die(1);
@@ -148,6 +158,7 @@ unlink "$dbdir/wspec/displays.old" ;
  ###################################
 
 system ("mv $dbdir/wspec/passwd.wrm $dbdir/wspec/passwd.old") ;
+die "Couldn't run mv: $?" if ($?);
 open (FILE_OLD,"$dbdir/wspec/passwd.old") || do { 
     print LOGFILE "failed to open $dbdir/wspec/passwd.old\n"; 
     die(1);
@@ -171,16 +182,21 @@ unlink "$dbdir/wspec/passwd.old" ;
  ####################################
 
 system ("\\rm $dbdir/database/new/*");
+die "Couldn't run rm: $?" if ($?);
 system ("\\rm $dbdir/database/touched/*");
+die "Couldn't run rm: $?" if ($?);
+
 if (-e "$dbdir/database/lock.wrm") {
     print LOGFILE "*Reinitdb error - lock.wrm file present..\n";
     close LOGFILE;
     die();
 }
 system ("\\mv $dbdir/database/log.wrm $dbdir/database/log.old");  
+die "Couldn't run mv: $?" if ($?);
 system ("\\rm $dbdir/database/*.wrm");
+die "Couldn't run rm: $?" if ($?);
 unlink "$dbdir/database/ACEDB.wrm";
-$command=<<EOF;
+my $command=<<EOF;
 y
 EOF
     
@@ -193,7 +209,7 @@ print LOGFILE "* Reinitdb: reinitializing the database ..\n";
 
 foreach $filename (@filenames) {
     
-my $command=<<END;
+$command=<<END;
 pparse $filename
 save 
 quit
@@ -213,6 +229,7 @@ if (-e $filename) {
 ###############################
 
 system ("/bin/rm -f cshl_dump_$today.tar");
+die "Couldn't run rm: $?" if ($?);
 print LOGFILE "\ndelete tar file from current directory\n\n";
 
 print LOGFILE "Database files to be removed:\n";
