@@ -85,7 +85,7 @@ $WS_version = substr ($Wormbase_release_version,2);
 # manipulate to assign last WS release version and this wormpep version
 $WS_previous = $WS_version -1;
 $WP_version = $WS_version + 10;
-$WP_previous = $WP_version -1;
+
 
  ########################################
  # if all then set all flags            #
