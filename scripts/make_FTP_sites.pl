@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-11-08 19:08:55 $
+# Last updated on: $Date: 2002-11-08 19:41:13 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -20,6 +20,7 @@ use lib '/wormsrv2/scripts';
 use Wormbase;
 use Getopt::Long;
 use Ace;
+use IO::Handle;
 $|=1;
 
 
