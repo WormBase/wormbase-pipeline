@@ -18,7 +18,7 @@
 # [04] - copy the chromosome DNA/GFF files to the target directory
 # [05] - make a new directory for the wspec files
 # [06] - copy the wspec files to the target directory
-# [07] - make a new directory for the pictures files
+# [07] - make a new directory for the pictures files - removed by krb
 # [08] - copy the pictures files to the target directory
 # [09] - make a new directory for the additional files
 # [10] - copy the additional files to the target directory
@@ -142,18 +142,6 @@ print "moved the contents of the CHROMOSOMES directory\n" if ($debug);
 system "cp $sourcedir/wspec/models.wrm $targetdir/$release/models.wrm.$release";
 print "Copying models.wrm\n" if ($debug);
  
-
-# copy the pictures directory to a tarball
-chdir "/nfs/disk67/sylvia/geneace/pictures" or die "Couldn't cd into ~sylvia/pictures\n";
-system("/bin/tar -c -f $targetdir/$release/pictures.tar [A-Z]*");
-system("/bin/tar -u -f $targetdir/$release/pictures.tar [0-9]*");
-system("/bin/tar -u -f $targetdir/$release/pictures.tar [a-h]*");
-system("/bin/tar -u -f $targetdir/$release/pictures.tar [i-q]*");
-system("/bin/tar -u -f $targetdir/$release/pictures.tar [r-z]*");
-
-system("/bin/gzip $targetdir/$release/pictures.tar");
-print "make the pictures.tar.gz file in the FTP directory\n" if ($debug);
-
 
 # copy some miscellaneous files across
 system "cp /wormsrv2/autoace_config/INSTALL $targetdir/$release/";
