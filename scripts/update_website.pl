@@ -86,6 +86,10 @@ print LOG "\nChanging 'current symbolic link to point to new release\n";
 system("rm -f $www/current") && die "Couldn't remove 'current' symlink\n";
 system("ln -s $www/$WS_name/ $www/current") && die "Couldn't create new symlink\n";
 
+# copy release notes file across
+system("cp /nfs/disk69/ftp/pub/wormbase/current_release/letter.$WS_name $www/current/release_notes.txt") && die "Couldn't copy across release notes file\n";
+
+
 print LOG "\n\nC'est finis\n\n";
 
 # mail log
