@@ -2,7 +2,7 @@
 
 # Author: Chao-Kung Chen
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-03-19 15:27:03 $ 
+# Last updated on: $Date: 2004-03-25 17:46:17 $ 
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -32,11 +32,13 @@ my %multi_geno;
 
 foreach (@multi_pt){
   my (@checks, $e);
-  $multi_geno{$_} = $_ -> Genotype(1) if defined $_ -> Genotype(1);	
+  $multi_geno{$_} = $_ -> Genotype(1) if defined $_ -> Genotype(1);
+  $multi_geno{$_} = "NA" if !defined $_ -> Genotype(1);
+
   @checks = qw(Locus_A Locus_B Locus);
   foreach $e (@checks){
     if (defined $_ -> $e(1)){
-      push( @{$Locus_2_multiPt_B{$_ -> $e(1)}}, $_ );
+      push( @{$Locus_2_multiPt_B{$_ -> $e(1)}}, $_ ); # key is locus
     }
   }
   
@@ -48,15 +50,16 @@ foreach (@multi_pt){
   }
 }
 
-foreach (keys %Locus_2_multiPt_A){ # multi-pt of a locus
+foreach (keys %Locus_2_multiPt_A){ # key : locus obj, value: multi-pt of that locus obj
   my @unique_B = ();
-  my @unique_A = $ga->get_unique_from_array( @{$Locus_2_multiPt_A{$_}} ); # unique multi in a locus
-  @unique_B = $ga->get_unique_from_array( @{$Locus_2_multiPt_B{$_}} ) if exists $Locus_2_multiPt_B{$_}; # unique multi in a locus
+  my @unique_A = $ga->get_unique_from_array( @{$Locus_2_multiPt_A{$_}} ); # unique multi in a locus obj
+  @unique_B = $ga->get_unique_from_array( @{$Locus_2_multiPt_B{$_}} ) if exists $Locus_2_multiPt_B{$_}; # unique multi in a locus obtained from a multi-pt obj
 
   if ( !exists $Locus_2_multiPt_B{$_} ){
     foreach my $ea ( @unique_A ) {
+      $multi_geno{$ea} = "NA" if !exists $multi_geno{$ea};
       print LOG "ERROR: $ea ($multi_geno{$ea}) should not be linked to $_?\n";
-      print ACE "\n//ERROR: $ea ($multi_geno{$ea}) should not be linked to $_?\n";
+      print ACE "\n//ERROR: $ea ($multi_geno{$ea}) should not be linked to $_? ===(1)\n";
       print ACE "Locus : \"$_\"\n";
       print ACE "-D Multi_point \"$ea\"\n";
     }
@@ -66,9 +69,10 @@ foreach (keys %Locus_2_multiPt_A){ # multi-pt of a locus
   foreach (@unique_A){$unique_A{$_}++};  # turn array element to hash key for quick look up
 
   if (@unique_B){
+    
     foreach (@unique_B){$unique_B{$_}++};
     @diff = $ga->array_comp(\@unique_A, \@unique_B, "diff");
-    #print "$_ -> @diff ###DIFFS\n" if @diff;
+
     foreach my $e (@diff){
       $multi_geno{$e} = "NA" if !exists $multi_geno{$e};	
       if (!exists $unique_A{$e} ){
@@ -76,13 +80,14 @@ foreach (keys %Locus_2_multiPt_A){ # multi-pt of a locus
       }
       if (!exists $unique_B{$e} ){
         print LOG "ERROR: $e ($multi_geno{$e}) should not be linked to $_?\n";
-	print ACE "\n//ERROR: $e ($multi_geno{$e}) should not be linked to $_?\n";
+	
+	print ACE "\n//ERROR: $e ($multi_geno{$e}) should not be linked to $_? ===(2)\n";
 	print ACE "Locus : \"$_\"\n";
 	print ACE "-D Multi_point \"$e\"\n";
       }
-    }
-  }	
-}    
+    }	
+  }    
+}
 
 print LOG "\n\nChecking locus names (other name) appear in multi-pt object\n";
 print LOG "-----------------------------------------------------------\n\n";
