@@ -206,6 +206,7 @@
 										 // is deleted and something else is 
 										 // also inserted
 	Affects Gene ?Gene XREF Allele  // New tag structure to handle allele cross-links [krb 021217]
+		Locus ?Locus XREF Allele  // to accomodate SNP alleles which also have Locus objects
 		Predicted_gene ?CDS XREF Alleles // Replaces linking to Has_allele tag in ?Sequence class
 		Transcript ?Transcript XREF Alleles // added for two cases of RNA genes with alleles [021126 krb]
         Reference_Allele
@@ -309,7 +310,7 @@
                         2_point ?2_point_data
                         Multi_point ?Multi_pt_data
                         Pos_neg_data ?Pos_neg_data
-        Allele  ?Allele XREF Gene #Evidence
+        Allele  ?Allele XREF Locus #Evidence // just for SNPs for now
         Laboratory ?Laboratory
         Reference ?Paper XREF Locus
         Remark ?Text #Evidence
@@ -340,7 +341,7 @@
         Gene_info Gene_class UNIQUE ?Gene_class XREF Genes
                   Laboratory ?Laboratory
                   Reference_allele ?Allele Text
-                  Allele  ?Allele XREF Gene #Evidence
+                  Allele ?Allele XREF Gene #Evidence
                   Phenotype ?Text #Evidence
                   Provisional_description ?Text #Evidence // added for Erich [020322 krb]
                   Detailed_description ?Text #Evidence // added for Erich [020322 krb]

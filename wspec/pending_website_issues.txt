@@ -8,3 +8,7 @@
 23rd April, 2004
 Two new methods for "predicted_polyA_site" and "predicted_polyA_signal_sequence"
 Will go in for WS124.
+
+26th April, 2004
+New connection between Locus and Allele classes for horrible SNP objects, Locus class has Allele
+tag which XREFs to a Locus tag in the Allele classs
