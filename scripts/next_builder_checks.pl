@@ -7,8 +7,8 @@
 # A simple script to send a check list to the person who will be performing the next
 # build to check the current build
 #
-# Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-06-09 14:29:37 $      
+# Last updated by: $Author: ar2 $     
+# Last updated on: $Date: 2005-03-29 09:36:43 $      
 
 
 use strict;
@@ -101,6 +101,8 @@ print LOG "should notify the responsible group (HX or RW) to fix them for next b
 print LOG "6) Check all Protein objects have a Species tag set\n\n";
 
 print LOG "7) Check all PFAM Motif objects have a title tag\n";
+
+print LOG "8) Run composition *.dna in the CHROMOSOMES directory.  Make sure this is the same as it was\nat the start of the build.  Bad Homol objects can lead to errors esp when chromosome length has been reduced\n\n";
 
 print LOG "\nThat's all...for now!  If you are satisfied the build is ok, please inform the person\n";
 print LOG "building the database. Please continue to add to this list as appropriate\n";
