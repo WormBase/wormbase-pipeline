@@ -7,7 +7,7 @@
 # A script to take ?Sequence objects and make ?CDS objects
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-11-04 17:05:46 $     
+# Last updated on: $Date: 2003-11-06 18:50:22 $     
 
 use strict;
 use Carp;
@@ -62,6 +62,9 @@ while(<IN>){
 
     # Get rid of this line (now removed in camace)
     s/Properties\s+$ts\s+Status\s+$ts\s+Annotated\s+$ts\s+\d{4}-\d{2}-\d{2}\s+$ts\s//g;
+
+    # Change Has_allele tag
+    s/Has_allele/Allele/;
     
     print CDS;
   }
