@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl
+#!/usr/local/bin/perl5.6.0
 #
 # make_wormpep
 # v 4.1
@@ -29,7 +29,7 @@ use Wormbase;
 my $maintainer = "All";
 my $rundate    = `date +%y%m%d`; chomp $rundate;
 my $runtime    = `date +%H:%M:%S`; chomp $runtime;
-my $version    = get_cvs_version($0);
+#my $version    = get_cvs_version($0);
 
  #######################################
  # command-line options                #
@@ -45,6 +45,7 @@ getopts ('dhtr:');
 &error(1) if ((length $opt_r) == 0);
 &error(2) if (($opt_r =~ /\D+/));
 
+
  #######################################
  # release data                        #
  #######################################
@@ -52,6 +53,9 @@ getopts ('dhtr:');
 my $release = $opt_r; 
 my $old_release = $release-1;
 my $debug = $opt_d;
+
+($maintainer = "dl1\@sanger.ac.uk") if ($debug);
+
 
  ########################################################################
  # files in wormpep directory
@@ -69,7 +73,7 @@ my $new_wpdir = "/wormsrv2/WORMPEP/wormpep$release";
 my $tace      = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
 
 if ($opt_t) {
-    $dbdir     = "/wormsrv2/current_DB";
+    $dbdir     = "/wormsrv2/autoace";
     $new_wpdir = "/wormsrv2/WORMPEP/wormpep${release}_test";
 }
 
@@ -327,121 +331,10 @@ chmod (0444 , "$new_wpdir/wp.fasta$release") || print LOG "cannot chmod $new_wpd
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
 print LOG "\n# $runtime : finished writing wormpep.fasta file\n\n";
 
-###########################################################################
-# retrieve the protein_id and the SWISS-PROT or SPTREMBL accession using srs
-# socketsrs: query srs with socket to retrieve large data sets.
-# The actual SRS query is
-# [libs={embl emblnew}-Organism: Caenorhabditis elegans]
-# & ([libs-FtQualifier: gene] > parent) & [libs-AllText: cosmid]
-# ag3 271099, modified ms2 991029
-
-my $runtime = `date +%H:%M:%S`; chomp $runtime;
-print LOG "# $runtime : retrieve protein_id & accession for each CDS\n";
-
-my $GENE ;    my $GENE_1 ;     my $SPT ;    my $SWISS;
-my $PROTEIN;  my $PRODUCT;     
-my %SPTREMBL; my %SWISS_PROT ; my %PROTEIN;
-
-my $querycontent="(([embl-organism\:Caenorhabditis elegans]) & ([embl-des:cosmid*]))";
-
-# Parsing annotation
-
-my $genes_parsed=0;
-
-open (GETZ, "getz -e \'$querycontent\' | ");
-while (my $return_line=<GETZ>) {
-    if ($return_line =~ /ID\s+(\w+)/) {
-	undef $GENE;
-	undef $GENE_1;
-	undef $SPT;
-	undef $SWISS;
-	undef $PRODUCT;
-    }
-    if ($return_line =~ /CDS/) {
-	undef $GENE;
-	undef $GENE_1;
-	undef $SPT;
-	undef $SWISS;
-	undef $PSEUDO;
-	undef $PROTEIN;
-	undef $PRODUCT;
-    }
-    if ($return_line =~ /db_xref=\"SPTREMBL\:(\w+)/) {
-	$SPT = $1;
-    }      
-    if ($return_line =~ /db_xref=\"SWISS-PROT\:(\w+)/) {
-	$SWISS = $1;
-    }
-    if ($return_line =~ /note=\"(\w+\.\w+)\;/) {
-	$GENE_1=$1;
-    }
-    if ($return_line =~ /pseudo/) {
-	$PSEUDO = 1;
-    }
-    if ($return_line =~ /gene=/) {
-	$GENE=$';
-	chomp $GENE;
-	$GENE=~s/\"//g;
-	$GENE=~s/\s+//g; 
-	
-	if ($GENE =~ /^[A-Z0-9]+\.t[1-9]/) {   # get rid of tRNA's
-	    next;
-	}
-	if ($GENE =~ /\-/) {   # in some cases the gene tag contains the locus name, gene is in note tag!!
-	    $GENE = $GENE_1; 
-	}
-	if ($PSEUDO == 1)  {                   # get rid of psudogenes
-	    next;
-	}
-	
-	$genes_parsed++;
-	# assign SPTREMBL/SWISSPROT hash entries
-	$SPTREMBL{$GENE} = $SPT;
-	$SWISS_PROT{$GENE} = $SWISS;
-
-	print "Assign $SWISS as swissprot accession for $GENE\n" if (defined $SWISS);
-	print "Assign $SPT as trembl accession for $GENE\n" if (defined $SPT);
-
-    }
-    if ($return_line =~ /product=/) {
-	$PRODUCT=$';
-	chomp $PRODUCT;
-	$PRODUCT =~ s/\"//g;
-	$PRODUCT =~ s/^\s+//g;
-	$PRODUCT =~ s/Hypothetical protein //g;
-	$PRODUCT{$GENE}=$PRODUCT;
-
-	# Alternative splice form handling
-	# reassign $GENE to data from $PRODUCT
-	# and add new SPTREMBL/SWISSPROT hash entries
-
-	if ($PRODUCT =~ /[a-z]$/) {
-#	    print "Alternative splice form. ?Sequence name is $PRODUCT\n";
-	    $GENE = $PRODUCT;
-	    $SPTREMBL{$GENE} = $SPT;
-	    $SWISS_PROT{$GENE} = $SWISS;
-	}
-
-    }
-    if ($return_line =~ /protein_id=/) {
-	$PROTEIN=$';
-	chomp $PROTEIN;
-	$PROTEIN =~ s/\"//g;
-	$PROTEIN =~ s/\s+//g;
-	$PROTEIN{$GENE} = $PROTEIN;
-	print "Assign $PROTEIN as protein_id for $GENE in $ACC\n";
-    }
-}
-close GETZ;
-
-my $runtime = `date +%H:%M:%S`; chomp $runtime;
-print LOG "\t=> parsed $genes_parsed CDS\n";
-print LOG "# $runtime : finished retrieving protein_id & accession for each CDS\n\n";
-
- ########### 
- # most of the data 
- #
- #####
+ ##################################################
+ # retrieve most of the data from the database    #
+ # via a tablemaker call                          #
+ ##################################################
 
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
 print LOG "# $runtime : retrieving data from autoace for each CDS\n\n";
@@ -455,27 +348,35 @@ my %laboratory     = "";
 my %CDS_status     = "";
 my @CDS            = "";
 my %EST            = "";
-
+our %Protein_id     = "";
+our %Protein_ac     = "";
+our %Protein_db     = "";
 
 $ENV{'ACEDB'} = $dbdir;
 $command=<<EOF;
 Table-maker -p "$dbdir/wquery/wormpep.def"
 quit
 EOF
-    
+   
 open (TACE, "echo '$command' | $tace | ");
 while (<TACE>) {
     chomp;
+    s/acedb\>//g;
     next if ($_ eq "");
-    next if (/acedb\>/);
     next if (/\/\//);
     s/\"//g;
     (/^(\S+)\s/);
-    ($cds,$parent,$loci,$brief_id,$confirmed,$est) = split /\t/;
-    $CDS_locus{$cds} = $loci;
-    $CDS_id{$cds} = $brief_id;
-    $CDS_lab{$cds} = $parent;
-    $EST{$cds} = $est;
+    ($cds,$parent,$prot_id_parent,$prot_id,$prot_id_ver,$prot_db,$prot_ac,$loci,$confirmed,$est,$brief_id) = split /\t/;
+
+    $CDS_locus{$cds}  = $loci;
+    $CDS_id{$cds}     = $brief_id;
+    $CDS_lab{$cds}    = $parent;
+    $EST{$cds}        = $est;
+    $Protein_ac{$cds} = $prot_ac;
+    $Protein_id{$cds} = $prot_id . "." . $prot_id_ver;
+    $Protein_db{$cds} = $prot_db;
+
+    print "$cds Locus:$CDS_locus{$cds} Protein_ID:$Protein_id{$cds} Protein_AC:$Protein_ac{$cds} Protein_DB:$Protein_db{$cds} Brief_ID:$CDS_id{$cds}\n\n";
     
     # confirmed CDS - [EST|mRNA] data
     if ($confirmed) {
@@ -514,8 +415,6 @@ close TACE;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
 print LOG "# $runtime : finished retrieving data from autoace for each CDS\n\n";
 
-
-
  ###########################################################################
  # get from autoace the data required to write the wormpep file and the wormpep.table file
  # use rd's seqpress to wrap the sequence lines in the wormpep file 
@@ -543,40 +442,36 @@ foreach (@dotnames) {
     my $wpid_pad = sprintf "%05d" , $wpid;
     my $pepseq = $num2seq[$wpid];
 
-    if ($CDS_locus{$cds} ne "") {$locus_1 = "locus\:".$CDS_locus{$cds};}
-            
-#    if ($laboratory{$CDS_lab{$cds}} eq "RW") {$lab = "ST.LOUIS";}
-#    if ($laboratory{$CDS_lab{$cds}} eq "HX") {$lab = "HINXTON";}
+    if ($CDS_locus{$cds} ne "") {
+	$locus_1 = "locus\:".$CDS_locus{$cds};
+    }
     
-#    my $runtime = `date +%H:%M:%S`; chomp $runtime;
-#    print LOG "writing gene $c_dot @ $runtime\n";
-    
-    if ((defined ($PROTEIN{$cds})) && ($PROTEIN{$cds} ne "")) {
-	if ((defined ($SWISS_PROT{$cds})) && ($SWISS_PROT{$cds} ne "")) {
-	    print USERFASTA ">$c_dot CE$wpid_pad  $locus_1 $CDS_id{$cds} status\:$CDS_status{$cds} SW\:$SWISS_PROT{$cds} protein_id\:$PROTEIN{$cds}\n$pepseq\n";
-	    print USERTABLE "$c_dot\tCE$wpid_pad\t$CDS_locus{$cds}\t$CDS_id{$cds}\t$CDS_status{$cds}\tSW\:$SWISS_PROT{$cds}\t$PROTEIN{$cds}\n";
-	} else {
-	    if ((defined ($SPTREMBL{$cds})) && ($SPTREMBL{$cds} ne "")) {
-		print USERFASTA ">$c_dot CE$wpid_pad  $locus_1 $CDS_id{$cds} status\:$CDS_status{$cds} TR\:$SPTREMBL{$cds} protein_id\:$PROTEIN{$cds}\n$pepseq\n";
-		print USERTABLE "$c_dot\tCE$wpid_pad\t$CDS_locus{$cds}\t$CDS_id{$cds}\t$CDS_status{$cds}\tTR\:$SPTREMBL{$cds}\t$PROTEIN{$cds}\n";
-	    } else {
-                print USERFASTA ">$c_dot CE$wpid_pad  $locus_1 $CDS_id{$cds} status\:$CDS_status{$cds} protein_id\:$PROTEIN{$cds}\n$pepseq\n";
-                print USERTABLE "$c_dot\tCE$wpid_pad\t$CDS_locus{$cds}\t$CDS_id{$cds}\t$CDS_status{$cds}\t$PROTEIN{$cds}\n";
-	    }
+    if ( (defined ($Protein_id{$cds})) && ($Protein_id{$cds} ne "") ) {
+	if ($Protein_db{$cds} eq "SwissProt") {
+	    print USERFASTA ">$c_dot CE$wpid_pad  $locus_1 $CDS_id{$cds} status\:$CDS_status{$cds} SW\:$Protein_ac{$cds} protein_id\:$Protein_id{$cds}\n$pepseq\n";
+	    print USERTABLE "$c_dot\tCE$wpid_pad\t$CDS_locus{$cds}\t$CDS_id{$cds}\t$CDS_status{$cds}\tSW\:$Protein_ac{$cds}\t$Protein_id{$cds}\n";
 	}
-    } else {
-	if ((defined ($SWISS_PROT{$cds})) && ($SWISS_PROT{$cds} ne "")) {
-	    print USERFASTA     ">$c_dot CE$wpid_pad  $locus_1 $CDS_id{$cds} status\:$CDS_status{$cds} SW\:$SWISS_PROT{$cds}\n$pepseq\n";
-	    print USERTABLE      "$c_dot\tCE$wpid_pad\t$CDS_locus{$cds}\t$CDS_id{$cds}\t$CDS_status{$cds}\tSW\:$SWISS_PROT{$cds}\n";
+	elsif ($Protein_db{$cds} eq "TrEMBL") {
+	    print USERFASTA ">$c_dot CE$wpid_pad  $locus_1 $CDS_id{$cds} status\:$CDS_status{$cds} TR\:$Protein_ac{$cds} protein_id\:$Protein_id{$cds}\n$pepseq\n";
+	    print USERTABLE "$c_dot\tCE$wpid_pad\t$CDS_locus{$cds}\t$CDS_id{$cds}\t$CDS_status{$cds}\tTR\:$Protein_ac{$cds}\t$Protein_id{$cds}\n";
+	}
+	else {
+	    print USERFASTA ">$c_dot CE$wpid_pad  $locus_1 $CDS_id{$cds} status\:$CDS_status{$cds} protein_id\:$Protein_id{$cds}\n$pepseq\n";
+	    print USERTABLE "$c_dot\tCE$wpid_pad\t$CDS_locus{$cds}\t$CDS_id{$cds}\t$CDS_status{$cds}\t$Protein_id{$cds}\n";
+	}
+    }
+    else {
+	if ($Protein_db{$cds} eq "SwissProt") {
+	    print USERFASTA     ">$c_dot CE$wpid_pad  $locus_1 $CDS_id{$cds} status\:$CDS_status{$cds} SW\:$Protein_ac{$cds}\n$pepseq\n";
+	    print USERTABLE      "$c_dot\tCE$wpid_pad\t$CDS_locus{$cds}\t$CDS_id{$cds}\t$CDS_status{$cds}\tSW\:$Protein_ac{$cds}\n";
+	} 
+	elsif ($Protein_db{$cds} eq "TrEMBL") {
+	    print USERFASTA ">$c_dot CE$wpid_pad  $locus_1 $CDS_id{$cds} status\:$CDS_status{$cds} TR\:$Protein_ac{$cds}\n$pepseq\n";
+	    print USERTABLE  "$c_dot\tCE$wpid_pad\t$CDS_locus{$cds}\t$CDS_id{$cds}\t$CDS_status{$cds}\tTR\:$Protein_ac{$cds}\n";
 	} else {
-	    if ((defined ($SPTREMBL{$cds})) && ($SPTREMBL{$cds} ne "")) {
-		print USERFASTA ">$c_dot CE$wpid_pad  $locus_1 $CDS_id{$cds} status\:$CDS_status{$cds} TR\:$SPTREMBL{$cds}\n$pepseq\n";
-		print USERTABLE  "$c_dot\tCE$wpid_pad\t$CDS_locus{$cds}\t$CDS_id{$cds}\t$CDS_status{$cds}\tTR\:$SPTREMBL{$cds}\n";
-	    } else {
-                print USERFASTA ">$c_dot CE$wpid_pad  $locus_1 $CDS_id{$cds} status\:$CDS_status{$cds}\n$pepseq\n";
-                print USERTABLE  "$c_dot\tCE$wpid_pad\t$CDS_locus{$cds}\t$CDS_id{$cds}\t$CDS_status{$cds}\n";
-	    }
-	}          
+	    print USERFASTA ">$c_dot CE$wpid_pad  $locus_1 $CDS_id{$cds} status\:$CDS_status{$cds}\n$pepseq\n";
+	    print USERTABLE  "$c_dot\tCE$wpid_pad\t$CDS_locus{$cds}\t$CDS_id{$cds}\t$CDS_status{$cds}\n";
+	}
     }
 } # end of loop foreach (@dotnames)
 
