@@ -171,25 +171,33 @@ if ($opt_x) {
 
 if ($opt_e) {
 	print "Producing files for the virtual objects in autoace: $blat/virtual_objects.autoace.BLAT_EST.ace\n";
-	system("$bin/superlinks.blat.pl $chrom > ! $blat/virtual_objects.BLAT_EST.ace")
+	unlink "$blat/virtual_objects.BLAT_EST.ace" if (-e "$blat/virtual_objects.BLAT_EST.ace");
+	system("$bin/superlinks.blat.pl $chrom > $blat/virtual_objects.BLAT_EST.ace")
 		&& die "Producing virtual objects for blat failed\n";
+
+
 	print "Producing files for the virtual objects in camace : $blat/virtual_objects.camace.BLAT_EST.ace\n";
-	system("$bin/superlinks.blat.pl -c $chrom > ! $blat/virtual_objects.camace.BLAT_EST.ace")
+	unlink "$blat/virtual_objects.camace.BLAT_EST.ace" if (-e "$blat/virtual_objects.camace.BLAT_EST.ace");
+	system("$bin/superlinks.blat.pl -c $chrom > $blat/virtual_objects.camace.BLAT_EST.ace")
 		&& die "Producing virtual objects for blat failed\n";
 
 #	print "Producing files for the virtual objects in autoace: $blat/rawdata/virtual_objects.autoace.ci.EST.ace\n";
 #	system("$bin/superlinks.confirmed_introns.pl $chrom > ! $blat/virtual_objects.autoace.ci.EST.ace")
 #		&& die "Producing virtual objects for confirmed introns failed\n"; 
+
 #	print "Producing files for the virtual objects in camace: $blat/rawdata/virtual_objects.camace.ci.EST.ace\n";
 #	system("$bin/superlinks.confirmed_introns.pl $chrom > ! $blat/virtual_objects.camace.ci.EST.ace")
 #		&& die "Producing virtual objects for confirmed introns failed\n"; 
 }
 if ($opt_m) {
 	print "Producing files for the virtual objects in autoace: $blat/virtual_objects.autoace.BLAT_mRNA.ace\n";
-	system("$bin/superlinks.blat.pl -m $chrom > ! $blat/virtual_objects.autoace.BLAT_mRNA.ace")
+	unlink "$blat/virtual_objects.autoace.BLAT_mRNA.ace" if (-e "$blat/virtual_objects.autoace.BLAT_mRNA.ace");
+	system("$bin/superlinks.blat.pl -m $chrom > $blat/virtual_objects.autoace.BLAT_mRNA.ace")
 		&& die "Producing virtual objects for blat failed\n";
+
 	print "Producing files for the virtual objects in camace: $blat/virtual_objects.camace.BLAT_mRNA.ace\n";
-	system("$bin/superlinks.blat.pl -m -c $chrom > ! $blat/virtual_objects.camace.BLAT_mRNA.ace")
+	unlink "$blat/virtual_objects.camace.BLAT_mRNA.ace" if (-e "$blat/virtual_objects.camace.BLAT_mRNA.ace");
+	system("$bin/superlinks.blat.pl -m -c $chrom > $blat/virtual_objects.camace.BLAT_mRNA.ace")
 		&& die "Producing virtual objects for blat failed\n";
 
 #	print "Producing files for the virtual objects in autoace: $blat/virtual_objects.autoace.ci.mRNA.ace\n";
@@ -201,10 +209,13 @@ if ($opt_m) {
 }
 if ($opt_x) {
 	print "Producing files for the virtual objects in autoace: $blat/virtual_objects.autoace.BLATX_NEMATODE.ace\n";
-	system("$bin/superlinks.blat.pl -x $chrom > ! $blat/virtual_objects.autoace.BLATX_NEMATODE.ace")
+	unlink "$blat/virtual_objects.autoace.BLATX_NEMATODE.ace" if (-e "$blat/virtual_objects.autoace.BLATX_NEMATODE.ace");
+	system("$bin/superlinks.blat.pl -x $chrom > $blat/virtual_objects.autoace.BLATX_NEMATODE.ace")
 		&& die "Producing virtual objects for blat failed\n";
+
 	print "Producing files for the virtual objects in camace: $blat/virtual_objects.camace.BLATX_NEMATODE.ace\n";
-	system("$bin/superlinks.blat.pl -x -c $chrom > ! $blat/virtual_objects.camace.BLATX_NEMATODE.ace")
+	unlink "$blat/virtual_objects.camace.BLATX_NEMATODE.ace" if (-e "$blat/virtual_objects.camace.BLATX_NEMATODE.ace");
+	system("$bin/superlinks.blat.pl -x -c $chrom > $blat/virtual_objects.camace.BLATX_NEMATODE.ace")
 		&& die "Producing virtual objects for blat failed\n";
 }
 
