@@ -12,8 +12,8 @@
 # 3) Archives old GFF_SPLITS directory
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2005-01-20 16:19:55 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2005-03-18 16:38:47 $
 
 
 use strict;
@@ -124,7 +124,11 @@ print LOG "Removing old files in /wormsrv2/autoace/logs\n";
 &delete_files_from("$basedir/autoace/logs",":","-");
 # Exception needed because we need to keep one file (Primary_databases) and this log file uses different name, so
 # *:* won't remove it.
-unlink("$basedir/autoace/logs/UTR_gff_dump");             
+unlink("$basedir/autoace/logs/UTR_gff_dump");
+
+#remove coordinate files for Coords_converter ready for next build.
+unlink("/wormsrv2/autoace/clone_coords") if -e "/wormsrv2/autoace/clone_coords";
+unlink("/wormsrv2/autoace/SL_coords") if -e "SL_coords";
 
 
 
