@@ -7,8 +7,8 @@
 # A script to finish the last part of the weekly build by updating all of the
 # relevant WormBase and Wormpep web pages.
 #
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2004-12-06 10:45:40 $      
+# Last updated by: $Author: pad $     
+# Last updated on: $Date: 2005-02-15 16:55:47 $      
 
 
 #################################################################################
@@ -75,14 +75,17 @@ GetOptions ("all"            => \$all,
 ##############################
 # Script variables           #
 ##############################
-
+my $day;
+my $month;
+my $year;
+($day, $month, $year) = (localtime)[3,4,5];
 my $maintainers      = "All";
 my $rundate          = `date +%y%m%d`; chomp $rundate;
 my $runtime          = `date +%H:%M:%S`; chomp $runtime;
 my @chrom            = qw ( I II III IV V X ); 
 my $WS_current       = &get_wormbase_version;
-my $release_date     = &get_wormbase_release_date("long");
-my $release_date2    = &get_wormbase_release_date("short");
+my $release_date2    = `date +%d/%m/%y`; chomp $release_date2;
+my $release_date     = sprintf ("%02d %02d %04d", $day, $month+1, $year+1900);
 my $WS_previous      = $WS_current - 1;
 my $WS_name          = &get_wormbase_version_name;
 my $WS_previous_name = "WS".$WS_previous;
