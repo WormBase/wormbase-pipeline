@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder [-options]
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2002-10-31 14:30:15 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2002-11-05 11:21:34 $
 
 
 #################################################################################
@@ -873,7 +873,10 @@ sub blat_jobs {
       
       # upload .acefiles to autoace
       $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Starting autoace_minder -addblatpartial at $runtime\n\n";
-      $i = system ("scriptdir/autoace_minder -addblatpartial"); 
+      # $i = system ("scriptdir/autoace_minder -addblatpartial"); 
+      # Attempting to now call this directly rather than run autoace_minder again from
+      # within this forked process.
+      &parse_blat_files_other;
       $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Finishing autoace_minder -addblatpartial at $runtime\n\n";
 
       system ("touch $logdir/$flag{'B7A'}");  
