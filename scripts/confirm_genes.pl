@@ -27,8 +27,8 @@ getopts ('emhvx');
 &printhelp() unless ($opt_e || $opt_m);
 &printhelp() if ($opt_h);
 @todo = qw(BLAT_EST_BEST BLAT_mRNA_BEST) if ($opt_e && $opt_m);
-@todo = 'BLAT_EST_BEST'                  if ($opt_e || !$opt_m);
-@todo = 'BLAT_mRNA_BEST'                 if ($opt_m || !$opt_e); 
+@todo = 'BLAT_EST_BEST'                  if ($opt_e && !$opt_m);
+@todo = 'BLAT_mRNA_BEST'                 if ($opt_m && !$opt_e); 
 my $exon   = 'exon';
 my $intron = 'intron';
 
