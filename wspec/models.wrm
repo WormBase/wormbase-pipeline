@@ -1033,6 +1033,7 @@
              Tm UNIQUE Float
              Pairwise_scores ?Oligo XREF Pairwise_scores UNIQUE Float Float // score and Tm
         In_sequence ?Sequence XREF Oligo
+	PCR_product ?PCR_product XREF Oligo //added 15/02/2002 krb
 
 // Protein class
 
@@ -1445,7 +1446,7 @@
 			  Expr_profile ?Expr_profile XREF PCR_product UNIQUE Int UNIQUE Int #SMap_info// added for new Expr_profile class [010912 krb]
  	     Method ?Method
  	     Overlaps_CDS ?Sequence XREF Corresponding_PCR_product  // added for Dan PCR mappings [010419 dl]
-	     Oligo ?Oligo UNIQUE Int UNIQUE Int
+	     Oligo ?Oligo XREF PCR_product UNIQUE Int UNIQUE Int
  	     Assay_conditions ?LongText
 	     Amplified Int
 	     Remark ?Text
