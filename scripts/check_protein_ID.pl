@@ -15,7 +15,7 @@
 #
 # v0.1
 # 000712 : dan : PP version
-#
+# 020116 : dan : moved to /wormsrv1/camace as acedb database
 
 use strict;
 
@@ -30,7 +30,7 @@ my $PID_count = 0;                                      # No. of Protein_ID tags
 my $errors = 0;                                         # No. of CDS with corrupted Protein_ID tags
 my @LOG = ();                                           # List of CDS with corrupted Protein_ID tags
 my $tace = glob("~acedb/RELEASE.SUPPORTED/bin.ALPHA_4/tace"); # tace executable path
-my $db = glob("/wormsrv2/camace");                      # Database path
+my $db = glob("/wormsrv1/camace");                      # Database path
 my $exec="$tace $db";     
 my $command1=<<EOF;
 find Predicted_gene
