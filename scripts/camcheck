@@ -97,6 +97,7 @@ my $db = Ace->connect(-path=>$dbpath,
 
 print LOG "CamCheck run STARTED at $runtime\n\n";
 
+
 #####################################################################
 # Do the following for every sequence in current.cosmid             #
 #####################################################################
@@ -114,9 +115,9 @@ while(defined($line=<CLONEFILE>)){
   
   print "[$clone|$dir_date]    \t" if ($debug);
 
- ######################################################################
- # Retrieve the first sequence and date FROM DIRECTORY                #
- ######################################################################
+  ######################################################################
+  # Retrieve the first sequence and date FROM DIRECTORY                #
+  ######################################################################
     
   my $seqpath = "$clonepath"."/"."$line"."/"."$clone.seq";
 
@@ -157,7 +158,7 @@ while(defined($line=<CLONEFILE>)){
   
   #####################################################################
   # Push the sequence as string in $seq2                              #
- #####################################################################
+  #####################################################################
     
   $seq_ace=$obj->asDNA();
   if (!$seq_ace) {
@@ -277,16 +278,16 @@ while (<READLOG>) {
 close READLOG;
 close OUTLOG;
 
- ##############################
- # Write log to wormpub intweb
- ##############################
+##############################
+# Write log to wormpub intweb
+##############################
 
 &writehtml;
 
 
- ##############################
- # hasta luego                #
- ##############################
+##############################
+# hasta luego                #
+##############################
 
 exit(0);
 
