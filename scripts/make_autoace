@@ -8,7 +8,7 @@
 # This makes the autoace database from its composite sources.
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-01-29 12:47:07 $
+# Last edited on: $Date: 2003-01-29 14:52:16 $
 
 
 $|=1;
@@ -31,6 +31,16 @@ my $rundate       = `date +%y%m%d`; chomp $rundate;
 my $runtime       = `date +%H:%M:%S`; chomp $runtime;
 my $WS_current    = &get_wormbase_version;
 my $WS_previous   = $WS_current - 1;
+our @filenames; # for storing contents of autoace_config
+
+# database/file paths and locations
+our $basedir     = "/wormsrv2";
+our $wormbasedir = "$basedir/wormbase";
+our $autoacedir  = "$basedir/autoace";
+our $stlacedir   = "$basedir/stlace";
+our $camacedir   = "$basedir/camace";
+our $configfile     = "/wormsrv2/autoace_config/autoace.config";
+
 our $WS_version   = &get_wormbase_version_name;
 my $CWD = cwd;
 our $tace   = &tace;
@@ -79,7 +89,7 @@ else{
     $dbpath = "$dbpath"."/"."$filename";
   } 
   elsif($database =~ /^(\w+)/) { # for incomplete paths, expand using CWD
-    $dbpath="$CWD"."/"."$datbase";
+    $dbpath="$CWD"."/"."$database";
   }  
   elsif ($database =~ /\/\w+/) { # else assume path is ok
     $dbpath=$database;
@@ -123,7 +133,10 @@ sub REAPER {
 my $time = `date +%H:%M:%S`; chomp $time;
 print LOG "make_autoace finished at $time\n\n";
 close (LOG);
+
+&mail_maintainer("WormBase Report: make_autoace $WS_version",$maintainers,$log);
  
+
 exit (0);
 
 
@@ -146,28 +159,19 @@ exit (0);
 sub buildautoace{
 
   #Set up correct database structure if it doesn't exist
-  &createdirs($dbpath);	
+  &createdirs;	
 
-  # database paths                             
-   
-  my $basedir     = "/wormsrv2";
-  my $autoacedir  = "$basedir/autoace";
-  my $stlacedir   = "$basedir/stlace";
-  my $camacedir   = "$basedir/camace";
-  my $wormbasedir = "$basedir/wormbase";
 
-  my $configfile     = "/wormsrv2/autoace_config/autoace.config";
-  my $makeChromLinks = "/wormsrv2/scripts/makeChromLinks.pl";
 
 
   &rmtempgene();
-  $now = `date +%H:%M:%S`; chomp $now;
+  my $now = `date +%H:%M:%S`; chomp $now;
   print LOG "* Removed temp_gene sequences at $now\n\n";
   
   ################################################
   # Parse config file                            
   ################################################
-  
+
   &parseconfig;
   $now = `date +%H:%M:%S`; chomp $now;
   print LOG "* Parsed config file at $now\n\n";
@@ -243,7 +247,8 @@ sub buildautoace{
 sub create_log_files{
 
   # Create history logfile for script activity analysis
-  $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
+  $0 =~ m/\/*([^\/]+)$/; 
+  system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
 
   # create main log file using script name for
   my $script_name = $1;
@@ -267,7 +272,7 @@ sub create_log_files{
 
 sub DbWrite {
     my ($command,$exec,$dir,$name)=@_;
-    open (WRITEDB,"| $exec $dir >> $logfile") or do {print LOG "$name DbWrite failed\n";close LOG; die();};
+    open (WRITEDB,"| $exec $dir >> $log") or do {print LOG "$name DbWrite failed\n";close LOG; die();};
     print WRITEDB $command;
     close WRITEDB;
 }
@@ -307,7 +312,6 @@ sub rmtempgene {
 # Create directories
 
 sub createdirs {
-  my $basedir  = shift @_;
   my $chromes  = "$basedir/CHROMOSOMES";
   my $db       = "$basedir/database";		
   my $new      = "$db/new";
@@ -316,12 +320,12 @@ sub createdirs {
   my $rel      = "$basedir/release";
   my $wspec    = "$basedir/wspec";
   my $pictures = "$basedir/pictures";
-  @dirarray    = ("$basedir","$chromes","$db","$new","$touch","$ace","$rel","$wspec");
-  @args1       = ();
-  @args2       = ("/bin/mkdir");
+  my @dirarray    = ("$basedir","$chromes","$db","$new","$touch","$ace","$rel","$wspec");
+  my @args1       = ();
+  my @args2       = ("/bin/mkdir");
   
   foreach (@dirarray) {	
-    $present_dir = $_;
+    my $present_dir = $_;
     if (-d $present_dir) {
       print "** Skipping $present_dir - already present\n";
       next;
@@ -330,18 +334,18 @@ sub createdirs {
       push (@args1,"$present_dir");
     }			
   }
-  $argsize = scalar (@args1);
+  my $argsize = scalar (@args1);
   if ($argsize == 0) {
     print "** No new directories to create .. end mkdirectories\n";
     return;
   }
   push (@args2,@args1);
-  system (@args2) && die "Couldn't run 'system (@args2)'\n";
+  system (@args2) && print LOG "ERROR: Couldn't run 'system (@args2)'\n";
   foreach (@args1) {
-    $made_dir = $_;
+    my $made_dir = $_;
     if ($made_dir =~ /wspec/) {
       print "** Copying wspec from $autoacedir .. \n";
-      system ("/bin/cp $autoacedir/wspec/* $wspec/.") && die "Couldn't cp wspec directory\n";
+      system ("/bin/cp $autoacedir/wspec/* $wspec/.") && print LOG "ERROR: Couldn't cp wspec directory\n";
     }
     if (!-d $made_dir) {
       print " ** mkdir for $basedir failed ** \n\n";
@@ -349,7 +353,7 @@ sub createdirs {
       die(0);
     } 
   }
-  system ("/bin/ln -s /wormsrv2/geneace/pictures $pictures") && die "Couldn't make symbolic link\n";
+  system ("/bin/ln -s /wormsrv2/geneace/pictures $pictures") && print LOG "ERROR: Couldn't make symbolic link\n";
   return;
 }
 
@@ -360,7 +364,7 @@ sub createdirs {
 sub parseconfig {
     open(CONFIG,"$configfile");
     while(<CONFIG>) {
-	
+	my ($filename,$dbname);
         # some formating, remove leading and trailing whitespace
 	s/^\s+//;
 	s/\s+$//;   
@@ -406,11 +410,11 @@ sub parseconfig {
 # Remove confidential remarks from certain files  
 
 sub rmconfremark { 
-  @remove_confid=("stlace/stlace_Sequence.ace","camace/camace_Sequence.ace","briggsae/briggsae_Sequence.ace");
+  my @remove_confid=("stlace/stlace_Sequence.ace","camace/camace_Sequence.ace","briggsae/briggsae_Sequence.ace");
   
   my $confidential = 0;
-  foreach $confid (@remove_confid) {
-    $this_acefile="$wormbasedir"."/$confid";
+  foreach my $confid (@remove_confid) {
+    my $this_acefile="$wormbasedir"."/$confid";
     open(TEMP,">$dbpath/acefiles/temp$$");
     open(ACEFILE,"$this_acefile");
     while(<ACEFILE>) {
@@ -420,7 +424,7 @@ sub rmconfremark {
     }
     close ACEFILE;
     close TEMP;
-    system("\\mv $dbpath/acefiles/temp$$ $this_acefile");
+    system("\\mv $dbpath/acefiles/temp$$ $this_acefile") && print LOG "ERROR: can't move acefile\n";
   }
 }
 
@@ -438,31 +442,31 @@ sub rmconfremark {
 #                camace_Sequence.ace will be loaded as camace.
 
 sub reinitdb {
-    system ("\\rm -f $dbpath/database/new/*");
-    system ("\\rm -f $dbpath/database/touched/*");
+    system ("\\rm -f $dbpath/database/new/*") && print LOG "ERROR: Couldn't remove database/new/ file\n";
+    system ("\\rm -f $dbpath/database/touched/*") && print LOG "ERROR: Couldn't remove database/touched/ file\n";
     if (-e "$dbpath/database/lock.wrm") {
 	print LOG "*Reinitdb error - lock.wrm file present..\n";
 	close LOG;
 	die();
     }
-    system ("\\mv $dbpath/database/log.wrm $dbpath/database/log.old");  
-    system ("\\rm $dbpath/database/*.wrm");
+    system ("\\mv $dbpath/database/log.wrm $dbpath/database/log.old") && print LOG "ERROR: couldn't mv log.wrm\n";  
+    system ("\\rm $dbpath/database/*.wrm") && print LOG "ERROR: couldn't mv *.wrm file\n";
     unlink "$dbpath/database/ACEDB.wrm";
-    $command = "y\n";
+    my $command = "y\n";
     print LOG "* Reinitdb: reinitializing the database ..\n";
     &DbWrite($command,$tace,$dbpath,"ReInitDB");
-    foreach $filename (@filenames) {
-	$command = "pparse $filename\nsave\nquit\n";
-	if (-e $filename) {
-	    $now = `date +%H:%M:%S`; chomp $now;
-	    print LOG "* Reinitdb: reading in new database  $filename at $now\n";
-	    my ($tsuser) = $filename =~ (/^\S+\/(\S+)\_/);
-	    &DbWrite($command,"$tace -tsuser $tsuser",$dbpath,"ParseFile");
-	}
-	else {
-	    print LOG "* Reinitdb: $filename is not existent - skipping ..\n";
-	    next;
-	}
+    foreach my $filename (@filenames) {
+      my $command = "pparse $filename\nsave\nquit\n";
+      if (-e $filename) {
+	my $now = `date +%H:%M:%S`; chomp $now;
+	print LOG "* Reinitdb: reading in new database  $filename at $now\n";
+	my ($tsuser) = $filename =~ (/^\S+\/(\S+)\_/);
+	&DbWrite($command,"$tace -tsuser $tsuser",$dbpath,"ParseFile");
+      }
+      else {
+	print LOG "* Reinitdb: $filename is not existent - skipping ..\n";
+	next;
+      }
     }
 }
 
@@ -512,22 +516,22 @@ sub makemaps {
 # Set the date correctly in displays.wrm          
 
 sub setdate {
-    @t   = localtime ; while ($t[5] >= 100) { $t[5] -= 100 ; }
-    $dat = sprintf "%02d\/%02d\/%02d", $t[3], $t[4]+1, $t[5] ;
-    system ("mv $dbpath/wspec/displays.wrm $dbpath/wspec/displays.old") ;
-    open(FILE,"$dbpath/wspec/displays.old") or do { print LOG "failed to open $dbpath/wspec/displays.old\n"; return 1;};
-    open(NEWFILE,">$dbpath/wspec/displays.wrm") or do { print LOG "failed to open $dbpath/wspec/displays.wrm\n"; return 1;};
-    while (<FILE>) {
-	if (/^_DDtMain/) {
-	    print NEWFILE "_DDtMain -g TEXT_FIT -t \"C.elegans database $dat\"  -w .43 -height .23 -help acedb\n";
-	} 
-	else {
-	    print NEWFILE $_;
-	}
+  my @t   = localtime ; while ($t[5] >= 100) { $t[5] -= 100 ; }
+  my $dat = sprintf "%02d\/%02d\/%02d", $t[3], $t[4]+1, $t[5] ;
+  system ("mv $dbpath/wspec/displays.wrm $dbpath/wspec/displays.old") && print LOG "ERROR: Can't move displays.wrm file\n";
+  open(FILE,"$dbpath/wspec/displays.old") or do { print LOG "failed to open $dbpath/wspec/displays.old\n"; return 1;};
+  open(NEWFILE,">$dbpath/wspec/displays.wrm") or do { print LOG "failed to open $dbpath/wspec/displays.wrm\n"; return 1;};
+  while (<FILE>) {
+    if (/^_DDtMain/) {
+      print NEWFILE "_DDtMain -g TEXT_FIT -t \"C.elegans database $dat\"  -w .43 -height .23 -help acedb\n";
+    } 
+    else {
+      print NEWFILE $_;
     }
-    close(FILE);
-    close(NEWFILE);
-    unlink "$dbpath/wspec/displays.old" ;
+  }
+  close(FILE);
+  close(NEWFILE);
+  unlink "$dbpath/wspec/displays.old" ;
 }
 
 
@@ -544,16 +548,16 @@ sub setdate {
 #
 
 sub makechromlink {
-    system ("rm -f $wormbasedir/misc/misc_chromlinks.ace");
-    system ("$makeChromLinks > $wormbasedir/misc/misc_chromlinks.ace"); 
-    if (-z "$wormbasedir/misc/misc_chromlinks.ace") {
-	print LOG "*Makechromlink: chromlinks.ace has ZERO size\n";  
-	return;
-    } 
-    else {
-	my $command = "pparse $wormbasedir/misc/misc_chromlinks.ace\nsave\nquit\n";
-	&DbWrite($command,"$tace -tsuser make_autoace",$dbpath,"MakeChromLinks");
-    }
+  system ("rm -f $wormbasedir/misc/misc_chromlinks.ace") && print LOG "ERROR: Couldn't rm chromlinks file\n";
+  system ("/wormsrv2/scripts/makeChromLinks.pl > $wormbasedir/misc/misc_chromlinks.ace") && print LOG "ERROR: couldn't run makechromlinks\n"; 
+  if (-z "$wormbasedir/misc/misc_chromlinks.ace") {
+    print LOG "*Makechromlink: chromlinks.ace has ZERO size\n";  
+    return;
+  } 
+  else {
+    my $command = "pparse $wormbasedir/misc/misc_chromlinks.ace\nsave\nquit\n";
+    &DbWrite($command,"$tace -tsuser make_autoace",$dbpath,"MakeChromLinks");
+  }
 }
 
 
@@ -578,7 +582,7 @@ sub usage {
     exit (0);
   }
 
-  elif ($error eq "Database") {
+  elsif ($error eq "Database") {
     # Normal help menu
     print "\n\nYou need to specify a name of a database to build (-buildautoace option) or a name\n";
     print "of an existing database where you can dump release files (-buildrelease option\n\n";
@@ -598,9 +602,10 @@ sub buildrelease{
     # Remove old release files if present
     if (-e "$dbpath/release/database.WS"."$WS_previous".".4-0.tar.gz"){
       print LOG "Older WS version files exist, removing them\n";
-      system("rm -f $dbpath/release/*WS"."$WS_previous"."*") && die "Can't remove old release files\n";
+      system("rm -f $dbpath/release/*WS"."$WS_previous"."*") && print LOG "ERROR: Can't remove old release files\n";
     }
     
+    my $dbname;
     
     open (DBWRM,"<$dbpath/wspec/database.wrm");
     while (<DBWRM>) {
@@ -611,28 +616,26 @@ sub buildrelease{
     close DBWRM;
     print LOG "makedistr: dbname $dbname\n\n";
     
-    system ("/bin/touch $dbpath/release/files_in_tar");
-    system ("/bin/touch $dbpath/release/md5sum.${dbname}");
+    system ("/bin/touch $dbpath/release/files_in_tar") && print LOG "ERROR: Can't touch files_in_tar\n";
+    system ("/bin/touch $dbpath/release/md5sum.${dbname}") && print LOG "ERROR: Can't touch md5sum file\n";
     
-    
+    my @tarfiles;
     $tarfiles[0] = "wspec/cachesize.wrm  wspec/constraints.wrm wspec/copyright wspec/database.wrm wspec/displays.wrm wspec/help.wrm wspec/layout.wrm wspec/models.wrm wspec/options.wrm wspec/passwd.wrm wspec/psfonts.wrm wspec/subclasses.wrm wspec/xfonts.wrm wgf wquery wscripts  pictures database/log.wrm database/database.map database/ACEDB.wrm" ;
-    for ($i = 1 ; -e "$dbpath/database/block$i.wrm" ; ++$i) {
+    for (my $i = 1 ; -e "$dbpath/database/block$i.wrm" ; ++$i) {
       $tarfiles[($i+4)/5] .= " database/block$i.wrm" ;
     }
     print LOG "* Makedistr: beginning tar ..\n";
     my $remove1 = `\\rm $dbpath/release/database.$dbname.*.tar 2>/dev/null`;
     my $remove2 = `\\rm $dbpath/release/database.$dbname.*.tar.gz 2>/dev/null`;
-    for ($i = 0; $i < @tarfiles; ++$i) {
-      $rs = `cd $dbpath; tar -hcf $dbpath/release/database.$dbname.4-$i.tar $tarfiles[$i]\"`;
-      print LOG "* Makedistr: made  tar file $dbpath/release/database.$dbname.4-$i.tar\n";
-      if ($rs != 0) {
-	print LOG "* Warning: signal $rs\n";
-      }
+    for (my $i = 0; $i < @tarfiles; ++$i) {
+      system("cd $dbpath"); 
+      system("tar -hcf $dbpath/release/database.$dbname.4-$i.tar $tarfiles[$i]\"") && print LOG "Couldn't create tarfile\n";
+
       # list files in the tar archive
       system ("tar -tf $dbpath/release/database.$dbname.4-$i.tar >> $dbpath/release/files_in_tar");
       
       # gzip the tar archive
-      system ("/bin/gzip $dbpath/release/database.$dbname.4-$i.tar");
+      system ("/bin/gzip $dbpath/release/database.$dbname.4-$i.tar") && print LOG "ERROR: Couldn't create gzip file\n";
       
       # check consistency of gzip file
       system ("/bin/gzip -t $dbpath/release/database.$dbname.4-$i.tar.gz >> $dbpath/release/files_in_tar");
@@ -681,21 +684,7 @@ make_autoace  arguments:
 
 =back
  
-Examples:
 
-make_autoace -p /wormsrv2/WS15 -d 
-Creates the distribution files of the database in subdirectory /wormsrv2/WS15
-
-make_autoace -p WS15 -rdc
-Creates the new database in the WS15 subdirectory of the current path.
-Creates the whole database, including distribution and CHROMOSOME files.
-
-make_autoace -p ~wormpub/new_databases/WS15 -r
-Creates the new database in the /new_databases/WS15 subdirectory of the ~wormpub user.
-Re-create only the database files, not the distribution or the CHROMOSOME files
-
-
-=back
 =cut
 
 

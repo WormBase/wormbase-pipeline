@@ -7,7 +7,7 @@
 # Usage : autoace_minder [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-01-22 14:47:14 $
+# Last edited on: $Date: 2003-01-29 14:52:16 $
 
 
 #################################################################################
@@ -590,7 +590,7 @@ sub make_autoace {
     close (EMAIL);
 
 
-    system ("$scriptdir/make_autoace -p /wormsrv2/autoace -r") && die "Couldn't run autoace -rc\n";
+    system ("$scriptdir/make_autoace --database /wormsrv2/autoace --buildautoace") && die "Couldn't run make_autoace\n";
     $runtime = `date +%H:%M:%S`; chomp $runtime;
     print LOG "Finished running make_autoace at $runtime\n";
     
@@ -637,7 +637,7 @@ sub make_autoace {
     
     local (*MD5SUM_IN,*MD5SUM_OUT);
     
-    system ("$scriptdir/make_autoace -p /wormsrv2/autoace -d")  && die "Couldn't run autoace -d\n"; 
+    system ("$scriptdir/make_autoace -database /wormsrv2/autoace --buildrelease")  && die "Couldn't run make_autoace\n"; 
     $runtime = `date +%H:%M:%S`; chomp $runtime;
     print LOG "Finished running make_autoace at $runtime\n";
 
