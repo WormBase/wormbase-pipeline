@@ -8,7 +8,7 @@
 # Output ace file of such information and upload to autoace during each build
 # Output also other files related. See POD
 
-# Last updated on: $Date: 2003-06-26 13:46:49 $
+# Last updated on: $Date: 2003-06-26 15:37:53 $
 # Last updated by: $Author: ck1 $
 
 use strict;
@@ -581,6 +581,10 @@ my $end=`date +%H:%M:%S`; chomp $end;
 
 print "\nJob started at $start\n";
 print "Job finished at $end\n";
+
+my $maintainers = "ck1\@sanger.ac.uk";
+mail_maintainer($0,$maintainers,"Interpolated map position for WS$version can now be loaded to geneace.");
+
 
 #################################
 # s  u  b  r  o  u  t  i  n  e  s
