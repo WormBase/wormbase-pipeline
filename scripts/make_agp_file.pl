@@ -8,7 +8,7 @@
 # Usage : make_agp_file.pl
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2002-09-03 16:07:47 $
+# Last edited on: $Date: 2002-09-03 16:19:33 $
 
 
 #################################################################################
@@ -59,7 +59,7 @@ $debug = 1;
 our %seqver = ();
 our %seqlen = ();
 
-open (SEQUENCES, "getz -f \'id seqversion\' \"([emblnew-org:Caenorhabditis elegans] \& [emblnew-div:INV]) | ([embl-org:Caenorhabditis elegans] \& [embl-div:INV])\" |");
+open (SEQUENCES, "getz -f \'id seqversion\' \"([emblnew-org:Caenorhabditis elegans] \& [emblnew-div:INV]) | ([embl-org:Caenorhabditis elegans] \& [embl-div:INV]) | ([emblrelease-org:Caenorhabditis elegans] \& [emblrelease-div:INV])\" |");
 while (<SEQUENCES>) {
 #    print "$_";
     if (/^ID\s+(\S+)\s+standard\; DNA\; INV\; (\d+)/) {
@@ -146,14 +146,14 @@ foreach my $chromosome (@gff_files) {
 #	printf "%8s [%8d => %8d : %6d] $acc{$i}.$sv_ver\n", $clone{$i}, $start{$i}, $stop{$i}, $span{$i};
 
     # fudge to try to get sequence version using pfetch if getz fails
-    if($seqver{$acc} eq ""){
-      my $getz_acc = `/usr/local/pubseq/bin/pfetch $acc | grep ">"`;
-      $getz_acc =~ s/.*\.(\d+)\s+.*/$1/;
-      $ver{$1} = $getz_acc;
-    }
-    else{
+#    if($seqver{$acc} eq ""){
+#      my $getz_acc = `/usr/local/pubseq/bin/pfetch $acc | grep ">"`;
+#      $getz_acc =~ s/.*\.(\d+)\s+.*/$1/;
+#      $ver{$1} = $getz_acc;
+#    }
+#    else{
       $ver{$i}    = $seqver{$acc};
-    }
+#    }
 
     $last_stop  = $stop;
     $last_start = $start;
