@@ -5,7 +5,7 @@
 # written by Anthony Rogers (ar2@sanger.ac.uk)
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-07-08 09:39:43 $
+# Last updated on: $Date: 2002-07-08 10:31:55 $
 
 
 use strict;
@@ -86,12 +86,12 @@ while (<GENEACE>)
 	    $seq_locus{$seq} .= "$locus ";
 	    $count++;
 	  }
-	else{print LOG  "$locus - invalid or no sequence found  (found $seq)\n";
+	else{print LOG  "$locus -> $seq: invalid sequence name\n";
 	   }
       }
     elsif(scalar(@entry) == 2)#entry no test is to exclude AceDB startup text
       {
-	print LOG "$locus is incorrectly marked as cgc approved in geenace\n";
+	print LOG "$locus: has <CGC_approved> tag yet invalid format name in $geneace_dir\n";
       }
   }
 close(GENEACE);
@@ -150,12 +150,12 @@ foreach $sequence(keys %seq_locus)
 		  }
 		else
 		  {
-		    print  LOG "\nlocus $locus  -  $sequence has unkown <From_Laboratory> tag - $lab[0]  - not included in outputs \n";
+		    print  LOG "\n$locus -> $sequence:  $sequence has unknown <From_Laboratory> tag: $lab[0]\n";
 		  }
 	      }	
 	    else
 	      {
-		print LOG "$locus -  $sequence has no lab tag\n";
+		print LOG "$locus -> $sequence: $sequence  has no <From_laboratory> tag in $database\n";
 		$PROBcount++;
 		FindSequenceInfo($sequence,$locus);
 	      }
@@ -163,7 +163,7 @@ foreach $sequence(keys %seq_locus)
       }
     else
       {
-	print LOG "\n$sequence not found in $database  - locus is $seq_locus{$sequence}\n";
+	print LOG "\n$seq_locus{$sequence} -> $sequence: $sequence not found in $database\n";
 	$PROBcount++;
 	FindSequenceInfo($sequence,$locus);
       }
@@ -223,9 +223,9 @@ sub FindSequenceInfo #($sequence - genomic seq and $locus )
       $database = "/wormsrv2/current_DB";
     }
     my $log = "/wormsrv2/logs/locus2seq.log.$rundate";
-    open(LOG,">>$log")|| die "cant append to $log";
+    open(LOG,">>$log")|| die "Can't append to $log";
     my $test_seq = $seq;
-    my $autoace = Ace->connect($database) || die "cant connect to $database\n";
+    my $autoace = Ace->connect($database) || die "Can't connect to $database\n";
     my $solved = 0;
     my @lab;
     my $foundlab;
@@ -238,7 +238,6 @@ sub FindSequenceInfo #($sequence - genomic seq and $locus )
 	my $pre_catch = $1;
 	my $catch = $2;
 
-
 	#print " . . . . . . ends with digit\n";
 
 	#catch where sequence now has isoforms
@@ -246,7 +245,7 @@ sub FindSequenceInfo #($sequence - genomic seq and $locus )
 	my $result = TestSeq($test_seq);
 	if(defined($result))
 	  {
-	    print LOG "$locus - $seq does not exist but has isoforms\n\n";
+	    print LOG "\t$seq does not exist but has isoforms\n\n";
 	    $solved = 1;
 	  }
 
@@ -260,7 +259,7 @@ sub FindSequenceInfo #($sequence - genomic seq and $locus )
 	    #print LOG "testing with seq++ :$seq -> $test_seq\n";
 	    if(defined(TestSeq($test_seq)))
 	      {
-		print LOG "$locus - $seq may have been merged to $test_seq \n\n";
+		print LOG "\t$seq may have been merged to $test_seq \n\n";
 		$solved = 1;
 	      }	  
 	    else
@@ -270,7 +269,7 @@ sub FindSequenceInfo #($sequence - genomic seq and $locus )
 		print LOG "testing with seq-- :$seq -> $test_seq\n";
 		if(defined(TestSeq($test_seq)))
 		  {
-		    print LOG "$locus - $seq may have been merged to $test_seq \n\n";
+		    print LOG "\t$seq may have been merged to $test_seq \n\n";
 		    $solved = 1;
 		  }
 
@@ -283,7 +282,7 @@ sub FindSequenceInfo #($sequence - genomic seq and $locus )
 			$test_seq = $pre_catch.(substr($catch,0,1));
 			if(defined(TestSeq($test_seq)))
 			  {
-			    print LOG "$locus - $seq not valid - but found $test_seq \n\n";
+			    print LOG "\t$seq not valid - but found $test_seq \n\n";
 			    $solved = 1;
 			  }
 		      }
@@ -314,7 +313,7 @@ sub FindSequenceInfo #($sequence - genomic seq and $locus )
 	 # print "trying with $test_seq . . \n";
 	  if(defined(TestSeq($test_seq)))
 	    {
-	      print LOG "$locus - $seq merged to $test_seq \n\n";
+	      print LOG "\t$seq merged to $test_seq \n\n";
 	      $solved = 1;
 	    }
 
@@ -324,7 +323,7 @@ sub FindSequenceInfo #($sequence - genomic seq and $locus )
 	    {
 	      if(defined(TestSeq($main_part)))
 		{
-		  print LOG "$locus - $seq isoform not found try $main_part \n\n";
+		  print LOG "\t$seq isoform not found try $main_part \n\n";
 		  $solved = 1;
 		}
 	    }
@@ -339,16 +338,16 @@ sub FindSequenceInfo #($sequence - genomic seq and $locus )
 	    $test_seq = $1;
 	    if(defined(TestSeq($test_seq)))
 	      {
-		print LOG "$locus - $seq is not valid seq but $test_seq is\n\n";
+		print LOG "\t$seq is not valid seq but parent $test_seq is\n\n";
 	      }
 	    else
 	      {	      
-		print LOG "$locus - $seq -  CANT FIND THIS AT ALL\n\n\n";
+		print LOG "\t$seq -  can't find sequence or parent sequence\n\n";
 	      }
 	  }
 	else
 	  {	      
-	    print LOG "$locus - $seq -  CANT FIND THIS AT ALL\n\n\n";
+	    print LOG "\t$seq -  can't find sequence or parent sequence\n\n";
 	  }
       }
   }
