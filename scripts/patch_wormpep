@@ -94,12 +94,17 @@ sub changed {
     my @list = $sequence->Corresponding_DNA;
     my $length = scalar(@list);
 
-    # Delete old entry
+    # Delete tags from old entry
     print "Protein : \"WP:$old_acc\"\n";
     print "-D Corresponding_DNA $CDS\n";
+    print "-D Live\n" unless ($length > 1); # don't add this tag if there are 2 or more CDS
+    print "\n";
+
+    # Add tags to old entry
+    print "Protein : \"WP:$old_acc\"\n";
     print "DB_Remark \"[wormpep${release}] Altered GeneModel, new accession is $new_acc\n";
     print "Replaced_by WP:$new_acc\n"unless ($length > 1); # don't add this tag if there are 2 or more CDS
-    print "-D Live\n" unless ($length > 1); # don't add this tag if there are 2 or more CDS
+    print "Wormpep\n"; # shouldn't need to add this line but I don't trust the deletion of the Live tag
     print "\n";
 
     # Add new entry
@@ -128,11 +133,16 @@ sub changed {
 sub lost {
     my($CDS,$old_acc)= @_;
 
-    # Delete old entry
+    # Delete tags from old entry
     print "Protein : \"WP:$old_acc\"\n";
     print "-D Corresponding_DNA $CDS\n";
     print "-D Live\n";
+    print "\n";
+    
+    # Add tags to old entry
+    print "Protein : \"WP:$old_acc\"\n";
     print "DB_Remark \"[wormpep${release}] Deleted GeneModel\n";
+    print "Wormpep\n";
     print "\n";
 
 }
