@@ -8,8 +8,8 @@
 # Uses Ant's Feature_mapper.pm module
 #
 #
-# Last updated by: $Author: pad $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2004-11-19 12:47:42 $        # quickly see when script was last changed and by whom
+# Last updated by: $Author: dl1 $                      # These lines will get filled in by cvs and helps us
+# Last updated on: $Date: 2005-02-16 13:13:04 $        # quickly see when script was last changed and by whom
 
 
 $|=1;
@@ -37,8 +37,6 @@ my $build;                   # specify build mode, will write to acefiles and th
 my $start;
 my $stop;
 my $log = Log_files->make_build_log();
-my $maintainers = "All"; # log file recipients
-
 
 GetOptions ("all"          => \$all,
 	    "SL1"          => \$SL1,
@@ -55,6 +53,12 @@ GetOptions ("all"          => \$all,
 # Help pod if needed
 &usage(0) if ($help);
 
+# Who to send the mail to?
+my $maintainers = "All";                 # log file recipients
+if ($debug) {
+    $maintainers = $debug;
+}
+
 
 #######################
 # ACEDB and databases #
@@ -68,7 +72,7 @@ $dbdir = "/nfs/disk100/wormpub/DATABASES/current_DB" if ($debug);
 
 $log->write_to("-build specified, writing to /wormsrv2/autoace/acefiles\n\n") if ($build);
 
-
+ 
 # WS version for output files
 
 our ($WS_version) = &get_wormbase_version_name;
@@ -136,7 +140,7 @@ foreach my $query (@features2map) {
       # munge returned coordinates to get the span of the mapped feature
       
       # Deal with polyA_signal features
-      if ($polyA_signal) {
+      if ($query eq "polyA_signal") {
 	if ($start < $stop) {
 	  $start++;
 	  $stop--;
