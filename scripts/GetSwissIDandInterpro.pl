@@ -163,7 +163,7 @@ sub outputToAce #(\%wormpep_acc, \@accession \$ace_output, \$errorLog)
       {
 	chomp;
 	#get the SWISSPROT/TrEMBL id
-	if($_ =~ m/ID\s+(\w+)/)
+	if($_ =~ m/^ID\s+(\w+)/)
 	 { $proteinID = $1;}
 	
 	#get the SWISSPROT accession
