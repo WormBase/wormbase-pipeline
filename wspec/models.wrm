@@ -288,6 +288,8 @@
         Drives_Transgene ?Transgene XREF Driven_by_Locus	
 	Transgene_product ?Transgene XREF Worm_gene
 	Rescued_by_Transgene ?Transgene XREF Rescue
+	GO_term ?GO_term XREF Locus #Evidence // Added by krb 020905
+
 
 ?Balancer From_left_end
           To_right_end
@@ -648,6 +650,8 @@
 		       Phenotype ?Phenotype XREF GO_term // added for Erich, [020128 dl]
 		       Index Ancestor ?GO_term XREF Descendent // added for Lincoln [020709 [krb]
                	       Descendent ?GO_term XREF Ancestor
+		       Locus ?Locus XREF GO_term // added by krb 020905
+
 //
 // Laboratory/Bibliography
 //
