@@ -4,7 +4,7 @@
 
 # Author: Chao-Kung Chen
 # Last updated by $Author: krb $
-# Last updated on: $Date: 2004-06-30 15:22:51 $
+# Last updated on: $Date: 2004-06-30 15:27:50 $
 
 use strict;
 
@@ -14,12 +14,12 @@ use strict;
 
 my (%id_def, $id, $def_version);
 
-open(IN, "$ARGV[0]") || die $!;
+open(IN, "sofa.definition") || die "$!: Can't find sofa.definition file in current directory\n";
 
 while(<IN>){
   my $def =();
 
-  if ($_ =~ /version: \$Revision: 1.2 $/){$def_version = $1}
+  if ($_ =~ /version: \$Revision: 1.3 $/){$def_version = $1}
   if ($_ =~ /id: (.+)/){$id = $1}
   if ($_ =~ /definition: (.+)/){
     my @def =();
@@ -42,14 +42,14 @@ my ($so_term, $so_term_id, %hierarchy, $parellel_so_term, $parellel_so_term_id,
 
 my ($level, @items, %level, $onto_version, $type);
 
-open(IN, "/nfs/team71/worm/ck1/TMP/sofa.ontology") || die $!;
+open(IN, "sofa.ontology") || die "$!: Can't find sofa.ontology file in current directory\n";
 
 while(<IN>){
 
   chomp;
   my $part_of;
 
-  if ($_ =~ /version: \$Revision: 1.2 $/){
+  if ($_ =~ /version: \$Revision: 1.3 $/){
     $onto_version = $1;
   }
 
