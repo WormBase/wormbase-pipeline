@@ -6,8 +6,8 @@
 #
 # Ashwin Hajarnavis ah3@sanger.ac.uk  August 2002
 #
-# Last updated by: $Author: krb $                 
-# Last updated on: $Date: 2003-12-08 16:40:33 $   
+# Last updated by: $Author: ar2 $                 
+# Last updated on: $Date: 2004-02-05 14:05:07 $   
 
 
 use strict;
@@ -512,17 +512,6 @@ sub sort_gff {
     close(FIVEFILE);
     close(XFILE);
 }
-
-sub get_wormbase_version {
-  my $dbdir = shift;
-  my $WS_version = `grep "NAME WS" $dbdir/wspec/database.wrm`;
-  chomp($WS_version);
-  $WS_version =~ s/.*WS//;    
-  return($WS_version);
-}
-
-
-
 
 
 
