@@ -27,8 +27,7 @@ my @sample_peps = @_;
 my $maintainers = "All";
 my $rundate    = `date +%y%m%d`; chomp $rundate;
 my $wormpipe_dir = "/acari/work2a/wormpipe";
-my $dbname = "wormprot";
-$dbname .= "_dev" if $test;
+my $dbname = "worm_pep";
 my $best_hits = "$wormpipe_dir/dumps/best_blastp_hits";
 my $ipi_file = "$wormpipe_dir/dumps/ipi_hits_list";
 
@@ -68,43 +67,41 @@ print "DEBUG = \"$debug\"\n\n" if $debug;
 $WPver-- if( $test );
   
 
-#|          7 | yeast2.pep          | 
+#|          7 | yeast2.pep          |
 #|          8 | gadfly3.pep         |
-#|          9 | ensembl7.29a.2.pep  | 
-#|         11 | wormpep87.pep       | 
-#|         13 | slimswissprot40.pep | 
+#|          9 | ensembl7.29a.2.pep  |
+#|         11 | wormpep87.pep       |
+#|         13 | slimswissprot40.pep |
 #|         14 | slimtrembl21.pep    |
 
-my %wormprotprocessIds = ( wormpep => 11,
-			   ensembl => 9,
-			   gadfly  => 8,
-			   yeast => 7,
-			   slimswissprot => 13,
-			   slimtrembl_1 =>14,
-			   slimtrembl_2 =>16,
-			   ipi_human => 15,
-			   brigpep   => 17
+my %wormprotprocessIds = ( 'wormpep'       => '2',
+			   'brigpep'       => '3',
+			   'ipi_human'     => '4',
+			   'yeast'         => '5',
+			   'gadfly'        => '6',
+			   'slimswissprot' => '7',
+			   'slimtrembl_1'  => '8',
+			   'slimtrembl_2'  => '9',
 			 );
 
-my %processIds2prot_analysis = ( 11 => "wublastp_worm",
-				 9  => "wublastp_ensembl",
-				 8  => "wublastp_fly",
-				 7  => "wublastp_yeast",
-				 13 => "wublastp_slimswissprot",
-				 14 => "wublastp_slimtrembl",
-				 16 => "wublastp_slimtrembl",# slimtrembl is too large so is split
-				 15 => "wublastp_human",
-				 17 => "wublastp_briggsae"
+my %processIds2prot_analysis = ( '2' => "wublastp_worm",
+				 '3' => "wublastp_briggsae",
+				 '4' => "wublastp_human",
+				 '5' => "wublastp_yeast",
+				 '6' => "wublastp_fly",
+				 '7' => "wublastp_slimswissprot",
+				 '8' => "wublastp_slimtrembl",
+				 '9' => "wublastp_slimtrembl",# slimtrembl is too large so is split
 			       );
 
-our %org_prefix = ( 'wublastp_worm' => 'WP',
-		    'wublastp_ensembl' => 'ENSEMBL',
-		    'wublastp_fly' => 'GADFLY',
-		    'wublastp_yeast' => 'SGD',
+our %org_prefix = ( 'wublastp_worm'          => 'WP',
+		    'wublastp_ensembl'       => 'ENSEMBL',
+		    'wublastp_fly'           => 'GADFLY',
+		    'wublastp_yeast'         => 'SGD',
 		    'wublastp_slimswissprot' => 'SW',
-		    'wublastp_slimtrembl' => 'TR',
-		    'wublastp_briggsae'  => 'BP',
-		    'wublastp_ipi_human' => 'IP'      # should never actually get included
+		    'wublastp_slimtrembl'    => 'TR',
+		    'wublastp_briggsae'      => 'BP',
+		    'wublastp_ipi_human'     => 'IP'      # should never actually get included
 		  );
 # gene CE info from COMMON_DATA files copied to ~wormpipe/dumps in prep_dump
 undef $/;
@@ -204,26 +201,17 @@ $wormprot = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {Raise
 my $sth_f;
 if ( $analysisTOdump ) {
 
-  $sth_f = $wormprot->prepare ( q{ SELECT proteinId,analysis,
-				     start, end,
-				     hId, hstart, hend,  
+  $sth_f = $wormprot->prepare ( q{ SELECT protein_id,analysis_id,
+				     seq_start, seq_end,
+				     hit_id, hit_start, hit_end,
 				     -log10(evalue), cigar
 				       FROM protein_feature
-					 WHERE proteinId = ? and (-log10(evalue) > 1 or evalue = 0)
-					   AND analysis = ?
-					   ORDER BY hId
+					 WHERE protein_id = ? and (-log10(evalue) > 1 or evalue = 0)
+					   AND analysis_id = ?
+					   ORDER BY hit_id
 				   } );  
 }
-else {
-  $sth_f = $wormprot->prepare ( q{ SELECT proteinId,analysis,
-				     start, end,
-				     hId, hstart, hend,  
-				     -log10(evalue), cigar
-				       FROM protein_feature
-					 WHERE proteinId = ? and (-log10(evalue) > 1 or evalue = 0)
-					   ORDER BY hId
-					 } );
-}
+
 open (OUT,">$output") or die "cant open $output\n";
 
 # reciprocals of matches ie if CE00000 matches XXXX_CAEEL the homology details need to be written for XXXX_CAEEL 
