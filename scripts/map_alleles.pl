@@ -7,7 +7,7 @@
 # This maps alleles to the genome based on their flanking sequence
 #
 # Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2002-08-22 10:46:50 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2002-09-06 12:19:22 $        # quickly see when script was last changed and by whom
 
 
 use strict;
@@ -55,9 +55,9 @@ if( defined($opt_d) ) {
   $genome_fa_file = glob("~ar2/allele_mapping/genome.fa");
   $scan_file = glob("~ar2/allele_mapping/alleles.scan");
   $log        = glob("~ar2/allele_mapping/map_alleles.$rundate");
-  $database = glob("~ar2/testace/");
- # $database = "/wormsrv2/current_DB/";
-  $ver--;
+ # $database = glob("~ar2/testace/");
+  $database = "/wormsrv2/current_DB/";
+ # $ver--;
 }
 else { 
   $log        = "/wormsrv2/logs/map_alleles.$rundate";
@@ -88,10 +88,9 @@ my @alleles = $db->fetch(-query =>'Find Allele;flanking_sequences');
 
 
 
-my %allele_data;   #  allele => [ (0)type, (1)5'flank_seq , (2)3'flank_seq, (3)DNA_matched_to, (4)end of 5'match, (5)start of 3'match , (6)chromosome]
+my %allele_data;   #  allele => [ (0)type, (1)5'flank_seq , (2)3'flank_seq, (3)CDS, (4)end of 5'match, (5)start of 3'match , (6)clone]
 my $count = 0;
 my $scoreCutoff = 29;  #SCAN score is no of matching bases
-my $sequence;
 my $source;
 my $OLR;
 my $OLL;
@@ -99,14 +98,21 @@ my $sourceSeq;
 my $OLLseq = "";
 my $OLRseq = "";
 my $SEQspan;
+my $sequence;
+my $clone;
 my $chromosome;
+my $name;
+my $type;
+my $left;
+my $right;
+my $allele;
 
-foreach my $allele (@alleles)
+foreach $allele (@alleles)
   {
-    my $name = $allele->name;print "$name\n";
-    my $type = $allele->Allelic_difference->name;
-    my $left = $allele->Flanking_sequences->name;
-    my $right = $allele->Flanking_sequences->right->name;
+    $name = $allele->name;print "$name\n";
+    $type = $allele->Allelic_difference->name;
+    $left = $allele->Flanking_sequences->name;
+    $right = $allele->Flanking_sequences->right->name;
 
     $allele_data{$name}[0] = $type;
     $allele_data{$name}[1] = $left;
@@ -117,157 +123,137 @@ foreach my $allele (@alleles)
 
     if ( $sequence )
       {
+	#make the allele.fa file
+	open (AFA, ">$allele_fa_file") or die "cant open $allele_fa_file\n";
+	print AFA "\>$name\_5\n$allele_data{$allele}[1]\n";
+	print AFA "\>$name\_3\n$allele_data{$allele}[2]\n";
+	close AFA;
+
+	$allele_data{$name}[3] = "unknown";
+
+	#try and map to clone
 	#examine the sequence name and extract clone name if required
-	my $clone;
 	if( $sequence->name =~ m/(\w+)\.\w+/ ) {
 	  $clone = $1;
+	  $allele_data{$name}[3] = "$&";
 	}
 	else {
 	  $clone = $sequence->name;
 	}
-	$source = $db->fetch(Sequence => "$clone");
 	
-	#findout which CHROMOSOME this clone is on for later mappings.
-	$chromosome = $source;
-	while( $chromosome )
+	$source = $db->fetch(Sequence => "$clone");	
+	$SEQspan = $source->asDNA;
+	
+	if( &MapAllele == 1){
+	  #allele mapped to clone
+	  $allele_data{$name}[6] = $source->name;
+	  print "Did $allele with clone\n";
+	}
+	
+	#try and map to OverlapLeft - Clone - OverLapRight concatenated sequence
+	else
 	  {
-	    if( $chromosome->name =~ m/CHROMOSOME_(\w+)/ ) {
-	      $chromosome = $1;
-	      last;
-	    }
-	    else {
-	      my $newchrom = $chromosome;
-	      $chromosome = $newchrom->Source;
-	      print "\t$chromosome\n";
-	    }
-	  }
-	$allele_data{$name}[6] = $chromosome;
-      }
-    else {
-      print LOG "$allele has no sequence\n";
-      next;
-    }
-
-    if( $source )
-      {
-	$sourceSeq = $source->asDNA();
-	$allele_data{$name}[3] = $source->name;  #set 5' DNA to allele source in case of no OLL
-
-	$OLR = $source->Overlap_Right;
-	$OLL = $source->Overlap_Left;
-	
-	if( $OLL ) {
-	  $OLLseq = $OLL->asDNA();
-	  $allele_data{$name}[3] = $OLL->name;   #set 5' DNA to clone left of allele clone
-	}
-	else {
-	  print LOG "$allele $source has no OLL\n";
-	}
-	
-	if( $OLR ) {
-	  $OLRseq = $OLR->asDNA();    
-	}
-	else {
-	  print LOG "$allele $source has no OLR\n";
-	}   
-
-	$SEQspan = $OLLseq.$sourceSeq.$OLRseq;
-	$SEQspan = &FASTAformat( $SEQspan );
-      }
-    else {
-      print LOG "$allele $sequence has no Source\n";
-      next;
-    }
-
-    #make the genomic seq fa file
-    open (GFA,">$genome_fa_file" ) or die "cant open genome file for $allele\n";
-    print GFA ">$name\n$SEQspan";
-    close GFA;
-
-    #make the allele.fa file
-    open (AFA, ">$allele_fa_file") or die "cant open $allele_fa_file\n";
-    print AFA "\>$name\_5\n$allele_data{$allele}[1]\n";
-    print AFA "\>$name\_3\n$allele_data{$allele}[2]\n";
-    close AFA;
-
-    print "Starting $name SCAN with score cutoff $scoreCutoff\n";
-
-    my $scan = "/usr/local/pubseq/bin/scan -f -t";
-    open (SCAN, ">$scan_file") or die "cant write $scan_file\n";
-    print SCAN `$scan $scoreCutoff $genome_fa_file $allele_fa_file` or die "SCAN failed\n";
-    close SCAN;
-
-    #read in the results
-    my @data;
-    open (SCAN, "<$scan_file") or die "cant read $scan_file\n";
-    while (<SCAN>)
-      {
-	# scan output-  gk2_3       1     30  56424 56453     30  100 % match, 0 copies, 0 gaps
-	@data = split(/\s+/,$_);
-	if( defined( $data[1]) )
-	  {
-	    if( $data[1] =~ /(\w+)_([3,5])/ )
+	    #$source is a clone obj
+	    if( $source )
 	      {
-		if( "$2" eq "5" ) {
-		  if( $data[5] ){
-		    $allele_data{$1}[4] = $data[5];     #end of 5'
-		  }
-		  else{ print " 5\' stall - @data\n"; sleep; }
+		$sourceSeq = $source->asDNA();
+		    $allele_data{$name}[3] = $source->name;  #set 5' DNA to allele source in case of no OLL
+		
+		$OLR = $source->Overlap_Right;
+		$OLL = $source->Overlap_Left;
+		
+		if( $OLL ) {
+		  $OLLseq = $OLL->asDNA();
+		  $allele_data{$name}[3] = $OLL->name;   #set 5' DNA to clone left of allele clone
 		}
-		else{
-		  if( $data[4] ){
-		    $allele_data{$1}[5] = $data[4];     #start of 3'
-		  }
-		  else{ print "3\' stall - @data\n "; sleep; }
+		else {
+		  print LOG "$allele $source has no OLL\n";
+		}
+		
+		if( $OLR ) {
+		  $OLRseq = $OLR->asDNA();
+		}
+		else {
+		  print LOG "$allele $source has no OLR\n";
+		}
+		
+		$SEQspan = $OLLseq.$sourceSeq.$OLRseq;
+		$SEQspan = &FASTAformat( $SEQspan );
+		if( &MapAllele == 0 ) {
+		  print LOG "$name cannot be mapped\n";
+		  
 		}
 	      }
+	    else {
+	      print LOG "$allele $sequence has no Source\n";
+	      next;
+	    }
+	    
+#                find out which CHROMOSOME this clone is on for later mappings.
+#		$chromosome = $source;
+#		while( $chromosome )
+#		  {
+#		    if( $chromosome->name =~ m/CHROMOSOME_(\w+)/ ) {
+#		      $chromosome = $1;
+#		      last;
+#		    }
+#		    else {
+q#		      my $newchrom = $chromosome;
+#		      $chromosome = $newchrom->Source;
+#		      print "\t$chromosome\n";
+#		    }
+#		  }
+#		$allele_data{$name}[6] = $chromosome;
 	  }
       }
-    close SCAN;
-    last if $count++ > 1;
+
+    # last if $count++ > 1;
   }
+
+
 my $output = glob("~ar2/allele_mapping/map_results");
 open (OUT,">$output");
 foreach (keys %allele_data )
   {
-    if( $allele_data{$_}[3]) { 
-      print OUT "$_ is a $allele_data{$_}[0] from $allele_data{$_}[4] to $allele_data{$_}[5] ( ",$allele_data{$_}[5] - $allele_data{$_}[4]," bp )in $allele_data{$_}[3] chromosome $allele_data{$_}[6]\n";
+    if( $allele_data{$_}[3] and $allele_data{$_}[4] and  $allele_data{$_}[5]) { 
+      #print OUT "$_ is a $allele_data{$_}[0] from $allele_data{$_}[4] to $allele_data{$_}[5] ( ",$allele_data{$_}[5] - $allele_data{$_}[4]," bp )in $allele_data{$_}[3]\n";
 
+      print OUT "Sequence : \"$allele_data{$_}[6]\"\nAllele $_ $allele_data{$_}[4] $allele_data{$_}[5] $allele_data{$_}[0] \n\n";
       #map position on genome
       #(0)type, 
       #(1)5'flank_seq ,
       #(2)3'flank_seq
-      #(3)DNA_matched_to,
+      #(3)CDS
       #(4)end of 5'match
       #(5)start of 3'match
-      #(6)chromosome]
+      #(6)clone]
 
-      my $csome_lookup = $allele_data{$_}[6];
-      my $map_hash; 
-      if( "$csome_lookup" eq "I" ){
-	$map_hash = \%chromosomeI_clones;
-      }
-      elsif ( "$csome_lookup" eq "II" ){
-	$map_hash = \%chromosomeII_clones;
-      }
-      elsif ( "$csome_lookup" eq "III" ){
-	$map_hash = \%chromosomeIII_clones;
-      }
-      elsif ( "$csome_lookup" eq "IV" ){
-	$map_hash = \%chromosomeIV_clones;
-      }
-      elsif ( "$csome_lookup" eq "V" ){
-	$map_hash = \%chromosomeV_clones;
-      }
-      elsif ( "$csome_lookup" eq "X" ){
-	$map_hash = \%chromosomeX_clones;
-      }
-      else {
-	warn "allele $_ has no chromsome\n";
-	next;
-      }
+#      my $csome_lookup = $allele_data{$_}[6];
+#      my $map_hash; 
+#      if( "$csome_lookup" eq "I" ){
+#	$map_hash = \%chromosomeI_clones;
+#      }
+#      elsif ( "$csome_lookup" eq "II" ){
+#	$map_hash = \%chromosomeII_clones;
+#      }
+#      elsif ( "$csome_lookup" eq "III" ){
+#	$map_hash = \%chromosomeIII_clones;
+#      }
+#      elsif ( "$csome_lookup" eq "IV" ){
+#	$map_hash = \%chromosomeIV_clones;
+#      }
+#      elsif ( "$csome_lookup" eq "V" ){
+#	$map_hash = \%chromosomeV_clones;
+#      }
+#      elsif ( "$csome_lookup" eq "X" ){
+#	$map_hash = \%chromosomeX_clones;
+#      }
+#      else {
+#	warn "allele $_ has no chromsome\n";
+#	next;
+#      }
 
-      print "$_ map position is ",$$map_hash{$allele_data{$_}[3]} + $allele_data{$_}[4],"\n";
+#      print "$_ map position is ",$$map_hash{$allele_data{$_}[3]} + $allele_data{$_}[4],"\n";
 	
 
 
@@ -282,6 +268,65 @@ close LOG;
 
 # Always good to cleanly exit from your script
 exit(0);
+
+sub MapAllele
+  {
+    # This routine converts whatever is in $SEQspan in to "genome_fa_file
+    # then performs a SCAN analysis against whatever is in it
+    # then checks the results to see if both flanking sequences have been matched.  If they have
+    # it fills in the allele_data fields and returns 1; otherwise 0;
+
+
+    &makeTargetfile;
+    print "Starting $name SCAN with score cutoff $scoreCutoff\n";
+
+    my $scan = "/usr/local/pubseq/bin/scan -f -t";
+    open (SCAN, ">$scan_file") or die "cant write $scan_file\n";
+    print SCAN `$scan $scoreCutoff $genome_fa_file $allele_fa_file` or die "SCAN failed\n";
+    close SCAN;
+
+    #read in the results
+    my @data;
+    my $end5;
+    my $end3;
+    open (SCAN, "<$scan_file") or die "cant read $scan_file\n";
+    while (<SCAN>)
+      {
+	# scan output-  gk2_3       1     30  56424 56453     30  100 % match, 0 copies, 0 gaps
+	@data = split(/\s+/,$_);
+	if( defined( $data[1]) )
+	  {
+	    if( $data[1] =~ /(\w+)_([3,5])/ )
+	      {
+		if( "$2" eq "5" ) {
+		  if( $data[5] ){
+		    $end5 = $data[5]+1;     #end of 5'
+		  }
+		}
+		else{
+		  if( $data[4] ){
+		    $end3 = $data[4]-1;     #start of 3'
+		  }
+		}
+	      }
+	  }
+      }
+    close SCAN;
+
+    if( defined($end5) and defined($end3) ) {
+      $allele_data{$name}[4] = $end5;
+      $allele_data{$name}[5] = $end3;
+      return 1;
+    }
+    else { return 0; }
+  }
+
+sub makeTargetfile
+  {
+    open (GFA,">$genome_fa_file" ) or die "cant open genome file for $allele\n";
+    print GFA "$SEQspan";
+    close GFA;
+  }
 
 sub FASTAformat
   {
