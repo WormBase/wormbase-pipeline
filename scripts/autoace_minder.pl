@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2003-11-05 11:00:55 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2003-11-07 14:14:58 $
 
 
 #################################################################################
@@ -876,7 +876,7 @@ sub blat_jobs{
     # Run aceprocess to make cleaner files
     # slight difference for nematode files as there is no best/other distinction or intron files
     if($job eq "nematode"){
-      &run_command("$scriptdir/acecompress.pl -homol ${blat_dir}/autoace.$job.ace > ${blat_dir}/autoace.${job}lite.ace");
+      &run_command("$scriptdir/acecompress.pl -homol ${blat_dir}/autoace.$job.ace > ${blat_dir}/autoace.blat.${job}lite.ace");
       &run_command("mv -f ${blat_dir}/autoace.blat.${job}lite.ace ${blat_dir}/autoace.blat.$job.ace");
     }
     else{
