@@ -7,7 +7,7 @@
 # Usage: camcheck.pl
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2004-07-28 14:56:08 $
+# Last updated on: $Date: 2004-10-27 09:13:09 $
 #
 # see pod documentation (i.e. 'perldoc camcheck.pl') for more information.
 #
@@ -119,7 +119,7 @@ print LOG "** Monthly edition **\n\n" if ($opt_m);
 
 &CloneTests;
 
-&check_worm_genes;
+#&check_worm_genes;
 
 &check_worm_transcripts;
 
