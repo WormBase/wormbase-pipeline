@@ -8,7 +8,7 @@
 # and virtual objects to hang the data onto
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-09-10 07:15:19 $
+# Last edited on: $Date: 2003-09-11 16:43:49 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -115,11 +115,11 @@ my $data;
 
 # Select the correct set of query sequences for blat
 my $query = "/nfs/disk100/wormpub/analysis/ESTs/";
-$query   .= 'C.elegans_nematode_ESTs'     if ($est); # EST data set
-$query   .= 'C.elegans_nematode_OSTs'     if ($ost); # OST data set
-$query   .= 'C.elegans_nematode_mRNAs'    if ($mrna); # mRNA data set
-$query   .= 'non_C.elegans_nematode_ESTs' if ($nematode); # ParaNem EST data set
-$query   .= 'C.elegans_nematode_miscPep'  if ($embl); # Other CDS data set, DNA not peptide!
+$query   .= 'elegans_ESTs'        if ($est); # EST data set
+$query   .= 'elegans_OSTs'        if ($ost); # OST data set
+$query   .= 'elegans_mRNAs'       if ($mrna); # mRNA data set
+$query   .= 'other_nematode_ESTs' if ($nematode); # ParaNem EST data set
+$query   .= 'elegans_embl_cds'    if ($embl); # Other CDS data set, DNA not peptide!
 
 
 &create_log_files;
