@@ -187,7 +187,7 @@ sub mail_maintainer {
     else {
       print OUTLOG "$name";
     }
-    close OUTLOG;
+    close OUTLOG or die "didn't close mail properly\n\n";
   } 
 
 
