@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.6.1 -w                  
 #
 # Last updated by: $Author: wormpipe $     
-# Last updated on: $Date: 2003-03-25 10:37:10 $      
+# Last updated on: $Date: 2003-06-04 10:09:09 $      
 
 use strict;
 use Getopt::Long;
@@ -64,7 +64,17 @@ while (<DATA>) {
       my ($db,$acc) = split(/:/,$_);
       next if( ("$db" eq "IPI" ) or ($db =~ /REFSEQ/) );
       if( $acc =~ /(\w+);\S+/ )
-	{ $acc = $1;	}
+	{ $acc = $1; }
+ 
+      # IPI indicate splice variants with -2 style nomenclature so we strip this and only use the primary version ( -1 )
+      if( $acc =~ /(\w+)-(\d+)/ ) {
+	if( $2 == 1 ){
+	  $acc = $1;
+	}
+	else {
+	  next;
+	}	      
+      }
       $databases{$db} = $acc;
     }
     # select primary database
@@ -84,7 +94,12 @@ while (<DATA>) {
       $dont_read_pep = 1;
       next;
     }
-    
+
+    if( defined $ACC2DB{$prim_DB_id}) {
+      $dont_read_pep = 1;
+      next;
+    }
+      
     $ACC2DB{$prim_DB_id} = $prim_DB;   # record database for each accession
 
     print OUT "\nProtein : \"$prim_DB:$prim_DB_id\"\n";
