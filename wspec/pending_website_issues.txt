@@ -1,4 +1,6 @@
 
+
+
 14th April, 2004
 ?3d_data - new class, not picked up on website at all
 ?Y2H - another new class, not picked up on website at all
@@ -21,3 +23,10 @@ GADFLY protein objects replaced by FlyBase protein objects, just change to objec
 
 30th April, 2004
 Added 'Library_screened' tag to ?Y2H
+
+14th May, 2004
+Remove two UNIQUE qualifiers after 'Laboratory' and 'CGC_representative_for' tag in the Person class
+
+14th May, 2004
+Added new event option in Gene_history_action hash.  Genes can now have 'Changed_class' tag set should
+they change from (say) a CDS to a Pseudogene.

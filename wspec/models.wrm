@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: krb $
-// Last edited on: $Date: 2004-05-14 09:15:13 $
+// Last edited on: $Date: 2004-05-14 10:52:42 $
  
 
 
@@ -908,8 +908,6 @@
 			Matching_CDS ?CDS XREF Matching_cDNA
 			Matching_transcript ?Transcript XREF Matching_cDNA // to link ESTs/mRNAs to RNA genes
 			Matching_pseudogene ?Pseudogene XREF Matching_cDNA // for ESTs that match Pseudogenes [krb 030801]
-			Corresponding_transcript UNIQUE ?Transcript XREF Corresponding_CDS // to link coding genes to new style 
-											   // ar2 Transcripts, 1-2-1 relationship
 		  	Clone ?Clone XREF Sequence 
 			GO_term ?GO_term XREF Sequence ?GO_code #Evidence
 			Gene ?Gene XREF Other_sequence  // for where mRNAs etc. correspond to a gene
@@ -1079,8 +1077,8 @@
                         Cis_target      ?Gene_regulation XREF Cis_regulated_seq  // new for Wen
 	Visible Gene UNIQUE ?Gene XREF CDS // when live 
 		Gene_history UNIQUE ?Gene XREF CDS_history // when dead
-		Corresponding_transcript UNIQUE ?Transcript XREF Corresponding_CDS // links CDS' to new-style ?Transcript
-                                                                                   // objects, 1-to-1 relationship
+		Corresponding_transcript ?Transcript XREF Corresponding_CDS // links CDS' to new-style ?Transcript
+                                                                            // objects, 1-to-1 relationship
 		Corresponding_protein UNIQUE ?Protein XREF Corresponding_CDS #Evidence
 		Corresponding_PCR_product ?PCR_product XREF Overlaps_CDS // added for PCR mappings [010419 dl]
 		Matching_cDNA ?Sequence XREF Matching_CDS #Evidence
