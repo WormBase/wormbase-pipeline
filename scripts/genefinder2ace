@@ -50,6 +50,7 @@ while (<genefinder>) {
 	print "\nCDS $ARGV[1].gc${genename}\n"; 
 	print "CDS\n"; 
  	print "CDS_predicted_by Genefinder $score\n";
+	print "Species \"Caenorhabditis elegans\"\n";
 	if ($nostart eq "yes") {
 	    print "Start_not_found\n";
 	}
