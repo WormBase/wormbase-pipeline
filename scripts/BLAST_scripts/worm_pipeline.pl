@@ -135,12 +135,12 @@ $db->disconnect;
 
 
 ####################################
-#   run script to check that whats in the database is whats in wormpep
-#$fasta = new_entries.WS$WS_versio
-my $version = $fasta =~ /new_entries\.WS(\d+)/;
-my $wp_file = "/wormsrv2/WORMPEP/wormpep$version/wp.fasta$version";
-my $script = $ENV{'CVS_DIR'}."/BLAST_scripts/mysql_vs_db_protein_compare.pl";
-system("perl5.8.0 $script -fasta $wp_file");
+##   run script to check that whats in the database is whats in wormpep
+##$fasta = new_entries.WS$WS_versio
+#my $version = $fasta =~ /new_entries\.WS(\d+)/;
+#my $wp_file = "/wormsrv2/WORMPEP/wormpep$version/wp.fasta$version";
+#my $script = $ENV{'CVS_DIR'}."/BLAST_scripts/mysql_vs_db_protein_compare.pl";
+#system("perl5.8.0 $script -fasta $wp_file");
 
 
 
