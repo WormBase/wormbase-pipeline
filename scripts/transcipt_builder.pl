@@ -8,6 +8,7 @@ use Coords_converter;
 use Wormbase;
 
 my $tace = &tace;
+my $log = &make_log_file;
 
 my ($debug, $help, $verbose, $really_verbose, $est, $count, $report, $gap, $transcript, $gff, $show_matches, $database, $overlap_check, $load_matches, $load_transcripts, $build);
 
@@ -62,6 +63,7 @@ foreach my $chrom ( @chromosomes ) {
   }
 
   open (GFF,"<$gff_file") or die "gff_file\n";
+  print $log "reading gff file $gff_file\n";
   # C43G2	  curated	  exon         10841   10892   .       +       .       Sequence "C43G2.4"
   # C43G2   curated         CDS          10841   10892   .       +       0       Sequence "C43G2.4"
   # C43G2   curated         Sequence     10841   13282   .       +       .       Sequence "C43G2.4"
@@ -133,7 +135,7 @@ foreach my $chrom ( @chromosomes ) {
   my $coords;
   # write out the transcript objects
   if( $transcript ) {
-    system("mkdir $database/TRANSCRIPTS") unless -e $database/TRANSCRIPTS;
+    system("mkdir $database/TRANSCRIPTS") unless -e "$database/TRANSCRIPTS";
     open (ACE,">$database/TRANSCRIPTS/transcripts_$chrom.ace") or die "transcripts\n";
     # get coords obj to return clone and coords from chromosomal coords
     $coords = Coords_converter->invoke($database);
@@ -220,8 +222,9 @@ foreach my $chrom ( @chromosomes ) {
   close ACE if $transcript;
 
   if ($show_matches) { 
-    system("mkdir $database/TRANSCRIPTS") unless -e $database/TRANSCRIPTS;
+    system("mkdir $database/TRANSCRIPTS") unless -e "$database/TRANSCRIPTS";
     open(MATCHES,">$database/TRANSCRIPTS/chromosome${chrom}_matching_cDNA.dat");
+    print $log "writing Matching_cDNA file $database/TRANSCRIPTS/chromosome${chrom}_matching_cDNA.dat\n";
     print MATCHES Data::Dumper->Dump([\%gene2cdnas]);
     close MATCHES;
 
@@ -242,6 +245,7 @@ foreach my $chrom ( @chromosomes ) {
 }
 
 if( $load_transcripts ) {
+  print $log "loading transcripts file to $database\n";
   system("cat $database/TRANSCRIPTS/ranscripts_*.ace > $database/TRANSCRIPTS/transcripts_all.ace");
   open(TACE, " | $tace -tsuser transcripts $database |") or warn "could open $database to load transcript file\n";
   print TACE "pparse $database/TRANSCRIPTS/transcripts_all.ace\nsave\nquit";
@@ -249,13 +253,15 @@ if( $load_transcripts ) {
 }
 
 if( $load_matches ) {
+  print $log "loading matching_cDNA file to $database\n";
   system("cat $database/TRANSCRIPTS/chromosome*_matching_cDNA.ace > $database/TRANSCRIPTS/matching_cDNA_all.ace");
   open(TACE, " | $tace -tsuser matching_cDNA $database |") or warn "could open $database to load matching_cDNA file\n";
   print TACE "pparse $database/TRANSCRIPTS/matching_cDNA_all.ace\nsave\nquit";
   close TACE;
 }
   
-
+print $log "$0 finished at ",&runtime,"\n";
+close $log;
 
 exit(0);
 
@@ -462,6 +468,7 @@ sub cDNA_ExonThatEndsWith
 
 sub eradicateSingleBaseDiff
   {
+    print $log "removing small cDNA mismatches\n\n\n";
     foreach my $cdna_hash (keys %cDNA ) {
       my $last_key;
       my $check;
@@ -493,6 +500,7 @@ sub eradicateSingleBaseDiff
 
 sub checkOverlappingTranscripts  {
   my $chrom = shift;
+  print $log "checking overlapping transcripts for chromosome_$chrom\n";
   my @ordered_transcripts;
   foreach my $transcript ( sort { $transcript_span{$a}[0]<=>$transcript_span{$b}[0]  } keys %transcript_span) {
     push (@ordered_transcripts, $transcript);
@@ -543,6 +551,7 @@ sub checkOverlappingTranscripts  {
 }
 
 sub check_opts {
+  print $log "checking options . . . \n\n\n";
   # sanity check options
   if( $help ) {
     system("perldoc $0");
