@@ -6,8 +6,8 @@
 #
 # Usage : make_keysets.pl [-options]
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-12-01 11:54:27 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2004-10-08 15:58:40 $
 
 #################################################################################
 # variables                                                                     #
@@ -49,8 +49,9 @@ GetOptions (
 # Paths etc                  #
 ##############################
 
-our $tace     = &tace;  # tace executable path
+our $tace     = &tace;                                    # tace executable path
 our $dbpath   = "/wormsrv2/autoace";                      # Database path (live runs)
+our $outpath  = "/wormsrv2/tmp";                          # Output directory
 
 # Use current_DB if you are testing 
 $dbpath   = "/nfs/disk100/wormpub/DATABASES/current_DB" if ($test);        # Database path (test runs)
@@ -97,7 +98,7 @@ if (($go) || ($all)) {
     print "Tace query for CDS_with_GO_term\t" if ($debug);
     my $command ="nosave\nquery find elegans_CDS where GO_term\nlist -a\nquit\n";
     &tace_it($command,'CDS_with_GO_term');
-    print "....load into db\t" if ($debug);
+    print "....load into db\t" if ( ($debug) && (!$noload) );
     &load_it('CDS_with_GO_term','keyset_lists') unless ($noload);
     print "...hasta luego\n\n" if ($debug);
 }
@@ -107,7 +108,7 @@ if (($touched) || ($all)) {
     print "Tace query for CDS_with_transcript_evidence\t" if ($debug);
     my $command ="nosave\nquery find elegans_CDS where Matching_cDNA\nlist -a\nquit\n";
     &tace_it($command,'CDS_with_transcript_evidence');
-    print "....load into db\t" if ($debug);
+    print "....load into db\t" if (($debug) && (!$noload));
     &load_it('CDS_with_transcript_evidence','keyset_lists') unless ($noload);
     print "...hasta luego\n\n" if ($debug);
 }
@@ -116,7 +117,10 @@ if (($touched) || ($all)) {
 if (($history) || ($all)) {
     print "Tace query for wormpep_mods_since_WSnn\n" if ($debug);
 
-    for (my $i = 77; $i <= $history; $i++) { 
+    my @releases = (77,100,110,120,130);
+    push (@releases,$history-1);
+
+    foreach my $i (@releases) {
 	my $wsname = "wormpep_mods_since_WS" . $i;
 	(print "Tace query for " . $wsname . "\t") if ($debug);
 	my $command ="nosave\nquery find wormpep where history AND NEXT > $i\nlist -a\nquit\n";
@@ -125,7 +129,7 @@ if (($history) || ($all)) {
 	&load_it($wsname,'keyset_lists') unless ($noload);
  	print "...hasta luego\n\n" if ($debug);
     } 
-    print "calculated keysets back to WS77\n\n";
+    print "calculated keysets of changed wormpep entries\n\n";
 } 
 
 print "le fin\n";
@@ -140,7 +144,7 @@ sub tace_it {
     my ($command,$name) = @_;
     my @results if ($debug);
     
-    open (OUTPUT, ">/tmp/$name.ace");
+    open (OUTPUT, ">$outpath/$name.ace") || die "Can't open the output file\n";
     open (TACE,"echo '$command' | $tace $dbpath |");
     while (<TACE>) { 
 	next if /\/\//;
@@ -161,7 +165,7 @@ sub tace_it {
 sub load_it {
     my ($name,$user) = @_;
 
-    my $command = "pparse /tmp/$name.ace\nsave\nquit\n";
+    my $command = "pparse $outpath/$name.ace\nsave\nquit\n";
 
     open (TACE,"echo '$command' | $tace $dbpath |") or die "Can't make db connection\n";
     while (<TACE>) {
