@@ -7,7 +7,7 @@
 # Usage : autoace_minder [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2002-09-05 13:37:43 $
+# Last edited on: $Date: 2002-09-05 13:39:01 $
 
 
 #################################################################################
@@ -1259,7 +1259,7 @@ sub make_wormpep {
   system("GetIDandAC.pl") && die "Couldn't run GetIDandAC.pl";
   $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Finished GetIDandAC.pl at $runtime\n";
   # load into autoace
-  $command = "pparse /wormsrv2/autoace/wormpep_ace/WormpepACandIDs.ace\nsave\nquit\n"; 
+  my $command = "pparse /wormsrv2/autoace/wormpep_ace/WormpepACandIDs.ace\nsave\nquit\n"; 
   open (WRITEDB, "| $tace -tsuser utr_data /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
   print WRITEDB $command;
   close WRITEDB;
