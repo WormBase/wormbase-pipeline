@@ -8,13 +8,15 @@ use DB_File;
 #######################################
 # command-line options                #
 #######################################
-my ($test, $debug, $help, $all, $WPver, $analysisTOdump);
+my ($test, $debug, $help, $all, $WPver, $analysisTOdump, $just_matches, $matches);
 GetOptions ("debug=s"   => \$debug,
 	    "test"    => \$test,
 	    "help"    => \$help,
 	    "all"     => \$all,
 	    "analysis=s" => \$analysisTOdump,
-	    "version=s" =>\$WPver
+	    "version=s" =>\$WPver,
+	    "just_matches" => \$just_matches,
+	    "matches"   => \$matches
            );
 
 my $maintainers = "All";
@@ -205,7 +207,8 @@ open (RECIP,">$recip_file") or die "cant open recip file\n";
 dbmopen our %ACC2DB, "$wormpipe_dir/dumps/acc2db.dbm", 0666 or die "cannot open acc2db \n";
 
 my $count;
-
+my $count_limit = 10;
+$count_limit = 1 if ($just_matches);
 
 foreach $pep (@peps2dump)
   {
@@ -344,7 +347,7 @@ sub dumpData
 
       foreach (sort {$$matches{$b}[0]->[7] <=> $$matches{$a}[0]->[7]} keys %$matches ){
         foreach my $data_array_ref (@$matches{$_}) {
-	  last HOMOLOGUES if $output_count++ ==  10; # only output the top 10
+	  last HOMOLOGUES if $output_count++ ==  $count_limit; # only output the top 10
 
 	  foreach my $data (@$data_array_ref) {
 	    print "@$data\n" if ($debug);
@@ -365,6 +368,7 @@ sub dumpData
 	    if ($best == 0) {
 	      $BEST{$$data[1]} = "$prefix:$$data[4]"."score$$data[7]";
 	      $best = 1;
+	      next HOMOLOGUES if $just_matches; # dont bother with all the rest
 	    }
 	    foreach (@cigar){
 	      #print OUT "Pep_homol \"$homolID\" $processIds2prot_analysis{$analysis} $e $myHomolStart $myHomolEnd $pepHomolStart $pepHomolEnd Align ";
@@ -409,7 +413,8 @@ sub dumpData
     foreach my $ana (@to_output) {
       if ($BEST{$ana}) {
 	my($homol, $score) =  split(/score/,$BEST{$ana});
-	print BEST ",$homol,$score"
+	my $e = 10**(-$score);
+	print BEST ",$homol,"; printf BEST "%g",$e,"\n";
       }
       else {
 	print BEST ",,";
