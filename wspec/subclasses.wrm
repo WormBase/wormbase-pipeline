@@ -171,7 +171,12 @@ Composite_of elegans_CDS
 Composite_of elegans_pseudogenes
 Composite_of elegans_RNA_genes
 
-
+// composite class to hold all gene models for checking essential non-specific tags.
+Class All_genes
+Visible
+Composite_of CDS
+Composite_of Pseudogene
+Composite_of Transcript
 
 
 
