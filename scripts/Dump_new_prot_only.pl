@@ -226,15 +226,15 @@ my $tace =  "$wormpub/ACEDB/bin.ALPHA_4/tace";
 my $command;
 
 #parse homology data
-print LOG &runtime," : Adding $output file to $acedb_database\n";
-$command = "pparse $output\nsave\nquit\n"; 
-open (AUTOACE, "| $tace $acedb_database  |") || die "Couldn't open pipe to $acedb_database\n";
-print AUTOACE $command;
-print LOG &runtime ," : finished adding $output file to $acedb_database\n";  close AUTOACE;
-print LOG &runtime," : finished\n\n______END_____";
+#print LOG &runtime," : Adding $output file to $acedb_database\n";
+#$command = "pparse $output\nsave\nquit\n"; 
+#open (AUTOACE, "| $tace -tsuser wublastp $acedb_database  |") || die "Couldn't open pipe to $acedb_database\n";
+#print AUTOACE $command;
+#print LOG &runtime ," : finished adding $output file to $acedb_database\n";  close AUTOACE;
+#print LOG &runtime," : finished\n\n______END_____";
 
 close LOG;
-`rm -f $recip_file`;
+#`rm -f $recip_file`;
 
 &mail_maintainer("Dump_new_proteins_only.pl",$maintainers,$log);
 
