@@ -142,6 +142,7 @@ _VTransgene        -V
 
 // GO terms
 _VGO_term	   -V
+_VGO_code	   -V
 
 // Others
 _VHomol_data       -V -D FMAP
@@ -149,9 +150,6 @@ _VFeature_data     -V -D FMAP
 
 // Feature class
 _VFeature	   -V
-
-// WTP
-// _VWTP		   -V -D FMAP
 
 // UTR
 _VUTR		   -V -D FMAP
