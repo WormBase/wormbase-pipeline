@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.50 2002-04-05 14:46:48 kj2 Exp $
+// CVS info:  $Id: models.wrm,v 1.51 2002-04-09 08:57:46 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -275,7 +275,8 @@
 // discussion.
 
 #Evidence  Source  UNIQUE  Author  ?Author
-                           Paper   ?Paper //updated krb 04/03/02
+                           Literature   Paper   ?Paper //updated krb 04/03/02
+			   		PMID    Text // added for Erich's gene function data 02/03/09
                            Automated_method ?Method ?Database
            Curator UNIQUE ?Curator
            Type    UNIQUE Mutant_phenotype	// NB These types map to GO codes
