@@ -4,14 +4,7 @@
 # by Anthony Rogers                             
 #
 # Last updated by: $Author: ar2 $               
-# Last updated on: $Date: 2002-11-04 17:09:27 $         
-
-
-#use Exporter;
-#use Carp;
-#use Ace;
-#@ISA       = qw(Exporter);
-#@EXPORT    = qw(write_clone2acc clone2acc);
+# Last updated on: $Date: 2002-11-05 10:18:06 $         
 
 use strict;                    
 use lib "/wormsrv2/scripts/";
@@ -58,7 +51,7 @@ sub write_clone2acc
 
     #now dump data to file
     open (C2A, ">$sub2file{'clone2acc'}") or die "cant write $sub2file{'clone2acc'} :$!";
-    open (A2C, ">$sub2file{'acc2clone'}") or die "cant write $sub2file{'acc2clone'} :$!";
+    open (A2C, ">$sub2file{'acc2clone'}") or die "cant write $sub2file{'acc2clone'} :$! ";
 
     print C2A Data::Dumper->Dump([\%clone2acc]);
     print A2C Data::Dumper->Dump([\%acc2clone]);
@@ -72,20 +65,20 @@ sub write_gene2CE
   {
     my $WPver = &get_wormbase_version;
     $WPver--;
-    open (FH,"</wormsrv2/WORMPEP/wormpep$WPver/wormpep.accession$WPver") or die "cant open wormpep.accession$WPver\n";
+    open (FH,"</wormsrv2/WORMPEP/wormpep$WPver/wormpep$WPver") or die "cant open wormpep$WPver\n";
     my %gene2CE;
     my %CE2gene;
     while(<FH>)
       {
-	chomp;
-	my @data = split;
-	#eg CE00012 B0303.9
-	my $pep = $data[0];
-	my $i = 1;
-	while( $data[$i] ) {
-	  $gene2CE{$data[$i]} = $pep;
-	  $CE2gene{$pep} .= "$data[$i] ";
-	  $i++;
+	if( />/ ) {
+	  chomp;
+	  my @data = split;
+	  # >2L52.1 CE32090   Zinc finger, C2H2 type status:Predicted TR:Q9XWB3
+	  my $pep = $data[1];
+	  my $gene = substr("$data[0]",1);
+	    $gene2CE{$gene} = $pep;
+	    $CE2gene{$pep} .= "$gene ";
+	  }
 	}
       }
 
