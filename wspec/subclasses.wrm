@@ -5,7 +5,7 @@
 Class Gene
 Visible
 Is_a_subclass_of Locus
-Filter Gene
+Filter "Gene AND NOT CGC_unresolved"
 
 Class Other_Locus
 Visible
