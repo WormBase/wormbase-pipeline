@@ -3,25 +3,6 @@
 // this is in standard ace file format
 
 
-// ?Locus subclasses
-
-Class Gene
-Visible
-Is_a_subclass_of Locus
-Filter "Gene AND NOT CGC_unresolved"
-
-Class Other_Locus
-Visible
-Is_a_subclass_of Locus
-Filter "NOT Gene"
-
-Class Briggsae_loci
-Visible
-Is_a_subclass_of Locus
-Filter "Gene AND (Species = C*briggsae)"
-
-
-
 // ?Sequence subclasses
 
 Class Genome_Sequence
@@ -73,12 +54,12 @@ Filter "((Method = curated) OR (Method = provisional)) AND (Species = C*briggsae
 Class elegans_RNA_genes
 Visible
 Is_a_subclass_of Transcript
-Filter "(NOT Method = Coding_transcript) AND (Species = C*elegans)"
+Filter "(NOT Method = Coding_transcript) AND (NOT Method = history) AND (Species = C*elegans)"
 
 Class briggsae_RNA_genes
 Visible
 Is_a_subclass_of Transcript
-Filter "(NOT Method = Coding_transcript) AND (Species = C*briggsae)"
+Filter "(NOT Method = Coding_transcript) AND (NOT Method = history) AND (Species = C*briggsae)"
 
 Class Coding_transcripts
 Visible
@@ -171,10 +152,12 @@ Filter "Cell_Lineage"
 // First attempt to use new 'composite class' to merge together various
 // gene like classes for C. elegans genes
 
-//Class worm_genes
-//Visible
-//Composite_of CDS
-//Composite_of Transposon
+Class worm_genes
+Visible
+Composite_of elegans_CDS
+Composite_of elegans_pseudogenes
+Composite_of elegans_RNA_genes
+
 
 
 
