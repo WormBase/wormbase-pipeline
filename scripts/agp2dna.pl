@@ -11,7 +11,7 @@
 # Usage : agp2dna.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-12-01 11:54:25 $
+# Last edited on: $Date: 2003-12-03 13:28:22 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -66,7 +66,7 @@ if($test && $quicktest){
 # Set up top level base directory which is different if in test mode
 # Make all other directories relative to this
 my $basedir   = "/wormsrv2";
-$basedir      = glob"(~wormpub")."/TEST_BUILD" if ($test); 
+$basedir      = glob("~wormpub")."/TEST_BUILD" if ($test); 
 my $dnadir    = "$basedir/autoace/CHROMOSOMES";
 my $logdir    = "$basedir/autoace/yellow_brick_road";
 
