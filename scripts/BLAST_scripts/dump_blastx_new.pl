@@ -61,7 +61,7 @@ my $searchspace = 10000000;
 
 # subroutine to get the current time...
 sub now {
-    return sprintf ("%04d-%02d-%02d %02d:%02d:%02d",
+  return sprintf ("%04d-%02d-%02d %02d:%02d:%02d",
                      sub {($_[5]+1900, $_[4]+1, $_[3], $_[2], $_[1], $_[0])}->(localtime));
 }
 
@@ -244,7 +244,7 @@ while (my @row = $sth->fetchrow_array) {
         elsif ($1 =~ /slimswissprot/) {$org = "slimSwissProt";}
         elsif ($1 =~ /slimtrembl/)    {$org = "slimTrEMBL";}
 	elsif ($1 =~ /human/)         {$org = "human";}
-	elsif ($1 =~ /brigpep/)      {$org = "briggsae";}
+	elsif ($1 =~ /brigpep/)       {$org = "briggsae";}
         $analysis2org{$row[0]} = $org;
     }
 }
@@ -308,90 +308,90 @@ else {
 }
 my $ref = $sth_c->fetchall_arrayref;
 foreach my $aref (@$ref) {
-    # get sequence info
-    my ($internal_id, $id, $length, $version) = @$aref;
-    my $fragment_number = (int($length/50))+1;
-    # process id's from ensembl names
-    if ($id =~ /^(.+)\.[^\.]+\.[^\.]+\.[^\.]+/) {
-        $id = $1;
-    }
-    my $name;
-    # map accession 2 name
-    unless ($map) {
-        if (exists $accession2name{$id}) {
-            $name = $accession2name{$id};
-            print LOG "\n\tprocessing $name $id $version ($internal_id) of length $length , $fragment_number 50bp fragments [".&now."]\n";
-        }
-        else {
-	    print LOG "\nno mapping of accession $id to clone name -> skip it\n\n";
-            next;
-        }
+  # get sequence info
+  my ($internal_id, $id, $length, $version) = @$aref;
+  my $fragment_number = (int($length/50))+1;
+  # process id's from ensembl names
+  if ($id =~ /^(.+)\.[^\.]+\.[^\.]+\.[^\.]+/) {
+    $id = $1;
+  }
+  my $name;
+  # map accession 2 name
+  unless ($map) {
+    if (exists $accession2name{$id}) {
+      $name = $accession2name{$id};
+      print LOG "\n\tprocessing $name $id $version ($internal_id) of length $length , $fragment_number 50bp fragments [".&now."]\n";
     }
     else {
-        $name = $id;
-        print LOG "\n\tprocessing $name $version ($internal_id) of length $length , $fragment_number 50bp fragments [".&now."]\n";
+      print LOG "\nno mapping of accession $id to clone name -> skip it\n\n";
+      next;
     }
-    # check that we have the current version
- #   if ($opt_a) {
-        if ($version < $accession2version{$id}) {
-            print LOG "\nold version ($version) of $id, current one is $accession2version{$id} -> skip it\n\n";
-            next;
- #       }
+  }
+  else {
+    $name = $id;
+    print LOG "\n\tprocessing $name $version ($internal_id) of length $length , $fragment_number 50bp fragments [".&now."]\n";
+  }
+  # check that we have the current version
+  #   if ($opt_a) {
+  if ($version < $accession2version{$id}) {
+    print LOG "\nold version ($version) of $id, current one is $accession2version{$id} -> skip it\n\n";
+    next;
+    #       }
+  }
+  # %hsp:      stores all mysql column ref's keyed by org, hid and feature_id
+  # %accepted: stores all accepted hsp's, keyed by org, hid and feature_id
+  # %sum:      stores all hsp's that are part of the best sum statistics, keyed by org, hid and feature_id
+  my %accepted;
+  my %hsp;
+  my %strand;
+  my %sum;
+  my %min_sum;    
+  # feature table query
+  $sth_f->execute ($internal_id);
+  my $ref = $sth_f->fetchall_arrayref;
+  my %count;
+  # loop over all returned hsp columns
+  # (feature_id , analysis , seq_start, seq_end, hid, hstart, hend, score, evalue, strand, cigar)
+  foreach my $aref (@$ref) {
+    # check that analysis2org mapping exists
+    my $org;
+    unless ($org = $analysis2org{$aref->[1]}) {
+      next;
     }
-    # %hsp:      stores all mysql column ref's keyed by org, hid and feature_id
-    # %accepted: stores all accepted hsp's, keyed by org, hid and feature_id
-    # %sum:      stores all hsp's that are part of the best sum statistics, keyed by org, hid and feature_id
-    my %accepted;
-    my %hsp;
-    my %strand;
-    my %sum;
-    my %min_sum;    
-    # feature table query
-    $sth_f->execute ($internal_id);
-    my $ref = $sth_f->fetchall_arrayref;
-    my %count;
-    # loop over all returned hsp columns
-    # (feature_id , analysis , seq_start, seq_end, hid, hstart, hend, score, evalue, strand, cigar)
-    foreach my $aref (@$ref) {
-        # check that analysis2org mapping exists
-        my $org;
-        unless ($org = $analysis2org{$aref->[1]}) {
-            next;
-	}
-        # worm: change gene name to protein id (e.g. AH6.2 to CE01456), and reject self-matches
-        if ($org eq "worm") {
-	  my $gene_name = $aref->[4];
-	  $gene_name =~ /^(\S+)\.\S+$/;
-	  my $parent = $1;
-	  my $match_start = $cos{$name}->[0]+$aref->[2]+1;
-	  my $match_end = $cos{$name}->[0]+$aref->[3]+1;
-	  
-	  #                print $aref->[0]." $gene_name $parent  ".$cos{$parent}->[0]." $match_start  $match_end \n";
-	  
-	  if (($match_start > $cds{$gene_name}->[0] && $match_start < $cds{$gene_name}->[1]) || ($match_end > $cds{$gene_name}->[0] && $match_end < $cds{$gene_name}->[1])) {
-	    
-	    #                    print LOG "reject self match: ".$aref->[0]." $gene_name $parent\n";
-	    
-	    next;
-	  }
-	  
-	  unless ($aref->[4] = $name2id{$aref->[4]}) {
-	    die "no mapping of protein name ".$aref->[4]." to id";
-	  }
-	}
-        # store the hsp's that are part of the best sum statistics (strand independent)
-        unless (exists $min_sum{$org}->{$aref->[4]}) {
-            $min_sum{$org}->{$aref->[4]} = 1;
-	}
-        if ($aref->[8] < $min_sum{$org}->{$aref->[4]}) {
-            $sum{$org}->{$aref->[4]} = ();
-            $sum{$org}->{$aref->[4]}->{$aref->[0]} = $aref->[2];
-            $min_sum{$org}->{$aref->[4]} = $aref->[8];
-	}
-        elsif ($aref->[8] == $min_sum{$org}->{$aref->[4]}) {
-            $sum{$org}->{$aref->[4]}->{$aref->[0]} = $aref->[2];
-	}
-
+    # worm: change gene name to protein id (e.g. AH6.2 to CE01456), and reject self-matches
+    if ($org eq "worm") {
+      my $gene_name = $aref->[4];
+      $gene_name =~ /^(\S+)\.\S+$/;
+      my $parent = $1;
+      my $match_start = $cos{$name}->[0]+$aref->[2]+1;
+      my $match_end = $cos{$name}->[0]+$aref->[3]+1;
+      
+      #                print $aref->[0]." $gene_name $parent  ".$cos{$parent}->[0]." $match_start  $match_end \n";
+      
+      if (($match_start > $cds{$gene_name}->[0] && $match_start < $cds{$gene_name}->[1]) || ($match_end > $cds{$gene_name}->[0] && $match_end < $cds{$gene_name}->[1])) {
+	
+	#                    print LOG "reject self match: ".$aref->[0]." $gene_name $parent\n";
+	
+	next;
+      }
+      
+      unless ($aref->[4] = $name2id{$aref->[4]}) {
+	die "no mapping of protein name ".$aref->[4]." to id";
+      }
+    }
+    # store the hsp's that are part of the best sum statistics (strand independent)
+    unless (exists $min_sum{$org}->{$aref->[4]}) {
+      $min_sum{$org}->{$aref->[4]} = 1;
+    }
+    if ($aref->[8] < $min_sum{$org}->{$aref->[4]}) {
+      $sum{$org}->{$aref->[4]} = ();
+      $sum{$org}->{$aref->[4]}->{$aref->[0]} = $aref->[2];
+      $min_sum{$org}->{$aref->[4]} = $aref->[8];
+    }
+    elsif ($aref->[8] == $min_sum{$org}->{$aref->[4]}) {
+      $sum{$org}->{$aref->[4]}->{$aref->[0]} = $aref->[2];
+    }
+    
 #        foreach my $org (keys %sum) {
 #            foreach my $hid (keys %{$sum{$org}}) {
 #                foreach my $fid (keys %{$sum{$org}->{$hid}}) {
@@ -399,242 +399,251 @@ foreach my $aref (@$ref) {
 #		}
 #	    }
 #	}
-
-        # recalculate the evalue, not using sum statistics
-        $aref->[8] = ($searchspace*$length)*2**(-($aref->[7]));
-        #
-        $count{$aref->[1]}++;
-        # set evalue to -log(10)            
-        if ($aref->[8] != 0) {
-            $aref->[8] = sprintf ("%.3f", -(log($aref->[8]))/log(10));
-        }
-        else {
-            $aref->[8] = 999.999;
-        }
-        # populate %hsp
-        $hsp{$org}->{$aref->[4]}->{$aref->[0]} = $aref;
-        # populate %plus or %minus, splitting hsp' into intervals
-        my $first_fragment = (int($aref->[2]/50));
-        my $last_fragment = (int($aref->[3]/50));
-        for (my $n = $first_fragment ; $n <= $last_fragment ; $n++) {
-            if ($aref->[9] > 0) {
-                push (@{$strand{plus}->[$n]}, $aref);
-   	    }
-            elsif ($aref->[9] < 0) {
-                push (@{$strand{minus}->[$n]}, $aref);
-	    }
-	    else {
-                die "wrong strand assignment ".$aref->[9]." for feature ".$aref->[0];
-	    }
-	}
+    
+    # recalculate the evalue, not using sum statistics
+    $aref->[8] = ($searchspace*$length)*2**(-($aref->[7]));
+    #
+    $count{$aref->[1]}++;
+    # set evalue to -log(10)            
+    if ($aref->[8] != 0) {
+      $aref->[8] = sprintf ("%.3f", -(log($aref->[8]))/log(10));
     }
-    foreach (sort {$a <=> $b} keys %count) {
-        print LOG "\t\t\t$analysis2org{$_} analysis $_ ($count{$_} HSP's)\n";
+    else {
+      $aref->[8] = 999.999;
     }
-    # make the feature table querie again, this time per 10kb fragments
-    # (this speeds up the analysis of every 50 bp interval quite a lot)
-    my @strands = qw(plus minus);
-    foreach my $strand (@strands) {
-        print LOG "\t\t$strand strand\n\t\t\t";
-        for (my $n = 0 ; $n < $fragment_number ; $n++) {
-            print LOG "." if $n % 100 == 0;
+    # populate %hsp
+    $hsp{$org}->{$aref->[4]}->{$aref->[0]} = $aref;
+    # populate %plus or %minus, splitting hsp' into intervals
+    my $first_fragment = (int($aref->[2]/50));
+    my $last_fragment = (int($aref->[3]/50));
+    for (my $n = $first_fragment ; $n <= $last_fragment ; $n++) {
+      if ($aref->[9] > 0) {
+	push (@{$strand{plus}->[$n]}, $aref);
+      }
+      elsif ($aref->[9] < 0) {
+	push (@{$strand{minus}->[$n]}, $aref);
+      }
+      else {
+	die "wrong strand assignment ".$aref->[9]." for feature ".$aref->[0];
+      }
+    }
+  }
+  foreach (sort {$a <=> $b} keys %count) {
+    print LOG "\t\t\t$analysis2org{$_} analysis $_ ($count{$_} HSP's)\n";
+  }
+  # make the feature table querie again, this time per 10kb fragments
+  # (this speeds up the analysis of every 50 bp interval quite a lot)
+  my @strands = qw(plus minus);
+  foreach my $strand (@strands) {
+    print LOG "\t\t$strand strand\n\t\t\t";
+    for (my $n = 0 ; $n < $fragment_number ; $n++) {
+      print LOG "." if $n % 100 == 0;
 #            print LOG "$n of $fragment_number\n";
-            next unless $strand{$strand}->[$n];
+      next unless $strand{$strand}->[$n];
 #            print LOG "\t$n exists\n";
-            my $worm_switch = 0;
-            my @worm_tmp;
-            my %accept_per_org;
-            my $max_ev = 0;
-            # loop over all hsp columns, ordered by increasing evalue,
-            # parsing the results
-            LOOP:foreach my $aref (sort {$b->[8] <=> $a->[8]} @{$strand{$strand}->[$n]}) {
-                my ($fid , $analysis, $start, $end, $hid, $hstart, $hend, $score, $ev, $strand, $cigar) = @$aref;
+      my $worm_switch = 0;
+      my @worm_tmp;
+      my %accept_per_org;
+      # initialise hash to zero
+      $accept_per_org{"worm"}  = 0;
+      $accept_per_org{"fly"}   = 0;
+      $accept_per_org{"human"} = 0;
+      $accept_per_org{"yeast"} = 0;
+      $accept_per_org{"briggsae"} = 0;
+      $accept_per_org{"slimSwissProt"} = 0;
+      $accept_per_org{"slimTrEMBL"} = 0;
 
+      my $max_ev = 0;
+      # loop over all hsp columns, ordered by increasing evalue,
+      # parsing the results
+    LOOP:foreach my $aref (sort {$b->[8] <=> $a->[8]} @{$strand{$strand}->[$n]}) {
+      my ($fid , $analysis, $start, $end, $hid, $hstart, $hend, $score, $ev, $strand, $cigar) = @$aref;
+      
 #                print LOG "N: $n I: $i  $hid  $analysis  $analysis2org{$analysis}  $ev\n";
-
-                next LOOP unless $ev > $e_threshold;
-                my $org = $analysis2org{$analysis};
-                # worm
-                if ($org eq "worm") {
-                    # if there are no better matches from others
-                    if ($max_ev == 0) {
-                        if ($accept_per_org{$org} >= 5) {
-
+      
+      next LOOP unless $ev > $e_threshold;
+      my $org = $analysis2org{$analysis};
+      # worm
+      if ($org eq "worm") {
+	# if there are no better matches from others
+	if ($max_ev == 0) {
+	  if ($accept_per_org{$org} >= 5) {
+	    
 #                            print LOG "\t $i failed $hid $analysis $org} $accept_per_org{$org}\n";
-
-                            next LOOP;
- 			}
-                        else {
-                            push (@worm_tmp , [$fid, $hid, $ev]);
-                            $worm_switch = 1;
-                            $accept_per_org{$org}++;
-
+	    
+	    next LOOP;
+	  }
+	  else {
+	    push (@worm_tmp , [$fid, $hid, $ev]);
+	    $worm_switch = 1;
+	    $accept_per_org{$org}++;
+	    
 #                            print LOG "\t $i accept as best $hid count $ev  $analysis $org} $accept_per_org{$org}\n";
-
-			}
-		    }
-                    # if the best match is from others , and worm is within 75%
-                    elsif (($max_ev != 0) && ($ev > 0.75*$max_ev) && ($worm_switch == 0)) {
-                        if ($accept_per_org{$org} >= 2) {
-
+	    
+	  }
+	}
+	# if the best match is from others , and worm is within 75%
+	elsif (($max_ev != 0) && ($ev > 0.75*$max_ev) && ($worm_switch == 0)) {
+	  if ($accept_per_org{$org} >= 2) {
+	    
 #                            print LOG "\t $i failed $hid count $ev  $analysis $org} $accept_per_org{$org}\n";
-
-                            next LOOP;
-			}
-                        else {
-                            $accepted{$org}->{$hid}->{$fid} = 1;
-                            $accept_per_org{$org}++;
-
+	    
+	    next LOOP;
+	  }
+	  else {
+	    $accepted{$org}->{$hid}->{$fid} = 1;
+	    $accept_per_org{$org}++;
+	    
 #                            print LOG "\t $i accept $hid count $ev  $analysis $org} $accept_per_org{$org}\n";
-
-			}
-                    }
-		}
-                # others
-                else {
-                    if ($ev > $max_ev) {
-                        $max_ev = $ev;
-                        if ($accept_per_org{$org} >= 2) {
-
+	    
+	  }
+	}
+      }
+      # others
+      else {
+	if ($ev > $max_ev) {
+	  $max_ev = $ev;
+	  if ($accept_per_org{$org} >= 2) {
+	    
 #                            print LOG "\t $i failed $hid count $ev  $analysis $org} $accept_per_org{$org}\n";
-
-                            next LOOP;
-			}
-                        else {
-                            $accepted{$org}->{$hid}->{$fid} = 1;
-                            $accept_per_org{$org}++;
-
+	    
+	    next LOOP;
+	  }
+	  else {
+	    $accepted{$org}->{$hid}->{$fid} = 1;
+	    $accept_per_org{$org}++;
+	    
 #                            print LOG "\t $i accept $hid count $ev  $analysis $org} $accept_per_org{$org}\n";
-
-			}
-	            }
-          	    elsif ($ev > 0.75*$max_ev) {
-                        if ($accept_per_org{$org} >= 2) {
-
+	    
+	  }
+	}
+	elsif ($ev > 0.75*$max_ev) {
+	  if ($accept_per_org{$org} >= 2) {
+	    
 #                            print LOG "\t $i failed $hid count $ev  $analysis $org} $accept_per_org{$org}\n";
-
-                            next LOOP;
-			}
-                        else {
-                            $accepted{$org}->{$hid}->{$fid} = 1;
-                            $accept_per_org{$org}++;
-
+	    
+	    next LOOP;
+	  }
+	  else {
+	    $accepted{$org}->{$hid}->{$fid} = 1;
+	    $accept_per_org{$org}++;
+	    
 #                            print LOG "\t $i accept $hid count $ev  $analysis $org} $accept_per_org{$org}\n";
-
-			}
-		    }
-                    else {
-			last LOOP;
-		    }
-		}
-
-	    }
-            # go through the worm again:
-            if ($max_ev == 0) {
-                # there were no matches from others at all, keep within 75% of best worm match
-                foreach my $aref (@worm_tmp) {
-                    if ($aref->[2] > 0.75*$worm_tmp[1]->[2]) {
-                        $accepted{worm}->{$aref->[1]}->{$aref->[0]} = 1;
-
+	    
+	  }
+	}
+	else {
+	  last LOOP;
+	}
+      }
+      
+    }
+      # go through the worm again:
+      if ($max_ev == 0) {
+	# there were no matches from others at all, keep within 75% of best worm match
+	foreach my $aref (@worm_tmp) {
+	  if ($aref->[2] > 0.75*$worm_tmp[1]->[2]) {
+	    $accepted{worm}->{$aref->[1]}->{$aref->[0]} = 1;
+	    
 #                        print LOG "\t ACCEPT finally ".$aref->[0]." ".$aref->[1]."\n"; 
-
-		    }
-		}
-	    }
-            else {
-                # keep all
-                foreach my $aref (@worm_tmp) {
-                    $accepted{worm}->{$aref->[1]}->{$aref->[0]} = 1;
-
+	    
+	  }
+	}
+      }
+      else {
+	# keep all
+	foreach my $aref (@worm_tmp) {
+	  $accepted{worm}->{$aref->[1]}->{$aref->[0]} = 1;
+	  
 #                    print LOG "\t ACCEPT finally all ".$aref->[0]." ".$aref->[1]."\n"; 
-
+	  
  		}
-	    }
+      }
+    }
+    print LOG "\n";
+  }
+  # loop over all the matches, printing the accepted ones to an ACE file
+  print LOG "\t\toutput\n";
+  if ($worm) {
+    @species = qw(worm);
+  }
+  foreach my $org (@species) {
+    # write the sequence info to the text file
+    print ACE "\n\n";
+    print ACE "Sequence : \"$name\"\n";
+    print ACE "Homol_data \"$name:wublastx_$org\" 1 $length\n";
+    print ACE "\n";
+    print ACE "Homol_data : \"$name:wublastx_$org\"\n";
+    my $count_target = 0;
+    my $count_accepted = 0;
+    my $count_hsp = 0;
+  TARGET:foreach my $target (keys %{$hsp{$org}}) {
+    $count_target++;
+    my %written;
+    unless (exists $accepted{$org}->{$target}) {
+      next TARGET;
+    }
+    $count_accepted++;
+  FID:foreach my $fid (sort { $hsp{$org}->{$target}->{$a}->[2] <=> $hsp{$org}->{$target}->{$b}->[2] } keys %{$hsp{$org}->{$target}}) {
+    unless (exists $accepted{$org}->{$target}->{$fid}) {
+      next FID;
+    }
+    if (exists $written{$fid}) {
+      next FID;
+    }
+    my @write;
+    my ($feature_id , $analysis, $start, $end, $hid, $hstart, $hend, $score, $e, $hsp_strand, $cigar) = @{$hsp{$org}->{$target}->{$fid}};
+    if (exists $sum{$org}->{$target}->{$fid}) {
+      foreach my $fid (keys %{$sum{$org}->{$target}}) {
+	push (@write, $hsp{$org}->{$target}->{$fid});
+	$count_hsp++;
+	$written{$fid} = 1;
+      }
+    }
+    else {
+      push (@write, $hsp{$org}->{$target}->{$fid});
+      $count_hsp++;
+      $written{$fid} = 1;
+    }
+    foreach my $aref (sort { $a->[2] <=> $b->[2] } @write) {
+      my ($fid , $analysis, $start, $end, $hid, $hstart, $hend, $score, $e, $hsp_strand, $cigar) = @$aref;
+      # check strand
+      if ($hsp_strand < 0) {
+	my $tmp = $end;
+	$end = $start;
+	$start = $tmp;
+      }
+      # write the HSP info to the ACE file
+      my @cigars = split (/:/, $cigar);
+      my $prefix;
+      if ("$org" eq "human") {
+	$prefix = &getPrefix($hid);
+      }
+      else {
+	$prefix = ${org2acedb{$org}};
+      }
+      if (@cigars == 1) {
+	print ACE "Pep_homol\t\"$prefix$hid\" \"wublastx_$org\" ";
+	print ACE "$e $start $end $hstart $hend\n";
+      }
+      else {
+	print ACE "Pep_homol\t\"$prefix$hid\" \"wublastx_$org\" ";
+	print ACE "$e $start $end $hstart $hend ";
+	print ACE "align $start $hstart\n";
+	shift @cigars;
+	foreach my $string (@cigars) {
+	  my ($coor, $hcoor) = split (/,/, $string);
+	  print ACE "Pep_homol\t\"$prefix$hid\" \"wublastx_$org\" ";
+	  print ACE "$e $start $end $hstart $hend ";
+	  print ACE "align $coor $hcoor\n";
 	}
-        print LOG "\n";
+      }
     }
-    # loop over all the matches, printing the accepted ones to an ACE file
-    print LOG "\t\toutput\n";
-    if ($worm) {
-        @species = qw(worm);
-    }
-    foreach my $org (@species) {
-        # write the sequence info to the text file
-        print ACE "\n\n";
-        print ACE "Sequence : \"$name\"\n";
-        print ACE "Homol_data \"$name:wublastx_$org\" 1 $length\n";
-        print ACE "\n";
-        print ACE "Homol_data : \"$name:wublastx_$org\"\n";
-        my $count_target = 0;
-        my $count_accepted = 0;
-        my $count_hsp = 0;
-        TARGET:foreach my $target (keys %{$hsp{$org}}) {
-            $count_target++;
-            my %written;
-            unless (exists $accepted{$org}->{$target}) {
-                next TARGET;
-            }
-            $count_accepted++;
-            FID:foreach my $fid (sort { $hsp{$org}->{$target}->{$a}->[2] <=> $hsp{$org}->{$target}->{$b}->[2] } keys %{$hsp{$org}->{$target}}) {
-                unless (exists $accepted{$org}->{$target}->{$fid}) {
-                    next FID;
-                }
-                if (exists $written{$fid}) {
-                    next FID;
-		}
-                my @write;
-                my ($feature_id , $analysis, $start, $end, $hid, $hstart, $hend, $score, $e, $hsp_strand, $cigar) = @{$hsp{$org}->{$target}->{$fid}};
-                if (exists $sum{$org}->{$target}->{$fid}) {
-                    foreach my $fid (keys %{$sum{$org}->{$target}}) {
-                        push (@write, $hsp{$org}->{$target}->{$fid});
-                        $count_hsp++;
-                        $written{$fid} = 1;
-		    }
-		}
-                else {
-                    push (@write, $hsp{$org}->{$target}->{$fid});
-                    $count_hsp++;
-                    $written{$fid} = 1;
-		}
-                foreach my $aref (sort { $a->[2] <=> $b->[2] } @write) {
-                    my ($fid , $analysis, $start, $end, $hid, $hstart, $hend, $score, $e, $hsp_strand, $cigar) = @$aref;
-                    # check strand
-                    if ($hsp_strand < 0) {
-                        my $tmp = $end;
-                        $end = $start;
-                        $start = $tmp;
-                    }
-                    # write the HSP info to the ACE file
-                    my @cigars = split (/:/, $cigar);
-		    my $prefix;
-		    if ("$org" eq "human") {
-		      $prefix = &getPrefix($hid);
-		    }
-		    else {
-		      $prefix = ${org2acedb{$org}};
-		  }
-                    if (@cigars == 1) {
-                        print ACE "Pep_homol\t\"$prefix$hid\" \"wublastx_$org\" ";
-                        print ACE "$e $start $end $hstart $hend\n";
-                    }
-                    else {
-                        print ACE "Pep_homol\t\"$prefix$hid\" \"wublastx_$org\" ";
-                        print ACE "$e $start $end $hstart $hend ";
-                        print ACE "align $start $hstart\n";
-                        shift @cigars;
-                        foreach my $string (@cigars) {
-                            my ($coor, $hcoor) = split (/,/, $string);
-                            print ACE "Pep_homol\t\"$prefix$hid\" \"wublastx_$org\" ";
-                            print ACE "$e $start $end $hstart $hend ";
-                            print ACE "align $coor $hcoor\n";
-			}
-		    }
-		}
-
-   	    }
-	}
-        print LOG "\t\t\t$org -> $count_target targets, $count_accepted accepted ($count_hsp HSP's)\n";
-    }
+    
+  }
+  }
+    print LOG "\t\t\t$org -> $count_target targets, $count_accepted accepted ($count_hsp HSP's)\n";
+  }
 }
 
 # close the mysql database and the filehandles
