@@ -6,8 +6,8 @@
 
 # Author: Chao-Kung Chen
 
-# Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2004-03-19 11:59:03 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2005-02-14 14:46:17 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'}; 
@@ -85,7 +85,7 @@ if ($infile){
     $seq =~ s/\..+//;
     
     
-    print ACE "\n\nAllele : \"$Allele\"\n";
+    print ACE "\n\nVariation : \"$Allele\"\n";
     print ACE "Sequence \"$seq\"\n";
     print ACE "Mutagen \"$mutagen\"\n";
     
@@ -95,7 +95,7 @@ if ($infile){
 
     print ACE "Missense\n" if $MU_mis ne "x";
 
-    print ACE "Predicted_gene \"$cds\"\n";
+    print ACE "Predicted_CDS \"$cds\"\n";
     print ACE "Species \"Caenorhabditis elegans\"\n";
     
     $MU_aa = uc($MU_aa) if length($MU_aa) == 1;
