@@ -4,7 +4,7 @@
 #
 # by ag3 [991221]
 #
-# Last updated on: $Date: 2003-11-18 17:20:26 $
+# Last updated on: $Date: 2003-11-20 09:42:49 $
 # Last updated by: $Author: ar2 $
 
 
@@ -415,7 +415,7 @@ sub create_log_files{
 
   # Create history logfile for script activity analysis
   my $ws2 = 1;
-  $ws2 = 0 if ( -e /wormsrv2 ); # cant always see wormsrv2
+  $ws2 = 0 if ( -e "/wormsrv2" ); # cant always see wormsrv2
   $0 =~ m/\/*([^\/]+)$/; 
   system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`") unless ($debug or $ws2 == 0);
 
