@@ -7,7 +7,7 @@
 # A script to find (and classify) potentially short, spurious genes (default = <50 aa)
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-10-30 10:02:46 $     
+# Last updated on: $Date: 2003-10-30 15:39:12 $     
 
 
 use strict;
@@ -21,9 +21,10 @@ use Getopt::Long;
 # misc variables             #
 ##############################
 
-my $maintainers = "All";  # who will receive log file
+my $maintainers  = "All";           # who will receive log file
 my $ws_version   = &get_wormbase_version_name;
-
+my $dir          = "/wormsrv2/tmp"; # default output location
+my $file         = "short_spurious_genes.$ws_version.csv"; # initial output file
 
 
 ##############################
@@ -36,13 +37,15 @@ my $verbose;             # turn on extra output
 my $debug;               # For sending output to just one person
 my $database;            # which database to use?
 my $cutoff;              # what length of gene should you use as the cutoff?
+my $html;                # Also produce html files for website?
 
 GetOptions ("database=s" => \$database,
             "verbose"    => \$verbose,
 	    "cutoff=i"   => \$cutoff,
             "debug=s"    => \$debug,
             "help"       => \$help,
-	    "build"      => \$build
+	    "build"      => \$build,
+	    "html"       => \$html
             );
 
 
@@ -61,6 +64,10 @@ if(!defined($cutoff)){
   $cutoff = 50;        
 }
 
+# specify different path if using build mode
+$dir = "/wormsrv2/autoace/CHECKS" if ($build);
+
+
 
 #####################################################################
 #
@@ -69,26 +76,14 @@ if(!defined($cutoff)){
 #####################################################################
 
 my $log = Log_files->make_build_log();  
-$log->write_to("Looking for spurious genes shorter or equal to $cutoff amino acids in length\n");
-print "Looking for spurious genes shorter or equal to $cutoff amino acids in length\n" if ($verbose);
+$log->write_to("Looking for potentially spurious genes shorter or equal to $cutoff amino acids in length\n");
+print "Looking for potentially spurious genes shorter or equal to $cutoff amino acids in length\n" if ($verbose);
 
-if($build){
-   $log->write_to("Output file will be written to /wormsrv2/autoace/CHECKS/\n");
-}
-else{
-   $log->write_to("Output file will be written to /wormsrv2/tmp/\n");
-}
+$log->write_to("Output file(s) will be written to $dir\n");
 
 
-
-
-# choice of output file location depends on if you are running this as part of build
-if($build){
-  open(OUT,">/wormsrv2/autoace/CHECKS/short_spurious_genes.$ws_version.csv") || die "Can't open output file\n";
-}
-else{
-  open(OUT,">/wormsrv2/tmp/short_spurious_genes.$ws_version.csv") || die "Can't open output file\n";
-}
+# open initial output file
+open(OUT,">$dir/$file") || die "Can't open output file\n";
 
 
 # open a database connection and grab list of genes
@@ -96,6 +91,8 @@ my $db = Ace->connect(-path  =>  "$database")  || die "Cannot open $database",Ac
 my @genes = $db->fetch(-class => "Predicted_gene");
 
 
+# used for testing purposes
+my $counter = 0;
 
 
 ################################################
@@ -105,6 +102,9 @@ my @genes = $db->fetch(-class => "Predicted_gene");
 ################################################
 
 foreach my $gene (@genes){
+
+  # when debugging can reduce this if you want less output to speed up script
+  last if ($counter > 50000);  $counter++;
   
   # get protein information, and make sure that there is a protein object!
   my ($protein) = $gene->at("Visible.Corresponding_protein");
@@ -210,13 +210,87 @@ foreach my $gene (@genes){
   $protein->DESTROY();
 }
 
+close(OUT);
+$db->close;
+
+
+
+
+
+############################################################
+#
+# Process main output file into files for web (if required)
+#
+############################################################
+
+if($html){
+  
+  $log->write_to("Producing html file\n");
+  print "Producing html file\n" if ($verbose);
+
+  # sort output file by various factors using sort command
+  my $status = system("sort -t, -k 2,2 -k 1,1 -k 5,5r -k 4n,4 $dir/$file -o $dir/$file.tmp");
+  $log->write_to("ERROR: Couldn't run sort command") if ($status != 0);
+  
+  open(IN,"<$dir/$file.tmp")      || die "Couldn't open $dir/$file.tmp for reading";
+  open(OUT, ">$dir/$file.html")   || die "Couldn't write to $dir/$file.html";
+  
+  # set once to be able to flag when you reach RW part of output file
+  my $lab_flag = "HX";
+
+  print OUT "<TR bgcolor=lightgrey>\n";
+  print OUT "<TD colspan=6 align=center><B> Sanger genes </B></TD>\n";
+  print OUT "</TR>\n";
+
+  while(<IN>){
+    my @line = split(/,/);
+    my $evidence = $line[0];
+    my $lab      = $line[1];
+    my $gene     = $line[2];
+    my $length   = $line[3];
+    my $status   = $line[4];
+    my $rnai     = $line[5];
+    my $pcr      = $line[6];
+
+    # drop evidence prefix for web files, just show number
+    $evidence =~ s/EVIDENCE //;
+
+
+    # print web output
+    if(($lab_flag eq "HX") && ($lab eq "RW")){
+      # now set flag to RW so this only get executed once
+      $lab_flag = "RW";
+      print OUT "<TR bgcolor=lightgrey>\n";
+      print OUT "<TD colspan=6 align=center><B> St. Louis genes </B></TD>\n";
+      print OUT "</TR>\n";
+    }
+
+    print OUT "<TR bgcolor=lightblue>\n";
+    print OUT "<TD align=center><B>$evidence</B></TD>\n";
+    print OUT "<TD align=center><a href=\"http://dev.wormbase.org/db/gene/gene?name=${gene};class=Sequence\">$gene</a></TD>\n";
+    print OUT "<TD align=center>$length</TD>\n";
+    print OUT "<TD align=center>$status</TD>\n";
+    print OUT "<TD align=center>$rnai</TD>\n";    
+    print OUT "<TD align=center>$pcr</TD>\n";
+    print OUT "</TR>\n";
+
+  }
+  close(IN);
+  close(OUT);
+
+  # remove temp file
+  $status = system("rm $dir/$file.tmp");
+  $log->write_to("ERROR: Couldn't remove temp file") if ($status != 0);
+
+}
+
+
+
 
 ################################
 # Tidy up and exit             #
 ################################
 
-close(OUT);
-$db->close;
 # only mail if running as part of build
 $log->mail("$maintainers") if ($build);
 exit;
@@ -265,7 +339,7 @@ Database will be expected to have a valid 'Predicted_gene' subclass
 
 =back
 
-=head1 OPTIONAL arguments: -cutoff, -build, -debug, -verbose, -help
+=head1 OPTIONAL arguments: -cutoff, -build, -debug, -verbose, -help, -html
 
 =over 4
 
@@ -280,6 +354,12 @@ look at every gene equal to or less than the specified length
 If specified will assume that this script is being run as part of the build,
 the only differences being that the output file will be placed in /wormsrv2/autoace/CHECKS
 rather than in /wormsrv2/tmp and the log file will be emailed to everyone
+
+
+=item -html
+
+Additionally produce a html file that can be added to the website as part of the 
+data consistency checks page
 
 =item -debug <user>
 
