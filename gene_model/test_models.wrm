@@ -279,6 +279,9 @@
                 Remark ?Text #Evidence
 
 
+// new slimmed down Locus class.  Will initially just store Polymorphisms and gene clusters.
+// krb Feb 2004
+
 ?Locus  Evidence #Evidence
 	Name    Other_name ?Gene_name #Evidence // unidirectional link
 	Species UNIQUE ?Species // added by krb 15/02/02
@@ -290,12 +293,6 @@
 				Transposon_insertion  Text
 				Detection_method Text
 	Map    UNIQUE ?Map XREF Locus #Map_position
-
-//checked to here
-
-	Interpolated_map_position UNIQUE ?Map UNIQUE Float // new for updated CDS-based interpolated map positions [krb 030502]
-        Hide_under ?Locus XREF Representative_for
-        Representative_for ?Locus XREF Hide_under
 	Positive Inside_rearr ?Rearrangement XREF Locus_inside ?Author
 		 Positive_clone ?Clone XREF Positive_locus #Evidence
 	Negative Outside_rearr ?Rearrangement XREF Locus_outside ?Author
@@ -305,16 +302,8 @@
                         Multi_point ?Multi_pt_data
 			Pos_neg_data ?Pos_neg_data
         Allele  ?Allele XREF Gene #Evidence
-        Strain  ?Strain XREF Gene #Evidence
 	Laboratory ?Laboratory
-        Reference ?Paper XREF Locus
-	Expr_pattern ?Expr_pattern XREF Locus
-        Drives_Transgene ?Transgene XREF Driven_by_Locus	
-	Transgene_product ?Transgene XREF Locus
-	Rescued_by_Transgene ?Transgene XREF Rescue
-	GO_term ?GO_term XREF Locus ?GO_code #Evidence // Added by krb 020905
-	Microarray_results ?Microarray_results XREF Locus
-	Antibody ?Antibody XREF Locus // added [031120 krb]
+	Reference ?Paper XREF Locus
 	Remark ?Text #Evidence
 
 
