@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.44 2002-03-07 16:34:18 kj2 Exp $
+// CVS info:  $Id: models.wrm,v 1.45 2002-03-07 17:36:26 kj2 Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -33,6 +33,7 @@
 		 Sequence ?Sequence XREF Map
 		 Allele ?Allele XREF Map
                  Transgene  ?Transgene XREF Map //sdm added to display new gmaps 
+        EMBL_chromosome UNIQUE ?Text  // [020307 kj]
 
 #Map_position UNIQUE	Position UNIQUE Float #Map_error
 			Ends Left UNIQUE Float #Map_error
