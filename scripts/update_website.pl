@@ -40,7 +40,7 @@ my $release_date2    = &get_wormbase_release_date("short");
 my $WS_previous      = $WS_current - 1;
 my $WS_name          = &get_wormbase_version_name;
 my $WS_previous_name = "WS".$WS_previous;
-my $wormpep_version  = &get_wormpep_version;
+
 
 # file path info
 my $www_root         = "/nfs/WWW/htdocs/Projects/C_elegans";
@@ -361,7 +361,7 @@ sub create_wormpep_page{
 
 
   my ($wp_seq,$wp_let);
-  open (WP_1, "</wormsrv2/WORMPEP/wormpep$wormpep_version/wormpep_current.log") || die "Failed to open wormpep.log\n";
+  open (WP_1, "</wormsrv2/WORMPEP/wormpep$WS_current/wormpep_current.log") || die "Failed to open wormpep.log\n";
   while (<WP_1>) {
     if (/==\> (\S+) sequences totalling (\S+) letters/) {
       ($wp_seq,$wp_let) = ($1,$2);
@@ -372,7 +372,7 @@ sub create_wormpep_page{
   
   # get details from last wormpep log file
   my $wp_alt;
-  my @possible_logs = `ls -t /wormsrv2/logs/make_wormpep.$wormpep_version*`;
+  my @possible_logs = `ls -t /wormsrv2/logs/make_wormpep.${WS_current}*`;
   my $wormpeplog  = "$possible_logs[0]";
   open (WP_2, "<$wormpeplog") || die "Failed to open wormpep.log\n";
   while (<WP_2>) {
@@ -381,13 +381,13 @@ sub create_wormpep_page{
     }
   }
   close (WP_2);
-  print WORMPEP "<TR><TD>wormpep$wormpep_version</TD> <TD>$wp_seq</TD> <TD>$wp_let</TD> <TD>$wp_alt</TD> </TR>\n";
+  print WORMPEP "<TR><TD>wormpep${WS_current}</TD> <TD>$wp_seq</TD> <TD>$wp_let</TD> <TD>$wp_alt</TD> </TR>\n";
   print WORMPEP "</TABLE>\n";
   print WORMPEP "</P><PRE>\n";
   
 
   my (@changed, @lost, @new, @reappeared);
-  open (WP_3, "</wormsrv2/WORMPEP/wormpep$wormpep_version/wormpep.diff$wormpep_version") || die "Failed to open wormpep.history\n";
+  open (WP_3, "</wormsrv2/WORMPEP/wormpep${WS_current}/wormpep.diff${WS_current}") || die "Failed to open wormpep.history\n";
   while (<WP_3>) {
     (push (@changed,$_)) if (/changed:/);
     (push (@lost,$_)) if (/lost:/);
@@ -600,7 +600,7 @@ sub update_wormpep_pages{
   print LOG "Updating wormpep pages at $www_root/wormpep\n";
   
   # write a new paragraph for the index.shtml page        
-  open(LOGFILE,"</wormsrv2/WORMPEP/wormpep$wormpep_version/wormpep_current.log") || die "Couldn't open wormpep log file\n";
+  open(LOGFILE,"</wormsrv2/WORMPEP/wormpep${WS_current}/wormpep_current.log") || die "Couldn't open wormpep log file\n";
   my $text = <LOGFILE>;
   close(LOGFILE);
 
@@ -610,26 +610,26 @@ sub update_wormpep_pages{
   $count =~ s/.*==> (.*) sequences.*/$1/;
   $letters =~ s/.*sequences totalling (.*) letters/$1/;
   # calculate number of splice variants by looking for proteins ending in 'A' in wormpep.table file
-  my $alt_spliced = `cut -f 1 /wormsrv2/WORMPEP/wormpep$wormpep_version/wormpep.table$wormpep_version | sed 's/.*[0-9B-Z]\$//' | grep \".\"| wc -l`; 
+  my $alt_spliced = `cut -f 1 /wormsrv2/WORMPEP/wormpep${WS_current}/wormpep.table${WS_current} | sed 's/.*[0-9B-Z]\$//' | grep \".\"| wc -l`; 
   $alt_spliced =~ s/\s+//g;
 
   # create release_paragraph.shtml
   system("rm -f $www_root/wormpep/release_paragraph.shtml") && die "Couldn't remove old release_paragraph.shtml\n";
   open (PARAGRAPH, ">$www_root/wormpep/release_paragraph.shtml") || die "Can't create the file: $www_root/wormpep/release_paragraph.shtml\n\n";
-  print PARAGRAPH "The current Wormpep database, wormpep$wormpep_version (released $release_date), contains $letters residues in $count protein sequences (of which $alt_spliced have splice variants) - wormpep$wormpep_version is based on the <A href=\"ftp://ftp.sanger.ac.uk/pub/wormbase/WS$WS_current\">current WS$WS_current release</A> of the <I>C. elegans</I> AceDB database.\n";
+  print PARAGRAPH "The current Wormpep database, wormpep${WS_current} (released $release_date), contains $letters residues in $count protein sequences (of which $alt_spliced have splice variants) - wormpep${WS_current} is based on the <A href=\"ftp://ftp.sanger.ac.uk/pub/wormbase/WS$WS_current\">current WS$WS_current release</A> of the <I>C. elegans</I> AceDB database.\n";
   close (PARAGRAPH);
 
   # update the 'current_release.shtml' file
   system("rm -f $www_root/wormpep/current_release.shtml") && die "Couldn't remove current_release.shtml\n";
   open(RELEASE,">$www_root/wormpep/current_release.shtml") || die "Coudn't write to current_release.shtml\n";
-  print RELEASE "The current release is wormpep$wormpep_version\n";
+  print RELEASE "The current release is wormpep${WS_current}\n";
   close(RELEASE);
 
   # update the history of wormpep releases, i.e. wormpep_release.txt
 
   open (TABLE, "<$www_root/wormpep/wormpep_release.txt") || die "Can't read from the file: $www_root/wormpep/wormpep_release.txt\n\n";
   open (TABLE2, ">$www_root/wormpep/tmp_table.txt") || die "Can't create the file: $www_root/wormpep/tmp_table.txt\n\n";
-  print TABLE2 "$wormpep_version\t$release_date2\t$count";
+  print TABLE2 "${WS_current}\t$release_date2\t$count";
   while(<TABLE>){
     print TABLE2 $_;
   }
@@ -640,7 +640,7 @@ sub update_wormpep_pages{
 
   # write a new table for the wormpep_download.shtml page    
   print LOG "Updating wormpep_download.shtml page\n";
-  my $rows = $wormpep_version + 5;
+  my $rows = $WS_current + 5;
 
   open (LIST, ">$www_root/wormpep/releases.shtml") || die "Can't open the file: $www_root/wormpep/releases.shtml\n\n";
   print LIST "<CENTER><TABLE CELLPADDING=\"0\" CELLSPACING=\"0\" BORDER=\"0\">\n";
@@ -678,7 +678,7 @@ sub update_wormpep_pages{
 
     print LIST "<td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
 
-    if (($wp_rel < 8) || ($wp_rel == $wormpep_version)) {
+    if (($wp_rel < 8) || ($wp_rel == $WS_current)) {
         print LIST "<td>wormpep${wp_rel}</td>\n";
     }
     else {
