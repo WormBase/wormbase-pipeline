@@ -53,7 +53,7 @@ _DDtFile_Chooser  -g TEXT_SCROLL -t "File chooser" -w 0.5 -height 0.7 \
 _DDtHelp -g TEXT_SCROLL -t "Help" -x .5 -y .15 -w  .9 -hei .8 -help Help
 
 _DDtAce_Parser -g TEXT_SCROLL -t ".ace file parser" -x 0.4 -w 0.5 \
-	-heigt 0.3 -help Read_files
+	-height 0.3 -help Read_files
 
 _DDtDump -g TEXT_SCROLL -t Dump  -x .65 -y .04 -w 0.6 -height 0.6 \
 	-help Dump
