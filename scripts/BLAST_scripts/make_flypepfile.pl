@@ -28,7 +28,7 @@ GetOptions (
 my $blastdir    = "/nfs/acari/wormpipe/BlastDB";
 my $acedir      = "/nfs/acari/wormpipe/ace_files";
 my $source_file = "$blastdir/gadfly${version}.pep";
-my $acefile     = "$acedir/gadfly.ace";
+my $acefile     = "$acedir/flybase.ace";
 # output initally goes to tmp file
 my $pepfile  = "$blastdir/gadfly${version}.pep.tmp"; 
 
@@ -102,7 +102,7 @@ system("mv $pepfile $source_file") && die "Couldn't overwrite original peptide f
 print "$record_count proteins\n" if ($verbose);
 
 # copy acefile across to /wormsrv2/wormbase/ensembl_dumps
-system("scp $acedir/gadfly.ace wormsrv2:/wormsrv2/wormbase/ensembl_dumps")  && die "Couldn't copy acefile\n";
+system("scp $acefile wormsrv2:/wormsrv2/wormbase/ensembl_dumps")  && die "Couldn't copy acefile\n";
 
 
 exit (0);
