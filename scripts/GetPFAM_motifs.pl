@@ -7,12 +7,21 @@
 # Gets latest Interpro:GO mappings from XXXX and puts info in to ace file
 #
 # Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2002-08-12 15:38:38 $                        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2002-08-20 16:26:49 $                        # quickly see when script was last changed and by whom
 
 
 use strict;                                     
 use lib "/wormsrv2/scripts/";                    
 use Wormbase;
+use Getopt::Std;
+#######################################
+# command-line options                #
+#######################################
+
+use vars qw($opt_d);
+# $opt_d debug   -  all output goes to ar/allele_mapping
+
+getopts ('d');
 
 # Try to keep different parts of code cleanly separated using comments...
 
@@ -35,22 +44,37 @@ print LOG "started at ",`date`,"\n";
 print LOG "=============================================\n";
 print LOG "\n";
 
-#Get the latest version
-my $pfam_motifs_gz = "/wormsrv2/tmp/Pfam_motifs.gz";
-print LOG "Attempting to wget the latest version\n";
-print "Attempting to wget the latest version\n";
-#`wget -O $pfam_motifs_gz ftp://ftp.sanger.ac.uk/pub/databases/Pfam/Pfam-A.full.gz` and die "$0 Couldnt get Pfam-A.full.gz \n";
-print LOG "...... got it!\nUnzipping . .";
-print "...... got it!\nUnzipping . .";
-#`gunzip $pfam_motifs_gz` and die "gunzip failed\n";
-print LOG "DONE\n";
-print "DONE\n";
+unless (defined($opt_d))
+  {
+    #Get the latest version
+    my $pfam_motifs_gz = "/wormsrv2/tmp/Pfam_motifs.gz";
+    print LOG "Attempting to wget the latest version\n";
+    print "Attempting to wget the latest version\n";
+    #`wget -O $pfam_motifs_gz ftp://ftp.sanger.ac.uk/pub/databases/Pfam/Pfam-A.full.gz` and die "$0 Couldnt get Pfam-A.full.gz \n";
+    print LOG "...... got it!\nUnzipping . .";
+    print "...... got it!\nUnzipping . .";
+    #`gunzip $pfam_motifs_gz` and die "gunzip failed\n";
+    print LOG "DONE\n";
+    print "DONE\n";
+  }
+else{
+  $maintainers = "ar2\@sanger.ac.uk";
+}
 
 my $pfam_motifs = "/wormsrv2/tmp/Pfam_motifs";
 print LOG "\n\nOpening file $pfam_motifs . . \n";
 print "\n\nOpening file $pfam_motifs . . \n";
 open (PFAM,"<$pfam_motifs") or die "cant open $pfam_motifs\n";
-open (PFAMOUT,">/wormsrv2/wormbase/misc/misc_pfam_motifs.ace") or die "cant write misc_pfam_motifs.ace\n";
+
+my $acefile;
+
+if (defined ($opt_d)) {
+    $acefile = "/wormsrv2/tmp/misc_pfam_motifs.ace";
+  }
+else {
+  $acefile = "/wormsrv2/wormbase/misc/misc_pfam_motifs.ace";
+}
+open (PFAMOUT,">$acefile") or die "cant write misc_pfam_motifs.ace\n";
 
 my $text;
 my $pfam;
@@ -85,6 +109,7 @@ while (<PFAM>)
     if($_ =~ m/^\#=GF DE\s+(.*$)/  ) 
       {
 	$text = $1;
+	$text =~ s/\"//g;
       }      
   }
 
@@ -96,7 +121,6 @@ close PFAMOUT;
 close LOG;
 #### use Wormbase.pl to mail Log ###########
 my $name = "GetPFAM_motifs";
-$maintainers = "ar2\@sanger.ac.uk";
 &mail_maintainer ($name,$maintainers,$log);
 #########################################
 
