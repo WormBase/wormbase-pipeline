@@ -59,8 +59,8 @@ sub now {
 }
 
 # create output files
-my $log = "/nfs/acari/wormpipe/dumps/blastx_ensembl.log";
-my $ace = "/nfs/acari/wormpipe/dumps/blastx_ensembl.ace";
+my $log = "/acari/work2a/wormpipe/dumps/blastx_ensembl.log";
+my $ace = "/acari/work2a/wormpipe/dumps/blastx_ensembl.ace";
 
 open (LOG, ">$log") || die "cannot create log file $log\n";
 open (ACE, ">$ace") || die "cannot create ace file $ace\n";

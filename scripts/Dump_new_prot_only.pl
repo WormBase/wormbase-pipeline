@@ -20,7 +20,7 @@ $all = 1; #hack while working out why GetOpts not working
 my $maintainers = "All";
 my $rundate    = `date +%y%m%d`; chomp $rundate;
 my $runtime    = &runtime;
-my $log = "/wormsrv2/logs/Dump_new_prot_only.pl.$rundate";
+my $log = "/acari/work2a/wormpipe/Dump_new_prot_only.pl.$rundate";
 open( LOG, ">$log") || die "cant open $log";
 print LOG "Dump_new_prot_only.pl log file $rundate ",&runtime,"\n";
 print LOG "-----------------------------------------------------\n\n";
@@ -44,7 +44,7 @@ print "DEBUG = \"$debug\"\n\n" if $debug;
 
 my @sample_peps = @_;
 
-my $wormpipe_dir = glob("~wormpipe");
+my $wormpipe_dir = "/acari/work2a/wormpipe/";
 my $WPver = &get_wormbase_version;
 my $acedb_database;
 my $output = "$wormpipe_dir/dumps/blastp_ensembl.ace";
