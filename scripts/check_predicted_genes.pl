@@ -25,13 +25,7 @@ my $db_path = $ARGV[0];
 
 # Specify which tace to use if you are using -program flag
 
-
-
-# RELEASE.SUPPORTED version is (yet again) buggy, rolling back to an older version
-# for now
-
-my $tace = glob("~acedb/RELEASE.2001_05_01.BUILD/bin.ALPHA_4/tace");
-#my $tace = glob("~acedb/RELEASE.SUPPORTED/bin.ALPHA_4/tace");
+my $tace = glob("~acedb/RELEASE.SUPPORTED/bin.ALPHA_4/tace");
 
 #my $tace = glob("~acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace");
 my $db = Ace->connect(-path=>$db_path, -program=>$tace) || die "Couldn't connect to $db_path\n", Ace->error;
