@@ -7,7 +7,7 @@
 # This script calculates interpolated genetic map positions for CDS, Transcripts 
 # and Pseudogenes lying between and outside genetic markers.
 #
-# Last updated on: $Date: 2004-12-15 17:01:28 $
+# Last updated on: $Date: 2005-01-11 14:43:47 $
 # Last updated by: $Author: krb $
 
 
@@ -784,7 +784,7 @@ else {
 
   my ($jah, $recipients);
   $recipients = "mt3\@sanger.ac.uk, jah\@bioch.ox.ac.uk, ar2\@sanger.ac.uk, dl1\@sanger.ac.uk, pad\@sanger.ac.uk";
-  $recipients = "krb\@sanger.ac.uk" if $debug;
+  $recipients = "mt3\@sanger.ac.uk" if $debug;
 
   my @rev = `cat $revfile`;
 
