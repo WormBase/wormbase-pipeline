@@ -8,7 +8,7 @@
 # and virtual objects to hang the data onto
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-09-03 14:03:44 $
+# Last edited on: $Date: 2003-09-03 14:57:35 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -175,42 +175,42 @@ if ($process) {
 
   if ($est) {
     unless ($camace) {
-      system("$bin/blat2ace.pl -ei") && croak "Mapping failed\n"; 
+      system("$bin/blat2ace.pl -est -intron") && croak "Mapping failed\n"; 
     }
     else {
-      system("$bin/blat2ace.pl -eiz") && croak "Mapping failed\n"; 	
+      system("$bin/blat2ace.pl -est -intron -camace") && croak "Mapping failed\n"; 	
     }
   }
 
   if ($ost) {
     unless ($camace) {
-      system("$bin/blat2ace.pl -yi") && croak "Mapping failed\n"; 
+      system("$bin/blat2ace.pl -ost -intron") && croak "Mapping failed\n"; 
     }
     else {
-      system("$bin/blat2ace.pl -yiz") && croak "Mapping failed\n"; 	
+      system("$bin/blat2ace.pl -ost -intron -camace") && croak "Mapping failed\n"; 	
     }
   }
 
   if ($mrna) {
     unless ($camace) {
-      system("$bin/blat2ace.pl -mi") && croak "Mapping failed\n"; 
+      system("$bin/blat2ace.pl -mrna -intron") && croak "Mapping failed\n"; 
     }
     else {
-      system("$bin/blat2ace.pl -miz") && croak "Mapping failed\n"; 
+      system("$bin/blat2ace.pl -mrna -intron -camace") && croak "Mapping failed\n"; 
     }
   }
 
   if ($embl) {  
     unless ($camace) {
-      system("$bin/blat2ace.pl -oi") && croak "Mapping failed\n"; 
+      system("$bin/blat2ace.pl -embl -intron") && croak "Mapping failed\n"; 
     }
     else {
-      system("$bin/blat2ace.pl -oiz") && croak "Mapping failed\n"; 
+      system("$bin/blat2ace.pl -embl -intron -camace") && croak "Mapping failed\n"; 
     }
   }
   
   if ($nematode) {
-    system("$bin/blat2ace.pl -x") && croak "Mapping failed\n"; 
+    system("$bin/blat2ace.pl -nematode") && croak "Mapping failed\n"; 
   }
 
 
