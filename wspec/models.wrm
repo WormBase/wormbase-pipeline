@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: krb $
-// Last edited on: $Date: 2004-06-01 08:52:31 $
+// Last edited on: $Date: 2004-06-02 07:43:53 $
  
 
 
@@ -1881,6 +1881,7 @@
 			Pseudogene ?Pseudogene XREF RNAi_result #Evidence // new [030801 krb]
         Supporting_data Movie ?Movie XREF RNAi			   // added for Lincoln, krb [010807]
                         Picture ?Picture XREF RNAi
+	Species UNIQUE ?Species
 	Reference ?Paper XREF RNAi
         Phenotype ?Phenotype XREF RNAi #Phenotype_info
 	Expr_profile ?Expr_profile XREF RNAi_result // connection added during build [030106 krb]
