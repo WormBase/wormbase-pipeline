@@ -49,8 +49,18 @@ sub get_wormbase_version_name {
 sub get_wormbase_release_date{
 
   my $format = shift;
-  
-  $format = "long" if(($format eq "") || ($format ne "long") || ($format ne "short") || ($format ne "both"));
+
+  if(!(defined($format))){
+    $format = "long";
+  }
+  elsif($format eq "short"){
+    $format = "short";
+  }
+  elsif($format eq "both"){
+    $format = "both";
+  }
+  else{$format = "long";}
+
   
   my $line = `ls -l /nfs/disk69/ftp/pub/wormbase/current_release/letter.WS??`;
   my @split = split(/\s+/,$line);
@@ -99,7 +109,7 @@ sub get_wormbase_release_date{
 
   return($date)        if ($format eq "long");
   return($date2)       if ($format eq "short");
-  return($date,$date2) if ($format eq "both"); 
+  return($date2,$date) if ($format eq "both"); 
 }
 
 
