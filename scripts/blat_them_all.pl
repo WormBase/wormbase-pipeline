@@ -34,7 +34,7 @@
 # 02.04.08 dl: old style logging for autoace.fa check, prevented complete run of subs
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2003-04-27 13:19:21 $
+# Last edited on: $Date: 2003-04-27 13:21:30 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -73,7 +73,7 @@ our %word = (
 # command-line options & ramifications #
 ########################################
 
-getopts('emxbsvonhdc');
+getopts('emxbsvonhdcy');
 
 if ($opt_c) {
     $dbdir = "/wormsrv1/camace";

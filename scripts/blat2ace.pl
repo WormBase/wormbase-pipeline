@@ -21,7 +21,7 @@
 # 010905 by Kerstin Jekosch
 
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2003-04-27 13:19:21 $
+# Last edited on: $Date: 2003-04-27 13:21:30 $
 
 
 use strict;
@@ -67,7 +67,7 @@ our $log;
  # command-line options & ramifications #
  ########################################
 
-getopts ('csemxoihz');
+getopts ('csemxoihyz');
 
 # Help pod documentation
 &usage(0) if ($opt_h);
