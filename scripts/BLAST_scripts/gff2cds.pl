@@ -15,15 +15,15 @@ my %line; my %cds;
 while (<>) {
     chomp;
     if ((/^\S+\t(curated)\tCDS\t/) && (/\"(\S+\.\S+)\"/)) {
-        $line{$1} = $_;
+        print "$_\n";
     }
-    if ((/^\S+\t+\w*\tCDS\t/) && (/\"(\S+\.\S+)\"$/)) {
-        $cds{$1} = "yes";
-    }
+#    if ((/^\S+\t+\w*\tCDS\t/) && (/\"(\S+\.\S+)\"$/)) {
+#        $cds{$1} = "yes";
+#   }
 }
 
-foreach (keys (%line)) {
-    if (exists $cds{$_}) {
-        print "$line{$_}\n";
-    }
-}
+#foreach (keys (%line)) {
+#    if (exists $cds{$_}) {
+#        print "$line{$_}\n";
+#    }
+#}
