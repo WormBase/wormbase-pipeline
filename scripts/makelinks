@@ -32,6 +32,7 @@
 ##########################################################
 # 000618 : dl : Altered script to accomodate change of lab 'CB' -> 'HX'
 # 000929 : dl : Altered script to reflect new path for camace database
+# 020425 : dl : Changed camace path from wormsrv2 to wormsrv1
 
 use Getopt::Long ;
 
@@ -57,7 +58,7 @@ if ($opt_load) {
 	# get data from camace
 
     use Ace ;
-    $campath = "/wormsrv2/camace" ;
+    $campath = "/wormsrv1/camace" ;
     $camdb = Ace->connect(-path=>"$campath") || 
 	die "failed to connect to database\n" ;
 
