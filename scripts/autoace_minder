@@ -300,7 +300,7 @@ sub initiate_build {
     my $cvs_file = "/wormsrv2/autoace/wspec/database.wrm";
 
     # exit if build_in_progress flag is present
-    &usage(10) if (-e $logdir/$flag{'A1'};
+    &usage(10) if (-e $logdir/$flag{'A1'});
     
     # commit to new build ..............
     $WS_version = &get_wormbase_version;
