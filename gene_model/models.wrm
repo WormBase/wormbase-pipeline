@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.93 2002-11-19 14:56:58 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.94 2002-11-21 10:48:48 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -1655,10 +1655,8 @@
                         Contained_in ?Paper XREF Contains       // old form
                         Medline_acc UNIQUE Int
                         PMID UNIQUE Int                     
-//        Author ?Author XREF Paper #Affiliation        // replaced by:
-        Author ?Author UNIQUE ?Person XREF Paper
-// Eimear wants to replace this line to keep #Affiliation, and test it
-// to see that it doesn't cause problems.
+        Author ?Author XREF Paper #Affiliation       
+//        Author_to_person ?Author UNIQUE ?Person XREF Paper
         Person ?Person XREF Paper
         Affiliation Text        // Authors' affiliation if available
         Brief_citation UNIQUE Text
