@@ -3,23 +3,28 @@
 # ms2@sanger.ac.uk
 
 use strict;
-use Getopt::Std;
+use Getopt::Long;
 use DBI;
 use Bio::PrimarySeq;
 use Bio::SeqIO;
 use Bio::EnsEMBL::Pipeline::DBSQL::Protein::DBAdaptor;
-use vars qw($opt_f $opt_o $opt_n $opt_m);
+#use vars qw($opt_f $opt_o $opt_n $opt_m,);
+
+my ($fasta, $database, $brig );
 
 $|=1;
 
-getopts ("f:onm:");
+GetOptions (
+	    'fasta:s'    => \$fasta,
+	     'brig'       => \$brig
+	   );
 
 my $usage = "worm_pipeline.pl\n";
-$usage .= "-f [fasta file of protein sequences to be added to the mysql database]\n";
-$usage .= "-n to match the newly added proteins to swall, using pmatch\n";
-$usage .= "-o to re-match the proteins already in the database to swall, using pmatch (very slow)\n";
+$usage .= "-fasta [fasta file of protein sequences to be added to the mysql database]\n";
+#$usage .= "-n to match the newly added proteins to swall, using pmatch\n";
+#$usage .= "-o to re-match the proteins already in the database to swall, using pmatch (very slow)\n";
 
-unless ($opt_f) {
+unless ($fasta) {
     die "$usage";
 }
 
@@ -27,10 +32,10 @@ unless ($opt_f) {
 # define some variables
 
 my $host = "ecs1f";
-my $dbname = "wormprot";
-$dbname = "$opt_m" if $opt_m;
+my $dbname = $brig ? "worm_brigprot" : "wormprot"; #if -brig opt, use worm_brigprot else use wormprot
 my $user = "wormadmin";
 my $pass = "worms";
+my $species = $brig ? 2 : 1; #assign no based on species
 
 my $pmatch_wrapper = "pmatch.pl";
 my $scratchdir = "/tmp";
@@ -61,7 +66,7 @@ my $proteinAdaptor = $db->get_ProteinAdaptor;
 
 print "----------------------------------------------------------\n";
 print "starting the WORM PROTEIN analysis pipeline\n";
-print "\tprocessing file $opt_f\n";
+print "\tprocessing file $fasta\n";
 print "\tconnected to $dbname at $host as $user\n";
 print "----------------------------------------------------------\n\n";
 
@@ -76,40 +81,7 @@ my @peptides = $proteinAdaptor->fetch_all_Peptide;
 my %exists;
 if (@peptides) {
     print "-> there are ".scalar(@peptides)." in the database...\n";
-    if ($opt_o) {
-        # print the peptides to a fasta file
-        open (TMP, ">$scratchdir/$$.fasta") || die "cannot create tmp file\n";
-        foreach my $pep (@peptides) {
-            $exists{$pep->id} = 1;
-            print TMP ">".$pep->id."\n".$pep->seq."\n";
-        }
-        close TMP;
-        # run pmatch
-        print "map the proteins already in the DB to swall, updating the previous mapping [".&now."]\n";
-        my $cmd = "$pmatch_wrapper -q $scratchdir/$$.fasta -w -o $scratchdir/$$.pmatch -c";
-        my $exit_value = system "$cmd";
-        unless ($exit_value == 0) {
-             die "couldn't make first system call";
-        }
-        # parse pmatch, updating the swallId's at the same time
-        print "make swallId updates [".&now."]\n";
-        open (FH1 , "$scratchdir/$$.pmatch") || die "cannot read $scratchdir/$$.pmatch\n";
-        while (<FH1>) {
-            chomp;
-            my @a = split /\t/;
-            if ($a[2] eq "match" || $a[2] eq "repeat") {
-                $proteinAdaptor->update_swallId ($a[0], $a[1]);
-            }
-        }
-        close FH1;
-        unlink "$scratchdir/$$.pmatch";
-        unlink "$scratchdir/$$.fasta";
-    }
-    else {
-        foreach my $pep (@peptides) {
-            $exists{$pep->id} = 1;
-        }
-    } 
+    %exists = map { ($_->id, 1) } @peptides;
 }
 else {
     print "-> no proteins in the database...\n";
@@ -120,26 +92,6 @@ else {
 
 my %name2swall;
 
-if ($opt_n) {
-    print "map the new proteins to swall [".&now."]\n";
-
-    my $cmd = "$pmatch_wrapper -q $opt_f -w -o $scratchdir/$$.pmatch_new -c";
-    my $exit_value = system "$cmd";
-    unless ($exit_value == 0) {
-         die "couldn't make second system call";
-    }
-    # parse pmatch
-    open (FH2 , "$scratchdir/$$.pmatch_new") || die "cannot read $scratchdir/$$.pmatch_new\n";
-    while (<FH2>) {
-        chomp;
-        my @a = split /\t/;
-        if ($a[2] eq "match" || $a[2] eq "repeat") {
-            $name2swall{$a[0]} = $a[1];
-        }
-    }
-    close FH2;
-    unlink "$scratchdir/$$.pmatch_new";
-}
 
 #################################################################################
 # populate the protein, peptide and InputIdAnalysis tables
@@ -148,7 +100,7 @@ if ($opt_n) {
 
 print "populate the protein, peptide and InputIdAnalysis tables with the new proteins [".&now."]\n";
 
-my $stream = Bio::SeqIO->new ( -file   => $opt_f,
+my $stream = Bio::SeqIO->new ( -file   => $fasta,
                                -format => 'fasta',
                              );
 $stream->moltype ('protein');
@@ -164,7 +116,7 @@ while (my $pep = $stream->next_primary_seq) {
         $count_swall++;
     }
     # !! the organism is currently hard-coded to 1 (= Caenorhabditis elegans in organism table)
-    $proteinAdaptor->submit ($pep, 1);
+    $proteinAdaptor->submit ($pep, $species);
     print "  ".$pep->id."\n";
     $count++;
 }
