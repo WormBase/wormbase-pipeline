@@ -178,9 +178,9 @@ sub make_acefiles {
 #################################################################################
 
 sub make_autoace {
-    system ("$scriptdir/make_autoace -p /wormsrv2/autoace -rdc") && die "Couldn't run autoace -rdc\n";
-    print LOG " Build full autoace (database/CHROMOSOMES/release)\n";
-    print LOG " =>'make_autoace -p /wormsrv2/autoace -rdc'\n\n";
+    system ("$scriptdir/make_autoace -p /wormsrv2/autoace -rc") && die "Couldn't run autoace -rc\n";
+    print LOG " Build autoace (database/CHROMOSOMES/release)\n";
+    print LOG " =>'make_autoace -p /wormsrv2/autoace -rc'\n\n";
 }
 
 sub make_DB {
@@ -329,7 +329,7 @@ autoace_minder OPTIONAL arguments:
 
 =item -w, Write .acefiles from WormBase copies of the databases
 
-=item -b, Build autoace
+=item -b, Build autoace : (performs options 1 & 2 below)
 
 =item -1, Build autoace : Database only
 
