@@ -241,21 +241,6 @@ sub make_wormpep {
     print LOG " Build wormpep release $WP_version\n";
     print LOG " =>'make_wormpep -r $WP_version'\n\n";
 
-    print LOG "Loading patch file into pepace\n";
-
-    my $tace = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
-
-    my $command=<<END;
-pparse /wormsrv2/WORMPEP/wormpep.${WP_version}/patch_wormpep.${WP_version}-${WP_previous}.ace
-save
-quit
-END
- 
-  print LOG "Loading /wormsrv2/WORMPEP/wormpep.${WP_version}/patch_wormpep.${WP_version}-${WP_previous}.ace\n\n"; 
-open (TACE,"| $tace /wormsrv2/pepace") or do { print LOG "Couldn't pipe to tace\n"; close(LOG); die "Couldn't open pipe to tace\n";};
-print TACE $command;
-close (TACE);
-
 }
 
 #################################################################################
