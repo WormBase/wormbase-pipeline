@@ -8,7 +8,7 @@
 # Output ace file of such information and upload to autoace during each build
 # Output also other files related. See POD
 
-# Last updated on: $Date: 2003-05-27 12:26:34 $
+# Last updated on: $Date: 2003-05-30 16:09:49 $
 # Last updated by: $Author: ck1 $
 
 use strict;
@@ -24,18 +24,21 @@ my $rundate = `date +%y%m%d`; chomp $rundate;
 # variables and command-line options with aliases #
 ###################################################
 
-my ($diff, $reverse, $database, $gff_location, $help, $map, $comp, $gmap_marker_dir, $gff_dir, $curr_db);
+my ($diff, $reverse, $database, $gff_location, $help, $debug, $map, 
+    $comp, $gmap_marker_dir, $gff_dir, $curr_db, $output);
 
 GetOptions ("diff"          => \$diff,
             "rev|reverse"   => \$reverse,
 	    "db|database=s" => \$database,
 	    "map"           => \$map,
 	    "comp"          => \$comp, 
-	    "h|help"        => \$help 
+	    "h|help"        => \$help, 
+	    "d|debug"       => \$debug
            );
 
 $gff_dir = "/wormsrv2/autoace/GFF_SPLITS/";
 $curr_db = "/nfs/disk100/wormpub/DATABASES/current_DB/"; 
+$output = "/wormsrv2/autoace/MAPPINGS/G_MAP";
 
 if (!defined @ARGV or $help){system ("perldoc /wormsrv1/chaokung/my-scripts/test_gmap.pl"); exit(0)}
 
@@ -58,7 +61,8 @@ if (defined $database){
 my ($revfile, $diffile);
 
 if ($reverse){
-  $revfile = "/wormsrv2/logs/reverse_physicals_"."WS$order[-1].$rundate.$$";
+  my $version = $order[-1]+1;
+  $revfile = "$output/reverse_physicals_WS$version.$rundate.$$";
   open(REV, ">$revfile") || die $!;
   system("chmod 777 $revfile");
 }
@@ -76,7 +80,7 @@ my (%chrom_meanCoord, %genetics_mapping);
 my ($cds, $parts, @coords, $i, $mean_coords, %cds_mean, %mean_coord_cds, %chrom_mean_coord_cds);
 
 my $version = $order[-1]+1; # autoace
-my $acefile="/wormsrv2/autoace/MAPPINGS/interpolated_gmap_"."WS$version.$rundate.ace";
+my $acefile="$output/interpolated_gmap_"."WS$version.$rundate.ace";
 
 if ($map){
   open (ACE, ">$acefile") || die "Can't output file!\n";
@@ -120,8 +124,8 @@ my %locus_map;
 
 if($comp){
   open(IN, "/wormsrv1/geneace/gMAP/interpolated_gmap_based_on_contig_map_out.all") || die $!;
-  open (MAPCOMP, ">/wormsrv2/logs/compare_gmap_WS$version.$rundate") || die $!;
-  system("chmod 777 /wormsrv2/logs/compare_gmap_WS*.$rundate");
+  open (MAPCOMP, ">$output/compare_gmap_WS$version.$rundate") || die $!;
+  system("chmod 777 $output/compare_gmap_WS*.$rundate");
   while (<IN>){
     chomp;
     my ($locus, $LG, $map) = split (/\s+/, $_);
@@ -130,10 +134,10 @@ if($comp){
   close IN; 
 }
 
-open (INFO, ">/wormsrv2/logs/gmap_info_"."WS$version.$rundate") || die $!;
-system("chmod 777 /wormsrv2/logs/gmap_info_WS*.$rundate");
+open (INFO, ">$output/gmap_info_"."WS$version.$rundate") || die $!;
+system("chmod 777 $output/gmap_info_WS*.$rundate");
 
-print INFO "\nAll CDS/transcript linked to locus in $curr_db ", scalar keys %predicted_gene_to_locus,"\n\n";
+#print INFO "\nAll CDS/transcript linked to locus in $curr_db ", scalar keys %predicted_gene_to_locus,"\n\n";
 
 ########################################################################################
 # retrieve data from gff file: CHROMOSOME_number.genes.gff and CHROMOSOME_number.rna.gff
@@ -141,7 +145,7 @@ print INFO "\nAll CDS/transcript linked to locus in $curr_db ", scalar keys %pre
 
 my @gff_files_cds=dataset($gff_location, "genes");
 my @gff_files_rna=dataset($gff_location, "rna");
-  
+
 my $cds_count=0;
 my $rna_count=0;
 my $variants=0;
@@ -170,11 +174,13 @@ foreach (@gff_files_cds){
 }
 
 print "\nEgrepping transcripts in huge CHROMOSOME_*.rest.gff files . . .\n"; 
+
 foreach (@gff_files_rna){
   @data = `egrep "(RNA|UNKNOWN).+(Transcript|Sequence).+" $_ | cut -f 1,2,4,5,9`;
+  #@data = `egrep ".+(Transcript|Sequence).+" $_ | cut -f 1,2,4,5,9`;
   foreach (@data){
     chomp;
-    if ($_ !~ /miRNA.+/ && $_ !~ /\[.+\].+/ && $_ !~ /mRNA.+/){
+    if ($_ !~ /\[.+\].+/ && $_ !~ /mRNA.+/){
       $rna_count++;
       my ($chrom, $type, $left, $right, $junk, $RNA)= split(/\s+/,$_);
       $RNA =~ s/(.+):.+/$1/;
@@ -194,7 +200,7 @@ foreach (@gff_files_rna){
   }
 }
 
-print INFO "Thinkgs fetched from gff files:\n";
+print INFO "Things fetched from gff files:\n";
 print INFO "Number of CDS/transcript without isoforms: ", scalar keys %CDS_mapping, "\n";
 print INFO "Number of CDS/transcript with isoforms: ", scalar keys %CDS_isoforms_mapping, "\n";
 print INFO "Number of CDS/transcript variants: ", $variants, "\n";
@@ -250,7 +256,7 @@ Table-maker -p "/wormsrv1/geneace/wquery/marker_gmap_of_each_chrom.def" quit
 EOF
   
 my ($mean_coord, %chrom_pos);
-my $cmp_file = "/wormsrv2/logs/cmp_gmap_with_coord_order_"."WS$version.$rundate.$$";
+my $cmp_file = "$output/cmp_gmap_with_coord_order_"."WS$version.$rundate.$$";
 
 if ($reverse) {
   open(CMP, ">$cmp_file") || die $!;
@@ -541,7 +547,7 @@ foreach $chrom (@chroms){
   $rev_phys=(); @all_mean_of_each_chrom=(); @unique_all_mean_of_each_chrom=(); %all_mean_of_each_chrom=();
 }
 
-if ($map){
+if (!$debug){
   print "\n\nDeleting old interpolated map and uploading new ones to autolace . . .\n\n";
 
   my $tace = &tace;
@@ -560,7 +566,7 @@ save
 quit
 END
 
-  open (Load_A,"| $tace /wormsrv2/autoace/ >> $log") || die "Failed to upload to Geneace";
+  open (Load_A,"| $tace /wormsrv2/autoaceq/ >> $log") || die "Failed to upload to Geneace";
   print Load_A $command;
   close Load_A;
  
@@ -646,11 +652,11 @@ __END__
             This script is run at end of build to calculate interpolated map positions for all CDS and Transcripts.
             It can generate the following files:
 
-            (1) /wormsrv2/logs/reverse_physicals_WSXXX.yymmdd.pid
-            (2) /wormsrv2/logs/cmp_gmap_with_coord_order_WSXX.yymmdd.pid (list of marker loci with gmap and coords)
+            (1) /wormsrv2/autoace/MAPPINGS/G_MAP/reverse_physicals_WSXXX.yymmdd.pid
+            (2) /wormsrv2/autoace/MAPPINGS/G_MAP/cmp_gmap_with_coord_order_WSXX.yymmdd.pid (list of marker loci with gmap and coords)
             (3) /wormsrv2/logs/mapping_diff.yymmdd (not run for the build, but called by geneace_check.pl)  
-            (4) /wormsrv2/autoace/MAPPINGS/interpolated_gmap_WSXXX.yymmdd 
-            (5) /wormsrv2/logs/gmap_info_WS*yymmdd (information might be interesting in case data looks strange) 
+            (4) /wormsrv2/autoace/MAPPINGS/G_MAP/interpolated_gmap_WSXXX.yymmdd 
+            (5) /wormsrv2/autoace/MAPPINGS/G_MAP/gmap_info_WS*yymmdd (information might be interesting in case data looks strange) 
             
 
 =head3 <USAGE> 
@@ -672,7 +678,7 @@ __END__
 
             Some options have single letter or wordy aliases 
   
-            [diff] [rev or reverse] [db or databases] [map] [comp]
+            [diff] [rev or reverse] [db or databases] [map] [comp] [debug]
 
 B<-h: / -help:>     
             Displays usage of the script: surprised?
@@ -693,7 +699,7 @@ B<-db: / -databse:>
                 if this option is omitted, ie, when this script is run at end of build, it points to autoace
                                 
 B<-map:>    
-            Output interpolated map positions as ace file and upload it to autoace. Requeires -rev to check for reverse physicals
+            Output interpolated map positions as ace file. Requeires -rev to check for reverse physicals
            
 
 B<-comp:>
@@ -701,3 +707,9 @@ B<-comp:>
             Output a list that compares interpolated gmap of CDS/transcripts links to locus based on 
             (1) sequence coordinates 
             (2) physical contig maps, which can be view in gmap
+
+
+B<-d: / debug:>
+  
+            In debug mode, interpolated_map_positions will not be uploaded to autoace.
+             
