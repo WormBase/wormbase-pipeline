@@ -5,7 +5,7 @@
 # written by Anthony Rogers (ar2@sanger.ac.uk)
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-02-21 11:32:23 $
+# Last updated on: $Date: 2003-02-21 13:02:14 $
 
 
 use strict;
@@ -82,7 +82,11 @@ print "\nUsing $geneace_dir as target geneace database\n";
 
 
 # remove existing camace connections and replace with new ones
-&update_camace if ($camace); 
+
+# First check for write access to $camace_dir
+my $write_access = check_write_access($camace_dir);
+
+&update_camace if (($camace) && ($write_access eq "yes")); 
 
 
 

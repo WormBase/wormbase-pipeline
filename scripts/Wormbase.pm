@@ -9,7 +9,7 @@ use Exporter;
 use Carp;
 use Ace;
 @ISA       = qw(Exporter);
-@EXPORT    = qw(get_wormbase_version get_wormbase_version_name get_wormbase_release_date copy_check mail_maintainer celeaccession tace gff_sort dbfetch clones_in_database open_TCP DNA_string_reverse DNA_string_composition release_databases find_file_last_modified FetchData release_composition release_wormpep test_user_wormpub runtime tace giface);
+@EXPORT    = qw(get_wormbase_version get_wormbase_version_name get_wormbase_release_date copy_check mail_maintainer celeaccession tace gff_sort dbfetch clones_in_database open_TCP DNA_string_reverse DNA_string_composition release_databases find_file_last_modified FetchData release_composition release_wormpep test_user_wormpub runtime tace giface check_write_access);
 @EXPORT_OK = qw(get_script_version); 
 
 
@@ -677,7 +677,7 @@ The $number_total sequences contain $codingDNA base pairs in total.\n\n";
 #end of release letter generating subs
 #############################################
 
-#
+
 sub test_user_wormpub
   {
     my $name = `whoami`;
@@ -777,7 +777,7 @@ sub Map_feature
     return $result;
   }
 
-
+#########################################################
 sub scan
   {
     # SCAN 
@@ -813,6 +813,21 @@ sub scan
     }
     else { return; }
   }
+
+
+####################################
+# Check for database write access
+####################################
+
+sub check_write_access{
+
+  my $database = shift;
+  my $write_access = "yes";
+
+  $write_access = "no" if (-e "${database}/database/lock.wrm");
+  return($write_access);
+
+}
 
 ################################################################################
 #Return a true value
@@ -982,6 +997,17 @@ Does various checks on data integrity and flags any problems in the mail sent.
 release_wormpep
 
 Compiles release stats of the current Wormpep and writes to a file, later used in release letter.
+
+=back 
+
+=over 4
+
+=item *
+
+check_write_access
+
+Takes a path to an acedb database and returns "yes" if no database/lock.wrm file is present
+(i.e. yes, you have write access) and returns "no" if such a file is present.
 
 =back 
 
