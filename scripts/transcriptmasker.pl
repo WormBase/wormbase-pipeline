@@ -8,7 +8,7 @@
 # 031023 dl1
 
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2004-05-12 15:19:56 $
+# Last edited on: $Date: 2004-08-03 14:01:34 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -148,11 +148,14 @@ sub MaskSequence {
     }
 
     # input file loop structure
+    my $skip = 1;
+    
     open (INPUT, "<$data")     || die "ERROR: Can't open input file: '$data'";
     while (<INPUT>) {
 	chomp;
 	next if ($_ eq "");                 # catch empty lines
-
+	if ($skip == 1) {$skip--;next;}     # skip first bad entry
+	
 	if (/^(\S+)\s+\S+.+\n/) {           # deal with accessions {$acc} and WormBase internal names {$id}
 	    $acc = $1;
 	    if (defined $EST_name{$acc}) {
@@ -171,6 +174,9 @@ sub MaskSequence {
 	
 	print "-> Parsing $acc [$id]\n" if ($verbose);
 	
+	print "$_\n";
+
+
 	# fetch the sequence object from the database. push the feature_data objects to memory
 	my $obj = $db->fetch(Sequence=>$id);
 	if (!defined ($obj)) {
