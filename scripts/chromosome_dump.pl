@@ -27,10 +27,12 @@ my $cvs_version = &get_cvs_version("$0");
 
 our $tace   = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
 our $giface = "/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_4/giface";
-our ($opt_d,$opt_g,$opt_e,$opt_h,$opt_c, $opt_p, $opt_q);
+our ($opt_d,$opt_g,$opt_e,$opt_h,$opt_c, $opt_p, $opt_q, $opt_t);
 getopts("dgehcp:q:");
 our $database;
 our $dump_dir;
+
+
 
 
 if($opt_p && !$opt_q){
@@ -60,7 +62,10 @@ else{
 # display help if required  #
 #############################
 
-&show_help if (!$opt_d && !$opt_e && !$opt_g && !$opt_h && !$opt_c);
+&show_help if ((!$opt_d && !$opt_e && !$opt_g && !$opt_c) || $opt_h);
+
+
+
 
 ##################################################
 # Open logfile                                   #
@@ -83,11 +88,10 @@ print LOGFILE "\n\n";
 # Main three subroutines
 #####################################################
 
-&dump_dna  if ($opt_d);
-&dump_gff  if ($opt_g);
+&dump_dna    if ($opt_d);
+&dump_gff    if ($opt_g);
 &composition if ($opt_c);
-&zip_files if ($opt_e || $opt_h);
-
+&zip_files   if ($opt_e || $opt_t);
 
 # say goodnight Barry
 
@@ -192,9 +196,9 @@ sub zip_files{
       print LOGFILE "Compressing $dna_file\n";
       system ("/bin/gzip -f $dna_file") if ($opt_e);
     }
-    if ($opt_h){
+    if ($opt_t){
       print LOGFILE "Compressing $gff_file\n";
-      system ("/bin/gzip -f $gff_file") if ($opt_h);
+      system ("/bin/gzip -f $gff_file") if ($opt_t);
     }
   }	
 }
@@ -267,6 +271,14 @@ Use in combination with -d option (see above)
 
 =over 4
 
+=item -h
+
+Show these help files.
+
+=back
+
+=over 4
+
 =item -g
 
 Dump gff files, dumps one file for each chromosome in the database.
@@ -307,7 +319,7 @@ option will be run before this stage if -c is specified.
 
 =over 4
 
-=item -h (optional) 
+=item -t (optional) 
 
 Compresses any gff files using gzip (will remove any existing files first).      
 
