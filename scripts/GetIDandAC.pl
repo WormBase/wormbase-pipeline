@@ -14,7 +14,7 @@
 # pfetch is done in batches of 2000, any greater and nothing comes back!
 #
 # Last updated by: $Author: ar2 $                  
-# Last updated on: $Date: 2002-09-06 12:25:35 $    
+# Last updated on: $Date: 2003-02-19 13:46:40 $    
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -145,7 +145,7 @@ foreach my $key (keys %protid_data)
 	if( $protid_data{$key}[3] =~ m/_CAEEL/ ) {
 	  $database = "SwissProt";
 	}
-	elsif( $protid_data{$key}[3] =~ m/[OPQ]\d\w{4}/ ) {
+	elsif( $protid_data{$key}[3] =~ m/^[OPQ]\d\w{4}/ ) {
 	  $database = "TREMBL";
 	}
 	else {
