@@ -1010,7 +1010,8 @@
                      EST
 		     Homology
 		     UTR	
-			 
+		     False
+		 
 #Gene_confirmation cDNA
                    EST
 		   pers_comm #Evidence // added 020405 kj	
