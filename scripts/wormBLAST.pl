@@ -4,8 +4,8 @@
 # 
 # written by Anthony Rogers
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-03-10 16:55:15 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2004-04-07 11:23:53 $
 
 use DBI;
 use strict;
@@ -614,9 +614,9 @@ sub wait_for_pipeline_to_finish
 
 sub check_wormsrv2_conflicts
   {
-    if( ( -e "/wormsrv2" ) && ($blastx || $blastp || $dump_data) )
+    if( ( -e "/wormsrv2" ) && ($update_databases || $blastx || $blastp || $dump_data) )
       {
-	print "no can do - to run the blast pipeline wormsrv2 can NOT be mounted.  Your options conflict with this.\nthe following options REQUIRE wormsrv2 to not be mounted \n\t-blastx\t-blastp\t-dump\t-run\t-testpipe\t-run_brig\t-cleanup\n\n";
+	print "no can do - to run the blast pipeline wormsrv2 can NOT be mounted.  Your options conflict with this.\nthe following options REQUIRE wormsrv2 to not be mounted \n\t-databases\n\t-blastx\t-blastp\t-dump\t-run\t-testpipe\t-run_brig\t-cleanup\n\n";
 	exit (1);
       }
     elsif( !(-e "/wormsrv2") && ($chromosomes || $wormpep  || $update_mySQL || $prep_dump) ) {
