@@ -8,7 +8,7 @@
 # This makes the autoace database from its composite sources.
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-01-13 17:43:52 $
+# Last edited on: $Date: 2003-01-14 08:58:16 $
 
 
 ###########################################################################################
@@ -317,7 +317,7 @@ sub rmtempgene {
     my $command = "query find sequence method = hand_built\nkill\nsave\nquit\n";
     &DbWrite($command,$tace,$camace,"CamAce");
     &DbWrite($command,$tace,$stlace,"StlAce");
-    $command = "query find sequence temp*\nkill\nsave\nquit\n";
+    my $command2 = "query find sequence temp*\nkill\nsave\nquit\n";
     &DbWrite($command2,$tace,$camace,"CamAce");
     &DbWrite($command2,$tace,$stlace,"StlAce");
 }
@@ -391,8 +391,8 @@ sub parseconfig {
 	# parse database information
 	if (/^P\s+(\S+)\s+(\S+)$/) {
 	    $dbname = $1;
-	    $dbdir  = $2;
-	    $targetdir="$wormbasedir"."/$dbname";
+#	    $dbdir  = $2;
+#	    $targetdir="$wormbasedir"."/$dbname";
 	    next;
 	}
 	
@@ -426,20 +426,22 @@ sub parseconfig {
 # Remove confidential remarks from certain files  
 
 sub rmconfremark { 
-    @remove_confid=("stlace/stlace_Sequence.ace","camace/camace_Sequence.ace","briggsae/briggsae_Sequence.ace");
-    foreach $confid (@remove_confid) {
-	$this_acefile="$wormbasedir"."/$confid";
-	open(TEMP,">$autodir/acefiles/temp$$");
-	open(ACEFILE,"$this_acefile");
-	while(<ACEFILE>) {
-	    if (/^Confidential_remark/)  {$confidential=1;}
-	    if ($confidential !=1) {print TEMP $_;}
-	    if (/"$/ && !/\\"$/) {$confidential=0;}
-	}
-	close ACEFILE;
-	close TEMP;
-	system("\\mv $autodir/acefiles/temp$$ $this_acefile");
+  @remove_confid=("stlace/stlace_Sequence.ace","camace/camace_Sequence.ace","briggsae/briggsae_Sequence.ace");
+  
+  my $confidential = 0;
+  foreach $confid (@remove_confid) {
+    $this_acefile="$wormbasedir"."/$confid";
+    open(TEMP,">$autodir/acefiles/temp$$");
+    open(ACEFILE,"$this_acefile");
+    while(<ACEFILE>) {
+      ($confidential = 1) if (/^Confidential_remark/);
+      (print TEMP $_) if ($confidential !=1);
+      ($confidential = 0) if (/"$/ && !/\\"$/);
     }
+    close ACEFILE;
+    close TEMP;
+    system("\\mv $autodir/acefiles/temp$$ $this_acefile");
+  }
 }
 
 
