@@ -8,7 +8,7 @@
 # to look for bogus sequence entries
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-05-01 15:18:57 $
+# Last updated on: $Date: 2003-08-19 13:57:51 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -155,7 +155,7 @@ my $all = "wormbase-dev\@wormbase.org";
 
 my $caltech = "wormbase\@its.caltech.edu, krb\@sanger.ac.uk";
 my $sanger = "wormbase\@sanger.ac.uk";
-my $cshl = "stein\@cshl.org, cunningh\@cshl.edu, harris\@cshl.org, krb\@sanger.ac.uk";
+my $cshl = "stein\@cshl.org, harris\@cshl.org, chenn\@cshl.edu, krb\@sanger.ac.uk";
 my $stlouis = "dblasiar\@watson.wustl.edu, jspieth\@watson.wustl.edu, krb\@sanger.ac.uk";
 
 &mail_maintainer("$WS_version integrity checks: Sanger","$sanger",$sanger_log) unless ($test || ($sanger_counter == 0));
