@@ -866,21 +866,44 @@ sub check_write_access{
 
 }
 
+=head2 make_build_log
+
+Generate log file in the logs directory with WS version and processID appended to script name.
+
+  Title   :   make_build_log
+  Usage   :   my $log = &make_build_log("$debug");
+              print $log "This is a log file\n";
+              close $log;
+  Returns :   filehandle ref
+  Args    :   Optional - Debug_status
+
+=head2 make_log
+
+    Title   :   make_log
+    Usage   :   my $log = &make_log("logfile.log");
+                print $log "This is a log file\n";
+                close $log;
+    Returns :   filehandle ref
+    Args    :   filename to use (inlcuding path)
+
+=cut
 
 #############################################################################
 #   Easy generation of log files
 
-sub make_build_log
+  sub make_build_log
   {
     my $debug = shift;
     my $ver = &get_wormbase_version_name;
     my $filename;
     $0 =~ /([^\/]*$)/ ? $filename = $0 : $filename = $1 ; # get filename (sometimes $0 includes full path if not run from its dir )
-
+	    
     my $path = "/wormsrv2/logs";
     $path = "/tmp/logs" if $debug;
     my $log_file = "$path/$filename".".$ver.".$$;
-    return &make_log("$log_file")
+    my $fh = &make_log("$log_file");
+    print $fh "Build script : $filename \n Started at ",&runtime,"\n\n***********************************\n\n";
+    return $fh;
   }
 # little sub to create any writable file 
 sub make_log
@@ -1130,24 +1153,3 @@ my $coord_3 = $$map[1];
 
 =cut
 
-=head2 make_build_log
-
-Generate log file in the logs directory with WS version and processID appended to script name.
-
-  Title   :   make_build_log
-  Usage   :   my $log = &make_build_log("$debug");
-              print $log "This is a log file\n";
-              close $log;
-  Returns :   filehandle ref
-  Args    :   Optional - Debug_status
-
-=head2 make_log
-
-    Title   :   make_log
-    Usage   :   my $log = &make_log("logfile.log");
-                print $log "This is a log file\n";
-                close $log;
-    Returns :   filehandle ref
-    Args    :   filename to use (inlcuding path)
-
-=cut
