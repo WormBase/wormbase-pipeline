@@ -6,8 +6,8 @@
 #
 # This maps alleles to the genome based on their flanking sequence
 #
-# Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2003-10-24 11:04:08 $        # quickly see when script was last changed and by whom
+# Last updated by: $Author: dl1 $                      # These lines will get filled in by cvs and helps us
+# Last updated on: $Date: 2003-10-29 17:22:05 $        # quickly see when script was last changed and by whom
 
 
 use strict;
@@ -37,19 +37,19 @@ my $geneace;
 
 # $debug   -  all output goes to ar/allele_mapping
 
-GetOptions( "debug:s"   => \$debug,
-	    "limit=s"   => \$limit,
-	    "database=s"=> \$database,
-	    "WS=s"      => \$ver,
-	    "verbose"   => \$verbose,
-	    "help"      => \$help,
-	    "restart=s" => \$restart,
-	    "no_parse"  => \$no_parse,
-	    "list=s"    => \$list,
-	    "no_geneace"=> \$no_geneace,
-	    "gff"       => \$gff,
-	    "verbose"   => \$verbose,
-	    "geneace=s"   => \$geneace
+GetOptions( "debug:s"    => \$debug,
+	    "limit=s"    => \$limit,
+	    "database=s" => \$database,
+	    "WS=s"       => \$ver,
+	    "verbose"    => \$verbose,
+	    "help"       => \$help,
+	    "restart=s"  => \$restart,
+	    "no_parse"   => \$no_parse,
+	    "list=s"     => \$list,
+	    "no_geneace" => \$no_geneace,
+	    "gff"        => \$gff,
+	    "verbose"    => \$verbose,
+	    "geneace=s"  => \$geneace
 	  );
 
 if ($help) { print `perldoc $0`;exit;}
@@ -59,7 +59,7 @@ if ($help) { print `perldoc $0`;exit;}
 ##############
 
 # Most checking scripts should produce a log file that is a) emailed to us all
-# and b) copied to /wormsrv2/logs
+#                                                         b) copied to /wormsrv2/logs
 
 my $maintainers = "All";
 my $rundate     = `date +%y%m%d`; chomp $rundate;
@@ -73,48 +73,48 @@ my $strain_file;
 my $gff_file;
 my $mapping_dir;
 
-if( $debug )  {
-  
-  $data_dump_dir = "/tmp";
-  $log        = "$data_dump_dir/map_Alleles.$rundate";
-  $database = "/nfs/disk100/wormpub/DATABASES/current_DB/" unless $database;
-  $ver--;
-  $ace_file = "$data_dump_dir/mapped_alleles.ace";
-  $gff_file = "$data_dump_dir/mapped_alleles.gff";
-  $mapping_dir = $data_dump_dir;
-  $maintainers = "$debug\@sanger.ac.uk";
+if ($debug)  {
+    $data_dump_dir = "/tmp";
+    $log           = "$data_dump_dir/map_Alleles.$rundate";
+    $database      = "/nfs/disk100/wormpub/DATABASES/current_DB/" unless $database;
+    $ver--;
+    $ace_file      = "$data_dump_dir/mapped_alleles.ace";
+    $gff_file      = "$data_dump_dir/mapped_alleles.gff";
+    $mapping_dir   = $data_dump_dir;
+    $maintainers   = "$debug\@sanger.ac.uk";
 }
 else { 
-  $log        = "/wormsrv2/logs/map_AllelesWS$ver.$rundate.$$";
-  $mapping_dir = "$mapping_dir";
-  $ace_file = "$mapping_dir/allele_mapping.WS$ver.ace";
-  $gff_file = "$mapping_dir/allele_mapping.WS$ver.gff";
-  $database = "/wormsrv2/autoace/" unless $database;
+    $log         = "/wormsrv2/logs/map_AllelesWS$ver.$rundate.$$";
+    $mapping_dir = "/wormsrv2/autoace/MAPPINGS";
+    $ace_file    = "$mapping_dir/allele_mapping.WS$ver.ace";
+    $gff_file    = "$mapping_dir/allele_mapping.WS$ver.gff";
+    $database    = "/wormsrv2/autoace/" unless $database;
 }
+
 # geneace selectable for dev
-$geneace = "wormsrv2/geneace" unless $geneace;
+$geneace = "/wormsrv2/geneace" unless $geneace;
 
 ##########  File handles etc #############
 open (LOG,">$log") or die "cant open $log\n\n";
 print LOG "$0 start at $runtime on $rundate\n----------------------------------\n\n";
 
-my $geneace_update = "$mapping_dir/map_alleles_geneace_update$ver.ace";
+my $geneace_update        = "$mapping_dir/map_alleles_geneace_update$ver.ace";
 my $geneace_update_delete = "$mapping_dir/map_alleles_geneace_update_delete$ver.ace";
 my %geneace_alleles;
 
-my $cshl_update = "$mapping_dir/map_alleles_cshl_update$ver.ace";
-my $cshl_update_delete = "$mapping_dir/map_alleles_cshl_update_delete$ver.ace";
+my $cshl_update           = "$mapping_dir/map_alleles_cshl_update$ver.ace";
+my $cshl_update_delete    = "$mapping_dir/map_alleles_cshl_update_delete$ver.ace";
 
-my $KO_overlap_genes = "$mapping_dir/KO_genes_overlap";
+my $KO_overlap_genes      = "$mapping_dir/KO_genes_overlap";
 
 unless ($no_geneace) {
-  open (GENEACE,">$geneace_update") or die "cant open $geneace_update: $!\n";
-  open (GEN_DEL,">$geneace_update_delete") or die "cant open $geneace_update_delete\n";
+  open (GENEACE,">$geneace_update") or die "can't open $geneace_update: $!\n";
+  open (GEN_DEL,">$geneace_update_delete") or die "can't open $geneace_update_delete\n";
 
-  open (CSHLACE,">$cshl_update") or die "cant open $cshl_update: $!\n";
-  open (CSHL_DEL,">$cshl_update_delete") or die "cant open $cshl_update_delete\n";
+  open (CSHLACE,">$cshl_update") or die "can't open $cshl_update: $!\n";
+  open (CSHL_DEL,">$cshl_update_delete") or die "can't open $cshl_update_delete\n";
 
-  open (KOC, ">$KO_overlap_genes") or die "cant open $KO_overlap_genes\n";
+  open (KOC, ">$KO_overlap_genes") or die "can't open $KO_overlap_genes\n";
   
   # get list of alleles from geneace to check against for feedback files
   my $g_db = Ace->connect(-path => $geneace) || do { print  "$database Connection failure: ",Ace->error; die();};
