@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/bin/perl5.8.0 -w
 #
 # chromosome_dump.pl 
 #
@@ -8,7 +8,7 @@
 # see pod for more details
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-01-14 10:28:19 $      
+# Last updated on: $Date: 2003-05-23 13:23:32 $      
 
 
 use strict;
@@ -107,6 +107,8 @@ find sequence CHROMOSOME_V
 dna -f $dump_dir/CHROMOSOME_V.dna
 find sequence CHROMOSOME_X
 dna -f $dump_dir/CHROMOSOME_X.dna
+find sequence CHROMOSOME_MtDNA
+dna -f $dump_dir/CHROMOSOME_MtDNA.dna
 quit
 END
 
@@ -128,6 +130,7 @@ gif seqget CHROMOSOME_III ; seqfeatures -version 2 -file $dump_dir/CHROMOSOME_II
 gif seqget CHROMOSOME_IV ; seqfeatures -version 2 -file $dump_dir/CHROMOSOME_IV.gff
 gif seqget CHROMOSOME_V ; seqfeatures -version 2 -file $dump_dir/CHROMOSOME_V.gff
 gif seqget CHROMOSOME_X ; seqfeatures -version 2 -file $dump_dir/CHROMOSOME_X.gff
+gif seqget CHROMOSOME_MtDNA ; seqfeatures -version 2 -file $dump_dir/CHROMOSOME_MtDNA.gff
 quit
 END
 
@@ -145,7 +148,7 @@ sub composition{
   print LOG "Generating composition.all\n";	
 
   chdir $dump_dir;
-  system("/bin/cat *.dna | /nfs/disk100/wormpub/bin.ALPHA/composition > composition.all") && die "Couldn't create composition file\n";
+  system("/bin/cat CHROMOSOME_I.dna CHROMOSOME_II.dna CHROMOSOME_III.dna CHROMOSOME_IV.dna CHROMOSOME_V.dna CHROMOSOME_X.dna | /nfs/disk100/wormpub/bin.ALPHA/composition > composition.all") && die "Couldn't create composition file\n";
   print LOG "Generating totals file\n";
   my $total = 0;
   my $final_total = 0;
@@ -173,7 +176,7 @@ sub composition{
 ###########################
 
 sub zip_files{
-  foreach my $chr ("I", "II", "III", "IV", "V", "X"){
+  foreach my $chr ("I", "II", "III", "IV", "V", "X", "MtDNA"){
     my $dna_file = "$dump_dir"."/CHROMOSOME_".$chr.".dna";
     my $gff_file = "$dump_dir"."/CHROMOSOME_".$chr.".gff";
     if ($zipdna){
@@ -267,7 +270,8 @@ chromosome_dump.pl arguments:
 
 =item -dna
 
-Dump dna files from specified database (see -p flag), dumps one file for each of the six chromosomes.
+Dump dna files from specified database (see -p flag), dumps one file for each of 
+the six nuclear chromosomes, plus one file for the mitochondrial chromosome.
 
 =back
 
@@ -277,7 +281,8 @@ Dump dna files from specified database (see -p flag), dumps one file for each of
 =item -composition (optional)
 
 Calculates composition statistics for any dna files that are generated.
-Use in combination with -d option (see above)
+Use in combination with -d option (see above).  Excludes mitochondrial 
+chromosome.
 
 =back
 
