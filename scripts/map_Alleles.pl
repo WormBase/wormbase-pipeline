@@ -7,7 +7,7 @@
 # This maps alleles to the genome based on their flanking sequences
 #
 # Last updated by: $Author: krb $                      
-# Last updated on: $Date: 2004-09-03 15:39:12 $        
+# Last updated on: $Date: 2004-09-08 00:07:38 $        
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -24,7 +24,7 @@ use Getopt::Long;
 my $debug;          # debug mode, output goes to /tmp
 my $limit;          # limit number of alleles to map
 my $database;       # specify database to map alleles in, default is autoace
-my $ver;            # specify release number, defaults to current release number
+my $release;        # specify release number, defaults to current release number
 my $help;           # help mode, show perldoc
 my $restart = "go"; # specify an allele name from which to start mapping
 my $no_parse;       # turn off loading of data to $database
@@ -36,7 +36,7 @@ my $geneace;        # optionally make output file to fix problems in geneace
 GetOptions( "debug=s"    => \$debug,
 	    "limit=i"    => \$limit,
 	    "database=s" => \$database,
-	    "WS=i"       => \$ver,
+	    "release=i"  => \$release,
 	    "help"       => \$help,
 	    "restart=s"  => \$restart,
 	    "no_parse"   => \$no_parse,
@@ -47,7 +47,7 @@ GetOptions( "debug=s"    => \$debug,
 	  );
 
 if ($help) { print `perldoc $0`;exit;}
-
+die "No need for -release option in debug mode" if ($release && $debug);
 
 
 ###################
@@ -57,7 +57,8 @@ if ($help) { print `perldoc $0`;exit;}
 my $maintainers = "All";
 my $rundate     = &rundate;
 my $runtime     = &runtime;
-$ver = &get_wormbase_version unless defined $ver;
+
+
 my $tace = &tace;
 
 my $data_dump_dir;
@@ -68,22 +69,22 @@ my $mapping_dir;
 
 
 # Read hashes from COMMON_DATA
-my %worm_gene2class = &FetchData('worm_gene2class');
-my %CDS2gene        = &FetchData('cds2wbgene_id');
+my %worm_gene2class  = &FetchData('worm_gene2class');
+my %worm_gene2geneID = &FetchData('worm_gene2geneID_name');
 
 if ($debug)  {
     $data_dump_dir = "/tmp";
     $database      = "/nfs/disk100/wormpub/DATABASES/current_DB/" unless $database;
-    $ver--;
     $ace_file      = "$data_dump_dir/mapped_alleles.ace";
     $gff_file      = "$data_dump_dir/mapped_alleles.gff";
     $mapping_dir   = $data_dump_dir;
     $maintainers   = "$debug\@sanger.ac.uk";
 }
 else { 
+    $release = &get_wormbase_version unless (defined $release);
     $mapping_dir  = "/wormsrv2/autoace/MAPPINGS";
-    $ace_file     = "$mapping_dir/allele_mapping.WS$ver.ace";
-    $gff_file     = "$mapping_dir/allele_mapping.WS$ver.gff";
+    $ace_file     = "$mapping_dir/allele_mapping.WS$release.ace";
+    $gff_file     = "$mapping_dir/allele_mapping.WS$release.gff";
     $database     = "/wormsrv2/autoace/" unless $database;
     $geneace_file =  "$mapping_dir/allele_fix_for_geneace.ace";    
 }
@@ -118,17 +119,12 @@ my @original_alleles = $original_db->fetch(-query =>'Find Allele WHERE Flanking_
 
 # loop through each allele and then each gene for each allele, adding to hash structure
 foreach my $allele (@original_alleles) {
-
-  # set to undef if no genes are attached to allele
-  if(!defined($allele->Gene)){
-    $original_alleles{$allele}[0] = "undef";
-    print "$allele - $original_alleles{$allele}[0]\n";
-  }
-  else{
+  # only consider alleles with gene connections
+  if(defined($allele->Gene)){
     my @gene_IDs = $allele->Gene;
     my $counter = 0;
     foreach my $gene (@gene_IDs){
-      $original_alleles{$allele}[$counter] = $gene;
+      $original_alleles{$allele->name}[$counter] = $gene->name;
       $counter++;
     }
   }
@@ -167,7 +163,7 @@ my $left;
 my $right;
 my $go = 0;
 my %allele2gene;
-my @affects_genes;
+my @affects_CDSs;
 
 my $mapper = Feature_mapper->new( $database);
 
@@ -175,7 +171,7 @@ ALLELE:
 foreach my $allele (@alleles) {
   $name = $allele->name;
 
-  print "\nMapping $name\n" if $verbose;
+#  print "\nMapping $name\n" if $verbose;
 
 
   # debug facility - this bit is so that it can restart from given allele name
@@ -260,15 +256,42 @@ foreach my $allele (@alleles) {
   $allele_data{$name}[5] = $map[2];
   $allele_data{$name}[6] = $map[0];
 
+  @affects_CDSs = $mapper->check_overlapping_CDS($map[0],$map[1],$map[2]);
 
-  @affects_genes = $mapper->check_overlapping_CDS($map[0],$map[1],$map[2]);
-  print "$name hits @affects_genes\n" if $verbose;
-  $allele2gene{"$name"} = \@affects_genes if ($affects_genes[0]);
+
+  # make (UNIQUE) array of gene names corresponding to @affects_CDSs
+  # first make a hash, then use the keys of the hash to set new array
+  my %affects_genes;
+  foreach (@affects_CDSs){
+    my $gene = $worm_gene2geneID{$_};
+    $affects_genes{$gene} = 1;  
+  }
+  my @affects_genes = keys(%affects_genes);
+  my %count;
+  foreach my $gene (@{$original_alleles{$name}}, @affects_genes){
+    $count{$gene}++;
+  }
+  foreach my $gene (keys %count){
+    if ($count{$gene} == 1){
+      $error_count++;
+      if($affects_genes{$gene}){
+	print "ERROR 1: $name->$gene was mapped by script only\n";
+	$log->write_to("ERROR 1: $name->$gene was mapped by script only\n");	
+      }
+      else{
+	print "ERROR 2: $name->$gene was in original database only\n";
+	$log->write_to("ERROR 2: $name->$gene was in original database only\n");
+      }
+   }
+  }
+
+
+  $allele2gene{"$name"} = \@affects_CDSs if ($affects_CDSs[0]);
 
   &outputAllele($name);
 }
 
-print "\nWARNING: $error_count alleles failed to map\n\n";
+print "\nWARNING: problems with $error_count alleles\n\n";
 
 $db->close;
 
@@ -324,18 +347,30 @@ exit(0);
 sub outputAllele{
   my $allele = shift;
 
-  if( $allele_data{$allele}[6] and $allele_data{$allele}[4] and  $allele_data{$allele}[5]) { 
+  # only proceed if mapping routine returns the following three pieces of info
+  if( $allele_data{$allele}[6] and $allele_data{$allele}[4] and $allele_data{$allele}[5]) { 
       
     print OUT "\nSequence : \"$allele_data{$allele}[6]\"\nAllele $allele $allele_data{$allele}[4] $allele_data{$allele}[5]\n";
     print GFF "\n$allele_data{$allele}[6]\tAllele\tTEST\t$allele_data{$allele}[4]\t$allele_data{$allele}[5]\t.\t+\t.\tAllele \"$allele\"" if $gff;
 
     # process allele if it matches overlapping CDSs/Transcripts
     if( $allele2gene{$allele} ) {
-      my @affects_genes = split(/\s/,"@{$allele2gene{$allele}}");
+      my @affects_CDSs = split(/\s/,"@{$allele2gene{$allele}}");
       
       # loop through all CDSs/Transcripts that overlap allele
-      foreach my $cds (@affects_genes) {
-	print "$allele affects $cds which is in $worm_gene2class{$cds} class\n" if ($worm_gene2class{$cds} ne "CDS");
+      foreach my $cds (@affects_CDSs) {
+
+	#allele - WBGene connection
+	my $WBGene = $worm_gene2geneID{$cds};
+	print OUT "Gene $WBGene\n";
+
+	if(!defined($worm_gene2class{$cds})){
+	  $log->write_to("ERROR: $cds not listed in %worm_gene2class\n");
+	  next;
+	}
+	elsif ($worm_gene2class{$cds} ne "CDS"){
+	  print "WARNING: $allele affects $cds which is in $worm_gene2class{$cds} class\n";
+	}
 	print OUT "\nCDS : \"$cds\"\nAlleles $allele\n";
 
 	# in Allele object
@@ -343,36 +378,8 @@ sub outputAllele{
 
 	#allele - CDS connection
 	print OUT "Predicted_gene $cds\n";
-
-	#allele - WBGene connection
-	my $WBGene = $CDS2gene{$cds};
-	print OUT "Gene $WBGene\n";
-
-	if( defined($original_alleles{$allele}[0]) and ($original_alleles{$allele}[0] eq "undef") ) {
-	  $log->write_to("ERROR: $allele - script has added new connection to $WBGene\n");
-	  $error_count++;
-	  return;
-	}
-	if( defined($original_alleles{$allele}[0]) and $original_alleles{$allele}[0]->name ne $WBGene ) {
-	  $log->write_to("ERROR: $allele - original connection was to Gene $original_alleles{$allele}[0] but scripts maps to Gene $WBGene\n");
-	  $error_count++;
-	}
       }
-    }
-    else {
-      print "$allele - script does not find overlapping CDS/Transcript\n" if $verbose;
-
-      # but should check whether original data had a connected gene
-      if($original_alleles{$allele}[0] ne "undef"){
-	$log->write_to("ERROR: $allele - script does not match this to a gene, but geneace does\n");
-	$error_count++;
-      }
-      else{
-	print "$allele - original database does not have overlapping CDS/Transcript\n" if $verbose;
-      }
-    }
-
-    
+    }    
   }
 }
 
@@ -388,7 +395,7 @@ __END__
 
 =over 4
 
-=item map_alleles.pl  [-debug -limit -database=s -WS=s -verbose -restart=s -list=s -no_parse]
+=item map_alleles.pl  [-debug -limit -database=s -release=s -verbose -restart=s -list=s -no_parse]
 
 =back
 
@@ -471,9 +478,9 @@ greater indication of what procedured are being used to map the allele
 
 =over 4
 
-=item -ver 
+=item -release
 
-select a version of the database other than that being built
+select a version of the database other than that being built, do not use in debug mode
 
 =back
 
