@@ -8,7 +8,7 @@
 # and virtual objects to hang the data onto
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2003-10-24 11:11:16 $
+# Last edited on: $Date: 2003-10-27 11:31:00 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -26,13 +26,13 @@ my ($help, $debug, $verbose, $est, $mrna, $ost, $nematode, $embl,
     $blat, $process, $virtual, $dump, $camace, $fine);
 my $maintainers = "All";
 my $errors = 0;
+my $bin       = "/wormsrv2/scripts";
 our $log;
-our $blat_dir = "/wormsrv2/autoace/BLAT"; # default BLAT directory, can get changed if -camace used
-our $dbpath = "/wormsrv2/autoace"; # default database location
-my $bin     = "/wormsrv2/scripts";
-our %homedb; # for storing superlink->lab connections
-our $blatex  = '/nfs/disk100/wormpub/bin.ALPHA/blat';
-our $giface  = &giface;
+our $blat_dir = "/wormsrv2/autoace/BLAT";    # default BLAT directory, can get changed if -camace used
+our $dbpath   = "/wormsrv2/autoace";         # default database location
+our %homedb;                                 # for storing superlink->lab connections
+our $blatex   = '/nfs/disk100/wormpub/bin.ALPHA/blat';
+our $giface   = &giface;
 our %word = (
 	     est      => 'BLAT_EST',
 	     mrna     => 'BLAT_mRNA',
@@ -212,6 +212,7 @@ if ($virtual) {
   my $runtime = &runtime;
   print LOG "$runtime: Producing $data files for the virtual objects\n";
 
+  print "// Assign laboratories to superlinks*\n";
   # First assign laboratories to each superlink object (stores in %homedb)
   &sequence_to_lab;
 
@@ -227,12 +228,12 @@ close(LOG);
 
 # send log
 # warn about errors in subject line if there were any
-if($errors == 0){
-  &mail_maintainer("BUILD SCRIPT: blat_them_all",$maintainers,$log);
-}
-else{
-  &mail_maintainer("BUILD SCRIPT: blat_them_all: $errors ERROR!",$maintainers,$log);
-}
+#if($errors == 0){
+#  &mail_maintainer("BUILD SCRIPT: blat_them_all",$maintainers,$log);
+#}
+#else{
+#  &mail_maintainer("BUILD SCRIPT: blat_them_all: $errors ERROR!",$maintainers,$log);
+#}
 
 
 exit(0);
@@ -247,7 +248,7 @@ exit(0);
 #                                                                               #
 #################################################################################
 
-sub sequence_to_lab{
+sub sequence_to_lab {
   # Connect superlink objects to their corresponding laboratory object
   # store in global %homedb
   local (*LINK);
@@ -257,16 +258,19 @@ sub sequence_to_lab{
   # deal with the superlink objects
   open (LINK, "<$blat_dir/superlinks.ace") || croak "Couldn't open superlinks.ace $!";
   while (<LINK>) {
-    if (/^Sequence\s+\:\s+\"(\S+)\"/) {
-      $name = $1;
-      next;
-    }
-    if (/^From_Laboratory\s+\"(\S+)\"/) {
-      $homedb{$name} = $1;
-      print LOG "assigning $1 to $name\n";
-      undef ($name);
-      next;
-    }
+      
+      if (/^Sequence\s+\:\s+\"(\S+)\"/) {
+	  $name = $1;
+#	  print "// New sequence is $name\n";
+	  next;
+      }
+      if (/^From_laboratory\s+\"(\S+)\"/) {
+	  $homedb{$name} = $1;
+	  print LOG "assigning $1 to $name\n";
+#	  print "assigning $1 to $name\n";
+	  undef ($name);
+	  next;
+      }
   }
   close(LINK);
   
@@ -584,7 +588,7 @@ sub virtual_objects_blat {
   close OUT_stlace_feat;
   
   # clean up if you are dealing with parasitic nematode conensus data
-  if ($data eq "NEMATODE") {
+  if ($data eq "nematode") {
     unlink ("$blat_dir/virtual_objects.autoace.ci.$data.ace");
     unlink ("$blat_dir/virtual_objects.camace.ci.$data.ace");
     unlink ("$blat_dir/virtual_objects.stlace.ci.$data.ace");
