@@ -1,3 +1,78 @@
+=pod 
+
+=head1 NAME
+
+ SequenceObj
+
+=head1 SYNOPSIS
+
+ my $seq = SequenceObj->new($name,\%exons,"+");
+ $seq->sort_exons
+ $seq->exon_data
+ $seq->transform_strand($transformer,'transform');
+ $seq->check_exon_match( $cdna );
+
+ my $exons = $seq->( exon_data ); 
+ foreach (keys %{$exons} ) {
+   print "$_ $exons->{$_}\n";
+ }
+
+ my $first_exon = $seq->first_exon; # array ref
+ my $last_exon  = $seq->last_exon; # array ref
+
+ $self->_cDNA_wholelyInExon( $cdna );
+ $self->_exon_that_ends( $exon_end );
+
+ my $name   = $seq->name;
+ my $start  = $seq->start;
+ my $end    = $seq->end;
+ my $strand = $seq->strand;
+
+ $seq->mapped( $cds ); sets the CDS to which the mRNA is attached
+
+ # feature data is added / queried via specific name method that in turn all call 'feature' with the specific type set
+ # no distinction is made between SL1 and SL2. Although there are methods for both they both end up as SL
+ my $SL = $seq->( SL1 );
+ $seq->polyA_site( [ 182772,  182773,  "WBsf01634" ] ); array of coords and name is passed
+
+
+=head1 DESCRIPTION
+
+ This object represents a SequenceObj for use in the transcript_builder.pl script.  It is a generic object that stores exon structure as a hash 
+
+ 'exons' => HASH(0x143160ad0)
+            4900023 => 4900309
+            4899865 => 4899943
+            4900377 => 4900592
+
+
+and a sorted array of arrays 
+
+ 'sorted_exons' => ARRAY(0x143160b80)
+      0  ARRAY(0x14315ffe8)
+         0  4899865
+         1  4899943
+      1  ARRAY(0x14315fe88)
+         0  4900023
+         1  4900309
+      2  ARRAY(0x14315fec8)
+         0  4900377
+         1  4900592
+
+Also stores coordinate info - start, end  and strand. and features associated with the sequence
+
+Inherited by CDS.pm Transcript.pm 
+
+=head1 CONTACT
+
+Anthony  ar2@sanger.ac.uk
+
+
+=head1 METHODS
+
+=cut
+
+
 package SequenceObj;
 
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'} ;
@@ -7,7 +82,19 @@ use strict;
 # new 
 # expects name , %-ref of exon start/ends and strand ( +/- )
 
-our $debug;
+our $debug; # class variable - available to all instances of SequenceObj and classes that inherit from it.
+
+=head2 new
+
+    Title   :   new
+    Usage   :   SequenceObj->new($name,\%exons,"+");
+    Function:   Creates new SequenceObj object
+    Returns :   ref to self
+    Args    :   name - string
+                hash ref of exon structure
+                strand as string
+
+=cut
 
 sub new
   {
@@ -41,6 +128,20 @@ sub new
     return $self;
   }
 
+=head2 sort_exons
+
+    Title   :   sort_exons
+    Usage   :   $seq->sort_exons
+    Function:   create sorted array of exon arrays
+                 [0]->( 1200, 1250 )
+                 [1]->( 1300, 1350 )
+                 [2]->( 1400, 1500 ) etc
+    Returns :   nothing
+    Args    :   none
+               
+
+=cut
+
 sub sort_exons
   {
     my $self = shift;
@@ -62,6 +163,18 @@ sub sort_exons
     $self->start( $start );
     $self->end( $end );
   }
+
+=head2 transform_strand
+
+    Title   :   transform_strand
+    Usage   :   $seq->transform_strand( $transformer,'transform')
+                $seq->transform_strand( $transformer,'revert')
+    Function:   convert ( and revert ) negative strand coords to pseudo fwd so that same code exon comparison will work
+    Returns :   nothing
+    Args    :   Strand_transformer
+                direction ( 'transform' or 'revert' )
+
+=cut
 
 sub transform_strand
   {
@@ -93,10 +206,23 @@ sub transform_strand
     # transform feature data ( SL1 etc ).
     foreach my $feature ( keys %{ $self->{'feature'}} ) {
       $self->{'feature'}->{"$feature"} = [( $transformer->transform_neg_coord( $self->{'feature'}->{"$feature"}->[1]),
-					   $transformer->transform_neg_coord( $self->{'feature'}->{"$feature"}->[0])
-					 )];
+					    $transformer->transform_neg_coord( $self->{'feature'}->{"$feature"}->[0]),
+					    $self->{'feature'}->{"$feature"}->[2]
+					  )];
     }
   }
+
+=head2 check_exon_match
+
+    Title   :   check_exon_match
+    Usage   :   $seq->check_exon_match( $cdna )
+    Function:   check that the passed SequenceObj derived object has valid matching exon structure to this.  This comparison is mainly for comparing cDNAs to CDSs so has criteria such as 'final exon of gene so allow extension past end (UTR)'.  Also used for the reverse check cDNA ->cds
+             It writes a flag in the exon data of the passed object indicating the match type of each exon, for use in Transcript.pm
+    Returns :   1 for match; 0 for fail
+    Args    :   SequenceObj
+               
+
+=cut
 
 sub check_exon_match 
   {
@@ -184,6 +310,14 @@ sub check_exon_match
 	print "Match cDNA contained in exon\n"  if $debug;
 	$exon->[2] = 7;
       }
+      # single exon gene contained in cDNA
+      elsif( ( $cExonStart < $self->first_exon->[0] ) and
+	     ( $cdna->exon_data->{$cExonStart} > $self->last_exon->[1] ) and
+	     ( scalar keys %{$self->exon_data} == 1 ) # single exon gene
+	   ) {
+	print "Match single exon gene contained in cDNA\n"  if $debug;
+	$exon->[2] = 13;
+      }
       # cDNA exon overlaps gene 1st exon start and terminate therein
       elsif( ( $cExonStart == $cdna->last_exon->[0] ) and #  last exon of cDNA
 	     ( $cExonStart < $self->first_exon->[0] ) and 
@@ -218,6 +352,17 @@ sub check_exon_match
     return 1;
   }
 
+=head2 _cDNA_wholelyInExon
+
+    Title   :   _cDNA_wholelyInExon
+    Usage   :   $self_cDNA_wholelyInExon
+    Function:   internal method to determine if a passed SequenceObj lies completely within an exon of this SequenceObj
+    Returns :   1 if does lie within exon; 0 otherwise
+    Args    :   SequenceObj
+               
+
+=cut
+
 sub _cDNA_wholelyInExon
   {
     my $self = shift;
@@ -232,6 +377,17 @@ sub _cDNA_wholelyInExon
   }
 
 
+=head2 _exon_that_end
+
+    Title   :  _exon_that_end
+    Usage   :  $self->_exon_that_end ( 20000 )
+    Function:  internal method to find it this SequenceObj has an exon that ends with passed coord 
+    Returns :   exon start coord or 0
+    Args    :   coordinate as int
+               
+
+=cut
+
 # expects coord of exon end to compare. Returns start of exon if match , or else 0 
 sub _exon_that_ends
   {
@@ -243,6 +399,17 @@ sub _exon_that_ends
     return 0;
   }
 
+=head2 exon_data
+
+    Title   :  exon_data
+    Usage   :  exon_data
+    Function:  $seq->exon_data( %exons )  
+    Returns :   hash ref of exons
+    Args    :   hash or nothing
+               
+
+=cut
+
 sub exon_data
   {
     my $self = shift;
@@ -251,17 +418,48 @@ sub exon_data
     return $self->{'exons'};
   }
 
+=head2 first_exon
+
+    Title   :   first_exon
+    Usage   :   $seq->first_exon
+    Returns :   returns array of first exon coords ( 1250, 1300 )
+    Args    :   none
+               
+
+=cut
+
 sub first_exon 
   {
     my $self = shift;
     return $self->{'sorted_exons'}->[0];
   }
 
+=head2 last_exon
+
+    Title   :  last_exon
+    Usage   :  $seq->last_exon
+    Returns :  returns array of last exon coords ( 1450, 1600 )
+    Args    :  none
+               
+
+=cut
+
 sub last_exon 
   {
     my $self = shift;
     return $self->{'sorted_exons'}->[-1];
   }
+
+=head2 start
+
+    Title   :  start
+    Usage   :  $seq->start( '1250' )
+    Function:  get / set start of object
+    Returns :  start coord as int
+    Args    :  coord as int or none
+               
+
+=cut
 
 sub start 
   {
@@ -271,6 +469,17 @@ sub start
     return $self->{'start'};
   }
 
+=head2 end
+
+    Title   :  end
+    Usage   :  $seq->end( '1600' )
+    Function:  get / set end of object
+    Returns :  end coord as int
+    Args    :  coord as int or none
+               
+
+=cut
+
 sub end 
   {
     my $self = shift;
@@ -278,6 +487,17 @@ sub end
     $self->{'end'} = $end if $end;
     return $self->{'end'};
   }
+
+=head2 name
+
+    Title   :   name
+    Usage   :  $seq->name( "F45G2.2.1" )
+    Function:   get / set name
+    Returns :   name as string
+    Args    :   name as string or none
+               
+
+=cut
 
 sub name
   {
@@ -287,11 +507,31 @@ sub name
     return $self->{'name'};
   }
 
+=head2 strand
+
+    Function:  get / set strand assignment
+    Returns / Args : "+" or "-" as string
+               
+
+=cut
+
 sub strand
   {
     my $self = shift;
     return $self->{'strand'};
   }
+
+=head2 sorted_exons
+
+    Title   :  sorted_exons
+    Usage   :  my $second_exon = $seq->sorted_exons->[1]
+               my $second_exon_start = $second_exon->[0]
+    Function:  get sorted exons 
+    Returns :  sorted array of exon arrays ( sees synopsis )
+    Args    :  none
+               
+
+=cut
 
 sub sorted_exons
   {
@@ -299,16 +539,29 @@ sub sorted_exons
     return $self->{'sorted_exons'};
   }
 
+=head2 mapped
+
+    Function:  get / set function for assigning Transcript / CDS that this is assiged to ( cDNA method really  !)
+    Returns / Args :  CDS object
+
+=cut
+
 #this is really a cDNA specific method but cant be bothered to create new class yet !
 sub mapped
   {
     my $self = shift;
-    my $state = shift;
-    if( $state ){
-      $self->{'mapped'} = $state;
-    }
-    return $self->{'mapped'};
+    my $CDS = shift;
+    $self->{'CDS'} = $CDS if( $CDS );
+    
+    return $self->{'CDS'};
   }
+
+=head2 chromosome
+
+    Function:   get / set chromosome assignment
+    Returns / Args : eg "I" as string
+
+=cut
 
 sub chromosome
   {
@@ -317,6 +570,17 @@ sub chromosome
     $self->{'chromosome'} = $chromosome if $chromosome;
     return $self->{'chromosome'};
   }
+
+=head2 transformer
+
+    Title   :   transformer ( see Strand_transformer.pm )
+    Usage   :   $seq->transformer( $transformer )
+    Function:   get / set Strand_transformer 
+    Returns :   Strand_transformer ref
+    Args    :   
+               
+
+=cut
 
 sub transformer 
   {
@@ -327,6 +591,17 @@ sub transformer
     return $self->{'transformer'};
   }
 
+=head2 debug 
+
+    Title   :   debug
+    Usage   :   $seq->debug
+    Function:   set debug class variable
+    Returns :   $debug value
+    Args    :   defined of none
+               
+
+=cut
+
 sub debug
   {
     my $self = shift;
@@ -335,14 +610,48 @@ sub debug
     return $debug;
   }
 
+=head2 features
+
+    Title   :  features
+    Usage   :  $seq->feature
+    Function:  get array of features associated with this SequenceObj 
+    Returns :  array of features
+    Args    :  none
+               
+
+=cut
+
+# just returns the WBfeature names
+sub features
+  {
+    my $self = shift;
+    my @features;
+    foreach my $feature ( keys %{$self->{feature}} )  {
+      push( @features, $self->{feature}->{$feature}->[2] );
+    }
+    return @features; 
+  }
+
+=head2 feature
+
+    Title   :  feature 
+    Usage   :  $self->feature( 'SL',\@coords );
+    Function:  add / query specific feature type
+    Returns :  array ( coord coord WBsf_id )
+    Args    :  type ('SL', polyA_site etc ) and array ( coord coord WBsf_id )
+               
+
+=cut
+
+# add / query specific feature type
 sub feature
   {
     my $self = shift;
     my $feature = shift;
     my $data = shift; #@  182772  182773  WBsf01634
 
-    # self=>feature=>SL   =>( x y )
-    #              =>polyA_site=>( x y )
+    # self=>feature=>SL   =>( x y id)
+    #              =>polyA_site=>( x y id)
 
     if( $data ) { # adding new feature
       $self->{'feature'}->{ "$feature" } = $data;
@@ -351,6 +660,16 @@ sub feature
       return $self->{'feature'}->{$feature};
     }
   }
+
+=head2 SL1
+
+    Usage   :   $seq->feature('SL',[$x, $y, $WBsf_id] );
+                my $sl = $seq->SL1;
+    Function:   get / set feature data
+  
+               
+
+=cut
   
 sub SL1
   {
@@ -358,6 +677,12 @@ sub SL1
     my $type = "SL";
     return $self->feature( $type, $data );
   }
+
+=head2 SL2
+
+   see SL1
+
+=cut
 
 sub SL2
   {
@@ -367,12 +692,24 @@ sub SL2
   }
 
 
+=head2 SL
+
+   see SL1
+
+=cut
+
 sub SL
   {
     my ($self, $data) = @_;
     my $type = "SL";
     return $self->feature( $type, $data );
   }
+
+=head2 polyA_site
+
+   see SL1
+
+=cut
 
 sub polyA_site
   {
@@ -381,6 +718,26 @@ sub polyA_site
     return $self->feature( $type, $data );
   }
 
+=head2 polyA_signal_sequence
+
+   see SL1
+
+=cut
+
+sub polyA_signal_sequence
+  {
+    my ($self, $data) = @_;
+    my $type = "polyA_signal";
+    return $self->feature( $type, $data );
+  }
+
+=head2 polyA_signal
+
+   see SL1
+
+=cut
+
+# added this so i dont have to change loads of code where i've written it as this ;)
 sub polyA_signal
   {
     my ($self, $data) = @_;
@@ -388,6 +745,50 @@ sub polyA_signal
     return $self->feature( $type, $data );
   }
 
+=head2 array_index
+
+    Title   :   array_index
+    Function:   get / set array_index - used to store position in ordered arrays in transcript_builder.pl
+
+=cut
+
+sub array_index
+  {
+    my $self = shift;
+    my $index = shift;
+    $self->{'index'} = $index if defined $index;
+    return $self->{'index'};
+  }
+
+=head2 matching_cDNAs
+
+    Returns :   array of SequenceObj s
+
+=cut
+
+sub matching_cDNAs
+  {
+    my $self = shift;
+    return $self->{'matching_cdna'};
+  }
+
+=head2 paired_read
+
+    Function:   get / set paired read for ESTs
+    Returns :   SequenceObj
+    Args    :   SequenceObj
+               
+
+=cut
+
+sub paired_read
+  {
+    my $self = shift;
+    my $pair = shift;
+
+    $self->{'paired_read'} = $pair if $pair;
+    return $self->{'paired_read'};
+  }
 
 
 1;

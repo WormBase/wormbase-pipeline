@@ -18,8 +18,18 @@ sub new
     bless ( $self, $class );
 
     $self->transformer($transformer) if $transformer;
+    $self->cds( $CDS ) if $CDS;
     return $self;
   }
+
+sub cds
+  {
+    my $self = shift;
+    my $cds = shift;
+
+    $self->{'cds'} = $cds if $cds;
+    return $self->{'cds'};
+ }
 
 sub map_cDNA
   {
@@ -66,7 +76,7 @@ sub map_cDNA
 	  }
 	}
 	else {
-	  if( $polyA_site->[0] < $self-end ) {
+	  if( $polyA_site->[0] < $self->end ) {
 	    print STDERR $cdna->name, " polyA_site within ", $self->name, "\n" if $debug;
 	    return 0;
 	  }
@@ -76,14 +86,14 @@ sub map_cDNA
       # . and polyA_signal
       my $polyA_sig;
       if( $polyA_sig = $cdna->polyA_signal ) {
-	if( $self->polyA_sig ) {
-	  unless( $polyA_sig->[0] == $self->polyA_sig->[0] ) {
+	if( $self->polyA_signal ) {
+	  unless( $polyA_signal->[0] == $self->polyA_signal->[0] ) {
 	    print STDERR "Conficting polyA_signals ",$self->name, "\t",$cdna->name,"\n" if $debug;
 	    return 0;
 	  }
 	}
 	else {
-	  if( $polyA_sig->[0] + 30 > $self-end) {
+	  if( $polyA_signal->[0] + 30 > $self->end) {
 	    print STDERR $cdna->name, " polyA_signal within ", $self->name, "\n" if $debug;
 	    return 0;
 	  }
@@ -104,14 +114,23 @@ sub map_cDNA
 	  $match = 1;
 	}
       }
-      $self->SL( $SL ) if $SL;
-      $self->polyA_site( $polyA_site )  if $polyA_site;
-      $self->polyA_signal( $polyA_sig ) if $polyA_sig;
       return $match;
     }
   }
 
+sub add_3_UTR
+  {
+    my $self = shift;
+    my $cdna = shift;
 
+    return if( $self->polyA_site or $self->polyA_signal) ;
+
+    # set match code for interpretation in add_matching_cDNA
+    foreach $exon ( @{$cdna->sorted_exons} ) {
+      $exon->[2] = 12;
+    }
+    $self->add_matching_cDNA($cdna)
+  }
 
 sub add_matching_cDNA
   {
@@ -134,6 +153,7 @@ sub add_matching_cDNA
 # *9 = final cDNA exon starts in final gene exon and continues past end
 # *10 = 5'UTR exon
 # *11 = 3'UTR exon
+#  12 = downstream of existing transcript
 
 ########################################################################
 
@@ -164,9 +184,48 @@ sub add_matching_cDNA
 	#add exon to UTR
 	$self->exon_data->{"$exon->[0]"} = $exon->[1];
       }
+      #extending 3'UTR with non-overlapping cDNAs
+      elsif( $match_code == 12) {
+	if ( $cdna->start == $exon->[0]) { 
+	  #extend existing
+	  my $last_exon_start = $self->last_exon->[0];
+	  $self->{'exons'}->{"$last_exon_start"} = $exon->[1];
+	}
+	else {
+	  #add new exon
+	  $self->{'exons'}->{"$exon->[0]"} = $exon->[1];
+	}
+      }
+      # single exon gene extend both ends
+      elsif( match_code == 13 ) {	
+	# 5' extension
+	my $curr_start = $self->start;
+	my $exon_end = $self->sorted_exons->[0]->[1];
+
+	delete $self->exon_data->{$curr_start};
+	$self->exon_data->{"$exon->[0]"} = $exon_end;
+	
+	# 3' extension
+	my $last_exon_start = $self->last_exon->[0];
+	$self->exon_data->{"$last_exon_start"} = $exon->[1];
+      }	
     }
     # reset start end etc . . 
     $self->sort_exons;
+
+    # update gene start and end
+    $self->cds->gene_start( $self->start );
+    $self->cds->gene_end  ( $self->end );
+
+    if( my $SL = $cdna->SL){
+      $self->SL( $SL );
+    } 
+    if ( my $polyA_site = $cdna->polyA_site ) {
+      $self->polyA_site( $polyA_site )  ;
+    }
+    if (my $polyA_signal = $cdna->polyA_signal ) {
+      $self->polyA_signal( $polyA_sig ) ;
+    }
   }
 
 sub report
@@ -204,17 +263,16 @@ sub report
     # . . and Matching_cDNA
     foreach (@{$self->{'matching_cdna'}}) {
       print $fh "Matching_cDNA \"",$_->name,"\"\n";
+
+#   This bit commented out for WS127 until model change approved
+#      foreach my $f ( $_->features ) {
+#	print $fh "Sequence_features $f\n";
+#      }
+
     }
     # .. and method
     print $fh "Method Coding_transcript\n";
   }
-
-
-
-
-
-
-
 
 
 1;
