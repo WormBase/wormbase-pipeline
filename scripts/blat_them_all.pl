@@ -8,7 +8,7 @@
 # and virtual objects to hang the data onto
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-09-08 16:55:00 $
+# Last edited on: $Date: 2003-09-10 07:15:19 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -179,76 +179,27 @@ if ($process) {
   print "Mapping blat data to autoace\n" if ($verbose);      
   print LOG "$runtime: Processing blat ouput file, running blat2ace.pl\n";
   
-
-  if ($est) {
-    unless ($camace) {
-      system("$bin/blat2ace.pl -est -intron") && croak "Mapping failed\n"; 
-    }
-    else {
-      system("$bin/blat2ace.pl -est -intron -camace") && croak "Mapping failed\n"; 	
-    }
-  }
-
-  if ($ost) {
-    unless ($camace) {
-      system("$bin/blat2ace.pl -ost -intron") && croak "Mapping failed\n"; 
-    }
-    else {
-      system("$bin/blat2ace.pl -ost -intron -camace") && croak "Mapping failed\n"; 	
-    }
-  }
-
-  if ($mrna) {
-    unless ($camace) {
-      system("$bin/blat2ace.pl -mrna -intron") && croak "Mapping failed\n"; 
-    }
-    else {
-      system("$bin/blat2ace.pl -mrna -intron -camace") && croak "Mapping failed\n"; 
-    }
-  }
-
-  if ($embl) {  
-    unless ($camace) {
-      system("$bin/blat2ace.pl -embl -intron") && croak "Mapping failed\n"; 
-    }
-    else {
-      system("$bin/blat2ace.pl -embl -intron -camace") && croak "Mapping failed\n"; 
-    }
-  }
-  
+  # treat slightly different for nematode data (no confirmed introns needed)
   if ($nematode) {
-    system("$bin/blat2ace.pl -nematode") && croak "Mapping failed\n"; 
+    system("$bin/blat2ace.pl -$data") && croak "Mapping failed\n"; 
   }
-
+  elsif($camace){
+    system("$bin/blat2ace.pl -$data -intron -camace") && croak "Mapping failed\n"; 	
+  }
+  else {
+    system("$bin/blat2ace.pl -$data -intron") && croak "Mapping failed\n"; 
+  }
 
   $runtime = &runtime;
   print "Producing confirmed introns in databases\n\n" if $verbose;
   print LOG "$runtime: Producing confirmed introns in databases\n";
 
-  # produce confirmed introns #
-  if ($est) {    
-    print "Producing confirmed introns using EST data\n" if $verbose;
-    &confirm_introns('autoace','EST');
-    &confirm_introns('camace', 'EST');
-    &confirm_introns('stlace', 'EST');
-  }
-  if ($ost) {
-    print "Producing confirmed introns using OST data\n" if $verbose;
-    &confirm_introns('autoace','OST');
-    &confirm_introns('camace', 'OST');
-    &confirm_introns('stlace', 'OST');
-  }
-  if ($mrna) {
-    print "Producing confirmed introns using mRNA data\n" if $verbose;
-    &confirm_introns('autoace','mRNA');
-    &confirm_introns('camace', 'mRNA');
-    &confirm_introns('stlace', 'mRNA');
-  }
-  if ($embl) {
-    print "Producing confirmed introns using EMBL CDS data\n" if $verbose;
-    &confirm_introns('autoace','EMBL');
-    &confirm_introns('camace', 'EMBL');
-    &confirm_introns('stlace', 'EMBL');
+  # produce confirmed introns for all but nematode data
+  unless($nematode){
+    print "Producing confirmed introns using $data data\n" if $verbose;
+    &confirm_introns('autoace',"$data");
+    &confirm_introns('camace', "$data");
+    &confirm_introns('stlace', "$data");
   }
 }
 
