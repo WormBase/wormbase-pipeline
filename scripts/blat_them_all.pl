@@ -8,7 +8,7 @@
 # and virtual objects to hang the data onto
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2004-04-14 13:31:56 $
+# Last edited on: $Date: 2004-04-14 14:00:48 $
 
 
 use strict;
@@ -483,7 +483,7 @@ sub confirm_introns {
 	      # check to see intron length. If less than 25 bp then mark up as False
 	      # dl 040413
 	    
-	      if (($f[2] - $f[1]) <= 25) {
+	      if  ( (($f[2] - $f[1]) <= 25) || (($f[1] - $f[2]) <= 25) ) {
 		  print GOOD "Confirmed_intron $one $two False $f[4]\n\n";
 	      }
 	      else {
