@@ -1649,6 +1649,7 @@
                         Last_attempt_to_contact UNIQUE DateType UNIQUE Text
                                 // Text is method of attempt to contact
                         Old_address DateType #Address   // for history
+			Left_the_field Text
         Comment Text
         Publication     Paper ?Paper XREF Person
                         Publishes_as ?Author    // confirmed author names (curated)
