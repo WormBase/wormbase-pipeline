@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-07-10 10:04:04 $
+# Last updated on: $Date: 2002-07-10 10:57:29 $
 
 use Ace;
 use lib "/wormsrv2/scripts/"; 
@@ -59,7 +59,7 @@ close(ERICHLOG);
 my $maintainer = "All";
 &mail_maintainer($0,$maintainer,$log);
 
-my $interested ="krb\@sanger.ac.uk, emsch\@its.caltech.edu";
+my $interested ="krb\@sanger.ac.uk, emsch\@its.caltech.edu, ck1\@sanger.ac.uk";
 &mail_maintainer($0,"$interested",$erichlog);
 exit(0);
 
