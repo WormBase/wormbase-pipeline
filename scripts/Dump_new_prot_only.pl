@@ -1,4 +1,3 @@
-
 #!/usr/local/bin/perl5.6.1 -w
 
 use DBI;
@@ -10,16 +9,16 @@ use DB_File;
 # command-line options                #
 #######################################
 my ($test, $debug, $help, $all, $WPver, $analysisTOdump, $just_matches, $matches, $list, $brigprot);
-GetOptions ("debug=s"   => \$debug,
-	    "test"    => \$test,
-	    "help"    => \$help,
-	    "all"     => \$all,
-	    "analysis=s" => \$analysisTOdump,
-	    "version=s" =>\$WPver,
+GetOptions ("debug=s"      => \$debug,
+	    "test"         => \$test,
+	    "help"         => \$help,
+	    "all"          => \$all,
+	    "analysis=s"   => \$analysisTOdump,
+	    "version=s"    => \$WPver,
 	    "just_matches" => \$just_matches,
-	    "matches"   => \$matches,
+	    "matches"      => \$matches,
 	    "dumplist=s"   => \$list,
-	    "brigprot" => \$brigprot
+	    "brigprot"     => \$brigprot
            );
 
 my $maintainers = "All";
