@@ -445,6 +445,7 @@
 		  Does_not_hybridize_to ?Clone XREF Negative_probe ?Grid
         In_strain ?Strain XREF Clone
 	Sequence    ?Sequence XREF Clone
+	PCR_product ?PCR_product XREF Clone
 	Length	Seq_length UNIQUE Int 			// bp
 		Gel_length UNIQUE Float			// Kb
 	Location ?Laboratory #Lab_Location
@@ -1806,6 +1807,7 @@
 	     Flanks_deletion ?Allele XREF Flanking_PCR_product // For KO allele data [krb 021217]
 	     Microarray_result  ?Microarray_result  XREF PCR_product 
 	     Microarray_results ?Microarray_results XREF PCR_product //added for Microarray_results class
+	     Clone ?Clone XREF PCR_product  // added [krb 031126]
  	     Method UNIQUE ?Method
 
 
