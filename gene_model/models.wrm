@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.96 2002-11-26 10:49:39 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.97 2002-11-26 10:51:36 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -1670,6 +1670,7 @@
                   Rearrangement ?Rearrangement XREF Reference
                   Sequence ?Sequence XREF Reference
 		  CDS ?CDS XREF Reference // added by krb [021114]
+		  Transcript ?Transcript XREF Reference // added by krb [021125]
                   Strain ?Strain XREF Reference
                   Clone ?Clone XREF Reference
                   Protein ?Protein XREF Reference
