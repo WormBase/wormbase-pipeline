@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl
+#!/usr/local/bin/perl -w
 #
 # map_PCR_products
 # v 0.1
@@ -7,13 +7,14 @@
 #
 # Usage: map_PCR_products [-options]
 #
+# [010717 kj] modified to (hopefully) run faster and produce the final output files in one go
+#
+#############################################################################################
 
-#####################################################################################################
 
-
-#################################################################################
-# variables                                                                     #
-#################################################################################
+#############
+# variables #
+#############
 
 $|=1;
 BEGIN {
@@ -24,63 +25,67 @@ use IO::Handle;
 use Getopt::Std;
 use Cwd;
 use Ace;
-require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
+use lib "/wormsrv2/scripts/";
+use Wormbase;
 
- ##############################
- # Script variables (run)     #
- ##############################
+##########################
+# Script variables (run) #
+##########################
 
-my $maintainer = "dl1\@sanger.ac.uk";
+my $maintainer = "dl1\@sanger.ac.uk kj2\@sanger.ac.uk";
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
-my $version = &get_script_version(map_PCR_products);
+my %output      = ();
+my %finaloutput = ();
 
- ##############################
- # command-line options       #
- ##############################
+########################
+# command-line options #
+########################
 
 $opt_d="";   # Verbose debug mode
 $opt_h="";   # Help/Usage page
-$opt_s="";   # check Status tags
 
 getopts ('hd');
 &usage(0) if ($opt_h);
 my $debug = $opt_d;
 
- ##############################
- # Paths etc                  #
- ##############################
+#############
+# Paths etc #
+#############
 
 my $tace = glob("~acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace");    # tace executable path
 my $dbdir  = "/wormsrv2/autoace";                                  # Database path
 my $gffdir = "/wormsrv2/autoace/CHROMOSOMES";
+my @chromosomes = qw( I II III IV V X );
+my $version = &get_cvs_version('$0');
+my $dbnumber = &get_wormbase_version;
  
-my @chromosomes = ('I','II','III','IV', 'V','X');
+################
+# Open logfile #
+################
 
- ########################################
- # Open logfile                         #
- ########################################
-
-#my $log="./PCR_mappings.$rundate";
 my $log="/wormsrv2/logs/map_PCR_products.$rundate";
 
 open (LOG,">$log");
 LOG->autoflush();
 
 print LOG "# map_PCR_products\n";     
-print LOG "# version        : $version\n";
 print LOG "# run details    : $rundate $runtime\n";
+print LOG "# version        : $version\n";
 print LOG "\n";
 
- ########################################
+###########################################
+# get exons and PCRs out of the gff files #
+###########################################        
    
 foreach $chromosome (@chromosomes) {
 
-    undef (@PCR);
-    undef (@exon);
-  
-#    print "Checking GFF file: 'CHROMOSOME_${chromosome}'\n";
-    
+    my %exoncount = ();
+    my %PCRcount  = ();
+    my %genes     = ();
+    my %PCR       = ();
+    my %exon      = ();
+        
     open (GFF_in, "<$gffdir/CHROMOSOME_${chromosome}.gff") || die "Failed to open gff file\n\n";
     while (<GFF_in>) {
         chomp;
@@ -88,65 +93,111 @@ foreach $chromosome (@chromosomes) {
         next unless /\S/;
         @f = split /\t/;
 
-#	print "[$f[1]] [$f[2]]\n";
-
 	if ($f[1] eq "GenePair_STS") {
-	    push (@PCR, "$f[3] $f[4] $f[8]");
+	    my ($name) = ($f[8] =~ /PCR_product \"(.*)\"$/);
+            $PCRcount{$name}++;
+            my $PCRname = $name.".".$PCRcount{$name};
+            $PCR{$PCRname} = [$f[3],$f[4]];
 	}
-	if ($f[2] eq "exon") {
-	    push (@exon, "$f[3] $f[4] $f[6] $f[8]");
-	}
-	last if (/similarity/);
-
+	elsif (($f[2] eq "exon") && (($f[1] eq "curated") || ($f[1] eq "Pseudogene") || ($f[1] eq "provisional"))) {
+            my ($name) = ($f[8] =~ /\"(\S+)\"/);
+            $exoncount{$name}++;
+            my $exonname = $name.".".$exoncount{$name};
+            $exon{$exonname} = [$f[3],$f[4]];
+        }
     }
     close GFF_in;
     
-    foreach (@PCR) {
-	($start,$stop,$name)  = (/(\S+)\s+(\S+)\s+(\S+.+)/);
-	$name =~ s/PCR_product //g;
-	$name =~ s/\"//g;
-	print LOG "\n$name  \t[$start => $stop]\n";
-
-	foreach (@exon) {
-	    ($exon_start,$exon_stop,$exon_sense,$exon_name) = (/(\d+)\s+(\d+)\s+(\S+)\s+(\S+.+)/);
-
-	    # ignore NDB_CDS objects
-	    next if ($exon_name =~ /-/);
-
-	    # short_cuts
-#	    last if ($exon_start > $stop);
-
-#	    next if ($exon_stop < $start);
- 	    
-	    # check overlaps
-	    if ( ($exon_stop > $start) && ($exon_start < $start) ) {
-		print LOG "exon $exon_name [$exon_sense] [$exon_start => $exon_stop] overlaps beginning of PCR product\n";
-		print "$name\t$exon_name\n";
-	    }
-	    if ( ($exon_start > $start) && ($exon_stop < $stop) ) {
-		print LOG "exon $exon_name [$exon_sense] [$exon_start => $exon_stop] is internal of PCR product\n";
-		print "$name\t$exon_name\n";
-	    }
-	    if ( ($exon_start < $stop) && ($exon_stop > $stop) ) {
-		print LOG "exon $exon_name [$exon_sense] [$exon_start => $exon_stop] overlaps end of PCR product\n";
-		print "$name\t$exon_name\n";
-	    }
-
-	}
+#########################   
+# make exons into genes #
+#########################
+ 
+    foreach my $name (sort keys %exoncount) {
+        my $v = $exoncount{$name};
+        my $w = $name.".".$v;
+        $genes{$name} = [$exon{$name.".1"}->[0],$exon{$w}->[1]];
     }
+    
+###################
+# make indexlists #
+###################
+ 
+    my @exonlist= sort { $exon{$a}->[0]  <=> $exon{$b}->[0]  } keys %exon;
+    my @genelist= sort { $genes{$a}->[0] <=> $genes{$b}->[0] } keys %genes;
+    my @PCRlist = sort { $PCR{$a}->[0]   <=> $PCR{$b}->[0] || $a cmp $b } keys %PCR;     
 
+##########
+# map it #
+##########
+ 
+    my $lastfail = 0;
+    
+    for (my $x = 0; $x < @PCRlist; $x++) {
+        my $testPCR   = $PCRlist[$x];
+        my $PCRstart  = $PCR{$testPCR}->[0];
+        my $PCRstop   = $PCR{$testPCR}->[1];
+            
+        for (my $y = 0; $y < @genelist; $y++) {
+            my $testgene = $genelist[$y];
+            my $genestart= $genes{$testgene}->[0];
+            my $genestop = $genes{$testgene}->[1];
+            
+            if ($PCRstart > $genestop) {
+                $lastfail = $y;
+                next; 
+            }
+            
+            elsif ($PCRstop < $genestart) {
+                last; 
+            }
+            
+            else {
+                for (my $z = 1; $z <= $exoncount{$testgene}; $z++) {
+                    my $exon_start = $exon{"$testgene.$z"}->[0];
+                    my $exon_stop  = $exon{"$testgene.$z"}->[1];
+                   
+                    if ( not (($PCRstart > $exon_stop) || ($PCRstop < $exon_start))) {
+                        my ($PCR) = ($testPCR =~ /(\S+)\.\d+$/);
+                        push @{$output{$PCR}}, $testgene;
+                        print LOG "$PCR mapped to $testgene\n";
+                    }
+                }
+            }                
+        }
+    }
 }
 
 close LOG;
 
+###################
+# sort the output #
+###################
+ 
+foreach my $mess (sort keys %output) {
+    @{$output{$mess}} = sort @{$output{$mess}};
+    my $count = 0; 
+    push @{$finaloutput{$mess}}, $output{$mess}->[0];
+    for (my $m = 1; $m < (scalar @{$output{$mess}}); $m++) {
+        if ($output{$mess}->[$count] ne $output{$mess}->[$m]) {
+            push @{$finaloutput{$mess}}, $output{$mess}->[$m];
+            $count = $m;    
+        }    
+    }
+}
+
+########################
+# produce output files #
+########################
+
+open (OUT,    ">/wormsrv2/autoace/dan/PCR_mappings.$dbnumber");
+open (OUTACE, ">/wormsrv2/autoace/dan/PCR_mappings.$dbnumber.ace");
+
+foreach my $mapped (sort keys %finaloutput) {
+    print OUT "$mapped\t@{$finaloutput{$mapped}}\n";
+    for (my $n = 0; $n < (scalar @{$finaloutput{$mapped}}); $n++) {
+        print OUTACE "Sequence : $finaloutput{$mapped}->[$n]\n";
+        print OUTACE "Corresponding_PCR_product $mapped\n\n";
+    }
+} 
+
 exit(0);
-
-
-
-
-
-
-
-
-
-
