@@ -123,9 +123,18 @@ foreach my $gene (@predicted_genes){
   # check that 'Start_not_found' and 'End_not_found' tags present?
   my $start_tag = "";
   my $end_tag = "";
-  $start_tag = "present" if ($gene_object->get('Start_not_found'));
-  $end_tag = "present"  if ($gene_object->get('End_not_found'));
 
+  if ($gene_object->get('Start_not_found')){
+    $start_tag = "present";
+    print LOG "Gene warning - $gene: Start_not_found tag present\n";
+    print "Gene warning - $gene: Start_not_found tag present\n" if $verbose;
+  }
+  
+  if ($gene_object->get('End_not_found')){
+    $end_tag = "present";
+    print LOG "Gene warning - $gene: End_not_found tag present\n";
+    print "Gene warning - $gene: End_not_found tag present\n" if $verbose;
+  }
 
   # check species is correct
   my $species = "";
