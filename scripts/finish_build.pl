@@ -12,8 +12,8 @@
 # 3) Archives old GFF_SPLITS directory
 # 4) Makes wormsrv2/current_DB point at latest release
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-12-09 16:01:31 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2002-12-20 11:24:51 $
 
 
 
@@ -61,7 +61,7 @@ getopts ('h');
 
 # Transfer autoace to WSxx
 print LOG "Transferring autoace into /wormsrv2/$WS_name\n";
-system("TransferDB -start /wormsrv2/autoace -end /wormsrv2/$WS_name -all -name $WS_name") 
+system("TransferDB.pl -start /wormsrv2/autoace -end /wormsrv2/$WS_name -all -name $WS_name") 
   && die "couldn't run TransferDB for autoace\n";
 
 # Remove redundant files from /wormsrv2/autoace/release and /wormsrv2/autoace/CHROMOSOMES
