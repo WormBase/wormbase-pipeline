@@ -122,7 +122,7 @@ sub FetchData {
     unless( $dir ) {
       $dir = $common_data_dir;
     }
-    print "using $dir for COMMON_DATA\n";
+    print STDERR "using $dir for COMMON_DATA\n";
     open (FH, "<$dir/$file.dat") or die "can't open $dir/$file.dat\t:$!";
     undef $/;
     my $VAR1;

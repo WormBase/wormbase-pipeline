@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers
 #
-# Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2004-10-07 09:56:50 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2005-02-14 14:36:17 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -84,10 +84,10 @@ our $tace = &tace;
 # use autoace if -build specified, else use current_DB
 if($build) {
   $ace_dir = "$basedir/autoace";
-  print "during build so using $ace_dir - ensure that the data you are updating is actually in the database.\n";
+  print STDERRR "during build so using $ace_dir - ensure that the data you are updating is actually in the database.\n";
 }
 else {
-  print "- NOT as part of build so using $ace_dir. If this is part of the build data MAY be stale\n";
+  print STDERR "- NOT as part of build so using $ace_dir. If this is part of the build data MAY be stale\n";
 }
 
 
