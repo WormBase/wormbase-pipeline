@@ -8,9 +8,6 @@
 # Usage : autoace_minder [-options]
 #
 
-
-# 010807 : kj  : Added subs gff_dump (-g) and map_PCR_and_RNAi (-m)
-
 # v0.3
 # 001110 : dl  : Added 'test_dna_dump' into the DNA dump sub
 #              : This is a fatal exit if any .dna file is zero length
@@ -63,7 +60,7 @@ $opt_f="";   # Wormbase release to FTP site
 $opt_z="";   # Public release to FTP site
 $opt_d="";   # Verbose debug mode
 $opt_h="";   # Help/Usage page
-$opt_g="";   # gff_dump
+$opt_g="";   # chromosome_dump.pl -g
 $opt_m="";   # map PCR and RNAi
 
 
@@ -123,7 +120,7 @@ print LOG "  -p : Build wormpep database\n" if ($opt_p);
 print LOG "  -f : Move WS release to the ftp-wormbase site (WormBase private release)\n" if ($opt_f);
 print LOG "  -z : Move WS release to the external FTP site (Full public release)\n" if ($opt_z);
 print LOG "  -d : Verbose/Debug mode\n" if ($opt_d);
-print LOG "  -g : gff_dump\n" if ($opt_g);
+print LOG "  -g : chromosome_dump.pl -g\n" if ($opt_g);
 print LOG "  -m : map PCR and RNAi\n" if ($opt_m);
 print LOG "======================================================================\n";
 print LOG "\n";
@@ -199,9 +196,9 @@ sub make_DB {
 }
 
 sub make_DNA {
-    system ("$scriptdir/dna_dump /wormsrv2/autoace")  && die "Couldn't run autoace\n";
+    system ("$scriptdir/chromosome_dump.pl -dce")  && die "Couldn't run chromosome_dump.pl -dce\n";
     print LOG " Build autoace (CHROMOSOMES)\n";
-    print LOG " =>'dna_dump /wormsrv2/autoace'\n\n";
+    print LOG " =>'chromosome_dump.pl -dce'\n\n";
 
 #    system ("$scriptdir/test_dna_dump /wormsrv2/autoace/CHROMOSOMES");
 #    print LOG " test chromosomal DNA dumps\n";
@@ -246,9 +243,9 @@ sub make_wormpep {
 #################################################################################
 
 sub dump_GFFs {
-    system ("$scriptdir/gff_dump /wormsrv2/autoace") && die "Couldn't make GFF files\n";
+    system ("$scriptdir/chromosome_dump.pl -g") && die "Couldn't make GFF files\n";
     print LOG " Dumped GFF files for $WS_version\n";
-    print LOG " =>'gff_dump /wormsrv2/autoace'\n\n";
+    print LOG " =>'chromosome_dump.pl -g'\n\n";
 
 }
 
@@ -311,7 +308,7 @@ sub run_details {
     print "  -f : Move WS release to the ftp-wormbase site (WormBase private release)\n" if ($opt_f);
     print "  -z : Move WS release to the external FTP site (Full public release)\n" if ($opt_z);
     print "  -d : Verbose/Debug mode\n" if ($opt_d);
-    print "  -g : gff_dump\n" if ($opt_g);
+    print "  -g : chromosome_dump.pl -g\n" if ($opt_g);
     print "  -m : map PCR and RNAi\n" if ($opt_m);
     print "\n\n";
 }
