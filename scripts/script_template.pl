@@ -7,7 +7,7 @@
 # This is a example of a good script template   
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-01-24 15:47:53 $      
+# Last updated on: $Date: 2003-01-28 10:26:21 $      
 
 use strict;                                      
 use lib "/wormsrv2/scripts/";                    
@@ -19,14 +19,13 @@ use Getopt::Long;
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug);
+my ($help, $debug, $database);
 my $maintainers = "All";
-my $rundate     = `date +%y%m%d`; chomp $rundate;
-my $runtime     = `date +%H:%M:%S`; chomp $runtime;
 our $log;
 
-GetOptions ("help"      => \$help,
-            "debug=s"   => \$debug);
+GetOptions ("help"       => \$help,
+            "debug=s"    => \$debug,
+	    "database=s  => \$database);
 
 
 # Display help if required
