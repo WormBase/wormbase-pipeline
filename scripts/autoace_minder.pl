@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-03-05 13:47:06 $
+# Last edited on: $Date: 2004-03-09 10:38:19 $
 
 
 #################################################################################
@@ -929,13 +929,9 @@ sub blat_jobs{
   foreach my $job(@blat_jobs){
 
     # If all other blat jobs are finished can load all non-nematode blat data into autoace this allows 
-    # gff dump and gff split to be run, this is because nematode ESTs take a long time to blat/load
+    # gff dump and gff split to be runin later steps, this is because nematode ESTs take a long time to blat/load
     if ($job eq "nematode"){
       &load_blat_results("est","mrna","embl","ost");
-      # dump gff from the database and then split them for when you want to make UTRs later
-      &dump_GFFs;
-      &split_GFFs;
-      system("touch $logdir/UTR_gff_dump");
       $nematode_flag = 1;
     }
     
@@ -1133,15 +1129,6 @@ sub parse_briggsae_data {
 sub generate_utrs {
   $am_option = "-utrs";
   
-  #split GFF prior to UTR generation if not already done by BLAT routine
-  unless ( -e "/$logdir/UTR_gff_dump" ){
-    &dump_GFFs; 
-    &split_GFFs;
-    # create a lockfile to indicate that this is done (helpful if you need to rerun
-    # this step (autoace_minder.pl -utr) but don't want to keep on redumping GFF)
-    system("touch $logdir/UTR_gff_dump");
-  }
-
   # run find_utrs.pl to generate data
   my $command = "$scriptdir/find_utrs.pl -database autoace -output_dir $basedir/autoace/UTR";
   ($command .= " -test") if ($test);
@@ -1309,9 +1296,10 @@ sub map_features {
 sub confirm_gene_models {
   $am_option = "-confirm";
 
-  # needs GFF files to be split, which might not have happened depending on what was blatted
-  # so if no C2 lock file, split GFFs
-  &split_GFFs unless (-e "$logdir/$flag{'C2'}");
+  # GFF files need to be dumped again (will now have blat data)
+  # also needs GFF files to be split again
+  &dump_GFFs;
+  &split_GFFs;
 
   # confirm_genes from EST&OST (-est) and mRNA (-mrna) data sets
   &run_command("$scriptdir/confirm_genes.pl --est --mrna");
