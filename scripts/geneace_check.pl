@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-09-01 11:43:18 $
+# Last updated on: $Date: 2003-09-02 09:15:35 $
 
 
 use strict;
@@ -465,8 +465,6 @@ sub test_locus_for_errors{
     my @diff = @{$comp_result[0]}; 
     
     if (@diff){
-    
-#    if($seq ne $name){
       $warnings .= "ERROR 22: $locus has a 'Genomic_sequence' name different to 'Sequence_name'\n";
       print "." if ($verbose);
     }
@@ -495,7 +493,6 @@ sub test_locus_for_errors{
     my @diff = @{$comp_result[0]}; 
     
     if (@diff){ 
-#    if($seq ne $name){
       $warnings .= "ERROR 24: $locus has a 'Transcript' name different to 'Transcript_name'\n";
       print "." if ($verbose);
     }
@@ -525,8 +522,6 @@ sub test_locus_for_errors{
     my @diff = @{$comp_result[0]}; 
     
     if (@diff){
-
-#    if($seq ne $name){
       $warnings .= "ERROR 26: $locus has a 'Pseudogene' name different to 'Pseudogene_name'\n";
       print "." if ($verbose);
     }
