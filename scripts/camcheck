@@ -34,28 +34,26 @@ use IO::Handle;
 use Getopt::Std;
 use Ace;
 use strict;
+use lib "/wormsrv2/scripts/";
+use Wormbase;
 
 ##############################
 # Script variables (run)     #
 ##############################
 
-my $maintainer = "dl1\@sanger.ac.uk";
+my $maintainers = "dl1\@sanger.ac.uk kj2\@sanger.ac.uk krb\@sanger.ac.uk";
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
 
 # grab version number from cvs
-my $version = `cvs -d /nfs/ensembl/cvsroot/ status /wormsrv2/scripts/camcheck`;
-$version =~ s/.* +Repository revision:\s+([\d\.]*)\s+.*/$1/s; 
+my $version = &get_cvs_version($0);
 
 
 ##############################
 # command-line options       #
 ##############################
-
-my $opt_d="";   # Verbose debug mode
-my $opt_h="";   # Help/Usage page
-
-getopts ('hd');
+use vars qw/ $opt_d $opt_h /;
+getopts ("hd");
 &usage(0) if ($opt_h);
 my $debug = $opt_d;
 
@@ -270,7 +268,7 @@ close LOG;
 # mail $maintainer report    #
 ##############################
 
-open (OUTLOG,"|/usr/bin/mailx -s camcheck_report $maintainer ");
+open (OUTLOG,"|/usr/bin/mailx -s camcheck_report $maintainers ");
 open (READLOG, "<$log") || die "Couldn't open $log for reading\n";
 while (<READLOG>) {
     print OUTLOG "$_";
