@@ -4,8 +4,9 @@
 // This file is read only when starting a new database or when you select 
 // "Read Models" or "Add Update File" from the main menu.
 
-// [010226 dl] Added updates for RNAi and PCR_product classes from Lincoln Stein
-
+// [010226 dl]  Added updates for RNAi and PCR_product classes from Lincoln Stein
+// [010912 krb] Added new classes Expr_profile and SK_map to allow new microarray data
+// from Stuart Kim
 
 //
 // Basic Map classes
@@ -663,7 +664,8 @@
 		  Clone ?Clone XREF Reference
 		  Protein ?Protein XREF Reference
 		  Expr_pattern ?Expr_pattern XREF Reference
-                  Cell ?Cell XREF Reference
+		  Expr_profile ?Expr_profile XREF Reference // Added to fit new Expr_profile class [010912 krb]
+	          Cell ?Cell XREF Reference
                   Cell_group ?Cell_group XREF Reference
                   Life_stage ?Life_stage XREF Reference
                   RNAi ?RNAi XREF Reference  // added for Lincoln RNAi [001213 dl]
@@ -1262,6 +1264,23 @@
 		Reference ?Paper XREF Expr_pattern
                 Transgene ?Transgene XREF Expr_pattern
 
+
+// NEW Expr_profile and SK_map classes added at request of Raymond [010912 krb]
+
+?Expr_profile SMap S_parent PCR_product UNIQUE ?PCR_product XREF Expr_profile
+              Method ?Method
+              Expr_map ?SK_map
+              Reference       ?Paper //XREF Expr_profile
+              Remark ?Text
+
+?SK_map       X_coord UNIQUE Float
+              Y_coord UNIQUE Float
+              Mountain UNIQUE Int
+              Date UNIQUE DateType
+              Remark ?Text
+
+
+
 ?Picture Description ?Text
 	 Pick_me_to_call Text Text
 	 Expr_pattern ?Expr_pattern XREF Picture
@@ -1468,14 +1487,17 @@
                 Temperature_sensitive Int UNIQUE Int    // temperature (degrees C), penetrance
                 Quantity UNIQUE Int UNIQUE Int          // for quantitative phenotypes low/high
 
+
 // New Class from Lincoln [010226]
 
 ?PCR_product SMap S_Parent Canonical_parent UNIQUE ?Sequence XREF PCR_product
  		  S_Child RNAi ?RNAi XREF PCR_product UNIQUE Int UNIQUE Int #SMap_info
+		  S_Child Expr_profile ?Expr_profile XREF PCR_product // added for new Expr_profile class [010912 krb]
  	     Method ?Method
  	     Overlaps_CDS ?Sequence XREF Corresponding_PCR_product  // added for Dan PCR mappings [010419 dl]
 	     Oligo ?Oligo UNIQUE Int UNIQUE Int
  	     Assay_conditions ?LongText
+	     Amplified Int
 	     Remark ?Text
 
 ?Phenotype Description UNIQUE ?Text
