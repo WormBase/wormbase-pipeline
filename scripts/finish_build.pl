@@ -13,7 +13,7 @@
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-08-19 13:44:28 $
+# Last updated on: $Date: 2003-09-18 16:04:53 $
 
 
 
@@ -61,7 +61,7 @@ getopts ('h');
 
 # Transfer autoace to WSxx
 print LOG "Transferring autoace into /wormsrv2/$WS_name\n";
-system("TransferDB.pl -start /wormsrv2/autoace -end /wormsrv2/$WS_name -database -wspec -chromosomes -name $WS_name") 
+system("TransferDB.pl -start /wormsrv2/autoace -end /wormsrv2/$WS_name -database -release -wspec -chromosomes -name $WS_name") 
   && die "couldn't run TransferDB for autoace\n";
 
 # Remove redundant files from /wormsrv2/autoace/release and /wormsrv2/autoace/CHROMOSOMES
@@ -154,7 +154,7 @@ sub archive_old_releases{
 
   # turn the old release into a tarball, move into /nfs/wormarchive and remove old directory
   print LOG "\nCreating $WS_old_path.tar.gz\n";
-  system ("tar -cvf $WS_old_path.tar $WS_old_path/") && die "Couldn't create tar file\n";
+  system ("tar -P /wormsrv2/ -cvf $WS_old_path.tar $WS_old_path/") && die "Couldn't create tar file\n";
   system ("gzip $WS_old_path.tar") && die "Couldn't create gzip file\n";
   print LOG "Moving archive to /nfs/wormarchive and removing $WS_old_path\n";
   system ("mv $WS_old_path.tar.gz /nfs/wormarchive/") && die "Couldn't move to /nfs/wormarchive\n";
@@ -163,7 +163,7 @@ sub archive_old_releases{
   # archive old wormpep version
   if(-d $old_wormpep){
     print LOG "\nCreating $old_wormpep archive\n";
-    system ("tar -cvf $old_wormpep.tar $old_wormpep") && die "Couldn't create wormpep tar file\n";
+    system ("tar -P /wormsrv2/ -cvf $old_wormpep.tar $old_wormpep") && die "Couldn't create wormpep tar file\n";
     system ("gzip $old_wormpep.tar") && die "Couldn't create gzip wormpep tar file\n";
     system ("rm -rf $old_wormpep") && die "Couldn't remove old directory\n";
   }
