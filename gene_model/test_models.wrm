@@ -1553,8 +1553,8 @@
 ?Antibody  Evidence     #Evidence
            Summary      ?Text   #Evidence
            Other_name   Text
-           Gene         Gene ?Gene XREF Antibody
-                        CDS  ?CDS  XREF Antibody
+           Gene ?Gene XREF Antibody
+           CDS  ?CDS  XREF Antibody // CDS will become redundant when Gene class takes over [040203 krb]
            Clonality    UNIQUE          Polyclonal      Text 
                                         Monoclonal      Text
            Antigen      UNIQUE          Peptide         Text
