@@ -7,8 +7,8 @@
 
 # 031023 dl1
 
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2003-12-08 14:43:11 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2004-03-05 16:10:59 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -173,19 +173,21 @@ sub masksequence {
 		print "\n// parse $feature\n" if ($verbose);
 		
 		$type  = $obj->Feature_data->Feature(1);         # Feature type (e.g. SL1,SL2,polyA)
-		$start = $obj->Feature_data->Feature(2);         # start coord
-		$stop  = $obj->Feature_data->Feature(3);         # stop coord
-		
-		$cut_to     = $start - 1;                        # manipulations for clipping 
-		$cut_from   = $stop;
-		$cut_length = $stop - $start + 1;
-		
-		if ($cut_to < 0 ) {$cut_to = 0;}                 # fudge to ensure non-negative clipping coords
-		
-		print "$acc [$id]: '$type' $start -> $stop [$cut_to : $cut_from ($cut_length)]\n" if ($debug);
-		print "// # $acc [$id] $type:" . (substr($seq,$cut_to,$cut_length)) . " [$start - $stop]\n\n" if ($verbose);
-		    $newseq = (substr($seqmasked,0,$cut_to))  . ('n' x $cut_length)  . (substr($seqmasked,$cut_from));
-		$seqmasked = $newseq;
+		if(defined($type)){
+		  $start = $obj->Feature_data->Feature(2);         # start coord
+		  $stop  = $obj->Feature_data->Feature(3);         # stop coord
+		  
+		  $cut_to     = $start - 1;                        # manipulations for clipping 
+		  $cut_from   = $stop;
+		  $cut_length = $stop - $start + 1;
+		  
+		  if ($cut_to < 0 ) {$cut_to = 0;}                 # fudge to ensure non-negative clipping coords
+		  
+		  print "$acc [$id]: '$type' $start -> $stop [$cut_to : $cut_from ($cut_length)]\n" if ($debug);
+		  print "// # $acc [$id] $type:" . (substr($seq,$cut_to,$cut_length)) . " [$start - $stop]\n\n" if ($verbose);
+		      $newseq = (substr($seqmasked,0,$cut_to)) . ('n' x $cut_length)  . (substr($seqmasked,$cut_from));
+		  $seqmasked = $newseq;
+		}
 	    } 
 	}
 	
