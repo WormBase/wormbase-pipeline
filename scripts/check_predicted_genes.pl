@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam aged 12 and a half
 #
-# Last updated on: $Date: 2003-03-27 14:12:40 $
+# Last updated on: $Date: 2003-09-19 09:06:35 $
 # Last updated by: $Author: krb $
 #
 # see pod documentation at end of file for more information about this script
@@ -71,7 +71,7 @@ LOG->autoflush();
 # Fetch Predicted genes
 ################################
 
-my @predicted_genes = $db->fetch (-query => 'FIND Predicted_gene');
+my @predicted_genes = $db->fetch (-query => 'FIND Predicted_gene; !MTCE*');
 my $gene_count=@predicted_genes;
 print LOG "Checking $gene_count predicted genes in '$db_path'\n\n";
 print "\nChecking $gene_count predicted genes in '$db_path'\n\n" if $verbose;;
