@@ -5,6 +5,10 @@
 #
 # A script for dumping dna and/or gff files for chromosome objects in autoace
 # see pod for more details
+#
+# v1.13 :  dl : Added a chdir command to the -c option. This ensures that you move to the dump directory
+#               prior to calculating composition/totals
+
 
 use strict;
 use Getopt::Std;
@@ -154,7 +158,8 @@ END
 sub composition{
 
   print LOGFILE "Generating composition.all\n";	
-  
+
+  chdir $dump_dir;
   system("/bin/cat *.dna | /nfs/disk100/wormpub/bin.ALPHA/composition > composition.all") && die "Couldn't create composition file\n";
   print LOGFILE "Generating totals file\n";
   my ($total, $minus, $final_total);
