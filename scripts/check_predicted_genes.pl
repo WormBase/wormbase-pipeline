@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl -w
+#!/usr/local/bin/perl5.6.0 -w
 
 # check_predicted_genes.pl
 #
@@ -8,94 +8,84 @@
 # see pod documentation at end of file for more information about this script
 
 use Ace;
-#use IO::Handle;
+use IO::Handle;
+use Getopt::Long;
 use strict;
 $|=1;
 
+our($verbose,$db_path,$log);
+
+GetOptions ("verbose"    => \$verbose,
+	    "database=s" => \$db_path,    
+	    "log"        => \$log);
+
+# verbose mode
+# toggle reporting of genes with improper stop/start codons and/or genes which have length's 
+# not divisible by three but have 'Start_not_found' and/or 'End_not_found' tags.
+# 'ON' setting means that you will get full output, 'OFF' means that you will get restricted output,
+# Also outputs gene names as you cycle through main loop
+
 
 ################################
-#
 # Establish database connection
-#
 ################################
 
-die "Please specify a path to the database as a command line parameter.\n\n" if ($ARGV[0] eq "");
-
-my $db_path = $ARGV[0];
+die "Please use -database <path> specify a valid database directory.\n\n" if (!defined($db_path));
 
 # Specify which tace to use if you are using -program flag
 
 my $tace = glob("~wormpub/ACEDB/bin.ALPHA_4/tace");
-
 my $db = Ace->connect(-path=>$db_path, -program=>$tace) || die "Couldn't connect to $db_path\n", Ace->error;
 
-#otherwise just use the default style of Ace database connection
-#my $db = Ace->connect(-path=>$db_path) || die "Couldn't connect to $db_path\n", Ace->error;
 
-
-
-
-################################
-#
-# Toggle amount of output
-#
-################################
-
-# toggle reporting of genes with improper stop/start codons and/or genes which have length's 
-# not divisible by three but have 'Start_not_found' and/or 'End_not_found' tags.
-# 'ON' setting means that you will get full output, 'OFF' means that you will get restricted output
-
-#my $verbose = 'ON';
-my $verbose = 'OFF';
 
 # set up log file for output, use specified command line argument where present or write to screen
 # if log file specified and it exists, then append.  Else write to new file.
 
-if(defined($ARGV[1])){
-  my $log = "$ARGV[1]";
-
+if($log){
   if(-e $log){
     open(LOG,">>$log");  
   }
   else{
     open(LOG,">$log");
   }
-  # make LOG the default location for 'print' commands
-#  LOG->autoflush();
-  select(LOG);
 }
+else{
+  my $rundate    = `date +%y%m%d`; chomp $rundate;
+  $log = "/wormsrv2/logs/check_predicted_genes.log.$rundate.$$";
+  open(LOG,">$log") || die "cant open $log\n";
+}
+print LOG "\ncheck_predicted_genes.pl started at ",`date`,"\n";
+
+
+LOG->autoflush();
+
 
 
 ################################
-#
 # Fetch Predicted genes
-#
 ################################
 
-# load all predicted genes into an array
 my @predicted_genes = $db->fetch (-query => 'FIND Predicted_gene');
-
-# count genes in database
 my $gene_count=@predicted_genes;
-print "\nChecking $gene_count predicted genes in '$db_path'\n\n";
-
+print LOG "\nChecking $gene_count predicted genes in '$db_path'\n\n";
 
 
 ################################
-#
 # Run checks on genes
-#
 ################################
 
 CHECK_GENE:
 foreach my $gene (@predicted_genes){
+  print STDOUT "$gene\n" if $verbose;
   # get gene
   my $gene_object = $db->fetch(Sequence=>$gene);
   
   # check that 'Source' tag is present and if so then grab parent sequence details
   my $source = $gene_object->Source;
   if (!defined ($source)){
-    print "Gene error - $gene: has no Source tag, cannot check DNA\n";
+    print LOG "Gene error - $gene: has no Source tag, cannot check DNA\n";
+    print "Gene error - $gene: has no Source tag, cannot check DNA\n" if $verbose;
     next CHECK_GENE;
   }
 
@@ -104,6 +94,8 @@ foreach my $gene (@predicted_genes){
   my @exon_coord1 = $gene_object->get('Source_Exons',1);
   my @exon_coord2 = $gene_object->get('Source_Exons',2);
 
+
+
   my $i;
   my $j;
   for($i=0; $i<@exon_coord1; $i++){
@@ -111,10 +103,12 @@ foreach my $gene (@predicted_genes){
     my $end = $exon_coord2[$i];
     for ($j=$i+1;$j<@exon_coord1;$j++){
       if(($end > $exon_coord1[$j]) && ($start < $exon_coord2[$j])){
-	print "Gene error - $gene: exon inconsistency, exons overlap\n";
+	print "Gene error - $gene: exon inconsistency, exons overlap\n" if $verbose;
+	print LOG "Gene error - $gene: exon inconsistency, exons overlap\n";
       }
     }
   }
+
 
 
   # check that 'Start_not_found' and 'End_not_found' tags present?
@@ -127,31 +121,37 @@ foreach my $gene (@predicted_genes){
   # check species is correct
   my $species = "";
   ($species) = ($gene_object->get('Species'));
-  print "Gene error - $gene: species is $species\n" if ($species ne "Caenorhabditis elegans");
-  
+  print LOG "Gene error - $gene: species is $species\n" if ($species ne "Caenorhabditis elegans");  
+  print "Gene error - $gene: species is $species\n" if ($species ne "Caenorhabditis elegans" && $verbose);
 
   # check Method isn't 'hand_built'
   my $method = "";
   ($method) = ($gene_object->get('Method'));
-  print "Gene error - $gene: method is hand_built\n" if ($method eq 'hand_built');
+  print LOG "Gene error - $gene: method is hand_built\n" if ($method eq 'hand_built');
+  print "Gene error - $gene: method is hand_built\n" if ($method eq 'hand_built' && $verbose);
 
   # check From_laboratory tag is present
   my $laboratory = ($gene_object->From_laboratory);
-  print "Gene error - $gene: does not have From_laboratory tag\n" if (!defined($laboratory));
+  print LOG "Gene error - $gene: does not have From_laboratory tag\n" if (!defined($laboratory));
+  print "Gene error - $gene: does not have From_laboratory tag\n" if (!defined($laboratory) && $verbose);
 
 
   # then run misc. sequence integrity checks
   my $dna = $gene->asDNA();
   if(!$dna){
-    print "Gene error - $gene: can't find any DNA to analyse\n";
+    print LOG "Gene error - $gene: can't find any DNA to analyse\n";
+    print "Gene error - $gene: can't find any DNA to analyse\n" if $verbose;
     next CHECK_GENE;
   }
 
   # feed DNA sequence to function for checking
-  &test_gene_sequence_for_errors($gene,$start_tag,$end_tag,$dna,$verbose);
+  &test_gene_sequence_for_errors($gene,$start_tag,$end_tag,$dna);
 
 }
-close(LOG) if(defined($ARGV[1]));
+
+print LOG "\ncheck_predicted_genes.pl ended at ",`date`,"\n";;
+close(LOG);
+exit(0);
 
 #################################################################
 
@@ -161,7 +161,6 @@ sub test_gene_sequence_for_errors{
   my $start_tag = shift;
   my $end_tag = shift;
   my $dna = shift;
-  my $verbose = shift;
 
   # trim DNA sequence to just A,T,C,G etc.
   $dna =~ s/\n//g;
@@ -179,7 +178,7 @@ sub test_gene_sequence_for_errors{
     if (($end_tag ne "present") && ($start_tag ne "present")){
       print "Gene error - $gene: length ($gene_length bp) not divisible by 3, Start_not_found & End_not_found tags MISSING\n";
     }
-    elsif($verbose eq 'ON'){
+    elsif($verbose){
       print "Gene error - $gene: length ($gene_length bp) not divisible by 3, Start_not_found and/or End_not_found tag present\n";
     }   
   }   
@@ -190,7 +189,7 @@ sub test_gene_sequence_for_errors{
     if($end_tag ne "present"){
       print "Gene error - $gene: '$stop_codon' is not a valid stop codon. End_not_found tag MISSING\n";
     }
-    elsif($verbose eq 'ON'){
+    elsif($verbose){
       print "Gene error - $gene: '$stop_codon' is not a valid stop codon. End_not_found tag present\n";
     }
   }
@@ -201,7 +200,7 @@ sub test_gene_sequence_for_errors{
    if($start_tag ne "present"){
       print "Gene error - $gene: '$start_codon' is not a valid start codon. Start_not_found tag MISSING\n";
     }
-    elsif($verbose eq 'ON'){
+    elsif($verbose){
       print "Gene error - $gene: '$start_codon' is not a valid start codon. Start_not_found tag present\n";
     }
   }
@@ -231,6 +230,9 @@ sub test_gene_sequence_for_errors{
 
 }
 
+
+
+
 __END__
 
 =pod
@@ -254,21 +256,22 @@ other acedb) database.  The script will only analyse objects in the 'Predicted_g
 
 =over 4
 
-=item MANDATORY arguments:
+=item MANDATORY arguments: -database <database_path>
 
-First argument must be a path to a valid acedb database, e.g.
-check_predicted_genes.pl /wormsrv2/camace
+This argument must be a path to a valid acedb database, e.g.
+check_predicted_genes.pl -database /wormsrv2/camace
 
 =back
 
 =over 4
 
-=item OPTIONAL arguments:
+=item OPTIONAL arguments: -log <logfile>, -verbose
 
-A log file can be named as a second optional argument.  If such a file already
-exists, output will be appended to it.  If it doesn't exist, then such a file will be 
-created.  If no log file is specified then all output will be sent to STDOUT as the 
-default.  
+If the file specified by -log already exists, the script will append the output to that file.
+Otherwise it will attempt to write to a new file by that name.  If no log file is specified,
+the script will generate a log file in /wormsrv2/logs.
+
+If -verbose is specified, output will be written to screen as well as to the log file
 
 =back
 
