@@ -20,7 +20,7 @@
 # 010905 by Kerstin Jekosch
 
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-04-01 09:52:21 $
+# Last edited on: $Date: 2003-04-01 13:19:03 $
 
 
 use strict;
@@ -359,43 +359,42 @@ foreach my $found (sort keys %best) {
 	    my $first  =  (${$entry->{"exons"}}[$last][1] + 1) + (($n-1)*100000);
 	    my $second =  (${$entry->{'exons'}}[$y][0]    - 1) + (($n-1)*100000);
 	    $EST_dir{$found} = 5 if ($opt_m || $opt_o);
-            if (${$entry->{'exons'}}[0][2] < ${$entry->{'exons'}}[0][3]) {
-               if ((${$entry->{'exons'}}[$y][2] == ${$entry->{'exons'}}[$last][3] + 1) && (($second - $first) > 2)) {
-                  if (exists $EST_dir{$found} && $EST_dir{$found} eq '3') {
-		    push @{$ci{$superlink}}, [$second,$first];
-		  }
-		  elsif (exists $EST_dir{$found} && $EST_dir{$found} eq '5') {
-		    push @{$ci{$superlink}}, [$first,$second];
-		  }
-		  else {
-		    print LOG "WARNING: Direction not found for $found\n\n";
-		  }
+	    if (${$entry->{'exons'}}[0][2] < ${$entry->{'exons'}}[0][3]) {
+	      if ((${$entry->{'exons'}}[$y][2] == ${$entry->{'exons'}}[$last][3] + 1) && (($second - $first) > 2)) {
+		if (exists $EST_dir{$found} && $EST_dir{$found} eq '3') {
+		  push @{$ci{$superlink}}, [$second,$first];
 		}
-            }
-            elsif (${$entry->{'exons'}}[0][2] > ${$entry->{'exons'}}[0][3]) {
-	       if ((${$entry->{'exons'}}[$last][3] == ${$entry->{'exons'}}[$y][2] + 1) && (($second - $first) > 2)) {
-	          if (exists $EST_dir{$found} && $EST_dir{$found} eq '3') {
-		    push @{$ci{$superlink}}, [$first,$second];
-		  }
-		  elsif (exists $EST_dir{$found} && $EST_dir{$found} eq '5') {
-		    push @{$ci{$superlink}}, [$second,$first]; 
-		  }
-		  else {
-		    print LOG "WARNING: Direction not found for $found\n\n";
-		  }
+		elsif (exists $EST_dir{$found} && $EST_dir{$found} eq '5') {
+		  push @{$ci{$superlink}}, [$first,$second];
+		}
+		else {
+		  print LOG "WARNING: Direction not found for $found\n\n";
 		}
 	      }
+	    }
+	    elsif (${$entry->{'exons'}}[0][2] > ${$entry->{'exons'}}[0][3]) {
+	      if ((${$entry->{'exons'}}[$last][3] == ${$entry->{'exons'}}[$y][2] + 1) && (($second - $first) > 2)) {
+		if (exists $EST_dir{$found} && $EST_dir{$found} eq '3') {
+		  push @{$ci{$superlink}}, [$first,$second];
+		}
+		elsif (exists $EST_dir{$found} && $EST_dir{$found} eq '5') {
+		  push @{$ci{$superlink}}, [$second,$first]; 
+		}
+		else {
+		  print LOG "WARNING: Direction not found for $found\n\n";
+		}
+	      }
+	    }
 	  }
-      }
-    # this section 'produce confirmed introns'
-
-  }	
+	}
+	# this section 'produce confirmed introns'
+      }	
+    }
+  }
 }
-}
-}
-close AUTBEST;
-close CAMBEST;
-close STLBEST;
+close(AUTBEST;
+close(CAMBEST);
+close(STLBEST);
 
 ########################################################
 # produce final BLAT output (including BEST and OTHER) #
