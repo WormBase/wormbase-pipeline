@@ -6,8 +6,8 @@
 #
 # Script to make ?Transcript objects
 #
-# Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-09-19 14:06:19 $  
+# Last updated by: $Author: ar2 $     
+# Last updated on: $Date: 2003-09-24 15:02:19 $  
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -17,9 +17,6 @@ use Coords_converter;
 use Wormbase;
 
 my $tace = &tace;
-my $rundate = `date +%y%m%d`; chomp $rundate;
-
-my $log = &make_build_log; 
 
 my ($debug, $help, $verbose, $really_verbose, $est, $count, $report, $gap, $transcript, $gff, $show_matches, $database, $overlap_check, $load_matches, $load_transcripts, $build);
 
@@ -43,6 +40,7 @@ GetOptions ( "debug"            => \$debug,
 	     "build"            => \$build
 	   ) ;
 
+my $log = &make_build_log($debug);
 &check_opts; # if -build set, this will set all relevant opts to works as if in build. Will NOT overwrite the others (eg -count)
 
 $database = glob("~wormpub/DATABASES/TEST_DBs/transcripts") unless $database;
@@ -257,18 +255,14 @@ foreach my $chrom ( @chromosomes ) {
 
 if( $load_transcripts ) {
   print $log "loading transcripts file to $database\n";
-  system("cat $database/TRANSCRIPTS/transcripts_*.ace > $database/TRANSCRIPTS/all_transcripts.ace");
-  open(TACE, " | $tace -tsuser transcripts $database |") or warn "could open $database to load transcript file\n";
-  print TACE "pparse $database/TRANSCRIPTS/all_transcripts.ace\nsave\nquit";
-  close TACE;
+  system("cat $database/TRANSCRIPTS/transcripts_*.ace >! $database/TRANSCRIPTS/transcripts_all.ace");
+  system("echo \"pparse $database/TRANSCRIPTS/transcripts_all.ace\nsave\nquit\" | $tace -tsuser transcripts $database");
 }
 
 if( $load_matches ) {
   print $log "loading matching_cDNA file to $database\n";
-  system("cat $database/TRANSCRIPTS/chromosome*_matching_cDNA.ace > $database/TRANSCRIPTS/all_matching_cDNA.ace");
-  open(TACE, " | $tace -tsuser matching_cDNA $database |") or warn "could open $database to load matching_cDNA file\n";
-  print TACE "pparse $database/TRANSCRIPTS/all_matching_cDNA.ace\nsave\nquit";
-  close TACE;
+  system("cat $database/TRANSCRIPTS/chromosome*_matching_cDNA.ace >! $database/TRANSCRIPTS/matching_cDNA_all.ace");
+  system("echo \"parse $database/TRANSCRIPTS/matching_cDNA_all.ace\nsave\nquit\" | $tace -tsuser matching_cDNA $database");
 }
   
 print $log "$0 finished at ",&runtime,"\n";
@@ -520,7 +514,7 @@ sub checkOverlappingTranscripts  {
 
   my $trans_count = scalar (@ordered_transcripts);
 
-  open (OLT,">$database/overlapping_transcripts_$chrom") or warn "cant open $database/overlapping_transcripts\n";
+  open (OLT,">$database/TRANSCRIPTS/overlapping_transcripts_$chrom") or warn "cant open $database/TRANSCRIPTS/overlapping_transcripts\n";
   TRANS:
     for( my $i = 0;$i < $trans_count; $i++) {
       for( my $j = 1; $j < 6; $j++ ) {
