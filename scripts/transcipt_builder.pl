@@ -9,7 +9,7 @@ use Wormbase;
 
 my $tace = &tace;
 
-my ($debug, $help, $verbose, $really_verbose, $est, $count, $report, $gap, $transcript, $gff, $show_matches, $database, $overlap_check, $load_matches, $load_transcripts);
+my ($debug, $help, $verbose, $really_verbose, $est, $count, $report, $gap, $transcript, $gff, $show_matches, $database, $overlap_check, $load_matches, $load_transcripts, $build);
 
 $gap = 5; # $gap is the gap allowed in an EST alignment before it is considered a "real" intron
 
@@ -27,10 +27,11 @@ GetOptions ( "debug" => \$debug,
 	     "database:s"   => \$database,
 	     "overlap"      => \$overlap_check,
 	     "load_transcripts" => \$load_transcripts,
-	     "load_matches"    => \$load_matches
+	     "load_matches"    => \$load_matches,
+	     "build"           => \$build
 	   ) ;
 
-&check_opts;
+&check_opts; # if -build set, this will set all relevant opts to works as if in build. Will NOT overwrite the others (eg -count)
 
 $database = glob("~wormpub/DATABASES/TEST_DBs/transcripts") unless $database;
 
@@ -99,6 +100,8 @@ foreach my $chrom ( @chromosomes ) {
   }
 
   close GFF;
+
+  &checkData(\$gff); # this just checks that there is some BLAT and gene data in the GFF file
 
   &eradicateSingleBaseDiff;
 
@@ -539,12 +542,30 @@ sub check_opts {
     if( $overlap_check ) {
       die print "\n\n\nyou have chosen to check for overlapping transcripts without generating them\n Try adding -transcript if you want to build them first\n\n\n\n";
     }
+    if( $build ) {
+      $database = "/wormsrv2/autoace";
+      $transcript = 1;
+      $show_matches = 1;
+      $load_transcripts = 1;
+      $load_matches = 1;
+      $overlap = 1;
+    }
   }
 
   if( defined($load_matches) & !defined($show_matches ) ) {
     die print "\n\n\nyou have chosen to load_matches without generating them\n Try adding -show_matches if you want to generate them first\n\n\n\n";
   }
 }
+
+sub checkData
+  {
+    my $file = shift;
+    die "There's no BLAT data in the gff file $$file\n" if scalar keys %cDNA_span == 0;
+    die "There are no genes in the gff file $$file\n" if scalar keys %genes_span == 0;
+  }
+
+
+
 
 __END__
 
