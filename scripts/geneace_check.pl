@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-09-02 09:15:35 $
+# Last updated on: $Date: 2003-09-08 14:18:55 $
 
 
 use strict;
@@ -62,6 +62,7 @@ GetOptions ("help"        => \$help,
             "ace"         => \$ace, 
 	    "verbose"     => \$verbose
            );
+
 
 # Display help if required
 if ($help){&usage("Help")}
@@ -148,13 +149,6 @@ mail_maintainer($0,"$interested",$caltech_log) unless ($debug || $caltech_errors
 mail_maintainer($0,"cgc\@wormbase.org",$jah_log) unless ($debug || $jah_errors == 0);
 
 
-#chdir "/wormsrv2/logs";
-#
-#my @files = qw ($acefile  $log $jahlog $JAHmsg $caltech_log $Emsg $reverse_log);
-#foreach(@files){
-#  system("$_") if $_;
-#}
-
 exit(0);
 
 
@@ -167,7 +161,6 @@ exit(0);
 #
 #
 ##############################################################################################
-
 
 
 sub process_locus_class{
@@ -373,7 +366,8 @@ sub test_locus_for_errors{
       if(defined($locus->at('Molecular_information.Genomic_sequence')) || 
 	 (defined($locus->at('Molecular_information.Transcript'))) ||
 	 (defined($locus->at('Molecular_information.Pseudogene')))){
-	$warnings .= "ERROR 15: $locus has 'Genomic_sequence', 'Transcript', or 'Pseudogene' tag but no 'CGC_approved' tag\n";
+	$warnings .= "ERROR 15: $locus has 'Genomic_sequence', 'Transcript', or 'Pseudogene' tag but no 'CGC_approved' tag\n" if $locus ne "arl-query";
+	$warnings .= "ERROR 15: $locus has 'Genomic_sequence', 'Transcript', or 'Pseudogene' tag but no 'CGC_approved' tag\n" if $verbose;
 	print JAHLOG "ERROR: $locus has 'Genomic_sequence', 'Transcript', or 'Pseudogene' tag but no 'CGC_approved' tag\n";
 	$jah_errors++;
 	print "." if ($verbose);
@@ -558,7 +552,8 @@ sub test_locus_for_errors{
   # Remind of outstanding CGC_unresolved tags
   if(defined($locus->CGC_unresolved)){
     my ($unresolved_details) = $locus->at('Type.Gene.CGC_unresolved');
-    $warnings .= "ERROR 30: $locus has CGC_unresolved tag: \"$unresolved_details\"\n";
+    $warnings .= "ERROR 30: $locus has CGC_unresolved tag: \"$unresolved_details\"\n" if $locus ne "arl-qury";
+    $warnings .= "ERROR 30: $locus has CGC_unresolved tag: \"$unresolved_details\"\n" if $verbose;
   }
 
 
@@ -1079,11 +1074,8 @@ EOF
 	if ($ace){
 	  if ($allele =~ /^([a-z]{1,})\d+$/){
 	    $desig = $1;
-	    print "1: $desig: $location{$desig}\n";
 	    print  ACE "\n\nAllele : \"$allele\"\n";
 	    print  ACE "Location \"$location{$desig}\"\n";
-	    print   "\n\nAllele : \"$allele\"\n";
-	    print   "Location \"$location{$desig}\"\n";
 	    next;
 	  }
 
@@ -1095,23 +1087,16 @@ EOF
 	  if ($allele =~ /^([a-z]{1,})\d+([a-z]{1,})\d+$/){
 	    $desig = $1; $desig2 = $2;
 	    if ("$desig" eq "$desig2"){
-	      print "2. Double allele: $desig\n";
 	      print  ACE "\n\nAllele : \"$allele\"\n";
 	      print  ACE "Location \"$location{$desig}\"\n";
-	      print   "\n\nAllele : \"$allele\"\n";
-	      print   "Location \"$location{$desig}\"\n";
 	    }
 	    else {
 
 	      # double allele has diff designation
 	      $desig = $1; $desig2 = $2;
-	      print "3. Double allele: $desig and $desig2\n";
 	      print  ACE "\n\nAllele : \"$allele\"\n";
 	      print  ACE "Location \"$location{$desig}\"\n";
 	      print  ACE "Location \"$location{$desig2}\"\n";
-	      print   "\n\nAllele : \"$allele\"\n";
-	      print   "Location \"$location{$desig}\"\n";
-	      print   "Location \"$location{$desig2}\"\n";
 	    }
 	    next;
           }
@@ -1286,7 +1271,7 @@ sub process_strain_class {
 
   my (@strains, @seqs, $genotype, @genes, $seq, $strain, $extract);
 
- # print"\n\nChecking Strain class for errors:\n";
+  print"\n\nChecking Strain class for errors:\n";
   print LOG "\n\nChecking Strain class for errors:\n";
   print LOG "---------------------------------\n";
 
@@ -1318,6 +1303,7 @@ EOF
       my $cgc=$strain->Location;
       if ($strain->Genotype){
 	$genotype = $strain->Genotype(1);
+	print "$genotype\n" if ($strain eq "RB992");
 	$extract = $genotype;
 	$extract =~ s/\(|\)|\/|\+|;|\?|\{|\}|,|\=|\.$/ /g;
 	$extract =~ s/ I | II | III | IV | V | X / /g;
@@ -1325,6 +1311,7 @@ EOF
 	$extract =~ s/^\s|\w{3}-\s| f | A //g;
 	$extract =~ s/\s{1,}/ /g;
 	@genes=split(/ /,$extract);
+	print @genes, "\n" if ($strain eq "C52E12.2");
 	foreach (@genes){
 	  if($seqs{$_}){
 	    my $seq = $db->fetch('Sequence', $_);
