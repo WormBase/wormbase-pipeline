@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.22 2001-11-29 14:51:04 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.23 2001-12-06 13:28:11 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -453,10 +453,11 @@
         Sequence_status	Shotgun	UNIQUE DateType
 			Finished UNIQUE DateType
 			Accession_number UNIQUE Text
-	Type Cosmid  // 000824 Lincoln's additions to segregate clones
-  	     YAC
-  	     cDNA
-             Plasmid
+	Type UNIQUE Cosmid  // 000824 Lincoln's additions to segregate clones
+		    Fosmid // added for dl by krb 06/12/01
+		    YAC
+		    cDNA
+		    Plasmid
 	Transgene ?Transgene XREF Clone
         Derived_from	?Clone
 
@@ -811,9 +812,7 @@
 			Predicted_3 ?Method Int Int UNIQUE Float // (x, x+1) or (x, x-1)
           Oligo ?Oligo XREF In_sequence Int UNIQUE Int  // for OSP and human mapping mostly
 	  Assembly_tags	Text Int Int Text // type, start, stop, comment
-	  Analysis_details Analysis_history ?Method DateType
-                           Parent_model ?Sequence XREF Child_model DateType    // parent/child relationship for history models [dl 000727]
-                           Child_model ?Sequence XREF Parent_model DateType    //
+	  Analysis_details Analysis_history ?Method UNIQUE DateType
 	  Homol	DNA_homol ?Sequence XREF DNA_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		Pep_homol ?Protein XREF DNA_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		Motif_homol ?Motif XREF DNA_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
@@ -988,8 +987,8 @@
 		  Date DateType Text			// Text for comments on operation
 		  Species UNIQUE ?Species               // RD 0107 added UNIQUE
 		  Wormpep Replaces ?Protein XREF Replaced_by
-			  Inactive Replaced_by ?Protein XREF Replaces
-		// inactive wormpep entries won't be output in standard wormpep dumps
+			  Replaced_by ?Protein XREF Replaces
+			  Live // added by krb 06/12/01
 	  Visible	Corresponding_CDS ?CDS XREF Corresponding_protein // RD 0107 was Corresponding_DNA
 			Reference ?Paper XREF Protein
 			Gene ?Gene XREF Protein
