@@ -5,7 +5,7 @@
 # completely rewritten by Keith Bradnam from list_loci_designations
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-06-03 12:04:13 $      
+# Last updated on: $Date: 2003-08-18 09:15:58 $      
 #
 # This script should be run under a cron job and simply update the webpages that show
 # current gene names and sequence connections.  Gets info from geneace.  
@@ -26,8 +26,9 @@ use Carp;
 ##############################
 
 my $tace  = &tace;
-my $www = "/nfs/WWWdev/htdocs/Projects/C_elegans/LOCI";
+my $www = "/nfs/WWWdev/htdocs/Projects/C_elegans/LOCI"; # where output will be going
 
+# query against active geneace database
 my $db = Ace->connect(-path  => "/wormsrv1/geneace",
                       -program =>$tace) || do { print "Connection failure: ",Ace->error; croak();};
 
@@ -39,11 +40,13 @@ my @loci = $db->fetch(-query=>"Find Locus WHERE Gene AND \(Species = \"Caenorhab
 open (HTML, ">$www/loci_designations_a.shtml") || croak "Couldn't open file for writing to\n";
 # Text file for simpler handling
 open (TEXT, ">$www/loci_all.txt") || croak "Couldn't open text file for writing to\n";
+print TEXT "Locus, sequence name, transcript name, pseudogene name, other names, cgc approved?\n";
 my $prev_initial = "a";
 
 
 my $line = 0;
 
+# cycle through each locus in database
 foreach my $locus (@loci){
   my $initial = substr($locus,0,1);
   $initial = lc($initial);
@@ -62,20 +65,44 @@ foreach my $locus (@loci){
   
   print HTML "<TD><A HREF=\"http://www.wormbase.org/db/gene/gene?name=${locus}\">${locus}</a></TD>";
   print TEXT "$locus,";
+
   # Get sequence connections
   if(defined($locus->at('Molecular_information.Genomic_sequence'))){
     my @genomic_sequences = $locus->Genomic_sequence;
     print HTML "<TD>";
     foreach my $i (@genomic_sequences){
       print HTML "<A HREF=\"http://www.wormbase.org/db/seq/sequence?name=${i}\">${i}</a> ";
-      print TEXT "$i ";
+      print TEXT "$i ,,,";
+    }
+    print HTML "</TD><TD>&nbsp</TD><TD>&nbsp</TD>";
+  }
+
+  # get transcript connections
+  elsif(defined($locus->at('Molecular_information.Transcript'))){
+    print HTML "<TD>&nbsp</TD>";
+    my @transcripts = $locus->Transcript;
+    print HTML "<TD>";
+    foreach my $i (@transcripts){
+      print HTML "<A HREF=\"http://www.wormbase.org/db/seq/sequence?name=${i}\">${i}</a> ";
+      print TEXT ",,$i ,";
+    }
+    print HTML "</TD><TD>&nbsp</TD>";
+  }
+  # get pseudogene connections
+  elsif(defined($locus->at('Molecular_information.Pseudogene'))){
+    my @pseudogenes = $locus->Pseudogene;
+    print HTML "<TD>&nbsp</TD><TD>&nbsp</TD>";
+    foreach my $i (@pseudogenes){
+      print HTML "<A HREF=\"http://www.wormbase.org/db/seq/sequence?name=${i}\">${i}</a> ";
+      print TEXT ",,,$i ";
     }
     print HTML "</TD>";
   }
+
   else{
-    print HTML "<TD>&nbsp</TD>";
+    print HTML "<TD>&nbsp</TD><TD>&nbsp</TD><TD>&nbsp</TD>";
   }
-  print TEXT ",";
+  print TEXT ",,,";
 
 
   #Get other names
@@ -149,7 +176,7 @@ __END__
 Simply takes the latest set of gene names in geneace and writes to the development web site
 a set of HTML pages (one for each letter of the alphabet) containing all gene names starting
 with that letter.  Makes these tables hyperlinked to WormBase and also includes other names
-and sequence connections.
+and sequence/transcript/pseudogene connections.
 
 When script finishes it copies across to the live web site.  This script should normally be
 run every night on a cron job.
