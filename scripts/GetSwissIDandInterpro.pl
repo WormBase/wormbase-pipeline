@@ -167,7 +167,7 @@ sub outputToAce #(\%wormpep_acc, \@accession \$ace_output, \$errorLog)
 	 { $proteinID = $1;}
 	
 	#get the SWISSPROT accession
-	if($_ =~ m/AC\s+(\w+)/)
+	if($_ =~ m/^AC\s+(\w+)/)
 	  { $acc = $1;}
 
 	#get all InterPro motifs
