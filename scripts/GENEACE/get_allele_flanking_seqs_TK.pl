@@ -4,7 +4,7 @@
 #
 # by Chao-Kung Chen [030625]
 
-# Last updated on: $Date: 2004-12-09 17:02:31 $
+# Last updated on: $Date: 2004-12-10 15:13:48 $
 # Last updated by: $Author: krb $
 
 use Tk;
@@ -85,7 +85,7 @@ my %Gene_info = $ga -> gene_info();
 #----------- top level frame ----------
 
 my $mw = MainWindow->new();
-$mw->configure (title => "Allele Flanking Sequences Retriever   by Chao-Kung Chen   Version 1.0 (2003/06/20)",
+$mw->configure (title => "Allele Flanking Sequences Retriever by Chao-Kung Chen Version 1.0 (2003/06/20)",
                 background => "white",
                );
 
@@ -147,7 +147,8 @@ $param_frame -> Label(text => "Eg: 4R79.1 -aa 332Q ok12 abc-1 1232   OR   4R79.1
 #----------- entry box ----------
 
 my $params;
-my @info;
+
+my @info;  # will store amino acid before and after mutation along with coordinate of mutation
 
 my $entry_frame = $mw ->Frame(relief => 'groove', borderwidth => 2)
                     ->pack(side => 'top', anchor => 'n', after => $param_frame, expand => 1, fill => 'x');
@@ -395,6 +396,7 @@ sub Reset{
    $entry -> delete('0.1', 'end');
 }
 
+
 sub run {
 
   my $text = $entry -> cget(-textvariable);
@@ -467,6 +469,7 @@ sub run {
     # Set molecule type
     if ($aa_or_dna eq "-aa" || $aa_or_dna eq "-AA"){$molecule = "aa"} else {$molecule = "DNA"}
 
+    # make cds name uppercase apart from any trailing isoform suffixes
     if ($cds_or_locus =~ /(.+\.\d+)(\w)/){
       my $variant = $2; my $seq = uc($1);
       $cds = $seq.$variant; 
@@ -581,7 +584,7 @@ sub run {
     # retrieving flank seq of a specified codon or mutation site via exons_to_codons routine
     ########################################################################################
 
-    exons_to_codons($cds, \@exons, \@DNA, \@prot, $mutation, $position, $allele, $cgc_name);
+    &exons_to_codons($cds, \@exons, \@DNA, \@prot, $mutation, $position, $allele, $cgc_name);
   }
 }
 
@@ -747,6 +750,7 @@ sub exons_to_codons {
   my ($dna_L, $dna_R, $bp_num, @ace, $dna_Lf, $dna_Rf);
 
   @ace =();
+
 
   ################
   # no frame shift
@@ -1013,26 +1017,23 @@ sub write_ace {
   $ace_window->insert('end', "Gene  \"$Gene_info{$cgc_name}{'Gene'}\"  \/\/$cgc_name\n");
   $ace_window->insert('end', "Species \"Caenorhabditis elegans\"\n");
 
-  $ace_window->insert('end', "\/\/Substitution \"[\/]\"\n");
+  $ace_window->insert('end', "Substitution \"[\/]\"\n");
+  $ace_window->insert('end', "Method \"Substitution_allele\"\n");
+
+  if ($info[0] eq "X"){
+    $ace_window->insert('end', "\/\/Nonsense \"Amber_UAG\" \"$info[1] to X\"\n");
+    $ace_window->insert('end', "\/\/Nonsense \"Ochre_UAA\" \"$info[1] to X\"\n");
+    $ace_window->insert('end', "\/\/Nonsense \"Opal_UGA\"  \"$info[1] to X\"\n");
+  }
+  else {
+    $ace_window->insert('end', "Missense \"$info[1] to $info[0]\"\n");
+  }
   $ace_window->insert('end', "\/\/Deletion \n");
   $ace_window->insert('end', "\/\/Insertion\n");
   $ace_window->insert('end', "\/\/Deletion_with_insertion\n");
-
-  if ($info[0] eq "X"){
-    $ace_window->insert('end', "\/\/Nonsense \"Amber_UAG\" \"$info[2] to stop\"\n");
-    $ace_window->insert('end', "\/\/Nonsense \"Ochre_UAA\" \"$info[2] to stop\"\n");
-    $ace_window->insert('end', "\/\/Nonsense \"Opal_UGA\"  \"$info[2] to stop\"\n");
-  }
-  else {
-    $ace_window->insert('end', "Missense \"$info[2] to $info[0]\"\n");
-  }
-
-  $info[0] = "stop" if  lc($info[0]) eq "x";
-
   $ace_window->insert('end', "\/\/Remark \"\"\n");
   $ace_window->insert('end', "\/\/Remark \"\" Curator_confirmed \"WBPerson2970\"\n");
   $ace_window->insert('end', "\/\/Method \"Allele\"\n");
-  $ace_window->insert('end', "\/\/Method \"Substitution_allele\"\n");
   $ace_window->insert('end', "\/\/Method \"Deletion_allele\"\n");
   $ace_window->insert('end', "\/\/Method \"Insertion_allele\"\n");
   $ace_window->insert('end', "\/\/Method \"Deletion_and_insertion_allele\"\n");
