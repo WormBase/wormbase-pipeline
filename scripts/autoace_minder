@@ -7,7 +7,7 @@
 # Usage : autoace_minder [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-01-13 09:02:37 $
+# Last edited on: $Date: 2003-01-13 16:22:55 $
 
 
 #################################################################################
@@ -581,7 +581,7 @@ sub make_autoace {
   
   if ($build || $builddb) { 
 
-    open (EMAIL,  "|/bin/mailx -s \"WormBase build reminder\" \"All\" ");
+    open (EMAIL,  "|/bin/mailx -s \"WormBase build reminder\" \"wormbase\@sanger.ac.uk\" ");
     print EMAIL "Dear builder,\n\n";
     print EMAIL "You have just run autoace_minder -build.  This will probably take 5-6 hours\n";
     print EMAIL "to run.  You should therefore start work on the blast pipeline. So put down that\n";
