@@ -9,7 +9,7 @@
 # 
 #
 # Last updated by: $Author: ar2 $                     
-# Last updated on: $Date: 2002-07-26 15:34:40 $     
+# Last updated on: $Date: 2002-07-30 13:45:01 $     
 
 
 use strict;                                     
@@ -53,6 +53,7 @@ my %CE_gene;         # hash of arrays eg  CE00100 => (gene1.1  gene3.4 gene2.1) 
 my %gene_CE;
 my %CE_live;
 my %CE_corr_DNA;     # hash of arrays eg  CE00100 => (gene1.1   gene2.1)  - contains only genes of Live peptides
+my %CE_sequence;
 
 my $stem;
 my $isoform;
@@ -158,8 +159,8 @@ while(<HISTORY>)
 		# do something clever
 		# else
 		$existingCE = $gene_CE{$gene};
-		&addNewPeptide;
 		&replacePeptide;
+		&addNewPeptide;
 	      }
 	  
 	    else
@@ -195,6 +196,7 @@ while(<HISTORY>)
 #	  last;
 #	}
       }
+
 close HISTORY;
 
 
@@ -202,28 +204,57 @@ close HISTORY;
 #Database "SwissProt" "RR44_CAEEL" "Q17632"
 #Motif_homol     "INTERPRO:IPR001900"
 
+#get the sequence from the .fasta file
+open (FASTA, "<$wormpepdir/wp.fasta$ver") || die "cant open wp.fasta";
+my $fasta_pep;
+while (<FASTA>)
+  {
+    #chomp;
+    if ($_ =~ /CE\d{5}/ ){
+      $fasta_pep = $&;
+    }
+    else{
+      if ( defined($fasta_pep) ) {
+	$CE_sequence{$fasta_pep} .= "$_";
+      }
+    }
+  }
+close FASTA;
+
 #write ace file
 my $ii;
+my $acefile = "$wormpepdir/pepace.ace";
+open (ACE, ">$acefile") || die "cant write $acefile\n";
+
+#ace file for new Protein model (with History)
 foreach my $key(sort keys %CE_history)
 {
-  print "Protein : \"WP:$key\"\n";
+  print ACE "Protein : \"WP:$key\"\n";
+
+# Write histories
   foreach my $release(sort byRelease keys %{ $CE_history{$key} })
     {
       foreach my $genehis(sort keys %{ $CE_history{$key}{$release} })
 	{
-	  print "History \"$release\" \"$CE_history{$key}{$release}{$genehis}\" \"$genehis\"\n";
+	  print ACE "History \"$release\" \"$CE_history{$key}{$release}{$genehis}\" \"$genehis\"\n";
 	}
     } 
+
   if( $CE_live{$key} == 1 ){
-    print "Live\n";
-    print "Database \"WORMPEP\" \"$key\" \"WP:$key\"\n";
-   
+    print ACE "Live\n";
+    print ACE "Database \"WORMPEP\" \"$key\" \"WP:$key\"\n";
+    print ACE "Species \"Caenorhabditis elegans\"\n";
     for $ii (0 .. $#{ $CE_corr_DNA{$key} })
       {
-	print "Corresponding_DNA \"$CE_corr_DNA{$key}[$ii]\"\n";
+	print ACE "Corresponding_DNA \"$CE_corr_DNA{$key}[$ii]\"\n";
       }
   }
-  print "\n";
+  print ACE "\n";
+  
+  print ACE "Peptide : \"WP:$key\"\n";
+  print ACE "$CE_sequence{$key}\n";
+
+  'perl5.6.0 /wormsrv2/scripts/GetSwissIDandInterpro.pl';
 }
 
 close LOG;
@@ -250,20 +281,28 @@ sub addNewPeptide
     $CE_live{$CE} = 1;   #assume live when put in unless explicitly killed
     $gene_CE{$gene} = $CE;
     if (defined ($out) ){
-      $CE_history{$CE}{$out}{$gene} = "removed";#.= "Removed $out\t" ;
-      &removeGeneCorrDNA;
       if( &multiCoded == 0){
 	$CE_live{$CE} = 0;
       }
+      $CE_history{$CE}{$out}{$gene} = "removed";
+      &removeGeneCorrDNA;
     } 
     return 1;
   }
 
 sub replacePeptide
   {
-    $CE_live{$existingCE} = 0;
-    $CE_history{$existingCE}{$in}{$gene} = "replaced_by $CE";# .= "$in Replaced_by $CE\t";
-    $CE_history{$CE}{$in}{$gene} = "Created to replace $existingCE";#.= "$in Replaces $existingCE\t";
+    if ( &multiCoded($existingCE) == 0){
+      #this is to make sure that Im not killing a peptide coded by another gene
+      if( $CE_live{$existingCE} == 1 )
+	{
+	  if ("$CE_corr_DNA{$existingCE}[0]" eq "$gene") {
+	    $CE_live{$existingCE} = 0;
+	  }
+	}
+    } 
+    $CE_history{$existingCE}{$in}{$gene} = "replaced_by $CE";
+    $CE_history{$CE}{$in}{$gene} = "Created to replace $existingCE";
   }
 
 sub reappearedPeptide
@@ -272,7 +311,9 @@ sub reappearedPeptide
     $CE_history{$CE}{$in}{$gene} = "reappeared" ;#.= "$in Reappeared\t";
     if( $out )
       {
-	$CE_live{$CE} = 0;
+	if( &multiCoded == 0){
+	  $CE_live{$CE} = 0;
+	}
 	$CE_history{$CE}{$out}{$gene} = "removed";# .= "$out Removed\t";
       }
     else {
@@ -286,18 +327,26 @@ sub reappearedAsIsoform
   {
     $CE_live{$CE} = 1;
     #check if becoming isoform is same release as removal - if so modify history to show conversion rather than reappearance
-    if( (defined("$CE_history{$CE}{$in}{$stem}") ) && ("$CE_history{$CE}{$in}{$stem}" eq "removed") ) { 
-      $CE_history{$CE}{$in}{$stem} = "converted to isoform $gene";
-    }
-    else{
-      $CE_history{$CE}{$in}{$stem} = "reappeared as isoform $gene";# .= "$in Reappeared as isoform to $stem \t"; 
-    }
-    
+    if( defined("$CE_history{$CE}{$in}{$stem}") )
+	{
+	  if("$CE_history{$CE}{$in}{$stem}" eq "removed") { 
+	    $CE_history{$CE}{$in}{$stem} = "converted to isoform $gene";
+	  }
+	  else{
+	    $CE_history{$CE}{$in}{$stem} = "reappeared as isoform $gene"; 
+	  }
+	}
+	else{
+	  $CE_history{$CE}{$in}{$stem} = "reappeared as isoform $gene"; 
+	}
+	
     push( @{ $CE_gene{$CE} }, "$gene");
     $gene_CE{$CE} = $CE;
     if( $out )
       {
-	$CE_live{$CE} = 0;
+	if( &multiCoded == 0){
+	  $CE_live{$CE} = 0;
+	}
 	$CE_history{$CE}{$out}{$gene} = "removed";# .= "$out Removed\t";
       }
     else {
@@ -315,7 +364,9 @@ sub becameIsoform
     $gene_CE{$CE} = $CE;
     if( $out )
       {
-	$CE_live{$CE} = 0;
+	if( &multiCoded == 0){
+	  $CE_live{$CE} = 0;
+	}
 	$CE_history{$CE}{$out}{$gene} = "removed";# .= "$out Removed\t";
       } 
     else {
@@ -333,7 +384,9 @@ sub changePepGene
     $CE_history{$CE}{$in}{$gene} = "reappeared coded by another gene $gene";# .= "$in reappeared coded by another gene\t";
     if( $out )
       {
-	$CE_live{$CE} = 0;
+	if( &multiCoded == 0){
+	  $CE_live{$CE} = 0;
+	}
 	$CE_history{$CE}{$out}{$gene} = "removed";# .= "$out Removed\t";
       } 
     else {
@@ -354,9 +407,14 @@ sub changePepGene
 sub multiCoded
   {
     # if the peptide is coded by multiple genes returns 1 else 0
-    my @mul = $CE_gene{$CE};
-    my $lastIndex = $#mul;
-    if ($lastIndex > 0){
+    my $loop = 0;
+    my $mul = $CE_corr_DNA{$CE}[0];
+    while (defined($CE_corr_DNA{$CE}[$loop]) )
+      {
+	$loop++;
+	$mul = $CE_corr_DNA{$CE}[0];
+      }
+    if ($loop > 1){
       return 1;
     }
     else{
