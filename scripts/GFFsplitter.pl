@@ -5,7 +5,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-09-17 14:44:50 $
+# Last updated on: $Date: 2003-09-20 10:04:07 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -35,6 +35,7 @@ our $lockdir = "/wormsrv2/autoace/logs/";
 my $help;      # Help/Usage page
 my $archive;   # archive GFF_splits directory into a WSxx directory
 my $debug;     # debug
+my $verbose;   # verbose mode
 our $log;
 
 GetOptions (
@@ -121,7 +122,7 @@ foreach $file (@gff_files) {
   next if ($file eq "");
     
   print LOG "# File $file\n";
-  print     "# File $file\n";
+  print     "\n# File $file\n" if ($verbose);
   
   my $line_count = 0;
   
@@ -138,7 +139,7 @@ foreach $file (@gff_files) {
     chomp;
     $line_count++;
     
-    print "." if (($line_count % 5000) == 0);
+    print "." if ((($line_count % 5000) == 0) && $verbose);
     
     #skip header lines of file
     if (/^\#/) {push (@header,$_); next;}
@@ -552,6 +553,7 @@ None.
 
 = item -archive, archives (gzips) older versions of GFF_SPLITS directory
 
+= item -verbose, turn on extra output to screen to help track progress
 
 
 =back
