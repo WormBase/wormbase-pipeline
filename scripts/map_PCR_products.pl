@@ -33,6 +33,7 @@ my $rundate     = &rundate;
 my $runtime     = &runtime;
 my %output      = ();
 my %finaloutput = ();
+my $log = Log_files->make_build_log();
 
 ########################
 # command-line options #
@@ -42,6 +43,8 @@ my $help;       # Help perdoc
 my $test;       # Test mode
 my $debug;      # Debug mode, output only goes to one user
 my $verbose;    # verbose mode, more command line outout
+
+
 
 GetOptions ("debug=s"   => \$debug,
 	    "verbose"   => \$verbose,
@@ -70,19 +73,6 @@ my @chromosomes = qw( I II III IV V X );                     # chromosomes to pa
 my $db_version  = &get_wormbase_version_name;                # WS version number
 our %genetype   = ();                                        # gene type hash
 
-################
-# Open logfile #
-################
-
-my $log = "/wormsrv2/logs/map_PCR_products.$rundate.$$";
-
-open (LOG,">$log");
-LOG->autoflush();
-
-print LOG "# map_PCR_products\n";     
-print LOG "# run details    : $rundate $runtime\n";
-print LOG "\n";
-
 ###########################################
 # get exons and PCRs out of the gff files #
 ###########################################        
@@ -106,7 +96,7 @@ foreach my $chromosome (@chromosomes) {
     
     my ($name) = ($f[8] =~ /PCR_product \"(.*)\"$/);
     unless ($name) {
-      print LOG "ERROR: Cant get name from $f[8]\n";
+      $log->write_to("ERROR: Cant get name from $f[8]\n");
       next;
     }
     $PCRcount{$name}++;
@@ -229,15 +219,12 @@ foreach my $chromosome (@chromosomes) {
 	  if ( not (($PCRstart > $exon_stop) || ($PCRstop < $exon_start))) {
 	    my ($PCR) = ($testPCR =~ /(\S+)\.\d+$/);
 	    push @{$output{$PCR}}, $testgene;
-	    print LOG "$PCR mapped to $testgene\n";
 	  }
 	}
       }                
     }
   }
 }
-
-close LOG;
 
 ###################
 # sort the output #
@@ -259,31 +246,26 @@ foreach my $mess (sort keys %output) {
 # produce output files #
 ########################
 
-open (OUT,    ">/wormsrv2/autoace/MAPPINGS/PCR_mappings.$db_version");
-open (OUTACE, ">/wormsrv2/autoace/MAPPINGS/PCR_mappings.$db_version.ace");
+open (OUTACE, ">/wormsrv2/autoace/acefiles/PCR_mappings.ace") || die "Couldn't write to PCR_mappings.ace\n";
 
 foreach my $mapped (sort keys %finaloutput) {
+  for (my $n = 0; $n < (scalar @{$finaloutput{$mapped}}); $n++) {
+    my $gene = $finaloutput{$mapped}->[$n];
     
-    print OUT "$mapped\t@{$finaloutput{$mapped}}\n";
-  
-    for (my $n = 0; $n < (scalar @{$finaloutput{$mapped}}); $n++) {
-	my $gene = $finaloutput{$mapped}->[$n];
-    
-	if ($genetype{$gene} eq "CDS") {
-	    print OUTACE "CDS : \"$gene\"\n";
-	    print OUTACE "Corresponding_PCR_product \"$mapped\"\n\n";
-	}
-	elsif ($genetype{$gene} eq "Pseudogene") {
-	    print OUTACE "Pseudogene : \"$gene\"\n";
-	    print OUTACE "Corresponding_PCR_product \"$mapped\"\n\n";
-	}
-	elsif ($genetype{$gene} eq "Transcript") {
-	    print OUTACE "Transcript : \"$gene\"\n";
-	    print OUTACE "Corresponding_PCR_product \"$mapped\"\n\n";
-	}
+    if ($genetype{$gene} eq "CDS") {
+      print OUTACE "CDS : \"$gene\"\n";
+      print OUTACE "Corresponding_PCR_product \"$mapped\"\n\n";
     }
+    elsif ($genetype{$gene} eq "Pseudogene") {
+      print OUTACE "Pseudogene : \"$gene\"\n";
+      print OUTACE "Corresponding_PCR_product \"$mapped\"\n\n";
+    }
+    elsif ($genetype{$gene} eq "Transcript") {
+      print OUTACE "Transcript : \"$gene\"\n";
+      print OUTACE "Corresponding_PCR_product \"$mapped\"\n\n";
+    }
+  }
 } 
-close(OUT);
 close(OUTACE);
 
 ##############################
@@ -292,7 +274,7 @@ close(OUTACE);
 
 unless ($test) {
   
-  my $command = "pparse /wormsrv2/autoace/MAPPINGS/PCR_mappings.$db_version.ace\nsave\nquit\n";
+  my $command = "pparse /wormsrv2/autoace/acefiles/PCR_mappings.ace\nsave\nquit\n";
   
   open (TACE,"| $tace -tsuser map_PCR_products $dbdir") || die "Couldn't open tace connection to $dbdir\n";
   print TACE $command;
@@ -302,6 +284,8 @@ unless ($test) {
 ###############
 # hasta luego #
 ###############
+
+$log->mail("$maintainers","BUILD REPORT: $0");
 
 exit(0);
 
