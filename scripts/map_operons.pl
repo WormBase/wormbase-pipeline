@@ -3,7 +3,7 @@
 # map_operons.pl
 
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2003-12-16 12:54:51 $
+# Last edited on: $Date: 2003-12-16 13:49:44 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -11,6 +11,7 @@ use Wormbase;
 use IO::Handle;
 use Data::Dumper;
 use Getopt::Long;
+use File::Copy;
 use Ace;
 
 ##############################
@@ -23,8 +24,9 @@ my $maintainers = "dl1";
 our $dir    = "/wormsrv2/autoace/OPERONS";
 our $gff    = "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS";
 our $WS_version =  &get_wormbase_version_name;
-our $output = "/wormsrv2/autoace/OPERONS/operons_${WS_version}.ace";
 
+our $output1 = "/wormsrv2/autoace/OPERONS/operons_${WS_version}.ace";
+our $output2 = "/wormsrv2/wormbase/misc/misc_operons.ace";
 
 # do everything in /wormsrv2/autoace/OPERONS
 chdir("$dir");
@@ -67,13 +69,23 @@ print LOG "# map_operons.pl\n";
 
 print "// create output file\n\n" if ($verbose);
 
-open (OUTPUT, ">$output") || die "Can't open file for output\n";
+open (OUTPUT, ">$output1") || die "Can't open file for output\n";
 
 &acedump_operons;
 
 close OUTPUT;
 
 print "// end output file\n\n" if ($verbose);
+
+# copy this file to correct place
+
+my $status = copy($output1, $output2);
+
+if ($status == 0) {
+    print "// Failed to copy file to $output2\n"; 
+    print LOG "Failed to copy file: $!\n";   
+    $errors++;
+}
 
 my $subject_line = "map_operons.pl";
 
@@ -88,7 +100,6 @@ elsif ($errors > 1) {
 print "// mail log file\n\n" if ($verbose);
 
 &mail_maintainer("$subject_line",$maintainers,$log);
-
 
 # hasta luego
 
