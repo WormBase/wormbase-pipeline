@@ -9,7 +9,7 @@
 # mysql database prior for the pre-build pipeline.
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-02-27 14:55:28 $
+# Last updated on: $Date: 2003-02-27 15:39:05 $
 
 
 #################################################################################
@@ -49,6 +49,16 @@ our %wormpep;
 our %old_wormpep;
 &make_hash;
 &make_old_wormpep_hash;
+
+# Simple but important check...is the new wp.fasta file bigger than the old one.
+# if not then this is serious and should be investigated
+my $old_wp_size = keys(%old_wormpep);
+my $new_wp_size = keys(%wormpep);
+
+
+if($old_wp_size > $new_wp_size){
+  die "ERROR: WS${release} wp.fasta file appears to have less entries than WS${old_release} wp.fasta file!\n\n";
+}
 
 my %proteins_outputted;
  ###############################
