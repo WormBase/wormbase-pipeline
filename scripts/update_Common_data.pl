@@ -5,7 +5,7 @@
 # by Anthony Rogers
 #
 # Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2005-03-03 14:14:06 $
+# Last updated on: $Date: 2005-03-24 17:19:38 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -33,7 +33,9 @@ my $cds2wormpep;       # Hash: %cds2wormpep         Key: CDS name               
 my $cds2protein_id;    # Hash: %cds2protein_id      Key: CDS name                          Value: Protein_ID
                        # Hash: %protein_id2cds      Key: Protein_ID                        Value: CDS name
 my $CDS_list;          # Hash: %CDSlist             Key: CDS name                          Value: Prediction status 
-my $clone2seq;         # Hash: %clone2seq           Key: Genomic_canbonical                Value: DNA sequence (lower case)
+my $clone2seq;         # Hash: %clone2seq           Key: Genomic_canonical                 Value: DNA sequence (lower case)
+my $clone2sv;          # Hash: %clone2sv            Key: Genomic_canonical                 Value: Sequence version (integer)
+
 my $genes2lab;         # Hash: %worm_gene2lab       Key: Gene (CDS|Transcript|Pseudogene)  Value: From_laboratory (HX, RW, DRW)
 
 my $worm_gene2cgc;     # Hash: %worm_gene2cgc_name  Key: CGC name                          Value: Gene ID, plus molecular name (e.g. AH6.1), also a hash of cgc_name2gene
@@ -52,6 +54,7 @@ GetOptions("build"              => \$build,
 	   "cds2pid"            => \$cds2protein_id,
 	   "CDS_list"           => \$CDS_list,
 	   "clone2seq"          => \$clone2seq,
+	   "clone2sv"           => \$clone2sv,
 	   "genes2lab"          => \$genes2lab,
 	   "worm_gene2cgc"      => \$worm_gene2cgc,
 	   "worm_gene2geneID"   => \$worm_gene2geneID,
@@ -100,6 +103,7 @@ else {
 &write_cds2wormpep      if ($cds2wormpep || $all);
 &write_CDSlist          if ($CDS_list || $all);
 &write_clones2seq       if ($clone2seq || $all);
+&write_clones2sv        if ($clone2sv || $all);
 &write_genes2lab        if ($genes2lab || $all);
 &write_worm_gene2class  if ($worm_gene2class || $all);
 &write_EST              if ($estdata || $all);
@@ -126,7 +130,7 @@ sub write_cds2protein_id {
   # populating %accession2name (maps embl accession to contig name)
   ####################################################################
 
-  my $command="Table-maker -p $wquery_dir/gene2pid.def\nquit\n";
+  my $command="Table-maker -p $wquery_dir/CommonData:CDS_proteinID.def\nquit\n";
   
   open (TACE, "echo '$command' | $tace $ace_dir |");
   while (<TACE>) {
@@ -192,6 +196,37 @@ sub write_clone2accession  {
   close A2C;
   
 }
+
+########################################################################################################
+
+sub write_clones2sv  {   
+
+    my %clone2sv;
+    
+    # connect to AceDB using TableMaker,
+    my $command="Table-maker -p $wquery_dir/clone2sv.def\nquit\n";
+    
+    open (TACE, "echo '$command' | $tace $ace_dir |");
+    while (<TACE>) {
+	chomp;
+	next if ($_ eq "");
+	next if (/acedb\>/);
+	last if (/\/\//);
+	if (/\"(\S+)\"\s+\"(S+)\.(\d+)\"/) {
+	    $clone2sv{$1} = $2;
+	}
+    }
+    close TACE;
+	
+    #now dump data to file
+    open (C2SV, ">$data_dir/clone2sv.dat") or die "cant write $data_dir/clone2sv.dat :$!";
+    
+    print C2SV Data::Dumper->Dump([\%clone2sv]);
+    
+    close C2SV;
+    
+}
+
 
 ########################################################################################################
 
