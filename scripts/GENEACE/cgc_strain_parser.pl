@@ -8,7 +8,7 @@
 # Page download and update upload to geneace has been automated [ck1]
 
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2004-05-11 14:26:32 $
+# Last updated on: $Date: 2004-05-25 15:23:37 $
 
 use strict;
 use Getopt::Std;
@@ -71,6 +71,8 @@ my $current_strain_ace = "cgc_strain_info_$rundate.ace";
 # get hash to convert CGC name to Gene id
 my $ga = init Geneace();
 my %Gene_info = $ga -> gene_info();
+my $last_gene_id_number = $ga ->get_last_gene_id();
+
 
 
 # Count how many strains to loop through
@@ -188,12 +190,38 @@ while(<INPUT>){
   # will not write out Gene tag if the loci from genotype is not a CGC name
   foreach my $i (@loci) {
     $ace_object .= "Gene $Gene_info{$i}{'Gene'}\n" if exists $Gene_info{$i}{'Gene'};
-    print CGC "CGC issue: locus $i ($strain: $geno) is not yet linked to a gene id\n" if (!exists $Gene_info{$i}{'Gene'} && $i !~ /^Cb|Cr|Cv/);
+    if (!exists $Gene_info{$i}{'Gene'} && $i !~ /^Cb|Cr|Cv/){
+      print CGC "\n\/\/CGC issue: locus $i ($strain: $geno) is not yet linked to a gene id\n";
+      $last_gene_id_number++;
+      my $id = sprintf("%08d", $last_gene_id_number);
+
+      print CGC "Gene : \"WBGene$id\"\n";
+      print CGC "Version  1\n";
+      print CGC "Other_name \"$i\"\n";
+      print CGC "Species  \"Caenorhabditis elegans\"\n";
+      print CGC "Version_change 1 now \"WBPerson1845\" Created\n";
+      print CGC "Strain \"$strain\"\n";
+      print CGC "Remark \"$i is parsed from CGC strain $strain\"\n";
+    }
   }
+
   foreach my $i (@loci2) {
     $ace_object .= "Gene $Gene_info{$i}{'Gene'}\n" if exists $Gene_info{$i}{'Gene'};
-    print CGC "CGC issue: locus $i ($strain: $geno) is not yet linked to a gene id\n" if (!exists $Gene_info{$i}{'Gene'} && $i !~ /^Cb|Cr|Cv/);
+    if (!exists $Gene_info{$i}{'Gene'} && $i !~ /^Cb|Cr|Cv/){
+      print CGC "\n\/\/CGC issue: locus $i ($strain: $geno) is not yet linked to a gene id\n";
+      $last_gene_id_number++;
+      my $id = sprintf("%08d", $last_gene_id_number);
+
+      print CGC "Gene : \"WBGene$id\"\n";
+      print CGC "Version  1\n";
+      print CGC "Other_name \"$i\"\n";
+      print CGC "Species  \"Caenorhabditis elegans\"\n";
+      print CGC "Version_change 1 now \"WBPerson1845\" Created\n";
+      print CGC "Strain \"$strain\"\n";
+      print CGC "Remark \"$i is parsed from CGC strain $strain\"\n";
+    }
   }
+
   foreach my $i (@alleles){$ace_object .= "Allele $i\n";}
   foreach my $i (@alleles2){$ace_object .= "Allele $i\n";}
   foreach my $i (@alleles3){$ace_object .= "Allele $i\n";}
