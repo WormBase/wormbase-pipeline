@@ -2195,7 +2195,7 @@
 
 ?Paper  Original_timestamp Datetype // temporary tag in transition period [krb 040223]
 	Name    CGC_name ?Paper_name XREF CGC_name_for
-		PMID     ?Paper_name XREF PMID_for
+		//PMID     ?Paper_name XREF PMID_for
 		Medline_name ?Paper_name XREF Medline_name_for
 		Meeting_abstract ?Paper_name XREF Meeting_abstract_name
 		WBG_abstract    ?Paper_name XREF WBG_abstract_name
