@@ -664,9 +664,6 @@ sub test {
 
 sub check_release {
 
-    # exit if autoace has not been built
-    &usage(7) unless (-e "$logdir/$flag{'Z1'}");
-
     # have you run GFFsplitter ?
     # if no then this is about checking the DNA/agp files
     unless ((-e "$logdir/$flag{'C2'}") && (-e "$logdir/$flag{'B3'}")) {
