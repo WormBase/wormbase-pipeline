@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-03-25 11:12:13 $
+# Last updated by: $Author: dl1 $
+# Last updated on: $Date: 2004-04-29 10:23:32 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -150,12 +150,14 @@ foreach $file (@gff_files) {
     # Clone path
     if    ( ($source eq "Genomic_canonical")    && ($feature eq "region"))      {push (@{$GFF{$file}{clone_path}},$_);}
     # Genes (CDSs)  
-    elsif ((($source eq "curated")              && ($feature eq "CDS")))        {push (@{$GFF{$file}{genes}},$_);}
+    elsif ((($source eq "curated")              && ($feature eq "CDS")))        {push (@{$GFF{$file}{genes}},$_);
+									         push (@{$GFF{$file}{worm_genes}},$_);}
     # Pseudogenes
-    elsif ( ($source eq "Pseudogene")           && ($feature eq "Pseudogene"))  {push (@{$GFF{$file}{pseudogenes}},$_);}
+    elsif ( ($source eq "Pseudogene")           && ($feature eq "Pseudogene"))  {push (@{$GFF{$file}{pseudogenes}},$_);
+									         push (@{$GFF{$file}{worm_genes}},$_);}
     # RNA genes 
-    elsif ($feature =~ m/_primary_transcript/)                                  {push (@{$GFF{$file}{rna}},$_);}
-
+    elsif ($feature =~ m/_primary_transcript/)                                  {push (@{$GFF{$file}{rna}},$_);
+									         push (@{$GFF{$file}{worm_genes}},$_);}
     # coding_exon (used to be CDS)
     elsif (($source eq "curated")               && ($feature eq "coding_exon")) {push (@{$GFF{$file}{coding_exon}},$_);}
     # Exon      
@@ -171,7 +173,7 @@ foreach $file (@gff_files) {
     elsif ($feature eq "intron")                                                {push (@{$GFF{$file}{intron_all}},$_);}
 
     # Repeats
-    elsif ($source eq "RepeatMasker")                                              {push (@{$GFF{$file}{repeats}},$_);}
+    elsif ($source eq "RepeatMasker")                                           {push (@{$GFF{$file}{repeats}},$_);}
 
     # Assembly tags
     elsif ($source eq "assembly_tag")                                           {push (@{$GFF{$file}{assembly_tags}},$_);}
@@ -180,9 +182,9 @@ foreach $file (@gff_files) {
     # Oligo mapping
     elsif ($feature eq "OLIGO")                                                 {push (@{$GFF{$file}{oligos}},$_);}
     # RNAi
-    elsif ($feature eq "RNAi_reagent")                         {push (@{$GFF{$file}{RNAi}},$_);}
+    elsif ($feature eq "RNAi_reagent")                                          {push (@{$GFF{$file}{RNAi}},$_);}
     # PCR_products
-    elsif ($feature eq "PCR_product")                 {push (@{$GFF{$file}{PCR_products}},$_);}
+    elsif ($feature eq "PCR_product")                                           {push (@{$GFF{$file}{PCR_products}},$_);}
     # Alleles
     elsif (($source eq "Allele") || ($source eq "Mos_insertion_allele")) {push (@{$GFF{$file}{allele}},$_);}
     # operons
@@ -480,6 +482,7 @@ clone_path
 genes
 pseudogenes
 rna
+worm_genes
 coding_exon
 exon
 exon_tRNA
