@@ -358,124 +358,128 @@ sub checkchars {
 #######################################################################
 
 sub checkgenes {
-
-    foreach my $child ($obj->Subsequence) {
-	undef my @num;
-	undef my ($method);
-	undef my ($source);
+  my ($parent_length) = $obj->DNA(2);
+  foreach my $child ($obj->Subsequence) {
+    undef my @num;
+    undef my ($method);
+    undef my ($source);
 	
-	my ($seq, $start, $end) = $child->row();
-	
-	unless ($seq =~ /\./) {next;}
-	
-	if ($link =~ /^SUPERLINK/) {print LOG "SUPERLINK $link contains CDS gene models\n";}
-	
-	my $diff = $end - $start;
-	if ($diff < 0) {
-	    $diff = $start - $end;
-	}
-	
-	my $subseq = $db->fetch(Sequence => "$child");
-	if (!defined ($subseq)) {
-	    print LOG "Cannot fetch subsequence $child\n";
-	    next;
-	}
-		
-	# Source
-	#
-	# All Subsequence objects must have a Source
-
-	my $source = $subseq->Source(1);
-	if ((!defined ($source))) {
-	    print LOG "The subsequence $child has no Source\n";
-	}
-
-	# check to see if subsequence coordinates exceed length of parent clone
-	# won't work for parents that are links (they have zero length)
-	if($source !~ m/LINK/){
-	  my ($source_length) = $source->DNA(2);
-	  if (($start > $source_length) || ($end > $source_length)){
-	    print LOG "The subsequence $child has coordinates that exceed the length of its parent\n";
-	  }
-	}
-
-	# Source Exons
-	#
-	# All Subsequence objects must have Source_Exons
-
-	@num = $subseq->Source_Exons(2);
-	if (!defined (@num)) {
-	    print LOG "The subsequence $child has no Source_Exons\n";
-	}
-	@sort = sort numerically @num;
-	my $index = $#sort;
-	my $length = ($sort[$index])-1;
-	if ($diff != $length) {
-	    print LOG "The subsequence $child belonging to $clone has diff=$diff and length=$length\n";
-	}
-	
-		
-	# Method tags
-	#
-	# All Subsequence objects must have a Method
-
-	my $method = $subseq->Method(1);
-	if ((!defined ($method))) {
-	    print LOG "The subsequence $child has no method\n";
-	}
-	
-	# NDB_CDS || HALFWISE || gaze - don't process
- 
-	if ( ($method eq  "NDB_CDS") || ($method eq  "HALFWISE") || ($method eq  "gaze") ) {
-	    $subseq->DESTROY();
-	    $child->DESTROY();
-	    $diff="";
-	    $length="";
-	    next;
-	}
-	
-	# Species
-	# 
-	# Most Subsequence objects must have a Species
-
-	my $species = $subseq->Species(1);
-	if ((!defined ($species))) {
-	    print LOG "The subsequence $child has no Species tag\n";
-	}
-
-	# Transcripts
-	
-	if ($child =~ /\S+\.t\d+/) {
-	    my $tag = $subseq->Transcript;
-	    if ((!defined ($tag))) {
-		print LOG "The subsequence $child has no Transcript tag\n";
-	    }
-	}
-	else {
-	    
-	    if ($method eq "Pseudogene") {
-		my $tag = $subseq->Properties.Pseudogene;
-		if (!defined ($tag)) {
-		    print LOG "The subsequence $child [$method] has no Pseudogene tag\n";
-		} 
-	    }
-	    if ( ($method eq "curated") || ($method eq "provisional") ) {
-		my $tag = $subseq->Properties.CDS;
-		if (!defined ($tag)) {
-		    print LOG "The subsequence $child [$method] has no CDS tag\n";
-		}
-	    }
-	}
-	
-
-#	print  "$child [$source|$diff|$length|$method]\n";
-	
-	$subseq->DESTROY();
-	$child->DESTROY();
-	$diff="";
-	$length="";
-	
+    my ($seq, $start, $end) = $child->row();
+    
+    if($end > $parent_length){
+      print LOG "Gene error - $child has coordinates greater than length if parent\n";
     }
+    
+    unless ($seq =~ /\./) {next;}
+    
+    if ($link =~ /^SUPERLINK/) {print LOG "SUPERLINK $link contains CDS gene models\n";}
+    
+    my $diff = $end - $start;
+    if ($diff < 0) {
+      $diff = $start - $end;
+    }
+    
+    my $subseq = $db->fetch(Sequence => "$child");
+    if (!defined ($subseq)) {
+      print LOG "Cannot fetch subsequence $child\n";
+      next;
+    }
+    
+    # Source
+    #
+    # All Subsequence objects must have a Source
+    
+    my $source = $subseq->Source(1);
+    if ((!defined ($source))) {
+      print LOG "The subsequence $child has no Source\n";
+    }
+    
+    # check to see if subsequence coordinates exceed length of parent clone
+    # won't work for parents that are links (they have zero length)
+    if($source !~ m/LINK/){
+      my ($source_length) = $source->DNA(2);
+      if (($start > $source_length) || ($end > $source_length)){
+	print LOG "The subsequence $child has coordinates that exceed the length of its parent\n";
+      }
+    }
+    
+    # Source Exons
+    #
+    # All Subsequence objects must have Source_Exons
+    
+    @num = $subseq->Source_Exons(2);
+    if (!defined (@num)) {
+      print LOG "The subsequence $child has no Source_Exons\n";
+    }
+    @sort = sort numerically @num;
+    my $index = $#sort;
+    my $length = ($sort[$index])-1;
+    if ($diff != $length) {
+      print LOG "The subsequence $child belonging to $clone has diff=$diff and length=$length\n";
+    }
+    
+    
+    # Method tags
+    #
+    # All Subsequence objects must have a Method
+    
+    my $method = $subseq->Method(1);
+    if ((!defined ($method))) {
+      print LOG "The subsequence $child has no method\n";
+    }
+    
+    # NDB_CDS || HALFWISE || gaze - don't process
+    
+    if ( ($method eq  "NDB_CDS") || ($method eq  "HALFWISE") || ($method eq  "gaze") ) {
+      $subseq->DESTROY();
+      $child->DESTROY();
+      $diff="";
+      $length="";
+      next;
+    }
+    
+    # Species
+    # 
+    # Most Subsequence objects must have a Species
+    
+    my $species = $subseq->Species(1);
+    if ((!defined ($species))) {
+      print LOG "The subsequence $child has no Species tag\n";
+    }
+    
+    # Transcripts
+    
+    if ($child =~ /\S+\.t\d+/) {
+      my $tag = $subseq->Transcript;
+      if ((!defined ($tag))) {
+	print LOG "The subsequence $child has no Transcript tag\n";
+      }
+    }
+    else {
+      
+      if ($method eq "Pseudogene") {
+	my $tag = $subseq->Properties.Pseudogene;
+	if (!defined ($tag)) {
+	  print LOG "The subsequence $child [$method] has no Pseudogene tag\n";
+	} 
+      }
+      if ( ($method eq "curated") || ($method eq "provisional") ) {
+	my $tag = $subseq->Properties.CDS;
+	if (!defined ($tag)) {
+	  print LOG "The subsequence $child [$method] has no CDS tag\n";
+	}
+      }
+    }
+    
+    
+    #	print  "$child [$source|$diff|$length|$method]\n";
+    
+    $subseq->DESTROY();
+    $child->DESTROY();
+    $diff="";
+    $length="";
+    
+  }
 }
 
 
@@ -762,6 +766,11 @@ of the Gene Model as a Subsequence of the parent ?Sequence.
          Parent (ZK637)        = (12536 - 11124) + 1 = 1413
                                                        ----
 
+=head3 Subsequence coordinates exceeding parent sequence length
+
+The coordinates of each subsequence must be less than the length of the
+parent sequence.
+
 
 =head2 LINK objects
 
@@ -780,6 +789,10 @@ checks.
 =head1 AUTHOR - Daniel Lawson
 
 Email dl1@sanger.ac.uk
+
+=head2 Also hacked by Keith Bradnam
+
+Email krb@sanger.ac.uk
 
 =cut
 
