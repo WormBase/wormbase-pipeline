@@ -501,7 +501,7 @@ sub process_ace_file{
   my $filename = shift;
   my $database = shift;
 
-  print LOG "Replacing 'wormpub' in timestamps with database name\n\n";
+  print LOG "Replacing 'wormpub' in timestamps with $database\n\n";
 
   open (INPUT, "<$filename") || die "Couldn't open $filename for reading\n";
   open (OUTPUT, ">${filename}.tmpfile") || die "Couldn't write to tmpfile\n";
@@ -510,10 +510,14 @@ sub process_ace_file{
   while (<INPUT>) {
     if (/_wormpub/) {
       s/_wormpub/_$database/g;
-      print OUT "$_";
+      print OUTPUT "$_";
+    }
+    elsif(/_sylvia/){
+      s/_sylvia/_$database/g;
+      print OUTPUT "$_";
     }
     else {
-      print OUT "$_";
+      print OUTPUT "$_";
     } 
   }
   close(INPUT);
