@@ -1311,8 +1311,10 @@
               Method ?Method
               Expr_map ?SK_map XREF Expr_profile
               Reference ?Paper XREF Expr_profile
+	      RNAi_result ?RNAi XREF Expr_profile // Connection made by script during build [030106 krb]
               Remark ?Text
 
+		
 ?SK_map       X_coord UNIQUE Float
               Y_coord UNIQUE Float
               Mountain UNIQUE Int
@@ -1528,6 +1530,7 @@
                         Picture ?Picture XREF RNAi
 	Reference ?Paper XREF RNAi
         Phenotype ?Phenotype XREF RNAi #Phenotype_info
+	Expr_profile ?Expr_profile XREF RNAi_result // connection added during build [030106 krb]
         Remark ?Text
 
 #Phenotype_info Remark ?Text                            // specific remarks about this instance
