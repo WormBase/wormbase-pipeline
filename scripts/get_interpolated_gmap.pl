@@ -7,7 +7,7 @@
 # This script calculates interpolated genetic map positions for CDS, Transcripts 
 # and Pseudogenes lying between and outside genetic markers.
 #
-# Last updated on: $Date: 2003-10-13 13:27:32 $
+# Last updated on: $Date: 2003-11-20 12:41:31 $
 # Last updated by: $Author: ck1 $
 
 use strict;
@@ -21,30 +21,33 @@ use Getopt::Long;
 # variables and command-line options with aliases #
 ###################################################
 
-my ($diff, $reverse, $database, $gff_location, $help, $noUpload, $map, $comp, $verbose);
+my ($diff, $reverse, $database, $gff_location, $help, $debug, $map, $comp, $verbose);
 
 GetOptions ("diff"          => \$diff,
             "rev|reverse"   => \$reverse,
 	    "db|database=s" => \$database,
 	    "map"           => \$map,
 	    "comp"          => \$comp, 
-	    "help"          => \$help, 
-	    "noUpload"      => \$noUpload,
-	    "verbose"       => \$verbose
+	    "h|help"        => \$help, 
+	    "d|debug"       => \$debug,
+	    "v|verbose"     => \$verbose,
            );
 
 
 
 print "Script started at ",&runtime,"\n";
 
-my $gff_dir = "/wormsrv2/autoace/GFF_SPLITS/";
-my $curr_db = "/nfs/disk100/wormpub/DATABASES/current_DB/"; 
-my $output = "/wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP";
-my $rundate = `date +%y%m%d`; chomp $rundate;
+my $gff_dir    = "/wormsrv2/autoace/GFF_SPLITS/";
+my $curr_db    = "/nfs/disk100/wormpub/DATABASES/current_DB/"; 
+my $output     = "/wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP";
 
-if (!defined @ARGV or $help){system ("perldoc /wormsrv2/scripts/get_interpolated_gmap.pl"); exit(0)}
+my $rundate    = `date +%y%m%d`; chomp $rundate;
+my $start      = `date +%H:%M:%S`; chomp $start;
+my $script_dir = "/wormsrv2/scripts/";
 
 
+#if (!defined @ARGV or $help){system ("perldoc /wormsrv2/scripts/get_interpolated_gmap.pl"); exit(0)}
+if (!defined @ARGV){system ("perldoc /wormsrv2/scripts/get_interpolated_gmap.pl"); exit(0)}
 
 # set WS version number
 my $current = `grep "NAME WS" $curr_db/wspec/database.wrm`; $current =~ s/NAME WS//; chomp $current;
@@ -58,7 +61,7 @@ if($database){
 }
 else{
   $gff_location = "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS";
-  $database = "/wormsrv2/autoace"; 
+  $database = $curr_db = "/wormsrv2/autoace";  
 } 
 print "\nUsing $database as database path for genetics marker loci\n";
 
@@ -431,6 +434,13 @@ foreach my $e (@FHS){
 
 close FH1; close FH2; close FH3;
 
+# for debugging only
+if ($debug){
+  open (CL, ">/wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/type");
+  foreach (sort keys %class){
+    print CL "$_ -> $class{$_}\n";
+  }
+}
 
 ##################################################################
 # sorting gmap positions of marker loci from left tip to right tip 
@@ -444,6 +454,8 @@ my (@chroms, $chrom, $ea, @pos_order, $part, @unique_pos_order, %pos_order_to_me
 
 # check for any error which will mean script needs to be rerun
 my $error_check = 0;
+my $rev_phys =();
+my $count_rev = 0;
 
 @chroms=qw(I II III IV V X);
 
@@ -503,7 +515,7 @@ foreach $chrom (@chroms){
   ## for calculating int. gmap of CDSes/transcript/pseudogene lying outside of tip markers
   ########################################################################################
 
-  my $rev_phys =0;
+  $rev_phys =0;
   my (@all_coords, @all_cds_each_chrom);
   my ($baseline, $length_diff, $position, $down_mean_coord, $up_mean_coord, $gmap_down, $gmap_up);
 
@@ -670,16 +682,20 @@ foreach $chrom (@chroms){
   }
 
   @pos_order=(); @unique_pos_order=(); @all_coords=(); %pos_order_to_mean_coord_locus_cds=(); 
+
+  # counting total number of rev. phys
+  $count_rev += $rev_phys;
   $rev_phys=(); @all_mean_of_each_chrom=(); @unique_all_mean_of_each_chrom=(); %all_mean_of_each_chrom=();
 }
 
 
+# no upload of map data to DB if in debug mode
+if (!$debug){
 
-if (!$noUpload){
-  print "Deleting old interpolated map and uploading new ones to autoace\n";
+  print "Deleting old interpolated map and uploading new ones to $database\n";
 
   my $tace = &tace;
-  my $log = "/wormsrv2/logs/load_gmap_to_autoace_"."WS$version.$rundate.$$";
+  my $log = "/wormsrv2/logs/load_gmap_to_autoace"."_WS$version.$rundate.$$";
  
   my $command=<<END;
 find sequence * where Interpolated_map_position
@@ -699,22 +715,52 @@ save
 quit
 END
 
-  open (LOAD_A,"| $tace /wormsrv2/autoace/ >> $log") || die "Failed to upload to Geneace";
+  open (LOAD_A,"| $tace -tsuser $database/ >> $log") || die "Failed to upload to Geneace";
   print LOAD_A $command;
   close LOAD_A;
  
   system("chmod 777 $log");
   
-  print "\nFinished uploading files to autoace\n";
+  print "\nFinished uploading files to $database\n";
 }
 
 
 
 # Finish and exit
 if($error_check == 1){
-  print "\nERROR: reverse physicals were found, you cannot proceed with the build until these are fixed\n\n";
+  print "\nERROR: $count_rev reverse physicals were found, you cannot proceed with the build until these are fixed\n\n";
+  system("perl5.6.1 $script_dir\/update_rev_physicals.pl -panel $count_rev -rev $revfile -comp $cmp_file -v $version");
 }
-print "Script finished at ",&runtime,"\n";
+else {
+
+  my ($jah, $recipients);
+  my $existfile = glob("$output/rev_physical_CGC_WS$version");
+  if ($existfile){
+
+    $jah = $existfile;
+    my @CGC = `cat $jah`;
+    open(JAH, ">$jah") || die $!;
+    
+    print JAH "get_interpolated_map.pl started at $start\n","Finished at ", &runtime,"\n\n";
+    print JAH "WS$version modifications to genetics map according to reverse physicals\n";
+    print JAH "============================================================================\n\n";
+    $recipients = "All";  
+    $recipients = "ck1\@sanger.ac.uk" if $debug;
+    
+    print JAH @CGC;
+    print JAH "\n\nBelow is a list of full WS$version genetics map update\n";
+    print JAH "------------------------------------------------------\n\n";
+    print JAH `cat $cmp_file`;
+
+    mail_maintainer("WS$version genetics map modification", $recipients, $jah);
+    print "Genetics Map update has been mailed to CGC (JAH)\n\n";
+  }
+  else {
+    print "Failed to mail Genetics Map update to CGC (JAH)\n\n";
+    print "Script finished at ",&runtime,"\n";
+  }
+}
+
 exit(0);
 
 
@@ -781,7 +827,9 @@ sub ace_output {
   if (exists $CDS_variants{$cds}){
     foreach (@{$CDS_variants{$cds}}){
       $type = $class{$_};
-       
+
+      print "$_ -> $type\n";
+ 
       my $cdsf = $_;
       $cdsf = sprintf ("%-15s", "$cdsf");
       
@@ -806,8 +854,8 @@ sub ace_output {
 	}
       }
       else {
-	print CDSes "-\n" if $type ne "pseudo"; 
-	print PSEUDO "-\n" if $type eq "pseudo";
+	print CDSes "-\n"  if $type ne "pseudo" && $type; 
+	print PSEUDO "-\n" if $type eq "pseudo" && $type;
       }	
     }
   }  
@@ -894,6 +942,6 @@ B<-comp:>
             (2) physical contig maps, which can be view in gmap
 
 
-B <-n / -noUpload):
+B <-d / -debug):
   
             Interpolated_map_positions will not be uploaded to autoace.
