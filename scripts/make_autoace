@@ -20,6 +20,7 @@
 # 010606 : rd  : add removing gaze genes, and do all of genewise, halfwise, gaze in one go
 # 010712 : dl  : Expanded wspec directory contents explicitly for release. The CVS directory
 #                is no longer exported
+# 010802 : dl  : Removed server.wrm from the list of files to add to the tar archive
 
 # v3.1 (001004)
 # 001218 : dl1 : Altered path of chromlinks .acefile to wormbase misc directory
@@ -629,7 +630,7 @@ sub makedistr {
     }
     close DBWRM;
     print LOGFILE "makedistr: dbname $dbname\n\n";
-    $tarfiles[0] = "wspec/cachesize.wrm  wspec/constraints.wrm wspec/copyright wspec/database.wrm wspec/displays.wrm wspec/help.wrm wspec/layout.wrm wspec/models.wrm wspec/options.wrm wspec/passwd.wrm wspec/psfonts.wrm wspec/server.wrm wspec/subclasses.wrm wspec/xfonts.wrm wgf wquery wscripts  pictures database/log.wrm database/database.map database/ACEDB.wrm" ;
+    $tarfiles[0] = "wspec/cachesize.wrm  wspec/constraints.wrm wspec/copyright wspec/database.wrm wspec/displays.wrm wspec/help.wrm wspec/layout.wrm wspec/models.wrm wspec/options.wrm wspec/passwd.wrm wspec/psfonts.wrm wspec/subclasses.wrm wspec/xfonts.wrm wgf wquery wscripts  pictures database/log.wrm database/database.map database/ACEDB.wrm" ;
     for ($i = 1 ; -e "$autodir/database/block$i.wrm" ; ++$i) {
 	$tarfiles[($i+4)/5] .= " database/block$i.wrm" ;
     }
