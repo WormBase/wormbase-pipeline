@@ -4,8 +4,8 @@
 # 
 # A script to make multiple copies of camace for curation, and merge them back again
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2003-09-26 09:19:35 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2003-11-14 16:48:56 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -252,7 +252,7 @@ sub update_camace {
 
     # upload BLAT results to database
     print "Update BLAT results in /wormsrv1/camace\n";
-    system ("load_blat2db.pl -dbdir $current");
+    system ("load_blat2db.pl -all -dbdir $current");
 
     # synchronize the locus - sequence connections
     print  "Update locus2sequence connections in /wormsrv1/camace\n";
