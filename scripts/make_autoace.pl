@@ -8,7 +8,7 @@
 # This makes the autoace database from its composite sources.
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2004-02-04 16:36:44 $
+# Last edited on: $Date: 2004-02-05 10:29:38 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -572,7 +572,7 @@ sub buildrelease{
 
   if (-e "$dbpath/release/database.WS"."$WS_previous".".4-0.tar.gz"){
     print LOG "Older WS version files exist, removing them\n";
-    &delete_files_from("$dbpath/release","*WS"."$S_previous"."*") or print LOG "ERROR: Problems removing files from $dbpath/release: $!\n";
+    &delete_files_from("$dbpath/release","*WS"."$WS_previous"."*") or print LOG "ERROR: Problems removing files from $dbpath/release: $!\n";
   }
   
   my $dbname;
