@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2004-05-21 10:38:06 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2004-06-15 14:33:20 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -16,7 +16,7 @@
 
 
 use strict;
-use lib '/wormsrv2/scripts';
+use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
 use Ace;
@@ -39,7 +39,15 @@ our $wormpep            = $release_number;
 my $maintainers = "All";
 my $errors = 0;    # tracking system call errors
 
-our ($help,$debug,$norelease, $nochroms, $nomisc, $nowormpep, $nogenes, $noyk);
+my $help;
+my $debug;
+my $norelease; # don't copy across release files
+my $nochroms;  # don't copy across chromosome files
+my $nomisc;    # don't copy misc files
+my $nowormpep; # don't copy wormpep files
+my $nogenes;   # don't copy confirmed genes
+my $noyk;      # don't copy yk2orf file
+my $nogeneIDs; # don't copy file of gene IDs
 
 GetOptions (
 	    "help"       => \$help,
@@ -49,7 +57,8 @@ GetOptions (
 	    "nomisc"     => \$nomisc,
 	    "nowormpep"  => \$nowormpep,
 	    "nogenes"    => \$nogenes,
-	    "noyklist"   => \$noyk
+	    "noyklist"   => \$noyk,
+	    "nogeneIDs"  => \$nogeneIDs
 	   );
 
 # Display help if required
@@ -81,6 +90,9 @@ if ($debug) {
 
 &make_yk2ORF_list unless ($noyk);       # make file of yk EST -> ORF connections and add to FTP site
 
+&make_geneID_list unless ($nogeneIDs);       # make file of WBGene IDs -> CGC name & Sequence name and add to FTP site
+
+# disabled this step because WashU were not making any use of this data
 #&copy_homol_data;        # copy blat and blast data to private ftp site for St. Louis
 
 
@@ -329,6 +341,39 @@ EOF
   
 }
 
+################################################################################
+# make list of WBGene IDs to CGC name and Sequence name
+################################################################################
+
+sub make_geneID_list {
+
+  # For each 'live' Gene object, extract 'CGC_name' and 'Sequence_name' fields (if present)
+
+  my $tace = &tace;
+  my $command=<<EOF;
+Table-maker -p "/wormsrv2/autoace/wquery/gene2cgc_name_and_sequence_name.def" quit
+EOF
+
+  my $dir = "/wormsrv2/autoace";
+
+  my $out = "$targetdir/$release/geneIDs.$release";
+  open(OUT, ">$out") || croak "Couldn't open $out\n";
+  open (TACE, "echo '$command' | $tace $dir | ") || croak "Couldn't access $dir\n";  
+  while (<TACE>){
+    if (m/^\"/){
+      s/\"//g;
+      tr/\t/,/;
+      print OUT "$_";
+    }
+  }
+  close(TACE);
+  close(OUT);
+
+  &run_command("/bin/gzip $out");
+  
+  
+}
+
 ########################
 
 sub CheckSize {
@@ -438,7 +483,9 @@ This script does :
  [11] - copies BLAT and BLAST data to private FTP site for St. Louis
  [12] - delete the old symbolic link and make the new one
  [13] - delete the old WS release version directory
- [14] - exit gracefully
+ [14] - makes a file of yk2orf connections
+ [15] - makes a file of all gene IDs with CGC names and Sequence names (where present)
+ [16] - exit gracefully
 
 
 =over 4

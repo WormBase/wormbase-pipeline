@@ -5,7 +5,7 @@
 # by Anthony Rogers                             
 #
 # Last updated by: $Author: krb $               
-# Last updated on: $Date: 2004-04-26 10:36:39 $         
+# Last updated on: $Date: 2004-06-15 14:33:20 $         
 
 # Generates a release letter at the end of build.
 #
@@ -85,6 +85,8 @@ if( defined($opt_l)) {
 
   print RL "xii)\tbest_blastp_hits_brigprot.WS$ver.gz   - for each C. briggsae protein, lists Best blastp match to\n 
                                         human, fly, yeast, C. elegans, and SwissProt & TrEMBL proteins.\n";  
+
+  print RL "xiii)\tgeneIDs.WS$ver.gz   - list of all current gene identifiers with CGC & molecular names (when known)\n";
   print RL "\n\n";
   print RL "Release notes on the web:\n-------------------------\n";
   print RL "http://www.sanger.ac.uk/Projects/C_elegans/WORMBASE\n\n\n\n";
