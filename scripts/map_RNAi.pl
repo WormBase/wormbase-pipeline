@@ -197,8 +197,16 @@ foreach my $mapped (sort keys %finaloutput) {
     for (my $n = 0; $n < (scalar @{$finaloutput{$mapped}}); $n++) {
         print OUTACE "RNAi : $mapped\n";
         print OUTACE "-D Predicted_gene\n";
+    }
+} 
+
+foreach my $mapped (sort keys %finaloutput) {
+    print OUT "$mapped\t@{$finaloutput{$mapped}}\n";
+    for (my $n = 0; $n < (scalar @{$finaloutput{$mapped}}); $n++) {
+        print OUTACE "RNAi : $mapped\n";
         print OUTACE "Predicted_gene $finaloutput{$mapped}->[$n]\n\n";
     }
 } 
+
 
 exit(0);
