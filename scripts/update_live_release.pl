@@ -6,7 +6,7 @@
 #
 # Updates the local webpages in synch with the main website
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-07-21 08:12:33 $
+# Last updated on: $Date: 2004-08-03 09:26:07 $
 
 
 use strict;
@@ -17,8 +17,7 @@ use Getopt::Long;
 
 my $release;
 my $errors = 0;
-GetOptions ("release:s" => \$release );
-
+GetOptions ("release=i" => \$release );
 die "you must give a release version ( just numbers eg -release 125 )\n" unless $release;
 
 my $www = "/nfs/WWWdev/htdocs/Projects/C_elegans";
@@ -27,9 +26,10 @@ my $www = "/nfs/WWWdev/htdocs/Projects/C_elegans";
 # update wormpep files
 #############################################
 
-my $wormpub_dir = "/nfs/disk100/wormpub/WORMPEP";
+my $wormpub_dir      = "/nfs/disk100/wormpub/WORMPEP";
 my $wormpep_ftp_root = glob("~ftp/pub/databases/wormpep");
-my $wp_ftp_dir = "$wormpep_ftp_root/wormpep${release}";
+my $wp_ftp_dir       = "$wormpep_ftp_root/wormpep${release}";
+my $wormbase_ftp_dir = glob("~ftp/pub/wormbase"); 
 
 # grab from Wormbase.pm subroutine
 my @wormpep_files = &wormpep_files;
@@ -49,12 +49,18 @@ foreach my $file ( @wormpep_files ) {
 
 # create a symbolic link from top level wormpep into the release on the wormpep ftp site
 foreach my $file ( @wormpep_files ) {
-  &run_command("cd $wormpep_ftp_root; ln -fs $wp_ftp_dir/${file}${release} $file");
+  &run_command("cd $wormpep_ftp_root; ln -fs wormpep${release}/${file}${release} $file");
 }
 
 # delete the old symbolic link and make the new one to wormpep.prev
 my $prev_release = $release -1;
 &run_command("cd $wormpep_ftp_root; ln -fs wormpep${prev_release}/wormpep${prev_release} wormpep.prev");
+
+
+##################################################################
+# Update Sanger WORMBASE ftp site to change live_release symlink
+##################################################################
+&run_command("cd $wormbase_ftp_dir; rm -f live_release; ln -fs WS${release} live_release");
 
 
 
@@ -67,12 +73,11 @@ my $prev_release = $release -1;
 my $webpublish = "/usr/local/bin/webpublish";
 
 # Now update WORMBASE current link
-chdir("$www/WORMBASE") || print LOG "Couldn't run chdir\n";
-&run_command("$webpublish -f -q -r current") && print LOG "Couldn't run webpublish on current symlink files\n";
+&run_command("cd $www/WORMBASE; rm -f current; ln -fs WS${release} current") && print LOG "Couldn't update 'current' symlink\n";
+&run_command("cd $www/WORMBASE; webpublish -f -q -r current") && print LOG "Couldn't run webpublish on current symlink files\n";
 
 # Now need to update big dbcomp output in data directory
-chdir("/nfs/WWWdev/SANGER_docs/data/Projects/C_elegans") || print LOG "Couldn't chdir to data directory\n";
-&run_command("$webpublish -f -q WS.dbcomp_output") && print LOG "Couldn't webpublish data directory\n";
+&run_command("cd /nfs/WWWdev/SANGER_docs/data/Projects/C_elegans; $webpublish -f -q WS.dbcomp_output") && print LOG "Couldn't webpublish data directory\n";
 
 
 # The end
