@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-05-12 16:07:41 $
+# Last updated on: $Date: 2004-05-21 15:56:50 $
 
 package Geneace;
 
@@ -179,7 +179,7 @@ sub other_name {
     return @result;
   }
   if (!$option){
-    print "You need to specify datatype to resturn: array or hash\n";
+    print "You need to specify parameters: 'main_other' or 'other_main' or 'other'.  First 2 params. returns hashes (CGC_name->Other_name / Other_name->CGC_name), last one returns an array of all Other_names\n";
   }
 }
 sub cgc_name_is_also_other_name {
@@ -331,10 +331,21 @@ sub allele_to_gene_id {
 
 }
 
+sub gene_id_is_live {
+  my ($this)=shift;
+  my (%gene_id_is_live, @live);
+
+  my $db = Ace->connect(-path  => $geneace_dir,
+		        -program =>$tace) || die "Connection failure";
+
+  push(@live, $db->find("Find Gene * where Live") );
+  foreach (@live){$gene_id_is_live{$_}++};
+  return %gene_id_is_live;
+}
 
 sub convert_2_WBPaper {
 
 
-}  
+}
 
 1;

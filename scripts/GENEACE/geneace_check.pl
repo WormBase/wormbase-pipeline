@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2004-05-19 08:58:37 $
+# Last updated on: $Date: 2004-05-21 15:56:50 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -169,7 +169,6 @@ sub process_gene_class{
   my @gene_ids = $db->fetch(-class => 'Gene',
 	                    -name  => '*');
 
-
   # Loop through loci checking for various potential errors in the Locus object
   print "Checking Gene class for errors:\n";
   print LOG "\nChecking Gene class for errors:\n--------------------------------\n";
@@ -194,6 +193,12 @@ sub process_gene_class{
 
   print LOG "ERROR 4: There are $non_CGC_count Gene_ids that do not have CGC_name\n" if $non_CGC_count > 0;
 
+  my $last_gene_id = $gene_ids[-1];
+  $last_gene_id =~ s/WBGene(0)+//;
+
+  if ( scalar @gene_ids != $last_gene_id ){
+    print LOG "ERROR 24: The highest gene id ($last_gene_id) is not equal to total number of Gene objects (", scalar @gene_ids, ")\n";
+  }
 }
 
 sub test_locus_for_errors{
