@@ -889,10 +889,10 @@
 			Predicted_3 ?Method Int Int UNIQUE Float // (x, x+1) or (x, x-1)
           Oligo ?Oligo XREF In_sequence Int UNIQUE Int  // for OSP and human mapping mostly
 	  Has_allele ?Allele XREF Predicted_gene // for linking to KO genes, substitution alleles etc. Used for Predicted_genes only
-	  Defines_feature ?Feature XREF Defined_by #Evidence       // Feature data model [dl 030304]
-	  Sequence_features ?Feature XREF Part_of_gene #Evidence   // Feature data model [dl 030304]
-	  Strain ?Strain XREF Sequence // new for KO data [krb 021219]
-	  Assembly_tags	Text Int Int Text // type, start, stop, comment
+	  Defines_feature ?Feature XREF Defined_by_sequence #Evidence       // Feature data model [dl 030304]
+	  Sequence_features ?Feature XREF Part_of_gene #Evidence            // Feature data model [dl 030304]
+	  Strain ?Strain XREF Sequence                                      // new for KO data [krb 021219]
+	  Assembly_tags	Text Int Int Text                                   // type, start, stop, comment
 	  Analysis_details Analysis_history ?Method UNIQUE DateType
 	  Homol	DNA_homol ?Sequence XREF DNA_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		Pep_homol ?Protein XREF DNA_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
@@ -1042,7 +1042,11 @@
 ?Feature SMap S_Parent Sequence UNIQUE ?Sequence
          Flanking_sequences UNIQUE ?Sequence UNIQUE Text UNIQUE Text
          Visible	    Description ?Text
-	 Defined_by ?Sequence XREF Defines_feature #Evidence
+			    Remark ?Text #Evidence
+	 Defined_by Defined_by_sequence ?Sequence XREF Defines_feature #Evidence
+		    Defined_by_paper ?Paper XREF Feature #Evidence
+		    Defined_by_person ?Person
+		    Defined_by_author ?Author
 	 Part_of_gene ?Sequence XREF Sequence_features  #Evidence
 	 Annotation UNIQUE ?LongText		// added for data attribution [030220 dl]
          Method ?Method
@@ -1782,9 +1786,10 @@
                   RNAi ?RNAi XREF Reference  // added for Lincoln RNAi [001213 dl]
                   Transgene ?Transgene XREF Reference
                   GO_term ?GO_term XREF Reference ?GO_code #Evidence
-                  Operon ?Operon XREF Reference      // added for operon data [010928 dl]
-		  //Microarray_result ?Microarray_result XREF Reference //added for Microarray_result [030127 krb]
-                  Cluster ?Cluster XREF Reference //added for SMD_result [030127 krb]
+                  Operon ?Operon XREF Reference                          // added for operon data [010928 dl]
+		  //Microarray_result ?Microarray_result XREF Reference  //added for Microarray_result [030127 krb]
+                  Cluster ?Cluster XREF Reference                        //added for SMD_result [030127 krb]
+		  Feature ?Feature XREF Defined_by_paper                 // added [030424 dl]
         Keyword ?Keyword
 
 
