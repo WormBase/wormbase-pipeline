@@ -4,8 +4,8 @@
 #
 # Dumps protein motifs from ensembl mysql (protein) database to an ace file
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2003-01-29 10:18:37 $
+# Last updated by: $Author: wormpipe $
+# Last updated on: $Date: 2003-04-28 09:42:39 $
 
 
 use strict;
@@ -28,7 +28,7 @@ sub now {
 }
 
 # create output files
-my $dump_dir = glob("~wormpipe/dumps");
+my $dump_dir = "/acari/work2a/wormpipe/dumps";
 open(ACE,">$dump_dir/ensembl_motif_info.ace") || die "cannot create ace file";
 
 open(LOG,">$dump_dir/ensembl_motif_info.log") || die "cannot create log file";
@@ -114,12 +114,6 @@ foreach my $prot (sort {$a cmp $b} keys %motifs) {
 $sth->finish;
 $sth_f->finish;
 $dbh->disconnect;
-
-# copy output to wormsrv2
-
-print LOG "\nCopying to /wormsrv2/wormbase/ensembl_dumps\n";
-print "\nCopying to /wormsrv2/wormbase/ensembl_dumps\n";
-`/usr/bin/rcp $dump_dir/ensembl_motif_info.ace /wormsrv2/wormbase/ensembl_dumps/`;
 
 print LOG "\nEnd of Motif dump\n";
 print "\nEnd of Motif dump\n";
