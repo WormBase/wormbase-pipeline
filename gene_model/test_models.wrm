@@ -25,8 +25,9 @@
 		View ?View                // Columns to display
         Inherits  From_map UNIQUE ?Map    // To locally edit
 		  Author Text             // login name of who created it
- 	Main_Marker Main_Locus ?Locus     // XREF Main_Marker removed to
+ 	Main_Marker Main_Locus ?Gene     // XREF Main_Marker removed to
 					// allow tag2 system
+					// switched to link to ?Gene rather than ?Locus
 		// tag2 system for items shown left of locator
 	Map ?Map XREF Map_shown #Map_position  // Include all objects in these maps (must be mapped and have extents)
 	Includes ?Map
@@ -590,12 +591,14 @@
 				Laboratory ?Laboratory
 				Date  UNIQUE DateType
 				Temperature UNIQUE Text
-		Point_1 UNIQUE Locus_1	UNIQUE ?Locus XREF 2_point UNIQUE ?Allele XREF In_2_point
-			       Allele_1 UNIQUE ?Allele XREF 2_point
+		Point_1 UNIQUE Gene_1	       UNIQUE ?Gene  XREF 2_point UNIQUE ?Allele XREF In_2_point
+			       Locus_1	       UNIQUE ?Locus XREF 2_point UNIQUE ?Allele XREF In_2_point
+			       Allele_1	       UNIQUE ?Allele XREF 2_point
 			       Rearrangement_1 UNIQUE ?Rearrangement XREF 2_point
-                               Transgene_1 UNIQUE ?Transgene XREF 2_point
-		Point_2 UNIQUE Locus_2	UNIQUE ?Locus XREF 2_point UNIQUE ?Allele XREF In_2_point
-			       Allele_2 UNIQUE ?Allele XREF 2_point
+                               Transgene_1     UNIQUE ?Transgene XREF 2_point
+		Point_2 UNIQUE Gene_2	       UNIQUE ?Gene XREF 2_point UNIQUE ?Allele XREF In_2_point
+			       Locus_2	       UNIQUE ?Locus XREF 2_point UNIQUE ?Allele XREF In_2_point
+			       Allele_2	       UNIQUE ?Allele XREF 2_point
 			       Rearrangement_2 UNIQUE ?Rearrangement XREF 2_point
                                Transgene_2 UNIQUE ?Transgene XREF 2_point
 			// Point_1 and Point_2 are tag2 for the mapped loci
@@ -641,11 +644,13 @@
 		Experiment Mapper ?Author
 			   Laboratory ?Laboratory
 			   Date  UNIQUE DateType
-		Item_1	UNIQUE	Locus_1	UNIQUE ?Locus XREF Pos_neg_data UNIQUE ?Allele XREF In_pos_neg_data
+		Item_1	UNIQUE	Gene_1	UNIQUE ?Gene  XREF Pos_neg_data UNIQUE ?Allele XREF In_pos_neg_data
+				Locus_1	UNIQUE ?Locus XREF Pos_neg_data UNIQUE ?Allele XREF In_pos_neg_data
 			     	Rearrangement_1 UNIQUE ?Rearrangement XREF Pos_neg_data
 				Allele_1 UNIQUE ?Allele XREF Pos_neg_data
 				Clone_1 UNIQUE ?Clone XREF Pos_neg_data
-		Item_2	UNIQUE	Locus_2	UNIQUE ?Locus XREF Pos_neg_data UNIQUE ?Allele XREF In_pos_neg_data
+		Item_2	UNIQUE	Gene_2	UNIQUE ?Gene XREF Pos_neg_data UNIQUE ?Allele XREF In_pos_neg_data
+				Locus_2	UNIQUE ?Locus XREF Pos_neg_data UNIQUE ?Allele XREF In_pos_neg_data
 			     	Rearrangement_2 UNIQUE ?Rearrangement XREF Pos_neg_data
 				Allele_2 UNIQUE ?Allele XREF Pos_neg_data
 				Clone_2 UNIQUE ?Clone XREF Pos_neg_data
@@ -660,14 +665,16 @@
 		Experiment  Mapper ?Author
 			    Laboratory ?Laboratory
 			    Date  UNIQUE DateType
-		Selected A UNIQUE Locus_A UNIQUE ?Locus UNIQUE ?Allele XREF In_multi_point
+		Selected A UNIQUE Gene_A UNIQUE ?Gene UNIQUE ?Allele XREF In_multi_point
+				  Locus_A UNIQUE ?Locus UNIQUE ?Allele XREF In_multi_point
 				  Allele_A UNIQUE ?Allele
 				  Rearrangement_A UNIQUE ?Rearrangement
                                   Transgene_A UNIQUE ?Transgene XREF Multi_point
-			 B UNIQUE Locus_B UNIQUE ?Locus UNIQUE ?Allele XREF In_multi_point
+			 B UNIQUE Gene_B UNIQUE ?Gene UNIQUE ?Allele XREF In_multi_point
 				  Allele_B UNIQUE ?Allele
 				  Rearrangement_B UNIQUE ?Rearrangement
                                   Transgene_B UNIQUE ?Transgene XREF Multi_point 
+		Gene  ?Gene  UNIQUE ?Allele XREF In_multi_point	    // new for ?Gene model
 		Locus ?Locus UNIQUE ?Allele XREF In_multi_point	    // just to pair up alleles
 		Results A_non_B #Multi_counts
 			B_non_A	#Multi_counts
@@ -677,10 +684,11 @@
 	// code uses all the Results subtags, and the #Multi_counts structure
 
 
-?Multi_counts	UNIQUE Locus UNIQUE ?Locus XREF Multi_point UNIQUE Int #Multi_counts
-		       Allele UNIQUE ?Allele XREF Multi_point UNIQUE Int #Multi_counts
+?Multi_counts	UNIQUE Gene	     UNIQUE ?Gene XREF Multi_point UNIQUE Int #Multi_counts
+		       Locus	     UNIQUE ?Locus XREF Multi_point UNIQUE Int #Multi_counts
+		       Allele	     UNIQUE ?Allele XREF Multi_point UNIQUE Int #Multi_counts
 		       Rearrangement UNIQUE ?Rearrangement XREF Multi_point UNIQUE Int #Multi_counts
-		       Transgene UNIQUE ?Transgene XREF Multi_point UNIQUE Int #Multi_counts  // dl1 010307 from geneace
+		       Transgene     UNIQUE ?Transgene XREF Multi_point UNIQUE Int #Multi_counts  // dl1 010307 from geneace
 
 ?Grid_data	Experiment  Mapper ?Author
 			    Laboratory ?Laboratory
