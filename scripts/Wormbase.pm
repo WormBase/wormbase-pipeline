@@ -152,8 +152,8 @@ sub copy_check {
 
 sub mail_maintainer {
     my ($name,$maintainer,$logfile) = @_;
-    $maintainer = "dl1\@sanger.ac.uk, ar2\@sanger.ac.uk, krb\@sanger.ac.uk" if ($maintainer eq All);
-    open (OUTLOG,  "|/usr/bin/mailx -s \"$name\" $maintainer ");
+    $maintainer = "dl1\@sanger.ac.uk, ar2\@sanger.ac.uk, krb\@sanger.ac.uk" if ($maintainer eq "All");
+    open (OUTLOG,  "|/bin/mailx -s \"$name\" $maintainer ");
     open (READLOG, "<$logfile");
     while (<READLOG>) {
 	print OUTLOG "$_";
