@@ -1,39 +1,148 @@
-#!/usr/local/bin/perl
-
+#!/usr/local/bin/perl5.6.0 -w
+#
+# submit_TO_SUBMIT_contents
+# Steven Jones, 1995, Sanger Centre.
+#
 # This script will mail the contents of ~wormpub/analysis/TO_SUBMIT
 # to celegans@ebi.ac.uk.
 #
-#
-#
-# Steven Jones, 1995, Sanger Centre.
+# 020123 : dan : modified to make a report file, gzip the EMBL entry
+#                after submission and use Perl5.6 with strict
 
+use strict;
+use Getopt::Std;
+use vars qw/ $opt_d $opt_h/;
 
-opendir(DIR,'/nfs/disk100/wormpub/analysis/TO_SUBMIT');
+my $submitdir = "/nfs/disk100/wormpub/analysis/TO_SUBMIT";
+my (@filenames);
+
+###################################################
+# command-line options                            #
+###################################################
+
+getopts ("hd");
+&usage if ($opt_h);
+my $debug = $opt_d;
+
+###################################################
+# read TO_SUBMIT directory                        #
+###################################################
+
+opendir(DIR,"$submitdir");
 @filenames=grep(/\.embl$/,readdir(DIR));
 close DIR;
-foreach $file (@filenames) {
-    print "$file\n";
-    $total++;
-}
 
+# report number of .embl files in directory
+print scalar(@filenames) . " cosmids found in $submitdir\n";
 
+# exit if no valid .embl files are found
+exit if (scalar(@filenames) == 0);
 
-print "\n$total cosmids found in ~wormpub/analysis/TO_SUBMIT\n";
+# confirm you want to do this
 print "\nAll of these will be submitted to celegans\@ebi.ac.uk\n\n";
 print "Do you wish to proceed???(y or n)\n\n";
 
-$answer=<STDIN>;
+my $answer=<STDIN>;
 if ($answer ne "y\n") {die "\nSubmission aborted\n";}
 
-
-open(files, "ls  /nfs/disk100/wormpub/analysis/TO_SUBMIT  |");
-
-while (<files>) {
-	chop;
-	if (/embl$/) { 
-		print "Mailing /nfs/disk100/wormpub/analysis/TO_SUBMIT/$_\n";
-		system ("/usr/ucb/Mail celegans\@ebi.ac.uk < /nfs/disk100/wormpub/analysis/TO_SUBMIT/$_");}
+# touch the log file if it does not exist
+unless (-e "$submitdir/submitted_to_EMBL") {
+    system ("touch $submitdir/submitted_to_EMBL");
 }
 
+# mail embl files to EBI and append clone name to log file
+open (LOG, ">>$submitdir/submitted_to_EMBL");
+open (LIST, "ls  $submitdir |");
+while (<LIST>) {
+    chop;
+    if (/embl$/) { 
+	print "Mailing $submitdir/$_\n" if $debug;
+	(/^(\S+)\.\S+\.\S+/);
+	print LOG "$1\n";
+	system ("/usr/ucb/Mail celegans\@ebi.ac.uk < $submitdir/$_");
+	system ("/bin/gzip $submitdir/$_");
+    }
+}
+close LIST;
+close LOG;
 
+###################################################
+# hasta luego                                     #
+###################################################
 
+exit(0);
+
+sub usage {
+    # Normal help menu
+    exec ('perldoc',$0);
+}
+
+__END__
+
+=pod
+
+=head2 NAME - submit_TO_SUBMIT_contents
+
+=head1 USAGE:
+
+=over 4
+
+=item submit_TO_SUBMIT_contents [-options]
+
+=back
+
+submit_TO_SUBMIT_contents will submit EMBL files to the EBI via e-mail.
+The submitted .embl files are then gzipped to prevent subsequent
+resubmission. All submission clone names are written to a log file. 
+
+submit_TO_SUBMIT_contents mandatory arguments:
+
+=over 4
+
+=item none
+
+=back
+
+submit_TO_SUBMIT_contents optional arguments:
+
+=over 4
+
+=item -h, Help page
+
+=item -d, Verbose/Debug mode
+
+=back
+
+=head1 RUN REQUIREMENTS:
+
+=back
+
+submit_TO_SUBMIT has no requirements. If the submit directory contains
+no .embl files then no action is taken.
+
+=head1 RUN OUTPUT:
+
+=back
+
+Log file ~wormpub/analysis/TO_SUBMIT/submitted_to_EMBL is a single column
+text file containing the clone name of all EMBL entries submitted. This 
+file is appended and hence may contain old submissions as well as the
+current run.
+
+=head1 EXAMPLES:
+
+=over 4
+
+=item submit_TO_SUBMIT_contents 
+
+=back
+
+Submits all files with the .embl suffix in the ~wormpub/analysis/TO_SUBMIT
+directory. The clone name for each file submitted is appended to the file
+submitted_to_EMBL
+
+=head1 AUTHOR - Daniel Lawson (modifications from the original of Steve Jones)
+
+Email dl1@sanger.ac.uk
+
+=cut
