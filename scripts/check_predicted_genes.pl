@@ -34,7 +34,9 @@ die "Please use -database <path> specify a valid database directory.\n\n" if (!d
 
 # Specify which tace to use if you are using -program flag
 
-my $tace = glob("~wormpub/ACEDB/bin.ALPHA_4/tace");
+#my $tace = glob("~wormpub/ACEDB/bin.ALPHA_4/tace");
+#going back to old version
+my $tace = glob("~wormpub/ACEDB/bin.ALPHA_4/tace_4_9f");
 my $db = Ace->connect(-path=>$db_path, -program=>$tace) || die "Couldn't connect to $db_path\n", Ace->error;
 
 
