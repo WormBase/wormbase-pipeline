@@ -699,7 +699,7 @@ sub gffdump {
   unless (fork) {
     unless (fork) {
       sleep 1 until getppid == 1;
-      $rs = system ("/wormsrv2/scripts/chromosome_dump.pl -dec") ;
+      $rs = system ("/wormsrv2/scripts/chromosome_dump.pl -dc") ;
       open(MAIL, "| Mail -s \"make_autoace_log\" $maintainers");
       open (INLOG,"/bin/cat $logfile |");
       while (<INLOG>) {
