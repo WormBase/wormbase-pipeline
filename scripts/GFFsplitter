@@ -150,6 +150,9 @@ foreach (@gff_files) {
     $gff_BLAT_EST_BEST        = $file_prefix . "\.BLAT_EST_BEST\.gff";
     $gff_BLAT_EST_OTHER       = $file_prefix . "\.BLAT_EST_OTHER\.gff";
     $gff_mRNA_GENOME          = $file_prefix . "\.mRNA_GENOME\.gff";
+    $gff_BLAT_mRNA_BEST       = $file_prefix . "\.BLAT_mRNA_BEST\.gff";
+    $gff_BLAT_mRNA_OTHER      = $file_prefix . "\.BLAT_mRNA_OTHER\.gff";
+    $gff_BLATX_NEMATODE       = $file_prefix . "\.BLATX_NEMATODE\.gff";
     $gff_Expr_profile         = $file_prefix . "\.Expr_profile\.gff";
 
     
@@ -289,6 +292,18 @@ foreach (@gff_files) {
     print GFF_MRNA_GENOME     "##Version: $cvs_version\n";
     print GFF_MRNA_GENOME     "##date $rundate\n";
 
+    open (BLAT_MRNA_BEST,     ">$datadir/GFF_SPLITS/$gff_BLAT_mRNA_BEST");
+    print BLAT_MRNA_BEST,     "##Version: $cvs_version\n";
+    print BLAT_MRNA_BEST,     "##date $rundate\n";
+
+    open (BLAT_MRNA_OTHER,    ">$datadir/GFF_SPLITS/$gff_BLAT_mRNA_OTHER");
+    print BLAT_MRNA_OTHER     "##Version: $cvs_version\n";
+    print BLAT_MRNA_OTHER     "##date $rundate\n";
+
+    open (BLATX_NEMATODE,     ">$datadir/GFF_SPLITS/$gff_BLATX_NEMATODE");
+    print BLATX_NEMATODE      "##Version: $cvs_version\n";
+    print BLATX_NEMATODE      "##date $rundate\n";
+
     open (GFF_EXPR_PROFILE,    ">$datadir/GFF_SPLITS/$gff_Expr_profile");
     print GFF_EXPR_PROFILE     "##Version: $cvs_version\n";
     print GFF_EXPR_PROFILE     "##date $rundate\n";
@@ -350,6 +365,9 @@ foreach (@gff_files) {
 	    print GFF_CDNA_FOR_RNAI        "$_\n";
 	    print GFF_BLAT_EST_BEST        "$_\n";
 	    print GFF_BLAT_EST_OTHER       "$_\n";
+	    print GFF_BLAT_MRNA_BEST       "$_\n";
+	    print GFF_BLAT_MRNA_OTHER      "$_\n";
+	    print GFF_BLATX_NEMATODE       "$_\n";
 	    print GFF_MRNA_GENOME          "$_\n";
 	    next;
 	}
@@ -661,12 +679,38 @@ foreach (@gff_files) {
 
 
 	################################
+   	# BLAT_mRNA 
+	################################
+
+	if (/BLAT_mRNA_BEST/) {
+	  #	    print "$_\n" if ($debug);
+	  print BLAT_MRNA_BEST "$_\n";
+	  $found_a_home = 1;
+	}
+
+	if (/BLAT_mRNA_OTHER/) {
+	  #	    print "$_\n" if ($debug);
+	  print BLAT_MRNA_OTHER "$_\n";
+	  $found_a_home = 1;
+	}
+
+	################################
    	# mRNA_GENOME
 	################################
 
 	if (/mRNA_GENOME/) {
 	  #	    print "$_\n" if ($debug);
 	  print GFF_EXPR_PROFILE "$_\n";
+	  $found_a_home = 1;
+	}
+
+	################################
+   	# BLATX_NEMATODE
+	################################
+
+	if (/BLATX_NEMATODE/) {
+	  #	    print "$_\n" if ($debug);
+	  print BLATX_NEMATODE "$_\n";
 	  $found_a_home = 1;
 	}
 
@@ -721,6 +765,9 @@ foreach (@gff_files) {
     close GFF_BLAT_EST_BEST;
     close GFF_BLAT_EST_OTHER;
     close GFF_MRNA_GENOME;
+    close BLAT_MRNA_BEST;
+    close BLAT_MRNA_OTHER;
+    close BLATX_NEMATODE;
     close GFF_EXPR_PROFILE;
 
     ########################################
@@ -861,6 +908,18 @@ foreach (@gff_files) {
     $gff_length_MRNA_GENOME = file_size("$datadir/GFF_SPLITS/$gff_mRNA_GENOME") - 3;
     $total_lines = $total_lines + $gff_length_MRNA_GENOME;
     print "$gff_mRNA_GENOME   \t\t: $gff_length_MRNA_GENOME\n";
+
+    $gff_length_BLAT_MRNA_BEST = file_size("$datadir/GFF_SPLITS/$gff_BLAT_mRNA_BEST") - 3;
+    $total_lines = $total_lines + $gff_length_BLAT_MRNA_BEST;
+    print "$gff_BLAT_mRNA_BEST   \t\t: $gff_length_BLAT_MRNA_BEST\n";
+
+    $gff_length_BLAT_MRNA_OTHER = file_size("$datadir/GFF_SPLITS/$gff_BLAT_mRNA_OTHER") - 3;
+    $total_lines = $total_lines + $gff_length_BLAT_MRNA_OTHER;
+    print "$gff_BLAT_mRNA_OTHER   \t\t: $gff_length_BLAT_MRNA_OTHER\n";
+
+    $gff_length_BLATX_NEMATODE = file_size("$datadir/GFF_SPLITS/$gff_BLATX_NEMATODE") - 3;
+    $total_lines = $total_lines + $gff_length_BLATX_NEMATODE;
+    print "$gff_BLATX_NEMATODE   \t\t: $gff_length_BLATX_NEMATODE\n";
 
     $gff_length_Expr_profile = file_size("$datadir/GFF_SPLITS/$gff_Expr_profile") - 3;
     $total_lines = $total_lines + $gff_length_Expr_profile;
