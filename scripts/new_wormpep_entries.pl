@@ -8,8 +8,8 @@
 # and produce a fasta file of these sequence to load into the wormprot
 # mysql database prior for the pre-build pipeline.
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2002-11-12 09:58:55 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2003-02-27 14:55:28 $
 
 
 #################################################################################
@@ -38,12 +38,17 @@ getopts ('h');
  ##############################
 my $release_name = &get_wormbase_version_name;
 my $release      = &get_wormbase_version;
+my $old_release  = $release -1;
 
-our $dbfile = "/wormsrv2/WORMPEP/wormpep${release}/wp.fasta${release}";
+our $dbfile     = "/wormsrv2/WORMPEP/wormpep${release}/wp.fasta${release}";
+our $old_dbfile = "/wormsrv2/WORMPEP/wormpep${old_release}/wp.fasta${old_release}";
 
-# make a hash of wormpep IDs -> peptide sequence
+# make a hash of wormpep IDs -> peptide sequence for current and previous versions
+# of wormpep
 our %wormpep;
+our %old_wormpep;
 &make_hash;
+&make_old_wormpep_hash;
 
 my %proteins_outputted;
  ###############################
@@ -54,8 +59,9 @@ open (LOG,  ">/wormsrv2/WORMPEP/wormpep${release}/new_entries.$release_name") ||
 open (DIFF, "</wormsrv2/WORMPEP/wormpep${release}/wormpep.diff${release}") || die "Couldn't read from diff file\n";
 while (<DIFF>) {    
   my ($new_acc,$seq);
-    if( (/changed:\t\S+\s+\S+ --> (\S+)/) || (/new:\t\S+\s+(\S+)/) ) {
+    if( (/changed:\t\S+\s+\S+ --> (\S+)/) || (/new:\t\S+\s+(\S+)/) || (/reappeared:\t\S+\s+(\S+)/)) {
       $new_acc = $1;
+      next if $old_wormpep{$new_acc};
       next if $proteins_outputted{$new_acc};
       print LOG ">$new_acc\n$wormpep{$new_acc}";
       $proteins_outputted{$new_acc}++;
@@ -106,6 +112,39 @@ sub make_hash {
   close (WP);
   
 }
+#################################
+
+sub make_old_wormpep_hash {
+  my $id;
+  my $seq;
+  open (WP, "<$old_dbfile") || die "Couldn't read from file\n";
+  while (<WP>) {
+    if (/^>(\S+)/) {
+      chomp;
+      my $new_id = $1;
+      if ($id) {
+	$id =~ /CE0*([1-9]\d*)/ ; 
+	$old_wormpep{$id} = $seq;
+      }
+      $id = $new_id ; $seq = "" ;
+    } 
+    elsif (eof) {
+      if ($id) {
+	$id =~ /CE0*([1-9]\d*)/ ;
+	$seq .= $_ ;
+	$old_wormpep{$id} = $seq;
+      }
+    } 
+    else {
+      $seq .= $_ ;
+    }
+  }
+
+  close (WP);
+  
+}
+
+
 exit(0);
 
 
@@ -117,13 +156,21 @@ __END__
 
 =head2 USAGE
 
-This file looks at the wormpep.diff file from the last release of
+This file looks at the wormpep.diff file from the current release of
 wormpep and extracts any new peptide sequences which it writes to
 a file inside the respective wormpep directory.  This fasta file
 is needed by the prebuild process to populate the wormprot mysql
 database with the new protein entries.
 
-
+More specifically, this script looks for genes flagged as 'new',
+'changed', or 'reappeared' in the wormpep.diff file.  However, The 
+latter two categories may represent genes that have a wormpep protein 
+which already exists. In this sense, we don't need to output the protein 
+because it will already be in the MySQL database.  This script always 
+compares proteins to the wp.fasta file from the previous release, so
+if it spots an older CExxxxx identifier it doesn't bother dumping
+the sequence as a 'new' protein.
+ 
 Optional arguments:
 
 =over 4
