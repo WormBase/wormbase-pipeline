@@ -1,7 +1,8 @@
 #!/usr/local/bin/perl
 #
-# usage: repeatmasker_worm.pl -c [for camace output and/or] -s [for stlace output] 
-#							  -m [just map existing RepeatMasker file to ace file]	
+# usage: repeatmasker_worm.pl -c [for camace output] OR -s [for stlace output] -f [infile]
+#						      -nolow [for NOT masking low complexity regions]
+#							  -low   [for JUST masking low complexity regions]		
 #
 # runs RepeatMasker and creates ace file output
 # 11.12.02 Kerstin Jekosch
@@ -9,6 +10,7 @@
 use strict;
 use Ace;
 use Getopt::Long;
+$|=1;
 
 #############
 # variables #
@@ -17,11 +19,14 @@ use Getopt::Long;
 my $campath = '/wormsrv2/camace';
 my $stlpath = '/wormsrv2/stlace';
 my $outdir  = '/nfs/disk100/wormpub/repeats';
-my (%cam,%stl,$infile,$outfile,$opt_c,$opt_s,$opt_m,%acc);
+my $tace    = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace /wormsrv2/current_DB";
+my (%cam,%stl,$infile,$outfile,$opt_c,$opt_s,%acc,$nolow,$low);
 &GetOptions( 'c'    => \$opt_c,
 		     's'    => \$opt_s,		
-             'm'    => \$opt_m,
-             'f=s' => \$infile);
+             'f=s'  => \$infile,
+			 'nolow'=> \$nolow,
+			 'low'  => \$low,
+			 );
 
 if ($opt_c && $opt_s) {
 	print STDERR "Try s OR c, not both at a time!\n";
@@ -32,17 +37,21 @@ unless ($infile) {
 	print STDERR "Specify infile (-f [file])!";
 	exit(0);
 }
+unless ($low || $nolow)  {
+	print STDERR "Specify -low or -nolow\n";
+}
+
+open(LOG,">$outdir/log");
 
 #########################
 # get accession numbers #
 #########################
 
-my $autotace  = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace /wormsrv2/current_DB";
-my $command1=<<EOF;
+my $command=<<EOF;
 Table-maker -p "/wormsrv2/autoace/wquery/accession2clone.def"
 quit
 EOF
-open (TACE, "echo '$command1' | $autotace | ");
+open (TACE, "echo '$command' | $tace | ");
 while (<TACE>) {
 	chomp;
 	next if ($_ eq "");
@@ -54,9 +63,7 @@ while (<TACE>) {
 	$acc{$name} = $acc;
 }
 close TACE;
-
-
-
+print LOG "Got accession numbers out of autoace\n";
 
 #####################
 # get camace clones #
@@ -64,7 +71,7 @@ close TACE;
 
 if ($opt_c) {
 	my $db = Ace->connect(-path=>$campath) || die "Cannot open camace",Ace->error;
-	print STDERR "Checking for clones in camace\n";
+	print LOG "Checking for clones in camace\n";
 	my @clones = map $_->name, $db->fetch(Genome_sequence => '*') ; 
 	foreach my $clone (@clones) {
 		$cam{$clone} = 1;
@@ -77,28 +84,31 @@ if ($opt_c) {
 
 if ($opt_s) {
 	my $db = Ace->connect(-path=>$stlpath) || die "Cannot open stlace",Ace->error;
-	print STDERR "Checking for clones in stlace\n";
+	print LOG "Checking for clones in stlace\n";
 	my @clones = map $_->name, $db->fetch(Genome_sequence => '*') ; 
 	foreach my $clone (@clones) {
 		$stl{$clone} = 1;
 	}
 }
 
-######################
-# start RepeatMasker #
-######################
+########
+# MAIN #
+########
 
 open(F,"$infile");
 print STDERR "Opening infile\n";
 while (<F>) {
-	my ($clone,$seq);
+	my $clone;
 	next unless /\>/;
+
 	/\>(\S+)\// and do {
+		print LOG "\nDealing with $clone:\n";
 		$clone = $1;
 		unless ($clone =~ /\S+/) {
 			die "Cannot read file $infile\n";
 		}
 
+		# create temporary sequence file
 		open(TMP,">$outdir/$clone.dna");
 		open(FETCH,"pfetch $acc{$clone} |");
 
@@ -108,21 +118,80 @@ while (<F>) {
 			print TMP $_;
 		}
 		close FETCH;
-	};
-	close TMP;
-	
-	# run RepeatMasker
-	if (($opt_c && (exists $cam{$clone})) || ($opt_s && (exists $stl{$clone}))) {
-		print "Running RepeatMasker for $clone\n";
-		system("RepeatMasker -nolow -lib $outdir/newelegans.lib $outdir/$clone.dna");
-	}
+		close TMP;
 		
-	# map to ace file
-	print STDERR "Mapping output for $clone\n";
-	map2ace("$outdir/$clone.dna.out","$clone.repeatmasker.ace");
-} 
+		# check for pfetch success
+		open(TEST,"ls -l $outdir | grep $clone.dna |");
+		while (<TEST>) {
+			if (/\s+0\s+/) {
+				print LOG "Pfetch failed for $clone\n";
+			}
+		} 
+		close TEST;
+		# run RepeatMasker
+		if ($nolow) {
+			if (($opt_c && (exists $cam{$clone})) || ($opt_s && (exists $stl{$clone}))) {
+				print LOG "Running RepeatMasker -nolow for $clone\n";
+				system("RepeatMasker -nolow -lib $outdir/lib/newelegans.lib $outdir/$clone.dna");
+				system("mv $outdir/$clone.dna.out $outdir/nolow/$clone.dna.out");
+				unlink("$outdir/$clone.dna") if (-e "$outdir/$clone.dna");
+				unlink("$outdir/$clone.dna.stderr") if (-e "$outdir/$clone.dna.stderr");
+				unlink("$outdir/$clone.dna.cat") if (-e "$outdir/$clone.dna.cat");
+				unlink("$outdir/$clone.dna.masked") if (-e "$outdir/$clone.dna.masked");
+			}
+		}
+		elsif ($low) {
+			if (($opt_c && (exists $cam{$clone})) || ($opt_s && (exists $stl{$clone}))) {
+				print LOG "Running RepeatMasker -int for $clone\n";
+				system("RepeatMasker -int $outdir/$clone.dna");
+				system("mv $outdir/$clone.dna.out $outdir/low/$clone.dna.out");
+				unlink("$outdir/$clone.dna") if (-e "$outdir/$clone.dna");
+				unlink("$outdir/$clone.dna.stderr") if (-e "$outdir/$clone.dna.stderr");
+				unlink("$outdir/$clone.dna.cat") if (-e "$outdir/$clone.dna.cat");
+				unlink("$outdir/$clone.dna.masked") if (-e "$outdir/$clone.dna.masked");
+				
+			}
+			
+		}
 
+#		# map to ace file
+#		print LOG "Mapping output for $clone\n";
+#		map2ace("$outdir/$clone.dna.out","$clone.repeatmasker.ace");
+		
+	};
+}
 
+##########################
+# produce final ace file #
+##########################
+
+if ($nolow) {
+	unlink("$outdir/nolow/all.repeatmasker_nolow.ace") if (-e "$outdir/nolow/all.repeatmasker_nolow.ace");
+	system("repeatmasker2ace.pl $outdir/nolow RepeatMasker > $outdir/nolow/all.repeatmasker_nolow.ace");
+}
+elsif ($low) {
+	unlink("$outdir/low/all.repeatmasker_low.ace") if (-e "$outdir/low/all.repeatmasker_low.ace");
+	system("repeatmasker2ace.pl $outdir/low low_complexity_repeat > $outdir/low/all.repeatmasker_low.ace");
+}
+
+exit(0);
+
+__END__
+
+# replaced internal mapping by upper system call... 
+
+open(FINAL,">$infile.repeatmasker.ace");
+print LOG "Producing final outfile\n";
+foreach my $file (@files) {
+	open(FILE,"$file");
+	while (<FILE>) {
+		unless (/\S+/) {
+			print LOG "$file WAS EMPTY!\n";
+		} 
+		print FINAL $_;
+	}
+	unlink("$file");
+}
 
 
 ###############
@@ -150,8 +219,10 @@ sub map2ace {
 				$repend   = $try2; 
 			}
 		};
-		print OUT "Sequence \"$query\"\n";
-		print OUT "Motif_homol \"$rep\" \"RepeatMasker\" $score $qstart $qend $repstart $repend\n\n";	
+		if ($query =~ /\S+/) {
+			print OUT "Sequence \"$query\"\n";
+			print OUT "Motif_homol \"$rep\" \"RepeatMasker\" $score $qstart $qend $repstart $repend\n\n";	
+		}
 	}
 }
 
