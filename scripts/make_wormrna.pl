@@ -7,7 +7,7 @@
 # Builds a wormrna data set from the current autoace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-08-10 15:48:33 $
+# Last updated on: $Date: 2004-08-10 15:49:43 $
 
 
 #################################################################################
@@ -78,7 +78,7 @@ mkdir ("$new_wrdir" , 0755) || die "Couldn't create $new_wrdir\n";
 
 my $db = Ace->connect (-path => $dbdir, -program => $tace) || die "Couldn't connect to $dbdir\n";
 # Get RNA genes, but not other Transcript objects
-my @transcripts = $db->fetch (-query => 'FIND elegans_RNA_gene');
+my @transcripts = $db->fetch (-query => 'FIND elegans_RNA_genes');
 
 @transcripts = sort @transcripts;
 my $count = scalar(@transcripts);
