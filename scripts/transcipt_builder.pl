@@ -130,13 +130,14 @@ foreach my $chrom ( @chromosomes ) {
   #This is the place to check for paired reads that dont overlap a gene model
 
 
-  # get coords obj to return clone and coords from chromosomal coords
-  my $coords = Coords_converter->invoke;
-
+  my $coords;
   # write out the transcript objects
   if( $transcript ) {
     open (ACE,">$database/transcripts_$chrom.ace") or die "transcripts\n";
+    # get coords obj to return clone and coords from chromosomal coords
+    $coords = Coords_converter->invoke($database);
   }
+  
   foreach my $gene (keys %gene2cdnas) {
     print  "$gene matching cDNAs => @{$gene2cdnas{$gene}}\n" if $report;
     print "$_ matches ",scalar(@{$gene2cdnas{$gene}}),"\n" if $count;
@@ -169,7 +170,7 @@ foreach my $chrom ( @chromosomes ) {
 
 	  # iterate thru existing transcript exons and check for overlaps
 	  foreach my $transExon (keys %transcript ) {
-	    if( $cExon < $transExon and $cDNA{$cdna}->{$cExon} >= $transExon ) {
+	    if( $cExon < $transExon and $cDNA{$cdna}->{$cExon} >= $transExon ) { # 
 
 	      if( $cDNA{$cdna}->{$cExon} > $transcript{$transExon} ) {
 		$transcript{$cExon} = $cDNA{$cdna}->{$cExon}; # ever possible ?
@@ -348,7 +349,7 @@ sub checkExonMatch
 	  }
 	}
 	# exon matched is not 1st of gene
-	elsif ( ($cExonStart == $cdna_exon_starts[-1] ) and # start of cDNA
+	elsif ( ($cExonStart == $cdna_exon_starts[0] ) and # start of cDNA
 		($cExonStart >$gExonS ) ) {                   # . . . is in gene exon
 	  print"\tMatch - 1st exon of cDNA starts in exon of gene\n" if $verbose;
 	  next;
