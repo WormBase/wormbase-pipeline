@@ -7,7 +7,7 @@
 
 # by Chao-Kung Chen [030625]
 
-# Last updated on: $Date: 2003-06-26 16:21:40 $
+# Last updated on: $Date: 2003-12-16 17:55:25 $
 # Last updated by: $Author: ck1 $
 
 use strict;
@@ -25,7 +25,7 @@ my $current = `grep "NAME WS" $curr_db/wspec/database.wrm`;
 $current =~ s/NAME WS//; chomp $current;
 $current++;
 
-my $file = `ls /wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/interpolated_gmap_to_geneace_WS$current*`;
+my $file = glob("/wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/interpolated_map_to_geneace_WS$current*");
 
 print "Uploading interpolated map position to geneace . . . \n";
 
