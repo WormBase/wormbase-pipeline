@@ -82,7 +82,6 @@ my @updated_DBs;  #used by get_updated_database_list sub - when run this array i
 #load in databases used in previous build
 my $last_build_DBs = "$wormpipe_dir/BlastDB/databases_used_WS$WP_old";
 my $database_to_use = "$wormpipe_dir/BlastDB/databases_used_WS$WPver";
-&get_updated_database_list;
 
 
 open (OLD_DB,"<$last_build_DBs") or die "cant find $last_build_DBs";
