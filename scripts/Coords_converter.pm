@@ -226,7 +226,15 @@ sub LocateSpan
     my $x = shift;
     my $y = shift;
 
-    #this doesn't handle single letter style chromosome names
+    my %single_chrom = ( "I" => "CHROMOSOME_I",
+			 "II" => "CHROMOSOME_II",
+			 "III" => "CHROMOSOME_III",
+			 "IV" => "CHROMOSOME_IV",
+			 "V" => "CHROMOSOME_V",
+			 "X" => "CHROMOSOME_X"
+		       );
+
+    $chrom = $single_chrom{$chrom} if $single_chrom{$chrom};
 
     # if a clone is passed (handles negative coords eg AH6, -500, 12000)
     unless( $chrom =~ /CHROMOSOME/ or $chrom =~ /SUPERLINK/ ) { 
