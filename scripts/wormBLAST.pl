@@ -27,6 +27,7 @@ my $WPver;   #  Wormpep version is passed as command line option
 my $blastx;
 my $blastp;
 my $prep_dump;
+my $cleanup;
 
 GetOptions("chromosomes" => \$chromosomes,
 	   "wormpep"     => \$wormpep,
@@ -41,7 +42,8 @@ GetOptions("chromosomes" => \$chromosomes,
 	   "testpipe"    => \$test_pipeline,
 	   "version=s"   => \$WPver,
 	   "blastp"      => \$blastp,
-	   "blastx"      => \$blastx
+	   "blastx"      => \$blastx,
+	   "cleanup"     => \$cleanup
 	  );
 
 # you can do either or both blast anaylses
@@ -472,7 +474,7 @@ if( $dump_data )
     }
     # Dump
     print "Dumping blastp\n";
-    #`$wormpipe_dir/scripts/Dump_new_prot_only.pl -all -version $WPver`;
+    `$wormpipe_dir/scripts/Dump_new_prot_only.pl -all -version $WPver`;
     print "Dumping blastx\n";
     `$scripts_dir/dump_blastx_new.pl -w $wormpipe_dir/BlastDB/wormpep$WPver.pep -a ~/Elegans/WS$WPver.agp -g ~/Elegans/cds$WPver.gff -c ~/Elegans/cos$WPver.gff -m`;
     print "Dumping motifs\n";
@@ -482,6 +484,36 @@ if( $dump_data )
     print "Creating acefile of SWALL proteins with homologies\n";
     `$scripts_dir/write.swiss_trembl.pl -swiss -trembl`;
   }
+
+if( $cleanup ) {
+  print "clearing up files generated in this build\n";
+# files to move to ~wormpub/last-build/
+#   /acari/work2a/wormpipe/dumps/
+#    ipi_hits_list
+#    trembllist.txt
+#    swisslist.txt
+
+#  ~wormpipe/Elegans
+#    WS99.agp
+#    cds99.gff
+#    cos99.gff
+#    ids.txt
+
+# to delete
+#   /acari/work2a/wormpipe/dumps/
+#      *.ace
+#      *.log
+  my $clear_dump = "/acari/work2a/wormpipe/dumps";
+  print "Removing . . . \n";
+  print "\t$clear_dump/*.ace\n";  system("rm -f $clear_dump/*.ace") or warn "cant remove ace files from $clear_dump";
+  print "\t$clear_dump/*.log\n";  system("rm -f $clear_dump/*.log") or warn "cant remove log files from $clear_dump";
+  
+  print "\nmoving the following to ~wormpipe/last_build . . \n";
+  print "\t$clear_dump/*.txt\n"; system("mv -f $clear_dump/*.txt $wormpipe_dir/last_build/") or warn "cant move $clear_dump/*.txt\n";
+  print "\n$wormpipe_dir/Elegans/*\n"; system("mv -f $wormpipe_dir/Elegans/* $wormpipe_dir/last_build/") or warn "cant move $wormpipe_dir/Elegans/*\n";
+
+  print "CLEAN UP COMPLETED\n\n";
+}
 
 
 &wait_for_pipeline_to_finish if $test_pipeline; # debug stuff
