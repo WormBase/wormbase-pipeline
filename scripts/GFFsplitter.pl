@@ -5,7 +5,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-01-17 09:50:35 $
+# Last updated on: $Date: 2003-01-17 12:45:31 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -19,6 +19,7 @@ use lib '/wormsrv2/scripts';
 use Wormbase;
 use IO::Handle;
 use Getopt::Long;
+use Ace;
 
 $|=1;
 
@@ -30,6 +31,8 @@ my $maintainers = "All";
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
 my $WS_version = &get_wormbase_version_name;
+our $lockdir = "/wormsrv2/autoace/logs";
+
 
 my $help;      # Help/Usage page
 my $archive;   # archive GFF_splits directory into a WSxx directory
@@ -283,17 +286,26 @@ foreach $file (@gff_files) {
     #########################################
    
     # GFF clone_path with EMBL accessions and sequence versions
-    system ("GFF_with_accessions $datadir/GFF_SPLITS/$file.clone_path.gff > $datadir/GFF_SPLITS/$file.clone_acc.gff");
+    my $input_file = "$datadir/GFF_SPLITS/$file.clone_path.gff";
+    my $output_file = "$datadir/GFF_SPLITS/$file.clone_acc.gff";
+    &GFF_clones_with_accessions("$input_file", "$output_file");
+
 
     # GFF genes with wormpep CE accessions
     system ("GFF_with_wormpep_accessions.pl $datadir/GFF_SPLITS/$file.genes.gff > $datadir/GFF_SPLITS/$file.genes_acc.gff");
-    system ("mv -f $datadir/GFF_SPLITS/$file.genes_acc.gff $datadir/GFF_SPLITS/$file.genes.gff");
+    $input_file = "$datadir/GFF_SPLITS/$file.genes.gff";
+    $output_file = "$datadir/GFF_SPLITS/$file.genes_acc.gff";
+    &GFF_genes_with_accessions("$input_file", "$output_file");
+    system ("mv -f $output_file $input_file");
+
     
     # GFF UTRs with CDS names
-    my $utr_file = "GFF_with_UTR_name $datadir/GFF_SPLITS/$file.UTR.gff";
-    my $utr_cds_file = "$datadir/GFF_SPLITS/$file.UTR_CDS.gff";
-    &GFF_with_UTR("$utr_file","$utr_cds_file");
-
+    # Shouldn't attempt to do this if UTR data has not been generated
+    unless( -e "$lockdir/B10:Generate_UTR_data" ) {
+      my $utr_file = "$datadir/GFF_SPLITS/$file.UTR.gff";
+      my $utr_cds_file = "$datadir/GFF_SPLITS/$file.UTR_CDS.gff";
+      &GFF_with_UTR("$utr_file","$utr_cds_file");
+  }
     
 }
 close LOG;
@@ -353,25 +365,112 @@ sub usage {
   }
 }
 
-sub GFF_with_UTR
-  {
-    my $utr = shift;
-    my $utr_cds = shift;
-    open( UTR, "$utr" );
-    open( UTR_CDS, "$utr_cds");
-    while (<UTR>) {
-      
-      print UTR_CDS $_ if (/^\#/);
-      (/_UTR:(\S+)\"/);
-      print UTR_CDS "$`" . "_UTR:$1\" CDS=\"$1\"\n";
-    }
-    close UTR;
-    close UTR_CDS;
+################################################
+#
+# Post-processing GFF routines
+#
+################################################
 
-    system ("mv -f $utr_cds $utr");
+sub GFF_with_UTR{
+  my $utr = shift;
+  my $utr_cds = shift;
+  open( UTR, "$utr" );
+  open( UTR_CDS, "$utr_cds");
+  while (<UTR>) {
+    
+    print UTR_CDS $_ if (/^\#/);
+    (/_UTR:(\S+)\"/);
+    print UTR_CDS "$`" . "_UTR:$1\" CDS=\"$1\"\n";
   }
+  close UTR;
+  close UTR_CDS;
+  
+  system ("mv -f $utr_cds $utr");
+}
 
+########################################
 
+sub GFF_clones_with_accessions{
+  my $infile   = shift;
+  my $outfile = shift;
+  my $wormdb = "/wormsrv2/autoace";
+
+  my $db = Ace->connect(-path=>$wormdb) || do { print "Connection failure to $wormdb: ",Ace->error; die();};
+
+  open (GFF, "<$infile")  || die "Can't open GFF file: $infile\n\n";
+  open (OUT, ">$outfile") || die "Can't write to $outfile\n";
+  while (<GFF>) {
+
+    next if (/^\#/);
+    chomp;
+
+    my @gff = split (/\t/,$_);
+    my ($gen_can) = $gff[8] =~ /Sequence \"(\S+)\"/; 
+    my $obj = $db->fetch(Sequence=>$gen_can);
+    if (!defined ($obj)) {
+      print "Could not fetch sequence '$gen_can'\n";
+      next;
+    }
+  
+    my @acc = $obj->DB_info->row();
+    
+    print OUT "$_ acc=$acc[3] ver=$acc[4]\n";
+    
+    $obj->DESTROY();
+    
+  }
+  close(GFF);
+  close(OUT);
+  $db->close;
+ 
+}
+
+########################################
+
+sub GFF_genes_with_accessions{
+  my $infile  = shift;
+  my $outfile = shift;
+  my $wormdb = "/wormsrv2/autoace";
+
+  my $db = Ace->connect(-path=>$wormdb) || do { print "Connection failure to $wormdb: ",Ace->error; die();};
+
+  open (GFF, "<$infile") || die "Can't open GFF file: $infile\n\n";
+  open (OUT, ">$outfile") || die "Can't write to $outfile\n";
+  while (<GFF>) {
+
+    next if (/^\#/);    
+    chomp;
+
+    my @gff = split (/\t/,$_);    
+    (my $gen_can) = $gff[8] =~ /Sequence \"(\S+)\"/; 
+
+    my $obj = $db->fetch(Sequence=>$gen_can);
+    if (!defined ($obj)) {
+      print "Could not fetch sequence '$gen_can'\n";
+      next;
+    }
+
+    my $acc = $obj->Corresponding_protein(1);
+    $acc =~ s/WP\://g;
+
+    if ($acc ne "") {
+      $acc =~ s/WP\://g;
+      print OUT "$_ wp_acc=$acc\n";
+    }
+    else {  # could be a tRNA
+      print OUT "$_\n";
+    }
+    undef ($acc); 
+
+    $obj->DESTROY();
+
+  }
+  close (GFF);
+  close (OUT);
+  $db->close;
+
+ 
+}
 
 __DATA__
 clone_path
