@@ -1765,27 +1765,27 @@
                                 //monograph, news, book,
                                 //meeting_abstract
         Contains ?Paper XREF Contained_in
-        Refers_to Locus ?Locus XREF Reference
-                  Allele ?Allele XREF Reference
-                  Rearrangement ?Rearrangement XREF Reference
-                  Sequence ?Sequence XREF Reference
-		  Transcript ?Transcript XREF Reference // for new gene model [021126 krb]
-                  Strain ?Strain XREF Reference
-                  Clone ?Clone XREF Reference
-                  Protein ?Protein XREF Reference
-                  Expr_pattern ?Expr_pattern XREF Reference
-                  Expr_profile ?Expr_profile XREF Reference
+        Refers_to Locus ?Locus XREF Reference #Evidence
+                  Allele ?Allele XREF Reference #Evidence
+                  Rearrangement ?Rearrangement XREF Reference #Evidence
+                  Sequence ?Sequence XREF Reference #Evidence
+		  Transcript ?Transcript XREF Reference #Evidence
+                  Strain ?Strain XREF Reference #Evidence
+                  Clone ?Clone XREF Reference #Evidence
+                  Protein ?Protein XREF Reference #Evidence
+                  Expr_pattern ?Expr_pattern XREF Reference #Evidence
+                  Expr_profile ?Expr_profile XREF Reference #Evidence
                                 // Added to fit new Expr_profile class
                                 // [010912 krb]
-                  Cell ?Cell XREF Reference
-                  Cell_group ?Cell_group XREF Reference
-                  Life_stage ?Life_stage XREF Reference
-                  RNAi ?RNAi XREF Reference  // added for Lincoln RNAi [001213 dl]
-                  Transgene ?Transgene XREF Reference
+                  Cell ?Cell XREF Reference #Evidence
+                  Cell_group ?Cell_group XREF Reference #Evidence
+                  Life_stage ?Life_stage XREF Reference #Evidence
+                  RNAi ?RNAi XREF Reference #Evidence
+                  Transgene ?Transgene XREF Reference #Evidence
                   GO_term ?GO_term XREF Reference ?GO_code #Evidence
-                  Operon ?Operon XREF Reference                          // added for operon data [010928 dl]
+                  Operon ?Operon XREF Reference #Evidence
 		  //Microarray_result ?Microarray_result XREF Reference  //added for Microarray_result [030127 krb]
-                  Cluster ?Cluster XREF Reference                        //added for SMD_result [030127 krb]
+                  Cluster ?Cluster XREF Reference #Evidence
 		  Feature ?Feature XREF Defined_by_paper                 // added [030424 dl]
         Keyword ?Keyword
 
