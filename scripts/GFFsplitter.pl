@@ -5,7 +5,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-01-07 13:12:06 $
+# Last updated on: $Date: 2003-01-17 09:50:35 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -294,8 +294,6 @@ foreach $file (@gff_files) {
     my $utr_cds_file = "$datadir/GFF_SPLITS/$file.UTR_CDS.gff";
     &GFF_with_UTR("$utr_file","$utr_cds_file");
 
-    system ("GFF_with_UTR_name $datadir/GFF_SPLITS/$file.UTR.gff > $datadir/GFF_SPLITS/$file.UTR_CDS.gff");
-    system ("mv -f $datadir/GFF_SPLITS/$file.UTR_CDS.gff $datadir/GFF_SPLITS/$file.UTR.gff");
     
 }
 close LOG;
