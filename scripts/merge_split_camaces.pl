@@ -5,7 +5,7 @@
 # A script to make multiple copies of camace for curation, and merge them back again
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2003-11-14 16:48:56 $
+# Last edited on: $Date: 2003-11-24 14:53:20 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -72,7 +72,7 @@ if ($merge) {
   push(@databases,"dl1") if ($dan || $all);
   push(@databases,"pad") if ($paul || $all);
 
-  print "You are merging Data from @databases\n\n";
+  print "You are merging Data from " . (join '-',@databases) ."\n\n";
 
   # dumps the Pseudogene, Transcript, Feature and Sequence classes from the database
   &dump_camace;
