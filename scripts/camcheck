@@ -222,8 +222,13 @@ close(CLONEFILE);
 # Check predicted genes
 ########################
 
+# need to close and reopen existing log filehandle either side of system call
+close(LOG);
 system("/wormsrv2/scripts/check_predicted_genes.pl $dbpath $log");
 
+# now opened in append mode
+open (LOG,">>$log");
+LOG->autoflush();
 
 ##################
 # LINK objects 
