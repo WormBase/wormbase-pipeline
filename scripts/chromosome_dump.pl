@@ -24,15 +24,15 @@ our $tace   = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
 our $giface = "/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_4/giface";
 our $database = "/wormsrv2/autoace";
 our $dump_dir = "/wormsrv2/autoace/CHROMOSOMES";
-our ($opt_d,$opt_g,$opt_e,$opt_h);
-getopts("dgeh");
+our ($opt_d,$opt_g,$opt_e,$opt_h,$opt_c);
+getopts("dgehc");
 
 
 #############################
 # display help if required  #
 #############################
 
-&show_help if (!$opt_d && !$opt_e && !$opt_g && !$opt_h);
+&show_help if (!$opt_d && !$opt_e && !$opt_g && !$opt_h && !$opt_c);
 
 ##################################################
 # Open logfile                                   #
@@ -56,6 +56,7 @@ print LOGFILE "\n\n";
 
 &dump_dna  if ($opt_d);
 &dump_gff  if ($opt_g);
+&composition if ($opt_c);
 &zip_files if ($opt_e || $opt_h);
 
 
@@ -118,6 +119,18 @@ END
 
   &execute_ace_command($command,$giface,$database);
   print LOGFILE "Finished dumping GFF files\n\n";
+}
+
+
+###################################
+# produce dna composition files
+###################################
+
+sub composition{
+	print LOGFILE "Generating composition.all\n";	
+	system("/bin/cat *.dna | /nfs/disk100/wormpub/bin.ALPHA/composition > composition.all");
+
+
 }
 
 ##########################
