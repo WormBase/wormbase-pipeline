@@ -7,7 +7,7 @@
 # A script to convert ?Locus objects into the new ?Gene object
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-03-01 16:50:30 $   
+# Last updated on: $Date: 2004-03-02 10:41:46 $   
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -309,14 +309,19 @@ if($post_process5){
     # Store results in @row array
     my @rows;
 
-    # grab row data if it exists
+    # grab row data if it exists for each of the three different types
     (push(@rows, $multipoint->at("Results.Combined")->row)) if ($multipoint->at("Results.Combined"));
     (push(@rows, $multipoint->at("Results.A_non_B")->row)) if ($multipoint->at("Results.A_non_B"));
     (push(@rows, $multipoint->at("Results.B_non_A")->row)) if ($multipoint->at("Results.B_non_A"));
 
     # Loop through loop elements changing Locus for Gene and substituting Gene IDs for locus names
     foreach (my $i=0; $i<@rows;$i++){
-#      print "$rows[$i] *";
+
+      # need to add new line when there are multiple rows of results
+      ($rows[$i] = "\n\nMulti_pt_data : \"$multipoint\"\n"."$rows[$i]") if ($rows[$i] eq "A_non_B");
+      ($rows[$i] = "\n\nMulti_pt_data : \"$multipoint\"\n"."$rows[$i]") if ($rows[$i] eq "B_non_A");
+      ($rows[$i] = "\n\nMulti_pt_data : \"$multipoint\"\n"."$rows[$i]") if ($rows[$i] eq "Combined");
+
       if(($rows[$i] eq "Locus") && ($rows[$i+1] eq "act-123")){
 	$i += 2;
 	next;
@@ -329,10 +334,9 @@ if($post_process5){
       }
     }
     if(@rows){
-      print OUT "Multi_pt_data : \"$multipoint\"\n";
-      print OUT "-D Results\n\n";
+      print OUT "\nMulti_pt_data : \"$multipoint\"\n";
+      print OUT "-D Results";
       
-      print OUT "Multi_pt_data : \"$multipoint\n";
       print OUT "@rows\n\n";
     }
   }
