@@ -40,8 +40,8 @@ my %EST_dir;     # EST accession => orientation [5|3]
 my %hash;
 my (%best,%other,%bestclone,%match,%ci);
 
-my %camace;
-my %stlace;
+our %camace;
+our %stlace;
 
 our $type = "";
 our $db   = "";
@@ -106,19 +106,15 @@ else {
 #########################################
 
 # parse links for camace
-if ($opt_c) {
-    my @camclones = qw(cTel3X cTel4X cTel7X cTel33B cTel54X LINK_6R55 LINK_cTel52S SUPERLINK_CB_I SUPERLINK_CB_II SUPERLINK_CB_IIIL SUPERLINK_CB_IIIR SUPERLINK_CB_IR SUPERLINK_CB_IV SUPERLINK_CB_V SUPERLINK_CB_X); 
-    foreach my $camclone (@camclones) {
-	$camace{$camclone} = 1;
-    }
+my @camclones = qw(cTel3X cTel4X cTel7X cTel33B cTel54X LINK_6R55 LINK_cTel52S SUPERLINK_CB_I SUPERLINK_CB_II SUPERLINK_CB_IIIL SUPERLINK_CB_IIIR SUPERLINK_CB_IR SUPERLINK_CB_IV SUPERLINK_CB_V SUPERLINK_CB_X); 
+foreach my $camclone (@camclones) {
+    $camace{$camclone} = 1;
 }
 
 # parse links for stlace
-if ($opt_s) {
-    my @stlclones = qw(SUPERLINK_RW1 SUPERLINK_RW1R SUPERLINK_RW2 SUPERLINK_RW3A SUPERLINK_RW3B SUPERLINK_RW4 SUPERLINK_RW5 SUPERLINK_RWXL SUPERLINK_RWXR);
-    foreach my $stlclone (@stlclones) {
-	$stlace{$stlclone} = 1;
-    }
+my @stlclones = qw(SUPERLINK_RW1 SUPERLINK_RW1R SUPERLINK_RW2 SUPERLINK_RW3A SUPERLINK_RW3B SUPERLINK_RW4 SUPERLINK_RW5 SUPERLINK_RWXL SUPERLINK_RWXR);
+foreach my $stlclone (@stlclones) {
+    $stlace{$stlclone} = 1;
 }
 
 ############################
@@ -148,12 +144,24 @@ while (<BLAT>) {
 	my $estname  = $EST_name{$est};
 	if ($est ne $estname) {
 	    $est = $estname;
-	    print LOG "EST name $est was replaced by $estname\n\n";
+	    print LOG "EST name '$est' was replaced by '$estname'\n\n";
 	}
     }
     my @lengths     = split (/,/, $f[18]);
     my @eststarts   = split (/,/, $f[19]);
     my @slinkstarts = split (/,/, $f[20]);
+
+
+#    print "$est maps to $superlink [currentDB: $db => $camace{$superlink} | $stlace{$superlink}]\n";
+
+    # next if LINK is part of camace BUT we want stlace
+    next if ((defined ($camace{$superlink})) && ($opt_s));
+    
+    # next if LINK is part of stlace BUT we want camace
+    next if ((defined ($stlace{$superlink})) && ($opt_c));
+    
+#    print "$est will be processed\n";
+
 
     my $matchstart  = $f[15];
     my $matchend    = $f[16];
