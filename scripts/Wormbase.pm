@@ -215,8 +215,9 @@ This subroutine replaces the (deprecated) get_script_version (see below).
 
 get_wormbase_version
 
-This subroutine returns the current WormBase release number (read from the 
-file: /wormsrv2/autoace_config/WormBase_release_version.
+This subroutine returns the current WormBase release version.  This is read from
+the file: /wormsrv2/autoace/wspec/database.wrm file.  The function returns
+the string, i.e. WS48 and not just the number.
 
 =back
 
@@ -226,7 +227,7 @@ file: /wormsrv2/autoace_config/WormBase_release_version.
 
 get_old_wormbase_version
 
-This subroutine returns the previous WormBase release number.
+This subroutine returns the previous WormBase release version.
 
 =back
 
