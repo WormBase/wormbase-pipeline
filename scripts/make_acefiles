@@ -131,7 +131,7 @@ sub mknewacefiles {
     open (CONFIG, "$autoace_config");
     while (<CONFIG>) {
 	s/^\s+//;s/\s+$//;    
-	
+			
 	# next if comment line
 	next if (/^\#/  || /^$/);
 
@@ -153,7 +153,10 @@ sub mknewacefiles {
 
 	# nuts and bolts of acefile generation
 	# format:  database object criteria
-	
+
+	# clear out the @deletes array eachtime
+	undef (@deletes);
+
 	# deal with complete queries
 	unless (/\[(\S+.+)\]$/) { 
 	    if (/^\S+\s+(\S+)$/) {
