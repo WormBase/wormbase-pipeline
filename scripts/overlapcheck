@@ -14,6 +14,13 @@ $|=1;
 my @chrom = qw(I II III IV V X);
 my (%exon, %est, %genes, %repeat, %intron, %camace, %stlace);
 
+# set parameters for ESTs and repeats (score threshold, overlap threshold)
+my $ESTth      = '98.0';
+my $ESTlength  = '10';
+my $repth      = '15';
+my $repolstart = '10';
+my $repolmid   = '23';
+my $repolend   = '10';
 
 #################################
 # I. get clone out of databases #
@@ -23,7 +30,7 @@ my $camdb     = Ace->connect(-path => '/wormsrv2/camace/') || die "Couldn't conn
 my @camclones = $camdb->fetch(-query => 'FIND Genome_Sequence');
 foreach my $camclone (@camclones) {
 	my $string = $camclone->Confidential_remark(1);
-	if ((defined $string) && ($string =~ /Louis/)) {
+	if ((defined $string) && (($string =~ /Louis/) || ($string =~ /not in Cambridge/))) {
 		next;
 	}
 	else {$camace{$camclone} = 1;}
@@ -96,7 +103,7 @@ foreach my $chrom (@chrom) {
     # get the ESTs above a certain thresholdthreshold and certain match length #
     ############################################################################
 			
-            elsif ($fields[1] =~ /^EST_GENOME/ && $fields[5] > 98.0 && (($fields[4] - $fields[3]) > 10)) {
+            elsif (($fields[1] =~ /^EST_GENOME/ && $fields[5] > $ESTth) && (($fields[4] - $fields[3]) > $ESTlength)) {
                 $fields[8] =~ /Sequence:(\S+)\"/;
                 $name = $1;
                 $estcount{$name}++;
@@ -109,7 +116,7 @@ foreach my $chrom (@chrom) {
     # get the repeats #
     ###################
 			
-            elsif ($fields[1] =~ /hmmfs/) {
+            elsif (($fields[1] =~ /hmmfs/) && ($fields[5] > $repth)) {
                 my @descr = split (/ /);
                 $descr[1] =~ /\"Motif:(\S+)\"/; 
                 $name = $1;
@@ -277,7 +284,7 @@ foreach my $chrom (@chrom) {
         my @single = split (/:/, $pair);
         push @{$stlest{$single[1]}}, $single[0];
     }   
-    my %stlout = erase_isoforms(\%camest,\%iso);
+    my %stlout = erase_isoforms(\%stlest,\%iso);
     foreach my $x (sort keys %stlout) {
         @{$stlout{$x}} = sort @{$stlout{$x}};
         print STLEST "Introns of gene $x match ESTs @{$stlout{$x}}\n"; 
@@ -315,21 +322,18 @@ foreach my $chrom (@chrom) {
 		    my $repeatend    = $repeat{$testrepeat}->[1];
 		    if (($repeatstart < $exonstart) && ($repeatend > $exonstart)) {
                         my $overlap = ($repeatend - $exonstart + 1);
-                        # set size of overlap to be reported
                         my ($finalrepeat)  = ($testrepeat =~ /^(\S+)\.\d+/);
-                        push (@repeatoutput, [$finalrepeat,$testgene]) if ($overlap >= 10);#here
+                        push (@repeatoutput, [$finalrepeat,$testgene]) if ($overlap >= $repolstart);
                     }
                     elsif (($repeatstart > $exonstart) && ($repeatend < $exonend)) {
                         my $overlap = ($repeatend - $repeatstart + 1);
-                        # set size of overlap to be reported
                         my ($finalrepeat)  = ($testrepeat =~ /^(\S+)\.\d+/);
-                        push (@repeatoutput, [$finalrepeat,$testgene]) if ($overlap >= 23);#here
+                        push (@repeatoutput, [$finalrepeat,$testgene]) if ($overlap >= $repolmid);
                     }
                     elsif (($repeatstart < $exonend) && ($repeatend > $exonend)) {
                         my $overlap = ($exonend - $repeatstart + 1);
-                        # set size of overlap to be reported
                         my ($finalrepeat)  = ($testrepeat =~ /^(\S+)\.\d+/);
-                        push (@repeatoutput, [$finalrepeat,$testgene]) if ($overlap >= 10);#here
+                        push (@repeatoutput, [$finalrepeat,$testgene]) if ($overlap >= $repolend);
                     }
                 }
             }
