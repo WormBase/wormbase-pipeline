@@ -4,8 +4,8 @@
 #
 # Dumps protein motifs from ensembl mysql (protein) database to an ace file
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2003-06-06 09:49:23 $
+# Last updated by: $Author: wormpipe $
+# Last updated on: $Date: 2003-06-11 08:33:35 $
 
 
 use strict;
@@ -28,6 +28,7 @@ my $dbhost = "ecs1f";
 my $dbuser = "wormro";
 my $dbname = "wormprot";
 $dbname = $database if $database;
+print "Dumping motifs from $dbname\n";
 my $dbpass = "";
 
 # to get the current time...
