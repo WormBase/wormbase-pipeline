@@ -9,7 +9,7 @@
 #
 #
 # Last updated by: $Author: krb $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2004-10-14 14:57:35 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2004-10-14 15:06:32 $        # quickly see when script was last changed and by whom
 
 
 $|=1;
@@ -189,7 +189,7 @@ close OUTPUT unless ($adhoc);
 # hasta luego #
 ###############
 
-$log->mail("$maintainers");
+$log->mail("$maintainers","BUILD REPORT: $0");
 exit(0);
 
 
