@@ -5,10 +5,11 @@
 # written by Anthony Rogers (ar2@sanger.ac.uk)
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-07-03 15:24:11 $
+# Last updated on: $Date: 2002-07-08 09:39:43 $
 
 
 use strict;
+use lib "/wormsrv2/scripts/";
 use Wormbase;
 use Ace;
 use Getopt::Std;
@@ -168,18 +169,15 @@ foreach $sequence(keys %seq_locus)
       }
   }
 my $sum = $CAMcount+$STLcount+$PROBcount;
+
+my $interested = "John Spieth & Darin Blasair ";
+
 print LOG "found $CAMcount loci on Hinxton sequences.\n
 found $STLcount loci on StLouis sequences.\n
-found $ALLcount total.\n
-$PROBcount have problems\n
-ALL should equal sum of others ie $sum and no put into hash - $count \n
-\n\n
-wrote output ACE files to $autoace_acefiles_dir"; 
-
-
-
-my $interested = "Jean TM, John Spieth, Darin Blasair\n";
-print LOG "$interested would like to be informed of this update\n\n";
+found $ALLcount total (plus another$PROBcount that have problems)\n
+This should equal sum of others ie $sum and the number put into hash - $count \n
+Wrote output ACE files to $autoace_acefiles_dir\n
+$interested would like to be informed of this update.\n\n";
 
 $autoace->close;
 close CAMOUT;
@@ -201,19 +199,18 @@ close LOG;
 
 
 #inform any interested parties
-my $notify = $maintainer;
-    open (OUTLOG,  "|/usr/bin/mailx -s \"new geneace updates\" $notify ");
-
-        print OUTLOG "updated info linking loci to sequences is available from\n
+my $notify = "jspieth\@watson.wustl.edu,dblasiar\@watson.wustl.edu,ar2\@sanger.ac.uk,krb\@sanger.ac.uk";
+open (OUTLOG,  "|/usr/bin/mailx -s \"New locus->sequence connections available from Sanger\" $notify ");
+print OUTLOG "Updated info linking loci to sequences is available from\n
 ftp-wormbase\/pub\/data\/updated_locus2seq\/\n
 in the 3 files\n
 CAM_locus_seq.ace\t loci in Hinxton sequence.\n
 STL_locus_seq.ace\t loci in St Louis sequence.\n
 ALL_locus_seq.ace\t all loci.\n
 \n
-These are loci that have approved cgc names.";
+These are loci with approved cgc names and that connect to a valid Genome sequence gene.\n";
 
-    close OUTLOG;
+close OUTLOG;
 
 
 
