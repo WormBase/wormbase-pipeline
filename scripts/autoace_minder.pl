@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2004-06-28 16:19:49 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2004-07-12 10:45:58 $
 
 
 
@@ -1162,7 +1162,7 @@ sub make_operons {
   
   # needs split gff files for this step, so should only run if UTRs have been
   # generated (which will make split GFF files
-  &usage(20) unless (-e "$logdir/$flag{'B10'}");
+  # &usage(20) unless (-e "$logdir/$flag{'B10'}");
 
   # run find_utrs.pl to generate data
   &run_command("$scriptdir/map_operons.pl");
@@ -1309,7 +1309,7 @@ sub map_features {
   # microarray connections
   &run_command("$scriptdir/map_microarray.pl");
 
-  my $file = "$basedir/wormbase/misc/misc_microarrays.ace";
+  my $file = "$basedir/wormbase/misc_dynamic/misc_microarrays.ace";
   &load($file,"microarray_connections");
 
 }
@@ -1346,10 +1346,10 @@ sub confirm_gene_models {
   &run_command("$scriptdir/confirm_genes.pl --est --mrna");
 
   # load files
-  my $file = "$basedir/wormbase/misc/misc_confirmed_by_EST.ace";
+  my $file = "$basedir/wormbase/misc_dynamic/misc_confirmed_by_EST.ace";
   &load($file,"genes_confirmed_by_EST_and_OST");
 
-  $file = "$basedir/wormbase/misc/misc_confirmed_by_mRNA.ace";
+  $file = "$basedir/wormbase/misc_dynamic/misc_confirmed_by_mRNA.ace";
   &load($file,"genes_confirmed_by_mrna");
   
   # make dumped_GFF_file in /logs
