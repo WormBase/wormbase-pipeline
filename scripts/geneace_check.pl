@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-01-22 17:56:18 $
+# Last updated on: $Date: 2003-01-23 18:03:43 $
 
 
 use strict;
@@ -16,25 +16,25 @@ use Wormbase;
 use Ace;
 use Getopt::Long;
 
-######################################
-# variables and command-line options # 
-######################################
+###################################################
+# variables and command-line options with aliases # 
+###################################################
 
 my ($help, $debug, $database, $class, @class);
 my $maintainers = "All";
 our $tace = &tace;   # tace executable path
-our ($log, $erichlog);
+our ($log, $erichlog, $jahlog);
 
-GetOptions ("help"        => \$help,
-            "debug=s"     => \$debug,
-	    "class=s"     => \@class,
-	    "database=s"  => \$database
+GetOptions ("h|help"        => \$help,
+            "d|debug=s"     => \$debug,
+	    "c|class=s"     => \@class,
+	    "db|database=s"  => \$database
 
            );
 
-##############################################
-# choose database to query: default is Geneace
-##############################################
+################################################ 
+# choose database to query: default is Geneace #
+################################################
 
 my $default_db;
 
@@ -65,9 +65,9 @@ my $db = Ace->connect(-path  => $default_db,
 		      -program =>$tace) || do { print LOG "Connection failure: ",Ace->error; die();};
 
 
-###########################
-# MAIN LOOP
-###########################
+############## 
+# MAIN LOOPS #
+##############
 
 # track errors in each class
 our $locus_errors = 0;
@@ -78,13 +78,13 @@ our $rearrangement_errors = 0;
 our $sequence_errors = 0;
 
 
-##################################################
-# Process various classes looking for errors: 
-# choose class to check - multiple classes allowed
-##################################################
+####################################################
+# Process various classes looking for errors:      #
+# choose class to check - multiple classes allowed #
+####################################################
 
 foreach $class (@class){
-  $class = lc($class);  # command line option is case-insensitive
+  $class = lc($class);  # makes command line option case-insensitive
   if ($class eq "") {
     &process_locus_class;
     &process_laboratory_class;
@@ -109,14 +109,18 @@ foreach $class (@class){
 $db->close;
 close(LOG);
 close(ERICHLOG);
+close(JAHLOG);
+
 
 # Always mail to $maintainers (which might be a single user under debug mode)
 &mail_maintainer($0,$maintainers,$log);
 
 # Also mail to Erich unless in debug mode
 my $interested ="krb\@sanger.ac.uk, emsch\@its.caltech.edu, ck1\@sanger.ac.uk";
+my $CGC = "krb\@sanger.ac.uk, ck1\@sanger.ac.uk"; 
 &mail_maintainer($0,"$interested",$erichlog) unless $debug;
-
+&mail_maintainer($0,"$CGC",$jahlog) unless $debug;
+&mail_maintainer($0,"ck1\@sanger.ac.uk",$jahlog);
 
 exit(0);
 
@@ -515,6 +519,7 @@ sub loci_point_to_same_CDS {
      if (scalar @{$CDS_loci{$_}} > 1){
        $locus_errors++;
        print LOG "ERROR: $_ is connected to @{$CDS_loci{$_}}: case of merging?\n";
+       print JAHLOG "ERROR: $_ is connected to @{$CDS_loci{$_}}: case of merging?\n";
      }
    }
 
@@ -558,6 +563,7 @@ sub locus_CGC {
       $_ =~ s/\"//g;
       if ($_ !~ /^[A-Z]/){
 	print LOG "WARNING: $_ is linked to coding sequence but not CGC_approved\n"; 
+	print JAHLOG "WARNING: $_ is linked to coding sequence but not CGC_approved\n"; 	
 	$locus_errors++; 
       }
     }
@@ -747,7 +753,7 @@ sub create_log_files{
   my $script_name = $1;
   $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
   my $rundate     = `date +%y%m%d`; chomp $rundate;
-  $log        = "/wormsrv2/logs/$script_name.$rundate.$$";
+  $log = "/wormsrv2/logs/$script_name.$rundate.$$";
 
   open (LOG, ">$log") or die "cant open $log";
   print LOG "$script_name\n";
@@ -755,7 +761,11 @@ sub create_log_files{
   print LOG "=============================================\n";
   print LOG "\n";
 
-
+  $jahlog = "/wormsrv2/logs/$script_name.jahlog.$rundate.$$";
+  open(JAHLOG, ">$jahlog") || die "Can't open $jahlog\n";
+  print JAHLOG "Data created on $rundate\n";
+  print JAHLOG "=============================================\n";
+  
   # create separate log with errors for Erich
   $erichlog = "/wormsrv2/logs/geneace_check.erichlog.$rundate.$$";
   open(ERICHLOG,">$erichlog") || die "cant open $erichlog";
