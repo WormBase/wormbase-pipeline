@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.62 2002-07-24 13:24:33 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.63 2002-07-24 14:49:01 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -280,17 +280,17 @@
 			   		PMID_evidence    Text // added for Erich's gene function data 02/03/09
                            Automated_method ?Method ?Database
            Curator UNIQUE ?Curator
-           Type    UNIQUE Mutant_phenotype	// NB These types map to GO codes
-                          Genetic_interaction
-                          Physical_interaction
-                          Similarity	Sequence ?Sequence
-					Protein ?Protein
-					Motif ?Motif
-                          Direct_assay
-                          Expression_pattern
-                          Electronic_annotation
-                          Traceable_author_statement
-                          Nontraceable_author_statement
+	   GO_inference_type UNIQUE IC  Text // added for Erich 020723
+                             	    IDA Text
+                             	    IEA Text
+                             	    IEP Text
+                             	    IGI Text
+                             	    IMP Text
+                             	    IPI Text
+                             	    ISS Text
+                             	    NAS Text
+                             	    ND  Text
+                             	    TAS Text
            Remark ?Text
 
 ?Allele Name	Rearrangement ?Rearrangement XREF Allele
