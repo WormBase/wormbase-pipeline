@@ -6,8 +6,8 @@
 #
 # Builds a wormrna data set from the current autoace database
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2003-02-04 09:39:01 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2003-05-14 16:31:55 $
 
 
 #################################################################################
@@ -109,7 +109,6 @@ foreach my $transcript (@transcripts) {
   undef (my $method);
 
     
-  print LOG "Extracting RNA sequence $transcript\n";
   my $obj = $db->fetch(Transcript=>"$transcript");
   
 
