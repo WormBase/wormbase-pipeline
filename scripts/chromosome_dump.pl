@@ -22,11 +22,37 @@ my $cvs_version = &get_cvs_version("$0");
 
 our $tace   = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
 our $giface = "/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_4/giface";
-our $database = "/wormsrv2/autoace";
-our $dump_dir = "/wormsrv2/autoace/CHROMOSOMES";
-our ($opt_d,$opt_g,$opt_e,$opt_h,$opt_c);
-getopts("dgehc");
+our ($opt_d,$opt_g,$opt_e,$opt_h,$opt_c, $opt_p, $opt_q);
+getopts("dgehcp:q:");
+our $database;
+our $dump_dir;
 
+
+if($opt_p && !$opt_q){
+  die "You have specified a database (-p flag) but not a destination directory\nto dump to (-q flag).\n";
+}
+if(!$opt_p && $opt_q){
+  die "You have specified a destination directory to dump to (-q flag) but not\na source database (-p flag).\n";
+}
+
+
+if (defined($opt_p)){
+  $database = $opt_p;
+}
+else{
+  $database = "/wormsrv2/autoace";
+}
+    
+if (defined($opt_q)){
+  $dump_dir = $opt_q;
+}
+else{
+  $dump_dir = "/wormsrv2/autoace/CHROMOSOMES";
+}
+
+
+print "opt_p = $opt_p, opt_q = $opt_q\ndatabase is $database, dump_dir is $dump_dir\n\n";
+exit(0);
 
 #############################
 # display help if required  #
@@ -226,41 +252,68 @@ chromosome_dump.pl arguments:
 
 =over 4
 
-=item *
+=item -d
 
-<-d> dumps one dna file for each of the six chromosomes.
+Dump dna files from specified database (see -p flag), dumps one file for each of the six chromosomes.
 
 =back
+
 
 =over 4
 
-=item *
+=item -c (optional)
 
-<-g> dumps one gff file for each of the six chromosomes
+Calculates composition statistics for any dna files that are generated.
+Use in combination with -d option (see above)
 
 =back
+
 
 =over 4
 
-=item *
+=item -g
 
-<-e> (optional) compresses any dna files using gzip (will remove 
-any existing files first).
-
-=back
-
-=item *
-                        
-<-h> (optional) compresses any gff files using gzip (will remove        
-any existing files first).      
+Dump gff files, dumps one file for each chromosome in the database.
 
 =back
+
 
 =over 4
 
-=item *
+=item -p <database>
 
-<-h> help page (what you are reading now).
+Specify database that you wish to dump dna/gff files from.  If -p is not specified
+the script will dump from /wormsrv2/autoace by default
+
+=back
+
+
+=over 4
+
+=item -q <destination directory for dump files>
+
+Specify destination of the dna and/or gff dump files generated from the -d or -g options.
+If -q is not specified, dump files will be written to /wormsrv2/autoace/CHROMOSOMES by default
+
+=back
+
+
+
+=over 4
+
+=item -e (optional)
+
+Compresses any dna files using gzip (will remove any existing files first).  The -c
+option will be run before this stage if -c is specified.
+
+=back
+
+
+=over 4
+
+=item -h (optional) 
+
+Compresses any gff files using gzip (will remove any existing files first).      
 
 =back
 
