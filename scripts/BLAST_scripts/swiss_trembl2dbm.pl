@@ -58,7 +58,7 @@ else {
 }
 
 while (my $line = <>) {
-    if ($line =~ /^AC\s+(\S+)/) {
+    if ($line =~ /^AC\s+(\S+)\;/) {
         $id = $1;
         $switch = 1;
     }
