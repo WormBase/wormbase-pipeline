@@ -2036,6 +2036,7 @@
                 Tag_sequence            UNIQUE Text     //tag sequence including the restriction site
                 Anchoring_enzyme        UNIQUE ?Motif   //NlaIII most commonly 
                 Tag_length              UNIQUE Int      //14 most commonly
+		Most_three_prime // added for tags which are the most 3' in a transcript
                 SAGE_transcript         ?SAGE_transcript XREF SAGE_tag #Evidence        //used to map tags to 'conceptual
 							 // transcripts', a tag could be mapped to multiple SAGE transcripts
                 Unambiguously_mapped //boolean; describes whether tag is unambiguously mapped to one SAGE transcript 
@@ -2076,6 +2077,7 @@
                  Strand                 UNIQUE Sense            //sense/antisense
                                                Antisense
                  SAGE_tag               ?SAGE_tag XREF SAGE_transcript #Evidence
+		 Most_three_prime // to match same tag in ?SAGE_tag
                  Unique_to_tag     //boolean; describes whether the transcript is unique to the corresponding tag; 
 				   // complements Unambiguously_mapped tag in SAGE_tag model for ease of querying
                  Corresponds_to Predicted_gene  ?CDS XREF SAGE_transcript #Evidence             // these connections are made
