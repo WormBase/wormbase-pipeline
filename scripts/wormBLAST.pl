@@ -188,7 +188,7 @@ if( $mail )
     close LETTER;
   
     my $name = "Wormpipe database distribution request";
-    my $maintainer = "ssg-isg\@sanger.ac.uk; ar2\@sanger.ac.uk";
+    my $maintainer = "ssg-isg\@sanger.ac.uk, sanger\@wormbase.org";     # mail to ssg and all Sanger WormBase
     print "mailing distibution request to $maintainer\n";
     &mail_maintainer($name,$maintainer,$letter);
   }
@@ -204,9 +204,10 @@ my $dbpass = "worms";
 
 my @results;
 my $query = "";
-my $worm01;  #worm01 Db handle
-my $wormprot;#wormprot Db handle
-#update mySQL database
+my $worm01;     #worm01 Db handle
+my $wormprot;   #wormprot Db handle
+
+# update mySQL database
 if( $update_mySQL )
   {
     print "Updating mysql databases\n";
