@@ -13,7 +13,7 @@
 # the Caltech database (citace)
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-12-01 11:54:28 $
+# Last updated on: $Date: 2003-12-02 13:26:01 $
 
 
 #################################################################################
@@ -147,35 +147,43 @@ sub unpack_stuff{
  # copy the tar.gz file from the ftp site #
  ##########################################
 
-  chdir $dbdir;
+
+  # make temp unpack directory
+  my $unpack_dir = "$dbdir"."/temp_unpack_dir";
+  system("/bin/mkdir $unpack_dir") && print LOG "Couldn't make temp unpack directory\n";
+
+  chdir $unpack_dir;
   my $dir = cwd();
   print LOGFILE "Move to directory: '$dir'\n";
+
 
   # copy database.tar.gz file & check size
   cp("$ftp/".$dbname."_$today.tar.gz", ".") or print LOG "ERROR: Couldn't copy file: $!\n";
 
-  my $match = &copy_check("$ftp/".$dbname."_$today.tar.gz","$dbdir/".$dbname."_$today.tar.gz");
-  print LOGFILE "Copy '".$dbname."_$today.tar.gz' to $dbdir successful\n" if ($match == 1); 
-  print LOGFILE "Copy '".$dbname."_$today.tar.gz' to $dbdir failed\n"     if ($match == 0);
+  my $match = &copy_check("${ftp}/${dbname}_${today}.tar.gz","${dbname}_${today}.tar.gz");
+  print LOGFILE "Copy '".$dbname."_$today.tar.gz' to $unpack_dir successful\n" if ($match == 1); 
+  print LOGFILE "Copy '".$dbname."_$today.tar.gz' to $unpack_dir failed\n"     if ($match == 0);
 
-  system ("/bin/gzip -d ".$dbname."_$today.tar.gz") && die "Couldn't run gzip command\n";
+  system ("/bin/gzip -d ${dbname}_${today}.tar.gz") && die "Couldn't run gzip command\n";
   print LOGFILE "uncompress file\n";
 
-  system ("/bin/tar -xvf ".$dbname."_$today.tar");
+  system ("/bin/tar -xvf ${dbname}_${today}.tar");
   print LOGFILE "untar file\n\n";
-
-  print LOGFILE "Database files to be loaded:\n";
 
 
   # add list of ace files to be loaded into array
-  open (LIST, "/bin/ls *ace |") || die "Couldn't pipe";
+  print LOGFILE "Database files to be loaded:\n";
+  open (LIST, "/bin/ls *.ace |") || die "Couldn't pipe";
   while (<LIST>) {
     chomp;
     push (@filenames,"$_");
     print LOGFILE "$_\n";
+    print "$_\n";
   }
   close LIST;
   print LOGFILE "\n\n";
+
+
 
 
   ###################################
@@ -217,7 +225,6 @@ sub unpack_stuff{
 
   mv("$dbdir/database/log.wrm", "$dbdir/database/log.old") or print LOG "Couldn't rename file: $!\n";
   unlink glob("$dbdir/database/*.wrm") or print LOG "ERROR: Couldn't run rm command: $!\n";
-  unlink "$dbdir/database/ACEDB.wrm" or print LOG "ERROR: Couldn't unlink file: $!\n";
 
   my $command="y\n";
   print LOGFILE "* Reinitdb: reinitializing the database ..\n";
@@ -248,16 +255,8 @@ END
   ###############################
   # Tidy up old ace files       #
   ###############################
-
-  system ("/bin/rm -f ".$dbname."_$today.tar") && die "Couldn't run rm command\n";
-
-  print LOGFILE "\ndelete tar file from current directory\n\n";
-
-  print LOGFILE "Database files to be removed:\n";
-  foreach $filename (@filenames) {
-    print LOGFILE "$filename\n";
-    unlink $filename;
-  }
+  unlink glob("$unpack_dir/*") or print LOG "ERROR: Couldn't remove $unpack_dir/*\n";
+  rmdir("$unpack_dir") or print LOG "ERROR: Could't remove $unpack_dir\n";
 
   $runtime = &runtime;
   print LOGFILE "\n$database build complete at $rundate $runtime\n";
@@ -267,8 +266,9 @@ END
   ###############################
   # Mail log to curator         #
   ###############################
-
-  &mail_maintainer("WormBase Report: unpack_$database",$maintainers,$logfile);
+  my $subject_line = "WormBase Report: unpack_$database";
+  $subject_line = "TEST BUILD: WormBase Report: unpack_$database" if ($test);  
+  &mail_maintainer("$subject_line",$maintainers,$logfile);
 
 }
 
@@ -292,22 +292,22 @@ sub DbWrite {
 # Errors and pod documentation
 
 sub error {
-    my $error = shift;
-    my $database = shift;
-    my $logfile = shift;
-    my $opt = shift;
-    # Error 1 - date directory ($opt) is of incorrect length 
-    if ($error == 1) {
-	print "The database.tar.gz file date for $database is incorrect\n";
-	print "'$opt' is not a correct (six figure) date format\n\n";
-	$runtime = `date +%H:%M:%S`; chomp $runtime;
-	print LOGFILE "The database.tar.gz file date is incorrect.\n";
-	print LOGFILE "'$opt' is not a correct (six figure) date format\n\n";
-	print LOGFILE "Exiting early at $rundate $runtime\n";
-	close LOGFILE;
-	&mail_maintainer("WormBase Report: unpack_db.pl",$maintainers,$logfile);
-    }
-    exit(1);
+  my $error = shift;
+  my $database = shift;
+  my $logfile = shift;
+  my $opt = shift;
+  # Error 1 - date directory ($opt) is of incorrect length 
+  if ($error == 1) {
+    print "The database.tar.gz file date for $database is incorrect\n";
+    print "'$opt' is not a correct (six figure) date format\n\n";
+    $runtime = `date +%H:%M:%S`; chomp $runtime;
+    print LOGFILE "The database.tar.gz file date is incorrect.\n";
+    print LOGFILE "'$opt' is not a correct (six figure) date format\n\n";
+    print LOGFILE "Exiting early at $rundate $runtime\n";
+    close LOGFILE;
+    &mail_maintainer("WormBase Report: unpack_db.pl",$maintainers,$logfile);
+  }
+  exit(1);
 }
 
 sub usage {
