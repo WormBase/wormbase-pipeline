@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2004-01-29 18:09:29 $
+# Last updated on: $Date: 2004-02-26 17:16:21 $
 
 
 use strict;
@@ -1359,7 +1359,6 @@ EOF
       my $cgc=$strain->Location;
       if ($strain->Genotype){
 	$genotype = $strain->Genotype(1);
-	print "$genotype\n" if ($strain eq "RB992");
 	$extract = $genotype;
 	$extract =~ s/\(|\)|\/|\+|;|\?|\{|\}|,|\=|\.$/ /g;
 	$extract =~ s/ I | II | III | IV | V | X / /g;
@@ -1367,7 +1366,6 @@ EOF
 	$extract =~ s/^\s|\w{3}-\s| f | A //g;
 	$extract =~ s/\s{1,}/ /g;
 	@genes=split(/ /,$extract);
-	print @genes, "\n" if ($strain eq "C52E12.2");
 	foreach (@genes){
 	  if($seqs{$_}){
 	    my $seq = $db->fetch('CDS', $_);
@@ -1432,13 +1430,18 @@ EOF
       foreach (@la){
 	if ($_ =~ /(Cb-\w{3,3}-\d+|Cr-\w{3,3}-\d+|\w{3,3}-\d+)\((\w+\d+)\)/){
 	  $locus = $1; $allele = $2; 
-	  
 	  # diff allele->locus link in geneace and allele->locus in strain genotype
 	  # if diff, the print error LOG
-	  if ((defined @{$allele_locus{$allele}}) && ("@{$allele_locus{$allele}}" ne "$locus")){
-  	    print LOG "ERROR: Strain $strain has $locus($allele) in genotype: ";
-	    print LOG "change each $locus to @{$allele_locus{$allele}}\n";
-          }
+	 
+	  if ( defined @{$allele_locus{$allele}} ){
+	    my @LOci = @{$allele_locus{$allele}}; 
+	    my %LOci;
+	    foreach (@LOci){$LOci{$_}++}; 
+	    if (!exists $LOci{$locus} ){
+	      print LOG "ERROR: Strain $strain has $locus($allele) in genotype: ";
+	      print LOG "change each $locus to @{$allele_locus{$allele}}\n";
+	    }
+	  }
 	}
       }
     }
