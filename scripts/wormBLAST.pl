@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2004-10-28 13:48:14 $
+# Last edited on: $Date: 2004-10-28 14:00:39 $
 
 
 use DBI;
@@ -101,8 +101,7 @@ my %worm_dna_processIDs = (
 			yeast         => 5,
 			gadfly        => 6,
 			slimswissprot => 7,
-			slimtrembl_1  => 8,
-			slimtrembl_2  => 9,
+			slimtrembl  => 8,
 		       );
 
 
@@ -113,8 +112,7 @@ my %wormprotprocessIds = (
 			  yeast         => 5,
 			  gadfly        => 6,
 			  slimswissprot => 7,
-			  slimtrembl_1  => 8,
-			  slimtrembl_2  => 9,
+			  slimtrembl  => 8,
 			 );
 
 #get new chromosomes
@@ -135,7 +133,7 @@ my $database_to_use = "$wormpipe_dir/BlastDB/databases_used_WS$WS_version";
 open (OLD_DB,"<$last_build_DBs") or die "cant find $last_build_DBs";
 while (<OLD_DB>) {
   chomp;
-  if( /(gadfly|yeast|slimswissprot|slimtrembl_1|slimtrembl_2|wormpep|ipi_human|brigpep)/ ) {
+  if( /(gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep)/ ) {
     $currentDBs{$1} = $_;
   }
 }
@@ -148,7 +146,7 @@ if ( $update_databases ){
   while (<DIR>) { 
     #  print;
     chomp;
-    if( /\/(gadfly|yeast|slimswissprot|slimtrembl_1|slimtrembl_2|wormpep|ipi_human|brigpep)/ ) {
+    if( /\/(gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep)/ ) {
       my $whole_file = "$1"."$'";  #match + stuff after match.
       if( $1 eq "wormpep" ) {
 	print "updating wormpep to version $WS_version anyway - make sure the data is there !\nCopying over will take care of  formatting it\n";
@@ -714,14 +712,14 @@ sub get_updated_database_list
     #get database file info from databases_used_WS(xx-1) (should have been updated by script if databases changed
     while (<OLD_DB>) {
       chomp;
-      if( /(ensembl|gadfly|yeast|slimswissprot|slimtrembl_1|slimtrembl_2|wormpep|ipi_human|brigpep)/ ) {
+      if( /(ensembl|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep)/ ) {
 	$prevDBs{$1} = $_;
       }
     }  
     open (CURR_DB,"<$database_to_use") or die "cant find $database_to_use";
     while (<CURR_DB>) {
       chomp;
-      if( /(ensembl|gadfly|yeast|slimswissprot|slimtrembl_1|slimtrembl_2|wormpep|ipi_human|brigpep)/ ) {
+      if( /(ensembl|gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep)/ ) {
 	$currentDBs{$1} = $_;
       }
     }
