@@ -5,7 +5,7 @@
 # written by Anthony Rogers (ar2@sanger.ac.uk)
 #
 # Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2003-08-11 09:13:46 $
+# Last updated on: $Date: 2003-08-11 10:11:42 $
 
 
 use strict;
@@ -25,7 +25,7 @@ GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
 	    "geneace=s"  => \$geneace,
 	    "camace"     => \$camace,
-	    "update"     => \$camace
+	    "update"     => \$update
     );
 
 
