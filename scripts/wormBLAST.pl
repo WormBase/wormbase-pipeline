@@ -4,8 +4,8 @@ use DBI;
 use strict;
 my $wormpipe_dir = glob("~wormpipe");
 #use libs "$wormpipe_dir/wormbase/scripts/"
-use lib "/wormsrv2/scripts/";
-use Wormbase;
+#use lib "/wormsrv2/scripts/";
+#use Wormbase;
 use Getopt::Long;
 
 #######################################
@@ -70,11 +70,13 @@ my %wormprotprocessIds = ( wormpep => 11,
 
 if( $chromosomes ) {
   #get new chromosomes
+  print "Updating chromosomes\n";
   `$scripts_dir/copy_files_to_acari.pl -c`;
 }
 
 if( $wormpep ) {
   #get new wormpep
+  print "Updating wormpep . . \n";
   `$scripts_dir/copy_files_to_acari.pl -w`;
 }
 
@@ -97,6 +99,7 @@ close OLD_DB;
 #check for updated Databases
 if ( $update_databases )
   {
+    print "Updating databases \n";
     open (DIR,"ls -l $wormpipe_dir/BlastDB/*.pep |") or die "readir\n";
     while (<DIR>) { 
       #  print;
@@ -105,13 +108,14 @@ if ( $update_databases )
 	my $whole_file = "$1"."$'";  #match + stuff after match.
 	if( "$whole_file" ne "$currentDBs{$1}" ) {
 	  #make blastable database
-	  `/usr/local/ensembl/bin/setdb /$whole_file`;
+	  print "\tmaking blastable database for $1\n";
+	   `/usr/local/pubseq/bin/setdb $wormpipe_dir/BlastDB/$whole_file`;
 	  push( @updated_DBs,$1 );
 	  #change hash entry ready to rewrite external_dbs
 	  $currentDBs{$1} = "$whole_file";
 	 	}
 	else {
-	  print "$1 database unchanged $whole_file\n";
+	  print "\t$1 database unchanged $whole_file\n";
 	}
       }
     }
@@ -131,34 +135,35 @@ if( $mail )
   {
     &get_updated_database_list;
     
-  #generate distribution request based on updated databases
-  my $letter = "$wormpipe_dir/distribute_on_farm_mail";
-  open (LETTER,">$letter");
-  print LETTER "This is a script generated email from the wormpipe Blast analysis pipeline.\nAny problems should be addessed to worm\@sanger.ac.uk.\n
+    #generate distribution request based on updated databases
+    my $letter = "$wormpipe_dir/distribute_on_farm_mail";
+    open (LETTER,">$letter");
+    print LETTER "This is a script generated email from the wormpipe Blast analysis pipeline.\nAny problems should be addessed to worm\@sanger.ac.uk.\n
 =====================================================
 \n";
-  print LETTER "The following can be removed from /data/blastdb/Worms.\n\n";
-  foreach (@updated_DBs){
-    print LETTER "$_*\n";
-  }
-  #print LETTER "wormpep*\n";
-  print LETTER "CHROMOSOME_*.dna\n";
-
-  print LETTER "-------------------------------------------------------\n\nand replaced with the following files from ~wormpipe/BlastDB/\n\n";
-  foreach (@updated_DBs){
-    print LETTER "$currentDBs{$_}\n$currentDBs{$_}.ahd\n$currentDBs{$_}.atb\n$currentDBs{$_}.bsq\n\n";
-  }
+    print LETTER "The following can be removed from /data/blastdb/Worms.\n\n";
+    foreach (@updated_DBs){
+      print LETTER "$_*\n";
+    }
+    #print LETTER "wormpep*\n";
+    print LETTER "CHROMOSOME_*.dna\n";
+    
+    print LETTER "-------------------------------------------------------\n\nand replaced with the following files from ~wormpipe/BlastDB/\n\n";
+    foreach (@updated_DBs){
+      print LETTER "$currentDBs{$_}\n$currentDBs{$_}.ahd\n$currentDBs{$_}.atb\n$currentDBs{$_}.bsq\n\n";
+    }
+    
+    #print LETTER "wormpep$WPver.pep\nwormpep$WPver.pep.ahd\nwormpep$WPver.pep.atb\nwormpep$WPver.pep.bsq\n\n";
+    print LETTER "CHROMOSOME_I.dna\nCHROMOSOME_II.dna\nCHROMOSOME_III.dna\nCHROMOSOME_IV.dna\nCHROMOSOME_V.dna\nCHROMOSOME_X.dna\n\n";
+    
+    print LETTER "-------------------------------------------------------\n\n";
+    print LETTER "Thanks\n\n ________ END ________";
+    close LETTER;
   
-  #print LETTER "wormpep$WPver.pep\nwormpep$WPver.pep.ahd\nwormpep$WPver.pep.atb\nwormpep$WPver.pep.bsq\n\n";
-  print LETTER "CHROMOSOME_I.dna\nCHROMOSOME_II.dna\nCHROMOSOME_III.dna\nCHROMOSOME_IV.dna\nCHROMOSOME_V.dna\nCHROMOSOME_X.dna\n\n";
-  
-  print LETTER "-------------------------------------------------------\n\n";
-  print LETTER "Thanks\n\n ________ END ________";
-  close LETTER;
-  
-  my $name = "Wormpipe database distribution request";
-  my $maintainer = "ar2\@sanger.ac.uk";
-  &mail_maintainer($name,$maintainer,$letter);
+    my $name = "Wormpipe database distribution request";
+    my $maintainer = "ar2\@sanger.ac.uk";
+    print "mailing distibution request to $maintainer\n";
+    &mail_maintainer($name,$maintainer,$letter);
 }
 
 
@@ -177,6 +182,7 @@ my $wormprot;#wormprot Db handle
 #update mySQL database
 if( $update_mySQL )
   {
+    print "Updating mysql databases\n";
     #make worm01 connection
      $worm01 = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
       || die "cannot connect to db, $DBI::errstr";
@@ -186,6 +192,8 @@ if( $update_mySQL )
      my $last_clone;
      my $update;
      open (NEW_DB,"<$database_to_use") or die "cant read updated $database_to_use during update_mySQL";
+    
+    #this bits logic seems wrong - but it works so I'l fix it later - ar2
      while(<NEW_DB>){
        if( /last_clone\s(\w+)/ ){
 	 $last_clone = $1;
@@ -207,9 +215,11 @@ if( $update_mySQL )
      print "last_clone = $last_clone\n";
      
      #Make a concatenation of all six agp files from the last release to ~/Elegans  e.g.
-     `cat /wormsrv2/autoace/CHROMOSOMES/*.agp > $wormpipe_dir/Elegans/WS$WPver.agp`;
+    print "\tconcatenating agp files\n";
+    `cat /wormsrv2/autoace/CHROMOSOMES/*.agp > $wormpipe_dir/Elegans/WS$WPver.agp`;
      
      #load information about any new clones
+    print "\tloading information about any new clones\n";
     `$scripts_dir/agp2ensembl.pl -dbname worm01 -dbhost ecs1f -dbuser wormadmin -dbpass worms -agp $wormpipe_dir/Elegans/WS$WPver.agp -write -v -strict`;
     
     #check that the number of clones in the clone table equals the number of contigs and dna objects
@@ -226,16 +236,20 @@ if( $update_mySQL )
     @results = &single_line_query( $query, $worm01);
     $dna_count = $results[0];
     
+    print "checking clone contig and dna counts . . .";
     if( ($clone_count != $contig_count) or ($contig_count != $dna_count ) ){
-      print "the number of clones, contigs and DNAs is inconsistant\n
+      print "\nthe number of clones, contigs and DNAs is inconsistant\n
 clones = $clone_count\ncontigs = $contig_count\ndna = $dna_count\n";
       exit(0);
+    }
+    else {
+      print "OK\n";
     }
     
     $query = "select * from clone order by internal_id desc limit 1";
     @results = &single_line_query( $query, $worm01 );
     my $new_last_clone = $results[0];
-    print "new_last_clone = $new_last_clone\n";
+    print "\tnew_last_clone = $new_last_clone\n";
 
     if( $last_clone != $new_last_clone )
       {
@@ -246,10 +260,13 @@ clones = $clone_count\ncontigs = $contig_count\ndna = $dna_count\n";
 	
       }
      $worm01->disconnect;
+
+    print "\tchecking for duplicate clones\n";
     `$scripts_dir/find_duplicate_clones.pl`;
 
 
      #add new peptides to MySQL database
+    print "\n\nAdding new peptides to wormprot\n";
      #make wormprot connection
      $dbname = "wormprot";
      $wormprot = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
@@ -258,16 +275,23 @@ clones = $clone_count\ncontigs = $contig_count\ndna = $dna_count\n";
      $query = "select * from protein order by proteinId desc limit 1";
      @results = &single_line_query( $query, $wormprot );
      my $old_topCE = $results[0];
-     `$scripts_dir/worm_pipeline.pl -f /wormsrv2/WORMPEP/wormpep$WPver/new_entries.WS$WPver`;
-     
+
+    if (-e "/wormsrv2/WORMPEP/wormpep$WPver/new_entries.WS$WPver"){
+      `$scripts_dir/worm_pipeline.pl -f /wormsrv2/WORMPEP/wormpep$WPver/new_entries.WS$WPver`;
+    }
+    else {
+      die "new_entries.WS$WPver does not exist! \nThis should have been made in autoace_minder -buildpep\n";
+    }
+
+
      #check for updated ids
      @results = &single_line_query( $query, $wormprot );
      my $new_topCE = $results[0];
      if( "$old_topCE" eq "$new_topCE" ) {
-       print "NO new peptides were added to the wormprot mysql database\n";
+       print "\tNO new peptides were added to the wormprot mysql database\n";
      }
      else {
-       print "new highest proteinId is $new_topCE (old was $old_topCE )\n";
+       print "\tnew highest proteinId is $new_topCE (old was $old_topCE )\n";
      }
 
      $wormprot->disconnect;
@@ -278,7 +302,8 @@ clones = $clone_count\ncontigs = $contig_count\ndna = $dna_count\n";
 $dbuser = "wormadmin";
 $dbpass = "worms";
 if( $setup_mySQL )
-  {    
+  {  
+    print "Setting up mysql ready for Blast run\n";
     #make wormprot connection
     $dbname = "wormprot";
     my $wormprot =  DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
@@ -453,6 +478,33 @@ sub get_updated_database_list
 	push( @updated_DBs, "$_");
       }
     }
+  }
+
+
+sub get_wormbase_version {
+
+    my $WS_version = `grep "NAME WS" /wormsrv2/autoace/wspec/database.wrm`;
+    chomp($WS_version);
+    $WS_version =~ s/.*WS//;    
+    return($WS_version);
+}
+
+sub mail_maintainer {
+    my ($name,$maintainer,$logfile) = @_;
+    $maintainer = "dl1\@sanger.ac.uk, ar2\@sanger.ac.uk, ck1\@sanger.ac.uk, krb\@sanger.ac.uk" if ($maintainer eq "All");
+    open (OUTLOG,  "|/bin/mailx -s \"$name\" $maintainer ");
+    if ( $logfile )
+      {
+	open (READLOG, "<$logfile");
+	while (<READLOG>) 
+	  { print OUTLOG "$_";
+	  }
+	close READLOG;
+      }
+    else {
+      print OUTLOG "$name";
+    }
+    close OUTLOG;
   }
 
 __END__
