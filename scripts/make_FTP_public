@@ -48,6 +48,7 @@ my $old_release        = "";    # [Text] Internally generated release number ($r
 my $old_release_number = "";    # [Int]  Internally generated release number 
 my $debug              = "";    #        on/off flag for verbose mode
 my $clean              = "";    #        on/off flag for removing old WS directories from the FTP site
+my $wormrna_release = get_wormrna_version();
 
 GetOptions (
             "source=s"       => \$sourcedir,
@@ -90,106 +91,102 @@ if ($debug) {
 system "mkdir $targetdir/$release" unless -e "$targetdir/$release";
 print "make a new WS release directory : '$targetdir/$release'\n" if ($debug);
 
- # copy the WS release files across and check on the size
- # The FTP disk tends to be unstable
+
+# copy the WS release files across and check on the size
+# The FTP disk tends to be unstable
 
 opendir (RELEASE,"$sourcedir/release") or die ("Could not open directory $sourcedir/release");
 while (defined($filename = readdir(RELEASE))) {
- if (($filename eq ".")||($filename eq "..")) { next;}
- if (($filename =~ /letter/)||($filename =~ /dbcomp/)) { next;}
- system "cp $sourcedir/release/$filename $targetdir/$release/$filename";
- $O_SIZE = (stat("$sourcedir/release/$filename"))[7];
- $N_SIZE = (stat("$targetdir/$release/$filename"))[7];
- if ($O_SIZE != $N_SIZE) {
-   print "*Error - file $filename not transferred regularly - please check\n";
-   die();
- } else {
-   print "Copied filename: $filename SRC: $O_SIZE TGT: $N_SIZE\n" if ($debug);
- }
+  if (($filename eq ".")||($filename eq "..")) { next;}
+  if (($filename =~ /letter/)||($filename =~ /dbcomp/)) { next;}
+  system "cp $sourcedir/release/$filename $targetdir/$release/$filename";
+  $O_SIZE = (stat("$sourcedir/release/$filename"))[7];
+  $N_SIZE = (stat("$targetdir/$release/$filename"))[7];
+  if ($O_SIZE != $N_SIZE) {
+    print "*Error - file $filename not transferred regularly - please check\n";
+    die();
+  } else {
+    print "Copied filename: $filename SRC: $O_SIZE TGT: $N_SIZE\n" if ($debug);
+  }
 }
 closedir RELEASE;
 print "copied the release directory to FTP site\n" if ($debug);
 
- # make a new /CHROMOSOMES directory for the chromosome DNA/GFF
+
+# make a new /CHROMOSOMES directory for the chromosome DNA/GFF
 
 system "mkdir $targetdir/$release/CHROMOSOMES" unless -e "$targetdir/$release/CHROMOSOMES";
 print "make a new CHROMOSOMES directory : '$targetdir/$release/CHROMOSOMES'\n" if ($debug);
 
- # copy the DNA/GFF files across
+
+# copy the DNA,GFF, and agp files across
 
 opendir (DNAGFF,"$sourcedir/CHROMOSOMES") or die ("Could not open directory $sourcedir/CHROMOSOMES");
 while (defined($filename = readdir(DNAGFF))) {
- if (($filename eq ".")||($filename eq "..")) { next;}
- system "cp $sourcedir/CHROMOSOMES/$filename $targetdir/$release/CHROMOSOMES/$filename";
- $O_SIZE = (stat("$sourcedir/CHROMOSOMES/$filename"))[7];
- $N_SIZE = (stat("$targetdir/$release/CHROMOSOMES/$filename"))[7];
- if ($O_SIZE != $N_SIZE) {
-   print "*Error - file $filename not transferred regularly - please check\n";
-   die();
- } else {
-   print "Copied filename: $filename SRC: $O_SIZE TGT: $N_SIZE\n" if ($debug);
- }
+  if (($filename eq ".")||($filename eq "..")) { next;}
+  system "cp $sourcedir/CHROMOSOMES/$filename $targetdir/$release/CHROMOSOMES/$filename";
+  $O_SIZE = (stat("$sourcedir/CHROMOSOMES/$filename"))[7];
+  $N_SIZE = (stat("$targetdir/$release/CHROMOSOMES/$filename"))[7];
+  if ($O_SIZE != $N_SIZE) {
+    print "*Error - file $filename not transferred regularly - please check\n";
+    die();
+  } else {
+    print "Copied filename: $filename SRC: $O_SIZE TGT: $N_SIZE\n" if ($debug);
+  }
 }
 closedir DNAGFF;
 print "moved the contents of the CHROMOSOMES directory\n" if ($debug);
 
- # make a new wspec directory
+
+# make a new wspec directory and copy the wspec/* files across
 
 system "mkdir $targetdir/$release/wspec" unless -e "$targetdir/$release/wspec";
 print "make a new wspec directory : '$targetdir/$release/wspec'\n" if ($debug);
-
- # copy the wspec/* files across
-
 system "cp $sourcedir/wspec/* $targetdir/$release/wspec/";
 print "move the contents of the wspec directory\n" if ($debug);
  
- # make a new pictures directory
 
-#system "mkdir $targetdir/$release/pictures" unless -e "$targetdir/$release/pictures";
-#print "make a new pictures directory : '$targetdir/$release/pictures'\n" if ($debug);
+# make a new pictures directory
+
 system("cp -r /nfs/disk67/sylvia/geneace/pictures/ $targetdir/$release/");
 print "copying picture files from ~sylvia/geneace to $targetdir/$release/pictures\n" if ($debug);
 
- # make a tar gzip file of pictures
 
-#system "/bin/tar -cf $targetdir/$release/pictures/pictures.tar $sourcedir/pictures";
-#system "/bin/gzip $targetdir/$release/pictures/pictures.tar";
-#print "Archived the pictures in $targetdir/$release/pictures/pictures.tar.gz\n";
-
- # make a new additional_files directory
-
-system "mkdir $targetdir/$release/additional_files" unless -e "$targetdir/$release/additional_files";
-print "make a new additional_files directory : '$targetdir/$release/additional_files'\n" if ($debug);
-
- # copy the additional_files across
-
-# SOURCE :  Genes_with_ESTs
-#           Genes_with_ESTs.PREV
-#           oligo.ace
-#           All_Genome_Seqs.gff.Z
-
- # copy some miscellaneous files across
+# copy some miscellaneous files across
 
 system "cp /wormsrv2/autoace_config/INSTALL $targetdir/$release/";
 system "cp /wormsrv2/autoace_config/PICTURES.doc $targetdir/$release/";
 system "cp /wormsrv2/autoace/COMPARE/WS${old_WS_release}-${release}.dbcomp $targetdir/$release/";
 print "copying some miscellaneous file across\n" if ($debug);
 
- # tar up the latest wormpep release and copy across
+
+# tar up the latest wormpep release and copy across
+
 system ("/wormsrv2/scripts/tar_wormpep $wormpep");
-system ("cp /wormsrv2/WORMPEP/wormpep${wormpep}/wormpep${wormpep}.tar.gz $targetdir/$release");
+system ("mv /wormsrv2/WORMPEP/wormpep${wormpep}/wormpep${wormpep}.tar.gz $targetdir/$release");
 print "running tar_wormpep and copying across to ftp site\n" if ($debug);
 
- # delete the old symbolic link and make the new one
+
+# Create wormpep FTP site
+
+system "/wormsrv2/scripts/make_FTP_wormpep -r $wormpep";
+print "make the wormpep FTP release for wormpep${wormpep}\n" if ($debug);
+
+
+# tar, zip, and copy WormRNA files across from wormsrv2/WORMRNA
+my $dest = "/wormsrv2/WORMRNA/current_WormRNA";
+system "/bin/tar -cf $targetdir/$release/wormrna${wormrna_release}.tar $dest/README $dest/wormrna${wormrna_release}.dna";
+system "/bin/gzip $targetdir/$release/wormrna${wormrna_release}.tar";
+print "make the FTP files for WormRNA${wormrna_release}\n" if ($debug);
+
+# delete the old symbolic link and make the new one
 
 system "rm -f $targetdir/current_release";
 system "cd $targetdir; ln -s $release current_release";
 print "deleted the old sym_link and create the new one\n" if ($debug);
 
- # deal with the wormpep side of things
 
-system "/wormsrv2/scripts/make_FTP_wormpep -r $wormpep";
-print "make the wormpep FTP release for wormpep${wormpep}\n" if ($debug);
+
 
  # delete the old WS release version
 
