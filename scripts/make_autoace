@@ -257,7 +257,8 @@ if ($opt_r) {
 #    &setdate();
 #    $now = `date +%H:%M:%S`; chomp $now;
 #    print LOGFILE "* New display date set at $now\n\n";
-#}
+
+}
 
    ################################################
    # Dump DNA and gff (CHROMOSOME) files          #
