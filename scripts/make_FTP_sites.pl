@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-08-03 16:14:59 $
+# Last updated on: $Date: 2004-08-13 16:00:39 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -48,6 +48,7 @@ my $nowormpep; # don't copy wormpep files
 my $nogenes;   # don't copy confirmed genes
 my $noyk;      # don't copy yk2orf file
 my $nogeneIDs; # don't copy file of gene IDs
+my $nopcr;     # don't copy file of PCR products
 
 GetOptions (
 	    "help"       => \$help,
@@ -78,21 +79,23 @@ if ($debug) {
 
 &create_log_file;
 
-&copy_release_files unless ($norelease);    # make a new directory for the WS release and copy across release files
+#&copy_release_files unless ($norelease);    # make a new directory for the WS release and copy across release files
 
-&copy_chromosome_files unless ($nochroms); # make a new /CHROMOSOMES directory for the DNA, GFF, and agp files and copy files across
+#&copy_chromosome_files unless ($nochroms);  # make a new /CHROMOSOMES directory for the DNA, GFF, and agp files and copy files across
 
-&copy_misc_files unless ($nomisc);       # copy across models.wrm and other misc. files, e.g. wormRNA
+#&copy_misc_files unless ($nomisc);          # copy across models.wrm and other misc. files, e.g. wormRNA
 
-&copy_wormpep_files unless ($nowormpep);    # copied from ~wormpub/WORMPEP
+#&copy_wormpep_files unless ($nowormpep);    # copied from ~wormpub/WORMPEP
 
-&extract_confirmed_genes unless ($nogenes); # make file of confirmed genes from autoace and copy across
+#&extract_confirmed_genes unless ($nogenes); # make file of confirmed genes from autoace and copy across
 
-&make_yk2ORF_list unless ($noyk);       # make file of yk EST -> ORF connections and add to FTP site
+#&make_yk2ORF_list unless ($noyk);           # make file of yk EST -> ORF connections and add to FTP site
 
-&make_geneID_list unless ($nogeneIDs);       # make file of WBGene IDs -> CGC name & Sequence name and add to FTP site
+#&make_geneID_list unless ($nogeneIDs);      # make file of WBGene IDs -> CGC name & Sequence name and add to FTP site
 
-&copy_homol_data;        # copies best blast hits files across
+&make_pcr_list unless ($nopcr);             # make file of PCR products -> WBGene IDs, CDS, CGC name
+
+#&copy_homol_data;                           # copies best blast hits files across
 
 
 
@@ -379,6 +382,76 @@ sub make_geneID_list {
       }
   }
   close(TACE);
+  close(OUT);
+
+  &run_command("/bin/gzip $out");
+  
+  print LOG &runtime, ": Finished making list\n\n";
+}
+
+
+################################################################################
+# make list of PCR_product connections to CDS and Gene ID plus CGC name
+################################################################################
+
+sub make_pcr_list {
+
+  print LOG &runtime, ": making PCR product 2 gene list list\n";
+
+  my $tace    = &tace;
+  my $command = "Table-maker -p /wormsrv2/autoace/wquery/pcr_product2gene.def\nquit\n";
+  my $dir     = "/wormsrv2/autoace";
+  my $out     = "$targetdir/$release/pcr_product2gene.$release";
+
+  # hashes needed because one pcr product may hit two or more genes
+  my %pcr2gene;
+  my %gene2sequence;
+  my %gene2cgc;
+
+  open (TACE, "echo '$command' | $tace $dir | ") || croak "Couldn't access $dir\n";  
+  while (<TACE>){
+    if (m/^\"/){
+      s/\"//g;
+      chomp;
+      # split the line into various fields
+      my ($pcr,$gene,$cgc,$sequence) = split(/\t/, $_) ;
+
+      # fill hashes and arrays, allow for multiple genes per PCR product
+      $pcr2gene{$pcr}      .= "$gene,";
+      ($gene2cgc{$gene} = $cgc) if($cgc);
+      $gene2sequence{$gene} = "$sequence";
+    }
+  }
+  close(TACE);
+
+
+
+# Now write output, cycling through list of pcr products in %pcr2gene
+
+  open (OUT, ">$out") || croak "Couldn't open $out\n";
+
+  foreach my $pcr (keys %pcr2gene){
+    my @genes = split(/,/,$pcr2gene{$pcr});
+    my $counter =0;
+    print "$pcr";
+    foreach my $gene (@genes){
+
+      # remove next element if it is the same gene ID and start loop again
+      if (defined($genes[$counter+1]) && $genes[$counter+1] eq $genes[$counter]){
+	splice(@genes, $counter+1,1);
+	redo;
+      }
+      $counter++;
+      print "\t$gene";
+      print "($gene2cgc{$gene})" if (exists($gene2cgc{$gene}));
+      
+      # now print sequence name
+      print ",$gene2sequence{$gene}";
+      
+    }
+    print "\n";
+  }
+
   close(OUT);
 
   &run_command("/bin/gzip $out");
