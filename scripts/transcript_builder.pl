@@ -55,6 +55,8 @@ $gff_file = $gff if $gff;
 my @chromosomes = qw(I II III IV V X);
 foreach my $chrom ( @chromosomes ) {
 
+  $chrom = "CHROMOSOME_".$chrom;
+
   #Make sure these are empty
   %genes_exons = ();
   %genes_span= ();
