@@ -4,7 +4,7 @@
 
 # by ag3 [991221]
 #
-# Last updated on: $Date: 2002-12-09 16:05:04 $
+# Last updated on: $Date: 2002-12-09 16:23:19 $
 # Last updated by: $Author: ck1 $
 
 
@@ -98,7 +98,7 @@ if ($srcdir =~ /^\~/) {
   $s_dir=$srcdir;
   print LOGFILE "SOURCE DIR: $s_dir\n";
 }
-if (!-d $s_dir) {\&SendMail ("ERROR: Could not found directory $s_dir\n");}
+if (!-d $s_dir) {&SendMail ("ERROR: Could not found directory $s_dir\n");}
 if ($enddir =~ /^\~/) {
   $e_dir = glob ($enddir);
   print LOGFILE "TARGET DIR: $e_dir\n\n";
@@ -148,7 +148,7 @@ my @OLDDATABASE;
 
 if ($DB==1) {
   if (!-d $e_dir){ 
-    mkdir($e_dir,07777) or \&SendMail("ERROR 1: Could not mkdir $e_dir: $!\n");
+    mkdir($e_dir,07777) or &SendMail("ERROR 1: Could not mkdir $e_dir: $!\n");
     print LOGFILE "CREATED TARGET DIR: $e_dir\n";
   } else {
     if (-d $new_subdir) {
@@ -173,7 +173,7 @@ if ((length($backup)==0)&&(-d $bck_subdir)) {
 }
 
 my $body = "SUCCESS: Your transferdb process $$ has ended succesfully.\n";
-\&SendMail($body);
+&SendMail($body);
 
 exit 0;
 
@@ -190,7 +190,7 @@ sub backup_db {
   if (-d $file) {
     $file=~s/$database/$bck_subdir/;
     if (!-d $file){
-      mkdir($file,07777) or \&SendMail ("Could not mkdir backup directory $file: $!");
+      mkdir($file,07777) or &SendMail ("Could not mkdir backup directory $file: $!");
       print LOGFILE "CREATED backup directory $file\n";
     }
   } else {
@@ -223,13 +223,13 @@ sub process_file {
   my $filename=$_;
   my $s_subdir="$File::Find::dir";
   if (!-d $s_subdir) {
-    \&SendMail ("ERROR: Could not read $s_subdir\n");
+    &SendMail ("ERROR: Could not read $s_subdir\n");
   }
   $s_subdir=~s/$s_dir//;
   my $s_file="$File::Find::name";
   my $e_subdir="$e_dir"."$s_subdir";
   if (!-d $e_subdir){
-    mkdir($e_subdir,07777) or \&SendMail ("ERROR: Could not mkdir subdir $e_subdir: $!\n");
+    mkdir($e_subdir,07777) or &SendMail ("ERROR: Could not mkdir subdir $e_subdir: $!\n");
     print LOGFILE "CREATED SUBDIR $e_subdir\n";
   }
   my $e_file="$e_subdir"."/"."$filename";
