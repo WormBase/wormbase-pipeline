@@ -901,12 +901,12 @@
                 source_organism UNIQUE Text
 		gene_from_name   
 
-#Splice_confirmation cDNA
-                     EST
+#Splice_confirmation cDNA ?Sequence // ?Sequence link to flag which cDNA is confirming
+                     EST ?Sequence  // or falsifying the intron in question, added [031121 krb]
 		     Homology
-		     UTR	
-		     False
-		     Inconsistent
+		     UTR ?Sequence
+		     False ?Sequence 
+		     Inconsistent ?Sequence
 		 
 
 // Homol and Feature info
