@@ -268,7 +268,7 @@ sub bless_prediction
     my $obj = $db->fetch(CDS => "$gene");
     return &error_warning("Invalid CDS","$gene is not a valid CDS name") unless $obj;
     my $method = $obj->Method->name;
-    if ( ($method ne "Genefinder") or ($method eq "Twinscan") ) {
+    if ( ($method ne "Genefinder") or ($method eq "twinscan") ) {
       &error_warning("Wrong method","I only bless Genefinder or Twinscan predictions, my child");
       next;
     }
@@ -323,7 +323,7 @@ sub bless_prediction
     print BLS "Remark \"[$date $user] Autoconversion from $gene\"\n";
 
     close BLS;
-    #system("xremote -remote 'parse $output'");
+    system("xremote -remote 'parse $output'");
 
     &confirm_message("Made new gene","Made new CDS $new_gene from $gene");
     &mail_geneace($new_gene);
