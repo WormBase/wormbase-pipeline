@@ -5,7 +5,7 @@
 # by Anthony Rogers
 #
 # Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2004-05-19 13:26:16 $
+# Last updated on: $Date: 2004-05-20 09:36:37 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -36,8 +36,9 @@ my $CDS_list;       # Hash: %CDSlist             Key: CDS name                  
 my $clone2seq;      # Hash: %clone2seq           Key: Genomic_canbonical                Value: DNA sequence (lower case)
 my $genes2lab;      # Hash: %worm_gene2lab       Key: Gene (CDS|Transcript|Pseudogene)  Value: From_laboratory (HX, RW, DRW)
 my $worm_gene2cgc;  # Hash: %worm_gene2cgc_name  Key: CGC name                          Value: Gene ID, plus molecular name (e.g. AH6.1), also a hash of cgc_name2gene
-my $estdata;        # Hash: %NDBaccession2est    Key: EST name (WormBase)               Value: GenBank/EMBL accession
+my $estdata;        # Hash: %NDBaccession2est    Key: GenBank/EMBL accession            Value: EST name (WormBase)  
                     # Hash: %estorientation      Key: EST name (WormBase)               Value: EST_5 = 5, EST_3 = 3
+my $feature_list;   # Hash: %Featurelist         Key: EST name (WormBase)               Value: Feature name (WormBase)
 
 
 GetOptions("build"         => \$build,
@@ -49,6 +50,7 @@ GetOptions("build"         => \$build,
 	   "genes2lab"     => \$genes2lab,
 	   "worm_gene2cgc" => \$worm_gene2cgc,
 	   "est"           => \$estdata,
+	   "feature"       => \$feature_list,
 	   "all"           => \$all,
 	   "test"          => \$test
 	   );
@@ -91,8 +93,8 @@ else {
 &write_clones2seq      if ($clone2seq || $all);
 &write_genes2lab       if ($genes2lab || $all);
 &write_worm_gene2cgc   if ($worm_gene2cgc);
-&write_EST             if ($estdata);
-
+&write_EST             if ($estdata || $all);
+&write_Feature         if ($feature_list || $all);
 # hasta luego
 
 exit(0);
@@ -234,6 +236,37 @@ sub write_CDSlist  {
 }
 ########################################################################################################
 
+
+sub write_Feature  {   
+
+  my %Featurelist;
+  my $EST;
+  my $feature;
+
+  # connect to AceDB using TableMaker,
+  my $command="Table-maker -p $wquery_dir/EST2feature.def\nquit\n";
+  
+  open (TACE, "echo '$command' | $tace $ace_dir |");
+  while (<TACE>) {
+      print;
+      chomp;
+      next if ($_ eq "");
+      last if (/\/\//);
+      if (/^\"(\S+)\"\s+\"(\S+)\"/) {
+	  $Featurelist{$1} = $2;
+	  print "assigned $Featurelist{$1} to $1\n" if ($test);
+      }
+  }
+  close TACE;
+  
+  #now dump data to file
+  open (CDS, ">$data_dir/Featurelist.dat") or die "Can't open file: $data_dir/Featurelist.dat";
+  print CDS Data::Dumper->Dump([\%Featurelist]);
+  close CDS;
+}
+
+
+########################################################################################################
 
 sub write_EST  {   
 
