@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.0 -w
+#!/usr/local/bin/perl5.6.1 -w
 #
 # find_utrs.pl
 #
@@ -6,10 +6,13 @@
 #
 # Ashwin Hajarnavis ah3@sanger.ac.uk  August 2002
 #
-# Last updated by: $Author: dl1 $                 
-# Last updated on: $Date: 2002-09-27 10:28:19 $   
+# Last updated by: $Author: krb $                 
+# Last updated on: $Date: 2002-11-19 14:02:07 $   
+
 
 use strict;
+use lib "/wormsrv2/scripts/";
+use Wormbase;
 use Getopt::Std;
 use Data::Dumper;
 use vars qw($opt_d $opt_r);
@@ -46,7 +49,8 @@ elsif ($opt_d eq "autoace") {
     $gff_dir = "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS";
 }
 
-my $tace      = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
+my $tace      = &tace;
+
 my $query_def = "/nfs/team71/phd/ah3/UTR_DATA/Find_UTRs/cDNA_CDS_EST5_EST3_METHOD.def";
 my $genes     = "genes.gff";
 my $est_file  = "BLAT_EST_BEST.gff";
