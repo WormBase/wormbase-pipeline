@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.34 2002-03-04 16:37:26 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.35 2002-03-04 17:19:19 dl1 Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -733,14 +733,14 @@
 	       S_child Homol_data ?Homol_data XREF Sequence UNIQUE Int UNIQUE Int #SMap_info
 		       Feature_data ?Feature_data XREF Sequence UNIQUE Int UNIQUE Int #SMap_info
 		       Genomic_non_canonical ?Sequence XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info
-                       PCR_product ?PCR_product XREF Canonical_parent Int UNIQUE Int #SMap_info // added for Lincoln RNAi [010226 dl]
-		       Nongenomic ?Sequence XREF Genomic_parent Int UNIQUE Int #SMap_info       // added for Lincoln RNAi [010226 dl]
-                       RNAi ?RNAi XREF Sequence UNIQUE Int UNIQUE Int #SMap_info                // added for Lincoln RNAi [001213 dl]
-		       WTP ?WTP XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info                // added for Mieg WTP data [001623 rd]
-		       Locus ?Locus XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info                // RD 0107
-		       Allele ?Allele XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info                // RD 0107
-		       Gene ?Allele XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info                // RD 0107
-		       CDS_child ?CDS XREF Sequence_parent UNIQUE Int UNIQUE Int #SMap_info                // RD 0107
+                       PCR_product ?PCR_product XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info // added for Lincoln RNAi [010226 dl]
+		       Nongenomic ?Sequence XREF Genomic_parent UNIQUE Int UNIQUE Int #SMap_info       // added for Lincoln RNAi [010226 dl]
+                       RNAi ?RNAi XREF Sequence UNIQUE Int UNIQUE Int #SMap_info                       // added for Lincoln RNAi [001213 dl]
+		       WTP ?WTP XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info                 // added for Mieg WTP data [001623 rd]
+		       Locus ?Locus XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info             // RD 0107
+		       Allele ?Allele XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info           // RD 0107
+		       Gene ?Allele XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info             // RD 0107
+		       CDS_child ?CDS XREF Sequence_parent UNIQUE Int UNIQUE Int #SMap_info            // RD 0107
 		       Transcript_child ?Transcript XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info                // RD 0107
 		       Operon ?Operon XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info  // added for Operon data
 		       Transposon ?Transposon XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info // added for transposons [020128 dl]
@@ -793,7 +793,7 @@
 		// tag2 system: names of all objects following next tag are shown in the 
 		//   general annotation display column as "tag:objname"
 	  Properties    Pseudogene Text		// explanation
-			Genomic_canonical UNIQUE Int                             // added tag for dot name tracking [020128 dl]
+			Genomic_canonical Gene_count UNIQUE Int      // added tag for dot name tracking [020128 dl]
                         Briggsae_canonical
 			cDNA cDNA_EST
 			     EST_5		       // Indicate whether this is a 5' or 3' read [010423 dl]
@@ -1417,7 +1417,8 @@
  	     Overlaps_CDS ?CDS XREF Corresponding_PCR_product  // added for Dan PCR mappings [010419 dl]
 	     Oligo ?Oligo XREF PCR_product UNIQUE Int UNIQUE Int
  	     Assay_conditions ?LongText
-	     Amplified Int
+	     From_Laboratory ?Laboratory                            // added for Lincoln Orfeome attribution [020304 dl]
+             Amplified Int
 	     Remark ?Text
 	     SNP_locus ?Locus XREF SNP_assay    // added for Todd [171001 krb]
 
