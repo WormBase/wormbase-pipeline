@@ -9,7 +9,7 @@
 # 030507 : dl  : Upload OST data as part of script
 
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2003-05-07 14:50:25 $
+# Last edited on: $Date: 2003-05-07 15:19:40 $
 
 use strict;
 use Getopt::Long;
@@ -116,7 +116,7 @@ pparse /wormsrv2/autoace/BLAT/camace.blat.OST.ace
 pparse /wormsrv2/autoace/BLAT/camace.blat.mRNA.ace 
 pparse /wormsrv2/autoace/BLAT/camace.blat.EMBL.ace 
 pparse /wormsrv2/autoace/BLAT/camace.good_introns.EST.ace 
-pparse /wormsrv2/autoace/BLAT/camace.good_intronsOEST.ace 
+pparse /wormsrv2/autoace/BLAT/camace.good_introns.OST.ace 
 pparse /wormsrv2/autoace/BLAT/camace.good_introns.mRNA.ace 
 pparse /wormsrv2/autoace/BLAT/camace.good_introns.EMBL.ace 
 save 
