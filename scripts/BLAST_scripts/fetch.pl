@@ -11,7 +11,7 @@
 #              target-start, target-end, target, target length, first iteration this target appeared)
 
 BEGIN {
-    unshift (@INC , "/nfs/acari/wormpipe/Pipeline");
+    unshift (@INC , "/nfs/acari/wormpipe/wormbase/scripts/BLAST_scripts");
 }
 
 use strict;

@@ -65,7 +65,7 @@ while (<>) {
     else {
         die "wrong options";
     }
-    my $entry = `/nfs/acari/wormpipe/Pipeline/fetch.pl -g $opt_d/$fetch_db.gsi -i $id`;
+    my $entry = `/nfs/acari/wormpipe/wormbase/scripts/BLAST_scripts/fetch.pl -g $opt_d/$fetch_db.gsi -i $id`;
     chomp $entry;
     my @ary = split (/\n/, $entry);
 

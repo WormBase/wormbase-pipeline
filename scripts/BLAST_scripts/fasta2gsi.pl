@@ -5,7 +5,7 @@
 # make a gsi index (using S. Eddy's GSI.pm) of one or several fasta files
 
 BEGIN {
-    unshift (@INC , "/nfs/acari/wormpipe/Pipeline");
+    unshift (@INC , "/nfs/acari/wormpipe/wormbase/scripts/BLAST_scripts");
 }
 
 use strict;
