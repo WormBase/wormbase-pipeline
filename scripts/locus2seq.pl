@@ -1,7 +1,36 @@
 #!/usr/local/bin/perl5.6.0 -w
+#
+# locus2seq.pl
+#
+# written by Anthony Rogers (ar2@sanger.ac.uk)
+#
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2002-07-03 13:50:09 $
+
+
 use strict;
 use Wormbase;
 use Ace;
+use Getopt::Std;
+ 
+##############################
+# command-line options       #
+##############################
+our $opt_d = "";      # Help/Usage page
+our $opt_h = "";      # wormpep release number
+getopts ('dh');
+&usage if ($opt_h);
+
+# choose geneace database
+my $geneace_dir;
+
+if ($opt_d){
+  $geneace_dir = $opt_d;
+}
+else{
+  $geneace_dir = "/wormsrv2/geneace";
+}
+
 
 my $maintainer = "All";
 my $rundate    = `date +%y%m%d`; chomp $rundate;
@@ -13,7 +42,6 @@ print LOG "$rundate\n";
 print LOG "=============================================\n";
 
 
-my $geneace_dir = "/wormsrv2/geneace";
 my $autoace_acefiles_dir = "/wormsrv2/autoace/acefiles";
 open (CAMOUT,">$autoace_acefiles_dir/CAM_locus_seq.ace") || die "cant open CAMOUT";
 open (STLOUT,">$autoace_acefiles_dir/STL_locus_seq.ace") || die "cant open STLOUT";
@@ -22,8 +50,6 @@ open (ALLOUT,">$autoace_acefiles_dir/ALL_locus_seq.ace") || die "cant open ALLOU
 
 #get locus with confirmed CGC names and the corresponding seq
 #this uses a table_maker query exported from xace
-#my $table = "/wormsrv1/geneace/wquery/locus_seq.def";
-#print system(stat $table);
 my $command1=<<EOF;
 Table-maker -p "/wormsrv2/geneace/wquery/locus_seq.def"
 quit
@@ -34,7 +60,7 @@ my $count;$count = 0;
 my @entry;
 my $seq;
 my $locus;
-open (GENEACE, "echo '$command1' | tace /wormsrv2/geneace | ");
+open (GENEACE, "echo '$command1' | tace $geneace_dir | ") || die "Couldn't open pipe to $geneace_dir\n";
 while (<GENEACE>)
   { 
     @entry = split(/\s+/,$_);
@@ -69,39 +95,10 @@ while (<GENEACE>)
       }
   }
 
-#this is a selection of error causing data (taken from a logfile)
-#%seq_locus = ();
-#%seq_locus = (
-#'ZK328.1', 'uch-1',    
-#'ZK328.5', 'npp-10',   
-#'F57C7.2a', 'nhx-5', 
-#'F57C7.2b', 'nhx-5', 
-#'Y69A2AR.d', 'ngn-1',    
-#'F10C2.1', 'kin-13',   
-#'F56B6.4', 'uvt-5',    
-#'C18E9.11', 'ooc-5',     
-#'C09D8.1', 'ptp-3',     
-#'Y47D3B.2', 'nlp-21',    
-#'Y39H10A.A', 'chk-1',    
-#'F33D4.2b', 'itr-1', 
-#'K07F5.13', 'npp-1',     
-#'T09A12.4', 'anhr-66',    
-#'Y48G8A.3304', 'smg-2', 
-#'T09A12.4b', 'nhr-66', 
-#);
-
-
-
 
 close GENEACE;
 my $sequence;
-#print LOG "#############################\n outputing seq_locus hash\n\n";
-#foreach $sequence(keys %seq_locus)
-#  {
-#    print LOG "$sequence\t$seq_locus{$sequence}\n";
-#  }
-#print LOG "#############################\n\n\n";
-#now find out who did the sequencing
+
 
 my $database = "/wormsrv2/current_DB";
 my $autoace = Ace->connect($database) || die "cant open $database\n";
@@ -380,3 +377,73 @@ sub TestSeq # recieves a sequence | returns LabCode if it exists
     return $labtag;
   }
 }
+
+sub usage {
+    system ('perldoc',$0);
+    exit;       
+}
+
+
+
+
+
+__END__
+
+=pod
+
+=head2 NAME - locus2seq.pl
+
+=head1 USAGE
+
+=over 4
+
+=item locus2seq.pl  [-options]
+
+=back
+
+This script makes a list of current locus->sequence connections which are valid and
+makes a dump of these to the FTP site, making separate files for just St. Louis and 
+Sanger sequences and also a combined file.  This information will help keep stlace and
+camace synchronised with changes in geneace.
+
+This script also checks for bogus sequences arising from geneace and reports these via
+an email message.  This script usually runs at the end of the build process.
+
+locus2seq.pl MANDATORY arguments:
+
+=over 4
+
+=item none
+
+=back
+
+locus2seq.pl  OPTIONAL arguments:
+
+=over 4
+
+=item -d, database
+
+By default this script will compare /wormsrv2/current_DB to /wormsrv2/geneace.  The
+-d flag allows you to compare against another copy of geneace (i.e. /wormsrv1/geneace)
+
+=item -h, Help
+
+=back
+
+=head1 REQUIREMENTS
+
+=over 4
+
+=item This script must run on a machine which can see the /wormsrv2 disk.
+
+=back
+
+=head1 AUTHOR
+
+=over 4
+
+=item Anthony Rogers (ar2@sanger.ac.uk)
+
+=back
+
+=cut
