@@ -48,6 +48,10 @@ sub get_wormbase_version_name {
 
 sub get_wormbase_release_date{
 
+  my $format = shift;
+  
+  $format = "long" if(($format eq "") || ($format ne "long") || ($format ne "short") || ($format ne "both"))
+  
   my $line = `ls -l /nfs/disk69/ftp/pub/wormbase/current_release/letter.WS??`;
   my @split = split(/\s+/,$line);
 
@@ -69,6 +73,10 @@ sub get_wormbase_release_date{
 
   my $day = $split[6];
 
+  my $day2;
+  if (length($day) == 1){$day2 = "0".$day;}
+  else{$day2 = $day;}
+
   if    ($day eq "1") {$day .= "st";}
   elsif ($day eq "2") {$day .= "nd";}
   elsif ($day eq "3") {$day .= "rd";}
@@ -78,9 +86,7 @@ sub get_wormbase_release_date{
   elsif ($day eq "31"){$day .= "st";}
   else                {$day .= "th";} 
 
-  my $day2;
-  if (length($day) == 1){$day2 = "0".$day;}
-  else{$day2 = $day;}
+
 
   my $year = `date`;
   $year = substr($year,-3,2);
@@ -91,7 +97,9 @@ sub get_wormbase_release_date{
   # make a regular xx/xx/xx date
   my $date2 = $day2."/".$month2."/".$year;
 
-  return($date,$date2);
+  return($date)        if ($format eq "long");
+  return($date2)       if ($format eq "short");
+  return($date,$date2) if ($format eq "both"); 
 }
 
 
@@ -335,13 +343,18 @@ As above, but returns the full name, e.g. 'WS47' rather than just '47'
 
 get_wormbase_release_date
 
-Looks at the date stamp on the letter.WSxx file in the wormbase ftp directory.
-Converts this date into a string such as "21st September" which it returns.
-Creation of the letter.WSxx file occurs pretty much at the end of the rebuild
+Gets the date of the release from the date stamp of the letter.WSxx file in the wormbase ftp 
+directory.  Creation of the letter.WSxx file occurs pretty much at the end of the rebuild
 so it is really an approximate date.
 
-Additionally if the function call expects two arguments to be returned then the
-second argument will be a standard six figure date, e.g. 29/12/01
+If no argument is passed to the function it will return the date in 'long' format. E.g.
+"21st September".  It will also return this format if the string 'long' is passed to the 
+function.
+
+If the string 'short' is passed to the function it will return a six figure date format,
+e.g. dd/mm/yy.
+
+If the string 'both' is passed to the function it will return the long and the short versions.
 
 =back
 
