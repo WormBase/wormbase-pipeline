@@ -35,7 +35,7 @@ GetOptions("chromosomes" => \$chromosomes,
 
 my $WPver = &get_wormbase_version;
 my $WP_old = $WPver - 1;
-my $scripts_dir = "$wormpipe_dir/wormbase/scripts/BLAST_scripts";
+my $scripts_dir = "$wormpipe_dir/scripts/BLAST_scripts";
 #process Ids
 
 #|         18 | gadfly3.pep         |
