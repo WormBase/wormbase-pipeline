@@ -7,7 +7,7 @@
 # Creates SMapped Gene spans for Gene objects
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-08-06 09:05:40 $
+# Last edited on: $Date: 2004-08-09 15:34:58 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -105,7 +105,7 @@ foreach my $chrom ( @chromosomes ) {
   }
 
   if( $gff ) {
-    open (OUTGFF,">$database/CHROMOSOMES/CHROMOSOME_${chrom}_WBgene.gff") or do{ $log->write_to("cant open output\n"); die "cant open output\n"; }
+    open (OUTGFF,">$database/CHROMOSOMES/CHROMOSOME_${chrom}.WBgene.gff") or do{ $log->write_to("cant open output\n"); die "cant open output\n"; }
   }
   my $acefile = "$database/acefiles/WBgene_spans_${chrom}.ace";
   unless ( $no_ace){ 
