@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-01-23 17:44:31 $
+# Last updated on: $Date: 2003-01-23 17:57:22 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -114,7 +114,7 @@ sub copy_release_files{
   $runtime = &runtime;
   print LOG "$runtime: Starting to copy release directory to FTP site\n\n";
 
-  system "mkdir $targetdir/$release" unless -e "$targetdir/$release";
+  system ("mkdir $targetdir/$release") unless -e "$targetdir/$release";
 
   my $filename;
 
@@ -150,12 +150,12 @@ sub copy_chromosome_files{
   print LOG "Starting to copy CHROMOSOMES directory : '$targetdir/$release/CHROMOSOMES'\n";
 
   my $filename;
-  system "mkdir $targetdir/$release/CHROMOSOMES" unless -e "$targetdir/$release/CHROMOSOMES";
+  system ("mkdir $targetdir/$release/CHROMOSOMES") unless -e "$targetdir/$release/CHROMOSOMES";
 
   opendir (DNAGFF,"$sourcedir/CHROMOSOMES") or die ("Could not open directory $sourcedir/CHROMOSOMES");
   while (defined($filename = readdir(DNAGFF))) {
     if (($filename eq ".")||($filename eq "..")) { next;}
-    system "cp $sourcedir/CHROMOSOMES/$filename $targetdir/$release/CHROMOSOMES/$filename" && die "ERROR: Can't copy chromosome file\n";
+    system ("cp $sourcedir/CHROMOSOMES/$filename $targetdir/$release/CHROMOSOMES/$filename") && die "ERROR: Can't copy chromosome file\n";
     my $O_SIZE = (stat("$sourcedir/CHROMOSOMES/$filename"))[7];
     my $N_SIZE = (stat("$targetdir/$release/CHROMOSOMES/$filename"))[7];
     if ($O_SIZE != $N_SIZE) {
@@ -184,18 +184,18 @@ sub copy_misc_files{
 
 
   # Copy across the models.wrm file
-  system "cp $sourcedir/wspec/models.wrm $targetdir/$release/models.wrm.$release" && die "ERROR: can't copy models.wrm\n";
+  system("cp $sourcedir/wspec/models.wrm $targetdir/$release/models.wrm.$release") && die "ERROR: can't copy models.wrm\n";
 
   # copy some miscellaneous files across
-  system "cp /wormsrv2/autoace/COMPARE/WS$old_release-$release.dbcomp $targetdir/$release/" && die "ERROR: can't copy dbcomp file\n";
+  system("cp /wormsrv2/autoace/COMPARE/WS$old_release-$release.dbcomp $targetdir/$release/") && die "ERROR: can't copy dbcomp file\n";
   
-  system "cp /wormsrv2/autoace_config/INSTALL $targetdir/$release/" && die "ERROR: can't copy INSTALL script\n";
+  system("cp /wormsrv2/autoace_config/INSTALL $targetdir/$release/") && die "ERROR: can't copy INSTALL script\n";
 
   # tar, zip, and copy WormRNA files across from wormsrv2/WORMRNA
   my $dest = "/wormsrv2/WORMRNA/wormrna${wormrna_release}";
   chdir "$dest" or die "Couldn't cd $dest\n";
-  system "/bin/tar -cf $targetdir/$release/wormrna${wormrna_release}.tar README wormrna${wormrna_release}.rna" && die "ERROR: can't create wormrna tar file\n";
-  system "/bin/gzip $targetdir/$release/wormrna${wormrna_release}.tar" && die "ERROR: can't create wormrna gzip file\n";
+  system("/bin/tar -cf $targetdir/$release/wormrna${wormrna_release}.tar README wormrna${wormrna_release}.rna") && die "ERROR: can't create wormrna tar file\n";
+  system("/bin/gzip $targetdir/$release/wormrna${wormrna_release}.tar") && die "ERROR: can't create wormrna gzip file\n";
 
 
   $runtime = &runtime;
@@ -253,61 +253,56 @@ sub copy_wormpep_files{
   my $wp_old_release = "old_wormpep"."$old_release";
 
   print LOG "\tMaking $wp_ftp_dir/$wp_old_release directory\n";
-  system "mkdir $wp_ftp_dir/$wp_old_release" unless -e "$wp_ftp_dir/$wp_old_release";
+  system("mkdir $wp_ftp_dir/$wp_old_release") unless -e "$wp_ftp_dir/$wp_old_release";
 
 
   # move the actual files to old_ directory
   print LOG "\tstarting to move files from current wormpep directory to old wormpep directory on FTP site\n";
-  system "mv $wp_ftp_dir/wormpep.accession $wp_ftp_dir/$wp_old_release/wormpep.accession$old_release";
 
-  system "mv $wp_ftp_dir/wormpep.diff $wp_ftp_dir/$wp_old_release/wormpep.diff$old_release";
-  
-  system "mv $wp_ftp_dir/wormpep.dna $wp_ftp_dir/$wp_old_release/wormpep.dna$old_release";
-  
-  system "mv $wp_ftp_dir/wormpep.history $wp_ftp_dir/$wp_old_release/wormpep.history$old_release";
-  
-  system "mv $wp_ftp_dir/wormpep.table $wp_ftp_dir/$wp_old_release/wormpep.table$old_release";
-   
-  system "mv $wp_ftp_dir/wormpep${old_release} $wp_ftp_dir/$wp_old_release/";
-   
-  system "mv $wp_ftp_dir/wp.fasta $wp_ftp_dir/$wp_old_release/wp.fasta$old_release";
+  system("mv $wp_ftp_dir/wormpep.accession $wp_ftp_dir/$wp_old_release/wormpep.accession$old_release");
+  system("mv $wp_ftp_dir/wormpep.diff $wp_ftp_dir/$wp_old_release/wormpep.diff$old_release");
+  system("mv $wp_ftp_dir/wormpep.dna $wp_ftp_dir/$wp_old_release/wormpep.dna$old_release"); 
+  system("mv $wp_ftp_dir/wormpep.history $wp_ftp_dir/$wp_old_release/wormpep.history$old_release");  
+  system("mv $wp_ftp_dir/wormpep.table $wp_ftp_dir/$wp_old_release/wormpep.table$old_release");   
+  system("mv $wp_ftp_dir/wormpep${old_release} $wp_ftp_dir/$wp_old_release/");
+  system("mv $wp_ftp_dir/wp.fasta $wp_ftp_dir/$wp_old_release/wp.fasta$old_release");
   print LOG "\tfinished moving files to old wormpep directory on FTP site\n";
 
 
 
   # copy the wormpep release files across
-  system "cp $wp_source_dir/wormpep.accession$wormpep $wp_ftp_dir/wormpep.accession";
+  system("cp $wp_source_dir/wormpep.accession$wormpep $wp_ftp_dir/wormpep.accession");
   &CheckSize("$wp_source_dir/wormpep.accession$wormpep","$wp_ftp_dir/wormpep.accession");
   print LOG "\tmove & rename wormpep.accession$wormpep => wormpep.accession\n";
   
-  system "cp $wp_source_dir/wormpep.diff$wormpep $wp_ftp_dir/wormpep.diff";
+  system("cp $wp_source_dir/wormpep.diff$wormpep $wp_ftp_dir/wormpep.diff");
   &CheckSize("$wp_source_dir/wormpep.diff$wormpep","$wp_ftp_dir/wormpep.diff");
   print LOG "\tmove & rename wormpep.diff$wormpep => wormpep.diff\n";
   
-  system "cp $wp_source_dir/wormpep.dna$wormpep $wp_ftp_dir/wormpep.dna";
+  system("cp $wp_source_dir/wormpep.dna$wormpep $wp_ftp_dir/wormpep.dna");
   &CheckSize("$wp_source_dir/wormpep.dna$wormpep","$wp_ftp_dir/wormpep.dna");
   print LOG "\tmove & rename wormpep.dna$wormpep => wormpep.dna\n";
   
-  system "cp $wp_source_dir/wormpep.history$wormpep $wp_ftp_dir/wormpep.history";
+  system("cp $wp_source_dir/wormpep.history$wormpep $wp_ftp_dir/wormpep.history");
   &CheckSize("$wp_source_dir/wormpep.history$wormpep","$wp_ftp_dir/wormpep.history");
   print LOG "\tmove & rename wormpep.history$wormpep => wormpep.history\n";
   
-  system "cp $wp_source_dir/wormpep.table$wormpep $wp_ftp_dir/wormpep.table";
+  system("cp $wp_source_dir/wormpep.table$wormpep $wp_ftp_dir/wormpep.table");
   &CheckSize("$wp_source_dir/wormpep.table$wormpep","$wp_ftp_dir/wormpep.table");
   print LOG "\tmove & rename wormpep.table$wormpep => wormpep.table\n";
   
-  system "cp $wp_source_dir/wormpep$wormpep $wp_ftp_dir/wormpep${wormpep}";
+  system("cp $wp_source_dir/wormpep$wormpep $wp_ftp_dir/wormpep${wormpep}");
   &CheckSize("$wp_source_dir/wormpep$wormpep","$wp_ftp_dir/wormpep${release}");
   print LOG "\tmove wormpep$wormpep =>  wormpep$wormpep\n";
   
-  system "cp $wp_source_dir/wp.fasta$wormpep $wp_ftp_dir/wp.fasta";
+  system("cp $wp_source_dir/wp.fasta$wormpep $wp_ftp_dir/wp.fasta");
   &CheckSize("$wp_source_dir/wp.fasta$wormpep","$wp_ftp_dir/wp.fasta");
   print LOG "\tmove & rename wp.fasta$wormpep => wp.fasta\n\n";
   
 
   # delete the old symbolic link and make the new one  
-  system "cd $wp_ftp_dir; ln -fs wormpep$wormpep wormpep";
-  system "cd $wp_ftp_dir; ln -fs $wp_old_release/wormpep$old_release wormpep.prev";
+  system("cd $wp_ftp_dir; ln -fs wormpep$wormpep wormpep");
+  system("cd $wp_ftp_dir; ln -fs $wp_old_release/wormpep$old_release wormpep.prev");
   print LOG "Deleted the old sym_link and created the new one\n\n";
 
 
@@ -386,26 +381,26 @@ sub copy_homol_data{
   my $blat_dir  = "/wormsrv2/autoace/BLAT";
   my $blast_dir = "/wormsrv2/wormbase/ensembl_dumps";
   my $private_ftp = "/nfs/privateftp/ftp-wormbase/pub/data/st_louis_homol_data";
-  system "rm -f $private_ftp/*gz";
+  system("rm -f $private_ftp/*gz");
   
-  system "cp $blat_dir/stlace.blat.EST.ace                  $private_ftp/${release}_stlace.blat.EST.ace";
-  system "cp $blat_dir/stlace.blat.mRNA.ace                 $private_ftp/${release}_stlace.blat.mRNA.ace";
-  system "cp $blat_dir/stlace.good_introns.EST.ace          $private_ftp/${release}_stlace.blat.good_introns.EST.ace";
-  system "cp $blat_dir/stlace.good_introns.mRNA.ace         $private_ftp/${release}_stlace.blat.good_introns.mRNA.ace";
+  system("cp $blat_dir/stlace.blat.EST.ace                  $private_ftp/${release}_stlace.blat.EST.ace");
+  system("cp $blat_dir/stlace.blat.mRNA.ace                 $private_ftp/${release}_stlace.blat.mRNA.ace");
+  system("cp $blat_dir/stlace.good_introns.EST.ace          $private_ftp/${release}_stlace.blat.good_introns.EST.ace");
+  system("cp $blat_dir/stlace.good_introns.mRNA.ace         $private_ftp/${release}_stlace.blat.good_introns.mRNA.ace");
   
-  system "cp $blat_dir/virtual_objects.stlace.BLAT_EST.ace  $private_ftp/${release}_virtual_objects.stlace.BLAT_EST.ace";
-  system "cp $blat_dir/virtual_objects.stlace.BLAT_mRNA.ace $private_ftp/${release}_virtual_objects.stlace.BLAT_mRNA.ace";
-  system "cp $blat_dir/virtual_objects.stlace.ci.EST.ace    $private_ftp/${release}_virtual_objects.stlace.ci.EST.ace";
-  system "cp $blat_dir/virtual_objects.stlace.ci.mRNA.ace   $private_ftp/${release}_virtual_objects.stlace.ci.mRNA.ace";
+  system("cp $blat_dir/virtual_objects.stlace.BLAT_EST.ace  $private_ftp/${release}_virtual_objects.stlace.BLAT_EST.ace");
+  system("cp $blat_dir/virtual_objects.stlace.BLAT_mRNA.ace $private_ftp/${release}_virtual_objects.stlace.BLAT_mRNA.ace");
+  system("cp $blat_dir/virtual_objects.stlace.ci.EST.ace    $private_ftp/${release}_virtual_objects.stlace.ci.EST.ace");
+  system("cp $blat_dir/virtual_objects.stlace.ci.mRNA.ace   $private_ftp/${release}_virtual_objects.stlace.ci.mRNA.ace");
   
   $runtime = &runtime;
   print LOG "$runtime: Starting to copy BLAST data to private ftp site\n";
 
-  system "cp $blast_dir/blastp_ensembl.ace          $private_ftp/${release}_blastp_data.ace";
-  system "cp $blast_dir/blastx_ensembl.ace          $private_ftp/${release}_blastx_data.ace";
-  system "cp $blast_dir/ensembl_motif_info.ace      $private_ftp/${release}_protein_motif_data.ace";
+  system("cp $blast_dir/blastp_ensembl.ace          $private_ftp/${release}_blastp_data.ace");
+  system("cp $blast_dir/blastx_ensembl.ace          $private_ftp/${release}_blastx_data.ace");
+  system("cp $blast_dir/ensembl_motif_info.ace      $private_ftp/${release}_protein_motif_data.ace");
 
-  system "/bin/gzip $private_ftp/*ace";
+  system("/bin/gzip $private_ftp/*ace");
 
   $runtime = &runtime;
   print LOG "$runtime: Finishing copying BLAST data to private ftp site\n";
