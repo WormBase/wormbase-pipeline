@@ -47,6 +47,15 @@ while (<FILE>) {
 	next;
     }    
     
+    if (/^Pseudogene \"(\S+)\"/) {
+	$class = "Pseudogene";
+	$name = $1;
+	if ($oldname eq "nill") {$oldname = $name;next;}	
+	&report;
+	$oldname = $name;
+	next;
+    }    
+    
     
     if (/^Transcript \"(\S+)\"/) {
 	$class = "Transcript";
