@@ -9,6 +9,7 @@ use strict;
 use Getopt::Std;
 use DB_File;
 use vars qw($opt_s $opt_t $opt_v);
+#swissprot trembl verbose
 
 getopts ("stv");
 my $verbose = $opt_v;

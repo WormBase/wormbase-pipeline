@@ -449,6 +449,7 @@ sub justGeneName
     }
   }
 
+
 sub usage {
      my $error = shift;
 
