@@ -154,18 +154,21 @@ foreach my $EST (sort keys %EST_clone) {
   my @reads = split (/ /, $EST_clone{$EST});
   foreach my $read (@reads) {
     next if ($read eq "");
-    #	print "$read\t$EST_acc{$read}\t$EST_len{$read}\t$EST_match{$read}\n";
+    ($EST_acc{$read} = "") if (!defined($EST_acc{$read}));
+    ($EST_match{$read} = "") if (!defined($EST_match{$read}));
+    ($EST_len{$read} = "") if (!defined($EST_len{$read}));
     print EST_total "$read\t$EST_acc{$read}\t$EST_len{$read}\t$EST_match{$read}\n";
+    print EST_total "$read\t$EST_acc{$read}\t\n";
     
     # No accession
-    if ($EST_acc{$read} eq "") {
+    if (!defined($EST_acc{$read})) {
       print LOG "=> $read has no accession number\n";
       print EST_no_accession_1 "$read has no accession number\n";
       print EST_no_accession_2 "Sequence : \"$read\"\n";
     }
     
     # No match in genome
-    if ($EST_match{$read} eq "") {
+    if (!defined($EST_match{$read})) {
       print LOG "=> $read is not attached to a CDS\n";
       print EST_unassigned_1 "$read is not attached to a CDS\n";
       print EST_unassigned_2 "Sequence : \"$read\"\n";
