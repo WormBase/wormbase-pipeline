@@ -7,7 +7,7 @@
 # by Anon
 #
 # Last updated by: $Author: krb $                      
-# Last updated on: $Date: 2004-10-19 14:58:12 $        
+# Last updated on: $Date: 2004-10-20 12:03:04 $        
 
 
 use strict;
@@ -34,11 +34,13 @@ my $test;       # Test mode
 my $debug;      # Debug mode, verbose output to user running script
 my $log = Log_files->make_build_log();
 my $verbose;    # verbose mode, extra output to screen
+my $load;       # load file to autoace
 
-my $outfile = "/wormsrv2/autoace/acefiles/microarray_mappings.ace";
+my $outfile = "$dbdir/acefiles/microarray_mappings.ace";
 
 GetOptions ("debug=s"   => \$debug,
 	    "test"      => \$test,
+	    "load"      => \$load,
             "help"      => \$help);
 
 
@@ -63,16 +65,8 @@ if ($debug) {
 
     $count = $db->fetch(-query=> 'find Oligo_set where Microarray_results');
     print "checking $count Oligo_sets\n\n";
-
 }
 
-my $microarray_results;
-my @CDSs;
-my @Pseudo;
-my $cds;
-my $gene;
-my $pseudo;
-my $locus;
 
 open (OUTPUT, ">$outfile") or die "Can't open the output file $outfile\n";
 
@@ -80,42 +74,51 @@ open (OUTPUT, ">$outfile") or die "Can't open the output file $outfile\n";
 # PCR_products and SMD_microarray results #
 ###########################################
 
-my $i = $db->fetch_many(-query=> 'find PCR_product where Microarray_results');  
+$log->write_to("Making CDS/Pseudogene/Transcript connections to Microarray_results objects based on PCR_products\n");
+
+my $i = $db->fetch_many(-query=> 'find PCR_product WHERE Microarray_results AND (Overlaps_CDS || Overlaps_pseudogene || Overlaps_transcript)');  
 while (my $obj = $i->next) {
     
   print "$obj\t" if ($debug);
 
   # Microarray_results
   
-  $microarray_results = $obj->Microarray_results;
+  my $microarray_results = $obj->Microarray_results;  
+  my @CDSs               = $obj->Overlaps_CDS;
+  my @pseudogenes        = $obj->Overlaps_pseudogene;
+  my @transcripts        = $obj->Overlaps_transcript;
+
   
-  @CDSs    = $obj->Overlaps_CDS;
-  @Pseudo  = $obj->Overlaps_pseudogene;
-  
-  print "Microarray_results : \"$microarray_results\"\tCDS: " . (scalar @CDSs) . " Pseudo: " . (scalar @Pseudo) . "\n" if ($debug);
-  
-  if (scalar @CDSs > 0) {
-    print OUTPUT "\nMicroarray_results : \"$microarray_results\"\n";
-    foreach $cds (@CDSs) {
+  if (@CDSs) {
+    foreach my $cds (@CDSs) {
+      my $gene = $obj->Overlaps_CDS->Gene;
+      print OUTPUT "\nMicroarray_results : \"$microarray_results\"\n";
       print OUTPUT "CDS \"$cds\"\n";
-      $gene   = $obj->Overlaps_CDS->Gene;
-    }
-    
-    print OUTPUT "Gene $gene\n" if (defined $gene);
+      print OUTPUT "Gene $gene\n" if (defined $gene);
+    }    
+    print OUTPUT "\n";
+  }
+
+  if (@pseudogenes) {
+    foreach my $pseudogene (@pseudogenes) {
+      my $gene = $obj->Overlaps_pseudogene->Gene;
+      print OUTPUT "\nMicroarray_results : \"$microarray_results\"\n";
+      print OUTPUT "Pseudogene \"$pseudogene\"\n";
+      print OUTPUT "Gene $gene\n" if (defined $gene);
+    }    
+    print OUTPUT "\n";
+  }
+
+  if (@transcripts) {
+    foreach my $transcript (@transcripts) {
+      my $gene = $obj->Overlaps_transcript->Gene;
+      print OUTPUT "\nMicroarray_results : \"$microarray_results\"\n";
+      print OUTPUT "Transcript \"$transcript\"\n";
+      print OUTPUT "Gene $gene\n" if (defined $gene);
+    }    
     print OUTPUT "\n";
   }
   
-  if (scalar @Pseudo > 1) {
-    print OUTPUT "\n// Microarray_results : \"$microarray_results\"\n";
-    foreach $pseudo (@Pseudo) {
-      print OUTPUT "// Predicted_pseudogene \"$pseudo\"\n";
-    }
-    print OUTPUT "\n";
-  }
-  
-  @CDSs    = "";
-  @Pseudo = "";
-  $gene = "";
   $obj->DESTROY();
 }
 
@@ -123,48 +126,70 @@ while (my $obj = $i->next) {
 # Oligo_sets and Aff_microarray results #
 ###########################################
 
-$i = $db->fetch_many(-query=> 'find Oligo_set where Microarray_results');  
+$log->write_to("Making CDS/Pseudogene/Transcript connections to Microarray_results objects based on Oligo_set objects\n");
+
+$i = $db->fetch_many(-query=> 'find Oligo_set WHERE Microarray_results AND (Overlaps_CDS || Overlaps_transcript || Overlaps_pseudogene)');  
+
 while (my $obj = $i->next) {
   
   print "$obj\t" if ($debug);
 
   # Microarray_results
     
-  $microarray_results = $obj->Microarray_results;
-  
-  @CDSs    = $obj->Overlaps_CDS;
-  @Pseudo  = $obj->Overlaps_pseudogene;
-    
-  print "Microarray_results : \"$microarray_results\"\tCDS: " . (scalar @CDSs) . " Pseudo: " . (scalar @Pseudo) . "\n" if ($debug);
-    
-  if (scalar @CDSs > 0) {
-    print OUTPUT "\nMicroarray_results : \"$microarray_results\"\n";
-    foreach $cds (@CDSs) {
+  my $microarray_results = $obj->Microarray_results;  
+  my @CDSs               = $obj->Overlaps_CDS;
+  my @pseudogenes        = $obj->Overlaps_pseudogene;
+  my @transcripts        = $obj->Overlaps_transcript;
+
+  if (@CDSs) {
+    foreach my $cds (@CDSs) {
+      my $gene = $obj->Overlaps_CDS->Gene;
+      print OUTPUT "\nMicroarray_results : \"$microarray_results\"\n";
       print OUTPUT "CDS \"$cds\"\n";
-      $gene   = $obj->Overlaps_CDS->Gene;
-    }
-    
-    print OUTPUT "Gene $gene\n" if (defined $gene);
+      print OUTPUT "Gene $gene\n" if (defined $gene);
+    }    
     print OUTPUT "\n";
   }
-  
-  if (scalar @Pseudo > 1) {
-    print OUTPUT "\n// Microarray_results : \"$microarray_results\"\n";
-    foreach $pseudo (@Pseudo) {
-      print OUTPUT "// Predicted_pseudogene \"$pseudo\"\n";
-    }
+
+  if (@pseudogenes) {
+    foreach my $pseudogene (@pseudogenes) {
+      my $gene = $obj->Overlaps_pseudogene->Gene;
+      print OUTPUT "\nMicroarray_results : \"$microarray_results\"\n";
+      print OUTPUT "Pseudogene \"$pseudogene\"\n";
+      print OUTPUT "Gene $gene\n" if (defined $gene);
+    }    
     print OUTPUT "\n";
   }
-  
-  @CDSs    = "";
-  @Pseudo = "";
-  $gene = "";
+
+  if (@transcripts) {
+    foreach my $transcript (@transcripts) {
+      my $gene = $obj->Overlaps_transcript->Gene;
+      print OUTPUT "\nMicroarray_results : \"$microarray_results\"\n";
+      print OUTPUT "Transcript \"$transcript\"\n";
+      print OUTPUT "Gene $gene\n" if (defined $gene);
+    }    
+    print OUTPUT "\n";
+  }  
+
   $obj->DESTROY();
 }
 
 
 close OUTPUT;
 $db->close;
+
+if($load){
+  $log->write_to("Loading file to autoace\n");
+  my $command = "autoace_minder.pl -load $dbdir/acefiles/microarray_mappings.ace -tsuser
+RNAi_mappings";
+                                                                                   
+  my $status = system($command);
+  if(($status >>8) != 0){
+    $log->write_to("ERROR: Loading microarray_mappings.ace file failed \$\? = $status\n");
+  }
+}
+
+
 
 $log->mail("$maintainers","BUILD REPORT: $0");
 

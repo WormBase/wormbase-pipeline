@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-10-20 09:44:01 $
+# Last edited on: $Date: 2004-10-20 12:03:04 $
 
 
 
@@ -1301,21 +1301,16 @@ sub map_features {
   &run_command ("$scriptdir/map_Oligo_set.pl");
   
   # RNAi experiments
-  &run_command("$scriptdir/map_RNAi.pl");
+  &run_command("$scriptdir/map_RNAi.pl -load");
 
   # alleles
   &run_command("$scriptdir/map_Alleles.pl");
 
   # Y2H objects
-  &run_command("$scriptdir/map_Y2H.pl");
-  $file = "$basedir/wormbase/misc_dynamic/misc_Y2H_connections.ace";
-  &load($file,"Y2H_connections");
+  &run_command("$scriptdir/map_Y2H.pl -load");
 
   # microarray connections
-  &run_command("$scriptdir/map_microarray.pl");
-
-  $file = "$basedir/autoace/acefiles/microarray_mappings.ace";
-  &load($file,"microarray_connections");
+  &run_command("$scriptdir/map_microarray.pl -load");
 
 }
 #__ end map_features __#

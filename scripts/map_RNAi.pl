@@ -7,7 +7,7 @@
 # by Kerstin Jekosch
 #
 # Last updated by: $Author: krb $                      
-# Last updated on: $Date: 2004-10-19 11:14:40 $        
+# Last updated on: $Date: 2004-10-20 12:03:04 $        
 
 use strict;
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
@@ -44,13 +44,15 @@ my $help;       # Help perdoc
 my $test;       # Test mode
 my $debug;      # Debug mode, verbose output to user running script
 my $verbose;
+my $load;       # use to automatically load file to autoace
 
 my $log = Log_files->make_build_log();
 
 GetOptions ("debug=s"   => \$debug,
 	    "verbose"   => \$verbose,
 	    "test"      => \$test,
-            "help"      => \$help);
+            "help"      => \$help,
+	    "load"      => \$load);
 
 
 # Display help if required
@@ -430,15 +432,17 @@ close(OUTACE);
 #########################################################
 # read acefiles into autoace (unless running test mode) #
 #########################################################
-
-unless ($test) {
-
-  my $command = "pparse /wormsrv2/autoace/acefiles/RNAi_mappings.ace\nsave\nquit\n";
-
-  open (TACE,"| $tace -tsuser map_RNAi $dbdir") || die "Couldn't open tace connection to $dbdir\n";
-  print TACE $command;
-  close (TACE);
+if($load){
+  $log->write_to("Loading file to autoace\n");
+  my $command = "autoace_minder.pl -load $dbdir/acefiles/RNAi_mappings.ace -tsuser RNAi_mappings";
+  
+  my $status = system($command);
+  if(($status >>8) != 0){
+    $log->write_to("ERROR: Loading RNAi_mappings.ace file failed \$\? = $status\n");
+  }
 }
+
+$log->mail("$maintainers","BUILD REPORT: $0");
 
 exit(0);
 
@@ -504,6 +508,8 @@ map_RNAi optional arguments:
 =item -test, Test mode, generate the acefile but do not upload them 
 
 =item -help, Help pages
+
+=item -load, loads file to autoace
 
 =back
 
