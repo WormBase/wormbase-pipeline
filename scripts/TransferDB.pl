@@ -4,7 +4,7 @@
 #
 # by ag3 [991221]
 #
-# Last updated on: $Date: 2003-09-22 17:41:53 $
+# Last updated on: $Date: 2003-09-22 22:43:34 $
 # Last updated by: $Author: krb $
 
 
@@ -31,6 +31,7 @@ use Cwd;
 my $help;              # Help/Usage page
 my $verbose;           # turn on extra command-line output
 my $debug;             # For sending log file output to just one person
+my $mail;              # -mail: turn flag on to email log file
 my $dbname;            # -name: name of the database (will be overwritten in displays.wrm)
 my $srcdir;            # -start: Location of source database, mandatory option
 my $enddir;            # -end: Location of target database, mandatory option
@@ -66,7 +67,8 @@ GetOptions (
 	    "release"     => \$S_release,
 	    "help"        => \$help,
 	    "verbose"     => \$verbose,
-	    "debug=s"     => \$debug
+	    "debug=s"     => \$debug,
+	    "mail"        => \$mail
 	    );
 
 ##################################
@@ -209,7 +211,7 @@ elsif ($backup &&(-d $bck_subdir)) {
 print LOG "\n=============================================\n";
 print LOG "TransferDB process $$ ended SUCCESSFULLY at ",&runtime,"\n";
 close(LOG);
-&mail_maintainer("TransferDB.pl",$maintainers,$log);
+&mail_maintainer("TransferDB.pl",$maintainers,$log) if ($mail);
 exit 0;
 
 
@@ -449,6 +451,7 @@ TransferDB OPTIONAL arguments:
 
 =item -verbose, not really used yet, but will give more output to command line
 
+=item -mail, if set will email log file to everyone (default) or just to user specified by -debug
 =back
 
 Choose one or more of the following switches if you 
