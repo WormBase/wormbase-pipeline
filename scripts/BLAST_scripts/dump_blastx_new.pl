@@ -94,18 +94,18 @@ print LOG "--------------------------------------------------------------------\
 ####################################################################
 my %accession2version;
 
-if ($opt_a) {
-    print LOG "get the accession 2 version mapping from the agp file [".&now."]\n\n";
 
-    open (AGP , "$opt_a") || die "cannot read $opt_a";
-    while (<AGP>) {
-        chomp;
-        my @ary = split /\t/;
-        $ary[5] =~ /^([^\.]+)\.(\d+)/;
-        $accession2version{$1} = $2;
-    }
-    close AGP;
+print LOG "get the accession 2 version mapping from the agp file [".&now."]\n\n";
+
+open (AGP , "$agp_file") || die "cannot read $agp_file";
+while (<AGP>) {
+  chomp;
+  my @ary = split /\t/;
+  $ary[5] =~ /^([^\.]+)\.(\d+)/;
+  $accession2version{$1} = $2;
 }
+close AGP;
+
 
 ####################################################################
 # read the appropriate wormpep file (same as BlastDB version),
@@ -115,7 +115,7 @@ my %name2id;
 
 print LOG "get the name 2 id mapping for the wormpep proteins [".&now."]\n\n";
 
-open (WP , "$opt_w") || die "cannot read $opt_w";
+open (WP , "$wormpep_file") || die "cannot read $wormpep_file";
 while (<WP>) {
     next unless /^>/;
     /^>(\S+)\s+(\S+)/;
@@ -129,53 +129,50 @@ close WP;
 ####################################################################
 my %cds;
 
-if ($opt_g) {
-    print LOG "get chromosomal cds coordinates [".&now."]\n\n";
+print LOG "get chromosomal cds coordinates [".&now."]\n\n";
 
-    open (CDS , "$opt_g") || die "cannot read $opt_g";
-    while (<CDS>) {
-        chomp;
-        my @ary = split /\t/;
-        my $start = $ary[3];
-        my $end = $ary[4];
-        $ary[8] =~ /\"(\S+)\"/;
-        my $name = $1;
-        if ($name) {
-            $name =~ tr/a-z/A-Z/;
-            $cds{$name} = [$start, $end];
-        }
-        else {
-            die "cannot process $opt_g";
-        }
-    }
-    close CDS;
+open (CDS , "$cds_file") || die "cannot read $cds_file";
+while (<CDS>) {
+  chomp;
+  my @ary = split /\t/;
+  my $start = $ary[3];
+  my $end = $ary[4];
+  $ary[8] =~ /\"(\S+)\"/;
+  my $name = $1;
+  if ($name) {
+    $name =~ tr/a-z/A-Z/;
+    $cds{$name} = [$start, $end];
+  }
+  else {
+    die "cannot process $opt_g";
+  }
 }
+close CDS;
+
 
 ####################################################################
 # read the file with cosmid coordinates
 ####################################################################
 my %cos;
+print LOG "get chromosomal cosmid coordinates [".&now."]\n\n";
 
-if ($opt_c) {
-    print LOG "get chromosomal cosmid coordinates [".&now."]\n\n";
-
-    open (COS , "$opt_c") || die "cannot read $opt_c";
-    while (<COS>) {
-        chomp;
-        my @ary = split /\t/;
-        my $start = $ary[3];
-        my $end = $ary[4];
-        $ary[8] =~ /\"(\S+)\"/;
-        my $name = $1;
-        if ($name) {
-            $cos{$name} = [$start, $end];
-        }
-        else {
-            die "cannot process $opt_c";
-        }
-    }
-    close COS;
+open (COS , "$cos_file") || die "cannot read $cos_file";
+while (<COS>) {
+  chomp;
+  my @ary = split /\t/;
+  my $start = $ary[3];
+  my $end = $ary[4];
+  $ary[8] =~ /\"(\S+)\"/;
+  my $name = $1;
+  if ($name) {
+    $cos{$name} = [$start, $end];
+  }
+  else {
+    die "cannot process $opt_c";
+  }
 }
+close COS;
+
 
 ####################################################################
 # connect to AceDB using TableMaker,
@@ -286,7 +283,7 @@ foreach my $aref (@$ref) {
     }
     my $name;
     # map accession 2 name
-    if ($opt_m) {
+    unless ($opt_m) {
         if (exists $accession2name{$id}) {
             $name = $accession2name{$id};
             print LOG "\n\tprocessing $name $id $version ($internal_id) of length $length , $fragment_number 50bp fragments [".&now."]\n";
