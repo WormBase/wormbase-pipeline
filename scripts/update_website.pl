@@ -7,8 +7,8 @@
 # A script to finish the last part of the weekly build by updating all of the
 # relevant WormBase and Wormpep web pages.
 #
-# Last updated by: $Author: dl1 $     
-# Last updated on: $Date: 2004-10-08 16:11:53 $      
+# Last updated by: $Author: ar2 $     
+# Last updated on: $Date: 2004-11-22 14:08:07 $      
 
 
 #################################################################################
@@ -48,6 +48,10 @@ my $EST_files;          # run copy_EST_files
 my $create_GFF;         # run create_GFF_intron_files
 my $update_wormpep;
 
+# check for command-line options if none given then you do everything
+unless (defined $ARGV[0]) {
+    $all = 1;
+}
 
 GetOptions ("all"            => \$all,
 	    "header"         => \$header,
@@ -111,7 +115,7 @@ if (defined $test) {
 # Main subroutine calls    
 ###########################################################################################################
 
-&create_log_file               if ($all);
+&create_log_file;
 
 &create_web_directories        if ($all || $directories);
 
@@ -212,7 +216,7 @@ sub copy_overlapcheck_files{
 
   print LOG "Creating symbolic link for header.ini file\n";
   chdir("$www/$WS_name/Checks") || print LOG "Couldn't chdir to $www/$WS_name/Checks\n";
-  system("ln -s ../../header.ini header.ini") && croak "Couldn't create new symlink\n";
+  system("ln -sf ../../header.ini header.ini") && croak "Couldn't create new symlink\n";
 
   foreach my $file (@filenames) {
     my $line_total;
@@ -221,6 +225,7 @@ sub copy_overlapcheck_files{
 
     foreach my $chrom (@chrom) {
       print LOG "Copying file CHROMOSOME_$chrom.$file to $www/$WS_name/Checks\n";
+      next unless (-s "/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.$file");
       system ("cp -f /wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.$file $www/$WS_name/Checks/")
 	&& croak "Could not copy /wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.$file $!\n";
       
@@ -820,7 +825,7 @@ sub update_wormpep_pages{
   # make symbolic
   print LOG "Creating symbolic link for header.ini file\n";
   chdir("$www/$WS_name") || print LOG "Couldn't chdir to $www/$WS_name\n";
-  system("ln -s ../header.ini header.ini") && croak "Couldn't create new symlink\n";    
+  system("ln -sf ../header.ini header.ini") && croak "Couldn't create new symlink\n";    
   
   # copy over static files that don't change
   print LOG "copying static wormpep files\n"; 
