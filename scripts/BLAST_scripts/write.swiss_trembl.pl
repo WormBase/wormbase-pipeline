@@ -71,6 +71,10 @@ $db_files = "$database" if defined $database;  # can use other database files if
 my %ORG;
 my %DES;
 
+unless ($swiss || $trembl) {
+    die "usage -swiss for swissprot, -trembl for trembl, -database directory where .gsi database file is\n";
+}
+
 if ($swiss) {
   unless (-s "$db_files/swissprot2org") {
     die "swissprot2org not found or empty";
@@ -80,8 +84,11 @@ if ($swiss) {
     die "swissprot2des not found or empty";
   }
   dbmopen %DES, "$db_files/swissprot2des", 0666 or die "cannot open swissprot2des DBM file $db_files/swissprot2des";
-  push( @lists_to_dump,$swiss_list_txt);
+  &output_list($swiss_list_txt,$input2output{"$swiss_trembl_list"});
+  dbmclose %ORG;
+  dbmclose %DES;
 }
+
 if ($trembl) {
   unless (-s "$db_files/trembl2org") {
     die "trembl2org not found or empty";
@@ -92,19 +99,12 @@ if ($trembl) {
   }
   dbmopen %DES, "$db_files/trembl2des", 0666 or die "cannot open trembl2des DBM file";
   push( @lists_to_dump,$trembl_list_txt);
-}
-
-unless (defined $lists_to_dump[0]) {
-    die "usage -swiss for swissprot,-trembl for trembl, -database directory where .gsi database file is\n";
-}
-
-foreach my $list (@lists_to_dump) {
-  &output_list($list,$input2output{"$list"});
+  &output_list($trembl_list_txt,$input2output{"$trembl_list_txt"});
+  dbmclose %ORG;
+  dbmclose %DES;
 }
 
     
-dbmclose %ORG;
-dbmclose %DES;
 
 sub output_list
   {
@@ -152,7 +152,7 @@ sub output_list
 	  print ACE "Protein : \"$prefix:$id\"\n";
 	  print ACE "Peptide \"$prefix:$id\"\n";
 	  print ACE "Title \"$DES{$id}\"\n";
-	  print ACE "Species \"sw\"\n";
+	  print ACE "Species \"$ORG{$id}\"\n";
 	  print ACE  "Database \"$db\" \"$id\" \"$accession\"\n";
 	  print ACE  "\n";
 	  print ACE  "Peptide : \"$prefix:$id\"\n";
