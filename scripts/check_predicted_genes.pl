@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam aged 12 and a half
 #
-# Last updated on: $Date: 2004-06-14 16:11:54 $
+# Last updated on: $Date: 2004-06-16 09:40:22 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
@@ -75,7 +75,7 @@ our @error5;
 my $CDSfilter = "";
 my @CDSfilter = $db->fetch (-query => 'FIND CDS; method != Transposon_CDS; method != curated; method !=history');
 foreach $CDSfilter (@CDSfilter) {
-  push(@error4, "WARNING! CDS:$CDSfilter contains an invalid method please check\n");
+  push(@error4, "ERROR! CDS:$CDSfilter contains an invalid method please check\n");
 }
 
 ################################
@@ -117,10 +117,10 @@ foreach my $cds (@CDSs){
   for($i=1; $i<@exon_coord2;$i++){
     my $intron_size = ($exon_coord1[$i] - $exon_coord2[$i-1] -1);
     print "ERROR: $cds has a small intron ($intron_size bp)\n" if (($intron_size < 34)  && $verbose);
-    push(@error4,"ERROR: $cds has a very small intron ($intron_size bp)\n") if ($intron_size < 34);
+    push(@error4,"WARNING: $cds has a very small intron ($intron_size bp)\n") if (($intron_size < 34) && (!$basic));
+    push(@error4,"WARNING: $cds has a very small intron ($intron_size bp)\n") if (($intron_size < 34) && (defined $basic) && ($db_path eq glob("~wormpub/camace_krb/")));
     push(@error5,"WARNING: $cds has a small intron ($intron_size bp)\n") if (($intron_size > 33) && ($intron_size < 39) && (!$basic));
   }
-  
 
   for($i=0; $i<@exon_coord1; $i++){
     my $start = $exon_coord1[$i];
@@ -141,14 +141,14 @@ foreach my $cds (@CDSs){
 
   if ($cds_object->get('Start_not_found')){
     $start_tag = "present";
-    push(@error2,"WARNING: $cds Start_not_found tag present\n") unless ($basic);
-    print "WARNING: $cds Start_not_found tag present\n" if $verbose;
+    push(@error2,"ERROR: $cds Start_not_found tag present\n") unless ($basic);
+    print "ERROR: $cds Start_not_found tag present\n" if $verbose;
   }
   
   if ($cds_object->get('End_not_found')){
     $end_tag = "present";
-    push(@error2,"WARNING: $cds End_not_found tag present\n") unless ($basic);
-    print "WARNING: $cds End_not_found tag present\n" if $verbose;
+    push(@error2,"ERROR: $cds End_not_found tag present\n") unless ($basic);
+    print "ERROR: $cds End_not_found tag present\n" if $verbose;
   }
 
   # check species is correct
