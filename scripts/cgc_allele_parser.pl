@@ -7,19 +7,34 @@
 # Script to convert cgc allele/lab links into ace file for geneace
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-10-17 09:57:30 $
+# Last updated on: $Date: 2002-12-10 10:16:04 $
 
 use strict;
+use lib "/wormsrv2/scripts/";                    
+use Wormbase;
+use Getopt::Long;
 use Ace;
-use Getopt::Std;
 
 ##############################
 # command-line options       #
 ##############################
-our $opt_i = "";      # input file
-our $opt_h = "";      # help
-getopts ('i:h');
-&usage if ($opt_h);
+our ($help,$debug,$input);
+my $maintainers = "All";
+
+GetOptions ("help"      => \$help,
+            "debug=s"   => \$debug,
+	    "input=s"   => \$input);
+
+
+# Display help if required
+&usage("Help") if ($help);
+
+# Use debug mode?
+if($debug){
+  print "DEBUG = \"$debug\"\n\n";
+  ($maintainers = $debug . '\@sanger.ac.uk');
+}
+
 
 
 $|=1;
@@ -27,7 +42,7 @@ $|=1;
 # hash to store allele 2 letter code and lab 2 letter codes
 my %alleles_labs;
 
-open(INPUT, "<$opt_i") || die "Couldn't open input file\n";
+open(INPUT, "<$input") || die "Couldn't open input file\n";
 while(<INPUT>){
   my $line = $_;
   chomp($line);
@@ -53,15 +68,22 @@ foreach my $key (sort keys %alleles_labs){
 
 $db->close;
 
-sub usage {
-  system ('perldoc',$0);
-  exit;       
-}
-
-
 
 
 exit(0);
+
+
+###########################################################
+
+sub usage {
+  my $error = shift;
+
+  if ($error eq "Help") {
+    # Normal help menu
+    system ('perldoc',$0);
+    exit (0);
+  }
+}
 
 __END__
 
@@ -93,7 +115,7 @@ delete instructions for removing all the data you have just added.
 
 =item MANDATORY arguments:
 
--i Specify input file (CGC strain file)
+-input Specify input file (CGC strain file)
 
 =back
 
@@ -101,7 +123,9 @@ delete instructions for removing all the data you have just added.
 
 =item OPTIONAL arguments:
 
--h (this help page)
+-help (this help page)
+
+-debug <user> (debug mode)
 
 =head1 AUTHOR - Keith Bradnam
 
