@@ -61,7 +61,7 @@ while (<GENEACE>)
 	    $seq_locus{$seq} .= "$locus ";
 	    $count++;
 	  }
-	else{print LOG "invalid or no sequence found for $locus (found $seq)\n";
+	else{print LOG  "$locus - invalid or no sequence found  (found $seq)\n";
 	   }
       }
     elsif(scalar(@entry) == 2)#entry no test is to exclude AceDB startup text
@@ -144,12 +144,12 @@ foreach $sequence(keys %seq_locus)
 		  }
 		else
 		  {
-		    print  LOG "\nlocus $locus\t$sequence has unkown <From_Laboratory> tag - $lab[0]  - not included in outputs \n";
+		    print  LOG "\nlocus $locus  -  $sequence has unkown <From_Laboratory> tag - $lab[0]  - not included in outputs \n";
 		  }
 	      }	
 	    else
 	      {
-		print LOG "$sequence has no lab tag\n";
+		print LOG "$locus -  $sequence has no lab tag\n";
 		$PROBcount++;
 		FindSequenceInfo($sequence,$locus);
 	      }
@@ -177,7 +177,7 @@ close CAMOUT;
 close STLOUT;
 close ALLOUT;
 close LOG;
-
+#$maintainer = "ar2\@sanger.ac.uk";
 &mail_maintainer($0,$maintainer,$log);
 
 #copy the ace files to the FTP site
@@ -225,7 +225,7 @@ sub FindSequenceInfo #($sequence - genomic seq and $locus )
     my $foundlab;
     my $seq_used;
 
-    print LOG "examining $seq\n";
+    #print LOG "examining $seq\n";
     
     if ($test_seq =~ m/(\w+\.)(\d+)$/ )#if the sequence name ends with ".number" (.1   .123)
       {
@@ -233,14 +233,14 @@ sub FindSequenceInfo #($sequence - genomic seq and $locus )
 	my $catch = $2;
 
 
-	print " . . . . . . ends with digit\n";
+	#print " . . . . . . ends with digit\n";
 
 	#catch where sequence now has isoforms
 	$test_seq = $seq."a";
 	my $result = TestSeq($test_seq);
 	if(defined($result))
 	  {
-	    print LOG "$seq does not exist but has isoforms\n\n";
+	    print LOG "$locus - $seq does not exist but has isoforms\n\n";
 	    $solved = 1;
 	  }
 
@@ -251,10 +251,10 @@ sub FindSequenceInfo #($sequence - genomic seq and $locus )
 	  {
 	    $catch++;
 	    $test_seq = $pre_catch.$catch;
-	    print LOG "testing with seq++ :$seq -> $test_seq\n";
+	    #print LOG "testing with seq++ :$seq -> $test_seq\n";
 	    if(defined(TestSeq($test_seq)))
 	      {
-		print LOG "$seq may have been merged to $test_seq \n\n";
+		print LOG "$locus - $seq may have been merged to $test_seq \n\n";
 		$solved = 1;
 	      }	  
 	    else
@@ -264,7 +264,7 @@ sub FindSequenceInfo #($sequence - genomic seq and $locus )
 		print LOG "testing with seq-- :$seq -> $test_seq\n";
 		if(defined(TestSeq($test_seq)))
 		  {
-		    print LOG "$seq may have been merged to $test_seq \n\n";
+		    print LOG "$locus - $seq may have been merged to $test_seq \n\n";
 		    $solved = 1;
 		  }
 
@@ -277,7 +277,7 @@ sub FindSequenceInfo #($sequence - genomic seq and $locus )
 			$test_seq = $pre_catch.(substr($catch,0,1));
 			if(defined(TestSeq($test_seq)))
 			  {
-			    print LOG "$seq not valid - but found $test_seq \n\n";
+			    print LOG "$locus - $seq not valid - but found $test_seq \n\n";
 			    $solved = 1;
 			  }
 		      }
@@ -308,7 +308,7 @@ sub FindSequenceInfo #($sequence - genomic seq and $locus )
 	 # print "trying with $test_seq . . \n";
 	  if(defined(TestSeq($test_seq)))
 	    {
-	      print LOG "$seq merged to $test_seq \n\n";
+	      print LOG "$locus - $seq merged to $test_seq \n\n";
 	      $solved = 1;
 	    }
 
@@ -318,7 +318,7 @@ sub FindSequenceInfo #($sequence - genomic seq and $locus )
 	    {
 	      if(defined(TestSeq($main_part)))
 		{
-		  print LOG "$seq isoform not found try $main_part \n\n";
+		  print LOG "$locus - $seq isoform not found try $main_part \n\n";
 		  $solved = 1;
 		}
 	    }
@@ -333,16 +333,16 @@ sub FindSequenceInfo #($sequence - genomic seq and $locus )
 	    $test_seq = $1;
 	    if(defined(TestSeq($test_seq)))
 	      {
-		print LOG "$seq is not valid seq but $test_seq is\n\n";
+		print LOG "$locus - $seq is not valid seq but $test_seq is\n\n";
 	      }
 	    else
 	      {	      
-		print LOG "$seq -  CANT FIND THIS AT ALL\n\n\n";
+		print LOG "$locus - $seq -  CANT FIND THIS AT ALL\n\n\n";
 	      }
 	  }
 	else
 	  {	      
-	    print LOG "$seq -  CANT FIND THIS AT ALL\n\n\n";
+	    print LOG "$locus - $seq -  CANT FIND THIS AT ALL\n\n\n";
 	  }
       }
   }
