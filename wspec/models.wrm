@@ -1239,7 +1239,10 @@
 		Species ?Species
 		Description ?Text //For trait information
 
-//NEW - one  new tag added by Paul Sternberg and tag order reversed by SDM
+
+// NEW - one  new tag added by Paul Sternberg and tag order reversed by SDM
+// removed localisation tag [010927 krb]
+// Added 'Curated_by' line for Sylvia [010927 krb]
 
 ?Expr_pattern	Expression_of	Sequence ?Sequence XREF Expr_pattern
 				Clone ?Clone XREF Expr_pattern
@@ -1250,7 +1253,6 @@
 		Expressed_in	Cell ?Cell XREF Expr_pattern
 				Cell_group ?Cell_group XREF Expr_pattern
 				Life_stage ?Life_stage XREF Expr_pattern
-                Localisation ?Text
                 Subcellular_localization ?Text
 		Type	Reporter_gene ?Text
 			In_situ ?Text
@@ -1264,20 +1266,23 @@
 				Strain UNIQUE ?Strain
 		Reference ?Paper XREF Expr_pattern
                 Transgene ?Transgene XREF Expr_pattern
+		Curated_by UNIQUE Text // Hinxton (HX) or Caltech (CT)
 
 
 // NEW Expr_profile and SK_map classes added at request of Raymond [010912 krb]
+// more tweaks added [010927 krb]
 
 ?Expr_profile SMap S_parent PCR_product UNIQUE ?PCR_product XREF Expr_profile
               Method ?Method
-              Expr_map ?SK_map
-              Reference       ?Paper //XREF Expr_profile
+              Expr_map ?SK_map XREF Expr_profile
+              Reference ?Paper XREF Expr_profile
               Remark ?Text
 
 ?SK_map       X_coord UNIQUE Float
               Y_coord UNIQUE Float
               Mountain UNIQUE Int
               Date UNIQUE DateType
+	      Attribute_of Expr_profile ?Expr_profile XREF Expr_map
               Remark ?Text
 
 
@@ -1493,7 +1498,7 @@
 
 ?PCR_product SMap S_Parent Canonical_parent UNIQUE ?Sequence XREF PCR_product
  		  S_Child RNAi ?RNAi XREF PCR_product UNIQUE Int UNIQUE Int #SMap_info
-			  Expr_profile ?Expr_profile XREF PCR_product // added for new Expr_profile class [010912 krb]
+			  Expr_profile ?Expr_profile XREF PCR_product UNIQUE Int UNIQUE Int #SMap_info// added for new Expr_profile class [010912 krb]
  	     Method ?Method
  	     Overlaps_CDS ?Sequence XREF Corresponding_PCR_product  // added for Dan PCR mappings [010419 dl]
 	     Oligo ?Oligo UNIQUE Int UNIQUE Int
