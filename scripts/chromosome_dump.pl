@@ -7,8 +7,8 @@
 # A script for dumping dna and/or gff files for chromosome objects in autoace
 # see pod for more details
 #
-# Last updated by: $Author: dl1 $     
-# Last updated on: $Date: 2004-04-22 16:23:08 $      
+# Last updated by: $Author: ar2 $     
+# Last updated on: $Date: 2004-07-01 14:55:42 $      
 
 
 use strict;
@@ -218,9 +218,17 @@ sub zip_files{
   foreach my $chr (@chromosomes){
     my $dna_file = "$dump_dir"."/CHROMOSOME_".$chr.".dna";
     my $gff_file = "$dump_dir"."/CHROMOSOME_".$chr.".gff";
+    my $msk_file = "$dump_dir"."/CHROMOSOME_".$chr."_masked.dna";
     if ($zipdna){
       print LOG "Compressing $dna_file\n";
       system ("/bin/gzip -f $dna_file");
+      if(-e $msk_file ) {
+	print LOG "Compressing $msk_file\n";
+	system ("/bin/gzip -f $msk_file");
+      }
+      else {
+	print LOG "Couldn't find any repeat-masked chromosomes in $dump_dir\n";
+      }
     }
     if ($zipgff){
       print LOG "Compressing $gff_file\n";
