@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-09-24 16:38:53 $
+# Last edited on: $Date: 2003-09-25 11:21:25 $
 
 
 #################################################################################
@@ -206,10 +206,18 @@ LOG->autoflush();
 &prepare_for_blat       if ($prepare_blat);
 
 
-# B6:Blat_analysis & B7:Upload_BLAT_data
+# B6:Blat_analysis 
 # Requires: A1,A4,A5,B1
-&blat_jobs              if ($blat_est || $blat_ost || $blat_embl || $blat_nematode || $blat_all);
-&load_blat_files("all") if ($addblat);
+&blat_jobs              if ($blat_est || $blat_ost || $blat_mrna || $blat_embl || $blat_nematode || $blat_all);
+
+
+# B7:Upload_BLAT_data
+# requires B6
+if ($addblat){
+  # Check that blats were actually run
+  &usage(19) unless (-e "$logdir/$flag{'B6'}");  
+  &load_blat_results("all");
+}
 
 
 # B8:Upload_wublast_data & B9:Upload_briggsae_data
@@ -280,7 +288,7 @@ else{
 
 ##############################
 # hasta luego                #
-##############################
+#############################
 
 exit(0);
 
@@ -815,20 +823,16 @@ sub prepare_for_blat{
   
   # TransferDB the current autoace to safe directory 
   print LOG "Starting TransferDB at ",&runtime,"\n";
-  my $status = system("TransferDB.pl -start /wormsrv2/autoace -end /wormsrv2/autoace_midway -database -wspec -name autoace_midway");
+  &run_command("TransferDB.pl -start /wormsrv2/autoace -end /wormsrv2/autoace_midway -database -wspec -name autoace_midway");
   print LOG "Finished TransferDB at ",&runtime,"\n";
 
-  if ($status != 0){
-    print LOG "ERROR: TransferDB for autoace failed.  Non-zero system return call\n";
-    $errors++;
-  }
   # make a copy_autoace_midway log file in /logs
   system ("touch $logdir/$flag{'B5'}");  
 
   # Now make blat target database using autoace (will be needed for all possible blat jobs)
   # Need to run blat_them_all -dump
   print LOG "Starting blat_them_all.pl -dump at ",&runtime,"\n";
-  system ("$scriptdir/blat_them_all.pl -dump")   && die "Couldn't blat_them_all -dump\n";
+  &run_command("$scriptdir/blat_them_all.pl -dump");
   print LOG "Finishing blat_them_all.pl -dump at ",&runtime,"\n";
 
 }
@@ -836,6 +840,7 @@ sub prepare_for_blat{
 #################################################################################
 
 sub blat_jobs{
+
   $am_option = "-blat";
   # Should only be here if there are new sequences to blat with, or genome sequence has changed.
 
@@ -870,26 +875,26 @@ sub blat_jobs{
     
     # run the main blat job
     print LOG "Starting blat_them_all.pl -blat -process -$job at ",&runtime,"\n\n";
-    $status = system ("$scriptdir/blat_them_all.pl -blat -process -$job"); die "-process -$job: $?" unless ($status == 0);
+    &run_command("$scriptdir/blat_them_all.pl -blat -process -$job");
     print LOG "Finishing blat_them_all.pl -blat -process -$job at ",&runtime,"\n\n";
     
     # also create virtual objects
     print LOG "Starting blat_them_all.pl -virtual -$job at ",&runtime,"\n\n";
-    $status = system ("$scriptdir/blat_them_all.pl -virtual -$job");  die "-virtual -$job: $?" unless ($status == 0);
+    &run_command("$scriptdir/blat_them_all.pl -virtual -$job");
     print LOG "Finishing blat_them_all.pl -virtual -$job at ",&runtime,"\n\n";
     
     # Run aceprocess to make cleaner files
     # slight difference for nematode files as there is no best/other distinction or intron files
     print LOG "Starting acecompress.pl at ",&runtime,"\n\n";
     if($job eq "nematode"){
-      system ("$scriptdir/acecompress.pl -homol autoace.$job.ace > autoace.${job}lite.ace");
-      system ("mv -f autoace.blat.${job}lite.ace autoace.blat.$job.ace");
+      &run_command("$scriptdir/acecompress.pl -homol autoace.$job.ace > autoace.${job}lite.ace");
+      &run_command("mv -f autoace.blat.${job}lite.ace autoace.blat.$job.ace");
     }
     else{
-      system ("$scriptdir/acecompress.pl -homol autoace.blat.$job.ace > autoace.blat.${job}lite.ace");
-      system ("mv -f autoace.blat.${job}lite.ace autoace.blat.$job.ace");
-      system ("$scriptdir/acecompress.pl -feature autoace.good_introns.$job.ace > autoace.good_introns.${job}lite.ace");
-      system ("mv -f autoace.good_introns.${job}lite.ace autoace.good_introns.$job.ace");
+      &run_command("$scriptdir/acecompress.pl -homol autoace.blat.$job.ace > autoace.blat.${job}lite.ace");
+      &run_command("mv -f autoace.blat.${job}lite.ace autoace.blat.$job.ace");
+      &run_command("$scriptdir/acecompress.pl -feature autoace.good_introns.$job.ace > autoace.good_introns.${job}lite.ace");
+      &run_command("mv -f autoace.good_introns.${job}lite.ace autoace.good_introns.$job.ace");
     }
 
     print LOG "Finishing acecompress.pl at ",&runtime,"\n\n";
@@ -915,19 +920,20 @@ sub blat_jobs{
 ################################################################################
 sub load_blat_results{
 
+  $am_option .= "-addblat";
   # generic subroutine for loading blat data into autoace
   # will load all types of blat result if 'all' is passed to the subroutine
-  my $first_blat_type = $_;
+  my $first_blat_type = $_[0];
+
   my @blat_types = @_;
   @blat_types = ("est","mrna","ost","embl","nematode") if ($first_blat_type eq "all");
   
-  my $command;
   foreach my $type (@blat_types){    
     print LOG "Adding BLAT $type data to autoace at ",&runtime,"\n";
-    $command =  "pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.blat.$type.ace\n";
+    my $command =  "pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.blat.$type.ace\n";
     # Don't need to add confirmed introns from nematode data (because there are none!)
     $command .= "pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.$type.ace\n" unless ($type eq "nematode");
-    $command .= "pparse /wormsrv2/autoace/BLAT/autoace.good_introns.$type.ace\n" unless ($type eq "nematode");
+    $command .= "pparse /wormsrv2/autoace/BLAT/autoace.good_introns.$type.ace\n"       unless ($type eq "nematode");
     $command .= "pparse /wormsrv2/autoace/BLAT/autoace.blat.$type.ace\n";           
     $command .= "save\nquit\n";
     open (WRITEDB, "| $tace -tsuser Sanger_BLAT_data /wormsrv2/autoace |") || die "Couldn't open pipe to autoace\n";
@@ -935,8 +941,7 @@ sub load_blat_results{
     close WRITEDB;
     print LOG "Finished adding BLAT $type data at ",&runtime,"\n";  
   }
-  system ("touch $logdir/$flag{'B7A'}");    
-
+  system ("touch $logdir/$flag{'B7'}"); 
 
 }
 
@@ -1204,11 +1209,7 @@ sub make_wormrna {
 sub dump_GFFs {
   $am_option .= " -gffdump";
   print LOG "chromosome_dump.pl started at ",&runtime,"\n";  
-  my $status = system ("$scriptdir/chromosome_dump.pl --gff");
-  if($status != 0){
-    print LOG "ERROR: non-zero return value of system call.  Couldn't make GFF files\n";
-    system ("touch $logdir/C1:ERROR");
-  }
+  &run_command("$scriptdir/chromosome_dump.pl --gff");
   print LOG "chromosome_dump.pl finished at ",&runtime,"\n";  
 
   &usage(18) if(-e "$logdir/$flag{'C1:ERROR'}");
@@ -1223,8 +1224,9 @@ sub dump_GFFs {
 sub split_GFFs {
   $am_option .= " -gffsplit";
   print LOG "GFFsplitter.pl started at ",&runtime,"\n";  
-  system ("$scriptdir/GFFsplitter.pl") && die "Couldn't split GFF files\n";
+  &run_command("$scriptdir/GFFsplitter.pl");
   print LOG "GFFsplitter finished at ",&runtime,"\n";  
+
   # make GFF_splitter file in /logs
   system ("touch $logdir/C2:Split_GFF_files");
 }
@@ -1489,7 +1491,13 @@ sub usage {
 	print "You cannot continue until this lock file is removed.\n";
 	exit(0);
     }
-    
+    elsif ($error == 19) {
+      # tried loading blat results without first runnning blat
+      print "\nautoace build aborted:\n";
+      print "The '$flag{'B6'} flag is not present indicating that BLAT has not been run. \n";
+      print "If you didn't need to run BLAT then you must create this file before you can upload BLAT results.\n\n";
+      exit(0);
+    }
     elsif ($error == 0) {
 	# Normal help menu
 	exec ('perldoc',$0);
