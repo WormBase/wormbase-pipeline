@@ -7,11 +7,11 @@
 # Creates SMapped Gene spans for Gene objects
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-08-05 16:47:43 $
+# Last edited on: $Date: 2004-08-06 09:05:40 $
 
-use lib $ENV{CVS_DIR};
-use Wormbase;
 use strict;
+use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use Wormbase;
 use Coords_converter;
 use Getopt::Long;
 use Log_files;
