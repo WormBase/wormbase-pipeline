@@ -181,7 +181,7 @@ if ( $analysisTOdump ) {
 				     hId, hstart, hend,  
 				     -log10(evalue), cigar
 				       FROM protein_feature
-					 WHERE proteinId = ? and -log10(evalue) > 1
+					 WHERE proteinId = ? and (-log10(evalue) > 1 or evalue = 0)
 					   AND analysis = ?
 					   ORDER BY hId
 				   } );  
@@ -192,7 +192,7 @@ else {
 				     hId, hstart, hend,  
 				     -log10(evalue), cigar
 				       FROM protein_feature
-					 WHERE proteinId = ? and -log10(evalue) > 1
+					 WHERE proteinId = ? and (-log10(evalue) > 1 or evalue = 0)
 					   ORDER BY hId
 					 } );
 }
@@ -234,6 +234,7 @@ foreach $pep (@peps2dump)
     foreach my $result_row (@$ref_results)
       {
 	($proteinId, $analysis,  $myHomolStart, $myHomolEnd, $homolID, $pepHomolStart, $pepHomolEnd, $e, $cigar) = @$result_row;
+	unless( defined $e) { $e = 1000 };# mysql gives -log10(v small no) as NULL 
 	my @data = ($proteinId, $processIds2prot_analysis{$analysis},  $myHomolStart, $myHomolEnd, $homolID, $pepHomolStart, $pepHomolEnd, $e, $cigar);
 	if( $analysis == 11 )   #wormpep
 	  {
