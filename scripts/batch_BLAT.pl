@@ -64,11 +64,8 @@ if ( $blat ) {
   #ncRNAs (?) 
   &run_bsub("elegans_ncRNAs.masked", "ncrna_out.psl") if $ncrna;
 
-  if ( $nematode ) {
-
-    # splitting Nematode_ESTs
-
-  }
+  # splitting Nematode_ESTs
+  &split_run( "nematode" ) if ( $nematode );
 }
 
 if ( $process or $virtual ) {
@@ -154,7 +151,7 @@ sub split_run
       $source_file = "${wormpub}/analysis/ESTs/elegans_ESTs.masked";
       $opts = "";
     }
-    elsif ($type eq "ost" ) {
+    elsif ($type eq "nematode" ) {
       $shatter_dir = "shatteredOST";
       $name_stem   = "$shatter_dir/nematodeEST";
       $source_file = "${wormpub}/analysis/ESTs/other_nematode_ESTs";
