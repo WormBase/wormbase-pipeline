@@ -5,8 +5,8 @@
 #
 # Usage : autoace_minder [-options]
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2002-08-09 15:54:15 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2002-08-16 15:01:22 $
 
 
 #################################################################################
@@ -48,8 +48,10 @@ my $check;		# Check DB consistency
 my $confirm;            # Confirm gene models (EST|mRNA)
 my $ftp;		# Public release to FTP site
 my $debug;		# Verbose debug mode
+my $time;		# Verbose timing mode
 my $help;		# Help/Usage page
 my $test;               # Test routine 
+my $suggest;            # Suggestion
 
 GetOptions (
 	    "initial"      => \$initial,
@@ -74,7 +76,9 @@ GetOptions (
 	    "check"        => \$check,
 	    "confirm"      => \$confirm,
 	    "ftp"          => \$ftp,
+	    "suggest"      => \$suggest,
 	    "debug"        => \$debug,
+	    "time"         => \$time,
 	    "help"         => \$help,
 	    "h"	           => \$help,
 	    "test"         => \$test
@@ -125,10 +129,10 @@ our %flag = (
 	     'Z1'  => 'Z1:Make_autoace_complete'
 	     );
 
-our @chrom      = ('I','II','III','IV','V','X');
-our $logdir     = "/wormsrv2/autoace/logs";
-our $WSver_file = "/wormsrv2/autoace/wspec/database.wrm";
-our $tace       =  "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
+our @chrom        = ('I','II','III','IV','V','X');
+our $logdir       = "/wormsrv2/autoace/logs";
+our $WSver_file   = "/wormsrv2/autoace/wspec/database.wrm";
+our $tace         =  "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
 our ($WS_version,$WS_previous) = &get_WS_version;
 
 # deal with logfile issues
@@ -137,8 +141,17 @@ our $logtype = "";
 open (LOG,">$logfile");
 LOG->autoflush();
 
+# logfiles
+&logfile_details;
+
 # debug mode modifies $maintainers to reduce e-mail load
 ($maintainers = "dl1\@sanger.ac.uk") if ($debug);
+
+#################################
+# Suggest which step to do next #
+#################################
+
+&make_suggestion if ($suggest);
 
 #######################
 #__ PREPARE SECTION __#
@@ -150,9 +163,6 @@ LOG->autoflush();
 #######################################
 
 &initiate_build    if ($initial);
-
-# logfiles
-&logfile_details;
 
 #######################################
 # A3:Unpack_FTP_databases             #
@@ -282,7 +292,7 @@ exit(0);
 #
 # Checks       : [01] - Fail if the build_in_progess flag is present.
 #
-# Does         : [01] - updates the WS version in database.wrm (under CVS)
+# Does         : [01] - updates the WS version in database.wrm
 #              : [02] - writes the WS version to the build_flag (writes to /wormsrv2/autoace/logs)
 #              : [03] - writes log file A2:Update_WS_version to /wormsrv2/autoace/logs
 #
@@ -291,6 +301,12 @@ exit(0);
 
 sub initiate_build {
 
+    # time logging
+    if ($time) {
+	my $runtime     = `date +%H:%M:%S`; chomp $runtime;
+	print LOG "Starting 'autoace_minder -initiate' at $runtime\n\n";
+    }
+    
     local (*FLAG);
     my $cvs_file = "/wormsrv2/autoace/wspec/database.wrm";
 
@@ -299,6 +315,13 @@ sub initiate_build {
     
     # commit to new build ..............
     $WS_version = &get_wormbase_version;
+
+
+
+
+
+
+
     
     # exit if no WS version is returned
     &usage("No_WormBase_release_number") if (!defined($WS_version));
@@ -306,8 +329,11 @@ sub initiate_build {
     # manipulate to assign last WS release version
     my $WS_new_name = $WS_version +1;
  
-    # tidy up the log directory
-    system ("/usr/bin/rm -f $logdir/*:*");
+#    [move this step to the end of the build procedure]
+#    [i.e. clean up after yourself]
+#
+#    # tidy up the log directory
+#    system ("/usr/bin/rm -f $logdir/*:*");
 
     # make new build_in_process flag
     system ("touch $logdir/$flag{'A1'}");
@@ -319,19 +345,23 @@ sub initiate_build {
     sleep 10;
 
     # update database.wrm using cvs
-    print "Updating $cvs_file to include new WS number - using CVS\n\n";
-    system ("cvs -d '/nfs/ensembl/cvsroot/' edit $cvs_file")       
-	&& usage ("Failed_to_update_cvs_repository");
-    system ("sed 's/$WS_version/$WS_new_name/' < $cvs_file > ${cvs_file}.new")            
-	&& usage ("Failed_to_update_cvs_repository");
-    system ("mv /wormsrv2/autoace/wspec/database.wrm.new $cvs_file")                              
-	&& usage ("Failed_to_update_cvs_repository");
-    system ("cvs -d '/nfs/ensembl/cvsroot/' commit -m 'updating $cvs_file to $WS_new_name' $cvs_file") 
-	&& usage ("Failed_to_update_cvs_repository");
+    print "Updating $cvs_file to include new WS number - using sed\n\n";
+    system ("sed 's/$WS_version/$WS_new_name/' < $cvs_file > ${cvs_file}.new");
+    system ("mv /wormsrv2/autoace/wspec/database.wrm.new $cvs_file");
 
     # make a log file in /wormsrv2/autoace/logs
     system ("touch $logdir/$flag{'A2'}");
 
+    # add lines to the logfile
+    print LOG "Updated WormBase version number to WS$WS_new_name\n\n";
+    print LOG "You are ready to build another WormBase release\n\n";
+
+    # time logging
+    if ($time) {
+	$runtime = `date +%H:%M:%S`; chomp $runtime;
+	print LOG "Ending 'autoace_minder -initiate' at $runtime\n\n";
+    }
+    
 }
 #__ end initiate_build __#
 
@@ -339,7 +369,8 @@ sub initiate_build {
 # get_WS_version                                                                #
 #################################################################################
 # Requirements : [01] - Presence of the database.wrm file in wspec
-
+#              : [02] - WormBase.pm modules
+#
 # Checks       : [01] - Fail if no WS_version is returned.
 
 # Does         : [01] - checks the build_in_progess flag is older than the version
@@ -352,12 +383,17 @@ sub get_WS_version {
     # exit if no WS version is returned
     &usage("No_WormBase_release_number") if (!defined($WS_version));
 
+    print "$logdir/$flag{'A1'} : " . (-M "$logdir/$flag{'A1'}") . "\n" if ($debug);
+    print "$WSver_file : "         . (-M "$WSver_file") . "\n" if ($debug);
+
+
+
     # exit if WS version (database.wrm) is older than build_in_process flag
     # i.e. the WS version has been changed since the start of the build
-    &usage(11) if (-M "$logdir/$flag{'A1'}" < -M "$WSver_file");
-    
-#    print "$logdir/$flag{'A1'} : " . (-M "$logdir/$flag{'A1'}") . "\n";
-#    print "$WSver_file : "         . (-M "$WSver_file") . "\n";
+    # ignore if the A1 flag doesn't exist
+    if (-e "$logdir/$flag{'A1'}") {
+	&usage(11) if (-M "$logdir/$flag{'A1'}" < -M "$WSver_file");
+    }
 
     # manipulate to assign last WS release version
     $WS_previous = $WS_version -1;
@@ -1014,8 +1050,12 @@ sub make_agp {
 }
 #__ end make_agp __#
 
+
+
+
+
 #################################################################################
-# make_FTP
+# make_FTP                                                                      #
 #################################################################################
 
 sub make_FTP {
@@ -1023,9 +1063,21 @@ sub make_FTP {
 
 
 }
- ########################################
- # Open logfile                         #
- ########################################
+
+#################################################################################
+# make suggestion                                                               #
+#################################################################################
+
+sub make_suggestion {
+
+
+}
+#__ end of make_suggestion __#
+
+
+#################################################################################
+# Open logfile                                                                  #
+#################################################################################
 
 sub logfile_details {
 
@@ -1038,7 +1090,7 @@ sub logfile_details {
     
     print LOG "======================================================================\n";
     print LOG "  -full         : Full WS release (executes all of the following -wbcp)\n"               if ($full);
-    print LOG "  -initial      : Start an autoace build\n"                                              if ($initial);
+    print LOG "  -initial      : Prepare for a new build, update WSnn version number\n"            if ($initial);
     print LOG "  -unpack       : Unpack databases from FTP site and copy Sanger dbs\n"                  if ($unpack);
     print LOG "  -acefile      : Write .acefiles from WormBase copies of the databases\n"               if ($acefile);
     print LOG "  -build        : Build autoace\n"                                                       if ($build);
@@ -1052,6 +1104,7 @@ sub logfile_details {
     print LOG "  -addhomol     : Load blast data into autoace\n"                                        if ($addhomol);
     print LOG "  -ftp          : Move WS release to the external FTP site (Full public release)\n"      if ($ftp);
     print LOG "  -debug        : Verbose/Debug mode\n"                                                  if ($debug);
+    print LOG "  -time         : Verbose/Timing mode\n"                                                 if ($time);
     print LOG "  -gffdump      : Dump GFF files\n"                                                      if ($gffdump);
     print LOG "  -gffsplit     : Split GFF files\n"                                                     if ($gffsplit);
     print LOG "  -map          : map PCR, RNAi and WTP\n"                                               if ($map);
@@ -1074,6 +1127,7 @@ sub run_details {
     print "\n";
     print "======================================================================\n";
     print "  -full         : Full WS release (executes all of the following -wbcp)\n"          if ($full);
+    print "  -initial      : Prepare for a new build, update WSnn version number\n"            if ($initial);
     print "  -unpack       : Unpack databases from FTP site and copy Sanger dbs\n"             if ($unpack);
     print "  -acefile      : Write .acefiles from WormBase copies of the databases\n"          if ($acefile);
     print "  -build        : Build autoace\n"                                                  if ($build);
@@ -1087,6 +1141,7 @@ sub run_details {
     print "  -addhomol     : Load blast data into autoace\n"                                   if ($addhomol);
     print "  -ftp          : Move WS release to the external FTP site (Full public release)\n" if ($ftp);
     print "  -debug        : Verbose/Debug mode\n"                                             if ($debug);
+    print "  -time         : Verbose/Timing mode\n"                                            if ($time);
     print "  -gffdump      : Dump GFF files\n"                                                 if ($gffdump);
     print "  -gffsplit     : Split GFF files\n"                                                if ($gffsplit);
     print "  -map          : map PCR, RNAi and WTP\n"                                          if ($map);
