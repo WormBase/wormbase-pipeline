@@ -855,6 +855,7 @@
 						snRNA UNIQUE Text
 						scRNA UNIQUE Text
 						stRNA UNIQUE Text         // [010723 dl]
+						miRNA UNIQUE Text         // [011129 dl]
 						misc_RNA UNIQUE Text
 			Status	Received UNIQUE DateType
 				Library_construction UNIQUE DateType
