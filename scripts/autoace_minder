@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/bin/perl5.8.0 -w
 #
 # autoace_minder
 # 
@@ -6,23 +6,23 @@
 #
 # Usage : autoace_minder [-options]
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2003-06-10 16:27:16 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2003-07-22 12:55:35 $
 
 
 #################################################################################
 # Initialise variables                                                          #
 #################################################################################
 
-$|=1;
-use IO::Handle;
-use Getopt::Long;
+use strict;
 use lib "/wormsrv2/scripts/";
 use Wormbase;
-use strict;
+use IO::Handle;
+use Getopt::Long;
 use vars;
 use Carp;
 
+# is this script being run as user wormpub???
 &test_user_wormpub;
 
 ##############################
@@ -33,7 +33,6 @@ my $initial;		# Start the build process
 my $unpack;		# unpack primaries	
 my $gffdump;		# dump gff files
 my $gffsplit;           # split gff files
-my $agp;		# make agp files for the yellow brick road
 my $buildpep;		# Build wormpep
 my $buildrna;		# Build wormrna
 my $blat;		# map similarities (BLAT jobs)
@@ -51,16 +50,17 @@ my $buildchrom;		# Build autoace : CHROMOSOMES directory
 my $buildrelease;	# Build autoace : Release directory
 my $buildtest;          # Test autoace build
 my $secure;		# copy autoace before blatting
-my $check;		# Check DB consistency
+my $agp;		# make/check agp files
 my $confirm;            # Confirm gene models (EST|mRNA)
 my $ftp;		# Public release to FTP site
 my $debug;		# Verbose debug mode
 my $help;		# Help/Usage page
 my $test;               # Test routine 
-my $suggest;            # Suggestion
+my $dbcomp;		# runs dbcomp script
 our $am_option;         # track which option has been used (for logging purposes)
 
 GetOptions (
+	    "agp"	     => \$agp,
 	    "initial"        => \$initial,
 	    "unpack"         => \$unpack,
 	    "gffdump"        => \$gffdump,
@@ -82,10 +82,8 @@ GetOptions (
 	    "buildrelease"   => \$buildrelease,
             "buildtest"      => \$buildtest,
 	    "secure"         => \$secure,
-	    "check"          => \$check,
 	    "confirm"        => \$confirm,
-	    "ftp"            => \$ftp,
-	    "suggest"        => \$suggest,
+	    "dbcomp"	     => \$dbcomp,
 	    "debug"          => \$debug,
 	    "help"           => \$help,
 	    "h"	             => \$help,
@@ -158,12 +156,6 @@ LOG->autoflush();
 # debug mode modifies $maintainers to reduce e-mail load
 ($maintainers = "dl1\@sanger.ac.uk") if ($debug);
 
-#################################
-# Suggest which step to do next #
-#################################
-
-&make_suggestion if ($suggest);
-
 #__ PREPARE SECTION __#
 
 # A1:Build_in_progress & A2:Updated_WS_version
@@ -190,7 +182,8 @@ LOG->autoflush();
 
 # B3:Make_agp_files
 # Requires: A1,A4,A5,B1
-&check_release          if ($check);
+&make_agp		if ($agp);
+
 
 # Add parasitic nematode ESTs
 &add_nematode_ESTs      if ($addnematode);
@@ -240,26 +233,22 @@ LOG->autoflush();
 &confirm_gene_models   if ($confirm);
 
 
+
 #__ ANCILLIARY DATA SECTION __#
 
-#######################################
-# D1:Build_wormpep                    #
-#######################################
-
+# D1:Build_wormpep                    
 &make_wormpep      if ($buildpep);
 
-#######################################
-# D4:Build_wormrna                    #
-#######################################
-
+# D4:Build_wormrna                    
 &make_wormrna      if ($buildrna);
 
+
 #__ CHECK SECTION __#
+&dbcomp		  if ($dbcomp);
 
 
 #__ RELEASE SECTION __#
 
-&make_FTP          if ($ftp);
 
 
 ##############################################
@@ -576,8 +565,6 @@ sub make_acefiles {
 # Does         : [01] - checks the Primary_database_used_in_build data
 #              : [03] - writes log file A1:Update_WS_version to /wormsrv2/autoace/logs
 
-
-
 sub make_autoace {
   $am_option = "-build";
   my $runtime;
@@ -728,57 +715,69 @@ sub test {
 
 
 #################################################################################
-# check_release                                                                 #
+# make_agp                                                                      #
 #################################################################################
 
-sub check_release {
-  $am_option = "-check";
-  # have you run GFFsplitter ?
-  # if no then this is about checking the DNA and then making agp files
+sub make_agp {
+  $am_option = "-agp";
+
+  # This is about checking the DNA and then making agp files.  This step
+  # now gets run twice during build, the first time might have errors due to 
+  # EMBL synchronisation problems but the second time should be run at the end
+  # of the build and errors should have gone away
+
+  # have you run GFFsplitter?
   unless ((-e "$logdir/$flag{'C2'}") && (-e "$logdir/$flag{'B3'}")) {
-	
     &dump_GFFs;
-    system ("$scriptdir/check_DNA.pl")     && die "Couldn't run check_DNA.pl\n";
-    $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "check_DNA.pl finished at $runtime\n";  
-    system ("$scriptdir/make_agp_file.pl") && die "Couldn't run make_agp_file.pl\n";
-    $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "make_agp_file.pl finished at $runtime\n";  
-    system ("$scriptdir/agp2dna.pl")       && die "Couldn't run agp2dna.pl\n";
-    $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "agp2dna.pl finished at $runtime\n";  
+  }   
 
-    # make a make_autoace log file in /logs
-    system ("touch $logdir/$flag{'B3'}");
+  system ("$scriptdir/check_DNA.pl")     && die "Couldn't run check_DNA.pl\n";
+  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "check_DNA.pl finished at $runtime\n";  
+  system ("$scriptdir/make_agp_file.pl") && die "Couldn't run make_agp_file.pl\n";
+  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "make_agp_file.pl finished at $runtime\n";  
+  system ("$scriptdir/agp2dna.pl")       && die "Couldn't run agp2dna.pl\n";
+  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "agp2dna.pl finished at $runtime\n";  
 
-    # check for errors in the agp file
-    
-    local (*AGP);
-    my $chrom;
-    my @errors;
-    
-    foreach $chrom (@chrom) {
-      open (AGP, "</wormsrv2/autoace/yellow_brick_road/CHROMOSOME_${chrom}.agp_seq.log") or die "Couldn't open agp file : $!";
-      while (<AGP>) {
-	push (@errors,$_) if (/ERROR/);
-      }
-      close AGP;
+  # make a B3 log file if this is first run of -agp (i.e. no B3 log file there)
+  system ("touch $logdir/$flag{'B3'}") unless ((-e "$logdir/$flag{'B3'}"));
+
+  # check for errors in the agp file 
+  local (*AGP);
+  my $chrom;
+  my @errors;
+  
+  foreach $chrom (@chrom) {
+    open (AGP, "</wormsrv2/autoace/yellow_brick_road/CHROMOSOME_${chrom}.agp_seq.log") or die "Couldn't open agp file : $!";
+    while (<AGP>) {
+      push (@errors,$_) if (/ERROR/);
     }
-    
-    # No errors
-    if (scalar @errors > 1) {
-      # make 'agp_files_errors' log file in /logs
-      # this will halt the process if you are running blat
-      system ("touch $logdir/$flag{'B4'}");
-    }
-    
-    
+    close AGP;
   }
-  # if yes then this is about checking the class counts
-  else {
-    $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "dbcomp.pl started at $runtime\n";  
-    system ("$scriptdir/dbcomp.pl") && die "Couldn't run dbcomp.pl\n";
-    $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "dbcomp.pl finished at $runtime\n";  
-    }
+    
+  # No errors
+  if (scalar @errors > 1) {
+  # make 'agp_files_errors' log file in /logs
+  # this will halt the process if you are running blat
+    system ("touch $logdir/$flag{'B4'}");
+  }
+        
 }
-#__ end check_release __#
+
+#__ end make_agp __#
+
+#################################################################################
+# run dbcomp.pl                                                                 #
+#################################################################################
+
+sub dbcomp{
+  $am_option = "-dbcomp";	
+  # need to perform class by class comparison against previous release
+
+  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "dbcomp.pl started at $runtime\n";	
+  system ("$scriptdir/dbcomp.pl") && die "Couldn't run dbcomp.pl\n";	      
+  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "dbcomp.pl finished at $runtime\n";      
+}
+#__ end dbcomp __#
 
 #################################################################################
 # similarity mapping                                                            #
@@ -1517,27 +1516,6 @@ END
 
 
 #################################################################################
-# make_FTP                                                                      #
-#################################################################################
-
-sub make_FTP {
-  $am_option = "-ftp";
-
-
-}
-
-#################################################################################
-# make suggestion                                                               #
-#################################################################################
-
-sub make_suggestion {
-  $am_option = "-suggest";
-
-}
-#__ end of make_suggestion __#
-
-
-#################################################################################
 # Open logfile                                                                  #
 #################################################################################
 
@@ -1553,13 +1531,13 @@ sub logfile_details {
   print LOG "#  -buildchrom   : Build autoace : DNA data\n"                                            if ($buildchrom);
   print LOG "#  -buildtest    : Build autoace : Test for failed .ace object uploads\n"                 if ($buildtest);
   print LOG "#  -buildrelease : Build autoace : Release directory\n"                                   if ($buildrelease);
-  print LOG "#  -check        : Check DB consistency and diffs from previous version\n"                if ($check);
+  print LOG "#  -agp          : Make and check agp files\n"		                               if ($agp);
+  print LOG "#  -dbcomp       : Check DB consistency and diffs from previous version\n"                if ($dbcomp);
   print LOG "#  -buildpep     : Build wormpep database\n"                                              if ($buildpep);
   print LOG "#  -buildrna     : Build wormrna database\n"                                              if ($buildrna);
   print LOG "#  -addhomol     : Load blast data into autoace\n"                                        if ($addhomol);
   print LOG "#  -addbriggsae  : Load briggsae data into autoace\n"                                     if ($addbriggsae);
   print LOG "#  -utrs         : Generates and load UTR data into autoace\n"                            if ($utrs);
-  print LOG "#  -ftp          : Move WS release to the external FTP site (Full public release)\n"      if ($ftp);
   print LOG "#  -debug        : Verbose/Debug mode\n"                                                  if ($debug);
   print LOG "#  -gffdump      : Dump GFF files\n"                                                      if ($gffdump);
   print LOG "#  -gffsplit     : Split GFF files\n"                                                     if ($gffsplit);
@@ -1746,13 +1724,15 @@ autoace_minder OPTIONAL arguments:
 
 =item -buildrelease, Build autoace : release directory
 
-=item -check, Check DB consistency and diffs from previous version
+=item -dbcomp, Check DB consistency and diffs from previous version
 
 =item -buildpep, Build wormpep database
 
 =item -ftp, Move WS release to the external FTP site (Full public release)
 
 =item -debug, Verbose/Debug mode
+
+=item -agp, creates and checks agp files
 
 =item -gffdump, dump GFF files
 
