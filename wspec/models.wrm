@@ -1701,9 +1701,9 @@
                         Publishes_as ?Author    // confirmed author names (curated)
                                                 // can't XREF because of paper model
                         Possibly_publishes_as ?Author XREF Possible_person
-                                                // scripted automatically for a
-                                                // curator to look at and verify
-                                                // or reject later
+                                                // curated for Author->Paper->Person
+                                                // connection but not yet verified by
+                                                // the Person
 
 #Address  Street_address Text        // multiple lines including town, state, zip/postcode, whatever
           Country UNIQUE Text
