@@ -8,8 +8,8 @@
 #                          /wormsrv2/autoace/release/
 #                          /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/current/release_notes.txt/
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2004-07-06 13:10:25 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2004-07-06 14:13:41 $
 
 
 use strict;
@@ -79,10 +79,9 @@ my $targetdir = "/nfs/disk69/ftp/pub/wormbase";  # default directory, can be ove
  
 
 # update wormpep_dev symbolic link in wormpep ftp site
-my $wormpep_ftp_root = glob("~ftp/pub/databases/wormpep");
-&run_command("cd $wormpep_ftp_root");
-&run_command("rm -f wormpep_dev");
-&run_command("ln -fs wormpep${release_number}/wormpep${release_number} wormpep_dev");
+my $wormpep_dir = glob("~ftp/pub/databases/wormpep");
+&run_command("rm -f $wormpep_dir/wormpep_dev");
+&run_command("ln -fs $wormpep_dir/wormpep${release_number}/wormpep${release_number} $wormpep_dir/wormpep_dev");
 
 
 #######################################
