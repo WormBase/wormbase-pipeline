@@ -162,13 +162,23 @@ print OUT " +--------------------+----------+----------+--------+\n";
 
 close OUT;
 close ERR;
+
+
+# create symbolic links to current.out and current.dbcomp
+print LOG "\nCreating 'current.out' and 'current.dbcomp'\n";
+system("rm -f /wormsrv2/autoace/COMPARE/current.out") && die "Couldn't remove 'current.out' symlink\n";
+system("rm -f /wormsrv2/autoace/COMPARE/current.dbcomp") && die "Couldn't remove 'current.dbcomp' symlink\n";
+system("ln -s $errfile /wormsrv2/autoace/COMPARE/current.out") && die "Couldn't create new symlink\n";
+system("ln -s $outfile /wormsrv2/autoace/COMPARE/current.dbcomp") && die "Couldn't create new symlink\n";
+
 close LOG;
 
- ##############################
- # tidy up class count files  #
- ##############################
+##############################
+# tidy up class count files  #
+##############################
 
 system ("rm -f /tmp/dbcomp*");
+
 
  ##############################
  # mail $maintainer report    #
