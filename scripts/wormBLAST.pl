@@ -3,7 +3,8 @@
 use DBI;
 use strict;
 my $wormpipe_dir = glob("~wormpipe");
-use libs "$wormpipe_dir/wormbase/scripts/"
+#use libs "$wormpipe_dir/wormbase/scripts/"
+use lib "/wormsrv2/scripts/";
 use Wormbase;
 use Getopt::Long;
 
