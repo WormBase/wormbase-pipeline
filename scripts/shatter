@@ -2,11 +2,32 @@
 #
 # shatter fasta file into separate sequences
 #
+# Usage : shatter <filename> <No. of entries per output file> <name for output files>
+#
 
-while (<>) {
+use strict;
+
+my $file = shift;
+my $bin_size = shift;
+my $output_name = shift;
+my $count = 0;
+my $output_count = 1;
+
+open (FILE, "<$file");
+while (<FILE>) {
+
     if (/^>(\S+)/) {
-	close FILE if (FILE) ;
-	open (FILE, ">$1") || die "can't open file $1\n" ;
+	if ($count == $bin_size) {
+	    close OUTPUT if (OUTPUT);
+	    open (OUTPUT, ">${output_name}_${output_count}") || die "can't open file\n" ;
+	    $output_count++;
+	    $count = 0;
+	}
+	
+	$count++;
     }
-    print FILE ;
+    print OUTPUT ;
 }
+close FILE;
+
+close OUTPUT;
