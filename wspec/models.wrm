@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: krb $
-// Last edited on: $Date: 2004-07-23 09:09:56 $
+// Last edited on: $Date: 2004-08-09 09:11:22 $
  
 
 
@@ -1686,10 +1686,11 @@
                                         Chicken
                                         Goat
                                         Other_animal    Text
-           Expr_pattern ?Expr_pattern   XREF    Antibody_info   
-           Location     ?Laboratory
-           Reference    ?Paper          XREF    Antibody
-           Remark       ?Text #Evidence
+           Expr_pattern    ?Expr_pattern   XREF    Antibody_info   
+	   Gene_regulation ?Gene_regulation XREF Antibody_info
+           Location        ?Laboratory
+           Reference       ?Paper          XREF    Antibody
+           Remark          ?Text #Evidence
 
 
 
@@ -1911,6 +1912,7 @@
 					       X_ray
 				   	       Spontaneous
 				     	       UV
+					       Particle_bombardment
 				     	       Not_integrated
 				     	       Other_integration_method	Text 
 		Location ?Laboratory #Lab_Location //Which Labs have the transgene.
@@ -1921,9 +1923,10 @@
 		Phenotype	?Text	//Phenotype should be described as "Unc. With other ..."
 		Rescue ?Gene XREF Rescued_by_Transgene ?Allele XREF Rescued_by_Transgene
 		Expr_pattern ?Expr_pattern XREF Transgene //Related Expr_pattern
-		Remark ?Text #Evidence //More comments on the transgene
+		Gene_regulation ?Gene_regulation XREF Transgene
 		Reference ?Paper XREF Transgene //papers refered to the transgene.
 		Species UNIQUE ?Species // added by krb for consistency with other classes 021030
+		Remark ?Text #Evidence //More comments on the transgene
 
 
 // RNAi from Lincoln Stein 001213
@@ -2409,7 +2412,7 @@
 
 ?Paper  Original_timestamp Datetype // temporary tag in transition period [krb 040223]
 	Name    CGC_name ?Paper_name XREF CGC_name_for
-		//PMID     ?Paper_name XREF PMID_for
+		PMID     ?Paper_name XREF PMID_for
 		Medline_name ?Paper_name XREF Medline_name_for
 		Meeting_abstract ?Paper_name XREF Meeting_abstract_name
 		WBG_abstract    ?Paper_name XREF WBG_abstract_name
@@ -2426,8 +2429,6 @@
                         Year UNIQUE Int
                         In_book #Paper
                         Contained_in ?Paper XREF Contains       // old form
-			Medline_acc UNIQUE Int 
-			PMID UNIQUE Int 
         Author ?Author XREF Paper #Affiliation        // replaced by:
 //        Author_to_person ?Author UNIQUE ?Person XREF Paper
         Person ?Person XREF Paper
@@ -2553,15 +2554,17 @@
 
 ?Gene_regulation Evidence  #Evidence       
 		 Summary   ?Text
-                 Method    Antibody        ?Text
-                           Reporter_gene   ?Text
-                           In_situ         Text
-                           Northern        Text
-                           Western         Text
-                           RT_PCR          Text
-                           Other_method    ?Text
-                 Regulator Regulator_info  Allele                  ?Allele 
-                                           RNAi                    ?RNAi
+                 Method    Antibody       ?Text
+			   Antibody_info  ?Antibody XREF Gene_regulation
+                           Reporter_gene  ?Text
+			   Transgene      ?Transgene XREF Gene_regulation
+                           In_situ        Text
+                           Northern       Text
+                           Western        Text
+                           RT_PCR         Text
+                           Other_method   ?Text
+                 Regulator Regulator_info Allele                  ?Allele 
+                                          RNAi                    ?RNAi
                            Trans_regulator_gene    ?Gene      XREF    Trans_regulator #Boolean
                            Trans_regulator_seq     ?CDS       XREF    Trans_regulator #Boolean
                            Cis_regulator_seq       ?Sequence  XREF    Cis_regulator   #Boolean

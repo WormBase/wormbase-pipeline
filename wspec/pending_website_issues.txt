@@ -58,3 +58,14 @@ New Library class to support new data on nematode EST consensi (from Blaxter gro
 EST sequence objects (non-C.elegans) will now link to Library class via Library tag, and those
 consensus sequences will have a EST_consensus tag (those part of a consensus will have a 
 Contained_in_cluster tag which XREFs to a Contains_reads tag)
+
+
+
+9th August
+Gene_regulation now links to ?Antibody class via Antibody_info tag and ?Transgene via Transgene
+tag.
+
+Added 'Particle_bombardment' tag to Transgene class (under Isolation tag)
+
+
+Paper class loses Medline_acc tag and uses PMID tag in a new way (now xrefd to Paper_name class)
