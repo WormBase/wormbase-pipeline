@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: krb $
-// Last edited on: $Date: 2004-05-14 12:34:22 $
+// Last edited on: $Date: 2004-06-01 08:52:31 $
  
 
 
@@ -1900,7 +1900,7 @@
  		  S_child RNAi ?RNAi XREF PCR_product UNIQUE Int UNIQUE Int #SMap_info
 			  Expr_profile ?Expr_profile XREF PCR_product UNIQUE Int UNIQUE Int #SMap_info// added for new Expr_profile class [010912 krb]
  	     Overlaps_CDS ?CDS XREF Corresponding_PCR_product  // added for Dan PCR mappings [010419 dl]
- 	     Overlaps_transcript ?CDS XREF Corresponding_PCR_product  
+ 	     Overlaps_transcript ?Transcript XREF Corresponding_PCR_product  
 	     Overlaps_pseudogene ?Pseudogene XREF Corresponding_PCR_product // new [030801 krb]
 	     Oligo ?Oligo XREF PCR_product UNIQUE Int UNIQUE Int
  	     Assay_conditions ?LongText
