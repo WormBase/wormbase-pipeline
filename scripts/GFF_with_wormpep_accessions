@@ -31,12 +31,17 @@ while (<GFF>) {
         next;
     }
 
-    # exceptions WS32
-#   if ($gen_can eq "ZK1236R") {print "$_ acc=n/a\n"; next;}  : removed 010927
-
     $acc = $obj->Corresponding_protein(1);
     $acc =~ s/WP\://g;
-    print "$_ acc=$acc\n";
+
+    if ($acc ne "") {
+	$acc =~ s/WP\://g;
+	print "$_ wp_acc=$acc\n";
+    }
+    else {  # could be a tRNA
+	print "$_\n";
+    }
+    undef ($acc); 
 
     $obj->DESTROY();
 
