@@ -8,10 +8,6 @@
 
 # Usage : GFFsplitter
 #
-# 
-
-# v0.1
-# 001129 : dl  : PP version
 
 #################################################################################
 # variables                                                                     #
@@ -63,18 +59,8 @@ print LOG "\n";
 # Main Loop                                                                     #
 #################################################################################
 
- ############################################################
- # get the list of gff files from the data directory        #
- ############################################################
 
-#opendir(CHROMOSOMES, $datadir) or die ("Could not opendir $datadir");
-#while (defined($file=readdir(CHROMOSOMES))) {
-#    next unless ($file =~ /CHROMOSOME_\S+\.gff/);
-#    print LOG "$file\n";
-#    push (@files,$file);
-#}
-#close CHROMOSOMES;
-
+# prepare array of file names and sort names
 @files = (
 	  'CHROMOSOME_I.gff',
 	  'CHROMOSOME_II.gff',
@@ -84,16 +70,12 @@ print LOG "\n";
 	  'CHROMOSOME_X.gff',
 	  );
 
- ############################################################
- # sort them alphabetically                                 #
- ############################################################
-
 @gff_files = sort @files; 
 undef @files; 
 
- ############################################################
- # loop through each GFF file                               #
- ############################################################
+############################################################
+# loop through each GFF file                               #
+############################################################
 
 $debug = 1;
 
@@ -137,120 +119,124 @@ foreach (@gff_files) {
     $gff_ts_site              = $file_prefix . "\.ts_site\.gff";
     $gff_RNAi                 = $file_prefix . "\.RNAi\.gff";
     $gff_genepair             = $file_prefix . "\.genepair\.gff";
+    $gff_WTP                  = $file_prefix . "\.WTP\.gff";
     
     open (GFF_CLONE_PATH, ">$datadir/GFF_SPLITS/$gff_clone_path");
-    print GFF_CLONE_PATH  "##gff-version 2\n";
+    print GFF_CLONE_PATH  "##Version: $cvs_version\n";
     print GFF_CLONE_PATH  "##date $rundate\n";
 
     open (GFF_GENES, ">$datadir/GFF_SPLITS/$gff_genes");
-    print GFF_GENES  "##gff-version 2\n";
+    print GFF_GENES  "##Version: $cvs_version\n";
     print GFF_GENES  "##date $rundate\n";
 
     open (GFF_PSEUDOGENES, ">$datadir/GFF_SPLITS/$gff_pseudogenes");
-    print GFF_PSEUDOGENES  "##gff-version 2\n";
+    print GFF_PSEUDOGENES  "##Version: $cvs_version\n";
     print GFF_PSEUDOGENES  "##date $rundate\n";
 
     open (GFF_RNA, ">$datadir/GFF_SPLITS/$gff_rna");
-    print GFF_RNA  "##gff-version 2\n";
+    print GFF_RNA  "##Version: $cvs_version\n";
     print GFF_RNA  "##date $rundate\n";
 
     open (GFF_REST, ">$datadir/GFF_SPLITS/$gff_rest");
-#    print GFF_REST  "##gff-version 2\n";
-#    print GFF_REST  "##date $rundate\n";
+    print GFF_REST  "##Version: $cvs_version\n";
+    print GFF_REST  "##date $rundate\n";
 
     open (GFF_CDS_EXON, ">$datadir/GFF_SPLITS/$gff_CDS_exon");
-    print GFF_CDS_EXON  "##gff-version 2\n";
+    print GFF_CDS_EXON  "##Version: $cvs_version\n";
     print GFF_CDS_EXON  "##date $rundate\n";
 
     open (GFF_EXON, ">$datadir/GFF_SPLITS/$gff_exon");
-    print GFF_EXON  "##gff-version 2\n";
+    print GFF_EXON  "##Version: $cvs_version\n";
     print GFF_EXON  "##date $rundate\n";
 
     open (GFF_EXON_tRNA, ">$datadir/GFF_SPLITS/$gff_exon_tRNA");
-    print GFF_EXON_tRNA  "##gff-version 2\n";
+    print GFF_EXON_tRNA  "##Version: $cvs_version\n";
     print GFF_EXON_tRNA  "##date $rundate\n";
 
     open (GFF_EXON_PSEUDOGENE, ">$datadir/GFF_SPLITS/$gff_exon_pseudogene");
-    print GFF_EXON_PSEUDOGENE  "##gff-version 2\n";
+    print GFF_EXON_PSEUDOGENE  "##Version: $cvs_version\n";
     print GFF_EXON_PSEUDOGENE  "##date $rundate\n";
 
     open (GFF_INTRON, ">$datadir/GFF_SPLITS/$gff_intron");
-    print GFF_INTRON  "##gff-version 2\n";
+    print GFF_INTRON  "##Version: $cvs_version\n";
     print GFF_INTRON  "##date $rundate\n";
 
     open (GFF_INTRON_tRNA, ">$datadir/GFF_SPLITS/$gff_intron_tRNA");
-    print GFF_INTRON_tRNA  "##gff-version 2\n";
+    print GFF_INTRON_tRNA  "##Version: $cvs_version\n";
     print GFF_INTRON_tRNA  "##date $rundate\n";
 
     open (GFF_INTRON_PSEUDOGENE, ">$datadir/GFF_SPLITS/$gff_intron_pseudogene");
-    print GFF_INTRON_PSEUDOGENE  "##gff-version 2\n";
+    print GFF_INTRON_PSEUDOGENE  "##Version: $cvs_version\n";
     print GFF_INTRON_PSEUDOGENE  "##date $rundate\n";
 
     open (GFF_INTRON_CONFIRMED_CDS, ">$datadir/GFF_SPLITS/$gff_intron_confirmed_CDS");
-    print GFF_INTRON_CONFIRMED_CDS  "##gff-version 2\n";
+    print GFF_INTRON_CONFIRMED_CDS  "##Version: $cvs_version\n";
     print GFF_INTRON_CONFIRMED_CDS  "##date $rundate\n";
 
     open (GFF_INTRON_CONFIRMED_UTR, ">$datadir/GFF_SPLITS/$gff_intron_confirmed_UTR");
-    print GFF_INTRON_CONFIRMED_UTR  "##gff-version 2\n";
+    print GFF_INTRON_CONFIRMED_UTR  "##Version: $cvs_version\n";
     print GFF_INTRON_CONFIRMED_UTR  "##date $rundate\n";
 
      open (GFF_REPEATS, ">$datadir/GFF_SPLITS/$gff_repeats");
-    print GFF_REPEATS  "##gff-version 2\n";
+    print GFF_REPEATS  "##Version: $cvs_version\n";
     print GFF_REPEATS  "##date $rundate\n";
 
     open (GFF_ESTS, ">$datadir/GFF_SPLITS/$gff_ests");
-    print GFF_ESTS  "##gff-version 2\n";
+    print GFF_ESTS  "##Version: $cvs_version\n";
     print GFF_ESTS  "##date $rundate\n";
 
     open (GFF_TC_INSERTIONS, ">$datadir/GFF_SPLITS/$gff_tc_insertions");
-    print GFF_TC_INSERTIONS  "##gff-version 2\n";
+    print GFF_TC_INSERTIONS  "##Version: $cvs_version\n";
     print GFF_TC_INSERTIONS  "##date $rundate\n";
 
     open (GFF_BLASTX, ">$datadir/GFF_SPLITS/$gff_blastx");
-    print GFF_BLASTX  "##gff-version 2\n";
+    print GFF_BLASTX  "##Version: $cvs_version\n";
     print GFF_BLASTX  "##date $rundate\n";
 
     open (GFF_TBLASTX_EST, ">$datadir/GFF_SPLITS/$gff_tblastx_est");
-    print GFF_TBLASTX_EST  "##gff-version 2\n";
+    print GFF_TBLASTX_EST  "##Version: $cvs_version\n";
     print GFF_TBLASTX_EST  "##date $rundate\n";
  
     open (GFF_TBLASTX_BRIGGSAE, ">$datadir/GFF_SPLITS/$gff_tblastx_briggsae");
-    print GFF_TBLASTX_BRIGGSAE  "##gff-version 2\n";
+    print GFF_TBLASTX_BRIGGSAE  "##Version: $cvs_version\n";
     print GFF_TBLASTX_BRIGGSAE  "##date $rundate\n";
  
     open (GFF_ASSEMBLY_TAGS, ">$datadir/GFF_SPLITS/$gff_assembly_tags");
-    print GFF_ASSEMBLY_TAGS  "##gff-version 2\n";
+    print GFF_ASSEMBLY_TAGS  "##Version: $cvs_version\n";
     print GFF_ASSEMBLY_TAGS  "##date $rundate\n";
 
     open (GFF_TS_SITE, ">$datadir/GFF_SPLITS/$gff_ts_site");
-    print GFF_TS_SITE  "##gff-version 2\n";
+    print GFF_TS_SITE  "##Version: $cvs_version\n";
     print GFF_TS_SITE  "##date $rundate\n";
 
     open (GFF_PROSITE, ">$datadir/GFF_SPLITS/$gff_prosite");
-    print GFF_PROSITE  "##gff-version 2\n";
+    print GFF_PROSITE  "##Version: $cvs_version\n";
     print GFF_PROSITE  "##date $rundate\n";
 
     open (GFF_OLIGOS, ">$datadir/GFF_SPLITS/$gff_oligos");
-    print GFF_OLIGOS  "##gff-version 2\n";
+    print GFF_OLIGOS  "##Version: $cvs_version\n";
     print GFF_OLIGOS  "##date $rundate\n";
 
     open (GFF_ALLELES, ">$datadir/GFF_SPLITS/$gff_alleles");
-    print GFF_ALLELES  "##gff-version 2\n";
+    print GFF_ALLELES  "##Version: $cvs_version\n";
     print GFF_ALLELES  "##date $rundate\n";
 
     open (GFF_CLONE_ENDS, ">$datadir/GFF_SPLITS/$gff_clone_ends");
-    print GFF_CLONE_ENDS  "##gff-version 2\n";
+    print GFF_CLONE_ENDS  "##Version: $cvs_version\n";
     print GFF_CLONE_ENDS  "##date $rundate\n";
 
     open (GFF_RNAi, ">$datadir/GFF_SPLITS/$gff_RNAi");
-    print GFF_RNAi  "##gff-version 2\n";
+    print GFF_RNAi  "##Version: $cvs_version\n";
     print GFF_RNAi  "##date $rundate\n";
 
     open (GFF_GENEPAIR, ">$datadir/GFF_SPLITS/$gff_genepair");
-    print GFF_GENEPAIR  "##gff-version 2\n";
+    print GFF_GENEPAIR  "##Version: $cvs_version\n";
     print GFF_GENEPAIR  "##date $rundate\n";
 
- 
+    open (GFF_WTP, ">$datadir/GFF_SPLITS/$gff_WTP");
+    print GFF_WTP  "##Version: $cvs_version\n";
+    print GFF_WTP  "##date $rundate\n";
+
     #########################################################
     # open the gff file                                     #
     #########################################################
@@ -301,11 +287,10 @@ foreach (@gff_files) {
 	    print GFF_CLONE_ENDS           "$_\n";
 	    print GFF_RNAi                 "$_\n";
 	    print GFF_GENEPAIR             "$_\n";
+	    print GFF_WTP                  "$_\n";
 	    next;
 	}
 	
-	
-#	@f = split (/\t/,$_);
 	($name,$method,$feature,$start,$stop,$score,$strand,$other,$name) = split (/\t/,$_);
 	
 	undef $found_a_home;
@@ -561,6 +546,20 @@ foreach (@gff_files) {
 	    print GFF_CLONE_ENDS "$_\n";
 	    $found_a_home = 1;
 	}
+
+
+	################################
+   	# WTP
+	################################
+
+	if (/WTP/) {
+#	    print "$_\n" if ($debug);
+	    print GFF_WTP "$_\n";
+	    $found_a_home = 1;
+	}
+
+
+
 	
 	print GFF_REST "$_\n" unless ($found_a_home); 
 	$running_total++ if ($found_a_home); 
@@ -596,10 +595,11 @@ foreach (@gff_files) {
     close GFF_OLIGOS;
     close GFF_ALLELES;
     close GFF_CLONE_ENDS;
+    close GFF_WTP;
 
-    	########################################
-   	# count file lengths for all GFF files #
-	###########################################
+    ########################################
+    # count file lengths for all GFF files #
+    ###########################################
 
     my $total_lines = 0;
     print "\n\nGFF file lengths\n\n";
@@ -711,10 +711,15 @@ foreach (@gff_files) {
     $gff_length_genepair = file_size("$datadir/GFF_SPLITS/$gff_genepair") - 3;
     $total_lines = $total_lines + $gff_length_genepair;
     print "$gff_genepair   \t\t: $gff_length_genepair\n";
-    
+   
+    $gff_length_WTP = file_size("$datadir/GFF_SPLITS/$gff_WTP") - 3;
+    $total_lines = $total_lines + $gff_length_WTP;
+    print "$gff_WTP   \t\t: $gff_length_WTP\n";
+
     $gff_length_rest = file_size("$datadir/GFF_SPLITS/$gff_rest") - 3;
     $total_lines = $total_lines + $gff_length_rest;
     print "$gff_rest   \t\t: $gff_length_rest\n";
+
     
     my $lines_split = int ((($running_total / $gff_length) * 100) + 0.5);
     my $discarded_lines = $gff_length - $total_lines;
@@ -724,9 +729,9 @@ foreach (@gff_files) {
 
 
 
-   #########################################
-   # Alter clone file to include accession #
-   #########################################
+    #########################################
+    # Alter clone file to include accession #
+    #########################################
    
     system ("GFF_with_accessions $datadir/GFF_SPLITS/${file_prefix}.clone_path.gff > $datadir/GFF_SPLITS/${file_prefix}.clone_acc.gff");
     
