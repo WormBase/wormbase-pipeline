@@ -673,6 +673,7 @@
 			Medline_acc UNIQUE Int
 			PMID UNIQUE Int                         // ADDED FOR JUANCARLOS
         Author ?Author XREF Paper #Affiliation
+	Full_author_name ?Text // added for Eimear [krb 020403]
 	Affiliation Text	// Authors' affiliation if available
         Brief_citation UNIQUE Text
         Abstract ?LongText
