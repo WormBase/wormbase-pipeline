@@ -65,16 +65,16 @@ while (<SOURCE>){
     if( $gadID ){
 
       #print ace file
-      print ACE "\n\nProtein : \"GADFLY:$gadID\"\n";
-      print ACE "Peptide \"GADFLY:$gadID\"\n";
+      print ACE "\n\nProtein : \"FLYBASE:$gadID\"\n";
+      print ACE "Peptide \"FLYBASE:$gadID\"\n";
       print ACE "Species \"Drosophila melanogaster\"\n";
 
       #FlyBase_gn	      #Gadfly_ID
       print ACE "Gene_name \"$FBname\"\n" if $FBname;
-      print ACE "Database \"Flybase\" FlyBase_gn \"$FBgn\"\n" if ($FBgn);
-      print ACE "Database \"Gadfly\" Gadfly_ID \"$gadID\"\n" if $gadID;
+      print ACE "Database \"FlyBase\" FlyBase_gn \"$FBgn\"\n" if ($FBgn);
+      print ACE "Database \"FlyBase\" FlyBase_ID \"$gadID\"\n" if $gadID;
       print ACE "Description \"Flybase gene name is $FBname\"\n" if $FBname;
-      print ACE "\nPeptide : \"GADFLY:$gadID\"\n";
+      print ACE "\nPeptide : \"FLYBASE:$gadID\"\n";
 
       #write database file
       print PEP ">$gadID\n";
