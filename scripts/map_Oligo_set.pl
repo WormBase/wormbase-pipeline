@@ -147,22 +147,22 @@ foreach my $chromosome (@chromosomes) {
   close(GFF_in);
 
 
-#  # Get exon info from split transcript exon GFF file
-#  open (GFF_in, "<$gffdir/CHROMOSOME_${chromosome}.exon_noncoding.gff") || die "Failed to open exon_noncoding gff file\n\n";
-#  while (<GFF_in>) {
-#    chomp;	     
-#    s/\#.*//;
-#    next unless /\S/;
-#    @f = split /\t/;
-#
-#    my ($name) = ($f[8] =~ /\"(\S+)\"/);
-#    $exoncount{$name}++;
-#    my $exonname = $name.".".$exoncount{$name};
-#    $exon{$exonname} = [$f[3],$f[4]];
-#    $genetype{$name} = "Transcript" if ($f[1] eq "Non_coding_transcript");
-#    print "Gene : '$name' [$genetype{$name}] exon $exoncount{$name}\n" if ($verbose);
-#  }
-#  close(GFF_in);
+  # Get exon info from split transcript exon GFF file
+  open (GFF, "<$gffdir/CHROMOSOME_${chromosome}.exon_noncoding.gff") || die "Failed to open exon_noncoding gff file\n\n";
+  while (<GFF>) {
+    chomp;	     
+    s/\#.*//;
+    next unless /\S/;
+    @f = split /\t/;
+
+    my ($name) = ($f[8] =~ /\"(\S+)\"/);
+    $exoncount{$name}++;
+    my $exonname = $name.".".$exoncount{$name};
+    $exon{$exonname} = [$f[3],$f[4]];
+    $genetype{$name} = "Transcript" if ($f[1] eq "Non_coding_transcript");
+    print "Gene : '$name' [$genetype{$name}] exon $exoncount{$name}\n" if ($verbose);
+  }
+  close(GFF);
   
 
   print "Finished GFF loop\n" if ($verbose);
@@ -171,7 +171,7 @@ foreach my $chromosome (@chromosomes) {
   # make exons into genes #
   #########################
   
-  print "Turn exons into genes\n" if ($debug);
+  print "Turn exons into genes\n" if ($verbose);
   
   foreach my $name (sort keys %exoncount) {
     my $v = $exoncount{$name};
@@ -183,7 +183,7 @@ foreach my $chromosome (@chromosomes) {
   # make indexlists #
   ###################
   
-  print "Index exons,genes,RNAi and Expr_profiles\n" if ($debug);
+  print "Index exons, genes, and oligos\n" if ($verbose);
   
   my @exonlist  = sort { $exon{$a}->[0]  <=> $exon{$b}->[0]  } keys %exon;
   my @genelist  = sort { $genes{$a}->[0] <=> $genes{$b}->[0] } keys %genes;
@@ -193,7 +193,7 @@ foreach my $chromosome (@chromosomes) {
   # map it #
   ##########
   
-  print "Find overlaps for Oligo_set\n" if ($debug);
+  print "Find overlaps for Oligo_set\n" if ($verbose);
   
   my $lastfail = 0;
   
@@ -252,12 +252,11 @@ foreach my $mess (sort keys %output) {
 # produce output files #
 ########################
 
-open (OUT,    ">/wormsrv2/autoace/MAPPINGS/Oligo_mappings.$db_version");
-open (OUTACE, ">/wormsrv2/autoace/MAPPINGS/Oligo_mappings.$db_version.ace");
+open (OUTACE, ">/wormsrv2/autoace/acefiles/Oligo_mappings.ace");
 
 foreach my $mapped (sort keys %finaloutput) {
     
-  print OUT "$mapped\t@{$finaloutput{$mapped}}\n";
+  print "$mapped\t@{$finaloutput{$mapped}}\n" if ($verbose);
   
   for (my $n = 0; $n < (scalar @{$finaloutput{$mapped}}); $n++) {
     my $gene = $finaloutput{$mapped}->[$n];
@@ -276,7 +275,6 @@ foreach my $mapped (sort keys %finaloutput) {
     }
   }
 } 
-close(OUT);
 close(OUTACE);
 
 ##############################
@@ -285,7 +283,7 @@ close(OUTACE);
 
 unless ($test) {
   
-  my $command = "pparse /wormsrv2/autoace/MAPPINGS/Oligo_mappings.$db_version.ace\nsave\nquit\n";
+  my $command = "pparse /wormsrv2/autoace/acefiles/Oligo_mappings.ace\nsave\nquit\n";
   
   open (TACE,"| $tace -tsuser map_Oligo_products $dbdir") || die "Couldn't open tace connection to $dbdir\n";
   print TACE $command;
@@ -343,7 +341,9 @@ map_Oligo_products optional arguments:
 
 =over 4
 
-=item -debug, Verbose/Debug mode
+=item -debug, debug mode email goes to user specified by -debug
+
+=item -verbose, toggles extra output
 
 =item -test, Test mode, generate the acefile but do not upload 
 
