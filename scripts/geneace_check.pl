@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-02-21 21:37:15 $
+# Last updated on: $Date: 2003-02-25 12:07:14 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -338,8 +338,10 @@ sub process_laboratory_class{
       $lab_errors++;
     }    
     if(!defined($lab->at('CGC.Representative')) && $lab ne "CGC"){  
-      print LOG "WARNING: $lab has no Representative tag present\n";
-      $lab_errors++;
+      if ($lab ne "XA"){
+	print LOG "WARNING: $lab has no Representative tag present\n";
+	$lab_errors++;
+      }
     }  
   }
   print LOG "\nThere are $lab_errors errors in Laboratory class\n";
