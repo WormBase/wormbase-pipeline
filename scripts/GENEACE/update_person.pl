@@ -4,15 +4,13 @@
 
 # by Chao-Kung Chen [030728]
 
-# Last updated on: $Date: 2004-03-19 11:59:04 $
+# Last updated on: $Date: 2004-03-23 13:07:25 $
 # Last updated by: $Author: ck1 $
 
 
 # Automatically update Geneace with Person/Person_name classes from autoace
 
 use strict;                    
-use lib "/wormsrv2/scripts/"; 
-use Wormbase;
 
 ###########################
 # variables
@@ -23,7 +21,7 @@ chomp($user);
 
 if ($user ne "wormpub"){print "You need to be wormpub to run this update!\n"; exit(0)}
 
-my $tace = &tace;
+my $tace = glob("~wormpub/ACEDB/bin_ALPHA/tace");          # tace executable path
 my $autoace = "/wormsrv2/autoace";
 my $ga = "/wormsrv1/geneace";
 

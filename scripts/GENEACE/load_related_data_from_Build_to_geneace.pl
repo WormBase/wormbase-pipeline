@@ -4,7 +4,7 @@
 
 # by Chao-Kung Chen
 
-# Last updated on: $Date: 2004-03-19 11:59:04 $
+# Last updated on: $Date: 2004-03-23 13:07:25 $
 # Last updated by: $Author: ck1 $
 
 
@@ -23,7 +23,7 @@ use Ace;
 # load Geneace related data from Build back to Geneace
 #######################################################
 
-my $tace = &tace;
+my $tace = glob("~wormpub/ACEDB/bin_ALPHA/tace");          # tace executable path
 my $geneace_dir = "/wormsrv1/geneace";
 my $autoace = get_wormbase_version(); # only the digits   
 my $log = "/wormsrv2/logs/load_WS".$autoace."_build_data_to_geneace";
@@ -35,13 +35,14 @@ print LOG "----------------------------------------------------------------\n";
 my @map = glob("/wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/interpolated_map_to_geneace_WS$autoace.*.ace");
 
 # corrected reverse physicals
-my $rev_pyhs = glob("/wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/rev_physical_update_$autoace");
+my $rev_pyhs = glob("/wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/rev_physical_update_WS$autoace");
 
 # inferred multi-pt data
-my $multi = glob("/wormsrv1/geneace/JAH_DATA/MULTI_PT_INFERRED/inferred_multi_pt_obj_$autoace");
+my $multi = glob("/wormsrv1/geneace/JAH_DATA/MULTI_PT_INFERRED/inferred_multi_pt_obj_WS$autoace");
 
 # updated person from Caltech
-system("perl /wormsrv2/scripts/update_person.pl");
+system("perl /nfs/team71/worm/ck1/WORMBASE_CVS/scripts/GENEACE/update_person.pl");
+#system("perl /wormsrv2/scripts/update_person.pl");
 
 my $command;
 
