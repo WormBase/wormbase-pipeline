@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: krb $
-// Last edited on: $Date: 2004-06-04 09:40:41 $
+// Last edited on: $Date: 2004-06-09 07:48:07 $
  
 
 
@@ -1983,7 +1983,7 @@
                         Gene          ?Gene 	  XREF Microarray_results #Evidence   // should be mapped during the build
                         CDS	      ?CDS 	  XREF Microarray_results #Evidence   // should be mapped during the build
                         Transcript    ?Transcript XREF Microarray_results #Evidence   // should be mapped during the build
-			Pseudogene    ?Transcript XREF Micriarray_results #Evidence   // should be mapped during the build
+			Pseudogene    ?Transcript XREF Microarray_results #Evidence   // should be mapped during the build
                         Microarray    ?Microarray XREF Microarray_results
                         Results       ?Microarray_experiment UNIQUE #Microarray_data
                         Remark        ?Text   #Evidence
