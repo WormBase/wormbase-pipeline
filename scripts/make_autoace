@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl
+#!/usr/local/bin/perl5.6.0
 #
 # make_autoace
 #
@@ -45,27 +45,30 @@
 # Variables                                                                               #
 ###########################################################################################
 
-BEGIN  {
- unshift (@INC,"/nfs/disk100/wormpub/analysis/scripts");
-}
+#BEGIN  {
+# unshift (@INC,"/nfs/disk100/wormpub/analysis/scripts");
+#}
 
 $|=1;
+use lib "/wormsrv2/scripts/";
+use Wormbase;
 use Check_Classes('check_classes');
 use IO::Handle;
 use POSIX qw(:signal_h :errno_h :sys_wait_h);
 use Getopt::Std;
 use Cwd;
-require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
 
 
  ##################################################
  # Script variables (run)                         #
  ##################################################
 
-my $maintainer = "dl1\@sanger.ac.uk";
+my $maintainers = "dl1\@sanger.ac.uk kj2\@sanger.ac.uk krb\@sanger.ac.uk";
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
-my $version = &get_script_version(make_autoace);
+
+# grab version number from cvs
+my $cvs_version = &get_cvs_version($0);
 
 my $CWD = cwd;
 
@@ -128,30 +131,23 @@ sub REAPER {
     $SIG{CHLD}=\&REAPER;
 }
 
-  ###################################################################
-  # Get the WS version number and set the wormpep release number    #
-  ###################################################################
+###################################################################
+# Get the WS version number and set the wormpep release number    #
+###################################################################
 
-my $Wormbase_release_file = "/wormsrv2/autoace_config/WormBase_release_version";
-&usage(3) unless (-e $Wormbase_release_file);
-open (WormBase_release, $Wormbase_release_file);
-while (<WormBase_release>) {
-    chomp;
-    $WS_version = $_;
-}
-close (WormBase_release);
+our $WS_version = &get_wormbase_version;
 
- ##################################################	
- # Create the directory structure                 #
- ##################################################
+##################################################	
+# Create the directory structure                 #
+##################################################
 
 &sendmails("STARTED");
 #$now = &GetTime();
 &createdirs($autodir);	
 
- ##################################################
- # Open logfile                                   #
- ##################################################
+##################################################
+# Open logfile                                   #
+##################################################
 
 my $logfile = "$autodir"."/make_autoace.${WS_version}.$$";
 system ("/bin/touch $logfile");
@@ -159,7 +155,7 @@ open (LOGFILE,">>$logfile");
 LOGFILE->autoflush;
 
 print LOGFILE "# make_autoace\n\n";     
-print LOGFILE "# version        : $version\n";
+print LOGFILE "# version        : $cvs_version\n";
 print LOGFILE "# run details    : $rundate $runtime\n";
 print LOGFILE "\n";
 print LOGFILE "WormBase version : ${WS_version}\n";
@@ -168,10 +164,10 @@ print LOGFILE "\n";
 my $now = `date +%H:%M:%S`; chomp $now;
 print LOGFILE "* Directory stucture created for $autodir at $now\n\n";
   
-   ################################################
-   # Start rebuilding the database	
-   # Remove temp_gene sequences from stl & cam    
-   ################################################
+################################################
+# Start rebuilding the database	
+# Remove temp_gene sequences from stl & cam    
+################################################
 
 if ($opt_r) {
 
@@ -305,15 +301,15 @@ exit (0);
 # Email the log file to wormpub                   
 
 sub sendmails {
-    $SUBJ = shift @_;
-    open(MAIL, "| Mail -s \"make_autoace $SUBJ\" $maintainer ");
+    $SUBJ = shift;
+    open(MAIL, "| Mail -s \"make_autoace $SUBJ\" $maintainers ");
 
 
     print MAIL "make_autoace $$ has $SUBJ\n\n";
     
     print MAIL "=============================================\n";
     print MAIL "# make_autoace\n\n";     
-    print MAIL "# version        : $version\n";
+    print MAIL "# version        : $cvs_version\n";
     print MAIL "# run details    : $rundate $runtime\n";
     print MAIL "\n";
     print MAIL "WormBase version : ${WS_version}\n";
@@ -730,7 +726,7 @@ sub gffdump {
     unless (fork) {
       sleep 1 until getppid == 1;
       $rs = system ("/nfs/disk100/wormpub/analysis/scripts/chrom_dump_3.0 $dumpdir") ;
-      open(MAIL, "| Mail -s \"New_Make_autoace_log\" $maintainer");
+      open(MAIL, "| Mail -s \"New_Make_autoace_log\" $maintainers");
       open (INLOG,"/bin/cat $logfile |");
       while (<INLOG>) {
 	print MAIL $_;
