@@ -8,8 +8,8 @@
 # solely in the wormpep.history file.
 # 
 #
-# Last updated by: $Author: ar2 $                     
-# Last updated on: $Date: 2002-07-30 14:49:18 $     
+# Last updated by: $Author: wormpub $                     
+# Last updated on: $Date: 2002-08-09 15:27:16 $     
 
 
 use strict;                                     
@@ -78,15 +78,8 @@ while(<HISTORY>)
 		$existingGene = $CE_gene{$CE}[$i];
 		if( "$gene" eq "$existingGene" )
 		  {
-		    #		    if( (&multiCoded == 0) && ($CE_live{$CE} == 1) ) {
-		    #		      print LOG "$CE is being replaced by $gene when not dead\n";
-		    #		    }
-		    #		    else {
-		    #reappeared protein
 		    $handled =  &reappearedPeptide;
 		    last;
-		    #		    }
-		    
 		  }
 		#is this an isoform of a pre-exisiting gene?
 		elsif( $gene =~ m/(\w+\.\d+)(\w*)/)
@@ -94,11 +87,11 @@ while(<HISTORY>)
 		    $stem = $1;     #eg FK177.8
 		    $isoform = $2;  #eg a
 		    
-		    if( $existingGene =~ m/^($stem)(\w*)/ )
+		    if( $existingGene =~ m/^($stem)(\w*)/ )#if nothing matches $2 = '' so is defined 
 		      {
 			#$gene is isoform
 			my $existingIform = $2;
-			if( defined($existingIform))
+			if( $existingIform =~ m/\w/) 
 			  {
 			    # Existing peptide is coded for by isoform of same gene
 			    # This may occur due to curation changes as well actual genes doing this
@@ -133,7 +126,7 @@ while(<HISTORY>)
 			if( $CE_live{$CE} == 1 )
 			  {
 			    #peptide coded by multiple genes
-			    print LOG "$CE strange oldstyle name stuff $gene\n"
+			    #drop thru
 			  }
 			else
 			  {
@@ -232,8 +225,8 @@ while (<FASTA>)
   }
 close FASTA;
 
-#write ace file
-my $ii;
+##write ace file
+#my $ii;
 my $acefile = "$wormpepdir/pepace.ace";
 open (ACE, ">$acefile") || die "cant write $acefile\n";
 
@@ -242,7 +235,7 @@ foreach my $key(sort keys %CE_history)
 {
   print ACE "Protein : \"WP:$key\"\n";
 
-# Write histories
+## Write histories
   foreach my $release(sort byRelease keys %{ $CE_history{$key} })
     {
       foreach my $genehis(sort keys %{ $CE_history{$key}{$release} })
@@ -250,11 +243,12 @@ foreach my $key(sort keys %CE_history)
 	  print ACE "History \"$release\" \"$CE_history{$key}{$release}{$genehis}\" \"$genehis\"\n";
 	}
     } 
-
+  print ACE "Database \"WORMPEP\" \"$key\" \"WP:$key\"\n";
+  print ACE "Species \"Caenorhabditis elegans\"\n";
+  print ACE "Wormpep\n";
+  
   if( $CE_live{$key} == 1 ){
     print ACE "Live\n";
-    print ACE "Database \"WORMPEP\" \"$key\" \"WP:$key\"\n";
-    print ACE "Species \"Caenorhabditis elegans\"\n";
     for $ii (0 .. $#{ $CE_corr_DNA{$key} })
       {
 	print ACE "Corresponding_DNA \"$CE_corr_DNA{$key}[$ii]\"\n";
@@ -265,14 +259,34 @@ foreach my $key(sort keys %CE_history)
   print ACE "Peptide : \"WP:$key\"\n";
   print ACE "$CE_sequence{$key}\n";
 
-  'perl5.6.0 /wormsrv2/scripts/GetSwissIDandInterpro.pl';
 }
+close ACE;
+print LOG "written $acefile - to be loaded in to autoace\n";
+my $live_peps = `grep -c Live $acefile`;
+my $table_peps = `cut -f 2 wormpep.table$ver | sort -u | wc -l`;
+chomp $live_peps; chomp $table_peps;
+print LOG "This file has $live_peps live peptides\n";
+print LOG "wormpep.table$ver suggests there should be $table_peps\n";
+if ( ($live_peps + 1) == $table_peps ) {
+    print LOG "\nso thats OK!\ntaking in to account 1 known problem - CE25872\n";
+  }
+else {
+  print LOG "\n\n! ! ! ! THIS NEEDS ATTENTION ! ! ! !\n\n\n";
+  print LOG "\n1 known problem - CE25872\n"
+}
+my $date = `date`;
+print LOG "\n$0 finished at $date\n";
+print LOG "\n . . about to start GetSwissIDandInterpro.pl\n";
 
 close LOG;
+
+#auto run GetSwissIDandInterpro.pl
+`perl5.6.0 /wormsrv2/scripts/GetSwissIDandInterpro.pl`;
+
 #### use Wormbase.pl to mail Log ###########
 my $name = "$0";
-$maintainers = "ar2\@sanger.ac.uk";
-#&mail_maintainer ($name,$maintainers,$log);
+#$maintainers = "ar2\@sanger.ac.uk";
+&mail_maintainer ($name,$maintainers,$log);
 #########################################
 exit(0);
 
@@ -312,7 +326,7 @@ sub replacePeptide
 	  }
 	}
     } 
-    $CE_history{$existingCE}{$in}{$gene} = "replaced_by $CE";
+    $CE_history{$existingCE}{$in}{$gene} = "replaced by $CE";
     $CE_history{$CE}{$in}{$gene} = "Created to replace $existingCE";
   }
 
@@ -340,7 +354,7 @@ sub reappearedAsIsoform
     #check if becoming isoform is same release as removal - if so modify history to show conversion rather than reappearance
     if( defined("$CE_history{$CE}{$in}{$stem}") )
 	{
-	  if("$CE_history{$CE}{$in}{$stem}" eq "removed") { 
+	  if( ("$CE_history{$CE}{$in}{$stem}" eq "removed") || ($CE_history{$CE}{$in}{$stem} =~ m/replaced/ ) ) {
 	    $CE_history{$CE}{$in}{$stem} = "converted to isoform $gene";
 	  }
 	  else{
@@ -392,7 +406,7 @@ sub changePepGene
     my $oldgene = $CE_gene{$CE};
     #$CE_gene{$CE} = $gene;
     push( @{ $CE_gene{$CE} }, "$gene");
-    $CE_history{$CE}{$in}{$gene} = "reappeared coded by another gene $gene";# .= "$in reappeared coded by another gene\t";
+    $CE_history{$CE}{$in}{$gene} = "reappeared coded by another gene";# .= "$in reappeared coded by another gene\t";
     if( $out )
       {
 	if( &multiCoded == 0){
