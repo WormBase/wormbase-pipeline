@@ -144,6 +144,10 @@ if ( $update_databases ){
     chomp;
     if( /\/(ensembl|gadfly|yeast|slimswissprot|slimtrembl_1|slimtrembl_2|wormpep|ipi_human|brigpep)/ ) {
       my $whole_file = "$1"."$'";  #match + stuff after match.
+      if( $1 eq "wormpep" ) {
+	print "updating wormpep to version $WS_version anyway - make sure the data is there !";
+	$whole_file = "wormpep".$WS_version.".pep";
+      }
       if( "$whole_file" ne "$currentDBs{$1}" ) {
 	#make blastable database
 	print "\tmaking blastable database for $1\n";
@@ -507,12 +511,36 @@ if( $dump_data )
       exit(0);
     }
     # Dump
-    print "Dumping blastp\n";
-    &run_command("$wormpipe_dir/scripts/Dump_new_prot_only.pl -all -version $WS_version -matches");
-    print "Dumping blastx\n";
-    &run_command("$scripts_dir/dump_blastx_new.pl -version $WS_version");
+
+    # fork new process to dump x and p at same time !
+
+    my $dumping_P = "";
+    my $dumping_X = "";
+
+
+    # fork off child process to dump BLASTP data at the same time
+
+    if( my $pid = fork ) {
+      print "Dumping blastp\n";
+      $dumping_P = "start_P";
+      &run_command("$wormpipe_dir/scripts/Dump_new_prot_only.pl -all -version $WS_version -matches");
+      $dumping_P = "finished_P";
+    }
+    else {warn "ERROR : forked dumping of BLASTP failed\n";}
+
+    unless ($dumping_X ) {
+      $dumping_X = "start_X";
+      print "Dumping blastx\n";
+      &run_command("$scripts_dir/dump_blastx_new.pl -version $WS_version");
+      $dumping_X = "finished_X";
+    }
+
+    # go in to holding routine until both have finished
+    while(! ( ( $dumping_X eq "finished_X" ) and ($dumping_P eq "finished_P") ) ) {
+      sleep 1000;
+    }
     print "Dumping motifs\n";
-      &run_command("$scripts_dir/dump_motif.pl");
+    &run_command("$scripts_dir/dump_motif.pl");
 
     # Dump extra info for SWALL proteins that have matches. Info retrieved from the dbm databases on /acari/work2a/wormpipe/
     print "Creating acefile of SWALL proteins with homologies\n";
@@ -707,7 +735,7 @@ sub get_updated_database_list
 ############################################################################################
 sub create_log_files{
 
-  # create main log file using script name for
+  # create main log ile using script name for
   $log        = "/nfs/acari/wormpipe/logs/wormBLAST.${WS_version}.${rundate}.$$";
 
   open (LOG, ">$log") or die "cant open $log";
