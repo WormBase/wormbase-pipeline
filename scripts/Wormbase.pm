@@ -53,7 +53,7 @@ sub get_wormbase_release_date{
   else{$format = "long";}
 
   
-  my $line = `ls -l /nfs/disk69/ftp/pub/wormbase/current_release/md5sum.WS\d+`;
+  my $line = `ls -l /nfs/disk69/ftp/pub/wormbase/current_release/md5sum.WS*`;
   my @split = split(/\s+/,$line);
 
   my $month = $split[5];
