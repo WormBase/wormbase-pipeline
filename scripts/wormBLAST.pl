@@ -514,11 +514,14 @@ if( $cleanup ) {
   
   print "\nmoving the following to ~wormpipe/last_build . . \n";
   print "\t$clear_dump/*.txt\n"; system("mv -f $clear_dump/*.txt $wormpipe_dir/last_build/") && warn "cant move $clear_dump/*.txt\n";
-  print "\n$wormpipe_dir/Elegans/*\n"; system("mv -f $wormpipe_dir/Elegans/* $wormpipe_dir/last_build/") && warn "cant move $wormpipe_dir/Elegans/*\n";
+  print "\t$clear_dump/ipi*\n"; system("mv -f $clear_dump/ipi* $wormpipe_dir/last_build/") && warn "cant move $clear_dump/ipi*\n";
+  print "\t$wormpipe_dir/Elegans/*\n"; system("mv -f $wormpipe_dir/Elegans/* $wormpipe_dir/last_build/") && warn "cant move $wormpipe_dir/Elegans/*\n";
 
   print "\nRemoving the $wormpipe_dir/DUMP_PREP_RUN lock file\n"; system("rm -f $wormpipe_dir/DUMP_PREP_RUN") && warn "cant remove $wormpipe_dir/DUMP_PREP_RUN\n";
 
-  print "CLEAN UP COMPLETED\n\n";
+  print "\nRemoving farm output and error files from /acari/scatch5/ensembl/Worms/*\n"; system("rm -rf /acari/scratch5/ensembl/Worms/*") && warn "cant clear up /acari/scatch5/ensembl/Worms/*\n";
+
+  print "\n\nCLEAN UP COMPLETED\n\n";
 }
 
 
