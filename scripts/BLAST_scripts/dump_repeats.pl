@@ -2,23 +2,23 @@
 
 use DBI;
 use strict;
-use lib "/wormsrv2/scripts/";
+use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Getopt::Long;
 use Wormbase;
 
 #######################################
 # command-line options                #
 #######################################
-my ($test, $debug, $help, $all);
+my ($test, $debug, $help);
 
 GetOptions ("debug"   => \$debug,
 	    "test"    => \$test,
 	    "help"    => \$help,
-	    "all"     => \$all
            );
 
 
 my $dump_dir = "/wormsrv2/wormbase/ensembl_dumps";
+$dump_dir = glob("~wormpub/TEST_BUILD/") if $test;
 my $acedb_database;
 my $output = "$dump_dir/repeats.ace";
 die &help if $help;
@@ -27,9 +27,12 @@ $output .= "_test" if $test;
 
 open (OUT,">$output") or die "cant open $output\n";
 
+
 # retrieve hash of acc2clone
 my %acc2clone;
 &FetchData("acc2clone",\%acc2clone);
+
+
 
 my %clonesize;
 &FetchData("clonesize", \%clonesize);
@@ -42,6 +45,12 @@ my $dbpass = "";
 
 my $wormrepeats_DB = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
       || die "cannot connect to db, $DBI::errstr";
+
+
+#retrieves descriptive information about the repeats from the database
+my %repeat_info;
+&GetRepeatInfo;
+
 
 # build hash of internal_id to clone via EMBL accession
 my $sth_f = $wormrepeats_DB->prepare ( q{SELECT
@@ -95,7 +104,7 @@ foreach my $repeat (@$ref_results) {
       print OUT "Homol_data $clone:RepeatMasker 1 $clonesize{$clone}\n\n";
       print OUT "Homol_data : $clone:RepeatMasker\n";      
     }
-    print OUT "Motif_homol $hid RepeatMasker $score $seq_start $seq_end";
+    print OUT "Motif_homol ",$repeat_info{$hid}->{'name'} ," RepeatMasker $score $seq_start $seq_end";
     if( $strand == 1 ){
       print OUT " $hstart $hend\n";
     }
@@ -112,10 +121,23 @@ close OUT;
 
 exit(0);  
 
+sub GetRepeatInfo
+  {
+    my $info = $wormrepeats_DB->prepare ( q{ SELECT * from repeat_consensus} );
+    $info->execute;
+
+    my $info_data = $info->fetchall_arrayref;
+    foreach my $repeat ( @$info_data ) {
+      $repeat_info{$$repeat[0]}->{'name'} = $$repeat[1];
+      $repeat_info{$$repeat[0]}->{'class'} = $$repeat[2];
+    } 
+  }
+
+
 sub help
   {
     print "===============================================\n$0\n
-Extract RepeatMasker data from wormrepeats on ecs1f\n\n
+Extract RepeatMasker data from worm_dna on ecs1f\n\n
 Writes ace file $output\n
 \t\t-test appends _test to output filename.
 
