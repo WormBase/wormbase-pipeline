@@ -1,8 +1,8 @@
 #!/usr/local/bin/perl5.8.0 -w
 
 # Author: Chao-Kung Chen
-# Last updated by $Author: pad $
-# Last updated on: $Date: 2004-06-25 12:16:48 $ 
+# Last updated by $Author: krb $
+# Last updated on: $Date: 2004-07-01 11:40:58 $ 
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -140,11 +140,9 @@ sub make_inferred_multi_pt_obj {   # run during the build, when approved pseudo 
   foreach (keys %gene_id_allele){
 
     $multi++;
-    my $L_locus = $order_locus{ $locus_order{ $Gene_info{$_}{'CGC_name'} } -1 } if exists $Gene_info{$_}{'CGC_name'};
-       $L_locus = $order_locus{ $locus_order{ $Gene_info{$_}{'Other_name'} } -1 } if exists $Gene_info{$_}{'Other_name'};
+    my $L_locus = $order_locus{ $locus_order{ $Gene_info{$_}{'Public_name'} } -1 } if exists $Gene_info{$_}{'Public_name'};
     print $L_locus, " (L)\n";
-    my $R_locus = $order_locus{ $locus_order{ $Gene_info{$_}{'CGC_name'} } +1 } if exists $Gene_info{$_}{'CGC_name'};
-       $R_locus = $order_locus{ $locus_order{ $Gene_info{$_}{'Other_name'} } +1 } if exists $Gene_info{$_}{'Other_name'};
+    my $R_locus = $order_locus{ $locus_order{ $Gene_info{$_}{'Public_name'} } +1 } if exists $Gene_info{$_}{'Public_name'};
     print $R_locus, " (R)\n";
 
     print NEW "\n\nGene : \"$_\"\n";
@@ -168,7 +166,7 @@ sub make_inferred_multi_pt_obj {   # run during the build, when approved pseudo 
   }
   close NEW;
 
-  print LOG "\nInfo: for incomplete flanking loci: check that they should be the end marker of a chromosome: back to JAH.\n";
+  print LOG "\nInfo: for incomplete flanking loci: check that they should be the end marker of a chromosome: back to JAH.\n" if ($error ==1);
 
   # load $multi_dir/inferred_multi_pt_obj_$autoace_version to autoace
   my $upload = "pparse $multi_dir/inferred_multi_pt_obj_$autoace_version\nsave\nquit\n";
