@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.0 -w
+#!/usr/local/bin/perl5.6.1 -w
 #
 # submit_TO_SUBMIT_contents
 # Steven Jones, 1995, Sanger Centre.
@@ -8,21 +8,65 @@
 #
 # 020123 : dan : modified to make a report file, gzip the EMBL entry
 #                after submission and use Perl5.6 with strict
+#
+# Last updated by: $Author: dl1 $                      
+# Last updated on: $Date: 2002-12-09 13:48:07 $        
 
+$|=1;
 use strict;
-use Getopt::Std;
+use Getopt::Long;
 use vars qw/ $opt_d $opt_h/;
+use lib "/wormsrv2/scripts/";   
+use Wormbase;
 
 my $submitdir = "/nfs/disk100/wormpub/analysis/TO_SUBMIT";
 my (@filenames);
 
+ ##############################
+ # Variables                  #
+ ##############################
+
+my $maintainers = "dl1\@sanger.ac.uk";
+my $rundate     = `date +%y%m%d`; chomp $rundate;
+my $name;
+
+# touch logfile for run details
+if ($0 =~ /\//) {($name) = $0 =~ m/\/([^\/]+)$/;}
+else {$name = $0;}
+system ("touch /wormsrv2/logs/history/$name.`date +%y%m%d`");
+my $logfile = "$submitdir/submitted_to_EMBL";
+	   
 ###################################################
 # command-line options                            #
 ###################################################
 
-getopts ("hd");
-&usage if ($opt_h);
-my $debug = $opt_d;
+my $help;       # Help perdoc
+my $debug;      # Debug mode, verbose output to dl1 only
+
+GetOptions (
+            "debug=s"   => \$debug,
+            "help"      => \$help
+            );
+
+# help page	   
+&usage("Help") if ($help);
+	   
+# no debug name
+&usage("Debug") if (!defined $debug);
+
+# assign $maintainers if $debug set
+if ($debug) {
+    $maintainers = $debug . "\@sanger.ac.uk";
+}
+
+
+###################################################
+# logfile                                         #
+###################################################
+
+# open logfile
+system ("/bin/touch $logfile");
+open (LOG,">>$logfile") or die ("Could not create logfile\n");
 
 ###################################################
 # read TO_SUBMIT directory                        #
@@ -73,8 +117,18 @@ close LOG;
 exit(0);
 
 sub usage {
-    # Normal help menu
-    exec ('perldoc',$0);
+    my $error = shift;
+
+    if ($error eq "Help") {
+        # Normal help menu
+        system ('perldoc',$0);
+        exit (0);
+    }
+    elsif ($error eq "Debug") {
+        # No debug bod named
+        print "You haven't supplied your name\nI won't run in debug mode until i know who you are\n";
+        exit (0);
+    }
 }
 
 __END__
