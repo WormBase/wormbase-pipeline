@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2004-01-21 11:29:46 $
+# Last updated on: $Date: 2004-01-29 18:09:29 $
 
 
 use strict;
@@ -55,12 +55,12 @@ foreach (@exceptions){$exceptions{$_}++};
 
 my ($help, $debug, $class, @classes, $database, $ace, $verbose);
 
-GetOptions ("help"        => \$help,
-            "debug=s"     => \$debug,
-	    "class=s"     => \@classes,
-	    "database=s"  => \$database,
-            "ace"         => \$ace, 
-	    "verbose"     => \$verbose
+GetOptions ("h|help"        => \$help,
+            "d|debug=s"     => \$debug,
+	    "c|class=s"     => \@classes,
+	    "db|database=s"  => \$database,
+            "a|ace"         => \$ace, 
+	    "v|verbose"     => \$verbose
            );
 
 
@@ -1727,12 +1727,15 @@ sub int_map_to_map_loci {
   print LOG "------------------------------------------------------------------------------------------------------\n";
   print JAHLOG "\n\nChecking loci without map & mapping_data but have allele & seq. connection & interpolated_map_position\n";
   print JAHLOG "------------------------------------------------------------------------------------------------------\n";
-  my $int_loci  = "find Locus * where !map & !mapping_data & allele & (CDS|transcript|pseudogene) & interpolated_map_position & species =\"*elegans\"";
+  my $int_loci  = "find Locus * where (!map OR (map & !(map AND NEXT AND NEXT = \"position\"))) & !mapping_data & allele & (CDS|transcript|pseudogene) & interpolated_map_position & species =\"*elegans\"";
   my %INT_loci;
-
-  open(INT_map_TO_MAP, ">/wormsrv1/geneace/JAH_DATA/MULTI_PT_INFERRED/loci_become_genetic_marker.$rundate") || die $!;
+  
+  my $autoace_version = get_wormbase_version() +1 ;
+  # create a list of "promoted" loci
+  open(INT_map_TO_MAP, ">/wormsrv1/geneace/JAH_DATA/MULTI_PT_INFERRED/loci_become_genetic_marker_for_WS$autoace_version.$rundate") || die $!;
 
   push( my @int_loci, $db->find($int_loci) );
+  print "@int_loci\n";
   foreach (@int_loci){
     $error++;
     my $int_map = $_ -> Interpolated_map_position(1);
