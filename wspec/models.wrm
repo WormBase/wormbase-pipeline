@@ -638,6 +638,7 @@
 	  PMID_evidence Text //added for Erich's gene function data krb 02/04/09
 	  Accession_evidence ?Accession_number // added for and by krb 020422
 	  Protein_id_evidence ?Text // added to cope with protein id's [krb 020726]
+	  CGC_data_submission // new way of flagging information from CGC [krb 030207]
 	  GO_inference_type IC  Text
 			    IDA Text
 			    IEA Text
