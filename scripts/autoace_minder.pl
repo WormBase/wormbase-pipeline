@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2003-10-24 11:04:08 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2003-10-31 14:17:00 $
 
 
 #################################################################################
@@ -1292,7 +1292,7 @@ sub run_command{
     $errors++;
     print LOG "ERROR: $command failed\n";
   }
-  print LOG &runtime, ": finished running $command\n";
+  print LOG &runtime, ": finished running\n\n";
 
   # for optional further testing by calling subroutine
   return($status);
