@@ -7,6 +7,8 @@
 // [010912 krb] Added new classes Expr_profile and SK_map to allow new microarray data
 // from Stuart Kim
 
+// [020412] Details of model changes made through cvs now get sent to wormbase-dev@wormbase.org
+
 //
 // Basic Map classes
 //
