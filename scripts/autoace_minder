@@ -6,7 +6,7 @@
 # Usage : autoace_minder [-options]
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2002-08-20 16:35:12 $
+# Last edited on: $Date: 2002-08-22 15:30:35 $
 
 
 #################################################################################
@@ -846,8 +846,15 @@ sub blat_jobs {
 	    # blat_them_all -e {EST}
 	    $runtime = 'date +%H:%M:%S'; chomp $runtime;
 	    print LOG "Starting BLAT v EST at $runtime\n\n" if ($time);
+	    # do the blats
 	    $i = system ("$scriptdir/blat_them_all.pl -bse");
 	    $i = system ("$scriptdir/blat_them_all.pl -ve"); 
+	    # process them to cleaner files
+	    $i = system ("$scriptdir/acecompress.pl -homol autoace.blat.EST.ace > autoace.blat.ESTlite.ace");
+	    $i = system ("mv -f autoace.blat.ESTlite.ace > autoace.blat.EST.ace");
+	    $i = system ("$scriptdir/acecompress.pl -feature autoace.good_introns.EST.ace > autoace.good_introns.ESTlite.ace");
+	    $i = system ("mv -f autoace.good_introns.ESTlite.ace > autoace.good_introns.EST.ace");
+	    # tidy
 	    system ("touch $logdir/$flag{'B6A'}");  
 	    $runtime = 'date +%H:%M:%S'; chomp $runtime;
 	    print LOG "Finished BLAT v EST at $runtime\n\n" if ($time);
@@ -855,8 +862,15 @@ sub blat_jobs {
 	    # blat_them_all -m {mRNA}
 	    $runtime = 'date +%H:%M:%S'; chomp $runtime;
 	    print LOG "Starting BLAT v mRNA at $runtime\n\n" if ($time);
+	    # do the blats
 	    $i = system ("$scriptdir/blat_them_all.pl -bsm");
 	    $i = system ("$scriptdir/blat_them_all.pl -vm"); 
+	    # process them to cleaner files
+	    $i = system ("$scriptdir/acecompress.pl -homol   autoace.blat.mRNA.ace > autoace.blat.mRNAlite.ace");
+	    $i = system ("mv -f autoace.blat.mRNAlite.ace >  autoace.blat.mRNA.ace");
+	    $i = system ("$scriptdir/acecompress.pl -feature autoace.good_introns.mRNA.ace > autoace.good_introns.mRNAlite.ace");
+	    $i = system ("mv -f autoace.good_introns.mRNAlite.ace >  autoace.good_introns.mRNA.ace");
+	    # tidy
 	    system ("touch $logdir/$flag{'B6B'}");  
 	    $runtime = 'date +%H:%M:%S'; chomp $runtime;
 	    print LOG "Finished BLAT v mRNA at $runtime\n\n" if ($time);
@@ -864,8 +878,15 @@ sub blat_jobs {
 	    # blat_them_all -o {EMBL}
 	    $runtime = 'date +%H:%M:%S'; chomp $runtime;
 	    print LOG "Starting BLAT v EMBL at $runtime\n\n" if ($time);
+	    # do the blats
 	    $i = system ("$scriptdir/blat_them_all.pl -bso");
 	    $i = system ("$scriptdir/blat_them_all.pl -vo"); 
+	    # process them to cleaner files
+	    $i = system ("$scriptdir/acecompress.pl -homol autoace.blat.EMBL.ace > autoace.blat.EMBLlite.ace");
+	    $i = system ("mv -f autoace.blat.EMBL.ace > autoace.blat.EMBL.ace");
+	    $i = system ("$scriptdir/acecompress.pl -feature autoace.good_introns.EMBL.ace > autoace.good_introns.EMBLlite.ace");
+	    $i = system ("mv -f autoace.good_introns.EMBLlite.ace >  autoace.good_introns.EMBL.ace");
+	    # tidy
 	    system ("touch $logdir/$flag{'B6C'}");  
 	    $runtime = 'date +%H:%M:%S'; chomp $runtime;
 	    print LOG "Finished BLAT v EMBL at $runtime\n\n" if ($time);
@@ -894,8 +915,13 @@ sub blat_jobs {
     # blast_them_all -x {NEMATODE}
     $runtime = 'date +%H:%M:%S'; chomp $runtime;
     print LOG "Starting BLATX v NEMATODE at $runtime\n\n" if ($time);
+    # do the blats
     system ("$scriptdir/blat_them_all.pl -bsx") && die "Couldn't blat_them_all -bsx\n";
     system ("$scriptdir/blat_them_all.pl -vx")  && die "Couldn't blat_them_all -vx\n";
+    # process them to cleaner files
+    system ("$scriptdir/acecompress.pl -homol autoace.NEMATODE.ace > autoace.NEMATODElite.ace");
+    system ("mv -f autoace.NEMATODElite.ace > autoace.NEMATODE.ace");
+    # tidy
     system ("touch $logdir/$flag{'B6D'}");  
     $runtime = 'date +%H:%M:%S'; chomp $runtime;
     print LOG "Finished BLATX v NEMATODE at $runtime\n\n" if ($time);
@@ -920,34 +946,64 @@ sub blat_jobs {
 
 sub parse_blat_files {
 
-# quit if blat_them_all has not been run
-&usage(9) unless (-e "$logdir/$flag{'B6'}");
+    my $command;
+    
+    # quit if blat_them_all has not been run
+    &usage(9) unless (-e "$logdir/$flag{'B6'}");
 
-my $command=<<END;
-pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLAT_EST.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLAT_mRNA.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLAT_EMBL.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLATX_NEMATODE.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.EST.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.mRNA.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.EMBL.ace 
-save
-pparse /wormsrv2/autoace/BLAT/autoace.blat.EST.ace            
-save
-pparse /wormsrv2/autoace/BLAT/autoace.blat.mRNA.ace 
-save
-pparse /wormsrv2/autoace/BLAT/autoace.blat.EMBL.ace 
-save
-pparse /wormsrv2/autoace/BLAT/autoace.NEMATODE.ace 
-save
-pparse /wormsrv2/autoace/BLAT/autoace.good_introns.EST.ace 
-save
-pparse /wormsrv2/autoace/BLAT/autoace.good_introns.mRNA.ace 
-save
-pparse /wormsrv2/autoace/BLAT/autoace.good_introns.EMBL.ace 
-save 
-quit
-END
+    $command =  "pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLAT_EST.ace\n";
+    $command .= "pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLAT_mRNA.ace\n";
+    $command .= "pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLAT_EMBL.ace\n";
+    $command .= "pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.EST.ace\n";
+    $command .= "pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.mRNA.ace\n";
+    $command .= "pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.EMBL.ace\n";
+    $command .= "pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLATX_NEMATODE.ace\n";
+    $command .= "save\nquit\n";
+    open (WRITEDB, "| $tace -tsuser Sanger_BLAT_data /wormsrv2/autoace |") || die "Couldn't open pipe to autoace\n";
+    print WRITEDB $command;
+    close WRITEDB;
+
+    $command =  "pparse /wormsrv2/autoace/BLAT/autoace.blat.EST.ace\n";           
+    $command .= "save\nquit\n";
+    open (WRITEDB, "| $tace -tsuser Sanger_BLAT_data /wormsrv2/autoace |") || die "Couldn't open pipe to autoace\n";
+    print WRITEDB $command;
+    close WRITEDB;
+
+    $command =  "pparse /wormsrv2/autoace/BLAT/autoace.blat.mRNA.ace\n";       
+    $command .= "save\nquit\n";
+    open (WRITEDB, "| $tace -tsuser Sanger_BLAT_data /wormsrv2/autoace |") || die "Couldn't open pipe to autoace\n";
+    print WRITEDB $command;
+    close WRITEDB;
+
+    $command =  "pparse /wormsrv2/autoace/BLAT/autoace.blat.EMBL.ace \n";      
+    $command .= "save\nquit\n";
+    open (WRITEDB, "| $tace -tsuser Sanger_BLAT_data /wormsrv2/autoace |") || die "Couldn't open pipe to autoace\n";
+    print WRITEDB $command;
+    close WRITEDB;
+
+    $command =  "pparse /wormsrv2/autoace/BLAT/autoace.NEMATODE.ace\n";
+    $command .= "save\nquit\n";
+    open (WRITEDB, "| $tace -tsuser Sanger_BLAT_data /wormsrv2/autoace |") || die "Couldn't open pipe to autoace\n";
+    print WRITEDB $command;
+    close WRITEDB;
+
+    $command =  "pparse /wormsrv2/autoace/BLAT/autoace.good_introns.EST.ace \n";      
+    $command .= "save\nquit\n";
+    open (WRITEDB, "| $tace -tsuser Sanger_BLAT_data /wormsrv2/autoace |") || die "Couldn't open pipe to autoace\n";
+    print WRITEDB $command;
+    close WRITEDB;
+
+    $command =  "pparse /wormsrv2/autoace/BLAT/autoace.good_introns.mRNA.ace \n";      
+    $command .= "save\nquit\n";
+    open (WRITEDB, "| $tace -tsuser Sanger_BLAT_data /wormsrv2/autoace |") || die "Couldn't open pipe to autoace\n";
+    print WRITEDB $command;
+    close WRITEDB;
+
+    $command =  "pparse /wormsrv2/autoace/BLAT/autoace.good_introns.EMBL.ace\n";       
+    $command .= "save\nquit\n";
+    open (WRITEDB, "| $tace -tsuser Sanger_BLAT_data /wormsrv2/autoace |") || die "Couldn't open pipe to autoace\n";
+    print WRITEDB $command;
+    close WRITEDB;
 
     open (WRITEDB, "| $tace -tsuser Sanger_BLAT_data /wormsrv2/autoace |") || die "Couldn't open pipe to autoace\n";
     print WRITEDB $command;
@@ -964,56 +1020,73 @@ END
 
 sub parse_blat_files_other {
 
+    my $command;
 
-# quit if blat_them_all has not been run
-&usage(9) unless (-e "$logdir/$flag{'B6A'}");
-&usage(9) unless (-e "$logdir/$flag{'B6B'}");
-&usage(9) unless (-e "$logdir/$flag{'B6C'}");
+    # quit if blat_them_all has not been run
+    &usage(9) unless (-e "$logdir/$flag{'B6A'}");
+    &usage(9) unless (-e "$logdir/$flag{'B6B'}");
+    &usage(9) unless (-e "$logdir/$flag{'B6C'}");
 
-my $command=<<END;
-pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLAT_EST.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLAT_mRNA.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLAT_EMBL.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.EST.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.mRNA.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.EMBL.ace 
-save
-pparse /wormsrv2/autoace/BLAT/autoace.blat.EST.ace            
-save
-pparse /wormsrv2/autoace/BLAT/autoace.blat.mRNA.ace 
-save
-pparse /wormsrv2/autoace/BLAT/autoace.blat.EMBL.ace 
-save
-pparse /wormsrv2/autoace/BLAT/autoace.good_introns.EST.ace 
-save
-pparse /wormsrv2/autoace/BLAT/autoace.good_introns.mRNA.ace 
-save
-pparse /wormsrv2/autoace/BLAT/autoace.good_introns.EMBL.ace 
-save 
-quit
-END
-
+    $command =  "pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLAT_EST.ace\n";
+    $command .= "pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLAT_mRNA.ace\n";
+    $command .= "pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLAT_EMBL.ace\n";
+    $command .= "pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.EST.ace\n";
+    $command .= "pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.mRNA.ace\n";
+    $command .= "pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.EMBL.ace\n";
+    $command .= "save\nquit\n";
     open (WRITEDB, "| $tace -tsuser Sanger_BLAT_data /wormsrv2/autoace |") || die "Couldn't open pipe to autoace\n";
     print WRITEDB $command;
     close WRITEDB;
-    
+
+    $command =  "pparse /wormsrv2/autoace/BLAT/autoace.blat.EST.ace\n";           
+    $command .= "save\nquit\n";
+    open (WRITEDB, "| $tace -tsuser Sanger_BLAT_data /wormsrv2/autoace |") || die "Couldn't open pipe to autoace\n";
+    print WRITEDB $command;
+    close WRITEDB;
+
+    $command =  "pparse /wormsrv2/autoace/BLAT/autoace.blat.mRNA.ace\n";       
+    $command .= "save\nquit\n";
+    open (WRITEDB, "| $tace -tsuser Sanger_BLAT_data /wormsrv2/autoace |") || die "Couldn't open pipe to autoace\n";
+    print WRITEDB $command;
+    close WRITEDB;
+
+    $command =  "pparse /wormsrv2/autoace/BLAT/autoace.blat.EMBL.ace \n";      
+    $command .= "save\nquit\n";
+    open (WRITEDB, "| $tace -tsuser Sanger_BLAT_data /wormsrv2/autoace |") || die "Couldn't open pipe to autoace\n";
+    print WRITEDB $command;
+    close WRITEDB;
+
+    $command =  "pparse /wormsrv2/autoace/BLAT/autoace.good_introns.EST.ace \n";      
+    $command .= "save\nquit\n";
+    open (WRITEDB, "| $tace -tsuser Sanger_BLAT_data /wormsrv2/autoace |") || die "Couldn't open pipe to autoace\n";
+    print WRITEDB $command;
+    close WRITEDB;
+
+    $command =  "pparse /wormsrv2/autoace/BLAT/autoace.good_introns.mRNA.ace \n";      
+    $command .= "save\nquit\n";
+    open (WRITEDB, "| $tace -tsuser Sanger_BLAT_data /wormsrv2/autoace |") || die "Couldn't open pipe to autoace\n";
+    print WRITEDB $command;
+    close WRITEDB;
+
+    $command =  "pparse /wormsrv2/autoace/BLAT/autoace.good_introns.EMBL.ace\n";       
+    $command .= "save\nquit\n";
+    open (WRITEDB, "| $tace -tsuser Sanger_BLAT_data /wormsrv2/autoace |") || die "Couldn't open pipe to autoace\n";
+    print WRITEDB $command;
+    close WRITEDB;
+
     # make a make_autoace log file in /logs
     system ("touch $logdir/$flag{'B7A'}");
 }
 #__ end parse_blat_files_other __#
 
 sub parse_blat_files_nematode {
-
-# quit if blat_them_all has not been run
-&usage(9) unless (-e "$logdir/$flag{'B6D'}");
-
-my $command=<<END;
-pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLATX_NEMATODE.ace 
-pparse /wormsrv2/autoace/BLAT/autoace.NEMATODE.ace 
-save
-quit
-END
-
+    
+    # quit if blat_them_all has not been run
+    &usage(9) unless (-e "$logdir/$flag{'B6D'}");
+    
+    my $command = "pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.BLATX_NEMATODE.ace\n";
+    $command   .= "pparse /wormsrv2/autoace/BLAT/autoace.NEMATODE.ace\nsave\nquit\n";
+    
     open (WRITEDB, "| $tace -tsuser Sanger_BLAT_data /wormsrv2/autoace |") || die "Couldn't open pipe to autoace\n";
     print WRITEDB $command;
     close WRITEDB;
@@ -1028,60 +1101,27 @@ sub parse_homol_data {
     
     my $command;
 
-$command=<<END;
-pparse /wormsrv2/wormbase/ensembl_dumps/blastp_ensembl.ace 
-save 
-quit
-END
-
+    $command = "pparse /wormsrv2/wormbase/ensembl_dumps/blastp_ensembl.ace\nsave\nquit\n"; 
     open (WRITEDB, "| $tace -tsuser ensembl_pipeline_wublastp_data /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
     print WRITEDB $command;
     close WRITEDB;
-
-
-
-$command=<<END;
-pparse /wormsrv2/wormbase/ensembl_dumps/blastx_ensembl.ace 
-save 
-quit
-END
-
+    
+    $command = "pparse /wormsrv2/wormbase/ensembl_dumps/blastx_ensembl.ace\nsave\nquit\n"; 
     open (WRITEDB, "| $tace -tsuser ensembl_pipeline_wublastx_data /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
     print WRITEDB $command;
     close WRITEDB;
 
-
-
-$command=<<END;
-pparse /wormsrv2/wormbase/ensembl_dumps/ensembl_protein_info.ace 
-save 
-quit
-END
-
+    $command = "pparse /wormsrv2/wormbase/ensembl_dumps/ensembl_protein_info.ace\nsave\nquit\n"; 
     open (WRITEDB, "| $tace -tsuser ensembl_pipeline_protein_info /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
     print WRITEDB $command;
     close WRITEDB;
 
-
-
-$command=<<END;
-pparse /wormsrv2/wormbase/ensembl_dumps/waba.ace
-save 
-quit
-END
-
+    $command = "pparse /wormsrv2/wormbase/ensembl_dumps/waba.ace\nsave\nquit\n"; 
     open (WRITEDB, "| $tace -tsuser waba_data /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
     print WRITEDB $command;
     close WRITEDB;
 
-
-
-$command=<<END;
-pparse /wormsrv2/wormbase/ensembl_dumps/ensembl_motif_info.ace
-save 
-quit
-END
-
+    $command = "pparse /wormsrv2/wormbase/ensembl_dumps/ensembl_motif_info.ace\nsave\nquit\n"; 
     open (WRITEDB, "| $tace -tsuser ensembl_pipeline_motif_info /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
     print WRITEDB $command;
     close WRITEDB;
@@ -1138,7 +1178,7 @@ sub dump_GFFs {
 sub split_GFFs {
     system ("$scriptdir/GFFsplitter -s") && die "Couldn't split GFF files\n";
     print LOG " Split GFF files for $WS_version\n";
-    print LOG " =>'GFFsplitter -s'\n\n";
+    print LOG " =>'GFFsplitter -silent'\n\n";
 
     # make GFF_splitter file in /logs
     system ("touch $logdir/C2:Split_GFF_files");
