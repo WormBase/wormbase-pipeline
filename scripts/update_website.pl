@@ -7,8 +7,8 @@
 # A script to finish the last part of the weekly build by updating all of the
 # relevant WormBase and Wormpep web pages.
 #
-# Last updated by: $Author: pad $     
-# Last updated on: $Date: 2004-09-07 15:12:01 $      
+# Last updated by: $Author: dl1 $     
+# Last updated on: $Date: 2004-09-14 11:03:39 $      
 
 
 #################################################################################
@@ -199,7 +199,7 @@ sub copy_overlapcheck_files{
   print LOG "-----------------------\n";
 
   # list of files to be copied
-  my @filenames = qw( overlapping_genes_cam overlapping_genes_stl EST_in_intron_cam EST_in_intron_stl repeat_in_exon_cam repeat_in_exon_stl );
+  my @filenames = qw( overlapping_TSL_cam overlapping_TSL_stl overlapping_genes_cam overlapping_genes_stl EST_in_intron_cam EST_in_intron_stl repeat_in_exon_cam repeat_in_exon_stl );
 
   print LOG "copying files from /wormsrv2/autoace/CHECKS/ to $www/$WS_name/Checks\n"; 
   system("cp -f $www/$WS_previous_name/Checks/index.shtml $www/$WS_name/Checks/") && warn "Cannot copy index.shtml $!\n";
