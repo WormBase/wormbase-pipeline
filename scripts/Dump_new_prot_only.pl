@@ -134,8 +134,8 @@ my @results;
 my $query = "";
 my $wormprot;#wormprot Db handle
 
-# set a E-value threshold ( (not actually ) used in the sql query)
-my $e_threshold = 40;
+# E-value threshold  used in the sql query is set so that -log10(evalue) >  1. This is equivalent to an
+# evalue of 1e-3 (0.001)
 $wormprot = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
       || die "cannot connect to db, $DBI::errstr";
 
@@ -145,13 +145,19 @@ my $sth_f = $wormprot->prepare ( q{ SELECT proteinId,analysis,
                                       hId, hstart, hend,  
                                       -log10(evalue), cigar
                                  FROM protein_feature
-                                WHERE proteinId = ? and -log10(evalue) > 40
+                                WHERE proteinId = ? and -log10(evalue) > 1
                              ORDER BY hId
 	  	  	     } );
 my $output = "/wormsrv2/wormbase/ensembl_dumps/blastp_ensembl.ace";
 open (OUT,">$output") or die "cant open $output\n";
+
+# reciprocals of matches ie if CE00000 matches XXXX_CAEEL the homology details need to be written for XXXX_CAEEL 
+# as well.  These are put in a separate file and post processed so that all matches for XXXX_CAEEL are loaded 
+# in one go for efficient loading ( cf acecompress.pl )
+
 my $recip_file = "/wormsrv2/tmp/wublastp_recip.ace";
 open (RECIP,">$recip_file") or die "cant open recip file\n";
+
 my $count;
 
 our %CE2gene;
