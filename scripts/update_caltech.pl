@@ -4,7 +4,7 @@
 
 # by Chao-Kung Chen [030113]
 
-# Last updated on: $Date: 2003-01-24 11:00:12 $
+# Last updated on: $Date: 2003-01-24 11:21:50 $
 # Last updated by: $Author: ck1 $
 
 
@@ -65,7 +65,7 @@ print FH $command;
 close FH;
 
 $command=<<END;
-lspparse /wormsrv1/geneace/ERICHS_DATA/$update_file
+pparse /wormsrv1/geneace/ERICHS_DATA/$update_file
 save
 quit
 END
