@@ -73,7 +73,7 @@ getopts ('awbchpqfzdrgym123');
 $scriptdir = "/wormsrv2/scripts";
 
 #################################################################################
-# Get the WS version number and set the wormpep release number                  #
+# Get the WS version number                                                     #
 #################################################################################
 
 $WS_version = &get_wormbase_version;
@@ -82,9 +82,6 @@ $WS_version = &get_wormbase_version;
 
 # manipulate to assign last WS release version
 $WS_previous = $WS_version -1;
-
-# grab wormpep version
-$WP_version = &get_wormpep_version;
 
 
  ########################################
@@ -108,7 +105,7 @@ print LOG "# version        : $version\n";
 print LOG "# run details    : $rundate $runtime\n";
 print LOG "\n";
 print LOG "WormBase version : WS${WS_version}\n";
-print LOG "Wormpep version  : wormpep${WP_version}\n\n";
+print LOG "Wormpep version  : wormpep${WS_version}\n\n";
 
 print LOG "======================================================================\n";
 print LOG "  -a : Full WS release (executes all of the following -wbcp)\n" if ($opt_a);
@@ -239,9 +236,9 @@ sub check_release {
 #################################################################################
 
 sub make_wormpep {
-    system ("$scriptdir/make_wormpep -r $WP_version") && die "Couldn't run make_wormpep -r\n";
-    print LOG " Build wormpep release $WP_version\n";
-    print LOG " =>'make_wormpep -r $WP_version'\n\n";
+    system ("$scriptdir/make_wormpep -r $WS_version") && die "Couldn't run make_wormpep -r\n";
+    print LOG " Build wormpep release $WS_version\n";
+    print LOG " =>'make_wormpep -r $WS_version'\n\n";
 
 }
 
@@ -329,7 +326,7 @@ sub run_details {
     print "# run details    : $rundate $runtime\n";
     print "\n";
     print "WormBase version : WS${WS_version}\n";
-    print "Wormpep version  : wormpep${WP_version}\n";
+    print "Wormpep version  : wormpep${WS_version}\n";
     print "\n";
     print "  -a : Full WS release (executes all of the following -wbcp)\n" if ($opt_a);
     print "  -w : Write .acefiles from WormBase copies of the databases\n" if ($opt_w);

@@ -40,8 +40,7 @@ my $WS_oldest   = $WS_current - 3; # the version that *should* be the oldest in 
 my $WS_old_name = "WS".$WS_oldest;
 my $WS_old_path = "$db_path"."/$WS_old_name";
 
-my $wormpep_ver = &get_wormpep_version;
-my $old_wormpep = "$db_path/WORMPEP/wormpep".($wormpep_ver-3);
+my $old_wormpep = "$db_path/WORMPEP/wormpep".($WS_current-3);
 
  ##############################
  # command-line options       #

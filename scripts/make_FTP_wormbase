@@ -42,7 +42,6 @@ use Wormbase;
 my $sourcedir         = "";  # [Text] Directory in which the latest WS release resides
 my $targetdir         = "";  # [Text] Directory in which to build the new release
 my $WS_release        = "";  # [Text] Release number (look-up from file)
-my $WP_release        = "";  # [Int]  wormpep release number  (look-up from file)
 my $debug             = "";  #        on/off flag for verbose mode
 my $clean             = "";  #        on/off flag for removing old WS directories from the FTP site
 
@@ -80,7 +79,6 @@ $targetdir="/nfs/disk100/wormpub/private_ftp" if ($targetdir eq "");
 
 if ($WS_release eq "") {
   $WS_release = &get_wormbase_version;
-  $WP_release = &get_wormpep_version;
 }
  ###############################
  # get date & time             #
@@ -105,7 +103,7 @@ if ($debug) {
     print LOG "# Source directory : $sourcedir \n";
     print LOG "# Target directory : $targetdir\n";
     print LOG "# WS release No.   : WS$WS_release\n";
-    print LOG "# wormpep release  : wormpep$WP_release\n\n";
+    print LOG "# wormpep release  : wormpep${WS_release}\n\n";
 }
 
  ##################################################
@@ -159,8 +157,8 @@ print LOG "copied the models.wrm file to FTP site\n" if ($debug);
  # tar and move the wormpep release               #
  ##################################################
 
-system "/nfs/disk100/wormpub/analysis/scripts/tar_wormpep $WP_release ";
-system "mv /wormsrv2/WORMPEP/wormpep${WP_release}/wormpep${WP_release}.tar.gz $targetdir/WS$WS_release/";
+system "/nfs/disk100/wormpub/analysis/scripts/tar_wormpep $WS_release ";
+system "mv /wormsrv2/WORMPEP/wormpep${WS_release}/wormpep${WS_release}.tar.gz $targetdir/WS$WS_release/";
 print LOG "tarred and gzipped the Wormpep release .... and moved\n" if ($debug);
 
  ##################################################
