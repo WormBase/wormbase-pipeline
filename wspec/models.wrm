@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: krb $
-// Last edited on: $Date: 2004-06-30 14:23:51 $
+// Last edited on: $Date: 2004-06-30 14:37:30 $
  
 
 
@@ -355,6 +355,7 @@
                   Strain ?Strain XREF Gene
                   In_cluster ?Locus XREF Contains // new way of linking to Clusters in locus class
                   GO_term ?GO_term XREF Gene ?GO_code #Evidence
+		  Contained_in_operon ?Operon XREF Contains_gene
         Molecular_info CDS ?CDS XREF Gene #Evidence             // to link to live CDSs
                        CDS_history ?CDS XREF Gene_history       // to link to history CDSs
                        Transcript ?Transcript XREF Gene #Evidence
@@ -1945,13 +1946,14 @@
 
 ?Operon SMap S_parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF Operon
 	Species UNIQUE ?Species
-	Contains_CDS ?CDS XREF Contained_in_operon  #Trans_splice_leader
-	Contains_pseudogene ?Pseudogene XREF Contained_in_operon  #Trans_splice_leader // new [030801 krb]
+	Contains_gene ?Gene XREF Contained_in_operson #Trans_splice_leader
 	Reference ?Paper XREF Operon
 	Method UNIQUE ?Method
 
-#Trans_splice_leader SL1 ?Text
-                     SL2 ?Text
+#Trans_splice_leader SL1 #Evidence
+                     SL2 #Evidence
+		     Microarray #Evidence   // Handles Blumenthal microarray assignments
+                                                                                                         
 
 
 
