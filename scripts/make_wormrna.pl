@@ -7,7 +7,7 @@
 # Builds a wormrna data set from the current autoace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-09-30 08:36:17 $
+# Last updated on: $Date: 2003-09-30 08:47:22 $
 
 
 #################################################################################
@@ -82,7 +82,7 @@ my @transcripts = $db->fetch (-query => 'FIND Transcript WHERE Species = "Caenor
 
 @transcripts = sort @transcripts;
 my $count = scalar(@transcripts);
-print LOG "Finding ". $count . " RNA sequences, writing output file\n";
+print LOG "Finding ". $count . " RNA sequences, writing output file\n\n";
 
 
 ###########################################################################
@@ -114,6 +114,8 @@ foreach my $transcript (@transcripts) {
   if ((!defined ($dna)) || ($dna eq "")) {
     print LOG "ERROR: cannot extract dna sequence for $transcript\n";
     $errors++;
+    # can't include in WormRNA if there is no DNA!
+    next; 
   }
   $dna =~ /^>(\S+)\s+(\w.*)/s; 
   my $dseq = $2; 
@@ -144,7 +146,6 @@ chmod (0444 , "$new_wrdir/wormrna$release.rna") || print LOG "cannot chmod $new_
 # Create the associated README file          
 ###########################################################################
 
-print LOG "# $runtime : creating README file\n\n";
 open (README , ">$new_wrdir/README") || die "Couldn't creat README file\n"; 
 
 my $readme = <<END;
@@ -171,6 +172,8 @@ print README "$readme";
 ##################
 
 close(README);
+print LOG "\n============================================\n";
+print LOG "Finished at ",&runtime, "\n";
 close(LOG);
 $db->close;
 
@@ -208,7 +211,7 @@ sub create_log_files{
 
   open (LOG, ">$log") or die "cant open $log";
   print LOG "$script_name\n";
-  print LOG "started at ",`date`,"\n";
+  print LOG "Started at ",&runtime," \n";
   print LOG "=============================================\n";
   print LOG "\n";
 
