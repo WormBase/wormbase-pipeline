@@ -9,7 +9,7 @@
 # Usage : update_totals
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-02-19 15:38:52 $
+# Last updated on: $Date: 2004-02-23 14:20:53 $
 #
 # see pod documentation (i.e. 'perldoc update_totals') for more information.
 #
@@ -33,8 +33,8 @@ my $cmid        = "/nfs/disk100/wormpub/analysis/cosmids/cmid";
 my $unfincmid   = "/nfs/disk100/wormpub/analysis/Sequence_Databases/unfincmid";
 my $composition = "/nfs/disk100/wormpub/bin.ALPHA/composition";
 my $webpath     = "/nfs/WWW/SANGER_docs/data/sequencing_stats";
-my $count_fin   = "$webpath/celegans.fin";
-my $count_unfin = "$webpath/celegans.unfin";
+my $count_fin   = "$webpath/c.elegans.fin";
+my $count_unfin = "$webpath/c.elegans.unfin";
 my $fin;
 my $unfin;
 
