@@ -4,7 +4,7 @@
 
 # by Chao-Kung Chen [030625]
 
-# Last updated on: $Date: 2003-09-17 12:49:28 $
+# Last updated on: $Date: 2003-09-25 11:16:47 $
 # Last updated by: $Author: ck1 $
 
 use Tk;
@@ -994,9 +994,11 @@ sub write_ace {
     $ace_window->insert('end', "Missense\n");
   }
   if ($info[1] =~ /\[.+\]/){ 
+    $info[0] = "stop" if  lc($info[0]) eq "x";
     $ace_window->insert('end', "Remark \"$allele is a $info[2] to $info[0] mutation\" Paper_evidence \"$info[1]\"\n");
   }
   else {
+    $info[0] = "stop" if  lc($info[0]) eq "x";
     $ace_window->insert('end', "Remark \"$allele is a $info[2] to $info[0] mutation\" PMID_evidence \"$info[1]\"\n");
   }
   $ace_window->insert('end', "\/\/Remark \"\" Curator_confirmed \"WBPerson1845\"\n");
