@@ -8,7 +8,7 @@
 # Output ace file of such information and upload to autoace during each build
 # Output also other files related. See POD
 
-# Last updated on: $Date: 2003-05-30 16:09:49 $
+# Last updated on: $Date: 2003-06-02 09:27:15 $
 # Last updated by: $Author: ck1 $
 
 use strict;
@@ -81,10 +81,12 @@ my ($cds, $parts, @coords, $i, $mean_coords, %cds_mean, %mean_coord_cds, %chrom_
 
 my $version = $order[-1]+1; # autoace
 my $acefile="$output/interpolated_gmap_"."WS$version.$rundate.ace";
+my $gacefile = "$output/interpolated_gmap_to_geneace"."WS$version.$rundate.ace";
 
 if ($map){
   open (ACE, ">$acefile") || die "Can't output file!\n";
-  system("chmod 777 $acefile");
+  open (GACE, ">$gacefile") || die "Can't output file!\n";
+  system("chmod 777 $acefile $gacefile");
 }
 
 ######################################################
@@ -621,7 +623,9 @@ sub ace_output {
       print ACE "Interpolated_map_position\t\"$chrom\"\t$gmap\t\/\/$mean_coord (iso)\n";
       if (exists $predicted_gene_to_locus{$_}){
         print ACE "\nLocus : \"$predicted_gene_to_locus{$_}\"\n";
+	print GACE "\nLocus : \"$predicted_gene_to_locus{$_}\"\n";
         print ACE "Interpolated_map_position\t\"$chrom\"\t$gmap\t\/\/$mean_coord (iso)\n";
+	print GACE "Interpolated_map_position\t\"$chrom\"\t$gmap\t\/\/$mean_coord (iso)\n";
 	if ($comp && $locus_map{$predicted_gene_to_locus{$_}}){
         print MAPCOMP "$predicted_gene_to_locus{$_}\t\"$chrom\"\tCoords:\t$gmap\tContig:\t$locus_map{$predicted_gene_to_locus{$_}}\n";
       }
@@ -634,7 +638,9 @@ sub ace_output {
     print ACE "Interpolated_map_position\t\"$chrom\"\t$gmap\t\/\/$mean_coord\n";
     if (exists $predicted_gene_to_locus{$cds}){
       print ACE "\nLocus : \"$predicted_gene_to_locus{$cds}\"\n";
+      print GACE "\nLocus : \"$predicted_gene_to_locus{$cds}\"\n";
       print ACE "Interpolated_map_position\t\"$chrom\"\t$gmap\t\/\/$mean_coord\n";
+      print GACE "Interpolated_map_position\t\"$chrom\"\t$gmap\t\/\/$mean_coord\n";
       if ($comp && exists $locus_map{$predicted_gene_to_locus{$cds}}){
 	print MAPCOMP "$predicted_gene_to_locus{$cds}\t\"$chrom\"\tCoords:\t$gmap\tContig:\t$locus_map{$predicted_gene_to_locus{$cds}}\n";
       }
@@ -696,7 +702,7 @@ B<-db: / -databse:>
             Eg. 
                 -db /wormsrv1/geneace 
 
-                if this option is omitted, ie, when this script is run at end of build, it points to autoace
+                if this option is omitted and this script is run during the build, it points to autoace
                                 
 B<-map:>    
             Output interpolated map positions as ace file. Requeires -rev to check for reverse physicals
@@ -712,4 +718,5 @@ B<-comp:>
 B<-d: / debug:>
   
             In debug mode, interpolated_map_positions will not be uploaded to autoace.
-             
+
+
