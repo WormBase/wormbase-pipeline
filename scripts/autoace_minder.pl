@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-08-10 13:36:33 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2004-08-12 09:42:38 $
 
 
 
@@ -22,6 +22,7 @@ use IO::Handle;
 use Getopt::Long;
 use vars;
 use File::Copy;
+use Coords_converter;
 
 # is this script being run as user wormpub???
 &test_user_wormpub;
@@ -417,6 +418,9 @@ sub initiate_build {
   print LOG "Please tell camace and geneace curators to update their database to use the new models!!!\n\n";
   print LOG "Please also check following 'top' output to see if there are stray processes that should\n";
   print LOG "be removed:\n$top\n\n";
+
+  # this will force a refresh of the coordinate files.
+  my $coords = Coords_converter->invoke($db_path,1);
     
 }
 #__ end initiate_build __#
