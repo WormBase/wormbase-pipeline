@@ -7,8 +7,8 @@
 # A script to finish the last part of the weekly build by updating all of the
 # relevant WormBase and Wormpep web pages.
 #
-# Last updated by: $Author: dl1 $     
-# Last updated on: $Date: 2003-05-23 15:29:28 $      
+# Last updated by: $Author: ar2 $     
+# Last updated on: $Date: 2003-06-17 16:02:46 $      
 
 
 #################################################################################
@@ -815,18 +815,19 @@ sub update_wormpep_pages{
 
   print LOG "Updating wormpep pages at $www_root/wormpep\n";
   
-  # write a new paragraph for the index.shtml page        
+  # write a new paragraph for the index.shtml page 
+  undef $/;       
   open(LOGFILE,"</wormsrv2/WORMPEP/wormpep${WS_current}/wormpep_current.log") || croak "Couldn't open wormpep log file\n";
   my $text = <LOGFILE>;
   close(LOGFILE);
+  $/ = "\n";
+  $text =~ /No\. of sequences \(letters\) written:  (\d+,\d+)  \((\d+,\d+,\d+)\)/;
 
   # grab details of wormpep release, number of sequences etc
-  my $count = $text;
-  my $letters = $text;
-  $count =~ s/.*==> (.*) sequences.*/$1/;
-  $letters =~ s/.*sequences totalling (.*) letters/$1/;
+  my $count = $1;
+  my $letters = $2;
   # calculate number of splice variants by looking for proteins ending in 'A' in wormpep.table file
-  my $alt_spliced = `cut -f 1 /wormsrv2/WORMPEP/wormpep${WS_current}/wormpep.table${WS_current} | sed 's/.*[0-9B-Z]\$//' | grep \".\"| wc -l`; 
+  my $alt_spliced = `cut -f 1 /wormsrv2/WORMPEP/wormpep${WS_current}/wormpep.table${WS_current} | sed 's/.*[0-9b-z]\$//' | grep \".\"| wc -l`; 
   $alt_spliced =~ s/\s+//g;
 
   # create release_paragraph.shtml
