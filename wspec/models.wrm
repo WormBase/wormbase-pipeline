@@ -1015,6 +1015,9 @@
 ?Feature_data SMap S_Parent Sequence ?Sequence
 	      Feature ?Method Int Int UNIQUE Float UNIQUE Text #Feature_info
               Method ?Method // added for Lincoln RNAi [001213 dl]
+	      Splices	Confirmed_intron  Int Int #Splice_confirmation
+			Predicted_5 ?Method Int Int UNIQUE Float // (x, x+1) or (x, x-1)
+			Predicted_3 ?Method Int Int UNIQUE Float // (x, x+1) or (x, x-1)
                // keep the same model as in Sequence, so same code works
 
 ?Oligo  Sequence UNIQUE Text  // verbatim sequence 
