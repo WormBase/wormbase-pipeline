@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-05-15 14:22:16 $
+# Last updated on: $Date: 2003-05-16 14:31:24 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -105,7 +105,7 @@ if(!@class){
   &process_rearrangement;
   &process_sequence;
   &check_genetics_coords_mapping;
-  &chech_reverse_physicals;
+  #&chech_reverse_physicals;
   &check_evidence;
  }
  
@@ -119,7 +119,6 @@ else{
     if ($class =~ /(rearrangement|rearr)/) {&process_rearrangement}
     if ($class =~ /(sequence|seq)/)        {&process_sequence}
     if ($class =~ /(mapping|map)/)         {&check_genetics_coords_mapping}
-    if ($class =~ /(reverse|rev)/)         {&chech_reverse_physicals}
     if ($class =~ /(reverse|rev)/)         {&chech_reverse_physicals}
     if ($class =~ /(evidence|evi)/)        {&check_evidence}
   }  
@@ -1069,7 +1068,7 @@ sub check_genetics_coords_mapping {
 ##############################################
 
 sub chech_reverse_physicals {
-  
+  print "#$rundate#\n";
   print "\nChecking reverse physicals of gmap marker loci in Geneace:\n\n";
   system ("/wormsrv2/scripts/get_interpolated_gmap.pl -db /wormsrv1/geneace -reverse");
   my $infile = `echo /wormsrv2/logs/reverse_physicals_WS*.$rundate.*`;
