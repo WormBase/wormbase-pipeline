@@ -775,7 +775,7 @@
 	  Web_location  ?Url 
 	  Origin  From_Database UNIQUE ?Database UNIQUE Int	// release number
 		  From_Author ?Author XREF Sequence
-		  From_Laboratory UNIQUE ?Laboratory
+		  From_laboratory UNIQUE ?Laboratory
 		  Genetic_code UNIQUE ?Genetic_code // krb 030506
 		  Production_group Text
 		  Finishing_group Text
@@ -1114,7 +1114,7 @@
                    Gene_name  ?Text
                    Description   UNIQUE ?Text
 		   Molecular_weight Text #Evidence
-          Origin   Species ?Species   //XREF Protein in geneace
+          Origin   Species UNIQUE ?Species   //XREF Protein in geneace
                    Wormpep History Int Text ?Text //new history logging [020801 krb]
                    Live       // new tag to replace use of 'Inactive' krb 06/12/01
           Visible       Corresponding_DNA ?Sequence XREF Corresponding_protein
@@ -1586,7 +1586,7 @@
 	     Overlaps_pseudogene ?Pseudogene XREF Corresponding_PCR_product // new [030801 krb]
 	     Oligo ?Oligo XREF PCR_product UNIQUE Int UNIQUE Int
  	     Assay_conditions ?LongText
-	     From_Laboratory ?Laboratory                            // added for Lincoln Orfeome attribution [020304 dl]
+	     From_laboratory ?Laboratory                            // added for Lincoln Orfeome attribution [020304 dl]
 	     Amplified Int
 	     Remark ?Text #Evidence
 	     SNP_locus ?Locus XREF SNP_assay	                    // added for Todd [171001 krb]
@@ -1612,7 +1612,7 @@
 // New Class to handle operon data [010928 dl]
 
 ?Operon SMap S_Parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF Operon
-	Species ?Species
+	Species UNIQUE ?Species
 	Contains_CDS ?Sequence XREF Contained_in_operon  #Trans_splice_leader
 	Contains_pseudogene ?Pseudogene XREF Contained_in_operon  #Trans_splice_leader // new [030801 krb]
 	Reference ?Paper XREF Operon
@@ -1628,6 +1628,8 @@
 	    Source_exons Int UNIQUE Int // added for consistency with other 'gene' classes
             LTR_region UNIQUE Int UNIQUE Int
             Remark ?Text #Evidence
+	    From_laboratory UNIQUE ?Laboratory
+	    Species UNIQUE ?Species
             Method UNIQUE ?Method
 
 
@@ -1791,7 +1793,7 @@
      Matching_CDS ?Sequence XREF Matching_UTR
      Properties 5_UTR #Evidence
                 3_UTR #Evidence
-     Species ?Species
+     Species UNIQUE ?Species
      Method UNIQUE ?Method
 
 
