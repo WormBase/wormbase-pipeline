@@ -5,7 +5,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-01-17 16:04:31 $
+# Last updated on: $Date: 2003-01-17 16:28:07 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -115,7 +115,6 @@ READARRAY:   while (<DATA>) {
 # loop through each GFF file                               #
 ############################################################
 
-our $debug = 1;
 my %GFF;
 my $file;
 
