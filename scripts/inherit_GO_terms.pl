@@ -4,16 +4,15 @@
 #
 # map GO_terms to ?Sequence objects from ?Motif and ?Phenotype
 #
-# Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-12-01 11:54:26 $      
+# Last updated by: $Author: dl1 $     
+# Last updated on: $Date: 2004-02-27 10:28:30 $      
 
 use strict;
-use lib "/wormsrv2/scripts/";
+use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
 use IO::Handle;
 use Getopt::Long;
 use Ace;
-
 
 $|=1;
 
@@ -24,8 +23,7 @@ $|=1;
 my $maintainers = "All";
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
-our ($help, $debug, $motif, $phenotype, $log);
-
+our ($help, $debug, $motif, $phenotype, $noload, $log);
 
 ##############################
 # command-line options       #
@@ -34,21 +32,19 @@ our ($help, $debug, $motif, $phenotype, $log);
 GetOptions ("help"      => \$help,
             "debug=s"   => \$debug,
 	    "phenotype" => \$phenotype,
-	    "motif"     => \$motif);
-
+	    "motif"     => \$motif,
+	    "noload"    => \$noload);
 
 # Display help if required
 &usage("Help") if ($help);
 
 # Use debug mode?
-if($debug){
-  print "DEBUG = \"$debug\"\n\n";
-  ($maintainers = $debug . '\@sanger.ac.uk');
+if ($debug) {
+    print "DEBUG = \"$debug\"\n\n";
+    ($maintainers = $debug . '\@sanger.ac.uk');
 }
 
 &create_log_files;
-
-
 
 ##############################
 # Paths etc                  #
@@ -57,11 +53,9 @@ if($debug){
 my $tace      = &tace;      # tace executable path
 my $dbpath    = "/wormsrv2/autoace";                                      # Database path
 
-
 my $out="/wormsrv2/wormbase/misc/misc_inherit_GO_term.ace";
 open (OUT,">$out");
 OUT->autoflush();
-
 
 ########################################
 # Connect with acedb server            #
@@ -73,23 +67,27 @@ my $db = Ace->connect(-path=>$dbpath,
 print LOG "inherit_GO_terms run STARTED at $runtime\n\n";
 
 &motif($db) if ($motif);
-&phenotype if ($phenotype);
+&phenotype($db) if ($phenotype);
 
 ##############################
 # read acefiles into autoace #
 ##############################
 
-my $command =<<END;
-pparse /wormsrv2/wormbase/misc/misc_inherit_GO_term.ace
-save
-quit
-END
+unless ($noload || $debug) {
 
-open (TACE,"| $tace -tsuser inherit_GO_terms $dbpath") || die "Couldn't open tace connection to $dbpath\n";
-print TACE $command;
-close (TACE);
+    my $command = "pparse /wormsrv2/wormbase/misc/misc_inherit_GO_term.ace\nsave\nquit\n";
+    
+    open (TACE,"| $tace -tsuser inherit_GO_terms $dbpath") || die "Couldn't open tace connection to $dbpath\n";
+    print TACE $command;
+    close (TACE);
+    
+    print LOG "uploaded results into autoace\n\n";
+    
+}
 
-print LOG "uploaded results into autoace\n\n";
+##############################
+# tidy up                    #
+##############################
 
 $runtime = `date +%H:%M:%S`; chomp $runtime;
 print LOG "\ninherit_GO_terms run ENDED at $runtime\n\n";
@@ -128,7 +126,6 @@ sub motif {
     my ($motif,$obj,$term,$protein,$match,$pepobj) = "";
     my (@GO_terms,@pep_homols,@CDS) = "";
 
-
     my $i = $db->fetch_many(-query=> 'find Motif "INTERPRO*"');  
     while ($obj = $i->next) {
 	$motif = $obj;
@@ -138,7 +135,7 @@ sub motif {
 	print "\nMotif : $motif\n";
 	foreach $term (@GO_terms) {
 	    print "contains GO_term : $term with " . scalar (@pep_homols) . " attached Protein objects\n" if ($debug);
-	
+	    
 	    foreach $protein (@pep_homols) {
 		print "maps to Protein: $protein " if ($debug);
 		my $pepobj = $db->fetch(Protein=>$protein);
@@ -146,20 +143,45 @@ sub motif {
 		
 		foreach $match (@CDS) {
 		    print "== $match\n" if ($debug);
-		    print OUT "\nSequence : \"$match\"\nGO_term $term GO_inference_type IEA\n";
-		} # Sequence
+		    print OUT "\nCDS : \"$match\"\nGO_term $term IEA Inferred_automatically\n";
+		} # CDS
 	    }     # Protein
 	}         # GO_term
     }             # Motif object
-
 }
-
 
 ########################################################################################
 # phenotype to sequence mappings                                                       #
 ########################################################################################
 
 sub phenotype {
+    my $db = shift;
+    
+    my ($phenmotype,$obj,$term,$rnai,$match,$rnaiobj) = "";
+    my (@GO_terms,@rnai,@CDS) = "";
+
+    my $i = $db->fetch_many(-query=> 'find Phenotype "*"');  
+    while ($obj = $i->next) {
+	$motif = $obj;
+	@GO_terms = $obj->GO_term;
+	@rnai = $obj->RNAi;
+	
+	print "\nRNA : $motif\n";
+	foreach $term (@GO_terms) {
+	    print "contains GO_term : $term with " . scalar (@rnai) . " attached RNAi objects\n" if ($debug);
+	
+	    foreach $rnai (@rnai) {
+		print "maps to RNAi $rnai " if ($debug);
+		my $rnaiobj = $db->fetch(RNAi=>$rnai);
+		@CDS = $rnaiobj->Predicted_gene;
+		
+		foreach $match (@CDS) {
+		    print "== $match\n" if ($debug);
+		    print OUT "\nCDS : \"$match\"\nGO_term $term IMP Inferred_automatically\n";
+		} # CDS
+	    }     # RNAi
+	}         # GO_term
+    }             # Phenotype object
 }
 
 
@@ -214,7 +236,8 @@ __END__
 =back
 
 inherit_GO_terms.pl assigns GO terms to sequences based on Interpro motifs
-and RNAi phenotypes.
+and RNAi phenotypes. The resulting acefile will be loaded into the database
+as part of the script run (default database is autoace).
 
 inherit_GO_terms.pl mandatory arguments:
 
@@ -232,7 +255,9 @@ inherit_GO_terms.pl OPTIONAL arguments:
 
 =item -phenotype, parse phenotype data
 
-=item -debug, debug
+=item -noload, do not upload results to autoace
+
+=item -debug, debug (results not loaded into autoace)
 
 =item -help, help
 
