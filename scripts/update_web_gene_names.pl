@@ -1,16 +1,15 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/bin/perl5.8.0 -w
 #
 # update_web_gene_names.pl
 #
 # completely rewritten by Keith Bradnam from list_loci_designations
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-04-04 15:24:13 $      
-
-
+# Last updated on: $Date: 2003-06-03 12:04:13 $      
+#
 # This script should be run under a cron job and simply update the webpages that show
-# current gene names and sequence connections.  Gets info from geneace.  Writes to
-# WWWdev first and then runs webpublish in /Projects/C_elegans/LOCI
+# current gene names and sequence connections.  Gets info from geneace.  
+
 
 #################################################################################
 # Initialise variables                                                          #
@@ -47,7 +46,7 @@ my $line = 0;
 
 foreach my $locus (@loci){
   my $initial = substr($locus,0,1);
-
+  $initial = lc($initial);
   if ($initial ne $prev_initial){
     close(HTML);
     open (HTML, ">$www/loci_designations_$initial.shtml") || croak "Couldn't open file for writing to\n";
@@ -85,7 +84,7 @@ foreach my $locus (@loci){
     print HTML "<TD>";
     foreach my $i (@other_names){
       print HTML "${i} ";
-      print TEXT "$i";
+      print TEXT "$i ";
     }
     print HTML "</TD>";
   }
@@ -132,3 +131,50 @@ system("/usr/local/bin/webpublish -f -q *.txt") && print LOG "Couldn't run webpu
 close(LOG);
 exit(0);
 
+
+__END__
+
+=pod
+
+=head1 NAME - update_web_gene_names.pl
+
+=back
+
+=head1 USAGE
+
+=over 4
+
+=item update_web_gene_names.pl 
+
+Simply takes the latest set of gene names in geneace and writes to the development web site
+a set of HTML pages (one for each letter of the alphabet) containing all gene names starting
+with that letter.  Makes these tables hyperlinked to WormBase and also includes other names
+and sequence connections.
+
+When script finishes it copies across to the live web site.  This script should normally be
+run every night on a cron job.
+
+=back
+
+=head2 camcheck.pl MANDATORY arguments:
+
+=over 4
+
+=item none
+
+=back
+
+=head2 camcheck.pl OPTIONAL arguments:
+
+=over 4
+
+=item none
+
+=back
+
+
+=head1 AUTHOR - Keith Bradnam
+
+Email krb@sanger.ac.uk
+
+=cut
