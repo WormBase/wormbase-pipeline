@@ -1,0 +1,53 @@
+#!/usr/local/bin/perl5.6.0
+#
+# copy_files_to_acari.pl
+#
+# dl
+#
+# copy the latest dna files from the ftp site to acari
+
+use strict;
+
+my @CHROMOSOME = ('I','II','III','IV','V','X');
+my $dir        = "/nfs/acari/wormpipe/BlastDB";
+
+print "Remove old DNA files\n";
+system ("rm -f $dir/*dna");
+
+print "Copy the new DNA files from the FTP site\n";
+system ("cp /nfs/disk69/ftp/pub/wormbase/current_release/CHROMOSOMES/*dna.gz $dir/");
+
+foreach my $chrom (@CHROMOSOME) {
+    print " ..unzip the DNA file for chromosome $chrom\n";
+    system ("gzip -d $dir/CHROMOSOME_$chrom.dna.gz");
+    print " ..replace padding characters by N's in chromosome consensus DNA\n";
+    system ("cat $dir/CHROMOSOME_$chrom.dna | perl -n -e 's/\-/n/g;print' > $dir/tmp_file");
+    system ("mv -f $dir/tmp_file $dir/CHROMOSOME_$chrom.dna");
+}
+
+print "Finished copying DNA to acari\n\n";
+
+print "Copy over the latest wormpep relese\n";
+our $WS_version = "";
+open (WB, "ls -l /nfs/disk69/ftp/pub/databases/wormpep/wormpep* |");
+while (<WB>) {
+    next unless /\>/;
+    ($WS_version) = (/wormpep(\d+)$/);
+    last;
+}
+close WB;
+
+my $wp_file = "wormpep" . $WS_version . ".pep";
+my $wp_old  = "wormpep" . ($WS_version - 1) . ".pep";
+
+system ("cp /nfs/disk69/ftp/pub/databases/wormpep/wormpep $dir/$wp_file");
+
+print "and make it blastable.\n";
+system ("setdb $dir/$wp_file");
+
+print "\nRemoved old version of wormpep\n";
+system ("rm -f $dir/${wp_old}*");
+
+exit(0);
+
+
