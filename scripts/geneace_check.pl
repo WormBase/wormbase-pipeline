@@ -6,8 +6,8 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2002-11-13 17:48:01 $
+# Last updated by: $Author: ck1 $
+# Last updated on: $Date: 2002-11-15 16:52:37 $
 
 use Ace;
 use lib "/wormsrv2/scripts/"; 
@@ -45,10 +45,10 @@ close(LOG);
 close(ERICHLOG);
 
 my $maintainer = "All";
-&mail_maintainer($0,$maintainer,$log);
+#&mail_maintainer($0,$maintainer,$log);
 
 my $interested ="krb\@sanger.ac.uk, emsch\@its.caltech.edu, ck1\@sanger.ac.uk";
-&mail_maintainer($0,"$interested",$erichlog);
+#&mail_maintainer($0,"$interested",$erichlog);
 exit(0);
 
 
@@ -92,7 +92,7 @@ sub process_laboratory_class{
   print LOG "\n\nChecking Laboratory class for errors:\n";
   #grab lab details
   my @labs = $db->fetch(-class => 'Laboratory',
-		      -name  => '*');
+		        -name  => '*');
 
   # test for Allele_designation and Representative tags
   foreach my $lab (@labs){
@@ -116,27 +116,49 @@ sub process_laboratory_class{
 ########################
 
 sub process_allele_class{
+ 
   print"\n\nChecking Allele class for errors:\n";
   print LOG "\n\nChecking Allele class for errors:\n";
-  #grab allele details
-  my @alleles = $db->fetch(-class => 'Allele',
-		           -name  => '*');
+
+  my @alleles = $db->fetch('Allele','*');
+  print scalar @alleles, "\n";
+  my ($allele, %allele_gene, $gene, $seq_name, @seq1, @seq2, @seqs, $cdb);
+
+  $cdb = Ace->connect(-path  => '/wormsrv2/current_DB/',
+	              -program =>$tace) || do { print LOG "Connection failure: ",Ace->error; die();};
+  
+  @seqs=Table_maker();
+
+  print scalar @seqs, "\n";
+  my %seqs;
+    foreach (@seqs){
+      $seqs{$_}++;
+  }
 
   # test for Location tag and if an allele is connected to multiple loci
 
-  my %allele_gene;
-
-  foreach my $allele (@alleles){
+  foreach $allele (@alleles){
     if(!defined($allele->at('Location'))){  
       print LOG "$allele has no Location tag present\n";
-     # print  "$allele has no Location tag present\n";
       $allele_errors++;
-    }   
-    if($allele -> Gene(1)){
-      my @loci=$allele->Gene(1);
-      #print @loci, "\n";
-      push(@{$allele_gene{$allele}}, @loci); 
     }
+   
+    # checking if sequence name in Allele has now a locus name 
+
+    if($allele -> Gene){
+      my @loci=$allele->Gene(1);
+      push(@{$allele_gene{$allele}}, @loci); 
+      foreach $gene (@loci){
+	if($seqs{$gene}){
+	  my $seq = $cdb->fetch('Sequence', $gene);
+	  if ($seq->Locus_genomic_seq){
+	    my @LOCI=$seq->Locus_genomic_seq(1);
+	    print LOG "Sequence tag of Allele $allele points to $seq, which can now become @LOCI.\n";
+	    $allele_errors++;   
+	  }
+	}
+      }
+    }  
   }
 
   foreach (keys %allele_gene){
@@ -146,7 +168,6 @@ sub process_allele_class{
     }
   }
   print LOG "\nThere were $allele_errors errors in Allele class\n";
-  #print "\nThere were $allele_errors errors in Allele class\n";
 }
 
 ########################
@@ -398,5 +419,39 @@ sub create_log_files{
   print ERICHLOG "=============================================\n";
   print ERICHLOG "This mail is generated automatically.\n";
   print ERICHLOG "If you have any queries please email ar2\@sanger.ac.uk or krb\@sanger.ac.uk\n\n";
+}
+
+sub Table_maker {
+
+  my $get_predicted_genes=<<EOF;
+  Table-maker -p "/wormsrv1/geneace/wquery/get_all_predicted_gene_names.def" quit 
+EOF
+  my $get_genome_seqs=<<EOF;
+  Table-maker -p "/wormsrv1/geneace/wquery/get_all_genome_sequence_names.def" quit
+EOF
+
+  my $dir="/wormsrv2/current_DB";
+  
+  my @names=();
+  open (FH1, "echo '$get_predicted_genes' | tace $dir | ") || die "Couldn't access current_DB\n";
+  open (FH2, "echo '$get_genome_seqs' | tace $dir | ") || die "Couldn't access current_DB\n";
+  
+    while (<FH1>){
+      chomp($_);
+      if ($_ =~ /^\"/){ 
+	$_ =~ s/"//g;
+        #print $_, "\n";
+        push (@names, $_);
+      }
+    }
+    while (<FH2>){
+      chomp($_);
+      if ($_ =~ /^\"/){ 
+	$_ =~ s/"//g;
+        #print $_, "\n";
+        push (@names, $_);
+      }
+    }
+  return @names;
 }
 
