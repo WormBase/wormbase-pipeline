@@ -73,22 +73,16 @@ our %genetype   = ();                                        # gene type hash
 ################
 # Open logfile #
 ################
+my $log = Log_files->make_build_log();
 
-my $log = "/wormsrv2/logs/map_Oligo_set.$rundate.$$";
 
-open (LOG,">$log");
-LOG->autoflush();
-
-print LOG "# map_Oligo_set\n";     
-print LOG "# run details    : $rundate $runtime\n";
-print LOG "\n";
-
-###########################################
-# get exons and PCRs out of the gff files #
-###########################################        
+#####################################################
+# get exons and Oligo_set info out of the gff files #
+#####################################################        
    
 foreach my $chromosome (@chromosomes) {
-  print "\n$chromosome\n" if ($verbose);
+  $log->write_to("Processing chromosome $chromosome\n");
+  print "\nProcessing chromosome $chromosome\n" if ($verbose);
   my %exoncount  = ();
   my %Oligocount = ();
   my %genes      = ();
@@ -96,9 +90,9 @@ foreach my $chromosome (@chromosomes) {
   my %exon       = ();
   my @f          = ();
   
-  # Get PCR_product info from split GFF file
-  open (GFF_in, "<$gffdir/CHROMOSOME_${chromosome}.Oligo_set.gff") || die "Failed to open Oligo_set gff file\n\n";
-  while (<GFF_in>) {
+  # Get Oligo set info from split GFF file
+  open (GFF, "<$gffdir/CHROMOSOME_${chromosome}.Oligo_set.gff") || die "Failed to open Oligo_set gff file\n\n";
+  while (<GFF>) {
     chomp;	     
     s/\#.*//;
     next unless /\S/;
@@ -106,7 +100,7 @@ foreach my $chromosome (@chromosomes) {
     
     my ($name) = ($f[8] =~ /Oligo_set \"(.*)\"$/);
     unless ($name) {
-      print LOG "ERROR: Cant get name from $f[8]\n";
+      $log->write_to("ERROR: Cant get name from $f[8]\n");
       next;
     }
     $Oligocount{$name}++;
@@ -114,7 +108,7 @@ foreach my $chromosome (@chromosomes) {
     $Oligo{$Oligoname} = [$f[3],$f[4]];
     print "Oligo_set : '$name'\n" if ($verbose);
   }
-  close(GFF_in);
+  close(GFF);
 
 
   # Get exon info from split exon GFF files
@@ -230,7 +224,6 @@ foreach my $chromosome (@chromosomes) {
 	  if ( not (($Oligostart > $exon_stop) || ($Oligostop < $exon_start))) {
 	    my ($Oligo) = ($testOligo =~ /(\S+)\.\d+$/);
 	    push @{$output{$Oligo}}, $testgene;
-	    print LOG "$Oligo mapped to $testgene\n";
 	  }
 	}
       }                
@@ -238,7 +231,6 @@ foreach my $chromosome (@chromosomes) {
   }
 }
 
-close LOG;
 
 ###################
 # sort the output #
@@ -303,6 +295,8 @@ unless ($test) {
 ###############
 # hasta luego #
 ###############
+
+$log->mail("$maintainers","BUILD REPORT: $0");
 
 exit(0);
 
