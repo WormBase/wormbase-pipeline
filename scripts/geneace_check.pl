@@ -6,8 +6,8 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-06-19 09:07:55 $
+# Last updated by: $Author: ck1 $
+# Last updated on: $Date: 2003-06-25 16:17:43 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -277,7 +277,7 @@ END
       $tag = $2;
       $paper = $3;
       $class_obj = $class." : "."\"$obj\"";
-      if ($paper !~ /\[.+]/){
+      if ($paper !~ /\[.+\]/){
         $evid_errors++;
 	print LOG "\nERROR: $class $obj has Paper $paper under main tag $tag\n";
 	if ($ace){
@@ -287,8 +287,20 @@ END
 	  $paper =~ s/\[|\]//g;
 	  print ACE "$b4_evi Paper_evidence \"\[$paper$\]\"\n";
         }
-      }  
-    }
+      }
+      if ($paper !~ /\[cgc\d+\]/ && $paper =~ /\[pmid(\d+)\]/){
+	$evid_errors++;
+	$paper = $1;
+	print LOG "\nERROR: $class $obj has Paper $paper under main tag $tag\n";
+	if ($ace){
+	  print ACE "\n$class_obj\n";
+	  print ACE "-D $ori\n\n";
+	  print ACE "\n$class_obj\n";
+	  print ACE "$b4_evi PMID_evidence \"\[$paper$\]\"\n"; 
+        }
+      }
+    }  
+
     if ($_ =~ /((\w+)\s+.+)Author_evidence -O .+\"(.+)\" -O.+/){
       $ori = $_;
       $b4_evi = $1;
@@ -314,7 +326,7 @@ END
     }
     
   }
-  print LOG "\n\nThere are $evid_errors Evidence errors in 7 classes checked\n";
+  print LOG "\n\nThere are $evid_errors Evidence errors in 8 classes checked\n";
   print LOG "\n$updates Authors can be converted to Persons\n";
   print LOG "\n$info_num Authors are not Persons\n" if $verbose;
   system ("rm -f /tmp/*_dump.ace");
@@ -1295,8 +1307,11 @@ sub loci_as_other_name {
       # hard coded loci for no main name / other_name merging 
       #######################################################
       @exceptions = 
-      qw (aka-1 cas-1 clh-2 clh-3 ctl-1 ctl-2 egl-13 evl-20 gst-4 mig-1 sle-1 slo-1 rap-1 rpy-1 dmo-1 mod-1
-          old-1 plk-1 ptp-3 rab-18 rsp-1 rsp-2 rsp-4 rsp-5 rsp-6 sca-1 sus-1);
+      qw (aka-1 cas-1 clh-2 clh-3 ctl-1 ctl-2 egl-13 evl-20 gst-4 mig-1 sle-1 slo-1 rap-1 rpy-1 dmo-1 mod-1 
+          old-1 plk-1 ptp-3 rab-18 rsp-1 rsp-2 rsp-4 rsp-5 rsp-6 sca-1 sus-1 twk-1 twk-2 twk-3 twk-4 twk-5 twk-6 twk-7 twk-8
+          twk-9 twk-10 twk-11 twk-12 twk-13 twk-14 twk-16 twk-17 twk-18 twk-20 twk-21 twk-22 twk-23 twk-24 twk-25 twk-26 
+          twk-32 unc-58 sup-9
+         );
 
       foreach (@exceptions){$exceptions{$_}++};  
 
