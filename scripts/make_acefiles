@@ -7,8 +7,8 @@
 # Generates the .acefiles from the primary databases as a prelim for building
 # autoace.
 #
-# Last updated by: $Author: dl1 $                     
-# Last updated on: $Date: 2002-12-09 15:00:29 $       
+# Last updated by: $Author: krb $                     
+# Last updated on: $Date: 2003-02-13 11:02:20 $       
 
 #################################################################################
 # Variables                                                                     #
@@ -22,43 +22,36 @@ use IPC::Open2;
 use IO::Handle;
 use Getopt::Long;
 
- ##############################
- # Script variables (run)     #
- ##############################
+##############################
+# Script variables (run)     #
+##############################
 
 my $maintainers = "All";
 my $rundate     = `date +%y%m%d`;   chomp $rundate;
 my $runtime     = `date +%H:%M:%S`; chomp $runtime;
-my $WS_version  = &get_wormbase_version_name;
-
-# touch logfile for run details
-$0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
-my $logfile = "/wormsrv2/logs/$1.${WS_version}.`date +%y%m%d`.$$";
-
- ##############################
- # command-line options       #
- ##############################
-
-my $help;       # Help perdoc
-my $db;         # Database name for single db option
-my $debug;      # Debug mode, verbose output to runner only
-my $dev;        # Write to development stream (/wormsrv1/ not /wormsrv2/)
-
-GetOptions (
-	    "debug:s"   => \$debug,
-	    "help"      => \$help,
-	    "db=s"      => \$db,
-	    "dev"       => \$dev
-	    );
-
- ##############################
- # Paths etc                  #
- ##############################
-
 my $tace           = &tace;
 my $autoace_config = "/wormsrv2/autoace_config/autoace.config";
 my $basedir        = "/wormsrv2/wormbase";
 my $miscdir        = "$basedir/misc";
+
+our $WS_version  = &get_wormbase_version_name;
+our $log;
+
+
+##############################
+# command-line options       #
+##############################
+
+our $help;       # Help perdoc
+our $db;         # Database name for single db option
+our $debug;      # Debug mode, verbose output to runner only
+our $dev;        # Write to development stream (/wormsrv1/ not /wormsrv2/)
+
+GetOptions ("debug:s"   => \$debug,
+	    "help"      => \$help,
+	    "db=s"      => \$db,
+	    "dev"       => \$dev);
+
 
  ##############################
  # Paths for dev run          #
@@ -72,40 +65,68 @@ if ($dev) {
 # help page
 &usage("Help") if ($help);
 
-# no debug name
-&usage("Debug") if ((defined $debug) && ($debug eq ""));
+# Use debug mode?
+if($debug){
+  print "DEBUG = \"$debug\"\n\n";
+  ($maintainers = $debug . '\@sanger.ac.uk');
+}
 
 # single database mode
 if ($db) {
     &usage("Bad_database_name") unless (($db eq "camace") || ($db eq "stlace") || ($db eq "briggsae") || ($db eq "cshace") || ($db eq "citace") || ($db eq "geneace"));
 }
 
- ########################################
- # Open logfile                         #
- ########################################
 
-system ("/bin/touch $logfile");
-open (LOG,">>$logfile") or die ("Could not create logfile\n");
-LOG->autoflush();
-open (STDOUT,">>$logfile");
-STDOUT->autoflush();
-open (STDERR,">>$logfile"); 
-STDERR->autoflush();
+&create_log_files;
 
-print LOG "# make_acefiles\n\n";     
-print LOG "# run details    : $rundate $runtime\n";
-print LOG "\n";
-print LOG "WormBase version : ${WS_version}\n";
-print LOG "\n";
-print LOG "======================================================================\n";
-print LOG " Write .ace files\n";                     
-print LOG "  from database $db\n"                           if ($db);
-print LOG "  Output to /wormsrv1\n"                         if ($dev);
-print LOG "======================================================================\n";
-print LOG "\n";
-print LOG "Starting make_acefiles .. \n\n";
+# Main Loop   
+&mknewacefiles;
 
-if ($debug) {
+
+##############################
+# tidy up                    #
+##############################
+
+my $endtime = `date +%H:%M:%S`; chomp $endtime;
+print LOG "Ended make_acefiles @ $endtime\n";
+print "Ended make_acefiles @ $endtime\n" if ($debug);
+
+close(LOG);
+
+&mail_maintainer("WormBase Report: make_acefiles",$maintainers,$log);
+
+exit (0);
+
+
+
+
+
+#################################################################################
+### Subroutines                                                               ###
+#################################################################################
+
+
+sub create_log_files{
+
+  # Create history logfile for script activity analysis
+  $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
+
+  # create main log file using script name for
+  my $script_name = $1;
+  $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
+  my $rundate     = `date +%y%m%d`; chomp $rundate;
+  $log        = "/wormsrv2/logs/$script_name.$WS_version.$rundate.$$";
+
+  open (LOG, ">$log") or die "cant open $log";
+  print LOG "$script_name\n";
+  print LOG "started at ",`date`,"\n";
+  print LOG "=============================================\n";
+  print LOG " Write .ace files\n";                     
+  print LOG " from database $db\n"                           if ($db);
+  print LOG " Output to /wormsrv1\n"                         if ($dev);
+  print LOG "======================================================================\n";
+
+  if ($debug) {
     print "# make_acefiles\n\n";
     print "# run details    : $rundate $runtime\n";
     print "\n";
@@ -119,33 +140,12 @@ if ($debug) {
     print "\n";
     print "Starting make_acefiles .. \n\n";
     print "writing .acefiled to '$basedir'\n";
+  }
+
+
 }
 
-#################################################################################
-# Main Loop                                                                     #
-#################################################################################
 
-&mknewacefiles;
-
-my $endtime = `date +%H:%M:%S`; chomp $endtime;
-print LOG "Ended make_acefiles @ $endtime\n";
-print "Ended make_acefiles @ $endtime\n" if ($debug);
-close STDERR;
-close STDOUT;
-close LOG;
-
- ##############################
- # mail $maintainer report    #
- ##############################
-
-&mail_maintainer("WormBase Report: make_acefiles",$maintainers,$logfile);
-
-# hasta luego
-exit (0);
-
-#################################################################################
-### Subroutines                                                               ###
-#################################################################################
 
 #################################################################################
 # Erases old acefiles and make new ones                                         #
@@ -153,139 +153,139 @@ exit (0);
 
 sub mknewacefiles {
     
-    my ($dbname,$dbdir,$targetdir,$exe,$object,$criteria,$criterianoasterisk);
-    my ($filename,$filepath,$command,$outfile,$tag,@deletes,$include);
-
-    local (*CONFIG);
-
-    open (CONFIG, "<$autoace_config");
-    while (<CONFIG>) {
-	
-	# some formating, remove leading and trailing whitespace
-	s/^\s+//;
-	s/\s+$//;    
-			
-	# next if comment line
-	next if (/^\#/  || /^$/);
-
-        # single database mode, next unless line contains db name
-	if ($db) {
-	    next unless (/$db/);
-	}
-	# parse database information
-	if (/^P\s+(\S+)\s+(\S+)$/) {
-	    $dbname    = $1;
-	    $dbdir     = $2;
-	    $targetdir = "$basedir/$dbname";
-	    $exe       = "$tace $dbdir";
-	    next;
-	}
-
-	next if ($dbname =~ /misc/);
-
-	# nuts and bolts of acefile generation
-	# format:  database object criteria
-
-	# clear out the @deletes array eachtime
-	undef (@deletes);
-
-	# parse filename
-	($filename) = (/^\S+\s+(\S+)/);
-	$filepath   = "$basedir/$dbname/$filename";
-		    
-	print "Noting filename:$filename\n" if ($debug);
-
-	# deal with queries requiring tag deletion
-	if (/\[(\S+.+)\]$/) { 
-	    @deletes = split (/\s/,$1);
-	    print LOG "add " . scalar (@deletes) . " tags to delete array\n";
-	    my $report = join ' + ', @deletes;
-	    
-	    if (/^\S+\s+\S+\s+(\S+)\s+\[/) {  
-		$object = $1; ($criteria,$criterianoasterisk) = ""; 
-
-		$command = "nosave\nquery find $object\n";
-		foreach my $delete (@deletes) {
-		    $command .= "eedit -D $delete\n";
-		}
-		$command .= "show -a -T -f $filepath\nquit\n";
-	    } 
-	    elsif (/^\S+\s+\S+\s+(\S+)\s+(\S+.+)\s+\[/) {
-		$object   = $1; ($criteria,$criterianoasterisk) = $2; 
-		chop($criterianoasterisk) if ($criteria =~ /\*$/);
-
-		$command ="nosave\nquery find $object where ($criteria)\n";
-		foreach my $delete (@deletes) {
-		    $command .= "eedit -D $delete\n";
-		}
-		$command .= "show -a -T -f $filepath\nquit\n";
-	    }
-	}
-	# queries requiring tag inclusion
-	elsif (/\{(\S+)\}$/) { 
-	    $include = $1;
-	    print LOG "add $include tags\n";
-	    if (/^\S+\s+\S+\s+(\S+)\s+\{/) {  
-		$object = $1; 
-		($criteria,$criterianoasterisk) = ""; 
-		
-		$command = "nosave\nquery find $object\n";
-		$command .= "show -a -T $include -f $filepath\nquit\n";
-	    } 
-	    elsif (/^\S+\s+\S+\s+(\S+)\s+(\S+.+)\s+\{/) {
-		$object   = $1; 
-		($criteria,$criterianoasterisk) = $2; 
-		chop($criterianoasterisk) if ($criteria =~ /\*$/);
-		
-		$command ="nosave\nquery find $object where ($criteria)\n";
-		$command .= "show -a -T $include -f $filepath\nquit\n";
-	    }
-	}
-	# simple query
-	else { 
-	    if (/^\S+\s+\S+\s+(\S+)$/) {
-		$object=$1; 
-		($criteria,$criterianoasterisk) = ""; 
-		if ($object eq "DNA") {
-		    $command   = "nosave\nquery find Sequence\nfollow DNA\n";
-		    $command  .= "show -a -T -f $filepath\nquit\n";
-		}
-		else {
-		    $command   = "nosave\nquery find $object\n";
-		    $command  .= "show -a -T -f $filepath\nquit\n";
-		}
-	    }
-	    elsif (/^\S+\s+\S+\s+(\S+)\s+(\S+.+)$/) {
-		$object   = $1; 
-		$criteria = $2;
-		($criteria,$criterianoasterisk) = $2;
-		chop($criterianoasterisk) if ($criteria =~ /\*$/);
-
-		if ($object eq "DNA") {
-		    $command   = "nosave\nquery find Sequence where ($criteria)\nfollow DNA\n";
-		    $command  .= "show -a -T -f $filepath\nquit\n";
-		}
-		else {
-		    $command   ="nosave\nquery find $object where ($criteria)\n";
-		    $command  .= "show -a -T -f $filepath\nquit\n";
-		}
-	    }
-	}
-		
-	# dump out from ACEDB
-	print "\nFilename: $filepath\n";
-        print "Command : 'find $object $criteria' in $dbname\n";
-	open (TACE,"| $exe");
-	print TACE $command;
-	close TACE;
-	print "Made file $filepath\n";
-	
-	# process database dumps to add database names into time stamps
-	&process_ace_file($filepath,$dbname);
-
-	next;
+  my ($dbname,$dbdir,$targetdir,$exe,$object,$criteria,$criterianoasterisk);
+  my ($filename,$filepath,$command,$outfile,$tag,@deletes,$include);
+  
+  local (*CONFIG);
+  
+  open (CONFIG, "<$autoace_config");
+  while (<CONFIG>) {
+    
+    # some formating, remove leading and trailing whitespace
+    s/^\s+//;
+    s/\s+$//;    
+    
+    # next if comment line
+    next if (/^\#/  || /^$/);
+    
+    # single database mode, next unless line contains db name
+    if ($db) {
+      next unless (/$db/);
     }
-    close CONFIG;
+    # parse database information
+    if (/^P\s+(\S+)\s+(\S+)$/) {
+      $dbname    = $1;
+      $dbdir     = $2;
+      $targetdir = "$basedir/$dbname";
+      $exe       = "$tace $dbdir";
+      next;
+    }
+    
+    next if ($dbname =~ /misc/);
+    
+    # nuts and bolts of acefile generation
+    # format:  database object criteria
+    
+    # clear out the @deletes array eachtime
+    undef (@deletes);
+    
+    # parse filename
+    ($filename) = (/^\S+\s+(\S+)/);
+    $filepath   = "$basedir/$dbname/$filename";
+    
+    print "Noting filename:$filename\n" if ($debug);
+    
+    # deal with queries requiring tag deletion
+    if (/\[(\S+.+)\]$/) { 
+      @deletes = split (/\s/,$1);
+      print LOG "add " . scalar (@deletes) . " tags to delete array\n";
+      my $report = join ' + ', @deletes;
+      
+      if (/^\S+\s+\S+\s+(\S+)\s+\[/) {  
+	$object = $1; ($criteria,$criterianoasterisk) = ""; 
+	
+	$command = "nosave\nquery find $object\n";
+	foreach my $delete (@deletes) {
+	  $command .= "eedit -D $delete\n";
+	}
+	$command .= "show -a -T -f $filepath\nquit\n";
+      } 
+      elsif (/^\S+\s+\S+\s+(\S+)\s+(\S+.+)\s+\[/) {
+	$object   = $1; ($criteria,$criterianoasterisk) = $2; 
+	chop($criterianoasterisk) if ($criteria =~ /\*$/);
+	
+	$command ="nosave\nquery find $object where ($criteria)\n";
+	foreach my $delete (@deletes) {
+	  $command .= "eedit -D $delete\n";
+	}
+	$command .= "show -a -T -f $filepath\nquit\n";
+      }
+    }
+    # queries requiring tag inclusion
+    elsif (/\{(\S+)\}$/) { 
+      $include = $1;
+      print LOG "add $include tags\n";
+      if (/^\S+\s+\S+\s+(\S+)\s+\{/) {  
+	$object = $1; 
+	($criteria,$criterianoasterisk) = ""; 
+	
+	$command = "nosave\nquery find $object\n";
+	$command .= "show -a -T $include -f $filepath\nquit\n";
+      } 
+      elsif (/^\S+\s+\S+\s+(\S+)\s+(\S+.+)\s+\{/) {
+	$object   = $1; 
+	($criteria,$criterianoasterisk) = $2; 
+	chop($criterianoasterisk) if ($criteria =~ /\*$/);
+	
+	$command ="nosave\nquery find $object where ($criteria)\n";
+	$command .= "show -a -T $include -f $filepath\nquit\n";
+      }
+    }
+    # simple query
+    else { 
+      if (/^\S+\s+\S+\s+(\S+)$/) {
+	$object=$1; 
+	($criteria,$criterianoasterisk) = ""; 
+	if ($object eq "DNA") {
+	  $command   = "nosave\nquery find Sequence\nfollow DNA\n";
+	  $command  .= "show -a -T -f $filepath\nquit\n";
+	}
+	else {
+	  $command   = "nosave\nquery find $object\n";
+	  $command  .= "show -a -T -f $filepath\nquit\n";
+	}
+      }
+      elsif (/^\S+\s+\S+\s+(\S+)\s+(\S+.+)$/) {
+	$object   = $1; 
+	$criteria = $2;
+	($criteria,$criterianoasterisk) = $2;
+	chop($criterianoasterisk) if ($criteria =~ /\*$/);
+	
+	if ($object eq "DNA") {
+	  $command   = "nosave\nquery find Sequence where ($criteria)\nfollow DNA\n";
+	  $command  .= "show -a -T -f $filepath\nquit\n";
+	}
+	else {
+	  $command   ="nosave\nquery find $object where ($criteria)\n";
+	  $command  .= "show -a -T -f $filepath\nquit\n";
+	}
+      }
+    }
+    
+    # dump out from ACEDB
+    print "\nFilename: $filepath\n";
+    print "Command : 'find $object $criteria' in $dbname\n";
+    open (TACE,"| $exe");
+    print TACE $command;
+    close TACE;
+    print "Made file $filepath\n";
+    
+    # process database dumps to add database names into time stamps
+    &process_ace_file($filepath,$dbname);
+    
+    next;
+  }
+  close CONFIG;
 }
 
 ########################################################################
