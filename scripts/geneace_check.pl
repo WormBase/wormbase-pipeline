@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-01-23 18:03:43 $
+# Last updated on: $Date: 2003-01-27 14:14:32 $
 
 
 use strict;
@@ -15,6 +15,7 @@ use lib "/wormsrv2/scripts/";
 use Wormbase;
 use Ace;
 use Getopt::Long;
+
 
 ###################################################
 # variables and command-line options with aliases # 
@@ -83,24 +84,35 @@ our $sequence_errors = 0;
 # choose class to check - multiple classes allowed #
 ####################################################
 
-foreach $class (@class){
-  $class = lc($class);  # makes command line option case-insensitive
-  if ($class eq "") {
-    &process_locus_class;
-    &process_laboratory_class;
-    &process_allele_class;
-    &process_strain_class;
-    &process_rearrangement;
-    &process_sequence;
-  }
-  if ($class =~ /locus/)                 {&process_locus_class}
-  if ($class =~ /(laboratory|lab)/)      {&process_laboratory_class}
-  if ($class =~ /allele/)                {&process_allele_class}
-  if ($class =~ /strain/)                {&process_strain_class}
-  if ($class =~ /(rearrangement|rearr)/) {&process_rearrangement}
-  if ($class =~ /(sequence|seq)/)        {&process_sequence}
-}  
-
+if(!@class){
+  print "Checking all classes in Geneace.....\n\n";
+  &process_locus_class;
+  &process_laboratory_class;
+  &process_allele_class;
+  &process_strain_class;
+  &process_rearrangement;
+  &process_sequence;
+ }
+ 
+else{
+  foreach $class (@class){
+    $class = lc($class);  # makes command line option case-insensitive
+    if ($class eq "") {
+      &process_locus_class;
+      &process_laboratory_class;
+      &process_allele_class;
+      &process_strain_class;
+      &process_rearrangement;
+      &process_sequence;
+    }
+    if ($class =~ /locus/)                 {&process_locus_class}
+    if ($class =~ /(laboratory|lab)/)      {&process_laboratory_class}
+    if ($class =~ /allele/)                {&process_allele_class}
+    if ($class =~ /strain/)                {&process_strain_class}
+    if ($class =~ /(rearrangement|rearr)/) {&process_rearrangement}
+    if ($class =~ /(sequence|seq)/)        {&process_sequence}
+  }  
+}
 
 #######################################
 # Tidy up and mail relevant log files #
@@ -111,16 +123,18 @@ close(LOG);
 close(ERICHLOG);
 close(JAHLOG);
 
-
 # Always mail to $maintainers (which might be a single user under debug mode)
-&mail_maintainer($0,$maintainers,$log);
+mail_maintainer($0,$maintainers,$log);
+
 
 # Also mail to Erich unless in debug mode
 my $interested ="krb\@sanger.ac.uk, emsch\@its.caltech.edu, ck1\@sanger.ac.uk";
-my $CGC = "krb\@sanger.ac.uk, ck1\@sanger.ac.uk"; 
-&mail_maintainer($0,"$interested",$erichlog) unless $debug;
-&mail_maintainer($0,"$CGC",$jahlog) unless $debug;
-&mail_maintainer($0,"ck1\@sanger.ac.uk",$jahlog);
+mail_maintainer($0,"$interested",$erichlog) unless $debug; 
+
+
+# Email to Jonathan for problematic loci
+my $CGC = "ck1\@sanger.ac.uk, krb\@sanger.ac.uk"; 
+mail_maintainer($0,$CGC,$jahlog) unless $debug;
 
 exit(0);
 
@@ -145,7 +159,7 @@ sub process_locus_class{
     #print "$locus\n";
     my $warnings;
     my $erich_warnings;
-    ($warnings, $erich_warnings) = &test_locus_for_errors($locus);
+    #($warnings, $erich_warnings) = &test_locus_for_errors($locus);
     print LOG "$warnings" if(defined($warnings));
     #Erich Schwarz wants some of these - emsch@its.caltech.edu
     print ERICHLOG "$erich_warnings" if(defined($erich_warnings));
@@ -159,7 +173,7 @@ sub process_locus_class{
   Table-maker -p "/wormsrv1/geneace/wquery/get_all_seq_with_pseudogene_and_locus.def" quit
 EOF
  
-  &find_new_loci_in_current_DB($get_seg_with_pseudogene_locus, $db);
+  #&find_new_loci_in_current_DB($get_seg_with_pseudogene_locus, $db);
    
   #Look for loci that are other_names and still are obj of ?Locus -> candidate for merging
   my $locus_has_other_name=<<EOF;
@@ -753,8 +767,8 @@ sub create_log_files{
   my $script_name = $1;
   $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
   my $rundate     = `date +%y%m%d`; chomp $rundate;
-  $log = "/wormsrv2/logs/$script_name.$rundate.$$";
 
+  $log = "/wormsrv2/logs/$script_name.$rundate.$$";
   open (LOG, ">$log") or die "cant open $log";
   print LOG "$script_name\n";
   print LOG "started at ",`date`,"\n";
