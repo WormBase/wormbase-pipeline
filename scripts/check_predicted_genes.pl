@@ -4,8 +4,8 @@
 #
 # by Keith Bradnam aged 12 and a half
 #
-# Last updated on: $Date: 2004-05-07 15:21:39 $
-# Last updated by: $Author: krb $
+# Last updated on: $Date: 2004-05-11 13:07:40 $
+# Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
 
@@ -112,7 +112,7 @@ foreach my $cds (@CDSs){
     my $intron_size = ($exon_coord1[$i] - $exon_coord2[$i-1] -1);
     print "ERROR: $cds has a small intron ($intron_size bp)\n" if (($intron_size < 34)  && $verbose);
     push(@error2,"ERROR: $cds has a very small intron ($intron_size bp)\n") if ($intron_size < 34);
-    push(@error4,"WARNING: $cds has a small intron ($intron_size bp)\n") if ($intron_size > 33 && $intron_size < 39) unless ($basic);
+    push(@error4,"WARNING: $cds has a small intron ($intron_size bp)\n") if (($intron_size > 33) && ($intron_size < 39) && (!$basic));
   }
   
 
