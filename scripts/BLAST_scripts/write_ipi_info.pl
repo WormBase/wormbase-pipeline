@@ -169,11 +169,11 @@ sub getSwissGeneName
 sub makeENSgenes 
   {
     my $p2g = shift;
-    my $file = glob("~ar2/ensgene_pep");
-    open (ENS,"$file") or die "cant open ENSEMBL genes file\n";
+    open (ENS, "/usr/local/pubseq/bin/getz -f \"ID Gene\" \"[ensemblpep_human-ID:*]\" | ");
+
+    #>ENSP00000217378 Gene:ENSG00000101397 Clone:AL049651 Contig:AL049651.2.1.97912 Chr:20 Basepair:23016474 Status:known
     while (<ENS>) {
-      #ENSG00000173097	ENSP00000311007
-      my @data = split;
-      $$p2g{$data[1]} = $data[0];
+      />(ENSP\d+) Gene:(ENSG\d+)/;
+      $$p2g{$1} = $2;
     }
   }
