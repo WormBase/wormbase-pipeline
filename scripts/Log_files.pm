@@ -78,7 +78,9 @@ sub make_build_log
     my $log_file = "$path/$filename".".$ver.".$$;
     my $log;
     open($log,">$log_file") or croak "cant open file $log_file : $!";
-    print $log "WS$ver Build script : $filename \n Started at ",&Wormbase::runtime,"\n\n***********************************\n\n";
+    print $log "WS$ver Build script : $filename \n";
+    print $log "Started at ",&Wormbase::runtime,"\n";
+    print $log "-----------------------------------\n\n";
 
     my $self = {};
     $self->{"FILENAME"} = $log_file;
@@ -103,7 +105,8 @@ sub mail
    my ($self, $recipient) = @_;
 
    my $fh = $self->{"FH"};
-   print $fh "\nFinished at ",&Wormbase::runtime,"\n\n***********************************\n\n"; 
+   print $fh "\n\n-----------------------------------\n"   
+   print $fh "Finished at ",&Wormbase::runtime,"\n"; 
    close $fh;
 
    $recipient = "All" unless $recipient;

@@ -7,7 +7,7 @@
 # A script to find (and classify) potentially short, spurious genes (<100 aa)
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-10-29 13:20:03 $     
+# Last updated on: $Date: 2003-10-29 14:57:21 $     
 
 
 use strict;
@@ -58,7 +58,7 @@ if($debug){
 
 # set default cutoff to 100 amino acids if not specified on command line
 if(!defined($cutoff)){
-  $cutoff = 100;        
+  $cutoff = 50;        
 }
 
 
@@ -69,7 +69,6 @@ if(!defined($cutoff)){
 #####################################################################
 
 my $log = Log_files->make_build_log();  
-$log->write_to(&runtime,": starting script\n===============\n\n");
 $log->write_to("Looking for spurious genes shorter or equal to $cutoff amino acids in length\n");
 print "Looking for spurious genes shorter or equal to $cutoff amino acids in length\n" if ($verbose);
 
@@ -209,7 +208,6 @@ foreach my $gene (@genes){
 
 close(OUT);
 $db->close;
-$log->write_to(&runtime,": finishing script\n");
 # only mail if running as part of build
 $log->mail("$maintainers") if ($build);
 exit;
