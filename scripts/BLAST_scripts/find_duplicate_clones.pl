@@ -42,7 +42,7 @@ my $dbh = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseEr
 my $clone_table     = $dbh->prepare (q{ SELECT clone_id, embl_acc, embl_version FROM clone 
 				       ORDER BY embl_acc,embl_version} );
 
-my $contig_table    = $dbh->prepare (q{ SELECT contig_id, name, dna FROM contig where clone_id = ? } );
+my $contig_table    = $dbh->prepare (q{ SELECT contig_id, name, dna_id FROM contig where clone_id = ? } );
 
 my $delete_clone    = $dbh->prepare (q{ DELETE FROM clone             WHERE clone_id = ? } );
 my $delete_contig   = $dbh->prepare (q{ DELETE FROM contig            WHERE contig_id = ? } );
@@ -75,10 +75,10 @@ while (@row = $clone_table->fetchrow_array) {
     my $contig_id = $new_row[1];
     my $dna_id = $new_row[2];
 
-    print "\tDELETE FROM clone           WHERE internal_id = $last_id\n";
-    print "\tDELETE FROM contig          WHERE internal_id = $contig_internal_id\n";
-    print "\tDELETE FROM dna             WHERE id = $dna_id\n";
-    print "\tDELETE FROM InputIdAnalysis WHERE inputId = $contig_id\n";
+    print "\tDELETE FROM clone           WHERE clone_id = $last_id\n";
+    print "\tDELETE FROM contig          WHERE contig_id = $contig_internal_id\n";
+    print "\tDELETE FROM dna             WHERE dna_id = $dna_id\n";
+    print "\tDELETE FROM input_id_analysis WHERE input_id = $contig_id\n";
     print "\n\n";
     $delete_clone->execute($last_id);
     $delete_contig->execute($contig_internal_id);
