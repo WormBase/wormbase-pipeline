@@ -252,10 +252,12 @@ if ($opt_r) {
    # Set the date correctly in displays.wrm       #
    ################################################
 
-    &setdate();
-    $now = `date +%H:%M:%S`; chomp $now;
-    print LOGFILE "* New display date set at $now\n\n";
-}
+# disabled 010724 dl
+
+#    &setdate();
+#    $now = `date +%H:%M:%S`; chomp $now;
+#    print LOGFILE "* New display date set at $now\n\n";
+#}
 
    ################################################
    # Dump DNA and gff (CHROMOSOME) files          #
