@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-07-21 08:12:33 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2004-07-23 11:10:45 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -246,8 +246,8 @@ sub copy_wormpep_files{
 
   foreach my $file ( @{&wormpep_files} ){
   # copy the wormpep release files across
-    &run_command("scp $wp_source_dir/$file$wormpep $wp_ftp_dir/$file");
-    &CheckSize("$wp_source_dir/$file$wormpep","$wp_ftp_dir/$file");
+    &run_command("scp $wp_source_dir/$file$wormpep $wp_ftp_dir/$file$wormpep");
+    &CheckSize("$wp_source_dir/$file$wormpep","$wp_ftp_dir/$file$wormpep");
   }
 
   # tar up the latest wormpep release and copy across
