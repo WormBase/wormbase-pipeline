@@ -8,11 +8,11 @@ use DBI;
 use Bio::PrimarySeq;
 use Bio::SeqIO;
 use Bio::EnsEMBL::Pipeline::DBSQL::Protein::DBAdaptor;
-use vars qw($opt_f $opt_o $opt_n);
+use vars qw($opt_f $opt_o $opt_n $opt_m);
 
 $|=1;
 
-getopts ("f:on");
+getopts ("f:onm:");
 
 my $usage = "worm_pipeline.pl\n";
 $usage .= "-f [fasta file of protein sequences to be added to the mysql database]\n";
@@ -28,6 +28,7 @@ unless ($opt_f) {
 
 my $host = "ecs1f";
 my $dbname = "wormprot";
+$dbname = "$opt_m" if $opt_m;
 my $user = "wormadmin";
 my $pass = "worms";
 
