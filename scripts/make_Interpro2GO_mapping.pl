@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.0 -w                   
+#!/usr/local/bin/perl5.6.1 -w
 #
 # make_Interpro2GO_mapping.pl 
 # 
@@ -7,12 +7,13 @@
 # Gets latest Interpro:GO mappings from XXXX and puts info in to ace file
 #
 # Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2002-08-12 15:47:11 $                        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2003-04-23 16:12:48 $                        # quickly see when script was last changed and by whom
 
 
-use strict;                                     
-use lib "/wormsrv2/scripts/";                    
+use strict;
+use lib "/wormsrv2/scripts/";
 use Wormbase;
+use Data::Dumper;
 
 # Try to keep different parts of code cleanly separated using comments...
 
@@ -106,6 +107,14 @@ foreach my $key (keys %interpro_des)
     print I2GACE "\n";
   }
 close I2GACE;
+
+
+# write Data::Dumper has of interpro => GO mapping
+open (IP2GO,">/wormsrv2/autoace/COMMON_DATA/interpro2go.dat") or die "cant open i2g\n";
+print IP2GO Data::Dumper->Dump([\%interpro_GO]);
+close IP2GO;
+
+
 
 print LOG "$0 finished at ",`date`,"\n\n";
 close LOG;

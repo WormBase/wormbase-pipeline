@@ -8,7 +8,7 @@
 # dl
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2003-04-22 14:09:31 $
+# Last edited on: $Date: 2003-04-23 16:12:48 $
 
 use lib "/wormsrv2/scripts/";
 use Wormbase;
@@ -18,7 +18,7 @@ use Data::Dumper;
 
 my %acc2clone = &FetchData('acc2clone');
 my %gene2CE = &FetchData('gene2CE');
-my %Ip2Go = &FetchData('interpro2go');    # get the InterPro => GOterm mapping ( space separated ie 'IPR004794' => 'GO:0008703 GO:0008835 GO:0009231 ')
+ # get the InterPro => GOterm mapping ( space separated ie 'IPR004794' => 'GO:0008703 GO:0008835 GO:0009231 ')
 
 our %databases = (
 		  'SW' => 'SWISSPROT',
@@ -30,14 +30,18 @@ our %databases = (
 # variables and command-line options # 
 ######################################
 
-my ($help, $file, $debug);
+my ($help, $file, $debug, $no_go);
 
 GetOptions (
 	    "help"      => \$help,
             "file=s"    => \$file,
-	    "debug"     => \$debug
+	    "debug"     => \$debug,
+	    "go"        => \$no_go
 	    );
-
+unless ($no_go) {
+  system("make_Interpro2GO_mapping.pl") and die "cant update the interpro to GO term mappings\n";
+  my %Ip2Go = &FetchData('interpro2go');
+}
 # Display help if required
 &usage("Help") if ($help);
 
@@ -85,10 +89,12 @@ while (<FILE>) {
     print OUT "Protein_id \"$acc2clone{$f[0]}\" $f[2] $f[3]\n";
 
     # assign GO terms based on InterPro Motifs
-    foreach my $ip (@interpro) {
-      my @GOterms = split(/\s/,$Ip2Go{$ip});
-      foreach my $go (@GOterms) {
-	print OUT "GO_term\t\"$go\" \"IEA\"\n"
+    unless ($no_go) {
+      foreach my $ip (@interpro) {
+	my @GOterms = split(/\s/,$Ip2Go{$ip});
+	foreach my $go (@GOterms) {
+	  print OUT "GO_term\t\"$go\" \"IEA\"\n"
+	}
       }
     }
 }
@@ -156,13 +162,15 @@ script_template.pl MANDATORY arguments:
 
 =over 4
 
-=item none, (but it won't do anything)
-
 =back
 
 script_template.pl  OPTIONAL arguments:
 
 =over 4
+
+=item no_go
+
+use this if you dont want to update and include the interpro to GO data
 
 =item -file <file>, Extracted e-mail from EBI containing the Protein_ID data
 
