@@ -7,7 +7,7 @@
 # Script to make ?Transcript objects
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-01-12 17:00:20 $
+# Last updated on: $Date: 2005-02-24 10:44:36 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -204,6 +204,7 @@ foreach my $chrom ( @chromosomes ) {
 
   $index = 0;
   foreach ( keys %cDNA ) {
+
     my $cdna = SequenceObj->new( $_, $cDNA{$_}, $cDNA_span{$_}->[2] );
     $cdna->array_index($index);
     if ( $cDNA_span{"$_"}[3] ) {
@@ -220,6 +221,15 @@ foreach my $chrom ( @chromosomes ) {
     $cDNA_index{"$_"} = $index;
     $index++;
     $cdna->transform_strand($transformer,"transform") if ( $cdna->strand eq "-" );
+
+    #check for and remove ESTs with internal SL's 
+    if( $cdna->SL ) {
+      if( $cdna->start < $cdna->SL->[0] ) {
+	$log->write_to($cdna->name." has internal SL ".$cdna->SL->[2]."\n");
+	next;
+      }
+    }
+
     push(@cdna_objs,$cdna);
   }
 
@@ -238,6 +248,10 @@ foreach my $chrom ( @chromosomes ) {
  CDNA:
   foreach my $CDNA ( @cdna_objs) {
     next if ( defined $est and $CDNA->name ne "$est"); #debug line
+
+    #sanity check features on cDNA ie SLs are at start
+    next if ( &sanity_check_features( $CDNA ) == 0 );
+
     foreach my $cds ( @cds_objs ) {
       if ( $cds->map_cDNA($CDNA) ) {
 	$CDNA->mapped($cds );
@@ -307,7 +321,7 @@ foreach my $chrom ( @chromosomes ) {
 	  print "trying ",$cds->name, " downstream is ", $downstream_CDS->name," with ",$CDNA->name,"\n";
 	  if( ($CDNA->start > $cds->gene_end) and ($CDNA->start - $cds->gene_end < 1000) and ($CDNA->end < $downstream_CDS->gene_start) ) {
 	    print " adding 3' cDNA ",$CDNA->name," to ",$cds->name,"\n";
-	    $cds->add_3_UTR($CDNA, $downstream_CDS);
+	    $cds->add_3_UTR($CDNA);
 	    $CDNA->mapped($cds);
 	    last;
 	  }
@@ -331,6 +345,7 @@ foreach my $chrom ( @chromosomes ) {
       }
     }
   }
+
 
   my $out_file = "$transcript_dir/chromosome_$chrom.ace";
   print "writing output to $out_file\n";
@@ -488,7 +503,7 @@ sub load_EST_data
 	print PAIRS "$data[0]\t$data[1]\n";
       }
       close PAIRS;
-    }   
+    }
   }
 
 sub load_features 
@@ -502,6 +517,22 @@ sub load_features
 	push(@{$$features{$_}},$seq);
       }
     }
+  }
+
+sub sanity_check_features
+  {
+    my $cdna = shift;
+    my $return = 1;
+    if( my $SL = $cdna->SL ) {
+      $return = 0 if( $SL->[0] != $cdna->start );
+      print STDERR $SL->[2]," inside ",$cdna->name,"\n";
+    }
+    if( my $polyA = $cdna->polyA_site ){
+      $return = 0 if( $polyA->[1] != $cdna->end );
+      print STDERR $polyA->[2]," inside ",$cdna->name,"\n";
+    }
+
+    return $return;
   }
 
 __END__
