@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-04-16 17:29:06 $
+# Last updated on: $Date: 2003-04-17 17:04:13 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -43,6 +43,7 @@ GetOptions ("h|help"        => \$help,
 
 my $default_db;
 my $curr_db = "/nfs/disk100/wormpub/DATABASES/current_DB"; 
+
 
 # Display help if required
 &usage("Help") if ($help);
@@ -171,27 +172,28 @@ EOF
  
   print LOG "\nChecking misuse of Evidence and converting Authors to Persons:\n";
   print LOG "--------------------------------------------------------------\n\n";
+
 my $command=<<END;
 find locus * 
-show -a -f /tmp/locus_dump.ace
+show -a -T -f /tmp/locus_dump.ace
 
 find allele *
-show -a -f /tmp/allele_dump.ace
+show -a -T -f /tmp/allele_dump.ace
 
 find strain *
-show -a -f /tmp/strain_dump.ace
+show -a -T -f /tmp/strain_dump.ace
 
 find gene_class *
-show -a -f /tmp/geneclass_dump.ace
+show -a -T -f /tmp/geneclass_dump.ace
 
 find 2_point_data *
-show -a -f /tmp/2_pt_dump.ace
+show -a -T -f /tmp/2_pt_dump.ace
 
 find Multi_pt_data *
-show -a -f /tmp/multi_pt_dump.ace
+show -a -T -f /tmp/multi_pt_dump.ace
 
 find Pos_neg_data *
-show -a -f /tmp/posneg_dump.ace
+show -a -T -f /tmp/posneg_dump.ace
 
 save
 quit
@@ -207,42 +209,58 @@ END
 
   my $evid_errors = 0;
   my $updates = 0;
-  my @counters;
   my $info_num = 0;
-  my ($class, $obj, $tag, $name, $paper, $author, $last_name, $initials);
+  my (@counters, $class_obj, $class, $obj, $tag, $ori, $b4_evi, $name, $paper, $author, $last_name, $initials);
 
   while (<IN>){
-    if ($_ =~ /^(Locus) : \"(.+)\"/){$class = $1; $obj = $2}
-    if ($_ =~ /^(Allele) : \"(.+)\"/){$class = $1; $obj = $2}
-    if ($_ =~ /^(Strain) : \"(.+)\"/){$class = $1; $obj = $2}
-    if ($_ =~ /^(Gene_Class) : \"(.+)\"/){$class = $1; $obj = $2}
-    if ($_ =~ /^(2_point_data) : \"(.+)\"/){$class = $1; $obj = $2}     
-    if ($_ =~ /^(Multi_pt_data) : \"(.+)\"/){$class = $1; $obj = $2}  
-    if ($_ =~ /^(Pos_neg_data) : \"(.+)\"/){$class = $1; $obj = $2}  
+    chomp;
+    if ($_ =~ /^(Locus) : \"(.+)\" -O .+/){$class = $1; $obj = $2}
+    if ($_ =~ /^(Allele) : \"(.+)\" -O .+/){$class = $1; $obj = $2}
+    if ($_ =~ /^(Strain) : \"(.+)\" -O .+/){$class = $1; $obj = $2}
+    if ($_ =~ /^(Gene_Class) : \"(.+)\" -O .+/){$class = $1; $obj = $2}
+    if ($_ =~ /^(2_point_data) : \"(.+)\" -O .+/){$class = $1; $obj = $2}     
+    if ($_ =~ /^(Multi_pt_data) : \"(.+)\" -O .+/){$class = $1; $obj = $2}  
+    if ($_ =~ /^(Pos_neg_data) : \"(.+)\" -O .+/){$class = $1; $obj = $2}  
     
-    if ($_ =~ /(\w+)\s+.+Person_evidence\s+\"(.+)\"/){
-      $tag = $1;
-      $name = $2;
+    if ($_ =~ /((\w+)\s+.+)Person_evidence -O .+\"(.+)\" -O.+/){
+      $ori = $_;
+      $b4_evi = $1;	
+      $tag = $2;
+      $name = $3;
       if ($name !~ /WBPerson\d+/){
 	$evid_errors++;
 	print LOG "\nERROR: $class $obj has non-Person $name under main tag $tag\n";
-	@counters = get_WBPerson_ID($name, $class, $obj, $tag); 
+
+	@counters = get_WBPerson_ID($name, $class, $obj, $tag, $ori, $b4_evi, "PtoA");  
 	$updates += $counters[1];
 	$info_num += $counters[2]; 
       }  
     }
-    if ($_ =~ /(\w+)\s+.+Paper_evidence\s+\"(.+)\"/){
-      $tag = $1;
-      $paper = $2;
+    if ($_ =~ /((\w+)\s+.+)Paper_evidence -O .+\"(.+)\" -O.+/){
+      $ori = $_;
+      $b4_evi = $1;
+      $tag = $2;
+      $paper = $3;
+      $class_obj = $class." : "."\"$obj\"";
       if ($paper !~ /\[.+]/){
         $evid_errors++;
 	print LOG "\nERROR: $class $obj has Paper $paper under main tag $tag\n";
+	if ($ace){
+	  print ACE "\n$class_obj\n";
+	  print ACE "-D $ori\n\n";
+	  print ACE "\n$class_obj\n";
+	  $paper =~ s/\[|\]//g;
+	  print ACE "$b4_evi Paper_evidence \"\[$paper$\]\"\n";
+        }
       }  
     }
-    if ($_ =~ /(\w+)\s+.+Author_evidence\s+\"(.+)\"/){
-      $tag = $1;
-      $author = $2;
-      @counters = get_WBPerson_ID($author, $class, $obj, $tag); 
+    if ($_ =~ /((\w+)\s+.+)Author_evidence -O .+\"(.+)\" -O.+/){
+      $ori = $_;
+      $b4_evi = $1;
+      $tag = $2;
+      $author = $3;
+
+      @counters = get_WBPerson_ID($author, $class, $obj, $tag, $ori, $b4_evi); 
       $evid_errors += $counters[0];
       $updates += $counters[1];
       $info_num += $counters[2]; 
@@ -259,8 +277,8 @@ END
   sub process_WBPerson_names {
     my ($def, $db)=@_;
     my ($WBPerson, $F_name, $M_name, $L_name, $F_char, $M_char);
-    open (FH1, "echo '$def' | tace $db | ") || die "Couldn't access current_DB\n";
-    while (<FH1>){
+    open (FH, "echo '$def' | tace $db | ") || die "Couldn't access current_DB\n";
+    while (<FH>){
       chomp($_);
       if ($_ =~ /^\"(WBPerson\d+)\"\s+\"(\w+)\"\s+\"(\w+|\w+.)\"\s+\"(\w+|\w+-\w+)\"$/){ 
 	$WBPerson = $1;
@@ -280,73 +298,115 @@ END
       } 
       
     }
+    close FH;
   }
 
   sub get_WBPerson_ID {
-    my ($name, $class, $obj, $tag) = @_;
+    my ($name, $class, $obj, $tag, $ori, $b4_evi, $conversion) = @_;
     my ($last_name, $initials, $num);
+    my $class_obj = $class." : "."\"$obj\"";
     my $convert = 0;
     my $info_count = 0;
     my $evid_errors = 0;
 
     if ($name =~ /\w+\,\w+/ || $name =~ /\w+\,\s+\w+/){
       $evid_errors++;
-      print LOG "\nERROR: $class $obj has Author $name under main tag $tag\n";
-      ($last_name, $initials) = split(/ /, $name);
-      $last_name =~ s/,//;
+      if (!defined $conversion){
+	($last_name, $initials) = split(/ /, $name);
+	$last_name =~ s/,//;
+	print LOG "\nERROR: $class $obj has $name (Author_evidence) under main tag $tag\n";
+	print LOG"=====>Correct $name as $last_name $initials\n";
+	if ($ace){
+	  print ACE "\n$class_obj\n";
+	  print ACE "-D $ori\n\n";
+	  print ACE "\n$class_obj\n";
+	  print ACE "$b4_evi Author_evidence \"$last_name $initials\"\n";
+	}
+      }
     }
     else {
       ($last_name, $initials) = split(/ /, $name);
     }
     
     if (!exists $L_name_F_WBP{$last_name} && !exists $L_name_F_M_WBP{$last_name}){
-      if ($info){
-	$info_count++;
-	print LOG "\nINFO: $class $obj has Author $name under main tag $tag: NOT a Person object\n";
-      }	
+      if (defined $conversion){
+	print LOG "=====>Move $name under Author_evidence as NO corresponding WBPersonID exists\n";
+      }
+      if ($info && !defined $conversion){
+	$info_count++; 
+	print LOG "\nINFO: $class $obj has $name (Author_evidence under $tag tag): NOT yet a Person\n";
+      }
+      if ($ace && defined $conversion){
+	print ACE "\n$class_obj\n";
+	print ACE "-D $ori\n\n";
+	print ACE "\n$class_obj\n";
+	print ACE "$b4_evi Author_evidence \"$last_name $initials\"\n";
+      }
     }
+
     if (exists $L_name_F_WBP{$last_name}){
       $num = scalar @{$L_name_F_WBP{$last_name}};
       
       for (my $i=0; $i< $num; $i=$i+2){
 	if ($initials eq @{$L_name_F_WBP{$last_name}}->[$i]){
 	  $convert++;
-	  print LOG "\nUPDT: $class $obj has Author $name under main tag $tag\n";
+	  if (!defined $conversion){
+	    print LOG "\nUPDT: $class $obj has $name (Author_evidence) under $tag tag\n";
+          }
 	  if ($num == 2){
-	    print LOG "=====>Author $name can now be Person @{$L_name_F_WBP{$last_name}}->[$i+1]\n";   
+	    print LOG "=====>$name can now be Person @{$L_name_F_WBP{$last_name}}->[$i+1]\n";   
+	    if ($ace){
+              print ACE "\n$class_obj\n";
+              print ACE "-D $ori\n\n";
+	      print ACE "\n$class_obj\n";
+              print ACE "$b4_evi"." Person_evidence \"@{$L_name_F_WBP{$last_name}}->[$i+1]\"\n";
+            }
 	  }
 	  else {
-	    print LOG "=====>Author $name might be Person @{$L_name_F_WBP{$last_name}}->[$i+1]\n";   
+	    print LOG "=====>$name might be Person @{$L_name_F_WBP{$last_name}}->[$i+1]\n"; 
+	    if ($ace){
+              print ACE "\n$class_obj\n";
+              print ACE "-D $ori\n\n";
+	      print ACE "\n$class_obj\n";
+              print ACE "$b4_evi"." Person_evidence \"@{$L_name_F_WBP{$last_name}}->[$i+1]\"\n";
+            }
 	  }
 	}
       }
     }
-    
+
     if (exists $L_name_F_M_WBP{$last_name}){
       $num = scalar @{$L_name_F_M_WBP{$last_name}};
-      for (my $i=0; $i<scalar @{$L_name_F_M_WBP{$last_name}}; $i=$i+3){ 
-	if ($initials eq @{$L_name_F_M_WBP{$last_name}}->[$i]){   
-	  $convert++;
-	  print LOG "\nUPDT: $class $obj has Author $name under main tag $tag\n";
-	  if ($num == 3){
-	    print LOG "=====>Author $name can now be Person @{$L_name_F_M_WBP{$last_name}}->[$i+2]\n";
+      
+      for (my $i=0; $i< $num; $i=$i+3){
+	if ($initials eq @{$L_name_F_M_WBP{$last_name}}->[$i] || 
+            $initials eq @{$L_name_F_M_WBP{$last_name}}->[$i+1] ){
+          $convert++;
+          if (!defined $conversion){
+	    print LOG "\nUPDT: $class $obj has $name (Author_evidence) under $tag tag\n";
+          }
+       	  if ($num == 3){
+	    print LOG "=====>$name can now be Person @{$L_name_F_M_WBP{$last_name}}->[$i+2]\n";
+            if ($ace){
+              print ACE "\n$class_obj\n";
+              print ACE "-D $ori\n\n";
+	      print ACE "\n$class_obj\n";
+              print ACE "$b4_evi"." Person_evidence \"@{$L_name_F_M_WBP{$last_name}}->[$i+2]\"\n";
+            }
 	  }
 	  else {
-	    print LOG "=====>Author $name might be Person @{$L_name_F_M_WBP{$last_name}}->[$i+2]\n";
-	  }
-	}
-	if ($initials eq @{$L_name_F_M_WBP{$last_name}}->[$i+1]){
-	  $convert++;
-	  print LOG "\nUPDT: $class $obj has Author $name under main tag $tag\n";
-	  if ($num == 3){
-	    print LOG "=====>Author $name might be Person @{$L_name_F_M_WBP{$last_name}}->[$i+2]\n";
-	  }
-	  else {
-	    print LOG "=====>Author $name might be Person @{$L_name_F_M_WBP{$last_name}}->[$i+2]\n";
+	    print LOG "=====>$name might be Person @{$L_name_F_M_WBP{$last_name}}->[$i+2]\n";
+            if ($ace){
+              print ACE "\n$class_obj\n";
+              print ACE "-D $ori\n\n";
+	      print ACE "\n$class_obj\n";
+	      print ACE "$b4_evi"." Person_evidence \"@{$L_name_F_M_WBP{$last_name}}->[$i+2]\"\n";
+            }
 	  }
 	}
       }
-    }
+    } 
+    $conversion =();
     return $evid_errors, $convert, $info_count;
   }
 }	
