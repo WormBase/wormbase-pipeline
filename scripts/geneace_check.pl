@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-12-19 09:25:47 $
+# Last updated on: $Date: 2002-12-23 13:35:40 $
 
 use Ace;
 use lib "/wormsrv2/scripts/"; 
@@ -60,12 +60,14 @@ if ($debug){
 }
 else {
   my $maintainer = "All";
-  #&mail_maintainer($0,$maintainer,$log);
+  &mail_maintainer($0,$maintainer,$log);
 
   my $interested ="krb\@sanger.ac.uk, emsch\@its.caltech.edu, ck1\@sanger.ac.uk";
-  #&mail_maintainer($0,"$interested",$erichlog);
-  exit(0);
+  &mail_maintainer($0,"$interested",$erichlog);
 }
+
+exit(0);
+
 
 #######################
 # Process Locus class #
