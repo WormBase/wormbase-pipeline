@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/bin/perl5.8.0 -w
 #
 # update_website.pl
 # 
@@ -7,8 +7,8 @@
 # A script to finish the last part of the weekly build by updating all of the
 # relevant WormBase and Wormpep web pages.
 #
-# Last updated by: $Author: dl1 $     
-# Last updated on: $Date: 2003-09-23 13:16:06 $      
+# Last updated by: $Author: krb $     
+# Last updated on: $Date: 2003-10-30 17:06:24 $      
 
 
 #################################################################################
@@ -213,6 +213,9 @@ sub copy_overlapcheck_files{
 
   print LOG "copying three ace files from /wormsrv2/autoace/CHECKS/ to $www/$WS_name/Checks\n"; 
   system("cp -f $www/$WS_previous_name/Checks/*.ace $www/$WS_name/Checks/") && warn "Cannot copy *.ace files $!\n";
+
+  print LOG "copying short genes file /wormsrv2/autoace/CHECKS/ to $www/$WS_name/Checks\n"; 
+  system("cp -f /wormsrv2/autoace/CHECKS/short_spurious_genes.$WS_name.csv.html $www/$WS_name/Checks/short_genes.html") && warn "Cannot copy short_genes file $!\n";
 
 
   foreach my $file (@filenames) {
