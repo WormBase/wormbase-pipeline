@@ -8,7 +8,7 @@
 # This makes the autoace database from its composite sources.
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-03-12 11:22:53 $
+# Last edited on: $Date: 2004-06-01 12:53:28 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -451,10 +451,12 @@ sub physical_map_stuff{
 
   print LOG &runtime, ": starting physical_map_stuff subroutine\n";
 
-  
-  my $command = "find clone\nedit -D pMap\nedit -D Fingerprint\nedit -D Contig9\nedit -D Remark\n";
-  $command .= "pparse $autoacedir/physical_map/cen2hs.ace\nsave\nquit\n";
-  &DbWrite($command,"$tace -tsuser Coulson",$dbpath,"ContigC");
+# This data is permanently in geneace now, the previous file was no longer
+# being updated once Alan left
+ 
+#  my $command = "find clone\nedit -D pMap\nedit -D Fingerprint\nedit -D Contig9\nedit -D Remark\n";
+#  $command .= "pparse $autoacedir/physical_map/cen2hs.ace\nsave\nquit\n";
+#  &DbWrite($command,"$tace -tsuser Coulson",$dbpath,"ContigC");
   
   # now make the maps
   $command = "gif makemaps -all\nsave\ngif makemaps -seqclonemap $dbpath/acefiles/seqclonemap.ace\n";
