@@ -1,19 +1,34 @@
 #!/usr/local/bin/perl5.6.1 -w
+#
+# make_yeastpepfile.pl
+#
+# by Keith Bradnam
+# 
+# Converts yeastX.pep file to ace file, copies to wormsrv2, adds SGD as Accession field
+#
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2003-09-24 16:34:41 $
 
-# krb 020829
-
-# converts yeastX.pep file with yeast peptide entries into ace file
-# Puts SGDID as Accssion in Database field.
-
-my $acefile = glob("~wormpipe/ace_files/yeast.ace");
-my $source_file = shift;
-my $pepfile = shift; #cant embed this as the version is not known
-
-unless ( (defined $source_file) and (defined $pepfile) ) {
-  die "usage:  make_yeastpepfile source_file output.pep_file\n";
-}
 
 use strict;
+use Getopt::Long;
+
+my $version;
+my $verbose;
+
+GetOptions (
+            "version:s"  => \$version,
+            "verbose"    => \$verbose
+            );
+
+
+my $blastdir    = "/nfs/acari/wormpipe/BlastDB";
+my $acedir      = "/nfs/acari/wormpipe/ace_files";
+my $source_file = "$blastdir/yeast${version}.pep";
+my $acefile     = "$acedir/yeast.ace";
+# output initally goes to tmp file
+my $pepfile  = "$blastdir/yeast${version}.pep.tmp"; 
+
 
 # this bit creates a DBM database of ORF => description
 use DB_File;
@@ -88,7 +103,16 @@ close(SOURCE);
 close(PEP);
 close(ACE);
 
-print "\n$source_file is now converted to $pepfile..\n";
+print "\n$source_file is now converted to $pepfile..\n" if ($verbose);
+
+
+# Now overwrite source file with newly formatted file
+system("mv $pepfile $source_file") && die "Couldn't overwrite original peptide file\n";
+
+# copy acefile across to /wormsrv2/wormbase/ensembl_dumps
+system("scp $acedir/yeast.ace wormsrv2:/wormsrv2/wormbase/ensembl_dumps")  && die "Couldn't copy acefile\n";
+
+
 
 exit(0);
 
