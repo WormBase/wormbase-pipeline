@@ -5,7 +5,7 @@
 # completely rewritten by Keith Bradnam from list_loci_designations
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-08-17 12:41:56 $      
+# Last updated on: $Date: 2004-10-08 12:29:32 $      
 #
 # This script should be run under a cron job and simply update the webpages that show
 # current gene names and sequence connections.  Gets info from geneace.  
@@ -28,7 +28,6 @@ my $daily;  # daily updates which will interrogate /wormsrv1/geneace
  
 GetOptions ("weekly" => \$weekly,
             "daily"  => \$daily);
-
 
 
 ##############################
@@ -276,14 +275,20 @@ sub make_gene_lists{
     s/\"//g;
                                                                                            
     # split the line into various fields
-    my ($gene,$sequence_name) = split(/\t/, $_) ;
+    my ($gene,$sequence_name,$cgc_name) = split(/\t/, $_) ;
 
-    # populate hashes
-    $gene2molecular_name{$gene} = $sequence_name;
-    $molecular_name2gene{$sequence_name} = $gene;
+    # populate hashes, appending CGC name if present
+    if(defined($cgc_name)){
+      $molecular_name2gene{$sequence_name} = "$gene $cgc_name";
+      $gene2molecular_name{$gene} = "$sequence_name $cgc_name";
+    }
+    else{
+      $molecular_name2gene{$sequence_name} = $gene;
+      $gene2molecular_name{$gene} = $sequence_name;
+    }
   }
   close TACE;
-  
+    
 
 
   # set up two output files which are reverse of each other 
