@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.46 2002-03-08 13:21:43 kj2 Exp $
+// CVS info:  $Id: models.wrm,v 1.47 2002-03-11 16:00:52 kj2 Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -134,7 +134,7 @@
                 Homol           HOM_bump
                 pepFeature      FEA_bump
                                 FEA_query Text
-                Homol_Name      HOM_NAME_bump
+                Homol_name      HOM_NAME_bump       // changed to lower case from Homol_Name [020311 kj]
 				HOM_NAME_width Int
                 pepActiveZone
 
@@ -207,7 +207,7 @@
 			Protein ?Protein XREF Gene
                         Other_sequence ?Sequence XREF Gene_other_seq     // dl 001128 // RD 0107 leave for now
 			Product ?Text
-	SMap S_parent UNIQUE Canonical_parent ?Sequence XREF Locus
+	SMap S_parent Sequence UNIQUE ?Sequence XREF Locus     // changed into S_parent Sequence UNIQUE [020311 kj]
 	Method UNIQUE ?Method
 	Map_info  Map ?Map XREF Gene #Map_position
 		  Well_ordered		// "on the line"
@@ -245,7 +245,7 @@
 		  Mapping_data	Two_pt ?Two_pt_data
 	                        Multi_point ?Multi_pt_data
 				Pos_neg_data ?Pos_neg_data
-	SMap S_parent UNIQUE Canonical_parent ?Sequence XREF Locus
+	SMap S_parent Sequence UNIQUE ?Sequence XREF Locus     // changed into S_parent Sequence UNIQUE [020311 kj]
 	Method UNIQUE ?Method
 	Remark ?Text
 	Reference ?Paper XREF Locus
@@ -292,7 +292,7 @@
 ?Allele Name	Rearrangement ?Rearrangement XREF Allele
 	Source	UNIQUE Gene ?Gene XREF Allele // RD 0107 Locus->Gene
 	               Gene_class ?Gene_class XREF Allele
-	SMap S_parent Canonical_parent UNIQUE ?Sequence XREF Allele
+	SMap S_parent Sequence UNIQUE ?Sequence XREF Allele     // changed into S_parent Sequence UNIQUE [020311 kj]
 	Method UNIQUE ?Method
 	Replacement UNIQUE Text UNIQUE Text	// RD 0107 big change
 		// canonical sequence, replacement sequence
@@ -874,7 +874,7 @@
 #Gene_confirmation cDNA
                    EST  
 
-?CDS	SMap S_parent Sequence_parent UNIQUE ?Sequence XREF CDS_child
+?CDS	SMap S_parent Sequence UNIQUE ?Sequence XREF CDS_child      // changed into S_parent Sequence UNIQUE [020311 kj]
 	     S_child PCR_product ?PCR_product XREF Canonical_parent Int UNIQUE Int #SMap_info // added [011030 krb]
                      RNAi ?RNAi XREF Expressed_seq UNIQUE Int UNIQUE Int #SMap_info           // added [011210 krb]
 	Structure Source_exons Int UNIQUE Int
@@ -910,7 +910,7 @@
         Drives_transgene ?Transgene XREF Driven_by_CDS
 	Transgene_product ?Transgene XREF Worm_CDS
 
-?Transcript	SMap S_parent Canonical_parent ?Sequence XREF Transcript_child
+?Transcript	SMap S_parent Sequence UNIQUE ?Sequence XREF Transcript_child        // changed into S_parent Sequence UNIQUE [020311 kj]
 		Structure Source_exons Int UNIQUE Int
 		Visible	Gene ?Gene XREF Transcript
 			CDS ?CDS XREF Transcript
@@ -979,14 +979,14 @@
 	   Display Max_mag UNIQUE Float	// don't show if more bases per line
 		   Min_mag UNIQUE Float	// don't show if fewer bases per line
 
-?Homol_data SMap S_parent Sequence ?Sequence
+?Homol_data SMap S_parent Sequence UNIQUE ?Sequence     // changed into S_parent Sequence UNIQUE [020311 kj]
 	    Homol DNA_homol ?Sequence XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		  Pep_homol ?Protein XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		  Motif_homol ?Motif XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		  Homol_homol ?Homol_data XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		  // keep the standard model structure, so same code works
 
-?Feature_data SMap S_parent Sequence ?Sequence
+?Feature_data SMap S_parent Sequence UNIQUE ?Sequence     // changed into S_parent Sequence UNIQUE [020311 kj]
 	      Feature ?Method Int Int UNIQUE Float UNIQUE Text #Feature_info
               Method ?Method // added for Lincoln RNAi [001213 dl]
 	      Splices	Confirmed_intron  Int Int #Splice_confirmation
@@ -1261,7 +1261,7 @@
 // NEW Expr_profile and SK_map classes added at request of Raymond [010912 krb]
 // fixes made [010927 krb]
 
-?Expr_profile SMap S_parent PCR_product UNIQUE ?PCR_product XREF Expr_profile
+?Expr_profile SMap S_parent Sequence UNIQUE ?PCR_product XREF Expr_profile     // changed into S_parent Sequence UNIQUE [020311 kj]
               Method ?Method
               Expr_map ?SK_map ?SK_map XREF Expr_profile
               Reference ?Paper XREF Expr_profile
@@ -1282,8 +1282,16 @@
 
 
 //
-// WWW_server
+// URL and WWW_server // [020308 kj] added complete ?URL as is seems to have been overlooked...
 //
+?Url    Url UNIQUE Text // Simple, text of URL
+        Template UNIQUE ?Url // use this object as a generic template
+        Reference_tag UNIQUE Text // look for this tag in the reffing object for url
+        Remove_prefix UNIQUE Text // prefix to remove to make url
+        Remove_postfix UNIQUE Text // postfix to remove to make url
+        Prepend UNIQUE Text // then add this to the beginning
+        Append UNIQUE Text // then add this to the end
+	Web_location UNIQUE ?WWW_server
 
 ?WWW_server URL Text // Simple hard-wired URL
 	    Build_URL Reference_tag Text Text	   // tag [class]
@@ -1397,7 +1405,7 @@
 
 // RNAi from Lincoln Stein 001213
 
-?RNAi   SMap S_parent Sequence UNIQUE ?Sequence XREF RNAi       // canonical parent (reliable)
+?RNAi   SMap S_parent Sequence UNIQUE ?Sequence XREF RNAi       // canonical parent (reliable)     // changed into S_parent Sequence UNIQUE [020311 kj]
  		      PCR_product UNIQUE ?PCR_product XREF RNAi // primer pair (reliable)
 		      Expressed_seq ?CDS XREF RNAi		// added [011210 krb]
         Method ?Method
@@ -1424,7 +1432,7 @@
 
 // New Class from Lincoln [010226], tweaks made [010927 krb]
 
-?PCR_product SMap S_parent Canonical_parent UNIQUE ?Sequence XREF PCR_product
+?PCR_product SMap S_parent Sequence UNIQUE ?Sequence XREF PCR_product     // changed into S_parent Sequence UNIQUE [020311 kj]
  		  S_child RNAi ?RNAi XREF PCR_product UNIQUE Int UNIQUE Int #SMap_info
 			  Expr_profile ?Expr_profile XREF PCR_product UNIQUE Int UNIQUE Int #SMap_info // for new Expr_profile class [010912 krb]
  	     Method ?Method
@@ -1449,7 +1457,7 @@
 
 // New Class to handle WTP data [010623 rd]
 
-?WTP         SMap S_parent Canonical_parent UNIQUE ?Sequence XREF WTP
+?WTP         SMap S_parent Sequence UNIQUE ?Sequence XREF WTP     // changed into S_parent Sequence UNIQUE [020311 kj]
  	     Method ?Method
  	     Overlaps_CDS ?CDS XREF Corresponding_WTP  // added for Dan PCR mappings [010419 dl]
 	     Contact_information Text
@@ -1465,7 +1473,7 @@
 
 // New Class to handle operon data [010928 dl]
 
-?Operon SMap S_Parent Canonical_parent UNIQUE ?Sequence XREF Operon
+?Operon SMap S_parent Sequence UNIQUE ?Sequence XREF Operon     // changed into S_parent Sequence UNIQUE [020311 kj]
 	Species ?Species
 	Contains_CDS ?CDS XREF Contained_in_operon  #Trans_splice_leader
 	Reference ?Paper XREF Operon
@@ -1476,7 +1484,7 @@
 
 // New Class to handle Transposon data [020128 dl]
 
-?Transposon SMap S_Parent Canonical_parent UNIQUE ?Sequence XREF Transposon
+?Transposon SMap S_parent Sequence UNIQUE ?Sequence XREF Transposon     // changed into S_parent Sequence UNIQUE [020311 kj]
 	    LTR_region UNIQUE Int UNIQUE Int
             Remark ?Text
             Method ?Method
