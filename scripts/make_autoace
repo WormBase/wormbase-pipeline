@@ -8,7 +8,7 @@
 # This makes the autoace database from its composite sources.
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-07-25 08:04:21 $
+# Last edited on: $Date: 2003-08-04 15:28:13 $
 
 
 $|=1;
@@ -547,8 +547,10 @@ sub makechromlink {
 sub rmhistory {
     my $command  = "query find sequence method = history\nkill\nsave\nquit\n";
     my $command2 = "query find Transcript method = history\nkill\nsave\nquit\n";
+    my $command3 = "query find Pseudogene method = history\nkill\nsave\nquit\n";
     &DbWrite($command,$tace,$dbpath,"RmHistory");
     &DbWrite($command2,$tace,$dbpath,"RmHistory");
+    &DbWrite($command3,$tace,$dbpath,"RmHistory");
 }
 
 
