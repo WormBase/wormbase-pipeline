@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.63 2002-07-24 14:49:01 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.64 2002-07-26 08:21:42 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -280,6 +280,8 @@
 			   		PMID_evidence    Text // added for Erich's gene function data 02/03/09
                            Automated_method ?Method ?Database
            Curator UNIQUE ?Curator
+	   Accession_evidence ?Text
+	   Protein_id_evidence ?Text
 	   GO_inference_type UNIQUE IC  Text // added for Erich 020723
                              	    IDA Text
                              	    IEA Text
