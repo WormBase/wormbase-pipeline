@@ -177,7 +177,7 @@ close CAMOUT;
 close STLOUT;
 close ALLOUT;
 close LOG;
-$maintainer = "ar2";
+
 &mail_maintainer($0,$maintainer,$log);
 
 #copy the ace files to the FTP site
@@ -187,12 +187,12 @@ $maintainer = "ar2";
 `gzip -f /$autoace_acefiles_dir/ALL_locus_seq.ace` && print LOG "gzip failed on ALL";
 
 `cp /$autoace_acefiles_dir/CAM_locus_seq.ace.gz /nfs/privateftp/ftp-wormbase/pub/data/updated_locus2seq/`;
-`cp /$autoace_acefiles_dir/STL_locus_seq.ace.gz /nfs/privateftp/ftp-wormbase/pub/data/updated_locus2seq/`;
-`cp /$autoace_acefiles_dir/ALL_locus_seq.ace.gz /nfs/privateftp/ftp-wormbase/pub/data/updated_locus2seq/`;
+`mv /$autoace_acefiles_dir/STL_locus_seq.ace.gz /nfs/privateftp/ftp-wormbase/pub/data/updated_locus2seq/`;
+`mv /$autoace_acefiles_dir/ALL_locus_seq.ace.gz /nfs/privateftp/ftp-wormbase/pub/data/updated_locus2seq/`;
 
 
 #inform any interested parties
-my $notify = "ar2\@sanger.ac.uk";#krb\@sanger.ac.uk";
+my $notify = "wormbase-dev@wormbase.org";
     open (OUTLOG,  "|/usr/bin/mailx -s \"new genace updates\" $notify ");
 
         print OUTLOG "updated info linking loci to sequences is available from\n
