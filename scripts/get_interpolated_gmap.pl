@@ -8,7 +8,7 @@
 # Output ace file of such information and upload to autoace during each build
 # Output also other files related. See POD
 
-# Last updated on: $Date: 2003-08-21 15:45:12 $
+# Last updated on: $Date: 2003-09-19 09:19:09 $
 # Last updated by: $Author: ck1 $
 
 use strict;
@@ -198,7 +198,7 @@ foreach (@gff_files_cds){
 print "\nEgrepping transcripts in gff files . . .\n"; 
 
 foreach (@gff_files_rna){
-  @data = `egrep "(RNA|UNKNOWN).+(Transcript|Sequence).+" $_ | cut -f 1,2,4,5,9`;
+  @data = `egrep "RNA.+(Transcript|Sequence).+" $_ | cut -f 1,2,4,5,9`;
   #@data = `egrep ".+(Transcript|Sequence).+" $_ | cut -f 1,2,4,5,9`;
   foreach (@data){
     chomp;
