@@ -9,8 +9,8 @@
 # solely in the wormpep.history file.
 # 
 #
-# Last updated by: $Author: pad $                     
-# Last updated on: $Date: 2004-02-09 16:38:34 $     
+# Last updated by: $Author: krb $                     
+# Last updated on: $Date: 2004-06-09 12:23:35 $     
 
 use strict;                                     
 use lib "/wormsrv2/scripts/";                  
@@ -289,7 +289,7 @@ my $command;
 if( -e "/wormsrv2/autoace/wormpep_ace/pepace.ace" ) {
   $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Adding pepace.ace file to autoace at $runtime\n";
   $command = "pparse /wormsrv2/autoace/wormpep_ace/pepace.ace\nsave\nquit\n"; 
-  open (AUTOACE, "| $tace -tsuser pepace /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
+  open (AUTOACE, "| $tace -tsuser pepace /wormsrv2/autoace ") || die "Couldn't open pipe to autoace\n";
   print AUTOACE $command;
   $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "finished adding pepace.ace file to autoace at $runtime\n";  close AUTOACE;
 }
