@@ -7,7 +7,7 @@
 # Usage : autoace_minder [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2002-11-07 09:40:38 $
+# Last edited on: $Date: 2002-11-07 12:49:24 $
 
 
 #################################################################################
@@ -1284,7 +1284,7 @@ sub make_wormpep {
     
     # load into autoace
     my $command = "pparse /wormsrv2/autoace/wormpep_ace/WormpepACandIDs.ace\nsave\nquit\n"; 
-    open (WRITEDB, "| $tace -tsuser utr_data /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
+    open (WRITEDB, "| $tace -tsuser protein_id_data /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
     print WRITEDB $command;
     close WRITEDB;
     $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Finished loading proteinID info into autoace at $runtime\n";
