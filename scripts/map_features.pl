@@ -7,7 +7,7 @@
 # This maps features to the genome based on their flanking sequence
 #
 # Last updated by: $Author: dl1 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2004-04-15 09:20:20 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2004-04-28 14:15:40 $        # quickly see when script was last changed and by whom
 
 
 $|=1;
@@ -116,22 +116,15 @@ foreach my $query (@features2map) {
 
 
 	    if ($coords[1] > $coords[2]) {
-		$span = $coords[1] - $coords[2] -1 if ($SL1 || $SL2 || $polyA_site);  # +1 for TSL tight junction
-		$span = $coords[1] - $coords[2] +1 if ($polyA_signal);                # -1 for polyA_signal
-
+		$span = $coords[1] - $coords[2] -1;  # +1 for TSL tight junction
 	    }
 	    else {
-		$span = $coords[2] - $coords[1] -1 if ($SL1 || $SL2 || $polyA_site) ;  # +1 for TSL tight junction
-		$span = $coords[2] - $coords[1] +1 if ($polyA_signal);                 # -1 for polyA_signal
+		$span = $coords[2] - $coords[1] -1;  # +1 for TSL tight junction
 	    }
 
 	    print "// $feature\n[$flanking_left]\n[$flanking_right]\n" if ($adhoc);
 	    print "//$feature maps to $clone $coords[1] -> $coords[2], feature span is $span bp\n";
 
-#	    my @coords = &MapFeature2($feature,$clone,$flanking_left,$flanking_right,$clone2seq{$clone});
-#	    
-#	    print  "Mapping $feature [$flanking_left | $flanking_right] to $clone: $coords[0] -> $coords[1], span $coords[2]\n";
-#	    
 	    if ($span == $sanity{$query}) {
 		print OUTPUT "//$feature maps to $clone $coords[1] -> $coords[2], feature span is $span bp\n" if ($verbose);
 		print OUTPUT "\nSequence : \"$clone\"\n" unless ($adhoc);
