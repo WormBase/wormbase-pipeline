@@ -7,7 +7,7 @@
 # simple script for changing class of gene objects (e.g. CDS->Pseudogene)
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-09-13 10:49:47 $
+# Last edited on: $Date: 2004-09-13 12:47:39 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -20,7 +20,7 @@ use Getopt::Long;
 
 my $input;                   # when loading from input file
 my $seq;                     # sequence name of gene to change
-my $id;                      # gene ID of gene to change
+my $id;                      # gene ID of gene to change, ignore trailing zeros
 my $class;                   # two or more letters to indicated old and new class (e.g. CDS Transcript)
 my $who;                     # Person ID for new genes being created (defaults to krb = WBPerson1971)
 my $person = "WBPerson1971"; # default
@@ -64,14 +64,13 @@ open(OUT, ">/wormsrv1/geneace/fix.ace") || die "Can't write to output file\n";
 
 
 # get gene ID if -seq was specified
-# else add preceding part of name if specifying an ID
+# else create a valid Gene object name based on numerical id from -id option
 if ($seq){
   $id = &seq2gene($seq);
 }
 elsif($id){
-  $id = "WBGene$id";
+  $id = "WBGene" . sprintf("%08d",$id);
 }
-
 
 
 
@@ -150,6 +149,10 @@ sub process_gene{
 
   # Look up gene based on ID
   my ($gene) = $db->fetch(-query=>"Find Gene $id");
+  if(!$gene){
+    print "ERROR: No gene corresponding to $id\n";
+    last;
+  }
 
   # get version of gene
   my ($version) = $gene->Version;
@@ -188,7 +191,7 @@ sub process_gene{
 
 sub check_command_line_options{
   die "-seq option not valid if -input is specified\n"     if ($input && $seq);
-  die "You must specify either -input <file> or -seq <sequence> or -id <gene ID>\n" if (!$seq && !$input);
+  die "Please specify either -input <file> or -seq <sequence> or -id <gene ID>\n" if (!$seq && !$id && !$input);
   die "-who option must be an integer\n"                   if ($who && ($who !~ m/^\d+$/));
   die "can't use -id option if processing input file\n"    if ($id && $input);
   die "Use -id or -seq option, not both\n"                 if ($id && $seq);
@@ -282,7 +285,8 @@ History Version_change 2 now WBPerson1971 Event Changed_class CDS Pseudogene
 
 The -seq option must specify a valid CDS/Pseudogene/Transcript name.  This must correspond to an 
 existing gene, else script will warn you.  Alternatively, specify the gene ID directly if you know 
-it using the -id option.
+it using the -id option.  In this case, just specify the significant digits and not any leading zeros,
+e.g. for WBGene00001323 just specify -id 1323
 
 =back
 
