@@ -9,7 +9,7 @@ use Exporter;
 use Carp;
 use Ace;
 @ISA       = qw(Exporter);
-@EXPORT    = qw(get_cvs_version get_wormbase_version get_old_wormbase_version copy_check mail_maintainer celeaccession tace gff_sort dbfetch clones_in_database);
+@EXPORT    = qw(get_cvs_version get_wormbase_version get_wormbase_version_name get_wormpep_version copy_check mail_maintainer celeaccession tace gff_sort dbfetch clones_in_database);
 @EXPORT_OK = qw(get_script_version); 
 
 
@@ -29,29 +29,34 @@ sub get_wormbase_version {
 
     my $WS_version = `grep "NAME WS" /wormsrv2/autoace/wspec/database.wrm`;
     chomp($WS_version);
-    $WS_version =~ s/NAME //;    
-    $WS_version =~ s/ +$//;
+    $WS_version =~ s/.*WS//;    
     return($WS_version);
 }
 
+###################################################################################
 
-#################################################################################
+sub get_wormbase_version_name {
 
-sub get_old_wormbase_version {
-    my $WS_version = `grep "NAME WS" /wormsrv2/autoace/wspec/database.wrm`;
-    chomp($WS_version);
-    $WS_version =~ s/NAME //;    
-    $WS_version =~ s/ +$//;
-    print $WS_version, "\n";
-    my ($newnumber) = ($WS_version =~ /WS(\d+)/);
-    print $newnumber, "\n";
-    my $oldnumber = $newnumber -1;
-    my $oldWSversion = "WS".$oldnumber;
-    return($oldWSversion);
+    my $WS_version_name = `grep "NAME WS" /wormsrv2/autoace/wspec/database.wrm`;
+    chomp($WS_version_name);
+    $WS_version_name =~ s/NAME //;    
+    $WS_version_name =~ s/ +$//;
+    return($WS_version_name);
 }
 
+###################################################################################
+
+sub get_wormpep_version {
+
+    my $wormpep_version = `grep "NAME WS" /wormsrv2/autoace/wspec/database.wrm`;
+    chomp($wormpep_version);
+    $wormpep_version =~ s/.*WS//;    
+    $wormpep_version += 10;
+    return($wormpep_version);
+}
 
 #################################################################################
+
 
 sub get_script_version {
     my $script = shift;
@@ -258,7 +263,7 @@ get_wormbase_version
 
 This subroutine returns the current WormBase release version.  This is read from
 the file: /wormsrv2/autoace/wspec/database.wrm file.  The function returns
-the string, i.e. WS48 and not just the number.
+the number.
 
 =back
 
@@ -266,11 +271,19 @@ the string, i.e. WS48 and not just the number.
 
 =item *
 
-get_old_wormbase_version
+get_wormbase_version_name
 
-This subroutine returns the previous WormBase release version.
+As above, but returns the full name, e.g. 'WS47' rather than just '47'
 
 =back
+
+=over 4
+
+=item *
+
+get_wormpep_version
+
+Takes the wormbase version number and adds 10 to it.
 
 =over 4
 
