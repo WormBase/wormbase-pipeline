@@ -6,8 +6,8 @@
 #
 # Builds a wormrna data set from the current autoace database
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-04-26 10:36:39 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2004-05-10 10:03:28 $
 
 
 #################################################################################
@@ -125,7 +125,7 @@ foreach my $transcript (@transcripts) {
   
   # Grab locus name if present
   $gene = $obj->Gene;
-  $cgc_name = $gene->CGC_name;
+  $cgc_name = $gene->CGC_name if (defined $gene);
   
 
   my $rseq = &reformat($dseq);
