@@ -4,7 +4,7 @@
 # by Anthony Rogers                             
 #
 # Last updated by: $Author: ar2 $               
-# Last updated on: $Date: 2002-11-13 17:48:00 $         
+# Last updated on: $Date: 2002-11-19 14:33:26 $         
 
 use strict;                    
 use lib "/wormsrv2/scripts/";
@@ -28,7 +28,7 @@ sub write_clone2acc
     # AceDB database
     my $ace_dir = "/wormsrv2/autoace";
     my $wquery_dir = "/wormsrv2/autoace/wquery";
-    my $tace = &tace";
+    my $tace = &tace;
 
     my %clone2acc;
     my %acc2clone;
