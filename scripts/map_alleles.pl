@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.0 -w                    # perl5.6.0 and -w flag
+#!/usr/local/bin/perl5.6.1 -w                    # perl5.6.0 and -w flag
 #
 # map_alleles.pl
 #
@@ -7,7 +7,7 @@
 # This maps alleles to the genome based on their flanking sequence
 #
 # Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2002-10-22 13:08:19 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2002-10-30 11:33:09 $        # quickly see when script was last changed and by whom
 
 
 use strict;
@@ -41,7 +41,7 @@ my $ver = &get_wormbase_version;
 my $allele_fa_file;
 my $genome_fa_file;
 my $scan_file;
-my $database;
+x my $database;
 
 my (%chromosomeI_clones, %chromosomeII_clones, %chromosomeIII_clones, %chromosomeIV_clones, %chromosomeV_clones, %chromosomeX_clones);
 
@@ -115,7 +115,7 @@ my $allele;
 foreach $allele (@alleles)
   {
     if( $opt_d ) {
-      last if $count++ > 3;
+     # last if $count++ > 3;
     }
     $name = $allele->name;print "$name\n";
     $type = $allele->Allelic_difference->name;
@@ -131,6 +131,7 @@ foreach $allele (@alleles)
     #if seq is not valid )ie no source check for other sequences
     unless ($sequence->Source) {
       $sequence = $allele->Sequence(1)->down;
+      next unless $sequence;
       next unless( $sequence->Source );
     }      
       
@@ -303,7 +304,15 @@ foreach (keys %allele_data )
       #print OUT "$_ is a $allele_data{$_}[0] from $allele_data{$_}[4] to $allele_data{$_}[5] ( ",$allele_data{$_}[5] - $allele_data{$_}[4]," bp )in $allele_data{$_}[3]\n";
 
       print OUT "Sequence : \"$allele_data{$_}[6]\"\nAllele $_ $allele_data{$_}[4] $allele_data{$_}[5] $allele_data{$_}[0] \n\n";
-      print "$_ $allele2gene{$_}\n";
+
+
+      if( $allele2gene{$_} ) {
+	print "$_ $allele2gene{$_}\n";
+      }
+      else {
+	print "no overlapping gene for $_\n";
+
+      }
       #map position on genome
       #(0)type, 
       #(1)5'flank_seq ,
