@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-10-17 14:35:22 $
+# Last updated on: $Date: 2003-10-22 15:12:22 $
 
 
 use strict;
@@ -1487,63 +1487,114 @@ EOF
 
 sub check_bogus_XREF {
   
-  print "\nChecking bogus XREF debris from deleted CDS / Transcript / Pseudogene in Locus obj. . . .\n\n";
+  print LOG "\nChecking bogus XREF debris from deleted CDS / Transcript / Pseudogene / Gene_name in Locus obj. . . .\n\n";
   
-  my $query_cds = "find Sequence * where !(yk*) & *.*; locus_genomic_seq";
+  my $query_cds        = "find Sequence * where !(yk*) & *.*; locus_genomic_seq";
   my $query_transcript = "find Transcript * ; locus";
-  my $query_pseudo = "find Pseudogene * ; locus";
-  my @CDS;
-  
-  push(@CDS, $db->find($query_cds));
-  push(@CDS, $db->find($query_transcript));
-  push(@CDS, $db->find($query_pseudo));
-  
-  my %Seqs;
+  my $query_pseudo     = "find Pseudogene * ; locus";
+  my $query_gname      = "find Gene_name *.*"; 
+  my $query_locus      = "find Locus * where (genomic_sequence|transcript|pseudogene)";
+   
+  push(my @CDS,   $db->find($query_cds));
+  push(my @TRANS, $db->find($query_transcript));
+  push(my @PSEUDO,$db->find($query_pseudo));
+  push(my @GNAME, $db->find($query_gname));
+  push(my @loci,  $db->find($query_locus));
 
-  #################################################################################################
-  # HOW it works: 
-  # hash dataset -
-  # split a sequence eg. Y110A7A.10a, into "Y110A7A.10" (left: as key) and "a" (right: as value)
-  # if a sequence has no right (ie, not an isoform), then "NA" is assigned.
-  # So, if a key has multiple "NA" as values, then that seq. is found in multiple classes,
-  # and if a key's value has "NA", other than a/b/c/d..etc, then the one without isoform is invalid
-  ################################################################################################# 
-  
-  foreach (@CDS){
-    my ($left, $right);
-    
-    if ($_ =~ /^(.+\.\d+)(\D)$/){$left = $1; $right = $2}
-    if ($_ =~ /^(.+\.\d+)$/){$left = $1; $right = "NA"}
-    push(@{$Seqs{$left}}, $right) if defined $left;  
-    $left =();  
-  }   
-  
-  my $counter=0;
-  
-  foreach (keys %Seqs){
-    if (scalar @{$Seqs{$_}} > 1){
-      foreach my $e (@{$Seqs{$_}}){
-	if ($e eq "NA"){
-	  $counter++;
-	  print "Found $_\n";
-	  next;
-	}
+  my $error = 0;
+  # finding deleted parent seq name after isoforms are created
+  $error = find_bogus(\@CDS, "CDS");
+  $error = find_bogus(\@TRANS, "Transcripts");
+  $error = find_bogus(\@PSEUDO, "Pseudogene");
+  $error = find_bogus(\@GNAME, "Gene_name");
+
+  # finding bogus XREF from seq. names that are typos
+  my (%locus_seq_A, %locus_seq_B); # hash A, locus linked to seq. in seq objs, hash B, locus linked to seq. in locus obj.
+
+  my @all = (\@CDS, \@TRANS, \@PSEUDO);
+  foreach my $e (@all){
+    foreach (@{$e}){
+      if(defined $_ -> Visible(2) ) {push(@{$locus_seq_A{$_ -> Visible(2)}}, $_)}
+      if(defined $_ -> at("Genetics.Locus")){push(@{$locus_seq_A{$_ -> Genetics(2)}}, $_)}
+    }
+  }  
+ 
+  foreach (@loci){
+    if(defined $_ -> Genomic_sequence(1)){push(@{$locus_seq_B{$_}}, $_ -> Genomic_sequence(1))}
+    if(defined $_ -> Transcript(1)){push(@{$locus_seq_B{$_}}, $_ -> Transcript(1))}
+    if(defined $_ -> Pseudogene(1)){push(@{$locus_seq_B{$_}}, $_ -> Pseudogene(1))}
+  }  
+ 
+  foreach (keys %locus_seq_A){
+    print "$_ ->@{$locus_seq_A{$_}}\n";
+  }
+  foreach (keys %locus_seq_B){
+    print "$_ ->@{$locus_seq_B{$_}}\n";
+  }
+
+  foreach (keys %locus_seq_A){
+    if (exists $locus_seq_B{$_}){
+
+      # compare seq. obj. in a locus class with seq. obj linked to same locus in seq. classes
+      # extra obj means bogus obj
+      my @comp_result = array_comp(\@{$locus_seq_A{$_}},  \@{$locus_seq_B{$_}});
+      my @diff = @{$comp_result[0]}; 
+      if (@diff){
+	print LOG "Found typo bogus @diff linked to $_\n" if @diff;
+	$error = 1;
       }
+    } 
+    else {
+      print $_, "\n";
     }
   }
   
-  if ($counter > 1){
-    print "\n=======================================================================================\n";
-    print "NOTE:\nCheck Sequence/Transcript/Pseudogene class(es) for\n1. Sequence found once, which is invalid.\n";
-    print "2. Those appear more than once are found in multiple classes -> delete the invalid one.\n";
-    print "=======================================================================================\n";
-  }
-  else{
-    print "No bogus XREF link found\n";
+  print LOG "No bogus XREF link found\n" if $error == 0;
+ 
+  #################################################################################################
+  # HOW this routine works: 
+  # split a sequence eg. Y110A7A.10a, into "Y110A7A.10" (left: as key) and "a" (right: as value)
+  # if a sequence has no right (ie, not an isoform), then "NA" is assigned.
+  # and if a key's value has "NA", other than a/b/c/d..etc, then the one without isoform is invalid
+  # this routine checks only deleted bogus parent seq. names when isoforms are created
+  # it cannot check bogus seq. names created by typos 
+  ##################################################################################################
+
+  sub find_bogus {
+    my ($class, $cat) = @_;
+    my %Seqs;
+    my@class = @{$class};
+
+    foreach (@class){
+      my ($left, $right);
+      
+      if ($_ =~ /^(.+\.\d+)(\D)$/){$left = $1; $right = $2}
+      if ($_ =~ /^(.+\.\d+)$/){$left = $1; $right = "NA"}
+      push(@{$Seqs{$left}}, $right) if defined $left;  
+      $left =();  
+    }   
+    
+    my $error=0;
+    
+    foreach (keys %Seqs){
+      my $counter_NA = 0; my $counter_iso = 0;
+      foreach my $e (@{$Seqs{$_}}){
+	if ($e eq "NA"){	# ie, has somthing like XX.1 , XX.1a and XX.1b
+	  $counter_NA++;
+	}
+	else {
+	  $counter_iso++;
+	}
+      }
+      if ($counter_iso != 0 && $counter_NA != 0){
+	print LOG "Found bogus $_ in $cat class\n" if $counter_iso != 0 && $counter_NA != 0;
+	$error = 1;
+      }
+    }
+    return $error;
   }
 }
  
-
 #############################################
 
 sub check_genetics_coords_mapping {
