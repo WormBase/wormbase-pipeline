@@ -10,7 +10,7 @@
 # 
 #
 # Last updated by: $Author: ar2 $                     
-# Last updated on: $Date: 2002-10-14 09:04:49 $     
+# Last updated on: $Date: 2002-10-21 08:49:54 $     
 
 use strict;                                     
 use lib "/wormsrv2/scripts/";                  
@@ -250,12 +250,39 @@ else {
 my $date = `date`;
 
 print LOG "\n$0 finished at $date\n";
-print LOG "\n . . about to start GetSwissIDandInterpro.pl\n";
-
-close LOG;
+print LOG "\n   . . about to start GetSwissIDandInterpro.pl\n";
 
 # auto run GetSwissIDandInterpro.pl
 `perl5.6.0 /wormsrv2/scripts/GetSwissIDandInterpro.pl`;
+
+
+#load files in to autoace.
+my $tace =  "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
+
+if( -e "/wormsrv2/autoace/UTR/pepace.ace" ) {
+  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Adding pepace.ace file to autoace at $runtime\n";
+  $command = "pparse /wormsrv2/autoace/UTR/pepace.ace\nsave\nquit\n"; 
+  open (AUTOACE, "| $tace -tsuser pepace /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
+  print AUTOACE $command;
+  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "finished adding pepace.ace file to autoace at $runtime\n";  close AUTOACE;
+}
+else {
+  print LOG " /wormsrv2/autoace/wormpep_ace/pepace.ace does not exist\n";
+}
+
+if ( -e  "/wormsrv2/autoace/wormpep_ace/SwissprotIDs.ace" ) {
+  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Adding SwissprotIDs.ace file to autoace at $runtime\n";
+  $command = "pparse /wormsrv2/autoace/wormpep_ace/SwissprotIDs.ace\nsave\nquit\n"; 
+  open (AUTOACE, "| $tace -tsuser SwissIds  /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
+  print AUTOACE $command;
+  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "finished adding SwissprotIDs.ace file to autoace at $runtime\n";  close AUTOACE;
+}
+else {
+  print LOG " /wormsrv2/autoace/wormpep_ace/SwissprotIDs.ace does not exist\n";
+}
+
+
+close LOG;
 
 #### use Wormbase.pl to mail Log ###########
 my $name = "$0";
