@@ -209,10 +209,10 @@ sub mknewacefiles {
 	# The subroutines will set the $command and $filename variables
 
 	if ($criteria eq "DNA") {
-	    $command = &make_command_DNA($object,$dbname,$targetdir);
+	    ($command,$filename) = &make_command_DNA($object,$dbname,$targetdir);
 	}
 	else {
-	    $command = &make_command($object,$dbname,$targetdir,$criteria,$criterianoasterisk);
+	    ($command,$filename) = &make_command($object,$dbname,$targetdir,$criteria,$criterianoasterisk);
 	}
 
 	print LOG "Filename: $filename\n";
@@ -272,7 +272,7 @@ write $filename
 quit
 END
 
-    return ($command);
+    return ($command,$filename);
 
 }
 
@@ -290,7 +290,7 @@ write $filename
 quit
 END
 
-    return ($command);
+    return ($command,$filename);
 
 }
 
