@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/bin/perl5.8.0 -w
 #
 # make_FTP_sites.pl
 #
@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2003-07-15 13:39:19 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2003-07-23 13:15:40 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -71,6 +71,8 @@ if($debug){
 &copy_wormpep_files;    # copied from ~wormpub/WORMPEP
 
 &extract_confirmed_genes; # make file of confirmed genes from autoace and copy across
+
+&make_yk2ORF_list;       # make file of yk EST -> ORF connections and add to FTP site
 
 &copy_homol_data;        # copy blat and blast data to private ftp site for St. Louis
 
@@ -344,6 +346,53 @@ sub extract_confirmed_genes{
   
   $db->close;
   return(0);
+  
+}
+
+################################################################################
+# make list of yk EST -> orf connections
+################################################################################
+
+sub make_yk2ORF_list {
+
+  # simple routine to just get yk est names and their correct ORFs and make an FTP site file
+  # two columns, second column supports multiple ORF names
+  $runtime = &runtime;
+  print LOG "$runtime: Starting to make yk2ORF list\n";
+
+  my $tace = &tace;
+  my $command=<<EOF;
+Table-maker -p "/wormsrv2/autoace/wquery/yk2ORF.def" quit
+EOF
+
+  my $dir = "/wormsrv2/autoace";
+  my %est2orf;
+  open (TACE, "echo '$command' | $tace $dir | ") || croak "Couldn't access $dir\n";  
+  while (<TACE>){
+    chomp;
+    if (m/^\"/){
+      s/\"//g;
+      m/(.+)\s+(.+)/;     
+      $est2orf{$1} .= "$2 ";
+    }
+  }
+  close(TACE);
+  
+  # output to ftp site
+
+  
+  my $out = "$targetdir/$release/yk2orf.$release";
+  open(OUT, ">$out") || croak "Couldn't open $out\n";
+
+  foreach my $key (keys %est2orf){
+    print OUT "$key,$est2orf{$key}\n";
+  }
+  close(OUT);
+
+  system("gzip $out");
+  
+  $runtime = &runtime;
+  print LOG "$runtime: Starting to make yk2ORF list\n";
   
 }
 
