@@ -115,6 +115,9 @@ unless ($agp) {
   exit 1;
 }
 
+#check agp file
+$log->log_and_die("agp file $agp is absent or zero length\n") unless ( -e $agp and !(-z $agp) );
+
 if (defined $phase && ($phase < 0 || $phase > 4)) {
 
   print STDERR "Phase should be 1, 2, 3 or 4\n";
