@@ -170,7 +170,7 @@ sub Sub_sequence
     }
     else {
       $chrom = $seq;
-      $start--; # chromosome coords start at 1, substr assumes 0 for 1st char.
+      $start = 0;.
     }
 
     $length = length($self->{SEQUENCE}->{"$chrom"}) unless $length; #full sequence of object.
