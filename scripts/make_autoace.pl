@@ -8,7 +8,7 @@
 # This makes the autoace database from its composite sources.
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2004-07-06 15:36:58 $
+# Last edited on: $Date: 2004-09-15 13:44:50 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -322,7 +322,6 @@ sub createdirs {
       die(0);
     } 
   }
-  &run_command("/bin/ln -s $basedir/geneace/pictures $pictures");
 
   print LOG &runtime, ": Finished\n\n";
   return;
