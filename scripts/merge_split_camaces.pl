@@ -4,8 +4,8 @@
 # 
 # A script to make multiple copies of camace for curation, and merge them back again
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2004-08-23 09:43:39 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2004-11-12 12:55:37 $
 
 
 use strict;
@@ -18,6 +18,10 @@ use Getopt::Long;
 # command-line options       #
 ##############################
 
+my $all;                   # All
+my $dl1;                   # Use Daniel's split
+my $ar2;                   # Use Anthony's split
+my $pad;                   # Use Paul's split
 my $merge;                 # Merging databases
 my $split;                 # Splitting databases
 my $update;                # Update current database
@@ -25,6 +29,10 @@ my $debug;                 # Debug option
 my $help;                  # Help menu
 
 GetOptions (
+            "all"        => \$all,
+	    "dl1"        => \$dl1,
+	    "ar2"        => \$ar2,
+	    "pad"        => \$pad,
 	    "merge"      => \$merge,
 	    "split"      => \$split,
 	    "update"     => \$update,
@@ -48,10 +56,9 @@ my @classes = ('Transposon', 'Transcript', 'Sequence', 'CDS', 'Feature', 'Featur
 
 # load @databases array with user database names.
 push(@databases,"orig");
-push(@databases,"ar2");
-push(@databases,"dl1");
-push(@databases,"pad");
-push(@databases,"krb");
+push(@databases,"ar2") if ($ar2 || $all);
+push(@databases,"dl1") if ($dl1 || $all);
+push(@databases,"pad") if ($pad || $all);
 
 # directory paths
 our $current     = "/wormsrv1/camace";
