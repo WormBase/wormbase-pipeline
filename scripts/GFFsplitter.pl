@@ -5,7 +5,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2004-01-15 11:14:41 $
+# Last updated on: $Date: 2004-01-16 12:19:49 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -457,12 +457,12 @@ sub GFF_genes_with_accessions{
     next if (/^\#/);    
     chomp;
 
-    my @gff = split (/\t/,$_);    
-    (my $gen_can) = $gff[8] =~ /Sequence \"(\S+)\"/; 
-
-    my $obj = $db->fetch(Sequence=>$gen_can);
+    my @gff = split (/\t/,$_);
+    next if ($gff[1] ne "curated");
+    (my $gen_can) = $gff[8] =~ /CDS \"(\S+)\"/; 
+    my $obj = $db->fetch(CDS=>$gen_can);
     if (!defined ($obj)) {
-      print "Could not fetch sequence '$gen_can'\n";
+      print "Could not fetch CDS '$gen_can'\n";
       next;
     }
 
