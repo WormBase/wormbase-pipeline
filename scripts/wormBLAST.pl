@@ -728,7 +728,7 @@ sub run_command{
     $errors++;
     print LOG "ERROR: $command failed\n";
   }
-  print LOG &runtime, ": finished running $command\n";
+  print LOG &runtime, ": finished running\n\n";
 
   # for optional further testing by calling subroutine
   return($status);
