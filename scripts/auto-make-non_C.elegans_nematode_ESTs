@@ -1,0 +1,9 @@
+#!/bin/csh 
+
+/bin/rm ~wormpub/analysis/ESTs/non_C.elegans_nematode_ESTs
+~wormpub/analysis/ESTs/make_non_C.elegans_nematode_ESTs >! ~wormpub/analysis/ESTs/non_C.elegans_nematode_ESTs.log
+pressdb ~wormpub/analysis/ESTs/non_C.elegans_nematode_ESTs > /dev/null 
+/bin/rm /nfs/disk69/ftp/pub/wormbase/sequences/ESTS/non_C.elegans_nematode_ESTs
+/bin/rm /nfs/disk69/ftp/pub/wormbase/sequences/ESTS/non_C.elegans_nematode_ESTs.gz
+cp ~wormpub/analysis/ESTs/non_C.elegans_nematode_ESTs /nfs/disk69/ftp/pub/wormbase/sequences/ESTS/non_C.elegans_nematode_ESTs
+gzip /nfs/disk69/ftp/pub/wormbase/sequences/ESTS/non_C.elegans_nematode_ESTs
