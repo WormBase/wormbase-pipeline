@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-06-11 11:24:23 $
+# Last updated on: $Date: 2003-06-17 14:50:48 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -1295,7 +1295,7 @@ sub loci_as_other_name {
       # hard coded loci for no main name / other_name merging 
       #######################################################
       @exceptions = 
-      qw (aka-1 cas-1 clh-2 clh-3 ctl-1 ctl-2 egl-13 evl-20 gst-4 mig-1 sle-1 slo-1 rap-1 rpy-1
+      qw (aka-1 cas-1 clh-2 clh-3 ctl-1 ctl-2 egl-13 evl-20 gst-4 mig-1 sle-1 slo-1 rap-1 rpy-1 dmo-1 mod-1
           old-1 plk-1 ptp-3 rab-18 rsp-1 rsp-2 rsp-4 rsp-5 rsp-6 sca-1 sus-1);
 
       foreach (@exceptions){$exceptions{$_}++};  
