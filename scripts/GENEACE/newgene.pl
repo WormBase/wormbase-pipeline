@@ -7,7 +7,7 @@
 # simple script for creating new (sequence based) Gene objects 
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-09-13 12:57:09 $
+# Last edited on: $Date: 2004-09-15 14:19:45 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -183,13 +183,29 @@ sub process_gene{
 
     # can now process CGC name
     else{
+
       # new version number
       print "Creating version $new_version: CGC_name = $cgc\n" if ($verbose);
       print OUT "Gene $gene\n";
       print OUT "Version $new_version\n";
       print OUT "History Version_change $new_version now $person Name_change CGC_name $cgc\n";
       print OUT "CGC_name $cgc\n";
+
+      # need to also Gene_class link unless it already exists
+      my $gene_class;
+      if($gene->Gene_class){
+	$gene_class = $gene->Gene_class;
+	print "WARNING: $gene already connects to $gene_class\n";	
+      }
+      else{
+	($gene_class) = ($cgc =~ m/^(\w+)\-\.*/);
+	print OUT "Gene_class $gene_class\n";
+	print "Creating new link to Gene_class $gene_class\n" if ($verbose);
+      }
+
+      # finally print out new public name field
       print OUT "Public_name $cgc\n\n";
+
     }
   }
 
