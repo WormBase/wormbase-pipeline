@@ -11,7 +11,7 @@ my $output;
 my $species;
 
 GetOptions ( "old"     => \$old,
-	     "verbose" => $verbose,
+	     "verbose" => \$verbose,
 	     "list=s"  => \$list_all,
 	     "output=s"  => \$output,
 	     "species=s" => \$species
@@ -24,26 +24,20 @@ my $acc2db = "$wormpipe_dump/acc2db.dbm";
 my $desc = "$wormpipe_dump/desc.dbm";
 my $peptide = "$wormpipe_dump/peptide.dbm";
 my $database = "$wormpipe_dump/databases.dbm";
-my $listx = "$wormpipe_dump/ipi_hits_list_x";
-my $listp = "$wormpipe_dump/ipi_hits_list";
+
+my @blastp_databases = qw( worm_pep worm_brigpep );
+
+my $ipi_hits_files = "$wormpipe_dump/ipi_hits_list_x ";
+foreach ( @blastp_databases ){ 
+  $ipi_hits_files .= "$wormpipe_dump/${_}_blastp_ipi ";
+  warn "no ipi_hits file for $_ : $wormpipe_dump/${_}_blastp_ipi\n" unless (-e "$wormpipe_dump/${_}_blastp_ipi" );
+}
+
 $list_all = "$wormpipe_dump/ipi_hits_all" unless $list_all;
 $output = "$wormpipe_dump/ipi_hits.ace" unless $output;
 
-if( $species ) {
-  $list_all = "${species}_ipi_hits";
-  $output = "${species}_ipi_hits.ace";
-}
+system("cat $ipi_hits_files | sort -u > $list_all");
 
-if (defined($species) and -e $list_all) {
-  die "$list_all file doesnt exist\n";
-}
-
-if( !(defined($species)) and (-e $listx and -e $listp) ) {
-  system("cat $listx $listp | sort -u > $list_all");
-}
-else {
-  die "one of $listp or $listx is missing. These files should be written when the data is dumped \n";
-}
 
 unless (-s "$acc2db" and -s "$desc"  and -s "$peptide") {
   die "problem with the dbm files - expecting :\n$acc2db\n$desc\n$peptide\n\n";
@@ -131,7 +125,7 @@ while (<LIST>) {
       }
       elsif( "$DB" eq "SWISS-PROT" ){ 
 	$othername = $acc2id{$ID} if $acc2id{$ID};
-	print ACE "Other_name \"$swiss_id2gene{$othername}\"\n" if $swiss_id2gene{$othername};
+	print ACE "Other_name \"$swiss_id2gene{$othername}\"\n" if( $othername and $swiss_id2gene{$othername} );
       }
       
       print ACE "Database $DB $othername $ID\n";

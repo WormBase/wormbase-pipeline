@@ -36,19 +36,25 @@ my $blastx_file = "$wormpipe_dump/blastx_ensembl.ace";
 my $blastp_file = "$wormpipe_dump/blastp_ensembl.ace";
 my $ensembl_info_file = "$wormpipe_dump/ensembl_protein_info.ace";
 
-if ( $species ) {
-  $output_swiss = "$wormpipe_dump/${species}_swissproteins.ace";
-  $output_trembl = "$wormpipe_dump/${species}_tremblproteins.ace";
-  $swiss_list_txt = "$wormpipe_dump/${species}_swisslist.txt";
-  $trembl_list_txt = "$wormpipe_dump/${species}_trembllist.txt";
-  $blastx_file = "";#$wormpipe_dump/${species}_blastx_ensembl.ace";
-  $blastp_file = "$wormpipe_dump/${species}_blastp_ensembl.ace";
-  $ensembl_info_file = "$wormpipe_dump/${species}_ensembl_protein_info.ace";
-}
+my @blastp_databases = qw(worm_pep worm_brigpep);
+my $blast_files = "$wormpipe_dump/*blastp.ace $wormpipe_dump/*blastx.ace ";
+#foreach ( @blastp_databases ) {
+#  $blast_files .= "$wormpipe_dump/$_/blastp/ACE/wublastp_slimtrembl.ace ";
+#  $blast_files .= "$wormpipe_dump/$_/blastp/ACE/wublastp_slimswissprot.ace ";
+#}
+#if ( $species ) {
+#  $output_swiss = "$wormpipe_dump/${species}_swissproteins.ace";
+#  $output_trembl = "$wormpipe_dump/${species}_tremblproteins.ace";
+#  $swiss_list_txt = "$wormpipe_dump/${species}_swisslist.txt";
+#  $trembl_list_txt = "$wormpipe_dump/${species}_trembllist.txt";
+#  $blastx_file = "";#$wormpipe_dump/${species}_blastx_ensembl.ace";
+#  $blastp_file = "$wormpipe_dump/${species}_blastp_ensembl.ace";
+#  $ensembl_info_file = "$wormpipe_dump/${species}_ensembl_protein_info.ace";
+#}
 
 # extract and write lists of which proteins have matches
 unless ( $list ){
-  open (DATA,"cat $blastx_file $blastp_file |");
+  open (DATA,"cat $blast_files |");
   my (%swisslist, %trembllist);
   while (<DATA>) {
     if (/Pep_homol\s+\"/) {
