@@ -7,7 +7,7 @@
 # Script to make ?Transcript objects
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2004-09-01 11:01:37 $
+# Last updated on: $Date: 2004-09-01 14:50:34 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -287,7 +287,7 @@ foreach my $chrom ( @chromosomes ) {
 
       # find next downstream CDS - must be on same strand
       my $downstream_CDS;
-      while (! defined $downstream_CDS ) {
+    DOWN: while (! defined $downstream_CDS ) {
 	$index++;
 	if ( $downstream_CDS = $cds_objs[ $index ] ) {
 	
