@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl
+#!/usr/local/bin/perl -w
 #
 # GFFsplitter
 # 
@@ -20,16 +20,17 @@
 $|=1;
 use IO::Handle;
 use Getopt::Std;
-require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
+use lib '/wormsrv2/scripts';
+use Wormbase;
 
  ##############################
  # Script variables (run)     #
  ##############################
 
-my $maintainer = "dl1\@sanger.ac.uk";
+my $maintainers = "dl1\@sanger.ac.uk krb\@sanger.ac.uk kj2\@sanger.ac.uk";
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
-my $version = &get_script_version(GFFsplitter);
+my $cvs_version = &get_cvs_version($0);
 
  ##############################
  # Paths etc                  #
@@ -54,7 +55,7 @@ open (LOG,">$logfile");
 LOG->autoflush();
 
 print LOG "# GFFsplitter\n\n";     
-print LOG "# version        : $version\n";
+print LOG "# version        : $cvs_version\n";
 print LOG "# run details    : $rundate $runtime\n";
 print LOG "\n";
 
@@ -738,7 +739,7 @@ close LOG;
 # Mail log to curator         #
 ###############################
 
-open (OUTLOG,  "|/usr/bin/mailx -s \"WormBase Report: GFFsplitter\" $maintainer ");
+open (OUTLOG,  "|/usr/bin/mailx -s \"WormBase Report: GFFsplitter\" $maintainers ");
 open (READLOG, "<$logfile");
 while (<READLOG>) {
     print OUTLOG "$_";
