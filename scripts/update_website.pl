@@ -8,7 +8,7 @@
 # relevant WormBase and Wormpep web pages.
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-07-20 15:06:21 $      
+# Last updated on: $Date: 2004-08-03 09:47:54 $      
 
 
 #################################################################################
@@ -667,8 +667,7 @@ sub copy_EST_files{
   print LOG "--------------\n";
 
 
-  my %files = ("EST_total" => "Main report",
-               "EST_no_accession" => "No Accession number", 
+  my %files = ("EST_no_accession" => "No Accession number", 
                "EST_unassigned" => "Unassigned reads",
                "EST_mismatched" => "mismatched CDS assignments");
 
