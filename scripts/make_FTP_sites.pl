@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-11-08 19:41:13 $
+# Last updated on: $Date: 2002-11-08 19:42:52 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -29,7 +29,7 @@ $|=1;
 #################################################################################
 
 our $sourcedir = "/wormsrv2/autoace";
-our $targetdir = "/nfs/disk69/ftp/wormbase";  # default directory, can be overidden
+our $targetdir = "/nfs/disk69/ftp/pub/wormbase";  # default directory, can be overidden
 our $runtime;
 our $log;
 
