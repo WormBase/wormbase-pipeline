@@ -18,7 +18,7 @@ Filter "Genomic_Canonical AND (Species = C*briggsae)"
 Class cDNA_Sequence
 Visible
 Is_a_subclass_of Sequence
-Filter "Method = EST_elegans"
+Filter "((Method = EST_elegans) OR (Method = NDB))" 
 
 Class nematode_ESTs
 Visible
@@ -29,7 +29,6 @@ Class Repeat_Sequence
 Hidden
 Is_a_subclass_of Sequence
 Filter Repeat_consensus
-
 
 Class NDB_Sequence
 Visible
@@ -67,7 +66,6 @@ Is_a_subclass_of Transcript
 Filter "(Method = Coding_transcript) AND (Species = C*elegans)"
 
 
-
 // ?Pseudogene subclasseses
 Class elegans_pseudogenes
 Visible
@@ -79,6 +77,11 @@ Visible
 Is_a_subclass_of Pseudogene
 Filter "(Method = Pseudogene) AND (Species = C*briggsae)"
 
+// ?Transposon subclasses
+Class elegans_transposons
+Visible
+Is_a_subclass_of Transposon
+Filter "Species = C*elegans"
 
 
 // ?Protein subclasses
@@ -107,31 +110,31 @@ Is_a_subclass_of Map
 Filter "IS *Sequence*"
 
 
-// ?Allele subclasses
+// ?Variation subclasses
 
 Class Deletion_allele
 Visible
-Is_a_subclass_of Allele
+Is_a_subclass_of Variation
 Filter "Deletion"
 
 Class Insertion_allele
 Visible
-Is_a_subclass_of Allele
+Is_a_subclass_of Variation
 Filter "Insertion"
 
 Class Substitution_allele
 Visible
-Is_a_subclass_of Allele
+Is_a_subclass_of Variation
 Filter "Substitution"
 
 Class KO_allele
 Visible
-Is_a_subclass_of Allele
+Is_a_subclass_of Variation
 Filter "KO_consortium_allele"
 
 Class NBP_allele
 Visible
-Is_a_subclass_of Allele
+Is_a_subclass_of Variation
 Filter "NBP_allele"
 
 // Gene subclasses
@@ -142,7 +145,6 @@ Class Live_genes
 Visible
 Is_a_subclass_of Gene
 Filter "Live AND Species = Caenorhabditis*elegans AND Sequence_name"
-
 
 // Other Misc. subclasses
 
@@ -170,6 +172,7 @@ Visible
 Composite_of elegans_CDS
 Composite_of elegans_pseudogenes
 Composite_of elegans_RNA_genes
+Composite_of elegans_transposons
 
 // composite class to hold all gene models for checking essential non-specific tags.
 Class All_genes
