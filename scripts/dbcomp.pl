@@ -5,8 +5,8 @@
 # Counts the number of objects in an ACEDB database for each Class stated in the config file
 # Compares this number to those from a second database.
 #
-# Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-10-25 07:19:47 $      
+# Last updated by: $Author: ar2 $     
+# Last updated on: $Date: 2005-02-11 15:55:26 $      
 
 
 use strict;
@@ -330,7 +330,6 @@ __DATA__
 2_point_data
 3d_data
 Accession_number
-Allele
 Anatomy_name
 Anatomy_term
 Antibody
@@ -417,6 +416,7 @@ Transcript
 Transgene
 Transposon
 UTR
+Variation
 Y2H
 __END__
 

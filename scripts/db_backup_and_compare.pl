@@ -5,7 +5,7 @@
 # backup database and compare to last backed up database to look for lost data
 #
 # Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2005-02-10 15:34:55 $      
+# Last updated on: $Date: 2005-02-11 15:54:11 $      
 
 use strict;
 use lib -e '/wormsrv2/scripts' ? '/wormsrv2/scripts' : $ENV{'CVS_DIR'};
@@ -299,7 +299,7 @@ sub usage {
 __DATA__
 2_point_data
 Accession_number
-Allele
+Variation
 Author
 CDS
 Cell
