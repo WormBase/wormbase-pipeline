@@ -10,10 +10,10 @@ use Getopt::Long;
 # command-line options                #
 #######################################
 my $test;
+my $all;
 
-
-
-GetOptions("test"        => \$test,
+GetOptions("test"   => \$test,
+	   "all"    => \$all
 	  );
 
 my $wormpipe_dir = glob("~wormpipe");
@@ -45,29 +45,40 @@ my %processIds2prot_analysis = ( 11 => "wublastp_worm",
 			       );
 
 
+my $runtime    = `date +%H:%M:%S`; chomp $runtime;
 
-
-#get list of wormpeps to dump from wormpep.diffXX
+#get list of wormpeps to dump from wormpep.diffXX or wormpep.tableXX depending on wether u want to dump all or just new
 my @peps2dump;
 my $pep;
-open( DIFF,"</wormsrv2/WORMPEP/wormpep$WPver/wormpep.diff$WPver") or die "cant opne diff file\n";
-while (<DIFF>)
-  {
-    my $pep;
-    if( /new/ ){
-       /CE\d+/;
-       $pep = $&;
-    }
-    elsif ( /changed/ ){
-      /-->\s+(CE\d+)/;
-      $pep = $1;
-    }
-    if( $pep ){
-      push( @peps2dump, $pep );
-    }
-  }
-close DIFF;
 
+if( $all ) {
+  open( DIFF,"</wormsrv2/WORMPEP/wormpep$WPver/wormpep.table$WPver") or die "cant opne diff file\n";
+  while(<DIFF>) {
+    chomp;
+    my @tabledata = split;
+    push( @peps2dump, $tabledata[1]);
+  }
+}
+else {
+  open( DIFF,"</wormsrv2/WORMPEP/wormpep$WPver/wormpep.diff$WPver") or die "cant opne diff file\n";
+  while (<DIFF>)
+    {
+      if( /new/ ){
+	/CE\d+/;
+	$pep = $&;
+      }
+      elsif ( /changed/ ){
+	/-->\s+(CE\d+)/;
+	$pep = $1;
+      }
+      if( $pep ){
+	push( @peps2dump, $pep );
+      }
+    }
+}
+
+close DIFF;
+  
 
 # mysql database parameters
 my $dbhost = "ecs1f";
@@ -102,9 +113,10 @@ my $sth_f = $wormprot->prepare ( q{ SELECT proteinId,analysis,
 	  	  	     } );
 
 open (OUT,">wublastp.ace") or die "cant open out file\n";
+print OUT "$runtime\n";
 my $count;
 
-my %CE2gene = &CE2gene;
+our %CE2gene = &CE2gene;
 my %gene2CE = &gene2CE;
 
 my %matched_genes;
@@ -133,17 +145,13 @@ foreach $pep (@peps2dump)
 	my @data = ($proteinId, $processIds2prot_analysis{$analysis},  $myHomolStart, $myHomolEnd, $homolID, $pepHomolStart, $pepHomolEnd, $e, $cigar);
 	if( $analysis == 11 )   #wormpep
 	  {
-	    #send the CE id rather than gene name
-	    my $worm_protein = $gene2CE{$homolID};
-	    next if ("$worm_protein" eq "$pep" );
-	    
-	    my $pepgene = &justGeneName($homolID);
-	    $data[4] = $worm_protein;
+	    # my $my_gene = &justGeneName( $CE2gene( $data[0] ) ) ;
+	    &addWormData ( \%worm_matches, \@data );
 	  }
 	elsif( $analysis == $wormprotprocessIds{'gadfly'}  ) { #gadfly peptide set also has isoforms
-	  &addData ( \%fly_matches, \@data );
+	  &addFlyData ( \%fly_matches, \@data );
 	}
-	elsif( $analysis == $wormprotprocessIds{'human'}  ) { # others dont have isoforms so let adding routine deal with them
+	elsif( $analysis == $wormprotprocessIds{'ensembl'}  ) { # others dont have isoforms so let adding routine deal with them
 	  &addData ( \%human_matches, \@data );
 	}
 	elsif( $analysis == $wormprotprocessIds{'yeast'}  ) { # others dont have isoforms so let adding routine deal with them
@@ -161,9 +169,12 @@ foreach $pep (@peps2dump)
     &dumpData ($proteinId,\%worm_matches,\%human_matches,\%fly_matches,\%yeast_matches,\%swiss_matches,\%trembl_matches);
   }
 
+my $runtime    = `date +%H:%M:%S`; chomp $runtime;
+print OUT "$runtime\n";
 close OUT;
 
 exit(0);
+
 
 sub dumpData
   {
@@ -172,8 +183,11 @@ sub dumpData
     print OUT "\nProtein : $pid\n";
     while( $matches = shift) {   #pass reference to the hash to dump
       #write ace info
-      foreach (keys %$matches ){
+      my $output_count = 0;
+    HOMOLOGUES:
+      foreach (sort {$$matches{$b}[0]->[7] <=> $$matches{$a}[0]->[7]} keys %$matches ){
         foreach my $data (@$matches{$_}) {
+	  last HOMOLOGUES if $output_count++ ==  10; # only output the top 10
 	  my @cigar = split(/:/,"$$data[0]->[8]");  #split in to blocks of homology
 	  
 	  foreach (@cigar){
@@ -189,12 +203,79 @@ sub dumpData
 	    print OUT "Align ";
 
 	    my @align = split(/\,/,$_);
-	    print "@align\n";
 	    print OUT "$align[0] $align[1]\n";
 	  }
 	}
       }
     }
+  }
+
+
+sub addFlyData 
+  {
+    my $match = shift;   #hash to add data to 
+    my $data = shift;    #array data to analyse
+    my $homol = $$data[4];
+
+    my $i = 0;
+    foreach (keys %$match ) { # check against all previously matched if there is a matching protein
+      next unless $$match{$_}[0]->[0]; # previously removed isoforms still have valid keys
+      my $existing_gene = &justGeneName( "$_" );
+      my $homol_gene = &justGeneName( "$homol" );
+
+      if( "$homol_gene" eq "$existing_gene" ) { 
+	# the result being add is an isoform of a protein already matched - check and replace if nec.
+	my $existing_e = $$match{$_}[0]->[7];  #1st array - 7th index   evalue will be same in all arrays
+	my $this_e = $$data[7];
+
+	if( $this_e > $existing_e ) { #replace what is currently stored for this homology
+	  undef $$match{$_}[0];
+	  $$match{$homol}[0] = [ @$data ];
+	}
+	elsif( $this_e == $existing_e )  {
+	  push( @{$$match{'$_'}},[ @$data ]) if ("$homol" eq "$_"); #if protein matches 2 isoforms with same evalue just keep 1st one.
+	}
+	return; # shouldn't need to check against rest
+      } 
+    }
+    # if we get to here it must be a match to something that is not an isoform of things already matched or a self-match
+    $$match{$homol}[0] = [ @$data ];
+  }
+
+
+sub addWormData 
+  {
+    my $match = shift;   #hash to add data to 
+    my $data = shift;    #array data to analyse
+    my $my_gene = &justGeneName( $CE2gene{ $$data[0] } ) ;
+    my $homol = $$data[4];
+    my $homol_gene = &justGeneName( $homol );
+    return if ("$homol_gene" eq "$my_gene");    # self match or isoform of same gene
+
+    #have we already matched an isoform of this protein
+    # CE26000 | wublast_worm | start | end | Y73B6BL.34    fields or result array
+    my $i = 0;
+    foreach (keys %$match ) { # check against all previously matched if there is a matching protein
+      next unless $$match{$_}[0]->[0]; # previously removed isoforms still have valid keys
+      my $existing_gene = &justGeneName( "$_" );
+
+      if( "$homol_gene" eq "$existing_gene" ) { 
+	# the result being add is an isoform of a protein already matched - check and replace if nec.
+	my $existing_e = $$match{$_}[0]->[7];  #1st array - 7th index   evalue will be same in all arrays
+	my $this_e = $$data[7];
+
+	if( $this_e > $existing_e ) { #replace what is currently stored for this homology
+	  undef $$match{$_}[0];
+	  $$match{$homol}[0] = [ @$data ];
+	}
+	elsif( $this_e == $existing_e )  {
+	  push( @{$$match{'$_'}},[ @$data ]) if ("$homol" eq "$_"); #if protein matches 2 isoforms with same evalue just keep 1st one.
+	}
+	return; # shouldn't need to check against rest
+      } 
+    }
+    # if we get to here it must be a match to something that is not an isoform of things already matched or a self-match
+    $$match{$homol}[0] = [ @$data ];
   }
 
 sub addData 
@@ -230,9 +311,6 @@ sub gene2CE
     return @array;
   }
 
-
-
-
 sub CE2gene
   {
     my @array;
@@ -251,10 +329,14 @@ sub CE2gene
 sub justGeneName
   {
     my $test = shift;
-    if( $test =~ m/(\w+\.\d+)/ ){
+    
+    if( $test =~ m/(\w+\.\d+)/ ){   # worm gene
+      return $1;
+    }
+    elsif( $test =~ m/(\w+)-\p{IsUpper}{2}/ ) {
       return $1;
     }
     else {
-      return "nonworm";
+      return "$test";
     }
   }
