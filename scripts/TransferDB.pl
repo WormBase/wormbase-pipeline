@@ -4,8 +4,8 @@
 #
 # by ag3 [991221]
 #
-# Last updated on: $Date: 2004-05-13 14:30:34 $
-# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2004-08-16 07:52:27 $
+# Last updated by: $Author: krb $
 
 # transferdb moves acedb database files across filesystems.
 # Creates a temporary database.BCK 
@@ -35,6 +35,7 @@ my $dbname;            # -name: name of the database (will be overwritten in dis
 my $srcdir;            # -start: Location of source database, mandatory option
 my $enddir;            # -end: Location of target database, mandatory option
 my $backup;            # -bck: will specify that script keep .BCK directory
+my $S_acefiles;        # -acefiles: will copy acefiles dir
 my $S_database;        # -database: will copy database dir
 my $S_wspec;           # -wspec
 my $S_wgf;             # -wgf
@@ -58,6 +59,7 @@ GetOptions (
 	    "bck"         => \$backup,
 	    "database"    => \$S_database,
 	    "all"         => \$S_all,
+	    "acefiles"    => \$S_acefiles,
 	    "wspec"       => \$S_wspec,
 	    "wgf"         => \$S_wgf,
 	    "wscripts"    => \$S_wscripts,
@@ -160,6 +162,7 @@ my $whelp       = "$srcdir"."/whelp";
 my $wdata       = "$srcdir"."/data";
 my $chromosomes = "$srcdir"."/CHROMOSOMES";
 my $release     = "$srcdir"."/release";
+my $acefiles    = "$srcdir"."/acefiles";
 
 # set what is to be copiedin @TOBEMOVED
 my @TOBEMOVED;
@@ -174,6 +177,7 @@ push (@TOBEMOVED,"$whelp")       if ($S_whelp       || $S_all);
 push (@TOBEMOVED,"$wdata")       if ($S_wdata       || $S_all);
 push (@TOBEMOVED,"$chromosomes") if ($S_chromosomes || $S_all);
 push (@TOBEMOVED,"$release")     if ($S_release     || $S_all);
+push (@TOBEMOVED,"$acefiles")    if ($S_acefiles    || $S_all);
 
 print LOG "Directories to be copied: @TOBEMOVED \n";
 
@@ -516,6 +520,8 @@ in alternative to the -all switch:
 =item -chromosomes =>  CHROMOSOMES subdir
 
 =item -release =>  release subdir
+
+=item -acefiles => acefiles subdir
 
 =back
 

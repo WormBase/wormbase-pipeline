@@ -13,7 +13,7 @@
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-07-28 16:32:33 $
+# Last updated on: $Date: 2004-08-16 07:52:27 $
 
 
 use strict;
@@ -85,13 +85,18 @@ system("update_Common_data.pl -build -all") && die "Couldn't run update_Common_d
 
 # Transfer autoace to WSxx
 print LOG "Transferring autoace into /wormsrv2/$WS_name\n";
-system("TransferDB.pl -start /wormsrv2/autoace -end /wormsrv2/$WS_name -database -release -wspec -chromosomes -name $WS_name") 
+system("TransferDB.pl -start /wormsrv2/autoace -end /wormsrv2/$WS_name -database -release -wspec -chromosomes -acefiles -name $WS_name") 
   && die "couldn't run TransferDB for autoace\n";
 
-# Transfer autoace to ~wormpub/DATABASES/current_DB - first remnove existing files
-print LOG "Removing ~wormpub/DATABASES/current_DB/database/ and ~wormpub/DATABASES/current_DB/database/CHROMOSOMES/\n";
+# Transfer autoace to ~wormpub/DATABASES/current_DB - first remove existing files
+print LOG "Removing ~wormpub/DATABASES/current_DB/database/\n";
 &delete_files_from("/nfs/disk100/wormpub/DATABASES/current_DB/database","*","+");
+
+print LOG "Removing ~wormpub/DATABASES/current_DB/database/CHROMOSOMES/\n";
 &delete_files_from("/nfs/disk100/wormpub/DATABASES/current_DB/CHROMOSOMES","*","+");
+
+
+
 print LOG "Running TransferDB.pl to copy autoace to ~wormpub/DATABASES/current_DB\n";
 system("TransferDB.pl -start $basedir/autoace -end /nfs/disk100/wormpub/DATABASES/current_DB -database -chromosomes -wspec -name $WS_name")  && die "couldn't run TransferDB for wormpub\n";
 print LOG "Unzipping any gzipped chromosome files\n";
@@ -101,6 +106,9 @@ system("/bin/gunzip /nfs/disk100/wormpub/DATABASES/current_DB/CHROMOSOMES/*.gz")
 # Remove redundant files and directories in /wormsrv2/autoace/
 print LOG "Removing old files in /wormsrv2/autoace/release/\n";
 &delete_files_from("/wormsrv2/autoace/release","*","-");
+
+print LOG "Removing old files in /wormsrv2/autoace/acefiles/\n";
+&delete_files_from("/wormsrv2/autoace/acefiles","*","-");
 
 print LOG "Removing old CHROMOSOME files in /wormsrv2/autoace/CHROMOSOMES/\n";
 &delete_files_from("/wormsrv2/autoace/CHROMOSOMES","*","-");

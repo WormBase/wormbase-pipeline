@@ -6,8 +6,8 @@
 #
 # This maps alleles to the genome based on their flanking sequences
 #
-# Last updated by: $Author: ar2 $                      
-# Last updated on: $Date: 2004-08-06 16:37:45 $        
+# Last updated by: $Author: krb $                      
+# Last updated on: $Date: 2004-08-16 07:52:28 $        
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -31,7 +31,7 @@ my $no_parse;       # turn off loading of data to $database
 my $list;           # read in alleles to map from file rather than from database
 my $gff;            # option to print output in GFF format as well
 my $verbose;        # verbose mode, extra output to screen
-
+my $geneace;        # optionally make output file to fix problems in geneace
 
 GetOptions( "debug=s"    => \$debug,
 	    "limit=i"    => \$limit,
@@ -43,6 +43,7 @@ GetOptions( "debug=s"    => \$debug,
 	    "list=s"     => \$list,
 	    "gff"        => \$gff,
 	    "verbose"    => \$verbose,
+	    "geneace"    => \$geneace
 	  );
 
 if ($help) { print `perldoc $0`;exit;}
@@ -63,7 +64,13 @@ my $tace = &tace;
 my $data_dump_dir;
 my $ace_file;
 my $gff_file;
+my $geneace_file;
 my $mapping_dir;
+
+
+# Read hashes from COMMON_DATA
+my %worm_gene2class = &FetchData('worm_gene2class');
+my %CDS2gene        = &FetchData('cds2wbgene_id');
 
 if ($debug)  {
     $data_dump_dir = "/tmp";
@@ -76,11 +83,12 @@ if ($debug)  {
     $maintainers   = "$debug\@sanger.ac.uk";
 }
 else { 
-    $log         = "/wormsrv2/logs/map_AllelesWS$ver.$rundate.$$";
-    $mapping_dir = "/wormsrv2/autoace/MAPPINGS";
-    $ace_file    = "$mapping_dir/allele_mapping.WS$ver.ace";
-    $gff_file    = "$mapping_dir/allele_mapping.WS$ver.gff";
-    $database    = "/wormsrv2/autoace/" unless $database;
+    $log          = "/wormsrv2/logs/map_AllelesWS$ver.$rundate.$$";
+    $mapping_dir  = "/wormsrv2/autoace/MAPPINGS";
+    $ace_file     = "$mapping_dir/allele_mapping.WS$ver.ace";
+    $gff_file     = "$mapping_dir/allele_mapping.WS$ver.gff";
+    $database     = "/wormsrv2/autoace/" unless $database;
+    $geneace_file =  "$mapping_dir/allele_fix_for_geneace.ace";    
 }
 
 
@@ -121,9 +129,7 @@ open (LOG,">$log") or die "cant open $log\n\n";
 print LOG "$0 start at $runtime on $rundate\n----------------------------------\n\n";
 open (OUT,">$ace_file") or die "cant open $ace_file\n";
 open (GFF,">$gff_file") or die "cant open $gff_file\n" if $gff;
-
-my %CDS2gene;
-&FetchData('cds2wbgene_id',\%CDS2gene);
+open (GENEACE,">$geneace_file") or die "cant open $geneace_file\n" if $geneace;
 
 
 #########################################################
@@ -255,6 +261,7 @@ $db->close;
 
 close OUT;
 close GFF if $gff;
+close GENEACE if $geneace;
 
 ##############################
 # read acefiles into autoace #
@@ -302,41 +309,43 @@ exit(0);
 #######################################
 
 sub outputAllele{
-  my $to_dump = shift;
+  my $allele = shift;
 
-  if( $allele_data{$to_dump}[6] and $allele_data{$to_dump}[4] and  $allele_data{$to_dump}[5]) { 
+  if( $allele_data{$allele}[6] and $allele_data{$allele}[4] and  $allele_data{$allele}[5]) { 
       
-    print OUT "\nSequence : \"$allele_data{$to_dump}[6]\"\nAllele $to_dump $allele_data{$to_dump}[4] $allele_data{$to_dump}[5]\n";
-    print GFF "\n$allele_data{$to_dump}[6]\tAllele\tTEST\t$allele_data{$to_dump}[4]\t$allele_data{$to_dump}[5]\t.\t+\t.\tAllele \"$to_dump\"" if $gff;
-    if( $allele2gene{$to_dump} ) {
-      my @affects_genes = split(/\s/,"@{$allele2gene{$to_dump}}");
-      
-      # in CDS object
-      foreach my $ko (@affects_genes) {
-	print OUT "\nCDS : \"$ko\"\nAlleles $to_dump\n";
-      }
+    print OUT "\nSequence : \"$allele_data{$allele}[6]\"\nAllele $allele $allele_data{$allele}[4] $allele_data{$allele}[5]\n";
+    print GFF "\n$allele_data{$allele}[6]\tAllele\tTEST\t$allele_data{$allele}[4]\t$allele_data{$allele}[5]\t.\t+\t.\tAllele \"$allele\"" if $gff;
 
-      # in Allele object
-      print OUT "\nAllele : $to_dump\n";
-      foreach my $ko (@affects_genes) {
+    # process allele if it matches overlapping CDSs/Transcripts
+    if( $allele2gene{$allele} ) {
+      my @affects_genes = split(/\s/,"@{$allele2gene{$allele}}");
+      
+      # loop through all CDSs/Transcripts that overlap allele
+      foreach my $cds (@affects_genes) {
+	print "$allele affects $cds which is in $worm_gene2class{$cds} class\n" if ($worm_gene2class{$cds} ne "CDS");
+	print OUT "\nCDS : \"$cds\"\nAlleles $allele\n";
+
+	# in Allele object
+	print OUT "\nAllele : $allele\n";
+
 	#allele - CDS connection
-	print OUT "Predicted_gene $ko\n";
+	print OUT "Predicted_gene $cds\n";
 
 	#allele - WBGene connection
-	my $WBGene = $CDS2gene{$ko};
+	my $WBGene = $CDS2gene{$cds};
 	print OUT "Gene $WBGene\n";
 
-	if( defined($geneace_alleles{$to_dump}) and ($geneace_alleles{$to_dump} eq "undef") ) {
-	  print LOG "Geneace Gene error $to_dump : Geneace has no connection  Mapping $WBGene\n";
+	if( defined($geneace_alleles{$allele}) and ($geneace_alleles{$allele} eq "undef") ) {
+	  print LOG "ERROR: $allele - no Gene connection in geneace but script maps to $WBGene\n";
 	  return;
 	}
-	if( defined($geneace_alleles{$to_dump}) and $geneace_alleles{$to_dump}->name ne $WBGene ) {
-	  print LOG "Geneace Gene error $to_dump : Geneace $geneace_alleles{$to_dump}  Mapping $WBGene\n";
+	if( defined($geneace_alleles{$allele}) and $geneace_alleles{$allele}->name ne $WBGene ) {
+	  print LOG "ERROR: $allele - geneace maps to Gene $geneace_alleles{$allele} but scripts maps to Gene $WBGene\n";
 	}
       }
     }
     else {
-      print "no overlapping gene for $to_dump\n" if $verbose;
+      print "no overlapping gene for $allele\n" if $verbose;
     }
 
     
