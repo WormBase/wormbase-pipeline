@@ -1,11 +1,9 @@
-
-
 #!/usr/local/bin/perl5.8.0 -w
 #
 # map_operons.pl
 
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2003-12-16 16:14:56 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2004-01-12 11:49:21 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
