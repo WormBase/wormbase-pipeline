@@ -79,7 +79,7 @@ sub make_build_log
     }
 
     $path = "/tmp" unless ( -e "/wormsrv2");
-    my $log_file = "$path/$filename".".$ver.".$$;
+    my $log_file = "$path/$filename".".WS${ver}.".$$;
     my $log;
     open($log,">$log_file") or croak "cant open file $log_file : $!";
     print $log "WS$ver Build script : $filename \n\n";
