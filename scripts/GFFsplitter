@@ -27,6 +27,8 @@ my $maintainers = "dl1\@sanger.ac.uk krb\@sanger.ac.uk kj2\@sanger.ac.uk";
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
 my $cvs_version = &get_cvs_version($0);
+my $WS_version = &get_wormbase_version;
+
 
  ##############################
  # Paths etc                  #
@@ -39,7 +41,8 @@ my $datadir = "/wormsrv2/autoace/GFF_SPLITS";
  ##############################
 
 $opt_h = "";   # Help/Usage page
-getopts ('h');
+$opt_a = "";   # archive GFF_splits directory into a WSxx directory when script ends
+getopts ('ha');
 &usage if ($opt_h);
 
  ########################################
@@ -825,6 +828,16 @@ foreach (@gff_files) {
     system ("GFF_with_accessions $datadir/GFF_SPLITS/${file_prefix}.clone_path.gff > $datadir/GFF_SPLITS/${file_prefix}.clone_acc.gff");
     
 }
+
+##########################################################
+# Archive the GFF_splits directory into a WSxx directory
+##########################################################
+
+if($opt_a){
+  print LOG "Renaming $datadir/GFF_SPLITS to $datadir/$WS_version\n";
+  system("mv $datadir/GFF_SPLITS ${datadir}/${WS_version}") && die "Couldn't rename directory\n";
+}
+
 
 close LOG;
 
