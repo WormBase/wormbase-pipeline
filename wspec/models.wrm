@@ -173,7 +173,7 @@
 			Nne #Colour // negative, no error
                 	Ne  #Colour // negative, error
 
-?Allele Name	Other_name ?Text
+?Allele Name	Other_name ?Text #Evidence
 		Qualifier Text	    // sd, sm, ts etc.  Not systematic just now
 		Rearrangement ?Rearrangement XREF Allele
 	Source	UNIQUE Gene ?Locus XREF Allele
