@@ -803,7 +803,7 @@ sub load_to_database {
 
 sub wormpep_files
   {
-    return [ ("wormpep", "wormpep.accession", "wormpep.dna", "wormpep.history", "wp.fasta", "wormpep.table", "wormpep.diff") ];
+    return ("wormpep", "wormpep.accession", "wormpep.dna", "wormpep.history", "wp.fasta", "wormpep.table", "wormpep.diff");
   }
 
 ################################################################################

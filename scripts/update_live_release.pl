@@ -6,7 +6,7 @@
 #
 # Updates the local webpages in synch with the main website
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-07-20 15:56:37 $
+# Last updated on: $Date: 2004-07-21 08:08:33 $
 
 
 use strict;
@@ -30,7 +30,9 @@ my $www = "/nfs/WWWdev/htdocs/Projects/C_elegans";
 my $wormpub_dir = "/nfs/disk100/wormpub/WORMPEP";
 my $wormpep_ftp_root = glob("~ftp/pub/databases/wormpep");
 my $wp_ftp_dir = "$wormpep_ftp_root/wormpep${release}";
-my @wormpep_files = ("wormpep", "wormpep.accession", "wormpep.dna", "wormpep.history", "wp.fasta", "wormpep.table", "wormpep.diff");
+#my @wormpep_files = ("wormpep", "wormpep.accession", "wormpep.dna", "wormpep.history", "wp.fasta", "wormpep.table", "wormpep.diff");
+# grab from Wormbase.pm subroutine
+my @wormpep_files = &wormpep_files;
 
 my $log  = "/wormsrv2/logs/update_live_release.${release}.$$";
 
