@@ -215,7 +215,7 @@ prepare_build.pl  OPTIONAL arguments:
 
 =head1 REQUIREMENTS
 
-This script must run on a machine which can see the /wormsrv2 disk.
+=item This script must run on a machine which can see the /wormsrv2 disk.
 
 =back
 
