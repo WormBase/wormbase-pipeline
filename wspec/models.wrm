@@ -851,7 +851,6 @@
 			     TSL_tag		       // Indicates a short RT-PCR product for TSL detection [030220 dl]
 			RNA	// if set then use U in place of T
 			Coding	CDS UNIQUE Int UNIQUE Int
-				CDS_predicted_by ?Method Float // score of method
 				Precursor
 				Confirmed_by #Gene_confirmation
 			End_not_found
