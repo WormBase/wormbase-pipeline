@@ -1320,7 +1320,6 @@
 ?Alignment Description ?Text
 	   Consensus UNIQUE Verbatim UNIQUE Text
 	   Alignment	Sequence ?Sequence XREF In_alignment Int UNIQUE Int #Align_component  // Member_Alignment
-			Protein ?Protein XREF In_alignment Int UNIQUE Int #Align_component
 			Include_alignment ?Alignment XREF In_alignment UNIQUE Int UNIQUE Int #Align_component
 	   In_alignment #Alignment
 	   Parent ?Alignment XREF Child
@@ -1405,7 +1404,6 @@
                          Show_Bootstrap          // ... except those with the "Show_Bootstrap" tag set
                 Contains Taxon                //    UNIQUE ?Taxon    XREF Tree_Node
 			 Sequence UNIQUE ?Sequence XREF Tree_Node
-		         Protein  UNIQUE ?Protein  XREF Tree_Node
                          Cell     UNIQUE ?Cell     XREF Tree_Node
                          Cell_group UNIQUE ?Cell_group  XREF Tree_Node     //URL UNIQUE ?Url XREF Tree_Node
                          Pick_me_to_call UNIQUE Text Text
