@@ -110,7 +110,7 @@ sub write_to
 
 sub mail
   {
-   my ($self, $recipient) = @_;
+   my ($self, $recipient, $subject) = @_;
 
    my $fh = $self->{"FH"};
    print $fh "\n\n-----------------------------------\n";
@@ -120,7 +120,15 @@ sub mail
    $recipient = "All" unless $recipient;
    $recipient = $self->{"DEBUG"} if (defined $self->{"DEBUG"});
    my $file = $self->{"FILENAME"};
-   my $script = $self->{"SCRIPT"};
+
+   # use subject line from calling script if specified or default to script name
+   my $script;
+   if($subject){
+     $script = $subject;
+   }
+   else{
+     $script = $self->{"SCRIPT"};
+   }
    &Wormbase::mail_maintainer($script,$recipient,$file);
    $self->{'MAILED'} = 1;
   }
