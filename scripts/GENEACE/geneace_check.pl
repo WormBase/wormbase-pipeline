@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-11-24 17:49:58 $
+# Last updated on: $Date: 2004-11-25 14:09:07 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -851,17 +851,19 @@ sub process_allele_class{
   my %allele2lab;
   my $def="Table-maker -p \"$def_dir/allele_designation_to_LAB.def\"\nquit\n";
 
-  open (FH, "echo '$def' | $tace $db | ") || die "Couldn't access $db\n";
+  open (FH, "echo '$def' | $tace $default_db | ") || die "Couldn't access $db\n";
   while (<FH>){
+    print;
     chomp;
     if ($_ =~ /^\"(.+)\"\s+\"(.+)\"/){
       $allele2lab{$2} = $1  # $2 is allele_designation $1 is lab designation	
     }
   }
 
-
   # now loop through all alleles looking for problems
   foreach my $allele (@alleles){
+
+    print "$allele\n" if ($verbose);
 
     # check allele has no location tag
     if(!defined $allele->Location ){
@@ -890,27 +892,30 @@ sub process_allele_class{
     if (defined $allele->Location) {
       my $lab = $allele->Location;
       if ($allele =~ m/^([a-z]{1,2})\d+$/){
-	my $allele_name = $1;
-	if ( $allele2lab{$allele_name} ne $lab ){
-	  print LOG "ERROR: $allele is connected to $lab lab which is incorrect according to $allele2lab{$allele_name} lab info\n";
+	my $allele_prefix = $1;
+	if ( $allele2lab{$allele_prefix} ne $lab ){
+	  print LOG "ERROR: $allele is connected to $lab lab which is incorrect according to $allele2lab{$allele_prefix} lab info\n";
 	}
       }
     }
 
 
-    # warn about alleles linked to more than one Gene (might be valid for deletion alleles)
-    if(($allele -> Gene) && (($allele->Deletion) || ($allele -> Deletion_with_insertion))){
-      my @geneids=$allele->Gene;
-
-      if (scalar @geneids > 1){
-	print LOG "CHECK: $allele is connected to more than one gene ids: @geneids\n";
+    # warn about alleles linked to more than one Gene (might be valid for deletion alleles so ignore them)
+    unless($allele->at('Sequence_details.Allele_type.Deletion') || $allele->at('Sequence_details.Allele_type.Deletion_with_insertion')){
+      if($allele->Gene){
+	my @geneids=$allele->Gene;       
+	if (scalar @geneids > 1){
+	  print LOG "CHECK: $allele is connected to more than one gene ids: @geneids\n";
+	}
       }
     }
 
 
-    # All alleles with flanking sequences should be connected to a gene
+    # All substitution alleles with flanking sequences should be connected to a gene
     if($allele->Flanking_sequences && !defined $allele->Gene){
-      print LOG "ERROR: $allele has flanking sequences but is not connected to a Gene object\n";
+      if($allele->at('Sequence_details.Allele_type.Substitution')){
+	print LOG "ERROR: substitution allele $allele has flanking sequences but is not connected to a Gene object\n";
+      }
     }
 
   
@@ -929,13 +934,18 @@ sub process_allele_class{
     if(defined $allele->Allele_type){
       my $expected_method; 
       my $observed_method;
-      if    ($allele->Allele_type eq "Insertion" && !defined $allele->Transposon_insertion ){$expected_method = "Insertion_allele"}
-      if    ($allele->Allele_type eq "Transposon_insertion" )    {$expected_method = "Transposon_insertion"}
+
+      if($allele->Allele_type eq "Insertion" && !defined $allele->Transposon_insertion ){
+	$expected_method = "Insertion_allele";
+      }
+      elsif($allele->at('Isolation.Transposon_insertion') && $allele->at('Sequence_details.Allele_type.Insertion')){
+	$expected_method = "Transposon_insertion";
+      }
       elsif ($allele->Allele_type eq "Deletion" )                {$expected_method = "Deletion_allele"}
       elsif ($allele->Allele_type eq "Deletion_with_insertion")  {$expected_method = "Deletion_and_insertion_allele"}
       elsif ($allele->Allele_type eq "Substitution" )            {$expected_method = "Substitution_allele"}
       
-      ($observed_method = $allele->Method) if (defined $allele -> Method);
+      ($observed_method = $allele->Method) if (defined $allele->Method);
       
       # does $observed method tag agree with expected method tag (based on Allele_type tag)?
       if ($expected_method ne $observed_method){
@@ -947,13 +957,13 @@ sub process_allele_class{
 	  print ACE "Method \"$expected_method\"\n";
 	}
 	else{
-	  print LOG "ERROR: $allele has method $observed_method which maybe should be $expected_method\n";
+	  print LOG "ERROR: $allele has method $observed_method which might need to be $expected_method\n";
 	}
       }
     }
 
     # find alleles that have flanking_seqs but no SMAPPED sequence
-    if ( $allele -> Flanking_sequences && ! defined $allele -> Sequence ){
+    if ( $allele ->Flanking_sequences && ! defined $allele ->Sequence ){
       print LOG "ERROR: Allele $allele has Flanking_sequences tag but has no Sequence tag\n";
     }
   }  
