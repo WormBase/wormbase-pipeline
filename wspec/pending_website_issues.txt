@@ -4,3 +4,7 @@
 ?Y2H - another new class, not picked up on website at all
 
 ?SAGE_transcript & ?SAGE_tag - both have new 'Most_three_prime' tag
+
+23rd April, 2004
+Two new methods for "predicted_polyA_site" and "predicted_polyA_signal_sequence"
+Will go in for WS124.
