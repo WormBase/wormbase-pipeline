@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-06-16 09:37:49 $
+# Last edited on: $Date: 2004-06-16 10:00:53 $
 
 
 
@@ -148,8 +148,9 @@ if($debug){
 
 # Set up top level base directory which is different if in test mode
 # Make all other directories relative to this
+# Also need another exception for -full_gffdump which needs to be run on cbi1 not on wormsrv2
 my $basedir   = "/wormsrv2";
-$basedir      = glob("~wormpub")."/TEST_BUILD" if ($test); 
+$basedir      = glob("~wormpub")."/TEST_BUILD" if ($test || $full_gffdump); 
 my $db_path   = "$basedir/autoace";
 my $scriptdir = "$basedir/scripts";               
 
@@ -1294,6 +1295,7 @@ sub full_gff_dump {
   # first make a copy of autoace to ~wormpub/DATABASES/autoace
   # TransferDB the current autoace to safe directory 
   my $targetdir = "/nfs/disk100/wormpub/DATABASES";
+
   print LOG &runtime, ": Copying across $basedir/autoace to $targetdir/autoace\n";
   &run_command("$scriptdir/TransferDB.pl -start $basedir/autoace -end $targetdir/autoace -database -wspec -name autoace");
   
