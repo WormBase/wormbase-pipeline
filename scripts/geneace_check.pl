@@ -6,8 +6,8 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-03-21 15:22:39 $
+# Last updated by: $Author: ck1 $
+# Last updated on: $Date: 2003-03-24 16:58:57 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -24,7 +24,7 @@ my ($help, $debug, $database, $class, @class, $ace);
 my $maintainers = "All";
 
 our $tace = &tace;   # tace executable path
-our ($log, $erichlog, $jahlog, $JAHmsg, $Emsg, $caltech, @CGC, $cgc);
+our ($log, $erichlog, $jahlog, $cecilialog, $JAHmsg, $Emsg, $Cmsg, $caltech, @CGC, $cgc);
 
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $acefile = "/wormsrv2/logs/geneace_check_ACE.$rundate.$$";
@@ -123,6 +123,7 @@ $db->close;
 close(LOG);
 close(ERICHLOG);
 close(JAHLOG);
+close (CECILIALOG);
 
 # Always mail to $maintainers (which might be a single user under debug mode)
 mail_maintainer($0,$maintainers,$log);
@@ -148,6 +149,16 @@ $cgc=join('', @CGC);
 if ($cgc ne $JAHmsg){   
   mail_maintainer($0,$CGC,$jahlog) unless $debug;
 }
+
+# Email to Cecilia for WBPerson not linked to Laboratory
+my $wbperson_mail="ck1\@sanger.ac.uk, cecilia\@minerva.caltech.edu";
+
+open(MAIL3, "$cecilialog") || die "Can't read in file $cecilialog";
+my @WBPerson=<MAIL3>; 
+my $WBPerson=join('', @WBPerson);
+if ($WBPerson ne $Cmsg){
+  mail_maintainer($0,$WBPerson, $cecilialog) unless $debug;
+}  
   
 exit(0);
 
@@ -380,9 +391,58 @@ sub process_laboratory_class{
     }  
     undef($lab);
   }
-  print LOG "\nThere are $lab_errors errors in Laboratory class\n";
+
+  my $WBPerson_not_linked_to_lab=<<EOF;
+  Table-maker -p "/wormsrv1/geneace/wquery/WBPerson_not_linked_to_lab.def" quit
+EOF
+  my $lab_has_person=<<EOF;            
+  Table-maker -p "/wormsrv1/geneace/wquery/laboratory_has_person.def" quit                
+EOF
+   
+  my $wbperson_errors=WBPerson_no_lab($WBPerson_not_linked_to_lab, $lab_has_person, $default_db);  
+  $lab_errors=$lab_errors + $wbperson_errors;
+  print  LOG "\nThere are $lab_errors errors in Laboratory class\n";
 }
  
+#############################################
+# check for WBPerson not linked to Laboratory
+#############################################
+
+sub  WBPerson_no_lab {
+  my($def1, $def2, $dir)=@_;
+  my $lab_errors=0;
+  my (@WBPerson_no_lab, %WBPerson_no_lab, $lab, $id);
+  open (FH1, "echo '$def1' | tace $dir | ") || die "Couldn't access current_DB\n";
+  open (FH2, "echo '$def2' | tace $dir | ") || die "Couldn't access current_DB\n";
+  
+  while (<FH1>){
+    chomp($_);
+    if ($_ =~ /^\"/){
+      $_ =~ s/"//g;
+      push (@WBPerson_no_lab, $_);
+    }
+  }
+  foreach(@WBPerson_no_lab){$WBPerson_no_lab{$_}++}
+  #print keys %WBPerson_no_lab, "\n";
+  while (<FH2>){
+    chomp($_);
+    if ($_ =~ /^\"/){
+      $_ =~ s/"//g;
+      my ($lab, $id)=split(/\s+/, $_);
+      if ($WBPerson_no_lab{$id}){
+        $lab_errors++;
+        print LOG "INFO: $id can now be linked to Laboratory $lab\n";
+      }      
+      else {
+        $lab_errors++; 
+        print LOG "WARNING: $id is not linked to Laboratory\n";
+        print CECILIALOG "$id is not linked to Laboratory\n";
+      }
+    }
+  }
+  return $lab_errors;
+}  
+
 ########################
 # Process Allele class #
 ########################
@@ -1177,10 +1237,23 @@ sub create_log_files{
   $Emsg = "$0 started at ".`date`."\n";
   print ERICHLOG "This mail is generated automatically for Caltech\n";
   $Emsg .= "This mail is generated automatically for Caltech\n";
-  print ERICHLOG "If you have any queries please email ar2\@sanger.ac.uk or ck1\@sanger.ac.uk or krb\@sanger.ac.uk\n\n";
-  $Emsg .= "If you have any queries please email ar2\@sanger.ac.uk or ck1\@sanger.ac.uk or krb\@sanger.ac.uk\n\n";   
+  print ERICHLOG "If you have any queries please email ck1\@sanger.ac.uk or krb\@sanger.ac.uk\n\n";
+  $Emsg .= "If you have any queries please email ck1\@sanger.ac.uk or krb\@sanger.ac.uk\n\n";   
   print ERICHLOG "================================================================================================\n";
   $Emsg .= "================================================================================================\n";
+  
+  # create separate log with errors for Cecilia
+  $cecilialog = "/wormsrv2/logs/geneace_check.cecilialog.$rundate.$$";
+  open(CECILIALOG,">$cecilialog") || die "cant open $cecilialog";
+  print CECILIALOG "$0 started at ",`date`,"\n";
+  $Cmsg = "$0 started at ".`date`."\n";
+  print CECILIALOG "This mail is generated automatically for Caltech\n";
+  $Cmsg .= "This mail is generated automatically for Caltech\n";
+  print CECILIALOG "If you have any queries please email ck1\@sanger.ac.uk or krb\@sanger.ac.uk\n\n";
+  $Cmsg .= "If you have any queries please email ck1\@sanger.ac.uk or krb\@sanger.ac.uk\n\n";
+  print CECILIALOG "================================================================================================\n";
+  $Cmsg .= "================================================================================================\n";
+
 }
 
 
