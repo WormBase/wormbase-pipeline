@@ -7,7 +7,7 @@
 # Builds a wormpep data set from the current autoace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-04-26 10:36:39 $
+# Last updated on: $Date: 2004-06-10 11:43:26 $
 
 
 use strict;
@@ -647,16 +647,24 @@ sub write_wormpep_history_and_diff{
     ($cds , $wpid , $start , $end) = split (/\t/ , $line);
     $wpid =~ /CE0*([1-9]\d*)/ ; my $num = $1;
     $line{$cds} = $line;
-    if ((!exists ($cds2number{$cds}) && ($end eq ""))) {
-      print HISTORY "$cds\t$wpid\t$start\t$release\n";
-      print DIFF "lost:\t$cds\t$wpid\n";
-    } elsif (($cds2number{$cds} ne $num) && ($end eq "")) {
+
+    if (!exists($cds2number{$cds})){
+      if ($end eq "") {
+	print HISTORY "$cds\t$wpid\t$start\t$release\n";
+	print DIFF "lost:\t$cds\t$wpid\n";
+      } 
+      else{
+	print HISTORY "$cds\t$wpid\t$start\t$end\n";
+      }
+    }
+    elsif (($cds2number{$cds} ne $num) && ($end eq "")) {
       print HISTORY "$cds\t$wpid\t$start\t$release\n";
       my $new_num = $cds2number{$cds};
       my $new_pad = sprintf "%05d" , $new_num;
       print HISTORY "$cds\tCE$new_pad\t$release\t$end\n";
       print DIFF "changed:\t$cds\t$wpid --> CE$new_pad\n";
-    } else {
+    } 
+    else {
       print HISTORY "$cds\t$wpid\t$start\t$end\n";
     }
   }
