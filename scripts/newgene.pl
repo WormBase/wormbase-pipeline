@@ -7,7 +7,7 @@
 # simple script for creating new (sequence based) Gene objects 
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-08-26 12:59:01 $
+# Last edited on: $Date: 2004-08-31 09:07:02 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -23,6 +23,7 @@ my $seq;         # sequence name for new/existing gene
 my $cgc;         # cgc name for new/existing gene
 my $who;         # Person ID for new genes being created (defaults to krb = WBPerson1971)
 my $id;          # force creation of gene using set ID
+my $gene_id;     # stores highest gene ID
 my $email;       # email new Gene IDs back to users to person who requested it
 my $load;        # load results to geneace (default is to just write an ace file)
 my $verbose;     # toggle extra (helpful?) output to screen
@@ -197,11 +198,11 @@ sub process_gene{
     # increase gene ID unless -id was specified
     unless($id){      
       $gene_max++;
-      $id = $gene_max;
+      $gene_id = $gene_max;
     }
-    print "$seq does not exist, creating new Gene object WBGene000$id\n" if ($verbose);
+    print "$seq does not exist, creating new Gene object WBGene000$gene_id\n" if ($verbose);
     
-    print OUT "Gene WBGene000$id\n";
+    print OUT "Gene WBGene000$gene_id\n";
     print OUT "Live\n";
     print OUT "Version 1\n";
     print OUT "Sequence_name $seq\n";
@@ -241,7 +242,7 @@ sub process_gene{
       $email = "\n\nYou requested a new gene ID for $seq, but this gene already exists as $gene\n\n";
     }
     else{
-      $email = "\n\nYou requested a new gene ID for $seq, this Gene ID is WBGene000$id\n\n";
+      $email = "\n\nYou requested a new gene ID for $seq, this Gene ID is WBGene000$gene_id\n\n";
     }
     $email .= "This email was generated automatically, please reply to krb\@sanger.ac.uk\n";
     $email .= "if there are any problems\n";
