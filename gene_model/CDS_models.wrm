@@ -335,7 +335,7 @@
 	Expr_pattern ?Expr_pattern XREF Locus
         Contained_in ?Locus XREF Contains //sdm put in to accomodate HISTONE geneclusters
         Drives_Transgene ?Transgene XREF Driven_by_Locus	
-	Transgene_product ?Transgene XREF Worm_gene
+	Transgene_product ?Transgene XREF Locus
 	Rescued_by_Transgene ?Transgene XREF Rescue
 	GO_term ?GO_term XREF Locus ?GO_code #Evidence // Added by krb 020905
 	Microarray_results ?Microarray_results XREF Locus
@@ -1001,7 +1001,7 @@
 	Sequence_features ?Feature XREF Part_of_gene #Evidence            // Feature data model [dl 030304]
  	Interpolated_map_position UNIQUE ?Map UNIQUE Float 
 	Drives_transgene  ?Transgene XREF Driven_by_CDS
-	Transgene_product ?Transgene XREF Worm_CDS
+	Transgene_product ?Transgene XREF CDS
         Method UNIQUE ?Method
 
 
@@ -1355,7 +1355,8 @@
 				Clone ?Clone XREF Expr_pattern
 				Locus ?Locus XREF Expr_pattern
 				Protein ?Protein XREF Expr_pattern
-                                Protein_description Text   // dl1 010307 from geneace
+                                Protein_description Text   // stores information for Expr_patterns
+							   // with unknown antigens [031105 krb]
 		Expressed_in	Cell ?Cell XREF Expr_pattern
 				Cell_group ?Cell_group XREF Expr_pattern
 				Life_stage ?Life_stage XREF Expr_pattern
@@ -1561,8 +1562,8 @@
 		Reporter_product GFP
 				 LacZ
 			         Other_reporter ?Text
-				 Worm_gene ?Locus XREF Transgene_product Text
-				 Worm_CDS  ?CDS   XREF Transgene_product Text
+				 Locus ?Locus XREF Transgene_product Text
+				 CDS   ?CDS   XREF Transgene_product Text
 		Isolation Author ?Author
 			  Clone ?Clone XREF Transgene Text //injected clone conc.
 			  Fragment Text Text //injected DNA fragment conc. 
