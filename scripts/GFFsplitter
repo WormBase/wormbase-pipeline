@@ -48,7 +48,8 @@ if (! -e "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS"){
 
 $opt_h = "";   # Help/Usage page
 $opt_a = "";   # archive GFF_splits directory into a WSxx directory
-getopts ('ha');
+$opt_s = "";   # silent running
+getopts ('has');
 &usage if ($opt_h);
 
 
@@ -62,10 +63,6 @@ if($opt_a){
   system("mv $datadir/GFF_SPLITS ${datadir}/${WS_version}") && die "Couldn't rename directory\n";
   exit(0);
 }
-
-
-
-
 
  ########################################
  # Open logfile                         #
@@ -209,7 +206,7 @@ foreach (@gff_files) {
     print GFF_INTRON_CONFIRMED_UTR  "##Version: $cvs_version\n";
     print GFF_INTRON_CONFIRMED_UTR  "##date $rundate\n";
 
-     open (GFF_REPEATS, ">$datadir/GFF_SPLITS/$gff_repeats");
+    open (GFF_REPEATS, ">$datadir/GFF_SPLITS/$gff_repeats");
     print GFF_REPEATS  "##Version: $cvs_version\n";
     print GFF_REPEATS  "##date $rundate\n";
 
@@ -301,19 +298,11 @@ foreach (@gff_files) {
     
     $gff_length = file_size("/wormsrv2/autoace/CHROMOSOMES/$file") - 3;
     print LOG "File contains $gff_length lines\n";
-    print "File '$file' contains $gff_length lines\n";
-    print "% complete :    "; 
-
-
     $running_total = -1;
 
     open (GFF, "</wormsrv2/autoace/CHROMOSOMES/$file");
     while (<GFF>) {
 	chomp;
-	
-	$done = int ((($line_count / $file_length) * 100));
-	printf "\b\b%2d", $done;
-	STDOUT->autoflush();
 	$line_count++;
 
 	if (/\#\#sequence-region/) {
@@ -685,8 +674,6 @@ foreach (@gff_files) {
 
     close GFF;
     
-    print "\n";
-
     close GFF_REST;
     close GFF_CLONE_PATH;
     close GFF_GENES;
@@ -725,157 +712,158 @@ foreach (@gff_files) {
     # count file lengths for all GFF files #
     ###########################################
 
-    my $total_lines = 0;
-    print "\n\nGFF file lengths\n\n";
+    unless ($opt_s) {
+
+	my $total_lines = 0;
+	print "\n\nGFF file lengths\n\n";
+	
+	$gff_length_clone_path = file_size("$datadir/GFF_SPLITS/$gff_clone_path") - 3;
+	$total_lines = $total_lines + $gff_length_clone_path;
+	print "$gff_clone_path\t: $gff_length_clone_path\n";
+	
+	$gff_length_genes = file_size("$datadir/GFF_SPLITS/$gff_genes") - 3;
+	$total_lines = $total_lines + $gff_length_genes;
+	print "$gff_genes   \t\t: $gff_length_genes\n";
+	
+	$gff_length_pseudogenes = file_size("$datadir/GFF_SPLITS/$gff_pseudogenes") - 3;
+	$total_lines = $total_lines + $gff_length_pseudogenes;
+	print "$gff_pseudogenes   \t\t: $gff_length_pseudogenes\n";
+	
+	$gff_length_rna = file_size("$datadir/GFF_SPLITS/$gff_rna") - 3;
+	$total_lines = $total_lines + $gff_length_rna;
+	print "$gff_rna     \t\t: $gff_length_rna\n";
+	
+	$gff_length_CDS_exon = file_size("$datadir/GFF_SPLITS/$gff_CDS_exon") - 3;
+	$total_lines = $total_lines + $gff_length_CDS_exon;
+	print "$gff_CDS_exon   \t\t: $gff_length_CDS_exon\n";
+	
+	$gff_length_exon = file_size("$datadir/GFF_SPLITS/$gff_exon") - 3;
+	$total_lines = $total_lines + $gff_length_exon;
+	print "$gff_exon   \t\t: $gff_length_exon\n";
+	
+	$gff_length_exon_tRNA = file_size("$datadir/GFF_SPLITS/$gff_exon_tRNA") - 3;
+	$total_lines = $total_lines + $gff_length_exon_tRNA;
+	print "$gff_exon_tRNA   \t\t: $gff_length_exon_tRNA\n";
+	
+	$gff_length_exon_pseudogene = file_size("$datadir/GFF_SPLITS/$gff_exon_pseudogene") - 3;
+	$total_lines = $total_lines + $gff_length_exon_pseudogene;
+	print "$gff_exon_pseudogene   \t: $gff_length_exon_pseudogene\n";
+
+	$gff_length_intron = file_size("$datadir/GFF_SPLITS/$gff_intron") - 3;
+	$total_lines = $total_lines + $gff_length_intron;
+	print "$gff_intron   \t\t: $gff_length_intron\n";
     
-    $gff_length_clone_path = file_size("$datadir/GFF_SPLITS/$gff_clone_path") - 3;
-    $total_lines = $total_lines + $gff_length_clone_path;
-    print "$gff_clone_path\t: $gff_length_clone_path\n";
-    
-    $gff_length_genes = file_size("$datadir/GFF_SPLITS/$gff_genes") - 3;
-    $total_lines = $total_lines + $gff_length_genes;
-    print "$gff_genes   \t\t: $gff_length_genes\n";
-
-    $gff_length_pseudogenes = file_size("$datadir/GFF_SPLITS/$gff_pseudogenes") - 3;
-    $total_lines = $total_lines + $gff_length_pseudogenes;
-    print "$gff_pseudogenes   \t\t: $gff_length_pseudogenes\n";
-
-    $gff_length_rna = file_size("$datadir/GFF_SPLITS/$gff_rna") - 3;
-    $total_lines = $total_lines + $gff_length_rna;
-    print "$gff_rna     \t\t: $gff_length_rna\n";
-    
-    $gff_length_CDS_exon = file_size("$datadir/GFF_SPLITS/$gff_CDS_exon") - 3;
-    $total_lines = $total_lines + $gff_length_CDS_exon;
-    print "$gff_CDS_exon   \t\t: $gff_length_CDS_exon\n";
-
-    $gff_length_exon = file_size("$datadir/GFF_SPLITS/$gff_exon") - 3;
-    $total_lines = $total_lines + $gff_length_exon;
-    print "$gff_exon   \t\t: $gff_length_exon\n";
-
-    $gff_length_exon_tRNA = file_size("$datadir/GFF_SPLITS/$gff_exon_tRNA") - 3;
-    $total_lines = $total_lines + $gff_length_exon_tRNA;
-    print "$gff_exon_tRNA   \t\t: $gff_length_exon_tRNA\n";
-
-    $gff_length_exon_pseudogene = file_size("$datadir/GFF_SPLITS/$gff_exon_pseudogene") - 3;
-    $total_lines = $total_lines + $gff_length_exon_pseudogene;
-    print "$gff_exon_pseudogene   \t: $gff_length_exon_pseudogene\n";
-
-    $gff_length_intron = file_size("$datadir/GFF_SPLITS/$gff_intron") - 3;
-    $total_lines = $total_lines + $gff_length_intron;
-    print "$gff_intron   \t\t: $gff_length_intron\n";
-    
-    $gff_length_intron_tRNA = file_size("$datadir/GFF_SPLITS/$gff_intron_tRNA") - 3;
-    $total_lines = $total_lines + $gff_length_intron_tRNA;
-    print "$gff_intron_tRNA   \t\t: $gff_length_intron_tRNA\n";
-    
-    $gff_length_intron_pseudogene = file_size("$datadir/GFF_SPLITS/$gff_intron_pseudogene") - 3;
-    $total_lines = $total_lines + $gff_length_intron_pseudogene;
-    print "$gff_intron_pseudogene   \t: $gff_length_intron_pseudogene\n";
-    
-    $gff_length_intron_confirmed_CDS = file_size("$datadir/GFF_SPLITS/$gff_intron_confirmed_CDS") - 3;
-    $total_lines = $total_lines + $gff_length_intron_confirmed_CDS;
-    print "$gff_intron_confirmed_CDS\t: $gff_length_intron_confirmed_CDS\n";
-    
-    $gff_length_intron_confirmed_UTR = file_size("$datadir/GFF_SPLITS/$gff_intron_confirmed_UTR") - 3;
-    $total_lines = $total_lines + $gff_length_intron_confirmed_UTR;
-    print "$gff_intron_confirmed_UTR\t: $gff_length_intron_confirmed_UTR\n";
-    
-    $gff_length_repeats = file_size("$datadir/GFF_SPLITS/$gff_repeats") - 3;
-    $total_lines = $total_lines + $gff_length_repeats;
-    print "$gff_repeats   \t\t: $gff_length_repeats\n";
-
-    $gff_length_tc_insertions = file_size("$datadir/GFF_SPLITS/$gff_tc_insertions") - 3;
-    $total_lines = $total_lines + $gff_length_tc_insertions;
-    print "$gff_tc_insertions   \t: $gff_length_tc_insertions\n";
-
-    $gff_length_blastx = file_size("$datadir/GFF_SPLITS/$gff_blastx") - 3;
-    $total_lines = $total_lines + $gff_length_blastx;
-    print "$gff_blastx   \t\t: $gff_length_blastx\n";
-
-    $gff_length_tblastx_briggsae = file_size("$datadir/GFF_SPLITS/$gff_tblastx_briggsae") - 3;
-    $total_lines = $total_lines + $gff_length_tblastx_briggsae;
-    print "$gff_tblastx_briggsae    \t: $gff_length_tblastx_briggsae\n";
-
-    $gff_length_assembly_tags = file_size("$datadir/GFF_SPLITS/$gff_assembly_tags") - 3;
-    $total_lines = $total_lines + $gff_length_assembly_tags;
-    print "$gff_assembly_tags   \t: $gff_length_assembly_tags\n";
-    
-    $gff_length_ts_site = file_size("$datadir/GFF_SPLITS/$gff_ts_site") - 3;
-    $total_lines = $total_lines + $gff_length_ts_site;
-    print "$gff_ts_site   \t\t: $gff_length_ts_site\n";
-    
-    $gff_length_prosite = file_size("$datadir/GFF_SPLITS/$gff_prosite") - 3;
-    $total_lines = $total_lines + $gff_length_prosite;
-    print "$gff_prosite   \t\t: $gff_length_prosite\n";
-
-    $gff_length_oligos = file_size("$datadir/GFF_SPLITS/$gff_oligos") - 3;
-    $total_lines = $total_lines + $gff_length_oligos;
-    print "$gff_oligos   \t\t: $gff_length_oligos\n";
-
-    $gff_length_alleles = file_size("$datadir/GFF_SPLITS/$gff_alleles") - 3;
-    $total_lines = $total_lines + $gff_length_alleles;
-    print "$gff_alleles   \t\t: $gff_length_alleles\n";
-
-    $gff_length_clone_ends = file_size("$datadir/GFF_SPLITS/$gff_clone_ends") - 3;
-    $total_lines = $total_lines + $gff_length_clone_ends;
-    print "$gff_clone_ends   \t\t: $gff_length_clone_ends\n";
-    
-    $gff_length_RNAi = file_size("$datadir/GFF_SPLITS/$gff_RNAi") - 3;
-    $total_lines = $total_lines + $gff_length_RNAi;
-    print "$gff_RNAi   \t\t: $gff_length_RNAi\n";
-    
-    $gff_length_genepair = file_size("$datadir/GFF_SPLITS/$gff_genepair") - 3;
-    $total_lines = $total_lines + $gff_length_genepair;
-    print "$gff_genepair   \t\t: $gff_length_genepair\n";
-   
-    $gff_length_WTP = file_size("$datadir/GFF_SPLITS/$gff_WTP") - 3;
-    $total_lines = $total_lines + $gff_length_WTP;
-    print "$gff_WTP   \t\t: $gff_length_WTP\n";
-
-    $gff_length_PCR_products = file_size("$datadir/GFF_SPLITS/$gff_PCR_products") - 3;
-    $total_lines = $total_lines + $gff_length_PCR_products;
-    print "$gff_PCR_products   \t\t: $gff_length_WTP\n";
-    
-    $gff_length_cDNA_for_RNAi = file_size("$datadir/GFF_SPLITS/$gff_cDNA_for_RNAi") - 3;
-    $total_lines = $total_lines + $gff_length_cDNA_for_RNAi;
-    print "$gff_cDNA_for_RNAi   \t\t: $gff_length_cDNA_for_RNAi\n";
-
-    $gff_length_BLAT_EST_BEST   = file_size("$datadir/GFF_SPLITS/$gff_BLAT_EST_BEST") - 3;
-    $total_lines = $total_lines + $gff_length_BLAT_EST_BEST;
-    print "$gff_BLAT_EST_BEST   \t\t: $gff_length_BLAT_EST_BEST\n";
-
-    $gff_length_BLAT_EST_OTHER = file_size("$datadir/GFF_SPLITS/$gff_BLAT_EST_OTHER") - 3;
-    $total_lines = $total_lines + $gff_length_BLAT_EST_OTHER;
-    print "$gff_BLAT_EST_OTHER   \t\t: $gff_length_BLAT_EST_OTHER\n";
-
-    $gff_length_BLAT_MRNA_BEST = file_size("$datadir/GFF_SPLITS/$gff_BLAT_mRNA_BEST") - 3;
-    $total_lines = $total_lines + $gff_length_BLAT_MRNA_BEST;
-    print "$gff_BLAT_mRNA_BEST   \t\t: $gff_length_BLAT_MRNA_BEST\n";
-
-    $gff_length_BLAT_MRNA_OTHER = file_size("$datadir/GFF_SPLITS/$gff_BLAT_mRNA_OTHER") - 3;
-    $total_lines = $total_lines + $gff_length_BLAT_MRNA_OTHER;
-    print "$gff_BLAT_mRNA_OTHER   \t\t: $gff_length_BLAT_MRNA_OTHER\n";
-
-    $gff_length_BLATX_NEMATODE = file_size("$datadir/GFF_SPLITS/$gff_BLATX_NEMATODE") - 3;
-    $total_lines = $total_lines + $gff_length_BLATX_NEMATODE;
-    print "$gff_BLATX_NEMATODE   \t\t: $gff_length_BLATX_NEMATODE\n";
-
-    $gff_length_Expr_profile = file_size("$datadir/GFF_SPLITS/$gff_Expr_profile") - 3;
-    $total_lines = $total_lines + $gff_length_Expr_profile;
-    print "$gff_Expr_profile   \t\t: $gff_length_Expr_profile\n";
-
-    $gff_length_rest = file_size("$datadir/GFF_SPLITS/$gff_rest") - 3;
-    $total_lines = $total_lines + $gff_length_rest;
-    print "$gff_rest   \t\t: $gff_length_rest\n";
-
-    
-    my $lines_split = int ((($running_total / $gff_length) * 100) + 0.5);
-    my $discarded_lines = $gff_length - $total_lines;
-    print "\nLine parsed to files : $gff_length $running_total [$lines_split %]\n";
-    print "Discarded lines       : $discarded_lines\n";
-    print "\n\n";
-
-
+	$gff_length_intron_tRNA = file_size("$datadir/GFF_SPLITS/$gff_intron_tRNA") - 3;
+	$total_lines = $total_lines + $gff_length_intron_tRNA;
+	print "$gff_intron_tRNA   \t\t: $gff_length_intron_tRNA\n";
+	
+	$gff_length_intron_pseudogene = file_size("$datadir/GFF_SPLITS/$gff_intron_pseudogene") - 3;
+	$total_lines = $total_lines + $gff_length_intron_pseudogene;
+	print "$gff_intron_pseudogene   \t: $gff_length_intron_pseudogene\n";
+	
+	$gff_length_intron_confirmed_CDS = file_size("$datadir/GFF_SPLITS/$gff_intron_confirmed_CDS") - 3;
+	$total_lines = $total_lines + $gff_length_intron_confirmed_CDS;
+	print "$gff_intron_confirmed_CDS\t: $gff_length_intron_confirmed_CDS\n";
+	
+	$gff_length_intron_confirmed_UTR = file_size("$datadir/GFF_SPLITS/$gff_intron_confirmed_UTR") - 3;
+	$total_lines = $total_lines + $gff_length_intron_confirmed_UTR;
+	print "$gff_intron_confirmed_UTR\t: $gff_length_intron_confirmed_UTR\n";
+	
+	$gff_length_repeats = file_size("$datadir/GFF_SPLITS/$gff_repeats") - 3;
+	$total_lines = $total_lines + $gff_length_repeats;
+	print "$gff_repeats   \t\t: $gff_length_repeats\n";
+	
+	$gff_length_tc_insertions = file_size("$datadir/GFF_SPLITS/$gff_tc_insertions") - 3;
+	$total_lines = $total_lines + $gff_length_tc_insertions;
+	print "$gff_tc_insertions   \t: $gff_length_tc_insertions\n";
+	
+	$gff_length_blastx = file_size("$datadir/GFF_SPLITS/$gff_blastx") - 3;
+	$total_lines = $total_lines + $gff_length_blastx;
+	print "$gff_blastx   \t\t: $gff_length_blastx\n";
+	
+	$gff_length_tblastx_briggsae = file_size("$datadir/GFF_SPLITS/$gff_tblastx_briggsae") - 3;
+	$total_lines = $total_lines + $gff_length_tblastx_briggsae;
+	print "$gff_tblastx_briggsae    \t: $gff_length_tblastx_briggsae\n";
+	
+	$gff_length_assembly_tags = file_size("$datadir/GFF_SPLITS/$gff_assembly_tags") - 3;
+	$total_lines = $total_lines + $gff_length_assembly_tags;
+	print "$gff_assembly_tags   \t: $gff_length_assembly_tags\n";
+	
+	$gff_length_ts_site = file_size("$datadir/GFF_SPLITS/$gff_ts_site") - 3;
+	$total_lines = $total_lines + $gff_length_ts_site;
+	print "$gff_ts_site   \t\t: $gff_length_ts_site\n";
+	
+	$gff_length_prosite = file_size("$datadir/GFF_SPLITS/$gff_prosite") - 3;
+	$total_lines = $total_lines + $gff_length_prosite;
+	print "$gff_prosite   \t\t: $gff_length_prosite\n";
+	
+	$gff_length_oligos = file_size("$datadir/GFF_SPLITS/$gff_oligos") - 3;
+	$total_lines = $total_lines + $gff_length_oligos;
+	print "$gff_oligos   \t\t: $gff_length_oligos\n";
+	
+	$gff_length_alleles = file_size("$datadir/GFF_SPLITS/$gff_alleles") - 3;
+	$total_lines = $total_lines + $gff_length_alleles;
+	print "$gff_alleles   \t\t: $gff_length_alleles\n";
+	
+	$gff_length_clone_ends = file_size("$datadir/GFF_SPLITS/$gff_clone_ends") - 3;
+	$total_lines = $total_lines + $gff_length_clone_ends;
+	print "$gff_clone_ends   \t\t: $gff_length_clone_ends\n";
+	
+	$gff_length_RNAi = file_size("$datadir/GFF_SPLITS/$gff_RNAi") - 3;
+	$total_lines = $total_lines + $gff_length_RNAi;
+	print "$gff_RNAi   \t\t: $gff_length_RNAi\n";
+	
+	$gff_length_genepair = file_size("$datadir/GFF_SPLITS/$gff_genepair") - 3;
+	$total_lines = $total_lines + $gff_length_genepair;
+	print "$gff_genepair   \t\t: $gff_length_genepair\n";
+	
+	$gff_length_WTP = file_size("$datadir/GFF_SPLITS/$gff_WTP") - 3;
+	$total_lines = $total_lines + $gff_length_WTP;
+	print "$gff_WTP   \t\t: $gff_length_WTP\n";
+	
+	$gff_length_PCR_products = file_size("$datadir/GFF_SPLITS/$gff_PCR_products") - 3;
+	$total_lines = $total_lines + $gff_length_PCR_products;
+	print "$gff_PCR_products   \t\t: $gff_length_WTP\n";
+	
+	$gff_length_cDNA_for_RNAi = file_size("$datadir/GFF_SPLITS/$gff_cDNA_for_RNAi") - 3;
+	$total_lines = $total_lines + $gff_length_cDNA_for_RNAi;
+	print "$gff_cDNA_for_RNAi   \t\t: $gff_length_cDNA_for_RNAi\n";
+	
+	$gff_length_BLAT_EST_BEST   = file_size("$datadir/GFF_SPLITS/$gff_BLAT_EST_BEST") - 3;
+	$total_lines = $total_lines + $gff_length_BLAT_EST_BEST;
+	print "$gff_BLAT_EST_BEST   \t\t: $gff_length_BLAT_EST_BEST\n";
+	
+	$gff_length_BLAT_EST_OTHER = file_size("$datadir/GFF_SPLITS/$gff_BLAT_EST_OTHER") - 3;
+	$total_lines = $total_lines + $gff_length_BLAT_EST_OTHER;
+	print "$gff_BLAT_EST_OTHER   \t\t: $gff_length_BLAT_EST_OTHER\n";
+	
+	$gff_length_BLAT_MRNA_BEST = file_size("$datadir/GFF_SPLITS/$gff_BLAT_mRNA_BEST") - 3;
+	$total_lines = $total_lines + $gff_length_BLAT_MRNA_BEST;
+	print "$gff_BLAT_mRNA_BEST   \t\t: $gff_length_BLAT_MRNA_BEST\n";
+	
+	$gff_length_BLAT_MRNA_OTHER = file_size("$datadir/GFF_SPLITS/$gff_BLAT_mRNA_OTHER") - 3;
+	$total_lines = $total_lines + $gff_length_BLAT_MRNA_OTHER;
+	print "$gff_BLAT_mRNA_OTHER   \t\t: $gff_length_BLAT_MRNA_OTHER\n";
+	
+	$gff_length_BLATX_NEMATODE = file_size("$datadir/GFF_SPLITS/$gff_BLATX_NEMATODE") - 3;
+	$total_lines = $total_lines + $gff_length_BLATX_NEMATODE;
+	print "$gff_BLATX_NEMATODE   \t\t: $gff_length_BLATX_NEMATODE\n";
+	
+	$gff_length_Expr_profile = file_size("$datadir/GFF_SPLITS/$gff_Expr_profile") - 3;
+	$total_lines = $total_lines + $gff_length_Expr_profile;
+	print "$gff_Expr_profile   \t\t: $gff_length_Expr_profile\n";
+	
+	$gff_length_rest = file_size("$datadir/GFF_SPLITS/$gff_rest") - 3;
+	$total_lines = $total_lines + $gff_length_rest;
+	print "$gff_rest   \t\t: $gff_length_rest\n";
+	
+	
+	my $lines_split = int ((($running_total / $gff_length) * 100) + 0.5);
+	my $discarded_lines = $gff_length - $total_lines;
+	print "\nLine parsed to files : $gff_length $running_total [$lines_split %]\n";
+	print "Discarded lines       : $discarded_lines\n";
+	print "\n\n";
+    }
 
     #########################################
     # Alter clone file to include accession #
