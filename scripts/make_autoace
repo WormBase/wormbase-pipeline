@@ -498,6 +498,7 @@ END
 ###################################################
 # Remove GeneWise, HalfWise, Gaze genes                                 
 # edited by RD 010606 to do all such genes in one routine
+# edited by dl 020327 to remove GAZE link objects 
 
 sub rmautogenes {
   my $command=<<END;
@@ -521,6 +522,13 @@ save
 quit
 EOF
   &DbWrite($command,$tace,$autodir,"RmGaze");
+query find sequence "GAZE:LINK*"
+kill
+save    
+quit
+EOF
+  &DbWrite($command,$tace,$autodir,"RmGazeLink");
+
 }
 
 ###################################################
