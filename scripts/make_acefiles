@@ -242,7 +242,7 @@ sub mknewacefiles {
 	elsif ($filename eq "/wormsrv2/wormbase/briggsae/briggsae_Sequence.ace") {
 	    $outfile = "$targetdir/".$dbname."_".$object.$criterianoasterisk.".ace";
 	    &strip_sequence("$outfile","\"WP:");
-
+	}
 	# strip genomic_canonical tags from geneace Sequences
 	elsif ($filename eq "/wormsrv2/wormbase/geneace/geneace_Sequence.ace") {
 	    $outfile = "$targetdir/".$dbname."_".$object.$criterianoasterisk.".ace";
