@@ -8,7 +8,7 @@
 # autoace.
 #
 # Last updated by: $Author: krb $                     
-# Last updated on: $Date: 2004-03-02 13:34:24 $       
+# Last updated on: $Date: 2004-03-02 13:40:21 $       
 
 #################################################################################
 # Variables                                                                     #
@@ -218,7 +218,7 @@ sub mknewacefiles {
     # deal with queries requiring tag deletion
     if (/\[(\S+.+)\]$/) { 
       @deletes = split (/\s/,$1);
-      print LOG "Adding " . scalar (@deletes) . " tags to delete array\n\n";
+      print LOG &runtime, "Adding " . scalar (@deletes) . " tags to delete array\n";
       my $report = join ' + ', @deletes;
       
       if (/^\S+\s+\S+\s+(\S+)\s+\[/) {  
@@ -249,8 +249,8 @@ sub mknewacefiles {
 	  chop $include;
 	  $follow = $include;
       }
-      print LOG "add $include tags\n";
-      if ($follow) { print LOG "... and follow $follow\n";}
+      print LOG &runtime, "Adding $include tags\n";
+      if ($follow) { print LOG "\t... and follow $follow\n";}
       
       if (/^\S+\s+\S+\s+(\S+)\s+\{/) {  
 	  $object = $1; 
@@ -320,7 +320,7 @@ sub mknewacefiles {
     print "\nFilename: $filepath\n";
     print "Command : 'find $object $criteria' in $dbname\n";
 
-    print LOG &runtime, ": Dumping class $object from database\n";
+    print LOG &runtime, ": Dumping $object class\n";
 
     open (TACE,"| $exe");
     print TACE $command;
@@ -355,12 +355,9 @@ sub mknewacefiles {
 sub process_ace_file{
     my $filename = shift;
     my $database = shift;
-
-    print LOG &runtime, ": Changing timestamp information to contain $database\n";
     
     open (INPUT, "<$filename")            || die "Couldn't open $filename for reading\n";
     open (OUTPUT, ">${filename}.tmpfile") || die "Couldn't write to tmpfile\n";
-
     
     while (<INPUT>) {
 
