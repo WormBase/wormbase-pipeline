@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-09-24 09:13:12 $
+# Last edited on: $Date: 2003-09-24 09:37:30 $
 
 
 #################################################################################
@@ -124,7 +124,7 @@ our %flag = (
 	     'B2'          => 'B2:Dump_DNA_files',
 	     'B2:ERROR'    => 'B2:Errors_in_dumping_DNA',
  	     'B3'          => 'B3:Made_agp_files',
-	     'B4'          => 'B4:Errors_in_agp_files',
+	     'B3:ERROR'    => 'B3:Errors_in_agp_files',
 	     'B5'          => 'B5:Copy_to_midway',
 	     'B6'          => 'B6:BLAT_analysis',
 	     'B6_est'      => 'B6a:BLAT_analysis_EST',
@@ -137,6 +137,7 @@ our %flag = (
 	     'B9'          => 'B9:Upload_briggsae_data',
 	     'B10'         => 'B10:Generate_UTR_data',
 	     'C1'          => 'C1:Dumped_GFF_files',
+	     'C1:ERROR'    => 'C1:Errors_dumping_GFF_files',
 	     'C2'          => 'C2:Split_GFF_files',
 	     'C3'          => 'C3:Map_PCR_products',
 	     'C4'          => 'C4:Confirm_gene_models',
@@ -226,7 +227,6 @@ LOG->autoflush();
 # Requires: A1,A4,A5,B1
 &dump_GFFs         if ($gffdump);
 
-
 # C2:Split_GFF_files   
 # Requires: A1,A4,A5,B1
 &split_GFFs        if ($gffsplit);
@@ -303,7 +303,7 @@ sub initiate_build {
   my $cvs_file = "/wormsrv2/autoace/wspec/database.wrm";
 
   # exit if build_in_progress flag is present
-  &usage(10) if (-e "$logdir/$flag{'A1'}");
+  &usage(1) if (-e "$logdir/$flag{'A1'}");
     
   # commit to new build ..............
   $WS_version = &get_wormbase_version;
@@ -314,12 +314,6 @@ sub initiate_build {
   # manipulate to assign last WS release version
   my $WS_new_name = $WS_version +1;
  
-#    [move this step to the end of the build procedure]
-#    [i.e. clean up after yourself]
-#
-#    # tidy up the log directory
-#    system ("/usr/bin/rm -f $logdir/*:*");
-
   # make new build_in_process flag
   system ("touch $logdir/$flag{'A1'}");
   open (FLAG, ">>$logdir/$flag{'A1'}"); 
@@ -738,17 +732,26 @@ sub make_agp {
   # EMBL synchronisation problems but the second time should be run at the end
   # of the build and errors should have gone away
 
+  # Were there errors with generating DNA or composition, i.e. B2:ERROR file?
+  &usage(17) if(-e "$logdir/$flag{'B2:ERROR'}");
+  
   # have you run GFFsplitter?
-  unless ((-e "$logdir/$flag{'C2'}") && (-e "$logdir/$flag{'B3'}")) {
-    &dump_GFFs;
-  }   
+  &dump_GFFs unless ((-e "$logdir/$flag{'C2'}") && (-e "$logdir/$flag{'B3'}"));
 
-  system ("$scriptdir/check_DNA.pl")     && die "Couldn't run check_DNA.pl\n";
+  my $status = system ("$scriptdir/check_DNA.pl");
   print LOG "check_DNA.pl finished at ",&runtime,"\n";  
-  system ("$scriptdir/make_agp_file.pl") && die "Couldn't run make_agp_file.pl\n";
+  print LOG "ERROR: check_DNA.pl did not run correctly\n" if ($status != 0);  
+
+
+  $status = system ("$scriptdir/make_agp_file.pl");
   print LOG "make_agp_file.pl finished at ",&runtime,"\n";  
-  system ("$scriptdir/agp2dna.pl")       && die "Couldn't run agp2dna.pl\n";
+  print LOG "ERROR: Couldn't run make_agp_file.pl\n" if ($status != 0);
+
+
+  $status = system ("$scriptdir/agp2dna.pl");
   print LOG "agp2dna.pl finished at ",&runtime,"\n";  
+  print LOG "ERROR: Couldn't run agp2dna.pl\n" if ($status != 0);
+
 
   # make a B3 log file if this is first run of -agp (i.e. no B3 log file there)
   system ("touch $logdir/$flag{'B3'}") unless ((-e "$logdir/$flag{'B3'}"));
@@ -770,7 +773,7 @@ sub make_agp {
   if (scalar @errors > 1) {
   # make 'agp_files_errors' log file in /logs
   # this will halt the process if you are running blat
-    system ("touch $logdir/$flag{'B4'}");
+    system ("touch $logdir/$flag{'B3:ERROR'}");
   }
         
 }
@@ -798,7 +801,7 @@ sub dbcomp{
 
 sub prepare_for_blat{
   $am_option = "-prepare_blat";
-  &usage(15) if (-e "$logdir/$flag{'B4'}");
+  &usage(15) if (-e "$logdir/$flag{'B3:ERROR'}");
   
   # TransferDB the current autoace to safe directory 
   print LOG "Starting TransferDB at ",&runtime,"\n";
@@ -1174,8 +1177,14 @@ sub make_wormrna {
 sub dump_GFFs {
   $am_option .= " -gffdump";
   print LOG "chromosome_dump.pl started at ",&runtime,"\n";  
-  system ("$scriptdir/chromosome_dump.pl --gff") && die "Couldn't make GFF files\n";
+  my $status = system ("$scriptdir/chromosome_dump.pl --gff");
+  if($status != 0){
+    print LOG "ERROR: non-zero return value of system call.  Couldn't make GFF files\n";
+    system ("touch $logdir/C1:ERROR");
+  }
   print LOG "chromosome_dump.pl finished at ",&runtime,"\n";  
+
+  &usage(18) if(-e "$logdir/$flag{'C1:ERROR'}");
 
   # make dumped_GFF_file in /logs
   system ("touch $logdir/C1:Dumped_GFF_files");
@@ -1308,6 +1317,13 @@ sub usage {
 	print "Check File: /wormsrv2/autoace/wspec/database.wrm\n\n";
 	exit(0);
     }
+    elsif ($error == 1) {
+	# Build_in_progress flag already exists when build initiation attempted
+	print "\nautoace build aborted:\n";
+	print "The 'build_in_progress' flag already exists\n";
+	print "You cannot start a new build until this flag is removed\n\n";
+	exit(0);
+    }
     elsif ($error eq "Failed_to_update_cvs_repository") {
 	# Failed to update cvs repository with new WormBase release number
 	print "The 'database.wrm' file in the cvs repository was not updated\n";
@@ -1371,13 +1387,6 @@ sub usage {
 	print "You haven't run blat_them_all.\n";
 	exit(0);
     }
-    elsif ($error == 10) {
-	# Build_in_progress flag already exists when build initiation attempted
-	print "\nautoace build aborted:\n";
-	print "The 'build_in_progress' flag already exists\n";
-	print "You cannot start a new build until this flag is removed\n\n";
-	exit(0);
-    }
     elsif ($error == 11) {
 	# Build_in_progress flag is newer than WormBase version number
 	print "\nautoace build aborted:\n";
@@ -1409,7 +1418,7 @@ sub usage {
     elsif ($error == 15) {
 	# attempted BLAT analysis with agp errors 
 	print "\nautoace build aborted:\n";
-	print "The '$flag{'B4'} flag is set indicating errors in the agp file. \n";
+	print "The '$flag{'B3:ERROR'} flag is set indicating errors in the agp file. \n";
 	print "You must remove this file before you can run the BLAT analysis.\n\n";
 	exit(0);
     }
@@ -1420,6 +1429,21 @@ sub usage {
 	print "You must add this file if you want to run the BLAT analysis or run autoace_minder.pl -prepare_blat.\n\n";
 	exit(0);
     }
+    elsif ($error == 17) {
+	# atempted agp creation without clearing DNA/composition error file
+	print "\nautoace build aborted:\n";
+	print "The '$flag{'B2:ERROR'} flag is present indicating that the chromosome DNA and/or composition\n";
+	print "files were not generated properly.  You cannot continue until this lock file is removed.\n";
+	exit(0);
+    }
+    elsif ($error == 18) {
+	# gff dumping failed
+	print "\nautoace build aborted:\n";
+	print "The '$flag{'C2:ERROR'} flag is present indicating that the chromosome GFF dumps did not work.\n";
+	print "You cannot continue until this lock file is removed.\n";
+	exit(0);
+    }
+    
     elsif ($error == 0) {
 	# Normal help menu
 	exec ('perldoc',$0);
