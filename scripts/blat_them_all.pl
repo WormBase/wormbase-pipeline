@@ -7,8 +7,9 @@
 # Gets sequences ready for blatting, blats sequences, processes blat output, makes confirmed introns
 # and virtual objects to hang the data onto
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2003-11-28 09:35:30 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2003-12-01 11:19:34 $
+
 
 use strict;
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};           
@@ -294,7 +295,7 @@ sub dump_dna {
   unless ($camace) {
     $command  = "query find Sequence \"CHROMOSOME*\"\n";
     $command .= "show -a -f /wormsrv2/autoace/BLAT/chromosome.ace\n";
-    $command .= "follow subsequence\n";
+    $command .= "follow Subsequence\n";
     $command .= "show -a -f /wormsrv2/autoace/BLAT/superlinks.ace\n";
     $command .= "dna -f /wormsrv2/autoace/BLAT/autoace.first\nquit\n";
   }
@@ -419,7 +420,7 @@ sub confirm_introns {
 #	    print "Coords start $f[1] => $start, end $f[2] => $end\n";
 	  
 	  ##################
-	  # map to S_Child #
+	  # map to S_child #
 	  ##################
 	  
 	  my $lastvirt = int((length $dna) /100000) + 1;
@@ -542,30 +543,30 @@ sub virtual_objects_blat {
 	if (($length - $first) < 100000) {
 	  $second = $length;
 	  # autoace
-	  print OUT_autoace_homol "S_Child Homol_data $word{$data}:$name"."_$m $first $second\n";
-	  print OUT_autoace_feat  "S_Child Feature_data Confirmed_intron_$data:$name"."_$m $first $second\n";
+	  print OUT_autoace_homol "S_child Homol_data $word{$data}:$name"."_$m $first $second\n";
+	  print OUT_autoace_feat  "S_child Feature_data Confirmed_intron_$data:$name"."_$m $first $second\n";
 
 	  unless($name eq "MTCE"){
 	    # camace
-	    print OUT_camace_homol  "S_Child Homol_data $word{$data}:$name"."_$m $first $second\n"             if ($homedb{$name} eq "HX");
-	    print OUT_camace_feat   "S_Child Feature_data Confirmed_intron_$data:$name"."_$m $first $second\n" if ($homedb{$name} eq "HX");
+	    print OUT_camace_homol  "S_child Homol_data $word{$data}:$name"."_$m $first $second\n"             if ($homedb{$name} eq "HX");
+	    print OUT_camace_feat   "S_child Feature_data Confirmed_intron_$data:$name"."_$m $first $second\n" if ($homedb{$name} eq "HX");
 	    # stlace
-	    print OUT_stlace_homol  "S_Child Homol_data $word{$data}:$name"."_$m $first $second\n"             if ($homedb{$name} eq "RW");
-	    print OUT_stlace_feat   "S_Child Feature_data Confirmed_intron_$data:$name"."_$m $first $second\n" if ($homedb{$name} eq "RW");
+	    print OUT_stlace_homol  "S_child Homol_data $word{$data}:$name"."_$m $first $second\n"             if ($homedb{$name} eq "RW");
+	    print OUT_stlace_feat   "S_child Feature_data Confirmed_intron_$data:$name"."_$m $first $second\n" if ($homedb{$name} eq "RW");
 	  }
 	  last;
 	}					
 	else {
 	  ($second = $length) if ($second >  $length);
 	  # autoace
-	  print OUT_autoace_homol "S_Child Homol_data $word{$data}:$name"."_$m $first $second\n";
-	  print OUT_autoace_feat  "S_Child Feature_data Confirmed_intron_$data:$name"."_$m $first $second\n";
+	  print OUT_autoace_homol "S_child Homol_data $word{$data}:$name"."_$m $first $second\n";
+	  print OUT_autoace_feat  "S_child Feature_data Confirmed_intron_$data:$name"."_$m $first $second\n";
 	  # camace
-	  print OUT_camace_homol  "S_Child Homol_data $word{$data}:$name"."_$m $first $second\n"             if ($homedb{$name} eq "HX");
-	  print OUT_camace_feat   "S_Child Feature_data Confirmed_intron_$data:$name"."_$m $first $second\n" if ($homedb{$name} eq "HX");
+	  print OUT_camace_homol  "S_child Homol_data $word{$data}:$name"."_$m $first $second\n"             if ($homedb{$name} eq "HX");
+	  print OUT_camace_feat   "S_child Feature_data Confirmed_intron_$data:$name"."_$m $first $second\n" if ($homedb{$name} eq "HX");
 	  # stlace
-	  print OUT_stlace_homol  "S_Child Homol_data $word{$data}:$name"."_$m $first $second\n"             if ($homedb{$name} eq "RW");
-	  print OUT_stlace_feat   "S_Child Feature_data Confirmed_intron_$data:$name"."_$m $first $second\n" if ($homedb{$name} eq "RW");
+	  print OUT_stlace_homol  "S_child Homol_data $word{$data}:$name"."_$m $first $second\n"             if ($homedb{$name} eq "RW");
+	  print OUT_stlace_feat   "S_child Feature_data Confirmed_intron_$data:$name"."_$m $first $second\n" if ($homedb{$name} eq "RW");
 	}
       }
       print OUT_autoace_homol "\n";

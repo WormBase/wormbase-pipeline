@@ -7,7 +7,7 @@
 # Usage: camcheck.pl
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-11-28 11:22:34 $
+# Last updated on: $Date: 2003-12-01 11:20:40 $
 #
 # see pod documentation (i.e. 'perldoc camcheck.pl') for more information.
 #
@@ -17,8 +17,6 @@
 #################################################################################
 # variables                                                                     #
 #################################################################################
-
-$|=1;
 
 use IO::Handle;
 use Getopt::Std;
@@ -220,7 +218,7 @@ while(defined($line=<CLONEFILE>)){
   ######################################################################
 
   print " | CDS_coords" if ($verbose);
-  &checkgenes($obj);
+  &check_CDSs($obj);
 
   ######################################################################
   # Check Sequence versions with EMBL                                  #
@@ -286,7 +284,7 @@ while (my $obj = $i->next) {
   my $link = $obj;
   print "[$link]    \t" if ($verbose);
   print " | CDS_coords" if ($verbose);
-  &checkgenes($obj);
+  &check_CDSs($obj);
   print "]\n" if ($verbose);
 }
 
@@ -421,10 +419,12 @@ sub check_sequence_version {
     my $obj = shift;
     my $server = "srs.ebi.ac.uk";
 
-    my $acc = $obj->Database(3);
-    my $ver = $obj->Database(4);
-    my ($EM_acc,$EM_seqver);
+    # get details from camace
+    my ($acc) = $obj->at('DB_info.Database.EMBL.NDB_AC');
+    my ($ver) = $obj->at('DB_info.Database.EMBL.NDB_SV');
 
+    # get details from EMBL
+    my ($EM_acc,$EM_seqver);
     my $querycontent="-e+([EMBLNEW-acc:'$acc'])|(([EMBL-acc:'$acc'])!(EMBL<EMBLNEW))";
     my $request = "/srsbin/cgi-bin/wgetz?$querycontent";
 
@@ -468,18 +468,18 @@ sub open_TCP_connection  {
 
 
 #######################################################################
-# Gene length as declared is subsequence and in exons list            #
+# Gene length as declared is CDS and in exons list            #
 #######################################################################
 
-sub checkgenes {
+sub check_CDSs {
   my $obj = shift;
 
-  foreach my $child ($obj->Subsequence) {
+  foreach my $cds ($obj->CDS) {
     undef my @num;
     undef my ($method);
-    undef my ($source);
+    undef my ($parent);
 	
-    my ($seq, $start, $end) = $child->row();
+    my ($seq, $start, $end) = $cds->row();
     
     unless ($seq =~ /\./) {next;}
     
@@ -488,60 +488,57 @@ sub checkgenes {
       $diff = $start - $end;
     }
     
-    my $subseq = $db->fetch(Sequence => "$child");
+    my $subseq = $db->fetch(CDS => "$cds");
     if (!defined ($subseq)) {
-      print LOG "Cannot fetch subsequence $child\n";
+      print LOG "Cannot fetch CDS $cds\n";
       next;
     }
     
-    # Source
-    #
-    # All Subsequence objects must have a Source
-    
-    $source = $subseq->Source(1);
-    if ((!defined ($source))) {
-      print LOG "The subsequence $child has no Source\n";
+    # All CDS objects must have a 'Sequence' tag to connect to parent object    
+    $parent = $subseq->Sequence;
+    if ((!defined ($parent))) {
+      print LOG "The CDS $cds has no Sequence tag\n";
     }
     
-    # check to see if subsequence coordinates exceed length of parent clone
+    # check to see if CDS coordinates exceed length of parent clone
     # won't work for parents that are links (they have zero length)
-    if($source !~ m/SUPERLINK/){
-      my ($source_length) = $source->DNA(2);
-      if (($start > $source_length) || ($end > $source_length)){
-	print LOG "The subsequence $child has coordinates that exceed the length of its parent\n";
+    if($parent !~ m/SUPERLINK/){
+      my ($parent_length) = $parent->DNA(2);
+      if (($start > $parent_length) || ($end > $parent_length)){
+	print LOG "The CDS $cds has coordinates that exceed the length of its parent\n";
       }
     }
     
     # Source Exons
     #
-    # All Subsequence objects must have Source_Exons
+    # All CDS objects must have Source_exons
     
-    @num = $subseq->Source_Exons(2);
+    @num = $subseq->Source_exons(2);
     if (!@num) {
-      print LOG "The subsequence $child has no Source_Exons\n";
+      print LOG "The CDS $cds has no Source_exons\n";
     }
     my @sort = sort numerically @num;
     my $index = $#sort;
     my $length = ($sort[$index])-1;
     if ($diff != $length) {
-      print LOG "The subsequence $child belonging to $obj has diff=$diff and length=$length\n";
+      print LOG "The CDS $cds belonging to $obj has diff=$diff and length=$length\n";
     }
     
     
     # Method tags
     #
-    # All Subsequence objects must have a Method
+    # All CDS objects must have a Method
     
     $method = $subseq->Method(1);
     if ((!defined ($method))) {
-      print LOG "The subsequence $child has no method\n";
+      print LOG "The CDS $cds has no method\n";
     }
     
     # NDB_CDS || HALFWISE || gaze - don't process
     
     if ( ($method eq  "NDB_CDS") || ($method eq  "HALFWISE") || ($method eq  "gaze") ) {
       $subseq->DESTROY();
-      $child->DESTROY();
+      $cds->DESTROY();
       $diff="";
       $length="";
       next;
@@ -549,39 +546,43 @@ sub checkgenes {
     
     # Species
     # 
-    # Most Subsequence objects must have a Species
+    # CDS objects must have a Species
     
     my $species = $subseq->Species(1);
     if ((!defined ($species))) {
-      print LOG "The subsequence $child has no Species tag\n";
+      print LOG "The CDS $cds has no Species tag\n";
     }
-    
+ 
+
+# The following section of code won't work now and needs to be revamped to actually look at 
+# ?Transcript and ?Pseudogene objects.
+   
     # Transcripts
     
-    if ($child =~ /\S+\.t\d+/) {
-      if (!defined ($subseq->at('Properties.Transcript'))) {
-	print LOG "The subsequence $child has no Transcript tag\n";
-      }
-    }
-    else {
-      
-      if ($method eq "Pseudogene") {
-	if (!defined ($subseq->at('Properties.Pseudogene'))) {
-	  print LOG "The subsequence $child [$method] has no Pseudogene tag\n";
-	} 
-      }
-      if ( ($method eq "curated") || ($method eq "provisional") ) {
-	if (!defined ($subseq->at('Properties.Coding.CDS'))) {
-	  print LOG "The subsequence $child [$method] has no CDS tag\n";
-	}
-      }
-    }
+#    if ($cds =~ /\S+\.t\d+/) {
+#      if (!defined ($subseq->at('Properties.Transcript'))) {
+#	print LOG "The CDS $cds has no Transcript tag\n";
+#      }
+#    }
+#    else {
+#      
+#      if ($method eq "Pseudogene") {
+#	if (!defined ($subseq->at('Properties.Pseudogene'))) {
+#	  print LOG "The CDS $cds [$method] has no Pseudogene tag\n";
+#	} 
+#      }
+#      if ( ($method eq "curated") || ($method eq "provisional") ) {
+#	if (!defined ($subseq->at('Properties.Coding.CDS'))) {
+#	  print LOG "The subsequence $cds [$method] has no CDS tag\n";
+#	}
+#      }
+#    }
     
     
-    #	print  "$child [$source|$diff|$length|$method]\n";
+    #	print  "$cds [$parent|$diff|$length|$method]\n";
     
     $subseq->DESTROY();
-    $child->DESTROY();
+    $cds->DESTROY();
     $diff="";
     $length="";
     
@@ -636,7 +637,7 @@ END
 	push (@date,$_)        if (/^DATE/);
 	push (@sequence,$_)    if (/^SEQUENCE/);
 	push (@seqversion,$_)  if (/^Sequence version/);
-	push (@subsequence,$_) if (/^The subsequence/);
+	push (@subsequence,$_) if (/^The CDS/);
 	push (@subsequence,$_) if (/^Gene error - /);
 	push (@link,$_)        if (/^SUPERLINK/);
 	push (@clone,$_)       if (/^Clone error - /);
@@ -840,62 +841,62 @@ synchrony with the DB_info Database fields.
 
 =head2 Gene Models
 
-=head3 Absence of Source in ?Sequence
+=head3 Absence of Sequence tag in ?CDS
 
-All Subsequence Gene Models MUST have a parent ?Sequence.
+All CDS Gene Models MUST have a parent ?Sequence.
 
-    i.e. Sequence "ZK637.5"
-         Source "ZK637"
+    i.e. CDS "ZK637.5"
+         Sequence "ZK637"
 
-=head3 Absence of Source_Exons in ?Sequence
+=head3 Absence of Source_exons in ?Sequence
 
-All Subsequence Gene Models MUST have Source_Exons.
+All CDS Gene Models MUST have Source_exons.
 
-    i.e. Sequence "ZK637.5"
-         Source_Exons      1   434
+    i.e. CDS "ZK637.5"
+         Source_exons      1   434
                          483   741
                          950  1159
                         1288  1413
 
-=head3 Absence of Method in ?Sequence
+=head3 Absence of Method in ?CDS
 
-All Subsequence Gene Models MUST have a Method tag. Method tags 
+All CDS Gene Models MUST have a Method tag. Method tags 
 are used in two ways: Firstly, as a means of tagging Gene Models
 into classes (e.g. 'curated' for active CDS prediction, 'RNA' for
 RNA gene) and secondly as an internal ACEDB description of how
 to display the object in the F-map.
 
-    i.e. Sequence "ZK637.5"
+    i.e. CDS "ZK637.5"
          Method "curated"
 
 For details of permissible Method tags see:
  http://intweb.sanger.ac.uk/Projects/C_elegans/MANUAL
 
-=head3 Absence of Species tag in ?Sequence
+=head3 Absence of Species tag in ?CDS
 
-All Subsequence Gene Models MUST have Species tag.
+All CDS Gene Models MUST have Species tag.
 
-    i.e. Sequence "ZK637.5"
+    i.e. CDS "ZK637.5"
          Species "Caenorhabditis elegans"
 
-=head3 Absence of CDS tag in ?Sequence
+=head3 Absence of CDS tag in ?CDS
 
-All Subsequence Gene Models MUST have a Coding CDS tag.
+All CDS Gene Models MUST have a Coding CDS tag.
 
-    i.e. Sequence "ZK637.5"
+    i.e. CDS "ZK637.5"
          Coding CDS
 
 =head3 Mismatch between Parent coordinates and CDS span length
 
 The coordinate span of the Gene Model (1 => n) based on the 
-Source_Exon tags MUST be in agreement with the coordinate span
-of the Gene Model as a Subsequence of the parent ?Sequence.
+Source_exon tags MUST be in agreement with the coordinate span
+of the Gene Model as a CDS of the parent ?Sequence.
 
     i.e. Sequence "ZK637"
-         Subsequence ZK637.5 11124 12536
+         CDS ZK637.5 11124 12536
 
-         Sequence "ZK637.5"
-         Source_Exons      1   434
+         CDS "ZK637.5"
+         Source_exons      1   434
                          483   741
                          950  1159
                         1288  1413
@@ -904,9 +905,9 @@ of the Gene Model as a Subsequence of the parent ?Sequence.
          Parent (ZK637)        = (12536 - 11124) + 1 = 1413
                                                        ----
 
-=head3 Subsequence coordinates exceeding parent sequence length
+=head3 CDS coordinates exceeding parent sequence length
 
-The coordinates of each subsequence must be less than the length of the
+The coordinates of each CDS must be less than the length of the
 parent sequence.
 
 =head2 Valid predicted gene objects

@@ -7,8 +7,8 @@
 # This script calculates interpolated genetic map positions for CDS, Transcripts 
 # and Pseudogenes lying between and outside genetic markers.
 #
-# Last updated on: $Date: 2003-11-20 12:41:31 $
-# Last updated by: $Author: ck1 $
+# Last updated on: $Date: 2003-12-01 11:26:09 $
+# Last updated by: $Author: krb $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -698,7 +698,7 @@ if (!$debug){
   my $log = "/wormsrv2/logs/load_gmap_to_autoace"."_WS$version.$rundate.$$";
  
   my $command=<<END;
-find sequence * where Interpolated_map_position
+find elegans_CDS * where Interpolated_map_position
 edit -D Interpolated_map_position
 
 find transcript * where Interpolated_map_position

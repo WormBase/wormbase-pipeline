@@ -7,8 +7,8 @@
 #
 # dl
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2003-11-12 09:56:57 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2003-12-01 11:24:06 $
 
 use lib "/wormsrv2/scripts/";
 use Wormbase;
@@ -20,7 +20,7 @@ my %acc2clone = &FetchData('acc2clone');
 my %gene2CE   = &FetchData('gene2CE');
 my %Ip2Go;
 
- # get the InterPro => GOterm mapping ( space separated ie 'IPR004794' => 'GO:0008703 GO:0008835 GO:0009231 ')
+# get the InterPro => GOterm mapping ( space separated ie 'IPR004794' => 'GO:0008703 GO:0008835 GO:0009231 ')
 
 our %databases = (
 		  'SW' => 'SWISSPROT',
@@ -112,8 +112,8 @@ while (<FILE>) {
 	print OUT "Database $databases{$dbxref_db} ",$db_ids_acc{$dbxref_db."_id"}," $dbxref_id\n" if($dbxref_id and(  "$dbxref_id" ne "$dbxref_ac"));
 	print OUT "Database $databases{$dbxref_db} ",$db_ids_acc{$dbxref_db."_ac"}," $dbxref_ac\n";
 	foreach (@interpro) {
-	    print OUT "Motif_homol\t\"INTERPRO:$_\"\n"
-	    }
+	  print OUT "Motif_homol\t\"INTERPRO:$_\"\n"
+	}
     }
     else {
 	print "ERROR: gene $f[7] has no protein (has common_data been updated ?)\n";
@@ -122,7 +122,8 @@ while (<FILE>) {
     print "\n" if ($verbose);
     
     print OUT "\nSequence : \"$f[7]\"\n";
-    print OUT "Database $databases{$dbxref_db} $dbxref_id $dbxref_ac\n";
+    print OUT "Database $databases{$dbxref_db} TrEMBL_AC $dbxref_ac\n";
+    print OUT "Database $databases{$dbxref_db} TrEMBL_ID $dbxref_id\n";
     print OUT "Protein_id \"$acc2clone{$f[0]}\" $f[2] $f[3]\n";
     
     # assign GO terms based on InterPro Motifs

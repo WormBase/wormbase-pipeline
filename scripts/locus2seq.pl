@@ -4,9 +4,8 @@
 #
 # written by Anthony Rogers (ar2@sanger.ac.uk)
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2003-11-17 12:37:29 $
-
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2003-12-01 11:27:06 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -43,7 +42,7 @@ if($debug){
 # Set up and initialise variables      #
 ########################################
 
-my (%seq_locus);
+my (%gene_2_locus);
 our $log; # for error email to go to Sanger crew
 our $stlouis_log; # for email to go to St. Louis
 our $cam_out = "/wormsrv2/autoace/acefiles/CAM_locus_seq.ace";
@@ -73,9 +72,9 @@ print "\nUsing $geneace_dir as target geneace database\n";
 &create_log_files;
 
 
-# grab Locus->Sequence, Locus->Transcript, and Locus->Pseudogene
+# grab Locus->CDS, Locus->Transcript, and Locus->Pseudogene
 # connections from geneace
-&get_sequence_connections;
+&get_gene_connections;
 
 # Compare this to current_DB to work out which genes are Sanger / St. Louis
 &compare_with_current_DB;
@@ -172,13 +171,13 @@ sub create_log_files{
   # information!
 
   open(STLOUIS, ">$stlouis_log") || die "Couldn't open $stlouis_log\n";
-  print STLOUIS "Updated info linking Loci to Sequences, Transcripts, and Pseudogene is available from\n";
+  print STLOUIS "Updated info linking Loci to CDSs, Transcripts, and Pseudogene is available from\n";
   print STLOUIS "ftp-wormbase\/pub\/data\/updated_locus2seq\/ in the three files:\n";
-  print STLOUIS "CAM_locus_seq.ace: loci in Hinxton sequence.\n";
-  print STLOUIS "STL_locus_seq.ace: loci in St Louis sequence.\n";
+  print STLOUIS "CAM_locus_seq.ace: loci in Hinxton CDSs.\n";
+  print STLOUIS "STL_locus_seq.ace: loci in St Louis CDSs.\n";
   print STLOUIS "ALL_locus_seq.ace: all loci.\n\n";
   print STLOUIS "These are loci with approved cgc names and that connect to a valid\n";
-  print STLOUIS "Sequence (Predicted_gene), Transcript, or Pseudogene object.\n";
+  print STLOUIS "CDS, Transcript, or Pseudogene object.\n";
   close(STLOUIS);
 
 
@@ -191,15 +190,15 @@ sub create_log_files{
 }
 
 
-#######################################################################
-# Grab locus->sequence and Locus-> Transcript connections from geneace
-#######################################################################
+######################################################################################
+# Grab Locus->CDS, Locus->Transcript, and Locus->Pseudogene connections from geneace
+######################################################################################
 
-sub get_sequence_connections{
+sub get_gene_connections{
  
-  print LOG "Getting Locus->Sequence/Transcript/Pseudogene connections from $geneace_dir:\n\n";
+  print LOG "Getting Locus->CDS/Transcript/Pseudogene connections from $geneace_dir:\n\n";
 
-  # get locus with confirmed CGC names and the corresponding sequences, transcripts
+  # get locus with confirmed CGC names and the corresponding CDSs, transcripts
   # and Pseudogenes.  This uses 3 table_maker queries exported from xace
 
   my $command1 = "Table-maker -p \"${geneace_dir}/wquery/locus_seq.def\"\nquit\n";
@@ -207,7 +206,7 @@ sub get_sequence_connections{
   my $command3 = "Table-maker -p \"${geneace_dir}/wquery/locus_pseudogene.def\"\nquit\n";
 
   my @commands = ($command1, $command2, $command3);
-  my $type = "Sequence";
+  my $type = "CDS"; # set type to CDS for first iteration through foreach loop
 
   # Counter for tracking which iteration you are in
   my $counter = 0;
@@ -223,12 +222,12 @@ sub get_sequence_connections{
 
       if($entry[0] && $entry[1]){
 	my $locus = $entry[0]; $locus =~ s/\"//g;
-	my $sequence = $entry[1]; $sequence =~ s/\"//g;
+	my $gene = $entry[1]; $gene =~ s/\"//g;
 	
 	# Add to hash with appropriate type prefix
-	$seq_locus{"Sequence:".$sequence}   .= "$locus " if ($type eq "Sequence");
-	$seq_locus{"Transcript:".$sequence} .= "$locus " if ($type eq "Transcript");
-	$seq_locus{"Pseudogene:".$sequence} .= "$locus " if ($type eq "Pseudogene");
+	$gene_2_locus{"CDS:".$gene}        .= "$locus " if ($type eq "CDS");
+	$gene_2_locus{"Transcript:".$gene} .= "$locus " if ($type eq "Transcript");
+	$gene_2_locus{"Pseudogene:".$gene} .= "$locus " if ($type eq "Pseudogene");
        
       }
     }
@@ -253,9 +252,9 @@ sub compare_with_current_DB{
   my $PROBcount = 0;  
    
   my $count;  
-  foreach my $entry(keys %seq_locus){  
+  foreach my $entry(keys %gene_2_locus){  
     
-    # work out what to get (i.e. ?Sequence, ?Transcript, or ?Pseudogene)  
+    # work out what to get (i.e. ?CDS, ?Transcript, or ?Pseudogene)  
     my @details = split(/\:/,$entry);  
     my $class  = $details[0];  
     my $object = $details[1];  
@@ -264,13 +263,13 @@ sub compare_with_current_DB{
     
     if (defined($seq)){  
       my @lab = $seq->at('Origin.From_laboratory');  
-      #extract any cases where a sequence contains two loci  
-      my @loci = split(/\s+/,"$seq_locus{$entry}");  
+      #extract any cases where a CDS contains two loci  
+      my @loci = split(/\s+/,"$gene_2_locus{$entry}");  
       
       foreach my $locus (@loci){  
 	if(defined($lab[0])){  
 	  my $tag = $class;  
-	  $tag = "Genomic_sequence" if ($class eq "Sequence");  
+	  $tag = "CDS" if ($class eq "CDS");  
 	  if($lab[0] eq "HX"){  
 	    print CAMOUT "Locus : \"$locus\"\n$tag\t\"$object\"\n\n";  
 	    $CAMcount++;  
@@ -298,14 +297,14 @@ sub compare_with_current_DB{
       }  
     }  
     else{  
-      print LOG "ERROR: $class: $object ($seq_locus{$entry}) not found in $currentDB\n";  
+      print LOG "ERROR: $class: $object ($gene_2_locus{$entry}) not found in $currentDB\n";  
       $PROBcount++;  
     }  
   }  
   $autoace->close;  
   
-  print LOG "\nFound $CAMcount loci on Hinxton sequences/transcripts/pseudogene.\n";  
-  print LOG "Found $STLcount loci on StLouis sequences/transcripts/pseudogene.\n";  
+  print LOG "\nFound $CAMcount loci on Hinxton CDSs/Transcripts/Pseudogenes.\n";  
+  print LOG "Found $STLcount loci on StLouis CDSs/Transcripts/Pseudogenes.\n";  
   print LOG "Found $PROBcount loci that have problems (see above)\n\n";  
   
   print LOG "Wrote output ACE files to /wormsrv2/autoace/acefiles\n";  
@@ -325,7 +324,7 @@ sub usage {
 }
 
 ##############################################################
-# update camace with new locus->Sequence connectons
+# update camace with new locus->CDS connectons
 ###############################################################
 
 sub update_camace{
@@ -333,10 +332,10 @@ sub update_camace{
 
   # Delete existing locus connections in camace and then load new ones in
   my $runtime = &runtime;
-  print LOG "\n$runtime: Starting to remove existing locus->sequence connections in camace and replace with new ones\n";
+  print LOG "\n$runtime: Starting to remove existing Locus->CDS connections in camace and replace with new ones\n";
   my $command;
-  $command  = "query find Predicted_gene\n";
-  $command .= "eedit -D Locus_genomic_seq\n";
+  $command  = "query find elegans_CDS\n";
+  $command .= "eedit -D Locus\n";
   $command .= "query find Transcript\n";
   $command .= "eedit -D Locus\n";
   $command .= "query find Pseudogene\n";
@@ -370,9 +369,9 @@ __END__
 
 =back
 
-This script makes a list of current Locus->Sequence (and Locus->Transcript + Locus->Pseudogene)
+This script makes a list of current Locus->CDS (and Locus->Transcript + Locus->Pseudogene)
 connections which are valid and makes a dump of these to the FTP site, making separate files 
-for just St. Louis and Sanger sequences and also a combined file.  This information will help 
+for just St. Louis and Sanger CDSs and also a combined file.  This information will help 
 keep stlace and camace synchronised with changes in geneace.
 
 locus2seq.pl MANDATORY arguments:
@@ -396,7 +395,7 @@ at the moment.
 
 =item -camace, update camace
 
-This option will specify that existing Locus->Sequence/Transcript/Pseudogene connections should 
+This option will specify that existing Locus->CDS/Transcript/Pseudogene connections should 
 be removed and replaced with the new ones.
 
 =item -help, Help

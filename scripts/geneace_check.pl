@@ -6,8 +6,8 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-11-14 11:20:33 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2003-12-01 11:23:26 $
 
 
 use strict;
@@ -190,9 +190,9 @@ sub process_locus_class{
   &find_new_loci_in_current_DB($db);
 
    
-  # Find sequences connected to multiple loci
-  print "Looking for sequences connected to multiple loci\n" if ($verbose);
-  &find_sequences_with_multiple_loci($db);
+  # Find CDSs connected to multiple loci
+  print "Looking for CDSs connected to multiple loci\n" if ($verbose);
+  &find_CDSs_with_multiple_loci($db);
 
 }
 
@@ -223,7 +223,7 @@ sub test_locus_for_errors{
 
   # test for more than one gene class
   if(defined($locus->at('Name.Gene_class'))){
-    my @gene_classes = $locus->at('Name.Gene_Class');
+    my @gene_classes = $locus->at('Name.Gene_class');
     if(scalar(@gene_classes) > 1){
       $warnings .= "ERROR 3: $locus has more than one Gene_class\n";
       print "." if ($verbose);
@@ -349,9 +349,9 @@ sub test_locus_for_errors{
   }
   
 
-  # test for no Gene tag AND Genomic_sequence tag
-  if(!defined($locus->at('Type.Gene')) && defined($locus->at('Molecular_information.Genomic_sequence'))){
-    $warnings .= "ERROR 14: $locus has 'Genomic_sequence' tag but no 'Gene' tag\n";
+  # test for no Gene tag AND CDS tag
+  if(!defined($locus->at('Type.Gene')) && defined($locus->at('Molecular_information.CDS'))){
+    $warnings .= "ERROR 14: $locus has 'CDS' tag but no 'Gene' tag\n";
     print "." if ($verbose);
     if ($ace){
       print ACE "\n\nLocus : \"$locus\"\n";  
@@ -360,16 +360,16 @@ sub test_locus_for_errors{
   }
 
 
-  # test for no CGC_approved tag AND Genomic_sequence/Transcript/Pseudogene tag
+  # test for no CGC_approved tag AND CDS/Transcript/Pseudogene tag
   if(!defined($locus->at('Type.Gene.CGC_approved'))){ 
     my $species = $locus->Species;
     if ($species eq "Caenorhabditis elegans"){
-      if(defined($locus->at('Molecular_information.Genomic_sequence')) || 
+      if(defined($locus->at('Molecular_information.CDS')) || 
 	 (defined($locus->at('Molecular_information.Transcript'))) ||
 	 (defined($locus->at('Molecular_information.Pseudogene')))){
-	$warnings .= "ERROR 15: $locus has 'Genomic_sequence', 'Transcript', or 'Pseudogene' tag but no 'CGC_approved' tag\n" if $locus ne "arl-query";
-	$warnings .= "ERROR 15: $locus has 'Genomic_sequence', 'Transcript', or 'Pseudogene' tag but no 'CGC_approved' tag\n" if $verbose;
-	print JAHLOG "ERROR: $locus has 'Genomic_sequence', 'Transcript', or 'Pseudogene' tag but no 'CGC_approved' tag\n";
+	$warnings .= "ERROR 15: $locus has 'CDS', 'Transcript', or 'Pseudogene' tag but no 'CGC_approved' tag\n" if $locus ne "arl-query";
+	$warnings .= "ERROR 15: $locus has 'CDS', 'Transcript', or 'Pseudogene' tag but no 'CGC_approved' tag\n" if $verbose;
+	print JAHLOG "ERROR: $locus has 'CDS', 'Transcript', or 'Pseudogene' tag but no 'CGC_approved' tag\n";
 	$jah_errors++;
 	print "." if ($verbose);
       }
@@ -377,26 +377,26 @@ sub test_locus_for_errors{
   }
 
 
-  # test for Genomic_sequence tag but no value   
-  if(defined($locus->at('Molecular_information.Genomic_sequence')) && !defined($locus->Genomic_sequence)){
-    $warnings .= "ERROR 16: $locus has 'Genomic_sequence' tag but no associated value\n";
+  # test for CDS tag but no value   
+  if(defined($locus->at('Molecular_information.CDS')) && !defined($locus->CDS)){
+    $warnings .= "ERROR 16: $locus has 'CDS' tag but no associated value\n";
     print "." if ($verbose);
     if ($ace){
       print ACE "\n\nLocus : \"$locus\"\n"; 
-      print ACE "-D Genomic_sequence\n";
+      print ACE "-D CDS\n";
     } 
   }
 
-  # test for more than one Genomic_sequence tag, but need to allow for splice variants. A bit tricky this
+  # test for more than one CDS tag, but need to allow for splice variants. A bit tricky this
   # and I think my RE (which just looks for word.number.letter) might allow some errors to creep through.  
-  if(defined($locus->at('Molecular_information.Genomic_sequence'))){
-    my @genomic_sequences = $locus->Genomic_sequence;
+  if(defined($locus->at('Molecular_information.CDS'))){
+    my @CDSs = $locus->CDS;
 
-    if(scalar(@genomic_sequences)>1){
-      my @problems = $locus->at('Molecular_information.Genomic_sequence');
+    if(scalar(@CDSs)>1){
+      my @problems = $locus->at('Molecular_information.CDS');
       foreach my $problem (@problems){
 	if ($problem !~ m/[\w\d]+\.\d+[a-z]/){
-	  $warnings .= "ERROR 17: $locus has multiple 'Genomic_sequence' tags (see $problem)\n";
+	  $warnings .= "ERROR 17: $locus has multiple 'CDS' tags (see $problem)\n";
 	  print "." if ($verbose);
 	}
       }
@@ -404,8 +404,8 @@ sub test_locus_for_errors{
 
     # can also test to see if there are attached annotations to these sequences which Erich should
     # know about, i.e. they should now be attached to the loci object instead
-    foreach my $seq (@genomic_sequences){
-      my ($newseq) = $db->fetch(-class=>'Sequence',-name=>"$seq");
+    foreach my $seq (@CDSs){
+      my ($newseq) = $db->fetch(-class=>'elegans_CDS',-name=>"$seq");
       if(defined($newseq->at('Visible.Provisional_description')) || 
 	 defined($newseq->at('Visible.Concise_description')) ||
 	 defined($newseq->at('Visible.Detailed_description'))){  
@@ -415,10 +415,23 @@ sub test_locus_for_errors{
     }
   }
   
-  # test for Genomic_sequence AND !Sequence_name
-  if(defined($locus->at('Molecular_information.Genomic_sequence')) && !defined($locus->at('Name.Sequence_name'))){  
-    my $seq = $locus->Genomic_sequence;
-    $warnings .= "ERROR 21: $locus has a 'Genomic_sequence' tag but not a  'Sequence_name' tag\n";
+  # test for CDS AND Pseudogene tags both present
+  if(defined($locus->at('Molecular_information.CDS')) && defined($locus->at('Molecular_information.Pseudogene'))){
+    $warnings .= "ERROR 19: $locus has a 'CDS' tag AND 'Pseudogene' tag\n";
+    print "." if ($verbose);
+  }
+
+
+  # test for Pseudogene AND Transcript tags both present
+  if(defined($locus->at('Molecular_information.Pseudogene')) && defined($locus->at('Molecular_information.Transcript'))){
+    $warnings .= "ERROR 20: $locus has a 'Pseudogene' tag AND 'Transcript' tag\n";
+    print "." if ($verbose);
+  }
+
+  # test for CDS AND !Sequence_name
+  if(defined($locus->at('Molecular_information.CDS')) && !defined($locus->at('Name.Sequence_name'))){  
+    my $seq = $locus->CDS;
+    $warnings .= "ERROR 21: $locus has a 'CDS' tag but not a  'Sequence_name' tag\n";
     print "." if ($verbose);
     if ($ace){
       print ACE "\n\nLocus : \"$locus\"\n"; 
@@ -428,9 +441,9 @@ sub test_locus_for_errors{
 
 
 
- # test for Genomic_sequence = Sequence_name
-  if(defined($locus->at('Molecular_information.Genomic_sequence')) && defined($locus->at('Name.Sequence_name'))){  
-    my @seq = $locus->Genomic_sequence;
+ # test for CDS = Sequence_name
+  if(defined($locus->at('Molecular_information.CDS')) && defined($locus->at('Name.Sequence_name'))){  
+    my @seq = $locus->CDS;
     my @name = $locus->Sequence_name;
 
     # compare @seq with @name for difference (order does not matter)
@@ -438,7 +451,7 @@ sub test_locus_for_errors{
     my @diff = @{$comp_result[0]}; 
     
     if (@diff){
-      $warnings .= "ERROR 22: $locus has a 'Genomic_sequence' name different to 'Sequence_name'\n";
+      $warnings .= "ERROR 22: $locus has a 'CDS' name different to 'Sequence_name'\n";
       print "." if ($verbose);
     }
   }
@@ -537,10 +550,10 @@ sub test_locus_for_errors{
 
 
   # Look for loci with no Positive_clone info but with information that could be added from
-  # Genomic_sequence, Transcript, or Pseudogene tags
+  # CDS, Transcript, or Pseudogene tags
   if(!defined($locus->at('Positive.Positive_clone'))){
     my $seq;
-    ($seq = $locus->Genomic_sequence) if(defined($locus->at('Molecular_information.Genomic_sequence')));
+    ($seq = $locus->CDS) if(defined($locus->at('Molecular_information.CDS')));
     ($seq = $locus->Transcript) if(defined($locus->at('Molecular_information.Transcript')));
     ($seq = $locus->Pseudogene) if(defined($locus->at('Molecular_information.Pseudogene')));
 
@@ -548,7 +561,7 @@ sub test_locus_for_errors{
     if($seq){
       # need to chop off the ending to just get clone part
       $seq =~ s/\..*//;
-      $warnings .= "ERROR 31: $locus has no 'Positive_clone' tag but info is available from Genomic_sequence, Transcript, Pseudogene tag\n";
+      $warnings .= "ERROR 31: $locus has no 'Positive_clone' tag but info is available from CDS, Transcript, Pseudogene tag\n";
       print "." if ($verbose);
       # must use Inferred_automatically from Evidence hash for this type of info
       print ACE "\n\nLocus : \"$locus\"\nPositive_clone \"$seq\" Inferred_automatically \"From sequence, transcript, pseudogene data\"\n" if ($ace);
@@ -593,7 +606,7 @@ sub test_locus_for_errors{
 	  $warnings .= "ERROR 32: $locus has Other_name but no Remark in Gene_class object\n";
 	  print "." if ($verbose);      
 	  if($ace){
-	    print ACE "\n\nGene_Class : \"$gene_class\"\n";
+	    print ACE "\n\nGene_class : \"$gene_class\"\n";
 	    print ACE "Remark \"$locus is also an unofficial other name of $other_name\" CGC_data_submission\n";
 	    
 	  }         
@@ -635,16 +648,16 @@ sub find_new_loci_in_current_DB{
 
 #############################
 
-sub find_sequences_with_multiple_loci {
+sub find_CDSs_with_multiple_loci {
   my $db = shift;
 
-  # Find sequences that have more than one locus_genomic_seq tag
-  my @sequences = $db->fetch(-query=>'Find Sequence COUNT Locus_genomic_seq >1');
-  foreach my $seq (@sequences){
-    my @loci = $seq->Locus_genomic_seq;
+  # Find CDSs that have more than one Locus tag
+  my @CDSs = $db->fetch(-query=>'Find elegans_CDS COUNT Locus >1');
+  foreach my $cds (@CDSs){
+    my @loci = $cds->Locus;
 
-    print LOG "ERROR 34: Multiple loci (@loci) are connected to the same sequence ($seq)\n";
-    print JAHLOG "ERROR: Multiple loci (@loci) are connected to the same sequence ($seq)\n";
+    print LOG "ERROR 34: Multiple loci (@loci) are connected to the same CDS ($cds)\n";
+    print JAHLOG "ERROR: Multiple loci (@loci) are connected to the same CDS ($cds)\n";
 
     $jah_errors++;
   }
@@ -674,28 +687,28 @@ EOF
 # dump flat files with time stamps
 
 my $command=<<END;
-find locus * 
+Find locus * 
 show -a -T -f /tmp/locus_dump.ace
 
-find allele *
+Find allele *
 show -a -T -f /tmp/allele_dump.ace
 
-find strain *
+Find strain *
 show -a -T -f /tmp/strain_dump.ace
 
-find gene_class *
+Find gene_class *
 show -a -T -f /tmp/geneclass_dump.ace
 
-find 2_point_data *
+Find 2_point_data *
 show -a -T -f /tmp/2_pt_dump.ace
 
-find Multi_pt_data *
+Find Multi_pt_data *
 show -a -T -f /tmp/multi_pt_dump.ace
 
-find Pos_neg_data *
+Find Pos_neg_data *
 show -a -T -f /tmp/posneg_dump.ace
 
-find Laboratory *
+Find Laboratory *
 show -a -T -f /tmp/lab_dump.ace
 
 quit
@@ -725,7 +738,7 @@ END
     if ($_ =~ /^(Locus) : \"(.+)\" -O .+/){$class = $1; $obj = $2}
     if ($_ =~ /^(Allele) : \"(.+)\" -O .+/){$class = $1; $obj = $2}
     if ($_ =~ /^(Strain) : \"(.+)\" -O .+/){$class = $1; $obj = $2}
-    if ($_ =~ /^(Gene_Class) : \"(.+)\" -O .+/){$class = $1; $obj = $2}
+    if ($_ =~ /^(Gene_class) : \"(.+)\" -O .+/){$class = $1; $obj = $2}
     if ($_ =~ /^(2_point_data) : \"(.+)\" -O .+/){$class = $1; $obj = $2}     
     if ($_ =~ /^(Multi_pt_data) : \"(.+)\" -O .+/){$class = $1; $obj = $2}  
     if ($_ =~ /^(Pos_neg_data) : \"(.+)\" -O .+/){$class = $1; $obj = $2}  
@@ -1091,7 +1104,7 @@ EOF
   # check when an allele has a predicted_gene and no gene (locus); if that predicted_gene is already links to a locus
   # make allele-locus link
   
-  my $query_allele = "find allele * where predicted_gene & !gene";
+  my $query_allele = "Find allele * where predicted_gene & !gene";
   my @allele_predict_no_gene;
   push(@allele_predict_no_gene, $db->find($query_allele));
   
@@ -1100,13 +1113,13 @@ EOF
   foreach (@allele_predict_no_gene){$allele_predict_no_gene{$_}++};
   
   my @Allele_gene;
-  my $query_cds_locus_has_allele = "find sequence * where (Locus_genomic_seq | Locus) & has_allele";
+  my $query_cds_locus_has_allele = "Find elegans_CDS WHERE Locus AND Allele";
   push(@Allele_gene, $db->find($query_cds_locus_has_allele));
   
   foreach (@Allele_gene){
-    if (defined $_->Locus_genomic_seq(1)){
-      my $gene = $_->Locus_genomic_seq(1); 
-      my $allele = $_->Has_allele(1);
+    if (defined $_->Locus(1)){
+      my $gene = $_->Locus(1); 
+      my $allele = $_->Allele(1);
       if (exists $allele_predict_no_gene{$allele}){
 	print LOG "WARNING: Allele $allele is not linked to $gene\n";
 	print ACE "\nAllele : \"$allele\"\n" if $ace;
@@ -1281,7 +1294,7 @@ sub process_strain_class {
   print LOG "---------------------------------\n";
 
   @strains = $db->fetch('Strain','*');
-  @seqs = $db->fetch('Sequence','*');
+  @seqs = $db->fetch('elegans_CDS','*');
 
   my %seqs;
   foreach (@seqs){
@@ -1319,9 +1332,9 @@ EOF
 	print @genes, "\n" if ($strain eq "C52E12.2");
 	foreach (@genes){
 	  if($seqs{$_}){
-	    my $seq = $db->fetch('Sequence', $_);
-	    if ($seq->Locus_genomic_seq){
-	      my @loci=$seq->Locus_genomic_seq(1);
+	    my $seq = $db->fetch('elegans_CDS', $_);
+	    if ($seq->Locus){
+	      my @loci=$seq->Locus(1);
 	      if ($cgc eq "CGC"){
 		foreach $e (@loci){
 		  if ($cgc_loci{$e}){
@@ -1468,16 +1481,16 @@ EOF
 sub check_bogus_XREF {
 
   # Does two things:
-  #  A: finding deleted parent seq name after isoforms are created
-  #  B: finding bogus XREF from seq. names that are typos
+  #  A: finding deleted parent CDS name after isoforms are created
+  #  B: finding bogus XREF from CDS names that are typos
   
   print LOG "\nChecking bogus XREF debris from deleted CDS / Transcript / Pseudogene / Gene_name in Locus obj. . . .\n\n";
   
-  my $query_cds        = "find Sequence * where !(yk*) & *.*; locus_genomic_seq";
-  my $query_transcript = "find Transcript * ; locus";
-  my $query_pseudo     = "find Pseudogene * ; locus";
-  my $query_gname      = "find Gene_name *.*"; 
-  my $query_locus      = "find Locus * where (genomic_sequence|transcript|pseudogene)";
+  my $query_cds        = "Find elegans_CDS * where !(yk*) & *.*; Locus";
+  my $query_transcript = "Find Transcript * ; locus";
+  my $query_pseudo     = "Find Pseudogene * ; locus";
+  my $query_gname      = "Find Gene_name *.*"; 
+  my $query_locus      = "Find Locus * where (genomic_sequence|transcript|pseudogene)";
    
   push(my @CDS,   $db->find($query_cds));
   push(my @TRANS, $db->find($query_transcript));
@@ -1505,7 +1518,7 @@ sub check_bogus_XREF {
   }  
  
   foreach (@loci){
-    if(defined $_ -> Genomic_sequence(1)){push(@{$locus_seq_B{$_}}, $_ -> Genomic_sequence(1))}
+    if(defined $_ -> CDS(1)){push(@{$locus_seq_B{$_}}, $_ -> CDS(1))}
     if(defined $_ -> Transcript(1)){push(@{$locus_seq_B{$_}}, $_ -> Transcript(1))}
     if(defined $_ -> Pseudogene(1)){push(@{$locus_seq_B{$_}}, $_ -> Pseudogene(1))}
   }  
