@@ -188,17 +188,17 @@ EOF
 
 #################################################################################
 
-sub tace {
-   local($prog);
-   local($name); 
-   $name=`uname -sr`;
-    if ($name=~/^SunOS/)    {($prog)=<~wormpub/acedb/ace4/bin.SUN_4/tace>;}
-    elsif ($name=~/^IRIX/)  {($prog)=<~wormpub/acedb/ace4/bin.SGI_4/tace>;}
-    elsif ($name=~/^OSF/)   {($prog)=<~wormpub/ACEDB/bin.ALPHA_4/tace>;}
-    elsif ($name=~/^Linux/) {($prog)=<~wormpub/acedb/ace4/bin.LINUX/tace>;}
-    else {print STDERR "No known binary for $uname\n";exit;}
-    return $prog;
-}
+#sub tace {
+#   local($prog);
+#   local($name); 
+#   $name=`uname -sr`;
+#    if ($name=~/^SunOS/)    {($prog)=<~wormpub/acedb/ace4/bin.SUN_4/tace>;}
+#    elsif ($name=~/^IRIX/)  {($prog)=<~wormpub/acedb/ace4/bin.SGI_4/tace>;}
+#    elsif ($name=~/^OSF/)   {($prog)=<~wormpub/ACEDB/bin.ALPHA_4/tace>;}
+#    elsif ($name=~/^Linux/) {($prog)=<~wormpub/acedb/ace4/bin.LINUX/tace>;}
+#    else {print STDERR "No known binary for $uname\n";exit;}
+#    return $prog;
+#}
 
 #################################################################################
 
