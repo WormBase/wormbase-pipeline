@@ -7,7 +7,7 @@
 # Script to make ?Transcript objects
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-09-29 15:32:37 $  
+# Last updated on: $Date: 2003-09-29 15:34:06 $  
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -18,9 +18,9 @@ use Wormbase;
 
 my $tace = &tace;
 
-my ($debug, $help, $verbose, $really_verbose, $est, $count, $report, $gap, $transcript, $gff, $show_matches, $database, $overlap_check, $load_matches, $load_transcripts, $build);
+my ($debug, $help, $verbose, $really_verbose, $est, $count, $report, $transcript, $gff, $show_matches, $database, $overlap_check, $load_matches, $load_transcripts, $build);
 
-$gap = 5; # $gap is the gap allowed in an EST alignment before it is considered a "real" intron
+my $gap = 5; # $gap is the gap allowed in an EST alignment before it is considered a "real" intron
 
 # to track failings of system calls
 my $errors = 0;
