@@ -10,7 +10,7 @@
 # 
 #
 # Last updated by: $Author: ar2 $                     
-# Last updated on: $Date: 2002-10-21 08:49:54 $     
+# Last updated on: $Date: 2002-10-21 09:31:48 $     
 
 use strict;                                     
 use lib "/wormsrv2/scripts/";                  
@@ -261,7 +261,7 @@ my $tace =  "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace";
 
 if( -e "/wormsrv2/autoace/UTR/pepace.ace" ) {
   $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Adding pepace.ace file to autoace at $runtime\n";
-  $command = "pparse /wormsrv2/autoace/UTR/pepace.ace\nsave\nquit\n"; 
+  $command = "pparse /wormsrv2/autoace/wormpep_ace/pepace.ace\nsave\nquit\n"; 
   open (AUTOACE, "| $tace -tsuser pepace /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
   print AUTOACE $command;
   $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "finished adding pepace.ace file to autoace at $runtime\n";  close AUTOACE;
