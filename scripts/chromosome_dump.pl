@@ -8,7 +8,7 @@
 # see pod for more details
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-12-01 11:54:25 $      
+# Last updated on: $Date: 2003-12-02 09:54:29 $      
 
 
 use strict;
@@ -23,8 +23,8 @@ use IO::Handle;
 ######################################################
 
 our $tace   = &tace;
-our $giface = &giface;
-#our $giface = "/nfs/team71/acedb/edgrif/TEST/DAN/giface";
+#our $giface = &giface;
+our $giface = "/nfs/team71/acedb/edgrif/TEST/DAN/giface";
 our $maintainers = "All";
 our ($log, $help, $debug, $dna, $gff, $zipdna, $zipgff, $composition, $database, $dump_dir, $test, $quicktest);
 
