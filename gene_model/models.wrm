@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.81 2002-10-09 09:04:15 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.82 2002-10-09 12:31:22 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -276,6 +276,7 @@
 // discussion.
 
 #Evidence Paper_evidence ?Paper
+	  Author_evidence ?Author UNIQUE Text
           Person_evidence ?Person
           Similarity_evidence ?Sequence
           PMID_evidence Text //added for Erich's gene function data krb 02/04/09
