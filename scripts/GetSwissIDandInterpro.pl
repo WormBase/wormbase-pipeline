@@ -15,7 +15,7 @@
 # pfetch is done in batches of 2000, any greater and nothing comes back!
 #
 # Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs 
-# Last updated on: $Date: 2002-08-08 14:18:29 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2002-08-12 15:44:25 $        # quickly see when script was last changed and by whom
 
 use strict;
 use Wormbase;
@@ -23,7 +23,7 @@ use Ace;
 
 my $maintainer = "All";
 my $rundate    = `date +%y%m%d`; chomp $rundate;
-my $wmpep_ver = &get_wormbase_version() -1;# for testing during builds
+my $wmpep_ver = &get_wormbase_version();#-1 for testing during builds
 my $wormpepdir = "/wormsrv2/WORMPEP/wormpep$wmpep_ver";
 my $log = "/wormsrv2/logs/GetSwissIDandInterpro.WB$wmpep_ver.$rundate";#error log (email to All)
 my $temp_acefile = "$wormpepdir/SwissprotIDs.ace";
@@ -80,7 +80,7 @@ while (<INPUT>)
 	else
 	  {
 	    
-	    if( $_ =~ m/(((AA\p{IsUpper})|(CAD))\d{5})\.\d*/ )
+	    if( $_ =~ m/(((AA\p{IsUpper})|(CA\p{IsUpper}))\d{5})\.\d*/ )
 	      {
 		#put the AAA accs into hash to be investigated
 		$noSWALL{$1} = $protein[$count];
@@ -90,7 +90,7 @@ while (<INPUT>)
 	      print LOG "cant find anything useful in $_\n";
 	    }
 	  }
-#	if($count == 20)
+#	if($count == 2000)
 #	  {
 #	    #DEBUG########################################
 #	    last;#only included for testing on small sample sets
@@ -190,7 +190,6 @@ sub outputToAce #(\%wormpep_acc, \@accession \$ace_output, \$errorLog)
 	if($_ =~ m/^AC\s+(\w+)/)
 	  {
 	    $acc = $1;
-
 	    #put ID AC pair in to hash
 	    $idextract{$acc} = $proteinID
 	  }
@@ -220,7 +219,7 @@ sub outputToAce #(\%wormpep_acc, \@accession \$ace_output, \$errorLog)
 	    $Database = "TrEMBL";
 	  }
 	  else {
-	    if( $databaseID =~ m/((AA\p{IsUpper})|(CAD))\d{5}/ ) {
+	    if( $databaseID =~ m/((AA\p{IsUpper})|(CA\p{IsUpper}))\d{5}/ ) {
 	      $Database = "TrEMBLnew";
 	    }
 	    else {print $errorLog $peptide,"\t",$full_accn,"\tfrom unknown database\n";}
@@ -276,7 +275,7 @@ sub GetNoAccPeps
       while(<FH>)
 	{
 	  # while global match as some proteins have multiple ids
-	  while( $_ =~ m/(((AA\p{IsUpper})|(CAD))\d{5})\.\d*/g )   #matched AAM23424.2 or CAD23525.1 stylee
+	  while( $_ =~ m/(((AA\p{IsUpper})|(CA\p{IsUpper}))\d{5})\.\d*/g )   #matched AAM23424.2 or CAD23525.1 stylee
 	    {
 	      $aaaID = $1;
 	      if ( defined($noSWALL{$aaaID}) )  #if the $aaaID is one we found earlier
