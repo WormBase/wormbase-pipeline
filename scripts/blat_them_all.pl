@@ -29,7 +29,7 @@
 # 01.02.02 dl: uncommented report logging & mail routines
 # 01.02.02 dl: routine to convert '-' -> 'N' needs to be within the same BLOCK as the tace command
 #            : else you get a zero length fasta file each time and the confirm intron routines fail
-
+# 21.02.02 dl: typos in the naming of the confirmed_intron virtual objects
 
 use strict;
 use Ace;
@@ -102,7 +102,7 @@ getopts('emxbsvonhd');
 #############
 
 my $maintainer = "kj2\@sanger.ac.uk dl1\@sanger.ac.uk krb\@sanger.ac.uk";
-$maintainer = "dl1\@sanger.ac.uk"; 
+#$maintainer = "dl1\@sanger.ac.uk"; 
 
 my $rundate    = `date +%y%m%d`;   chomp $rundate;
 my $runtime    = `date +%H:%M:%S`; chomp $runtime;
@@ -249,7 +249,7 @@ if ($opt_s) {
 if ($opt_v) {
 
     # CHECK: 
-    &usage(11) if (-e "/wormsrv2/autoace/BLAT/chromosome.ace");
+    &usage(11) unless (-e "/wormsrv2/autoace/BLAT/superlinks.ace");
     
     # assign contigs to laboratory
     %homedb = &which_db;
@@ -400,26 +400,26 @@ sub virtual_objects_blat {
 		    $second = $length;
 		    # autoace
 		    print OUT_autoace_homol "S_Child Homol_data $word{$data}:$name"."_$m $first $second\n";
-		    print OUT_autoace_feat  "S_Child Feature_data $word{$data}:$name"."_$m $first $second\n";
+		    print OUT_autoace_feat  "S_Child Feature_data Confirmed_intron_$data:$name"."_$m $first $second\n";
 		    # camace
-		    print OUT_camace_homol  "S_Child Homol_data $word{$data}:$name"."_$m $first $second\n"   if ($homedb{$name} eq "HX");
-		    print OUT_camace_feat   "S_Child Feature_data $word{$data}:$name"."_$m $first $second\n" if ($homedb{$name} eq "HX");
+		    print OUT_camace_homol  "S_Child Homol_data $word{$data}:$name"."_$m $first $second\n"             if ($homedb{$name} eq "HX");
+		    print OUT_camace_feat   "S_Child Feature_data Confirmed_intron_$data:$name"."_$m $first $second\n" if ($homedb{$name} eq "HX");
 		    # stlace
-		    print OUT_stlace_homol  "S_Child Homol_data $word{$data}:$name"."_$m $first $second\n"   if ($homedb{$name} eq "RW");
-		    print OUT_stlace_feat   "S_Child Feature_data $word{$data}:$name"."_$m $first $second\n" if ($homedb{$name} eq "RW");
+		    print OUT_stlace_homol  "S_Child Homol_data $word{$data}:$name"."_$m $first $second\n"             if ($homedb{$name} eq "RW");
+		    print OUT_stlace_feat   "S_Child Feature_data Confirmed_intron_$data:$name"."_$m $first $second\n" if ($homedb{$name} eq "RW");
 		    last;
 		}					
 		else {
 		    ($second = $length) if ($second >  $length);
 		    # autoace
 		    print OUT_autoace_homol "S_Child Homol_data $word{$data}:$name"."_$m $first $second\n";
-		    print OUT_autoace_feat  "S_Child Feature_data $word{$data}:$name"."_$m $first $second\n";
+		    print OUT_autoace_feat  "S_Child Feature_data Confirmed_intron_$data:$name"."_$m $first $second\n";
 		    # camace
-		    print OUT_camace_homol  "S_Child Homol_data $word{$data}:$name"."_$m $first $second\n"   if ($homedb{$name} eq "HX");
-		    print OUT_camace_feat   "S_Child Feature_data $word{$data}:$name"."_$m $first $second\n" if ($homedb{$name} eq "HX");
+		    print OUT_camace_homol  "S_Child Homol_data $word{$data}:$name"."_$m $first $second\n"             if ($homedb{$name} eq "HX");
+		    print OUT_camace_feat   "S_Child Feature_data Confirmed_intron_$data:$name"."_$m $first $second\n" if ($homedb{$name} eq "HX");
 		    # stlace
-		    print OUT_stlace_homol  "S_Child Homol_data $word{$data}:$name"."_$m $first $second\n"   if ($homedb{$name} eq "RW");
-		    print OUT_stlace_feat   "S_Child Feature_data $word{$data}:$name"."_$m $first $second\n" if ($homedb{$name} eq "RW");
+		    print OUT_stlace_homol  "S_Child Homol_data $word{$data}:$name"."_$m $first $second\n"             if ($homedb{$name} eq "RW");
+		    print OUT_stlace_feat   "S_Child Feature_data Confirmed_intron_$data:$name"."_$m $first $second\n" if ($homedb{$name} eq "RW");
 		}
 	    }
 	    print OUT_autoace_homol "\n";
@@ -639,9 +639,9 @@ sub usage {
 	exit(0);
     }
     elsif ($error == 11) {
-	# 'chromosome.ace' file is not there or unreadable
-	print "\nThe WormBase 'chromosome.ace' file you does not exist or is non-readable.\n";
-	print "Check File: '/wormsrv2/autoace/BLAT/chromosome.ace'\n\n";
+	# 'superlinks.ace' file is not there or unreadable
+	print "\nThe WormBase 'superlinks.ace' file you does not exist or is non-readable.\n";
+	print "Check File: '/wormsrv2/autoace/BLAT/superlinks.ace'\n\n";
 	exit(0);
     }
     elsif ($error == 0) {
