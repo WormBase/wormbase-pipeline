@@ -43,7 +43,7 @@ my $rundate    = `date +%y%m%d`; chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
 
 our $logfile = "/wormsrv2/logs/chromosome_dump.${rundate}.$$";
-system ("/bin/touch $logfile") || die "Couldn't create $logfile\n";
+system ("/bin/touch $logfile");
 open (LOGFILE,">>$logfile") || die "Couldn't append to $logfile\n";
 
 print LOGFILE "# chromosome_dump.pl\n\n";     
@@ -168,7 +168,7 @@ chromosome_dump.pl arguments:
 
 =item *
 
--d dumps one dna file for each of the six chromosomes.
+<-d> dumps one dna file for each of the six chromosomes.
 
 =back
 
@@ -176,7 +176,7 @@ chromosome_dump.pl arguments:
 
 =item *
 
--g dumps one gff file for each of the six chromosomes
+<-g> dumps one gff file for each of the six chromosomes
 
 =back
 
@@ -184,7 +184,7 @@ chromosome_dump.pl arguments:
 
 =item *
 
--z (optional) compresses all dna and gff files using gzip (will remove 
+<-z> (optional) compresses all dna and gff files using gzip (will remove 
 any existing files first).
 
 =back
@@ -193,7 +193,7 @@ any existing files first).
 
 =item *
 
--h help page (what you are reading now).
+<-h> help page (what you are reading now).
 
 =back
 
