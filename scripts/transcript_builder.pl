@@ -7,7 +7,7 @@
 # Script to make ?Transcript objects
 #
 # Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2003-10-09 11:20:43 $  
+# Last updated on: $Date: 2003-10-09 11:22:54 $  
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -51,7 +51,7 @@ if($debug){
 }
 
 
-my $log = Log_files->make_build_log()
+my $log = Log_files->make_build_log();
 
 exit(0);
 
