@@ -9,7 +9,7 @@
 #                          /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/current/release_notes.txt/
 #
 # Last updated by: $Author: krb $                       
-# Last updated on: $Date: 2003-04-07 09:12:34 $         
+# Last updated on: $Date: 2003-04-08 08:12:52 $         
 
 
 use strict;                                     
@@ -28,8 +28,8 @@ my $maintainers = "All";
 my $rundate     = `date +%y%m%d`; chomp $rundate;
 my $runtime     = `date +%H:%M:%S`; chomp $runtime;
 our $log        = "/wormsrv2/logs/distribute_letter.$rundate";
-my $ver         = &get_wormbase_version;
-
+my $release   = &get_wormbase_version_name(); # e.g. WS89
+my $www = "/nfs/WWWdev/htdocs/Projects/C_elegans";
 
 open (LOG, ">$log");
 print LOG "about to spread the word . . . \n";
@@ -37,21 +37,21 @@ print LOG "about to spread the word . . . \n";
 # copy the letter around
 print LOG "copying to ftp site . . . . ";
 my $ftp_dir = glob("~ftp/pub/wormbase");
-`cp /wormsrv2/autoace/RELEASE_LETTERS/letter.WS$ver $ftp_dir/WS$ver/letter.WS$ver` and die "couldnt copy to $ftp_dir\n";
+`cp /wormsrv2/autoace/RELEASE_LETTERS/letter.${release} $ftp_dir/${release}/letter.${release}` and die "couldnt copy to $ftp_dir\n";
 print LOG "DONE.\n";
 print LOG "copying to autoace/release . . . . ";
-`cp /wormsrv2/autoace/RELEASE_LETTERS/letter.WS$ver /wormsrv2/autoace/release/letter.WS$ver` and die "couldnt copy to autoace/release";
+`cp /wormsrv2/autoace/RELEASE_LETTERS/letter.${release} /wormsrv2/autoace/release/letter.${release}` and die "couldnt copy to autoace/release";
 print LOG "DONE.\n";
 print LOG "copying to intranet . . . . ";
-`cp /wormsrv2/autoace/RELEASE_LETTERS/letter.WS$ver /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/current/release_notes.txt`
-  and die "couldnt copy to /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/current/\n";
+`cp /wormsrv2/autoace/RELEASE_LETTERS/letter.${release} ${www}/WORMBASE/${release}/release_notes.txt`
+  and die "couldnt copy to ${www}/WORMBASE/${release}/\n";
 print LOG "DONE.\n";
 
 print "\n\nMailing to wormbase-dev . . ";
 
 my $to = "wormbase-dev\@wormbase.org";
-my $name = "Wormbase WS$ver release";
-my $release_letter = "/wormsrv2/autoace/RELEASE_LETTERS/letter.WS$ver";
+my $name = "Wormbase ${release} release";
+my $release_letter = "/wormsrv2/autoace/RELEASE_LETTERS/letter.${release}";
 if( &mail_maintainer($name,$to,$release_letter) == 1 ) {
   print LOG "DONE.\n\n\n  Go and have a cuppa !\n";}
 else {
@@ -68,16 +68,16 @@ whatever - something is wrong.\n"; }
 print LOG "Updating symlink on FTP site\n";
 
 my $targetdir = "/nfs/disk69/ftp/pub/wormbase";  # default directory, can be overidden
-my $release   = &get_wormbase_version_name(); # e.g. WS89
 
 # delete the old symbolic link and make the new one
 system "rm -f $targetdir/current_release";
 system "cd $targetdir; ln -s $release current_release";
 
-
-# now update pages using webpublish
+##############################################
+# Update pages using webpublish
 # Separate webpublish commands (for safety!) on the two top level directories that need updating
-my $www = "/nfs/WWWdev/htdocs/Projects/C_elegans";
+##############################################
+
 chdir($www) || print LOG "Couldn't run chdir\n";
 
 system("/usr/local/bin/webpublish -f -q -r wormpep") && print LOG "Couldn't run webpublish on wormpep files\n";
