@@ -270,7 +270,7 @@ sub report
       }
 
     }
-    print $fh "Species \"Caenorhabditis elegans\"\n"
+    print $fh "Species \"Caenorhabditis elegans\"\n";
 
     # .. and method
     print $fh "Method Coding_transcript\n";
