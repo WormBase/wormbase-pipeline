@@ -3,12 +3,12 @@
 # make_FTP_sites.pl
 #
 # A PERL wrapper to automate the process of building the FTP sites 
-# builds wormbase (public), wormbase (private), wormpep sites
+# builds wormbase & wormpep FTP sites
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2004-08-02 10:26:34 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2004-08-03 16:14:59 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -92,8 +92,7 @@ if ($debug) {
 
 &make_geneID_list unless ($nogeneIDs);       # make file of WBGene IDs -> CGC name & Sequence name and add to FTP site
 
-# disabled this step because WashU were not making any use of this data
-#&copy_homol_data;        # copy blat and blast data to private ftp site for St. Louis
+&copy_homol_data;        # copies best blast hits files across
 
 
 
@@ -399,7 +398,7 @@ sub CheckSize {
 }
 
 ############################################################
-# copy BLAT results to the private FTP site for St. Louis
+# copy best blast hits file to ftp site
 ############################################################
 
 sub copy_homol_data{
@@ -407,23 +406,19 @@ sub copy_homol_data{
 
   my $blat_dir  = "/wormsrv2/autoace/BLAT";
   my $blast_dir = "/wormsrv2/wormbase/ensembl_dumps";
-  my $private_ftp = "/nfs/privateftp/ftp-wormbase/pub/data/st_louis_homol_data";
-  &run_command("rm -f $private_ftp/*gz");
 
-
+  # does this to tidy up???? Not sure why these lines are here, krb
   &run_command("/bin/gzip -f $blast_dir/worm_pep_blastp.ace");
   &run_command("/bin/gzip -f $blast_dir/worm_brigpep_blastp.ace");
   &run_command("/bin/gzip -f $blast_dir/worm_dna_blastx.ace");
   &run_command("/bin/gzip -f $blast_dir/worm_pep_motif_info.ace");
   &run_command("/bin/gzip -f $blast_dir/worm_brigpep_motif_info.ace");
 
+  # compress best blast hits files and then copy to FTP site
   &run_command("/bin/gzip -f $blast_dir/worm_pep_best_blastp_hits");
   &run_command("/bin/gzip -f $blast_dir/worm_brigpep_best_blastp_hits");
-
   &run_command("scp $blast_dir/worm_pep_best_blastp_hits.gz      $targetdir/$release/best_blastp_hits.$release.gz");
   &run_command("scp $blast_dir/worm_brigpep_best_blastp_hits.gz  $targetdir/$release/best_blastp_hits_brigpep.$release.gz");
-
-  &run_command("/bin/gzip $private_ftp/*ace");
 
 
 }
@@ -493,12 +488,11 @@ This script does :
  [08] - make wormpep FTP site
  [09] - copy WormRNA release across
  [10] - extract confirmed genes from autoace and make a file on FTP site
- [11] - copies BLAT and BLAST data to private FTP site for St. Louis
- [12] - delete the old symbolic link and make the new one
- [13] - delete the old WS release version directory
- [14] - makes a file of yk2orf connections
- [15] - makes a file of all gene IDs with CGC names and Sequence names (where present)
- [16] - exit gracefully
+ [11] - delete the old symbolic link and make the new one
+ [12] - delete the old WS release version directory
+ [13] - makes a file of yk2orf connections
+ [14] - makes a file of all gene IDs with CGC names and Sequence names (where present)
+ [15] - exit gracefully
 
 
 =over 4
