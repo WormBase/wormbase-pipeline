@@ -6,7 +6,7 @@
 # Usage : autoace_minder [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2002-09-04 14:13:28 $
+# Last edited on: $Date: 2002-09-04 14:35:14 $
 
 
 #################################################################################
@@ -1258,7 +1258,7 @@ sub generate_utrs {
   
   # run find_utrs.pl to generate data
   $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Running find_utrs.pl\n";
-  system("find_utrs.pl-d autoace -r /nfs/disk100/wormpub/analysis/UTR") && die "Couldn't run find_utrs.pl\n";
+  system("find_utrs.pl -d autoace -r /nfs/disk100/wormpub/analysis/UTR") && die "Couldn't run find_utrs.pl\n";
 
   $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Adding UTRs.ace file to autoace\n";
   $command = "pparse /nfs/disk100/wormpub/UTR/UTRs.ace\nsave\nquit\n"; 
