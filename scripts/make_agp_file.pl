@@ -5,7 +5,7 @@
 # by Dan Lawson (dl1@sanger.ac.uk)
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-12-04 14:07:00 $
+# Last edited on: $Date: 2003-12-04 14:10:21 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -208,7 +208,7 @@ foreach my $chromosome (@gff_files) {
   }
   # copy agp file to correct directory
   # copy command returns 0 for failed
-  my $status = copy("$file", "$basedir/autoace/CHROMOSOMES/"); 
+  my $status = copy("$file", "$basedir/autoace/CHROMOSOMES/CHROMOSOME_$chromosome.agp"); 
   print LOG "ERROR: Couldn't copy file: $!\n" if ($status == 0);
 
   close LOG;
