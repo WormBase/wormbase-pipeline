@@ -993,7 +993,7 @@
                                                                                    // objects, 1-to-1 relationship
 		Corresponding_protein UNIQUE ?Protein XREF Corresponding_CDS #Evidence
 		Corresponding_PCR_product ?PCR_product XREF Overlaps_CDS // added for PCR mappings [010419 dl]
-		Matching_cDNA ?Sequence XREF Matching_CDS
+		Matching_cDNA ?Sequence XREF Matching_CDS #Evidence
 		Matching_UTR ?UTR XREF Matching_CDS // added for UTR model [krb 020729]
 		Orthologue ?CDS XREF Orthologue ?Species #Evidence  // dl 030304
 		Expr_pattern ?Expr_pattern XREF CDS
