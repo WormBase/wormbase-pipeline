@@ -7,7 +7,7 @@
 # A script to find (and classify) potentially short, spurious genes (default = <50 aa)
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-10-29 14:58:06 $     
+# Last updated on: $Date: 2003-10-30 10:02:46 $     
 
 
 use strict;
@@ -71,6 +71,15 @@ if(!defined($cutoff)){
 my $log = Log_files->make_build_log();  
 $log->write_to("Looking for spurious genes shorter or equal to $cutoff amino acids in length\n");
 print "Looking for spurious genes shorter or equal to $cutoff amino acids in length\n" if ($verbose);
+
+if($build){
+   $log->write_to("Output file will be written to /wormsrv2/autoace/CHECKS/\n");
+}
+else{
+   $log->write_to("Output file will be written to /wormsrv2/tmp/\n");
+}
+
+
 
 
 # choice of output file location depends on if you are running this as part of build
