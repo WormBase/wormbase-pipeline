@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.66 2002-07-26 10:46:20 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.67 2002-07-26 16:16:59 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -894,6 +894,7 @@
                      EST
 		     Homology
 		     UTR	
+		     False
 
 #Gene_confirmation cDNA
                    EST 
