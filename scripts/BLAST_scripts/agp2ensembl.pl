@@ -347,6 +347,10 @@ sub update_existing_clone
 	  my $seqstr;
  
 	  unless ($dna) {
+	    if( $fasta ) {
+	      $log->write_to("ERROR: dna sequence for $acc is not in the fasta file $fasta - not updated\n");
+	      return 1;
+	    }
 	    $dna  = fetch_seq($acc, $ver);
 	    unless ($dna) {
 	      print "Error fetching $sv\n";
