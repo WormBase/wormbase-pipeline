@@ -20,16 +20,18 @@
 $|=1;
 use IO::Handle;
 use Getopt::Std;
-require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
+use lib '/wormsrv2/scripts';
+use Wormbase;
+
 
  ##############################
  # Script variables (run)     #
  ##############################
 
-my $maintainer = "dl1\@sanger.ac.uk";
+my $maintainers = "dl1\@sanger.ac.uk krb\@sanger.ac.uk";
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
-my $version = &get_script_version(dbcomp);
+my $version = &get_cvs_version($0);
 
 ##################################################
 # Connect with acedb database                    #
@@ -182,7 +184,7 @@ system ("rm -f /tmp/dbcomp*");
  # mail $maintainer report    #
  ##############################
 
-open (mailLOG, "|/usr/bin/mailx -s \"WormBase Report: dbcomp\" $maintainer ");
+open (mailLOG, "|/usr/bin/mailx -s \"WormBase Report: dbcomp\" $maintainers ");
 open (readLOG, "<$logfile");
 while (<readLOG>) {
     print mailLOG $_;
