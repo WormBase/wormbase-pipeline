@@ -56,6 +56,7 @@
 _VMap              -V -D GMAP  
 _VSequence         -V -D FMAP
 _VTranscript	   -V -D FMAP
+-VTransposon       -V -D FMAP
 _VPseudogene	   -V -D FMAP
 _VClone            -V -D PMAP
 _VGenetic_code	   -V 
@@ -91,7 +92,6 @@ _VWormpep	   -V -D PEPMAP
 _VGrid             -V -D GRID
 _VSpecies          -H
 
-_VCell             -V
 _VExpr_pattern	   -V
 
 // Added for new data from citace krb 04/10/01
@@ -100,7 +100,7 @@ _VSK_map	   -V
 
 
 // Added to match new class created by kj2 and dl1 25/02/02
--VTransposon       -V
+
 
 // Added for operon analysis
 -VOperon           -V
@@ -115,8 +115,12 @@ _VManyMap          -H -D GMAP
 //_VMetabolite	   -H
 
 _VView		   -V
+_VCell             -V
 _VCell_group       -H
 _VLife_stage       -H
+_VAnatomy_term     -V
+_VAnatomy_name     -V
+
 _VPicture	   -H
 
 _VAccession_number -H
@@ -132,6 +136,19 @@ _VJade		   -H
 // RNAi class added by LS 11/18/2000
 _VRNAi             -V
 _VPCR_product      -V
+
+
+// Microarray related classes
+_VSK_map	   -H
+_VMicroarray	   -H
+_VMicroarray_result -H
+_VMicroarray_results -H
+_VMicroarray_experiment -H
+_VMicroarray_aff -H
+_VCondition -H
+_VCluster -H
+_VOligo_set -H
+
 
 // Added krb 04/10/01
 _VOligo		   -V
