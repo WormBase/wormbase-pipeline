@@ -9,8 +9,8 @@ while (<DISPLAY>) {
 }
 close DISPLAY;
 
-if ($host ne "wormsrv2") {
-    print "You can only access the current worm database  from wormsrv2\nLog into that machine to run this database\n\n";   
+if ($host eq "wormsrv2") {
+    print "Please do not access this database from wormsrv2.  Use another host such as cbi1.  Thank you.\n";
     exit(0);
 }
 
