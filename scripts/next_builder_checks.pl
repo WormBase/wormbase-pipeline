@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/bin/perl5.8.0 -w
 #
 # next_builder_checks.pl                           
 # 
@@ -8,10 +8,8 @@
 # build to check the current build
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-02-27 15:43:01 $      
+# Last updated on: $Date: 2003-09-22 08:44:46 $      
 
-
-$|=1;
 use strict;
 use lib "/wormsrv2/scripts/";   
 use Wormbase;
@@ -83,9 +81,20 @@ print LOG "3) Check /wormsrv2/autoace/CHROMOSOMES/composition.all - are there an
 print LOG "characters\n\n";
 
 
-print LOG "4) Check that the latest WormPep proteins have proper protein and motif homologies\n";
+print LOG "4a) Check that the latest WormPep proteins have proper protein and motif homologies\n";
 print LOG "This has been a problem in some builds where all new WormPep proteins don't get any\n";
-print LOG "BLAST analysis\n\n";
+print LOG "BLAST analysis.  Pick a few random Wormpep proteins and especially check that all of\n";
+print LOG "the various blastp homologies are there (human, fly, worm, yeast etc.) and try to\n";
+print LOG "check at least one protein from the /wormsrv2/WORMPEP/wormpepXXX/new_entries.WSXXX file\n\n";
+
+print LOG "4b) Now that we have a curated set of brigpep, should do this periodically for\n";
+print LOG "C. briggase protein objects too...these now have their own set of blastp hits\n\n";
+
+
+print LOG "5) Open a keyset of all genome sequences and then query them for:\n";
+print LOG " 'Transcript_child AND NEXT AND NOT NEXT'\n";
+print LOG "I.e. tRNAs not attached properly to parent sequence.  This has happened before and you\n";
+print LOG "should notify the responsible group (HX or RW) to fix them for next build\n\n";
 
 print LOG "\nThat's all...for now!  If you are satisfied the build is ok, please inform the person\n";
 print LOG "building the database. Please continue to add to this list as appropriate\n";
