@@ -33,19 +33,19 @@ my $rundate = `date +%y%m%d`; chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
 
 my $WS_version; 
-open (WormBase_release, "/wormsrv2/autoace_config/WormBase_release_version");
+open (WormBase_release, "/wormsrv2/autoace_config/WormBase_release_version") || die "Cannot open WormBase_release $!\n";
 while (<WormBase_release>) {
     chomp;
     $WS_version = substr ($_,2);
 }
-close (WormBase_release);
+close (WormBase_release) || die "Cannot close WormBase_release $!\n";
 
 #################
 # open LOG file #
 #################
 
 my $logfile = "/wormsrv2/logs/gffcheck.WS${WS_version}.${rundate}.$$";
-open (LOG,">$logfile");
+open (LOG,">$logfile") || die "Cannot open logfile $!\n";
 LOG->autoflush();
 
 print LOG "# gffcheck\n\n";     
@@ -75,13 +75,13 @@ print LOG "\n";
 
 close LOG;
 
-open (mailLOG, "|/usr/bin/mailx -s \"gffcheck Report: gffcheck\" $maintainers ");
-open (readLOG, "<$logfile");
+open (mailLOG, "|/usr/bin/mailx -s \"gffcheck Report: gffcheck\" $maintainers ") || die "Cannot open mailLOG $!\n";
+open (readLOG, "<$logfile") || die "Cannot open readLOG $!\n";
 while (<readLOG>) {
     print mailLOG $_;
 }
-close readLOG;
-close mailLOG;
+close readLOG || die "Cannot close readLOG $!\n";
+close mailLOG || die "Cannot close mailLOG $!\n";
 
 exit(0);
 
@@ -91,17 +91,17 @@ exit(0);
 
 sub runestcheck {
     system ("/wormsrv2/scripts/estcheck") && die "Cannot execute estcheck $!\n";
-    print LOG " Run estcheck\n";
+    print LOG "Run estcheck\n";
 }
 
 sub runintroncheck {
     system ("/wormsrv2/scripts/introncheck")  && die "Cannot execute introncheck $!\n";
-    print LOG " Run introncheck\n";
+    print LOG "Run introncheck\n";
 }
 
 sub runoverlapcheck {
     system ("/wormsrv2/scripts/overlapcheck") && die "Cannot execute overlapcheck $!\n";
-    print LOG " Run overlapcheck\n";
+    print LOG "Run overlapcheck\n";
 }
  
 sub usage {
