@@ -267,14 +267,23 @@ sub make_command {
 
    my ($object,$dbname,$targetdir,$criteria,$criterianoasterisk) = @_;
    my $filename="$targetdir/".$dbname."_".$object.$criterianoasterisk.".ace";
-
-my $command=<<END;
+   my $command;
+   if($dbname eq "camace" || $dbname eq "geneace"){
+     $command=<<END;
 find $object $criteria
-write $filename
+show -a -T -f $filename
+quit
+END
+   }
+   else{
+     $command=<<END;
+find $object $criteria
+show -a -f $filename
 quit
 END
 
-    return ($command,$filename);
+}
+   return ($command,$filename);
 
 }
 
@@ -282,16 +291,27 @@ END
 
 sub make_command_DNA {
 
-    my ($object,$dbname,$targetdir) = @_;
+    my ($object,$dbname,$targetdir) = @_;    
     my $filename = "$targetdir/" . $dbname . "_DNA.ace";
+    my $command;
 
-my $command=<<END;
+    if($dbname eq "camace"){
+      $command=<<END;
 find $object
 follow DNA
-write $filename
+show -a -T -f $filename
+quit
+END
+}
+    else{
+      $command=<<END;
+find $object
+follow DNA
+show -a -f $filename
 quit
 END
 
+    }
     return ($command,$filename);
 
 }
