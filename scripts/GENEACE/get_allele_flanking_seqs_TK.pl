@@ -4,7 +4,7 @@
 
 # by Chao-Kung Chen [030625]
 
-# Last updated on: $Date: 2004-06-08 13:00:27 $
+# Last updated on: $Date: 2004-06-09 12:50:41 $
 # Last updated by: $Author: ck1 $
 
 use Tk;
@@ -41,7 +41,7 @@ if ("$current" ne "$archive") {
   my $message_frame = $top ->Frame(relief => 'groove', borderwidth => 2)
                            ->pack(side => 'top', anchor => 'n',expand => 1, fill => 'x');
 
-  $message_frame -> Label(text=>"\nNew Wormbase release available.\n\n   Need to update exon table of all CDS/Transcripts\nand 6 chromosomal DNA sequencs.\n\nThis usually takes ~45 sec.\nAnother window will then popup for curation\n", fg=>"blue")
+  $message_frame -> Label(text=>"\nNew Wormbase release (WS$current) available.\n\n   Need to update exon table of all CDS/Transcripts\nand 6 chromosomal DNA sequencs.\n\nThis usually takes ~45 sec.\nAnother window will then popup for curation\n", fg=>"blue")
                  -> pack(side => "left");
 
   $message_frame -> Button(text => "Update", activebackground => "green", activeforeground => "black", command => \&update)

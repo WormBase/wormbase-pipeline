@@ -4,7 +4,7 @@
 
 # by Chao-Kung Chen
 
-# Last updated on: $Date: 2004-06-02 12:27:17 $
+# Last updated on: $Date: 2004-06-09 12:50:41 $
 # Last updated by: $Author: ck1 $
 
 
@@ -44,7 +44,8 @@ print LOG "---------------------------------------------------------------------
 ##############################
 
 # (1) interpolated map data
-my $map = "/wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/interpolated_map_to_geneace_WS$build_ver.ace";
+my @map = glob("/wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/interpolated_map_to_geneace_WS$build_ver.*ace");
+my $map = $map[-1];
 
 # (2) corrected reverse physicals
 my $rev_pyhs = glob("/wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/rev_physical_update_WS$build_ver");
@@ -179,7 +180,9 @@ close Load_GA;
 # ----- email notice -----
 ###########################
 
-mail_maintainer("Loading WS$build_ver Geneace related data to Geneace", "ck1\@sanger.ac.uk, krb\@sanger.ac.uk", $log);
+#mail_maintainer("Loading WS$build_ver Geneace related data to Geneace", "ck1\@sanger.ac.uk, krb\@sanger.ac.uk", $log);
 
+mail_maintainer("Loading WS$build_ver Geneace related data to Geneace", "ck1\@sanger.ac.uk", $log);
 
 __END__
+

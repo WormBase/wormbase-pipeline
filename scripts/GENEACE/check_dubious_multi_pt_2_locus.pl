@@ -2,7 +2,7 @@
 
 # Author: Chao-Kung Chen
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-05-12 16:07:41 $ 
+# Last updated on: $Date: 2004-06-09 12:50:41 $ 
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -14,7 +14,7 @@ use GENEACE::Geneace;
 my $tace        = &tace;
 my $ga          = init Geneace();
 my $geneace_dir = $ga->geneace();
-my $db          = Ace->connect(-path => $geneace_dir, -program =>$tace) || print Ace->error; 
+my $db          = Ace->connect(-path => $geneace_dir, -program =>$tace) || print Ace->error;
 my $rundate = rundate();
 
 open(LOG, ">/wormsrv2/logs/dubious_multiPt_2_locus.$rundate") || die $!;
@@ -62,8 +62,8 @@ foreach (keys %Gene_id_2_multiPt_A){ # key : locus obj, value: multi-pt of that 
       $counter++;
       print LOG "$counter. ERROR: $ea ($multi_geno{$ea}) should not be linked to $_?\n";
       print ACE "\n//ERROR: $ea ($multi_geno{$ea}) should not be linked to $_ ($Gene_info{$_}{'CGC_name'}) ? ===(1)\n";
-      print ACE "Gene : \"$_\"\n";
-      print ACE "-D Multi_point \"$ea\"\n";
+      print ACE "\/\/Gene : \"$_\"\n";
+      print ACE "\/\/-D Multi_point \"$ea\"\n";
     }
   }
 
@@ -86,8 +86,8 @@ foreach (keys %Gene_id_2_multiPt_A){ # key : locus obj, value: multi-pt of that 
         print LOG "$counter. ERROR: $e ($multi_geno{$e}) should not be linked to $_ ($Gene_info{$_}{'CGC_name'}) ?\n";
 	
 	print ACE "\n//ERROR: $e ($multi_geno{$e}) should not be linked to $_ ($Gene_info{$_}{'CGC_name'}) ? ===(2)\n";
-	print ACE "Gene : \"$_\"\n";
-	print ACE "-D Multi_point \"$e\"\n";
+	print ACE "\/\/Gene : \"$_\"\n";
+	print ACE "\/\/-D Multi_point \"$e\"\n";
       }
     }	
   }

@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2004-06-01 16:16:12 $
+# Last updated on: $Date: 2004-06-09 12:50:41 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -97,38 +97,42 @@ my $db = Ace->connect(-path  => $default_db,
 
 
 my $ga = init Geneace();
-my @Gene_info = $ga -> gene_info($default_db, "seq2id"); # hash for converting locus/seq. names to gene_id
+# hash for converting locus/seq. names <-> gene_id
+my @Gene_info = $ga -> gene_info($default_db, "seq2id");
 my %Gene_info = %{$Gene_info[0]};
 my %seqs_to_gene_id = %{$Gene_info[1]};
 
-
-# get list of loci that are both CGC/Non_CGC loci and other-name(s) of CGC name(s) (exceptions for main name / other_name merging) 
-# @exceptions and %exceptions are made global as they are used for checking both Locus and Strain classes
-
-my @exceptions = $ga->cgc_name_is_also_other_name($db);
-my %exceptions;
-
-foreach (@exceptions){$exceptions{$_}++};
-
-# get other names to main name hash 
-my %other_main = $ga->other_name($db, "other_main");
-
+# counters used later
 my $non_CGC_to_seq = 0;
 my $non_CGC_non_seq = 0;
 
-# Process separate classes if specified on the command line else process all classes
-@classes = ("gene","laboratory","allele","strain","rearrangement","sequence","mapping","evidence", "xref", "multipt", ) if (!@classes);
+# Process separate classes if specified on the command line else process all classes, EXCEPT "pseudo", because
+# running this option will output a list of candidate pseudo markers for CGC to approve, and for those approved ones, 
+# inferred multi-pt markers will be created accordingly.
+# As Jonathan (CGC) does not approve this instantly, this check runs only right after the build, given a 2-week time for CGC to approve.
+# If during these 2 weeks, nothing is heard from CGC, the file
+# /wormsrv1/geneace/JAH_DATA/MULTI_PT_INFERRED/loci_become_genetic_marker_for_WS$autoace_version needs to be
+#        (1) REMOVED before the start of the next build,
+#        (2) or at least before the step of the build that does "update_inferred_multi_pt.pl -db /wormsrv2/autoace/ -u",
+# as the WS$autoace_version of the file will be the same as the build about to start and so will be processed during the build => the problem
+# is that this list has not yet been approved !!
+
+@classes = ("gene", "laboratory", "evidence", "allele", "strain", "rearrangement", "mapping", "xref", "multipt") if (!@classes);
 
 foreach $class (@classes){
   if ( $class =~ m/gene/i )                {&process_gene_class}
-  if ( $class =~ m/evidence|evi/i )        {&check_evidence}
   if ( $class =~ m/laboratory|lab/i )      {&process_laboratory_class}
+  if ( $class =~ m/evidence|evi/i )        {&check_evidence}
   if ( $class =~ m/allele/i )              {&process_allele_class}
   if ( $class =~ m/strain/i )              {&process_strain_class}
   if ( $class =~ m/rearrangement|rearr/i ) {&process_rearrangement}
   if ( $class =~ m/mapping/i )             {&check_genetics_coords_mapping}
   if ( $class =~ m/xref/i )                {&check_bogus_XREF}
-  if ( $class =~ m/multipt/i )             {&int_map_to_map_loci}
+  if ( $class =~ m/multipt|mui/i )         {&check_dubious_multipt_gene_connections}
+
+  # this will not fire off if no class if specified see http://intweb.sanger.ac.uk/Projects/C_elegans/DOCS/geneace_duties.shtml
+  # section "Load CGC approved pseudo genetic markers to geneace before the start of the build"
+  if ( $class =~ m/pseudo|ps/i )           {&int_map_to_map_loci}
 }
 
 #######################################
@@ -185,7 +189,7 @@ sub process_gene_class{
     print "\n" if ($verbose);
   }
 
-  # Look for allele linked to a Gene and predicted_gene/Transcript, but the Gene does not have seq. info
+  # looks for seq. (predictted_gene, transcript) link to an allele, but which gene ids don't => make gene id -> allele connection
   &link_seq_to_Gene_based_on_allele($db);
 
   # Find sequences (CDS/Trans/Pseudo) linkd to multiple gene_ids
@@ -505,6 +509,7 @@ sub test_locus_for_errors{
   return($non_CGC_to_seq, $non_CGC_non_seq);
 }
 
+
 sub get_event {
   my $gene_id = shift;
 
@@ -526,46 +531,44 @@ sub get_event {
   return $tag;
 }
 
-
+# looks for seq. (predictted_gene, transcript) link to an allele, but which gene ids don't => make gene id -> allele connection
 sub link_seq_to_Gene_based_on_allele {
 
   my $db = shift;
-  my $query = "Find Allele * where (Predicted_gene|Transcript) & gene; >gene; !(CDS|Transcript|Pseudogene); > Allele; (Predicted_gene|Transcript) & gene";
+  my $query = "Find Allele * where (Predicted_gene|Transcript) & gene";
 
-  push(my @seqs_link_to_Gene, $db->find($query));
-  foreach (@seqs_link_to_Gene){
+  push(my @alleles_link_to_Gene_and_seq, $db->find($query));
+  foreach my $allele (@alleles_link_to_Gene_and_seq){
     my @Genes =(); my @cds =(); my @trans =();
-    @Genes = $_ -> Gene;
-    @cds   = $_ -> Predicted_gene;
-    @trans = $_ -> Transcript;
 
-    foreach my $e (@Genes){
-      if ( !exists $Gene_info{$e}{'CDS'} && @cds ){
-	print LOG "ERROR 22: $e ($Gene_info{$e}{'Public_name'}) should be linked to CDS @cds based on $_\n";
-	if ($ace){
-	  print ACE "\nGene : \"$e\"\n";
-	  foreach (@cds){
-	    print ACE "CDS \"$_\"\n";
-	  }
-	}
-      }
-      if ( !exists $Gene_info{$e}{'Transcript'} && @trans ){
-	print LOG "ERROR 22: $e ($Gene_info{$e}{'Public_name'}) should be linked to Transcript @trans based on $_\n";
-	if ($ace){
-	  print ACE "\nGene : \"$e\"\n";
-	  foreach (@trans){
-	    print ACE "CDS \"$_\"\n";
-	  }
-	}
+    my (%Genes, %cds, %trans);
+    @Genes = $allele -> Gene; foreach (@Genes){$Genes{$_}++}
+    @cds   = $allele -> Predicted_gene;
+    @trans = $allele -> Transcript;
+
+    my %gene_ids;
+    foreach my $e (@cds, @trans){
+       $gene_ids{$Gene_info{$e}{'Gene'}}++;
+    }
+	
+    foreach my $id (keys %gene_ids){
+      if (!exists $Genes{$id}){
+        print LOG "ERROR 22: $id ($Gene_info{$id}{'Public_name'}) is not linked to allele $allele\n";
+        if ($ace){
+          print ACE "\nAllele : \"$allele\"\n";
+          print ACE "Gene \"$id\"\n";
+        }
       }
     }
   }
 }
 
+# A seq. should normally be linked to only one gene id: there are cases where .a is WBGenex and .b is WBGy (eg, ZC416.8a/b)
+# The query is to find sequences (CDS/Transcript/Pseudogene) that have more than one Sequence_name_for values
+# this tells you if a gene id is linked to > 1 sequences
 sub find_seqs_with_multiple_Gene_ids {
   my $db = shift;
 
-  # Find CDSs that have more than one Locus tag
   my @CDSs = $db->fetch(-query=>'Find Gene_name * where COUNT Sequence_name_for > 1');
   foreach my $cds (@CDSs){
     my @gid = $cds->Sequence_name_for;
@@ -952,13 +955,12 @@ sub process_allele_class{
   print LOG "\n\nChecking Allele class for errors:\n";
   print LOG "---------------------------------\n";
 
-  # when an allele is linked to a predicted_gene and not a gene, is that predicted_gene already linked to a gene_id 
-  # and has a CGC_name?
-  # if yes, make allele-Gene connection
+  # when an allele is linked to a predicted_gene and not a gene, is that predicted_gene already linked to a gene_id?
+  # if yes, make allele - Gene id connection
 
   foreach my $tag ("Predicted_gene", "Transcript"){
-    my $query_1 = "Find allele * where $tag & !Gene; > $tag; Gene"; # but also checks predicted_gene/transcript is linked to Gene
-    my $query_2 = "Find allele * where $tag & !Gene";               # but does not check predicted_gene/transcript is linked to Gene
+    my $query_1 = "Find allele * where $tag & !Gene; > $tag; Gene"; # alleles have no gene but have predicted_gene/transcript which are linked to Gene
+    my $query_2 = "Find allele * where $tag & !Gene";               # alleles have no Gene
 
     my (@seqs_linked_to_allele_and_gene, %seqs_linked_to_allele_and_gene,
         @alleles_linked_to_seqs_and_not_gene, %alleles_linked_to_seqs_and_not_gene);
@@ -977,15 +979,22 @@ sub process_allele_class{
 	if ( exists $alleles_linked_to_seqs_and_not_gene{$e} ){
 
 	  # a seq. maybe linked to > 1 gene ids
-	  my @gene_ids = $ga -> get_unique_from_array( @{$seqs_to_gene_id{$SEQ{$seq}}} ) if exists $seqs_to_gene_id{$SEQ{$seq}};
+	  my @gene_ids = $ga -> get_unique_from_array( @{$seqs_to_gene_id{$SEQ{$seq}}} );
 	  foreach (@gene_ids){
 
-	    # check this gene id has also a CGC_name (given that some gene ids do not have CGC_name yet)
-	    if ( $Gene_info{$_}{'CGC_name'} ){
-	      print LOG "WARNING: $e should be linked to $_ ($Gene_info{$_}{'CGC_name'}) based on $seq of $e\n";
-	      if ($ace){
-		print ACE "\nAllele : \"$e\"\n";
-		print ACE "Gene \"$_\"\n";
+	    # check this gene id has also a CGC_name / Sequence_name
+	    foreach my $tag ("CDS", "Transcript"){
+	      if ( $Gene_info{$_}{$tag}){
+		if ( $Gene_info{$_}{'CGC_name'} ){
+		  print LOG "WARNING: $e should be linked to $_ ($Gene_info{$_}{'CGC_name'}) based on $seq of $e\n";
+		}
+		elsif ( $Gene_info{$_}{'Sequence_name'} ){
+		  print LOG "WARNING: $e should be linked to $_ ($Gene_info{$_}{'Sequence_name'}) based on $seq of $e\n";
+		}
+		if ($ace){
+		  print ACE "\nAllele : \"$e\"\n";
+		  print ACE "Gene \"$_\"\n";
+		}
 	      }
 	    }
 	  }
@@ -1070,7 +1079,7 @@ sub process_allele_class{
       my @geneids=$allele->Gene;
 
       if (scalar @geneids > 1){
-	print LOG "ERROR: $allele is connected to more than one Genes: @geneids\n";
+	print LOG "CHECK: $allele is connected to more than one gene ids: @geneids\n";
       }
     }
 
@@ -1212,7 +1221,7 @@ sub process_strain_class {
     }
   }
 
-  my ($locus, %allele_locus, %strain_genotype, $cds, %locus_cds, $main, $other_name, %other_main, $allele);
+  my ($locus, %allele_locus, %strain_genotype, $cds, %locus_cds, $main, $allele);
 
   my $get_genotype_in_strain="Table-maker -p \"$def_dir/strain_genotype.def\"\nquit\n";
   my $allele_to_locus="Table-maker -p \"$def_dir/allele_to_locus.def\"\nquit\n";
@@ -1233,9 +1242,7 @@ sub process_strain_class {
     if ($_ =~ /\"(.+)\"\s+\"(.+)\"/){
       my $gene_id = $2;
       $gene_id =~ s/\\//;
-     # if (!$exceptions{$locus}){
-	push(@{$allele_locus{$1}}, $Gene_info{$gene_id}{'CGC_name'}) if exists $Gene_info{$gene_id}{'CGC_name'};
-     # }
+      push(@{$allele_locus{$1}}, $Gene_info{$gene_id}{'CGC_name'}) if exists $Gene_info{$gene_id}{'CGC_name'};
     }
   }
   close FH2;
@@ -1422,9 +1429,9 @@ sub check_genetics_coords_mapping {
   }
 }
 
-                          ############################################################
-                          #             SUBROUTINES FOR -c multipt option            #
-                          ############################################################
+                          #######################################################
+                          #             SUBROUTINES FOR -c ps option            #
+                          #######################################################
 
 sub int_map_to_map_loci {
 
@@ -1474,9 +1481,19 @@ sub int_map_to_map_loci {
 
   print LOG    "Total: $error to become inferred genetic marker(s)\n\n";
   print JAHLOG "Total: $error to become inferred genetic marker(s)\n\n";
+}
 
-  $header = "\n\nChecking dubious multi-pt <-> Gene association\n";
-  $sep = "-----------------------------------------------------------------------------------\n";
+
+
+                          ############################################################
+                          #             SUBROUTINES FOR -c multipt option            #
+                          ############################################################
+
+
+sub check_dubious_multipt_gene_connections {
+
+  my $header = "\n\nChecking dubious multi-pt <-> Gene association\n";
+  my $sep = "-----------------------------------------------------------------------------------\n";
   print $header;
   print LOG $header, $sep;
 
