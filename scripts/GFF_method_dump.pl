@@ -7,7 +7,7 @@
 # Selectively dump GFF for certain acedb methods
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-08-05 16:40:48 $
+# Last edited on: $Date: 2004-10-14 10:34:47 $
 
 
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{CVS_DIR};
@@ -56,7 +56,7 @@ open (WRITEDB,"| $giface $database") or die "failed to open giface connection to
 foreach my $sequence ( @sequences ) {
   if ( @methods ) {
     foreach my $method ( @methods ) {
-      my $command = "gif seqget $sequence +method $method; seqfeatures -version 2 -file $dump_dir/${sequence}_${method}.gff\n";
+      my $command = "gif seqget $sequence +method $method; seqfeatures -version 2 -file $dump_dir/${sequence}.${method}.gff\n";
       print "$command";
       print WRITEDB $command;
     }
