@@ -156,11 +156,11 @@ foreach $chromosome (@chromosomes) {
 			}
 			if ($lab eq "HX") {
 #			    print "CAM => $line Clone:$seq Lab:$lab\n";
-			    print OUT_CAM "$line Clone:$seq Lab:$lab\n";
+			    print OUT_CAM "$line\tClone:$seq\tLab:$lab\n";
 			}
 			elsif ($lab eq "RW") {
 #			    print  "STL => $line Clone:$seq Lab:$lab\n";
-			    print OUT_STL "$line Clone:$seq Lab:$lab\n";
+			    print OUT_STL "$line\tClone:$seq\tLab:$lab\n";
 			}
 			($seq,$lab) = "";
 			$confirmed_intron{$chromosome}++;
@@ -179,7 +179,7 @@ foreach $chromosome (@chromosomes) {
     close GFF;
     
 
-    print "Completed GFF file: 'CHROMOSOME_${chromosome}' : Confirmed_introns not in GeneModel $confirmed_intron{$chromosome}\n";
+    print "Completed GFF file: 'CHROMOSOME_${chromosome}'\t: Confirmed_introns not in GeneModel $confirmed_intron{$chromosome}\n";
 
 }
 close OUT_CAM;

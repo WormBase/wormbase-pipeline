@@ -143,9 +143,9 @@ open (EST_mismatched_2, ">$outdir/EST_mismatched.ace");
 open (EST_no_accession_1, ">$outdir/EST_no_accession.txt");
 open (EST_no_accession_2, ">$outdir/EST_no_accession.ace");
 
-print EST_unassigned_2   "KeySet : \"Unassigned_ESTs.$rundate\"\n";
-print EST_mismatched_2   "KeySet : \"Mismatched_ESTs.$rundate\"\n";
-print EST_no_accession_2 "KeySet : \"No_accession.$rundate\"\n";
+print EST_unassigned_2   "KeySet :\t\"Unassigned_ESTs.$rundate\"\n";
+print EST_mismatched_2   "KeySet :\t\"Mismatched_ESTs.$rundate\"\n";
+print EST_no_accession_2 "KeySet :\t\"No_accession.$rundate\"\n";
 
 foreach $EST (sort keys %EST_clone) {
 
@@ -161,23 +161,23 @@ foreach $EST (sort keys %EST_clone) {
 
 	# No accession
 	if ($EST_acc{$read} eq "") {
-	    print LOG "=> $read has no accession number\n";
-	    print EST_no_accession_1 "$read has no accession number\n";
-	    print EST_no_accession_2 "Sequence : \"$read\"\n";
+	    print LOG "=> $read\thas no accession number\n";
+	    print EST_no_accession_1 "$read\thas no accession number\n";
+	    print EST_no_accession_2 "Sequence :\t\"$read\"\n";
 	}
 
 	# No match in genome
 	if ($EST_match{$read} eq "") {
-	    print LOG "=> $read is not attached to a CDS\n";
-	    print EST_unassigned_1 "$read is not attached to a CDS\n";
-	    print EST_unassigned_2 "Sequence : \"$read\"\n";
+	    print LOG "=> $read\tis not attached to a CDS\n";
+	    print EST_unassigned_1 "$read\tis not attached to a CDS\n";
+	    print EST_unassigned_2 "Sequence :\t\"$read\"\n";
 	}
 	
 	# Mismatch between .3 and .5 reads
 	if ( ($first_match ne "") && ($EST_match{$read} ne $first_match)) {
-	    print LOG "=> $read is attached to a different CDS than $first_read : [${read}:$EST_match{$read} | $first_read:$first_match]\n";
-	    print EST_mismatched_1 "$read is attached to a different CDS than $first_read : [${read}:$EST_match{$read} | $first_read:$first_match]\n";
-	    print EST_mismatched_2 "Sequence : \"$read\"\n";
+	    print LOG "=> $read\tis attached to a different CDS than $first_read :\t[${read}:$EST_match{$read}\t|\t$first_read:$first_match]\n";
+	    print EST_mismatched_1 "$read\tis attached to a different CDS than $first_read :\t[${read}:$EST_match{$read}\t|\t$first_read:$first_match]\n";
+	    print EST_mismatched_2 "Sequence :\t\"$read\"\n";
 	} 
 
 	# Store .3 match for comparison
