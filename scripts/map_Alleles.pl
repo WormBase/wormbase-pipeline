@@ -6,8 +6,8 @@
 #
 # This maps alleles to the genome based on their flanking sequences
 #
-# Last updated by: $Author: krb $                      
-# Last updated on: $Date: 2004-09-09 13:44:46 $        
+# Last updated by: $Author: ar2 $                      
+# Last updated on: $Date: 2005-02-11 16:00:47 $        
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -156,7 +156,7 @@ exit(0);
 sub map_alleles{
   # First get allele info from database
   my $db = Ace->connect(-path  => $database) || do { print  "$database Connection failure: ",Ace->error; die();};
-  my @alleles = $db->fetch(-query =>'Find Allele WHERE Flanking_sequences');
+  my @alleles = $db->fetch(-query =>'Find Variation WHERE Flanking_sequences');
   
   open (OUT,">$ace_file") or die "cant open $ace_file\n";
   open (GFF,">$gff_file") or die "cant open $gff_file\n" if ($gff);
@@ -349,14 +349,14 @@ sub outputAllele{
 	  print OUT "\nCDS : \"$cds\"\n";
 	  print OUT "Alleles $allele\n\n";
 
-	  print OUT "Allele : $allele\n";
+	  print OUT "Variation : $allele\n";
 	  print OUT "Predicted_gene $cds\n";
 	}
 	elsif ($worm_gene2class{$cds} eq "Transcript"){
 	  print OUT "\nTranscript : \"$cds\"\n";
 	  print OUT "Alleles $allele\n\n";
 
-	  print OUT "Allele : $allele\n";
+	  print OUT "Variation : $allele\n";
 	  print OUT "Transcript $cds\n";
 	}
 	else{
@@ -398,7 +398,7 @@ sub check_original_mappings{
 
   my $original_db = Ace->connect(-path => "$database") || do { print  "$database Connection failure: ",Ace->error; die();};
   
-  my @original_alleles = $original_db->fetch(-query =>'Find Allele WHERE Flanking_sequences');
+  my @original_alleles = $original_db->fetch(-query =>'Find Variation WHERE Flanking_sequences');
 
 # loop through each allele and then each gene for each allele, adding to hash structure
   foreach my $allele (@original_alleles) {
