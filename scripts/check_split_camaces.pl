@@ -4,8 +4,8 @@
 #
 # Cronjob integrity check controls for split camace databases.
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-11-28 11:31:38 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2004-05-05 12:03:04 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -17,7 +17,7 @@ my $wormpub_dir = glob("~wormpub");
 my $log = "/wormsrv2/logs/check_split_camaces.$rundate.$$";
 open (LOG,">$log") or &mail_maintainer("LOG failed in check_split_camaces.pl","wormbase\@sanger.ac.uk");
 
-my @users = ("ar2", "dl1", "pad");
+my @users = ("ar2", "dl1", "pad", "krb");
 
 foreach my $name (@users) {
   if(-e "$wormpub_dir/camace_${name}/database/ACEDB.wrm" ) {
