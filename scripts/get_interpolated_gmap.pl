@@ -7,12 +7,12 @@
 # This script calculates interpolated genetic map positions for CDS, Transcripts 
 # and Pseudogenes lying between and outside genetic markers.
 #
-# Last updated on: $Date: 2004-09-02 12:04:18 $
-# Last updated by: $Author: dl1 $
+# Last updated on: $Date: 2004-12-15 17:01:28 $
+# Last updated by: $Author: krb $
 
 
 use strict;
-use lib "/wormsrv2/scripts/";
+use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
 use Cwd 'chdir';
 use Getopt::Long;
@@ -22,28 +22,32 @@ use GENEACE::Geneace;
 # variables and command-line options with aliases #
 ###################################################
 
-my ($diff, $reverse, $database, $gff_location, $help, $debug, $map, $comp, $verbose);
+my ($diff, $reverse, $database, $gff_location, $help, $debug, $map, $comp, $verbose,$test);
 
 GetOptions ("diff"          => \$diff,
             "rev|reverse"   => \$reverse,
-	    "database=s" => \$database,
+	    "database=s"    => \$database,
 	    "map"           => \$map,
 	    "comp"          => \$comp,
 	    "h|help"        => \$help,
 	    "d|debug"       => \$debug,
 	    "v|verbose"     => \$verbose,
+	    "test"          => \$test,
            );
 
+my $basedir   = "/wormsrv2";
+$basedir      = glob("~wormpub")."/TEST_BUILD" if ($test);
 
-my $gff_dir    = "/wormsrv2/autoace/GFF_SPLITS/";
-my $output     = "/wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP";
+my $gff_dir    = "$basedir/autoace/GFF_SPLITS/";
+my $output     = "$basedir/autoace/MAPPINGS/INTERPOLATED_MAP";
 
 my $rundate    = &rundate;
 my $start      = &runtime;
-my $script_dir = "/wormsrv2/scripts/";
-my $tace = glob("~wormpub/ACEDB/bin_ALPHA/tace");
+my $script_dir = "$basedir/scripts/";
+my $tace = &tace;
 
-if (!defined @ARGV){system ("perldoc /wormsrv2/scripts/get_interpolated_gmap.pl"); exit(0)}
+
+if (!defined @ARGV){system ("perldoc $basedir/scripts/get_interpolated_gmap.pl"); exit(0)}
 
 # set WS version number
 my $version = &get_wormbase_version;
@@ -52,11 +56,11 @@ my $version = &get_wormbase_version;
 # Use specified database for path but default to using autoace if -database not specified
 if($database){
   my $prev_version = $version -1;
-  $gff_location = "/wormsrv2/autoace/GFF_SPLITS/WS"."$prev_version";
+  $gff_location = "$basedir/autoace/GFF_SPLITS/WS"."$prev_version";
 }
 else{
-  $gff_location = "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS";
-  $database = "/wormsrv2/autoace";
+  $gff_location = "$basedir/autoace/GFF_SPLITS/GFF_SPLITS";
+  $database = "$basedir/autoace";
 }
 print "\nUsing $database as database path for genetics marker loci\n";
 
@@ -69,7 +73,7 @@ if ($reverse){
 }
 
 if ($diff){
-  $diffile = "/wormsrv2/logs/mapping_diff.".$rundate;
+  $diffile = "$basedir/logs/mapping_diff.".$rundate;
   system("rm -f $diffile; chmod 777 $diffile");
   open(DIFF, ">$diffile") || die $!;
 }
@@ -318,7 +322,7 @@ if ($debug){
 ##################################################################################
 
 my $marker_gmap_of_each_chrom=<<EOF;
-Table-maker -p "/wormsrv1/geneace/wquery/marker_gmap_of_each_chrom.def" quit
+Table-maker -p "$basedir/autoace/wquery/marker_gmap_of_each_chrom.def" quit
 EOF
 
 my ($mean_coord, %chrom_pos);
@@ -419,7 +423,7 @@ if ($diff){
 # get chrom length - as slight changes still occurs
 ###################################################
 
-my @dna_file = glob("/wormsrv2/autoace/CHROMOSOMES/CHROMOSOME_*.dna");
+my @dna_file = glob("$basedir/autoace/CHROMOSOMES/CHROMOSOME_*.dna");
 
 my %chrom_length;
 foreach (@dna_file){
@@ -463,7 +467,7 @@ $db->close;
 
 # for debugging only
 if ($debug){
-  open (CL, ">/wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/type");
+  open (CL, ">$basedir/autoace/MAPPINGS/INTERPOLATED_MAP/type");
   foreach (sort keys %class){
     print CL "$_ -> $class{$_}  (1-1)\n";
   }
@@ -689,6 +693,7 @@ foreach $chrom (@chroms){
 	my $cdsf = $cds;
 	$cdsf = sprintf("%-15s", $cdsf);
 
+
 	print CMP "$chrom\t$gmdn\t$locusf\t$cdsf\t$dnmcoord\n";
 	if ($down_mean_coord eq "NA") {
 	  print REV "\n** Gmap marker $cds ($locus1) on $chrom has no coordinate : [$down_mean_coord] **\n";
@@ -740,7 +745,7 @@ if (!$debug){
   print "Deleting old interpolated map and uploading new ones to $database\n";
 
   my $tace = &tace;
-  my $log = "/wormsrv2/logs/load_gmap_to_autoace"."_WS$version.$rundate.$$";
+  my $log = "$basedir/logs/load_gmap_to_autoace"."_WS$version.$rundate.$$";
 
   my $command=<<END;
 find elegans_CDS * where Interpolated_map_position
@@ -772,13 +777,13 @@ END
 if($error_check == 1){
   print "\nERROR: $count_rev reverse physical(s) were found and need you to do some corrections.\n";
   system("perl5.6.1 $script_dir\/update_rev_physicals.pl -panel $count_rev -rev $revfile -comp $cmp_file -v $version");
-  #system("perl5.6.1 \/nfs\/team71\/worm\/ck1\/WORMBASE_CVS\/scripts\/update_rev_physicals.pl -panel $count_rev -rev $revfile -comp $cmp_file -v $version -d");
+
 }
 
 else {
 
   my ($jah, $recipients);
-  $recipients = "krb\@sanger.ac.uk, jah\@bioch.ox.ac.uk, ar2\@sanger.ac.uk, dl1\@sanger.ac.uk, pad\@sanger.ac.uk";
+  $recipients = "mt3\@sanger.ac.uk, jah\@bioch.ox.ac.uk, ar2\@sanger.ac.uk, dl1\@sanger.ac.uk, pad\@sanger.ac.uk";
   $recipients = "krb\@sanger.ac.uk" if $debug;
 
   my @rev = `cat $revfile`;
