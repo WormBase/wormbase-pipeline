@@ -5,7 +5,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-03-05 15:22:19 $
+# Last updated on: $Date: 2004-03-05 16:08:03 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -401,8 +401,18 @@ sub GFF_clones_with_accessions{
       next;
     }
 
-    my ($acc) = $obj->at('DB_info.Database.EMBL.NDB_AC');
-    my ($sv) = $obj->at('DB_info.Database.EMBL.NDB_SV');
+    # Grab accession and sequence version info from the database
+    my $acc;
+    my $sv;
+
+    if($obj->at('DB_info.Database.EMBL.NDB_AC')){
+      ($acc) = $obj->at('DB_info.Database.EMBL.NDB_AC');
+      ($sv) = $obj->at('DB_info.Database.EMBL.NDB_SV');
+    }
+    elsif($obj->at('DB_info.Database.GenBank.NDB_AC')){
+      ($acc) = $obj->at('DB_info.Database.GenBank.NDB_AC');
+      ($sv) = $obj->at('DB_info.Database.GenBank.NDB_SV');
+    }
 
     # now just want the numerical suffix of sequence version field
     $sv =~ s/.*\.//;
