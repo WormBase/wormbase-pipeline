@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-03-10 17:00:14 $
+# Last updated on: $Date: 2003-03-10 17:09:29 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -742,10 +742,11 @@ EOF
 sub check_genetics_coords_mapping {
   print "\nChecking discrepancies in genetics/coords mapping:\n\n";
   print LOG "\nChecking discrepancies in genetics/coords mapping:\n\n";
-  system ("perl5.6.1 /nfs/team71/worm/ck1/WORMBASE_CVS/scripts/cmp_gmap_physical_location.pl -diff");
+  system ("/wormsrv2/scripts/cmp_gmap_physical_location.pl -diff");
   open(IN, "/wormsrv2/logs/mapping_diff") || die $!;
   while(<IN>){
     print LOG $_;
+    print JAHLOG $_;
   }
 }
 
