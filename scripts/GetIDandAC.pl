@@ -14,9 +14,10 @@
 # pfetch is done in batches of 2000, any greater and nothing comes back!
 #
 # Last updated by: $Author: dl1 $                  
-# Last updated on: $Date: 2002-08-13 09:25:59 $    
+# Last updated on: $Date: 2002-08-27 12:09:32 $    
 
 use strict;
+use lib="/wormsrv2/scripts/";
 use Wormbase;
 
 my $maintainer   = "All";
@@ -149,10 +150,10 @@ foreach my $key (keys %protid_data)
 	  $database = "SwissProt";
 	}
 	elsif( $protid_data{$key}[3] =~ m/[OPQ]\d\w{4}/ ) {
-	  $database = "TrEMBL";
+	  $database = "TREMBL";
 	}
 	else {
-	  $database = "TrEMBLNEW";
+	  $database = "TREMBLNEW";
 	}
 	print ACE_OUTPUT "Sequence : \"$protid_data{$key}[0]\"\n";
 	print ACE_OUTPUT "Database \"$database\" \"$protid_data{$key}[3]\" \"$protid_data{$key}[2]\"\n";
