@@ -1,5 +1,53 @@
+=pod 
+
+=head1 NAME
+
+Coords_converter
+
+=head1 SYNOPSIS
+
+my $coords       = Coords_converter->invoke
+
+my $superlink    = $coords->GetSuperlinkFromCoord("I", 10000000)
+
+my $clone        = $coords->GetCloneFromCoord( "I", 1000000 )
+
+$clone           = $coords->GetCloneFromCoord( "SUPERLINK_RW1", 100000 )
+
+my @clone_coords = $coords->LocateSpan("I",5239404,5271341 )
+
+=head1 DESCRIPTION
+
+This object can be used to get from chromosomal coordinates eg those in gff file to clone or superlink coordinates.
+Can also give a clone or superlink from specified chromosome coordinates
+
+=head1 CONTACT
+
+Anthony  ar2@sanger.ac.uk
+
+=head1 APPENDIX
+
+The rest of the documentation details each of the object methods. 
+Internal methods are usually preceded with a _
+
+=cut
+
+
+
+
 package Coords_converter;
 use Carp;
+
+
+=head2 invoke
+
+    Title   :   invoke
+    Usage   :   Coords_converter->invoke
+    Function:   Creats the object and loads in the data fom gff files
+    Returns :   ref to self
+    Args    :   none
+
+=cut
 
 sub invoke 
   {
@@ -38,6 +86,16 @@ sub invoke
     return $self;
   }
 
+=head2 GetSuperlinkFromCoord
+
+    Title   :   GetSuperlinkFromCoord
+    Usage   :   my $superlink = $coords->GetSuperlinkFromCoord('III',4500000)
+    Function:   Determine what superlink any base is in
+    Returns :   superlink as string eg "SUPERLINK_CB_V"
+    Args    :   chromosome as string eg "V",  coordinate as int
+
+=cut
+
 sub GetSuperlinkFromCoord
   {
     my $self = shift;
@@ -53,6 +111,16 @@ sub GetSuperlinkFromCoord
     }
     return 0;
   }
+
+=head2 GetCloneFromCoord
+
+    Title   :   GetCloneFromCoord
+    Usage   :   my $clone = $coords->GetCloneFromCoord('III',1200000)
+    Function:   Determine what clone any base is in
+    Returns :   clone as string eg "AH6"
+    Args    :   chromosome as string eg "III",  coordinate as int
+
+=cut
 
 sub GetCloneFromCoord
   {
@@ -81,6 +149,16 @@ sub GetCloneFromCoord
     }
   }
 
+=head2 _getChromFromSlink
+
+    Title   :   _getChromFromSlink
+    Usage   :   _getChromFromSlink('superlink_name')
+    Function:   Internal usage : determine what chromosome a superlink is in
+    Returns :   Chromosome as string eg "V"
+    Args    :   Superlink as string eg "SUPERLINK_CB_V"
+
+=cut
+
 sub _getChromFromSlink
   {
     my $self = shift;
@@ -97,6 +175,16 @@ sub _getChromFromSlink
       return 0;
     }
   }
+
+=head2 LocateSpan
+
+    Title   :   LocateSpan
+    Usage   :   my @data = $coords->LocateSpan("CHROMOSOME_I", 100000, 101000);
+    Function:   Returns smallest sequence object containing the given coordinate ie clone, slink or csome and the coordinates relative to that sequence.
+    Returns :   Clone as string eg "V"; coordinates relative to clone obj 
+    Args    :   Sequence obj and two coordinates within that eg ("AH6", 3000, 3100)
+
+=cut
 
 sub LocateSpan
   {
@@ -145,10 +233,21 @@ sub LocateSpan
     return ($seq, $rel_x, $rel_y);
   }
 
+=head2 _swap
+
+    Title   :   _swap
+    Usage   :   _swap(\$x,\$y);
+    Function:   swaps values of variables passed in
+    Returns :   nothing
+    Args    :   references to two coordinates
+
+=cut
+
 sub _swap
   {
     my $x = shift;
     my $y = shift;
+    carp "undefined values passed to _swap \n" unless ($$x and $$y);
     my $tmp = $$x;
     $$x = $$y;
     $$y = $tmp;
