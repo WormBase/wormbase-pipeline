@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.0 -w
+#!/usr/local/bin/perl5.6.0 
 #
 # overlapcheck.pl
 #
@@ -8,16 +8,21 @@
 # by Kerstin Jekosch
 # 10/07/01
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-04-25 15:35:08 $
+# Last updated by: $Author: dl1 $
+# Last updated on: $Date: 2002-11-15 10:45:34 $
 
 use strict;
 use Carp;
 use Ace;
 use IO::Handle;
+use Data::Dumper;
 $|=1;
+
 my @chrom = qw(I II III IV V X);
 my (%exon, %est, %genes, %repeat, %intron, %camace, %stlace);
+my %EST_name;    # EST accession => name
+my %EST_dir;     # EST accession => orientation [5|3]
+my $tace      = "/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4/tace /wormsrv2/autoace";
 
 # set parameters for ESTs and repeats (score threshold, overlap threshold)
 my $ESTth      = '98.0';
@@ -26,6 +31,32 @@ my $repth      = '15';
 my $repolstart = '10';
 my $repolmid   = '23';
 my $repolend   = '10';
+
+
+############################################
+# EST data from autoace (name,orientation) #
+############################################
+
+
+print "Loading EST.dat into hashes .....";
+
+# check to see if EST hash data exists
+# make it via tablemaker queries if absent
+unless (-e "/wormsrv2/autoace/BLAT/EST.dat") {
+    (%EST_name,%EST_dir) = &make_EST_hash;
+}
+# else read it into memory
+else {
+    open (FH, "</wormsrv2/autoace/BLAT/EST.dat") or die "EST.dat : $!\n";
+    undef $/;
+    my $data = <FH>;
+    eval $data;
+    die if $@;
+    $/ = "\n";
+    close FH;
+}
+
+print "complete.\n";
 
 #################################
 # I. get clone out of databases #
@@ -54,18 +85,26 @@ foreach my $stlclone (@stlclones) {
 #############################################
 
 foreach my $chrom (@chrom) {
-  print "\nProcessing chromosome $chrom\n";
-  open (GFF, "/wormsrv2/autoace/CHROMOSOMES/CHROMOSOME_$chrom.gff"); 
-  open (CAMOL, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.overlapping_genes_cam") || die "Cannot open output file $chrom $!\n"; 
-  open (CAMEST, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.EST_in_intron_cam") || die "Cannot open output file $chrom $!\n"; 
-  open (CAMREP, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.repeat_in_exon_cam") || die "Cannot open output file $chrom $!\n"; 
-  open (STLOL, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.overlapping_genes_stl") || die "Cannot open output file $chrom $!\n"; 
-  open (STLEST, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.EST_in_intron_stl") || die "Cannot open output file $chrom $!\n"; 
-  open (STLREP, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.repeat_in_exon_stl") || die "Cannot open output file $chrom $!\n"; 
-		
+    print "\nProcessing chromosome $chrom\n";
+#  open (GFF, "/wormsrv2/autoace/CHROMOSOMES/CHROMOSOME_$chrom.gff"); 
+    open (GFF, "/wormsrv2/current_DB/CHROMOSOMES/CHROMOSOME_$chrom.gff"); 
+    open (CAMOL, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.overlapping_genes_cam") 
+	|| die "Cannot open output file $chrom $!\n"; 
+    open (CAMEST, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.EST_in_intron_cam")    
+	|| die "Cannot open output file $chrom $!\n"; 
+    open (CAMREP, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.repeat_in_exon_cam")  
+	|| die "Cannot open output file $chrom $!\n"; 
+    open (STLOL, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.overlapping_genes_stl") 
+	|| die "Cannot open output file $chrom $!\n"; 
+    open (STLEST, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.EST_in_intron_stl")    
+	|| die "Cannot open output file $chrom $!\n"; 
+    open (STLREP, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.repeat_in_exon_stl")   
+	|| die "Cannot open output file $chrom $!\n"; 
+    
   %exon  = %est = %genes = %intron = %repeat = (); 
   my (%exoncount, %introncount, %estcount, %repeatcount, $name);
-    
+    my (%exon_orient, %intron_orient, %est_orient);
+
   while (<GFF>) {
     if (/^CHROM/) {
       my @fields = ();
@@ -74,6 +113,9 @@ foreach my $chrom (@chrom) {
       #################
       # get the exons #
       #################
+      # %exon{AH6.1}        = [34454,36677]
+      # %exon_orient{AH6.1} = +
+      
       
       if ($fields[2] =~ /exon/ and $fields[1] =~ /curated/) {
 	$fields[8] =~ /^Sequence \"(\S+)\"/;
@@ -81,7 +123,8 @@ foreach my $chrom (@chrom) {
 	$exoncount{$name}++; 
 	my $exonname = $name.".".$exoncount{$name};
 	$exon{$exonname} = [$fields[3],$fields[4]]; 
-      }   
+	$exon_orient{$name} = $fields[6];
+    }   
       
       ###################
       # get the introns #
@@ -93,6 +136,7 @@ foreach my $chrom (@chrom) {
 	$introncount{$name}++; 
 	my $intronname = $name.".".$introncount{$name};
 	$intron{$intronname} = [$fields[3],$fields[4]]; 
+	$intron_orient{$name} = $fields[6];
       }
       
       ############################################################################
@@ -106,6 +150,7 @@ foreach my $chrom (@chrom) {
 	my $estname = $name.".".$estcount{$name};
 	my @names = split (/ /, $fields[8]);
 	$est{$estname} = [$fields[3],$fields[4],$names[2],$names[3]];  
+	$est_orient{$name} = $fields[6];
       } 
       
       ###################
@@ -220,42 +265,56 @@ foreach my $chrom (@chrom) {
 # IV. find ESTs matching introns #
 ##################################
 	
-    my $lastfail  = 0;
-    my @intronoutput = ();
+  my $lastfail  = 0;
+  my @intronoutput = ();
+  
+  for (my $x = 0; $x < @estlist; $x++) {
+      my $testest = $estlist[$x];
+      
+      for (my $y = $lastfail; $y < @genelist; $y++) {
+	  my $testgene  = $genelist[$y];
+	  
+	  if (!defined $introncount{$testgene}) {
+	      next;
+	  }
+	  elsif ($est{$testest}->[0] > $genes{$testgene}->[1]){
+	      $lastfail = $y;
+	      next;
+	  }
+	  elsif ($est{$testest}->[1] < $genes{$testgene}->[0]){
+	      last;
+	  }
+	  else {
+	      for (my $z = 1; $z <= $introncount{$testgene}; $z++) {
+		  my $intronstart = $intron{"$testgene.$z"}->[0];
+		  my $intronend   = $intron{"$testgene.$z"}->[1];
+		  my $eststart  = $est{$testest}->[0];
+		  my $estend    = $est{$testest}->[1];
+		  if ( not (($eststart > $intronend) || ($estend < $intronstart))) {
+		      my ($finalest)  = ($testest =~ /^(\S+)\.\d+/);  	
 
-    for (my $x = 0; $x < @estlist; $x++) {
-        my $testest = $estlist[$x];
+		      # report to log file
+		      print "\nLogging error for $finalest which extends into intron $intronstart - $intronend for $testgene\n";
+		      print "EST runs $est_orient{$finalest}\tCDS runs $exon_orient{$testgene}\n";
+		      print "EST is stored as a $EST_dir{$finalest} read\n";
+		      
+		      # throw away matches on the opposite strand
+		      next if (($exon_orient{$testgene} eq "+") && ($EST_dir{$finalest} eq "5") && ($est_orient{$finalest} ne "+"));
+		      next if (($exon_orient{$testgene} eq "+") && ($EST_dir{$finalest} eq "3") && ($est_orient{$finalest} ne "-"));
+		      next if (($exon_orient{$testgene} eq "-") && ($EST_dir{$finalest} eq "5") && ($est_orient{$finalest} ne "-"));
+		      next if (($exon_orient{$testgene} eq "-") && ($EST_dir{$finalest} eq "3") && ($est_orient{$finalest} ne "+"));
+			  
+		      print "data ok - push to array\n";
 
-        for (my $y = $lastfail; $y < @genelist; $y++) {
-            my $testgene  = $genelist[$y];
+		      # push to array
+		      push (@intronoutput, [$finalest,$testgene,$intronstart,$intronend]);
+		  }
 
-            if (!defined $introncount{$testgene}) {
-                next;
-            }
 
-            elsif ($est{$testest}->[0] > $genes{$testgene}->[1]){
-                $lastfail = $y;
-                next;
-            }
-
-            elsif ($est{$testest}->[1] < $genes{$testgene}->[0]){
-                last;
-            }
-
-            else {
-                for (my $z = 1; $z <= $introncount{$testgene}; $z++) {
-                    my $intronstart = $intron{"$testgene.$z"}->[0];
-		    my $intronend   = $intron{"$testgene.$z"}->[1];
-		    my $eststart  = $est{$testest}->[0];
-		    my $estend    = $est{$testest}->[1];
-		    if ( not (($eststart > $intronend) || ($estend < $intronstart))) {
-                        my ($finalest)  = ($testest =~ /^(\S+)\.\d+/);  	
-                        push (@intronoutput, [$finalest,$testgene]);
-	            }
-                }
-            }
-        }   
-    }
+	      }
+	  }
+      }   
+  }
 
     # output for camace
     my @camintrons        = find_database(\@intronoutput,\%camace);
@@ -263,7 +322,7 @@ foreach my $chrom (@chrom) {
     my %camest = ();
     foreach my $pair (sort keys %finalintroncamace) {
         my @single = split (/:/, $pair);
-        push @{$camest{$single[1]}}, $single[0];
+        push @{$camest{$single[1]}}, "$single[0] $single[2] - $single[3]";
     }   
     my %camout = erase_isoforms(\%camest,\%iso);
     foreach my $x (sort keys %camout) {
@@ -277,7 +336,7 @@ foreach my $chrom (@chrom) {
     my %stlest = ();
     foreach my $pair (sort keys %finalintronstlace) {
         my @single = split (/:/, $pair);
-        push @{$stlest{$single[1]}}, $single[0];
+        push @{$stlest{$single[1]}}, "$single[0] $single[2] - $single[3]";
     }   
     my %stlout = erase_isoforms(\%stlest,\%iso);
     foreach my $x (sort keys %stlout) {
@@ -420,8 +479,57 @@ sub sort_by_gene {
     my %final_output;
 	
     foreach my $out (@output) {
-    	my $both  = $out->[1].":".$out->[0];
+    	my $both  = $out->[1].":".$out->[0].":".$out->[2].":".$out->[3];
         $final_output{$both}++,
     }
     return %final_output;
 }
+
+
+sub make_EST_hash {
+    
+    my ($command1,$command2) = &commands;
+    my ($acc,$name,$orient);
+
+    my %EST_name = ();
+    my %EST_dir  = ();
+
+    # get EST names  (-e option only)       #
+    open (TACE, "echo '$command1' | $tace | ");
+    while (<TACE>) {
+        chomp;
+        next if ($_ eq "");
+        next if (/\/\//);
+        s/acedb\>\s//g;
+        s/\"//g;
+        s/EMBL://g;
+        ($acc,$name) = ($_ =~ /^(\S+)\s(\S+)/);
+        $name = $acc unless ($name);
+        $EST_name{$acc} = $name;
+    }
+    close TACE;
+
+    # get EST orientation (5' or 3')    #
+    open (TACE, "echo '$command2' | $tace | ");
+    while (<TACE>) {
+        chomp;
+        next if ($_ eq "");
+        next if (/\/\//);
+        s/acedb\>\s//g;
+        s/\"//g;
+        ($name,$orient) = ($_ =~ /^(\S+)\s+EST_(\d)/);
+        $EST_dir{$name} = $orient if ($orient);
+    }
+    close TACE;
+
+    # Data::Dumper write hash to /wormsrv2/autoace/BLAT/EST.dat
+    open (OUT, ">/wormsrv2/autoace/BLAT/EST.dat") or die "EST.dat : $!";
+    print OUT Data::Dumper->Dump([\%EST_name],['*EST_name']);
+    print OUT Data::Dumper->Dump([\%EST_dir],['*EST_dir']);
+    close OUT;
+
+    return (%EST_name,%EST_dir);
+
+
+}
+
