@@ -6,7 +6,7 @@
 #
 # Automatically update Geneace with Erich's functional annotation update
 #
-# Last updated on: $Date: 2003-12-17 10:49:08 $
+# Last updated on: $Date: 2004-02-03 10:32:04 $
 # Last updated by: $Author: ck1 $
 
 use strict;                    
@@ -439,13 +439,15 @@ END
 
 sub dataset {
   my $dir = shift;
-  my ($date, $name);
+  my $date = ();
+  my $name;
+
   opendir(DIR, $dir) || die "Can't read directory";
   my @dir=readdir DIR;
   splice(@dir, 0,2);
   closedir (DIR);
   foreach (@dir){
-    if ($_ =~ /^annots-(\d+)(\w{3,3})(\d+)_CDS\.ace$/){
+    if ($_ =~ /^annots-(\d+)(\w{3,3})(\d+)\.ace$/){
       $name = $_;
       my $mon = $2;
       if ($mon eq "jan"){$mon = "01"}
@@ -461,6 +463,10 @@ sub dataset {
       if ($mon eq "nov"){$mon = "11"}
       if ($mon eq "dec"){$mon = "12"}
       $date = $1.$mon.$3;
+      if (!$date){
+	print LOG "\nFilename in FTP directory cannot be processed. Script halted\n";
+	exit(0);
+      }
     }
   }
   return $date, $name; 
