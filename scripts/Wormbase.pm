@@ -9,8 +9,9 @@ use Exporter;
 use Carp;
 use Ace;
 @ISA       = qw(Exporter);
-@EXPORT    = qw(get_wormbase_version get_wormbase_version_name get_wormbase_release_date copy_check mail_maintainer celeaccession tace gff_sort dbfetch clones_in_database open_TCP DNA_string_reverse DNA_string_composition release_databases find_file_last_modified FetchData release_composition release_wormpep test_user_wormpub runtime tace giface check_write_access);
-@EXPORT_OK = qw(get_script_version); 
+
+@EXPORT    = qw(get_wormbase_version get_wormbase_version_name get_wormbase_release_date copy_check mail_maintainer celeaccession tace gff_sort dbfetch clones_in_database open_TCP DNA_string_reverse DNA_string_composition release_databases find_file_last_modified FetchData release_composition release_wormpep test_user_wormpub runtime tace giface check_write_access Map_feature scan);
+ 
 
 
 #################################################################################
