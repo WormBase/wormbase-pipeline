@@ -133,13 +133,13 @@ print "-> $count proteins were added to the database ($count_swall map to a swal
 
 $db->disconnect;
 
-#################################################################
-# run the RuleManager script,
-# which creates and run the appropriate jobs
-#################################################################
 
-
-
+####################################
+#   run script to check that whats in the database is whats in wormpep
+#$fasta = new_entries.WS$WS_versio
+my $version = $fasta =~ /new_entries\.WS(\d+)/;
+my $wp_file = "/wormsrv2/WORMPEP/wormpep$version/wp.fasta$version";
+system("perl ~/wormbase/scripts/BLAST_scripts/mysql_vs_db_protein_compare.pl -fasta $wp_file");
 
 
 
