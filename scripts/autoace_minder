@@ -362,7 +362,7 @@ sub get_WS_version {
 
     # exit if WS version (database.wrm) is older than build_in_process flag
     # i.e. the WS version has been changed since the start of the build
-    &usage(11) if (-M $flag{'A1'} < -M $WSver_file);
+#    &usage(11) if (-M $flag{'A1'} < -M $WSver_file);
 
     # manipulate to assign last WS release version
     $WS_previous = $WS_version -1;
