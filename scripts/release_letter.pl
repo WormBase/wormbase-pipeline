@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers                             
 #
-# Last updated by: $Author: krb $               
-# Last updated on: $Date: 2003-07-25 11:09:12 $         
+# Last updated by: $Author: ck1 $               
+# Last updated on: $Date: 2003-09-18 13:10:51 $         
 #
 # Generates a release letter at the end of build.
 #
@@ -83,6 +83,8 @@ if( defined($opt_l)) {
   print RL "xi)\tbest_blastp_hits.WS$ver.gz    - for each C. elegans WormPep protein, lists Best blastp match to\n 
                                         human, fly, yeast, C. briggsae, and SwissProt & Trembl proteins.\n";
 
+  print RL "xii)\tbest_blastp_hits_brigprot.WS$ver.gz   - for each C. briggsae protein, lists Best blastp match to\n 
+                                        human, fly, yeast, C. elegans, and SwissProt & Trembl proteins.\n";  
   print RL "\n\n";
   print RL "Release notes on the web:\n-------------------------\n";
   print RL "http://www.sanger.ac.uk/Projects/C_elegans/WORMBASE\n\n\n\n";
