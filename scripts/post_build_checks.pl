@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl5.6.0 -w
 #
-# wrapper to call introncheck, estcheck and overlapcheck on gff files, 
+# wrapper to call introncheck, estcheck and overlapcheck.pl on gff files, 
 # recommended after database rebuilt :o)
 #
 # by Kerstin Jekosch
@@ -9,7 +9,7 @@
 # N.B. Previously called gffcheck
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-04-25 13:58:15 $
+# Last updated on: $Date: 2002-04-25 15:35:08 $
 
 
 use Getopt::Std;
@@ -27,7 +27,7 @@ use strict;
 use vars qw / $opt_a $opt_o $opt_e $opt_i $opt_h /;
 
 $opt_a="";   # does all the following
-$opt_o="";   # performs overlapcheck
+$opt_o="";   # performs overlapcheck.pl
 $opt_e="";   # performs estcheck 
 $opt_i="";   # performs introncheck
 $opt_h="";   # Help/Usage page
@@ -66,7 +66,7 @@ print LOG "=====================================================================
 print LOG "  -a : executes all of the following -e -i -o\n" if ($opt_a);
 print LOG "  -e : executes estcheck\n"                      if ($opt_e);
 print LOG "  -i : executes introncheck\n"                   if ($opt_i);
-print LOG "  -o : executes overlapcheck\n"                  if ($opt_o);
+print LOG "  -o : executes overlapcheck.pl\n"                  if ($opt_o);
 print LOG "======================================================================\n";
 print LOG "\n";
 
@@ -75,9 +75,8 @@ print LOG "\n";
 #########################
 
 &runestcheck     if ($opt_e);
-&runoverlapcheck if ($opt_o);
 &runintroncheck  if ($opt_i);
-
+&runoverlapcheck if ($opt_o);
 
 ##############################
 # mail $maintainer report    #
@@ -100,18 +99,21 @@ exit(0);
 ###############
 
 sub runestcheck {
+    print LOG "Starting estcheck\n";
     system ("/wormsrv2/scripts/estcheck") && die "Cannot execute estcheck $!\n";
-    print LOG "Run estcheck\n";
+    print LOG "Finished running estcheck\n";
 }
 
 sub runintroncheck {
+    print LOG "Starting introncheck\n";
     system ("/wormsrv2/scripts/introncheck") && die "Cannot execute introncheck $!\n";
-    print LOG "Run introncheck\n";
+    print LOG "Finished running introncheck\n";
 }
 
 sub runoverlapcheck {
-    system ("/wormsrv2/scripts/overlapcheck") && die "Cannot execute overlapcheck $!\n";
-    print LOG "Run overlapcheck\n";
+    print LOG "Starting overlapcheck.pl\n";
+    system ("/wormsrv2/scripts/overlapcheck.pl") && die "Cannot execute overlapcheck.pl $!\n";
+    print LOG "Finished running overlapcheck.pl\n";
 }
    
 sub usage {
@@ -134,7 +136,7 @@ __END__
 
 post_build_checks.pl is a wrapper to drive scripts to check the gff files for confirmed introns (introncheck), 
 inconsistencies in EST assignments (estcheck), overlapping genes, ESTs matching introns and repeats 
-within genes (overlapcheck).  
+within genes (overlapcheck.pl).  
 
 post_build_checks.pl mandatory arguments:
 
@@ -154,7 +156,7 @@ post_build_checks.pl OPTIONAL arguments:
 
 =item -i, executes introncheck 
 
-=item -o, execute overlapcheck
+=item -o, execute overlapcheck.pl
 
 =back
 

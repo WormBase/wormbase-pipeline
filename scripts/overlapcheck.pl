@@ -1,10 +1,15 @@
-#!/usr/local/bin/perl -w
+#!/usr/local/bin/perl5.6.0 -w
+#
+# overlapcheck.pl
 #
 # checks whether genes overlap, ESTs match introns and repeats match exons                                   
 # sorts output for stl and cam clones
 #
 # by Kerstin Jekosch
 # 10/07/01
+#
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2002-04-25 15:35:08 $
 
 use strict;
 use Carp;
@@ -29,17 +34,17 @@ my $repolend   = '10';
 my $camdb     = Ace->connect(-path => '/wormsrv2/camace/') || die "Couldn't connect to camace\n", Ace->error;
 my @camclones = $camdb->fetch(-query => 'FIND Genome_Sequence');
 foreach my $camclone (@camclones) {
-	my $string = $camclone->Confidential_remark(1);
-	if ((defined $string) && (($string =~ /Louis/) || ($string =~ /not in Cambridge/))) {
-		next;
-	}
-	else {$camace{$camclone} = 1;}
+  my $string = $camclone->Confidential_remark(1);
+  if ((defined $string) && (($string =~ /Louis/) || ($string =~ /not in Cambridge/))) {
+    next;
+  }
+  else {$camace{$camclone} = 1;}
 }
 
 my $stldb     = Ace->connect(-path => '/wormsrv2/stlace/') || die "Couldn't connect to stlace\n", Ace->error;
 my @stlclones = $stldb->fetch(-query => 'FIND Genome_Sequence');
 foreach my $stlclone (@stlclones) {
-	$stlace{$stlclone} = 1;
+  $stlace{$stlclone} = 1;
 }
 
 
@@ -49,159 +54,149 @@ foreach my $stlclone (@stlclones) {
 #############################################
 
 foreach my $chrom (@chrom) {
-
-    open (GFF, "/wormsrv2/autoace/CHROMOSOMES/CHROMOSOME_$chrom.gff"); 
-    open (CAMOL, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.overlapping_genes_cam") 
-	|| die "Cannot open output file $chrom $!\n"; 
-    open (CAMEST, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.EST_in_intron_cam") 
-	|| die "Cannot open output file $chrom $!\n"; 
-    open (CAMREP, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.repeat_in_exon_cam") 
-	|| die "Cannot open output file $chrom $!\n"; 
-    open (STLOL, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.overlapping_genes_stl") 
-	|| die "Cannot open output file $chrom $!\n"; 
-    open (STLEST, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.EST_in_intron_stl") 
-	|| die "Cannot open output file $chrom $!\n"; 
-    open (STLREP, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.repeat_in_exon_stl") 
-	|| die "Cannot open output file $chrom $!\n"; 
+  print "\nProcessing chromosome $chrom\n";
+  open (GFF, "/wormsrv2/autoace/CHROMOSOMES/CHROMOSOME_$chrom.gff"); 
+  open (CAMOL, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.overlapping_genes_cam") || die "Cannot open output file $chrom $!\n"; 
+  open (CAMEST, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.EST_in_intron_cam") || die "Cannot open output file $chrom $!\n"; 
+  open (CAMREP, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.repeat_in_exon_cam") || die "Cannot open output file $chrom $!\n"; 
+  open (STLOL, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.overlapping_genes_stl") || die "Cannot open output file $chrom $!\n"; 
+  open (STLEST, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.EST_in_intron_stl") || die "Cannot open output file $chrom $!\n"; 
+  open (STLREP, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.repeat_in_exon_stl") || die "Cannot open output file $chrom $!\n"; 
 		
-    %exon  = %est = %genes = %intron = %repeat = (); 
-    my (%exoncount, %introncount, %estcount, %repeatcount, $name);
+  %exon  = %est = %genes = %intron = %repeat = (); 
+  my (%exoncount, %introncount, %estcount, %repeatcount, $name);
     
-    while (<GFF>) {
-        if (/^CHROM/) {
-            my @fields = ();
-            @fields = split(/\t/,$_);
+  while (<GFF>) {
+    if (/^CHROM/) {
+      my @fields = ();
+      @fields = split(/\t/,$_);
 
+      #################
+      # get the exons #
+      #################
+      
+      if ($fields[2] =~ /exon/ and $fields[1] =~ /curated/) {
+	$fields[8] =~ /^Sequence \"(\S+)\"/;
+	$name = $1;
+	$exoncount{$name}++; 
+	my $exonname = $name.".".$exoncount{$name};
+	$exon{$exonname} = [$fields[3],$fields[4]]; 
+      }   
+      
+      ###################
+      # get the introns #
+      ###################
+      
+      if ($fields[2] =~ /intron/ and $fields[1] =~ /curated/) {
+	$fields[8] =~ /^Sequence \"(\S+)\"/;
+	$name = $1;
+	$introncount{$name}++; 
+	my $intronname = $name.".".$introncount{$name};
+	$intron{$intronname} = [$fields[3],$fields[4]]; 
+      }
+      
+      ############################################################################
+      # get the ESTs above a certain thresholdthreshold and certain match length #
+      ############################################################################
+      
+      elsif (($fields[1] =~ /^BLAT_EST_BEST/ && $fields[5] > $ESTth) && (($fields[4] - $fields[3]) > $ESTlength)) {
+	$fields[8] =~ /Sequence:(\S+)\"/;
+	$name = $1;
+	$estcount{$name}++;
+	my $estname = $name.".".$estcount{$name};
+	my @names = split (/ /, $fields[8]);
+	$est{$estname} = [$fields[3],$fields[4],$names[2],$names[3]];  
+      } 
+      
+      ###################
+      # get the repeats #
+      ###################
 
-
-
-    #################
-    # get the exons #
-    #################
-			
-            if ($fields[2] =~ /exon/ and $fields[1] =~ /curated/) {
-                $fields[8] =~ /^Sequence \"(\S+)\"/;
-                $name = $1;
-                $exoncount{$name}++; 
-                my $exonname = $name.".".$exoncount{$name};
-                $exon{$exonname} = [$fields[3],$fields[4]]; 
-            }   
-            
-    ###################
-    # get the introns #
-    ###################
-			
-            if ($fields[2] =~ /intron/ and $fields[1] =~ /curated/) {
-                $fields[8] =~ /^Sequence \"(\S+)\"/;
-                $name = $1;
-                $introncount{$name}++; 
-                my $intronname = $name.".".$introncount{$name};
-                $intron{$intronname} = [$fields[3],$fields[4]]; 
-            }
-    
-    ############################################################################
-    # get the ESTs above a certain thresholdthreshold and certain match length #
-    ############################################################################
-			
-            elsif (($fields[1] =~ /^BLAT_EST_BEST/ && $fields[5] > $ESTth) && (($fields[4] - $fields[3]) > $ESTlength)) {
-                $fields[8] =~ /Sequence:(\S+)\"/;
-                $name = $1;
-                $estcount{$name}++;
-                my $estname = $name.".".$estcount{$name};
-                my @names = split (/ /, $fields[8]);
-                $est{$estname} = [$fields[3],$fields[4],$names[2],$names[3]];  
-            } 
-           
-    ###################
-    # get the repeats #
-    ###################
-			
-            elsif (($fields[1] =~ /hmmfs/) && ($fields[5] > $repth)) {
-                my @descr = split (/ /);
-                $descr[1] =~ /\"Motif:(\S+)\"/; 
-                $name = $1;
-                $repeatcount{$name}++;
-                my $repeatname = $name.".".$repeatcount{$name};
-                $repeat{$repeatname} = [$fields[3],$fields[4]];  
-			} 
-        }
-    }        
-		
-    #########################
-    # make exons into genes #
-    #########################
-	
-    foreach $name (sort keys %exoncount) {
-	my $v = $exoncount{$name};
-	my $w = "$name.$v";
-        $genes{$name} = [$exon{$name.".1"}->[0],$exon{$w}->[1]];
+      
+      elsif (($fields[5] ne ".") && ($fields[1] =~ /hmmfs/) && ($fields[5] > $repth)) {
+	my @descr = split (/ /);
+	$descr[1] =~ /\"Motif:(\S+)\"/; 
+	$name = $1;
+	$repeatcount{$name}++;
+	my $repeatname = $name.".".$repeatcount{$name};
+	$repeat{$repeatname} = [$fields[3],$fields[4]];  
+      } 
     }
-
-    #################
-    # hunt isoforms #
-    #################
-    
-    my %iso = ();
-    my @alphabet = ("a" .. "z");
-    foreach $name (sort keys %genes) {
-        if ($name =~ /\da$/) {
-            my ($newname) = ($name =~ /(\S+\.\d+)a$/);
-            foreach my $letter (sort @alphabet) {
-                my $k = $newname.$letter;
-                if (exists $genes{$k}) {
-                    push @{$iso{$name}}, $k; 
-                }
-                else {
-                    last;
-                }
-            }    
-        }
+  }        
+  
+  #########################
+  # make exons into genes #
+  #########################
+  
+  foreach $name (sort keys %exoncount) {
+    my $v = $exoncount{$name};
+    my $w = "$name.$v";
+    $genes{$name} = [$exon{$name.".1"}->[0],$exon{$w}->[1]];
+  }
+  
+  #################
+  # hunt isoforms #
+  #################
+  
+  my %iso = ();
+  my @alphabet = ("a" .. "z");
+  foreach $name (sort keys %genes) {
+    if ($name =~ /\da$/) {
+      my ($newname) = ($name =~ /(\S+\.\d+)a$/);
+      foreach my $letter (sort @alphabet) {
+	my $k = $newname.$letter;
+	if (exists $genes{$k}) {
+	  push @{$iso{$name}}, $k; 
+	}
+	else {
+	  last;
+	}
+      }    
     }
+  }
+  
+  
+  
 
-   
-           
+  #####################
+  # get "index" lists #
+  #####################
+  
+  my @exonlist   = sort { ${$exon{$a}}[0]     <=> ${$exon{$b}}[0]   || $a cmp $b  } keys %exon;
+  my @estlist    = sort { ${$est{$a}}[0]      <=> ${$est{$b}}[0]    || $a cmp $b  } keys %est;
+  my @genelist   = sort { ${$genes{$a}}[0]    <=> ${$genes{$b}}[0]  || $a cmp $b  } keys %genes;
+  my @repeatlist = sort { ${$repeat{$a}}[0]   <=> ${$repeat{$b}}[0] || $a cmp $b  } keys %repeat; 
+  my @intronlist = sort { ${$intron{$a}}[0]   <=> ${$intron{$b}}[0] || $a cmp $b  } keys %intron; 
 
-    #####################
-    # get "index" lists #
-    #####################
+
+  ###############################
+  # III. find overlapping genes #
+  ###############################
 	
-    my @exonlist   = sort { ${$exon{$a}}[0]     <=> ${$exon{$b}}[0]   || $a cmp $b  } keys %exon;
-    my @estlist    = sort { ${$est{$a}}[0]      <=> ${$est{$b}}[0]    || $a cmp $b  } keys %est;
-    my @genelist   = sort { ${$genes{$a}}[0]    <=> ${$genes{$b}}[0]  || $a cmp $b  } keys %genes;
-    my @repeatlist = sort { ${$repeat{$a}}[0]   <=> ${$repeat{$b}}[0] || $a cmp $b  } keys %repeat; 
-    my @intronlist = sort { ${$intron{$a}}[0]   <=> ${$intron{$b}}[0] || $a cmp $b  } keys %intron; 
-
-
-
-
-###############################
-# III. find overlapping genes #
-###############################
-	
-    my @geneoutput = ();
-    for (my $x = 0; $x < @exonlist; $x++) {
-        for (my $y = $x + 1; $y < @exonlist; $y++) {
-            my $name  = $exonlist[$x];
-            my $other = $exonlist[$y];
-            undef my $one; undef my $two;
-            ($one) = ($name  =~ /(\S.*?\.\d+)[a-z]\./);
-            ($two) = ($other =~ /(\S.*?\.\d+)[a-z]\./);
-            if (!$one) {$one = "n/a";}
-            if (!$two) {$two = "n/b";}
-            if ($name eq $other || $one eq $two) {
-                next;
-            }
-            elsif (${$exon{$name}}[1] >= ${$exon{$other}}[0])  {
-                (my $onename)    = ($name  =~ /(\S.*?\.\S.*?)\./);
-                (my $othername)  = ($other =~ /(\S.*?\.\S.*?)\./);
-                push (@geneoutput, [sort ($onename,$othername)] );
-            }    
-            else {last;}
-        }
+  my @geneoutput = ();
+  for (my $x = 0; $x < @exonlist; $x++) {
+    for (my $y = $x + 1; $y < @exonlist; $y++) {
+      my $name  = $exonlist[$x];
+      my $other = $exonlist[$y];
+      undef my $one; undef my $two;
+      ($one) = ($name  =~ /(\S.*?\.\d+)[a-z]\./);
+      ($two) = ($other =~ /(\S.*?\.\d+)[a-z]\./);
+      if (!$one) {$one = "n/a";}
+      if (!$two) {$two = "n/b";}
+      if ($name eq $other || $one eq $two) {
+	next;
+      }
+      elsif (${$exon{$name}}[1] >= ${$exon{$other}}[0])  {
+         (my $onename)    = ($name  =~ /(\S.*?\.\S.*?)\./);
+         (my $othername)  = ($other =~ /(\S.*?\.\S.*?)\./);
+	 push (@geneoutput, [sort ($onename,$othername)] );
+       }   
+      else {last;}
     }
-	
-    # output for camace
-    my @camgenes         = find_database(\@geneoutput,\%camace);   
+  }
+
+ # output for camace
+  my @camgenes         = find_database(\@geneoutput,\%camace);   
     my %finalgenescamace = sort_by_gene(\@camgenes);
     warn "problem with genematch  reference\n" if ref(\@camgenes) ne 'ARRAY';
     foreach my $pair (sort keys %finalgenescamace) {
