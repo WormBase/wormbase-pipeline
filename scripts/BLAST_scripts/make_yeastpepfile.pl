@@ -5,11 +5,14 @@
 # converts yeastX.pep file with yeast peptide entries into ace file
 # Puts SGDID as Accssion in Database field.
 
-my $dir = glob("~wormpipe/BlastDB");
-my $acefile = "$dir/yeast.ace";
-
+my $acefile = glob("~wormpipe/ace_files/yeast.ace");
 my $source_file = shift;
-my $pepfile = shift;
+my $pepfile = shift; #cant embed this as the version is not known
+
+unless ( (defined $source_file) and (defined $pepfile) ) {
+  die "usage:  make_yeastpepfile source_file output.pep_file\n";
+}
+
 use strict;
 
 # this bit creates a DBM database of ORF => description
@@ -21,7 +24,7 @@ my $ace_info_dbm = "$DB_dir/ace_info.dbm";
 my %ACE_INFO;
 
 if( -e $ace_info_dbm ) {  #make sure starting with new dbase
-  `rm -f $ace_info_dbm` || die "cant remove $ace_info_dbm: $!\n";
+  `rm -f $ace_info_dbm` && die "cant remove $ace_info_dbm: $!\n";
 }
 my %YEAST_DESC;
 dbmopen  (%YEAST_DESC ,"$ace_info_dbm", 0777) or die "cant open $ace_info_dbm :$!\n";
@@ -85,10 +88,7 @@ close(SOURCE);
 close(PEP);
 close(ACE);
 
-print "\n\nabout to copy (scp) $acefile to /wormsrv2/wormbase/ensembl_dumps/\n";
-system ("scp -r $acefile wormpub\@wormsrv2:/wormsrv2/wormbase/ensembl_dumps/") and warn "copy $acefile failed\n";
+print "\n$source_file is now converted to $pepfile..\n";
 
-print "\n$source_file is now converted to $pepfile...now removing $source_file\n";
-system ("rm -f $source_file") and warn "removing $source_file failed\n";
-__END__
+exit(0);
 
