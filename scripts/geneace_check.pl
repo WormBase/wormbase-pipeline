@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-01-27 14:14:32 $
+# Last updated on: $Date: 2003-02-03 09:32:43 $
 
 
 use strict;
@@ -21,16 +21,19 @@ use Getopt::Long;
 # variables and command-line options with aliases # 
 ###################################################
 
-my ($help, $debug, $database, $class, @class);
+my ($help, $debug, $database, $class, @class, $ace);
 my $maintainers = "All";
 our $tace = &tace;   # tace executable path
 our ($log, $erichlog, $jahlog);
 
+my $rundate = `date +%y%m%d`; chomp $rundate;
+my $acefile = "/wormsrv2/logs/geneace_check_ACE.$rundate.$$";
+
 GetOptions ("h|help"        => \$help,
             "d|debug=s"     => \$debug,
 	    "c|class=s"     => \@class,
-	    "db|database=s"  => \$database
-
+	    "db|database=s" => \$database,
+            "ace|a"         => \$ace,  
            );
 
 ################################################ 
@@ -159,7 +162,7 @@ sub process_locus_class{
     #print "$locus\n";
     my $warnings;
     my $erich_warnings;
-    #($warnings, $erich_warnings) = &test_locus_for_errors($locus);
+    ($warnings, $erich_warnings) = &test_locus_for_errors($locus);
     print LOG "$warnings" if(defined($warnings));
     #Erich Schwarz wants some of these - emsch@its.caltech.edu
     print ERICHLOG "$erich_warnings" if(defined($erich_warnings));
@@ -173,7 +176,7 @@ sub process_locus_class{
   Table-maker -p "/wormsrv1/geneace/wquery/get_all_seq_with_pseudogene_and_locus.def" quit
 EOF
  
-  #&find_new_loci_in_current_DB($get_seg_with_pseudogene_locus, $db);
+  &find_new_loci_in_current_DB($get_seg_with_pseudogene_locus, $db);
    
   #Look for loci that are other_names and still are obj of ?Locus -> candidate for merging
   my $locus_has_other_name=<<EOF;
@@ -186,7 +189,7 @@ EOF
   Table-maker -p "/wormsrv1/geneace/wquery/locus_to_CDS.def" quit
 EOF
 
-  loci_point_to_same_CDS($locus_to_CDS, $default_db);
+  #loci_point_to_same_CDS($locus_to_CDS, $default_db);
 
   # check CGC_approved loci is XREF to existing Gene_Class   
   # check locus in geneace that are connected to CDS but not CGC_approved
@@ -203,11 +206,63 @@ EOF
 EOF
     
   locus_CGC($cgc_loci_not_linked_to_geneclass, $get_all_gene_class, $locus_to_CDS_but_not_CGC_approved, $default_db);
+
+  my $cds_of_each_locus=<<EOF;
+  Table-maker -p "/wormsrv1/geneace/wquery/cds_of_each_locus.def" quit
+EOF
+  my $seq_name_of_each_locus=<<EOF;
+  Table-maker -p "/wormsrv1/geneace/wquery/seq_name_of_each_locus.def" quit
+EOF
   
+  cds_name_to_seq_name($cds_of_each_locus, $seq_name_of_each_locus, $default_db);
+    
   print LOG "\nThere are $locus_errors errors in $size loci.\n";
 
 }
 
+sub cds_name_to_seq_name {
+  if ($ace){open (CDS, ">>$acefile") || die "Can't write to file!"}	
+  my ($def1, $def2, $db) = @_;
+  my ($locus, $cds, %locus_cds, %locus_seq_name);
+  open (FH1, "echo '$def1' | tace $db | ") || die "Couldn't access $db\n";
+  open (FH2, "echo '$def2' | tace $db | ") || die "Couldn't access $db\n";
+  
+  while (<FH1>){
+    chomp($_);
+    if ($_ =~ /\"(.+)\"\s+\"(.+)\"/){push (@{$locus_cds{$1}}, $2)}
+  }
+  while (<FH2>){
+    chomp($_);
+    if ($_ =~ /\"(.+)\"\s+\"(.+)\"/){push (@{$locus_seq_name{$1}}, $2)}
+  }
+  
+  my (%ary1, @ary1, %ary2, @ary2, $ea1, $ea2);
+  foreach (keys %locus_cds){
+    my $ary2 = \@{$locus_cds{$_}}; my $ary1 = \@{$locus_seq_name{$_}};
+    foreach (@$ary2){$ary2{$_}++}
+    foreach (@$ary1){$ary1{$_}++}
+    foreach $ea1 (@$ary1){
+      if (!$ary2{$ea1}){	
+        print  LOG "ERROR: Locus $_ has incorrect Sequence_name $ea1\n";
+        $locus_errors++;
+	if ($ace){
+	  print CDS "\n\nLocus : \"$_\"\n";
+          print CDS "-D Sequence_name \"$ea1\"\n";
+        }
+      }
+    }
+    foreach $ea2 (@$ary2){
+      if (!$ary1{$ea2}){
+        print LOG "ERROR: Locus $_ is missing Sequence_name $ea2\n";
+        $locus_errors++;
+        if ($ace){
+	  print CDS "\n\nLocus : \"$_\"\n";   
+          print CDS "Sequence_name \"$ea2\"\n";
+        }
+      }	 	
+    }
+  }  
+} 
 
 ############################
 # Process Laboratory class #
@@ -254,7 +309,7 @@ sub process_allele_class{
   
   @seqs=Table_maker();
 
-  print scalar @seqs, "\n";
+  #print scalar @seqs, "\n";
   my %seqs;
     foreach (@seqs){
       $seqs{$_}++;
@@ -285,6 +340,8 @@ sub process_allele_class{
       }
     }  
   }
+
+  $cdb->close;
 
   foreach (keys %allele_gene){
     if ((scalar @{$allele_gene{$_}}) > 1){
@@ -336,7 +393,6 @@ sub allele_has_predicted_gene_and_no_seq {
   }
 }
 
-
 ########################
 # Process Strain class #  
 ########################
@@ -359,29 +415,42 @@ sub process_strain_class {
     $seqs{$_}++;
   }
   foreach $strain (@strains){
-    if ($strain->Genotype){
-      $genotype = $strain->Genotype(1);
-      $extract = $genotype;
-      $extract =~ s/\(|\)|\/|\+|;|\?|\{|\}|,|\=|\.$/ /g;
-      $extract =~ s/ I | II | III | IV | V | X / /g;
-      $extract =~ s/ I | II | III | IV | V | X | f / /g; # further tidying up of chromosomes
-      $extract =~ s/^\s|\w{3}-\s| f | A //g;
-      $extract =~ s/\s{1,}/ /g;
-      @genes=split(/ /,$extract);
-      foreach (@genes){
-	if($seqs{$_}){
-	  my $seq = $db->fetch('Sequence', $_);
-	  if ($seq->Locus_genomic_seq){
-	    my @loci=$seq->Locus_genomic_seq(1);
-	    print LOG "WARNING: Strain $strain has sequence_name $_ in Genotype, which can now become @loci.\n";
-	    $strain_errors++; 
-	  }  
+    if (!$strain->Location){
+      print LOG "WARNING: Strain $strain has no location tag\n";
+      $strain_errors++; 
+    }
+    else { 
+      my $cgc=$strain->Location;
+      if ($strain->Genotype){
+	$genotype = $strain->Genotype(1);
+	$extract = $genotype;
+	$extract =~ s/\(|\)|\/|\+|;|\?|\{|\}|,|\=|\.$/ /g;
+	$extract =~ s/ I | II | III | IV | V | X / /g;
+	$extract =~ s/ I | II | III | IV | V | X | f / /g; # further tidying up of chromosomes
+	$extract =~ s/^\s|\w{3}-\s| f | A //g;
+	$extract =~ s/\s{1,}/ /g;
+	@genes=split(/ /,$extract);
+	foreach (@genes){
+	  if($seqs{$_}){
+	    my $seq = $db->fetch('Sequence', $_);
+	    if ($seq->Locus_genomic_seq){
+	      my @loci=$seq->Locus_genomic_seq(1);
+	      if ($cgc eq "CGC"){	
+		print LOG "WARNING: CGC Strain $strain has sequence_name $_ in Genotype, which can now become @loci.\n";
+		$strain_errors++; 
+	      }
+	      else {
+		print LOG "WARNING: Non_CGC Strain $strain has sequence_name $_ in Genotype, which can now become @loci.\n";
+		$strain_errors++; 
+	      }  
+	    }
+	  }
 	}
       }
     }
   }
   print LOG "\nThere are $strain_errors errors in Strain class.\n";
-} 
+}
 
 ###############################
 # Process Rearrangement class #
@@ -390,6 +459,7 @@ sub process_strain_class {
 sub process_rearrangement {
  
   print"\n\nChecking Rearrangement class for errors:\n";
+  print "----------------------------------------\n";	
   print LOG "\n\nChecking Rearrangement class for errors:\n";
   print LOG "----------------------------------------\n";
   # checks presence of non-rearrangement object 
@@ -415,7 +485,7 @@ sub process_sequence {
 
   print"\n\nChecking Sequence class for errors:\n";
   print LOG "\n\nChecking sequence class for errors:\n";
-  print LOG "----------------------------------------\n";
+  print LOG "-----------------------------------\n";
 
   my $get_seqs_with_multiple_loci=<<EOF;
   Table-maker -p "/wormsrv1/geneace/wquery/get_seq_has_multiple_loci.def" quit 
@@ -542,7 +612,8 @@ sub loci_point_to_same_CDS {
 ##############################
 
 sub locus_CGC {
-  
+
+  if ($ace){open (LC, ">>$acefile") || die "Can't write to file!"}
   my ($def1, $def2, $def3, $dir) = @_;
   my (@gc, %gc, $gc);
 
@@ -567,6 +638,10 @@ sub locus_CGC {
       if ($gc{$gc}){ 
 	print LOG "ERROR: $_ is CGC_approved but not XREF to existing $gc Gene_Class\n"; 
 	$locus_errors++; 
+        if ($ace){
+	  print LC "\n\nGene_Class : \"$gc\"\n";
+          print LC "Loci \"$_\"\n";
+        }
       }
     }
   }
@@ -766,7 +841,6 @@ sub create_log_files{
   # create main log file using script name for
   my $script_name = $1;
   $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
-  my $rundate     = `date +%y%m%d`; chomp $rundate;
 
   $log = "/wormsrv2/logs/$script_name.$rundate.$$";
   open (LOG, ">$log") or die "cant open $log";
@@ -837,5 +911,4 @@ EOF
     }
   return @names;
 }
-
 
