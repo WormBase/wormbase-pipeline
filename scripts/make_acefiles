@@ -7,8 +7,8 @@
 # Generates the .acefiles from the primary databases as a prelim for building
 # autoace.
 #
-# Last updated by: $Author: krb $                     
-# Last updated on: $Date: 2002-07-22 15:38:08 $       
+# Last updated by: $Author: dl1 $                     
+# Last updated on: $Date: 2002-07-22 16:51:01 $       
 
 #################################################################################
 # Variables                                                                     #
@@ -160,11 +160,11 @@ exit (0);
 sub mknewacefiles {
     
     my ($dbname,$dbdir,$targetdir,$exe,$object,$criteria,$criterianoasterisk);
-    my ($filename,$command,$outfile,$tag,@deletes,$include);
+    my ($filename,$filepath,$command,$outfile,$tag,@deletes,$include);
 
     local (*CONFIG);
 
-    open (CONFIG, "$autoace_config");
+    open (CONFIG, "<$autoace_config");
     while (<CONFIG>) {
 	
 	# some formating, remove leading and trailing whitespace
@@ -197,7 +197,8 @@ sub mknewacefiles {
 
 	# parse filename
 	($filename) = (/^\S+\s+(\S+)/);
-	 
+	$filepath   = "$basedir/$dbname/$filename";
+		    
 	print "Noting filename:$filename\n" if ($debug);
 
 	# deal with queries requiring tag deletion
@@ -213,7 +214,7 @@ sub mknewacefiles {
 		foreach my $delete (@deletes) {
 		    $command .= "eedit -D $delete\n";
 		}
-		$command .= "show -a -T -f $filename\nquit\n";
+		$command .= "show -a -T -f $filepath\nquit\n";
 	    } 
 	    elsif (/^\S+\s+\S+\s+(\S+)\s+(\S+.+)\s+\[/) {
 		$object   = $1; ($criteria,$criterianoasterisk) = $2; 
@@ -223,7 +224,7 @@ sub mknewacefiles {
 		foreach my $delete (@deletes) {
 		    $command .= "eedit -D $delete\n";
 		}
-		$command .= "show -a -T -f $filename\nquit\n";
+		$command .= "show -a -T -f $filepath\nquit\n";
 	    }
 	}
 	# queries requiring tag inclusion
@@ -235,7 +236,7 @@ sub mknewacefiles {
 		($criteria,$criterianoasterisk) = ""; 
 		
 		$command = "nosave\nquery find $object\n";
-		$command .= "show -a -T $include -f $filename\nquit\n";
+		$command .= "show -a -T $include -f $filepath\nquit\n";
 	    } 
 	    elsif (/^\S+\s+\S+\s+(\S+)\s+(\S+.+)\s+\{/) {
 		$object   = $1; 
@@ -243,7 +244,7 @@ sub mknewacefiles {
 		chop($criterianoasterisk) if ($criteria =~ /\*$/);
 		
 		$command ="nosave\nquery find $object where ($criteria)\n";
-		$command .= "show -a -T $include -f $filename\nquit\n";
+		$command .= "show -a -T $include -f $filepath\nquit\n";
 	    }
 	}
 	# simple query
@@ -253,11 +254,11 @@ sub mknewacefiles {
 		($criteria,$criterianoasterisk) = ""; 
 		if ($object eq "DNA") {
 		    $command   = "nosave\nquery find Sequence\nfollow DNA\n";
-		    $command  .= "show -a -T -f $filename\nquit\n";
+		    $command  .= "show -a -T -f $filepath\nquit\n";
 		}
 		else {
 		    $command   = "nosave\nquery find $object\n";
-		    $command  .= "show -a -T -f $filename\nquit\n";
+		    $command  .= "show -a -T -f $filepath\nquit\n";
 		}
 	    }
 	    elsif (/^\S+\s+\S+\s+(\S+)\s+(\S+.+)$/) {
@@ -268,25 +269,25 @@ sub mknewacefiles {
 
 		if ($object eq "DNA") {
 		    $command   = "nosave\nquery find Sequence where ($criteria)\nfollow DNA\n";
-		    $command  .= "show -a -T -f $filename\nquit\n";
+		    $command  .= "show -a -T -f $filepath\nquit\n";
 		}
 		else {
 		    $command   ="nosave\nquery find $object where ($criteria)\n";
-		    $command  .= "show -a -T -f $filename\nquit\n";
+		    $command  .= "show -a -T -f $filepath\nquit\n";
 		}
 	    }
 	}
 		
 	# dump out from ACEDB
-	print "\nFilename: $filename\n";
+	print "\nFilename: $filepath\n";
         print "Command : 'find $object $criteria' in $dbname\n";
 	open (TACE,"| $exe");
 	print TACE $command;
 	close TACE;
-	print "Made file $filename\n";
+	print "Made file $filepath\n";
 	
 	# process database dumps to add database names into time stamps
-	&process_ace_file($filename,$dbname);
+	&process_ace_file($filepath,$dbname);
 
 	next;
     }
@@ -303,7 +304,7 @@ sub process_ace_file{
 
     print LOG "Changing timestamp information to contain $database\n\n";
     
-    open (INPUT, "<$filename") || die "Couldn't open $filename for reading\n";
+    open (INPUT, "<$filename")            || die "Couldn't open $filename for reading\n";
     open (OUTPUT, ">${filename}.tmpfile") || die "Couldn't write to tmpfile\n";
 
     
