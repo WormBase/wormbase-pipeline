@@ -12,6 +12,7 @@ my $design;
 my $chromosome;
 my $blast;
 my $user;
+my $mail;
 
 GetOptions (
 	    "source:s"     => \$source,
@@ -19,6 +20,7 @@ GetOptions (
 	    "chromosome:s" => \$chromosome,
 	    "blast=s"      => \$blast,
 	    "user:s"       => \$user,
+	    "mail"         => \$mail,
 	    "help|h"         => sub { system("perldoc $0"); exit(0);}
 	   );
 
@@ -35,8 +37,8 @@ my $session_file = "/tmp/history_session.$version";
 
 # set up Tk interface
 my $main_gui = MainWindow->new();
-my $form_cds; # cds variable from form
-my $form_gene; # gene variable from form
+my $form_cds;			# cds variable from form
+my $form_gene;			# gene variable from form
 
 # Main window
 $main_gui->configure(-title => "Curation Tool for WS${version}",
@@ -98,35 +100,35 @@ if ( $chromosome ) {
 # history_maker
 
 my $his_maker = $main_gui->Frame( -background => "blue",
-				    -height     => "400",
-				    -label      => "History Maker",
-				    -relief     => "raised",
-				    -borderwidth => 5,
-				  )->pack( -pady => "20",
-					   -fill => "x"
-					 );
+				  -height     => "400",
+				  -label      => "History Maker",
+				  -relief     => "raised",
+				  -borderwidth => 5,
+				)->pack( -pady => "20",
+					 -fill => "x"
+				       );
 
 # Reference database lable
 my $db_lbl = $his_maker->Label( -text => "$database",
-			       -background => 'blue',
-			       -foreground => 'white'
-			     )->pack( -pady => '3'
-				    );
-# CDS entry widgets
-my $cds_lbl = $his_maker->Label( -text => 'CDS',
 				-background => 'blue',
 				-foreground => 'white'
-			      )->pack(-pady => '6',
-				      -padx => '6',
-				      -side => 'left',
+			      )->pack( -pady => '3'
 				     );
+# CDS entry widgets
+my $cds_lbl = $his_maker->Label( -text => 'CDS',
+				 -background => 'blue',
+				 -foreground => 'white'
+			       )->pack(-pady => '6',
+				       -padx => '6',
+				       -side => 'left',
+				      );
 my $cds_val = $his_maker->Entry( -width => '10',
-				-background => 'white',
-				-textvariable=> \$form_cds,
-			      )->pack(-side => 'left',
-				      -pady => '5',
-				      -padx => '5'
-				     );
+				 -background => 'white',
+				 -textvariable=> \$form_cds,
+			       )->pack(-side => 'left',
+				       -pady => '5',
+				       -padx => '5'
+				      );
 
 #make Return and Enter submit CDS 
 $cds_val->bind("<Return>",[ \&make_history]);
@@ -134,47 +136,47 @@ $cds_val->bind("<KP_Enter>",[ \&make_history]);
 
 #Make history button
 my $make = $his_maker->Button( -text => "Make History",
-			      -command => [\&make_history]
-			    )->pack(-side => 'right',
-				    -pady => '2',
-				    -padx => '6',
-				    -anchor => "w"
-				   );
-# Clear CDS entry button
-my $clear = $his_maker->Button( -text => "Clear",
-			       -command => [\&clear]
-			     )->pack(-side => 'left',
+			       -command => [\&make_history]
+			     )->pack(-side => 'right',
 				     -pady => '2',
 				     -padx => '6',
-				     -anchor => "e"
+				     -anchor => "w"
 				    );
+# Clear CDS entry button
+my $clear = $his_maker->Button( -text => "Clear",
+				-command => [\&clear]
+			      )->pack(-side => 'left',
+				      -pady => '2',
+				      -padx => '6',
+				      -anchor => "e"
+				     );
 
 
 ###########################################################
 ##   genefinder / twinscan blesser
 my $gene_blesser = $main_gui->Frame( -background => "green",
-				    -height     => "400",
-				    -label      => "Genefinder / Twinscan blesser",
-				    -relief     => "raised",
-				    -borderwidth => 5,
-				  )->pack( -pady => "20",
-					   -fill => "x"
-					 );
+				     -height     => "400",
+				     -label      => "Genefinder / Twinscan blesser",
+				     -relief     => "raised",
+				     -borderwidth => 5,
+				   )->pack( -pady => "20",
+					    -fill => "x"
+					  );
 # CDS entry widgets
 my $gene_lbl = $gene_blesser->Label( -text => 'prediction name',
-				-background => 'green',
-				-foreground => 'white'
-			      )->pack(-pady => '6',
-				      -padx => '6',
-				      -side => 'left',
-				     );
+				     -background => 'green',
+				     -foreground => 'white'
+				   )->pack(-pady => '6',
+					   -padx => '6',
+					   -side => 'left',
+					  );
 my $gene_val = $gene_blesser->Entry( -width => '10',
-				-background => 'white',
-				-textvariable=> \$form_gene,
-			      )->pack(-side => 'left',
-				      -pady => '5',
-				      -padx => '5'
-				     );
+				     -background => 'white',
+				     -textvariable=> \$form_gene,
+				   )->pack(-side => 'left',
+					   -pady => '5',
+					   -padx => '5'
+					  );
 
 #make Return and Enter submit CDS 
 $gene_val->bind("<Return>",[ \&bless_prediction]);
@@ -182,20 +184,20 @@ $gene_val->bind("<KP_Enter>",[ \&bless_prediction]);
 
 #Make history button
 my $bless = $gene_blesser->Button( -text => "Bless this gene",
-			      -command => [\&bless_prediction]
-			    )->pack(-side => 'right',
-				    -pady => '2',
-				    -padx => '6',
-				    -anchor => "w"
-				   );
+				   -command => [\&bless_prediction]
+				 )->pack(-side => 'right',
+					 -pady => '2',
+					 -padx => '6',
+					 -anchor => "w"
+					);
 # Clear CDS entry button
 my $clear_gene = $gene_blesser->Button( -text => "Clear",
-			       -command => [\&clear_gene]
-			     )->pack(-side => 'left',
-				     -pady => '2',
-				     -padx => '6',
-				     -anchor => "e"
-				    );
+					-command => [\&clear_gene]
+				      )->pack(-side => 'left',
+					      -pady => '2',
+					      -padx => '6',
+					      -anchor => "e"
+					     );
 
 
 ###########################################################
@@ -236,7 +238,7 @@ if ( $blast ) {
     push( @data, "$input[0]  $input[1]  $input[2]   $input[3]");
   }
   close BLASTS;
-  foreach (sort @data){
+  foreach (sort @data) {
     $blast_list->insert('end',"$_");
   }
 }
@@ -261,19 +263,25 @@ sub bless_prediction
   {
     my $gene = $form_gene;
     return unless $gene;
-    last if( $cds eq "end" );
+    #last if( $cds eq "end" );
 
-    $cds = &confirm_case($gene);
-
+    #$cds = &confirm_case($gene);
+    
     my $obj = $db->fetch(CDS => "$gene");
     return &error_warning("Invalid CDS","$gene is not a valid CDS name") unless $obj;
     my $method = $obj->Method->name;
-    if ( ($method ne "Genefinder") or ($method eq "twinscan") ) {
+    my $stem = $obj->Sequence->name;
+    my $exceptions = $obj->Sequence->Method->name;
+    if (! ( ($method eq "Genefinder") || ($method eq "twinscan") ) ) {
+      #if ($method ne "twinscan") {
       &error_warning("Wrong method","I only bless Genefinder or Twinscan predictions, my child");
+      next;
+    } elsif ($exceptions eq "Link") {
+      &error_warning("Warning","This Prediction lies over clone boundaries, my child");
       next;
     }
 
-    my $new_gene = &suggest_name("$gene");
+    my $new_gene = &suggest_name("$stem");
     unless ( $new_gene ){
       &error_warning("No name","Cant suggest name for gene based on $gene");
       return;
@@ -326,7 +334,24 @@ sub bless_prediction
     system("xremote -remote 'parse $output'");
 
     &confirm_message("Made new gene","Made new CDS $new_gene from $gene");
-    &mail_geneace($new_gene);
+
+    #pop-up window if a -mail option has not been set.
+    &error_warning("Info","The gene $new_gene has been created but you have not spread the word, my child") if (!($mail));
+
+    #
+    my @IDs = ('1983','1847','1846');
+    my $person = "";
+    if ($user eq "pad") {
+      $person = ($IDs[0]);
+    } elsif ($user eq "ar2") {
+      $person = ($IDs[1]);
+    } elsif ($user eq "dl1") {
+      $person = ($IDs[2]);
+    }
+
+    #&suggest_name("$stem");
+
+    &mail_geneace("$new_gene","$person") if ($mail);
   }
 
 sub clear_gene
@@ -334,10 +359,10 @@ sub clear_gene
     $gene_val->delete(0,'end');
   }
 
+
 sub suggest_name
   {
-    my $name = shift;
-    my ($stem) = $name =~ /(.*)\./;
+    my $stem = shift;
     my $query = "find worm_genes $stem.*";
     my @genes = $db->fetch( -query => "$query");
     my @names = map($_->name,@genes);
@@ -348,7 +373,7 @@ sub suggest_name
     }
     my $max =0;
 
-    foreach(  @numbers ) {
+    foreach (  @numbers ) {
       $max = $_ if ($_ > $max );
     }
 
@@ -357,15 +382,22 @@ sub suggest_name
     return "$stem.$gene_no";
   }
 
-sub mail_geneace
-  {
-    my $gene = shift;
-    $gene = "TESTING.1";
-    open (MAIL,  "|/bin/mailx -r \"$user\@sanger.ac.uk\" -s \"Gene_id required for $gene\" \"mt3\@sanger.ac.uk\"");
-    print MAIL "$gene\n";
-    close MAIL or warn "mail not sent for $gene\n";
-    return;
-  }
+
+sub mail_geneace {
+  my $gene = shift;
+  my $person = shift;
+  open (MAIL,  "|/bin/mailx -r \"$user\@sanger.ac.uk\" -s \"Gene_id required for $gene\" \"mt3\@sanger.ac.uk\"");
+  print MAIL "============================\n";
+  print MAIL "history_maker.pl\n";
+  print MAIL "Date:$date\n";
+  print MAIL "============================\n\n";
+  print MAIL "This is an automated request from $user.\n\n";
+  print MAIL "Please create a new gene ID for $gene.\n\n";
+  print MAIL "newgene.pl -seq $gene -who $person -email\n\n";
+  print MAIL "Thank you for your cooperation.\n";
+  close MAIL or warn "mail not sent for $gene\n";
+  return;
+}
 
 ##############################################################
 # History maker
@@ -527,11 +559,10 @@ sub check_user
     return if( defined $user );
     my $name = `whoami`;
     chomp $name;
-    if( "$name" eq "wormpub" ){
+    if ( "$name" eq "wormpub" ) {
       &error_warning("WORMPUB","Please either run this as yourself or use the -user option. How else can you be blamed for your errors!");
       exit(0);
-    }
-    else {
+    } else {
       $user = $name;
     }
   }
@@ -564,7 +595,9 @@ A perl Tk interface to aid manual gene curation.
 
 -user       : If you are not yourself enter your user to use in autgenerated comments (when blessing genefinder etc)
 
--design     : Doesn't make Aceperl connection - dev tool for quicker startup
+-design     : Does not make Aceperl connection - dev tool for quicker startup
+
+-mail       : This option emails blessed predictions to mt3 requesting a new gene ID
 
 =item Intron finder
 
@@ -576,7 +609,7 @@ presents to the user a simple box with a space to enter a CDS name and a button 
 
 =item Genefinder / Twinscan Blesser
 
-Enter current CDS name eg AC8.gc3 and click "Bless this gene".  This will create a new CDS with the correct name based on the "worm_genes" class.
+Enter current CDS name eg AC8.gc3 and click "Bless this gene".  This will create a new CDS with the correct name based on the "worm_genes" class. If you have specified the -mail option a new gene ID will automatically be requested.
 
 =item BLAST hit finder
 
@@ -591,7 +624,7 @@ A reference database is used to extract the relevant info needed to make a histo
 
 Some error checking is done so that;
 
-=over4 
+=over4
 
   history objects cant be created for non-existant CDSs.
   history objects with the same name as existing histories will not be made.
