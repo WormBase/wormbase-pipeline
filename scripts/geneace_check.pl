@@ -6,8 +6,8 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-07-10 10:57:29 $
+# Last updated by: $Author: ck1 $
+# Last updated on: $Date: 2002-09-12 13:31:53 $
 
 use Ace;
 use lib "/wormsrv2/scripts/"; 
@@ -203,7 +203,7 @@ sub test_locus_for_errors{
       $errors++;
     }
   }
-  
+=start  
   # Test for Polymorphisms with no P in their title
   if(defined($locus->at('Type.Polymorphism'))){
     if($locus !~ /P/){
@@ -211,7 +211,8 @@ sub test_locus_for_errors{
       $errors++;
     }
   }
-
+=end
+=cut
   # Look for Gene_class tag in non-gene objects 
   if(!defined($locus->at('Type.Gene'))){
     if(defined($locus->at('Name.Gene_class'))){
@@ -225,7 +226,7 @@ sub test_locus_for_errors{
     $warnings .= "ERROR 16: $locus has 'Other_name' tag but no associated value\n";
     $errors++;
   }
-
+=start
   # test for Other_name value which is also a Locus name in its own right
   # N.B. This is not always a bad thing
   if(defined($locus->at('Name.Other_name'))){
@@ -240,6 +241,8 @@ sub test_locus_for_errors{
       }
     }
   }
+=end
+=cut
   # Remind of outstanding CGC_unresolved tags
   if(defined($locus->CGC_unresolved)){
     my ($unresolved_details) = $locus->at('Type.Gene.CGC_unresolved');
