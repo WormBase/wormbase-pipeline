@@ -8,7 +8,7 @@
 # see pod for more details
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2002-12-16 14:56:08 $      
+# Last updated on: $Date: 2003-01-14 09:13:35 $      
 
 
 use strict;
@@ -147,7 +147,7 @@ sub composition{
   chdir $dump_dir;
   system("/bin/cat *.dna | /nfs/disk100/wormpub/bin.ALPHA/composition > composition.all") && die "Couldn't create composition file\n";
   print LOG "Generating totals file\n";
-  my ($total, $minus, $final_total);
+  my ($total, $minus, $final_total) = 0;
   open(IN,"$dump_dir/composition.all") || die "Couldn't open composition.all\n";
   while(<IN>){
     if(/.*, (\d*) total/){
