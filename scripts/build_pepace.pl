@@ -10,7 +10,7 @@
 # 
 #
 # Last updated by: $Author: krb $                     
-# Last updated on: $Date: 2004-06-09 12:23:35 $     
+# Last updated on: $Date: 2004-08-10 13:36:33 $     
 
 use strict;                                     
 use lib "/wormsrv2/scripts/";                  
@@ -221,7 +221,7 @@ close FASTA;
 
 # write ace file
 my $ii;
-my $acefile = "/wormsrv2/autoace/wormpep_ace/pepace.ace";
+my $acefile = "/wormsrv2/autoace/acefiles/pepace.ace";
 
 open (ACE, ">$acefile") || die "cant write $acefile\n";
 
@@ -286,15 +286,15 @@ print LOG "\n   . . about to start GetSwissIDandInterpro.pl\n";
 #load files in to autoace.
 my $tace =  &tace;
 my $command;
-if( -e "/wormsrv2/autoace/wormpep_ace/pepace.ace" ) {
-  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Adding pepace.ace file to autoace at $runtime\n";
-  $command = "pparse /wormsrv2/autoace/wormpep_ace/pepace.ace\nsave\nquit\n"; 
+if( -e "/wormsrv2/autoace/acefiles/pepace.ace" ) {
+  print LOG &runtime, ": Adding pepace.ace file to autoace\n";
+  $command = "pparse /wormsrv2/autoace/acefiles/pepace.ace\nsave\nquit\n"; 
   open (AUTOACE, "| $tace -tsuser pepace /wormsrv2/autoace ") || die "Couldn't open pipe to autoace\n";
   print AUTOACE $command;
-  $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "finished adding pepace.ace file to autoace at $runtime\n";  close AUTOACE;
+  print LOG &runtime, ": finished adding pepace.ace file to autoace\n";  close AUTOACE;
 }
 else {
-  print LOG " pepace.ace NOT loaded into autoace . . \n/wormsrv2/autoace/wormpep_ace/pepace.ace does not exist\n";
+  print LOG " pepace.ace NOT loaded into autoace . . \n/wormsrv2/autoace/acefiles/pepace.ace does not exist\n";
 }
 
 

@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-08-06 09:42:09 $
+# Last edited on: $Date: 2004-08-10 13:36:33 $
 
 
 
@@ -1215,7 +1215,7 @@ sub make_wormpep {
     &run_command("$scriptdir/getProteinID");
 
     # load into autoace
-    my $file = "$basedir/autoace/wormpep_ace/WormpepACandIDs.ace"; 
+    my $file = "$basedir/autoace/acefiles/WormpepACandIDs.ace"; 
     &load($file,"wormpep_acs_and_Ids");
     
     # make wormpep -final
