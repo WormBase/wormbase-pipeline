@@ -174,7 +174,13 @@ sub error
 
 sub report_errors
   {
+    # if no errors have been reported return zero
     my $self = shift;
-    return $self->{'ERRORS'};
+    if(!defined($self->{'ERRORS'})){
+      return(0);
+    }
+    else{
+      return $self->{'ERRORS'};
+    }
   }
 1;
