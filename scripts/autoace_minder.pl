@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-06-02 10:08:15 $
+# Last edited by: $Author: wormpub $
+# Last edited on: $Date: 2004-06-03 09:05:38 $
 
 
 
@@ -978,7 +978,7 @@ sub blat_jobs{
     print LOG "Finishing acecompress.pl at ",&runtime,"\n\n";
       
     # make blat job specific lock file
-    system("touch $logdir/$flag{"B6_$job"}");
+    system("touch $logdir/$flag{'B6_${job}'}");
     
   }
   # generic lock file
@@ -1016,7 +1016,7 @@ sub load_blat_results {
 	&load($file,"virtual_objects_$type");
 
 	# Don't need to add confirmed introns from nematode data (because there are none!)
-	unless ( ($type eq "nematode") || ($type eq "tc1") || ($type eq "embl")|| ($type eq "ncRNA") ) {
+	unless ( ($type eq "nematode") || ($type eq "tc1") || ($type eq "embl")|| ($type eq "ncrna") ) {
 	    $file = "$basedir/autoace/BLAT/virtual_objects.autoace.ci.$type.ace"; 
 	    &load($file,"blat_confirmed_introns_$type");
 	    
