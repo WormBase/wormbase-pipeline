@@ -7,7 +7,7 @@
 # simple script for creating new (sequence based) Gene objects 
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-09-20 13:23:20 $
+# Last edited on: $Date: 2004-11-23 16:34:36 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -21,7 +21,7 @@ use Getopt::Long;
 my $input;       # when loading from input file
 my $seq;         # sequence name for new/existing gene
 my $cgc;         # cgc name for new/existing gene
-my $who;         # Person ID for new genes being created (defaults to krb = WBPerson1971)
+my $who;         # Person ID for new genes being created (defaults to mt3 = WBPerson2970)
 my $id;          # force creation of gene using set ID
 my $gene_id;     # stores highest gene ID
 my $email;       # email new Gene IDs back to users to person who requested it
@@ -65,8 +65,8 @@ if($who){
   $person = "WBPerson$who";
 }
 else{
-  # defaults to krb
-  $person = "WBPerson1971";
+  # defaults to mt3
+  $person = "WBPerson2970";
 }
 
 
@@ -130,7 +130,7 @@ close(OUT);
 # load information to geneace if -load is specified
 if ($load){
   my $command = "pparse /wormsrv1/geneace/fix.ace\nsave\nquit\n";
-  open (GENEACE,"| $tace -tsuser \"krb\" /wormsrv1/geneace") || die "Failed to open pipe to /wormsrv1/geneace\n";
+  open (GENEACE,"| $tace -tsuser \"mt3\" /wormsrv1/geneace") || die "Failed to open pipe to /wormsrv1/geneace\n";
   print GENEACE $command;
   close GENEACE;
 }
@@ -248,8 +248,8 @@ sub process_gene{
     ######################################
   
   if($email){
-    # set default address to krb in case wrong user ID used
-    my $address = "krb\@sanger.ac.uk";
+    # set default address to mt3 in case wrong user ID used
+    my $address = "mt3\@sanger.ac.uk";
     
     $address = "ar2\@sanger.ac.uk"          if ($person eq "WBPerson1847");
     $address = "dl1\@sanger.ac.uk"          if ($person eq "WBPerson1846");
@@ -265,7 +265,7 @@ sub process_gene{
     else{
       $email = "\n\nYou requested a new gene ID for $seq, this Gene ID is $gene_id\n\n";
     }
-    $email .= "This email was generated automatically, please reply to krb\@sanger.ac.uk\n";
+    $email .= "This email was generated automatically, please reply to mt3\@sanger.ac.uk\n";
     $email .= "if there are any problems\n";
 
     my $subject;
@@ -275,7 +275,7 @@ sub process_gene{
     else{
       $subject = "WormBase Gene ID request for $seq:  SUCCESSFUL";
     }
-    open (MAIL,  "|/bin/mailx -r \"krb\@sanger.ac.uk\" -s \"$subject\" $address");
+    open (MAIL,  "|/bin/mailx -r \"mt3\@sanger.ac.uk\" -s \"$subject\" $address");
     print MAIL "$email";
     close (MAIL);
 
@@ -309,7 +309,7 @@ them, or just assign CGC names to pre-existing genes.  Finally, the script can p
 lists of genes if stored in an input file.
  
 Example 1 
-newgene.pl -seq AH6.24 -who 1971 -id 23428 -load
+newgene.pl -seq AH6.24 -who 2970 -id 23428 -load
  
  
 This would produce the following acefile at /wormsrv1/geneace/fix.ace and attempt to
@@ -321,7 +321,7 @@ Version 1
 Sequence_name AH6.24
 Public_name AH6.24
 Species "Caenorhabditis elegans"
-History Version_change 1 now WBPerson1971 Event Created
+History Version_change 1 now WBPerson2970 Event Created
 Method Gene
 
 
@@ -330,7 +330,7 @@ newgene.pl -seq AH6.24 -load
 
 This would achieve the same effect (assuming that 23428 in the previous example is the
 next available gene ID).  Here the script automatically looks up the highest gene ID
-and adds 1 to get the new gene ID and assumed krb to the be the default option for -who
+and adds 1 to get the new gene ID and assumed mt3 to the be the default option for -who
 
 
 
@@ -357,12 +357,12 @@ script will look to see what the next available gene ID is
 =item -who <number>
 
 Where number should correspond to a person ID...if this number doesn't match anyone then 
-the script will assume that it is krb
+the script will assume that it is mt3
                                                                                            
 =item -email
 
 person corresponding to -who option will be emailed notification, email goes to
-krb@sanger.ac.uk if -who option doesn't correspond to a curator
+mt3@sanger.ac.uk if -who option doesn't correspond to a curator
 
 =item -verbose
 

@@ -7,7 +7,7 @@
 # simple script for changing class of gene objects (e.g. CDS->Pseudogene)
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-09-13 16:59:05 $
+# Last edited on: $Date: 2004-11-23 16:34:36 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -22,8 +22,8 @@ my $input;                   # when loading from input file
 my $seq;                     # sequence name of gene to change
 my $id;                      # gene ID of gene to change, ignore trailing zeros
 my $class;                   # two or more letters to indicated old and new class (e.g. CDS Transcript)
-my $who;                     # Person ID for new genes being created (defaults to krb = WBPerson1971)
-my $person = "WBPerson1971"; # default
+my $who;                     # Person ID for new genes being created (defaults to mt3 = WBPerson2970)
+my $person = "WBPerson2970"; # default
 my $load;                    # load results to geneace (default is to just write an ace file)
 my $verbose;                 # toggle extra (helpful?) output to screen
 
@@ -121,7 +121,7 @@ close(OUT);
 # load information to geneace if -load is specified
 if ($load){
   my $command = "pparse /wormsrv1/geneace/fix.ace\nsave\nquit\n";
-  open (GENEACE,"| $tace -tsuser \"krb\" /wormsrv1/geneace") || die "Failed to open pipe to /wormsrv1/geneace\n";
+  open (GENEACE,"| $tace -tsuser \"mt3\" /wormsrv1/geneace") || die "Failed to open pipe to /wormsrv1/geneace\n";
   print GENEACE $command;
   close GENEACE;
 }
@@ -272,7 +272,7 @@ R = RNA gene (Transcript)
 T = Transposon
  
 Example
-changegene.pl -seq AH6.24 -who 1971 -class CP -load
+changegene.pl -seq AH6.24 -who 2970 -class CP -load
  
  
 This would produce the following acefile at /wormsrv1/geneace/fix.ace and attempt to
@@ -281,7 +281,7 @@ load it into geneace:
 Gene WBGene00023428
 Live
 Version 2
-History Version_change 2 now WBPerson1971 Event Changed_class CDS Pseudogene
+History Version_change 2 now WBPerson2970 Event Changed_class CDS Pseudogene
 
 
 
@@ -307,7 +307,7 @@ e.g. for WBGene00001323 just specify -id 1323
 =item -who <number>
 
 Where number should correspond to a person ID...if this number doesn't match anyone then 
-the script will assume that it is krb
+the script will assume that it is mt3
                                                                                            
 
 =item -verbose
@@ -330,7 +330,7 @@ per line) then script will process file in a batch style
 will attempt to load the acefile into geneace (need to have write access!)
                                                                                            
                                                                                            
-=head1 AUTHOR Keith Bradnam (krb@sanger.ac.uk)
+=head1 AUTHOR Keith Bradnam (mt3@sanger.ac.uk)
                                                                                            
 =back
                                                                                            
