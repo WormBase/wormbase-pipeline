@@ -7,7 +7,7 @@
 # checks EMBL for new EST or mRNA entries
 #
 # Last updated by: $Author: krb $                      
-# Last updated on: $Date: 2003-09-09 14:46:06 $        
+# Last updated on: $Date: 2003-09-10 16:40:04 $        
 
 use strict;
 use Getopt::Long;
@@ -56,7 +56,7 @@ my $new_EMBL_CDS     = 0;
 
 
 # Elegans mRNA entries
-open (NEW_SEQUENCES, "/usr/local/pubseq/bin/getz -c \'([emblnew-Division:inv] & [emblnew-Molecule:rna] & [emblnew-org:caenorhabditis elegans*] & [emblnew-DateCreated#$date:]) | ([emblrelease-Division:inv] & [emblrelease-Molecule:rna] & [emblrelease-org:caenorhabditis elegans*] & [emblrelease-DateCreated#$date:])\' |");
+open (NEW_SEQUENCES, "/usr/local/pubseq/bin/getz -c \'([emblnew-Division:inv] & [emblnew-Molecule:mrna] & [emblnew-org:caenorhabditis elegans*] & [emblnew-DateCreated#$date:]) | ([emblrelease-Division:inv] & [emblrelease-Molecule:mrna] & [emblrelease-org:caenorhabditis elegans*] & [emblrelease-DateCreated#$date:])\' |");
 
 while (<NEW_SEQUENCES>){
   chomp;
