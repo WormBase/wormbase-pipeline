@@ -1,13 +1,15 @@
-#!/usr/local/bin/perl5.6.1                   
+#!/usr/local/bin/perl5.8.0                   
 #
 # map_features.pl
 #
 # by Dan Lawson
 #
-# This maps features to the genome based on their flanking sequence
+# This maps features to the genome based on their flanking sequence.
+# Uses Ant's Feature_mapper.pm module
+#
 #
 # Last updated by: $Author: dl1 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2004-04-28 14:15:40 $        # quickly see when script was last changed and by whom
+# Last updated on: $Date: 2004-04-29 12:39:53 $        # quickly see when script was last changed and by whom
 
 
 $|=1;
@@ -19,22 +21,17 @@ use Ace;
 use Getopt::Long;
 
 
-my $feature;
-my $clone;
-my $flanking_left;
-my $flanking_right;
-my $coords;
-my $span;
+my ($feature, $clone, $flanking_left, $flanking_right, $coords, $span);
 
-my $help;
-my $debug;
-my $verbose;
-my $all;
-my $SL1;
-my $SL2;
-my $polyA_site;
-my $polyA_signal;
-my $adhoc;
+my $help;                    # Help menu
+my $debug;                   # Debug mode 
+my $verbose;                 # Verbose mode
+my $all;                     # Do all the following features:
+my $SL1;                     #  SL1 trans-splice leader acceptors
+my $SL2;                     #  SL2 trans-splice leader acceptors
+my $polyA_site;              #  polyA_site
+my $polyA_signal;            #  polyA_signal
+my $adhoc;                   # Run against a file, output to screen
 
 GetOptions (
 	    "all"          => \$all,
@@ -48,91 +45,96 @@ GetOptions (
 	    "help"         => \$help
            );
 
+# Help pod if needed
+&usage(0) if ($help);
 
+#######################
+# ACEDB and databases #
+#######################
 
-# ACEDB and databases
-my $tace  = &tace; 
-my $dbdir = "/wormsrv2/autoace";
+our $tace   = &tace; 
+our $outdir = "/wormsrv2/autoace/FEATURES";
+our $dbdir  = "/wormsrv2/autoace";
 $dbdir = "/nfs/disk100/wormpub/DATABASES/current_DB" if ($debug);
+
+
+# WS version for output files
 
 our ($WS_version) = &get_wormbase_version_name;
 
-# assign genomic sequences to hash
-#print "// Reading sequence hash\n" if ($verbose);
-#my %clone2seq = &FetchData('clone2seq');
+# coordinates for Feature_mapper.pm module
 
-# assign Tablemaker defs for each Feature type
-my %command;
-$command{SL1}          = "Table-maker -p $dbdir/wquery/feature_SL1.def\nquit\n";
-$command{SL2}          = "Table-maker -p $dbdir/wquery/feature_SL2.def\nquit\n"; 
-$command{polyA_site}   = "Table-maker -p $dbdir/wquery/feature_polyA_site.def\nquit\n";
-$command{polyA_signal} = "Table-maker -p $dbdir/wquery/feature_polyA_signal_sequence.def\nquit\n";
+my $mapper      = Feature_mapper->new($dbdir);
 
-my %sanity;
-$sanity{SL1} = 0;
-$sanity{SL2} = 0;
-$sanity{polyA_site} = 0;
-$sanity{polyA_signal} = 6;
+# sanity checks for the length of feature types
+
+my %sanity = (
+	      'SL1'          => 0,
+	      'SL2'          => 0,
+	      'polyA_site'   => 0,
+	      'polyA_signal' => 6
+	      );
 
 # queue which Feature types you want to map
+
 my @features2map;
 push (@features2map, "SL1")           if (($SL1) || ($all));
 push (@features2map, "SL2")           if (($SL2) || ($all));
 push (@features2map, "polyA_signal")  if (($polyA_signal) || ($all));
 push (@features2map, "polyA_site")    if (($polyA_site) || ($all));
 
-my $mapper      = Feature_mapper->new($dbdir);
-
-# main loop
+#############
+# main loop #
+#############
 
 foreach my $query (@features2map) {
 
     print "// mapping $query features\n" if ($verbose);
+    
+    # open output files
 
-    open (OUTPUT, ">/wormsrv2/autoace/FEATURES/${WS_version}_feature_${query}.ace") or die "Failed to open output file\n" unless ($adhoc);
-    open (ERRORS, ">/wormsrv2/autoace/FEATURES/${WS_version}_feature_${query}.err") or die "Failed to open error file\n" unless ($adhoc);
+    open (OUTPUT, ">$outdir/${WS_version}_feature_${query}.ace") or die "Failed to open output file\n" unless ($adhoc);
+    open (ERRORS, ">$outdir/${WS_version}_feature_${query}.err") or die "Failed to open error file\n" unless ($adhoc);
 
+    # start tace session for input data (or find file for adhoc run)
     if ($adhoc) {
 	open (TACE, "<$adhoc") or die "Failed to open input file: $adhoc\n";
-	print "// Opening a file for input: $adhoc\n";
+	print "// Opening a file for input: $adhoc\n" if ($verbose);
     }
     else {
-	open (TACE, "echo '$command{$query}' | $tace $dbdir | ");
+	open (TACE, "echo 'Table-maker -p $dbdir/wquery/feature_${query}.def\nquit\n' | $tace $dbdir | ");
     }
     while (<TACE>) {
+
 	# when it finds a good line
 	if (/^\"(\S+)\"\s+\"(\S+)\"\s+\"(\S+)\"\s+\"(\S+)\"/) {
 	    ($feature,$clone,$flanking_left,$flanking_right) = ($1,$2,$3,$4);
 
-#	    $coords = &Map_feature($clone2seq{$clone},$flanking_left,$flanking_right);
 	    my @coords = $mapper->map_feature($clone,$flanking_left,$flanking_right);
 
-	    if ($coords[1] eq "") {
-		print "// do it again\n";
-		my $rev_left     = &DNA_string_reverse2($flanking_left);
-		my $rev_right    = &DNA_string_reverse2($flanking_right);
-		@coords = $mapper->map_feature($clone,$rev_left,$rev_right);
-	    }
-
-
+	    # munge returned coordinates to get the span of the mapped feature
 	    if ($coords[1] > $coords[2]) {
-		$span = $coords[1] - $coords[2] -1;  # +1 for TSL tight junction
+		$span = $coords[1] - $coords[2] -1;
 	    }
 	    else {
-		$span = $coords[2] - $coords[1] -1;  # +1 for TSL tight junction
+		$span = $coords[2] - $coords[1] -1;
 	    }
 
-	    print "// $feature\n[$flanking_left]\n[$flanking_right]\n" if ($adhoc);
-	    print "//$feature maps to $clone $coords[1] -> $coords[2], feature span is $span bp\n";
-
+	    # check feature span is sane
+	    
 	    if ($span == $sanity{$query}) {
-		print OUTPUT "//$feature maps to $clone $coords[1] -> $coords[2], feature span is $span bp\n" if ($verbose);
-		print OUTPUT "\nSequence : \"$clone\"\n" unless ($adhoc);
-		print OUTPUT "Feature_object $feature $coords[1]  $coords[2]\n\n" unless ($adhoc);
-		print "$feature maps to $clone $coords[1] -> $coords[2], feature span is $span bp\n" if ($adhoc);
+		
+		if ($adhoc) {
+		    print "$feature maps to $clone $coords[1] -> $coords[2], feature span is $span bp\n";
+		}
+		else {
+		    print OUTPUT "//$feature maps to $clone $coords[1] -> $coords[2], feature span is $span bp\n";
+		    print OUTPUT "\nSequence : \"$clone\"\n";
+		    print OUTPUT "Feature_object $feature $coords[1]  $coords[2]\n\n";
+		}
 	    }
 	    else {
-		print ERRORS "//$feature maps to $clone $coords[1] -> $coords[2], feature span is $span bp\n" unless ($adhoc);
+		print ERRORS "// $feature maps to $clone $coords[1] -> $coords[2], feature span is $span bp\n" unless ($adhoc);
 	    }
 	} #_ if match line
     }
@@ -142,16 +144,87 @@ foreach my $query (@features2map) {
 close OUTPUT unless ($adhoc);
 close ERRORS unless ($adhoc);
 
-exit;
+###############
+# hasta luego #
+###############
+
+exit(0);
 
 
-sub DNA_string_reverse2 {
-    my $revseq = reverse shift;
-    $revseq =~ tr/A/x/;
-    $revseq =~ tr/T/A/;
-    $revseq =~ tr/x/T/;
-    $revseq =~ tr/G/x/;
-    $revseq =~ tr/C/G/;
-    $revseq =~ tr/x/C/;
-    return ($revseq);
-}    
+#######################################################################
+# Help and error trap outputs                                         #
+#######################################################################
+
+sub usage {
+    my $error = shift;
+
+    if ($error == 1) {
+    }
+    elsif ($error == 0) {
+        # Normal help menu
+        exec ('perldoc',$0);
+    }
+}
+
+
+
+__END__
+
+=pod
+
+=head2 NAME - map_features.pl
+
+=head1 USAGE
+
+=over 4
+
+=item map_features.pl [-options]
+
+=back
+
+map_features.pl mandatory arguments:
+
+=over 4
+
+=item none
+
+=back
+
+map_features.pl optional arguments:
+
+=over 4
+
+=item -all 
+
+map all of the following feature types:
+
+=item -SL1
+
+map SL1 trans-splice leader acceptor sites (2 bp feature)
+
+=item -SL2
+
+map SL2 trans-splice leader acceptor sites (2 bp feature)
+
+=item -polyA_site
+
+map polyA attachement sites (2 bp feature)
+
+=item -polyA_signal
+
+map polyA signal sequence sites (6 bp feature)
+
+=item -debug <user> 
+
+Queries current_DB rather than autoace
+
+=item -adhoc <file> 
+
+Queries a flatfile for the Feature data. Flatfile format is
+"<feature_name>"  "<clone>" "<flanking_sequence_left>" "<flanking_sequence_right>" 
+
+=item -help      
+
+This help page
+
+=cut
