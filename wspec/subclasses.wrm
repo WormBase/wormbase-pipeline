@@ -138,10 +138,10 @@ Filter "NBP_allele"
 
 // capture just C. elegans genes that are live
 
-Class total_genes
+Class live_genes
 Visible
 Is_a_subclass_of Gene
-Filter "Live AND Species = "Caenorhabditis elegans"
+Filter "Live AND Species = Caenorhabditis*elegans"
 
 
 // Other Misc. subclasses
