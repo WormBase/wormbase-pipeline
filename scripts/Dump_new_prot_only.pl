@@ -502,14 +502,17 @@ sub addWormData
   {
     my $match = shift;   #hash to add data to 
     my $data = shift;    #array data to analyse
-    my $my_gene = &justGeneName( $CE2gene{ $$data[0] } ) ;
     my $homol = $$data[4];
     my $homol_gene = &justGeneName( $homol );
-    return if ("$homol_gene" eq "$my_gene");    # self match or isoform of same gene
+
+    unless( $brigprot ) {
+      my $my_gene = &justGeneName( $CE2gene{ $$data[0] } ) ;
+      return if ("$homol_gene" eq "$my_gene"); # self match or isoform of same gene
+    }
 
     #have we already matched an isoform of this protein
     # CE26000 | wublast_worm | start | end | Y73B6BL.34    fields or result array
-    my $i = 0;
+
     foreach (keys %$match ) { # check against all previously matched if there is a matching protein
       next unless $$match{$_}[0]->[0]; # previously removed isoforms still have valid keys
       my $existing_gene = &justGeneName( "$_" );

@@ -19,6 +19,7 @@ my $update_databases;
 my $update_mySQL;
 my $setup_mySQL;
 my $run_pipeline;
+my $run_brig;
 my $dont_SQL;
 my $dump_data;
 my $mail;
@@ -35,6 +36,7 @@ GetOptions("chromosomes" => \$chromosomes,
 	   "updatemysql" => \$update_mySQL,
 	   "setup"       => \$setup_mySQL,
 	   "run"         => \$run_pipeline,
+	   "run_brig"    => \$run_brig,
 	   "nosql"       => \$dont_SQL,
 	   "prep_dump"   => \$prep_dump,
 	   "dump"        => \$dump_data,
@@ -288,30 +290,28 @@ clones = $clone_count\ncontigs = $contig_count\ndna = $dna_count\n";
 	
       }
     $worm01->disconnect;
-    
+
     print "\tchecking for duplicate clones\n";
     `$scripts_dir/find_duplicate_clones.pl`;
-    
-    
+
+
     #add new peptides to MySQL database
     print "\n\nAdding new peptides to wormprot\n";
     #make wormprot connection
     $dbname = "wormprot";
     $wormprot = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
       || die "cannot connect to db, $DBI::errstr";
-    
+
     $query = "select * from protein order by proteinId desc limit 1";
     @results = &single_line_query( $query, $wormprot );
     my $old_topCE = $results[0];
-    
     if (-e "/wormsrv2/WORMPEP/wormpep$WPver/new_entries.WS$WPver"){
-      `$scripts_dir/worm_pipeline.pl -f /wormsrv2/WORMPEP/wormpep$WPver/new_entries.WS$WPver`;
+      `$scripts_dir/worm_pipeline.pl -fasta /wormsrv2/WORMPEP/wormpep$WPver/new_entries.WS$WPver`;
     }
     else {
       die "new_entries.WS$WPver does not exist! \nThis should have been made in autoace_minder -buildpep\n";
     }
-    
-    
+
     #check for updated ids
     @results = &single_line_query( $query, $wormprot );
     my $new_topCE = $results[0];
@@ -321,7 +321,7 @@ clones = $clone_count\ncontigs = $contig_count\ndna = $dna_count\n";
     else {
       print "\tnew highest proteinId is $new_topCE (old was $old_topCE )\n";
     }
-    
+
     $wormprot->disconnect;
   }
 
@@ -336,13 +336,19 @@ if( $setup_mySQL )
     $dbname = "wormprot";
     my $wormprot =  DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
       || die "cannot connect to db, $DBI::errstr";
-    $dbname = "worm01";
+
+    #make worm_brigprot connection
+    $dbname = "worm_brigprot";
+    my $worm_brigprot =  DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
+      || die "cannot connect to db, $DBI::errstr";
+
     #make worm01 connection
+    $dbname = "worm01";
     $worm01 = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
       || die "cannot connect to db, $DBI::errstr";
-    
+
     &get_updated_database_list;
-    
+
     # if the user passes WPversion greater than that in the current file update it anyway
     # (this means you can update the database before wormpep is made - ie during autoace_minder -build
     $currentDBs{$1} =~ /wormpep(\d+)/;
@@ -355,7 +361,7 @@ if( $setup_mySQL )
     #   use wormprot;
     #   delete from InputIdAnalysis where analysisId = 11 (wormpep proteins BLASTP'd against other proteins)
     #   delete from protein_feature where analysis = 11
-    
+
     #update mysql with which databases need to be run against
     foreach my $database (@updated_DBs)
       {
@@ -385,37 +391,42 @@ if( $setup_mySQL )
 	print "doing wormprot updates . . . \n";
 	$analysis = $wormprotprocessIds{$database};
 	$query = "update analysisprocess set db = \"$db_file\" where analysisId = $analysis";
-	print $query,"\n";
-	
+	print $query,"\n";	
 	&update_database( $query, $wormprot );
+	&update_database( $query, $worm_brigprot );
+
 	$query = "update analysisprocess set db_file = \"/data/blastdb/Worms/$db_file\" where analysisId = $analysis";
 	print $query,"\n";
 	&update_database( $query, $wormprot );
+	&update_database( $query, $worm_brigprot );
 	
 	#delete entries so they get rerun
 	$query = "delete from InputIdAnalysis where analysisId = $analysis";
 	print $query,"\n";
 	&update_database( $query, $wormprot );
+	&update_database( $query, $worm_brigprot );
 	
 	$query = "delete from protein_feature where analysis = $analysis";
 	print $query,"\n";
 	&update_database( $query, $wormprot );
+	&update_database( $query, $worm_brigprot );
       }
-    
+
     $worm01->disconnect;
     $wormprot->disconnect;
-    
+    $worm_brigprot->disconnect;
+
   }
 my $bdir = "/nfs/farm/Worms/EnsEMBL/branch-ensembl-121/ensembl-pipeline/modules/Bio/EnsEMBL/Pipeline";
 if( $blastx ) 
-  {   
+  {
     die "can't run pipeline whilst wormsrv2 is mounted - please exit and try again\n" if (-e "/wormsrv2");
     #make sure we have the databases to work on.
     &get_updated_database_list;
     #run worm01 stuff
-    
+ 
     `cp -f $bdir/pipeConf.pl.worm01 $bdir/pipeConf.pl` and die "cant copy pipeConf worm01 file\n";
-    
+
     #any updated databases
     # worm01 stuff
     foreach (@updated_DBs)
@@ -429,14 +440,14 @@ if( $blastx )
 
 if( $blastp )
   {
-    &wait_for_pipeline_to_finish;
+    &wait_for_pipeline_to_finish if $blastx;
     die "can't run pipeline whilst wormsrv2 is mounted - please exit and try again\n" if (-e "/wormsrv2");
     #make sure we have the databases to work on.
     &get_updated_database_list;
-    
+
     #run wormpep stuff
-    `cp -f $bdir/pipeConf.pl.wormprot $bdir/pipeConf.pl` and die "cant copy pipeConf wormprot file\n";   
-    
+    `cp -f $bdir/pipeConf.pl.wormprot $bdir/pipeConf.pl` and die "cant copy pipeConf wormprot file\n";
+
     #for anything updated
     foreach (@updated_DBs)
       {
@@ -444,6 +455,19 @@ if( $blastp )
 	`perl $bdir/RuleManager3Prot.pl -once -flushsize 5 -analysis $analysis`;
       }
     `perl $bdir/RuleManager3Prot.pl -once -flushsize 5`; # finish off anything that didn't work + PFams and low complexity, signalp, ncoils,transmembrane
+
+    # run worm_brigprot analyses
+    if ($run_brig) {
+      &wait_for_pipeline_to_finish;
+      `cp -f $bdir/pipeConf.pl.worm_brigprot $bdir/pipeConf.pl` and die "cant copy pipeConf wormprot file\n";
+
+      #for anything updated
+      foreach (@updated_DBs) {
+	my $analysis = $wormprotprocessIds{$_};
+	`perl $bdir/RuleManager3Prot.pl -once -flushsize 5 -analysis $analysis`;
+      }
+      `perl $bdir/RuleManager3Prot.pl -once -flushsize 5`; # finish off anything that didn't work + PFams and low complexity, signalp, ncoils,transmembrane
+    }
   }
 
 if( $prep_dump ) 
@@ -460,7 +484,7 @@ if( $prep_dump )
       `cp /wormsrv2/autoace/COMMON_DATA/gene2CE.dat $wormpipe_dir/dumps/`;
 
       `touch $wormpipe_dir/DUMP_PREP_RUN`;
-    }     
+    }
     else {
       print " cant find GFF files at /wormsrv2/autoace/CHROMOSOMES/ \n ";
       exit(1);
@@ -480,14 +504,13 @@ if( $dump_data )
     `$scripts_dir/dump_blastx_new.pl -version $WPver`;
     print "Dumping motifs\n";
       `$scripts_dir/dump_motif.pl`;
-    
+
     # Dump extra info for SWALL proteins that have matches. Info retrieved from the dbm databases on /acari/work2a/wormpipe/
     print "Creating acefile of SWALL proteins with homologies\n";
     `$scripts_dir/write.swiss_trembl.pl -swiss -trembl`;
 
     print "Creating acefile of matched IPI proteins\n";
     `$scripts_dir/write_ipi_info.pl`;
-      
   }
 
 if( $cleanup ) {
@@ -514,7 +537,7 @@ if( $cleanup ) {
   print "Removing . . . \n";
   print "\t$clear_dump/*.ace\n";  system("rm -f $clear_dump/*.ace") && warn "cant remove ace files from $clear_dump";
   print "\t$clear_dump/*.log\n";  system("rm -f $clear_dump/*.log") && warn "cant remove log files from $clear_dump";
-  
+
   print "Removing files currently in $wormpipe_dir/last_build/n";
   system(" rm -f $wormpipe_dir/last_build/*.gff");
   system(" rm -f $wormpipe_dir/last_build/*.agp");
@@ -541,7 +564,7 @@ sub wait_for_pipeline_to_finish
   {
     my $finished = 0;
     while( $finished == 0 ) {
-      my $jobsleft = `bjobs | wc -l`;
+      my $jobsleft = `cjobs`;
       chomp $jobsleft;
       if( $jobsleft == 0 ){
 	$finished = 1;
