@@ -7,7 +7,7 @@
 # Builds a wormpep data set from the current autoace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-12-08 16:40:33 $
+# Last updated on: $Date: 2003-12-09 13:42:16 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -137,7 +137,7 @@ my $new_wpdir = "$basedir/WORMPEP/wormpep$release";
 
 
 # write the wormep.historyXXX and the wormpep.diffXXX files
-#&write_wormpep_history_and_diff;
+&write_wormpep_history_and_diff;
 
 
 # count the isoforms of each CDS (stats for release letter)
@@ -642,7 +642,6 @@ sub write_wormpep_history_and_diff{
     ($cds , $wpid , $start , $end) = split (/\t/ , $line);
     $wpid =~ /CE0*([1-9]\d*)/ ; my $num = $1;
     $line{$cds} = $line;
-    print "$line\n";
     if ((!exists ($cds2number{$cds}) && ($end eq ""))) {
       print HISTORY "$cds\t$wpid\t$start\t$release\n";
       print DIFF "lost:\t$cds\t$wpid\n";
