@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: krb $
-// Last edited on: $Date: 2004-06-30 16:03:55 $
+// Last edited on: $Date: 2004-07-09 15:00:29 $
  
 
 
@@ -1210,6 +1210,7 @@
 		           Isoform #Evidence
                            Start_not_found                                   // [020306 kj]
                            End_not_found                                     // [020306 kj]
+		Sequence_features ?Feature XREF Part_of_transcript #Evidence  
                 Method UNIQUE ?Method                  
 
 
@@ -1359,7 +1360,8 @@
 		    Defined_by_paper    ?Paper XREF Feature #Evidence
 		    Defined_by_person   ?Person
 		    Defined_by_author   ?Author
-	 Part_of_gene ?CDS XREF Sequence_features  #Evidence
+	 Part_of_gene       ?CDS        XREF Sequence_features #Evidence
+	 Part_of_transcript ?Transcript XREF Sequence_features #Evidence
 	 Annotation UNIQUE ?LongText		// added for data attribution [030220 dl]
          Method UNIQUE ?Method
 
