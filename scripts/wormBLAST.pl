@@ -72,39 +72,46 @@ if( $wormpep ) {
   `$wormpipe_dir/Pipeline/copy_files_to_acari.pl`;
 }
 
-my %currentDBs;   #ALSO used in setup_mySQL
+my %currentDBs;   #ALSO used in setup_mySQL 
+#load in databases used in previous build
+my $extDB_file = "$wormpipe_dir/BlastDB/external_dbs";
+open (OLD_DB,"<$extDB_file") or die "cant find $extDB_file";
+while (<OLD_DB>) {
+  chomp;
+  if( /(ensembl|gadfly|yeast|slimswissprot|slimtrembl|wormpep)/ ) {
+    $currentDBs{$1} = $_;
+  }
+}
+close OLD_DB;
+
 my @updated_DBs;
+push (@updated_DBs, "wormpep");
 #check for updated Databases
 if ( $update_databases )
   {
-    #read in existing 
-    my $extDB_file = "$wormpipe_dir/BlastDB/external_dbs";
-    open (OLD_DB,"<$extDB_file") or die "cant find $extDB_file";
-    
-    while (<OLD_DB>) {
-      chomp;
-      if( /(ensembl|gadfly|yeast|slimswissprot|slimtrembl)/ ) {
-	$currentDBs{$1} = $_;
-      }
-    }
-    
     open (DIR,"ls -l $wormpipe_dir/BlastDB/*.pep |") or die "readir\n";
     while (<DIR>) { 
       #  print;
       chomp;
-      if( /\/(ensembl|gadfly|yeast|slimswissprot|slimtrembl)/ ) {
-	my $whole_file = "$1"."$'";  #match + suff after match.
+      if( /\/(ensembl|gadfly|yeast|slimswissprot|slimtrembl|wormpep)/ ) {
+	my $whole_file = "$1"."$'";  #match + stuff after match.
 	if( "$whole_file" ne "$currentDBs{$1}" ) {
 	  #make blastable database
 	  push( @updated_DBs,$1 );
 	  #change hash entry ready to rewrite external_dbs
-	  $currentDBs{$1} = "$&";
+	  $currentDBs{$1} = "$whole_file";
 	 	}
 	else {
 	  print "$1 database unchanged $&\n";
 	}
       }
     }
+    close DIR;
+    open (OLD_DB,">$extDB_file") or die "cant write updated $extDB_file";
+    foreach (keys %currentDBs){
+      print OLD_DB "$currentDBs{$_}\n";
+    }
+    close OLD_DB;
   }
 
 
@@ -121,7 +128,7 @@ print LETTER "The following can be removed from /data/blastdb/Worms.\n\n";
 foreach (@updated_DBs){
   print LETTER "$_*\n";
 }
-print LETTER "wormpep*\n";
+#print LETTER "wormpep*\n";
 print LETTER "CHROMOSOME_*.dna\n";
 
 print LETTER "-------------------------------------------------------\n\nand replaced with the following files from ~wormpipe/BlastDB/\n\n";
@@ -129,7 +136,7 @@ foreach (@updated_DBs){
   print LETTER "$currentDBs{$_}\n$currentDBs{$_}.ahd\n$currentDBs{$_}.atb\n$currentDBs{$_}.bsq\n\n";
 }
 
-print LETTER "wormpep$WPver.pep\nwormpep$WPver.pep.ahd\nwormpep$WPver.pep.atb\nwormpep$WPver.pep.bsq\n\n";
+#print LETTER "wormpep$WPver.pep\nwormpep$WPver.pep.ahd\nwormpep$WPver.pep.atb\nwormpep$WPver.pep.bsq\n\n";
 print LETTER "CHROMOSOME_I.dna\nCHROMOSOME_II.dna\nCHROMOSOME_III.dna\nCHROMOSOME_IV.dna\nCHROMOSOME_V.dna\nCHROMOSOME_X.dna\n\n";
 
 print LETTER "-------------------------------------------------------\n\n";
@@ -224,25 +231,6 @@ if( $setup_mySQL )
     $worm01 = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
       || die "cannot connect to db, $DBI::errstr";
     
-    #update mySQL database with new wormpep info
-    $query = "update analysisprocess set db = 'wormpep$WPver.pep' where analysisId = 11";
-    &single_line_query( $query, $wormprot );
-    $query = "update analysisprocess set db_file = '/data/blastdb/Worms/wormpep$WPver.pep' where analysisId = 11";
-    &single_line_query( $query, $wormprot );
-    $query = "update analysisprocess set db = 'wormpep$WPver.pep' where analysisId = 23";
-    &single_line_query( $query, $worm01 );
-    $query = "update analysisprocess set db_file = '/data/blastdb/Worms/wormpep$WPver.pep' where analysisId = 23";
-    &single_line_query( $query, $worm01 );
-    
-    #processes to be re-run
-    $query = "delete from InputIdAnalysis where analysisId = 23";
-    &single_line_query( $query, $worm01 );
-    $query = "delete from feature where analysis = 23";
-    &single_line_query( $query, $worm01 );
-    $query = "delete from InputIdAnalysis where analysisId = 11";
-    &single_line_query( $query, $wormprot );
-    $query = "delete from protein_feature where analysis = 11";
-    &single_line_query( $query, $wormprot );
     #process new databases
     my $extDB_file = "$wormpipe_dir/BlastDB/external_dbs";
     open (OLD_DB,"<$extDB_file") or die "cant find $extDB_file";
@@ -252,20 +240,23 @@ if( $setup_mySQL )
     #get database file info from external_dbs (should have been updated by script if databases changed
     while (<OLD_DB>) {
       chomp;
-      if( /(ensembl|gadfly|yeast|slimswissprot|slimtrembl)/ ) {
+      if( /(ensembl|gadfly|yeast|slimswissprot|slimtrembl|wormpep)/ ) {
 	$currentDBs{$1} = $_;
       }
     }
-    #@updated_DBs = qw(ensembl gadfly yeast slimswissprot slimtrembl);
+    close OLD_DB;
+
+    @updated_DBs = qw(wormpep ensembl gadfly yeast slimswissprot slimtrembl);
     foreach my $database (@updated_DBs)
       {
 	my $analysis = $worm01processIDs{$database};
 	my $db_file = $currentDBs{$database};
+	print "________________________________________________________________________________\n";
 	$query = "update analysisprocess set db = '$db_file' where analysisId = $analysis";
 	print $query,"\n";
 	&single_line_query( $query, $worm01 );
 	$query = "update analysisprocess set db_file = '/data/blastdb/Worms/$db_file' where analysisId = $analysis";
-	print $query,"\n\n\n";
+	print $query,"\n\n";
 	&single_line_query( $query, $worm01 );
 
 	$analysis = $wormprotprocessIds{$database};
@@ -303,19 +294,19 @@ if( $run_pipeline )
     #anything updated
     foreach (@updated_DBs)
       {
-	my $analysis = $worm01processIDs{$database};
+	my $analysis = $worm01processIDs{$_};
 	`perl RuleManager3.pl -once -flushsize 5 -analysis $analysis`;
       }
     
     #run wormpep stuff
     `cp -f $bdir/pipeConf.pl.wormprot $bdir/pipeConf.pl` and die "cant copy pipeCon fwormprot file\n";
-    `perl RuleManager3.pl -once -flushsize 5 -analysis $wormprotprocessIDs{wormpep}`;# - wormpep
+    `perl RuleManager3.pl -once -flushsize 5 -analysis $wormprotprocessIds{wormpep}`;# - wormpep
     
     `perl RuleManager3.pl -once -flushsize 5`;  #finish off anything that didn't work
     #anything updated
     foreach (@updated_DBs)
       {
-	my $analysis = $wormprotprocessIDs{$database};
+	my $analysis = $wormprotprocessIds{$_};
 	`perl RuleManager3Prot.pl -once -flushsize 5 -analysis $analysis`;
       }
     `perl RuleManager3prot.pl -once -flushsize 5`; # finish off anything that didn't work + PFams and low complexity, signalp, ncoils, transmembrane
