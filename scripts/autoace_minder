@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl
+#!/usr/local/bin/perl -w
 #
 # autoace_minder
 # v 0.3
@@ -40,7 +40,10 @@ require "/wormsrv2/scripts/babel.pl";
 my $maintainer = "dl1\@sanger.ac.uk";
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
-my $version = &get_script_version(autoace_minder);
+
+# grab version number from cvs
+my $version = `cvs -d /nfs/ensembl/cvsroot/ status /wormsrv2/scripts/autoace_minder`;
+$version =~ s/.* +Repository revision:\s+([\d\.]*)\s+.*/$1/s; 
 
  ##############################
  # command-line options       #
@@ -166,7 +169,7 @@ exit(0);
 #################################################################################
 
 sub make_acefiles {
-    system ("$scriptdir/make_acefiles -nep");
+    system ("$scriptdir/make_acefiles -nep") && die "Couldn't run make_acefiles\n";
     print LOG " Write acefiles to disk\n";
     print LOG " => 'make_acefiles -nep'\n\n";
 }
@@ -176,19 +179,19 @@ sub make_acefiles {
 #################################################################################
 
 sub make_autoace {
-    system ("$scriptdir/make_autoace -p /wormsrv2/autoace -rdc");
+    system ("$scriptdir/make_autoace -p /wormsrv2/autoace -rdc") && die "Couldn't run autoace -rdc\n";
     print LOG " Build full autoace (database/CHROMOSOMES/release)\n";
     print LOG " =>'make_autoace -p /wormsrv2/autoace -rdc'\n\n";
 }
 
 sub make_DB {
-    system ("$scriptdir/make_autoace -p /wormsrv2/autoace -r");
+    system ("$scriptdir/make_autoace -p /wormsrv2/autoace -r") && die "Couldn't run autoace -r\n" ;
     print LOG " Build autoace (database)\n";
     print LOG " => 'make_autoace -p /wormsrv2/autoace -r'\n\n";
 }
 
 sub make_DNA {
-    system ("$scriptdir/dna_dump /wormsrv2/autoace");
+    system ("$scriptdir/dna_dump /wormsrv2/autoace")  && die "Couldn't run autoace\n";
     print LOG " Build autoace (CHROMOSOMES)\n";
     print LOG " =>'dna_dump /wormsrv2/autoace'\n\n";
 
@@ -198,7 +201,7 @@ sub make_DNA {
 }
 
 sub make_release {
-    system ("$scriptdir/make_autoace -p /wormsrv2/autoace -d");
+    system ("$scriptdir/make_autoace -p /wormsrv2/autoace -d")  && die "Couldn't run autoace -d\n"; 
     print LOG " Build autoace (release)\n";
     print LOG " => 'make_autoace -p /wormsrv2/autoace -d'\n\n";
 }
@@ -214,7 +217,7 @@ sub check_release {
 #    print LOG " Test database build\n";
 #    print LOG " => 'test_make_autoace -n /wormsrv2/autoace -o /wormsrv2/$olddb -cd'\n\n";
 
-    system ("$scriptdir/dbcomp -f /wormsrv2/WS${WS_previous}");
+    system ("$scriptdir/dbcomp -f /wormsrv2/WS${WS_previous}") && die "Couldn't run dbcomp -f\n";
     print LOG " Make dbcomp report\n";
     print LOG " => 'dbcomp -f /wormsrv2/WS${WS_previous}'\n\n";
 
@@ -225,7 +228,7 @@ sub check_release {
 #################################################################################
 
 sub make_wormpep {
-    system ("$scriptdir/make_wormpep -r $WP_version");
+    system ("$scriptdir/make_wormpep -r $WP_version") && die "Couldn't run make_wormpep -r\n";
     print LOG " Build wormpep release $WP_version\n";
     print LOG " =>'make_wormpep -r $WP_version'\n\n";
 }
@@ -235,7 +238,7 @@ sub make_wormpep {
 #################################################################################
 
 sub make_FTP_wormbase {
-    system ("$scriptdir/make_FTP_wormbase");
+    system ("$scriptdir/make_FTP_wormbase") && die "Couldn't run make_FTP_wormbase\n";
     print LOG " Move version to ftp-wormbase\n";
     print LOG " => 'make_FTP_wormbase\n\n";
 }
@@ -290,7 +293,6 @@ sub usage {
     elsif ($error == 0) {
 	# Normal help menu
 	exec ('perldoc',$0);
-	exit (0);
     }
 }
 
