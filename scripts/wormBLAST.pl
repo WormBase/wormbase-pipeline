@@ -20,6 +20,7 @@ my $setup_mySQL;
 my $run_pipeline;
 my $dont_SQL;
 my $dump_data;
+my $mail;
 
 GetOptions("chromosomes" => \$chromosomes,
 	   "wormpep"     => \$wormpep,
@@ -28,7 +29,8 @@ GetOptions("chromosomes" => \$chromosomes,
 	   "setup"       => \$setup_mySQL,
 	   "run"         => \$run_pipeline,
 	   "nosql"       => \$dont_SQL,
-	   "dump"        => \$dump_data
+	   "dump"        => \$dump_data,
+	   "mail"        => \$mail
 	  );
 
 my $wormpipe_dir = glob("~wormpipe");
@@ -78,10 +80,11 @@ if( $wormpep ) {
 }
 
 my %currentDBs;   #ALSO used in setup_mySQL 
-
+my @updated_DBs;  #used by get_updated_database_list sub - when run this array is filled with databases that have been updated since the prev build
 #load in databases used in previous build
 my $last_build_DBs = "$wormpipe_dir/BlastDB/databases_used_WS$WP_old";
 my $database_to_use = "$wormpipe_dir/BlastDB/databases_used_WS$WPver";
+&get_updated_database_list;
 
 
 open (OLD_DB,"<$last_build_DBs") or die "cant find $last_build_DBs";
@@ -93,7 +96,6 @@ while (<OLD_DB>) {
 }
 close OLD_DB;
 
-my @updated_DBs;
 #check for updated Databases
 if ( $update_databases )
   {
@@ -105,7 +107,7 @@ if ( $update_databases )
 	my $whole_file = "$1"."$'";  #match + stuff after match.
 	if( "$whole_file" ne "$currentDBs{$1}" ) {
 	  #make blastable database
-	  `setdb $whole_file`;
+	  `/usr/local/ensembl/bin/setdb /$whole_file`;
 	  push( @updated_DBs,$1 );
 	  #change hash entry ready to rewrite external_dbs
 	  $currentDBs{$1} = "$whole_file";
@@ -127,36 +129,39 @@ if ( $update_databases )
 
 
 #@updated_DBs = qw(ensembl gadfly yeast slimswissprot slimtrembl);
-
-#generate distribution request based on updated databases
-my $letter = "$wormpipe_dir/distribute_on_farm_mail";
-open (LETTER,">$letter");
-print LETTER "This is a script generated email from the wormpipe Blast analysis pipeline.\nAny problems should be addessed to worm\@sanger.ac.uk.\n
+if( $mail )
+  {
+    &get_updated_database_list;
+    
+  #generate distribution request based on updated databases
+  my $letter = "$wormpipe_dir/distribute_on_farm_mail";
+  open (LETTER,">$letter");
+  print LETTER "This is a script generated email from the wormpipe Blast analysis pipeline.\nAny problems should be addessed to worm\@sanger.ac.uk.\n
 =====================================================
 \n";
-print LETTER "The following can be removed from /data/blastdb/Worms.\n\n";
-foreach (@updated_DBs){
-  print LETTER "$_*\n";
+  print LETTER "The following can be removed from /data/blastdb/Worms.\n\n";
+  foreach (@updated_DBs){
+    print LETTER "$_*\n";
+  }
+  #print LETTER "wormpep*\n";
+  print LETTER "CHROMOSOME_*.dna\n";
+
+  print LETTER "-------------------------------------------------------\n\nand replaced with the following files from ~wormpipe/BlastDB/\n\n";
+  foreach (@updated_DBs){
+    print LETTER "$currentDBs{$_}\n$currentDBs{$_}.ahd\n$currentDBs{$_}.atb\n$currentDBs{$_}.bsq\n\n";
+  }
+  
+  #print LETTER "wormpep$WPver.pep\nwormpep$WPver.pep.ahd\nwormpep$WPver.pep.atb\nwormpep$WPver.pep.bsq\n\n";
+  print LETTER "CHROMOSOME_I.dna\nCHROMOSOME_II.dna\nCHROMOSOME_III.dna\nCHROMOSOME_IV.dna\nCHROMOSOME_V.dna\nCHROMOSOME_X.dna\n\n";
+  
+  print LETTER "-------------------------------------------------------\n\n";
+  print LETTER "Thanks\n\n ________ END ________";
+  close LETTER;
+  
+  my $name = "Wormpipe database distribution request";
+  my $maintainer = "ar2\@sanger.ac.uk";
+  &mail_maintainer($name,$maintainer,$letter);
 }
-#print LETTER "wormpep*\n";
-print LETTER "CHROMOSOME_*.dna\n";
-
-print LETTER "-------------------------------------------------------\n\nand replaced with the following files from ~wormpipe/BlastDB/\n\n";
-foreach (@updated_DBs){
-  print LETTER "$currentDBs{$_}\n$currentDBs{$_}.ahd\n$currentDBs{$_}.atb\n$currentDBs{$_}.bsq\n\n";
-}
-
-#print LETTER "wormpep$WPver.pep\nwormpep$WPver.pep.ahd\nwormpep$WPver.pep.atb\nwormpep$WPver.pep.bsq\n\n";
-print LETTER "CHROMOSOME_I.dna\nCHROMOSOME_II.dna\nCHROMOSOME_III.dna\nCHROMOSOME_IV.dna\nCHROMOSOME_V.dna\nCHROMOSOME_X.dna\n\n";
-
-print LETTER "-------------------------------------------------------\n\n";
-print LETTER "Thanks\n\n ________ END ________";
-close LETTER;
-
-my $name = "Wormpipe database distribution request";
-my $maintainer = "ar2\@sanger.ac.uk";
-&mail_maintainer($name,$maintainer,$letter);
-
 
 
 
@@ -179,17 +184,34 @@ if( $update_mySQL )
       || die "cannot connect to db, $DBI::errstr";
     
     #internal_id number of the last clone in the worm01
-    my $last_clone;
-    
-    $query = "select * from clone order by internal_id desc limit 1";
-    @results = &single_line_query( $query, $worm01 );
-    $last_clone = $results[0];
-    print "last_clone = $last_clone\n";
-    
-    #Make a concatenation of all six agp files from the last release to ~/Elegans  e.g.
-    `cat /wormsrv2/current_DB/CHROMOSOMES/*.agp > $wormpipe_dir/Elegans/WS$WPver.agp`;
-    
-    #load information about any new clones
+     #in case this routine is being run twice the clone id is stored and checked
+     my $last_clone;
+     my $update;
+     open (NEW_DB,"<$database_to_use") or die "cant read updated $database_to_use during update_mySQL";
+     while(<NEW_DB>){
+       if( /last_clone\s(\w+)/ ){
+	 $last_clone = $1;
+	 last;
+       }
+       else {
+	 $query = "select * from clone order by internal_id desc limit 1";
+	 @results = &single_line_query( $query, $worm01 );
+	 $last_clone = $results[0];
+	 $update = 1;
+       }
+     }
+     close NEW_DB;
+     
+     if( $update ){   # first time writing for this build
+       open (NEW_DB,">>$database_to_use") or die "cant read updated $database_to_use during update_mySQL - last_clone";
+       print NEW_DB "last_clone $last_clone\n";
+     }
+     print "last_clone = $last_clone\n";
+     
+     #Make a concatenation of all six agp files from the last release to ~/Elegans  e.g.
+     `cat /wormsrv2/current_DB/CHROMOSOMES/*.agp > $wormpipe_dir/Elegans/WS$WPver.agp`;
+     
+     #load information about any new clones
     `$wormpipe_dir/Pipeline/agp2ensembl.pl -dbname worm01 -dbhost ecs1f -dbuser wormadmin -dbpass worms -agp $wormpipe_dir/Elegans/WS$WPver.agp -write -v -strict`;
     
     #check that the number of clones in the clone table equals the number of contigs and dna objects
@@ -216,7 +238,6 @@ clones = $clone_count\ncontigs = $contig_count\ndna = $dna_count\n";
     @results = &single_line_query( $query, $worm01 );
     my $new_last_clone = $results[0];
     print "new_last_clone = $new_last_clone\n";
-    $last_clone = 3487;
 
     if( $last_clone != $new_last_clone )
       {
@@ -239,7 +260,7 @@ clones = $clone_count\ncontigs = $contig_count\ndna = $dna_count\n";
      $query = "select * from protein order by proteinId desc limit 1";
      @results = &single_line_query( $query, $wormprot );
      my $old_topCE = $results[0];
-    # `$wormpipe_dir/Pipeline/worm_pipeline.pl -f /wormsrv2/WORMPEP/wormpep$WPver/new_entries.WS$WPver`;
+     `$wormpipe_dir/Pipeline/worm_pipeline.pl -f /wormsrv2/WORMPEP/wormpep$WPver/new_entries.WS$WPver`;
      
      #check for updated ids
      @results = &single_line_query( $query, $wormprot );
@@ -268,35 +289,16 @@ if( $setup_mySQL )
     #make worm01 connection
     $worm01 = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
       || die "cannot connect to db, $DBI::errstr";
-    
-    #process new databases
-    open (OLD_DB,"<$last_build_DBs") or die "cant find $last_build_DBs";
-    my %prevDBs;
-    my %currentDBs;
-    my @updated_DBs;
-    
-    #get database file info from databases_used_WS(xx-1) (should have been updated by script if databases changed
-    while (<OLD_DB>) {
-      chomp;
-      if( /(ensembl|gadfly|yeast|slimswissprot|slimtrembl|wormpep)/ ) {
-	$prevDBs{$1} = $_;
-      }
-    }  
-    open (CURR_DB,"<$database_to_use") or die "cant find $database_to_use";
-    while (<CURR_DB>) {
-      chomp;
-      if( /(ensembl|gadfly|yeast|slimswissprot|slimtrembl|wormpep)/ ) {
-	$currentDBs{$1} = $_;
-      }
-    }
-    close CURR_DB;
-    
-    #compare old and new database list
-    foreach (keys %currentDBs){
-      if( "$currentDBs{$_}" ne "$prevDBs{$_}" ){
-	push( @updated_DBs, "$_");
-      }
-    }
+
+    &get_updated_database_list;
+
+
+#   mysql -h ecs1f -u wormadmin -p worm01
+#   delete from InputIdAnalysis where analysisId = 23; (DNA clones BLASTX'd against wormpep)
+#   delete from feature where analysis = 23;
+#   use wormprot;
+#   delete from InputIdAnalysis where analysisId = 11 (wormpep proteins BLASTP'd against other proteins)
+#   delete from protein_feature where analysis = 11
     
     #update mysql with which databases need to be run against
     foreach my $database (@updated_DBs)
@@ -304,18 +306,42 @@ if( $setup_mySQL )
 	my $analysis = $worm01processIDs{$database};
 	my $db_file = $currentDBs{$database};
 	print "________________________________________________________________________________\n";
+	print "doing worm01 updates . . . \n";
 	$query = "update analysisprocess set db = \"$db_file\" where analysisId = $analysis";
 	print $query,"\n";
 	&update_database( $query, $worm01 );
+
 	$query = "update analysisprocess set db_file = \"/data/blastdb/Worms/$db_file\" where analysisId = $analysis";
 	print $query,"\n\n";
 	&update_database( $query, $worm01 );
 
+	#delete entries so they get rerun
+	$query = "delete from InputIdAnalysis where analysisId = $analysis";
+	print $query,"\n";
+	&update_database( $query, $worm01 );
+
+	$query = "delete from feature where analysis = $analysis";
+	print $query,"\n";
+	&update_database( $query, $worm01 );
+	
+	
+
+	print "doing wormprot updates . . . \n";
 	$analysis = $wormprotprocessIds{$database};
 	$query = "update analysisprocess set db = \"$db_file\" where analysisId = $analysis";
 	print $query,"\n";
+
 	&update_database( $query, $wormprot );
 	$query = "update analysisprocess set db_file = \"/data/blastdb/Worms/$db_file\" where analysisId = $analysis";
+	print $query,"\n";
+	&update_database( $query, $wormprot );
+
+	#delete entries so they get rerun
+	$query = "delete from InputIdAnalysis where analysisId = $analysis";
+	print $query,"\n";
+	&update_database( $query, $wormprot );
+
+	$query = "delete from protein_feature where analysis = $analysis";
 	print $query,"\n";
 	&update_database( $query, $wormprot );
       }
@@ -327,41 +353,46 @@ if( $setup_mySQL )
 my $bdir = "/nfs/farm/Worms/EnsEMBL/branch-ensembl-121/ensembl-pipeline/modules/Bio/EnsEMBL/Pipeline";
 if( $run_pipeline )
   {   
+    #make sure we have the databases to work on.
+    &get_updated_database_list;
     #run worm01 stuff
    
     `cp -f $bdir/pipeConf.pl.worm01 $bdir/pipeConf.pl` and die "cant copy pipeConf worm01 file\n";
 
-    `perl RuleManager3.pl -once -flushsize 3 -analysis 23`;# - wormpep
-    #anything updated
+    #any updated databases
+    # worm01 stuff
     foreach (@updated_DBs)
       {
 	my $analysis = $worm01processIDs{$_};
-	`perl RuleManager3.pl -once -flushsize 5 -analysis $analysis`;
+	`perl $bdir/RuleManager3.pl -once -flushsize 5 -analysis $analysis`;
       }
-    
+    `perl $bdir/RuleManager3.pl -once -flushsize 5`;#finish off anything that didn't work
+
     #run wormpep stuff
-    `cp -f $bdir/pipeConf.pl.wormprot $bdir/pipeConf.pl` and die "cant copy pipeConf wormprot file\n";
-    `perl RuleManager3.pl -once -flushsize 5 -analysis $wormprotprocessIds{wormpep}`;# - wormpep
-    
-    `perl RuleManager3.pl -once -flushsize 5`;  #finish off anything that didn't work
-    #anything updated
+    `cp -f $bdir/pipeConf.pl.wormprot $bdir/pipeConf.pl` and die "cant copy pipeConf wormprot file\n";   
+    #for anything updated
     foreach (@updated_DBs)
       {
 	my $analysis = $wormprotprocessIds{$_};
-	`perl RuleManager3Prot.pl -once -flushsize 5 -analysis $analysis`;
+	`perl $bdir/RuleManager3Prot.pl -once -flushsize 5 -analysis $analysis`;
       }
-    `perl RuleManager3prot.pl -once -flushsize 5`; # finish off anything that didn't work + PFams and low complexity, signalp, ncoils, transmembrane
+    `perl $bdir/RuleManager3prot.pl -once -flushsize 5`; # finish off anything that didn't work + PFams and low complexity, signalp, ncoils, transmembrane
   }
 
 if( $dump_data )
   {
-    #dont forget the other stuff before this
-    `$wormpipe_dir/Pipeline/dump_blastp.pl -w ~/BlastDB/wormpep$WPver.pep -s`;
-    `$wormpipe_dir/Pipeline/dump_blastx_new.pl -w ~/BlastDB/wormpep$WPver.pep -a ~/Elegans/WS$WPver.agp -g ~/Elegans/cds87.gff -c ~/Elegans/cos87.gff -m`;
+    # prepare helper files
+    `cat /wormsrv2/autoace/CHROMOSOMES/*.gff | /nfs/acari/wormpipe/Pipeline/gff2cds.pl > /nfs/acari/wormpipe/Elegans/cds$WPver.gff`;
+    `cat /wormsrv2/autoace/CHROMOSOMES/*.gff | /nfs/acari/wormpipe/Pipeline/gff2cos.pl > /nfs/acari/wormpipe/Elegans/cos$WPver.gff`;
+    `$wormpipe_dir/Pipeline/prepare_dump_blastx.pl > $wormpipe_dir/dumps/accession2clone.list`;
+
+    `$wormpipe_dir/Pipeline/dump_blastp.pl -w $wormpipe_dir/BlastDB/wormpep$WPver.pep -s`;
+    `$wormpipe_dir/Pipeline/dump_blastx_new.pl -w $wormpipe_dir/BlastDB/wormpep$WPver.pep -a ~/Elegans/WS$WPver.agp -g ~/Elegans/cds$WPver.gff -c ~/Elegans/cos$WPver.gff -m`;
     `$wormpipe_dir/Pipeline/dump_motif.pl`;
   }
 
 exit(0);
+
 sub update_database
   {
     if( $dont_SQL ){
@@ -392,3 +423,104 @@ sub single_line_query
       return @results;
     }
   }
+
+
+sub get_updated_database_list
+  {
+    @updated_DBs = ();
+    #process new databases
+    open (OLD_DB,"<$last_build_DBs") or die "cant find $last_build_DBs";
+    my %prevDBs;
+   # my %currentDBs;
+    
+    #get database file info from databases_used_WS(xx-1) (should have been updated by script if databases changed
+    while (<OLD_DB>) {
+      chomp;
+      if( /(ensembl|gadfly|yeast|slimswissprot|slimtrembl|wormpep)/ ) {
+	$prevDBs{$1} = $_;
+      }
+    }  
+    open (CURR_DB,"<$database_to_use") or die "cant find $database_to_use";
+    while (<CURR_DB>) {
+      chomp;
+      if( /(ensembl|gadfly|yeast|slimswissprot|slimtrembl|wormpep)/ ) {
+	$currentDBs{$1} = $_;
+      }
+    }
+    close CURR_DB;
+    
+    #compare old and new database list
+    foreach (keys %currentDBs){
+      if( "$currentDBs{$_}" ne "$prevDBs{$_}" ){
+	push( @updated_DBs, "$_");
+      }
+    }
+  }
+
+__END__
+  
+=pod
+
+  
+=head2 NAME - wormBLAST.pl
+
+=head1 USAGE
+  
+=over 4
+ 
+=item wormBLAST.pl [-chromosomes -wormpep -databases -datemysql -setup -run -nosql -dump -mail]
+  
+=back
+  
+This script:
+  
+I<wormBLAST.pl MANDATORY arguments:>
+
+B<NONE>
+
+I<wormBLAST.pl  Overview:>
+
+This script is a collection of subroutines that automate the BLAST part of the Wormbase build process.  It keeps track of which databases are being used in the files ~wormpipe/BlastDB/databases_used_WSXX and databases_used_WSXX-1.  There are certain problems with this at the moment mounting acari and wormsrv2.  Most of this can be run from wormsrv2, but when actually running and dumping do this on acari.  The Wormbase.pm module is used by this script, so until all the Pipeline scripts are under CVS we'll have to live with it.
+
+
+I<wormBLAST.pl  OPTIONAL arguments:>
+
+B<-chromosomes> Runs ~wormpipe/Pipeline/copy_files_to_acari.pl -c to copy the newly formed chromosomes from /wormsrv2 and cats them in to one
+
+B<-wormpep>      Runs ~wormpipe/Pipeline/copy_files_to_acari.pl -c to take the new wormpepXX file from /wormsrv2/WORMPEP and creates a BLASTable database (setdb)
+
+B<-databases>    Checks existing database files (slimtremblXX.pep etc) against what was used last time and updates them.  It takes the new .pep file and runs setdb.  Modifies the databases_used_WSXX file to reflect changes.  This will ensure that the update propegates to the remainder of the process.
+
+B<-mail>           Creates and sends a mail to systems to distribute new databases over the farm.  Compares the database files used in this and the previous build to tell system which files to remove and what to replace them with.
+
+B<-updatemysql>    Updates any new databases to be used in MySQL.  
+
+B<-setup>          Prepares MySQL for the pipeline run.  Performs the 'delete' commands so that new data is included in the run
+
+B<-run>            Actually starts the BLAST analyses.  Does a single analysis at a time based on what new databases are being used, plus a couple of "do everything runs" to finish it all off.
+
+B<-dump>           Dumps data from MySQL after anaylsis is complete.
+
+B<-nosql>            Debug option where SQL calls to databases are not performed. 
+
+=back
+
+=over 4
+
+=head1 REQUIREMENTS
+
+=over 4
+
+=item This script must run on a machine which can see the /wormsrv2 disk.
+
+=back
+
+=head1 AUTHOR
+
+=over 4
+
+=item Anthony Rogers (ar2@sanger.ac.uk)
+
+=back
+
+=cut
