@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2002-11-15 16:52:37 $
+# Last updated on: $Date: 2002-11-27 17:15:51 $
 
 use Ace;
 use lib "/wormsrv2/scripts/"; 
@@ -25,7 +25,9 @@ our $allele_errors = 0;
 our $strain_update = 0;
 
 # open a connection to geneace
+
 our $tace = &tace;   # tace executable path
+
 my $db = Ace->connect(-path  => '/wormsrv1/geneace/',
 		      -program =>$tace) || do { print LOG "Connection failure: ",Ace->error; die();};
 
@@ -35,6 +37,8 @@ my $db = Ace->connect(-path  => '/wormsrv1/geneace/',
 &process_laboratory_class;
 &process_allele_class;
 &process_strain_class;
+&rearrangement;
+
 
 #######################################
 # Tidy up and mail relevant log files #
@@ -213,6 +217,29 @@ sub process_strain_class {
   }
   print LOG "\nThere are $strain_update genotypes to be updated in Strain class.\n";
   #print "\nThere are $strain_update genotypes to be updated in Strain class.\n";
+} 
+
+###############################
+# Process Rearrangement class #
+###############################
+
+sub rearrangement {
+ 
+  print"\n\nChecking Rearrangement class for errors:\n";
+  print LOG "\n\nChecking Rearrangement class for errors:\n";
+  # checks presence of non-rearrangement object 
+  # as objects of Rearrangement class
+
+  my (@rearr, $count);
+ 
+  @rearr = $db -> fetch('Rearrangement','*'); 
+  foreach (@rearr){
+    if ($_ !~/\w+(Df|Dp|Ex|T|In|C|D)\d*/){
+      $count++;
+      print LOG "$_ is NOT an object of Rearrangement\n";
+    }
+  }  
+  print LOG "\n\nThere are $count error(s) in Rearrangement class.\n";
 } 
 
 ################################################
