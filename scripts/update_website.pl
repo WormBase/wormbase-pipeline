@@ -84,7 +84,7 @@ our $log             = "/wormsrv2/logs/update_website.$rundate";
 # update 'current' symlink
 print LOG "\nChanging 'current symbolic link to point to new release\n";
 system("rm -f $www/current") && die "Couldn't remove 'current' symlink\n";
-system("ln -s $www/$WS_name/ current") && die "Couldn't create new symlink\n";
+system("ln -s $www/$WS_name/ $www/current") && die "Couldn't create new symlink\n";
 
 print LOG "\n\nC'est finis\n\n";
 
