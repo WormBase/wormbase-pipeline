@@ -41,8 +41,8 @@ $count = 0;
 
 #open file with linkin data
 open (INPUT, "$wormpepdir/wormpep.table$wmpep_ver")|| print "SubGetSwiss.pl cant find file wormpep.table$wmpep_ver";
-
-my $db = Ace->connect(-path  =>  '/wormsrv2/pepace') || print "Couldn't connect to pepace\n", Ace->error;
+#my $db = Ace->connect(-path  =>  '/wormsrv2/pepace') || print "Couldn't connect to pepace\n", Ace->error;
+my $db = Ace->connect(-path  =>  '/wormsrv1/TESTpepace') || print "Couldn't connect to pepace\n", Ace->error;
 my $accn_holder;
 while (<INPUT>)
   {
@@ -98,18 +98,20 @@ while (<INPUT>)
 	  }
       }
   }
+#close $db;
 #process the remainders
 outputToAce(\%wormpep_acc, \@accession, \$ace_output, \$errorLog);
 
+
 #update pepace
-#my @updates = $db->parse_file($temp_acefile);#
-#print "@updates";
+my @updates = $db->parse_file($temp_acefile);
+print "@updates";
 print LOG "SubGetSwissId finished at ",`date`,"\n";
 
 #### use Wormbase.pl to mail Log ###########
 my $name = "SubGetSwissId";
 #$maintainer = "ar2\@sanger.ac.uk";
-&mail_maintainer ($name,$maintainer,$log);
+#&mail_maintainer ($name,$maintainer,$log);
 #########################################
 
 sub outputToAce #(\%wormpep_acc, \@accession \$ace_output, \$errorLog)
