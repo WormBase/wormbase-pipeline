@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.30 2002-01-28 15:40:51 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.31 2002-01-29 10:35:33 dl1 Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -644,7 +644,10 @@
                 Component_of ?GO_term XREF Component
 	 Attributes_of Gene ?Gene XREF GO_term
                        Cell ?Cell XREF GO_term
+		       Reference ?Paper XREF GO_term
 		       Motif ?Motif XREF GO_term
+		       Phenotype ?Phenotype XREF GO_term // added for Erich, [020128 dl]
+
 //
 // RD 0107 removed connection to ?Paper - how can a paper have a GO_term
 
@@ -711,6 +714,7 @@
                   RNAi ?RNAi XREF Reference  // added for Lincoln RNAi [001213 dl]
                   Transgene ?Transgene XREF Reference
 		  Operon ?Operon XREF Reference      // added for operon data [010928 dl]
+                  GO_term ?GO_term XREF Reference
         Keyword ?Keyword
 
 #Affiliation Affiliation_address UNIQUE Text
@@ -738,6 +742,7 @@
 		       CDS_child ?CDS XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info                // RD 0107
 		       Transcript_child ?Transcript XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info                // RD 0107
 		       Operon ?Operon XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info  // added for Operon data
+		       Transposon ?Transposon XREF Canonical_parent UNIQUE Int UNIQUE Int #SMap_info // added for transposons [020128 dl]
 	  Structure  From	Source UNIQUE ?Sequence XREF Subsequence
 				Source_exons Int UNIQUE Int // start at 1
 		     Subsequence ?Sequence XREF Source UNIQUE Int UNIQUE Int
@@ -788,7 +793,7 @@
 		//   general annotation display column as "tag:objname"
 	  Properties    Pseudogene Text		// explanation
 			Transposon Text		// transposon type
-			Genomic_canonical
+			Genomic_canonical UNIQUE Int                             // added tag for dot name tracking [020128 dl]
                         Briggsae_canonical
 			cDNA cDNA_EST
 			     EST_5		       // Indicate whether this is a 5' or 3' read [010423 dl]
@@ -1424,6 +1429,7 @@
                               Similar_to ?Phenotype XREF Similar_to
            Attribute_of       RNAi ?RNAi XREF Phenotype
                               Gene ?Gene XREF Controlled_phenotype
+			      GO_term ?GO_term XREF Phenotype   // added for Erich, [020128 dl]
 
 // New Class to handle WTP data [010623 rd]
 
@@ -1452,6 +1458,12 @@
 #Trans_splice_leader SL1 ?Text
                      SL2 ?Text
 
+// New Class to handle Transposon data [020128 dl]
+
+?Transposon SMap S_Parent Canonical_parent UNIQUE ?Sequence XREF Transposon
+	    LTR_region UNIQUE Int UNIQUE Int
+            Remark ?Text
+            Method ?Method
 
 // end of file
 
