@@ -6,8 +6,8 @@
 # 
 # dl
 #
-# Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2002-08-22 13:51:52 $
+# Last updated by: $Author: ck1 $
+# Last updated on: $Date: 2002-12-09 13:15:39 $
 
 #################################################################################
 # variables                                                                     #
@@ -285,7 +285,7 @@ foreach $file (@gff_files) {
     system ("GFF_with_accessions $datadir/GFF_SPLITS/$file.clone_path.gff > $datadir/GFF_SPLITS/$file.clone_acc.gff");
 
     # GFF genes with wormpep CE accessions
-    system ("GFF_with_wormpep_accessions $datadir/GFF_SPLITS/$file.genes.gff > $datadir/GFF_SPLITS/$file.genes_acc.gff");
+    system ("GFF_with_wormpep_accessions.pl $datadir/GFF_SPLITS/$file.genes.gff > $datadir/GFF_SPLITS/$file.genes_acc.gff");
     system ("mv -f $datadir/GFF_SPLITS/$file.genes_acc.gff $datadir/GFF_SPLITS/$file.genes.gff");
     
     # GFF UTRs with CDS names
