@@ -144,7 +144,7 @@ sub new {
     print "DB_Remark \"[wormpep${release}] New GeneModel\n";
     print "\n";
     
-    print "Peptide : ";
+    print "Peptide : WP:";
     &dbfetch($new_acc,$dbfile);
     print "\n";
 
