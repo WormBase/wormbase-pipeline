@@ -8,7 +8,7 @@
 # autoace.
 #
 # Last updated by: $Author: krb $                     
-# Last updated on: $Date: 2004-03-02 13:40:21 $       
+# Last updated on: $Date: 2004-08-03 07:22:19 $       
 
 #################################################################################
 # Variables                                                                     #
@@ -192,7 +192,7 @@ sub mknewacefiles {
     if (/^P\s+(\S+)\s+(\S+)$/) {
       $dbname    = $1;
       $dbdir     = $2;
-      print LOG "\n\n",&runtime, ": Processing $dbname information in autoace_config\n";
+      print LOG "\n\n",&runtime, " : Processing $dbname information in autoace_config\n";
       # need to change dbpath if in test mode
       $dbdir     =~ s/\/wormsrv2/$basedir/ if ($test);
       $targetdir = "$wormbasedir/$dbname";
@@ -218,7 +218,7 @@ sub mknewacefiles {
     # deal with queries requiring tag deletion
     if (/\[(\S+.+)\]$/) { 
       @deletes = split (/\s/,$1);
-      print LOG &runtime, "Adding " . scalar (@deletes) . " tags to delete array\n";
+      print LOG &runtime, " : Adding " . scalar (@deletes) . " tags to delete array\n";
       my $report = join ' + ', @deletes;
       
       if (/^\S+\s+\S+\s+(\S+)\s+\[/) {  
@@ -249,7 +249,7 @@ sub mknewacefiles {
 	  chop $include;
 	  $follow = $include;
       }
-      print LOG &runtime, "Adding $include tags\n";
+      print LOG &runtime, " : Adding $include tags\n";
       if ($follow) { print LOG "\t... and follow $follow\n";}
       
       if (/^\S+\s+\S+\s+(\S+)\s+\{/) {  
@@ -320,7 +320,7 @@ sub mknewacefiles {
     print "\nFilename: $filepath\n";
     print "Command : 'find $object $criteria' in $dbname\n";
 
-    print LOG &runtime, ": Dumping $object class\n";
+    print LOG &runtime, " : Dumping $object class\n";
 
     open (TACE,"| $exe");
     print TACE $command;
