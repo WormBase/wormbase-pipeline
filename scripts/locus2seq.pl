@@ -254,7 +254,7 @@ sub FindSequenceInfo #($sequence - genomic seq and $locus )
 	    print LOG "testing with seq++ :$seq -> $test_seq\n";
 	    if(defined(TestSeq($test_seq)))
 	      {
-		print LOG "$seq may have been merged to $test_seq (or $seq-- - not tested) \n\n";
+		print LOG "$seq may have been merged to $test_seq \n\n";
 		$solved = 1;
 	      }	  
 	    else
