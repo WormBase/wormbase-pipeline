@@ -28,12 +28,13 @@ if ($checklocus == 1)
 	#print "\nLOCUS: $locus\n";
 	my $warnings;
 	# check for various potential errors in the Locus object
-	#$warnings = &test_locus_for_errors($locus);
+	$warnings = &test_locus_for_errors($locus);
 	if(defined($warnings))
 	  {
 	    print $warnings;
 	  }
-	# $logstring .= OtherNameCheck($db,$locus,@loci);
+	
+	$logstring .= OtherNameCheck($db,$locus,@loci);
       }
   }
       
@@ -77,7 +78,7 @@ foreach my $seq(@oddies)
 $LSGlog .= "==============================================END\n";
 
 #mail Erich
-my $interested ="ar2\@sanger.ac.uk";# "emsch\@its.caltech.edu";
+my $interested ="$maintainer"; # "emsch\@its.caltech.edu";
 my $mailname = "Annotated Sequences with loci_genomic_seq tags";
 #open (OUTLOG,  "|/bin/mailx -s \"$name    \" $maintainer ");
 open (OUTLOG,  "|/bin/mailx -s \"$mailname\" $interested");
