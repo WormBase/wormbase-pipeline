@@ -191,8 +191,8 @@ foreach my $mess (sort keys %output) {
 # produce output files #
 ########################
 
-open (OUT,    ">/wormsrv2/autoace/mappings/RNAi_mappings.$db_version");
-open (OUTACE, ">/wormsrv2/autoace/mappings/RNAi_mappings.$db_version.ace");
+open (OUT,    ">/wormsrv2/autoace/MAPPINGS/RNAi_mappings.$db_version");
+open (OUTACE, ">/wormsrv2/autoace/MAPPINGS/RNAi_mappings.$db_version.ace");
 
 foreach my $mapped (sort keys %finaloutput) {
     print OUT "$mapped\t@{$finaloutput{$mapped}}\n";
@@ -218,7 +218,7 @@ close(OUTACE);
 ##############################
 
 my $command =<<END;
-pparse /wormsrv2/autoace/mappings/RNAi_mappings.$db_version.ace
+pparse /wormsrv2/autoace/MAPPINGS/RNAi_mappings.$db_version.ace
 save
 quit
 END
