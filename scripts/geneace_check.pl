@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-08-12 18:01:44 $
+# Last updated on: $Date: 2003-08-13 07:41:04 $
 
 
 use strict;
@@ -342,16 +342,19 @@ sub test_locus_for_errors{
 
   # test for no CGC_approved tag AND Genomic_sequence/Transcript/Pseudogene tag
   if(!defined($locus->at('Type.Gene.CGC_approved'))){ 
-    if(defined($locus->at('Molecular_information.Genomic_sequence')) || 
-       (defined($locus->at('Molecular_information.Transcript'))) ||
-       (defined($locus->at('Molecular_information.Pseudogene')))){
-      $warnings .= "ERROR 15: $locus has 'Genomic_sequence', 'Transcript', or 'Pseudogene' tag but no 'CGC_approved' tag\n";
-      print JAHLOG "ERROR: $locus has 'Genomic_sequence', 'Transcript', or 'Pseudogene' tag but no 'CGC_approved' tag\n";
-      $jah_errors++;
-      print "." if ($verbose);
-      if ($ace){
-	print ACE "\n\nLocus : \"$locus\"\n";  
-	print ACE "CGC_approved\n";
+    my $species = $locus->Species;
+    if ($species eq "Caenorhabditis elegans"){
+      if(defined($locus->at('Molecular_information.Genomic_sequence')) || 
+	 (defined($locus->at('Molecular_information.Transcript'))) ||
+	 (defined($locus->at('Molecular_information.Pseudogene')))){
+	$warnings .= "ERROR 15: $locus has 'Genomic_sequence', 'Transcript', or 'Pseudogene' tag but no 'CGC_approved' tag\n";
+	print JAHLOG "ERROR: $locus has 'Genomic_sequence', 'Transcript', or 'Pseudogene' tag but no 'CGC_approved' tag\n";
+	$jah_errors++;
+	print "." if ($verbose);
+	if ($ace){
+	  print ACE "\n\nLocus : \"$locus\"\n";  
+	  print ACE "CGC_approved\n";
+	}
       }
     }
   }
