@@ -34,15 +34,79 @@ sub map_cDNA
       return 0;
     }
     else {
-      #this must overlap - check exon matching
+      #this must overlap - check Splice Leader
+      my $SL;
+      if( $SL = $cdna->SL ){
+	if( $self->SL ) {
+	  unless( $SL->[0] == $self->SL->[0] ) {	    #same SL
+	    print STDERR "Conficting SLs ",$self->name, "\t",$cdna->name,"\n" if $debug;
+	    return 0;
+	  }
+	}
+	else { 
+	  if( $SL->[1] > $self->start ) {
+	    print STDERR $cdna->name, " Splice Leader within ", $self->name, "\n" if $debug;
+	    return 0;
+	  }
+	}
+      }
+
+      # reject cdna's that start before transcript SL
+      if( $self->SL and $cdna->start < $self->start ) {
+	return 0;
+      }
+
+      # and polyA_Site
+      my $polyA_site;
+      if( $polyA_site = $cdna->polyA_site ) {
+	if( $self->polyA_site ) {
+	  unless( $polyA_site->[0] == $self->polyA_site->[0] ) {
+	    print STDERR "Conficting polyA_sites ",$self->name, "\t",$cdna->name,"\n" if $debug;
+	    return 0;
+	  }
+	}
+	else {
+	  if( $polyA_site->[0] < $self-end ) {
+	    print STDERR $cdna->name, " polyA_site within ", $self->name, "\n" if $debug;
+	    return 0;
+	  }
+	}
+      }
+
+      # . and polyA_signal
+      my $polyA_sig;
+      if( $polyA_sig = $cdna->polyA_signal ) {
+	if( $self->polyA_sig ) {
+	  unless( $polyA_sig->[0] == $self->polyA_sig->[0] ) {
+	    print STDERR "Conficting polyA_signals ",$self->name, "\t",$cdna->name,"\n" if $debug;
+	    return 0;
+	  }
+	}
+	else {
+	  if( $polyA_sig->[0] + 30 > $self-end) {
+	    print STDERR $cdna->name, " polyA_signal within ", $self->name, "\n" if $debug;
+	    return 0;
+	  }
+	}
+      }	
+
+      # transcript already has polyA and cDNA goes past this
+      if( $self->polyA_site and $cdna->end > $self->end ){
+	return 0;
+      }
+      
+      #check exon matching
       my $match = $self->check_exon_match( $cdna );
       if( $match == 1 ) {
 	$match = $cdna->check_exon_match( $self );
 	unless ($match == 0) { 
 	  $self->add_matching_cDNA( $cdna );
 	  $match = 1;
-	} 
+	}
       }
+      $self->SL( $SL ) if $SL;
+      $self->polyA_site( $polyA_site )  if $polyA_site;
+      $self->polyA_signal( $polyA_sig ) if $polyA_sig;
       return $match;
     }
   }

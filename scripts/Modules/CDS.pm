@@ -42,6 +42,10 @@ sub map_cDNA
     my $cdna = shift;
 
     # check strandedness
+    if( $SequenceObj::debug ) { # class data
+      ( print $self->name," has no strand\n" and return 0 ) unless $self->strand;
+      ( print $cdna->name," has no strand\n" and return 0 ) unless $cdna->strand;
+    }
     return 0 if $self->strand ne $cdna->strand;
 
     #this must overlap - check exon matching

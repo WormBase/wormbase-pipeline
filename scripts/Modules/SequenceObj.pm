@@ -89,6 +89,13 @@ sub transform_strand
     $self->exon_data(\%tmp_exons);
 
     $self->sort_exons;
+
+    # transform feature data ( SL1 etc ).
+    foreach my $feature ( keys %{ $self->{'feature'}} ) {
+      $self->{'feature'}->{"$feature"} = [( $transformer->transform_neg_coord( $self->{'feature'}->{"$feature"}->[1]),
+					   $transformer->transform_neg_coord( $self->{'feature'}->{"$feature"}->[0])
+					 )];
+    }
   }
 
 sub check_exon_match 
@@ -327,5 +334,60 @@ sub debug
     $debug = 1 if $set;
     return $debug;
   }
+
+sub feature
+  {
+    my $self = shift;
+    my $feature = shift;
+    my $data = shift; #@  182772  182773  WBsf01634
+
+    # self=>feature=>SL   =>( x y )
+    #              =>polyA_site=>( x y )
+
+    if( $data ) { # adding new feature
+      $self->{'feature'}->{ "$feature" } = $data;
+    }
+    else { 
+      return $self->{'feature'}->{$feature};
+    }
+  }
+  
+sub SL1
+  {
+    my ($self, $data) = @_;
+    my $type = "SL";
+    return $self->feature( $type, $data );
+  }
+
+sub SL2
+  {
+    my ($self, $data) = @_;
+    my $type = "SL";
+    return $self->feature( $type, $data );
+  }
+
+
+sub SL
+  {
+    my ($self, $data) = @_;
+    my $type = "SL";
+    return $self->feature( $type, $data );
+  }
+
+sub polyA_site
+  {
+    my ($self, $data) = @_;
+    my $type = "polyA_site";
+    return $self->feature( $type, $data );
+  }
+
+sub polyA_signal
+  {
+    my ($self, $data) = @_;
+    my $type = "polyA_signal";
+    return $self->feature( $type, $data );
+  }
+
+
 
 1;
