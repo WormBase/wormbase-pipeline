@@ -266,7 +266,7 @@ unless ($opt_v) {
 	print "\nRead into camace:\n";
 	if ($opt_e) {
 		print "$blat/virtual_objects.camace.BLAT_EST.ace\n";
-		print "$blat/autoace.blat.camace.EST.ace\n";
+		print "$blat/camace.blat.EST.ace\n";
 		print "$blat/virtual_objects.camace.ci.EST.ace\n";
 		print "$blat/camace.good_introns.EST.ace\n";
 		unlink("$blat/camace.EST.ace");
