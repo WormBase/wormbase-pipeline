@@ -97,10 +97,16 @@ foreach my $gene (@predicted_genes){
   my @exon_coord1 = $gene_object->get('Source_Exons',1);
   my @exon_coord2 = $gene_object->get('Source_Exons',2);
 
-
-
   my $i;
   my $j;
+
+  for($i=1; $i<@exon_coord2;$i++){
+    my $intron_size = ($exon_coord1[$i] - $exon_coord2[$i-1] +1);
+    print "Small intron ($intron_size bp) in $gene\n" if (($intron_size < 21)  && $verbose);
+    print LOG "Small intron ($intron_size bp) in $gene\n" if ($intron_size < 21);
+
+  }
+
   for($i=0; $i<@exon_coord1; $i++){
     my $start = $exon_coord1[$i];
     my $end = $exon_coord2[$i];
