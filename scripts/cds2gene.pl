@@ -8,7 +8,7 @@
 # linked to an existing ?Gene object
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-05-27 14:46:40 $   
+# Last updated on: $Date: 2004-05-28 12:44:05 $   
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -104,7 +104,7 @@ sub process_cds_class{
       print OUT "Sequence_name $sequence_name\n";
       print OUT "Public_name $sequence_name\n";
       print OUT "Species \"$species\"\n";
-      print OUT "Version_change 1 now \"WBPerson1971\" Imported \"Initial conversion from CDS class of WS125\"\n";
+      print OUT "Version_change 1 now \"WBPerson1971\" Imported \"Initial conversion from CDS class of stlace from WS125\"\n";
       print OUT "Live\n";
       print OUT "CDS $gene\n\n";
 
@@ -126,7 +126,7 @@ sub process_cds_class{
 sub process_transcript_class{
   
   # unused gene IDs
-  my @unused_ids = (7475,7539,8104,8135,8179,9206,9527,9555,9936,10276,308,309,310,311,10376,10430,10431,10733,10777,11346,11470,12292,12350,12377,12653,12752,13010,13386,13918,13948,13993,14026,14126,14147);
+#  my @unused_ids = (7475,7539,8104,8135,8179,9206,9527,9555,9936,10276,308,309,310,311,10376,10430,10431,10733,10777,11346,11470,12292,12350,12377,12653,12752,13010,13386,13918,13948,13993,14026,14126,14147);
 
   # start from highest ID that was used previously
   my $id = $id_limit;
@@ -179,16 +179,16 @@ sub process_transcript_class{
       my $final_id;
       my $id_padded;
 
-      if($unused_ids[0]){
-	my $tmp_id = $unused_ids[0];
-	shift(@unused_ids);
-	$id_padded = sprintf "%08d" , $tmp_id;
-      }
-      else{
+ #     if($unused_ids[0]){
+#	my $tmp_id = $unused_ids[0];
+#	shift(@unused_ids);
+#	$id_padded = sprintf "%08d" , $tmp_id;
+#      }
+#      else{
 	$id++;
 	$id_padded = sprintf "%08d" , $id;
 
-      }
+#      }
       my $name = "WBGene$id_padded";  
 
       
@@ -288,7 +288,7 @@ sub process_pseudogene_class{
       print OUT "Sequence_name $sequence_name\n";
       print OUT "Public_name $sequence_name\n";
       print OUT "Species \"$species\"\n";
-      print OUT "Version_change 1 now \"WBPerson1971\" Imported \"Initial conversion from Pseudogene class of WS125\"\n";
+      print OUT "Version_change 1 now \"WBPerson1971\" Imported \"Initial conversion from Pseudogene class of stlace from WS125\"\n";
       print OUT "Live\n";
       print OUT "Pseudogene $gene\n\n";
 
