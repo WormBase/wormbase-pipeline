@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-03-24 17:16:41 $
+# Last updated on: $Date: 2003-03-25 10:31:21 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -123,7 +123,6 @@ $db->close;
 close(LOG);
 close(ERICHLOG);
 close(JAHLOG);
-close (CECILIALOG);
 
 # Always mail to $maintainers (which might be a single user under debug mode)
 mail_maintainer($0,$maintainers,$log);
@@ -150,16 +149,6 @@ if ($cgc ne $JAHmsg){
   mail_maintainer($0,$CGC,$jahlog) unless $debug;
 }
 
-# Email to Cecilia for WBPerson not linked to Laboratory
-my $wbperson_mail="ck1\@sanger.ac.uk, cecilia\@minerva.caltech.edu";
-
-open(MAIL3, "$cecilialog") || die "Can't read in file $cecilialog";
-my @WBPerson=<MAIL3>; 
-my $WBPerson=join('', @WBPerson);
-if ($WBPerson ne $Cmsg){
-  mail_maintainer($0,$WBPerson, $cecilialog) unless $debug;
-}  
-  
 exit(0);
 
 #######################
@@ -1192,19 +1181,6 @@ sub create_log_files{
   $Emsg .= "If you have any queries please email ck1\@sanger.ac.uk or krb\@sanger.ac.uk\n\n";   
   print ERICHLOG "================================================================================================\n";
   $Emsg .= "================================================================================================\n";
-  
-  # create separate log with errors for Cecilia
-  $cecilialog = "/wormsrv2/logs/geneace_check.cecilialog.$rundate.$$";
-  open(CECILIALOG,">$cecilialog") || die "cant open $cecilialog";
-  print CECILIALOG "$0 started at ",`date`,"\n";
-  $Cmsg = "$0 started at ".`date`."\n";
-  print CECILIALOG "This mail is generated automatically for Caltech\n";
-  $Cmsg .= "This mail is generated automatically for Caltech\n";
-  print CECILIALOG "If you have any queries please email ck1\@sanger.ac.uk or krb\@sanger.ac.uk\n\n";
-  $Cmsg .= "If you have any queries please email ck1\@sanger.ac.uk or krb\@sanger.ac.uk\n\n";
-  print CECILIALOG "================================================================================================\n";
-  $Cmsg .= "================================================================================================\n";
-
 }
 
 
