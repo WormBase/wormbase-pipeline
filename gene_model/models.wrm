@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.91 2002-11-14 16:19:14 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.92 2002-11-15 14:42:25 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -319,11 +319,12 @@
 		Other_name ?Text #Evidence
 	Source	UNIQUE Gene ?Gene XREF Allele // RD 0107 Locus->Gene
 	               Gene_class ?Gene_class XREF Allele
-	//SMap S_parent Sequence UNIQUE ?Sequence XREF Allele     // changed into S_parent Sequence UNIQUE [020311 kj]
+	SMap S_parent Sequence UNIQUE ?Sequence XREF Allele     // changed into S_parent Sequence UNIQUE [020311 kj]
 	// Do we really need SMap for Alleles? Commented this out for now. krb 020726
-	Sequence_details Sequence ?Sequence XREF Allele #Evidence	
+	Sequence_details CDS ?CDS XREF Allele #Evidence	
                          Flanking_sequences UNIQUE Text UNIQUE Text
                          Allelic_difference UNIQUE ?Text #Evidence
+			 Knocks_out ?CDS XREF Knock_out_allele // for new KO allele data krb [021114]
 	Species UNIQUE ?Species
 	Method UNIQUE ?Method
 	Replacement UNIQUE Text UNIQUE Text	// RD 0107 big change
@@ -441,6 +442,7 @@
 		     Outcrossed
 		     Mutagen Text
 		     CGC_received DateType
+	 Knocks_out ?CDS XREF Knock_out_strain // for new KO allele data [krb 021114]
          Location ?Laboratory
 	 Made_by Text
 	 Remark	?Text
@@ -713,7 +715,7 @@
                        RNAi ?RNAi XREF Sequence UNIQUE Int UNIQUE Int #SMap_info                       // added for Lincoln RNAi [001213 dl]
 		       WTP ?WTP XREF Sequence UNIQUE Int UNIQUE Int #SMap_info                 // added for Mieg WTP data [001623 rd]
 		       Locus ?Locus XREF Sequence UNIQUE Int UNIQUE Int #SMap_info             // RD 0107
-//		       Allele ?Allele XREF Sequence UNIQUE Int UNIQUE Int #SMap_info           // RD 0107
+		       Allele ?Allele XREF Sequence UNIQUE Int UNIQUE Int #SMap_info           // RD 0107
 //		       Gene ?Allele XREF Sequence UNIQUE Int UNIQUE Int #SMap_info             // RD 0107
 		       CDS_child ?CDS XREF Sequence UNIQUE Int UNIQUE Int #SMap_info            // RD 0107
 		       Transcript_child ?Transcript XREF Sequence UNIQUE Int UNIQUE Int #SMap_info                // RD 0107
@@ -810,7 +812,7 @@
 	  Splices	Confirmed_intron  Int Int #Splice_confirmation
 			Predicted_5 ?Method Int Int UNIQUE Float // (x, x+1) or (x, x-1)
 			Predicted_3 ?Method Int Int UNIQUE Float // (x, x+1) or (x, x-1)
-	  Allele ?Allele XREF Sequence UNIQUE Int UNIQUE Int UNIQUE Text
+//	  Allele ?Allele XREF Sequence UNIQUE Int UNIQUE Int UNIQUE Text
                 // start, stop, replacement sequence
                 // if an insertion point Text is transposon name (distinguished
                 // by containing non ACTG letters), and (n, n+1) = T A, so indicates 
@@ -887,6 +889,8 @@
 			Contained_in_operon ?Operon XREF Contains_CDS
 	  		Reference ?Paper XREF CDS // added [011030 krb]
 			GO_term ?GO_term XREF CDS #Evidence
+			Knock_out_allele ?Allele XREF Knocks_out // for new KO allele data [krb 021114]
+			Knock_out_strain ?Strain XREF Knocks_out
 	Properties	Coding	CDS UNIQUE Int UNIQUE Int
 				CDS_predicted_by ?Method Float // score of method
 				Confirmed_by #Gene_confirmation       // added [011030 krb]
