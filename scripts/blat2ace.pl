@@ -183,8 +183,19 @@ while (<BLAT>) {
     # calculate coordinates #
     #########################
 	
+	# need to allow for est exons in the next virtual object, otherwise they get remapped to the start 
+	# of the virtual by performing %100000
+	my $calc = int(($slinkstarts[0]+1)/100000);
+	
 	for (my $x = 0;$x < $f[17]; $x++) {
-		my $virtualstart = ($slinkstarts[$x] +1)%100000;
+		my $newcalc      = int(($slinkstarts[$x]+1)/100000);
+		my $virtualstart;
+		if ($calc == $newcalc) {	
+			$virtualstart = ($slinkstarts[$x] +1)%100000;
+		}
+		elsif ($calc == ($newcalc-1)) {
+			$virtualstart = (($slinkstarts[$x] +1)%100000) + 100000;
+		}
 		my $virtualend   = $virtualstart + $lengths[$x] -1;
 		my ($eststart,$estend);
 		if ($opt_x) {
