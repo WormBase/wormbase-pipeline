@@ -8,7 +8,7 @@
 # This makes the autoace database from its composite sources.
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-02-11 17:18:33 $
+# Last edited on: $Date: 2003-02-11 17:49:01 $
 
 
 $|=1;
@@ -361,47 +361,48 @@ sub createdirs {
 # Parses the lists from the config files     
 
 sub parseconfig {
-    open(CONFIG,"$configfile");
-    while(<CONFIG>) {
-	my ($filename,$dbname);
-        # some formating, remove leading and trailing whitespace
-	s/^\s+//;
-	s/\s+$//;   
-	
-	# next if comment line
-	next if (/^\#/ || /^$/);
-	
-	# parse database information
-	if (/^P\s+(\S+)\s+(\S+)$/) {
-	    $dbname = $1;
-#	    $dbdir  = $2;
-#	    $targetdir="$wormbasedir"."/$dbname";
-	    next;
-	}
-	
-	# parse file name
-	if (/^\S+\s+(\S+)/) {
-	    $filename = $1;
-	}
-	
-	# next if no filename parsed
-	if (!defined $filename) {
-	    print LOG "* Failed to parse filename ..\n";
-	    next;
-	}
+  my ($filename,$dbname);
+  open(CONFIG,"$configfile");
+  while(<CONFIG>) {
 
-	# check that file exists before adding to array
-	if (-e "$wormbasedir"."/$dbname/"."$filename") {
-	    push (@filenames,"$wormbasedir"."/$dbname/"."$filename");
-	    print LOG "* Parse config file : file $wormbasedir/$dbname/$filename noted ..\n";
-	} 
-	else {
-	    print LOG "** Warning - file $wormbasedir/$dbname/$filename is not existent !\n";
-	    next;
-	}
-	
+    # some formating, remove leading and trailing whitespace
+    s/^\s+//;
+    s/\s+$//;   
+    
+    # next if comment line
+    next if (/^\#/ || /^$/);
+    
+    # parse database information
+    if (/^P\s+(\S+)\s+(\S+)$/) {
+      $dbname = $1;
+      #	    $dbdir  = $2;
+      #	    $targetdir="$wormbasedir"."/$dbname";
+      next;
     }
-    close(CONFIG);
+    
+    # parse file name
+    if (/^\S+\s+(\S+)/) {
+      $filename = $1;
+    }
+    
+    # next if no filename parsed
+    if (!defined $filename) {
+      print LOG "* Failed to parse filename ..\n";
+      next;
+    }
+    
+    # check that file exists before adding to array
+    if (-e "$wormbasedir"."/$dbname/"."$filename") {
+      push (@filenames,"$wormbasedir"."/$dbname/"."$filename");
+      print LOG "* Parse config file : file $wormbasedir/$dbname/$filename noted ..\n";
+    } 
+    else {
+      print LOG "ERROR: file $wormbasedir/$dbname/$filename is not existent !\n";
+      next;
+    }
+    
+  }
+  close(CONFIG);
 }
 
 
