@@ -1903,6 +1903,7 @@
 //Will eventually replace Microarray_aff class. 
 //Used for Affymetrix and other oligo-based arrays. 
 ?Oligo_set      SMap S_parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF Oligo_set
+		Structure Target_exons Int UNIQUE Int
                 Microarray_results ?Microarray_results XREF Oligo_set 
                 Oligo ?Oligo     //used in case oligos are specified
                 Remark ?Text    #Evidence
