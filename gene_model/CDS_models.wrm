@@ -315,8 +315,7 @@
 				Pseudogene ?Pseudogene XREF Locus #Evidence // new [030801 krb]
 	Gene_regulation         Trans_regulator ?Gene_regulation XREF Trans_regulator_locus // new for Wen [030804 krb]
                                 Trans_target    ?Gene_regulation XREF Trans_regulated_locus // new for Wen [030804 krb]
-	Remark ?Text #Evidence
-	Map    ?Map XREF Locus #Map_position
+	Map    UNIQUE ?Map XREF Locus #Map_position
 	Interpolated_map_position UNIQUE ?Map UNIQUE Float // new for updated CDS-based interpolated map positions [krb 030502]
         Hide_under ?Locus XREF Representative_for
         Representative_for ?Locus XREF Hide_under
@@ -339,6 +338,8 @@
 	Rescued_by_Transgene ?Transgene XREF Rescue
 	GO_term ?GO_term XREF Locus ?GO_code #Evidence // Added by krb 020905
 	Microarray_results ?Microarray_results XREF Locus
+	Antibody ?Antibody XREF Locus // added [031120 krb]
+	Remark ?Text #Evidence
 
 
 
@@ -473,6 +474,7 @@
         Sequence_status	Shotgun	UNIQUE DateType
 			Finished UNIQUE DateType
 			Accession_number UNIQUE Text
+	DB_info  Database ?Database ?Database_field UNIQUE ?Accession_number XREF Clone // added [031120 krb]
 	Type UNIQUE Cosmid            // 000824 Lincoln's additions to segregate clones
 		    Fosmid            // added 06/12/01 by krb for dl
 		    YAC
@@ -685,6 +687,7 @@
                	             Descendent ?GO_term XREF Ancestor
 		       Locus ?Locus XREF GO_term // added by krb 020905
 		       Anatomy_term ?Anatomy_term XREF GO_term // added [031107 krb]
+		       Homology_group ?Homology_group XREF GO_term // added [031120 krb]
  	 Version UNIQUE Text UNIQUE Text // added for Lincoln, to store version number of GO
 					 // only to be attached to three parent GO_terms [krb 031028]
 
@@ -835,6 +838,7 @@
 			     Capped_5	               // Indicates capped 5' end - for Lincoln [06/12/01 krb]
 			     TSL_tag		       // Indicates a short RT-PCR product for TSL detection [030220 dl]
 			RNA	// if set then use U in place of T
+			Ignore #Evidence // tag to flag problem Sequence objects to avoid certain analysis [031120 krb]
 			Show_in_reverse_orientation    // Draw 3' reads in reverse orientation [010423 dl]
 			Status	Received UNIQUE DateType
 				Library_construction UNIQUE DateType
@@ -997,6 +1001,7 @@
 		GO_term ?GO_term XREF CDS ?GO_code #Evidence
 		Allele ?Allele XREF CDS // replaces Has_allele tag in ?Sequence
 		Microarray_results ?Microarray_results XREF CDS      //added for Microarray_results
+		Antibody ?Antibody XREF CDS // added [031120 krb]
 	  	Reference ?Paper XREF CDS // added [011030 krb]
                 Provisional_description ?Text #Evidence
                 Detailed_description ?Text #Evidence
@@ -1129,6 +1134,63 @@
 
 
 
+/////////////////////////////////////////////////////////////////////////////////
+//
+// New class to handle clusters of orthologus genes (COG) and other related data
+// 
+// Added by krb 031120
+//
+/////////////////////////////////////////////////////////////////////////////////
+
+
+?Homology_group Evidence #Evidence
+                Title ?Text
+                DB_info Database ?Database ?Database_field ?Accession_number XREF Homology_group
+                Group_type  UNIQUE COG  COG_type KOG
+                                                 TWOG
+                                                 FOG
+                                                 LSE
+                                        COG_code #COG_codes
+                                   HOPS_group    // Sonnhammer
+                                   RIO_group     // Eddy
+                GO_term ?GO_term XREF Homology_group
+                Protein ?Protein XREF Homology_group
+                Remark ?Text #Evidence
+
+
+#COG_codes       Code_J // Translation, ribosomal structure and biogenesis
+                 Code_A // RNA processing and modification
+                 Code_K // Transcription
+                 Code_L // Replication, recombination and repair
+                 Code_B // Chromatin structure and dynamics
+                 Code_D // Cell cycle control, cell division, chromosome partitioning
+                 Code_Y // Nuclear structure
+                 Code_V // Defense mechanisms
+                 Code_T // Signal transduction mechanisms
+                 Code_M // Cell wall/membrane/envelope biogenesis
+                 Code_N // Cell motility
+                 Code_Z // Cytoskeleton
+                 Code_W // Extracellular structures
+                 Code_U // Intracellular trafficking, secretion, and vesicular transport
+                 Code_O // Posttranslational modification, protein turnover, chaperones
+                 Code_C // Energy production and conversion
+                 Code_G // Carbohydrate transport and metabolism
+                 Code_E // Amino acid transport and metabolism
+                 Code_F // Nucleotide transport and metabolism
+                 Code_H // Coenzyme transport and metabolism
+                 Code_I // Lipid transport and metabolism
+                 Code_P // Inorganic ion transport and metabolism
+                 Code_Q // Secondary metabolites biosynthesis, transport and catabolism
+                 Code_R // General function prediction only
+                 Code_S // Function unknown
+
+// J, A, K, L, B == Information storage and processing
+// D, Y, V, T, M, N, Z, W, U, O == Cellular processes and signalling
+// C, G, E, F, H, I, P, Q == Metabolism
+// R, S == Poorly characterized
+
+
+
 
 ?Homol_data SMap S_parent UNIQUE Sequence UNIQUE ?Sequence
 	    Homol DNA_homol ?Sequence XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
@@ -1140,11 +1202,11 @@
 
 ?Feature_data SMap S_parent UNIQUE Sequence UNIQUE ?Sequence
 	      Feature ?Method Int Int UNIQUE Float UNIQUE Text #Feature_info
-              Method ?Method // added for Lincoln RNAi [001213 dl]
 	      Splices	Confirmed_intron  Int Int #Splice_confirmation
 			Predicted_5 ?Method Int Int UNIQUE Float // (x, x+1) or (x, x-1)
 			Predicted_3 ?Method Int Int UNIQUE Float // (x, x+1) or (x, x-1)
                // keep the same model as in Sequence, so same code works
+              Method UNIQUE ?Method // added for Lincoln RNAi [001213 dl]
 
 
 ?Feature SMap S_parent UNIQUE Sequence UNIQUE ?Sequence
@@ -1211,8 +1273,8 @@
                    Description   UNIQUE ?Text
 		   Molecular_weight Text #Evidence
           Origin   Species UNIQUE ?Species   //XREF Protein in geneace
-                   Wormpep
-		   Brigpep // to help flag Brigpep proteins as a subclass
+                   Wormpep // for C. elegans or C. briggsae  proteins, used by subclass definitions
+		   Brigpep // 
 		   History Int Text ?Text //new history logging [020801 krb]
                    Live       // new tag to replace use of 'Inactive' krb 06/12/01
           Visible       Corresponding_CDS ?CDS XREF Corresponding_protein
@@ -1220,11 +1282,7 @@
                         Expr_pattern ?Expr_pattern XREF Protein
                         Interacts_with_sequence ?Sequence XREF Interacts_with_protein #Evidence // for future interaction data [020704 krb]
                         Interacts_with_protein ?Protein XREF Interacts_with_protein #Evidence // for future interaction data [020704 krb]
-                // tag2 system.  For now I have not populated this column.  For C. elegans
-                // wormpep we want to get the information from the ?Corresponding_DNA 
-                // object.  Because those objects have long term continuity, while wormpep
-                // objects are one per protein sequence.  At least that is the current 
-                // plan.
+			Homology_group ?Homology_group XREF Protein // added [031120 krb]
           Homol DNA_homol ?Sequence XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int  #Homol_info
                 Pep_homol ?Protein XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int  #Homol_info
                 Motif_homol ?Motif XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int  #Homol_info
@@ -1287,6 +1345,8 @@
 			 Pseudogene ?Pseudogene 
 			 Protein ?Protein
 			 Motif ?Motif
+			 Clone ?Clone // added [031120 krb]
+			 Homology_group // added [031120 krb]
 		   Web_location ?Database // use for WWW display
 
 
@@ -1403,6 +1463,8 @@
 				Strain UNIQUE ?Strain
 		Reference ?Paper XREF Expr_pattern
                 Transgene ?Transgene XREF Expr_pattern
+		Antibody_info ?Antibody XREF Expr_pattern // This applies to both Western & Antibody staining
+                                                          // added [031120 krb]
 		Curated_by UNIQUE Text // Hinxton (HX) or Caltech (CIT)
 
 
@@ -1410,11 +1472,11 @@
 // more tweaks added [010927 krb]
 
 ?Expr_profile SMap S_parent UNIQUE PCR_product UNIQUE ?PCR_product XREF Expr_profile
-              Method UNIQUE ?Method
               Expr_map ?SK_map XREF Expr_profile
               Reference ?Paper XREF Expr_profile
 	      RNAi_result ?RNAi XREF Expr_profile // Connection made by script during build [030106 krb]
               Remark ?Text #Evidence
+              Method UNIQUE ?Method
 
 
 ?SK_map       X_coord UNIQUE Float
@@ -1423,6 +1485,45 @@
               Date UNIQUE DateType
 	      Attribute_of Expr_profile ?Expr_profile XREF Expr_map
               Remark ?Text #Evidence
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+//
+//  Antibody model
+//
+// Summary records the whole description extracted from paper
+// Other_name holds the antibody's name appeared in the paper, such as MH27
+// XREF from ?Antibody to ?CDS class will be added after ?CDS is integrated 
+// into models.wrm and gets stable.
+//
+// added by krb 031120
+//
+/////////////////////////////////////////////////////////////////////////////////////////////
+ 
+?Antibody  Evidence     #Evidence
+           Summary      ?Text   #Evidence
+           Other_name   Text
+           Gene         Locus ?Locus XREF Antibody
+                        CDS   ?CDS   XREF Antibody
+           Clonality    UNIQUE          Polyclonal      Text 
+                                        Monoclonal      Text
+           Antigen      UNIQUE          Peptide         Text
+                                        Protein         Text
+                                        Other_antigen   Text
+           Animal       UNIQUE          Rabbit
+                                        Mouse
+                                        Rat
+                                        Guinea_pig
+                                        Chicken
+                                        Goat
+                                        Other_animal    Text
+           Expr_pattern ?Expr_pattern   XREF    Antibody_info   
+           Location     ?Laboratory
+           Reference    ?Paper          XREF    Antibody
+           Remark       ?Text #Evidence
+
 
 
 
@@ -1662,7 +1763,6 @@
 
 ?RNAi   SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF RNAi       // canonical parent (reliable)
 			     PCR_product UNIQUE ?PCR_product XREF RNAi // primer pair (reliable)
-        Method UNIQUE ?Method
         Experiment      Laboratory ?Laboratory
                         Author ?Author
                         Date UNIQUE DateType
@@ -1681,6 +1781,8 @@
         Phenotype ?Phenotype XREF RNAi #Phenotype_info
 	Expr_profile ?Expr_profile XREF RNAi_result // connection added during build [030106 krb]
         Remark ?Text #Evidence
+        Method UNIQUE ?Method
+
 
 #Phenotype_info Remark ?Text #Evidence                           // specific remarks about this instance
                 Penetrance UNIQUE Int UNIQUE Int        // estimated percent penetrance range (0-100)
@@ -1693,7 +1795,6 @@
 ?PCR_product SMap S_parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF PCR_product
  		  S_child RNAi ?RNAi XREF PCR_product UNIQUE Int UNIQUE Int #SMap_info
 			  Expr_profile ?Expr_profile XREF PCR_product UNIQUE Int UNIQUE Int #SMap_info// added for new Expr_profile class [010912 krb]
- 	     Method UNIQUE ?Method
  	     Overlaps_CDS ?CDS XREF Corresponding_PCR_product  // added for Dan PCR mappings [010419 dl]
 	     Overlaps_pseudogene ?Pseudogene XREF Corresponding_PCR_product // new [030801 krb]
 	     Oligo ?Oligo XREF PCR_product UNIQUE Int UNIQUE Int
@@ -1705,6 +1806,9 @@
 	     Flanks_deletion ?Allele XREF Flanking_PCR_product // For KO allele data [krb 021217]
 	     Microarray_result  ?Microarray_result  XREF PCR_product 
 	     Microarray_results ?Microarray_results XREF PCR_product //added for Microarray_results class
+ 	     Method UNIQUE ?Method
+
+
 
 ?Phenotype Description UNIQUE ?Text
            Assay UNIQUE ?Text
@@ -1800,7 +1904,7 @@
                 Microarray_results ?Microarray_results XREF Oligo_set 
                 Oligo ?Oligo     //used in case oligos are specified
                 Remark ?Text    #Evidence
-
+		Method UNIQUE ?Method
 
 
 
@@ -1811,7 +1915,7 @@
                 Microarray_result ?Microarray_result XREF Microarray_aff // Added to merge with SMD microarray.
 		Reference ?Paper //Describes the design of the chip
                 Remark ?Text #Evidence
-
+		Method UNIQUE ?Method
 
 // Microarray_result data model is created for Data types from Stanford Microarray Database
 // and from Affymetrix
@@ -2066,6 +2170,7 @@
 		  Gene_regulation ?Gene_regulation XREF Reference // added [030804 krb]
 		  Microarray_experiment ?Microarray_experiment XREF Reference //added for Microarray_experiment model
 		  Anatomy_term ?Anatomy_term XREF Reference #Evidence
+		  Antibody ?Antibody XREF Reference #Evidence // added [031120 krb]
         Keyword ?Keyword
 
 
