@@ -8,21 +8,21 @@
 use strict;
 use Getopt::Long;
 
-my ($dbpass, $dump_worm01, $dump_wormprot, $dump_brigprot);
+my ($dbpass, $dump_worm_dna, $dump_worm_pep, $dump_brigpep);
 
 GetOptions ( 
-	    'dbpass=s' => \$dbpass,
-	    'worm01'   => \$dump_worm01,
-	    'wormprot' => \$dump_wormprot,
-	    'worm_brigprot' => \$dump_brigprot,
+	    'dbpass=s'     => \$dbpass,
+	    'worm_dna'     => \$dump_worm_dna,
+	    'worm_pep'     => \$dump_worm_pep,
+	    'worm_brigpep' => \$dump_brigpep,
 	   );
 
 die "I need the password, please - try something like - \nbackup_mysql.pl -dbpass  xxxxxxxx\n" unless $dbpass;
 
 unless ( defined $dump_worm01 or defined $dump_wormprot or defined $dump_brigprot ) {
-  $dump_worm01 = 1; 
-  $dump_wormprot = 1;
-  $dump_brigprot = 1;
+  $dump_worm_dna = 1; 
+  $dump_worm_pep = 1;
+  $dump_brigpep = 1;
 }
 
 my $date = `date +%y%m%d`;
@@ -31,15 +31,15 @@ chomp $date;
 my $start=`date +%H:%M:%S`; chomp $start;
 print "Backup started at $start\n\n";
 
-my $worm01="worm01_$date";
-my $wormprot="wormprot_$date";
-my $worm_brigprot="worm_brigprot_$date";
+my $worm_dna="worm_dna_$date";
+my $worm_pep="wormpep_$date";
+my $worm_brigpep="worm_brigpep_$date";
 
 # password is not included for security reasons
 
-&dump_it("worm01",$worm01) if $dump_worm01;
-&dump_it("wormprot",$wormprot) if $dump_wormprot;
-&dump_it("worm_brigprot",$worm_brigprot) if $dump_brigprot;
+&dump_it("worm_dna",$worm_dna) if $dump_worm_dna;
+&dump_it("worm_pep",$worm_pep) if $dump_worm_pep;
+&dump_it("worm_brigpep",$worm_brigpep) if $dump_brigpep;
 
 my $end=`date +%H:%M:%S`; chomp $end;
 
