@@ -50,7 +50,7 @@ my @species = qw(fly human slimswissprot slimtrembl worm yeast briggsae);
 my %org2acedb;
 
 $org2acedb{worm} = "WP:";
-$org2acedb{fly} = "GADFLY:";
+$org2acedb{fly} = "FLYBASE:";
 $org2acedb{ensembl} = "ENSEMBL:";
 $org2acedb{yeast} = "SGD:";
 $org2acedb{slimswissprot} = "SW:";
@@ -150,7 +150,7 @@ my %name2id;
 
 print LOG "get the name 2 id mapping for the wormpep proteins [".&now."]\n\n";
 
-FetchData("CDS2wormpep",\%name2id,"/nfs/acari/wormpipe/dumps");
+FetchData("cds2wormpep",\%name2id,"/nfs/acari/wormpipe/dumps");
 
 
 ####################################################################
