@@ -243,6 +243,106 @@ sub gff_sort {
   
 }
 
+#################################################################################
+
+sub getseqEMBL {
+
+    my $acc = shift;
+    my $absent;
+    
+    my $querycontent1 = "-e+[embl-acc:'$acc']";
+    my $querycontent2 = "-e+[emblnew-acc:'$acc']";
+    
+    my $request1 = "/srs6bin/cgi-bin/wgetz?$querycontent1";
+    my $request2 = "/srs6bin/cgi-bin/wgetz?$querycontent2";
+    
+    my $server = "srs.ebi.ac.uk";
+
+    if (!defined(open_TCP(*F,$server,80))) {
+        print "Error connecting to server \n";
+        exit(-1);
+    }
+
+    # get from emblnew
+    print F "GET $request2 HTTP/1.0\n\n";
+    print F "Accept: */*\n";
+    print F "User-Agent: socketsrs/1.0\n\n";
+    
+    undef ($absent);
+    while (my $return_line=<F>) {
+	if ($return_line =~ /error/) {
+#	    print "Query returned no entry : '$request2'\n";
+	    $absent = 1;
+	    last;
+	}
+    }
+    close F;
+    
+    # else get from embl
+    if ($absent) {
+	if (!defined(open_TCP(*G,$server,80))) {
+	    print "Error connecting to server \n";
+	    exit(-1);
+	} 
+	
+#	print "Query [$j]: '$request1'\n";
+	
+	print G "GET $request1 HTTP/1.0\n\n";
+	print G "Accept: */*\n";
+	print G "User-Agent: socketsrs/1.0\n\n";
+    }
+    else {
+	if (!defined(open_TCP(*G,$server,80))) {
+	    print "Error connecting to server \n";
+	    exit(-1);
+	} 
+
+#	print "Query [$j]: '$request2'\n";
+	
+	print G "GET $request2 HTTP/1.0\n\n";
+	print G "Accept: */*\n";
+	print G "User-Agent: socketsrs/1.0\n\n";
+    }
+
+# Parsing annotation
+    
+    while (my $return_line=<G>) {
+#	print "$return_line";
+	
+    # Sequence version
+    # SV   AL032679.2
+	if ($return_line =~ /^SV\s+(\S+)/) {
+#	    print "parsing SV line : $return_line";
+	    
+	    ($sv_acc,$sv_ver) = split (/\./, $1);
+	}
+    
+    # Sequence
+    # SQ   Sequence 2679 BP; 882 A; 510 C; 415 G; 872 T; 0 other;
+
+	if ($return_line =~ /^SQ\s+Sequence\s(\d+)\sBP/) {
+#	    print "parsing SQ line : $return_line";
+	    $seq_len = $1;
+	    return ($sv_acc,$sv_ver,$seq_len);
+	    last;
+	}
+    }
+    close G;
+}
+
+
+#################################################################################
+
+sub open_TCP {
+    my ($FS,$dest,$port) = @_;
+    my $proto = getprotobyname ('tcp');
+    socket ($FS,PF_INET,SOCK_STREAM,$proto);
+    my $sin = sockaddr_in($port,inet_aton($dest));
+    connect($FS,$sin) || return undef;
+    my $old_fh = select($FS);
+    $| = 1;
+    select($old_fh);
+}
 
 #################################################################################
 
