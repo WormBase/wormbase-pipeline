@@ -99,7 +99,7 @@ sub unpack_stuff{
   if ($database eq "citace"){
     $ftp    = "/nfs/privateftp/ftp-wormbase/pub/incoming/caltech";
     $dbdir  = "/wormsrv2/citace";
-    $logfile = "/wormsrv2/logs/unpack_stlace.$rundate.$$";
+    $logfile = "/wormsrv2/logs/unpack_citace.$rundate.$$";
     $dbname = "citace_dump";
   }
 
