@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl
+#!/usr/local/bin/perl -w
 #
 # camcheck
 #
@@ -33,8 +33,7 @@ use Bio::Seq;
 use IO::Handle;
 use Getopt::Std;
 use Ace;
-require "/wormsrv2/scripts/babel.pl";
-
+#require "/wormsrv2/scripts/babel.pl";
 
  ##############################
  # Script variables (run)     #
@@ -99,9 +98,10 @@ print LOG "CamCheck run STARTED at $runtime\n\n";
  # Do the following for every sequence in current.cosmid             #
  #####################################################################
 
-open (CLONEFILE,"<$clonefile");
+open (CLONEFILE,"<$clonefile") || die "Couldn't open $clonefile for reading\n";
 
-while($line=<CLONEFILE>){
+my $line;
+while(defined($line=<CLONEFILE>)){
     
   undef ($seq_file);
   undef ($seq_ace);
@@ -119,7 +119,8 @@ while($line=<CLONEFILE>){
   $seqpath = "$clonepath"."/"."$line"."/"."$clone.seq";
 
   open SEQPATH,"<$seqpath" || do {print LOG "$clone  \t:NOT_IN_DIRECTORY $seqpath\n"; next; };
-  while ($line1=<SEQPATH>) {  
+  my $line1;
+  while (defined($line1=<SEQPATH>)) {  
     chomp($line1);
     $seq_file.="$line1";
   }
@@ -238,7 +239,7 @@ LOG->autoflush();
 ##########################################################
 
 my @multimap_clones= $db->fetch(-query=>'find Clone COUNT Map > 1');
-if (@mutimap_clones){
+if (@multimap_clones){
   foreach (@multimap_clones){
     print LOG "Clone error - $_ contains two or more map objects\n";
   }
@@ -248,8 +249,8 @@ if (@mutimap_clones){
 # LINK objects 
 ###################
 
-$i = $db->fetch_many(-query=> 'find Sequence "*LINK*"');  
-while ($obj = $i->next) {
+my $i = $db->fetch_many(-query=> 'find Sequence "*LINK*"');  
+while (my $obj = $i->next) {
     my $link = $obj;
 
     print "[$link]    \t" if ($debug);
@@ -268,7 +269,7 @@ close LOG;
  ##############################
 
 open (OUTLOG,"|/usr/bin/mailx -s camcheck_report $maintainer ");
-open (READLOG, "<$log");
+open (READLOG, "<$log") || die "Couldn't open $log for reading\n";
 while (<READLOG>) {
     print OUTLOG "$_";
 }
@@ -342,8 +343,6 @@ sub finannot {
     if (($finished)&&(!$annotated)){
 	print LOG "FINISHED_BUT_NOT_ANNOTATED $clone\n";
     }
-    undef $finished;
-    undef $annotated;
 }
 
 #######################################################################
@@ -351,7 +350,7 @@ sub finannot {
 #######################################################################
 
 sub checkchars {
-    
+  my $finished  = $obj->Finished(1);
     if ($seq_ace =~ /[^ACGTUMRWSYKVHDBXN]/img) {
 	print LOG "ACEDBSEQ for $clone contains bad characters\n";
 	$seq_ace =~s/[^ACGTUMRWSYKVHDBXN]//img;
@@ -360,8 +359,6 @@ sub checkchars {
 	print LOG "ACEDBSEQ FINISHED SEQUENCE for $clone contains N \n";
     }
 }
-
-
 
 
 #######################################################################
@@ -378,7 +375,7 @@ sub checkgenes {
     
     unless ($seq =~ /\./) {next;}
     
-    if ($obj =~ /^SUPERLINK/) {print LOG "SUPERLINK $link contains CDS gene models\n";}
+    if ($obj =~ /^SUPERLINK/) {print LOG "SUPERLINK $obj contains CDS gene models\n";}
     
     my $diff = $end - $start;
     if ($diff < 0) {
@@ -395,7 +392,7 @@ sub checkgenes {
     #
     # All Subsequence objects must have a Source
     
-    my $source = $subseq->Source(1);
+    $source = $subseq->Source(1);
     if ((!defined ($source))) {
       print LOG "The subsequence $child has no Source\n";
     }
@@ -429,7 +426,7 @@ sub checkgenes {
     #
     # All Subsequence objects must have a Method
     
-    my $method = $subseq->Method(1);
+    $method = $subseq->Method(1);
     if ((!defined ($method))) {
       print LOG "The subsequence $child has no method\n";
     }
@@ -522,12 +519,12 @@ $HTML_END=<<END;
 </HTML>
 END
 
-    open (OUTHTML,">$logdir/camchecklog.html");
+    open (OUTHTML,">$logdir/camchecklog.html") || die "Couldn't open $logdir/camchecklog.html for writing\n";
     print OUTHTML $HTML_START;
     print OUTHTML "Last ran  : <B>$rundate $runtime</B></P>\n";
     print OUTHTML "<TABLE BORDER=1 WIDTH=100%>\n";
 
-    open (READLOG, "<$log");
+    open (READLOG, "<$log") || die "Couldn't open $log for reading\n";
     while (<READLOG>) {
 	push (@finished,$_)    if (/^NOT_FINISHED/);
 	push (@annotated,$_)   if (/^FINISHED_BUT_NOT_ANNOTATED/);
@@ -628,14 +625,13 @@ sub usage {
     if ($error == 1) {
         # No WormBase release number file
         print "The WormBase release number cannot be parsed\n";
-        print "Check File: '$Wormbase_release_file'\n\n";
+#        print "Check File: '$Wormbase_release_file'\n\n";
         &run_details;
         exit(0);
     }
     elsif ($error == 0) {
         # Normal help menu
         exec ('perldoc',$0);
-        exit (0);
     }
 }
 
@@ -813,10 +809,4 @@ camcheck determines if this is the case by using the simple acedb query:
 Email dl1@sanger.ac.uk, krb@sanger.ac.uk
 
 =cut
-
-
-
-
-
-
 
