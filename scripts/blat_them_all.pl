@@ -90,11 +90,12 @@ getopts('emxbsvonhd');
 ($data = 'NEMATODE') if ($opt_x);
 
 my $query;
-$query      = '/nfs/disk100/wormpub/analysis/ESTs/C.elegans_nematode_ESTs'    if ($opt_e); # EST data set
-$query      = '/wormsrv2/mRNA_GENOME/NDB_mRNAs.fasta'                         if ($opt_m); # mRNA data set
-$query      = '/wormsrv2/autoace/BLAT/nematode.fa'                            if ($opt_x); # ParaNem EST data set
-$query      = '/nfs/disk100/wormpub/analysis/ESTs/C.elegans_nematode_miscPep' if ($opt_o); # Other CDS data set
+$query      = '/nfs/disk100/wormpub/analysis/ESTs/C.elegans_nematode_ESTs'     if ($opt_e); # EST data set
+$query      = '/nfs/disk100/wormpub/analysis/ESTs/C.elegans_nematode_mRNAs'    if ($opt_m); # mRNA data set
+$query      = '/nfs/disk100/wormpub/analysis/ESTs/non_C.elegans_nematode_ESTs' if ($opt_x); # ParaNem EST data set
+$query      = '/nfs/disk100/wormpub/analysis/ESTs/C.elegans_nematode_miscPep'  if ($opt_o); # Other CDS data set
 
+#$query      = '/wormsrv2/autoace/BLAT/nematode.fa'                            if ($opt_x); # ParaNem EST data set
 
 #############
 # LOG stuff #
