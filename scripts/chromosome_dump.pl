@@ -8,6 +8,7 @@
 
 use strict;
 use Getopt::Std;
+use IO::Handle;
 use lib '/wormsrv2/scripts/';
 use Wormbase;
 
@@ -70,6 +71,7 @@ my $runtime = `date +%H:%M:%S`; chomp $runtime;
 our $logfile = "/wormsrv2/logs/chromosome_dump.${rundate}.$$";
 
 open (LOGFILE,">$logfile") || die "Couldn't create $logfile\n";
+LOGFILE->autoflush();
 print LOGFILE "# chromosome_dump.pl\n\n";     
 print LOGFILE "# version        : $cvs_version\n";
 print LOGFILE "# run details    : $rundate $runtime\n";
