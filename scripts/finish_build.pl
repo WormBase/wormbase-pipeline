@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.0 -w
+#!/usr/local/bin/perl5.6.1 -w
 #
 # finish_build.pl
 # 
@@ -12,8 +12,8 @@
 # 3) Archives old GFF_SPLITS directory
 # 4) Makes wormsrv2/current_DB point at latest release
 #
-# Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2003-01-16 14:55:40 $
+# Last updated by: $Author: krb $
+# Last updated on: $Date: 2003-01-24 15:44:07 $
 
 
 
@@ -81,7 +81,7 @@ system("ln -s $db_path/$WS_name/ $db_path/current_DB") && die "Couldn't create n
 
 # archive old GFF splits directory'
 print LOG "Archiving GFFsplits directory using GFFsplitter.pl -a\n\n";
-system("GFFsplitter -a") && die "Couldn't run GFFsplitter.pl -a\n";
+system("GFFsplitter.pl -a") && die "Couldn't run GFFsplitter.pl -a\n";
 
 # run locus2seq.pl
 print LOG "Running locus2seq.pl\n\n";
