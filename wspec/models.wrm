@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: krb $
-// Last edited on: $Date: 2004-06-30 14:18:03 $
+// Last edited on: $Date: 2004-06-30 14:23:51 $
  
 
 
@@ -329,6 +329,7 @@
                                                                                 
                                                                                 
 ?Gene   Evidence #Evidence
+	SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF Gene_child
         Identity  Version UNIQUE Int
                   Name  CGC_name        UNIQUE ?Gene_name XREF CGC_name_for
                         Sequence_name   UNIQUE ?Gene_name XREF Sequence_name_for // captures main CDS name without isoforms
@@ -390,7 +391,7 @@
                   Interpolated_map_position UNIQUE ?Map UNIQUE Float // for loci with CDSs but no real Map position
         Reference ?Paper XREF Gene
         Remark ?Text #Evidence
-
+	Method UNIQUE ?Method
 
 // hash to track details of what actually happened for each change to a gene
 
@@ -863,7 +864,8 @@
 	  SMap S_parent UNIQUE Canonical_parent UNIQUE ?Sequence XREF Genomic_non_canonical 
 			       Genomic_parent   UNIQUE ?Sequence XREF Nongenomic
 			       AGP_parent       UNIQUE ?Sequence XREF AGP_fragment // added to hold briggsae data [krb 020726]
-	       S_child CDS_child  ?CDS        XREF Sequence UNIQUE Int UNIQUE Int #SMap_info  // For new ?CDS class [031104 krb]
+	       S_child Gene_child ?Gene       XREF Sequence UNIQUE Int UNIQUE Int #SMap_info  // maximal extent of Gene objects
+		       CDS_child  ?CDS        XREF Sequence UNIQUE Int UNIQUE Int #SMap_info  // For new ?CDS class [031104 krb]
 		       Transcript ?Transcript XREF Sequence UNIQUE Int UNIQUE Int #SMap_info  // for new ?Transcript class [021126 krb]
 		       Pseudogene ?Pseudogene XREF Sequence UNIQUE Int UNIQUE Int #SMap_info  // For new ?Pseudogene class [030801 krb]
 		       Transposon ?Transposon XREF Sequence UNIQUE Int UNIQUE Int #SMap_info  // for transposons   [020128 dl]
@@ -1303,7 +1305,7 @@
 
 
 
-?Homol_data SMap S_parent UNIQUE Sequence UNIQUE ?Sequence
+?Homol_data SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF Homol_data
 	    Homol DNA_homol ?Sequence XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		  Pep_homol ?Protein XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		  Motif_homol ?Motif XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
