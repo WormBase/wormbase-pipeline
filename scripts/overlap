@@ -10,7 +10,7 @@ use Carp;
 use Ace;
 use IO::Handle;
 $|=1;
-my @chrom = qw( I );
+my @chrom = qw( I II III IV V X );
 my (%exon, %est, %genes, %repeat, %intron, %camace, %stlace);
 
 ######################
