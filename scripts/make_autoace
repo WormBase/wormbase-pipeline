@@ -8,7 +8,7 @@
 # This makes the autoace database from its composite sources.
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-02-11 10:05:43 $
+# Last edited on: $Date: 2003-02-11 17:18:33 $
 
 
 $|=1;
@@ -39,7 +39,7 @@ our $wormbasedir = "$basedir/wormbase";
 our $autoacedir  = "$basedir/autoace";
 our $stlacedir   = "$basedir/stlace";
 our $camacedir   = "$basedir/camace";
-our $configfile     = "/wormsrv2/autoace_config/autoace.config";
+our $configfile  = "/wormsrv2/autoace_config/autoace.config";
 
 our $WS_version   = &get_wormbase_version_name;
 my $CWD = cwd;
@@ -312,15 +312,15 @@ sub rmtempgene {
 # Create directories
 
 sub createdirs {
-  my $chromes  = "$basedir/CHROMOSOMES";
-  my $db       = "$basedir/database";		
+  my $chromes  = "$dbpath/CHROMOSOMES";
+  my $db       = "$dbpath/database";		
   my $new      = "$db/new";
   my $touch    = "$db/touched";
-  my $ace      = "$basedir/acefiles";
-  my $rel      = "$basedir/release";
-  my $wspec    = "$basedir/wspec";
-  my $pictures = "$basedir/pictures";
-  my @dirarray    = ("$basedir","$chromes","$db","$new","$touch","$ace","$rel","$wspec");
+  my $ace      = "$dbpath/acefiles";
+  my $rel      = "$dbpath/release";
+  my $wspec    = "$dbpath/wspec";
+  my $pictures = "$dbpath/pictures";
+  my @dirarray    = ("$dbpath","$chromes","$db","$new","$touch","$ace","$rel","$wspec");
   my @args1       = ();
   my @args2       = ("/bin/mkdir");
   
@@ -341,14 +341,13 @@ sub createdirs {
   }
   push (@args2,@args1);
   system (@args2) && print LOG "ERROR: Couldn't run 'system (@args2)'\n";
-  foreach (@args1) {
-    my $made_dir = $_;
+  foreach my $made_dir (@args1) {
     if ($made_dir =~ /wspec/) {
       print "** Copying wspec from $autoacedir .. \n";
       system ("/bin/cp $autoacedir/wspec/* $wspec/.") && print LOG "ERROR: Couldn't cp wspec directory\n";
     }
     if (!-d $made_dir) {
-      print " ** mkdir for $basedir failed ** \n\n";
+      print " ** mkdir for $made_dir failed ** \n\n";
       print LOG "ERROR: mkdir command failed\n";
       die(0);
     } 
