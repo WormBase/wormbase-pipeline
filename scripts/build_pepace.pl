@@ -10,7 +10,7 @@
 # 
 #
 # Last updated by: $Author: ar2 $                     
-# Last updated on: $Date: 2002-11-13 17:48:00 $     
+# Last updated on: $Date: 2002-12-10 15:04:49 $     
 
 use strict;                                     
 use lib "/wormsrv2/scripts/";                  
@@ -201,7 +201,7 @@ open (ACE, ">$acefile") || die "cant write $acefile\n";
 
 
 $CE_live{'CE25872'} = 1; #hard coded as this history is confused. Remove if CE25873 no longer valid
-
+$CE_corr_DNA{'CE25872'} = "F36D3.1";
 
 #ace file for new Protein model (with History)
 foreach my $key(sort keys %CE_history) {
@@ -244,7 +244,7 @@ if ( ($live_peps ) == $table_peps ) {
 }
 else {
     print LOG "\n\n! ! ! ! THIS NEEDS ATTENTION ! ! ! !\n\n\n";
-    print LOG "\n1 known problem - CE25872 is hard coded as LIVE in $0\n Check this is still valid dequence F36D3.1";
+    print LOG "\n1 known problem - CE25872 is hard coded as LIVE in $0\n Check this is still valid sequence F36D3.1";
 }
 
 my $date = `date`;
