@@ -92,7 +92,7 @@ print LOG "$LSGlog";
 $db->close;
 close LOG;
 
-$maintainer = "ar2\@sanger.ac.uk";
+#$maintainer = "ar2\@sanger.ac.uk";
 &mail_maintainer($0,$maintainer,$log);
 
 ################################################
