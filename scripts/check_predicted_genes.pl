@@ -4,8 +4,8 @@
 #
 # by Keith Bradnam aged 12 and a half
 #
-# Last updated on: $Date: 2002-12-05 10:55:10 $
-# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2002-12-18 11:13:11 $
+# Last updated by: $Author: krb $
 #
 # see pod documentation at end of file for more information about this script
 
@@ -146,6 +146,12 @@ foreach my $gene (@predicted_genes){
     $end_tag = "present";
     push(@error2,"Gene warning - $gene: End_not_found tag present\n");
     print "Gene warning - $gene: End_not_found tag present\n" if $verbose;
+  }
+
+  # Check that Transcript tag not present
+  if ($gene_object->get('Transcript')){
+    push(@error2,"Gene warning - $gene: has CDS tag plus Transcript tag\n");
+    print "Gene warning - $gene: has CDS tag plus Transcript tag\n" if $verbose;
   }
 
   # check species is correct
