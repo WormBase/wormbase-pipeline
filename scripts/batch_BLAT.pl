@@ -4,17 +4,17 @@
 #
 # Anthony Rogers
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2005-01-26 09:45:02 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2005-02-18 17:12:27 $
  
 
 use strict;
-use lib $ENV{'CVS_DIR'};
+use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
 use Log_files;
 
-my ($help, $debug, $verbose, $est, $mrna, $ncrna, $ost, $nematode, $embl, $tc1, $all, $dump, $no_bsub);
+my ($help, $debug, $verbose, $est, $mrna, $ncrna, $ost, $nematode, $embl, $tc1, $all, $export, $no_bsub);
 my ($blat, $process, $virtual);
 
 GetOptions ("help"       => \$help,
@@ -28,7 +28,7 @@ GetOptions ("help"       => \$help,
 	    "embl"       => \$embl,
 	    "tc1"        => \$tc1,
 	    "all"        => \$all,
-	    "dump"       => \$dump,
+	    "dump"       => \$export,
 	    "no_bsub"    => \$no_bsub,
 	    "blat"       => \$blat,
 	    "process"    => \$process,
@@ -52,41 +52,36 @@ if( $all ) {
 my $log = Log_files->make_build_log($debug);
 my $wormpub = glob("~wormpub");
 
-$log->log_and_die("cant do blat and process / virtual at same time\n") if ($blat and ( $process or $virtual ));
+$log->log_and_die("failed do run blat and process / virtual at same time\n") if ($blat and ( $process or $virtual ));
 
 if ( $blat ) {
-
-  # copy autoace.fa to cbi1
-  $log->write_to("copying autoace.fa\n");
-
-  if ( -e "$wormpub/BLAT/autoace.fa" and &new_file("$wormpub/BLAT/autoace.fa") ) {
-    $log->write_to("using existing autoace.fa file\n\n");
-  } else {
+    
+    # copy autoace.fa to cbi1
+    $log->write_to("copying autoace.fa\n");
     system("scp wormsrv2:/wormsrv2/autoace/BLAT/autoace.fa $wormpub/BLAT/autoace.fa") and $log->log_and_die("cant copy autoace.fa\n");
-  }
 
-  #ESTs (~2 hours) 
-  #&run_bsub("elegans_ESTs.masked", "est_out.psl") if $est;
-  &split_run( "est" ) if $est;
-
-  #OSTs (5min) 
-  &run_bsub("elegans_OSTs.masked", "ost_out.psl") if $ost;
-
-  #TC1s (10min)
-  &run_bsub("elegans_TC1s", "tc1_out.psl") if $tc1;
-
-  #mRNA (2 hours)
-  &run_bsub("elegans_mRNAs.masked", "mrna_out.psl", " -fine") if $mrna;
-
-  #EMBL (5 mins) 
-  &run_bsub("elegans_embl_cds", "embl_out.psl") if $embl;
-
-  #ncRNAs (?) 
-  &run_bsub("elegans_ncRNAs.masked", "ncrna_out.psl") if $ncrna;
-
-  # splitting Nematode_ESTs
-  &split_run( "nematode" ) if ( $nematode );
-}
+    # ESTs (~2 hours) 
+    &split_run( "est" ) if $est;
+    
+    # OSTs (5min) 
+    &run_bsub("elegans_OSTs.masked", "ost_out.psl") if $ost;
+    
+    # TC1s (10min)
+    &run_bsub("elegans_TC1s", "tc1_out.psl") if $tc1;
+    
+    # mRNA (2 hours)
+    &run_bsub("elegans_mRNAs.masked", "mrna_out.psl", " -fine") if $mrna;
+    
+    # EMBL (5 mins) 
+    &run_bsub("elegans_embl_cds", "embl_out.psl") if $embl;
+    
+    # ncRNAs (?) 
+    &run_bsub("elegans_ncRNAs.masked", "ncrna_out.psl") if $ncrna;
+    
+    # splitting Nematode_ESTs
+    &split_run( "nematode" ) if ( $nematode );
+    
+} # end $blat loop
 
 if ( $process or $virtual ) {
 
@@ -103,16 +98,21 @@ if ( $process or $virtual ) {
   # run the main blat job
  
   foreach my $option (@blat_jobs ) {
-    system("$wormpub/scripts/blat_them_all.pl -process -$option");
-    # also create virtual objects
-    system("$wormpub/scripts/blat_them_all.pl -virtual -$option");
+      system("$wormpub/scripts/blat_them_all.pl -process -$option");
+      # also create virtual objects
+      system("$wormpub/scripts/blat_them_all.pl -virtual -$option");
   }
-}
+} # end loop for $process or $virtual 
 
-
-$log->mail;
+$log->mail($log,"BUILD REPORT: batch_BLAT.pl","all");
 
 exit (0);
+
+
+###########################
+####### Subroutines #######
+###########################
+
 
 sub run_bsub
   {
@@ -142,19 +142,6 @@ sub run_bsub
     $log->write_to("$bsub_id\n");
   }
 
-sub new_file
-  {
-    my $file = shift;
-    my (@date) ="ls -ltr $file";
-
-    # get the last block file in @date and split to find date
-    my @line = split(/\s+/,$date[$#date]);
-    
-    my $file_age = sprintf("%.1f", -M $line[8]);
-
-    return 0 if $file_age > 1;
-    return 1;
-}
 
 sub split_run 
   {
