@@ -184,7 +184,6 @@ sub find_database {
 
     my @clones   = @{$_[0]};
     my $handle   = @{$_[1]};
-    my @dbclones = ();
     my $name     = "";
     my %count    = ();
     my @output   = ();
