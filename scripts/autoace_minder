@@ -6,7 +6,7 @@
 # Usage : autoace_minder [-options]
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2002-08-16 15:01:22 $
+# Last edited on: $Date: 2002-08-19 09:50:00 $
 
 
 #################################################################################
@@ -315,13 +315,6 @@ sub initiate_build {
     
     # commit to new build ..............
     $WS_version = &get_wormbase_version;
-
-
-
-
-
-
-
     
     # exit if no WS version is returned
     &usage("No_WormBase_release_number") if (!defined($WS_version));
@@ -420,6 +413,12 @@ sub prepare_primaries {
     # exit if the Primary_databases_used_in_build is absent
     &usage(13) unless (-e "$logdir/Primary_databases_used_in_build");
 
+    # time logging
+    if ($time) {
+	my $runtime     = `date +%H:%M:%S`; chomp $runtime;
+	print LOG "Starting 'autoace_minder -prepare' at $runtime\n\n";
+    }
+ 
     local (*LAST_VER);
     my ($stlace_date,$brigdb_date,$citace_date,$cshace_date) = &FTP_versions;
     my ($stlace_last,$brigdb_last,$citace_last,$cshace_last) = &last_versions;
@@ -491,6 +490,12 @@ sub prepare_primaries {
 
     # make a unpack_db.pl log file in /logs
     system ("touch $logdir/$flag{'A4'}");
+
+    # time logging
+    if ($time) {
+	$runtime = `date +%H:%M:%S`; chomp $runtime;
+	print LOG "Ending 'autoace_minder -prepare' at $runtime\n\n";
+    }
 
 }
 
@@ -1090,7 +1095,7 @@ sub logfile_details {
     
     print LOG "======================================================================\n";
     print LOG "  -full         : Full WS release (executes all of the following -wbcp)\n"               if ($full);
-    print LOG "  -initial      : Prepare for a new build, update WSnn version number\n"            if ($initial);
+    print LOG "  -initial      : Prepare for a new build, update WSnn version number\n"                 if ($initial);
     print LOG "  -unpack       : Unpack databases from FTP site and copy Sanger dbs\n"                  if ($unpack);
     print LOG "  -acefile      : Write .acefiles from WormBase copies of the databases\n"               if ($acefile);
     print LOG "  -build        : Build autoace\n"                                                       if ($build);
