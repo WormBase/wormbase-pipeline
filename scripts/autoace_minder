@@ -16,7 +16,7 @@ use Getopt::Std;
 use lib "/wormsrv2/scripts/";
 use Wormbase;
 use strict;
-use vars qw ($opt_a $opt_w $opt_b $opt_1 $opt_2 $opt_3 $opt_c $opt_p $opt_q $opt_f $opt_z $opt_d $opt_s $opt_h $opt_g $opt_m $opt_i $opt_u $opt_y );
+use vars qw ($opt_a $opt_w $opt_b $opt_1 $opt_2 $opt_3 $opt_c $opt_p $opt_q $opt_f $opt_z $opt_n $opt_d $opt_s $opt_h $opt_g $opt_m $opt_i $opt_u $opt_y );
 
  ##############################
  # Script variables (run)     #
@@ -51,10 +51,13 @@ my $scriptdir   = "/wormsrv2/scripts";
 # $opt_h="";   # Help/Usage page
 # $opt_g="";   # chromosome_dump.pl -g
 # $opt_m="";   # map PCR, RNAi and WTP
+
+# $opt_n="";   # copy autoace before blatting
 # $opt_s="";   # map similarities (BLAT jobs)
+
 # $opt_y="";   # make agp files for the yellow brick road
 
-getopts ('awbchipqfzdrsguym123');
+getopts ('awbchipqfzdrsguymn123');
 &usage(0) if ($opt_h);
 
 # -d debug mode modifies $maintainers to reduce e-mail load
@@ -129,6 +132,7 @@ if ($opt_a) {
 &check_release          if ($opt_c);
 
 # similarity matches
+&pre_blat_copy          if ($opt_n);
 &blat_jobs              if ($opt_s);
 
 # wormpep and protein work
@@ -449,23 +453,39 @@ sub check_release {
 # similarity mapping                                                            #
 #################################################################################
 
+sub pre_blat_copy {
+    # make a copy of the database so far
+    # transfer /wormsrv1/geneace to /wormsrv2/geneace 
+    
+    system("TransferDB -start /wormsrv2/autoace -end /wormsrv2/autoace_midway -database -wspec -name autoace_midway")
+	&& die "Couldn't run TransferDB for autoace\n";
+    
+    print LOG " Copy autoace prior to BLAT analysis\n";
+    
+    # make a make_autoace log file in /logs
+    system ("touch $logdir/copy_autoace_before_BLAT_run");
+
+    
+}
+
 sub blat_jobs {
     
     local (*WRITEDB);
 
+
     # run the blat jobs
 
-# blat_them_all -e
-system ("$scriptdir/blat_them_all -nbsve") && die "Couldn't blat_them_all -nbsve\n";
+    # blat_them_all -e
+    system ("$scriptdir/blat_them_all -nbsve") && die "Couldn't blat_them_all -nbsve\n";
 
-# blat_them_all -m
-system ("$scriptdir/blat_them_all -bsm") && die "Couldn't blat_them_all -nbsve\n";
+    # blat_them_all -m
+    system ("$scriptdir/blat_them_all -bsm") && die "Couldn't blat_them_all -nbsve\n";
 
-# blat_them_all -o
-system ("$scriptdir/blat_them_all -bso") && die "Couldn't blat_them_all -nbsve\n";
+    # blat_them_all -o
+    system ("$scriptdir/blat_them_all -bso") && die "Couldn't blat_them_all -nbsve\n";
 
-# blat_them_all -x
-system ("$scriptdir/blat_them_all -bsx") && die "Couldn't blat_them_all -nbsve\n";
+    # blat_them_all -x
+    system ("$scriptdir/blat_them_all -bsx") && die "Couldn't blat_them_all -nbsve\n";
 
     # quit if blat_them_all has not been run
     &usage(9) unless (-e "$logdir/blat_transcript_data");
