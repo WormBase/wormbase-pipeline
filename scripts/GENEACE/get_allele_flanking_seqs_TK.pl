@@ -4,7 +4,7 @@
 #
 # by Chao-Kung Chen [030625]
 
-# Last updated on: $Date: 2004-08-18 07:18:23 $
+# Last updated on: $Date: 2004-08-18 14:23:06 $
 # Last updated by: $Author: krb $
 
 use Tk;
@@ -120,7 +120,7 @@ my $param_frame = $mw ->Frame(relief => 'groove', borderwidth => 2)
 $param_frame -> Label(text=>"Query parameters: ", fg=>"blue") # create a horizontal space 
            -> pack(side => "left");
 
-$param_frame -> Label(text => "Eg: 4R79.1 -aa 324y ok12 abc-1 pmid/[cgcxxx]   OR   4R79.1 -dna 1324t ok12 abc-1 pmid/[cgcxxx]", fg => "black")
+$param_frame -> Label(text => "Eg: 4R79.1 -aa 324y ok12 abc-1 00001232   OR   4R79.1 -dna 1324t ok12 abc-1 00001232", fg => "black")
                 -> pack(side => "left");
 
 #----------- entry box ----------
@@ -992,14 +992,12 @@ sub write_ace {
   my ($Lf, $Rf, $allele, $locus, $seq) = @_;
 
   $ace_window->insert('end', "\nGene : \"$Gene_info{$locus}{'Gene'}\"\n");
-  if ($info[1] =~ /\[.+\]/){ 
-    $ace_window->insert('end', "Allele \"$allele\" Paper_evidence \"$info[1]\"\n");
-  }
+  $ace_window->insert('end', "Allele \"$allele\" Paper_evidence \"WBPaper${info}[1]\"\n");
+  
 
   $ace_window->insert('end', "\nAllele : \"$allele\"\n");
-  if ($info[1] =~ /\[.+\]/){ 
-    $ace_window->insert('end', "Evidence Paper_evidence \"$info[1]\"\n");
-  }
+  $ace_window->insert('end', "Evidence Paper_evidence \"WBPaper${info}[1]\"\n");
+  
 
   $ace_window->insert('end', "Sequence \"$seq\"\n");
   $ace_window->insert('end', "\/\/Substitution \"[\/]\"\n");
@@ -1017,14 +1015,10 @@ sub write_ace {
   else {
     $ace_window->insert('end', "Missense \"$info[2] to $info[0]\"\n");
   }
-  if ($info[1] =~ /\[.+\]/){ 
-    $info[0] = "stop" if  lc($info[0]) eq "x";
-    $ace_window->insert('end', "\/\/Remark \"\"\n");
-  }
-  else {
-    $info[0] = "stop" if  lc($info[0]) eq "x";
-    $ace_window->insert('end', "\/\/Remark \"\"\n");
-  }
+
+  $info[0] = "stop" if  lc($info[0]) eq "x";
+
+  $ace_window->insert('end', "\/\/Remark \"\"\n");
   $ace_window->insert('end', "\/\/Remark \"\" Curator_confirmed \"WBPerson2861\"\n");
   $ace_window->insert('end', "\/\/Method \"Allele\"\n");
   $ace_window->insert('end', "\/\/Method \"Substitution_allele\"\n");
@@ -1053,9 +1047,9 @@ DESCRIPTION
 
   You need to supply a CDS/Transcript name (case-insensitive) and amino acid coordinate by -aa option 
   (or nucleotide coordinate by -dna opti  on) followed by a mutation in single- or three-letter code (case-insensitive) 
-  as arguments (see USAGE) to retrieve the flanking sequences.
+  as arguments (see USAGE) to retrieve the flanking sequences.  Finally, incude an 8 digit WBPaper ID.
 
-  Eg, 4R79.1 -aa 324y ok12 abc-1 pmid/[cgcxxx]   OR   4R79.1 -dna 1324t ok12 abc-1 pmid/[cgcxxx]
+  Eg, 4R79.1 -aa 324y ok12 abc-1 00001321   OR   4R79.1 -dna 1324t ok12 abc-1 00001231
 
 SCENARIO A: DNA coordinate
 
