@@ -6,7 +6,13 @@
 #               (2) Delete old blast data   
 
 use strict;
+use Getopt::Long;
 
+my $dbpass;
+
+GetOptions ( 'dbpass=s' => \$dbpass );
+
+die "I need the password, please - try something like - \nbackup_mysql.pl -pass  xxxxxxxx\n" unless $dbpass;
 
 my $date = `date +%y%m%d`;
 chomp $date;
@@ -19,10 +25,10 @@ my $wormprot="wormprot_$date";
 # password is not included for security reasons
 
 print "Backup Blast_X homols...\n\n";
-system("mysqldump -h ecs1f -u wormadmin  --opt -p worm01 > /nfs/disk100/wormpub/MYSQL_DUMPS/$worm01");
+system("mysqldump -h ecs1f -u wormadmin --opt -p$dbpass worm01 > /nfs/disk100/wormpub/MYSQL_DUMPS/$worm01");
 
 print "Backup Blast_P homols...\n\n";
-system("mysqldump -h ecs1f -u wormadmin --opt -p wormprot > /nfs/disk100/wormpub/MYSQL_DUMPS/$wormprot");
+system("mysqldump -h ecs1f -u wormadmin --opt -p$dbpass wormprot > /nfs/disk100/wormpub/MYSQL_DUMPS/$wormprot");
 
 my @files =`ls /nfs/disk100/wormpub/MYSQL_DUMPS`;
 foreach (@files){
