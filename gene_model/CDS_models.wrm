@@ -995,6 +995,9 @@
 		Allele ?Allele XREF CDS // replaces Has_allele tag in ?Sequence
 		Microarray_results ?Microarray_results XREF CDS      //added for Microarray_results
 	  	Reference ?Paper XREF CDS // added [011030 krb]
+                Provisional_description ?Text #Evidence
+                Detailed_description ?Text #Evidence
+                Concise_description ?Text #Evidence
 		Brief_identification UNIQUE ?Text #Evidence
 		Confidential_remark ?Text
 		Remark ?Text #Evidence
@@ -1038,6 +1041,9 @@
 			RNAi_result ?RNAi XREF Transcript //was missing from model [021126 krb]
 			GO_term ?GO_term XREF Transcript ?GO_code #Evidence // [030411 krb]
 			Microarray_results ?Microarray_results XREF Transcript      //added for Microarray_results
+                        Provisional_description ?Text #Evidence
+                        Detailed_description ?Text #Evidence
+                        Concise_description ?Text #Evidence
                         Brief_identification UNIQUE Text                           // [020306 kj]
                         Confidential_remark ?Text
                         Remark ?Text #Evidence
