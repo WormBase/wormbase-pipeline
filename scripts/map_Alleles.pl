@@ -6,8 +6,8 @@
 #
 # This maps alleles to the genome based on their flanking sequences
 #
-# Last updated by: $Author: krb $                      
-# Last updated on: $Date: 2004-07-26 16:04:27 $        
+# Last updated by: $Author: ar2 $                      
+# Last updated on: $Date: 2004-08-06 09:52:24 $        
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -101,7 +101,6 @@ if ( $list ) {
 
 ########## get list of alleles from geneace ####################
 
-my $geneace_update        = "$mapping_dir/map_alleles_geneace_update.WS$ver.ace";
 my %geneace_alleles;
 
 # list of alleles will be used later check against for feedback files
@@ -109,7 +108,9 @@ my $geneace_db = Ace->connect(-path => "/wormsrv2/geneace") || do { print  "$dat
 my @geneace_alleles = $geneace_db->fetch(-query =>'Find Allele WHERE Flanking_sequences');
 foreach ( @geneace_alleles ) {
   my $G_name = $_->name;
-  $geneace_alleles{$G_name} = 1;
+  my $wb_gene = $_->Gene;
+  $wb_gene = "undef" unless $wb_gene;
+  $geneace_alleles{$G_name} = $wb_gene;
 }
 $geneace_db->close;
 
@@ -118,11 +119,11 @@ $geneace_db->close;
 
 open (LOG,">$log") or die "cant open $log\n\n";
 print LOG "$0 start at $runtime on $rundate\n----------------------------------\n\n";
-open (GENEACE,">$geneace_update") or die "can't open $geneace_update: $!\n";
 open (OUT,">$ace_file") or die "cant open $ace_file\n";
 open (GFF,">$gff_file") or die "cant open $gff_file\n" if $gff;
 
-
+my %CDS2gene;
+&FetchData('cds2wbgene_id',\%CDS2gene);
 
 
 #########################################################
@@ -249,14 +250,11 @@ foreach my $allele (@alleles) {
 
 print "\nWARNING: $error_count alleles failed to map\n\n";
 
-print LOG "\nUpdate files for geneace allele mappings are available - \n$geneace_update\n";
-
 $db->close;
 
 
 close OUT;
 close GFF if $gff;
-close GENEACE;
 
 ##############################
 # read acefiles into autoace #
@@ -320,12 +318,17 @@ sub outputAllele{
 
       # in Allele object
       print OUT "\nAllele : $to_dump\n";
-      if ( defined $geneace_alleles{$to_dump} ) {
-	print GENEACE "\nAllele : \"$to_dump\"\nSequence \"$allele_data{$to_dump}[6]\"\n"; # allele -> sequence
-      } 	
       foreach my $ko (@affects_genes) {
 	#allele - CDS connection
 	print OUT "Predicted_gene $ko\n";
+
+	#allele - WBGene connection
+	my $WBGene = $CDS2gene{$ko};
+	print OUT "Gene $WBGene\n";
+
+	if( $geneace_alleles{$to_dump}->name ne $WBGene ) {
+	  print LOG "Geneace Gene error $ko : Geneace $geneace_alleles{$ko}  Mapping $WBGene\n";
+	}
       }
     }
     else {
