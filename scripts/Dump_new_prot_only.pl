@@ -538,6 +538,7 @@ sub addData
     my $match = shift;
     my $data = shift;
     my $homol = $$data[4];
+    return if( $homol eq "$$data[0]" );
     if ( $$match{$homol} ){
       my $existing_e = $$match{$homol}[0]->[7];  #1st array - 7th index
       my $this_e = $$data[7];
