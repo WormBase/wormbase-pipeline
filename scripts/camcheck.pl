@@ -7,7 +7,7 @@
 # Usage: camcheck.pl
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-12-01 11:20:40 $
+# Last updated on: $Date: 2003-12-19 16:00:32 $
 #
 # see pod documentation (i.e. 'perldoc camcheck.pl') for more information.
 #
@@ -474,7 +474,7 @@ sub open_TCP_connection  {
 sub check_CDSs {
   my $obj = shift;
 
-  foreach my $cds ($obj->CDS) {
+  foreach my $cds ($obj->CDS_child) {
     undef my @num;
     undef my ($method);
     undef my ($parent);
