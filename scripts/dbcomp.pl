@@ -6,7 +6,7 @@
 # Compares this number to those from a second database.
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-03-10 16:37:53 $      
+# Last updated on: $Date: 2004-03-12 11:29:01 $      
 
 
 use strict;
@@ -334,18 +334,25 @@ Anatomy_name
 Anatomy_term
 Antibody
 Author
+briggsae_CDS
+briggsae_genomic
+cDNA_sequence
 CDS
 Cell
 Cell_group
 Class
 Clone
 Cluster
+Coding_transcripts
 Comment
 Condition
 Contig
 Database
 Display
 DNA
+elegans_CDS
+elegans_pseudogenes
+elegans_RNA_genes
 Expr_pattern
 Expr_profile
 Feature
@@ -354,6 +361,7 @@ Gene
 Gene_class
 Gene_name
 Gene_regulation
+Genome_Sequence
 GO_term
 Homology_group
 Homol_data
@@ -372,6 +380,8 @@ Model
 Motif
 Movie
 Multi_pt_data
+NDB_Sequence
+nematode_ESTs
 Oligo
 Oligo_set
 Operon
