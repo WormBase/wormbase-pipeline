@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: wormpub $
-# Last edited on: $Date: 2004-03-19 09:59:36 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2004-04-15 09:20:41 $
 
 
 #################################################################################
@@ -1270,11 +1270,32 @@ sub split_GFFs {
 
 
 #################################################################################
-# map PCR and RNAi                                                              #
+# map things to the genome                                                      #
 #################################################################################
 
+# set of calls to map a variety of things
+
 sub map_features {
+    
   $am_option = "-map";
+
+  # features
+  &run_command("$scriptdir/map_features.pl -all");
+
+  # these should be folded into a loop or into the script itself [dl]
+
+  my $file = "$basedir/autoace/FEATURES/${WS_version}_feature_SL1.ace";
+  &load($file,"feature_SL1");
+
+  my $file = "$basedir/autoace/FEATURES/${WS_version}_feature_SL2.ace";
+  &load($file,"feature_SL2");
+
+  my $file = "$basedir/autoace/FEATURES/${WS_version}_feature_polyA_site.ace";
+  &load($file,"feature_polyA");
+
+  my $file = "$basedir/autoace/FEATURES/${WS_version}_feature_polyA_signal.ace";
+  &load($file,"feature_polyA");
+
   # PCR products
   &run_command("$scriptdir/map_PCR_products.pl");
   
@@ -1286,6 +1307,7 @@ sub map_features {
 
   # microarray connections
   &run_command("$scriptdir/map_microarray.pl");
+
   my $file = "$basedir/wormbase/misc/misc_microarrays.ace";
   &load($file,"microarray_connections");
 
