@@ -8,7 +8,7 @@
 # sorts output for stl and cam clones
 #
 # Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2004-03-25 15:34:01 $
+# Last updated on: $Date: 2004-04-28 10:39:59 $
 
 use strict;
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
@@ -16,12 +16,12 @@ use Wormbase;
 use Carp;
 use Ace;
 use IO::Handle;
-use Data::Dumper;
 
 my @chrom = qw(I II III IV V X);
 my (%exon, %est, %genes, %repeat, %intron, %camace, %stlace);
-my %EST_name;    # EST accession => name
-my %EST_dir;     # EST accession => orientation [5|3]
+
+my %estorientation = &FetchData('estorientation');     # EST accession => orientation [5|3]
+
 my $tace      = &tace;
 my $database  =  "/wormsrv2/autoace";
 
@@ -32,32 +32,6 @@ my $repth      = '15';
 my $repolstart = '10';
 my $repolmid   = '23';
 my $repolend   = '10';
-
-
-############################################
-# EST data from autoace (name,orientation) #
-############################################
-
-
-print "Loading EST.dat into hashes .....";
-
-# check to see if EST hash data exists
-# make it via tablemaker queries if absent
-unless (-e "/wormsrv2/autoace/BLAT/EST.dat") {
-    (%EST_name,%EST_dir) = &make_EST_hash;
-}
-# else read it into memory
-else {
-    open (FH, "</wormsrv2/autoace/BLAT/EST.dat") or die "EST.dat : $!\n";
-    undef $/;
-    my $data = <FH>;
-    eval $data;
-    die if $@;
-    $/ = "\n";
-    close FH;
-}
-
-print "complete.\n";
 
 #################################
 # I. get clone out of databases #
@@ -297,13 +271,13 @@ foreach my $chrom (@chrom) {
 		      # report to log file
 		      print "\nLogging error for $finalest which extends into intron $intronstart - $intronend for $testgene\n";
 		      print "EST runs $est_orient{$finalest}\tCDS runs $exon_orient{$testgene}\n";
-		      print "EST is stored as a $EST_dir{$finalest} read\n";
+		      print "EST is stored as a $estorientation{$finalest} read\n";
 		      
 		      # throw away matches on the opposite strand
-		      next if (($exon_orient{$testgene} eq "+") && ($EST_dir{$finalest} eq "5") && ($est_orient{$finalest} ne "+"));
-		      next if (($exon_orient{$testgene} eq "+") && ($EST_dir{$finalest} eq "3") && ($est_orient{$finalest} ne "-"));
-		      next if (($exon_orient{$testgene} eq "-") && ($EST_dir{$finalest} eq "5") && ($est_orient{$finalest} ne "-"));
-		      next if (($exon_orient{$testgene} eq "-") && ($EST_dir{$finalest} eq "3") && ($est_orient{$finalest} ne "+"));
+		      next if (($exon_orient{$testgene} eq "+") && ($estorientation{$finalest} eq "5") && ($est_orient{$finalest} ne "+"));
+		      next if (($exon_orient{$testgene} eq "+") && ($estorientation{$finalest} eq "3") && ($est_orient{$finalest} ne "-"));
+		      next if (($exon_orient{$testgene} eq "-") && ($estorientation{$finalest} eq "5") && ($est_orient{$finalest} ne "-"));
+		      next if (($exon_orient{$testgene} eq "-") && ($estorientation{$finalest} eq "3") && ($est_orient{$finalest} ne "+"));
 			  
 		      print "data ok - push to array\n";
 
@@ -491,51 +465,4 @@ sub sort_by_gene {
     return %final_output;
 }
 
-
-sub make_EST_hash {
-    
-    my ($command1,$command2) = &commands;
-    my ($acc,$name,$orient);
-
-    my %EST_name = ();
-    my %EST_dir  = ();
-
-    # get EST names  (-e option only)       #
-    open (TACE, "echo '$command1' | $tace $database | ");
-    while (<TACE>) {
-        chomp;
-        next if ($_ eq "");
-        next if (/\/\//);
-        s/acedb\>\s//g;
-        s/\"//g;
-        s/EMBL://g;
-        ($acc,$name) = ($_ =~ /^(\S+)\s(\S+)/);
-        $name = $acc unless ($name);
-        $EST_name{$acc} = $name;
-    }
-    close TACE;
-
-    # get EST orientation (5' or 3')    #
-    open (TACE, "echo '$command2' | $tace $database | ");
-    while (<TACE>) {
-        chomp;
-        next if ($_ eq "");
-        next if (/\/\//);
-        s/acedb\>\s//g;
-        s/\"//g;
-        ($name,$orient) = ($_ =~ /^(\S+)\s+EST_(\d)/);
-        $EST_dir{$name} = $orient if ($orient);
-    }
-    close TACE;
-
-    # Data::Dumper write hash to /wormsrv2/autoace/BLAT/EST.dat
-    open (OUT, ">/wormsrv2/autoace/BLAT/EST.dat") or die "EST.dat : $!";
-    print OUT Data::Dumper->Dump([\%EST_name],['*EST_name']);
-    print OUT Data::Dumper->Dump([\%EST_dir],['*EST_dir']);
-    close OUT;
-
-    return (%EST_name,%EST_dir);
-
-
-}
 
