@@ -7,7 +7,7 @@
 # by Kerstin Jekosch
 #
 # Last updated by: $Author: krb $                      
-# Last updated on: $Date: 2003-12-01 11:54:27 $        
+# Last updated on: $Date: 2004-03-05 17:56:09 $        
 
 
 $|=1;
@@ -26,7 +26,7 @@ use Ace;
 
 my $tace        = &tace;                                  # tace executable path
 my $dbdir       = "/wormsrv2/autoace";                    # Database path
-my $gffdir      = "/wormsrv2/autoace/CHROMOSOMES";        # CHROMOSOME dir
+my $gffdir      = "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS";        # GFF_SPLITS directory
 my @chromosomes = qw( I II III IV V X );                  # chromosomes
 my $db_version  = &get_wormbase_version_name;             # WS version name
 
@@ -37,8 +37,6 @@ my %finaloutput  = (); # for RNAi
 my %finaloutput2 = (); # for Expression profiles
 
 my $maintainers = "All";
-my $rundate = `date +%y%m%d`; chomp $rundate;
-my $runtime = `date +%H:%M:%S`; chomp $runtime;
 my $name;
 my $help;       # Help perdoc
 my $test;       # Test mode
@@ -78,63 +76,118 @@ our %genetype         = ();
 
 
 foreach my $chromosome (@chromosomes) {
-    my %RNAi             = ();
-    my %RNAicount        = ();
-    my %genes            = ();
-    my %exon             = ();
-    my %exoncount        = ();
-    my %expression       = ();
-    my %expression_count = ();
+  my %RNAi             = ();
+  my %RNAicount        = ();
+  my %genes            = ();
+  my %exon             = ();
+  my %exoncount        = ();
+  my %expression       = ();
+  my %expression_count = ();
+  
+  # loop through the split GFF RNAi file  
+  print "Loop through RNAi GFF file CHROMOSOME_${chromosome}\n" if ($debug);
+  open (GFF_in, "<$gffdir/CHROMOSOME_${chromosome}.RNAi.gff") || die "Failed to open RNAi gff file\n\n";
+  while (<GFF_in>) {
+    chomp;
+    s/^\#.*//;
+    next unless /\S/;
+    @line = split /\t/;
+    
+    my ($name) = ($line[8] =~ /\"(\S+.+)\"$/);
+    $RNAicount{$name}++;
+    my $RNAiname = $name.".".$RNAicount{$name};
+    $RNAi{$RNAiname} = [$line[3],$line[4]];
+    print "RNAi : '$name'\n" if ($debug);
+    
+  }
+  close(GFF_in);
 
-    # loop through the GFF file
 
-    print "Loop through GFF file CHROMOSOME_${chromosome}\n" if ($debug);
-    open (GFF_in, "<$gffdir/CHROMOSOME_${chromosome}.gff") || die "Failed to open gff file\n\n";
-    while (<GFF_in>) {
-	chomp;
-	s/^\#.*//;
-	next unless /\S/;
-	@line = split /\t/;
-	
-	if ($line[1] eq "RNAi") {
-	    my ($name) = ($line[8] =~ /\"(\S+.+)\"$/);
-	    $RNAicount{$name}++;
-	    my $RNAiname = $name.".".$RNAicount{$name};
-	    $RNAi{$RNAiname} = [$line[3],$line[4]];
-	    print "RNAi : '$name'\n" if ($debug);
-	}
-	elsif ($line[1] eq "Expr_profile") {
-	    my ($name) = ($line[8] =~ /\"(.*)\"$/);
-	    $expression_count{$name}++;
-	    my $expression_name = $name.".".$expression_count{$name};
-	    $expression{$expression_name} = [$line[3],$line[4]];
-	    print "Expr_profile : '$name'\n" if ($debug);
-	}
-	elsif (($line[2] eq "exon") && (($line[1] eq "curated")       || 
-					($line[1] eq "Pseudogene")    ||
-					($line[1] eq "transcript")    ||
-					($line[1] eq "provisional")))  {
-	    my ($name) = ($line[8] =~ /\"(\S+.+)\"/);
-	    $exoncount{$name}++;
-	    my $exonname = $name.".".$exoncount{$name};
-	    $exon{$exonname} = [$line[3],$line[4]];
-	    $genetype{$name} = "CDS"        if ($line[1] eq "curated");
-	    $genetype{$name} = "Transcript" if ($line[1] eq "transcript");
-	    $genetype{$name} = "Pseudogene" if ($line[1] eq "Pseudogene");
-	    print "Gene : '$name' [$genetype{$name}] exon $exoncount{$name}\n" if ($debug);
-	}
-    }
-    close GFF_in;
+  # loop through the split GFF Expr_profile file  
+  print "Loop through Expr_profile GFF file CHROMOSOME_${chromosome}\n" if ($debug);
+  open (GFF_in, "<$gffdir/CHROMOSOME_${chromosome}.Expr_profile.gff") || die "Failed to open Expr_profile gff file\n\n";
+  while (<GFF_in>) {
+    chomp;
+    s/^\#.*//;
+    next unless /\S/;
+    @line = split /\t/;
     
-    print "Finished GFF loop\n" if ($debug);
-    
-    #########################   
-    # make exons into genes #
-    #########################
-    
-    print "Turn exons into genes\n" if ($debug);
-    
-    foreach my $name (sort keys %exoncount) {
+    my ($name) = ($line[8] =~ /\"(.*)\"$/);
+    $expression_count{$name}++;
+    my $expression_name = $name.".".$expression_count{$name};
+    $expression{$expression_name} = [$line[3],$line[4]];
+    print "Expr_profile : '$name'\n" if ($debug);    
+  }
+  close(GFF_in);
+
+
+  # loop through the split GFF exon file  
+  print "Loop through exon GFF file CHROMOSOME_${chromosome}\n" if ($debug);
+  open (GFF_in, "<$gffdir/CHROMOSOME_${chromosome}.exon.gff") || die "Failed to open exon gff file\n\n";
+  while (<GFF_in>) {
+    chomp;
+    s/^\#.*//;
+    next unless /\S/;
+    @line = split /\t/;
+
+    my ($name) = ($line[8] =~ /\"(\S+.+)\"/);
+    $exoncount{$name}++;
+    my $exonname = $name.".".$exoncount{$name};
+    $exon{$exonname} = [$line[3],$line[4]];
+    $genetype{$name} = "CDS"        if ($line[1] eq "curated");
+    print "Gene : '$name' [$genetype{$name}] exon $exoncount{$name}\n" if ($debug);
+  }
+  close(GFF_in);
+  
+
+  # loop through the split GFF exon_pseudogene file  
+  print "Loop through exon_pseudogene GFF file CHROMOSOME_${chromosome}\n" if ($debug);
+  open (GFF_in, "<$gffdir/CHROMOSOME_${chromosome}.exon_pseudogene.gff") || die "Failed to open exon pseudogene gff file\n\n";
+  while (<GFF_in>) {
+    chomp;
+    s/^\#.*//;
+    next unless /\S/;
+    @line = split /\t/;
+
+    my ($name) = ($line[8] =~ /\"(\S+.+)\"/);
+    $exoncount{$name}++;
+    my $exonname = $name.".".$exoncount{$name};
+    $exon{$exonname} = [$line[3],$line[4]];
+    $genetype{$name} = "Pseudogene" if ($line[1] eq "Pseudogene");
+    print "Gene : '$name' [$genetype{$name}] exon $exoncount{$name}\n" if ($debug);
+  }
+  close(GFF_in);
+
+  
+  # loop through the split GFF exon_noncoding file  
+  print "Loop through exon_noncoding GFF file CHROMOSOME_${chromosome}\n" if ($debug);
+  open (GFF_in, "<$gffdir/CHROMOSOME_${chromosome}.exon_noncoding.gff") || die "Failed to open exon_noncoding gff file\n\n";
+  while (<GFF_in>) {
+    chomp;
+    s/^\#.*//;
+    next unless /\S/;
+    @line = split /\t/;
+
+    my ($name) = ($line[8] =~ /\"(\S+.+)\"/);
+    $exoncount{$name}++;
+    my $exonname = $name.".".$exoncount{$name};
+    $exon{$exonname} = [$line[3],$line[4]];
+    $genetype{$name} = "Transcript" if ($line[1] eq "Non_coding_transcript");
+    print "Gene : '$name' [$genetype{$name}] exon $exoncount{$name}\n" if ($debug);
+  }
+  close(GFF_in);
+  
+
+
+  print "Finished GFF loop\n" if ($debug);
+  
+  #########################   
+  # make exons into genes #
+  #########################
+  
+  print "Turn exons into genes\n" if ($debug);
+  
+  foreach my $name (sort keys %exoncount) {
     my $v = $exoncount{$name};
     my $w = $name.".".$v;
     $genes{$name} = [$exon{$name.".1"}->[0],$exon{$w}->[1]];
@@ -144,26 +197,26 @@ foreach my $chromosome (@chromosomes) {
   # make indexlists #
   ###################
   
-    print "Index exons,genes,RNAi and Expr_profiles\n" if ($debug);
-    
-    my @exonlist       = sort { $exon{$a}->[0]  <=> $exon{$b}->[0]  } keys %exon;
-    my @genelist       = sort { $genes{$a}->[0] <=> $genes{$b}->[0] } keys %genes;
-    my @RNAilist       = sort { $RNAi{$a}->[0]  <=> $RNAi{$b}->[0]             || $a cmp $b } keys %RNAi;     
-    my @expressionlist = sort { $expression{$a}->[0]  <=> $expression{$b}->[0] || $a cmp $b } keys %expression;
-    
+  print "Index exons,genes,RNAi and Expr_profiles\n" if ($debug);
+  
+  my @exonlist       = sort { $exon{$a}->[0]  <=> $exon{$b}->[0]  } keys %exon;
+  my @genelist       = sort { $genes{$a}->[0] <=> $genes{$b}->[0] } keys %genes;
+  my @RNAilist       = sort { $RNAi{$a}->[0]  <=> $RNAi{$b}->[0]             || $a cmp $b } keys %RNAi;     
+  my @expressionlist = sort { $expression{$a}->[0]  <=> $expression{$b}->[0] || $a cmp $b } keys %expression;
+  
   #############
   # map RNAis #
   #############
   
-    print "Find overlaps for RNAi\n" if ($debug);
+  print "Find overlaps for RNAi\n" if ($debug);
+  
+  my $lastfail = 0;
+  
+  for (my $x = 0; $x < @RNAilist; $x++) {
+    my $testRNAi   = $RNAilist[$x];
+    my $RNAistart  = $RNAi{$testRNAi}->[0];
+    my $RNAistop   = $RNAi{$testRNAi}->[1];
     
-    my $lastfail = 0;
-    
-    for (my $x = 0; $x < @RNAilist; $x++) {
-	my $testRNAi   = $RNAilist[$x];
-	my $RNAistart  = $RNAi{$testRNAi}->[0];
-	my $RNAistop   = $RNAi{$testRNAi}->[1];
-	
     for (my $y = 0; $y < @genelist; $y++) {
       my $testgene = $genelist[$y];
       my $genestart= $genes{$testgene}->[0];
@@ -192,14 +245,14 @@ foreach my $chromosome (@chromosomes) {
       }                
     }
   }
-
+  
   ###########################
   # map Expression profiles #
   ###########################
   
-    print "Find overlaps for Expr_profile\n" if ($debug);
-   
-    $lastfail = 0;
+  print "Find overlaps for Expr_profile\n" if ($debug);
+  
+  $lastfail = 0;
     
   for (my $x = 0; $x < @RNAilist; $x++) {
     my $testRNAi   = $RNAilist[$x];
@@ -237,15 +290,15 @@ foreach my $chromosome (@chromosomes) {
 ############################
  
 foreach my $mess (sort keys %output) {
-    @{$output{$mess}} = sort @{$output{$mess}};
-    my $count = 0; 
-    push @{$finaloutput{$mess}}, $output{$mess}->[0];
-    for (my $m = 1; $m < (scalar @{$output{$mess}}); $m++) {
-	if ($output{$mess}->[$count] ne $output{$mess}->[$m]) {
-	    push @{$finaloutput{$mess}}, $output{$mess}->[$m];
-	    $count = $m;    
-	}    
-    }
+  @{$output{$mess}} = sort @{$output{$mess}};
+  my $count = 0; 
+  push @{$finaloutput{$mess}}, $output{$mess}->[0];
+  for (my $m = 1; $m < (scalar @{$output{$mess}}); $m++) {
+    if ($output{$mess}->[$count] ne $output{$mess}->[$m]) {
+      push @{$finaloutput{$mess}}, $output{$mess}->[$m];
+      $count = $m;    
+    }    
+  }
 }
 
 ####################################
@@ -253,15 +306,15 @@ foreach my $mess (sort keys %output) {
 ####################################
  
 foreach my $mess (sort keys %output2) {
-    @{$output2{$mess}} = sort @{$output2{$mess}};
-    my $count = 0; 
-    push @{$finaloutput2{$mess}}, $output2{$mess}->[0];
-    for (my $m = 1; $m < (scalar @{$output2{$mess}}); $m++) {
-	if ($output2{$mess}->[$count] ne $output2{$mess}->[$m]) {
-	    push @{$finaloutput2{$mess}}, $output2{$mess}->[$m];
-	    $count = $m;    
-	}    
-    }
+  @{$output2{$mess}} = sort @{$output2{$mess}};
+  my $count = 0; 
+  push @{$finaloutput2{$mess}}, $output2{$mess}->[0];
+  for (my $m = 1; $m < (scalar @{$output2{$mess}}); $m++) {
+    if ($output2{$mess}->[$count] ne $output2{$mess}->[$m]) {
+      push @{$finaloutput2{$mess}}, $output2{$mess}->[$m];
+      $count = $m;    
+    }    
+  }
 }
 
 
@@ -278,12 +331,12 @@ open (OUTACE, ">/wormsrv2/autoace/MAPPINGS/RNAi_mappings.$db_version.ace");
 # remove existing connections
 foreach my $mapped (sort keys %finaloutput) {
     
-    print OUT "$mapped\t@{$finaloutput{$mapped}}\n";
-    
-    for (my $n = 0; $n < (scalar @{$finaloutput{$mapped}}); $n++) {
-        print OUTACE "RNAi : $mapped\n";
-	print OUTACE "-D Inhibits\n\n";
-    }
+  print OUT "$mapped\t@{$finaloutput{$mapped}}\n";
+  
+  for (my $n = 0; $n < (scalar @{$finaloutput{$mapped}}); $n++) {
+    print OUTACE "RNAi : $mapped\n";
+    print OUTACE "-D Inhibits\n\n";
+  }
 } 
 
 # open autoace connection with aceperl
@@ -291,53 +344,53 @@ my $db = Ace->connect(-path=>$dbdir, -program=>$tace) || die "Couldn't connect t
 
 foreach my $mapped (sort keys %finaloutput) {
     
-    # $mapped is the name of the RNAi object
-    # %finaloutput is a hash of arrays containing the gene o/l data
+  # $mapped is the name of the RNAi object
+  # %finaloutput is a hash of arrays containing the gene o/l data
+  
+  print OUT "$mapped\t@{$finaloutput{$mapped}}\n";
+  
+  my $seq;
+  my $locus;
+  my $gene;
+  
+  for (my $n = 0; $n < (scalar @{$finaloutput{$mapped}}); $n++) {
     
-    print OUT "$mapped\t@{$finaloutput{$mapped}}\n";
-
-    my $seq;
-    my $locus;
-    my $gene;
-
-    for (my $n = 0; $n < (scalar @{$finaloutput{$mapped}}); $n++) {
-	
-	$gene = $finaloutput{$mapped}->[$n];
-	print "'$mapped' is mapped to $gene\t" if ($debug);
-
-	print OUTACE "\nRNAi : \"$mapped\"\n";
-
-	# Does this CDS have a locus?
-	if ($genetype{$gene} eq "CDS") {
-	    print OUTACE "Predicted_gene \"$gene\"\n";
-	    $seq = $db->fetch(-class=>'CDS',-name=>" $finaloutput{$mapped}->[$n]");
-	    if (defined($seq->at('Visible.Locus'))) {
-		($locus) = ($seq->get('Locus'));
-		print OUTACE "Locus \"$locus\"\n";
-	    }
-	    print " which is a CDS\n" if ($debug);
-	}
-	# Does this Pseudogene have a locus?
-	elsif ($genetype{$gene} eq "Pseudogene") {
-	    print OUTACE "Pseudogene \"$gene\"\n";
-	    $seq = $db->fetch(-class=>'Pseudogene',-name=>" $finaloutput{$mapped}->[$n]");
-	    if (defined($seq->at('Genetics.Locus'))){
-		($locus) = ($seq->get('Locus'));
-		print OUTACE "Locus \"$locus\"\n";
-	    }
-	    print " which is a pseudogene\n" if ($debug);
-	}
-	# Does this transcript have a locus?
-	elsif ($genetype{$gene} eq "Transcript") {
-	    print OUTACE "Transcript \"$gene\"\n";
-	    $seq = $db->fetch(-class=>'Transcript',-name=>" $finaloutput{$mapped}->[$n]");
-	    if (defined($seq->at('Visible.Locus'))){
-		($locus) = ($seq->get('Locus'));
-		print OUTACE "Locus \"$locus\"\n";
-	    }
-	    print " which is a transcript\n" if ($debug);
-	}
+    $gene = $finaloutput{$mapped}->[$n];
+    print "'$mapped' is mapped to $gene\t" if ($debug);
+    
+    print OUTACE "\nRNAi : \"$mapped\"\n";
+    
+    # Does this CDS have a locus?
+    if ($genetype{$gene} eq "CDS") {
+      print OUTACE "Predicted_gene \"$gene\"\n";
+      $seq = $db->fetch(-class=>'CDS',-name=>" $finaloutput{$mapped}->[$n]");
+      if (defined($seq->at('Visible.Locus'))) {
+	($locus) = ($seq->get('Locus'));
+	print OUTACE "Locus \"$locus\"\n";
+      }
+      print " which is a CDS\n" if ($debug);
     }
+    # Does this Pseudogene have a locus?
+    elsif ($genetype{$gene} eq "Pseudogene") {
+      print OUTACE "Pseudogene \"$gene\"\n";
+      $seq = $db->fetch(-class=>'Pseudogene',-name=>" $finaloutput{$mapped}->[$n]");
+      if (defined($seq->at('Genetics.Locus'))){
+	($locus) = ($seq->get('Locus'));
+	print OUTACE "Locus \"$locus\"\n";
+      }
+      print " which is a pseudogene\n" if ($debug);
+    }
+    # Does this transcript have a locus?
+    elsif ($genetype{$gene} eq "Transcript") {
+      print OUTACE "Transcript \"$gene\"\n";
+      $seq = $db->fetch(-class=>'Transcript',-name=>" $finaloutput{$mapped}->[$n]");
+      if (defined($seq->at('Visible.Locus'))){
+	($locus) = ($seq->get('Locus'));
+	print OUTACE "Locus \"$locus\"\n";
+      }
+      print " which is a transcript\n" if ($debug);
+    }
+  }
 } 
 
 $db->close;
@@ -355,7 +408,7 @@ foreach my $mapped (sort keys %finaloutput2) {
 } 
 
 
-print LOG "Script ended at ",`date`,"\n";
+print LOG "Script ended at ",&runtime,"\n";
 close(LOG);
 close(OUT);
 close(OUTACE);
@@ -367,11 +420,11 @@ close(OUTACE);
 
 unless ($test) {
 
-    my $command = "pparse /wormsrv2/autoace/MAPPINGS/RNAi_mappings.$db_version.ace\nsave\nquit\n";
+  my $command = "pparse /wormsrv2/autoace/MAPPINGS/RNAi_mappings.$db_version.ace\nsave\nquit\n";
 
-    open (TACE,"| $tace -tsuser map_RNAi $dbdir") || die "Couldn't open tace connection to $dbdir\n";
-    print TACE $command;
-    close (TACE);
+  open (TACE,"| $tace -tsuser map_RNAi $dbdir") || die "Couldn't open tace connection to $dbdir\n";
+  print TACE $command;
+  close (TACE);
 }
 
 exit(0);
@@ -394,7 +447,7 @@ sub create_log_files{
   # create main log file using script name for
   my $script_name = $1;
   $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
-  my $rundate     = `date +%y%m%d`; chomp $rundate;
+  my $rundate = &rundate;
   $log        = "/wormsrv2/logs/$script_name.$rundate.$$";
 
   open (LOG, ">$log") or die "cant open $log";
