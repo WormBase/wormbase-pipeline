@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam aged 12 and a half
 #
-# Last updated on: $Date: 2004-06-03 16:02:03 $
+# Last updated on: $Date: 2004-06-14 16:11:54 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
@@ -64,7 +64,19 @@ print LOG "\ncheck_predicted_genes.pl started at ",`date`,"\n";
 
 LOG->autoflush();
 
+# create separate arrays for different classes of errors (1 = most severe, 4 = least severe)
+our @error1;
+our @error2;
+our @error3;
+our @error4;
+our @error5;
 
+# Check for non-standard methods in CDS class
+my $CDSfilter = "";
+my @CDSfilter = $db->fetch (-query => 'FIND CDS; method != Transposon_CDS; method != curated; method !=history');
+foreach $CDSfilter (@CDSfilter) {
+  push(@error4, "WARNING! CDS:$CDSfilter contains an invalid method please check\n");
+}
 
 ################################
 # Fetch CDSs
@@ -79,14 +91,6 @@ print "\nChecking $cds_count CDSs in '$db_path'\n\n" if $verbose;;
 ################################
 # Run checks on genes
 ################################
-
-# create separate arrays for different classes of errors (1 = most severe, 4 = least severe)
-our @error1;
-our @error2;
-our @error3;
-our @error4;
-our @error5;
-
 
 CHECK_GENE:
 foreach my $cds (@CDSs){
