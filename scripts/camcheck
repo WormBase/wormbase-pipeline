@@ -36,6 +36,7 @@ use Ace;
 use strict;
 use lib "/wormsrv2/scripts/";
 use Wormbase;
+use Socket;
 
 ##############################
 # Script variables (run)     #
@@ -47,7 +48,6 @@ my $runtime = `date +%H:%M:%S`; chomp $runtime;
 
 # grab version number from cvs
 my $version = &get_cvs_version($0);
-
 
 ##############################
 # command-line options       #
@@ -67,6 +67,10 @@ my $clonefile="$clonepath"."/current.versions";
 my $tace = glob("~acedb/RELEASE.SUPPORTED/bin.ALPHA_4/tace");   # tace executable path
 
 my $dbpath = "/wormsrv1/camace";                                       # Database path
+
+
+# only tell Dan if running debug mode
+$maintainers = "dl1\@sanger.ac.uk" if ($debug);
 
 
 ########################################
@@ -200,9 +204,15 @@ while(defined($line=<CLONEFILE>)){
   # Check correctness of gene structure                                #
   ######################################################################
 
-
   print " | CDS_coords" if ($debug);
   &checkgenes($obj);
+
+  ######################################################################
+  # Check Sequence versions with EMBL                                  #
+  ######################################################################
+
+#  print " | Sequence versions" if ($debug);
+#  &check_sequence_version($obj);
 
   ######################################################################
   # last check complete, tidy up                                       #
@@ -341,6 +351,9 @@ sub finannot {
     }
 }
 
+
+
+
 #######################################################################
 # Odd chars and N's in  finished sequences                            #
 #######################################################################
@@ -357,6 +370,60 @@ sub checkchars {
 	print LOG "ACEDBSEQ FINISHED SEQUENCE for $obj contains N \n";
     }
 }
+
+#######################################################################
+# Check sequence version between camace and EMBL                      #
+#######################################################################
+
+sub check_sequence_version {
+    local (*F);
+    my $obj = shift;
+    my $server = "srs.ebi.ac.uk";
+
+    my $acc = $obj->Database(3);
+    my $ver = $obj->Database(4);
+    my ($EM_acc,$EM_seqver);
+
+    my $querycontent="-e+([EMBLNEW-acc:'$acc'])|(([EMBL-acc:'$acc'])!(EMBL<EMBLNEW))";
+    my $request = "/srsbin/cgi-bin/wgetz?$querycontent";
+
+    if (!defined(open_TCP(*F,$server,80))) {
+	print "Error connecting to server at \n";
+	exit(-1);
+    }
+    print F "GET $request HTTP/1.0\n\n";
+    print F "Accept: */*\n";
+    print F "User-Agent: socketsrs/1.0\n\n";
+ 
+    while (my $return_line=<F>) {
+#    print "$return_line";
+	if ($return_line =~ /^SV\s+(\S+)\.(\d+)/) {
+	    ($EM_acc,$EM_seqver) = ($1,$2);
+	    last;
+	}
+    }
+    
+    if ($EM_seqver != $ver) {
+	print LOG "Sequence version discrepent $obj [camace = $ver | EMBL = $EM_seqver]\n";
+    }
+
+}
+
+ ########################################################
+ # Output: successful network connection in file handle #
+ ########################################################
+
+sub open_TCP  {
+    my ($FS,$dest,$port) = @_;
+    my $proto = getprotobyname ('tcp');
+    socket ($FS,PF_INET,SOCK_STREAM,$proto);
+    my $sin = sockaddr_in($port,inet_aton($dest));
+    connect($FS,$sin) || return undef;
+    my $old_fh = select($FS);
+    $| = 1;
+    select($old_fh);
+}
+
 
 
 #######################################################################
