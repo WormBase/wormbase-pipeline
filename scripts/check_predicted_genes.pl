@@ -117,40 +117,44 @@ foreach my $gene (@predicted_genes){
   }
   my $parent = $db->fetch(Sequence=>$source);
   
-  # need to fetch subsequence coordinates from source and compare to parent length
-  # to see if any exon coordinate exceed parent length
-
 
   # check to see if any predicted gene belongs to superlink object...they shouldn't
   if ($parent =~ m/SUPERLINK/){
     print "Gene error - $gene: belongs to a superlink object ($parent)\n";
   }
 
-  # If subsequence is not from a link object, check that largest exon coordinate 
-  # does not exceed range of parent sequence?
+  # check coordinate system of both subsequence in relation to parent and exons in relation
+  # to subsequence
   if ($parent !~ m/LINK/){    
     my ($parent_length) = $parent->DNA(2);
-#    my ($parent_length) = $parent->get('DNA',2);
-#    my ($parent_length) = $parent->at('DNA[2]');
     $parent_length = 0 if (!defined($parent_length));
-    
-    my @exon_coord1 = $gene_object->get('Source_Exons',1);
-    my @exon_coord2 = $gene_object->get('Source_Exons',2);
+
+    # fetch subsequence coordinates from source
+    my @subseq_coord1 = $parent->get('Subsequence',2);
+    my @subseq_coord2 = $parent->get('Subsequence',3);
+
+    # check subsequence coordinates against parent length
     my $max_coordinate = 0;
     my $i;
+    for($i=0; $i<@subseq_coord1; $i++){
+      $max_coordinate = $subseq_coord1[$i] if ($subseq_coord1[$i] > $max_coordinate);
+      $max_coordinate = $subseq_coord2[$i] if ($subseq_coord2[$i] > $max_coordinate);
+      print "Gene error - $gene: exon inconsistency, overlapping exons?\n" if ($max_coordinate > $parent_length);
+    }
+
+    $max_coordinate = $i = 0;
+
+    # fetch exon coordinates
+    my @exon_coord1 = $gene_object->get('Source_Exons',1);
+    my @exon_coord2 = $gene_object->get('Source_Exons',2);
+    # check that largest exon coordinate does not exceed range of parent sequence?    
+
     for($i=0; $i<@exon_coord1; $i++){
       $max_coordinate = $exon_coord1[$i] if ($exon_coord1[$i] > $max_coordinate);
       $max_coordinate = $exon_coord2[$i] if ($exon_coord2[$i] > $max_coordinate);
       print "Gene error - $gene: exon inconsistency, overlapping exons?\n" if (($exon_coord1[$i] < $exon_coord2[$i-1]) && ($i>0));
     }
 
-# Error - doesn't work!
-#    if ($max_coordinate >$parent_length){
-#      print "Gene error - $gene: largest exon coordinate ($max_coordinate) exceeds length of parent ($parent = $parent_length bp)\n" 
-#    }
-  }
-
-  
   # check that 'Start_not_found' and 'End_not_found' tags present?
   my $start_tag = "";
   my $end_tag = "";
