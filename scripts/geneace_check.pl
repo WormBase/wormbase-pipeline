@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-08-12 09:03:32 $
+# Last updated on: $Date: 2003-08-12 09:49:13 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -21,7 +21,7 @@ use Getopt::Long;
 # variables and command-line options with aliases # 
 ###################################################
 
-my ($help, $debug, $database, $class, @class, $ace, $verbose);
+my ($help, $debug, $database, $class, @class, $verbose, $ace);
 my $maintainers = "All";
 
 # hashes for checking Person and Author merging?
@@ -32,7 +32,7 @@ our $tace = &tace;   # tace executable path
 our ($log, $erichlog, $jahlog, $JAHmsg, $Emsg, $caltech, @CGC, $cgc);
 
 my $rundate = `date +%y%m%d`; chomp $rundate;
-my $acefile = "/wormsrv2/logs/geneace_check_ACE.$rundate.$$";
+
 my $curr_db = "/nfs/disk100/wormpub/DATABASES/current_DB"; 
 my $def_dir = "/wormsrv1/geneace/wquery";
 
@@ -44,10 +44,24 @@ GetOptions ("h|help"        => \$help,
 	    "v|verbose"     => \$verbose
            );
 
-if ($ace){open(ACE, ">>$acefile") || croak $!}
+
+
+# Open output file for acefile output?
+if ($ace){
+  my $acefile = "/wormsrv1/geneace/CHECKS/geneace_check.$rundate.$$.ace";
+  open(ACE, ">>$acefile") || croak $!;
+}
+
 
 # Display help if required
-&usage("Help") if ($help);
+if ($help){&usage("Help")}
+
+
+# Use debug mode?
+if($debug){
+  print "DEBUG = \"$debug\"\n\n";
+  ($maintainers = "$debug" . '\@sanger.ac.uk');
+}
 
 
 ##########################################################
@@ -65,15 +79,8 @@ else {
 print "\nUsing $default_db as default database.\n\n";
 
 
-# Use debug mode?
-if($debug){
-  print "DEBUG = \"$debug\"\n\n";
-  ($maintainers = "$debug" . '\@sanger.ac.uk');
-}
 
-# Open output ace file if specified
-if ($ace){open (ACE, ">>$acefile") || die "Can't write to file!\n"}
-
+# Set up other log files
 &create_log_files;
 
 
@@ -90,6 +97,12 @@ my $db = Ace->connect(-path  => $default_db,
 		      -program =>$tace) || do { print LOG "Connection failure: ",Ace->error; die();};
 
 
+
+####################################################
+# Process various classes looking for errors:      #
+# choose class to check - multiple classes allowed #
+####################################################
+
 # track errors in each class
 our $locus_errors = 0;
 our $lab_errors = 0;
@@ -98,10 +111,6 @@ our $strain_errors = 0;
 our $rearrangement_errors = 0;
 our $sequence_errors = 0;
 
-####################################################
-# Process various classes looking for errors:      #
-# choose class to check - multiple classes allowed #
-####################################################
 
 if(!@class){
   print "Checking all classes in $default_db.....\n\n";
@@ -130,6 +139,7 @@ else{
   }  
 }
 
+
 #######################################
 # Tidy up and mail relevant log files #
 #######################################
@@ -143,6 +153,7 @@ close(ACE) if ($ace);
 
 # Always mail to $maintainers (which might be a single user under debug mode)
 mail_maintainer($0,$maintainers,$log);
+
 
 # Also mail to Erich unless in debug mode
 my $interested ="krb\@sanger.ac.uk, emsch\@its.caltech.edu, kimberly\@minerva.caltech.edu, ck1\@sanger.ac.uk";
@@ -186,6 +197,7 @@ exit(0);
 #
 #
 ##############################################################################################
+
 
 
 
@@ -525,15 +537,18 @@ END
 
 sub process_locus_class{
 
+  # get all loci
   my @loci = $db->fetch(-class => 'Locus',
 		        -name  => '*');
-  
+
+  # how many loci?
   my $size =scalar(@loci);
   
   # Loop through loci checking for various potential errors in the Locus object
   print "\nChecking loci for errors:\n";
   print LOG "\nChecking Locus class for errors:\n";
   print LOG "--------------------------------\n";
+
 
   foreach my $locus (@loci){
     #print "$locus\n";
@@ -560,11 +575,15 @@ sub process_locus_class{
 EOF
   &loci_as_other_name($locus_has_other_name, $default_db, $db);
 
+
+
+  # Do something unspecified!
   my $locus_to_CDS=<<EOF;
   Table-maker -p "$def_dir/locus_to_CDS.def" quit
 EOF
-
   &loci_point_to_same_CDS($locus_to_CDS, $default_db);
+
+
 
   my $cgc_approved_and_non_cgc_name=<<EOF;
   Table-maker -p "$def_dir/cgc_approved_and_non_cgc_name.def" quit
@@ -616,96 +635,31 @@ EOF
 
 
   #################################################################################################
-  # checks if locus has positive_clone: 
-  # if yes: checks to see if derived clone from CDS/Transcript already exists, otherwise adds to it
-  # if no: adds derived clone from CDS/Transcript
+  # Check if locus has no Positive_clone tag but does have a Genomic_sequence, Transcript,
+  # or Pseudogene tag
+  # if yes: add Positive_clone info using 'Inferred_automatically' in Evidence hash
   # This check is essential for cloned loci to be appeared as yellow highlighted in gmap
   #################################################################################################
 
-  # list of loci linked to CDS/Transcript and have/have no positive clone
-  my @loci_pos_clone_seq=`echo "table-maker -p $def_dir/loci_linked-not_linked_2_pos_clone.def" | $tace /wormsrv1/geneace`;
+  print ACE "\n\n\n// Positive_clone info\n\n" if ($ace);
 
-  my (%loci_has_pos_clone, %loci_no_pos_clone, @clone, @parent, %parent);
-  
-  my ($seq, $clone, $locus);
-  my $ace=1;
-  foreach (sort @loci_pos_clone_seq){
-    chomp;
-    if ($_ =~ /^\"(.+)\"\s+\"(.+)\"\s+\"(.+)\"/){
+  my $command = "Table-maker -p /wormsrv1/geneace/wquery/loci_with_seq_but_no_pos_clone.def\nquit\n";
+
+  open (FH, "echo '$command' | $tace $default_db | ") || croak "Couldn't access $default_db\n";
+  while (<FH>){
+    if ($_ =~ /^\"(.+)\"\s+\"(.+)\"/){
       my $locus = $1;
       my $seq = $2;
-      my $clone = $3;
-      $clone =~ s/\..+//;
-      push(@{$loci_has_pos_clone{$locus}}, $seq, $clone);
+      $seq =~ s/\..*//;
+      # warn about each error and add to ace file
+      print LOG "WARNING: $locus has no Positive_clone tag, can add $seq to it based on attached sequence/transcript/pseudogene\n";
+      print ACE "\nLocus : \"$locus\"\nPositive_clone \"$seq\" Inferred_automatically \"From sequence, transcript, pseudogene data\"\n" if ($ace);
     }
-    if ($_ =~ /^\"(.+)\"\s+\"(.+)\"\s+$/){
-      my $locus = $1;
-      my $seq = $2;
-      $loci_no_pos_clone{$locus} = $seq;
-    } 
   }
+  close(FH);
 
-  # also write ace file for added derived positive clone to each locus linked to CDS/Transcript
-  
-  foreach (keys %loci_no_pos_clone){
-    $seq = $loci_no_pos_clone{$_};
-    $seq =~ s/\..+//;
-    $locus_errors++;
-    print LOG "WARNING: $_ has no positive_clone, the derived one $seq can be added to it\n";
-    if ($ace){
-      print ACE "\n\nLocus\t\"$_\"\n";
-      print ACE "Positive_clone\t\"$seq\" Inferred_automatically \"From Genomic_sequence or Transcript info\"\n";
-    }							
-  }
-    
-  foreach (keys %loci_has_pos_clone){
-    @parent =(); %parent=();
-    if (scalar @{$loci_has_pos_clone{$_}} == 2){
-      $seq = ${@{$loci_has_pos_clone{$_}}}[0];
-      $seq =~ s/\..+//;
-      $clone = ${@{$loci_has_pos_clone{$_}}}[1];
-      if ($seq ne $clone){
-	if ($seq ne $clone){
-	  push(@parent, $seq);
-	}
-      } 
-      foreach my $e (@parent){$parent{$e}++};
-      foreach my $ea (keys %parent){
-	$locus_errors++;
-        print LOG "WARNING: $_ already has positive_clone, the derived clone $ea can be added to it\n";
-	if ($ace){
-	  print ACE "\n\nLocus\t\"$_\"\n";
-	  print ACE "Positive_clone\t\"$ea\"\n";
-	}
-      }	
-    }
-    if (scalar @{$loci_has_pos_clone{$_}} > 2){
-      @clone =();
-      for(my $i=0; $i < scalar @{$loci_has_pos_clone{$_}}; $i = $i+2){
-	$seq = ${@{$loci_has_pos_clone{$_}}}[$i];
-        $seq =~ s/\..+//;
-        $clone = ${@{$loci_has_pos_clone{$_}}}[$i+1];
-        push(@clone, $clone);
-        if ($seq ne $clone){
-	  push(@parent, $seq);
-	}
-      } 
-      foreach my $p (@parent){$parent{$p}++};
-      @parent = keys %parent; 
-      my @comp_result=array_comp(\@parent, \@clone);
-      my @same_clone=@{$comp_result[1]}; 
-      if (!@same_clone){
-	foreach my $ea (@parent){
-	  $locus_errors++;
-	  print LOG "WARNING: $_ already has positive_clone, the derived clone $ea can be added to it\n"; 
-	  if ($ace){
-	    print ACE "\n\nLocus\t\"$_\"\n";
-	    print ACE "Positive_clone\t\"$ea\"\n";
-	  }
-	}
-      } 
-    }
-  }
+
+
   print LOG "\nThere are $locus_errors errors in $size loci.\n";
 
 }
@@ -726,8 +680,8 @@ sub add_remark_for_merged_loci_in_geneclass {
       $locus =~ s/\\//g;  # get rid of \ in locus like AAH\/1 from table maker
       print LOG "$locus became an other_name of $other and no remark is added in Gene_class $gc\n";
       if ($ace){
-	print ACE "\n\nGene_Class : \"$gc\"\n";
-	print ACE "Remark \"$locus is also an unofficial other name of $other\" CGC_data_submission\n";
+	print ACE "\n\nGene_Class : \"$gc\"\n" if ($ace);
+	print ACE "Remark \"$locus is also an unofficial other name of $other\" CGC_data_submission\n" if ($ace);
       }
     }
   }
@@ -751,8 +705,8 @@ sub gene_name_class {
       $locus_errors++;
       print LOG "ERROR: $locus is CGC_approved but still has NON_CGC_name tag\n";
       if ($ace){
-	print ACE "\n\nLocus : \"$locus\"\n";
-	print ACE "-D Non_CGC_name\n";
+	print ACE "\n\nLocus : \"$locus\"\n" if ($ace);
+	print ACE "-D Non_CGC_name\n" if ($ace);
       }	
     }
   }
@@ -764,8 +718,8 @@ sub gene_name_class {
       print LOG "ERROR: $locus is CGC_approved but has no CGC_name tag\n";
       $locus_errors++;
       if ($ace){
-	print ACE "\n\nLocus : \"$locus\"\n";
-	print ACE "CGC_name \"$locus\"\n";
+	print ACE "\n\nLocus : \"$locus\"\n" if ($ace);
+	print ACE "CGC_name \"$locus\"\n" if ($ace);
       }	
     }
   }    
@@ -799,8 +753,8 @@ sub cds_name_to_seq_name {
         print  LOG "ERROR: Locus $_ has incorrect Sequence_name $ea1\n";
         $locus_errors++;
 	if ($ace){
-	  print ACE "\n\nLocus : \"$_\"\n";
-          print ACE "-D Sequence_name \"$ea1\"\n";
+	  print ACE "\n\nLocus : \"$_\"\n" if ($ace);
+          print ACE "-D Sequence_name \"$ea1\"\n" if ($ace);
         }
       }
     }
@@ -809,8 +763,8 @@ sub cds_name_to_seq_name {
         print LOG "ERROR: Locus $_ is missing Sequence_name $ea2\n";
         $locus_errors++;
         if ($ace){
-	  print ACE "\n\nLocus : \"$_\"\n";   
-          print ACE "Sequence_name \"$ea2\"\n";
+	  print ACE "\n\nLocus : \"$_\"\n" if ($ace);   
+          print ACE "Sequence_name \"$ea2\"\n" if ($ace);
         }
       }	 	
     }
@@ -907,17 +861,17 @@ EOF
 	  }
 
 	  if (exists $location{$desig}){
-	    print  ACE "\n\nAllele : \"$allele\"\n";
-	    print  ACE "Location \"$location{$desig}\"\n";
+	    print  ACE "\n\nAllele : \"$allele\"\n" if ($ace);
+	    print  ACE "Location \"$location{$desig}\"\n" if ($ace);
 	  }
 	  if (exists $location{$desig2}){
-	    print  ACE "\n\nAllele : \"$allele\"\n";
-	    print  ACE "Location \"$location{$desig2}\"\n";
+	    print  ACE "\n\nAllele : \"$allele\"\n" if ($ace);
+	    print  ACE "Location \"$location{$desig2}\"\n" if ($ace);
 	  }
 	  if (exists $location{$desig3}){
-	    print  ACE "\n\nAllele : \"$main_allele\"\n";
-	    print  ACE "Other_name \"$allele\"\n";  
-	    print  ACE "Location \"$location{$desig3}\"\n";
+	    print  ACE "\n\nAllele : \"$main_allele\"\n" if ($ace);
+	    print  ACE "Other_name \"$allele\"\n" if ($ace);  
+	    print  ACE "Location \"$location{$desig3}\"\n" if ($ace);
 	  }
 	}
       }
@@ -1031,8 +985,8 @@ sub allele_has_predicted_gene_and_no_seq {
         print LOG "ERROR: Allele $allele has an incorrect parent sequence ($seq) with respect to its predicted gene ($cds)\n";
         $allele_errors++;
         if ($ace){
-          print ACE "\n\nAllele : \"$allele\"\n";
-          print ACE "-D Sequence \"$seq\"\n";
+          print ACE "\n\nAllele : \"$allele\"\n" if ($ace);
+          print ACE "-D Sequence \"$seq\"\n" if ($ace);
           &get_parent_seq($cds, $allele);
         }
       }
@@ -1042,9 +996,9 @@ sub allele_has_predicted_gene_and_no_seq {
           print LOG "ERROR: Allele $allele has an incorrect parent sequence ($seq) with respect to its predicted gene ($cds)\n";
           $allele_errors++;
           if ($ace){
-            print ACE "\nAllele : \"$allele\"\n";
-            print ACE "-D Sequence \"$seq\"\n";
-            print ACE "Sequence \"$parent\"\n";
+            print ACE "\nAllele : \"$allele\"\n" if ($ace);
+            print ACE "-D Sequence \"$seq\"\n" if ($ace);
+            print ACE "Sequence \"$parent\"\n" if ($ace);
           }
         } 
       }
@@ -1056,8 +1010,8 @@ sub allele_has_predicted_gene_and_no_seq {
     if ($predict =~ /(.+)\.(\d+)[a-z]/ || $predict =~ /(.+)\.(\d+)/){
       $parent =  $1;
       if (!$get_parent){
-        print ACE "\n\nAllele : \"$allele\"\n";
-        print ACE "Sequence \"$parent\"\n";
+        print ACE "\n\nAllele : \"$allele\"\n" if ($ace);
+        print ACE "Sequence \"$parent\"\n" if ($ace);
       }
     }
     return $parent;
@@ -1094,8 +1048,8 @@ sub check_missing_allele_method {
     my ($allele, $tag, $ace) = @_;
     print LOG "ERROR: Allele $allele has no Method $tag\n";
     if ($ace ne ""){
-      print ACE "\n\nAllele : \"$allele\"\n";
-      print ACE "Method \"$tag\"\n";
+      print ACE "\n\nAllele : \"$allele\"\n" if ($ace);
+      print ACE "Method \"$tag\"\n" if ($ace);
     }
   }
 }
@@ -1135,8 +1089,8 @@ EOF
       $strain_errors++; 
       if ($ace){
 	$strain =~ /([A-Z]+)\d+/;
-	print ACE "\n\nStrain : \"$strain\"\n";
-	print ACE "Location \"$1\"\n";
+	print ACE "\n\nStrain : \"$strain\"\n" if ($ace);
+	print ACE "Location \"$1\"\n" if ($ace);
       }
     }
     else { 
@@ -1385,9 +1339,9 @@ sub loci_as_other_name {
 	  print LOG "WARNING: $main has $other_name as Other_name...$other_name is still a separate Locus object\n";
         }
 	if ($ace && !$exceptions{$main}){
-	  print ACE "\n-R Locus : \"$other_name\" \"$main\"\n";
-	  print ACE "\nLocus : \"$main\"\n";
-          print ACE "Other_name \"$other_name\"\n";
+	  print ACE "\n-R Locus : \"$other_name\" \"$main\"\n" if ($ace);
+	  print ACE "\nLocus : \"$main\"\n" if ($ace);
+          print ACE "Other_name \"$other_name\"\n" if ($ace);
         }
       }  
     }
@@ -1449,8 +1403,8 @@ sub locus_CGC {
 	print LOG "ERROR: $_ is CGC_approved but not XREF to existing $gc Gene_Class\n"; 
 	$locus_errors++; 
         if ($ace){
-	  print ACE "\n\nGene_Class : \"$gc\"\n";
-          print ACE "Loci \"$_\"\n";
+	  print ACE "\n\nGene_Class : \"$gc\"\n" if ($ace);
+          print ACE "Loci \"$_\"\n" if ($ace);
         }
       }
     }
@@ -1498,9 +1452,9 @@ sub test_locus_for_errors{
   if(!defined($locus->at('Type'))){  
     $warnings .= "ERROR 3: $locus has no Type tag present\n";
     if ($ace){
-      print ACE "\n\nLocus : \"$locus\"\n";
-      print ACE "Gene\n";
-      print ACE "Non_CGC_name \"$locus\"\n";
+      print ACE "\n\nLocus : \"$locus\"\n" if ($ace);
+      print ACE "Gene\n" if ($ace);
+      print ACE "Non_CGC_name \"$locus\"\n" if ($ace);
     }
     $locus_errors++;
   }
@@ -1509,19 +1463,19 @@ sub test_locus_for_errors{
   if(defined($locus->at('Type.Gene')) && !defined($locus->at('Species'))){
     $warnings .= "ERROR 4: $locus has a 'Gene' tag but not a 'Species' tag\n";
     if ($ace){
-      print ACE "\n\nLocus : \"$locus\"\n";
+      print ACE "\n\nLocus : \"$locus\"\n" if ($ace);
       if ($locus !~ /Cb-|Cr-|Cv/){
-	print ACE "Species \"Caenorhabditis elegans\"\n";
+	print ACE "Species \"Caenorhabditis elegans\"\n" if ($ace);
       }
       if ($locus =~/^Cb-.+/){
-	print ACE "Species \"Caenorhabditis briggsae\"\n";
+	print ACE "Species \"Caenorhabditis briggsae\"\n" if ($ace);
       }
       if ($locus =~/^Cr-.+/){
-	print ACE "Species \"Caenorhabditis remanei\"\n";
+	print ACE "Species \"Caenorhabditis remanei\"\n" if ($ace);
 	
       }
       if ($locus =~/^Cv-.+/){
-	print ACE "Species \"Caenorhabditis vulgaris\"\n";
+	print ACE "Species \"Caenorhabditis vulgaris\"\n" if ($ace);
       }	
     }
     $locus_errors++;
@@ -1538,8 +1492,8 @@ sub test_locus_for_errors{
   # test for !Gene AND Gene_class 
   if(!defined($locus->at('Type.Gene')) && defined($locus->at('Name.Gene_class'))){
     $warnings .= "ERROR 5: $locus has a 'Gene_class' tag but not a 'Gene' tag\n";
-    print ACE "\n\nLocus : \"$locus\"\n";
-    print ACE "Gene\n";
+    print ACE "\n\nLocus : \"$locus\"\n" if ($ace);
+    print ACE "Gene\n" if ($ace);
     $locus_errors++;
   }
   
@@ -1547,8 +1501,8 @@ sub test_locus_for_errors{
   if(!defined($locus->at('Type.Gene')) && defined($locus->at('Molecular_information.Genomic_sequence'))){
     $warnings .= "ERROR 6: $locus has 'Genomic_sequence' tag but no 'Gene' tag\n";
     if ($ace){
-      print ACE "\n\nLocus : \"$locus\"\n";  
-      print ACE "Gene\n";
+      print ACE "\n\nLocus : \"$locus\"\n" if ($ace);  
+      print ACE "Gene\n" if ($ace);
     }
     $locus_errors++;
   }
@@ -1557,8 +1511,8 @@ sub test_locus_for_errors{
   if(defined($locus->at('Molecular_information.Genomic_sequence')) && !defined($locus->Genomic_sequence)){
     $warnings .= "ERROR 7: $locus has 'Genomic_sequence' tag but no associated value\n";
     if ($ace){
-      print ACE "\n\nLocus : \"$locus\"\n"; 
-      print ACE "-D Genomic_sequence\n";
+      print ACE "\n\nLocus : \"$locus\"\n" if ($ace); 
+      print ACE "-D Genomic_sequence\n" if ($ace);
     } 
     $locus_errors++;
   }
@@ -1622,8 +1576,8 @@ sub test_locus_for_errors{
       $warnings .= "ERROR 15: $locus has Gene_class tag but it is not a gene!\n";
       $locus_errors++;
       if ($ace){
-        print ACE "\n\nLocus : \"$locus\"\n"; 
-        print ACE "Gene\n";
+        print ACE "\n\nLocus : \"$locus\"\n" if ($ace); 
+        print ACE "Gene\n" if ($ace);
       } 
     }
   }
@@ -1817,7 +1771,7 @@ B<-ace:>
             Allows generating ace file for fixing erros spotted by 
             this checking script.
             Default location and filename of ace file:
-            /wormsrv2/logs/geneace_check_ACE.rundate.processid
+            /wormsrv1/geneace/CHECKS/geneace_check.rundate.processid.ace
                       
             For example: -a or -ace
 
