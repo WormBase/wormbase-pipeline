@@ -2,7 +2,7 @@
 
 # Author: Chao-Kung Chen
 # Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-02-06 12:03:31 $ 
+# Last updated on: $Date: 2004-04-27 10:59:36 $ 
 
 use strict;
 use lib "/wormsrv2/scripts";
@@ -11,8 +11,10 @@ use Ace;
 use Tk;
 use Tk::DialogBox;
 use Getopt::Long;
+use GENEACE::Geneace;
 
 my $tace = &tace;
+
 my ($panel, $comp, $rev, $version, $debug);
 GetOptions ("p|panel:s"   => \$panel,    # number of rows (panels) to create
             "c|comp=s"    => \$comp,     # cmp_gmap_with_coord_order_WSXXX.date.pid
@@ -56,7 +58,7 @@ $button_frm->Button(text => "View rev. physicals",  activebackground => "white",
 $button_frm->Button(text => "View genetics map",  activebackground => "white", activeforeground => "blue", command => \&view_gmap)
            -> pack(side => "left",  fill => "x", expand => 1);
 
-my $add_btn = $button_frm->Button(text => "Add row",  activebackground => "white", activeforeground => "blue", command => \&add_panel)
+my $add_btn = $button_frm->Button(text => "Add row",  activebackground => "white", activeforeground => "blue", command => \&add_row)
                             -> pack(side => "left",  fill => "x", expand => 1);
 
 my $upload_btn = $button_frm->Button(text => "Upload AUTOACE",  activebackground => "white", activeforeground => "red", command => \&load_autoace)
@@ -74,16 +76,15 @@ for (my $j = 0; $j < $panel; $j++){
   $length = &loci_map_panel($panel-$j);
 }
 
-MainLoop;
-
 my $add_length = $length;
 
+MainLoop;
 
 #####################
 #    subroutines
 #####################
 
-# --- popup rev. physical message
+# --- popup rev. physical message ---
 sub view_rev_physicals {
   my $mw1 = MainWindow -> new();
   $mw1 -> geometry("620x260+610+0");
@@ -98,7 +99,7 @@ sub view_rev_physicals {
   $mw1->resizable(1,0);
 }
 
-# --- popup gmap list
+# --- popup gmap list ---
 sub view_gmap {
  
   my $mw2 = MainWindow -> new();
@@ -113,7 +114,7 @@ sub view_gmap {
   $mw2->resizable(0,0);
 }
 
-# --- make number of panels according to number of rev. physicals
+# --- make number of panels according to number of rev. physicals ---
 sub loci_map_panel {
 
   my $panel = shift;
@@ -146,7 +147,7 @@ sub loci_map_panel {
   $map = $block -> Entry(textvariable => \$param_map, bg => "white", fg => "black", width => 10)
                 ->pack(side =>"left");
 
- 
+
   # put all objs in an array for later cget query
   push(@objs, $locus, $chrom, $map, $oldmap);
 
@@ -157,12 +158,11 @@ sub loci_map_panel {
 }
 
 # --- add new rows ---
-sub add_panel {
+sub add_row {
 
   $length = &loci_map_panel(1);
   $add_length = $length;
 }
-   
 
 sub load_autoace {
 
@@ -175,16 +175,28 @@ sub load_autoace {
   print CGC ("M O D I F I C A T I O N S\n\n");
   printf CGC ("%-8s %-6s %8s %8s\n", "Locus", "Chrom", "old_map", "new_map");
   print CGC "-----------------------------------\n";
+
+  ##############################################################
+  # hash to retrieve Gene obj info: 
+  #      eg. WBGenexxxxxxxx to CGC_name/Sequence_name/Other_name
+  #          and vice verse
+  ##############################################################
+
+  my $ga = init Geneace();
+  my %Gene_info = $ga -> gene_info();
+
   for (my $i = 0; $i < scalar @objs; $i=$i+4){
     $locus  = $objs[$i]  ->cget("textvariable");
     $chrom  = $objs[$i+1]->cget("textvariable");
-    $map    = $objs[$i+2]->cget("textvariable"); 
-    $oldmap = $objs[$i+3]->cget("textvariable"); 
-    print UPDT "\nLocus : \"$$locus\"\n";
+    $map    = $objs[$i+2]->cget("textvariable");
+    $oldmap = $objs[$i+3]->cget("textvariable");
+
+    print UPDT "\/\/$$locus ---------\n";
+    print UPDT "\nGene : \"$Gene_info{$$locus}{'Gene'}\"\n";
     print UPDT "-D Map\n\n";
-    print UPDT "Locus : \"$$locus\"\n";
+    print UPDT "Gene : \"$Gene_info{$$locus}{'Gene'}\"\n";
     print UPDT "Map \"$$chrom\" Position $$map\n";
-    printf CGC ("%-8s %-6s %8.4f %8.4f\n", $$locus, $$chrom, $$oldmap, $$map); 
+    printf CGC ("%-8s %-6s %8.4f %8.4f\n", $$locus, $$chrom, $$oldmap, $$map);
   }
   print CGC  ("\n***********************************\n");
   close CGC; close UPDT;
@@ -208,14 +220,14 @@ END
   # pop up a window for AceDB log message
   my $dialog =  $mw -> DialogBox(-title   => "Uploading corrected map data to autoace . . .",
 				 -buttons => ["Close" ]);
-  
+
   $dialog->geometry("800x500");
   $dialog->resizable(0,0);
   my $txt=$dialog->Scrolled("Text",  -scrollbars=>"ow", height=>60, width=> 170)->pack(side => "left", anchor => "w");
   open(LOG, "$log");
   while(<LOG>){$txt -> insert('end', "$_")}
   $dialog->Show();
-  
+
 }
 
 
