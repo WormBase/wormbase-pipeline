@@ -4,8 +4,8 @@
 #
 # written by Anthony Rogers (ar2@sanger.ac.uk)
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2003-04-04 18:01:42 $
+# Last updated by: $Author: dl1 $
+# Last updated on: $Date: 2003-08-11 09:13:46 $
 
 
 use strict;
@@ -18,13 +18,15 @@ use Getopt::Long;
 # command-line options       #
 ##############################
 
-my ($help, $debug,$camace,$geneace);
+my ($help, $debug,$update,$camace,$geneace);
 my $maintainers = "All";
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
 	    "geneace=s"  => \$geneace,
-	    "camace"     => \$camace);
+	    "camace"     => \$camace,
+	    "update"     => \$camace
+    );
 
 
 # Display help if required
@@ -60,8 +62,6 @@ else{
 print "\nUsing $geneace_dir as target geneace database\n";
 
 
-
-
 ################################
 # 
 #       Main subroutines
@@ -86,7 +86,7 @@ print "\nUsing $geneace_dir as target geneace database\n";
 # First check for write access to $camace_dir
 my $write_access = check_write_access($camace_dir);
 
-#&update_camace if (($camace) && ($write_access eq "yes")); 
+&update_camace if ( ($camace) && ($update) && ($write_access eq "yes")); 
 
 
 
@@ -101,8 +101,6 @@ my $write_access = check_write_access($camace_dir);
 close (CAMOUT);
 close (STLOUT);
 close (ALLOUT);
-
-
 
 
 #copy the ace files to the FTP site
@@ -135,6 +133,9 @@ if($debug){
 else{
   &mail_maintainer($0,"$notify",$stlouis_log);
 }
+
+# hasta luego
+
 exit(0);
 
 
