@@ -60,6 +60,10 @@ sub invoke
     my $database = shift;
     my $refresh = shift;
 
+    print "Class is $class\n";
+    print "Database is $database\n";
+    print "Refresh is $refresh\n";
+
     if( $database ) {
       croak "$database does not exist\n" unless( -d "$database" );
     }
