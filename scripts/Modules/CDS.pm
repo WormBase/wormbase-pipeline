@@ -4,8 +4,9 @@ use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'} ;
 use Carp;
 use Modules::SequenceObj;
 use Modules::Transcript;
+use strict;
 
-@ISA = qw( SequenceObj );
+our @ISA = qw( SequenceObj );
 
 sub new
   {
@@ -14,15 +15,21 @@ sub new
     my $exon_data = shift;
     my $strand = shift;
     my $chromosome = shift;
+    my $transformer = shift;
 
     my $self = SequenceObj->new($name, $exon_data, $strand);
-
-    my $transcript = Transcript->new( $name, $exon_data, $strand);
-    $transcript->chromosome( $chromosome ) if $chromosome;
-    push (@{$self->{'transcripts'}},$transcript);
-    
     bless ( $self, $class );
-    $self->chromosome( $chromosome ) if $chromosome;
+
+    $self->transform_strand($transformer,"transform") if ( $self->strand eq "-" );
+
+    $self->transformer( $transformer );
+    my $transcript = Transcript->new( $name, $self);
+    $self->transcripts( $transcript );
+
+    if ($chromosome) {
+      $transcript->chromosome( $chromosome ) if $chromosome;
+      $self->chromosome( $chromosome ) if $chromosome;
+    }
 
     return $self;
   }
@@ -36,12 +43,12 @@ sub map_cDNA
 
     # check strandedness
     return 0 if $self->strand ne $cdna->strand;
-    return 0 if $self->strand ne "+";
+    #return 0 if $self->strand ne "+";
 
     #this must overlap - check exon matching
 
     my $matches_me = 0;
-    foreach $transcript ( $self->transcripts ) {
+    foreach my $transcript ( $self->transcripts ) {
       $matches_me = 1 if ($transcript->map_cDNA( $cdna ) == 1);
     }
 
@@ -60,7 +67,7 @@ sub map_cDNA
 	  # append .x to indicate multiple transcripts for same CDS.
 	  my $transcript_count = scalar($self->transcripts);
 	  my $new_name = $transcript_count > 1 ? $self->name : $self->name . ".$transcript_count";
-	  my $transcript = Transcript->new( $new_name, $self->exon_data, $self->strand);
+	  my $transcript = Transcript->new( $new_name, $self);
 	  $transcript->chromosome( $self->chromosome );
 	  $transcript->add_matching_cDNA($cdna);
 	  
@@ -98,6 +105,7 @@ sub report
     my $self = shift;
     my $fh = shift;
     my $coords = shift;
+    my $transformer = shift;
 
     #$fh = STDOUT unless defined $fh;
 
@@ -114,5 +122,7 @@ sub report
       $_->report($fh, $coords);
     }
   }
+
+
 
 1;

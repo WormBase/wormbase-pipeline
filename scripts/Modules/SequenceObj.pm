@@ -2,9 +2,12 @@ package SequenceObj;
 
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'} ;
 use Carp;
+use strict;
 
 # new 
 # expects name , %-ref of exon start/ends and strand ( +/- )
+
+our $debug;
 
 sub new
   {
@@ -14,25 +17,26 @@ sub new
     my $strand = shift;
 
     my $self = {};
-    $self->{'name'}   = $name;
+    if ($name) {
+      $self->{'name'}   = $name;
 
-    my ($start, $end);
-    my @tmp;
-    foreach ( keys %{$exon_data} ) {
-      if( !(defined $start) or $start > $_ ) {
-	$start = $_;
+      my ($start, $end);
+      my @tmp;
+      foreach ( keys %{$exon_data} ) {
+	if ( !(defined $start) or $start > $_ ) {
+	  $start = $_;
+	}
+	if ( !(defined $end) or $end < $$exon_data{$_} ) {
+	  $end = $$exon_data{$_};
+	}
+	$self->{'exons'}->{$_} = $$exon_data{$_};
+	push(@tmp,[($_,$$exon_data{$_})]);
       }
-      if( !(defined $end) or $end < $$exon_data{$_} ) {
-	$end = $$exon_data{$_};
-      }
-      $self->{'exons'}->{$_} = $$exon_data{$_};
-      push(@tmp,[($_,$$exon_data{$_})]);
+      @{$self->{'sorted_exons'}} = sort { $a->[0] <=> $b->[0] } @tmp;
+      $self->{'start'} = $start;
+      $self->{'end'}   = $end;
+      $self->{'strand'}= $strand ;
     }
-    @{$self->{'sorted_exons'}} = sort { $a->[0] <=> $b->[0] } @tmp;
-    $self->{'start'} = $start;
-    $self->{'end'}   = $end;
-    $self->{'strand'}= $strand ;
-
     bless ( $self, $class );
     return $self;
   }
@@ -59,6 +63,33 @@ sub sort_exons
     $self->end( $end );
   }
 
+sub transform_strand
+  {
+    my $self = shift;
+    my $transformer = shift;
+    my $direction = shift;
+
+    my %tmp_exons;
+    foreach ( keys %{$self->exon_data} ){
+      my ($key,$value);
+      if( $direction eq "transform" ){
+	# swap exon start / end too
+	$value = $transformer->transform_neg_coord( $_);
+	$key   = $transformer->transform_neg_coord( $self->exon_data->{$_});
+      }
+      elsif ( $direction eq "revert" ) {
+	# swap exon start / end too
+	$value = $transformer->revert_to_neg( $_);
+	$key   = $transformer->revert_to_neg( $self->exon_data->{$_});
+      }
+      else { die "need a transformation direction\n";	   }
+	
+      $tmp_exons{$key} = $value;
+    }
+    $self->exon_data(\%tmp_exons);
+
+    $self->sort_exons;
+  }
 
 sub check_exon_match 
   {
@@ -76,21 +107,21 @@ sub check_exon_match
       if ( $self->{'exons'}->{"$cExonStart"} ) {
 	if ($self->{'exons'}->{"$cExonStart"} == $cdna->{'exons'}->{"$cExonStart"} ) {
 	  #exact match
-	  print "\tExact Match\n" if $verbose;
+	  print "\tExact Match\n" if $debug;
 	  $exon->[2] = 1;
 	}
 	#is this final gene exon
 	elsif ( $cExonStart == $self->last_exon->[0] ) {
 	  if( $cdna->exon_data->{"$cExonStart"} > $self->last_exon->[1] ) {
-	    print "\tMatch - last SeqObj exon\n" if $verbose;
+	    print "\tMatch - last SeqObj exon\n" if $debug ;
 	    $exon->[2] = 2;
 	  }
 	  elsif ( $cdna->exon_data->{"$cExonStart"} == $cdna->end ) {
-	    print "Match - cDNA final exon ends in final gene exon\n" if $verbose;
+	    print "Match - cDNA final exon ends in final gene exon\n"  if $debug;
 	    $exon->[2] = 7;
 	  }
 	  else {
-	    print STDERR "MISS : cDNA splices in last SeqObj exon\n" if $verbose;
+	    print STDERR "MISS : cDNA splices in last SeqObj exon\n" if $debug ;
 	    return 0;
 	  }
 	}
@@ -98,15 +129,15 @@ sub check_exon_match
 	elsif ( $cExonStart == $cdna->last_exon->[0] ) {
 	  # . . must terminate within gene exon
 	  if ( $cdna->{'exons'}->{"$cExonStart"} > $self->{'exons'}->{"$cExonStart"} ) {
-	    print STDERR "\tMISS - ",$cdna->name," $cExonStart => ",$cdna->{'exons'}->{$cExonStart}," extends over gene exon boundary\n" if $verbose;
+	    print STDERR "\tMISS - ",$cdna->name," $cExonStart => ",$cdna->{'exons'}->{$cExonStart}," extends over gene exon boundary\n" if $debug ;
 	    return 0;
 	  } else {
-	    print "\tMatch - last cDNA exon\n" if $verbose;
+	    print "\tMatch - last cDNA exon\n" if $debug ;
 	    $exon->[2] = 3;
 	  }
 	}
 	else {
-	  print STDERR "\tMISS -  ",$cdna->name," $cExonStart => ",$cdna->{'exons'}->{$cExonStart}," extends over gene exon boundary\n" if $verbose;
+	  print STDERR "\tMISS -  ",$cdna->name," $cExonStart => ",$cdna->{'exons'}->{$cExonStart}," extends over gene exon boundary\n"  if $debug;
 	  return 0;
 	}
       }
@@ -116,34 +147,34 @@ sub check_exon_match
 	
 	if ( $gExonS == $self->first_exon->[0] ) { #is this the 1st gene exon 
 	  if ( $cExonStart == $cdna->first_exon->[0] ) { # also cDNA start so always match
-	    print "\tMatch - 1st exons end in same place\n" if $verbose;
+	    print "\tMatch - 1st exons end in same place\n" if $debug ;
 	    $exon->[2] = 4;
 	  }
 	  elsif ( $cExonStart < $self->first_exon->[0] ) { # cDNA exon overlap 1st gene exon
-	    print "\tMatch - cDNA exon covers 1st gene exon\n" if $verbose;
+	    print "\tMatch - cDNA exon covers 1st gene exon\n" if $debug ;
 	    $exon->[2] = 5;
 	    # extends 5'
 	  }
 	  else {
-	    print STDERR "\tMISS - cDNA exon splices in gene exon\n" if $verbose;
-	    print STDERR "\t\t",$cdna->name," $cExonStart => ",$cdna{'exons'}->{$cExonStart},"\n" if $verbose;
-	    print STDERR "\t\t",$self->name," $gExonS => ",$self->{'exons'}->{$gExonS},"\n" if $verbose;
+	    print STDERR "\tMISS - cDNA exon splices in gene exon\n" if $debug ;
+	    print STDERR "\t\t",$cdna->name," $cExonStart => ",$cdna->exon_data->{$cExonStart},"\n" if $debug ;
+	    print STDERR "\t\t",$self->name," $gExonS => ",$self->exon_data->{$gExonS},"\n"  if $debug;
 	    return 0;
 	  }
 	}
 	# exon matched is not 1st of SeqObj
 	elsif ( ($cExonStart == $cdna->first_exon->[0] ) and # start of cDNA
 		($cExonStart >$gExonS ) ) { # . . . is in SeqObj exon
-	  print"\tMatch - 1st exon of cDNA starts in exon of SeqObj\n" if $verbose;
+	  print"\tMatch - 1st exon of cDNA starts in exon of SeqObj\n" if $debug ;
 	  $exon->[2] = 6;
 	} 
 	else {
-	  print STDERR "MISS - exon ",$cdna->name," : $cExonStart => ",$cdna{'exons'}->{$cExonStart}," overlaps start of gene exon : $gExonS => ",$self->{'exons'}->{$gExonS},"\n" if $verbose;
+	  print STDERR "MISS - exon ",$cdna->name," : $cExonStart => ",$cdna->exon_data->{$cExonStart}," overlaps start of gene exon : $gExonS => ",$self->exon_data->{$gExonS},"\n"  if $debug;
 	  return 0;
 	}
       }# cDNA_wholelyInExon
       elsif ( $self->_cDNA_wholelyInExon($cdna) ) {
-	print "Match cDNA contained in exon\n" if $verbose;
+	print "Match cDNA contained in exon\n"  if $debug;
 	$exon->[2] = 7;
       }
       # cDNA exon overlaps gene 1st exon start and terminate therein
@@ -151,7 +182,7 @@ sub check_exon_match
 	     ( $cExonStart < $self->first_exon->[0] ) and 
 	     ( $cdna->last_exon->[1] > $self->first_exon->[0] and $self->first_exon->[0] <$self->first_exon->[1] )
 	   ) {
-	print "\tcDNA final exon overlaps first exon of gene and end therein\n" if $verbose;
+	print "\tcDNA final exon overlaps first exon of gene and end therein\n" if $debug ;
 	$exon->[2] = 8;
       }
       # cDNA exon starts in final gene exon and continues past end
@@ -159,16 +190,16 @@ sub check_exon_match
 	     ($cdna->start < $self->last_exon->[1]) and 
 	     ($cdna->first_exon->[1] > $self->last_exon->[1] )
 	   ) {
-	print "MATCH : final cDNA exon starts in final gene exon and continues past end\n" if $verbose;
+	print "MATCH : final cDNA exon starts in final gene exon and continues past end\n"  if $debug;
 	$exon->[2] = 9;
       }
       # exon lies outside of CDS ( but other parts of cDNA overlap it )
       elsif( $exon->[1] < $self->start ) {
-	print "MATCH : 5\'UTR exon\n" if $verbose;
+	print "MATCH : 5\'UTR exon\n" if $debug ;
 	$exon->[2] = 10;
       }
       elsif( $exon->[0] > $self->end ) {
-	print "MATCH : 3\'UTR exon\n" if $verbose;
+	print "MATCH : 3\'UTR exon\n"  if $debug;
 	$exon->[2] = 11;
       }
       else {
@@ -209,6 +240,8 @@ sub _exon_that_ends
 sub exon_data
   {
     my $self = shift;
+    my $new_exons = shift;
+    $self->{'exons'} = $new_exons if $new_exons;
     return $self->{'exons'};
   }
 
@@ -278,4 +311,22 @@ sub chromosome
     $self->{'chromosome'} = $chromosome if $chromosome;
     return $self->{'chromosome'};
   }
+
+sub transformer 
+  {
+    my $self = shift;
+    my $transformer = shift;
+    $self->{'transformer'} = $transformer if $transformer;
+
+    return $self->{'transformer'};
+  }
+
+sub debug
+  {
+    my $self = shift;
+    my $set = shift;
+    $debug = 1 if $set;
+    return $debug;
+  }
+
 1;

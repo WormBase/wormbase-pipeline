@@ -10,12 +10,14 @@ sub new
   {
     my $class = shift;
     my $name = shift;
-    my $exon_data = shift;
-    my $strand = shift;
+    my $CDS = shift;
+    my $transformer = $CDS->transformer;
 
-    my $self = SequenceObj->new($name, $exon_data, $strand);
+    my $self = SequenceObj->new($name, $CDS->exon_data, $CDS->strand);
 
     bless ( $self, $class );
+
+    $self->transformer($transformer) if $transformer;
     return $self;
   }
 
@@ -101,8 +103,18 @@ sub report
     my $self = shift;
     my $fh = shift;
     my $coords = shift;
+    
+    my $real_start = $self->start;
+    my $real_end = $self->end;
 
-    my @clone_coords = $coords->LocateSpan($self->chromosome, $self->start,$self->end );
+    if( $self->strand eq "-" ) {
+      $real_start = $self->transformer->revert_to_neg( $self->start );
+      $real_end = $self->transformer->revert_to_neg( $self->end );
+    }
+
+    my @clone_coords = $coords->LocateSpan($self->chromosome, $real_start,$real_end );
+
+    print $fh "\n-D Transcript : ",$self->name,"\n";
 
     # output S_Parent for transcript
     print $fh "\nSequence : $clone_coords[0]\n";
@@ -110,18 +122,13 @@ sub report
 
     # . . and the transcript object
     print $fh "\nTranscript : \"", $self->name,"\"\n";
-    my$start = $self->start - 1;
+    our $start = $self->start - 1;
+    our $end = $self->end + 1;
     my $exon_1 = 1;
-    foreach $exon ( @{$self->sorted_exons} ) {
+    foreach $exon ( @{$self->sorted_exons} ) {    
       $exon->[0] = $exon->[0] - $start;
       $exon->[1] = $exon->[1] - $start;
 
-      # start coord for 1st exon has to be 1
-      #"Source_exons ",$_ - $exons[0] + 1," ",$transcript{$_} - $exons[0]+1," \n"; # + strand
-   #   if( $exon_1 == 1) {
-#	$exon->[0] += 2;
-#	$exon_1 = 0;
-#      }
       print $fh "Source_exons\t$exon->[0]\t$exon->[1]\n";
     }
 
