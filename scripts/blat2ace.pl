@@ -1,44 +1,51 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/bin/perl5.8.0 -w
 #
 # blat2ace.pl
-# kj2
+# 
+# by Kerstin Jekosch
 #
-# Exporter to map blat data to acedb and to find the best match for each EST
+# Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
-# -i  : get confirmed introns
-#
-# -c  : get best matches for camace
-# -s  : get best matches for stlace
-#
-# -e  : create output for ESTs 
-# -y  : create output for OSTs 
-# -m  : create output for mRNAs 
-# -x  : create output for parasitic nematode ESTs (blatx)
-# -o  : create output for other CDS
-#
-# -h  : print help
-#
-# 010905 by Kerstin Jekosch
-
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2003-06-12 16:03:36 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2003-09-03 14:53:48 $
 
 
 use strict;
 use Data::Dumper;
 use lib "/wormsrv2/scripts/";
 use Wormbase;
-use Getopt::Std;
-use vars qw($opt_i $opt_h $opt_s $opt_c $opt_e $opt_m $opt_o $opt_x $opt_y $opt_z);
-$| = 1;
+use Getopt::Long;
+
+#########################
+# Command line options  #
+#########################
+
+my ($help, $est, $mrna, $ost, $nematode, $embl, $camace, $intron);
+
+GetOptions ("help"       => \$help,
+            "est"        => \$est,
+            "mrna"       => \$mrna,
+            "ost"        => \$ost,
+            "nematode"   => \$nematode,
+            "embl"       => \$embl,
+            "camace"     => \$camace,
+	    "intron"     => \$intron
+);
 
 #############################
 # variables and directories #
 #############################
- 
-my $dir	      = "/wormsrv2/autoace/BLAT";
-my $dbdir     = "/wormsrv2/autoace";
-my $tace      = &tace." /wormsrv2/autoace";
+
+our $log;
+
+
+# set database paths, default to autoace unless -camace
+my $blat_dir  = "/wormsrv2/autoace/BLAT";
+my $tace      = &tace ." /wormsrv2/autoace";
+if ($camace) {
+    $blat_dir  = "/wormsrv1/camace/BLAT";
+    $tace      = &tace." /wormsrv1/camace";
+}
 
 my %EST_name;    # EST accession => name
 my %EST_dir;     # EST accession => orientation [5|3]
@@ -59,57 +66,48 @@ our %word = (
 	     );
 
 
-# create log file
-our $log;
+
 &create_log_files;
 
- ########################################
- # command-line options & ramifications #
- ########################################
 
-getopts ('csemxoihyz');
+########################################
+# command-line options & ramifications #
+########################################
 
 # Help pod documentation
-&usage(0) if ($opt_h);
-
-# camace run paths
-if ($opt_z) {
-    $dir       = "/wormsrv1/camace/BLAT";
-    $dbdir     = "/wormsrv1/camace";
-    $tace      = &tace." /wormsrv1/camace";
-}
+&usage(0) if ($help);
 
 # Exit if no data type choosen [EST|mRNA|EMBL|NEMATODE|OST]
-&usage(1) unless ($opt_e || $opt_m || $opt_o || $opt_x || $opt_y); 
+# or if multiple data types are chosen
 
-# Exit if multiple data types choosen [EST|mRNA|EMBL|NEMATODE|OST]
-&usage(2) if (($opt_e + $opt_m + $opt_o + $opt_x || $opt_y) > 1);
+&usage(1) unless ($est || $mrna || $ost || $nematode || $embl); 
+&usage(2) if (($est + $mrna + $ost + $nematode || $embl) > 1);
 
 # assign type variable
-($type = 'EST')      if ($opt_e);
-($type = 'OST')      if ($opt_y);
-($type = 'mRNA')     if ($opt_m);
-($type = 'EMBL')     if ($opt_o);
-($type = 'NEMATODE') if ($opt_x);
+($type = 'EST')      if ($est);
+($type = 'OST')      if ($ost);
+($type = 'mRNA')     if ($mrna);
+($type = 'EMBL')     if ($embl);
+($type = 'NEMATODE') if ($nematode);
+
 
 ############################################
 # EST data from autoace (name,orientation) #
 ############################################
 
-# check to see if EST hash data exists
-# make it via tablemaker queries if absent
-unless (-e "/wormsrv2/autoace/BLAT/EST.dat") {
+# check to see if EST hash data exists, make it via tablemaker queries if absent
+# else read it into memory
+unless (-e "$blat_dir/EST.dat") {
     (%EST_name,%EST_dir) = &make_EST_hash;
 }
-# else read it into memory
 else {
-    open (FH, "</wormsrv2/autoace/BLAT/EST.dat") or die "EST.dat : $!\n";
-    undef $/;
-    my $data = <FH>;
-    eval $data;
-    die if $@;
-    $/ = "\n";
-    close FH;
+  open (FH, "<$blat_dir/EST.dat") or die "EST.dat : $!\n";
+  undef $/;
+  my $data = <FH>;
+  eval $data;
+  die if $@;
+  $/ = "\n";
+  close FH;
 }
 
 #########################################
@@ -119,26 +117,27 @@ else {
 # parse links for camace
 my @camclones = qw(cTel3X cTel4X cTel7X cTel33B cTel54X 6R55 SUPERLINK_CB_I SUPERLINK_CB_II SUPERLINK_CB_IIIL SUPERLINK_CB_IIIR SUPERLINK_CB_IR SUPERLINK_CB_IV SUPERLINK_CB_V SUPERLINK_CB_X); 
 foreach my $camclone (@camclones) {
-    $camace{$camclone} = 1;
+  $camace{$camclone} = 1;
 }
 
 # parse links for stlace
 my @stlclones = qw(SUPERLINK_RW1 SUPERLINK_RW1R SUPERLINK_RW2 SUPERLINK_RW3A SUPERLINK_RW3B SUPERLINK_RW4 SUPERLINK_RW5 SUPERLINK_RWXL SUPERLINK_RWXR);
 foreach my $stlclone (@stlclones) {
-    $stlace{$stlclone} = 1;
+  $stlace{$stlclone} = 1;
 }
 
 ############################
 # map the blat hits to ace #
 ############################
 
-print LOG "Start mapping\n\n";
+my $runtime = &runtime;
+print LOG "$runtime: Start mapping\n\n";
 
 # output filehandle
-open(ACE,  ">$dir/autoace.$type.ace")  or die "Cannot open $dir/autoace.${type}.ace $!\n";
+open(ACE,  ">$blat_dir/autoace.$type.ace")  or die "Cannot open $blat_dir/autoace.${type}.ace $!\n";
 
 # input filehandle
-open(BLAT, "<$dir/${type}_out.psl")  or die "Cannot open $dir/${type}_out.psl $!\n";
+open(BLAT, "<$blat_dir/${type}_out.psl")  or die "Cannot open $blat_dir/${type}_out.psl $!\n";
 while (<BLAT>) {
   next unless (/^\d/);
   my @f         = split "\t";
@@ -151,7 +150,7 @@ while (<BLAT>) {
   #############################################################
 	
   my $est = $f[9];
-  if (( $opt_e || $opt_y )  && (exists $EST_name{$est})) {
+  if (( $est || $ost )  && (exists $EST_name{$est})) {
     my $estname  = $EST_name{$est};
     if ($est ne $estname) {
       print LOG "EST name '$est' was replaced by '$estname'\n\n";
@@ -165,10 +164,10 @@ while (<BLAT>) {
 
 #    print "$est maps to $superlink [currentDB: $db => $camace{$superlink} | $stlace{$superlink}]\n";
 #    # next if LINK is part of camace BUT we want stlace
-#    next if ((defined ($camace{$superlink})) && ($opt_s));
+#    next if ((defined ($camace{$superlink})) && ($stlace));
 #    
 #    # next if LINK is part of stlace BUT we want camace
-#    next if ((defined ($stlace{$superlink})) && ($opt_c));
+#    next if ((defined ($stlace{$superlink})) && ($camace));
 #    print "$est will be processed\n";
 
 
@@ -233,7 +232,7 @@ while (<BLAT>) {
     my ($eststart,$estend);
     
     # blatx 6-frame translation v 6-frame translation
-    if ($opt_x) {
+    if ($nematode) {
       my $temp;
       if (($f[8] eq '++') || ($f[8] eq '-+')) {
 	$eststart   = $eststarts[$x] +1;
@@ -315,11 +314,11 @@ close ACE;
 # produce outfile for best matches #
 ####################################
 
-&usage(20) if ($opt_x);
+&usage(20) if ($nematode);
 
-open (AUTBEST, ">$dir/autoace.best.$type.ace");
-open (STLBEST, ">$dir/stlace.best.$type.ace");
-open (CAMBEST, ">$dir/camace.best.$type.ace");
+open (AUTBEST, ">$blat_dir/autoace.best.$type.ace");
+open (STLBEST, ">$blat_dir/stlace.best.$type.ace");
+open (CAMBEST, ">$blat_dir/camace.best.$type.ace");
 
 foreach my $found (sort keys %best) {
   if (exists $best{$found}) {
@@ -355,14 +354,14 @@ foreach my $found (sort keys %best) {
 	#############################
 	
 	# this section 'produce confirmed introns'
-	if ($opt_i) {
+	if ($intron) {
 	  print LOG "Producing confirmed introns\n";
 	  my ($n) = ($virtual =~ /\S+_(\d+)$/);
 	  for (my $y = 1; $y < @{$entry->{'exons'}}; $y++) {
 	    my $last   = $y - 1;
 	    my $first  =  (${$entry->{"exons"}}[$last][1] + 1) + (($n-1)*100000);
 	    my $second =  (${$entry->{'exons'}}[$y][0]    - 1) + (($n-1)*100000);
-	    $EST_dir{$found} = 5 if ($opt_m || $opt_o);
+	    $EST_dir{$found} = 5 if ($mrna || $embl);
 	    if (${$entry->{'exons'}}[0][2] < ${$entry->{'exons'}}[0][3]) {
 	      if ((${$entry->{'exons'}}[$y][2] == ${$entry->{'exons'}}[$last][3] + 1) && (($second - $first) > 2)) {
 		if (exists $EST_dir{$found} && $EST_dir{$found} eq '3') {
@@ -403,17 +402,15 @@ close(STLBEST);
 # produce final BLAT output (including BEST and OTHER) #
 ########################################################
 
-&usage(20) if ($opt_x);
+&usage(20) if ($nematode);
 
 # autoace
-open (OUT_autoace, ">$dir/autoace.blat.$type.ace") or die "$!";
+open (OUT_autoace, ">$blat_dir/autoace.blat.$type.ace") or die "$!";
 # camace
-open (OUT_camace,  ">$dir/camace.blat.$type.ace")  or die "$!";
+open (OUT_camace,  ">$blat_dir/camace.blat.$type.ace")  or die "$!";
 # stlace
-open (OUT_stlace,  ">$dir/stlace.blat.$type.ace")  or die "$!";
+open (OUT_stlace,  ">$blat_dir/stlace.blat.$type.ace")  or die "$!";
 
-
-#open(AOUT,  ">$dir/autoace.blat.$type.ace");
 
 my (%line);
 my $temp = $/;
@@ -422,14 +419,11 @@ $/ = "";
 my $superlink = "";
 
 # assign 
-open(ABEST,  "<$dir/autoace.best.$type.ace");
+open(ABEST,  "<$blat_dir/autoace.best.$type.ace");
 while (<ABEST>) {
-#   print $_;
     if ($_ =~ /^Homol_data/) {
 	$line{$_} = 1;
 	($superlink) = (/\"BLAT\_$type\:(\S+)\_\d+\"/);
-
-#	Homol_data : "BLAT_EST:SUPERLINK_RW5_45"
 
 	print OUT_autoace "// Source $superlink\n\n";
 	print OUT_autoace $_;
@@ -447,30 +441,29 @@ while (<ABEST>) {
 close ABEST;
 
 
-open(AOTHER, "<$dir/autoace.$type.ace");
+open(AOTHER, "<$blat_dir/autoace.$type.ace");
 while (<AOTHER>) {
-#	print $_;
-    if ($_ =~ /^Homol_data/) {
-	my $line = $_;
-	s/BLAT_EST_OTHER/BLAT_EST_BEST/g unless ($opt_m || $opt_o || $opt_x || $opt_y);
-	s/BLAT_OST_OTHER/BLAT_OST_BEST/g     if ($opt_y); 
-	s/BLAT_mRNA_OTHER/BLAT_mRNA_BEST/g   if ($opt_m);
-	s/BLAT_EMBL_OTHER/BLAT_EMBL_BEST/g   if ($opt_o);
-
-	unless (exists $line{$_}) {
-	    print OUT_autoace $line;
-
-	    # camace
-	    if ($camace{$superlink}) {
-		print OUT_camace $line;
-	    }
-	    # and stlace
-	    elsif ($stlace{$superlink}) {
-		print OUT_stlace $line;
-	    }
-	    
-	}	
-    }
+  if ($_ =~ /^Homol_data/) {
+    my $line = $_;
+    s/BLAT_EST_OTHER/BLAT_EST_BEST/g unless ($mrna || $embl || $nematode || $ost);
+    s/BLAT_OST_OTHER/BLAT_OST_BEST/g     if ($ost); 
+    s/BLAT_mRNA_OTHER/BLAT_mRNA_BEST/g   if ($mrna);
+    s/BLAT_EMBL_OTHER/BLAT_EMBL_BEST/g   if ($embl);
+    
+    unless (exists $line{$_}) {
+      print OUT_autoace $line;
+      
+      # camace
+      if ($camace{$superlink}) {
+	print OUT_camace $line;
+      }
+      # and stlace
+      elsif ($stlace{$superlink}) {
+	print OUT_stlace $line;
+      }
+      
+    }	
+  }
 }
 close AOTHER;
 
@@ -480,50 +473,50 @@ $/= $temp;
 # produce confirmed intron output #
 ###################################
 
-if ($opt_i) {
-
-    open(CI_auto, ">$dir/autoace.ci.${type}.ace");
-    open(CI_cam,  ">$dir/camace.ci.${type}.ace");
-    open(CI_stl,  ">$dir/stlace.ci.${type}.ace");
-   
-    foreach my $superlink (sort keys %ci) {
-	my %double;
-	
-	print CI_auto "\nSequence : \"$superlink\"\n";
-	print CI_stl  "\nSequence : \"$superlink\"\n" if ($stlace{$superlink});
-	print CI_cam  "\nSequence : \"$superlink\"\n" if ($camace{$superlink});
-	
-	for (my $i = 0; $i < @{$ci{$superlink}}; $i++) {
-	    my $merge = $ci{$superlink}->[$i][0].":".$ci{$superlink}->[$i][1];
-	    if (!exists $double{$merge}) {
-		if ($opt_m) {
-		    printf CI_auto "Confirmed_intron %d %d mRNA\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1];
-		    (printf CI_cam "Confirmed_intron %d %d mRNA\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($camace{$superlink});
-		    (printf CI_stl "Confirmed_intron %d %d mRNA\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($stlace{$superlink});
-		}
-		if ($opt_o) {
-		    printf CI_auto "Confirmed_intron %d %d Homol\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1];
-		    (printf CI_cam "Confirmed_intron %d %d Homol\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($camace{$superlink});
-		    (printf CI_stl "Confirmed_intron %d %d Homol\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($stlace{$superlink});
-		}
-		if ($opt_e) {
-		    printf CI_auto "Confirmed_intron %d %d EST\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1];
-		    (printf CI_cam "Confirmed_intron %d %d EST\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($camace{$superlink});
-		    (printf CI_stl "Confirmed_intron %d %d EST\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($stlace{$superlink});
-		}
-		if ($opt_y) {
-		    printf CI_auto "Confirmed_intron %d %d EST\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1];
-		    (printf CI_cam "Confirmed_intron %d %d EST\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($camace{$superlink});
-		    (printf CI_stl "Confirmed_intron %d %d EST\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($stlace{$superlink});
-		}
-		$double{$merge} = 1;
-	    }
-	}
-    }
+if ($intron) {
+  
+  open(CI_auto, ">$blat_dir/autoace.ci.${type}.ace");
+  open(CI_cam,  ">$blat_dir/camace.ci.${type}.ace");
+  open(CI_stl,  ">$blat_dir/stlace.ci.${type}.ace");
+  
+  foreach my $superlink (sort keys %ci) {
+    my %double;
     
-    close CI_auto;
-    close CI_cam;
-    close CI_stl;
+    print CI_auto "\nSequence : \"$superlink\"\n";
+    print CI_stl  "\nSequence : \"$superlink\"\n" if ($stlace{$superlink});
+    print CI_cam  "\nSequence : \"$superlink\"\n" if ($camace{$superlink});
+    
+    for (my $i = 0; $i < @{$ci{$superlink}}; $i++) {
+      my $merge = $ci{$superlink}->[$i][0].":".$ci{$superlink}->[$i][1];
+      if (!exists $double{$merge}) {
+	if ($mrna) {
+	  printf CI_auto "Confirmed_intron %d %d mRNA\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1];
+	  (printf CI_cam "Confirmed_intron %d %d mRNA\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($camace{$superlink});
+	  (printf CI_stl "Confirmed_intron %d %d mRNA\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($stlace{$superlink});
+	}
+	if ($embl) {
+	  printf CI_auto "Confirmed_intron %d %d Homol\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1];
+	  (printf CI_cam "Confirmed_intron %d %d Homol\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($camace{$superlink});
+	  (printf CI_stl "Confirmed_intron %d %d Homol\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($stlace{$superlink});
+	}
+	if ($est) {
+	  printf CI_auto "Confirmed_intron %d %d EST\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1];
+	  (printf CI_cam "Confirmed_intron %d %d EST\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($camace{$superlink});
+	  (printf CI_stl "Confirmed_intron %d %d EST\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($stlace{$superlink});
+	}
+	if ($ost) {
+	  printf CI_auto "Confirmed_intron %d %d EST\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1];
+	  (printf CI_cam "Confirmed_intron %d %d EST\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($camace{$superlink});
+	  (printf CI_stl "Confirmed_intron %d %d EST\n",  $ci{$superlink}->[$i][0], $ci{$superlink}->[$i][1]) if ($stlace{$superlink});
+	}
+	$double{$merge} = 1;
+      }
+    }
+  }
+  
+  close CI_auto;
+  close CI_cam;
+  close CI_stl;
 
 }
 
@@ -531,11 +524,18 @@ if ($opt_i) {
 # hasta luego                #
 ##############################
 
+close(LOG);
 exit(0);
 
+
+
+
 #################################################################################
-### Subroutines                                                               ###
+#                                                                               #
+#                          Subroutines                                          #
+#                                                                               #
 #################################################################################
+
 
 #########################################
 # get EST names  (-e option only)       #
@@ -559,49 +559,49 @@ EOF
 
 sub make_EST_hash {
     
-    my ($command1,$command2) = &commands;
-    my ($acc,$name,$orient);
-
-    my %EST_name = ();
-    my %EST_dir  = ();
-
-    # get EST names  (-e option only)       #
-    open (TACE, "echo '$command1' | $tace | ");
-    while (<TACE>) {
-	chomp;
-	next if ($_ eq "");
-	next if (/\/\//);
-	s/acedb\>\s//g;
-    	s/\"//g;
-	s/EMBL://g;
-	($acc,$name) = ($_ =~ /^(\S+)\s(\S+)/);
-	$name = $acc unless ($name);
-	$EST_name{$acc} = $name;
-    }
-    close TACE;
-
-    # get EST orientation (5' or 3')    #
-    open (TACE, "echo '$command2' | $tace | ");
-    while (<TACE>) {
-	chomp;
-	next if ($_ eq "");
-	next if (/\/\//);
-	s/acedb\>\s//g;
-	s/\"//g;
-	($name,$orient) = ($_ =~ /^(\S+)\s+EST_(\d)/);
-	$EST_dir{$name} = $orient if ($orient);
-    }
-    close TACE;
-
-    # Data::Dumper write hash to /wormsrv2/autoace/BLAT/EST.dat
-    open (OUT, ">/wormsrv2/autoace/BLAT/EST.dat") or die "EST.dat : $!";
-    print OUT Data::Dumper->Dump([\%EST_name],['*EST_name']);
-    print OUT Data::Dumper->Dump([\%EST_dir],['*EST_dir']);
-    close OUT;
-
-    return (%EST_name,%EST_dir);
-
-
+  my ($command1,$command2) = &commands;
+  my ($acc,$name,$orient);
+  
+  my %EST_name = ();
+  my %EST_dir  = ();
+  
+  # get EST names  (-e option only)       #
+  open (TACE, "echo '$command1' | $tace | ");
+  while (<TACE>) {
+    chomp;
+    next if ($_ eq "");
+    next if (/\/\//);
+    s/acedb\>\s//g;
+    s/\"//g;
+    s/EMBL://g;
+    ($acc,$name) = ($_ =~ /^(\S+)\s(\S+)/);
+    $name = $acc unless ($name);
+    $EST_name{$acc} = $name;
+  }
+  close TACE;
+  
+  # get EST orientation (5' or 3')    #
+  open (TACE, "echo '$command2' | $tace | ");
+  while (<TACE>) {
+    chomp;
+    next if ($_ eq "");
+    next if (/\/\//);
+    s/acedb\>\s//g;
+    s/\"//g;
+    ($name,$orient) = ($_ =~ /^(\S+)\s+EST_(\d)/);
+    $EST_dir{$name} = $orient if ($orient);
+  }
+  close TACE;
+  
+  # Data::Dumper write hash to /wormsrv2/autoace/BLAT/EST.dat
+  open (OUT, ">/wormsrv2/autoace/BLAT/EST.dat") or die "EST.dat : $!";
+  print OUT Data::Dumper->Dump([\%EST_name],['*EST_name']);
+  print OUT Data::Dumper->Dump([\%EST_dir],['*EST_dir']);
+  close OUT;
+  
+  return (%EST_name,%EST_dir);
+  
+  
 }
 
 
@@ -615,13 +615,13 @@ sub usage {
     
     if ($error == 1) {
 	# No data-type choosen
-	print "\nNo data option choosen [-e|m|o|x|y]\n";
+	print "\nNo data option choosen [-est|-mrna|-ost|-nematode|-ost]\n";
 	print "Run with one of the above options\n\n";
 	exit(0);
     }
     if ($error == 2) {
 	# 'Multiple data-types choosen
-	print "\nMultiple data option choosen [-e|m|o|x|y]\n";
+	print "\nMultiple data option choosen [-est|-mrna|-ost|-nematode|-embl]\n";
 	print "Run with one of the above options\n\n";
 	exit(0);
     }
@@ -633,7 +633,7 @@ sub usage {
     }
     if ($error == 20) {
 	# 
-	print "\nDon't want to do this for the -x option.\n";
+	print "\nDon't want to do this for the -nematode option.\n";
 	print "hasta luego\n\n";
 	exit(0);
     }
@@ -656,7 +656,7 @@ sub create_log_files{
   my $script_name = $1;
   $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
   my $WS_version = &get_wormbase_version_name;
-  my $rundate     = `date +%y%m%d`; chomp $rundate;
+  my $rundate = &runtime;
   $log        = "/wormsrv2/logs/$script_name.${WS_version}.$rundate.$$";
 
   open (LOG, ">$log") or die "cant open $log";
@@ -669,6 +669,22 @@ sub create_log_files{
 
 
 ###################################
+
+#
+# -i  : get confirmed introns
+#
+# -c  : get best matches for camace
+# -s  : get best matches for stlace
+#
+# -e  : create output for ESTs 
+# -y  : create output for OSTs 
+# -m  : create output for mRNAs 
+# -x  : create output for parasitic nematode ESTs (blatx)
+# -o  : create output for other CDS
+#
+# -h  : print help
+
+
 
 __END__
 
@@ -689,19 +705,39 @@ blat2ace.pl  arguments:
 
 =item 
 
--a => produce output for autoace (autoace.blat.ace, /helpfiles/autoace.best.ace, /helpfiles/autoace.ace)
+-camace => produce output for camace (camace.blat.ace, /helpfiles/camace.best.ace, /helpfiles/camace.ace)
 
 =item 
 
--c => produce output for camace (camace.blat.ace, /helpfiles/camace.best.ace, /helpfiles/camace.ace)
-
-=item 
-
--i => produce output for confirmed introns (autoace.ci.ace, camace.ci.ace)
+-intron => produce output for confirmed introns (autoace.ci.ace, camace.ci.ace)
 
 =item
 
--m => perform everything for mRNAs (default is EST)
+-mrna => perform everything for mRNAs
+
+=back
+
+=item
+
+-est => perform everything for ESTs
+
+=back
+
+=item
+
+-ost => perform everything for OSTs
+
+=back
+
+=item
+
+-nematode => perform everything for non-C. elegans ESTs
+
+=back
+
+=item
+
+-embl => perform everything for non-WormBase CDSs in EMBL
 
 =back
 
