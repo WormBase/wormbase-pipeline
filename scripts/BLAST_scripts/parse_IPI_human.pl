@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.6.1 -w                  
 #
 # Last updated by: $Author: wormpipe $     
-# Last updated on: $Date: 2003-06-04 10:09:09 $      
+# Last updated on: $Date: 2003-07-01 11:42:03 $      
 
 use strict;
 use Getopt::Long;
@@ -18,9 +18,14 @@ Get this from ftp://ftp.ebi.ac.uk/pub/databases/IPI/current/ipi.HUMAN.fasta.gz\n
 
 #extract date from file name
 $file =~ /ipi_human(_\d+_\d+)/;
+
 my $datestamp = $1;
-my $output_dir = "/acari/work2a/wormpipe/dumps/";
+my $output_dir = "/acari/work2a/wormpipe/dumps";
 my $fasta = glob("~wormpipe/BlastDB/ipi_human$datestamp.pep");
+
+if( $debug ) {
+  $output_dir .= "_test";
+}
 open (DATA, "<$file") or die "cant open $file\n";
 open (OUT, ">$output_dir/ipi_human.ace") or die "cant write $output_dir\n";
 open (FASTA, ">$fasta") or die "cant write $fasta\n";
@@ -51,6 +56,7 @@ my $prim_DB;
 my $dont_read_pep;
 
 while (<DATA>) {
+
   if( /^>/ ) {
     my @data = split(/\s+/,$'); # everything after the >
     my @databases = split(/\|/,$data[0]);
@@ -63,7 +69,7 @@ while (<DATA>) {
     foreach ( @databases ) {
       my ($db,$acc) = split(/:/,$_);
       next if( ("$db" eq "IPI" ) or ($db =~ /REFSEQ/) );
-      if( $acc =~ /(\w+);\S+/ )
+      if( $acc =~ /^(\w+(-\d+)?);/)
 	{ $acc = $1; }
  
       # IPI indicate splice variants with -2 style nomenclature so we strip this and only use the primary version ( -1 )
