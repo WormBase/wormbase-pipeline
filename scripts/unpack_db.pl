@@ -12,8 +12,8 @@
 # the Cold Spring Harbor Laboratory database (cshace)
 # the Caltech database (citace)
 #
-# Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2004-05-10 14:26:41 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2005-01-11 14:38:29 $
 
 
 #################################################################################
@@ -92,21 +92,21 @@ sub unpack_stuff{
 
   # set up correct locations
   if ($database eq "brigace"){
-    $ftp     = "/nfs/privateftp/ftp-wormbase/pub/incoming/stl";
+    $ftp     = "/nfs/ftp_uploads/wormbase/stl";
     $dbdir   = "$basedir/brigace";
     $logfile = "$basedir/logs/unpack_briggsae.$rundate.$$";
     $dbname  = "brigdb";
   }
 
   if ($database eq "cshace"){
-    $ftp     = "/nfs/privateftp/ftp-wormbase/pub/incoming/csh";
+    $ftp     = "/nfs/ftp_uploads/wormbase/csh";
     $dbdir   = "$basedir/cshace";
     $logfile = "$basedir/logs/unpack_cshace.$rundate.$$";
     $dbname  = "cshl_dump";
   }
 
   if ($database eq "stlace"){
-    $ftp     = "/nfs/privateftp/ftp-wormbase/pub/incoming/stl";
+    $ftp     = "/nfs/ftp_uploads/wormbase/stl";
     $dbdir   = "$basedir/stlace";
     $logfile = "$basedir/logs/unpack_stlace.$rundate.$$";
     $dbname  = "stlace";
@@ -114,7 +114,7 @@ sub unpack_stuff{
 
 
   if ($database eq "citace"){
-    $ftp     = "/nfs/privateftp/ftp-wormbase/pub/incoming/caltech";
+    $ftp     = "/nfs/ftp_uploads/wormbase/caltech";
     $dbdir   = "$basedir/citace";
     $logfile = "$basedir/logs/unpack_citace.$rundate.$$";
     $dbname  = "citace_dump";

@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-10-20 12:03:04 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2005-01-11 14:38:29 $
 
 
 
@@ -568,11 +568,11 @@ sub prepare_primaries {
 sub FTP_versions {
 
   local (*STLACE_FTP,*BRIGDB_FTP,*CITACE_FTP,*CSHACE_FTP);
-  
-  my $stlace_FTP = "/nfs/privateftp/ftp-wormbase/pub/incoming/stl/stlace_*";
-  my $brigdb_FTP = "/nfs/privateftp/ftp-wormbase/pub/incoming/stl/brigdb_*";
-  my $citace_FTP = "/nfs/privateftp/ftp-wormbase/pub/incoming/caltech/citace_*";
-  my $cshace_FTP = "/nfs/privateftp/ftp-wormbase/pub/incoming/csh/cshl_*";
+  #updated to new location of incoming files 
+  my $stlace_FTP = "/nfs/ftp_uploads/wormbase/stl/stlace_*";
+  my $brigdb_FTP = "/nfs/ftp_uploads/wormbase/stl/brigdb_*";
+  my $citace_FTP = "/nfs/ftp_uploads/wormbase/caltech/citace_*";
+  my $cshace_FTP = "/nfs/ftp_uploads/wormbase/csh/cshl_*";
   my ($stlace_date,$brigdb_date,$citace_date,$cshace_date);
   
   # stlace
