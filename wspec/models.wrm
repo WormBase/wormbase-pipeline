@@ -209,10 +209,13 @@
 		Transcript ?Transcript XREF Allele // added for two cases of RNA genes with alleles [021126 krb]
 		//Gene ?Gene XREF Allele  // what this will becomee
         Reference_Allele
-	Isolation	Author	Text	// Isolator - should be ?Author
+	Isolation	Author	?Author	// use Person when known, else use Author
+			Person  ?Person //
 			Date	DateType
 		        Mutagen UNIQUE Text UNIQUE Text
 			Procedure Text
+			Forward_genetics Text // New tags to capture the basis of the experiment that isolated
+                        Reverse_genetics Text // the allele. [040206 krb]
 			Transposon_insertion Text  // Text Transposon type
 			Transposon_excision Text  //  new tag [030220 krb]
 			Transposon_mobilisation Text  // added [030220 krb]
@@ -240,8 +243,8 @@
                         Dominant		       
 			Penetrance UNIQUE Complete
 					  Partial Text // percentage of animals displaying phenotype
-                        Temperature_sensitive Heat_sensitive #Evidence
-					      Cold_sensitive #Evidence
+                        Temperature_sensitive Heat_sensitive Text #Evidence // text field stores temperature
+					      Cold_sensitive Text #Evidence
 			Loss_of_function UNIQUE Haplo_insufficient #Evidence //new section krb 021210
 						Hypomorph #Evidence
 						Amorph #Evidence
@@ -253,7 +256,10 @@
 			Nonsense UNIQUE	Amber_UAG
 					Ochre_UAA
 					Opal_UGA
-                        Missense
+                        Missense Text // text fields stored details of codon change
+			Silent Text
+			Splice_site Donor Text
+				    Acceptor Text
                         Frameshift   // added sdm
                         Maternal	Strictly_Maternal
 					With_Maternal_Effect
@@ -313,6 +319,7 @@
                                 Other_sequence ?Sequence XREF Locus_other_seq #Evidence    // dl 001128
 				Transcript ?Transcript XREF Locus #Evidence // en route to new gene model [021126 krb]
 				Pseudogene ?Pseudogene XREF Locus #Evidence // new [030801 krb]
+				Gene_variant_count UNIQUE Int // track how many isoforms made [040206 krb]
 	Gene_regulation         Trans_regulator ?Gene_regulation XREF Trans_regulator_locus // new for Wen [030804 krb]
                                 Trans_target    ?Gene_regulation XREF Trans_regulated_locus // new for Wen [030804 krb]
 	Map    UNIQUE ?Map XREF Locus #Map_position
@@ -376,7 +383,8 @@
 //	several intervals.
 	        Reference_strain ?Strain
 		Remark ?Text #Evidence
-		Isolation	Author Text	// should be ?Author
+		Isolation	Author ?Author  // use Person where possible, else use Author
+				Person ?Person
 				Date DateType
 				Mutagen UNIQUE Text UNIQUE Text // Text is dose
                 Map     ?Map XREF Rearrangement #Map_position
