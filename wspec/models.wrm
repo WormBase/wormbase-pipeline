@@ -1238,12 +1238,12 @@
 				Cell_group ?Cell_group XREF Expr_pattern
 				Life_stage ?Life_stage XREF Expr_pattern
                 Subcellular_localization ?Text
-		Type	Reporter_gene ?Text
-			In_situ ?Text
-			Antibody ?Text
-			Northern ?Text // added for Wen [krb 030425]
-                        Western ?Text // added for Wen 
-                        RT_PCR ?Text // added for Wen
+		Type	Reporter_gene Text
+			In_situ Text
+			Antibody Text
+			Northern Text // added for Wen [krb 030425]
+                        Western Text // added for Wen 
+                        RT_PCR Text // added for Wen
 		Pattern ?Text
 		Picture ?Picture XREF Expr_pattern	
                 Remark ?Text #Evidence
