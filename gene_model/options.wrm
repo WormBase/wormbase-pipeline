@@ -1,0 +1,146 @@
+/* @(#)options.wrm	1.17 9/10/96 */
+
+  /* wspec/options.wrm
+     
+     This file is read only at execution time
+
+     It holds the class definitions necessary to the applications.
+     The kernel classes are defined in  wspec/sysoptions.wrm
+     which can serve as a model when editing this one.
+
+     You can freely edit this file without recompiling
+     but it must remain consistent with the other wspec files
+     and you must never change the type (A, B, X) of a class
+     unless you reconstruct the database from ace files.
+
+     Line starting with _VClassName are parsed, they are expected
+     to contain a la Unix a set of -Option parameters.
+     Class names must match their enumeration in wspec/classes.wrm
+	
+     The order in which classes appear here will be used in displays.
+	
+     Options names can be abbreviated, recognized options are
+     -Hidden    : this class will not be listed in the Main Window pulldown list.
+     -Visible   : this class will be listed in the acedb Main Window.
+     -Array     : this class is of type A, (Array or tuple).
+     -Btree     : this class is of type B, it must be further defined in models.wrm
+     -XREF      : Auto cross referencing Hidden B system class. Do not use.
+     -Display  displayType : The preferred display type of the class,
+		             as enumerated in wspec/disptype.wrm
+     -Title  Tag : Tag must be a tag name listed in wspec/tags.wrm (or systags)
+	           If present in some object of that class, the text following it
+                   will be used preferentially when referring to that object.
+     -Rename otherName : Other name will show in lists, old and new
+                         name will be recognized in ace files and queries, old
+                         is used in the code. In case some newName
+			 matches some old name, the new name takes precedence.
+     -CaseSensitive : The names in this class will be case sensitive.
+                      Never undo this option once it has been used.
+     Classes default as -B -H -D TREE
+     A classes further default as -H -D ZERO
+
+     A classes may have a user defined parse and dump functions. 
+     Every display type needs a display function.
+     
+     These routines must be registered in file wspec/quovadis.h before
+     recompilation.
+  */
+
+// use the following for Arun Aggrawal's synmap 
+// but note that they will not work with tace unless you
+// register the -M options in displays.wrm, with dummy values
+//  _VMap              -V -D SYN -M STSMAP
+//  _VAssembly         -V -D SYN -M DOGMAP
+//  _VClone            -V -D SYN -M CloneMAP
+
+_VMap              -V -D GMAP  
+_VSequence         -V -D FMAP
+_VClone            -V -D PMAP
+
+_VAuthor           -V 
+_VJournal          -V
+_VPaper            -V -T Brief_citation
+
+_VGene_Class       -V
+_VLocus            -V -D GMAP 
+_VRearrangement    -V -D GMAP
+
+_VAllele           -V
+_VStrain           -V -T Genotype 
+_VLaboratory       -V
+
+_V2_point_data     -H -T Genotype 
+_VMulti_pt_data    -H -T Genotype
+_VPos_neg_data     -H -T Results 
+
+_VMotif            -V -D WWW
+
+_VContig           -H -D PMAP
+
+_VProtein	   -V -D PEPMAP
+_VAlignment	   -V
+_VMethod	   -V
+_VWormpep	   -V -D PEPMAP
+_VGrid             -V -D GRID
+_VSpecies          -H
+
+_VCell             -V
+_VExpr_pattern	   -V
+
+_VMultiMap	   -H -D DtMULTIMAP
+_VManyMap          -H -D GMAP
+
+_VPathway	   -V -D METAB
+_VEnzyme	   -V
+_VMetabolite	   -H
+
+_VView		   -V
+_VCell_group       -H
+_VLife_stage       -H
+_VPicture	   -H
+
+_VAccession_number -H
+_VTree             -V -D DtDendrogram
+_VTreeNode         -H -D DtDendrogram
+
+//added to allow URL objects to call netscape 
+_VUrl		   -V -D WWW
+
+// Jade class for Lincoln/Jean added by rd 000307
+_VJade		   -H
+
+// RNAi class added by LS 11/18/2000
+_VRNAi             -V
+_VPCR_product      -V
+
+// phenotypes and RNAis
+_VPhenotype        -V
+
+// Transgenes from Wen
+_VTransgene        -V
+
+// GO terms
+_VGO_term	   -V
+
+// Others
+_VHomol_data       -V
+
+// WTP
+_VWTP		   -V -D FMAP
+
+
+// The following lines are now obsolete and declared in kernel
+// _VgMap		   -A -H -D GMAP
+// _VvMap		   -A -H -D VMAP
+// _VpMap             -A -H -D PMAP
+// _VDNA              -A -H -D FMAP
+// _VPeptide	      -A -H
+ 
+
+
+
+
+
+
+
+
