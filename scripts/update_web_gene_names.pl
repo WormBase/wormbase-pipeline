@@ -5,7 +5,7 @@
 # completely rewritten by Keith Bradnam from list_loci_designations
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-07-28 16:32:33 $      
+# Last updated on: $Date: 2004-07-28 17:10:19 $      
 #
 # This script should be run under a cron job and simply update the webpages that show
 # current gene names and sequence connections.  Gets info from geneace.  
@@ -49,7 +49,7 @@ my $database;
 open(LOG,">$log") || carp "Couldn't open tmp log file\n";
 print LOG "Running update_web_gene_names.pl on $rundate\n\n";
 
-
+die "Can't run both -weekly and -daily at the same time!\n" if ($weekly && $daily);
 
 # make the a-z lists based on CGC_name using current_DB
 if($weekly){
@@ -60,7 +60,7 @@ if($weekly){
 
 # make lists of gene2molecular_name and molecular_name2gene
 if($daily){
-  print LOG "Making gene lists\n";
+  print LOG "Making gene2molecular_name lists\n";
   $database = "/wormsrv1/geneace";
   &make_gene_lists;
 }
@@ -73,7 +73,10 @@ if($daily){
 # now update pages using webpublish
 chdir($www) || print LOG "Couldn't run chdir\n";
 
-system("/usr/local/bin/webpublish -f -q *.shtml") && print LOG "Couldn't run webpublish on html files\n";
+
+if($weekly){
+  system("/usr/local/bin/webpublish -f -q *.shtml") && print LOG "Couldn't run webpublish on html files\n";
+}
 system("/usr/local/bin/webpublish -f -q *.txt") && print LOG "Couldn't run webpublish on text file\n";
 
 &mail_maintainer("update_web_gene_names.pl","krb\@sanger.ac.uk","$log");
@@ -114,6 +117,7 @@ sub create_currentDB_loci_pages{
     # cycle through each locus in database
     foreach my $gene_name (@gene_names){
 
+
       # skip gene names that are just sequence names
       next unless ($gene_name->CGC_name_for || $gene_name->Other_name_for);
 
@@ -135,8 +139,8 @@ sub create_currentDB_loci_pages{
       next unless ($species eq "Caenorhabditis elegans");
 
       # ignore dead genes
-      next if (!defined($gene->Live));
-      
+      next if(!defined $gene->at('Identity.Live'));
+
       # Set alternating colours for each row of (HTML) output 
       if (($line % 2) == 0) { 
 	print HTML "<TR BGCOLOR=\"lightblue\">\n";
