@@ -7,8 +7,8 @@
 
 # 031023 dl1
 
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2004-08-03 14:01:34 $
+# Last edited by: $Author: krb $
+# Last edited on: $Date: 2004-08-03 14:16:26 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -172,10 +172,7 @@ sub MaskSequence {
 	$seqmasked = $seq;                  # copy sequence to masked file and
 	$seqlength = length ($seq);         # calculate the length of the sequence
 	
-	print "-> Parsing $acc [$id]\n" if ($verbose);
-	
-	print "$_\n";
-
+	print "-> Parsing $acc [$id]\n" if ($verbose);	
 
 	# fetch the sequence object from the database. push the feature_data objects to memory
 	my $obj = $db->fetch(Sequence=>$id);
