@@ -1,10 +1,15 @@
 #!/usr/local/bin/perl5.6.1 -w
-          
+#
+# Common_data.pm          
 # 
 # by Anthony Rogers                             
 #
-# Last updated by: $Author: ar2 $               
-# Last updated on: $Date: 2002-11-28 12:10:23 $         
+# Last updated by: $Author: dl1 $               
+# Last updated on: $Date: 2002-11-28 16:45:13 $         
+
+#################################################################################
+# Initialise variables                                                          #
+#################################################################################
 
 use strict;                    
 use lib "/wormsrv2/scripts/";
@@ -12,78 +17,97 @@ use Wormbase;
 use Data::Dumper;
 use Getopt::Long;
 
-my $update;
-my $build;
-my $a2c;
-my $c2g;
-my $g2p;
-my $all;
-my $test;
+##############################
+# command-line options       #
+##############################
 
-GetOptions("update"     => \$update,
-	   "in_build"   => \$build,
-	   "accession"  => \$a2c,
-	   "ce"         => \$c2g,
-	   "pid"        => \$g2p,
-	   "all"        => \$all,
-	   "test"       => \$test
-	  );
+use vars qw($update $build $a2c $c2g $g2p $all $predicted_CDS $test);
 
-if( $all ) {
-  $c2g = 1;
-  $a2c = 1;
-  $g2p = 1;
+GetOptions("update"        => \$update,
+	   "in_build"      => \$build,
+	   "accession"     => \$a2c,
+	   "ce"            => \$c2g,
+	   "pid"           => \$g2p,
+	   "all"           => \$all,
+	   "predicted_CDS" => \$predicted_CDS,
+	   "test"          => \$test
+	   );
+
+# do all of the data sets if -all
+if ($all) {
+    $c2g = 1; $a2c = 1; $g2p = 1;
 }
 
-my $this_file = "/wormsrv2/scripts/Common_data.pm";
-our $data_dir = "/wormsrv2/autoace/COMMON_DATA";
-$data_dir = "/wormsrv2/tmp" if $test;
-our $ace_dir;
+##############################
+# database paths             #
+##############################
+
+my $this_file   = "/wormsrv2/scripts/Common_data.pm";
+our $data_dir   = "/wormsrv2/autoace/COMMON_DATA";
 our $wquery_dir = "/wormsrv2/autoace/wquery";
+our $ace_dir;
+
+our %sub2file = ( 'gene2CE'   => "$data_dir/gene2CE.dat",
+		  'CE2gene'   => "$data_dir/CE2gene.dat",
+		  'clone2acc' => "$data_dir/clone2acc.dat",
+		  'acc2clone' => "$data_dir/acc2clone.dat",
+		  'gene2pid'  => "$data_dir/gene2pid.dat",
+		  'CDSlist'   => "$data_dir/CDSlist.dat",
+		  'pid2gene'  => "$data_dir/pid2gene.dat"
+		);
+
+##############################
+# ACEDB executables          #
+##############################
+
 our $tace = &tace;
 
+##############################
+# debug mode                 #
+##############################
+
+my $debug = 0;
+
+
+# Use alternate directory for output if testing (-test)
+$data_dir = "/wormsrv2/tmp" if ($test);
+
+# update mode 
 if( $update ) {
   print "Updating $data_dir data files ";
 
   # AceDB data
   if( $build ) {
-    $ace_dir = "/wormsrv2/autoace";
-    print "during build so using $ace_dir - ensure that the data you are updating is actually in the database.\n";
+      $ace_dir = "/wormsrv2/autoace";
+      print "during build so using $ace_dir - ensure that the data you are updating is actually in the database.\n";
   }
   else {
-    $ace_dir = "/wormsrv2/current_DB";
-    print "- NOT as part of build so using $ace_dir. If this is part of the build data MAY be stale\n";
+      $ace_dir = "/wormsrv2/current_DB";
+      print "- NOT as part of build so using $ace_dir. If this is part of the build data MAY be stale\n";
   }
   &Common_data_update;
 }
-
-
-
-our %sub2file = ( 'gene2CE' => "$data_dir/gene2CE.dat",
-		  'CE2gene' => "$data_dir/CE2gene.dat",
-		  'clone2acc' => "$data_dir/clone2acc.dat",
-		  'acc2clone' => "$data_dir/acc2clone.dat",
-		  'gene2pid' => "$data_dir/gene2pid.dat",
-		  'pid2gene' => "$data_dir/pid2gene.dat"
-		);
-
-
-sub Common_data_update
-  {
-    &write_gene2pid if $g2p;
-    &write_clone2acc if $a2c;
-    &write_gene2CE if $c2g;
-  }
-
-# Data writing routines - actually create and dump the data
-##################################
-sub write_gene2pid
-  {
-    unless( $update ) {
-      print "please update using the script ie Common_data.pm -update -pid\n";
-      `perldoc $this_file`;
-      exit(1);
+# checks to stop you running the writeable outside update mode
+else {
+    if ( ($g2p) || ($a2c) || ($c2g) ) {
+	print "please update using the script ie Common_data.pm -update -pid\n";
+	`perldoc $this_file`;
+	exit(1);
     }
+}
+
+sub Common_data_update {
+    &write_gene2pid  if $g2p;
+    &write_clone2acc if $a2c;
+    &write_gene2CE   if $c2g;
+    &write_CDSlist   if $predicted_CDS;
+}
+
+#######################################################################
+# Data writing routines - actually create and dump the data           #
+#######################################################################
+
+sub write_gene2pid {
 
     my %gene2pid;
     my %pid2gene;
@@ -92,7 +116,7 @@ sub write_gene2pid
     # connect to AceDB using TableMaker,
     # populating %accession2name (maps embl accession to contig name)
     ####################################################################
-    my $command="Table-maker -p $wquery_dir/gene2pid.def\nquit";
+    my $command="Table-maker -p $wquery_dir/gene2pid.def\nquit\n";
     
     open (TACE, "echo '$command' | $tace $ace_dir |");
     while (<TACE>) {
@@ -117,16 +141,10 @@ sub write_gene2pid
     
     close G2P;
     close P2G;
-        
-  }
+    
+}
 
-sub write_clone2acc
-  {   
-    unless( $update ) {
-      print "please update using the script ie Common_data.pm -update -accession\n";
-      `perldoc $this_file`;
-      exit(1);
-    }
+sub write_clone2acc  {   
 
     my %clone2acc;
     my %acc2clone;
@@ -135,9 +153,9 @@ sub write_clone2acc
     # connect to AceDB using TableMaker,
     # populating %gene2pid
     ####################################################################
-    my $command="Table-maker -p $wquery_dir/accession2clone.def\nquit";
+    my $command="Table-maker -p $wquery_dir/accession2clone.def\nquit\n";
     
-    open (TACE, "echo '$command' | $tace /wormsrv2/autoace |");
+    open (TACE, "echo '$command' | $tace $ace_dir |");
     while (<TACE>) {
       chomp;
       if (/\"(\S+)\"\s+\"(\S+)\"\s*\d*/) {
@@ -157,31 +175,25 @@ sub write_clone2acc
     close C2A;
     close A2C;
         
-  }
+}
 
-sub write_gene2CE
-  {   
-    unless( $update ) {
-      print "please update using the script ie Common_data.pm -update -ce\n";
-      exec ('perldoc', $this_file);
-      exit(1);
-    }
+sub write_gene2CE  {   
+
     my $WPver = &get_wormbase_version;
     open (FH,"</wormsrv2/WORMPEP/wormpep$WPver/wormpep$WPver") or die "cant open wormpep$WPver\n";
     my %gene2CE;
     my %CE2gene;
-    while(<FH>)
-      {
+    while(<FH>) {
 	if( />/ ) {
-	  chomp;
-	  my @data = split;
-	  # >2L52.1 CE32090   Zinc finger, C2H2 type status:Predicted TR:Q9XWB3
-	  my $pep = $data[1];
-	  my $gene = substr("$data[0]",1);
-	  $gene2CE{$gene} = $pep;
-	  $CE2gene{$pep} .= "$gene ";
+	    chomp;
+	    my @data = split;
+	    # >2L52.1 CE32090   Zinc finger, C2H2 type status:Predicted TR:Q9XWB3
+	    my $pep = $data[1];
+	    my $gene = substr("$data[0]",1);
+	    $gene2CE{$gene} = $pep;
+	    $CE2gene{$pep} .= "$gene ";
 	}
-      }
+    }
     
     #now dump data to file
     open (C2G, ">$sub2file{'CE2gene'}") or die "$sub2file{'CE2gene'}";
@@ -192,52 +204,93 @@ sub write_gene2CE
     
     close C2G;
     close G2C;
-  }
+}
 
+sub write_CDSlist  {   
+
+    my %CDSlist;
+    my $CDS;
+
+    ####################################################################
+    # connect to AceDB using TableMaker,
+    # populating %gene2pid
+    ####################################################################
+    my $command="Table-maker -p $wquery_dir/CDSlist.def\nquit\n";
+    
+    open (TACE, "echo '$command' | $tace $ace_dir |");
+    while (<TACE>) {
+	chomp;
+	next if ($_ eq "");
+	last if (/\/\//);
+	($CDS) = (/^\"(\S+)\"/);
+	if (/Confirmed_by/) {$CDSlist{$CDS} = 1;}
+	else {$CDSlist{$CDS} = 0;}
+	print "assigned $CDS with status '$CDSlist{$CDS}'\n" if ($debug);
+    }
+    close TACE;
+    
+    #now dump data to file
+    open (CDS, ">$sub2file{'CDSlist'}") or die "Can't open file: $sub2file{'CDSlist'}";
+    print CDS Data::Dumper->Dump([\%CDSlist]);
+    close CDS;
+}
+
+
+
+####################################################################################
 
 # Data retrieval routines - all work thru same sub but pass different files
 
-sub gene2pid 
-  {
+sub FetchData {
+    my ($file,$ref) = @_;
+
+    open (FH, "<$sub2file{$file}") or die "can't open $file";
+    undef $/;
+    my $VAR1;
+    my $data = <FH>;
+    eval $data;
+    die if $@;
+    $/ = "\n";
+    close FH;
+    %$ref = (%$VAR1);    
+}
+
+sub gene2pid   {
     my $ref = shift;
     my $file = $sub2file{'gene2pid'};
     &getData($ref, $file);
-  }
+}
 
-sub clone2acc 
-  {
+sub clone2acc   {
     my $ref = shift;
     my $file = $sub2file{'clone2acc'};
     &getData($ref, $file);
+}
 
-  }
-
-#data for this dumped from write_clone2acc sub
-sub acc2clone
-  {
+sub acc2clone {
     my $ref = shift;
     my $file = $sub2file{'acc2clone'};
     &getData($ref, $file);
+}
 
-  }
-
-sub gene2CE
-  {
+sub gene2CE  {
     my $ref = shift;
     my $file = $sub2file{'gene2CE'};
     &getData($ref, $file);
-  }
+}
 
-sub CE2gene
-  {
+sub CE2gene {
     my $ref = shift;
     my $file = $sub2file{'CE2gene'};
     &getData($ref, $file);
-  }
+}
 
-# Actually gets the data from the .dat files and populated the hash whose reference is passed.
-sub getData
-  {
+#######################################################################
+# Actually gets the data from the .dat files                          # 
+# and populated the hash whose reference is passed.                   # 
+#######################################################################
+
+sub getData  {
     my $ref = shift;
     my $file = shift;
     open (FH, "<$file") or die "cant open $file";
@@ -249,7 +302,7 @@ sub getData
     $/ = "\n";
     close FH;
     %$ref = (%$VAR1);    
-  }
+}
 
 ####################
 #Return a true value
