@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-03-03 10:30:59 $
+# Last edited on: $Date: 2004-03-03 16:57:52 $
 
 
 #################################################################################
@@ -1309,6 +1309,10 @@ sub map_features {
 
 sub confirm_gene_models {
   $am_option = "-confirm";
+
+  # needs GFF files to be split, which might not have happened depending on what was blatted
+  # so if no C2 lock file, split GFFs
+  &split_GFFs unless (-e "$logdir/$flag{'C2'}");
 
   # confirm_genes from EST&OST (-est) and mRNA (-mrna) data sets
   &run_command("$scriptdir/confirm_genes.pl --est --mrna");
