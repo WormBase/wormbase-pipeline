@@ -7,8 +7,8 @@
 #
 # dl
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2003-04-23 16:12:48 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2003-04-30 16:28:20 $
 
 use lib "/wormsrv2/scripts/";
 use Wormbase;
@@ -18,6 +18,8 @@ use Data::Dumper;
 
 my %acc2clone = &FetchData('acc2clone');
 my %gene2CE = &FetchData('gene2CE');
+my %Ip2Go;
+
  # get the InterPro => GOterm mapping ( space separated ie 'IPR004794' => 'GO:0008703 GO:0008835 GO:0009231 ')
 
 our %databases = (
