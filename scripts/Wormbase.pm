@@ -7,7 +7,7 @@ package Wormbase;
 
 use Exporter;
 @ISA       = qw(Exporter);
-@EXPORT    = qw(get_cvs_version copy_check mail_maintainer celeaccession tace gff_sort dbfetch);
+@EXPORT    = qw(get_cvs_version get_wormbase_version copy_check mail_maintainer celeaccession tace gff_sort dbfetch);
 @EXPORT_OK = qw(get_script_version); 
 
 
@@ -18,6 +18,23 @@ sub get_cvs_version{
   my $version = `cvs -d /nfs/ensembl/cvsroot/ status $script_name`;
   $version =~ s/.* +Repository revision:\s+([\d\.]*)\s+.*/$1/s; 
   return($version);
+}
+
+#################################################################################
+
+sub get_wormbase_version {
+
+    my $Wormbase_release_file = "/wormsrv2/autoace_config/WormBase_release_version";
+    my $WS_version            = "";
+
+    open (WormBase_release, $Wormbase_release_file) || warn "Can't open file\n\n";
+    while (<WormBase_release>) {
+	chomp;
+	$WS_version = $_;
+    }
+    close (WormBase_release);
+    
+    return($WS_version);
 }
 
 
@@ -180,6 +197,17 @@ get_cvs_version must be present in a CVS checked-out directory.
 Returns the latest CVS version number.
 
 This subroutine replaces the (deprecated) get_script_version (see below).
+
+=back
+
+=over 4
+
+=item *
+
+get_wormbase_version
+
+This subroutine returns the current WormBase release number (read from the 
+file: /wormsrv2/autoace_config/WormBase_release_version.
 
 =back
 
