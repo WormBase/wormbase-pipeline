@@ -62,11 +62,10 @@ my $debug = $opt_d;
 # Paths etc                  #
 ##############################
 
-my $clonepath="/nfs/disk100/wormpub/analysis/cosmids";
-my $clonefile="$clonepath"."/current.versions";
-my $tace = glob("~wormpub/ACEDB/bin.ALPHA_4/tace");   # tace executable path
-
-my $dbpath = "/wormsrv1/camace";                                       # Database path
+my $clonepath = "/nfs/disk100/wormpub/analysis/cosmids";
+my $clonefile = "$clonepath"."/current.versions";
+my $tace      = glob("~wormpub/ACEDB/bin.ALPHA_4/tace");   # tace executable path
+my $dbpath = "/wormsrv1/camace";                           # Database path
 
 
 # only tell Dan if running debug mode
@@ -263,7 +262,7 @@ if (@multimap_clones){
 # LINK objects    #
 ###################
 
-my $i = $db->fetch_many(-query=> 'find Sequence "*LINK*"');  
+my $i = $db->fetch_many(-query=> 'find Sequence "SUPERLINK*"');  
 while (my $obj = $i->next) {
   my $link = $obj;
   print "[$link]    \t" if ($debug);
@@ -443,8 +442,6 @@ sub checkgenes {
     
     unless ($seq =~ /\./) {next;}
     
-    if ($obj =~ /^SUPERLINK/) {print LOG "SUPERLINK $obj contains CDS gene models\n";}
-    
     my $diff = $end - $start;
     if ($diff < 0) {
       $diff = $start - $end;
@@ -467,7 +464,7 @@ sub checkgenes {
     
     # check to see if subsequence coordinates exceed length of parent clone
     # won't work for parents that are links (they have zero length)
-    if($source !~ m/LINK/){
+    if($source !~ m/SUPERLINK/){
       my ($source_length) = $source->DNA(2);
       if (($start > $source_length) || ($end > $source_length)){
 	print LOG "The subsequence $child has coordinates that exceed the length of its parent\n";
@@ -729,7 +726,7 @@ __END__
 
 camcheck performs a number of integrity/consistency checks against
 the camace database. The script is based on an iterative loop across
-all Genome_sequences and LINK* objects.
+all Genome_sequences and SUPERLINK* objects.
 
 =back
 
@@ -866,14 +863,6 @@ of the Gene Model as a Subsequence of the parent ?Sequence.
 
 The coordinates of each subsequence must be less than the length of the
 parent sequence.
-
-
-=head2 LINK objects
-
-=head3 CDS Gene Models on SUPERLINK objects
-
-CDS Gene Models are not allowed as children of SUPERLINK objects.
-
 
 =head2 Valid predicted gene objects
 
