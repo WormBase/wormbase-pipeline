@@ -4,7 +4,7 @@
 
 # by Chao-Kung Chen [030113]
 
-# Last updated on: $Date: 2003-02-12 16:43:54 $
+# Last updated on: $Date: 2003-02-14 11:40:22 $
 # Last updated by: $Author: ck1 $
 
 
@@ -15,6 +15,7 @@ use lib "/wormsrv2/scripts/";
 use Wormbase;
 use Cwd 'chdir';
 use Getopt::Long;
+
 
 ###################################################
 # variables and command-line options with aliases # 
@@ -65,15 +66,20 @@ system("echo '\$ caltech' | ftp -i caltech.wormbase.org") && print LOG "Failed t
 my @ftp_date=dataset($caltech);    # [0] is the date of the file , [1] is the filename
 my @last_date=dataset($updatedir); # [0] is the date of the file , [1] is the filename
 
+#print $ftp_date[0], "#\n";
+#print $ftp_date[1], "#\n";
+#print $last_date[0], "##\n";
+#print $last_date[1], "##\n";
+
 push(@dates, $ftp_date[0], $last_date[0]);
 
 my @order = sort {$a <=> $b} @dates;
 
-if ($last_date[0] == $order[0]){
+if ($last_date[0] != $order[0]){
   print LOG "UPDATE file $ftp_date[1] avilable on FTP...start to download\n\n";
   chdir $updatedir;
-  system("mv $last_date[1] ARCHIVE/"); 
   system("echo '\$ caltech' | ftp -i caltech.wormbase.org") && print LOG "Failed to download file\n"; 
+  if (!$!){system("mv $last_date[1] ARCHIVE/")}   # if download failed, do not move the last update file to ARCHIVE
 }
 else {
   print LOG "No new update on FTP site\n";
@@ -82,37 +88,40 @@ else {
   exit(0);
 }
 
-###############################################
+################################################
 # check if locus is now CGC_approved other_name
 # if yes, replace by main_name in ace file
-# if not, output to an file and check by hand
-###############################################
+# if not, output to LOG file and updates geneace
+################################################
 
 my $ga_dir = "/wormsrv1/geneace";
 
 my $locus_has_other_name=<<EOF;
 Table-maker -p "/wormsrv1/geneace/wquery/locus_has_other_name.def" quit
 EOF
+my $cgc_approved_loci=<<EOF;
+Table-maker -p "/wormsrv1/geneace/wquery/cgc_approved_loci.def" quit
+EOF
 
-my @other_main=loci_as_other_name($locus_has_other_name, $ga_dir);
+
+my @other_main=loci_as_other_name($locus_has_other_name,  $cgc_approved_loci, $ga_dir);
 
 my %other_main=%{$other_main[0]};
 
 my %main;
 my @main=@{$other_main[1]}; foreach (@main){$main{$_}++};
 
-my $change=0;
-my ($non_cgc_other_name, $cgc_other_name);
+my %cgc_loci=%{$other_main[2]};
 
-$!=();
+my $change=0;
+my ($other_name_as_object, $cgc_other_name);
 
 open (IN, "$updatedir/$ftp_date[1]");
-print LOG "Can't read in update file $ftp_date[1] downloaded from FTP site\n" if ($!);
 
 my $modify ="/wormsrv1/geneace/ERICHS_DATA/$ftp_date[1].modified";
 
 open(OUT, ">$modify");
-print LOG "Couldn't write modification to $modify" if ($!);
+
 
 while(<IN>){
   if ($_ =~ /^Locus : \"(.+)\"/){
@@ -121,8 +130,11 @@ while(<IN>){
     # check if locus is an other_name and also a locus object
     #########################################################
 
-    if ($other_main{$1} && $main{$1}){    
-      $non_cgc_other_name .= "$1 - this is a valid CGC gene name, but has also been used as an other name for @{$other_main{$1}}\n";
+    if ($other_main{$1} && $main{$1} && $cgc_loci{$1}){    
+      $other_name_as_object .= "$1 - this is a valid CGC gene name, but has also been used as an other name for @{$other_main{$1}}\n";
+    }  
+    if ($other_main{$1} && $main{$1} && !exists $cgc_loci{$1}){    
+      $other_name_as_object .= "$1 - this is a non_CGC gene name, but has also been used as an other name for @{$other_main{$1}}\n";
     }  
     if ($other_main{$1} && !$main{$1}){     # check if locus is an other_name and also not a locus object  
       $cgc_other_name .= "\n$1 is now an other_name of @{$other_main{$1}}";
@@ -139,7 +151,7 @@ while(<IN>){
 }
 print LOG "Functional annotations are attached to the following genes which\n";
 print LOG "*possibly* should be attached to different genes:\n\n";
-print LOG "$non_cgc_other_name\n\n";
+print LOG "$other_name_as_object\n\n";
 
 print LOG "Functional annotations are attached to the following gene names\n";
 print LOG "which are no longer valid CGC names, and should be attached to new names as follows:\n";
@@ -205,6 +217,7 @@ exit(0);
 
 mail_maintainer($script, $recipients, $log) unless $debug;
 
+
 #############
 # subroutines
 #############
@@ -241,22 +254,29 @@ sub dataset {
 
 sub loci_as_other_name {
 
-  my ($def, $dir) = @_;
-  my ($main, @main, $other_name, %other_main);
+  my ($def1, $def2, $dir) = @_;
+  my ($main, @main, $other_name, %other_main, @cgc_loci, $cgc_loci);
   
-  open (FH, "echo '$def' | tace $dir | ") || die "Couldn't access geneace\n";
-  while (<FH>){
+  open (FH1, "echo '$def1' | tace $dir | ") || die "Couldn't access geneace\n";
+  while (<FH1>){
     chomp $_;
     if ($_ =~ /\"(.+)\"\s+\"(.+)\"/){
       $main = $1;
       $other_name = $2;
-      $other_name =~ s/\\//g; #print $other_name, "\n";
-    #  print "$main -> $other_name\n";
+      $other_name =~ s/\\//g;
       push(@{$other_main{$other_name}}, $main);
       push(@main, $main);
     }
   }
-  return \%other_main, \@main
+  open (FH2, "echo '$def2' | tace $dir | ") || die "Couldn't access geneace\n";
+  while (<FH2>){
+    chomp $_;
+    if ($_ =~ /\"(.+)\"/){
+      push(@cgc_loci,  $1);
+    }
+  }
+  foreach (@cgc_loci){$cgc_loci{$_}++};
+  return \%other_main, \@main, \%cgc_loci;
 }
 
 
