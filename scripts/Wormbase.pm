@@ -901,7 +901,7 @@ Generate log file in the logs directory with WS version and processID appended t
     my $rundate    = `date +%y%m%d`; chomp $rundate;	    
     my $path = "/wormsrv2/logs";
     $path = "/tmp" if $debug;
-    my $log_file = "$path/$filename".".$ver.$rundate".$$;
+    my $log_file = "$path/${filename}.${ver}.${rundate}.$$";
     my $fh = &make_log("$log_file");
     print $fh "Build script : $filename \n Started at ",&runtime,"\n\n***********************************\n\n";
     return $fh;
