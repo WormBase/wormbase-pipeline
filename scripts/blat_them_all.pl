@@ -10,6 +10,16 @@
 # - producing confirmed introns
 # - producing virtual objects to put the data into
 #
+# -e : run everything for ESTs
+# -m : run everything for mRNAs
+# -x : run everything for parasitic nematode ESTs
+# -o : run everything for miscellaneous peptides (worm non RNA division coding sequence, not HTG)
+#
+# -n : dump dna/chromosome data from autoace
+# -b : blating (autoace.fa, chromosome.ace already present)
+# -s : sorting/mapping (blat2ace.pl)
+# -v : produce the virtual objects
+#
 # 16.10.01 Kerstin Jekosch
 # 17.10.01 kj: modified to get everything onto wormsrv2 and to include an mRNA and parasitic nematode blatx option
 # 26.11.01 kj: runs everything for autoace AND camace now
@@ -20,50 +30,81 @@
 # 01.02.02 dl: routine to convert '-' -> 'N' needs to be within the same BLOCK as the tace command
 #            : else you get a zero length fasta file each time and the confirm intron routines fail
 
+
 use strict;
 use Ace;
 use lib "/wormsrv2/scripts/";
 use Wormbase;
 use Getopt::Std;
 use IO::Handle;
-use vars qw($opt_e $opt_m $opt_x $opt_b $opt_s $opt_o $opt_v);
+use vars qw($opt_e $opt_m $opt_x $opt_b $opt_s $opt_o $opt_v $opt_n $opt_h $opt_d);
 $|=1;
 
-$opt_e = ""; # run everything for ESTs
-$opt_m = ""; # run everything for mRNAs
-$opt_x = ""; # run everything for parasitic nematode ESTs
-$opt_o = ""; # run everything for miscellaneous peptides (worm non RNA division coding sequence, not HTG)
-$opt_b = ""; # start with blating (autoace.fa, chromosome.ace already present)
-$opt_s = ""; # start later with sorting/mapping (blat2ace.pl)
-$opt_v = ""; # just produce the virtual objects
-getopts('emxbsvo');
 
 ###############
 # directories #
 ###############
 
-my $dbdir  = '/wormsrv2/autoace';
-my $bin    = '/wormsrv2/scripts';
-
-#my $bin    = '/nfs/griffin2/dl1/wormbase/wormbase/scripts';
+our $dbdir  = '/wormsrv2/autoace';
+#my $bin     = '/wormsrv2/scripts';
+my $bin    = '/nfs/griffin2/dl1/wormbase/wormbase/scripts';
 
 my $query;
-$query     = '/nfs/disk100/wormpub/analysis/ESTs/C.elegans_nematode_ESTs'    if ($opt_e); # EST data set
-$query     = '/wormsrv2/mRNA_GENOME/NDB_mRNAs.fasta'                         if ($opt_m); # mRNA data set
-$query     = '/wormsrv2/autoace/BLAT/nematode.fa'                            if ($opt_x); # ParaNem EST data set
-$query     = '/nfs/disk100/wormpub/analysis/ESTs/C.elegans_nematode_miscPep' if ($opt_o); # Other CDS data set
-my $seq    = '/wormsrv2/autoace/BLAT/autoace.fa';               
-my $chrom  = '/wormsrv2/autoace/BLAT/chromosome.ace';
-my $blatex = '/nfs/disk100/wormpub/blat/blat';
-my $blat   = '/wormsrv2/autoace/BLAT';
-my $giface = '/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_4/giface';
+$query      = '/nfs/disk100/wormpub/analysis/ESTs/C.elegans_nematode_ESTs'    if ($opt_e); # EST data set
+$query      = '/wormsrv2/mRNA_GENOME/NDB_mRNAs.fasta'                         if ($opt_m); # mRNA data set
+$query      = '/wormsrv2/autoace/BLAT/nematode.fa'                            if ($opt_x); # ParaNem EST data set
+$query      = '/nfs/disk100/wormpub/analysis/ESTs/C.elegans_nematode_miscPep' if ($opt_o); # Other CDS data set
+
+my $db;
+our %homedb;
+
+our $seq     = '/wormsrv2/autoace/BLAT/autoace.fa';               
+our $chrom   = '/wormsrv2/autoace/BLAT/chromosome.ace';
+our $blatex  = '/nfs/disk100/wormpub/blat/blat';
+our $blat    = '/wormsrv2/autoace/BLAT';
+our $giface  = '/nfs/disk100/acedb/RELEASE.SUPPORTED/bin.ALPHA_4/giface';
+our $data;
+our %word = (
+	     EST      => 'BLAT_EST',
+	     mRNA     => 'BLAT_mRNA',
+	     EMBL     => 'BLAT_EMBL',
+	     NEMATODE => 'BLATX_NEMATODE',
+	     );
+
+
+########################################
+# command-line options & ramifications #
+########################################
+
+getopts('emxbsvonhd');
+
+# Help pod documentation
+&usage(0) if ($opt_h);
+
+# Exit if no option choosen [n|b|s|v]
+&usage(1) unless ($opt_n || $opt_b || $opt_s || $opt_v); 
+
+# Exit if no data type choosen [EST|mRNA|EMBL|NEMATODE]
+&usage(2) unless ($opt_e || $opt_m || $opt_o || $opt_x); 
+
+# Exit if multiple data types choosen [EST|mRNA|EMBL|NEMATODE]
+&usage(3) if (($opt_e + $opt_m + $opt_o + $opt_x) > 1);
+
+# assign type variable
+($data = 'EST')      if ($opt_e);
+($data = 'mRNA')     if ($opt_m);
+($data = 'EMBL')     if ($opt_o);
+($data = 'NEMATODE') if ($opt_x);
+
+
 
 #############
 # LOG stuff #
 #############
 
-system("perldoc $bin/blat_them_all") unless ($opt_m || $opt_e || $opt_x);
 my $maintainer = "kj2\@sanger.ac.uk dl1\@sanger.ac.uk krb\@sanger.ac.uk";
+$maintainer = "dl1\@sanger.ac.uk"; 
+
 my $rundate    = `date +%y%m%d`;   chomp $rundate;
 my $runtime    = `date +%H:%M:%S`; chomp $runtime;
 my $version    = &get_cvs_version('/wormsrv2/scripts/blat_them_all.pl');
@@ -73,10 +114,10 @@ my $logfile = "/wormsrv2/logs/blat_them_all.${WS_version}.$rundate.$$";
 system ("/bin/touch $logfile");
 open (LOG,">>$logfile") or die ("Could not create logfile\n");
 LOG->autoflush();
-open (STDOUT,">>$logfile");
-STDOUT->autoflush();
-open (STDERR,">>$logfile"); 
-STDERR->autoflush();
+#open (STDOUT,">>$logfile");
+#STDOUT->autoflush();
+#open (STDERR,">>$logfile"); 
+#STDERR->autoflush();
 
 print LOG "# blat_them_all\n\n";     
 print LOG "# version        : $version\n";
@@ -94,270 +135,488 @@ print LOG "\n";
 print LOG "Starting blat process .. \n\n";
 
 ###########################
-# get data out of autoace #
+# Main loop               #
 ###########################
 
-unless ($opt_b || $opt_s || $opt_v) {
-    print "Getting sequence data out of autoace and putting it into $seq\n";
-    print "Getting chromosome data out of autoace and putting it into $chrom\n";
 
-my $command1=<<EOF;
-find sequence "CH*"
-follow subsequence
-dna -f /wormsrv2/autoace/BLAT/autoace.first
-clear
-find sequence "CH*"
+# Write sequence data from autoace
+if ($opt_n) {
+
+    # CHECK: do the autoace.fa & chromosome.ace files exist
+
+    # CHECK: are we dumping from a new database
+    
+    &dump_dna;
+    %homedb = &which_db;
+}
+
+# BLAT the query data type 
+if ($opt_b) {
+
+    # CHECK: does the autoace.fa exist
+    # exit if autoace.fa file is absent
+    &usage(5) if (-e "/wormsrv2/autoace/BLAT/autoace.fa");
+    
+    # CHECK: how old is the autoace.fa file ?
+    # exit if autoace.fa file created prior to start of (re)build 
+    &usage(6) if (-M "/wormsrv2/autoace/ace/logs/build_in_progess" < -M "/wormsrv2/autoace/BLAT/autoace.fa");
+   
+    # assign contigs to laboratory
+    %homedb = &which_db;
+
+    print LOG "running blat and putting the result in $blat/${data}_out.psl\n";
+
+    # BLAT system call
+    if ($opt_x) {
+	system("$blatex $seq $query -t=dnax -q=dnax $blat/${data}_out.psl") && die "Blat failed\n";
+    }
+    else {
+	system("$blatex $seq $query $blat/${data}_out.psl") && die "Blat failed\n";
+    }
+}
+
+
+# map to autoace #
+if ($opt_s) {
+
+    # assign contigs to laboratory
+    %homedb = &which_db;
+
+    if ($opt_e) {
+	
+	print "Mapping blat data to autoace\n";
+	system("$bin/blat2ace.pl -ei ") && die "Mapping failed\n"; 
+
+    }
+    if ($opt_m) {
+	print "Mapping blat data to autoace\n";
+	system("$bin/blat2ace.pl -mi") && die "Mapping failed\n"; 
+    }
+    if ($opt_o) {
+	print "Mapping blat data to autoace\n";
+	system("$bin/blat2ace.pl -oi") && die "Mapping failed\n"; 
+    }
+    if ($opt_x) {
+	print "Mapping blat data to autoace\n";
+	system("$bin/blat2ace.pl -x") && die "Mapping failed\n"; 
+    }
+
+    # produce confirmed introns #
+    if ($opt_e) {
+	print "Producing EST confirmed introns in databases\n";
+	&confirm_introns('autoace','EST');
+	&confirm_introns('camace', 'EST');
+	&confirm_introns('stlace', 'EST');
+    }
+    if ($opt_m) {
+	print "Producing mRNA confirmed introns in databases\n";
+	&confirm_introns('autoace','mRNA');
+	&confirm_introns('camace', 'mRNA');
+	&confirm_introns('stlace', 'mRNA');
+    }
+    if ($opt_o) {
+	print "Producing EMBL confirmed introns in databases\n";
+	&confirm_introns('autoace','EMBL');
+	&confirm_introns('camace', 'EMBL');
+	&confirm_introns('stlace', 'EMBL');
+    }
+}
+
+# produce files for the virtual objects #
+
+if ($opt_v) {
+
+    # CHECK: 
+    &usage(11) if (-e "/wormsrv2/autoace/BLAT/chromosome.ace");
+    
+    # assign contigs to laboratory
+    %homedb = &which_db;
+
+    print LOG "Producing $data files for the virtual objects\n\n";
+    &virtual_objects_blat($data);
+}
+
+
+close LOG
+
+# mail logfile to maintainer
+&mail_maintainer("WormBase Report: blat_them_all ",$maintainer,$logfile);
+
+##############################
+# hasta luego                #
+##############################
+
+exit(0);
+
+#################################################################################
+### Subroutines                                                               ###
+#################################################################################
+
+
+###################################################
+# dump_dna : get data out of autoace              #
+###################################################
+
+# tace query for chromosome DNA files and chromosome link files
+# not run for blatting (-b), mapping (-s) and virtual_obj generation (-v)
+
+sub dump_dna {
+
+    local (*CHANGE,*NEW);
+
+my $command=<<EOF;
+query find Sequence "CHROMOSOME*"
 show -a -f /wormsrv2/autoace/BLAT/chromosome.ace
+follow subsequence
+show -a -f /wormsrv2/autoace/BLAT/superlinks.ace
+dna -f /wormsrv2/autoace/BLAT/autoace.first
 quit
 EOF
 
-    system("echo '$command1' | $giface $dbdir") && die "Cannot open autoace $!\n";;
-	
-    # move -'s into n's
-    open(CHANGE,'/wormsrv2/autoace/BLAT/autoace.first');
-    open(NEW,">$seq");
-    while (<CHANGE>) {
-	chomp;
-	my $seq = $_;
-	$seq =~ tr/-/n/;
-	print NEW "$seq\n";
-    }
-    unlink ('/wormsrv2/autoace/BLAT/autoace.first') if (-e '/wormsrv2/autoace/BLAT/autoace.first');
-}
-
-############
-# run blat #
-############
-
-unless ($opt_s || $opt_v) {
-    if ($opt_e) {
-	print "running blat and putting the result in $blat/est_out.psl\n";
-	system("$blatex $seq $query $blat/est_out.psl") && die "Blat failed\n";
-    }
-    if ($opt_m) {
-	print "running blat and putting the result in $blat/mRNA_out.psl\n";
-	system("$blatex $seq $query $blat/mRNA_out.psl") && die "Blat failed\n";
-    }
-    if ($opt_o) {
-	print "running blat and putting the result in $blat/miscPep_out.psl\n";
-	system("$blatex $seq $query $blat/miscPep_out.psl") && die "Blat failed\n";
-    }
-    if ($opt_x) {
-	print "Getting nematode consensus sequences and putting them into /wormsrv2/autoace/BLAT/nematode.fa\n";
 my $command2=<<EOF;
 query find nematode_ESTs where Remark = "*Blaxter*"
 dna -f /wormsrv2/autoace/BLAT/nematode.fa
 quit
 EOF
-        system("echo '$command2' | $giface $dbdir ");
-	print "running blat and putting the result in $blat/nematode_out.psl\n";
-	system("$blatex $seq $query -t=dnax -q=dnax $blat/nematode_out.psl") && die "Blat failed\n";
+
+    my ($sequence,$name);
+    
+    # tace dump chromosome consensus sequences
+    system("echo '$command' | $giface $dbdir") && &usage(5);
+    
+    # move '-'s into 'n's => blat excludes '-'
+    open (CHANGE, "</wormsrv2/autoace/BLAT/autoace.first");
+    open (NEW,    ">/wormsrv2/autoace/BLAT/autoace.fa");
+    while (<CHANGE>) {
+	chomp;
+	$sequence = $_;
+	$sequence =~ tr/-/n/;
+	print NEW "$sequence\n";
     }
+    close CHANGE;
+
+    # remove intermediary sequence file
+    unlink ('/wormsrv2/autoace/BLAT/autoace.first') if (-e '/wormsrv2/autoace/BLAT/autoace.first');
+
+    # tace dump parasitic nematode consensus
+    system("echo '$command2' | $giface $dbdir ");
 }
 
-##################
-# map to autoace #
-##################
 
-unless ($opt_v) {
-    if ($opt_e) {
-	print "Mapping blat data to autoace\n";
-	print "Putting results to $blat/autoace.blat.EST.ace and $blat/autoace.ci.EST.ace\n";
-	print "Putting results to $blat/camace.blat.EST.ace and $blat/camace.ci.EST.ace\n";
-	system("$bin/blat2ace.pl -a -c -i ") && die "Mapping failed\n"; 
+sub which_db {
+    
+    local (*LINK);
+    my (%homedb,$name);
+    
+    print LOG "Assign LINK* objects to laboratory\n\n";
+    # deal with the superlink objects
+    open (LINK, "</wormsrv2/autoace/BLAT/superlinks.ace") || die "whoops $!";
+    while (<LINK>) {
+	if (/^Sequence\s+\:\s+\"(\S+)\"/) {
+	    $name = $1;
+	    next;
+	}
+	if (/^From_Laboratory\s+\"(\S+)\"/) {
+	    $homedb{$name} = $1;
+	    print LOG "assigning $1 to $name\n";
+	    undef ($name);
+ 	    next;
+	}
     }
-    if ($opt_m) {
-	print "Mapping blat data to autoace\n";
-	print "Putting results to $blat/autoace.blat.mRNA.ace and $blat/autoace.ci.mRNA.ace\n";
-	print "Putting results to $blat/camace.blat.mRNA.ace and $blat/camace.ci.mRNA.ace\n";
-	system("$bin/blat2ace.pl -a -m -c -i") && die "Mapping failed\n"; 
-    }
-    if ($opt_o) {
-	print "Mapping blat data to autoace\n";
-	print "Putting results to $blat/autoace.blat.miscPep.ace and $blat/autoace.ci.miscPep.ace\n";
-	print "Putting results to $blat/camace.blat.miscPep.ace and $blat/camace.ci.miscPep.ace\n";
-	system("/nfs/griffin2/dl1/wormbase/wormbase/scripts/blat2ace.pl -a -o -c") && die "Mapping failed\n"; 
-    }
-    if ($opt_x) {
-	print "Mapping blat data to autoace\n";
-	print "Putting results to $blat/autoace.blat.nematode.ace\n";
-	print "Putting results to $blat/camace.blat.nematode.ace\n";
-	system("$bin/blat2ace.pl -a -x -c") && die "Mapping failed\n"; 
-    }
+    close LINK;
+    
+    print LOG "\n";
+   
+    # return hash for (super)link objects
+    return (%homedb);
+
 }
 
 #############################
-# produce confirmed introns #
+# virtual object generation #
 #############################
 
-unless ($opt_v) {
-    if ($opt_e) {
-	print "Producing confirmed introns in $blat/autoace.good_introns.EST.ace\n";
-	system("$bin/confirm_introns.pl -a") && die "Intron confirmation failed\n";
-	print "Producing confirmed introns in $blat/camace.good_introns.EST.ace\n";
-	system("$bin/confirm_introns.pl -c") && die "Intron confirmation failed\n";
+sub virtual_objects_blat {
+    
+    my ($data) = shift;
+    local (*OUT_autoace_homol,*OUT_camace_homol,*OUT_stlace_homol);
+    local (*OUT_autoace_feat,*OUT_camace_feat,*OUT_stlace_feat);
+    my ($name,$length,$total,$first,$second,$m,$n);
+
+    # autoace
+    open (OUT_autoace_homol, ">$blat/virtual_objects.autoace.$word{$data}.ace") or die "$!";
+    open (OUT_autoace_feat,  ">$blat/virtual_objects.autoace.ci.$data.ace")     or die "$!";
+    # camace
+    open (OUT_camace_homol,  ">$blat/virtual_objects.camace.$word{$data}.ace")  or die "$!";
+    open (OUT_camace_feat,   ">$blat/virtual_objects.camace.ci.$data.ace")      or die "$!";
+    # stlace
+    open (OUT_stlace_homol,  ">$blat/virtual_objects.stlace.$word{$data}.ace")  or die "$!";
+    open (OUT_stlace_feat,   ">$blat/virtual_objects.stlace.ci.$data.ace")      or die "$!";
+    
+    open (ACE, "<$chrom") || die &usage(11);
+    while (<ACE>) {
+	if (/Subsequence\s+\"(\S+)\" (\d+) (\d+)/) {
+	    $name   = $1;
+	    $length = $3 - $2 + 1;
+	    $total = int($length/100000) +1;
+	    
+	    # autoace
+	    print OUT_autoace_homol "Sequence : \"$name\"\n";
+	    print OUT_autoace_feat  "Sequence : \"$name\"\n";
+	    # camace
+	    print OUT_camace_homol  "Sequence : \"$name\"\n" if ($homedb{$name} eq "HX");
+	    print OUT_camace_feat   "Sequence : \"$name\"\n" if ($homedb{$name} eq "HX");
+	    # stlace
+	    print OUT_stlace_homol  "Sequence : \"$name\"\n" if ($homedb{$name} eq "RW");
+	    print OUT_stlace_feat   "Sequence : \"$name\"\n" if ($homedb{$name} eq "RW");
+	    
+	    for ($n = 0; $n <= $total; $n++) {
+		$m      = $n + 1;
+		$first  = ($n*100000) + 1;
+		$second = $first + 149999;
+		if (($length - $first) < 100000) {
+		    $second = $length;
+		    # autoace
+		    print OUT_autoace_homol "S_Child Homol_data $word{$data}:$name"."_$m $first $second\n";
+		    print OUT_autoace_feat  "S_Child Feature_data $word{$data}:$name"."_$m $first $second\n";
+		    # camace
+		    print OUT_camace_homol  "S_Child Homol_data $word{$data}:$name"."_$m $first $second\n"   if ($homedb{$name} eq "HX");
+		    print OUT_camace_feat   "S_Child Feature_data $word{$data}:$name"."_$m $first $second\n" if ($homedb{$name} eq "HX");
+		    # stlace
+		    print OUT_stlace_homol  "S_Child Homol_data $word{$data}:$name"."_$m $first $second\n"   if ($homedb{$name} eq "RW");
+		    print OUT_stlace_feat   "S_Child Feature_data $word{$data}:$name"."_$m $first $second\n" if ($homedb{$name} eq "RW");
+		    last;
+		}					
+		else {
+		    ($second = $length) if ($second >  $length);
+		    # autoace
+		    print OUT_autoace_homol "S_Child Homol_data $word{$data}:$name"."_$m $first $second\n";
+		    print OUT_autoace_feat  "S_Child Feature_data $word{$data}:$name"."_$m $first $second\n";
+		    # camace
+		    print OUT_camace_homol  "S_Child Homol_data $word{$data}:$name"."_$m $first $second\n"   if ($homedb{$name} eq "HX");
+		    print OUT_camace_feat   "S_Child Feature_data $word{$data}:$name"."_$m $first $second\n" if ($homedb{$name} eq "HX");
+		    # stlace
+		    print OUT_stlace_homol  "S_Child Homol_data $word{$data}:$name"."_$m $first $second\n"   if ($homedb{$name} eq "RW");
+		    print OUT_stlace_feat   "S_Child Feature_data $word{$data}:$name"."_$m $first $second\n" if ($homedb{$name} eq "RW");
+		}
+	    }
+	    print OUT_autoace_homol "\n";
+	    print OUT_autoace_feat  "\n";
+	    print OUT_camace_homol  "\n" if ($homedb{$name} eq "HX");
+	    print OUT_camace_feat   "\n" if ($homedb{$name} eq "HX");
+	    print OUT_stlace_homol  "\n" if ($homedb{$name} eq "RW");
+	    print OUT_stlace_feat   "\n" if ($homedb{$name} eq "RW");
+	}
     }
-    if ($opt_m) {
-	print "Producing confirmed introns in $blat/autoace.good_introns.mRNA.ace\n";
-	system("$bin/confirm_introns.pl -a -m") && die "Intron confirmation failed\n";
-	print "Producing confirmed introns in $blat/camace.good_introns.mRNA.ace\n";
-	system("$bin/confirm_introns.pl -c -m") && die "Intron confirmation failed\n";
+    close ACE;
+    close OUT_autoace_homol;
+    close OUT_autoace_feat;
+    close OUT_camace_homol;
+    close OUT_camace_feat;
+    close OUT_stlace_homol;
+    close OUT_stlace_feat;
+
+    # clean up if you are dealing with parasitic nematode conensus data
+    if ($data eq "NEMATODE") {
+	unlink ("$blat/virtual_objects.autoace.ci.$data.ace");
+	unlink ("$blat/virtual_objects.camace.ci.$data.ace");
+	unlink ("$blat/virtual_objects.stlace.ci.$data.ace");
     }
-    if ($opt_o) {
-	print "Producing confirmed introns in $blat/autoace.good_introns.EMBL.ace\n";
-	system("$bin/confirm_introns.pl -a -o") && die "Intron confirmation failed\n";
-	print "Producing confirmed introns in $blat/camace.good_introns.EMBL.ace\n";
-	system("$bin/confirm_introns.pl -c -o") && die "Intron confirmation failed\n";
-    }
+
 }
 
-#########################################
-# produce files for the virtual objects #
-#########################################
 
-if ($opt_e) {
-    print "Producing files for the virtual objects in autoace: $blat/virtual_objects.autoace.BLAT_EST.ace\n";
-    unlink "$blat/virtual_objects.BLAT_EST.ace" if (-e "$blat/virtual_objects.BLAT_EST.ace");
-    system("$bin/superlinks.blat.pl $chrom > $blat/virtual_objects.autoace.BLAT_EST.ace")
-	&& die "Producing virtual objects for blat failed\n";
-    
-    print "Producing files for the virtual objects in camace : $blat/virtual_objects.camace.BLAT_EST.ace\n";
-    unlink "$blat/virtual_objects.camace.BLAT_EST.ace" if (-e "$blat/virtual_objects.camace.BLAT_EST.ace");
-    system("$bin/superlinks.blat.pl -c $chrom > $blat/virtual_objects.camace.BLAT_EST.ace")
-	&& die "Producing virtual objects for blat failed\n";
-    
-    print "Producing files for the virtual objects in autoace: $blat/rawdata/virtual_objects.autoace.ci.EST.ace\n";
-    unlink "$blat/virtual_objects.autoace.ci.BLAT_EST.ace" if (-e "$blat/virtual_objects.autoace.ci.BLAT_EST.ace");
-    system("$bin/superlinks.confirmed_introns.pl $chrom > $blat/virtual_objects.autoace.ci.EST.ace")
-	&& die "Producing virtual objects for confirmed introns failed\n"; 
-    
-    print "Producing files for the virtual objects in camace: $blat/rawdata/virtual_objects.camace.ci.EST.ace\n";
-    unlink "$blat/virtual_objects.camace.ci.BLAT_EST.ace" if (-e "$blat/virtual_objects.camace.ci.BLAT_EST.ace");
-    system("$bin/superlinks.confirmed_introns.pl -c $chrom > $blat/virtual_objects.camace.ci.EST.ace")
-	&& die "Producing virtual objects for confirmed introns failed\n"; 
-}
-if ($opt_m) {
-    print "Producing files for the virtual objects in autoace: $blat/virtual_objects.autoace.BLAT_mRNA.ace\n";
-    unlink "$blat/virtual_objects.autoace.BLAT_mRNA.ace" if (-e "$blat/virtual_objects.autoace.BLAT_mRNA.ace");
-    system("$bin/superlinks.blat.pl -m $chrom > $blat/virtual_objects.autoace.BLAT_mRNA.ace")
-	&& die "Producing virtual objects for blat failed\n";
-    
-    print "Producing files for the virtual objects in camace: $blat/virtual_objects.camace.BLAT_mRNA.ace\n";
-    unlink "$blat/virtual_objects.camace.BLAT_mRNA.ace" if (-e "$blat/virtual_objects.camace.BLAT_mRNA.ace");
-    system("$bin/superlinks.blat.pl -m -c $chrom > $blat/virtual_objects.camace.BLAT_mRNA.ace")
-	&& die "Producing virtual objects for blat failed\n";
-    
-    print "Producing files for the virtual objects in autoace: $blat/virtual_objects.autoace.ci.mRNA.ace\n";
-    unlink "$blat/virtual_objects.autoace.ci.mRNA.ace" if (-e "$blat/virtual_objects.autoace.ci.mRNA.ace");
-    system("$bin/superlinks.confirmed_introns.pl -m $chrom > $blat/virtual_objects.autoace.ci.mRNA.ace")
-	&& die "Producing virtual objects for confirmed introns failed\n"; 
-    
-    print "Producing files for the virtual objects in camace: $blat/virtual_objects.camace.ci.mRNA.ace\n";
-    unlink "$blat/virtual_objects.camace.ci.mRNA.ace" if (-e "$blat/virtual_objects.camace.ci.mRNA.ace");
-    system("$bin/superlinks.confirmed_introns.pl -m -c $chrom > $blat/virtual_objects.camace.ci.mRNA.ace")
-	&& die "Producing virtual objects for confirmed introns failed\n"; 
-}
-if ($opt_o) {
-    print "Producing files for the virtual objects in autoace: $blat/virtual_objects.autoace.BLAT_EMBL.ace\n";
-    unlink "$blat/virtual_objects.autoace.BLAT_EMBL.ace" if (-e "$blat/virtual_objects.autoace.BLAT_EMBL.ace");
-    system("$bin/superlinks.blat.pl -o $chrom > $blat/virtual_objects.autoace.BLAT_EMBL.ace")
-	&& die "Producing virtual objects for blat failed\n";
-    
-    print "Producing files for the virtual objects in camace: $blat/virtual_objects.camace.BLAT_EMBL.ace\n";
-    unlink "$blat/virtual_objects.camace.BLAT_EMBL.ace" if (-e "$blat/virtual_objects.camace.BLAT_EMBL.ace");
-    system("$bin/superlinks.blat.pl -o -c $chrom > $blat/virtual_objects.camace.BLAT_EMBL.ace")
-	&& die "Producing virtual objects for blat failed\n";
+sub confirm_introns {
 
-    print "Producing files for the virtual objects in autoace: $blat/virtual_objects.autoace.ci.EMBL.ace\n";
-    unlink "$blat/virtual_objects.autoace.ci.EMBL.ace" if (-e "$blat/virtual_objects.autoace.ci.EMBL.ace");
-    system("$bin/superlinks.confirmed_introns.pl -m $chrom > $blat/virtual_objects.autoace.ci.EMBL.ace")
-	&& die "Producing virtual objects for confirmed introns failed\n"; 
-    
-    print "Producing files for the virtual objects in camace: $blat/virtual_objects.camace.ci.EMBL.ace\n";
-    unlink "$blat/virtual_objects.camace.ci.EMBL.ace" if (-e "$blat/virtual_objects.camace.ci.EMBL.ace");
-    system("$bin/superlinks.confirmed_introns.pl -m -c $chrom > $blat/virtual_objects.camace.ci.EMBL.ace")
-	&& die "Producing virtual objects for confirmed introns failed\n"; 
-}
-if ($opt_x) {
-    print "Producing files for the virtual objects in autoace: $blat/virtual_objects.autoace.BLATX_NEMATODE.ace\n";
-    unlink "$blat/virtual_objects.autoace.BLATX_NEMATODE.ace" if (-e "$blat/virtual_objects.autoace.BLATX_NEMATODE.ace");
-    system("$bin/superlinks.blat.pl -x $chrom > $blat/virtual_objects.autoace.BLATX_NEMATODE.ace")
-	&& die "Producing virtual objects for blat failed\n";
-    
-    print "Producing files for the virtual objects in camace: $blat/virtual_objects.camace.BLATX_NEMATODE.ace\n";
-    unlink "$blat/virtual_objects.camace.BLATX_NEMATODE.ace" if (-e "$blat/virtual_objects.camace.BLATX_NEMATODE.ace");
-    system("$bin/superlinks.blat.pl -x -c $chrom > $blat/virtual_objects.camace.BLATX_NEMATODE.ace")
-	&& die "Producing virtual objects for blat failed\n";
-}
+    my ($db,$data) = @_;
+    local (*GOOD,*BAD);
 
-##########################
-# give 'read in' message #
-##########################
+    # open the output files
+    open (GOOD, ">$blat/$db.good_introns.$data.ace") or die "$!";
+    open (BAD,  ">$blat/$db.bad_introns.$data.ace")  or die "$!";
 
-unless ($opt_v) {
-    print "\n";
-    print "Read into autoace:\n";
-    if ($opt_e) {
-	print "$blat/virtual_objects.autoace.BLAT_EST.ace\n";
-	print "$blat/autoace.blat.EST.ace\n";
-	print "$blat/virtual_objects.autoace.ci.EST.ace\n";
-	print "$blat/autoace.good_introns.EST.ace\n";
-	unlink("$blat/autoace.EST.ace");
-	unlink("$blat/autoace.best.EST.ace");
-	unlink("$blat/autoace.bad_introns.EST.ace");
-	unlink("$blat/autoace.ci.EST.ace");
+    my ($lala,$link,@introns,$dna,$switch);
+
+    $lala = $/;
+    $/ = "";
+    open(CI,  "<$blat/${db}.ci.${data}.ace")      or die "Cannot open $blat/$db.ci.$data.ace $!\n";
+    while (<CI>) {
+	next unless /^\S/;
+	if (/Sequence : \"(\S+)\"/) {
+	    $link = $1;
+	    print "Sequence : $link\n";
+	    @introns = split /\n/, $_;
+	    
+	    # get the link sequence #
+	    print "Extracting DNA sequence for $link\n";
+	    undef ($dna);
+
+	    open(SEQ, "<$blat/autoace.fa") || &usage(5);
+	    $switch = 0;
+	    $/ = $lala;
+	    
+	    while (<SEQ>) {
+		if (/^\>$link$/) {
+		    $switch = 1;
+		}
+		elsif (/^(\w+)$/) {
+		    if ($switch == 1) {
+			chomp;
+			$dna .= $1;
+		    }			
+		}
+		else { 
+		    $switch = 0;		
+		}
+	    }
+	    close SEQ;
+	    
+	    print "DNA sequence is " . length($dna) . " bp long.\n";
+
+	    # evaluate introns #
+	    
+	    $/ = "";
+	    foreach my $test (@introns) {
+		if ($test =~ /Confirmed_intron/) {
+		    my @f = split / /, $test;
+		    
+		    #######################################
+		    # get the donor and acceptor sequence #
+		    #######################################
+		    
+		    my ($first,$last,$start,$end,$pastfirst,$prelast);
+		    if ($f[1] < $f[2]) {
+			($first,$last,$pastfirst,$prelast) = ($f[1]-1,$f[2]-1,$f[1],$f[2]-2);
+		    }
+		    else {
+			($first,$last,$pastfirst,$prelast) = ($f[2]-1,$f[1]-1,$f[2],$f[1]-2);
+		    }	
+
+		    $start = substr($dna,$first,2);
+		    $end   = substr($dna,$prelast,2);
+#		    print "Coords start $f[1] => $start, end $f[2] => $end\n";
+		    
+		    ##################
+		    # map to S_Child #
+		    ##################
+		    
+		    my $lastvirt = int((length $dna) /100000) + 1;
+		    my ($startvirt,$endvirt,$virtual);
+		    if ((int($first/100000) + 1 ) > $lastvirt) {
+			$startvirt = $lastvirt;
+		    }
+		    else {
+			$startvirt = int($first/100000) + 1;
+		    }
+		    if ((int($last/100000) + 1 ) > $lastvirt) {
+			$endvirt = $lastvirt;
+		    }
+		    else {
+			$endvirt = int($first/100000) + 1;
+		    }
+		    
+		    if ($startvirt == $endvirt) { 
+			$virtual = "Confirmed_intron_EST:" .$link."_".$startvirt unless ($opt_m);
+			$virtual = "Confirmed_intron_mRNA:".$link."_".$startvirt     if ($opt_m);
+		    }
+		    elsif (($startvirt == ($endvirt - 1)) && (($last%100000) <= 50000)) {
+			$virtual = "Confirmed_intron_EST:" .$link."_".$startvirt unless ($opt_m);
+			$virtual = "Confirmed_intron_mRNA:".$link."_".$startvirt     if ($opt_m);
+		    }
+		
+		    #################
+		    # check introns #
+		    #################
+		    
+		    my $firstcalc = int($f[1]/100000);
+		    my $seccalc   = int($f[2]/100000);
+		    print STDERR "Problem with $test\n" unless (defined $firstcalc && defined $seccalc); 
+		    my ($one,$two);
+		    if ($firstcalc == $seccalc) {
+			$one = $f[1]%100000;
+			$two = $f[2]%100000;
+		    }
+		    elsif ($firstcalc == ($seccalc-1)) {
+			$one = $f[1]%100000;
+			$two = $f[2]%100000 + 100000;
+			print STDERR "$virtual: $one $two\n";
+		    }
+		    elsif (($firstcalc-1) == $seccalc) {
+			$one = $f[1]%100000 + 100000;
+			$two = $f[2]%100000;
+			print STDERR "$virtual: $one $two\n";
+		    } 
+		    print STDERR "Problem with $test\n" unless (defined $one && defined $two); 
+		    
+		    if ( ( (($start eq 'gt') || ($start eq 'gc')) && ($end eq 'ag')) ||
+			 (  ($start eq 'ct') && (($end eq 'ac') || ($end eq 'gc')) ) ) {	 
+			print GOOD "Feature_data : \"$virtual\"\n";
+			print GOOD "Confirmed_intron $one $two EST\n\n";
+		    }  	
+		    else {
+			print BAD "Feature_data : \"$virtual\"\n";
+			print BAD "Confirmed_intron $one $two EST\n\n";		
+		    }
+		}
+	    }
+	}
     }
-    if ($opt_m) {
-	print "$blat/virtual_objects.autoace.BLAT_mRNA.ace\n";
-	print "$blat/autoace.blat.mRNA.ace\n";
-	print "$blat/virtual_objects.autoace.ci.mRNA.ace\n";
-	print "$blat/autoace.good_introns.mRNA.ace\n";
-	unlink("$blat/autoace.mRNA.ace");
-	unlink("$blat/autoace.best.mRNA.ace");
-	unlink("$blat/autoace.bad_introns.mRNA.ace");
-	unlink("$blat/autoace.ci.mRNA.ace");
-    }
-    if ($opt_o) {
-	print "$blat/virtual_objects.autoace.BLAT_miscPep.ace\n";
-	print "$blat/autoace.blat.miscPep.ace\n";
-    }
-    if ($opt_x) {
-	print "$blat/virtual_objects.autoace.BLATX_NEMATODE.ace\n";
-	print "$blat/autoace.blat.nematode.ace\n";
-    }
-    print "\nRead into camace:\n";
-    if ($opt_e) {
-	print "$blat/virtual_objects.camace.BLAT_EST.ace\n";
-	print "$blat/camace.blat.EST.ace\n";
-	print "$blat/virtual_objects.camace.ci.EST.ace\n";
-	print "$blat/camace.good_introns.EST.ace\n";
-	unlink("$blat/camace.EST.ace");
-	unlink("$blat/camace.best.EST.ace");
-	unlink("$blat/camace.bad_introns.EST.ace");
-	unlink("$blat/camace.ci.EST.ace");
-    }
-    if ($opt_m) {
-	print "$blat/virtual_objects.camace.BLAT_mRNA.ace\n";
-	print "$blat/camace.blat.mRNA.ace\n";
-	print "$blat/virtual_objects.camace.ci.mRNA.ace\n";
-	print "$blat/camace.good_introns.mRNA.ace\n";
-	unlink("$blat/camace.mRNA.ace");
-	unlink("$blat/camace.best.mRNA.ace");
-	unlink("$blat/camace.bad_introns.mRNA.ace");
-	unlink("$blat/camace.ci.mRNA.ace");
-    }
-    if ($opt_o) {
-	print "$blat/virtual_objects.camace.BLAT_miscPep.ace\n";
-	print "$blat/camace.blat.miscPep.ace\n";
-    }
-    if ($opt_x) {
-	print "$blat/virtual_objects.camace.BLATX_NEMATODE.ace\n";
-	print "$blat/camace.blat.nematode.ace\n";
-    }
-    print "Good bye :o)\n";
+    close CI;
 }
 
-&mail_maintainer("WormBase Report: blat_them_all ",$maintainer,$logfile);
+
+
+
+sub usage {
+    my $error = shift;
+
+    if ($error == 1) {
+	# no option supplied
+	print "\nNo process option choosen [-n|b|s|v]\n";
+	print "Run with one of the above options\n\n";
+	exit(0);
+    }
+    elsif ($error == 2) {
+	# No data-type choosen
+	print "\nNo data option choosen [-e|m|o|x]\n";
+	print "Run with one of the above options\n\n";
+	exit(0);
+    }
+    elsif ($error == 3) {
+	# 'Multiple data-types choosen
+	print "\nMultiple data option choosen [-e|m|o|x]\n";
+	print "Run with one of the above options\n\n";
+	exit(0);
+    }
+    elsif ($error == 4) {
+	# 'autoace.fa' file exists
+	print "\nThe WormBase 'autoace.fa' file exists already\n";
+	print "Remove this file before starting the process again\n\n";
+	exit(0);
+    }
+    elsif ($error == 5) {
+	# 'autoace.fa' file is not there or unreadable
+	print "\nThe WormBase 'autoace.fa' file you does not exist or is non-readable.\n";
+	print "Check File: '/wormsrv2/autoace/BLAT/autoace.fa'\n\n";
+	exit(0);
+    }
+    elsif ($error == 6) {
+	# BLAT failure
+	print "\BLAT failure.\n";
+	print "Whoops! you're going to have to start again.\n\n";
+	exit(0);
+    }
+    elsif ($error == 11) {
+	# 'chromosome.ace' file is not there or unreadable
+	print "\nThe WormBase 'chromosome.ace' file you does not exist or is non-readable.\n";
+	print "Check File: '/wormsrv2/autoace/BLAT/chromosome.ace'\n\n";
+	exit(0);
+    }
+    elsif ($error == 0) {
+	# Normal help menu
+	exec ('perldoc',$0);
+    }
+}
 
 __END__
 
