@@ -7,7 +7,7 @@
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2004-05-10 14:27:27 $
+# Last edited on: $Date: 2004-05-11 16:12:55 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -80,7 +80,7 @@ our %word = (
 # Exit if no data type choosen [EST|mRNA|EMBL|NEMATODE|OST]
 # or if multiple data types are chosen
 
-&usage(1) unless ($est || $mrna || $ost || $tc1 || $nematode || $embl); 
+&usage(1) unless ($est || $mrna || $ost || $ncrna || $tc1 || $nematode || $embl); 
 
 my $flags = 0;
 $flags++ if $est;
