@@ -13,7 +13,7 @@
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-08-16 07:52:27 $
+# Last updated on: $Date: 2004-09-10 15:21:23 $
 
 
 use strict;
@@ -131,7 +131,7 @@ unlink("$basedir/autoace/logs/UTR_gff_dump");
 
 # archive old GFF splits directory'
 print LOG "Archiving GFFsplits directory using GFFsplitter.pl -a\n\n";
-system("GFFsplitter.pl -a") && die "Couldn't run GFFsplitter.pl -a\n";
+system("GFFsplitter.pl -archive") && die "Couldn't run GFFsplitter.pl -a\n";
 
 # update "Confirmed Introns" webpage (introns to be addressed)
 system("/nfs/intweb/cgi-bin/wormpub/confirmed_introns/parse_gff.pl") && warn "Couldn't run parse_gff.pl\n";

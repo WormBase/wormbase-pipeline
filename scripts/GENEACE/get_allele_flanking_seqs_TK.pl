@@ -4,7 +4,7 @@
 #
 # by Chao-Kung Chen [030625]
 
-# Last updated on: $Date: 2004-08-23 10:55:19 $
+# Last updated on: $Date: 2004-09-10 15:21:23 $
 # Last updated by: $Author: krb $
 
 use Tk;
@@ -464,7 +464,7 @@ sub run {
 
   chdir "/wormsrv2/autoace/GFF_SPLITS/$current/";
 
-  @CDS_coords = `grep $cds *.genes.gff | cut -f 1,4,5,7,9`;
+  @CDS_coords = `grep $cds *.CDS.gff | cut -f 1,4,5,7,9`;
   if (!@CDS_coords){@CDS_coords = `grep $cds *.rna.gff | cut -f 1,4,5,7,9`} # do this if seq. belongs to Transcript class
 
   foreach (@CDS_coords){
