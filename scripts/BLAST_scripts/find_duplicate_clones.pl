@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.0 -w
+#!/usr/local/ensembl/bin/perl -w
 
 # Keith Bradnam (krb@sanger.ac.uk)
 # Finds and removes duplicate clones in worm01 database (duplicates arise 

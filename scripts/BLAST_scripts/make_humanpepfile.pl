@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl
+#!/usr/local/ensembl/bin/perl
 
 # converts ensembl.pep file with human peptide entries into ace file
 

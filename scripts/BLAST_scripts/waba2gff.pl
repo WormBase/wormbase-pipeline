@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl
+#!/usr/local/ensembl/bin/perl
 
 # Marc Sohrmann (ms2@sanger.ac.uk)
 

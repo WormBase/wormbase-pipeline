@@ -1,11 +1,11 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/ensembl/bin/perl -w
 #
 # Originally written by Marc Sohrmann (ms2@sanger.ac.uk)
 #
 # Dumps protein motifs from ensembl mysql (protein) database to an ace file
 #
 # Last updated by: $Author: wormpipe $
-# Last updated on: $Date: 2004-01-20 09:56:39 $
+# Last updated on: $Date: 2004-01-27 17:15:56 $
 
 
 use strict;

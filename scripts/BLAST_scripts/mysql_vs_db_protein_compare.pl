@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.8.0 -w
+#!/usr/local/ensembl/bin/perl5.8.0 -w
 
 use strict;
 use Getopt::Long;

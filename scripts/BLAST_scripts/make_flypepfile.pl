@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/ensembl/bin/perl -w
 
 # krb 020829
 

@@ -1,7 +1,7 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/ensembl/bin/perl -w
 #
-# Last updated by: $Author: wormpub $
-# Last updated on: $Date: 2003-01-14 11:48:48 $
+# Last updated by: $Author: wormpipe $
+# Last updated on: $Date: 2004-01-27 17:15:56 $
 
 use strict;
 use Getopt::Long;

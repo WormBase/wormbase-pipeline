@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/ensembl/bin/perl -w
 
 use DBI;
 use strict;
@@ -82,10 +82,10 @@ if( $dump or $dump_all )
     }
     # Dump
     print "Dumping blastp\n";
-    `perl5.6.1 $wormpipe_dir/scripts/Dump_new_prot_only.pl -all -version $WPver -brigprot -analysis 11 -matches` if $dump;
-    `perl5.6.1 $wormpipe_dir/scripts/Dump_new_prot_only.pl -all -version $WPver -brigprot -matches` if $dump_all;
+    `perl $wormpipe_dir/scripts/Dump_new_prot_only.pl -all -version $WPver -brigprot -analysis 11 -matches` if $dump;
+    `perl $wormpipe_dir/scripts/Dump_new_prot_only.pl -all -version $WPver -brigprot -matches` if $dump_all;
     print "Dumping motifs\n";
-      `perl5.6.1 $wormpipe_dir/scripts/BLAST_scripts/dump_motif.pl -database worm_brigprot`;
+      `perl $wormpipe_dir/scripts/BLAST_scripts/dump_motif.pl -database worm_brigprot`;
   }
 
 

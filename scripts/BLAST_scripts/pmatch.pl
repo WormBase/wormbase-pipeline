@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl
+#!/usr/local/ensembl/bin/perl
 
 # Author: Marc Sohrmann (ms2@sanger.ac.uk)
 # Copyright (c) Marc Sohrmann, 2001

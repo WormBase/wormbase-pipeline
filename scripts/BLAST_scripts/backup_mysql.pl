@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/ensembl/bin/perl -w
 
 # Author: Chao-Kung Chen
 # 2001-11-28

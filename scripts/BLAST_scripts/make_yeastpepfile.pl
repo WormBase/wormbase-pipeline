@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.6.1 -w
+#!/usr/local/ensembl/bin/perl -w
 #
 # make_yeastpepfile.pl
 #
@@ -6,8 +6,8 @@
 # 
 # Converts yeastX.pep file to ace file, copies to wormsrv2, adds SGD as Accession field
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-09-24 16:34:41 $
+# Last edited by: $Author: wormpipe $
+# Last edited on: $Date: 2004-01-27 17:15:56 $
 
 
 use strict;

@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl
+#!/usr/local/ensembl/bin/perl
 
 my %seq = read_fasta (\*STDIN);
 my $coor;
