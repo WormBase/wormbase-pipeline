@@ -5,7 +5,7 @@
 # backup database and compare to last backed up database to look for lost data
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-04-15 09:04:01 $      
+# Last updated on: $Date: 2003-08-07 08:40:41 $      
 
 use strict;
 use lib '/wormsrv2/scripts';
@@ -326,6 +326,7 @@ Phenotype
 Picture
 Pos_neg_data
 Protein
+Pseudogene
 Rearrangement
 Reference
 Repeat_Info
