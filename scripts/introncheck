@@ -1,11 +1,11 @@
 #!/usr/local/bin/perl
 #
-# gffcheck
+# introncheck
 # v 0.1
 #
 # Cronjob integrity check controls for generic ACEDB database.
 #
-# Usage: gffcheck [-options]
+# Usage: introncheck [-options]
 #
 
 #####################################################################################################
@@ -33,7 +33,6 @@ require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
 my $maintainer = "dl1\@sanger.ac.uk";
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
-my $version = &get_script_version(gffcheck);
 
  ##############################
  # command-line options       #
@@ -63,15 +62,10 @@ my %confirmed_intron = ();
  # Open logfile                         #
  ########################################
 
-my $log="/wormsrv2/logs/gffcheck.$rundate";
+my $log="/wormsrv2/logs/introncheck.$rundate";
 
 #open (LOG,">$log");
 #LOG->autoflush();
-
-#print LOG "# gffcheck\n";     
-#print LOG "# version        : $version\n";
-#print LOG "# run details    : $rundate $runtime\n";
-#print LOG "\n";
 
  ########################################
  # Connect with acedb server            #
