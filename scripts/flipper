@@ -1,13 +1,14 @@
 #!/usr/local/bin/perl
-#
-# Flipper 
-# v 2.0                       
-#                                    
-# script to reverse cosmid ace files 
-#                                    
-# dl 961210                          
-#                                    
 
+######################################
+#                                    #
+# Flipper v1.0                       #
+#                                    #
+# script to reverse cosmid ace files #
+#                                    #
+# dl 961210                          #
+#                                    #
+######################################
 
 # Take an ace dump and modify the subsequence
 # coordinates to reflect either :
@@ -21,12 +22,40 @@
 ########
 
 $flipper = 0;
+$insert = 0;
+$delete = 0;
+#within_gene = 0;
+
+#########################
+# command line switches #
+#########################
+
+while ($ARGV[0] =~ /^-/) {
+    $_=shift;
+    if (/^-r(.*)/) {
+        $flipper=1;
+    }
+    elsif (/^-i(.*)/) {
+        $insert=1;
+	$position = shift;
+    }
+    elsif (/^-d(.*)/) {
+        $delete=1;
+	$position = shift;
+    }
+    else {
+        &usage;
+    }
+}
+
 
 sub usage  {
-    print "\nFlipper v2.0\t[dl 961210]\n\n";
+    print "\nFlipper v1.0\t[dl 961210]\n\n";
     print "Requires a dumped ace file for the cosmid to be flipped.\n\n"; 
     print "Usage : flipper -options cosmid_name\n\n";
     print "-r   : reverse sequence\n";
+    print "-i n : insert base at position n\n";
+    print "-d n : delete base at position n\n\n";
     exit;
 }
 
@@ -35,251 +64,306 @@ sub usage  {
 $cosmid = shift;
 if ($cosmid eq "") {&usage;}
 
-#############################
-# Load ace file into memory #
-#############################
+open (file, "$cosmid.ace") || die "No ace file for cosmid $cosmid\n\n";
 
-#$debug = 1;
-
-my $line_count = 0;
-my $new_count = 0;
-
-open (file, "<$cosmid.ace") || die "No ace file for cosmid $cosmid\n\n";
 while (<file>) {
-    chomp;
-    next if (/\/\//);
-    next if ($_ eq "");
-    
-    push (@acefile,"$_\n");
-    $line_count++;
-}
-close file;
-
-print "// Flipping $cosmid.ace [$line_count lines]\n\n";
-
-foreach (@acefile) {
-    chomp;
-    $line = $_;
-
-    print " # $line #\n" if ($debug);
 
     # SEQUENCE
-    if (/^Sequence :\s+\"(\S+)\"/) {
-	print "$_\n";
-	$new_count++;
+    if (/^Sequence :\s+\S+/) {
+	push (@OUT,$_);
     }
 
     # DNA length 
     if (/^DNA\s+\S+\s+(\d+)/) {
 	$cos_len = $1;
-	$cos_len++;
-	print "=> DNA\n" if ($debug);
-	$new_count++;
+	# flipper -f
+	if ($flipper == 1) {
+	    $push = "DNA\t$cos_len\n";
+	    $cos_len++;
+	}
+	# flipper -i
+	if ($insert == 1) {
+	    $cos_len++;
+	    $push = "DNA\t$cos_len\n";
+	    $cos_len++;
+	}
+	# flipper -d
+	if ($delete == 1) {
+	    $cos_len--;
+	    $push = "DNA\t$cos_len\n";
+	    $cos_len++;
+	}
+	push (@OUT,$push);
     }
-   
+
     # SOURCE 
-    if (/Source\s+\S+/) {
-	print "$_\n";
-	$new_count++;
+    if (/^Source\s+\S+/) {
+	push (@OUT,$_);
     }
 
     # SUBSEQUENCE coordinates
-    if (/Subsequence\s+\"(\S+)\"\s+(\d+)\s+(\d+)/) {
+    if (/^Subsequence\s+(\S+)\s+(\d+)\s+(\d+)/) {
 	
 	# parse gene number
 	chomp;
 	($cos,$gene) = split (/\./,$1);
 	chop ($gene);
-	$new_5 = $cos_len - $2;
-	$new_3 = $cos_len - $3;
-	print  "Subsequence\t\"$1\" $new_5 $new_3\n";
-	$new_count++;
+
+	# flipper -f
+	if ($flipper == 1) {
+	    $new_5 = $cos_len - $2;
+	    $new_3 = $cos_len - $3;
+	}
+	# flipper -i
+	if ($insert == 1) {
+	    if ($3 > $2) {
+		if (($2 < $position) && ($3 < $position)) {
+		    $new_5 = $2;
+		    $new_3 = $3;
+		}
+		elsif (($2 > $position) && ($3 > $position)) {
+		    $new_5 = $2 + 1;
+		    $new_3 = $3 + 1;
+		}
+		elsif (($2 < $position) && ($3 > $position)) {
+		    $within_gene = $gene;
+		    $new_5 = $2;
+		    $new_3 = $3 + 1;
+		}
+	    }
+	    elsif ($3 < $2) {
+		if (($2 > $position) && ($3 > $position)) {
+		    $new_5 = $2 + 1;
+		    $new_3 = $3 + 1;
+		}
+		elsif (($2 < $position) && ($3 < $position)) {
+		    $new_5 = $2;
+		    $new_3 = $3;
+		}
+		elsif (($2 > $position) && ($3 < $position)) {
+		    $within_gene = $gene;
+		    $new_5 = $2 + 1;
+		    $new_3 = $3;
+		}
+	    }
+	}
+	# flipper -d
+	if ($delete == 1) {
+	    if ($3 > $2) {
+		if (($2 < $position) && ($3 < $position)) {
+		    $new_5 = $2;
+		    $new_3 = $3;
+		}
+		elsif (($2 > $position) && ($3 > $position)) {
+		    $new_5 = $2 - 1;
+		    $new_3 = $3 - 1;
+		}
+		elsif (($2 < $position) && ($3 > $position)) {
+		    $within_gene = $gene;
+		    $new_5 = $2;
+		    $new_3 = $3 - 1;
+		}
+	    }
+	    elsif ($3 < $2) {
+		if (($2 > $position) && ($3 > $position)) {
+		    $new_5 = $2 - 1;
+		    $new_3 = $3 - 1;
+		}
+		elsif (($2 < $position) && ($3 < $position)) {
+		    $new_5 = $2;
+		    $new_3 = $3;
+		}
+		elsif (($2 > $position) && ($3 < $position)) {
+		    $within_gene = $gene;
+		    $new_5 = $2 - 1;
+		    $new_3 = $3;
+		}
+	    }
+	}
+	$push = "Subsequence\t$1 $new_5 $new_3\n";
+	push (@OUT,$push);
     }
 
     # OVERLAP_RIGHT name
     if (/^Overlap_right\s+(\S+)\s+(\d+)/) {
-	print "Overlap_left\t$1\n";
-	$new_count++;
+	# flipper -f
+	if ($flipper == 1) {
+	    $push = "Overlap_left\t$1\n";
+	}
+	# flipper -i
+	if ($insert == 1) {
+	    $coord = $2 + 1;
+	    $push = "Overlap_right\t$1\t$coord\n";
+	}
+	# flipper -d
+	if ($delete == 1) {
+	    $coord = $2 - 1;
+	    $push = "Overlap_right\t$1\t$coord\n";
+	}
+	push (@OUT,$push);
     }
 
     # OVERLAP_LEFT name
     if (/^Overlap_left\s+(\S+)/) {
-	$overlap_right = $1;
-	$overlap_right =~ s/\"//g;
-	print "=>Overlap_left\n" if ($debug);
-	$new_count++;
+	# flipper -f
+	if ($flipper == 1) {
+	    $overlap_right = $1;
+	    $overlap_right =~ s/\"//g;
+	}else {
+	    push (@OUT,$_);
+	}
     }
 
     # CLONE_LEFT_END names
     if (/^Clone_left_end\s+(\S+)\s+(\d+)/) {
-
-	$clone_right = $1;
-	$coord = $2;
-	$clone_right =~ s/\"//g;
-	$clone_right_end = $cos_len - $coord;
-	print "Clone_right_end\t\"$clone_right\" $clone_right_end\n";
-	$new_count++;
+	# flipper -f
+	if ($flipper == 1) {
+	    $clone_right = $1;
+	    $coord = $2;
+	    $clone_right =~ s/\"//g;
+	    $clone_right_end = $cos_len - $coord;
+	    $push = "Clone_right_end\t\"$clone_right\" $clone_right_end\n";
+	}
+	# flipper -i
+	if ($insert == 1) {
+	    if ($2 < $position) {
+		$push = "Clone_left_end\t$1\t$2\n";
+	    }
+	    if ($2 > $position) {
+		$coord = $2 + 1;
+		$push = "Clone_left_end\t$1\t$coord\n";
+	    }
+	}
+	# flipper -d
+	if ($delete == 1) {
+	    if ($2 < $position) {
+		$push = "Clone_left_end\t$1\t$2\n";
+	    }
+	    if ($2 > $position) {
+		$coord = $2 - 1;
+		$push = "Clone_left_end\t$1\t$coord\n";
+	    }
+	}	    
+	push (@OUT,$push);
     }
 
    # CLONE_RIGHT_END names
     if (/^Clone_right_end\s+(\S+)\s+(\d+)/) {
-	$clone_left = $1;
-	$coord = $2;
-	$clone_left =~ s/\"//g;
-	$clone_left_end = $cos_len - $coord;  
-	print  "Clone_left_end\t \"$clone_left\" $clone_left_end\n";
-	$new_count++;
-	if ($clone_left eq $overlap_right) {	  
-	    print "Overlap_right\t\"${overlap_right}\"\t$clone_left_end\n";
-	$new_count++;
-	}
-    }
+	# flipper -f
+	if ($flipper == 1) {
+	    $clone_left = $1;
+	    $coord = $2;
+	    $clone_left =~ s/\"//g;
+	    $clone_left_end = $cos_len - $coord;  
+	    $push = "Clone_left_end\t \"$clone_left\" $clone_left_end\n";
+	    if ($clone_left eq $overlap_right) {	  
 
-    # FLIPPED
-    if (/^Flipped/) {
-	# delete this line
-	print "=> Flipped\n" if ($debug);
-	$new_count++;
+       	       	$push .= "Overlap_right\t\"${overlap_right}\"\t$clone_left_end\n";
+	    }
+	}
+	# flipper -i
+	if ($insert == 1) {
+	    if ($2 < $position) {
+		$push = "Clone_right_end\t$1\t$2\n";
+	    }
+	    if ($2 > $position) {
+		$coord = $2 +1;
+		$push = "Clone_right_end\t$1\t$coord\n";
+	    }
+	}
+	if ($delete == 1) {
+	    if ($2 < $position) {
+		$push = "Clone_right_end\t$1\t$2\n";
+	    }
+	    if ($2 > $position) {
+		$coord = $2 -1;
+		$push = "Clone_right_end\t$1\t$coord\n";
+	    }
+	}
+	push (@OUT,$push);
     }
     
     # DATABASE
     if (/^Database\s+\S+\s+\S+\s+\S+/) {
-	print "$_\n";
-	$new_count++;
+	push (@OUT,$_);
     }
 
     # KEYWORD
-    if (/^Keyword/) {
-	print "$_\n";
-	$new_count++;
+    if (/^Keyword\s+\S+/) {
+	push (@OUT,$_);
     }
 
-    # EMBL_DUMP_INFO
-    if (/^EMBL_dump_info/) {
-	print "$_\n";
-	$new_count++;
+    # FROM_AUTHOR name
+    if (/^From_author\s+\S+/) {
+	push (@OUT,$_);
     }
 
-    # FROM_AUTHOR & FROM_LABORATORY
-    if ((/^From_author/) || (/^From_Laboratory/)) {
-	print "$_\n";
-	$new_count++;
+    # FROM_LABORATORY name
+    if (/^From_laboratory\s+\S+/) {
+	push (@OUT,$_);
     }
 
     # DATE_DIRECTORY
     if (/^Date_directory\s+\S+/) {
 	&get_date_stamp;
-	print "Date_directory\t$date_stamp\n";
-	$new_count++;
+	$push = "Date_directory\t$date_stamp\n";
+	push (@OUT,$push);
     }
 
     # Species
     if (/^Species\s+/) {
-	print "$_\n";
-	$new_count++;
+	push (@OUT,$_);
     }
 
    # MAP coordinates
-    if ((/^Map/) || (/^Interpolated_gMap/)) {
-	print "$_\n";
-	$new_count++;
+    if (/^Map\s+\S+\s+\S+\s+\S+/) {
+	push (@OUT,$_);
     }
 
     # CLONE name
     if (/^Clone\s+\S+/) {
-	print "$_\n";
-	$new_count++;
+	push (@OUT,$_);
     }
 
     # GENOMIC_CANONICAL
-    if (/^Genomic_canonical/) {
-	print "$_\n";
-	$new_count++;
+    if (/^Genomic canonical/) {
+	push (@OUT,$_);
     }
-    
+
     # FINISHED date
-    if ((/^Finished/) || (/^Submitted/) || (/^Annotated/)) {
-	print "$_\n";
-	$new_count++;
+    if (/^Finished\s+\S+/) {
+	$finished_date = "19" . substr($date_stamp,0,2) . "-" . substr($date_stamp,2,2) . "-" . substr($date_stamp,4,2);
+	$push = "Finished\t$finished_date\n";
+	push (@OUT,$push);
     }
 
-    # OLIGO
-    if (/^Oligo\s+\"(\S+)\"\s+(\d+)\s+(\d+)/) {
-	$new_5 = $cos_len - $2;
-	$new_3 = $cos_len - $3;
-	print  "Oligo\t\"$1\" $new_5 $new_3\n";
-	$new_count++;
+    # SUBMITTED date
+    if (/^Submitted\s+\S+/) {
+	push (@OUT,$_);
     }
 
-    # CONFIRMED INTRONS 
-    if (/^Confirmed_intron\s+(\d+)\s+(\d+)\s+(\S+)/) {
-	$new_5 = $cos_len - $1;
-	$new_3 = $cos_len - $2;
-	print "Confirmed_intron\t$new_5 $new_3 $3\n";
-	$new_count++;
-    }
-
-    
-    # ASSEMBLY TAGS
-    if (/^Assembly_tags/) {
-	print "$_\n" if ($debug);
-	$new_count++;
-    }
-    
-    # ANALYSIS_HISTORY
-    if (/^Analysis_history/) {
-	print "$_\n";
-	$new_count++;
-    }
-    
-    # DNA HOMOL
-    if (/^DNA_homol\s+\"(\S+)\"\s+\"(\S+.+)\"\s+(\S+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/) {
-	$new_5 = $cos_len - $4;
-	$new_3 = $cos_len - $5;
-	print  "DNA_homol\t\"$1\" \"$2\" $3 $new_5 $new_3 $6 $7\n";
-	$new_count++;
-    }
-
-    # PEP HOMOL
-    if (/^Pep_homol\s+\"(\S+)\"\s+\"(\S+.+)\"\s+(\S+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/) {
-	$new_5 = $cos_len - $4;
-	$new_3 = $cos_len - $5;
-	print  "Pep_homol\t\"$1\" \"$2\" $3 $new_5 $new_3 $6 $7\n";
-	$new_count++;
-    }
-
-    # MOTIF HOMOL
-    if (/^Motif_homol\s+\"(\S+)\"\s+\"(\S+.+)\"\s+(\S+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/) {
-	$new_5 = $cos_len - $4;
-	$new_3 = $cos_len - $5;
-	print  "Motif_homol\t\"$1\" \"$2\" $3 $new_5 $new_3 $6 $7\n";
-	$new_count++;
-    }
-
-    # Feature
-    if (/^Feature\s+\"(\S+)\"\s+(\d+)\s+(\d+)\s+(\S+)\s+\"(\S+.+)\"/) {
-	$new_5 = $cos_len - $2;
-	$new_3 = $cos_len - $3;
-	print  "Feature\t\"$1\" $new_5 $new_3 $4 \"$5\"\n";
-	$new_count++;
-    }
-
-    # Method
-    if (/^Method\s+/) {
-	print "$_\n";
-	$new_count++;
+    # ANNOTATED date
+    if (/^Annotated\s+\S+/) {
+	push (@OUT,$_);
     }
 
     # THE END #
 
 }
 
-print "\n\n// ${cosmid}_flipper.ace [$new_count lines]\n";
+# PRINT OUTPUT ACE FILE
 
-unless ($line_count == $new_count) {
-    print "// !! line counts do not match !!\n\n";
+open (out, ">${cosmid}_flipper.ace") || die "Can't open ${cosmid}_flipper.ace file\n\n";
+
+foreach (@OUT) {
+    print out "$_";
 }
 
+close (out);
+
+if ($within_gene != 0) {
+    print "\n!! WARNING !! - the indel was within a subsequence ${within_gene}\n\n";
+}
 
 exit;
 
