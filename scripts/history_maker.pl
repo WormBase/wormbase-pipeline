@@ -136,6 +136,7 @@ sub make_history
     print HIS "CDS\n";
     print HIS "From_laboratory $lab\n";
     print HIS "Gene_history $gene\n" if $gene;
+    print HIS "Species \"$species\"\n" if $species;
     print HIS "Method history\n";
 
     close HIS;
