@@ -10,7 +10,7 @@
 # 
 #
 # Last updated by: $Author: ar2 $                     
-# Last updated on: $Date: 2002-12-17 17:32:28 $     
+# Last updated on: $Date: 2002-12-17 17:34:48 $     
 
 use strict;                                     
 use lib "/wormsrv2/scripts/";                  
@@ -201,7 +201,6 @@ open (ACE, ">$acefile") || die "cant write $acefile\n";
 
 
 $CE_live{'CE25872'} = 1; #hard coded as this history is confused. Remove if CE25873 no longer valid
-$CE_corr_DNA{'CE25872'} = "F36D3.1";
 push( @{ $CE_corr_DNA{'CE25872'} }, "F36D3.1");
 
 #ace file for new Protein model (with History)
@@ -254,7 +253,7 @@ print LOG "\n$0 finished at $date\n";
 print LOG "\n   . . about to start GetSwissIDandInterpro.pl\n";
 
 # auto run GetSwissIDandInterpro.pl
-`perl5.6.0 /wormsrv2/scripts/GetSwissIDandInterpro.pl`;
+`perl5.6.1 /wormsrv2/scripts/GetSwissIDandInterpro.pl`;
 
 
 #load files in to autoace.
