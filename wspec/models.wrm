@@ -388,7 +388,7 @@
 		   Transgene ?Transgene XREF Strain
 	 Properties  Males Text
 		     Reference_strain Text
-		     Outcrossed
+		     Outcrossed Text
 		     Mutagen Text
 		     CGC_received DateType
          Location ?Laboratory #Lab_Location
