@@ -5,7 +5,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2003-10-29 12:10:42 $
+# Last updated on: $Date: 2003-10-29 12:14:51 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -202,6 +202,8 @@ foreach $file (@gff_files) {
     elsif ($method eq "GenePair_STS")                 {push (@{$GFF{$file}{genepair}},$_);}
     # Alleles
     elsif ($method eq "Allele")                       {push (@{$GFF{$file}{allele}},$_);}
+    # operons
+    elsif ($feature eq "operon")                      {push (@{$GFF{$file}{operon}},$_);}
     # Clone ends
     elsif ((/Clone_left_end/)  
 	   || (/Clone_right_end/))                    {push (@{$GFF{$file}{clone_ends}},$_);}
@@ -231,7 +233,7 @@ foreach $file (@gff_files) {
     elsif (/UTR/)                                     {push (@{$GFF{$file}{UTR}},$_);}
     # Protein similarities
     elsif (/wublastx_/)                                {push (@{$GFF{$file}{BLASTX}},$_);}
-    #C. briggsae
+    # C. briggsae
     elsif (/:waba/)                                   {push (@{$GFF{$file}{WABA_BRIGGSAE}},$_);}
 
     # REST OF LINES
@@ -514,6 +516,7 @@ Expr_profile
 UTR
 BLASTX
 WABA_BRIGGSAE
+operon
 rest
 __END__
 
