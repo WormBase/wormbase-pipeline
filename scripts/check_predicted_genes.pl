@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam aged 12 and a half
 #
-# Last updated on: $Date: 2004-11-17 14:02:58 $
+# Last updated on: $Date: 2004-11-30 17:12:22 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
@@ -199,25 +199,21 @@ foreach my $gene_model (@Predictions){
     push(@error3, "ERROR: $gene_model needs to be renamed as it is part of history.\n");
   }
 
-  # check Gene IDs are populated in predictions and are valid.
+  my $Gene_ID     = $gene_model->at('Visible.Gene.[1]');
+  my $Genehist_ID = $gene_model->at('Visible.Gene_history.[1]');
+
   if ($gene_model->name =~ (/\w+\d+\.\d+\Z/)) {
-    my $Gene_ID = $gene_model->at('Visible.Gene.[1]');
-    if (defined $Gene_ID) {
-      push(@error2, "ERROR: The Gene ID '$Gene_ID' in $gene_model is invalid!\n") unless ($Gene_ID =~ /WBGene[0-9]{8}/);
-    }
-    elsif (!defined $Gene_ID) {push(@error2, "ERROR: $gene_model does not have a Gene ID!\n");
-    }
+    push(@error2, "ERROR: $gene_model does not have a Gene ID!\n") unless (defined $Gene_ID);
+    push(@error2, "ERROR: The Gene ID '$Gene_ID' in $gene_model is invalid!\n") unless ($Gene_ID =~ /WBGene[0-9]{8}/);
+  }
+  elsif ($gene_model->name =~ (/\w+\.\w+\:\w+/)) {
+    push(@error2, "ERROR: $gene_model does not have the Gene_history populated\n") unless (defined $Genehist_ID);
+    push(@error2, "ERROR: The Gene ID '$Genehist_ID' in $gene_model is invalid!\n") unless ($Genehist_ID =~ /WBGene[0-9]{8}/);
+  }
+  if ((defined $Genehist_ID) && (defined $Gene_ID)) {
+    push(@error2, "ERROR: Gene Model $gene_model contains both a Gene and a Gene_history tag, Please fix.\n");
   }
 
-  if ($gene_model->name =~ (/\w+\.\w+\:\w+/)) {
-    my $Genehist_ID = $gene_model->at('Visible.Gene_history.[1]');
-    if (defined $Genehist_ID) {
-      push(@error2, "ERROR: The Gene ID '$Genehist_ID' in $gene_model is invalid!\n") unless ($Genehist_ID =~ /WBGene[0-9]{8}/);
-    }
-    elsif (!defined $Genehist_ID) {push(@error2, "ERROR: $gene_model does not have the Gene_history populated\n");
-    }
-  }
-  
 ###################################################################################################################
 
   # then run misc. sequence integrity checks
@@ -325,7 +321,7 @@ sub test_gene_sequence_for_errors{
       $warning .= "WARNING: $gene_model is short ($gene_model_length bp) and is Predicted\n";
       print "WARNING: $gene_model is short ($gene_model_length bp) and is Predicted\n" if $verbose;
     }
-    push(@error4, $warning) unless ($basic);
+    push(@error5, $warning) unless ($basic);
   }
 
   if (($remainder != 0) && ($method_test eq 'curated')){
@@ -415,7 +411,7 @@ __END__
 =back
 
 This script is designed to check the validity of predicted gene objects from any wormbase (or
-other acedb) database.  The script will only analyse objects in the 'elegans_CDS' subclass.
+other acedb) database.  The script will analyse objects in the 'All_genes' subclass.
 The script emails the top 20 problems each day (sorted by severity).
 
 
