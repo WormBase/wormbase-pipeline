@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers                             
 #
-# Last updated by: $Author: dl1 $               
-# Last updated on: $Date: 2002-11-28 16:45:13 $         
+# Last updated by: $Author: ar2 $               
+# Last updated on: $Date: 2002-12-13 11:09:37 $         
 
 #################################################################################
 # Initialise variables                                                          #
@@ -352,7 +352,7 @@ This module provides access to the following data sets:
 
 =head2 EXAMPLE USAGE
 
-=over4
+=over 4
 
 =item include this file
 
@@ -382,7 +382,7 @@ returns 'CE04501'
 
 =item UPDATING THE DATA
 
-=over4
+=over 4
 
 We need to be very careful about updating this data.  Depending in wether it is being updated during the build or otherwise we need to use autoace or current_DB. 
 
