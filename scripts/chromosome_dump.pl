@@ -19,9 +19,10 @@ $|=1;
 ##############################
 
 my $cvs_version = &get_cvs_version("$0");
+
 our $tace   = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_4/tace";
 our $database = "/wormsrv2/autoace";
-our $dump_dir = "/wormsrv2/autoace/CHROMOSOMES/";
+our $dump_dir = "/wormsrv2/autoace/CHROMOSOMES";
 our ($opt_d,$opt_g,$opt_z,$opt_h);
 getopts("dgzh");
 
@@ -31,9 +32,7 @@ getopts("dgzh");
 #############################
 
 &show_help if ($opt_h);
-&show_help if (@ARGV = "");
-
-
+&show_help if (!$opt_h && !$opt_d && !$opt_g && !$opt_z);
 
 ##################################################
 # Open logfile                                   #
@@ -43,9 +42,8 @@ my $rundate    = `date +%y%m%d`; chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
 
 our $logfile = "/wormsrv2/logs/chromosome_dump.${rundate}.$$";
-system ("/bin/touch $logfile");
-open (LOGFILE,">>$logfile") || die "Couldn't append to $logfile\n";
 
+open (LOGFILE,">$logfile") || die "Couldn't create $logfile\n";
 print LOGFILE "# chromosome_dump.pl\n\n";     
 print LOGFILE "# version        : $cvs_version\n";
 print LOGFILE "# run details    : $rundate $runtime\n";
@@ -59,6 +57,7 @@ print LOGFILE "\n\n";
 &dump_dna  if ($opt_d);
 &dump_gff  if ($opt_g);
 &zip_files if ($opt_z);
+
 
 # say goodnight Barry
 
@@ -135,6 +134,7 @@ sub execute_tace_command {
   close (WRITEDB);
 }
 
+######################################################
 
 sub show_help {
   system ('perldoc',$0);
