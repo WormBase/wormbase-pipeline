@@ -314,6 +314,8 @@
 				Transcript ?Transcript XREF Locus #Evidence // en route to new gene model [021126 krb]
 				Pseudogene ?Pseudogene XREF Locus #Evidence // new [030801 krb]
 				Product ?Text
+	Gene_regulation         Trans_regulator ?Gene_regulation XREF Trans_regulator_locus // new for Wen [030804 krb]
+                                Trans_target    ?Gene_regulation XREF Trans_regulated_locus // new for Wen [030804 krb]
 	Remark ?Text #Evidence
 	Map    ?Map XREF Locus #Map_position
 	Interpolated_map_position UNIQUE ?Map UNIQUE Float // new for updated CDS-based interpolated map positions [krb 030502]
@@ -888,6 +890,10 @@
 	  Strain ?Strain XREF Sequence                                      // new for KO data [krb 021219]
 	  Assembly_tags	Text Int Int Text                                   // type, start, stop, comment
 	  Analysis_details Analysis_history ?Method UNIQUE DateType
+	  Gene_regulation Trans_regulator  ?Gene_regulation XREF Trans_regulator_seq // new for Wen [030804 krb]
+                          Cis_regulator    ?Gene_regulation XREF Cis_regulator_seq // new for Wen
+                          Trans_target     ?Gene_regulation XREF Trans_regulated_seq // new for Wen
+                          Cis_target       ?Gene_regulation XREF Cis_regulated_seq  // new for Wen
 	  Homol	DNA_homol ?Sequence XREF DNA_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		Pep_homol ?Protein XREF DNA_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		Motif_homol ?Motif XREF DNA_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
@@ -1840,6 +1846,7 @@
 		  //Microarray_result ?Microarray_result XREF Reference  //added for Microarray_result [030127 krb]
                   Cluster ?Cluster XREF Reference #Evidence
 		  Feature ?Feature XREF Defined_by_paper                 // added [030424 dl]
+		  Gene_regualtion ?Gene_regulation XREF Reference // added [030804 krb]
         Keyword ?Keyword
 
 
@@ -1885,6 +1892,75 @@
         	      Past_lab_members ?Person XREF Old_laboratory     // for anyone who has left the field, or the circle of life
 	      Remark ?Text #Evidence
 
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////
+//
+//  New ?Gene_regulation model
+//
+// From Wen, 5th August 2003
+//
+//////////////////////////////////////////////////////////////////////////////////////////////
+
+// Gene regulation model describes the expression pattern in different genetic backgrounds
+// "Summary" use text to describe the experimental results observed from experiments. It should be summarized from 
+// publication or pers. coomunication. 
+// "Method" is the experimental approach, whether it is done by Immunostaining, Reporter_gene or ...
+// "Regulator" is the party that regulated the expression pattern, it can be a gene (Trans_regulator), a short 
+// DNA sequence (Cis_regulator), or protein, drug, condition ... (Other_regulator). 
+// Regulator_info  describes details about regulator, such aswhat allele and what RNAi is used to test the regulation.
+// "Target" is the party that displayed expression pattern, can be a gene(Trans_regulated) or a specific promoter
+// sequence(Cis_regulated). Target_info described what Expr_pattern is tested under mutant background. Here the 
+// Expr_pattern refers to the expression pattern under wild type C. elegans background. 
+// Result: "Positive_regulate" display when and where increase of expression were observed. "Negative_regulate" display 
+// when and where decrease of expression were observed.
+// "Remark" is for any other information that might be useful.
+// "Evidence" will be used to curate data from personal communication. 
+//"Reference" show which paper is the source of the data.
+
+
+?Gene_regulation Evidence  #Evidence       
+		 Summary   ?Text
+                 Method    Antibody        ?Text
+                           Reporter_gene   ?Text
+                           In_situ         Text
+                           Northern        Text
+                           Western         Text
+                           RT_PCR          Text
+                           Other_method    ?Text
+                 Regulator Regulator_info  Allele                  ?Allele 
+                                           RNAi                    ?RNAi
+                           Trans_regulator_locus   ?Locus          XREF    Trans_regulator #Boolean
+                           Trans_regulator_seq     ?Sequence       XREF    Trans_regulator #Boolean
+                           Cis_regulator_seq       ?Sequence       XREF    Cis_regulator   #Boolean
+                           Other_regulator         ?Text                                   #Boolean        
+                 Target    Target_info     Expr_pattern            ?Expr_pattern
+                           Trans_regulated_locus   ?Locus          XREF    Trans_target    #Boolean
+                           Trans_regulated_seq     ?Sequence       XREF    Trans_target    #Boolean
+                           Cis_regulated_seq       ?Sequence       XREF    Cis_target      #Boolean
+                           Other_regulated         ?Text                                   #Boolean
+                 Result    Positive_regulate #GR_condition
+                           Negative_regulate #GR_condition
+                 Remark    ?Text #Evidence
+                 Reference ?Paper XREF Gene_regulation
+
+
+//Boolean operators.
+
+#Boolean  AND      //Added by wjc for Gene_regulation model.
+          OR       //Added by wjc for Gene_regulation model.
+          NOT      //Added by wjc for Gene_regulation model.
+          XOR      //Added by wjc for Gene_regulation model.
+
+
+// #GR_condition provides information on when(Life_stage) and where(Cell, Cell_group, Subcellular) certain kinds of 
+// regulation happen.
+
+#GR_condition          Life_stage               ?Life_stage      
+                       Cell                     ?Cell
+                       Cell_group               ?Cell_group
+                       Subcellular_localization ?Text 
 
 
 
