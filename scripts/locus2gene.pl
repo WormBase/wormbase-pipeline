@@ -7,7 +7,7 @@
 # A script to convert ?Locus objects into the new ?Gene object
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-03-16 17:47:51 $   
+# Last updated on: $Date: 2004-04-07 10:34:08 $   
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -35,6 +35,7 @@ GetOptions ("file=s"       => \$file,
 	    "fix_map"      => \$fix_map,
 	    "fix_rearrangement" => \$fix_rearrangement);
 
+my $db_path = "/wormsrv1/geneace2";
 
 &process_locus_dump if ($file);
 
@@ -176,7 +177,7 @@ sub fix_locus_class{
   # remove any Gene object which isn't called WBGene*
 
   open(OUT, ">fix_locus.ace") || die "Can't create output file\n";
-  my $db_path = "/nfs/disk100/wormpub/DATABASES/TEST_DBs/geneace_gene_model";
+
   my $db = Ace->connect(-path  => $db_path) || do { print "Connection failure: ",Ace->error; die();};
 
   # This query gets all genes which link to other genes using old CGC style names,
@@ -214,7 +215,7 @@ sub fix_two_point_data_class{
   # remove any Gene object which isn't called WBGene*
 
   open(OUT, ">fix_2_pt_data.ace") || die "Can't create output file\n";
-  my $db_path = "/nfs/disk100/wormpub/DATABASES/TEST_DBs/geneace_gene_model";
+
   my $db = Ace->connect(-path  => $db_path) || do { print "Connection failure: ",Ace->error; die();};
 
   # This query gets all 2_point_data objects which link to Locus objects using old CGC style names,
@@ -277,7 +278,7 @@ sub fix_pos_neg_data_class{
   # remove any Gene object which isn't called WBGene*
 
   open(OUT, ">fix_pos_neg_data.ace") || die "Can't create output file\n";
-  my $db_path = "/nfs/disk100/wormpub/DATABASES/TEST_DBs/geneace_gene_model";
+
   my $db = Ace->connect(-path  => $db_path) || do { print "Connection failure: ",Ace->error; die();};
 
   # This query gets all 2_point_data objects which link to Locus objects using old CGC style names,
@@ -339,7 +340,7 @@ sub fix_multi_pt_data_class{
   # remove any Gene object which isn't called WBGene*
 
   open(OUT, ">fix_multi_pt_data.ace") || die "Can't create output file\n";
-  my $db_path = "/nfs/disk100/wormpub/DATABASES/TEST_DBs/geneace_gene_model";
+
   my $db = Ace->connect(-path  => $db_path) || do { print "Connection failure: ",Ace->error; die();};
 
   # This query gets all Multi_pt_data objects which link to Locus objects using old CGC style names,
@@ -477,7 +478,7 @@ sub fix_multi_pt_data_class{
 sub fix_map_class{
 
   open(OUT, ">fix_map.ace") || die "Can't create output file\n";
-  my $db_path = "/nfs/disk100/wormpub/DATABASES/TEST_DBs/geneace_gene_model";
+
   my $db = Ace->connect(-path  => $db_path) || do { print "Connection failure: ",Ace->error; die();};
 
   my $query = "Find Genetic_map *";
@@ -528,7 +529,7 @@ sub fix_map_class{
 sub fix_rearrangement_class{
 
   open(OUT, ">fix_rearrangement.ace") || die "Can't create output file\n";
-  my $db_path = "/nfs/disk100/wormpub/DATABASES/TEST_DBs/geneace_gene_model";
+
   my $db = Ace->connect(-path  => $db_path) || do { print "Connection failure: ",Ace->error; die();};
 
   my $query = "Find Rearrangement * WHERE Positive OR Negative";
