@@ -5,7 +5,7 @@ use lib glob("~ar2/wormbase/scripts/");
 use Ace;
 use Getopt::Long;
 
-my ($debug, $verbose, $really_verbose, $est, $count, $report, $gap);
+my ($debug, $verbose, $really_verbose, $est, $count, $report, $gap, $transcript);
 $gap = 1; # $gap is the gap allowed in an EST alignment before it is considered a "real" intron
 
 GetOptions ( "debug" => \$debug,
@@ -14,7 +14,8 @@ GetOptions ( "debug" => \$debug,
 	     "est:s" => \$est,
 	     "count" => \$count,
 	     "report" => \$report,
-	     "gap:s"  => \$gap
+	     "gap:s"  => \$gap,
+	     "transcript" => \$transcript
 	   ) ;
 
 my $database = glob("~wormpub/DATABASES/TEST_DBs/ANT_matchingace");
@@ -65,6 +66,8 @@ while (<GFF>) {
   }
 }
 
+close GFF;
+
 &eradicateSingleBaseDiff;
 
 my %gene2cdnas;
@@ -83,12 +86,52 @@ foreach my $CDNA (keys %cDNA_span) {
   last if $est;
 }
 
-
+open (ACE,">$database/transcripts.ace") or die "transcripts\n";
 foreach (keys %gene2cdnas) {
   print "$_ matching cDNAs => @{$gene2cdnas{$_}}\n" if $report;
   print "$_ matches ",scalar(@{$gene2cdnas{$_}}),"\n" if $count;
-}
+  if( $transcript ) {
+    next unless $genes_span{$_}->[2] eq "+"; #just do forward for now
+    my %transcript;
+    %transcript = %{$genes_exons{$_}};   # put the gene model in to the transcript
 
+    print ACE "\nSequence : \"$_.trans\"\n";
+    print ACE "Source T23G11\n";
+    print ACE "method history\n";
+    foreach my $cdna (@{$gene2cdnas{$_}}) { # iterate thru array of cDNAs ( 1 per gene )
+      print ACE "matching_CDNA \"$cdna\"\n";
+      foreach my $cExon(keys %{$cDNA{$cdna}} ){ #  then thru exons of the cDNA
+	next if( defined $transcript{$cExon} and  $transcript{$cExon} == $cDNA{$cdna}->{$cExon} ); #skip if the cDNA exon is same as one in transcript
+	
+	# iterate thru existing transcript exons and check for overlaps
+	foreach my $transExon (keys %transcript ) {
+	  if( $cExon < $transExon and $cDNA{$cdna}->{$cExon} >= $transExon ) {
+	
+	    if( $cDNA{$cdna}->{$cExon} > $transcript{$transExon} ) {
+	      $transcript{$cExon} = $cDNA{$cdna}->{$cExon};
+	    }
+	    else {
+	      $transcript{$cExon} = $transcript{$transExon};
+	    }
+	    delete $transcript{$transExon};
+	  }
+	  elsif( $cExon > $transExon and $cExon < $transcript{$transExon} and $cDNA{$cdna}->{$cExon} >= $transExon ) {
+	    $transcript{$transExon} = $cDNA{$cdna}->{$cExon};
+	  }
+	}
+      }
+    }
+    
+    my @exons = (sort { $transcript{$a} <=> $transcript{$b} } keys %transcript);
+    foreach (@exons) {
+      print ACE "source_exons ",$_ - $exons[0] + 1," ",$transcript{$_} - $exons[0]+1," \n";
+    }
+
+    print ACE "\nSequence : T23G11\n";
+    print ACE "Subsequence $_.trans $exons[0] $transcript{$exons[-1]}\n";
+  }
+}
+close ACE;
 exit(0);
 
 sub findOverlappingGene
