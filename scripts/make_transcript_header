@@ -1,0 +1,88 @@
+#!/usr/local/bin/perl
+
+
+&EST_2;
+
+exit(0);
+
+sub EST {
+
+    open (EST, "</nfs/disk100/wormpub/analysis/ESTs/C.elegans_nematode_ESTs.020806");
+while (<EST>) {
+      if (/^>(\S+)\s+(\S+)/) {
+	  ($acc,$id) = ($1,$2);
+	  if (/clone (yk\S+)\s\:\s(\d+)/) {
+	      $yes = 2;
+	      print "$acc $1.$2 [$2'EST] ";
+	  }
+	  elsif (/clone\:(yk\S+)\s\:\s(\d+)/) {
+	      $yes = 2;
+	      print "$acc $1.$2 [$2'EST] ";
+	  }
+	  else {
+	      $yes = 2;
+	      print "$acc $id [EST] ";
+	  }
+	  next;
+      }
+      
+      if (defined $yes) {
+	  chomp;
+	  tr/[a-z]/[A-Z]/;
+	  print "$_";
+	  $yes--;
+	  if ($yes == 0) {print "\n"; undef($yes)};
+      }
+  }
+close EST;
+
+}
+
+sub mRNA {
+
+open (mRNA, "<C.elegans_nematode_mRNAs");
+while (<mRNA>) {
+      if (/^>(\S+)\s+(\S+)/) {
+	  ($acc,$id) = ($1,$2);
+	  print "$acc $id [mRNA] ";
+	  $yes = 2;
+	  next;
+      }
+      
+      if (defined $yes) {
+	  chomp;
+	  tr/[a-z]/[A-Z]/;
+	  print "$_";
+	  $yes--;
+	  if ($yes == 0) {print "\n"; undef($yes)};
+      }
+  }
+close mRNA;
+
+      
+}
+
+
+sub EST_2 {
+
+#    open (EST2, "</nfs/disk100/wormpub/analysis/mRNA/otherEST.dna") or die "$!";
+    open (EST2, "</nfs/disk100/wormpub/analysis/ESTs/C.elegans_nematode_ESTs") or die "$!";
+    while (<EST2>) {
+      if (/^>(\S+)/) {
+	  ($acc) = ($1);
+	  $yes = 2;
+	  print "$acc $acc [EST] ";
+	  next;
+      }
+      
+      if (defined $yes) {
+	  chomp;
+	  tr/[a-z]/[A-Z]/;
+	  print "$_";
+	  $yes--;
+	  if ($yes == 0) {print "\n"; undef($yes)};
+      }
+  }
+close EST2;
+
+}
