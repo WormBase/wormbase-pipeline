@@ -4,6 +4,7 @@ use DBI;
 use strict;
 use lib "/wormsrv2/scripts/";
 use Wormbase;
+use Common_data;
 use Getopt::Long;
 
 my $maintainers = "All";
@@ -76,15 +77,21 @@ while ( $pep_input ) {
 unless (@peps2dump)  {
   if( $all ) {
     print LOG &runtime," : Dumping all current wormpep proteins ( Wormpep$WPver )\n";
-    open( DIFF,"</wormsrv2/WORMPEP/wormpep$WPver/wormpep$WPver") or die "cant open Wormpep$WPver file\n";
-    while(<DIFF>) {
-      if( /^>/ ) {
-	chomp;
-	my @tabledata = split;
-	push( @peps2dump, $tabledata[1]);
-      }
+    my %tmp_peps;
+    &CE2gene(\%tmp_peps);
+    foreach (keys %tmp_peps) {
+      push( @peps2dump, $_ );
     }
   }
+  #  open( DIFF,"</wormsrv2/WORMPEP/wormpep$WPver/wormpep$WPver") or die "cant open Wormpep$WPver file\n";
+#    while(<DIFF>) {
+#      if( /^>/ ) {
+#	chomp;
+#	my @tabledata = split;
+#	push( @peps2dump, $tabledata[1]);
+#      }
+  
+  
   else {
     open( DIFF,"</wormsrv2/WORMPEP/wormpep$WPver/wormpep.diff$WPver") or die "cant opne diff file\n";
     print LOG &runtime," : Dumping updated proteins ( wormpep.diff$WPver )\n";
@@ -92,18 +99,19 @@ unless (@peps2dump)  {
       {
 	if( /new/ ){
 	  /CE\d+/;
-	$pep = $&;
+	  $pep = $&;
 	}
 	elsif ( /changed/ ){
 	  /-->\s+(CE\d+)/;
 	  $pep = $1;
 	}
 	if( $pep ){
-	push( @peps2dump, $pep );
+	  push( @peps2dump, $pep );
+	}
       }
-      }
+    close DIFF;
   }
-  close DIFF;
+ # close DIFF;
 }
 
 # mysql database parameters
@@ -132,14 +140,17 @@ my $sth_f = $wormprot->prepare ( q{ SELECT proteinId,analysis,
                                 WHERE proteinId = ? and -log10(evalue) > 40
                              ORDER BY hId
 	  	  	     } );
-my $output = "/wormsrv2/wormbase/ensembl_dumps/wublastp_data.ace";
+my $output = "/wormsrv2/wormbase/ensembl_dumps/blastp_ensembl.ace";
 open (OUT,">$output") or die "cant open $output\n";
 my $recip_file = "/wormsrv2/tmp/wublastp_recip.ace";
 open (RECIP,">$recip_file") or die "cant open recip file\n";
 my $count;
 
-our %CE2gene = &CE2gene;
-my %gene2CE = &gene2CE;
+our %CE2gene;
+&CE2gene(\%CE2gene);
+
+my %gene2CE;
+&gene2CE(\%gene2CE);;
 
 foreach $pep (@peps2dump)
   {
@@ -227,16 +238,10 @@ my $wormpub = glob("~wormpub");
 my $tace =  "$wormpub/ACEDB/bin.ALPHA_4/tace";
 my $command;
 
-#parse homology data
-#print LOG &runtime," : Adding $output file to $acedb_database\n";
-#$command = "pparse $output\nsave\nquit\n"; 
-#open (AUTOACE, "| $tace -tsuser wublastp $acedb_database  |") || die "Couldn't open pipe to $acedb_database\n";
-#print AUTOACE $command;
-#print LOG &runtime ," : finished adding $output file to $acedb_database\n";  close AUTOACE;
-#print LOG &runtime," : finished\n\n______END_____";
+print LOG &runtime," : finished\n\n______END_____";
 
 close LOG;
-#`rm -f $recip_file`;
+`rm -f $recip_file`;
 
 &mail_maintainer("Dump_new_proteins_only.pl",$maintainers,$log);
 
@@ -388,32 +393,6 @@ sub addData
     }
   }
 
-
-sub gene2CE
-  {
-    my @array;
-    open (FH,"</wormsrv2/WORMPEP/wormpep$WPver/wormpep.table$WPver") or die "cant open wormpep.table$WPver\n";
-    while(<FH>){
-      my @data = split(/\s+/,$_);
-      push( @array, $data[0], $data[1]);
-    }
-    return @array;
-  }
-
-sub CE2gene
-  {
-    my @array;
-    open (FH,"</wormsrv2/WORMPEP/wormpep$WPver/wormpep.accession$WPver") or die "cant open wormpep.accession$WPver\n";
-    while(<FH>)
-      {
-	chomp;
-	my @data = split;
-	if( $data[1] ){
-	  push(@array, $data[0],$data[1]);
-	}
-      }
-    return @array;
-  }
 
 sub justGeneName
   {
