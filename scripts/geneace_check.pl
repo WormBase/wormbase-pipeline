@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: krb $
-# Last updated on: $Date: 2002-07-10 09:35:06 $
+# Last updated on: $Date: 2002-07-10 10:04:04 $
 
 use Ace;
 use lib "/wormsrv2/scripts/"; 
@@ -20,9 +20,9 @@ our $errors;
 &create_log_files;
 
 # open a connection to geneace and grab list of loci
-my $tace = glob("~wormpub/ACEDB/bin.ALPHA_4/tace");   # tace executable path
+our $tace = glob("~wormpub/ACEDB/bin.ALPHA_4/tace");   # tace executable path
 my $db = Ace->connect(-path  => '/wormsrv1/geneace/',
-		      -program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
+		      -program =>$tace) || do { print LOG "Connection failure: ",Ace->error; die();};
 
 my @loci = $db->fetch(-class => 'Locus',
 		      -name  => '*');
@@ -69,7 +69,8 @@ sub find_new_loci_in_current_DB{
   my $warnings;
 
   # open a database connection to current_DB and grab all loci names (excluding polymorphisms)
-  my $new_db = Ace->connect(-path  => '/wormsrv2/current_DB') || die "Could not connect to current_DB\n";
+  my $new_db = Ace->connect(-path  => '/wormsrv2/current_DB',
+		    -program =>$tace) || do { print LOG "Connection failure: ",Ace->error; die();};
   my @current_DB_loci = $db->fetch(-query=>'Find Locus;!Polymorphism');
   $new_db->close;
 
