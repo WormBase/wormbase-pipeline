@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-09-07 16:18:57 $
+# Last updated by: $Author: dl1 $
+# Last updated on: $Date: 2004-10-07 09:56:50 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -21,28 +21,27 @@ use Getopt::Long;
 # command-line options       #
 ##############################
 
-
-my $build;          # for when you want to query autoace, i.e. you are building.  Otherwise defaults to current_DB
-my $test;           # test mode, uses ~wormpub/TEST_BUILD
-my $all;            # performs all of the below options:
+my $build;             # for when you want to query autoace, i.e. you are building.  Otherwise defaults to current_DB
+my $test;              # test mode, uses ~wormpub/TEST_BUILD
+my $all;               # performs all of the below options:
      
-my $clone2accession;# Hash: %clone2accession     Key: Genomic_canonical                 Value: GenBank/EMBL accession
-                    # Hash: %accession2clone     Key: GenBank/EMBL accession            Value: Genomic_canonical
-my $cds2wormpep;    # Hash: %cds2wormpep         Key: CDS name                          Value: Wormpep ID
-                    # Hash: %wormpep2cds         Key: Wormpep ID                        Value: CDS name
-my $cds2protein_id; # Hash: %cds2protein_id      Key: CDS name                          Value: Protein_ID
-                    # Hash: %protein_id2cds      Key: Protein_ID                        Value: CDS name
-my $CDS_list;       # Hash: %CDSlist             Key: CDS name                          Value: Confirmed status (confirmed = 1, not confirmed = 0) 
-my $clone2seq;      # Hash: %clone2seq           Key: Genomic_canbonical                Value: DNA sequence (lower case)
-my $genes2lab;      # Hash: %worm_gene2lab       Key: Gene (CDS|Transcript|Pseudogene)  Value: From_laboratory (HX, RW, DRW)
+my $clone2accession;   # Hash: %clone2accession     Key: Genomic_canonical                 Value: GenBank/EMBL accession
+                       # Hash: %accession2clone     Key: GenBank/EMBL accession            Value: Genomic_canonical
+my $cds2wormpep;       # Hash: %cds2wormpep         Key: CDS name                          Value: Wormpep ID
+                       # Hash: %wormpep2cds         Key: Wormpep ID                        Value: CDS name
+my $cds2protein_id;    # Hash: %cds2protein_id      Key: CDS name                          Value: Protein_ID
+                       # Hash: %protein_id2cds      Key: Protein_ID                        Value: CDS name
+my $CDS_list;          # Hash: %CDSlist             Key: CDS name                          Value: Prediction status 
+my $clone2seq;         # Hash: %clone2seq           Key: Genomic_canbonical                Value: DNA sequence (lower case)
+my $genes2lab;         # Hash: %worm_gene2lab       Key: Gene (CDS|Transcript|Pseudogene)  Value: From_laboratory (HX, RW, DRW)
 
-my $worm_gene2cgc;  # Hash: %worm_gene2cgc_name  Key: CGC name                          Value: Gene ID, plus molecular name (e.g. AH6.1), also a hash of cgc_name2gene
-my $worm_gene2geneID;  # Hash: %worm_gene2geneID Key: Gene (CDS|Transcript|Pseudogene)  Value: Gene ID
-my $worm_gene2class; # Hash: %worm_gene2class      Key: CDS/Transcript/Pseudogene name    Value: 'CDS', 'Transcript', or 'Pseudogene'
-my $estdata;        # Hash: %NDBaccession2est    Key: GenBank/EMBL accession            Value: EST name (WormBase)  
-                    # Hash: %estorientation      Key: EST name (WormBase)               Value: EST_5 = 5, EST_3 = 3
-my $feature_list;   # Hash: %Featurelist         Key: EST name (WormBase)               Value: Feature name (WormBase)
-my $CDS2gene_id;     # Hash: %CDS2gene_id         Key: CDS name                          Value: WBGene_id
+my $worm_gene2cgc;     # Hash: %worm_gene2cgc_name  Key: CGC name                          Value: Gene ID, plus molecular name (e.g. AH6.1), also a hash of cgc_name2gene
+my $worm_gene2geneID;  # Hash: %worm_gene2geneID    Key: Gene (CDS|Transcript|Pseudogene)  Value: Gene ID
+my $worm_gene2class;   # Hash: %worm_gene2class     Key: CDS/Transcript/Pseudogene name    Value: 'CDS', 'Transcript', or 'Pseudogene'
+my $estdata;           # Hash: %NDBaccession2est    Key: GenBank/EMBL accession            Value: EST name (WormBase)  
+                       # Hash: %estorientation      Key: EST name (WormBase)               Value: EST_5 = 5, EST_3 = 3
+my $feature_list;      # Hash: %Featurelist         Key: EST name (WormBase)               Value: Feature name (WormBase)
+my $CDS2gene_id;       # Hash: %CDS2gene_id         Key: CDS name                          Value: WBGene_id
 
 
 GetOptions("build"              => \$build,
@@ -226,33 +225,45 @@ sub write_cds2wormpep  {
 ########################################################################################################
 
 
+# Hash: %CDSlist             Key: CDS name                          Value: Prediction status 
+#
+# The prediction status {Confirmed|Partially_confirmed|Predicted) based on mapping of transcript data
+# to the coding exons.
+
+
 sub write_CDSlist  {   
+    
+    my %CDSlist;
+    my @f;
 
-  my %CDSlist;
-  my $CDS;
+    # connect to AceDB using TableMaker,
+    my $command="Table-maker -p $wquery_dir/CDSlist.def\nquit\n";
+    
+    open (TACE, "echo '$command' | $tace $ace_dir |");
+    while (<TACE>) {
+	chomp;
+	next if ($_ eq "");
+	next if (/acedb\>/);
+	last if (/\/\//);
+	s/\"//g;
 
-  # connect to AceDB using TableMaker,
-  my $command="Table-maker -p $wquery_dir/CDSlist.def\nquit\n";
-  
-  open (TACE, "echo '$command' | $tace $ace_dir |");
-  while (<TACE>) {
-    chomp;
-    next if ($_ eq "");
-    next if (/acedb\>/);
-    last if (/\/\//);
-    ($CDS) = (/^\"(\S+)\"/);
-    # Flag confirmed genes with a 1
-    if (/Confirmed_by/) {$CDSlist{$CDS} = 1;}
-    else {$CDSlist{$CDS} = 0;}
-    print "assigned $CDS with status '$CDSlist{$CDS}'\n" if ($test);
-  }
-  close TACE;
-  
-  #now dump data to file
-  open (CDS, ">$data_dir/CDS_list.dat") or die "Can't open file: $data_dir/CDS_list.dat";
-  print CDS Data::Dumper->Dump([\%CDSlist]);
-  close CDS;
+	@f = split /\t/;
+	
+	if ($f[1] eq "Predicted")              {$CDSlist{$f[0]} = $f[1];}
+	elsif ($f[2] eq "Partially_confirmed") {$CDSlist{$f[0]} = $f[2];}
+	elsif ($f[3] eq "Confirmed")           {$CDSlist{$f[0]} = $f[3];}
+
+	print "assigned $f[0] with status '$CDSlist{$f[0]}'\n" if ($test);
+
+    }
+    close TACE;
+    
+    #now dump data to file
+    open (CDS, ">$data_dir/CDS_list.dat") or die "Can't open file: $data_dir/CDS_list.dat";
+    print CDS Data::Dumper->Dump([\%CDSlist]);
+    close CDS;
 }
+
 ########################################################################################################
 
 
