@@ -6,8 +6,8 @@
 #
 # Usage: introncheck [-options]
 #
-# Last updated by: $Author: dl1 $     
-# Last updated on: $Date: 2003-02-20 14:06:40 $      
+# Last updated by: $Author: ar2 $     
+# Last updated on: $Date: 2003-04-17 14:14:38 $      
 
 #################################################################################
 # variables                                                                     #
@@ -113,7 +113,7 @@ foreach my $chromosome (@chromosomes) {
     # ignore those marked as false
     next if (($f[8] =~ /Confirmed_as_FALSE/) || ($f[8] =~ /Confirmed_as_Inconsistent/));
 
-    if ( (($f[2] eq "intron") && ($f[1] eq "") && (not $f[8] =~ /Confirmed_in_UTR/) ) || ( ($f[1] eq "NDB_CDS") && (($f[8] =~ /Confirmed_by_EST/) || ($f[8] =~ /Confirmed_by_cDNA/))) ) {
+    if ( (($f[2] eq "intron") && ($f[1] eq "*UNKNOWN*") && (not $f[8] =~ /Confirmed_in_UTR/) ) || ( ($f[1] eq "NDB_CDS") && (($f[8] =~ /Confirmed_by_EST/) || ($f[8] =~ /Confirmed_by_cDNA/))) ) {
           
       my $line = $_;      
       
