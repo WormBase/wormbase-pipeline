@@ -7,7 +7,7 @@
 # This script calculates interpolated gmap for CDS/transcripts lying between as well as outside genetic markers.
 # Output ace file of such information
 
-# Last updated on: $Date: 2003-03-11 17:27:06 $
+# Last updated on: $Date: 2003-03-11 18:55:35 $
 # Last updated by: $Author: ck1 $
 
 use strict;                    
@@ -20,8 +20,11 @@ use Getopt::Long;
 # variables and command-line options with aliases # 
 ###################################################
 
-my $diff;
-GetOptions ("diff" => \$diff);
+my ($diff, $reverse);
+
+GetOptions ("diff" => \$diff,
+	    "reverse" => \$reverse,
+	   );
 
 #################################################
 # look for latest WS release in GFF_SPLITS folder
@@ -52,6 +55,12 @@ my ($cds, $parts, @coords, $i, $mean_coords, %cds_mean, %mean_coord_cds,
 
 if ($diff){&gff_gmap; exit (0)} else {&gff_gmap}
 
+if ($reverse){
+  open (LOG, ">/wormsrv2/logs/reverse_physicals") || die $!;
+  print LOG "Checking linearity of gmap markers (reverse physicals) ....\n";
+  print LOG "\n";
+}
+
 sub gff_gmap {
 
   ##########################################################
@@ -71,12 +80,10 @@ sub gff_gmap {
 	my ($chrom, $left, $right, $junk1, $CDS, $junk2)= split(/\s/,$_); 
      	$CDS =~ s/\"//g;
 	my $ori = $CDS;
-	print $ori, ">\n";
 	$cds_count++;
 	push(@{$CDS_isoforms_mapping{$CDS}}, $chrom, $left, $right);
 	if ($CDS =~ /(.+\.\d+)\D+/){
 	  $CDS = $1;
-	  print $CDS, ">>\n";
 	  push(@{$CDS_variants{$CDS}}, $ori); #parent of isoforms
 	}
 	else {$CDS = $CDS}
@@ -322,10 +329,31 @@ sub get_gmap_mean_of_each_chrom {
   print "$marker_count markers on Chrom $_\n";         
   $marker_count = 0;
   #print "@chrom\n";
-  
   my ($i, %gff_gmap, $mean_up, $mean_down, $gmap_up, $gmap_down, $baseline, $position, $diff_bp);
   my @num_cds=keys %Mean_coord_cds;
   my $out; # counting cds/transcripts outside of tip markers for each chromosom
+  my $reverse_physical=0;
+
+  if ($reverse){
+     for($i=0; $i < (scalar @chrom)-3; $i=$i+2){           # gmap
+      #print $i," ->", $i+1," -> ",$i+2," -> ",$i+3,"\n";
+      $mean_down =  $chrom[$i+1]; 
+      $mean_up = $chrom[$i+3];
+      $gmap_up=$chrom[$i+2];
+      $gmap_down=$chrom[$i];
+      #print ">$mean_down -> $mean_up\n";
+      if ($mean_down > $mean_up){
+	$reverse_physical++;
+	if(exists $CDS_variants{$Mean_coord_cds{$mean_down}}){
+	  print LOG "Reverse physicals found: $Mean_coord_cds{$mean_down} (@{$CDS_variants{$Mean_coord_cds{$mean_down}}}) ($mean_down) on ${@{$CDS_mapping{$Mean_coord_cds{$mean_down}}}}[0]\n"; 
+	}
+	else {
+	 print LOG "Reverse physicals found: $Mean_coord_cds{$mean_down} ($mean_down) on ${@{$CDS_mapping{$Mean_coord_cds{$mean_down}}}}[0]\n";
+	}
+      }  
+    }
+    print LOG "\nTotal reverse physicals on ${@{$CDS_mapping{$Mean_coord_cds{$mean_down}}}}[0]: $reverse_physical\n\n";
+  }
 
   foreach (sort keys %Mean_coord_cds){                    # gff w/o isoforms
     if ($_ < $chrom[1] || $_ > $chrom[-1]){$out++; $outside++}    # count cds/transcripts outside of tip markers
@@ -335,7 +363,7 @@ sub get_gmap_mean_of_each_chrom {
       $mean_up = $chrom[$i+3];
       $gmap_up=$chrom[$i+2];
       $gmap_down=$chrom[$i];
-
+    
       if (($_>$mean_down) && ($_<$mean_up) ){  
 
         ################################        
@@ -367,21 +395,22 @@ sub get_gmap_mean_of_each_chrom {
         #print $mean_down," ->", $mean_up,">1\n";
         #print $gmap_down," -> ",$gmap_up,">2\n";
         if(exists $CDS_variants{$Mean_coord_cds{$_}}){
-	  print "### $Mean_coord_cds{$_} (@{$CDS_variants{$Mean_coord_cds{$_}}}) ($_) on ${@{$CDS_mapping{$Mean_coord_cds{$_}}}}[0] -> interpolated: $position ###\n";
+	  #print "### $Mean_coord_cds{$_} (@{$CDS_variants{$Mean_coord_cds{$_}}}) ($_) on ${@{$CDS_mapping{$Mean_coord_cds{$_}}}}[0] -> interpolated: $position ###\n";
 	}  
 	else {
-	  print "### $Mean_coord_cds{$_} ($_) on ${@{$CDS_mapping{$Mean_coord_cds{$_}}}}[0] -> interpolated: $position ###\n";
-	}  
+	  #print "### $Mean_coord_cds{$_} ($_) on ${@{$CDS_mapping{$Mean_coord_cds{$_}}}}[0] -> interpolated: $position ###\n";
+	}
       }
     }
   }
- 
-  my @total_cds=keys %CDS_mapping;
-  my @total_rna=keys %RNA_mapping;
-  print OUT "\n\ntotal cds/transcripts w\/o isoforms: ", (scalar @total_cds) + (scalar @total_rna), "\n";
-  print OUT "total cds/transcripts on chromosom $chromosom: ", scalar @num_cds, "\n";
-  print OUT "On Chromosome $chromosom: $out cds are outside of tip(L) or tip(R) markers\n";
-  if ($chromosom eq "X"){return $outside, (scalar @total_cds) + (scalar @total_rna)} 
+  if (!$reverse){
+    my @total_cds=keys %CDS_mapping;
+    my @total_rna=keys %RNA_mapping;
+    print OUT "\n\ntotal cds/transcripts w\/o isoforms: ", (scalar @total_cds) + (scalar @total_rna), "\n";
+    print OUT "total cds/transcripts on chromosom $chromosom: ", scalar @num_cds, "\n";
+    print OUT "On Chromosome $chromosom: $out cds are outside of tip(L) or tip(R) markers\n";
+    if ($chromosom eq "X"){return $outside, (scalar @total_cds) + (scalar @total_rna)} 
+  }
   @chrom=(); 
 }
 
