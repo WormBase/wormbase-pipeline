@@ -796,6 +796,7 @@
 		     Clone_right_end ?Clone XREF Clone_right_end UNIQUE Int
 		     Flipped
 	  DB_info    Database ?Database ?Database_field UNIQUE ?Accession_number XREF Sequence
+		     Protein_id ?Sequence UNIQUE Text UNIQUE Int // DB_info tag added [011030 krb]
 		     Secondary_accession ?Accession_number XREF Sequence
 		     DB_remark ?Text	#Evidence	// EMBL/Genbank
 		     Keyword ?Keyword	// EMBL/Genbank
