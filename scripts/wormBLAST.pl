@@ -28,7 +28,7 @@ my $blastx;
 my $blastp;
 my $prep_dump;
 my $cleanup;
-my $errors; # for tracking global error
+my $errors = 0; # for tracking global error - needs to be initialised to 0
 my $debug;
 my $log;
 my $WS_version;
