@@ -1680,7 +1680,7 @@
 
 /////////////////////////  PEOPLE, PLACES AND PAPERS //////////////////////////////
 //
-// ?Person, #Address, ?Author, ?Paper, ?Journal, and ?Laboratory
+// ?Person, #Address, ?Person_name, ?Author, ?Paper, ?Journal, and ?Laboratory
 //
 ///////////////////////////////////////////////////////////////////////////////////
 
@@ -1694,8 +1694,8 @@
                                         // Text instead of Int so it says WBperson####
         Name    First_name    UNIQUE  Text    // prefered first name
                 Middle_name   Text            // middle name(s)
-                Last_name     UNIQUE  Text    // prefered last name
-                Standard_name UNIQUE  ?Text   // name to be used for displays
+                Last_name     UNIQUE  ?Person_name XREF Last_name_of    // prefered last name
+                Standard_name UNIQUE  ?Person_name XREF Full_name_of   // name to be used for displays
                                               // default is "First_name Last_name"
                 Also_known_as   Text
         CGC_representative_for UNIQUE ?Laboratory XREF Representative
@@ -1731,6 +1731,18 @@
                                           // multiple fax numbers if present (optional)
           Web_page      Text    // web page is part of the address info I think
 
+
+
+///////////////////////
+// Person_name class
+//
+// New simple container class to provide a simple way of searching for peoples full
+// name (using Standard_name field of ?Person class) or just surname. krb 030210.
+//
+///////////////////////
+
+?Person_name Name Full_name_of ?Person XREF Standard_name
+		  Last_name_of ?Person XREF Last_name
 
 
 //////////////////
