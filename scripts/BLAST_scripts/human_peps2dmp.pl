@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.6.1 -w
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2003-01-13 16:29:06 $
+# Last updated on: $Date: 2003-01-13 16:58:51 $
 
 use strict;
 use Getopt::Long;
@@ -18,7 +18,7 @@ unless (defined $file) {
   $file = "$DB_dir/9606.SPEns.FASTAC";
 }
 my $fasta = "$DB_dir/human_pep.fasta";
-
+#/wormsrv2/wormbase/ensembl_dumps/DBMs/ace_info.dbm
 #wormbase/ensembl_dumps/DBMs
 open (DATA, "<$file") or die "cant open $file\n";
 #open (FASTA, ">$fasta") or die "cant write $fasta\n";
@@ -80,8 +80,14 @@ while (<DATA>) {
 
       $swissprot{acc} = $databases{'SWISS-PROT'};
       $swissprot{id} = $acc2id{ "$swissprot{acc}" };
-      $swissprot{gene} = $swiss_id2gene{ "$swissprot{id}" };
 
+      if ($swiss_id2gene{ "$swissprot{id}" } ) {
+	$swissprot{gene} = $swiss_id2gene{ "$swissprot{id}" };
+      }
+      else {
+	print "$swissprot{id}\n";
+      }
+	    
       unless ($prim_DB) {
 	$prim_DB = "SW";
 	$prim_DB_id = $databases{'SWISS-PROT'};
@@ -115,7 +121,7 @@ while (<DATA>) {
     $database_IDS .= "Database TREMBL TR".$trembl_id." " if $trembl_id;
     #print $database_IDS;
 
-    #$ACE_INFO{"$prim_DB_id"} = "$database_IDS";
+    $ACE_INFO{"$prim_DB_id"} = "$database_IDS";
     #print $ACE_INFO{"$prim_DB_id"};
 
   }
