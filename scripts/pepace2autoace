@@ -121,7 +121,7 @@ quit
 END
 
   print "Loading $filename into autoace\n\n";
-  open (TACE,"| $tace /wormsrv2/autoace") || die "Couldn't open pipe to autoace\n";
+  open (TACE,"| $tace -tsuser pepace /wormsrv2/autoace") || die "Couldn't open pipe to autoace\n";
   print TACE $command;
   close (TACE);
 
