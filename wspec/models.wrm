@@ -809,7 +809,6 @@
 		  Date_directory UNIQUE Text	        // date of this version for cosmids, changed sdm 000731 to text
 		  Species UNIQUE ?Species
 	  Map ?Map XREF Sequence #Map_position		// use in particular for Genomic_canonical
-	  Interpolated_gMap ?Map UNIQUE Float
 	  Interpolated_map_position UNIQUE ?Map UNIQUE Float // new for updated CDS-based interpolated map positions [krb 030502]
 	  Visible	Title UNIQUE ?Text
 	  		Other_name ?Text	        // for repeats
