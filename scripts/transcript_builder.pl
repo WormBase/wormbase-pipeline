@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.6.1 -w
 
 use strict;
-use lib glob("~ar2/wormbase/scripts/");
+use lib "/wormsrv2/scripts/"; 
 use Getopt::Long;
 use Data::Dumper;
 use Coords_converter;
@@ -10,13 +10,10 @@ use Wormbase;
 my $tace = &tace;
 my $rundate = `date +%y%m%d`; chomp $rundate;
 
-#my $log = &make_log_file; #Undefined subroutine &main::make_log_file called at transcript_builder.pl
+my $log = &make_log_file; 
 
-open(FH, ">/wormsrv2/logs/transcript_builder_$rundate") || die $!;
-my $log = (*FH);
-
-my $start = `date`;
-print $log "Transcript_builder started at $start\n";
+#open(FH, ">/wormsrv2/logs/transcript_builder_$rundate") || die $!;
+#my $log = (*FH);
 
 my ($debug, $help, $verbose, $really_verbose, $est, $count, $report, $gap, $transcript, $gff, $show_matches, $database, $overlap_check, $load_matches, $load_transcripts, $build);
 
