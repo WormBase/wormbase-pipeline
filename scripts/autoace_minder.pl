@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-12-16 16:22:11 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2004-01-15 13:15:26 $
 
 
 #################################################################################
@@ -1023,14 +1023,23 @@ sub parse_homol_data {
   my $command;
 
   my @files2Load = (
-		    "blastp_ensembl.ace",
+		    #BLAST data
+		    "worm_pep_blastp.ace",
+		    "worm_brigpep_blastp.ace",
 		    "blastx_ensembl.ace",
-		    "ensembl_protein_info.ace",
+		    #motif info
+		    "worm_pep_motif_info.ace",
+		    "worm_brigpep_motif_info.ace",
+		    #protein info
+		    "ipi_hits.ace", 
+		    "gadfly.ace",
+		    "yeast.ace",
+		    "swissproteins.ace",
+		    "tremblproteins.ace",
+		    "brigpep.ace",
+		    #other data
+		    "repeat_homologies.ace",
 		    "waba.ace",
-		    "wormprot_motif_info.ace",
-		    "worm_brigprot_motif_info.ace",
-		    "brigprot_blastp_ensembl.ace",
-		    "repeat_homologies.ace"
 		   );
 
   foreach my $file ( @files2Load ) {
