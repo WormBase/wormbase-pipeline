@@ -8,7 +8,7 @@
 # Output ace file of such information and upload to autoace during each build
 # Output also other files related. See POD
 
-# Last updated on: $Date: 2003-05-16 10:17:55 $
+# Last updated on: $Date: 2003-05-27 12:26:34 $
 # Last updated by: $Author: ck1 $
 
 use strict;
@@ -135,9 +135,6 @@ system("chmod 777 /wormsrv2/logs/gmap_info_WS*.$rundate");
 
 print INFO "\nAll CDS/transcript linked to locus in $curr_db ", scalar keys %predicted_gene_to_locus,"\n\n";
 
-
-
- 
 ########################################################################################
 # retrieve data from gff file: CHROMOSOME_number.genes.gff and CHROMOSOME_number.rna.gff
 ########################################################################################
@@ -544,6 +541,34 @@ foreach $chrom (@chroms){
   $rev_phys=(); @all_mean_of_each_chrom=(); @unique_all_mean_of_each_chrom=(); %all_mean_of_each_chrom=();
 }
 
+if ($map){
+  print "\n\nDeleting old interpolated map and uploading new ones to autolace . . .\n\n";
+
+  my $tace = &tace;
+  my $log = "/wormsrv2/logs/load_gmap_to_autoace_"."WS$order[-1].$rundate.$$";
+ 
+  my $command=<<END;
+find sequence * where Interpolated_map_position
+edit -D Interpolated_map_position
+find transcript * where Interpolated_map_position
+edit -D Interpolated_map_position
+find locus * where Interpolated_map_position
+edit -D Interpolated_map_position
+
+pparse $acefile
+save
+quit
+END
+
+  open (Load_A,"| $tace /wormsrv2/autoace/ >> $log") || die "Failed to upload to Geneace";
+  print Load_A $command;
+  close Load_A;
+ 
+  system("chmod 777 $log");
+  
+  print "\n\nDone with uploading . . .\n\n";
+}
+
 my $end=`date +%H:%M:%S`; chomp $end;
 
 print "\nJob started at $start\n";
@@ -611,6 +636,7 @@ sub ace_output {
   }
 }
 
+
 __END__
 
 =head2 NAME - get_interpolated_gmap.pl  
@@ -667,7 +693,7 @@ B<-db: / -databse:>
                 if this option is omitted, ie, when this script is run at end of build, it points to autoace
                                 
 B<-map:>    
-            Output interpolated map positions as ace file. Requeires -rev to check for reverse physicals
+            Output interpolated map positions as ace file and upload it to autoace. Requeires -rev to check for reverse physicals
            
 
 B<-comp:>
