@@ -982,7 +982,7 @@
 			  CDS_predicted_by ?Method Float // score of method
 			  Confirmed_by #Gene_confirmation       // added [011030 krb]
 		   Isoform #Evidence
-		   Start_not_found
+		   Start_not_found Int
 		   End_not_found
 	Gene_regulation Trans_regulator ?Gene_regulation XREF Trans_regulator_seq // new for Wen [030804 krb]
                         Trans_target    ?Gene_regulation XREF Trans_regulated_seq // new for Wen
