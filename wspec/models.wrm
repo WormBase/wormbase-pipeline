@@ -387,11 +387,12 @@
         Sequence_status	Shotgun	UNIQUE DateType
 			Finished UNIQUE DateType
 			Accession_number UNIQUE Text
-	Type Cosmid  // 000824 Lincoln's additions to segregate clones
-  	     YAC
-  	     cDNA
-             Plasmid
-	     Other       // added to catch all clones 011017 dl
+	Type UNIQUE Cosmid  // 000824 Lincoln's additions to segregate clones
+		    Fosmid // added 06/12/01 by krb for dl
+		    YAC
+		    cDNA
+		    Plasmid
+		    Other       // added to catch all clones 011017 dl
 	Transgene ?Transgene XREF Clone
         Derived_from	?Clone
 
@@ -916,9 +917,7 @@
 			LTR             Int Int Text #EMBL_info
 			terminator      Int Int Text #EMBL_info
 		// EMBL_features are for legitimate EMBL feature table entries only
-	  Analysis_details Analysis_history ?Method DateType
-                           Parent_model ?Sequence XREF Child_model DateType    // parent/child relationship for history models [dl 000727]
-                           Child_model ?Sequence XREF Parent_model DateType    //
+	  Analysis_details Analysis_history ?Method UNIQUE DateType
 	  Homol	DNA_homol ?Sequence XREF DNA_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		Pep_homol ?Protein XREF DNA_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		Motif_homol ?Motif XREF DNA_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
@@ -1050,8 +1049,8 @@
 		  Date DateType Text			// Text for comments on operation
 		  Species ?Species               //XREF Protein in geneace
 		  Wormpep Replaces ?Protein XREF Replaced_by
-			  Inactive Replaced_by ?Protein XREF Replaces
-		// inactive wormpep entries won't be output in standard wormpep dumps
+			  Replaced_by ?Protein XREF Replaces
+			  Live	      // new tag to replace use of 'Inactive' krb 06/12/01
 	  Visible	Corresponding_DNA ?Sequence XREF Corresponding_protein
 			Enzyme ?Enzyme XREF Protein
 			Reference ?Paper XREF Protein
