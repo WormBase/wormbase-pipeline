@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl
+#!/usr/local/bin/perl5.6.1 -w
 
 ##########################################################
 #
@@ -14,41 +14,66 @@
 # 010307 : dl  : Added Method tag to chromosome objects
 #
 ##########################################################
+#
+# Last updated by: $Author: dl1 $                     
+# Last updated on: $Date: 2002-12-09 14:56:20 $       
 
-use Ace ;
-use Getopt::Std;
+$|=1;
+use strict;
+use lib "/wormsrv2/scripts/";   
+use Wormbase;
+use Ace;
+use Getopt::Long;
 use Cwd;
 
-getopts ('cal:');
+ ##############################
+ # Script variables (run)     #
+ ##############################
 
+my $maintainers = "All";
+my $rundate     = `date +%y%m%d`;   chomp $rundate;
+my $runtime     = `date +%H:%M:%S`; chomp $runtime;
+
+# touch logfile for run details
+$0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
+my $logfile = "/wormsrv2/logs/$1.`date +%y%m%d`.$$";
+
+
+ ##############################
+ # command-line options       #
+ ##############################
+
+my $help;       # Help perdoc
+my $database;   # Database name for single db option
+my $debug;      # Debug mode, verbose output to runner only
+
+GetOptions (
+	    "database:s"  => \$database,
+	    "debug=s"     => \$debug,
+	    "help"        => \$help
+	    );
+
+# help page
+&usage("Help") if ($help);
+
+# no debug name
+&usage("Debug") if ((defined $debug) && ($debug eq ""));
+
+# assign $maintainers if $debug set
+($maintainers = $debug . '\@sanger.ac.uk') if ($debug);
+
+# where am i
 my $CWD = cwd;
 $ENV{PATH}="/nfs/disk100/wormpub/ACEDB/bin.ALPHA_4:$ENV{PATH}";
 
-if ($opt_c) {
-  $db = Ace->connect(-path=>'/nfs/disk100/wormpub/acedb/ace4/cgc') or die ("Could not connect with cgcace\n");
-} elsif ($opt_a) {
-  $db = Ace->connect(-path=>'/wormsrv2/autoace') or die ("Could not connect with autoace\n");
-} elsif ($opt_l) {
-  if ($opt_l =~ /^(\~\w+)\//){
-    $TARGETDIR=glob("$1");
-    $TARGETDIR =~ s/\/tmp_mnt//;
-    $FILENAME=$';
-    $TARGETDIR="$TARGETDIR"."/"."$FILENAME";
- } elsif ($opt_l =~ /^(\w+)/) {
-    $TARGETDIR="$CWD"."/"."$opt_l";
-  } elsif ($opt_l =~ /\/\w+/) {
-    $TARGETDIR=$opt_l;
-  } else {
-    print "Incorrect database path\n";
-  }
-  if (!-d $TARGETDIR) {
-    die ("Directory $TARGETDIR not existent\n");
-  }
-  $db = Ace->connect(-path=>"$TARGETDIR");
-} else {
-  &PrintHelp;
+if (!defined $database) {
+    $database = "/wormsrv2/autoace";
 }
 
+# AcePerl connection to $database
+my $db = Ace->connect(-path=>'$database') or die ("Could not connect with $database\n");
+
+my ($pos,$i);
 
 print "\nSequence CHROMOSOME_I\nMethod Link\n" ; $pos = 1 ;
 &add ("SUPERLINK_RW1");     &overlap ("C30F12") ;
@@ -81,6 +106,10 @@ print "\nSequence CHROMOSOME_X\nMethod Link\n" ; $pos = 1 ;
 &add ("SUPERLINK_RWXR"); 
 
 $db->close;
+
+ ###############
+ # hasta luego #
+ ###############
 exit 0 ;
 
 ############################################################
@@ -120,13 +149,21 @@ sub overlap {
     }
 }
 
-#---------------------------
-# Prints help and disappears
-#
-sub PrintHelp {
-   exec ('perldoc',$0);
-}
+sub usage {
+     my $error = shift;
 
+     if ($error eq "Help") {
+         # Normal help menu
+         system ('perldoc',$0);
+         exit (0);
+     }
+     elsif ($error eq "Debug") {
+         # No debug bod named
+         print "You haven't supplied your name\nI won't run in debug mode
+    	 until i know who you are\n";
+        exit (0);
+    }
+}
 
 __END__
 
@@ -143,11 +180,11 @@ objects from autoace or cgcace, depending from the chosen switch.
 
 =over 4
 
-=item -a reads from autoace
+=item -database [path] reads from supplied path, default is autoace
 
-=item -c reads from cgcace
+=item -debug [name], verbose report 
 
-=item -l database directory
+=item -help, this help page
 
 =back
 
