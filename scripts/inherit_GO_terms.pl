@@ -66,7 +66,7 @@ print LOG "# run details    : $rundate $runtime\n";
 print LOG "\n";
 
 
-my $out="/wormsrv2/wormbasr/misc_inherit_GO_term.ace";
+my $out="/wormsrv2/wormbasr/misc/misc_inherit_GO_term.ace";
 open (OUT,">$out");
 OUT->autoflush();
 
@@ -82,6 +82,22 @@ print LOG "inherit_GO_terms run STARTED at $runtime\n\n";
 
 &motif($db) if ($opt_m);
 &phenotype if ($opt_p);
+
+##############################
+# read acefiles into autoace #
+##############################
+
+my $command =<<END;
+pparse /wormsrv2/wormbase/misc/misc_inherit_GO_term.ace
+save
+quit
+END
+
+open (TACE,"| $tace -tsuser map_GO_terms $dbpath") || die "Couldn't open tace connection to $dbdir\n";
+print TACE $command;
+close (TACE);
+
+print LOG "uploaded results into autoace\n\n";
 
 $runtime = `date +%H:%M:%S`; chomp $runtime;
 print LOG "\ninherit_GO_terms run ENDED at $runtime\n\n";
