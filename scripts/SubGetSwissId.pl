@@ -56,7 +56,7 @@ while (<INPUT>)
 	if($_ =~ m/(SW:\w+|TR:\w+)/)#any "words" prefixed with SW: or TR:
 	  {
 	    $accn_holder = $1;
-	    print "protein $count $protein[$count] accn is $accn_holder\n";
+	   # print "protein $count $protein[$count] accn is $accn_holder\n";
 	  }
 	else{
 	  print LOG "protein $protein[$count] has no Swissprot / TrEMBL acc\n";}
@@ -75,7 +75,7 @@ while (<INPUT>)
 	    $count++;
 	  }
 	    
-	if($count == 2000)
+	if($count == 200)
 	  {
 	    #DEBUG########################################
 	    #print "wormpep_acc hash after building\n";
@@ -93,6 +93,8 @@ while (<INPUT>)
 	    @protein = "";
 	    @accession = "";
 	    @proteinID = "";	    
+
+	    last;
 	  }
       }
   }
@@ -100,7 +102,7 @@ while (<INPUT>)
 outputToAce(\%wormpep_acc, \@accession, \$ace_output, \$errorLog);
 
 #update pepace
-#my @updates = $db->parse_file($temp_acefile);
+#my @updates = $db->parse_file($temp_acefile);#
 #print "@updates";
 print LOG "SubGetSwissId finished at ",`date`,"\n";
 
@@ -116,7 +118,7 @@ sub outputToAce #(\%wormpep_acc, \@accession \$ace_output, \$errorLog)
     #$ace_output is filehandle of file creatred in calling script
 
     #construct pfetch command string by concatenating accession no's
-    my $submitString = "pfetch"." @accession";
+    my $submitString = "pfetch "." @accession";#get full Fasta record (includes Interpro motifs)
     my %idextract;
     
     my $fasta_output = "../fasta_output";
@@ -125,20 +127,25 @@ sub outputToAce #(\%wormpep_acc, \@accession \$ace_output, \$errorLog)
     close FASTA;
     
     #build hash of accession : Swissprot/Trembl ID
+
     open (FASTA,"<$fasta_output")|| die "cant open fasta record";#read
-    print FASTA "This is a temp file created by SubGetSwissId.pl and can be removed -unless script is running!";
-    
+    #print FASTA "This is a temp file created by SubGetSwissId.pl and can be removed -unless script is running!";
+   
+    my $proteinID;
+    print "opening FASTA file  . . . \n";
     while(<FASTA>)
       {
 	chomp;
+#	print "$_\n";
 	if($_ =~ m/>(\w+)/)
 	  {
-	    my $proteinID = $1;
+	    $proteinID = $1;
 	    my @pfetch = split(/ |>/,$_);
 	    my $acc = $pfetch[2];
 	    $idextract{$acc} = $proteinID ;
-	  }		    
-      }
+	  }	   
+      }		    
+
     close FASTA;
 
     print "\n";
