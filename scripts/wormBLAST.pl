@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2004-10-28 14:00:39 $
+# Last edited on: $Date: 2004-10-28 14:09:20 $
 
 
 use DBI;
@@ -157,7 +157,7 @@ if ( $update_databases ){
       if( "$whole_file" ne "$currentDBs{$1}" ) {
 	#make blastable database
 	print "\tmaking blastable database for $1\n";
-	&run_command("xdformat $wormpipe_dir/BlastDB/$whole_file");
+	&run_command("xdformat -p $wormpipe_dir/BlastDB/$whole_file");
 	push( @updated_DBs,$1 );
 	#change hash entry ready to rewrite external_dbs
 	$currentDBs{$1} = "$whole_file";
