@@ -70,8 +70,8 @@ while (<GENEACE>)
   }
 
 #this is a selection of error causing data (taken from a logfile)
-%seq_locus = ();
-%seq_locus = (
+#%seq_locus = ();
+#%seq_locus = (
 #'ZK328.1', 'uch-1',    
 #'ZK328.5', 'npp-10',   
 #'F57C7.2a', 'nhx-5', 
@@ -83,12 +83,12 @@ while (<GENEACE>)
 #'C09D8.1', 'ptp-3',     
 #'Y47D3B.2', 'nlp-21',    
 #'Y39H10A.A', 'chk-1',    
-'F33D4.2b', 'itr-1', 
+#'F33D4.2b', 'itr-1', 
 #'K07F5.13', 'npp-1',     
 #'T09A12.4', 'anhr-66',    
 #'Y48G8A.3304', 'smg-2', 
-'T09A12.4b', 'nhr-66', 
-);
+#'T09A12.4b', 'nhr-66', 
+#);
 
 
 
