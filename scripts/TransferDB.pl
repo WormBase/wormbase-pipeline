@@ -4,7 +4,7 @@
 
 # by ag3 [991221]
 #
-# Last updated on: $Date: 2003-01-13 09:21:59 $
+# Last updated on: $Date: 2003-01-13 18:10:17 $
 # Last updated by: $Author: krb $
 
 
@@ -42,9 +42,11 @@ my $wdata="";
 my $chromosomes="";
 my $release="";
 
-my ($srcdir,$enddir,$dbname,$backup,$printlog,$S_database,
+my ($srcdir,$enddir,$backup,$printlog,$S_database,
     $S_all,$S_wspec,$S_wgf,$S_wscripts,$S_wquery,$S_wtools,$S_whelp,
-    $S_wdata,$S_chromosomes,$S_release);   
+    $S_wdata,$S_chromosomes,$S_release,$file);   
+
+our $dbname;
 
 GetOptions (
 	    "start=s"   => \$srcdir,
@@ -66,15 +68,16 @@ GetOptions (
 	    "release"     => \$S_release,
 );
 
-length ($srcdir)==0 && &PrintHelp;
-length ($enddir)==0 && &PrintHelp;
-if ((length($S_all)!=0)&&(length($dbname)==0)) {
-  &PrintHelp;
-}
+# warn if mandatory command line arguments not set
+&PrintHelp if(!$srcdir);
+&PrintHelp if(!$enddir);
+&PrintHelp if ($S_all && !$dbname);
+
+
 
 my $DEBUG = 0;
 my $OK=0;
-my $DB=0;
+our $DB=0;
 my $PRESENT_DIR = cwd;
 $PRESENT_DIR =~ s/\/tmp_mnt//;
 my $LOGFILE = "$PRESENT_DIR"."/"."TransferDB.log.$$";
@@ -91,18 +94,25 @@ my $datestamp=&GetTime();
 my ($s_dir, $e_dir);
 
 print LOGFILE "TransferDB run $$ started at $datestamp\n\n"; 
+
+# set source directory - $s_dir
 if ($srcdir =~ /^\~/) {
   $s_dir = glob ($srcdir);
   print LOGFILE "SOURCE DIR : $s_dir\n";
-} else {
+} 
+else {
   $s_dir=$srcdir;
   print LOGFILE "SOURCE DIR: $s_dir\n";
 }
 if (!-d $s_dir) {&SendMail ("ERROR: Could not found directory $s_dir\n");}
+
+
+# set target directory - $e_dir
 if ($enddir =~ /^\~/) {
   $e_dir = glob ($enddir);
   print LOGFILE "TARGET DIR: $e_dir\n\n";
-} else {
+} 
+else {
   $e_dir=$enddir;
   if ($e_dir !~ /^\//) {
     my $cwd;
@@ -150,7 +160,8 @@ if ($DB==1) {
   if (!-d $e_dir){ 
     mkdir($e_dir,07777) or &SendMail("ERROR 1: Could not mkdir $e_dir: $!\n");
     print LOGFILE "CREATED TARGET DIR: $e_dir\n";
-  } else {
+  } 
+  else {
     if (-d $new_subdir) {
       @OLDDATABASE = ("$database");
       print LOGFILE "Making backup copy of old database ...\n";
@@ -159,16 +170,18 @@ if ($DB==1) {
   }
 }
 
+
 # Move the actual acedb tree structure
 find (\&process_file,@TOBEMOVED);
 
 # Remove the backup database directory, unless bck switch specified
-if ((!$backup)&&(-d $bck_subdir)) {
+if ((!$backup) && (-d $bck_subdir)) {
   print LOGFILE "REMOVING BACKUP TREE $bck_subdir\n";
   rmtree ($bck_subdir) if !$DEBUG;
   print LOGFILE "$0 ended SUCCESSFULLY\n";
   close LOGFILE;
-} elsif ($backup &&(-d $bck_subdir)) {
+} 
+elsif ($backup &&(-d $bck_subdir)) {
   print LOGFILE "Backup database directory is in $bck_subdir\n";
 }
 
@@ -194,7 +207,8 @@ sub backup_db {
       mkdir($file,07777) or &SendMail ("Could not mkdir backup directory $file: $!");
       print LOGFILE "CREATED backup directory $file\n";
     }
-  } else {
+  } 
+  else {
     $newfile=$file;
     $newfile=~s/$database/$bck_subdir/;
     if ($file !~ /^\./) {
@@ -222,11 +236,14 @@ sub backup_db {
 #
 sub process_file {
   my $filename=$_;
+
+#  print "File is $file\n";
   my $s_subdir="$File::Find::dir";
   if (!-d $s_subdir) {
     &SendMail ("ERROR: Could not read $s_subdir\n");
   }
   $s_subdir=~s/$s_dir//;
+
   my $s_file="$File::Find::name";
   my $e_subdir="$e_dir"."$s_subdir";
   if (!-d $e_subdir){
@@ -234,36 +251,47 @@ sub process_file {
     print LOGFILE "CREATED SUBDIR $e_subdir\n";
   }
   my $e_file="$e_subdir"."/"."$filename";
-  my ($string, $file,$cp_chk,$cp_val,$S_SIZE,$E_SIZE);
 
-  if ((-d $s_file)||($filename =~ /^\./)||($filename =~ /lock.wrm/)) 
-    { print LOGFILE " .. SKIPPING file $filename \n";} else {
-    if (($filename =~ /displays.wrm$/)&&($DB==1)){
+  if ((-d $s_file) || ($filename =~ /^\./) || ($filename =~ /lock.wrm/)){ 
+    print LOGFILE " .. SKIPPING file $filename \n";
+  } 
+  else {
+    if (($filename =~ m/displays.wrm$/) && ($DB==1)){
       print LOGFILE "Updating displays.wrm ...\n";
       open (INFILE,"cat $s_file|");
       open (OUTFILE,">$e_file");
       while (<INFILE>) {
 	if ($_ =~ /DDtMain/) {
-	  $string="_DDtMain -g TEXT_FIT -t \"$dbname $datestamp\"  -w .46 -height .32 -help acedb";
+	  my $string="_DDtMain -g TEXT_FIT -t \"$dbname $datestamp\"  -w .46 -height .32 -help acedb";
 	  print OUTFILE $string;
-	} else {
+	} 
+	else {
 	  print OUTFILE $_;
 	}      
       }
       close INFILE;
       close OUTFILE;
-    } elsif ($file !~ /^\./) {
-      $cp_chk="0";
-      $cp_val=system("\/usr/bin/cp $s_file $e_file") if !$DEBUG;
-      $cp_chk=$cp_val >> 8;
-      $S_SIZE = (stat($s_file))[7];
-      $E_SIZE = (stat($e_file))[7];
+    }
+    elsif ($filename !~ /^\./) {
+      my $cp_chk = "0";
+      my $cp_val;
+      if($filename =~ m/models\.wrm$/){
+	$cp_val = system("\/usr/bin/cp -R $s_file $e_file") if !$DEBUG;
+      }
+      else{
+	$cp_val = system("\/usr/bin/cp $s_file $e_file") if !$DEBUG;
+      }
+      $cp_chk = $cp_val >> 8;
+      my $S_SIZE = (stat($s_file))[7];
+      my $E_SIZE = (stat($e_file))[7];
       if (($cp_chk != 0)||($S_SIZE != $E_SIZE)){
 	\&SendMail ("ERROR: COPY of $s_file FAILED\n") if !$DEBUG;
-      } else {
+      }
+      else {
 	print LOGFILE "COPIED - $e_file .. \n";
       }     
-    } else {
+    } 
+    else {
       print LOGFILE "SKIPPING COPY of $s_file .. \n";
     };
   }
@@ -295,7 +323,7 @@ sub SendMail {
     print $mailer $mailbody;
     $mailer->close();
   }
-  if (length($printlog)!=0) {
+  if ($printlog) {
     open (LOGFILE,"cat $LOGFILE |");
     while (<LOGFILE>) {
       print $_;
