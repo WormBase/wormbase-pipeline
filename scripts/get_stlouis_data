@@ -1,34 +1,29 @@
-#!/usr/local/bin/perl
+#!/usr/local/bin/perl5.6.0
 #
 # get_stlouis_all
-#
-# v 0.2
-#
-# ag3/dl
 #
 # Usage : get_stlouis_all
 #
 # Produces the two files stl_fincmid and stl_unfincmid in
+#
 # /nfs/disk69/ftp/pub/wormbase/sequences/ALL_COSMIDS
 # ~wormpub/analysis/Sequence_databases
+#
 # Distributes and sorts all the single files in FastA format in the directories under
+#
 # /nfs/disk69/ftp/pub/wormbase/sequences/FINISHED_SEQUENCES/STLOUIS_FINISHED/
 # /nfs/disk69/ftp/pub/wormbase/sequences/UNFINISHED_SEQUENCES/STLOUIS_UNFINISHED/
 #
-#
-
-# v0.2
-# 011203 : dl  : Added third FTP directory from St Louis to include missing data
-# 001122 : dl  : Reformat code to generic structure
-# 001122 : dl  : Added some more error-trapping and modified logging procedure
 
 #################################################################################
 # variables                                                                     #
 #################################################################################
 
 $|=1;
+
 use IO::Handle;
-use Getopt::Std;
+use Getopt::Long;
+
 require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
 
  ##############################
@@ -38,49 +33,64 @@ require "/nfs/disk100/wormpub/analysis/scripts/babel.pl";
 my $maintainer = "dl1\@sanger.ac.uk";
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $runtime = `date +%H:%M:%S`; chomp $runtime;
-my $version = &get_script_version(get_stlouis_data);
 
  ##############################
  # Paths etc                  #
  ##############################
 
-$fin_dir                = "/wormsrv2/ftp_site/finished";
-$unfin_dir              = "/wormsrv2/ftp_site/unfinished";
+$genbank_dir            = "/wormsrv2/ftp_site/submitted";
+$finished_dir           = "/wormsrv2/ftp_site/finished";
+$unfinished_dir         = "/wormsrv2/ftp_site/unfinished";
+
+$ftp_dir                = "/wormsrv2/ftp_site";
 $inlogfile              = "/wormsrv2/ftp_site/get_stlouis_data.$rundate.$$";
+
+$wget                   = "/usr/local/bin/wget --force-html --no-clobber -a '$inlogfile' ";
+
+$stl_ftpsite            = "ftp://genome.wustl.edu/pub/gsc1/sequence/st.louis/elegans";
+
 $stl_fin_ftpsite1       = "ftp://genome.wustl.edu/pub/gsc1/sequence/st.louis/elegans/genbank";
 $stl_fin_ftpsite2       = "ftp://genome.wustl.edu/pub/gsc1/sequence/st.louis/elegans/finish";
 $stl_unfin_ftpsite      = "ftp://genome.wustl.edu/pub/gsc1/sequence/st.louis/elegans/preliminary";
+
 $fin_ftpsite            = "/nfs/disk69/ftp/pub/wormbase/sequences/FINISHED_SEQUENCES/STLOUIS_FINISHED";
 $unfin_ftpsite          = "/nfs/disk69/ftp/pub/wormbase/sequences/UNFINISHED_SEQUENCES/STLOUIS_UNFINISHED";
 $stl_fin_cmid           = "/nfs/disk69/ftp/pub/wormbase/sequences/ALL_COSMIDS/stl_fincmid";
 $stl_unfin_cmid         = "/nfs/disk69/ftp/pub/wormbase/sequences/ALL_COSMIDS/stl_unfincmid";
 $stl_fin_cmid_gz        = "/nfs/disk69/ftp/pub/wormbase/sequences/ALL_COSMIDS/stl_fincmid.gz";
 $stl_unfin_cmid_gz      = "/nfs/disk69/ftp/pub/wormbase/sequences/ALL_COSMIDS/stl_unfincmid.gz";
+
 $stl_analysis_fincmid   = "/nfs/disk100/wormpub/analysis/Sequence_Databases/stl_fincmid";
 $stl_analysis_unfincmid = "/nfs/disk100/wormpub/analysis/Sequence_Databases/stl_unfincmid";
-$file_ext               = "*.seq";
-$wget_opt               = "-r -nv -x -nH --cut-dirs=6 ";
-$fastafilter            = "/nfs/disk100/humpub/scripts/fastfil";
+
+$fastafilter            = "/nfs/griffin2/dl1/perlscrip/fastfil";
 system ("/bin/touch $inlogfile");
 
  ##############################
  # command-line options       #
  ##############################
 
-$opt_h = "";   # Help/Usage page
-getopts ('h');
-&usage(0) if ($opt_h);
+my $help;       # Help perdoc
+my $debug;      # Debug mode, verbose output to dl1 only
+my $fetch;      # Fetch index files from St Louis FTP site
+
+GetOptions (
+            "debug"     => \$debug,
+            "help"      => \$help,
+	    "fetch"     => \$fetch
+            );
+
+&usage(0) if ($help);
 
  ########################################
  # Open logfile                         #
  ########################################
 
-my $logfile = "/wormsrv2/logs/get_stlouis_all.log.$rundate.$$";
+my $logfile = "/wormsrv2/logs/get_stlouis_data.$rundate.$$";
 open (LOG,">$logfile");
 LOG->autoflush();
 
-print LOG "# get_stlouis_all\n\n";     
-print LOG "# version        : $version\n";
+print LOG "# get_stlouis_data\n\n";
 print LOG "# run details    : $rundate $runtime\n";
 print LOG "\n";
 
@@ -104,13 +114,13 @@ print LOG "\n";
 
 close LOG;
 
-open (mailLOG, "|/usr/bin/mailx -s \"FTP-Blast Report: get_stlouis_all\" $maintainer ");
-open (readLOG, "<$logfile");
-while (<readLOG>) {
-    print mailLOG $_;
-}
-close readLOG;
-close mailLOG;
+#open (mailLOG, "|/usr/bin/mailx -s \"FTP-Blast Report: get_stlouis_all\" $maintainer ");
+#open (readLOG, "<$logfile");
+#while (<readLOG>) {
+#    print mailLOG $_;
+#}
+#close readLOG;
+#close mailLOG;
 
  ##############################
  # hasta luego                #
@@ -167,18 +177,129 @@ sub cleanup {
 
 sub getsequences {
 
-    # get StLouis FINISHED
-    $g_fin1 = system ("/usr/local/bin/wget $wget_opt -a \"$inlogfile\" -P \"$fin_dir\" -A \"$file_ext\" \"$stl_fin_ftpsite1\" ");
-    print LOG "St Louis genbank sequences transferred .. \n\n";
+    @files = ('1','1R','2','2R','3','3R','4','4R','5','UL','X','XM');
+    %location = ( 
+		  '1'   => '1',
+		  '1R'  => '1',
+		  '2'   => '2',
+		  '2R'  => '2',
+		  '3'   => '3',
+		  '3R'  => '3',
+		  '4'   => '4',
+		  '4R'  => '4',
+		  '5'   => '5',
+		  'UL'  => 'UL',
+		  'X'   => 'X',
+		  'XM'  => 'X'
+		  );
 
-    $g_fin2 = system ("/usr/local/bin/wget $wget_opt -a \"$inlogfile\" -P \"$fin_dir\" -A \"$file_ext\" \"$stl_fin_ftpsite2\" ");
-    print LOG "St Louis finish sequences transferred .. \n\n";
+    our @finished_seq   = "";
+    our @unfinished_seq = "";
+    our %chromosome_seq = "";
+
+    # get St Louis submitted
+    print "St Louis genbank sequences [${stl_fin_ftpsite}/genbank] .. \n\n";
+    foreach $chrom (@files) {
+
+	# get index list from FTP site
+	if ($fetch) {
+	    system ("$wget -P '$genbank_dir' '$stl_ftpsite/genbank/$chrom' ");
+	}
+
+	# loop through index file and retrieve each sequence file, write to $ftp_dir/$chrom
+	open (FILE, "</wormsrv2/ftp_site/submitted/$chrom") or die "Can't open filename: submitted/$chrom $!\n";
+	while (<FILE>) {
+	    
+	    if (/^\<A HREF\=\"(\S+)\"/) {
+		$filename = $1;
+		next unless ($filename =~ /\.seq/);
+
+		print "Filename is $filename\n";
+		push (@finished_seq,$filename);
+		$chromosome_seq{$filename} = $chrom;
+		print "Finished => $finished_seq[-1]  $chromosome_seq{$filename}\n";
+
+		if ($fetch) {
+		    system ("$wget -P '$ftp_dir/$location{$chrom}' '$stl_ftpsite/genbank/$chrom/$filename'  ");
+		}
+		print "wget file '$chrom/$filename' \n";
+
+	    }
+	}
+	close FILE;
+    }
+    print "St Louis genbank sequences transferred .. \n\n";
     
-    $g_fin = $g_fin1 + $g_fin2;
 
-    # get StLouis UNFINISHED
-    $g_unfin = system ("/usr/local/bin/wget $wget_opt -a \"$inlogfile\" -P \"$unfin_dir\" -A \"$file_ext\" \"$stl_unfin_ftpsite\" ");
-    print LOG "St Louis unfinished sequences transferred .. \n\n";
+    # get St Louis finished
+    print  "St Louis finished sequences [${stl_fin_ftpsite}/finished] .. \n\n";
+
+    foreach $chrom (@files) {
+	
+        # get index list from FTP site
+	if ($fetch) {
+	    system ("$wget -P '$finished_dir' '$stl_ftpsite/finished/$chrom' ");
+	}	
+	
+	# loop through index file and retrieve each sequence file, write to $ftp_dir/$chrom
+	open (FILE, "</wormsrv2/ftp_site/finished/$chrom") or die "Can't open filename: finished/$chrom $!\n";
+	while (<FILE>) {
+	    
+	    if (/^\<A HREF\=\"(\S+)\"/) {
+		$filename = $1;
+		next unless ($filename =~ /\.seq/);
+
+		print "Filename is $filename\n";
+		push (@finished_seq,$filename);
+		$chromosome_seq{$filename} = $chrom;
+		print "Finished => $finished_seq[-1]  $chromosome_seq{$filename}\n";
+
+		if ($fetch) {
+		    system ("$wget -P '$ftp_dir/$location{$chrom}' '$stl_ftpsite/finish/$chrom/$filename' ");
+		}
+		print "wget file '$chrom/$filename' \n";
+	    }
+	}
+	close FILE;
+    }
+    print  "St Louis finish sequences transferred .. \n\n";
+
+
+    # get St Louis UNFINISHED
+    print  "St Louis unfinished sequences [${stl_fin_ftpsite}/unfinished] .. \n\n";
+    
+    foreach $chrom (@files) {
+
+        # get index list from FTP site
+	if ($fetch) {
+	    system ("$wget -P '$unfinished_dir' '$stl_ftpsite/unfinished/$chrom' ");
+	}
+	
+	# loop through index file and retrieve each sequence file, write to $ftp_dir/$chrom
+
+	foreach $chrom (@files) {
+	    open (FILE, "</wormsrv2/ftp_site/unfinished/$chrom") or die "Can't open filename: unfinished/$chrom $!\n";
+	    while (<FILE>) {
+		
+		if (/^\<A HREF\=\"(\S+)\"/) {
+		    $filename = $1;
+		    next unless ($filename =~ /\.seq/);
+
+		    print "Filename is $filename\n";
+		    push (@unfinished_seq,$filename);
+		    $chromosome_seq{$filename} = $chrom;
+		    print "Unfinished => $unfinished_seq[-1]  $chromosome_seq{$filename}\n";
+		    
+		    if ($fetch) {
+			system ("$wget -P '$ftp_dir/$location{$chrom}' '$stl_ftpsite/preliminary/$chrom/$filename'");
+		    }
+		    print "wget file '$chrom/$filename' \n";
+		}
+	    }
+	    close FILE;
+	}
+    }
+    print  "St Louis unfinished sequences transferred .. \n\n";
 
 } # end getsequences
 
@@ -187,128 +308,152 @@ sub getsequences {
 #################################################################################
 
 sub copyover {
+
+    # remove old stl_finished files
     unlink $stl_fin_cmid;
     unlink $stl_fin_cmid_gz;
     system ("/bin/touch $stl_fin_cmid");
+
+    # remove old stl_unfinished files
     unlink $stl_unfin_cmid;
     unlink $stl_unfin_cmid_gz;
     system ("/bin/touch $stl_unfin_cmid");
-    print LOG "old stlcmid files removed ..\n";
-    
-    open (FINCMIDFILE,">$stl_fin_cmid");
-    open (UNFINCMIDFILE,">$stl_unfin_cmid");
-    
-    open (INLOG,"$inlogfile") or die ("Could not open $inlogfile ..\n");
-    while (<INLOG>) {
-	$c_line=$_;
-	chomp $c_line;
 
-    # FINISHED St.Louis clones
-	if ($c_line=~/\"$fin_dir\/(\w+)\/(\S+)\"/) {
-	    $chr=$1;
-	    $filename=$2;
-	    if ($filename =~ /listing/) {next;};
-	    ($chr =~ /1/) && do { $fin_tgtfile = "$fin_ftpsite"."/I/"."$filename"; };
-	    ($chr =~ /2/) && do { $fin_tgtfile = "$fin_ftpsite"."/II/"."$filename"; };
-	    ($chr =~ /3/) && do { $fin_tgtfile = "$fin_ftpsite"."/III/"."$filename"; };
-	    ($chr =~ /4/) && do { $fin_tgtfile = "$fin_ftpsite"."/IV/"."$filename"; };
-	    ($chr =~ /5/) && do { $fin_tgtfile = "$fin_ftpsite"."/V/"."$filename"; };
-	    ($chr =~ /X/) && do { $fin_tgtfile = "$fin_ftpsite"."/X/"."$filename"; };
-	    
-	    ($chr =~ /1R/) && do { $fin_tgtfile = "$fin_ftpsite"."/I/"."$filename"; };
-	    ($chr =~ /2R/) && do { $fin_tgtfile = "$fin_ftpsite"."/II/"."$filename"; };
-	    ($chr =~ /3R/) && do { $fin_tgtfile = "$fin_ftpsite"."/III/"."$filename"; };
-	    ($chr =~ /4R/) && do { $fin_tgtfile = "$fin_ftpsite"."/IV/"."$filename"; };
-	    ($chr =~ /XM/) && do { $fin_tgtfile = "$fin_ftpsite"."/X/"."$filename"; };
-	    
-	    $source_file="$fin_dir"."/$chr"."/$filename";
-	    $unsorted_fin_file = "$fin_ftpsite"."/UNSORTED/"."$filename";
-	    if (-s $source_file) {
-		system ("/bin/cat $source_file | $fastafilter > $fin_tgtfile");
-		print LOG "Copied and fasta_filtered to $fin_tgtfile..\n";
-		system ("/bin/cat $source_file | $fastafilter > $unsorted_fin_file");
-		print LOG "Copied and fasta_filtered to $unsorted_fin_file..\n";
+    print "old stlcmid files removed ..\n";
+    
+    # open filehandles to the finished and unfinished fasta files
+    open (FINCMIDFILE,   ">$stl_fin_cmid");
+    open (UNFINCMIDFILE, ">$stl_unfin_cmid");
+    
+    @chromosome = ('1','2','3','4','5','UL','X');
+    %ftpchrom = (
+		 '1' => 'I',
+		 '2' => 'II',
+		 '3' => 'III',
+		 '4' => 'IV',
+		 '5' => 'V',
+		 'X' => 'X',
+		 'UL' => 'UNSORTED'
+		 );		 
 
-              # Add the clones in finished target file and reformat
-		system ("/bin/cat $fin_tgtfile >> $stl_fin_cmid");
-		open (INFILE,"<$fin_tgtfile");
-		while (<INFILE>) {
-		    if ($_ =~ /^\s+$/) {
-			next;
-		    }
-		    if ($_ =~ /^>\s{0,}(\S+)/) {
-			my $cosmid=$1;
-			$cosmid=~tr/a-z/A-Z/;
-			$cosmid=~s/\s+//mg;
-			print FINCMIDFILE ">$cosmid\n";
-		    } else {
-			print FINCMIDFILE $_;  
-		    }
-		}
-		close INFILE;
-		print LOG "Copied and fasta_filtered to $stl_fin_cmid ..\n";
+    foreach $clone (@finished_seq) {
+	chomp;
+
+	next if ($clone eq "");
+
+	$filename = $clone;
+	$file_chrom = $chromosome_seq{$filename};
+	
+	next if (!$filename);
+	
+	$fin_tgtfile = $fin_ftpsite . "/$ftpchrom{$file_chrom}/" . $filename;            
+	    
+	# Filter file to reformat sequence length etc
+	print "Copying $ftp_dir/$file_chrom/$filename to $fin_tgtfile \n";
+	system ("/bin/cat $ftp_dir/$file_chrom/$filename | $fastafilter > $fin_tgtfile");
+
+	# Add the clones in finished target file and reformat
+	system ("/bin/cat $fin_tgtfile >> $stl_fin_cmid");
+
+	open (OUTFILE, ">${fin_tgtfile}.new");
+	open (INFILE,  "<$fin_tgtfile");
+	while (<INFILE>) {
+	    next if ($_ =~ /^\s+$/);
+	    if ($_ =~ /^>\s{0,}(\S+)/) {
+		my $cosmid=$1;
+		$cosmid=~tr/a-z/A-Z/;
+		$cosmid=~s/\s+//mg;
+		print FINCMIDFILE ">$cosmid\n";
+		print OUTFILE ">$cosmid\n";
 	    } else {
-		print LOG "** Warning : $source_file has ZERO size ..\n";        
-		next; 
+		print FINCMIDFILE $_;  
+		print OUTFILE $_;  
 	    }
-
-    # UNFINISHED St.Louis clones
-	} elsif ($c_line=~/\"$unfin_dir\/(\w+)\/(\S+)\"/) {
-	    $chr=$1;
-	    $filename=$2;
-	    if ($filename =~ /listing/) {next;};
-	    $source_file="$unfin_dir"."/$chr"."/$filename";
-	    $filename =~ s/\.seq/\.shg/;
-	    $unsorted_unfin_file = "$unfin_ftpsite"."/UNSORTED/"."$filename";
-	    ($chr =~ /1/) && do { $unfin_tgtfile = "$unfin_ftpsite"."/I/"."$filename"; };
-	    ($chr =~ /2/) && do { $unfin_tgtfile = "$unfin_ftpsite"."/II/"."$filename"; };
-	    ($chr =~ /3/) && do { $unfin_tgtfile = "$unfin_ftpsite"."/III/"."$filename"; };
-	    ($chr =~ /4/) && do { $unfin_tgtfile = "$unfin_ftpsite"."/IV/"."$filename"; };
-	    ($chr =~ /5/) && do { $unfin_tgtfile = "$unfin_ftpsite"."/V/"."$filename"; };
-	    ($chr =~ /X/) && do { $unfin_tgtfile = "$unfin_ftpsite"."/X/"."$filename"; };
-	    ($chr =~ /UL/) && do { $unfin_tgtfile = "$unfin_ftpsite"."/UNSORTED/"."$filename"; };
-	    if (-s $source_file) {
-		system ("/bin/cat $source_file | $fastafilter > $unfin_tgtfile");
-		print LOG "Copied and fasta_formatted to $unfin_tgtfile..\n";
-		system ("/bin/cat $source_file | $fastafilter > $unsorted_unfin_file");
-		print LOG "Copied and fasta_filtered to $unsorted_unfin_file..\n";
-		system ("/bin/cat $unfin_tgtfile >> $stl_unfin_cmid");
-		open (INFILE,"<$unfin_tgtfile");
-		while (<INFILE>) {
-		    print UNFINCMIDFILE $_;
-		}
-		close INFILE;
-		print LOG "Copied and fasta_filtered to $stl_unfin_cmid ..\n";
-	    } else {
-		print LOG "** Warning : $source_file has ZERO size ..\n";        
-		next; 
-	    } 
-	}	
+	}
+	close INFILE;
+	close OUTFILE;
+	
+	# overwrite seq file with modified version
+	system ("mv -f ${fin_tgtfile}.new $fin_tgtfile");
+	    
     }
-    close (INLOG);
+
+    foreach $clone (@unfinished_seq) {
+	chomp;
+
+	next if ($clone eq "");
+
+	$filename = $clone;
+	$file_chrom = $chromosome_seq{$filename};
+
+	next if (!$filename);
+	
+	
+	$unfin_tgtfile = $unfin_ftpsite . "/$ftpchrom{$file_chrom}/" . $filename;            
+	    
+	# Filter file to reformat sequence length etc
+	print "Copying $filename to $unfin_tgtfile \n";
+	system ("/bin/cat $ftp_dir/$file_chrom/$filename | $fastafilter > $unfin_tgtfile");
+
+	# Add the clones in finished target file and reformat
+	system ("/bin/cat $unfin_tgtfile >> $stl_unfin_cmid");
+
+	open (OUTFILE, ">${unfin_tgtfile}.new");
+	open (INFILE,  "<$unfin_tgtfile");
+	while (<INFILE>) {
+	    next if ($_ =~ /^\s+$/);
+	    if ($_ =~ /^>\s{0,}(\S+)/) {
+		my $cosmid=$1;
+		$cosmid=~tr/a-z/A-Z/;
+		$cosmid=~s/\s+//mg;
+		print UNFINCMIDFILE ">$cosmid\n";
+		print OUTFILE ">$cosmid\n";
+	    } else {
+		print UNFINCMIDFILE $_;  
+		print OUTFILE $_;  
+	    }
+	}
+	close INFILE;
+	close OUTFILE;
+	
+	# overwrite seq file with modified version
+	system ("mv -f ${unfin_tgtfile}.new $unfin_tgtfile");
+	    
+    }
+
+    # close filehandles to the finished and unfinished fasta files
     close (FINFCMIDILE);
     close (UNFINCMIDFILE);
-    
+
+    # house keeping for ~/analysis/Sequence_Databases etc
     if (-e $stl_fin_cmid) {
-	$old_analysis_fin = "$stl_analysis_fincmid".".OLD";
+	$old_analysis_fin   = "$stl_analysis_fincmid".".OLD";
 	$old_analysis_unfin = "$stl_analysis_unfincmid".".OLD"; 
 	system ("/bin/rm $old_analysis_fin");
 	system ("/bin/rm $old_analysis_unfin");
-	print LOG "Moving $stl_analysis_fincmid to $old_analysis_fin ..\n";
+	print "Moving $stl_analysis_fincmid to $old_analysis_fin ..\n";
 	system ("/bin/mv $stl_analysis_fincmid $old_analysis_fin");
-	print LOG "Moving $stl_analysis_unfincmid to $old_analysis_unfin ..\n";
+	print "Moving $stl_analysis_unfincmid to $old_analysis_unfin ..\n";
 	system ("/bin/mv $stl_analysis_unfincmid $old_analysis_unfin");
-	print LOG "Copying $stl_fin_cmid to $stl_analysis_fincmid ..\n";
+	print  "Copying $stl_fin_cmid to $stl_analysis_fincmid ..\n";
 	system ("/bin/cp $stl_fin_cmid $stl_analysis_fincmid");
-	print LOG "gzipping $stl_fin_cmid ..\n\n";
+	print "gzipping $stl_fin_cmid ..\n\n";
 	system ("/bin/gzip $stl_fin_cmid");
-    } else { print LOG "$stl_fin_cmid NOT existent ..\n\n";} 
+    } 
+    else { 
+	print "$stl_fin_cmid NOT existent ..\n\n";
+    } 
+   
     if (-e $stl_unfin_cmid) {
-	print LOG "Copying $stl_unfin_cmid to $stl_analysis_unfincmid ..\n";
+	print "Copying $stl_unfin_cmid to $stl_analysis_unfincmid ..\n";
 	system ("/bin/cp $stl_unfin_cmid $stl_analysis_unfincmid");
-	print LOG "gzipping $stl_unfin_cmid ..\n\n";
+	print  "gzipping $stl_unfin_cmid ..\n\n";
 	system ("/bin/gzip $stl_unfin_cmid");
-    } else { print LOG "$stl_unfin_cmid NOT existent ..\n\n";} 
+    } 
+    else { 
+	print  "$stl_unfin_cmid NOT existent ..\n\n";
+    } 
+
     
 } # end copyover
 
