@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2003-10-16 09:13:54 $
+# Last updated by: $Author: dl1 $
+# Last updated on: $Date: 2003-11-03 10:45:10 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -36,22 +36,23 @@ our $release_number     = &get_wormbase_version();      # e.g.   89
 our $old_release        = $release_number - 1;
 our $wormrna_release    = $release_number;
 our $wormpep            = $release_number;
-our ($help,$debug);
+our ($help,$debug,$norelease);
 my $maintainers = "All";
 my $errors = 0;    # tracking system call errors
 
 GetOptions (
-	    "help"     => \$help,
-	    "debug=s"   => \$debug
+	    "help"       => \$help,
+	    "debug=s"    => \$debug,
+	    "norelease"  => \$norelease
 	   );
 
 # Display help if required
 &usage("Help") if ($help);
 
 # Use debug mode?
-if($debug){
-  print "DEBUG = \"$debug\"\n\n";
-  ($maintainers = $debug . '\@sanger.ac.uk');
+if ($debug) {
+    print "DEBUG = \"$debug\"\n\n";
+    ($maintainers = $debug . '\@sanger.ac.uk');
 }
 
 
@@ -62,7 +63,7 @@ if($debug){
 
 &create_log_file;
 
-&copy_release_files;    # make a new directory for the WS release and copy across release files
+&copy_release_files if ($norelease);    # make a new directory for the WS release and copy across release files
 
 &copy_chromosome_files; # make a new /CHROMOSOMES directory for the DNA, GFF, and agp files and copy files across
 
