@@ -7,7 +7,7 @@
 # Usage : autoace_minder [-options]
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2003-03-11 10:57:26 $
+# Last edited on: $Date: 2003-03-11 13:01:38 $
 
 
 #################################################################################
@@ -40,6 +40,7 @@ my $addblat;		# parse (all) blat files
 my $addblatpartial;	# parse (EST|mRNA|EMBL) blat files
 my $addbriggsae;        # add briggsae ace files
 my $addhomol;           # parse similarity data from /ensembl_dump
+my $addnematode;        # parse parastic nematode EST file
 my $utrs;               # generate UTR dataset
 my $map;		# map PCR and RNAi
 my $acefile;		# Write .acefiles
@@ -70,6 +71,7 @@ GetOptions (
 	    "addblatpartial" => \$addblatpartial,
 	    "addbriggsae"    => \$addbriggsae,
 	    "addhomol"       => \$addhomol,
+	    "addnematode"    => \$addnematode,
 	    "utrs"           => \$utrs,
 	    "map"            => \$map,
 	    "acefile"        => \$acefile,
@@ -189,6 +191,8 @@ LOG->autoflush();
 # Requires: A1,A4,A5,B1
 &check_release          if ($check);
 
+# Add parasitic nematode ESTs
+&add_nematode_ESTs      if ($addnematode);
 
 # B5:Copy_to_midway
 # Requires: A1,A4,A5,B1
@@ -1170,8 +1174,34 @@ sub parse_homol_data {
 
 
 ##################################
+# load nematode EST data
+#################################
+
+
+sub add_nematode_ESTs {
+    my $command;
+    my $runtime;
+    
+    
+    $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Adding nematode EST data files at $runtime\n";
+    $command = "pparse /wormsrv2/wormbase/misc/misc_nonelegansests.ace\nsave\nquit\n";
+    open (WRITEDB, "| $tace -tsuser nematode_ESTs /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
+    print WRITEDB $command;
+    close WRITEDB;
+    $runtime = `date +%H:%M:%S`; chomp $runtime; print LOG "Finished adding nematode EST data files at $runtime\n";
+
+
+}
+
+#__ end add_nematode_ESTs_data __#
+
+
+
+
+##################################
 # load briggsae data
 #################################
+
 sub parse_briggsae_data {
   my $command;
   my $runtime;
@@ -1219,6 +1249,11 @@ sub parse_briggsae_data {
   close WRITEDB;
   
   $command = "pparse /wormsrv2/wormbase/briggsae/briggsae_cb25.agp8_ensembl.ace\nsave\nquit\n"; 
+  open (WRITEDB, "| $tace -tsuser briggsae_gene_prediction_data /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
+  print WRITEDB $command;
+  close WRITEDB;
+
+  $command = "pparse /wormsrv2/wormbase/briggsae/briggsae_cb25.agp8_hybrid.ace\nsave\nquit\n"; 
   open (WRITEDB, "| $tace -tsuser briggsae_gene_prediction_data /wormsrv2/autoace  |") || die "Couldn't open pipe to autoace\n";
   print WRITEDB $command;
   close WRITEDB;
