@@ -1,4 +1,4 @@
-// CVS info:  $Id: models.wrm,v 1.16 2001-10-17 12:55:31 krb Exp $
+// CVS info:  $Id: models.wrm,v 1.17 2001-10-17 15:31:33 krb Exp $
 // 
 // This is the new models.wrm file for WormBase
 // First draft Richard Durbin July 2001
@@ -214,7 +214,10 @@
 	Laboratory ?Laboratory
         Reference ?Paper XREF Gene
 	
-?Locus  Type	Polymorphism    RFLP	Text
+?Locus  Type	Polymorphism    SNP  Text               // SNP stuff added for Todd [171001 krb]
+                                Status Text
+                                SNP_assay ?PCR_product XREF SNP_locus ?Text
+				RFLP	Text
 				Transposon_insertion  Text
 				Detection_method Text
 		PCR_product	Primers  Text
@@ -326,6 +329,7 @@
                         Maternal	Strictly_maternal
 					With_maternal_effect
                         Paternal
+			Insertion       // Added for Todd [171001 krb]
 	Remark	?Text
         Reference ?Paper XREF Allele               // Mary
         Rescued_by_transgene ?Transgene XREF Rescue
@@ -1384,6 +1388,7 @@
  	     Assay_conditions ?LongText
 	     Amplified Int
 	     Remark ?Text
+	     SNP_locus ?Locus XREF SNP_assay    // added for Todd [171001 krb]
 
 ?Phenotype Description UNIQUE ?Text
            Assay UNIQUE ?Text
