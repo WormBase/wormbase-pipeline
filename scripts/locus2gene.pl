@@ -7,7 +7,7 @@
 # A script to convert ?Locus objects into the new ?Gene object
 #
 # Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-02-06 17:44:57 $   
+# Last updated on: $Date: 2004-02-09 17:13:17 $   
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -53,14 +53,15 @@ while(<IN>){
 
 #  s/Non_CGC_name\s+$ts\s+(\"[\w\d]+\.[\d\w:]+\")\s+$ts\s+(\d+)\s+$ts\s+(\d+)\s+$ts/CDS $3 $5 $7/g;
   if(m/Non_CGC_name/){
-    s/Non_CGC_name\s+$ts\s+(\S+)\s+$ts/Other_name $1 $2 $3/;
+    s/Non_CGC_name\s+$ts\s+(\S+)\s+$ts/Other_name -O \"$1\" $2 -O \"$3\"/;
     $non_cgc_name = $2;
   }
   # Change Transcript_name or Pseudogene_name to Sequence_name
   s/Transcript_name/Sequence_name/g if (m/Transcript_name/);
   s/Pseudogene_name/Sequence_name/g if (m/Pseudogene_name/);
 
-
+  # Remove Sequence_name splice variant suffix
+  s/Sequence_name\s+$ts\s+(\"[A-Z0-9]*?\.\d+)[a-z]\"\s+/Sequence_name -O \"$1\" $2\" /g;
 
   # grab other names when present: e.g. cgc_name, sequence_name or other_name
   if(m/\s+CGC_name\s+$ts\s+(\S+)\s+$ts/){
@@ -91,23 +92,35 @@ while(<IN>){
 
 
   # Main conversion to Gene object with basic history/identity information
-  s/^Locus :.*/Gene : \"$name\"\nLive\nVersion 1\nVersion_change 1 now \"WBPerson1971\" Imported \"Initial conversion from geneace\"\nPublic_name $public_name/;
+  s/^Locus :.*/Gene : \"$name\"\nVersion 1\nVersion_change 1 now \"WBPerson1971\" Imported \"Initial conversion from geneace\"\nPublic_name $public_name/;
 
   # Remove CGC_approved, now assumed if CGC_name is present
-  s/Type\s+$ts\s+Gene\s+$ts\s+CGC_approved\s+$ts//;
+  s/Type\s+$ts\s+Gene\s+$ts\s+CGC_approved\s+$ts/Type -O \"$1\" Gene -O \"$2\"/;
 
-  # get rid of Type.Gene part of tree as this is no longer applicable
+  # Remove Type.Gene lines which have no more data (i.e. they are the last line of the object)
+  s/Type\s+$ts\s+Gene\s+$ts\n$/\n/;  
+
+  # prune Type.Gene part of tree in other cases where tags follow Gene tag
   s/Type\s+$ts\s+Gene\s+$ts\s+//g;  
 
   # change tag names to new shorter formats
   s/Gene_information\s+/Gene_info /g;
   s/Molecular_information\s+/Molecular_info /g;
 
+  # fix other tag name changes
+  s/Contained_in\s+/In_cluster /g;
 
-  print;
+  # Negative_clone now uses Evidence hash and needs Author_evidence rather than text
+  s/Negative\s+$ts\s+Negative_clone\s+$ts\s+(\S+)\s+$ts\s+(\S+? \S+?)\s+$ts/Negative_clone -O \"$2\" $3 -O \"$4\" Author_evidence $5 -O \"$6\"/g;
+
+  # Same for Inside_rearr / Outside_rearr
+  s/Positive\s+$ts\s+Inside_rearr\s+$ts\s+(\S+)\s+$ts\s+(\S+? \S+?)\s+$ts/Inside_rearr -O \"$2\" $3 -O \"$4\" Author_evidence $5 -O \"$6\"/g;
+  s/Negative\s+$ts\s+Outside_rearr\s+$ts\s+(\S+)\s+$ts\s+(\S+? \S+?)\s+$ts/Outside_rearr -O \"$2\" $3 -O \"$4\" Author_evidence $5 -O \"$6\"/g;
+
+  print OUT;
 
   $id++;
-  last if $id>205;
+#  last if $id>205;
 }
 
 
