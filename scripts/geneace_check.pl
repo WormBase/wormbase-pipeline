@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2003-04-01 13:25:36 $
+# Last updated on: $Date: 2003-04-01 16:49:12 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -24,7 +24,7 @@ my ($help, $debug, $database, $class, @class, $ace);
 my $maintainers = "All";
 
 our $tace = &tace;   # tace executable path
-our ($log, $erichlog, $jahlog, $cecilialog, $JAHmsg, $Emsg, $Cmsg, $caltech, @CGC, $cgc);
+our ($log, $erichlog, $jahlog, $JAHmsg, $Emsg, $caltech, @CGC, $cgc);
 
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $acefile = "/wormsrv2/logs/geneace_check_ACE.$rundate.$$";
@@ -467,19 +467,19 @@ EOF
   Table-maker -p "/wormsrv1/geneace/wquery/allele_has_flankSeq_and_no_seq.def" quit
 EOF
 
-  &allele_has_flankSeq_and_no_seq($allele_has_flankSeq_and_no_seq, $default_db);
+  #&allele_has_flankSeq_and_no_seq($allele_has_flankSeq_and_no_seq, $default_db);
 
   my $allele_has_predicted_gene_and_no_seq=<<EOF;
   Table-maker -p "/wormsrv1/geneace/wquery/allele_has_predicted_gene_and_no_seq.def" quit
 EOF
 
-  &allele_has_predicted_gene_and_no_seq($allele_has_predicted_gene_and_no_seq, $default_db);
+  #&allele_has_predicted_gene_and_no_seq($allele_has_predicted_gene_and_no_seq, $default_db);
 
   my $allele_methods=<<EOF;
   Table-maker -p "/wormsrv1/geneace/wquery/allele_methods.def" quit
 EOF
 
-  &check_missing_allele_method($allele_methods, $default_db);
+  check_missing_allele_method($allele_methods, $default_db);
 
   print LOG "\nThere are $allele_errors errors in Allele class\n";
 }
@@ -586,18 +586,21 @@ sub check_missing_allele_method {
   open (FH, "echo '$def' | tace $dir | ") || die "Couldn't access geneace\n";
   while (<FH>){
     chomp($_);
+    print $_, "\n";
     if ($_ =~ /^\"(.+)\"\s+\"(.+)\"/){
       $allele_errors++;
       $allele = $1;
       $tag = $2;
       if ($tag eq "KO_consortium_allele"){$tag = "Knockout_allele"}
-      if ($tag eq "Transposon_insertion"){$tag = "Transposonn_insertion"}
+      if ($tag eq "Transposon_insertion"){$tag = "Transposon_insertion"}
       if ($ace){output($allele, $tag, "ace")}
       else {output($allele, $tag)}		    
     }
-    if ($_ =~ /^\"(.+)\"\s$/){
+    if ($_ =~ /^\"(.+)\"/){
+      print $1, "\n";
+      $allele = $1;
       if ($ace){output($allele, "Allele", "ace")}
-      else {output($allele, "Allele")}		    
+      else {print LOG "ERROR: Allele $allele has no Method \"Allele\"\n"}		    
     }
   }
   sub output {
