@@ -6,8 +6,8 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-03-04 13:29:29 $
+# Last updated by: $Author: mt3 $
+# Last updated on: $Date: 2005-04-07 10:08:42 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -855,7 +855,7 @@ sub process_allele_class{
   while( my $allele = $alleles_it->next){
     print "$allele\n" if ($verbose);
 
-    # check allele has no location tag
+    # check allele has no laboratory tag
     if (!defined $allele->Laboratory ) {
       
       if (!$ace) {
