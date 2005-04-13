@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2005-03-24 14:09:17 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2005-04-13 16:24:00 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -187,6 +187,8 @@ foreach $file (@gff_files) {
     elsif ($source eq "Genefinder")                                             {push (@{$GFF{$file}{Genefinder}},$_);}
     # History predictions
     elsif ($source eq "history")                                                {push (@{$GFF{$file}{history}},$_);}
+    # Twinscan predictions
+    elsif ($source eq "twinscan")                                             {push (@{$GFF{$file}{twinscan}},$_);}
     # Repeats
     elsif ( ($source eq "RepeatMasker") || ($source eq "inverted") || ($source eq "tandem"))  {push (@{$GFF{$file}{repeats}},$_);}
 
@@ -203,7 +205,7 @@ foreach $file (@gff_files) {
 
 
     # Oligo mapping
-    elsif ($feature eq "OLIGO")                                                 {push (@{$GFF{$file}{oligos}},$_);}
+    elsif ($feature eq "oligo")                                                 {push (@{$GFF{$file}{oligos}},$_);}
     # RNAi
     elsif ($feature eq "RNAi_reagent")                                          {push (@{$GFF{$file}{RNAi}},$_);}
     # PCR_products
