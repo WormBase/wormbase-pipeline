@@ -11,5 +11,8 @@ while (<>) {
     if ((/^\S+\tGenomic_canonical\tregion\s+/) && (/\"(\S+)\"$/)) {
         print "$_\n";
     }
+    elsif ((/^\S+\tLink\tregion\s+/) && (/\"(\S+)\"$/)) {
+        print "$_\n";
+    }
 }
 
