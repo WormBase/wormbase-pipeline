@@ -2,7 +2,7 @@
 
 # Author: Chao-Kung Chen
 # Last updated by $Author: ar2 $
-# Last updated on: $Date: 2005-02-09 13:35:12 $ 
+# Last updated on: $Date: 2005-04-14 12:59:53 $ 
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -327,6 +327,7 @@ sub get_30_bp_flanks {
 	print ACE "Oligo $allele"."_external_f\n";
 	print ACE "Oligo $allele"."_external_b\n";
 	print ACE "Variation \"$allele\"\n";
+	print ACE "Method Variation_PCR\n";
 	
 	print ACE "\nOligo : \"$allele"."_external_f\"\n";
 	print ACE "Sequence \"$NBP_info{$allele}->[5]->[0]\"\n";
