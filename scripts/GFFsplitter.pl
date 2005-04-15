@@ -5,7 +5,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2005-04-13 16:24:00 $
+# Last updated on: $Date: 2005-04-15 11:15:53 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -33,12 +33,14 @@ my $help;      # Help/Usage page
 my $archive;   # archive GFF_splits directory into a WSxx directory
 my $debug;     # debug
 my $verbose;   # verbose mode
+my $chrom;     # single chromosome mode
 our $log;
 
 GetOptions (
 	    "help"      => \$help,
 	    "archive"   => \$archive,
-	    "debug:s"   => \$debug
+	    "debug:s"   => \$debug,
+	    "chrom:s"     => \$chrom
 	    );
 
 # help 
@@ -58,17 +60,29 @@ if($debug){
 
 my $datadir = "/wormsrv2/autoace/GFF_SPLITS";
 my $gffdir  = "/wormsrv2/autoace/CHROMOSOMES";
-
+my @files;
 # prepare array of file names and sort names
-our @files = (
-	      'CHROMOSOME_I',
-	      'CHROMOSOME_II',
-	      'CHROMOSOME_III',
-	      'CHROMOSOME_IV',
-	      'CHROMOSOME_V',
-	      'CHROMOSOME_X',
-	      'CHROMOSOME_MtDNA'
-	      );
+
+
+if (defined($chrom)){
+    unless (grep { $chrom eq $_ } ('I','II','III','IV','V','X','MtDNA')) {
+	die "ERROR: $chrom is an incorrect chromosome number, please use I, II, III etc.\n";
+    }
+    @files = (
+		  'CHROMOSOME_${chrom}'
+		  );
+}
+else {
+    @files = (
+		  'CHROMOSOME_I',
+		  'CHROMOSOME_II',
+		  'CHROMOSOME_III',
+		  'CHROMOSOME_IV',
+		  'CHROMOSOME_V',
+		  'CHROMOSOME_X',
+		  'CHROMOSOME_MtDNA'
+		  );
+}
 
 our @gff_files = sort @files; 
 undef @files; 

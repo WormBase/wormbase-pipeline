@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2004-12-22 12:43:38 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2005-04-15 11:15:53 $
 #
 # Usage GFFmunger.pl [-options]
 
@@ -35,6 +35,7 @@ my $landmark;                  #   Landmark genes
 my $UTR;                       #   UTRs 
 my $WBGene;                    #   WBGene spans
 my $CDS;                       #   CDS overload
+my $chrom;                     # single chromosome mode
 my $debug;                     # debug
 my $verbose;                   # verbose mode
 our $log;
@@ -45,6 +46,7 @@ GetOptions (
 	    "landmark"  => \$landmark,
 	    "UTR"       => \$UTR,
 	    "CDS"       => \$CDS,
+	    "chrom:s"     => \$chrom,
 	    "debug:s"   => \$debug
 	    );
 
@@ -68,9 +70,19 @@ our $WS_version = &get_wormbase_version;
 
 my $datadir = "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS";
 my $gffdir  = "/wormsrv2/autoace/CHROMOSOMES";
+my @files;
 
 # prepare array of file names and sort names
-our @files = (
+if (defined($chrom)){
+    unless (grep { $chrom eq $_ } ('I','II','III','IV','V','X','MtDNA')) {
+	die "ERROR: $chrom is an incorrect chromosome number, please use I, II, III etc.\n";
+    }
+    @files = (
+	      'CHROMOSOME_${chrom}'
+	      );
+}
+else {
+    @files = (
 	      'CHROMOSOME_I',
 	      'CHROMOSOME_II',
 	      'CHROMOSOME_III',
@@ -78,6 +90,7 @@ our @files = (
 	      'CHROMOSOME_V',
 	      'CHROMOSOME_X',
 	      );
+}
 
 our @gff_files = sort @files; 
 undef @files; 
@@ -104,10 +117,14 @@ my $gffpath;
 
 if ($CDS || $all) {
     print LOG "# Overloading CDS lines\n";
-    system ("overload_GFF_CDS_lines.pl $WS_version");                     # generate *.CSHL.gff files
-
+    if (defined($chrom)){
+	system ("overload_GFF_CDS_lines.pl $WS_version -chrom $chrom");                     # generate *.CSHL.gff files
+    }
+    else {
+	system ("overload_GFF_CDS_lines.pl $WS_version");
+    }
     foreach my $file (@gff_files) {
-	next if ($file eq "");              
+	next if ($file eq ""); 
 	$gffpath = "$gffdir/${file}.gff";
 	system ("mv -f $gffdir/$file.CSHL.gff $gffdir/$file.gff");        # copy *.CSHL.gff files back to *.gff name
     }

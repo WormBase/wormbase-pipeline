@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2004-10-08 12:24:39 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2005-04-15 11:15:53 $
 #
 
 #
@@ -75,7 +75,16 @@ close WORMPEP;
 our $splitdir = "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS";
 our $gffdir   = "/wormsrv2/autoace/CHROMOSOMES";
 
-our @files = (
+if (defined($chrom)){
+    unless (grep { $chrom eq $_ } ('I','II','III','IV','V','X','MtDNA')) {
+	die "ERROR: $chrom is an incorrect chromosome number, please use I, II, III etc.\n";
+    }
+    @files = (
+	      'CHROMOSOME_${chrom}'
+	      );
+}
+else {
+    @files = (
               'CHROMOSOME_I',
               'CHROMOSOME_II',
               'CHROMOSOME_III',
@@ -83,6 +92,7 @@ our @files = (
               'CHROMOSOME_V',
               'CHROMOSOME_X'
               );
+}
 
 our @gff_files = sort @files;
 undef @files;
