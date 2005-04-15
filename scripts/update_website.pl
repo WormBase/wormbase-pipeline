@@ -8,7 +8,7 @@
 # relevant WormBase and Wormpep web pages.
 #
 # Last updated by: $Author: pad $     
-# Last updated on: $Date: 2005-02-15 16:55:47 $      
+# Last updated on: $Date: 2005-04-15 16:34:30 $      
 
 
 #################################################################################
@@ -92,7 +92,7 @@ my $WS_previous_name = "WS".$WS_previous;
 
 
 # file path info
-my $www              = "/nfs/WWWdev/htdocs/Projects/C_elegans/WORMBASE";
+my $www              = "/nfs/WWWdev/SANGER_docs/htdocs/Projects/C_elegans/WORMBASE";
 my $wwwdata          = "/nfs/WWWdev/SANGER_docs/data/Projects/C_elegans";
 my $gff              = "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS";
 my $dbpath           = "/wormsrv2/autoace";
