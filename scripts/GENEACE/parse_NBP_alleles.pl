@@ -2,7 +2,7 @@
 
 # Author: Chao-Kung Chen
 # Last updated by $Author: ar2 $
-# Last updated on: $Date: 2005-04-14 12:59:53 $ 
+# Last updated on: $Date: 2005-04-15 15:55:26 $ 
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -212,6 +212,7 @@ sub get_30_bp_flanks {
 
       print ACE "\nVariation : \"$allele\"\n";
       print ACE "Allele\n";
+      print ACE "CGC_name $allele\n";
       print DELETE "\nVariation : \"$allele\"\n";
       print DELETE "-D Allele\n";
       
