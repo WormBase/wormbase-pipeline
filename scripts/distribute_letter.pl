@@ -6,10 +6,10 @@
 #
 # copies release letter to ~ftp/pub/wormbase/WSxx
 #                          /wormsrv2/autoace/release/
-#                          /nfs/WWW/htdocs/Projects/C_elegans/WORMBASE/current/release_notes.txt/
+#                          /nfs/WWW/SANGER_docs/htdocs/Projects/C_elegans/WORMBASE/current/release_notes.txt/
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2004-12-03 17:00:28 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2005-04-15 17:56:06 $
 
 
 use strict;
@@ -30,7 +30,7 @@ my $runtime     = `date +%H:%M:%S`; chomp $runtime;
 my $release   = &get_wormbase_version_name(); # e.g. WS89
 my $release_number = &get_wormbase_version; # e.g. 89
 my $log        = "/wormsrv2/logs/distribute_letter.${release}.$$";
-my $www = "/nfs/WWWdev/htdocs/Projects/C_elegans";
+my $www = "/nfs/WWWdev/SANGER_docs/htdocs/Projects/C_elegans";
 my $errors = 0; 
 
 open (LOG, ">$log");
