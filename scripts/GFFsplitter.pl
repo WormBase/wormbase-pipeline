@@ -5,7 +5,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2005-04-15 11:15:53 $
+# Last updated on: $Date: 2005-04-15 12:12:09 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -69,7 +69,7 @@ if (defined($chrom)){
 	die "ERROR: $chrom is an incorrect chromosome number, please use I, II, III etc.\n";
     }
     @files = (
-		  'CHROMOSOME_${chrom}'
+		  "CHROMOSOME_${chrom}"
 		  );
 }
 else {
