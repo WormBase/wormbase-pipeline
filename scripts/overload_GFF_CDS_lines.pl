@@ -5,7 +5,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2005-04-15 12:12:09 $
+# Last updated on: $Date: 2005-04-15 12:41:02 $
 #
 
 #
@@ -19,6 +19,14 @@
 #	        [1]                                                                      [3]                    [2]             [4]                   [5]
 # CDS "JC8.10a" ; Note "Inositol polyphosphate phosphatase, catalytic domain homologues" ; WormPep "WP:CE28239" ; Note "unc-26" ; Confirmed_by "cDNA" ; Gene "WBGene00006763"
 #
+
+use Getopt::Long;
+
+my $chrom;
+
+GetOptions (
+	    "chrom:s"     => \$chrom
+	    );
 
 $verbose = 1;
 
