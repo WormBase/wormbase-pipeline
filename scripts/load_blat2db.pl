@@ -8,8 +8,8 @@
 # 030507 : dl  : Update tace queries to restrict deleted/uploaded Homol_data and Feature data class objects
 # 030507 : dl  : Upload OST data as part of script
 
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2004-09-07 12:25:21 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2005-04-18 09:45:04 $
 
 use strict;
 use Getopt::Long;
@@ -118,7 +118,6 @@ pparse /wormsrv2/autoace/BLAT/camace.blat.embl.ace
 pparse /wormsrv2/autoace/BLAT/camace.good_introns.est.ace 
 pparse /wormsrv2/autoace/BLAT/camace.good_introns.ost.ace 
 pparse /wormsrv2/autoace/BLAT/camace.good_introns.mrna.ace 
-#pparse /wormsrv2/autoace/BLAT/camace.good_introns.embl.ace 
 save 
 pparse /wormsrv2/autoace/BLAT/camace.blat.est.ace            
 save
