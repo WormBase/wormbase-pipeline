@@ -7,7 +7,7 @@
 # Usage : genestatsr.pl [-options]
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2005-03-24 11:49:16 $
+# Last edited on: $Date: 2005-04-18 09:54:41 $
  
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -77,7 +77,7 @@ my $percent_SAGE_transcript     = (int ( ( ($SAGE_transcript / $live_genes) * 10
 # report to file #
 ##################
 
-open (OUT, ">/wormsrv2/autoace/REPORTS") || die "Failed to open output file\n";
+open (OUT, ">/wormsrv2/autoace/REPORTS/genedata") || die "Failed to open output file\n";
 print OUT "Gene data set (Live C.elegans genes $values[0])\n";
 print OUT "------------------------------------------\n";
 print OUT "Molecular_info              "  . $values[1] . " (" . $percent_molecular_info . "%)\n";
