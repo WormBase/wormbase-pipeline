@@ -1,7 +1,7 @@
 #!/usr/local/ensembl/bin/perl -w                  
 #
 # Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2004-08-17 15:37:09 $      
+# Last updated on: $Date: 2005-04-18 14:24:05 $      
 
 use strict;
 use Getopt::Long;
@@ -15,6 +15,13 @@ GetOptions ("help"      => \$help,
 
 die "\nYou need to give me a fasta file of the ipi_human proteins with the date appended eg ipi_human_03_05 (5th March)\n
 Get this from ftp://ftp.ebi.ac.uk/pub/databases/IPI/current/ipi.HUMAN.fasta.gz\n\n" unless (defined $file);
+
+#make sure on ecs1 -> otherwise DB_File fails.
+my $host = `hostname`;
+chomp $host;
+unless ( $host =~ /ecs1/ ) {
+  die "You must run this from an ecs1 machine, otherwise DB_File causes a segmentation fault\n\n";
+}
 
 #extract date from file name
 $file =~ /ipi_human(_\d+_\d+)/;
