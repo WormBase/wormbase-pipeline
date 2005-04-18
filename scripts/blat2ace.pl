@@ -7,7 +7,7 @@
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2004-05-11 16:12:55 $
+# Last edited on: $Date: 2005-04-18 13:46:07 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -267,7 +267,7 @@ while (<BLAT>) {
 	      $query_end     = $query_start - $lengths[$x] +1;
 	  }		
       }		
-      print LOG "$query was mapped to $virtual\n\n";
+#      print LOG "$query was mapped to $virtual\n\n";
       
       # write to output file
       print ACE "Homol_data : \"$virtual\"\n";
