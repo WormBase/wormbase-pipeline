@@ -5,8 +5,8 @@
 # by Anthony Rogers
 #
 # Updates the local webpages in synch with the main website
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-08-03 09:26:07 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2005-04-18 09:47:49 $
 
 
 use strict;
@@ -20,7 +20,7 @@ my $errors = 0;
 GetOptions ("release=i" => \$release );
 die "you must give a release version ( just numbers eg -release 125 )\n" unless $release;
 
-my $www = "/nfs/WWWdev/htdocs/Projects/C_elegans";
+my $www = "/nfs/WWWdev/SANGER_docs/htdocs/Projects/C_elegans";
 
 ############################################
 # update wormpep files

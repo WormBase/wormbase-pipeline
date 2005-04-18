@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers                             
 #
-# Last updated by: $Author: dl1 $               
-# Last updated on: $Date: 2005-03-24 11:50:56 $         
+# Last updated by: $Author: pad $               
+# Last updated on: $Date: 2005-04-18 09:49:11 $         
 
 # Generates a release letter at the end of build.
 #
@@ -56,7 +56,7 @@ our $log;
 &create_log_files;
 
 
-my $webdir = "/nfs/WWWdev/htdocs/Projects/C_elegans/WORMBASE";
+my $webdir = "/nfs/WWWdev/SANGER_docs/htdocs/Projects/C_elegans/WORMBASE";
 
 &release_databases   if defined($opt_d);
 &release_composition if defined($opt_c);
