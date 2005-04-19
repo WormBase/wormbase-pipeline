@@ -56,6 +56,7 @@ _VPseudogene	   -V -D FMAP
 _VTransposon	   -V -D FMAP
 _VProtein	   -V -D PEPMAP
 _Vworm_genes	   -V
+_VTransposon_family -V -D TREE
 
 // other sequence/SMapped related classes
 
