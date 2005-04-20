@@ -8,7 +8,7 @@
 # Page download and update upload to geneace has been automated [ck1]
 
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-02-21 11:51:37 $
+# Last updated on: $Date: 2005-04-20 11:01:43 $
 
 use strict;
 use Getopt::Long;
@@ -368,7 +368,7 @@ sub check_details{
   # if the gene name corresponds to a valid Gene object, add a Gene->Allele and Strain->Gene connections
   if(defined($Gene_info{$gene}{'Gene'})){
     print GENE2ALLELE "Gene : $Gene_info{$gene}{'Gene'}\n";
-    print GENE2ALLELE "Variation $allele Inferred_automatically \"From strain object: $strain\"\n\n";
+    print GENE2ALLELE "Allele $allele Inferred_automatically \"From strain object: $strain\"\n\n";
 
     print STRAIN "Gene \"$Gene_info{$gene}{'Gene'}\"\n";
     print DELETE_STRAIN "-D Gene \"$Gene_info{$gene}{'Gene'}\"\n";  
@@ -397,7 +397,7 @@ sub check_details{
       print NEWGENES "Other_name \"$gene\"\n";
       print NEWGENES "Public_name \"$gene\"\n";
     }
-    print NEWGENES "Variation \"$allele\" Inferred_automatically \"From strain object: $strain\"\n\n";
+    print NEWGENES "Allele \"$allele\" Inferred_automatically \"From strain object: $strain\"\n\n";
 
   } 
 }
