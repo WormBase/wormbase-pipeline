@@ -201,11 +201,10 @@ sub makeENSgenes
   {
     my $p2g = shift;
     open (ENS, "/usr/local/pubseq/bin/getz -f \"ID Gene\" \"[ensemblpep_human-ID:*]\" | ");
-
-    #>ENSP00000217378 Gene:ENSG00000101397 Clone:AL049651 Contig:AL049651.2.1.97912 Chr:20 Basepair:23016474 Status:known
-    #>Translation:ENSP00000000233 Database:core Gene:ENSG00000004059 Clone:AC000357 Contig:AC000357.1.1.45309 Chr:7 Basepair:126782948 Status:known
+    #>ENSP00000263506 pep:novel chromosome:NCBI35:1:16764182:16779878:-1 gene:ENSG00000116219 transcript:ENST00000263506
     while (<ENS>) {
-      />Translation:(ENSP\d+).*Gene:(ENSG\d+)/;
-      $$p2g{$1} = $2;
+      if( />(ENSP\d+).*gene:(ENSG\d+)/ ) {
+	$$p2g{$1} = $2;
+      }
     }
   }
