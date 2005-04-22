@@ -245,6 +245,7 @@ while (<BLAST>) {
   $e = 1000 if( $e eq "NULL"); # mysql gives -log10(v small no) as NULL 
 
   my @data = ($proteinId, $processIds2prot_analysis{$analysis},  $myHomolStart, $myHomolEnd, $homolID, $pepHomolStart, $pepHomolEnd, $e, $cigar);
+  next unless ( $CE2gene{ $data[0] } );  # mysql database retains dead proteins but we dont want to dump them
 
   my $added = 0;
   if ( $analysis == $wormprotprocessIds{'wormpep'} ) #wormpep
@@ -541,6 +542,7 @@ while (<BLAST>) {
   sub justGeneName
     {
       my $test = shift;
+      unless( defined $test ) { print "NO TEST\n";return}
       if ( $test =~ m/(\w+\.\d+)/ ) { # worm gene
 	return $1;
       } elsif ( $test =~ m/(\w+)-\p{IsUpper}{2}/ ) {
