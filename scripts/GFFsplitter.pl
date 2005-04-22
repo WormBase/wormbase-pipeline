@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2005-04-15 12:12:09 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2005-04-22 11:06:15 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -527,7 +527,8 @@ assembly_tags
 TSL_site
 polyA
 oligos
-RNAi
+RNAi_primary
+RNAi_secondary
 TEC_RED
 SAGE
 allele
