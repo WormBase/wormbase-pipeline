@@ -98,7 +98,7 @@ our %org_prefix = ( 'wublastp_worm'          => 'WP',
 # gene CE info from COMMON_DATA files copied to ~wormpipe/dumps in prep_dump
 undef $/;
 our %CE2gene;
-open (C2G ,"<$wormpipe/dumps/CE2gene.dat" );
+open (C2G ,"<$wormpipe/dumps/wormpep2cds.dat" );
 my $in_data = <C2G>;
 my $VAR1;
 eval $in_data;
@@ -109,7 +109,7 @@ close C2G;
 undef $VAR1;
 
 my %gene2CE;
-open (G2C ,"<$wormpipe/dumps/gene2CE.dat" );
+open (G2C ,"<$wormpipe/dumps/cds2wormpep.dat" );
 $in_data = <G2C>;
 eval $in_data;
 die if $@;
@@ -541,7 +541,6 @@ while (<BLAST>) {
   sub justGeneName
     {
       my $test = shift;
-    
       if ( $test =~ m/(\w+\.\d+)/ ) { # worm gene
 	return $1;
       } elsif ( $test =~ m/(\w+)-\p{IsUpper}{2}/ ) {
