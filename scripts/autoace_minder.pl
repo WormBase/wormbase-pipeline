@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2005-04-25 13:32:08 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2005-04-25 16:15:13 $
 
 
 
@@ -1079,6 +1079,10 @@ sub parse_homol_data {
     my $newfile = "$basedir/wormbase/ensembl_dumps/$file";
     &load($newfile,$tsuser);
   }
+
+  # load the inverted repeat data
+  $newfile = "/wormsrv2/autoace/acefiles/inverted_repeats.ace";
+  &load($newfile,$tsuser);
  
   # upload_homol data log file in /logs
   system("touch $logdir/$flag{'B8'}");
