@@ -1,0 +1,243 @@
+#!/usr/local/bin/perl5.8.0 -w
+
+use strict;
+
+
+# do a single chromosome if prompted else do the lot......
+
+my $chrom = shift;
+
+my @chromosome;
+
+if ($chrom) {
+    push (@chromosome,$chrom);
+}
+else {
+    @chromosome = qw( I II III IV V X );
+}
+
+# other vars
+
+my $verbose = 0;
+my $workdir = "/nfs/disk100/wormpub/analysis/UTR";
+
+my ($file1,$file2,$file3,$file4);
+
+my ($gene,$gene_start,$gene_stop,$line);
+my ($gene_strand,$exon5_stop,$exon3_start);
+my @f;
+my $CDS;
+my $Transcript;
+my %transcripts2process;
+my $isoform;
+my $dotno;
+
+#
+#
+
+
+
+
+#################################
+# Main Loop for each chromosome #
+#################################
+
+
+foreach my $chrom ( @chromosome ) {
+
+    open (OUTPUT, ">$workdir/CHROMOSOME_$chrom.UTR.gff");
+
+    #################################
+    # coding_transcript split files #
+    #################################
+
+    system ("grep exon $workdir/CHROMOSOME_$chrom.Coding_transcript.gff > $workdir/CHROMOSOME_$chrom.coding_transcript_exon.gff");
+
+    #######################
+    # curated split files #
+    #######################
+
+    $file1 = "$workdir/test_$chrom.coding_exon_exon.gff";
+    $file2 = "$workdir/test_$chrom.coding_transcript_exon.gff";
+
+    #############################################
+    # Loop through each gene in this chromosome #
+    #############################################
+
+    open (GENES, "<$workdir/CHROMOSOME_$chrom.CDS.gff");
+    while (<GENES>) {
+	next if (/^\#/);
+	($gene) = (/CDS \"(\S+)\"/);
+	
+	next unless ($gene);
+	
+	print "// Parsing gene $gene\n\n" if ($verbose);
+	
+	#####################################
+        # make the small files to work with #
+	#####################################
+
+	system ("grep -iw $gene $workdir/CHROMOSOME_$chrom.coding_exon.gff              > $file1");
+	system ("grep -iw $gene $workdir/CHROMOSOME_$chrom.coding_transcript_exon.gff   > $file2");
+	
+	###################
+        # CDS coordinates #
+	###################
+
+	$line = 1;
+	open (CDS, "<$file1");
+	while (<CDS>) {
+	    chomp;
+	    @f = split /\t/;
+	    if ($line == 1) {
+		$gene_start = $f[3];
+		$exon5_stop = $f[4];
+	    }
+	    $gene_stop   = $f[4];
+	    $exon3_start = $f[3];
+	    $gene_strand = $f[6];
+	    $line++;
+	}
+	close CDS;
+	
+	print "GENE $gene [$gene_start -> $gene_stop] [FIRST EXON stop $exon5_stop : LAST EXON start $exon3_start]\n" if ($verbose);
+	
+	#################
+        # New UTR exons #
+	#################	
+
+	open (NEW, "gff_overlap -unsorted -not $file1 $file2 | ");
+	while (<NEW>) {
+	    @f = split /\t/;
+
+	    # Assign $Transcript and $CDS
+	    ($Transcript) = $f[8] =~ (/\"(\S+)\"/);
+	    $CDS = $Transcript;
+	    $dotno = $CDS =~ tr /\./\./;
+	    if ($dotno > 1) {
+		chop $CDS;
+		chop $CDS;
+	    }
+	    $transcripts2process{$Transcript} = 1;   # Ensure that we write coding_exons for this one
+	    
+	    if ($f[4] < $gene_start) {
+		if ($f[6] eq "+") {
+		    print OUTPUT "$f[0]\tCoding_transcript\tfive_prime_UTR\t$f[3]\t$f[4]\t$f[5]\t$f[6]\t$f[7]\tTranscript \"$Transcript\"\n";
+		}
+		else {
+		    print OUTPUT "$f[0]\tCoding_transcript\tthree_prime_UTR\t$f[3]\t$f[4]\t$f[5]\t$f[6]\t$f[7]\tTranscript \"$Transcript\"\n";
+		}
+	    }
+	    elsif ($f[3] > $gene_stop) {
+		if ($f[6] eq "+") {
+		    print OUTPUT "$f[0]\tCoding_transcript\tthree_prime_UTR\t$f[3]\t$f[4]\t$f[5]\t$f[6]\t$f[7]\tTranscript \"$Transcript\"\n";
+		}
+		else {
+		    print OUTPUT "$f[0]\tCoding_transcript\tfive_prime_UTR\t$f[3]\t$f[4]\t$f[5]\t$f[6]\t$f[7]\tTranscript \"$Transcript\"\n";
+		}
+	    }
+	}
+	close NEW;
+	
+	##########################
+	# Partially coding exons #
+	##########################
+
+	open (NEW, "gff_overlap -unsorted -minfrac1 1 -quiet $file1 $file2 | ");
+	while (<NEW>) {
+	    @f = split /\t/;
+
+	    # Assign $Transcript and $CDS
+	    ($Transcript) = $f[8] =~ (/\"(\S+)\"/);
+	    $CDS = $Transcript;
+	    $dotno = $CDS =~ tr /\./\./;
+	    if ($dotno > 1) {
+		chop $CDS;
+		chop $CDS;
+
+	    }
+	    $transcripts2process{$Transcript} = 1;   # Ensure that we write coding_exons for this one
+
+	    
+	    if ( ($f[4] == $exon5_stop) && ($f[3] != $gene_start)) {
+
+		$gene_start--;
+		$gene_stop++;
+
+		if ($f[6] eq "+") {
+		    print OUTPUT "$f[0]\tCoding_transcript\tfive_prime_UTR\t$f[3]\t$gene_start\t$f[5]\t$f[6]\t$f[7]\tTranscript \"$Transcript\"\n";
+		}
+		else {
+		    print OUTPUT "$f[0]\tCoding_transcript\tthree_prime_UTR\t$f[3]\t$gene_start\t$f[5]\t$f[6]\t$f[7]\tTranscript \"$Transcript\"\n";
+		}
+				
+		$gene_start++;
+		$gene_stop--;
+
+	    }
+	    elsif ( ($f[3] == $exon3_start) && ($f[4] != $gene_stop) ) {
+		
+		$gene_start--;
+		$gene_stop++;
+
+		if ($f[6] eq "+") {
+		    print OUTPUT "$f[0]\tCoding_transcript\tthree_prime_UTR\t$gene_stop\t$f[4]\t$f[5]\t$f[6]\t$f[7]\tTranscript \"$Transcript\"\n";
+		}
+		else {
+		    print OUTPUT "$f[0]\tCoding_transcript\tfive_prime_UTR\t$gene_stop\t$f[4]\t$f[5]\t$f[6]\t$f[7]\tTranscript \"$Transcript\"\n";
+		}
+		
+		$gene_start++;
+		$gene_stop--;
+
+	    }
+	}
+	close NEW;
+	
+
+	#########################################
+	# Coding_exon lines for the transcripts #
+	#########################################
+
+	# CHROMOSOME_I    curated           coding_exon     11641   11689   .       +       0       CDS "Y74C9A.2"
+	#
+	# becomes 
+	#
+	# CHROMOSOME_I    Coding_transcript coding_exon     11641   11689   .       +       0       Transcript "Y74C9A.2" ; CDS "Y74C9A.2"
+
+	foreach $isoform (keys %transcripts2process) {
+	    
+	    next if ($isoform eq "");
+	    
+	    open (CODINGEXONS, "<$file1");
+	    while (<CODINGEXONS>) {
+		chomp;
+		@f = split /\t/;
+
+		# Assign $CDS
+		($CDS) = $f[8] =~ (/\"(\S+)\"/);
+
+		print OUTPUT"$f[0]\tCoding_transcript\tcoding_exon\t$f[3]\t$f[4]\t$f[5]\t$f[6]\t$f[7]\tTranscript \"$isoform\" ; CDS \"$CDS\"\n";
+	    }
+	}
+	close CODINGEXONS;
+	
+
+
+	############
+	# clean up #
+	############
+	
+	undef $gene;
+	%transcripts2process = ();
+
+	unlink $file1;
+	unlink $file2;
+
+	
+    #_ end of gene line
+    }
+#_ end of chromosome   
+}
+
+exit(0);
