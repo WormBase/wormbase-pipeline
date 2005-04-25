@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2005-04-25 16:15:13 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2005-04-25 16:25:23 $
 
 
 
@@ -697,7 +697,8 @@ sub make_autoace {
     # errors in the make_autoace log file
     if ($builderrors > 1) {
       system("touch $logdir/$flag{'B1:ERROR'}");
-      &usage("Errors_in_loaded_acefiles");
+      print LOG "There are Errors in loaded acefiles\n\n";
+      #&usage("Errors_in_loaded_acefiles");
     }
 
     # this will force a refresh of the coordinate files.
@@ -708,7 +709,7 @@ sub make_autoace {
     system("touch $logdir/$flag{'B1'}");
 
     # Update Common_data clone2accession info, genes2lab, and worm_genes2cgc (uses geneace)
-    $command = "$scriptdir/update_Common_data.pl --build --clone2acc --genes2lab --worm_gene2cgc --worm_gene2clas --clone2seq --clonesize --gene_ids";
+    $command = "$scriptdir/update_Common_data.pl --build --all";
     $command .= " --test" if ($test);
     &run_command($command);
   }
@@ -1074,9 +1075,10 @@ sub parse_homol_data {
 		    "TRF.ace",
 		   );
 
-  foreach my $file ( @files2Load ) {
 
-    my $newfile = "$basedir/wormbase/ensembl_dumps/$file";
+  my $newfile;
+  foreach my $file ( @files2Load ) {
+    $newfile = "$basedir/wormbase/ensembl_dumps/$file";
     &load($newfile,$tsuser);
   }
 
