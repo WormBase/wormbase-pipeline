@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers
 #
-# Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2005-03-24 17:19:38 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2005-04-25 16:56:26 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -316,6 +316,7 @@ sub write_CDSlist  {
 	s/\"//g;
 
 	@f = split /\t/;
+	next unless ( $f[1] or $f[2] or $f[3] ); # this will be the case if update is done when no data available
 	
 	if ($f[1] eq "Predicted")              {$CDSlist{$f[0]} = $f[1];}
 	elsif ($f[2] eq "Partially_confirmed") {$CDSlist{$f[0]} = $f[2];}
