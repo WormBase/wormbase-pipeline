@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2005-03-31 15:18:57 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2005-04-25 13:32:08 $
 
 
 
@@ -761,7 +761,7 @@ sub make_autoace {
       
       local (*MD5SUM_IN,*MD5SUM_OUT);
       
-      &run_command("$scriptdir/make_autoace.pl -database $basedir/autoace --buildrelease"); 
+      &run_command("$scriptdir/make_autoace.pl -database $basedir/autoace --buildrelease");
             
       # make a make_autoace log file in /logs
       system("touch $logdir/$flag{'D1'}");
@@ -1097,20 +1097,6 @@ sub parse_briggsae_data {
   $am_option = "-addbriggsae";
 
   my $file;
-
-  # load raw briggsae data files
-  my @Brigdata = ("DNA", "fosmid", "agplink", "sequence");
-  foreach my $Brigdata (@Brigdata) {
-    $file = "$basedir/wormbase/briggsae/briggsae_cb25.agp8_${Brigdata}.ace";
-    &load($file,"briggsae_${Brigdata}");
-  }
-		   
-#  # load gene prediction sets
-#  my @genepredicters =("genefinder", "fgenesh", "twinscan", "ensembl", "hybrid", "rna");
-#  foreach my $genepredicters (@genepredicters) {
-#    $file = "$basedir/wormbase/briggsae/briggsae_cb25.agp8_${genepredicters}.ace"; 
-#    &load($file,"briggsae_${genepredicters}_genes");
-#  }
 
   # briggsae BAC end data
   $file = "/wormsrv1/briggsae/BAC_ENDS/briggsae_BAC_ends.fasta";
