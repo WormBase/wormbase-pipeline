@@ -10,13 +10,14 @@ use Wormbase;
 use Log_files;
 
 my $debug;
-my ($prepare, $run);
-my $scripts = shift | $ENV{'CVS_DIR'};
+my ($prepare, $run, $final);
+my $scripts = $ENV{'CVS_DIR'};
 my $chromosome;
 
 GetOptions (
 	    'prepare' => \$prepare,
 	    'run'     => \$run,
+	    'final'   => \$final,
 	    'debug:s' => \$debug,
 	    'chromosome:s' => \$chromosome,
 	    'chromosomes:s' => \$chromosome
@@ -24,14 +25,16 @@ GetOptions (
 
 my $log = Log_files->make_build_log($debug);
 
+$log->log_and_die("Cant do those options ( -prepare and /or -run with -final )\n") if ( ($run or $prepare) and $final );
+
 my $wormpub = glob("~wormpub");
 my $datdir = "$wormpub/analysis/UTR";
-
 my $GFFdir = "wormsrv2:/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS";
 
 my @chromosomes = $chromosome ? split(/,/,join(',',$chromosome)) : qw( I II III IV V X );
 
 my $errors = 0;
+
 if ( $prepare ) {
   $log->write_to("Copying GFF files from $GFFdir to $datdir \n");
   foreach my $chrom ( @chromosomes ) {
@@ -58,6 +61,14 @@ if( $run ) {
     system("$bsub");
   }
 }
+
+if ( $final ) {
+  $log->write_to("Copying GFF files back to wormsrv2\n");
+  foreach my $chrom ( @chromosomes ) {
+    system ("scp $datdir/CHROMOSOME_$chrom.UTR.gff $GFFdir/");
+  }
+}
+
 
 $log->mail;
 
