@@ -136,8 +136,13 @@ sub Sub_sequence
 
     $seq = $self->{'single_chrom'}->{"$seq"} if $self->{'single_chrom'}->{"$seq"};
 
+    if( $seq =~ /CHROMOSOME/ ) {
+      $chrom = $seq;
+      $start = 0;
+    }      
+
     #passed seq is a SUPERLINK
-    if( $seq =~ /SUPERLINK/ ) {
+    elsif( $seq =~ /SUPERLINK/ ) {
       my $sl = $seq;
       $chrom = $self->_getChromFromSlink("$seq");
       $seq = $chrom; # gets processed as chromosome below
@@ -147,7 +152,7 @@ sub Sub_sequence
       $length = $self->{"$chrom"}->{SUPERLINK}->{"$sl"}->[1] - $self->{"$chrom"}->{SUPERLINK}->{"$sl"}->[0] unless $length;
     }
 
-    unless( $seq =~ /CHROMOSOME/ ) {
+    else {
       # This is when the passed seq is a clone
     SLINKS:
       foreach my $slink (keys %{$self->{'SUPERLINK'}} ) {
@@ -167,10 +172,6 @@ sub Sub_sequence
 	  } 
 	}
       }
-    }
-    else {
-      $chrom = $seq;
-      $start = 0;
     }
 
     $length = length($self->{SEQUENCE}->{"$chrom"}) unless $length; #full sequence of object.
