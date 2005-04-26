@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2005-04-25 16:25:23 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2005-04-26 13:46:05 $
 
 
 
@@ -1310,6 +1310,8 @@ sub map_features {
   # microarray connections
   &run_command("$scriptdir/map_microarray.pl -load");
 
+  # TSL features 
+  &run_command("$scriptdir/map_feature2gene.pl -load");
 }
 #__ end map_features __#
 
