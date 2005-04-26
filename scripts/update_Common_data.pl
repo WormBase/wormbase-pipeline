@@ -5,7 +5,7 @@
 # by Anthony Rogers
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-04-25 16:56:26 $
+# Last updated on: $Date: 2005-04-26 11:20:29 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -110,7 +110,7 @@ else {
 &write_Feature          if ($feature_list || $all);
 &write_Gene_id          if ($CDS2gene_id || $all);
 &write_worm_gene2geneID if ($worm_gene2geneID || $all);
-&write_worm_gene2cgc    if ($worm_gene2cgc);
+&write_worm_gene2cgc    if ($worm_gene2cgc || $all);
 
 # hasta luego
 
