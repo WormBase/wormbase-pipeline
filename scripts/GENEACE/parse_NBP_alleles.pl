@@ -2,7 +2,7 @@
 
 # Author: Chao-Kung Chen
 # Last updated by $Author: ar2 $
-# Last updated on: $Date: 2005-04-15 15:55:26 $ 
+# Last updated on: $Date: 2005-04-27 10:22:29 $ 
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -215,6 +215,8 @@ sub get_30_bp_flanks {
       print ACE "CGC_name $allele\n";
       print DELETE "\nVariation : \"$allele\"\n";
       print DELETE "-D Allele\n";
+      print DELETE "-D Method\n";
+      print DELETE "-D CGC_name\n";
       
       my @indel_info = @{$NBP_info{$allele}->[3]};
       my $L_clone = $indel_info[4];
