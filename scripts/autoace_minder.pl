@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2005-04-26 13:46:05 $
+# Last edited on: $Date: 2005-04-28 13:04:58 $
 
 
 
@@ -1329,7 +1329,7 @@ sub confirm_gene_models {
   # make dumped_GFF_file in /logs
   system("touch $logdir/C4:Confirm_gene_models");
 
-  &run_command("$scriptdir/update_Common_data.pl -build -CDS_list");
+  &run_command("$scriptdir/update_Common_data.pl -build -cds2status");
 
 }
 #__ end confirm_gene_models __#
