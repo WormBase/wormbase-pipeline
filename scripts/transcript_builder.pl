@@ -6,8 +6,8 @@
 #
 # Script to make ?Transcript objects
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-03-15 12:10:27 $
+# Last updated by: $Author: dl1 $
+# Last updated on: $Date: 2005-04-28 13:04:04 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -511,7 +511,7 @@ sub load_features
   {
     my $features = shift;
     my %tmp;
-    &FetchData("Featurelist",\%tmp,glob("~wormpub/DATABASES/autoace/COMMON_DATA") );
+    &FetchData("est2feature",\%tmp,glob("~wormpub/DATABASES/autoace/COMMON_DATA") );
     foreach my $seq ( keys %tmp ) {
       my @feature = split(/,/,$tmp{$seq});
       foreach ( @feature ) {
