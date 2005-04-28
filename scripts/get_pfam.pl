@@ -7,7 +7,7 @@
 # This script interogates an ACEDB database and returns all pfam/Interpro/blastx 
 # data as appropriate and generates a suitable DB_remark
 #
-# Last updated on: $Date: 2004-11-24 13:38:05 $
+# Last updated on: $Date: 2005-04-28 09:49:48 $
 # Last updated by: $Author: ar2 $
 
 
@@ -89,11 +89,13 @@ my $debug;    # for debug mode, log file emailed to one person
 my $database; # which database to query
 my $output;   # choose different location of output file
 my $maintainers = "All"; 
+my $gene;     # to test on a single gene
 
 GetOptions("debug=s"    => \$debug,
 	   "test"       => \$test,
 	   "database=s" => \$database,
-	   "output=s"   => \$output
+	   "output=s"   => \$output,
+	   "gene=s"     => \$gene
 	  );
 
 
@@ -111,7 +113,7 @@ if($debug){
 #################################
 
 my $tace = &tace; # to get tace version
-my $log = Log_files->make_build_log() unless $test;
+my $log = Log_files->make_build_log( $debug );
 my $basedir;      # wormsrv2 or test environment
 my $output_file;  # specify output file location
 my $runtime;
@@ -126,10 +128,9 @@ else{
   $basedir = "/wormsrv2";
 }
 
-if($output){
+if ($output) {
   $output_file = $output;
-}
-else{
+} else {
   $output_file   = "$basedir/wormbase/misc_dynamic/misc_DB_remark.ace";
 }
 print "Output file is $output_file\n\n";
@@ -152,9 +153,14 @@ $runtime= &runtime;
 $log->write_to("$runtime: Processing CDS class\n");
 
 # get CDSs for C. elegans
-my @CDSs = $db->fetch(-query => 'Find elegans_CDS');
+my $CDSs;
+if ( $gene ) {
+  $CDSs = $db->fetch_many(-query => "Find elegans_CDS $gene");
+} else {
+  $CDSs = $db->fetch_many(-class => 'elegans_CDS');
+}
 
-SUBSEQUENCE: foreach my $cds (@CDSs) {
+SUBSEQUENCE: while ( my $cds = $CDSs->next ) {
   
   my (@motifs, @peptide_homols, $protein, $gene_name, $gene, $cgc_name, $cgc_protein_name);
 
@@ -166,7 +172,7 @@ SUBSEQUENCE: foreach my $cds (@CDSs) {
     next;
   }
 
-  if(defined($gene->CGC_name)){
+  if (defined($gene->CGC_name)) {
     $cgc_name = $gene->CGC_name;
     $cgc_protein_name = uc($cgc_name);
   }
@@ -175,15 +181,117 @@ SUBSEQUENCE: foreach my $cds (@CDSs) {
   $protein = $cds->Corresponding_protein;
   if ($protein) {
     @motifs = $protein->Motif_homol;
-
-    # process motif information if present
-    if($motifs[0]){
+    if ($motifs[0]) {
       $full_string .= "C. elegans $cgc_protein_name protein; " if ($cgc_name);
+      # process motif information if present
+      my %pfamhits;
+      my %interprohits;
+
+      my %pfam_count;
+      foreach my $motif (@motifs) {
+	my $title = $motif->Title;
+	if ($motif =~ /PFAM/) {
+	  my ($pfam_motif) = $motif =~ /\w+\:(\w+)/;
+	  $pfamhits{$pfam_motif} = $title;
+	  my $pointer = $motif->right->right;
+	  $pfam_count{$motif->name} = 1;
+	  while ($pointer->down ) {
+	    $pfam_count{$motif->name}++;
+	    $pointer = $pointer->down;
+	  }
+	}
+	if ($motif =~ /INTERPRO/) {
+	  my ($interpro_motif) = $motif =~ /\w+\:(\w+)/;
+	  $interprohits{$interpro_motif} = $title;
+	}
+	# free up memory
+	$motif->DESTROY();
+      }
+
+      my @pfamelements = %pfamhits;
+      my @interproelements = %interprohits;
+
+      if ($#pfamelements == 1) {
+	foreach (keys %pfamhits) {
+	  $full_string .= "contains similarity to Pfam domain $_ ($pfamhits{$_})";
+	}
+      }
+      if ($#pfamelements > 1) {
+	my $count = 1;
+	$full_string .= "contains similarity to Pfam domains ";
+	foreach (keys %pfamhits) {
+	  if ($pfamhits{$_}) {
+	    $full_string .= "$_ ($pfamhits{$_})";
+	    $full_string .=  "($pfam_count{\"PFAM:$_\"})" if $pfam_count{"PFAM:$_"} > 1;
+	    if ($count < $#pfamelements) {
+	      $full_string .= ", ";
+	    }
+	    $count += 2;
+	  }
+	}
+      }
+
+      if ($#interproelements == 1) {
+	foreach (keys %interprohits) {
+	  $full_string .= "contains similarity to Interpro domain $_ ($interprohits{$_})";
+	}
+      }
+      if ($#interproelements > 1) {
+	my $count = 1;
+	$full_string .= "contains similarity to Interpro domains ";
+	foreach (keys %interprohits) {
+	  $full_string .= "$_ ($interprohits{$_})";
+	  if ($count < $#interproelements) {
+	    $full_string .= ", ";
+	  }
+	  $count += 2;
+	}
+      }
+
     }
+    
     # get peptide homologies if no motif data
-    else{
+    else {
       @peptide_homols = $protein->Pep_homol;
-      $full_string .= "C. elegans $cgc_protein_name protein" if ($cgc_name);
+      $full_string .= "C. elegans $cgc_protein_name protein" if ($cgc_name); #####################################################
+      # no pfam or interpro hits; getting protein matches
+      #####################################################
+
+      if ($peptide_homols[0]) {
+
+	# stored details of match with highest score
+	my $max_score = 0;
+	my $best_match = "";
+	my $best_description = "";
+	my $best_species = "";
+      PROTEIN: foreach my $protein (@peptide_homols) {
+
+	  # ignore other worm matches
+	  next PROTEIN if (($protein =~ m/^BP\:CBP/) || ($protein =~ m/^WP\:CE/));
+
+	  my ($a,$b,$score,$d,$e,$f,$g) = $protein->row;
+
+	  my $title = $protein->Description;
+	  my $species = $protein->Species;
+    
+	  # replace details if you find better score
+	  if (($score > $max_score) && $title && $species && $protein) {
+	    $max_score = $score;
+	    $best_match = $protein;
+	    $best_description = $title;
+	    $best_species = $species;
+	  }
+
+	  $protein->DESTROY();
+	}
+    
+	if ($cgc_name) {	# don't always take a peptide match, so can't add "; " above, must add here
+	  $full_string .= "; ";
+	}
+	if ((defined $best_species) && (defined $best_description) && (defined $best_match)) {
+	  $full_string .= "contains similarity to $best_species $best_description; $best_match";
+	}
+      }
     }
 
     $protein->DESTROY();
@@ -193,129 +301,13 @@ SUBSEQUENCE: foreach my $cds (@CDSs) {
   }
 
 
-  # process motif information if present
-  if($motifs[0]) {	
-    my %pfamhits;
-    my %interprohits;
-
-    my %pfam_count;
-    foreach my $motif (@motifs) {
-      my $title = $motif->Title;
-      if($motif =~ /PFAM/) {
-	my ($pfam_motif) = $motif =~ /\w+\:(\w+)/;
-	$pfamhits{$pfam_motif} = $title;
-	my $pointer = $motif->right->right;
-	$pfam_count{$motif->name} = 1;
-	while($pointer->down ) {
-	  $pfam_count{$motif->name}++;
-	  $pointer = $pointer->down;
-	}
-      }
-      if ($motif =~ /INTERPRO/) {
-	my ($interpro_motif) = $motif =~ /\w+\:(\w+)/;
-	$interprohits{$interpro_motif} = $title;
-      }
-      # free up memory
-      $motif->DESTROY();
-    }
-
-    my @pfamelements = %pfamhits;
-    my @interproelements = %interprohits;
-
-    if ($#pfamelements == 1) {
-      foreach (keys %pfamhits) {
-	$full_string .= "contains similarity to Pfam domain $_ ($pfamhits{$_})";
-      }
-      goto PRINTIT;
-    }
-    if ($#pfamelements > 1) {
-      my $count = 1;
-      $full_string .= "contains similarity to Pfam domains ";
-      foreach (keys %pfamhits) {
-	if($pfamhits{$_}){
-	  $full_string .= "$_ ($pfamhits{$_})";
-	  $full_string .=  "($pfam_count{\"PFAM:$_\"})" if $pfam_count{"PFAM:$_"} > 1;
-	  if ($count < $#pfamelements) {
-	    $full_string .= ", ";
-	  }
-	  $count += 2;
-	}
-      }
-      goto PRINTIT;
-    }
-
-    if ($#interproelements == 1) {
-      foreach (keys %interprohits) {
-	$full_string .= "contains similarity to Interpro domain $_ ($interprohits{$_})";
-      }
-      goto PRINTIT;
-    }
-    if ($#interproelements > 1) {
-      my $count = 1;
-      $full_string .= "contains similarity to Interpro domains ";
-      foreach (keys %interprohits) {
-	$full_string .= "$_ ($interprohits{$_})";
-	if ($count < $#interproelements) {
-	  $full_string .= ", ";
-	}
-	$count += 2;
-      }
-      goto PRINTIT;
-    }
-
-  }
-
-  #####################################################
-  # no pfam or interpro hits; getting protein matches
-  #####################################################
-
-  elsif ($peptide_homols[0]) {
-
-    # stored details of match with highest score
-    my $max_score = 0;
-    my $best_match = "";
-    my $best_description = "";
-    my $best_species = "";
-  PROTEIN: foreach my $protein (@peptide_homols) {
-
-    # ignore other worm matches
-    next PROTEIN if (($protein =~ m/^BP\:CBP/) || ($protein =~ m/^WP\:CE/));
-
-    my ($a,$b,$score,$d,$e,$f,$g) = $protein->row;
-
-    my $title = $protein->Description;
-    my $species = $protein->Species;
-    
-    # replace details if you find better score
-    if (($score > $max_score) && $title && $species && $protein){
-      $max_score = $score;
-      $best_match = $protein;
-      $best_description = $title;
-      $best_species = $species;
-    }
-
-    $protein->DESTROY();
-  }
-    
-    if ($cgc_name) {		# don't always take a peptide match, so can't add "; " above, must add here
-      $full_string .= "; ";
-    }
-    if ((defined $best_species) && (defined $best_description) && (defined $best_match)) {
-      $full_string .= "contains similarity to $best_species $best_description; $best_match";
-    }
-    goto PRINTIT;
-  }
-
- PRINTIT:
-
   next SUBSEQUENCE if ($full_string eq "");
 
   print ACE "CDS : $cds\n";
   print ACE "-D DB_remark\n";
   print ACE "DB_remark \"$full_string\"\n\n";
 
-  # free up memory
-  $cds->DESTROY();
+  print "$cds\t$full_string\n" if $debug;
 }
 
 
@@ -394,9 +386,9 @@ $runtime= &runtime;
 $log->write_to("$runtime: Processing transcript class\n");
 
 
-my @transcripts = $db->fetch(-query => 'Find elegans_RNA_genes');
+my $transcripts = $db->fetch_many(-query => 'Find elegans_RNA_genes');
 
-TRANSCRIPT: foreach my $transcript (@transcripts) {
+TRANSCRIPT: while ( my $transcript = $transcripts->next ) {
 
   my ($description, $cgc_name, $gene_name, $gene, $type, $method);
 
@@ -503,13 +495,13 @@ $db->close;
 # load the file to autoace
 $runtime= &runtime;
 $log->write_to("$runtime: loading results to $database\n");
-&load_to_database($database,$output_file,"DB_remark");
+&load_to_database($database,$output_file,"DB_remark") unless $debug;
 
 
 $log->write_to("$runtime: Finished script\n\n");
 
 
-$log->mail($maintainers) unless $test;
+$log->mail();
 
 
 
