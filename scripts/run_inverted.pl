@@ -143,16 +143,16 @@ foreach my $clone (@clones2process) {
 	    # output ace format for both stem structures at the same time
 	    
 	    if ($gaps > 1) {
-		push (@output, "Feature Inverted $loop_1_start $loop_1_stop $percent loop $loop_len, $gaps gaps\"\n");
-		push (@output, "Feature Inverted $loop_2_start $loop_2_stop $percent loop $loop_len, $gaps gaps\"\n");
+		push (@output, "Feature Inverted $loop_1_start $loop_1_stop $percent \"loop $loop_len, $gaps gaps\"\n");
+		push (@output, "Feature Inverted $loop_2_start $loop_2_stop $percent \"loop $loop_len, $gaps gaps\"\n");
 	    }
 	    elsif ($gaps == 1) {
-		push (@output, "Feature Inverted $loop_1_start $loop_1_stop $percent loop $loop_len, 1 gap\"\n");
-		push (@output, "Feature Inverted $loop_2_start $loop_2_stop $percent loop $loop_len, 1 gap\"\n");
+		push (@output, "Feature Inverted $loop_1_start $loop_1_stop $percent \"loop $loop_len, 1 gap\"\n");
+		push (@output, "Feature Inverted $loop_2_start $loop_2_stop $percent \"loop $loop_len, 1 gap\"\n");
 	    }
 	    elsif ($gaps == 0) {
-		push (@output, "Feature Inverted $loop_1_start $loop_1_stop $percent loop $loop_len\"\n");
-		push (@output, "Feature Inverted $loop_2_start $loop_2_stop $percent loop $loop_len\"\n");
+		push (@output, "Feature Inverted $loop_1_start $loop_1_stop $percent \"loop $loop_len\"\n");
+		push (@output, "Feature Inverted $loop_2_start $loop_2_stop $percent \"loop $loop_len\"\n");
 	    }
 	    
 	    $tag == 0;
