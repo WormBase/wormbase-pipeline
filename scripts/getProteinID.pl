@@ -7,15 +7,37 @@
 #
 # written by Dan Lawson
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-09-01 13:50:57 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2005-05-04 13:59:31 $
 
 use lib "/wormsrv2/scripts/";
 use Wormbase;
 use Getopt::Long;
 use strict;
 use Data::Dumper;
+use Log_files;
 
+######################################
+# variables and command-line options # 
+######################################
+
+my $help;
+my $file;    # specify protein ID file to use (defaults to ~wormpub/protein_ID.mail)
+my $debug;
+my $verbose;
+my $load;    # option specifies whether resulting acefile will be loaded to autoace
+
+GetOptions ("help"      => \$help,
+            "file=s"    => \$file,
+	    "debug=s"   => \$debug,
+	    "verbose"   => \$verbose,
+	    "load"      => \$load);
+
+
+# Display help if required
+&usage("Help") if ($help);
+
+my $log = Log_files->make_build_log($debug);
 
 # fetch hashes made by other scripts
 my %acc2clone = &FetchData('accession2clone');
@@ -38,36 +60,17 @@ my %db_ids_acc = (
 		  'TN_ac' => 'TrEMBLNEW_AC'
 		 );
 
-######################################
-# variables and command-line options # 
-######################################
-
-my $help;
-my $file;    # specify protein ID file to use (defaults to ~wormpub/protein_ID.mail)
-my $debug;
-my $verbose;
-my $load;    # option specifies whether resulting acefile will be loaded to autoace
-
-GetOptions ("help"      => \$help,
-            "file=s"    => \$file,
-	    "debug=s"   => \$debug,
-	    "verbose"   => \$verbose,
-	    "load"      => \$load);
 
 # get swall data
 &getswalldata;
 
-
-# Display help if required
-&usage("Help") if ($help);
-
-
 # set default file if -file not specified on command line
 ($file = "/nfs/disk100/wormpub/protein_ID.mail") if (!defined($file));
 
-
 my $ace_file = "/wormsrv2/autoace/acefiles/WormpepACandIDs.ace";
 $ace_file = "/tmp/WormpepACandIDs.ace" if ($debug);
+
+$log->write_to("Using $file as protein_id file - writing to $ace_file\n");
 
 open (OUT, ">$ace_file");
 
@@ -98,36 +101,43 @@ while (<FILE>) {
     print "$f[7]\t" if ($verbose);
     my $protein = $gene2CE{$f[7]};                      # incremented array slice to handle new SWALL column
     
-    if ($swall{$f[2]}{Accession} ne $f[6]) { 
-	print "ERROR:  mismatch between getz and EBI for $protein [EBI:$f[6]|GETZ:$swall{$f[2]}{Accession})\n";
-	next;
+    if (!defined( $swall{$f[2]} ) or ( $swall{$f[2]}{Accession} ne $f[6]) ){ 
+      my $ebi = $f[6] ? $f[6] : "-";
+      my $getz = $swall{$f[2]}{Accession} ? $swall{$f[2]}{Accession} : "-";
+      $log->write_to("ERROR:  mismatch between getz and EBI for $protein [EBI:$ebi|GETZ:$getz)\n");
+      #next;
     }
 
-    if ($protein) {
+    if ($protein and $swall{$f[2]}{Database}) {
 	print "$protein" if ($verbose);
 	print OUT "\nProtein : WP:$protein\n";
-	print OUT "Database $databases{ $swall{$f[2]}{Database} } ",$db_ids_acc{ $swall{$f[2]}{Database}."_id" }," $swall{$f[2]}{Identifier}\n"
- 	     if ( ($swall{$f[2]}{Identifier}) and  ($swall{$f[2]}{Identifier} ne $swall{$f[2]}{Accession}) );
+	if ( ($swall{$f[2]}{Identifier}) and  ($swall{$f[2]}{Identifier} ne $swall{$f[2]}{Accession}) ) {
+	  print OUT "Database $databases{ $swall{$f[2]}{Database} } ",$db_ids_acc{ $swall{$f[2]}{Database}."_id" }," $swall{$f[2]}{Identifier}\n"
+	}
 	print OUT "Database $databases{ $swall{$f[2]}{Database} } ",$db_ids_acc{ $swall{$f[2]}{Database}."_ac" }," $swall{$f[2]}{Accession}\n";
-	
-	foreach (@{$swall{$f[2]}{Interpro}}) {
-	    next if ($_ eq "");
-	    print OUT "Motif_homol\t\"INTERPRO:$_\"\n"
-	    }
-    }
+      }
+
+    if ( $swall{$f[2]} ) {
+      foreach (@{$swall{$f[2]}{Interpro}}) {
+	next if ($_ eq "");
+	print OUT "Motif_homol\t\"INTERPRO:$_\"\n"
+      }	
+      }
     else {
-	print "ERROR: gene $f[7] has no protein (has common_data been updated ?)\n";
-	next
+      print "ERROR: gene $f[7] has no protein (has common_data been updated ?)\n";
+      next
     }
 
     print "\n" if ($verbose);
-    
+
     print OUT "\nCDS : \"$f[7]\"\n";
-    print OUT "Database $databases{ $swall{$f[2]}{Database} } ",$db_ids_acc{ $swall{$f[2]}{Database}."_id" }," $swall{$f[2]}{Identifier}\n"
-	 	     if ( ($swall{$f[2]}{Identifier}) and  ($swall{$f[2]}{Identifier} ne $swall{$f[2]}{Accession}) );
-    print OUT "Database $databases{ $swall{$f[2]}{Database} } ",$db_ids_acc{ $swall{$f[2]}{Database}."_ac" }," $swall{$f[2]}{Accession}\n";
     print OUT "Protein_id \"$acc2clone{$f[0]}\" $f[2] $f[3]\n";
-    
+    if( $swall{$f[2]}{Database} ) {
+      print OUT "Database $databases{ $swall{$f[2]}{Database} } ",$db_ids_acc{ $swall{$f[2]}{Database}."_id" }," $swall{$f[2]}{Identifier}\n"
+	if ( ($swall{$f[2]}{Identifier}) and  ($swall{$f[2]}{Identifier} ne $swall{$f[2]}{Accession}) );
+      print OUT "Database $databases{ $swall{$f[2]}{Database} } ",$db_ids_acc{ $swall{$f[2]}{Database}."_ac" }," $swall{$f[2]}{Accession}\n";
+    }
+
     # assign GO terms based on InterPro Motifs
     foreach my $ip (@{$swall{$f[2]}{Interpro}}) {
       if( exists $Ip2Go{$ip} ) {
@@ -151,6 +161,8 @@ if($load){
 
 close FILE;
 close OUT;
+
+$log->mail;
 exit(0);
 
 ##############################################################
