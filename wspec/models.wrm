@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: dl1 $
-// Last edited on: $Date: 2005-03-07 09:55:57 $
+// Last edited on: $Date: 2005-05-09 08:41:01 $
  
 
 
@@ -199,6 +199,7 @@
                 Designating_laboratory UNIQUE ?Laboratory XREF Gene_classes
                 Variation ?Variation	XREF Gene_class
 		Genes ?Gene XREF Gene_class
+		Old_member XREF ?Gene_name Former_member_of
                 Main_name  ?Gene_class XREF Other_name
 		Other_name ?Gene_class XREF Main_name
                 Remark ?Text #Evidence
@@ -256,7 +257,9 @@
                           Split_from UNIQUE ?Gene XREF Split_into
                           Split_into ?Gene XREF Split_from
 			  Made_into_transposon
-                  Live  // remove live to make gene "dead"
+		  Status UNIQUE Live #Evidence
+                                Suppressed #Evidence
+                                Dead #Evidence   
         Gene_info Gene_class UNIQUE ?Gene_class XREF Genes
                   Laboratory ?Laboratory
                   Reference_allele ?Variation Text
@@ -347,8 +350,9 @@
 ?Gene_name CGC_name_for       ?Gene XREF CGC_name
            Sequence_name_for  ?Gene XREF Sequence_name
            Molecular_name_for ?Gene XREF Molecular_name // captures CDS names, Wormpep names etc.
-           Other_name_for     ?Gene XREF Other_name // main reason for this class
-           Public_name_for    ?Gene XREF Public_name // the main name for a gene
+           Other_name_for     ?Gene XREF Other_name     // main reason for this class
+           Former_member_of   ?Gene_class XREF Old_member // track old members of a class
+           Public_name_for    ?Gene XREF Public_name    // the main name for a gene
 
 
 // new Interaction class for Andrei
@@ -1203,12 +1207,15 @@
 
 ?Transposon Evidence #Evidence
 	    SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF Transposon
-	    Source_exons Int UNIQUE Int // added for consistency with other 'gene' classes
-	    Species UNIQUE ?Species
-            LTR_region UNIQUE Int UNIQUE Int
-	    From_laboratory UNIQUE ?Laboratory
-	    Associated_feature ?Feature XREF Associated_with_transposon #Evidence	
-            Remark ?Text #Evidence
+	    Structure Source_exons Int UNIQUE Int // added for consistency with other 'gene' classes
+                      LTR_region UNIQUE Int UNIQUE Int
+                      S_child CDS_child ?CDS XREF Sequence UNIQUE Int UNIQUE Int #SMap_info
+		              Pseudogene_child ?Pseudogene XREF Sequence UNIQUE Int UNIQUE Int #SMap_info
+	    Origin Species UNIQUE ?Species
+	           From_laboratory UNIQUE ?Laboratory
+                   Member_of ?Transposon_family XREF Family_members
+	    Visible Remark ?Text #Evidence
+            Associated_feature ?Feature XREF Associated_with_transposon #Evidence
             Method UNIQUE ?Method
 
 
@@ -2598,7 +2605,10 @@
 		  Detection_method Text
 		  Positive_clone ?Clone XREF Positive_variation #Evidence
 		  Nature_of_variation UNIQUE Polymorphic
-					     Synthetic						     
+					     Synthetic	
+		  Status UNIQUE Live #Evidence
+                                Suppressed #Evidence
+                                Dead #Evidence   
 	   Linked_to ?Variation XREF Linked_to  // for being able to specify paired substitutions which are part of the same allele
 	   Affects Gene	         ?Gene	     XREF Allele
 		   Predicted_CDS ?CDS	     XREF Variation
@@ -2669,6 +2679,7 @@
 
 ?Transposon_family Title UNIQUE ?Text                                   // Information on the Transposon family 
                    Description ?Text
+		   Family_members ?Transposon XREF Member_of            // Connects to Transposon object
                    In_variation ?Variation XREF Transposon_insertion
 		   
 ////////////////////////
