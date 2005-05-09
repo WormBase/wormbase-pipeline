@@ -3,7 +3,7 @@
 $|=1;
 use lib "/wormsrv2/scripts/";   
 use strict;
-use Wormbase;
+use Wormbase
 
 my $maintainers = "All";
 my $log         = "/tmp/whoswho.log";
