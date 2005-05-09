@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: dl1 $
-// Last edited on: $Date: 2005-05-09 08:41:01 $
+// Last edited on: $Date: 2005-05-09 09:02:08 $
  
 
 
@@ -199,7 +199,7 @@
                 Designating_laboratory UNIQUE ?Laboratory XREF Gene_classes
                 Variation ?Variation	XREF Gene_class
 		Genes ?Gene XREF Gene_class
-		Old_member XREF ?Gene_name Former_member_of
+		Old_member ?Gene_name XREF Former_member_of
                 Main_name  ?Gene_class XREF Other_name
 		Other_name ?Gene_class XREF Main_name
                 Remark ?Text #Evidence
