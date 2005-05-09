@@ -3,8 +3,8 @@
 $|=1;
 use lib "/wormsrv2/scripts/";   
 use strict;
-use Wormbase
-
+use Wormbase;
+asdfsd
 my $maintainers = "All";
 my $log         = "/tmp/whoswho.log";
 my $line_count  = 0;
