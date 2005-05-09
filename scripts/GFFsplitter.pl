@@ -5,7 +5,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-04-22 11:06:15 $
+# Last updated on: $Date: 2005-05-09 10:51:47 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -36,11 +36,16 @@ my $verbose;   # verbose mode
 my $chrom;     # single chromosome mode
 our $log;
 
+my $splitdir;
+my $gffdir;
+
 GetOptions (
 	    "help"      => \$help,
 	    "archive"   => \$archive,
 	    "debug:s"   => \$debug,
-	    "chrom:s"     => \$chrom
+	    "chrom:s"   => \$chrom,
+	    "gffdir:s"  => \$gffdir,
+	    "splitdir:s"=> \$splitdir
 	    );
 
 # help 
@@ -52,14 +57,14 @@ if($debug){
   ($maintainers = $debug . '\@sanger.ac.uk');
 }
 
-&create_log_files;
+&create_log_files unless $debug;
 
 ##############################
 # Paths etc                  #
 ##############################
 
-my $datadir = "/wormsrv2/autoace/GFF_SPLITS";
-my $gffdir  = "/wormsrv2/autoace/CHROMOSOMES";
+$splitdir = "/wormsrv2/autoace/GFF_SPLITS"  unless $splitdir;
+$gffdir  = "/wormsrv2/autoace/CHROMOSOMES" unless $gffdir;
 my @files;
 # prepare array of file names and sort names
 
@@ -91,8 +96,8 @@ our @gff_classes;
 
 
 # create GFF_SPLITS subdirectory if it doesn't already exist
-if (! -e "$datadir/GFF_SPLITS"){
-  system("mkdir /wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS") && die "Couldn't create directory\n";
+if (! -e "$splitdir/GFF_SPLITS"){
+  system("mkdir $splitdir/GFF_SPLITS") && die "Couldn't create directory\n";
 }
 
 ##########################################################
@@ -101,8 +106,8 @@ if (! -e "$datadir/GFF_SPLITS"){
 
 # runs only if -a is specified
 if($archive){
-  print "Renaming $datadir/GFF_SPLITS to $datadir/$WS_version\n";
-  system("mv $datadir/GFF_SPLITS ${datadir}/${WS_version}") && die "Couldn't rename directory\n";
+  print "Renaming $splitdir/GFF_SPLITS to $splitdir/$WS_version\n";
+  system("mv $splitdir/GFF_SPLITS ${splitdir}/${WS_version}") && die "Couldn't rename directory\n";
   exit(0);
 }
 
@@ -153,7 +158,7 @@ foreach $file (@gff_files) {
   my ($chromosome,$source,$feature,$start,$stop,$score,$strand,$other,$name);
   my @header = "";
   
-  open (GFF, "</wormsrv2/autoace/CHROMOSOMES/$file.gff")  || die "Cannot open /wormsrv2/autoace/CHROMOSOMES/$file.gff\n";
+  open (GFF, "<$gffdir/$file.gff")  || die "Cannot open $gffdir/$file.gff\n";
   while (<GFF>) {
     chomp;
     $line_count++;
@@ -179,7 +184,7 @@ foreach $file (@gff_files) {
     elsif ($feature =~ m/_primary_transcript/)                                  {push (@{$GFF{$file}{rna}},$_);
 									         push (@{$GFF{$file}{worm_genes}},$_);}
     # Transposon
-    elsif ($source eq "Transposon")                                             {push (@{$GFF{$file}{transposon}},$_);}
+    elsif( ($source eq "Transposon")         or ($source eq "Transposon_CDS") ) {push (@{$GFF{$file}{transposon}},$_);}
 
     # Coding_transcripts
     elsif ($source eq "Coding_transcript")                                      {push (@{$GFF{$file}{Coding_transcript}},$_);}
@@ -221,7 +226,7 @@ foreach $file (@gff_files) {
     # Oligo mapping
     elsif ($feature eq "oligo")                                                 {push (@{$GFF{$file}{oligos}},$_);}
     # RNAi
-    elsif ($feature eq "RNAi_reagent")                                          {push (@{$GFF{$file}{RNAi}},$_);}
+    elsif ($feature eq "RNAi_reagent")                                          {push (@{$GFF{$file}{RNAi_primary}},$_);}
     # PCR_products
     elsif ($feature eq "PCR_product")                                           {push (@{$GFF{$file}{PCR_products}},$_);}
     # Alleles
@@ -286,7 +291,7 @@ foreach $file (@gff_files) {
   foreach my $tag (@gff_classes) {
     print "# $file $tag\n" if ($debug);
     
-    open (OUT, ">$datadir/GFF_SPLITS/$file.$tag.gff") or die "Can't open file\n";
+    open (OUT, ">$splitdir/GFF_SPLITS/$file.$tag.gff") or die "Can't open file\n";
     
     # gff header lines
     foreach my $line (@header) {
@@ -308,16 +313,16 @@ foreach $file (@gff_files) {
   #########################################
   
   # GFF clone_path with EMBL accessions and sequence versions
-  my $input_file = "$datadir/GFF_SPLITS/$file.clone_path.gff";
-  my $output_file = "$datadir/GFF_SPLITS/$file.clone_acc.gff";
+  my $input_file = "$splitdir/GFF_SPLITS/$file.clone_path.gff";
+  my $output_file = "$splitdir/GFF_SPLITS/$file.clone_acc.gff";
   &GFF_clones_with_accessions("$input_file", "$output_file");
   
   
   # GFF genes with wormpep CE accessions
   # Shouldn't do this unless Wormpep has been made else no Corresponding_protein tags in database
   if(-e "$lockdir/D1:Build_wormpep_final"){
-    $input_file = "$datadir/GFF_SPLITS/$file.CDS.gff";
-    $output_file = "$datadir/GFF_SPLITS/$file.CDS_acc.gff";
+    $input_file = "$gffdir/GFF_SPLITS/$file.CDS.gff";
+    $output_file = "$gffdir/GFF_SPLITS/$file.CDS_acc.gff";
     &GFF_CDS_with_accessions("$input_file", "$output_file");
     system ("mv -f $output_file $input_file");
   }
