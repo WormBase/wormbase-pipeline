@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers et al
 #
-# Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2005-04-28 13:03:02 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2005-05-10 09:07:50 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -58,6 +58,7 @@ my %Table_defs = (
 		  'RNAgene2lab'      => 'CommonData:RNAgene_Lab.def',
 		  'wormgene2cgc'     => 'CommonData:WormGene_CGCname.def',
 		  'wormgene2geneid'  => 'CommonData:WormGene_GeneID.def',
+		  'CDS2wormpep'      => 'CommonData:CDS2wormpep'
 		  );
 
 GetOptions (
@@ -290,28 +291,32 @@ sub write_clonesize  {
 sub write_cds2wormpep  {   
 
   my $WPver = &get_wormbase_version;
-  open (FH,"<$basedir/WORMPEP/wormpep$WPver/wormpep$WPver") or die "cant open wormpep$WPver\n";
+
+  # connect to AceDB using TableMaker,
+  my $command="Table-maker -p $wquery_dir/$Table_defs{'CDS2wormpep'}\nquit\n";
+  
+  open (TACE, "echo '$command' | $tace $ace_dir |");
   my %cds2wormpep;
   my %wormpep2cds;
-  while(<FH>) {
-    if( />/ ) {
-      chomp;
-      my @data = split;
-      # >2L52.1 CE32090   Zinc finger, C2H2 type status:Predicted TR:Q9XWB3
-      my $pep = $data[1];
-      my $gene = substr("$data[0]",1);
-      $cds2wormpep{$gene} = $pep;
-      $wormpep2cds{$pep} .= "$gene ";
-    }
+  while (<TACE>) {
+    chomp;
+    s/\"//g;
+    next if ($_ eq "");
+    next if (/acedb\>/);
+    my @data = split;
+    my $gene = $data[0];
+    my $pep = $data[1];
+    $cds2wormpep{$gene} = $pep;
+    $wormpep2cds{$pep} .= "$gene ";
   }
-  
+
   #now dump data to file
   open (C2G, ">$data_dir/wormpep2cds.dat") or die "$data_dir/wormpep2cds.dat";
   open (G2C, ">$data_dir/cds2wormpep.dat") or die "$data_dir/cds2wormpep.dat";
-  
+
   print C2G Data::Dumper->Dump([\%wormpep2cds]);
   print G2C Data::Dumper->Dump([\%cds2wormpep]);
-  
+
   close C2G;
   close G2C;
 }
