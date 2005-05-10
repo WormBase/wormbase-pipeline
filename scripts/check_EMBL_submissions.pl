@@ -7,8 +7,8 @@
 # clones. Entries which have failed to load or return are highlighted
 # and changes in sequence version are notified.
 
-# Last updated on: $Date: 2003-12-01 14:50:46 $
-# Last updated by: $Author: krb $
+# Last updated on: $Date: 2005-05-10 11:07:43 $
+# Last updated by: $Author: dl1 $
 
 # touch logfile for run details
 $0 =~ m/\/*([^\/]+)$/; system("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
@@ -24,7 +24,7 @@ use vars qw/ $opt_d $opt_h $opt_f/;
  # Script variables (run)               #
  ########################################
 
-my $maintainer = "dl1\@sanger.ac.uk";
+my $maintainer = "All";
 my $rundate = &rundate;
 my $runtime = &runtime;
 my $log="/wormsrv2/logs/check_EMBL_submissions.$rundate.$$";
@@ -74,10 +74,9 @@ print LOG "\n";
 
 $ENV{'ACEDB'} = $dbdir;
 
-my $command=<<EOF;
-Table-maker -p "$dbdir/wquery/accessions4submission.def"
-quit
-EOF
+my $command = "Table-maker -p $dbdir/wquery/accessions4submission.def\nquit\n";
+
+my ($sv,$id,$name);
 
 open (TACE, "echo '$command' | $tace | ");
 while (<TACE>) {
@@ -89,8 +88,14 @@ while (<TACE>) {
 
     s/\"//g;
     if (/(\S+)\s+(\S+)\s+(\S+)/) {
-      ($clone2id{$1} = $3) if ($2 eq "NDB_ID"); # ACEDB_clone => NDB_ID  
-      ($id2sv{$2}    = $3) if ($2 eq "NDB_SV"); # NDB_ID => NDB_SV
+	($clone2id{$1} = $3) if ($2 eq "NDB_ID"); # ACEDB_clone => NDB_ID  
+	if ($2 eq "NDB_SV") { # NDB_ID => NDB_SV
+	    $id   = $1;
+	    $sv   = $3;
+	    $name = $sv =~ (/\S+\.(\d+)/);
+	    $id2sv{$id} = $name;
+	  } 
+
     }
 }
 close TACE;
@@ -123,15 +128,14 @@ print LOG "Populated hashes with data for " . scalar (keys %embl_status) . " ent
  # submitted clones from ~wormpub/analysis/TO_SUBMIT         #
  #############################################################
 
-my ($clone,$id);
  
 open (SUBMITTED, "<$submitted_file") || die "Cannot open submit_TO_SUBMIT log file\n";;
 while (<SUBMITTED>) {
-    ($clone) = (/^(\S+)/);
-    if (!defined $clone2id{$clone}) {print LOG "eek .. no ID for clone $clone\n";}
-    $id = $clone2id{$clone};
+    ($name) = (/^(\S+)/);
+    if (!defined $clone2id{$name}) {print LOG "eek .. no ID for clone $name\n";}
+    $id = $clone2id{$name};
 
-    print LOG "# $clone   \tSubmitted_to_EMBL\t";
+    print LOG "# $name   \tSubmitted_to_EMBL\t";
 
     if (!defined $embl_status{$id}) {
 	print LOG "not returned\n";
@@ -145,7 +149,7 @@ while (<SUBMITTED>) {
 	next;
     }
     
-    if ($embl_sv{$id} ne $id2sv{$id}) {
+    if ($embl_sv{$id} ne $id2sv{$name}) {
 	print LOG "Update sequence version\n";
     }
     else {
@@ -251,7 +255,7 @@ check_EMBL_submissions.pl -f /nfs/griffin2/dl1/EMBL_020123
 
 =head1 AUTHOR: 
 
-Daniel Lawson (modifications from the original of Steve Jones)
+Daniel Lawson
 
 Email dl1@sanger.ac.uk
 
