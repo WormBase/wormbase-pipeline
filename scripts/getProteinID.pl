@@ -8,7 +8,7 @@
 # written by Dan Lawson
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2005-05-04 13:59:31 $
+# Last edited on: $Date: 2005-05-11 14:11:56 $
 
 use lib "/wormsrv2/scripts/";
 use Wormbase;
@@ -43,6 +43,7 @@ my $log = Log_files->make_build_log($debug);
 my %acc2clone = &FetchData('accession2clone');
 my %gene2CE   = &FetchData('cds2wormpep');
 my %Ip2Go     = &FetchData('interpro2go');
+my %cds2gene  = &FetchData('cds2wbgene_id');
 our %swall;
 
 # get the InterPro => GOterm mapping ( space separated ie 'IPR004794' => 'GO:0008703 GO:0008835 GO:0009231 ')
@@ -110,7 +111,7 @@ while (<FILE>) {
 
     if ($protein and $swall{$f[2]}{Database}) {
 	print "$protein" if ($verbose);
-	print OUT "\nProtein : WP:$protein\n";
+	print OUT "\nProtein : \"WP:$protein\"\n";
 	if ( ($swall{$f[2]}{Identifier}) and  ($swall{$f[2]}{Identifier} ne $swall{$f[2]}{Accession}) ) {
 	  print OUT "Database $databases{ $swall{$f[2]}{Database} } ",$db_ids_acc{ $swall{$f[2]}{Database}."_id" }," $swall{$f[2]}{Identifier}\n"
 	}
@@ -138,12 +139,29 @@ while (<FILE>) {
       print OUT "Database $databases{ $swall{$f[2]}{Database} } ",$db_ids_acc{ $swall{$f[2]}{Database}."_ac" }," $swall{$f[2]}{Accession}\n";
     }
 
-    # assign GO terms based on InterPro Motifs
-    foreach my $ip (@{$swall{$f[2]}{Interpro}}) {
-      if( exists $Ip2Go{$ip} ) {
-	my @GOterms = split(/\s/,$Ip2Go{$ip});
-	foreach my $go (@GOterms) {
-	  print OUT "GO_term\t\"$go\" \"IEA\" Inferred_automatically\n";
+    if (@{$swall{$f[2]}{Interpro}}) {
+      # assign GO terms based on InterPro Motifs
+      foreach my $ip (@{$swall{$f[2]}{Interpro}}) {
+	if ( exists $Ip2Go{$ip} ) {
+	  my @GOterms = split(/\s/,$Ip2Go{$ip});
+	  foreach my $go (@GOterms) {
+	    print OUT "GO_term\t\"$go\" \"IEA\" Inferred_automatically\n";
+	  }
+	}
+      }
+      # connect Gene to GO_term as well.
+      my $gene = $cds2gene{$f[7]};
+      unless ( $gene ) {
+	print STDERR "no gene_id for $f[7]\n";
+	next;
+      }
+      print OUT "\nGene : $gene\n";
+      foreach my $ip (@{$swall{$f[2]}{Interpro}}) {
+	if ( exists $Ip2Go{$ip} ) {
+	  my @GOterms = split(/\s/,$Ip2Go{$ip});
+	  foreach my $go (@GOterms) {
+	    print OUT "GO_term\t\"$go\" \"IEA\" Inferred_automatically\n";
+	  }
 	}
       }
     }
@@ -218,7 +236,7 @@ sub getswalldata {
 	    else                      {	$db = "TR"; }
 #	    print "assign AC & DB\n";
 	}
-	while ($text =~ /DR\s+EMBL;\s\S+\s(\S+)\.\d+; \-\./g) {            # DR   EMBL; U05038; AAA61872.1; -.
+	while ($text =~ /DR\s+EMBL;\s\S+\s(\S+)\.\d+; \-\;/g) {            # DR   EMBL; U05038; AAA61872.1; -.
 	    push (@proteinID, $1);
 #	    print "assign proteinID\n";
 	}
