@@ -7,7 +7,7 @@
 # clones. Entries which have failed to load or return are highlighted
 # and changes in sequence version are notified.
 
-# Last updated on: $Date: 2005-05-10 11:07:43 $
+# Last updated on: $Date: 2005-05-12 11:09:46 $
 # Last updated by: $Author: dl1 $
 
 # touch logfile for run details
@@ -74,7 +74,7 @@ print LOG "\n";
 
 $ENV{'ACEDB'} = $dbdir;
 
-my $command = "Table-maker -p $dbdir/wquery/accessions4submission.def\nquit\n";
+my $command = "Table-maker -p $dbdir/wquery/SCRIPT:check_EMBL_submissions.def\nquit\n";
 
 my ($sv,$id,$name);
 
