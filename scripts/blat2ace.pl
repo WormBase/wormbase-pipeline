@@ -7,7 +7,7 @@
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2005-04-18 13:46:07 $
+# Last edited on: $Date: 2005-05-12 11:15:08 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -47,6 +47,10 @@ if ($camace) {
     $blat_dir  = "/wormsrv1/camace/BLAT";
     $tace      = &tace." /wormsrv1/camace";
 }
+
+#############################
+# CommonData hash retrieval #
+#############################
 
 my %NDBaccession2est = &FetchData('NDBaccession2est');     # EST accession => name
 my %estorientation   = &FetchData('estorientation');       # EST accession => orientation [5|3]
@@ -541,29 +545,6 @@ exit(0);
 #                          Subroutines                                          #
 #                                                                               #
 #################################################################################
-
-
-#########################################
-# get EST names  (-e option only)       #
-#########################################
-
-sub commands {
-    
-my $command1=<<EOF;
-Table-maker -p "/wormsrv2/autoace/wquery/ESTacc2names.def"
-quit
-EOF
-
-my $command2=<<EOF;
-Table-maker -p "/wormsrv2/autoace/wquery/ESTorient.def"
-quit
-EOF
-
-    return($command1,$command2);
-
-}
-
-###################################
 
 sub usage {
     my $error = shift;
