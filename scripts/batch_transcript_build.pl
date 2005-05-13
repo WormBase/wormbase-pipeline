@@ -6,8 +6,8 @@
 #
 # wrapper script for running transcript_builder.pl
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-08-05 13:54:01 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2005-05-13 12:59:34 $
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -32,6 +32,10 @@ GetOptions (
 	    "chromosomes:s" => \$chrom_choice,
 	    "chromosome:s"  => \$chrom_choice
 	   );
+# make sure required files present.
+system("scp wormsrv2:/wormsrv2/autoace/COMMON_DATA/est2feature.dat    $database/COMMON_DATA/") && die "cant copy est2feature\n";
+system("scp wormsrv2:/wormsrv2/autoace/COMMON_DATA/Featurelist.dat    $database/COMMON_DATA/") && die "cant copy Featurelistn\n";
+system("scp wormsrv2:/wormsrv2/autoace/COMMON_DATA/estorientation.dat $database/COMMON_DATA/") && die "cant copy estorientation\n";
 
 my @chromosomes = split(/,/,join(',',$chrom_choice));
 
