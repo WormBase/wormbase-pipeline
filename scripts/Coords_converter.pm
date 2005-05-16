@@ -87,8 +87,8 @@ sub invoke
       close(ACE);
 
       # need to remove genes SMapped to slinks
-      open( FH, "$clone_coords_file") or die "bugger";
-      open( NEW,">$clone_coords_file.bk" ) or die "bugger2";
+      open( FH, "$clone_coords_file") or die "cant open $clone_coords_file for reading\t$!\n ";
+      open( NEW,">$clone_coords_file.bk" ) or die "cant write to $clone_coords_file.bk\t$!\n";
       while (<FH>) {
 	print NEW unless /\./;
       }
