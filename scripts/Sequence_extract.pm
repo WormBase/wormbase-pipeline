@@ -150,32 +150,39 @@ sub Sub_sequence
       # modify the starting coordinate
       $start += $self->{"$chrom"}->{SUPERLINK}->{"$sl"}->[0];
       $length = $self->{"$chrom"}->{SUPERLINK}->{"$sl"}->[1] - $self->{"$chrom"}->{SUPERLINK}->{"$sl"}->[0] unless $length;
-    }
-
-    else {
+    } else {
       # This is when the passed seq is a clone
-    SLINKS:
-      foreach my $slink (keys %{$self->{'SUPERLINK'}} ) {
-
-	foreach my $clone (keys %{$self->{SUPERLINK}->{$slink}} ) {
-
-	  if( "$clone" eq "$seq" ) {
-	    $chrom = $self->_getChromFromSlink("$slink");
-
-	    # modify the starting coordinate
-	    $start += $self->{"$chrom"}->{SUPERLINK}->{$slink}->[0] - 1; # superlink base coords 
-	    $start += $self->{SUPERLINK}->{"$slink"}->{"$clone"}->[0] - 1; # clone base coords
-	    
-	    # length is entire obj length unless specified
-	    $length = 1 + $self->{SUPERLINK}->{"$slink"}->{"$clone"}->[1] - $self->{SUPERLINK}->{"$slink"}->{"$clone"}->[0] unless $length;
-	    last SLINKS;
-	  } 
-	}
+      unless ($self->{'CLONE2CHROM'}->{"$seq"} ) {
+	carp "$seq is not a valid sequence\n";
+	return;
       }
+      SLINKS:
+	foreach my $slink (keys %{$self->{'SUPERLINK'}} ) {
+
+	  foreach my $clone (keys %{$self->{SUPERLINK}->{$slink}} ) {
+
+	    if ( "$clone" eq "$seq" ) {
+	      $chrom = $self->_getChromFromSlink("$slink");
+
+	      # modify the starting coordinate
+	      $start += $self->{"$chrom"}->{SUPERLINK}->{$slink}->[0] - 1; # superlink base coords 
+	      $start += $self->{SUPERLINK}->{"$slink"}->{"$clone"}->[0] - 1; # clone base coords
+
+	      # length is entire obj length unless specified
+	      $length = 1 + $self->{SUPERLINK}->{"$slink"}->{"$clone"}->[1] - $self->{SUPERLINK}->{"$slink"}->{"$clone"}->[0] unless $length;
+	      last SLINKS;
+	    } 
+	  }
+	}
     }
 
-    $length = length($self->{SEQUENCE}->{"$chrom"}) unless $length; #full sequence of object.
-    $subseq = substr( ($self->{SEQUENCE}->{"$chrom"} ),$start, $length+(2*$extend) ); #extend either end
+    if( $chrom ) {
+      $length = length($self->{SEQUENCE}->{"$chrom"}) unless $length; #full sequence of object.
+      $subseq = substr( ($self->{SEQUENCE}->{"$chrom"} ),$start, $length+(2*$extend) ); #extend either end
+    }
+    else {
+      carp "couldn't work out chromosome \n that sequence $seq derives from\n";
+    }
 
     if ($subseq ) {
       return $subseq;
