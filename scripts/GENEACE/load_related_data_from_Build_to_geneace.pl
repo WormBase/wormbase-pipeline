@@ -8,8 +8,8 @@
 # RUN this script anytime during the build or after the build when get_interpolated_map 
 # and update_inferred multi-pt data are done
 #
-# Last updated on: $Date: 2004-12-22 16:37:24 $
-# Last updated by: $Author: krb $
+# Last updated on: $Date: 2005-05-18 10:32:15 $
+# Last updated by: $Author: ar2 $
 
 
 use strict;
@@ -146,6 +146,16 @@ my $person = "/wormsrv2/wormbase/caltech/caltech_Person.ace";
 
 $command= "pparse $person\nsave\nquit\n";
 open (Load_GA,"| $tace -tsuser \"person_update_from_autoace\" $geneace_dir") || die "Failed to upload to Geneace\n";
+print Load_GA $command;
+close Load_GA;
+
+
+# new Person data will have been dumped from citace
+$log->write_to("Adding new paper data\n");
+my $paper = "/wormsrv2/wormbase/caltech/caltech_Paper.ace";
+
+$command= "pparse $paper\nsave\nquit\n";
+open (Load_GA,"| $tace -tsuser \"paper_update_from_caltech\" $geneace_dir") || die "Failed to upload to Geneace\n";
 print Load_GA $command;
 close Load_GA;
 
