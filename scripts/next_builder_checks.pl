@@ -8,7 +8,7 @@
 # build to check the current build
 #
 # Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2005-03-29 09:36:43 $      
+# Last updated on: $Date: 2005-05-19 10:17:37 $      
 
 
 use strict;
@@ -103,6 +103,10 @@ print LOG "6) Check all Protein objects have a Species tag set\n\n";
 print LOG "7) Check all PFAM Motif objects have a title tag\n";
 
 print LOG "8) Run composition *.dna in the CHROMOSOMES directory.  Make sure this is the same as it was\nat the start of the build.  Bad Homol objects can lead to errors esp when chromosome length has been reduced\n\n";
+
+print LOG "9) Confirm that GFFmunger.pl has done its job ie \n grep landmark /wormsrv2/autoace/CHROMOSOMES/CHROMOSOME_III.gff | head\n";
+print LOG " grep five_prime /wormsrv2/autoace/CHROMOSOMES/CHROMOSOME_III.gff\n";
+print LOG " grep Partially /wormsrv2/autoace/CHROMOSOMES/CHROMOSOME_III.gff  and check these are overloaded CDS lines\n";
 
 print LOG "\nThat's all...for now!  If you are satisfied the build is ok, please inform the person\n";
 print LOG "building the database. Please continue to add to this list as appropriate\n";
