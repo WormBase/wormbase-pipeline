@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2005-04-15 12:12:09 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2005-05-19 08:44:52 $
 #
 # Usage GFFmunger.pl [-options]
 
@@ -15,7 +15,7 @@
 #################################################################################
 
 use strict;
-use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use IO::Handle;
 use Getopt::Long;
@@ -39,6 +39,8 @@ my $chrom;                     # single chromosome mode
 my $debug;                     # debug
 my $verbose;                   # verbose mode
 our $log;
+my $datadir;
+my $gffdir;
 
 GetOptions (
 	    "help"      => \$help,
@@ -46,8 +48,10 @@ GetOptions (
 	    "landmark"  => \$landmark,
 	    "UTR"       => \$UTR,
 	    "CDS"       => \$CDS,
-	    "chrom:s"     => \$chrom,
-	    "debug:s"   => \$debug
+	    "chrom:s"   => \$chrom,
+	    "debug:s"   => \$debug,
+	    "gff:s"     => \$gffdir,
+	    "splits:s"  => \$datadir
 	    );
 
 # help 
@@ -68,8 +72,8 @@ our $WS_version = &get_wormbase_version;
 # Paths etc                  #
 ##############################
 
-my $datadir = "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS";
-my $gffdir  = "/wormsrv2/autoace/CHROMOSOMES";
+$datadir = "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS" unless $datadir;
+$gffdir  = "/wormsrv2/autoace/CHROMOSOMES" unless $gffdir;
 my @files;
 
 # prepare array of file names and sort names
