@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2005-04-15 12:41:02 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2005-05-19 09:42:23 $
 #
 
 #
@@ -22,19 +22,23 @@
 
 use Getopt::Long;
 
-my $chrom;
+my ($chrom, $splitdir, $gffdir);
 
 GetOptions (
-	    "chrom:s"     => \$chrom
+	    "chrom:s"     => \$chrom,
+	    "release:s"   => \$release,
+	    "splits:s"    => \$splitdir,
+	    "gff:s"       => \$gffdir
 	    );
 
 $verbose = 1;
 
-my $release = shift;
+$splitdir = "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS" unless $splitdir;
+$gffdir   = "/wormsrv2/autoace/CHROMOSOMES" unless $gffdir;
 
 # check that the supplied $release is numeric
 unless ($release =~ /\d+/) {
-    exit(1);x
+    exit(1);
 }
 
 print "// Working with wormpep release $release\n" if ($verbose);
@@ -79,9 +83,6 @@ close WORMPEP;
 #}
 
 # parse GFF lines
-
-our $splitdir = "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS";
-our $gffdir   = "/wormsrv2/autoace/CHROMOSOMES";
 
 if (defined($chrom)){
     unless (grep { $chrom eq $_ } ('I','II','III','IV','V','X','MtDNA')) {
