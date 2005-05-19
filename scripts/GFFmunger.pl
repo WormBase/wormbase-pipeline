@@ -5,7 +5,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-05-19 08:44:52 $
+# Last updated on: $Date: 2005-05-19 09:43:49 $
 #
 # Usage GFFmunger.pl [-options]
 
@@ -41,6 +41,7 @@ my $verbose;                   # verbose mode
 our $log;
 my $datadir;
 my $gffdir;
+my $version;
 
 GetOptions (
 	    "help"      => \$help,
@@ -51,7 +52,8 @@ GetOptions (
 	    "chrom:s"   => \$chrom,
 	    "debug:s"   => \$debug,
 	    "gff:s"     => \$gffdir,
-	    "splits:s"  => \$datadir
+	    "splits:s"  => \$datadir,
+	    "release:s" => \$version,
 	    );
 
 # help 
@@ -64,7 +66,7 @@ if($debug){
 }
 
 # get version number
-our $WS_version = &get_wormbase_version;
+our $WS_version = $version or &get_wormbase_version;
  
 &create_log_files;
 
@@ -122,10 +124,10 @@ my $gffpath;
 if ($CDS || $all) {
     print LOG "# Overloading CDS lines\n";
     if (defined($chrom)){
-	system ("overload_GFF_CDS_lines.pl $WS_version -chrom $chrom");                     # generate *.CSHL.gff files
+	system ("overload_GFF_CDS_lines.pl -release $WS_version -chrom $chrom -splits $datadir -gff $gffdir");                     # generate *.CSHL.gff files
     }
     else {
-	system ("overload_GFF_CDS_lines.pl $WS_version");
+	system ("overload_GFF_CDS_lines.pl -release $WS_version -splits $datadir -gff $gffdir");
     }
     foreach my $file (@gff_files) {
 	next if ($file eq ""); 
