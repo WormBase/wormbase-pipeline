@@ -2,7 +2,7 @@
 
 # Author: Chao-Kung Chen
 # Last updated by $Author: ar2 $
-# Last updated on: $Date: 2005-04-27 10:22:29 $ 
+# Last updated on: $Date: 2005-05-25 08:44:43 $ 
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -138,6 +138,14 @@ foreach(@NBP){
   # convert CDS name to clone name by removing trailing digit
   $clone =~ s/\..+//;
 
+  #hard code exception where parent seq is not made correctly
+  if ( $clone eq "Y66A7A" ) {
+    $insert  = "NA";
+    $L_clone = "NA";
+    $R_clone = "NA";
+    $site_L  = "NA";
+    $site_R  = "NA";
+  }
 
   #----- process primers info in $primer (4 primers)
   my ($ext_f, $int_b, $ext_b, $int_f) = split(/,/, $primers);
@@ -361,6 +369,7 @@ sub get_30_bp_flanks {
 	print DELETE "-D Oligo $allele"."_external_f\n";
 	print DELETE "-D Oligo $allele"."_external_b\n";
 	print DELETE "-D Variation \"$allele\"\n";
+	print DELETE "-D Method\n";
 	
 	print DELETE "\nOligo : \"$allele"."_external_f\"\n";
 	print DELETE "-D Sequence \"$NBP_info{$allele}->[5]->[0]\"\n";
@@ -376,6 +385,7 @@ sub get_30_bp_flanks {
         print DELETE "-D Oligo $allele"."_internal_f\n";
         print DELETE "-D Oligo $allele"."_internal_b\n";
         print DELETE "-D Variation \"$allele\"\n";
+	print DELETE "-D Method\n";
 
         print DELETE "\nOligo : \"$allele"."_internal_f\"\n";
 	print DELETE "-D Sequence \"$NBP_info{$allele}->[5]->[1]\"\n";
