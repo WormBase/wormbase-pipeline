@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-05-19 09:43:49 $
+# Last updated by: $Author: dl1 $
+# Last updated on: $Date: 2005-05-27 11:13:42 $
 #
 # Usage GFFmunger.pl [-options]
 
@@ -25,7 +25,6 @@ use Ace;
 # Script variables and command-line options      #
 ##################################################
 my $maintainers = "All";
-my $WS_version = &get_wormbase_version_name;
 our $lockdir = "/wormsrv2/autoace/logs/";
 
 
@@ -66,8 +65,15 @@ if($debug){
 }
 
 # get version number
-our $WS_version = $version or &get_wormbase_version;
- 
+our $WS_version;
+
+if ($version) {
+    $WS_version = $version;
+}
+else {
+     $WS_version = &get_wormbase_version;
+ }
+
 &create_log_files;
 
 ##############################
@@ -124,9 +130,12 @@ my $gffpath;
 if ($CDS || $all) {
     print LOG "# Overloading CDS lines\n";
     if (defined($chrom)){
+	print LOG "overload_GFF_CDS_lines.pl -release $WS_version -chrom $chrom -splits $datadir -gff $gffdir\n";
 	system ("overload_GFF_CDS_lines.pl -release $WS_version -chrom $chrom -splits $datadir -gff $gffdir");                     # generate *.CSHL.gff files
+
     }
     else {
+	print LOG "overload_GFF_CDS_lines.pl -release $WS_version -splits $datadir -gff $gffdir\n";
 	system ("overload_GFF_CDS_lines.pl -release $WS_version -splits $datadir -gff $gffdir");
     }
     foreach my $file (@gff_files) {
