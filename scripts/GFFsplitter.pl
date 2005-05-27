@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-05-09 10:51:47 $
+# Last updated by: $Author: dl1 $
+# Last updated on: $Date: 2005-05-27 09:41:27 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -321,8 +321,8 @@ foreach $file (@gff_files) {
   # GFF genes with wormpep CE accessions
   # Shouldn't do this unless Wormpep has been made else no Corresponding_protein tags in database
   if(-e "$lockdir/D1:Build_wormpep_final"){
-    $input_file = "$gffdir/GFF_SPLITS/$file.CDS.gff";
-    $output_file = "$gffdir/GFF_SPLITS/$file.CDS_acc.gff";
+    $input_file = "$splitdir/GFF_SPLITS/$file.CDS.gff";
+    $output_file = "$splitdir/GFF_SPLITS/$file.CDS_acc.gff";
     &GFF_CDS_with_accessions("$input_file", "$output_file");
     system ("mv -f $output_file $input_file");
   }
