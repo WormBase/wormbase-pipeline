@@ -5,8 +5,8 @@
 # Counts the number of objects in an ACEDB database for each Class stated in the config file
 # Compares this number to those from a second database.
 #
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2005-02-11 15:55:26 $      
+# Last updated by: $Author: dl1 $     
+# Last updated on: $Date: 2005-05-27 09:42:37 $      
 
 
 use strict;
@@ -21,18 +21,23 @@ $|=1;
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $database, $database2);
+my ($help, $debug, $database, $database2, $all, $midway, $wee);
 our ($log,$errfile,$outfile); 
 our ($db_1, $db_2, $dbname_1, $dbname_2);
 our $WS_current  = &get_wormbase_version;
 our $WS_previous = $WS_current - 1;
-my $maintainers = "All";
-my $exec        = &tace;
+my $maintainers  = "All";
+my $exec         = &tace;
 
-GetOptions ("help"          => \$help,
+GetOptions (
+	    "help"          => \$help,
             "debug=s"       => \$debug,
 	    "database=s"    => \$database,
-	    "database2=s"   => \$database2);
+	    "database2=s"   => \$database2,
+	    "all"           => \$all,
+	    "wee"           => \$wee,
+	    "midway"        => \$midway
+	    );
 
 
 ############################################
@@ -40,20 +45,21 @@ GetOptions ("help"          => \$help,
 ############################################
 
 # Display help if required
-&usage("Help") if ($help);
-
-# Use debug mode?
-if($debug){
-  print "DEBUG = \"$debug\"\n\n";
-  ($maintainers = $debug . '\@sanger.ac.uk');
+if ($help) { 
+    system ('perldoc',$0);
+    exit (0);
 }
 
+# Use debug mode?
+if ($debug) {
+    print "DEBUG = \"$debug\"\n\n";
+    ($maintainers = $debug . '\@sanger.ac.uk');
+}
 
 
 #################################################################
 # Compare autoace to previous build unless -database specified
 #################################################################
-
 
 $dbname_1    = "WS${WS_previous}";
 $db_1        = "/wormsrv2/$dbname_1"; 
@@ -61,24 +67,19 @@ $db_1        = "/wormsrv2/$dbname_1";
 $dbname_2    = "WS${WS_current}";
 $db_2        = "/wormsrv2/autoace";
 
-
 # First alternative datatbase specified?
-if($database){
-  $dbname_1  = "$database";
-  $db_1      = "$database"; 
+if ($database) {
+    $dbname_1  = "$database";
+    $db_1      = "$database"; 
 }
 
 # Second alternative datatbase specified?
-if($database2){
-  $dbname_2  = "$database2";
-  $db_2      = "$database2"; 
+if ($database2) {
+    $dbname_2  = "$database2";
+    $db_2      = "$database2"; 
 }
 
-
-
-
 &create_log_files;
-
 
 #########################################################################
 # Read list of classes
@@ -87,12 +88,21 @@ if($database2){
 
 my @TotalClasses;
 
-READARRAY:   while (<DATA>) {
-  chomp $_;
-  last READARRAY if $_ =~ /END/;
-  push (@TotalClasses,$_);
-}
 
+#@TotalClasses = &full_run if ($all);
+#@TotalClasses = &mid_run if ($midway);
+
+
+# run midway list if asked too, else default to the full list
+if ($midway) {
+    @TotalClasses = &mid_run;
+}
+elsif ($wee) {
+    @TotalClasses = &wee_run;
+}
+else {
+    @TotalClasses = &full_run;
+}
 
 
 
@@ -107,20 +117,20 @@ foreach my $query (@TotalClasses) {
   LOG->autoflush();
 
   print LOG  " Counting '$query'\n";
-  printf OUT " | %18s |", $query;
+  printf OUT " | %22s |", $query;
 
   ##################################################
   # Get class counts from both databases           #
   ################################################## 
-
+  
   my ($class_count_1,$class_count_2) = &count_class($query,$counter);
 
   print LOG " Counting $dbname_1 : $class_count_1\n";  
   print LOG " Counting $dbname_2 : $class_count_2\n\n";
   
-  printf OUT "%8s",$class_count_1;
-  print OUT " | ";  
-  printf OUT "%8s",$class_count_2;
+  printf OUT " %7s ",$class_count_1;
+  print OUT "|";  
+  printf OUT " %7s ",$class_count_2;
 
 
   ##################################################
@@ -132,15 +142,15 @@ foreach my $query (@TotalClasses) {
 
 #  printf OUT "| %6s |\n",$diff;
 
-  printf OUT "| %7s ",$added;
-  printf OUT "| %7s ",$removed;
+  printf OUT "| %7s ", $added;
+  printf OUT "| %7s ", $removed;
   printf OUT "| %7s |\n",$diff;
 
   $counter++;
 }
 
 
-print OUT  " +--------------------+---------+---------+---------+---------+---------+\n";
+print OUT  " +------------------------+---------+---------+---------+---------+---------+\n";
 
 
 
@@ -204,71 +214,63 @@ sub create_log_files{
   open (OUT, ">$outfile") || die "Couldn't write to out file\n";
   open (ERR, ">$errfile") || die "Couldn't write to err file\n";
   
-  print OUT  " +----------------------------------------+\n";
-  print OUT  " | Class              |   ACEDB database  |\n";
-  print OUT  " |                    +---------+---------+---------+---------+---------+\n";
-  printf OUT " |                    | %7s | %7s |    +    |    -    |   Net   |\n", $dbname_1,$dbname_2;
-  print OUT  " +--------------------+---------+---------+---------+---------+---------+\n";
-
-
-
+  print OUT  " +--------------------------------------------+\n";
+  print OUT  " | Class                  |   ACEDB database  |\n";
+  print OUT  " |                        +---------+---------+---------+---------+---------+\n";
+  printf OUT " |                        | %7s | %7s |    +    |    -    |   Net   |\n", $dbname_1,$dbname_2;
+  print OUT  " +------------------------+---------+---------+---------+---------+---------+\n";
 
   LOG->autoflush();
 }
 
 ##########################################
 sub count_class{
-  my $query  = shift;
-  my $counter = shift;
-  my $out;
-  my $class_count1;
-  my $class_count2;
 
-  # Formulate query
-  my $command=<<EOF;
-query find $query 
-list -a 
-quit
-EOF
-
-  ####################################
-  # Count objects in first database
-  ####################################
-
-  # open temp output file
-  $out = "/wormsrv2/tmp/dbcomp_A_${counter}";
-  open (COUNT, ">$out") || die "Couldn't write to tmp file: $out\n";
-
-  # open tace connection and count how many objects in that class
-  open (TACE, "echo '$command' | $exec $db_1 | ");
-  while (<TACE>) {
-    ($class_count1 = $1) if (/^\/\/ (\d+) Active Objects/);
-    (print COUNT "$_") if (/\:/); # Add list of object to temp file
-  }
-  close (TACE);
-  close (COUNT);
-
-
-  ####################################
-  # Count objects in second database
-  ####################################
-
-  $out = "/wormsrv2/tmp/dbcomp_B_${counter}";
-  open (COUNT, ">$out") || die "Couldn't write to tmp file: $out\n";
-
-  # open tace connection and count how many objects in that class
-  open (TACE, "echo '$command' | $exec $db_2 | ");
-  while (<TACE>) {
-    ($class_count2 = $1) if (/^\/\/ (\d+) Active Objects/);
-    (print COUNT "$_") if (/\:/); # Add list of object to temp file
-  }
-  close (TACE);
-  close (COUNT);
-
-
-  return ($class_count1, $class_count2);
-
-
+    my $query  = shift;
+    my $counter = shift;
+    my $out;
+    my $class_count1;
+    my $class_count2;
+    
+    # Formulate query
+    my $command = "query find '$query'\nlist -a\nquit\n";
+    
+    ####################################
+    # Count objects in first database
+    ####################################
+    
+    # open temp output file
+    $out = "/wormsrv2/tmp/dbcomp_A_${counter}";
+    open (COUNT, ">$out") || die "Couldn't write to tmp file: $out\n";
+    
+    # open tace connection and count how many objects in that class
+    open (TACE, "echo '$command' | $exec $db_1 | ");
+    while (<TACE>) {
+	($class_count1 = $1) if (/^\/\/ (\d+) Active Objects/);
+	(print COUNT "$_")   if (/\:/); # Add list of object to temp file
+    }
+    close (TACE);
+    close (COUNT);
+    
+    
+    ####################################
+    # Count objects in second database
+    ####################################
+    
+    $out = "/wormsrv2/tmp/dbcomp_B_${counter}";
+    open (COUNT, ">$out") || die "Couldn't write to tmp file: $out\n";
+    
+    # open tace connection and count how many objects in that class
+    open (TACE, "echo '$command' | $exec $db_2 | ");
+    while (<TACE>) {
+	($class_count2 = $1) if (/^\/\/ (\d+) Active Objects/);
+	(print COUNT "$_")   if (/\:/); # Add list of object to temp file
+    }
+    close (TACE);
+    close (COUNT);
+    
+    return ($class_count1, $class_count2);
+    
 }
 
 
@@ -287,16 +289,18 @@ sub diff {
   system ("cat /wormsrv2/tmp/dbcomp_B_${counter} | sort > /wormsrv2/tmp/look-2");
   open (COMM, "comm -3 /wormsrv2/tmp/look-1 /wormsrv2/tmp/look-2 |");
   while (<COMM>) {
-    if (/^(\S+.+)/){
-      print ERR " <- $dbname_1 $1\n";
-      $removed++;
-    }
-    if (/^\s+(\S+.+)/){
-      print ERR " -> $dbname_2 $1\n";
-      $added++;
-    }
+      if (/^(\S+.+)/){
+	  print ERR " <- $dbname_1 $1\n";
+	  $removed++;
+      }
+      if (/^\s+(\S+.+)/){
+	  print ERR " -> $dbname_2 $1\n";
+	  $added++;
+      }
   }   
   close (COMM);
+
+  # Tidy up after yourself
   system ("rm -f /wormsrv2/tmp/look-1");
   system ("rm -f /wormsrv2/tmp/look-2");
 
@@ -310,115 +314,204 @@ sub diff {
 
 ###############################################
 
+sub full_run {
 
+    my @classes = (
+		   "2_point_data",
+		   "3d_data",
+		   "Accession_number",
+		   "Anatomy_name",
+		   "Anatomy_term",
+		   "Antibody",
+		   "Author",
+		   "briggsae_CDS",
+		   "briggsae_genomic",
+		   "cDNA_sequence",
+		   "CDS",
+		   "Cell",
+		   "Cell_group",
+		   "Class",
+		   "Clone",
+		   "Cluster",
+		   "Coding_transcripts",
+		   "Comment",
+		   "Condition",
+		   "Contig",
+		   "Database",
+		   "Display",
+		   "DNA",
+		   "elegans_CDS",
+		   "elegans_pseudogenes",
+		   "elegans_RNA_genes",
+		   "Expr_pattern",
+		   "Expr_profile",
+		   "Feature",
+		   "Feature_data",
+		   "Gene",
+		   "Gene_class",
+		   "Gene_name",
+		   "Gene_regulation",
+		   "Genome_Sequence",
+		   "GO_term",
+		   "Homology_group",
+		   "Homol_data",
+		   "Interaction",
+		   "Journal",
+		   "Keyword",
+		   "Laboratory",
+		   "Life_stage",
+		   "Lineage",
+		   "Locus",
+		   "LongText",
+		   "Map",
+		   "Method",
+		   "Microarray_experiment",
+		   "Microarray_results",
+		   "Model",
+		   "Motif",
+		   "Movie",
+		   "Multi_pt_data",
+		   "NDB_Sequence",
+		   "nematode_ESTs",
+		   "Oligo",
+		   "Oligo_set",
+		   "Operon",
+		   "Paper",
+		   "Paper_name",
+		   "PCR_product",
+		   "Peptide",
+		   "Person",
+		   "Person_name",
+		   "Phenotype",
+		   "Picture",
+		   "Pos_neg_data",
+		   "Protein",
+		   "Pseudogene",
+		   "Rearrangement",
+		   "RNAi",
+		   "SAGE_tag",
+		   "SAGE_transcript",
+		   "SAGE_experiment",
+		   "Sequence",
+		   "SK_map",
+		   "SO_term",
+		   "Species",
+		   "Strain",
+		   "Table",
+		   "Transcript",
+		   "Transgene",
+		   "Transposon",
+		   "Variation",
+		   "Y2H"
+		   );
 
-sub usage {
-  my $error = shift;
-
-  if ($error eq "Help") {
-    # Normal help menu
-    system ('perldoc',$0);
-    exit (0);
-  }
+    return (@classes);
+    
 }
 
+sub mid_run {
 
+    my @classes = (
+		   "2_point_data",
+		   "3d_data",
+		   "Anatomy_name",
+		   "Anatomy_term",
+		   "Antibody",
+		   "Author",
+		   "briggsae_CDS",
+		   "briggsae_genomic",
+		   "cDNA_sequence",
+		   "CDS",
+		   "Cell",
+		   "Cell_group",
+		   "Class",
+		   "Clone",
+		   "Cluster",
+		   "Coding_transcripts",
+		   "Comment",
+		   "Condition",
+		   "Contig",
+		   "Database",
+		   "Display",
+		   "DNA",
+		   "elegans_CDS",
+		   "elegans_pseudogenes",
+		   "elegans_RNA_genes",
+		   "Expr_pattern",
+		   "Expr_profile",
+		   "Feature",
+		   "Feature_data",
+		   "Gene",
+		   "Gene_class",
+		   "Gene_name",
+		   "Gene_regulation",
+		   "Genome_Sequence",
+		   "GO_term",
+		   "Homology_group",
+		   "Homol_data",
+		   "Interaction",
+		   "Journal",
+		   "Keyword",
+		   "Laboratory",
+		   "Life_stage",
+		   "Lineage",
+		   "Locus",
+		   "LongText",
+		   "Map",
+		   "Method",
+		   "Microarray_experiment",
+		   "Microarray_results",
+		   "Model",
+		   "Motif",
+		   "Movie",
+		   "Multi_pt_data",
+		   "NDB_Sequence",
+		   "nematode_ESTs",
+		   "Oligo",
+		   "Oligo_set",
+		   "Paper",
+		   "Paper_name",
+		   "PCR_product",
+		   "Person",
+		   "Person_name",
+		   "Phenotype",
+		   "Picture",
+		   "Pos_neg_data",
+		   "Pseudogene",
+		   "Rearrangement",
+		   "RNAi",
+		   "SAGE_tag",
+		   "SAGE_transcript",
+		   "SAGE_experiment",
+		   "Sequence",
+		   "SK_map",
+		   "SO_term",
+		   "Strain",
+		   "Table",
+		   "Transcript",
+		   "Transgene",
+		   "Transposon",
+		   "Variation",
+		   "Y2H"
+		   );
 
+    return (@classes);
+    
+}
 
+sub wee_run {
 
-__DATA__
-2_point_data
-3d_data
-Accession_number
-Anatomy_name
-Anatomy_term
-Antibody
-Author
-briggsae_CDS
-briggsae_genomic
-cDNA_sequence
-CDS
-Cell
-Cell_group
-Class
-Clone
-Cluster
-Coding_transcripts
-Comment
-Condition
-Contig
-Database
-Display
-DNA
-elegans_CDS
-elegans_pseudogenes
-elegans_RNA_genes
-Expr_pattern
-Expr_profile
-Feature
-Feature_data
-Gene
-Gene_class
-Gene_name
-Gene_regulation
-Genome_Sequence
-GO_term
-Homology_group
-Homol_data
-Interaction
-Journal
-Keyword
-Laboratory
-Life_stage
-Lineage
-Locus
-LongText
-Map
-Method
-Microarray_experiment
-Microarray_results
-Model
-Motif
-Movie
-Multi_pt_data
-NDB_Sequence
-nematode_ESTs
-Oligo
-Oligo_set
-Operon
-Paper
-Paper_name
-PCR_product
-Peptide
-Person
-Person_name
-Phenotype
-Picture
-Pos_neg_data
-Protein
-Pseudogene
-Rearrangement
-Reference
-Repeat_Info
-RNAi
-SAGE_tag
-SAGE_transcript
-SAGE_experiment
-Sequence
-Session
-SK_map
-SO_term
-Species
-Strain
-Table
-Tag
-Transcript
-Transgene
-Transposon
-UTR
-Variation
-Y2H
-__END__
+    my @classes = (
+		   "elegans_CDS",
+		   "elegans_pseudogenes",
+		   "elegans_RNA_genes",
+		   "Transposon",
+		   );
+
+    return (@classes);
+    
+}
+
 
 
 =pod
