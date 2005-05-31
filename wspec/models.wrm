@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: dl1 $
-// Last edited on: $Date: 2005-05-09 09:02:08 $
+// Last edited on: $Date: 2005-05-31 09:28:16 $
  
 
 
@@ -684,6 +684,7 @@
           CGC_data_submission                                         // bless the data as comning from CGC
 	  Curator_confirmed ?Person                                   // bless the data manually 
 	  Inferred_automatically Text                                 // bless the data via a script
+	  Date_last_updated UNIQUE DateType                           // Stores last update timestamp
 
 
 ////////////////////////////////////////////////////////
@@ -1092,7 +1093,8 @@
 		Y2H_bait   ?Y2H XREF Bait_overlapping_CDS // for yeast two hybrid data
 		Y2H_target ?Y2H XREF Target_overlapping_CDS
 		3d_data ?3d_data XREF CDS
-		Remark ?Text #Evidence
+	        Structure_data ?Structure_data XREF Corresponding_CDS #Evidence
+                Remark ?Text #Evidence
 	Associated_feature ?Feature XREF Associated_with_CDS #Evidence
 	Drives_transgene  ?Transgene XREF Driven_by_CDS_promoter
 	Transgene_product ?Transgene XREF CDS
@@ -1401,6 +1403,7 @@
                   Expr_pattern ?Expr_pattern XREF Protein
 		  Homology_group ?Homology_group XREF Protein // added [031120 krb]
 		  3d_data ?3d_data XREF Protein
+                  Structure_data ?Structure_data XREF Corresponding_protein #Evidence
           Homol DNA_homol ?Sequence XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int  #Homol_info
                 Pep_homol ?Protein XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int  #Homol_info
                 Motif_homol ?Motif XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int  #Homol_info
@@ -1466,6 +1469,7 @@
 			 Clone ?Clone // added [031120 krb]
 			 Homology_group // added [031120 krb]
 			 3d_data ?3d_data
+                         Structure_data ?Structure_data
 		   Web_location ?Database // use for WWW display
 
 
@@ -2016,6 +2020,7 @@
 
 
 //New class for Igor [030815 krb]
+
 ?Microarray     Chip_type UNIQUE ?Text  //SMD, Affymetrix, etc.
                 Chip_info  ?Text        //Describes batch number of the chip, etc.
                 Reference  ?Paper       //Describes design of the chip
@@ -2026,6 +2031,7 @@
 
 
 //New class. Contains multiple results for one microarray spot. Used for both SMD and Affymetrix chips as well as for generic chips. 
+
 ?Microarray_results     Sequence_info UNIQUE PCR_product     UNIQUE ?PCR_product     XREF Microarray_results
                                              Oligo_set       UNIQUE ?Oligo_set       XREF Microarray_results
                         Gene          ?Gene 	  XREF Microarray_results #Evidence   // should be mapped during the build
@@ -2034,25 +2040,30 @@
 			Pseudogene    ?Pseudogene XREF Microarray_results #Evidence   // should be mapped during the build
                         Microarray    ?Microarray XREF Microarray_results
                         Results       ?Microarray_experiment UNIQUE #Microarray_data
+                        Range         Min UNIQUE Float UNIQUE ?Microarray_experiment  // mix observed ratio or frequency in all experiments and corresponding experiment
+                                      Max UNIQUE Float UNIQUE ?Microarray_experiment  // max observed ratio or frequency in all experiments and corresponding experiment 
                         Remark        ?Text   #Evidence
 
 
 
 //New class. Used by ?Microarray_results.
-#Microarray_data        Result          A_vs_B_log_ratio        UNIQUE Float    //relative abundance               
-                                        A_vs_B_SD               UNIQUE Float    //standard deviation over a set of experiments
-                                        Frequency               UNIQUE Int      //absolute abundance in ppm
+
+#Microarray_data        Result          A_vs_B_log_ratio        UNIQUE Float                 // relative abundance               
+                                        A_vs_B_SD               UNIQUE Float                 // standard deviation over a set of experiments
+                                        Frequency               UNIQUE Int                   // absolute abundance in ppm
                                         Number_of_experiments   UNIQUE Int
-                        Confidence      Confidence_level        UNIQUE Float   //added for Igor [031020
+                                        Range_within_paper      UNIQUE Float UNIQUE Float    // min and max observed ratio or frequency in all experiments from a paper
+                        Confidence      Confidence_level        UNIQUE Float                 // added for Igor [031020
 					P_value  UNIQUE Float
-                                        Presence UNIQUE PA                      //present always
-                                                        PS                      //present sometimes - marginal call
-                                                        NP                      //never present
-                        Cluster         ?Cluster XREF Microarray_results //one way XREF used to populate Cluster class
-                        Remark          ?Text   #Evidence
+                                        Presence UNIQUE PA                                   // present always
+                                                        PS                                   // present sometimes - marginal call
+                                                        NP                                   // never present
+                        Cluster         ?Cluster XREF Microarray_results                     // one way XREF used to populate Cluster class
+                        Remark          ?Text #Evidence
 
 
 //New class. Used by ?Microarray_results.
+
 ?Microarray_experiment  Microarray ?Microarray XREF Microarray_experiment
                         Sample  Sample_A     UNIQUE      ?Condition     //for PCR product-base (SMD-type) chips
                                 Sample_B     UNIQUE      ?Condition     //for PCR product-base (SMD-type) chips
@@ -2671,8 +2682,6 @@
                 WashU_ID_for	  UNIQUE ?Variation XREF WashU_ID 
 		Exelixis_ID_for   UNIQUE ?Variation XREF Exelixis_ID
 
-
-
 ?Gene_cluster Title UNIQUE ?Text                                        // Information on the Gene cluster
               Description ?Text
               Contains_gene ?Gene XREF In_cluster
@@ -2681,6 +2690,38 @@
                    Description ?Text
 		   Family_members ?Transposon XREF Member_of            // Connects to Transposon object
                    In_variation ?Variation XREF Transposon_insertion
+
+
+
+///////////////////////////////////
+// Structure_data model for Payan
+///////////////////////////////////
+
+?Structure_data Evidence            #Evidence
+                DB_info             Database ?Database ?Database_field ?Accession_number XREF Structure_data
+                Sequence            Protein UNIQUE ?Peptide 
+                Assigned_sequence   Corresponding_protein ?Protein XREF Structure_data #Evidence
+                                    Corresponding_CDS ?CDS XREF Structure_data #Evidence
+                                    Protein_identity ?Text #Evidence
+                Status              Selected UNIQUE DateType
+                                    Cloned UNIQUE DateType
+                                    Expressed UNIQUE DateType
+                                    Soluble UNIQUE DateType
+                                    Purified UNIQUE DateType
+                                    Crystallized UNIQUE DateType
+                                    Diffraction_quality_crystals UNIQUE DateType
+                                    Diffraction UNIQUE DateType
+                                    NMR_assigned UNIQUE DateType
+                                    Hsqc UNIQUE DateType
+                                    Crystal_structure UNIQUE DateType
+                                    NMR_structure UNIQUE DateType
+                                    In_pdb UNIQUE DateType
+                                    Work_stopped UNIQUE DateType
+                                    Test_target UNIQUE DateType
+                                    Other UNIQUE DateType
+                Status_updated      UNIQUE DateType
+                Date_downloaded     UNIQUE DateType
+                Remark              ?Text #Evidence
 		   
 ////////////////////////
 //    END OF FILE     //
