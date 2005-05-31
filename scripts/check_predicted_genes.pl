@@ -2,9 +2,9 @@
 #
 # check_predicted_genes.pl
 #
-# by Keith Bradnam aged 12 and a half
+# by Keith Bradnam
 #
-# Last updated on: $Date: 2005-04-19 14:06:38 $
+# Last updated on: $Date: 2005-05-31 12:38:29 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
@@ -200,7 +200,11 @@ CHECK_GENE:
 	if ($method_test eq "history" && !($gene_model->name =~ /\:/)) {
 	    push(@error3, "ERROR: $gene_model needs to be renamed as it is part of history.\n");
 	}
-	
+
+	if ($method_test eq "Transposon") {
+	    next CHECK_GENE;
+	}
+
 	#Gene ID checks.
 	my $Gene_ID     = $gene_model->at('Visible.Gene.[1]');
 	my $Genehist_ID = $gene_model->at('Visible.Gene_history.[1]');
