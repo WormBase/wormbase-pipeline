@@ -48,6 +48,10 @@ Visible
 Is_a_subclass_of CDS
 Filter "((Method = curated) OR (Method = provisional)) AND (Species = C*briggsae)"
 
+Class curated_CDS
+Visible
+Is_a_subclass_of CDS
+Filter "((Method = curated) OR (Method = history)) AND (Species = C*elegans)"
 
 // ?Transcript subclasseses
 Class elegans_RNA_genes
@@ -174,10 +178,10 @@ Composite_of elegans_pseudogenes
 Composite_of elegans_RNA_genes
 Composite_of elegans_transposons
 
-// composite class to hold all gene models for checking essential non-specific tags.
+// composite class to hold all manually curated gene models for checking essential non-specific tags.
 Class All_genes
 Visible
-Composite_of CDS
+Composite_of curated_CDS
 Composite_of Pseudogene
 Composite_of Transcript
 Composite_of Transposon
