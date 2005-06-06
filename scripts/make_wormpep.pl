@@ -7,7 +7,7 @@
 # Builds a wormpep data set from the current autoace database
 #
 # Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2005-02-18 16:11:46 $
+# Last updated on: $Date: 2005-06-06 10:09:54 $
 
 
 use strict;
@@ -560,60 +560,80 @@ sub write_main_wormpep_and_table{
 
   print LOG &runtime, ": Build wormpep & wormpep.table files\n\n";
   
-  open (FASTA , ">$new_wpdir/wormpep_unwrap$release") || die "cannot create wormpep_unwrap$release\n";
+  # open filehandles for output files
+  
+  open (FASTA, ">$new_wpdir/wormpep_unwrap$release") || die "cannot create wormpep_unwrap$release\n";
   FASTA->autoflush();
 
-  if($final){
-    open (TABLE , ">$new_wpdir/wormpep.table$release")  || die "cannot create wormpep.table$release\n";
-    TABLE->autoflush();
+  if ($initial) {
+      open (CONNECTIONS, ">$new_wpdir/wormpep2CDS_${release}.ace") || die "cannot create wormpep2CDS_${release}\n";
+      CONNECTIONS->autoflush();
+  }
+  elsif ($final) {
+      open (TABLE, ">$new_wpdir/wormpep.table$release")  || die "cannot create wormpep.table$release\n";
+      TABLE->autoflush();
   }
   
   foreach my $cds (@CDSs) {
-    # reset all fields
+   
+      # reset all fields
+      
+      my $wpid     = $cds2number{$cds};
+      my $wpid_pad = sprintf "%05d" , $wpid;
+      my $pepseq   = $number2peptide[$wpid];
+      
+      # set the fields to be printed depending on whether they exist
 
-    my $wpid = $cds2number{$cds};
-    my $wpid_pad = sprintf "%05d" , $wpid;
-    my $pepseq = $number2peptide[$wpid];
-    
-    # set the fields to be printed depending on whether they exist
-    my $output = ">$cds CE$wpid_pad";
-    ($output .= " $cds2gene{$cds}")                    if ($cds2gene{$cds});
-    ($output .= " locus\:".$cds2cgc_name{$cds})        if ($cds2cgc_name{$cds});
-    ($output .= " $cds2id{$cds}")                      if ($cds2id{$cds});
-    ($output .= " status\:".$cds_status{$cds})         if ($cds_status{$cds});
+      my $output = ">$cds CE$wpid_pad";
+      ($output .= " $cds2gene{$cds}")                    if ($cds2gene{$cds});
+      ($output .= " locus\:".$cds2cgc_name{$cds})        if ($cds2cgc_name{$cds});
+      ($output .= " $cds2id{$cds}")                      if ($cds2id{$cds});
+      ($output .= " status\:".$cds_status{$cds})         if ($cds_status{$cds});
+      
+      # can only get the following information if running in final mode, else won't yet be in autoace
+      if ($final) {
+	  ($output .= " SW:$cds2protein_ac{$cds}")           if (($cds2protein_db{$cds} eq "SwissProt") && defined($cds2protein_ac{$cds}));
+	  ($output .= " TR:$cds2protein_ac{$cds}")           if (($cds2protein_db{$cds} eq "TREMBL")    && defined($cds2protein_ac{$cds}));
+	  ($output .= " TN:$cds2protein_ac{$cds}")           if (($cds2protein_db{$cds} eq "TREMBLNEW") && defined($cds2protein_ac{$cds}));
+	  ($output .= " protein_id\:".$cds2protein_id{$cds}) if ($cds2protein_id{$cds});
+      }
+      $output .= "\n$pepseq\n";
+      print FASTA "$output";
 
-    # can only get the following information if running in final mode, else won't yet be in autoace
-    if($final){
-      ($output .= " SW:$cds2protein_ac{$cds}")           if (($cds2protein_db{$cds} eq "SwissProt") && defined($cds2protein_ac{$cds}));
-      ($output .= " TR:$cds2protein_ac{$cds}")           if (($cds2protein_db{$cds} eq "TREMBL")    && defined($cds2protein_ac{$cds}));
-      ($output .= " TN:$cds2protein_ac{$cds}")           if (($cds2protein_db{$cds} eq "TREMBLNEW") && defined($cds2protein_ac{$cds}));
-      ($output .= " protein_id\:".$cds2protein_id{$cds}) if ($cds2protein_id{$cds});
-    }
-    $output .= "\n$pepseq\n";
-    print FASTA "$output";
+      # print out connections in -initial mode
+      
+      if ($initial) {
+
+	  $output  = "CDS : \"$cds\"\n";
+	  $output .= "Corresponding_protein WP:CE${wpid_pad}\n\n";
+	  print CONNECTIONS "$output";
+
+      }
+      
+      # print to table in -final mode
     
-    # only print to table in -final mode
-    if($final){
-      my $output = ">$cds\tCE$wpid_pad";
-      $output .= "\t";
-      ($output .= "$cds2cgc_name{$cds}")          if ($cds2cgc_name{$cds});
-      $output .= "\t";
-      ($output .= "$cds2id{$cds}")             if ($cds2id{$cds});
-      $output .= "\t";
-      ($output .= "$cds_status{$cds}")         if ($cds_status{$cds});
-      $output .= "\t";
-      ($output .= "SW:$cds2protein_ac{$cds}")  if (($cds2protein_db{$cds} eq "SwissProt") && ($cds2protein_ac{$cds}));
-      ($output .= "TR:$cds2protein_ac{$cds}")  if (($cds2protein_db{$cds} eq "TREMBL")    && ($cds2protein_ac{$cds}));
-      ($output .= "TN:$cds2protein_ac{$cds}")  if (($cds2protein_db{$cds} eq "TREMBLNEW") && ($cds2protein_ac{$cds}));
-      $output .= "\t";
-      ($output .= "$cds2protein_id{$cds}")     if ($cds2protein_id{$cds});
-      print TABLE "$output\n";
-    } 
+      if ($final) {
+	  my $output = ">$cds\tCE$wpid_pad";
+	  $output   .= "\t";
+	  ($output  .= "$cds2cgc_name{$cds}")       if ($cds2cgc_name{$cds});
+	  $output   .= "\t";
+	  ($output  .= "$cds2id{$cds}")             if ($cds2id{$cds});
+	  $output   .= "\t";
+	  ($output  .= "$cds_status{$cds}")         if ($cds_status{$cds});
+	  $output .= "\t";
+	  ($output .= "SW:$cds2protein_ac{$cds}")  if (($cds2protein_db{$cds} eq "SwissProt") && ($cds2protein_ac{$cds}));
+	  ($output .= "TR:$cds2protein_ac{$cds}")  if (($cds2protein_db{$cds} eq "TREMBL")    && ($cds2protein_ac{$cds}));
+	  ($output .= "TN:$cds2protein_ac{$cds}")  if (($cds2protein_db{$cds} eq "TREMBLNEW") && ($cds2protein_ac{$cds}));
+	  $output .= "\t";
+	  ($output .= "$cds2protein_id{$cds}")     if ($cds2protein_id{$cds});
+	  print TABLE "$output\n";
+      } 
   } 
   
-  close(FASTA);
-  close(TABLE) if ($final);
-
+  close (FASTA);
+  close (CONNECTIONS) if ($initial);
+  close (TABLE) if ($final);
+  
   my $status = system ("rewrap $new_wpdir/wormpep_unwrap$release > $new_wpdir/wormpep$release");
   if(($status >>8) != 0){
     print LOG "ERROR: rewrap command failed. \$\? = $status\n";
