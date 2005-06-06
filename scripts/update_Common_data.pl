@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers et al
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-05-10 09:07:50 $
+# Last updated by: $Author: dl1 $
+# Last updated on: $Date: 2005-06-06 10:42:55 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -199,7 +199,6 @@ sub write_clone2accession  {
       s/\"//g;
       next if ($_ eq "");
       next if (/acedb\>/);
-      last if (/\/\//);
       if (/(\S+)\s+(\S+)/) {
 	  $clone2accession{$1} = $2;
 	  $accession2clone{$2} = $1;
@@ -235,9 +234,8 @@ sub write_clones2sv  {
 	s/\"//g;
 	next if ($_ eq "");
 	next if (/acedb\>/);
-	last if (/\/\//);
-	if (/(\S+)\s+(S+)\.(\d+)/) {
-	    $clone2sv{$1} = $2;
+	if (/^(\S+)\s+(\S+)\.(\d+)/) {
+	    $clone2sv{$1} = $3;
 	}
     }
     close TACE;
@@ -268,7 +266,6 @@ sub write_clonesize  {
       s/\"//g;
       next if ($_ eq "");
       next if (/acedb\>/);
-      last if (/\/\//);
       if (/(\S+)\s+(\d+)/) {
 	  $clonesize{$1} = $2;
       }
