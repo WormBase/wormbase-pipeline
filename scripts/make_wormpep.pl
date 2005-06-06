@@ -7,7 +7,7 @@
 # Builds a wormpep data set from the current autoace database
 #
 # Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2005-06-06 10:09:54 $
+# Last updated on: $Date: 2005-06-06 10:51:57 $
 
 
 use strict;
@@ -566,7 +566,7 @@ sub write_main_wormpep_and_table{
   FASTA->autoflush();
 
   if ($initial) {
-      open (CONNECTIONS, ">$new_wpdir/wormpep2CDS_${release}.ace") || die "cannot create wormpep2CDS_${release}\n";
+      open (CONNECTIONS, ">/wormsrv2/autoace/acefiles/CDS2wormpep.ace") || die "cannot create CDS2wormpep\n";
       CONNECTIONS->autoflush();
   }
   elsif ($final) {
