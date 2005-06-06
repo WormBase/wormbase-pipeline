@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2005-04-28 13:04:58 $
+# Last edited on: $Date: 2005-06-06 10:52:35 $
 
 
 
@@ -928,10 +928,9 @@ sub prepare_for_blat{
   $am_option = "-prepare_blat";
   &usage(15) if (-e "$logdir/$flag{'B3:ERROR'}");
   
-  # transcriptmasker run to mask ?Feature_data from raw sequences
-  # note to krb. This needs bradnamisation to allow a -all flag.
+  # Extract sequences from autoace & mask using ?Feature_data as appropriate
 
-  &run_command("$scriptdir/transcriptmasker.pl -all");
+  &run_command("$scriptdir/fetch_seqs_for_blatting.pl -all");
 
   # Now make blat target database using autoace (will be needed for all possible blat jobs)
   # This also makes a backup copy of the old psl files (in case you need them to refer to)
@@ -1177,55 +1176,71 @@ sub make_operons {
 ##########################################################################################################
 
 sub make_wormpep {
-  $am_option = "-buildpep";
-  # make wormpep database but also perform all the other related protein steps in the build
-  unless( -e "$logdir/D1A:Build_wormpep_initial" ) {
-    # make wormpep -initial
-    my $command = "$scriptdir/make_wormpep.pl -initial";
-    $command .= " -test" if ($test);
-    &run_command("$command");
-   
-    #generate file to ad new peptides to mySQL database.
-    $command = "$scriptdir/new_wormpep_entries.pl";
-    $command .= " -test" if ($test);
-    &run_command("$command");
 
-    # update common data
-    $command = "$scriptdir/update_Common_data.pl --build --cds2wormpep";
-    $command .= " -test" if ($test);
-    &run_command("$command");
+    $am_option = "-buildpep";
 
+    # make wormpep database but also perform all the other related protein steps in the build
     
-    system("touch $logdir/D1A:Build_wormpep_initial");
-  }
-  else {
-    # get Pfam domains (this step loads resulting ace file to autoace)
-    &run_command("$scriptdir/GetPFAM_motifs.pl -load");
+    unless( -e "$logdir/D1A:Build_wormpep_initial" ) {
+      
+	# make wormpep -initial
+	
+	my $command = "$scriptdir/make_wormpep.pl -initial";
+	$command .= " -test" if ($test);
+	&run_command("$command");
+	
+	# Add CDS <-> wormpep CE connections so that CommonData hash is populated correctly
 
-    # get interpro domains (this step loads resulting ace file to autoace)
-    &run_command("$scriptdir/GetInterPro_motifs.pl -load");
-
-    # make interpro2go connections (to be used by getProteinID)
-    &run_command("$scriptdir/make_Interpro2GO_mapping.pl");
-
-    # Get protein IDs (this step writes to ~wormpub/analysis/SWALL and loads wormpep info to autoace) 
-    &run_command("$scriptdir/getProteinID.pl -load");
-    
-    # make wormpep -final
-    my $command = "$scriptdir/make_wormpep.pl -final";
-    $command .= " -test" if ($test);
-    &run_command("$command");
-   
-    #
-    # make acefile of peptides etc to add to autoace (replacement for pepace)
-    &run_command("$scriptdir/build_pepace.pl");
-
-    &run_command("$scriptdir/update_Common_data.pl -build -cds2pid");
-
-    
-    # make a make_autoace log file in /logs
-    system("touch $logdir/D1:Build_wormpep_final");
-  }
+	my $file =  "$basedir/autoace/acefiles/CDS2wormpep.ace";
+	&load($file,"wormpep");
+	
+	# generate file to add new peptides to mySQL database.
+	
+	$command = "$scriptdir/new_wormpep_entries.pl";
+	$command .= " -test" if ($test);
+	&run_command("$command");
+	
+	# update common data
+	
+	$command = "$scriptdir/update_Common_data.pl -build -cds2wormpep";
+	$command .= " -test" if ($test);
+	&run_command("$command");
+	
+	# make a make_autoace log file in /logs
+	system("touch $logdir/D1A:Build_wormpep_initial");
+    }
+    else {
+	
+	# get Pfam domains (this step loads resulting ace file to autoace)
+	
+	&run_command("$scriptdir/GetPFAM_motifs.pl -load");
+	
+	# get interpro domains (this step loads resulting ace file to autoace)
+	
+	&run_command("$scriptdir/GetInterPro_motifs.pl -load");
+	
+	# make interpro2go connections (to be used by getProteinID)
+	
+	&run_command("$scriptdir/make_Interpro2GO_mapping.pl");
+	
+	# Get protein IDs (this step writes to ~wormpub/analysis/SWALL and loads wormpep info to autoace) 
+	
+	&run_command("$scriptdir/getProteinID.pl -load");
+	
+	# make wormpep -final
+	
+	my $command = "$scriptdir/make_wormpep.pl -final";
+	$command .= " -test" if ($test);
+	&run_command("$command");
+		
+	# make acefile of peptides etc to add to autoace (replacement for pepace)
+	
+	&run_command("$scriptdir/build_pepace.pl");
+	&run_command("$scriptdir/update_Common_data.pl -build -cds2pid");
+	
+	# make a make_autoace log file in /logs
+	system("touch $logdir/D1:Build_wormpep_final");
+    }
 }
 #__ end make_wormpep  __#
 
