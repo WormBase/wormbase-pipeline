@@ -7,7 +7,7 @@
 # simple script for creating new (sequence based) Gene objects 
 #
 # Last edited by: $Author: mt3 $
-# Last edited on: $Date: 2005-02-02 15:33:27 $
+# Last edited on: $Date: 2005-06-07 12:06:22 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -22,6 +22,7 @@ my $input;       # when loading from input file
 my $seq;         # sequence name for new/existing gene
 my $cgc;         # cgc name for new/existing gene
 my $who;         # Person ID for new genes being created (defaults to mt3 = WBPerson2970)
+my $p_clone;     # positive clone name for new/existing gene
 my $id;          # force creation of gene using set ID
 my $gene_id;     # stores highest gene ID
 my $email;       # email new Gene IDs back to users to person who requested it
@@ -161,7 +162,6 @@ sub process_gene{
   my $gene;
   my ($gene_name) = $db->fetch(-query=>"Find Gene_name $seq");
 
-
   # get gene object if sequence name is valid, else need to make new gene
   if(defined($gene_name) && $gene_name->Sequence_name_for){
     $gene = $gene_name->Sequence_name_for;
@@ -181,6 +181,10 @@ sub process_gene{
       print "ERROR: $seq($gene) already has a CGC name ($cgc_name)\n";
     }
 
+    # create positive clone name from sequence name
+    my $p_clone = $seq;
+    $p_clone =~ s/[\.][.]*//;   
+
     # can now process CGC name
     else{
 
@@ -190,6 +194,9 @@ sub process_gene{
       print OUT "Version $new_version\n";
       print OUT "History Version_change $new_version now $person Name_change CGC_name $cgc\n";
       print OUT "CGC_name $cgc\n";
+      print OUT "Positive_clone: $p_clone Inferred Automatically \"From sequence, transcript, pseudogene data\"\n";
+
+
 
       # need to also Gene_class link unless it already exists
       my $gene_class;
