@@ -5,7 +5,7 @@
 # by Anthony Rogers et al
 #
 # Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2005-06-06 10:42:55 $
+# Last updated on: $Date: 2005-06-07 08:50:25 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -58,7 +58,7 @@ my %Table_defs = (
 		  'RNAgene2lab'      => 'CommonData:RNAgene_Lab.def',
 		  'wormgene2cgc'     => 'CommonData:WormGene_CGCname.def',
 		  'wormgene2geneid'  => 'CommonData:WormGene_GeneID.def',
-		  'CDS2wormpep'      => 'CommonData:CDS2wormpep'
+		  'cds2wormpep'      => 'CommonData:CDS2wormpep'
 		  );
 
 GetOptions (
@@ -290,24 +290,26 @@ sub write_cds2wormpep  {
   my $WPver = &get_wormbase_version;
 
   # connect to AceDB using TableMaker,
-  my $command="Table-maker -p $wquery_dir/$Table_defs{'CDS2wormpep'}\nquit\n";
+  my $command="Table-maker -p $wquery_dir/$Table_defs{'cds2wormpep'}\nquit\n";
   
   open (TACE, "echo '$command' | $tace $ace_dir |");
   my %cds2wormpep;
   my %wormpep2cds;
+
+
   while (<TACE>) {
-    chomp;
-    s/\"//g;
-    next if ($_ eq "");
-    next if (/acedb\>/);
-    my @data = split;
-    my $gene = $data[0];
-    my $pep = $data[1];
-    $cds2wormpep{$gene} = $pep;
-    $wormpep2cds{$pep} .= "$gene ";
+      chomp;
+      s/\"//g;
+      next if ($_ eq "");
+      next if (/acedb\>/);
+
+      if (/^(\S+)\s+WP\:(\S+)/) {
+	  $cds2wormpep{$1} = $2;
+	  $wormpep2cds{$2} = $1;
+      }
   }
 
-  #now dump data to file
+  # now dump data to file
   open (C2G, ">$data_dir/wormpep2cds.dat") or die "$data_dir/wormpep2cds.dat";
   open (G2C, ">$data_dir/cds2wormpep.dat") or die "$data_dir/cds2wormpep.dat";
 
