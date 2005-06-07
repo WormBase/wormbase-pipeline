@@ -7,7 +7,7 @@
 # simple script for creating new (sequence based) Gene objects 
 #
 # Last edited by: $Author: mt3 $
-# Last edited on: $Date: 2005-06-07 12:13:22 $
+# Last edited on: $Date: 2005-06-07 13:45:17 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -28,6 +28,7 @@ my $gene_id;     # stores highest gene ID
 my $email;       # email new Gene IDs back to users to person who requested it
 my $load;        # load results to geneace (default is to just write an ace file)
 my $verbose;     # toggle extra (helpful?) output to screen
+my $test;        
 
 GetOptions ("input=s"   => \$input,
             "seq=s"     => \$seq,
@@ -36,7 +37,11 @@ GetOptions ("input=s"   => \$input,
 	    "id=i"      => \$id,
 	    "email"     => \$email,
 	    "load"      => \$load,
-	    "verbose"   => \$verbose);
+	    "verbose"   => \$verbose,
+	    "test"      => \$test
+	    );
+
+           
 
 
 #####################################################
@@ -77,11 +82,12 @@ else{
 
 my $tace = &tace;
 my $database = "/wormsrv1/geneace";
+$database = glob("~wormpub/DATABASES/geneace") if $test;
 
 my $db = Ace->connect(-path  => $database,
 		      -program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
 
-open(OUT, ">/wormsrv1/geneace/fix.ace") || die "Can't write to output file\n";
+open(OUT, ">$database/fix.ace") || die "Can't write to output file\n";
 
 # find out highest gene number in case new genes need to be created
 my $gene_max = $db->fetch(-query=>"Find Gene");
@@ -130,8 +136,8 @@ close(OUT);
 
 # load information to geneace if -load is specified
 if ($load){
-  my $command = "pparse /wormsrv1/geneace/fix.ace\nsave\nquit\n";
-  open (GENEACE,"| $tace -tsuser \"mt3\" /wormsrv1/geneace") || die "Failed to open pipe to /wormsrv1/geneace\n";
+  my $command = "pparse $database/fix.ace\nsave\nquit\n";
+  open (GENEACE,"| $tace -tsuser \"mt3\" $database") || die "Failed to open pipe to $database\n";
   print GENEACE $command;
   close GENEACE;
 }
@@ -164,7 +170,7 @@ sub process_gene{
   
   # create positive clone name from sequence name
   my $p_clone = $seq;
-  $p_clone =~ s/[\.][.]*//;   
+  $p_clone =~ s/\.\S+$//;   
 
   # get gene object if sequence name is valid, else need to make new gene
   if(defined($gene_name) && $gene_name->Sequence_name_for){
@@ -185,10 +191,6 @@ sub process_gene{
       print "ERROR: $seq($gene) already has a CGC name ($cgc_name)\n";
     }
 
-    # create positive clone name from sequence name
-    my $p_clone = $seq;
-    $p_clone =~ s/[\.][.]*//;   
-
     # can now process CGC name
     else{
 
@@ -198,7 +200,6 @@ sub process_gene{
       print OUT "Version $new_version\n";
       print OUT "History Version_change $new_version now $person Name_change CGC_name $cgc\n";
       print OUT "CGC_name $cgc\n";
-      print OUT "Positive_clone: $p_clone Inferred Automatically \"From sequence, transcript, pseudogene data\"\n";
 
       # need to also Gene_class link unless it already exists
       my $gene_class;
@@ -239,6 +240,7 @@ sub process_gene{
     print OUT "Species \"Caenorhabditis elegans\"\n";
     print OUT "History Version_change 1 now $person Event Created\n";
     print OUT "Method Gene\n";
+    print OUT "Positive_clone $p_clone Inferred_automatically \"From sequence, transcript, pseudogene data\"\n";
 
     # set CGC name if it exists and set public name based on CGC name or sequence name
     if($cgc && ($cgc ne "NULL")){
