@@ -3,7 +3,7 @@
 # map_operons.pl
 
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2004-09-23 09:26:08 $
+# Last edited on: $Date: 2005-06-07 14:13:37 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -26,9 +26,10 @@ our $gff    = "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS";
 our $WS_version =  &get_wormbase_version_name;
 
 our $output1 = "/wormsrv2/autoace/OPERONS/operons_${WS_version}.ace";
-our $output2 = "/wormsrv2/wormbase/misc_dynamic/misc_operons.ace";
+our $output2 = "/wormsrv2/autoace/acefiles/operons.ace";
 
 # do everything in /wormsrv2/autoace/OPERONS
+
 chdir("$dir");
 
 our %operon;
@@ -77,9 +78,6 @@ close OUTPUT;
 
 print "// end output file\n\n" if ($verbose);
 
-
-exit(0);
-
 # copy this file to correct place
 
 my $status = copy($output1, $output2);
@@ -89,6 +87,20 @@ if ($status == 0) {
     print LOG "Failed to copy file: $!\n";   
     $errors++;
 }
+
+# upload file to autoace if no errors where encountered
+
+unless ($errors > 0) {
+
+    my $command = "autoace_minder.pl -load $output2 -tsuser operons";
+    my $status  = system($command);
+    if (($status >>8) != 0) {
+	print LOG "Failed to upload acefile: $!\n";
+	$errors++;
+    }
+}
+
+# email report
 
 my $subject_line = "map_operons.pl";
 
@@ -140,15 +152,14 @@ sub acedump_operons {
 	print OUTPUT "Operon : \"$operon_lookup\"\n";
 	print OUTPUT "Species \"Caenorhabditis elegans\"\n";
 
-	print "\n// Dump operon $operon_lookup [$operon{$operon_lookup}->{CHROMOSOME}|$operon{$operon_lookup}->{NO_GENES}]\n";
+	print "\n// Dump operon $operon_lookup [$operon{$operon_lookup}->{CHROMOSOME}|$operon{$operon_lookup}->{NO_GENES}]\n" if ($verbose);
 	
 	$gene_count = 1;
 	foreach my $gene_lookup (@{$operon{$operon_lookup}{CDS}}) {
 	    
-	    print "// Looking at $gene_lookup\t";
+	    print "// Looking at $gene_lookup\t" if ($verbose);
 
 	    if ($gene_count == 1) {
-#		print "// searching for start\n";
 		$operon_start = 0;
 		open (GFF_1, "grep -w '$gene_lookup' $gff/CHROMOSOME_${operon{$operon_lookup}->{CHROMOSOME}}.WBgene.gff |");
 		while (<GFF_1>) {
@@ -157,11 +168,10 @@ sub acedump_operons {
 		    if ($f[6] eq "-") {$operon_start = $f[4];}
 		}
 		close GFF_1;
-		print "OP_start = $operon_start\n";
+		print "OP_start = $operon_start\n" if ($verbose);
 		
 	    }
 	    elsif ($gene_count == $operon{$operon_lookup}->{NO_GENES}) {
-#		print "// searching for stop\n";
 		$operon_stop = 0;
 		open (GFF_2, "grep -w '$gene_lookup' $gff/CHROMOSOME_${operon{$operon_lookup}->{CHROMOSOME}}.WBgene.gff |");
 		while (<GFF_2>) {
@@ -170,12 +180,11 @@ sub acedump_operons {
 		    ($operon_stop = $f[3]) if ($f[6] eq "-");
 		}
 		close GFF_2;
-		print "OP_stop = $operon_stop\n";
+		print "OP_stop = $operon_stop\n" if ($verbose);
 	    }
 	    else {
-		print "\n";
+		print "\n" if ($verbose);
 	    }
-
 	    
 #	    if (scalar (@{$cds{$gene_lookup}{SL1_EST}}) > 1) {
 #		print OUTPUT "Contains_CDS \"$gene_lookup\" SL1 \"EST clones @{$cds{$gene_lookup}{SL1_EST}}\"\n";
