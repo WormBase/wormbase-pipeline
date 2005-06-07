@@ -7,7 +7,7 @@
 # simple script for creating new (sequence based) Gene objects 
 #
 # Last edited by: $Author: mt3 $
-# Last edited on: $Date: 2005-06-07 12:06:22 $
+# Last edited on: $Date: 2005-06-07 12:13:22 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -161,6 +161,10 @@ sub process_gene{
   # Look up gene based on sequence name
   my $gene;
   my ($gene_name) = $db->fetch(-query=>"Find Gene_name $seq");
+  
+  # create positive clone name from sequence name
+  my $p_clone = $seq;
+  $p_clone =~ s/[\.][.]*//;   
 
   # get gene object if sequence name is valid, else need to make new gene
   if(defined($gene_name) && $gene_name->Sequence_name_for){
@@ -195,8 +199,6 @@ sub process_gene{
       print OUT "History Version_change $new_version now $person Name_change CGC_name $cgc\n";
       print OUT "CGC_name $cgc\n";
       print OUT "Positive_clone: $p_clone Inferred Automatically \"From sequence, transcript, pseudogene data\"\n";
-
-
 
       # need to also Gene_class link unless it already exists
       my $gene_class;
