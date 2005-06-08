@@ -7,8 +7,8 @@
 #
 # written by Dan Lawson
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2005-05-11 14:11:56 $
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2005-06-08 10:17:05 $
 
 use lib "/wormsrv2/scripts/";
 use Wormbase;
@@ -98,83 +98,92 @@ while (<FILE>) {
     
     my @interpro = "";
 
-    # standard name
+    # Standard name
+
     print "$f[7]\t" if ($verbose);
     my $protein = $gene2CE{$f[7]};                      # incremented array slice to handle new SWALL column
     
     if (!defined( $swall{$f[2]} ) or ( $swall{$f[2]}{Accession} ne $f[6]) ){ 
-      my $ebi = $f[6] ? $f[6] : "-";
-      my $getz = $swall{$f[2]}{Accession} ? $swall{$f[2]}{Accession} : "-";
-      $log->write_to("ERROR:  mismatch between getz and EBI for $protein [EBI:$ebi|GETZ:$getz)\n");
-      #next;
+	my $ebi = $f[6] ? $f[6] : "-";
+	my $getz = $swall{$f[2]}{Accession} ? $swall{$f[2]}{Accession} : "-";
+	$log->write_to("ERROR:  mismatch between getz and EBI for $protein [EBI:$ebi|GETZ:$getz)\n");
+	next;
     }
+
+ 
+    # Protein entries
 
     if ($protein and $swall{$f[2]}{Database}) {
 	print "$protein" if ($verbose);
 	print OUT "\nProtein : \"WP:$protein\"\n";
+	
 	if ( ($swall{$f[2]}{Identifier}) and  ($swall{$f[2]}{Identifier} ne $swall{$f[2]}{Accession}) ) {
-	  print OUT "Database $databases{ $swall{$f[2]}{Database} } ",$db_ids_acc{ $swall{$f[2]}{Database}."_id" }," $swall{$f[2]}{Identifier}\n"
+	    print OUT "Database $databases{ $swall{$f[2]}{Database} } ",$db_ids_acc{ $swall{$f[2]}{Database}."_id" }," $swall{$f[2]}{Identifier}\n"
 	}
 	print OUT "Database $databases{ $swall{$f[2]}{Database} } ",$db_ids_acc{ $swall{$f[2]}{Database}."_ac" }," $swall{$f[2]}{Accession}\n";
-      }
-
-    if ( $swall{$f[2]} ) {
-      foreach (@{$swall{$f[2]}{Interpro}}) {
-	next if ($_ eq "");
-	print OUT "Motif_homol\t\"INTERPRO:$_\"\n"
-      }	
-      }
-    else {
-      print "ERROR: gene $f[7] has no protein (has common_data been updated ?)\n";
-      next
+	
+        if ( $swall{$f[2]} ) {
+	    foreach (@{$swall{$f[2]}{Interpro}}) {
+		next if ($_ eq "");
+		print OUT "Motif_homol\t\"INTERPRO:$_\"\n"
+		}	
+	}
+	else {
+	    print "ERROR: gene $f[7] has no protein (has common_data been updated ?)\n";
+	    next;
+	    }
     }
-
+    
     print "\n" if ($verbose);
+
+    # CDS entry
 
     print OUT "\nCDS : \"$f[7]\"\n";
     print OUT "Protein_id \"$acc2clone{$f[0]}\" $f[2] $f[3]\n";
-    if( $swall{$f[2]}{Database} ) {
-      print OUT "Database $databases{ $swall{$f[2]}{Database} } ",$db_ids_acc{ $swall{$f[2]}{Database}."_id" }," $swall{$f[2]}{Identifier}\n"
-	if ( ($swall{$f[2]}{Identifier}) and  ($swall{$f[2]}{Identifier} ne $swall{$f[2]}{Accession}) );
-      print OUT "Database $databases{ $swall{$f[2]}{Database} } ",$db_ids_acc{ $swall{$f[2]}{Database}."_ac" }," $swall{$f[2]}{Accession}\n";
+    if ( $swall{$f[2]}{Database} ) {
+	print OUT "Database $databases{ $swall{$f[2]}{Database} } ",$db_ids_acc{ $swall{$f[2]}{Database}."_id" }," $swall{$f[2]}{Identifier}\n"	
+                     if ( ($swall{$f[2]}{Identifier}) and  ($swall{$f[2]}{Identifier} ne $swall{$f[2]}{Accession}) );
+	print OUT "Database $databases{ $swall{$f[2]}{Database} } ",$db_ids_acc{ $swall{$f[2]}{Database}."_ac" }," $swall{$f[2]}{Accession}\n";
     }
 
     if (@{$swall{$f[2]}{Interpro}}) {
-      # assign GO terms based on InterPro Motifs
-      foreach my $ip (@{$swall{$f[2]}{Interpro}}) {
-	if ( exists $Ip2Go{$ip} ) {
-	  my @GOterms = split(/\s/,$Ip2Go{$ip});
-	  foreach my $go (@GOterms) {
-	    print OUT "GO_term\t\"$go\" \"IEA\" Inferred_automatically\n";
-	  }
+	# assign GO terms based on InterPro Motifs
+	foreach my $ip (@{$swall{$f[2]}{Interpro}}) {
+	    if ( exists $Ip2Go{$ip} ) {
+		my @GOterms = split(/\s/,$Ip2Go{$ip});
+		foreach my $go (@GOterms) {
+		    print OUT "GO_term\t\"$go\" \"IEA\" Inferred_automatically\n";
+		}
+	    }
 	}
-      }
-      # connect Gene to GO_term as well.
-      my $gene = $cds2gene{$f[7]};
-      unless ( $gene ) {
-	print STDERR "no gene_id for $f[7]\n";
-	next;
-      }
-      print OUT "\nGene : $gene\n";
-      foreach my $ip (@{$swall{$f[2]}{Interpro}}) {
-	if ( exists $Ip2Go{$ip} ) {
-	  my @GOterms = split(/\s/,$Ip2Go{$ip});
-	  foreach my $go (@GOterms) {
-	    print OUT "GO_term\t\"$go\" \"IEA\" Inferred_automatically\n";
-	  }
+	# connect Gene to GO_term as well.
+	my $gene = $cds2gene{$f[7]};
+	unless ( $gene ) {
+	    print STDERR "no gene_id for $f[7]\n";
+	    next;
 	}
-      }
+	
+	# Gene entry
+	print OUT "\nGene : $gene\n";
+	foreach my $ip (@{$swall{$f[2]}{Interpro}}) {
+	    if ( exists $Ip2Go{$ip} ) {
+		my @GOterms = split(/\s/,$Ip2Go{$ip});
+		foreach my $go (@GOterms) {
+		    print OUT "GO_term\t\"$go\" \"IEA\" Inferred_automatically\n";
+		}
+	    }
+	}
     }
-  }
+}
 
 
 # now load to autoace if -load specified
-if($load){
-  my $command = "autoace_minder.pl -load /wormsrv2/autoace/acefiles/WormpepACandIDs.ace -tsuser wormpep_IDs";
-  my $status = system($command);
-  if(($status >>8) != 0){
-    die "ERROR: Loading WormpepACandIDs.ace file failed \$\? = $status\n";
-  }
+if ($load) {
+    my $command = "autoace_minder.pl -load /wormsrv2/autoace/acefiles/WormpepACandIDs.ace -tsuser wormpep_IDs";
+    my $status = system($command);
+    if (($status >>8) != 0) {
+	die "ERROR: Loading WormpepACandIDs.ace file failed \$\? = $status\n";
+    }
 }
 
 close FILE;
