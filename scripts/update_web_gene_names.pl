@@ -5,7 +5,7 @@
 # completely rewritten by Keith Bradnam from list_loci_designations
 #
 # Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2005-03-31 08:54:16 $      
+# Last updated on: $Date: 2005-06-09 08:12:00 $      
 #
 # This script should be run under a cron job and simply update the webpages that show
 # current gene names and sequence connections.  Gets info from geneace.  
@@ -140,7 +140,7 @@ sub create_currentDB_loci_pages{
       next unless ($species eq "Caenorhabditis elegans");
 
       # ignore dead genes
-      next if(!defined $gene->at('Identity.Live'));
+      next if($gene->Status->name ne "Live");
 
       # Set alternating colours for each row of (HTML) output 
       if (($line % 2) == 0) { 
