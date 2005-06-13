@@ -6,8 +6,8 @@
 #
 # Usage : make_keysets.pl [-options]
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2005-01-19 17:35:02 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2005-06-13 09:24:37 $
 
 #################################################################################
 # variables                                                                     #
@@ -132,6 +132,8 @@ if (($history) || ($all)) {
     } 
     print "calculated keysets of changed wormpep entries\n\n";
 } 
+
+&load_to_database($dbpath, "/wormsrv2/wormbase/misc_static/represent_clone.ace", "clone_check") if $all;
 
 print "le fin\n";
 
