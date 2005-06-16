@@ -7,7 +7,7 @@
 # Makes CDS status information by looking at transcript to exon mappings
 #
 # Last updated by: $Author: dl1 $     
-# Last updated on: $Date: 2005-03-24 14:10:11 $      
+# Last updated on: $Date: 2005-06-16 14:34:40 $      
 
 
 use strict;
@@ -191,18 +191,18 @@ close(ACE);
 # load file to autoace?
 if($load){
   $log->write_to("Loading file to autoace\n");
-  my $command = "autoace_minder.pl -load /wormsrv2/autoace/acefiles/gene_confirmation_status.ace -tsuser interpro_motifs";
+  my $command = "autoace_minder.pl -load /wormsrv2/autoace/acefiles/gene_confirmation_status.ace -tsuser CDS_status";
 
   my $status = system($command);
   if(($status >>8) != 0){
-    $log->write_to("ERROR: Loading interpro_motifs.ace file failed \$\? = $status\n");
+    $log->write_to("ERROR: Loading gene_confirmation_status.ace file failed \$\? = $status\n");
   }
 }
 
 
 $log->mail("$maintainers", "BUILD REPORT: $0");
 
-# Ate logo
+# hasta luego
 
 exit(0);
 
@@ -302,19 +302,32 @@ sub find_match {
 	##################
 
 	
-	# No overlap between HSP and CDS exon
+	#######################################
+	# No overlap between HSP and CDS exon #
+	#######################################
 	
-	# next gene if geneend is left of ESTstart 
-	if ($eststart > $geneend) {                                                                                                # no match,            EXON  ----------------<========================--------========*=----------------
-	    next GENE;                                                                                                             #                      HSP                                                                  ##########
+	# next gene if geneend is left of ESTstart
+	
+	# no match,            EXON  ----------------<========================--------========*=----------------
+	#                      HSP                                                                  ##########
+	
+	if ($eststart > $geneend) {
+	    next GENE;
 	}
+
 	
 	# next EST if genestart is right of ESTend
-	elsif ($estend < $genestart) {                                                                                             # no match,            EXON  ----------------<========================--------========*=----------------
-	    $lastfail = $x;                                                                                                        #                      HSP   ###########
+	
+	# no match,            EXON  ----------------<========================--------========*=----------------
+	#                      HSP   ###########
+
+	elsif ($estend < $genestart) {
+	    $lastfail = $x;
 	    next EST;
 	}
    
+
+
 	# HSP overlaps with CDS exon somehow
 
 	else {
@@ -335,34 +348,60 @@ sub find_match {
 		# IDEAL OUTCOME, BLAT HSP matches exon exactly #
 		################################################
 		
-		if ( ($est_exon_start == $CDS_exon_start) && ($est_exon_end == $CDS_exon_end) ) {                                  #                                EXON_start ¬             EXON_stop ¬
-		    map {$store_match{$testgene}->{$_} = 1;} ($est_exon_start..$est_exon_end);                                     # complete match,      EXON  ------->===^^^^^^^========================^^^^^^^^^========*-------------
-		    next ESTEXON;                                                                                                  #                      HSP                  ---########################---
-		}
+		#                                  EXON_start ¬             EXON_stop ¬
+		# complete match,      EXON  ------->===^^^^^^^========================^^^^^^^^^========*-------------
+		#                      HSP                  ---########################---
 		
-		if ( ($est_exon_start < $CDS_exon_end) && ($est_exon_end == $CDS_exon_end)) { 
-		    if ($est_exon_start >= $CDS_exon_start) {                                                                      #                                         HSP_start¬         EXON_stop¬
-			map {$store_match{$testgene}->{$_} = 1;} ($est_exon_start..$est_exon_end);                                 # partial match        EXON  ------->===^^^^^^^========================^^^^^^^^^=======*-------------
-			next ESTEXON;                                                                                              #                      HSP                          ###################
-		    }
-		    elsif ($est_exon_start < $CDS_exon_start) {                                                                    #                                   EXON_start¬              EXON_stop¬
-			map {$store_match{$testgene}->{$_} = 1;} ($CDS_exon_start..$est_exon_end);                                 # complete match       EXON    ----->===^^^^^^^========================^^^^^^^^^========*-------------
-			next ESTEXON;                                                                                              #                      HSP                  ###########################
-		    }
-		}
-		
-		if (($CDS_exon_start == $est_exon_start) && ($CDS_exon_end > $est_exon_start)) {   
-		    
-		    if ($CDS_exon_end <= $est_exon_end) {                                                                         #                                                HSP_start¬               CDS_stop¬
-			map {$store_match{$testgene}->{$_}=1;} ($est_exon_start..$CDS_exon_end);                                  # complete match    EXON  ----------->==============^^^^^^^========================^^^^^^^^^==============*----------
-			next ESTEXON;                                                                                             #                   HSP                                    ##########################
-		    }
-		    elsif ($CDS_exon_end > $est_exon_end) {                                                                       #                                                HSP_start¬           HSP_stop¬
-			map {$store_match{$testgene}->{$_}=1;} ($est_exon_start..$est_exon_end);                                  # partial match     EXON  ----------->==============^^^^^^^========================^^^^^^^^^==============*----------
-			next ESTEXON;                                                                                             #                   HSP                                    ####################                 
-		    }
+		if ( ($est_exon_start == $CDS_exon_start) && ($est_exon_end == $CDS_exon_end) ) {
+		    map {$store_match{$testgene}->{$_} = 1;} ($est_exon_start..$est_exon_end);   
+		    next ESTEXON;                                                                
 		}
 
+
+		if ( ($est_exon_start < $CDS_exon_end) && ($est_exon_end == $CDS_exon_end)) { 
+		    
+		    #                                         HSP_start¬         EXON_stop¬
+		    # partial match        EXON  ------->===^^^^^^^========================^^^^^^^^^=======*-------------
+		    #                      HSP                          ###################
+
+		    if ($est_exon_start >= $CDS_exon_start) {                                  
+			map {$store_match{$testgene}->{$_} = 1;} ($est_exon_start..$est_exon_end);
+			next ESTEXON;                                                             
+		    }
+
+		    #                                   EXON_start¬              EXON_stop¬
+		    # complete match       EXON    ----->===^^^^^^^========================^^^^^^^^^========*-------------
+		    #                      HSP                  ###########################
+
+		    elsif ($est_exon_start < $CDS_exon_start) {                                      
+			map {$store_match{$testgene}->{$_} = 1;} ($CDS_exon_start..$est_exon_end);   
+			next ESTEXON;                                                                
+		    }
+		}
+		
+
+
+		if (($CDS_exon_start == $est_exon_start) && ($CDS_exon_end > $est_exon_start)) {   
+		    
+		    #                                                HSP_start¬               CDS_stop¬
+		    # complete match    EXON  ----------->==============^^^^^^^========================^^^^^^^^^==============*----------
+		    #                   HSP                                    ##########################
+
+		    if ($CDS_exon_end <= $est_exon_end) {                                       
+			map {$store_match{$testgene}->{$_}=1;} ($est_exon_start..$CDS_exon_end);
+			next ESTEXON;                                                           
+		    }
+
+		    #                                                HSP_start¬           HSP_stop¬
+		    # partial match     EXON  ----------->==============^^^^^^^========================^^^^^^^^^==============*----------
+		    #                   HSP                                    ####################                 
+		    
+		    elsif ($CDS_exon_end > $est_exon_end) {                                                            
+			map {$store_match{$testgene}->{$_}=1;} ($est_exon_start..$est_exon_end);                       
+			next ESTEXON;                                                                                  
+		    }
+		}
+		
 		#################
 		# SPECIAL CASES #
 		#################
@@ -370,13 +409,23 @@ sub find_match {
 		# First HSP of transcript sequence ($v = 0)
 		if ($v == 0) {
 		    if (($est_exon_start < $CDS_exon_end) && ($est_exon_end == $CDS_exon_end)) { 
-			if ($est_exon_start >= $CDS_exon_start) {                                                                  #                                         HSP_start¬         EXON_stop¬
-			    map {$store_match{$testgene}->{$_} = 1;} ($est_exon_start..$est_exon_end);                             # partial match        EXON  ------->===^^^^^^^========================^^^^^^^^^=======*-------------
-			    next GENEEXON;                                                                                         #                      HSP                          ###################
+
+			#                                         HSP_start¬         EXON_stop¬
+			# partial match        EXON  ------->===^^^^^^^========================^^^^^^^^^=======*-------------
+			#                      HSP                          ###################
+
+			if ($est_exon_start >= $CDS_exon_start) {                                        
+			    map {$store_match{$testgene}->{$_} = 1;} ($est_exon_start..$est_exon_end);   
+			    next GENEEXON;                                                               
 			}
-			elsif ($est_exon_start < $CDS_exon_start) {                                                                #                                   EXON_start¬              EXON_stop¬
-			    map {$store_match{$testgene}->{$_} = 1;} ($CDS_exon_start..$est_exon_end);                             # complete match       EXON    ----->===^^^^^^^========================^^^^^^^^^========*-------------
-			    next GENEEXON;                                                                                         #                      HSP                  ###########################
+
+			#                                   EXON_start¬              EXON_stop¬
+			# complete match       EXON    ----->===^^^^^^^========================^^^^^^^^^========*-------------
+			#                      HSP                  ###########################
+
+			elsif ($est_exon_start < $CDS_exon_start) {                                      
+			    map {$store_match{$testgene}->{$_} = 1;} ($CDS_exon_start..$est_exon_end);   
+			    next GENEEXON;                                                               
 			}
 		    }
 		} #_ end of initial HSP processing
@@ -385,40 +434,70 @@ sub find_match {
 		if ($v == $estblocks) {
 			
 		    # single exon EST within geneexon
-		    if (($est_exon_start >= $CDS_exon_start) && ($est_exon_end <= $CDS_exon_end)) {                               #                                      HSP_start ¬        HSP_stop ¬
-			map {$store_match{$testgene}->{$_} = 1;} ($est_exon_start..$est_exon_end);                                # complete match          EXON  ----->===^^^^^^^========================^^^^^^^^^========*-------------
-			next EST;                                                                                                 #                         HSP                     ##################
+
+		    #                                      HSP_start ¬        HSP_stop ¬
+		    # complete match          EXON  ----->===^^^^^^^========================^^^^^^^^^========*-------------
+		    #                         HSP                     ##################
+		    
+		    if (($est_exon_start >= $CDS_exon_start) && ($est_exon_end <= $CDS_exon_end)) {      
+			map {$store_match{$testgene}->{$_} = 1;} ($est_exon_start..$est_exon_end); 
+			next EST;                                                                  
 		    }
-			
+		    
 		    # single exon EST overlapping gene start
-		    elsif (($est_exon_start <= $CDS_exon_start) && ($est_exon_end <= $CDS_exon_end) && ($w == 0)) {               #                                   EXON_start ¬    HSP_stop ¬
-			map {$store_match{$testgene}->{$_} = 1;} ($CDS_exon_start..$est_exon_end);                                # partial match           EXON  ---------------->=======================^^^^^^^^^========*-------------
-			next EST;                                                                                                 #                         HSP             ####################
+
+		    #                                   EXON_start ¬    HSP_stop ¬
+		    # partial match           EXON  ---------------->=======================^^^^^^^^^========*-------------
+		    #                         HSP             ####################
+
+		    elsif (($est_exon_start <= $CDS_exon_start) && ($est_exon_end <= $CDS_exon_end) && ($w == 0)) {      
+			map {$store_match{$testgene}->{$_} = 1;} ($CDS_exon_start..$est_exon_end);                       
+			next EST;                                                                                        
 		    }
 		    
 		    # single exon EST overlapping gene end
-		    elsif (($est_exon_start >= $CDS_exon_start) && ($est_exon_end >= $CDS_exon_end) && ($w == $geneblocks)) {     #                                           HSP_start ¬      EXON_stop ¬
-			map {$store_match{$testgene}->{$_} = 1;} ($est_exon_start..$CDS_exon_end);                                # partial match           EXON  ---->====^^^^^^^=======================*-------------------------------
-			next EST;                                                                                                 #                         HSP                          ####################
+
+		    #                                           HSP_start ¬      EXON_stop ¬
+		    # partial match           EXON  ---->====^^^^^^^=======================*-------------------------------
+		    #                         HSP                          ####################
+
+		    elsif (($est_exon_start >= $CDS_exon_start) && ($est_exon_end >= $CDS_exon_end) && ($w == $geneblocks)) { 
+			map {$store_match{$testgene}->{$_} = 1;} ($est_exon_start..$CDS_exon_end);                            
+			next EST;                                                                                             
 		    }
 			
 		    # single exon EST covering whole single exon gene
-		    elsif (($est_exon_start < $CDS_exon_start) && ($est_exon_end > $CDS_exon_end) && ($geneblocks == 0)) {        #                                             EXON_start¬                  EXON_stop ¬
-			map {$store_match{$testgene}->{$_} = 1;} ($CDS_exon_start..$CDS_exon_end);                                # complete match          EXON  ------------------------->===========================*-------------------------------
-			next GENE;                                                                                                #                         HSP                        ####################################
+
+		    #                                             EXON_start¬                  EXON_stop ¬
+		    # complete match          EXON  ------------------------->===========================*-------------------------------
+		    #                         HSP                        ####################################
+
+		    elsif (($est_exon_start < $CDS_exon_start) && ($est_exon_end > $CDS_exon_end) && ($geneblocks == 0)) {    
+			map {$store_match{$testgene}->{$_} = 1;} ($CDS_exon_start..$CDS_exon_end);                            
+			next GENE;                                                                                            
 		    }
 		} #_ end of Single HSP processing
 
 		# Final HSP of transcribed sequence ($v = $estblocks)
 		if ($v == $estblocks) {
 		    if ( ($est_exon_start == $CDS_exon_start) && ($est_exon_end > $CDS_exon_start) ) { 
-			if ($est_exon_end <= $CDS_exon_end) {                                                                     #                                                                                EXON_start¬  HSP_stop ¬
-			    map {$store_match{$testgene}->{$_} = 1;} ($est_exon_start..$est_exon_end);                            # partial match     EXON  ----------->==============^^^^^^^========================^^^^^^^^^==============*----------
-			    next EST;                                                                                             #                   HSP                                                                     ############
+
+			#                                                                                EXON_start¬  HSP_stop ¬
+			# partial match     EXON  ----------->==============^^^^^^^========================^^^^^^^^^==============*----------
+			#                   HSP                                                                     ############
+
+			if ($est_exon_end <= $CDS_exon_end) {                                                       
+			    map {$store_match{$testgene}->{$_} = 1;} ($est_exon_start..$est_exon_end);              
+			    next EST;                                                                               
 			}
-			elsif ($est_exon_end > $CDS_exon_end) {                                                                   #                                                                                EXON_start¬     EXON_stop¬
-			    map {$store_match{$testgene}->{$_}=1;} ($est_exon_start..$CDS_exon_end);                              # complete match    EXON  ----------->==============^^^^^^^=======================^^^^^^^^^^==============*----------
-			    next EST;                                                                                             #                   HSP                                                                     #################
+
+			#                                                                                EXON_start¬     EXON_stop¬
+			# complete match    EXON  ----------->==============^^^^^^^=======================^^^^^^^^^^==============*----------
+			#                   HSP                                                                     #################
+			
+			elsif ($est_exon_end > $CDS_exon_end) {                                                     
+			    map {$store_match{$testgene}->{$_}=1;} ($est_exon_start..$CDS_exon_end);                
+			    next EST;                                                                               
 			}  
 		    }
 		} #_ end of final HSP processing
@@ -426,60 +505,99 @@ sub find_match {
 		# First CDS exon ($w = 0)
 		if ($w == 0) {
 		    if ( ($CDS_exon_start < $est_exon_end) && ($CDS_exon_end == $est_exon_end) ) {
-			if ($CDS_exon_start >= $est_exon_start) {                                                                  #                         EXON_start¬     EXON_stop¬
-			    map {$store_match{$testgene}->{$_}=1;} ($CDS_exon_start..$est_exon_end);                              # partial match     EXON  ----------->==============^^^^^^^========================^^^^^^^^^==============*---------- 
-			    next ESTEXON;                                                                                         #                   HSP           ##################
+			
+			#                         EXON_start¬     EXON_stop¬
+			# partial match     EXON  ----------->==============^^^^^^^========================^^^^^^^^^==============*---------- 
+			#                   HSP           ##################
+			
+			if ($CDS_exon_start >= $est_exon_start) {                                                   
+			    map {$store_match{$testgene}->{$_}=1;} ($CDS_exon_start..$est_exon_end);                
+			    next ESTEXON;                                                                           
 			}
-			elsif ($CDS_exon_start < $est_exon_start) {                                                               #                              HSP_start¬ EXON_stop¬
-			    map {$store_match{$testgene}->{$_}=1;} ($est_exon_start..$est_exon_end);                              # partial match     EXON  ----------->==============^^^^^^^========================^^^^^^^^^==============*----------
-			    next ESTEXON;                                                                                         #                   HSP                  ###########
+
+			#                              HSP_start¬ EXON_stop¬
+			# partial match     EXON  ----------->==============^^^^^^^========================^^^^^^^^^==============*----------
+			#                   HSP                  ###########
+
+			elsif ($CDS_exon_start < $est_exon_start) {                                                 
+			    map {$store_match{$testgene}->{$_}=1;} ($est_exon_start..$est_exon_end);                
+			    next ESTEXON;                                                                           
 			}   
 		    }
 		} #_ end of intial CDS exon processing
-		    
+		
 		# Single exon CDS  ($w = 0 AND $w = $geneblocks)
 		if ($w == $geneblocks) {
 			
 		    # single exon gene completely covered by EST
-		    if (($est_exon_start <= $CDS_exon_start ) && ($est_exon_end >= $CDS_exon_end)) {                              #                                             EXON_start¬                   EXON_stop¬
-			map {$store_match{$testgene}->{$_}=1;} ($CDS_exon_start..$CDS_exon_end);                                  # complete match    EXON  ------------------------->===========================*-------------------------------
-			next GENE;                                                                                                #                   HSP                         ####################################
+
+		    #                                             EXON_start¬                   EXON_stop¬
+		    # complete match    EXON  ------------------------->===========================*-------------------------------
+		    #                   HSP                         ####################################
+
+		    if (($est_exon_start <= $CDS_exon_start ) && ($est_exon_end >= $CDS_exon_end)) {                     
+			map {$store_match{$testgene}->{$_}=1;} ($CDS_exon_start..$CDS_exon_end);                         
+			next GENE;                                                                                       
 		    }   
 		    
 		    # single exon gene end covered
-		    elsif (($est_exon_start >= $CDS_exon_start) && ($est_exon_end >= $CDS_exon_end) && ($v == 0)) {               #                                                  HSP_start¬               EXON_stop¬
-			map {$store_match{$testgene}->{$_}=1;} ($est_exon_start..$CDS_exon_end);                                  # partial match     EXON  ------------------------->===========================*-------------------------------
-			next EST;                                                                                                 #                   HSP                                ####################################
+
+		    #                                                  HSP_start¬               EXON_stop¬
+		    # partial match     EXON  ------------------------->===========================*-------------------------------
+		    #                   HSP                                ####################################
+
+		    elsif (($est_exon_start >= $CDS_exon_start) && ($est_exon_end >= $CDS_exon_end) && ($v == 0)) {      
+			map {$store_match{$testgene}->{$_}=1;} ($est_exon_start..$CDS_exon_end);                         
+			next EST;                                                                                        
 		    }
 		    
 		    # single exon gene start covered
-		    elsif (($est_exon_start <= $CDS_exon_start) && ($est_exon_end <= $CDS_exon_end) && ($v == $estblocks)) {      #                                             EXON_start¬                 HSP_stop¬
-			map {$store_match{$testgene}->{$_}=1;} ($CDS_exon_start..$est_exon_end);                                  # partial match     EXON  ------------------------->===========================*-------------------------------
-			next EST;                                                                                                 #                   HSP                  ####################################
+		    
+		    #                                             EXON_start¬                 HSP_stop¬
+		    # partial match     EXON  ------------------------->===========================*-------------------------------
+		    #                   HSP                  ####################################
+		    
+		    elsif (($est_exon_start <= $CDS_exon_start) && ($est_exon_end <= $CDS_exon_end) && ($v == $estblocks)) { 
+			map {$store_match{$testgene}->{$_}=1;} ($CDS_exon_start..$est_exon_end);                             
+			next EST;                                                                                            
 		    }
 		    
 		    # single exon EST inside single exon gene
-		    elsif (($est_exon_start >= $CDS_exon_start) && ($est_exon_end <= $CDS_exon_end) && ($estblocks == 0)) {       #                                                 HSP_start¬            HSP_stop¬
-			map {$store_match{$testgene}->{$_}=1;} ($est_exon_start..$est_exon_end);                                  # complete match    EXON  ------------------------->===========================*-------------------------------
-			next EST;                                                                                                 #                   HSP                               #####################
+
+		    #                                                 HSP_start¬            HSP_stop¬
+		    # complete match    EXON  ------------------------->===========================*-------------------------------
+		    #                   HSP                               #####################
+		    
+		    elsif (($est_exon_start >= $CDS_exon_start) && ($est_exon_end <= $CDS_exon_end) && ($estblocks == 0)) {  
+			map {$store_match{$testgene}->{$_}=1;} ($est_exon_start..$est_exon_end);                             
+			next EST;                                                                                            
 		    }
 		}
 		 
 		if ($w == $geneblocks) {
 		    if (($CDS_exon_start == $est_exon_start) && ($CDS_exon_end > $est_exon_start)) {   
 		    
-			if ($CDS_exon_end <= $est_exon_end) {                                                                     #                                                HSP_start¬               CDS_stop¬
-			    map {$store_match{$testgene}->{$_}=1;} ($est_exon_start..$CDS_exon_end);                              # complete match    EXON  ----------->==============^^^^^^^========================^^^^^^^^^==============*----------
-			    next EST;                                                                                             #                   HSP                                    ##########################
+			#                                                HSP_start¬               CDS_stop¬
+			# complete match    EXON  ----------->==============^^^^^^^========================^^^^^^^^^==============*----------
+			#                   HSP                                    ##########################
+			
+			if ($CDS_exon_end <= $est_exon_end) {                                                                
+			    map {$store_match{$testgene}->{$_}=1;} ($est_exon_start..$CDS_exon_end);                         
+			    next EST;                                                                                        
 			}
-			elsif ($CDS_exon_end > $est_exon_end) {                                                                   #                                                HSP_start¬           HSP_stop¬
-			    map {$store_match{$testgene}->{$_}=1;} ($est_exon_start..$est_exon_end);                              # partial match     EXON  ----------->==============^^^^^^^========================^^^^^^^^^==============*----------
-			    next EST;                                                                                             #                   HSP                                    ####################                 
+			
+			#                                                HSP_start¬           HSP_stop¬
+			# partial match     EXON  ----------->==============^^^^^^^========================^^^^^^^^^==============*----------
+			#                   HSP                                    ####################                 
+
+			elsif ($CDS_exon_end > $est_exon_end) {                                                              
+			    map {$store_match{$testgene}->{$_}=1;} ($est_exon_start..$est_exon_end);     
+			    next EST;                                                                    
 			}
 		    }
 		}
 		
-
+		
 	    } #_ ESTEXON
 	  }   #_ GENEEXON
 	}
