@@ -5,7 +5,7 @@
 # A script to make multiple copies of camace for curation, and merge them back again
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2005-01-21 15:33:41 $
+# Last edited on: $Date: 2005-06-16 14:10:02 $
 
 
 use strict;
@@ -53,7 +53,7 @@ print "WS_version : $WS_version\tWS_next : $WS_next\n" if ($debug);
 my @databases; #array to store what splits are to be merged.
 my $path_new = ();
 my $path_ref = ();
-my @classes = ('Transposon', 'Transcript', 'CDS', 'Sequence', 'Feature', 'Feature_data', 'Pseudogene');
+my @classes = ('Transposon', 'Transcript', 'CDS', 'Sequence', 'Feature', 'Feature_data', 'Pseudogene', 'dna');
 
 # load @databases array with user database names.
 push(@databases,"orig");
@@ -134,7 +134,6 @@ sub dump_camace {
     $ENV{'ACEDB'} = $camace_path;
 
     foreach my $class (@classes) {
-
       print "dumping $class class from camace_${database}\n";
       $path = "$directory/" . "${class}_${database}.ace";
       &dumpace("$class",$path);
@@ -147,9 +146,9 @@ sub dump_camace {
 sub dumpace {
   my $class    = shift;
   my $filepath = shift;
-  
+
   my $command = "nosave\nquery find $class\nshow -a -f $filepath\nquit\n";
-  
+
   # dump out from ACEDB
   print "\nFilename: $filepath\n";
   open (TACE,"| $tace") or die "Failed to open database connection\n";
@@ -162,7 +161,7 @@ sub loadace {
   my $filepath = shift;
   my $tsuser   = shift;
   my $command = "pparse $filepath\nsave\nquit\n";
-  
+
   # dump out from ACEDB
   print "\nFilename: $filepath\n";
   open (TACE,"| $tace -tsuser $tsuser") or die "Failed to open database connection\n";
@@ -175,7 +174,7 @@ sub update_camace {
   # upload processed diff files into /wormsrv1/camace
   print "Upload diff files to /wormsrv1/camace";
   $ENV{'ACEDB'} = $current;
-  
+
   foreach my $database (@databases) {
     foreach my $class (@classes) {
       &loadace("$directory/update_${class}_${database}.ace","${database}");
