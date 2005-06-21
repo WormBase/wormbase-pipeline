@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: dl1 $
-// Last edited on: $Date: 2005-05-31 09:28:16 $
+// Last edited on: $Date: 2005-06-21 15:17:38 $
  
 
 
@@ -899,6 +899,7 @@
 		//   general annotation display column as "tag:objname"
 	  Properties    Genomic_canonical Gene_count UNIQUE Int                  // added tag for dot name tracking [020128 dl]
                         Briggsae_canonical
+                        Genomic                                                  // added tag to define genomic sequences not from the consortium
 			cDNA cDNA_EST
 			     EST_5		       // Indicate whether this is a 5' or 3' read [010423 dl]
 			     EST_3
@@ -906,18 +907,18 @@
 			     TSL_tag		       // Indicates a short RT-PCR product for TSL detection [030220 dl]
 			EST_consensus		       // Designates this object as a consensus
 			// if RNA tag, acedb outputs U in place of T in sequence output
-			RNA UNIQUE mRNA UNIQUE Processed_mRNA
+			RNA UNIQUE mRNA UNIQUE Processed_mRNA       // 
 					       Unprocessed_mRNA
-				   tRNA Type UNIQUE Text  // new for ck1 [030926] krb
-					Anticodon UNIQUE Text  // 
+				   tRNA Type UNIQUE Text            // new for ck1 [030926] krb
+					Anticodon UNIQUE Text       // 
 				   rRNA UNIQUE Text
 				   snRNA UNIQUE Text
-				   snoRNA UNIQUE Text // [030102 krb]
+				   snoRNA UNIQUE Text               // [030102 krb]
 				   scRNA UNIQUE Text
-				   miRNA UNIQUE Text         // [020306 kj]
-				   ncRNA UNIQUE Text	     // for everything else that doesn't have a known type
-			Ignore #Evidence // tag to flag problem Sequence objects to avoid certain analysis [031120 krb]
-			Show_in_reverse_orientation    // Draw 3' reads in reverse orientation [010423 dl]
+				   miRNA UNIQUE Text                // [020306 kj]
+				   ncRNA UNIQUE Text	            // true non-coding RNA molecules
+			Ignore #Evidence                            // tag to flag problem Sequence objects to avoid certain analysis [031120 krb]
+			Show_in_reverse_orientation                 // Draw 3' reads in reverse orientation [010423 dl]
 			Status	Received UNIQUE DateType
 				Library_construction UNIQUE DateType
 				Shotgun	UNIQUE DateType
@@ -1138,18 +1139,19 @@
                         Remark ?Text #Evidence
                 Properties Transcript UNIQUE  mRNA UNIQUE Processed_mRNA
                                                           Unprocessed_mRNA
-                                              tRNA Type UNIQUE Text  // new for ck1 [030926] krb
-						   Anticodon UNIQUE Text  // 
+                                              tRNA Type UNIQUE Text        // new for ck1 [030926] krb
+						   Anticodon UNIQUE Text   // 
                                               rRNA UNIQUE Text
                                               snRNA UNIQUE Text
-					      snoRNA UNIQUE Text // [030102 krb]
+					      snoRNA UNIQUE Text           // [030102 krb]
                                               scRNA UNIQUE Text
-                                              stRNA UNIQUE Text         // [010723 dl]
-                                              miRNA UNIQUE Text         // [020306 kj]
-                                              ncRNA UNIQUE Text
-		           Isoform #Evidence
-                           Start_not_found                                   // [020306 kj]
-                           End_not_found                                     // [020306 kj]
+                                              stRNA UNIQUE Text            // [010723 dl]
+                                              miRNA UNIQUE Text            // [020306 kj]
+                                              ncRNA UNIQUE Text            // true non-coding RNAs
+		           Isoform #Evidence                               // Set if this is a RNA isoform
+			   Ignore #Evidence                                // Set for putative NMD targets which we do not want to see in wormrna
+                           Start_not_found                                 // [020306 kj]
+                           End_not_found                                   // [020306 kj]
 		Associated_feature ?Feature XREF Associated_with_transcript #Evidence
                 Method UNIQUE ?Method                  
 
@@ -1406,6 +1408,7 @@
                   Structure_data ?Structure_data XREF Corresponding_protein #Evidence
           Homol DNA_homol ?Sequence XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int  #Homol_info
                 Pep_homol ?Protein XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int  #Homol_info
+                Structure_homol ?Structure_data XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
                 Motif_homol ?Motif XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int  #Homol_info
                 Homol_homol ?Homol_data XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
           Feature ?Method Int Int UNIQUE Float  // display according to method
@@ -1886,13 +1889,14 @@
 		Map ?Map  #Map_position 
 		Mapping_data 2_point ?2_point_data 
 			     Multi_point ?Multi_pt_data
-		Phenotype	?Text	//Phenotype should be described as "Unc. With other ..."
+                Phenotype ?Phenotype #Phenotype_info
+		Phenotype_remark ?Text                                                           // Phenotype "Unc. With other ..."
 		Rescue ?Gene XREF Rescued_by_Transgene ?Variation XREF Rescued_by_Transgene
-		Expr_pattern ?Expr_pattern XREF Transgene //Related Expr_pattern
+		Expr_pattern ?Expr_pattern XREF Transgene                                        // Related Expr_pattern
 		Gene_regulation ?Gene_regulation XREF Transgene
-		Reference ?Paper XREF Transgene //papers refered to the transgene.
-		Species UNIQUE ?Species // added by krb for consistency with other classes 021030
-		Remark ?Text #Evidence //More comments on the transgene
+		Reference ?Paper XREF Transgene                                                  // papers refered to the transgene.
+		Species UNIQUE ?Species                                                          // added by krb for consistency with other classes 021030
+		Remark ?Text #Evidence                                                           // More comments on the transgene
 
 
 
@@ -2644,33 +2648,16 @@
                                  In_pos_neg_data ?Pos_neg_data
                                 // these are for when the locus is mapped
 		    Rescued_by_transgene ?Transgene	 
-	   Description Phenotype ?Text #Evidence
-                       Recessive
-                       Semi_dominant
-                       Dominant
-		       Partially_penetrant Text // percentage of animals displaying phenotype
-		       Completely_penetrant
-                       Temperature_sensitive Heat_sensitive Text #Evidence // text field stores temperature
-                                             Cold_sensitive Text #Evidence
-                       Loss_of_function UNIQUE Haplo_insufficient #Evidence //new section krb 021210
-                                               Hypomorph #Evidence
-                                               Amorph #Evidence
-                                               Uncharacterised_loss_of_function #Evidence
-                       Gain_of_function UNIQUE Dominant_negative #Evidence //new section krb 021210
-                                               Hypermorph #Evidence
-                                               Neomorph #Evidence
-                                               Uncharacterised_gain_of_function #Evidence
+	   Description Phenotype ?Phenotype #Phenotype_info
+                       Phenotype_remark ?Text #Evidence
                        Nonsense UNIQUE Amber_UAG Text
                                        Ochre_UAA Text
                                        Opal_UGA  Text
-                       Missense Text // text fields stored details of codon change
+                       Missense Text                                // text fields stored details of codon change
                        Silent Text
                        Splice_site Donor Text
                                    Acceptor Text
-                       Frameshift Text  // added sdm
-                       Maternal Strictly_maternal
-                                With_maternal_effect
-                       Paternal
+                       Frameshift Text 
            Reference ?Paper XREF Allele
            Remark  ?Text #Evidence
 	   Method UNIQUE ?Method
@@ -2700,9 +2687,10 @@
 ?Structure_data Evidence            #Evidence
                 DB_info             Database ?Database ?Database_field ?Accession_number XREF Structure_data
                 Sequence            Protein UNIQUE ?Peptide 
+                Homol               Pep_homol ?Protein XREF Structure_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
                 Assigned_sequence   Corresponding_protein ?Protein XREF Structure_data #Evidence
                                     Corresponding_CDS ?CDS XREF Structure_data #Evidence
-                                    Protein_identity ?Text #Evidence
+                                    Protein_identity #Evidence
                 Status              Selected UNIQUE DateType
                                     Cloned UNIQUE DateType
                                     Expressed UNIQUE DateType
