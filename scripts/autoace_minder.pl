@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2005-06-06 10:52:35 $
+# Last edited on: $Date: 2005-07-04 13:58:13 $
 
 
 
@@ -66,6 +66,7 @@ my $debug;		# debug mode
 my $verbose;            # verbose mode - more output to screen
 my $help;		# Help/Usage page
 my $dbcomp;		# runs dbcomp script
+my $inverted;           # runs inverted script
 my $operon;             # generate operon data
 my $load;               # generic file loading routine
 my $tsuser;             # tsuser setting to go with -load
@@ -101,6 +102,7 @@ GetOptions (
 	    "builddb"               => \$builddb,
 	    "buildchrom"            => \$buildchrom,
 	    "buildrelease"          => \$buildrelease,
+	    "inverted"              => \$inverted,
 	    "confirm"               => \$confirm,
 	    "dbcomp"	            => \$dbcomp,
 	    "debug:s"               => \$debug,
@@ -177,6 +179,7 @@ our %flag = (
 	     'B9'          => 'B9:Upload_briggsae_data',
 	     'B10'         => 'B10:Generate_UTR_data',
 	     'B11'         => 'B11:Generate_operon_data',
+             'B12'         => 'B12:Generate_inverted_data',
 	     'C1'          => 'C1:Dumped_GFF_files',
 	     'C1:ERROR'    => 'C1:ERROR_in_dumping_GFF_files',
 	     'C2'          => 'C2:Split_GFF_files',
@@ -231,6 +234,7 @@ LOG->autoflush();
 &make_autoace           if ($build || $builddb || $buildchrom || $buildrelease);
 &check_make_autoace     if ($buildtest);
 
+#B2:
 
 # B3:Make_agp_files
 # Requires: A1,A4,A5,B1
@@ -273,8 +277,8 @@ if ($addblat){
 # Requires: B10
 &make_operons           if ($operon);
 
-
-
+# B12:Generate_inverted_data
+&inverted_repeats       if ($inverted);
 
 #__ PROCESS SECTION __#
 
@@ -673,19 +677,20 @@ sub make_acefiles {
 #              : [03] - writes log file A1:Update_WS_version to $basedir/autoace/logs
 
 sub make_autoace {
+
   $am_option = "-build";
   # quit if make_acefiles has not been run
   &usage(8) unless (-e "$logdir/$flag{'A5'}");
   
   if ($build || $builddb) { 
 
-    open (EMAIL,  "|/bin/mailx -s \"WormBase build reminder\" \"wormbase\@sanger.ac.uk\" ");
-    print EMAIL "Dear builder,\n\n";
-    print EMAIL "You have just run autoace_minder.pl -build.  This will probably take 5-6 hours\n";
-    print EMAIL "to run.  You should therefore start work on the blast pipeline. So put down that\n";
-    print EMAIL "coffee and do some work.\n\n";
-    print EMAIL "Yours sincerely,\nOtto\n";
-    close (EMAIL);
+      open (EMAIL,  "|/bin/mailx -s \"WormBase build reminder\" \"wormbase\@sanger.ac.uk\" ");
+      print EMAIL "Dear builder,\n\n";
+      print EMAIL "You have just run autoace_minder.pl -build.  This will probably take 5-6 hours\n";
+      print EMAIL "to run.  You should therefore start work on the blast pipeline. So put down that\n";
+      print EMAIL "coffee and do some work.\n\n";
+      print EMAIL "Yours sincerely,\nOtto\n";
+      close (EMAIL);
 
     my $command = "$scriptdir/make_autoace.pl --database $db_path --buildautoace";
     $command .= " --test" if ($test);
@@ -704,7 +709,6 @@ sub make_autoace {
     # this will force a refresh of the coordinate files.
     my $coords = Coords_converter->invoke($db_path,1);
 
-    
     # make a make_autoace log file in /logs
     system("touch $logdir/$flag{'B1'}");
 
@@ -781,6 +785,19 @@ sub make_autoace {
   }
 }
 #__ end make_autoace __#
+
+
+
+#__ inverted repeats _#
+
+sub inverted_repeats {
+
+    # run the inverted script over all clones 
+    &run_command("$scriptdir/run_inverted.pl -all");
+    system ("touch $logdir/$flag{'B12'}");
+}
+
+
 
 #########################################################################################################################
 
