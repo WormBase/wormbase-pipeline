@@ -2,7 +2,12 @@
 #
 # run_genefinder.pl
 #
-##
+# Usage: run_genefinder.pl -WSxxx
+#
+# Last edited by: $Author: dl1 $
+# Last edited on: $Date: 2005-07-11 13:16:57 $
+ 
+
 
 my $release = shift;                                         # Release number 
 
@@ -16,8 +21,8 @@ system ("scp wormsrv2:/wormsrv2/autoace/allcmid ./allcmid"); # copy allcmid file
 # Touch output file
 system ("touch ./${release}_genefinder.ace");
 
-open (AGP, "<$cmid");
-while (<AGP>) {
+open (CMID, "<$cmid");
+while (<CMID>) {
 
     # parse file name f
 
@@ -41,7 +46,8 @@ while (<AGP>) {
     }   
     
 }
-close AGP;
+close CMID;
 
+system ("scp ${release}_genefinder.ace wormsrv2:/wormsrv2/wormbase/misc_dynamic/misc_genefinder.ace");
 
 exit(0);
