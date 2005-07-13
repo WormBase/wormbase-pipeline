@@ -373,10 +373,11 @@ sub update_existing_clone
 	  &make_SQL_query($dbobj,"delete from input_id_analysis where input_id = \"$contig_old_name\"");# remove old
 	  &make_SQL_query($dbobj,"INSERT INTO input_id_analysis VALUES (\"$name\",\"Contig\",1,FROM_UNIXTIME($time),\"\",\"\",0)");# add dummy
 	
-	  #update clone and contig tables
+	  #update clone and contig tables and remove 
 	  &make_SQL_query($dbobj,"UPDATE contig SET name = \"$name\" WHERE contig_id = $contig_id");
 	  $contig->length($length);
 	  &make_SQL_query($dbobj,"UPDATE contig SET length = $length WHERE contig_id = $contig_id");
+	  &make_SQL_query($dbobj,"DELETE from repeat_feature where contig_id = $contig_id");
 
 	  return 1;
 	}
