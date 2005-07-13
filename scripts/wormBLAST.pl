@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2005-03-24 12:16:17 $
+# Last edited on: $Date: 2005-07-13 12:45:58 $
 
 
 use DBI;
@@ -209,7 +209,7 @@ if( $mail )
     close LETTER;
   
     my $name = "Wormpipe database distribution request";
-    my $maintainer = "ssg-isg\@sanger.ac.uk, sanger\@wormbase.org";     # mail to ssg and all Sanger WormBase
+    my $maintainer = "isg-help\@sanger.ac.uk, sanger\@wormbase.org";     # mail to ssg and all Sanger WormBase
     print "mailing distibution request to $maintainer\n";
     &mail_maintainer($name,$maintainer,$letter);
   }
