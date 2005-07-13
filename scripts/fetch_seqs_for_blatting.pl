@@ -7,7 +7,7 @@
 # Attempt to unify all of the diverse scripts to fetch ESTs, OSTs, mRNAs etc. used by blat
 #
 # Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2005-07-04 16:11:41 $
+# Last edited on: $Date: 2005-07-13 14:25:23 $
  
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -69,18 +69,17 @@ my $ost_seq;             # tag for OST/EST split
 my %ISNB2wormbase = &FetchData('NDBaccession2est');      # EST accession => name
 my %wormbase2ISNB = reverse %ISNB2wormbase;
 
+
 my $log;                                                       # for log file
 my $dir      = "/nfs/disk100/wormpub/analysis/ESTs";           # path for output files
 my $ftpdir   = "/nfs/disk69/ftp/pub/wormbase/sequences/ESTS";  # path for ftp site
 my $getz     = "/usr/local/pubseq/bin/getzc";                  # getz binary
-our $tace    = "/nfs/team71/acedb/edgrif/TEST/DAN/tace";       # tace binary
+our $tace    = &tace;                                          # tace binary
 our $ace_dir = "/wormsrv2/autoace";                            # database to extract data from
 
 if ($debug) {
-    $ace_dir = "/nfs/disk100/wormpub/camace_dl1";
+    $tace = "/nfs/team71/acedb/edgrif/TEST/DAN/tace";       # tace binary
 }
-
-
 
 # get masking data.....
 
@@ -147,7 +146,7 @@ sub make_ests {
  	$seq =~ s/\W//g;
 	$seq =~ s/[^gatcn]/n/g;
 	
-	$sequence{$wormbase2ISNB{$name}} = $seq;
+	$sequence{$name} = $seq;
     }
     # close file handles
     close (SEQUENCES);
@@ -188,8 +187,8 @@ sub make_ests {
 	    
 	}
 	
-	print  OUT_EST ">$name $ISNB2wormbase{$name}\n$sequence{$name}\n\n" unless ($ISNB2wormbase{$name} =~ /^OST/);
-	print  OUT_OST ">$name $ISNB2wormbase{$name}\n$sequence{$name}\n\n" if     ($ISNB2wormbase{$name} =~ /^OST/);
+	print  OUT_EST ">$name \n$sequence{$name}\n\n" unless ($name =~ /^OST/);
+	print  OUT_OST ">$name \n$sequence{$name}\n\n" if     ($name =~ /^OST/);
 
     }
     
@@ -465,23 +464,28 @@ sub get_masking_data {
     my ($seqtag,$target,$start,$stop,$span,$desc,$seq,$type);
 
     # assign tace query for this data set 
-    my $command = "Table-maker -p /nfs/disk100/wormpub/camace_dl1/wquery/test.def\nquit\n";
+    my $command = "Table-maker -p /nfs/disk100/wormpub/DATABASES/current_DB/wquery/FeatureMasker.def\nquit\n";
     # tace call to the database to dump dna
     open (TACE, "echo '$command' | $tace $ace_dir |");
     while (<TACE>) {
 
 	# Exclusions from the TableMaker output
 	next if (/inverted/);
+	next if (/tandem/);
 	next if (/intron/);
 	next if (/polyA_site/);
 	next if (/polyA_signal_sequence/);
 
 	s/\"//g;
+
+#	print "// $_\n" if ($debug);
+
 	if (/^(\S+)\s+(\S+)\s+(\S+)\s+(\d+)\s+(\d+)\s+(\S+)\s+(\S+.+)/) {
 	    ($seqtag,$target,$type,$start,$stop,$span,$desc) = ($1,$2,$3,$4,$5,$6,$7);
 
 	    # output data to array and hash
 	    push (@{$bmasked{$target}},$type);
+	    $mask{$seqtag}{SEQ}   = $target;
 	    $mask{$seqtag}{START} = $start;
 	    $mask{$seqtag}{STOP}  = $stop;
 	    $mask{$seqtag}{DESC}  = $desc;
