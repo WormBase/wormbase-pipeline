@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2005-07-13 12:45:58 $
+# Last edited on: $Date: 2005-07-14 13:19:42 $
 
 
 use DBI;
@@ -491,6 +491,7 @@ if( $prep_dump ) {
     &run_command("cp /wormsrv2/autoace/COMMON_DATA/cds2wormpep.dat $wormpipe_dir/dumps/");
     &run_command("cp /wormsrv2/autoace/COMMON_DATA/accession2clone.dat $wormpipe_dir/dumps/");
     &run_command("cp /wormsrv2/autoace/COMMON_DATA/clonesize.dat $wormpipe_dir/dumps/");
+    &run_command("mkdir /nfs/disk100/wormpub/DATABASES/autoace/COMMON_DATA");
     &run_command("cp /wormsrv2/autoace/COMMON_DATA/clonesize.dat /nfs/disk100/wormpub/DATABASES/autoace/COMMON_DATA/");
     
     system("touch $wormpipe_dir/DUMP_PREP_RUN");
