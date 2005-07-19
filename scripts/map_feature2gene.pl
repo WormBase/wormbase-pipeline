@@ -8,8 +8,8 @@
 #
 # Usage : map_feature2gene.pl [-options]
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2005-04-26 13:45:15 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2005-07-19 09:35:12 $
  
 #################################################################################
 # Initialise variables                                                          #
@@ -119,6 +119,7 @@ foreach my $feature (@TSL) {
 
 
 close OUTPUT;
+$db->close;
 
 # Upload file to autoace (if you have been asked to)
 
