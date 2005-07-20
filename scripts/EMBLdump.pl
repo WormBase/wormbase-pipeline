@@ -2,7 +2,7 @@
 #
 # EMBLDump.pl :  makes EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2005-03-24 17:18:35 $
+#  Last updated on: $Date: 2005-07-20 13:16:52 $
 #  Last updated by: $Author: dl1 $
 
 use strict;
@@ -15,9 +15,12 @@ use File::Copy;
 # command-line options       #
 ##############################
 
-my $test;   # use test environment in ~wormpub/TEST_BUILD/
+my $test;                                              # use test environment in ~wormpub/TEST_BUILD/
 
-GetOptions ("test"         => \$test);
+GetOptions (
+	    "test"         => \$test
+	    );
+
 
 my $basedir     = "/wormsrv2";
 $basedir        = glob("~wormpub")."/TEST_BUILD" if ($test); 
@@ -26,131 +29,71 @@ $basedir        = glob("~wormpub")."/TEST_BUILD" if ($test);
 # misc. variables             #
 ###############################
 
-#my $giface      = &giface;
+my $giface         = &giface;
+my $dbdir          = "$basedir/camace";
+my $tace           = &tace;
+my $outfilename    = "/nfs/disk100/wormpub/tmp/EMBLdump.$$";
+my $current_DB     = "/nfs/disk100/wormpub/DATABASES/current_DB";
+my $mod_file       = "/nfs/disk100/wormpub/tmp/EMBLdump.mod";
 
-my $giface =  glob("~edgrif/TEST/DAN/giface");
-my $dbdir       = "$basedir/camace";
-my $tace        = &tace;
-my $outfilename = "/nfs/disk100/wormpub/tmp/EMBLdump.$$";
-my $current_DB  = "/nfs/disk100/wormpub/DATABASES/current_DB";
-my $mod_file    = "/nfs/disk100/wormpub/tmp/EMBLdump.mod";
-
-if( $test ) {
-  $giface    = glob("~edgrif/TEST/DAN/giface");
-  $outfilename   = "/nfs/disk100/wormpub/test/EMBLdump.$$";
-  $mod_file  = "/nfs/disk100/wormpub/test/EMBLdump.mod";
+if ($test) {
+    $giface        = glob("~edgrif/TEST/DAN/giface");
+    $outfilename   = "/nfs/disk100/wormpub/test/EMBLdump.$$";
+    $mod_file      = "/nfs/disk100/wormpub/test/EMBLdump.mod";
 }
 
 #########################
 # make history log item
 #########################
+
 $0 =~ s/^\/.+\///;
 system ("touch $basedir/logs/history/$0.`date +%y%m%d`");
-
 
 #############################################
 # Use giface to dump EMBL files from camace #
 #############################################
 
 my $command;
-
-$command  = "nosave\n";                                                                                          # Don't reall want to do this
+$command  = "nosave\n";                                                                                          # Don't really want to do this
 $command .= "query find CDS where Method = \"Genefinder\"\nkill\n";                                              # remove Genefinder predictions
 $command .= "query find CDS where Method = \"twinscan\"\nkill\n";                                                # remove twinscan predictions
-$command .= "query find Genome_sequence From_laboratory = HX AND Finished AND DNA\ngif EMBL $outfilename\n";     # find genome sequences and EMBL dump
+$command .= "query find Genome_sequence From_laboratory = HX AND Finished AND DNA\ngif EMBL $outfilename\n";     # find Genome_sequences and EMBL dump
 $command .= "quit\nn\n";                                                                                         # say you don't want to save and exit
 
 # test mode only works on B0250
 if ($test) {
     $command    = "query find Genome_sequence B0250\ngif EMBL $outfilename\nquit\n";
 }
-open(READ, "echo '$command' | $giface $dbdir |") or die ("Could not open $giface $dbdir\n"); 
+
+open (READ, "echo '$command' | $giface $dbdir |") or die ("Could not open $giface $dbdir\n"); 
 while (<READ>) {
- next if ($_ =~ /\/\//);
- next if ($_ =~ /acedb/);
+    next if ($_ =~ /\/\//);
+    next if ($_ =~ /acedb/);
 }                   
-close(READ);
+close (READ);
 
 
-########################################################
-# make clone2sv hash from info in camace
-########################################################
+##########################################
+# make clone2sv hash from info in camace #
+##########################################
 
-# this is needed to fix missing sequence version and accession info in 
-# dumped EMBL files
+# this is needed to fix missing sequence version and accession info in dumped EMBL files
 
-my %clone2sv;
-
-$command = "Table-maker -p \"$basedir/autoace/wquery/clone2sv.def\"\nquit\n";
-
-open (TACE, "echo '$command' | $tace $dbdir | ");
-while (<TACE>) {
-  chomp;
-  next if ($_ eq "");
-  next if (/\/\//);
-  s/acedb\> //g;      # only need this is using 4_9i code, bug fixed in 4_9k onward (should be redundant)
-  s/\"//g;
-
-  if($_ =~ m/^(\S+)\s/){
-    my ($clone,$sv) = split /\t/;
-    $clone2sv{$clone} = $sv;
-  }
-}
-close TACE;
+my %clone2sv = &FetchData('clone2sv');            # CommonData hash Key: Genome sequence Value: Sequence version integer 
 
 ###############################################
 # make clone2name hash from info in current_DB
 ###############################################
-my %clone2type;
-my ($clone,$type);
 
-$command = "Table-maker -p \"$basedir/autoace/wquery/clone2type.def\"\nquit\n";
-
-open (TACE, "echo '$command' | $tace $current_DB | ");
-while (<TACE>) {
-  chomp;
-  s/acedb\> //g;      # only need this is using 4_9i code, bug fixed in 4_9k onward (should be redundant)
-  next if ($_ eq "");
-  next if (/\/\//);
-  s/\"//g;
-
-  if ($_ =~ m/^(\S+)\s+(\S+)/){    
-    ($clone,$type) = split /\t/;
-    $type =~ tr/[A-Z]/[a-z]/;
-    $clone2type{$clone} = $type;
-    ($clone2type{$clone} = "YAC") if ($type eq "yac");
-  }
-  elsif ($_ =~ m/^(\S+)\s/){    
-    print "WARNING: Missing type information?  $_\n";
-  }
-}
-close TACE;
+my %clone2type = &FetchData('clone2type');        # CommonData hash Key: Clone/Sequence name Value: Type information (cosmid|fosmid|yac|Other);
 
 #############################################
 # make CDS2CGC hash from info in current_DB #
 #############################################
 
-my %cds2cgc;
-my %cds2gene;
-my ($cds,$cgc,$wbgene);
+my %cds2cgc  = &FetchData('cds2cgc');
+my %cds2gene = &FetchData('cds2wbgene_id');
 
-$command = "Table-maker -p \"$basedir/autoace/wquery/cgc2cds.def\"\nquit\n";
-
-open (TACE, "echo '$command' | $tace $current_DB | ");
-while (<TACE>) {
-    chomp;
-    s/acedb\> //g;        # only need this if using 4_9i code
-    next if ($_ eq "");
-    next if (/\/\//);
-    s/\"//g;
-
-    if (/^(\S+)\s+(\S+)\s+(\S+)/) {
-	($wbgene,$cgc,$cds) = ($1,$2,$3);
-	$cds2cgc{$cds} = $cgc;
-	$cds2gene{$cds} = $wbgene;
-    }
-}
-close TACE;
 
 ######################################################################                     
 # cycle through the EMBL dump file, replacing info where appropriate #
@@ -160,6 +103,9 @@ open (OUT, ">$mod_file") or  die "Can't process new EMBL dump file\n";
 open (EMBL, "<$outfilename.embl") or die "Can't process EMBL dump file\n";
 
 my $id = "";
+my $cds;
+my $clone;
+
 our $reference_remove = 0;
 our $author_change;
 
@@ -180,7 +126,7 @@ while (<EMBL>) {
 
   # DE   Caenorhabditis elegans cosmid C05G5    
   if (/^DE   Caenorhabditis elegans cosmid (\S+)/) {
-    my $clone = $1;
+    $clone = $1;
 
     # can now reset $id
     $id = "";
@@ -191,6 +137,9 @@ while (<EMBL>) {
     }
     elsif ($clone2type{$clone} eq "other") {
       print OUT "DE   Caenorhabditis elegans clone $clone\n";
+    }
+    elsif ($clone2type{$clone} eq "yac") {
+      print OUT "DE   Caenorhabditis elegans YAC $clone\n";
     }
     else {
       print OUT "DE   Caenorhabditis elegans $clone2type{$clone} $clone\n";
@@ -249,7 +198,6 @@ while (<EMBL>) {
 	  next;
       }
       else {
-	  print OUT "FT                   /gene=\"$cds\"\n";
 	  print OUT "FT                   /locus_tag=\"$cds\"\n";
 	  next;
       }
