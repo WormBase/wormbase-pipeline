@@ -5,7 +5,7 @@
 # by Anthony Rogers et al
 #
 # Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2005-07-20 12:37:15 $
+# Last updated on: $Date: 2005-07-20 13:11:26 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -32,6 +32,7 @@ my $cds2wormpep;       # Hash: %cds2wormpep         Key: CDS name               
                        # Hash: %wormpep2cds         Key: Wormpep ID                        Value: CDS name
 my $cds2protein_id;    # Hash: %cds2protein_id      Key: CDS name                          Value: Protein_ID
                        # Hash: %protein_id2cds      Key: Protein_ID                        Value: CDS name
+my $cds2cgc;           # Hash: %cds2cgc             Key: CDS name                          Value: CGC name
 my $cds2status;        # Hash: %cds2status          Key: CDS name                          Value: Prediction status 
 my $clone2seq;         # Hash: %clone2seq           Key: Genomic_canonical                 Value: DNA sequence (lower case)
 my $clone2sv;          # Hash: %clone2sv            Key: Genomic_canonical                 Value: Sequence version (integer)
@@ -53,6 +54,7 @@ my %Table_defs = (
 		  'clone2size'       => 'CommonData:Clone_Size.def',
                   'clone2type'       => 'CommonData:Clone_Type.def',
 		  'cds2status'       => 'CommonData:CDS_Status.def',
+                  'cds2cgc'          => 'CommonData:CDS_CGCname.def',
 		  'est2feature'      => 'CommonData:EST_Feature.def',
 		  'estdata'          => 'CommonData:EST_data.def',
 		  'cds2lab'          => 'CommonData:CDS_Lab.def',
@@ -71,6 +73,7 @@ GetOptions (
 	   "cds2wormpep"        => \$cds2wormpep,
 	   "cds2pid"            => \$cds2protein_id,
 	   "cds2status"         => \$cds2status,
+           "cds2cgc"            => \$cds2cgc,
 	   "clone2seq"          => \$clone2seq,
 	   "clone2sv"           => \$clone2sv,
 	   "genes2lab"          => \$genes2lab,
@@ -120,6 +123,7 @@ else {
 &write_clonesize        if ($clone2size       || $all);
 &write_cds2wormpep      if ($cds2wormpep      || $all);
 &write_cds2status       if ($cds2status       || $all);
+&write_cds2cgc          if ($cds2cgc          || $all);
 &write_clones2seq       if ($clone2seq        || $all);
 &write_clones2sv        if ($clone2sv         || $all);
 &write_clone2type       if ($clone2type       || $all);
@@ -398,6 +402,37 @@ sub write_cds2status  {
 }
 
 ########################################################################################################
+
+sub write_cds2cgc {
+
+  # connect to AceDB using TableMaker,
+  my $command="Table-maker -p $wquery_dir/$Table_defs{'cds2CGCname'}\nquit\n";
+  
+  open (TACE, "echo '$command' | $tace $ace_dir |");
+  my %cds2cgc;
+
+  while (<TACE>) {
+      chomp;
+      s/\"//g;
+      next if ($_ eq "");
+      next if (/acedb\>/);
+
+      if (/^\S+\s+(\S+)\s+(\S+)/) {
+	  $cds2cgc{$2} = $1;
+      }
+  }
+
+  # now dump data to file
+  open (cds2cgc, ">$data_dir/cds2cgc.dat") or die "$data_dir/cds2cgc.dat";
+
+  print cds2cgc Data::Dumper->Dump([\%cds2cgc]);
+  
+  close cds2cgc;
+  }
+
+########################################################################################################
+
+
 
 
 sub write_Feature  {   
