@@ -5,7 +5,7 @@
 # by Anthony Rogers et al
 #
 # Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2005-06-07 08:50:25 $
+# Last updated on: $Date: 2005-07-20 12:37:15 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -35,6 +35,7 @@ my $cds2protein_id;    # Hash: %cds2protein_id      Key: CDS name               
 my $cds2status;        # Hash: %cds2status          Key: CDS name                          Value: Prediction status 
 my $clone2seq;         # Hash: %clone2seq           Key: Genomic_canonical                 Value: DNA sequence (lower case)
 my $clone2sv;          # Hash: %clone2sv            Key: Genomic_canonical                 Value: Sequence version (integer)
+my $clone2type;        # Hash: %clone2type          Key: Genomic_canonical                 Value: Type information (Cosmid, Fosmid, YAC, Plasmid)
 my $genes2lab;         # Hash: %worm_gene2lab       Key: Gene (CDS|Transcript|Pseudogene)  Value: From_laboratory (HX, RW, DRW)
 my $worm_gene2cgc;     # Hash: %worm_gene2cgc_name  Key: CGC name                          Value: Gene ID, plus molecular name (e.g. AH6.1), also a hash of cgc_name2gene
 my $worm_gene2geneID;  # Hash: %worm_gene2geneID    Key: Gene (CDS|Transcript|Pseudogene)  Value: Gene ID
@@ -50,6 +51,7 @@ my %Table_defs = (
 		  'clone2sv'         => 'CommonData:Clone_SequenceVersion.def',
 		  'clone2accession'  => 'CommonData:Clone_Accession.def', 
 		  'clone2size'       => 'CommonData:Clone_Size.def',
+                  'clone2type'       => 'CommonData:Clone_Type.def',
 		  'cds2status'       => 'CommonData:CDS_Status.def',
 		  'est2feature'      => 'CommonData:EST_Feature.def',
 		  'estdata'          => 'CommonData:EST_data.def',
@@ -65,6 +67,7 @@ GetOptions (
 	   "build"              => \$build,
 	   "clone2acc"          => \$clone2accession,
 	   "clone2size"         => \$clone2size,
+           "clone2type"         => \$clone2type,
 	   "cds2wormpep"        => \$cds2wormpep,
 	   "cds2pid"            => \$cds2protein_id,
 	   "cds2status"         => \$cds2status,
@@ -87,6 +90,7 @@ GetOptions (
 
 # Set up top level base directory which is different if in test mode
 # Make all other directories relative to this
+
 my $basedir   = "/wormsrv2";
 $basedir      = glob("~wormpub")."/TEST_BUILD" if ($test);
 
@@ -118,6 +122,7 @@ else {
 &write_cds2status       if ($cds2status       || $all);
 &write_clones2seq       if ($clone2seq        || $all);
 &write_clones2sv        if ($clone2sv         || $all);
+&write_clone2type       if ($clone2type       || $all);
 &write_genes2lab        if ($genes2lab        || $all);
 &write_worm_gene2class  if ($worm_gene2class  || $all);
 &write_EST              if ($estdata          || $all);
@@ -247,6 +252,37 @@ sub write_clones2sv  {
     print C2SV Data::Dumper->Dump([\%clone2sv]);
     
     close C2SV;
+    
+}
+
+########################################################################################################
+
+sub write_clone2type  {   
+
+    my %clone2type;
+    
+    # connect to AceDB using TableMaker,
+    my $command="Table-maker -p $wquery_dir/$Table_defs{'clone2tab'}\nquit\n";
+    
+    open (TACE, "echo '$command' | $tace $ace_dir |");
+    while (<TACE>) {
+	chomp;
+	s/\"//g;
+	next if ($_ eq "");
+	next if (/acedb\>/);
+	if (/^(\S+)\s+(\S+)/) {
+	    $clone2type{$1} = $3;
+	}
+    }
+    close TACE;
+	
+    # now dump data to file
+
+    open (C2TYPE, ">$data_dir/clone2type.dat") or die "cant write $data_dir/clone2type.dat :$!";
+    
+    print C2TYPE Data::Dumper->Dump([\%clone2type]);
+    
+    close C2TYPE;
     
 }
 
