@@ -4,8 +4,8 @@
 // "Read Models" or "Add Update File" from the main menu.
 
 // ALL WormBase groups should be in sync with this set of models
-// Last edited by: $Author: dl1 $
-// Last edited on: $Date: 2005-06-21 15:17:38 $
+// Last edited by: $Author: ar2 $
+// Last edited on: $Date: 2005-07-25 12:42:20 $
  
 
 
@@ -2460,7 +2460,7 @@
 		  Y2H ?Y2H XREF Reference
 		  Interaction ?Interaction XREF Paper
         Keyword ?Keyword
-
+	Remark  ?Text   #Evidence
 
 // new supporting class to index various paper names
 
@@ -2630,9 +2630,9 @@
 		   Transcript    ?Transcript XREF Variation
 		   Pseudogene    ?Pseudogene XREF Variation
            Isolation Date    DateType
-                     Mutagen UNIQUE Text
-                     Forward_genetics Text   // New tags to capture the basis of the experiment that isolated
-                     Reverse_genetics Text   // the allele. [040206 krb]
+                     Mutagen UNIQUE Text #Evidence
+                     Forward_genetics Text #Evidence  // New tags to capture the basis of the experiment that isolated
+                     Reverse_genetics Text #Evidence  // the allele. [040206 krb]
                      Transposon_excision ?Transposon_family
                      Derived_from ?Variation XREF Derivative
 		     Derivative	  ?Variation XREF Derived_from
@@ -2650,14 +2650,14 @@
 		    Rescued_by_transgene ?Transgene	 
 	   Description Phenotype ?Phenotype #Phenotype_info
                        Phenotype_remark ?Text #Evidence
-                       Nonsense UNIQUE Amber_UAG Text
-                                       Ochre_UAA Text
-                                       Opal_UGA  Text
-                       Missense Text                                // text fields stored details of codon change
-                       Silent Text
-                       Splice_site Donor Text
-                                   Acceptor Text
-                       Frameshift Text 
+                       Nonsense UNIQUE Amber_UAG Text #Evidence
+                                       Ochre_UAA Text #Evidence
+                                       Opal_UGA  Text #Evidence
+                       Missense Text #Evidence                               // text fields stored details of codon change
+                       Silent Text #Evidence
+                       Splice_site Donor Text #Evidence
+                                   Acceptor Text #Evidence
+                       Frameshift Text #Evidence
            Reference ?Paper XREF Allele
            Remark  ?Text #Evidence
 	   Method UNIQUE ?Method
