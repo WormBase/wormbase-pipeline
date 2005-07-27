@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: mt3 $
-# Last updated on: $Date: 2005-04-07 10:08:42 $
+# Last updated on: $Date: 2005-07-27 07:28:16 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -386,11 +386,16 @@ sub test_locus_for_errors{
     }
   }
 
-  # Look for Genes with no Positive_clone info but which can be derived from its sequence info
+  # Look for Genes with Live tag and no Positive_clone info but which can be derived from its sequence info
   if( !defined $gene_id->Positive_clone(1) && defined $gene_id->Sequence_name){
     # don't need to do this for C. briggsae genes
     my $species = $gene_id->Species;
     if ($species eq "Caenorhabditis elegans"){
+      my $seq = $gene_id->Sequence_name;
+
+  # don't need to do this for Dead genes.
+    my $identity = $gene_id->Status;
+    if ($identity eq "Live"){
       my $seq = $gene_id->Sequence_name;
       
       # need to chop off the ending to just get clone part
@@ -1209,7 +1214,7 @@ sub create_log_files{
 
   `chmod 777 $log $jah_log $caltech_log`; # so that they can be deleted by script
 
-}
+}}
 
 
 __END__
