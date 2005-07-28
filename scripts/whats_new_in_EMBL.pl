@@ -7,7 +7,7 @@
 # checks EMBL for new EST or mRNA entries
 #
 # Last updated by: $Author: dl1 $                      
-# Last updated on: $Date: 2005-02-18 16:10:42 $        
+# Last updated on: $Date: 2005-07-28 16:08:13 $        
 
 use strict;
 use Getopt::Long;
@@ -33,44 +33,127 @@ GetOptions ("help"     => \$help,
 &usage("Help") if ($help);
 	   
 # no debug name
-if($debug){
-  print "DEBUG = \"$debug\"\n\n";
-  ($maintainers = $debug . '\@sanger.ac.uk');
+if ($debug) {
+    ($maintainers = $debug . '\@sanger.ac.uk');
 }
 
 &create_log_files;
 
+#########################
+## MAIN BODY OF SCRIPT ##
+#########################
 
+our $buildtime       = 21;                                                # length of build in days
+my $date             = &get_date; 
 
-
-##########################
-# MAIN BODY OF SCRIPT
-##########################
-
-our $buildtime        = 21;   # length of build in days
-
-my $date     = &get_date;
-
-my $new_elegans_mRNA = 0;
+my $new_elegans_mRNA = 0;                                                 # Counts for the various classes
 my $new_elegans_EST  = 0;
 my $new_nematode_EST = 0;
 my $non_elegans_ESTs = 0;
 my $new_EMBL_CDS     = 0;
 
-# Elegans mRNA entries
-open (NEW_SEQUENCES, "$getz -c \'([embl-div:inv] & [embl-mol:*rna] & [embl-org:Caenorhabditis elegans] & [emblnew-DateCreated#$date:])\' |");
+my $outdir  = "/wormsrv2/autoace/acefiles";
 
+our $acc;                 # EMBL accession
+our $id;                  # EMBL ID
+our $sv;                  # EMBL sequence version
+our $def = "";            # EMBL description, needs to be initialised to ""
+our $protid;              # EMBL Protein_ID
+our $protver;             # EMBL Protein_ID version
+our $org;                 # EMBL species
+our $verbose;
+
+our $longtext;
+
+########################
+# Elegans mRNA entries #
+########################
+
+open (NEW_SEQUENCES, "$getz -c \'([embl-div:inv] & [embl-mol:*rna] & [embl-org:Caenorhabditis elegans] & [emblnew-DateCreated#$date:])\' |");
 while (<NEW_SEQUENCES>){
-  chomp;
-  $new_elegans_mRNA = $_;
+    chomp;
+    $new_elegans_mRNA = $_;
 }
 close NEW_SEQUENCES;
 
 print "There are $new_elegans_mRNA new mRNA entries since $date\n" if ($debug);
 
+if ($new_elegans_mRNA > 0) {
+
+    open (OUT_ACE,  ">$outdir/new_mRNA.ace");
+    open (NEW_SEQUENCES, "$getz -f \"acc\" \'([embl-div:inv] & [embl-mol:*rna] & [embl-org:Caenorhabditis elegans] & [emblnew-DateCreated#$date:])\' |");
+    while (<NEW_SEQUENCES>){
+	chomp;
+	($acc) = (/^AC\s+(\S+)\;/);
+        next if ($acc eq "");
+        print "Parsing EMBL accession: '$acc'\n" if ($verbose);
+                            
+	$longtext = 1;
+	print OUT_ACE "\nLongText : \"$acc\"\n";
+
+        # pfetch each sequence individually
+        open (LOOK, "/usr/local/pubseq/bin/pfetch -F $acc |");
+        while (<LOOK>) {
+	    chomp;
+            print if ($verbose);
+                                                                                                                                                    
+            if (/^\s/) {
+                s/\s+//g;
+                s/\d+//g;
+                print OUT_ACE  "$_\n";
+            }
+
+	    unless ($longtext == 0) {
+		print OUT_ACE "$_\n";
+	    }
+            # grab various details out of EMBL entry
+            if (/^ID\s+(\S+)/)                         {$id  = $1;}
+            if (/^SV\s+(\S+\.\d+)/)                    {$sv  = $1;}
+            if (/^DE\s+(.+)/)                          {$def = $def . " " . $1;}
+            if (/^FT\s+\/protein_id=\"(\S+)\.(\d+)\"/) {$protid = $1; $protver = $2;}
+            if (/^SQ/) {
 
 
-# Elegans EST entries
+		print OUT_ACE "//\n";
+		print OUT_ACE "***LongTextEnd***\n";
+
+		# remove any offending '>' from def line. This is required by transcriptmasker.pl
+                $def =~ s/\>//g;
+                                                                                                                                                    
+		print OUT_ACE "\nSequence : \"$acc\"\n";
+		print OUT_ACE "Database EMBL NDB_AC $acc\n";
+		print OUT_ACE "Database EMBL NDB_ID $id\n";
+		print OUT_ACE "Database EMBL NDB_SV $sv\n";
+		print OUT_ACE "Protein_id $acc $protid $protver\n";
+		print OUT_ACE "DB_annotation EMBL $acc\n";
+		print OUT_ACE "Species \"Caenorhabditis elegans\"\n";
+		print OUT_ACE "Title \"$def\"\nMethod NDB\n";
+		print OUT_ACE "\nDNA \"$acc\"\n";
+		
+		# end  LongText object
+		$longtext = 0;
+	    }
+
+
+	}
+	close LOOK;
+
+        # reset vars
+	$def = ""; $id = ""; $acc = ""; $sv = ""; $protid = ""; $protver ="";
+
+    }
+    # close filehandles
+    close SEQUENCES;
+    close OUT_ACE;
+}
+
+exit(0);
+
+
+#######################
+# Elegans EST entries #
+#######################
+
 open (NEW_SEQUENCES, "$getz -c \'([embl-div:est] & [embl-mol:*rna] & [embl-org:Caenorhabditis elegans] & [embl-DateCreated#$date:])\' |");
 while (<NEW_SEQUENCES>){
   chomp;
@@ -81,8 +164,63 @@ close NEW_SEQUENCES;
 print "There are $new_elegans_EST new EST entries since $date\n" if ($debug);
 
 
+if ($new_elegans_EST > 0) {
 
-# All Nematatode EST entries
+    open (OUT_ACE,  ">$outdir/new_EST.ace");
+    open (NEW_SEQUENCES, "$getz -f \"acc\" \'([embl-div:est] & [embl-mol:*rna] & [embl-org:Caenorhabditis elegans] & [emblnew-DateCreated#$date:])\' |");
+    while (<NEW_SEQUENCES>){
+	chomp;
+	($acc) = (/^AC\s+(\S+)\;/);
+        next if ($acc eq "");
+        print "Parsing EMBL accession: '$acc'\n" if ($verbose);
+                                                                                                                                                    
+        # pfetch each sequence individually
+        open (LOOK, "/usr/local/pubseq/bin/pfetch -F $acc |");
+        while (<LOOK>) {
+            print if ($verbose);
+                                                                                                                                                    
+            if (/^\s/) {
+                s/\s+//g;
+                s/\d+//g;
+                print OUT_ACE  "$_\n";
+            }
+            # grab various details out of EMBL entry
+            if (/^ID\s+(\S+)/)                         {$id  = $1;}
+            if (/^SV\s+(\S+\.\d+)/)                    {$sv  = $1;}
+            if (/^DE\s+(.+)/)                          {$def = $def." ".$1;}
+            if (/^FT\s+\/protein_id=\"(\S+)\.(\d+)\"/) {$protid=$1; $protver=$2;}
+            if (/^SQ/) {
+		# remove any offending '>' from def line. This is required by transcriptmasker.pl
+                $def =~ s/\>//g;
+                                                                                                                                                    
+		print OUT_ACE "\nSequence : \"$acc\"\n";
+		print OUT_ACE "Database EMBL NDB_AC $acc\n";
+		print OUT_ACE "Database EMBL NDB_ID $id\n";
+		print OUT_ACE "Database EMBL NDB_SV $sv\n";
+		print OUT_ACE "Protein_id $acc $protid $protver\n";
+		print OUT_ACE "Species \"Caenorhabditis elegans\"\n";
+		print OUT_ACE "Title \"$def\"\nMethod NDB\n";
+		print OUT_ACE "\nDNA \"$acc\"\n";
+	    }
+	}
+	close LOOK;
+
+        # reset vars
+	$def = ""; $id = ""; $acc = ""; $sv = ""; $protid = ""; $protver ="";
+
+    }
+    # close filehandles
+    close SEQUENCES;
+    close OUT_ACE;
+}
+
+
+
+
+############################
+# All Nematode EST entries #
+############################
+
 open (NEW_SEQUENCES, "$getz -c \'([embl-div:est] & [embl-mol:*rna] & [embl-Taxon:Nematoda] & [embl-DateCreated#$date:])\' |");
 while (<NEW_SEQUENCES>){
   chomp;
@@ -97,7 +235,10 @@ print "There are $non_elegans_ESTs non C. elegans ESTs since $date\n" if ($debug
 
 
 
-# New EMBL CDS entries
+########################
+# New EMBL CDS entries #
+########################
+
 open (NEW_SEQUENCES, "$getz -c \'([embl-div:inv] & ([embl-mol:genomic dna*] | [embl-mol:unassigned dna]) & [embl-DateCreated#$date:] & [embl-org:Caenorhabditis elegans] ! [embl-Keywords:HTG*]) & ([embl-FtKey:cds] > embl))\' |");
 while(<NEW_SEQUENCES>){
   chomp;
