@@ -7,8 +7,8 @@
 #
 # written by Dan Lawson
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2005-06-08 10:17:05 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2005-08-01 16:09:50 $
 
 use lib "/wormsrv2/scripts/";
 use Wormbase;
@@ -240,10 +240,8 @@ sub getswalldata {
 	}
 	if ($text =~ /AC\s+(\S+);/) {                                        # AC  Q95YB2;
 	    $acc = $1;
-	    if ((length ($acc)) == 8) {	$db = "TN"; }
-	    elsif ($id =~ /_CAEEL/)   { $db = "SW"; }
-	    else                      {	$db = "TR"; }
-#	    print "assign AC & DB\n";
+	    # assign SwissProt : TrEMBL based on diff between ID and ACC eg SW = YPC1_CAEEL Q11178 vs TR = Q52GY9_CAEEL Q52GY9
+	    $db = $id =~ /$acc/ ? 'TR' : 'SW';
 	}
 	while ($text =~ /DR\s+EMBL;\s\S+\s(\S+)\.\d+; \-\;/g) {            # DR   EMBL; U05038; AAA61872.1; -.
 	    push (@proteinID, $1);
