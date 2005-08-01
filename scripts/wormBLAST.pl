@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2005-07-14 13:19:42 $
+# Last edited on: $Date: 2005-08-01 12:08:24 $
 
 
 use DBI;
@@ -583,7 +583,7 @@ if( $cleanup ) {
 
   print "\nRemoving farm output and error files from /acari/scatch5/ensembl/Worms/*\n"; 
 
-  my $scratch_dir = "/acari/scratch5/ensembl/Worms";
+  my $scratch_dir = "/acari/scratch1/ensembl/Worms";
   my @directories = qw( 0 1 2 3 4 5 6 7 8 9 );
 
   foreach my $directory ( @directories ) {
