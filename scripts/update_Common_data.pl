@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers et al
 #
-# Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2005-07-20 13:11:26 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2005-08-02 09:52:09 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -266,7 +266,7 @@ sub write_clone2type  {
     my %clone2type;
     
     # connect to AceDB using TableMaker,
-    my $command="Table-maker -p $wquery_dir/$Table_defs{'clone2tab'}\nquit\n";
+    my $command="Table-maker -p $wquery_dir/$Table_defs{'clone2type'}\nquit\n";
     
     open (TACE, "echo '$command' | $tace $ace_dir |");
     while (<TACE>) {
@@ -275,7 +275,7 @@ sub write_clone2type  {
 	next if ($_ eq "");
 	next if (/acedb\>/);
 	if (/^(\S+)\s+(\S+)/) {
-	    $clone2type{$1} = $3;
+	    $clone2type{$1} = $2;
 	}
     }
     close TACE;
