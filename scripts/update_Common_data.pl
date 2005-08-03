@@ -5,7 +5,7 @@
 # by Anthony Rogers et al
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2005-08-02 09:52:09 $
+# Last updated on: $Date: 2005-08-03 11:26:09 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -406,7 +406,7 @@ sub write_cds2status  {
 sub write_cds2cgc {
 
   # connect to AceDB using TableMaker,
-  my $command="Table-maker -p $wquery_dir/$Table_defs{'cds2CGCname'}\nquit\n";
+  my $command="Table-maker -p $wquery_dir/$Table_defs{'cds2cgc'}\nquit\n";
   
   open (TACE, "echo '$command' | $tace $ace_dir |");
   my %cds2cgc;
