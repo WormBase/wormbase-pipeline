@@ -2,8 +2,8 @@
 #
 # EMBLDump.pl :  makes EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2005-07-20 13:16:52 $
-#  Last updated by: $Author: dl1 $
+#  Last updated on: $Date: 2005-08-08 14:41:18 $
+#  Last updated by: $Author: pad $
 
 use strict;
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
@@ -74,12 +74,12 @@ close (READ);
 
 
 ##########################################
-# make clone2sv hash from info in camace #
+# make clone2accession hash from info in camace #
 ##########################################
 
 # this is needed to fix missing sequence version and accession info in dumped EMBL files
 
-my %clone2sv = &FetchData('clone2sv');            # CommonData hash Key: Genome sequence Value: Sequence version integer 
+my %clone2accession = &FetchData('clone2accession');            # CommonData hash Key: Genome sequence Value: Sequence version integer 
 
 ###############################################
 # make clone2name hash from info in current_DB
@@ -120,7 +120,7 @@ while (<EMBL>) {
 
   # print ID line and next XX
   if( /^AC/ ) {
-    print OUT "AC   ",substr($clone2sv{$id},0,-2),";\nXX\n";
+    print OUT "AC   $clone2accession{$id};\nXX\n";
     next;
   }
 
