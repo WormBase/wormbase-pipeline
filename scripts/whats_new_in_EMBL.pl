@@ -6,8 +6,8 @@
 #
 # checks EMBL for new EST or mRNA entries
 #
-# Last updated by: $Author: dl1 $                      
-# Last updated on: $Date: 2005-07-28 16:08:13 $        
+# Last updated by: $Author: pad $                      
+# Last updated on: $Date: 2005-08-08 14:37:49 $        
 
 use strict;
 use Getopt::Long;
@@ -147,7 +147,7 @@ if ($new_elegans_mRNA > 0) {
     close OUT_ACE;
 }
 
-exit(0);
+#exit(0);
 
 
 #######################
