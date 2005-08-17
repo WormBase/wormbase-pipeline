@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2005-05-27 09:41:27 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2005-08-17 10:21:15 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -207,7 +207,7 @@ foreach $file (@gff_files) {
     # History predictions
     elsif ($source eq "history")                                                {push (@{$GFF{$file}{history}},$_);}
     # Twinscan predictions
-    elsif ($source eq "twinscan")                                             {push (@{$GFF{$file}{twinscan}},$_);}
+    elsif ($source eq "twinscan")                                               {push (@{$GFF{$file}{twinscan}},$_);}
     # Repeats
     elsif ( ($source eq "RepeatMasker") || ($source eq "inverted") || ($source eq "tandem"))  {push (@{$GFF{$file}{repeats}},$_);}
 
@@ -226,58 +226,60 @@ foreach $file (@gff_files) {
     # Oligo mapping
     elsif ($feature eq "oligo")                                                 {push (@{$GFF{$file}{oligos}},$_);}
     # RNAi
-    elsif ($feature eq "RNAi_reagent")                                          {push (@{$GFF{$file}{RNAi_primary}},$_);}
+    elsif ($source eq "RNAi_primary")                                           {push (@{$GFF{$file}{RNAi_primary}},$_);}
+    elsif ($source eq "RNAi_secondary")                                         {push (@{$GFF{$file}{RNAi_secondary}},$_);}
+
     # PCR_products
     elsif ($feature eq "PCR_product")                                           {push (@{$GFF{$file}{PCR_products}},$_);}
     # Alleles
-    elsif (($source eq "Allele") || ($source eq "Mos_insertion_allele")) {push (@{$GFF{$file}{allele}},$_);}
+    elsif (($source eq "Allele") || ($source eq "Mos_insertion_allele"))        {push (@{$GFF{$file}{allele}},$_);}
     # operons
-    elsif ($source eq "operon")                       {push (@{$GFF{$file}{operon}},$_);}
+    elsif ($source eq "operon")                                                 {push (@{$GFF{$file}{operon}},$_);}
     # Oligo_set
-    elsif (($source eq "Oligo_set") && ($feature eq "reagent")) {push (@{$GFF{$file}{Oligo_set}},$_);}
+    elsif (($source eq "Oligo_set") && ($feature eq "reagent"))                 {push (@{$GFF{$file}{Oligo_set}},$_);}
     # Clone ends
-    elsif ((/Clone_left_end/) || (/Clone_right_end/)) {push (@{$GFF{$file}{clone_ends}},$_);}
+    elsif ((/Clone_left_end/) || (/Clone_right_end/))                           {push (@{$GFF{$file}{clone_ends}},$_);}
     # cDNA for RNAi
-    elsif (/cDNA_for_RNAi/)                           {push (@{$GFF{$file}{cDNA_for_RNAi}},$_);}
+    elsif (/cDNA_for_RNAi/)                                                     {push (@{$GFF{$file}{cDNA_for_RNAi}},$_);}
     # BLAT_EST
-    elsif (/BLAT_EST_BEST/)                           {push (@{$GFF{$file}{BLAT_EST_BEST}},$_);
-						       push (@{$GFF{$file}{BLAT_TRANSCRIPT_BEST}},$_);}
-    elsif (/BLAT_EST_OTHER/)                          {push (@{$GFF{$file}{BLAT_EST_OTHER}},$_);}
+    elsif (/BLAT_EST_BEST/)                                                     {push (@{$GFF{$file}{BLAT_EST_BEST}},$_);
+						                                 push (@{$GFF{$file}{BLAT_TRANSCRIPT_BEST}},$_);}
+    elsif (/BLAT_EST_OTHER/)                                                    {push (@{$GFF{$file}{BLAT_EST_OTHER}},$_);}
     # BLAT_OST
-    elsif (/BLAT_OST_BEST/)                           {push (@{$GFF{$file}{BLAT_OST_BEST}},$_);
-						       push (@{$GFF{$file}{BLAT_TRANSCRIPT_BEST}},$_);}
-    elsif (/BLAT_OST_OTHER/)                          {push (@{$GFF{$file}{BLAT_OST_OTHER}},$_);}
+    elsif (/BLAT_OST_BEST/)                                                     {push (@{$GFF{$file}{BLAT_OST_BEST}},$_);
+						                                 push (@{$GFF{$file}{BLAT_TRANSCRIPT_BEST}},$_);}
+    elsif (/BLAT_OST_OTHER/)                                                    {push (@{$GFF{$file}{BLAT_OST_OTHER}},$_);}
     # BLAT_mRNA
-    elsif (/BLAT_mRNA_BEST/)                          {push (@{$GFF{$file}{BLAT_mRNA_BEST}},$_);
-						       push (@{$GFF{$file}{BLAT_TRANSCRIPT_BEST}},$_);}
-    elsif (/BLAT_mRNA_OTHER/)                         {push (@{$GFF{$file}{BLAT_mRNA_OTHER}},$_);}
+    elsif (/BLAT_mRNA_BEST/)                                                    {push (@{$GFF{$file}{BLAT_mRNA_BEST}},$_);
+						                                 push (@{$GFF{$file}{BLAT_TRANSCRIPT_BEST}},$_);}
+    elsif (/BLAT_mRNA_OTHER/)                                                   {push (@{$GFF{$file}{BLAT_mRNA_OTHER}},$_);}
     # BLAT_EMBL
-    elsif (/BLAT_EMBL_BEST/)                          {push (@{$GFF{$file}{BLAT_EMBL_BEST}},$_);}
-    elsif (/BLAT_EMBL_OTHER/)                         {push (@{$GFF{$file}{BLAT_EMBL_OTHER}},$_);}
+    elsif (/BLAT_EMBL_BEST/)                                                    {push (@{$GFF{$file}{BLAT_EMBL_BEST}},$_);}
+    elsif (/BLAT_EMBL_OTHER/)                                                   {push (@{$GFF{$file}{BLAT_EMBL_OTHER}},$_);}
     # BLAT_NEMATODE
-    elsif (/BLAT_NEMATODE/)                           {push (@{$GFF{$file}{BLAT_NEMATODE}},$_);}
+    elsif (/BLAT_NEMATODE/)                                                     {push (@{$GFF{$file}{BLAT_NEMATODE}},$_);}
     # BLAT_TC1_BEST
-    elsif (/BLAT_TC1_BEST/)                           {push (@{$GFF{$file}{BLAT_TC1_BEST}},$_);}
-    elsif (/BLAT_TC1_OTHER/)                          {push (@{$GFF{$file}{BLAT_TC1_OTHER}},$_);}
+    elsif (/BLAT_TC1_BEST/)                                                     {push (@{$GFF{$file}{BLAT_TC1_BEST}},$_);}
+    elsif (/BLAT_TC1_OTHER/)                                                    {push (@{$GFF{$file}{BLAT_TC1_OTHER}},$_);}
     # BLAT_ncRNA_BEST
-    elsif (/BLAT_ncRNA_BEST/)                         {push (@{$GFF{$file}{BLAT_ncRNA_BEST}},$_);}
-    elsif (/BLAT_ncRNA_OTHER/)                        {push (@{$GFF{$file}{BLAT_ncRNA_OTHER}},$_);}
+    elsif (/BLAT_ncRNA_BEST/)                                                   {push (@{$GFF{$file}{BLAT_ncRNA_BEST}},$_);}
+    elsif (/BLAT_ncRNA_OTHER/)                                                  {push (@{$GFF{$file}{BLAT_ncRNA_OTHER}},$_);}
     # Expr_profile
-    elsif (/Expr_profile/)                            {push (@{$GFF{$file}{Expr_profile}},$_);}
+    elsif (/Expr_profile/)                                                      {push (@{$GFF{$file}{Expr_profile}},$_);}
     # Protein similarities
-    elsif (/wublastx/)                                {push (@{$GFF{$file}{BLASTX}},$_);}
+    elsif (/wublastx/)                                                          {push (@{$GFF{$file}{BLASTX}},$_);}
     # C. briggsae
-    elsif ($source =~ /waba/)                         {push (@{$GFF{$file}{WABA_BRIGGSAE}},$_);}
+    elsif ($source =~ /waba/)                                                   {push (@{$GFF{$file}{WABA_BRIGGSAE}},$_);}
 
     # TEC_RED similarities
-    elsif ($source eq "TEC_RED")                      {push (@{$GFF{$file}{TEC_RED}},$_);}
+    elsif ($source eq "TEC_RED")                                                {push (@{$GFF{$file}{TEC_RED}},$_);}
     # SAGE transcript
-    elsif ($source eq "SAGE_transcript")              {push (@{$GFF{$file}{SAGE}},$_);}
+    elsif ($source eq "SAGE_transcript")                                        {push (@{$GFF{$file}{SAGE}},$_);}
 
 
 
     # REST OF LINES
-    else                                              {push (@{$GFF{$file}{rest}},$_); $running_total--;}
+    else                                                                        {push (@{$GFF{$file}{rest}},$_); $running_total--;}
     
     # increment no of lines sorted to bin
     $running_total++; 
