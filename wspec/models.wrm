@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2005-07-25 12:42:20 $
+// Last edited on: $Date: 2005-08-18 19:47:24 $
  
 
 
@@ -299,6 +299,7 @@
                                           Trans_target    ?Gene_regulation XREF Trans_regulated_gene
                           Antibody ?Antibody XREF Gene
                           Microarray_results ?Microarray_results XREF Gene
+			  Expression_cluster ?Expression_cluster XREF Gene #Evidence	//Igor: create clusters of Genes from microarray exps
 			  SAGE_transcript ?SAGE_transcript XREF Gene
 			  Y2H_bait   ?Y2H XREF Bait_overlapping_gene // for yeast two hybrid data
 			  Y2H_target ?Y2H XREF Target_overlapping_gene
@@ -2062,7 +2063,7 @@
                                         Presence UNIQUE PA                                   // present always
                                                         PS                                   // present sometimes - marginal call
                                                         NP                                   // never present
-                        Cluster         ?Cluster XREF Microarray_results                     // one way XREF used to populate Cluster class
+			Expression_cluster ?Expression_cluster XREF Microarray_results       // one way XREF used to populate Cluster class (prev ?Cluster)
                         Remark          ?Text #Evidence
 
 
@@ -2098,15 +2099,13 @@
 // The tag "Microarray_result" refers to all experimental results included in the cluster.
 // The tag "Reference" refers to the paper performed this clustering analysis
 
-?Cluster Description   ?Text
-         Algorithm     ?Text
-	 Microarray_results ?Microarray_results     //added for Microarray_results model
-         Reference     ?Paper XREF Cluster 
-	 SAGE_results ?SAGE_results
-         Remark ?Text #Evidence
-                  
-
-
+?Expression_cluster  Description  ?Text
+		     Algorithm    Text
+		     Reference    ?Paper XREF Expression_cluster
+		     Microarray_results ?Microarray_results  Text #Evidence  //added for Microarray_results model
+		     SAGE_tag ?SAGE_tag Text #Evidence
+		     Gene ?Gene XREF Expression_cluster #Evidence           //Igor: populated during build based on Microarray_results mapping
+		     Remark ?Text #Evidence    
 
 ?Condition Life_stage      ?Life_stage
 	   Strain	   ?Strain // added for Microarry_result [030127 krb]
@@ -2155,7 +2154,7 @@
                                 Confidence_level        UNIQUE Float
                                 Standard_deviation      UNIQUE Float
                                 Number_of_experiments   UNIQUE Int
-                Cluster         ?Cluster XREF SAGE_results                                                      
+		Expression_cluster ?Expression_cluster XREF SAGE_tag    //Replaces ?Cluster connection
                 Sequence_quality  UNIQUE Float            //most commonly cumulative phred scores associated with the tag 
 						// sequences; not in ?SAGE_tag since it will vary from experiment to experiment
 
@@ -2450,7 +2449,7 @@
                   Transgene ?Transgene XREF Reference #Evidence
                   GO_term ?GO_term XREF Reference ?GO_code #Evidence
                   Operon ?Operon XREF Reference #Evidence
-                  Cluster ?Cluster XREF Reference #Evidence
+		  Expression_cluster ?Expression_cluster XREF Reference #Evidence
 		  Feature ?Feature XREF Defined_by_paper                 // added [030424 dl]
 		  Gene_regulation ?Gene_regulation XREF Reference // added [030804 krb]
 		  Microarray_experiment ?Microarray_experiment XREF Reference //added for Microarray_experiment model
@@ -2650,14 +2649,32 @@
 		    Rescued_by_transgene ?Transgene	 
 	   Description Phenotype ?Phenotype #Phenotype_info
                        Phenotype_remark ?Text #Evidence
+                       Recessive
+                       Semi_dominant
+                       Dominant
+		       Partially_penetrant Text // percentage of animals displaying phenotype
+		       Completely_penetrant
+                       Temperature_sensitive Heat_sensitive Text #Evidence // text field stores temperature
+                                             Cold_sensitive Text #Evidence
+                       Loss_of_function UNIQUE Haplo_insufficient #Evidence //new section krb 021210
+                                               Hypomorph #Evidence
+                                               Amorph #Evidence
+                                               Uncharacterised_loss_of_function #Evidence
+                       Gain_of_function UNIQUE Dominant_negative #Evidence //new section krb 021210
+                                               Hypermorph #Evidence
+                                               Neomorph #Evidence
+                                               Uncharacterised_gain_of_function #Evidence
                        Nonsense UNIQUE Amber_UAG Text #Evidence
                                        Ochre_UAA Text #Evidence
                                        Opal_UGA  Text #Evidence
-                       Missense Text #Evidence                               // text fields stored details of codon change
+                       Missense Text  #Evidence				// text fields stored details of codon change
                        Silent Text #Evidence
                        Splice_site Donor Text #Evidence
                                    Acceptor Text #Evidence
-                       Frameshift Text #Evidence
+                       Frameshift Text #Evidence  // added sdm
+                       Maternal Strictly_maternal
+                                With_maternal_effect
+                       Paternal
            Reference ?Paper XREF Allele
            Remark  ?Text #Evidence
 	   Method UNIQUE ?Method
@@ -2691,7 +2708,7 @@
                 Assigned_sequence   Corresponding_protein ?Protein XREF Structure_data #Evidence
                                     Corresponding_CDS ?CDS XREF Structure_data #Evidence
                                     Protein_identity #Evidence
-                Status              Selected UNIQUE DateType
+                Status		    Selected UNIQUE DateType
                                     Cloned UNIQUE DateType
                                     Expressed UNIQUE DateType
                                     Soluble UNIQUE DateType
