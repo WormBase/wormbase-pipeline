@@ -135,3 +135,10 @@ Added new tags to the ?Gene class for Caltech descriptions. This required the co
 tags under the Structured_description heading.
 
 Added Title and Description tags to the ?Gene_cluster and ?Transposon_family classes.
+
+18th August 2005
+================
+
+Changes in the ?Variation model have been made too soon. Several tags under Description were removed and the data not moved elsewhere in WS146. I have reinstated the tags for WS148 and the data is fine.  The Phenotype tag is now for connecting to a ?Phenotype object and any text that was previously here is now in Phenotype_remark.
+
+?Cluster has been replaced by ?Expression_cluster for connecting Microarray_results and Genes.
