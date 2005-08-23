@@ -5,7 +5,7 @@
 # by Anthony Rogers                             
 #
 # Last updated by: $Author: ar2 $               
-# Last updated on: $Date: 2005-08-23 13:39:31 $         
+# Last updated on: $Date: 2005-08-23 15:59:23 $         
 
 # Generates a release letter at the end of build.
 #
@@ -139,9 +139,8 @@ if( defined($opt_l)) {
   print  RL "\n\n\n";
   print  RL "Status of entries: Protein Accessions\n";
   print  RL "-------------------------------------\n";
-  printf RL "Swissprot accessions %6d (%2.1f%%)\n", $wp_status{Swissprot}, (($wp_status{Swissprot}/$wp_status{Total}) * 100);
-  printf RL "TrEMBL accessions    %6d (%2.1f%%)\n", $wp_status{Trembl},    (($wp_status{Trembl}/$wp_status{Total}) * 100);
-  printf RL "TrEMBLnew accessions %6d (%2.1f%%)\n", $wp_status{Tremblnew}, (($wp_status{Tremblnew}/$wp_status{Total}) * 100);
+  printf RL "UniProtKB\/Swiss-Prot accessions %6d (%2.1f%%)\n", $wp_status{Swissprot}, (($wp_status{Swissprot}/$wp_status{Total}) * 100);
+  printf RL "UniProtKB\/TrEMBL accessions    %6d (%2.1f%%)\n", $wp_status{Trembl},    (($wp_status{Trembl}/$wp_status{Total}) * 100);
   print  RL "\n\n\n";
   print  RL "Status of entries: Protein_ID's in EMBL\n";
   print  RL "---------------------------------------\n";
