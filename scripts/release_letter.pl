@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers                             
 #
-# Last updated by: $Author: pad $               
-# Last updated on: $Date: 2005-04-18 09:49:11 $         
+# Last updated by: $Author: ar2 $               
+# Last updated on: $Date: 2005-08-23 13:39:31 $         
 
 # Generates a release letter at the end of build.
 #
@@ -219,6 +219,7 @@ if( defined($opt_l)) {
   print RL "Known Problems:\n--------------\n\n\n";
   print RL "Other Changes:\n--------------\n\n";
   print RL "Proposed Changes / Forthcoming Data:\n------------------------------------\n\n\n";
+  print RL "Model Changes:\n------------------------------------\n\n\n";
   
   # Installation guide
   print RL "-===================================================================================-\n";
