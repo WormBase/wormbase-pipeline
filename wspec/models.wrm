@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2005-08-18 19:47:24 $
+// Last edited on: $Date: 2005-08-26 11:09:04 $
  
 
 
@@ -320,7 +320,7 @@
 		  Landmark_gene // for those genes that will appear in genetic map of Genome Browser
 		  Pseudo_map_position // should be added to flag those genes which have Map position tags that
 				      // were 'promoted' from Interpolated_map_position tags
-        Reference ?Paper XREF Gene
+        Reference ?Paper XREF Gene #Evidence
         Remark ?Text #Evidence
 	Method UNIQUE ?Method
 
@@ -670,9 +670,9 @@
 			  Default_negative
 		// if set then all non-explicit elements on Grid score -ve
 
-
+//Evidence hash
 #Evidence Paper_evidence ?Paper                                       // Data from a Paper
-          Published_as Gene UNIQUE ?Gene_name #Evidence               //  .. track other names for the same data
+          Published_as ?Text                                           //  .. track other names for the same data
           Person_evidence ?Person                                     // Data from a Person
           Author_evidence ?Author UNIQUE Text                         // Data from an Author
           Accession_evidence ?Database ?Accession_number              // Data from a database (NDB/UNIPROT etc)
@@ -1095,7 +1095,7 @@
 		Y2H_bait   ?Y2H XREF Bait_overlapping_CDS // for yeast two hybrid data
 		Y2H_target ?Y2H XREF Target_overlapping_CDS
 		3d_data ?3d_data XREF CDS
-	        Structure_data ?Structure_data XREF Corresponding_CDS #Evidence
+	        //Structure_data ?Structure_data XREF Corresponding_CDS #Evidence
                 Remark ?Text #Evidence
 	Associated_feature ?Feature XREF Associated_with_CDS #Evidence
 	Drives_transgene  ?Transgene XREF Driven_by_CDS_promoter
@@ -1310,6 +1310,7 @@
 		  Motif_homol ?Motif XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		  Homol_homol ?Homol_data XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		  RNAi_homol ?RNAi XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info //added for RNAi mapping
+		  Structure_homol ?Structure_data XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info               //ar2_struct
                                                                                               
 
 
@@ -1406,7 +1407,7 @@
                   Expr_pattern ?Expr_pattern XREF Protein
 		  Homology_group ?Homology_group XREF Protein // added [031120 krb]
 		  3d_data ?3d_data XREF Protein
-                  Structure_data ?Structure_data XREF Corresponding_protein #Evidence
+                  //Structure_data ?Structure_data XREF Corresponding_protein #Evidence
           Homol DNA_homol ?Sequence XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int  #Homol_info
                 Pep_homol ?Protein XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int  #Homol_info
                 Structure_homol ?Structure_data XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
@@ -1935,7 +1936,7 @@
                                             Injection              //RL [010327]
                                             Soaking                //RL [010327]
                                             Transgene_expression   //RL [010327]
-        Inhibits        Predicted_gene ?CDS XREF RNAi_result  #Evidence // "gene" parent (unreliable)
+        Inhibits        Predicted_gene ?CDS XREF RNAi_result #Evidence // "gene" parent (unreliable)
                         Gene ?Gene   XREF RNAi_result #Evidence           //RL [010327]
                         Transcript ?Transcript XREF RNAi_result #Evidence // krb [021126]
                         Pseudogene ?Pseudogene XREF RNAi_result #Evidence // new [030801 krb]
@@ -2703,11 +2704,12 @@
 
 ?Structure_data Evidence            #Evidence
                 DB_info             Database ?Database ?Database_field ?Accession_number XREF Structure_data
-                Sequence            Protein UNIQUE ?Peptide 
+                Sequence            Protein UNIQUE ?Protein 
                 Homol               Pep_homol ?Protein XREF Structure_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
-                Assigned_sequence   Corresponding_protein ?Protein XREF Structure_data #Evidence
-                                    Corresponding_CDS ?CDS XREF Structure_data #Evidence
-                                    Protein_identity #Evidence
+				    Homol_homol ?Homol_data XREF Structure_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
+                //Assigned_sequence   Corresponding_protein ?Protein XREF Structure_data #Evidence
+		//		    Corresponding_CDS ?CDS XREF Structure_data #Evidence
+                //                   Protein_identity #Evidence
                 Status		    Selected UNIQUE DateType
                                     Cloned UNIQUE DateType
                                     Expressed UNIQUE DateType
