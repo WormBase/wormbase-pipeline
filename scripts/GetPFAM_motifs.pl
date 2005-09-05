@@ -6,8 +6,8 @@
 #
 # Gets latest PFAM motifs from sanger/pub and puts info in to ace file
 #
-# Last updated by: $Author: krb $                      
-# Last updated on: $Date: 2004-09-01 14:29:26 $         
+# Last updated by: $Author: ar2 $                      
+# Last updated on: $Date: 2005-09-05 13:50:40 $         
 
 
 use strict;                                     
@@ -47,7 +47,7 @@ my $log = Log_files->make_build_log();
 my $pfam_motifs_gz = "/wormsrv2/tmp/Pfam_motifs.gz";
 $log->write_to("Attempting to wget the latest version\n");
 print "Attempting to wget the latest version\n";
-`wget -O $pfam_motifs_gz ftp://ftp.sanger.ac.uk/pub/databases/Pfam/Pfam-A.full.gz` and die "$0 Couldnt get Pfam-A.full.gz \n";
+`wget -O $pfam_motifs_gz ftp://ftp.sanger.ac.uk/pub/databases/Pfam/current_release/Pfam-A.full.gz` and die "$0 Couldnt get Pfam-A.full.gz \n";
 
 `gunzip -f $pfam_motifs_gz` and die "gunzip failed\n";
 
