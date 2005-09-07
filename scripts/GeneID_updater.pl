@@ -4,10 +4,10 @@
 # 
 # by Paul Davis
 #
-# Script to do soemthing else quite different indeed.
+# Script to refresh the CDS->WBGene connections in a chosen database from a chosen reference database.
 #
-# Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2005-05-09 14:15:13 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2005-09-07 13:45:36 $
 
 use strict;                                      
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
@@ -19,9 +19,10 @@ use Carp;
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $targetDB, $sourceDB, $update, $all);
+my ($help, $debug, $targetDB, $sourceDB, $fileout, $update, $public);
 my $maintainers = "All";
 my $log;
+my $output_file;
 #our $logdir  = "/nfs/team71/worm/pad/Scripts";
 
 
@@ -30,8 +31,10 @@ GetOptions (
             'debug=s'      => \$debug,
 	    'sourceDB=s'   => \$sourceDB,
 	    'targetDB=s'   => \$targetDB,
+	    'fileout=s'    => \$fileout,
 	    'update'       => \$update,
-	    );	     
+	    'public'       => \$public,
+	    );
 
 # Display help if required
 &usage("Help") if ($help);
@@ -47,17 +50,39 @@ if($debug){
 # MAIN BODY OF SCRIPT
 ##########################
 
-# default databases
-$sourceDB = "/wormsrv1/geneace" if (!$sourceDB);
-$targetDB = "/wormsrv1/camace"  if (!$targetDB);
+# Select and check source databases.
+if ($sourceDB) {
+  $sourceDB = $sourceDB;
+}
+elsif (!$sourceDB) {
+  $sourceDB = "/wormsrv1/geneace";
+}
+if ($targetDB) {
+  $targetDB = $targetDB;
+}
+elsif (!$targetDB) {
+$targetDB = "/wormsrv1/camace";
+}
+
+print "\n\nSOURCE Database: $sourceDB.\n\n";
+print "TARGET Database: $targetDB\n\n";
+
 
 # tace executable path
 our $tace = &tace; 
 
-
 # paths and files
 my $tablemaker_query =  "/nfs/disk100/wormpub/DATABASES/current_DB/wquery/SCRIPT:GeneID_updater.pl.def";
-my $output_file      =  "/nfs/disk100/wormpub/camace_orig/updated_geneIDs.ace";
+
+#Check and set output file
+if ($fileout) {
+  $output_file = $fileout;
+}
+elsif (!$fileout) {
+  $output_file = "/nfs/disk100/wormpub/camace_orig/updated_geneIDs.ace";
+}
+
+print "You are creating the file $output_file.\n";
 
 ########################################################################
 # make database connection for extracting WBGene<=>Sequence_name data  #
@@ -79,7 +104,7 @@ while (<TACE>) {
     chomp;
     next if ($_ eq "");
     next if (/acedb\>/);
-    last if (/\/\//);
+    #last if (/\/\//);
     
     # get rid of quote marks
     s/\"//g;
@@ -101,23 +126,15 @@ close TACE;
 # TargetDB : /wormsrv1/camace                                      # 
 ####################################################################
 
-print LOG "// Gathering data from $targetDB; Object Class and Name\n";
-
+print LOG "// Gathering data from $targetDB; Object Class and Name\n\n";
 open (OUT, ">$output_file") or die "Can't write output .acefile: $output_file\n";
 
 # Retrieve model names and assign to a hash#
-my @classes = ('elegans_CDS', 'elegans_pseudogenes', 'elegans_RNA_genes'); 
+my @classes = ('All_genes');
 
-my %tags = (
-	    'elegans_CDS'         => 'CDS',
-	    'elegans_pseudogenes' => 'Pseudogene',
-	    'elegans_RNA_genes'   => 'Transcript'
-	    );
-
-my $history;
+#my $history;
 my $lookupname;
 my $geneID;
-my $object;
 my $query;
 
 my $db = Ace->connect(-path => "$targetDB",
@@ -130,42 +147,49 @@ foreach my $class (@classes) {
 
     while (my $obj = $i->next) {
 	
-	$name = $obj;
-
+	$name = $obj->name;
+	my $history;
         # histories AH6.1:wp999
 	if ($name =~ /(\S+.+)\:(\S+.+)/) {
-	    $lookupname = $1;                 
+	    $lookupname = $1;
 	    $history    = 1;
 	}
 	else {
 	    $lookupname = $name;
 	}
 
-        # remove isoform letters from model names
-	$lookupname =~ s/[a-z]$//;
+        # remove isoform letters from models with a cosmid.no name
+	$lookupname =~ s/[a-z]$// unless ($lookupname =~ /\S+\.\D/);
 
         # lookup GeneID keyed on lookupname
 	$geneID = $models2geneID{$lookupname};
 		
         # Print out ace file full model name and modified class name.
+	my $Tag = $obj->class;
 
 #	print "// $name \t$lookupname\n";             # verbose debug line
-	
-	print OUT "$tags{$class} : \"$name\"\n";
-	unless ($history) {
+	if ($Tag ne "Transposon")	{
+	  print OUT "$Tag : \"$name\"\n";
+	  if (!$history) {
 	    print OUT "Gene\t\"$geneID\"\n\n";
-	}
-	else {
-	    print OUT "Gene_history\t\"$geneID\"\n\n";
-	}
-	$obj->DESTROY();
-    }
-}
+	  }
+	  elsif (defined $history) {
+	  #print OUT "Gene_history\t\"$geneID\"\n\n" if (defined ($geneID));
+	    print OUT "Gene_history\t\"$geneID\"\n\n" unless (!defined ($geneID));
+	  }
+	  print OUT "\n" if (!defined ($geneID));
+	  print LOG "$name does not have a geneID please investigate.\n" if (!defined ($geneID));
+	  $obj->DESTROY();
+	}    
+      }
+  }
 $db->close;
 
 close OUT;
 
-print LOG "// upload file complete\n";
+print LOG "\n// upload file complete\n";
+print LOG "// **You will have to manually load this data into /wormsrv1/camace.**\n" if (!defined ($update));
+print LOG "// **Also load the patch file for the exceptions**\n\n";
 
 ###############################################################
 # Delete targetDB Gene ID info & load new ones into $targetdb #
@@ -173,23 +197,22 @@ print LOG "// upload file complete\n";
 
 if ($update) {
 
-    my $command = "query find elegans_CDS\nedit -D Gene\nclear\n";
-    $command   .= "query find elegans_pseudogenes\nedit -D Gene\nclear\n";
-    $command   .= "query find elegans_RNA_genes\nedit -D Gene\nclear\n";
-    $command   .= "pparse $output_file\n";
-    $command   .= "save\nquit\n";
-    
-    open (DB, "| $tace $targetDB |") || die "Couldn't open $targetDB\n";
-    print DB $command;
-    close DB;
-    
-    print LOG "// synchronised data in $targetDB\n";
+  my $command = "query find curated_CDS\nedit -D Gene\nclear\n";
+  $command   .= "query find elegans_pseudogenes\nedit -D Gene\nclear\n";
+  $command   .= "query find elegans_RNA_genes\nedit -D Gene\nclear\n";
+  $command   .= "pparse $output_file\n";
+  $command   .= "save\nquit\n";
+
+  open (DB, "| $tace $targetDB |") || die "Couldn't open $targetDB\n";
+  print DB $command;
+  close DB;
+
+  print LOG "// synchronised data in $targetDB\n";
 }
 
+print "You will now need to manually update gene connections using $output_file as -update was not used\n\n" if (!$update);
 
-###############
-# hasta luego #
-###############
+print "Diaskeda same Poli\n"; #we had alot of fun#
 
 &mail_maintainer("GeneID_updater.pl",$maintainers,$log);
 close(LOG);
@@ -229,56 +252,59 @@ sub create_log_files{
 
 __END__
 
-    =pod
+  =pod
 
-    =head2 NAME - GeneID_updater.pl
+  =head2 NAME - GeneID_updater.pl
 
-    =head1 USAGE
+  =head1 USAGE
 
-    =over 4
+  =over 4
 
-    =item GeneID_updater.pl [-options]
+  =item GeneID_updater.pl [-options]
 
-    =back
+  =back
 
-    This script does...blah blah blah
+  This script removes all prediction->WBGene id connections from a chosen target database and re-synchronises these connections with a chosen reference database.  Defaults are in place for routine updating of /wormsrv1/camace with data from wormsrv1/geneace.  The script can also populate the Public_name tags in the newly syncronised WBGene objects to aid curators when chosing which CDS should be renamed following a gene split event.
 
-    script_template.pl MANDATORY arguments:
 
-    =over 4
+  script_template.pl MANDATORY arguments:
 
-    =item None,
+  =over 4
 
-    =back
+  =item None,
 
-    Update_checker.pl  OPTIONAL arguments:
+  =back
 
-    =over 4
+  Update_checker.pl  OPTIONAL arguments:
 
-    =item -h, Help
+  =over 4
 
-    =item -sourceDB, database from which you wish to synchronise
+  =item -h, Help
 
-    =item -targetDB, database you wish to synchronise
+  =item -sourceDB, database from which you wish to synchronise
 
-    =item -update updates target database with new gene IDs
+  =item -targetDB, database you wish to synchronise
 
-    =back
+  =item -update, updates target database with new gene IDs
 
-    =head1 REQUIREMENTS
+  =public -public, populates the public name data tag in gene objects in target database.
 
-    =over 4
+  =back
 
-    =item This script needs to run on a machine which can see the /wormsrv2 disk.
+  =head1 REQUIREMENTS
 
-    =back
+  =over 4
 
-    =head1 AUTHOR
+  =item This script needs to run on a machine which can see the /wormsrv2 disk.
 
-    =over 4
+  =back
 
-    =item Paul Davis (pad@sanger.ac.uk)
+  =head1 AUTHOR
 
-    =back
+  =over 4
 
-    =cut
+  =item Paul Davis (pad@sanger.ac.uk)
+
+  =back
+  
+  =cut
