@@ -8,7 +8,7 @@
 # relevant WormBase and Wormpep web pages.
 #
 # Last updated by: $Author: pad $     
-# Last updated on: $Date: 2005-04-15 16:34:30 $      
+# Last updated on: $Date: 2005-09-07 13:40:00 $      
 
 
 #################################################################################
@@ -23,8 +23,9 @@ use Getopt::Long;
 use Cwd;
 use Symbol 'gensym';
 use Ace;
-use lib "/nfs/WWW/perl";
-use SangerWeb;
+#use lib "/nfs/WWW/perl";   removed following email from Roger Pettett
+#use lib "/nfs/WWWdev/SANGER_docs/perl";   removed following email from Roger Pettett
+#use SangerWeb;   removed following email from Roger Pettett
 use Carp;
 
 ##############################
@@ -685,8 +686,9 @@ sub copy_EST_files{
     print LOG "creating $file.shtml in $www/$WS_name/Checks\n"; 
     open(EST_HTML,">$www/$WS_name/Checks/$file.shtml") || croak "Couldn't create $file.shtml\n";
     
-    print EST_HTML &SangerWeb::virtual_header();
-    
+#    print EST_HTML &SangerWeb::virtual_header();
+print EST_HTML qq(<!--#include virtual="/perl/header" -->\n);
+   
     print EST_HTML "<TABLE WIDTH=\"100%\" CELLSPACING=\"0\" CELLPADDING=\"0\"><TR VALIGN=\"top\" BGCOLOR=\"darkblue\" ><TD WIDTH=\"100%\"><BR><H2 align=\"center\"><FONT COLOR=\"white\">";
     print EST_HTML "EST analysis: \"$files{$file}\"";
     print EST_HTML "</FONT></H2></TD></TR></TABLE>\n";
@@ -703,7 +705,8 @@ sub copy_EST_files{
      print EST_HTML "$_";
     }
     print EST_HTML "</PRE></P>";
-    print EST_HTML &SangerWeb::virtual_footer();
+#    print EST_HTML &SangerWeb::virtual_footer();
+    print EST_HTML qq(<!--#include virtual="/perl/footer" -->\n);
     close(EST_TXT);
     close(EST_HTML);
   }
