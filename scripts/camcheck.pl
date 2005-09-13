@@ -7,7 +7,7 @@
 # Usage: camcheck.pl
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2005-08-01 11:47:48 $
+# Last updated on: $Date: 2005-09-13 13:05:14 $
 #
 # see pod documentation (i.e. 'perldoc camcheck.pl') for more information.
 #
@@ -66,7 +66,7 @@ if ($opt_s) {
 
 # only email a specific person responsible for a database
 if($opt_e){
-  if(($opt_e eq "ar2") || ($opt_e eq "pad")){ 
+  if(($opt_e eq "gw3") || ($opt_e eq "pad")){ 
      $maintainers = $opt_e;
   }
   else{
@@ -857,7 +857,7 @@ all Genome_sequences and SUPERLINK* objects.
 
 =item -m, Montly checks are active
 
-=item -s, Select a specific database to test eg -s ~wormpub/camace_ar2
+=item -s, Select a specific database to test eg -s ~wormpub/camace_pad
 
 =item -l, Doesnt do all the small intron checking stuff in check_predicted_genes.pl
 
