@@ -18,8 +18,8 @@ use File::Path;
 # set these variables once outside of subroutines otherwise, each call to subroutine
 # iterates through the results of the glob function.  This means second calls to subroutines
 # lose the tace path 
-my $tace = glob("~wormpub/ACEDB/bin_ALPHA/tace");
-my $giface = glob("~wormpub/ACEDB/bin_ALPHA/giface");
+my $tace   = '/nfs/disk100/acedb/RELEASE.2005_04_20/bin.ALPHA_5/tace';    #glob("~wormpub/ACEDB/bin_ALPHA/tace");
+my $giface = '/nfs/disk100/acedb/RELEASE.2005_04_20/bin.ALPHA_5/giface';  #glob("~wormpub/ACEDB/bin_ALPHA/giface");
 my $common_data_dir = (-e "/wormsrv2") ? "/wormsrv2/autoace/COMMON_DATA" : glob("~wormpub/TEST_BUILD/autoace/COMMON_DATA") ;
 
 #################################################################################
