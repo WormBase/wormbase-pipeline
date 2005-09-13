@@ -5,7 +5,7 @@
 # Cronjob integrity check controls for split camace databases.
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2005-08-01 11:53:31 $
+# Last updated on: $Date: 2005-09-13 13:03:02 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -24,7 +24,7 @@ open (LOG,">$log") or &mail_maintainer("LOG failed in check_split_camaces.pl","w
 
 print LOG &runtime, ": script started\n\n";
 
-my @users = ("ar2", "pad");
+my @users = ("gw3", "pad");
 
 foreach my $user (@users) {
 
