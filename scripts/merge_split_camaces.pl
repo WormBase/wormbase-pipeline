@@ -5,7 +5,7 @@
 # A script to make multiple copies of camace for curation, and merge them back again
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2005-08-01 11:50:02 $
+# Last edited on: $Date: 2005-09-13 13:07:57 $
 
 
 use strict;
@@ -20,7 +20,6 @@ use Getopt::Long;
 ##############################
 
 my $all;                   # All
-my $ar2;                   # Use Anthony's split
 my $pad;                   # Use Paul's split
 my $merge;                 # Merging databases
 my $split;                 # Splitting databases
@@ -30,7 +29,6 @@ my $help;                  # Help menu
 
 GetOptions (
             "all"        => \$all,
-	    "ar2"        => \$ar2,
 	    "pad"        => \$pad,
 	    "merge"      => \$merge,
 	    "split"      => \$split,
@@ -55,7 +53,6 @@ my @classes = ('Transposon', 'Transcript', 'CDS', 'Sequence', 'Feature', 'Featur
 
 # load @databases array with user database names.
 push(@databases,"orig");
-push(@databases,"ar2") if ($ar2 || $all);
 push(@databases,"pad") if ($pad || $all);
 
 # directory paths
