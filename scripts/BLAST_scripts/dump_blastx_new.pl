@@ -646,13 +646,13 @@ foreach my $aref (@$ref) {
 	} else {
 	  print $output "Pep_homol\t\"$prefix$hid\" \"wublastx_$org\" ";
 	  print $output "$e $start $end $hstart $hend ";
-	  print $output "align $start $hstart\n";
+	  print $output "AlignPepDNA $start $hstart\n";
 	  shift @cigars;
 	  foreach my $string (@cigars) {
 	    my ($coor, $hcoor) = split (/,/, $string);
 	    print $output "Pep_homol\t\"$prefix$hid\" \"wublastx_$org\" ";
 	    print $output "$e $start $end $hstart $hend ";
-	    print $output "align $coor $hcoor\n";
+	    print $output "AlignPepDNA $coor $hcoor\n";
 	  }
 	}
       } 
