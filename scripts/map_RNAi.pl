@@ -7,7 +7,7 @@
 # by Kerstin Jekosch
 #
 # Last updated by: $Author: gw3 $                      
-# Last updated on: $Date: 2005-09-15 14:27:49 $        
+# Last updated on: $Date: 2005-09-16 13:45:01 $        
 
 use strict;
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
@@ -339,6 +339,8 @@ my $no_of_duplicate_secondaries = 0;
 # sort the output for RNAi #
 ############################
 
+print "Remove duplicates for RNAi\n" if ($verbose);
+ 
 foreach my $mess (sort keys %output) {
   # sort by the gene names
   # with secondary sort key term to retain primary RNAis in preference to secondary ones
@@ -356,7 +358,7 @@ foreach my $mess (sort keys %output) {
   push @{$finaloutput{$mess}}, $output{$mess}->[0];
   for (my $m = 1; $m < (scalar @{$output{$mess}}); $m++) {
     # compare gene names to get a unique, sorted set of genes
-    if ($output{$mess}->[$count]->[0] ne $output{$mess}->[$m]->[0]) {
+    if ($output{$mess}->[$count][0] ne $output{$mess}->[$m][0]) {
       push @{$finaloutput{$mess}}, $output{$mess}->[$m];
       $count = $m;
     } else {
@@ -372,7 +374,9 @@ foreach my $mess (sort keys %output) {
 ####################################
 # sort the output for Expr_profile #
 ####################################
- 
+
+print "Remove duplicates for Expr_profile\n" if ($verbose);
+
 foreach my $mess (sort keys %output2) {
   @{$output2{$mess}} = sort @{$output2{$mess}};
   my $count = 0; 
@@ -391,6 +395,8 @@ foreach my $mess (sort keys %output2) {
 # produce output files #
 ########################
 
+print "Produce output file\n" if ($verbose);
+
 open (OUTACE, ">$dbdir/acefiles/RNAi_mappings.ace") || die "Failed to open RNAi_mappings.ace file\n";
 
 # Produce connections for RNAi->Genes
@@ -408,78 +414,68 @@ foreach my $mapped (sort keys %finaloutput) {
     
   # $mapped is the name of the RNAi object
   # %finaloutput is a hash of arrays containing the gene o/l data
- 
-  
+
+    
   my $seq;
-  my $locus;
-  my $gene;
-  
+  my $gene;       # e.g. WBGene00001231
+  my $worm_gene;  # CDS, Transcript, or Pseudogene name
+
+  # $type holds whether the RNAi mapping to this gene is primary or secondary
+  my $type;
+
   for (my $n = 0; $n < (scalar @{$finaloutput{$mapped}}); $n++) {
-    
-    $gene = $finaloutput{$mapped}->[$n]->[0];
-    print "'$mapped' is mapped to $gene\t" if ($verbose);
-    
-    my $seq;
-    my $gene;       # e.g. WBGene00001231
-    my $worm_gene;  # CDS, Transcript, or Pseudogene name
-
-    # $type holds whether the RNAi mapping to this gene is primary or secondary
-    my $type;
-
-    for (my $n = 0; $n < (scalar @{$finaloutput{$mapped}}); $n++) {
 	
-      $worm_gene = $finaloutput{$mapped}->[$n][0];
-      $type      = $finaloutput{$mapped}->[$n][1];
-      print "$type RNAi '$mapped' is mapped to $worm_gene\t" if ($verbose);
-      if ($type eq "primary") {
-	$no_of_rnais_primary++;
-      } else {
-	$no_of_rnais_secondary++;
-      }
+    $worm_gene = $finaloutput{$mapped}->[$n][0];
+    $type      = $finaloutput{$mapped}->[$n][1];
+    print "$type RNAi '$mapped' is mapped to $worm_gene\t" if ($verbose);
+    if ($type eq "primary") {
+      $no_of_rnais_primary++;
+    } else {
+      $no_of_rnais_secondary++;
+    }
 
-      print OUTACE "\nRNAi : \"$mapped\"\n";
+    print OUTACE "\nRNAi : \"$mapped\"\n";
       
-      # Does this CDS have a Gene object?
-      if ($genetype{$worm_gene} eq "CDS") {
-	$seq = $db->fetch(-class=>'CDS',-name=>" $worm_gene");
-	if (defined $seq) { 
-	    print OUTACE "Predicted_gene \"$worm_gene\" Inferred_automatically \"RNAi_$type\"\n";
-	    if (defined($seq->at('Visible.Gene'))) {
-		($gene) = ($seq->get('Gene'));
-		print OUTACE "Gene \"$gene\" Inferred_automatically \"RNAi_$type\"\n";
-	    }
-	    print " which is a CDS\n" if ($verbose);
-	} else {
-	    print "*** WARNING - skipping missing gene $worm_gene\n";
+    # Does this CDS have a Gene object?
+    if ($genetype{$worm_gene} eq "CDS") {
+      $seq = $db->fetch(-class=>'CDS',-name=>" $worm_gene");
+      if (defined $seq) { 
+	print OUTACE "Predicted_gene \"$worm_gene\" Inferred_automatically \"RNAi_$type\"\n";
+	if (defined($seq->at('Visible.Gene'))) {
+	  ($gene) = ($seq->get('Gene'));
+	  print OUTACE "Gene \"$gene\" Inferred_automatically \"RNAi_$type\"\n";
 	}
+	print " which is a CDS\n" if ($verbose);
+      } else {
+	print "*** WARNING - skipping missing gene $worm_gene\n";
       }
-      # Does this Pseudogene have a Gene object?
-      elsif ($genetype{$worm_gene} eq "Pseudogene") {
-	$seq = $db->fetch(-class=>'Pseudogene',-name=>" $worm_gene");
-	if (defined $seq) {
-	    print OUTACE "Pseudogene \"$worm_gene\" Inferred_automatically \"RNAi_$type\"\n";
-	    if (defined($seq->at('Visible.Gene'))){
-		($gene) = ($seq->get('Gene'));
-		print OUTACE "Gene \"$gene\" Inferred_automatically \"RNAi_$type\"\n";
-	    }
-	    print " which is a pseudogene\n" if ($verbose);
-	} else {
-	    print "*** WARNING - skipping missing gene $worm_gene\n";  
+    }
+    # Does this Pseudogene have a Gene object?
+    elsif ($genetype{$worm_gene} eq "Pseudogene") {
+      $seq = $db->fetch(-class=>'Pseudogene',-name=>" $worm_gene");
+      if (defined $seq) {
+	print OUTACE "Pseudogene \"$worm_gene\" Inferred_automatically \"RNAi_$type\"\n";
+	if (defined($seq->at('Visible.Gene'))){
+	  ($gene) = ($seq->get('Gene'));
+	  print OUTACE "Gene \"$gene\" Inferred_automatically \"RNAi_$type\"\n";
 	}
+	print " which is a pseudogene\n" if ($verbose);
+      } else {
+	print "*** WARNING - skipping missing gene $worm_gene\n";  
       }
-      # Does this transcript have a Gene object?
-      elsif ($genetype{$worm_gene} eq "Transcript") {
-	$seq = $db->fetch(-class=>'Transcript',-name=>" $worm_gene");
-	if (defined $seq) {
-	    print OUTACE "Transcript \"$worm_gene\" Inferred_automatically \"RNAi_$type\"\n";
-	    if (defined($seq->at('Visible.Gene'))){
-		($gene) = ($seq->get('Gene'));
-		print OUTACE "Gene \"$gene\" Inferred_automatically \"RNAi_$type\"\n";
-	    }
-	    print " which is a transcript\n" if ($verbose);
-	} else {
-	    print "*** WARNING - skipping missing gene $worm_gene\n"
+    }
+    # Does this transcript have a Gene object?
+    elsif ($genetype{$worm_gene} eq "Transcript") {
+      $seq = $db->fetch(-class=>'Transcript',-name=>" $worm_gene");
+      if (defined $seq) {
+	print OUTACE "Transcript \"$worm_gene\" Inferred_automatically \"RNAi_$type\"\n";
+	if (defined($seq->at('Visible.Gene'))){
+	  ($gene) = ($seq->get('Gene'));
+	  print OUTACE "Gene \"$gene\" Inferred_automatically \"RNAi_$type\"\n";
 	}
+	print " which is a transcript\n" if ($verbose);
+      } else {
+	print "*** WARNING - skipping missing gene $worm_gene\n";
       }
     }
   }
@@ -492,7 +488,6 @@ print OUTACE "\n\n//Expression profiles\n";
 # Produce connections for RNAi->Expr_profile
 foreach my $mapped (sort keys %finaloutput2) {
   for (my $n = 0; $n < (scalar @{$finaloutput2{$mapped}}); $n++) {
-#    my ($expr_profile) = (@{$finaloutput2{$mapped}}->[$n] =~ /(\S+)\.\d+$/);
     my ($expr_profile) = ($finaloutput2{$mapped}->[$n] =~ /(\S+)\.\d+$/);
     print OUTACE "RNAi : $mapped\n";
     print OUTACE "Expr_profile $expr_profile\n\n";
@@ -520,7 +515,6 @@ if($load){
 ####################################
 
 # count secondary RNAis which map to a gene which is already mapped by that RNAi as a primary
-$no_of_duplicate_secondaries = 0;
 $log->write_to("\n\nStatistics\n");
 $log->write_to("----------\n\n");
 $log->write_to("No. of primary RNAis written to database:   $no_of_rnais_primary\n");
