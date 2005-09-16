@@ -64,16 +64,18 @@ if($debug){
 #############
 
 my $tace        = &tace;                                     # tace executable path
-my $dbdir       = "/wormsrv2/autoace";                       # Database path
-my $gffdir      = "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS"; # GFF splits directory
-my @chromosomes = qw( I II III IV V X );                     # chromosomes to parse 
+my $basedir     = $test ? glob("~wormpub/TEST_BUILD") : "/wormsrv2";
+my $dbdir       = "$basedir/autoace";                        # Database path
+my $gffdir      = "$dbdir/GFF_SPLITS/GFF_SPLITS";            # GFF splits directory
+
+my @chromosomes = $test ? qw(III) : qw( I II III IV V X );   # chromosomes to parse 
 my $db_version  = &get_wormbase_version_name;                # WS version number
 our %genetype   = ();                                        # gene type hash
 
 ################
 # Open logfile #
 ################
-my $log = Log_files->make_build_log();
+my $log = Log_files->make_build_log($debug);
 
 
 #####################################################
@@ -91,7 +93,7 @@ foreach my $chromosome (@chromosomes) {
   my @f          = ();
   
   # Get Oligo set info from split GFF file
-  open (GFF, "<$gffdir/CHROMOSOME_${chromosome}.Oligo_set.gff") || die "Failed to open Oligo_set gff file\n\n";
+  open (GFF, "<$gffdir/CHROMOSOME_${chromosome}.Oligo_set.gff") || die "Failed to open Oligo_set gff file : $!\n\n";
   while (<GFF>) {
     chomp;	     
     s/\#.*//;
@@ -110,6 +112,20 @@ foreach my $chromosome (@chromosomes) {
   }
   close(GFF);
 
+  # Get exon info from split UTR GFF files
+  open (GFF_in, "<$gffdir/CHROMOSOME_${chromosome}.UTR.gff") || die "Failed to open UTR gff file\n\n";
+  while (<GFF_in>) {
+    chomp;	     
+    s/\#.*//;
+    next unless /UTR/;
+    @f = split /\t/;
+
+    my ($name) = ($f[8] =~ /\"(\S+)\"/);
+    $exoncount{$name}++;
+    my $exonname = $name.".".$exoncount{$name};
+    $exon{$exonname} = [$f[3],$f[4]];
+  }
+  close(GFF_in);
 
   # Get exon info from split exon GFF files
   open (GFF_in, "<$gffdir/CHROMOSOME_${chromosome}.exon.gff") || die "Failed to open exon gff file\n\n";
@@ -252,7 +268,7 @@ foreach my $mess (sort keys %output) {
 # produce output files #
 ########################
 
-open (OUTACE, ">/wormsrv2/autoace/acefiles/Oligo_mappings.ace");
+open (OUTACE, ">$dbdir/acefiles/Oligo_mappings.ace");
 
 foreach my $mapped (sort keys %finaloutput) {
     
@@ -283,7 +299,7 @@ close(OUTACE);
 
 unless ($test) {
   
-  my $command = "pparse /wormsrv2/autoace/acefiles/Oligo_mappings.ace\nsave\nquit\n";
+  my $command = "pparse $dbdir/acefiles/Oligo_mappings.ace\nsave\nquit\n";
   
   open (TACE,"| $tace -tsuser map_Oligo_products $dbdir") || die "Couldn't open tace connection to $dbdir\n";
   print TACE $command;
