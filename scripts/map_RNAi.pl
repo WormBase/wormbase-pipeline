@@ -7,7 +7,7 @@
 # by Kerstin Jekosch
 #
 # Last updated by: $Author: gw3 $                      
-# Last updated on: $Date: 2005-09-16 13:45:01 $        
+# Last updated on: $Date: 2005-09-19 12:38:51 $        
 
 use strict;
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
@@ -340,8 +340,8 @@ my $no_of_duplicate_secondaries = 0;
 ############################
 
 print "Remove duplicates for RNAi\n" if ($verbose);
- 
-foreach my $mess (sort keys %output) {
+
+foreach my $RNAiID (sort keys %output) {
   # sort by the gene names
   # with secondary sort key term to retain primary RNAis in preference to secondary ones
   # this was done by adding a term to also sort by "primary" before "secondary": 
@@ -351,20 +351,20 @@ foreach my $mess (sort keys %output) {
   # the %output values are a list of lists - each hash value contains a list of:
   # [the names of genes, primary / secondary RNAi mapped to this gene]
   # we now wish to sort this list of pairs of values by gene name
-  my @array = @{$output{$mess}};
-  @{$output{$mess}} = sort { $a->[0] cmp $b->[0]  or  $a->[1] cmp $b->[1] } @array;
+  my @array = @{$output{$RNAiID}};
+  @{$output{$RNAiID}} = sort { $a->[0] cmp $b->[0]  or  $a->[1] cmp $b->[1] } @array;
 
   my $count = 0; 
-  push @{$finaloutput{$mess}}, $output{$mess}->[0];
-  for (my $m = 1; $m < (scalar @{$output{$mess}}); $m++) {
+  push @{$finaloutput{$RNAiID}}, $output{$RNAiID}->[0];
+  for (my $m = 1; $m < (scalar @{$output{$RNAiID}}); $m++) {
     # compare gene names to get a unique, sorted set of genes
-    if ($output{$mess}->[$count][0] ne $output{$mess}->[$m][0]) {
-      push @{$finaloutput{$mess}}, $output{$mess}->[$m];
+    if ($output{$RNAiID}->[$count][0] ne $output{$RNAiID}->[$m][0]) {
+      push @{$finaloutput{$RNAiID}}, $output{$RNAiID}->[$m];
       $count = $m;
     } else {
       # get some statistics on duplicate mappings
       $no_of_multiple_mappings++;
-      if ($output{$mess}->[$count][1] ne $output{$mess}->[$m][1]) {
+      if ($output{$RNAiID}->[$count][1] ne $output{$RNAiID}->[$m][1]) {
 	$no_of_duplicate_secondaries++;
       }
     }
@@ -377,13 +377,13 @@ foreach my $mess (sort keys %output) {
 
 print "Remove duplicates for Expr_profile\n" if ($verbose);
 
-foreach my $mess (sort keys %output2) {
-  @{$output2{$mess}} = sort @{$output2{$mess}};
+foreach my $RNAiID (sort keys %output2) {
+  @{$output2{$RNAiID}} = sort @{$output2{$RNAiID}};
   my $count = 0; 
-  push @{$finaloutput2{$mess}}, $output2{$mess}->[0];
-  for (my $m = 1; $m < (scalar @{$output2{$mess}}); $m++) {
-    if ($output2{$mess}->[$count] ne $output2{$mess}->[$m]) {
-      push @{$finaloutput2{$mess}}, $output2{$mess}->[$m];
+  push @{$finaloutput2{$RNAiID}}, $output2{$RNAiID}->[0];
+  for (my $m = 1; $m < (scalar @{$output2{$RNAiID}}); $m++) {
+    if ($output2{$RNAiID}->[$count] ne $output2{$RNAiID}->[$m]) {
+      push @{$finaloutput2{$RNAiID}}, $output2{$RNAiID}->[$m];
       $count = $m;    
     }    
   }
@@ -396,6 +396,11 @@ foreach my $mess (sort keys %output2) {
 ########################
 
 print "Produce output file\n" if ($verbose);
+
+# store the gene names and the RNAis that hit it, together with the RNAi's primary/secondary type
+# so that we can later populate the ?Gene model RNAi data with primary/secondary information
+my %inverse = ();
+
 
 open (OUTACE, ">$dbdir/acefiles/RNAi_mappings.ace") || die "Failed to open RNAi_mappings.ace file\n";
 
@@ -413,7 +418,7 @@ my $db = Ace->connect(-path=>$dbdir, -program=>$tace) || die "Couldn't connect t
 foreach my $mapped (sort keys %finaloutput) {
     
   # $mapped is the name of the RNAi object
-  # %finaloutput is a hash of arrays containing the gene o/l data
+  # %finaloutput is a hash of arrays containing the gene overlap data
 
     
   my $seq;
@@ -424,10 +429,12 @@ foreach my $mapped (sort keys %finaloutput) {
   my $type;
 
   for (my $n = 0; $n < (scalar @{$finaloutput{$mapped}}); $n++) {
-	
+
     $worm_gene = $finaloutput{$mapped}->[$n][0];
     $type      = $finaloutput{$mapped}->[$n][1];
+
     print "$type RNAi '$mapped' is mapped to $worm_gene\t" if ($verbose);
+
     if ($type eq "primary") {
       $no_of_rnais_primary++;
     } else {
@@ -444,6 +451,7 @@ foreach my $mapped (sort keys %finaloutput) {
 	if (defined($seq->at('Visible.Gene'))) {
 	  ($gene) = ($seq->get('Gene'));
 	  print OUTACE "Gene \"$gene\" Inferred_automatically \"RNAi_$type\"\n";
+	  push @{$inverse{$gene}}, [$mapped, $type];
 	}
 	print " which is a CDS\n" if ($verbose);
       } else {
@@ -458,6 +466,7 @@ foreach my $mapped (sort keys %finaloutput) {
 	if (defined($seq->at('Visible.Gene'))){
 	  ($gene) = ($seq->get('Gene'));
 	  print OUTACE "Gene \"$gene\" Inferred_automatically \"RNAi_$type\"\n";
+	  push @{$inverse{$gene}}, [$mapped, $type];
 	}
 	print " which is a pseudogene\n" if ($verbose);
       } else {
@@ -472,6 +481,7 @@ foreach my $mapped (sort keys %finaloutput) {
 	if (defined($seq->at('Visible.Gene'))){
 	  ($gene) = ($seq->get('Gene'));
 	  print OUTACE "Gene \"$gene\" Inferred_automatically \"RNAi_$type\"\n";
+	  push @{$inverse{$gene}}, [$mapped, $type];
 	}
 	print " which is a transcript\n" if ($verbose);
       } else {
@@ -489,10 +499,23 @@ print OUTACE "\n\n//Expression profiles\n";
 foreach my $mapped (sort keys %finaloutput2) {
   for (my $n = 0; $n < (scalar @{$finaloutput2{$mapped}}); $n++) {
     my ($expr_profile) = ($finaloutput2{$mapped}->[$n] =~ /(\S+)\.\d+$/);
-    print OUTACE "RNAi : $mapped\n";
-    print OUTACE "Expr_profile $expr_profile\n\n";
+    print OUTACE "\nRNAi : \"$mapped\"\n";
+    print OUTACE "Expr_profile $expr_profile\n";
   }
 } 
+
+
+# Write primary/secondary type evidence for RNAi tag in ?Gene model
+# (This is done explicitly because you can't (easily) make a XREF between #Evidence tags in the models)
+foreach my $gene (sort keys %inverse) {
+  for (my $n = 0; $n < (scalar @{$inverse{$gene}}); $n++) {
+    my $RNAi = $inverse{$gene}->[$n][0];
+    my $type = $inverse{$gene}->[$n][1];
+    print "Gene: $gene RNAi: $RNAi type: $type\n" if ($verbose);
+    print OUTACE "\nGene : \"$gene\"\n";
+    print OUTACE "Experimental_info RNAi_result  \"$RNAi\" Inferred_automatically \"RNAi_$type\"\n";
+  }
+}
 
 close(OUTACE);
 
@@ -517,11 +540,11 @@ if($load){
 # count secondary RNAis which map to a gene which is already mapped by that RNAi as a primary
 $log->write_to("\n\nStatistics\n");
 $log->write_to("----------\n\n");
-$log->write_to("No. of primary RNAis written to database:   $no_of_rnais_primary\n");
-$log->write_to("No. of secondary RNAis written to database: $no_of_rnais_secondary\n\n");
-$log->write_to("The following duplicates have been detected and not written to the database...\n");
-$log->write_to("No. of RNAis found mapping more than once to the same gene: $no_of_multiple_mappings\n");
-$log->write_to("No. of secondary RNAis found mapping to a gene already mapped by that RNAi as a primary: $no_of_duplicate_secondaries\n");
+$log->write_to("No. of primary   RNAi links to genes written to database: $no_of_rnais_primary\n");
+$log->write_to("No. of secondary RNAi links to genes written to database: $no_of_rnais_secondary\n\n");
+#$log->write_to("The following duplicates have been detected and not written to the database...\n");
+#$log->write_to("No. of RNAis found mapping more than once to the same gene: $no_of_multiple_mappings\n");
+#$log->write_to("No. of secondary RNAis found mapping to a gene already mapped by that RNAi as a primary: $no_of_duplicate_secondaries\n");
 
 $log->mail("$maintainers","BUILD REPORT: $0");
 
