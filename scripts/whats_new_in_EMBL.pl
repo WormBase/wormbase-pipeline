@@ -6,14 +6,15 @@
 #
 # checks EMBL for new EST or mRNA entries
 #
-# Last updated by: $Author: pad $                      
-# Last updated on: $Date: 2005-08-08 14:37:49 $        
+# Last updated by: $Author: mh6 $                      
+# Last updated on: $Date: 2005-09-19 16:19:42 $        
 
 use strict;
 use Getopt::Long;
-use lib "/wormsrv2/scripts/";   
+use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
 use Wormbase;
 use Time::Local;
+use Features;
 
 ##############################
 # Variables                  #
@@ -52,7 +53,7 @@ my $new_nematode_EST = 0;
 my $non_elegans_ESTs = 0;
 my $new_EMBL_CDS     = 0;
 
-my $outdir  = "/wormsrv2/autoace/acefiles";
+my $outdir  = ($debug) ? '/tmp/' : '/nfs/disk100/wormpub/camace_orig';
 
 our $acc;                 # EMBL accession
 our $id;                  # EMBL ID
@@ -60,7 +61,7 @@ our $sv;                  # EMBL sequence version
 our $def = "";            # EMBL description, needs to be initialised to ""
 our $protid;              # EMBL Protein_ID
 our $protver;             # EMBL Protein_ID version
-our $org;                 # EMBL species
+#our $org;                 # EMBL species (not used mh6)
 our $verbose;
 
 our $longtext;
@@ -69,7 +70,7 @@ our $longtext;
 # Elegans mRNA entries #
 ########################
 
-open (NEW_SEQUENCES, "$getz -c \'([embl-div:inv] & [embl-mol:*rna] & [embl-org:Caenorhabditis elegans] & [emblnew-DateCreated#$date:])\' |");
+open (NEW_SEQUENCES, "$getz -c \'([embl-div:inv] & [embl-mol:*rna] & [embl-org:Caenorhabditis elegans] & [embl-DateCreated#$date:])\' |");
 while (<NEW_SEQUENCES>){
     chomp;
     $new_elegans_mRNA = $_;
@@ -81,8 +82,13 @@ print "There are $new_elegans_mRNA new mRNA entries since $date\n" if ($debug);
 if ($new_elegans_mRNA > 0) {
 
     open (OUT_ACE,  ">$outdir/new_mRNA.ace");
-    open (NEW_SEQUENCES, "$getz -f \"acc\" \'([embl-div:inv] & [embl-mol:*rna] & [embl-org:Caenorhabditis elegans] & [emblnew-DateCreated#$date:])\' |");
+    open (NEW_SEQUENCES, "$getz -f \"acc\" \'([embl-div:inv] & [embl-mol:*rna] & [embl-org:Caenorhabditis elegans] & [embl-DateCreated#$date:])\' |");
     while (<NEW_SEQUENCES>){
+	my $seq='';
+        # reset vars
+	$def = ''; $id = ''; $acc = ''; $sv = ''; $protid = ''; $protver ='';
+
+
 	chomp;
 	($acc) = (/^AC\s+(\S+)\;/);
         next if ($acc eq "");
@@ -97,17 +103,19 @@ if ($new_elegans_mRNA > 0) {
 	    chomp;
             print if ($verbose);
                                                                                                                                                     
+	    # sequence cleaning <----- SEQ
             if (/^\s/) {
                 s/\s+//g;
                 s/\d+//g;
                 print OUT_ACE  "$_\n";
+		$seq.=$_;
             }
 
 	    unless ($longtext == 0) {
 		print OUT_ACE "$_\n";
 	    }
             # grab various details out of EMBL entry
-            if (/^ID\s+(\S+)/)                         {$id  = $1;}
+            if (/^ID\s+(\S+)/)                         {$id  = $1;}  # <-------- ID 
             if (/^SV\s+(\S+\.\d+)/)                    {$sv  = $1;}
             if (/^DE\s+(.+)/)                          {$def = $def . " " . $1;}
             if (/^FT\s+\/protein_id=\"(\S+)\.(\d+)\"/) {$protid = $1; $protver = $2;}
@@ -138,9 +146,11 @@ if ($new_elegans_mRNA > 0) {
 	}
 	close LOOK;
 
-        # reset vars
-	$def = ""; $id = ""; $acc = ""; $sv = ""; $protid = ""; $protver ="";
-
+	my $feature=Features::annot($seq,$id);
+	if ($feature){
+	    chomp $feature;
+	    print OUT_ACE "\n",$feature;
+	}
     }
     # close filehandles
     close SEQUENCES;
@@ -167,8 +177,13 @@ print "There are $new_elegans_EST new EST entries since $date\n" if ($debug);
 if ($new_elegans_EST > 0) {
 
     open (OUT_ACE,  ">$outdir/new_EST.ace");
-    open (NEW_SEQUENCES, "$getz -f \"acc\" \'([embl-div:est] & [embl-mol:*rna] & [embl-org:Caenorhabditis elegans] & [emblnew-DateCreated#$date:])\' |");
+    open (NEW_SEQUENCES, "$getz -f \"acc\" \'([embl-div:est] & [embl-mol:*rna] & [embl-org:Caenorhabditis elegans] & [embl-DateCreated#$date:])\' |");
     while (<NEW_SEQUENCES>){
+	my $seq='';
+        # reset vars
+	$def = ""; $id = ""; $acc = ""; $sv = ""; $protid = ""; $protver ="";
+
+
 	chomp;
 	($acc) = (/^AC\s+(\S+)\;/);
         next if ($acc eq "");
@@ -178,11 +193,14 @@ if ($new_elegans_EST > 0) {
         open (LOOK, "/usr/local/pubseq/bin/pfetch -F $acc |");
         while (<LOOK>) {
             print if ($verbose);
-                                                                                                                                                    
+             
+
+            # sequence stuff                                                                                                                                       
             if (/^\s/) {
                 s/\s+//g;
                 s/\d+//g;
                 print OUT_ACE  "$_\n";
+		$seq.=$_;
             }
             # grab various details out of EMBL entry
             if (/^ID\s+(\S+)/)                         {$id  = $1;}
@@ -204,17 +222,17 @@ if ($new_elegans_EST > 0) {
 	    }
 	}
 	close LOOK;
-
-        # reset vars
-	$def = ""; $id = ""; $acc = ""; $sv = ""; $protid = ""; $protver ="";
+	my $feature=Features::annot($seq,$id);
+	if ($feature){
+	    chomp $feature;
+	    print OUT_ACE "\n",$feature;
+	}
 
     }
     # close filehandles
     close SEQUENCES;
     close OUT_ACE;
 }
-
-
 
 
 ############################
@@ -225,6 +243,7 @@ open (NEW_SEQUENCES, "$getz -c \'([embl-div:est] & [embl-mol:*rna] & [embl-Taxon
 while (<NEW_SEQUENCES>){
   chomp;
   $new_nematode_EST = $_;
+
 }
 close NEW_SEQUENCES;
 
@@ -285,7 +304,6 @@ sub create_log_files{
   $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
   my $rundate     = `date +%y%m%d`; chomp $rundate;
   $log        = "/wormsrv2/logs/$script_name.$rundate.$$";
-
   open (LOG, ">$log") or die "cant open $log";
   print LOG "$script_name\n";
   print LOG "started at ",`date`,"\n";
