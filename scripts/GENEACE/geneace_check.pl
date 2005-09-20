@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-09-20 15:45:56 $
+# Last updated on: $Date: 2005-09-20 15:49:22 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -24,13 +24,16 @@ use File::Path;
 ###################################################
 
 my ($help, $debug, $class, @classes, $database, $ace, $verbose);
+my $weekly;
 
 GetOptions ("help"        => \$help,
             "debug=s"     => \$debug,
 	    "class=s"     => \@classes,
 	    "database=s"  => \$database,
             "ace"         => \$ace,
-	    "verbose"     => \$verbose);
+	    "verbose"     => \$verbose,
+	    "weekly"      => \$weekly
+	   );
 
 ###################################################
 # Miscellaneous important variables               # 
@@ -191,9 +194,11 @@ sub process_gene_class{
   }
 
   # checks Genes that do not have a map position nor an interpolated_map_position but has sequence info
-  my $query = "Find Live_genes WHERE !(Map | Interpolated_map_position) & Sequence_name & Species=\"*elegans\" & !Positive_clone=\"MTCE\" & !Made_into_transposon";
-  foreach my $gene ($db->fetch(-query=>"$query")){
-    print LOG "ERROR: $gene ($Gene_info{$gene}{'Public_name'}) has neither Map nor Interpolated_map_position info but has Sequence_name\n";
+  unless ( $weekly ) {
+    my $query = "Find Live_genes WHERE !(Map | Interpolated_map_position) & Sequence_name & Species=\"*elegans\" & !Positive_clone=\"MTCE\" & !Made_into_transposon";
+    foreach my $gene ($db->fetch(-query=>"$query")){
+      print LOG "ERROR: $gene ($Gene_info{$gene}{'Public_name'}) has neither Map nor Interpolated_map_position info but has Sequence_name\n";
+    }
   }
 
   # test for Map tag and !NEXT
