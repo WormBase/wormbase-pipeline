@@ -6,35 +6,18 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: mt3 $
-# Last updated on: $Date: 2005-07-27 07:28:16 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2005-09-20 15:45:56 $
 
 use strict;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Ace;
 use Ace::Object;
 use Carp;
 use Getopt::Long;
 use GENEACE::Geneace;
-
-###################################################
-# Miscellaneous important variables               # 
-###################################################
-
-my $tace = &tace;          # tace executable path
-my $curr_db = "/nfs/disk100/wormpub/DATABASES/current_DB"; # Used for some cross checking with geneace
-my $def_dir = "/wormsrv1/geneace/wquery";                  # where lots of table-maker definitions are kept
-
-my $rundate = &rundate;                                    # Used by various parts of script for filename creation
-my $maintainers = "All";                                   # Default for emailing everyone logfile
-my $caltech_errors = 0;                                    # counter for tracking errors going into Caltech email
-my $jah_errors = 0;                                        # counter for tracking errors going into Caltech email
-my $log;                                                   # main log file for most output
-my $caltech_log;                                           # Additional log file for problems that need to be sent to Caltech
-my $jah_log;                                               # Additional log file for problems to be sent to Jonathan Hodgkin at CGC
-my (%L_name_F_WBP, %L_name_F_M_WBP);                       # hashes for checking Person and Author merging?
-
+use File::Path;
 
 ###################################################
 # command line options                            # 
@@ -48,6 +31,30 @@ GetOptions ("help"        => \$help,
 	    "database=s"  => \$database,
             "ace"         => \$ace,
 	    "verbose"     => \$verbose);
+
+###################################################
+# Miscellaneous important variables               # 
+###################################################
+
+# choose database to query: default is /wormsrv1/geneace
+$database = "/wormsrv1/geneace" unless $database;
+print "Using database $database.\n\n";
+
+my $tace = &tace;          # tace executable path
+my $curr_db = "/nfs/disk100/wormpub/DATABASES/current_DB"; # Used for some cross checking with geneace
+my $def_dir = "$database/wquery";                          # where lots of table-maker definitions are kept
+
+my $rundate = &rundate;                                    # Used by various parts of script for filename creation
+my $maintainers = "All";                                   # Default for emailing everyone logfile
+my $caltech_errors = 0;                                    # counter for tracking errors going into Caltech email
+my $jah_errors = 0;                                        # counter for tracking errors going into Caltech email
+
+my $log_dir = "$database/logs";                            # some of the many output files are put here (ar2)
+my $log;                                                   # main log file for most output
+my $caltech_log;                                           # Additional log file for problems that need to be sent to Caltech
+my $jah_log;                                               # Additional log file for problems to be sent to Jonathan Hodgkin at CGC
+my (%L_name_F_WBP, %L_name_F_M_WBP);                       # hashes for checking Person and Author merging?
+
 
 
 ##################################################
@@ -63,15 +70,11 @@ if($debug){
   ($maintainers = "$debug" . '\@sanger.ac.uk');
 }
 
-# choose database to query: default is /wormsrv1/geneace
-my $default_db = "/wormsrv1/geneace";
-($default_db = $database) if ($database);
-print "Using $default_db as default database.\n\n";
-
 # Open file for acefile output?
 my $acefile;
 if ($ace){
-  $acefile = "/wormsrv1/geneace/CHECKS/geneace_check.$rundate.$$.ace";
+  mkdir "$database/CHECKS" unless ( -e "$database/CHECKS");
+  $acefile = "$database/CHECKS/geneace_check.$rundate.$$.ace";
   open(ACE, ">>$acefile") || croak $!;
   system("chmod 777 $acefile");
 }
@@ -91,13 +94,13 @@ my $next_build_ver = get_wormbase_version() + 1 ; # next build number
 ######################################################################################################
 
 # open a connection to database
-my $db = Ace->connect(-path  => $default_db,
+my $db = Ace->connect(-path  => $database,
 		      -program =>$tace) || do { print LOG "Connection failure: ",Ace->error; die();};
 
 
 my $ga = init Geneace();
 # hash for converting locus/seq. names <-> gene_id
-my @Gene_info = $ga -> gene_info($default_db, "seq2id");
+my @Gene_info = $ga -> gene_info($database, "seq2id");
 my %Gene_info = %{$Gene_info[0]};
 my %seqs_to_gene_id = %{$Gene_info[1]};
 
@@ -500,7 +503,7 @@ sub check_evidence {
 
 
 # dump flat files with time stamps
-my $dump_dir = "/wormsrv1/geneace/CHECKS";
+my $dump_dir = "$database/CHECKS";
 
 my $command=<<END;
 Find Gene * 
@@ -530,7 +533,7 @@ show -a -T -f $dump_dir/lab_dump.ace
 quit
 END
 
-  open (DUMP, "| $tace $default_db") || die "Failed to connect to Geneace";
+  open (DUMP, "| $tace $database") || die "Failed to connect to Geneace";
   print DUMP $command;
   close DUMP;
 
@@ -843,7 +846,7 @@ sub process_allele_class{
   my %allele2lab;
   my $def="Table-maker -p \"$def_dir/allele_designation_to_LAB.def\"\nquit\n";
 
-  open (FH, "echo '$def' | $tace $default_db | ") || die "Couldn't access $db\n";
+  open (FH, "echo '$def' | $tace $database | ") || die "Couldn't access $db\n";
   while (<FH>) {
     print;
     chomp;
@@ -1049,8 +1052,8 @@ sub process_strain_class {
   my $get_genotype_in_strain="Table-maker -p \"$def_dir/strain_genotype.def\"\nquit\n";
   my $allele_to_locus="Table-maker -p \"$def_dir/allele_to_locus.def\"\nquit\n";
 
-  open (FH1, "echo '$get_genotype_in_strain' | $tace $default_db | ") || die $!;
-  open (FH2, "echo '$allele_to_locus' | $tace $default_db | ") || die $!;
+  open (FH1, "echo '$get_genotype_in_strain' | $tace $database | ") || die $!;
+  open (FH2, "echo '$allele_to_locus' | $tace $database | ") || die $!;
 
   while(<FH1>){
     chomp;
@@ -1132,8 +1135,8 @@ sub check_genetics_coords_mapping {
   print LOG "--------------------------------------------------\n";
   print JAHLOG "\nChecking discrepancies in genetics/coords mapping:\n";
   print JAHLOG "--------------------------------------------------\n";
-  system ("/wormsrv2/scripts/get_interpolated_gmap.pl -database /wormsrv1/geneace -diff");
-  my $map_diff = "/wormsrv2/logs/mapping_diff.".$rundate;
+  system ("$ENV{'CVS_DIR'}/GENEACE/get_interpolated_gmap.pl -database $database -diff");
+  my $map_diff = "$log_dir/mapping_diff.".$rundate;
   open(IN, $map_diff) || die $!;
   while(<IN>){
     print LOG $_;
@@ -1156,10 +1159,10 @@ sub check_dubious_multipt_gene_connections {
   print $header;
   print LOG $header, $sep;
 
-  system("perl5.8.0 /wormsrv2/scripts/GENEACE/check_dubious_multi_pt_2_locus.pl");
-  print LOG `cat /wormsrv2/logs/dubious_multiPt_2_locus.$rundate`;
-  print JAHLOG `cat /wormsrv2/logs/dubious_multiPt_2_locus.$rundate`;
-  print ACE `cat /wormsrv1/geneace/CHECKS/multiPt_2_locus.ace` if $ace;
+  system("perl5.8.0 $ENV{'CVS_DIR'}/GENEACE/check_dubious_multi_pt_2_locus.pl");
+  print LOG `cat $log_dir/dubious_multiPt_2_locus.$rundate`;
+  print JAHLOG `cat $log_dir/dubious_multiPt_2_locus.$rundate`;
+  print ACE `cat $database/CHECKS/multiPt_2_locus.ace` if $ace;
   #`rm -f /wormsrv1/geneace/CHECKS/multiPt_2_locus.ace`;
 }
 
@@ -1175,13 +1178,13 @@ sub usage {
 sub create_log_files{
 
   # Create history logfile for script activity analysis
-  $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
+  $0 =~ m/\/*([^\/]+)$/; system ("touch $log_dir/history/$1.`date +%y%m%d`");
 
   # create main log file using script name for
   my $script_name = $1;
   $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
 
-  $log = "/wormsrv2/logs/$script_name.$rundate.$$";
+  $log = "$log_dir/$script_name.$rundate.$$";
 
   open (LOG, ">$log") or die "cant open $log";
   print LOG "$script_name\n";
@@ -1195,7 +1198,7 @@ sub create_log_files{
   }
   
 
-  $jah_log = "/wormsrv2/logs/$script_name.jahlog.$rundate.$$";
+  $jah_log = "$log_dir/$script_name.jahlog.$rundate.$$";
 
 
   open(JAHLOG, ">>$jah_log") || die "Can't open $jah_log\n";
@@ -1204,7 +1207,7 @@ sub create_log_files{
   print JAHLOG "=========================================================================\n";
 
   # create separate log with errors for Erich
-  $caltech_log = "/wormsrv2/logs/geneace_check.caltech_log.$rundate.$$";
+  $caltech_log = "$log_dir/geneace_check.caltech_log.$rundate.$$";
 
   open(CALTECHLOG,">$caltech_log") || die "cant open $caltech_log";
   print CALTECHLOG "$0 started at ",`date`,"\n";
@@ -1281,4 +1284,4 @@ B<-verbose:>
 
             Geneace check is now set to run on Sundays.
             ##Run Geneace check over weekend
-            20 7 * * 0 /wormsrv2/scripts/GENEACE/geneace_check.pl -a &
+            20 7 * * 0 $ENV{'CVS_DIR'}/GENEACE/geneace_check.pl -a &
