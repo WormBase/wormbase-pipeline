@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-09-20 15:49:22 $
+# Last updated on: $Date: 2005-09-21 13:25:08 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -57,7 +57,7 @@ my $log;                                                   # main log file for m
 my $caltech_log;                                           # Additional log file for problems that need to be sent to Caltech
 my $jah_log;                                               # Additional log file for problems to be sent to Jonathan Hodgkin at CGC
 my (%L_name_F_WBP, %L_name_F_M_WBP);                       # hashes for checking Person and Author merging?
-
+my $OPERON_FILE = "/wormsrv2/autoace/OPERONS/operon.dat";
 
 
 ##################################################
@@ -161,6 +161,8 @@ sub process_gene_class{
   print "Checking Gene class for errors:\n";
   print LOG "\nChecking Gene class for errors:\n--------------------------------\n";
 
+  #check if any genes in operons have been killed
+  &check_operons if $weekly;
 
   # Can first check general errors by grabbing sets of genes for querying
 
@@ -194,7 +196,7 @@ sub process_gene_class{
   }
 
   # checks Genes that do not have a map position nor an interpolated_map_position but has sequence info
-  unless ( $weekly ) {
+  if ( $weekly ) {
     my $query = "Find Live_genes WHERE !(Map | Interpolated_map_position) & Sequence_name & Species=\"*elegans\" & !Positive_clone=\"MTCE\" & !Made_into_transposon";
     foreach my $gene ($db->fetch(-query=>"$query")){
       print LOG "ERROR: $gene ($Gene_info{$gene}{'Public_name'}) has neither Map nor Interpolated_map_position info but has Sequence_name\n";
@@ -1224,6 +1226,36 @@ sub create_log_files{
 
 }}
 
+
+
+sub check_operons {
+
+  
+  open (FH, "<$OPERON_FILE") or die "can't open $OPERON_FILE\t:$!";
+  undef $/;
+  my %operon;
+  my %est;
+  my %cds;
+  my $data = <FH>;
+  eval $data;
+  die if $@;
+  $/ = "\n";
+  close FH;
+
+  my %dead_genes;
+  my $query = $db->fetch_many(-query=>'Find Gene; dead');
+  while( my $g = $query->next ){
+    $dead_genes{$g->name} = 1;
+  }
+
+  foreach my $ops ( keys %operon ) {
+    foreach my $gene ( @{$operon{$ops}{CDS}} ) {
+      if( $dead_genes{$gene} ) {
+	print LOG "$gene - dead but in operon $ops\n";
+      }
+    }
+  }
+}
 
 __END__
 
