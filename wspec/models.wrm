@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2005-08-26 11:09:04 $
+// Last edited on: $Date: 2005-09-22 08:48:08 $
  
 
 
@@ -290,7 +290,7 @@
                        Other_sequence ?Sequence XREF Gene #Evidence  // for linking to mRNAs etc. that correspond to a gene		   
 		       Associated_feature ?Feature XREF Associated_with_gene #Evidence
 		       Gene_product_binds ?Feature XREF Bound_by_product_of
-        Experimental_info RNAi_result ?RNAi XREF Gene
+        Experimental_info RNAi_result ?RNAi XREF Gene #Evidence
                           Expr_pattern ?Expr_pattern XREF Gene
                           Drives_Transgene ?Transgene XREF Driven_by_gene
                           Transgene_product ?Transgene XREF Gene
@@ -1000,6 +1000,9 @@
 			// one row per ungapped alignment section
 			// first int is position in query, second in target
 			// third int is length - only necessary when gaps in both sequences align
+            AlignDNAPep Int UNIQUE Int UNIQUE Int
+            AlignPepDNA Int UNIQUE Int UNIQUE Int
+	    Target_species UNIQUE ?Species
 	    EMBL_dump UNIQUE EMBL_dump_YES
 			     EMBL_dump_NO
 			// overrides for embl dump based on method
@@ -1265,6 +1268,7 @@
                                         COG_code #COG_codes
                                    HOPS_group    // Sonnhammer
                                    RIO_group     // Eddy
+				   InParanoid_group
                 GO_term ?GO_term XREF Homology_group
                 Protein ?Protein XREF Homology_group
                 Remark ?Text #Evidence
@@ -1407,7 +1411,7 @@
                   Expr_pattern ?Expr_pattern XREF Protein
 		  Homology_group ?Homology_group XREF Protein // added [031120 krb]
 		  3d_data ?3d_data XREF Protein
-                  //Structure_data ?Structure_data XREF Corresponding_protein #Evidence
+                 // Structure_data ?Structure_data XREF Corresponding_protein #Evidence
           Homol DNA_homol ?Sequence XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int  #Homol_info
                 Pep_homol ?Protein XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int  #Homol_info
                 Structure_homol ?Structure_data XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
@@ -2702,15 +2706,12 @@
 // Structure_data model for Payan
 ///////////////////////////////////
 
-?Structure_data Evidence            #Evidence
-                DB_info             Database ?Database ?Database_field ?Accession_number XREF Structure_data
-                Sequence            Protein UNIQUE ?Protein 
-                Homol               Pep_homol ?Protein XREF Structure_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
-				    Homol_homol ?Homol_data XREF Structure_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
-                //Assigned_sequence   Corresponding_protein ?Protein XREF Structure_data #Evidence
-		//		    Corresponding_CDS ?CDS XREF Structure_data #Evidence
-                //                   Protein_identity #Evidence
-                Status		    Selected UNIQUE DateType
+?Structure_data Evidence            #Evidence //Contains Date_last_updated                                    
+                DB_info             Database ?Database ?Database_field ?Accession_number XREF Structure_data // Database_field: Native_ID
+                                    Sequence            Protein UNIQUE ?Protein  // Protein sequence as included in the source data
+                                    Homol               Pep_homol ?Protein XREF Structure_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info 
+							Homol_homol ?Homol_data XREF Structure_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info 
+                Status              Selected UNIQUE DateType
                                     Cloned UNIQUE DateType
                                     Expressed UNIQUE DateType
                                     Soluble UNIQUE DateType
@@ -2718,17 +2719,21 @@
                                     Crystallized UNIQUE DateType
                                     Diffraction_quality_crystals UNIQUE DateType
                                     Diffraction UNIQUE DateType
-                                    NMR_assigned UNIQUE DateType
+                                    Native_diffraction_data UNIQUE DateType
+                                    Phasing_diffraction_data UNIQUE DateType
+                                    Nmr_assigned UNIQUE DateType
                                     Hsqc UNIQUE DateType
                                     Crystal_structure UNIQUE DateType
-                                    NMR_structure UNIQUE DateType
+                                    Nmr_structure UNIQUE DateType
                                     In_pdb UNIQUE DateType
                                     Work_stopped UNIQUE DateType
                                     Test_target UNIQUE DateType
-                                    Other UNIQUE DateType
-                Status_updated      UNIQUE DateType
-                Date_downloaded     UNIQUE DateType
+                                    Other UNIQUE DateType                                   
+                Status_updated      UNIQUE DateType // Date when status was updated as reported by the source data
+                Wormpep_release     UNIQUE Int// The Wormpep release that was used for mapping
                 Remark              ?Text #Evidence
+
+
 		   
 ////////////////////////
 //    END OF FILE     //
