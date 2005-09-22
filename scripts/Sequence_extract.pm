@@ -138,7 +138,8 @@ sub Sub_sequence
 
     if( $seq =~ /CHROMOSOME/ ) {
       $chrom = $seq;
-      $start = 0;
+# GWW - removed this to stop chromosome positions being reset all the time
+#      $start = 0;
     }      
 
     #passed seq is a SUPERLINK
