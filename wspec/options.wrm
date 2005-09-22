@@ -148,7 +148,7 @@ _VView		   -V
 _VAnatomy_term 	   -V
 _VAnatomy_name 	   -V
 _VAntibody         -V
-_VCluster          -V
+_VExpression_cluster          -V
 _VCondition        -V
 _VGene_regulation  -V
 _VGenetic_code     -V
