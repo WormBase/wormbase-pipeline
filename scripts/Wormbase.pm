@@ -273,8 +273,8 @@ sub getseqEMBL {
     my $querycontent1 = "-e+[embl-acc:'$acc']";
     my $querycontent2 = "-e+[emblnew-acc:'$acc']";
     
-    my $request1 = "/srs6bin/cgi-bin/wgetz?$querycontent1";
-    my $request2 = "/srs6bin/cgi-bin/wgetz?$querycontent2";
+    my $request1 = "/srsbin/cgi-bin/wgetz?$querycontent1";
+    my $request2 = "/srsbin/cgi-bin/wgetz?$querycontent2";
     
     my $server = "srs.ebi.ac.uk";
 
@@ -1001,19 +1001,49 @@ Takes a path to an acedb database and returns "yes" if no database/lock.wrm file
 
 =over 4
 
+=item *
 
-=cut
+gff_sort
 
-=back
+
+gff_sort reads a GFF file from STDIN , ignores comment lines and blank
+lines and prints the remaining lines to STDOUT sorted by the following
+keys:
+
+name (column 0)
+start (column 3)
+end (column 4)
+
+=back 
 
 =over 4
 
 =item *
-gff_sort, tace, and dbfetch
 
-Dont know what these do, sorry.
+tace
+
+tace returns the path for tace that is being used
 
 =back 
+
+=over 4
+
+=item *
+
+dbfetch
+
+dbfetch takes arguments:
+
+   name of sequence to find
+   name of file containing one or more sequences in Fasta format
+
+It returns the first fasta format sequence from the file whose name
+matches the input seqeunce name.
+
+=back 
+
+=over 4
+
 
 =head2 load_to_datase
 
