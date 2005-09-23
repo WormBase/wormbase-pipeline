@@ -7,7 +7,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $                      
-# Last updated on: $Date: 2005-09-23 08:38:30 $        
+# Last updated on: $Date: 2005-09-23 09:17:13 $        
 
 use strict;
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
@@ -207,7 +207,7 @@ foreach my $chromosome (@chromosomes) {
 	# just print the intergenic region
 	# get width of intergenic distance
 	$width = $start-$last_end-1;
-	$seq_start = $last_end+1;
+	$seq_start = $last_end;
 	print OUT ">${last_name}_${gene_name} CHROMOSOME_$chromosome $seq_start, len: $width\n";
 	$sequence = $seq_obj->Sub_sequence("CHROMOSOME_$chromosome", "$seq_start", "$width");
 #	print OUT "$sequence\n";
@@ -226,7 +226,7 @@ foreach my $chromosome (@chromosomes) {
 	  $width = $start-$last_end-1;
 	  # use the smaller of $width or $proximity
 	  $width = $width < $proximity ? $width : $proximity;
-	  $seq_start = $last_end+1;
+	  $seq_start = $last_end;
 	  my $prime =  ($last_strand eq "+") ? "3" : "5";
 	  print OUT ">$last_name.${prime}prime CHROMOSOME_$chromosome $seq_start, len: $width\n";
 	  # output sequence from end of gene to $width past the end
@@ -247,7 +247,7 @@ foreach my $chromosome (@chromosomes) {
 	  $width = $start-$last_end-1;
 	  # use the smaller of $width or $proximity
 	  $width = $width < $proximity ? $width : $proximity;
-	  $seq_start = $start-$width;
+	  $seq_start = $start-$width-1;
 	  my $prime =  ($strand eq "+") ? "5" : "3";
 	  print OUT ">$gene_name.${prime}prime CHROMOSOME_$chromosome $seq_start, len: $width\n";
 	  # output sequence from $width before the gene to the start
@@ -292,7 +292,7 @@ foreach my $chromosome (@chromosomes) {
       # just print the intergenic region
       # get width of intergenic distance
       $width = 50000;
-      $seq_start = $last_end+1;
+      $seq_start = $last_end;
       print OUT ">${last_name}_end_of_chromosome CHROMOSOME_$chromosome $seq_start, len: $width\n";
       $sequence = $seq_obj->Sub_sequence("CHROMOSOME_$chromosome", "$seq_start", "$width");
 #      print OUT "$sequence\n";
@@ -303,7 +303,7 @@ foreach my $chromosome (@chromosomes) {
       if ($side eq "both" || ($last_strand eq "+" && $side eq "3") || ($last_strand eq "-" && $side eq "5")) {
 	# get width of intergenic distance
 	$width = $proximity;
-	$seq_start = $last_end+1;
+	$seq_start = $last_end;
 	my $prime =  ($last_strand eq "+") ? "3" : "5";
 	print OUT ">$last_name.${prime}prime CHROMOSOME_$chromosome $seq_start\n";
 	# output sequence from end of gene to $width past the end
