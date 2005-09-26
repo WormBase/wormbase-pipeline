@@ -4,7 +4,7 @@
 # by Michael Han 
 # 
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2005-09-19 16:19:42 $
+# Last updated on: $Date: 2005-09-26 16:30:13 $
 
 package Features;
 
@@ -118,7 +118,7 @@ sub get_tls{
     my $psize=length $seq;
 
     # searches for n-mers of the TLS (max 23)
-    for (my $i=23;$i>5;$i--){
+    for (my $i=23;$i>6;$i--){
 
 	# loops through the TLS sequences 
 	foreach my $slname (keys %SL){
@@ -258,6 +258,6 @@ $Author: mh6 $
 
 =head1 VERSION
 
-$Date: 2005-09-19 16:19:42 $
+$Date: 2005-09-26 16:30:13 $
 
 =cut
