@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-09-21 13:25:08 $
+# Last updated on: $Date: 2005-09-27 08:47:23 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -1183,9 +1183,6 @@ sub usage {
 }
 
 sub create_log_files{
-
-  # Create history logfile for script activity analysis
-  $0 =~ m/\/*([^\/]+)$/; system ("touch $log_dir/history/$1.`date +%y%m%d`");
 
   # create main log file using script name for
   my $script_name = $1;
