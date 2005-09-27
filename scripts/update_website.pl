@@ -7,8 +7,8 @@
 # A script to finish the last part of the weekly build by updating all of the
 # relevant WormBase and Wormpep web pages.
 #
-# Last updated by: $Author: pad $     
-# Last updated on: $Date: 2005-09-07 13:40:00 $      
+# Last updated by: $Author: ar2 $     
+# Last updated on: $Date: 2005-09-27 08:58:30 $      
 
 
 #################################################################################
@@ -925,7 +925,7 @@ sub update_wormpep_pages{
         print LIST "<td>wormpep${wp_rel}</td>\n";
     }
     else {
-        print LIST "<td><A href=\"ftp://ftp.sanger.ac.uk/pub/databases/wormpep/old_wormpep${wp_rel}\">wormpep${wp_rel}</A></td>\n";
+        print LIST "<td><A href=\"ftp://ftp.sanger.ac.uk/pub/databases/wormpep/wormpep${wp_rel}\">wormpep${wp_rel}</A></td>\n";
     }
 
     print LIST "<td><img src=\"/icons/blank.gif\" width=\"16\" height=\"22\"></td>\n";
