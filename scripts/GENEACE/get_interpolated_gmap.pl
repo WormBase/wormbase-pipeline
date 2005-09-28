@@ -7,7 +7,7 @@
 # This script calculates interpolated genetic map positions for CDS, Transcripts 
 # and Pseudogenes lying between and outside genetic markers.
 #
-# Last updated on: $Date: 2005-09-27 08:27:18 $
+# Last updated on: $Date: 2005-09-28 10:55:13 $
 # Last updated by: $Author: ar2 $
 
 
@@ -73,8 +73,8 @@ if ($reverse){
 }
 
 if ($diff){
-  $diffile = "$basedir/logs/mapping_diff.".$rundate;
-  system("rm -f $diffile; chmod 777 $diffile");
+  $diffile = "$database/logs/mapping_diff.".$rundate;
+  system("chmod 777 $diffile");
   open(DIFF, ">$diffile") || die $!;
 }
 
