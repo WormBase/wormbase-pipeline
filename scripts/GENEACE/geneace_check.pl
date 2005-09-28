@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-09-27 08:47:23 $
+# Last updated on: $Date: 2005-09-28 11:09:54 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -1143,7 +1143,7 @@ sub check_genetics_coords_mapping {
   print JAHLOG "\nChecking discrepancies in genetics/coords mapping:\n";
   print JAHLOG "--------------------------------------------------\n";
   system ("$ENV{'CVS_DIR'}/GENEACE/get_interpolated_gmap.pl -database $database -diff");
-  my $map_diff = "$log_dir/mapping_diff.".$rundate;
+  my $map_diff = "/wormsrv2/logs/mapping_diff.".$rundate;
   open(IN, $map_diff) || die $!;
   while(<IN>){
     print LOG $_;
@@ -1184,14 +1184,10 @@ sub usage {
 
 sub create_log_files{
 
-  # create main log file using script name for
-  my $script_name = $1;
-  $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
-
-  $log = "$log_dir/$script_name.$rundate.$$";
+  $log = "$log_dir/geneace_check.$rundate.$$";
 
   open (LOG, ">$log") or die "cant open $log";
-  print LOG "$script_name\n";
+  print LOG "geneace_check\n";
   print LOG "started at ",`date`,"\n";
   print LOG "=============================================\n";
   print LOG "\n";
@@ -1202,7 +1198,7 @@ sub create_log_files{
   }
   
 
-  $jah_log = "$log_dir/$script_name.jahlog.$rundate.$$";
+  $jah_log = "$log_dir/geneace_check.jahlog.$rundate.$$";
 
 
   open(JAHLOG, ">>$jah_log") || die "Can't open $jah_log\n";
