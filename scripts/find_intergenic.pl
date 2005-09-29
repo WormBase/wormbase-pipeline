@@ -6,8 +6,8 @@
 #
 # by Gary Williams
 #
-# Last updated by: $Author: gw3 $                      
-# Last updated on: $Date: 2005-09-23 09:17:13 $        
+# Last updated by: $Author: ar2 $                      
+# Last updated on: $Date: 2005-09-29 13:24:06 $        
 
 use strict;
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
@@ -22,17 +22,11 @@ use Sequence_extract;
 ######################################
 # variables and command-line options #
 ######################################
-
-my $dbdir       = glob("~wormpub/DATABASES/current_DB"); # Database path
-my $gffdir      = "${dbdir}/CHROMOSOMES/";        # GFF directory
-my @chromosomes = qw( I II III IV V X );                            # chromosomes
-#my $db_version  = &get_wormbase_version_name;                       # WS version name
-
 my $maintainers = "All";
 
 my $rundate = &rundate;
 my $runtime = &runtime;
-
+my $dbdir;
 
 my $help;			# Help perdoc
 my $test;			# Test mode
@@ -52,7 +46,13 @@ GetOptions ("debug=s"   => \$debug,
 	    "proximity=i" => \$proximity,
 	    "side=s"      => \$side,
 	    "operons=s" => \$operons,
+	    "database=s"=> \$dbdir
 );
+
+
+$dbdir          = $test ? glob("~wormpub/DATABASES/current_DB") : '/wormsrv2/autoace' unless $dbdir; # Database path
+my $gffdir      = "${dbdir}/CHROMOSOMES/";        # GFF directory
+my @chromosomes = qw( I II III IV V X );                            # chromosomes
 
 # Display help if required
 &usage("Help") if ($help);
