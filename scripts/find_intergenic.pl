@@ -6,8 +6,8 @@
 #
 # by Gary Williams
 #
-# Last updated by: $Author: ar2 $                      
-# Last updated on: $Date: 2005-09-29 13:24:06 $        
+# Last updated by: $Author: gw3 $                      
+# Last updated on: $Date: 2005-09-29 15:57:04 $        
 
 use strict;
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
@@ -158,7 +158,7 @@ foreach my $chromosome (@chromosomes) {
 # produce output files #
 ########################
 
-  my $last_end = -1;	        # the position of the end of the previous gene
+  my $last_end = 0;	        # the position of the end of the previous gene
   my $operon_end = -1;		# end position of last operon found
   my $operon_start = -1;	# start position of last operon found
   # name of previous gene
@@ -208,7 +208,8 @@ foreach my $chromosome (@chromosomes) {
 	# get width of intergenic distance
 	$width = $start-$last_end-1;
 	$seq_start = $last_end;
-	print OUT ">${last_name}_${gene_name} CHROMOSOME_$chromosome $seq_start, len: $width\n";
+	$print_start = $seq_start+1; # human-readable start coordinate
+	print OUT ">${last_name}_${gene_name} CHROMOSOME_$chromosome $print_start, len: $width\n";
 	$sequence = $seq_obj->Sub_sequence("CHROMOSOME_$chromosome", "$seq_start", "$width");
 #	print OUT "$sequence\n";
 	fasta_write($sequence);
@@ -227,8 +228,9 @@ foreach my $chromosome (@chromosomes) {
 	  # use the smaller of $width or $proximity
 	  $width = $width < $proximity ? $width : $proximity;
 	  $seq_start = $last_end;
+	  $print_start = $seq_start+1; # human-readable start coordinate
 	  my $prime =  ($last_strand eq "+") ? "3" : "5";
-	  print OUT ">$last_name.${prime}prime CHROMOSOME_$chromosome $seq_start, len: $width\n";
+	  print OUT ">$last_name.${prime}prime CHROMOSOME_$chromosome $print_start, len: $width\n";
 	  # output sequence from end of gene to $width past the end
 	  $sequence = $seq_obj->Sub_sequence("CHROMOSOME_$chromosome", "$seq_start", "$width");
 	  if ($last_strand eq "-") {
@@ -248,8 +250,9 @@ foreach my $chromosome (@chromosomes) {
 	  # use the smaller of $width or $proximity
 	  $width = $width < $proximity ? $width : $proximity;
 	  $seq_start = $start-$width-1;
+	  $print_start = $seq_start+1; # human-readable start coordinate
 	  my $prime =  ($strand eq "+") ? "5" : "3";
-	  print OUT ">$gene_name.${prime}prime CHROMOSOME_$chromosome $seq_start, len: $width\n";
+	  print OUT ">$gene_name.${prime}prime CHROMOSOME_$chromosome $print_start, len: $width\n";
 	  # output sequence from $width before the gene to the start
 	  $sequence = $seq_obj->Sub_sequence("CHROMOSOME_$chromosome", "$seq_start", "$width");
 	  if ($strand eq "-") {
@@ -293,7 +296,8 @@ foreach my $chromosome (@chromosomes) {
       # get width of intergenic distance
       $width = 50000;
       $seq_start = $last_end;
-      print OUT ">${last_name}_end_of_chromosome CHROMOSOME_$chromosome $seq_start, len: $width\n";
+      $print_start = $seq_start+1; # human-readable start coordinate
+      print OUT ">${last_name}_end_of_chromosome CHROMOSOME_$chromosome $print_start, len: $width\n";
       $sequence = $seq_obj->Sub_sequence("CHROMOSOME_$chromosome", "$seq_start", "$width");
 #      print OUT "$sequence\n";
       fasta_write($sequence);
@@ -304,8 +308,9 @@ foreach my $chromosome (@chromosomes) {
 	# get width of intergenic distance
 	$width = $proximity;
 	$seq_start = $last_end;
+	$print_start = $seq_start+1; # human-readable start coordinate
 	my $prime =  ($last_strand eq "+") ? "3" : "5";
-	print OUT ">$last_name.${prime}prime CHROMOSOME_$chromosome $seq_start\n";
+	print OUT ">$last_name.${prime}prime CHROMOSOME_$chromosome $print_start\n";
 	# output sequence from end of gene to $width past the end
 	$sequence = $seq_obj->Sub_sequence("CHROMOSOME_$chromosome", "$seq_start", "$width");
 	if ($last_strand eq "-") {
