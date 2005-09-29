@@ -7,7 +7,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: gw3 $                      
-# Last updated on: $Date: 2005-09-29 15:57:04 $        
+# Last updated on: $Date: 2005-09-29 16:03:32 $        
 
 use strict;
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
@@ -168,6 +168,7 @@ foreach my $chromosome (@chromosomes) {
   my $sequence;			# sequence of intergenic region
   my $width;			# amount of sequence to output
   my $seq_start;		# position to start writing sequence from
+  my $print_start;		# human-readable start coordinate
 
   print "Produce output file\n" if ($verbose);
 
