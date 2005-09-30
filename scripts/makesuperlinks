@@ -10,6 +10,7 @@ $!=1;
 use Ace ;
 use strict;
 use Getopt::Long ;
+use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
 
 ##############################
