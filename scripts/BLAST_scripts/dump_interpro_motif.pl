@@ -5,7 +5,7 @@
 # Dumps InterPro protein motifs from ensembl mysql (protein) database to an ace file
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2005-09-30 09:17:37 $
+# Last updated on: $Date: 2005-09-30 15:28:55 $
 
 
 use strict;
@@ -404,8 +404,12 @@ __END__
  
 =back
  
-This script does...blah blah blah
- 
+This script reads the results of Pfam, PRINTS and Profile domain hits from the mysql database, 
+converts the IDs from these hits into InterPro IDs and then merges overlapping hits which have 
+the same InterPro ID into single InterPro hits.
+
+It then writes out an .ace file of the resulting InterPro hits.
+
 script_template.pl MANDATORY arguments:
  
 =over 4
@@ -421,12 +425,49 @@ script_template.pl  OPTIONAL arguments:
 =item -help, Help
  
 =back
- 
+
+=over 4
+
+=item -database=database, Specify a specific database for debugging
+
+=back
+
+=over 4
+
+=item -mysql=servername, Specify a specific mysql server for debugging.
+
+=back
+
+=over 4
+
+=item -method=method, Specify a specific result method for debugging.
+
+=back
+
+=over 4
+
+=item -test, use the test database 'worm_peptest'.
+
+=back
+
+=over 4
+
+=item -debug=username, run in debug mode.
+
+=back
+
+=over 4
+
+=item -verbose,  Verbose output
+
+=back
+
+
 =head1 REQUIREMENTS
  
 =over 4
  
-=item This script must be run where it can see /wormsrv2/tmp/ as it puts the interpro.xml file in there.
+=item This script must be run where it can see /wormsrv2/tmp/ as it puts the temporary interpro.xml file in there.
  
 =back
  
