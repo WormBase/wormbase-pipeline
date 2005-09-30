@@ -8,7 +8,7 @@
 # build to check the current build
 #
 # Last updated by: $Author: mt3 $     
-# Last updated on: $Date: 2005-09-30 13:20:36 $      
+# Last updated on: $Date: 2005-09-30 13:24:22 $      
 
 
 use strict;
@@ -106,8 +106,8 @@ print LOG "8) Run composition *.dna in the CHROMOSOMES directory.  Make sure thi
 
 print LOG "9) Confirm that GFFmunger.pl has done its job ie \n grep landmark /wormsrv2/autoace/CHROMOSOMES/CHROMOSOME_III.gff | head\n";
 print LOG " grep five_prime /wormsrv2/autoace/CHROMOSOMES/CHROMOSOME_III.gff\n";
-print LOG " grep Partially /wormsrv2/autoace/CHROMOSOMES/CHROMOSOME_III.gff  and check these are overloaded CDS lines\n";
-print LOG " These should have about 10 columns if overloaded and only about 5 or 6 if there are problems\n";
+print LOG " grep Partially /wormsrv2/autoace/CHROMOSOMES/CHROMOSOME_III.gff  and check these are overloaded CDS lines.\n";
+print LOG " These should have about 10 columns if overloaded and only about 5 or 6 if there are problems.\n";
 
 print LOG "\nThat's all...for now!  If you are satisfied the build is ok, please inform the person\n";
 print LOG "building the database. Please continue to add to this list as appropriate\n";
