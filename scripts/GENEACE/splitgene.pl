@@ -7,8 +7,8 @@
 # simple script for creating new (sequence based) Gene objects when splitting 
 # existing gene 
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-11-23 16:34:36 $
+# Last edited by: $Author: mt3 $
+# Last edited on: $Date: 2005-10-03 15:26:19 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -27,6 +27,8 @@ my $gene_id;     # stores highest gene ID
 my $email;       # email new Gene IDs back to users to person who requested it
 my $load;        # load results to geneace (default is to just write an ace file)
 my $verbose;     # toggle extra (helpful?) output to screen
+my $p_clone;     # positive clone name for new gene
+
 
 GetOptions ("old=s"     => \$old,
             "new=s"     => \$new,
@@ -35,7 +37,6 @@ GetOptions ("old=s"     => \$old,
 	    "email"     => \$email,
 	    "load"      => \$load,
 	    "verbose"   => \$verbose);
-
 
 #####################################################
 # warn about incorrect usage of command line options
@@ -136,6 +137,10 @@ sub process_gene{
       $new_exists = 1;
     }
     else{
+ 
+      # create new positive clone name from sequence name
+      my $p_clone = $new;
+      $p_clone =~ s/\.\S+$//;
 
       # new version number
       my $new_version = $old_version+1;
@@ -153,7 +158,6 @@ sub process_gene{
       print "$old = $old_gene, version $old_version becomes version $new_version\n" if ($verbose);
       print "$new = $gene_id, version 1\n" if ($verbose);
 
-
       # update existing gene info
       print OUT "Gene : $old_gene\n";
       print OUT "Version $new_version\n";
@@ -167,6 +171,7 @@ sub process_gene{
       print OUT "Sequence_name $new\n";
       print OUT "Public_name $new\n";
       print OUT "Species \"Caenorhabditis elegans\"\n";
+      print OUT "Positive_clone $p_clone Inferred_automatically \"From sequence, transcript, pseudogene data\"\n";
       print OUT "History Version_change 1 now $person Event Split_from $old_gene\n";
       print OUT "Split_from $old_gene\n";
       print OUT "Method Gene\n\n";
@@ -188,7 +193,7 @@ sub process_gene{
     my $address = "mt3\@sanger.ac.uk";
     
     $address = "ar2\@sanger.ac.uk"          if ($person eq "WBPerson1847");
-    $address = "dl1\@sanger.ac.uk"          if ($person eq "WBPerson1846");
+    $address = "gw3\@sanger.ac.uk"          if ($person eq "WBPerson4025");
     $address = "pad\@sanger.ac.uk"          if ($person eq "WBPerson1983");
     $address = "dblasiar\@watson.wustl.edu" if ($person eq "WBPerson1848");
     $address = "tbieri\@watson.wustl.edu"   if ($person eq "WBPerson1849");
