@@ -7,7 +7,7 @@
 # simple script for creating new (sequence based) Gene objects 
 #
 # Last edited by: $Author: mt3 $
-# Last edited on: $Date: 2005-06-07 13:45:17 $
+# Last edited on: $Date: 2005-10-03 16:32:57 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -263,7 +263,7 @@ sub process_gene{
     my $address = "mt3\@sanger.ac.uk";
     
     $address = "ar2\@sanger.ac.uk"          if ($person eq "WBPerson1847");
-    $address = "dl1\@sanger.ac.uk"          if ($person eq "WBPerson1846");
+    $address = "gw3\@sanger.ac.uk"          if ($person eq "WBPerson4025");
     $address = "pad\@sanger.ac.uk"          if ($person eq "WBPerson1983");
     $address = "dblasiar\@watson.wustl.edu" if ($person eq "WBPerson1848");
     $address = "tbieri\@watson.wustl.edu"   if ($person eq "WBPerson1849");
