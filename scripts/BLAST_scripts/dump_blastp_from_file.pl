@@ -95,6 +95,29 @@ our %org_prefix = ( 'wublastp_worm'          => 'WP',
 		    'wublastp_briggsae'      => 'BP',
 		    'wublastp_ipi_human'     => 'IP' # should never actually get included
 		  );
+
+my %database2species = ( 'worm_pep'     => 'Caenorhabditis elegans',
+			 'worm_brigpep' => 'Caenorhabditis briggsae',
+			 'worm_remapep' => 'Caenorhabditis remanei',
+			 'species_test' => 'Caenorhabditis test',
+		       );
+
+my $QUERY_SPECIES = $database2species{"$database"};
+ 
+#connect to DB_File databases for species determination and establish hashes
+
+my $db_files = "/acari/work2a/wormpipe/swall_data";
+my (%SWISSORG, %TREMBLORG);
+dbmopen %SWISSORG, "$db_files/swissprot2org", 0666 or die "cannot open swissprot2org DBM file $db_files/swissprot2org";
+unless (-s "$db_files/swissprot2des") {
+  die "swissprot2des not found or empty";
+}
+
+dbmopen %TREMBLORG, "$db_files/trembl2org", 0666 or die "cannot open trembl2org DBM file";
+unless (-s "$db_files/trembl2des") {
+  die "trembl2des not found or empty";
+}
+
 # gene CE info from COMMON_DATA files copied to ~wormpipe/dumps in prep_dump
 undef $/;
 our %CE2gene;
@@ -320,21 +343,23 @@ while (<BLAST>) {
       print RS "\n$current_pep\n";
     }
   }
-  
-  my $wormpub = glob("~wormpub");
 
-  print LOG " : finished\n\n______END_____";
+my $wormpub = glob("~wormpub");
 
-  close LOG;
-  #`rm -f $recip_file`;
+print LOG " : finished\n\n______END_____";
+
+close LOG;
+#`rm -f $recip_file`;
 
 
-  print "\nEnd of dump/\n";
+print "\nEnd of dump/\n";
 
-  # Copy resulting file to wormsrv2 - leave in original place for subsequent script write.swiss_trembl
-  # `/usr/bin/rcp $output /wormsrv2/wormbase/ensembl_dumps/`;
+# Copy resulting file to wormsrv2 - leave in original place for subsequent script write.swiss_trembl
+# `/usr/bin/rcp $output /wormsrv2/wormbase/ensembl_dumps/`;
 
-  dbmclose %ACC2DB;
+dbmclose %ACC2DB;
+dbmclose %SWISSORG;
+dbmclose %TREMBLORG;
 
 
   exit(0);
@@ -394,7 +419,28 @@ while (<BLAST>) {
 		$BEST{$$data[1]} = "$prefix:$$data[4]"."score$$data[7]";
 		$best = 1;
 		next HOMOLOGUES if $just_matches; # dont bother with all the rest
-	      }
+	      }	
+	      print OUT "Pep_homol ";
+	      print OUT "\"$prefix:$$data[4]\" "; #  homolID
+	      print OUT "$$data[1] ";	#  analysis
+	      print OUT "$$data[7] ";	#  e value
+	      print OUT "$$data[2] ";	#  HomolStart
+	      print OUT "$$data[3] ";	#  HomolEnd
+	      print OUT "$$data[5] ";	#  pepHomolStar
+	      print OUT "$$data[6] ";	#  pepHomolEnd
+	      print OUT "Target_species \"",&species_lookup($$data[1], $$data[4]),"\"\n";
+
+
+	      print RECIP "Protein : \"$prefix:$$data[4]\" line "; #  matching peptide
+	      print RECIP "\"$prot_pref:$pid\" ";	#worm protein
+	      print RECIP "$$data[1] "; #  analysis
+	      print RECIP "$$data[7] "; #  e value
+	      print RECIP "$$data[5] "; #  HomolStart
+	      print RECIP "$$data[6] "; #  HomolEnd
+	      print RECIP "$$data[2] "; #  pepHomolStar
+	      print RECIP "$$data[3] "; #  pepHomolEnd
+	      print RECIP "Target_species \"$QUERY_SPECIES\"\n";
+	      
 	      foreach (@cigar) {
 		#print OUT "Pep_homol \"$homolID\" $processIds2prot_analysis{$analysis} $e $myHomolStart $myHomolEnd $pepHomolStart $pepHomolEnd Align ";
 		print OUT "Pep_homol ";
@@ -591,6 +637,28 @@ while (<BLAST>) {
     return -999 if $n == 0;
     return log($n)/log(10);
   } 
+
+
+sub species_lookup
+    {
+      my $analysis = shift;
+      my $protein = shift;
+
+      my %species = ( 'wublastp_worm'          => 'Caenorhabditis elegans',
+		      'wublastp_briggsae'      => 'Caenorhabditis briggsae',
+		      'wublastp_human'         => 'Homo sapiens',
+		      'wublastp_yeast'           => 'Saccharomyces cerevisiae',
+		      'wublastp_fly'           => 'Drosophila melanogaster',
+		      'wublastp_slimswissprot' => $SWISSORG{$protein},
+		      'wublastp_slimtrembl'    => $TREMBLORG{$protein}
+		      );
+      my $species = $species{"$analysis"};
+
+      $species = 'unknown' unless$species;
+      return $species;
+    }
+
+
 
 __END__
 
