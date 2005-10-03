@@ -5,7 +5,7 @@
 # A script to make multiple copies of camace for curation, and merge them back again
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2005-09-13 13:07:57 $
+# Last edited on: $Date: 2005-10-03 14:16:27 $
 
 
 use strict;
@@ -21,6 +21,7 @@ use Getopt::Long;
 
 my $all;                   # All
 my $pad;                   # Use Paul's split
+my $gw3;                   # Use Gary's split
 my $merge;                 # Merging databases
 my $split;                 # Splitting databases
 my $update;                # Update current database
@@ -30,6 +31,7 @@ my $help;                  # Help menu
 GetOptions (
             "all"        => \$all,
 	    "pad"        => \$pad,
+	    "gw3"        => \$gw3,
 	    "merge"      => \$merge,
 	    "split"      => \$split,
 	    "update"     => \$update,
@@ -54,6 +56,7 @@ my @classes = ('Transposon', 'Transcript', 'CDS', 'Sequence', 'Feature', 'Featur
 # load @databases array with user database names.
 push(@databases,"orig");
 push(@databases,"pad") if ($pad || $all);
+push(@databases,"gw3") if ($gw3 || $all);
 
 # directory paths
 our $current     = "/wormsrv1/camace";
