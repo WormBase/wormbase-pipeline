@@ -47,17 +47,17 @@ while (<SOURCE>){
     undef $FBgn;
     undef $gadID;
     undef $FBname;
-    
+
+    s/;//g; # get rid of ;'s
     $count++;
     $record_count++;
 
-    if( /^>(\S+)\s.*name=(.*);\s.*FlyBase:(FBgn\d+)/ ) {
-      ($gadID, $FBname, $FBgn)  = ($1, $2, $3);
-    }
+    my %fields = /(\w+)=(\S+)/g;
 
-    if( !($FBgn) ){
-      $FBgn = $1 if ($_ =~ /(FBgn\d+)/);  #last ditch attemp to grap if from the header
-    }
+    $gadID = $fields{'ID'} if $fields{'ID'} ;
+    $FBname = $fields{'name'};
+
+    ($FBgn) = /FlyBase:(FBgn\d+)/;
 
     # some old style names still exist eg pp-CT*****.  In these cases
     # we need to use the 1st field of the "from_gene" fields.
