@@ -56,6 +56,7 @@ $org2acedb{yeast} = "SGD:";
 $org2acedb{slimswissprot} = "SW:";
 $org2acedb{slimtrembl} = "TR:";
 $org2acedb{briggsae} = "BP:";
+$org2acedb{remanei} = "RP:";
 $org2acedb{human} = "never_used"; #this should always be done in sub getPrefix. This is here to check for valid analysis selection
 
 
@@ -66,6 +67,7 @@ my %worm_dna_processIds = ( 'worm'          => '2',
 			    'fly'           => '6',
 			    'slimswissprot' => '7',
 			    'slimtrembl'    => '8',
+			    'remanei'       => '15'
 			  );
 
 my %anal2db; 
@@ -256,6 +258,8 @@ while (my @row = $sth->fetchrow_array) {
       $org = "human";
     } elsif ($1 =~ /brigpep/) {
       $org = "briggsae";
+    } elsif ($1 =~ /remanei/) {
+      $org = "remanei";
     }
     $analysis2org{$row[0]} = $org;
   }
@@ -466,6 +470,7 @@ foreach my $aref (@$ref) {
       $accept_per_org{"briggsae"} = 0;
       $accept_per_org{"slimswissprot"} = 0;
       $accept_per_org{"slimtrembl"} = 0;
+      $accept_per_org{"remanei"} = 0;
 
       my $max_ev = 0;
       # loop over all hsp columns, ordered by increasing evalue,
