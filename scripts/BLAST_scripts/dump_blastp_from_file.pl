@@ -75,6 +75,7 @@ my %wormprotprocessIds = ( 'wormpep'       => '2',
 			   'gadfly'        => '6',
 			   'slimswissprot' => '7',
 			   'slimtrembl'    => '8',
+			   'remanei'       => '15',
 			 );
 
 my %processIds2prot_analysis = ( '2' => "wublastp_worm",
@@ -84,6 +85,7 @@ my %processIds2prot_analysis = ( '2' => "wublastp_worm",
 				 '6' => "wublastp_fly",
 				 '7' => "wublastp_slimswissprot",
 				 '8' => "wublastp_slimtrembl",
+				 '15'=> "wublastp_remanei",
 			       );
 
 our %org_prefix = ( 'wublastp_worm'          => 'WP',
@@ -93,7 +95,8 @@ our %org_prefix = ( 'wublastp_worm'          => 'WP',
 		    'wublastp_slimswissprot' => 'SW',
 		    'wublastp_slimtrembl'    => 'TR',
 		    'wublastp_briggsae'      => 'BP',
-		    'wublastp_ipi_human'     => 'IP' # should never actually get included
+		    'wublastp_ipi_human'     => 'IP', # should never actually get included
+		    'wublastp_remanei'       => 'RP',
 		  );
 
 my %database2species = ( 'worm_pep'     => 'Caenorhabditis elegans',
@@ -140,63 +143,6 @@ close C2G;
 %gene2CE = (%$VAR1);
 $/ = "\n";
 
-##get list of wormpeps to dump from wormpep.diffXX or wormpep.tableXX depending on wether u want to dump all or just new
-#my @peps2dump;
-#my $pep;
-#my $pep_input = shift;
-#while ( $pep_input ) {
-#  print LOG "Dumping blastp results for $pep_input\n";
-#  push(@peps2dump, $pep_input);
-#  $pep_input = shift;
-#}
-#unless (@peps2dump)  {
-#  # this is not generic for when 3rd species arrives.
-#  if( "$database" eq "worm_brigpep" ) {  # get all the briggsae proteins
-#    print LOG " : Dumping all current brigpep proteins\n";
-#    open (BRIGPEP,"<$wormpipe/BlastDB/brigpep2.pep") or die "cant find brigpep2.pep file - has it been updated?\n";
-#    while (<BRIGPEP>) {
-#      if( />(CBP\d+)/ ) {
-#	push( @peps2dump, $1);
-#      }
-#    }
-#  }
-
-#  elsif( $all ) {
-#    print LOG " : Dumping all current wormpep proteins ( Wormpep$WPver )\n";
-#    foreach (keys %CE2gene) {
-#      push( @peps2dump, $_ );
-#    }
-#  }
-#  elsif ($list) {
-#    open( LIST,"<$list") or die "cant opne list file $list\n";
-#    while (<LIST>) {
-#      chomp;
-#      push( @peps2dump, $_ );
-#    }
-#  }
-#  else {
-#    open( DIFF,"<$wormpipe/Elegans/wormpep.diff$WPver") or die "cant opne diff file $wormpipe/Elegans/wormpep.diff$WPver\n";
-#    print LOG " : Dumping updated proteins ( wormpep.diff$WPver )\n";
-#    while (<DIFF>)
-#      {
-#	if( /new/ ){
-#	  /CE\d+/;
-#	  $pep = $&;
-#	}
-#	elsif ( /changed/ ){
-#	  /-->\s+(CE\d+)/;
-#	  $pep = $1;
-#	}
-#	if( $pep ){
-#	  push( @peps2dump, $pep );
-#	}
-#      }
-#    close DIFF;
-#  }
-# # close DIFF;
-#}
-
-
 my @results;
 
 open (OUT,">$output") or die "cant open $output\n";
@@ -223,6 +169,7 @@ my %yeast_matches;
 my %swiss_matches;
 my %trembl_matches;
 my %brig_matches;
+my %rem_matches;
 
 my %type_count;
 
@@ -245,7 +192,7 @@ while (<BLAST>) {
 
   #check if next protein
   if ( $current_pep and $current_pep ne $proteinId ) {  
-    &dumpData ($current_pep,\%worm_matches,\%human_matches,\%fly_matches,\%yeast_matches,\%swiss_matches,\%trembl_matches,\%brig_matches) if (%worm_matches or %human_matches or %fly_matches or %yeast_matches or %swiss_matches or %trembl_matches or %brig_matches);
+    &dumpData ($current_pep,\%worm_matches,\%human_matches,\%fly_matches,\%yeast_matches,\%swiss_matches,\%trembl_matches,\%brig_matches, \%rem_matches) if (%worm_matches or %human_matches or %fly_matches or %yeast_matches or %swiss_matches or %trembl_matches or %brig_matches or %rem_matches);
 
     #undef all hashes
     %worm_matches = ();
@@ -255,6 +202,7 @@ while (<BLAST>) {
     %swiss_matches = ();
     %trembl_matches = ();
     %brig_matches = ();
+    %rem_matches = ();
 
     %type_count = ();
     #print "$proteinId\n";
@@ -262,7 +210,7 @@ while (<BLAST>) {
   }
   $current_pep = $proteinId;
 
-  next if $analysis > 9; #PFAM etc 
+  next unless $processIds2prot_analysis{$analysis}; #only does those with valid process ids
   next if( ( defined $type_count{$analysis} ) and ( $type_count{$analysis} > 9 ) and ( $e ne "NULL") );
 
   $e = 1000 if( $e eq "NULL"); # mysql gives -log10(v small no) as NULL 
@@ -287,6 +235,8 @@ while (<BLAST>) {
       $added = &addData ( \%human_matches, \@data );
     } elsif ( $analysis == $wormprotprocessIds{'brigpep'}  ) {
       $added = &addData ( \%brig_matches, \@data );
+    } elsif ( $analysis == $wormprotprocessIds{'remanei'}  ) {
+      $added = &addData ( \%rem_matches, \@data );
     }
 
   #this keeps track of how many hits are stored for each analysis.  Once we have 10 we can ignore the rest as the list is sorted.
@@ -646,8 +596,9 @@ sub species_lookup
 
       my %species = ( 'wublastp_worm'          => 'Caenorhabditis elegans',
 		      'wublastp_briggsae'      => 'Caenorhabditis briggsae',
+		      'wublastp_remanei'       => 'Caenorhabditis remanei',
 		      'wublastp_human'         => 'Homo sapiens',
-		      'wublastp_yeast'           => 'Saccharomyces cerevisiae',
+		      'wublastp_yeast'         => 'Saccharomyces cerevisiae',
 		      'wublastp_fly'           => 'Drosophila melanogaster',
 		      'wublastp_slimswissprot' => $SWISSORG{$protein},
 		      'wublastp_slimtrembl'    => $TREMBLORG{$protein}
