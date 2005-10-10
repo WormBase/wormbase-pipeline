@@ -132,7 +132,7 @@ _VMicroarray_result       -V
 _VMicroarray_results       -V
 _VOligo_set        -V
 _VY2H		-V
-_V3d_data	-V
+_VStructure_data	-V
 
 // misc classes (may not be used), some acedb internal classes
 
