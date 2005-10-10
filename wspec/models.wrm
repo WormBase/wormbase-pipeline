@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2005-09-22 08:48:08 $
+// Last edited on: $Date: 2005-10-10 13:20:49 $
  
 
 
@@ -262,7 +262,7 @@
                                 Dead #Evidence   
         Gene_info Gene_class UNIQUE ?Gene_class XREF Genes
                   Laboratory ?Laboratory
-                  Reference_allele ?Variation Text
+                  Reference_allele ?Variation #Evidence
                   Allele ?Variation XREF Gene #Evidence
                   Phenotype ?Text #Evidence
                   Complementation_data Text
@@ -1344,6 +1344,7 @@
                       Associated_with_transcript ?Transcript XREF Associated_feature #Evidence  // richard
                       Associated_with_pseudogene ?Pseudogene XREF Associated_feature #Evidence // richard
                       Associated_with_transposon ?Transposon XREF Associated_feature #Evidence //richard
+		      Associated_with_variation  ?Variation  XREF Feature #Evidence  
 	 Bound_by_product_of ?Gene XREF Gene_product_binds #Evidence //pad added this to show what gene it binds
 	 Annotation UNIQUE ?LongText		// added for data attribution [030220 dl]
 	 Confidential_remark ?Text //pad
@@ -1770,6 +1771,7 @@
                 Synonym ?Anatomy_name XREF Synonym_for_anatomy_term #Evidence
                 Legacy Cell ?Cell XREF Anatomy_term
                        Cell_group ?Cell_group XREF Anatomy_term
+		URL     Text // for storing static URLs
                 Child   PART_OF_c       ?Anatomy_term   XREF    PART_OF_p
                         IS_A_c  ?Anatomy_term   XREF    IS_A_p
                         DESCENDENT_OF_c ?Anatomy_term   XREF    DESCENDENT_OF_p
@@ -1983,20 +1985,30 @@
 	     Remark ?Text #Evidence
  	     Method UNIQUE ?Method
 
+////////////////////////////////////////////////////////////////////////////////////////////
+//                                    Phenotype class                                     //
+////////////////////////////////////////////////////////////////////////////////////////////
+
+?Phenotype   Description   UNIQUE	?Text	#Evidence
+	     Identity	   Name		Primary_name	UNIQUE	?Phenotype_name	  XREF	Primary_name_for   #Evidence
+					Synonym		?Phenotype_name XREF Synonym_for #Evidence
+					Short_name	?Phenotype_name XREF Short_name_for #Evidence
+	     Assay	UNIQUE			?Text			#Evidence
+	     Remark	?Text	#Evidence
+	     Related_phenotypes	Specialization_of	?Phenotype	XREF	Generalization_of
+				Generalization_of	?Phenotype	XREF	Specialization_of
+             Attribute_of	RNAi	  ?RNAi		XREF	Phenotype
+				Variation ?Variation	XREF	Phenotype
+             Associated_with	GO_term   ?GO_term      XREF	Phenotype   ?GO_code  #Evidence
 
 
-?Phenotype Description UNIQUE ?Text
-           Assay UNIQUE ?Text
-           Remark ?Text #Evidence
-           Related_phenotypes Specialisation_of ?Phenotype XREF Generalisation_of
-                              Generalisation_of ?Phenotype XREF Specialisation_of
-                              Equivalent_to ?Phenotype XREF Equivalent_to
-                              Similar_to ?Phenotype XREF Similar_to
-           Attribute_of       RNAi ?RNAi XREF Phenotype
-			      GO_term ?GO_term XREF Phenotype ?GO_code #Evidence  // added for Erich, [020128 dl]
+
+?Phenotype_name		Primary_name_for	?Phenotype	XREF	Primary_name	#Evidence
+			Synonym_for		?Phenotype	XREF	Synonym		#Evidence
+			Short_name_for		?Phenotype	XREF	Short_name	#Evidence
+
 
 ?Phenotype_Assay Description ?Text
-		 
 
 
 // New Class to handle operon data [010928 dl]
@@ -2377,7 +2389,6 @@
 
 ?Author Full_name Text
         Also_known_as Text
-        Laboratory UNIQUE ?Laboratory XREF Unregistered_lab_members
 // Need to keep Laboratory connected to Author since People haven't
 // been connected to Labs yet
         Old_lab ?Laboratory
@@ -2516,7 +2527,6 @@
                       Gene_classes ?Gene_class XREF Designating_laboratory
 	      // new tidier staff section by krb 030523
 	      Staff   Registered_lab_members ?Person XREF Laboratory   // for people with WormBase Person IDs
-        	      Unregistered_lab_members ?Author XREF Laboratory // for those without IDs
         	      Past_lab_members ?Person XREF Old_laboratory     // for anyone who has left the field, or the circle of life
 	      Remark ?Text #Evidence
 
@@ -2633,6 +2643,7 @@
 		   Predicted_CDS ?CDS	     XREF Variation
 		   Transcript    ?Transcript XREF Variation
 		   Pseudogene    ?Pseudogene XREF Variation
+		   Feature       ?Feature    XREF Associated_with_variation
            Isolation Date    DateType
                      Mutagen UNIQUE Text #Evidence
                      Forward_genetics Text #Evidence  // New tags to capture the basis of the experiment that isolated
