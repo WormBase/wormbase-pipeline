@@ -5,7 +5,7 @@
 # Dumps InterPro protein motifs from ensembl mysql (protein) database to an ace file
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2005-10-11 12:55:33 $
+# Last updated on: $Date: 2005-10-11 15:45:55 $
 
 
 use strict;
@@ -81,7 +81,7 @@ if ($method ) {
 # don't use 'superfamily': it finds lots of hits per protein
 # 'profile' is still having problems writing to the database
 #  @methods= qw(hmmpfam prints profile pirsf hmmtigr hmmsmart );
-  @methods= qw(hmmpfam prints pirsf hmmtigr hmmsmart prosite);
+  @methods= qw(hmmpfam prints pirsf hmmtigr hmmsmart prosite profile);
 }
 
 
@@ -363,8 +363,8 @@ sub get_ip_mappings {
   # ftp.ebi.ac.uk/pub/databases/interpro/interpro.xml.gz
 
   # store it here
-#  my $dir = "/wormsrv2/tmp";	
-  my $dir = "/acari/scratch1/worm";
+  my $dir = "/wormsrv2/tmp";	
+#  my $dir = "/acari/scratch1/worm";
   my $file = "$dir/interpro.xml";
 
   # get the interpro file from the EBI
@@ -488,7 +488,7 @@ script_template.pl  OPTIONAL arguments:
  
 =over 4
  
-=item This script must be run where it can see /wormsrv2/tmp/ as it puts the temporary interpro.xml file in there.
+=item This script must be run where it can see /wormserv2/tmp/ as it puts the temporary interpro.xml file in there.
  
 =back
  
