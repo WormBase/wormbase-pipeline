@@ -4,7 +4,7 @@
 # by Michael Han 
 # 
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2005-09-26 16:30:13 $
+# Last updated on: $Date: 2005-10-11 09:09:29 $
 
 package Features;
 
@@ -68,7 +68,7 @@ sub trim_polyA{
 			      id          => $id,
 			      sequence    => $seq,
 			      start       => ($psize - $maskedb),
-			      stop        => ($psize - $maskedb),
+			      stop        => ($psize - $maskedb+1),
 			      psize       => $psize,
 			      length      => 1,
 			      type        => 'polyA_site',
@@ -258,6 +258,6 @@ $Author: mh6 $
 
 =head1 VERSION
 
-$Date: 2005-09-26 16:30:13 $
+$Date: 2005-10-11 09:09:29 $
 
 =cut
