@@ -5,7 +5,7 @@
 # Dumps InterPro protein motifs from ensembl mysql (protein) database to an ace file
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2005-10-11 15:45:55 $
+# Last updated on: $Date: 2005-10-11 16:04:05 $
 
 
 use strict;
@@ -171,7 +171,7 @@ my $sth_f = $dbh->prepare ( q{ SELECT protein_id, seq_start, seq_end, hit_id, hi
 # get the motifs
 my %motifs;
 foreach my $method (@methods) {
-  $log->write_to("processing $method\n");
+  #$log->write_to("processing $method\n");
   print "processing $method: $method2analysis{$method}\n" if ($verbose);
   $sth_f->execute ($method2analysis{$method});
   my $ref = $sth_f->fetchall_arrayref;
@@ -363,8 +363,8 @@ sub get_ip_mappings {
   # ftp.ebi.ac.uk/pub/databases/interpro/interpro.xml.gz
 
   # store it here
-  my $dir = "/wormsrv2/tmp";	
-#  my $dir = "/acari/scratch1/worm";
+#  my $dir = "/wormsrv2/tmp";	
+  my $dir = "/acari/scratch1/worm";
   my $file = "$dir/interpro.xml";
 
   # get the interpro file from the EBI
@@ -488,7 +488,7 @@ script_template.pl  OPTIONAL arguments:
  
 =over 4
  
-=item This script must be run where it can see /wormserv2/tmp/ as it puts the temporary interpro.xml file in there.
+=item This script must be run where it can see /acari/scratch1/worm/ as it puts the temporary interpro.xml file in there.
  
 =back
  
