@@ -5,7 +5,7 @@
 # Dumps InterPro protein motifs from ensembl mysql (protein) database to an ace file
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2005-09-30 15:28:55 $
+# Last updated on: $Date: 2005-10-11 12:55:33 $
 
 
 use strict;
@@ -74,20 +74,24 @@ my @methods;
 if ($method ) {
   push(@methods,$method)
 }else{
-# add new methods (program names, as defined in the mysql database 'analysis' table, column 'program') 
+
+# add new methods (logic_names, as defined in the mysql database 'analysis' table, column 'logic_name') 
 # as they are added to the pipeline
-#  @methods= qw(hmmpfam FingerPRINTScan pfscan scanregexp);
-  @methods= qw(hmmpfam FingerPRINTScan pfscan);
+#
+# don't use 'superfamily': it finds lots of hits per protein
+# 'profile' is still having problems writing to the database
+#  @methods= qw(hmmpfam prints profile pirsf hmmtigr hmmsmart );
+  @methods= qw(hmmpfam prints pirsf hmmtigr hmmsmart prosite);
 }
 
 
 # define the Database names that InterPro uses in interpro.xml
-# and the program names (as specified in @methods) that search those databases
+# and the logic names (as specified in @methods) that search those databases
 my %method_database = (
-		       'FingerPRINTScan'  => 'PRINTS',
-		       'profilescan' => 'PROFILE',
-		       'pfscan'      => 'PROFILE',
-		       'blastprodom' => 'PRODOM',
+		       'prosite'     => 'PROSITE',
+		       'prints'      => 'PRINTS',
+		       'profile'     => 'PROFILE',
+		       'prodom'      => 'PRODOM',
 		       'hmmsmart'    => 'SMART',
 		       'hmmpanther'  => 'PANTHER',
 		       'hmmpfam'     => 'PFAM',
@@ -97,10 +101,9 @@ my %method_database = (
 		       'seg'         => 'SEG',
 		       'tmhmm'       => 'TMHMM',
 		       'signalp'     => 'SIGNALP',
-		       'hmmpir'      => 'PIR',
+		       'pirsf'       => 'PIRSF',
 		       'superfamily' => 'SUPERFAMILY',
 		       'gene3d'      => 'GENE3D',
-		       'hmmpanther'  => 'PANTHER'
 	       );
 
 # mysql database parameters
@@ -147,30 +150,36 @@ $log->write_to("get mapping of method to analysis id [".&now."]:\n");
 print "get mapping of method to analysis id [".&now."]:\n" if ($verbose);
 my $sth = $dbh->prepare ( q{ SELECT analysis_id
                                FROM analysis
-                              WHERE program = ?
+                              WHERE logic_name = ?
                            } );
 
 foreach my $method (@methods) {
     $sth->execute ($method);
     (my $anal) = $sth->fetchrow_array;
     $method2analysis{$method} = $anal;
-    $log->write_to("$method  $anal\n");
-    print "$method  $anal\n" if ($verbose);
+#    $log->write_to("$method  $anal\n");
+#    print "$method  $anal\n" if ($verbose);
 }
 
 # prepare the sql query
 my $sth_f = $dbh->prepare ( q{ SELECT protein_id, seq_start, seq_end, hit_id, hit_start, hit_end, score, evalue
-                                 FROM protein_feature
-                                WHERE analysis_id = ?
+				   FROM protein_feature
+				   WHERE evalue <= "0.1"
+				   AND analysis_id = ?
                              } );
 
 # get the motifs
 my %motifs;
 foreach my $method (@methods) {
   $log->write_to("processing $method\n");
-  print "processing $method\n" if ($verbose);
+  print "processing $method: $method2analysis{$method}\n" if ($verbose);
   $sth_f->execute ($method2analysis{$method});
   my $ref = $sth_f->fetchall_arrayref;
+  my $method_count = scalar(@$ref);
+
+  print "$method: found $method_count hits\n" if ($verbose);
+  $log->write_to("$method: found $method_count hits\n");
+
   foreach my $aref (@$ref) {
     my ($prot, $start, $end, $hid, $hstart, $hend, $score, $evalue) = @$aref;
     if ($method eq "hmmpfam") {
@@ -185,6 +194,8 @@ foreach my $method (@methods) {
       print "Convert IDs $method: $hid -> InterPro: $ip_id\n" if ($verbose);
       my @hit = ( $ip_id, $start, $end, $hstart, $hend, $score, $evalue );
       push @{$motifs{$prot}}, [ @hit ];
+    } else {
+#      print "$database ID $hid is not in InterPro\n" if ($verbose);
     }
   }
 }
@@ -199,9 +210,12 @@ if ($dbname eq "worm_brigpep") {
 # here we need to do:
 # foreach protein:
 #   sort by interpro id and then start position
-#   and merge any overlapping hits with the same id
+#   and merge any overlapping hits with the same id 
+#    by taking the positions of the widest coverage
+#    and the lowest of the e-values
 
 my %merged = ();			# the resulting hash of lists of merged hits
+my $merged_count=0;
 
 foreach my $prot ( keys %motifs ) {
   # sort the hits for this protein by ID and start position
@@ -232,7 +246,7 @@ foreach my $prot ( keys %motifs ) {
 	push @{$merged{$prot}}, [ @merged_hit ];
       }
 
-      # reset the values for the merged hit of the new ID
+      # reset the values for the merged hit to be the values of the new ID
       $prev_id = $ip_id;
       $merged_start = $start;
       $merged_end = $end;
@@ -251,6 +265,7 @@ foreach my $prot ( keys %motifs ) {
       if ($merged_score < $score) {$merged_score = $score;}
       if ($merged_evalue > $evalue) {$merged_evalue = $evalue;}
       #print "merged to $merged_start $merged_end";
+      $merged_count++;
     }
 
   }
@@ -259,6 +274,9 @@ foreach my $prot ( keys %motifs ) {
   push @{$merged{$prot}}, [ @merged_hit ];
 
 }
+
+print "Merged $merged_count hits\n" if ($verbose);
+$log->write_to("Merged $merged_count hits\n");
 
 # now print out the ACE file
 foreach my $prot (sort {$a cmp $b} keys %merged) {
@@ -343,10 +361,11 @@ sub get_ip_mappings {
  
   # the interpro.xml file can be obtained from:
   # ftp.ebi.ac.uk/pub/databases/interpro/interpro.xml.gz
-#  my $dir = "/wormsrv2/tmp";	# store it here
-  my $dir = ".";	# store it here
-  my $file = "$dir/interpro.xml";
 
+  # store it here
+#  my $dir = "/wormsrv2/tmp";	
+  my $dir = "/acari/scratch1/worm";
+  my $file = "$dir/interpro.xml";
 
   # get the interpro file from the EBI
   get_interpro($file);
@@ -400,13 +419,15 @@ __END__
 =over 4
 
  
-=item script_template.pl  [-options]
- 
-=back
- 
-This script reads the results of Pfam, PRINTS and Profile domain hits from the mysql database, 
-converts the IDs from these hits into InterPro IDs and then merges overlapping hits which have 
-the same InterPro ID into single InterPro hits.
+=item script_template.pl [-options] 
+
+=back 
+
+This script reads the
+results of Pfam, PRINTS, SMART, TIGR, PIRSF and Profile domain hits
+from the mysql database, converts the IDs from these hits into
+InterPro IDs and then merges overlapping hits which have the same
+InterPro ID into single InterPro hits.
 
 It then writes out an .ace file of the resulting InterPro hits.
 
