@@ -6,8 +6,8 @@
 #
 # Selectively dump GFF for certain acedb methods
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-10-14 10:34:47 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2005-10-12 10:43:47 $
 
 
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{CVS_DIR};
@@ -15,7 +15,7 @@ use Wormbase;
 use Getopt::Long;
 use strict;
 
-my ($help, $debug, $test, $quicktest, $database, @methods, @chromosomes, $dump_dir, @clones );
+my ($help, $debug, $test, $quicktest, $database, @methods, @chromosomes, $dump_dir, @clones, $list );
 my @sequences;
 GetOptions (
 	    "help"          => \$help,
@@ -31,11 +31,13 @@ GetOptions (
 	    "chromosomes:s" => \@chromosomes,
 	    "chromosome:s"  => \@chromosomes,
 	    "clone:s"       => \@clones,
-	    "clones:s"       => \@clones,
+	    "clones:s"      => \@clones,
+	    "list:s"        => \$list
 	   );
 
 @methods     = split(/,/,join(',',@methods));
 @chromosomes = split(/,/,join(',',@chromosomes));
+@sequences = split(/,/,join(',',@clones)) if @clones;
 
 &check_options;
 
@@ -62,7 +64,8 @@ foreach my $sequence ( @sequences ) {
     }
   }
   else { 
-    my $command = "gif seqget $sequence; seqfeatures -version 2 -file $dump_dir/$sequence.gff";
+    my $command = "gif seqget $sequence; seqfeatures -version 2 -file $dump_dir/$sequence.gff\n";
+    print "$command";
     print WRITEDB $command;
   }
 }
@@ -77,7 +80,8 @@ exit(0);
 sub check_options {
 
 
-  unless( @clones ) {
+  unless($list or @clones ) {
+
     # -chromosomes
     my %chroms = qw(I 1 II 1 III 1 IV 1 V 1 X 1);
     my @chrom_keys = keys %chroms;
@@ -96,6 +100,8 @@ sub check_options {
       }
     }
   }
+  
+  &process_list if $list;
 
   # -database
   if ( $database ){
@@ -112,6 +118,16 @@ sub check_options {
   die "$database is not a valid acedb database\n";
 }
 
+
+
+sub process_list
+  {
+    open(LIST,"<$list") or die "bad list $list\n";
+    while(<LIST>) {
+      chomp;
+      push(@sequences,$_);
+    }
+  }
 
 =pod 
 
