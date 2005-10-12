@@ -5,7 +5,7 @@
 # Dumps InterPro protein motifs from ensembl mysql (protein) database to an ace file
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2005-10-12 08:21:04 $
+# Last updated on: $Date: 2005-10-12 08:47:08 $
 
 
 use strict;
@@ -125,7 +125,7 @@ my $dump_dir = "/acari/work2a/wormpipe/dumps";
 if ($test) {
   $dump_dir = ".";
 }
-open(ACE,">$dump_dir/".$dbname."_motif_info.ace") || die "cannot create ace file:$!\n";
+open(ACE,">$dump_dir/".$dbname."_interpro_motif_info.ace") || die "cannot create ace file:$!\n";
 
 # make the ACE filehandle line-buffered
 my $old_fh = select(ACE);
