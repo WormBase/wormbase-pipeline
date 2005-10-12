@@ -6,8 +6,8 @@
 #
 # Author: Chao-Kung CHen
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2004-10-19 12:17:06 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2005-10-12 09:14:26 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -46,6 +46,8 @@ my @files        = (
 		    "worm_dna_blastx.ace",
 		    "worm_pep_motif_info.ace",
 		    "worm_brigpep_motif_info.ace",
+		    "worm_pep_interpro_motif_info.ace",
+		    "worm_brigpep_interpro_motif_info.ace",
 		    "swissproteins.ace",
 		    "tremblproteins.ace",
 		   );

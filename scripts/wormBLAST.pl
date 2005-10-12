@@ -4,8 +4,8 @@
 # 
 # written by Anthony Rogers
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2005-08-01 12:08:24 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2005-10-12 09:14:38 $
 
 
 use DBI;
@@ -534,6 +534,8 @@ if( $dump_data )
     print "Dumping motifs\n";
     &run_command("perl5.6.1 $scripts_dir/dump_motif.pl");
     &run_command("perl5.6.1 $scripts_dir/dump_motif.pl -database worm_brigpep");
+    &run_command("perl5.6.1 $scripts_dir/dump_interpro_motif.pl");
+    &run_command("perl5.6.1 $scripts_dir/dump_interpro_motif.pl -database worm_brigpep");
 
     # Dump extra info for SWALL proteins that have matches. Info retrieved from the dbm databases on /acari/work2a/wormpipe/
     print "Creating acefile of SWALL proteins with homologies\n";
