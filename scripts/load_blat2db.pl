@@ -8,8 +8,8 @@
 # 030507 : dl  : Update tace queries to restrict deleted/uploaded Homol_data and Feature data class objects
 # 030507 : dl  : Upload OST data as part of script
 
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2005-04-18 09:45:04 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2005-10-12 13:27:27 $
 
 use strict;
 use Getopt::Long;
@@ -78,7 +78,7 @@ my $command;
 if ($dbname =~ /autoace/) {
 $command=<<END;
 pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.blat.est.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.blat.est.ace 
+pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.blat.ost.ace 
 pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.blat.mrna.ace 
 pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.blat.embl.ace 
 pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.blat.nematode.ace 
