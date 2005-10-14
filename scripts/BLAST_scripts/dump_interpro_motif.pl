@@ -5,7 +5,7 @@
 # Dumps InterPro protein motifs from ensembl mysql (protein) database to an ace file
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2005-10-12 08:47:08 $
+# Last updated on: $Date: 2005-10-14 15:58:44 $
 
 
 use strict;
@@ -216,8 +216,13 @@ if ($dbname eq "worm_brigpep") {
 
 my %merged = ();			# the resulting hash of lists of merged hits
 my $merged_count=0;
+my $motif_count = 0;
+my $protein_count = 0;
 
 foreach my $prot ( keys %motifs ) {
+
+  $protein_count++;
+
   # sort the hits for this protein by ID and start position
   my @array = @{$motifs{$prot}};
   @array = sort { $a->[0] cmp $b->[0]  or  $a->[1] <=> $b->[1] } @array;
@@ -244,6 +249,7 @@ foreach my $prot ( keys %motifs ) {
       if ($prev_id ne "") {
 	@merged_hit = ( $prev_id, $merged_start, $merged_end, $merged_hstart, $merged_hend, $merged_score, $merged_evalue );
 	push @{$merged{$prot}}, [ @merged_hit ];
+	$motif_count++;
       }
 
       # reset the values for the merged hit to be the values of the new ID
@@ -272,16 +278,29 @@ foreach my $prot ( keys %motifs ) {
   # save the last merged ID
   @merged_hit = ( $prev_id, $merged_start, $merged_end, $merged_hstart, $merged_hend, $merged_score, $merged_evalue );
   push @{$merged{$prot}}, [ @merged_hit ];
+  $motif_count++;
 
 }
 
-print "Merged $merged_count hits\n" if ($verbose);
-$log->write_to("Merged $merged_count hits\n");
+print "\nMerged $merged_count overlapping hits of the same InterPro ID\n" if ($verbose);
+$log->write_to("\nMerged $merged_count overlapping hits of the same InterPro ID\n");
 
+print "\nHave $motif_count InterPro domains in $protein_count proteins\n" if ($verbose);
+$log->write_to("\nHave $motif_count InterPro domains in $protein_count proteins\n");
+
+my %domain_counts = ();
 # now print out the ACE file
 foreach my $prot (sort {$a cmp $b} keys %merged) {
     print ACE "\n";
     print ACE "Protein : \"$prefix:$prot\"\n";
+
+    # count the number of domains in this protein for the statistics
+    my $domains = scalar(@{$merged{$prot}});
+    $domain_counts{$domains}++;
+    if ($verbose && $domains > 100) {
+      print  "$prot has $domains InterPro domains!\n";
+    }
+
     foreach my $hit (@{$merged{$prot}}) {
       my ($ip_id, $start, $end, $hstart, $hend, $score, $evalue) = @$hit;
       my $line = "Motif_homol \"INTERPRO:$ip_id\" \"interpro\" $evalue $start $end $hstart $hend";
@@ -300,6 +319,17 @@ close ACE;
 ####################################
 # print some statistics to the log #
 ####################################
+
+print "\nTable of InterPro domains found per protein\n" if ($verbose);
+$log->write_to("\nTable of InterPro domains found per protein\n");
+print "No. domains\tNo. of Proteins\n" if ($verbose);
+$log->write_to("No. domains\tNo. of Proteins\n");
+print "-----------\t---------------\n" if ($verbose);
+$log->write_to("-----------\t---------------\n");
+foreach my $domains (sort {$a <=> $b} keys %domain_counts) {
+  print "$domains\t\t$domain_counts{$domains}\n" if ($verbose);
+  $log->write_to("$domains\t\t$domain_counts{$domains}\n");
+}
 
 $log->write_to("\n\nEnd of InterPro Motif dump\n");
 print "\nEnd of InterPro Motif dump\n";
