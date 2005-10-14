@@ -6,8 +6,8 @@
 #
 # This maps alleles to the genome based on their flanking sequences
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-03-31 15:54:35 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2005-10-14 10:23:31 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -112,7 +112,7 @@ my %allele_data;        # allele data from mapping data, hash of arrays:
 &check_original_mappings;
 
 # create log file, open output file handles
-my $log = Log_files->make_build_log();
+my $log = Log_files->make_build_log($debug);
 
 # map alleles, the main routine
 &map_alleles;
