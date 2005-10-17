@@ -8,7 +8,7 @@
 # RUN this script anytime during the build or after the build when get_interpolated_map 
 # and update_inferred multi-pt data are done
 #
-# Last updated on: $Date: 2005-10-17 10:15:23 $
+# Last updated on: $Date: 2005-10-17 10:23:50 $
 # Last updated by: $Author: mt3 $
 
 
@@ -135,7 +135,7 @@ save
 quit
 END
 
-open (Load_GA,"| $tace  $geneace_dir") || die "Failed to upload to Geneace\n";
+open (Load_GA,"| $tace -tsuser \"person_update_from_autoace\" $geneace_dir") || die "Failed to upload to Geneace\n";
 print Load_GA $command;
 close Load_GA;
 
@@ -155,7 +155,7 @@ $log->write_to("Adding new paper data\n");
 my $paper = "/wormsrv2/wormbase/caltech/caltech_Paper.ace";
 
 $command= "pparse $paper\nsave\nquit\n";
-open (Load_GA,"| $tace -tsuser \"paper_update_from_caltech\" $geneace_dir") || die "Failed to upload to Geneace\n";
+open (Load_GA,"| $tace $geneace_dir") || die "Failed to upload to Geneace\n";
 print Load_GA $command;
 close Load_GA;
 
