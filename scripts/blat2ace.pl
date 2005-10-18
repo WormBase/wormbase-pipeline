@@ -6,8 +6,8 @@
 #
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2005-05-12 11:15:08 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2005-10-18 09:12:44 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -18,7 +18,7 @@ use Getopt::Long;
 # Command line options  #
 #########################
 
-my ($help, $est, $mrna, $ncrna, $ost, $tc1, $nematode, $embl, $camace, $intron);
+my ($help, $est, $mrna, $ncrna, $ost, $tc1, $nematode, $embl, $camace, $intron, $washu);
 
 GetOptions ("help"       => \$help,
             "est"        => \$est,
@@ -27,6 +27,7 @@ GetOptions ("help"       => \$help,
             "ost"        => \$ost,
             "tc1"        => \$tc1,
             "nematode"   => \$nematode,
+	    "washu"      => \$washu,
             "embl"       => \$embl,
             "camace"     => \$camace,
 	    "intron"     => \$intron
@@ -70,6 +71,7 @@ our %word = (
 	     embl     => 'BLAT_EMBL',
 	     tc1      => 'BLAT_TC1',
 	     nematode => 'BLAT_NEMATODE',
+	     washu    => 'BLAT_WASHU'
 	     );
 
 &create_log_files;
@@ -81,10 +83,10 @@ our %word = (
 # Help pod documentation
 &usage(0) if ($help);
 
-# Exit if no data type choosen [EST|mRNA|EMBL|NEMATODE|OST]
+# Exit if no data type choosen [EST|mRNA|EMBL|NEMATODE|OST|WASHU]
 # or if multiple data types are chosen
 
-&usage(1) unless ($est || $mrna || $ost || $ncrna || $tc1 || $nematode || $embl); 
+&usage(1) unless ($est || $mrna || $ost || $ncrna || $tc1 || $nematode || $embl || $washu); 
 
 my $flags = 0;
 $flags++ if $est;
@@ -94,6 +96,7 @@ $flags++ if $ncrna;
 $flags++ if $embl;
 $flags++ if $tc1;
 $flags++ if $nematode;
+$flags++ if $washu;
 &usage(2) if ($flags > 1);
 
 # assign type variable
@@ -104,6 +107,7 @@ $flags++ if $nematode;
 ($type = 'embl')     if ($embl);
 ($type = 'tc1')      if ($tc1);
 ($type = 'nematode') if ($nematode);
+($type = 'washu')    if ($washu);
 
 #########################################
 # get links for database                #
@@ -235,7 +239,7 @@ while (<BLAT>) {
       my ($query_start,$query_end);
       
         # blatx 6-frame translation v 6-frame translation
-      if ($nematode) {
+      if ($nematode || $washu) {
 	  my $temp;
 	  if (($strand eq '++') || ($strand eq '-+')) {
 	      $query_start = $query_starts[$x] +1;
@@ -275,7 +279,7 @@ while (<BLAT>) {
       
       # write to output file
       print ACE "Homol_data : \"$virtual\"\n";
-      if ($type eq "nematode") {
+      if ($type eq "nematode" || $type eq "washu") {
 	  printf ACE "DNA_homol\t\"%s\"\t\"$word{$type}\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$query,$score,$virtualstart,$virtualend,$query_start,$query_end;
 	  
 #      print "// ERROR: $query [$strand] $virtualstart $virtualend $query_start $query_end ::: [$debug_start,$debug_end]  $newcalc - $calc {$slink_starts[$x]}\n" unless ((defined $virtualstart) && (defined $virtualend));
@@ -318,7 +322,7 @@ close(ACE);
 # produce outfile for best matches #
 ####################################
 
-&usage(20) if ($nematode);
+&usage(20) if ($nematode || $washu);
 
 open (AUTBEST, ">$blat_dir/autoace.best.$type.ace");
 open (STLBEST, ">$blat_dir/stlace.best.$type.ace");
@@ -401,7 +405,7 @@ close(STLBEST);
 # produce final BLAT output (including BEST and OTHER) #
 ########################################################
 
-&usage(20) if ($nematode);
+&usage(20) if ($nematode || $washu);
 
 # Open new (final) output files for autoace, camace, and stlace
 open (OUT_autoace, ">$blat_dir/autoace.blat.$type.ace") or die "$!";
@@ -551,13 +555,13 @@ sub usage {
     
     if ($error == 1) {
 	# No data-type choosen
-	print "\nNo data option choosen [-est|-mrna|-ost|-nematode|-ost]\n";
+	print "\nNo data option choosen [-est|-mrna|-ost|-nematode|-ost|-washu]\n";
 	print "Run with one of the above options\n\n";
 	exit(0);
     }
     if ($error == 2) {
 	# 'Multiple data-types choosen
-	print "\nMultiple data option choosen [-est|-mrna|-ost|-nematode|-embl]\n";
+	print "\nMultiple data option choosen [-est|-mrna|-ost|-nematode|-embl|-washu]\n";
 	print "Run with one of the above options\n\n";
 	exit(0);
     }
@@ -569,7 +573,7 @@ sub usage {
     }
     if ($error == 20) {
 	# 
-	print "\nDon't want to do this for the -nematode option.\n";
+	print "\nDon't want to do this for the -nematode or -washu options.\n";
 	print "hasta luego\n\n";
 	exit(0);
     }
@@ -661,6 +665,12 @@ blat2ace.pl  arguments:
 =item
 
 -nematode => perform everything for non-C. elegans ESTs
+
+=back
+
+=item
+
+-washu => perform everything for WashU Nematode.net - John Martin <jmartin@watson.wustl.edu> contigs
 
 =back
 

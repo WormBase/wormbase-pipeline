@@ -7,8 +7,8 @@
 # Gets sequences ready for blatting, blats sequences, processes blat output, makes confirmed introns
 # and virtual objects to hang the data onto
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2004-07-21 12:06:11 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2005-10-18 09:12:32 $
 
 
 use strict;
@@ -23,7 +23,7 @@ use Carp;
 # Misc variables and paths   #
 ##############################
 
-my ($help, $debug, $verbose, $est, $mrna, $ncrna, $ost, $nematode, $embl, 
+my ($help, $debug, $verbose, $est, $mrna, $ncrna, $ost, $nematode, $embl, $washu,
     $blat, $tc1, $process, $virtual, $dump, $camace, $fine);
 my $maintainers = "All";
 my $errors      = 0;
@@ -42,6 +42,7 @@ our %word = (
 	     nematode => 'BLAT_NEMATODE',
 	     ost      => 'BLAT_OST',
 	     tc1      => 'BLAT_TC1',
+	     washu    => 'BLAT_WASHU'
 	     );
 
 
@@ -59,6 +60,7 @@ GetOptions ("help"       => \$help,
 	    "nematode"   => \$nematode,
 	    "embl"       => \$embl,
 	    "tc1"        => \$tc1,
+	    "washu"      => \$washu,
 	    "dump"       => \$dump,
 	    "blat"       => \$blat,
 	    "process"    => \$process,
@@ -92,9 +94,9 @@ if($debug){
 &usage(1) unless ($dump || $process || $blat || $virtual); 
 
 # Exit if no data type choosen [EST|mRNA|EMBL|NEMATODE|OST] (or -dump not chosen)
-&usage(2) unless ($est || $mrna || $ncrna || $embl || $tc1 || $nematode || $ost || $dump); 
+&usage(2) unless ($est || $mrna || $ncrna || $embl || $tc1 || $nematode || $ost || $washu || $dump); 
 
-# Exit if multiple data types choosen [EST|mRNA|ncRNA|EMBL|NEMATODE|OST]
+# Exit if multiple data types choosen [EST|mRNA|ncRNA|EMBL|NEMATODE|OST|WASHU]
 # ignore if -dump is being run
 unless($dump){
   my $flags = 0;
@@ -105,6 +107,7 @@ unless($dump){
   $flags++ if $embl;
   $flags++ if $tc1;
   $flags++ if $nematode;
+  $flags++ if $washu;
   &usage(3) if ($flags > 1);
 }
 
@@ -121,6 +124,7 @@ my $data;
 ($data = 'embl')     if ($embl);
 ($data = 'tc1')      if ($tc1);
 ($data = 'nematode') if ($nematode);
+($data = 'washu')    if ($washu);
 
 
 # Select the correct set of query sequences for blat
@@ -132,6 +136,7 @@ $query   .= 'elegans_mRNAs.masked' if ($mrna);     # mRNA data set
 $query   .= 'elegans_ncRNAs.masked'if ($ncrna);    # ncRNA data set
 $query   .= 'other_nematode_ESTs'  if ($nematode); # ParaNem EST data set
 $query   .= 'elegans_embl_cds'     if ($embl);     # Other CDS data set, DNA not peptide!
+$query   .= 'washu_nematode_contigs' if ($washu);  # Contigs from Nematode.net - John Martin <jmartin@watson.wustl.edu>
 
 &create_log_files;
 
@@ -163,9 +168,9 @@ if ($blat) {
   
 
   # BLAT system call
-  # nematode ESTs handled differently
+  # nematode ESTs and WashU contigs handled differently
   # use -fine for mrna sequences is specified
-  if ($nematode) {
+  if ($nematode || $washu) {
     system("$blatex $seq $query -t=dnax -q=dnax $blat_dir/${data}_out.psl") && croak "Blat failed $!\n";
   }
   elsif($fine) {
@@ -191,7 +196,7 @@ if ($process) {
     print LOG "$runtime: Processing blat ouput file, running blat2ace.pl\n";
     
     # treat slightly different for nematode data (no confirmed introns needed)
-    if ( ($nematode) || ($tc1) || ($embl) ) {
+    if ( ($nematode) || ($tc1) || ($embl) || ($ncrna) || ($washu) ) {
 	&run_command("$bin/blat2ace.pl -$data"); 
     }
     elsif($camace){
@@ -205,8 +210,8 @@ if ($process) {
     print "Producing confirmed introns in databases\n\n" if $verbose;
     print LOG "$runtime: Producing confirmed introns in databases\n";
 
-    # produce confirmed introns for all but nematode, tc1, embl and ncRNA data
-    unless ( ($nematode) || ($tc1) || ($embl) || ($ncrna) ) {
+    # produce confirmed introns for all but nematode, tc1, embl, ncRNA and washu data
+    unless ( ($nematode) || ($tc1) || ($embl) || ($ncrna) || ($washu) ) {
 	print "Producing confirmed introns using $data data\n" if $verbose;
 	&confirm_introns('autoace',"$data");
 	&confirm_introns('camace', "$data");
@@ -646,13 +651,13 @@ sub usage {
     }
     elsif ($error == 2) {
       # No data-type choosen
-      print "\nNo data option choosen [-est|-mrna|-ost|-embl|-nematode]\n";
+      print "\nNo data option choosen [-est|-mrna|-ost|-embl|-nematode|-washu]\n";
       print "Run with one of the above options\n\n";
       exit(0);
     }
     elsif ($error == 3) {
       # 'Multiple data-types choosen
-      print "\nMultiple data option choosen [-est|-mrna|-ost|-nematode|-embl]\n";
+      print "\nMultiple data option choosen [-est|-mrna|-ost|-nematode|-embl|-washu]\n";
       print "Run with one of the above options\n\n";
       exit(0);
     }
@@ -730,6 +735,7 @@ sub create_log_files{
   print LOG " -ost      : perform blat for OSTs\n"                              if ($ost);
   print LOG " -embl     : perform blat for misc. non-WormBase CDS from EMBL\n"  if ($embl);
   print LOG " -nematode : perform blatx for parasitic nematode ESTs\n"          if ($nematode);
+  print LOG " -washu    : perform blatx for WashU (nematode.net) contigs\n"     if ($washu);
   print LOG "\n";
   print LOG "blat_them_all.pl process options:\n";
   print LOG " -dump      : dump chromosome sequences from autoace\n"            if ($dump);
@@ -833,6 +839,14 @@ or
 =item -ost   
 
 run everything for OST data
+
+=back
+
+or 
+
+=item -washu
+
+run everything for WashU Nematode.net - John Martin <jmartin@watson.wustl.edu> contigs
 
 =back
 

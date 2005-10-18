@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2005-07-04 13:58:13 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2005-10-18 09:12:01 $
 
 
 
@@ -45,6 +45,7 @@ my $blat_ost;           # post-process for osts
 my $blat_embl;          # post-process for non-Wormbase CDS genes in EMBL
 my $blat_tc1;           # post-process for TC1 insertion sequences
 my $blat_nematode;      # post-process for non-C. elegans nematode ESTs
+my $blat_washu   ;      # post-process for WashU (nematode.net) contigs
 my $blat_all;           # post-process for all types of blat jobs
 my $addblat;		# load (all) blat files into autoace
 my $addbriggsae;        # add briggsae ace files
@@ -91,6 +92,7 @@ GetOptions (
 	    "process_blat_embl"     => \$blat_embl,
 	    "process_blat_tc1"      => \$blat_tc1,
 	    "process_blat_nematode" => \$blat_nematode,
+	    "process_blat_washu"    => \$blat_washu,
 	    "process_blat_all"      => \$blat_all,
 	    "addblat"               => \$addblat,
 	    "addbriggsae"           => \$addbriggsae,
@@ -174,6 +176,7 @@ our %flag = (
 	     'B6_embl'     => 'B6c:BLAT_analysis_EMBL',
 	     'B6_ost'      => 'B6d:BLAT_analysis_OST',
 	     'B6_nematode' => 'B6e:BLAT_analysis_NEMATODE',
+	     'B6_washu'    => 'B6e:BLAT_analysis_WASHU',
 	     'B7'          => 'B7:Upload_BLAT_data',
 	     'B8'          => 'B8:Upload_wublast_data',
 	     'B9'          => 'B9:Upload_briggsae_data',
@@ -248,7 +251,7 @@ LOG->autoflush();
 
 # B6:Blat_analysis 
 # Requires: A1,A4,A5,B1
-&process_blat_jobs      if ($blat_est || $blat_ost || $blat_mrna || $blat_ncrna || $blat_embl || $blat_tc1 || $blat_nematode || $blat_all);
+&process_blat_jobs      if ($blat_est || $blat_ost || $blat_mrna || $blat_ncrna || $blat_embl || $blat_tc1 || $blat_nematode || $blat_washu || $blat_all);
 
 
 # B7:Upload_BLAT_data
@@ -969,7 +972,9 @@ sub process_blat_jobs{
   my $blat_dir = "$basedir/autoace/BLAT";
 
   # what blat jobs should I run? Do everything if blat_all selected
-  # nematode should always be last job to tackle
+  # nematode should always be last job to tackle.
+
+  # [gw3 - why is that?]
 
   my @blat_jobs;
   push(@blat_jobs,"est")      if ( ($blat_est)      || ($blat_all) );
@@ -978,6 +983,7 @@ sub process_blat_jobs{
   push(@blat_jobs,"ncrna")    if ( ($blat_ncrna)    || ($blat_all) );
   push(@blat_jobs,"embl")     if ( ($blat_embl)     || ($blat_all) );
   push(@blat_jobs,"tc1")      if ( ($blat_tc1)      || ($blat_all) );      
+  push(@blat_jobs,"washu")    if ( ($blat_washu)    || ($blat_all) );
   push(@blat_jobs,"nematode") if ( ($blat_nematode) || ($blat_all) );
 
   my $status;
@@ -1035,7 +1041,7 @@ sub load_blat_results {
     
   my $first_blat_type = $_[0];
   my @blat_types = @_;
-  @blat_types    = ("est","mrna","ncrna","ost","embl","nematode","tc1") if ($first_blat_type eq "all");
+  @blat_types    = ("est","mrna","ncrna","ost","embl","nematode","tc1","washu") if ($first_blat_type eq "all");
   
   foreach my $type (@blat_types){    
     print LOG "Adding BLAT $type data to autoace at ",&runtime,"\n";
@@ -1043,7 +1049,7 @@ sub load_blat_results {
     &load($file,"virtual_objects_$type");
     
     # Don't need to add confirmed introns from nematode data (because there are none!)
-    unless ( ($type eq "nematode") || ($type eq "tc1") || ($type eq "embl")|| ($type eq "ncrna") ) {
+    unless ( ($type eq "nematode") || ($type eq "tc1") || ($type eq "embl")|| ($type eq "ncrna") || ($type eq "washu") ) {
       $file = "$basedir/autoace/BLAT/virtual_objects.autoace.ci.$type.ace"; 
       &load($file,"blat_confirmed_introns_$type");
       
@@ -1433,6 +1439,7 @@ sub logfile_details {
   print LOG "#  -process_blat_embl    : perform blat analysis on non-WormBase CDSs from EMBL\n"        if ($blat_embl);
   print LOG "#  -process_blat_tc1     : perform blat analysis on TC1 insertions\n"                     if ($blat_tc1);
   print LOG "#  -process_blat_nematode: perform blat analysis on non-C. elegans ESTs\n"                if ($blat_nematode);
+  print LOG "#  -process_blat_washu   : perform blat analysis on WashU (nematode.net) contigs\n"       if ($blat_washu);
   print LOG "#  -process_blat_all     : perform blat analysis on everything\n"                         if ($blat_all);
   print LOG "#  -addblat      : Load blat data into autoace\n"                                         if ($addblat);
   print LOG "#  -addhomol     : Load blast data into autoace\n"                                        if ($addhomol);
@@ -1705,6 +1712,8 @@ autoace_minder.pl OPTIONAL arguments:
 =item -process_blat_embl, process blat EMBL gene similarities, load into autoace
 
 =item -process_blat_nematode, process blat other nematode ESTs similarities, load into autoace
+
+=item -process_blat_washu, process blat WashU (nematode.net) contigs, load into autoace
 
 =item -process_blat_all, process all blat similarities (BLAT jobs)
 

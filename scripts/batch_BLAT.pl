@@ -4,8 +4,8 @@
 #
 # Anthony Rogers
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2005-03-31 12:30:24 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2005-10-18 09:12:17 $
  
 
 use strict;
@@ -14,7 +14,7 @@ use Wormbase;
 use Getopt::Long;
 use Log_files;
 
-my ($help, $debug, $verbose, $est, $mrna, $ncrna, $ost, $nematode, $embl, $tc1, $all, $export, $no_bsub);
+my ($help, $debug, $verbose, $est, $mrna, $ncrna, $ost, $nematode, $washu, $embl, $tc1, $all, $export, $no_bsub);
 my ($blat, $process, $virtual);
 
 GetOptions ("help"       => \$help,
@@ -25,6 +25,7 @@ GetOptions ("help"       => \$help,
 	    "ncrna"      => \$ncrna,
 	    "ost"        => \$ost,
 	    "nematode"   => \$nematode,
+	    "washu"      => \$washu,
 	    "embl"       => \$embl,
 	    "tc1"        => \$tc1,
 	    "all"        => \$all,
@@ -44,6 +45,7 @@ if( $all ) {
     $ncrna    = 1;
     $ost      = 1;
     $nematode = 1;
+    $washu    = 1;
     $embl     = 1;
     $tc1      = 1;
 }
@@ -78,6 +80,9 @@ if ( $blat ) {
     # ncRNAs (?) 
     &run_bsub("elegans_ncRNAs.masked", "ncrna_out.psl") if $ncrna;
     
+    # WashU contigs
+    &run_bsub( "washu_nematode_contigs", "washu_out.psl", "-t=dnax -q=dnax" ) if $washu;
+    
     # splitting Nematode_ESTs
     &split_run( "nematode" ) if ( $nematode );
     
@@ -92,6 +97,7 @@ if ( $process or $virtual ) {
   push(@blat_jobs,"ncrna")    if ( ($ncrna)    || ($all) );
   push(@blat_jobs,"embl")     if ( ($embl)     || ($all) );
   push(@blat_jobs,"tc1")      if ( ($tc1)      || ($all) );
+  push(@blat_jobs,"washu")    if ( ($washu)    || ($all) );
   push(@blat_jobs,"nematode") if ( ($nematode) || ($all) );
 
   # once the jobs have finished and been processed
@@ -199,7 +205,7 @@ __END__
 
 A wrapper script to hadle the submission of blat jobs to cbi1 cluster (or whatever cluster you are on)
 
-If -nematode is run it will run shatter to split the NematodeEST into files with 25000 sequences eachq and submit one job per file.
+If -nematode or -est is run it will run shatter to split the EST file into files with 25000 sequences each and submit one job per file.
 
 All output is written to ~wormpub/BLAT
 
@@ -218,6 +224,7 @@ molecule specific runs
   -ncrna
   -ost
   -nematode
+  -washu
   -embl
   -tc1
   -all all of the above
