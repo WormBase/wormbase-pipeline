@@ -6,8 +6,8 @@
 # 
 # Attempt to unify all of the diverse scripts to fetch ESTs, OSTs, mRNAs etc. used by blat 
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2004-07-20 16:17:04 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2005-10-19 14:35:07 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -412,6 +412,21 @@ sub make_nematode_ests{
 
   print LOG "Fetching other nematode EST sequences \n";
 
+  # Read in data on which Genbank/EMBL ESTs are used to construct the
+  # WashU NemaGene nemotode contigs.
+  # We wish to exclude the WashU set of ESTs from this Other Nematode
+  # set of ESTs
+  my $washu_ests_file = "washu_contig_est_gbacc.full_list";
+  my %washu_contig_est_gbacc;
+  open (WASHU_ESTS, "< $dir/$washu_ests_file ") || die "Can't open $washu_ests_file\n";
+  while (<WASHU_ESTS>) {
+    my @f = split;
+    if (defined $f[4]) {
+      $washu_contig_est_gbacc{$f[4]} = 1;
+    }
+  }				# 
+  close (WASHU_ESTS);
+
   # open filehandles for output files
   my $file = "other_nematode_ESTs";
   open (OUT_NEM, ">$dir/$file");
@@ -429,7 +444,16 @@ sub make_nematode_ests{
       print OUT_ACE "$_\n" if ($ace);
     }
     
-    if (/^AC\s+(\S+);/)        {$acc = $1};
+    if (/^AC\s+(\S+);/)        {
+      $acc = $1;
+      # ignore this EST if it has been used to construct the WashU contigs
+      if (exists $washu_contig_est_gbacc{$acc}) {
+	# reset vars
+	$def = ""; $id = ""; $acc = ""; $sv = ""; $protid = ""; $protver ="";
+	next;
+      }
+    }
+
     if (/^ID\s+(\S+)/)         {$id  = $1;}
     if (/^SV\s+(\S+\.\d+)/)    {$sv = $1;}
     if (/^DE\s+(.+)/)          {$def = $def." ".$1;}
