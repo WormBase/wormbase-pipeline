@@ -5,7 +5,7 @@
 # Anthony Rogers
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2005-10-18 09:12:17 $
+# Last edited on: $Date: 2005-10-19 11:19:44 $
  
 
 use strict;
@@ -14,7 +14,7 @@ use Wormbase;
 use Getopt::Long;
 use Log_files;
 
-my ($help, $debug, $verbose, $est, $mrna, $ncrna, $ost, $nematode, $washu, $embl, $tc1, $all, $export, $no_bsub);
+my ($help, $debug, $verbose, $est, $mrna, $ncrna, $ost, $nematode, $washu, $nembase, $embl, $tc1, $all, $export, $no_bsub);
 my ($blat, $process, $virtual);
 
 GetOptions ("help"       => \$help,
@@ -25,6 +25,7 @@ GetOptions ("help"       => \$help,
 	    "ncrna"      => \$ncrna,
 	    "ost"        => \$ost,
 	    "nematode"   => \$nematode,
+	    "nembase"    => \$nembase,
 	    "washu"      => \$washu,
 	    "embl"       => \$embl,
 	    "tc1"        => \$tc1,
@@ -45,6 +46,7 @@ if( $all ) {
     $ncrna    = 1;
     $ost      = 1;
     $nematode = 1;
+    $nembase  = 1;
     $washu    = 1;
     $embl     = 1;
     $tc1      = 1;
@@ -81,6 +83,9 @@ if ( $blat ) {
     &run_bsub("elegans_ncRNAs.masked", "ncrna_out.psl") if $ncrna;
     
     # WashU contigs
+    &run_bsub( "nembase_nematode_contigs", "nembase_out.psl", "-t=dnax -q=dnax" ) if $nembase;
+    
+    # WashU contigs
     &run_bsub( "washu_nematode_contigs", "washu_out.psl", "-t=dnax -q=dnax" ) if $washu;
     
     # splitting Nematode_ESTs
@@ -97,6 +102,7 @@ if ( $process or $virtual ) {
   push(@blat_jobs,"ncrna")    if ( ($ncrna)    || ($all) );
   push(@blat_jobs,"embl")     if ( ($embl)     || ($all) );
   push(@blat_jobs,"tc1")      if ( ($tc1)      || ($all) );
+  push(@blat_jobs,"nembase")  if ( ($nembase)  || ($all) );
   push(@blat_jobs,"washu")    if ( ($washu)    || ($all) );
   push(@blat_jobs,"nematode") if ( ($nematode) || ($all) );
 
@@ -224,6 +230,7 @@ molecule specific runs
   -ncrna
   -ost
   -nematode
+  -nembase
   -washu
   -embl
   -tc1

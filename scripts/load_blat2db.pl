@@ -9,7 +9,7 @@
 # 030507 : dl  : Upload OST data as part of script
 
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2005-10-18 11:18:30 $
+# Last edited on: $Date: 2005-10-19 11:20:43 $
 
 use strict;
 use Getopt::Long;
@@ -81,6 +81,7 @@ pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.blat.est.ace
 pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.blat.ost.ace 
 pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.blat.mrna.ace 
 pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.blat.embl.ace 
+pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.blat.nembase.ace 
 pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.blat.washu.ace 
 pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.blat.nematode.ace 
 pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.est.ace 
@@ -91,6 +92,7 @@ save
 pparse /wormsrv2/autoace/BLAT/autoace.blat.ost.ace            
 pparse /wormsrv2/autoace/BLAT/autoace.blat.mrna.ace 
 pparse /wormsrv2/autoace/BLAT/autoace.blat.embl.ace 
+pparse /wormsrv2/autoace/BLAT/autoace.blat.nembase.ace
 pparse /wormsrv2/autoace/BLAT/autoace.blat.washu.ace
 pparse /wormsrv2/autoace/BLAT/autoace.blat.nematode.ace
 pparse /wormsrv2/autoace/BLAT/autoace.good_introns.ost.ace 
@@ -109,6 +111,7 @@ pparse /wormsrv2/autoace/BLAT/virtual_objects.camace.blat.est.ace
 pparse /wormsrv2/autoace/BLAT/virtual_objects.camace.blat.ost.ace 
 pparse /wormsrv2/autoace/BLAT/virtual_objects.camace.blat.mrna.ace 
 pparse /wormsrv2/autoace/BLAT/virtual_objects.camace.blat.embl.ace 
+pparse /wormsrv2/autoace/BLAT/virtual_objects.camace.blat.nembase.ace 
 pparse /wormsrv2/autoace/BLAT/virtual_objects.camace.blat.washu.ace 
 pparse /wormsrv2/autoace/BLAT/virtual_objects.camace.blat.nematode.ace 
 pparse /wormsrv2/autoace/BLAT/virtual_objects.camace.ci.est.ace 
@@ -133,6 +136,7 @@ pparse /wormsrv2/autoace/BLAT/virtual_objects.stlace.blat.est.ace
 pparse /wormsrv2/autoace/BLAT/virtual_objects.stlace.blat.ost.ace 
 pparse /wormsrv2/autoace/BLAT/virtual_objects.stlace.blat.mrna.ace 
 pparse /wormsrv2/autoace/BLAT/virtual_objects.stlace.blat.embl.ace 
+pparse /wormsrv2/autoace/BLAT/virtual_objects.stlace.blat.nembase.ace 
 pparse /wormsrv2/autoace/BLAT/virtual_objects.stlace.blat.washu.ace 
 pparse /wormsrv2/autoace/BLAT/virtual_objects.stlace.blat.nematode.ace 
 pparse /wormsrv2/autoace/BLAT/virtual_objects.stlace.ci.est.ace 

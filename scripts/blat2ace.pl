@@ -7,7 +7,7 @@
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2005-10-18 09:12:44 $
+# Last edited on: $Date: 2005-10-19 11:20:00 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -18,7 +18,7 @@ use Getopt::Long;
 # Command line options  #
 #########################
 
-my ($help, $est, $mrna, $ncrna, $ost, $tc1, $nematode, $embl, $camace, $intron, $washu);
+my ($help, $est, $mrna, $ncrna, $ost, $tc1, $nematode, $embl, $camace, $intron, $washu, $nembase);
 
 GetOptions ("help"       => \$help,
             "est"        => \$est,
@@ -27,6 +27,7 @@ GetOptions ("help"       => \$help,
             "ost"        => \$ost,
             "tc1"        => \$tc1,
             "nematode"   => \$nematode,
+	    "nembase"    => \$nembase,
 	    "washu"      => \$washu,
             "embl"       => \$embl,
             "camace"     => \$camace,
@@ -71,6 +72,7 @@ our %word = (
 	     embl     => 'BLAT_EMBL',
 	     tc1      => 'BLAT_TC1',
 	     nematode => 'BLAT_NEMATODE',
+	     nembase    => 'BLAT_NEMBASE',
 	     washu    => 'BLAT_WASHU'
 	     );
 
@@ -83,10 +85,10 @@ our %word = (
 # Help pod documentation
 &usage(0) if ($help);
 
-# Exit if no data type choosen [EST|mRNA|EMBL|NEMATODE|OST|WASHU]
+# Exit if no data type choosen [EST|mRNA|EMBL|NEMATODE|OST|WASHU|NEMBASE]
 # or if multiple data types are chosen
 
-&usage(1) unless ($est || $mrna || $ost || $ncrna || $tc1 || $nematode || $embl || $washu); 
+&usage(1) unless ($est || $mrna || $ost || $ncrna || $tc1 || $nematode || $embl || $washu || $nembase); 
 
 my $flags = 0;
 $flags++ if $est;
@@ -96,6 +98,7 @@ $flags++ if $ncrna;
 $flags++ if $embl;
 $flags++ if $tc1;
 $flags++ if $nematode;
+$flags++ if $nembase;
 $flags++ if $washu;
 &usage(2) if ($flags > 1);
 
@@ -107,6 +110,7 @@ $flags++ if $washu;
 ($type = 'embl')     if ($embl);
 ($type = 'tc1')      if ($tc1);
 ($type = 'nematode') if ($nematode);
+($type = 'nembase')  if ($nembase);
 ($type = 'washu')    if ($washu);
 
 #########################################
@@ -141,6 +145,7 @@ open(BLAT, "<$blat_dir/${type}_out.psl")    or die "Cannot open $blat_dir/${type
 while (<BLAT>) {
   next unless (/^\d/);
   my @f            = split "\t";
+
   my $match        = $f[0];                    # number of bases matched by blat
   my $strand       = $f[8];                    # strand that match is on
   my $query        = $f[9];                    # query sequence name
@@ -239,7 +244,7 @@ while (<BLAT>) {
       my ($query_start,$query_end);
       
         # blatx 6-frame translation v 6-frame translation
-      if ($nematode || $washu) {
+      if ($nematode || $washu || $nembase) {
 	  my $temp;
 	  if (($strand eq '++') || ($strand eq '-+')) {
 	      $query_start = $query_starts[$x] +1;
@@ -279,7 +284,7 @@ while (<BLAT>) {
       
       # write to output file
       print ACE "Homol_data : \"$virtual\"\n";
-      if ($type eq "nematode" || $type eq "washu") {
+      if ($type eq "nematode" || $type eq "washu" || $type eq "nembase") {
 	  printf ACE "DNA_homol\t\"%s\"\t\"$word{$type}\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$query,$score,$virtualstart,$virtualend,$query_start,$query_end;
 	  
 #      print "// ERROR: $query [$strand] $virtualstart $virtualend $query_start $query_end ::: [$debug_start,$debug_end]  $newcalc - $calc {$slink_starts[$x]}\n" unless ((defined $virtualstart) && (defined $virtualend));
@@ -322,7 +327,7 @@ close(ACE);
 # produce outfile for best matches #
 ####################################
 
-&usage(20) if ($nematode || $washu);
+&usage(20) if ($nematode || $washu || $nembase);
 
 open (AUTBEST, ">$blat_dir/autoace.best.$type.ace");
 open (STLBEST, ">$blat_dir/stlace.best.$type.ace");
@@ -405,7 +410,7 @@ close(STLBEST);
 # produce final BLAT output (including BEST and OTHER) #
 ########################################################
 
-&usage(20) if ($nematode || $washu);
+&usage(20) if ($nematode || $washu || $nembase);
 
 # Open new (final) output files for autoace, camace, and stlace
 open (OUT_autoace, ">$blat_dir/autoace.blat.$type.ace") or die "$!";
@@ -555,13 +560,13 @@ sub usage {
     
     if ($error == 1) {
 	# No data-type choosen
-	print "\nNo data option choosen [-est|-mrna|-ost|-nematode|-ost|-washu]\n";
+	print "\nNo data option choosen [-est|-mrna|-ost|-nematode|-ost|-washu|-nembase]\n";
 	print "Run with one of the above options\n\n";
 	exit(0);
     }
     if ($error == 2) {
 	# 'Multiple data-types choosen
-	print "\nMultiple data option choosen [-est|-mrna|-ost|-nematode|-embl|-washu]\n";
+	print "\nMultiple data option choosen [-est|-mrna|-ost|-nematode|-embl|-washu|-nembase]\n";
 	print "Run with one of the above options\n\n";
 	exit(0);
     }
@@ -573,7 +578,7 @@ sub usage {
     }
     if ($error == 20) {
 	# 
-	print "\nDon't want to do this for the -nematode or -washu options.\n";
+	print "\nDon't want to do this for the -nematode or -washu or -nembase options.\n";
 	print "hasta luego\n\n";
 	exit(0);
     }
@@ -665,6 +670,12 @@ blat2ace.pl  arguments:
 =item
 
 -nematode => perform everything for non-C. elegans ESTs
+
+=back
+
+=item
+
+-nembase => perform everything for NemBase contigs
 
 =back
 

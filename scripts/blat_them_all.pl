@@ -8,7 +8,7 @@
 # and virtual objects to hang the data onto
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2005-10-18 09:12:32 $
+# Last edited on: $Date: 2005-10-19 11:20:20 $
 
 
 use strict;
@@ -23,7 +23,7 @@ use Carp;
 # Misc variables and paths   #
 ##############################
 
-my ($help, $debug, $verbose, $est, $mrna, $ncrna, $ost, $nematode, $embl, $washu,
+my ($help, $debug, $verbose, $est, $mrna, $ncrna, $ost, $nematode, $embl, $washu, $nembase, 
     $blat, $tc1, $process, $virtual, $dump, $camace, $fine);
 my $maintainers = "All";
 my $errors      = 0;
@@ -42,6 +42,7 @@ our %word = (
 	     nematode => 'BLAT_NEMATODE',
 	     ost      => 'BLAT_OST',
 	     tc1      => 'BLAT_TC1',
+	     washu    => 'BLAT_NEMBASE', 
 	     washu    => 'BLAT_WASHU'
 	     );
 
@@ -60,6 +61,7 @@ GetOptions ("help"       => \$help,
 	    "nematode"   => \$nematode,
 	    "embl"       => \$embl,
 	    "tc1"        => \$tc1,
+	    "nembase"    => \$nembase,
 	    "washu"      => \$washu,
 	    "dump"       => \$dump,
 	    "blat"       => \$blat,
@@ -94,9 +96,9 @@ if($debug){
 &usage(1) unless ($dump || $process || $blat || $virtual); 
 
 # Exit if no data type choosen [EST|mRNA|EMBL|NEMATODE|OST] (or -dump not chosen)
-&usage(2) unless ($est || $mrna || $ncrna || $embl || $tc1 || $nematode || $ost || $washu || $dump); 
+&usage(2) unless ($est || $mrna || $ncrna || $embl || $tc1 || $nematode || $ost || $washu || $nembase || $dump); 
 
-# Exit if multiple data types choosen [EST|mRNA|ncRNA|EMBL|NEMATODE|OST|WASHU]
+# Exit if multiple data types choosen [EST|mRNA|ncRNA|EMBL|NEMATODE|OST|WASHU|NEMBASE]
 # ignore if -dump is being run
 unless($dump){
   my $flags = 0;
@@ -107,6 +109,7 @@ unless($dump){
   $flags++ if $embl;
   $flags++ if $tc1;
   $flags++ if $nematode;
+  $flags++ if $nembase;
   $flags++ if $washu;
   &usage(3) if ($flags > 1);
 }
@@ -124,6 +127,7 @@ my $data;
 ($data = 'embl')     if ($embl);
 ($data = 'tc1')      if ($tc1);
 ($data = 'nematode') if ($nematode);
+($data = 'nembase')  if ($nembase);
 ($data = 'washu')    if ($washu);
 
 
@@ -136,6 +140,7 @@ $query   .= 'elegans_mRNAs.masked' if ($mrna);     # mRNA data set
 $query   .= 'elegans_ncRNAs.masked'if ($ncrna);    # ncRNA data set
 $query   .= 'other_nematode_ESTs'  if ($nematode); # ParaNem EST data set
 $query   .= 'elegans_embl_cds'     if ($embl);     # Other CDS data set, DNA not peptide!
+$query   .= 'nembase_nematode_contigs' if ($nembase);  # Contigs from NemBase
 $query   .= 'washu_nematode_contigs' if ($washu);  # Contigs from Nematode.net - John Martin <jmartin@watson.wustl.edu>
 
 &create_log_files;
@@ -168,9 +173,9 @@ if ($blat) {
   
 
   # BLAT system call
-  # nematode ESTs and WashU contigs handled differently
+  # nematode ESTs and NemBase and WashU contigs handled differently
   # use -fine for mrna sequences is specified
-  if ($nematode || $washu) {
+  if ($nematode || $washu || $nembase) {
     system("$blatex $seq $query -t=dnax -q=dnax $blat_dir/${data}_out.psl") && croak "Blat failed $!\n";
   }
   elsif($fine) {
@@ -196,7 +201,7 @@ if ($process) {
     print LOG "$runtime: Processing blat ouput file, running blat2ace.pl\n";
     
     # treat slightly different for nematode data (no confirmed introns needed)
-    if ( ($nematode) || ($tc1) || ($embl) || ($ncrna) || ($washu) ) {
+    if ( ($nematode) || ($tc1) || ($embl) || ($ncrna) || ($washu) || ($nembase)) {
 	&run_command("$bin/blat2ace.pl -$data"); 
     }
     elsif($camace){
@@ -210,8 +215,8 @@ if ($process) {
     print "Producing confirmed introns in databases\n\n" if $verbose;
     print LOG "$runtime: Producing confirmed introns in databases\n";
 
-    # produce confirmed introns for all but nematode, tc1, embl, ncRNA and washu data
-    unless ( ($nematode) || ($tc1) || ($embl) || ($ncrna) || ($washu) ) {
+    # produce confirmed introns for all but nematode, tc1, embl, ncRNA, nembase and washu data
+    unless ( ($nematode) || ($tc1) || ($embl) || ($ncrna) || ($washu) || ($nembase)) {
 	print "Producing confirmed introns using $data data\n" if $verbose;
 	&confirm_introns('autoace',"$data");
 	&confirm_introns('camace', "$data");
@@ -616,7 +621,7 @@ sub virtual_objects_blat {
   # dl 040315 - this is crazy. we make all of the files and then delete the ones we don't want.
   #             don't rock the boat...
 
-  if ( ($data eq "nematode") || ($data eq "tc1") || ($data eq "ncrna") || ($data eq "embl") ) {
+  if ( ($data eq "nematode") || ($data eq "tc1") || ($data eq "ncrna") || ($data eq "embl") || ($data eq $washu) || ($data eq $nembase)) {
     unlink ("$blat_dir/virtual_objects.autoace.ci.$data.ace");
     unlink ("$blat_dir/virtual_objects.camace.ci.$data.ace");
     unlink ("$blat_dir/virtual_objects.stlace.ci.$data.ace");
@@ -651,13 +656,13 @@ sub usage {
     }
     elsif ($error == 2) {
       # No data-type choosen
-      print "\nNo data option choosen [-est|-mrna|-ost|-embl|-nematode|-washu]\n";
+      print "\nNo data option choosen [-est|-mrna|-ost|-embl|-nematode|-washu|-nembase]\n";
       print "Run with one of the above options\n\n";
       exit(0);
     }
     elsif ($error == 3) {
       # 'Multiple data-types choosen
-      print "\nMultiple data option choosen [-est|-mrna|-ost|-nematode|-embl|-washu]\n";
+      print "\nMultiple data option choosen [-est|-mrna|-ost|-nematode|-embl|-washu|-nembase]\n";
       print "Run with one of the above options\n\n";
       exit(0);
     }
@@ -735,6 +740,7 @@ sub create_log_files{
   print LOG " -ost      : perform blat for OSTs\n"                              if ($ost);
   print LOG " -embl     : perform blat for misc. non-WormBase CDS from EMBL\n"  if ($embl);
   print LOG " -nematode : perform blatx for parasitic nematode ESTs\n"          if ($nematode);
+  print LOG " -washu    : perform blatx for NemBase contigs\n"                  if ($nembase);
   print LOG " -washu    : perform blatx for WashU (nematode.net) contigs\n"     if ($washu);
   print LOG "\n";
   print LOG "blat_them_all.pl process options:\n";
@@ -839,6 +845,14 @@ or
 =item -ost   
 
 run everything for OST data
+
+=back
+
+or 
+
+=item -nembase
+
+run everything for NemBase contigs
 
 =back
 
