@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2005-10-20 12:51:34 $
+# Last edited on: $Date: 2005-10-20 14:26:52 $
 
 
 
@@ -986,7 +986,7 @@ sub process_blat_jobs{
   push(@blat_jobs,"ncrna")    if ( ($blat_ncrna)    || ($blat_all) );
   push(@blat_jobs,"embl")     if ( ($blat_embl)     || ($blat_all) );
   push(@blat_jobs,"tc1")      if ( ($blat_tc1)      || ($blat_all) );      
-  push(@blat_jobs,"nembase")    if ( ($blat_nembase)    || ($blat_all) );
+  push(@blat_jobs,"nembase")  if ( ($blat_nembase)  || ($blat_all) );
   push(@blat_jobs,"washu")    if ( ($blat_washu)    || ($blat_all) );
   push(@blat_jobs,"nematode") if ( ($blat_nematode) || ($blat_all) );
 
@@ -1005,7 +1005,7 @@ sub process_blat_jobs{
     # do the homol compress for all types of data but only invoke the feature compress for good_intron files (i.e. EST/OST/mRNA)
     
     # Raw BLAT outputs
-    unless ($job eq "nematode") {
+    unless ($job eq "nematode" || $job eq "nembase" || $job eq "washu") {
       &run_command("$scriptdir/acecompress.pl -homol ${blat_dir}/autoace.blat.$job.ace > ${blat_dir}/autoace.blat.${job}lite.ace");
       my $status = move("${blat_dir}/autoace.blat.${job}lite.ace", "${blat_dir}/autoace.blat.$job.ace");
       print "ERROR: Couldn't move file: $!\n" if ($status == 0);      
