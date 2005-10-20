@@ -8,7 +8,7 @@
 # and virtual objects to hang the data onto
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2005-10-19 11:20:20 $
+# Last edited on: $Date: 2005-10-20 12:46:03 $
 
 
 use strict;
@@ -42,7 +42,7 @@ our %word = (
 	     nematode => 'BLAT_NEMATODE',
 	     ost      => 'BLAT_OST',
 	     tc1      => 'BLAT_TC1',
-	     washu    => 'BLAT_NEMBASE', 
+	     nembase  => 'BLAT_NEMBASE', 
 	     washu    => 'BLAT_WASHU'
 	     );
 
