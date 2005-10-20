@@ -5,7 +5,7 @@
 # Anthony Rogers
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2005-10-19 11:19:44 $
+# Last edited on: $Date: 2005-10-20 15:15:38 $
  
 
 use strict;
@@ -82,7 +82,7 @@ if ( $blat ) {
     # ncRNAs (?) 
     &run_bsub("elegans_ncRNAs.masked", "ncrna_out.psl") if $ncrna;
     
-    # WashU contigs
+    # Nembase contigs
     &run_bsub( "nembase_nematode_contigs", "nembase_out.psl", "-t=dnax -q=dnax" ) if $nembase;
     
     # WashU contigs
