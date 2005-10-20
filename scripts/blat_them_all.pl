@@ -8,7 +8,7 @@
 # and virtual objects to hang the data onto
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2005-10-20 12:46:03 $
+# Last edited on: $Date: 2005-10-20 12:55:57 $
 
 
 use strict;
@@ -621,7 +621,7 @@ sub virtual_objects_blat {
   # dl 040315 - this is crazy. we make all of the files and then delete the ones we don't want.
   #             don't rock the boat...
 
-  if ( ($data eq "nematode") || ($data eq "tc1") || ($data eq "ncrna") || ($data eq "embl") || ($data eq $washu) || ($data eq $nembase)) {
+  if ( ($data eq "nematode") || ($data eq "tc1") || ($data eq "ncrna") || ($data eq "embl") || ($data eq "washu") || ($data eq "nembase")) {
     unlink ("$blat_dir/virtual_objects.autoace.ci.$data.ace");
     unlink ("$blat_dir/virtual_objects.camace.ci.$data.ace");
     unlink ("$blat_dir/virtual_objects.stlace.ci.$data.ace");

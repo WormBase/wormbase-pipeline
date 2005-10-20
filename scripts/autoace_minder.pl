@@ -7,7 +7,7 @@
 # Usage : autoace_minder.pl [-options]
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2005-10-19 11:19:23 $
+# Last edited on: $Date: 2005-10-20 12:51:34 $
 
 
 
@@ -1718,7 +1718,7 @@ autoace_minder.pl OPTIONAL arguments:
 
 =item -process_blat_nematode, process blat other nematode ESTs similarities, load into autoace
 
-=item -process_blat_washu, process blat Nembase contigs, load into autoace
+=item -process_blat_nembase, process blat Nembase contigs, load into autoace
 
 =item -process_blat_washu, process blat WashU (nematode.net) contigs, load into autoace
 
