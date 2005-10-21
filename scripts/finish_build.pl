@@ -13,7 +13,7 @@
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-03-29 12:58:46 $
+# Last updated on: $Date: 2005-10-21 15:43:46 $
 
 
 use strict;
@@ -94,10 +94,13 @@ print LOG "Removing ~wormpub/DATABASES/current_DB/database/\n";
 print LOG "Removing ~wormpub/DATABASES/current_DB/database/CHROMOSOMES/\n";
 &delete_files_from("/nfs/disk100/wormpub/DATABASES/current_DB/CHROMOSOMES","*","+");
 
+print LOG "Removing ~wormpub/DATABASES/current_DB/database/COMMON_DATA/\n";
+&delete_files_from("/nfs/disk100/wormpub/DATABASES/current_DB/COMMON_DATA","*","+");
+
 
 
 print LOG "Running TransferDB.pl to copy autoace to ~wormpub/DATABASES/current_DB\n";
-system("TransferDB.pl -start $basedir/autoace -end /nfs/disk100/wormpub/DATABASES/current_DB -database -chromosomes -wspec -name $WS_name")  && die "couldn't run TransferDB for wormpub\n";
+system("TransferDB.pl -start $basedir/autoace -end /nfs/disk100/wormpub/DATABASES/current_DB -database -chromosomes -common -wspec -name $WS_name")  && die "couldn't run TransferDB for wormpub\n";
 print LOG "Unzipping any gzipped chromosome files\n";
 system("/bin/gunzip /nfs/disk100/wormpub/DATABASES/current_DB/CHROMOSOMES/*.gz") && die "Couldn't gunzip CHROMOSOMES/*.gz\n";
 
