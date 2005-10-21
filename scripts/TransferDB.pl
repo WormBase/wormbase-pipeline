@@ -4,8 +4,8 @@
 #
 # by ag3 [991221]
 #
-# Last updated on: $Date: 2004-08-16 07:52:27 $
-# Last updated by: $Author: krb $
+# Last updated on: $Date: 2005-10-21 15:39:58 $
+# Last updated by: $Author: ar2 $
 
 # transferdb moves acedb database files across filesystems.
 # Creates a temporary database.BCK 
@@ -46,6 +46,7 @@ my $S_whelp;           # -whelp
 my $S_wdata;           # -wdata ??? what is this
 my $S_chromosomes;     # -chromosomes: copies CHROMOSOMES dir
 my $S_release;         # -release 
+my $S_common;          # -common : copies COMMON_DATA
 my $S_all;             # -all: all of the above
 my $file;              # ???
 my $retry = 5;         # for making repeat attempts to copy a file
@@ -69,6 +70,7 @@ GetOptions (
 	    "wdata"       => \$S_wdata,
 	    "chromosomes" => \$S_chromosomes,
 	    "release"     => \$S_release,
+	    "common"      => \$S_common,
 	    "help"        => \$help,
 	    "verbose"     => \$verbose,
 	    "debug=s"     => \$debug,
@@ -163,6 +165,7 @@ my $wdata       = "$srcdir"."/data";
 my $chromosomes = "$srcdir"."/CHROMOSOMES";
 my $release     = "$srcdir"."/release";
 my $acefiles    = "$srcdir"."/acefiles";
+my $common_data = "$srcdir"."/COMMON_DATA";
 
 # set what is to be copiedin @TOBEMOVED
 my @TOBEMOVED;
@@ -178,6 +181,7 @@ push (@TOBEMOVED,"$wdata")       if ($S_wdata       || $S_all);
 push (@TOBEMOVED,"$chromosomes") if ($S_chromosomes || $S_all);
 push (@TOBEMOVED,"$release")     if ($S_release     || $S_all);
 push (@TOBEMOVED,"$acefiles")    if ($S_acefiles    || $S_all);
+push (@TOBEMOVED,"$common_data") if ($S_common      || $S_all);
 
 print LOG "Directories to be copied: @TOBEMOVED \n";
 
