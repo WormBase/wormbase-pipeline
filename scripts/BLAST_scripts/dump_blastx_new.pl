@@ -44,7 +44,7 @@ my $dbname = "worm_dna";
 my $dbpass = "";
 
 # define the organisms we deal with
-my @species = qw(fly human slimswissprot slimtrembl worm yeast briggsae);
+my @species = qw(fly human slimswissprot slimtrembl worm yeast briggsae remanei);
 
 # define the AceDB protein prefixes for the organisms used
 my %org2acedb;
@@ -240,7 +240,7 @@ my $sth = $dbh->prepare ( q{ SELECT analysis_id, db
 $sth->execute;
 
 while (my @row = $sth->fetchrow_array) {
-  if ($row[1] =~ /(wormpep|gadfly|ensembl|yeast|slimswissprot|slimtrembl|human|brigpep)/) {
+  if ($row[1] =~ /(wormpep|gadfly|ensembl|yeast|slimswissprot|slimtrembl|human|brigpep|remanei)/) {
     my $org;
     if ($1 =~ /wormpep/) {
       $org = "worm";
