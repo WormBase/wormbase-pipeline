@@ -101,8 +101,8 @@ while (<LIST>) {
       my ($DB,$ID) = split(/:/, $_);
       if( "$DB" eq "ENSEMBL" ){
       print ACE "Database ENSEMBL ENSEMBL_proteinID $ID\n";
-# no longer get gene IDs from ensembl due to change in their fasta header
-#     print ACE "Database ENSEMBL ENSEMBL_geneID $ENSpep_gene{$ID}\n" if $ENSpep_gene{$ID};
+      #no longer get gene IDs from ensembl due to change in their fasta header
+      print ACE "Database ENSEMBL ENSEMBL_geneID $ENSpep_gene{$ID}\n" if ($ENSpep_gene{$ID};
       }
       elsif( "$DB" eq "SWISS-PROT" ){ 
 	my $othername = $acc2id{$ID} if $acc2id{$ID};
@@ -201,6 +201,7 @@ sub makeENSgenes
   {
     my $p2g = shift;
     open (ENS, "/usr/local/pubseq/bin/getz -f \"ID Gene\" \"[ensemblpep_human-ID:*]\" | ");
+    #>ENSP00000329982 pep:known chromosome:NCBI35:1:660959:661897:-1 gene:ENSG00000185097 transcript:ENST00000332831
     #>ENSP00000263506 pep:novel chromosome:NCBI35:1:16764182:16779878:-1 gene:ENSG00000116219 transcript:ENST00000263506
     while (<ENS>) {
       if( />(ENSP\d+).*gene:(ENSG\d+)/ ) {
