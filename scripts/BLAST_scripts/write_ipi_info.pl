@@ -102,7 +102,7 @@ while (<LIST>) {
       if( "$DB" eq "ENSEMBL" ){
       print ACE "Database ENSEMBL ENSEMBL_proteinID $ID\n";
       #no longer get gene IDs from ensembl due to change in their fasta header
-      print ACE "Database ENSEMBL ENSEMBL_geneID $ENSpep_gene{$ID}\n" if ($ENSpep_gene{$ID};
+      print ACE "Database ENSEMBL ENSEMBL_geneID $ENSpep_gene{$ID}\n" if ($ENSpep_gene{$ID});
       }
       elsif( "$DB" eq "SWISS-PROT" ){ 
 	my $othername = $acc2id{$ID} if $acc2id{$ID};
