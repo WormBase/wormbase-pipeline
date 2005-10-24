@@ -4,40 +4,55 @@
 # 
 # by Keith Bradnam                         
 #
-# This is a example of a good script template   
+# Script to find candidate genes for splitting
 #
-# Last updated by: $Author: krb $     
-# Last updated on: $Date: 2003-12-01 11:54:27 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2005-10-24 16:31:55 $      
 
 use strict;                                      
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
 use Carp;
+use Log_files;
+#use Ace;
+#use Sequence_extract;
+#use Coords_converter;
+
 
 ######################################
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $database);
+my ($help, $debug, $test, $verbose);
 my $maintainers = "All";
-our $log;
+
+my $database;
+
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
-	    "database=s"  => \$database);
+	    "test"       => \$test,
+	    "verbose"    => \$verbose,
+	    "database=s" => \$database,
+	    );
 
+my $log = Log_files->make_build_log($debug);
 
 # Display help if required
 &usage("Help") if ($help);
 
 # Use debug mode?
-if($debug){
+if ($debug) {
   print "DEBUG = \"$debug\"\n\n";
   ($maintainers = $debug . '\@sanger.ac.uk');
 }
 
-&create_log_files;
+# in test mode?
+if ($test) {
+  print "In test mode";
+
+}
 
 
 
@@ -45,15 +60,20 @@ if($debug){
 # MAIN BODY OF SCRIPT
 ##########################
 
-
+# main stuff goes here
 
 
 
 
 # Close log files and exit
+$log->write_to("\n\nStatistics\n");
+$log->write_to("----------\n\n");
 
-&mail_maintainer("script template",$maintainers,$log);
-close(LOG);
+$log->write_to("put some statistics here");
+
+$log->mail();
+
+print "Finished." if ($verbose);
 exit(0);
 
 
@@ -67,24 +87,7 @@ exit(0);
 #
 ##############################################################
 
-sub create_log_files{
 
-  # Create history logfile for script activity analysis
-  $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
-
-  # create main log file using script name for
-  my $script_name = $1;
-  $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
-  my $rundate     = `date +%y%m%d`; chomp $rundate;
-  $log        = "/wormsrv2/logs/$script_name.$rundate.$$";
-
-  open (LOG, ">$log") or die "cant open $log";
-  print LOG "$script_name\n";
-  print LOG "started at ",`date`,"\n";
-  print LOG "=============================================\n";
-  print LOG "\n";
-
-}
 
 ##########################################
 
@@ -98,6 +101,7 @@ sub usage {
   }
 }
 
+##########################################
 
 
 
@@ -139,6 +143,25 @@ script_template.pl  OPTIONAL arguments:
 =item -h, Help
 
 =back
+
+=over 4
+ 
+=item -debug, Verbose/Debug mode
+ 
+=back
+
+=over 4
+
+=item -test, Test mode, generate the acefile but do not upload themrun the script, but don't change anything
+
+=back
+
+=over 4
+    
+=item -verbose, output lots of chatty test messages
+
+=back
+                                                                                             
 
 =head1 REQUIREMENTS
 
