@@ -5,8 +5,8 @@
 # by Anthony Rogers
 #
 # Updates the local webpages in synch with the main website
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2005-04-18 09:47:49 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2005-11-07 15:09:18 $
 
 
 use strict;
@@ -45,7 +45,7 @@ foreach my $file ( @wormpep_files ) {
   unlink("$wormpub_dir/${file}_current") || print LOG "ERROR: Cannot delete file $wormpub_dir/${file}_current :\t$!\n";
   &run_command("scp $wp_ftp_dir/${file}${release} $wormpub_dir/${file}_current");
 }
-&run_command("/usr/local/pubseq/bin/setdb $wormpub_dir/wormpep_current");
+&run_command("xdformat -p $wormpub_dir/wormpep_current");
 
 # create a symbolic link from top level wormpep into the release on the wormpep ftp site
 foreach my $file ( @wormpep_files ) {
