@@ -1,4 +1,4 @@
-// $Id: passwd.wrm,v 1.4 2005-06-16 13:22:21 pad Exp $
+// $Id: passwd.wrm,v 1.5 2005-11-07 15:08:46 ar2 Exp $
 //
 //  wspec/passwd.wrm
 //
@@ -14,11 +14,6 @@
 //
 
 wormpub
-dl1
-rd
-ar2
-pad
-mt3
 
 // On some platforms, the unix command getLogin fails,
 // In this case, anyone will have write access if you
