@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2005-08-17 10:21:15 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2005-11-07 16:28:32 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -258,12 +258,16 @@ foreach $file (@gff_files) {
     elsif (/BLAT_EMBL_OTHER/)                                                   {push (@{$GFF{$file}{BLAT_EMBL_OTHER}},$_);}
     # BLAT_NEMATODE
     elsif (/BLAT_NEMATODE/)                                                     {push (@{$GFF{$file}{BLAT_NEMATODE}},$_);}
+    # BLAT_NEMBASE
+    elsif (/BLAT_NEMBASE/)                                                      {push (@{$GFF{$file}{BLAT_NEMBASE}},$_);}
     # BLAT_TC1_BEST
     elsif (/BLAT_TC1_BEST/)                                                     {push (@{$GFF{$file}{BLAT_TC1_BEST}},$_);}
     elsif (/BLAT_TC1_OTHER/)                                                    {push (@{$GFF{$file}{BLAT_TC1_OTHER}},$_);}
     # BLAT_ncRNA_BEST
     elsif (/BLAT_ncRNA_BEST/)                                                   {push (@{$GFF{$file}{BLAT_ncRNA_BEST}},$_);}
     elsif (/BLAT_ncRNA_OTHER/)                                                  {push (@{$GFF{$file}{BLAT_ncRNA_OTHER}},$_);}
+    # BLAT_WASHU
+    elsif (/BLAT_WASHU/)                                                        {push (@{$GFF{$file}{BLAT_WASHU}},$_);}
     # Expr_profile
     elsif (/Expr_profile/)                                                      {push (@{$GFF{$file}{Expr_profile}},$_);}
     # Protein similarities
@@ -552,10 +556,12 @@ BLAT_mRNA_OTHER
 BLAT_EMBL_BEST
 BLAT_EMBL_OTHER
 BLAT_NEMATODE
+BLAT_NEMBASE
 BLAT_TC1_BEST
 BLAT_TC1_OTHER
 BLAT_ncRNA_BEST
 BLAT_ncRNA_OTHER
+BLAT_WASHU
 Expr_profile
 BLASTX
 WABA_BRIGGSAE

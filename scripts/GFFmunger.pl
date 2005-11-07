@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2005-05-27 11:13:42 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2005-11-07 16:28:32 $
 #
 # Usage GFFmunger.pl [-options]
 
@@ -296,10 +296,12 @@ BLAT_mRNA_OTHER
 BLAT_EMBL_BEST
 BLAT_EMBL_OTHER
 BLAT_NEMATODE
+BLAT_NEMBASE
 BLAT_TC1_BEST
 BLAT_TC1_OTHER
 BLAT_ncRNA_BEST
 BLAT_ncRNA_OTHER
+BLAT_WASHU
 Expr_profile
 BLASTX
 WABA_BRIGGSAE
