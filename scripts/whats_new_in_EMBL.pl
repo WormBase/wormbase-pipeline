@@ -6,15 +6,15 @@
 #
 # checks EMBL for new EST or mRNA entries
 #
-# Last updated by: $Author: mh6 $                      
-# Last updated on: $Date: 2005-09-19 16:19:42 $        
+# Last updated by: $Author: pad $                      
+# Last updated on: $Date: 2005-11-08 12:23:34 $        
 
 use strict;
 use Getopt::Long;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
 use Wormbase;
 use Time::Local;
-use Features;
+use Modules::Features;
 
 ##############################
 # Variables                  #
