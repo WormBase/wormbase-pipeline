@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2005-11-10 11:31:33 $
+# Last edited on: $Date: 2005-11-14 13:05:52 $
 
 
 use DBI;
@@ -452,52 +452,7 @@ if($setup_mySQL){
     &update_database("UNLOCK TABLES;", $worm_pep);
   }
 
-  # Setup mysql with the Interpro analyses.
-  # These don't have a blast database that we need to check and write
-  # to the analysis table.
-  # It is worth running them every time because the worm_pep proteins
-  # change substatially still on every build.
-  #
-  # The analyses that we do here are:
-  # 10 transmembrane
-  # 11 hmmpfam
-  # 12 low_complexity
-  # 13 signal_peptide
-  # 14 coiled_coil
-  # 16 prints
-  # 17 profile
-  # 18 pirsf
-  # 19 hmmtigr
-  # 20 hmmsmart
-  # 21 prosite
-  #
-  # NB. analysis_id = 15 is used by reamaei wublastp
-  foreach my $analysis (10, 11, 12, 13, 14, 16, 17, 18, 19, 20, 21){
-  
-    # lock protein tables 
-    $lock_statement = "LOCK TABLES input_id_analysis WRITE, protein_feature WRITE;";
-    print "Locking protein tables: $lock_statement\n";
-    &update_database("$lock_statement", $worm_pep);
-    &update_database("$lock_statement", $worm_brigpep);
-    
-    #delete entries so they get rerun
-    $query = "delete from input_id_analysis where analysis_id = $analysis";
-    print $query,"\n";
-    &update_database( $query, $worm_pep );
-    &update_database( $query, $worm_brigpep );
-    
-    $query = "delete from protein_feature where analysis_id = $analysis";
-    print $query,"\n";
-    &update_database( $query, $worm_pep );
-    &update_database( $query, $worm_brigpep );
-    
-    # release WRITE locks
-    &update_database("UNLOCK TABLES;", $worm_pep);
-    &update_database("UNLOCK TABLES;", $worm_brigpep);
-
-
-  }
-
+ 
   $worm_dna->disconnect;
   $worm_pep->disconnect;
   $worm_brigpep->disconnect;
