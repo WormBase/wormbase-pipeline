@@ -6,7 +6,7 @@
 #
 # Updates the local webpages in synch with the main website
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2005-11-07 15:09:18 $
+# Last updated on: $Date: 2005-11-14 11:43:26 $
 
 
 use strict;
@@ -74,10 +74,10 @@ my $webpublish = "/usr/local/bin/webpublish";
 
 # Now update WORMBASE current link
 &run_command("cd $www/WORMBASE; rm -f current; ln -fs WS${release} current") && print LOG "Couldn't update 'current' symlink\n";
-&run_command("cd $www/WORMBASE; webpublish -f -q -r current") && print LOG "Couldn't run webpublish on current symlink files\n";
+&run_command("cd $www/WORMBASE; webpublish -q -r current") && print LOG "Couldn't run webpublish on current symlink files\n";
 
 # Now need to update big dbcomp output in data directory
-&run_command("cd /nfs/WWWdev/SANGER_docs/data/Projects/C_elegans; $webpublish -f -q WS.dbcomp_output") && print LOG "Couldn't webpublish data directory\n";
+&run_command("cd /nfs/WWWdev/SANGER_docs/data/Projects/C_elegans; $webpublish -q WS.dbcomp_output") && print LOG "Couldn't webpublish data directory\n";
 
 
 # The end
