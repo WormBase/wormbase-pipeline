@@ -14,27 +14,19 @@
 #
 #############################################################################################
 
-#############
-# variables #
-#############
-
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
-use IO::Handle;
 use Getopt::Long;
-use Cwd;
 use warnings;
-use Data::Dumper;
 use Class::Struct;
+use Modules::Map_Helper;
 
 ##########################
 # Script variables (run) #
 ##########################
 
 my $maintainers = "All";
-my $rundate     = &rundate;
-my $runtime     = &runtime;
 my %output      = ();
 my %finaloutput = ();
 
@@ -71,11 +63,8 @@ if ($debug) {
 
 my $tace = &tace;    # tace executable path
 
-#my $basedir = $test ? glob("~wormpub/TEST_BUILD") : "/wormsrv2";
-my $basedir    = '/wormsrv2';
-my $dbdir      = "$basedir/autoace";                   # Database path
-my $db_version = &get_wormbase_version_name;           # WS version number
-my $gffdir     = "$dbdir/GFF_SPLITS/GFF_SPLITS/";
+my $dbdir      = '/wormsrv2/autoace';                   # Database path
+my $gffdir = $test ? "$dbdir/GFF_SPLITS/WS150" : "$dbdir/GFF_SPLITS/GFF_SPLITS";   # GFF splits directory
 my $acefile = $acename ? $acename : "$dbdir/acefiles/Oligo_mappings.ace";
 
 my @chromosomes = $test
@@ -126,13 +115,13 @@ foreach my $chromosome (@chromosomes) {
     close(GFF);
 
     # Get exon info from split UTR GFF files
-    get_from_gff("$gffdir/CHROMOSOME_${chromosome}.UTR.gff",'Transcript','UTR',\%genes);
+    Map_Helper::get_from_gff("$gffdir/CHROMOSOME_${chromosome}.UTR.gff",'Transcript','UTR',\%genes);
     # Get exon info from split exon GFF files
-    get_from_gff("$gffdir/CHROMOSOME_${chromosome}.exon.gff",'CDS',qw{\S},\%genes);
+    Map_Helper::get_from_gff("$gffdir/CHROMOSOME_${chromosome}.exon.gff",'CDS',qw{\S},\%genes);
     # Get exon info from split pseudogene exon GFF files
-    get_from_gff("$gffdir/CHROMOSOME_${chromosome}.exon_pseudogene.gff",'Pseudogene',qw{\S},\%genes);
+    Map_Helper::get_from_gff("$gffdir/CHROMOSOME_${chromosome}.exon_pseudogene.gff",'Pseudogene',qw{\S},\%genes);
     # Get exon info from split transcript exon GFF file
-    get_from_gff("$gffdir/CHROMOSOME_${chromosome}.exon_noncoding.gff",'Transcript',qw{\S},\%genes);
+    Map_Helper::get_from_gff("$gffdir/CHROMOSOME_${chromosome}.exon_noncoding.gff",'Transcript',qw{\S},\%genes);
 
     print "Finished GFF loop\n" if ($verbose);
 
@@ -150,35 +139,8 @@ foreach my $chromosome (@chromosomes) {
     ##########
     # map it #
     ##########
+   Map_Helper::map_it(\%output,\%Oligo,\@sorted_genes,\%genes);
 
-    print "Find overlaps for Oligo_set\n" if ($verbose);
-    #$|=1;
-    foreach my $testOligo ( keys %Oligo ) {
-        my $Oligostart = $Oligo{$testOligo}->[0];
-        my $Oligostop  = $Oligo{$testOligo}->[1];
-	print STDERR '.' if $verbose;
-        foreach my $gene (@sorted_genes) {
-
-            if ( $Oligostart > $genes{$gene}->stop ) {
-                next;
-            }
-            elsif ( $Oligostop < $genes{$gene}->start ) {
-                last;
-            }
-            else {
-		my %added_exons;
-                foreach my $exon ( @{$genes{$gene}->exons} ) {
-                    if ($Oligostart > $exon->stop
-                        || $Oligostop < $exon->start ) {
-			next if $added_exons{$exon->type.$exon->id};
-			print STDERR '+' if $verbose;
-                        push @{$output{$testOligo} }, $exon;
-			$added_exons{$exon->type.$exon->id}=1;
-                        }
-                }
-            }
-        }
-    }
 }
 
 ########################
