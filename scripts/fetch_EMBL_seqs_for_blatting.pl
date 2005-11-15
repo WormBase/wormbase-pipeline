@@ -7,7 +7,7 @@
 # Attempt to unify all of the diverse scripts to fetch ESTs, OSTs, mRNAs etc. used by blat 
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2005-11-15 15:56:58 $
+# Last edited on: $Date: 2005-11-15 17:22:21 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -439,13 +439,16 @@ sub make_nematode_ests{
   open (OUT_NEM, ">$dir/$file");
   open (OUT_ACE, ">$dir/$file.ace") if ($ace);
 
+  # set to 1 if ignoring this EST because it is in the WashU or NemBase contigs
+  my $ignore_flag = 0;
+
   # Grab all EST sequences (division EST) which have taxon 'Nematoda' but not species C. elegans
   open (SEQUENCES, "$getz -e \'([embl-tax:Nematoda] & [embl-div:est] ! [embl-org:Caenorhabditis elegans])' |") ;
   while (<SEQUENCES>) {
     chomp;
     
     # sequence lines start with a space
-    if (/^\s/) {
+    if (/^\s/ && !$ignore_flag) {
       s/\s+//g;
       s/\d+//g;
       print OUT_NEM "$_\n";
@@ -456,18 +459,19 @@ sub make_nematode_ests{
       $acc = $1;
       # ignore this EST if it has been used to construct the WashU or NemBase contigs
       if (exists $contig_est_gbacc{$acc}) {
-	# reset vars - especially set $acc to blank so the rest of the EST data is not printed
+	$ignore_flag = 1;
 	$def = ""; $id = ""; $acc = ""; $sv = ""; $protid = ""; $protver ="";
 	next;
       }
     }
 
+    if (m#^//#)                {$ignore_flag = 0;} # stop ignoring at the end of an EST record
     if (/^ID\s+(\S+)/)         {$id  = $1;}
     if (/^SV\s+(\S+\.\d+)/)    {$sv = $1;}
     if (/^DE\s+(.+)/)          {$def = $def." ".$1;}
     if (/^OS\s+(.+)/)          {$org = $1;}
     if (/^SQ/) {
-      if ($acc ne "") {		# $acc is blank if we are ignoring this EST
+      if (!$ignore_flag) {		
 	print OUT_NEM ">$acc $id $def\n";
 	if ($ace){
 	  print OUT_ACE "\nSequence : \"$acc\"\n";
