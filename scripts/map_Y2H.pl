@@ -6,8 +6,8 @@
 #
 # by Dan Lawson
 #
-# Last updated by: $Author: pad $                      
-# Last updated on: $Date: 2004-11-01 10:46:52 $        
+# Last updated by: $Author: mh6 $                      
+# Last updated on: $Date: 2005-11-15 14:55:53 $        
 
 use strict;
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
@@ -38,7 +38,6 @@ my $test;       # Test mode
 my $debug;      # Debug mode, verbose output to user running script
 my $verbose;    # Verbose mode
 my $load;       # for loading into autoace
-my $log = Log_files->make_build_log();
 
 GetOptions ("debug=s"   => \$debug,
 	    "verbose"   => \$verbose,
@@ -55,6 +54,8 @@ if($debug){
   print "DEBUG = \"$debug\"\n\n";
   ($maintainers = $debug . '\@sanger.ac.uk');
 }
+
+my $log = Log_files->make_build_log($debug);
 
 if ($test) {
     $dbdir       = glob("~wormpub/TEST_BUILD/autoace");                    # Database path

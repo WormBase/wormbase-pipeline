@@ -6,8 +6,8 @@
 #
 # A script to find (and classify) potentially short, spurious genes (default = <50 aa)
 #
-# Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-03-24 09:57:04 $     
+# Last updated by: $Author: mh6 $     
+# Last updated on: $Date: 2005-11-15 14:59:56 $     
 
 
 use strict;
@@ -85,7 +85,7 @@ $dir = "$basedir/autoace/CHECKS" if ($build);
 #
 #####################################################################
 
-my $log = Log_files->make_build_log();  
+my $log = Log_files->make_build_log($debug);  
 $log->write_to("Looking for potentially spurious genes shorter or equal to $cutoff amino acids in length\n");
 print "Looking for potentially spurious genes shorter or equal to $cutoff amino acids in length\n" if ($verbose);
 
