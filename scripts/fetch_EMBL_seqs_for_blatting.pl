@@ -7,7 +7,7 @@
 # Attempt to unify all of the diverse scripts to fetch ESTs, OSTs, mRNAs etc. used by blat 
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2005-10-28 09:47:08 $
+# Last edited on: $Date: 2005-11-15 15:56:58 $
 
 use strict;
 use lib "/wormsrv2/scripts/";
@@ -444,6 +444,7 @@ sub make_nematode_ests{
   while (<SEQUENCES>) {
     chomp;
     
+    # sequence lines start with a space
     if (/^\s/) {
       s/\s+//g;
       s/\d+//g;
@@ -455,7 +456,7 @@ sub make_nematode_ests{
       $acc = $1;
       # ignore this EST if it has been used to construct the WashU or NemBase contigs
       if (exists $contig_est_gbacc{$acc}) {
-	# reset vars
+	# reset vars - especially set $acc to blank so the rest of the EST data is not printed
 	$def = ""; $id = ""; $acc = ""; $sv = ""; $protid = ""; $protver ="";
 	next;
       }
@@ -466,15 +467,17 @@ sub make_nematode_ests{
     if (/^DE\s+(.+)/)          {$def = $def." ".$1;}
     if (/^OS\s+(.+)/)          {$org = $1;}
     if (/^SQ/) {
-      print OUT_NEM ">$acc $id $def\n";
-      if ($ace){
-	print OUT_ACE "\nSequence : \"$acc\"\n";
-	print OUT_ACE "Database EMBL NDB_AC $acc\n";
-	print OUT_ACE "Database EMBL NDB_ID $id\n";
-	print OUT_ACE "Database EMBL NDB_SV $sv\n";
-	print OUT_ACE "Species \"$org\"\n";
-	print OUT_ACE "Title \"$def\"\nMethod EST_nematode\n";
-	print OUT_ACE "\nDNA \"$acc\"\n";
+      if ($acc ne "") {		# $acc is blank if we are ignoring this EST
+	print OUT_NEM ">$acc $id $def\n";
+	if ($ace){
+	  print OUT_ACE "\nSequence : \"$acc\"\n";
+	  print OUT_ACE "Database EMBL NDB_AC $acc\n";
+	  print OUT_ACE "Database EMBL NDB_ID $id\n";
+	  print OUT_ACE "Database EMBL NDB_SV $sv\n";
+	  print OUT_ACE "Species \"$org\"\n";
+	  print OUT_ACE "Title \"$def\"\nMethod EST_nematode\n";
+	  print OUT_ACE "\nDNA \"$acc\"\n";
+	}
       }
       # reset vars
       $def = ""; $id = ""; $acc = ""; $sv = ""; $protid = ""; $protver ="";
