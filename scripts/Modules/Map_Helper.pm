@@ -12,7 +12,7 @@
 #      COMPANY:  
 #     $Version:  $
 #      CREATED:  14/11/05 14:33:43 GMT
-#        $Date: 2005-11-14 15:31:28 $
+#        $Date: 2005-11-16 11:21:56 $
 #===============================================================================
 package Map_Helper;
 
@@ -49,11 +49,10 @@ sub get_from_gff {
         }
         else {
             $$genes{ $x->id } = new Gene;
+            push @{ $$genes{ $x->id }->exons }, $x;
             $$genes{ $x->id }->start( $x->start );
             $$genes{ $x->id }->stop( $x->stop );
         }
-        #print "Gene : '$name' [$type]\n"
-        #  if $verbose;
     }
     close(GFF_in);
 
