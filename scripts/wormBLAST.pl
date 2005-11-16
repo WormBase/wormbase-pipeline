@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2005-11-14 13:05:52 $
+# Last edited on: $Date: 2005-11-16 15:17:06 $
 
 
 use DBI;
@@ -452,7 +452,61 @@ if($setup_mySQL){
     &update_database("UNLOCK TABLES;", $worm_pep);
   }
 
- 
+  #####################################################################################################
+  #
+  # check whether the InterPro databases have been updated in the last 3 weeks - if so we need
+  # to delete previous analyses that have been run.
+  #
+  #####################################################################################################
+
+  my $interpro_dir = "/data/blastdb/Ensembl/interpro_scan/";
+  my $interpro_date;
+  my $last_build_date = -M $last_build_DBs;
+  if (-e $interpro_dir ) {
+    $interpro_date = -M $interpro_dir;
+  } else {
+    print "Can't find the InterPro database directory: $interpro_dir\n";
+    $interpro_date = 1000;	# assume it has not changed, so make it 1000 days since last update
+  }
+
+  # see if the InterPro databases' directory has had stuff put in it since the last build
+  if ($interpro_date < $last_build_date) {
+    print "Starting worm_pep and worm_brigpep InterPro updates . . . \n";
+
+    # The analysis numbers for the InterPro databases are:
+    # 11 Pfam
+    # 16 Prints
+    # 17 Profile
+    # 18 pirsf
+    # 19 TIGR
+    # 20 Smart
+    # 21 Prosite
+    foreach my $analysis (11, 16 ..21) {
+
+      # lock protein tables 
+      $lock_statement = "LOCK TABLES input_id_analysis WRITE, protein_feature WRITE;";
+      print "Locking protein tables: $lock_statement\n";
+      &update_database("$lock_statement", $worm_pep);
+      &update_database("$lock_statement", $worm_brigpep);
+      
+      #delete entries so they get rerun
+      $query = "delete from input_id_analysis where analysis_id = $analysis";
+      print $query,"\n";
+      &update_database( $query, $worm_pep );
+      &update_database( $query, $worm_brigpep );
+      
+      $query = "delete from protein_feature where analysis_id = $analysis";
+      print $query,"\n";
+      &update_database( $query, $worm_pep );
+      &update_database( $query, $worm_brigpep );
+      
+      # release WRITE locks
+      &update_database("UNLOCK TABLES;", $worm_brigpep);
+      &update_database("UNLOCK TABLES;", $worm_pep);
+    }
+  }
+
+
   $worm_dna->disconnect;
   $worm_pep->disconnect;
   $worm_brigpep->disconnect;
@@ -460,6 +514,7 @@ if($setup_mySQL){
   print "\nFinished setting up MySQL databases\n\n";
 }
 
+#####################################################################################################
 
 
 my $bdir = "/nfs/farm/Worms/Ensembl/ensembl-pipeline/modules/Bio/EnsEMBL/Pipeline";
