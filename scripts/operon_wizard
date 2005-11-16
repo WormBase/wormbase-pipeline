@@ -18,30 +18,40 @@
 #use strict;
 use lib "/wormsrv2/scripts/";                    
 use Wormbase;
-
 use Data::Dumper;
-use Getopt::Std;
+use Getopt::Long;
 use Ace;
 
 $|=1;
 
-
-print "// Operon_wizard run\n";
-
-print "read in formats\t";
 &formats;
-print "done\n";
 
-my ($opt_a,$opt_b,$opt_c,$opt_d,$opt_e,$opt_f,$opt_j,
-   $opt_l,$opt_m,$opt_n,$opt_p,$opt_q,$opt_r,$opt_s,
-   $opt_t,$opt_w,$opt_x,$opt_z);
+my ($opt_a,$opt_b,$opt_c,$opt_e,$opt_f,$opt_j,$opt_l,$opt_m,$opt_n,$opt_p,$opt_q,$opt_r,$opt_s,$opt_t,$opt_w,$opt_x);
 
-#getopts ('abzqdcjyst:exwfmlr:p:k:n:');
+my $addarray;    # Add microarray data to hash
+my $addSL2;      # Add SL2 feature data to hash
+my $dump;        # write hash to datafile [operon.dat]
+my $report;      # write report for an operon
+my $input;       # input operon list from file
+my $checkgenes;  # check the WBGene names in the operon list
+my $checkoperon; # check the operon lengths in the operon list
+my $debug;       # debug/verbose mode
+my $help;        # help pages
 
+GetOptions (
+	    "help"           => \$help,
+	    "input:s"        => \$input,
+	    "addarray"       => \$addarray,
+	    "addSL2"         => \$addSL2,
+	    "report"         => \$report,
+	    "checkgenes"     => \$checkgenes,
+	    "checkoperon"    => \$checkoperon,
+	    "dump"           => \$dump,
+	    "debug"          => \$debug
+	    );
 
 
 # b       : read hash from datafile [operon.dat]
-# d       : write hash to datafile  [operon.dat]
 # r <txt> : write report for an operon
 # c       : overview of operon analysis
 
@@ -50,7 +60,6 @@ my ($opt_a,$opt_b,$opt_c,$opt_d,$opt_e,$opt_f,$opt_j,
 # n <txt> : list all operons from chromosome <txt>
 
 # s       : simple list of operons (out)
-# t <txt> : simple list of operons (in)
 
 # x       : dump operons in .ace format
 # a       : SL file to hash  [SL2.dat] 
@@ -68,21 +77,19 @@ my ($opt_a,$opt_b,$opt_c,$opt_d,$opt_e,$opt_f,$opt_j,
 
 
 # do everything in /wormsrv2/autoace/OPERONS
-print "change dir to /wormsrv2\t";
 chdir("/wormsrv2/autoace/OPERONS");
 $dir = "/wormsrv2/autoace/OPERONS";
-print "done\n";
-
-#if ($opt_t) {
-$opt_t = shift;
-    print "Use -t file $opt_t\n";
-    &simple_list_operons_in($opt_t);
-    exit(0);
-#}
-
-print "shouldn't get here\n";
 
 &recreate_hashes;
+
+print "// Operon_wizard run\n" if ($debug);
+
+
+if ($input) {
+    print "Use -input file $input\n" if ($debug);
+    &simple_list_operons_in($input);
+    exit(0);
+}
 
 &report($opt_r) if ($opt_r);
 
@@ -91,15 +98,17 @@ print "shouldn't get here\n";
 &ESTs_to_dumper('SL2.dat') if ($opt_a);
 &dumper_to_ESTs('SL2_other.dat') if ($opt_e);
 
-&count_operons if ($opt_c);
+&count_operons if ($report);
 
 &position_operons if ($opt_f);
 
-&check_CDS_names if ($opt_j);
+&check_genes  if ($checkgenes);
+&check_operon if ($checkoperon);
+
 &find_CDS_orphans if ($opt_y);
 &find_unassigned_CDS if ($opt_m);
 
-&rename_operons if ($opt_z);
+#&rename_operons if ($opt_z);
 
 &list_operons if ($opt_l);
 
@@ -109,11 +118,12 @@ print "shouldn't get here\n";
 &list_operons_from_chromosome($opt_n) if ($opt_n);
 &acedump_operons if ($opt_x);
 
-&renumber_cds_in_operons if ($opt_q);
+&add_microarray_data_to_operons if ($addarray);
+&add_SL2_data_to_operons if ($addSL2);
 
 &webpages if ($opt_w);
 
-&dump_hashes if ($opt_d);
+&dump_hashes if ($dump);
 
 exit(0);
 
@@ -467,13 +477,15 @@ sub simple_list_operons_out {
   }
 }
 
+###################################################################################
+
 sub simple_list_operons_in {
     
     my $file = shift;	   
     my ($operon_noCDS,$operon_chrom,$operon_acc,@operonCDS,$parse);
     my ($limit);
     
-    print "open file $file\n";
+    print "open file $file\n" if ($debug);
     open (LIST, "<./$file") or die "$file : $!\n";
     while (<LIST>) {
 
@@ -487,12 +499,12 @@ sub simple_list_operons_in {
 	@operonCDS = split (/\s+/,$parse);
 
 	# print one line summary of operon
-	print "$operon_acc [$operon_chrom|$operon_noCDS] ";
 	$limit = scalar @operonCDS;
+	print "$operon_acc [$operon_chrom|$limit] ";
 	for ($i=0; $i<$limit; $i++) {
 	    print "$operonCDS[$i]\t";
 	}
-	print "\n";
+	print "\t\n";
 
 	
 	# clean any old data
@@ -506,15 +518,15 @@ sub simple_list_operons_in {
         # reassign operon list
 	$operon{$operon_acc}{ACC}        = $operon_acc;
 	$operon{$operon_acc}{CHROMOSOME} = $operon_chrom;
-	$operon{$operon_acc}{NO_GENES}   = $operon_noCDS;
+	$operon{$operon_acc}{NO_GENES}   = $limit;
 	for ($i=0; $i<$limit; $i++) {
 	    push @{$operon{$operon_acc}{CDS}},$operonCDS[$i];   # add CDS to operon
 	    $cds{$operonCDS[$i]}{OPERON} = $operon_acc;         # ensure that operon tag is set in CDS
-	    $cds{$operonCDS[$i]}{POSITION} = $i +1;              # ensure that postion tag is set in CDS
+	    $cds{$operonCDS[$i]}{POSITION} = $i +1;             # ensure that postion tag is set in CDS
 	}
     }
 
-    print "Dump back to hash\n";
+    print "Dump back to hash\n" if ($debug);
 
     &dump_hashes;
 
@@ -552,34 +564,52 @@ sub list_operons_from_chromosome {
 
 #########################################################################################################################
 
-sub check_CDS_names {
+sub check_genes {
   
-  my $acepath ="/wormsrv2/current_DB";
-  my $tace    = glob("~wormpub/ACEDB/bin.ALPHA_4/tace_4_9k");   # tace executable path
-   
-  my $db      = Ace->connect(-path=>$acepath,
-			     -program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
+    my %geneID    = &FetchData('worm_gene2geneID_name');       # WBGeneID <=> array of CDS names 
+    my %genenames = reverse %geneID; 
 
-  my ($obj,$method);
+    my $look;
 
-  foreach my $cds_lookup (keys %cds) {
-    printf "%10s : ", $cds_lookup;
-    $obj = $db->fetch(CDS=>$cds_lookup);
-    if (!$obj) {
-      print "Object is not present in autoace\n";
-      next;
+
+    foreach my $cds_lookup (keys %cds) {
+	unless (defined $genenames{$cds_lookup}) {
+	    printf "%10s : is not a valid GeneID\n", $cds_lookup;
+	}
     }
-    $method = $obj->Method;
-    if ($method ne "curated") {
-      print "Object has an invalid method tag: $method\n";
+    
+}
+
+#########################################################################################################################
+
+# Check consistency of operon.dat hash and underlying operon.list file
+
+sub check_operon {
+
+    my %list_of_operons;
+    my $errors = 0;
+
+    open (LIST, "./operon.list");
+    while (<LIST>) {
+	if (/^(CEOP\S+)\s+\[\S+\|(\d+)\]/) {
+	    $list_of_operons{$1} = $2;
+	}
     }
-    else {
-      print "OK\n";
+    close LIST;
+    
+    foreach my $operon_lookup (keys %operon) {
+	if ($list_of_operons{$operon_lookup} != $operon{$operon_lookup}{NO_GENES}) {
+	    print "// ERROR - mismatch between .dat file and list for operon $operon_lookup [$operon{$operon_lookup}{NO_GENES}|$list_of_operons{$operon_lookup}]\n";
+	    $errors++;
+	}
     }
-    $obj->DESTROY();
-  }
+
+    if ($errors == 0) {
+	print "No mismatch in operon lengths between list and .dat file\n";
+    }
 
 }
+
 
 #########################################################################################################################
 
@@ -664,15 +694,54 @@ sub rename_operons {
 
 ######################################################################################################################################################
 
-sub renumber_cds_in_operons {
-    for my $operon_lookup (keys %operon) {
-	print "OPERON_ID   : $operon_lookup\n";
-	my $i = 1;
-	foreach $gene_lookup (@{$operon{$operon_lookup}{CDS}}) {
-	    $cds{$gene_lookup}{POSITION} = $i;
-	    $i++;
+sub add_microarray_data_to_operons {
+    
+    print "// Add microarray data to each CDS\n";
+    
+    open (INPUTDATA, "<./WBgene_array_data.txt");
+    while (<INPUTDATA>) {
+	if (/^(\S+)\s+(\S+)/) {
+	    $genearray{$1} = $2;
 	}
-	print "\n";
+    }
+    close INPUTDATA;
+
+    
+    foreach my $cds_lookup (keys %cds) {
+	print "CDS   : $cds_lookup\n";
+	if ($genearray{$cds_lookup}) {
+	    $cds{$cds_lookup}{SL2_MICROARRAY} = $genearray{$cds_lookup};
+	}
+	else {
+	    $cds{$cds_lookup}{SL2_MICROARRAY} = "-";
+	}
+    }
+    &dump_hashes;
+}
+
+######################################################################################################################################################
+
+sub add_SL2_data_to_operons {
+    
+#    print "// Add SL2 transcript data to each CDS from file $SL2hash\n";
+        
+    open (INPUTDATA, "<./SL2_features.WS128");
+    while (<INPUTDATA>) {
+	if (/^(\S+) maps with (\S+)/) {
+	    $featurearray{$1} = $2;
+	}
+    }
+    close INPUTDATA;
+
+    
+    foreach my $cds_lookup (keys %cds) {
+	print "CDS   : $cds_lookup\n";
+	if ($featurearray{$cds_lookup}) {
+	    $cds{$cds_lookup}{SL2_FEATURE} = $featurearray{$cds_lookup};
+	}
+	else {
+	    $cds{$cds_lookup}{SL2_FEATURE} = "-";
+	}
     }
     &dump_hashes;
 }
