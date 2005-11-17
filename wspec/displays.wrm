@@ -41,7 +41,7 @@
   */
 
 
-_DDtMain -g TEXT_FIT  -w .52 -height .50 -help acedb
+_DDtMain -g TEXT_FIT  -w .6 -height .50 -help acedb
 
 _DDtChrono -g TEXT_SCROLL -t "Chrono" -x .0125 -y .25 -w 0.6 \
 	-height 0.74 -help Chronometer
