@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2005-10-10 13:20:49 $
+// Last edited on: $Date: 2005-11-17 12:06:16 $
  
 
 
@@ -686,7 +686,7 @@
 	  Curator_confirmed ?Person                                   // bless the data manually 
 	  Inferred_automatically Text                                 // bless the data via a script
 	  Date_last_updated UNIQUE DateType                           // Stores last update timestamp
-
+	  Feature_evidence ?Feature				      // Reference a Feature - eg for creation of isoform based on TEC-RED SL2
 
 ////////////////////////////////////////////////////////
 //
@@ -1483,15 +1483,23 @@
 		   Web_location ?Database // use for WWW display
 
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Database class.  This is to be used in the construction of cgi URLs
+// an RNAi object would have a Database connection  . .
+// Database Phenobank GeneID 512754
+//                    RNAID 3004316 
+// The Phenobank Database object would have a URL_constructor
+// eg "http://worm.mpi-cbg.de/phenobank2/cgi-bin/GenePage.py?GeneID=<GeneID>&RNAID=<RNAID>" 
+//
+// Combining the two would give a URL of 
+// http://worm.mpi-cbg.de/phenobank2/cgi-bin/GenePage.py?GeneID=512754&RNAID=3004316
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
-?Database	Name ?Text // Full name
-		Contents ?Text // Description of material included
-		WWW Reference_tag Text Text // tag class(optional)
-		    Use_name Text // class(optional)
-		    Rewrite Text UNIQUE Text Text UNIQUE Text
-		      // prefix_to_add postfix_to_add   prefix_to_remove postfix_to_remove
-
-
+?Database  Name        UNIQUE ?Text            // name of the database
+           Description UNIQUE Text             // description of database contacts
+           URL         UNIQUE Text             // Link to database home page
+           Email              Text             // Contact email 
+           URL_constructor UNIQUE Text         // rule to build URL to specific database entry page 
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -1989,23 +1997,23 @@
 //                                    Phenotype class                                     //
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-?Phenotype   Description   UNIQUE	?Text	#Evidence
-	     Identity	   Name		Primary_name	UNIQUE	?Phenotype_name	  XREF	Primary_name_for   #Evidence
-					Synonym		?Phenotype_name XREF Synonym_for #Evidence
-					Short_name	?Phenotype_name XREF Short_name_for #Evidence
-	     Assay	UNIQUE			?Text			#Evidence
-	     Remark	?Text	#Evidence
-	     Related_phenotypes	Specialization_of	?Phenotype	XREF	Generalization_of
-				Generalization_of	?Phenotype	XREF	Specialization_of
-             Attribute_of	RNAi	  ?RNAi		XREF	Phenotype
-				Variation ?Variation	XREF	Phenotype
-             Associated_with	GO_term   ?GO_term      XREF	Phenotype   ?GO_code  #Evidence
+?Phenotype Description UNIQUE ?Text
+           Assay UNIQUE ?Text
+           Remark ?Text #Evidence
+           Related_phenotypes Specialisation_of ?Phenotype XREF Generalisation_of
+                              Generalisation_of ?Phenotype XREF Specialisation_of
+                              Equivalent_to ?Phenotype XREF Equivalent_to
+                              Similar_to ?Phenotype XREF Similar_to
+           Attribute_of       RNAi ?RNAi XREF Phenotype
+                              GO_term ?GO_term XREF Phenotype ?GO_code #Evidence  // added for Erich, [020128 dl]
 
 
 
-?Phenotype_name		Primary_name_for	?Phenotype	XREF	Primary_name	#Evidence
-			Synonym_for		?Phenotype	XREF	Synonym		#Evidence
-			Short_name_for		?Phenotype	XREF	Short_name	#Evidence
+
+
+//?Phenotype_name		Primary_name_for	?Phenotype	XREF	Primary_name	#Evidence
+//			Synonym_for		?Phenotype	XREF	Synonym		#Evidence
+//			Short_name_for		?Phenotype	XREF	Short_name	#Evidence
 
 
 ?Phenotype_Assay Description ?Text
@@ -2737,6 +2745,7 @@
                                     Crystal_structure UNIQUE DateType
                                     Nmr_structure UNIQUE DateType
                                     In_pdb UNIQUE DateType
+				    In_bmrb UNIQUE DateType
                                     Work_stopped UNIQUE DateType
                                     Test_target UNIQUE DateType
                                     Other UNIQUE DateType                                   
