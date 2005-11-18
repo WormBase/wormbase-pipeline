@@ -1,123 +1,153 @@
-#!/usr/local/bin/perl -w
+#author ar2
+package NameDB_handler;
 
-use lib "lib";
-use lib "/nfs/WWW/SANGER_docs/perl";
-use SangerWeb;
-
+use lib "/nfs/WWWdev/SANGER_docs/cgi-bin/Projects/C_elegans/lib";
 use NameDB;
-use CGI qw(:standard);
-use CGI::Carp qw(fatalsToBrowser);
+our @ISA = qw( NameDB );
 
-my $sw = SangerWeb->new( {
-			  'title'  => "WormBase NameDB",
-			  'banner' => "Results",
-			  'inifile'=> "/nfs/WWW/SANGER_docs/Projects/C_elegans/header.ini"
-			 });
+sub new
+  {
+    my $class = shift;
+    my $dsn = shift;
+    my ($name,$password) = @_;
+    my $self = NameDB->connect($dsn,$name,$password);
 
-my $USER = $sw->username();
-
-$USER = 'wormpub' unless $USER;
-
-print $sw->header();
-print start_html;
-print "logged in as $USER<br><br>";
-
-print "@ARGV\n";
-
-my $action;
-my $type;
-my $name;
-my $gene_id;
-
-$action  = param('action');
-$type    = param('type');
-$name    = param('new_name') || param('remove_name');
-$gene_id = param('id');
-$merge_id = param('id_2');
-$lookup   = param('gene');
-
-my $domain = 'Gene';
-my $DB   = 'wbgene_id;mcs2a';
-#my $USER = 'wormpub';
-my $PASS = 'wormpub';
-
-#verify if valid name
-
-my $db = NameDB_handler->connect($DB,$USER,$PASS);
-my $id;
-$db->setDomain($domain);
-
-
-# query current status
-if ( $action eq 'query') {
-  my $gene = $lookup;
-  ($gene) = $db->idGetByTypedName($type=>$lookup) unless ("$type" eq "WBGene");
-  &print_history($gene);
-  &printAllNames($gene);
-}
-
-# Add a new gene
-elsif ( $action eq 'new_gene') {
-  &validate_name($name, $type);
-  &check_pre_exists($name, $type);
-  &isoform_exists($name, $type);
-  &make_new_obj($name, $type);
-}
-
-# Add name to existing gene
-elsif ( $action eq 'add_name'){
-  &validate_name($name, $type);
-  &validate_geneid($name, $type);
-  &check_pre_exists($name, $type);
-  &add_name($name, $type);
-  print "Added $name to $gene_id<br>";
-}
-
-# Kill existing gene
-elsif( $action eq "kill_gene"){
-  &validate_geneid;
-  print "$gene_id killed<br>" if $db->idKill($gene_id);
-}
-
-# split existing gene
-elsif ($action eq "split_gene") {
-  &validate_geneid;
-  &validate_name;
-  &check_pre_exists;
-  my $id = $db->idSplit($gene_id);
-  $type = "CDS";
-  &add_name($id);
-
-  print "Split $gene_id creating $id with CDS $name<br>"
-}
-elsif ($action eq "merge_genes") {
-  &validate_geneid();
-  &validate_geneid($merge_id);
-  if ($db->idMerge($merge_id,$gene_id)) {
-    print "merged $merge_id into $gene_id<br>";
+    bless ($self, $class);
+    return $self;
   }
-  else {
-    print "merge failed<br>";
+
+sub web  # set flag to specify web or script for error (dienice)
+  {
+    my $self = shift;
+    my $set = shift;
+    $self{'web'} = $set if( $set );
+    return $self{'web'};
+  }
+
+sub printAllNames
+  {
+    my $self = shift;
+    my $obj = shift;
+    my %names = $self->idAllNames($obj);
+    print "<br>Current gene names for <b>$obj</b> <br>";
+    foreach (keys %names ) {
+      print "$_ : ",join(" ",@{$names{$_}}) || $names{$_} ,"<br>";
+    }
+  }
+
+sub add_name
+  {
+    my $self = shift;
+    my $id = shift;
+    my $name = shift;
+    my $type = shift;
+    eval {
+      $self->addName($id,$type => $name);
+    };
+    if ($@) {
+      $self->dienice("$@");
+    }
+  }
+
+sub isoform_exists
+  {
+    my $self = shift;
+    my $name = shift;
+    my $type = shift;
+    if ( $name =~ /^(\w+\.\d+)\w/) {
+      $id = $self->idGetByTypedName($type,$1);
+      if ( $id->[0] ) {
+	print "adding $name as an isoform of ".$id->[0]."<BR>";
+	$self->addTypeName($id->[0],"$type => $name");
+      }
+    }
+  }
+
+sub validate_name
+  {
+    my $self = shift;
+    my $name = shift;
+    my $type = shift;
+    #is this a valid name tpye?
+    my @types = $self->getNameTypes;
+    if( grep {$_ eq $type} @types) {
+      #check name structure matches format eg CDS = clone.no
+      my %name_checks = ( "CDS" => '^\w+\.\d+\w?',
+			  "CGC" => '[a-z]{3,4}-\d+'
+			);
+      unless( $name =~ /$name_checks{$type}/ ) {
+	$self->dienice("$name is incorrect format for $type<br>");
+      }
+    }
+    else {
+      $self->dienice("$type is a invalid typename:<br>@types");
+    }
+  }
+
+sub validate_id
+  {
+    my $self = shift;
+    my $id = shift;
+    unless ( $self->idExists($id) ) {
+      $self->dienice("$id does not exist<br>");
+    }
+    unless( $self->idLive($id) ) {
+      $self->dienice("$id is not live<br>");
+    }
+  }
+
+sub check_pre_exists
+  {
+    my $self = shift;
+    my $name = shift;
+    my $type = shift;
+    $id = $self->idGetByTypedName($type,$name);
+    if(defined $id->[0] ){
+      my $err = "$name already exists as ".$id->[0].":<br>";
+      $self->dienice("$err");
+    }
+  }
+
+
+sub make_new_obj
+  {
+    my $self = shift;
+    my $name = shift;
+    my $type = shift;
+    $id = $self->create_named_object($type, $name);
+    print "The new id for $type: $name is $id\n";
+  }
+
+sub dienice {
+    my $self = shift;
+    my($errmsg) = @_;
+    if( $self->web ) {
+      print "<h2>Error</h2>\n";
+      print "<p>$errmsg</p>\n";
+      print end_html;
+    }
+    else {
+      print "$errmsg\n";
+    }
+    exit;
+  }
+
+sub print_history {
+  my $self = shift;
+  my $id = shift;
+
+  $self->validate_id($id);
+
+  my $history = $self->idGetHistory($id);
+  print "$id<br>";
+  foreach my $event (@{$history}) {
+    print $event->{version}," ";
+    print $event->{date}," ";
+    print $event->{event}," ";
+    print $event->{name_type}," " if (defined $event->{name_type});
+    print $event->{name_value}," " if (defined $event->{name_value});
+    print $event->{user},"<br>";
   }
 }
-elsif( $action eq "remove_name" ) {
-  &validate_geneid();
-  &validate_name;
-  my ($exist_id) = $db->idGetByTypedName($type,$name);
-  if( "$exist_id" ne "$gene_id" ) {
-    &dienice("$name is not a name of $gene_id\n");
-  }
-  if( $db->delName($gene_id,$type,$name) ) {
-    print "Removed $name as name for $gene_id<br><br>Remaining names are <br>";
-  }
-  else {
-    print "name removal failed<br>Names for $gene_id";
-  }
-  #print remaining names
-  &printAllNames;
-}
 
-
-print end_html;
-
-print $sw->footer();
+1;
