@@ -127,7 +127,6 @@ use constant INTERR  => 12;
 use Crypt::CBC;
 use constant SECRET_PASSWORD => 'ViVaAce!';
 use constant DB_TYPE         => 'InnoDB';
-
 my $CIPHER = Crypt::CBC->new({key => SECRET_PASSWORD,
 			      cipher => 'DES'}) or die;
 
@@ -333,6 +332,27 @@ sub _getDomains {
   $result;
 }
 
+=item $db->getDomainId('Gene');
+
+Get the id of the current or passed domain
+
+=cut
+
+sub getDomainId {
+  my ($self,$domain) = @_;
+  $domain = $self->getDomain unless $domain;
+
+  my %domains = map {$_=>1} @{$self->_getDomains};
+  $self->throw(BADDOM) unless $domains{$domain};
+
+  my $query = "select domain_id from domain where domain_name = \"$domain\"";
+
+  my $dbh   = $self->dbh;
+  my $aref = $dbh->selectcol_arrayref($query) or $self->throw(DBERR);
+  my $domain_id = $aref->[0];
+  return $domain_id;
+}
+
 =item $db->setDomain($new_domain)
 
 Set the current domain.  This domain will be the default in subsequent
@@ -530,23 +550,6 @@ END
                                             : @{$arrayref->[0]};
 }
 
-#ar2----------------- import pre-existing data -------------------
-
-sub import {
-  my $self   = shift;
-  my $domain = shift;
-  my $object = shift; #ref to hash containing data
-  $domain  = $self->getDomain  unless defined $domain;
-  $domain  or $self->throw(BADDOM);
-
-
-
-  #get name template and confirm passed id
-  my $name_template = $self->getTemplate($domain);
-  
-  
-}
-
 #-------------------- public ID creation-----------------------
 =head2 Identifier Creation
 
@@ -588,16 +591,102 @@ sub idCreate {
   _scalar_result($new_id);
 }
 
-#-------------------- public_id retrieval-----------------------
-=head2 Identifier Lookup
 
-=over 4
+sub import_object {
+  my $self  = shift;
+  my $object = shift;
 
-=item $id = $db->idGetByID($id [,$domain])
+  $self->_createExistingObject($object );
 
-Look up the ID in the database and return it if present.
+}
+
+# This is used to create an object from a existing ACeDB object.
+
+sub _createExistingObject {
+  my $self = shift;
+  my $object = shift;
+  my $ext_id = $$object{'id'};
+  my $live = $$object{'live'};
+
+  my $domain =  $self->getDomain;
+  $domain or $self->throw(BADDOM);
+
+  my $domain_id = $self->getDomainId;
+
+  # add primary_identifier
+  my $dbh   = $self->dbh;
+  my $query ="insert into primary_identifier values (NULL, \"$ext_id\", $domain_id, 1, $live)";
+
+  $dbh->do($query) or $self->throw(DBERR);
+
+  #get object_id of new thing
+  my $object_id = $self->_internal_id("$ext_id");
+  print "$ext_id => $object_id\n";
+
+  #fill in the identifier_log
+  $query = "INSERT INTO identifier_log values ( \"$object_id\", 1, \"import\", \"" . $object->{'who'} . "\", \"" . $object->{'when'} ."\", 0, 1, NULL)";
+
+  $dbh->do($query) or $self->throw(DBERR);
+
+  # add secondary names
+  foreach my $name_type ( keys %{$object->{'names'}} ) {
+    foreach my $name ( @{$object->{'names'}->{"$name_type"}} ) {
+      $self->_addExistingName( $object_id,$name_type,$name );
+    }
+  }
+}
+
+sub _addExistingName {
+  my $self = shift;
+  my ($object_id, $name_type, $name) = @_;
+
+  return unless ($object_id and  $name_type and $name );
+
+  my $query = "INSERT INTO secondary_identifier (object_id, name_type_id, object_name) SELECT ".$object_id.", name_type_id, \"".$name."\" FROM name_type where name_type_name = \"".$name_type."\"";
+  my $dbh = $self->dbh;
+  my $sth = $dbh->prepare($query);
+  $sth->execute();
+}
+
+
+=item create_named_object
+
+$db->create_named_object($type,$name);
+
+use this to create a new object and name it immediately. If the naming is invalid
+the new object id will not be created.
 
 =cut
+
+sub create_named_object
+  {
+    my $self = shift;
+    my $type = shift;
+    my $name = shift;
+    my $domain = shift;
+    $domain  = $self->getDomain  unless defined $domain;
+    $domain  or $self->throw(BADDOM);
+
+    $self->throw("bad params to create_named_object") unless ($type and $name);
+
+    my $dbh = $self->dbh;
+    my $id;
+    $dbh->begin_work;
+    eval {
+      $id = $self->_idCreate(undef,$domain);
+      $self->_addName($id,$type,$name,$domain);
+      $dbh->commit;
+    };
+    if ($@) {
+      $dbh->rollback;
+      die $@;
+    }
+    return $id;
+  }
+
+
+#-------------------- public_id retrieval-----------------------
+=head2 Identifier Lookup
 
 sub idExists {
   my $self = shift;
@@ -628,7 +717,7 @@ sub idGetByTypedName {
   my ($type,$name,$domain) = @_;
   $domain  = $self->getDomain  unless defined $domain;
   $domain  or $self->throw(BADDOM);
-
+  
   my $query =<<END;
 select object_public_id
   from primary_identifier,secondary_identifier,domain,name_type
@@ -645,6 +734,7 @@ END
     or $self->throw(DBERR);
   _list_result(@$arrayref);
 }
+
 
 =item $ids = $db->idGetByAnyName($name [,$domain])
 
@@ -1175,7 +1265,7 @@ sub delName {
   local $dbh->{RaiseError} = 1;
   $dbh->begin_work;
   eval {
-    $self->_delName($public_id,$nametype,$name,$domain);
+    $self->_delName($public_id,$nametype,$name,undef,$domain);
     $dbh->commit;
   };
   if ($@) {
@@ -1327,6 +1417,7 @@ sub dbh {
   my ($dsn,$name,$password) = $self->{session} ? $self->_session() : @_;
   $name     ||= '';
   $password ||= '';
+
   my $db = eval { DBI->connect($dsn,$name,$password,{PrintError=>0,AutoCommit=>1})};
   my $connection_string        = $self->_session($dsn,$name,$password);
   $HANDLES{$connection_string} = $db;
@@ -1586,7 +1677,7 @@ END
   $dbh->do($query,undef,$id,$typeid,$name)
     or $self->throw(DBERR);
 
-  $dbh->_add_history('delName',$public_id,$nametype,$name,undef,$domain) unless $no_history;
+  $self->_add_history('delName',$public_id,$nametype,$name,undef,$domain) unless $no_history;
 }
 
 sub _internal_id {
@@ -1770,7 +1861,7 @@ CREATE TABLE IF NOT EXISTS identifier_log (
        log_version  int(11) not null,
        log_what	    enum('created','addName','changeName','delName',
 			'killed','resurrected','mergedTo','splitTo',
-			'mergedFrom','splitFrom'),
+			'mergedFrom','splitFrom','import','changeClass'),
        log_who	    char(80) not null,
        log_when	    timestamp not null,
        log_related_object int(11) default 1,
