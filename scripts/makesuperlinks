@@ -18,7 +18,7 @@ use Wormbase;
 ##############################
 
 my $help;       # Help perdoc
-my $db;         # Database name for databases other than /wormsrv1/camace
+my $db;         # Database name for databases other than /nfs/disk100/wormpub/DATABASES/camace
 my $debug;      # Debug mode, verbose output to dl1 only
 
 GetOptions (
@@ -54,7 +54,7 @@ our %clone2super = ("H06O01"  => "I",
 our $tace         =  &tace;
 
 
-my $campath = "/wormsrv1/camace";
+my $campath = "/nfs/disk100/wormpub/DATABASES/camace";
 ($campath = $db) if ($db ne "");
 
 warn "Acessing database $campath\n" if ($debug);
@@ -403,7 +403,7 @@ makesuperlinks mandatory arguments:
 
 =over 4
 
-=item none, (standard run using /wormsrv1/camace)
+=item none, (standard run using /nfs/disk100/wormpub/DATABASES/camace)
 
 =back
 

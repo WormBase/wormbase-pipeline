@@ -6,6 +6,7 @@
 # 28.2.2002 Kerstin Jekosch
 
 use strict;
+use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
 use Ace;
@@ -29,7 +30,7 @@ if (($help) || (!$link) || (!$coord)) {
 }
 
 my $dbdir;
-$dbdir   = '/wormsrv1/camace'   if ($camace);
+$dbdir   = '/nfs/disk100/wormpub/DATABASES/camace'   if ($camace);
 $dbdir   = '/wormsrv2/stlace'   if ($stlace);
 $dbdir   = '/wormsrv2/autoace/' if ($autoace);
 my $tace = &tace; 

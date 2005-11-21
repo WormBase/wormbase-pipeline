@@ -7,7 +7,7 @@
 # Usage: camcheck.pl
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2005-09-13 13:05:14 $
+# Last updated on: $Date: 2005-11-21 17:45:57 $
 #
 # see pod documentation (i.e. 'perldoc camcheck.pl') for more information.
 #
@@ -57,7 +57,7 @@ my $verbose = $opt_v;  # for specifying more output
 ##############################
 
 my $tace    = &tace;                            # tace executable path
-my $dbpath  = "/wormsrv1/camace";               # Database path
+my $dbpath  = "/nfs/disk100/wormpub/DATABASES/camace";               # Database path
 
 if ($opt_s) {
     $dbpath = $opt_s;
@@ -91,7 +91,7 @@ my $dbname = $dbpath;
 $dbname =~ s/.*camace(.*)/camace$1/;
 my $rundate = &rundate;
 my $runtime = &runtime;
-my $log="/wormsrv2/logs/camcheck.$dbname.$rundate.$$";
+my $log="/nfs/disk100/wormpub/logs/camcheck.$dbname.$rundate.$$";
 
 
 open (LOG,">$log") || die "Couldn't write to log file\n";
@@ -335,7 +335,7 @@ sub CheckPredictedGenes {
 
     close(LOG);
 
-    my $cpg_call = "/wormsrv2/scripts/check_predicted_genes.pl -database $dbpath -log $log";
+    my $cpg_call = "$ENV{'CVS_DIR'}check_predicted_genes.pl -database $dbpath -log $log";
     $cpg_call .= " -basic" if $opt_l;
     system("$cpg_call");
     warn "check_predicted_genes.pl did not run correctly: $?" if ($?);

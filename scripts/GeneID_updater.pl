@@ -8,7 +8,7 @@
 # Script also refreshes Protein_IDs in the chosen database from the latest build.
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2005-09-13 12:47:03 $
+# Last updated on: $Date: 2005-11-21 17:45:57 $
 
 use strict;                                      
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
@@ -62,6 +62,7 @@ if($debug){
 my $def_dir = "/nfs/disk100/wormpub/DATABASES/current_DB/wquery";
 my $tablemaker_query =  "${def_dir}/SCRIPT:GeneID_updater.pl.def";
 my $tablemaker_query2 = "${def_dir}/SCRIPT:HXcds2protID.def";
+my $canonical = "/nfs/disk100/wormpub/DATABASES/camace";
 
 # Select and check source databases.
 if ($sourceDB) {
@@ -75,7 +76,7 @@ if ($targetDB) {
 }
 elsif (!$targetDB) {
 #$targetDB = "/nfs/disk100/wormpub/camace_pad";
-$targetDB = "/wormsrv1/camace";
+$targetDB = "$canonical";
 }
 if ($proteinID) {
   $sourceDB2 ="/nfs/disk100/wormpub/DATABASES/current_DB";
@@ -131,7 +132,7 @@ close TACE;
 ####################################################################
 # make database connections for looping through elegans subclasses #
 # Method   : AcePerl                                               # 
-# TargetDB : /wormsrv1/camace                                      # 
+# TargetDB : /nfs/disk100/wormpub/DATABASES/camace                 # 
 ####################################################################
 
 print LOG "// Gathering data from $targetDB; Object Class and Name\n\n";
@@ -241,7 +242,7 @@ print OUT2 "protein_id	\"MTCE\"  \"CAA38162.1\"\n";
 print LOG "// upload file(s) complete\n";
 
 if (!defined ($update)) {
-  print LOG "// **You will have to manually load this data into /wormsrv1/camace.**\n";
+  print LOG "// **You will have to manually load this data into $canonical.**\n";
   print LOG "// **Also load /nfs/disk100/wormpub/camace_orig/geneID_patch.ace for the exceptions**\n\n";
 }
 
@@ -275,13 +276,13 @@ exit(0);
 sub create_log_files {
 
     # Create history logfile for script activity analysis
-    $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
+    $0 =~ m/\/*([^\/]+)$/; system ("touch /nfs/disk100/wormpub/logs/history/$1.`date +%y%m%d`");
 
     # create main log file using script name for
     my $script_name = $1;
     $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
     my $rundate     = `date +%y%m%d`; chomp $rundate;
-    $log        = "/wormsrv2/logs/$script_name.$rundate.$$";
+    $log        = "/nfs/disk100/wormpub/logs/$script_name.$rundate.$$";
 
     open (LOG, ">$log") or die "cant open $log";
     print LOG "$script_name\n";
@@ -340,10 +341,10 @@ __END__
 
 =back
 
-This script removes all prediction->WBGene id connections from a chosen target database and re-synchronises these connections with a chosen reference database.  Defaults are in place for routine updating of /wormsrv1/camace with data from wormsrv1/geneace.  The script can also populate the Public_name tags in the newly syncronised WBGene objects to aid curators when chosing which CDS should be renamed following a gene split event.  The script has also been modified to retrieve protein ids from the previous build and update these in a chosen target database ready for emnl dumping in the next build.
+This script removes all prediction->WBGene id connections from a chosen target database and re-synchronises these connections with a chosen reference database.  Defaults are in place for routine updating of /nfs/disk100/wormpub/DATABASES/camace with data from wormsrv1/geneace.  The script can also populate the Public_name tags in the newly syncronised WBGene objects to aid curators when chosing which CDS should be renamed following a gene split event.  The script has also been modified to retrieve protein ids from the previous build and update these in a chosen target database ready for emnl dumping in the next build.
 
 
-script_template.pl MANDATORY arguments:
+=head2 GeneID_updater.pl MANDATORY arguments:
 
 =over 4
 
@@ -351,13 +352,13 @@ script_template.pl MANDATORY arguments:
 
 =back
 
-Update_checker.pl  OPTIONAL arguments:
+GeneID_updater.pl  OPTIONAL arguments:
 
 =over 4
 
-=item -h, Help
+=item -h, Help.
 
-=item -dubug, supply your user ID any you will be the only person to recieve the Log email.
+=item -dubug, supply user ID to limit logs email distribution.
 
 =item -geneID, specifies that gene ids are to be updated.
 
@@ -377,9 +378,7 @@ Update_checker.pl  OPTIONAL arguments:
 
 =head1 REQUIREMENTS
 
-=over 4
-
-=item This script needs to run on a machine which can see the /wormsrv2 disk.
+=item Script needs /wormsrv2 for geneace only, will be resolved.
 
 =back
 

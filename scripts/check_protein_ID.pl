@@ -20,7 +20,7 @@
 #use strict;
 use Socket;
 use vars qw ($debug $seq_len $sv_acc $sv_ver);
-use lib '/wormsrv2/scripts';
+use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
 
 $|=1;
@@ -36,7 +36,7 @@ my %clone2id = "";
 my %acc2ver = "";
 
 my $tace = "/nfs/disk100/wormpub/ACEDB/bin_ALPHA/tace"; # tace executable path
-my $db = "/wormsrv1/camace";                            # Database path
+my $db = "/nfs/disk100/wormpub/DATABASES/camace";                            # Database path
 my $exec="$tace $db";     
 my $command=<<EOF;
 find Predicted_gene

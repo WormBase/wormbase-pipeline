@@ -6,11 +6,11 @@
 #
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2005-10-19 11:20:00 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2005-11-21 17:45:57 $
 
 use strict;
-use lib "/wormsrv2/scripts/";
+use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
 
@@ -44,10 +44,12 @@ our $log;
 # set database paths, default to autoace unless -camace
 my $blat_dir  = "/wormsrv2/autoace/BLAT";
 my $tace      = &tace ." /wormsrv2/autoace";
+my $logdir = "/nfs/disk100/wormpub/logs";
+my $canonical = "/nfs/disk100/wormpub/DATABASES/camace";
 
 if ($camace) {
-    $blat_dir  = "/wormsrv1/camace/BLAT";
-    $tace      = &tace." /wormsrv1/camace";
+    $blat_dir  = "$canonical/BLAT";
+    $tace      = &tace." $canonical";
 }
 
 #############################
@@ -594,7 +596,7 @@ sub usage {
 sub create_log_files{
 
   # Create history logfile for script activity analysis
-  $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`
+  $0 =~ m/\/*([^\/]+)$/; system ("touch $logdir/history/$1.`date +%y%m%d`
 ");
 
   # create main log file using script name for
@@ -602,7 +604,7 @@ sub create_log_files{
   $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
   my $WS_version = &get_wormbase_version_name;
   my $rundate = `date +%y%m%d`; chomp $rundate;
-  $log        = "/wormsrv2/logs/$script_name.${WS_version}.$rundate.$$";
+  $log        = "/$logdir/$script_name.${WS_version}.$rundate.$$";
 
   open (LOG, ">$log") or die "cant open $log";
   print LOG "$script_name\n";
@@ -643,51 +645,47 @@ blat2ace.pl  arguments:
 
 -intron => produce output for confirmed introns (autoace.ci.ace, camace.ci.ace)
 
-=item
+=item 
 
 -mrna => perform everything for mRNAs
 
-=back
-
-=item
+=item 
 
 -ncrna => perform everything for ncRNAs
-
-=back
 
 =item
 
 -est => perform everything for ESTs
 
-=back
-
 =item
 
 -ost => perform everything for OSTs
-
-=back
 
 =item
 
 -nematode => perform everything for non-C. elegans ESTs
 
-=back
-
 =item
 
 -nembase => perform everything for NemBase contigs
-
-=back
 
 =item
 
 -washu => perform everything for WashU Nematode.net - John Martin <jmartin@watson.wustl.edu> contigs
 
-=back
-
 =item
 
 -embl => perform everything for non-WormBase CDSs in EMBL
+
+=back
+
+=item script still relies upon /wormsrv connections for
+
+=back
+
+      /wormsrv2/autoace/BLAT directory
+      autoace itself.
+
 
 =back
 

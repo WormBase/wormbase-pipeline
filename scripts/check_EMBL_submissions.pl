@@ -7,11 +7,11 @@
 # clones. Entries which have failed to load or return are highlighted
 # and changes in sequence version are notified.
 
-# Last updated on: $Date: 2005-05-12 11:09:46 $
-# Last updated by: $Author: dl1 $
+# Last updated on: $Date: 2005-11-21 17:45:57 $
+# Last updated by: $Author: pad $
 
 # touch logfile for run details
-$0 =~ m/\/*([^\/]+)$/; system("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
+$0 =~ m/\/*([^\/]+)$/; system("touch /nfs/disk100/wormpub/logs/history/$1.`date +%y%m%d`");
 
 use strict;
 use Getopt::Std;
@@ -27,13 +27,13 @@ use vars qw/ $opt_d $opt_h $opt_f/;
 my $maintainer = "All";
 my $rundate = &rundate;
 my $runtime = &runtime;
-my $log="/wormsrv2/logs/check_EMBL_submissions.$rundate.$$";
+my $log="/nfs/disk100/wormpub/logs/check_EMBL_submissions.$rundate.$$";
 
  ########################################
  # Paths/variables etc                  #
  ########################################
 
-my $dbdir = glob "/wormsrv1/camace";
+my $dbdir = glob "/nfs/disk100/wormpub/DATABASES/camace";
 my $tace = &tace;
 my $submitted_file = "/nfs/disk100/wormpub/analysis/TO_SUBMIT/submitted_to_EMBL";
 
@@ -238,7 +238,7 @@ as reference for the entries submitted to the EBI.
 
 =back
 
-The log file at /wormsrv2/logs/check_EMBL_submissions.$$ contains the output
+The log file at /nfs/disk100/wormpub/DATABASES/logs/check_EMBL_submissions.$$ contains the output
 from the script. An example of this output is given below.
 
 C01G10        Submitted_to_EMBL       loaded          Sequence version unchanged

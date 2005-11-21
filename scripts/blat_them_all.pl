@@ -7,8 +7,8 @@
 # Gets sequences ready for blatting, blats sequences, processes blat output, makes confirmed introns
 # and virtual objects to hang the data onto
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2005-10-20 12:55:57 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2005-11-21 17:45:57 $
 
 
 use strict;
@@ -28,6 +28,7 @@ my ($help, $debug, $verbose, $est, $mrna, $ncrna, $ost, $nematode, $embl, $washu
 my $maintainers = "All";
 my $errors      = 0;
 my $bin         = "/wormsrv2/scripts";
+my $canonical = "/nfs/disk100/wormpub/DATABASES/camace";
 our $log;
 our $blat_dir   = "/wormsrv2/autoace/BLAT";    # default BLAT directory, can get changed if -camace used
 our $dbpath     = "/wormsrv2/autoace";         # default database location
@@ -78,8 +79,8 @@ GetOptions ("help"       => \$help,
 
 
 # set to camace or autoace
-$blat_dir = "/wormsrv1/camace/BLAT" if $camace;
-$dbpath   = "/wormsrv1/camace"      if $camace;
+$blat_dir = "$canonical/BLAT" if $camace;
+$dbpath   = "$canonical"      if $camace;
 our $seq  = "$blat_dir/autoace.fa";               
 
 # Help pod documentation
@@ -320,8 +321,8 @@ sub dump_dna {
   }
   else {
     $command  = "query find Sequence \"SUPERLINK*\"\n";
-    $command .= "show -a -f /wormsrv1/camace/BLAT/superlinks.ace\n";
-    $command .= "dna -f /wormsrv1/camace/BLAT/autoace.first\nquit\n";
+    $command .= "show -a -f $canonical/BLAT/superlinks.ace\n";
+    $command .= "dna -f $canonical/BLAT/autoace.first\nquit\n";
   }
   
   # tace dump chromosomal DNA and superlinks file
@@ -719,13 +720,13 @@ sub create_log_files{
 
 
   # Create history logfile for script activity analysis
-  $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
+  $0 =~ m/\/*([^\/]+)$/; system ("touch //nfs/disk100/wormpub/logs/history/$1.`date +%y%m%d`");
 
   # create main log file using script name for
   my $script_name = $1;
   $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
   my $rundate     = `date +%y%m%d`; chomp $rundate;
-  $log        = "/wormsrv2/logs/${script_name}.${WS_version}.${rundate}.$$";
+  $log        = "/nfs/disk100/wormpub/logs/${script_name}.${WS_version}.${rundate}.$$";
 
   open (LOG, ">$log") or die "cant open $log";
   print LOG "$script_name\n";
@@ -796,7 +797,7 @@ A wrapper script to generate blat data by:
 
 5) Producing virtual objects to 'hang' the data onto
 
-All output is stored in /wormsrv2/autoace/BLAT/ (or /wormsrv1/camace/BLAT/ if -camace
+All output is stored in /wormsrv2/autoace/BLAT/ (or /nfs/disk100/wormpub/DATABASES/camace/BLAT/ if -camace
 is specified)
 
 blat_them_all mandatory arguments:
@@ -888,7 +889,7 @@ start later by processing (and sorting/mapping) existing *.psl file
 
 =item -camace    
 
-Use /wormsrv1/camace rather than the default /wormsrv2/autoace
+Use nfs/disk100/wormpub/DATABASES/camace rather than the default /wormsrv2/autoace
 
 =back
 

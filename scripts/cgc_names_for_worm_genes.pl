@@ -7,8 +7,8 @@
 #
 # written by Keith Bradnam (based on locus2seq.pl)
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2005-01-11 14:49:17 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2005-11-21 17:45:57 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -46,7 +46,7 @@ our $stlouis_log; # for email to go to St. Louis
 our $cam_out = "/wormsrv2/autoace/acefiles/CAM_cgc_names_for_genes.ace";
 our $stl_out = "/wormsrv2/autoace/acefiles/STL_cgc_names_for_genes.ace";
 our $all_out = "/wormsrv2/autoace/acefiles/ALL_cgc_names_for_genes.ace";
-our $camace_dir = "/wormsrv1/camace";
+our $camace_dir = "/nfs/disk100/wormpub/DATABASES/camace";
 
 # use /wormsrv2/geneace as this is frozen, safer to do this than use /wormsrv1/geneace
 my $geneace_dir = "/wormsrv2/geneace";
@@ -134,14 +134,14 @@ exit(0);
 sub create_log_files{
 
   # Create history logfile for script activity analysis
-  $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
+  $0 =~ m/\/*([^\/]+)$/; system ("touch /nfs/disk100/wormpub/logs/history/$1.`date +%y%m%d`");
 
   # create main log file using script name for
   my $script_name = $1;
   $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
   my $rundate     = `date +%y%m%d`; chomp $rundate;
-  $log          = "/wormsrv2/logs/$script_name.$rundate.$$";
-  $stlouis_log  = "/wormsrv2/logs/$script_name.st_louis_data.txt";
+  $log          = "/nfs/disk100/wormpub/logs/$script_name.$rundate.$$";
+  $stlouis_log  = "/nfs/disk100/wormpub/logs/$script_name.st_louis_data.txt";
 
   open (LOG, ">$log") or die "cant open $log";
   print LOG "$script_name\n";
