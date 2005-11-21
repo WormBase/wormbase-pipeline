@@ -5,7 +5,7 @@
 # A script to make multiple copies of camace for curation, and merge them back again
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2005-10-03 14:16:27 $
+# Last edited on: $Date: 2005-11-21 15:00:48 $
 
 
 use strict;
@@ -59,7 +59,7 @@ push(@databases,"pad") if ($pad || $all);
 push(@databases,"gw3") if ($gw3 || $all);
 
 # directory paths
-our $current     = "/wormsrv1/camace";
+our $canonical = '/nfs/disk100/wormpub/DATABASES/camace';
 our $directory   = "/nfs/disk100/wormpub/camace_orig/WS${WS_version}-WS${WS_next}";
 our $camace_orig = "/nfs/disk100/wormpub/camace_orig";
 
@@ -93,16 +93,16 @@ if ($merge) {
   print "Phase 1 finished and all files can be found in $directory\n";
 }
 
-## (2) synchronises /wormsrv1/camace with the split versions ##
+## (2) synchronises Canonical Database with the split versions ##
 if ($update) {
   shift (@databases);
   &update_camace;
-  print "Phase 2 finished wormsrv1/camace is now updated\n";
+  print "Phase 2 finished $canonical is now updated\n";
 }
 
-## (3) TransferDB calls to move /wormsrv1/camace to the split databases ##
+## (3) TransferDB calls to move Canonical Database to the split databases ##
 if ($split) {
-  print "Removing old split databases and Copying /wormsrv1/database to the split camaces\n";
+  print "Removing old split databases and Copying $canonical database to the split camaces\n";
   shift (@databases);
   &split_databases;
   print "Phase 3 finished. All ~wormpub split camaces can now be used\n\nCheck all TransferDB log files for \"ended SUCCESSFULLY\"\n";
@@ -120,7 +120,7 @@ exit(0);
 
 #(1)dump files from camace splits#
 sub dump_camace {
-  #dumps out subset of classes from camace splits and processes the files to be loaded back to /wormsrv1/camace
+  #dumps out subset of classes from camace splits and processes the files to be loaded back to Canonical Database
   #array of classes to be dumped
   my $camace_path;
   my $path;
@@ -166,11 +166,11 @@ sub loadace {
   close TACE;
 }
 
-#(2a)upload data to wormsrv1/camace#
+#(2a)upload data to Canonical Database#
 sub update_camace {
-  # upload processed diff files into /wormsrv1/camace
-  print "Upload diff files to /wormsrv1/camace";
-  $ENV{'ACEDB'} = $current;
+  # upload processed diff files into Canonical Database.
+  print "Upload diff files to $canonical";
+  $ENV{'ACEDB'} = $canonical;
 
   foreach my $database (@databases) {
     foreach my $class (@classes) {
@@ -178,27 +178,29 @@ sub update_camace {
     }
   }
   # uplaod new mRNAs into camace
-  print "Upload new mRNAs in /wormsrv1/camace\n";
+  print "Upload new mRNAs in $canonical\n";
   &loadace("/nfs/disk100/wormpub/analysis/ESTs/elegans_mRNAs.ace",'NDB_data') or die "Failed to load new mRNA data";
   
   # upload BLAT results to database
-  print "Update BLAT results in /wormsrv1/camace\n";
-  system ("load_blat2db.pl -all -dbdir $current") && die "Failed to run load_blat2db.pl\n";
+  print "Update BLAT results in $canonical\n";
+  system ("load_blat2db.pl -all -dbdir $canonical") && die "Failed to run load_blat2db.pl\n";
 
-  #check wormsrv1/camace to see if there are any errors prior to the build starting.
+  #check Canonical Database to see if there are any errors prior to the build starting.
   system ("camcheck.pl") && die "Failed to run camcheck.pl\n";
 }
 
 #(3)Data dispersion#
 sub split_databases {
   # it has been decided that it is better to remove the database directory to make transfer db more stable #
-  # initialise camace_orig and copy data from wormsrv1/camace.
+  # initialise camace_orig and copy data from Canonical Database.
   system("rm -rf /nfs/disk100/wormpub/camace_orig/database") && die "Failed to remove camace_orig/database\n";
-  system ("TransferDB.pl -start /wormsrv1/camace -end $camace_orig -split -database -wspec -name camace_orig_WS$WS_version");
+  system ("TransferDB.pl -start $canonical -end $camace_orig -split -database -wspec -name camace_orig_WS$WS_version");
 
   #Do the same for each split database but transfer data from camace_orig.
   foreach my $database (@databases) {
+    print "Removing $database\n";
     system("rm -rf /nfs/disk100/wormpub/camace_${database}/database") && die "Failed to remove camace_${database}/database\n";
+    print "Transfering $canonical to camace_$database\n";
     system ("TransferDB.pl -start $camace_orig -end ~wormpub/camace_${database} -split -database -wspec -name camace_${database}_WS$WS_version");
   }
   print "CAMACE SPLITS UPDATED\n";
@@ -247,9 +249,9 @@ merge_split_camaces optional arguments:
 
 =item -merge, Generate diff files from split camace databases
  
-=item -update, Upload diff files to /wormsrv1/camace and add BLAT, Locus data
+=item -update, Upload diff files to ~wormpub/DATABASES/camace and add BLAT, Locus data
 
-=item -split, Transfer /wormsrv1/camace into split camace databases
+=item -split, Transfer ~wormpub/DATABASES/camace into split camace databases
 
 =item -help, Help page
 
@@ -261,7 +263,7 @@ merge_split_camaces optional arguments:
 
 =back
 
-merge_split_camaces must be able to see the /wormsrv1 disk
+merge_split_camaces has been divorced from the /wormsrv2 disk
 
 =head1 RUN OUTPUT:
 
