@@ -5,14 +5,14 @@
 # Cronjob integrity check controls for split camace databases.
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2005-09-13 13:03:02 $
+# Last updated on: $Date: 2005-11-21 15:51:14 $
 
 use strict;
-use lib "/wormsrv2/scripts/";
+use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
 use Wormbase;
 
 my $rundate = &rundate;
-my $log = "/wormsrv2/logs/check_split_camaces.$rundate.$$";
+my $log = "/nfs/disk100/wormpub/logs/check_split_camaces.$rundate.$$";
 my $path = "/nfs/disk100/wormpub";
 my $age = 1;
 my $maintainers = "All";
@@ -46,7 +46,7 @@ foreach my $user (@users) {
     }
     else{
       print LOG "running camcheck.pl\n\n";
-      system("/wormsrv2/scripts/camcheck.pl -s $path/camace_${user} -l -e $user");
+      system("$ENV{'CVS_DIR'}camcheck.pl -s $path/camace_${user} -l -e $user");
     }
   }
   else{
