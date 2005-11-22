@@ -4,8 +4,8 @@
 #
 # backup database and compare to last backed up database to look for lost data
 #
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2005-02-11 15:54:11 $      
+# Last updated by: $Author: pad $     
+# Last updated on: $Date: 2005-11-22 13:26:11 $      
 
 use strict;
 use lib -e '/wormsrv2/scripts' ? '/wormsrv2/scripts' : $ENV{'CVS_DIR'};
@@ -24,6 +24,7 @@ our $backup_dir = "/nfs/disk100/wormpub/DATABASES/BACKUPS";
 our $maintainers = "All";
 our $date = `date +%y%m%d`; chomp $date;
 my $exec        = &tace;
+my $return;
 
 GetOptions (
 	    "help"           => \$help,
@@ -123,7 +124,12 @@ sub find_and_make_backups{
     # keep TransferDB logs in backup directory
     chdir("$backup_dir") || print LOG "Couldn't cd to $backup_dir\n";
     print LOG "Making new backup - ${db}_backup\.${date}\n";
-    my $return = system("/wormsrv2/scripts/TransferDB.pl -start /wormsrv1/$db -end ${backup_dir}/${db}_backup\.${date} -database -wspec -name ${db}\.${date}"); 
+    if($db eq "genace") {
+      my $return = system("/wormsrv2/scripts/TransferDB.pl -start /wormsrv1/$db -end ${backup_dir}/${db}_backup\.${date} -database -wspec -name ${db}\.${date}"); 
+    }
+    elsif($db eq "camace") {
+      my $return = system("$ENV{'CVS_DIR'}/TransferDB.pl -start /nfs/disk100/wormpub/DATABASES/$db -end ${backup_dir}/${db}_backup\.${date} -database -wspec -name ${db}\.${date}");
+    }
     if($return != 0){
       print LOG "ERROR: Couldn't run TransferDB.pl correctly.  Check log\n";
       close(LOG);
@@ -184,13 +190,13 @@ sub compare_backups{
 
 sub create_log_files{
   # Create history logfile for script activity analysis
-  $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
+  $0 =~ m/\/*([^\/]+)$/; system ("touch /nfs/disk100/wormpub/logs/history/$1.`date +%y%m%d`");
 
   # create main log file using script name for
   my $script_name = $1;
   $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
   my $rundate     = `date +%y%m%d`; chomp $rundate;
-  $log        = "/wormsrv2/logs/$script_name.$rundate.$$";
+  $log        = "/nfs/disk100/wormpub/logs/$script_name.$rundate.$$";
 
   open (LOG, ">$log") or croak "cant open $log";
   print LOG "=============================================\n";
