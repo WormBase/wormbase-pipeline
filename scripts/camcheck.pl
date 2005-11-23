@@ -7,7 +7,7 @@
 # Usage: camcheck.pl
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2005-11-21 17:45:57 $
+# Last updated on: $Date: 2005-11-23 16:36:19 $
 #
 # see pod documentation (i.e. 'perldoc camcheck.pl') for more information.
 #
@@ -335,7 +335,7 @@ sub CheckPredictedGenes {
 
     close(LOG);
 
-    my $cpg_call = "$ENV{'CVS_DIR'}check_predicted_genes.pl -database $dbpath -log $log";
+    my $cpg_call = "$ENV{'CVS_DIR'}/check_predicted_genes.pl -database $dbpath -log $log";
     $cpg_call .= " -basic" if $opt_l;
     system("$cpg_call");
     warn "check_predicted_genes.pl did not run correctly: $?" if ($?);
