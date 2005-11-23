@@ -5,7 +5,7 @@
 # backup database and compare to last backed up database to look for lost data
 #
 # Last updated by: $Author: pad $     
-# Last updated on: $Date: 2005-11-22 13:26:11 $      
+# Last updated on: $Date: 2005-11-23 11:24:04 $      
 
 use strict;
 use lib -e '/wormsrv2/scripts' ? '/wormsrv2/scripts' : $ENV{'CVS_DIR'};
@@ -24,7 +24,6 @@ our $backup_dir = "/nfs/disk100/wormpub/DATABASES/BACKUPS";
 our $maintainers = "All";
 our $date = `date +%y%m%d`; chomp $date;
 my $exec        = &tace;
-my $return;
 
 GetOptions (
 	    "help"           => \$help,
@@ -33,7 +32,10 @@ GetOptions (
 	    "just_compare=s" => \$just_compare,
 	   );
 
-
+my %dblocations = (
+		   "geneace" => "/wormsrv2/geneace",
+		   "camace" => "/nfs/disk100/wormpub/DATABASES/camace",
+		  );
 
 # Check for mandatory/correct command line options
 &check_options($db);
@@ -124,12 +126,7 @@ sub find_and_make_backups{
     # keep TransferDB logs in backup directory
     chdir("$backup_dir") || print LOG "Couldn't cd to $backup_dir\n";
     print LOG "Making new backup - ${db}_backup\.${date}\n";
-    if($db eq "genace") {
-      my $return = system("/wormsrv2/scripts/TransferDB.pl -start /wormsrv1/$db -end ${backup_dir}/${db}_backup\.${date} -database -wspec -name ${db}\.${date}"); 
-    }
-    elsif($db eq "camace") {
-      my $return = system("$ENV{'CVS_DIR'}/TransferDB.pl -start /nfs/disk100/wormpub/DATABASES/$db -end ${backup_dir}/${db}_backup\.${date} -database -wspec -name ${db}\.${date}");
-    }
+    my $return = system("$ENV{'CVS_DIR'}/TransferDB.pl -start $dblocations{$db} -end ${backup_dir}/${db}_backup\.${date} -database -wspec -name ${db}\.${date}");
     if($return != 0){
       print LOG "ERROR: Couldn't run TransferDB.pl correctly.  Check log\n";
       close(LOG);
@@ -151,7 +148,7 @@ sub find_and_make_backups{
 
 sub compare_backups{
   my $db = shift;
-  
+
   # $db1 = most recent database, $db2 = next recent
   my $db1 = "${backup_dir}/${db}_backup\.${date}";
   my $db2 = "${backup_dir}/${db}_backup\.${backups[0]}";
@@ -234,7 +231,7 @@ EOF
   open (COUNT, ">$out") || croak "Couldn't write to tmp file: $out\n";
 
   # open tace connection and count how many objects in that class
-  open (TACE, "echo '$command' | $exec $db1 | ");
+  open (TACE, "echo '$command' | $exec $db1 | ") or die "Failed to open $db1:$!\n";
   while (<TACE>) {
     ($class_count1 = $1) if (/^\/\/ (\d+) Active Objects/);
     (print COUNT "$_") if (/\:/); # Add list of object to temp file
@@ -251,7 +248,7 @@ EOF
   open (COUNT, ">$out") || croak "Couldn't write to tmp file: $out\n";
 
   # open tace connection and count how many objects in that class
-  open (TACE, "echo '$command' | $exec $db2 | ");
+  open (TACE, "echo '$command' | $exec $db2 | ")or die "Failed to open $db2:$!\n";
   while (<TACE>) {
     ($class_count2 = $1) if (/^\/\/ (\d+) Active Objects/);
     (print COUNT "$_") if (/\:/); # Add list of object to temp file
