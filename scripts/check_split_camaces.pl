@@ -5,7 +5,7 @@
 # Cronjob integrity check controls for split camace databases.
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2005-11-21 15:51:14 $
+# Last updated on: $Date: 2005-11-23 11:46:25 $
 
 use strict;
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
@@ -46,7 +46,7 @@ foreach my $user (@users) {
     }
     else{
       print LOG "running camcheck.pl\n\n";
-      system("$ENV{'CVS_DIR'}camcheck.pl -s $path/camace_${user} -l -e $user");
+      system("$ENV{'CVS_DIR'}/camcheck.pl -s $path/camace_${user} -l -e $user");
     }
   }
   else{
