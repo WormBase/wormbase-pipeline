@@ -7,12 +7,12 @@
 #
 #        FILES:  ---
 #         BUGS:  ---
-#        NOTES:  ---
+#        NOTES: heavily depending on some structs as explained in perldoc 
 #      $Author: mh6 $
 #      COMPANY:  
 #     $Version:  $
 #      CREATED:  14/11/05 14:33:43 GMT
-#        $Date: 2005-11-16 11:21:56 $
+#        $Date: 2005-11-23 16:55:11 $
 #===============================================================================
 package Map_Helper;
 
@@ -82,21 +82,51 @@ sub map_it {
             else {
                 my %added_exons;
                 foreach my $exon ( @{ $$genes{$gene}->exons } ) {
-                    if ( $PCRstart > $exon->stop 
-                      ||  $PCRstop < $exon->start ) {
-                        next
-                          if $added_exons{ $exon->type . $exon->id };
+                    if ( $PCRstart <= $exon->stop 
+                      &&  $PCRstop >= $exon->start ) {
+                          next if $added_exons{ $exon->type . $exon->id };
                           push @{ $$output{$testPCR} }, $exon;
                           $added_exons{ $exon->type . $exon->id } = 1;
-                      }
+                     }
                 }
             }
         }
     }
 }
 
+#########################
+# map_it using SQL
+sub map_it2 {
+# actually should be %output,%query,$chromosome,@types
+	my ($output,$query,$chromosomes,$types)=@_;
+	foreach my $qid ( keys %$query ) {
+		my @goods;
+        	my $start = $$query{$qid}->[0];
+        	my $stop  = $$query{$qid}->[1];
+		# grab between start+stop on chromosome
+	#	my @hits = get_chr($chromosome,{'start' => $start,'stop' => $stop,'feature' => 'curated','source' => 'exon'});
+		# needs to be more generic
+
+		# cleanup fluff
+		# $fluff =~ /(\w+) \"(\S+)\"/ );
+		# $1 = type, $2= id
+	}
+}
 
 1;
+
+
+#######################
+# gff description line extraction
+#
+
+sub desc_line{
+	my ($line)=@_;
+	$line=~/(\w+) \"(\S+)\"/;
+	my $type=$1;
+	my $id  =$2;
+	return ($id,$type);
+}
 
 __END__
 
