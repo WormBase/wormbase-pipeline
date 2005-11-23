@@ -70,7 +70,7 @@ while ( my $gene = $WBGenes->next ) {
 
   my $cgc_name  = $gene->CGC_name->name        if $gene->CGC_name;
   my $seq_name  = $gene->Sequence_name->name   if $gene->Sequence_name;
-  my $live      = defined ($gene->at('Status.Live')) ? 1 : 0 ;
+  my $live      = ($gene->Status eq "Live") ? 1 : 0 ;
   my @mol_names = map($_->name,$gene->Molecular_name) if $gene->Molecular_name;
   my @CDS_names = map($_->name,$gene->Corresponding_CDS) if $gene->Corresponding_CDS;
 
