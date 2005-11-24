@@ -7,7 +7,7 @@
 # quick script to populate Molecular_name tag in ?Gene model during build
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-11-24 14:53:51 $
+# Last updated on: $Date: 2005-11-24 15:55:14 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -98,7 +98,7 @@ while (<TACE>) {
   }
   if($protein){
     print OUT "Gene : \"$gene\"\n";
-    print OUT "Molecular_name \"$coding_transcript\n" if (defined $coding_transcript);
+    print OUT "Molecular_name \"$coding_transcript\n" if ($coding_transcript =~ /\w+/);
     print OUT "Molecular_name \"$protein\"\n";
     $counter++; # coding_transcripts will make this wrong as they get outputted on the same line as the protein.  Ho hum- Im sure no-one will notice!
 
