@@ -686,7 +686,7 @@ sub create_named_object
 
 
 #-------------------- public_id retrieval-----------------------
-=head2 Identifier Lookup
+#=head2 Identifier Lookup
 
 sub idExists {
   my $self = shift;
@@ -1786,6 +1786,30 @@ sub _list_result {
     return wantarray ? @values : \@values;
   }
 }
+
+
+# updates the last identifier for given domain - useful when adding objects to initialised database.
+sub refresh_last_identifier
+  {
+    my $self = shift;
+    my $dbh = $self->dbh;
+    my $domain = shift;;
+    $domain    = $self->getDomain unless $domain;
+    my $domain_id = $self->getDomainId($domain);
+    my $query = " select object_id from primary_identifier where domain_id=? order by object_id desc limit 1";
+    my $last_object = $self->dbh->selectcol_arrayref($query,undef, $domain_id);
+
+    if( $last_object ){
+my $query =<<END;
+insert into last_identifier
+  values (?,?)
+END
+      $query = 'INSERT INTO last_identifier VALUES(?,?)';
+      my $result = $dbh->do($query,undef,$domain_id,$last_object->[0]);
+      return $last_object->[0];
+    }
+  }
+
 
 1;
 
