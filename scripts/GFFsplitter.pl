@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2005-11-07 16:28:32 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2005-11-24 17:52:57 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -366,24 +366,6 @@ sub create_log_files{
   print LOG "\n";
 
 }
-
-##########################################
-
-
-sub file_size {
-    my $file = shift;
-    my $file_length;
-    open (FILE_SIZE, "/bin/cat $file | wc -l |");
-    while (<FILE_SIZE>) {
-	chomp;
-	s/\s//g;
-	$file_length = $_;
-    }
-    close FILE_SIZE;
-    print LOG "Counting No. of lines in file '$file' : $file_length\n" if ($debug);
-    return $file_length;
-}
-
 
 ##########################################
 sub usage {
