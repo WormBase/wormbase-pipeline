@@ -1,7 +1,6 @@
 #author ar2
 package NameDB_handler;
 
-use lib "/nfs/WWWdev/SANGER_docs/cgi-bin/Projects/C_elegans/lib";
 use NameDB;
 our @ISA = qw( NameDB );
 
@@ -42,6 +41,12 @@ sub add_name
     my $name = shift;
     my $type = shift;
     eval {
+      #if this is a new isoform we want to check it matches existing CDS names ie dont add ABC.1a to CDE.2
+      if( $type eq "CDS") {
+	my $seq_name = $self->idTypedNames($id,'Sequence');
+	die "$name is not an isoform of $seq_name->[0]\n" unless ($name =~ /$seq_name->[0]/);
+	# all is well -> add the name
+      }
       $self->addName($id,$type => $name);
     };
     if ($@) {
@@ -58,7 +63,7 @@ sub isoform_exists
       $id = $self->idGetByTypedName($type,$1);
       if ( $id->[0] ) {
 	print "adding $name as an isoform of ".$id->[0]."<BR>";
-	$self->addTypeName($id->[0],"$type => $name");
+	$self->addName($id->[0],"$type => $name");
       }
     }
   }
@@ -149,5 +154,26 @@ sub print_history {
     print $event->{user},"<br>";
   }
 }
+
+
+sub remove_all_names
+  {
+    my $self = shift;
+    my $id = shift;
+    my %names = $self->idAllNames($id);
+    foreach my $name_type (keys %names) {
+      if( ref $names{$name_type} eq 'ARRAY' ) {
+	foreach my $name ( @{$names{$name_type}} ){
+	  print "$name_type : $name\n";
+	  $self->delName($id,$name_type, $name);
+	}
+      }
+      else {
+	print "$name_type : $names{$name_type}\n";
+	$self->delName($id,$name_type, $names{$name_type});
+      }
+    }
+  }
+
 
 1;
