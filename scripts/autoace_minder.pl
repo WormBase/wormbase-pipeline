@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2005-10-20 14:26:52 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2005-11-24 10:14:52 $
 
 
 
@@ -1095,6 +1095,8 @@ sub parse_homol_data {
 		    "swissproteins.ace",
 		    "tremblproteins.ace",
 		    "brigpep.ace",
+		    "worm_pep_interpro_motif_info.ace",
+		    "worm_brigpep_interpro_motif_info.ace",
 		    #other data
 		    "repeat_homologies.ace",
 		    "waba.ace",
@@ -1400,6 +1402,13 @@ sub load {
   unless (-e "$file"){
     $errors++;
     print LOG "ERROR: Couldn't find file named: $file\n";    
+    # set flag to skip loading step
+    $flag = 1;
+  }
+
+  if( -z $file) {
+    $errors++;
+    print LOG "ERROR: $file is empty\n";    
     # set flag to skip loading step
     $flag = 1;
   }
