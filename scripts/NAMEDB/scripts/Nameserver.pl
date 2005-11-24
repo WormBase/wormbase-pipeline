@@ -242,13 +242,12 @@ sub is_authorised {
 	}
 }
 #################################################################
-sub merge_genes {
-	my ($merge_id,$gene_id) = @_;
+sub merge_genes 
+  {
+    my ($merge_id,$gene_id) = @_;
 
-
-	unless ($merge_id && $gene_id){
-
-		print qq(
+    unless ($merge_id && $gene_id){
+      print qq(
 		<h3>Merge two existing WBGenes</h3>
 		<form action="$ENV{'SCRIPT_NAME'}" method="GET">
 		<BR><BR>
@@ -263,20 +262,26 @@ sub merge_genes {
     	</form>
 		);
  
-	} else {
+    } else {
 	
-		my $db = get_db_connection();
-		$db->validate_id($gene_id);
-		$db->validate_id($merge_id);
-		if ($db->idMerge($merge_id,$gene_id)) {
-			print "OK, merged gene $merge_id into gene $gene_id<br>";
-		} else {
-			print "Sorry, the gene merge failed<br>";
-		}
-		send_mail("webserver",$MAIL_NOTIFY_LIST,"Merge gene", "$SSO_USER merged a gene (merged gene $merge_id into gene $gene_id)");
+      my $db = get_db_connection();
+      $db->validate_id($gene_id);
+      $db->validate_id($merge_id);
 		
-	}
-}
+      #remove all gene names for eaten gene
+      $db->remove_all_names($merge_id);
+	
+      #do the merge
+      if ($db->idMerge($merge_id,$gene_id)) {
+	print "OK, merged gene $merge_id into gene $gene_id<br>";
+	#notify
+	send_mail("webserver",$MAIL_NOTIFY_LIST,"Merge gene", "$SSO_USER merged a gene (merged gene $merge_id into gene $gene_id)");
+      } else {
+	print "Sorry, the gene merge failed<br>";
+      }
+    }
+  }
+
 
 #################################################################
 sub split_gene {
@@ -329,7 +334,7 @@ sub kill_gene {
 		from the database
 		<INPUT TYPE="hidden" NAME="action" VALUE="kill_gene">
 		<br><br>
-		<INPUT TYPE="submit" VALUE="Delete" onClick="return validate_delete()">
+		<INPUT TYPE="submit" VALUE="Kill" onClick="return validate_delete()">
 		<input type="reset" value="Clear Form" />		
 		</form>
 		);
@@ -339,7 +344,7 @@ sub kill_gene {
 		my $db = get_db_connection();
 		$db->validate_id($gene_id);
 		if ($db->idKill($gene_id)){
-			print qq(Gene "$gene_id" has been deleted <br>) 
+			print qq(Gene "$gene_id" has been killed <br>) 
 		}
 		
 		send_mail("webserver",$MAIL_NOTIFY_LIST,"Delete (kill) gene", "$SSO_USER removed a gene (name $gene_id)");
