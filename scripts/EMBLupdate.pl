@@ -17,8 +17,8 @@
 #       3) Copy the version to ~wormpub/analysis/TO_SUBMIT.  
 #
 #
-# Last updated by: $Author: dl1 $     
-# Last updated on: $Date: 2003-12-09 16:16:02 $      
+# Last updated by: $Author: pad $     
+# Last updated on: $Date: 2005-11-24 12:50:10 $      
 
 
 use strict;
@@ -60,7 +60,7 @@ die "$file does not exist\n\n" if (! -e $file);
 
 # Set up top level base directory which is different if in test mode
 # Make all other directories relative to this
-my $basedir   = "/wormsrv2";
+my $basedir   = "/nfs/disk100/wormpub";
 $basedir      = glob("~wormpub")."/TEST_BUILD" if ($test); 
 
 
@@ -103,7 +103,7 @@ while (<IN>) {
     #------------------------------------
     # Get the current date for the cosmid
     #
-    open(CURRENT, "grep ^$cosmid\/  /nfs/disk100/wormpub/analysis/cosmids/current.versions  |"); 
+    open(CURRENT, "grep ^$cosmid\/  $basedir/analysis/cosmids/current.versions  |"); 
     my $date;
     while (<CURRENT>) {
       if (/^\S+\/(\d+)/) { 
@@ -120,15 +120,15 @@ while (<IN>) {
     # If there never has been a cosmid entry so far then may wish to make one
     #
     
-    if (!-e "/nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.embl") {
+    if (!-e "$basedir/analysis/cosmids/$cosmid/$date/embl/$cosmid.embl") {
       print "This cosmid has not been submitted before\n";
       print "Shall I make a $cosmid.embl file and make this the $cosmid.current.file and submit? (y or n)\n";
       my $answer=<STDIN>;
       if ($answer eq "y\n") {
-	my $status = copy("temp$$", "/nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.embl");
+	my $status = copy("temp$$", "$basedir/analysis/cosmids/$cosmid/$date/embl/$cosmid.embl");
 	print LOG "ERROR: Couldn't copy file: $!\n" if ($status == 0);
-	system "ln -s /nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.embl /nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.current.embl";
-	copy("temp$$", "/nfs/disk100/wormpub/analysis/TO_SUBMIT/$cosmid.$datestamp.embl");	 
+	system "ln -s $basedir/analysis/cosmids/$cosmid/$date/embl/$cosmid.embl $basedir/analysis/cosmids/$cosmid/$date/embl/$cosmid.current.embl";
+	copy("temp$$", "$basedir/analysis/TO_SUBMIT/$cosmid.$datestamp.embl");	 
 	print LOG "ERROR: Couldn't copy file: $!\n" if ($status == 0);
       } 
       else {
@@ -143,7 +143,7 @@ while (<IN>) {
     # place - if not quit now and sort this out 	
     #
 
-    if (-e "/nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.current.embl"){ 
+    if (-e "$basedir/analysis/cosmids/$cosmid/$date/embl/$cosmid.current.embl"){ 
       print "Current file for $cosmid found (number $cosnum)\n";
     } 
     else {
@@ -169,10 +169,10 @@ while (<IN>) {
     # Report the change and place in TO_SUBMIT directory. 
 
     if ($compare==1) {
-      my $status = copy("temp$$", "/nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.$datestamp.embl");
+      my $status = copy("temp$$", "$basedir/analysis/cosmids/$cosmid/$date/embl/$cosmid.$datestamp.embl");
       print LOG "ERROR: Couldn't copy file: $!\n" if ($status == 0);
-      system "ln -fs /nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.$datestamp.embl /nfs/disk100/wormpub/analysis/cosmids/$cosmid/$date/embl/$cosmid.current.embl";
-      $status = move("temp$$", "/nfs/disk100/wormpub/analysis/TO_SUBMIT/$cosmid.$datestamp.embl");
+      system "ln -fs $basedir/analysis/cosmids/$cosmid/$date/embl/$cosmid.$datestamp.embl $basedir/analysis/cosmids/$cosmid/$date/embl/$cosmid.current.embl";
+      $status = move("temp$$", "$basedir/analysis/TO_SUBMIT/$cosmid.$datestamp.embl");
       print LOG "ERROR: Couldn't move file: $!\n" if ($status == 0);
       print "$cosmid should be resubmitted and is in TO_SUBMIT.\n";
     } 
@@ -198,7 +198,7 @@ exit(0);
 #
 sub detectdifference {		 
   my $difference = 0;
-  open (DIFFOUT,"diff temp$$ /nfs/disk100/wormpub/analysis/cosmids/$_[0]/$_[1]/embl/$cosmid.current.embl |");
+  open (DIFFOUT,"diff temp$$ $basedir/analysis/cosmids/$_[0]/$_[1]/embl/$cosmid.current.embl |");
   while (<DIFFOUT>) {
     if ($_ ne "") {
       $difference=1;

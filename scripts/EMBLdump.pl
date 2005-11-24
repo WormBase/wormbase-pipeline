@@ -2,7 +2,7 @@
 #
 # EMBLDump.pl :  makes EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2005-08-08 14:41:18 $
+#  Last updated on: $Date: 2005-11-24 12:50:10 $
 #  Last updated by: $Author: pad $
 
 use strict;
@@ -22,7 +22,7 @@ GetOptions (
 	    );
 
 
-my $basedir     = "/wormsrv2";
+my $basedir     = "/nfs/disk100/wormpub";
 $basedir        = glob("~wormpub")."/TEST_BUILD" if ($test); 
 
 ###############################
@@ -30,16 +30,16 @@ $basedir        = glob("~wormpub")."/TEST_BUILD" if ($test);
 ###############################
 
 my $giface         = &giface;
-my $dbdir          = "$basedir/camace";
+my $dbdir          = "$basedir/DATABASES/camace";
 my $tace           = &tace;
-my $outfilename    = "/nfs/disk100/wormpub/tmp/EMBLdump.$$";
-my $current_DB     = "/nfs/disk100/wormpub/DATABASES/current_DB";
-my $mod_file       = "/nfs/disk100/wormpub/tmp/EMBLdump.mod";
+my $outfilename    = "$basedir/tmp/EMBLdump.$$";
+my $current_DB     = "$basedir/DATABASES/current_DB";
+my $mod_file       = "$basedir/tmp/EMBLdump.mod";
 
 if ($test) {
     $giface        = glob("~edgrif/TEST/DAN/giface");
-    $outfilename   = "/nfs/disk100/wormpub/test/EMBLdump.$$";
-    $mod_file      = "/nfs/disk100/wormpub/test/EMBLdump.mod";
+    $outfilename   = "$basedir/test/EMBLdump.$$";
+    $mod_file      = "$basedir/test/EMBLdump.mod";
 }
 
 #########################
