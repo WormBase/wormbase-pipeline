@@ -9,13 +9,13 @@
 # 020123 : dan : modified to make a report file, gzip the EMBL entry
 #                after submission and use Perl5.6 with strict
 #
-# Last updated by: $Author: dl1 $                      
-# Last updated on: $Date: 2003-07-28 12:33:03 $        
+# Last updated by: $Author: pad $                      
+# Last updated on: $Date: 2005-11-24 12:31:53 $        
 
 $|=1;
 use strict;
 use Getopt::Long;
-use lib "/wormsrv2/scripts/";   
+use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
 
 my $submitdir = "/nfs/disk100/wormpub/analysis/TO_SUBMIT";
