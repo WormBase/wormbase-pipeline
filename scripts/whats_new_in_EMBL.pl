@@ -7,7 +7,7 @@
 # checks EMBL for new EST or mRNA entries
 #
 # Last updated by: $Author: pad $                      
-# Last updated on: $Date: 2005-11-08 12:23:34 $        
+# Last updated on: $Date: 2005-11-24 11:32:02 $        
 
 use strict;
 use Getopt::Long;
@@ -22,7 +22,6 @@ use Modules::Features;
 
 my ($help, $debug, $days);
 my $maintainers = "All";
-our $log;
 my $getz   = "/usr/local/pubseq/bin/getzc"; # getz binary
 
 GetOptions ("help"     => \$help,
@@ -38,7 +37,7 @@ if ($debug) {
     ($maintainers = $debug . '\@sanger.ac.uk');
 }
 
-&create_log_files;
+my $log = Log_files->make_build_log($debug);
 
 #########################
 ## MAIN BODY OF SCRIPT ##
@@ -271,16 +270,14 @@ print "There are $new_EMBL_CDS new C. elegans non-WormBase CDS entries since $da
 # mail $maintainer report    #
 ##############################
 
-print LOG "New EMBL sequence entries created since: $date\n";
-print LOG "$new_elegans_mRNA new C. elegans mRNA entries\n";
-print LOG "$new_elegans_EST new C. elegans EST entries\n";
-print LOG "$non_elegans_ESTs new non-C. elegans nematode ESTs\n";
-print LOG "$new_EMBL_CDS new C. elegans non-WormBase CDS entries\n";
+$log->write_to("New EMBL sequence entries created since: $date\n");
+$log->write_to("$new_elegans_mRNA new C. elegans mRNA entries\n");
+$log->write_to("$new_elegans_EST new C. elegans EST entries\n");
+$log->write_to("$non_elegans_ESTs new non-C. elegans nematode ESTs\n");
+$log->write_to("$new_EMBL_CDS new C. elegans non-WormBase CDS entries\n");
 
 
-close LOG;
-
-&mail_maintainer("BUILD REPORT: whats new in EMBL",$maintainers,$log);
+$log->mail();
 
 
 ##############################
@@ -292,27 +289,6 @@ exit(0);
 ##############################
 # subroutines                #
 ##############################
-
-
-sub create_log_files{
-
-  # Create history logfile for script activity analysis
-  $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
-
-  # create main log file using script name for
-  my $script_name = $1;
-  $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
-  my $rundate     = `date +%y%m%d`; chomp $rundate;
-  $log        = "/wormsrv2/logs/$script_name.$rundate.$$";
-  open (LOG, ">$log") or die "cant open $log";
-  print LOG "$script_name\n";
-  print LOG "started at ",`date`,"\n";
-  print LOG "=============================================\n";
-  print LOG "\n";
-
-}
-
-##########################################
 
 sub usage {
   my $error = shift;
@@ -363,7 +339,7 @@ sub get_date {
     my $last_release_date = &get_wormbase_release_date("short");
     
     print "Last release date was $last_release_date\n" if $debug;
-    print LOG "\nLast release date was $last_release_date\n";
+    $log->write_to("\nLast release date was $last_release_date\n");
 
     my ($day, $month, $year) = split(/\//,$last_release_date);
     $month--;
@@ -380,7 +356,7 @@ sub get_date {
     $start_year += 1900;
 
     print     "Therefore last build started roughly $start_day/$start_month/$start_year\n" if $debug;
-    print LOG "Therefore last build started roughly $start_day/$start_month/$start_year\n\n";
+    $log->write_to("Therefore last build started roughly $start_day/$start_month/$start_year\n\n");
     
     $date  = "$start_year"."$start_month"."$start_day";
     
