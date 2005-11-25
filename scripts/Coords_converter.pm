@@ -447,4 +447,29 @@ sub Coords_2chrom_coords
   }
 
 
+=head2 Superlink_length
+
+    Title   :   Superlink_length
+    Usage   :   $coords->Superlink_length("SUPERLINK_RWXL");
+    Function:   returns the length of the specified superlink
+    Returns :   length of superlink
+    Args    :   name of superlink
+
+=cut
+
+sub Superlink_length
+  {
+    my ($self, $seq) = @_;
+    my $len = undef;
+
+    if($seq =~ /SUPERLINK/ ) {
+      my $chrom = $self->seq_obj_to_chrom($seq);
+      $len = $self->{"$chrom"}->{'SUPERLINK'}->{$seq}->[1] - 
+	     $self->{"$chrom"}->{'SUPERLINK'}->{$seq}->[0] + 1;
+    }
+
+    return $len;
+  }
+
+
 return 1;
