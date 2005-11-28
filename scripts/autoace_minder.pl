@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2005-11-24 10:14:52 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2005-11-28 15:28:49 $
 
 
 
@@ -552,11 +552,11 @@ sub prepare_primaries {
   system("touch $logdir/$flag{'A3'}");
 
   if($test){
-    print LOG "WARNING: Can't transfer geneace and camace from /wormsrv1.  You will have to do that by hand!\n";  
+    print LOG "WARNING: Can't transfer /wormsrv1/geneace and /nfs/disk100/wormpub/DATABASES/camace.  You will have to do that by hand!\n";  
   }
   else{
-    # transfer /wormsrv1/camace to $basedir/camace 
-    &run_command("$scriptdir/TransferDB.pl -start /wormsrv1/camace -end $basedir/camace -database");
+    # transfer /nfs/disk100/wormpub/DATABASES/camace to $basedir/camace 
+    &run_command("$scriptdir/TransferDB.pl -start /nfs/disk100/wormpub/DATABASES/camace -end $basedir/camace -database");
     # transfer /wormsrv1/geneace to $basedir/geneace 
     &run_command("$scriptdir/TransferDB.pl -start /wormsrv1/geneace -end $basedir/geneace -database");
   }
