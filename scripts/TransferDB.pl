@@ -4,8 +4,8 @@
 #
 # by ag3 [991221]
 #
-# Last updated on: $Date: 2005-10-21 15:39:58 $
-# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2005-11-28 09:36:36 $
+# Last updated by: $Author: pad $
 
 # transferdb moves acedb database files across filesystems.
 # Creates a temporary database.BCK 
@@ -87,7 +87,7 @@ my $log;
 my $maintainers = "All";
 
 # Set top level path for build, different if in test mode
-my $basedir   = "/wormsrv2";
+my $basedir   = "/nfs/disk100/wormpub";
 $basedir   = glob("~wormpub")."/TEST_BUILD" if ($test); 
 
 # Use debug mode?
