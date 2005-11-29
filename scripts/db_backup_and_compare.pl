@@ -5,7 +5,7 @@
 # backup database and compare to last backed up database to look for lost data
 #
 # Last updated by: $Author: pad $     
-# Last updated on: $Date: 2005-11-23 11:24:04 $      
+# Last updated on: $Date: 2005-11-29 14:41:03 $      
 
 use strict;
 use lib -e '/wormsrv2/scripts' ? '/wormsrv2/scripts' : $ENV{'CVS_DIR'};
@@ -21,21 +21,30 @@ use Carp;
 our ($help,$debug,$log,@backups, $just_compare);
 my $db;
 our $backup_dir = "/nfs/disk100/wormpub/DATABASES/BACKUPS";
-our $maintainers = "All";
 our $date = `date +%y%m%d`; chomp $date;
 my $exec        = &tace;
 
 GetOptions (
 	    "help"           => \$help,
 	    "db=s"           => \$db,
-            "debug=s"        => \$debug,
+            "debug:s"        => \$debug,
 	    "just_compare=s" => \$just_compare,
 	   );
 
 my %dblocations = (
-		   "geneace" => "/wormsrv2/geneace",
+		   "geneace" => "/wormsrv1/geneace",
 		   "camace" => "/nfs/disk100/wormpub/DATABASES/camace",
 		  );
+
+# Default logs mail to all.
+our $maintainers = "All";
+
+# Specify who should receive the log.
+if($debug){
+  print "DEBUG = \"$debug\"\n\n";
+  ($maintainers = $debug . '\@sanger.ac.uk');
+}
+  
 
 # Check for mandatory/correct command line options
 &check_options($db);
