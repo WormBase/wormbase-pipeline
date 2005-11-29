@@ -4,8 +4,8 @@
 # 
 # written by Anthony Rogers
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2005-11-16 15:17:06 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2005-11-29 14:34:20 $
 
 
 use DBI;
@@ -484,7 +484,7 @@ if($setup_mySQL){
     foreach my $analysis (11, 16 ..21) {
 
       # lock protein tables 
-      $lock_statement = "LOCK TABLES input_id_analysis WRITE, protein_feature WRITE;";
+      my $lock_statement = "LOCK TABLES input_id_analysis WRITE, protein_feature WRITE;";
       print "Locking protein tables: $lock_statement\n";
       &update_database("$lock_statement", $worm_pep);
       &update_database("$lock_statement", $worm_brigpep);
