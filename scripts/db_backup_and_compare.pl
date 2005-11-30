@@ -5,7 +5,7 @@
 # backup database and compare to last backed up database to look for lost data
 #
 # Last updated by: $Author: pad $     
-# Last updated on: $Date: 2005-11-29 14:41:03 $      
+# Last updated on: $Date: 2005-11-30 11:10:22 $      
 
 use strict;
 use lib -e '/wormsrv2/scripts' ? '/wormsrv2/scripts' : $ENV{'CVS_DIR'};
@@ -39,12 +39,6 @@ my %dblocations = (
 # Default logs mail to all.
 our $maintainers = "All";
 
-# Specify who should receive the log.
-if($debug){
-  print "DEBUG = \"$debug\"\n\n";
-  ($maintainers = $debug . '\@sanger.ac.uk');
-}
-  
 
 # Check for mandatory/correct command line options
 &check_options($db);
@@ -112,7 +106,7 @@ sub check_options{
 
 sub find_and_make_backups{
   my $db = shift;
-  my $backup_dbs = "/${backup_dir}/${db}_backup.*";
+  my $backup_dbs = "${backup_dir}/${db}_backup.*";
   open (BACKUP_DB, "/bin/ls -d -1 -t $backup_dbs |")  || croak "cannot open $backup_dbs\n";
   while (<BACKUP_DB>) { 
     chomp;
@@ -136,6 +130,7 @@ sub find_and_make_backups{
     chdir("$backup_dir") || print LOG "Couldn't cd to $backup_dir\n";
     print LOG "Making new backup - ${db}_backup\.${date}\n";
     my $return = system("$ENV{'CVS_DIR'}/TransferDB.pl -start $dblocations{$db} -end ${backup_dir}/${db}_backup\.${date} -database -wspec -name ${db}\.${date}");
+    print LOG "Using the command $return\n";
     if($return != 0){
       print LOG "ERROR: Couldn't run TransferDB.pl correctly.  Check log\n";
       close(LOG);
@@ -143,7 +138,7 @@ sub find_and_make_backups{
       exit;
     }
     # Now need to remove the oldest database (assuming that there are now five backups).
-    if (scalar(@backups) == "4"){
+    if (scalar(@backups) > "3"){
       print LOG "Removing oldest backup - ${db}_backup\.${backups[3]}\n\n";
       system("rm -rf ${backup_dir}/${db}_backup\.${backups[3]}");
     }
