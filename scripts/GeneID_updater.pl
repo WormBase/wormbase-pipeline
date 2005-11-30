@@ -8,7 +8,7 @@
 # Script also refreshes Protein_IDs in the chosen database from the latest build.
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2005-11-21 17:45:57 $
+# Last updated on: $Date: 2005-11-30 14:19:13 $
 
 use strict;                                      
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
@@ -250,15 +250,9 @@ if (!defined ($update)) {
 # Delete targetDB ID info & load new ones into $targetdb      #
 ###############################################################
 
-if (($update) && ($geneID)) {
-  &load_geneIDs;
-}
-elsif (($update) && ($proteinID)) {
-  &load_protein_IDs;
-}
-elsif ($update) {
-  &load_geneIDs;
-  &load_protein_IDs;
+if ($update) {
+  &load_geneIDs     if $geneID;
+  &load_protein_IDs if $proteinID;
 }
 
 print "Diaskeda same Poli\n"; #we had alot of fun#
