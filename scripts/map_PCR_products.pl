@@ -93,7 +93,7 @@ foreach my $chromosome (@chromosomes) {
       || die "Failed to open PCR_product gff file\n\n";
     while (<GFF_in>) {
         chomp;
-        s/\#.*//;
+        s/\#.*// if ! (/\".+\#.+\"/);
         next unless /\S/;
         my @f = split /\t/;
 
