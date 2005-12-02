@@ -6,8 +6,8 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-09-28 11:09:54 $
+# Last updated by: $Author: mt3 $
+# Last updated on: $Date: 2005-12-02 11:34:38 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -171,6 +171,11 @@ sub process_gene_class{
     print LOG "ERROR: $gene ($Gene_info{$gene}{'Public_name'}) has no Version number\n";    
   }
 
+  # check that there is a Status tag
+  foreach my $gene ($db->fetch(-query=>'Find Gene WHERE NOT Status')){
+    print LOG "ERROR: $gene ($Gene_info{$gene}{'Public_name'}) has no Status tag\n";    
+  }
+
   # test for Other_name tag but no value
   foreach my $gene ($db->fetch(-query=>'Find Gene WHERE Other_name AND NOT NEXT')){
     print LOG "ERROR: $gene ($Gene_info{$gene}{'Public_name'}) has 'Other_name' tag without value\n";
@@ -270,13 +275,15 @@ sub process_gene_class{
     print LOG "ERROR: $gene has a 'Species' tag but no value\n";
   }
 
-
-
   # checks that a genes with alleles are not dead (i.e. merged into something else)
   foreach my $gene ($db->fetch(-query=>"Find Gene WHERE NOT Live AND Allele")){
     print LOG "ERROR: Mama mia! $gene is dead but is still connected to an allele\n";
   }
 
+  # checks that a gene with references are not dead (i.e. merged into something else)
+  foreach my $gene ($db->fetch(-query=>"Find Gene WHERE NOT Live AND Reference")){
+      print LOG "ERROR: Oh my sainted Aunt! $gene is dead but is still connected to a reference\n";
+  }
 
 
   # checks that a Gene doesn't have both Map and Interpolated_map_position tags
@@ -937,7 +944,11 @@ sub process_allele_class{
       }
     }
 
-  
+    # Check for Status tag missing
+    if (!defined($allele->Status)) {
+      print LOG "ERROR: $allele has no Status tag\n";
+    }
+
     # Check for method tag missing
     if (!defined($allele->Method)) {
       print LOG "ERROR: $allele has no Method tag\n";
