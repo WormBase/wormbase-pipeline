@@ -25,6 +25,9 @@ $VALID_USERS = {
 					'ar2' 		=> 1,
 					'pad' 		=> 1,
 					'mt3' 		=> 1,
+					'gw3' 		=> 1,
+					'mh6' 		=> 1,
+		
 					
 					'tbieri' 	=> 1,
 					'jspieth' 	=> 1,
@@ -41,12 +44,12 @@ $VALID_USERS = {
 $VALID_API_USERS = {
 		'query'		=> [qw(avc ar2 pad mt3 tbieri jspieth dblasiar pozersky stlouis caltech cshl sanger)],
 
-		'merge_genes'	=> [qw(avc ar2 pad mt3 tbieri jspieth dblasiar pozersky)],
-		'split_gene'	=> [qw(avc ar2 pad mt3 tbieri jspieth dblasiar pozersky)],
-		'new_gene'	=> [qw(avc ar2 pad mt3 tbieri jspieth dblasiar pozersky)],
-		'kill_gene'	=> [qw(avc ar2 pad mt3 tbieri jspieth dblasiar pozersky)],
-		'add_name'	=> [qw(avc ar2 pad mt3 tbieri jspieth dblasiar pozersky)],
-		'remove_name'	=> [qw(avc ar2 pad mt3 tbieri jspieth dblasiar pozersky)],
+		'merge_genes'	=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth dblasiar pozersky)],
+		'split_gene'	=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth dblasiar pozersky)],
+		'new_gene'	=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth dblasiar pozersky)],
+		'kill_gene'	=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth dblasiar pozersky)],
+		'add_name'	=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth dblasiar pozersky)],
+		'remove_name'	=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth dblasiar pozersky)],
 
 };
 
@@ -534,7 +537,6 @@ sub query {
 			<OPTION>CDS</option>
 			<OPTION SELECTED>WBGene</option>
 			<OPTION>CGC</option>
-			<OPTION>other</option>
     	  </SELECT>
     	  <INPUT TYPE="text" NAME="gene" SIZE="15" MAXLENGTH="14" VALUE="">
     	  <INPUT TYPE="hidden" NAME="action" VALUE="query">
