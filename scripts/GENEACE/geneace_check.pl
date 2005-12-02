@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: mt3 $
-# Last updated on: $Date: 2005-12-02 11:34:38 $
+# Last updated on: $Date: 2005-12-02 14:17:08 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -898,7 +898,7 @@ sub process_allele_class{
       }
     }
   
-  
+
     # check that Lab designation (when present) is correct (for CGC named alleles)
     if (defined $allele->Laboratory) {
       my $lab = $allele->Laboratory;
@@ -942,6 +942,11 @@ sub process_allele_class{
       if ($missense !~ m/^[A-Z]\(\d+\) to [A-Z]$/) {
 	print LOG "ERROR: $allele has an incorrect Missense value ($missense)\n";
       }
+    }
+
+    # Ceheck for CGC_name tag missing
+    if (!defined($allele->CGC_name)) {
+	print LOG "ERROR: $allele has no CGC_name tag\n";
     }
 
     # Check for Status tag missing
