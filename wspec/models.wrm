@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2005-11-17 12:06:16 $
+// Last edited on: $Date: 2005-12-05 11:02:01 $
  
 
 
@@ -467,6 +467,7 @@
 	Length	Seq_length UNIQUE Int 			// bp
 		Gel_length UNIQUE Float			// Kb
 	Location ?Laboratory #Lab_Location
+	URL Text                          // to link to MRC_geneservice website ar2
 	Gridded ?Grid
 	Grid_data ?Grid_data 
         FingerPrint     Gel_Number UNIQUE Int
@@ -1055,7 +1056,8 @@
 
 
 ?CDS	Evidence #Evidence
-	SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF CDS_child
+	SMap S_parent UNIQUE Sequence   UNIQUE ?Sequence   XREF CDS_child
+			     Transposon UNIQUE ?Transposon XREF CDS_child
 	Structure Source_exons Int UNIQUE Int
 	DB_info Database ?Database ?Database_field UNIQUE ?Accession_number XREF CDS
 		Protein_id ?Sequence UNIQUE Text UNIQUE Int // DB_info tag added [011030 krb]
@@ -1217,7 +1219,7 @@
 	    SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF Transposon
 	    Structure Source_exons Int UNIQUE Int // added for consistency with other 'gene' classes
                       LTR_region UNIQUE Int UNIQUE Int
-                      S_child CDS_child ?CDS XREF Sequence UNIQUE Int UNIQUE Int #SMap_info
+		      S_child CDS_child ?CDS XREF Transposon UNIQUE Int UNIQUE Int #SMap_info	  // Transposon_CDSs will now link to parent Transposons ar2 02-DEC-05   
 		              Pseudogene_child ?Pseudogene XREF Sequence UNIQUE Int UNIQUE Int #SMap_info
 	    Origin Species UNIQUE ?Species
 	           From_laboratory UNIQUE ?Laboratory
@@ -1451,6 +1453,7 @@
 		Motif_homol ?Motif XREF Motif_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		Homol_homol ?Homol_data XREF Motif_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 	GO_term ?GO_term XREF Motif ?GO_code #Evidence
+	Associated_transposon_family ?Transposon_family XREF Associated_motif   // to connect Transposon famillies to Repeat motifs ar2 02-DEC-05
 
 
 
@@ -1956,6 +1959,7 @@
                         Pseudogene ?Pseudogene XREF RNAi_result #Evidence // new [030801 krb]
         Supporting_data Movie ?Movie XREF RNAi    // added for Lincoln, krb [010807]
                         Picture ?Picture XREF RNAi
+	DB_info    Database ?Database ?Database_field UNIQUE ?Accession_number //to link out to Phenobank ar2 02-DEC-05
 	Species UNIQUE ?Species
         Reference ?Paper XREF RNAi
         Phenotype ?Phenotype XREF RNAi #Phenotype_info
@@ -2054,6 +2058,7 @@
 ?Microarray     Chip_type UNIQUE ?Text  //SMD, Affymetrix, etc.
                 Chip_info  ?Text        //Describes batch number of the chip, etc.
                 Reference  ?Paper       //Describes design of the chip
+		URL Text                //to link to manufacturers site.
                 Remark     ?Text        #Evidence
                 Microarray_results      ?Microarray_results XREF Microarray
                 Microarray_experiment   ?Microarray_experiment XREF Microarray
@@ -2508,6 +2513,7 @@
 	 Full_name ?Text // added for Wen [020607 krb]
 	 Other_name ?Text // added for Wen [020607 krb]
 	 Previous_name ?Text // added for Wen [020607 krb]
+	 URL Text            //[ar2 4-DEC-05] Link to journal homepage
 
 
 
@@ -2523,6 +2529,7 @@
                       Phone Text
                       E_mail Text
                       Fax Text
+		      URL Text //to link to lab homepage ar2 02-DEC-05
               Clean_address #Address
 // Put back Address instead of #Address because citace doesn't have
 // control of Laboratory data, so anything parsed here won't be read.
@@ -2637,6 +2644,7 @@
 		  Laboratory ?Laboratory XREF Alleles
 		  Author  ?Author // use Person when known, else use Author
                   Person  ?Person //
+		  DB_info    Database ?Database ?Database_field UNIQUE ?Accession_number //to link out to KO pages ar2 02-DEC-05
                   KO_consortium_allele   // North American knockout consortium
                   NBP_allele  // Japanese knockout consortium
 		  Detection_method Text
@@ -2718,7 +2726,7 @@
                    Description ?Text
 		   Family_members ?Transposon XREF Member_of            // Connects to Transposon object
                    In_variation ?Variation XREF Transposon_insertion
-
+		   Associated_motif   ?Motif   XREF Associated_transposon_family // to connect Transposon famillies to Repeat motifs ar2
 
 
 ///////////////////////////////////
