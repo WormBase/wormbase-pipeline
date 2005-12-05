@@ -5,7 +5,7 @@
 # backup database and compare to last backed up database to look for lost data
 #
 # Last updated by: $Author: pad $     
-# Last updated on: $Date: 2005-11-30 11:10:22 $      
+# Last updated on: $Date: 2005-12-05 10:13:03 $      
 
 use strict;
 use lib -e '/wormsrv2/scripts' ? '/wormsrv2/scripts' : $ENV{'CVS_DIR'};
@@ -130,9 +130,10 @@ sub find_and_make_backups{
     chdir("$backup_dir") || print LOG "Couldn't cd to $backup_dir\n";
     print LOG "Making new backup - ${db}_backup\.${date}\n";
     my $return = system("$ENV{'CVS_DIR'}/TransferDB.pl -start $dblocations{$db} -end ${backup_dir}/${db}_backup\.${date} -database -wspec -name ${db}\.${date}");
-    print LOG "Using the command $return\n";
+print LOG "\nYou have made ${db}_backup\.${date} which is a copy of $dblocations{$db}\n";
+print LOG "\nThe command:\n$ENV{'CVS_DIR'}/TransferDB.pl\n-start $dblocations{$db} \n-end ${backup_dir}/${db}_backup\.${date}\n-database \n-wspec \n-name ${db}\.${date}\nwas used in this run.\n\n";
     if($return != 0){
-      print LOG "ERROR: Couldn't run TransferDB.pl correctly.  Check log\n";
+      print LOG "ERROR: Couldn't run TransferDB.pl correctly, \nusing the command:\n\n$ENV{'CVS_DIR'}/TransferDB.pl -start $dblocations{$db} -end ${backup_dir}/${db}_backup\.${date} -database -wspec -name ${db}\.${date} for TransferDB.\n";
       close(LOG);
       &mail_maintainer("$db backup and comparison",$maintainers,$log);    
       exit;
