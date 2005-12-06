@@ -3,27 +3,26 @@
 #
 #         FILE:  Map_Helper.pm
 #
-#  DESCRIPTION:  
+#  DESCRIPTION:
 #
 #        FILES:  ---
 #         BUGS:  ---
-#        NOTES: heavily depending on some structs as explained in perldoc 
+#        NOTES: heavily depending on some structs as explained in perldoc
 #      $Author: mh6 $
-#      COMPANY:  
+#      COMPANY:
 #     $Version:  $
 #      CREATED:  14/11/05 14:33:43 GMT
-#        $Date: 2005-11-23 16:55:11 $
+#        $Date: 2005-12-06 17:37:42 $
 #===============================================================================
 package Map_Helper;
 
 use strict;
 use warnings;
 
-
 ##########################################################
 # gff input file helper moved over from mapping scripts
 # will update $genes (hashref of Genes Exons)
-# 
+#
 sub get_from_gff {
     my ( $file, $type, $unless, $genes ) = @_;
     open( GFF_in, "<$file" )
@@ -45,7 +44,7 @@ sub get_from_gff {
             $$genes{ $x->id }->start( $x->start )
               if $x->start < $$genes{ $x->id }->start;
             $$genes{ $x->id }->stop( $x->stop )
-              if $x->stop < $$genes{ $x->id }->stop;
+              if $x->stop > $$genes{ $x->id }->stop;
         }
         else {
             $$genes{ $x->id } = new Gene;
@@ -58,19 +57,19 @@ sub get_from_gff {
 
 }
 
-
 ###########################################
 # helper function to search for overlaps
 # will update %$output with Exons
-# 
+#
 sub map_it {
-    my ($output,$pcr,$sorted_genes,$genes)=@_;
+    my ( $output, $pcr, $sorted_genes, $genes ) = @_;
     foreach my $testPCR ( keys %$pcr ) {
         my $PCRstart = $$pcr{$testPCR}->[0];
         my $PCRstop  = $$pcr{$testPCR}->[1];
 
         foreach my $gene (@$sorted_genes) {
-
+#            print "oligo $testPCR from $PCRstart to $PCRstop Gene $gene from ", $$genes{$gene}->start, " to ",
+#              $$genes{$gene}->stop, "\n";
             if ( $PCRstart > $$genes{$gene}->stop ) {
                 next;
             }
@@ -82,12 +81,13 @@ sub map_it {
             else {
                 my %added_exons;
                 foreach my $exon ( @{ $$genes{$gene}->exons } ) {
-                    if ( $PCRstart <= $exon->stop 
-                      &&  $PCRstop >= $exon->start ) {
-                          next if $added_exons{ $exon->type . $exon->id };
-                          push @{ $$output{$testPCR} }, $exon;
-                          $added_exons{ $exon->type . $exon->id } = 1;
-                     }
+                    if (   $PCRstart <= $exon->stop
+                        && $PCRstop >= $exon->start )
+                    {
+                        next if $added_exons{ $exon->type . $exon->id };
+                        push @{ $$output{$testPCR} }, $exon;
+                        $added_exons{ $exon->type . $exon->id } = 1;
+                    }
                 }
             }
         }
@@ -97,35 +97,36 @@ sub map_it {
 #########################
 # map_it using SQL
 sub map_it2 {
-# actually should be %output,%query,$chromosome,@types
-	my ($output,$query,$chromosomes,$types)=@_;
-	foreach my $qid ( keys %$query ) {
-		my @goods;
-        	my $start = $$query{$qid}->[0];
-        	my $stop  = $$query{$qid}->[1];
-		# grab between start+stop on chromosome
-	#	my @hits = get_chr($chromosome,{'start' => $start,'stop' => $stop,'feature' => 'curated','source' => 'exon'});
-		# needs to be more generic
 
-		# cleanup fluff
-		# $fluff =~ /(\w+) \"(\S+)\"/ );
-		# $1 = type, $2= id
-	}
+    # actually should be %output,%query,$chromosome,@types
+    my ( $output, $query, $chromosomes, $types ) = @_;
+    foreach my $qid ( keys %$query ) {
+        my @goods;
+        my $start = $$query{$qid}->[0];
+        my $stop  = $$query{$qid}->[1];
+
+        # grab between start+stop on chromosome
+        #	my @hits = get_chr($chromosome,{'start' => $start,'stop' => $stop,'feature' => 'curated','source' => 'exon'});
+        # needs to be more generic
+
+        # cleanup fluff
+        # $fluff =~ /(\w+) \"(\S+)\"/ );
+        # $1 = type, $2= id
+    }
 }
 
 1;
-
 
 #######################
 # gff description line extraction
 #
 
-sub desc_line{
-	my ($line)=@_;
-	$line=~/(\w+) \"(\S+)\"/;
-	my $type=$1;
-	my $id  =$2;
-	return ($id,$type);
+sub desc_line {
+    my ($line) = @_;
+    $line =~ /(\w+) \"(\S+)\"/;
+    my $type = $1;
+    my $id   = $2;
+    return ( $id, $type );
 }
 
 __END__
