@@ -7,8 +7,8 @@
 #
 # written by Dan Lawson
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2005-08-01 16:09:50 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2005-12-06 09:54:33 $
 
 use lib "/wormsrv2/scripts/";
 use Wormbase;
@@ -119,7 +119,8 @@ while (<FILE>) {
 	
 	if ( ($swall{$f[2]}{Identifier}) and  ($swall{$f[2]}{Identifier} ne $swall{$f[2]}{Accession}) ) {
 	    print OUT "Database $databases{ $swall{$f[2]}{Database} } ",$db_ids_acc{ $swall{$f[2]}{Database}."_id" }," $swall{$f[2]}{Identifier}\n"
-	}
+	} #creates tons of uninitialized values
+
 	print OUT "Database $databases{ $swall{$f[2]}{Database} } ",$db_ids_acc{ $swall{$f[2]}{Database}."_ac" }," $swall{$f[2]}{Accession}\n";
 	
         if ( $swall{$f[2]} ) {
@@ -142,7 +143,7 @@ while (<FILE>) {
     print OUT "Protein_id \"$acc2clone{$f[0]}\" $f[2] $f[3]\n";
     if ( $swall{$f[2]}{Database} ) {
 	print OUT "Database $databases{ $swall{$f[2]}{Database} } ",$db_ids_acc{ $swall{$f[2]}{Database}."_id" }," $swall{$f[2]}{Identifier}\n"	
-                     if ( ($swall{$f[2]}{Identifier}) and  ($swall{$f[2]}{Identifier} ne $swall{$f[2]}{Accession}) );
+                     if ( ($swall{$f[2]}{Identifier}) and  ($swall{$f[2]}{Identifier} ne $swall{$f[2]}{Accession}) ); #creates tons of uninitialized values
 	print OUT "Database $databases{ $swall{$f[2]}{Database} } ",$db_ids_acc{ $swall{$f[2]}{Database}."_ac" }," $swall{$f[2]}{Accession}\n";
     }
 
