@@ -59,13 +59,13 @@ sub isoform_exists
     my $self = shift;
     my $name = shift;
     my $type = shift;
-    if ( $name =~ /^(\w+\.\d+)\w/) {
+    if ( $name =~ /^(\w+\.\d+)[a-z]/) {
       $id = $self->idGetByTypedName($type,$1);
       if ( $id->[0] ) {
-	print "adding $name as an isoform of ".$id->[0]."<BR>";
-	$self->addName($id->[0],"$type => $name");
+	return $id->[0];
       }
     }
+    return undef;
   }
 
 sub validate_name
@@ -120,7 +120,7 @@ sub make_new_obj
     my $name = shift;
     my $type = shift;
     $id = $self->create_named_object($type, $name);
-    print "The new id for $type: $name is $id\n";
+    return $id;
   }
 
 sub dienice {
@@ -169,7 +169,7 @@ sub remove_all_names
 	}
       }
       else {
-	print "$name_type : $names{$name_type}\n";
+	#print "$name_type : $names{$name_type}\n";
 	$self->delName($id,$name_type, $names{$name_type});
       }
     }
