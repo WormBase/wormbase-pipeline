@@ -14,7 +14,6 @@ use constant PASSWD   => 'wormpub';
 
 use lib '../lib','./lib','./blib';
 use lib $ENV{'CVS_DIR'};
-use lib $ENV{'CVS_DIR'}."/NAMEDB/lib";
 
 use Wormbase;
 use NameDB;
@@ -62,6 +61,7 @@ else {
 
 $db->setDomain('Gene');
 print $db->getDomainId,"\n";
+my $last_identifier;
 
 while ( my $gene = $WBGenes->next ) {
 
@@ -109,6 +109,9 @@ while ( my $gene = $WBGenes->next ) {
     }
   }
 }
+print "setting last_identifier to . . \n";
+my $last_id = $db->refresh_last_identifier;
+print "$last_id\n";
 
 $db->disconnect if $db;
 
