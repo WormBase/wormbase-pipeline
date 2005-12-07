@@ -42,7 +42,7 @@ $VALID_USERS = {
 
 ## a list of valid SSO login names for each DB operation
 $VALID_API_USERS = {
-		'query'		=> [qw(avc ar2 pad mt3 tbieri jspieth dblasiar pozersky stlouis caltech cshl sanger)],
+		'query'		=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth dblasiar pozersky stlouis caltech cshl sanger)],
 
 		'merge_genes'	=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth dblasiar pozersky)],
 		'split_gene'	=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth dblasiar pozersky)],
@@ -127,7 +127,7 @@ sub main {
 	print_selector($action);
 
 	if($action eq "query") {
-		&query($type,$lookup);
+		&query($lookup);
 
 	} elsif($action =~ /new_gene/) {
 		if( is_authorised($SSO_USER,$action) == 1) {
@@ -255,9 +255,9 @@ sub merge_genes
 		<h3>Merge two existing WBGenes</h3>
 		<form action="$ENV{'SCRIPT_NAME'}" method="GET">
 		<BR><BR>
-		WBGene ID to stay alive  
+		Gene to stay alive  
 		<INPUT TYPE="text" NAME="id" SIZE="20" MAXLENGTH="14"<br>
-		WBGene ID to remove after merge   
+		Gene to remove after merge   
 		<INPUT TYPE="text" NAME="id_2" SIZE="20" MAXLENGTH="14">
 		<INPUT TYPE="hidden" NAME="action" VALUE="merge_genes">
 		<br><br>
@@ -270,8 +270,8 @@ sub merge_genes
 	
       my $db = get_db_connection();
       my ($gene_id, $merge_id);
-      $gene_id  = $db->idGetByTypedName('Sequence',$gene_gene)->[0]  or $gene_gene;  #allow use of sequence name
-      $merge_id = $db->idGetByTypedName('Sequence',$merge_gene)->[0] or $merge_gene; #allow use of sequence name
+      $gene_id  = $db->idGetByAnyName($gene_gene)->[0]  or $gene_gene;  #allow use of any name
+      $merge_id = $db->idGetByAnyName($merge_gene)->[0] or $merge_gene; #allow use of any name
       $db->validate_id($gene_id);
       $db->validate_id($merge_id);
 		
@@ -282,7 +282,7 @@ sub merge_genes
       if ($db->idMerge($merge_id,$gene_id)) {
 	print "Merge complete, $merge_gene ($merge_id) is DEAD and has been merged into gene $gene_gene ($gene_id)<br>";
 	#notify
-	send_mail("webserver",$MAIL_NOTIFY_LIST,"Merge gene", "$SSO_USER merged a gene (merged gene $merge_id into gene $gene_id)");
+	send_mail("webserver",$MAIL_NOTIFY_LIST,"Merged gene $gene_id : $merge_id", "GENE MERGE\nUSER : $SSO_USER\nLIVE:retained geneID $merge_id\nDEAD: killed geneID $gene_id");
       } else {
 	print "Sorry, the gene merge failed<br>";
       }
@@ -467,7 +467,6 @@ sub add_name {
 			$db->check_pre_exists($name, $type);
 			$db->add_name($gene_id,$name, $type);
 			$db->add_name($gene_id,$name, 'Public_name') if ($type eq 'CGC');
-			## how do we handle the public flag here??
 			print qq(Added "$name" as $type name for gene $gene_id<br>);
 
 			send_mail("webserver",$MAIL_NOTIFY_LIST,"$type added to $gene_id", "USER : $SSO_USER\nWBGeneID : $gene_id\nName added : $name $type\n");
@@ -505,10 +504,12 @@ sub new_gene {
 		
 		$db->validate_name($name, $type);
 		$db->check_pre_exists($name, $type);
-		$db->isoform_exists($name, $type);
+		if( my $id = $db->isoform_exists($name, $type) ) {
+		  $db->dienice("$name is an isoform of $id<BR>Please confirm and add $name as another name for $id<BR>")
+		};
 		my $id = $db->make_new_obj($name, $type);
 
-		send_mail("webserver",$MAIL_NOTIFY_LIST, "NameDB: WBGeneID request $name $SSO_USER","User : $SSO_USER\nType : $type\nName : $name\nID : $id");
+		send_mail("webserver",$MAIL_NOTIFY_LIST, " WBGeneID request $name $SSO_USER","User : $SSO_USER\nType : $type\nName : $name\nID : $id");
 
 		#report to screen
 		$id = 'secret' unless ( $LIVE or defined $$VALID_CGCNAME_USERS{$SSO_USER});
@@ -525,19 +526,14 @@ sub new_gene {
 
 #################################################################
 sub query {
-	my ($type,$lookup) = @_;
-	unless ($type && $lookup){
+	my $lookup = shift;
+	unless ($lookup){
 		## print the query form
 		print qq(
     	<form action="$ENV{'SCRIPT_NAME'}" method="GET">
 		<BR><BR>
     	  <h3>Retreive gene info</h3>
     	  Gene to retreive<br>  
-    	  <SELECT NAME="type">
-			<OPTION>CDS</option>
-			<OPTION SELECTED>WBGene</option>
-			<OPTION>CGC</option>
-    	  </SELECT>
     	  <INPUT TYPE="text" NAME="gene" SIZE="15" MAXLENGTH="14" VALUE="">
     	  <INPUT TYPE="hidden" NAME="action" VALUE="query">
 		<br><br>
@@ -551,13 +547,12 @@ sub query {
 		my $db = get_db_connection();
 		
 		my $gene = $lookup;
-		unless ("$type" eq "WBGene") {
-		  $db->validate_name($gene, $type);
-		  ($gene) = $db->idGetByTypedName($type=>"$lookup");
-		  unless ($gene) {
-		    $db->dienice($lookup." does not exist as a ".$type."<br>");
-		  }
+		#$db->validate_name($gene, $type);
+		($gene) = $db->idGetByAnyName($lookup);
+		unless ($gene =~ /\w+/) {
+		  $db->dienice($lookup." does not exist in database<br>");
 		}
+		
 		print qq(
 		The Gene Name database currently holds the following information about $lookup:
 		<BR><BR><BR>
