@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers et al
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2005-08-03 11:26:09 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2005-12-08 13:36:13 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -595,7 +595,7 @@ sub write_worm_gene2cgc  {
   my %cgc_name2gene;
 
   # connect to AceDB using TableMaker, but use /wormsrv2/geneace for Table-maker definition
-  my $command="Table-maker -p $wquery_dir/$Table_defs{'wormgene2cgc'}/\nquit\n";
+  my $command="Table-maker -p $wquery_dir/$Table_defs{'wormgene2cgc'}\nquit\n";
   
   open (TACE, "echo '$command' | $tace $ace_dir |");
   while (<TACE>) {
