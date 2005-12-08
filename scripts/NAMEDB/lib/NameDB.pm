@@ -751,6 +751,7 @@ sub idGetByAnyName {
   $domain  = $self->getDomain  unless defined $domain;
   $domain  or $self->throw(BADDOM);
 
+# ar2 added 'or object_public_id=?' so that if primary id searched this would find it too
   my $query =<<END;
 select object_public_id
   from primary_identifier,secondary_identifier,domain
@@ -758,10 +759,11 @@ select object_public_id
       and primary_identifier.object_id = secondary_identifier.object_id
       and object_live=1
       and domain_name=?
-      and object_name=?
+      and (object_name=? or object_public_id=?)
 END
   ;
-  my $arrayref = $self->dbh->selectcol_arrayref($query,undef,$domain,$name)
+
+  my $arrayref = $self->dbh->selectcol_arrayref($query,undef,$domain,$name, $name)
     or $self->throw(DBERR);
   _list_result(@$arrayref);
 }
