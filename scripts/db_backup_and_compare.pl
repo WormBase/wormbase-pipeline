@@ -5,7 +5,7 @@
 # backup database and compare to last backed up database to look for lost data
 #
 # Last updated by: $Author: pad $     
-# Last updated on: $Date: 2005-12-09 11:47:35 $      
+# Last updated on: $Date: 2005-12-09 14:00:42 $      
 
 use strict;
 use lib -e '/wormsrv2/scripts' ? '/wormsrv2/scripts' : $ENV{'CVS_DIR'};
@@ -400,11 +400,11 @@ made, the oldest backup will be removed, leaving four backup databases.
 
 -debug and -help are standard Wormbase script options.
 
--db allows you to specify either camace or genace to backup and compare to the previous backup..
+-db allows you to specify either camace or geneace to backup and compare to the previous backup..
 
 -just_compare  :  allows you to compare the database specified here with that specified in -db.  This will NOT create backups of either.
 
-db_backup_and_compare.pl -db geneace -just_compare /wormsrv2/genace
+db_backup_and_compare.pl -db geneace -just_compare /wormsrv2/geneace
 
 
 =back
