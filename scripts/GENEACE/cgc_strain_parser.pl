@@ -7,8 +7,8 @@
 # Script to convert cgc strain file into ace file for geneace
 # Page download and update upload to geneace has been automated [ck1]
 
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-04-20 11:01:43 $
+# Last updated by: $Author: mt3 $
+# Last updated on: $Date: 2005-12-09 11:52:01 $
 
 use strict;
 use Getopt::Long;
@@ -44,8 +44,8 @@ GetOptions ("help"   => \$help,
 # misc variables
 #######################
 
-my $path        = "/wormsrv1/geneace/STRAIN_INFO";
-my $geneace_dir = "/wormsrv1/geneace/";
+my $path        = "/nfs/disk100/wormpub/DATABASES/geneace/STRAIN_INFO";
+my $geneace_dir = "/nfs/disk100/wormpub/DATABASES/geneace/";
 my $tace = &tace;
 my $rundate = &rundate;
 
@@ -433,7 +433,7 @@ It should be run against the file available at
 http://www.cbs.umn.edu/CGC/Strains/gophstrn
 
 The script will write two ace files to your current directory, one to be loaded 
-into geneace, and a second to be archived in /wormsrv1/geneace which will have 
+into geneace, and a second to be archived in /nfs/disk100/wormpub/DATABASES/geneace which will have 
 delete instructions for removing all the data you have just added.  Some files 
 will be loaded automatically (strain objects in one, and Gene->Allele connections 
 in another).  
