@@ -4,13 +4,12 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2005-05-31 12:38:29 $
+# Last updated on: $Date: 2005-12-09 13:52:54 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
 
 use strict;
-#use lib "/wormsrv2/scripts/";
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
 use Ace;
@@ -56,7 +55,7 @@ if($log){
 }
 else{
     my $rundate    = `date +%y%m%d`; chomp $rundate;
-    $log = "/wormsrv2/logs/check_predicted_genes.log.$rundate.$$";
+    $log = "/nfs/disk100/wormpub/logs/check_predicted_genes.log.$rundate.$$";
     open(LOG,">$log") || die "cant open $log\n";
 }
 print LOG "\ncheck_predicted_genes.pl started at ",`date`,"\n";
@@ -438,7 +437,7 @@ The script emails the top 20 problems each day (sorted by severity).
 =item MANDATORY arguments: -database <database_path>
 
 This argument must be a path to a valid acedb database, e.g.
-check_predicted_genes.pl -database /wormsrv2/camace
+check_predicted_genes.pl -database /nfs/disk100/wormpub/DATABASES/camace
 
 =back
 
@@ -448,7 +447,7 @@ check_predicted_genes.pl -database /wormsrv2/camace
 
 If the file specified by -log already exists, the script will append the output to that file.
 Otherwise it will attempt to write to a new file by that name.  If no log file is specified,
-the script will generate a log file in /wormsrv2/logs.
+the script will generate a log file in /nfs/disk100/wormpub/logs.
 
 If -verbose is specified, output will be written to screen as well as to the log file
 
