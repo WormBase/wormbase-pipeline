@@ -7,7 +7,7 @@
 # Script to find candidate genes for splitting
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2005-10-24 16:31:55 $      
+# Last updated on: $Date: 2005-12-09 16:50:52 $      
 
 use strict;                                      
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
@@ -50,7 +50,7 @@ if ($debug) {
 
 # in test mode?
 if ($test) {
-  print "In test mode";
+  print "In test mode\n";
 
 }
 
@@ -73,7 +73,7 @@ $log->write_to("put some statistics here");
 
 $log->mail();
 
-print "Finished." if ($verbose);
+print "Finished.\n" if ($verbose);
 exit(0);
 
 
