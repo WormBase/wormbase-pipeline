@@ -1,8 +1,8 @@
 #!/usr/local/bin/perl5.8.0 -w
 
 # Author: Chao-Kung Chen
-# Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-06-09 12:50:41 $ 
+# Last updated by $Author: mt3 $
+# Last updated on: $Date: 2005-12-09 13:24:18 $ 
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -18,7 +18,7 @@ my $db          = Ace->connect(-path => $geneace_dir, -program =>$tace) || print
 my $rundate = rundate();
 
 open(LOG, ">/wormsrv2/logs/dubious_multiPt_2_locus.$rundate") || die $!;
-open(ACE, ">/wormsrv1/geneace/CHECKS/multiPt_2_locus.ace");
+open(ACE, ">/nfs/disk100/wormpub/DATABASES/geneace/CHECKS/multiPt_2_locus.ace");
 
 push( my @multi_pt, $db->find("Find Multi_pt_data *") );
 

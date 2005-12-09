@@ -6,8 +6,8 @@
 #
 # Script to check for the loci no longer as inside/outside locus of a Df/Dp based on modified gmap via interpolation
 #
-# Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2004-03-19 11:59:04 $
+# Last updated by: $Author: mt3 $
+# Last updated on: $Date: 2005-12-09 13:25:34 $
 
 
 use strict;
@@ -20,10 +20,10 @@ use Ace;
 ######################
 
 my $tace = &tace;  
-my $geneace_dir = "/wormsrv1/geneace";
+my $geneace_dir = "/nfs/disk100/wormpub/DATABASES/geneace";
 
 my $locus_2_gmap=<<EOF;
-  Table-maker -p "/wormsrv1/geneace/wquery/locus_2_gmap.def" quit
+  Table-maker -p "/nfs/disk100/wormpub/DATABASES/geneace/wquery/locus_2_gmap.def" quit
 EOF
 
 open (FH, "echo '$locus_2_gmap' | $tace $geneace_dir | ") || die "Couldn't access geneace\n";
@@ -42,7 +42,7 @@ while (<FH>){
 close FH;
 
 my $rearr_ends=<<EOF;
-  Table-maker -p "/wormsrv1/geneace/wquery/rearr_L_R_ends.def" quit
+  Table-maker -p "/nfs/disk100/wormpub/DATABASES/geneace/wquery/rearr_L_R_ends.def" quit
 EOF
 
 open (FH, "echo '$rearr_ends' | $tace $geneace_dir | ") || die "Couldn't access geneace\n";

@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: mt3 $
-# Last updated on: $Date: 2005-12-02 14:17:08 $
+# Last updated on: $Date: 2005-12-09 13:28:17 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -39,8 +39,8 @@ GetOptions ("help"        => \$help,
 # Miscellaneous important variables               # 
 ###################################################
 
-# choose database to query: default is /wormsrv1/geneace
-$database = "/wormsrv1/geneace" unless $database;
+# choose database to query: default is /nfs/disk100/wormpub/DATABASES/geneace
+$database = "/nfs/disk100/wormpub/DATABASES/geneace" unless $database;
 print "Using database $database.\n\n";
 
 my $tace = &tace;          # tace executable path
@@ -1186,7 +1186,7 @@ sub check_dubious_multipt_gene_connections {
   print LOG `cat $log_dir/dubious_multiPt_2_locus.$rundate`;
   print JAHLOG `cat $log_dir/dubious_multiPt_2_locus.$rundate`;
   print ACE `cat $database/CHECKS/multiPt_2_locus.ace` if $ace;
-  #`rm -f /wormsrv1/geneace/CHECKS/multiPt_2_locus.ace`;
+  #`rm -f /nfs/disk100/wormpub/DATABASES/geneace/CHECKS/multiPt_2_locus.ace`;
 }
 
 sub usage {
@@ -1307,7 +1307,7 @@ B<-class:>
 
 B<-database:>
             Allows specifying path to a specific database.
-            Default database path is /wormsrv1/geneace without this option.
+            Default database path is /nfs/disk100/wormpub/DATABASES/geneace without this option.
 
             For example: -database /wormsrv2/autoace or -database /wormsrv1/someone/Test_DB
 
@@ -1316,7 +1316,7 @@ B<-ace:>
             Allows generating ace file for fixing erros spotted by
             this checking script.
             Default location and filename of ace file:
-            /wormsrv1/geneace/CHECKS/geneace_check.rundate.processid.ace
+            /nfs/disk100/wormpub/DATABASES/geneace/CHECKS/geneace_check.rundate.processid.ace
             For example: -ace
 
 
