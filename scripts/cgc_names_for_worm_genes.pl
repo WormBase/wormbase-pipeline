@@ -7,8 +7,8 @@
 #
 # written by Keith Bradnam (based on locus2seq.pl)
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2005-11-21 17:45:57 $
+# Last updated by: $Author: mt3 $
+# Last updated on: $Date: 2005-12-09 13:55:16 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -48,7 +48,7 @@ our $stl_out = "/wormsrv2/autoace/acefiles/STL_cgc_names_for_genes.ace";
 our $all_out = "/wormsrv2/autoace/acefiles/ALL_cgc_names_for_genes.ace";
 our $camace_dir = "/nfs/disk100/wormpub/DATABASES/camace";
 
-# use /wormsrv2/geneace as this is frozen, safer to do this than use /wormsrv1/geneace
+# use /wormsrv2/geneace as this is frozen, safer to do this than use /nfs/disk100/wormpub/DATABASES/geneace
 my $geneace_dir = "/wormsrv2/geneace";
 
 

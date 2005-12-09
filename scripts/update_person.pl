@@ -4,8 +4,8 @@
 
 # by Chao-Kung Chen [030728]
 
-# Last updated on: $Date: 2003-07-28 13:15:20 $
-# Last updated by: $Author: ck1 $
+# Last updated on: $Date: 2005-12-09 13:55:16 $
+# Last updated by: $Author: mt3 $
 
 
 # Automatically update Geneace with Person/Person_name classes from autoace
@@ -25,7 +25,7 @@ if ($user ne "wormpub"){print "You need to be wormpub to run this update!\n"; ex
 
 my $tace = &tace;
 my $autoace = "/wormsrv2/autoace";
-my $ga = "/wormsrv1/geneace";
+my $ga = "/nfs/disk100/wormpub/DATABASES/geneace";
 
 my $rundate = `date +%y%m%d`; chomp $rundate;
 my $log = "/wormsrv2/logs/update_Person.$rundate";

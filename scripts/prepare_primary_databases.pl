@@ -2,8 +2,8 @@
 #
 # prepare_primary_databases.pl
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2005-01-11 14:38:29 $
+# Last edited by: $Author: mt3 $
+# Last edited on: $Date: 2005-12-09 13:55:16 $
 
 use strict;
 my $scriptdir = glob("~ar2/wormbase/rebuild");#$ENV{'CVS_DIR'};
@@ -101,8 +101,8 @@ if ($test) {
   # transfer /wormsrv1/camace to $basedir/camace 
   $log->write_to("Transfering geneace and camace\n");
   &run_command("$scriptdir/TransferDB.pl -start $camace_orig -end $basedir/camace -database");
-  # transfer /wormsrv1/geneace to $basedir/geneace 
-  &run_command("$scriptdir/TransferDB.pl -start /wormsrv1/geneace -end $basedir/geneace -database");
+  # transfer /nfs/disk100/wormpub/DATABASES/geneace to $basedir/geneace 
+  &run_command("$scriptdir/TransferDB.pl -start /nfs/disk100/wormpub/DATABASES/geneace -end $basedir/geneace -database");
 }
 
   

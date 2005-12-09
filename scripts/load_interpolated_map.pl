@@ -7,8 +7,8 @@
 
 # by Chao-Kung Chen [030625]
 
-# Last updated on: $Date: 2003-12-16 17:55:25 $
-# Last updated by: $Author: ck1 $
+# Last updated on: $Date: 2005-12-09 13:55:16 $
+# Last updated by: $Author: mt3 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -42,7 +42,7 @@ my $date = `date +%y%m%d`; chomp $date;
 my $log = "/wormsrv2/logs/load_intp_map_to_geneace_from_WS$current.$date";
 my $tace = &tace;
 
-my $geneace_dir="/wormsrv1/geneace";
+my $geneace_dir="/nfs/disk100/wormpub/DATABASES/geneace";
 open (Load_GA,"| $tace -tsuser \"interpolated_map\" $geneace_dir >> $log") || die "Failed to upload to Geneace";
 print Load_GA $command;
 close Load_GA;
