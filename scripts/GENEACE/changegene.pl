@@ -6,8 +6,8 @@
 #
 # simple script for changing class of gene objects (e.g. CDS->Pseudogene)
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2004-11-23 16:34:36 $
+# Last edited by: $Author: mt3 $
+# Last edited on: $Date: 2005-12-09 12:15:07 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -55,12 +55,12 @@ GetOptions ("input=s"   => \$input,
 ############################################################
 
 my $tace = &tace;
-my $database = "/wormsrv1/geneace";
+my $database = "/nfs/disk100/wormpub/DATABASES/geneace";
 
 my $db = Ace->connect(-path  => $database,
 		      -program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
 
-open(OUT, ">/wormsrv1/geneace/fix.ace") || die "Can't write to output file\n";
+open(OUT, ">/nfs/disk100/wormpub/DATABASES/geneace/fix.ace") || die "Can't write to output file\n";
 
 
 # get gene ID if -seq was specified
@@ -120,8 +120,8 @@ close(OUT);
 
 # load information to geneace if -load is specified
 if ($load){
-  my $command = "pparse /wormsrv1/geneace/fix.ace\nsave\nquit\n";
-  open (GENEACE,"| $tace -tsuser \"mt3\" /wormsrv1/geneace") || die "Failed to open pipe to /wormsrv1/geneace\n";
+  my $command = "pparse /nfs/disk100/wormpub/DATABASES/geneace/fix.ace\nsave\nquit\n";
+  open (GENEACE,"| $tace -tsuser \"mt3\" /nfs/disk100/wormpub/DATABASES/geneace") || die "Failed to open pipe to /nfs/disk100/wormpub/DATABASES/geneace\n";
   print GENEACE $command;
   close GENEACE;
 }
@@ -275,7 +275,7 @@ Example
 changegene.pl -seq AH6.24 -who 2970 -class CP -load
  
  
-This would produce the following acefile at /wormsrv1/geneace/fix.ace and attempt to
+This would produce the following acefile at /nfs/disk100/wormpub/DATABASES/geneace/fix.ace and attempt to
 load it into geneace:
  
 Gene WBGene00023428
