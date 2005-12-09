@@ -7,7 +7,7 @@
 # simple script for creating new (sequence based) Gene objects 
 #
 # Last edited by: $Author: mt3 $
-# Last edited on: $Date: 2005-10-03 16:32:57 $
+# Last edited on: $Date: 2005-12-09 11:34:51 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -81,7 +81,7 @@ else{
 ############################################################
 
 my $tace = &tace;
-my $database = "/wormsrv1/geneace";
+my $database = "/nfs/disk100/wormpub/DATABASES/geneace";
 $database = glob("~wormpub/DATABASES/geneace") if $test;
 
 my $db = Ace->connect(-path  => $database,
@@ -313,7 +313,7 @@ sub process_gene{
 A script designed to create new gene objects to load into geneace.  Mainly written to
 save time from adding all the mandatory tags that each new object needs.  Just supply
 a sequence name, person ID of curator providing the information and a new Gene object
-ID.  Resulting acefile will be made in /wormsrv1/geneace/fix.ace
+ID.  Resulting acefile will be made in /nfs/disk100/wormpub/DATABASES/geneace/fix.ace
 
 More powerfully the script can additionally assign CGC names to genes as it creates
 them, or just assign CGC names to pre-existing genes.  Finally, the script can process
@@ -323,7 +323,7 @@ Example 1
 newgene.pl -seq AH6.24 -who 2970 -id 23428 -load
  
  
-This would produce the following acefile at /wormsrv1/geneace/fix.ace and attempt to
+This would produce the following acefile at /nfs/disk100/wormpub/DATABASES/geneace/fix.ace and attempt to
 load it into geneace:
  
 Gene WBGene00023428
