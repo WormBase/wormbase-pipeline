@@ -8,7 +8,7 @@
 # Script also refreshes Protein_IDs in the chosen database from the latest build.
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2005-11-30 14:19:13 $
+# Last updated on: $Date: 2005-12-09 11:47:35 $
 
 use strict;                                      
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
@@ -69,7 +69,7 @@ if ($sourceDB) {
   $sourceDB = $sourceDB;
 }
 elsif (!$sourceDB) {
-  $sourceDB = "/wormsrv1/geneace";
+  $sourceDB = "/nfs/disk100/wormpub/DATABASES/geneace";
 }
 if ($targetDB) {
   $targetDB = $targetDB;
@@ -93,7 +93,7 @@ elsif (!$fileout) {
 ########################################################################
 # make database connection for extracting WBGene<=>Sequence_name data  #
 # Method   : tace/tablemaker                                           #
-# SourceDB : /wormsrv1/geneace                                         # 
+# SourceDB : /nfs/disk100/wormpub/DATABASES/geneace                    # 
 ########################################################################
 
 if ($geneID) {
@@ -103,7 +103,7 @@ print "TARGET Database: $targetDB\n\n";
 print "\nYou are creating the file $output_file.\n\n" if ($geneID);
 print LOG "// Gathering data from $sourceDB; Object Class and GeneID\n";
     
-# connect to AceDB using TableMaker, but use /wormsrv1/geneace for Table-maker definition
+# connect to AceDB using TableMaker, but use /nfs/disk100/wormpub/DATABASES/current_DB/wquery for Table-maker definition
 my $command = "Table-maker -p $tablemaker_query\nquit\n";
 my $gene;
 my $name;
@@ -335,7 +335,7 @@ __END__
 
 =back
 
-This script removes all prediction->WBGene id connections from a chosen target database and re-synchronises these connections with a chosen reference database.  Defaults are in place for routine updating of /nfs/disk100/wormpub/DATABASES/camace with data from wormsrv1/geneace.  The script can also populate the Public_name tags in the newly syncronised WBGene objects to aid curators when chosing which CDS should be renamed following a gene split event.  The script has also been modified to retrieve protein ids from the previous build and update these in a chosen target database ready for emnl dumping in the next build.
+This script removes all prediction->WBGene id connections from a chosen target database and re-synchronises these connections with a chosen reference database.  Defaults are in place for routine updating of /nfs/disk100/wormpub/DATABASES/camace with data from /nfs/disk100/wormpub/DATABASES/geneace.  The script can also populate the Public_name tags in the newly syncronised WBGene objects to aid curators when chosing which CDS should be renamed following a gene split event.  The script has also been modified to retrieve protein ids from the previous build and update these in a chosen target database ready for emnl dumping in the next build.
 
 
 =head2 GeneID_updater.pl MANDATORY arguments:
@@ -372,7 +372,7 @@ GeneID_updater.pl  OPTIONAL arguments:
 
 =head1 REQUIREMENTS
 
-=item Script needs /wormsrv2 for geneace only, will be resolved.
+=item Script no longer requires /wormsrv2.
 
 =back
 

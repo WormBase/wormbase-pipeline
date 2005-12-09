@@ -5,7 +5,7 @@
 # backup database and compare to last backed up database to look for lost data
 #
 # Last updated by: $Author: pad $     
-# Last updated on: $Date: 2005-12-05 10:13:03 $      
+# Last updated on: $Date: 2005-12-09 11:47:35 $      
 
 use strict;
 use lib -e '/wormsrv2/scripts' ? '/wormsrv2/scripts' : $ENV{'CVS_DIR'};
@@ -31,10 +31,7 @@ GetOptions (
 	    "just_compare=s" => \$just_compare,
 	   );
 
-my %dblocations = (
-		   "geneace" => "/wormsrv1/geneace",
-		   "camace" => "/nfs/disk100/wormpub/DATABASES/camace",
-		  );
+my $base_dir = "/nfs/disk100/wormpub/DATABASES";
 
 # Default logs mail to all.
 our $maintainers = "All";
@@ -129,11 +126,11 @@ sub find_and_make_backups{
     # keep TransferDB logs in backup directory
     chdir("$backup_dir") || print LOG "Couldn't cd to $backup_dir\n";
     print LOG "Making new backup - ${db}_backup\.${date}\n";
-    my $return = system("$ENV{'CVS_DIR'}/TransferDB.pl -start $dblocations{$db} -end ${backup_dir}/${db}_backup\.${date} -database -wspec -name ${db}\.${date}");
-print LOG "\nYou have made ${db}_backup\.${date} which is a copy of $dblocations{$db}\n";
-print LOG "\nThe command:\n$ENV{'CVS_DIR'}/TransferDB.pl\n-start $dblocations{$db} \n-end ${backup_dir}/${db}_backup\.${date}\n-database \n-wspec \n-name ${db}\.${date}\nwas used in this run.\n\n";
+    my $return = system("/nfs/disk100/wormpub/TEST_BUILD/scripts/TransferDB.pl -start $base_dir/$db -end ${backup_dir}/${db}_backup\.${date} -database -wspec -name ${db}\.${date}");
+print LOG "\nYou have made ${db}_backup\.${date} which is a copy of $base_dir/$db\n";
+print LOG "\nThe command:\n/nfs/disk100/wormpub/TEST_BUILD/scripts/TransferDB.pl\n-start $base_dir/$db \n-end ${backup_dir}/${db}_backup\.${date}\n-database \n-wspec \n-name ${db}\.${date}\nwas used in this run.\n\n";
     if($return != 0){
-      print LOG "ERROR: Couldn't run TransferDB.pl correctly, \nusing the command:\n\n$ENV{'CVS_DIR'}/TransferDB.pl -start $dblocations{$db} -end ${backup_dir}/${db}_backup\.${date} -database -wspec -name ${db}\.${date} for TransferDB.\n";
+      print LOG "ERROR: Couldn't run TransferDB.pl correctly, \nusing the command:\n\n/nfs/disk100/wormpub/TEST_BUILD/scripts/TransferDB.pl -start $base_dir/$db -end ${backup_dir}/${db}_backup\.${date} -database -wspec -name ${db}\.${date} for TransferDB.\n";
       close(LOG);
       &mail_maintainer("$db backup and comparison",$maintainers,$log);    
       exit;
@@ -403,12 +400,11 @@ made, the oldest backup will be removed, leaving four backup databases.
 
 -debug and -help are standard Wormbase script options.
 
--db allows you to specify the path of a database which will
-then be compared to /wormsrv2/autoace.
+-db allows you to specify either camace or genace to backup and compare to the previous backup..
 
 -just_compare  :  allows you to compare the database specified here with that specified in -db.  This will NOT create backups of either.
 
-db_backup_and_compare.pl -db /wormsrv1/geneace -just_compare /wormsrv2/camace
+db_backup_and_compare.pl -db geneace -just_compare /wormsrv2/genace
 
 
 =back
