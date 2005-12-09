@@ -6,8 +6,8 @@
 #
 # Script to prepare for 2003 C. elegans genetic map publication
 #
-# Last updated by: $Author: ck1 $
-# Last updated on: $Date: 2004-03-19 11:59:04 $
+# Last updated by: $Author: mt3 $
+# Last updated on: $Date: 2005-12-09 13:40:58 $
 
 
 use strict;
@@ -22,8 +22,8 @@ use Spreadsheet::WriteExcel;
 #########################
 
 my $tace = &tace;     
-my $def_dir = "/wormsrv1/geneace/wquery";
-my $geneace = "/wormsrv1/geneace";
+my $def_dir = "/nfs/disk100/wormpub/DATABASES/geneace/wquery";
+my $geneace = "/nfs/disk100/wormpub/DATABASES/geneace";
 my $file_dir= "/nfs/team71/worm/ck1/CGC";
 
 #################################

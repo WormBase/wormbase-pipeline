@@ -12,7 +12,7 @@ use GENEACE::Geneace;
 ################
 
 my $tace = &tace;
-my $ga_dir = "/wormsrv1/geneace";
+my $ga_dir = "/nfs/disk100/wormpub/DATABASES/geneace";
 
 #######################
 # Create a main windows
@@ -298,7 +298,7 @@ sub upload_ace_test {
 
 sub upload_ace_GA {
   my $command="pparse $filename\nsave\nquit\n";
-  my $db_dir="/wormsrv1/geneace/";
+  my $db_dir="/nfs/disk100/wormpub/DATABASES/geneace/";
   open (Load_GA,"| tace $db_dir ") || die "Failed to upload to test_Geneace";
   print Load_GA $command;
   close Load_GA;

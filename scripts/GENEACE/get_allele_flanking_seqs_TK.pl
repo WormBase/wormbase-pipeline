@@ -4,8 +4,8 @@
 #
 # by Chao-Kung Chen [030625]
 
-# Last updated on: $Date: 2005-02-21 11:53:39 $
-# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2005-12-09 13:35:15 $
+# Last updated by: $Author: mt3 $
 
 use Tk;
 use strict;
@@ -41,7 +41,7 @@ else{
 # check for latest exon table version
 #####################################
 
-my $exon_table_dir = "/wormsrv1/geneace/ALLELE_DATA/EXON_TABLES";
+my $exon_table_dir = "/nfs/disk100/wormpub/DATABASES/geneace/ALLELE_DATA/EXON_TABLES";
 
 # check that an ExonTable_XXX file exists that corresponds to last release of WormBase
 # if not, then need to make new Exon_Table file
@@ -270,8 +270,8 @@ my ($cds_or_locus, $aa_or_dna, $mutation, $allele, $cgc_name, $position, $cds,
 
 sub update {
   system ("rm -f $exon_table_dir/* ");
-  `echo "table-maker -o $exon_table_dir/CDS_table_$WB_version -p /wormsrv1/geneace/wquery/get_elegans_CDS_source_exons.def" | $tace $database`;
-  `echo "table-maker -o $exon_table_dir/RNA_table_$WB_version -p /wormsrv1/geneace/wquery/get_elegans_RNA_gene_source_exons.def" | $tace $database`;
+  `echo "table-maker -o $exon_table_dir/CDS_table_$WB_version -p /nfs/disk100/wormpub/DATABASES/geneace/wquery/get_elegans_CDS_source_exons.def" | $tace $database`;
+  `echo "table-maker -o $exon_table_dir/RNA_table_$WB_version -p /nfs/disk100/wormpub/DATABASES/geneace/wquery/get_elegans_RNA_gene_source_exons.def" | $tace $database`;
   system ("cat $exon_table_dir/CDS_table_$WB_version $exon_table_dir/RNA_table_$WB_version > $exon_table_dir/ExonTable_$WB_version; rm -f $exon_table_dir/*table_$WB_version");
   system ("chmod 775 $exon_table_dir/* ");
   $top->after(1, sub { $top->destroy } );
@@ -376,7 +376,7 @@ sub upload_ace_GA{
 
     my $command="pparse $filename\nsave\nquit\n";
 
-    my $db_dir="/wormsrv1/geneace/";
+    my $db_dir="/nfs/disk100/wormpub/DATABASES/geneace/";
     open (Load_GA,"| tace $db_dir > $log") || die "Failed to upload to test_Geneace";
     print Load_GA $command;
     close Load_GA;

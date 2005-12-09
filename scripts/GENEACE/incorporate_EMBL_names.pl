@@ -4,8 +4,8 @@
 
 
 # Author: Chao-Kung Chen
-# Last updated by $Author: krb $
-# Last updated on: $Date: 2004-07-09 13:30:02 $ 
+# Last updated by $Author: mt3 $
+# Last updated on: $Date: 2005-12-09 13:37:07 $ 
 
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
@@ -34,8 +34,8 @@ my $start = &runtime;
 # directory, files used for EMBL update
 my $script_dir = "/wormsrv2/scripts/GENEACE/";
 
-my $output_dir = "/wormsrv1/geneace/EMBL_GENE_NAMES/";
-my $temp_dir   = "/wormsrv1/geneace/EMBL_GENE_NAMES/TEMP/";
+my $output_dir = "/nfs/disk100/wormpub/DATABASES/geneace/EMBL_GENE_NAMES/";
+my $temp_dir   = "/nfs/disk100/wormpub/DATABASES/geneace/EMBL_GENE_NAMES/TEMP/";
 
 my $download = "$temp_dir/embl";
 my $flatfile= "$temp_dir/$version"."_EMBL_entry_no_seqs";

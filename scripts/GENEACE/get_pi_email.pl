@@ -1,8 +1,8 @@
 #!/usr/local/bin/perl5.8.0 -w
 
 # Author: Chao-Kung Chen
-# Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-03-19 15:27:03 $ 
+# Last updated by $Author: mt3 $
+# Last updated on: $Date: 2005-12-09 13:36:19 $ 
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'}; 
@@ -15,7 +15,7 @@ use GENEACE::Geneace;
 my $tace = &tace;
 
 # grep email add. of PI in Laboratory class
-my $db = Ace->connect(-path  => "/wormsrv1/geneace",
+my $db = Ace->connect(-path  => "/nfs/disk100/wormpub/DATABASES/geneace",
 		      -program =>$tace) || print Ace->error;
 
 my @labs = $db->fetch(-class => 'Laboratory',

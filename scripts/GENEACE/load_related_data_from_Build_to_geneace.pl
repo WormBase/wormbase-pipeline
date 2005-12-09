@@ -4,11 +4,11 @@
 #
 # by Chao-Kung Chen
 #
-# loads Geneace related data from Build back to /wormsrv1/geneace
+# loads Geneace related data from Build back to /nfs/disk100/wormpub/DATABASES/geneace
 # RUN this script anytime during the build or after the build when get_interpolated_map 
 # and update_inferred multi-pt data are done
 #
-# Last updated on: $Date: 2005-10-17 10:23:50 $
+# Last updated on: $Date: 2005-12-09 13:39:09 $
 # Last updated by: $Author: mt3 $
 
 
@@ -27,7 +27,7 @@ if ($user ne "wormpub"){print "\nYour need to be wormpub to upload data to genea
 my $tace = &tace;          # tace executable path
 my $release = get_wormbase_version_name(); # only the digits
 
-my $geneace_dir = "/wormsrv1/geneace";
+my $geneace_dir = "/nfs/disk100/wormpub/DATABASES/geneace";
 my $autoace = "/wormsrv2/autoace";
 my $curr_db = "/nfs/disk100/wormpub/DATABASES/current_DB";
 
@@ -117,7 +117,7 @@ close Load_GA;
 # can use dumped Person class in /wormsrv2/wormbase/caltech/caltech_Person.ace
 $log->write_to("Updating person name information from caltech_Person.ace file\n");
 
-# First need to remove person/person_name data from /wormsrv1/geneace
+# First need to remove person/person_name data from /nfs/disk100/wormpub/DATABASES/geneace
 # Not that the value of "CGC_representative_for" is kept as geneace keeps this record
 # i.e. you can't delete *all* of the Person class from geneace
 $log->write_to("First removing old Person data\n");

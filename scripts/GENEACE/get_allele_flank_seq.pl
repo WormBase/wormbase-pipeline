@@ -6,8 +6,8 @@
 
 # Author: Chao-Kung Chen
 
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-07-09 13:30:02 $
+# Last updated by: $Author: mt3 $
+# Last updated on: $Date: 2005-12-09 13:34:25 $
 
 use strict;
 use lib "/wormsrv2/scripts/"; 
@@ -94,7 +94,7 @@ print $cds, "\n";
 
 my $tace = &tace;  
 my $curr_db = "/nfs/disk100/wormpub/DATABASES/current_DB";
-my $exon_tbl = "/wormsrv1/geneace/ALLELE_DATA/EXON_TABLES";
+my $exon_tbl = "/nfs/disk100/wormpub/DATABASES/geneace/ALLELE_DATA/EXON_TABLES";
 
 my ($current, $archive);
 $current = get_wormbase_version() -1; # digits only
@@ -106,8 +106,8 @@ if ("$current" ne "$archive") {
 
   print "New WS release ($current) available . .\nFetching latest source exons of all CDS/Transcripts and 6 chromosomal DNA sequencs\n\n";
   system ("rm -f $exon_tbl/* ");
-  `echo "table-maker -o $exon_tbl/CDS_table_$current -p /wormsrv1/geneace/wquery/get_elegans_CDS_source_exons.def" | $tace $curr_db`;
-  `echo "table-maker -o $exon_tbl/RNA_table_$current -p /wormsrv1/geneace/wquery/get_elegans_RNA_gene_source_exons.def" | $tace $curr_db`;
+  `echo "table-maker -o $exon_tbl/CDS_table_$current -p /nfs/disk100/wormpub/DATABASES/geneace/wquery/get_elegans_CDS_source_exons.def" | $tace $curr_db`;
+  `echo "table-maker -o $exon_tbl/RNA_table_$current -p /nfs/disk100/wormpub/DATABASES/geneace/wquery/get_elegans_RNA_gene_source_exons.def" | $tace $curr_db`;
   system ("cat $exon_tbl/CDS_table_$current $exon_tbl/RNA_table_$current > $exon_tbl/ExonTable_$current; rm -f $exon_tbl/*table_$current");
   system ("chmod 775 $exon_tbl/* ");
 }

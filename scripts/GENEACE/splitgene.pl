@@ -8,7 +8,7 @@
 # existing gene 
 #
 # Last edited by: $Author: mt3 $
-# Last edited on: $Date: 2005-10-03 15:26:19 $
+# Last edited on: $Date: 2005-12-09 13:41:39 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -67,12 +67,12 @@ else{
 ############################################################
 
 my $tace = &tace;
-my $database = "/wormsrv1/geneace";
+my $database = "/nfs/disk100/wormpub/DATABASES/geneace";
 
 my $db = Ace->connect(-path  => $database,
 		      -program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
 
-open(OUT, ">/wormsrv1/geneace/fix.ace") || die "Can't write to output file\n";
+open(OUT, ">/nfs/disk100/wormpub/DATABASES/geneace/fix.ace") || die "Can't write to output file\n";
 
 # find out highest gene number in case new genes need to be created
 my $gene_max = $db->fetch(-query=>"Find Gene");
@@ -91,8 +91,8 @@ close(OUT);
 
 # load information to geneace if -load is specified
 if ($load){
-  my $command = "pparse /wormsrv1/geneace/fix.ace\nsave\nquit\n";
-  open (GENEACE,"| $tace -tsuser \"mt3\" /wormsrv1/geneace") || die "Failed to open pipe to /wormsrv1/geneace\n";
+  my $command = "pparse /nfs/disk100/wormpub/DATABASES/geneace/fix.ace\nsave\nquit\n";
+  open (GENEACE,"| $tace -tsuser \"mt3\" /nfs/disk100/wormpub/DATABASES/geneace") || die "Failed to open pipe to /wormsrv1/geneace\n";
   print GENEACE $command;
   close GENEACE;
 }
@@ -245,7 +245,7 @@ sub process_gene{
 A script designed to create new gene objects to load into geneace by splitting an
 existing gene.  Just supply an old (existing) sequence name, a new sequence name 
 for the result of the split, a person ID of curator providing the information and 
-optionally a new Gene object ID.  Resulting acefile will be made in /wormsrv1/geneace/fix.ace
+optionally a new Gene object ID.  Resulting acefile will be made in /nfs/disk100/wormpub/DATABASES/geneace/fix.ace
 
 Example 1 
 splitgene.pl -old AH6.3 -new AH6.11 -who 2970 -id 2342 -load
