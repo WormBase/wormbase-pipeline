@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 
-# Last updated by $Author: ar2 $
-# Last updated on: $Date: 2005-02-11 16:11:29 $
+# Last updated by $Author: pad $
+# Last updated on: $Date: 2005-12-12 10:59:48 $
 
 package Geneace;
 
@@ -11,13 +11,13 @@ use Wormbase;
 use Coords_converter;
 use strict;
 
-my $def_dir = "/wormsrv1/geneace/wquery";           # location of table-maker definitions
+my $def_dir = "/nfs/disk100/wormpub/DATABASES/geneace/wquery";           # location of table-maker definitions
 my $test_def_dir ="/nfs/disk100/wormpub/ck1";       # location of table-maker definitions for running this script not on wormsrv2
 my $machine = ();
 $machine = "+" if `ls /wormsrv1/`;                  # if sees wormsrv1 then $machine is defined, else it remains undef: for running on cbi1, eg
 
 my $curr_db = "/nfs/disk100/wormpub/DATABASES/current_DB";
-my $geneace_dir = "/wormsrv1/geneace";
+my $geneace_dir = "/nfs/disk100/wormpub/DATABASES/geneace";
 my $tace = &tace;
 
 
@@ -29,7 +29,7 @@ sub init {
 
 sub geneace {
   my $this = shift;
-  my $geneace_dir = "/wormsrv1/geneace";
+  my $geneace_dir = "/nfs/disk100/wormpub/DATABASES/geneace";
   return $geneace_dir;
 }
 
@@ -55,7 +55,7 @@ sub gene_info {
   my ($this, $db, $option) = @_;
   shift;
 
-  $db = "/wormsrv1/geneace" if !$db;
+  $db = "/nfs/disk100/wormpub/DATABASES/geneace" if !$db;
   print "----- Doing Gene id <-> Gene_name conversion based on $db ... -----\n\n";
 
   my $outfile = "$geneace_dir/CHECKS/gene_info.tmp"; `chmod 777 $outfile`;
@@ -112,9 +112,10 @@ sub gene_info {
 }
 
 sub parse_inferred_multi_pt_obj {
+  print "\n\nYou have just called a subroutine in Genace.pm that was assumed to be redundant, please notify mt3/pad as whatever you were doing will not have worked correctly.\n\n";
   my ($this, $version) = @_;
   my ($multi_obj, %locus_multi, $locus);
-  my $multi_file = glob("/wormsrv1/geneace/JAH_DATA/MULTI_PT_INFERRED/inferred_multi_pt_obj_WS$version");
+  my $multi_file = glob("/nfs/disk100/wormpub/DATABASES/geneace/JAH_DATA/MULTI_PT_INFERRED/inferred_multi_pt_obj_WS$version");
   my @multi_file = `cat $multi_file`;
 
   foreach (@multi_file){
