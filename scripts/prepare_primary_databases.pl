@@ -2,8 +2,8 @@
 #
 # prepare_primary_databases.pl
 #
-# Last edited by: $Author: mt3 $
-# Last edited on: $Date: 2005-12-09 13:55:16 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2005-12-12 11:56:32 $
 
 use strict;
 my $scriptdir = glob("~ar2/wormbase/rebuild");#$ENV{'CVS_DIR'};
@@ -38,8 +38,8 @@ $test = 1 if ( defined $ENV{'TEST_BUILD'} and ($ENV{'TEST_BUILD'} == 1));
 my $log = Log_files->make_build_log($debug);
 
 # set paths to take account of whether -test is being used
-my $basedir = glob("~wormpub");
-$basedir     .= "/TEST_BUILD" if ($test);
+my $basedir = "/wormsrv2";
+$basedir    = glob("~wormpub")."/TEST_BUILD" if ($test);
 
 # exit if the Primary_databases_used_in_build is absent
 #  &usage(13) unless (-e "$logdir/Primary_databases_used_in_build");
@@ -95,15 +95,13 @@ unless ($options eq "") {
 # make a unpack_db.pl log file in /logs
 
 if ($test) {
-  $log->write_to("WARNING: Can't transfer geneace from /wormsrv1.  You will have to do that by hand!\n");  
-} else {
-  my $camace_orig = glob("~wormpub/camace_orig");
-  # transfer /wormsrv1/camace to $basedir/camace 
+  $log->write_to("INFO: You are copying camace and genace from ~wormpub/DATABASES to ~wormpub/TEST_BUILD\n");  
+}
+  # transfer  /nfs/disk100/wormpub/DATABASES/camace to $basedir/camace
   $log->write_to("Transfering geneace and camace\n");
-  &run_command("$scriptdir/TransferDB.pl -start $camace_orig -end $basedir/camace -database");
+  &run_command("$scriptdir/TransferDB.pl -start /nfs/disk100/wormpub/DATABASES/camace -end $basedir/camace -database");
   # transfer /nfs/disk100/wormpub/DATABASES/geneace to $basedir/geneace 
   &run_command("$scriptdir/TransferDB.pl -start /nfs/disk100/wormpub/DATABASES/geneace -end $basedir/geneace -database");
-}
 
   
 #################################################
@@ -217,7 +215,7 @@ _BUILD_INFO_
 + Runs <a href="#unpack_db.pl"><font color=red>unpack_db.pl</font></a> on new databases
 to copy & unpack database files to relevant place (e.g. <font color = green>/wormsrv2/stlace</font>)<BR>
 + Re-initialise the databases, and then loads new data<BR>
-+ Copies camace and geneace from  <font color=green>/wormsrv1/</font> to <font color=green>/wormsrv2/</font>.<br>
++ Copies camace and geneace from  <font color=green>/nfs/disk100/wormpub/DATABASES/</font> to <font color=green>/wormsrv2/</font>.<br>
 + Writes <font color=green>Primary_databases_used_in_build</font> lock file (contains dates of databases
 used in build).<BR> 
 + Writes <font color=green>/wormsrv2/autoace/logs/A3:Unpack_FTP_databases</font> lock file<BR>
@@ -226,5 +224,5 @@ used in build).<BR>
 
 
 <BR><BR><font color=blue><B>CHECK:</B></font><BR>
-Copying camace and geneace is done by TransferDB, which will generate two log files <font color=green>/wormsrv2/logs/TransferDB.yymmdd.pid</font>. Make sure that the last line reads "SUCCESS ...".
+Copying camace and geneace is done by TransferDB, which will generate two log files <font color=green>~wormpub/logs/TransferDB.yymmdd.pid</font>. Make sure that the last line reads "SUCCESS ...".
 </p>
