@@ -44,7 +44,8 @@ sub add_name
       #if this is a new isoform we want to check it matches existing CDS names ie dont add ABC.1a to CDE.2
       if( $type eq "CDS") {
 	my $seq_name = $self->idTypedNames($id,'Sequence');
-	die "$name is not an isoform of $seq_name->[0]\n" unless ($name =~ /$seq_name->[0]/);
+	#if there is a sequence name check the new name is same "sequence"
+	die "$name is not an isoform of $seq_name->[0]\n" if($seq_name->[0] and !($name =~ /$seq_name->[0]/) );
 	# all is well -> add the name
       }
       $self->addName($id,$type => $name);
@@ -77,8 +78,8 @@ sub validate_name
     my @types = $self->getNameTypes;
     if( grep {$_ eq $type} @types) {
       #check name structure matches format eg CDS = clone.no
-      my %name_checks = ( "CDS" => '^\w+\.\d+\w?',
-			  "CGC" => '[a-z]{3,4}-\d+'
+      my %name_checks = ( "CDS" => '^\w+\.\d+\w?$',
+			  "CGC" => '^[a-z]{3,4}-\d+$'
 			);
       unless( $name =~ /$name_checks{$type}/ ) {
 	$self->dienice("$name is incorrect format for $type<br>");
