@@ -7,8 +7,8 @@
 # This script calculates interpolated genetic map positions for CDS, Transcripts 
 # and Pseudogenes lying between and outside genetic markers.
 #
-# Last updated on: $Date: 2005-10-03 16:37:42 $
-# Last updated by: $Author: mt3 $
+# Last updated on: $Date: 2005-12-12 11:20:20 $
+# Last updated by: $Author: pad $
 
 
 use strict;
@@ -160,7 +160,7 @@ close FH1; close FH2; close FH3;
 my %locus_map;
 
 if($comp){
-  open(IN, "/wormsrv1/geneace/gMAP/interpolated_gmap_based_on_contig_map_out.all") || die $!;
+  open(IN, "/nfs/disk100/wormpub/DATABASES/geneace/gMAP/interpolated_gmap_based_on_contig_map_out.all") || die $!;
   open (MAPCOMP, ">$output/compare_gmap_WS$version.$rundate") || die $!;
   system("chmod 777 $output/compare_gmap_WS*.$rundate");
   while (<IN>){
@@ -987,7 +987,7 @@ B<-db: / -databse:>
 
             Specifies database to look for marker map positions and gff coordinates
             Eg.
-                -db /wormsrv1/geneace 
+                -db /nfs/disk100/wormpub/DATABASES/geneace
 
                 if this option is omitted and this script is run during the build, it points to autoace
 

@@ -7,8 +7,8 @@
 # simple script for creating new (sequence based) Gene objects when splitting 
 # existing gene 
 #
-# Last edited by: $Author: mt3 $
-# Last edited on: $Date: 2005-12-12 08:59:34 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2005-12-12 11:20:20 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -92,7 +92,7 @@ close(OUT);
 # load information to geneace if -load is specified
 if ($load){
   my $command = "pparse /nfs/disk100/wormpub/DATABASES/geneace/splitgene.ace\nsave\nquit\n";
-  open (GENEACE,"| $tace -tsuser \"mt3\" /nfs/disk100/wormpub/DATABASES/geneace") || die "Failed to open pipe to /wormsrv1/geneace\n";
+  open (GENEACE,"| $tace -tsuser \"mt3\" /nfs/disk100/wormpub/DATABASES/geneace") || die "Failed to open pipe to /nfs/disk100/wormpub/DATABASES/geneace\n";
   print GENEACE $command;
   close GENEACE;
 }
