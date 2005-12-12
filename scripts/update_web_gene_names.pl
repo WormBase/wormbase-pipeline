@@ -5,7 +5,7 @@
 # completely rewritten by Keith Bradnam from list_loci_designations
 #
 # Last updated by: $Author: mt3 $     
-# Last updated on: $Date: 2005-12-09 13:55:16 $      
+# Last updated on: $Date: 2005-12-12 09:24:32 $      
 #
 # This script should be run under a cron job and simply update the webpages that show
 # current gene names and sequence connections.  Gets info from geneace.  
@@ -264,7 +264,7 @@ sub make_gene_lists{
   
   # connect to AceDB using TableMaker, 
   my $command="Table-maker -p /nfs/disk100/wormpub/DATABASES/geneace/wquery/gene2molecular_name.def\nquit\n";
-  open (TACE, "echo '$command' | $tace /nfs/disk100/wormpub/DATABASES/geneace |") || print LOG "ERROR: Can't open tace connection to /wormsrv1/geneace\n";
+  open (TACE, "echo '$command' | $tace /nfs/disk100/wormpub/DATABASES/geneace |") || print LOG "ERROR: Can't open tace connection to /nfs/disk100/wormpub/DATABASES/geneace\n";
   while (<TACE>) {
     chomp;
     # skip any acedb banner text (table maker output has all fields surrounded by "")
@@ -296,7 +296,7 @@ sub make_gene_lists{
   # now fire off second query to get dead genes which were made into Transposons
   # this is to help Darin
   $command = "Table-maker -p /nfs/disk100/wormpub/DATABASES/geneace/wquery/genes_made_into_transposons.def\nquit\n";
-  open (TACE, "echo '$command' | $tace /nfs/disk100/wormpub/DATABASES/geneace |") || print LOG "ERROR: Can't open tace connection to /wormsrv1/geneace\n";
+  open (TACE, "echo '$command' | $tace /nfs/disk100/wormpub/DATABASES/geneace |") || print LOG "ERROR: Can't open tace connection to /nfs/disk100/wormpub/DATABASES//geneace\n";
   while (<TACE>) {
     chomp;
     # skip any acedb banner text (table maker output has all fields surrounded by "")
