@@ -42,7 +42,7 @@ $VALID_USERS = {
 
 ## a list of valid SSO login names for each DB operation
 $VALID_API_USERS = {
-		'query'		=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth dblasiar pozersky stlouis caltech cshl sanger)],
+		'query'		=> [qw(avc ar2 pad gw3 mh6 mt3 tbieri jspieth dblasiar pozersky stlouis caltech cshl sanger)],
 
 		'merge_genes'	=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth dblasiar pozersky)],
 		'split_gene'	=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth dblasiar pozersky)],
@@ -57,7 +57,6 @@ $VALID_API_USERS = {
 $VALID_CGCNAME_USERS = {
 		'mt3'			=> 1,
 		'ar2'			=> 1,
-#		'avc'			=> 1,
 };
 
 ## a list of people to mail when a DB operation occurs
@@ -146,7 +145,7 @@ sub main {
 
 	} elsif($action =~ /split_gene/) {
 		if( is_authorised($SSO_USER,$action) == 1) {
-			&split_gene();
+			&split_gene($name,$type,$gene_id);
 		}
 
 	} elsif($action =~ /merge_genes/) {
@@ -228,6 +227,7 @@ sub print_javascript {
 				}
 
 			}
+
 		</script>
 	);
 }
@@ -265,13 +265,14 @@ sub merge_genes
 		<input type="reset" value="Clear Form" />		
     	</form>
 		);
+      print "<BR><font color=red>Please enter genes in both fields</font>" if($merge_gene or $gene_gene);
  
     } else {
-	
+      print  "-$merge_gene | $gene_gene-";
       my $db = get_db_connection();
       my ($gene_id, $merge_id);
-      $gene_id  = $db->idGetByAnyName($gene_gene)->[0]  or $gene_gene;  #allow use of any name
-      $merge_id = $db->idGetByAnyName($merge_gene)->[0] or $merge_gene; #allow use of any name
+      $gene_id  = ($db->idGetByAnyName($gene_gene)->[0]  or $gene_gene);  #allow use of any name
+      $merge_id = ($db->idGetByAnyName($merge_gene)->[0] or $merge_gene); #allow use of any name
       $db->validate_id($gene_id);
       $db->validate_id($merge_id);
 		
@@ -282,7 +283,7 @@ sub merge_genes
       if ($db->idMerge($merge_id,$gene_id)) {
 	print "Merge complete, $merge_gene ($merge_id) is DEAD and has been merged into gene $gene_gene ($gene_id)<br>";
 	#notify
-	send_mail("webserver",$MAIL_NOTIFY_LIST,"Merged gene $gene_id : $merge_id", "GENE MERGE\nUSER : $SSO_USER\nLIVE:retained geneID $merge_id\nDEAD: killed geneID $gene_id");
+	send_mail("webserver",$MAIL_NOTIFY_LIST,"Merged gene $gene_id : $merge_id", "GENE MERGE\nUSER : $SSO_USER\nLIVE:retained geneID $gene_id\nDEAD: killed geneID $merge_id");
       } else {
 	print "Sorry, the gene merge failed<br>";
       }
@@ -322,7 +323,7 @@ sub split_gene {
 		$db->add_name($id, $name, $type);
 
 		#mail
-		send_mail("webserver",$MAIL_NOTIFY_LIST,"Split gene", "$SSO_USER split a gene (Split $gene_id creating $id with name $name)");
+		send_mail("webserver",$MAIL_NOTIFY_LIST,"Split gene $gene_id", "USER : $SSO_USER\nACTION : Split $gene_id\nNEW geneId : $id\nNEW CDS : $type $name");
 
 		#report to screen
 		$id = 'secret' unless ( $LIVE or defined $$VALID_CGCNAME_USERS{$SSO_USER});
@@ -489,7 +490,13 @@ sub new_gene {
 		Enter the details of the new gene<br>  
 		<SELECT NAME="type">
 		  <OPTION SELECTED>CDS
-		  <OPTION>CGC
+                );	
+		if (exists $VALID_CGCNAME_USERS->{$SSO_USER}){
+		  print qq(
+			  <OPTION>CGC
+			);
+		}
+		print qq(
 		</SELECT>
 		<INPUT TYPE="text" NAME="new_name" SIZE="15" MAXLENGTH="10" VALUE="">
 		<INPUT TYPE="hidden" NAME="action" VALUE="new_gene">
