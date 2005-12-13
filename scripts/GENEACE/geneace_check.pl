@@ -6,8 +6,8 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2005-12-12 11:22:08 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2005-12-13 10:17:25 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -547,7 +547,7 @@ show -a -T -f $dump_dir/lab_dump.ace
 quit
 END
 
-  open (DUMP, "| $tace $database") || die "Failed to connect to Geneace";
+  open (DUMP, "| $tace $database") || warn "Failed to connect to Geneace";
   print DUMP $command;
   close DUMP;
 
@@ -557,7 +557,7 @@ END
 
   foreach (@dumps){system ("chmod 777 $dump_dir/$_")}
 
-  open(IN, "$dump_dir/class_dump.ace") || die $!;
+  open(IN, "$dump_dir/class_dump.ace") || warn $!;
 
 # look for person/author names that needs to be converted in 8 classes (regardless of which tag as the scripts greps from string pattern
 
@@ -642,7 +642,7 @@ END
   sub process_WBPerson_names {
     my ($def, $db)=@_;
     my ($WBPerson, $F_name, $M_name, $L_name, $F_char, $M_char);
-    open (FH, "echo '$def' | $tace $db | ") || die "Couldn't access current_DB\n";
+    open (FH, "echo '$def' | $tace $db | ") || warn "Couldn't access current_DB\n";
     while (<FH>){
       chomp($_);
       if ($_ =~ /^\"(WBPerson\d+)\"\s+\"(\w+)\"\s+\"(\w+|\w+.)\"\s+\"(\w+|\w+-\w+)\"$/){
@@ -860,7 +860,7 @@ sub process_allele_class{
   my %allele2lab;
   my $def="Table-maker -p \"$def_dir/allele_designation_to_LAB.def\"\nquit\n";
 
-  open (FH, "echo '$def' | $tace $database | ") || die "Couldn't access $db\n";
+  open (FH, "echo '$def' | $tace $database | ") || warn "Couldn't access $db\n";
   while (<FH>) {
     print;
     chomp;
@@ -1075,8 +1075,8 @@ sub process_strain_class {
   my $get_genotype_in_strain="Table-maker -p \"$def_dir/strain_genotype.def\"\nquit\n";
   my $allele_to_locus="Table-maker -p \"$def_dir/allele_to_locus.def\"\nquit\n";
 
-  open (FH1, "echo '$get_genotype_in_strain' | $tace $database | ") || die $!;
-  open (FH2, "echo '$allele_to_locus' | $tace $database | ") || die $!;
+  open (FH1, "echo '$get_genotype_in_strain' | $tace $database | ") || warn $!;
+  open (FH2, "echo '$allele_to_locus' | $tace $database | ") || warn $!;
 
   while(<FH1>){
     chomp;
@@ -1159,6 +1159,7 @@ sub check_genetics_coords_mapping {
   print JAHLOG "\nChecking discrepancies in genetics/coords mapping:\n";
   print JAHLOG "--------------------------------------------------\n";
   system ("$ENV{'CVS_DIR'}/GENEACE/get_interpolated_gmap.pl -database $database -diff");
+
   my $map_diff = "/nfs/disk100/wormpub/logs/mapping_diff.".$rundate;
   open(IN, $map_diff) || die $!;
   while(<IN>){
@@ -1202,7 +1203,7 @@ sub create_log_files{
 
   $log = "$log_dir/geneace_check.$rundate.$$";
 
-  open (LOG, ">$log") or die "cant open $log";
+  open (LOG, ">$log") or warn "cant open $log";
   print LOG "geneace_check\n";
   print LOG "started at ",`date`,"\n";
   print LOG "=============================================\n";
@@ -1217,7 +1218,7 @@ sub create_log_files{
   $jah_log = "$log_dir/geneace_check.jahlog.$rundate.$$";
 
 
-  open(JAHLOG, ">>$jah_log") || die "Can't open $jah_log\n";
+  open(JAHLOG, ">>$jah_log") || warn "Can't open $jah_log\n";
   print JAHLOG "This mail is generated automatically for CGC on $rundate\n"; 
   print JAHLOG "If you have any queries please email mt3\@sanger.ac.uk\n\n";
   print JAHLOG "=========================================================================\n";
@@ -1225,7 +1226,7 @@ sub create_log_files{
   # create separate log with errors for Erich
   $caltech_log = "$log_dir/geneace_check.caltech_log.$rundate.$$";
 
-  open(CALTECHLOG,">$caltech_log") || die "cant open $caltech_log";
+  open(CALTECHLOG,">$caltech_log") || warn "cant open $caltech_log";
   print CALTECHLOG "$0 started at ",`date`,"\n";
   print CALTECHLOG "This mail is generated automatically for Caltech\n";
   print CALTECHLOG "If you have any queries please email mt3\@sanger.ac.uk\n\n";
@@ -1240,14 +1241,14 @@ sub create_log_files{
 sub check_operons {
 
   
-  open (FH, "<$OPERON_FILE") or die "can't open $OPERON_FILE\t:$!";
+  open (FH, "<$OPERON_FILE") or warn "can't open $OPERON_FILE\t:$!";
   undef $/;
   my %operon;
   my %est;
   my %cds;
   my $data = <FH>;
   eval $data;
-  die if $@;
+  warn if $@;
   $/ = "\n";
   close FH;
 
