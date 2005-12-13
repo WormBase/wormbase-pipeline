@@ -63,9 +63,24 @@ if( $run ) {
 }
 
 if ( $final ) {
+
+  my @err_files = glob("$datdir/*err*");
+  foreach (@err_files ) {
+    if( -s "$_" ) {
+      $log->write_to("ERROR : $_ is NOT zero length");
+    }
+    else {
+      unlink("$_");
+    }
+  }
   $log->write_to("Copying GFF files back to wormsrv2\n");
   foreach my $chrom ( @chromosomes ) {
-    system ("scp $datdir/CHROMOSOME_$chrom.UTR.gff $GFFdir/");
+    if( system ("scp $datdir/CHROMOSOME_$chrom.UTR.gff $GFFdir/") ) {
+      $log->write_to("ERROR: copying $datdir/CHROMOSOME_$chrom.UTR.gff to $GFFdir\n");
+    }
+    else {
+      unlink("$datdir/CHROMOSOME_$chrom.UTR.gff");
+    }
   }
 }
 
