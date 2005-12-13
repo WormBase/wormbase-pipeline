@@ -2,11 +2,17 @@
 
 use lib (-e "/wormsrv2/scripts") ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
+use Getopt::Long;
+
+my $database;
+my $version;
+GetOptions ( 'database:s' => \$database,
+	     'version:s'  => \$version);
 
 print STDERR "\nStart $0 at ",&runtime,"\n=======================\n\n";
 
-my $database = "/wormsrv2/autoace";
-my $GFF_dir = "$database/CHROMOSOMES";
+$database = "/wormsrv2/autoace" unless $database;
+my $GFF_dir = glob("$database/CHROMOSOMES");
 
 #table maker defs used
 my $peptides = "wormpep_lengths.def";
@@ -30,6 +36,7 @@ open ( PEP ,"echo table-maker -p $database/wquery/$peptides | $tace $database |"
 my %pep_length;
 while( <PEP> ) {
   my @data = split;
+  next unless /WP/;
   $data[0] =~ s/WP://;
   $data[0] =~ s/\"//g;
   $pep_length{$data[0]} = $data[1];
@@ -59,7 +66,7 @@ my $genome_base = 0;
 print STDERR "Parsing data from GFF files . . . \n";
 foreach my $chrom ( qw(I II III IV V X ) ) {
   print STDERR "\tchromosome_$chrom \n";
-  open( GFF, "<$GFF_dir/CHROMOSOME_${chrom}.gff") or die "cant open gff $chrom\t$!\n";
+  open( GFF, "<$GFF_dir/CHROMOSOME_${chrom}.gff") or die "cant open gff $GFF_dir/CHROMOSOME_${chrom}.gff\t$!\n";
   while( <GFF> ) {
     #CHROMOSOME_X    curated CDS     39220   41753   .       +       .       CDS "Y73B3A.21"
     my @d = split(/\s+/,$_);
@@ -89,7 +96,7 @@ foreach my $chrom ( qw(I II III IV V X ) ) {
   $genome_base += $chrom_lengths{"$chrom"};
 }
 
-my $ver = &get_wormbase_version;
+$version = &get_wormbase_version unless $version;
 print STDERR "Writing output to \n";
 foreach my $gene ( keys %genes ) {
   print "$gene\t",uc "$gene","\t",                      #gene protein
@@ -105,7 +112,7 @@ foreach my $gene ( keys %genes ) {
     $genes{$gene}->{'genome_end'},"\t",                  #genome end
     $genes{$gene}->{'map'},"\t",                         #map position
     "source\t",
-    "WS$ver\t",                                          #version
+    "WS$version\t",                                          #version
     $genes{$gene}->{'method'},"\n";                      #method
   }
 

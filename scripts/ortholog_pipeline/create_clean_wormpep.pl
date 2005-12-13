@@ -50,6 +50,7 @@ sub find_longest {
     foreach my $id (keys %{$IDS->{$clean_id}}) {
       my $length = $IDS->{$clean_id}->{$id};
       if ($length > $prev) {
+	$prev = $length;
 	$longest_id = $id;
       } else {
 	next;
