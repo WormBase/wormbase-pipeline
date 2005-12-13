@@ -6,8 +6,8 @@
 #
 # This maps alleles to the genome based on their flanking sequences
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2005-10-14 10:23:31 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2005-12-13 10:20:35 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -291,7 +291,7 @@ sub map_alleles{
       if ($count{$gene} == 1){
 	if($affects_genes{$gene}){
 	  # not so serious, but source database should be updated with connection
-	  next if ( $allele->SNP );
+	  next if ( $allele->Method->name eq "SNP" );
 	  print "WARNING: $name->$gene was mapped by script only\n" if ($verbose);
 	  $log->write_to("WARNING: $name->$gene was mapped by script only\n");
 	  
