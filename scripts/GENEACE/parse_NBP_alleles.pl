@@ -1,11 +1,11 @@
 #!/usr/local/bin/perl5.8.0 -w
 
 # Author: Chao-Kung Chen
-# Last updated by $Author: mt3 $
-# Last updated on: $Date: 2005-12-09 13:40:13 $ 
+# Last updated by $Author: ar2 $
+# Last updated on: $Date: 2005-12-13 10:09:50 $ 
 
 use strict;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use lib  $ENV{'CVS_DIR'};
 use Wormbase;
 use Ace;
 use GENEACE::Geneace;
@@ -13,7 +13,10 @@ use Getopt::Long;
 
 # ----- command line options
 my ($input, $debug);
-GetOptions ("input=s"  => \$input);
+my $allele_dir;
+GetOptions ("input=s"  => \$input,
+	    "dir=s"    => \$allele_dir,
+	   );
 
 # ----- warn
 if (!$input){
@@ -25,22 +28,24 @@ if (!$input){
 my $user = `whoami`; chomp $user;
 if ($user ne "wormpub"){
   print "\n\nYou need to be wormpub to do this!\n\n";
-  exit(0);
+#  exit(0);
 }
 
 # ----- global variables
 my $ga = init Geneace();
 my $database = $ga->curr_db;
 my $tace = &tace;
-my $allele_dir = "/nfs/disk100/wormpub/DATABASES/geneace/ALLELE_DATA/JAPANESE_KNOCKOUTS";
+
+$allele_dir = "/nfs/disk100/wormpub/DATABASES/geneace/ALLELE_DATA/JAPANESE_KNOCKOUTS" unless $allele_dir;
 my $acedb = Ace->connect( -path => "$database") or die Ace->error;
+
 
 ##########################################
 # open logfile and various output streams
 ##########################################
 
 my $rundate = &rundate;
-my $log = "/wormsrv2/logs/parse_NBP_alleles.$rundate.$$";
+my $log = "/tmp/parse_NBP_alleles.$rundate.$$";
 
 open(LOG,    ">$log")                                              || die $!;
 open(ACE,    ">$allele_dir/NBP_alleles.$rundate.ace")              || die $!;
