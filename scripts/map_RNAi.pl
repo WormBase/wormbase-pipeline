@@ -8,7 +8,7 @@
 #
 # Version: $Version: $
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2005-12-16 13:13:13 $
+# Last updated on: $Date: 2005-12-16 13:20:32 $
 
 use strict;
 use warnings;
@@ -74,7 +74,7 @@ if ($debug) {
     ( $maintainers = $debug . '\@sanger.ac.uk' );
 }
 
-my $log = Log_files->make_build_log($wb)$
+my $log = Log_files->make_build_log($wb);
 
 ##############
 # Paths etc. #
