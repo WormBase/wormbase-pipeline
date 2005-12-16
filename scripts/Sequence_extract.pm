@@ -33,11 +33,7 @@ Internal methods are usually preceded with a _
 
 package Sequence_extract;
 
-<<<<<<< Sequence_extract.pm
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
-=======
 use lib $ENV{'CVS_DIR'};
->>>>>>> 1.5.4.2
 
 use Carp;
 use Wormbase;
