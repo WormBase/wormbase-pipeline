@@ -4,8 +4,8 @@
 #
 # by ag3 [991221]
 #
-# Last updated on: $Date: 2005-11-28 09:36:36 $
-# Last updated by: $Author: pad $
+# Last updated on: $Date: 2005-12-16 10:21:13 $
+# Last updated by: $Author: ar2 $
 
 # transferdb moves acedb database files across filesystems.
 # Creates a temporary database.BCK 
@@ -13,7 +13,7 @@
 # Updates display.wrm
 
 use strict;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 
 use Carp;
@@ -22,6 +22,9 @@ use File::Find;
 use File::Path;
 use Getopt::Long;
 use Cwd;
+use Log;
+use Storable;
+
 
 ##############################
 # command-line options       #
@@ -52,6 +55,8 @@ my $file;              # ???
 my $retry = 5;         # for making repeat attempts to copy a file
 my $test;              # test mode, logs go to ~wormpub/TEST_BUILD/logs
 my $split;             # -split: changes cp function for models.wrm if splitting camace
+my $store;
+my $wormbase;
 
 GetOptions (
 	    "start=s"     => \$srcdir,
@@ -77,27 +82,24 @@ GetOptions (
 	    "mail"        => \$mail,
 	    "retry=i"     => \$retry,
 	    "test"        => \$test,
-            "split"       => \$split
+            "split"       => \$split,
+	    "store:s"     => \$store
 );
+
+if( $store ) {
+  $wormbase = retrieve( $store ) or croak("cant restore wormbase from $store\n");
+}
+else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+			     -test    => $test,
+			   );
+}
 
 ##################################
 #set up log files and debug mode
 ##################################
-my $log; 
-my $maintainers = "All";
 
-# Set top level path for build, different if in test mode
-my $basedir   = "/nfs/disk100/wormpub";
-$basedir   = glob("~wormpub")."/TEST_BUILD" if ($test); 
-
-# Use debug mode?
-if($debug){
-  print "DEBUG = \"$debug\"\n\n";
-  ($maintainers = $debug . '\@sanger.ac.uk');
-}
-&create_log_files;
-
-
+my $log = Log_files->make_build_log( $wormbase );
 
 
 #########################################################
@@ -120,9 +122,9 @@ if ($srcdir =~ /^\~/) {
 ###########################
 my %SIG;
 
-$SIG{INT}  = sub {print LOG ".. INTERRUPT ..\n"; close LOG; die()};
-$SIG{TERM} = sub {print LOG ".. INTERRUPT ..\n"; close LOG; die()}; 
-$SIG{QUIT} = sub {print LOG ".. INTERRUPT ..\n"; close LOG; die()};
+$SIG{INT}  = sub {$log->log_and_die(".. INTERRUPT ..\n");};
+$SIG{TERM} = sub {$log->log_and_die(".. INTERRUPT ..\n");};
+$SIG{QUIT} = sub {$log->log_and_die(".. INTERRUPT ..\n");};
 
 
 #######################################################################
@@ -144,13 +146,13 @@ else {
 # does it exist?
 if (!-d $enddir){ 
   print "$enddir doesn't exist, will try to create it\n";
-  print LOG "$enddir doesn't exist, will try to create it\n";
+  $log->write_to( "$enddir doesn't exist, will try to create it\n");
   mkdir($enddir,07777) or &usage("3");
 } 
 
 
-print LOG "SOURCE DIR: $srcdir\n";
-print LOG "TARGET DIR: $enddir\n\n";
+$log->write_to( "SOURCE DIR: $srcdir\n");
+$log->write_to( "TARGET DIR: $enddir\n\n");
 
 my $new_subdir  = "$enddir"."/database";
 my $bck_subdir  = "$enddir"."/database.BCK";
@@ -183,7 +185,7 @@ push (@TOBEMOVED,"$release")     if ($S_release     || $S_all);
 push (@TOBEMOVED,"$acefiles")    if ($S_acefiles    || $S_all);
 push (@TOBEMOVED,"$common_data") if ($S_common      || $S_all);
 
-print LOG "Directories to be copied: @TOBEMOVED \n";
+$log->write_to( "Directories to be copied: @TOBEMOVED \n");
 
 
 
@@ -193,7 +195,7 @@ print LOG "Directories to be copied: @TOBEMOVED \n";
 #############################################################################
 
 if (($S_database || $S_all) && -d $new_subdir) {
-  print LOG "Making backup copy of old database ...\n";
+  $log->write_to( "Making backup copy of old database ...\n");
   find (\&backup_db,$database); 
 }
 
@@ -204,7 +206,7 @@ if (($S_database || $S_all) && -d $new_subdir) {
 my @failed_files;
 foreach my $dir (@TOBEMOVED){
   if (!-d $dir){
-    print LOG "$dir doesn't exist, skipping to next category\n";
+    $log->write_to( "$dir doesn't exist, skipping to next category\n");
   }
   else{
     find (\&process_file,$dir);
@@ -217,31 +219,29 @@ foreach my $dir (@TOBEMOVED){
 ######################################################################
 
 if ((!$backup) && (-d $bck_subdir)) {
-  print LOG "REMOVING BACKUP TREE $bck_subdir\n";
+  $log->write_to( "REMOVING BACKUP TREE $bck_subdir\n");
   rmtree ($bck_subdir);
 } 
 elsif ($backup &&(-d $bck_subdir)) {
-  print LOG "Backup database directory is in $bck_subdir\n";
+  $log->write_to( "Backup database directory is in $bck_subdir\n");
 }
 
 ########################
 # Finish script cleanly
 ########################
 
-print LOG "\n=============================================\n";
+$log->write_to( "\n=============================================\n");
 if( @failed_files ) {
-  print LOG "TransferDB process $$ ended in FAILURE  at ",&runtime,"\n\n";
-  print LOG "\n\nThe following ",scalar @failed_files," files were NOT copied correctly \n";
+  $log->write_to( "TransferDB process $$ ended in FAILURE  at ",$wormbase->runtime,"\n\n");
+  $log->write_to( "\n\nThe following ",scalar @failed_files," files were NOT copied correctly \n");
   foreach ( @failed_files ) {
-    print LOG "\t$_\n";
+    $log->write_to( "\t$_\n");
   }
 }
 else {
-  print LOG "TransferDB process $$ ended SUCCESSFULLY at ",&runtime,"\n";
+  $log->write_to( "TransferDB process $$ ended SUCCESSFULLY at ",$wormbase->runtime,"\n");
 }
-
-close(LOG);
-&mail_maintainer("TransferDB.pl",$maintainers,$log) if ($mail);
+$log->mail;
 exit 0;
 
 
@@ -269,8 +269,8 @@ sub backup_db {
   if (-d $file) {
     $file=~s/$database/$bck_subdir/;
     if (!-d $file){
-      mkdir($file,07777) or print LOG "Could not mkdir backup directory $file: $!";
-      print LOG "CREATED backup directory $file\n";
+      mkdir($file,07777) or $log->write_to( "Could not mkdir backup directory $file: $!");
+      $log->write_to( "CREATED backup directory $file\n");
     }
   } 
   else {
@@ -283,12 +283,12 @@ sub backup_db {
       $O_SIZE = (stat($file))[7];
       $N_SIZE = (stat($newfile))[7];
       if (($bk_chk != 0)||($O_SIZE != $N_SIZE)) {
-	print LOG "Copy of backup $file FAILED\n";
+	$log->write_to( "Copy of backup $file FAILED\n");
       } else {
-	print LOG "CREATED BACKUP copy - $newfile ..\n";
+	$log->write_to( "CREATED BACKUP copy - $newfile ..\n");
       }      
     } else {
-      print LOG "SKIPPING BACKUP copy - $file ..\n";
+      $log->write_to( "SKIPPING BACKUP copy - $file ..\n");
     }
   }
 }
@@ -308,7 +308,7 @@ sub process_file {
   my $s_subdir="$File::Find::dir";
 
   if (!-d $s_subdir) {
-    print LOG "ERROR: Could not read $s_subdir\n";
+    $log->write_to( "ERROR: Could not read $s_subdir\n");
   }
   $s_subdir =~ s/$srcdir//;
 
@@ -318,23 +318,23 @@ sub process_file {
 
   if (!-d $e_subdir){
     unless(mkdir($e_subdir,07777)){
-      print LOG "ERROR: Could not mkdir subdir $e_subdir: $!\n";
+      $log->write_to( "ERROR: Could not mkdir subdir $e_subdir: $!\n");
       close(LOG);
       croak "ERROR: Could not mkdir subdir $e_subdir: $!\n";
     }
-    print LOG "CREATED SUBDIR $e_subdir\n";
+    $log->write_to( "CREATED SUBDIR $e_subdir\n");
   }
   my $e_file="$e_subdir"."/"."$filename";
 
 
   if ((-d $s_file) || ($filename =~ /^\./) || ($filename =~ /lock.wrm/)){ 
-    print LOG " .. SKIPPING file $filename \n";
+    $log->write_to( " .. SKIPPING file $filename \n");
   } 
   else {
     # if you are copying displays.wrm and -name was specified, you can update
     # the contents of the file itself to ad6~d the new name
     if (($filename =~ m/displays.wrm$/) && $dbname){
-      print LOG "Updating displays.wrm ...\n";
+      $log->write_to( "Updating displays.wrm ...\n");
       open (INFILE,"cat $s_file|");
       open (OUTFILE,">$e_file");
       while (<INFILE>) {
@@ -369,10 +369,10 @@ sub process_file {
 	my $S_SIZE = (stat($s_file))[7];
 	my $E_SIZE = (stat($e_file))[7];
 	if (($cp_chk != 0)||($S_SIZE != $E_SIZE)){
-	  print LOG "ERROR: COPY of $s_file FAILED - attempt $i\n";
+	  $log->write_to( "ERROR: COPY of $s_file FAILED - attempt $i\n");
 	}
 	else {
-	  print LOG "COPIED - $e_file .. \n";
+	  $log->write_to( "COPIED - $e_file .. \n");
 	  $success = 1;
 	  last ATTEMPT;
 	}     
@@ -381,7 +381,7 @@ sub process_file {
       push(@failed_files, $s_file) unless $success == 1;
     }
     else {
-      print LOG "SKIPPING COPY of $s_file .. \n";
+      $log->write_to( "SKIPPING COPY of $s_file .. \n");
     };
   }
 }
@@ -402,25 +402,22 @@ sub usage {
     print "-start <database_path> and\n";
     print "-end <database_path>\n";
     print "Both database paths must be valid ones\n\n";
-    print LOG "-start and/or -end not specified, or -start describes an invalid database path\n";
-    print LOG "TransferDB prematurely quitting at",&runtime,"\n";
-    close(LOG);
+    $log->write_to( "-start and/or -end not specified, or -start describes an invalid database path\n");
+    $log->write_to( "TransferDB prematurely quitting at".$wormbase->runtime."\n");
     exit(1);
   }
   elsif($error == 2){
     print "If -name is specified you must also specify -wspec or -all\n";
-    print LOG "-name specified but -wspec or -all not specified\n";
-    print LOG "TransferDB prematurely quitting at",&runtime,"\n";
-    close(LOG);
+    $log->write_to( "-name specified but -wspec or -all not specified\n");
+    $log->write_to( "TransferDB prematurely quitting at".$wormbase->runtime."\n");
     exit(1);
   }
   elsif($error == 3){
     print "ERROR: Could not run mkdir for directory specified by -end\n";
-    print LOG "ERROR: Could not run mkdir for directory specified by -end\n";
-    print LOG "TransferDB prematurely quitting at",&runtime,"\n";
-    close(LOG);
+    $log->write_to( "ERROR: Could not run mkdir for directory specified by -end\n");
+    $log->write_to( "TransferDB prematurely quitting at".$wormbase->runtime."\n");
     exit(1);
-  }
+		 }
 
 
 
@@ -428,27 +425,6 @@ sub usage {
 
 #############################################################################################
 
-sub create_log_files{
-
-  # Create history logfile for script activity analysis
-  if( -e "$basedir/logs/history" ){
-    $0 =~ m/\/*([^\/]+)$/; system ("touch $basedir/logs/history/$1.`date +%y%m%d`");
-    # create main log file using script name for
-    my $script_name = $1;
-    $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
-    my $rundate     = `date +%y%m%d`; chomp $rundate;
-    $log        = "$basedir/logs/$script_name.$rundate.$$";
-
-    open (LOG, ">$log") or die "cant open $log";
-    print LOG "$script_name process $$ started at ",&runtime,"\n";
-    print LOG "=============================================\n";
-    print LOG "\n";
-  }
-  else {
-    print "cant see $basedir so LOGing to STDERR\n";
-    *LOG = *STDOUT;
-  }
-}
 
 
 
