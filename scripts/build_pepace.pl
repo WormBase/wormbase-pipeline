@@ -9,8 +9,8 @@
 # solely in the wormpep.history file.
 # 
 #
-# Last updated by: $Author: krb $                     
-# Last updated on: $Date: 2004-08-10 13:36:33 $     
+# Last updated by: $Author: ar2 $                     
+# Last updated on: $Date: 2005-12-16 11:18:55 $     
 
 use strict;                                     
 use lib "/wormsrv2/scripts/";                  

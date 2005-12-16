@@ -4,14 +4,16 @@
 #
 # by Dan Lawson (dl1@sanger.ac.uk)
 #
-# Last edited by: $Author: krb $
-# Last edited on: $Date: 2003-12-04 14:51:20 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2005-12-16 11:18:55 $
 
 use strict;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
 use File::Copy;
+use File::Path;
+use Storable;
 
 
 #################################
@@ -22,20 +24,16 @@ my $help;
 my $debug;
 my $test;      # uses test environment
 my $quicktest; # same as $test but only runs one chromosome
+my $database;
+my $store;
 
 GetOptions ("help"         => \$help,
-	    "debug"        => \$debug,
+	    "debug:s"      => \$debug,
 	    "test"         => \$test,
-            "quicktest"    => \$quicktest);
-
-&error(0) if ($help);
-
-# Use debug mode?
-my $maintainers = "All";
-if($debug){
-  print "DEBUG = \"$debug\"\n\n";
-  ($maintainers = $debug . '\@sanger.ac.uk');
-}
+            "quicktest"    => \$quicktest,
+	    "database:s"   => \$database,
+	    "store:s"      => \$store
+	   );
 
 # check that -test and -quicktest haven't both been set.  Also if -quicktest is specified, 
 # need to make -test true, so that test mode runs for those steps where -quicktest is meaningless
@@ -44,7 +42,19 @@ if($test && $quicktest){
 }
 ($test = 1) if ($quicktest);
 
+my $wormbase;
+if( $store ) {
+  $wormbase = retrieve( $store ) or croak("cant restore wormbase from $store\n");
+}
+else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+			     -test    => $test,
+			   );
+}
 
+&error(0) if ($help);
+
+my $log = Log_files->make_build_log($wormbase);
 
 ##############################
 # Script variables (run)     #
@@ -52,10 +62,10 @@ if($test && $quicktest){
 
 # Set up top level base directory which is different if in test mode
 # Make all other directories relative to this
-my $basedir   = "/wormsrv2";
-$basedir      = "/nfs/disk100/wormpub/TEST_BUILD" if ($test); 
-my $outdir    = "$basedir/autoace/yellow_brick_road";
-
+my $basedir  = $wormbase->basedir;
+my $outdir    = $wormbase->autoace."/yellow_brick_road";
+mkpath $outdir unless (-e $outdir);
+my $gff_dir = $wormbase->gff_splits;
 
 
 my @gff_files = ('I','II','III','IV','V','X');
@@ -111,10 +121,10 @@ foreach my $chromosome (@gff_files) {
 
   my $file = "$outdir/CHROMOSOME_$chromosome.agp";
 
-  &error(1,$chromosome) unless ("-e $outdir/CHROMOSOME_${chromosome}.clone_acc.gff");
+  &error(1,$chromosome) unless ("-e $gff_dir/CHROMOSOME_${chromosome}.clone_acc.gff");
   
   # read data from gff file
-  open (GFF, "<$outdir/CHROMOSOME_$chromosome.clone_acc.gff");
+  open (GFF, "<$gff_dir/CHROMOSOME_$chromosome.clone_acc.gff") or $log->log_and_die("cant open $gff_dir/CHROMOSOME_$chromosome.clone_acc.gff");
   while (<GFF>) {
     
     $seq_len = "";
@@ -182,12 +192,10 @@ foreach my $chromosome (@gff_files) {
   $limit = $i;
   
   print "\n";
-
-  open (LOG, ">${file}.log");
   
   # write report lines (redundant clones, butt-ends, gaps) to the log file
   foreach (@report) {
-    print LOG $_;
+    $log->write_to("$_");
   }
   @report = "";      # clean the report up
   
@@ -196,12 +204,15 @@ foreach my $chromosome (@gff_files) {
     $span2get = $start{$i+1} - $start{$i};
     
     if ($clone{$i} eq "gap") {
-      printf LOG "%3d %8s\t[%8d => %8d] [%8d] : Pad with %6d bp of '-'s}\n", $i, $clone{$i}, $start{$i}, $stop{$i}, $start{$i+1},$span2get;
+      my $msg = sprintf "%3d %8s\t[%8d => %8d] [%8d] : Pad with %6d bp of '-'s}\n", $i, $clone{$i}, $start{$i}, $stop{$i}, $start{$i+1},$span2get;
+      $log->write_to($msg);
+
       $unique_stop = $start{$i} + $span2get -1;
       print OUT "$chromosome\t$start{$i}\t$unique_stop\t$i\tN\t$span2get\n";
     } 
     else {
-      printf LOG "%3d %8s\t[%8d => %8d] [%8d] : Extract %6d bp from accession $acc{$i}, version $ver{$i}\n", $i, $clone{$i}, $start{$i}, $stop{$i}, $start{$i+1},$span2get;
+      my $msg = sprintf "%3d %8s\t[%8d => %8d] [%8d] : Extract %6d bp from accession $acc{$i}, version $ver{$i}\n", $i, $clone{$i}, $start{$i}, $stop{$i}, $start{$i+1},$span2get;
+      $log->write_to($msg);
       $unique_stop = $start{$i} + $span2get -1;
       print OUT "$chromosome\t$start{$i}\t$unique_stop\t$i\tF\t$acc{$i}.$ver{$i}\t1\t$span2get\t+\n";
     }
@@ -210,14 +221,12 @@ foreach my $chromosome (@gff_files) {
 
   # copy agp file to correct directory
   # copy command returns 0 for failed
-  my $status = copy("$file", "$basedir/autoace/CHROMOSOMES/CHROMOSOME_$chromosome.agp"); 
-  print LOG "ERROR: Couldn't copy file: $!\n" if ($status == 0);
-
-  close LOG;
-
-   
+  my $status = copy("$file", $wormbase->chromosomes."/CHROMOSOME_$chromosome.agp"); 
+  $log->write_to("ERROR: Couldn't copy file: $!\n") if ($status == 0);
 }
-
+$log->mail;
+exit(0);
+   
  ##############################
  # hasta luego                #
  ##############################

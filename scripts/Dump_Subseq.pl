@@ -4,8 +4,8 @@
 #
 # by Dan Lawson
 #
-# Last updated on: $Date: 2002-12-09 16:04:31 $
-# Last updated by: $Author: krb $
+# Last updated on: $Date: 2005-12-16 11:18:54 $
+# Last updated by: $Author: ar2 $
 #
 # Ace dumps a subsequence from a given target database
 # And retrieves the coordinates from parent object

@@ -6,8 +6,8 @@
 #
 # Usage : autoace_minder.pl [-options]
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2005-12-09 11:47:35 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2005-12-16 11:18:55 $
 
 
 
@@ -16,7 +16,7 @@
 #################################################################################
 
 use strict;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use lib -e $ENV{'CVS_DIR'};
 use Wormbase;
 use IO::Handle;
 use Getopt::Long;
@@ -38,6 +38,7 @@ my $gffsplit;           # split gff files
 my $buildpep;		# Build wormpep
 my $buildrna;		# Build wormrna
 my $prepare_blat;	# Prepare for blat, copy autoace before blatting, run blat_them_all.pl -dump
+<<<<<<< autoace_minder.pl
 my $blat_est;           # post-process blat for ests
 my $blat_mrna;          # post-process for mrnas
 my $blat_ncrna;         # post-process for ncrnas
@@ -49,6 +50,17 @@ my $blat_washu;         # post-process for WashU (nematode.net) contigs
 my $blat_nembase;       # post-process for Nembase contigs
 my $blat_all;           # post-process for all types of blat jobs
 my $addblat;		# load (all) blat files into autoace
+=======
+my $blat_est;           # post-process blat for ests
+my $blat_mrna;          # post-process for mrnas
+my $blat_ncrna;         # post-process for ncrnas
+my $blat_ost;           # post-process for osts
+my $blat_embl;          # post-process for non-Wormbase CDS genes in EMBL
+my $blat_tc1;           # post-process for TC1 insertion sequences
+my $blat_nematode;      # post-process for non-C. elegans nematode ESTs
+my $blat_all;           # post-process for all types of blat jobs
+my $addblat;		# load (all) blat files into autoace
+>>>>>>> 1.81.4.2
 my $addbriggsae;        # add briggsae ace files
 my $addhomol;           # parse similarity data from /ensembl_dump
 my $utrs;               # generate UTR dataset
@@ -77,6 +89,7 @@ my $errors = 0;         # keep track of errors in each step (from bad system cal
 my $remarks;
 
 GetOptions (
+<<<<<<< autoace_minder.pl
 	    "agp"	            => \$agp,
 	    "initial"               => \$initial,
 	    "unpack"                => \$unpack,
@@ -118,6 +131,46 @@ GetOptions (
 	    "test"                  => \$test,
 	    "quicktest"             => \$quicktest,
 	    "remarks"               => \$remarks,
+=======
+	    "agp"	            => \$agp,
+	    "initial"               => \$initial,
+	    "unpack"                => \$unpack,
+	    "gffdump"               => \$gffdump,
+	    "gffsplit"              => \$gffsplit,
+	    "buildpep"              => \$buildpep,
+	    "buildtest"             => \$buildtest,
+	    "buildrna"              => \$buildrna,
+	    "prepare_blat"          => \$prepare_blat,
+	    "process_blat_est"      => \$blat_est,
+	    "process_blat_ost"      => \$blat_ost,
+	    "process_blat_mrna"     => \$blat_mrna,
+	    "process_blat_ncrna"    => \$blat_ncrna,
+	    "process_blat_embl"     => \$blat_embl,
+	    "process_blat_tc1"      => \$blat_tc1,
+	    "process_blat_nematode" => \$blat_nematode,
+	    "process_blat_all"      => \$blat_all,
+	    "addblat"               => \$addblat,
+	    "addbriggsae"           => \$addbriggsae,
+	    "addhomol"              => \$addhomol,
+	    "utrs"                  => \$utrs,
+	    "map"                   => \$map,
+	    "acefile"               => \$acefile,
+	    "build"                 => \$build,
+	    "builddb"               => \$builddb,
+	    "buildchrom"            => \$buildchrom,
+	    "buildrelease"          => \$buildrelease,
+	    "confirm"               => \$confirm,
+	    "dbcomp"	            => \$dbcomp,
+	    "debug:s"               => \$debug,
+	    "verbose"               => \$verbose,
+	    "operon"                => \$operon,
+	    "load:s"                => \$load,
+	    "tsuser:s"              => \$tsuser,
+	    "help"                  => \$help,
+	    "test"                  => \$test,
+	    "quicktest"             => \$quicktest,
+	    "remarks"               => \$remarks,
+>>>>>>> 1.81.4.2
 );
 
 # Help pod if needed
@@ -132,7 +185,7 @@ if($test && $quicktest){
   &usage(21);
 }
 ($test = 1) if ($quicktest);
-
+$ENV{'TEST_BUILD'} = 1 if $test;
 
 ##############################
 # Script variables (run)     #
@@ -153,9 +206,14 @@ if($debug){
 # Set up top level base directory which is different if in test mode
 # Make all other directories relative to this
 my $basedir   = "/wormsrv2";
-$basedir      = glob("~wormpub")."/TEST_BUILD" if ($test); 
+my $scriptdir = "$basedir/scripts";
+
+if ($test ) {
+  $basedir = glob("~wormpub")."/TEST_BUILD";
+  $scriptdir = $ENV{'CVS_DIR'};
+}
+
 my $db_path   = "$basedir/autoace";
-my $scriptdir = "$basedir/scripts";               
 
 
 # build flag path
@@ -221,17 +279,19 @@ LOG->autoflush();
 
 # A1:Build_in_progress & A2:Updated_WS_version
 # Requires: 
-&initiate_build    if ($initial);
-
+my $opts = "-database $db_path";
+$opts .= " -test" if $test;
+$opts .= " -debug $debug" if $debug;
+system("perl $scriptdir/initiate_build.pl $opts")    if ($initial);
 
 # A3:Unpack_FTP_databases & A4:Primary_databases_on_wormsrv2
 # Requires: A1   
-&prepare_primaries if ($unpack);
+system("perl $scriptdir/prepare_primary_databases.pl $opts")  if ($unpack);
 
 
 # A5:Wrote_acefiles_to_wormbase 
 # Requires: A1,A4
-&make_acefiles     if ($acefile);
+&run_command("$scriptdir/make_acefiles.pl -$opts")   if ($acefile);
 
 #__ BUILD SECTION __#
 
@@ -254,7 +314,11 @@ LOG->autoflush();
 
 # B6:Blat_analysis 
 # Requires: A1,A4,A5,B1
+<<<<<<< autoace_minder.pl
 &process_blat_jobs      if ($blat_est || $blat_ost || $blat_mrna || $blat_ncrna || $blat_embl || $blat_tc1 || $blat_nematode || $blat_washu || $blat_nembase || $blat_all);
+=======
+&process_blat_jobs      if ($blat_est || $blat_ost || $blat_mrna || $blat_ncrna || $blat_embl || $blat_tc1 || $blat_nematode || $blat_all);
+>>>>>>> 1.81.4.2
 
 
 # B7:Upload_BLAT_data
@@ -311,13 +375,13 @@ if ($addblat){
 
 #__ ANCILLIARY DATA SECTION __#
 
-# D1:Build_wormpep                    
+# D1:Build_wormpep
 &make_wormpep      if ($buildpep);
 
 # add DB_remarks
 &run_command( "$scriptdir/get_pfam.pl --database /wormsrv2/autoace")  if ( $remarks );
 
-# D4:Build_wormrna                    
+# D4:Build_wormrna
 &make_wormrna      if ($buildrna);
 
 
@@ -370,7 +434,7 @@ exit(0);
 
 #################################################################################
 #                                                                               #
-#                                                                               # 
+#                                                                               #
 #                T  H  E     S  U  B  R  O  U  T  I  N  E  S                    #
 #                                                                               #
 #                                                                               #
@@ -482,6 +546,7 @@ sub get_WS_version {
 #__ end get_WS_version __#
 
 #################################################################################
+<<<<<<< autoace_minder.pl
 # prepare primary databases                                                     #
 #################################################################################
 #
@@ -647,25 +712,15 @@ sub last_versions {
 
 
 #################################################################################
+=======
+>>>>>>> 1.81.4.2
 # make_acefiles                                                               
 #################################################################################
 
 sub make_acefiles {
-  $am_option = "-acefile";
-
-  # exit unless build_in_progress flag is present
-  &usage("Build_in_progress_absent") unless (-e "$logdir/$flag{'A1'}");
-  
-  # exit unless A4:Primary_databases_on_wormsrv2
-  &usage("Build_in_progress_absent") unless (-e "$logdir/$flag{'A4'}");
-
   my $command = "$scriptdir/make_acefiles.pl";
   $command .= " -test" if ($test);
-  &run_command($command);
-
-  # make a make_acefiles log file in /logs
-  system("touch $logdir/$flag{'A5'}");
-  
+  &run_command($command);  
 }
 #__ end make_acefiles __#
 
@@ -682,6 +737,7 @@ sub make_acefiles {
 # Does         : [01] - checks the Primary_database_used_in_build data
 #              : [03] - writes log file A1:Update_WS_version to $basedir/autoace/logs
 
+<<<<<<< autoace_minder.pl
 sub make_autoace {
 
   $am_option = "-build";
@@ -791,6 +847,9 @@ sub make_autoace {
   }
 }
 #__ end make_autoace __#
+=======
+
+>>>>>>> 1.81.4.2
 
 
 
@@ -807,6 +866,7 @@ sub inverted_repeats {
 
 #########################################################################################################################
 
+<<<<<<< autoace_minder.pl
 sub check_make_autoace {
   local (*BUILDLOOK,*BUILDLOG);
   my $log;
@@ -929,6 +989,8 @@ sub make_agp {
 
 #__ end make_agp __#
 
+=======
+>>>>>>> 1.81.4.2
 
 #################################################################################
 # run dbcomp.pl                                                                 #
@@ -951,7 +1013,12 @@ sub prepare_for_blat{
   $am_option = "-prepare_blat";
   &usage(15) if (-e "$logdir/$flag{'B3:ERROR'}");
   
+<<<<<<< autoace_minder.pl
   # Extract sequences from autoace & mask using ?Feature_data as appropriate
+=======
+  # transcriptmasker run to mask ?Feature_data from raw sequences
+  # note to krb. This needs bradnamisation to allow a -all flag.
+>>>>>>> 1.81.4.2
 
   &run_command("$scriptdir/fetch_seqs_for_blatting.pl -all");
 
@@ -961,7 +1028,7 @@ sub prepare_for_blat{
   &run_command("$scriptdir/blat_them_all.pl -dump");
 
 
-} 
+}
 
 #################################################################################
 
@@ -1002,6 +1069,7 @@ sub process_blat_jobs{
     &run_command("$scriptdir/blat_them_all.pl -virtual -$job");
     
     # Run aceprocess to make cleaner files
+<<<<<<< autoace_minder.pl
     # do the homol compress for all types of data but only invoke the feature compress for good_intron files (i.e. EST/OST/mRNA)
     
     # Raw BLAT outputs
@@ -1011,6 +1079,17 @@ sub process_blat_jobs{
       print "ERROR: Couldn't move file: $!\n" if ($status == 0);      
     }
     else {
+=======
+    # do the homol compress for all types of data but only invoke the feature compress for good_intron files (i.e. EST/OST/mRNA)
+    
+    # Raw BLAT outputs
+    unless ($job eq "nematode") {
+      &run_command("$scriptdir/acecompress.pl -homol ${blat_dir}/autoace.blat.$job.ace > ${blat_dir}/autoace.blat.${job}lite.ace");
+      my $status = move("${blat_dir}/autoace.blat.${job}lite.ace", "${blat_dir}/autoace.blat.$job.ace");
+      print "ERROR: Couldn't move file: $!\n" if ($status == 0);      
+    }
+    else {
+>>>>>>> 1.81.4.2
       &run_command("$scriptdir/acecompress.pl -homol ${blat_dir}/autoace.$job.ace > ${blat_dir}/autoace.blat.${job}lite.ace");
       my $status = move("${blat_dir}/autoace.blat.${job}lite.ace", "${blat_dir}/autoace.blat.$job.ace");
       print "ERROR: Couldn't move file: $!\n" if ($status == 0);      
@@ -1041,6 +1120,7 @@ sub process_blat_jobs{
 
 sub load_blat_results {
 
+<<<<<<< autoace_minder.pl
   $am_option .= "-addblat";
     
   my $first_blat_type = $_[0];
@@ -1063,6 +1143,30 @@ sub load_blat_results {
     
     $file = "$basedir/autoace/BLAT/autoace.blat.$type.ace";           
     &load($file,"blat_${type}_data");
+=======
+  $am_option .= "-addblat";
+    
+  my $first_blat_type = $_[0];
+  my @blat_types = @_;
+  @blat_types    = ("est","mrna","ncrna","ost","embl","nematode","tc1") if ($first_blat_type eq "all");
+  
+  foreach my $type (@blat_types){    
+    print LOG "Adding BLAT $type data to autoace at ",&runtime,"\n";
+    my $file =  "$basedir/autoace/BLAT/virtual_objects.autoace.blat.$type.ace";
+    &load($file,"virtual_objects_$type");
+    
+    # Don't need to add confirmed introns from nematode data (because there are none!)
+    unless ( ($type eq "nematode") || ($type eq "tc1") || ($type eq "embl")|| ($type eq "ncrna") ) {
+      $file = "$basedir/autoace/BLAT/virtual_objects.autoace.ci.$type.ace"; 
+      &load($file,"blat_confirmed_introns_$type");
+      
+      $file = "$basedir/autoace/BLAT/autoace.good_introns.$type.ace";
+      &load($file,"blat_good_introns_$type");
+    } 
+    
+    $file = "$basedir/autoace/BLAT/autoace.blat.$type.ace";           
+    &load($file,"blat_${type}_data");
+>>>>>>> 1.81.4.2
     
   }
   system("touch $logdir/$flag{'B7'}"); 
@@ -1210,6 +1314,7 @@ sub make_wormpep {
 
     # make wormpep database but also perform all the other related protein steps in the build
     
+<<<<<<< autoace_minder.pl
     unless( -e "$logdir/D1A:Build_wormpep_initial" ) {
       
 	# make wormpep -initial
@@ -1219,6 +1324,31 @@ sub make_wormpep {
 	&run_command("$command");
 	
 	# Add CDS <-> wormpep CE connections so that CommonData hash is populated correctly
+=======
+    system("touch $logdir/D1A:Build_wormpep_initial");
+  }
+  else {
+    # get Pfam domains (this step loads resulting ace file to autoace)
+    &run_command("$scriptdir/GetPFAM_motifs.pl -load");
+
+    # get interpro domains (this step loads resulting ace file to autoace)
+    &run_command("$scriptdir/GetInterPro_motifs.pl -load");
+
+    # make interpro2go connections (to be used by getProteinID)
+    &run_command("$scriptdir/make_Interpro2GO_mapping.pl");
+
+    # Get protein IDs (this step writes to ~wormpub/analysis/SWALL and loads wormpep info to autoace) 
+    &run_command("$scriptdir/getProteinID.pl -load");
+    
+    # make wormpep -final
+    my $command = "$scriptdir/make_wormpep.pl -final";
+    $command .= " -test" if ($test);
+    &run_command("$command");
+   
+    #
+    # make acefile of peptides etc to add to autoace (replacement for pepace)
+    &run_command("$scriptdir/build_pepace.pl");
+>>>>>>> 1.81.4.2
 
 	my $file =  "$basedir/autoace/acefiles/CDS2wormpep.ace";
 	&load($file,"wormpep");
@@ -1335,6 +1465,12 @@ sub map_features {
   $am_option = "-map";
 
   my $file;
+<<<<<<< autoace_minder.pl
+=======
+
+  # features
+  &run_command("$scriptdir/map_features.pl -all -build");
+>>>>>>> 1.81.4.2
   
   # PCR products
   &run_command("$scriptdir/map_PCR_products.pl");
@@ -1445,6 +1581,7 @@ sub logfile_details {
   print LOG "#  -dbcomp       : Check DB consistency and diffs from previous version\n"                if ($dbcomp);
   print LOG "#  -buildpep     : Build wormpep database\n"                                              if ($buildpep);
   print LOG "#  -buildrna     : Build wormrna database\n"                                              if ($buildrna);
+<<<<<<< autoace_minder.pl
   print LOG "#  -process_blat_est     : perform blat analysis on ESTs\n"                               if ($blat_est);
   print LOG "#  -process_blat_ost     : perform blat analysis on OSTs\n"                               if ($blat_ost);
   print LOG "#  -process_blat_mrna    : perform blat analysis on mRNAs\n"                              if ($blat_mrna);
@@ -1455,6 +1592,16 @@ sub logfile_details {
   print LOG "#  -process_blat_nembase : perform blat analysis on Nembase contigs\n"                    if ($blat_nembase);
   print LOG "#  -process_blat_washu   : perform blat analysis on WashU (nematode.net) contigs\n"       if ($blat_washu);
   print LOG "#  -process_blat_all     : perform blat analysis on everything\n"                         if ($blat_all);
+=======
+  print LOG "#  -process_blat_est     : perform blat analysis on ESTs\n"                               if ($blat_est);
+  print LOG "#  -process_blat_ost     : perform blat analysis on OSTs\n"                               if ($blat_ost);
+  print LOG "#  -process_blat_mrna    : perform blat analysis on mRNAs\n"                              if ($blat_mrna);
+  print LOG "#  -process_blat_ncrna   : perform blat analysis on ncRNAs\n"                             if ($blat_ncrna);
+  print LOG "#  -process_blat_embl    : perform blat analysis on non-WormBase CDSs from EMBL\n"        if ($blat_embl);
+  print LOG "#  -process_blat_tc1     : perform blat analysis on TC1 insertions\n"                     if ($blat_tc1);
+  print LOG "#  -process_blat_nematode: perform blat analysis on non-C. elegans ESTs\n"                if ($blat_nematode);
+  print LOG "#  -process_blat_all     : perform blat analysis on everything\n"                         if ($blat_all);
+>>>>>>> 1.81.4.2
   print LOG "#  -addblat      : Load blat data into autoace\n"                                         if ($addblat);
   print LOG "#  -addhomol     : Load blast data into autoace\n"                                        if ($addhomol);
   print LOG "#  -addbriggsae  : Load briggsae data into autoace\n"                                     if ($addbriggsae);
@@ -1470,27 +1617,6 @@ sub logfile_details {
 
 }
 
-##################################################################################
-#
-# Simple routine which will run commands via system calls but also check the 
-# return status of a system call and complain if non-zero, increments error check 
-# count, and prints a log file error
-#
-##################################################################################
-
-sub run_command{
-  my $command = shift;
-  print LOG &runtime, ": Running $command\n";
-  my $status = system($command);
-  if(($status >>8) != 0){
-    $errors++;
-    print LOG "ERROR: $command failed. \$\? = $status\n";
-  }
-  print LOG &runtime, ": Finished.\n\n";
-
-  # for optional further testing by calling subroutine
-  return($status);
-}
 
 
 #######################################################################
@@ -1612,8 +1738,13 @@ sub usage {
 	exit(0);
     }
     elsif ($error == 16) {
+<<<<<<< autoace_minder.pl
       # DEPRECATED - dont copy to midway anymore
 
+=======
+      # DEPRECATED - dont copt to midway anymore
+
+>>>>>>> 1.81.4.2
     }
     elsif ($error == 17) {
 	# atempted agp creation without clearing DNA/composition error file
@@ -1717,19 +1848,39 @@ autoace_minder.pl OPTIONAL arguments:
 
 =item -map, map PCR and RNAi
 
+<<<<<<< autoace_minder.pl
 =item -process_blat_est, process blat EST similarities, load into autoace
 
 =item -process_blat_ost, process blat OST similarities, load into autoace
 
 =item -process_blat_mrna, process blat similarities, load into autoace
+=======
+=item -process_blat_est, process blat EST similarities, load into autoace
+>>>>>>> 1.81.4.2
 
+<<<<<<< autoace_minder.pl
 =item -process_blat_embl, process blat EMBL gene similarities, load into autoace
+=======
+=item -process_blat_ost, process blat OST similarities, load into autoace
+>>>>>>> 1.81.4.2
 
+<<<<<<< autoace_minder.pl
 =item -process_blat_nematode, process blat other nematode ESTs similarities, load into autoace
+=======
+=item -process_blat_mrna, process blat similarities, load into autoace
+>>>>>>> 1.81.4.2
 
+<<<<<<< autoace_minder.pl
 =item -process_blat_nembase, process blat Nembase contigs, load into autoace
+=======
+=item -process_blat_embl, process blat EMBL gene similarities, load into autoace
+>>>>>>> 1.81.4.2
 
+<<<<<<< autoace_minder.pl
 =item -process_blat_washu, process blat WashU (nematode.net) contigs, load into autoace
+=======
+=item -process_blat_nematode, process blat other nematode ESTs similarities, load into autoace
+>>>>>>> 1.81.4.2
 
 =item -process_blat_all, process all blat similarities (BLAT jobs)
 

@@ -4,8 +4,8 @@
 #
 # Usage: run_genefinder.pl -WSxxx
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2005-07-11 13:16:57 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2005-12-16 11:18:55 $
  
 
 

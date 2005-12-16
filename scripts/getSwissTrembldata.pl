@@ -5,7 +5,7 @@
 # Originally crafted by Dan Lawson
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2003-01-02 16:16:59 $
+# Last edited on: $Date: 2005-12-16 11:18:55 $
 #
 # see pod documentation (i.e. 'perldoc getSwissTrembldata.pl') for more information.
 #

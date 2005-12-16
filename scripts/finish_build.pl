@@ -2,7 +2,7 @@
 #
 # finish_build.pl
 # 
-# by Keith Bradnam aged 12 and a half
+# by Keith Bradnam
 #
 # Usage : finish_build.pl [-options]
 #
@@ -13,32 +13,58 @@
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-10-21 15:43:46 $
+# Last updated on: $Date: 2005-12-16 11:18:55 $
 
 
 use strict;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use IO::Handle;
 use Getopt::Long;
 use Cwd;
 use File::Glob ':glob';
 use File::Path;
-
+use Carp;
+use Log_files;
+use Storable;
 
 ##############################
 # command-line options       #
 ##############################
 
-my $help;          # Help/Usage page
-my $test;          # use test environment in ~wormpub/TEST_BUILD/
-my $verbose;       # Verbose mode
-
-GetOptions ("help"         => \$help,
-            "test"         => \$test);
+my ($help, $debug, $test, $verbose, $store, $wormbase);
 
 
-&usage if ($help);
+GetOptions ("help"       => \$help,
+            "debug=s"    => \$debug,
+	    "test"       => \$test,
+	    "verbose"    => \$verbose,
+	    "store"      => \$store,
+	    );
+
+
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+			     );
+}
+
+# Display help if required
+&usage("Help") if ($help);
+
+# in test mode?
+if ($test) {
+  print "In test mode\n" if ($verbose);
+# $debug = `whoami` unless ($debug);
+
+
+}
+
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
+
 
 
 
@@ -46,11 +72,13 @@ GetOptions ("help"         => \$help,
 # variables                                                                     #
 #################################################################################
 
-my $maintainers = "All";
-my $log;
+my $currentdb   = glob("~wormpub/DATABASES/current_DB"); 
 
-my $basedir     = "/wormsrv2";
-$basedir        = glob("~wormpub")."/TEST_BUILD" if ($test); 
+# the following point to various BUILD directories (or TEST_BUILD if $test)
+my $basedir     = $wormbase->basedir;
+my $ace_dir     = $wormbase->autoace; # AUTOACE DATABASE DIR
+my $chromosomes = $wormbase->chromosomes; # AUTOACE CHROMSOMES
+my $logs        = $wormbase->logs; # AUTOACE LOGS
 
 # need to change this if in test mode
 my $WS_name;
@@ -59,76 +87,98 @@ my $WS_current;
 if ($test) {
     $WS_current = "666";
     $WS_name    = "WS666";
-}
-else {
-    $WS_current = &get_wormbase_version;
-    $WS_name    = &get_wormbase_version_name;
+} else {
+    $WS_current = $wormbase->get_wormbase_version;
+    $WS_name    = $wormbase->get_wormbase_version_name;
 }
 
 my $WS_new      = $WS_current + 1;
 my $WS_new_name = "WS".$WS_new;
-my $WS_oldest   = $WS_current - 3; # the version that *should* be the oldest in /wormsrv2
+my $WS_oldest   = $WS_current - 3; # the version that *should* be the oldest
 my $WS_old_name = "WS".$WS_oldest;
 my $WS_old_path = "$basedir"."/$WS_old_name";
 my $old_wormpep = "$basedir/WORMPEP/wormpep".($WS_current-3);
 
 #####################################################################################
 
-&create_log_files;
 
 &archive_old_releases;
 
 # update all Common_data files - see Commom_data.pm
-system("update_Common_data.pl -build -all") && die "Couldn't run update_Common_data.pl -update -in_build -all\n";
+$wormbase->run_script("update_Common_data.pl -build -all", $log) 
+    && die "Couldn't run update_Common_data.pl -update -in_build -all\n";
 
 
 # Transfer autoace to WSxx
-print LOG "Transferring autoace into /wormsrv2/$WS_name\n";
-system("TransferDB.pl -start /wormsrv2/autoace -end /wormsrv2/$WS_name -database -release -wspec -chromosomes -acefiles -name $WS_name") 
-  && die "couldn't run TransferDB for autoace\n";
+$log->write_to("Transferring autoace into $basedir/$WS_name\n");
+$wormbase->run_script("TransferDB.pl -start $ace_dir -end $basedir/$WS_name -database -release -wspec -chromosomes -acefiles -name $WS_name", $log) 
+    && die "couldn't run TransferDB for autoace\n";
 
 # Transfer autoace to ~wormpub/DATABASES/current_DB - first remove existing files
-print LOG "Removing ~wormpub/DATABASES/current_DB/database/\n";
-&delete_files_from("/nfs/disk100/wormpub/DATABASES/current_DB/database","*","+");
+$log->write_to("Removing $currentdb/database/\n");
+$wormbase->delete_files_from("$currentdb/database","*","+") unless ($test);
 
-print LOG "Removing ~wormpub/DATABASES/current_DB/database/CHROMOSOMES/\n";
-&delete_files_from("/nfs/disk100/wormpub/DATABASES/current_DB/CHROMOSOMES","*","+");
+$log->write_to("Removing $currentdb/database/CHROMOSOMS/\n");
+$wormbase->delete_files_from("$currentdb/CHROMOSOMES","*","+") unless ($test);
 
+<<<<<<< finish_build.pl
 print LOG "Removing ~wormpub/DATABASES/current_DB/database/COMMON_DATA/\n";
 &delete_files_from("/nfs/disk100/wormpub/DATABASES/current_DB/COMMON_DATA","*","+");
 
+=======
+$log->write_to("Removing $currentdb/database/COMMON_DATA/\n");
+$wormbase->delete_files_from("$currentdb/COMMON_DATA","*","+") unless ($test);
+>>>>>>> 1.42.4.4
 
 
+<<<<<<< finish_build.pl
 print LOG "Running TransferDB.pl to copy autoace to ~wormpub/DATABASES/current_DB\n";
 system("TransferDB.pl -start $basedir/autoace -end /nfs/disk100/wormpub/DATABASES/current_DB -database -chromosomes -common -wspec -name $WS_name")  && die "couldn't run TransferDB for wormpub\n";
 print LOG "Unzipping any gzipped chromosome files\n";
 system("/bin/gunzip /nfs/disk100/wormpub/DATABASES/current_DB/CHROMOSOMES/*.gz") && die "Couldn't gunzip CHROMOSOMES/*.gz\n";
+=======
+>>>>>>> 1.42.4.4
 
+$log->write_to("Running TransferDB.pl to copy autoace to ~wormpub/DATABASES/current_DB\n");
+if (!$test) {
+  $wormbase->run_script("TransferDB.pl -start $ace_dir -end $currentdb -database -chromosomes -common -wspec -name $WS_name", $log)  
+      && die "couldn't run TransferDB for wormpub\n";
+}
+$log->write_to("Unzipping any gzipped chromosome files\n");
+if (!$test) {
+  system("/bin/gunzip $currentdb/CHROMOSOMES/*.gz") 
+      && die "Couldn't gunzip CHROMOSOMES/*.gz\n";
+}
 
-# Remove redundant files and directories in /wormsrv2/autoace/
-print LOG "Removing old files in /wormsrv2/autoace/release/\n";
-&delete_files_from("/wormsrv2/autoace/release","*","-");
+# Remove redundant files and directories in $ace_dir
+$log->write_to("Removing old files in $ace_dir/release/\n");
+$wormbase->delete_files_from("$ace_dir/release","*","-");
 
-print LOG "Removing old files in /wormsrv2/autoace/acefiles/\n";
-&delete_files_from("/wormsrv2/autoace/acefiles","*","-");
+$log->write_to("Removing old files in $ace_dir/acefiles/\n");
+$wormbase->delete_files_from("$ace_dir/acefiles","*","-");
 
-print LOG "Removing old CHROMOSOME files in /wormsrv2/autoace/CHROMOSOMES/\n";
-&delete_files_from("/wormsrv2/autoace/CHROMOSOMES","*","-");
+$log->write_to("Removing old CHROMOSOME files in $chromosomes/\n");
+$wormbase->delete_files_from("$chromosomes","*","-");
 
-print LOG "Removing *.wrm files in /wormsrv2/autoace/database/\n";
-&delete_files_from("/wormsrv2/autoace/database",".\.wrm","-") or print LOG "ERROR: Problems removing files from autoace/database\n";
+$log->write_to("Removing *.wrm files in $ace_dir/database/\n");
+$wormbase->delete_files_from("$ace_dir/database",".\.wrm","-") or $log->write_to("ERROR: Problems removing files from autoace/database\n");
 
-print LOG "Removing files in /wormsrv2/autoace/database/new/\n";
-&delete_files_from("/wormsrv2/autoace/database/new","*","+");
-print LOG "Removing files in /wormsrv2/autoace/database/touched/\n";
-&delete_files_from("/wormsrv2/autoace/database/touched","*","+");
+$log->write_to("Removing files in $ace_dir/database/new/\n");
+$wormbase->delete_files_from("$ace_dir/database/new","*","+");
+$log->write_to("Removing files in $ace_dir/database/touched/\n");
+$wormbase->delete_files_from("$ace_dir/database/touched","*","+");
 
-print LOG "Removing old files in /wormsrv2/autoace/logs\n";
-&delete_files_from("$basedir/autoace/logs",":","-");
+$log->write_to("Removing old files in $logs\n");
+$wormbase->delete_files_from("$logs",":","-");
 # Exception needed because we need to keep one file (Primary_databases) and this log file uses different name, so
 # *:* won't remove it.
+<<<<<<< finish_build.pl
 unlink("$basedir/autoace/logs/UTR_gff_dump");
+=======
+unlink("$logs/UTR_gff_dump");
+>>>>>>> 1.42.4.4
 
+<<<<<<< finish_build.pl
 #remove coordinate files for Coords_converter ready for next build.
 unlink("/wormsrv2/autoace/clone_coords") if -e "/wormsrv2/autoace/clone_coords";
 unlink("/wormsrv2/autoace/SL_coords") if -e "/wormsrv2/autoace/SL_coords";
@@ -140,47 +190,48 @@ foreach my $db (@source_dbs) {
   print LOG "\t$db\n";
   &delete_files_from("$basedir/wormbase/$db/","ace\$","-");
 }
+=======
+#remove coordinate files for Coords_converter ready for next build.
+unlink("$ace_dir/clone_coords") if -e "$ace_dir/clone_coords";
+unlink("$ace_dir/SL_coords") if -e "$ace_dir/SL_coords";
+
+#remove ace files created at start of build by make_acefiles.
+$log->write_to("\nRemoving ace files created by make_acefiles from . .\n");
+my @source_dbs = qw( briggsae caltech camace csh geneace stlace );
+foreach my $db (@source_dbs) {
+  $log->write_to("\t$db\n");
+  $wormbase->delete_files_from("$basedir/wormbase/$db/","ace\$","-");
+}
+>>>>>>> 1.42.4.4
 
 
 # archive old GFF splits directory'
+<<<<<<< finish_build.pl
 print LOG "Archiving GFFsplits directory using GFFsplitter.pl -a\n\n";
 system("GFFsplitter.pl -archive") && die "Couldn't run GFFsplitter.pl -a\n";
+
+# update "Confirmed Introns" webpage (introns to be addressed)
+system("/nfs/intweb/cgi-bin/wormpub/confirmed_introns/parse_gff.pl") && warn "Couldn't run parse_gff.pl\n";
+
+
+
+=======
+$log->write_to("Archiving GFFsplits directory using GFFsplitter.pl -a\n\n");
+$wormbase->run_script("GFFsplitter.pl -archive", $log) 
+    && die "Couldn't run GFFsplitter.pl -archive\n";
+>>>>>>> 1.42.4.4
 
 
 ##################
 # End
 ##################
 
-print LOG "hasta luego\n";
-close(LOG);
-&mail_maintainer("WormBase Report: finish_build.pl",$maintainers,$log);
-
-
+$log->write_to("Finished.\n");
+$log->mail();
+print "Finished.\n" if ($verbose);
 exit(0);
 
 
-
-
-#################################################################################
-# set up log file                                                               #
-#################################################################################
-sub create_log_files{
-
-  # Create history logfile for script activity analysis
-  $0 =~ m/\/*([^\/]+)$/; system ("touch $basedir/logs/history/$1.`date +%y%m%d`");
-
-  # create main log file using script name for
-  my $script_name = $1;
-  $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
-  my $rundate = &rundate;
-  $log        = "$basedir/logs/$script_name.$WS_name.$rundate.$$";
-  open (LOG, ">$log") or die "cant open $log";
-  print LOG "$script_name\n";
-  print LOG "started at ",&rundate,"\n";
-  print LOG "=============================================\n";
-  print LOG "\n";
-
-}
 
 
 #################################################################################
@@ -190,7 +241,7 @@ sub create_log_files{
 
 
 sub archive_old_releases{
-  print LOG "\n\n";
+  $log->write_to("\n\n");
 
   my @list;
   my $file;
@@ -199,41 +250,46 @@ sub archive_old_releases{
   if (-d "$WS_old_path") {
 
       if (-d "$WS_old_path/database") {
-	  print LOG "Removing $WS_old_path/database\n";
+	  $log->write_to("Removing $WS_old_path/database\n");
 	  
 	  # remove contents of the database folder
-	  &delete_files_from("$WS_old_path/database/new","*","+");
-	  &delete_files_from("$WS_old_path/database/oldlogs","*","+");
-	  &delete_files_from("$WS_old_path/database/readlocks","*","+");
-	  &delete_files_from("$WS_old_path/database/touched","*","+");
-	  &delete_files_from("$WS_old_path/database","*","+");
+	  $wormbase->delete_files_from("$WS_old_path/database/new","*","+");
+	  $wormbase->delete_files_from("$WS_old_path/database/oldlogs","*","+");
+	  $wormbase->delete_files_from("$WS_old_path/database/readlocks","*","+");
+	  $wormbase->delete_files_from("$WS_old_path/database/touched","*","+");
+	  $wormbase->delete_files_from("$WS_old_path/database","*","+");
       }
       
       # remove wspec, wgf etc.
-      print LOG "Removing $WS_old_path/wspec\n";
-      &delete_files_from("$WS_old_path/wspec","*","+");
+      $log->write_to("Removing $WS_old_path/wspec\n");
+      $wormbase->delete_files_from("$WS_old_path/wspec","*","+");
             
       if (-d "$WS_old_path/pictures"){
-	  print LOG "Removing $WS_old_path/pictures\n";
-	  &delete_files_from("$WS_old_path/pictures","*","+");
+	  $log->write_to("Removing $WS_old_path/pictures\n");
+	  $wormbase->delete_files_from("$WS_old_path/pictures","*","+");
       }    
   }
   
 
   # turn the old release into a tarball, move into /nfs/wormarchive and remove old directory
-  print LOG "\nCreating $WS_old_path.tar.gz\n";
-  system ("tar -P /$basedir/ -cvf $WS_old_path.tar $WS_old_path/") && die "Couldn't create tar file\n";
-  system ("gzip $WS_old_path.tar") && die "Couldn't create gzip file\n";
-  print LOG "Moving archive to /nfs/wormarchive and removing $WS_old_path\n";
-  system ("mv $WS_old_path.tar.gz /nfs/wormarchive/") && die "Couldn't move to /nfs/wormarchive\n";
-  &delete_files_from("$WS_old_path","*","+");
+  $log->write_to("\nCreating $WS_old_path.tar.gz\n");
+  system ("tar -P /$basedir/ -cvf $WS_old_path.tar $WS_old_path/") 
+      && die "Couldn't create tar file\n";
+  system ("gzip $WS_old_path.tar") 
+      && die "Couldn't create gzip file\n";
+  $log->write_to("Moving archive to /nfs/wormarchive and removing $WS_old_path\n");
+  system ("mv $WS_old_path.tar.gz /nfs/wormarchive/") 
+      && die "Couldn't move to /nfs/wormarchive\n";
+  $wormbase->delete_files_from("$WS_old_path","*","+");
  
   # archive old wormpep version
   if (-d $old_wormpep) {
-      print LOG "\nCreating $old_wormpep archive\n";
-      system ("tar -P /$basedir/ -cvf $old_wormpep.tar $old_wormpep") && die "Couldn't create wormpep tar file\n";
-      system ("gzip $old_wormpep.tar") && die "Couldn't create gzip wormpep tar file\n";
-      &delete_files_from("$old_wormpep","*","+");
+      $log->write_to("\nCreating $old_wormpep archive\n");
+      system ("tar -P /$basedir/ -cvf $old_wormpep.tar $old_wormpep") 
+	  && die "Couldn't create wormpep tar file\n";
+      system ("gzip $old_wormpep.tar") 
+	  && die "Couldn't create gzip wormpep tar file\n";
+      $wormbase->delete_files_from("$old_wormpep","*","+");
   }
   
 }
@@ -264,13 +320,13 @@ __END__
 This script:
 
  1) checks to see if there are three existing (and unpacked) WS releases 
- in /wormsrv2. If there are, then it archives the oldest release away into 
- /wormsrv2/wormbase_archive
- 2) Does a similar thing with Wormpep releases in /wormsrv2/WORMPEP
+ in ~wormpub/BUILD. If there are, then it archives the oldest release away into 
+ ~wormpub/BUILD/wormbase_archive
+ 2) Does a similar thing with Wormpep releases in ~wormpub/BUILD/WORMPEP
  but 
  3) Runs GFFsplitter.pl -a to archive away the last GFF_SPLITS directory
  4) Copies autoace into a separate WSxx directory
- 5) updates the /wormsrv2/current_DB symlink to point to the directory created
+ 5) updates the ~wormpub/BUILD/current_DB symlink to point to the directory created
     in step 4.
 
 finish_build.pl MANDATORY arguments:

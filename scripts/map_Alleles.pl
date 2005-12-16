@@ -7,7 +7,7 @@
 # This maps alleles to the genome based on their flanking sequences
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-12-13 10:20:35 $
+# Last updated on: $Date: 2005-12-16 11:18:55 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -111,8 +111,13 @@ my %allele_data;        # allele data from mapping data, hash of arrays:
 # make hash of allele->gene connections already in database
 &check_original_mappings;
 
+<<<<<<< map_Alleles.pl
 # create log file, open output file handles
 my $log = Log_files->make_build_log($debug);
+=======
+# create log file, open output file handles
+my $log = Log_files->make_build_log();
+>>>>>>> 1.19.4.1
 
 # map alleles, the main routine
 &map_alleles;
@@ -279,6 +284,7 @@ sub map_alleles{
     my @affects_genes = keys(%affects_genes);
 
 
+<<<<<<< map_Alleles.pl
     # now compare both arrays (allele->gene connections already in database and
     # allele->gene connections made by script) to look for differences
     my %count;
@@ -306,6 +312,35 @@ sub map_alleles{
     }
     
     $allele2gene{"$name"} = \@affects_CDSs if ($affects_CDSs[0]);
+=======
+    # now compare both arrays (allele->gene connections already in database and
+    # allele->gene connections made by script) to look for differences
+    my %count;
+    foreach my $gene (@{$original_alleles{$name}}, @affects_genes){
+      $count{$gene}++;
+    }
+    foreach my $gene (keys %count){
+      # allele->gene connections in both arrays will cause $count{$gene} to be == 2
+      # if it only == 1 then there is an error
+      if ($count{$gene} == 1){
+	if($affects_genes{$gene}){
+	  # not so serious, but source database should be updated with connection
+	  next if ( $allele->SNP );
+	  print "WARNING: $name->$gene was mapped by script only\n" if ($verbose);
+	  $log->write_to("WARNING: $name->$gene was mapped by script only\n");
+	  
+	}
+	else{
+	  # more serious, source database has a bad allele->gene connection
+	  print "ERROR: $name->$gene was in original database only\n" if ($verbose);
+	  $log->write_to("ERROR: $name->$gene was in original database only\n");
+	  $error_count++;       
+	}
+      }
+    }
+    
+    $allele2gene{"$name"} = \@affects_CDSs if ($affects_CDSs[0]);
+>>>>>>> 1.19.4.1
 
     &outputAllele($name);
   }

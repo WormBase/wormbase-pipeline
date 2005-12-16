@@ -6,8 +6,8 @@
 #
 # processes GFF files to make new files which can be used to make agp files 
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2004-03-04 14:07:18 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2005-12-16 11:18:55 $
 
 
 
@@ -24,9 +24,12 @@ use Getopt::Long;
 
 my $test;      # uses test environment
 my $quicktest; # same as $test but only runs one chromosome
+my $debug;
 
 GetOptions ("test"         => \$test,
-	    "quicktest"    => \$quicktest);
+	    "quicktest"    => \$quicktest,
+	    "debug:s"      => \$debug
+);
 
 # check that -test and -quicktest haven't both been set.  Also if -quicktest is specified, 
 # need to make -test true, so that test mode runs for those steps where -quicktest is meaningless
@@ -42,7 +45,11 @@ my $basedir   = "/wormsrv2";
 $basedir      = glob("~wormpub")."/TEST_BUILD" if ($test); 
 my $gffdir    = "$basedir/autoace/CHROMOSOMES";
 my $agpdir    = "$basedir/autoace/yellow_brick_road";
-my $scriptdir = "$basedir/scripts";
+
+mkdir("$gffdir") unless ( -e "$gffdir" );
+mkdir("$agpdir") unless ( -e "$agpdir" );
+
+my $scriptdir = $ENV{'CVS_DIR'};
 
 # prepare array of file names and sort names
 my @files = (

@@ -7,8 +7,8 @@
 # clones. Entries which have failed to load or return are highlighted
 # and changes in sequence version are notified.
 
-# Last updated on: $Date: 2005-11-21 17:45:57 $
-# Last updated by: $Author: pad $
+# Last updated on: $Date: 2005-12-16 11:18:55 $
+# Last updated by: $Author: ar2 $
 
 # touch logfile for run details
 $0 =~ m/\/*([^\/]+)$/; system("touch /nfs/disk100/wormpub/logs/history/$1.`date +%y%m%d`");

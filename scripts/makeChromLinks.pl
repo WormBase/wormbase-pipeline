@@ -16,14 +16,16 @@
 ##########################################################
 #
 # Last updated by: $Author: ar2 $                     
-# Last updated on: $Date: 2004-06-28 13:12:17 $       
+# Last updated on: $Date: 2005-12-16 11:18:55 $       
 
 use strict;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Ace;
 use Getopt::Long;
 use Cwd;
+use Storable;
+use Log_files;
 
 
 
@@ -36,39 +38,46 @@ my $database;   # Database name for single db option
 my $debug;      # Debug mode, verbose output to runner only
 my $test;       # test mode, uses ~wormpub/TEST_BUILD
 my $out;
+my $store;
+
 GetOptions (
 	    "database:s"  => \$database,
 	    "debug=s"     => \$debug,
 	    "help"        => \$help,
 	    "test"        => \$test,
-	    "out:s"       => \$out
+	    "out:s"       => \$out,
+	    "store:s"     => \$store
 	    );
 
 # help page
 &usage("Help") if ($help);
 
+my $wormbase;
+if( $store ) {
+  $wormbase = retrieve( $store ) or croak("cant restore wormbase from $store\n");
+}
+else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+			     -test    => $test,
+			   );
+}
 
-my $maintainers = "All";
+my $log = Log_files->make_build_log($wormbase);
 
-# debug
-if($debug){
-  print "// makeChromLinks run with debug as $debug\n\n";
-  ($maintainers = $debug . '\@sanger.ac.uk');
+if($wormbase->debug){
+  print "// makeChromLinks run with debug as ".$wormbase->debug."\n\n";
 }
 
 # database/file paths and locations
-my $basedir     = "/wormsrv2";
-$basedir        = glob("~wormpub")."/TEST_BUILD" if ($test); 
-
-
+my $basedir     = $wormbase->basedir;
 
  ##############################
  # Script variables (run)     #
  ##############################
 
 
-my $rundate     = &rundate;
-my $runtime     = &runtime;
+my $rundate     = $wormbase->rundate;
+my $runtime     = $wormbase->runtime;
 
 # touch logfile for run details
 $0 =~ m/\/*([^\/]+)$/; system ("touch $basedir/logs/history/$1.`date +%y%m%d`");
@@ -80,21 +89,21 @@ my $logfile = "$basedir/logs/$1.`date +%y%m%d`.$$";
 my $CWD = cwd;
 
 if (!defined $database) {
-    $database = "$basedir/autoace";
+    $database = $wormbase->autoace;
 }
 
-print "// Using $database as source of data for chromosomes\n" if ($debug);
+$log->write_to("// Using $database as source of data for chromosomes\n");
 print STDERR "\t\tconnecting to $database\n";
 # AcePerl connection to $database
 my $db = Ace->connect(-path=>$database,
-                      -program =>&tace) or die ("Could not connect with $database\n");
+                      -program =>$wormbase->tace) or die ("Could not connect with $database\n");
 print STDERR "\t\tConnected\n";
-print "Connected to database\n" if ($debug);
+$log->write_to("Connected to database\n");
 
 my ($pos,$i);
 
 our $fh;
-open ($fh, ">$out") or die "$out asfgasdg";
+open ($fh, ">$out") or $log->log_and_die( "cant open $out\n" );
 
 
 print $fh "\nSequence CHROMOSOME_I\nMethod Link\n" ; $pos = 1 ;
@@ -128,7 +137,10 @@ print $fh "\nSequence CHROMOSOME_X\nMethod Link\n" ; $pos = 1 ;
 &add ("SUPERLINK_RWXR"); 
 
 $db->close;
-print STDERR "\tclosing database\n"; 
+print STDERR "\tclosing database\n";
+
+$log->mail;
+
  ###############
  # hasta luego #
  ###############

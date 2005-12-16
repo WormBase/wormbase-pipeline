@@ -4,8 +4,8 @@
 #               Ouput: EMBL flatfile with the tags: ID, AC, SV, KW, DE, OS
 #                                    without DNA and protein sequences 
 
-# Last updated by $Author: ck1 $
-# Last updated on: $Date: 2003-09-04 14:46:57 $ 
+# Last updated by $Author: ar2 $
+# Last updated on: $Date: 2005-12-16 11:18:55 $ 
 
 use strict;
 

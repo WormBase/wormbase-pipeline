@@ -8,7 +8,7 @@
 # relevant WormBase and Wormpep web pages.
 #
 # Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2005-09-27 08:58:30 $      
+# Last updated on: $Date: 2005-12-16 11:18:55 $      
 
 
 #################################################################################

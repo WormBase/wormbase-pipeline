@@ -41,7 +41,11 @@ Internal methods are usually preceded with a _
 
 package Feature_mapper;
 
+<<<<<<< Feature_mapper.pm
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+=======
+use lib $ENV{'CVS_DIR'};
+>>>>>>> 1.6.4.1
 
 use Sequence_extract;
 use Carp;
@@ -61,11 +65,8 @@ use Carp;
 
 sub new
   {
-    my $class = shift;
-    my $database = shift;
-    my $refresh = shift;
-
-    my $self = Sequence_extract->invoke($database, $refresh);
+    my $class,$database,$refresh,$wormbase = @_;
+    my $self = Sequence_extract->invoke($database, $refresh,$wormbase);
 
     bless $self, $class;
     return $self;

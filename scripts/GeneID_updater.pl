@@ -7,8 +7,8 @@
 # Script to refresh the CDS->WBGene connections in a chosen database from a chosen reference database.
 # Script also refreshes Protein_IDs in the chosen database from the latest build.
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2005-12-09 11:47:35 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2005-12-16 11:18:54 $
 
 use strict;                                      
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};

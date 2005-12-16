@@ -15,7 +15,6 @@
 #############################################################################################
 
 use strict;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
 use warnings;
@@ -38,8 +37,14 @@ my $help;       # Help perldoc
 my $test;       # Test mode
 my $debug;      # Debug mode, output only goes to one user
 my $verbose;    # verbose mode, more command line outout
+<<<<<<< map_Oligo_set.pl
 my $acename;
+=======
+my $acename;    # specify a custom acefile
+my $store;	# specify a frozen configuration file
+>>>>>>> 1.1.4.2
 
+<<<<<<< map_Oligo_set.pl
 GetOptions(
     'debug=s'   => \$debug,
     'verbose'   => \$verbose,
@@ -47,9 +52,34 @@ GetOptions(
     'help'      => \$help,
     'acefile=s' => \$acename
 );
+=======
+GetOptions(
+    'debug=s'   => \$debug,
+    'verbose'   => \$verbose,
+    'test'      => \$test,
+    'help'      => \$help,
+    'acefile=s' => \$acename,
+    'store=s'	=> \$store
+);
+>>>>>>> 1.1.4.2
 
 # Display help if required
 &usage("Help") if ($help);
+
+############################
+# recreate configuration   #
+# ##########################
+my $wb;
+if ($store){$wb = Storable::retrieve($store) or croak("cant restore wormbase from $store\n")}
+else {$wb = Wormbase->new(-debug => $debug,-test => $test,)}
+
+###########################################
+# Variables Part II (depending on $wb)    #
+# #########################################
+ 
+$test  = $wb->test  if $wb->test;     # Test mode
+$debug = $wb->debug if $wb->debug;    # Debug mode, output only goes to one user
+
 
 # Use debug mode?
 if ($debug) {
@@ -61,6 +91,7 @@ if ($debug) {
 # Paths etc #
 #############
 
+<<<<<<< map_Oligo_set.pl
 my $tace = &tace;    # tace executable path
 
 my $dbdir      = '/wormsrv2/autoace';                   # Database path
@@ -78,6 +109,24 @@ my %genetype;                 # gene type hash
 use Class::Struct;
 struct( Exon => [ start => '$', stop => '$', type => '$', id => '$' ] );
 struct( Gene => [ start => '$', stop => '$', exons => '@' ] );
+=======
+my $tace = $wb->tace;    # tace executable path
+my $dbdir= $wb->autoace;                   # Database path
+my $gffdir= $wb->gff_splits;   # GFF splits directory
+my $acefile = $acename ? $acename : "$dbdir/acefiles/Oligo_mappings.ace";
+
+my @chromosomes = $test
+  ? qw( I )
+  : qw( I II III IV V X );    # chromosomes to parse (TEST_BUILD should be III)
+my %genetype;                 # gene type hash
+
+################
+# Structs      #
+################
+use Class::Struct;
+struct( Exon => [ start => '$', stop => '$', type => '$', id => '$' ] );
+struct( Gene => [ start => '$', stop => '$', exons => '@' ] );
+>>>>>>> 1.1.4.2
 
 ################
 # Open logfile #
@@ -270,15 +319,23 @@ map_Oligo_products optional arguments:
 
 =over 4
 
+<<<<<<< map_Oligo_set.pl
 =item -debug, debug mode email goes to user specified by -debug
 
 =item -verbose, toggles extra output
+=======
+=item -debug username, debug mode email goes to user specified by -debug
+
+=item -verbose, toggles extra output
+>>>>>>> 1.1.4.2
 
 =item -test, Test mode, generate the acefile but do not upload 
 
 =item -acefile, custom name for the acefile
 
 =item -help, Help pages
+
+=item -store, specify configuration file
 
 =back
 

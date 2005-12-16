@@ -6,8 +6,8 @@
 #
 # by Kerstin Jekosch
 #
-# Last updated by: $Author: gw3 $                      
-# Last updated on: $Date: 2005-09-19 12:38:51 $        
+# Last updated by: $Author: ar2 $                      
+# Last updated on: $Date: 2005-12-16 11:18:55 $        
 
 use strict;
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
@@ -101,6 +101,7 @@ foreach my $chromosome (@chromosomes) {
   
 
   # loop through the split GFF RNAi file  
+<<<<<<< map_RNAi.pl
   #
   # New RNAi lines : CHROMOSOME_I    RNAi_primary    RNAi_reagent    1681680 1683527 .       .       .       Target "RNAi:WBRNAi00004820" 1 1848
 
@@ -128,6 +129,11 @@ foreach my $chromosome (@chromosomes) {
   print "Loop through secondary RNAi GFF file CHROMOSOME_${chromosome}\n" if ($verbose);
   open (GFF, "<$gffdir/CHROMOSOME_${chromosome}.RNAi_secondary.gff") || die "Failed to open RNAi gff file\n\n";
   while (<GFF>) {
+=======
+  print "Loop through RNAi GFF file CHROMOSOME_${chromosome}\n" if ($debug);
+  open (GFF, "<$gffdir/CHROMOSOME_${chromosome}.RNAi.gff") || die "Failed to open RNAi gff file\n\n";
+  while (<GFF>) {
+>>>>>>> 1.27.4.1
     chomp;
     s/^\#.*//;
     next unless /\S/;

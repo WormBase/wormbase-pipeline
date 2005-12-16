@@ -6,19 +6,20 @@
 #
 # Builds a wormpep data set from the current autoace database
 #
-# Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2005-06-06 10:51:57 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2005-12-16 11:18:55 $
 
 
 use strict;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
 use IO::Handle;
 use Ace;
 use Socket;
 use File::Copy;
-
+use Log_files;
+use Storable;
 
 ##############################
 # command-line options       #
@@ -31,13 +32,15 @@ my $maintainers = "All"; # log file recipients
 my $initial;             # run script in initial mode at start of build
 my $final;               # for full run at end of build
 my $test;                # for running in test environment ~wormpub/TEST_BUILD
+my $store;
 
 GetOptions ("help"        => \$help,
             "debug=s"     => \$debug,
 	    "verbose"     => \$verbose,
             "initial"     => \$initial,
 	    "final"       => \$final,
-            "test"        => \$test
+            "test"        => \$test,
+	    "store:s"     => \$store
            );
 
 #########################################
@@ -47,25 +50,22 @@ GetOptions ("help"        => \$help,
 &error(0) if ($help);
 &error(1) if ($initial and $final);
 
-# Use debug mode?
-if($debug){
-  print "DEBUG = \"$debug\"\n\n";
-  ($maintainers = $debug . '\@sanger.ac.uk');
+my $wormbase;
+if( $store ) {
+  $wormbase = retrieve( $store ) or croak("cant restore wormbase from $store\n");
 }
-
+else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+			     -test    => $test,
+			   );
+}
 
 #######################################
 # misc. variables                     #
 #######################################
 
-my $tace = &tace; 
-my $release; 
-if($test){
-  $release = "666";
-}
-else{
-  $release = &get_wormbase_version; 
-}
+my $tace = $wormbase->tace; 
+my $release = $wormbase->get_wormbase_version;
 my $old_release = $release-1;
 
 
@@ -83,7 +83,6 @@ my %cds2protein_ac;   # Trembl/Swissprot protein accession for each CDS
 my %cds2protein_db;   # TREMBL/TREMBLNEW/SWISSPROT
 my $wpmax = 0;        # holds highest CE number in Wormpep (old release proteins + new)
 my $old_wpmax;        # holds highest CE number in Wormpep (just in old release)
-my $log;              # for log file
 
 
 ##########################################
@@ -92,12 +91,13 @@ my $log;              # for log file
 
 # Set up top level base directory which is different if in test mode
 # Make all other directories relative to this
-my $basedir   = "/wormsrv2";
-$basedir      = glob("~wormpub")."/TEST_BUILD" if ($test); 
+my $basedir   = $wormbase->basedir;
+my $dbdir     = $wormbase->autoace;
+my $new_wpdir = $wormbase->wormpep;
 
-my $dbdir     = "$basedir/autoace";
-my $wpdir     = "$basedir/WORMPEP/wormpep$old_release";
-my $new_wpdir = "$basedir/WORMPEP/wormpep$release";
+# need to get previous build WORMPEP
+my ($stem, $ver ) = $new_wpdir =~ /(.*wormpep)(\d+)/;
+my $wpdir     = "$stem".--$ver;
 
 
 
@@ -109,9 +109,7 @@ my $new_wpdir = "$basedir/WORMPEP/wormpep$release";
 #
 #####################################################################################################
 
-
-&create_log_files;
-
+my $log = Log_files->make_build_log( $wormbase );
 
 # create directory structure and read wp.fasta file from previous release
 &setup;
@@ -147,11 +145,18 @@ my $new_wpdir = "$basedir/WORMPEP/wormpep$release";
 # write wormpep accession file
 &write_wormpep_accession if ($final);
 
+#generate file to ad new peptides to mySQL database.
+$wormbase->run_script("new_wormpep_entries.pl");
+
+# update common data
+$wormbase->run_script("update_Common_data.pl --build --cds2wormpep");
+
 
 ##############################
 # Tidy up and finish stuff   #
 ##############################
 
+<<<<<<< make_wormpep.pl
 close (LOG);
 
 #Email log
@@ -159,6 +164,9 @@ my $subject = "BUILD REPORT: make_wormpep.pl";
 $subject = "TEST MODE: WormBase Build Report: make_wormpep.pl" if ($test);
 
 &mail_maintainer("$subject",$maintainers,$log);
+=======
+$log->mail;
+>>>>>>> 1.12.4.1
 
 exit(0);
 
@@ -176,7 +184,7 @@ exit(0);
 
 sub run_details {
   print "# make_wormpep\n";
-  print "# run details    : ",&rundate," ",&runtime,"\n";
+  print "# run details    : ",$wormbase->rundate," ",$wormbase->runtime,"\n";
   print "\n";
   print "Wormpep version  : wormpep$release\n";
   print "Primary database : $dbdir\n\n";
@@ -211,53 +219,36 @@ sub error {
   # Error  2 - not chosen initial or full
   elsif ($error == 2) {
     &run_details;
-    print "=> not chosen initial or full.\n\n";
-    exit(0);
+    $log->write_to("=> not chosen initial or full.\n\n");
   }
   # Error  3 - cannot create new wormpep directory 
   elsif ($error == 3) {
     &run_details;
-    print "=> Failed to create a new directory for wormpep release wormpep$release\n\n";
-    print LOG "=> Failed to create a new directory for wormpep release wormpep$release\n\n";
-    print LOG &runtime, ": Exiting script\n";
-    close LOG;
-    &mail_maintainer("WormBase Report: make_wormpep",$maintainers,$log);
+    $log->write_to("=> Failed to create a new directory for wormpep release wormpep$release\n\n");
   }
   # Error  4 - cannot open new wp.log file 
   elsif ($error == 4) {
     &run_details;
-    print "=> Failed to create a new wp.log for wormpep release wormpep$release\n\n";
-    print LOG &runtime, ": Exiting script\n";
-    close LOG;
-    &mail_maintainer("WormBase Report: make_wormpep",$maintainers,$log);
+    $log->write_to("=> Failed to create a new wp.log for wormpep release wormpep$release\n\n");
   }
   # Error  5 - cannot open old wp.fasta file 
   elsif ($error == 5) {
     &run_details;
-    print "=> Failed to open the old wp.fasta for wormpep release wormpep$old_release\n\n";
-    print LOG &runtime, ": Exiting script\n";
-    close LOG;
-    &mail_maintainer("WormBase Report: make_wormpep",$maintainers,$log);
+    $log->write_to("=> Failed to open the old wp.fasta for wormpep release wormpep$old_release\n\n");
   }
   # Error  6 - cannot connect to ACEDB database 
   elsif ($error == 6) {
     &run_details;
-    print "=> Failed to connect to primary database 'dbdir'\n\n";
-    print LOG &runtime, ": Exiting script\n";
-    close LOG;
-    &mail_maintainer("WormBase Report: make_wormpep",$maintainers,$log);
+    $log->write_to("=> Failed to connect to primary database 'dbdir'\n\n");
   }
   # Error  7 - cannot open new wp.log file 
   elsif ($error == 7) {
     &run_details;
-    print "=> Failed to create a new wormpep.dna for wormpep release wormpep$release\n\n";
-    print LOG &runtime, ": Exiting script\n";
-    close LOG;
-    &mail_maintainer("WormBase Report: make_wormpep",$maintainers,$log);
+    $log->write_to("=> Failed to create a new wormpep.dna for wormpep release wormpep$release\n\n");
   }
-  
-  exit(1);
-} # end of sub 'error'
+  $log->log_and_die(&runtime." : Exiting script\n");
+}
+ # end of sub 'error'
 
 
 
@@ -273,17 +264,17 @@ sub setup{
 
   # Make new directory for current release         
   if (-e $new_wpdir){
-    print LOG "$new_wpdir already exists\n";
+    $log->write_to("$new_wpdir already exists\n");
   }
   else {
     mkdir ("$new_wpdir" , 0755) || &error(3);               # die "cannot create the $new_wpdir directory\n";
-    print LOG &runtime, ": making wormpep$release\n\n";
+    $log->write_to($wormbase->runtime.": making wormpep$release\n\n");
   }
   
 
   # read in the wp.fasta file, contains all protein sequences ever assigned
-  print LOG &runtime, ": initiate parsing of wp.fasta file\n";
-  print     &runtime, ": initiate parsing of wp.fasta file\n" if ($verbose);
+  $log->write_to($wormbase->runtime." : initiate parsing of wp.fasta file\n");
+  print $wormbase->runtime, ": initiate parsing of wp.fasta file\n" if ($verbose);
 
   undef (my $id) ;
   my $peptide    = ""; # will store peptide sequence for each Wormpep protein
@@ -355,12 +346,12 @@ sub setup{
   # $wpmax can then be incremented with info from any new gene predictions
   $old_wpmax = $wpmax;
 
-  print LOG "=> wp.fasta file contains $duplicates duplicate sequences\n";
+  $log->write_to("=> wp.fasta file contains $duplicates duplicate sequences\n");
   print     "=> wp.fasta file contains $duplicates duplicate sequences\n" if ($verbose);
-  print LOG "=> wpmax of wp.fasta$old_release equals $old_wpmax\n";
+  $log->write_to("=> wpmax of wp.fasta$old_release equals $old_wpmax\n");
   print     "=> wpmax of wp.fasta$old_release equals $old_wpmax\n" if ($verbose);
-  print LOG &runtime, ": completed parsing of wp.fasta file\n\n";
-  print     &runtime, ": completed parsing of wp.fasta file\n\n" if ($verbose);
+  $log->write_to($wormbase->runtime." : completed parsing of wp.fasta file\n\n");
+  print     $wormbase->runtime, ": completed parsing of wp.fasta file\n\n" if ($verbose);
   close (WP);
 
 }
@@ -379,20 +370,20 @@ sub setup{
 
 sub write_wormpep_dna{
 
-  print LOG &runtime, ": connecting to $dbdir\n";
-  print     &runtime, ": connecting to $dbdir\n" if ($verbose);
+  $log->write_to($wormbase->runtime." : connecting to $dbdir\n");
+  print     $wormbase->runtime, ": connecting to $dbdir\n" if ($verbose);
 
   # grab list of valid CDS names, ignore any temp genes
   my $db = Ace->connect (-path => $dbdir, -program => $tace) || &error(6); # die "cannot connect to autoace\n";
   @CDSs = $db->fetch (-query => 'FIND elegans_CDS NOT *temp*');
   @CDSs = sort @CDSs;
 
-  print LOG "=> " . scalar(@CDSs) . " CDSs\n";
+  $log->write_to("=> ".scalar(@CDSs)." CDSs\n");
   print     "=> " . scalar(@CDSs) . " CDSs\n" if ($verbose);
 
 
   # write DNA for each CDS to separate file
-  print LOG &runtime, ": creating wormpep.dna file\n\n";
+  $log->write_to($wormbase->runtime.": creating wormpep.dna file\n\n");
   open (DNA , ">$new_wpdir/wormpep.dna$release") || &error(7); # die "cannot create $new_wpdir/wormpep.dna$release\n";
 
 
@@ -400,17 +391,17 @@ sub write_wormpep_dna{
     
     # get dna 
     my $dna = $cds->asDNA();
-    print LOG "cannot extract dna for CDS $cds\n" if ((!defined ($dna)) || ($dna eq ""));
+    $log->write_to("cannot extract dna for CDS $cds\n") if ((!defined ($dna)) || ($dna eq ""));
     $dna =~ /^>(\S+)\s+(\w.*)/s ; my $dna_seq = $2 ; $dna_seq =~ tr/a-z/A-Z/ ; $dna_seq =~ s/\s//g;
     if ($dna_seq =~ /[^ACGT]/) {
       if ($dna_seq =~ /\-/) {                                       # - seems to indicate that e.g the subsequence
-	print LOG "ERROR: $cds - DNA sequence contains a -\n"; # coordinates differ from the last exon coordinate
+	$log->write_to("ERROR: $cds - DNA sequence contains a -\n"); # coordinates differ from the last exon coordinate
       } 
       elsif ($dna_seq =~ /N/) {
-	print LOG "ERROR: $cds - DNA sequence contains an N\n";
+	$log->write_to("ERROR: $cds - DNA sequence contains an N\n");
       } 
       else {                         
-	print LOG "ERROR: $cds - DNA sequence contains a non-ACGT character (which isn't a '-' or 'N')\n";  
+	$log->write_to("ERROR: $cds - DNA sequence contains a non-ACGT character (which isn't a '-' or 'N')\n");
       }
     }
     print DNA "$dna";
@@ -418,7 +409,7 @@ sub write_wormpep_dna{
     # grab peptide sequence
     my $peptide = $cds->asPeptide();
     if ((!defined ($peptide)) || ($peptide eq "")) {
-      print LOG "cannot extract peptide sequence for CDS $cds\n";
+      $log->write_to("cannot extract peptide sequence for CDS $cds\n");
       next;
     }
     $peptide =~ /^>(\S+)\s+([\w\*].*)/s ; 
@@ -426,11 +417,11 @@ sub write_wormpep_dna{
 
 
     # various santity checks
-    print LOG "ERROR: $cds has an incorrect dotname\n" unless ($cds =~ /^[A-Z0-9_]+\.[1-9]\d?[A-Za-z]?$/i);    
-    print LOG "ERROR: $cds - peptide sequence does not start with a M\n" unless ($peptide_seq =~ /^M/);
-    print LOG "ERROR: $cds - peptide sequence contains an X\n"           if ($peptide_seq =~ /X/);
+    $log->write_to("ERROR: $cds has an incorrect dotname\n") unless ($cds =~ /^[A-Z0-9_]+\.[1-9]\d?[A-Za-z]?$/i);    
+    $log->write_to("ERROR: $cds - peptide sequence does not start with a M\n") unless ($peptide_seq =~ /^M/);
+    $log->write_to("ERROR: $cds - peptide sequence contains an X\n")           if ($peptide_seq =~ /X/);
     if ($peptide_seq =~ /\*/) {
-      print LOG "ERROR: $cds - peptide sequence contains a *\n";              
+      $log->write_to("ERROR: $cds - peptide sequence contains a *\n");
       next;
     }
     
@@ -454,12 +445,12 @@ sub write_wormpep_dna{
     
   }   
   close DNA;
-  print LOG &runtime, ": finished writing wormpep.dna file\n\n";
+  $log->write_to($wormbase->runtime." : finished writing wormpep.dna file\n\n");
 
   # close database connection
   $db->close;
-  print LOG &runtime, ": finished connection to database\n\n";
-  print     &runtime, ": finished connection to database\n\n" if ($verbose);
+  $log->write_to($wormbase->runtime." : finished connection to database\n\n");
+  print     $wormbase->runtime, ": finished connection to database\n\n" if ($verbose);
 
 }
 
@@ -471,8 +462,8 @@ sub write_wormpep_dna{
 
 sub retrieve_cds_data{
 
-  print LOG &runtime, ": retrieving data from autoace for each CDS\n\n";
-  
+  $log->write_to($wormbase->runtime." : retrieving data from autoace for each CDS\n\n");
+  $log->log_and_die("Tablemaker def file wormpep.def doesn't exist\n") unless -e ("$dbdir/wquery/wormpep.def");
   my $command = "Table-maker -p $dbdir/wquery/wormpep.def\nquit\n";
   
   open (TACE, "echo '$command' | $tace $dbdir | ");
@@ -516,7 +507,7 @@ sub retrieve_cds_data{
   }
   close(TACE);
   
-  print LOG &runtime, ": finished retrieving data from autoace for each CDS\n\n";
+  $log->write_to($wormbase->runtime." : finished retrieving data from autoace for each CDS\n\n");
 }
 
 
@@ -527,9 +518,9 @@ sub retrieve_cds_data{
 
 sub write_wormpep_fasta{
 
-  print LOG &runtime, ": writing wp.fasta$release file\n\n";
+  $log->write_to($wormbase->runtime." : writing wp.fasta$release file\n\n");
 
-  open (WPFASTA , ">$new_wpdir/wp.fasta_unwrap$release");
+  open (WPFASTA , ">$new_wpdir/wp.fasta_unwrap$release") or $log->log_and_die("cant open $new_wpdir/wp.fasta_unwrap$release :$!\n");
 
   # loop through array of peptide sequences
   for (my $i = 1 ; $i <= $wpmax ; $i++) {
@@ -542,11 +533,11 @@ sub write_wormpep_fasta{
 
   my $status = system ("rewrap $new_wpdir/wp.fasta_unwrap$release > $new_wpdir/wp.fasta$release");
   if(($status >>8) != 0){
-    print LOG "ERROR: rewrap command failed. \$\? = $status\n";
+    $log->write_to("ERROR: rewrap command failed. \$\? = $status\n");
   }
-  unlink ("$new_wpdir/wp.fasta_unwrap$release") || print LOG "cannot delete $new_wpdir/wp.fasta_unwrap$release\n";
+  unlink ("$new_wpdir/wp.fasta_unwrap$release") || $log->write_to("cannot delete $new_wpdir/wp.fasta_unwrap$release\n");
 
-  print LOG &runtime, ": finished writing wormpep.fasta file\n\n";
+  $log->write_to($wormbase->runtime." : finished writing wormpep.fasta file\n\n");
 
 }
 
@@ -558,13 +549,18 @@ sub write_wormpep_fasta{
 
 sub write_main_wormpep_and_table{
 
-  print LOG &runtime, ": Build wormpep & wormpep.table files\n\n";
+  $log->write_to($wormbase->runtime." : Build wormpep & wormpep.table files\n\n");
   
+<<<<<<< make_wormpep.pl
   # open filehandles for output files
   
   open (FASTA, ">$new_wpdir/wormpep_unwrap$release") || die "cannot create wormpep_unwrap$release\n";
+=======
+  open (FASTA , ">$new_wpdir/wormpep_unwrap$release") || $log->log_and_die("cannot create wormpep_unwrap$release\n");
+>>>>>>> 1.12.4.1
   FASTA->autoflush();
 
+<<<<<<< make_wormpep.pl
   if ($initial) {
       open (CONNECTIONS, ">/wormsrv2/autoace/acefiles/CDS2wormpep.ace") || die "cannot create CDS2wormpep\n";
       CONNECTIONS->autoflush();
@@ -572,6 +568,11 @@ sub write_main_wormpep_and_table{
   elsif ($final) {
       open (TABLE, ">$new_wpdir/wormpep.table$release")  || die "cannot create wormpep.table$release\n";
       TABLE->autoflush();
+=======
+  if($final){
+    open (TABLE , ">$new_wpdir/wormpep.table$release")  || $log->log_and_die("cannot create wormpep.table$release\n");
+    TABLE->autoflush();
+>>>>>>> 1.12.4.1
   }
   
   foreach my $cds (@CDSs) {
@@ -636,21 +637,21 @@ sub write_main_wormpep_and_table{
   
   my $status = system ("rewrap $new_wpdir/wormpep_unwrap$release > $new_wpdir/wormpep$release");
   if(($status >>8) != 0){
-    print LOG "ERROR: rewrap command failed. \$\? = $status\n";
+    $log->write_to("ERROR: rewrap command failed. \$\? = $status\n");
   }
 
   # create a blast'able database (indexing) using setdb for Wublast (not formatdb, which is  for blastall)
   if($final){
     $status = copy("$new_wpdir/wormpep$release", "$new_wpdir/wormpep_current");
-    print LOG "ERROR: Couldn't copy file: $!\n" if ($status == 0);
+    $log->write_to("ERROR: Couldn't copy file: $!\n") if ($status == 0);
     $status = system ("/usr/local/pubseq/bin/setdb $new_wpdir/wormpep_current > $new_wpdir/wormpep_current.log");
     if(($status >>8) != 0){
-      print LOG "ERROR: setdb command failed. \$\? = $status\n";
+      $log->write_to("ERROR: setdb command failed. \$\? = $status\n");
     }
   }
 
-  unlink ("$new_wpdir/wormpep_unwrap$release")  || print LOG "cannot delete $new_wpdir/wormpep_unwrap$release\n";
-  print LOG &runtime, ": Finished building wormpep & wormpep.table files\n\n";
+  unlink ("$new_wpdir/wormpep_unwrap$release")  || $log->write_to("cannot delete $new_wpdir/wormpep_unwrap$release\n");
+  $log->write_to($wormbase->runtime." : Finished building wormpep & wormpep.table files\n\n");
 
 }
 
@@ -660,9 +661,9 @@ sub write_main_wormpep_and_table{
 # wormpep.history contains tab-separated:  dotname, wpid, start (release), end (release)
 
 sub write_wormpep_history_and_diff{
-  open (OLDHISTORY, "$wpdir/wormpep.history$old_release")  || die "cannot open $wpdir/wormpep.history$old_release\n";
-  open (HISTORY,    ">$new_wpdir/wormpep.history$release") || die "cannot create $wpdir/wormpep.history$release\n";
-  open (DIFF,       ">$new_wpdir/wormpep.diff$release")    || die "cannot create $wpdir/wormpep.diff$release\n";
+  open (OLDHISTORY, "$wpdir/wormpep.history$old_release")  || $log->log_and_die("cannot open $wpdir/wormpep.history$old_release\n");
+  open (HISTORY,    ">$new_wpdir/wormpep.history$release") || $log->log_and_die("cannot create $wpdir/wormpep.history$release\n");
+  open (DIFF,       ">$new_wpdir/wormpep.diff$release")    || $log->log_and_die("cannot create $wpdir/wormpep.diff$release\n");
   
   my %line;
   while (my $line = <OLDHISTORY>) {
@@ -716,7 +717,7 @@ sub write_wormpep_history_and_diff{
   close HISTORY;
   close DIFF;
   my $wpdiff = $wpmax - $old_wpmax;
-  print LOG "\n\nnew wpmax of wp.fasta$release equals $wpmax\n$wpdiff new sequences have been added\n";
+  $log->write_to("\n\nnew wpmax of wp.fasta$release equals $wpmax\n$wpdiff new sequences have been added\n");
 }
 
 
@@ -728,7 +729,7 @@ sub write_wormpep_history_and_diff{
 sub count_isoforms{
 
   my @wormpep_CDSs;
-  open (FILE , "$new_wpdir/wormpep$release") || print LOG  "cannot open the wormpep$release file\n";
+  open (FILE , "$new_wpdir/wormpep$release") || $log->log_and_die("cannot open the wormpep$release file\n");
   while (<FILE>) {
     if (/^\>(\S+)\s+\S+/) {
       my $cds = $1;
@@ -763,16 +764,16 @@ sub count_isoforms{
       $new_name2x{$new_name} = "x";
     } 
     else {
-      print LOG "$_ has a non\-acceptable name in wormpep$release \(has not been counted\)\n";
+      $log->write_to("$_ has a non\-acceptable name in wormpep$release \(has not been counted\)\n");
       next;
     }
   }
-  print LOG "\n\nthere are $no_isoform_count CDS in autoace, $total_cds_count when counting \($isoform_count\) alternate splice_forms\n";
+  $log->write_to("\n\nthere are $no_isoform_count CDS in autoace, $total_cds_count when counting \($isoform_count\) alternate splice_forms\n");
 
   # write the release letter (also does some checks)
   if($final) {
     &release_wormpep($no_isoform_count,$total_cds_count,$isoform_count);
-    chmod (0444 , "$new_wpdir/*") || print LOG "cannot chmod $new_wpdir/ files\n";
+    chmod (0444 , "$new_wpdir/*") || $log->write_to("cannot chmod $new_wpdir/ files\n");
   }
   
 }
@@ -783,7 +784,7 @@ sub count_isoforms{
 # empty if inactive, and link to active wpid in case of duplicate sequences in wp.fasta
 
 sub write_wormpep_accession{
-  open (WPTABLE , ">$new_wpdir/wormpep.accession$release") || die "cannot create wormpep.accession$release\n";
+  open (WPTABLE , ">$new_wpdir/wormpep.accession$release") ||$log->log_and_die("cannot create wormpep.accession$release\n");
   
   for (my $i = 1 ; $i <= $wpmax ; $i++) {
     if (defined ($number2accession[$i])) {
@@ -793,41 +794,6 @@ sub write_wormpep_accession{
   close (WPTABLE);
   
 }
-
-
-#################################################################################################
-#
-# Create logfile
-#
-#################################################################################################
-
-sub create_log_files{
-
-  # Create history logfile for script activity analysis
-  $0 =~ m/\/*([^\/]+)$/; system ("touch $basedir/logs/history/$1.`date +%y%m%d`");
-
-  # create main log file using script name for
-  my $script_name = $1;
-  $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
-  my $rundate = &rundate;
-  # Log name depends on which mode script is being run in: initial/final
-  $log        = "$basedir/logs/$script_name.initial.WS$release.$rundate.$$" if ($initial);
-  $log        = "$basedir/logs/$script_name.final.WS$release.$rundate.$$"   if ($final);
-
-  open (LOG, ">$log") or die "cant open $log";
-  print LOG "$script_name\n";
-  print LOG "Wormpep version  : wormpep$release\n\n";
-  print LOG "initial phase\n" if ( $initial );
-  print LOG "full phase\n"    if ( $final );
-  print LOG "started at ",&runtime,"\n";
-  print LOG "=============================================\n";
-  print LOG "\n";
-
-  LOG->autoflush();
-}
-
-
-
 
 
 __END__

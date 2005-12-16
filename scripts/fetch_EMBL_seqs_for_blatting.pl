@@ -6,8 +6,8 @@
 # 
 # Attempt to unify all of the diverse scripts to fetch ESTs, OSTs, mRNAs etc. used by blat 
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2005-11-15 17:22:21 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2005-12-16 11:18:55 $
 
 use strict;
 use lib "/wormsrv2/scripts/";

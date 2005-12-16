@@ -9,7 +9,7 @@
 # Usage : map_feature2gene.pl [-options]
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2005-07-19 09:35:12 $
+# Last edited on: $Date: 2005-12-16 11:18:55 $
  
 #################################################################################
 # Initialise variables                                                          #

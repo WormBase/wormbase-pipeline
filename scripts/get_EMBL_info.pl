@@ -1,16 +1,16 @@
 #!/usr/local/bin/perl5.8.0 -w
 
 # Author: Chao-Kung Chen
-# Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-03-15 12:37:43 $ 
+# Last updated by $Author: ar2 $
+# Last updated on: $Date: 2005-12-16 11:18:55 $ 
 
 use strict;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'}; 
+use lib  $ENV{'CVS_DIR'}; 
 use Wormbase;
 use Ace;
 use Carp;
 use Getopt::Long;
-use EMBL_feature_parser;
+use GENEACE::EMBL_feature_parser;
 use Coords_converter;
 use Feature_mapper;
 

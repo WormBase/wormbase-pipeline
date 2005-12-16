@@ -7,7 +7,7 @@
 # This script checks the exon order and corrects them if needed
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2004-02-05 14:26:17 $
+# Last updated on: $Date: 2005-12-16 11:18:55 $
 
 
 
@@ -16,44 +16,56 @@
 #############################################
 
 use strict;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
 use Ace;
 use Cwd;
-
+use Log_files;
+use Storable;
 
 #################################
 # Command-line options          #
 #################################
 
 my $database; # which database to test
+my $debug;
 my $test;     # use test environment?
 my $quicktest;# use test environment but gets less clones?
+my $store;
+
 
 GetOptions ("database=s"   => \$database,
+	    "debug:s"      => \$debug,
             "test"         => \$test,
-	    "quicktest"    => \$quicktest
+	    "quicktest"    => \$quicktest,
+	    "store:s"      => \$store
 	   );
 
 $test = 1 if $quicktest;
-
+my $wormbase;
+if( $store ) {
+  $wormbase = retrieve( $store ) or croak("cant restore wormbase from $store\n");
+}
+else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+			     -test    => $test,
+			   );
+}
 #################################
 # Set paths                     #
 #################################
 
 # set root level
-my $basedir     = "/wormsrv2";
-$basedir        = glob("~wormpub")."/TEST_BUILD" if ($test); 
-
+my $basedir     = $wormbase->basedir;
 
 # check database name and path, default to autoace if -database not specified
 my $dbpath;
 my $CWD = cwd;
 
 if(!$database){
-  print "No database specified, using $basedir/autoace by default\n\n";
-  $dbpath = "$basedir/autoace";
+  print "No database specified, using ".$wormbase->autoace." by default\n\n";
+  $dbpath = $wormbase->autoace;
 }
 elsif($database =~ /^(\~\w+)\//){ # do we need to expand path if ~path specified?
   $dbpath = glob("$1");
@@ -80,7 +92,7 @@ open (ACE, ">$dbpath/acefiles/sorted_exons.ace") || die $!;
 # connect to database   #
 #########################
 
-my $tace = &tace;
+my $tace = $wormbase->tace;
 
 my $db = Ace->connect (-path => "$dbpath",
 		       -program => $tace) || 

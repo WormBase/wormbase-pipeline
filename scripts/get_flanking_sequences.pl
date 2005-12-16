@@ -7,8 +7,8 @@
 # Script to grab two 30 bp flanking sequences after specifying a sequence 
 # and two coordinates
 #
-# Last updated by: $Author: krb $     
-# Last updated on: $Date: 2004-08-02 10:08:03 $      
+# Last updated by: $Author: ar2 $     
+# Last updated on: $Date: 2005-12-16 11:18:55 $      
 
 use strict;
 use lib "/wormsrv2/scripts/";                    

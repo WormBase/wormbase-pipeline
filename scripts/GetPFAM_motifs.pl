@@ -7,7 +7,7 @@
 # Gets latest PFAM motifs from sanger/pub and puts info in to ace file
 #
 # Last updated by: $Author: ar2 $                      
-# Last updated on: $Date: 2005-09-05 13:50:40 $         
+# Last updated on: $Date: 2005-12-16 11:18:54 $         
 
 
 use strict;                                     

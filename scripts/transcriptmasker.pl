@@ -7,20 +7,22 @@
 
 # 031023 dl1
 
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2005-02-18 15:38:21 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2005-12-16 11:18:55 $
 
 #################################################################################
 # Initialise variables                                                          #
 #################################################################################
 
 use strict;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use IO::Handle;
 use Ace;
 use Getopt::Long;
 use Carp;
+use File::Path;
+use Storable;
 
 $|=1;
 
@@ -28,11 +30,15 @@ $|=1;
 # command-line options       #
 ##############################
 
-my $maintainers = "All";
-our $log;
-
 my $debug;              # debug mode
+<<<<<<< transcriptmasker.pl
 my $report;             # simple report mode
+=======
+my $database;
+my $test;
+my $store;
+my $verbose;            # verbose mode
+>>>>>>> 1.9.4.1
 my $help;               # Help/Usage page
 my $mrna;               # mRNA data
 my $ncrna;              # ncRNA data
@@ -47,31 +53,45 @@ GetOptions (
 	    "est"            => \$est,
 	    "ost"            => \$ost,
             "debug:s"        => \$debug,
+<<<<<<< transcriptmasker.pl
 	    "report:s"       => \$report,
             "help"           => \$help,
+=======
+	    "verbose"        => \$verbose,
+            "help|h"         => \$help,
+	    "database:s"     => \$database,
+	    "test"           => \$test,
+	    "store:s"        => \$store
+>>>>>>> 1.9.4.1
 	    );
 
 # Help pod if needed
 &usage("Help") if ($help);
 
-# Use debug mode?
-if ($debug) {
-    print "// DEBUG : \"$debug\"\n\n";
-    ($maintainers = $debug . '\@sanger.ac.uk');
+my $wormbase;
+if( $store ) {
+  $wormbase = retrieve( $store ) or croak("cant restore wormbase from $store\n");
+}
+else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+			     -test    => $test,
+			   );
 }
 if ($report) {
     print "// REPORT : \"$report\"\n\n";
     ($maintainers = $report . '\@sanger.ac.uk');
 }
 
-&create_log_files;
+my $log = Log_files->make_build_log($wormbase);
+
 
 # datafiles for input
+my $EST_dir = $wormbase->wormpub."/analysis/ESTs";
 our %datafiles = (
-		  "mrna"  => "/nfs/disk100/wormpub/analysis/ESTs/elegans_mRNAs",
-		  "ncrna" => "/nfs/disk100/wormpub/analysis/ESTs/elegans_ncRNAs",
-		  "est"   => "/nfs/disk100/wormpub/analysis/ESTs/elegans_ESTs",
-		  "ost"   => "/nfs/disk100/wormpub/analysis/ESTs/elegans_OSTs"
+		  "mrna"  => "elegans_mRNAs",
+		  "ncrna" => "elegans_ncRNAs",
+		  "est"   => "elegans_ESTs",
+		  "ost"   => "elegans_OSTs"
 		  );
 
 # valid Feature_data methods
@@ -87,15 +107,31 @@ our $valid_methods = join(' ', @valid_methods);
 
 # transcript accessions to names from a hash in common data
 
+<<<<<<< transcriptmasker.pl
 print "// Reading EST_names.dat hash\n\n" if ($debug);
 our %EST_name = &FetchData('NDBaccession2est');
 print "// Finished reading EST_names.dat hash\n\n" if ($debug);
+=======
+print "// Reading EST_names.dat hash\n\n" if ($verbose);
+our %EST_name = $wormbase->FetchData('NDBaccession2est');
+print "// Finished reading EST_names.dat hash\n\n" if ($verbose);
+>>>>>>> 1.9.4.1
 
 # which database
+<<<<<<< transcriptmasker.pl
 my $dbdir = "/wormsrv2/autoace";
 if ($debug) {$dbdir = "/nfs/disk100/wormpub/camace_dl1";}    # Use dan's split for the debug option
 if ($report) {$dbdir = "/nfs/disk100/wormpub/camace_dl1";}    # Use dan's split for the debug option
 my $tace  = &tace;                                    # tace executable path
+=======
+$database = $wormbase->autoace unless $database;
+
+my $blat_dir = "$database/BLAT";
+mkpath($blat_dir) unless (-e $blat_dir );
+
+my $tace  = $wormbase->tace;                                    # tace executable path
+
+>>>>>>> 1.9.4.1
 my $acc;                                              # accession for the entry
 my $id;                                               # id for the entry
 my $seq;                                              # raw sequence for the entry
@@ -112,14 +148,27 @@ my $ignored;                                          # No of entries ignored
 my $ignore;
 
 # which data file to parse
+<<<<<<< transcriptmasker.pl
 $masked = &MaskSequence($datafiles{mrna})  if ($mrna || $all);
 print LOG &runtime, ": masked $masked mRNA sequences\n"   if ($mrna || $all);
 print LOG &runtime, ": ignored $ignored mRNA sequences\n" if ($mrna || $all);
+=======
+$masked = &MaskSequence($datafiles{mrna}) if ($mrna || $all);
+$log->write_to($wormbase->runtime." : masked $masked mRNA sequences\n") if ($mrna || $all);
+>>>>>>> 1.9.4.1
 
 $masked = &MaskSequence($datafiles{ncrna}) if ($ncrna || $all);
+<<<<<<< transcriptmasker.pl
 print LOG &runtime, ": masked $masked ncRNA sequences\n"   if ($ncrna || $all);
 print LOG &runtime, ": ignored $ignored ncRNA sequences\n" if ($ncrna || $all);
+=======
+$log->write_to($wormbase->runtime." : masked $masked ncRNA sequences\n") if ($ncrna || $all);
 
+$masked = &MaskSequence($datafiles{est})  if ($est || $all);
+$log->write_to($wormbase->runtime." : masked $masked EST sequences\n") if ($est || $all);
+>>>>>>> 1.9.4.1
+
+<<<<<<< transcriptmasker.pl
 $masked = &MaskSequence($datafiles{est})   if ($est || $all);
 print LOG &runtime, ": masked $masked EST sequences\n"   if ($est || $all);
 print LOG &runtime, ": ignored $ignored EST sequences\n" if ($est || $all);
@@ -127,15 +176,18 @@ print LOG &runtime, ": ignored $ignored EST sequences\n" if ($est || $all);
 $masked = &MaskSequence($datafiles{ost})   if ($ost || $all);
 print LOG &runtime, ": masked $masked OST sequences\n"   if ($ost || $all);
 print LOG &runtime, ": ignored $ignored OST sequences\n" if ($ost || $all);
+=======
+$masked = &MaskSequence($datafiles{ost})  if ($ost || $all);
+$log->write_to($wormbase->runtime." : masked $masked OST sequences\n") if ($ost || $all);
+>>>>>>> 1.9.4.1
 
-print LOG "\n";
-print LOG "=============================================\n";
-print LOG "\n";
-close LOG;
+$log->write_to("\n=============================================\n\n");
 
 #########################################
 # hasta luego                           #
 #########################################
+
+$log->mail;
 
 exit(0);
 
@@ -151,28 +203,37 @@ exit(0);
 sub MaskSequence {
     my $data   = shift;
     my $masked = 0;
+<<<<<<< transcriptmasker.pl
     my $ignored = 0;
 
+=======
+    my $ignore ;
+
+>>>>>>> 1.9.4.1
     # connect to database
     print  "Opening database for masking $data ..\n" if ($debug);
-    my $db = Ace->connect(-path=>$dbdir,
-                          -program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
+    my $db = Ace->connect(-path=>$database,
+                          -program =>$tace) || $log->log_and_die("Connection failure: ".Ace->error."\n");
 
     # set input record seperator
     $/ = ">";
 
     # assign output file
+<<<<<<< transcriptmasker.pl
     if ( ($debug) || ($report) ) {
 	open (OUTPUT, ">${data}.testmasked") || die "ERROR: Can't open output file: '${data}.testmasked'";
     }
     else {
 	open (OUTPUT, ">${data}.masked") || die "ERROR: Can't open output file: '${data}.masked'";
     }
+=======
+    open (OUTPUT, ">$blat_dir/$data") || $log->log_and_die("ERROR: Can't open output file: $blat_dir/$data");
+>>>>>>> 1.9.4.1
 
     # input file loop structure
     my $skip = 1;
     
-    open (INPUT, "<$data")     || die "ERROR: Can't open input file: '$data'";
+    open (INPUT, "<$EST_dir/$data")     || $log->log_and_die("ERROR: Can't open input file: $EST_dir/$data");
     while (<INPUT>) {
 	chomp;
 	next if ($_ eq "");                 # catch empty lines
@@ -204,12 +265,19 @@ sub MaskSequence {
 	    next;
 	}
 	
+<<<<<<< transcriptmasker.pl
 	# fetch the feature_data for the database object
 	@features = $obj->Feature_data;                          # ?Method tag (i.e. SL1/SL2/polyA)
 	$no_features = scalar (@features);                       # Number of features to parse
 	
 	if ($no_features == 0) {
 	    print "WARNING: No Features to parse from $id\n\n" if ($debug);
+=======
+	@features = $obj->Feature_data(1);
+
+	if ( scalar (@features) == 0) {
+	    print "ERROR: No Features to parse \n\n" if ($debug);
+>>>>>>> 1.9.4.1
 	}
 	else {
 	    for (my $i=0; $i < $no_features; $i++) {             # loop through each attached ?Feature_data
@@ -221,6 +289,7 @@ sub MaskSequence {
 		$start  = $features[$i]->Feature(2);
 		$stop   = $features[$i]->Feature(3);
 		
+<<<<<<< transcriptmasker.pl
 		unless ((defined $start) && (defined $stop)) {
 		    print LOG "// ERROR: No coordinates for the $method feature in $id\n";
 		    next;
@@ -238,13 +307,32 @@ sub MaskSequence {
 		print "// $acc [$id] $method:" . substr($seq,$cut_to,$cut_length) . " [$start - $stop]\n" if ($report);
 		$newseq = substr($seqmasked,0,$cut_to) . ('n' x $cut_length)  . substr($seqmasked,$cut_from);
 		$seqmasked = $newseq;
+=======
+		$type  = $obj->Feature_data->Feature(1);         # Feature type (e.g. SL1,SL2,polyA)
+		if (defined($type)) {
+		    $start = $obj->Feature_data->Feature(2);         # start coord
+		    $stop  = $obj->Feature_data->Feature(3);         # stop coord
+
+		    $cut_to     = $start - 1;                        # manipulations for clipping 
+		    $cut_from   = $stop;
+		    $cut_length = $stop - $start + 1;
+
+		    if ($cut_to < 0 ) {$cut_to = 0;}                 # fudge to ensure non-negative clipping coords
+
+		    print "$acc [$id]: '$type' $start -> $stop [$cut_to : $cut_from ($cut_length)]\n" if ($debug);
+		    print "// # $acc [$id] $type:" . (substr($seq,$cut_to,$cut_length)) . " [$start - $stop]\n\n" if ($verbose);
+		    $newseq = (substr($seqmasked,0,$cut_to)) . ('n' x $cut_length)  . (substr($seqmasked,$cut_from));
+		    $seqmasked = $newseq;
+		}
+>>>>>>> 1.9.4.1
 	    }
 	    
 	    # increment count of sequences masked
 	    $masked++;
-	    
+
 	}
 	
+<<<<<<< transcriptmasker.pl
 	# Is the Ignore tag set?
 
 	$ignore = $obj->Ignore;        # Ignore tag set?
@@ -258,6 +346,19 @@ sub MaskSequence {
 	    $ignored++;
 	}	
 	undef $ignore;
+=======
+	# Is the Ignore tag set?
+
+	my $ignore = $obj->Ignore;        # Ignore tag set?
+	unless (defined $ignore) {
+	    # output masked sequence
+	    print OUTPUT ">$acc $id\n$seqmasked\n";
+	}
+	else {
+	    print "\n// Ignore tag set for $acc $id\n\n" if ($verbose);
+	}	
+	undef $ignore;
+>>>>>>> 1.9.4.1
 	
 	# close object
 	$obj->DESTROY();
@@ -272,27 +373,6 @@ sub MaskSequence {
 }
 #_ end MaskSequence _#
 
-###############################################################
-
-sub create_log_files{
-
-  # Create history logfile for script activity analysis
-  $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
-
-  # create main log file using script name for
-  my $script_name = $1;
-  $script_name    =~ s/\.pl//; # don't really need to keep perl extension in log name
-  my $rundate     = `date +%y%m%d`; chomp $rundate;
-  $log            = "/wormsrv2/logs/$script_name.$rundate.$$";
-
-  open (LOG, ">$log") or die "cant open $log";
-  print LOG "=============================================\n";
-  print LOG "$script_name\n";
-  print LOG "started at ",`date`,"\n";
-  print LOG "=============================================\n";
-  print LOG "\n";
-
-}
 
 
 ###############################################################

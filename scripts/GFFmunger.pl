@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2005-11-07 16:28:32 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2005-12-16 11:18:54 $
 #
 # Usage GFFmunger.pl [-options]
 

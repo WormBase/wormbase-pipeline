@@ -7,7 +7,7 @@
 # Usage : acecompress.pl [-options]
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2003-01-28 17:14:17 $
+# Last edited on: $Date: 2005-12-16 11:18:54 $
 
 use strict;
 use Getopt::Long;

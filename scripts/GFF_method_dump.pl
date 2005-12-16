@@ -7,20 +7,23 @@
 # Selectively dump GFF for certain acedb methods
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2005-10-12 10:43:47 $
+# Last edited on: $Date: 2005-12-16 11:18:54 $
 
 
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{CVS_DIR};
+use lib $ENV{CVS_DIR};
 use Wormbase;
 use Getopt::Long;
 use strict;
+use Storable;
 
 my ($help, $debug, $test, $quicktest, $database, @methods, @chromosomes, $dump_dir, @clones, $list );
 my @sequences;
+my $store;
 GetOptions (
 	    "help"          => \$help,
 	    "debug=s"       => \$debug,
 	    "test"          => \$test,
+	    "store:s"       => \$store,
 	    "quicktest"     => \$quicktest,
 	    "database:s"    => \$database,
 	    "dump_dir:s"    => \$dump_dir,
@@ -35,15 +38,27 @@ GetOptions (
 	    "list:s"        => \$list
 	   );
 
+my $wormbase;
+if( $store ) {
+  $wormbase = retrieve( $store ) or croak("cant restore wormbase from $store\n");
+}
+else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+			     -test    => $test,
+			   );
+}
+
+
+
 @methods     = split(/,/,join(',',@methods));
 @chromosomes = split(/,/,join(',',@chromosomes));
 @sequences = split(/,/,join(',',@clones)) if @clones;
 
 &check_options;
 
-my $giface = &giface;
+my $giface = $wormbase->giface;
 
-$database = "/wormsrv2/autoace" unless $database;
+$database = $wormbase->autoace unless $database;
 $dump_dir = "/tmp/GFF_CLASS" unless $dump_dir;
 
 mkdir $dump_dir unless -e $dump_dir;
@@ -58,14 +73,15 @@ open (WRITEDB,"| $giface $database") or die "failed to open giface connection to
 foreach my $sequence ( @sequences ) {
   if ( @methods ) {
     foreach my $method ( @methods ) {
-      my $command = "gif seqget $sequence +method $method; seqfeatures -version 2 -file $dump_dir/${sequence}.${method}.gff\n";
+      my $command = "gif seqget $sequence +method $method; seqactions -hide_header; seqfeatures -version 2 -file $dump_dir/${sequence}_${method}.gff\n";
+
       print "$command";
       print WRITEDB $command;
     }
   }
   else { 
-    my $command = "gif seqget $sequence; seqfeatures -version 2 -file $dump_dir/$sequence.gff\n";
     print "$command";
+    my $command = "gif seqget $sequence; seqactions -hide_header; seqfeatures -version 2 -file $dump_dir/$sequence.gff";
     print WRITEDB $command;
   }
 }

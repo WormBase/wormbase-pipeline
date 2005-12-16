@@ -1,13 +1,13 @@
 #!/usr/local/bin/perl5.6.0
-
+asdasd
 $|=1;
-use lib "/wormsrv2/scripts/";   
+use lib $ENV{'CVS_DIR'};   
 use strict;
 use Wormbase;
-asdfsd
+
 my $maintainers = "All";
 my $log         = "/tmp/whoswho.log";
-my $line_count  = 0;
+my $line_count  = 0
 
 # move to dl1 cvs checkout directory
 chdir ("/wormsrv2/scripts") || die "Couldn't cd to /wormsrv2/scripts\n";

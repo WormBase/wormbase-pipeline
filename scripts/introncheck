@@ -6,8 +6,8 @@
 #
 # Usage: introncheck [-options]
 #
-# Last updated by: $Author: dl1 $     
-# Last updated on: $Date: 2004-04-20 14:26:04 $      
+# Last updated by: $Author: ar2 $     
+# Last updated on: $Date: 2005-12-16 11:18:55 $      
 
 #################################################################################
 # variables                                                                     #
@@ -48,7 +48,7 @@ my $tace = &tace;    # tace executable path
 my $dbdir  = "/wormsrv2/autoace";                                  # Database path
 my $gffdir = "/wormsrv2/autoace/GFF_SPLITS";
 
-my @chromosomes = ('I','II','III','IV', 'V','X');
+my @chromosomes = ('IV','II','III','I', 'V','X');
 my %confirmed_intron = ();		  
 
 
@@ -139,7 +139,7 @@ foreach my $chromosome (@chromosomes) {
 	  unless ($match == 1) {	
 	      
 	      my @data = $coords->LocateSpan($f[0], $f[3], $f[4]);
-#	print "Maps to $data[0] from $data[1] - $data[2]\n";
+	      print "$f[0] $f[3] $f[4] Maps to $data[0] from $data[1] - $data[2]\n";
 	      
 	      my $obj = $db->fetch(Sequence=>$data[0]);
 	      my $lab;

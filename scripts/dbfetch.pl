@@ -4,8 +4,8 @@
 #
 # Usage: dbfetch <database> <name>
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2005-07-11 12:14:50 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2005-12-16 11:18:55 $
 
 
 my $database = shift;

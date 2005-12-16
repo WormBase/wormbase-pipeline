@@ -2,8 +2,8 @@
 #
 # map_operons.pl
 
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2005-06-07 14:13:37 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2005-12-16 11:18:55 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};

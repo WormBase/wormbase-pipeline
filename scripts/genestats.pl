@@ -6,8 +6,8 @@
 #
 # Usage : genestatsr.pl [-options]
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2005-04-18 09:54:41 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2005-12-16 11:18:55 $
  
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};

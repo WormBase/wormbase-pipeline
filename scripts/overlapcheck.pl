@@ -7,8 +7,8 @@
 # checks whether genes overlap, ESTs match introns and repeats match exons                                   
 # sorts output for stl and cam clones
 #
-# Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2004-04-28 10:39:59 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2005-12-16 11:18:55 $
 
 use strict;
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};

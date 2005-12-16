@@ -6,8 +6,13 @@
 #
 # Gets latest Interpro:GO mappings from XXXX and puts info in to ace file
 #
-# Last updated by: $Author: pad $                      
-# Last updated on: $Date: 2004-09-03 10:54:48 $         
+<<<<<<< GetInterPro_motifs.pl
+# Last updated by: $Author: ar2 $                      
+# Last updated on: $Date: 2005-12-16 11:18:54 $         
+=======
+# Last updated by: $Author: ar2 $                      
+# Last updated on: $Date: 2005-12-16 11:18:54 $         
+>>>>>>> 1.7.4.1
 
 use strict;                                     
 use lib "/wormsrv2/scripts/";                    

@@ -5,8 +5,8 @@
 # Counts the number of objects in an ACEDB database for each Class stated in the config file
 # Compares this number to those from a second database.
 #
-# Last updated by: $Author: dl1 $     
-# Last updated on: $Date: 2005-05-27 09:42:37 $      
+# Last updated by: $Author: ar2 $     
+# Last updated on: $Date: 2005-12-16 11:18:55 $      
 
 
 use strict;

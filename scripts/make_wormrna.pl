@@ -6,8 +6,8 @@
 #
 # Builds a wormrna data set from the current autoace database
 #
-# Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2005-07-27 13:37:35 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2005-12-16 11:18:55 $
 
 
 #################################################################################

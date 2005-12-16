@@ -1,15 +1,15 @@
 #!/usr/local/bin/perl5.8.0 -w
 
 # Author: Chao-Kung Chen
-# Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-03-15 12:37:43 $ 
+# Last updated by $Author: ar2 $
+# Last updated on: $Date: 2005-12-16 11:18:55 $ 
 
 use strict;
-use lib "/wormsrv2/scripts"  ? "/wormsrv2/scripts" : glob("/wormmsrv1/chaokung/my-scripts");
+use lib $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'}."/GENEACE";
 use Wormbase;
 use Ace;
 use Getopt::Long;
-use lib "/nfs/team71/worm/ck1/WORMBASE_CVS/scripts";
 use Geneace;
 
 my $tace        = &tace;
@@ -48,7 +48,7 @@ foreach (keys %Loci_multiPt){ # loci grepped from each multi-pt
   my @unique = $ga->get_unique_from_array( @{$Loci_multiPt{$_}} );
 
   my %unique;
-  foreach (@eunique){$unique{$_}++};  # turn array element to hash key for quick look up
+  foreach (@unique){$unique{$_}++};  # turn array element to hash key for quick look up
 
   my @diff = $ga->array_comp(\@unique, \@{$loci_2_multi{$_}}, "diff");
 

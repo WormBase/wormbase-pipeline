@@ -6,8 +6,8 @@
 #
 # A script to find (and classify) potentially short, spurious genes (default = <50 aa)
 #
-# Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2005-11-15 14:59:56 $     
+# Last updated by: $Author: ar2 $     
+# Last updated on: $Date: 2005-12-16 11:18:55 $     
 
 
 use strict;

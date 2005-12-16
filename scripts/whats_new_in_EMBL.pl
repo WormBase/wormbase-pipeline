@@ -6,8 +6,8 @@
 #
 # checks EMBL for new EST or mRNA entries
 #
-# Last updated by: $Author: pad $                      
-# Last updated on: $Date: 2005-11-24 11:32:02 $        
+# Last updated by: $Author: ar2 $                      
+# Last updated on: $Date: 2005-12-16 11:18:55 $        
 
 use strict;
 use Getopt::Long;

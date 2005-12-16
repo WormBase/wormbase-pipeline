@@ -4,8 +4,8 @@
 #
 # Cronjob integrity check controls for split camace databases.
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2005-11-23 11:46:25 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2005-12-16 11:18:55 $
 
 use strict;
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};

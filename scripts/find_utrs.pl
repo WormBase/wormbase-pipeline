@@ -6,8 +6,8 @@
 #
 # Ashwin Hajarnavis ah3@sanger.ac.uk  August 2002
 #
-# Last updated by: $Author: krb $                 
-# Last updated on: $Date: 2004-06-08 13:00:31 $   
+# Last updated by: $Author: ar2 $                 
+# Last updated on: $Date: 2005-12-16 11:18:55 $   
 
 
 use strict;

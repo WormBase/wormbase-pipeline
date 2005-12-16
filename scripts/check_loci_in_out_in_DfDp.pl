@@ -6,8 +6,8 @@
 #
 # Script to check for the loci no longer as inside/outside locus of a Df/Dp based on modified gmap via interpolation
 #
-# Last updated by: $Author: mt3 $
-# Last updated on: $Date: 2005-12-09 13:55:16 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2005-12-16 11:18:55 $
 
 
 use strict;

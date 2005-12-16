@@ -2,8 +2,8 @@
 #
 # EMBLDump.pl :  makes EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2005-11-24 12:50:10 $
-#  Last updated by: $Author: pad $
+#  Last updated on: $Date: 2005-12-16 11:18:54 $
+#  Last updated by: $Author: ar2 $
 
 use strict;
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};

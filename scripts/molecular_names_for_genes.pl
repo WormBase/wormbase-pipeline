@@ -7,7 +7,7 @@
 # quick script to populate Molecular_name tag in ?Gene model during build
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-11-24 15:55:14 $
+# Last updated on: $Date: 2005-12-16 11:18:55 $
 
 #################################################################################
 # Initialise variables                                                          #

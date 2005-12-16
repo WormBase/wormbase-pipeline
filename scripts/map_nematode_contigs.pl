@@ -7,8 +7,8 @@
 # Map WashU and Nembase EST contigs to genome and write out file to send to authors
 # of these two data sets for their web sites to point back at us
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2005-12-06 09:31:36 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2005-12-16 11:18:55 $
 
 use strict;
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};

@@ -6,10 +6,10 @@
 # Calculate the CRC64 of a string.
 #
 # $Source: /cvsroot/CVSmaster/wormbase/scripts/CRC64.pm,v $
-# $Revision: 1.2 $
+# $Revision: 1.3 $
 # $State: Exp $
-# Last updated on: $Date: 2002-12-09 12:54:27 $
-# Last updated by: $Author: ck1 $
+# Last updated on: $Date: 2005-12-16 11:18:54 $
+# Last updated by: $Author: ar2 $
 # #
 # *************************************************************
 #

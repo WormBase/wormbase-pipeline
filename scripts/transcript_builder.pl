@@ -6,9 +6,8 @@
 #
 # Script to make ?Transcript objects
 #
-# Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2005-04-28 13:04:04 $
-
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2005-12-16 11:18:55 $
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Getopt::Long;
@@ -19,6 +18,7 @@ use Modules::SequenceObj;
 use Modules::Transcript;
 use Modules::CDS;
 use Modules::Strand_transformer;
+use File::Path;
 
 my $tace = &tace;
 
@@ -66,7 +66,11 @@ my $log = Log_files->make_build_log($debug);
 
 #setup directory for transcript
 my $transcript_dir = "$database/TRANSCRIPTS";
+<<<<<<< transcript_builder.pl
 &run_command("mkdir $transcript_dir") unless -e "$transcript_dir";
+=======
+mkpath(" $transcript_dir") unless -e "$transcript_dir";
+>>>>>>> 1.29.4.1
 
 die "cant create log file\n\n" unless $log;
 

@@ -7,7 +7,7 @@
 # wrapper script for running transcript_builder.pl
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2005-05-13 12:59:34 $
+# Last edited on: $Date: 2005-12-16 11:18:55 $
 
 use lib $ENV{CVS_DIR};
 use Wormbase;

@@ -5,7 +5,7 @@
 # by Anthony Rogers                             
 #
 # Last updated by: $Author: ar2 $               
-# Last updated on: $Date: 2005-08-23 15:59:23 $         
+# Last updated on: $Date: 2005-12-16 11:18:55 $
 
 # Generates a release letter at the end of build.
 #
@@ -70,6 +70,7 @@ if( defined($opt_l)) {
   print RL "WS$ver was built by \n";
   print RL "======================================================================\n\n";
   print RL "This directory includes:\n";
+<<<<<<< release_letter.pl
   print RL "i)   database.WS$ver.*.tar.gz    -   compressed data for new release\n";
   print RL "ii)  models.wrm.WS$ver           -   the latest database schema (also in above database files)\n";
   print RL "iii) CHROMOSOMES/subdir         -   contains 3 files (DNA, GFF & AGP per chromosome)\n";
@@ -81,6 +82,20 @@ if( defined($opt_l)) {
   print RL "ix)   gene_interpolated_map_positions.WS$ver.gz    - Interpolated map positions for each coding/RNA gene\n";
   print RL "x)    clone_interpolated_map_positions.WS$ver.gz   - Interpolated map positions for each clone\n";
   print RL "xi)   best_blastp_hits.WS$ver.gz  - for each C. elegans WormPep protein, lists Best blastp match to
+=======
+  print RL "i)\tdatabase.WS$ver.*.tar.gz    -   compressed data for new release\n";
+  print RL "ii)\tmodels.wrm.WS$ver           -   the latest database schema (also in above database files)\n";
+  print RL "iii)\tCHROMOSOMES/subdir         -   contains 3 files (DNA, GFF & AGP per chromosome)\n";
+  print RL "iv)\tWS$ver-WS$old_ver.dbcomp         -   log file reporting difference from last release\n";
+  print RL "v)\twormpep$ver.tar.gz          -   full Wormpep distribution corresponding to WS$ver\n";
+  print RL "vi)\twormrna$ver.tar.gz          -   latest WormRNA release containing non-coding RNA's in the genome\n";
+  print RL "vii)\tconfirmed_genes.WS$ver.gz   -   DNA sequences of all genes confirmed by EST &/or cDNA\n";
+  print RL "viii)\tcDNA2orf.WS$ver.gz            -   Latest set of ORF connections to each cDNA (EST, OST, mRNA)\n";
+  print RL "ix)\tgene_interpolated_map_positions.WS$ver.gz    - Interpolated map positions for each coding/RNA gene\n";
+  print RL "x)\tclone_interpolated_map_positions.WS$ver.gz   - Interpolated map positions for each clone\n";
+  print RL "xi)\tbest_blastp_hits.WS$ver.gz  - for each C. elegans WormPep protein, lists Best blastp match to
+
+>>>>>>> 1.22.4.1
                             human, fly, yeast, C. briggsae, and SwissProt & TrEMBL proteins.\n";
 
   print RL "xii)  best_blastp_hits_brigprot.WS$ver.gz   - for each C. briggsae protein, lists Best blastp match to

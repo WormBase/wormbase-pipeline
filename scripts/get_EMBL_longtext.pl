@@ -7,8 +7,8 @@
 
 # Author: Chao-Kung Chen Jan 24 2003
 
-# Last updated by $Author: ck1 $
-# Last updated on: $Date: 2004-03-16 17:36:02 $ 
+# Last updated by $Author: ar2 $
+# Last updated on: $Date: 2005-12-16 11:18:55 $ 
 
 use strict;
 use Getopt::Long;

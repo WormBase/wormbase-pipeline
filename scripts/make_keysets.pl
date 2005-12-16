@@ -7,7 +7,7 @@
 # Usage : make_keysets.pl [-options]
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2005-06-13 09:24:37 $
+# Last edited on: $Date: 2005-12-16 11:18:55 $
 
 #################################################################################
 # variables                                                                     #
@@ -16,7 +16,7 @@
 use IO::Handle;
 use Getopt::Long;
 use strict;
-use lib "/wormsrv2/scripts/";
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Socket;
 

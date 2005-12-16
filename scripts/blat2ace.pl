@@ -6,21 +6,36 @@
 #
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2005-11-21 17:45:57 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2005-12-16 11:18:55 $
 
 use strict;
+<<<<<<< blat2ace.pl
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
+=======
+use lib $ENV{'CVS_DIR'};
+>>>>>>> 1.37.4.1
 use Wormbase;
+use Log_files;
 use Getopt::Long;
 
 #########################
 # Command line options  #
 #########################
 
+<<<<<<< blat2ace.pl
 my ($help, $est, $mrna, $ncrna, $ost, $tc1, $nematode, $embl, $camace, $intron, $washu, $nembase);
+=======
+my ($est, $mrna, $ncrna, $ost, $tc1, $nematode, $embl, $intron);
+my ($help, $test, $debug, $database);
 
-GetOptions ("help"       => \$help,
+GetOptions (
+	    "help"       => \$help,
+	    "test"       => \$test,
+	    "debug:s"    => \$debug,
+	    "database:s" => \$database,
+>>>>>>> 1.37.4.1
+
             "est"        => \$est,
             "mrna"       => \$mrna,
             "ncrna"      => \$ncrna,
@@ -30,9 +45,9 @@ GetOptions ("help"       => \$help,
 	    "nembase"    => \$nembase,
 	    "washu"      => \$washu,
             "embl"       => \$embl,
-            "camace"     => \$camace,
+
 	    "intron"     => \$intron
-);
+	   );
 
 #############################
 # variables and directories #
@@ -40,7 +55,9 @@ GetOptions ("help"       => \$help,
 
 our $log;
 
+my $wormpub = glob("~wormpub");
 
+<<<<<<< blat2ace.pl
 # set database paths, default to autoace unless -camace
 my $blat_dir  = "/wormsrv2/autoace/BLAT";
 my $tace      = &tace ." /wormsrv2/autoace";
@@ -51,6 +68,11 @@ if ($camace) {
     $blat_dir  = "$canonical/BLAT";
     $tace      = &tace." $canonical";
 }
+=======
+# set database paths
+$database = ( $test ? "$wormpub/TEST_BUILD/autoace" : "$wormpub/autoace" ) unless $database;
+my $blat_dir  = "$database/BLAT";
+>>>>>>> 1.37.4.1
 
 #############################
 # CommonData hash retrieval #
@@ -77,8 +99,7 @@ our %word = (
 	     nembase    => 'BLAT_NEMBASE',
 	     washu    => 'BLAT_WASHU'
 	     );
-
-&create_log_files;
+$log = Log_files->make_build_log($debug);
 
 ########################################
 # command-line options & ramifications #
@@ -90,7 +111,11 @@ our %word = (
 # Exit if no data type choosen [EST|mRNA|EMBL|NEMATODE|OST|WASHU|NEMBASE]
 # or if multiple data types are chosen
 
+<<<<<<< blat2ace.pl
 &usage(1) unless ($est || $mrna || $ost || $ncrna || $tc1 || $nematode || $embl || $washu || $nembase); 
+=======
+$log->log_and_die("no type specified\n") unless ($est || $mrna || $ost || $ncrna || $tc1 || $nematode || $embl);
+>>>>>>> 1.37.4.1
 
 my $flags = 0;
 $flags++ if $est;
@@ -135,13 +160,11 @@ foreach my $stlclone (@stlclones) {
 ##########################################################################################
 # map the blat hits to ace - i.e. process blat output (*.psl) file into set of ace files #
 ##########################################################################################
-
-my $runtime = &runtime;
-print LOG "$runtime: Start mapping\n\n";
+$log->write_to(&runtime.": Start mapping\n\n");
 
 # open input and output filehandles
 open(ACE,  ">$blat_dir/autoace.$type.ace")  or die "Cannot open $blat_dir/autoace.${type}.ace $!\n";
-open(BLAT, "<$blat_dir/${type}_out.psl")    or die "Cannot open $blat_dir/${type}_out.psl $!\n";
+open(BLAT, "<$blat_dir/PSL/${type}_out.psl")    or die "Cannot open $blat_dir/${type}_out.psl $!\n";
 
 # loop through each blat hit
 while (<BLAT>) {
@@ -166,7 +189,7 @@ while (<BLAT>) {
   if ( ($est || $ost) && (exists $NDBaccession2est{$query}) ) {
       my $estname  = $NDBaccession2est{$query};
       if ($query ne $estname) {
-	  print LOG "EST name '$query' was replaced by '$estname'\n\n";
+	  $log->write_to("EST name $query was replaced by $estname\n\n");
 	  $query = $estname;
       }
   }
@@ -193,16 +216,13 @@ while (<BLAT>) {
   
   if ($startvirtual == $endvirtual) {
       $virtual = "$word{$type}:${superlink}_${startvirtual}";
-#    print OUTBLAT "[1 : $startvirtual $endvirtual " . ($matchend%100000) . "] $_";
   }	
   elsif (($startvirtual == ($endvirtual - 1)) && (($matchend%100000) <= 50000)) {
       $virtual = "$word{$type}:${superlink}_${startvirtual}";
-#    print OUTBLAT "[2 : $startvirtual $endvirtual " . ($matchend%100000) . "] $_";
   }
   else {
-      print LOG "$query wasn't assigned to a virtual object as match size was too big\n";
-      print LOG "Start is $matchstart, end is $matchend on $superlink\n\n";
-#    print OUTBLAT "[3] : $startvirtual $endvirtual " . ($matchend%100000) . "] $_";
+      $log->write_to("$query wasn't assigned to a virtual object as match size was too big\n");
+      $log->write_to("Start is $matchstart, end is $matchend on $superlink\n\n");
       next;
   }
 
@@ -234,12 +254,12 @@ while (<BLAT>) {
       my $virtualend = $virtualstart + $lengths[$x] -1;
       
       if ($calc != $newcalc) {
-	  print LOG "// MISMATCH: $query [$strand] $virtualstart $virtualend :: [virtual slice $calc -> $newcalc, offset ". ($matchend%100000) . "}\n\n";
+	  $log->write_to("// MISMATCH: $query [$strand] $virtualstart $virtualend :: [virtual slice $calc -> $newcalc, offset ".($matchend%100000)."]\n\n");
       }
 
       if (!defined $virtualstart) {
-	  print LOG "$query will be discarded as the match is too long\n";
-	  print LOG "$query [$strand] $virtualstart $virtualend  [virtual slice $calc -> $newcalc, offset ". ($matchend%100000) . "}\n\n";
+	  $log->write_to("$query will be discarded as the match is too long\n");
+	  $log->write_to("$query [$strand] $virtualstart $virtualend  [virtual slice $calc -> $newcalc, offset ".($matchend%100000)."]\n\n");
 	  next;
       }
 
@@ -261,7 +281,7 @@ while (<BLAT>) {
 	      $temp         = $virtualstart;
 	      $virtualstart = $virtualend;
 	      $virtualend   = $temp;
-	      
+
 	      $query_start  = $query_size  - $query_starts[$x];
 	      $query_end    = $query_start - $lengths[$x] +1;
 
@@ -282,7 +302,10 @@ while (<BLAT>) {
 	      $query_end     = $query_start - $lengths[$x] +1;
 	  }		
       }		
+<<<<<<< blat2ace.pl
 #      print LOG "$query was mapped to $virtual\n\n";
+=======
+>>>>>>> 1.37.4.1
       
       # write to output file
       print ACE "Homol_data : \"$virtual\"\n";
@@ -365,7 +388,7 @@ foreach my $found (sort keys %best) {
 	# produce confirmed introns #
 	#############################
 		if ($intron) {
-		    print LOG "Producing confirmed introns\n";
+		    $log->write_to("Producing confirmed introns\n");
 		    my ($n) = ($virtual =~ /\S+_(\d+)$/);
 		    for (my $y = 1; $y < @{$entry->{'exons'}}; $y++) {
 			my $last   = $y - 1;
@@ -381,7 +404,7 @@ foreach my $found (sort keys %best) {
 				    push @{$ci{$superlink}}, [$first,$second,$found];
 				}
 				else {
-				    print LOG "WARNING: Direction not found for $found\n\n";
+				  $log->write_to("WARNING: Direction not found for $found\n\n");
 				}
 			    }
 			}
@@ -394,7 +417,7 @@ foreach my $found (sort keys %best) {
 				    push @{$ci{$superlink}}, [$second,$first,$found]; 
 				}
 				else {
-				    print LOG "WARNING: Direction not found for $found\n\n";
+				    $log->write_to("WARNING: Direction not found for $found\n\n");
 				}
 			    }
 			}
@@ -545,7 +568,7 @@ if ($intron) {
 # hasta luego                #
 ##############################
 
-close(LOG);
+$log->mail;
 exit(0);
 
 
@@ -591,6 +614,7 @@ sub usage {
 }
 
 
+<<<<<<< blat2ace.pl
 ##############################################################
 
 sub create_log_files{
@@ -619,6 +643,8 @@ sub create_log_files{
 
 
 
+=======
+>>>>>>> 1.37.4.1
 
 __END__
 

@@ -4,8 +4,8 @@
 
 # by Chao-Kung Chen [030728]
 
-# Last updated on: $Date: 2005-12-09 13:55:16 $
-# Last updated by: $Author: mt3 $
+# Last updated on: $Date: 2005-12-16 11:18:55 $
+# Last updated by: $Author: ar2 $
 
 
 # Automatically update Geneace with Person/Person_name classes from autoace

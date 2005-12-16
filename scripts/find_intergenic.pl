@@ -6,8 +6,8 @@
 #
 # by Gary Williams
 #
-# Last updated by: $Author: gw3 $                      
-# Last updated on: $Date: 2005-09-29 16:03:32 $        
+# Last updated by: $Author: ar2 $                      
+# Last updated on: $Date: 2005-12-16 11:18:55 $        
 
 use strict;
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};

@@ -3,7 +3,7 @@
 # initiate_build.pl
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2004-11-24 15:06:07 $
+# Last edited on: $Date: 2005-12-16 11:18:55 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -12,57 +12,52 @@ use Getopt::Long;
 use Coords_converter;
 use File::Copy;
 use File::Spec;
+use Storable;
 
-my ($test,$debug,$database);
-
+my ($test,$debug,$database, $version);
+my ($store, $wormbase);
 GetOptions (
 	    'test'       => \$test,
 	    'debug:s'    => \$debug,
-	    'database:s' => \$database
+	    'database:s' => \$database,
+	    'version:s'  => \$version,
+	    'store:s'    => \$store
 	   );
 
-$test = 1 if ( defined $ENV{'TEST_BUILD'} and $ENV{'TEST_BUILD'} == 1);
-
-# is this script being run as user wormpub???
-&test_user_wormpub unless ( $test or $debug );
+if( $store ) {
+  $wormbase = retrieve( $store ) or croak("cant restore wormbase from $store\n");
+}
+else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+			     -test    => $test,
+			     -version => $version
+			   );
+}
 
 # establish log file.
-my $log = Log_files->make_build_log($debug);
+my $log = Log_files->make_build_log($wormbase);
+
+$log->log_and_die( "version to build not specified\n") unless $wormbase->version;
+
+my $old_ver = $wormbase->version - 1;
 
 #################################################################################
 # initiate autoace build                                                        #
 #################################################################################
 
-my $cvs_file = "$database/wspec/database.wrm";
-    
-# get old build version number, exit if no WS version is returned
-# add 1 for new build number, but just use '666' if in test mode
+## update CVS wspec, wquery and autoace_config from CVS
+$wormbase->run_command("cd ".$wormbase->autoace.";cvs -d :ext:cvs.sanger.ac.uk:/nfs/ensembl/cvsroot/ checkout -d wspec wormbase/wspec");
+$wormbase->run_command("cd ".$wormbase->basedir.";cvs -d :ext:cvs.sanger.ac.uk:/nfs/ensembl/cvsroot/ checkout -d autoace_config wormbase/autoace_config");
 
-my $WS_new_name;
-my $WS_version;
+## make new build_in_process flag ( not done yet in rebuild )
 
-if ($test) {
-  $WS_version = "666";
-  $WS_new_name = "666";
-} else {
-  $WS_version = &get_wormbase_version;
-  $WS_new_name = $WS_version +1;
-}
-$log->log_and_die("No_WormBase_release_number") unless defined($WS_version);
-
-
-# make new build_in_process flag
-    
-# make sure that the database.wrm file is younger
-sleep 10;
-
-# update database.wrm using cvs
-&run_command("sed 's/WS${WS_version}/WS${WS_new_name}/' < $cvs_file > ${cvs_file}.new");
-my $status = move("$database/wspec/database.wrm.new", "$cvs_file") or $log->write_to("ERROR: renaming file: $!\n");
-$log->write_to("ERROR: Couldn't move file: $!\n") if ($status == 0);
+## update database.wrm using cvs
+#$wormbase->run_command("sed 's/WS${old_version}/WS${version}/' < $cvs_file > ${cvs_file}.new");
+#my $status = move("$database/wspec/database.wrm.new", "$cvs_file") or $log->write_to("ERROR: renaming file: $!\n");
+#$log->write_to("ERROR: Couldn't move file: $!\n") if ($status == 0);
 
 # update CVS
-unless ($test) {
+unless ($wormbase->test) {
   system("cd $database/wspec; cvs update");
   system("cd ${database}_config ;cvs update");
 }
@@ -75,7 +70,7 @@ else {
 my $top = `top`;
 
 # add lines to the logfile
-my $msg = "Updated WormBase version number to WS$WS_new_name\n";
+my $msg = "Updated WormBase version number to WS".$wormbase->version."\n";
 $msg .= "You are ready to build another WormBase release\n";
 $msg .= "Please tell camace and geneace curators to update their database to use the new models!!!\n\n";
 $msg .= "Please also check following 'top' output to see if there are stray processes that should\n";

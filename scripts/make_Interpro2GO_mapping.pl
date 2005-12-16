@@ -6,8 +6,8 @@
 #
 # Gets latest Interpro:GO mappings from XXXX and puts info in to ace file
 #
-# Last updated by: $Author: krb $                      
-# Last updated on: $Date: 2004-09-01 13:50:57 $           
+# Last updated by: $Author: ar2 $                      
+# Last updated on: $Date: 2005-12-16 11:18:55 $           
 
 
 use strict;

@@ -6,8 +6,8 @@
 #
 # Usage: camcheck.pl
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2005-12-09 13:52:54 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2005-12-16 11:18:55 $
 #
 # see pod documentation (i.e. 'perldoc camcheck.pl') for more information.
 #

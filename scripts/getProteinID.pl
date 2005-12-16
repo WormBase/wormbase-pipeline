@@ -7,8 +7,8 @@
 #
 # written by Dan Lawson
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2005-12-06 09:54:33 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2005-12-16 11:18:55 $
 
 use lib "/wormsrv2/scripts/";
 use Wormbase;

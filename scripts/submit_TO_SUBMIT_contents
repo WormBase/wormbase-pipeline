@@ -9,8 +9,8 @@
 # 020123 : dan : modified to make a report file, gzip the EMBL entry
 #                after submission and use Perl5.6 with strict
 #
-# Last updated by: $Author: pad $                      
-# Last updated on: $Date: 2005-11-24 12:31:53 $        
+# Last updated by: $Author: ar2 $                      
+# Last updated on: $Date: 2005-12-16 11:18:55 $        
 
 $|=1;
 use strict;

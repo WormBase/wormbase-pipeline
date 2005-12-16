@@ -7,54 +7,38 @@
 # Gets sequences ready for blatting, blats sequences, processes blat output, makes confirmed introns
 # and virtual objects to hang the data onto
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2005-11-21 17:45:57 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2005-12-16 11:18:55 $
 
 
 use strict;
-use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};           
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use IO::Handle;
 use Getopt::Long;
 use Carp;
-
+use Log_files;
+use Storable;
 
 ##############################
 # Misc variables and paths   #
 ##############################
 
-my ($help, $debug, $verbose, $est, $mrna, $ncrna, $ost, $nematode, $embl, $washu, $nembase, 
-    $blat, $tc1, $process, $virtual, $dump, $camace, $fine);
-my $maintainers = "All";
-my $errors      = 0;
-my $bin         = "/wormsrv2/scripts";
-my $canonical = "/nfs/disk100/wormpub/DATABASES/camace";
-our $log;
-our $blat_dir   = "/wormsrv2/autoace/BLAT";    # default BLAT directory, can get changed if -camace used
-our $dbpath     = "/wormsrv2/autoace";         # default database location
-our %homedb;                                   # for storing superlink->lab connections
-our $blatex     = '/nfs/disk100/wormpub/bin.ALPHA/blat';
-our $giface     = &giface;
-our %word = (
-	     est      => 'BLAT_EST',
-	     mrna     => 'BLAT_mRNA',
-	     ncrna    => 'BLAT_ncRNA',
-	     embl     => 'BLAT_EMBL',
-	     nematode => 'BLAT_NEMATODE',
-	     ost      => 'BLAT_OST',
-	     tc1      => 'BLAT_TC1',
-	     nembase  => 'BLAT_NEMBASE', 
-	     washu    => 'BLAT_WASHU'
-	     );
-
+my ($help, $debug, $test, $verbose , $dbpath);
+my ($est, $mrna, $ncrna, $ost, $nematode, $embl,, $washu, $nembase, $blat, $tc1);
+my ($process, $virtual, $dump, $camace, $fine, $nointron);
+my $store;
 
 #########################
 # Command line options  #
 #########################
 
 GetOptions ("help"       => \$help,
-            "debug=s"    => \$debug,
+            "debug:s"    => \$debug,
+	    "test"       => \$test,
 	    "verbose"    => \$verbose,
+	    "database"   => \$dbpath,
+	    "store:s"    => \$store,
 	    "est"        => \$est,
 	    "mrna"       => \$mrna,
 	    "ncrna"      => \$ncrna,
@@ -69,7 +53,8 @@ GetOptions ("help"       => \$help,
 	    "process"    => \$process,
 	    "virtual"    => \$virtual,
 	    "camace"     => \$camace,
-	    "fine"       => \$fine
+	    "fine"       => \$fine,
+	    "nointron"   => \$nointron
 	    );
 
 
@@ -77,21 +62,50 @@ GetOptions ("help"       => \$help,
 # command-line options & ramifications #
 ########################################
 
+my $wormbase;
+if( $store ) {
+  $wormbase = retrieve( $store ) or croak("cant restore wormbase from $store\n");
+}
+else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+			     -test    => $test,
+			   );
+}
+my $log         = Log_files->make_build_log($wormbase);
+my $errors      = 0;
+my $bin         = $ENV{'CVS_DIR'};
+my $wormpub     = $wormbase->wormpub;
 
+# database location
+$dbpath = $wormbase->autoace unless $dbpath;
+
+our $blat_dir   = "$dbpath/BLAT";             # default BLAT directory, can get changed if -camace used
+our %homedb;                                  # for storing superlink->lab connections
+our $blatex     = "$wormpub/bin.ALPHA/blat";
+our $giface     = $wormbase->giface;
+our %word = (
+	     est      => 'BLAT_EST',
+	     mrna     => 'BLAT_mRNA',
+	     ncrna    => 'BLAT_ncRNA',
+	     embl     => 'BLAT_EMBL',
+	     nematode => 'BLAT_NEMATODE',
+	     ost      => 'BLAT_OST',
+	     tc1      => 'BLAT_TC1',
+	     nembase  => 'BLAT_NEMBASE', 
+	     washu    => 'BLAT_WASHU'
+	     );
+
+<<<<<<< blat_them_all.pl
 # set to camace or autoace
 $blat_dir = "$canonical/BLAT" if $camace;
 $dbpath   = "$canonical"      if $camace;
-our $seq  = "$blat_dir/autoace.fa";               
+our $seq  = "$blat_dir/autoace.fa";
+=======
+our $seq  = "$blat_dir/autoace.fa";
+>>>>>>> 1.59.4.2
 
 # Help pod documentation
 &usage("Help") if ($help);
-
-# Use debug mode?
-if($debug){
-  print "DEBUG = \"$debug\"\n\n";
-  ($maintainers = $debug . '\@sanger.ac.uk');
-}
-
 
 # Exit if no dump/process/blat/virtual process option chosen
 &usage(1) unless ($dump || $process || $blat || $virtual); 
@@ -133,7 +147,7 @@ my $data;
 
 
 # Select the correct set of query sequences for blat
-my $query = "/nfs/disk100/wormpub/analysis/ESTs/";
+my $query = "$wormpub/analysis/ESTs/";
 $query   .= 'elegans_ESTs.masked'  if ($est);      # EST data set
 $query   .= 'elegans_OSTs'         if ($ost);      # OST data set
 $query   .= 'elegans_TC1s'         if ($tc1);      # TC1 data set
@@ -143,10 +157,6 @@ $query   .= 'other_nematode_ESTs'  if ($nematode); # ParaNem EST data set
 $query   .= 'elegans_embl_cds'     if ($embl);     # Other CDS data set, DNA not peptide!
 $query   .= 'nembase_nematode_contigs' if ($nembase);  # Contigs from NemBase
 $query   .= 'washu_nematode_contigs' if ($washu);  # Contigs from Nematode.net - John Martin <jmartin@watson.wustl.edu>
-
-&create_log_files;
-
-
 
 
 ###########################################################################
@@ -162,15 +172,17 @@ $query   .= 'washu_nematode_contigs' if ($washu);  # Contigs from Nematode.net -
     
 
 # BLAT the query data type 
-if ($blat) {
+# BLATTING now done by batch_BLAT.pl unless you're doing camace
+# BLAT the query data type 
+if ($blat and $camace) {
   
   &usage(5) unless (-e "$seq");   # Check that autoace.fa exists
   
   # Check that autoace.fa file was created prior to start of (re)build 
   &usage(6) if ( (-M "/wormsrv2/autoace/logs/A1:Build_in_progress" < -M "${blat_dir}/autoace.fa") && (!$camace) );
 
-  my $runtime = &runtime;   
-  print LOG "$runtime: Running blat and putting the results in $blat_dir/${data}_out.psl\n";
+  my $runtime = &runtime;
+  $log->write_to("$runtime: Running blat and putting the results in "."$blat_dir/${data}_out.psl"."\n");
   
 
   # BLAT system call
@@ -188,7 +200,6 @@ if ($blat) {
 }
 
 
-
 ####################################################################
 # process blat output (*.psl) file and convert results to acefile
 # by running blat2ace
@@ -197,33 +208,36 @@ if ($blat) {
 
 if ($process) {
 
-    my $runtime = &runtime;
+    my $runtime = $wormbase->runtime;
     print "Mapping blat data to autoace\n" if ($verbose);      
-    print LOG "$runtime: Processing blat ouput file, running blat2ace.pl\n";
+    $log->write_to("$runtime: Processing blat ouput file, running blat2ace.pl\n");
     
     # treat slightly different for nematode data (no confirmed introns needed)
     if ( ($nematode) || ($tc1) || ($embl) || ($ncrna) || ($washu) || ($nembase)) {
-	&run_command("$bin/blat2ace.pl -$data"); 
+	$wormbase->run_script("blat2ace.pl -$data"); 
     }
     elsif($camace){
-	&run_command("/nfs/team71/worm/dl1/wormbase/wormbase/scripts/blat2ace.pl -$data -intron -camace"); 	
+	$wormbase->run_script("blat2ace.pl -$data -intron -camace"); 	
     }
     else {
-	&run_command("$bin/blat2ace.pl -$data -intron"); 
+	$wormbase->run_script("blat2ace.pl -$data -intron"); 
     }
 
-    $runtime = &runtime;
+    $runtime = $wormbase->runtime;
     print "Producing confirmed introns in databases\n\n" if $verbose;
-    print LOG "$runtime: Producing confirmed introns in databases\n";
+    $log->write_to("$runtime: Producing confirmed introns in databases\n");
 
-    # produce confirmed introns for all but nematode, tc1, embl, ncRNA, nembase and washu data
-    unless ( ($nematode) || ($tc1) || ($embl) || ($ncrna) || ($washu) || ($nembase)) {
+
+    # produce confirmed introns for all but nematode, tc1, embl and ncRNA data
+    unless( $nointron ){
+      unless ( ($nematode) || ($tc1) || ($embl) || ($ncrna)|| ($washu) || ($nembase) ) {
 	print "Producing confirmed introns using $data data\n" if $verbose;
 	&confirm_introns('autoace',"$data");
 	&confirm_introns('camace', "$data");
 	&confirm_introns('stlace', "$data");
+      }
     }
-}
+  }
 
 
 #########################################
@@ -231,8 +245,8 @@ if ($process) {
 #########################################
 
 if ($virtual) {
-    my $runtime = &runtime;
-    print LOG "$runtime: Producing $data files for the virtual objects\n";
+    my $runtime = $wormbase->runtime;
+    $log->write_to("$runtime: Producing $data files for the virtual objects\n");
     
     print "// Assign laboratories to superlinks*\n";
     # First assign laboratories to each superlink object (stores in %homedb)
@@ -245,18 +259,7 @@ if ($virtual) {
 # Clean up and say goodbye   #
 ##############################
 
-close(LOG);
-
-# send log
-# warn about errors in subject line if there were any
-#if($errors == 0){
-#  &mail_maintainer("BUILD SCRIPT: blat_them_all",$maintainers,$log);
-#}
-#else{
-#  &mail_maintainer("BUILD SCRIPT: blat_them_all: $errors ERROR!",$maintainers,$log);
-#}
-
-
+$log->mail;
 exit(0);
 
 
@@ -275,9 +278,9 @@ sub sequence_to_lab {
   local (*LINK);
   my $name;
   
-  print LOG "Assign LINK* objects to laboratory\n\n";
+  $log->write_to("Assign LINK* objects to laboratory\n\n");
   # deal with the superlink objects
-  open (LINK, "<$blat_dir/superlinks.ace") || croak "Couldn't open superlinks.ace $!";
+  open (LINK, "<$blat_dir/superlinks.ace") || croak "Couldn't open $blat_dir/superlinks.ace $!";
   while (<LINK>) {
       
       if (/^Sequence\s+\:\s+\"(\S+)\"/) {
@@ -287,15 +290,13 @@ sub sequence_to_lab {
       }
       if (/^From_laboratory\s+\"(\S+)\"/) {
 	  $homedb{$name} = $1;
-	  print LOG "assigning $1 to $name\n";
+	 $log->write_to("assigning ".$1." to ".$name."\n");
 #	  print "assigning $1 to $name\n";
 	  undef ($name);
 	  next;
       }
   }
   close(LINK);
-  
-  print LOG "\n";
   
 }
 
@@ -306,6 +307,7 @@ sub sequence_to_lab {
 # and chromosome link files.                                                #
 #############################################################################
 
+#MOVED THIS IN TO BLAT_CONTROLLER.PL
 sub dump_dna {
 
   local (*CHANGE,*NEW);
@@ -314,10 +316,10 @@ sub dump_dna {
 
   unless ($camace) {
     $command  = "query find Sequence \"CHROMOSOME*\"\n";
-    $command .= "show -a -f /wormsrv2/autoace/BLAT/chromosome.ace\n";
+    $command .= "show -a -f $blat_dir/chromosome.ace\n";
     $command .= "follow Subsequence\n";
-    $command .= "show -a -f /wormsrv2/autoace/BLAT/superlinks.ace\n";
-    $command .= "dna -f /wormsrv2/autoace/BLAT/autoace.first\nquit\n";
+    $command .= "show -a -f $blat_dir/superlinks.ace\n";
+    $command .= "dna -f $blat_dir/autoace.first\nquit\n";
   }
   else {
     $command  = "query find Sequence \"SUPERLINK*\"\n";
@@ -326,7 +328,7 @@ sub dump_dna {
   }
   
   # tace dump chromosomal DNA and superlinks file
-  &run_command("echo '$command' | $giface $dbpath");
+  $wormbase->run_command("echo '$command' | $giface $dbpath");
 
   # Check that superlinks file created ok
   &usage(11) unless (-e "${blat_dir}/superlinks.ace");
@@ -698,59 +700,6 @@ sub usage {
 
 ######################################################################################################
 
-
-sub run_command{
-  my $command = shift;
-  print LOG &runtime, ": started running $command\n";
-  my $status = system($command);
-  if($status != 0){
-    $errors++;
-    print LOG "ERROR: $command failed\n";
-  }
-  print LOG &runtime, ": finished running $command\n";
-
-  # for optional further testing by calling subroutine
-  return($status);
-}
-
-################################################################
-sub create_log_files{
-
-  my $WS_version = &get_wormbase_version_name;
-
-
-  # Create history logfile for script activity analysis
-  $0 =~ m/\/*([^\/]+)$/; system ("touch //nfs/disk100/wormpub/logs/history/$1.`date +%y%m%d`");
-
-  # create main log file using script name for
-  my $script_name = $1;
-  $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
-  my $rundate     = `date +%y%m%d`; chomp $rundate;
-  $log        = "/nfs/disk100/wormpub/logs/${script_name}.${WS_version}.${rundate}.$$";
-
-  open (LOG, ">$log") or die "cant open $log";
-  print LOG "$script_name\n";
-  print LOG "started at ",`date`,"\n";
-  print LOG "WormBase version : ${WS_version}\n";
-  print LOG "======================================================================\n";
-  print LOG "blat_them_all.pl query sequence options:\n";
-  print LOG " -est      : perform blat for ESTs\n"                              if ($est);
-  print LOG " -mrna     : perform blat for mRNAs\n"                             if ($mrna);
-  print LOG " -ncrna    : perform blat for ncRNAs\n"                            if ($ncrna);
-  print LOG " -fine     : used with -mrna option\n"                             if ($fine);
-  print LOG " -ost      : perform blat for OSTs\n"                              if ($ost);
-  print LOG " -embl     : perform blat for misc. non-WormBase CDS from EMBL\n"  if ($embl);
-  print LOG " -nematode : perform blatx for parasitic nematode ESTs\n"          if ($nematode);
-  print LOG " -washu    : perform blatx for NemBase contigs\n"                  if ($nembase);
-  print LOG " -washu    : perform blatx for WashU (nematode.net) contigs\n"     if ($washu);
-  print LOG "\n";
-  print LOG "blat_them_all.pl process options:\n";
-  print LOG " -dump      : dump chromosome sequences from autoace\n"            if ($dump);
-  print LOG " -blat      : run blat against dumped chromosome sequences\n"      if ($blat);
-  print LOG " -process   : sort and process raw blat output\n"                  if ($process);
-  print LOG " -virtual   : create virtual sequence objects\n"                   if ($virtual);
-  print LOG "\n";
-}
 
 ##########################################################################################################
 

@@ -7,7 +7,7 @@
 # by Anon
 #
 # Last updated by: $Author: ar2 $                      
-# Last updated on: $Date: 2004-11-19 16:33:20 $        
+# Last updated on: $Date: 2005-12-16 11:18:55 $        
 
 
 use strict;
@@ -32,16 +32,27 @@ my $runtime = &runtime;
 my $help;       # Help perdoc
 my $test;       # Test mode
 my $debug;      # Debug mode, verbose output to user running script
+<<<<<<< map_microarray.pl
 my $log = Log_files->make_build_log();
 my $verbose;    # verbose mode, extra output to screen
 my $load;       # load file to autoace
+=======
+my $load;
+our $log;
+>>>>>>> 1.7.4.1
 
 my $outfile = "$dbdir/acefiles/microarray_mappings.ace";
 
 GetOptions ("debug=s"   => \$debug,
 	    "test"      => \$test,
+<<<<<<< map_microarray.pl
 	    "load"      => \$load,
             "help"      => \$help);
+=======
+            "help"      => \$help,
+	   "load"       => \$load,
+	   );
+>>>>>>> 1.7.4.1
 
 
 # Display help if required
@@ -178,6 +189,7 @@ while (my $obj = $i->next) {
 close OUTPUT;
 $db->close;
 
+<<<<<<< map_microarray.pl
 if($load){
   $log->write_to("Loading file to autoace\n");
   my $command = "autoace_minder.pl -load $dbdir/acefiles/microarray_mappings.ace -tsuser microarray_mappings";
@@ -192,5 +204,20 @@ if($load){
 
 $log->mail("$maintainers","BUILD REPORT: $0");
 
+=======
+if($load){
+  $log->write_to("Loading file to autoace\n");
+  my $command = "autoace_minder.pl -load $dbdir/acefiles/microarray_mappings.ace -tsuser
+RNAi_mappings";
+                                                                                   
+  my $status = system($command);
+  if(($status >>8) != 0){
+    $log->write_to("ERROR: Loading microarray_mappings.ace file failed \$\? = $status\n");
+  }
+}
+
+$log->mail("$maintainers","BUILD REPORT: $0");
+
+>>>>>>> 1.7.4.1
 exit(0);
 

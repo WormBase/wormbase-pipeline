@@ -7,28 +7,25 @@
 # A script for dumping dna and/or gff files for chromosome objects in autoace
 # see pod for more details
 #
-# Last updated by: $Author: dl1 $     
-# Last updated on: $Date: 2004-07-20 15:27:31 $      
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2005-12-16 11:18:55 $
 
 
 use strict;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
 use IO::Handle;
+use Log_files;
+use Storable;
 
 
 ######################################################
 # Script variables and command-line options          #
 ######################################################
 
-our $tace   = &tace;
-#our $giface = &giface;
-our $giface = "/nfs/disk100/acedb/RELEASE.DEVELOPMENT/bin.ALPHA_5/giface";
-#our $giface = "/nfs/team71/acedb/edgrif/TEST/DAN/giface";  # just for WS123
-
-our $maintainers = "All";
-our ($log, $help, $debug, $dna, $gff, $zipdna, $zipgff, $composition, $database, $dump_dir, $test, $quicktest);
+our ($help, $debug, $dna, $gff, $zipdna, $zipgff, $composition, $database, $dump_dir, $test, $quicktest);
+my $store;
 
 GetOptions ("help"        => \$help,
             "debug=s"     => \$debug,
@@ -40,26 +37,32 @@ GetOptions ("help"        => \$help,
 	    "database=s"  => \$database,
 	    "dump_dir=s"  => \$dump_dir,
 	    "test"        => \$test,
-	    "quicktest"   => \$quicktest
+	    "quicktest"   => \$quicktest,
+	    "store:s"     => \$store
 	   );
 
+my $wormbase;
+if( $store ) {
+  $wormbase = retrieve( $store ) or croak("cant restore wormbase from $store\n");
+}
+else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+			     -test    => $test,
+			   );
+}
+
+our $tace   = $wormbase->tace;
+our $giface = $wormbase->giface;
 
 ##########################################################
 
 # Display help if required
 &usage("Help") if ($help);
 
-# Use debug mode?
-if($debug){
-  print "DEBUG = \"$debug\"\n\n";
-  ($maintainers = $debug . '\@sanger.ac.uk');
-}
-
-
 # Sanity checks
-if($database && !$dump_dir){
-  die "You have specified a database (-database flag) but not a destination directory\nto dump to (-dump_dir flag).\n";
-}
+#if($database && !$dump_dir){
+#  die "You have specified a database (-database flag) but not a destination directory\nto dump to (-dump_dir flag).\n";
+#}
 if(!$database && $dump_dir){
   die "You have specified a destination directory to dump to (-dump_dir flag) but not\na source database (-database flag).\n";
 }
@@ -78,25 +81,24 @@ if($test && $quicktest){
 
 # Set up top level base directory which is different if in test mode
 # Make all other directories relative to this
-my $basedir   = "/wormsrv2";
-$basedir      = glob("~wormpub")."/TEST_BUILD" if ($test); 
-$database = "$basedir/autoace"             if (!defined($database));
-$dump_dir = "$basedir/autoace/CHROMOSOMES" if (!defined($dump_dir));
+my $basedir   = $wormbase->basedir;
+$database = $wormbase->autoace     unless ($database);
+$dump_dir = $wormbase->chromosomes unless ($dump_dir);
 
 
 #####################################################
 # Main subroutines
 #####################################################
 
-&create_log_files;
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
 
 &dump_dna    if ($dna);
-&dump_gff    if ($gff);
 &composition if ($composition);
 &zip_files   if ($zipdna || $zipgff);
 
 # say goodnight Barry
-close(LOG);
+$log->mail;
 
 exit(0);
 
@@ -136,7 +138,7 @@ if($quicktest){
 }
 
   &execute_ace_command($command,$tace,$database);
-  print LOG "Finished dumping DNA\n\n";
+  $log->write_to("Finished dumping DNA\n\n");
 }
 
 
@@ -163,7 +165,7 @@ if($quicktest){
 }
 
   &execute_ace_command($command,$giface,$database);
-  print LOG "Finished dumping GFF files\n\n";
+  $log->write_to("Finished dumping GFF files\n\n");
 }
 
 
@@ -173,7 +175,7 @@ if($quicktest){
 
 sub composition{
 
-  print LOG "Generating composition.all\n";	
+  $log->write_to("Generating composition.all\n");	
 
   chdir $dump_dir;
 
@@ -184,7 +186,7 @@ sub composition{
     system("/bin/cat CHROMOSOME_I.dna CHROMOSOME_II.dna CHROMOSOME_III.dna CHROMOSOME_IV.dna CHROMOSOME_V.dna CHROMOSOME_X.dna | /nfs/disk100/wormpub/bin.ALPHA/composition > composition.all") && die "Couldn't create composition file\n";
   }
 
-  print LOG "Generating totals file\n";
+  $log->write_to("Generating totals file\n");
   my $total = 0;
   my $final_total = 0;
   my $minus = 0;
@@ -204,7 +206,7 @@ sub composition{
   system("echo $total $final_total > totals") && die "Couldn't create totals file\n";
   
   # can't do this in test mode as the Wormbase.pm subroutine looks in /wormsrv2
-  &release_composition unless ($test);
+  $wormbase->release_composition;
 }
 
 ##########################
@@ -220,18 +222,18 @@ sub zip_files{
     my $gff_file = "$dump_dir"."/CHROMOSOME_".$chr.".gff";
     my $msk_file = "$dump_dir"."/CHROMOSOME_".$chr."_masked.dna";
     if ($zipdna){
-      print LOG "Compressing $dna_file\n";
+      $log->write_to("Compressing $dna_file\n");
       system ("/bin/gzip -f $dna_file");
       if(-e $msk_file ) {
-	print LOG "Compressing $msk_file\n";
+	$log->write_to("Compressing $msk_file\n");
 	system ("/bin/gzip -f $msk_file");
       }
       else {
-	print LOG "Couldn't find any repeat-masked chromosomes in $dump_dir\n";
+	$log->write_to("Couldn't find any repeat-masked chromosomes in $dump_dir\n");
       }
     }
     if ($zipgff){
-      print LOG "Compressing $gff_file\n";
+      $log->write_to("Compressing $gff_file\n");
       system ("/bin/gzip -f $gff_file");
     }
   }	
@@ -244,9 +246,8 @@ sub zip_files{
 
 sub execute_ace_command {
   my ($command,$exec,$dir)=@_;
-  open (WRITEDB,"| $exec $dir >> $log") or do {
-    print LOG "execute_ace_command failed\n";
-    close(LOG);
+  open (WRITEDB,"| $exec $dir ") or do {
+    $log->log_and_die("execute_ace_command failed\n");
     die();
   };
   print WRITEDB $command;
@@ -255,27 +256,6 @@ sub execute_ace_command {
 
 ######################################################
 
-
-sub create_log_files{
-
-  # Create history logfile for script activity analysis
-  $0 =~ m/\/*([^\/]+)$/; system ("touch $basedir/logs/history/$1.`date +%y%m%d`");
-
-  # create main log file using script name for
-  my $script_name = $1;
-  $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
-  my $rundate = &rundate;
-  $log        = "$basedir/logs/$script_name.$rundate.$$";
-
-  open (LOG, ">$log") or die "cant open $log";
-  print LOG "$script_name\n";
-  print LOG "started at ",&rundate,"\n";
-  print LOG "=============================================\n";
-  print LOG "\n";
-
-}
-
-#####################################################
 
 sub usage {
   my $error = shift;

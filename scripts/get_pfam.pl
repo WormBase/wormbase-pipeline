@@ -7,7 +7,7 @@
 # This script interogates an ACEDB database and returns all pfam/Interpro/blastx 
 # data as appropriate and generates a suitable DB_remark
 #
-# Last updated on: $Date: 2005-04-28 09:49:48 $
+# Last updated on: $Date: 2005-12-16 11:18:55 $
 # Last updated by: $Author: ar2 $
 
 
@@ -249,6 +249,7 @@ SUBSEQUENCE: while ( my $cds = $CDSs->next ) {
       }
 
     }
+<<<<<<< get_pfam.pl
     
     # get peptide homologies if no motif data
     else {
@@ -265,6 +266,15 @@ SUBSEQUENCE: while ( my $cds = $CDSs->next ) {
 	my $best_description = "";
 	my $best_species = "";
       PROTEIN: foreach my $protein (@peptide_homols) {
+=======
+  }
+
+  #####################################################
+  # no pfam or interpro hits; getting protein matches
+  #####################################################
+
+  elsif ($peptide_homols[0]) {
+>>>>>>> 1.13.4.1
 
 	  # ignore other worm matches
 	  next PROTEIN if (($protein =~ m/^BP\:CBP/) || ($protein =~ m/^WP\:CE/));

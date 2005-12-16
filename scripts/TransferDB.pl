@@ -4,7 +4,7 @@
 #
 # by ag3 [991221]
 #
-# Last updated on: $Date: 2005-12-16 10:21:13 $
+# Last updated on: $Date: 2005-12-16 11:18:54 $
 # Last updated by: $Author: ar2 $
 
 # transferdb moves acedb database files across filesystems.

@@ -6,8 +6,8 @@
 #
 # Author: Chao-Kung CHen
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2005-10-12 09:14:26 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2005-12-16 11:18:55 $
 
 use strict;
 use lib "/wormsrv2/scripts/";

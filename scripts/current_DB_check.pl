@@ -7,12 +7,12 @@
 # Script to run consistency checks on the current_DB database
 # to look for bogus sequence entries
 #
-# Last updated by: $Author: krb $
-# Last updated on: $Date: 2005-01-11 14:59:30 $
+# Last updated by: $Author: ar2 $
 
+# Last updated on: $Date: 2005-12-16 11:18:55 $
 
 use strict;
-use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Ace;
 use Getopt::Long;

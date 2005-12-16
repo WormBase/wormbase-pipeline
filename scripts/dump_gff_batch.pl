@@ -4,49 +4,86 @@ use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{CVS_DIR};
 use Wormbase;
 use Getopt::Long;
 use strict;
+use Log_files;
+use Storable;
+
+my ($debug, $test, $database);
 
 my @chroms = qw( I II III IV V X );
 my $dump_dir;
-my $database;
-my $dumpGFFscript = glob("~wormpub/TEST_BUILD/scripts/GFF_method_dump.pl");
+my $dumpGFFscript = $ENV{'CVS_DIR'}."/GFF_method_dump.pl";
 my $scratch_dir = "/tmp";
 my $methods;
 my $chrom_choice;
+my $store;
 
 &checkLSF;
 
 GetOptions (
+	    "debug:s"       => \$debug,
+	    "test"          => \$test,
 	    "database:s"    => \$database,
 	    "dump_dir:s"    => \$dump_dir,
 	    "method:s"      => \$methods,
 	    "methods:s"     => \$methods,
 	    "chromosomes:s" => \$chrom_choice,
-	    "chromosome:s"  => \$chrom_choice
+	    "chromosome:s"  => \$chrom_choice,
+	    "store:s"       => \$store
 	   );
+my $wormbase;
+if( $store ) {
+  $wormbase = retrieve( $store ) or croak("cant restore wormbase from $store\n");
+}
+else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+			     -test    => $test,
+			   );
+}
+
+my $log = Log_files->make_build_log($wormbase);
 
 my @methods     = split(/,/,join(',',$methods));
 my @chromosomes = split(/,/,join(',',$chrom_choice));
 
-$dump_dir = glob("~wormpub/GFFdump") unless $dump_dir;
-$database = glob("~wormpub/DATABASES/current_DB") unless $database;
+
+
+$database = $wormbase->autoace unless $database;
+$dump_dir = "$database/CHROMOSOMES" unless $dump_dir;
+
 @chromosomes = @chroms unless @chromosomes;
 
+$log->write_to("Dumping from DATABASE : $database\n\tto $dump_dir\n\n");
+	      
+$log->write_to("\t chromosomes".@chromosomes."\n");
+if( @methods ){
+  $log->write_to("\tmethods ".@methods."\n\n");
+}
+else {
+  $log->write_to("\tno method specified\n\n");
+}
+
+$log->write_to("bsub commands . . . . \n\n");
 foreach my $chrom ( @chromosomes ) {
   if ( @methods ) {
     foreach my $method ( @methods ) {
       my $err = "$scratch_dir/wormpubGFFdump.$chrom.$method.err";
       my $out = "$scratch_dir/wormpubGFFdump.$chrom.$method.out";
-      my $bsub = "bsub -e $err -o $out \"perl5.6.1 $dumpGFFscript -database $database -dump_dir $dump_dir -chromosome $chrom -method $method\"";
-      system("$bsub");
+      my $bsub = "bsub -e $err -o $out \"perl5.6.1 $dumpGFFscript -store $store -database $database -dump_dir $dump_dir -chromosome $chrom -method $method\"";
+      $log->write_to("$bsub\n");
+      $wormbase->run_command("$bsub", $log);
     }
   }
   else {
     my $err = "$scratch_dir/wormpubGFFdump.$chrom.err";
     my $out = "$scratch_dir/wormpubGFFdump.$chrom.out";
-    my $bsub = "bsub -e $err -o $out \"perl5.6.1 $dumpGFFscript -database $database -dump_dir $dump_dir -chromosome $chrom";
-    system("$bsub");
+    my $bsub = "bsub -e $err -o $out \"perl5.6.1 $dumpGFFscript -store $store -database $database -dump_dir $dump_dir -chromosome $chrom";
+    $log->write_to("$bsub\n");
+    $wormbase->run_command("$bsub", $log);
   }
 }
+
+$log->mail;
+exit(0);
 
 
 sub checkLSF 

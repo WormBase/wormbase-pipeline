@@ -1,8 +1,8 @@
 #!/usr/local/bin/perl5.8.0 -w
 
 # Author: Chao-Kung Chen
-# Last updated by $Author: krb $
-# Last updated on: $Date: 2004-12-16 14:47:37 $ 
+# Last updated by $Author: ar2 $
+# Last updated on: $Date: 2005-12-16 11:18:55 $ 
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
@@ -10,6 +10,7 @@ use Wormbase;
 use Ace;
 use Getopt::Long;
 
+<<<<<<< update_inferred_multi_pt.pl
 
 ##########################################
 # command line options
@@ -22,6 +23,19 @@ GetOptions ("help"         => \$help,
 	    "debug=s"      => \$debug,
 	    "test"         => \$test,       # use test build environment
 	    "load"         => \$load,       # load data to autoace
+=======
+#--------------------
+# global variables
+#--------------------
+
+my ($help, $database, $debug, $load, $update);
+
+GetOptions ("help"         => \$help,
+	    "database=s"  => \$database,   # can specify db for debug purpose (required also when not debug)
+	    "debug=s"      => \$debug,
+	    "load"         => \$load,       # load CGC approved pseudo map markers
+	    "update"       => \$update,
+>>>>>>> 1.15.4.1
            );
 
 
@@ -91,6 +105,7 @@ my %order_locus; # reverse of above, key is a integer position, value is CGC gen
 &get_flanking_loci;
 
 
+<<<<<<< update_inferred_multi_pt.pl
 # now make new multi point data objects
 # assumes that promoted map position file has been made earlier in the build
 &make_new_inferred_multi_pt_obj; 
@@ -98,6 +113,12 @@ my %order_locus; # reverse of above, key is a integer position, value is CGC gen
 
 # now update existing multi point data objects where necessary
 &update_existing_inferred_multi_pt;
+=======
+#--------------------------------------------------------------------
+#   make inferred multi-pt obj for promoted loci during the build
+#   update flanking loci of existing old inferred multi-pt obj
+#--------------------------------------------------------------------
+>>>>>>> 1.15.4.1
 
 
 #load to database if -load specified
@@ -132,6 +153,7 @@ exit(0);
 
 
 
+<<<<<<< update_inferred_multi_pt.pl
 sub get_flanking_loci {
 
   # get gene order from last cmp_gmap_with_coord_order_WSXXX.yymmdd.pid file
@@ -155,6 +177,8 @@ sub get_flanking_loci {
   }
   close(MAP);
 }
+=======
+>>>>>>> 1.15.4.1
 
 
 

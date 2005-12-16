@@ -33,7 +33,11 @@ Internal methods are usually preceded with a _
 
 package Sequence_extract;
 
+<<<<<<< Sequence_extract.pm
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+=======
+use lib $ENV{'CVS_DIR'};
+>>>>>>> 1.5.4.2
 
 use Carp;
 use Wormbase;
@@ -57,9 +61,7 @@ use Coords_converter;
 
 sub invoke 
   {
-    my $class = shift;
-    my $database = shift;
-    my $refresh = shift;
+    my ($class,$database,$refresh,$wormbase) = @_;
 
     # inherit from Coords_converter to get all the coord info
     my $self = Coords_converter->invoke($database,$refresh);
@@ -67,7 +69,7 @@ sub invoke
     bless $self, $class;
 
     # get the chromosomal sequences
-    my $tace = &tace;
+    my $tace = &tace; # <= hmpf
     my @chromosome = qw( I II III IV V X MtDNA);
     my $seq_file = "$database/CHROMOSOMES/CHROMOSOME_I.dna";
     unless( -e "$seq_file" ) {

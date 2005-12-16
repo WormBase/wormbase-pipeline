@@ -7,8 +7,8 @@
 # A simple script to send a check list to the person who will be performing the next
 # build to check the current build
 #
-# Last updated by: $Author: mt3 $     
-# Last updated on: $Date: 2005-09-30 13:24:22 $      
+# Last updated by: $Author: ar2 $     
+# Last updated on: $Date: 2005-12-16 11:18:55 $      
 
 
 use strict;

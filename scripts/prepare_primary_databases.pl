@@ -2,15 +2,16 @@
 #
 # prepare_primary_databases.pl
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2005-12-12 11:56:32 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2005-12-16 11:18:55 $
 
 use strict;
-my $scriptdir = glob("~ar2/wormbase/rebuild");#$ENV{'CVS_DIR'};
-use lib "/nfs/team71/worm/ar2/wormbase/rebuild";#$ENV{'CVS_DIR'};
+my $scriptdir = $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
 use Log_files;
+use Storable;
 
 
 #################################################################################
@@ -24,22 +25,35 @@ use Log_files;
 #
 # Does         : [01] - checks the Primary_database_used_in_build data
 
-my ($test,$debug,$database);
+my ($test,$debug,$database, $store, $wormbase);
 
 GetOptions ( 
 	    "test"       => \$test,
 	    'debug:s'    => \$debug,
-	    'database:s' => \$database
+	    'database:s' => \$database,
+	    'store:s'    => \$store
+	    
 	   );
 
-$test = 1 if ( defined $ENV{'TEST_BUILD'} and ($ENV{'TEST_BUILD'} == 1));
+if( $store ) {
+  $wormbase = retrieve( $store ) or croak("cant restore wormbase from $store\n");
+}
+else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+			     -test    => $test,
+			   );
+}
 
 # establish log file.
+<<<<<<< prepare_primary_databases.pl
 my $log = Log_files->make_build_log($debug);
 
 # set paths to take account of whether -test is being used
 my $basedir = "/wormsrv2";
 $basedir    = glob("~wormpub")."/TEST_BUILD" if ($test);
+=======
+my $log = Log_files->make_build_log($wormbase);
+>>>>>>> 1.2.2.3
 
 # exit if the Primary_databases_used_in_build is absent
 #  &usage(13) unless (-e "$logdir/Primary_databases_used_in_build");
@@ -87,13 +101,14 @@ unless ($options eq "") {
   print "Do you want to unpack these databases ?\n";
   my $answer=<STDIN>;
   &usage(2) if ($answer ne "y\n");
-
+  
   $log->write_to(" running unpack_db.pl $options\n\n");
-  &run_command("$scriptdir/unpack_db.pl $options", $log);
+  $wormbase->run_script("unpack_db.pl $options", $log);
 }
 
 # make a unpack_db.pl log file in /logs
 
+<<<<<<< prepare_primary_databases.pl
 if ($test) {
   $log->write_to("INFO: You are copying camace and genace from ~wormpub/DATABASES to ~wormpub/TEST_BUILD\n");  
 }
@@ -102,6 +117,13 @@ if ($test) {
   &run_command("$scriptdir/TransferDB.pl -start /nfs/disk100/wormpub/DATABASES/camace -end $basedir/camace -database");
   # transfer /nfs/disk100/wormpub/DATABASES/geneace to $basedir/geneace 
   &run_command("$scriptdir/TransferDB.pl -start /nfs/disk100/wormpub/DATABASES/geneace -end $basedir/geneace -database");
+=======
+$log->write_to("Transfering geneace and camace\n");
+$wormbase->run_script("TransferDB.pl -start ".$wormbase->database('camace')." -end ".$wormbase->basedir."/camace -database -wspec");
+$wormbase->run_script("TransferDB.pl -start ".$wormbase->database('geneace')." -end ".$wormbase->basedir."/geneace -database -wspec");
+#system("cp -R misc_static $autoace/acefiles/primary  #check whats happened here - looks like partial edit
+
+>>>>>>> 1.2.2.3
 
   
 #################################################
@@ -134,11 +156,12 @@ sub FTP_versions {
 
   $log->write_to("\tgetting FTP versions . . \n");
   local (*STLACE_FTP,*BRIGDB_FTP,*CITACE_FTP,*CSHACE_FTP);
-  # updated to use new ftp architecture.
-  my $stlace_FTP = "/nfs/ftp_uploads/wormbase/stl/stlace_*";
-  my $brigdb_FTP = "/nfs/ftp_uploads/wormbase/stl/brigdb_*";
-  my $citace_FTP = "/nfs/ftp_uploads/wormbase/caltech/citace_*";
-  my $cshace_FTP = "/nfs/ftp_uploads/wormbase/csh/cshl_*";
+
+  my $ftp = $wormbase->ftp_upload;
+  my $stlace_FTP = "$ftp/stl/stlace_*";
+  my $brigdb_FTP = "$ftp/stl/brigdb_*";
+  my $citace_FTP = "$ftp/caltech/citace_*";
+  my $cshace_FTP = "$ftp/csh/cshl_*";
   my ($stlace_date,$brigdb_date,$citace_date,$cshace_date);
 
   # stlace

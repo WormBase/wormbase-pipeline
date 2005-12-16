@@ -4,8 +4,7 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2005-11-24 17:52:57 $
+# Last updated on: $Date: 2005-12-16 11:18:54 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -15,26 +14,41 @@
 #################################################################################
 
 use strict;
-use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use IO::Handle;
+use File::Path;
 use Getopt::Long;
 use Ace;
+<<<<<<< GFFsplitter.pl
+use File::Path;
+=======
+use Carp;
+use Log_files;
+use Storable;
+>>>>>>> 1.35.4.3
 
 ##################################################
 # Script variables and command-line options      #
 ##################################################
-my $maintainers = "All";
-my $WS_version = &get_wormbase_version_name;
-our $lockdir = "/wormsrv2/autoace/logs/";
 
+my ($help, $debug, $test, $verbose, $store, $wormbase);
 
-my $help;      # Help/Usage page
 my $archive;   # archive GFF_splits directory into a WSxx directory
+<<<<<<< GFFsplitter.pl
 my $debug;     # debug
+my $database;
+my $test;
 my $verbose;   # verbose mode
 my $chrom;     # single chromosome mode
 our $log;
+=======
+my $chrom;     # single chromosome mode
+
+my $splitdir;
+my $splitsplitdir;
+my $gffdir;
+>>>>>>> 1.35.4.3
 
 my $splitdir;
 my $gffdir;
@@ -42,29 +56,90 @@ my $gffdir;
 GetOptions (
 	    "help"      => \$help,
 	    "archive"   => \$archive,
+<<<<<<< GFFsplitter.pl
 	    "debug:s"   => \$debug,
 	    "chrom:s"   => \$chrom,
 	    "gffdir:s"  => \$gffdir,
-	    "splitdir:s"=> \$splitdir
+	    "splitdir:s"=> \$splitdir,
+	    "test"       => \$test,
+	    "database:s" => \$database,
+=======
+	    "debug:s"   => \$debug,
+	    "chrom:s"   => \$chrom,
+	    "gffdir:s"  => \$gffdir,
+	    "splitdir:s"=> \$splitdir,
+	    "test"      => \$test,
+	    "verbose"   => \$verbose,
+	    "store"     => \$store,
+>>>>>>> 1.35.4.3
 	    );
 
-# help 
-&usage("Help") if ($help);
-
-# Use debug mode?
-if($debug){
-  print "DEBUG = \"$debug\"\n\n";
-  ($maintainers = $debug . '\@sanger.ac.uk');
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+			     );
 }
 
-&create_log_files unless $debug;
+# Display help if required
+&usage("Help") if ($help);
 
+<<<<<<< GFFsplitter.pl
+=======
+# in test mode?
+if ($test) {
+  print "In test mode\n" if ($verbose);
+}
+
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
+
+>>>>>>> 1.35.4.3
 ##############################
 # Paths etc                  #
 ##############################
+$database = ( $test ? glob("~wormpub/TEST_BUILD/autoace") : glob("~wormpub/autoace") ) unless $database;
 
-$splitdir = "/wormsrv2/autoace/GFF_SPLITS"  unless $splitdir;
-$gffdir  = "/wormsrv2/autoace/CHROMOSOMES" unless $gffdir;
+my $log = Log_files->make_build_log($debug);
+
+my $datadir = "$database/GFF_SPLITS";
+my $gffdir  = "$database/CHROMOSOMES";
+
+<<<<<<< GFFsplitter.pl
+$log->write_to("splitting GFF from $gffdir to $datadir\n");
+=======
+my $WS_version = $wormbase->get_wormbase_version_name;
+
+my $lockdir      = $wormbase->logs;
+$splitdir        = $wormbase->gff_splits unless $splitdir;
+$gffdir          = $wormbase->chromosomes unless $gffdir;
+$splitsplitdir   = $splitdir . "/GFF_SPLITS";
+>>>>>>> 1.35.4.3
+
+<<<<<<< GFFsplitter.pl
+
+if (defined($chrom)){
+    unless (grep { $chrom eq $_ } ('I','II','III','IV','V','X','MtDNA')) {
+	die "ERROR: $chrom is an incorrect chromosome number, please use I, II, III etc.\n";
+    }
+    @files = (
+		  "CHROMOSOME_${chrom}"
+		  );
+}
+else {
+    @files = (
+		  'CHROMOSOME_I',
+		  'CHROMOSOME_II',
+		  'CHROMOSOME_III',
+		  'CHROMOSOME_IV',
+		  'CHROMOSOME_V',
+		  'CHROMOSOME_X',
+		  'CHROMOSOME_MtDNA'
+		  );
+}
+=======
+
 my @files;
 # prepare array of file names and sort names
 
@@ -88,6 +163,7 @@ else {
 		  'CHROMOSOME_MtDNA'
 		  );
 }
+>>>>>>> 1.35.4.3
 
 our @gff_files = sort @files; 
 undef @files; 
@@ -96,10 +172,12 @@ our @gff_classes;
 
 
 # create GFF_SPLITS subdirectory if it doesn't already exist
-if (! -e "$splitdir/GFF_SPLITS"){
-  system("mkdir $splitdir/GFF_SPLITS") && die "Couldn't create directory\n";
-}
+<<<<<<< GFFsplitter.pl
 
+if (! -e "$datadir/GFF_SPLITS"){
+  mkpath("$datadir/GFF_SPLITS") or die "Couldn't create directory $datadir/GFF_SPLITS\n";
+
+}
 ##########################################################
 # Archive the GFF_splits directory into a WSxx directory
 ##########################################################
@@ -109,6 +187,21 @@ if($archive){
   print "Renaming $splitdir/GFF_SPLITS to $splitdir/$WS_version\n";
   system("mv $splitdir/GFF_SPLITS ${splitdir}/${WS_version}") && die "Couldn't rename directory\n";
   exit(0);
+=======
+if (! -e $splitsplitdir){
+  mkpath($splitsplitdir) or die "Couldn't create directory $splitsplitdir\n";
+}
+
+##########################################################
+# Archive the GFF_splits directory into a WSxx directory
+##########################################################
+
+# runs only if -a is specified
+if($archive){
+  print "Renaming $splitsplitdir to $splitdir/$WS_version\n" if ($verbose);
+  system("mv $splitsplitdir ${splitdir}/${WS_version}") && die "Couldn't rename directory\n";
+  exit(0);
+>>>>>>> 1.35.4.3
 }
 
 # check to see if full chromosome gff dump files exist
@@ -145,7 +238,7 @@ foreach $file (@gff_files) {
   undef(%GFF);
   next if ($file eq "");
     
-  print LOG "# File $file\n";
+  $log->write_to("# File $file\n");
   print     "\n# File $file\n" if ($verbose);
   
   my $line_count = 0;
@@ -295,9 +388,13 @@ foreach $file (@gff_files) {
   ########################################
   
   foreach my $tag (@gff_classes) {
-    print "# $file $tag\n" if ($debug);
+    print "# $file $tag\n" if ($verbose);
     
+<<<<<<< GFFsplitter.pl
     open (OUT, ">$splitdir/GFF_SPLITS/$file.$tag.gff") or die "Can't open file\n";
+=======
+    open (OUT, ">$splitsplitdir/$file.$tag.gff") or die "Can't open file\n";
+>>>>>>> 1.35.4.3
     
     # gff header lines
     foreach my $line (@header) {
@@ -319,55 +416,51 @@ foreach $file (@gff_files) {
   #########################################
   
   # GFF clone_path with EMBL accessions and sequence versions
+<<<<<<< GFFsplitter.pl
   my $input_file = "$splitdir/GFF_SPLITS/$file.clone_path.gff";
   my $output_file = "$splitdir/GFF_SPLITS/$file.clone_acc.gff";
+=======
+  my $input_file = "$splitsplitdir/$file.clone_path.gff";
+  my $output_file = "$splitsplitdir/$file.clone_acc.gff";
+>>>>>>> 1.35.4.3
   &GFF_clones_with_accessions("$input_file", "$output_file");
   
   
   # GFF genes with wormpep CE accessions
   # Shouldn't do this unless Wormpep has been made else no Corresponding_protein tags in database
   if(-e "$lockdir/D1:Build_wormpep_final"){
+<<<<<<< GFFsplitter.pl
     $input_file = "$splitdir/GFF_SPLITS/$file.CDS.gff";
     $output_file = "$splitdir/GFF_SPLITS/$file.CDS_acc.gff";
     &GFF_CDS_with_accessions("$input_file", "$output_file");
+=======
+    $input_file = "$splitsplitdir/$file.CDS.gff";
+    $output_file = "$splitsplitdir/$file.CDS_acc.gff";
+    &GFF_CDS_with_accessions("$input_file", "$output_file");
+>>>>>>> 1.35.4.3
     system ("mv -f $output_file $input_file");
   }
   
 }
 
 # Tidy up
-close (LOG);
+<<<<<<< GFFsplitter.pl
 
-&mail_maintainer("GFFsplitter.pl finished",$maintainers,$log);
-
+=======
+$log->mail();
+print "Finished.\n" if ($verbose);
+>>>>>>> 1.35.4.3
 exit(0);
-
 
 
 ###############################
 # subroutines                 #
 ###############################
 
-sub create_log_files{
-
-  # Create history logfile for script activity analysis
-  $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
-
-  # create main log file using script name for
-  my $script_name = $1;
-  $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
-  my $rundate     = `date +%y%m%d`; chomp $rundate;
-  $log        = "/wormsrv2/logs/$script_name.$rundate.$$";
-
-  open (LOG, ">$log") or die "cant open $log";
-  print LOG "$script_name\n";
-  print LOG "started at ",`date`,"\n";
-  print LOG "=============================================\n";
-  print LOG "\n";
-
-}
-
+<<<<<<< GFFsplitter.pl
 ##########################################
+=======
+>>>>>>> 1.35.4.3
 sub usage {
   my $error = shift;
 
@@ -404,7 +497,11 @@ sub usage {
 sub GFF_clones_with_accessions{
   my $infile   = shift;
   my $outfile = shift;
-  my $wormdb = "/wormsrv2/autoace";
+<<<<<<< GFFsplitter.pl
+  my $wormdb = "$database";
+=======
+  my $wormdb = $wormbase->autoace;;
+>>>>>>> 1.35.4.3
 
   my $db = Ace->connect(-path=>$wormdb) || do { print "Connection failure to $wormdb: ",Ace->error; die();};
 
@@ -455,7 +552,11 @@ sub GFF_clones_with_accessions{
 sub GFF_CDS_with_accessions{
   my $infile  = shift;
   my $outfile = shift;
-  my $wormdb = "/wormsrv2/autoace";
+<<<<<<< GFFsplitter.pl
+  my $wormdb = "$database";
+=======
+  my $wormdb = $wormbase->autoace;;
+>>>>>>> 1.35.4.3
 
   my $db = Ace->connect(-path=>$wormdb) || do { print "Connection failure to $wormdb: ",Ace->error; die();};
 
@@ -571,7 +672,7 @@ __END__
 
 This script splits the large GFF files produced during the build process into
 smaller files based on a named set of database classes to be split into.
-Output written to /wormsrv2/autoace/GFF_SPLITS/WSxx
+Output written to ~wormpub/BUILD/autoace/GFF_SPLITS/GFF_SPLITS
 
 =over 4
 

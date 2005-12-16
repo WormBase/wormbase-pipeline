@@ -6,8 +6,8 @@
 #
 # Attempt to unify all of the diverse scripts to fetch ESTs, OSTs, mRNAs etc. used by blat
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2005-07-13 14:25:23 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2005-12-16 11:18:55 $
  
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};

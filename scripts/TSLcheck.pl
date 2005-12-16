@@ -7,8 +7,8 @@
 # checks whether TSL acceptor sites overlap with exons.
 # Will discard matches to isoforms (Warning).
 #
-# Last updated by: $Author: dl1 $
-# Last updated on: $Date: 2004-10-08 15:56:54 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2005-12-16 11:18:54 $
 
 use strict;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};

@@ -7,94 +7,86 @@
 #
 # This makes the autoace database from its composite sources.
 #
-# Last edited by: $Author: dl1 $
-# Last edited on: $Date: 2005-03-21 13:24:28 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2005-12-16 11:18:55 $
 
 use strict;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use lib  $ENV{'CVS_DIR'};
 use Wormbase;
 use IO::Handle;
 use Getopt::Long;
 use Cwd;
 use File::Copy;
-
+use File::Path;
+use Log_files;
+use Storable;
 
 #################################
 # Command-line options          #
 #################################
 
-our ($help, $debug, $database, $buildautoace, $buildrelease, $log, $test);
+our ($help, $debug, $test);
+my $store;
+my( $all, $parse, $init, $tmpgene, $pmap, $chromlink, $check, $allcmid, $reorder );
 
 GetOptions ("help"         => \$help,
             "debug=s"      => \$debug,
-	    "database=s"   => \$database,
-	    "buildautoace" => \$buildautoace,
-	    "buildrelease" => \$buildrelease,
-	    "test"         => \$test);
+	    "test"         => \$test,
+	    "store:s"      => \$store,
+	    "parse"        => \$parse,
+	    "init"         => \$init,
+	    "tmpgene"      => \$tmpgene,
+	    "pmap"         => \$pmap,
+	    "chromlink"    => \$chromlink,
+	    "check"        => \$check,
+	    "allcmid"      => \$allcmid,
+	    "reorder"      => \$reorder
+	   );
 
+$all = 1 unless( $parse or $tmpgene or $pmap or $chromlink or $check or $allcmid or $reorder);
 
 # Display help if required
 &usage("Help") if ($help);
-
-my $maintainers   = "All";
-
-# Use debug mode?
-if($debug){
-  print "DEBUG = \"$debug\"\n\n";
-  ($maintainers = $debug . '\@sanger.ac.uk');
-}
 
 
 ###################################
 # Check command-line arguments    #
 ###################################
 
-&usage("Help") if ((!$buildautoace)&&(!$buildrelease));
+my $wormbase;
+if( $store ) {
+  $wormbase = retrieve( $store ) or croak("cant restore wormbase from $store\n");
+}
+else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+			     -test    => $test,
+			   );
+}
 
 # Exit if no database specified
-my $dbpath;
+# database/file paths and locations
+my $basedir     = $wormbase->basedir;
+
+my $autoacedir  = $wormbase->autoace;
+my $wormbasedir = "$autoacedir/acefiles/primary";
+my $stlacedir   = $wormbase->database('stlace');
+my $camacedir   = $wormbase->database('camace');
+my $configfile  = "$basedir/autoace_config/autoace.config";
+my $dbpath = $autoacedir;
 my $CWD = cwd;
 
-if(!$database){
-  &usage("Database");
-}
-else{
-  if($database =~ /^(\~\w+)\//){ # do we need to expand path if ~path specified?
-    $dbpath = glob("$1");
-    $dbpath =~ s/\/tmp_mnt//;
-    my $filename = "$'";
-    $dbpath = "$dbpath"."/"."$filename";
-  } 
-  elsif($database =~ /^(\w+)/) { # for incomplete paths, expand using CWD
-    $dbpath="$CWD"."/"."$database";
-  }  
-  elsif ($database =~ /\/\w+/) { # else assume path is ok
-    $dbpath=$database;
-  } 
-  else {
-    &usage("Help");
-  }
-}
-
+# make log files
+my $log = Log_files->make_build_log($wormbase);
 
 ##################
 # misc variables # 
 ##################
 
-my $WS_current;
-my $WS_version;
-
-# need to change this if in test mode
-if($test){
-  $WS_current       = "666";
-  $WS_version       = "WS666";
-}
-else{
-  $WS_current    = &get_wormbase_version;
-  $WS_version    = &get_wormbase_version_name;
-}
+my $WS_current    = $wormbase->get_wormbase_version;
+my $WS_version    = $wormbase->get_wormbase_version_name;
 my @filenames; # for storing contents of autoace_config
 
+<<<<<<< make_autoace.pl
 # database/file paths and locations
 my $basedir     = "/wormsrv2";
 $basedir        = glob("~wormpub")."/TEST_BUILD" if ($test); 
@@ -107,39 +99,52 @@ our $configfile  = "$basedir/autoace_config/autoace.config";
 
 my $tace   = &tace;
 my $giface = &giface;
+=======
+my $tace   = $wormbase->tace;
+my $giface = $wormbase->giface;
+>>>>>>> 1.15.4.1
 my $errors = 0; # for tracking system call related errors
 
+# start doing stuff
+&mail_reminder;
 
-# Open logfile                                   
-&create_log_files;
+#Set up correct database structure if it doesn't exist
+&createdirs;	
 
+# Parse config file
+&parseconfig if ( $all or $parse );
 
+<<<<<<< make_autoace.pl
 ##################################################	
 # Create the directory structure                 #
 ##################################################
+=======
+# Re-initialize the database
+# Re-initializing database is more complex as the .acefiles will be spread over a number of
+# directories - use the config file to find them all
+&reinitdb() if ( $all or $init );
 
-&buildautoace if($buildautoace);
-&buildrelease if($buildrelease);
+# remove temp genes
+&rmtempgene() if( $all or $tmpgene );
 
+# Read in the physical map and make all maps
+&physical_map_stuff() if( $all or $pmap );
+>>>>>>> 1.15.4.1
 
-################################################
-# Finish and tidy up                           #
-################################################
+# Make the chromosomal links
+&makechromlink() if ( $all or $chromlink );
 
-print LOG &runtime, " make_autoace.pl finished\n\n";
-close (LOG);
+#check new build
+&check_make_autoace if ( $all or $check );
 
-# warn about errors in subject line if there were any
-if($errors == 0){
-  &mail_maintainer("BUILD REPORT: make_autoace.pl",$maintainers,$log);
-}
-elsif ($errors ==1){
-  &mail_maintainer("BUILD REPORT: make_autoace.pl : $errors ERROR!",$maintainers,$log);
-}
-else{
-  &mail_maintainer("BUILD REPORT: make_autoace.pl : $errors ERRORS!!!",$maintainers,$log);
-}
+#write cosmid seq file
+&allcmid if ( $all or $allcmid );
 
+#reorder exons
+$wormbase->run_script("reorder_exons.pl", $log ) if( $all or $reorder );
+
+#finish
+$log->mail;
 exit (0);
 
 
@@ -152,6 +157,7 @@ exit (0);
 
 
 
+<<<<<<< make_autoace.pl
 
 ################################################
 # Build new autoace database
@@ -213,19 +219,22 @@ sub create_log_files{
 
 
 
+=======
+>>>>>>> 1.15.4.1
 ###################################################
-# Subroutine for writing to a given database      
+# Subroutine for writing to a given database    ###
+###################################################
 
 sub DbWrite {
     my ($command,$exec,$dir,$name)=@_;
-    open (WRITEDB,"| $exec $dir >> $log") or do {print LOG "$name DbWrite failed\n";close LOG; die();};
+    open (WRITEDB,"| $exec $dir >> STDERR") or $log->log_and_die("$name DbWrite failed\n");
     print WRITEDB $command;
     close WRITEDB;
 }
 
 
 ###################################################
-# Get time coordinates                            
+# Get time coordinates
 
 sub GetTime {
     my ($SECS,$MINS,$HOURS,$DAY,$MONTH,$YEAR)=(localtime)[0,1,2,3,4,5];
@@ -242,6 +251,7 @@ sub GetTime {
 ################################################
 # Remove Bad gene predictions from the database
 
+<<<<<<< make_autoace.pl
 sub remove_pariah_gene {
   
   print LOG &runtime, ": starting pariah gene subroutine\n";
@@ -256,6 +266,19 @@ sub remove_pariah_gene {
 
 
   print LOG &runtime, ": Finished.\n\n";
+=======
+sub rmtempgene {
+  $log->write_to( $wormbase->runtime." : starting rmtempgene subroutine\n");
+  my $camace  = "$camacedir";
+  my $stlace  = "$stlacedir";
+  my $command = "query find elegans_CDS method = hand_built\nkill\nsave\nquit\n";
+  &DbWrite($command,$tace,$camace,"CamAce");
+  &DbWrite($command,$tace,$stlace,"StlAce");
+  my $command2 = "query find elegans_CDS temp*\nkill\nsave\nquit\n";
+  &DbWrite($command2,$tace,$camace,"CamAce");
+  &DbWrite($command2,$tace,$stlace,"StlAce");
+  $log->write_to($wormbase->runtime." : Finished.\n\n");
+>>>>>>> 1.15.4.1
 }
 
 
@@ -264,7 +287,7 @@ sub remove_pariah_gene {
 
 sub createdirs {
 
-  print LOG &runtime, ": starting createdirs subroutine\n";
+  $log->write_to( $wormbase->runtime. ": starting createdirs subroutine\n");
 
   my $chromes  = "$dbpath/CHROMOSOMES";
   my $db       = "$dbpath/database";		
@@ -273,22 +296,21 @@ sub createdirs {
   my $ace      = "$dbpath/acefiles";
   my $rel      = "$dbpath/release";
   my $wspec    = "$dbpath/wspec";
-  my $pictures = "$dbpath/pictures";
   my @dirarray    = ("$dbpath","$chromes","$db","$new","$touch","$ace","$rel","$wspec");
-  my @args1       = ();
-  my @args2       = ("/bin/mkdir");
   
   foreach (@dirarray) {	
     my $present_dir = $_;
     if (-d $present_dir) {
-      print LOG "\t** $present_dir - already present\n";
+      $log->write_to( "\t** $present_dir - already present\n");
       print "** Skipping $present_dir - already present\n";
       next;
     }
     else {
-      push (@args1,"$present_dir");
+      $log->write_to("making $present_dir\n");
+      mkpath($present_dir);
     }			
   }
+<<<<<<< make_autoace.pl
   my $argsize = scalar (@args1);
   if ($argsize == 0) {
     print "** No new directories to create .. end mkdirectories\n";
@@ -314,6 +336,9 @@ sub createdirs {
 
   print LOG &runtime, ": Finished\n\n";
   return;
+=======
+  $log->write_to( $wormbase->runtime, ": Finished\n\n");
+>>>>>>> 1.15.4.1
 }
 
 
@@ -322,7 +347,7 @@ sub createdirs {
 
 sub parseconfig {
 
-  print LOG &runtime, ": starting parseconfig subroutine\n";
+  $log->write_to( $wormbase->runtime. ": starting parseconfig subroutine\n");
   my ($filename,$dbname);
   open(CONFIG,"$configfile");
   while(<CONFIG>) {
@@ -337,8 +362,6 @@ sub parseconfig {
     # parse database information
     if (/^P\s+(\S+)\s+(\S+)$/) {
       $dbname = $1;
-      #	    $dbdir  = $2;
-      #	    $targetdir="$wormbasedir"."/$dbname";
       next;
     }
     
@@ -349,114 +372,103 @@ sub parseconfig {
     
     # next if no filename parsed
     if (!defined $filename) {
-      print LOG "ERROR: Failed to parse filename ..\n";
+      $log->write_to( "ERROR: Failed to parse filename ..\n");
       next;
     }
     
     # check that file exists before adding to array and is not zero bytes
     if (-e "$wormbasedir"."/$dbname/"."$filename") {
       if (-z "$wormbasedir"."/$dbname/"."$filename") {
-	print LOG "ERROR: file $wormbasedir/$dbname/$filename is zero bytes !\n";
+	$log->write_to( "ERROR: file $wormbasedir/$dbname/$filename is zero bytes !\n");
 	$errors++;
       }
       else{
 	push (@filenames,"$wormbasedir"."/$dbname/"."$filename");
-	print LOG "* Parse config file : file $wormbasedir/$dbname/$filename noted ..\n";
+	$log->write_to( "* Parse config file : file $wormbasedir/$dbname/$filename noted ..\n");
       }
     } 
     else {
-      print LOG "ERROR: file $wormbasedir/$dbname/$filename is not existent !\n";
+      $log->write_to( "ERROR: file $wormbasedir/$dbname/$filename is not existent !\n");
       $errors++;
       next;
     }
     
   }
   close(CONFIG);
-  print LOG &runtime, ": Finished\n\n";
+  $log->write_to( $wormbase->runtime. ": Finished\n\n");
 }
 
 
 
 
 ###################################################
-# Re-initialize the database                      
+# Re-initialize the database
 # cleans and re-initalizes the ACEDB residing in $dbpath
 # then parses .ace files in @filenames
-#
-# 011016 : dl  : Added '-f' option to the rm lines. This will ensure that non 
-#                wormpub owned files within group worm are deleted without the
-#                need for an interactive prompt
-# 021025 : dl  : Added single Dbwrite command which parses the first section of
-#                a filename to assign the timestamp user string. i.e. a file
-#                camace_Sequence.ace will be loaded as camace.
 
 sub reinitdb {
 
-  print LOG &runtime, ": Starting reinitdb subroutine\n";
+  $log->write_to( $wormbase->runtime. ": Starting reinitdb subroutine\n");
 
+  if( -e "$dbpath/wspec/models.wrm" ) {
+    $log->write_to("$dbpath/wspec/model already exists . . \n");
+    if (-e "$dbpath/database/lock.wrm") {
+      $log->log_and_die( "*Reinitdb error - lock.wrm file present..\n");
+    }
 
-  if (-e "$dbpath/database/lock.wrm") {
-    print LOG "*Reinitdb error - lock.wrm file present..\n";
-    close LOG;
-    die();
+    $wormbase->delete_files_from("$dbpath/database",".\.wrm","-");
+  }
+  else {
+    $log->log_and_die("models file missing from $dbpath/wspec\n") unless (-e "$dbpath/wspec/models.wrm");
   }
 
-  &delete_files_from("$dbpath/database",".\.wrm","-");
-  
   my $command = "y\n";
-  print LOG &runtime, ": reinitializing the database\n";
+  $log->write_to( $wormbase->runtime. ": reinitializing the database\n");
   &DbWrite($command,$tace,$dbpath,"ReInitDB");
 
 
   foreach my $filename (@filenames) {
     my $command = "pparse $filename\nsave\nquit\n";
     if (-e $filename) {
-      my $runtime = &runtime;
-      print LOG "* Reinitdb: started parsing $filename at $runtime\n";
-      LOG->autoflush();
+      my $runtime = $wormbase->runtime;
+      $log->write_to( "* Reinitdb: started parsing $filename at $runtime\n");
       my ($tsuser) = $filename =~ (/^\S+\/(\S+)\_/);
       &DbWrite($command,"$tace -tsuser $tsuser",$dbpath,"ParseFile");
-      $runtime = &runtime;
-      LOG->autoflush();
     }
     else {
-      print LOG "* Reinitdb: $filename is not existent - skipping ..\n";
+      $log->write_to( "* Reinitdb: $filename is not existent - skipping ..\n");
       next;
     }
   }
-  print LOG &runtime, ": Finished.\n\n";
+  $log->write_to( $wormbase->runtime. ": Finished.\n\n");
 
 }
 
 
 ###################################################
-# Alan Coulson maintains a ContigC                
+# Alan Coulson maintains a ContigC
 # database in ~cemap for the physical map.
 # This is dumped in file ~cemap/cen2hs.ace 
 # (makecen2hs.pl nightly cron job on rathbin)
 
 sub physical_map_stuff{
 
-  print LOG &runtime, ": starting physical_map_stuff subroutine\n";
+  $log->write_to( $wormbase->runtime. ": starting physical_map_stuff subroutine\n");
 
 # This data is permanently in geneace now, the previous file was no longer
 # being updated once Alan left
- 
-#  my $command = "find clone\nedit -D pMap\nedit -D Fingerprint\nedit -D Contig9\nedit -D Remark\n";
-#  $command .= "pparse $autoacedir/physical_map/cen2hs.ace\nsave\nquit\n";
-#  &DbWrite($command,"$tace -tsuser Coulson",$dbpath,"ContigC");
   
   # now make the maps
   my $command = "gif makemaps -all\nsave\ngif makemaps -seqclonemap $dbpath/acefiles/seqclonemap.ace\n";
   $command .= "pparse $dbpath/acefiles/seqclonemap.ace\nsave\nquit\n";
   &DbWrite($command,$giface,$dbpath,"MakeMaps");
 
-  print LOG &runtime, ": finished\n\n";
+  $log->write_to( $wormbase->runtime. ": finished\n\n");
 }
 
 
 ###################################################
-# Set the date correctly in displays.wrm          
+# Set the date correctly in displays.wrm
 
 sub setdate {
   my @t   = localtime ; while ($t[5] >= 100) { $t[5] -= 100 ; }
@@ -465,8 +477,8 @@ sub setdate {
   print "ERROR: Couldn't move file: $!\n" if ($status == 0);
 
 
-  open(FILE,"$dbpath/wspec/displays.old") or do { print LOG "failed to open $dbpath/wspec/displays.old\n"; return 1;};
-  open(NEWFILE,">$dbpath/wspec/displays.wrm") or do { print LOG "failed to open $dbpath/wspec/displays.wrm\n"; return 1;};
+  open(FILE,"$dbpath/wspec/displays.old") or do { $log->write_to( "failed to open $dbpath/wspec/displays.old\n"); return 1;};
+  open(NEWFILE,">$dbpath/wspec/displays.wrm") or do { $log->write_to( "failed to open $dbpath/wspec/displays.wrm\n"); return 1;};
   while (<FILE>) {
     if (/^_DDtMain/) {
       print NEWFILE "_DDtMain -g TEXT_FIT -t \"C.elegans database $dat\"  -w .43 -height .23 -help acedb\n";
@@ -477,7 +489,7 @@ sub setdate {
   }
   close(FILE);
   close(NEWFILE);
-  unlink "$dbpath/wspec/displays.old" or print LOG "ERROR: Couldn't unlink file: $!\n";
+  unlink "$dbpath/wspec/displays.old" or $log->write_to( "ERROR: Couldn't unlink file: $!\n");
 }
 
 
@@ -487,13 +499,10 @@ sub setdate {
 #############################
 # Make chromosomal links    #
 #############################
-#
-# 010605 : rd  : removed extra "wormbase/" from paths following $wormbasedir
-# 001218 : dl  : Altered path of file to fit wormbase designations
-# 001307 : dl  : Added call to remove old file and state 'autoace' as the db to query
 
 sub makechromlink {
 
+<<<<<<< make_autoace.pl
   print LOG &runtime, ": starting makechromlink subroutine\n";
   my $chrom_file = "$database/acefiles/chromlinks.ace";
   if(-e $chrom_file){
@@ -502,17 +511,34 @@ sub makechromlink {
   my $command = "$basedir/scripts/makeChromLinks.pl -out $chrom_file";
   $command = "$basedir/scripts/makeChromLinks.pl -test -out $chrom_file" if ($test);
   &run_command("$command"); 
+=======
+  $log->write_to( $wormbase->runtime. ": starting makechromlink subroutine\n");
+  my $chromlink_file = "$dbpath/acefiles/chromlinks.ace";
 
+  unlink "$chromlink_file" or $log->write_to( "ERROR: Couldn't unlink file $chromlink_file: $!\n");
+  $wormbase->run_script("makeChromLinks.pl -out $chromlink_file", $log);
+
+  if (-z "$chromlink_file") {
+    $log->log_and_die( "*Makechromlink: $chromlink_file has ZERO size\n");
+>>>>>>> 1.15.4.1
+
+<<<<<<< make_autoace.pl
   if (-z "$chrom_file") {
     print LOG "*Makechromlink: chromlinks.ace has ZERO size\n";  
+=======
+>>>>>>> 1.15.4.1
     return;
   } 
   else {
+<<<<<<< make_autoace.pl
     my $command = "pparse $chrom_file\nsave\nquit\n";
+=======
+    my $command = "pparse $chromlink_file\nsave\nquit\n";
+>>>>>>> 1.15.4.1
     &DbWrite($command,"$tace -tsuser make_autoace",$dbpath,"MakeChromLinks");
   }
-
-  print LOG &runtime, ": Finished.\n\n";
+  
+  $log->write_to( $wormbase->runtime. ": Finished.\n\n");
 }
 
 
@@ -528,92 +554,80 @@ sub usage {
     system ('perldoc',$0);
     exit (0);
   }
-
-  elsif ($error eq "Database") {
-    # Normal help menu
-    print "\n\nYou need to specify a name of a database to build (-buildautoace option) or a name\n";
-    print "of an existing database where you can dump release files (-buildrelease option\n\n";
-    exit (0);
-  }
 }
 
+sub check_make_autoace {
+  local (*BUILDLOG);
 
-################################################
-# Make the db files for distribution           *	
-################################################
+  $log->write_to( $wormbase->runtime. ": Entering check_make_autoace subroutine\n");
 
-sub buildrelease{	
+  my $log_file = $log->get_file;
 
-  print LOG &runtime, " Starting to build release files\n\n";
+  print "Looking at log file: $log_file\n";  
+  print "Open log file $log_file\n";
+  
+  my ($parsefile,$parsefilename);
+  my $builderrors = 0;
 
-  # Remove old release files if present
-  my $WS_previous   = $WS_current - 1;
-
-  if (-e "$dbpath/release/database.WS"."$WS_previous".".4-0.tar.gz"){
-    print LOG "Older WS version files exist, removing them\n";
-    &delete_files_from("$dbpath/release","*WS"."$WS_previous"."*") or print LOG "ERROR: Problems removing files from $dbpath/release: $!\n";
+  open (BUILDLOG, "<$log_file") || $log->log_and_die("Couldn't open $log_file out\n");
+  while (<BUILDLOG>) {
+    if (/^\* Reinitdb: started parsing (\S+)/) {
+      $parsefile = $1;
+    }
+    if ((/^\/\/ objects processed: (\d+) found, (\d+) parsed ok, (\d+) parse failed/) && ($parsefile ne "")) {
+      my $object_count = $1;
+      my $error_count  = $3;
+      (printf "%6s parse failures of %6s objects from file: $parsefile\n", $error_count,$object_count);
+      if ($error_count > 0) {
+	$parsefilename = $parsefile;
+	$parsefilename =~ s/$basedir//;
+	$log->write_to(sprintf("%6s parse failures of %6s objects from file: $parsefilename\n", $error_count,$object_count));
+	$builderrors++;
+      }
+      ($parsefile,$parsefilename) = "";
+    }
   }
-  
+  close BUILDLOG;
 
-  print LOG "Making distribution files for $WS_version\n\n";
-  
-  &run_command("/bin/touch $dbpath/release/files_in_tar");
-  &run_command("/bin/touch $dbpath/release/md5sum.${WS_version}");
-  
-  my @tarfiles;
-  $tarfiles[0] = "wspec/cachesize.wrm  wspec/constraints.wrm wspec/copyright wspec/database.wrm wspec/displays.wrm wspec/help.wrm wspec/layout.wrm wspec/models.wrm wspec/options.wrm wspec/passwd.wrm wspec/psfonts.wrm wspec/subclasses.wrm wspec/xfonts.wrm wgf wquery wscripts  pictures database/log.wrm database/database.map database/ACEDB.wrm" ;
-  
-  for (my $i = 1 ; -e "$dbpath/database/block$i.wrm" ; ++$i) {
-    $tarfiles[($i+4)/5] .= " database/block$i.wrm" ;
-  }
-  print LOG "* Makedistr: beginning tar ..\n";
-  &delete_files_from("$dbpath/release","database\.$WS_version\..*\.tar","-");
 
-  for (my $i = 0; $i < @tarfiles; ++$i) {
-    &run_command("cd $dbpath; tar -hcf $dbpath/release/database.$WS_version.4-$i.tar $tarfiles[$i]\"");
-    
-    # list files in the tar archive
-    &run_command("tar -tf $dbpath/release/database.$WS_version.4-$i.tar >> $dbpath/release/files_in_tar");
-    
-    # gzip the tar archive
-    &run_command("/bin/gzip $dbpath/release/database.$WS_version.4-$i.tar"); 
-    
-    # check consistency of gzip file
-    &run_command("/bin/gzip -t $dbpath/release/database.$WS_version.4-$i.tar.gz >> $dbpath/release/files_in_tar");
-    
-    # calculate md5sum for the gzip file
-    &run_command("/nfs/disk100/wormpub/bin.ALPHA/md5sum $dbpath/release/database.$WS_version.4-$i.tar.gz >> $dbpath/release/md5sum.$WS_version");
+  # look for objects with no Gene tag
+  $log->write_to( "\n". $wormbase->runtime. ": Looking for CDSs, Transcripts, Pseudogenes with no Gene tag\n");
+  my $db = Ace->connect(-path=>$autoacedir, -program =>$tace) || $log->log_and_die("Connection failure: ". Ace->error);
+
+  my @genes= $db->fetch(-query=>'find worm_genes NOT Gene');
+  if(@genes){
+    foreach (@genes){
+      $log->write_to( "ERROR: $_ has no Gene tag, please add valid Gene ID from geneace\n");
+      $builderrors++;
+    }
   }
+  $db->close;
+
+  $log->write_to( $wormbase->runtime. ": Finished subroutine\n\n");
+
+  return ($builderrors);
 }
 
-
-
-
-
-##################################################################################
-#
-# Simple routine which will run commands via system calls but also check the 
-# return status of a system call and complain if non-zero, increments error check 
-# count, and prints a log file error
-#
-##################################################################################
-
-sub run_command{
-  my $command = shift;
-  print LOG &runtime, ": started running $command\n";
-  my $status = system($command);
- if(($status >>8) != 0){
-    $errors++;
-    print LOG "ERROR: command failed \$\? = $status\n";
+sub allcmid
+  {
+    # make the allcmid file needed for the farm
+    my $command = "query find genome_sequence\nDNA -f ".$wormbase->autoace."/allcmid\nquit\n";
+    open (WRITEDB, "| $tace $basedir/autoace ") || $log->log_and_die("Couldn't open pipe to autoace\n");
+    print WRITEDB $command;
+    close (WRITEDB);
   }
-  print LOG &runtime, ": finished running\n\n";
 
-  # for optional further testing by calling subroutine
-  return($status);
-}
-
-
-
+sub mail_reminder 
+  {
+    my $builder = $wormbase->debug ? $wormbase->debug : "wormbase";
+    open (EMAIL,  "|/bin/mailx -s \"WormBase build reminder\" \"$builder\@sanger.ac.uk\" ");
+    print EMAIL "Dear builder,\n\n";
+    print EMAIL "You have just run autoace_minder.pl -build.  This will probably take 5-6 hours\n";
+    print EMAIL "to run.  You should therefore start work on the blast pipeline. So put down that\n";
+    print EMAIL "coffee and do some work.\n\n";
+    print EMAIL "Yours sincerely,\nOtto\n";
+    close (EMAIL);
+  }
 __END__
 
 =pod
