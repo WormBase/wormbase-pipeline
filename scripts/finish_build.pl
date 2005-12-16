@@ -12,8 +12,8 @@
 # 3) Archives old GFF_SPLITS directory
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-12-16 11:18:55 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2005-12-16 13:41:11 $
 
 
 use strict;
@@ -121,23 +121,9 @@ $wormbase->delete_files_from("$currentdb/database","*","+") unless ($test);
 $log->write_to("Removing $currentdb/database/CHROMOSOMS/\n");
 $wormbase->delete_files_from("$currentdb/CHROMOSOMES","*","+") unless ($test);
 
-<<<<<<< finish_build.pl
-print LOG "Removing ~wormpub/DATABASES/current_DB/database/COMMON_DATA/\n";
-&delete_files_from("/nfs/disk100/wormpub/DATABASES/current_DB/COMMON_DATA","*","+");
 
-=======
 $log->write_to("Removing $currentdb/database/COMMON_DATA/\n");
 $wormbase->delete_files_from("$currentdb/COMMON_DATA","*","+") unless ($test);
->>>>>>> 1.42.4.4
-
-
-<<<<<<< finish_build.pl
-print LOG "Running TransferDB.pl to copy autoace to ~wormpub/DATABASES/current_DB\n";
-system("TransferDB.pl -start $basedir/autoace -end /nfs/disk100/wormpub/DATABASES/current_DB -database -chromosomes -common -wspec -name $WS_name")  && die "couldn't run TransferDB for wormpub\n";
-print LOG "Unzipping any gzipped chromosome files\n";
-system("/bin/gunzip /nfs/disk100/wormpub/DATABASES/current_DB/CHROMOSOMES/*.gz") && die "Couldn't gunzip CHROMOSOMES/*.gz\n";
-=======
->>>>>>> 1.42.4.4
 
 $log->write_to("Running TransferDB.pl to copy autoace to ~wormpub/DATABASES/current_DB\n");
 if (!$test) {
@@ -172,25 +158,8 @@ $log->write_to("Removing old files in $logs\n");
 $wormbase->delete_files_from("$logs",":","-");
 # Exception needed because we need to keep one file (Primary_databases) and this log file uses different name, so
 # *:* won't remove it.
-<<<<<<< finish_build.pl
-unlink("$basedir/autoace/logs/UTR_gff_dump");
-=======
 unlink("$logs/UTR_gff_dump");
->>>>>>> 1.42.4.4
 
-<<<<<<< finish_build.pl
-#remove coordinate files for Coords_converter ready for next build.
-unlink("/wormsrv2/autoace/clone_coords") if -e "/wormsrv2/autoace/clone_coords";
-unlink("/wormsrv2/autoace/SL_coords") if -e "/wormsrv2/autoace/SL_coords";
-
-#remove ace files created at start of build be make_acefiles.
-print LOG "\nRemoving ace files created by make_acefiles from . .\n";
-my @source_dbs = qw( briggsae caltech camace csh geneace stlace );
-foreach my $db (@source_dbs) {
-  print LOG "\t$db\n";
-  &delete_files_from("$basedir/wormbase/$db/","ace\$","-");
-}
-=======
 #remove coordinate files for Coords_converter ready for next build.
 unlink("$ace_dir/clone_coords") if -e "$ace_dir/clone_coords";
 unlink("$ace_dir/SL_coords") if -e "$ace_dir/SL_coords";
@@ -202,24 +171,12 @@ foreach my $db (@source_dbs) {
   $log->write_to("\t$db\n");
   $wormbase->delete_files_from("$basedir/wormbase/$db/","ace\$","-");
 }
->>>>>>> 1.42.4.4
-
 
 # archive old GFF splits directory'
-<<<<<<< finish_build.pl
-print LOG "Archiving GFFsplits directory using GFFsplitter.pl -a\n\n";
-system("GFFsplitter.pl -archive") && die "Couldn't run GFFsplitter.pl -a\n";
-
-# update "Confirmed Introns" webpage (introns to be addressed)
-system("/nfs/intweb/cgi-bin/wormpub/confirmed_introns/parse_gff.pl") && warn "Couldn't run parse_gff.pl\n";
-
-
-
-=======
 $log->write_to("Archiving GFFsplits directory using GFFsplitter.pl -a\n\n");
 $wormbase->run_script("GFFsplitter.pl -archive", $log) 
     && die "Couldn't run GFFsplitter.pl -archive\n";
->>>>>>> 1.42.4.4
+
 
 
 ##################
