@@ -19,13 +19,8 @@
 #############
 
 use strict;
-<<<<<<< map_PCR_products.pl
-use warnings;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
-=======
 use warnings;
 use lib $ENV{'CVS_DIR'};
->>>>>>> 1.2.4.2
 use Wormbase;
 use Getopt::Long;
 use Class::Struct;
@@ -37,10 +32,6 @@ use Modules::Map_Helper;
 
 my $maintainers = "All";
 my %output      = ();
-<<<<<<< map_PCR_products.pl
-my $log         = Log_files->make_build_log();
-=======
->>>>>>> 1.2.4.2
 
 ########################
 # command-line options #
@@ -50,22 +41,9 @@ my $help;       # Help perdoc
 my $test;       # Test mode
 my $debug;      # Debug mode, output only goes to one user
 my $verbose;    # verbose mode, more command line outout
-<<<<<<< map_PCR_products.pl
-my $acefile;    # output ace file
-=======
 my $acefile;    # output ace file
 my $store;      # specify a frozen configuration file
->>>>>>> 1.2.4.2
 
-<<<<<<< map_PCR_products.pl
-GetOptions(
-    "debug=s"   => \$debug,
-    "verbose"   => \$verbose,
-    "test"      => \$test,
-    "help"      => \$help,
-    "acefile=s" => \$acefile
-);
-=======
 GetOptions(
     "debug=s"   => \$debug,
     "verbose"   => \$verbose,
@@ -74,7 +52,6 @@ GetOptions(
     "acefile=s" => \$acefile,
     'store=s'   => \$store
 );
->>>>>>> 1.2.4.2
 
 # Display help if required
 &usage("Help") if ($help);
@@ -89,7 +66,6 @@ else { $wb = Wormbase->new( -debug => $debug, -test => $test, ) }
 ###########################################
 # Variables Part II (depending on $wb)    #
 ###########################################
-
 $test  = $wb->test  if $wb->test;     # Test mode
 $debug = $wb->debug if $wb->debug;    # Debug mode, output only goes to one user
 
@@ -102,67 +78,27 @@ if ($debug) {
 #############
 # Paths etc #
 #############
-
-<<<<<<< map_PCR_products.pl
-my $tace   = &tace;                                       # tace executable path
-my $dbdir  = '/wormsrv2/autoace';                         # Database path
-my $gffdir = $test ? "$dbdir/GFF_SPLITS/WS150" : "$dbdir/GFF_SPLITS/GFF_SPLITS";   # GFF splits directory
-my @chromosomes = $test ? qw ( I ) : qw( I II III IV V X );                  # chromosomes to parse
-my %genetype;                                             # gene type hash
-my $outace = $acefile ? $acefile : "$dbdir/acefiles/PCR_mappings.ace";
-=======
 my $tace        = $wb->tace;                                   # tace executable path
 my $dbdir       = $wb->autoace;                                # Database path
 my $gffdir      = $wb->gff_splits;                             # GFF splits directory
 my @chromosomes = $test ? qw ( I ) : qw( I II III IV V X );    # chromosomes to parse
 my %genetype;                                                  # gene type hash
 my $outace = $acefile ? $acefile : "$dbdir/acefiles/PCR_mappings.ace";
->>>>>>> 1.2.4.2
 
 ################
-<<<<<<< map_PCR_products.pl
 # Structs      #
-###############
-struct( Exon => [ start => '$', stop => '$', type => '$', id => '$' ] );
-struct( Gene => [ start => '$', stop => '$', exons => '@' ] );
-=======
-# Structs      #
-###############
+################
 struct( Exon => [ start => '$', stop => '$', type => '$', id => '$' ] );
 struct( Gene => [ start => '$', stop => '$', exons => '@' ] );
 
 # make a new log
-my $log = Log_files->make_build_log($debug);
->>>>>>> 1.2.4.2
+my $log = Log_files->make_build_log($wb);
 
 ###########################################
 # get exons and PCRs out of the gff files #
 ###########################################
 
 foreach my $chromosome (@chromosomes) {
-<<<<<<< map_PCR_products.pl
-    $log->write_to("Processing chromosome $chromosome\n");
-    print "\nProcessing chromosome $chromosome\n" if ($verbose);
-    my %genes;
-    my %pcr;
-
-    # Get PCR_product info from split GFF file
-    open( GFF_in, "<$gffdir/CHROMOSOME_${chromosome}.PCR_products.gff" )
-      || die "Failed to open PCR_product gff file\n\n";
-    while (<GFF_in>) {
-        chomp;
-        s/\#.*// if ! (/\".+\#.+\"/);
-        next unless /\S/;
-        my @f = split /\t/;
-
-        my ($name) = ( $f[8] =~ /PCR_product \"(.*)\"$/ );
-        unless ($name) {
-            $log->write_to("ERROR: Cant get name from $f[8]\n");
-            next;
-        }
-        $pcr{$name} = [ $f[3], $f[4] ];
-        print "PCR_product : '$name'\n" if ($verbose);
-=======
     $log->write_to("Processing chromosome $chromosome\n");
     print "\nProcessing chromosome $chromosome\n" if ($verbose);
     my %genes;
@@ -184,11 +120,7 @@ foreach my $chromosome (@chromosomes) {
         }
         $pcr{$name} = [ $f[3], $f[4] ];
         print "PCR_product : '$name'\n" if ($verbose);
->>>>>>> 1.2.4.2
     }
-<<<<<<< map_PCR_products.pl
-    close(GFF_in);
-=======
     close(GFF_in);
 
     #################
@@ -220,76 +152,17 @@ foreach my $chromosome (@chromosomes) {
     # map it #
     ##########
     print "Find overlaps for PCR_product\n" if ($debug);
->>>>>>> 1.2.4.2
 
-<<<<<<< map_PCR_products.pl
-    #################
-    # read GFFs     #
-    #################
-
-    # Get exon info from split exon GFF files
-    Map_Helper::get_from_gff( "$gffdir/CHROMOSOME_${chromosome}.exon.gff",
-        'CDS', qw{\S}, \%genes );
-    # Get exon info from split pseudogene exon GFF files
-    Map_Helper::get_from_gff( "$gffdir/CHROMOSOME_${chromosome}.exon_pseudogene.gff",
-        'Pseudogene', qw{\S}, \%genes );
-    # Get exon info from split transcript exon GFF file
-    Map_Helper::get_from_gff( "$gffdir/CHROMOSOME_${chromosome}.exon_noncoding.gff",
-        'Transcript', qw{\S}, \%genes );
-    # Get exon info from split UTR GFF files
-    Map_Helper::get_from_gff( "$gffdir/CHROMOSOME_${chromosome}.UTR.gff",
-        'Transcript', 'UTR', \%genes );
-
-    print "Finished GFF loop\n" if ($verbose);
-
-    ###################
-    # make indexlists #
-    ###################
-    print "sorting genes\n" if ($debug);
-    my @sorted_genes = sort {
-             $genes{$a}->start <=> $genes{$b}->start
-          || $genes{$a}->stop <=> $genes{$b}->stop
-    } keys %genes;
-
-    ##########
-    # map it #
-    ##########
-    print "Find overlaps for PCR_product\n" if ($debug);
-    # sub map_it(%output,%pcr,@sorted_genes,%genes)
-   Map_Helper::map_it(\%output,\%pcr,\@sorted_genes,\%genes);
-=======
     # sub map_it(%output,%pcr,@sorted_genes,%genes)
     Map_Helper::map_it( \%output, \%pcr, \@sorted_genes, \%genes );
->>>>>>> 1.2.4.2
 }
 
 ########################
 # produce output files #
 ########################
-
 open( OUTACE, ">$outace" )
   || die "Couldn't write to PCR_mappings.ace\n";
 
-<<<<<<< map_PCR_products.pl
-foreach my $mapped ( sort keys %output ) {
-    print "mapped $mapped\tto ", join ' ',
-      ( map { $_->id } @{ $output{$mapped} } ), "\n"
-      if ($verbose);
-
-    foreach my $exon ( @{ $output{$mapped} } ) {
-        if ( $exon->type eq "CDS" ) {
-            print OUTACE "CDS : \"",$exon->id,"\"\n";
-            print OUTACE "Corresponding_PCR_product \"$mapped\"\n\n";
-        }
-        elsif ( $exon->type eq "Pseudogene" ) {
-            print OUTACE "Pseudogene : \"",$exon->id,"\"\n";
-            print OUTACE "Corresponding_PCR_product \"$mapped\"\n\n";
-        }
-        elsif ( $exon->type eq "Transcript" ) {
-            print OUTACE "Transcript : \"",$exon->id,"\"\n";
-            print OUTACE "Corresponding_PCR_product \"$mapped\"\n\n";
-        }
-=======
 foreach my $mapped ( sort keys %output ) {
     print "mapped $mapped\tto ", join ' ', ( map { $_->id } @{ $output{$mapped} } ), "\n"
       if ($verbose);
@@ -307,7 +180,6 @@ foreach my $mapped ( sort keys %output ) {
             print OUTACE "Transcript : \"", $exon->id, "\"\n";
             print OUTACE "Corresponding_PCR_product \"$mapped\"\n\n";
         }
->>>>>>> 1.2.4.2
     }
 }
 close(OUTACE);
@@ -315,26 +187,12 @@ close(OUTACE);
 ##############################
 # read acefiles into autoace #
 ##############################
-
 unless ($test) {
-<<<<<<< map_PCR_products.pl
-
-    my $command =
-      "pparse /wormsrv2/autoace/acefiles/PCR_mappings.ace\nsave\nquit\n";
-
-    open( TACE, "| $tace -tsuser map_PCR_products $dbdir" )
-      || die "Couldn't open tace connection to $dbdir\n";
-    print TACE $command;
-    close(TACE);
-=======
-
     my $command = "pparse $outace\nsave\nquit\n";
 
-    open( TACE, "| $tace -tsuser map_PCR_products $dbdir" )
-      || die "Couldn't open tace connection to $dbdir\n";
+    open( TACE, "| $tace -tsuser map_PCR_products $dbdir" ) || die "Couldn't open tace connection to $dbdir\n";
     print TACE $command;
     close(TACE);
->>>>>>> 1.2.4.2
 }
 
 ###############
