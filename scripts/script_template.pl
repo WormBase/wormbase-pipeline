@@ -4,62 +4,32 @@
 # 
 # by Keith Bradnam                         
 #
-<<<<<<< script_template.pl
-# Script to find candidate genes for splitting
-=======
 # This is a example of a good script template
->>>>>>> 1.8.6.3
 #
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2005-12-16 11:18:55 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2005-12-16 12:14:23 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
 use Carp;
-<<<<<<< script_template.pl
-use Log_files;
-#use Ace;
-#use Sequence_extract;
-#use Coords_converter;
-
-=======
 use Log_files;
 use Storable;
 #use Ace;
 #use Sequence_extract;
 #use Coords_converter;
 
->>>>>>> 1.8.6.3
-
 ######################################
 # variables and command-line options # 
 ######################################
 
-<<<<<<< script_template.pl
-my ($help, $debug, $test, $verbose);
-my $maintainers = "All";
-
-my $database;
-
-=======
 my ($help, $debug, $test, $verbose, $store, $wormbase);
 
 my $database;
 
->>>>>>> 1.8.6.3
-
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
-<<<<<<< script_template.pl
-	    "test"       => \$test,
-	    "verbose"    => \$verbose,
-	    "database=s" => \$database,
-	    );
-
-my $log = Log_files->make_build_log($debug);
-=======
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
 	    "database=s" => \$database,
@@ -73,33 +43,16 @@ if ( $store ) {
                              -test    => $test,
 			     );
 }
->>>>>>> 1.8.6.3
 
 # Display help if required
 &usage("Help") if ($help);
 
-<<<<<<< script_template.pl
-# Use debug mode?
-if ($debug) {
-  print "DEBUG = \"$debug\"\n\n";
-  ($maintainers = $debug . '\@sanger.ac.uk');
-=======
 # in test mode?
 if ($test) {
   print "In test mode\n" if ($verbose);
-# $debug = `whoami` unless ($debug);
-
-
->>>>>>> 1.8.6.3
-}
-
-<<<<<<< script_template.pl
-# in test mode?
-if ($test) {
-  print "In test mode\n";
 
 }
-=======
+
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
@@ -108,21 +61,19 @@ my $log = Log_files->make_build_log($wormbase);
 #################################
 
 # Set up top level base directories (these are different if in test mode)
-my $ace_dir    = $wormbase->autoace; # AUTOACE DATABASE DIR
-my $ftp_upload = $wormbase->ftp_upload;	# "/nfs/ftp_uploads/wormbase"
-my $wormpep    = $wormbase->wormpep; # CURRENT WORMPEP
-my $wormrna    = $wormbase->wormrna; # CURRENT WORMRNA
-my $data_dir   = $wormbase->common_data; # AUTOACE COMMON_DATA
-my $chromosomes = $wormbase->chromosomes; # AUTOACE CHROMSOMES
-my $reports    = $wormbase->reports; # AUTOACE REPORTS
-my $gff        = $wormbase->gff;# AUTOACE GFF
-my $gff_splits = $wormbase->gff_splits; # AUTOACE GFF SPLIT FILES
-my $tace       = $wormbase->tace; # TACE PATH
-my $giface     = $wormbase->giface; # GIFACE PATH
+my $ace_dir         = $wormbase->autoace;     # AUTOACE DATABASE DIR
+my $wormpep_dir     = $wormbase->wormpep;     # CURRENT WORMPEP
+my $wormrna_dir     = $wormbase->wormrna;     # CURRENT WORMRNA
+my $common_data_dir = $wormbase->common_data; # AUTOACE COMMON_DATA
+my $chromosomes_dir = $wormbase->chromosomes; # AUTOACE CHROMSOMES
+my $reports_dir     = $wormbase->reports;     # AUTOACE REPORTS
+my $gff_dir         = $wormbase->gff;         # AUTOACE GFF
+my $gff_splits_dir  = $wormbase->gff_splits;  # AUTOACE GFF SPLIT
+my $logs_dir        = $wormbase->logs;        # AUTOACE LOGS
 
-
-
->>>>>>> 1.8.6.3
+my $ftp_upload_dir  = $wormbase->ftp_upload;  # "/nfs/ftp_uploads/wormbase"
+my $tace            = $wormbase->tace;        # TACE PATH
+my $giface          = $wormbase->giface;      # GIFACE PATH
 
 
 
@@ -130,40 +81,19 @@ my $giface     = $wormbase->giface; # GIFACE PATH
 # MAIN BODY OF SCRIPT
 ##########################
 
-<<<<<<< script_template.pl
-# main stuff goes here
-
-=======
 # main stuff goes here
 
 # example of running anther script
 $wormbase->run_script("other_script -options", $log);
->>>>>>> 1.8.6.3
-
 
 
 # Close log files and exit
 $log->write_to("\n\nStatistics\n");
 $log->write_to("----------\n\n");
-
-$log->write_to("put some statistics here");
-
-<<<<<<< script_template.pl
-$log->mail();
-=======
-# Close log files and exit
-$log->write_to("\n\nStatistics\n");
-$log->write_to("----------\n\n");
->>>>>>> 1.8.6.3
-
-<<<<<<< script_template.pl
-print "Finished.\n" if ($verbose);
-=======
-$log->write_to("Put some statistics here\n");
+$log->write_to("Put some statistics here.");
 
 $log->mail();
 print "Finished.\n" if ($verbose);
->>>>>>> 1.8.6.3
 exit(0);
 
 
