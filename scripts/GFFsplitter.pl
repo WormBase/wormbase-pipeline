@@ -4,7 +4,7 @@
 # 
 # by Dan Lawson
 #
-# Last updated on: $Date: 2005-12-16 14:32:36 $
+# Last updated on: $Date: 2005-12-16 17:17:00 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -122,7 +122,7 @@ if (! -e $splitdir){
 if($archive){
   my $archive_split = $wormbase->basedir . "$WS_version/GFF_SPLITS";
   # create archive GFF_SPLITS subdirectory if it doesn't already exist
-  if (! -e $archive_slpit){
+  if (! -e $archive_split){
     mkpath($archive_split) or die "Couldn't create directory $archive_split\n";
   }
   print "Renaming $splitdir to $archive_split\n" if ($verbose);
