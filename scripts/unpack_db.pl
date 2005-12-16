@@ -12,8 +12,8 @@
 # the Cold Spring Harbor Laboratory database (cshace)
 # the Caltech database (citace)
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2005-01-11 14:38:29 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2005-12-16 10:31:29 $
 
 
 #################################################################################
@@ -24,25 +24,11 @@ use IO::Handle;
 use Getopt::Long;
 use Cwd;
 use strict;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use File::Copy;
-
-##############################
-# Script variables (run)     #
-##############################
-
-my $maintainers = "All";
-my $rundate    = &rundate;
-my $runtime    = &runtime;
-
-##############################
-# Paths for I/O files        #
-##############################
-
-my $tace   = &tace;
-my $giface = &giface;
-
+use File::Path;
+use Storable;
 
 ##############################
 # command-line options       #
@@ -53,7 +39,8 @@ my $brigace;
 my $citace;
 my $cshace;
 my $stlace;
-my $test;
+my ($debug,$test,$database,$basedir);
+my $store;
 
 GetOptions (
             "help"      => \$help,
@@ -61,18 +48,29 @@ GetOptions (
             "citace=s"  => \$citace,
             "cshace=s"  => \$cshace,
             "stlace=s"  => \$stlace,
-            "test"      => \$test
-	    );
+            "test"      => \$test,
+	    "debug:s"   => \$debug,
+	    "database|basedir:s"  => \$basedir,
+	    "store:s"   => \$store,
+	   );
+
+my $wormbase;
+if( $store ) {
+  $wormbase = retrieve( $store ) or croak("cant restore wormbase from $store\n");
+}
+else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+			     -test    => $test,
+			   );
+}
+
+my $rundate = $wormbase->rundate;
 
 &usage if ($help);
 &usage if (!defined($brigace) && !defined($citace) && !defined($stlace) && !defined($cshace));
 
-# Set top level path for build, different if in test mode
-my $basedir = "/wormsrv2";
-$basedir    = glob("~wormpub")."/TEST_BUILD" if ($test); 
-
-
-
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
 
 ##############################################################
 # loop through main routine for each database to be unpacked #
@@ -89,34 +87,55 @@ sub unpack_stuff{
   my $opt = shift;
   my (@filenames,$filename,$ftp,$dbdir,$logfile,$dbname);
 
+  $log->write_to("Unpacking $database $opt\n");
+
+  my $ftp_dir = $wormbase->ftp_upload;
+  my $basedir = $wormbase->basedir;
+  my $logs    = $wormbase->logs;
 
   # set up correct locations
   if ($database eq "brigace"){
+<<<<<<< unpack_db.pl
     $ftp     = "/nfs/ftp_uploads/wormbase/stl";
+=======
+    $ftp     = "$ftp_dir/stl";
+>>>>>>> 1.17.4.1
     $dbdir   = "$basedir/brigace";
-    $logfile = "$basedir/logs/unpack_briggsae.$rundate.$$";
+    $logfile = "$logs/unpack_briggsae.$rundate.$$";
     $dbname  = "brigdb";
   }
 
   if ($database eq "cshace"){
+<<<<<<< unpack_db.pl
     $ftp     = "/nfs/ftp_uploads/wormbase/csh";
+=======
+    $ftp     = "$ftp_dir/csh";
+>>>>>>> 1.17.4.1
     $dbdir   = "$basedir/cshace";
-    $logfile = "$basedir/logs/unpack_cshace.$rundate.$$";
+    $logfile = "$logs/unpack_cshace.$rundate.$$";
     $dbname  = "cshl_dump";
   }
 
   if ($database eq "stlace"){
+<<<<<<< unpack_db.pl
     $ftp     = "/nfs/ftp_uploads/wormbase/stl";
+=======
+    $ftp     = "$ftp_dir/stl";
+>>>>>>> 1.17.4.1
     $dbdir   = "$basedir/stlace";
-    $logfile = "$basedir/logs/unpack_stlace.$rundate.$$";
+    $logfile = "$logs/unpack_stlace.$rundate.$$";
     $dbname  = "stlace";
   }
 
 
   if ($database eq "citace"){
+<<<<<<< unpack_db.pl
     $ftp     = "/nfs/ftp_uploads/wormbase/caltech";
+=======
+    $ftp     = "$ftp_dir/caltech";
+>>>>>>> 1.17.4.1
     $dbdir   = "$basedir/citace";
-    $logfile = "$basedir/logs/unpack_citace.$rundate.$$";
+    $logfile = "$logs/unpack_citace.$rundate.$$";
     $dbname  = "citace_dump";
   }
 
@@ -127,21 +146,18 @@ sub unpack_stuff{
   # year 2000 pragmatic programming, remember to alter script in 2100 !
   my $today = "20" . substr($opt,0,2) . "-" . substr($opt,2,2) . "-" . substr($opt,4,2);
 
-  system ("/bin/touch $logfile") && die "Couldn't touch $logfile\n";
-  open (LOGFILE,">>$logfile") || die "Couldn't append to $logfile";
-  LOGFILE->autoflush;
+  my $msg = "# unpack_db.pl - $database\n#\n".
+    "# run details         : $rundate ".$wormbase->runtime."\n".
+      "# Source directory    : $ftp\n".
+	"# Target directory    : $dbdir\n#\n".
+	  "# Source file         : ".$dbname."_$today.tar.gz\n".
+	    "\n";
 
-
-  print LOGFILE "# unpack_db.pl - $database\n#\n";
-  print LOGFILE "# run details         : $rundate $runtime\n";
-  print LOGFILE "# Source directory    : $ftp\n";
-  print LOGFILE "# Target directory    : $dbdir\n#\n";
-  print LOGFILE "# Source file         : ".$dbname."_$today.tar.gz\n";
-  print LOGFILE "\n";
+  $log->write_to("$msg");
 
 
   # check that command line argument is correct and form new date string
-  &error(1,$database,$logfile,$opt) if ((length $opt) != 6);
+  &error(1,$database,$opt) if ((length $opt) != 6);
 
  ##########################################
  # copy the tar.gz file from the ftp site #
@@ -150,39 +166,45 @@ sub unpack_stuff{
 
   # make temp unpack directory
   my $unpack_dir = "$dbdir"."/temp_unpack_dir";
-  system("/bin/mkdir $unpack_dir") && print LOGFILE "Couldn't make temp unpack directory\n";
+  eval { mkpath($unpack_dir) };
+  if ($@) {
+    print "Couldn't create $unpack_dir: $@";
+    $log->write_to("Couldn't make temp unpack directory\n");
+  } 
 
   chdir $unpack_dir;
   my $dir = cwd();
-  print LOGFILE "Move to directory: '$dir'\n";
+  $log->write_to("Move to directory: '$dir'\n");
 
 
   # copy database.tar.gz file & check size
-  my $status = copy("$ftp/".$dbname."_$today.tar.gz", ".");
-  print "ERROR: Couldn't copy file: $!\n" if ($status == 0);
+  my $file_to_copy = "$ftp/".$dbname."_$today.tar.gz";
+  my $status = copy("$file_to_copy", ".");
+  $log->write_to("ERROR: Couldn't copy file $file_to_copy : $!\n") if ($status == 0);
 
 
-  my $match = &copy_check("${ftp}/${dbname}_${today}.tar.gz","${dbname}_${today}.tar.gz");
-  print LOGFILE "Copy '".$dbname."_$today.tar.gz' to $unpack_dir successful\n" if ($match == 1); 
-  print LOGFILE "Copy '".$dbname."_$today.tar.gz' to $unpack_dir failed\n"     if ($match == 0);
+  my $match = $wormbase->copy_check("${ftp}/${dbname}_${today}.tar.gz","${dbname}_${today}.tar.gz");
+  $msg = "Copy '".$dbname."_$today.tar.gz' to $unpack_dir successful\n" if ($match == 1);
+  $msg = "ERROR : Copy '".$dbname."_$today.tar.gz' to $unpack_dir FAILED\n"     if ($match == 0);
+  $log->write_to("$msg");
 
   system ("/bin/gzip -d ${dbname}_${today}.tar.gz") && die "Couldn't run gzip command\n";
-  print LOGFILE "uncompress file\n";
+  $log->write_to("uncompress file\n");
 
   system ("/bin/tar -xvf ${dbname}_${today}.tar");
-  print LOGFILE "untar file\n\n";
+  $log->write_to("untar file\n\n");
 
 
   # add list of ace files to be loaded into array
-  print LOGFILE "Database files to be loaded:\n";
+  $log->write_to("Database files to be loaded:\n");
   open (LIST, "/bin/ls *.ace |") || die "Couldn't pipe";
   while (<LIST>) {
     chomp;
     push (@filenames,"$_");
-    print LOGFILE "$_\n";
+    $log->write_to("$_\n");
   }
   close LIST;
-  print LOGFILE "\n\n";
+  $log->write_to("\n\n");
 
 
 
@@ -191,48 +213,70 @@ sub unpack_stuff{
   # modify displays.wrm for rebuild #
   ###################################
 
-  $status = move("$dbdir/wspec/displays.wrm", "$dbdir/wspec/displays.old");
-  print "ERROR: Couldn't move file: $!\n" if ($status == 0);
+  unless( -e "$dbdir/wspec/displays.wrm" )  {
+    $log->write_to("display.wrm missing");
+    my $db = $wormbase->autoace;
+    eval system("cp -R $db/wspec $dbdir");
+    if (@!) {
+      $log->log_and_die("ERROR $db $dbdir copy ");
+    }
+  }
+  system("mv $dbdir/wspec/displays.wrm $dbdir/wspec/displays.old");
+  open (FILE_OLD,"$dbdir/wspec/displays.old")  || $log->log_and_die("failed to open $dbdir/wspec/displays.old\n");
+  open (FILE_NEW,">$dbdir/wspec/displays.wrm") || $log->log_and_die("failed to open $dbdir/wspec/displays.wrm\n");
 
-
-  open (FILE_OLD,"$dbdir/wspec/displays.old") || do { 
-    print LOGFILE "failed to open $dbdir/wspec/displays.old\n"; 
-    die(1);
-  };
-  open (FILE_NEW,">$dbdir/wspec/displays.wrm") || do { 
-    print LOGFILE "failed to open $dbdir/wspec/displays.wrm\n"; 
-    die(1);
-  };
   while (<FILE_OLD>) { 
     if (/^_DDtMain/) {
-      print FILE_NEW "_DDtMain -g TEXT_FIT -t \"$database $rundate\"  -w .43 -height .23 -help acedb\n";
-    } else {
-      print FILE_NEW $_;}
+	print FILE_NEW "_DDtMain -g TEXT_FIT -t \"$database $rundate\"  -w .43 -height .23 -help acedb\n";
+      } else {
+	print FILE_NEW $_;}
   }
   close FILE_OLD;
   close FILE_NEW;
   unlink "$dbdir/wspec/displays.old" ;
 
+  #############################################################################
+  # need to edit the passwrd file to allow re-init if not wormpub ( ie test ) #
+  #############################################################################
+  if ( $wormbase->test ) {
+    open( PASS,"<$dbdir/wspec/passwd.wrm") or $log->log_and_die("cant open password file");
+    open( NEWPASS,">$dbdir/wspec/passwd.new") or $log->log_and_die("cant open new password file");
+    while ( <PASS> ) {
+      if ( /^wormpub/ ) { 
+	my $user = `whoami`;
+	chomp $user;
+	print NEWPASS "$user\n";
+      }
+      print NEWPASS;
+    }
+    move("$dbdir/wspec/passwd.new","$dbdir/wspec/passwd.wrm") 
+  }
+
  ####################################
  # Re-initialise the ACEDB database #
  ####################################
 
-  if (-e "$dbdir/database/lock.wrm") {
-      print LOGFILE "*Reinitdb error - lock.wrm file present..\n";
-      close LOGFILE;
-      die();
+  $log->log_and_die("*Reinitdb error - lock.wrm file present..\n") if (-e "$dbdir/database/lock.wrm");
+
+  if( -e "$dbdir/database" ) {
+    unlink glob("$dbdir/database/new/*") or $log->write_to("ERROR: Couldn't unlink file $dbdir/database/new/ : $!\n");
+    unlink glob("$dbdir/database/touched/*") or $log->write_to( "ERROR: Couldn't unlink file $dbdir/database/touched/ : $!\n");
+
+    if( -e "$dbdir/database/log.wrm") {
+      $status = move("$dbdir/database/log.wrm", "$dbdir/database/log.old");
+      print "ERROR: Couldn't move file: $!\n" if ($status == 0);
+    }
+    unlink glob("$dbdir/database/*.wrm") or $log->write_to("ERROR: Couldn't run rm command $dbdir/database/*.wrm: $!\n");
   }
-
-  unlink glob("$dbdir/database/new/*") or print LOGFILE "ERROR: Couldn't unlink file: $!\n";
-  unlink glob("$dbdir/database/touched/*") or print LOGFILE "ERROR: Couldn't unlink file: $!\n";
-
-  $status = move("$dbdir/database/log.wrm", "$dbdir/database/log.old");
-  print "ERROR: Couldn't move file: $!\n" if ($status == 0);
-  unlink glob("$dbdir/database/*.wrm") or print LOGFILE "ERROR: Couldn't run rm command: $!\n";
-
+  else {
+    eval{
+      mkdir("$dbdir/database");
+    };
+    $log->log_and_die(@!) if @!;
+  }
   my $command="y\n";
-  print LOGFILE "* Reinitdb: reinitializing the database ..\n";
-  &DbWrite($command,$tace,$dbdir,"ReInitDB",$logfile);
+  $log->write_to("* Reinitdb: reinitializing the database ..\n");
+  &DbWrite($command,$wormbase->tace,$dbdir,"ReInitDB");
 
 
  ##############################
@@ -246,10 +290,10 @@ save
 quit
 END
     if (-e $filename) {
-      print LOGFILE "* Reinitdb: reading in new database  $filename\n";
-      &DbWrite($command,$tace,$dbdir,"ParseFile",$logfile);
+     $log->write_to( "* Reinitdb: reading in new database  $filename\n");
+      &DbWrite($command,$wormbase->tace,$dbdir,"ParseFile");
     } else {
-      print LOGFILE "* Reinitdb: $filename is not existent - skipping ..\n";
+      $log->write_to("* Reinitdb: $filename is not existent - skipping ..\n");
       next;
     }
   }
@@ -259,22 +303,13 @@ END
   ###############################
   # Tidy up old ace files       #
   ###############################
-  unlink glob("$unpack_dir/*") or print LOGFILE "ERROR: Couldn't remove $unpack_dir/*\n";
-  rmdir("$unpack_dir") or print LOGFILE "ERROR: Could't remove $unpack_dir\n";
+  unlink glob("$unpack_dir/*") or $log->write_to("ERROR: Couldn't remove $unpack_dir/*\n");
+  rmdir("$unpack_dir") or $log->write_to("ERROR: Could't remove $unpack_dir\n");
 
-  $runtime = &runtime;
-  print LOGFILE "\n$database build complete at $rundate $runtime\n";
-  close LOGFILE;
-
-
-  ###############################
-  # Mail log to curator         #
-  ###############################
-  my $subject_line = "BUILD REPORT: unpack_$database";
-  $subject_line = "TEST BUILD REPORT: WormBase Report: unpack_$database" if ($test);  
-  &mail_maintainer("$subject_line",$maintainers,$logfile);
-
+  $log->write_to( "\n$database build complete at ".$wormbase->runtime."\n");
 }
+
+$log->mail;
 
 # say goodnight Brian
 exit(0);
@@ -287,7 +322,7 @@ exit(0);
 
 sub DbWrite {
   my ($command,$exec,$dir,$name,$logfile)=@_;
-  open (WRITEDB,"| $exec $dir >> $logfile") or do {print LOGFILE "$name DbWrite failed\n";close LOGFILE; die();};
+  open (WRITEDB,"| $exec $dir ") or $log->log_and_die("$name DbWrite failed\n");
   print WRITEDB $command;
   close WRITEDB;
 }
@@ -298,18 +333,17 @@ sub DbWrite {
 sub error {
   my $error = shift;
   my $database = shift;
-  my $logfile = shift;
   my $opt = shift;
   # Error 1 - date directory ($opt) is of incorrect length 
   if ($error == 1) {
-    print "The database.tar.gz file date for $database is incorrect\n";
-    print "'$opt' is not a correct (six figure) date format\n\n";
-    $runtime = `date +%H:%M:%S`; chomp $runtime;
-    print LOGFILE "The database.tar.gz file date is incorrect.\n";
-    print LOGFILE "'$opt' is not a correct (six figure) date format\n\n";
-    print LOGFILE "Exiting early at $rundate $runtime\n";
-    close LOGFILE;
-    &mail_maintainer("WormBase Report: unpack_db.pl",$maintainers,$logfile);
+    my $runtime = $wormbase->runtime;
+    my $rundate = $wormbase->rundate;
+
+    my $msg = "The database.tar.gz file date for $database is incorrect\n" .
+      "'$opt' is not a correct (six figure) date format\n\n" . 
+	"Exiting early at $rundate $runtime\n";
+
+    $log->log_and_die("$msg");
   }
   exit(1);
 }
