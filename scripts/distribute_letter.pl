@@ -8,8 +8,8 @@
 #                          /wormsrv2/autoace/release/
 #                          /nfs/WWW/SANGER_docs/htdocs/Projects/C_elegans/WORMBASE/current/release_notes.txt/
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-12-16 11:18:55 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2005-12-16 14:34:16 $
 
 use strict;
 use warnings;
@@ -60,7 +60,7 @@ if ($debug) {
 }
 
 # create log
-my $log = Log_files->make_build_log($debug);
+my $log = Log_files->make_build_log($wb);
 
 ##############
 # variables  #
@@ -69,23 +69,12 @@ my $log = Log_files->make_build_log($debug);
 # Most checking scripts should produce a log file that is a) emailed to us all
 # and b) copied to /wormsrv2/logs
 
-<<<<<<< distribute_letter.pl
-my $maintainers = "All";
-my $rundate     = `date +%y%m%d`; chomp $rundate;
-my $runtime     = `date +%H:%M:%S`; chomp $runtime;
-my $release   = &get_wormbase_version_name(); # e.g. WS89
-my $release_number = &get_wormbase_version; # e.g. 89
-my $log        = "/wormsrv2/logs/distribute_letter.${release}.$$";
-my $www = "/nfs/WWWdev/SANGER_docs/htdocs/Projects/C_elegans";
-my $errors = 0; 
-=======
 my $rundate        = $wb->rundate;
 my $runtime        = $wb->runtime;
 my $release        = $wb->get_wormbase_version_name;
 my $release_number = $wb->get_wormbase_version;
 my $www            = "/nfs/WWWdev/SANGER_docs/htdocs/Projects/C_elegans";
 my $errors         = 0;
->>>>>>> 1.19.4.4
 
 $log->write_to("about to spread the word . . . \n");
 
@@ -140,30 +129,16 @@ my $wormpep_dir = glob("~ftp/pub/databases/wormpep");
 
 $log->write_to("Updating some WormBase webpages to live site\n");
 
-<<<<<<< distribute_letter.pl
-# update development_release symbolic link 
-chdir("$www/WORMBASE");
-&run_command("rm -f development_release");
-&run_command("ln -fs $release development_release");
-=======
 # update development_release symbolic link
 chdir("$www/WORMBASE");
 &run_command("rm -f development_release");
 &run_command("ln -fs $release development_release");
->>>>>>> 1.19.4.4
 
 # Now update WORMBASE pages
 # these won't be seen until current symlink is also updated
 my $webpublish = "/usr/local/bin/webpublish";
-<<<<<<< distribute_letter.pl
-&run_command("$webpublish -f -q -r $release") && print LOG "Couldn't run webpublish on release directory\n";
-&run_command("$webpublish -f -q -r development_release") && print LOG "Couldn't run webpublish on dev sym link\n";
-
-
-=======
 &run_command("$webpublish -f -q -r $release")            && $log->write_to("Couldn't run webpublish on release directory\n");
 &run_command("$webpublish -f -q -r development_release") && $log->write_to("Couldn't run webpublish on dev sym link\n");
->>>>>>> 1.19.4.4
 
 # say goodnight Brian
 $log->write_to("$0 finished at ", `date`, "\n\n");
