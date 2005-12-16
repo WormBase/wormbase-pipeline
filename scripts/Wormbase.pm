@@ -719,7 +719,6 @@ sub giface {
 
 sub check_write_access {
 
-  <<<<<<< Wormbase.pm
     my $self         = shift;
     my $database     = shift;
     my $write_access = "yes";
@@ -901,12 +900,6 @@ sub run_script {
 }
 
 
-sub wormpep_files
-  {
-    my $self = shift;
-    return ("wormpep", "wormpep.accession", "wormpep.dna", "wormpep.history", "wp.fasta", "wormpep.table", "wormpep.diff");
-  }
-
 sub run_command {
   my $self    = shift;
   my $command = shift;
@@ -946,27 +939,6 @@ sub wait_for_LSF {
     return $count;
   }
 }
-
-sub database 
-  {
-    my $self = shift;
-    my $database = shift;
-    if ( $self->{'databases'}->{"$database"} ) {
-      return $self->{'databases'}->{"$database"};
-    } else {
-      # try under the usual database path
-      my $poss_path = $self->wormpub."/DATABASES/$database";
-      return $poss_path if ( -e $poss_path );
-
-      #build related database 
-      $poss_path = $self->basedir."/$database";
-      return $poss_path if ( -e $poss_path );
-      print STDERR "no such database $database\n";
-      return undef;
-    }
-  }
-
-
 
 ################################################################################
 #Return a true value
