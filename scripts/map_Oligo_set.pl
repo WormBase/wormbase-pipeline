@@ -37,31 +37,17 @@ my $help;       # Help perldoc
 my $test;       # Test mode
 my $debug;      # Debug mode, output only goes to one user
 my $verbose;    # verbose mode, more command line outout
-<<<<<<< map_Oligo_set.pl
-my $acename;
-=======
 my $acename;    # specify a custom acefile
-my $store;	# specify a frozen configuration file
->>>>>>> 1.1.4.2
+my $store;      # specify a frozen configuration file
 
-<<<<<<< map_Oligo_set.pl
-GetOptions(
-    'debug=s'   => \$debug,
-    'verbose'   => \$verbose,
-    'test'      => \$test,
-    'help'      => \$help,
-    'acefile=s' => \$acename
-);
-=======
 GetOptions(
     'debug=s'   => \$debug,
     'verbose'   => \$verbose,
     'test'      => \$test,
     'help'      => \$help,
     'acefile=s' => \$acename,
-    'store=s'	=> \$store
+    'store=s'   => \$store
 );
->>>>>>> 1.1.4.2
 
 # Display help if required
 &usage("Help") if ($help);
@@ -70,16 +56,15 @@ GetOptions(
 # recreate configuration   #
 # ##########################
 my $wb;
-if ($store){$wb = Storable::retrieve($store) or croak("cant restore wormbase from $store\n")}
-else {$wb = Wormbase->new(-debug => $debug,-test => $test,)}
+if ($store) { $wb = Storable::retrieve($store) or croak("cant restore wormbase from $store\n") }
+else { $wb = Wormbase->new( -debug => $debug, -test => $test, ) }
 
 ###########################################
 # Variables Part II (depending on $wb)    #
 # #########################################
- 
+
 $test  = $wb->test  if $wb->test;     # Test mode
 $debug = $wb->debug if $wb->debug;    # Debug mode, output only goes to one user
-
 
 # Use debug mode?
 if ($debug) {
@@ -90,12 +75,9 @@ if ($debug) {
 #############
 # Paths etc #
 #############
-
-<<<<<<< map_Oligo_set.pl
-my $tace = &tace;    # tace executable path
-
-my $dbdir      = '/wormsrv2/autoace';                   # Database path
-my $gffdir = $test ? "$dbdir/GFF_SPLITS/WS150" : "$dbdir/GFF_SPLITS/GFF_SPLITS";   # GFF splits directory
+my $tace    = $wb->tace;                                                    # tace executable path
+my $dbdir   = $wb->autoace;                                                 # Database path
+my $gffdir  = $wb->gff_splits;                                              # GFF splits directory
 my $acefile = $acename ? $acename : "$dbdir/acefiles/Oligo_mappings.ace";
 
 my @chromosomes = $test
@@ -109,29 +91,11 @@ my %genetype;                 # gene type hash
 use Class::Struct;
 struct( Exon => [ start => '$', stop => '$', type => '$', id => '$' ] );
 struct( Gene => [ start => '$', stop => '$', exons => '@' ] );
-=======
-my $tace = $wb->tace;    # tace executable path
-my $dbdir= $wb->autoace;                   # Database path
-my $gffdir= $wb->gff_splits;   # GFF splits directory
-my $acefile = $acename ? $acename : "$dbdir/acefiles/Oligo_mappings.ace";
-
-my @chromosomes = $test
-  ? qw( I )
-  : qw( I II III IV V X );    # chromosomes to parse (TEST_BUILD should be III)
-my %genetype;                 # gene type hash
-
-################
-# Structs      #
-################
-use Class::Struct;
-struct( Exon => [ start => '$', stop => '$', type => '$', id => '$' ] );
-struct( Gene => [ start => '$', stop => '$', exons => '@' ] );
->>>>>>> 1.1.4.2
 
 ################
 # Open logfile #
 ################
-my $log = Log_files->make_build_log($debug);
+my $log = Log_files->make_build_log($wb);
 
 #####################################################
 # get exons and Oligo_set info out of the gff files #
@@ -140,18 +104,17 @@ my $log = Log_files->make_build_log($debug);
 foreach my $chromosome (@chromosomes) {
     $log->write_to("Processing chromosome $chromosome\n");
     print "\nProcessing chromosome $chromosome\n" if ($verbose);
-    my %genes      = ();
-    my %Oligo      = ();
+    my %genes = ();
+    my %Oligo = ();
 
     # Get Oligo set info from split GFF file
     open( GFF, "<$gffdir/CHROMOSOME_${chromosome}.Oligo_set.gff" )
-      || die
-      "Failed to open $gffdir/CHROMOSOME_${chromosome}.Oligo_set.gff : $!\n\n";
+      || die "Failed to open $gffdir/CHROMOSOME_${chromosome}.Oligo_set.gff : $!\n\n";
     while (<GFF>) {
         chomp;
         s/\#.*//;
         next unless /\S/;
-         my @f = split /\t/;
+        my @f = split /\t/;
 
         my ($name) = ( $f[8] =~ /Oligo_set \"(.*)\"$/ );
         unless ($name) {
@@ -164,13 +127,16 @@ foreach my $chromosome (@chromosomes) {
     close(GFF);
 
     # Get exon info from split UTR GFF files
-    Map_Helper::get_from_gff("$gffdir/CHROMOSOME_${chromosome}.UTR.gff",'Transcript','UTR',\%genes);
+    Map_Helper::get_from_gff( "$gffdir/CHROMOSOME_${chromosome}.UTR.gff", 'Transcript', 'UTR', \%genes );
+
     # Get exon info from split exon GFF files
-    Map_Helper::get_from_gff("$gffdir/CHROMOSOME_${chromosome}.exon.gff",'CDS',qw{\S},\%genes);
+    Map_Helper::get_from_gff( "$gffdir/CHROMOSOME_${chromosome}.exon.gff", 'CDS', qw{\S}, \%genes );
+
     # Get exon info from split pseudogene exon GFF files
-    Map_Helper::get_from_gff("$gffdir/CHROMOSOME_${chromosome}.exon_pseudogene.gff",'Pseudogene',qw{\S},\%genes);
+    Map_Helper::get_from_gff( "$gffdir/CHROMOSOME_${chromosome}.exon_pseudogene.gff", 'Pseudogene', qw{\S}, \%genes );
+
     # Get exon info from split transcript exon GFF file
-    Map_Helper::get_from_gff("$gffdir/CHROMOSOME_${chromosome}.exon_noncoding.gff",'Transcript',qw{\S},\%genes);
+    Map_Helper::get_from_gff( "$gffdir/CHROMOSOME_${chromosome}.exon_noncoding.gff", 'Transcript', qw{\S}, \%genes );
 
     print "Finished GFF loop\n" if ($verbose);
 
@@ -180,15 +146,13 @@ foreach my $chromosome (@chromosomes) {
 
     print " sorting genes\n" if ($verbose);
 
-    my @sorted_genes = sort {
-        $genes{$a}->start <=> $genes{$b}->start
-          || $genes{$a}->stop <=> $genes{$b}->stop
-    } keys %genes;
+    my @sorted_genes =
+      sort { $genes{$a}->start <=> $genes{$b}->start || $genes{$a}->stop <=> $genes{$b}->stop } keys %genes;
 
     ##########
     # map it #
     ##########
-   Map_Helper::map_it(\%output,\%Oligo,\@sorted_genes,\%genes);
+    Map_Helper::map_it( \%output, \%Oligo, \@sorted_genes, \%genes );
 
 }
 
@@ -198,20 +162,20 @@ foreach my $chromosome (@chromosomes) {
 open( OUTACE, ">$acefile" ) || die "cannot open file $acefile\n";
 
 foreach my $oligoname ( keys %output ) {
-    print "mapped $oligoname\tto ", join ' ',(map { $_->id } @{ $output{$oligoname} }), "\n"
+    print "mapped $oligoname\tto ", join ' ', ( map { $_->id } @{ $output{$oligoname} } ), "\n"
       if ($verbose);
 
     foreach my $exon ( @{ $output{$oligoname} } ) {
         if ( $exon->type eq "CDS" ) {
-            print OUTACE "CDS : \"",$exon->id,"\"\n";
+            print OUTACE "CDS : \"", $exon->id, "\"\n";
             print OUTACE "Corresponding_oligo_set \"$oligoname\"\n\n";
         }
         elsif ( $exon->type eq "Pseudogene" ) {
-            print OUTACE "Pseudogene : \"",$exon->id,"\"\n";
+            print OUTACE "Pseudogene : \"", $exon->id, "\"\n";
             print OUTACE "Corresponding_oligo_set \"$oligoname\"\n\n";
         }
         elsif ( $exon->type eq "Transcript" ) {
-            print OUTACE "Transcript : \"",$exon->id,"\"\n";
+            print OUTACE "Transcript : \"", $exon->id, "\"\n";
             print OUTACE "Corresponding_oligo_set \"$oligoname\"\n\n";
         }
     }
@@ -255,9 +219,9 @@ sub usage {
     }
 }
 
-sub get_from_gff{
-	my ($file,$type,$unless,$genes)=@_;
-	open( GFF_in, "<$file" )
+sub get_from_gff {
+    my ( $file, $type, $unless, $genes ) = @_;
+    open( GFF_in, "<$file" )
       || die "Failed to open gff file\n\n";
     while (<GFF_in>) {
         chomp;
