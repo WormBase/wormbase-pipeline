@@ -7,8 +7,8 @@
 # Gets sequences ready for blatting, blats sequences, processes blat output, makes confirmed introns
 # and virtual objects to hang the data onto
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2005-12-16 11:18:55 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2005-12-16 14:34:41 $
 
 
 use strict;
@@ -95,14 +95,10 @@ our %word = (
 	     washu    => 'BLAT_WASHU'
 	     );
 
-<<<<<<< blat_them_all.pl
 # set to camace or autoace
 $blat_dir = "$canonical/BLAT" if $camace;
 $dbpath   = "$canonical"      if $camace;
 our $seq  = "$blat_dir/autoace.fa";
-=======
-our $seq  = "$blat_dir/autoace.fa";
->>>>>>> 1.59.4.2
 
 # Help pod documentation
 &usage("Help") if ($help);
