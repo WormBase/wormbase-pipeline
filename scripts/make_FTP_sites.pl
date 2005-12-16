@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-12-16 11:18:55 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2005-12-16 16:59:37 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -16,27 +16,22 @@
 
 
 use strict;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
+use Carp;
+use Log_files;
+use Storable;
 use Ace;
 use IO::Handle;
-use Carp;
+
 
 #################################################################################
 # Command-line options and variables                                            #
 #################################################################################
 
-my $sourcedir = "/wormsrv2/autoace";
-my $targetdir = "/nfs/disk69/ftp/pub/wormbase";  # default directory, can be overidden
+my ($help, $debug, $test, $verbose, $store, $wormbase);
 
-my $WS              = &get_wormbase_version();      # e.g.   132
-my $WS_name         = &get_wormbase_version_name(); # e.g. WS132
-my $maintainers     = "All";
-my $runtime;
-
-my $help;
-my $debug;
 my $release; # only copy across release files
 my $chroms;  # only copy across chromosome files
 my $misc;    # only copy misc files
@@ -50,6 +45,9 @@ my $all;     # copy everything across
 
 GetOptions ("help"     => \$help,
 	    "debug=s"  => \$debug,
+	    "test"     => \$test,
+	    "verbose"  => \$verbose,
+	    "store"    => \$store,
 	    "release"  => \$release,
 	    "chroms"   => \$chroms,
 	    "misc"     => \$misc,
@@ -61,25 +59,45 @@ GetOptions ("help"     => \$help,
 	    "homols"   => \$homols,
 	    "all"      => \$all);
 
+
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+			     );
+}
+
 # Display help if required
 &usage("Help") if ($help);
 
-# Use debug mode?
-if ($debug) {
-    print "DEBUG = \"$debug\"\n\n";
-    ($maintainers = $debug . '\@sanger.ac.uk');
+# in test mode?
+if ($test) {
+  print "In test mode\n" if ($verbose);
+
 }
+
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
+
 
 # using -all option?
 ($release=$chroms=$misc=$wormpep=$genes=$cDNA=$geneIDs=$pcr=$homols = 1 ) if ($all);
+
+my $base_dir = $wormbase->basedir;    # The BUILD directory
+my $ace_dir = $wormbase->autoace;     # AUTOACE DATABASE DIR
+my $targetdir = "/nfs/disk69/ftp/pub/wormbase";  # default directory, can be overidden
+
+my $WS              = $wormbase->get_wormbase_version();      # e.g.   132
+my $WS_name         = $wormbase->get_wormbase_version_name(); # e.g. WS132
+my $maintainers     = "All";
+my $runtime;
+
 
 
 #################################################################################
 # Main                                                                          #
 #################################################################################
-
-# open log file
-my $log = Log_files->make_build_log();
 
 
 &copy_release_files if ($release);    # make a new directory for the WS release and copy across release files
@@ -124,6 +142,7 @@ else{
   $log->mail("$maintainers","BUILD REPORT: make_FTP_sites.pl : $errors ERRORS!!!");
 }
 
+print "Finished.\n" if ($verbose);
 exit (0);
 
 
@@ -140,20 +159,20 @@ exit (0);
 ##########################################################
 
 sub copy_release_files{
-  $runtime = &runtime;
+  $runtime = $wormbase->runtime;
   $log->write_to("$runtime: copying release files\n");
 
-  &run_command("mkdir $targetdir/$WS_name") unless -e "$targetdir/$WS_name";
+  $wormbase->run_command("mkdir $targetdir/$WS_name", $log) unless -e "$targetdir/$WS_name";
 
   my $filename;
 
-  opendir (RELEASE,"$sourcedir/release") or croak ("Could not open directory $sourcedir/release");
+  opendir (RELEASE,"$ace_dir/release") or croak ("Could not open directory $ace_dir/release");
   while (defined($filename = readdir(RELEASE))) {
     if (($filename eq ".")||($filename eq "..")) { next;}
     if (($filename =~ /letter/)||($filename =~ /dbcomp/)) { next;}
-    &run_command("scp $sourcedir/release/$filename $targetdir/$WS_name/$filename");
+    $wormbase->run_command("scp $ace_dir/release/$filename $targetdir/$WS_name/$filename", $log);
 
-    my $O_SIZE = (stat("$sourcedir/release/$filename"))[7];
+    my $O_SIZE = (stat("$ace_dir/release/$filename"))[7];
     my $N_SIZE = (stat("$targetdir/$WS_name/$filename"))[7];
     if ($O_SIZE != $N_SIZE) {
       $log->write_to("\tError: $filename SRC: $O_SIZE TGT: $N_SIZE - different file sizes, please check\n");
@@ -161,7 +180,7 @@ sub copy_release_files{
     } 
   }
   closedir RELEASE;
-  $runtime = &runtime;
+  $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished\n\n");
   
 }
@@ -172,16 +191,16 @@ sub copy_release_files{
 
 sub copy_chromosome_files{
 
-  $runtime = &runtime;
+  $runtime = $wormbase->runtime;
   $log->write_to("$runtime: copying chromosome files\n");
   my $filename;
-  &run_command("mkdir $targetdir/$WS_name/CHROMOSOMES") unless -e "$targetdir/$WS_name/CHROMOSOMES";
+  $wormbase->run_command("mkdir $targetdir/$WS_name/CHROMOSOMES", $log) unless -e "$targetdir/$WS_name/CHROMOSOMES";
 
-  opendir (DNAGFF,"$sourcedir/CHROMOSOMES") or croak ("Could not open directory $sourcedir/CHROMOSOMES");
+  opendir (DNAGFF,"$ace_dir/CHROMOSOMES") or croak ("Could not open directory $ace_dir/CHROMOSOMES");
   while (defined($filename = readdir(DNAGFF))) {
     if (($filename eq ".")||($filename eq "..")) { next;}
-    &run_command("scp $sourcedir/CHROMOSOMES/$filename $targetdir/$WS_name/CHROMOSOMES/$filename");
-    my $O_SIZE = (stat("$sourcedir/CHROMOSOMES/$filename"))[7];
+    $wormbase->run_command("scp $ace_dir/CHROMOSOMES/$filename $targetdir/$WS_name/CHROMOSOMES/$filename", $log);
+    my $O_SIZE = (stat("$ace_dir/CHROMOSOMES/$filename"))[7];
     my $N_SIZE = (stat("$targetdir/$WS_name/CHROMOSOMES/$filename"))[7];
     if ($O_SIZE != $N_SIZE) {
       $log->write_to("\tError: $filename SRC: $O_SIZE TGT: $N_SIZE - different file sizes, please check\n");
@@ -189,7 +208,7 @@ sub copy_chromosome_files{
     } 
   }
   closedir DNAGFF;
-  $runtime = &runtime;
+  $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished copying\n\n");
 }
 
@@ -198,31 +217,31 @@ sub copy_chromosome_files{
 #############################################
 
 sub copy_misc_files{
-  $runtime = &runtime;
+  $runtime = $wormbase->runtime;
   $log->write_to("$runtime: copying misc files\n");
 
   # Copy across the models.wrm file
-  &run_command("scp $sourcedir/wspec/models.wrm $targetdir/$WS_name/models.wrm.$WS_name");
+  $wormbase->run_command("scp $ace_dir/wspec/models.wrm $targetdir/$WS_name/models.wrm.$WS_name", $log);
 
   # copy some miscellaneous files across
   my $old_release = $WS -1;
-  &run_command("scp /wormsrv2/autoace/COMPARE/WS$old_release-$WS_name.dbcomp $targetdir/$WS_name/");
-  &run_command("scp /wormsrv2/autoace_config/INSTALL $targetdir/$WS_name/");
+  $wormbase->run_command("scp $ace_dir/COMPARE/WS$old_release-$WS_name.dbcomp $targetdir/$WS_name/", $log);
+  $wormbase->run_command("scp $base_dir/autoace_config/INSTALL $targetdir/$WS_name/", $log);
 
-  # tar, zip, and copy WormRNA files across from wormsrv2/WORMRNA
-  my $dest = "/wormsrv2/WORMRNA/wormrna$WS";
+  # tar, zip, and copy WormRNA files across from BUILD/WORMRNA
+  my $dest = "$base_dir/WORMRNA/wormrna$WS";
   chdir "$dest" or croak "Couldn't cd $dest\n";
-  &run_command("/bin/tar -cf $targetdir/$WS_name/wormrna$WS.tar README wormrna$WS.rna");
-  &run_command("/bin/gzip $targetdir/$WS_name/wormrna$WS.tar");
+  $wormbase->run_command("/bin/tar -cf $targetdir/$WS_name/wormrna$WS.tar README wormrna$WS.rna", $log);
+  $wormbase->run_command("/bin/gzip $targetdir/$WS_name/wormrna$WS.tar", $log);
 
-  # zip and copy interpolated map across from /wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/
+  # zip and copy interpolated map across from $ace_dir/MAPPINGS/INTERPOLATED_MAP/
 
-  chdir "/wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/";
-  &run_command("/bin/gzip WS*interpolated_map.txt"); 
-  &run_command("scp ${WS_name}_CDSes_interpolated_map.txt.gz $targetdir/$WS_name/gene_interpolated_map_positions.${WS_name}.gz");
-  &run_command("scp ${WS_name}_Clones_interpolated_map.txt.gz $targetdir/$WS_name/clone_interpolated_map_positions.${WS_name}.gz");
+  chdir "$ace_dir/MAPPINGS/INTERPOLATED_MAP/";
+  $wormbase->run_command("/bin/gzip WS*interpolated_map.txt", $log); 
+  $wormbase->run_command("scp ${WS_name}_CDSes_interpolated_map.txt.gz $targetdir/$WS_name/gene_interpolated_map_positions.${WS_name}.gz", $log);
+  $wormbase->run_command("scp ${WS_name}_Clones_interpolated_map.txt.gz $targetdir/$WS_name/clone_interpolated_map_positions.${WS_name}.gz", $log);
 
-  $runtime = &runtime;
+  $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished copying\n\n");
 
 }
@@ -234,11 +253,11 @@ sub copy_misc_files{
 
 sub copy_wormpep_files{
 
-  $runtime = &runtime;
+  $runtime = $wormbase->runtime;
   $log->write_to("$runtime: copying wormpep files\n");
 
   my $wormpub_dir = "/nfs/disk100/wormpub/WORMPEP";
-  my $wp_source_dir = "/wormsrv2/WORMPEP/wormpep$WS";
+  my $wp_source_dir = "$base_dir/WORMPEP/wormpep$WS";
   my $wormpep_ftp_root = glob("~ftp/pub/databases/wormpep");
   my $wp_ftp_dir = "$wormpep_ftp_root/wormpep$WS";
   mkdir $wp_ftp_dir unless -e $wp_ftp_dir;
@@ -248,25 +267,25 @@ sub copy_wormpep_files{
   
   foreach my $file ( @wormpep_files ){
   # copy the wormpep release files across
-    &run_command("scp $wp_source_dir/$file$WS $wp_ftp_dir/$file$WS");
+    $wormbase->run_command("scp $wp_source_dir/$file$WS $wp_ftp_dir/$file$WS", $log);
     &CheckSize("$wp_source_dir/$file$WS","$wp_ftp_dir/$file$WS");
   }
 
   # tar up the latest wormpep release and copy across
   my $tgz_file = "$wp_source_dir/wormpep$WS.tar";
-  my $command = "/bin/tar -c -h -P \"/wormsrv2/WORMPEP/\" -f $tgz_file";
+  my $command = "/bin/tar -c -h -P \"$base_dir/WORMPEP/\" -f $tgz_file";
 
   # grab list of wormpep file names from subroutine
   foreach my $file (@wormpep_files){
       $command .= " $wp_source_dir/$file$WS";
   }
-  &run_command("$command");
-  &run_command("/bin/gzip $tgz_file");
+  $wormbase->run_command("$command", $log);
+  $wormbase->run_command("/bin/gzip $tgz_file", $log);
   $tgz_file .= ".gz";
-  &run_command("mv $tgz_file $targetdir/$WS_name");
+  $wormbase->run_command("mv $tgz_file $targetdir/$WS_name", $log);
 
 
-  $runtime = &runtime;
+  $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished copying\n\n");
 }
 
@@ -277,10 +296,10 @@ sub copy_wormpep_files{
 
 sub extract_confirmed_genes{
 
-  $runtime = &runtime;
+  $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Extracting confirmed genes\n");
 
-  my $db = Ace->connect(-path  => "/wormsrv2/autoace/");
+  my $db = Ace->connect(-path  => "$ace_dir/");
   my $query = "Find elegans_CDS; Confirmed";
   my @confirmed_genes   = $db->fetch(-query=>$query);
 
@@ -292,11 +311,11 @@ sub extract_confirmed_genes{
   }
 
   close(OUT);
-  &run_command("/bin/gzip ${targetdir}/$WS_name/confirmed_genes.$WS_name");
+  $wormbase->run_command("/bin/gzip ${targetdir}/$WS_name/confirmed_genes.$WS_name", $log);
 
   $db->close;
 
-  $runtime = &runtime;
+  $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished extracting\n\n");
   return(0);
 }
@@ -307,17 +326,17 @@ sub extract_confirmed_genes{
 
 sub make_cDNA2ORF_list {
 
-  $runtime = &runtime;
+  $runtime = $wormbase->runtime;
   $log->write_to("$runtime: making cDNA2ORF files\n");
   # simple routine to just get cDNA est names and their correct ORFs and make an FTP site file
   # two columns, second column supports multiple ORF names
 
   my $tace = &tace;
   my $command=<<EOF;
-Table-maker -p "/wormsrv2/autoace/wquery/cDNA2CDS.def" quit
+Table-maker -p "$ace_dir/wquery/cDNA2CDS.def" quit
 EOF
 
-  my $dir = "/wormsrv2/autoace";
+  my $dir = "$ace_dir";
 
   my %cDNA2orf;
   open (TACE, "echo '$command' | $tace $dir | ") || croak "Couldn't access $dir\n";  
@@ -342,9 +361,9 @@ EOF
   }
   close(OUT);
 
-  &run_command("/bin/gzip $out");
+  $wormbase->run_command("/bin/gzip $out", $log);
 
-  $runtime = &runtime;
+  $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished making files\n\n");  
   
 }
@@ -355,13 +374,13 @@ EOF
 
 sub make_geneID_list {
 
-  $runtime = &runtime;
+  $runtime = $wormbase->runtime;
   $log->write_to("$runtime: making Gene ID list\n");
   # For each 'live' Gene object, extract 'CGC_name' and 'Sequence_name' fields (if present)
 
   my $tace    = &tace;
-  my $command = "Table-maker -p /wormsrv2/autoace/wquery/gene2cgc_name_and_sequence_name.def\nquit\n";
-  my $dir     = "/wormsrv2/autoace";
+  my $command = "Table-maker -p $ace_dir/wquery/gene2cgc_name_and_sequence_name.def\nquit\n";
+  my $dir     = "$ace_dir";
   my $out     = "$targetdir/$WS_name/geneIDs.$WS_name";
 
   open (OUT, ">$out") || croak "Couldn't open $out\n";
@@ -376,9 +395,9 @@ sub make_geneID_list {
   close(TACE);
   close(OUT);
 
-  &run_command("/bin/gzip $out");
+  $wormbase->run_command("/bin/gzip $out", $log);
   
-  $runtime = &runtime;
+  $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished making list\n\n");
 }
 
@@ -389,12 +408,12 @@ sub make_geneID_list {
 
 sub make_pcr_list {
 
-  $runtime = &runtime;
+  $runtime = $wormbase->runtime;
   $log->write_to("$runtime: making PCR product 2 gene list list\n");
 
   my $tace    = &tace;
-  my $command = "Table-maker -p /wormsrv2/autoace/wquery/pcr_product2gene.def\nquit\n";
-  my $dir     = "/wormsrv2/autoace";
+  my $command = "Table-maker -p $ace_dir/wquery/pcr_product2gene.def\nquit\n";
+  my $dir     = "$ace_dir";
   my $out     = "$targetdir/$WS_name/pcr_product2gene.$WS_name";
 
   # hashes needed because one pcr product may hit two or more genes
@@ -448,9 +467,9 @@ sub make_pcr_list {
 
   close(OUT);
 
-  &run_command("/bin/gzip $out");
+  $wormbase->run_command("/bin/gzip $out", $log);
 
-  $runtime = &runtime;
+  $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished making list\n\n");
 }
 
@@ -472,24 +491,26 @@ sub CheckSize {
 sub copy_homol_data{
 
 
-  my $blat_dir  = "/wormsrv2/autoace/BLAT";
-  my $blast_dir = "/wormsrv2/wormbase/ensembl_dumps";
+  my $blat_dir  = "$ace_dir/BLAT";
+  my $blast_dir = "$base_dir/wormbase/ensembl_dumps";
 
   # does this to tidy up???? Not sure why these lines are here, krb
-  &run_command("/bin/gzip -f $blast_dir/worm_pep_blastp.ace");
-  &run_command("/bin/gzip -f $blast_dir/worm_brigpep_blastp.ace");
-  &run_command("/bin/gzip -f $blast_dir/worm_dna_blastx.ace");
-  &run_command("/bin/gzip -f $blast_dir/worm_pep_motif_info.ace");
-  &run_command("/bin/gzip -f $blast_dir/worm_brigpep_motif_info.ace");
+  $wormbase->run_command("/bin/gzip -f $blast_dir/worm_pep_blastp.ace", $log);
+  $wormbase->run_command("/bin/gzip -f $blast_dir/worm_brigpep_blastp.ace", $log);
+  $wormbase->run_command("/bin/gzip -f $blast_dir/worm_dna_blastx.ace", $log);
+  $wormbase->run_command("/bin/gzip -f $blast_dir/worm_pep_motif_info.ace", $log);
+  $wormbase->run_command("/bin/gzip -f $blast_dir/worm_brigpep_motif_info.ace", $log);
 
   # compress best blast hits files and then copy to FTP site
-  &run_command("/bin/gzip -f $blast_dir/worm_pep_best_blastp_hits");
-  &run_command("/bin/gzip -f $blast_dir/worm_brigpep_best_blastp_hits");
-  &run_command("scp $blast_dir/worm_pep_best_blastp_hits.gz      $targetdir/$WS_name/best_blastp_hits.$WS_name.gz");
-  &run_command("scp $blast_dir/worm_brigpep_best_blastp_hits.gz  $targetdir/$WS_name/best_blastp_hits_brigpep.$WS_name.gz");
+  $wormbase->run_command("/bin/gzip -f $blast_dir/worm_pep_best_blastp_hits", $log);
+  $wormbase->run_command("/bin/gzip -f $blast_dir/worm_brigpep_best_blastp_hits", $log);
+  $wormbase->run_command("scp $blast_dir/worm_pep_best_blastp_hits.gz      $targetdir/$WS_name/best_blastp_hits.$WS_name.gz", $log);
+  $wormbase->run_command("scp $blast_dir/worm_brigpep_best_blastp_hits.gz  $targetdir/$WS_name/best_blastp_hits_brigpep.$WS_name.gz", $log);
 
 
 }
+
+##################################################################################
 
 sub usage {
   my $error = shift;
@@ -502,26 +523,6 @@ sub usage {
 }
 
 ##################################################################################
-#
-# Simple routine which will run commands via system calls but also check the 
-# return status of a system call and complain if non-zero, increments error check 
-# count, and prints a log file error
-#
-##################################################################################
-
-sub run_command{
-  my $command = shift;
-  $runtime = &runtime;
-  $log->write_to("$runtime: running $command\n");
-  my $status = system($command);
-  if($status != 0){
-    $log->error;
-    $log->write_to("ERROR: $command failed\n");
-  }
-
-  # for optional further testing by calling subroutine
-  return($status);
-}
 
 
 
