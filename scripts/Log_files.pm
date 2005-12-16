@@ -17,11 +17,7 @@
 package Log_files;
 
 
-<<<<<<< Log_files.pm
-use lib $ENV{'CVS_DIR'};
-=======
 use lib $ENV{CVS_DIR};
->>>>>>> 1.11.4.3
 use Wormbase;
 use Carp;
 use File::Spec;
@@ -83,38 +79,17 @@ Generate log file in the logs directory with WS version and processID appended t
 sub make_build_log
   {
     my $class = shift;
-<<<<<<< Log_files.pm
     my $wormbase = shift;
     my $ver = $wormbase->get_wormbase_version;
-=======
-    my $debug = shift;
-    my $test  = $debug;
-    my $wb=Wormbase->new(-debug => $debug,-test => $test);
-    my $ver = $wb->get_wormbase_version;
-    $ver = $debug unless $ver;  #if wormsrv2 not accessible then Wormbase module wont get version
-    $ver = 'XXX' unless $ver;
->>>>>>> 1.11.4.3
     my $filename;
     $0 =~ m/([^\/]*$)/ ? $filename = $0 :  $filename = $1 ; # get filename (sometimes $0 includes full path if not run from its dir )
 
-<<<<<<< Log_files.pm
     my $path = $wormbase->logs;
-=======
-    # Create history logfile for script activity analysis
-    $0 =~ m/\/*([^\/]+)$/; 
-    #system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`") unless $debug;
-
-    my $path = $wb->logs;
->>>>>>> 1.11.4.3
     my $log_file = "$path/$filename".".WS${ver}.".$$;
     my $log;
     open($log,">$log_file") or croak "cant open file $log_file : $!";
     print $log "WS$ver Build script : $filename \n\n";
-<<<<<<< Log_files.pm
     print $log "Started at ",$wormbase->runtime,"\n";
-=======
-    print $log "Started at ",$wb->runtime,"\n";
->>>>>>> 1.11.4.3
     print $log "-----------------------------------\n\n";
 
     my $self = {};
@@ -140,29 +115,16 @@ sub write_to
   }
 
 
-sub mail
-  {
-<<<<<<< Log_files.pm
+sub mail {
    my ($self, $recipient, $subject) = @_;
-
-=======
-   my ($self, $recipient, $subject) = @_;
-   
-   my $wb=Wormbase->new(-debug => $self->{"DEBUG"},-test => $self->{"DEBUG"});
->>>>>>> 1.11.4.3
    my $fh = $self->{"FH"};
    print $fh "\n\n-----------------------------------\n";
-<<<<<<< Log_files.pm
    print $fh "Finished at ",$self->{'wormbase'}->runtime,"\n"; 
-=======
-   print $fh "Finished at ",$wb->runtime,"\n"; 
->>>>>>> 1.11.4.3
    close $fh;
 
    $recipient = "All" unless $recipient;
    $recipient = $self->{"DEBUG"} if (defined $self->{"DEBUG"});
    my $file = $self->{"FILENAME"};
-<<<<<<< Log_files.pm
 
    # use subject line from calling script if specified or default to script name
    my $script;
@@ -173,18 +135,6 @@ sub mail
      $script = $self->{"SCRIPT"};
    }
    $self->{'wormbase'}->mail_maintainer($script,$recipient,$file);
-=======
-
-   # use subject line from calling script if specified or default to script name
-   my $script;
-   if($subject){
-     $script = $subject;
-   }
-   else{
-     $script = $self->{"SCRIPT"};
-   }
-   $wb->mail_maintainer($script,$recipient,$file);
->>>>>>> 1.11.4.3
    $self->{'MAILED'} = 1;
   }
 
@@ -208,7 +158,6 @@ sub DESTROY
     }
   }
 
-<<<<<<< Log_files.pm
 # this sub is to allow an error to be reported to screen and log file prior to script death
 sub log_and_die
   {
@@ -248,37 +197,4 @@ sub get_file
     return $self->{'FILENAME'};
   }
 
-=======
-# this sub is to allow an error to be reported to screen and log file prior to script death
-sub log_and_die
-  {
-    my $self = shift;
-    my $report = shift;
-
-    if( $report ) {
-      $self->write_to("$report\n") ;
-      print STDERR "$report\n";
-    }
-    die;
-  }
-
-sub error
-  {
-    my $self = shift;
-    $self->{'ERRORS'}++;
-    return $self->{'ERRORS'};
-  }
-
-sub report_errors
-  {
-    # if no errors have been reported return zero
-    my $self = shift;
-    if(!defined($self->{'ERRORS'})){
-      return(0);
-    }
-    else{
-      return $self->{'ERRORS'};
-    }
-  }
->>>>>>> 1.11.4.3
 1;
