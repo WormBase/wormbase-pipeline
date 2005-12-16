@@ -6,57 +6,59 @@
 #
 # by Anon
 #
-# Last updated by: $Author: ar2 $                      
-# Last updated on: $Date: 2005-12-16 11:18:55 $        
-
+# Last updated by: $Author: mh6 $                      
+# Last updated on: $Date: 2005-12-16 13:23:04 $        
 
 use strict;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
-use IO::Handle;
+use lib $ENV{'CVS_DIR'};
 use Getopt::Long;
-use Cwd;
 use Ace;
-
 
 ######################################
 # variables and command-line options #
 ######################################
-
-my $tace        = &tace;                                  # tace executable path
-my $dbdir       = "/wormsrv2/autoace";                    # Database path
-
 my $maintainers = "All";
-my $rundate = &rundate;
-my $runtime = &runtime;
 my $help;       # Help perdoc
 my $test;       # Test mode
 my $debug;      # Debug mode, verbose output to user running script
-<<<<<<< map_microarray.pl
-my $log = Log_files->make_build_log();
-my $verbose;    # verbose mode, extra output to screen
 my $load;       # load file to autoace
-=======
-my $load;
-our $log;
->>>>>>> 1.7.4.1
+my $store;	# specify a frozen configuration file
 
-my $outfile = "$dbdir/acefiles/microarray_mappings.ace";
+my $outfile;
 
 GetOptions ("debug=s"   => \$debug,
 	    "test"      => \$test,
-<<<<<<< map_microarray.pl
 	    "load"      => \$load,
-            "help"      => \$help);
-=======
             "help"      => \$help,
-	   "load"       => \$load,
-	   );
->>>>>>> 1.7.4.1
-
+	    "outace=s"	=> \$outfile,
+	    'store=s'	=> \$store
+    );
 
 # Display help if required
 &usage("Help") if ($help);
+
+############################
+# recreate configuration   #
+############################
+my $wb;
+if ($store){$wb = Storable::retrieve($store) or croak("cant restore wormbase from $store\n")}
+else {$wb = Wormbase->new(-debug => $debug,-test => $test,)}
+
+###########################################
+# Variables Part II (depending on $wb)    #
+########################################### 
+$test  = $wb->test  if $wb->test;     # Test mode
+$debug = $wb->debug if $wb->debug;    # Debug mode, output only goes to one user
+
+
+#further variables
+my $dbdir= $wb->autoace;                    # Database path
+$outfile = $outfile ? $outfile : "$dbdir/acefiles/microarray_mappings.ace";
+my $tace        = $wb->tace;                                  # tace executable path
+
+# create log
+my $log = Log_files->make_build_log($wb);
 
 # Use debug mode?
 if($debug){
@@ -134,7 +136,7 @@ while (my $obj = $i->next) {
 }
 
 ###########################################
-# Oligo_sets and Aff_microarray results #
+# Oligo_sets and Aff_microarray results   #
 ###########################################
 
 $log->write_to("Making CDS/Pseudogene/Transcript connections to Microarray_results objects based on Oligo_set objects\n");
@@ -189,7 +191,6 @@ while (my $obj = $i->next) {
 close OUTPUT;
 $db->close;
 
-<<<<<<< map_microarray.pl
 if($load){
   $log->write_to("Loading file to autoace\n");
   my $command = "autoace_minder.pl -load $dbdir/acefiles/microarray_mappings.ace -tsuser microarray_mappings";
@@ -204,20 +205,61 @@ if($load){
 
 $log->mail("$maintainers","BUILD REPORT: $0");
 
-=======
-if($load){
-  $log->write_to("Loading file to autoace\n");
-  my $command = "autoace_minder.pl -load $dbdir/acefiles/microarray_mappings.ace -tsuser
-RNAi_mappings";
-                                                                                   
-  my $status = system($command);
-  if(($status >>8) != 0){
-    $log->write_to("ERROR: Loading microarray_mappings.ace file failed \$\? = $status\n");
-  }
-}
-
-$log->mail("$maintainers","BUILD REPORT: $0");
-
->>>>>>> 1.7.4.1
 exit(0);
+sub usage {
+    my $error = shift;
+
+    if ( $error eq "Help" ) {
+
+        # Normal help menu
+        system( 'perldoc', $0 );
+        exit(0);
+    }
+}
+############################################
+
+__END__
+
+=pod
+
+=head2 NAME - map_microarray.pl
+
+=head1 USAGE
+
+=over 4
+
+=item map_microarray.pl [-options]
+
+=back
+
+map_microarray.pl connects PCR_products and micro_array_results  objects to CDS/transcript / Pseudogene /gene objects
+via the defined_by tag in the database.
+
+mandatory arguments:
+
+=over 4
+
+=item none
+
+=back
+
+optional arguments:
+
+=over 4
+
+=item -debug username, Debug mode
+
+=item -test, Test mode, generate the acefile but do not upload them 
+
+=item -load, loads file to autoace
+
+=item -help, Help pages
+
+=item -outace specify location for the output Ace (if you want to use it outside of the build)
+
+=item -store specifiy a configuration file
+
+=back
+
+=cut
 
