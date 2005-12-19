@@ -814,8 +814,8 @@ sub chromosomes { $self = shift; return $self->{'chromosomes'}; }
 sub logs        { $self = shift; return $self->{'logs'}; }
 sub ftp_upload  { $self = shift; return $self->{'ftp_upload'}; }
 sub reports     { $self = shift; return $self->{'reports'}; }
-sub static_data { $self = shift; return $self->{'static_data'}; }
-sub dynamic_data { $self = shift; return $self->{'dynamic_data'}; }
+sub misc_static { $self = shift; return $self->{'misc_static'}; }
+sub misc_dynamic { $self = shift; return $self->{'misc_dynamic'}; }
 
 # this can be modified by calling script
 sub common_data {
@@ -882,8 +882,8 @@ sub establish_paths {
   $self->{'databases'}->{'autoace'} = $self->autoace;
 
   $self->{'build_data'} = $self->{'wormpub'} . "BUILD_DATA";
-  $self->{'static_data'} = $self->{'build_data'} . "STATIC_DATA";
-  $self->{'dynamic_data'} = $self->{'build_data'} . "DYNAMIC_DATA";
+  $self->{'misc_static'} = $self->{'build_data'} . "MISC_STATIC";
+  $self->{'misc_dynamic'} = $self->{'build_data'} . "MISC_DYNAMIC";
 
   # create dirs if missing
   mkpath( $self->logs )        unless ( -e $self->logs );
