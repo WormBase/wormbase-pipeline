@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-12-16 11:18:54 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2005-12-19 16:56:46 $
 #
 # Usage GFFmunger.pl [-options]
 
@@ -14,74 +14,85 @@
 # variables                                                                     #
 #################################################################################
 
-use strict;
+use strict;                                      
 use lib $ENV{'CVS_DIR'};
 use Wormbase;
-use IO::Handle;
 use Getopt::Long;
+use Carp;
+use Log_files;
+use Storable;
+use IO::Handle;
 use Ace;
 
 ##################################################
 # Script variables and command-line options      #
 ##################################################
-my $maintainers = "All";
-our $lockdir = "/wormsrv2/autoace/logs/";
+my ($help, $debug, $test, $verbose, $store, $wormbase);
 
-
-my $help;                      # Help/Usage page
 my $all;                       # All of the following:
 my $landmark;                  #   Landmark genes
 my $UTR;                       #   UTRs 
 my $WBGene;                    #   WBGene spans
 my $CDS;                       #   CDS overload
 my $chrom;                     # single chromosome mode
-my $debug;                     # debug
-my $verbose;                   # verbose mode
-our $log;
 my $datadir;
 my $gffdir;
 my $version;
 
 GetOptions (
-	    "help"      => \$help,
 	    "all"       => \$all,
 	    "landmark"  => \$landmark,
 	    "UTR"       => \$UTR,
 	    "CDS"       => \$CDS,
 	    "chrom:s"   => \$chrom,
-	    "debug:s"   => \$debug,
 	    "gff:s"     => \$gffdir,
 	    "splits:s"  => \$datadir,
 	    "release:s" => \$version,
+            "help"       => \$help,
+            "debug=s"    => \$debug,
+	    "test"       => \$test,
+	    "verbose"    => \$verbose,
+	    "store"      => \$store,
 	    );
 
-# help 
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+			     );
+}
+
+# Display help if required
 &usage("Help") if ($help);
 
-# Use debug mode?
-if($debug){
-  print "DEBUG = \"$debug\"\n\n";
-  ($maintainers = $debug . '\@sanger.ac.uk');
+# in test mode?
+if ($test) {
+  print "In test mode\n" if ($verbose);
+
 }
+
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
+
 
 # get version number
-our $WS_version;
+my $WS_version;
 
 if ($version) {
-    $WS_version = $version;
+  $WS_version = $version;
+} else {
+  $WS_version = $wormbase->get_wormbase_version;
 }
-else {
-     $WS_version = &get_wormbase_version;
- }
 
-&create_log_files;
+
 
 ##############################
 # Paths etc                  #
 ##############################
 
-$datadir = "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS" unless $datadir;
-$gffdir  = "/wormsrv2/autoace/CHROMOSOMES" unless $gffdir;
+$datadir = $wormbase->gff_splits unless $datadir;
+$gffdir  = $wormbase->gff        unless $gffdir;
 my @files;
 
 # prepare array of file names and sort names
@@ -128,21 +139,20 @@ my $gffpath;
 
 
 if ($CDS || $all) {
-    print LOG "# Overloading CDS lines\n";
-    if (defined($chrom)){
-	print LOG "overload_GFF_CDS_lines.pl -release $WS_version -chrom $chrom -splits $datadir -gff $gffdir\n";
-	system ("overload_GFF_CDS_lines.pl -release $WS_version -chrom $chrom -splits $datadir -gff $gffdir");                     # generate *.CSHL.gff files
-
-    }
-    else {
-	print LOG "overload_GFF_CDS_lines.pl -release $WS_version -splits $datadir -gff $gffdir\n";
-	system ("overload_GFF_CDS_lines.pl -release $WS_version -splits $datadir -gff $gffdir");
-    }
-    foreach my $file (@gff_files) {
-	next if ($file eq ""); 
-	$gffpath = "$gffdir/${file}.gff";
-	system ("mv -f $gffdir/$file.CSHL.gff $gffdir/$file.gff");        # copy *.CSHL.gff files back to *.gff name
-    }
+  $log->write_to("# Overloading CDS lines\n");
+  if (defined($chrom)){
+    $log->write_to("overload_GFF_CDS_lines.pl -release $WS_version -chrom $chrom -splits $datadir -gff $gffdir\n");
+    $wormbase->run_script("overload_GFF_CDS_lines.pl -release $WS_version -chrom $chrom -splits $datadir -gff $gffdir", $log);                     # generate *.CSHL.gff files
+    
+  } else {
+    $log->write_to("overload_GFF_CDS_lines.pl -release $WS_version -splits $datadir -gff $gffdir\n");
+    $wormbase->run_script("overload_GFF_CDS_lines.pl -release $WS_version -splits $datadir -gff $gffdir", $log);
+  }
+  foreach my $file (@gff_files) {
+    next if ($file eq ""); 
+    $gffpath = "$gffdir/${file}.gff";
+    system ("mv -f $gffdir/$file.CSHL.gff $gffdir/$file.gff");        # copy *.CSHL.gff files back to *.gff name
+  }
 
 }
 
@@ -156,31 +166,28 @@ foreach my $file (@gff_files) {
     
   $gffpath = "$gffdir/${file}.gff";
 
-  print LOG "# File $file\n";
+  $wormbase->run_script("# File $file\n");
   
   if ($landmark || $all) {
-    print LOG "# Adding ${file}.landmarks.gff file\n";
+    $wormbase->run_script("# Adding ${file}.landmarks.gff file\n");
     $addfile = "$datadir/${file}.landmarks.gff";
     &addtoGFF($addfile,$gffpath);
   }
 
   if ($UTR || $all) {
-    print LOG "# Adding ${file}.UTR.gff file\n";
+    $wormbase->run_script("# Adding ${file}.UTR.gff file\n");
     $addfile = "$datadir/${file}.UTR.gff";
     &addtoGFF($addfile,$gffpath);
   }
   
-  print LOG "\n";
+  $wormbase->run_script("\n");
 }
 
 
 
 # Tidy up
-close (LOG);
-
-
-&mail_maintainer("GFFmunger.pl finished",$maintainers,$log);
-
+$log->mail();
+print "Finished.\n" if ($verbose);
 exit(0);
 
 
@@ -198,28 +205,6 @@ sub addtoGFF {
     system ("cat $addfile >> $GFFfile") && warn "ERROR: Failed to add $addfile to the main GFF file $GFFfile\n";
 
 }
-
-
-sub create_log_files{
-
-  # Create history logfile for script activity analysis
-  $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
-
-  # create main log file using script name for
-  my $script_name = $1;
-  $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
-  my $rundate     = `date +%y%m%d`; chomp $rundate;
-  $log        = "/wormsrv2/logs/$script_name.$rundate.$$";
-
-  open (LOG, ">$log") or die "cant open $log";
-  print LOG "$script_name\n";
-  print LOG "started at ",`date`,"\n";
-  print LOG "=============================================\n";
-  print LOG "\n";
-
-}
-
-##########################################
 
 
 ##########################################
