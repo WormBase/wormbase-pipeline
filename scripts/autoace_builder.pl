@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2005-12-19 17:04:58 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2005-12-19 17:41:02 $
 
 my $script_dir =  $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -25,7 +25,7 @@ my ($make_wormpep, $finish_wormpep);
 my ($run_blat, $finish_blat);
 my ($gff_dump, $processGFF, $gff_split);
 my $gene_span;
-my $load;
+my ($load,$tsuser);
 
 GetOptions (
 	    'debug:s'     => \$debug,
@@ -42,9 +42,10 @@ GetOptions (
 	    'processGFF:s'=> \$processGFF,
 	    'gff_split'   => \$gff_split,
 	    'gene_span'   => \$gene_span,
-	    'load'        => \$load,
+	    'load=s'        => \$load,
 	    'run_blat'    => \$run_blat,
-	    'finish_blat' => \$finish_blat
+	    'finish_blat' => \$finish_blat,
+	    'tsuser=s'	=> \$tsuser
 	   );
 
 my $wormbase = Wormbase->new(
@@ -78,12 +79,9 @@ $wormbase->run_script('BLAT_controller.pl -process -postprocess -ace -load', $lo
 $wormbase->run_script('WBGene_span.pl -prepare', $log) if $gene_span;
 
 if( $load ) {
-  my $file = shift;
-  my $tsuser = shift;
-
-  $log->("loading $file to $database\n");
+  $log->("loading $load to $database\n");
   $log->("\ttsuser = $tsuser\n\n");
-  $wormbase->load_to_database($database, $file, $tsuser) if( $file );
+  $wormbase->load_to_database($database, $load, $tsuser) if( -e $load );
 }
 
 $log->mail;
