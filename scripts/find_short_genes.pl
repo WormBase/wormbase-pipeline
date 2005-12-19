@@ -1,83 +1,84 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
-# find_short_genes.pl  
-# 
+# find_short_genes.pl
+#
 # by Keith Bradnam, aged 12 and half
 #
 # A script to find (and classify) potentially short, spurious genes (default = <50 aa)
 #
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2005-12-16 11:18:55 $     
-
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2005-12-19 18:27:35 $
 
 use strict;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Ace;
 use Getopt::Long;
-
 
 ##############################
 # misc variables             #
 ##############################
 
-my $maintainers  = "All";           # who will receive log file
-my $ws_version   = &get_wormbase_version_name;
-my $dir          = "/wormsrv2/tmp"; # default output location
-my $file         = "short_spurious_genes.$ws_version.csv"; # initial output file
-
+my $maintainers = "All";                                     # who will receive log file
 
 ##############################
 # command-line options       #
 ##############################
 
-my $help;                # Help/Usage page
-my $build;               # flag to say whether this is a build script or run outside of build
-my $verbose;             # turn on extra output
-my $debug;               # For sending output to just one person
-my $database;            # which database to use?
-my $cutoff;              # what length of gene should you use as the cutoff?
-my $test;                # use test environment
-my $html;                # Also produce html files for website?
+my $help;        # Help/Usage page
+my $build;       # flag to say whether this is a build script or run outside of build
+my $verbose;     # turn on extra output
+my $debug;       # For sending output to just one person
+my $database;    # which database to use?
+my $cutoff;      # what length of gene should you use as the cutoff?
+my $test;        # use test environment
+my $html;        # Also produce html files for website?
+my $store;       # to specify stored commandline options
 
-GetOptions ("database=s" => \$database,
-            "verbose"    => \$verbose,
-	    "cutoff=i"   => \$cutoff,
-            "debug=s"    => \$debug,
-            "help"       => \$help,
-	    "build"      => \$build,
-	    "html"       => \$html,
-	    "test"       => \$test
-            );
-
+GetOptions(
+    "database=s" => \$database,
+    "verbose"    => \$verbose,
+    "cutoff=i"   => \$cutoff,
+    "debug=s"    => \$debug,
+    "help"       => \$help,
+    "build"      => \$build,
+    "html"       => \$html,
+    "test"       => \$test,
+    'store=s'    => \$store
+);
 
 # Help pod if needed
-exec ('perldoc',$0) if ($help);
+exec( 'perldoc', $0 ) if ($help);
 
+############################
+# recreate configuration   #
+############################
+my $wb;
+if ($store) { $wb = Storable::retrieve($store) or croak("cant restore wormbase from $store\n") }
+else { $wb = Wormbase->new( -debug => $debug, -test => $test, ) }
+
+###########################################
+# Variables Part II (depending on $wb)    #
+###########################################
+$test  = $wb->test  if $wb->test;     # Test mode
+$debug = $wb->debug if $wb->debug;    # Debug mode, output only goes to one user
+my $file        = 'short_spurious_genes.'.$wb->version.'.csv';    # initial output file
 
 # Use debug mode?
-if($debug){
-  print "DEBUG = \"$debug\"\n\n";
-  ($maintainers = $debug . '\@sanger.ac.uk');
+if ($debug) {
+    print "DEBUG = \"$debug\"\n\n";
+    ( $maintainers = $debug . '\@sanger.ac.uk' );
 }
 
+my $ws_version = $wb->get_wormbase_version_name;
 
 # database/file paths and locations
-my $basedir     = "/wormsrv2";
-$basedir        = glob("~wormpub")."/TEST_BUILD" if ($test);
- 
-
+my $dir = $wb->basedir . '/autoace/CHECKS';
 
 # set default cutoff to 50 amino acids if not specified on command line
-if(!defined($cutoff)){
-  $cutoff = 50;        
+if ( !defined($cutoff) ) {
+    $cutoff = 50;
 }
-
-
-# specify different path if using build mode
-$dir = "$basedir/autoace/CHECKS" if ($build);
-
-
 
 #####################################################################
 #
@@ -85,25 +86,21 @@ $dir = "$basedir/autoace/CHECKS" if ($build);
 #
 #####################################################################
 
-my $log = Log_files->make_build_log($debug);  
+my $log = Log_files->make_build_log($wb);
 $log->write_to("Looking for potentially spurious genes shorter or equal to $cutoff amino acids in length\n");
 print "Looking for potentially spurious genes shorter or equal to $cutoff amino acids in length\n" if ($verbose);
 
 $log->write_to("Output file(s) will be written to $dir\n");
 
-
 # open initial output file
-open(OUT,">$dir/$file") || die "Can't open output file\n";
-
+open( OUT, ">$dir/$file" ) || die "Can't open output file\n";
 
 # open a database connection and grab list of genes
-my $db = Ace->connect(-path  =>  "$database")  || die "Cannot open $database",Ace->error;
-my @genes = $db->fetch(-class => "elegans_CDS");
-
+my $db = Ace->connect( -path => "$database" ) || die "Cannot open $database", Ace->error;
+my @genes = $db->fetch( -class => "elegans_CDS" );
 
 # used for testing purposes
 my $counter = 0;
-
 
 ################################################
 #
@@ -111,120 +108,111 @@ my $counter = 0;
 #
 ################################################
 
-foreach my $gene (@genes){
+foreach my $gene (@genes) {
 
-  # when debugging can reduce this if you want less output to speed up script
-  last if ($counter > 50000);  $counter++;
-  
-  # get protein length information from translation of gene
-  my $peptide = $gene->asPeptide();
+    # when debugging can reduce this if you want less output to speed up script
+    last if ( $counter > 50000 );
+    $counter++;
 
-  # trim FASTA header and remove new lines, and grab length
-  $peptide =~ /^>\S+\s+([\w\*].*)/s;
-  my $peptide_seq = $1 ; 
-  $peptide_seq =~ s/\s//g;
-  my $length = length($peptide);
+    # get protein length information from translation of gene
+    my $peptide = $gene->asPeptide();
 
-  # ignore proteins longer than cutoff value
-  next if ($length > $cutoff);
+    # trim FASTA header and remove new lines, and grab length
+    $peptide =~ /^>\S+\s+([\w\*].*)/s;
+    my $peptide_seq = $1;
+    $peptide_seq =~ s/\s//g;
+    my $length = length($peptide);
 
+    # ignore proteins longer than cutoff value
+    next if ( $length > $cutoff );
 
-  # Get confirmed/partially_confirmed etc. status
-  my $status;
-  if   ($gene->at("Properties.Coding.Confirmed_by")){$status = "Confirmed";}	
-  elsif($gene->at("Visible.Matching_cDNA"))         {$status = "Partially_confirmed";}
-  else                                              {$status = "Predicted";}			
-  
+    # Get confirmed/partially_confirmed etc. status
+    my $status;
+    if    ( $gene->at("Properties.Coding.Confirmed_by") ) { $status = "Confirmed"; }
+    elsif ( $gene->at("Visible.Matching_cDNA") )          { $status = "Partially_confirmed"; }
+    else { $status = "Predicted"; }
 
-  # get lab
-  my $lab = $gene->From_laboratory;
+    # get lab
+    my $lab = $gene->From_laboratory;
 
-
-  # get RNAi info, status defaults to 'N/A' when there are no RNAi results
-  # otherwise status is set to WT or non-WT
-  my $rnai_result = "N/A";
-  my @RNAi = $gene->RNAi_result;
-  foreach my $item (@RNAi){
-    $rnai_result = "WT";
-    my $RNAi = $db->fetch(RNAi => "$item");
-    my $phenotype = $RNAi->Phenotype;
-    if ($phenotype ne "WT"){
-      $rnai_result = "non-WT";
-      $RNAi->DESTROY();
-      last;
+    # get RNAi info, status defaults to 'N/A' when there are no RNAi results
+    # otherwise status is set to WT or non-WT
+    my $rnai_result = "N/A";
+    my @RNAi        = $gene->RNAi_result;
+    foreach my $item (@RNAi) {
+        $rnai_result = "WT";
+        my $RNAi = $db->fetch( RNAi => "$item" );
+        my $phenotype = $RNAi->Phenotype;
+        if ( $phenotype ne "WT" ) {
+            $rnai_result = "non-WT";
+            $RNAi->DESTROY();
+            last;
+        }
+        $RNAi->DESTROY();
     }
-    $RNAi->DESTROY();
-  }
 
-  
-  # look for associated PCR products that do or do not amplify
-  # status is 'N/A' if there are no associated PCR products
-  my $pcr_result = "N/A";
-  my @PCRs = $gene->Corresponding_PCR_product;
-  foreach my $item (@PCRs){
-    $pcr_result = "Does not amplify";
-    my $pcr = $db->fetch(PCR_product => "$item");
-    my $amplify_status = $pcr->Amplified;
-    if ((defined($amplify_status)) && ($amplify_status == 1)){
-      $pcr_result = "Amplifies";
-      $pcr->DESTROY();
-      last;
+    # look for associated PCR products that do or do not amplify
+    # status is 'N/A' if there are no associated PCR products
+    my $pcr_result = "N/A";
+    my @PCRs       = $gene->Corresponding_PCR_product;
+    foreach my $item (@PCRs) {
+        $pcr_result = "Does not amplify";
+        my $pcr = $db->fetch( PCR_product => "$item" );
+        my $amplify_status = $pcr->Amplified;
+        if ( ( defined($amplify_status) ) && ( $amplify_status == 1 ) ) {
+            $pcr_result = "Amplifies";
+            $pcr->DESTROY();
+            last;
+        }
+        $pcr->DESTROY();
     }
-    $pcr->DESTROY();
-  }
 
+    # flag output status depending on how bad we think the prediction is...
+    # 1 - no cDNA evidence AND two types of evidence AGAINST gene prediction (RNAi AND PCR)
+    # 2 - no cDNA evidence AND one type of evidence AGAINST gene prediction (RNAi OR PCR) and
+    #     other type of evidence not available
+    # 3 - no cDNA evidence AND no available RNAi AND PCR information
+    # 4 - no cDNA evidence AND contradictory RNAi AND PCR information (wild type AND amplifies, OR
+    #     non-wild type AND doesn't amplify)
+    # 5 - no cDNA evidence BUT both RNAi and PCR information confirm it is a real gene
+    # 6 - cDNA evidence
 
+    my $evidence;
 
-  # flag output status depending on how bad we think the prediction is...
-  # 1 - no cDNA evidence AND two types of evidence AGAINST gene prediction (RNAi AND PCR)
-  # 2 - no cDNA evidence AND one type of evidence AGAINST gene prediction (RNAi OR PCR) and
-  #     other type of evidence not available
-  # 3 - no cDNA evidence AND no available RNAi AND PCR information
-  # 4 - no cDNA evidence AND contradictory RNAi AND PCR information (wild type AND amplifies, OR 
-  #     non-wild type AND doesn't amplify)
-  # 5 - no cDNA evidence BUT both RNAi and PCR information confirm it is a real gene
-  # 6 - cDNA evidence
-
-  my $evidence;
-
-  if($status eq "Predicted"){
-    if(($rnai_result eq "WT") && ($pcr_result eq "Does not amplify")){
-      $evidence = "1";
+    if ( $status eq "Predicted" ) {
+        if ( ( $rnai_result eq "WT" ) && ( $pcr_result eq "Does not amplify" ) ) {
+            $evidence = "1";
+        }
+        elsif (( ( $rnai_result eq "WT" ) && ( $pcr_result eq "N/A" ) )
+            || ( ( $rnai_result eq "N/A" ) && ( $pcr_result eq "Does not amplify" ) ) )
+        {
+            $evidence = "2";
+        }
+        elsif ( ( $rnai_result eq "N/A" ) && ( $pcr_result eq "N/A" ) ) {
+            $evidence = "3";
+        }
+        elsif (( ( $rnai_result eq "WT" ) && ( $pcr_result eq "Amplifies" ) )
+            || ( ( $rnai_result eq "non-WT" ) && ( $pcr_result eq "Does not amplify" ) ) )
+        {
+            $evidence = "4";
+        }
+        else {
+            $evidence = "5";
+        }
     }
-    elsif((($rnai_result eq "WT")  && ($pcr_result eq "N/A")) ||
-	  (($rnai_result eq "N/A") && ($pcr_result eq "Does not amplify"))){
-      $evidence = "2";
+    else {
+        $evidence = "6";
     }
-    elsif(($rnai_result eq "N/A") && ($pcr_result eq "N/A")){
-      $evidence = "3";
-    }
-    elsif((($rnai_result eq "WT")     && ($pcr_result eq "Amplifies")) || 
-	  (($rnai_result eq "non-WT") && ($pcr_result eq "Does not amplify"))){
-      $evidence = "4";
-    }
-    else{ 
-      $evidence = "5";
-    }
-  }
-  else{
-    $evidence = "6";
-  }
-  
-  print OUT "EVIDENCE $evidence,$lab,$gene,$length,$status,$rnai_result,$pcr_result\n";
-  print     "EVIDENCE $evidence,$lab,$gene,$length,$status,$rnai_result,$pcr_result\n" if ($verbose);
 
+    print OUT "EVIDENCE $evidence,$lab,$gene,$length,$status,$rnai_result,$pcr_result\n";
+    print "EVIDENCE $evidence,$lab,$gene,$length,$status,$rnai_result,$pcr_result\n" if ($verbose);
 
-
-  # kill AcePerl objects
-  $gene->DESTROY();
+    # kill AcePerl objects
+    $gene->DESTROY();
 }
 
 close(OUT);
 $db->close;
-
-
-
-
 
 ############################################################
 #
@@ -232,81 +220,75 @@ $db->close;
 #
 ############################################################
 
-if($html){
-  
-  $log->write_to("Producing html file\n");
-  print "Producing html file\n" if ($verbose);
+if ($html) {
 
-  # sort output file by various factors using sort command
-  my $status = system("sort -t, -k 2,2 -k 1,1 -k 5,5r -k 4n,4 $dir/$file -o $dir/$file.tmp");
-  $log->write_to("ERROR: Couldn't run sort command") if ($status != 0);
-  
-  open(IN,"<$dir/$file.tmp")      || die "Couldn't open $dir/$file.tmp for reading";
-  open(OUT, ">$dir/$file.html")   || die "Couldn't write to $dir/$file.html";
-  
-  # set once to be able to flag when you reach RW part of output file
-  my $lab_flag = "HX";
+    $log->write_to("Producing html file\n");
+    print "Producing html file\n" if ($verbose);
 
-  print OUT "<TR bgcolor=lightgrey>\n";
-  print OUT "<TD colspan=6 align=center><B> Sanger genes </B></TD>\n";
-  print OUT "</TR>\n";
+    # sort output file by various factors using sort command
+    my $status = system("sort -t, -k 2,2 -k 1,1 -k 5,5r -k 4n,4 $dir/$file -o $dir/$file.tmp");
+    $log->write_to("ERROR: Couldn't run sort command") if ( $status != 0 );
 
-  while(<IN>){
-    my @line = split(/,/);
-    my $evidence = $line[0];
-    my $lab      = $line[1];
-    my $gene     = $line[2];
-    my $length   = $line[3];
-    my $status   = $line[4];
-    my $rnai     = $line[5];
-    my $pcr      = $line[6];
+    open( IN,  "<$dir/$file.tmp" )  || die "Couldn't open $dir/$file.tmp for reading";
+    open( OUT, ">$dir/$file.html" ) || die "Couldn't write to $dir/$file.html";
 
-    # drop evidence prefix for web files, just show number
-    $evidence =~ s/EVIDENCE //;
+    # set once to be able to flag when you reach RW part of output file
+    my $lab_flag = "HX";
 
-
-    # print web output
-    if(($lab_flag eq "HX") && ($lab eq "RW")){
-      # now set flag to RW so this only get executed once
-      $lab_flag = "RW";
-      print OUT "<TR bgcolor=lightgrey>\n";
-      print OUT "<TD colspan=6 align=center><B> St. Louis genes </B></TD>\n";
-      print OUT "</TR>\n";
-    }
-
-    print OUT "<TR bgcolor=lightblue>\n";
-    print OUT "<TD align=center><B>$evidence</B></TD>\n";
-    print OUT "<TD align=center><a href=\"http://dev.wormbase.org/db/gene/gene?name=${gene};class=Sequence\">$gene</a></TD>\n";
-    print OUT "<TD align=center>$length</TD>\n";
-    print OUT "<TD align=center>$status</TD>\n";
-    print OUT "<TD align=center>$rnai</TD>\n";    
-    print OUT "<TD align=center>$pcr</TD>\n";
+    print OUT "<TR bgcolor=lightgrey>\n";
+    print OUT "<TD colspan=6 align=center><B> Sanger genes </B></TD>\n";
     print OUT "</TR>\n";
 
-  }
-  close(IN);
-  close(OUT);
+    while (<IN>) {
+        my @line     = split(/,/);
+        my $evidence = $line[0];
+        my $lab      = $line[1];
+        my $gene     = $line[2];
+        my $length   = $line[3];
+        my $status   = $line[4];
+        my $rnai     = $line[5];
+        my $pcr      = $line[6];
 
-  # remove temp file
-  $status = system("rm $dir/$file.tmp");
-  $log->write_to("ERROR: Couldn't remove temp file") if ($status != 0);
+        # drop evidence prefix for web files, just show number
+        $evidence =~ s/EVIDENCE //;
+
+        # print web output
+        if ( ( $lab_flag eq "HX" ) && ( $lab eq "RW" ) ) {
+
+            # now set flag to RW so this only get executed once
+            $lab_flag = "RW";
+            print OUT "<TR bgcolor=lightgrey>\n";
+            print OUT "<TD colspan=6 align=center><B> St. Louis genes </B></TD>\n";
+            print OUT "</TR>\n";
+        }
+
+        print OUT "<TR bgcolor=lightblue>\n";
+        print OUT "<TD align=center><B>$evidence</B></TD>\n";
+        print OUT
+"<TD align=center><a href=\"http://dev.wormbase.org/db/gene/gene?name=${gene};class=Sequence\">$gene</a></TD>\n";
+        print OUT "<TD align=center>$length</TD>\n";
+        print OUT "<TD align=center>$status</TD>\n";
+        print OUT "<TD align=center>$rnai</TD>\n";
+        print OUT "<TD align=center>$pcr</TD>\n";
+        print OUT "</TR>\n";
+
+    }
+    close(IN);
+    close(OUT);
+
+    # remove temp file
+    $status = system("rm $dir/$file.tmp");
+    $log->write_to("ERROR: Couldn't remove temp file") if ( $status != 0 );
 
 }
-
-
-
 
 ################################
 # Tidy up and exit             #
 ################################
 
 # only mail if running as part of build or if debugging
-$log->mail("$maintainers") if ($build || $debug);
+$log->mail("$maintainers") if ( $build || $debug );
 exit;
-
-
-
-
 
 __END__
 
