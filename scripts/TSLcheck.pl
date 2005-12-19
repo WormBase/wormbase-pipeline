@@ -7,14 +7,17 @@
 # checks whether TSL acceptor sites overlap with exons.
 # Will discard matches to isoforms (Warning).
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-12-16 11:18:54 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2005-12-19 13:32:45 $
 
-use strict;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
+
+use strict;                                      
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
- 
+use Carp;
+use Log_files;
+use Storable;
 
 #######################################
 # command-line options                #
@@ -24,31 +27,57 @@ my $database;       # specify release to read GFF split files from
 my $debug;          # debug mode,
 my $help;           # help mode, show perldoc
 my $verbose;        # verbose mode, extra output to screen
+my $test;
+my $store;
+my $wormbase;
  
-GetOptions( "debug=s"    => \$debug,
-            "database=s" => \$database,
-            "help"       => \$help,
-            "verbose"    => \$verbose
+GetOptions ("help"       => \$help,
+            "debug=s"    => \$debug,
+	    "test"       => \$test,
+	    "verbose"    => \$verbose,
+	    "database=s" => \$database,
+	    "store"      => \$store,
 	    );
-                                              
-# check command line options
 
-# Help pod if needed
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+			     );
+}
+
+# Display help if required
 &usage("Help") if ($help);
 
+# in test mode?
+if ($test) {
+  print "In test mode\n" if ($verbose);
+
+}
+
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
+
+
+
+
+
 # database options
-my $datadir     = "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS"; 
+my $datadir  = $wormbase->gff_splits;  # AUTOACE GFF SPLIT DIR
+my $ace_dir  = $wormbase->autoace;     # AUTOACE DATABASE DIR
+
 
 if ($database) {
-    $datadir = "/wormsrv2/autoace/GFF_SPLITS/$database"; 
+    $datadir = $ace_dir . "/GFF_SPLITS/$database"; 
 }
 
 # output options
-my $outdir      = "/wormsrv2/autoace/CHECKS";
+my $outdir      = $ace_dir . "/CHECKS";
 
 
 # get clone2 centre data
-my %clone2centre = &FetchData('clone2centre');       # Clone => (HX|RW) centre designation
+my %clone2centre = $wormbase->FetchData('clone2centre');       # Clone => (HX|RW) centre designation
 
 # vars
 my @chromosomes  = qw(I II III IV V X);
@@ -58,9 +87,6 @@ my %active;                                          # No of overlaps needing to
 our $chromosome;
 my $cds; 
 my $line;
-
-# create log file, open output file handles
-my $log = Log_files->make_build_log();
 
 
 #############
@@ -121,11 +147,9 @@ foreach $chromosome (@chromosomes) {
 
 }
 
-$log->mail("dl1\@sanger.ac.uk", "BUILD REPORT: TSLcheck.pl");
-
-# hasta luego
-exit(0);
-    
+$log->mail();
+print "Finished.\n" if ($verbose);
+exit(0);    
  
 
 sub usage {
