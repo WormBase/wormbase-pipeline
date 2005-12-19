@@ -5,7 +5,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2005-12-19 16:56:46 $
+# Last updated on: $Date: 2005-12-19 16:59:52 $
 #
 # Usage GFFmunger.pl [-options]
 
@@ -166,21 +166,21 @@ foreach my $file (@gff_files) {
     
   $gffpath = "$gffdir/${file}.gff";
 
-  $wormbase->run_script("# File $file\n");
+  $log->write_to("# File $file\n");
   
   if ($landmark || $all) {
-    $wormbase->run_script("# Adding ${file}.landmarks.gff file\n");
+    $log->write_to("# Adding ${file}.landmarks.gff file\n");
     $addfile = "$datadir/${file}.landmarks.gff";
     &addtoGFF($addfile,$gffpath);
   }
 
   if ($UTR || $all) {
-    $wormbase->run_script("# Adding ${file}.UTR.gff file\n");
+    $log->write_to("# Adding ${file}.UTR.gff file\n");
     $addfile = "$datadir/${file}.UTR.gff";
     &addtoGFF($addfile,$gffpath);
   }
   
-  $wormbase->run_script("\n");
+  $log->write_to("\n");
 }
 
 
