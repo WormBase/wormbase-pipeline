@@ -6,17 +6,62 @@
 #
 # Usage : genestatsr.pl [-options]
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2005-12-16 11:18:55 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2005-12-19 14:40:47 $
  
-use strict;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
-use Wormbase;
-use IO::Handle;
-use Getopt::Long;
 
-our $database   = "/wormsrv2/autoace";
-our $tace       =  &tace;
+use strict;                                      
+use lib $ENV{'CVS_DIR'};
+use Wormbase;
+use Getopt::Long;
+use Carp;
+use Log_files;
+use Storable;
+use IO::Handle;
+
+
+######################################
+# variables and command-line options # 
+######################################
+
+my ($help, $debug, $test, $verbose, $store, $wormbase);
+
+GetOptions ("help"       => \$help,
+            "debug=s"    => \$debug,
+	    "test"       => \$test,
+	    "verbose"    => \$verbose,
+	    "store"      => \$store,
+	    );
+
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+			     );
+}
+
+# Display help if required
+&usage("Help") if ($help);
+
+# in test mode?
+if ($test) {
+  print "In test mode\n" if ($verbose);
+
+}
+
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
+
+#################################
+# Set up some useful paths      #
+#################################
+
+# Set up top level base directories (these are different if in test mode)
+my $ace_dir         = $wormbase->autoace;     # AUTOACE DATABASE DIR
+my $tace            = $wormbase->tace;        # TACE PATH
+my $reports_dir     = $wormbase->reports;     # AUTOACE REPORTS
+
 
 #######################
 # get data from ACEDB #
@@ -43,7 +88,7 @@ $command .= "quit\n";
 
 # database connection
 
-open (TACE,"echo '$command' | $tace $database |");
+open (TACE,"echo '$command' | $tace $ace_dir |");
 while (<TACE>) {
     chomp;
     if (/\/\/ Found (\d+) objects/) {
@@ -76,8 +121,7 @@ my $percent_SAGE_transcript     = (int ( ( ($SAGE_transcript / $live_genes) * 10
 ##################
 # report to file #
 ##################
-
-open (OUT, ">/wormsrv2/autoace/REPORTS/genedata") || die "Failed to open output file\n";
+open (OUT, ">$reports_dir/genedata") || die "Failed to open output file\n";
 print OUT "Gene data set (Live C.elegans genes $values[0])\n";
 print OUT "------------------------------------------\n";
 print OUT "Molecular_info              "  . $values[1] . " (" . $percent_molecular_info . "%)\n";
@@ -89,10 +133,34 @@ print OUT "Microarray_results          "  . $values[6] . " (" . $percent_microar
 print OUT "SAGE_transcript             "  . $values[7] . " (" . $percent_SAGE_transcript . "%)\n";
 close OUT;
 
-# hasta luego
+$log->mail();
+print "Finished.\n" if ($verbose);
 exit(0);
 
+
+##############################################################
+#
+# Subroutines
+#
+##############################################################
+
+
+
 ##########################################
+
+sub usage {
+  my $error = shift;
+
+  if ($error eq "Help") {
+    # Normal help menu
+    system ('perldoc',$0);
+    exit (0);
+  }
+}
+
+##########################################
+
+
 
 
 __END__
@@ -116,7 +184,7 @@ __END__
 =back
 
 Queries autoace to extract a number of counts for the Live gene class. Computes percentage values to 1 decimel place and
-write the report to /wormsrv2/autoace/REPORTS.
+write the report to autoace/REPORTS.
 
 =back
 
@@ -126,7 +194,7 @@ write the report to /wormsrv2/autoace/REPORTS.
 
 =over 4
 
-=item This script must run on a machine which can see the /wormsrv2 disk.
+=item None.
 
 =back
 
