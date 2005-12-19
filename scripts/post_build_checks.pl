@@ -8,16 +8,19 @@
 #
 # N.B. Previously called gffcheck
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-12-16 11:18:55 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2005-12-19 12:31:38 $
 
-
-use Getopt::Std;
+use strict;                                      
+use lib $ENV{'CVS_DIR'};
+use Wormbase;
+use Getopt::Long;
+use Carp;
+use Log_files;
+use Storable;
 use IO::Handle;
 $|=1;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
-use Wormbase;
-use strict;
+
 
 ###########
 # options #
@@ -32,21 +35,50 @@ $opt_i="";   # performs introncheck
 $opt_t = ""; # performs TSL checks
 $opt_h="";   # Help/Usage page
 
-getopts ('aeioh');
-&usage if ($opt_h);
-if ($opt_a) { $opt_e = 1; $opt_i = 1; $opt_t = 1; $opt_o = 1;}
+
+my ($help, $debug, $test, $verbose, $store, $wormbase);
+
+GetOptions ("help"       => \$help,
+            "debug=s"    => \$debug,
+	    "test"       => \$test,
+	    "verbose"    => \$verbose,
+	    "store"      => \$store,
+	    "a"          => \$opt_a,
+	    "e"          => \$opt_e,
+	    "i"          => \$opt_i,
+	    "o"          => \$opt_o,
+	    "t"          => \$opt_t,
+	    );
+
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+			     );
+}
+
+# Display help if required
+&usage("Help") if ($help);
+
+# in test mode?
+if ($test) {
+  print "In test mode\n" if ($verbose);
+
+}
+
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
+
 
 #################
 # set variables #
 #################
 
-my $maintainers = "All";
-my $rundate = &rundate;
-my $runtime = &runtime;
-my $WS_version = &get_wormbase_version;
+my $rundate = $wormbase->rundate;
+my $runtime = $wormbase->runtime;
+my $WS_version = $wormbase->get_wormbase_version;
 
-our $log;
-&create_log_files;
 
 #########################
 # tiny little main loop #
@@ -64,9 +96,8 @@ our $log;
 # Tidy up                    #
 ##############################
 
-close LOG;
-&mail_maintainer("post_build_checks.pl",$maintainers,$log);
-
+$log->mail();
+print "Finished.\n" if ($verbose);
 exit(0);
 
 
@@ -78,56 +109,48 @@ exit(0);
 #
 ##############################################################
 
-sub create_log_files{
-
-  # Create history logfile for script activity analysis
-  $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
-
-  # create main log file using script name for
-  my $script_name = $1;
-  $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
-  my $rundate = &rundate;
-  $log = "/wormsrv2/logs/$script_name.WS${WS_version}.$rundate.$$";
-
-  open (LOG, ">$log") or die "cant open $log";
-  print LOG &runtime, ": Starting post_build_checks.pl\n";
-  print LOG "=============================================\n";
-  print LOG "\n";
-
-}
 
 ##########################################
 
 
 sub runestcheck {
-  print LOG &runtime, ": Starting estcheck\n";
-  system ("/wormsrv2/scripts/estcheck") && die "Can't run estcheck\n";
-  print LOG &runtime, ": Finished running\n\n";
+  $log->write_to( $wormbase->runtime, ": Starting estcheck\n");
+  $wormbase->run_script("estcheck", $log) && die "Can't run estcheck\n";
+  $log->write_to( $wormbase->runtime, ": Finished running\n\n");
 }
 
 sub runTSLcheck {
-  print LOG &runtime, ": Starting TSLcheck.pl\n";
-  system ("/wormsrv2/scripts/TSLcheck.pl") && die "Can't run TSLcheck.pl\n";
-  print LOG &runtime, ": Finished running\n\n";
+  $log->write_to( $wormbase->runtime, ": Starting TSLcheck.pl\n");
+  $wormbase->run_script("TSLcheck.pl", $log) && die "Can't run TSLcheck.pl\n";
+  $log->write_to( $wormbase->runtime, ": Finished running\n\n");
 }
 
 sub runintroncheck {
-  print LOG &runtime, ": Starting introncheck\n";
-  system ("/wormsrv2/scripts/introncheck") && die "cant run /wormsrv2/scripts/introncheck\n";
-  print LOG &runtime, ": Finished running\n\n";
+  $log->write_to( $wormbase->runtime, ": Starting introncheck\n");
+  $wormbase->run_script("introncheck", $log) && die "cant run introncheck\n";
+  $log->write_to( $wormbase->runtime, ": Finished running\n\n");
 }
 
 sub runoverlapcheck {
-  print LOG &runtime, ": Starting overlapcheck.pl\n";
-  system ("/wormsrv2/scripts/overlapcheck.pl") && die "Can't run overlapcheck.pl\n";
-  print LOG &runtime, ": Finished running\n\n";
+  $log->write_to( $wormbase->runtime, ": Starting overlapcheck.pl\n");
+  $wormbase->run_script("overlapcheck.pl", $log) && die "Can't run overlapcheck.pl\n";
+  $log->write_to( $wormbase->runtime, ": Finished running\n\n");
 }
    
+
+##########################################
+
 sub usage {
-  system("perldoc /wormsrv2/scripts/post_build_checks.pl") && die "Cannot help you, sorry $!\n";
-  exit (0);
+  my $error = shift;
+
+  if ($error eq "Help") {
+    # Normal help menu
+    system ('perldoc',$0);
+    exit (0);
+  }
 }
 
+##########################################
 
 
 __END__
