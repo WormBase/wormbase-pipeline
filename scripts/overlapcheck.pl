@@ -7,23 +7,67 @@
 # checks whether genes overlap, ESTs match introns and repeats match exons                                   
 # sorts output for stl and cam clones
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-12-16 11:18:55 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2005-12-19 14:33:42 $
 
-use strict;
-use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
+use strict;                                      
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
+use Getopt::Long;
 use Carp;
+use Log_files;
+use Storable;
 use Ace;
 use IO::Handle;
+
+
+######################################
+# variables and command-line options # 
+######################################
+
+my ($help, $debug, $test, $verbose, $store, $wormbase);
+
+GetOptions ("help"       => \$help,
+            "debug=s"    => \$debug,
+	    "test"       => \$test,
+	    "verbose"    => \$verbose,
+	    "store"      => \$store,
+	    );
+
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+			     );
+}
+
+# Display help if required
+&usage("Help") if ($help);
+
+# in test mode?
+if ($test) {
+  print "In test mode\n" if ($verbose);
+
+}
+
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
+
+
+
+##########################
+# MAIN BODY OF SCRIPT
+##########################
+
 
 my @chrom = qw(I II III IV V X);
 my (%exon, %est, %genes, %repeat, %intron, %camace, %stlace);
 
-my %estorientation = &FetchData('estorientation');     # EST accession => orientation [5|3]
+my %estorientation = $wormbase->FetchData('estorientation');     # EST accession => orientation [5|3]
 
-my $tace      = &tace;
-my $database  =  "/wormsrv2/autoace";
+my $tace      = $wormbase->tace;        # TACE PATH
+my $ace_dir   =  $wormbase->autoace;
 
 # set parameters for ESTs and repeats (score threshold, overlap threshold)
 my $ESTth      = '98.0';
@@ -37,7 +81,9 @@ my $repolend   = '10';
 # I. get clone out of databases #
 #################################
     
-my $camdb     = Ace->connect(-path => '/wormsrv2/camace/') || die "Couldn't connect to camace\n", Ace->error;
+my $camace = $wormbase->database('camace');
+my $camdb  = Ace->connect(-path => $camace) || die "Couldn't connect to camace\n", Ace->error;
+
 my @camclones = $camdb->fetch(-query => 'FIND Genome_Sequence');
 foreach my $camclone (@camclones) {
   my $string = $camclone->Confidential_remark(1);
@@ -47,7 +93,8 @@ foreach my $camclone (@camclones) {
   else {$camace{$camclone} = 1;}
 }
 
-my $stldb     = Ace->connect(-path => '/wormsrv2/stlace/') || die "Couldn't connect to stlace\n", Ace->error;
+my $stlace = $wormbase->database('sltace');
+my $stldb    = Ace->connect(-path => $stlace) || die "Couldn't connect to stlace\n", Ace->error;
 my @stlclones = $stldb->fetch(-query => 'FIND Genome_Sequence');
 foreach my $stlclone (@stlclones) {
   $stlace{$stlclone} = 1;
@@ -59,21 +106,24 @@ foreach my $stlclone (@stlclones) {
 # II. get data for one chromosome at a time #
 #############################################
 
+my $chromosomes_dir = $wormbase->chromosomes; # AUTOACE CHROMSOMES
+
 foreach my $chrom (@chrom) {
     print "\nProcessing chromosome $chrom\n";
-    open (GFF, "/wormsrv2/autoace/CHROMOSOMES/CHROMOSOME_$chrom.gff") or die "cant open /wormsrv2/autoace/CHROMOSOMES/CHROMOSOME_$chrom.gff\n"; 
-    #open (GFF, "/nfs/disk100/wormpub/DATABASES/current_DB/CHROMOSOMES/CHROMOSOME_$chrom.gff"); 
-    open (CAMOL, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.overlapping_genes_cam") 
+    open (GFF, "$chromosomes_dir/CHROMOSOME_$chrom.gff") or die "cant open $chromosomes_dir/CHROMOSOME_$chrom.gff\n"; 
+    #my $currentdb = $wormabse->databases('currentdb');
+    #open (GFF, "$currentdb/CHROMOSOMES/CHROMOSOME_$chrom.gff"); 
+    open (CAMOL, ">$ace_dir/CHECKS/CHROMOSOME_$chrom.overlapping_genes_cam") 
 	|| die "Cannot open output file $chrom $!\n"; 
-    open (CAMEST, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.EST_in_intron_cam")    
+    open (CAMEST, ">$ace_dir/CHECKS/CHROMOSOME_$chrom.EST_in_intron_cam")    
 	|| die "Cannot open output file $chrom $!\n"; 
-    open (CAMREP, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.repeat_in_exon_cam")  
+    open (CAMREP, ">$ace_dir/CHECKS/CHROMOSOME_$chrom.repeat_in_exon_cam")  
 	|| die "Cannot open output file $chrom $!\n"; 
-    open (STLOL, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.overlapping_genes_stl") 
+    open (STLOL, ">$ace_dir/CHECKS/CHROMOSOME_$chrom.overlapping_genes_stl") 
 	|| die "Cannot open output file $chrom $!\n"; 
-    open (STLEST, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.EST_in_intron_stl")    
+    open (STLEST, ">$ace_dir/CHECKS/CHROMOSOME_$chrom.EST_in_intron_stl")    
 	|| die "Cannot open output file $chrom $!\n"; 
-    open (STLREP, ">/wormsrv2/autoace/CHECKS/CHROMOSOME_$chrom.repeat_in_exon_stl")   
+    open (STLREP, ">$ace_dir/CHECKS/CHROMOSOME_$chrom.repeat_in_exon_stl")   
 	|| die "Cannot open output file $chrom $!\n"; 
     
   %exon  = %est = %genes = %intron = %repeat = (); 
