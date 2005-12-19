@@ -8,7 +8,7 @@
 # relevant WormBase and Wormpep web pages.
 #
 # Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2005-12-19 14:18:10 $      
+# Last updated on: $Date: 2005-12-19 16:01:01 $      
 
 
 #################################################################################
@@ -562,12 +562,10 @@ sub create_wormpep_page{
   print WORMPEP "  <td colspan=\"9\"><img src=\"/icons/blank.gif\" width=\"10\" height=\"10\"></td>\n";
   print WORMPEP "</tr>\n";
   
-  # icky reference to /wormsrv2/wormpep :-(
-  $log->write_to("Opening log file '/wormsrv2/WORMPEP/wormpep$WS_current/wormpep_current.log'\n");
+  $log->write_to("Opening log file '$basedir/WORMPEP/wormpep$WS_current/wormpep_current.log'\n");
 
   my ($wp_seq,$wp_let);
-  # icky reference to /wormsrv2/wormpep :-(
- open (WP_1, "</wormsrv2/WORMPEP/wormpep$WS_current/wormpep_current.log") || croak "Failed to open wormpep.log\n";
+ open (WP_1, "</$basedir/WORMPEP/wormpep$WS_current/wormpep_current.log") || croak "Failed to open wormpep.log\n";
   while (<WP_1>) {
     # No. of sequences (letters) written:  22,221  (9,696,145)
     if (/No\. of sequences \(letters\) written:  (\d+,\d+)  \((\d+,\d+,\d+)\)/) {
@@ -605,15 +603,13 @@ sub create_wormpep_page{
   
 
   my (@changed, @lost, @new, @reappeared);
-  open (WP_3, "</wormsrv2/WORMPEP/wormpep${WS_current}/wormpep.diff${WS_current}") || croak "Failed to open wormpep.history\n";
-  # icky reference to /wormsrv2/wormpep :-(
+  open (WP_3, "<$basedir/WORMPEP/wormpep${WS_current}/wormpep.diff${WS_current}") || croak "Failed to open wormpep.history\n";
 
   while (<WP_3>) {
     (push (@changed,$_)) if (/changed:/);
     (push (@lost,$_)) if (/lost:/);
     (push (@new,$_)) if (/new:/);
     (push (@reappeared,$_)) if (/reappeared:/);
-    #       print WORMPEP "$_";
   }
   close (WP_3);
   
@@ -838,7 +834,7 @@ sub update_wormpep_pages{
 
   # write a new paragraph for the index.shtml page 
   undef $/;       
-  open(LOGFILE,"</wormsrv2/WORMPEP/wormpep${WS_current}/wormpep_current.log") || croak "Couldn't open wormpep log file\n";
+  open(LOGFILE,"<$basedir/WORMPEP/wormpep${WS_current}/wormpep_current.log") || croak "Couldn't open wormpep log file\n";
   my $text = <LOGFILE>;
   close(LOGFILE);
   $/ = "\n";
@@ -848,7 +844,7 @@ sub update_wormpep_pages{
   my $count = $1;
   my $letters = $2;
   # calculate number of splice variants by looking for proteins ending in 'A' in wormpep.table file
-  my $alt_spliced = `cut -f 1 /wormsrv2/WORMPEP/wormpep${WS_current}/wormpep.table${WS_current} | sed 's/.*[0-9b-z]\$//' | grep \".\"| wc -l`; 
+  my $alt_spliced = `cut -f 1 $basedir/WORMPEP/wormpep${WS_current}/wormpep.table${WS_current} | sed 's/.*[0-9b-z]\$//' | grep \".\"| wc -l`; 
   $alt_spliced =~ s/\s+//g;
 
   # create release_paragraph.shtml
