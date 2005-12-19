@@ -7,7 +7,7 @@
 # This is a example of a good script template
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2005-12-19 14:27:41 $      
+# Last updated on: $Date: 2005-12-19 14:31:43 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -72,13 +72,13 @@ my $gff_splits_dir  = $wormbase->gff_splits;  # AUTOACE GFF SPLIT
 my $logs_dir        = $wormbase->logs;        # AUTOACE LOGS
 
 # some database paths
-my $geneace   = databases('geneace');
-my $camace    =  databases('camace');
-my $currentdb =  databases('current');
-my $stlace    =  databases('stlace');
-my $citace    =  databases('citace');
-my $cshace    =  databases('cshace');
-my $brigace   =  databases('brigace');
+my $geneace   = $wormbase->databases('geneace');
+my $camace    = $wormbase->databases('camace');
+my $currentdb = $wormbase->databases('current');
+my $stlace    = $wormbase->databases('stlace');
+my $citace    = $wormbase->databases('citace');
+my $cshace    = $wormbase->databases('cshace');
+my $brigace   = $wormbase->databases('brigace');
 
 # other paths
 my $ftp_upload_dir  = $wormbase->ftp_upload;  # "/nfs/ftp_uploads/wormbase"
