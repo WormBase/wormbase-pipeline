@@ -8,7 +8,7 @@
 # sorts output for stl and cam clones
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2005-12-19 14:44:08 $
+# Last updated on: $Date: 2005-12-19 16:47:08 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -81,7 +81,11 @@ my $repolend   = '10';
 # I. get clone out of databases #
 #################################
     
-my $camace = $wormbase->database('camace');
+# NB at some time this should be changed to extract this information out of database('camace')
+# instead of the primary('camace') and primary('stlace'), because someone might be changing the
+# primary databases at the end of the build.
+
+my $camace = $wormbase->primary('camace');
 my $camdb  = Ace->connect(-path => $camace) || die "Couldn't connect to camace\n", Ace->error;
 
 my @camclones = $camdb->fetch(-query => 'FIND Genome_Sequence');
@@ -93,7 +97,7 @@ foreach my $camclone (@camclones) {
   else {$camace{$camclone} = 1;}
 }
 
-my $stlace = $wormbase->database('sltace');
+my $stlace = $wormbase->primary('stlace');
 my $stldb    = Ace->connect(-path => $stlace) || die "Couldn't connect to stlace\n", Ace->error;
 my @stlclones = $stldb->fetch(-query => 'FIND Genome_Sequence');
 foreach my $stlclone (@stlclones) {
@@ -111,7 +115,7 @@ my $chromosomes_dir = $wormbase->chromosomes; # AUTOACE CHROMSOMES
 foreach my $chrom (@chrom) {
     print "\nProcessing chromosome $chrom\n";
     open (GFF, "$chromosomes_dir/CHROMOSOME_$chrom.gff") or die "cant open $chromosomes_dir/CHROMOSOME_$chrom.gff\n"; 
-    #my $currentdb = $wormabse->databases('currentdb');
+    #my $currentdb = $wormbase->database('currentdb');
     #open (GFF, "$currentdb/CHROMOSOMES/CHROMOSOME_$chrom.gff"); 
     open (CAMOL, ">$ace_dir/CHECKS/CHROMOSOME_$chrom.overlapping_genes_cam") 
 	|| die "Cannot open output file $chrom $!\n"; 
