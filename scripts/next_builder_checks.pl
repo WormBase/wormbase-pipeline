@@ -1,45 +1,59 @@
 #!/usr/local/bin/perl5.8.0 -w
+# next_builder_checks.pl
 #
-# next_builder_checks.pl                           
-# 
-# by Keith Bradnam                         
+# by Keith Bradnam
 #
 # A simple script to send a check list to the person who will be performing the next
 # build to check the current build
 #
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2005-12-16 11:18:55 $      
-
-
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2005-12-19 14:12:39 $
 use strict;
-use lib "/wormsrv2/scripts/";   
+use warnings;
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
 
-my $WS_current    = &get_wormbase_version;
-my $log         = "/tmp/next_builder_check.log";
+my $store;                                          # to specify saved commandline arguments
+my $maintainers = "All";
+my ($help,$debug,$user);
 
-my ($help, $debug, $user,$maintainers);
-
-GetOptions ("help"       => \$help,
-            "debug=s"    => \$debug,
-            "user=s"     => \$user);
-
+GetOptions(
+    "help"    => \$help,
+    "debug=s" => \$debug,
+    "user=s"  => \$user,
+    'store=s' => \$store
+);
 
 # Display help if required
 &usage("Help") if ($help);
 
+############################
+# recreate configuration   #
+############################
+my $wb;
+if ($store) { $wb = Storable::retrieve($store) or croak("cant restore wormbase from $store\n") }
+else { $wb = Wormbase->new( -debug => $debug, -test => $debug, ) }
+
+##########################################
+# Variables Part II (depending on $wb)    #
+###########################################
+$debug = $wb->debug if $wb->debug;    # Debug mode, output only goes to one user
+my $WS_current = $wb->get_wormbase_version;
+
+
 # Use debug mode?
-if($debug){
-  print "DEBUG = \"$debug\"\n\n";
-  ($maintainers = $debug . '\@sanger.ac.uk');
+if ($debug) {
+    print "DEBUG = \"$debug\"\n\n";
+    $maintainers = $debug.'\@sanger.ac.uk';
 }
 
 # Use -user setting to send email
-if($user){
-  ($maintainers = $user . '\@sanger.ac.uk');
+if ($user) {
+    $maintainers = $user.'\@sanger.ac.uk';
 }
 
+my $log = Log_files->make_build_log($wb);
 
 #######################
 #
@@ -47,79 +61,76 @@ if($user){
 #
 #######################
 
+$log->write_to("\nGreetings $user.  You are meant to be building the next release of WormBase, so\n");
+$log->write_to("you should take some time to check the current release.\n");
+$log->write_to("====================================================================================\n\n");
+$log->write_to("THINGS TO CHECK:\n\n");
 
+my $log_msg= <<'LOGMSG';
+1) The following 12 clones are representative of the whole genome in that
+they include one Sanger and one St. Louis clone for each chromosome.  Check
+each clone to ensure that it contains BLAT data (EST and mRNA), BLAST data,
+waba data, gene models, UTRs etc.  Also check for presence of tandem and inverted
+repeats which have gone missing in the past
 
+i)    C25A1
+ii)   F56A3
+iii)  C04H5
+iv)   B0432
+v)    C07A9
+vi)   F30H5
+vii)  C10C6
+viii) B0545
+ix)   C12D8
+x)    K04F1
+xi)   C02C6
+xii)  AH9
 
-open (LOG, ">$log");
-print LOG "\nGreetings $user.  You are meant to be building the next release of WormBase, so\n";
-print LOG "you should take some time to check the current release.\n";
-print LOG "====================================================================================\n\n";
+2) If the genome sequence has changed, you should inspect the clones containing
+those changes to see if there are any strange errors (e.g. duplicate sets of data
+which are slightly out of sync.)
 
-print LOG "THINGS TO CHECK:\n\n";
+3) Check /wormsrv2/autoace/CHROMOSOMES/composition.all - are there any non-ATCGN
+characters
 
-print LOG "1) The following 12 clones are representative of the whole genome in that\n";
-print LOG "they include one Sanger and one St. Louis clone for each chromosome.  Check\n";
-print LOG "each clone to ensure that it contains BLAT data (EST and mRNA), BLAST data,\n";
-print LOG "waba data, gene models, UTRs etc.  Also check for presence of tandem and inverted\n";
-print LOG "repeats which have gone missing in the past\n\n";
-print LOG "i)    C25A1\n";
-print LOG "ii)   F56A3\n";
-print LOG "iii)  C04H5\n";
-print LOG "iv)   B0432\n";
-print LOG "v)    C07A9\n";
-print LOG "vi)   F30H5\n";
-print LOG "vii)  C10C6\n";
-print LOG "viii) B0545\n";
-print LOG "ix)   C12D8\n";
-print LOG "x)    K04F1\n";
-print LOG "xi)   C02C6\n";
-print LOG "xii)  AH9\n\n";
+4a) Check that the latest WormPep proteins have proper protein and motif homologies
+This has been a problem in some builds where all new WormPep proteins don't get any
+BLAST analysis.  Pick a few random Wormpep proteins and especially check that all of
+the various blastp homologies are there (human, fly, worm, yeast etc.) and try to
+check at least one protein from the /wormsrv2/WORMPEP/wormpepXXX/new_entries.WSXXX file
 
-print LOG "2) If the genome sequence has changed, you should inspect the clones containing\n";
-print LOG "those changes to see if there are any strange errors (e.g. duplicate sets of data\n";
-print LOG "which are slightly out of sync.)\n\n";
+4b) Now that we have a curated set of brigpep, should do this periodically for
+C. briggase protein objects too...these now have their own set of blastp hits
 
-print LOG "3) Check /wormsrv2/autoace/CHROMOSOMES/composition.all - are there any non-ATCGN\n";
-print LOG "characters\n\n";
+5) Open a keyset of all genome sequences and then query them for:
+ 'Transcript AND NEXT AND NOT NEXT'
+I.e. tRNAs not attached properly to parent sequence.  This has happened before and you
+should notify the responsible group (HX or RW) to fix them for next build
 
+6) Check all Protein objects have a Species tag set
 
-print LOG "4a) Check that the latest WormPep proteins have proper protein and motif homologies\n";
-print LOG "This has been a problem in some builds where all new WormPep proteins don't get any\n";
-print LOG "BLAST analysis.  Pick a few random Wormpep proteins and especially check that all of\n";
-print LOG "the various blastp homologies are there (human, fly, worm, yeast etc.) and try to\n";
-print LOG "check at least one protein from the /wormsrv2/WORMPEP/wormpepXXX/new_entries.WSXXX file\n\n";
+7) Check all PFAM Motif objects have a title tag
 
-print LOG "4b) Now that we have a curated set of brigpep, should do this periodically for\n";
-print LOG "C. briggase protein objects too...these now have their own set of blastp hits\n\n";
+8) Run composition *.dna in the CHROMOSOMES directory.  Make sure this is the same as it was
+at the start of the build.  Bad Homol objects can lead to errors esp when chromosome length has been reduced
 
+9) Confirm that GFFmunger.pl has done its job ie 
+ grep landmark /wormsrv2/autoace/CHROMOSOMES/CHROMOSOME_III.gff | head
+ grep five_prime /wormsrv2/autoace/CHROMOSOMES/CHROMOSOME_III.gff
+ grep Partially /wormsrv2/autoace/CHROMOSOMES/CHROMOSOME_III.gff  and check these are overloaded CDS lines.
+ These should have about 10 columns if overloaded and only about 5 or 6 if there are problems.
 
-print LOG "5) Open a keyset of all genome sequences and then query them for:\n";
-print LOG " 'Transcript AND NEXT AND NOT NEXT'\n";
-print LOG "I.e. tRNAs not attached properly to parent sequence.  This has happened before and you\n";
-print LOG "should notify the responsible group (HX or RW) to fix them for next build\n\n";
+That's all...for now!  If you are satisfied the build is ok, please inform the person
+building the database. Please continue to add to this list as appropriate
 
-print LOG "6) Check all Protein objects have a Species tag set\n\n";
+========================================================================================
+LOGMSG
 
-print LOG "7) Check all PFAM Motif objects have a title tag\n";
+$log->write_to($log_msg);
 
-print LOG "8) Run composition *.dna in the CHROMOSOMES directory.  Make sure this is the same as it was\nat the start of the build.  Bad Homol objects can lead to errors esp when chromosome length has been reduced\n\n";
-
-print LOG "9) Confirm that GFFmunger.pl has done its job ie \n grep landmark /wormsrv2/autoace/CHROMOSOMES/CHROMOSOME_III.gff | head\n";
-print LOG " grep five_prime /wormsrv2/autoace/CHROMOSOMES/CHROMOSOME_III.gff\n";
-print LOG " grep Partially /wormsrv2/autoace/CHROMOSOMES/CHROMOSOME_III.gff  and check these are overloaded CDS lines.\n";
-print LOG " These should have about 10 columns if overloaded and only about 5 or 6 if there are problems.\n";
-
-print LOG "\nThat's all...for now!  If you are satisfied the build is ok, please inform the person\n";
-print LOG "building the database. Please continue to add to this list as appropriate\n";
-
-print LOG "\n========================================================================================\n\n";
-close(LOG);
-
-&mail_maintainer("Please check the ongoing build of WS${WS_current}",$maintainers,$log);
-
+$log->mail( "$maintainers", "Please check the ongoing build of WS${WS_current}");
 
 exit(0);
-
 
 ##############################################################
 #
@@ -127,21 +138,18 @@ exit(0);
 #
 ##############################################################
 
-
 sub usage {
-  my $error = shift;
+    my $error = shift;
 
-  if ($error eq "Help") {
-    # Normal help menu
-    system ('perldoc',$0);
-    exit (0);
-  }
+    if ( $error eq "Help" ) {
+
+        # Normal help menu
+        system( 'perldoc', $0 );
+        exit(0);
+    }
 }
 
 ##################################################################
-
-
-
 
 __END__
 
