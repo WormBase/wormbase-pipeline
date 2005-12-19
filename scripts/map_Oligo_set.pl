@@ -283,15 +283,9 @@ map_Oligo_products optional arguments:
 
 =over 4
 
-<<<<<<< map_Oligo_set.pl
-=item -debug, debug mode email goes to user specified by -debug
-
-=item -verbose, toggles extra output
-=======
 =item -debug username, debug mode email goes to user specified by -debug
 
 =item -verbose, toggles extra output
->>>>>>> 1.1.4.2
 
 =item -test, Test mode, generate the acefile but do not upload 
 
