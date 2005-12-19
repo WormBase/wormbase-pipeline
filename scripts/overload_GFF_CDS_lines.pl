@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-12-16 11:18:55 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2005-12-19 17:09:13 $
 #
 
 #
@@ -20,21 +20,60 @@
 # CDS "JC8.10a" ; Note "Inositol polyphosphate phosphatase, catalytic domain homologues" ; WormPep "WP:CE28239" ; Note "unc-26" ; Confirmed_by "cDNA" ; Gene "WBGene00006763"
 #
 
+use strict;                                      
+use lib $ENV{'CVS_DIR'};
+use Wormbase;
 use Getopt::Long;
+use Carp;
+use Log_files;
+use Storable;
 
+my ($help, $debug, $test, $verbose, $store, $wormbase);
 my ($chrom, $splitdir, $gffdir);
 
 GetOptions (
-	    "chrom:s"     => \$chrom,
-	    "release:s"   => \$release,
-	    "splits:s"    => \$splitdir,
-	    "gff:s"       => \$gffdir
+            "help"       => \$help,
+            "debug=s"    => \$debug,
+	    "test"       => \$test,
+	    "verbose"    => \$verbose,
+	    "database=s" => \$database,
+	    "store"      => \$store,
+	    "chrom:s"    => \$chrom,
+	    "release:s"  => \$release,
+	    "splits:s"   => \$splitdir,
+	    "gff:s"      => \$gffdir
 	    );
 
-$verbose = 1;
 
-$splitdir = "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS" unless $splitdir;
-$gffdir   = "/wormsrv2/autoace/CHROMOSOMES" unless $gffdir;
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+			     );
+}
+
+# Display help if required
+&usage("Help") if ($help);
+
+# in test mode?
+if ($test) {
+  print "In test mode\n" if ($verbose);
+
+}
+
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
+
+
+#################################
+# Set up some useful paths      #
+#################################
+
+
+$splitdir           = $wormbase->gff_splits unless $splitdir;
+$gffdir             = $wormbase->gff unless $gffdir;
+my $wormpep_dir     = $wormbase->wormpep;     # CURRENT WORMPEP
 
 # check that the supplied $release is numeric
 unless ($release =~ /\d+/) {
@@ -46,7 +85,7 @@ print "// Working with wormpep release $release\n" if ($verbose);
 
 # get data from wormpep release
 
-open (WORMPEP, "</wormsrv2/WORMPEP/wormpep${release}/wormpep${release}");
+open (WORMPEP, "<$wormpep_dir/wormpep${release}/wormpep${release}");
 while (<WORMPEP>) {
     if (/^>(\S+) (\S+) (WBGene\d+) (\S+.+)\s+status\:(\S+)/) {
 	$CDS           = $1;
@@ -143,9 +182,15 @@ foreach my $file (@gff_files) {
 }
 
 
-# hasta luego
+$log->mail();
+print "Finished.\n" if ($verbose);
 exit(0);
 
+##############################################################
+#
+# Subroutines
+#
+##############################################################
 
 sub usage {
  my $error = shift;
@@ -161,3 +206,70 @@ sub usage {
       exit(0);
   }
 }
+
+=pod
+
+=head2 NAME - overload_GFF_CDS_lines.pl
+
+=head1 USAGE
+
+=over 4
+
+=item  overload_GFF_CDS_lines.pl [-options]
+
+=back
+
+This script does...blah blah blah
+
+script_template.pl MANDATORY arguments:
+
+=over 4
+
+=item None at present.
+
+=back
+
+script_template.pl  OPTIONAL arguments:
+
+=over 4
+
+=item -h, Help
+
+=back
+
+=over 4
+ 
+=item -debug, Debug mode, set this to the username who should receive the emailed log messages. The default is that everyone in the group receives them.
+ 
+=back
+
+=over 4
+
+=item -test, Test mode, run the script, but don't change anything.
+
+=back
+
+=over 4
+    
+=item -verbose, output lots of chatty test messages
+
+=back
+
+
+=head1 REQUIREMENTS
+
+=over 4
+
+=item None at present.
+
+=back
+
+=head1 AUTHOR
+
+=over 4
+
+=item Unknown
+
+=back
+
+=cut
