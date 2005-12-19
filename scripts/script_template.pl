@@ -7,7 +7,7 @@
 # This is a example of a good script template
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2005-12-16 12:14:23 $      
+# Last updated on: $Date: 2005-12-19 13:18:08 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -164,27 +164,6 @@ script_template.pl  OPTIONAL arguments:
 
 =back
 
-<<<<<<< script_template.pl
-=over 4
- 
-=item -debug, Verbose/Debug mode
- 
-=back
-
-=over 4
-
-=item -test, Test mode, generate the acefile but do not upload themrun the script, but don't change anything
-
-=back
-
-=over 4
-    
-=item -verbose, output lots of chatty test messages
-
-=back
-                                                                                             
-
-=======
 =over 4
  
 =item -debug, Debug mode, set this to the username who should receive the emailed log messages. The default is that everyone in the group receives them.
@@ -204,8 +183,6 @@ script_template.pl  OPTIONAL arguments:
 =back
 
 
-
->>>>>>> 1.8.6.3
 =head1 REQUIREMENTS
 
 =over 4
