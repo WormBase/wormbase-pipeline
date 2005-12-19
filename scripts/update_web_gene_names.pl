@@ -4,8 +4,8 @@
 #
 # completely rewritten by Keith Bradnam from list_loci_designations
 #
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2005-12-16 11:18:55 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2005-12-19 12:04:29 $      
 #
 # This script should be run under a cron job and simply update the webpages that show
 # current gene names and sequence connections.  Gets info from geneace.  
@@ -291,8 +291,6 @@ sub make_gene_lists{
     }
   }
   close TACE;
-<<<<<<< update_web_gene_names.pl
-    
 
   # now fire off second query to get dead genes which were made into Transposons
   # this is to help Darin
@@ -314,10 +312,6 @@ sub make_gene_lists{
     my ($gene,$public_name) = split(/\t/, $_) ;
     $transposon_genes{$gene} = $public_name;
   }
-=======
-    
->>>>>>> 1.25.4.1
-
 
   # set up various output files (first two are reverse of each other)
 
