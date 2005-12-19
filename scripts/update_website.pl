@@ -8,7 +8,7 @@
 # relevant WormBase and Wormpep web pages.
 #
 # Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2005-12-19 13:39:56 $      
+# Last updated on: $Date: 2005-12-19 14:18:10 $      
 
 
 #################################################################################
@@ -74,7 +74,15 @@ GetOptions ("all"            => \$all,
 my $wb;
 if ($store) { $wb = Storable::retrieve($store) or croak("cant restore wormbase from $store\n") }
 else { $wb = Wormbase->new( -debug => $debug, -test => $test, ) }
-	   
+
+###########################################
+# Variables Part II (depending on $wb)    #
+###########################################
+$test  = $wb->test  if $wb->test;     # Test mode
+$debug = $wb->debug if $wb->debug;    # Debug mode, output only goes to one user
+
+
+
 ##############################
 # Script variables           #
 ##############################
