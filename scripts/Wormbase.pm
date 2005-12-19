@@ -871,7 +871,7 @@ sub establish_paths {
   $self->{'giface'} = glob("~wormpub/ACEDB/bin_ALPHA/giface");
 
   $self->{'databases'}->{'geneace'} = $self->wormpub . "/DATABASES/geneace";
-  $self->{'databases'}->{'camace'}  = $self->wormpub . "/DATABASES/camace_orig";
+  $self->{'databases'}->{'camace'}  = $self->wormpub . "/DATABASES/camace";
   $self->{'databases'}->{'current'} = $self->wormpub . "/DATABASES/currentDB";
   $self->{'databases'}->{'autoace'} = $self->autoace;
 
