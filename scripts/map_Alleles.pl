@@ -1,5 +1,4 @@
 #!/usr/local/bin/perl5.8.0 -w
-#
 # map_Alleles.pl
 #
 # by Anthony Rogers
@@ -7,7 +6,7 @@
 # This maps alleles to the genome based on their flanking sequences
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2005-12-19 11:07:23 $
+# Last updated on: $Date: 2005-12-19 14:14:38 $
 
 use strict;
 use warnings;
@@ -58,6 +57,12 @@ die "No need for -release option in debug mode" if ( $release && $debug );
 my $wb;
 if ($store) { $wb = Storable::retrieve($store) or croak("cant restore wormbase from $store\n") }
 else { $wb = Wormbase->new( -debug => $debug, -test => $test, ) }
+
+###########################################
+# Variables Part II (depending on $wb)    #
+###########################################
+$test  = $wb->test  if $wb->test;     # Test mode
+$debug = $wb->debug if $wb->debug;    # Debug mode, output only goes to one user
 
 ###################
 # misc variables  #
