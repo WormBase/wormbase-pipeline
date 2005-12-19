@@ -7,7 +7,7 @@
 # quick script to populate Molecular_name tag in ?Gene model during build
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2005-12-19 17:41:34 $
+# Last updated on: $Date: 2005-12-19 17:42:26 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -16,7 +16,6 @@
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Wormbase;
-use Data::Dumper;
 use Getopt::Long;
 
 ##############################
