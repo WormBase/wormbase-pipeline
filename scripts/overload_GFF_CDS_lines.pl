@@ -5,7 +5,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2005-12-19 17:09:13 $
+# Last updated on: $Date: 2005-12-19 17:15:51 $
 #
 
 #
@@ -29,14 +29,13 @@ use Log_files;
 use Storable;
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
-my ($chrom, $splitdir, $gffdir);
+my ($chrom, $splitdir, $gffdir, $release);
 
 GetOptions (
             "help"       => \$help,
             "debug=s"    => \$debug,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
-	    "database=s" => \$database,
 	    "store"      => \$store,
 	    "chrom:s"    => \$chrom,
 	    "release:s"  => \$release,
@@ -84,6 +83,13 @@ print "// Working with wormpep release $release\n" if ($verbose);
 
 
 # get data from wormpep release
+my $CDS;
+my %wormpep;
+my %geneID;
+my %status;
+my $line;
+my %locus;
+my %briefID;
 
 open (WORMPEP, "<$wormpep_dir/wormpep${release}/wormpep${release}");
 while (<WORMPEP>) {
@@ -122,6 +128,7 @@ close WORMPEP;
 #}
 
 # parse GFF lines
+my @files;
 
 if (defined($chrom)){
     unless (grep { $chrom eq $_ } ('I','II','III','IV','V','X','MtDNA')) {
@@ -164,9 +171,9 @@ foreach my $file (@gff_files) {
 	    next;
 	}
 	
-	($chromosome,$source,$feature,$start,$stop,$score,$strand,$other,$name) = split /\t/;
+	my ($chromosome,$source,$feature,$start,$stop,$score,$strand,$other,$name) = split /\t/;
 	
-	($i) = $name =~ (/CDS \"(\S+)\"/);
+	my ($i) = $name =~ (/CDS \"(\S+)\"/);
 	
 	print OUT "$chromosome\t$source\t$feature\t$start\t$stop\t$score\t$strand\t$other\tCDS \"$i\" ;";
 	print OUT " Note \"$briefID{$i}\" ;"        if ($briefID{$i} ne "");
