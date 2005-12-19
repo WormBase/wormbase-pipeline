@@ -7,6 +7,8 @@
 #
 # Usage: estcheck [-options]
 #
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2005-12-19 12:46:05 $      
 
 #####################################################################################################
 
@@ -15,13 +17,17 @@
 # variables                                                                     #
 #################################################################################
 
+use strict;                                      
+use lib $ENV{'CVS_DIR'};
+use Wormbase;
+use Getopt::Long;
+use Carp;
+use Log_files;
+use Storable;
+use IO::Handle;
+
 $|=1;
 
-use IO::Handle;
-use Getopt::Std;
-use lib '/wormsrv2/scripts';
-use Wormbase;
-use strict;
 
  ##############################
  # Script variables (run)     #
@@ -34,34 +40,49 @@ my $runtime = `date +%H:%M:%S`; chomp $runtime;
  # command-line options       #
  ##############################
 
-my $opt_d="";   # Verbose debug mode
-my $opt_h="";   # Help/Usage page
+my ($help, $debug, $test, $verbose, $store, $wormbase);
 
-getopts ('hd');
-&usage(0) if ($opt_h);
-my $debug = $opt_d;
+GetOptions ("help"       => \$help,
+            "debug=s"    => \$debug,
+	    "test"       => \$test,
+	    "verbose"    => \$verbose,
+	    "store"      => \$store,
+	    );
+
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+			     );
+}
+
+# Display help if required
+&usage("Help") if ($help);
+
+# in test mode?
+if ($test) {
+  print "In test mode\n" if ($verbose);
+
+}
+
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
+
+
 
  ##############################
  # Paths etc                  #
  ##############################
+my $tace            = $wormbase->tace;        # TACE PATH
+my $dbdir           = $wormbase->autoace;     # Database path
+my $outdir          = $dbdir . "/CHECKS";
+my $WS_version      = $wormbase->get_wormbase_version_name;
 
-my $tace = &tace;    # tace executable path
-my $dbdir  = "/wormsrv2/autoace";                                  # Database path
-my $outdir = "/wormsrv2/autoace/CHECKS";
-my $WS_version = &get_wormbase_version_name;
 
- ########################################
- # Open logfile                         #
- ########################################
+$log->write_to("# estcheck\n");     
+$log->write_to("# run details    : $rundate $runtime\n\n");
 
-my $log="/wormsrv2/logs/estcheck.$WS_version.$rundate";
-
-open (LOG,">$log");
-LOG->autoflush();
-
-print LOG "# estcheck\n";     
-print LOG "# run details    : $rundate $runtime\n";
-print LOG "\n";
 
  ########################################
  # Loop through the EST sequences       #
@@ -199,3 +220,103 @@ close EST_no_accession_1;
 close EST_no_accession_2;
 
 exit(0);
+
+
+
+
+##############################################################
+#
+# Subroutines
+#
+##############################################################
+
+##########################################
+
+sub usage {
+  my $error = shift;
+
+  if ($error eq "Help") {
+    # Normal help menu
+    system ('perldoc',$0);
+    exit (0);
+  }
+}
+
+##########################################
+
+
+
+# Add perl documentation in POD format
+# This should expand on your brief description above and 
+# add details of any options that can be used with the program.  
+# Such documentation can be viewed using the perldoc command.
+
+
+__END__
+
+=pod
+
+=head2 NAME - estcheck
+
+=head1 USAGE
+
+=over 4
+
+=item estcheck
+
+=back
+
+This script does...
+
+script_template.pl MANDATORY arguments:
+
+=over 4
+
+=item None at present.
+
+=back
+
+script_template.pl  OPTIONAL arguments:
+
+=over 4
+
+=item -h, Help
+
+=back
+
+=over 4
+ 
+=item -debug, Verbose/Debug mode
+ 
+=back
+
+=over 4
+
+=item -test, Test mode, generate the acefile but do not upload themrun the script, but don't change anything
+
+=back
+
+=over 4
+    
+=item -verbose, output lots of chatty test messages
+
+=back
+                                                                                             
+
+=head1 REQUIREMENTS
+
+=over 4
+
+=item None at present.
+
+=back
+
+=head1 AUTHOR
+
+=over 4
+
+=item unknown
+
+=back
+
+=cut
