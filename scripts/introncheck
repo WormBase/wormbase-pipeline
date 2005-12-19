@@ -6,47 +6,68 @@
 #
 # Usage: introncheck [-options]
 #
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2005-12-16 11:18:55 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2005-12-19 13:51:24 $      
 
-#################################################################################
-# variables                                                                     #
-#################################################################################
-
-use Getopt::Std;
-use Ace;
-use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
+use strict;                                      
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
+use Getopt::Long;
+use Carp;
+use Log_files;
+use Storable;
+use Ace;
 use Coords_converter;
-use strict;
 
 $| = 1;
+
+##############################
+# command-line options       #
+##############################
+
+my ($help, $debug, $test, $verbose, $store, $wormbase);
+
+GetOptions ("help"       => \$help,
+            "debug=s"    => \$debug,
+	    "test"       => \$test,
+	    "verbose"    => \$verbose,
+	    "store"      => \$store,
+	    );
+
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+			     );
+}
+
+# Display help if required
+&usage("Help") if ($help);
+
+# in test mode?
+if ($test) {
+  print "In test mode\n" if ($verbose);
+
+}
+
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
 
 ##############################
 # Script variables (run)     #
 ##############################
 
 my $rundate = `date +%y%m%d`; chomp $rundate;
-my $runtime = &runtime;
-
-##############################
-# command-line options       #
-##############################
-
-our $opt_d="";   # Verbose debug mode
-our $opt_h="";   # Help/Usage page
-
-getopts ('hd');
-&usage(0) if ($opt_h);
-my $debug = $opt_d;
+my $runtime = $wormbase->runtime;
 
  ##############################
  # Paths etc                  #
  ##############################
 
-my $tace = &tace;    # tace executable path
-my $dbdir  = "/wormsrv2/autoace";                                  # Database path
-my $gffdir = "/wormsrv2/autoace/GFF_SPLITS";
+my $tace   = $wormbase->tace;    # tace executable path
+my $dbdir  = $wormbase->autoace; # Database path
+my $gffdir = $wormbase->gff_splits;
 
 my @chromosomes = ('IV','II','III','I', 'V','X');
 my %confirmed_intron = ();		  
@@ -76,7 +97,7 @@ foreach my $chromosome (@chromosomes) {
   #######################################
 
   print "Make a hash for all curated introns on chromosome $chromosome\n";
-  open (GFF_in, "/wormsrv2/scripts/gff_sort $gffdir/GFF_SPLITS/CHROMOSOME_${chromosome}.intron.gff |") || die "Failed to open gff file at $gffdir/GFF_SPLITS/CHROMOSOME_${chromosome}.intron.gff\n\n";
+  open (GFF_in, "$ENV{'CVS_DIR'}/gff_sort $gffdir/CHROMOSOME_${chromosome}.intron.gff |") || die "Failed to open gff file at $gffdir/CHROMOSOME_${chromosome}.intron.gff\n\n";
   
   while (<GFF_in>) {
     chomp;
@@ -93,7 +114,7 @@ foreach my $chromosome (@chromosomes) {
   ###################################################
   print "Cycle through all introns on chromosome $chromosome\n";
   
-  open (GFF, "/wormsrv2/scripts/gff_sort $gffdir/GFF_SPLITS/CHROMOSOME_${chromosome}.intron_all.gff |") || die "Failed to open gff file at $gffdir/GFF_SPLITS/CHROMOSOME_${chromosome}.intron_all.gff \n\n";
+  open (GFF, "$ENV{'CVS_DIR'}/gff_sort $gffdir/CHROMOSOME_${chromosome}.intron_all.gff |") || die "Failed to open gff file at $gffdir/CHROMOSOME_${chromosome}.intron_all.gff \n\n";
   
   while (<GFF>) {       	
       chomp;
@@ -173,7 +194,17 @@ close OUT_CAM;
 close OUT_STL;
 
 $db->close;
+
+$log->mail();
+print "Finished.\n" if ($verbose);
 exit(0);
+
+##############################################################
+#
+# Subroutines
+#
+##############################################################
+
 
 sub numerically {
   my ($a,$b);
@@ -190,6 +221,7 @@ sub run_details {
     print "\n";
 }
 
+##########################################
 
 sub usage {
     my $error = shift;
