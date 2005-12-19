@@ -873,6 +873,10 @@ sub establish_paths {
   $self->{'databases'}->{'geneace'} = $self->wormpub . "/DATABASES/geneace";
   $self->{'databases'}->{'camace'}  = $self->wormpub . "/DATABASES/camace";
   $self->{'databases'}->{'current'} = $self->wormpub . "/DATABASES/currentDB";
+  $self->{'databases'}->{'stlace'} = $self->wormpub . "/DATABASES/stlace";
+  $self->{'databases'}->{'citace'} = $self->wormpub . "/DATABASES/citace";
+  $self->{'databases'}->{'cshace'} = $self->wormpub . "/DATABASES/cshace";
+  $self->{'databases'}->{'brigace'} = $self->wormpub . "/DATABASES/brigace";
   $self->{'databases'}->{'autoace'} = $self->autoace;
 
   # create dirs if missing
