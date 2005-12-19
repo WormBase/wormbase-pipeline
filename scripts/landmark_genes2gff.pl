@@ -6,57 +6,60 @@
 #
 # script for creating extra GFF lines to indicate those genes that are landmark genes
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2005-12-16 11:18:55 $
-
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2005-12-19 16:10:40 $
 use strict;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
 
+my $database;     # choose another database (defaults to autoace)
+my $debug;        # debug mode, output only emailed to one person
+my $help;         # help mode, show perldoc
+my $test;         # use test mode in ~wormpub
+my %landmarks;    # hash containing gene IDs as keys and public_name field as value
+my $release     = &get_wormbase_version_name;    # WS release version
+my $maintainers = "All";                         # for email recipients
+my $store;                                       # to specify storable file
 
-my $database;         # choose another database (defaults to autoace)
-my $debug;            # debug mode, output only emailed to one person
-my $help;             # help mode, show perldoc
-my $test;             # use test mode in ~wormpub
-my %landmarks;        # hash containing gene IDs as keys and public_name field as value
-my $release     = &get_wormbase_version_name;   # WS release version
-my $maintainers = "All";                        # for email recipients
+GetOptions(
+    "help"       => \$help,
+    "debug=s"    => \$debug,
+    "test"       => \$test,
+    "database=s" => \$database,
+    'store=s'    => \$store
+);
 
-GetOptions ("help"         => \$help,
-            "debug=s"      => \$debug,
-	    "test"         => \$test,
-            "database=s"   => \$database);
- 
+############################
+# recreate configuration   #
+############################
+my $wb;
+if ($store) { $wb = Storable::retrieve($store) or croak("cant restore wormbase from $store\n") }
+else { $wb = Wormbase->new( -debug => $debug, -test => $test, ) }
 
-###############################
-#
-#  setup and test options
-#
-###############################
-
-
-# need help?
-if ($help) { print `perldoc $0`;exit;}
-
-
-# database/file paths and locations
-my $basedir     = "/wormsrv2";
-$basedir        = glob("~wormpub")."/TEST_BUILD" if ($test);
-
-# set default database if -database not used
-$database = "$basedir/autoace" if (!$database);
+###########################################
+# Variables Part II (depending on $wb)    #
+###########################################
+$test  = $wb->test  if $wb->test;     # Test mode
+$debug = $wb->debug if $wb->debug;    # Debug mode, output only goes to one user
 
 # Use debug mode?
-if($debug){
-  print "DEBUG = \"$debug\"\n\n";
-  ($maintainers = $debug . '\@sanger.ac.uk');
+if ($debug) {
+    print "DEBUG = \"$debug\"\n\n";
+    ( $maintainers = $debug . '\@sanger.ac.uk' );
 }
 
+# need help?
+if ($help) { print `perldoc $0`; exit; }
+
+# database/file paths and locations
+my $basedir = $wb->basedir;
+
+# set default database if -database not used
+$database = $wb->autoace if !$database;
+
 # create log file, open output file handles
-my $log = Log_files->make_build_log();
-
-
+my $log = Log_files->make_build_log($wb);
 
 ###############################
 #
@@ -64,80 +67,77 @@ my $log = Log_files->make_build_log();
 #
 ###############################
 
-
 # get list of landmark genes from database, and add to hash
 &get_landmark_genes;
 
-
 # now loop through GFF files to look for existing gene spans
 my @chromosomes = qw( I II III IV V X );
- 
+
 foreach (@chromosomes) {
 
-  $log->write_to("Processing chromosome $_\n");
+    $log->write_to("Processing chromosome $_\n");
 
-  # open input/output streams
-  open(OUT,">$database/GFF_SPLITS/GFF_SPLITS/CHROMOSOME_$_.landmarks.gff") || die "Cannot open output file\n";
-  open(GFF,"<$database/CHROMOSOMES/CHROMOSOME_$_.gff")                   || die "Can't read CHROMOSOME_$_.gff file\n";
-  
-  while (<GFF>) {
-    
-    # only want to match the following lines
-    # CHROMOSOME_II   gene    gene    23347   24428   .       +       .       Gene "WBGene00005017"
-    next unless (/gene/ && /WBGene/);
+    # open input/output streams
+    open( OUT, ">$database/GFF_SPLITS/GFF_SPLITS/CHROMOSOME_$_.landmarks.gff" ) || die "Cannot open output file\n";
+    open( GFF, "<$database/CHROMOSOMES/CHROMOSOME_$_.gff" ) || die "Can't read CHROMOSOME_$_.gff file\n";
 
-    # more exact check by splitting line and checking fields
-    my @data = split(/\t/);
-    next unless ($data[1] eq "gene"&& $data[2] eq "gene");
+    while (<GFF>) {
 
-    # modify 9th GFF column to look up in hash to get CGC name (or Public name)
-    my $gene = $data[8];
-    $gene =~ s/Gene //;
-    $gene =~ s/\"//g;
-    chomp($gene);
+        # only want to match the following lines
+        # CHROMOSOME_II   gene    gene    23347   24428   .       +       .       Gene "WBGene00005017"
+        next unless ( /gene/ && /WBGene/ );
 
-    # check gene from GFF file with genes in hash to see if it is a landmark gene, write to output if so
-    if($landmarks{$gene}){
-      print OUT "$data[0]\tlandmark\tgene\t$data[3]\t$data[4]\t$data[5]\t$data[6]\t$data[7]\tLocus $landmarks{$gene}\n";
+        # more exact check by splitting line and checking fields
+        my @data = split(/\t/);
+        next unless ( $data[1] eq "gene" && $data[2] eq "gene" );
+
+        # modify 9th GFF column to look up in hash to get CGC name (or Public name)
+        my $gene = $data[8];
+        $gene =~ s/Gene //;
+        $gene =~ s/\"//g;
+        chomp($gene);
+
+        # check gene from GFF file with genes in hash to see if it is a landmark gene, write to output if so
+        if ( $landmarks{$gene} ) {
+            print OUT
+              "$data[0]\tlandmark\tgene\t$data[3]\t$data[4]\t$data[5]\t$data[6]\t$data[7]\tLocus $landmarks{$gene}\n";
+        }
     }
-  }
-  close GFF;
-  close(OUT) || die "Couldn't close output file\n";
+    close GFF;
+    close(OUT) || die "Couldn't close output file\n";
 }
 
-
-
 # tidy up and exit
-$log->mail("$maintainers", "BUILD REPORT: landmark_genes2gff.pl");
+$log->mail( "$maintainers", "BUILD REPORT: landmark_genes2gff.pl" );
 exit(0);
-
 
 ##############################
 # get list of landmark genes
 ##############################
 
-sub get_landmark_genes{
+sub get_landmark_genes {
 
-  $log->write_to("Getting list of landmark genes from $database\n");
+    $log->write_to("Getting list of landmark genes from $database\n");
 
-  my $tace = &tace;
-  my $db = Ace->connect(-path  => $database,
-			-program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
-  
-  # only want landmark genes which will be in GFF files, i.e. those with Sequence name 
-  # this is virtually all of them
-  my @landmarks = $db->fetch(-query=>"Find Gene WHERE Landmark_gene AND Sequence_name");
+    my $tace = &tace;
+    my $db   = Ace->connect(
+        -path    => $database,
+        -program => $tace
+      )
+      || do { print "Connection failure: ", Ace->error; die(); };
 
-  # build hash
-  foreach my $gene (@landmarks){
-    my $public_name = $gene->Public_name->name;
-    $landmarks{$gene->name} = $public_name;
-  }  
-  $db->close;
+    # only want landmark genes which will be in GFF files, i.e. those with Sequence name
+    # this is virtually all of them
+    my @landmarks = $db->fetch( -query => "Find Gene WHERE Landmark_gene AND Sequence_name" );
+
+    # build hash
+    foreach my $gene (@landmarks) {
+        my $public_name = $gene->Public_name->name;
+        $landmarks{ $gene->name } = $public_name;
+    }
+    $db->close;
 
 }
-
-
 
 __END__
                                                                                                    
