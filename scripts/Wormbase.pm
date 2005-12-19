@@ -818,6 +818,7 @@ sub ftp_upload  { $self = shift; return $self->{'ftp_upload'}; }
 sub reports     { $self = shift; return $self->{'reports'}; }
 sub misc_static { $self = shift; return $self->{'misc_static'}; }
 sub misc_dynamic { $self = shift; return $self->{'misc_dynamic'}; }
+sub primaries   { $self = shift; return $self->{'primaries'}; }
 
 # this can be modified by calling script
 sub common_data {
@@ -852,6 +853,14 @@ sub database {
   }
 }
 
+sub primary {
+  my $self = shift;
+  my $database = shift;
+  my $path  = $self->primaries . "/$database";
+  print STDERR "no such primary database\n" unless (-e $path);
+  return $path;
+}
+
 sub establish_paths {
   my $self = shift;
   ( $self->{'wormpub'} ) = glob("~wormpub");
@@ -868,20 +877,24 @@ sub establish_paths {
   $self->{'common_data'} = $self->autoace . "/COMMON_DATA";
   $self->{'chromosomes'} = $self->autoace . "/CHROMOSOMES";
   $self->{'reports'}     = $self->autoace . "/REPORTS";
-  $self->{'gff'}         = $self->autoace . "/GFF";
-  $self->{'gff_splits'}  = $self->autoace . "/GFF_SPLITS/GFF_SPLITS";
+  $self->{'gff'}         = $self->chromosomes; #to maintain backwards compatibility 
+  $self->{'gff_splits'}  = $self->autoace . "/GFF_SPLITS";
+  $self->{'primaries'}   = $self->basedir . "/PRIMARIES";
 
   $self->{'tace'}   = glob("~wormpub/ACEDB/bin_ALPHA/tace");
   $self->{'giface'} = glob("~wormpub/ACEDB/bin_ALPHA/giface");
 
   $self->{'databases'}->{'geneace'} = $self->wormpub . "/DATABASES/geneace";
   $self->{'databases'}->{'camace'}  = $self->wormpub . "/DATABASES/camace";
-  $self->{'databases'}->{'current'} = $self->wormpub . "/DATABASES/currentDB";
-  $self->{'databases'}->{'stlace'} = $self->wormpub . "/DATABASES/stlace";
-  $self->{'databases'}->{'citace'} = $self->wormpub . "/DATABASES/citace";
-  $self->{'databases'}->{'cshace'} = $self->wormpub . "/DATABASES/cshace";
-  $self->{'databases'}->{'brigace'} = $self->wormpub . "/DATABASES/brigace";
+  $self->{'databases'}->{'current'} = $self->wormpub . "/DATABASES/current_DB";
   $self->{'databases'}->{'autoace'} = $self->autoace;
+
+  $self->{'primary'}->{'camace'}  = $self->primaries ."/camace";
+  $self->{'primary'}->{'geneace'} = $self->primaries ."/geneace";
+  $self->{'primary'}->{'stlace'}  = $self->primaries ."/stlace";
+  $self->{'primary'}->{'citace'}  = $self->primaries ."/citace";
+  $self->{'primary'}->{'cshace'}  = $self->primaries ."/cshace";
+  $self->{'primary'}->{'brigace'} = $self->primaries ."/brigace";
 
   $self->{'build_data'} = $self->{'wormpub'} . "/BUILD_DATA";
   $self->{'misc_static'} = $self->{'build_data'} . "/MISC_STATIC";
@@ -890,12 +903,15 @@ sub establish_paths {
   # create dirs if missing
   mkpath( $self->logs )        unless ( -e $self->logs );
   mkpath( $self->common_data ) unless ( -e $self->common_data );
-  mkpath( $self->wormpep )     unless ( -e $self->wormpep );
-  mkpath( $self->wormrna )     unless ( -e $self->wormrna );
+  mkpath( $self->wormpep )     unless ( -e $self->wormpep );  system("chmod -R g+w ".$self->wormpep);
+  mkpath( $self->wormrna )     unless ( -e $self->wormrna );  system("chmod -R g+w ".$self->wormrna);
   mkpath( $self->chromosomes ) unless ( -e $self->chromosomes );
   mkpath( $self->reports )     unless ( -e $self->reports );
   mkpath( $self->gff )         unless ( -e $self->gff );
   mkpath( $self->gff_splits )  unless ( -e $self->gff_splits );
+  mkpath( $self->primaries )   unless ( -e $self->primaries );
+
+  system("chmod -R g+w ".$self->autoace);
 
 }
 
