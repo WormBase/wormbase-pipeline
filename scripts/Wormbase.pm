@@ -881,9 +881,9 @@ sub establish_paths {
   $self->{'databases'}->{'brigace'} = $self->wormpub . "/DATABASES/brigace";
   $self->{'databases'}->{'autoace'} = $self->autoace;
 
-  $self->{'build_data'} = $self->{'wormpub'} . "BUILD_DATA";
-  $self->{'misc_static'} = $self->{'build_data'} . "MISC_STATIC";
-  $self->{'misc_dynamic'} = $self->{'build_data'} . "MISC_DYNAMIC";
+  $self->{'build_data'} = $self->{'wormpub'} . "/BUILD_DATA";
+  $self->{'misc_static'} = $self->{'build_data'} . "/MISC_STATIC";
+  $self->{'misc_dynamic'} = $self->{'build_data'} . "/MISC_DYNAMIC";
 
   # create dirs if missing
   mkpath( $self->logs )        unless ( -e $self->logs );
