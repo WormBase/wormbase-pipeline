@@ -6,18 +6,21 @@
 #
 # Usage : make_keysets.pl [-options]
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2005-12-16 11:18:55 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2005-12-19 15:19:36 $
 
 #################################################################################
 # variables                                                                     #
 #################################################################################
 
-use IO::Handle;
-use Getopt::Long;
-use strict;
+use strict;                                      
 use lib $ENV{'CVS_DIR'};
 use Wormbase;
+use Getopt::Long;
+use Carp;
+use Log_files;
+use Storable;
+use IO::Handle;
 use Socket;
 
 
@@ -25,8 +28,10 @@ use Socket;
 # command-line options       #
 ##############################
 
+my ($help, $debug, $test, $verbose, $store, $wormbase);
 
-use vars qw/ $all $rnai $expr $history $pcr $go $touched $noload $debug $help $test/;
+use vars qw/ $all $rnai $expr $history $pcr $go $touched $noload $debug $help /;
+
 GetOptions (
 	    "all"       => \$all,
 	    "rnai"      => \$rnai,
@@ -38,27 +43,44 @@ GetOptions (
 	    "noload"    => \$noload,
 	    "test"      => \$test,
 	    "debug"     => \$debug,
-	    "help"      => \$help
+	    "help"      => \$help,
+	    "test"      => \$test,
+	    "verbose"   => \$verbose,
+	    "store"     => \$store,
 	    );
 
-&usage('help') if ($help);
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+			     );
+}
 
-# status report to stdout?
+# Display help if required
+&usage("Help") if ($help);
+
+# in test mode?
+if ($test) {
+  print "In test mode\n" if ($verbose);
+
+}
+
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
+
 
 ##############################
 # Paths etc                  #
 ##############################
 
-our $tace     = &tace;                                    # tace executable path
-our $dbpath   = "/wormsrv2/autoace";                      # Database path (live runs)
-our $outpath  = "/wormsrv2/autoace/acefiles";             # Output directory
+our $tace     = $wormbase->tace;    # tace executable path
+our $dbpath   = $wormbase->autoace; # Database path (live runs)
+our $outpath  = "$dbpath/acefiles"; # Output directory
 
 # Use current_DB if you are testing 
-$dbpath   = "/nfs/disk100/wormpub/DATABASES/current_DB" if ($test);        # Database path (test runs)
+$dbpath   = $wormbase->databases('current') if ($test);        # Database path (test runs)
 print "Database = ${dbpath}\n" if ($debug);
-
-# only tell Dan if running debug mode
-my $maintainers = "dl1\@sanger.ac.uk" if ($debug);
 
 #################################################
 # series of if loops for each keyset to be made #
@@ -118,7 +140,7 @@ if (($touched) || ($all)) {
 if (($history) || ($all)) {
     print "Tace query for wormpep_mods_since_WSnn\n" if ($debug);
 
-    my @releases = (77,100,110,120,130);
+    my @releases = (77,100,110,120,130,140,150);
     push (@releases,$history-1);
 
     foreach my $i (@releases) {
@@ -133,10 +155,12 @@ if (($history) || ($all)) {
     print "calculated keysets of changed wormpep entries\n\n";
 } 
 
-&load_to_database($dbpath, "/wormsrv2/wormbase/misc_static/represent_clone.ace", "clone_check") if $all;
+my $misc_static_dir = $wormbase->misc_static;
+$wormbase->load_to_database($dbpath, "/wormsrv2/wormbase/misc_static/represent_clone.ace", "clone_check") if $all;
 
-print "le fin\n";
 
+$log->mail();
+print "Finished.\n" if ($verbose);
 exit(0);
 
 #################
@@ -188,7 +212,7 @@ sub usage {
     if ($error eq "No_WormBase_release_number") {
         # No WormBase release number file
         print "The WormBase release number cannot be parsed\n";
-        print "Check File: /wormsrv2/autoace/wspec/database.wrm\n\n";
+        print "Check File: $dbpath/wspec/database.wrm\n\n";
         exit(0);
     }
     elsif ($error eq "help") {
