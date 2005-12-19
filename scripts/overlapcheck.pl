@@ -8,7 +8,7 @@
 # sorts output for stl and cam clones
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2005-12-19 14:33:42 $
+# Last updated on: $Date: 2005-12-19 14:44:08 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -448,12 +448,33 @@ foreach my $chrom (@chrom) {
 # Tidy up
 $camdb->close;
 $stldb->close;
+
+$log->mail();
+print "Finished.\n" if ($verbose);
 exit(0);
 
 
 ###################
 # VI. subroutines #
 ###################
+
+
+
+##########################################
+
+sub usage {
+  my $error = shift;
+
+  if ($error eq "Help") {
+    # Normal help menu
+    system ('perldoc',$0);
+    exit (0);
+  }
+}
+
+##########################################
+
+
 
 sub find_database {
     
