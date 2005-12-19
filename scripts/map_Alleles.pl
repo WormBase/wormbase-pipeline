@@ -6,97 +6,91 @@
 #
 # This maps alleles to the genome based on their flanking sequences
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-12-16 11:18:55 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2005-12-19 11:07:23 $
 
 use strict;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use warnings;
+use lib $ENV{'CVS_DIR'};
 use Feature_mapper;
 use Wormbase;
 use Ace;
 use Getopt::Long;
 
-
 #######################################
 # command-line options                #
 #######################################
+my $debug;       # debug mode, output goes to /tmp
+my $limit;       # limit number of alleles to map
+my $database;    # specify database to map alleles in, default is autoace
+my $release;     # specify release number, defaults to current release number
+my $help;        # help mode, show perldoc
+my $restart = 'go';    # specify an allele name from which to start mapping
+my $no_parse;          # turn off loading of data to $database
+my $list;              # read in alleles to map from file rather than from database
+my $gff;               # option to print output in GFF format as well
+my $verbose;           # verbose mode, extra output to screen
+my $store;             # to specify stored commandline arguments
+my $test;	       # for future testing functionality
 
-my $debug;          # debug mode, output goes to /tmp
-my $limit;          # limit number of alleles to map
-my $database;       # specify database to map alleles in, default is autoace
-my $release;        # specify release number, defaults to current release number
-my $help;           # help mode, show perldoc
-my $restart = "go"; # specify an allele name from which to start mapping
-my $no_parse;       # turn off loading of data to $database
-my $list;           # read in alleles to map from file rather than from database
-my $gff;            # option to print output in GFF format as well
-my $verbose;        # verbose mode, extra output to screen
-
-GetOptions( "debug=s"    => \$debug,
-	    "limit=i"    => \$limit,
-	    "database=s" => \$database,
-	    "release=i"  => \$release,
-	    "help"       => \$help,
-	    "restart=s"  => \$restart,
-	    "no_parse"   => \$no_parse,
-	    "list=s"     => \$list,
-	    "gff"        => \$gff,
-	    "verbose"    => \$verbose);
+GetOptions(
+    'debug=s'    => \$debug,
+    'limit=i'    => \$limit,
+    'database=s' => \$database,
+    'release=i'  => \$release,
+    'help'       => \$help,
+    'restart=s'  => \$restart,
+    'no_parse'   => \$no_parse,
+    'list=s'     => \$list,
+    'gff'        => \$gff,
+    'verbose'    => \$verbose,
+    'store=s'    => \$store,
+    'test'	=> \$test
+);
 
 # check command line options
-if ($help) { print `perldoc $0`;exit;}
-die "No need for -release option in debug mode" if ($release && $debug);
+if ($help) { print `perldoc $0`; exit; }
+die "No need for -release option in debug mode" if ( $release && $debug );
 
+############################
+# recreate configuration   #
+############################
+my $wb;
+if ($store) { $wb = Storable::retrieve($store) or croak("cant restore wormbase from $store\n") }
+else { $wb = Wormbase->new( -debug => $debug, -test => $test, ) }
 
 ###################
 # misc variables  #
 ###################
-
 my $maintainers = "All";
-my $tace = &tace;
-my $data_dump_dir;    
-my $ace_file;
-my $gff_file;
-my $mapping_dir;
-my $error_count = 0;     # for tracking alleles that don't map
-
-
+my $tace        = $wb->tace;
+my $error_count = 0;           # for tracking alleles that don't map
 
 # set variables depending on whether in debug (test) mode or not
-
-if ($debug)  {
-    $data_dump_dir = "/tmp";
-    $database      = "/nfs/disk100/wormpub/DATABASES/current_DB/" unless $database;
-    $ace_file      = "$data_dump_dir/mapped_alleles.ace";
-    $gff_file      = "$data_dump_dir/mapped_alleles.gff";
-    $mapping_dir   = $data_dump_dir;
-    $maintainers   = "$debug\@sanger.ac.uk";
+if ($debug) {
+    print "DEBUG = \"$debug\"\n\n";
+    $maintainers = "$debug\@sanger.ac.uk";
 }
-else { 
-    $release      = &get_wormbase_version unless (defined $release);
-    $mapping_dir  = "/wormsrv2/autoace/MAPPINGS";
-    $ace_file     = "$mapping_dir/allele_mapping.WS$release.ace";
-    $gff_file     = "$mapping_dir/allele_mapping.WS$release.gff";
-    $database     = "/wormsrv2/autoace/" unless $database;
-}
-
+$release = $wb->get_wormbase_version unless ( defined $release );
+my $mapping_dir = $wb->basedir . "/MAPPINGS";
+my $ace_file    = "$mapping_dir/allele_mapping.WS$release.ace";
+my $gff_file    = "$mapping_dir/allele_mapping.WS$release.gff";
+$database = $wb->autoace unless $database;
 
 ################################################
 # Set hashes
 ################################################
 
-my %worm_gene2class  = &FetchData('worm_gene2class'); # set from Common Data
-my %worm_gene2geneID = &FetchData('worm_gene2geneID_name');
-my %to_map;             # will be set if -list option is specified, stores list of alleles to map
-my %original_alleles;   # will store details of allele->gene connections already in database
-my %allele2gene;        # key is allele name, value is array of CDS/Transcript names
-my %allele_data;        # allele data from mapping data, hash of arrays:
+my %worm_gene2class  = $wb->FetchData('worm_gene2class');         # set from Common Data
+my %worm_gene2geneID = $wb->FetchData('worm_gene2geneID_name');
+my %to_map;              # will be set if -list option is specified, stores list of alleles to map
+my %original_alleles;    # will store details of allele->gene connections already in database
+my %allele2gene;         # key is allele name, value is array of CDS/Transcript names
+my %allele_data;         # allele data from mapping data, hash of arrays:
 
-# allele => [ (0)type,           (1) 5'flank_seq ,      (2) 3'flank_seq, (3) CDS, 
-#             (4)end of 5'match, (5) start of 3'match , (6) clone,       (7) chromosome, 
+# allele => [ (0)type,           (1) 5'flank_seq ,      (2) 3'flank_seq, (3) CDS,
+#             (4)end of 5'match, (5) start of 3'match , (6) clone,       (7) chromosome,
 #             (8)strains]
-
-
 
 ###############################################################################################
 #
@@ -104,46 +98,35 @@ my %allele_data;        # allele data from mapping data, hash of arrays:
 #
 ###############################################################################################
 
-
 # read in list of alleles to map if -list is specified
 &process_list if ($list);
 
 # make hash of allele->gene connections already in database
 &check_original_mappings;
 
-<<<<<<< map_Alleles.pl
 # create log file, open output file handles
-my $log = Log_files->make_build_log($debug);
-=======
-# create log file, open output file handles
-my $log = Log_files->make_build_log();
->>>>>>> 1.19.4.1
+my $log = Log_files->make_build_log($wb);
 
-# map alleles, the main routine
-&map_alleles;
+
+  # map alleles, the main routine
+  &map_alleles;
 
 # load acefile to autoace (unless -no_parse specified)
 &load_alleles_to_database unless ($no_parse);
-
 
 #####################################
 # tidy up, email log, and exit
 #####################################
 
-if($error_count >0){
-  print "\nERROR: problems with $error_count alleles\n\n";
-  $log->write_to("\nProblems with $error_count alleles\n");
-  $log->mail("$maintainers","BUILD REPORT: map_Alleles.pl $error_count ERRORS!");
+if ( $error_count > 0 ) {
+    print "\nERROR: problems with $error_count alleles\n\n";
+    $log->write_to("\nProblems with $error_count alleles\n");
+    $log->mail( "$maintainers", "BUILD REPORT: map_Alleles.pl $error_count ERRORS!" );
 }
-else{
-  $log->mail("$maintainers", "BUILD REPORT: map_Alleles.pl");
+else {
+    $log->mail( "$maintainers", "BUILD REPORT: map_Alleles.pl" );
 }
 exit(0);
-
-
-
-
-
 
 ##################################################
 #                                                #
@@ -151,168 +134,136 @@ exit(0);
 #                                                #
 ##################################################
 
-
-
-
-######################################################### 
-#             Main allele mapping loop                  #                                                       
+#########################################################
+#             Main allele mapping loop                  #
 #########################################################
 
-sub map_alleles{
-  # First get allele info from database
-  my $db = Ace->connect(-path  => $database) || do { print  "$database Connection failure: ",Ace->error; die();};
-  my @alleles = $db->fetch(-query =>'Find Variation WHERE Flanking_sequences');
-  
-  open (OUT,">$ace_file") or die "cant open $ace_file\n";
-  open (GFF,">$gff_file") or die "cant open $gff_file\n" if ($gff);
-  
+sub map_alleles {
 
-  my $sequence;
-  my $clone;
-  my $chromosome;
-  my $name;
-  my $left;
-  my $right;
-  my $go = 0;
-  my @affects_CDSs;
-  
-  my $mapper = Feature_mapper->new( $database);
-  
- ALLELE:
-  foreach my $allele (@alleles) {
-    $name = $allele->name;
-    
-    print "\nMapping $name\n" if $verbose;
-    
-    # debug facility - this bit is so that it can restart from given allele name
-    unless ("$restart" eq "go"){
-      if ("$restart" eq "$name") {
-	$restart = "go";
-      } 
-      else { 
-	print "skipping $name\n" if $verbose;
-	next;
-      }
-    }
-    
-    # debug facility - after the restart means you can specify where to start and how many to do 
-    if ( $limit ) {
-      last if $error_count++ >= $limit;
-    }
-    
-    if ( $list ) {
-      next unless defined $to_map{$name};
-    }
-    
-    # grab both flanking sequences from $database
-    $left  = lc $allele->Flanking_sequences->name;
-    $right = lc $allele->Flanking_sequences->right->name;  
-    
-    # warn if flanking sequence is missing
-    unless ($left and $right){
-      $log->write_to("ERROR: $name does not have two flanking sequences\n");
-      $error_count++;
-      next ALLELE;
-    }
-    
-    
-    # check that allele is attached to a valid sequence object
-    $sequence = $allele->Sequence;
-    if(!defined $sequence){    
-      $log->write_to("ERROR: $name has missing Sequence tag\n");
-      $error_count++;
-      next ALLELE;
-    }
-    elsif(!defined $sequence->Source) {
-      $log->write_to("ERROR: $name connects to Sequence $sequence which has no Source tag\n");
-      $error_count++;
-      next ALLELE;
-    }
-    
-    
-    $allele_data{$name}[1] = $left;
-    $allele_data{$name}[2] = $right;
-    
-    # map allele using Feature_mapper.pm, store results of map in @map, warn if mapping failed
-    my @map = $mapper->map_feature($sequence->name,$left, $right);
-    
-    if( "$map[0]" eq "0" ) {
-      $log->write_to("ERROR: Couldn't map $name with $left and $right to seq $sequence\n");
-      $error_count++;
-      next ALLELE;
-    }
-    
-    #map position on genome
-    #(0)type, 
-    #(1)5'flank_seq ,
-    #(2)3'flank_seq
-    #(3)CDS
-    #(4)end of 5'match
-    #(5)start of 3'match
-    #(6)clone
-    #(7)chromosome
-    #(8)strains containing this allele
-    
-    
-    unless( ( $allele->Type_of_mutation and $allele->Type_of_mutation eq "Insertion" ) or
-	    ( $allele->Variation_type   and $allele->Variation_type   eq "Transposon_insertion")) {
-      # get coords of allele not 1st / last base of flanks
-      if( $map[2] > $map[1] ) {
-	# maps to fwd strand
-	$map[1]++; $map[2]--;
-      }
-      else {
-	$map[1]--; $map[2]++;
-      }
-    }
+    # First get allele info from database
+    my $db = Ace->connect( -path => $database ) || do { print "$database Connection failure: ", Ace->error; die(); };
+    my @alleles = $db->fetch( -query => 'Find Variation WHERE Flanking_sequences' );
 
-    $allele_data{$name}[4] = $map[1];
-    $allele_data{$name}[5] = $map[2];
-    $allele_data{$name}[6] = $map[0];
-    
-    # retrieve list of overlapping CDSs/Transcripts from Feature_mapper.pm
-    @affects_CDSs = $mapper->check_overlapping_CDS($map[0],$map[1],$map[2]);
-    
-    
-    # make (unique) array of gene names corresponding to @affects_CDSs
-    # first make a hash, then use the keys of the hash to set new array
-    my %affects_genes;
-    foreach (@affects_CDSs){
-      my $gene = $worm_gene2geneID{$_};
-      $affects_genes{$gene} = 1;  
-    }
-    my @affects_genes = keys(%affects_genes);
+    open( OUT, ">$ace_file" ) or die "cant open $ace_file\n";
+    open( GFF, ">$gff_file" ) or die "cant open $gff_file\n" if ($gff);
 
+    my $sequence;
+    my $clone;
+    my $chromosome;
+    my $name;
+    my $left;
+    my $right;
+    my $go = 0;
+    my @affects_CDSs;
 
-<<<<<<< map_Alleles.pl
-    # now compare both arrays (allele->gene connections already in database and
-    # allele->gene connections made by script) to look for differences
-    my %count;
-    foreach my $gene (@{$original_alleles{$name}}, @affects_genes){
-      $count{$gene}++;
-    }
-    foreach my $gene (keys %count){
-      # allele->gene connections in both arrays will cause $count{$gene} to be == 2
-      # if it only == 1 then there is an error
-      if ($count{$gene} == 1){
-	if($affects_genes{$gene}){
-	  # not so serious, but source database should be updated with connection
-	  next if ( $allele->Method->name eq "SNP" );
-	  print "WARNING: $name->$gene was mapped by script only\n" if ($verbose);
-	  $log->write_to("WARNING: $name->$gene was mapped by script only\n");
-	  
-	}
-	else{
-	  # more serious, source database has a bad allele->gene connection
-	  print "ERROR: $name->$gene was in original database only\n" if ($verbose);
-	  $log->write_to("ERROR: $name->$gene was in original database only\n");
-	  $error_count++;       
-	}
-      }
-    }
-    
-    $allele2gene{"$name"} = \@affects_CDSs if ($affects_CDSs[0]);
-=======
+    my $mapper = Feature_mapper->new($database);
+
+  ALLELE:
+    foreach my $allele (@alleles) {
+        $name = $allele->name;
+
+        print "\nMapping $name\n" if $verbose;
+
+        # debug facility - this bit is so that it can restart from given allele name
+        unless ( "$restart" eq "go" ) {
+            if ( "$restart" eq "$name" ) {
+                $restart = "go";
+            }
+            else {
+                print "skipping $name\n" if $verbose;
+                next;
+            }
+        }
+
+        # debug facility - after the restart means you can specify where to start and how many to do
+        if ($limit) {
+            last if $error_count++ >= $limit;
+        }
+
+        if ($list) {
+            next unless defined $to_map{$name};
+        }
+
+        # grab both flanking sequences from $database
+        $left  = lc $allele->Flanking_sequences->name;
+        $right = lc $allele->Flanking_sequences->right->name;
+
+        # warn if flanking sequence is missing
+        unless ( $left and $right ) {
+            $log->write_to("ERROR: $name does not have two flanking sequences\n");
+            $error_count++;
+            next ALLELE;
+        }
+
+        # check that allele is attached to a valid sequence object
+        $sequence = $allele->Sequence;
+        if ( !defined $sequence ) {
+            $log->write_to("ERROR: $name has missing Sequence tag\n");
+            $error_count++;
+            next ALLELE;
+        }
+        elsif ( !defined $sequence->Source ) {
+            $log->write_to("ERROR: $name connects to Sequence $sequence which has no Source tag\n");
+            $error_count++;
+            next ALLELE;
+        }
+
+        $allele_data{$name}[1] = $left;
+        $allele_data{$name}[2] = $right;
+
+        # map allele using Feature_mapper.pm, store results of map in @map, warn if mapping failed
+        my @map = $mapper->map_feature( $sequence->name, $left, $right );
+
+        if ( "$map[0]" eq "0" ) {
+            $log->write_to("ERROR: Couldn't map $name with $left and $right to seq $sequence\n");
+            $error_count++;
+            next ALLELE;
+        }
+
+        #map position on genome
+        #(0)type,
+        #(1)5'flank_seq ,
+        #(2)3'flank_seq
+        #(3)CDS
+        #(4)end of 5'match
+        #(5)start of 3'match
+        #(6)clone
+        #(7)chromosome
+        #(8)strains containing this allele
+
+        unless ( ( $allele->Type_of_mutation and $allele->Type_of_mutation eq "Insertion" )
+            or ( $allele->Variation_type and $allele->Variation_type eq "Transposon_insertion" ) )
+        {
+
+            # get coords of allele not 1st / last base of flanks
+            if ( $map[2] > $map[1] ) {
+
+                # maps to fwd strand
+                $map[1]++;
+                $map[2]--;
+            }
+            else {
+                $map[1]--;
+                $map[2]++;
+            }
+        }
+
+        $allele_data{$name}[4] = $map[1];
+        $allele_data{$name}[5] = $map[2];
+        $allele_data{$name}[6] = $map[0];
+
+        # retrieve list of overlapping CDSs/Transcripts from Feature_mapper.pm
+        @affects_CDSs = $mapper->check_overlapping_CDS( $map[0], $map[1], $map[2] );
+
+        # make (unique) array of gene names corresponding to @affects_CDSs
+        # first make a hash, then use the keys of the hash to set new array
+        my %affects_genes;
+        foreach (@affects_CDSs) {
+            my $gene = $worm_gene2geneID{$_};
+            $affects_genes{$gene} = 1;
+        }
+        my @affects_genes = keys(%affects_genes);
+
     # now compare both arrays (allele->gene connections already in database and
     # allele->gene connections made by script) to look for differences
     my %count;
@@ -340,89 +291,86 @@ sub map_alleles{
     }
     
     $allele2gene{"$name"} = \@affects_CDSs if ($affects_CDSs[0]);
->>>>>>> 1.19.4.1
 
-    &outputAllele($name);
-  }
+          &outputAllele($name);
+    }
 
-  # close database and file handles
-  $db->close;
+    # close database and file handles
+    $db->close;
 
-  close OUT;
-  close GFF if $gff;
-
+    close OUT;
+    close GFF if $gff;
 
 }
 
 #####################################################################################################
 
+sub outputAllele {
+    my $allele = shift;
 
+    # only proceed if mapping routine returns the following three pieces of info
+    if ( $allele_data{$allele}[6] and $allele_data{$allele}[4] and $allele_data{$allele}[5] ) {
 
-sub outputAllele{
-  my $allele = shift;
+        print OUT
+"\nSequence : \"$allele_data{$allele}[6]\"\nAllele $allele $allele_data{$allele}[4] $allele_data{$allele}[5]\n";
+        print GFF
+"\n$allele_data{$allele}[6]\tAllele\tTEST\t$allele_data{$allele}[4]\t$allele_data{$allele}[5]\t.\t+\t.\tAllele \"$allele\""
+          if $gff;
 
-  # only proceed if mapping routine returns the following three pieces of info
-  if( $allele_data{$allele}[6] and $allele_data{$allele}[4] and $allele_data{$allele}[5]) { 
-      
-    print OUT "\nSequence : \"$allele_data{$allele}[6]\"\nAllele $allele $allele_data{$allele}[4] $allele_data{$allele}[5]\n";
-    print GFF "\n$allele_data{$allele}[6]\tAllele\tTEST\t$allele_data{$allele}[4]\t$allele_data{$allele}[5]\t.\t+\t.\tAllele \"$allele\"" if $gff;
+        # process allele if it matches overlapping CDSs/Transcripts
+        if ( $allele2gene{$allele} ) {
+            my @affects_CDSs = split( /\s/, "@{$allele2gene{$allele}}" );
 
-    # process allele if it matches overlapping CDSs/Transcripts
-    if( $allele2gene{$allele} ) {
-      my @affects_CDSs = split(/\s/,"@{$allele2gene{$allele}}");
-      
-      # loop through all CDSs/Transcripts that overlap allele
-      foreach my $cds (@affects_CDSs) {
+            # loop through all CDSs/Transcripts that overlap allele
+            foreach my $cds (@affects_CDSs) {
 
-	#allele - WBGene connection
-	my $WBGene = $worm_gene2geneID{$cds};
-	print OUT "\nGene : $WBGene\n";
-	print OUT "Allele $allele\n\n";
-	
-	# now write relevant acefile output depending on whether allele hits CDS or Transcript
-	if(!defined($worm_gene2class{$cds})){
-	  $log->write_to("ERROR: $cds not listed in %worm_gene2class\n");
-	  $error_count++;
-	  next;
-	}
-	elsif ($worm_gene2class{$cds} eq "CDS"){
-	  print OUT "\nCDS : \"$cds\"\n";
-	  print OUT "Variation $allele\n\n";
+                #allele - WBGene connection
+                my $WBGene = $worm_gene2geneID{$cds};
+                print OUT "\nGene : $WBGene\n";
+                print OUT "Allele $allele\n\n";
 
-	  print OUT "Variation : $allele\n";
-	  print OUT "Predicted_CDS $cds\n";
-	}
-	elsif ($worm_gene2class{$cds} eq "Transcript"){
-	  print OUT "\nTranscript : \"$cds\"\n";
-	  print OUT "Variation $allele\n\n";
+                # now write relevant acefile output depending on whether allele hits CDS or Transcript
+                if ( !defined( $worm_gene2class{$cds} ) ) {
+                    $log->write_to("ERROR: $cds not listed in %worm_gene2class\n");
+                    $error_count++;
+                    next;
+                }
+                elsif ( $worm_gene2class{$cds} eq "CDS" ) {
+                    print OUT "\nCDS : \"$cds\"\n";
+                    print OUT "Variation $allele\n\n";
 
-	  print OUT "Variation : $allele\n";
-	  print OUT "Transcript $cds\n";
-	}
-	else{
-	  $log->write_to("ERROR: $cds is not a CDS or Transcript\n");
-	  $error_count++;
-	}
+                    print OUT "Variation : $allele\n";
+                    print OUT "Predicted_CDS $cds\n";
+                }
+                elsif ( $worm_gene2class{$cds} eq "Transcript" ) {
+                    print OUT "\nTranscript : \"$cds\"\n";
+                    print OUT "Variation $allele\n\n";
 
-      }
-    }    
-  }
+                    print OUT "Variation : $allele\n";
+                    print OUT "Transcript $cds\n";
+                }
+                else {
+                    $log->write_to("ERROR: $cds is not a CDS or Transcript\n");
+                    $error_count++;
+                }
+
+            }
+        }
+    }
 }
-
 
 ####################################################################################
 # small subroutine to load data into %to_map hash from file if -list is specified
 ####################################################################################
 
-sub process_list{
-  open (LIST, "<$list") || die "Cannot open file specified by $list\n";
-  while (<LIST>) {
-    chomp;
-    $to_map{$_} = 1;
-  }
-  close(LIST);
+sub process_list {
+    open( LIST, "<$list" ) || die "Cannot open file specified by $list\n";
+    while (<LIST>) {
+        chomp;
+        $to_map{$_} = 1;
+    }
+    close(LIST);
 }
-
 
 ##############################################################################################
 # get list of original allele->gene connections from source database
@@ -434,25 +382,27 @@ sub process_list{
 #
 ##############################################################################################
 
-sub check_original_mappings{
+sub check_original_mappings {
 
-  my $original_db = Ace->connect(-path => "$database") || do { print  "$database Connection failure: ",Ace->error; die();};
-  
-  my @original_alleles = $original_db->fetch(-query =>'Find Variation WHERE Flanking_sequences');
+    my $original_db = Ace->connect( -path => "$database" )
+      || do { print "$database Connection failure: ", Ace->error; die(); };
 
-# loop through each allele and then each gene for each allele, adding to hash structure
-  foreach my $allele (@original_alleles) {
-    # only consider alleles with gene connections
-    if(defined($allele->Gene)){
-      my @gene_IDs = $allele->Gene;
-      my $counter = 0;
-      foreach my $gene (@gene_IDs){
-	$original_alleles{$allele->name}[$counter] = $gene->name;
-	$counter++;
-      }
+    my @original_alleles = $original_db->fetch( -query => 'Find Variation WHERE Flanking_sequences' );
+
+    # loop through each allele and then each gene for each allele, adding to hash structure
+    foreach my $allele (@original_alleles) {
+
+        # only consider alleles with gene connections
+        if ( defined( $allele->Gene ) ) {
+            my @gene_IDs = $allele->Gene;
+            my $counter  = 0;
+            foreach my $gene (@gene_IDs) {
+                $original_alleles{ $allele->name }[$counter] = $gene->name;
+                $counter++;
+            }
+        }
     }
-  }
-  $original_db->close;
+    $original_db->close;
 }
 
 ################################
@@ -461,18 +411,16 @@ sub check_original_mappings{
 # use autoace_minder.pl -load  #
 ################################
 
-sub load_alleles_to_database{
-  
-  $log->write_to("\nStart parsing $ace_file in to $database\n\n");
-  my $command = "autoace_minder.pl -load $ace_file -tsuser map_Alleles.pl";
-  my $status = system($command);
-  if(($status >>8) != 0){
-    die "ERROR: Loading $ace_file file failed \$\? = $status\n";
-  }
-  $log->write_to("\nFinished parsing $ace_file in to $database\n\n");
+sub load_alleles_to_database {
+
+    $log->write_to("\nStart parsing $ace_file in to $database\n\n");
+    my $command = "autoace_minder.pl -load $ace_file -tsuser map_Alleles.pl";
+    my $status  = system($command);
+    if ( ( $status >> 8 ) != 0 ) {
+        die "ERROR: Loading $ace_file file failed \$\? = $status\n";
+    }
+    $log->write_to("\nFinished parsing $ace_file in to $database\n\n");
 }
-
-
 
 __END__
 
