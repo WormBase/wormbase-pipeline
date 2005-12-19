@@ -7,7 +7,7 @@
 # build to check the current build
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2005-12-19 14:12:39 $
+# Last updated on: $Date: 2005-12-19 15:44:19 $
 use strict;
 use warnings;
 use lib $ENV{'CVS_DIR'};
@@ -128,7 +128,7 @@ LOGMSG
 
 $log->write_to($log_msg);
 
-$log->mail( "$maintainers", "Please check the ongoing build of WS${WS_current}");
+$log->mail("$maintainers", "Please check the ongoing build of WS${WS_current}");
 
 exit(0);
 
