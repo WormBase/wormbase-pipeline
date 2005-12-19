@@ -24,7 +24,6 @@ sub new
       $key =~ s/-//;
       $self->{$key} = $params{$_};
     }
-    $self->version( '666' ) if ($self->test and !($self->version) );
     $self->establish_paths;
     return $self;
   }
@@ -41,6 +40,9 @@ sub get_wormbase_version {
       chomp($WS_version);
       $WS_version =~ s/.*WS//;
       $self->version($WS_version);
+    }
+    else {
+	$self->version(666);
     }
   }
 
