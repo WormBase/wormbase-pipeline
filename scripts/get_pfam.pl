@@ -7,8 +7,8 @@
 # This script interogates an ACEDB database and returns all pfam/Interpro/blastx 
 # data as appropriate and generates a suitable DB_remark
 #
-# Last updated on: $Date: 2005-12-16 11:18:55 $
-# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2005-12-20 15:45:28 $
+# Last updated by: $Author: gw3 $
 
 
 ### DB_remark is generated as follows:  ###
@@ -69,14 +69,14 @@
 #	w/locus { "C. elegans small cytoplasmic RNA $locus"; }
 #	w/o locus { "C. elegans predicted small cytoplasmic RNA"; }
     
-
-
-use strict;
-use Ace;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{CVS_DIR};
+use strict;                                      
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
+use Carp;
 use Log_files;
+use Storable;
+use Ace;
 
 #################################
 #
@@ -84,26 +84,45 @@ use Log_files;
 #
 #################################
 
-my $test;     # for test mode, use test environment not on wormsrv2
-my $debug;    # for debug mode, log file emailed to one person
+my ($help, $debug, $test, $verbose, $store, $wormbase);
+
 my $database; # which database to query
 my $output;   # choose different location of output file
-my $maintainers = "All"; 
 my $gene;     # to test on a single gene
 
-GetOptions("debug=s"    => \$debug,
+GetOptions("help"       => \$help,
+	   "debug=s"    => \$debug,
 	   "test"       => \$test,
+	   "verbose"    => \$verbose,
+	   "database=s" => \$database,
+	   "store"      => \$store,
 	   "database=s" => \$database,
 	   "output=s"   => \$output,
 	   "gene=s"     => \$gene
 	  );
 
 
-# Use debug mode?
-if($debug){
-  print "DEBUG = \"$debug\"\n\n";
-  ($maintainers = $debug . '\@sanger.ac.uk');
+
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+			     );
 }
+
+# Display help if required
+&usage("Help") if ($help);
+
+# in test mode?
+if ($test) {
+  print "In test mode\n" if ($verbose);
+
+}
+
+
+my $log = Log_files->make_build_log($wormbase);
+
 
 
 #################################
@@ -112,29 +131,20 @@ if($debug){
 #
 #################################
 
-my $tace = &tace; # to get tace version
-my $log = Log_files->make_build_log( $debug );
-my $basedir;      # wormsrv2 or test environment
+my $tace            = $wormbase->tace;        # TACE PATH
+my $basedir         = $wormbase->basedir;
 my $output_file;  # specify output file location
 my $runtime;
 
 
 # set up file paths
-
-if($test) {
-  $basedir = glob("~wormpub/TEST_BUILD");
-}
-else{
-  $basedir = "/wormsrv2";
-}
-
 if ($output) {
   $output_file = $output;
 } else {
-  $output_file   = "$basedir/wormbase/misc_dynamic/misc_DB_remark.ace";
+  $output_file   = $wormbase->misc_dynamic . "/misc_DB_remark.ace";
 }
 print "Output file is $output_file\n\n";
-open (ACE,">$output_file") or die "cant open output file $output_file:\t$!\n";
+open (ACE,">$output_file") or die "Can't open output file $output_file:\t$!\n";
 
 
 # open database connection
@@ -149,7 +159,7 @@ my $db = Ace->connect (-path => "$database",
 #
 ##################################################
 
-$runtime= &runtime;
+$runtime= $wormbase->runtime;
 $log->write_to("$runtime: Processing CDS class\n");
 
 # get CDSs for C. elegans
@@ -249,12 +259,12 @@ SUBSEQUENCE: while ( my $cds = $CDSs->next ) {
       }
 
     }
-<<<<<<< get_pfam.pl
     
     # get peptide homologies if no motif data
     else {
       @peptide_homols = $protein->Pep_homol;
-      $full_string .= "C. elegans $cgc_protein_name protein" if ($cgc_name); #####################################################
+      $full_string .= "C. elegans $cgc_protein_name protein" if ($cgc_name); 
+      #####################################################
       # no pfam or interpro hits; getting protein matches
       #####################################################
 
@@ -265,16 +275,8 @@ SUBSEQUENCE: while ( my $cds = $CDSs->next ) {
 	my $best_match = "";
 	my $best_description = "";
 	my $best_species = "";
+
       PROTEIN: foreach my $protein (@peptide_homols) {
-=======
-  }
-
-  #####################################################
-  # no pfam or interpro hits; getting protein matches
-  #####################################################
-
-  elsif ($peptide_homols[0]) {
->>>>>>> 1.13.4.1
 
 	  # ignore other worm matches
 	  next PROTEIN if (($protein =~ m/^BP\:CBP/) || ($protein =~ m/^WP\:CE/));
@@ -330,7 +332,7 @@ SUBSEQUENCE: while ( my $cds = $CDSs->next ) {
 #
 ###########################################
 
-$runtime= &runtime;
+$runtime= $wormbase->runtime;
 $log->write_to("$runtime: Processing pseudogene class\n");
 
 
@@ -392,7 +394,7 @@ PSEUDOGENE: foreach my $pseudogene (@pseudogenes) {
 #
 ###########################################
 
-$runtime= &runtime;
+$runtime= $wormbase->runtime;
 $log->write_to("$runtime: Processing transcript class\n");
 
 
@@ -497,28 +499,124 @@ TRANSCRIPT: while ( my $transcript = $transcripts->next ) {
 }
 
 # tidy up
-
 close ACE;
-
 $db->close;
 
 # load the file to autoace
-$runtime= &runtime;
+$runtime= $wormbase->runtime;
 $log->write_to("$runtime: loading results to $database\n");
-&load_to_database($database,$output_file,"DB_remark") unless $debug;
+$wormbase->load_to_database($database, $output_file,"DB_remark") unless $debug;
 
-
+$runtime= $wormbase->runtime;
 $log->write_to("$runtime: Finished script\n\n");
 
 
 $log->mail();
-
-
-
+print "Finished.\n" if ($verbose);
 exit(0);
 
 
+##############################################################
+#
+# Subroutines
+#
+##############################################################
+
+
+
+##########################################
+
+sub usage {
+  my $error = shift;
+
+  if ($error eq "Help") {
+    # Normal help menu
+    system ('perldoc',$0);
+    exit (0);
+  }
+}
+
+##########################################
 
 
 
 
+
+
+
+
+
+# Add perl documentation in POD format
+# This should expand on your brief description above and 
+# add details of any options that can be used with the program.  
+# Such documentation can be viewed using the perldoc command.
+
+
+__END__
+
+=pod
+
+=head2 NAME - get_pfam.pl
+
+=head1 USAGE
+
+=over 4
+
+=item get_pfam.pl  [-options]
+
+=back
+
+This script does..
+
+get_pfam.pl MANDATORY arguments:
+
+=over 4
+
+=item None at present.
+
+=back
+
+get_pfam.pl  OPTIONAL arguments:
+
+=over 4
+
+=item -h, Help
+
+=back
+
+=over 4
+ 
+=item -debug, Debug mode, set this to the username who should receive the emailed log messages. The default is that everyone in the group receives them.
+ 
+=back
+
+=over 4
+
+=item -test, Test mode, run the script, but don't change anything.
+
+=back
+
+=over 4
+    
+=item -verbose, output lots of chatty test messages
+
+=back
+
+
+=head1 REQUIREMENTS
+
+=over 4
+
+=item None at present.
+
+=back
+
+=head1 AUTHOR
+
+=over 4
+
+=item Unknown
+
+=back
+
+=cut
