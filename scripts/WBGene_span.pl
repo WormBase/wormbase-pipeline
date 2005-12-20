@@ -6,8 +6,8 @@
 #
 # Creates SMapped Gene spans for Gene objects
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2005-12-19 11:58:41 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2005-12-20 14:37:00 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -16,22 +16,20 @@ use Coords_converter;
 use Getopt::Long;
 use Log_files;
 
-my ($test, $database, $debug );
-my ($prepare, $gff, $no_ace, $gff_file, $chromosome);
-
+my ($database, $test, $gff, $no_ace, $debug, $gff_file, $chromosome, $prepare, );
 
 GetOptions (
-	    'database=s' => \$database,
-	    'test'       => \$test,
-	    'gff'        => \$gff,
-	    'no_ace'     => \$no_ace,
-	    'debug=s'    => \$debug,
-	    'gff_file=s' => \$gff_file,
+	    'database=s'   => \$database,
+	    'test'         => \$test,
+	    'gff'          => \$gff,
+	    'no_ace'       => \$no_ace,
+	    'debug=s'      => \$debug,
+	    'gff_file=s'   => \$gff_file,
 	    'chromosome=s' => \$chromosome,
-	    'prepare'    => \$prepare,
+	    'prepare'      => \$prepare
 	   );
 
-my $log = Log_files->make_build_log($debug);
+  my $log = Log_files->make_build_log($debug);
 
 $database = ($test ? glob("~wormpub/TEST_BUILD/autoace") : glob("~wormpub/autoace") ) unless $database;
 $log->write_to("Generating WBGene spans from database $database\n");
@@ -42,12 +40,13 @@ my @chromosomes = qw( I II III IV V X MtDNA);
 if ( $prepare ) {
   # gff dump Coding_transcript
   &run_command("perl $ENV{'CVS_DIR'}/GFF_method_dump.pl -database $database -method Coding_transcript -dump_dir $database/CHROMOSOMES");
-
+  
   # cat them to the main gff files
   foreach my $chrom ( @chromosomes ) {
     &run_command("cat $database/CHROMOSOMES/CHROMOSOME_${chrom}.Coding_transcript.gff >> $database/CHROMOSOMES/CHROMOSOME_${chrom}.gff");
   }
-} else {
+}
+else {
 
   die "$gff_file doesnt exist" if ($gff_file and !(-e $gff_file) );
 
@@ -75,7 +74,6 @@ if ( $prepare ) {
   }
 
   close FH;
-
 
 
   my @chromosomes = qw( I II III IV V X MtDNA);
@@ -106,29 +104,28 @@ if ( $prepare ) {
 	my ($gene) = $data[9] =~ /\"(\w+\.\w+)/;
 	push(@{$gene_coords{$gene}},[($data[3], $data[4], $data[6]) ]);
       }
-      close GFF;
-      my %gene_span;
-      WBG:foreach my $WBgene ( keys %gene2seq ) {
-	foreach my $CDS ( @{$gene2seq{$WBgene}} ) {
-	  next unless $gene_coords{$CDS};
-	  foreach my $transcript ( @{$gene_coords{$CDS}} ) {
-	    if ( !(defined $gene_span{$WBgene}) ) {
-
+    }
+    close GFF;
+    my %gene_span;
+  WBG:foreach my $WBgene ( keys %gene2seq ) {
+      foreach my $CDS ( @{$gene2seq{$WBgene}} ) {
+	next unless $gene_coords{$CDS};
+	foreach my $transcript ( @{$gene_coords{$CDS}} ) {
+	  if ( !(defined $gene_span{$WBgene}) ) {
+	    
+	    $gene_span{$WBgene}->{'min'}    = $transcript->[0];
+	    $gene_span{$WBgene}->{'max'}    = $transcript->[1];
+	    $gene_span{$WBgene}->{'strand'} = $transcript->[2];
+	  } else {
+	    if ( $transcript->[0] < $gene_span{$WBgene}->{'min'} ) {
 	      $gene_span{$WBgene}->{'min'}    = $transcript->[0];
+	    }
+	    if ( $gene_span{$WBgene}->{'max'} < $transcript->[1] ) {
 	      $gene_span{$WBgene}->{'max'}    = $transcript->[1];
-	      $gene_span{$WBgene}->{'strand'} = $transcript->[2];
-	    } else {
-	      if ( $transcript->[0] < $gene_span{$WBgene}->{'min'} ) {
-		$gene_span{$WBgene}->{'min'}    = $transcript->[0];
-	      }
-	      if ( $gene_span{$WBgene}->{'max'} < $transcript->[1] ) {
-		$gene_span{$WBgene}->{'max'}    = $transcript->[1];
-	      }
 	    }
 	  }
 	}
       }
-
       if ( $gff ) {
 	open (OUTGFF,">$database/CHROMOSOMES/CHROMOSOME_${chrom}.WBgene.gff") or do{ $log->write_to("cant open output\n"); die "cant open output\n"; }
       }
@@ -170,26 +167,26 @@ exit(0);
 
 =Title
 
-  WBGene_span.pl
+WBGene_span.pl
 
 =head1 Overview
 
-  parses GFF files to create a gene span for each WBGene from the start of the 5' most point of all transcripts to the 3'.
+parses GFF files to create a gene span for each WBGene from the start of the 5' most point of all transcripts to the 3'.
 
 =head1 Output
 
-  writes acefile output to $database/acefiles and gff to $database/CHROMOSOMES
+writes acefile output to $database/acefiles and gff to $database/CHROMOSOMES
   if acefile is created it will be loaded in to the database
 
 =head1 Options
 
-  -database  default is /wormsrv2/autoace
+-database  default is /wormsrv2/autoace
   -test      to use the test database
   -gff       to write a GFF file of the genespans as they are created rather than dumping them after loading to database
   -no_ace    dont write an acefile
 
 =head1 Example
 
- perl WBGene_span.pl -database ~wormpub/DATABASES/current_DB -gff
+perl WBGene_span.pl -database ~wormpub/DATABASES/current_DB -gff
 
 =cut
