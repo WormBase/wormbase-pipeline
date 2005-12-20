@@ -7,7 +7,7 @@
 # by Anon
 #
 # Last updated by: $Author: mh6 $                      
-# Last updated on: $Date: 2005-12-16 13:23:04 $        
+# Last updated on: $Date: 2005-12-20 14:10:17 $        
 
 use strict;
 use Wormbase;
@@ -193,7 +193,7 @@ $db->close;
 
 if($load){
   $log->write_to("Loading file to autoace\n");
-  my $command = "autoace_minder.pl -load $dbdir/acefiles/microarray_mappings.ace -tsuser microarray_mappings";
+  my $command = "autoace_builder.pl -load $dbdir/acefiles/microarray_mappings.ace -tsuser microarray_mappings";
                                                                                    
   my $status = system($command);
   if(($status >>8) != 0){
