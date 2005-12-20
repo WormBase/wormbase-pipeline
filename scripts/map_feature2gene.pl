@@ -9,7 +9,7 @@
 # Usage : map_feature2gene.pl [-options]
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2005-12-16 14:04:22 $
+# Last edited on: $Date: 2005-12-20 13:53:14 $
 #################################################
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -141,7 +141,7 @@ $db->close;
 # Upload file to autoace (if you have been asked to)
 if ($load) {
     $log->write_to("Loading file to autoace\n");
-    my $command = "autoace_minder.pl -load $output -tsuser TSL_CDS_connect";
+    my $command = "autoace_builder.pl -load $output -tsuser TSL_CDS_connect";
 
     my $status = system($command);
     if ( ( $status >> 8 ) != 0 ) {
