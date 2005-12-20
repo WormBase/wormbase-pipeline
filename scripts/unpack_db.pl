@@ -13,7 +13,7 @@
 # the Caltech database (citace)
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-12-16 11:18:55 $
+# Last updated on: $Date: 2005-12-20 12:09:56 $
 
 
 #################################################################################
@@ -90,51 +90,35 @@ sub unpack_stuff{
   $log->write_to("Unpacking $database $opt\n");
 
   my $ftp_dir = $wormbase->ftp_upload;
-  my $basedir = $wormbase->basedir;
+  my $primaries = $wormbase->primaries;
   my $logs    = $wormbase->logs;
 
   # set up correct locations
   if ($database eq "brigace"){
-<<<<<<< unpack_db.pl
-    $ftp     = "/nfs/ftp_uploads/wormbase/stl";
-=======
     $ftp     = "$ftp_dir/stl";
->>>>>>> 1.17.4.1
-    $dbdir   = "$basedir/brigace";
+    $dbdir   = "$primaries/brigace";
     $logfile = "$logs/unpack_briggsae.$rundate.$$";
     $dbname  = "brigdb";
   }
 
   if ($database eq "cshace"){
-<<<<<<< unpack_db.pl
-    $ftp     = "/nfs/ftp_uploads/wormbase/csh";
-=======
     $ftp     = "$ftp_dir/csh";
->>>>>>> 1.17.4.1
-    $dbdir   = "$basedir/cshace";
+    $dbdir   = "$primaries/cshace";
     $logfile = "$logs/unpack_cshace.$rundate.$$";
     $dbname  = "cshl_dump";
   }
 
   if ($database eq "stlace"){
-<<<<<<< unpack_db.pl
-    $ftp     = "/nfs/ftp_uploads/wormbase/stl";
-=======
     $ftp     = "$ftp_dir/stl";
->>>>>>> 1.17.4.1
-    $dbdir   = "$basedir/stlace";
+    $dbdir   = "$primaries/stlace";
     $logfile = "$logs/unpack_stlace.$rundate.$$";
     $dbname  = "stlace";
   }
 
 
   if ($database eq "citace"){
-<<<<<<< unpack_db.pl
-    $ftp     = "/nfs/ftp_uploads/wormbase/caltech";
-=======
     $ftp     = "$ftp_dir/caltech";
->>>>>>> 1.17.4.1
-    $dbdir   = "$basedir/citace";
+    $dbdir   = "$primaries/citace";
     $logfile = "$logs/unpack_citace.$rundate.$$";
     $dbname  = "citace_dump";
   }
@@ -297,15 +281,6 @@ END
       next;
     }
   }
- 
- 
-  
-  ###############################
-  # Tidy up old ace files       #
-  ###############################
-  unlink glob("$unpack_dir/*") or $log->write_to("ERROR: Couldn't remove $unpack_dir/*\n");
-  rmdir("$unpack_dir") or $log->write_to("ERROR: Could't remove $unpack_dir\n");
-
   $log->write_to( "\n$database build complete at ".$wormbase->runtime."\n");
 }
 

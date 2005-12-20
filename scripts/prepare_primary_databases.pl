@@ -3,7 +3,7 @@
 # prepare_primary_databases.pl
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2005-12-16 11:18:55 $
+# Last edited on: $Date: 2005-12-20 12:09:56 $
 
 use strict;
 my $scriptdir = $ENV{'CVS_DIR'};
@@ -45,53 +45,32 @@ else {
 }
 
 # establish log file.
-<<<<<<< prepare_primary_databases.pl
-my $log = Log_files->make_build_log($debug);
-
-# set paths to take account of whether -test is being used
-my $basedir = "/wormsrv2";
-$basedir    = glob("~wormpub")."/TEST_BUILD" if ($test);
-=======
 my $log = Log_files->make_build_log($wormbase);
->>>>>>> 1.2.2.3
 
-# exit if the Primary_databases_used_in_build is absent
-#  &usage(13) unless (-e "$logdir/Primary_databases_used_in_build");
- 
-local (*LAST_VER);
-my ($stlace_date,$brigdb_date,$citace_date,$cshace_date) = &FTP_versions;
-my ($stlace_last,$brigdb_last,$citace_last,$cshace_last) = &last_versions;
+my %databases;
+$databases{'stlace'}->{'search'} = 'stl/stlace*';
+$databases{'brigdb'}->{'search'} = 'stl/brigdb*';
+$databases{'brigdb'}->{'option'} = 'brigace'; # for this database the option passed to unpack is not db name <sigh>
+$databases{'citace'}->{'search'} = 'caltech/citace*';
+$databases{'cshace'}->{'search'} = 'csh/cshace*';
+
+&FTP_versions;
+&last_versions;
 my $options = "";
 
 # use test mode if autoace_minder -test was specified
 $options .= " -test" if ($test);
 
-# stlace
-print "\nstlace : $stlace_date last_build $stlace_last";
-unless ($stlace_last eq $stlace_date) {
-  $options .= " -stlace $stlace_date";
-  print "  => Update stlace";
-}
-  
-# brigdb
-print "\nbrigdb : $brigdb_date last_build $brigdb_last";
-unless ($brigdb_last eq $brigdb_date) {
-  $options .= " -brigace $brigdb_date";
-  print "  => Update brigdb";
-}
-  
-# citace
-print "\ncitace : $citace_date last_build $citace_last";
-unless ($citace_last eq $citace_date) {
-  $options .= " -citace $citace_date";
-  print "  => Update citace";
-}
-  
-# cshace
-print "\ncshace : $cshace_date last_build $cshace_last";
-unless ($cshace_last eq $cshace_date) {
-  $options .= " -cshace $cshace_date";
-  print "  => Update cshace";
+foreach my $primary (keys %databases){
+  if( $databases{$primary}->{'ftp_date'} ) {
+    unless ( $databases{$primary}->{'last_date'} == $databases{$primary}->{'ftp_date'} ) {
+      $options .= " -".($databases{"$primary"}->{'option'} or $primary )." ".$databases{$primary}->{'ftp_date'};
+      print " => Update $primary";
+    }
+  }else {
+    $log->write_to("no version of $primary on FTP site");
+    
+  }
 }
 
 print "\n\nrunning unpack_db.pl $options\n";
@@ -108,41 +87,25 @@ unless ($options eq "") {
 
 # make a unpack_db.pl log file in /logs
 
-<<<<<<< prepare_primary_databases.pl
-if ($test) {
-  $log->write_to("INFO: You are copying camace and genace from ~wormpub/DATABASES to ~wormpub/TEST_BUILD\n");  
-}
-  # transfer  /nfs/disk100/wormpub/DATABASES/camace to $basedir/camace
-  $log->write_to("Transfering geneace and camace\n");
-  &run_command("$scriptdir/TransferDB.pl -start /nfs/disk100/wormpub/DATABASES/camace -end $basedir/camace -database");
-  # transfer /nfs/disk100/wormpub/DATABASES/geneace to $basedir/geneace 
-  &run_command("$scriptdir/TransferDB.pl -start /nfs/disk100/wormpub/DATABASES/geneace -end $basedir/geneace -database");
-=======
+
+# transfer camace and geneace to correct PRIMARIES dir
 $log->write_to("Transfering geneace and camace\n");
-$wormbase->run_script("TransferDB.pl -start ".$wormbase->database('camace')." -end ".$wormbase->basedir."/camace -database -wspec");
-$wormbase->run_script("TransferDB.pl -start ".$wormbase->database('geneace')." -end ".$wormbase->basedir."/geneace -database -wspec");
+$wormbase->run_script("TransferDB.pl -start ".$wormbase->database('camace'). " -end ".$wormbase->primary("camace") ." -database -wspec");
+$wormbase->run_script("TransferDB.pl -start ".$wormbase->database('geneace')." -end ".$wormbase->primary("geneace")." -database -wspec");
 #system("cp -R misc_static $autoace/acefiles/primary  #check whats happened here - looks like partial edit
 
->>>>>>> 1.2.2.3
-
-  
 #################################################
 # Check that the database have unpack correctly #
 #################################################
 
 $log->write_to("writing Primary_databases_used_in_build\n");
 # rewrite Primary_databases_used_in_build
-open (LAST_VER, ">$database/Primary_databases_used_in_build");
-print LAST_VER "stlace : $stlace_date\n"; 
-print LAST_VER "brigdb : $brigdb_date\n"; 
-print LAST_VER "citace : $citace_date\n"; 
-print LAST_VER "cshace : $cshace_date\n"; 
+my $new_primary = $wormbase->basedir."Primary_databases_used_in_build";
+open (LAST_VER, ">$new_primary");
+foreach my $primary ( keys %databases){
+  print LAST_VER "$primary : ".$databases{$primary}->{'ftp_date'}."\n";
+}
 close LAST_VER;
-  
-# make a unpack_db.pl log file in /logs
-#  system("touch $logdir/$flag{'A4'}");
-
-
 
 $log->mail;
 exit(0);
@@ -155,45 +118,15 @@ exit(0);
 sub FTP_versions {
 
   $log->write_to("\tgetting FTP versions . . \n");
-  local (*STLACE_FTP,*BRIGDB_FTP,*CITACE_FTP,*CSHACE_FTP);
 
   my $ftp = $wormbase->ftp_upload;
-  my $stlace_FTP = "$ftp/stl/stlace_*";
-  my $brigdb_FTP = "$ftp/stl/brigdb_*";
-  my $citace_FTP = "$ftp/caltech/citace_*";
-  my $cshace_FTP = "$ftp/csh/cshl_*";
-  my ($stlace_date,$brigdb_date,$citace_date,$cshace_date);
-
-  # stlace
-  open (STLACE_FTP, "/bin/ls -t $stlace_FTP |")  || die "cannot open $stlace_FTP\n";
-  while (<STLACE_FTP>) {
-    chomp; (/\_(\d+)\-(\d+)\-(\d+)\./); $stlace_date = substr($1,-2).$2.$3; last;
+  foreach my $db (keys %databases){
+    open(my $dir, "/bin/ls -t $ftp/$databases{$db}->{'search'} |") or $log->log_and_die("Cant open $ftp/$databases{$db}->{'search'}"."\n");
+    while (<$dir>) {
+      chomp; (/\_(\d+)\-(\d+)\-(\d+)\./); $databases{$db}->{'ftp_date'} = substr($1,-2).$2.$3; last;
+    }
+    close $dir;
   }
-  close STLACE_FTP; 
-
-  # brigdb
-  open (BRIGDB_FTP, "/bin/ls -t $brigdb_FTP |") || die "cannot open $brigdb_FTP\n";
-  while (<BRIGDB_FTP>) {
-    chomp; (/\_(\d+)\-(\d+)\-(\d+)\./); $brigdb_date = substr($1,-2).$2.$3; last;
-  }
-  close BRIGDB_FTP; 
-  
-  # citace
-  open (CITACE_FTP, "/bin/ls -t $citace_FTP |") || die "cannot open $citace_FTP\n";
-  while (<CITACE_FTP>) {
-    chomp; (/\_(\d+)\-(\d+)\-(\d+)\./); $citace_date = substr($1,-2).$2.$3; last;
-  }
-  close CITACE_FTP; 
-  
-  # cshace
-  open (CSHACE_FTP, "/bin/ls -t $cshace_FTP |") || die "cannot open $cshace_FTP\n";
-  while (<CSHACE_FTP>) {
-    chomp; (/\_(\d+)\-(\d+)\-(\d+)\./); $cshace_date = substr($1,-2).$2.$3; last;
-  }
-  close CSHACE_FTP; 
-  
-  # return current dates as 6-figure string
-  return($stlace_date,$brigdb_date,$citace_date,$cshace_date);
 }
 
 #####################################################################################################################
@@ -201,29 +134,24 @@ sub FTP_versions {
 sub last_versions {
     
   $log->write_to("\tgetting last versions . . \n");
-  local (*LAST_VER);
-  my ($stlace_last,$brigdb_last,$citace_last,$cshace_last);
 
-  open (LAST_VER, "<$database/Primary_databases_used_in_build") || usage("Primary_databases_file_error");
+  my $file = $wormbase->basedir."/Primary_databases_used_in_build";
+  open (LAST_VER, "<$file") or $log->log_and_die("cant find $file\n");
   while (<LAST_VER>) {
-    $stlace_last = $1 if /^stlace \: (\d+)$/;
-    $brigdb_last = $1 if /^brigdb \: (\d+)$/;
-    $citace_last = $1 if /^citace \: (\d+)$/;
-    $cshace_last = $1 if /^cshace \: (\d+)$/;
+    if (/^(\w+) \: (\d+)$/) {
+      $databases{"$1"}->{'last_date'} = $2;
+    }
   }
   close LAST_VER;
 
-  foreach my $database ( ($stlace_last,$brigdb_last,$citace_last,$cshace_last) ) {
-    unless (defined $database ){
-      $database = 000000;
+  foreach my $db ( keys %databases ) {
+    unless (defined $databases{$db}->{'last_date'} ) {
+      $databases{$db}->{'last_date'} = '000000';
       $log->write_to("Database not defined - using FTP version\n");
     }
   }
-
-  # return last version dates as 6-figure string
-  return($stlace_last,$brigdb_last,$citace_last,$cshace_last);
-
 }
+
 sub usage {
   print "usage\n";
 }
