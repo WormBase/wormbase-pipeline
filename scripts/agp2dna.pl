@@ -10,16 +10,18 @@
 #
 # Usage : agp2dna.pl [-options]
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2005-12-16 11:18:55 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2005-12-20 14:02:11 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
-use vars qw ($seq_len $sv_acc $sv_ver $log);
+use Carp;
 use Storable;
 use Log_files;
+
+use vars qw ($seq_len $sv_acc $sv_ver );
 
 
 ########################################
@@ -33,7 +35,10 @@ my $pfetch;             # Fetch sequences using pfetch
 my $getz;               # Fetch sequences using getz
 my $test;               # use test environment in ~wormpub/TEST_BUILD
 my $quicktest;          # same as -test but only uses one chromosome
+my $verbose;
 my $store;
+my $wormbase;
+
 GetOptions (
             "pfetch"      => \$pfetch,
             "getz"        => \$getz,
@@ -42,27 +47,40 @@ GetOptions (
 	    "chrom=s"     => \$chrom,
 	    "test"        => \$test,
 	    "quicktest"   => \$quicktest,
+	    "verbose"     => \$verbose,
 	    "store:s"     => \$store
 	   );
 
-&usage("Help") if ($help);
+
 
 # check that -test and -quicktest haven't both been set.  Also if -quicktest is specified, 
 # need to make -test true, so that test mode runs for those steps where -quicktest is meaningless
-if($test && $quicktest){
+if ($test && $quicktest) {
   die "both -test and -quicktest specified, only one of these is needed\n";
 }
-($test = 1) if ($quicktest);
 
-my $wormbase;
-if( $store ) {
-  $wormbase = retrieve( $store ) or croak("cant restore wormbase from $store\n");
-}
-else {
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+  ($test = 1) if ($quicktest);
+  $wormbase->set_test($test);   # set test in the wormbase object
+} else {
+  ($test = 1) if ($quicktest);
   $wormbase = Wormbase->new( -debug   => $debug,
-			     -test    => $test,
-			   );
+                             -test    => $test,
+			     );
 }
+
+# Display help if required
+&usage("Help") if ($help);
+
+# in test mode?
+if ($test) {
+  print "In test mode\n" if ($verbose);
+
+}
+
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
 
 
 ##############################
@@ -78,7 +96,6 @@ my $logdir    = $wormbase->autoace."/yellow_brick_road";
 my @gff_files = ('I','II','III','IV','V','X');
 @gff_files = ('III') if ($quicktest);
 
-my $log = Log_files->make_build_log( $wormbase );
 
 # Set pfetch as the default retreival option
 if (!$getz) {$pfetch = 1};
@@ -199,6 +216,7 @@ foreach my $chromosome (@gff_files) {
  # hasta luego                          #
  ########################################
 $log->mail;
+print "Finished.\n" if ($verbose);
 exit(0);
 
 
