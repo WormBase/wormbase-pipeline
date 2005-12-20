@@ -6,60 +6,86 @@
 #
 # Gets latest PFAM motifs from sanger/pub and puts info in to ace file
 #
-# Last updated by: $Author: ar2 $                      
-# Last updated on: $Date: 2005-12-16 11:18:54 $         
+# Last updated by: $Author: gw3 $                      
+# Last updated on: $Date: 2005-12-20 17:15:16 $         
 
-
-use strict;                                     
-use lib "/wormsrv2/scripts/";                    
+use strict;                                      
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
+use Carp;
+use Log_files;
+use Storable;
 
 
 ######################################
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug);
-my $load;      # option for loading resulting acefile to autoace
-my $maintainers = "All";
-my $rundate     = &rundate;
-my $runtime     = &runtime;
+my ($help, $debug, $test, $verbose, $store, $wormbase);
 
-GetOptions ("help"      => \$help,
-            "debug=s"   => \$debug, 
-	    "load"      => \$load
+my $load;      # option for loading resulting acefile to autoace
+
+GetOptions ("help"       => \$help,
+            "debug=s"    => \$debug,
+	    "test"       => \$test,
+	    "verbose"    => \$verbose,
+	    "store"      => \$store,
+	    "load"       => \$load,
             );
 
-# help 
-&usage("Help") if ($help);
 
-# Use debug mode?
-if($debug){
-  print "DEBUG = \"$debug\"\n\n";
-  ($maintainers = $debug . '\@sanger.ac.uk');
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+			     );
 }
 
-# create log
-my $log = Log_files->make_build_log();
+# Display help if required
+&usage("Help") if ($help);
+
+# in test mode?
+if ($test) {
+  print "In test mode\n" if ($verbose);
+
+}
+
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
+
+#################################
+# Set up some useful paths      #
+#################################
+
+my $ace_dir         = $wormbase->autoace;     # AUTOACE DATABASE DIR
+
+my $rundate         = $wormbase->rundate;
+my $runtime         = $wormbase->runtime;
+
+
+
+
+
 
 #Get the latest version
-my $pfam_motifs_gz = "/wormsrv2/tmp/Pfam_motifs.gz";
+my $pfam_motifs_gz = "/tmp/Pfam_motifs.gz";
 $log->write_to("Attempting to wget the latest version\n");
 print "Attempting to wget the latest version\n";
 `wget -O $pfam_motifs_gz ftp://ftp.sanger.ac.uk/pub/databases/Pfam/current_release/Pfam-A.full.gz` and die "$0 Couldnt get Pfam-A.full.gz \n";
 
 `gunzip -f $pfam_motifs_gz` and die "gunzip failed\n";
 
-my $pfam_motifs = "/wormsrv2/tmp/Pfam_motifs";
+my $pfam_motifs = "/tmp/Pfam_motifs";
 $log->write_to("Opening file $pfam_motifs\n");
 print "\n\nOpening file $pfam_motifs . . \n";
 open (PFAM,"<$pfam_motifs") or die "cant open $pfam_motifs\n";
 
 
-my $acefile = "/wormsrv2/autoace/acefiles/pfam_motifs.ace";
+my $acefile = "$ace_dir/acefiles/pfam_motifs.ace";
 
-open (PFAMOUT,">$acefile") or die "cant write to /wormsrv2/autoace/acefiles/pfam_motifs.ace\n";
+open (PFAMOUT,">$acefile") or die "cant write to $ace_dir/acefiles/pfam_motifs.ace\n";
 
 my $text;
 my $pfam;
@@ -80,8 +106,7 @@ while (<PFAM>){
       $text = "";
     }
     else{
-      print "gone through a record with out picking up pfam\n";
-      die;
+       die "gone through a record without picking up pfam\n";
     }
   }
   #get the id
@@ -104,16 +129,14 @@ close PFAMOUT;
 
 # load file to autoace if -load specified
 if($load){
-  my $command = "autoace_minder.pl -load /wormsrv2/autoace/acefiles/pfam_motifs.ace -tsuser pfam_motifs";
-  my $status = system($command);
-  if(($status >>8) != 0){
-    die "ERROR: Loading pfam_motifs.ace file failed \$\? = $status\n";
-  }
+  my $command = "autoace_minder.pl -load $ace_dir/acefiles/pfam_motifs.ace -tsuser pfam_motifs";
+  $wormbase->run_script($command, $log);
 }
 
 
 # tidy up and die
-$log->mail("$maintainers");
+$log->mail();
+print "Finished.\n" if ($verbose);
 exit(0);
 
 
@@ -163,7 +186,7 @@ Title "Biopterin-dependent aromatic amino acid hydroxylase"
 Database" "Pfam" "Pfam_ID" "PF00351"
 
 
-writes to /wormsrv2/wormbase/misc_dynamic/misc_pfam_motifs.ace
+writes to ~wormpub/BUILD_DATA/MISC_DYNAMIC/misc_pfam_motifs.ace
 
 =head4 OPTIONAL arguments:
 
