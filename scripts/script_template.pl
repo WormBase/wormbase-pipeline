@@ -7,7 +7,7 @@
 # This is a example of a good script template
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2005-12-19 14:31:43 $      
+# Last updated on: $Date: 2005-12-20 17:04:29 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -26,13 +26,11 @@ use Storable;
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
 
-my $database;
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
-	    "database=s" => \$database,
 	    "store"      => \$store,
 	    );
 
@@ -61,6 +59,7 @@ my $log = Log_files->make_build_log($wormbase);
 #################################
 
 # Set up top level base directories (these are different if in test mode)
+my $basedir         = $wormbase->basedir;     # BASE DIR
 my $ace_dir         = $wormbase->autoace;     # AUTOACE DATABASE DIR
 my $wormpep_dir     = $wormbase->wormpep;     # CURRENT WORMPEP
 my $wormrna_dir     = $wormbase->wormrna;     # CURRENT WORMRNA
