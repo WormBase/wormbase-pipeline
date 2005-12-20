@@ -7,7 +7,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2005-12-16 13:57:58 $
+# Last updated on: $Date: 2005-12-20 13:52:01 $
 
 use strict;
 use warnings;
@@ -156,7 +156,7 @@ close(OUTPUT);    # close the output filehandle
 ###############
 if ($load) {
     $log->write_to("Loading file to autoace\n");
-    my $command = "autoace_minder.pl -load $output -tsuser interpro_motifs";
+    my $command = "autoace_builder.pl -load $output -tsuser interpro_motifs";
 
     my $status = system($command);
     if ( ( $status >> 8 ) != 0 ) {

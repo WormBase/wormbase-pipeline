@@ -6,7 +6,7 @@
 # This maps alleles to the genome based on their flanking sequences
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2005-12-19 14:14:38 $
+# Last updated on: $Date: 2005-12-20 13:49:05 $
 
 use strict;
 use warnings;
@@ -413,13 +413,13 @@ sub check_original_mappings {
 ################################
 # read acefiles into autoace   #
 #                              #
-# use autoace_minder.pl -load  #
+# use autoace_builder.pl -load  #
 ################################
 
 sub load_alleles_to_database {
 
     $log->write_to("\nStart parsing $ace_file in to $database\n\n");
-    my $command = "autoace_minder.pl -load $ace_file -tsuser map_Alleles.pl";
+    my $command = "autoace_builder.pl -load $ace_file -tsuser map_Alleles.pl";
     my $status  = system($command);
     if ( ( $status >> 8 ) != 0 ) {
         die "ERROR: Loading $ace_file file failed \$\? = $status\n";
