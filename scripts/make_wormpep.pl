@@ -6,59 +6,69 @@
 #
 # Builds a wormpep data set from the current autoace database
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-12-16 11:18:55 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2005-12-20 16:58:23 $
 
-
-use strict;
+use strict;                                      
 use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
+use Carp;
+use Log_files;
+use Storable;
 use IO::Handle;
 use Ace;
 use Socket;
 use File::Copy;
-use Log_files;
-use Storable;
 
 ##############################
 # command-line options       #
 ##############################
 
-my $help;                # Help/Usage page
-my $verbose;             # turn on extra output
-my $debug;               # For sending output to just one person
-my $maintainers = "All"; # log file recipients
+my ($help, $debug, $test, $verbose, $store, $wormbase);
+
 my $initial;             # run script in initial mode at start of build
 my $final;               # for full run at end of build
-my $test;                # for running in test environment ~wormpub/TEST_BUILD
-my $store;
 
-GetOptions ("help"        => \$help,
-            "debug=s"     => \$debug,
-	    "verbose"     => \$verbose,
-            "initial"     => \$initial,
-	    "final"       => \$final,
-            "test"        => \$test,
-	    "store:s"     => \$store
+GetOptions ("help"       => \$help,
+            "debug=s"    => \$debug,
+	    "test"       => \$test,
+	    "verbose"    => \$verbose,
+	    "store"      => \$store,
+            "initial"    => \$initial,
+	    "final"      => \$final,
+	    "store:s"    => \$store
            );
+
+
+
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+			     );
+}
+
+# Display help if required
+&usage("Help") if ($help);
+
+# in test mode?
+if ($test) {
+  print "In test mode\n" if ($verbose);
+
+}
+
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
+
 
 #########################################
 # sanity checks on command-line options #
 #########################################
 
-&error(0) if ($help);
 &error(1) if ($initial and $final);
 
-my $wormbase;
-if( $store ) {
-  $wormbase = retrieve( $store ) or croak("cant restore wormbase from $store\n");
-}
-else {
-  $wormbase = Wormbase->new( -debug   => $debug,
-			     -test    => $test,
-			   );
-}
 
 #######################################
 # misc. variables                     #
@@ -109,7 +119,6 @@ my $wpdir     = "$stem".--$ver;
 #
 #####################################################################################################
 
-my $log = Log_files->make_build_log( $wormbase );
 
 # create directory structure and read wp.fasta file from previous release
 &setup;
@@ -146,28 +155,18 @@ my $log = Log_files->make_build_log( $wormbase );
 &write_wormpep_accession if ($final);
 
 #generate file to ad new peptides to mySQL database.
-$wormbase->run_script("new_wormpep_entries.pl");
+$wormbase->run_script("new_wormpep_entries.pl", $log);
 
 # update common data
-$wormbase->run_script("update_Common_data.pl --build --cds2wormpep");
+$wormbase->run_script("update_Common_data.pl --build --cds2wormpep", $log);
 
 
 ##############################
 # Tidy up and finish stuff   #
 ##############################
 
-<<<<<<< make_wormpep.pl
-close (LOG);
-
-#Email log
-my $subject = "BUILD REPORT: make_wormpep.pl";
-$subject = "TEST MODE: WormBase Build Report: make_wormpep.pl" if ($test);
-
-&mail_maintainer("$subject",$maintainers,$log);
-=======
-$log->mail;
->>>>>>> 1.12.4.1
-
+$log->mail();
+print "Finished.\n" if ($verbose);
 exit(0);
 
 
@@ -177,6 +176,23 @@ exit(0);
 #################################################################################
 # Subroutines                                                                   #
 #################################################################################
+
+
+
+##########################################
+
+sub usage {
+  my $error = shift;
+
+  if ($error eq "Help") {
+    # Normal help menu
+    system ('perldoc',$0);
+    exit (0);
+  }
+}
+
+##########################################
+
 
 ##########################
 # run details            #
@@ -246,7 +262,7 @@ sub error {
     &run_details;
     $log->write_to("=> Failed to create a new wormpep.dna for wormpep release wormpep$release\n\n");
   }
-  $log->log_and_die(&runtime." : Exiting script\n");
+  $log->log_and_die($wormbase->runtime." : Exiting script\n");
 }
  # end of sub 'error'
 
@@ -551,28 +567,18 @@ sub write_main_wormpep_and_table{
 
   $log->write_to($wormbase->runtime." : Build wormpep & wormpep.table files\n\n");
   
-<<<<<<< make_wormpep.pl
-  # open filehandles for output files
-  
-  open (FASTA, ">$new_wpdir/wormpep_unwrap$release") || die "cannot create wormpep_unwrap$release\n";
-=======
   open (FASTA , ">$new_wpdir/wormpep_unwrap$release") || $log->log_and_die("cannot create wormpep_unwrap$release\n");
->>>>>>> 1.12.4.1
+
   FASTA->autoflush();
 
-<<<<<<< make_wormpep.pl
   if ($initial) {
-      open (CONNECTIONS, ">/wormsrv2/autoace/acefiles/CDS2wormpep.ace") || die "cannot create CDS2wormpep\n";
-      CONNECTIONS->autoflush();
-  }
-  elsif ($final) {
-      open (TABLE, ">$new_wpdir/wormpep.table$release")  || die "cannot create wormpep.table$release\n";
-      TABLE->autoflush();
-=======
-  if($final){
-    open (TABLE , ">$new_wpdir/wormpep.table$release")  || $log->log_and_die("cannot create wormpep.table$release\n");
+    my $ace_dir         = $wormbase->autoace;     # AUTOACE DATABASE DIR
+
+    open (CONNECTIONS, ">$ace_dir/acefiles/CDS2wormpep.ace") ||  $log->log_and_die("cannot create CDS2wormpep\n");
+    CONNECTIONS->autoflush();
+  } elsif ($final) {
+    open (TABLE, ">$new_wpdir/wormpep.table$release")  || $log->log_and_die("cannot create wormpep.table$release\n");
     TABLE->autoflush();
->>>>>>> 1.12.4.1
   }
   
   foreach my $cds (@CDSs) {
@@ -772,7 +778,7 @@ sub count_isoforms{
 
   # write the release letter (also does some checks)
   if($final) {
-    &release_wormpep($no_isoform_count,$total_cds_count,$isoform_count);
+    $wormbase->release_wormpep($no_isoform_count,$total_cds_count,$isoform_count);
     chmod (0444 , "$new_wpdir/*") || $log->write_to("cannot chmod $new_wpdir/ files\n");
   }
   
