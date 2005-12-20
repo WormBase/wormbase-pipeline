@@ -4,8 +4,8 @@
 #
 # by Dan Lawson (dl1@sanger.ac.uk)
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2005-12-16 11:18:55 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2005-12-20 13:52:23 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -25,11 +25,13 @@ my $debug;
 my $test;      # uses test environment
 my $quicktest; # same as $test but only runs one chromosome
 my $database;
+my $verbose;
 my $store;
 
 GetOptions ("help"         => \$help,
 	    "debug:s"      => \$debug,
 	    "test"         => \$test,
+	    "verbose"      => \$verbose,
             "quicktest"    => \$quicktest,
 	    "database:s"   => \$database,
 	    "store:s"      => \$store
@@ -45,14 +47,20 @@ if($test && $quicktest){
 my $wormbase;
 if( $store ) {
   $wormbase = retrieve( $store ) or croak("cant restore wormbase from $store\n");
+  ($test = 1) if ($quicktest);
+  $wormbase->set_test($test);   # set test in the wormbase object
+
 }
 else {
+  ($test = 1) if ($quicktest);
   $wormbase = Wormbase->new( -debug   => $debug,
 			     -test    => $test,
 			   );
 }
 
-&error(0) if ($help);
+# Display help if required
+&usage("Help") if ($help);
+
 
 my $log = Log_files->make_build_log($wormbase);
 
@@ -224,7 +232,10 @@ foreach my $chromosome (@gff_files) {
   my $status = copy("$file", $wormbase->chromosomes."/CHROMOSOME_$chromosome.agp"); 
   $log->write_to("ERROR: Couldn't copy file: $!\n") if ($status == 0);
 }
-$log->mail;
+
+
+$log->mail();
+print "Finished.\n" if ($verbose);
 exit(0);
    
  ##############################
@@ -239,6 +250,21 @@ exit(0);
 #################################################################################
 
 
+
+##########################################
+
+sub usage {
+  my $error = shift;
+
+  if ($error eq "Help") {
+    # Normal help menu
+    system ('perldoc',$0);
+    exit (0);
+  }
+}
+
+##########################################
+
 sub error {
   my $error = shift;
   my $chromosome = shift;
@@ -246,10 +272,6 @@ sub error {
     # No gff file to work from
     print "The gff file '$outdir/CHROMOSOME_${chromosome}.clone_acc.gff' doesn't exist.\n";
     exit(0);
-  }
-  elsif ($error == 0) {
-    # Normal help menu
-    exec ('perldoc',$0);
   }
 }
 
