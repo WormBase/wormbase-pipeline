@@ -1,55 +1,42 @@
 #!/usr/local/bin/perl5.8.0 -w
-
-# Last updated by $Author: pad $
-# Last updated on: $Date: 2005-12-12 10:59:48 $
+# Last updated by $Author: mh6 $
+# Last updated on: $Date: 2005-12-20 15:52:50 $
 
 package Geneace;
 
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
 use Ace;
 use Wormbase;
 use Coords_converter;
 use strict;
 
-my $def_dir = "/nfs/disk100/wormpub/DATABASES/geneace/wquery";           # location of table-maker definitions
-my $test_def_dir ="/nfs/disk100/wormpub/ck1";       # location of table-maker definitions for running this script not on wormsrv2
-my $machine = ();
-$machine = "+" if `ls /wormsrv1/`;                  # if sees wormsrv1 then $machine is defined, else it remains undef: for running on cbi1, eg
-
-my $curr_db = "/nfs/disk100/wormpub/DATABASES/current_DB";
-my $geneace_dir = "/nfs/disk100/wormpub/DATABASES/geneace";
-my $tace = &tace;
-
+# constant stuff (hopefully not modified anywhere)
+my $def_dir = '/nfs/disk100/wormpub/DATABASES/geneace/wquery';           # location of table-maker definitions
+my $curr_db = '/nfs/disk100/wormpub/DATABASES/current_DB';
+my $geneace_dir = '/nfs/disk100/wormpub/DATABASES/geneace';
 
 sub init {
-  my $class = shift;
-  my $this={};
+  my ($class,$wormbase) = @_;
+  
+  $wormbase= Wormbase->new() if !($wormbase); # crude hack
+  my $this= {
+	  tace => $wormbase->tace
+  	};
+  # set class variables
   bless($this, $class);
 }
 
-sub geneace {
-  my $this = shift;
-  my $geneace_dir = "/nfs/disk100/wormpub/DATABASES/geneace";
-  return $geneace_dir;
-}
-
 sub get_geneace_db_handle {
+  my $self = shift;
   my $db = Ace->connect(-path  => $geneace_dir,
-		        -program =>$tace) || die "Connection failure";
+		        -program =>$self->{tace}) || die "Connection failure";
   return $db;
 }
 
-sub curr_db {
-  my $this = shift;
-  my $curr_db_dir = "/nfs/disk100/wormpub/DATABASES/current_DB";
-  return $curr_db_dir;
-}
-
-sub test_geneace {
-  my $this = shift;
-  my $test_dir = "/nfs/disk100/wormpub/DATABASES/TEST_DBs/CK1TEST";
-  return $test_dir;
-}
+# accessors, that are not used as far as i can see
+sub geneace {return $geneace_dir}
+sub curr_db {return $curr_db}
+sub test_geneace {return  '/nfs/disk100/wormpub/DATABASES/TEST_DBs/CK1TEST'}
 
 sub gene_info {
   my ($this, $db, $option) = @_;
@@ -61,10 +48,9 @@ sub gene_info {
   my $outfile = "$geneace_dir/CHECKS/gene_info.tmp"; `chmod 777 $outfile`;
   my (%gene_info, %seqs_to_Gene_id);
 
-  my $gene_info="Table-maker -o $outfile -p \"$def_dir/geneace_gene_info.def\"\nquit\n" if $machine;
-     $gene_info="Table-maker -o $outfile -p \"$test_def_dir/geneace_gene_info.def\"\nquit\n" if !$machine;
+  my $gene_info="Table-maker -o $outfile -p \"$def_dir/geneace_gene_info.def\"\nquit\n";
 
-  open (FH, "echo '$gene_info' | $tace $db |") || die "Couldn't access $db\n";
+  open (FH, "echo '$gene_info' | $this->{tace} $db |") || die "Couldn't access $db\n";
   while(<FH>){}
 
   my @gene_info = `cut -f 1,2 $outfile`;
@@ -178,10 +164,9 @@ sub clone_to_lab {
   my $this = shift;
   my %clone_lab;
 
-  my $clone_to_lab="Table-maker -p \"$def_dir/clone_to_lab.def\"\nquit\n" if $machine;
-     $clone_to_lab="Table-maker -p \"$test_def_dir/clone_to_lab.def\"\nquit\n" if !$machine;
+  my $clone_to_lab="Table-maker -p \"$def_dir/clone_to_lab.def\"\nquit\n";
 
-  open (FH, "echo '$clone_to_lab' | $tace $curr_db |") || die "Couldn't access $curr_db\n";
+  open (FH, "echo '$clone_to_lab' | $this->{tace} $curr_db |") || die "Couldn't access $curr_db\n";
   while (<FH>){
     chomp $_;
     if ($_ =~ /\"(.+)\"\s+\"(.+)\"/){
@@ -193,7 +178,7 @@ sub clone_to_lab {
 
 sub upload_database {
   my($this, $db_dir, $command, $tsuser, $log) = @_;
-  open (Load_GA,"| $tace -tsuser \"$tsuser\" $db_dir >> $log") || die "Failed to upload to $db_dir";
+  open (Load_GA,"| $this->{tace} -tsuser \"$tsuser\" $db_dir >> $log") || die "Failed to upload to $db_dir";
   print Load_GA $command;
   close Load_GA;
 }
@@ -258,10 +243,9 @@ sub allele_to_gene_id {
   my ($this, $db)=@_;
   my %allele_to_gene_id;
 
-  my $def="Table-maker -p \"$def_dir/allele_to_gene_id.def\"\nquit\n" if $machine;
-     $def="Table-maker -p \"$test_def_dir/allele_to_gene_id.def\"\nquit\n" if !$machine;
+  my $def="Table-maker -p \"$def_dir/allele_to_gene_id.def\"\nquit\n";
 
-  open (FH, "echo '$def' | $tace $db | ") || die "Couldn't access geneace\n";
+  open (FH, "echo '$def' | $this->{tace} $db | ") || die "Couldn't access geneace\n";
   while (<FH>){
     chomp$_;
     if ($_ =~ /^\"(.+)\"\s+\"(.+)\"/){
@@ -296,6 +280,7 @@ sub get_last_gene_id {
 }
 
 sub get_WBPersonID {
+  my $this= shift;
   # this is just a simple hash and its name look up functionality is only limited to first_name, last_name
   # and has not yet extended for standard_name, other_name, also_known_as, etc
   # but enough for now to do Jonathan's lab update.
@@ -303,10 +288,8 @@ sub get_WBPersonID {
   # treated as identical, there for David Someone is not Dave Someone, although it would be in the database
   # DO THIS BY HAND FOR NOW
 
-  my $person="Table-maker -p \"$def_dir/get_WBPersonID_fn_ln.def\"\nquit\n" if $machine;
-     $person="Table-maker -p \"$test_def_dir/get_WBPersonID_fn_ln.def\"\nquit\n" if !$machine;
-
-  open (FH, "echo '$person' | $tace $geneace_dir |") || die "Couldn't access $geneace_dir\n";
+  my $person="Table-maker -p \"$def_dir/get_WBPersonID_fn_ln.def\"\nquit\n";
+  open (FH, "echo '$person' | $this->{tace} $geneace_dir |") || die "Couldn't access $geneace_dir\n";
 
   my %WBPerson_id;
   while (<FH>){
