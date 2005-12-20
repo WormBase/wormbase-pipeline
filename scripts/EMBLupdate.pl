@@ -17,33 +17,64 @@
 #       3) Copy the version to ~wormpub/analysis/TO_SUBMIT.  
 #
 #
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2005-12-16 11:18:54 $      
+# Last updated by: $Author: pad $     
+# Last updated on: $Date: 2005-12-20 14:19:51 $      
 
 
 use strict;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
 use File::Copy;
+use Storable;
 
 ##############
 # variables  #
 ##############
 
-my $maintainers = "All";
-my $rundate     = &rundate;
 my $name;
-my $log;
 my $first;
-my $second,
+my $second;
+my $wormbase;
+my $store;
 
+#command line options
 my ($test ,$debug ,$help, $file);
 GetOptions (
 	    "debug=s"   => \$debug,
 	    "file=s"    => \$file,
 	    "help"      => \$help,
-	    "test"      => \$test);
+	    "test"      => \$test,
+	    "store:s"  =>  \$store,
+	   );
+
+
+#Build wormbase storable
+if( $store ) {
+  $wormbase = retrieve( $store ) or croak("cant restore wormbase from $store\n");
+}
+else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+			     -test    => $test,
+			   );
+}
+
+
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
+
+#who will receive log file?
+my $maintainers = "All";
+
+#Use debug mode?
+if($debug){
+  print "DEBUG = \"$debug\"\n\n";
+  ($maintainers = $debug . '\@sanger.ac.uk');
+}
+
+###############################
+# Variables using Wormbase.pm #
+###############################
 
 # help page
 &usage("Help") if ($help);
@@ -54,20 +85,12 @@ GetOptions (
 # valid file specified?
 die "$file does not exist\n\n" if (! -e $file);
 
-# assign $maintainers if $debug set
-($maintainers = $debug . '\@sanger.ac.uk') if ($debug);
-
-
 # Set up top level base directory which is different if in test mode
-# Make all other directories relative to this
-my $basedir   = "/nfs/disk100/wormpub";
-$basedir      = glob("~wormpub")."/TEST_BUILD" if ($test); 
+my $basedir   = $wormbase->wormpub;
 
+#&create_log_files;
 
-&create_log_files;
-
-
-print LOG "EMBLupdate.pl start at ",&runtime,"\n";
+$log->write_to("\nList of ERRORS\n-----------------\n");
 
 
 my ($sec,$min,$hour,$mday,$mon,$year);
@@ -126,10 +149,10 @@ while (<IN>) {
       my $answer=<STDIN>;
       if ($answer eq "y\n") {
 	my $status = copy("temp$$", "$basedir/analysis/cosmids/$cosmid/$date/embl/$cosmid.embl");
-	print LOG "ERROR: Couldn't copy file: $!\n" if ($status == 0);
+	$log->write_to("ERROR: Couldn't copy file: $!\n") if ($status == 0);
 	system "ln -s $basedir/analysis/cosmids/$cosmid/$date/embl/$cosmid.embl $basedir/analysis/cosmids/$cosmid/$date/embl/$cosmid.current.embl";
 	copy("temp$$", "$basedir/analysis/TO_SUBMIT/$cosmid.$datestamp.embl");	 
-	print LOG "ERROR: Couldn't copy file: $!\n" if ($status == 0);
+	$log->write_to("ERROR: Couldn't copy file: $!\n") if ($status == 0);
       } 
       else {
 	print "** WARNING - COSMID $cosmid DOES NOT HAVE A $cosmid.embl FILE AND HAS NOT BEEN SUBMITTED\n";
@@ -170,10 +193,10 @@ while (<IN>) {
 
     if ($compare==1) {
       my $status = copy("temp$$", "$basedir/analysis/cosmids/$cosmid/$date/embl/$cosmid.$datestamp.embl");
-      print LOG "ERROR: Couldn't copy file: $!\n" if ($status == 0);
+      $log->write_to("ERROR: Couldn't copy file: $!\n") if ($status == 0);
       system "ln -fs $basedir/analysis/cosmids/$cosmid/$date/embl/$cosmid.$datestamp.embl $basedir/analysis/cosmids/$cosmid/$date/embl/$cosmid.current.embl";
       $status = move("temp$$", "$basedir/analysis/TO_SUBMIT/$cosmid.$datestamp.embl");
-      print LOG "ERROR: Couldn't move file: $!\n" if ($status == 0);
+      $log->write_to("ERROR: Couldn't move file: $!\n") if ($status == 0);
       print "$cosmid should be resubmitted and is in TO_SUBMIT.\n";
     } 
     else {
@@ -184,10 +207,9 @@ while (<IN>) {
   }
   
 }
+$log->write_to("\nOUTPUT: .embl files can be found  in ~wormpub/analysis/TO_SUBMIT\n\n");
 close(IN);
-print LOG "$0 finished at ",&runtime, "\n";
-close LOG;
-&mail_maintainer("EMBLupdate",$maintainers,"$log");
+$log->mail("$maintainers");
 
 exit(0);
 
@@ -223,32 +245,4 @@ sub usage {
     exit (0);
   }
 }
-
-
-######################################################################################
-
-
-sub create_log_files{
-
-  # Create history logfile for script activity analysis
-  $0 =~ m/\/*([^\/]+)$/; system ("touch $basedir/logs/history/$1.`date +%y%m%d`");
-
-  # create main log file using script name for
-  my $script_name = $1;
-  $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
-  my $rundate = &rundate;
-  $log        = "$basedir/logs/$script_name.$rundate.$$";
-
-  open (LOG, ">$log") or die "cant open $log";
-  print LOG "$script_name\n";
-  print LOG "started at ",&rundate,"\n";
-  print LOG "=============================================\n";
-  print LOG "\n";
-
-}
-
-
-
-
-
 
