@@ -1,14 +1,12 @@
 #!/nfs/team71/worm/mh6/bin/perl
-#
 # map_RNAi.pl
-#
 # Add information to RNAi objects based on overlaps in GFF files
 #
 # by Kerstin Jekosch
 #
 # Version: $Version: $
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2005-12-16 13:20:32 $
+# Last updated on: $Date: 2005-12-20 13:50:52 $
 
 use strict;
 use warnings;
@@ -352,7 +350,7 @@ close(OUTACE);
 #########################################################
 if ($load) {
     $log->write_to("Loading file to autoace\n");
-    my $command = "autoace_minder.pl -load $dbdir/acefiles/RNAi_mappings.ace -tsuser RNAi_mappings";
+    my $command = "autoace_builder.pl -load $dbdir/acefiles/RNAi_mappings.ace -tsuser RNAi_mappings";
 
     my $status = system($command);
     if ( ( $status >> 8 ) != 0 ) {
