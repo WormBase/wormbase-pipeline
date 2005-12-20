@@ -7,12 +7,13 @@
 # This script calculates interpolated genetic map positions for CDS, Transcripts 
 # and Pseudogenes lying between and outside genetic markers.
 #
-# Last updated on: $Date: 2005-12-12 11:20:20 $
-# Last updated by: $Author: pad $
+# Last updated on: $Date: 2005-12-20 16:47:40 $
+# Last updated by: $Author: mh6 $
 
 
 use strict;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use warnings;
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Cwd 'chdir';
 use Getopt::Long;
@@ -22,7 +23,7 @@ use GENEACE::Geneace;
 # variables and command-line options with aliases #
 ###################################################
 
-my ($diff, $reverse, $database, $gff_location, $help, $debug, $map, $comp, $verbose,$test);
+my ($diff, $reverse, $database, $gff_location, $help, $debug, $map, $comp, $verbose,$test,$store);
 
 GetOptions ("diff"          => \$diff,
             "rev|reverse"   => \$reverse,
@@ -33,24 +34,38 @@ GetOptions ("diff"          => \$diff,
 	    "d|debug"       => \$debug,
 	    "v|verbose"     => \$verbose,
 	    "test"          => \$test,
+	    'store=s'	    => \$store
            );
+	   
+############################
+# recreate configuration   #
+############################
+my $wb;
+if ($store){$wb = Storable::retrieve($store) or croak("cant restore wormbase from $store\n")}
+else {$wb = Wormbase->new(-debug => $debug,-test => $test,)}
 
-my $basedir   = "/wormsrv2";
-$basedir      = glob("~wormpub")."/TEST_BUILD" if ($test);
+###########################################
+# Variables Part II (depending on $wb)    #
+########################################### 
+$test  = $wb->test  if $wb->test;     # Test mode
+$debug = $wb->debug if $wb->debug;    # Debug mode, output only goes to one user
+
+	   
+my $basedir   = $wb->basedir;
 
 my $gff_dir    = "$basedir/autoace/GFF_SPLITS/";
 my $output     = "$basedir/autoace/MAPPINGS/INTERPOLATED_MAP";
 
-my $rundate    = &rundate;
-my $start      = &runtime;
+my $rundate    = $wb->rundate;
+my $start      = $wb->runtime;
 my $script_dir = "$basedir/scripts/";
-my $tace = &tace;
+my $tace = $wb->tace;
 
 
-if (!defined @ARGV){system ("perldoc $basedir/scripts/get_interpolated_gmap.pl"); exit(0)}
+if (!defined @ARGV){system ('perldoc',$0); exit(0)}
 
 # set WS version number
-my $version = &get_wormbase_version;
+my $version = $wb->get_wormbase_version;
 
 
 # Use specified database for path but default to using autoace if -database not specified
@@ -59,8 +74,9 @@ if($database){
   $gff_location = "$basedir/autoace/GFF_SPLITS/WS"."$prev_version";
 }
 else{
-  $gff_location = "$basedir/autoace/GFF_SPLITS/GFF_SPLITS";
-  $database = "$basedir/autoace";
+   $database = $wb->autoace;
+   $gff_location = "$database/GFF_SPLITS/GFF_SPLITS";
+
 }
 print "\nUsing $database as database path for genetics marker loci\n";
 
@@ -160,7 +176,7 @@ close FH1; close FH2; close FH3;
 my %locus_map;
 
 if($comp){
-  open(IN, "/nfs/disk100/wormpub/DATABASES/geneace/gMAP/interpolated_gmap_based_on_contig_map_out.all") || die $!;
+  open(IN, ($wb->{'primary'}->{'geneace'})."/gMAP/interpolated_gmap_based_on_contig_map_out.all") || die $!;
   open (MAPCOMP, ">$output/compare_gmap_WS$version.$rundate") || die $!;
   system("chmod 777 $output/compare_gmap_WS*.$rundate");
   while (<IN>){
@@ -744,7 +760,7 @@ if (!$debug){
 
   print "Deleting old interpolated map and uploading new ones to $database\n";
 
-  my $tace = &tace;
+  my $tace = $wb->tace;
   my $log = "$basedir/logs/load_gmap_to_autoace"."_WS$version.$rundate.$$";
 
   my $command=<<END;
