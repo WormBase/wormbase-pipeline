@@ -908,7 +908,7 @@ sub establish_paths {
   $self->{'primary'}->{'cshace'}  = $self->primaries ."/cshace";
   $self->{'primary'}->{'brigace'} = $self->primaries ."/brigace";
 
-  $self->{'build_data'} = $self->{'wormpub'} . "/BUILD_DATA";
+  $self->{'build_data'} = $self->{'basedir'} . "_DATA";	# BUILD_DATA or TEST_BUILD_DATA
   $self->{'misc_static'} = $self->{'build_data'} . "/MISC_STATIC";
   $self->{'misc_dynamic'} = $self->{'build_data'} . "/MISC_DYNAMIC";
 
