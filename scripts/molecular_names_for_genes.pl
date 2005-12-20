@@ -6,50 +6,68 @@
 #
 # quick script to populate Molecular_name tag in ?Gene model during build
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2005-12-19 17:42:26 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2005-12-20 14:55:42 $
 
 #################################################################################
 # Initialise variables                                                          #
 #################################################################################
 
-use strict;
+use strict;                                      
 use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
+use Carp;
+use Log_files;
+use Storable;
 
 ##############################
 # command-line options       #
 ##############################
-my $test;                # test mode, uses ~wormpub/TEST_BUILD
-my $debug;               # debug mode, email log file only goes to debugger
-my $maintainers = "All"; # log file recipients
-my $store;		# to specify any storable configuration files
+my ($help, $debug, $test, $verbose, $store, $wormbase);
 
-GetOptions('debug=s'       => \$debug,
-	   'test'          => \$test,
-	   'store=s'	=> \$store
-   	);
-	
-############################
-# recreate configuration   #
-############################
-my $wb;
-if ($store) { $wb = Storable::retrieve($store) or croak("cant restore wormbase from $store\n") }
-else { $wb = Wormbase->new( -debug => $debug,-test=>$test) }
-$debug = $wb->debug if $wb->debug;    # Debug mode, output only goes to one
+GetOptions ("help"       => \$help,
+            "debug=s"    => \$debug,
+	    "test"       => \$test,
+	    "verbose"    => \$verbose,
+	    "store"      => \$store,
+	    );
 
-# Use debug mode?
-if($debug){
-  print "DEBUG = \"$debug\"\n\n";
-  $maintainers = $debug.'\@sanger.ac.uk';
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+			     );
 }
-my $tace = $wb->tace;
-my $log = Log_files->make_build_log($wb);
+
+# Display help if required
+&usage("Help") if ($help);
+
+# in test mode?
+if ($test) {
+  print "In test mode\n" if ($verbose);
+
+}
+
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
+
+
+
+
+############################
+# Get paths
+############################
+
+my $tace = $wormbase->tace;
 
 # Set up top level base directory which is different if in test mode
 # Make all other directories relative to this
-my $basedir   = $wb->basedir;
+my $basedir   = $wormbase->basedir;
+
+my $ace_dir         = $wormbase->autoace;     # AUTOACE DATABASE DIR
+
 
 ##########################################################
 #
@@ -60,13 +78,13 @@ my $basedir   = $wb->basedir;
 my $counter = 0; 
 
 # output file
-open (OUT, ">$basedir/autoace/acefiles/molecular_names_for_genes.ace") or die "Can't write ace file";
+open (OUT, ">$ace_dir/acefiles/molecular_names_for_genes.ace") or die "Can't write ace file";
 
 # open tace pipe, and connect to AceDB using TableMaker
 my $command="Table-maker -p $basedir/autoace/wquery/molecular_names_for_genes.def\nquit\n";
 $log->write_to("Finding molecular names, using Table-maker...\n");
 
-open (TACE, "echo '$command' | $tace $basedir/autoace |");
+open (TACE, "echo '$command' | $tace $ace_dir |");
 while (<TACE>) {
   chomp;
   next if ($_ eq "");
@@ -114,18 +132,43 @@ close OUT;
 
 $log->write_to("Found $counter molecular names for genes\n");
 
-# load file to autoace using autoace_minder.pl -load
-$log->write_to("Loading $basedir/autoace/molecular_names_for_genes.ace to autoace\n");
-$command = "autoace_builder.pl -load $basedir/autoace/acefiles/molecular_names_for_genes.ace -tsuser molecular_names -database $basedir/autoace";
+# load file to autoace using autoace_builder.pl -load
+$log->write_to("Loading $ace_dir/molecular_names_for_genes.ace to autoace\n");
+$command = "autoace_builder.pl -load $ace_dir/acefiles/molecular_names_for_genes.ace -tsuser molecular_names -database $ace_dir";
 
-my $status = system($command);
-if(($status >>8) != 0){
-  $log->write_to("ERROR: Loading failed \$\? = $status\n");
-}
+$wormbase->run_script("$command", $log);
 
 # tidy up and exit
-$log->mail("$maintainers");
+$log->mail();
+print "Finished.\n" if ($verbose);
 exit(0);
+
+
+
+
+##############################################################
+#
+# Subroutines
+#
+##############################################################
+
+
+
+##########################################
+
+sub usage {
+  my $error = shift;
+
+  if ($error eq "Help") {
+    # Normal help menu
+    system ('perldoc',$0);
+    exit (0);
+  }
+}
+
+##########################################
+
+
 
 __END__
 
