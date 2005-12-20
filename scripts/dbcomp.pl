@@ -5,15 +5,20 @@
 # Counts the number of objects in an ACEDB database for each Class stated in the config file
 # Compares this number to those from a second database.
 #
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2005-12-16 11:18:55 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2005-12-20 14:44:44 $      
 
 
-use strict;
-use lib '/wormsrv2/scripts';
+use strict;                                      
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
-use IO::Handle;
 use Getopt::Long;
+use Carp;
+use Log_files;
+use Storable;
+use IO::Handle;
+
+
 $|=1;
 
 
@@ -21,40 +26,55 @@ $|=1;
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $database, $database2, $all, $midway, $wee);
-our ($log,$errfile,$outfile); 
+my ($help, $debug, $test, $verbose, $store, $wormbase);
+my ($database, $database2, $all, $midway, $wee);
+our ($errfile,$outfile); 
 our ($db_1, $db_2, $dbname_1, $dbname_2);
-our $WS_current  = &get_wormbase_version;
-our $WS_previous = $WS_current - 1;
-my $maintainers  = "All";
-my $exec         = &tace;
 
 GetOptions (
 	    "help"          => \$help,
             "debug=s"       => \$debug,
+	    "test"          => \$test,
+	    "verbose"       => \$verbose,
+	    "store"         => \$store,
 	    "database=s"    => \$database,
 	    "database2=s"   => \$database2,
 	    "all"           => \$all,
 	    "wee"           => \$wee,
-	    "midway"        => \$midway
+	    "midway"        => \$midway,
 	    );
 
 
-############################################
-# Check command-line options
-############################################
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+			     );
+}
 
 # Display help if required
-if ($help) { 
-    system ('perldoc',$0);
-    exit (0);
+&usage("Help") if ($help);
+
+# in test mode?
+if ($test) {
+  print "In test mode\n" if ($verbose);
+
 }
 
-# Use debug mode?
-if ($debug) {
-    print "DEBUG = \"$debug\"\n\n";
-    ($maintainers = $debug . '\@sanger.ac.uk');
-}
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
+
+
+############################################
+# Get paths and versions
+############################################
+
+my $basedir     = $wormbase->basedir;
+my $ace_dir     = $wormbase->autoace;     # AUTOACE DATABASE DIR
+my $WS_current  = $wormbase->get_wormbase_version;
+my $WS_previous = $WS_current - 1;
+my $exec        = $wormbase->tace;
 
 
 #################################################################
@@ -62,24 +82,42 @@ if ($debug) {
 #################################################################
 
 $dbname_1    = "WS${WS_previous}";
-$db_1        = "/wormsrv2/$dbname_1"; 
+$db_1        = "$basedir/$dbname_1"; 
 
 $dbname_2    = "WS${WS_current}";
-$db_2        = "/wormsrv2/autoace";
+$db_2        = "$basedir/autoace";
 
-# First alternative datatbase specified?
+# First alternative database specified?
 if ($database) {
     $dbname_1  = "$database";
     $db_1      = "$database"; 
 }
 
-# Second alternative datatbase specified?
+# Second alternative database specified?
 if ($database2) {
     $dbname_2  = "$database2";
     $db_2      = "$database2"; 
 }
 
-&create_log_files;
+# create_log_files;
+
+$log->write_to("\n");
+$log->write_to("Previous db      : $dbname_1 '$db_1'\n");
+$log->write_to("Current db       : $dbname_2 '$db_2'\n");
+$log->write_to("\n\n");
+				
+# open two main output files to store results
+$errfile = "$ace_dir/COMPARE/WS${WS_previous}-WS${WS_current}.out";
+$outfile = "$ace_dir/COMPARE/WS${WS_previous}-WS${WS_current}.dbcomp";
+
+open (OUT, ">$outfile") || die "Couldn't write to out file\n";
+open (ERR, ">$errfile") || die "Couldn't write to err file\n";
+  
+print OUT  " +--------------------------------------------+\n";
+print OUT  " | Class                  |   ACEDB database  |\n";
+print OUT  " |                        +---------+---------+---------+---------+---------+\n";
+printf OUT " |                        | %7s | %7s |    +    |    -    |   Net   |\n", $dbname_1,$dbname_2;
+print OUT  " +------------------------+---------+---------+---------+---------+---------+\n";
 
 #########################################################################
 # Read list of classes
@@ -114,9 +152,8 @@ my $counter = 1; # for indexing each class to be counted
 
 foreach my $query (@TotalClasses) {
   next if ($query eq "");
-  LOG->autoflush();
 
-  print LOG  " Counting '$query'\n";
+  $log->write_to(" Counting '$query'\n");
   printf OUT " | %22s |", $query;
 
   ##################################################
@@ -125,8 +162,8 @@ foreach my $query (@TotalClasses) {
   
   my ($class_count_1,$class_count_2) = &count_class($query,$counter);
 
-  print LOG " Counting $dbname_1 : $class_count_1\n";  
-  print LOG " Counting $dbname_2 : $class_count_2\n\n";
+  $log->write_to(" Counting $dbname_1 : $class_count_1\n");  
+  $log->write_to(" Counting $dbname_2 : $class_count_2\n\n");
   
   printf OUT " %7s ",$class_count_1;
   print OUT "|";  
@@ -157,23 +194,23 @@ print OUT  " +------------------------+---------+---------+---------+---------+-
 
 
 # create symbolic links to current.out and current.dbcomp
-print LOG "\nCreating 'current.out' and 'current.dbcomp'\n";
-system("rm -f /wormsrv2/autoace/COMPARE/current.out") && die "Couldn't remove 'current.out' symlink\n";
-system("rm -f /wormsrv2/autoace/COMPARE/current.dbcomp") && die "Couldn't remove 'current.dbcomp' symlink\n";
-system("ln -s $errfile /wormsrv2/autoace/COMPARE/current.out") && die "Couldn't create new symlink\n";
-system("ln -s $outfile /wormsrv2/autoace/COMPARE/current.dbcomp") && die "Couldn't create new symlink\n";
+$log->write_to("\nCreating 'current.out' and 'current.dbcomp'\n");
+system("rm -f $ace_dir/COMPARE/current.out") && die "Couldn't remove 'current.out' symlink\n";
+system("rm -f $ace_dir/COMPARE/current.dbcomp") && die "Couldn't remove 'current.dbcomp' symlink\n";
+system("ln -s $errfile $ace_dir/COMPARE/current.out") && die "Couldn't create new symlink\n";
+system("ln -s $outfile $ace_dir/COMPARE/current.dbcomp") && die "Couldn't create new symlink\n";
 
 
 close (OUT);
 close (ERR);
-close (LOG);
 
 # Email log file
-&mail_maintainer("WormBase Report: dbcomp.pl",$maintainers,$log);
+$log->mail();
 
-#write to the release letter - subroutine in Wormbase.pm
-&release_databases;
+# write to the release letter - subroutine in Wormbase.pm
+$wormbase->release_databases;
 
+print "Finished.\n" if ($verbose);
 exit (0);
 
 
@@ -185,45 +222,22 @@ exit (0);
 #
 ##############################################################
 
-sub create_log_files{
 
-  # Create history logfile for script activity analysis
-  $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
 
-  # create main log file using script name for
-  my $script_name = $1;
-  $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
-  my $rundate     = `date +%y%m%d`; chomp $rundate;
-  $log        = "/wormsrv2/logs/$script_name.$rundate.$$";
+##########################################
 
-  open (LOG, ">$log") or die "cant open $log";
-  print LOG "$script_name\n";
-  print LOG "started at ",`date`,"\n";
-  print LOG "=============================================\n";
-  print LOG "\n";
+sub usage {
+  my $error = shift;
 
-  print LOG "\n";
-  print LOG "Previous db      : $dbname_1 '$db_1'\n";
-  print LOG "Current db       : $dbname_2 '$db_2'\n";
-  print LOG "\n\n";
-
-  # open two main output files to store results
-  $errfile = "/wormsrv2/autoace/COMPARE/WS${WS_previous}-WS${WS_current}.out";
-  $outfile = "/wormsrv2/autoace/COMPARE/WS${WS_previous}-WS${WS_current}.dbcomp";
-
-  open (OUT, ">$outfile") || die "Couldn't write to out file\n";
-  open (ERR, ">$errfile") || die "Couldn't write to err file\n";
-  
-  print OUT  " +--------------------------------------------+\n";
-  print OUT  " | Class                  |   ACEDB database  |\n";
-  print OUT  " |                        +---------+---------+---------+---------+---------+\n";
-  printf OUT " |                        | %7s | %7s |    +    |    -    |   Net   |\n", $dbname_1,$dbname_2;
-  print OUT  " +------------------------+---------+---------+---------+---------+---------+\n";
-
-  LOG->autoflush();
+  if ($error eq "Help") {
+    # Normal help menu
+    system ('perldoc',$0);
+    exit (0);
+  }
 }
 
 ##########################################
+
 sub count_class{
 
     my $query  = shift;
@@ -240,7 +254,7 @@ sub count_class{
     ####################################
     
     # open temp output file
-    $out = "/wormsrv2/tmp/dbcomp_A_${counter}";
+    $out = "/tmp/dbcomp_A_${counter}";
     open (COUNT, ">$out") || die "Couldn't write to tmp file: $out\n";
     
     # open tace connection and count how many objects in that class
@@ -257,7 +271,7 @@ sub count_class{
     # Count objects in second database
     ####################################
     
-    $out = "/wormsrv2/tmp/dbcomp_B_${counter}";
+    $out = "/tmp/dbcomp_B_${counter}";
     open (COUNT, ">$out") || die "Couldn't write to tmp file: $out\n";
     
     # open tace connection and count how many objects in that class
@@ -285,9 +299,9 @@ sub diff {
   my $added   = 0; 
   my $removed = 0;
 
-  system ("cat /wormsrv2/tmp/dbcomp_A_${counter} | sort > /wormsrv2/tmp/look-1");
-  system ("cat /wormsrv2/tmp/dbcomp_B_${counter} | sort > /wormsrv2/tmp/look-2");
-  open (COMM, "comm -3 /wormsrv2/tmp/look-1 /wormsrv2/tmp/look-2 |");
+  system ("cat /tmp/dbcomp_A_${counter} | sort > /tmp/look-1");
+  system ("cat /tmp/dbcomp_B_${counter} | sort > /tmp/look-2");
+  open (COMM, "comm -3 /tmp/look-1 /tmp/look-2 |");
   while (<COMM>) {
       if (/^(\S+.+)/){
 	  print ERR " <- $dbname_1 $1\n";
@@ -301,11 +315,11 @@ sub diff {
   close (COMM);
 
   # Tidy up after yourself
-  system ("rm -f /wormsrv2/tmp/look-1");
-  system ("rm -f /wormsrv2/tmp/look-2");
+  system ("rm -f /tmp/look-1");
+  system ("rm -f /tmp/look-2");
 
-  system ("rm -f /wormsrv2/tmp/dbcomp_A_${counter}");
-  system ("rm -f /wormsrv2/tmp/dbcomp_B_${counter}");
+  system ("rm -f /tmp/dbcomp_A_${counter}");
+  system ("rm -f /tmp/dbcomp_B_${counter}");
  
   # Add break symbol to output file to separate classes
   print ERR "\/\/ -----------------------------\n";
@@ -547,7 +561,7 @@ as necessary when classes are added/removed to the database.
 -debug and -help are standard Wormbase script options.
 
 -database allows you to specify the path of a database which will
-then be compared to /wormsrv2/autoace.
+then be compared to the BUILD/autoace directory.
 
 -database2 allows you to specify a second database to compare to that specified
 by -database (rather than compare with previous build)
