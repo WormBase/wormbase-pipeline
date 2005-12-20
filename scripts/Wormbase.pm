@@ -856,7 +856,7 @@ sub database {
 sub primary {
   my $self = shift;
   my $database = shift;
-  my $path  = $self->primaries . "/$database";
+  my $path  = $self->{'primary'}->{"$database"};
   print STDERR "no such primary database\n" unless (-e $path);
   return $path;
 }
@@ -909,7 +909,7 @@ sub establish_paths {
   mkpath( $self->reports )     unless ( -e $self->reports );
   mkpath( $self->gff )         unless ( -e $self->gff );
   mkpath( $self->gff_splits )  unless ( -e $self->gff_splits );
-  mkpath( $self->primaries )   unless ( -e $self->primaries );
+  mkpath( $self->primaries )   unless ( -e $self->primaries );  system("chmod -R g+w ".$self->wormrna);
 
   system("chmod -R g+w ".$self->autoace);
 
@@ -932,7 +932,8 @@ sub run_command {
   my $self    = shift;
   my $command = shift;
   my $log     = shift;
-  $log->write_to("running $command\n");
+  print STDERR "No log obj passed to run_command by ".(caller)."\n" unless $log;
+  $log->write_to("running $command\n") if $log;
   my $return_status = system("$command");
   if ( ( $return_status >> 8 ) != 0 ) {
     $log->write_to(" WARNING: $script returned non-zero ($return_status)\n") if $log;
