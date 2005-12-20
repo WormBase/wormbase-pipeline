@@ -1,10 +1,11 @@
 #!/usr/local/bin/perl5.8.0 -w
 
 # Author: Chao-Kung Chen
-# Last updated by $Author: gw3 $
-# Last updated on: $Date: 2005-12-19 10:59:49 $ 
+# Last updated by $Author: mh6 $
+# Last updated on: $Date: 2005-12-20 13:46:59 $ 
 
 use strict;
+use warnings;
 use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
 use Wormbase;
 use Ace;
@@ -14,13 +15,15 @@ use Getopt::Long;
 # command line options
 ##########################################
 
-my ($help, $database, $debug, $load, $test);
+my $maintainers = "All";
+my ($help, $database, $debug, $load, $test,$store);
 
 GetOptions ("help"         => \$help,
 	    "database=s"   => \$database,   # can specify db for debug purpose (required also when not debug)
 	    "debug=s"      => \$debug,
 	    "test"         => \$test,       # use test build environment
 	    "load"         => \$load,       # load data to autoace
+	    'store=s'	=>\$store
            );
 
 
@@ -29,17 +32,31 @@ GetOptions ("help"         => \$help,
 ###############################
 
 # Display help if required
-if ($help){&usage("Help")}
+&usage("Help") if $help;
+
+# recreate configuration 
+my $wb;
+if ($store) { $wb = Storable::retrieve($store) or croak("cant restore wormbase from $store\n") }
+else { $wb = Wormbase->new( -debug => $debug, -test => $test, ) }
+
+# Variables Part II (depending on $wb) 
+$test  = $wb->test  if $wb->test;     # Test mode
+$debug = $wb->debug if $wb->debug;    # Debug mode, output only goes to one user
+
+# Use debug mode?
+if ($debug) {
+    print "DEBUG = \"$debug\"\n\n";
+    ( $maintainers = $debug . '\@sanger.ac.uk' );
+}
 
 
 my $user = `whoami`; chomp $user;
 
 # set a default database if not specified
-($database = "/wormsrv2/autoace") if (!$database);
+($database = $wb->autoace) if (!$database);
 
 if (!$debug && $user ne "wormpub"){print "\nYou need to be wormpub to proceed..exit\n"; exit(0)};
 
-my $maintainers = "All";
 $maintainers = $debug if ($debug);
 
 
@@ -53,17 +70,16 @@ print "\nTarget database for genetic map and multi-pt data uploading is $databas
 #
 #############################
 
-my $tace = &tace;          # tace executable path
+my $tace = $wb->tace;          # tace executable path
 
 # Set up top level base directory which is different if in test mode
 # Make all other directories relative to this
-my $basedir   = "/wormsrv2";
-$basedir      = glob("~wormpub")."/TEST_BUILD" if ($test);
+my $basedir   = $wb->basedir;
 my $outdir = "$basedir/autoace/acefiles";
 
 
 # log file information
-my $log = Log_files->make_build_log();
+my $log = Log_files->make_build_log($wb);
 
 
 # Need input file with genes which have had their Interpolated_map_position promoted to a Map position
@@ -102,10 +118,10 @@ my %order_locus; # reverse of above, key is a integer position, value is CGC gen
 #load to database if -load specified
 if($load){
   $log->write_to("Loading new pseudo multi point data to $database");
-  my $command = "autoace_minder.pl -load $new_output -tsuser new_pseudo_multi_pt_data";
+  my $command = "autoace_builder.pl -load $new_output -tsuser new_pseudo_multi_pt_data";
 
   $log->write_to("Loading updated pseudo multi point data to $database");
-  $command = "autoace_minder.pl -load $updated_output -tsuser updated_pseudo_multi_pt_data";
+  $command = "autoace_builder.pl -load $updated_output -tsuser updated_pseudo_multi_pt_data";
 
 }
 
