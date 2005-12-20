@@ -4,11 +4,12 @@
 #
 # map GO_terms to ?Sequence objects from ?Motif and ?Phenotype
 #
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2005-12-16 11:18:55 $      
+# Last updated by: $Author: mh6 $     
+# Last updated on: $Date: 2005-12-20 17:13:51 $      
 
 use strict;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use warnings;
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use IO::Handle;
 use Getopt::Long;
@@ -18,11 +19,10 @@ use Ace;
 # Script variables (run)     #
 ##############################
 
-my ($help, $debug, $motif, $phenotype);
+my ($help, $debug, $motif, $phenotype,$store);
 my $verbose;             # for toggling extra output
 my $maintainers = "All"; # who receives emails from script
 my $noload;              # generate results but do not load to autoace
-my $log;                 # for log file
 
 ##############################
 # command-line options       #
@@ -32,27 +32,36 @@ GetOptions ("help"      => \$help,
             "debug=s"   => \$debug,
 	    "phenotype" => \$phenotype,
 	    "motif"     => \$motif,
-	    "noload"    => \$noload);
+	    "noload"    => \$noload,
+    	    "store"     => \$store
+    	);
 
 # Display help if required
 &usage("Help") if ($help);
 
+# recreate configuration 
+my $wb;
+if ($store) { $wb = Storable::retrieve($store) or croak("cant restore wormbase from $store\n") }
+else { $wb = Wormbase->new( -debug => $debug, -test => $debug, ) }
+
+# Variables Part II (depending on $wb) 
+$debug = $wb->debug if $wb->debug;    # Debug mode, output only goes to one user
+
 # Use debug mode?
 if ($debug) {
     print "DEBUG = \"$debug\"\n\n";
-    ($maintainers = $debug . '\@sanger.ac.uk');
+    ( $maintainers = $debug . '\@sanger.ac.uk' );
 }
-
-&create_log_files;
+my $log=Log_files->make_build_log($wb);
 
 ##############################
 # Paths etc                  #
 ##############################
 
-my $tace      = &tace;      # tace executable path
-my $dbpath    = "/wormsrv2/autoace";                                      # Database path
+my $tace      = $wb->tace;      # tace executable path
+my $dbpath    = $wb->autoace;                                      # Database path
 
-my $out="/wormsrv2/autoace/acefiles/inherited_GO_terms.ace";
+my $out="$dbpath/acefiles/inherited_GO_terms.ace";
 open (OUT,">$out");
 OUT->autoflush();
 
@@ -81,24 +90,15 @@ unless ($noload || $debug) {
   print TACE $command;
   close (TACE);  
 
-  print LOG "uploaded results into autoace\n\n";
+  $log->write_to("uploaded results into autoace\n\n");
     
 }
 
 ##############################
-# tidy up                    #
-##############################
-
-print LOG &runtime, ": script finished\n";
-close LOG;
-
-close OUT;
-
-##############################
 # mail $maintainer report    #
 ##############################
-
-&mail_maintainer("inherit_GO_terms.pl Report:",$maintainers,$log);
+$log->write_to($wb->runtime.": script finished\n");
+$log->mail($maintainers,"BUILD REPORT: $0");
 
 ##############################
 # hasta luego                #
@@ -108,12 +108,9 @@ $db->close;
 exit(0);
 
 
-
-
 ########################################################################################
 ####################################   Subroutines   ###################################
 ########################################################################################
-
 
 ########################################################################################
 # motif to sequence mappings                                                           #
@@ -186,26 +183,6 @@ sub phenotype {
 
 ######################################################################
 
-sub create_log_files{
-
-  # Create history logfile for script activity analysis
-  $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
-
-  # create main log file using script name for
-  my $script_name = $1;
-  $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
-  my $rundate = &rundate;                     ;
-  $log = "/wormsrv2/logs/$script_name.$rundate.$$";
-
-  open (LOG, ">$log") or die "cant open $log";
-  print LOG "$script_name\n";
-  print LOG &runtime, " : script started\n";
-  print LOG "=============================================\n";
-  print LOG "\n";
-
-}
-
-##########################################
 
 sub usage {
   my $error = shift;
@@ -261,6 +238,8 @@ inherit_GO_terms.pl OPTIONAL arguments:
 =item -help, help
 
 =item -verbose, toggle extra output to screen
+
+=item -store <storable_file>, specifiy stored commandline options
 
 =back
 
