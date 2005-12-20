@@ -6,50 +6,77 @@
 #
 # processes GFF files to make new files which can be used to make agp files 
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-12-16 11:18:55 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2005-12-20 13:45:32 $
 
 
-
-use strict;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use strict;                                      
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
-use Ace;
 use Getopt::Long;
+use Carp;
+use Log_files;
+use Storable;
+use Ace;
 
 
 #################################
 # Command-line options          #
 #################################
 
-my $test;      # uses test environment
-my $quicktest; # same as $test but only runs one chromosome
-my $debug;
 
-GetOptions ("test"         => \$test,
-	    "quicktest"    => \$quicktest,
-	    "debug:s"      => \$debug
-);
+my ($help, $debug, $test, $verbose, $store, $wormbase);
+
+my $quicktest; # same as $test but only runs one chromosome
+
+GetOptions ("help"       => \$help,
+            "debug=s"    => \$debug,
+	    "test"       => \$test,
+	    "verbose"    => \$verbose,
+	    "store"      => \$store,
+	    "quicktest"  => \$quicktest,
+	    );
 
 # check that -test and -quicktest haven't both been set.  Also if -quicktest is specified, 
 # need to make -test true, so that test mode runs for those steps where -quicktest is meaningless
 if($test && $quicktest){
   die "both -test and -quicktest specified, only one of these is needed\n";
 }
-($test = 1) if ($quicktest);
+
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+  ($test = 1) if ($quicktest);
+  $wormbase->set_test($test);	# set test in the wormbase object
+
+} else {
+  ($test = 1) if ($quicktest);
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+			     );
+}
+
+# Display help if required
+&usage("Help") if ($help);
+
+# in test mode?
+if ($test) {
+  print "In test mode\n" if ($verbose);
+
+}
+
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
+
 
 
 # Set up top level base directory which is different if in test mode
 # Make all other directories relative to this
-my $basedir   = "/wormsrv2";
-$basedir      = glob("~wormpub")."/TEST_BUILD" if ($test); 
-my $gffdir    = "$basedir/autoace/CHROMOSOMES";
+my $basedir   = $wormbase->basedir;
+my $gffdir    = $wormbase->gff;
 my $agpdir    = "$basedir/autoace/yellow_brick_road";
 
 mkdir("$gffdir") unless ( -e "$gffdir" );
 mkdir("$agpdir") unless ( -e "$agpdir" );
-
-my $scriptdir = $ENV{'CVS_DIR'};
 
 # prepare array of file names and sort names
 my @files = (
@@ -69,8 +96,6 @@ undef @files;
 ############################################################
 # loop through each GFF file                               #
 ############################################################
-
-my $debug = 1;
 
 foreach my $file (@gff_files) {
     
@@ -98,13 +123,39 @@ foreach my $file (@gff_files) {
 }
 
 
+$log->mail();
+print "Finished.\n" if ($verbose);
 exit(0);
 
+##############################################################
+#
+# Subroutines
+#
+##############################################################
+
+
+
+##########################################
+
+sub usage {
+  my $error = shift;
+
+  if ($error eq "Help") {
+    # Normal help menu
+    system ('perldoc',$0);
+    exit (0);
+  }
+}
+
+##########################################
+
+
+
 # this was originally a separate script called only by this one, so folded in. Could be improved for greater efficiency :)
-sub GFF_with_acc{
+sub GFF_with_acc {
   my $file   = shift;
   my $output = shift;
-  my $wormdb = "$basedir/autoace";
+  my $wormdb = $wormbase->autoace;
   
   my $db = Ace->connect(-path=>$wormdb) || do { print "Connection failure: ",Ace->error; die();};
   open (OUT, ">$output") or die "cant write output to $output :$!\n";
