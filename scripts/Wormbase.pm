@@ -861,6 +861,18 @@ sub primary {
   return $path;
 }
 
+# setter methods
+sub set_test { 
+  $self = shift; 
+  $self->{'test'} = shift; 
+  # adjust the paths to point to the TEST_BUILD versions
+  $self->establish_paths;
+}
+sub set_debug { 
+  $self = shift; 
+  $self->{'debug'} = shift; 
+}
+
 sub establish_paths {
   my $self = shift;
   ( $self->{'wormpub'} ) = glob("~wormpub");
