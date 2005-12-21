@@ -940,6 +940,7 @@ sub run_script {
 
   my $store = $self->autoace . "/wormbase.store";
   store( $self, $store );
+  $self->run_command( "chmod 775 $store");
   my $command = "perl $ENV{'CVS_DIR'}/$script -store $store";
   print "$command\n" if $self->test;
   return $self->run_command( "$command", $log );
