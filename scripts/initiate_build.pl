@@ -3,7 +3,7 @@
 # initiate_build.pl
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2005-12-16 11:18:55 $
+# Last edited on: $Date: 2005-12-21 15:37:44 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -46,8 +46,8 @@ my $old_ver = $wormbase->version - 1;
 #################################################################################
 
 ## update CVS wspec, wquery and autoace_config from CVS
-$wormbase->run_command("cd ".$wormbase->autoace.";cvs -d :ext:cvs.sanger.ac.uk:/nfs/ensembl/cvsroot/ checkout -d wspec wormbase/wspec");
-$wormbase->run_command("cd ".$wormbase->basedir.";cvs -d :ext:cvs.sanger.ac.uk:/nfs/ensembl/cvsroot/ checkout -d autoace_config wormbase/autoace_config");
+$wormbase->run_command("cd ".$wormbase->autoace.";cvs -d :ext:cvs.sanger.ac.uk:/nfs/ensembl/cvsroot/ checkout -d wspec wormbase/wspec", $log);
+$wormbase->run_command("cd ".$wormbase->basedir.";cvs -d :ext:cvs.sanger.ac.uk:/nfs/ensembl/cvsroot/ checkout -d autoace_config wormbase/autoace_config",$log);
 
 ## make new build_in_process flag ( not done yet in rebuild )
 
@@ -65,22 +65,12 @@ else {
   print "NOT updating cvs as in test mode\n";
 }
 
-
-# check that top doesn't reveal strange processes running
-my $top = `top`;
-
 # add lines to the logfile
 my $msg = "Updated WormBase version number to WS".$wormbase->version."\n";
 $msg .= "You are ready to build another WormBase release\n";
 $msg .= "Please tell camace and geneace curators to update their database to use the new models!!!\n\n";
-$msg .= "Please also check following 'top' output to see if there are stray processes that should\n";
-$msg .= "be removed:\n$top\n\n";
 
 $log->write_to($msg);
-
-# this will force a refresh of the coordinate files.
-#my $coords = Coords_converter->invoke($database,1);
-
 $log->mail;
 exit(0);
 

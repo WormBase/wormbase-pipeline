@@ -8,7 +8,7 @@
 # This makes the autoace database from its composite sources.
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2005-12-16 11:18:55 $
+# Last edited on: $Date: 2005-12-21 15:37:44 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -68,12 +68,9 @@ else {
 my $basedir     = $wormbase->basedir;
 
 my $autoacedir  = $wormbase->autoace;
-my $wormbasedir = "$autoacedir/acefiles/primary";
-my $stlacedir   = $wormbase->database('stlace');
-my $camacedir   = $wormbase->database('camace');
+my $wormbasedir = "$autoacedir/acefiles/primaries";
 my $configfile  = "$basedir/autoace_config/autoace.config";
 my $dbpath = $autoacedir;
-my $CWD = cwd;
 
 # make log files
 my $log = Log_files->make_build_log($wormbase);
@@ -86,23 +83,9 @@ my $WS_current    = $wormbase->get_wormbase_version;
 my $WS_version    = $wormbase->get_wormbase_version_name;
 my @filenames; # for storing contents of autoace_config
 
-<<<<<<< make_autoace.pl
-# database/file paths and locations
-my $basedir     = "/wormsrv2";
-$basedir        = glob("~wormpub")."/TEST_BUILD" if ($test); 
-
-our $wormbasedir = "$basedir/wormbase";
-our $autoacedir  = "$basedir/autoace";
-our $stlacedir   = "$basedir/stlace";
-our $camacedir   = "$basedir/camace";
-our $configfile  = "$basedir/autoace_config/autoace.config";
-
-my $tace   = &tace;
-my $giface = &giface;
-=======
 my $tace   = $wormbase->tace;
 my $giface = $wormbase->giface;
->>>>>>> 1.15.4.1
+
 my $errors = 0; # for tracking system call related errors
 
 # start doing stuff
@@ -114,22 +97,16 @@ my $errors = 0; # for tracking system call related errors
 # Parse config file
 &parseconfig if ( $all or $parse );
 
-<<<<<<< make_autoace.pl
-##################################################	
-# Create the directory structure                 #
-##################################################
-=======
 # Re-initialize the database
 # Re-initializing database is more complex as the .acefiles will be spread over a number of
 # directories - use the config file to find them all
 &reinitdb() if ( $all or $init );
 
 # remove temp genes
-&rmtempgene() if( $all or $tmpgene );
+&remove_pariah_gene() if( $all or $tmpgene );
 
 # Read in the physical map and make all maps
 &physical_map_stuff() if( $all or $pmap );
->>>>>>> 1.15.4.1
 
 # Make the chromosomal links
 &makechromlink() if ( $all or $chromlink );
@@ -156,71 +133,6 @@ exit (0);
 ##############################################################
 
 
-
-<<<<<<< make_autoace.pl
-
-################################################
-# Build new autoace database
-################################################
-
-sub buildautoace{
-
-  #Set up correct database structure if it doesn't exist
-  &createdirs;	
-
-
-  # Parse config file                            
-  &parseconfig;
-
-
-  # Re-initialize the database                      
-  # Re-initializing database is more complex as the .acefiles will be spread over a number of
-  # directories - use the config file to find them all
-  &reinitdb();
-  
-
-  # remove temp genes
-  &remove_pariah_gene();
-  
-
-  # Read in the physical map and make all maps   
-  &physical_map_stuff();
-
-
-  # Make the chromosomal links                  
-  &makechromlink();
-    
-}
-
-
-###################################################################
-
-
-sub create_log_files{
-
-  # Create history logfile for script activity analysis
-  $0 =~ m/\/*([^\/]+)$/; 
-  system("touch $basedir/logs/history/$1.`date +%y%m%d`");
-
-  # create main log file using script name for
-  my $script_name = $1;
-  $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
-  my $rundate = &rundate;
-  $log        = "$basedir/logs/$script_name.$WS_version.$rundate.$$";
-
-  open (LOG, ">$log") or die "cant open $log";
-  print LOG "$script_name\n";
-  print LOG "started at ",`date`,"\n";
-  print LOG "=============================================\n";
-  print LOG "\n";
-
-}
-
-
-
-
-=======
->>>>>>> 1.15.4.1
 ###################################################
 # Subroutine for writing to a given database    ###
 ###################################################
@@ -251,10 +163,9 @@ sub GetTime {
 ################################################
 # Remove Bad gene predictions from the database
 
-<<<<<<< make_autoace.pl
 sub remove_pariah_gene {
   
-  print LOG &runtime, ": starting pariah gene subroutine\n";
+  $log->write_to($wormbase->runtime." : starting pariah gene subroutine\n");
 
   my $command  = "query find elegans_CDS method = hand_built\nkill\n";                                  # Any objects with Method "hand_build"
   $command    .= "query find elegans_CDS temp*\nkill\n";                                                # Any objects "temp*"
@@ -263,83 +174,10 @@ sub remove_pariah_gene {
   $command    .= "save\nquit\n";
 
   &DbWrite($command,$tace,$autoacedir,"anon");
-
-
-  print LOG &runtime, ": Finished.\n\n";
-=======
-sub rmtempgene {
-  $log->write_to( $wormbase->runtime." : starting rmtempgene subroutine\n");
-  my $camace  = "$camacedir";
-  my $stlace  = "$stlacedir";
-  my $command = "query find elegans_CDS method = hand_built\nkill\nsave\nquit\n";
-  &DbWrite($command,$tace,$camace,"CamAce");
-  &DbWrite($command,$tace,$stlace,"StlAce");
-  my $command2 = "query find elegans_CDS temp*\nkill\nsave\nquit\n";
-  &DbWrite($command2,$tace,$camace,"CamAce");
-  &DbWrite($command2,$tace,$stlace,"StlAce");
   $log->write_to($wormbase->runtime." : Finished.\n\n");
->>>>>>> 1.15.4.1
 }
 
 
-############################################
-# Create directories
-
-sub createdirs {
-
-  $log->write_to( $wormbase->runtime. ": starting createdirs subroutine\n");
-
-  my $chromes  = "$dbpath/CHROMOSOMES";
-  my $db       = "$dbpath/database";		
-  my $new      = "$db/new";
-  my $touch    = "$db/touched";
-  my $ace      = "$dbpath/acefiles";
-  my $rel      = "$dbpath/release";
-  my $wspec    = "$dbpath/wspec";
-  my @dirarray    = ("$dbpath","$chromes","$db","$new","$touch","$ace","$rel","$wspec");
-  
-  foreach (@dirarray) {	
-    my $present_dir = $_;
-    if (-d $present_dir) {
-      $log->write_to( "\t** $present_dir - already present\n");
-      print "** Skipping $present_dir - already present\n";
-      next;
-    }
-    else {
-      $log->write_to("making $present_dir\n");
-      mkpath($present_dir);
-    }			
-  }
-<<<<<<< make_autoace.pl
-  my $argsize = scalar (@args1);
-  if ($argsize == 0) {
-    print "** No new directories to create .. end mkdirectories\n";
-    print LOG "\t** No new directories to create\n";
-    print LOG &runtime, ": Finished\n\n";
-    return;
-  }
-  my $command = "@args2 @args1";
-  &run_command ($command);
-  foreach my $made_dir (@args1) {
-    if ($made_dir =~ /wspec/) {
-      print "** Copying wspec from $autoacedir .. \n";
-      my $status = copy("$autoacedir/wspec/*", "$wspec/.");
-      print LOG "ERROR: Couldn't copy file: $!\n" if ($status == 0);
-    }
-    if (!-d $made_dir) {
-      print " ** mkdir for $made_dir failed ** \n\n";
-      print LOG "ERROR: mkdir command failed\n";
-      $errors++;
-      die(0);
-    } 
-  }
-
-  print LOG &runtime, ": Finished\n\n";
-  return;
-=======
-  $log->write_to( $wormbase->runtime, ": Finished\n\n");
->>>>>>> 1.15.4.1
-}
 
 
 ###################################################
@@ -459,8 +297,8 @@ sub physical_map_stuff{
 # being updated once Alan left
   
   # now make the maps
-  my $command = "gif makemaps -all\nsave\ngif makemaps -seqclonemap $dbpath/acefiles/seqclonemap.ace\n";
-  $command .= "pparse $dbpath/acefiles/seqclonemap.ace\nsave\nquit\n";
+  my $command = "gif makemaps -all\nsave\ngif makemaps -seqclonemap ".$wormbase->acefiles."/seqclonemap.ace\n";
+  $command .= "pparse ".$wormbase->acefiles."/seqclonemap.ace\nsave\nquit\n";
   &DbWrite($command,$giface,$dbpath,"MakeMaps");
 
   $log->write_to( $wormbase->runtime. ": finished\n\n");
@@ -502,42 +340,19 @@ sub setdate {
 
 sub makechromlink {
 
-<<<<<<< make_autoace.pl
-  print LOG &runtime, ": starting makechromlink subroutine\n";
-  my $chrom_file = "$database/acefiles/chromlinks.ace";
-  if(-e $chrom_file){
-    unlink $chrom_file or print LOG "ERROR: Couldn't unlink $chrom_file: $!\n";
-  }
-  my $command = "$basedir/scripts/makeChromLinks.pl -out $chrom_file";
-  $command = "$basedir/scripts/makeChromLinks.pl -test -out $chrom_file" if ($test);
-  &run_command("$command"); 
-=======
   $log->write_to( $wormbase->runtime. ": starting makechromlink subroutine\n");
-  my $chromlink_file = "$dbpath/acefiles/chromlinks.ace";
+  my $chromlink_file = $wormbase->acefiles."/chromlinks.ace";
 
-  unlink "$chromlink_file" or $log->write_to( "ERROR: Couldn't unlink file $chromlink_file: $!\n");
   $wormbase->run_script("makeChromLinks.pl -out $chromlink_file", $log);
 
   if (-z "$chromlink_file") {
     $log->log_and_die( "*Makechromlink: $chromlink_file has ZERO size\n");
->>>>>>> 1.15.4.1
-
-<<<<<<< make_autoace.pl
-  if (-z "$chrom_file") {
-    print LOG "*Makechromlink: chromlinks.ace has ZERO size\n";  
-=======
->>>>>>> 1.15.4.1
     return;
   } 
   else {
-<<<<<<< make_autoace.pl
-    my $command = "pparse $chrom_file\nsave\nquit\n";
-=======
     my $command = "pparse $chromlink_file\nsave\nquit\n";
->>>>>>> 1.15.4.1
     &DbWrite($command,"$tace -tsuser make_autoace",$dbpath,"MakeChromLinks");
   }
-  
   $log->write_to( $wormbase->runtime. ": Finished.\n\n");
 }
 
@@ -628,6 +443,36 @@ sub mail_reminder
     print EMAIL "Yours sincerely,\nOtto\n";
     close (EMAIL);
   }
+
+
+sub createdirs {
+
+  $log->write_to( $wormbase->runtime. ": starting createdirs subroutine\n");
+
+  my $chromes  = "$dbpath/CHROMOSOMES";
+  my $db       = "$dbpath/database";		
+  my $new      = "$db/new";
+  my $touch    = "$db/touched";
+  my $ace      = "$dbpath/acefiles";
+  my $rel      = "$dbpath/release";
+  my $wspec    = "$dbpath/wspec";
+  my @dirarray    = ("$dbpath","$chromes","$db","$new","$touch","$ace","$rel","$wspec");
+  
+  foreach (@dirarray) {	
+    my $present_dir = $_;
+    if (-d $present_dir) {
+      $log->write_to( "\t** $present_dir - already present\n");
+      print "** Skipping $present_dir - already present\n";
+      next;
+    }
+    else {
+      $log->write_to("making $present_dir\n");
+      mkpath($present_dir);
+    }			
+  }
+}
+
+
 __END__
 
 =pod

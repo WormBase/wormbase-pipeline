@@ -8,7 +8,7 @@
 # autoace.
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-12-16 11:18:55 $
+# Last updated on: $Date: 2005-12-21 15:37:44 $
 
 #################################################################################
 # Variables                                                                     #
@@ -56,20 +56,12 @@ else {
 			   );
 }
 
-<<<<<<< make_acefiles.pl
-GetOptions ("debug=s"   => \$debug,
-	    "help"      => \$help,
-	    "db=s"      => \$db,
-	    "test"      => \$test
-	    );
 
-=======
 if( $database ) {
   my ($volume,$directories,$fname) = File::Spec->splitpath( $database );
   $basedir = $directories;
   chop $basedir; # remove the last /
 }
->>>>>>> 1.6.4.1
 ##############################
 # Script variables (run)     #
 ##############################
@@ -82,7 +74,7 @@ my $log         = Log_files->make_build_log( $wormbase );
 $basedir     = $wormbase->basedir unless $basedir;
 my $wormbasedir = $wormbase->autoace."/acefiles/primary";
 mkpath( $wormbasedir ) unless -e ( $wormbasedir );
-my $miscdir     = "$wormbasedir/misc";
+my $miscdir     = $wormbase->misc_static;
 
 my $autoace_config = "$basedir/autoace_config/autoace.config";
 
@@ -94,11 +86,7 @@ my  $WS_version = $wormbase->get_wormbase_version_name;
 
 # single database mode
 if ($db) {
-<<<<<<< make_acefiles.pl
     &usage("Bad_database_name") unless (($db eq "camace") || ($db eq "stlace") || ($db eq "briggsae") || ($db eq "cshace") || ($db eq "caltech") || ($db eq "geneace"));
-=======
-    &usage("Bad_database_name") unless (($db eq "camace") || ($db eq "stlace") || ($db eq "briggace") || ($db eq "cshace") || ($db eq "citace") || ($db eq "geneace"));
->>>>>>> 1.6.4.1
 }
 
 
@@ -115,11 +103,7 @@ if ($db) {
 close(STDOUT);
 close(STDERR);
 
-<<<<<<< make_acefiles.pl
-&mail_maintainer("BUILD REPORT: make_acefiles.pl",$maintainers,$log);
-=======
 $log->mail;
->>>>>>> 1.6.4.1
 
 exit (0);
 
@@ -132,54 +116,6 @@ exit (0);
 #################################################################################
 
 
-<<<<<<< make_acefiles.pl
-sub create_log_files{
-
-  # Create history logfile for script activity analysis
-  $0 =~ m/\/*([^\/]+)$/; system ("touch $basedir/logs/history/$1.`date +%y%m%d`");
-
-  # create main log file using script name for
-  my $script_name = $1;
-  $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
-  my $rundate  = &rundate;
-  $log         = "$basedir/logs/$script_name.$WS_version.$rundate.$$";
-
-  open (LOG, ">$log") or die "cant open $log";
-
-  # also want to capture STDOUT AND STERR to logfile
-  LOG->autoflush();
-  open(STDOUT,">>$log");
-  STDOUT->autoflush();
-  open(STDERR,">>$log");
-  STDERR->autoflush();
-
-  print LOG "# make_acefiles.pl started at: $rundate ",&runtime,"\n";
-  print LOG "# TEST MODE!!! Using $basedir/autoace\n" if ($test);
-  print LOG "# WormBase/Wormpep version: ${WS_version}\n\n";
-  print LOG "======================================================================\n\n";
- 
-
-  if ($debug) {
-    print "# make_acefiles.pl\n\n";
-    print "# run details    : $rundate $runtime\n";
-    print "\n";
-    print "WormBase version : ${WS_version}\n";
-    print "\n";
-    print "======================================================================\n";
-    print " Write .ace files\n";
-    print "  from database $db\n"                           if ($db);
-    print "======================================================================\n";
-    print "\n";
-    print "Starting make_acefiles.pl .. \n\n";
-    print "writing .acefiled to '$wormbasedir'\n";
-  }
-
-
-}
-
-
-=======
->>>>>>> 1.6.4.1
 
 #################################################################################
 # Erases old acefiles and make new ones                                         #
@@ -207,14 +143,14 @@ sub mknewacefiles {
       next unless (/$db/);
     }
     # parse database information
-    # this really needs reworking so that the data in autoace_config doesnt specify any path info. It'll do for testing tho'
     if (/^P\s+(\S+)\s+(\S+)$/) {
       ($dbname)  = $1;
-      $dbdir     = $wormbase->basedir."/$dbname";
+      $dbdir     = $wormbase->primary("$dbname");
       my $msg = "\n\n". $wormbase->runtime . " : Processing $dbname information in autoace_config\n";
       $log->write_to("$msg");
+
       # need to change dbpath if in test mode
-      $targetdir = "$wormbasedir/$dbname";
+      $targetdir = $wormbase->acefiles."/primaries/$dbname";
       mkpath( $targetdir ) unless ( -e "$targetdir" );
       $exe       = "$tace $dbdir";
       next;
@@ -228,14 +164,14 @@ sub mknewacefiles {
     
     # parse filename
     ($filename) = (/^\S+\s+(\S+)/);
-    $filepath   = "$wormbasedir/$dbname/$filename";
-    $extrafile  = "$wormbasedir/$dbname/$filename.extra";
+    $filepath   = "$targetdir/$filename";
+    $extrafile  = "$targetdir/$filename.extra";
 
     print "Noting filename:$filename\n" if ($wormbase->debug);
 
     # if misc_static file copy from source dir under ~wormpub
     if ($dbname =~ /misc_static/) {
-      my $misc_stat_dir = $wormbase->wormpub."/misc_static";
+      my $misc_stat_dir = $wormbase->misc_static;
       system("cp -f $misc_stat_dir/$filename $filepath") and $log->write_to("ERROR : couldnt copy $misc_stat_dir/$filename : $!\n");
       next;
     }
