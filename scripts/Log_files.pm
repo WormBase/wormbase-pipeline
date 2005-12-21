@@ -129,6 +129,8 @@ sub mail {
     else {
         $script = $self->{"SCRIPT"};
     }
+    $script = "REPORT: $script";
+    $script = "ERROR : $script" if ( $self->report_errors != 0 );
     $self->{'wormbase'}->mail_maintainer( $script, $recipient, $file );
     $self->{'MAILED'} = 1;
 }
