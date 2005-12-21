@@ -817,8 +817,9 @@ sub logs        { $self = shift; return $self->{'logs'}; }
 sub ftp_upload  { $self = shift; return $self->{'ftp_upload'}; }
 sub reports     { $self = shift; return $self->{'reports'}; }
 sub misc_static { $self = shift; return $self->{'misc_static'}; }
-sub misc_dynamic { $self = shift; return $self->{'misc_dynamic'}; }
+sub misc_dynamic{ $self = shift; return $self->{'misc_dynamic'}; }
 sub primaries   { $self = shift; return $self->{'primaries'}; }
+sub acefiles    { $self = shift; return $self->{'acefiles'}; }
 
 # this can be modified by calling script
 sub common_data {
@@ -889,6 +890,7 @@ sub establish_paths {
   $self->{'common_data'} = $self->autoace . "/COMMON_DATA";
   $self->{'chromosomes'} = $self->autoace . "/CHROMOSOMES";
   $self->{'reports'}     = $self->autoace . "/REPORTS";
+  $self->{'acefiles'}    = $self->autoace . "/acefiles";
   $self->{'gff'}         = $self->chromosomes; #to maintain backwards compatibility 
   $self->{'gff_splits'}  = $self->autoace . "/GFF_SPLITS";
   $self->{'primaries'}   = $self->basedir . "/PRIMARIES";
@@ -905,8 +907,11 @@ sub establish_paths {
   $self->{'primary'}->{'geneace'} = $self->primaries ."/geneace";
   $self->{'primary'}->{'stlace'}  = $self->primaries ."/stlace";
   $self->{'primary'}->{'citace'}  = $self->primaries ."/citace";
+  $self->{'primary'}->{'caltech'} = $self->primaries ."/citace"; # to handle the various names used
+  $self->{'primary'}->{'csh'}     = $self->primaries ."/cshace";
   $self->{'primary'}->{'cshace'}  = $self->primaries ."/cshace";
   $self->{'primary'}->{'brigace'} = $self->primaries ."/brigace";
+  $self->{'primary'}->{'briggsae'}= $self->primaries ."/brigace"; # to handle the various names used
 
   $self->{'build_data'} = $self->{'basedir'} . "_DATA";	# BUILD_DATA or TEST_BUILD_DATA
   $self->{'misc_static'} = $self->{'build_data'} . "/MISC_STATIC";
@@ -921,7 +926,8 @@ sub establish_paths {
   mkpath( $self->reports )     unless ( -e $self->reports );
   mkpath( $self->gff )         unless ( -e $self->gff );
   mkpath( $self->gff_splits )  unless ( -e $self->gff_splits );
-  mkpath( $self->primaries )   unless ( -e $self->primaries );  system("chmod -R g+w ".$self->wormrna);
+  mkpath( $self->primaries )   unless ( -e $self->primaries ); system("chmod -R g+w ".$self->primaries);
+  mkpath( $self->acefiles )    unless ( -e $self->acefiles );
 
   system("chmod -R g+w ".$self->autoace);
 
@@ -948,7 +954,10 @@ sub run_command {
   $log->write_to("running $command\n") if $log;
   my $return_status = system("$command");
   if ( ( $return_status >> 8 ) != 0 ) {
-    $log->write_to(" WARNING: $script returned non-zero ($return_status)\n") if $log;
+    if( $log ) {
+      $log->write_to(" WARNING: $script returned non-zero ($return_status)\n");
+      $log->error;
+    }
     return 1;
   } else {
     $log->write_to("$script exited cleanly\n") if $log;
