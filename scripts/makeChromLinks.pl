@@ -16,7 +16,7 @@
 ##########################################################
 #
 # Last updated by: $Author: ar2 $                     
-# Last updated on: $Date: 2005-12-16 11:18:55 $       
+# Last updated on: $Date: 2005-12-21 12:39:19 $       
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -78,12 +78,6 @@ my $basedir     = $wormbase->basedir;
 
 my $rundate     = $wormbase->rundate;
 my $runtime     = $wormbase->runtime;
-
-# touch logfile for run details
-$0 =~ m/\/*([^\/]+)$/; system ("touch $basedir/logs/history/$1.`date +%y%m%d`");
-my $logfile = "$basedir/logs/$1.`date +%y%m%d`.$$";
-
-
 
 # where am i
 my $CWD = cwd;
