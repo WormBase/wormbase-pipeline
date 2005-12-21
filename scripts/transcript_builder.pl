@@ -7,7 +7,7 @@
 # Script to make ?Transcript objects
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2005-12-21 12:03:43 $
+# Last updated on: $Date: 2005-12-21 14:17:08 $
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Getopt::Long;
@@ -19,10 +19,9 @@ use Modules::Transcript;
 use Modules::CDS;
 use Modules::Strand_transformer;
 use File::Path;
+use Storable;
 
-my $tace = &tace;
-
-my ($debug, $help, $verbose, $really_verbose, $est, $gff, $database, $build, $new_coords, $test, $UTR_range, @chromosomes, $gff_dir, $test_cds);
+my ($debug, $store, $help, $verbose, $really_verbose, $est, $gff, $database, $build, $new_coords, $test, $UTR_range, @chromosomes, $gff_dir, $test_cds, $wormbase, $db);
 
 my $gap = 15;			# $gap is the gap allowed in an EST alignment before it is considered a "real" intron
 
@@ -43,12 +42,34 @@ GetOptions ( "debug:s"          => \$debug,
 	     "utr_size:s"       => \$UTR_range,
 	     "chromosome:s"     => \@chromosomes,
 	     "gff_dir:s"        => \$gff_dir,
-	     "cds:s"            => \$test_cds
+	     "cds:s"            => \$test_cds,
+	     "store:s"          => \$store
 	   ) ;
 
-@chromosomes = split(/,/,join(',',@chromosomes));
+if( $store ) {
+  $wormbase = retrieve( $store ) or croak("cant restore wormbase from $store\n");
+}
+else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                            -test    => $test,
+                           );
+}
 
-# Who will log be emailed to?
+if ($database eq "autoace") { 
+my $db = $wormbase->autoace;
+}
+else {
+$db = $database;
+}
+
+# call tace from Wormbase.pm
+my $tace = $wormbase->tace;
+
+# other variables and paths.
+@chromosomes = split(/,/,join(',',@chromosomes));
+*STDERR = *STDOUT;
+
+# Log Info
 my $maintainers = "All";
 if ($debug) {
   print "DEBUG = \"$debug\"\n\n";
@@ -57,25 +78,20 @@ if ($debug) {
   $set_debug->debug($debug);
 }
 
-*STDERR = *STDOUT;
+my $log = Log_files->make_build_log($wormbase);
+die "cant create log file\n\n" unless $log;
 
 &check_opts;
 die "no database\n" unless $database;
 
-my $log = Log_files->make_build_log($debug);
-
 #setup directory for transcript
-my $transcript_dir = "$database/TRANSCRIPTS";
-
-mkpath(" $transcript_dir") unless -e "$transcript_dir";
-
-die "cant create log file\n\n" unless $log;
+my $transcript_dir = "$db/TRANSCRIPTS";
+mkpath("$transcript_dir") unless -e "$transcript_dir";
 
 my $coords;
 # write out the transcript objects
 # get coords obj to return clone and coords from chromosomal coords
 $coords = Coords_converter->invoke($database);
-
 
 #Load in Feature_data : cDNA associations from COMMON_DATA
 my %feature_data;
@@ -90,21 +106,16 @@ foreach my $chrom ( @chromosomes ) {
   # links store start /end chrom coords
   my $link_start;
   my $link_end;
-
   my %genes_exons;
   my %genes_span;
   my %cDNA;
   my %cDNA_span;
   my %cDNA_index;
   my %features;
-
   my $transformer;
-
   my @cdna_objs;
   my @cds_objs;
-
   my $index = 0;
-
   my $gff_file;
 
   $gff_file = $gff ? $gff : "$gff_dir/CHROMOSOME_$chrom.gff";
@@ -115,7 +126,6 @@ foreach my $chrom ( @chromosomes ) {
   # parse GFF file to get CDS, exon and cDNA info
   while (<GFF>) {
     my @data = split;
-    
     next if( $data[1] eq "history" );
     #  GENE STRUCTURE
     if ( $data[1] eq "curated" ) {
@@ -124,8 +134,8 @@ foreach my $chrom ( @chromosomes ) {
       if ( $data[2] eq "CDS" ) {
 	# GENE SPAN
 	$genes_span{$data[9]} = [($data[3], $data[4], $data[6])];
-
-      } elsif ($data[2] eq "exon" ) {
+      } 
+      elsif ($data[2] eq "exon" ) {
 	# EXON 
 	$genes_exons{$data[9]}{$data[3]} = $data[4];
       }
@@ -152,7 +162,7 @@ foreach my $chrom ( @chromosomes ) {
     }
     
     # add feature_data to cDNA
-    #CHROMOSOME_I    SL1     SL1_acceptor_site       182772  182773  .       -       .       Feature "WBsf016344"
+    #CHROMOSOME_I  SL1  SL1_acceptor_site   182772  182773 .  -  .  Feature "WBsf016344"
     elsif ( $data[9] and $data[9] =~ /(WBsf\d+)/) { #Feature "WBsf003597"
       my $feat_id = $1;
       my $dnas = $feature_data{$feat_id};
@@ -200,7 +210,6 @@ foreach my $chrom ( @chromosomes ) {
     $cds->array_index("$index");
     $index++;
   }
-
 
 
   $index = 0;
@@ -409,9 +418,6 @@ sub check_opts {
     system("perldoc $0");
     exit(0);
   }
-
-  $database = glob("~wormpub/TEST_BUILD/autoace") if $test;
-
 }
 
 sub checkData
@@ -430,13 +436,13 @@ sub checkData
 sub run_command
   {
     my $command = shift;
-    $log->write_to( &runtime, ": started running $command\n");
+    $log->write_to( $wormbase->runtime, ": started running $command\n");
     my $status = system($command);
     if ($status != 0) {
       $errors++;
       $log->write_to("ERROR: $command failed\n");
     }
-    $log->write_to( &runtime, ": finished running $command\n");
+    $log->write_to( $wormbase->runtime, ": finished running $command\n");
 
     # for optional further testing by calling subroutine
     return($status);
@@ -450,7 +456,7 @@ sub load_EST_data
     my $cDNA_span = shift;
     my $chrom = shift;
     my %est_orient;
-    &FetchData("estorientation",\%est_orient,glob("~wormpub/DATABASES/autoace/COMMON_DATA"));
+    $wormbase->FetchData("estorientation",\%est_orient);
     foreach my $EST ( keys %est_orient ) {
       if ( $$cDNA_span{$EST} ) {
 	my $GFF_strand = $$cDNA_span{$EST}->[2];
@@ -478,7 +484,7 @@ sub load_EST_data
 
     # load paired read info
     print STDERR "Loading EST paired read info\n";
-    my $pairs = "$database/EST_pairs.txt";
+    my $pairs = $wormbase->autoace."/EST_pairs.txt";
     
     if ( -e $pairs ) {
       open ( PAIRS, "<$pairs") or $log->log_and_die("cant open $pairs :\t$!\n");
@@ -495,7 +501,7 @@ sub load_EST_data
     else {
       my $cmd = "select cdna, pair from cdna in class cDNA_sequence where exists_tag cdna->paired_read, pair in cdna->paired_read";
       
-      open (TACE, "echo '$cmd' | $tace $database |") or die "cant open tace to $database using $tace\n";
+      open (TACE, "echo '$cmd' | $tace $db |") or die "cant open tace to $database using $tace\n";
       open ( PAIRS, ">$pairs") or die "cant open $pairs :\t$!\n";
       while ( <TACE> ) {
 	chomp;
@@ -512,7 +518,7 @@ sub load_features
   {
     my $features = shift;
     my %tmp;
-    &FetchData("est2feature",\%tmp,glob("~wormpub/DATABASES/autoace/COMMON_DATA") );
+    $wormbase->FetchData("est2feature",\%tmp);
     foreach my $seq ( keys %tmp ) {
       my @feature = split(/,/,$tmp{$seq});
       foreach ( @feature ) {
@@ -568,13 +574,15 @@ To do this it ;
 
 =item * verbose and really_verbose  -  levels of terminal output
   
-=item *  est:s     - just do for single est 
+=item * est:s     - just do for single est 
 
 =item * gap:s      - when building up cDNA exon structures from gff file there are often single / multiple base pair gaps in the alignment. This sets the gap size that is allowable [ defaults to 5 ]
 
+=item * gff_dir:s  - pass in the location of chromosome_*.gff files that have been generated for the database you are generating Transcripts for.
+
 =item * gff:s         - pass in a gff file to use
 
-=item * database:s      - database directory to use. Expects gff files to be in CHROMSOMES subdirectory.
+=item * database:s      - either use autoace if used in build process or give the full database path. Basically retrieves paired read info for ESTs from that database.
 
 =head1 AUTHOR
 
