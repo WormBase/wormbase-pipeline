@@ -1175,7 +1175,6 @@ Takes a path to an acedb database and returns "yes" if no database/lock.wrm file
 
 =over 4
 
-<<<<<<< Wormbase.pm
 =item *
 
 gff_sort
@@ -1194,36 +1193,10 @@ end (column 4)
 =over 4
 
 =item *
-=======
-=item *
-
-gff_sort
-
-
-gff_sort reads a GFF file from STDIN , ignores comment lines and blank
-lines and prints the remaining lines to STDOUT sorted by the following
-keys:
-
-name (column 0)
-start (column 3)
-end (column 4)
-
-=back 
-
-=over 4
->>>>>>> 1.88.4.7
-
-<<<<<<< Wormbase.pm
-tace
-
-tace returns the path for tace that is being used
-=======
-=item *
 
 tace
 
 tace returns the path for tace that is being used
->>>>>>> 1.88.4.7
 
 =back 
 
