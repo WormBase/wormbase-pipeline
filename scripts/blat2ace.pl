@@ -6,36 +6,32 @@
 #
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2005-12-16 11:18:55 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2005-12-22 10:13:34 $
 
-use strict;
-<<<<<<< blat2ace.pl
-use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
-=======
+use strict;                                      
 use lib $ENV{'CVS_DIR'};
->>>>>>> 1.37.4.1
 use Wormbase;
-use Log_files;
 use Getopt::Long;
+use Carp;
+use Log_files;
+use Storable;
 
 #########################
 # Command line options  #
 #########################
 
-<<<<<<< blat2ace.pl
-my ($help, $est, $mrna, $ncrna, $ost, $tc1, $nematode, $embl, $camace, $intron, $washu, $nembase);
-=======
-my ($est, $mrna, $ncrna, $ost, $tc1, $nematode, $embl, $intron);
-my ($help, $test, $debug, $database);
+my ($est, $mrna, $ncrna, $ost, $tc1, $nematode, $embl, $camace, $intron, $washu, $nembase);
+my ($help, $debug, $test, $verbose, $store, $wormbase);
+my $database;
 
 GetOptions (
 	    "help"       => \$help,
+            "debug=s"    => \$debug,
 	    "test"       => \$test,
-	    "debug:s"    => \$debug,
+	    "verbose"    => \$verbose,
+	    "store"      => \$store,
 	    "database:s" => \$database,
->>>>>>> 1.37.4.1
-
             "est"        => \$est,
             "mrna"       => \$mrna,
             "ncrna"      => \$ncrna,
@@ -45,41 +41,50 @@ GetOptions (
 	    "nembase"    => \$nembase,
 	    "washu"      => \$washu,
             "embl"       => \$embl,
-
-	    "intron"     => \$intron
+	    "intron"     => \$intron,
 	   );
+
+
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+			     );
+}
+
+# Display help if required
+&usage(0) if ($help);
+
+# in test mode?
+if ($test) {
+  print "In test mode\n" if ($verbose);
+
+}
+
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
+
 
 #############################
 # variables and directories #
 #############################
 
-our $log;
-
-my $wormpub = glob("~wormpub");
-
-<<<<<<< blat2ace.pl
 # set database paths, default to autoace unless -camace
-my $blat_dir  = "/wormsrv2/autoace/BLAT";
-my $tace      = &tace ." /wormsrv2/autoace";
-my $logdir = "/nfs/disk100/wormpub/logs";
-my $canonical = "/nfs/disk100/wormpub/DATABASES/camace";
+my $ace_dir         = $wormbase->autoace;     # AUTOACE DATABASE DIR
+my $blat_dir  = $ace_dir . "/BLAT";
+my $canonical = $wormbase->databases('camace');
 
 if ($camace) {
     $blat_dir  = "$canonical/BLAT";
-    $tace      = &tace." $canonical";
 }
-=======
-# set database paths
-$database = ( $test ? "$wormpub/TEST_BUILD/autoace" : "$wormpub/autoace" ) unless $database;
-my $blat_dir  = "$database/BLAT";
->>>>>>> 1.37.4.1
 
 #############################
 # CommonData hash retrieval #
 #############################
 
-my %NDBaccession2est = &FetchData('NDBaccession2est');     # EST accession => name
-my %estorientation   = &FetchData('estorientation');       # EST accession => orientation [5|3]
+my %NDBaccession2est = $wormbase->FetchData('NDBaccession2est');     # EST accession => name
+my %estorientation   = $wormbase->FetchData('estorientation');       # EST accession => orientation [5|3]
 
 my %hash;
 my (%best,%other,%bestclone,%match,%ci);
@@ -99,23 +104,19 @@ our %word = (
 	     nembase    => 'BLAT_NEMBASE',
 	     washu    => 'BLAT_WASHU'
 	     );
-$log = Log_files->make_build_log($debug);
+
 
 ########################################
 # command-line options & ramifications #
 ########################################
 
-# Help pod documentation
-&usage(0) if ($help);
-
 # Exit if no data type choosen [EST|mRNA|EMBL|NEMATODE|OST|WASHU|NEMBASE]
 # or if multiple data types are chosen
 
-<<<<<<< blat2ace.pl
-&usage(1) unless ($est || $mrna || $ost || $ncrna || $tc1 || $nematode || $embl || $washu || $nembase); 
-=======
-$log->log_and_die("no type specified\n") unless ($est || $mrna || $ost || $ncrna || $tc1 || $nematode || $embl);
->>>>>>> 1.37.4.1
+
+$log->log_and_die("no type specified\n") unless 
+    ($est || $mrna || $ost || $ncrna || $tc1 || $nematode || $embl || $washu || $nembase);
+
 
 my $flags = 0;
 $flags++ if $est;
@@ -160,7 +161,7 @@ foreach my $stlclone (@stlclones) {
 ##########################################################################################
 # map the blat hits to ace - i.e. process blat output (*.psl) file into set of ace files #
 ##########################################################################################
-$log->write_to(&runtime.": Start mapping\n\n");
+$log->write_to($wormbase->runtime.": Start mapping\n\n");
 
 # open input and output filehandles
 open(ACE,  ">$blat_dir/autoace.$type.ace")  or die "Cannot open $blat_dir/autoace.${type}.ace $!\n";
@@ -302,10 +303,6 @@ while (<BLAT>) {
 	      $query_end     = $query_start - $lengths[$x] +1;
 	  }		
       }		
-<<<<<<< blat2ace.pl
-#      print LOG "$query was mapped to $virtual\n\n";
-=======
->>>>>>> 1.37.4.1
       
       # write to output file
       print ACE "Homol_data : \"$virtual\"\n";
@@ -569,6 +566,7 @@ if ($intron) {
 ##############################
 
 $log->mail;
+print "Finished.\n" if ($verbose);
 exit(0);
 
 
@@ -614,37 +612,6 @@ sub usage {
 }
 
 
-<<<<<<< blat2ace.pl
-##############################################################
-
-sub create_log_files{
-
-  # Create history logfile for script activity analysis
-  $0 =~ m/\/*([^\/]+)$/; system ("touch $logdir/history/$1.`date +%y%m%d`
-");
-
-  # create main log file using script name for
-  my $script_name = $1;
-  $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
-  my $WS_version = &get_wormbase_version_name;
-  my $rundate = `date +%y%m%d`; chomp $rundate;
-  $log        = "/$logdir/$script_name.${WS_version}.$rundate.$$";
-
-  open (LOG, ">$log") or die "cant open $log";
-  print LOG "$script_name\n";
-  print LOG "started at ",`date`,"\n";
-  print LOG "=============================================\n";
-  print LOG "\n";
-
-}
-
-
-###################################
-
-
-
-=======
->>>>>>> 1.37.4.1
 
 __END__
 
@@ -702,16 +669,6 @@ blat2ace.pl  arguments:
 =item
 
 -embl => perform everything for non-WormBase CDSs in EMBL
-
-=back
-
-=item script still relies upon /wormsrv connections for
-
-=back
-
-      /wormsrv2/autoace/BLAT directory
-      autoace itself.
-
 
 =back
 
