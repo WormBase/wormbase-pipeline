@@ -7,15 +7,18 @@
 # Script to run consistency checks on the current_DB database
 # to look for bogus sequence entries
 #
-# Last updated by: $Author: ar2 $
+# Last updated by: $Author: gw3 $
 
-# Last updated on: $Date: 2005-12-16 11:18:55 $
+# Last updated on: $Date: 2006-01-03 17:35:31 $
 
-use strict;
+use strict;                                      
 use lib $ENV{'CVS_DIR'};
 use Wormbase;
-use Ace;
 use Getopt::Long;
+use Carp;
+use Log_files;
+use Storable;
+use Ace;
 use GENEACE::Geneace;
 
 
@@ -24,42 +27,37 @@ use GENEACE::Geneace;
 # command-line options       #
 ##############################
 
-my $help;                # Help/Usage page
-my $verbose;             # turn on extra output
+my ($help, $debug, $test, $verbose, $store, $wormbase);
 my $database;            # path to database
-my $debug;               # For sending output to just one person
-my $test;                # for running in test mode
-my $maintainers = "All"; # log file recipients
-
 
 GetOptions ("database=s" => \$database,
             "verbose"    => \$verbose,
             "test"       => \$test,
             "debug=s"    => \$debug,
-            "help"       => \$help);
+            "help"       => \$help,
+	    "store"      => \$store,
+);
 
-&usage if ($help);
 
-# Use debug mode?
-if($debug){
-  print "DEBUG = \"$debug\"\n\n";
-  ($maintainers = $debug . '\@sanger.ac.uk');
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+			     );
 }
 
+# Display help if required
+&usage("Help") if ($help);
 
+# in test mode?
+if ($test) {
+  print "In test mode\n" if ($verbose);
 
-#############################################################################
-# Set database details, default is /nfs/disk100/wormpub/DATABASES/current_DB
-##############################################################################
+}
 
-$database = "/nfs/disk100/wormpub/DATABASES/current_DB/" if (!$database);
-
-my $tace = &tace;   # tace executable path
-
-my $db = Ace->connect(-path  => "$database",
-		      -program =>$tace) || do { print ALL_LOG "Connection failure: ",Ace->error; die();};
-
-print "Checking $database\n\n";
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
 
 
 
@@ -77,9 +75,22 @@ my $sanger_log;
 my $cshl_log;
 my $stlouis_log;
 my $caltech_log;
-my $WS_version  = &get_wormbase_version_name;
+my $WS_version  = $wormbase->get_wormbase_version_name;
 
 &create_log_files;
+
+
+#############################################################################
+# Set database details, default is current_DB
+##############################################################################
+
+$database = $wormbase->databases('current') if (!$database);
+my $tace = $wormbase->tace;        # TACE PATH
+
+my $db = Ace->connect(-path  => "$database",
+		      -program =>$tace) || $all_log->log_and_die("Connection failure: " . Ace->error);
+print "Checking $database\n\n";
+
 
 
 ###################################
@@ -106,36 +117,36 @@ print "\nChecking for connections to non-live Gene objects\n" if ($verbose);
 # Count problems and print output
 
 foreach (@gene_id_error){
-  print ALL_LOG $_;
+  $all_log->write_to( $_ );
   print $_ if $verbose;
   $all_counter++;
-  if ($_ =~ /^csh/ )         { $cshl_counter++;    print CSHL_LOG $_ }
-  if ($_ =~ /^camace|^misc/ ){ $sanger_counter++;  print SANGER_LOG $_ }
-  if ($_ =~ /^caltech/ )     { $caltech_counter++; print CALTECH_LOG $_ }
-  if ($_ =~ /^stlace/ )      { $stlouis_counter++; print STLOUIS_LOG $_ }
+  if ($_ =~ /^csh/ )         { $cshl_counter++;    $cshl_log->write_to( $_ )}
+  if ($_ =~ /^camace|^misc/ ){ $sanger_counter++;  $sanger_log->writeto( $_ )}
+  if ($_ =~ /^caltech/ )     { $caltech_counter++; $caltech_log->write_to( $_ )}
+  if ($_ =~ /^stlace/ )      { $stlouis_counter++; $stlouis_log->write_to( $_ )}
 }
 
 
 foreach my $j (keys(%problems)){
   foreach my $k (keys(%{$problems{$j}})){
-    print ALL_LOG "ERROR: $j $k @{${$problems{$j}}{$k}}\n";
+    $all_log->write_to("ERROR: $j $k @{${$problems{$j}}{$k}}\n");
     if ($j ne "caltech" && $j ne "csh" && $j ne "stlace" && $j ne "brigace"){
-      print SANGER_LOG "ERROR: $j $k @{${$problems{$j}}{$k}}\n";
+      $sanger_log->writeto( "ERROR: $j $k @{${$problems{$j}}{$k}}\n");
       $sanger_counter++;
       $all_counter++;
     }
     if ($j eq "csh"){
-      print CSHL_LOG "ERROR: $k @{${$problems{$j}}{$k}}\n";
+      $cshl_log->write_to( "ERROR: $k @{${$problems{$j}}{$k}}\n");
       $cshl_counter++;
       $all_counter++;
     }
     if ($j eq "caltech"){
-      print CALTECH_LOG "ERROR: $k @{${$problems{$j}}{$k}}\n";
+      $caltech_log->write_to( "ERROR: $k @{${$problems{$j}}{$k}}\n");
       $caltech_counter++;
       $all_counter++;
     }
     if ($j eq "stlace" && $j eq "brigace"){
-      print STLOUIS_LOG "ERROR: $j $k @{${$problems{$j}}{$k}}\n";
+      $stlouis_log->write_to( "ERROR: $j $k @{${$problems{$j}}{$k}}\n");
       $stlouis_counter++;
       $all_counter++;
     }
@@ -144,8 +155,8 @@ foreach my $j (keys(%problems)){
 }
 
 foreach my $i (@other){
-  print ALL_LOG "ERROR: Other - $i\n";
-  print SANGER_LOG "ERROR: Other - $i\n";
+  $all_log->write_to( "ERROR: Other - $i\n");
+  $sanger_log->writeto( "ERROR: Other - $i\n");
   print "Other - $i\n" if $verbose;
   $all_counter++;
   $sanger_counter++;
@@ -163,17 +174,11 @@ print "\n$all_counter problems found\n" if $verbose;
 
 $db->close;
 
-print ALL_LOG "\n$all_counter problems found\n\n$0 ended at ",`date`,"\n";
-print SANGER_LOG "\n$sanger_counter problems found\n\n$0 ended at ",`date`,"\n";
-print CSHL_LOG "\n$cshl_counter problems found\n\n$0 ended at ",`date`,"\n";
-print CALTECH_LOG "\n$caltech_counter problems found\n\n$0 ended at ",`date`,"\n";
-print STLOUIS_LOG "\n$stlouis_counter problems found\n\n$0 ended at ",`date`,"\n";
-
-close(ALL_LOG);
-close(SANGER_LOG);
-close(CSHL_LOG);
-close(CALTECH_LOG);
-close(STLOUIS_LOG);
+$all_log->write_to( "\n$all_counter problems found\n\n$0 ended at ",`date`,"\n");
+$sanger_log->writeto( "\n$sanger_counter problems found\n\n$0 ended at ",`date`,"\n");
+$cshl_log->write_to( "\n$cshl_counter problems found\n\n$0 ended at ",`date`,"\n");
+$caltech_log->write_to( "\n$caltech_counter problems found\n\n$0 ended at ",`date`,"\n");
+$stlouis_log->write_to( "\n$stlouis_counter problems found\n\n$0 ended at ",`date`,"\n");
 
 my $all = "wormbase-dev\@wormbase.org";
 
@@ -186,11 +191,16 @@ if($debug){
   $caltech = $sanger = $cshl = $stlouis = $debug;
 }
 
-&mail_maintainer("$WS_version database checks: Sanger","$sanger",$sanger_log)    unless ($test || ($sanger_counter == 0));
-&mail_maintainer("$WS_version database checks: CSHL","$cshl",$cshl_log)          unless ($test || ($cshl_counter ==0));
-&mail_maintainer("$WS_version database checks: Caltech","$caltech",$caltech_log) unless ($test || ($caltech_counter == 0));
-&mail_maintainer("$WS_version database checks: WashU","$stlouis",$stlouis_log)   unless ($test || ($stlouis_counter == 0));
+# +++ check this! do we really want to mail wormbase-dev with these problems?
+#$all_log->mail($all, "$WS_version database checks: All")             unless ($test || ($all_counter == 0));
 
+$sanger_log->mail($sanger, "$WS_version database checks: Sanger")    unless ($test || ($sanger_counter == 0));
+$cshl_log->mail($cshl, "$WS_version database checks: CSHL")          unless ($test || ($cshl_counter == 0));
+$caltech_log->mail($caltech, "$WS_version database checks: Caltech") unless ($test || ($caltech_counter == 0));
+$stlouis_log->mail($stlouis, "$WS_version database checks: WashU")   unless ($test || ($stlouis_counter == 0));
+
+$log->mail();
+print "Finished.\n" if ($verbose);
 exit(0);
 
 
@@ -444,8 +454,11 @@ sub process_genes{
 }
 
 sub find_out_of_date_gene_id {
+  
+  my $ace_dir = $wormbase->autoace;     # AUTOACE DATABASE DIR
+  my $misc_static_dir = $wormbase->misc_static;
 
-  my @models = `cat /wormsrv2/autoace/wspec/models.wrm`;
+  my @models = `cat $ace_dir/wspec/models.wrm`;
   my ($class, %class_has_Gene);
 
   # ----- checks which ?class used ?Gene in model.wrm file and build a hash
@@ -489,11 +502,12 @@ sub find_out_of_date_gene_id {
       if ($config_line =~ /^$group\s+(.+\.ace)\s+(\w+)\s+/){
 	$acefile = $1;
 	$acefile =~ s/\s+//g;
-	$acefile = "/wormsrv2/wormbase/$group/$acefile";
 
 	# fix path if group is misc
 	if($group eq "misc"){
-	  $acefile = "/wormsrv2/wormbase/misc_static/$1";
+	  $acefile = "$misc_static_dir/$1";
+	} else {
+	  $acefile = $wormbase->primary($group) . "/$acefile";
 	}
 
 	$exist = `grep "WBGene" $acefile`; # check only acefiles that have WBGxxxxxxx info
@@ -537,53 +551,64 @@ sub find_out_of_date_gene_id {
 
 sub create_log_files{
 
-  my $rundate = &rundate;
-  $all_log = "/wormsrv2/logs/current_DB_check.all.log.$rundate.$$";
-  open(ALL_LOG,">$all_log") || die "can't open $all_log";
-  $sanger_log = "/wormsrv2/logs/current_DB_check.sanger.log.$rundate.$$";
-  open(SANGER_LOG,">$sanger_log") || die "can't open $sanger_log";
-  $cshl_log = "/wormsrv2/logs/current_DB_check.cshl.log.$rundate.$$";
-  open(CSHL_LOG,">$cshl_log") || die "can't open $cshl_log";
-  $stlouis_log = "/wormsrv2/logs/current_DB_check.stlouis.log.$rundate.$$";
-  open(STLOUIS_LOG,">$stlouis_log") || die "can't open $stlouis_log";
-  $caltech_log = "/wormsrv2/logs/current_DB_check.caltech.log.$rundate.$$";
-  open(CALTECH_LOG,">$caltech_log") || die "can't open $caltech_log";
+  my $rundate = $wormbase->rundate;
+  my $logs_dir = $wormbase->logs;
 
-  print ALL_LOG "$0 started at ",`date`,"\n";
-  print ALL_LOG "This file contains information on possible errors in the current_DB database\n";
-  print ALL_LOG "==========================================================================\n";
+  $all_log = "$logs_dir/current_DB_check.all.log.$rundate.$$";
+  #open(ALL_LOG,">$all_log") || die "can't open $all_log";
+  $all_log = Log_files->make_log($all_log);
 
-  print SANGER_LOG "$0 started at ",`date`,"\n";
-  print SANGER_LOG "This file contains information on possible errors in the latest $WS_version release\n";
-  print SANGER_LOG "which have been traced to the camace or geneace databases. This list is generated\n";
-  print SANGER_LOG "automatically at the end of the $WS_version build process. Most items on this list will be\n";
-  print SANGER_LOG "sequences created by your database which should now be replaced by splice variants\n";
-  print SANGER_LOG "or removed altogether. Email wormbase\@sanger.ac.uk if you have any questions.\n";
-  print SANGER_LOG "==========================================================================\n\n";
+  $sanger_log = "$logs_dir/current_DB_check.sanger.log.$rundate.$$";
+  #open(SANGER_LOG,">$sanger_log") || die "can't open $sanger_log";
+  $sanger_log = Log_files->make_log($sanger_log);
 
-  print CSHL_LOG "$0 started at ",`date`,"\n";
-  print CSHL_LOG "This file contains information on possible errors in the latest $WS_version release\n";
-  print CSHL_LOG "which have been traced to the cshace database.  This list is generated\n";
-  print CSHL_LOG "automatically at the end of the $WS_version build process. Most items on this list will be\n";
-  print CSHL_LOG "sequences created by your database which should now be replaced by splice variants\n";
-  print CSHL_LOG "or removed altogether. Email wormbase\@sanger.ac.uk if you have any questions.\n";
-  print CSHL_LOG "==========================================================================\n\n";
+  $cshl_log = "$logs_dir/current_DB_check.cshl.log.$rundate.$$";
+  #open(CSHL_LOG,">$cshl_log") || die "can't open $cshl_log";
+  $cshl_log = Log_files->make_log($cshl_log);
 
-  print STLOUIS_LOG "$0 started at ",`date`,"\n";
-  print STLOUIS_LOG "This file contains information on possible errors in the latest $WS_version release\n";
-  print STLOUIS_LOG "which have been traced to the stlace or brigace databases. This list is generated\n";
-  print STLOUIS_LOG "automatically at the end of the $WS_version build process. Most items on this list will be\n";
-  print STLOUIS_LOG "sequences created by your database which should now be replaced by splice variants\n";
-  print STLOUIS_LOG "or removed altogether. Email wormbase\@sanger.ac.uk if you have any questions.\n";
-  print STLOUIS_LOG "==========================================================================\n\n";
+  $stlouis_log = "$logs_dir/current_DB_check.stlouis.log.$rundate.$$";
+  #open(STLOUIS_LOG,">$stlouis_log") || die "can't open $stlouis_log";
+  $stlouis_log = Log_files->make_log($stlouis_log);
 
-  print CALTECH_LOG "$0 started at ",`date`,"\n";
-  print CALTECH_LOG "This file contains information on possible errors in the latest $WS_version release\n";
-  print CALTECH_LOG "which have been traced to the citace database. This list is generated\n";
-  print CALTECH_LOG "automatically at the end of the $WS_version build process. Most items on this list will be\n";
-  print CALTECH_LOG "sequences created by your database which should now be replaced by splice variants\n";
-  print CALTECH_LOG "or removed altogether. Email wormbase\@sanger.ac.uk if you have any questions.\n";
-  print CALTECH_LOG "==========================================================================\n\n";
+  $caltech_log = "$logs_dir/current_DB_check.caltech.log.$rundate.$$";
+  #open(CALTECH_LOG,">$caltech_log") || die "can't open $caltech_log";
+  $caltech_log = Log_files->make_log($caltech_log);
+
+  $all_log->write_to( "$0 started at ",`date`,"\n");
+  $all_log->write_to( "This file contains information on possible errors in the current_DB database\n");
+  $all_log->write_to( "==========================================================================\n");
+
+  $sanger_log->writeto( "$0 started at ",`date`,"\n");
+  $sanger_log->writeto( "This file contains information on possible errors in the latest $WS_version release\n");
+  $sanger_log->writeto( "which have been traced to the camace or geneace databases. This list is generated\n");
+  $sanger_log->writeto( "automatically at the end of the $WS_version build process. Most items on this list will be\n");
+  $sanger_log->writeto( "sequences created by your database which should now be replaced by splice variants\n");
+  $sanger_log->writeto( "or removed altogether. Email wormbase\@sanger.ac.uk if you have any questions.\n");
+  $sanger_log->writeto( "==========================================================================\n\n");
+
+  $cshl_log->write_to( "$0 started at ",`date`,"\n");
+  $cshl_log->write_to( "This file contains information on possible errors in the latest $WS_version release\n");
+  $cshl_log->write_to( "which have been traced to the cshace database.  This list is generated\n");
+  $cshl_log->write_to( "automatically at the end of the $WS_version build process. Most items on this list will be\n");
+  $cshl_log->write_to( "sequences created by your database which should now be replaced by splice variants\n");
+  $cshl_log->write_to( "or removed altogether. Email wormbase\@sanger.ac.uk if you have any questions.\n");
+  $cshl_log->write_to( "==========================================================================\n\n");
+
+  $stlouis_log->write_to( "$0 started at ",`date`,"\n");
+  $stlouis_log->write_to( "This file contains information on possible errors in the latest $WS_version release\n");
+  $stlouis_log->write_to( "which have been traced to the stlace or brigace databases. This list is generated\n");
+  $stlouis_log->write_to( "automatically at the end of the $WS_version build process. Most items on this list will be\n");
+  $stlouis_log->write_to( "sequences created by your database which should now be replaced by splice variants\n");
+  $stlouis_log->write_to( "or removed altogether. Email wormbase\@sanger.ac.uk if you have any questions.\n");
+  $stlouis_log->write_to( "==========================================================================\n\n");
+
+  $caltech_log->write_to( "$0 started at ",`date`,"\n");
+  $caltech_log->write_to( "This file contains information on possible errors in the latest $WS_version release\n");
+  $caltech_log->write_to( "which have been traced to the citace database. This list is generated\n");
+  $caltech_log->write_to( "automatically at the end of the $WS_version build process. Most items on this list will be\n");
+  $caltech_log->write_to( "sequences created by your database which should now be replaced by splice variants\n");
+  $caltech_log->write_to( "or removed altogether. Email wormbase\@sanger.ac.uk if you have any questions.\n");
+  $caltech_log->write_to( "==========================================================================\n\n");
 }
 
 
@@ -705,13 +730,21 @@ sub check_fate_of_gene{
   }
 }
 
-   
-###########################################
+
+
+##########################################
+
 sub usage {
+  my $error = shift;
+
+  if ($error eq "Help") {
+    # Normal help menu
     system ('perldoc',$0);
-    exit;       
+    exit (0);
+  }
 }
-############################################
+
+##########################################
 
 
 
@@ -762,7 +795,7 @@ By default this script will check ~wormpub/DATABASES/current_DB, but you can use
 =item -t, test
 
 Will run all of the script as normal but will not send any emails.  Separate 
-log files are still written to /wormsrv2/logs
+log files are still written to $logs_dir
 
 =item -v, verbose mode
 
