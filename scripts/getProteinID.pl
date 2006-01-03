@@ -7,37 +7,71 @@
 #
 # written by Dan Lawson
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2005-12-16 11:18:55 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2006-01-03 15:24:38 $
 
-use lib "/wormsrv2/scripts/";
+use strict;                                      
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
-use strict;
-use Data::Dumper;
+use Carp;
 use Log_files;
+use Storable;
+use Data::Dumper;
 
 ######################################
 # variables and command-line options # 
 ######################################
 
-my $help;
+my ($help, $debug, $test, $verbose, $store, $wormbase);
 my $file;    # specify protein ID file to use (defaults to ~wormpub/protein_ID.mail)
-my $debug;
-my $verbose;
 my $load;    # option specifies whether resulting acefile will be loaded to autoace
 
-GetOptions ("help"      => \$help,
-            "file=s"    => \$file,
-	    "debug=s"   => \$debug,
-	    "verbose"   => \$verbose,
-	    "load"      => \$load);
 
+GetOptions ("help"       => \$help,
+            "debug=s"    => \$debug,
+	    "test"       => \$test,
+	    "verbose"    => \$verbose,
+	    "store"      => \$store,
+            "file=s"     => \$file,
+	    "load"       => \$load,
+	    );
+
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+			     );
+}
 
 # Display help if required
 &usage("Help") if ($help);
 
-my $log = Log_files->make_build_log($debug);
+# in test mode?
+if ($test) {
+  print "In test mode\n" if ($verbose);
+
+}
+
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
+
+
+#################################
+# Set up some useful paths      #
+#################################
+
+# Set up top level base directories (these are different if in test mode)
+my $ace_dir         = $wormbase->autoace;     # AUTOACE DATABASE DIR
+my $common_data_dir = $wormbase->common_data; # AUTOACE COMMON_DATA
+my $chromosomes_dir = $wormbase->chromosomes; # AUTOACE CHROMSOMES
+
+
+##########################
+# MAIN BODY OF SCRIPT
+##########################
+
 
 # fetch hashes made by other scripts
 my %acc2clone = &FetchData('accession2clone');
@@ -68,7 +102,7 @@ my %db_ids_acc = (
 # set default file if -file not specified on command line
 ($file = "/nfs/disk100/wormpub/protein_ID.mail") if (!defined($file));
 
-my $ace_file = "/wormsrv2/autoace/acefiles/WormpepACandIDs.ace";
+my $ace_file = "$ace_dir/acefiles/WormpepACandIDs.ace";
 $ace_file = "/tmp/WormpepACandIDs.ace" if ($debug);
 
 $log->write_to("Using $file as protein_id file - writing to $ace_file\n");
@@ -180,7 +214,7 @@ while (<FILE>) {
 
 # now load to autoace if -load specified
 if ($load) {
-    my $command = "autoace_minder.pl -load /wormsrv2/autoace/acefiles/WormpepACandIDs.ace -tsuser wormpep_IDs";
+    my $command = "autoace_minder.pl -load $ace_dir/acefiles/WormpepACandIDs.ace -tsuser wormpep_IDs";
     my $status = system($command);
     if (($status >>8) != 0) {
 	die "ERROR: Loading WormpepACandIDs.ace file failed \$\? = $status\n";
@@ -225,7 +259,6 @@ sub getswalldata {
     $/ = "ID";
 
     open (LOOK, "/usr/local/pubseq/bin/getzc -f 'id acc dbxref'  \"[SWALL-organism:Caenorhabditis elegans]\" |");
-#    open (LOOK, "</nfs/disk100/wormpub2/dan/swall_all.txt");
     while (<LOOK>) {
 	$text = "ID" . $_;         # add the leading 'ID'
 	chop $text;                # remove the trailing 'ID'
