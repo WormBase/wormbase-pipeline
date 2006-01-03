@@ -6,50 +6,71 @@
 #
 # Gets latest Interpro:GO mappings from XXXX and puts info in to ace file
 #
-# Last updated by: $Author: ar2 $                      
-# Last updated on: $Date: 2005-12-16 11:18:55 $           
+# Last updated by: $Author: gw3 $                      
+# Last updated on: $Date: 2006-01-03 15:08:17 $           
 
 
 use strict;
-use lib "/wormsrv2/scripts/";
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
+use Getopt::Long;
+use Carp;
+use Log_files;
+use Storable;
 use Data::Dumper;
 use File::Copy;
 
+######################################
+# variables and command-line options # 
+######################################
 
-##############
-# variables  #                                                                   #
-##############
+my ($help, $debug, $test, $verbose, $store, $wormbase);
 
-# Most checking scripts should produce a log file that is a) emailed to us all 
-# and b) copied to /wormsrv2/logs
 
-my $maintainers = "All";
-my $rundate     = &rundate;
-my $runtime     = &runtime;
-our $log        = "/wormsrv2/logs/make_Interpro2GO_mapping.$rundate.$$";
-my $latest_version = "/wormsrv2/tmp/newip2gos";
+GetOptions ("help"       => \$help,
+            "debug=s"    => \$debug,
+	    "test"       => \$test,
+	    "verbose"    => \$verbose,
+	    "store"      => \$store,
+	    );
 
-open (LOG, ">$log") or die "cant open $log";
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+			     );
+}
 
-print LOG "$0\n";
-print LOG "started at ",`date`,"\n";
-print LOG "=============================================\n";
-print LOG "\n";
+# Display help if required
+&usage("Help") if ($help);
+
+# in test mode?
+if ($test) {
+  print "In test mode\n" if ($verbose);
+
+}
+
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
+
+
+my $latest_version = "/tmp/newip2gos";
+
 
 my $get_latest = 1;
 if( $get_latest == 1)
   {
     #Get the latest version
-    print LOG "Attempting to FTP the latest version from ebi \n";
+    $log->write_to("Attempting to FTP the latest version from ebi \n");
     `wget -O $latest_version ftp://ftp.ebi.ac.uk/pub/databases/interpro/interpro2go`;
    
   }
 else {
-  print LOG "Using the existing version of interpro2go mapping file (ie not FTPing latest)\n";
+  $log->write_to("Using the existing version of interpro2go mapping file (ie not FTPing latest)\n");
 }
 
-print LOG "\n\nOpening file $latest_version . . \n";
+$log->write_to("\n\nOpening file $latest_version . . \n");
 open (I2G,"<$latest_version") or die "cant open $latest_version\n";
 
 my %interpro_des;   #IPR000018 => "P2Y4 purinoceptor"
@@ -60,7 +81,7 @@ my $description;
 my $i;
 
 
-print LOG "\treading data . . . \n";
+$log->write_to("\treading data . . . \n");
 while (<I2G>)
   {
     @data = split(/\s+/,$_);
@@ -85,7 +106,7 @@ while (<I2G>)
       }
   }
 close I2G;
-print LOG "\tabout to write ace file  .  .  \n";
+$log->write_to("\tabout to write ace file  .  .  \n");
 
 #now write .ace file
 
@@ -95,7 +116,10 @@ print LOG "\tabout to write ace file  .  .  \n";
 #GO_term  "GO:0004930"
 #GO_term  "GO:0005624"
 
-open (I2GACE, ">/wormsrv2/autoace/acefiles/interpro2go.ace") or die "cant write to /wormsrv2/autoace/acefiles/interpro2go.ace\n";
+my $ace_dir = $wormbase->autoace;     # AUTOACE DATABASE DIR
+my $common_data_dir = $wormbase->common_data; # AUTOACE COMMON_DATA
+
+open (I2GACE, ">$ace_dir/acefiles/interpro2go.ace") or die "cant write to $ace_dir/acefiles/interpro2go.ace\n";
 foreach my $key (keys %interpro_des){
   print I2GACE "Motif : \"INTERPRO:$key\"\n";
   print I2GACE "Database \"INTERPRO\" \"INTERPRO_ID\" \"$key\"\n";
@@ -108,31 +132,20 @@ foreach my $key (keys %interpro_des){
 close(I2GACE);
 
 
-print LOG "Loading interpro2go.ace file to autoace\n";
-my $command = "autoace_minder.pl -load /wormsrv2/autoace/acefiles/interpro2go.ace -tsuser interpro2go_mappings";
- 
-my $status = system($command);
-if(($status >>8) != 0){
-  print LOG "ERROR: Loading interpro2go.ace file failed \$\? = $status\n";
-}
+$log->write_to("Loading interpro2go.ace file to autoace\n");
+my $command = "autoace_minder.pl -load $ace_dir/acefiles/interpro2go.ace -tsuser interpro2go_mappings";
+$wormbase->run_script($command, $log);
 
 
-# write Data::Dumper has of interpro => GO mapping
-open (IP2GO,">/wormsrv2/autoace/COMMON_DATA/interpro2go.dat") or die "cant open i2g\n";
+# write Data::Dumper of interpro => GO mapping
+open (IP2GO,">$common_data_dir/interpro2go.dat") or die "cant open i2g\n";
 print IP2GO Data::Dumper->Dump([\%interpro_GO]);
 close IP2GO;
 
 
 
-print LOG "$0 finished at ",`date`,"\n\n";
-close LOG;
-
-#### use Wormbase.pl to mail Log ###########
-my $name = "make_Interpro2GO_mapping";
-
-&mail_maintainer ($name,$maintainers,$log);
-#########################################
-
+$log->mail();
+print "Finished.\n" if ($verbose);
 exit(0);
 
 
@@ -173,7 +186,7 @@ GO_term  "GO:0005624"
 
 =over 4
 
-=item This script must run on a machine which can see the /wormsrv2 disk.
+=item None known.
 
 =back
 
