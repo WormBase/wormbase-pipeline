@@ -7,27 +7,27 @@
 # Map WashU and Nembase EST contigs to genome and write out file to send to authors
 # of these two data sets for their web sites to point back at us
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2005-12-16 11:18:55 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2006-01-03 14:26:29 $
 
 use strict;
-use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
-#use Wormbase;
+use lib $ENV{'CVS_DIR'};
+use Wormbase;
 use Getopt::Long;
-use Coords_converter;
 use Carp;
 use Log_files;
-#use Ace;
-#use Sequence_extract;
+use Storable;
+
 
 ######################################
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $test, $verbose);
+my ($help, $debug, $test, $verbose, $store, $wormbase);
 my ($all, $washu, $nembase);
-my $maintainers = "All";
 
+
+# the people to send the results to
 my $washu_email = "jmartin\@watson.wustl.edu";
 my $nembase_email = "mark.blaxter\@ed.ac.uk";
 
@@ -37,28 +37,36 @@ GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
+	    "store"      => \$store,
 	    "all"      	 => \$all,
 	    "washu"      => \$washu,
 	    "nembase"    => \$nembase,
 	    );
 
-my $log = Log_files->make_build_log($debug);
+
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+			     );
+}
 
 # Display help if required
 &usage("Help") if ($help);
 
-# Use debug mode?
-if ($debug) {
-  print "DEBUG = \"$debug\"\n\n";
-  ($maintainers = $debug . '\@sanger.ac.uk');
-}
-
 # in test mode?
 if ($test) {
-  print "In test mode\n";
-  $washu_email = "gw3\@sanger.ac.uk";
-  $nembase_email = "gw3\@sanger.ac.uk";
+  print "In test mode\n" if ($verbose);
+
+  # mail the results to this user
+  my $me = `whoami`;
+  $washu_email = "${me}\@sanger.ac.uk";
+  $nembase_email = "${me}\@sanger.ac.uk";
 }
+
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
 
 
 
@@ -67,28 +75,23 @@ if ($test) {
 ##########################
 
 my $type;
-my @best_hits;
-my $coords = Coords_converter->invoke;
-#my $gffdir      = glob("~wormpub/DATABASES/current_DB/CHROMOSOMES/");   # chromosome GFF files
-my $gffdir      = glob("/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS/");   # chromosome GFF files
+my $gffdir = $wormbase->gff;         # AUTOACE GFF
 
 if ($washu || $all) {
-  print "Mapping WashU contigs\n" if ($verbose);
-  $log->write_to("Mapping WashU contigs\n");
-  @best_hits = &map_hits_to_genome("washu");
-  &map_to_gene("washu", @best_hits);
-  &mail_author($washu_email, "/tmp/washu_result.dat");
+  $type = "WASHU";
+  print "Mapping $type contigs\n" if ($verbose);
+  $log->write_to("Mapping $type contigs\n");
+  &map_to_gene($type);
+  &mail_author($washu_email, "/tmp/${type}_result.dat");
 }
 
 if ($nembase || $all) {
-  print "Mapping Nembase contigs\n" if ($verbose);
-  $log->write_to("Mapping Nembase contigs\n");
-  @best_hits = &map_hits_to_genome("nembase");
-  &map_to_gene("nembase", @best_hits);
-  &mail_author($nembase_email, "/tmp/nembase_result.dat");
+  $type = "NEMBASE";
+  print "Mapping $type contigs\n" if ($verbose);
+  $log->write_to("Mapping $type contigs\n");
+  &map_to_gene($type);
+  &mail_author($washu_email, "/tmp/${type}_result.dat");
 }
-
-
 
 
 # Close log files and exit
@@ -96,7 +99,6 @@ $log->write_to("\n\nFinished.\n");
 
 
 $log->mail();
-
 print "Finished.\n" if ($verbose);
 exit(0);
 
@@ -111,165 +113,6 @@ exit(0);
 #
 ##############################################################
 
-# $type = "washu" (do mapping for WashU contigs)
-# or "nembase" (do mapping for Nembase)
-
-sub map_hits_to_genome {
-
-  my ($type) = @_;
-
-# set database paths
-  my $blat_dir  = "/wormsrv2/autoace/BLAT";
-
-  my %best;
-
-
-
-##########################################################################################
-# map the blat hits to ace - i.e. process blat output (*.psl) file into set of ace files #
-##########################################################################################
-
- 
-  print "Reading BLAT data\n";
-
-  open(BLAT, "<$blat_dir/${type}_out.psl")    or die "Cannot open $blat_dir/${type}_out.psl $!\n";
-
-  # loop through each blat hit
-  while (<BLAT>) {
-    next unless (/^\d/);
-    my @f            = split "\t";
-
-    my $match        = $f[0];                    # number of bases matched by blat
-    my $strand       = $f[8];                    # strand that match is on
-    my $query        = $f[9];                    # query sequence name
-    my $query_size   = $f[10];                   # query sequence length
-    my $superlink    = $f[13];                   # name of superlink that was used as blat target sequence
-    my $slsize       = $f[14];                   # superlink size
-    my $matchstart   = $f[15];                   # target (superlink) start coordinate...
-    my $matchend     = $f[16];                   # ...and end coordinate
-    my $block_count  = $f[17];                   # block count
-    my @lengths      = split (/,/, $f[18]);      # sizes of each blat 'block' in any individual blat match
-    my @query_starts = split (/,/, $f[19]);      # start coordinates of each query block
-    my @slink_starts = split (/,/, $f[20]);      # start coordinates of each target (superlink) block
-    
-    
-    # calculate (acedb) score for each blat match
-    # new way of calculating score, divide by query size rather than sum of matching blocks, 
-    my $score = ($match/$query_size)*100;
-    
-    my @exons = ();
-    my ($chrom, $chrom_start);
-    my $chrom_end;
-    
-    
-    for (my $x = 0;$x < $block_count; $x++) {
-      my $start = $slink_starts[$x];
-      
-      my ($query_start,$query_end);
-      my $gff_strand;
-      
-      ($chrom, $chrom_start) = $coords->Coords_2chrom_coords($superlink, $start);
-      $chrom_end = $chrom_start + $lengths[$x] -1;
-      if (($strand eq '--') || ($strand eq '+-')) {
-	$gff_strand = '-';
-      } else {
-	$gff_strand = '+';
-      }
-      
-      # blatx 6-frame translation v 6-frame translation
-      
-      my $temp;
-      if (($strand eq '++') || ($strand eq '-+')) {
-	$query_start = $query_starts[$x] +1;
-	$query_end   = $query_start + $lengths[$x] -1;
-	if ($strand eq '-+') {
-	  $temp        = $query_end;
-	  $query_end   = $query_start;
-	  $query_start = $temp; 
-	}
-      }
-      elsif (($strand eq '--') || ($strand eq '+-')) {
-	$temp         = $chrom_start;
-	$chrom_start = $chrom_end;
-	$chrom_end   = $temp;
-	
-	$query_start  = $query_size  - $query_starts[$x];
-	$query_end    = $query_start - $lengths[$x] +1;
-	
-	if ($strand eq '--') {
-	  $temp        = $query_end;
-	  $query_end   = $query_start;
-	  $query_start = $temp; 
-	}
-      }			
-      push @exons, [$chrom_start,$chrom_end,$query_start,$query_end];
-    }
-    
-    # collect best hits for each query sequence 
-    # Choose hit with highest score (% of query length which are matching bases) 
-    # If multiple hits have same scores (also meaning that $match must be same) store 
-    # details of extra hits against same primary key in %best
-    if (exists $best{$query}) {
-      if (($score > $best{$query}->{'score'})) { 
-	# Add all new details if score is better...
-	$best{$query}->{'score'} = $score;
-	$best{$query}->{'match'} = $match;
-	@{$best{$query}->{'entry'}} = ({'chrom' => $chrom,'exons' => \@exons});
-      }
-      elsif($score == $best{$query}->{'score'}){
-	#...only add details (name and coordinates) of extra hits if scores are same
-	push @{$best{$query}->{'entry'}}, {'chrom' => $chrom,'exons' => \@exons};
-      }
-    }
-    else {
-      $best{$query}->{'match'} = $match;
-      $best{$query}->{'score'} = $score;
-      @{$best{$query}->{'entry'}} = ({'chrom' => $chrom,'exons' => \@exons});
-    }
-  }
-  close(BLAT);
-  
-
-  # produce list of best matches 
-  
-  my @best_hits;		# LoL of best-match details
-  
-  foreach my $found (sort keys %best) {
-    if (exists $best{$found}) {
-      foreach my $entry (@{$best{$found}->{'entry'}}) {
-	if (@{$best{$found}->{'entry'}} < 2) { # only want best hits at a unique position
-	  my $chrom = $entry->{'chrom'};
-	  foreach my $ex (@{$entry->{'exons'}}) {
-	    my $score        = $best{$found}->{'score'};
-	    my $chrom_start  = $ex->[0];
-	    my $chrom_end    = $ex->[1];
-	    my $query_start  = $ex->[2];
-	    my $query_end    = $ex->[3];
-	    
-	    # print output 
-	    my $query = $found;
-	    my $gff_strand;
-	    if ($chrom_start < $chrom_end) {
-	      $gff_strand = '+';
-	    } else {
-	      $gff_strand = '-';
-	      my $temp = $chrom_start;
-	      $chrom_start = $chrom_end;
-	      $chrom_end = $temp;
-	  }
-	    push @best_hits, [ ($chrom, $chrom_start, $chrom_end, $gff_strand, $score, $query) ];
-	  }
-	  
-	}
-      }
-    }
-  }
-
-  # sort the best hist by the chromosome and then the end position
-  @best_hits = sort {$a->[0] cmp $b->[0] or $a->[2] <=> $b->[2]} @best_hits;
-  
-  return @best_hits;
-}
 
 ##########################################
 
@@ -277,7 +120,7 @@ sub map_hits_to_genome {
 # writes the results to a file
 
 sub map_to_gene() {
-  my ($type, @best_hits) = @_;
+  my ($type) = @_;
 
   my @chromosomes = qw( I II III IV V X );                            # chromosomes
   my $resultsfile = "/tmp/${type}_result.dat";
@@ -292,18 +135,19 @@ sub map_to_gene() {
     print "Reading chromosome $chromosome\n" if ($verbose);
     print "gffdir = $gffdir\n" if ($verbose);
 
+
     # loop through the GFF file
     my @f;
     my @chrom;
+    my @best_hits = ();
 
- #   open (GFF, "<$gffdir/CHROMOSOME_${chromosome}.gff") || die "Failed to open chromosome gff file $gffdir/CHROMOSOME_${chromosome}.gff\n";
-   open (GFF, "<$gffdir/CHROMOSOME_${chromosome}.WBgene.gff") || die "Failed to open chromosome gff file $gffdir/CHROMOSOME_${chromosome}.WBgene.gff\n";
+    print "Reading genes\n" if ($verbose);
+    open (GFF, "<$gffdir/CHROMOSOME_${chromosome}.WBgene.gff") || die "Failed to open WBgene gff file $gffdir/CHROMOSOME_${chromosome}.WBgene.gff\n";
     while (<GFF>) {
       chomp;
       s/^\#.*//;
       next unless /\S/;
       @f = split /\t/;
-      next unless ($f[1] eq "gene");
 
       my ($name) = ($f[8] =~ /Gene\s+\"(\S+)\"/); # get the gene name
       #print "gene name = $name\n";
@@ -311,10 +155,25 @@ sub map_to_gene() {
     }
     close(GFF);
                   
-    print "Read chromosome $chromosome, sorting...\n" if ($verbose);
     # sort by start pos
     @chrom = sort {$a->[0] <=> $b->[0]} @chrom;
 
+
+    print "Reading BLAT hits\n" if ($verbose);
+    open (GFF, "<$gffdir/CHROMOSOME_${chromosome}.BLAT_$type.gff") || die "Failed to open BLAT gff file $gffdir/CHROMOSOME_${chromosome}.BLAT_$type.gff\n";
+    while (<GFF>) {
+      chomp;
+      s/^\#.*//;
+      next unless /\S/;
+      @f = split /\t/;
+
+      my ($query) = ($f[8] =~ /Target\s+\"Sequence:(\S+)\"/); # get the EST contig name
+      push @best_hits, [ ($f[3], $f[4], $f[6], $query) ];
+    }
+    close(GFF);
+
+    # sort the best hits by the end position
+    @best_hits = sort {$a->[1] <=> $b->[1]} @best_hits;
 
   ###############
   # map contigs #
@@ -334,19 +193,14 @@ sub map_to_gene() {
     print "Have ",scalar(@best_hits), " best hits to look at\n" if ($verbose);
 
     # loop through BLAT results
-    # @best_hits is array-reference of [ ($chrom, $chrom_start, $chrom_end, $gff_strand, $score, $query) ];
+    # @best_hits is array-reference of [ ($chrom_start, $chrom_end, $gff_strand, $query) ];
     foreach my $hit_aref (@best_hits) {
     
       my @this_hit = @{$hit_aref};
       # now have @this_hit with the BLAT results in and @chrom with genes for this chromosome
-      my ($blat_chrom, $blat_start, $blat_end, $blat_strand, $blatscore, $blat_query) = @this_hit;
+      my ($blat_start, $blat_end, $blat_strand, $blat_query) = @this_hit;
 
-      # only want to look at this chromosome
-      if ($blat_chrom ne "CHROMOSOME_$chromosome") {
-	next;			                          # next BLAT
-      }
-
-      print "Next BLAT hit = $blat_chrom, $blat_start, $blat_end, $blat_strand, $blatscore, $blat_query\n" if ($verbose);
+      print "Next BLAT hit = $blat_start, $blat_end, $blat_strand, $blat_query\n" if ($verbose);
 
       # step down here
 LOOP:
@@ -361,6 +215,7 @@ LOOP:
       if ($blat_start > $gene_end) {                      # BLAT is after current gene - get next gene
 	print "next gene (BLAT=$blat_query)\n" if ($verbose);
 	$current_gene_count++;	                          # next gene
+	if ($current_gene_count >= scalar(@chrom)) {last;} # check if done all the genes
 	$current_gene = $chrom[$current_gene_count];
 	($gene_start, $gene_end, $gene_strand, $gene_name) = @{$current_gene};
 	goto LOOP;		                          # go to test this next gene
@@ -388,43 +243,6 @@ LOOP:
     print OUT "$c\t$t\n";
   }
   close (OUT);
-}
-
-##########################################
-
-# returns the index into @list of the gene that overlaps the contig
-# else it returns -1
-sub binary_chop() {
-  # start and end and strand of contig to find overlaps to
-  # list of details of genes to overlap with
-  my ($contig_start, $contig_end, $contig_strand, @list) = @_;
-
-  my $list_length = scalar(@list);
-
-  my $chop_start = 0;
-  my $chop_end = $list_length-1;
-  my $i;
-
-  while ($chop_start < $chop_end-1) {
-    #print "$chop_start $chop_end\t";
-    $i = $chop_start + int (($chop_end - $chop_start)/2);
-    my ($gene_start, $gene_end, $gene_strand, $gene_name) =  @{$list[$i]};
-    my $contig_middle = $gene_start + (($gene_end - $gene_start)/2);
-    if (#$contig_strand eq $gene_strand &&                                     # no - don't check for strand
-        (($contig_start >= $gene_start && $contig_start <= $gene_end) || # do we have an overlap?
-        ($contig_end >= $gene_start && $contig_end <= $gene_end)) &&
-        ($contig_middle >= $gene_start && $contig_middle <= $gene_end) # at least half of the contig match overlaps
-        ) {
-      return $i;                # found
-    } elsif ($contig_start < $gene_start) {
-      $chop_end = $i;
-    } else {
-      $chop_start = $i;
-    }
-  }
-
-  return -1;                    # not found
-
 }
 
 ##########################################
@@ -480,8 +298,9 @@ __END__
 
 =back
 
-This script maps WashU and Nembase EST contigs to genome and writes out files and sends them to authors
-of these two data sets for their web sites to point back at us.
+This script maps WashU and Nembase EST contigs to genome and writes
+out files and sends them to authors of these two data sets for their
+web sites to point back at us.
 
 
 script_template.pl MANDATORY arguments:
@@ -526,7 +345,7 @@ script_template.pl  OPTIONAL arguments:
 
 =over 4
 
-=item -test, Test mode, generate the acefile but do not upload themrun the script, but don't change anything
+=item -test, Test mode, run the script only for chromosome III and mail the person running the script, not the collaborators.
 
 =back
 
@@ -541,7 +360,7 @@ script_template.pl  OPTIONAL arguments:
 
 =over 4
 
-=item This script must run on a machine which can see the /wormsrv2 disk.
+=item 
 
 =back
 
