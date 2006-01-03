@@ -8,34 +8,57 @@
 # and produce a fasta file of these sequence to load into the wormprot
 # mysql database prior for the pre-build pipeline.
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-12-16 11:18:55 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2006-01-03 16:11:31 $
 
 
 #################################################################################
 # variables                                                                     #
 #################################################################################
 
-use strict;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use strict;                                      
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
-use IO::Handle;
 use Getopt::Long;
+use Carp;
+use Log_files;
+use Storable;
+use IO::Handle;
 use Cwd;
 
-##############################
-# command-line options       #
-##############################
+######################################
+# variables and command-line options # 
+######################################
 
-my $help;                # Help/Usage page
-my $test;                # for running in test environment ~wormpub/TEST_BUILD
-
-GetOptions ("help"        => \$help,
-            "test"        => \$test
-           );
+my ($help, $debug, $test, $verbose, $store, $wormbase);
 
 
-&usage if ($help);
+GetOptions ("help"       => \$help,
+            "debug=s"    => \$debug,
+	    "test"       => \$test,
+	    "verbose"    => \$verbose,
+	    "store"      => \$store,
+	    );
+
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+			     );
+}
+
+# Display help if required
+&usage("Help") if ($help);
+
+# in test mode?
+if ($test) {
+  print "In test mode\n" if ($verbose);
+
+}
+
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
 
 
  ##############################
@@ -43,21 +66,11 @@ GetOptions ("help"        => \$help,
  ##############################
 
 my $release; 
-if($test){
-  $release = "666";
-}
-else{
-  $release = &get_wormbase_version; 
-}
+$release = $wormbase->get_wormbase_version; 
 my $old_release  = $release -1;
 
 my $release_name; 
-if($test){
-  $release_name = "666";
-}
-else{
-  $release_name = &get_wormbase_version_name; 
-}
+$release_name = $wormbase->get_wormbase_version_name; 
 
 
 
@@ -67,8 +80,7 @@ else{
 
 # Set up top level base directory which is different if in test mode
 # Make all other directories relative to this
-my $basedir   = "/wormsrv2";
-$basedir      = glob("~wormpub")."/TEST_BUILD" if ($test); 
+my $basedir         = $wormbase->basedir;     # BASE DIR
 
 our $dbfile     = "$basedir/WORMPEP/wormpep${release}/wp.fasta${release}";
 our $old_dbfile = "$basedir/WORMPEP/wormpep${old_release}/wp.fasta${old_release}";
@@ -87,7 +99,7 @@ my $new_wp_size = keys(%wormpep);
 
 
 if($old_wp_size > $new_wp_size){
-  die "ERROR: WS${release} wp.fasta file appears to have less entries than WS${old_release} wp.fasta file!\n\n";
+  die "ERROR: WS${release} wp.fasta file appears to have fewer entries than WS${old_release} wp.fasta file!\n\n";
 }
 
 my %proteins_outputted;
@@ -95,7 +107,7 @@ my %proteins_outputted;
  # Main Loop                   #
  ###############################
 
-open (LOG,  ">$basedir/WORMPEP/wormpep${release}/new_entries.$release_name") || die "Couldn't write output file\n";;
+open (NEW,  ">$basedir/WORMPEP/wormpep${release}/new_entries.$release_name") || die "Couldn't write output file\n";;
 open (DIFF, "<$basedir/WORMPEP/wormpep${release}/wormpep.diff${release}") || die "Couldn't read from diff file\n";
 while (<DIFF>) {    
   my ($new_acc,$seq);
@@ -103,25 +115,40 @@ while (<DIFF>) {
       $new_acc = $1;
       next if $old_wormpep{$new_acc};
       next if $proteins_outputted{$new_acc};
-      print LOG ">$new_acc\n$wormpep{$new_acc}";
+      print NEW ">$new_acc\n$wormpep{$new_acc}";
       $proteins_outputted{$new_acc}++;
     }
 }
 close(DIFF);
-close(LOG);
+close(NEW);
+
+$log->mail();
+print "Finished.\n" if ($verbose);
 exit(0);
 
 
-##################
-# Usage
-##################
+##############################################################
+#
+# Subroutines
+#
+##############################################################
+
+
+
+##########################################
 
 sub usage {
+  my $error = shift;
+
+  if ($error eq "Help") {
+    # Normal help menu
     system ('perldoc',$0);
-    exit;
+    exit (0);
+  }
 }
 
-#################################
+##########################################
+
 
 sub make_hash {
   my $id;
