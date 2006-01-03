@@ -1,4 +1,4 @@
-#!/usr/local/ensembl/bin/perl -w
+#!/usr/local/bin/perl5.8.0 -w
 #
 # agp2ensembl
 #
