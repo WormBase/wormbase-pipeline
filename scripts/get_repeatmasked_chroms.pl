@@ -11,71 +11,62 @@
 #
 # modified for reading in .agp files for worm ensembl
 
-=pod
 
-=head1 NAME
-
-agp2ensembl.pl
-
-=head1 SYNOPSIS
-
-get_repeatmasked_chroms.pl -agp ~wormpipe/Elegans/WSXXX.agp
-
-=head1 DESCRIPTION
-
-extracts RepeatMasked sequence from DNA database using specified AGP file
-
-=head1 OPTIONS
-
-    -agp     agp file
-
-=head1 CONTACT
-
-ar2@sanger.ac.uk
-
-=cut
+use strict;                                      
+use lib $ENV{'CVS_DIR'};
+use Wormbase;
+use Getopt::Long;
+use Carp;
+use Log_files;
+use Storable;
 
 use lib '/nfs/farm/Worms/Ensembl/ensembl-pipeline/modules';
 use lib '/nfs/farm/Worms/Ensembl/ensembl/modules';
 use lib '/nfs/disk100/humpub/modules/PerlModules';
-use lib (-e '/wormsrv2/scripts') ? '/wormsrv2/scripts' : $ENV{'CVS_DIR'};
 
-
-use strict;
-use Getopt::Long;
-#use Bio::Root::RootI;
-#use Bio::Seq;
-#use Bio::SeqIO;
 use Bio::EnsEMBL::Pipeline::DBSQL::DBAdaptor;
 use Bio::EnsEMBL::Clone;
 use Bio::EnsEMBL::RawContig;
-#use Bio::SeqIO;
-#use Hum::NetFetch qw( wwwfetch );
-#use Hum::EMBL;
-use Log_files;
-use Wormbase;
 
+
+######################################
+# variables and command-line options # 
+######################################
+
+my ($help, $debug, $test, $verbose, $store, $wormbase);
 
 my $agp;
-my $test;
 my $out_dir;
-my $debug;
-
-&GetOptions(
-	    "agp:s"     => \$agp,
-	    "output:s"  => \$out_dir,
-	    "test"      => \$test,
-	    "debug:s"   => \$debug
-	   );
 
 
-my $log;
-if ( $test ) {
-  $log = Log_files->make_log("$out_dir/CHROMOSOMES/get_repeatmasked_chroms.log");
+GetOptions ("help"       => \$help,
+            "debug=s"    => \$debug,
+	    "test"       => \$test,
+	    "verbose"    => \$verbose,
+	    "store"      => \$store,
+	    "agp:s"      => \$agp,
+	    "output:s"   => \$out_dir,
+	    );
+
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+			     );
 }
-else {
-  $log = Log_files->make_build_log( $debug );
+
+# Display help if required
+&usage("Help") if ($help);
+
+# in test mode?
+if ($test) {
+  print "In test mode\n" if ($verbose);
+
 }
+
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
 
 
 unless ($agp) {
@@ -83,7 +74,13 @@ unless ($agp) {
     exit 1;
 }
 
-$out_dir = "/wormsrv2/autoace/CHROMOSOMES" unless $out_dir;
+#################################
+# Set up some useful paths      #
+#################################
+
+
+
+$out_dir = $wormbase->chromosomes unless $out_dir;
 die "cant write to $out_dir\t$!\n" unless (-w $out_dir );
 die "cant read agp file $agp\t$!\n" unless (-r $agp );
 
@@ -152,6 +149,70 @@ foreach my $seq (sort keys %chrom_seq ) {
 }
 
 $log->write_to("Done\n");
-$log->mail;
 
+
+$log->mail();
+print "Finished.\n" if ($verbose);
 exit(0);
+
+
+
+
+
+
+##############################################################
+#
+# Subroutines
+#
+##############################################################
+
+
+
+##########################################
+
+sub usage {
+  my $error = shift;
+
+  if ($error eq "Help") {
+    # Normal help menu
+    system ('perldoc',$0);
+    exit (0);
+  }
+}
+
+##########################################
+
+
+
+
+# Add perl documentation in POD format
+# This should expand on your brief description above and 
+# add details of any options that can be used with the program.  
+# Such documentation can be viewed using the perldoc command.
+
+
+__END__
+
+=pod
+
+=head1 NAME
+
+agp2ensembl.pl
+
+=head1 SYNOPSIS
+
+get_repeatmasked_chroms.pl -agp ~wormpipe/Elegans/WSXXX.agp
+
+=head1 DESCRIPTION
+
+extracts RepeatMasked sequence from DNA database using specified AGP file
+
+=head1 OPTIONS
+
+    -agp     agp file
+
+=head1 CONTACT
+
+ar2@sanger.ac.uk
+
+=cut
