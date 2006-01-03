@@ -8,7 +8,7 @@
 # of these two data sets for their web sites to point back at us
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2006-01-03 14:26:29 $
+# Last edited on: $Date: 2006-01-03 14:29:22 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -90,7 +90,7 @@ if ($nembase || $all) {
   print "Mapping $type contigs\n" if ($verbose);
   $log->write_to("Mapping $type contigs\n");
   &map_to_gene($type);
-  &mail_author($washu_email, "/tmp/${type}_result.dat");
+  &mail_author($nembase_email, "/tmp/${type}_result.dat");
 }
 
 
