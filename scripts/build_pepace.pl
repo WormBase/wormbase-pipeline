@@ -9,30 +9,61 @@
 # solely in the wormpep.history file.
 # 
 #
-# Last updated by: $Author: ar2 $                     
-# Last updated on: $Date: 2005-12-16 11:18:55 $     
+# Last updated by: $Author: gw3 $                     
+# Last updated on: $Date: 2006-01-03 15:57:33 $     
 
-use strict;                                     
-use lib "/wormsrv2/scripts/";                  
+use strict;                                      
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
+use Getopt::Long;
+use Carp;
+use Log_files;
+use Storable;
+
+
+######################################
+# variables and command-line options # 
+######################################
+
+my ($help, $debug, $test, $verbose, $store, $wormbase);
+
+
+GetOptions ("help"       => \$help,
+            "debug=s"    => \$debug,
+	    "test"       => \$test,
+	    "verbose"    => \$verbose,
+	    "store"      => \$store,
+	    );
+
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+			     );
+}
+
+# Display help if required
+&usage("Help") if ($help);
+
+# in test mode?
+if ($test) {
+  print "In test mode\n" if ($verbose);
+
+}
+
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
+
 
 ##############
 # variables  #                                                                   
 ##############
 
-# Produce a log file that is a) emailed to us all and b) copied to /wormsrv2/logs
+my $ace_dir         = $wormbase->autoace;     # AUTOACE DATABASE DIR
+my $wormpepdir      = $wormbase->wormpep;     # CURRENT WORMPEP
+my $ver = $wormbase->get_wormbase_version();
 
-my $maintainers = "All";
-my $rundate     = `date +%y%m%d`; chomp $rundate;
-my $runtime     = `date +%H:%M:%S`; chomp $runtime;
-our $log        = "/wormsrv2/logs/build_pepace.$rundate";
-
-my $ver = &get_wormbase_version();
-my $wormpepdir = "/wormsrv2/WORMPEP/wormpep$ver";
-
-open( LOG, ">$log") || die "cant open $log";
-print LOG "build_pepace log file $rundate $runtime using wormpep$ver\n";
-print LOG "-----------------------------------------------------\n\n";
 
 # read history file 
 
@@ -221,7 +252,7 @@ close FASTA;
 
 # write ace file
 my $ii;
-my $acefile = "/wormsrv2/autoace/acefiles/pepace.ace";
+my $acefile = "$ace_dir/acefiles/pepace.ace";
 
 open (ACE, ">$acefile") || die "cant write $acefile\n";
 
@@ -257,55 +288,71 @@ foreach my $key(sort keys %CE_history) {
     print ACE "$CE_sequence{$key}\n";
 }
 close ACE;
-print LOG "written $acefile - to be loaded in to autoace\n";
+$log->write_to( "written $acefile - to be loaded in to autoace\n");
 
 my $live_peps  = `grep -c Live $acefile`;
 my $table_peps = `cut -f 2 $wormpepdir/wormpep.table$ver | sort -u | wc -l`;
 chomp $live_peps; chomp $table_peps;
 
-print LOG "This file has $live_peps live peptides\n";
-print LOG "wormpep.table$ver suggests there should be $table_peps\n";
+$log->write_to( "This file has $live_peps live peptides\n");
+$log->write_to( "wormpep.table$ver suggests there should be $table_peps\n");
 
 if ( ($live_peps ) == $table_peps ) {
-    print LOG "\nso thats OK!\ntaking in to account 1 known problem - CE25872 -hard coded as live in the script\n";
+    $log->write_to( "\nso thats OK!\ntaking in to account 1 known problem - CE25872 -hard coded as live in the script\n");
 }
 else {
-    print LOG "\n\n! ! ! ! THIS NEEDS ATTENTION ! ! ! !\n\n\n";
-    print LOG "\n1 known problem - CE25872 is hard coded as LIVE in $0\n Check this is still valid sequence F36D3.1";
+    $log->write_to( "\n\n! ! ! ! THIS NEEDS ATTENTION ! ! ! !\n\n\n");
+    $log->write_to( "\n1 known problem - CE25872 is hard coded as LIVE in $0\n Check this is still valid sequence F36D3.1");
 }
 
 my $date = `date`;
 
-print LOG "\n$0 finished at $date\n";
-print LOG "\n   . . about to start GetSwissIDandInterpro.pl\n";
-
-# auto run GetSwissIDandInterpro.pl
-# `perl5.6.1 /wormsrv2/scripts/GetSwissIDandInterpro.pl`; Im going to do this manually to check for errors
+$log->write_to( "\n$0 finished at $date\n");
+$log->write_to( "\n   . . about to start GetSwissIDandInterpro.pl\n");
 
 
 #load files in to autoace.
 my $tace =  &tace;
 my $command;
-if( -e "/wormsrv2/autoace/acefiles/pepace.ace" ) {
-  print LOG &runtime, ": Adding pepace.ace file to autoace\n";
-  $command = "pparse /wormsrv2/autoace/acefiles/pepace.ace\nsave\nquit\n"; 
-  open (AUTOACE, "| $tace -tsuser pepace /wormsrv2/autoace ") || die "Couldn't open pipe to autoace\n";
+if( -e "$ace_dir/acefiles/pepace.ace" ) {
+  $log->write_to( "Adding pepace.ace file to autoace\n");
+  $command = "pparse $ace_dir/acefiles/pepace.ace\nsave\nquit\n"; 
+  open (AUTOACE, "| $tace -tsuser pepace $ace_dir ") || die "Couldn't open pipe to autoace\n";
   print AUTOACE $command;
-  print LOG &runtime, ": finished adding pepace.ace file to autoace\n";  close AUTOACE;
+  $log->write_to( "Finished adding pepace.ace file to autoace\n"); 
+  close AUTOACE;
 }
 else {
-  print LOG " pepace.ace NOT loaded into autoace . . \n/wormsrv2/autoace/acefiles/pepace.ace does not exist\n";
+  $log->write_to( " pepace.ace NOT loaded into autoace . . \n$ace_dir/acefiles/pepace.ace does not exist\n");
 }
 
 
-close LOG;
-
-#### use Wormbase.pl to mail Log ###########
-my $name = "$0";
-#$maintainers = "ar2\@sanger.ac.uk";
-&mail_maintainer ($name,$maintainers,$log);
-#########################################
+$log->mail();
+print "Finished.\n" if ($verbose);
 exit(0);
+
+
+
+
+##############################################################
+#
+# Subroutines
+#
+##############################################################
+
+##########################################
+
+sub usage {
+  my $error = shift;
+
+  if ($error eq "Help") {
+    # Normal help menu
+    system ('perldoc',$0);
+    exit (0);
+  }
+}
+
+##########################################
 
 sub get_mol_weight {
   my $pep = shift;
@@ -533,7 +580,7 @@ build_pepace.pl  OPTIONAL arguments:
 
 =over 4
 
-=item This script must run on a machine which can see the /wormsrv2 disk.
+=item None known.
 
 =back
 
