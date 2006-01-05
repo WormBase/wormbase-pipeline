@@ -1,0 +1,121 @@
+// Spread sheet definition for the ACeDB software 
+// User: krb
+// Date: 2004-03-11_16:49:25
+
+// %n (%%n in the graphic) are parameter to be given on the command line in tace
+// or by default by the Parameters given in this file
+// \%n (%n in the graphic) are substituted by the value of column n at run time
+// Line starting with // are ignored, starting with # are comments
+
+Sortcolumn 1
+
+Colonne 1 
+Subtitle CDS 
+Width 12 
+Optional 
+Visible 
+Class 
+Class elegans_CDS 
+From 1 
+ 
+Colonne 2 
+Subtitle Lab 
+Width 12 
+Optional 
+Visible 
+Class 
+Class Laboratory 
+From 1 
+Tag From_laboratory 
+ 
+Colonne 3 
+Subtitle Matching_cDNA 
+Width 12 
+Null 
+Hidden 
+Show_Tag 
+From 1 
+Tag Matching_cDNA 
+ 
+Colonne 4 
+Subtitle Protein 
+Width 12 
+Optional 
+Hidden 
+Class 
+Class Protein 
+From 1 
+Tag Corresponding_protein 
+ 
+Colonne 5 
+Subtitle Peptide 
+Width 12 
+Optional 
+Hidden 
+Class 
+Class Peptide 
+From 4 
+Tag Peptide 
+ 
+Colonne 6 
+Subtitle Length (AA) 
+Width 12 
+Optional 
+Visible 
+Integer 
+Right_of 5 
+Tag  HERE  
+ 
+Colonne 7 
+Subtitle Pep_homol 
+Width 12 
+Null 
+Hidden 
+Show_Tag 
+From 4 
+Tag Pep_homol 
+ 
+Colonne 8 
+Subtitle PCR_product 
+Width 12 
+Optional 
+Visible 
+Class 
+Class PCR_product 
+From 1 
+Tag Corresponding_PCR_product 
+ 
+Colonne 9 
+Subtitle Amplified? 
+Width 12 
+Optional 
+Visible 
+Integer 
+From 8 
+Tag Amplified 
+Condition 0
+ 
+Colonne 10 
+Subtitle RNAi 
+Width 12 
+Optional 
+Visible 
+Class 
+Class RNAi 
+From 1 
+Tag RNAi_result 
+ 
+Colonne 11 
+Subtitle Phenotype 
+Width 12 
+Optional 
+Visible 
+Class 
+Class Phenotype 
+From 10 
+Tag Phenotype 
+Condition !Emb
+ 
+ 
+
+// End of these definitions

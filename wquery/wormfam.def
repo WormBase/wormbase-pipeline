@@ -1,0 +1,49 @@
+// Spread sheet definition for the ACeDB software 
+// User: dl1
+// Date: 2002-01-22_15:39:59
+
+// %n (%%n in the graphic) are parameter to be given on the command line in tace
+// or by default by the Parameters given in this file
+// \%n (%n in the graphic) are substituted by the value of column n at run time
+// Line starting with // are ignored, starting with # are comments
+
+Sortcolumn 1
+
+Colonne 1 
+Width 12 
+Optional 
+Visible 
+Class 
+Class Wormpep 
+From 1 
+ 
+Colonne 2 
+Width 12 
+Optional 
+Hidden 
+Show_Tag 
+From 1 
+Tag Pep_homol 
+ 
+Colonne 3 
+Width 12 
+Optional 
+Visible 
+Class 
+Class Protein 
+Right_of 2 
+Tag Pep_homol 
+ 
+Colonne 4 
+Width 26 
+Mandatory 
+Hidden 
+Class 
+Class Method 
+Right_of 3 
+Tag  HERE  
+Condition wublastp_worm
+ 
+ 
+
+// End of these definitions

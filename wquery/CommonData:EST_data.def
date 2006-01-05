@@ -1,0 +1,72 @@
+// Spread sheet definition for the ACeDB software 
+// User: wormpub
+// Date: 2005-04-28_12:39:14
+
+// %n (%%n in the graphic) are parameter to be given on the command line in tace
+// or by default by the Parameters given in this file
+// \%n (%n in the graphic) are substituted by the value of column n at run time
+// Line starting with // are ignored, starting with # are comments
+
+Title CommonData:EST_data
+
+Sortcolumn 1
+
+Colonne 1 
+Subtitle cDNA_seq  
+Width 12 
+Optional 
+Visible 
+Class 
+Class cDNA_Sequence 
+From 1 
+ 
+Colonne 2 
+Width 20 
+Mandatory 
+Hidden 
+Class 
+Class Database 
+From 1 
+Tag Database  
+ 
+Colonne 3 
+Width 12 
+Optional 
+Hidden 
+Class 
+Class Database_field 
+Right_of 2 
+Tag HERE   
+Condition *AC
+ 
+Colonne 4 
+Subtitle Accession  
+Width 12 
+Optional 
+Visible 
+Class 
+Class Accession_number 
+Right_of 3 
+Tag HERE   
+ 
+Colonne 5 
+Subtitle EST_5  
+Width 12 
+Optional 
+Visible 
+Show_Tag 
+From 1 
+Tag EST_5  
+ 
+Colonne 6 
+Subtitle EST_3  
+Width 12 
+Optional 
+Visible 
+Show_Tag 
+From 1 
+Tag EST_3  
+ 
+ 
+
+// End of these definitions

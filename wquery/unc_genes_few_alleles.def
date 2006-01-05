@@ -1,0 +1,50 @@
+// @(#)unc_genes_few_alleles.def	1.1  8/8/95
+// Spread sheet definition for the ACeDB software 
+// User: mieg
+// Date: 94-11-25_13:34
+
+// %n (%%n in the graphic)  are parameter to be given on the command line in tace
+// \%n (%n in the graphic) are substituted by the value of column n at run time
+// Line starting with // are ignored, starting with # are comments
+
+Title Rare genes
+
+Colonne 1 
+Width 12 
+Mandatory 
+Visible 
+Class 
+Class Locus 
+From 0 
+Tag "(null)"  
+Condition IS unc* AND COUNT Allele < 3
+ 
+Colonne 2 
+Width 12 
+Mandatory 
+Visible 
+Class 
+Class Allele 
+From 1 
+Tag Allele 
+ 
+Colonne 3 
+Width 12 
+Optional 
+Visible 
+Class 
+Class Map 
+From 1 
+Tag Map 
+ 
+Colonne 4 
+Width 12 
+Optional 
+Visible 
+Float 
+Right_of 3 
+Tag  HERE  # Position 
+ 
+ 
+
+// End of these definitions

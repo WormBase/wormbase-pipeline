@@ -1,0 +1,36 @@
+// Spread sheet definition for the ACeDB software 
+// User: wormpub
+// Date: 2005-04-28_12:47:03
+
+// %n (%%n in the graphic) are parameter to be given on the command line in tace
+// or by default by the Parameters given in this file
+// \%n (%n in the graphic) are substituted by the value of column n at run time
+// Line starting with // are ignored, starting with # are comments
+
+Title CommonData:RNAgene_Lab
+
+Sortcolumn 1
+
+Colonne 1 
+Subtitle RNA gene 
+Width 20 
+Optional 
+Visible 
+Class 
+Class elegans_RNA_genes 
+From 1 
+Condition *
+ 
+Colonne 2 
+Subtitle Lab 
+Width 10 
+Optional 
+Visible 
+Class 
+Class Laboratory 
+From 1 
+Tag From_laboratory  
+ 
+ 
+
+// End of these definitions

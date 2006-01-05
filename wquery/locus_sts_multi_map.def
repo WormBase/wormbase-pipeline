@@ -1,0 +1,86 @@
+// @(#)locus_sts_multi_map.def	1.1  8/8/95
+// Spread sheet definition for the ACeDB software 
+// User: mieg
+// Date: 94-11-25_13:42:47
+
+// %n (%%n in the graphic)  are parameter to be given on the command line in tace
+// \%n (%n in the graphic) are substituted by the value of column n at run time
+// Line starting with // are ignored, starting with # are comments
+
+Title Up genes
+
+Colonne 1 
+Width 12 
+Mandatory 
+Visible 
+Class 
+Class Map 
+From 1 
+Condition 21.yac 
+ 
+Colonne 2 
+Subtitle Rigault  
+Width 12 
+Optional 
+Visible 
+Class 
+Class Locus 
+From 1 
+Tag Locus  
+ 
+Colonne 3 
+Width 12 
+Optional 
+Visible 
+Class 
+Class Map 
+From 2 
+Tag Map  
+ 
+Colonne 4 
+Width 12 
+Optional 
+Visible 
+Float 
+Right_of 3 
+Tag Position  
+ 
+Colonne 5 
+Width 12 
+Optional 
+Visible 
+Class 
+Class YAC 
+From 1 
+Tag YAC  
+ 
+Colonne 6 
+Width 12 
+Optional 
+Visible 
+Class 
+Class STS 
+From 5 
+Tag STS  
+ 
+Colonne 7 
+Width 12 
+Optional 
+Visible 
+Class 
+Class Map 
+From 6 
+Tag Map  
+Condition \%7 = "Rigault"
+ 
+Colonne 8 
+Width 12 
+Optional 
+Visible 
+Float 
+Right_of 7 
+Tag Position  
+ 
+ 
+
+// End of these definitions

@@ -1,0 +1,19 @@
+// @(#)external.parameter.def	1.1  8/8/95
+// Spread sheet definition for the ACeDB software 
+// User: mieg
+// Date: 94-11-22_20:19:37
+
+// Line starting with // are ignored, starting with # are comments
+
+Colonne 1 
+Width 12 
+Optional 
+Visible 
+Class 
+Class Author 
+From 0 
+Condition IS %1
+ 
+ 
+
+// End of these definitions

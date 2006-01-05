@@ -1,0 +1,112 @@
+// Spread sheet definition for the ACeDB software 
+// User: wormpub
+// Date: 2002-03-27_14:16:20
+
+// %n (%%n in the graphic) are parameter to be given on the command line in tace
+// or by default by the Parameters given in this file
+// \%n (%n in the graphic) are substituted by the value of column n at run time
+// Line starting with // are ignored, starting with # are comments
+
+Sortcolumn 1
+
+Colonne 1 
+Subtitle Sequence    
+Width 20 
+Optional 
+Visible 
+Class 
+Class Sequence 
+From 1 
+ 
+Colonne 2 
+Width 12 
+Mandatory 
+Hidden 
+Show_Tag 
+From 1 
+Tag CDS     
+ 
+Colonne 3 
+Subtitle Source    
+Width 12 
+Optional 
+Visible 
+Class 
+Class Sequence 
+From 1 
+Tag Source     
+ 
+Colonne 4 
+Subtitle Exons    
+Width 12 
+Optional 
+Visible 
+Class ... 
+Count 
+From 1 
+Tag Source_Exons     
+ 
+Colonne 5 
+Subtitle Lab    
+Width 30 
+Optional 
+Visible 
+Class 
+Class Laboratory 
+From 1 
+Tag From_Laboratory     
+ 
+Colonne 6 
+Subtitle Species    
+Width 16 
+Optional 
+Visible 
+Class 
+Class Species 
+From 1 
+Tag Species     
+ 
+Colonne 7 
+Subtitle Confirmed    
+Width 12 
+Optional 
+Visible 
+Show_Tag 
+From 1 
+Tag Confirmed_by     
+ 
+Colonne 8 
+Subtitle ESTs    
+Width 30 
+Optional 
+Visible 
+Class ... 
+Count 
+From 1 
+Tag Matching_cDNA    
+ 
+Colonne 9 
+Subtitle TSL   
+Width 11 
+Optional 
+Visible 
+Class 
+Class Text 
+From 1 
+Tag Remark   
+Condition *tsl*
+ 
+Colonne 10 
+Subtitle Method   
+Width 12 
+Mandatory 
+Visible 
+Class 
+Class Method 
+From 1 
+Tag Method   
+Condition curated
+ 
+ 
+
+// End of these definitions

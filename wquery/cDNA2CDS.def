@@ -1,0 +1,35 @@
+// Spread sheet definition for the ACeDB software 
+// User: wormpub
+// Date: 2004-01-30_16:47:22
+
+// %n (%%n in the graphic) are parameter to be given on the command line in tace
+// or by default by the Parameters given in this file
+// \%n (%n in the graphic) are substituted by the value of column n at run time
+// Line starting with // are ignored, starting with # are comments
+
+Title cDNA names to latest ORF names
+
+Sortcolumn 1
+
+Colonne 1 
+Subtitle cDNA name
+Width 20 
+Optional 
+Visible 
+Class 
+Class cDNA_Sequence 
+From 1 
+ 
+Colonne 2 
+Subtitle Corresponding ORF  
+Width 20 
+Mandatory 
+Visible 
+Class 
+Class CDS 
+From 1 
+Tag Matching_CDS 
+ 
+ 
+
+// End of these definitions

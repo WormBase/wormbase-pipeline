@@ -1,0 +1,47 @@
+// @(#)author.paper.def	1.1  8/8/95
+// Spread sheet definition for the ACeDB software 
+// User: mieg
+// Date: 94-11-25_12:53:02
+
+// %n (%%n in the graphic)  are parameter to be given on the command line in tace
+// \%n (%n in the graphic) are substituted by the value of column n at run time
+// Line starting with // are ignored, starting with # are comments
+
+Colonne 1 
+Width 12 
+Mandatory 
+Visible 
+Class 
+Class Author 
+From 0 
+Condition IS %1
+ 
+Colonne 2 
+Width 18 
+Optional 
+Visible 
+Class 
+Class Paper 
+From 1 
+Tag Paper   
+ 
+Colonne 3 
+Width 18 
+Optional 
+Visible 
+Class 
+Class Author 
+From 2 
+Tag Author   
+ 
+Colonne 4 
+Width 12 
+Optional 
+Visible 
+Text 
+From 3 
+Tag E_mail  
+ 
+ 
+
+// End of these definitions

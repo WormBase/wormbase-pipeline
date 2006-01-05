@@ -1,0 +1,54 @@
+// @(#)map2homology.def	1.1  8/8/95
+// Spread sheet definition for the ACeDB software 
+// User: mieg
+// Date: Thu-10-Nov_1994, Time: 11:10:29
+
+// Line starting with // are ignored, starting with # are comments
+
+Colonne 1 
+Width 12 
+Optional 
+Visible 
+Class 
+Class Map 
+From 0 
+Condition II 
+ 
+Colonne 2 
+Width 12 
+Optional 
+Visible 
+Class 
+Class Locus 
+From 1 
+Tag Locus 
+ 
+Colonne 4 
+Width 12 
+Optional 
+Visible 
+Float 
+Right_of 3 
+Tag HERE 
+ 
+Colonne 5 
+Width 12 
+Optional 
+Visible 
+Class 
+Class Contig 
+From 1 
+Tag Contig 
+ 
+Colonne 6 
+Width 12 
+Optional 
+Visible 
+Class 
+Class Clone 
+From 5 
+Tag Clone 
+ 
+ 
+
+// End of these definitions

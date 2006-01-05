@@ -1,0 +1,139 @@
+// Spread sheet definition for the ACeDB software 
+// User: wormpub
+// Date: 2004-02-13_10:16:07
+
+// %n (%%n in the graphic) are parameter to be given on the command line in tace
+// or by default by the Parameters given in this file
+// \%n (%n in the graphic) are substituted by the value of column n at run time
+// Line starting with // are ignored, starting with # are comments
+
+Sortcolumn 1
+
+Colonne 1 
+Subtitle Gene       
+Width 12 
+Optional 
+Visible 
+Class 
+Class elegans_CDS 
+From 1 
+ 
+Colonne 2 
+Subtitle Parent       
+Width 20 
+Optional 
+Hidden 
+Class 
+Class Sequence 
+From 1 
+Tag Source         
+ 
+Colonne 3 
+Subtitle PID_parent       
+Width 12 
+Optional 
+Hidden 
+Class 
+Class Sequence 
+From 1 
+Tag Protein_id      
+ 
+Colonne 4 
+Subtitle PID      
+Width 80 
+Optional 
+Visible 
+Text 
+Right_of 3 
+Tag HERE       
+ 
+Colonne 5 
+Subtitle PID_ver      
+Width 12 
+Optional 
+Visible 
+Integer 
+Right_of 4 
+Tag HERE       
+ 
+Colonne 6 
+Subtitle DB     
+Width 12 
+Optional 
+Visible 
+Class 
+Class Database 
+From 1 
+Tag Database      
+ 
+Colonne 7 
+Width 12 
+Optional 
+Hidden 
+Class 
+Class Text 
+Right_of 6 
+Tag HERE       
+ 
+Colonne 8 
+Subtitle Accession      
+Width 12 
+Optional 
+Visible 
+Class 
+Class Accession_number 
+Right_of 7 
+Tag HERE       
+ 
+Colonne 9 
+Subtitle Locus      
+Width 12 
+Optional 
+Visible 
+Class 
+Class Locus 
+From 1 
+Tag Locus  
+ 
+Colonne 10 
+Subtitle Confirmed      
+Width 12 
+Optional 
+Visible 
+Show_Tag 
+From 1 
+Tag Confirmed_by      
+ 
+Colonne 11 
+Subtitle ESTs      
+Width 10 
+Optional 
+Visible 
+Class ... 
+Count 
+From 1 
+Tag Matching_cDNA      
+ 
+Colonne 12 
+Subtitle Description      
+Width 40 
+Optional 
+Visible 
+Class 
+Class Text 
+From 1 
+Tag Brief_identification      
+ 
+Colonne 13 
+Subtitle corresponding protein    
+Width 12 
+Optional 
+Visible 
+Class 
+Class Protein 
+From 1 
+Tag Corresponding_protein    
+ 
+ 
+
+// End of these definitions

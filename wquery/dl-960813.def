@@ -1,0 +1,42 @@
+// Spread sheet definition for the ACeDB software 
+// Date: 1996-08-13_10:28:55
+
+// %n (%%n in the graphic)  are parameter to be given on the command line in tace
+// \%n (%n in the graphic) are substituted by the value of column n at run time
+// Line starting with // are ignored, starting with # are comments
+
+Colonne 1 
+Width 12 
+Optional 
+Visible 
+Class 
+Class Genome_Sequence 
+From 0 
+ 
+Colonne 2 
+Width 12 
+Mandatory 
+Visible 
+Date 
+From 1 
+Tag Finished 
+ 
+Colonne 3 
+Width 12 
+Mandatory 
+Visible 
+Class 
+Class Map 
+From 1 
+Tag Map 
+ 
+Colonne 4 
+Width 12 
+Optional 
+Visible 
+Float 
+Right_of 3 
+ 
+ 
+
+// End of these definitions

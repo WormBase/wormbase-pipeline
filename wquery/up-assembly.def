@@ -1,0 +1,49 @@
+// @(#)up-assembly.def	1.1  8/8/95
+// Spread sheet definition for the ACeDB software 
+// User: mieg
+// Date: 94-11-25_13:34:54
+
+// %n (%%n in the graphic)  are parameter to be given on the command line in tace
+// \%n (%n in the graphic) are substituted by the value of column n at run time
+// Line starting with // are ignored, starting with # are comments
+
+Title Up genes
+
+Colonne 1 
+Width 12 
+Mandatory 
+Visible 
+Class 
+Class Sequence 
+From 0 
+Condition bap* 
+ 
+Colonne 2 
+Width 18 
+Optional 
+Visible 
+Class 
+Class Sequence 
+From 1 
+Tag Assembled_from  
+ 
+Colonne 3 
+Width 12 
+Optional 
+Visible 
+Integer 
+Right_of 2 
+Tag HERE  
+ 
+Colonne 4 
+Width 12 
+Mandatory 
+Visible 
+Integer 
+Right_of 3 
+Tag HERE  
+Condition \%4 < \%3 
+ 
+ 
+
+// End of these definitions
