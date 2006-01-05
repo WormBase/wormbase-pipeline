@@ -3,7 +3,7 @@
 # initiate_build.pl
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2005-12-21 15:37:44 $
+# Last edited on: $Date: 2006-01-05 17:27:34 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -47,6 +47,7 @@ my $old_ver = $wormbase->version - 1;
 
 ## update CVS wspec, wquery and autoace_config from CVS
 $wormbase->run_command("cd ".$wormbase->autoace.";cvs -d :ext:cvs.sanger.ac.uk:/nfs/ensembl/cvsroot/ checkout -d wspec wormbase/wspec", $log);
+$wormbase->run_command("cd ".$wormbase->autoace.";cvs -d :ext:cvs.sanger.ac.uk:/nfs/ensembl/cvsroot/ checkout -d wquery wormbase/wquery", $log);
 $wormbase->run_command("cd ".$wormbase->basedir.";cvs -d :ext:cvs.sanger.ac.uk:/nfs/ensembl/cvsroot/ checkout -d autoace_config wormbase/autoace_config",$log);
 
 ## make new build_in_process flag ( not done yet in rebuild )
