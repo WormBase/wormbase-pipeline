@@ -2,8 +2,8 @@
 #
 # prepare_primary_databases.pl
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2005-12-20 12:09:56 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2006-01-05 09:50:38 $
 
 use strict;
 my $scriptdir = $ENV{'CVS_DIR'};
@@ -123,7 +123,11 @@ sub FTP_versions {
   foreach my $db (keys %databases){
     open(my $dir, "/bin/ls -t $ftp/$databases{$db}->{'search'} |") or $log->log_and_die("Cant open $ftp/$databases{$db}->{'search'}"."\n");
     while (<$dir>) {
-      chomp; (/\_(\d+)\-(\d+)\-(\d+)\./); $databases{$db}->{'ftp_date'} = substr($1,-2).$2.$3; last;
+      unless (/\_\d+\-\d+\-\d+\./) {next;}
+      chomp; 
+      (/\_(\d+)\-(\d+)\-(\d+)\./); 
+      $databases{$db}->{'ftp_date'} = substr($1,-2).$2.$3; 
+      last;
     }
     close $dir;
   }
