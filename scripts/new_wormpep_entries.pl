@@ -8,8 +8,8 @@
 # and produce a fasta file of these sequence to load into the wormprot
 # mysql database prior for the pre-build pipeline.
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2006-01-03 16:11:31 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2006-01-05 17:36:26 $
 
 
 #################################################################################
@@ -37,7 +37,7 @@ GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
-	    "store"      => \$store,
+	    "store:s"    => \$store,
 	    );
 
 if ( $store ) {
