@@ -11,27 +11,31 @@
 #################################################################################
  
 use strict;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
-use IO::Handle;
 use Getopt::Long;
-use vars;
+use Storable;
+use Log_files;
 
 ##############################
 # command-line options       #
 ##############################
                                                                                                                                      
 my $debug;              # debug mode
+my $test;
+my $store;
 my $help;               # Help/Usage page
 my $sequence;           # Sequence file handle
 my $all;                # Compute for all clones
 
 
 GetOptions (
-	    "all"              => \$all,
-	    "sequence:s"       => \$sequence,
-            "debug:s"          => \$debug,
-            "help"             => \$help,
+	    "all"         => \$all,
+	    "sequence:s"  => \$sequence,
+            "debug:s"     => \$debug,
+            "help"        => \$help,
+	    "test"        => \$test,
+	    "store:s"     => \$store
 	    );
 
 
@@ -41,20 +45,31 @@ if ($help) {
     exec ('perldoc',$0);
 }
 
-# Crash out if no sequence filename supplied
-
-unless ($all||$sequence) {
-    print "You must choose an option, [-all or -sequence <seqname>]. Ciao\n\n";
-    exit(0);
+my $wormbase;
+if( $store ) {
+  $wormbase = retrieve( $store ) or croak("cant restore wormbase from $store\n");
+}
+else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+			     -test    => $test,
+			   );
 }
 
-my %clone2sequence  = &FetchData('clone2sequence');      # Genomic_canonical => DNA sequence
-my %clonesize       = &FetchData('clonesize');           # Genomic_canonical => length in bp
+
+# make log files
+my $log = Log_files->make_build_log($wormbase);
+
+# Crash out if no sequence filename supplied
+unless ($all||$sequence) {
+  $log->log_and_die("You must choose an option, [-all or -sequence <seqname>]. Ciao\n\n");
+}
+
+my %clone2sequence  = $wormbase->FetchData('clone2sequence');      # Genomic_canonical => DNA sequence
+my %clonesize       = $wormbase->FetchData('clonesize');           # Genomic_canonical => length in bp
 
 
 if (($sequence) && (!defined $clone2sequence{$sequence})) {
-    print "Sequence name '$sequence' is not recognised in the COMMON_DATA hash\n\n";
-    exit(0);
+  $log->log_and_die("Sequence name '$sequence' is not recognised in the COMMON_DATA hash\n\n");
 }
 
 # deal with array of clones to process
@@ -68,8 +83,7 @@ if ($sequence) {
 
 # open output acefile
 
-my $outputfilename = "/wormsrv2/autoace/acefiles/inverted_repeats.ace";
-$outputfilename    = "/wormsrv2/autoace/acefiles/test_inverted_repeats.ace" if ($debug);
+my $outputfilename = $wormbase->acefiles."inverted_repeats.ace";
 
 open (ACE, ">$outputfilename") || die "Failed to open output acefile: '$outputfilename'\n";
 
@@ -85,10 +99,8 @@ my @output;
 foreach my $clone (@clones2process) {
 
     next if ($clone eq "");
-    
 
     # generate sequence file for the query sequence    
-   
     open (INPUT, ">/tmp/inverted_temp.$$") || die "Failed to open file for dumping sequence to\n";
     print INPUT ">$clone\n";
     print INPUT $clone2sequence{$clone};
@@ -186,6 +198,8 @@ foreach my $clone (@clones2process) {
 
 close ACE;
 close STDOUT;
+
+$log->mail();
 
 # Hasta luego
 exit (0);
