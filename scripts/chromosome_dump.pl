@@ -8,7 +8,7 @@
 # see pod for more details
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-12-16 11:18:55 $
+# Last updated on: $Date: 2006-01-06 13:46:12 $
 
 
 use strict;
@@ -42,6 +42,7 @@ GetOptions ("help"        => \$help,
 	   );
 
 my $wormbase;
+$test = 1 if $quicktest;
 if( $store ) {
   $wormbase = retrieve( $store ) or croak("cant restore wormbase from $store\n");
 }
@@ -69,15 +70,6 @@ if(!$database && $dump_dir){
 if(!$gff && !$dna && !$composition && !$zipgff && !$zipdna){
   die "No major option (-dna, -gff, -composition, -zipdna, or -zipgff) has been specified, try again\n";
 }
-
-# check that -test and -quicktest haven't both been set.  Also...
-# if -quicktest is specified, still need to make -test true, so that test mode runs 
-# for those steps where -quicktest is meaningless (can't run on only one chromosome)
-if($test && $quicktest){
-  die "both -test and -quicktest specified, only one of these is needed\n";
-}
-($test = 1) if ($quicktest);
-
 
 # Set up top level base directory which is different if in test mode
 # Make all other directories relative to this
@@ -138,6 +130,18 @@ if($quicktest){
 }
 
   &execute_ace_command($command,$tace,$database);
+
+  $log->write_to("Removing blank first lines");
+  undef $/;
+  foreach (qw(I II III IV V X MTCE)) {
+    open( CHROM,"<$dump_dir/CHROMOSOME_$_.dna") or $log->log_and_die("cant open $dump_dir/CHROMOSOME_$_.dna to read: $!\n");
+    my $chrom = <CHROM>;
+    close CHROM;
+    $chrom =~ s/^\n//;
+    open( CHROM,">$dump_dir/CHROMOSOME_$_.dna") or $log->log_and_die("cant open $dump_dir/CHROMOSOME_$_.dna to write: $!\n");
+    print CHROM $chrom;
+    close CHROM;
+  }
   $log->write_to("Finished dumping DNA\n\n");
 }
 
