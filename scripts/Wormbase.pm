@@ -820,6 +820,7 @@ sub misc_static { $self = shift; return $self->{'misc_static'}; }
 sub misc_dynamic{ $self = shift; return $self->{'misc_dynamic'}; }
 sub primaries   { $self = shift; return $self->{'primaries'}; }
 sub acefiles    { $self = shift; return $self->{'acefiles'}; }
+sub transcripts { $self = shift; return $self->{'transcripts'}; }
 
 # this can be modified by calling script
 sub common_data {
@@ -889,6 +890,7 @@ sub establish_paths {
   $self->{'logs'}        = $self->autoace . "/logs";
   $self->{'common_data'} = $self->autoace . "/COMMON_DATA";
   $self->{'chromosomes'} = $self->autoace . "/CHROMOSOMES";
+  $self->{'transcripts'} = $self->autoace . "/TRANSCRIPTS";
   $self->{'reports'}     = $self->autoace . "/REPORTS";
   $self->{'acefiles'}    = $self->autoace . "/acefiles";
   $self->{'gff'}         = $self->chromosomes; #to maintain backwards compatibility 
@@ -923,6 +925,7 @@ sub establish_paths {
   mkpath( $self->wormpep )     unless ( -e $self->wormpep );  system("chmod -R g+w ".$self->wormpep);
   mkpath( $self->wormrna )     unless ( -e $self->wormrna );  system("chmod -R g+w ".$self->wormrna);
   mkpath( $self->chromosomes ) unless ( -e $self->chromosomes );
+  mkpath( $self->transcripts ) unless ( -e $self->transcripts );
   mkpath( $self->reports )     unless ( -e $self->reports );
   mkpath( $self->gff )         unless ( -e $self->gff );
   mkpath( $self->gff_splits )  unless ( -e $self->gff_splits );
@@ -940,8 +943,8 @@ sub run_script {
 
   my $store = $self->autoace . "/wormbase.store";
   store( $self, $store );
-  $self->run_command( "chmod 775 $store");
-  my $command = "perl $ENV{'CVS_DIR'}/$script -store $store";
+  $self->run_command( "chmod 775 $store", $log);
+  my $command = "perl5.6.1 $ENV{'CVS_DIR'}/$script -store $store";
   print "$command\n" if $self->test;
   return $self->run_command( "$command", $log );
 }
@@ -961,7 +964,7 @@ sub run_command {
     }
     return 1;
   } else {
-    $log->write_to("$script exited cleanly\n") if $log;
+    $log->write_to("command exited cleanly\n") if $log;
     return 0;
   }
 }
@@ -990,6 +993,18 @@ sub wait_for_LSF {
     return $count;
   }
 }
+
+sub checkLSF
+  {
+    my ($self, $log) = @_;
+    unless ( -e "/usr/local/lsf/bin/bsub"){
+      if ($log){
+	$log->log_and_die("You need to be on cbi1 or other LSF enabled system to run this");
+      } else {
+	die "You need to be on cbi1 or other LSF enabled system to run this";
+      }
+    }
+  }
 
 ################################################################################
 #Return a true value
