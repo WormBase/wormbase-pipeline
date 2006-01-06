@@ -8,7 +8,7 @@
 # This makes the autoace database from its composite sources.
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2005-12-21 15:37:44 $
+# Last edited on: $Date: 2006-01-06 11:43:18 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -258,6 +258,21 @@ sub reinitdb {
   }
   else {
     $log->log_and_die("models file missing from $dbpath/wspec\n") unless (-e "$dbpath/wspec/models.wrm");
+  }
+
+  #if in debug then need to edit password file to allow non wormpub user.
+  if( $wormbase->test_) {
+    my $user = `whoami`;
+    open(PWD,"<$dbpath/wspec/passwd.wrm") or $log->log_and_die("cant edit $dbpath/wspec/passwd.wrm\n");
+    undef $/;
+    my $pass = <PWD>;
+    close PWD;
+    $pass =~ s/wormpub/wormpub$user/;
+    $\ = "\n";
+    system("chmod u+w $dbpath/wspec/passwd.wrm");
+    open(PWD,">$dbpath/wspec/passwd.wrm") or $log->log_and_die("cant write new $dbpath/wspec/passwd.wrm\n");
+    print PWD $pass;
+    close PWD;
   }
 
   my $command = "y\n";
