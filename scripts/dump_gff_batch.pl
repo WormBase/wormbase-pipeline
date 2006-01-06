@@ -9,7 +9,7 @@ use Storable;
 
 my ($debug, $test, $database);
 
-my @chroms = qw( I II III IV V X );
+my @chroms = qw( I II III IV V X MTCE);
 my $dump_dir;
 my $dumpGFFscript = $ENV{'CVS_DIR'}."/GFF_method_dump.pl";
 my $scratch_dir = "/tmp";
@@ -17,7 +17,6 @@ my $methods;
 my $chrom_choice;
 my $store;
 
-&checkLSF;
 
 GetOptions (
 	    "debug:s"       => \$debug,
@@ -41,6 +40,8 @@ else {
 }
 
 my $log = Log_files->make_build_log($wormbase);
+
+$wormbase->checkLSF;
 
 my @methods     = split(/,/,join(',',$methods));
 my @chromosomes = split(/,/,join(',',$chrom_choice));
@@ -68,7 +69,7 @@ foreach my $chrom ( @chromosomes ) {
     foreach my $method ( @methods ) {
       my $err = "$scratch_dir/wormpubGFFdump.$chrom.$method.err";
       my $out = "$scratch_dir/wormpubGFFdump.$chrom.$method.out";
-      my $bsub = "bsub -e $err -o $out \"perl5.6.1 $dumpGFFscript -store $store -database $database -dump_dir $dump_dir -chromosome $chrom -method $method\"";
+      my $bsub = "bsub -e $err -o $out \"perl $dumpGFFscript -store $store -database $database -dump_dir $dump_dir -chromosome $chrom -method $method\"";
       $log->write_to("$bsub\n");
       $wormbase->run_command("$bsub", $log);
     }
@@ -84,16 +85,6 @@ foreach my $chrom ( @chromosomes ) {
 
 $log->mail;
 exit(0);
-
-
-sub checkLSF 
-  {
-    my $lshosts = `lshosts`;
-    die "You need to be on cbi1 or other LSF enabled server to run this" 
-      unless $lshosts =~ /HOST_NAME/;
-  }
-
-
 
 =pod
 
