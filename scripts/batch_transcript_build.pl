@@ -7,48 +7,65 @@
 # wrapper script for running transcript_builder.pl
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2005-12-16 11:18:55 $
+# Last edited on: $Date: 2006-01-06 11:39:16 $
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
 use Getopt::Long;
 use strict;
 use Coords_converter;
+use Storable;
 
-my @chroms = qw( I II III IV V X );
 my $dump_dir;
 my $database;
 my $builder_script = $ENV{CVS_DIR}."/transcript_builder.pl";
 my $scratch_dir = "/tmp";
 my $chrom_choice;
 my $gff_dir;
-
-&checkLSF;
+my ($store, $debug, $test);
 
 GetOptions (
 	    "database:s"    => \$database,
 	    "dump_dir:s"    => \$dump_dir,
 	    "gff_dir:s"     => \$gff_dir,
 	    "chromosomes:s" => \$chrom_choice,
-	    "chromosome:s"  => \$chrom_choice
+	    "chromosome:s"  => \$chrom_choice,
+	    "store:s"       => \$store,
+	    "debug:s"       => \$debug,
+	    "test"          => \$test
+
 	   );
-# make sure required files present.
-system("scp wormsrv2:/wormsrv2/autoace/COMMON_DATA/est2feature.dat    $database/COMMON_DATA/") && die "cant copy est2feature\n";
-system("scp wormsrv2:/wormsrv2/autoace/COMMON_DATA/Featurelist.dat    $database/COMMON_DATA/") && die "cant copy Featurelistn\n";
-system("scp wormsrv2:/wormsrv2/autoace/COMMON_DATA/estorientation.dat $database/COMMON_DATA/") && die "cant copy estorientation\n";
+
+
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+			     );
+}
+
+my $log = Log_files->make_build_log($wormbase);
+$wormbase->checkLSF($log);
+
+## make sure required files present.
+#system("scp wormsrv2:/wormsrv2/autoace/COMMON_DATA/est2feature.dat    $database/COMMON_DATA/") && die "cant copy est2feature\n";
+#system("scp wormsrv2:/wormsrv2/autoace/COMMON_DATA/Featurelist.dat    $database/COMMON_DATA/") && die "cant copy Featurelistn\n";
+#system("scp wormsrv2:/wormsrv2/autoace/COMMON_DATA/estorientation.dat $database/COMMON_DATA/") && die "cant copy estorientation\n";
 
 my @chromosomes = split(/,/,join(',',$chrom_choice));
 
-$database = glob("~wormpub/TRANSCRIPTS") unless $database;
-$gff_dir  = "$database/CHROMOSOMES" unless $gff_dir;
-$dump_dir = "$database/TRANSCRIPTS" unless $dump_dir;
-@chromosomes = qw(I II III IV V X) unless @chromosomes;
+$database = $wormbase->autoace unless $database;
+$gff_dir  = $wormbase->gff unless $gff_dir;
+$dump_dir = $wormbase->transcripts unless $dump_dir;
+@chromosomes = qw(I II III IV V X MTCE) unless @chromosomes;
 
 # make a Coords_converter to write the coords files. Otherwise all 6 processes try and do it.
 my $coords = Coords_converter->invoke($database,1);
 
+# this extract paired read info from the database and writes it to EST_pairs file
 my $cmd = "select cdna, pair from cdna in class cDNA_sequence where exists_tag cdna->paired_read, pair in cdna->paired_read";
-my $tace = &tace;
+my $tace = $wormbase->tace;
 my $pairs = "$database/EST_pairs.txt";
 
 open (TACE, "echo '$cmd' | $tace $database |") or die "cant open tace to $database using $tace\n";
@@ -61,22 +78,14 @@ while ( <TACE> ) {
 }
 close PAIRS;
 
+# create and submit LSF jobs.
 foreach my $chrom ( @chromosomes ) {
   my $err = "$scratch_dir/transcipt_builder.$chrom.err.$$";
   my $out = "$dump_dir/CHROMOSOME_${chrom}_transcript.ace";
   my $bsub = "bsub -e $err \"$builder_script -database $database -chromosome $chrom -gff_dir $gff_dir \"";
   print "$bsub\n";
-  system("$bsub");
+  $wormbase->run_script("$bsub");
 }
-
-sub checkLSF 
-  {
-    my $lshosts = `lshosts`;
-    die "You need to be on cbi1 or other LSF enabled server to run this" 
-      unless $lshosts =~ /HOST_NAME/;
-  }
-
-
 
 =pod
 
