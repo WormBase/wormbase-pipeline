@@ -4,8 +4,8 @@
 #
 # by Dan Lawson (dl1@sanger.ac.uk)
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2005-12-20 13:52:23 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2006-01-06 14:45:15 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -37,22 +37,12 @@ GetOptions ("help"         => \$help,
 	    "store:s"      => \$store
 	   );
 
-# check that -test and -quicktest haven't both been set.  Also if -quicktest is specified, 
-# need to make -test true, so that test mode runs for those steps where -quicktest is meaningless
-if($test && $quicktest){
-  die "both -test and -quicktest specified, only one of these is needed\n";
-}
 ($test = 1) if ($quicktest);
-
 my $wormbase;
 if( $store ) {
   $wormbase = retrieve( $store ) or croak("cant restore wormbase from $store\n");
-  ($test = 1) if ($quicktest);
-  $wormbase->set_test($test);   # set test in the wormbase object
-
 }
 else {
-  ($test = 1) if ($quicktest);
   $wormbase = Wormbase->new( -debug   => $debug,
 			     -test    => $test,
 			   );
@@ -129,10 +119,10 @@ foreach my $chromosome (@gff_files) {
 
   my $file = "$outdir/CHROMOSOME_$chromosome.agp";
 
-  &error(1,$chromosome) unless ("-e $gff_dir/CHROMOSOME_${chromosome}.clone_acc.gff");
+  $log->log_and_die("The gff file $outdir/CHROMOSOME_${chromosome}_clone_acc.gff doesn't exist.\n") unless ("-e $gff_dir/CHROMOSOME_${chromosome}_clone_acc.gff");
   
   # read data from gff file
-  open (GFF, "<$gff_dir/CHROMOSOME_$chromosome.clone_acc.gff") or $log->log_and_die("cant open $gff_dir/CHROMOSOME_$chromosome.clone_acc.gff");
+  open (GFF, "<$gff_dir/CHROMOSOME_${chromosome}_clone_acc.gff") or $log->log_and_die("cant open $gff_dir/CHROMOSOME_${chromosome}_clone_acc.gff");
   while (<GFF>) {
     
     $seq_len = "";
@@ -262,19 +252,6 @@ sub usage {
     exit (0);
   }
 }
-
-##########################################
-
-sub error {
-  my $error = shift;
-  my $chromosome = shift;
-  if ($error == 1){ 
-    # No gff file to work from
-    print "The gff file '$outdir/CHROMOSOME_${chromosome}.clone_acc.gff' doesn't exist.\n";
-    exit(0);
-  }
-}
-
 
 __END__
 

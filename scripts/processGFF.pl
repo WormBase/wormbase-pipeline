@@ -7,7 +7,7 @@
 # handles post processing of GFF files
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-01-06 14:31:08 $
+# Last edited on: $Date: 2006-01-06 14:45:15 $
 
 
 use lib $ENV{CVS_DIR};
@@ -59,16 +59,16 @@ else {
   @chroms = qw(III) if $quicktest;
   if( $utr ) {
     foreach my $chrom ( @chroms ) {
-      my $in = $wormbase->gff_splits."/CHROMOSOME_${chrom}.UTR.gff";
-      my $out = $wormbase->gff_splits."/CHROMOSOME_${chrom}.UTR_CDS.gff";
+      my $in = $wormbase->gff_splits."/CHROMOSOME_${chrom}_UTR.gff";
+      my $out = $wormbase->gff_splits."/CHROMOSOME_${chrom}_UTR_CDS.gff";
       &GFF_with_UTR( $in, $out );
     }
   }
   if( $clone_acc ) {
     my $db = Ace->connect(-path=>$database) || do { print "Connection failure to $database: ",Ace->error; die();};
     foreach my $chrom ( @chroms ) {
-      my $in = $wormbase->gff_splits."/CHROMOSOME_${chrom}.Genomic_canonical.gff";
-      my $out = $wormbase->gff_splits."/CHROMOSOME_${chrom}.clone_acc.gff";
+      my $in = $wormbase->gff_splits."/CHROMOSOME_${chrom}_Genomic_canonical.gff";
+      my $out = $wormbase->gff_splits."/CHROMOSOME_${chrom}_clone_acc.gff";
       &GFF_clones_with_accessions( $in, $out, $db );
     }
     $db->close;
@@ -76,8 +76,8 @@ else {
   if( $gene_acc ) {
     my $db = Ace->connect(-path=>$database) || do { print "Connection failure to $database: ",Ace->error; die();};
     foreach my $chrom ( @chroms ) {
-      my $in = $wormbase->gff_splits."/CHROMOSOME_${chrom}.CDS.gff";
-      my $out = $wormbase->gff_splits."/CHROMOSOME_${chrom}.CDS_acc.gff";
+      my $in = $wormbase->gff_splits."/CHROMOSOME_${chrom}_CDS.gff";
+      my $out = $wormbase->gff_splits."/CHROMOSOME_${chrom}_CDS_acc.gff";
       &GFF_genes_with_accessions( $in, $out, $db );
     }
     $db->close;
