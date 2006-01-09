@@ -53,6 +53,11 @@ Visible
 Is_a_subclass_of CDS
 Filter "((Method = curated) OR (Method = history)) AND (Species = C*elegans)"
 
+Class Transposon_CDS
+Visible
+Is_a_subclass_of CDS
+Filter "Method = Transposon_CDS"
+
 // ?Transcript subclasseses
 Class elegans_RNA_genes
 Visible
@@ -166,7 +171,6 @@ Class Lineage
 Visible
 Is_a_subclass_of Tree
 Filter "Cell_Lineage"
-
 
 // First attempt to use new 'composite class' to merge together various
 // gene like classes for C. elegans genes
