@@ -6,8 +6,8 @@
 #
 # wrapper script for running transcript_builder.pl
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-01-06 11:39:16 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2006-01-10 14:13:42 $
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -61,7 +61,7 @@ $dump_dir = $wormbase->transcripts unless $dump_dir;
 @chromosomes = qw(I II III IV V X MTCE) unless @chromosomes;
 
 # make a Coords_converter to write the coords files. Otherwise all 6 processes try and do it.
-my $coords = Coords_converter->invoke($database,1);
+my $coords = Coords_converter->invoke($database,1,$wormbase);
 
 # this extract paired read info from the database and writes it to EST_pairs file
 my $cmd = "select cdna, pair from cdna in class cDNA_sequence where exists_tag cdna->paired_read, pair in cdna->paired_read";
