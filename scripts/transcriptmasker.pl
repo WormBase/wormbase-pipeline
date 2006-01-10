@@ -8,7 +8,7 @@
 # 031023 dl1
 
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-01-06 11:44:50 $
+# Last edited on: $Date: 2006-01-10 14:00:43 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -74,6 +74,7 @@ my $log = Log_files->make_build_log($wormbase);
 
 # datafiles for input
 my $EST_dir = $wormbase->wormpub."/analysis/ESTs";
+
 our %datafiles = (
 		  "mrna"  => "elegans_mRNAs",
 		  "ncrna" => "elegans_ncRNAs",
@@ -100,10 +101,7 @@ print "// Finished reading EST_names.dat hash\n\n" if ($verbose);
 
 # which database
 $database = $wormbase->autoace unless $database;
-
-my $blat_dir = "$database/BLAT";
-mkpath($blat_dir) unless (-e $blat_dir );
-
+my $blat_dir =  $wormbase->blat;
 my $tace  = $wormbase->tace;                                    # tace executable path
 
 my $acc;                                              # accession for the entry
