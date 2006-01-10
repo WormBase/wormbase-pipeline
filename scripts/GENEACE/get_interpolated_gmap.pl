@@ -7,7 +7,7 @@
 # This script calculates interpolated genetic map positions for CDS, Transcripts 
 # and Pseudogenes lying between and outside genetic markers.
 #
-# Last updated on: $Date: 2006-01-10 14:42:38 $
+# Last updated on: $Date: 2006-01-10 15:06:10 $
 # Last updated by: $Author: mh6 $
 
 use strict;
@@ -985,19 +985,19 @@ __END__
             This script is run at end of build to calculate interpolated map positions for all CDS and Transcripts.
             It can generate the following files:
 
-            (1) /wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/reverse_physicals_WSXXX.yymmdd.pid
-            (2) /wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/cmp_gmap_with_coord_order_WSXXX.yymmdd.pid (list of marker loci with gmap and coords)
-            (3) /wormsrv2/logs/mapping_diff.yymmdd (not run for the build, but called by geneace_check.pl)
-            (4) /wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/interpolated_gmap_WSXXX.yymmdd 
-            (5) /wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/interpolated_gmap_to_geneace_WSXXX.yymmdd.ace
-            (6) /wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/WSXXX_interpolated_map.txt
-            (7) /wormsrv2/autoace/MAPPINGS/INTERPOLATED_MAP/gmap_info_WS*yymmdd (information might be interesting in case data looks strange)
+            (1) autoace/MAPPINGS/INTERPOLATED_MAP/reverse_physicals_WSXXX.yymmdd.pid
+            (2) autoace/MAPPINGS/INTERPOLATED_MAP/cmp_gmap_with_coord_order_WSXXX.yymmdd.pid (list of marker loci with gmap and coords)
+            (3) logs/mapping_diff.yymmdd (not run for the build, but called by geneace_check.pl)
+            (4) autoace/MAPPINGS/INTERPOLATED_MAP/interpolated_gmap_WSXXX.yymmdd 
+            (5) autoace/MAPPINGS/INTERPOLATED_MAP/interpolated_gmap_to_geneace_WSXXX.yymmdd.ace
+            (6) autoace/MAPPINGS/INTERPOLATED_MAP/WSXXX_interpolated_map.txt
+            (7) autoace/MAPPINGS/INTERPOLATED_MAP/gmap_info_WS*yymmdd (information might be interesting in case data looks strange)
 
 =head3 <USAGE>
 
             Output reverse physicals of marker loci. Ie, check if the marker loci for genetics map are aligned lineally by gff coordinates.
 
-B<-db: / -databse:>
+B<-db: / -database:>
 
             Specifies database to look for marker map positions and gff coordinates
             Eg.
@@ -1015,6 +1015,14 @@ B<-comp:>
             (2) physical contig maps, which can be view in gmap
 
 
-B <-d / -debug):
+B<-debug:>
 
             Interpolated_map_positions will not be uploaded to autoace.
+
+B<-store:>
+	
+	    Load stored configuration from a specified file
+
+B<-test:>
+
+	    Sets the environment to TEST_BUILD
