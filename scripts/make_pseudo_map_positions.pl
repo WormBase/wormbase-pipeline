@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.8.0 -w
+#!/usr/local/bin/perl5.8.0
 # 
 # make_pseudo_map_positions.pl
 #
@@ -6,49 +6,66 @@
 #
 # Script to identify genes which can have their Interpolated_map_position tag promoted to a Map position
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-12-16 11:18:55 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2006-01-10 14:14:14 $
 
 use strict;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use warnings;
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Ace;
 use Getopt::Long;
 
 
-# create log file, open output file handles
-my $log = Log_files->make_build_log();
-
 ###################################################
 # command line options                            # 
 ###################################################
 
-my ($help, $database, $verbose, $test, $load);
+my $maintainers = "All";
+my ($help, $database, $verbose, $test, $load,$store,$debug);
 
 GetOptions ("help"        => \$help,
 	    "database=s"  => \$database,
 	    "test"        => \$test,
 	    "verbose"     => \$verbose,
-	    "load"        => \$load);
+	    "load"        => \$load,
+    	    'store=s'     => \$store,
+	    'debug=s'	  => \$debug
+    	);
 
 # Display help if required
-if ($help){&usage("Help")}
-
-
-# Set up top level base directory which is different if in test mode
-# Make all other directories relative to this
-my $basedir   = "/wormsrv2";
-$basedir      = glob("~wormpub")."/TEST_BUILD" if ($test);
-
-
+&usage("Help") if $help;
 
 ###################################################
 # Miscellaneous important variables               # 
 ###################################################
 
-my $maintainers = "All";
-my $tace = &tace;                               # tace executable path
-$database = "$basedir/autoace" if (!$database); # specify autoace as the default database if -database not specified
+# recreate configuration
+my $wb;
+if ($store) { $wb = Storable::retrieve($store) or croak("cant restore wormbase from $store\n")
+}
+else { $wb = Wormbase->new( -debug => $debug, -test => $test, ) }
+
+# Variables Part II (depending on $wb)
+$test  = $wb->test  if $wb->test;     # Test mode
+$debug = $wb->debug if $wb->debug;    # Debug mode, output only goes to one user
+
+# Use debug mode?
+if ($debug) {
+    print "DEBUG = \"$debug\"\n\n";
+    ( $maintainers = $debug . '\@sanger.ac.uk' );
+}
+
+# Set up top level base directory which is different if in test mode
+# Make all other directories relative to this
+my $basedir   = $wb->basedir;
+
+# create log file, open output file handles
+my $log = Log_files->make_build_log($wb);
+
+
+my $tace = $wb->tace;                               # tace executable path
+$database = $wb->autoace if (!$database);           # specify autoace as the default database
 my $output = "pseudo_map_positions.ace";
 
 
@@ -204,7 +221,7 @@ This script makes an acefile that gets loaded into the build which will remove e
 Interpolated_map_position tags for some genes and transfer the map value and position to the Map tag
 instead.  We also flag these genes with the 'Pseudo_map_position' tag and leave a suitable remark.
 
-The script will make an acefile at /wormsrv2/autoace/acefiles/pseudo_map_positions.ace
+The script will make an acefile at $wb->autoace/acefiles/pseudo_map_positions.ace
 This acefile will be loaded to autoace if -load option is used but it also needs to be loaded back 
 into geneace.  Jonathan receives a separate email listing the genes which have been changed.
 
@@ -215,7 +232,7 @@ into geneace.  Jonathan receives a separate email listing the genes which have b
 
 =back
 
-=head1 OPTIONAL arguments: -help, -database, -verbose, -test, -load
+=head1 OPTIONAL arguments: -help, -database, -verbose, -test, -load, -store
 
 
 =over 4
@@ -239,6 +256,10 @@ Use the test build environment
 =item -load
 
 Load the resulting acefile to autoace (or database specified by -database)
+
+=item -store
+
+Use a stored configuration
 
 =back
 
