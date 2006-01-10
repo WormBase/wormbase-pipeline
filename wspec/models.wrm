@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2005-12-05 11:02:01 $
+// Last edited on: $Date: 2006-01-10 14:37:11 $
  
 
 
@@ -1096,7 +1096,6 @@
 		Brief_identification UNIQUE ?Text #Evidence
 		Confidential_remark ?Text
 		SAGE_transcript ?SAGE_transcript XREF Predicted_gene // new for SAGE data
-		Interpolated_map_position UNIQUE ?Map UNIQUE Float 
 		Y2H_bait   ?Y2H XREF Bait_overlapping_CDS // for yeast two hybrid data
 		Y2H_target ?Y2H XREF Target_overlapping_CDS
 		3d_data ?3d_data XREF CDS
@@ -1141,7 +1140,6 @@
                         Brief_identification UNIQUE Text                           // [020306 kj]
                         Confidential_remark ?Text
 			SAGE_transcript ?SAGE_transcript XREF Transcript // new for SAGE data
-			Interpolated_map_position UNIQUE ?Map UNIQUE Float // new for updated interpolated map positions [krb 030515]
                         Remark ?Text #Evidence
                 Properties Transcript UNIQUE  mRNA UNIQUE Processed_mRNA
                                                           Unprocessed_mRNA
@@ -1199,7 +1197,6 @@
                         GO_term ?GO_term XREF Pseudogene ?GO_code #Evidence
                         Reference ?Paper XREF Pseudogene // added [011030 krb]
 			SAGE_transcript ?SAGE_transcript XREF Pseudogene
-                        Interpolated_map_position ?Map UNIQUE Float 
 			Microarray_results ?Microarray_results XREF Pseudogene  //added for Microarray_results
 			Remark ?Text #Evidence	  
 		Associated_feature ?Feature XREF Associated_with_pseudogene #Evidence
@@ -2669,7 +2666,7 @@
 		     Derivative	  ?Variation XREF Derived_from
            Genetics Gene_class ?Gene_class XREF Variation
 		    Map ?Map   XREF Variation #Map_position
-		    Interpolated_map_position ?Map #Map_position
+		    Interpolated_map_position UNIQUE ?Map UNIQUE Float
                     Mapping_data 2_point         ?2_point_data
                                  Multi_point     ?Multi_pt_data
                                  Pos_neg_data    ?Pos_neg_data
