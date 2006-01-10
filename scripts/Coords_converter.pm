@@ -6,7 +6,7 @@
 
 =head1 SYNOPSIS
 
- my $coords       = Coords_converter->invoke
+ my $coords       = Coords_converter->invoke($database, 1, $wormbase)
  my $superlink    = $coords->GetSuperlinkFromCoord("I", 10000000)
  my $clone        = $coords->GetCloneFromCoord( "I", 1000000 )
  $clone           = $coords->GetCloneFromCoord( "SUPERLINK_RW1", 100000 )
@@ -38,11 +38,12 @@ use Wormbase;
 =head2 invoke
 
     Title   :   invoke
-    Usage   :   Coords_converter->invoke($database,1);
+    Usage   :   Coords_converter->invoke($database, 1, $wormbase);
     Function:   Creates the object and loads in the data (generates fresh if requested)
     Returns :   ref to self
     Args    :   Database  (optional) - which database to use. Default is current_DB
                 refresh   default is NULL - connect to the database and update coordinates
+                wormbase - wormbase object
 
 =cut
 
@@ -52,12 +53,13 @@ sub invoke
     my $class = shift;
     my $database = shift;
     my $refresh = shift;
+    my $wormbase = shift;
 
     if( $database ) {
       croak "$database does not exist\n" unless( -d "$database" );
     }
     else {
-      $database = glob("~wormpub/DATABASES/current_DB");
+      $database = $wormbase->database("current");
       undef $refresh;
     }
 
@@ -68,17 +70,13 @@ sub invoke
 
     if( $refresh ) {
       print "refreshing coordinates for $database\n";
-      my $tace = &tace;
+      my $tace = $wormbase->tace;
       my $SL_coords_file = "$database/SL_coords";
       my $clone_coords_file = "$database/clone_coords";
 
       my @command;
       $command[0] = "find sequence CHROM*\nshow -a Subsequence -f ${SL_coords_file}\n";
       $command[1] = "clear\nfind sequence SUPER*\nshow -a Subsequence -f ${clone_coords_file}\n";
-
-      # temp fix as &tace isn't working in this script
-      $tace = "/nfs/disk100/wormpub/ACEDB/bin_ALPHA/tace";
-
 
       open (ACE,"| $tace $database") or croak "cant open $database\n";
       foreach (@command) {
