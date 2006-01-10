@@ -6,14 +6,17 @@
 #
 # by Gary Williams
 #
-# Last updated by: $Author: ar2 $                      
-# Last updated on: $Date: 2005-12-16 11:18:55 $        
+# Last updated by: $Author: gw3 $                      
+# Last updated on: $Date: 2006-01-10 14:09:58 $        
 
-use strict;
-use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
+use strict;                                      
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
-use IO::Handle;
 use Getopt::Long;
+use Carp;
+use Log_files;
+use Storable;
+use IO::Handle;
 use Cwd;
 use Ace;
 use Sequence_extract;
@@ -22,52 +25,52 @@ use Sequence_extract;
 ######################################
 # variables and command-line options #
 ######################################
-my $maintainers = "All";
 
-my $rundate = &rundate;
-my $runtime = &runtime;
-my $dbdir;
+my ($help, $debug, $test, $verbose, $store, $wormbase);
+my ($output, $proximity, $side, $operons, $dbdir);
+$output = "";       		# file to write output to
+$proximity = 0;              # region around gene to restrict output to (<= 0 write complete intergenic region)
+$side = "both";	        # either "both", "5", "3" side of gene to output
+$operons = "include";	# either "include", "only", "no" intergenic regions inside operons
 
-my $help;			# Help perdoc
-my $test;			# Test mode
-my $debug;			# Debug mode
-my $verbose;			# verbose output to user running script
-
-my $output = "";       		# file to write output to
-my $proximity = 0;              # region around gene to restrict output to (<= 0 write complete intergenic region)
-my $side = "both";	        # either "both", "5", "3" side of gene to output
-my $operons = "include";	# either "include", "only", "no" intergenic regions inside operons
-
-GetOptions ("debug=s"   => \$debug,
-	    "verbose"   => \$verbose,
-	    "test"      => \$test,
-            "help"      => \$help,
+GetOptions ("help"       => \$help,
+            "debug=s"    => \$debug,
+	    "test"       => \$test,
+	    "verbose"    => \$verbose,
+	    "store"      => \$store,
 	    "output=s"  => \$output,
 	    "proximity=i" => \$proximity,
 	    "side=s"      => \$side,
 	    "operons=s" => \$operons,
 	    "database=s"=> \$dbdir
-);
+	    );
 
-
-$dbdir          = $test ? glob("~wormpub/DATABASES/current_DB") : '/wormsrv2/autoace' unless $dbdir; # Database path
-my $gffdir      = "${dbdir}/CHROMOSOMES/";        # GFF directory
-my @chromosomes = qw( I II III IV V X );                            # chromosomes
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+			     );
+}
 
 # Display help if required
 &usage("Help") if ($help);
 
-my $log = Log_files->make_build_log($debug);
+$dbdir          = $test ? $wormbase->database("current") : $wormbase->autoace unless $dbdir; # Database path
+my $gffdir      = "${dbdir}/CHROMOSOMES/";        # GFF directory
+my @chromosomes = qw( I II III IV V X );                            # chromosomes
 
-# Use debug mode?
-if ($debug){
-  print "DEBUG = \"$debug\"\n\n";
-  ($maintainers = $debug . '\@sanger.ac.uk');
-}
 
+# in test mode?
 if ($test) {
+  print "In test mode\n" if ($verbose);
   @chromosomes = qw( III );
+
 }
+
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
+
 
 # Check options are valid
 if ($side ne "both" && $side ne "5" && $side ne "3") {
@@ -96,7 +99,7 @@ my $gene_name;			# name of gene or operon
 my $no_sequences = 0;		# count number of sequences written out
 
 
-my $seq_obj = Sequence_extract->invoke($dbdir, 1);
+my $seq_obj = Sequence_extract->invoke($dbdir, 1, $wormbase);
 
 open (OUT, ">$output") || die "Failed to open output file $output";
 
@@ -193,8 +196,6 @@ foreach my $chromosome (@chromosomes) {
     } elsif ($in_operon && $start > $operon_end) {
       $in_operon = 0;
     }
-
-# ??? Question, does the Sequence_extract script work in coordinates startnig from 0 or 1 ???
 
     print "name: $gene_name chromosome: $chromosome start: $start end: $end strand: $strand\n" if ($verbose);
 
@@ -343,7 +344,7 @@ $log->write_to("Wrote $no_sequences sequences\n");
 print "Wrote $no_sequences sequences\n";
 
 
-$log->mail("$maintainers","BUILD REPORT: $0");
+$log->mail();
 
 exit(0);
 
