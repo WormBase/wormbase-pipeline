@@ -10,8 +10,8 @@
 #
 # Usage : agp2dna.pl [-options]
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2005-12-20 14:02:11 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2006-01-10 13:53:49 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -50,21 +50,12 @@ GetOptions (
 	    "verbose"     => \$verbose,
 	    "store:s"     => \$store
 	   );
+($test = 1) if ($quicktest);
 
-
-
-# check that -test and -quicktest haven't both been set.  Also if -quicktest is specified, 
-# need to make -test true, so that test mode runs for those steps where -quicktest is meaningless
-if ($test && $quicktest) {
-  die "both -test and -quicktest specified, only one of these is needed\n";
-}
 
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
-  ($test = 1) if ($quicktest);
-  $wormbase->set_test($test);   # set test in the wormbase object
 } else {
-  ($test = 1) if ($quicktest);
   $wormbase = Wormbase->new( -debug   => $debug,
                              -test    => $test,
 			     );
