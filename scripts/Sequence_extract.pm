@@ -65,7 +65,7 @@ sub invoke
     bless $self, $class;
 
     # get the chromosomal sequences
-    my $tace = &tace; # <= hmpf
+    my $tace = $wormbase->tace; # <= hmpf
     my @chromosome = qw( I II III IV V X MtDNA);
     my $seq_file = "$database/CHROMOSOMES/CHROMOSOME_I.dna";
     unless( -e "$seq_file" ) {
