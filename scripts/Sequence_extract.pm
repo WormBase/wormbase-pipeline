@@ -60,7 +60,7 @@ sub invoke
     my ($class,$database,$refresh,$wormbase) = @_;
 
     # inherit from Coords_converter to get all the coord info
-    my $self = Coords_converter->invoke($database,$refresh);
+    my $self = Coords_converter->invoke($database, $refresh, $wormbase);
 
     bless $self, $class;
 
