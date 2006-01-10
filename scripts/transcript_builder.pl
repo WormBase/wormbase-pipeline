@@ -6,8 +6,8 @@
 #
 # Script to make ?Transcript objects
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2005-12-21 14:17:08 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2006-01-10 14:17:34 $
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Getopt::Long;
@@ -91,7 +91,7 @@ mkpath("$transcript_dir") unless -e "$transcript_dir";
 my $coords;
 # write out the transcript objects
 # get coords obj to return clone and coords from chromosomal coords
-$coords = Coords_converter->invoke($database);
+$coords = Coords_converter->invoke($database, 1, $wormbase);
 
 #Load in Feature_data : cDNA associations from COMMON_DATA
 my %feature_data;

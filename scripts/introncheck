@@ -7,7 +7,7 @@
 # Usage: introncheck [-options]
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2005-12-19 13:51:24 $      
+# Last updated on: $Date: 2006-01-10 14:16:10 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -73,7 +73,7 @@ my @chromosomes = ('IV','II','III','I', 'V','X');
 my %confirmed_intron = ();		  
 
 
-our $coords = Coords_converter->invoke($dbdir);         # invoke coordinate parser
+our $coords = Coords_converter->invoke($dbdir, 1, $wormbase);         # invoke coordinate parser
 
 
 
