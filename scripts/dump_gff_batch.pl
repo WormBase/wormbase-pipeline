@@ -77,7 +77,7 @@ foreach my $chrom ( @chromosomes ) {
   else {
     my $err = "$scratch_dir/wormpubGFFdump.$chrom.err";
     my $out = "$scratch_dir/wormpubGFFdump.$chrom.out";
-    my $bsub = "bsub -e $err -o $out \"perl5.6.1 $dumpGFFscript -store $store -database $database -dump_dir $dump_dir -chromosome $chrom";
+    my $bsub = "bsub -e $err -o $out \"perl $dumpGFFscript -store $store -database $database -dump_dir $dump_dir -chromosome $chrom";
     $log->write_to("$bsub\n");
     $wormbase->run_command("$bsub", $log);
   }
