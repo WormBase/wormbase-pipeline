@@ -1,12 +1,11 @@
 #!/usr/local/bin/perl5.8.0 -w
-
 # Author: Chao-Kung Chen
 # Last updated by $Author: mh6 $
-# Last updated on: $Date: 2005-12-20 13:46:59 $ 
+# Last updated on: $Date: 2006-01-10 14:57:13 $ 
 
 use strict;
 use warnings;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Ace;
 use Getopt::Long;
@@ -23,9 +22,8 @@ GetOptions ("help"         => \$help,
 	    "debug=s"      => \$debug,
 	    "test"         => \$test,       # use test build environment
 	    "load"         => \$load,       # load data to autoace
-	    'store=s'	=>\$store
+	    'store=s'	   => \$store
            );
-
 
 ##############################
 # check command line options
