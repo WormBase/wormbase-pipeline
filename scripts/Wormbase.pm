@@ -24,6 +24,7 @@ sub new
       $key =~ s/-//;
       $self->{$key} = $params{$_};
     }
+    $self->{'version'} = 666 if( $self->test);
     $self->establish_paths;
     return $self;
   }
@@ -791,6 +792,7 @@ sub load_to_database {
     die " Couldn't find file named: $file\n";
   }
   my $command = "pparse $file\nsave\nquit\n";
+  my $tace = $self->tace;
 
   open( WRITEDB, "| $tace -tsuser $tsuser $database " ) || die "Couldn't open pipe to database\n";
   print WRITEDB $command;
@@ -821,6 +823,7 @@ sub misc_dynamic{ $self = shift; return $self->{'misc_dynamic'}; }
 sub primaries   { $self = shift; return $self->{'primaries'}; }
 sub acefiles    { $self = shift; return $self->{'acefiles'}; }
 sub transcripts { $self = shift; return $self->{'transcripts'}; }
+sub blat        { $self = shift; return $self->{'blat'}; }
 
 # this can be modified by calling script
 sub common_data {
@@ -896,6 +899,7 @@ sub establish_paths {
   $self->{'gff'}         = $self->chromosomes; #to maintain backwards compatibility 
   $self->{'gff_splits'}  = $self->autoace . "/GFF_SPLITS";
   $self->{'primaries'}   = $self->basedir . "/PRIMARIES";
+  $self->{'blat'}        = $self->autoace . "/BLAT";
 
   $self->{'tace'}   = glob("~wormpub/ACEDB/bin_ALPHA/tace");
   $self->{'giface'} = glob("~wormpub/ACEDB/bin_ALPHA/giface");
@@ -931,6 +935,7 @@ sub establish_paths {
   mkpath( $self->gff_splits )  unless ( -e $self->gff_splits );
   mkpath( $self->primaries )   unless ( -e $self->primaries ); system("chmod -R g+w ".$self->primaries);
   mkpath( $self->acefiles )    unless ( -e $self->acefiles );
+  mkpath( $self->blat )        unless ( -e $self->blat );
 
   system("chmod -R g+w ".$self->autoace);
 
@@ -944,7 +949,7 @@ sub run_script {
   my $store = $self->autoace . "/wormbase.store";
   store( $self, $store );
   $self->run_command( "chmod 775 $store", $log);
-  my $command = "perl5.6.1 $ENV{'CVS_DIR'}/$script -store $store";
+  my $command = "perl $ENV{'CVS_DIR'}/$script -store $store";
   print "$command\n" if $self->test;
   return $self->run_command( "$command", $log );
 }
