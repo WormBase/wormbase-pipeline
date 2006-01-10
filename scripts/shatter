@@ -25,7 +25,7 @@ while (<FILE>) {
     if (/^>(\S+)/) {
 
 	if ($count == $bin_size) {
-	    close OUTPUT if (OUTPUT);
+	    close OUTPUT;
 
 	    $output_count++;
 
