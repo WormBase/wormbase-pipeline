@@ -7,7 +7,7 @@
 # This script calculates interpolated genetic map positions for CDS, Transcripts 
 # and Pseudogenes lying between and outside genetic markers.
 #
-# Last updated on: $Date: 2006-01-10 15:06:10 $
+# Last updated on: $Date: 2006-01-10 15:13:08 $
 # Last updated by: $Author: mh6 $
 
 use strict;
@@ -61,7 +61,7 @@ my $script_dir = "$basedir/scripts/";
 my $tace = $wb->tace;
 
 
-if (!defined @ARGV){system ('perldoc',$0); exit(0)}
+if ($help){system ('perldoc',$0); exit(0)}
 
 # set WS version number
 my $version = $wb->get_wormbase_version;
@@ -131,7 +131,7 @@ if ($map){
 #          and vice verse
 ##############################################################
 
-my $ga = init Geneace();
+my $ga = init Geneace($wb);
 my %Gene_info = $ga -> gene_info($database);
 
 #####################################################################################################
