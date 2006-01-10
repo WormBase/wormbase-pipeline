@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2005-12-16 11:18:54 $
+# Last edited on: $Date: 2006-01-10 14:47:33 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -53,18 +53,19 @@ my $log = Log_files->make_build_log($wormbase);
 
 my $wormpub = $wormbase->wormpub;
 my $EST_dir = "$wormpub/analysis/ESTs";
-my $scriptdir = $ENV{'CVS_DIR'};
 
 $database = $wormbase->autoace unless $database;
-my $blat_dir = "$database/BLAT";
-mkdir $blat_dir unless ( -e $blat_dir );
+my $blat_dir = $wormbase->blat;
 
+#make sure passed type is valid.
 @types = split(/,/,join(',',@types));
-@types = qw( est mrna ncrna ost nematode embl tc1) if ($all or !(@types));
+my @alltypes = qw( est mrna ncrna ost nematode embl tc1 washu nembase );
+foreach my $t(@types) {
+  $log->log_and_die("invalid type passed to $0 : $t\n") unless (grep {$t eq $_} @alltypes);
+}
+@types = @alltypes if ($all or !(@types));
 
 
-# transcriptmasker run to mask ?Feature_data from raw sequences
-# note to krb. This needs bradnamisation to allow a -all flag.
 
 if( $mask ) {
   my $opts = join(" -",@types);
@@ -73,9 +74,12 @@ if( $mask ) {
 
   # copy non-masked sequence type to database BLAT dir
   $log->write_to("copying nematode_ESTs, TC1s and embl_cds to $EST_dir\n");
-  $wormbase->run_command("scp $EST_dir/other_nematode_ESTs $blat_dir/", $log);
-  $wormbase->run_command("scp $EST_dir/elegans_TC1s  $blat_dir/", $log);
-  $wormbase->run_command("scp $EST_dir/elegans_embl_cds $blat_dir/", $log);
+
+  $wormbase->run_command("scp $EST_dir/other_nematode_ESTs      $blat_dir/", $log);
+  $wormbase->run_command("scp $EST_dir/nembase_nematode_contigs $blat_dir/", $log);
+  $wormbase->run_command("scp $EST_dir/washu_nematode_contigs   $blat_dir/", $log);
+  $wormbase->run_command("scp $EST_dir/elegans_TC1s             $blat_dir/", $log);
+  $wormbase->run_command("scp $EST_dir/elegans_embl_cds         $blat_dir/", $log);
 }
 
 
@@ -95,15 +99,15 @@ if ( $run ) {
 if( $postprocess ) {
   # merge psl files and convert to ace format
   $log->write_to("merging PSL files \n");
-  system("cat $blat_dir/PSL/nematodeEST_* | perl -ne 'print if (/^[0-9]/)' > $blat_dir/PSL/nematode_out.psl"); # /d causes compiler warning (?)
-  system("cat $blat_dir/PSL/elegansEST_*  | perl -ne 'print if (/^[0-9]/)' > $blat_dir/PSL/est_out.psl");
+  system("cat $blat_dir/nematodeEST_* | perl -ne 'print if (/^[0-9]/)' > $blat_dir/nematode_out.psl"); # /d causes compiler warning (?)
+  system("cat $blat_dir/elegansEST_*  | perl -ne 'print if (/^[0-9]/)' > $blat_dir/est_out.psl");
 }
 
 if ( $process or $virtual ) {
   foreach my $option (@types ) {
-    $wormbase->run_script("blat_them_all.pl -process -$option", $log) if $process;
-    # also create virtual objects
+    #create virtual objects
     $wormbase->run_script("blat_them_all.pl -virtual -$option", $log) if $virtual;
+    $wormbase->run_script("blat_them_all.pl -process -$option", $log) if $process;
   }
 }
 
@@ -176,6 +180,7 @@ sub dump_dna {
   open (NEW, ">$blat_dir/autoace.fa");
   while (<CHANGE>) {
     chomp;
+    next unless (/\w+/); # remove blank lines acedb puts in at start of seq dumps.
     $sequence = $_;
     $sequence =~ tr/-/n/;
     print NEW "$sequence\n";

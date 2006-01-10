@@ -5,17 +5,19 @@
 # Anthony Rogers
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2005-12-16 11:18:55 $
+# Last edited on: $Date: 2006-01-10 14:47:33 $
  
 
 use strict;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
 use Log_files;
+use Storable;
 
 my ($help, $debug, $verbose, $est, $mrna, $ncrna, $ost, $nematode, $washu, $nembase, $embl, $tc1, $all, $export, $no_bsub);
 my ($blat, $process, $virtual);
+my ($store, $test);
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
@@ -34,7 +36,9 @@ GetOptions ("help"       => \$help,
 	    "no_bsub"    => \$no_bsub,
 	    "blat"       => \$blat,
 	    "process"    => \$process,
-	    "virtual"    => \$virtual
+	    "virtual"    => \$virtual,
+	    "store:s"    => \$store,
+	    "test"       => \$test
 	    );
 
 if( $help ) { system ('perldoc',$0); exit(0);}
@@ -51,19 +55,23 @@ if( $all ) {
     $embl     = 1;
     $tc1      = 1;
 }
+my $wormbase;
+if( $store ) {
+  $wormbase = retrieve( $store ) or croak("cant restore wormbase from $store\n");
+}
+else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+			     -test    => $test,
+			   );
+}
 
-
-my $log = Log_files->make_build_log($debug);
+my $log = Log_files->make_build_log($wormbase);
 my $wormpub = glob("~wormpub");
 
 $log->log_and_die("failed do run blat and process / virtual at same time\n") if ($blat and ( $process or $virtual ));
 
 if ( $blat ) {
     
-    # copy autoace.fa to cbi1
-    $log->write_to("copying autoace.fa\n");
-    system("scp wormsrv2:/wormsrv2/autoace/BLAT/autoace.fa $wormpub/BLAT/autoace.fa") and $log->log_and_die("cant copy autoace.fa\n");
-
     # ESTs (~2 hours) 
     &split_run( "est" ) if $est;
     
@@ -108,11 +116,11 @@ if ( $process or $virtual ) {
 
   # once the jobs have finished and been processed
   # run the main blat job
- 
+
   foreach my $option (@blat_jobs ) {
-      system("$wormpub/scripts/blat_them_all.pl -process -$option");
+      $wormbase->run_script("blat_them_all.pl -process -$option", $log);
       # also create virtual objects
-      system("$wormpub/scripts/blat_them_all.pl -virtual -$option");
+      $wormbase->run_script("blat_them_all.pl -virtual -$option", $log);
   }
 } # end loop for $process or $virtual 
 
@@ -135,9 +143,9 @@ sub run_bsub
     my ($job_name) = $source =~ /_(\w+)/;
     $job_name = "BLAT_"."$job_name";
     my $blat       = "$wormpub/bin.ALPHA/blat";
-    my $autoace_fa = "$wormpub/BLAT/autoace.fa";
+    my $autoace_fa = $wormbase->blat."/autoace.fa";
     my $EST_dir    = "$wormpub/analysis/ESTs";
-    my $output_dir = "$wormpub/BLAT";
+    my $output_dir = $wormbase->blat;
 
     my $error_dir = "$wormpub/BSUB_ERRORS";
     my $error     = "$error_dir/$output.err";
@@ -162,21 +170,21 @@ sub split_run
     my $name_stem;
     my $source_file;
     my $opts;
-    my $ESTdir = "${wormpub}/analysis/ESTs";
+    my $ESTdir = $wormbase->blat;
     my $shattered_dir;
 
     if( $type eq "est" ) {
       $shattered_dir = "shatteredESTs";
       $shatter_tree = "$ESTdir/$shattered_dir";
       $name_stem   = "$shatter_tree/elegansEST";
-      $source_file = "${wormpub}/analysis/ESTs/elegans_ESTs.masked";
+      $source_file = $wormbase->blat."/elegans_ESTs.masked";
       $opts = "";
     }
     elsif ($type eq "nematode" ) {
       $shattered_dir = "shattered_nematode";
       $shatter_tree = "$ESTdir/$shattered_dir";
       $name_stem   = "$shatter_tree/nematodeEST";
-      $source_file = "${wormpub}/analysis/ESTs/other_nematode_ESTs";
+      $source_file = $wormbase->blat."/other_nematode_ESTs";
       $opts        = "-t=dnax -q=dnax"
     }
     else {
@@ -185,7 +193,7 @@ sub split_run
 
     mkdir( $shatter_tree ) unless ( -e $shatter_tree );
 
-    system("perl $ENV{'CVS_DIR'}/shatter $source_file 25000 $name_stem") and $log->log_and_die("cant shatter $source_file : $!\n");
+    $wormbase->run_command("perl $ENV{'CVS_DIR'}/shatter $source_file 25000 $name_stem") and $log->log_and_die("cant shatter $source_file : $!\n");
 
     opendir(DIR,"$shatter_tree");
 

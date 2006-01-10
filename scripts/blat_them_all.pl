@@ -7,8 +7,8 @@
 # Gets sequences ready for blatting, blats sequences, processes blat output, makes confirmed introns
 # and virtual objects to hang the data onto
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2005-12-16 14:34:41 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2006-01-10 14:47:33 $
 
 
 use strict;
@@ -95,9 +95,6 @@ our %word = (
 	     washu    => 'BLAT_WASHU'
 	     );
 
-# set to camace or autoace
-$blat_dir = "$canonical/BLAT" if $camace;
-$dbpath   = "$canonical"      if $camace;
 our $seq  = "$blat_dir/autoace.fa";
 
 # Help pod documentation
@@ -143,7 +140,7 @@ my $data;
 
 
 # Select the correct set of query sequences for blat
-my $query = "$wormpub/analysis/ESTs/";
+my $query = $wormbase->blat."/";
 $query   .= 'elegans_ESTs.masked'  if ($est);      # EST data set
 $query   .= 'elegans_OSTs'         if ($ost);      # OST data set
 $query   .= 'elegans_TC1s'         if ($tc1);      # TC1 data set
@@ -310,19 +307,12 @@ sub dump_dna {
 
   my $command;
 
-  unless ($camace) {
-    $command  = "query find Sequence \"CHROMOSOME*\"\n";
-    $command .= "show -a -f $blat_dir/chromosome.ace\n";
-    $command .= "follow Subsequence\n";
-    $command .= "show -a -f $blat_dir/superlinks.ace\n";
-    $command .= "dna -f $blat_dir/autoace.first\nquit\n";
-  }
-  else {
-    $command  = "query find Sequence \"SUPERLINK*\"\n";
-    $command .= "show -a -f $canonical/BLAT/superlinks.ace\n";
-    $command .= "dna -f $canonical/BLAT/autoace.first\nquit\n";
-  }
-  
+  $command  = "query find Sequence \"CHROMOSOME*\"\n";
+  $command .= "show -a -f $blat_dir/chromosome.ace\n";
+  $command .= "follow Subsequence\n";
+  $command .= "show -a -f $blat_dir/superlinks.ace\n";
+  $command .= "dna -f $blat_dir/autoace.first\nquit\n";
+
   # tace dump chromosomal DNA and superlinks file
   $wormbase->run_command("echo '$command' | $giface $dbpath");
 

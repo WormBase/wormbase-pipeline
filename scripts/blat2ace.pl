@@ -6,8 +6,8 @@
 #
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2005-12-22 10:13:34 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2006-01-10 14:47:33 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -30,7 +30,7 @@ GetOptions (
             "debug=s"    => \$debug,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
-	    "store"      => \$store,
+	    "store:s"    => \$store,
 	    "database:s" => \$database,
             "est"        => \$est,
             "mrna"       => \$mrna,
@@ -72,8 +72,8 @@ my $log = Log_files->make_build_log($wormbase);
 
 # set database paths, default to autoace unless -camace
 my $ace_dir         = $wormbase->autoace;     # AUTOACE DATABASE DIR
-my $blat_dir  = $ace_dir . "/BLAT";
-my $canonical = $wormbase->databases('camace');
+my $blat_dir  = $wormbase->blat;
+my $canonical = $wormbase->database('camace');
 
 if ($camace) {
     $blat_dir  = "$canonical/BLAT";
@@ -165,7 +165,7 @@ $log->write_to($wormbase->runtime.": Start mapping\n\n");
 
 # open input and output filehandles
 open(ACE,  ">$blat_dir/autoace.$type.ace")  or die "Cannot open $blat_dir/autoace.${type}.ace $!\n";
-open(BLAT, "<$blat_dir/PSL/${type}_out.psl")    or die "Cannot open $blat_dir/${type}_out.psl $!\n";
+open(BLAT, "<$blat_dir/${type}_out.psl")    or die "Cannot open $blat_dir/${type}_out.psl $!\n";
 
 # loop through each blat hit
 while (<BLAT>) {
@@ -385,7 +385,7 @@ foreach my $found (sort keys %best) {
 	# produce confirmed introns #
 	#############################
 		if ($intron) {
-		    $log->write_to("Producing confirmed introns\n");
+		  #$log->write_to("Producing confirmed introns\n");
 		    my ($n) = ($virtual =~ /\S+_(\d+)$/);
 		    for (my $y = 1; $y < @{$entry->{'exons'}}; $y++) {
 			my $last   = $y - 1;
