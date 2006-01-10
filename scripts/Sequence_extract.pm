@@ -6,7 +6,7 @@ Sequence_extract
 
 =head1 SYNOPSIS
 
- my $seq_obj      = Sequence_extract->invoke($database, $refresh);
+ my $seq_obj      = Sequence_extract->invoke($database, $refresh, $wormbase);
  my $seq          = "AH6";
  my $sub_sequence = $seq_obj->Sub_sequence($seq,50,100);
 
@@ -50,6 +50,7 @@ use Coords_converter;
   Returns :   ref to self
   Args    :   Database  (optional) - which database to use. Default is current_DB
               refresh   default is NULL - connect to the database and update coordinates
+              wormbase - wormbase object
  Requires:    Database must have CHROMOSOMES directory with dna of each chromosome in CHROMOSOME_*.dna (FASTA format)
 
 =cut
