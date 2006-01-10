@@ -7,9 +7,8 @@
 # This script calculates interpolated genetic map positions for CDS, Transcripts 
 # and Pseudogenes lying between and outside genetic markers.
 #
-# Last updated on: $Date: 2005-12-20 16:47:40 $
+# Last updated on: $Date: 2006-01-10 14:42:38 $
 # Last updated by: $Author: mh6 $
-
 
 use strict;
 use warnings;
@@ -26,13 +25,13 @@ use GENEACE::Geneace;
 my ($diff, $reverse, $database, $gff_location, $help, $debug, $map, $comp, $verbose,$test,$store);
 
 GetOptions ("diff"          => \$diff,
-            "rev|reverse"   => \$reverse,
+            "reverse"       => \$reverse,
 	    "database=s"    => \$database,
 	    "map"           => \$map,
 	    "comp"          => \$comp,
-	    "h|help"        => \$help,
-	    "d|debug"       => \$debug,
-	    "v|verbose"     => \$verbose,
+	    "help"          => \$help,
+	    "debug=s"       => \$debug,
+	    "verbose"       => \$verbose,
 	    "test"          => \$test,
 	    'store=s'	    => \$store
            );
@@ -73,7 +72,7 @@ if($database){
   my $prev_version = $version -1;
   $gff_location = "$basedir/autoace/GFF_SPLITS/WS"."$prev_version";
 }
-else{
+else {
    $database = $wb->autoace;
    $gff_location = "$database/GFF_SPLITS/GFF_SPLITS";
 
@@ -82,13 +81,13 @@ print "\nUsing $database as database path for genetics marker loci\n";
 
 my ($revfile, $diffile);
 
-if ($reverse){
+if ($reverse) {
   $revfile = "$output/reverse_physicals_WS$version.$rundate.$$";
   open(REV, ">$revfile") || die $!;
   system("chmod 777 $revfile");
 }
 
-if ($diff){
+if ($diff) {
   $diffile = "$database/logs/mapping_diff.".$rundate;
   system("chmod 777 $diffile");
   open(DIFF, ">$diffile") || die $!;
@@ -258,7 +257,6 @@ foreach (@gff_files_rna){
     }
   }
 }
-
 
 print "\nParsing pseudogene coords from gff files . . .\n";
 
@@ -800,7 +798,7 @@ else {
 
   my ($jah, $recipients);
   $recipients = "mt3\@sanger.ac.uk, jah\@bioch.ox.ac.uk, gw3\@sanger.ac.uk, mh6\@sanger.ac.uk, ar2\@sanger.ac.uk, pad\@sanger.ac.uk";
-  $recipients = "mt3\@sanger.ac.uk" if $debug;
+  $recipients = "$debug\@sanger.ac.uk" if $debug;
 
   my @rev = `cat $revfile`;
 
