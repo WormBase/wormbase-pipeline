@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2005-12-20 12:17:43 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2006-01-10 14:00:02 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -25,7 +25,7 @@ my ( $make_wormpep, $finish_wormpep );
 my ( $run_blat,     $finish_blat );
 my ( $gff_dump,     $processGFF, $gff_split );
 my $gene_span;
-my ( $load, $tsuser, $map );
+my ( $load, $tsuser, $map, $transcripts );
 
 GetOptions(
     'debug:s'        => \$debug,
@@ -46,7 +46,8 @@ GetOptions(
     'run_blat'       => \$run_blat,
     'finish_blat'    => \$finish_blat,
     'tsuser=s'       => \$tsuser,
-    'map'            => \$map
+    'map'            => \$map,
+    'transcripts'    => \$transcripts
 );
 
 my $wormbase = Wormbase->new(
@@ -62,11 +63,12 @@ $wormbase->run_script( "initiate_build.pl",                 $log ) if defined($i
 $wormbase->run_script( 'prepare_primary_databases.pl',      $log ) if $prepare_databases;
 $wormbase->run_script( 'make_acefiles.pl',                  $log ) if $acefile;
 $wormbase->run_script( 'make_autoace.pl',                   $log ) if $build;
-$wormbase->run_script( "build_dumpGFF.pl -stage $gff_dump", $log ) if $gff_dump;
-
 #//--------------------------- batch job submission -------------------------//
+$wormbase->run_script( "build_dumpGFF.pl -stage $gff_dump", $log ) if $gff_dump;
 $wormbase->run_script( "processGFF.pl -$processGFF", $log ) if $processGFF;    #clone_acc
 &first_dumps if $first_dumps;
+
+
 $wormbase->run_script( 'make_wormpep.pl -initial', $log ) if $make_wormpep;
 
 #########   BLAT  ############
@@ -74,7 +76,7 @@ $wormbase->run_script( 'BLAT_controller.pl -mask -dump -run', $log ) if $run_bla
 
 #//--------------------------- batch job submission -------------------------//
 
-$wormbase->run_script( 'BLAT_controller.pl -process -postprocess -ace -load', $log ) if $finish_blat;
+$wormbase->run_script( 'BLAT_controller.pl -virtual -process -postprocess -ace -load', $log ) if $finish_blat;
 
 # mapping part
 &map_features if $map;
@@ -98,7 +100,7 @@ exit(0);
 sub first_dumps {
     $wormbase->run_script( "chromosome_dump.pl --dna --composition", $log );
     $wormbase->run_script( "make_agp_file.pl",                       $log );
-    $wormbase->run_script( "agp2dna.pl",                             $log );
+    $wormbase->run_script( "agp2dna.pl",                             $log ); #dependant on processGFF producing clone_acc files.
 
     my $agp_errors = 0;
 
@@ -142,4 +144,3 @@ sub map_features {
 }
 
 #__ end map_features __#
-
