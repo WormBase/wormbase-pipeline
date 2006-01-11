@@ -8,8 +8,8 @@
 # Uses Ant's Feature_mapper.pm module
 #
 #
-# Last updated by: $Author: mh6 $                      # These lines will get filled in by cvs and helps us
-# Last updated on: $Date: 2005-12-20 14:08:30 $        # quickly see when script was last changed and by whom
+# Last updated by: $Author: ar2 $                      # These lines will get filled in by cvs and helps us
+# Last updated on: $Date: 2006-01-11 14:33:15 $        # quickly see when script was last changed and by whom
 
 
 $|=1;
@@ -33,10 +33,9 @@ my $polyA_site;              #  polyA_site
 my $polyA_signal;            #  polyA_signal
 my $binding_site;            #  binding_site feature data.
 my $adhoc;                   # Run against a file, output to screen
-my $build;                   # specify build mode, will write to acefiles and then load data
 my $start;
 my $stop;
-my $maintainers = "All";                 # log file recipients
+my $test;
 
 GetOptions (
 	    "all"          => \$all,
@@ -46,30 +45,20 @@ GetOptions (
 	    "polyA_signal" => \$polyA_signal,
 	    "binding_site" => \$binding_site,
 	    "adhoc=s"      => \$adhoc,
-	    "build"        => \$build,
             "debug=s"      => \$debug,
             "verbose"      => \$verbose,
-	    "build"        => \$build,
 	    "help"         => \$help,
-    	    'store=s'      => \$store
+    	    'store=s'      => \$store,
+	    'test'         => \$test
 		);
 
 # Help pod if needed
-&usage(0) if ($help);
+exec ('perldoc',$0) if ($help);
 
 # recreate configuration  
 my $wb;
 if ($store) { $wb = Storable::retrieve($store) or croak("cant restore wormbase from $store\n") }
 else { $wb = Wormbase->new( -debug => $debug,) }
-
-# Variables Part II (depending on $wb) 
-$debug = $wb->debug if $wb->debug;    # Debug mode, output only goes to one user
-
-
-# Who to send the mail to?
-if ($debug) {
-    $maintainers = $debug;
-}
 
 my $log = Log_files->make_build_log($wb);
 
@@ -77,17 +66,17 @@ my $log = Log_files->make_build_log($wb);
 # ACEDB and databases #
 #######################
 
-my $tace   = $wb->tace; 
+my $tace   = $wb->tace;
 my $dbdir  = $wb->autoace;
-my $outdir = "$dbdir/acefiles";
-$log->write_to("-build specified, writing to /wormsrv2/autoace/acefiles\n\n") if ($build);
+my $outdir = $wb->acefiles;
+$log->write_to("writing to ".$wb->acefiles."\n\n");
 
 # WS version for output files
 our ($WS_version) = $wb->get_wormbase_version_name;
 
 # coordinates for Feature_mapper.pm module
 
-my $mapper      = Feature_mapper->new($dbdir);
+my $mapper      = Feature_mapper->new($dbdir,undef, $wb);
 
 # sanity checks for the length of feature types
 my %sanity = (
@@ -115,13 +104,7 @@ foreach my $query (@features2map) {
   $log->write_to("Mapping $query features\n");
 
   # open output files
-  # use /tmp if not in build mode
-  if($build){
-    open (OUTPUT, ">$outdir/feature_${query}.ace") or die "Failed to open output file\n" unless ($adhoc);
-  }
-  else{
-    open (OUTPUT, ">/tmp/feature_${query}.ace") or die "Failed to open output file\n" unless ($adhoc);
-  }
+  open (OUTPUT, ">$outdir/feature_${query}.ace") or die "Failed to open output file\n" unless ($adhoc);
 
   # start tace session for input data (or find file for adhoc run)
   if ($adhoc) {
@@ -183,16 +166,7 @@ foreach my $query (@features2map) {
   }
   close TACE;
 
-  # load data to autoace if -load specified
-  if($build){
-    
-    my $command = "autoace_builder.pl -load $outdir/feature_${query}.ace -tsuser feature_${query}_data";
- 
-    my $status = system($command);
-    if(($status >>8) != 0){
-      $log->write_to("ERROR: loading failed \$\? = $status\n");
-    } 
-  }
+  $wb->load_to_database($wb->autoace,"$outdir/feature_${query}.ace","${feature}_mapping");
 }
 
 
@@ -203,26 +177,8 @@ close OUTPUT unless ($adhoc);
 # hasta luego #
 ###############
 
-$log->mail("$maintainers","BUILD REPORT: $0");
+$log->mail();
 exit(0);
-
-
-#######################################################################
-# Help and error trap outputs                                         #
-#######################################################################
-
-sub usage {
-    my $error = shift;
-
-    if ($error == 1) {
-    }
-    elsif ($error == 0) {
-        # Normal help menu
-        exec ('perldoc',$0);
-    }
-}
-
-
 
 __END__
 
@@ -277,7 +233,7 @@ Queries current_DB rather than autoace
 =item -build
 
 Assumes you are building, so therefore loads data into autoace and writes acefiles to
-/wormsrv2/autoace/acefiles
+autoace/acefiles
 =item -store <storefile>
 
 specifies an storable file with saved options
