@@ -6,8 +6,8 @@
 #
 # by Gary Williams
 #
-# Last updated by: $Author: gw3 $                      
-# Last updated on: $Date: 2006-01-10 14:09:58 $        
+# Last updated by: $Author: ar2 $                      
+# Last updated on: $Date: 2006-01-12 12:33:03 $        
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -28,7 +28,7 @@ use Sequence_extract;
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
 my ($output, $proximity, $side, $operons, $dbdir);
-$output = "";       		# file to write output to
+#$output = "";       		# file to write output to
 $proximity = 0;              # region around gene to restrict output to (<= 0 write complete intergenic region)
 $side = "both";	        # either "both", "5", "3" side of gene to output
 $operons = "include";	# either "include", "only", "no" intergenic regions inside operons
@@ -56,8 +56,8 @@ if ( $store ) {
 # Display help if required
 &usage("Help") if ($help);
 
-$dbdir          = $test ? $wormbase->database("current") : $wormbase->autoace unless $dbdir; # Database path
-my $gffdir      = "${dbdir}/CHROMOSOMES/";        # GFF directory
+$dbdir          = $wormbase->test ? $wormbase->database("current") : $wormbase->autoace unless $dbdir; # Database path
+my $gffdir      = $wormbase->gff_splits;        # GFF directory
 my @chromosomes = qw( I II III IV V X );                            # chromosomes
 
 
@@ -99,8 +99,9 @@ my $gene_name;			# name of gene or operon
 my $no_sequences = 0;		# count number of sequences written out
 
 
-my $seq_obj = Sequence_extract->invoke($dbdir, 1, $wormbase);
+my $seq_obj = Sequence_extract->invoke($dbdir, undef, $wormbase);
 
+$output = $wormbase->chromosomes."/intergenic_sequences.dna";
 open (OUT, ">$output") || die "Failed to open output file $output";
 
 foreach my $chromosome (@chromosomes) {
@@ -117,7 +118,7 @@ foreach my $chromosome (@chromosomes) {
   # CHROMOSOME_X    gene    gene    1316    1935    .       +       .       Gene "WBGene00008351"
 
   print "Loop through Gene GFF file CHROMOSOME_${chromosome}\n" if ($verbose);
-  open (GFF, "< $gffdir/CHROMOSOME_${chromosome}.gff") || die "Failed to open GFF file: $gffdir/CHROMOSOME_${chromosome}.gff\n\n";
+  open (GFF, "< $gffdir/CHROMOSOME_${chromosome}_WBgene.gff") || die "Failed to open GFF file: $gffdir/CHROMOSOME_${chromosome}_WBgene.gff\n\n";
   while (<GFF>) {
     chomp;
     s/^\#.*//;
@@ -343,6 +344,8 @@ $log->write_to("Wrote $no_sequences sequences\n");
 
 print "Wrote $no_sequences sequences\n";
 
+$log->write_to("gzipping $output\n");
+$wormbase->run_command("gzip $output", $log);
 
 $log->mail();
 
