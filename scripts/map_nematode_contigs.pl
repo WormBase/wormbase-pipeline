@@ -8,7 +8,7 @@
 # of these two data sets for their web sites to point back at us
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2006-01-03 14:29:22 $
+# Last edited on: $Date: 2006-01-12 11:30:31 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -75,7 +75,7 @@ my $log = Log_files->make_build_log($wormbase);
 ##########################
 
 my $type;
-my $gffdir = $wormbase->gff;         # AUTOACE GFF
+my $gffdir = $wormbase->gff_splits;         # AUTOACE GFF_SPLIT
 
 if ($washu || $all) {
   $type = "WASHU";
