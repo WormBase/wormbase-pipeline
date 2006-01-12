@@ -6,8 +6,8 @@
 #
 # Selectively dump GFF for certain acedb methods
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-01-06 11:36:31 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2006-01-12 10:20:24 $
 
 
 use lib $ENV{CVS_DIR};
@@ -99,7 +99,7 @@ sub check_options {
   unless($list or @clones ) {
 
     # -chromosomes
-    my %chroms = qw(I 1 II 1 III 1 IV 1 V 1 X 1);
+    my %chroms = qw(I 1 II 1 III 1 IV 1 V 1 X 1 MtDNA 1);
     my @chrom_keys = keys %chroms;
     unless (@chromosomes ) {
       @sequences= map("CHROMOSOME_"."$_",@chrom_keys);
