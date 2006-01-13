@@ -7,7 +7,7 @@
 # Creates SMapped Gene spans for Gene objects
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-01-12 12:18:45 $
+# Last edited on: $Date: 2006-01-13 09:54:50 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -17,7 +17,7 @@ use Getopt::Long;
 use Log_files;
 use Storable;
 
-my ($database, $test, $store, $gff, $no_ace, $debug, $gff_file, $chromosome, $prepare, );
+my ($database, $test, $store, $gff, $no_ace, $debug, $gff_file, $chromosome, $prepare,$no_gff );
 
 GetOptions (
 	    'database=s'   => \$database,
@@ -28,7 +28,8 @@ GetOptions (
 	    'debug=s'      => \$debug,
 	    'gff_file=s'   => \$gff_file,
 	    'chromosome=s' => \$chromosome,
-	    'prepare'      => \$prepare
+	    'prepare'      => \$prepare,
+	    'no_gff'       => \$no_gff
 	   );
 
 my $wormbase;
@@ -160,6 +161,8 @@ if ( $prepare ) {
     undef $gff_file;
   }
 }
+
+$wormbase->run_script("dump_gff_batch.pl -database ".$wormbase->autoace." -methods gene -dump_dir ".$wormbase->gff_splits,$log) unless $no_gff;
 $log->mail;
 
 exit(0);
