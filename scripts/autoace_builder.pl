@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-01-10 14:00:02 $
+# Last edited on: $Date: 2006-01-13 09:56:50 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -18,6 +18,7 @@ use Getopt::Long;
 use File::Copy;
 use Coords_converter;
 use Log_files;
+use Storable;
 
 my ( $debug, $test, $database );
 my ( $initiate, $prepare_databases, $acefile, $build, $first_dumps );
@@ -25,7 +26,7 @@ my ( $make_wormpep, $finish_wormpep );
 my ( $run_blat,     $finish_blat );
 my ( $gff_dump,     $processGFF, $gff_split );
 my $gene_span;
-my ( $load, $tsuser, $map, $transcripts );
+my ( $load, $tsuser, $map_features, $map, $transcripts, $intergenic, $data_sets);
 
 GetOptions(
     'debug:s'        => \$debug,
@@ -47,7 +48,11 @@ GetOptions(
     'finish_blat'    => \$finish_blat,
     'tsuser=s'       => \$tsuser,
     'map'            => \$map,
-    'transcripts'    => \$transcripts
+    'map_features'   => \$map_features,
+    'transcripts'    => \$transcripts,
+    'intergenic'     => \$intergenic,
+    'nem_contig'     => \$nem_contigs,
+    'data_sets'      => \$data_sets
 );
 
 my $wormbase = Wormbase->new(
@@ -63,26 +68,32 @@ $wormbase->run_script( "initiate_build.pl",                 $log ) if defined($i
 $wormbase->run_script( 'prepare_primary_databases.pl',      $log ) if $prepare_databases;
 $wormbase->run_script( 'make_acefiles.pl',                  $log ) if $acefile;
 $wormbase->run_script( 'make_autoace.pl',                   $log ) if $build;
+
 #//--------------------------- batch job submission -------------------------//
 $wormbase->run_script( "build_dumpGFF.pl -stage $gff_dump", $log ) if $gff_dump;
-$wormbase->run_script( "processGFF.pl -$processGFF", $log ) if $processGFF;    #clone_acc
-&first_dumps if $first_dumps;
+$wormbase->run_script( "processGFF.pl -$processGFF",        $log ) if $processGFF;    #clone_acc
+&first_dumps                                                       if $first_dumps;
+$wormbase->run_script( 'make_wormpep.pl -initial',          $log ) if $make_wormpep;
+$wormbase->run_script( 'map_features.pl -all',              $log ) if $map_features;
 
-
-$wormbase->run_script( 'make_wormpep.pl -initial', $log ) if $make_wormpep;
 
 #########   BLAT  ############
 $wormbase->run_script( 'BLAT_controller.pl -mask -dump -run', $log ) if $run_blat;
-
 #//--------------------------- batch job submission -------------------------//
-
 $wormbase->run_script( 'BLAT_controller.pl -virtual -process -postprocess -ace -load', $log ) if $finish_blat;
 
-# mapping part
-&map_features if $map;
+# $processGFF; (blat) is run chronologically here but previous call will operate
+$wormbase->run_script( 'batch_transcript_build.pl', $log) if $transcripts;
+#requires GFF dump of transcripts (done within script if all goes well)
 
-######## WBGene spans ########
-$wormbase->run_script( 'WBGene_span.pl -prepare', $log ) if $gene_span;
+$wormbase->run_script( 'WBGene_span.pl'                   , $log ) if $gene_span;
+$wormbase->run_script( 'map_nematode_contigs.pl -all'     , $log ) if $nem_contigs;
+$wormbase->run_script( 'find_intergenic.pl'               , $log ) if $intergenic;
+
+$wormbase->run_script( 'load_data_sets.pl -homol -briggsae -misc', $log) if $data_sets;
+
+####### mapping part ##########
+&map_features if $map;
 
 if ($load) {
     $log->("loading $load to $database\n");
@@ -92,6 +103,18 @@ if ($load) {
 
 $log->mail;
 exit(0);
+
+
+
+
+
+
+
+
+
+
+
+
 
 ############################
 #       SUBROUTINES        #
@@ -117,9 +140,6 @@ sub first_dumps {
 }
 
 sub map_features {
-
-    # features
-    $wormbase->run_script( 'map_features.pl -all -build', $log );
 
     # PCR products
     $wormbase->run_script( 'map_PCR_products.pl', $log );
