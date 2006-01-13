@@ -1,14 +1,16 @@
 #!/usr/local/ensembl/bin/perl -w
 
 # Keith Bradnam (krb@sanger.ac.uk)
-# Finds and removes duplicate clones in worm01 database (duplicates arise 
+# Finds and removes duplicate clones in a database (duplicates arise 
 # from new sequence versions of clones being added to the database)
 # script removes redundant entries from clone, contig, and InputIdAnalysis
 
-
+use lib $ENV{'CVS_DIR'};
 use strict;
 use DBI;
 use Getopt::Long;
+use Wormbase;
+use Storable;
 
 
 ####################################################################
@@ -19,13 +21,30 @@ my $dbhost;
 my $dbuser;
 my $dbname;
 my $dbpass;
+my ($store, $test, $debug);
 
 GetOptions(
-    "dbname=s"    => \$dbname,
-    "dbuser=s"    => \$dbuser,
-    "dbhost=s"    => \$dbhost,
-    "dbpass=s"    => \$dbpass
+	   "dbname=s"    => \$dbname,
+	   "dbuser=s"    => \$dbuser,
+	   "dbhost=s"    => \$dbhost,
+	   "dbpass=s"    => \$dbpass,
+	   "store:s"     => \$store,
+	   "debug:s"     => \$debug,
+	   "test"        => \$test
 	  );
+
+my $wormbase;
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+			     -farm    => '1'
+			     );
+}
+
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
 
 $dbhost = "ecs1f" unless $dbhost;
 $dbuser = "wormadmin" unless $dbuser;
@@ -36,8 +55,9 @@ $dbpass = "worms" unless $dbpass;
 # connect to the Mysql database
 ####################################################################
 
+$log->write_to("connecting to DBI:mysql:$dbname:$dbhost as $dbuser\n");
 my $dbh = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
-    || die "cannot connect to db, $DBI::errstr";
+    || $log->log_and_die("cannot connect to db, $DBI::errstr\n");
 
 my $clone_table     = $dbh->prepare (q{ SELECT clone_id, embl_acc, embl_version FROM clone 
 				       ORDER BY embl_acc,embl_version} );
@@ -95,7 +115,7 @@ while (@row = $clone_table->fetchrow_array) {
    
 }
 
-print "\n$counter entries deleted in worm01 database.\n";
+$log->write_to("\n$counter entries deleted in $dbname database.\n");
 
 
 # Close active database handles
@@ -107,7 +127,10 @@ $delete_contig->finish;
 $delete_dna->finish;
 $delete_inputId->finish;
 
+$log->write_to("Disconnecting\n");
 $dbh->disconnect;
 
+$log->mail;
 
 exit 0;
+

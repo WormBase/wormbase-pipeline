@@ -71,6 +71,7 @@ my($id, $acc, $ver, $phase, $contigs);
 my($agp, $single, $seqio, $seq, $fasta, $strict);
 my($dbname, $dbhost, $dbuser, $dbpass);
 my($help, $info, $write, $replace, $verbose);
+my($store, $test, $debug);
 
 
 $Getopt::Long::autoabbrev = 0;	# personal preference :)
@@ -88,7 +89,10 @@ my $ok = &GetOptions(
 		     "write"     => \$write,
 		     "v"         => \$verbose,
 		     "fasta=s"   => \$fasta,
-		     "strict"    => \$strict
+		     "strict"    => \$strict,
+		     "store:s"   => \$store,
+		     "test"      => \$test,
+		     "debug:s"   => \$debug
 		    );
 
 if ($help || not $ok) {
@@ -98,7 +102,17 @@ if ($help || not $ok) {
   exec("perldoc $0");
 }
 
-my $log = Log_files->make_build_log;
+my $wormbase;
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+			     -farm    => '1'
+			     );
+}
+
+my $log = Log_files->make_build_log($wormbase);
 
 unless ($dbname && $dbuser && $dbhost) {
   print STDERR "Must specify all DB parameters\n";
@@ -155,18 +169,17 @@ my $submitted_analysis = $analysis_adaptor->fetch_by_dbID(1); #1 is dummy analys
 my %seqs;
 my %acc2clone;
 
-&FetchData('accession2clone',\%acc2clone);
+$log->write_to("fetching acc2clone data\n");
+$wormbase->FetchData('accession2clone',\%acc2clone);
 
 if ($fasta) {
+  $log->write_to("Reading $fasta file \n");
   open (FH , "$fasta") || die "cannot open file $fasta";
   %seqs = read_fasta (\*FH);
 }
 
 
-open (AGP, "< $agp") or do {
-  $log->write_to("Cant open AGP file $agp");
-  $log->log_and_die("Can't open AGP file $agp");
-};
+open (AGP, "< $agp") or $log->log_and_die("Can't open AGP file $agp");
 while (<AGP>) {
   chomp;
   my @fields = split;
@@ -185,8 +198,7 @@ while (<AGP>) {
     print "Found $sv; skipping\n";
     next;
   } elsif ( &update_existing_clone($clone_adaptor, $sv) == 1) {
-    print "Found old version of $sv; updated\n";
-    $log->write_to("Updated $sv\n");
+    $log->write_to("Found old version of $sv; updated\n");
     next;
   }
 
@@ -203,7 +215,7 @@ while (<AGP>) {
   } else {
     $seq = fetch_seq($acc, $ver);
     unless ($seq) {
-      print "Error fetching $sv\n";
+      $log->write_to("Error fetching $sv\n");
       next;
     }
   }
@@ -252,7 +264,6 @@ while (<AGP>) {
       $clone_adaptor->store($clone);
     };
     if ($@) {
-      print "Error writing clone $sv\n"; 
       $log->write_to("Error writing clone $sv\n");
     } else {
       $sic->store_input_id_analysis($contig->name,$submitted_analysis) ;

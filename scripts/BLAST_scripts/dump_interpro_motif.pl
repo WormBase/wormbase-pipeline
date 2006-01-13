@@ -4,34 +4,27 @@
 #
 # Dumps InterPro protein motifs from ensembl mysql (protein) database to an ace file
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2005-10-14 15:58:44 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2006-01-13 14:16:46 $
 
 
 use strict;
-use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Carp;
 use IO::Handle;
 use Getopt::Long;
 use Cwd;
-#use Ace;
+use Storable;
 use DBI;
-
-my $maintainers = "All";
- 
-my $rundate = &rundate;
-my $runtime = &runtime;
- 
 
 my $WPver; 
 my $database; 
 my $mysql; 
 my $method; 
-my $test;
-my $debug; 
 my $verbose; 
 my $help;
+my ($store, $test, $debug);
 
 
 
@@ -42,18 +35,23 @@ GetOptions("debug:s"    => \$debug,
 	   "verbose"    => \$verbose,
 	   "test"       => \$test,
 	   "help"       => \$help,
+	   "store:s"    => \$store,
 	  );
 
 # Display help if required
 &usage("Help") if ($help);
 
-my $log = Log_files->make_build_log($debug);
-
-# Use debug mode?
-if ($debug){
-  print "DEBUG = \"$debug\"\n\n";
-  ($maintainers = $debug . '\@sanger.ac.uk');
+my $wormbase;
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+			     -farm    => '1'
+			     );
 }
+
+my $log = Log_files->make_build_log($wormbase);
 
 if ($test) {
   $database = "worm_peptest";
@@ -121,11 +119,11 @@ sub now {
 }
 
 # create output files
-my $dump_dir = "/acari/work2a/wormpipe/dumps";
+my $dump_dir = $wormbase->dump_dir;
 if ($test) {
   $dump_dir = ".";
 }
-open(ACE,">$dump_dir/".$dbname."_interpro_motif_info.ace") || die "cannot create ace file:$!\n";
+open(ACE,">$dump_dir/".$dbname."_interpro_motif_info.ace") || $log->log_and_die("cannot create ace file:$!\n");
 
 # make the ACE filehandle line-buffered
 my $old_fh = select(ACE);
@@ -133,21 +131,21 @@ $| = 1;
 select($old_fh);
 
 
-$log->write_to("DUMPing protein motif data from ".$dbname." to ace [".&now."]\n");
-print "DUMPing protein motif data from ".$dbname." to ace [".&now."]\n" if ($verbose);
+$log->write_to("DUMPing protein motif data from ".$dbname." to ace\n");
+print "DUMPing protein motif data from ".$dbname." to ace\n" if ($verbose);
 $log->write_to("----------------------------------------------------\n\n");
 print "----------------------------------------------------\n\n" if ($verbose);
 
 # connect to the mysql database
-$log->write_to("connect to the mysql database $dbname on $dbhost as $dbuser [".&now."]\n\n");
-print "connect to the mysql database $dbname on $dbhost as $dbuser [".&now."]\n\n" if ($verbose);
+$log->write_to("connect to the mysql database $dbname on $dbhost as $dbuser\n\n");
+print "connect to the mysql database $dbname on $dbhost as $dbuser\n\n" if ($verbose);
 my $dbh = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
-    || die "cannot connect to db, $DBI::errstr";
+    || $log->log_and_die("cannot connect to db, $DBI::errstr");
 
 # get the mapping of method 2 analysis id
 my %method2analysis;
-$log->write_to("get mapping of method to analysis id [".&now."]:\n");
-print "get mapping of method to analysis id [".&now."]:\n" if ($verbose);
+$log->write_to("get mapping of method to analysis id \n");
+print "get mapping of method to analysis id \n" if ($verbose);
 my $sth = $dbh->prepare ( q{ SELECT analysis_id
                                FROM analysis
                               WHERE logic_name = ?
@@ -171,7 +169,7 @@ my $sth_f = $dbh->prepare ( q{ SELECT protein_id, seq_start, seq_end, hit_id, hi
 # get the motifs
 my %motifs;
 foreach my $method (@methods) {
-  #$log->write_to("processing $method\n");
+  $log->write_to("processing $method\n");
   print "processing $method: $method2analysis{$method}\n" if ($verbose);
   $sth_f->execute ($method2analysis{$method});
   my $ref = $sth_f->fetchall_arrayref;
@@ -334,7 +332,7 @@ foreach my $domains (sort {$a <=> $b} keys %domain_counts) {
 $log->write_to("\n\nEnd of InterPro Motif dump\n");
 print "\nEnd of InterPro Motif dump\n";
 
-$log->mail("$maintainers","BUILD REPORT: $0");
+$log->mail;
 
 exit(0);
 

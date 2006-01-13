@@ -5,20 +5,36 @@
 # Dumps protein motifs from ensembl mysql (protein) database to an ace file
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-03-03 13:00:36 $
+# Last updated on: $Date: 2006-01-13 14:16:46 $
 
 
 use strict;
 use DBI;
 use Getopt::Long;
 
-my ($debug, $WPver, $database, $mysql, $method);
+my ($WPver, $database, $mysql, $method);
+my ($store, $test, $debug);
 
-GetOptions("debug:s"    => \$debug,
+GetOptions(
 	   "database:s" => \$database,
 	   "mysql"      => \$mysql,
-	   "method=s"   => \$method
+	   "method=s"   => \$method,
+	   "store:s"   => \$store,
+	   "test"      => \$test,
+	   "debug:s"   => \$debug
 	  );
+
+my $wormbase;
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+			     -farm    => '1'
+			     );
+}
+
+my $log = Log_files->make_build_log($wormbase);
 
 # define the names of the methods to be dumped
 my @methods;
@@ -27,7 +43,7 @@ if ($method ) {
 }else{
   @methods= qw(ncoils seg signalp tmhmm hmmpfam);
 }
-
+$log->write_to("Dumping methods".@methods."\n");
 
 # mysql database parameters
 my $dbhost = "ecs1f";
@@ -44,9 +60,8 @@ sub now {
 }
 
 # create output files
-my $dump_dir = "/acari/work2a/wormpipe/dumps";
+my $dump_dir = $wormbase->dump_dir;
 open(ACE,">$dump_dir/".$dbname."_motif_info.ace") || die "cannot create ace file:$!\n";
-
 open(LOG,">$dump_dir/".$dbname."_motif_info.log") || die "cannot create log file:$!\n";
 
 # make the LOG filehandle line-buffered
@@ -59,13 +74,12 @@ $| = 1;
 select($old_fh);
 
 
-print LOG "DUMPing protein motif data from ".$dbname." to ace [".&now."]\n";
-print LOG "---------------------------------------------------------------\n\n";
+$log->write_to("DUMPing protein motif data from ".$dbname." to ace\n---------------------------------------------------------------\n\n");
 
 # connect to the mysql database
 print LOG "connect to the mysql database $dbname on $dbhost as $dbuser [".&now."]\n\n";
 my $dbh = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
-    || die "cannot connect to db, $DBI::errstr";
+    || $log->log_and_die("cannot connect to db, $DBI::errstr\n");
 
 # get the mapping of method 2 analysis id
 my %method2analysis;
@@ -75,11 +89,11 @@ my $sth = $dbh->prepare ( q{ SELECT analysis_id
                               WHERE program = ?
                            } );
 
-foreach my $method (@methods) {
-    $sth->execute ($method);
+foreach my $meth (@methods) {
+    $sth->execute ($meth);
     (my $anal) = $sth->fetchrow_array;
-    $method2analysis{$method} = $anal;
-    print LOG "$method  $anal\n";
+    $method2analysis{$meth} = $anal;
+    $log->write_to("$meth  $anal\n");
 }
 
 # prepare the sql querie
@@ -91,24 +105,25 @@ my $sth_f = $dbh->prepare ( q{ SELECT protein_id, seq_start, seq_end, hit_id, hi
 # get the motifs
 my %motifs;
 my %pfams;
-foreach my $method (@methods) {
-    print LOG "processing $method\n";
-    $sth_f->execute ($method2analysis{$method});
-    my $ref = $sth_f->fetchall_arrayref;
-    foreach my $aref (@$ref) {
-        my ($prot, $start, $end, $hid, $hstart, $hend, $score) = @$aref;
-        if ($method eq "hmmpfam") {
-	  if( $hid =~ /(\w+)\.\d+/ ) {
-	    $hid = $1;
-	  }
-	  my $line = "Motif_homol \"PFAM:$hid\" \"pfam\" $score $start $end $hstart $hend";
-	  push (@{$motifs{$prot}} , $line);
-	}
-        else {
-            my $line = "Feature \"$method\" $start $end $score";
-            push (@{$motifs{$prot}} , $line);
-	}
+foreach my $meth (@methods) {
+  $log->write_to("processing $meth\n");
+  $sth_f->execute ($method2analysis{$meth});
+  my $ref = $sth_f->fetchall_arrayref;
+  foreach my $aref (@$ref) {
+    my ($prot, $start, $end, $hid, $hstart, $hend, $score) = @$aref;
+    my $line;
+    if ($meth eq "hmmpfam") {
+      if( $hid =~ /(\w+)\.\d+/ ) {
+	$hid = $1;
+      }
+       $line = "Motif_homol \"PFAM:$hid\" \"pfam\" $score $start $end $hstart $hend";
+      push (@{$motifs{$prot}} , $line);
     }
+    else {
+      $line = "Feature \"$method\" $start $end $score";
+      push (@{$motifs{$prot}} , $line);
+    }
+  }
 }
 
 # print ace file
@@ -131,7 +146,8 @@ $dbh->disconnect;
 
 close ACE;
 
-print LOG "\nEnd of Motif dump\n";
+$log->write_to("\nEnd of Motif dump\n");
 print "\nEnd of Motif dump\n";
-close LOG;
+
+$log->mail;
 exit(0);

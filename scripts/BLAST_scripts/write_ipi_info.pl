@@ -9,20 +9,34 @@ my $verbose;
 my $list_all;
 my $output;
 my $species;
+my ($store, $test, $debug);
 
-GetOptions ( "old"     => \$old,
-	     "verbose" => \$verbose,
-	     "list=s"  => \$list_all,
+GetOptions ( "old"       => \$old,
+	     "verbose"   => \$verbose,
+	     "list=s"    => \$list_all,
 	     "output=s"  => \$output,
-	     "species=s" => \$species
+	     "species=s" => \$species,
+	     "store:s"   => \$store,
+	     "test"      => \$test,
+	     "debug:s"   => \$debug
 	   );
 
+my $wormbase;
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+			     -farm    => '1'
+			     );
+}
 
-my $wormpipe_dump = "/acari/work2a/wormpipe/dumps";
+my $log = Log_files->make_build_log($wormbase);
 
-my $acc2db = "$wormpipe_dump/acc2db.dbm";
-my $desc = "$wormpipe_dump/desc.dbm";
-my $peptide = "$wormpipe_dump/peptide.dbm";
+my $wormpipe_dump = $wormbase->dump_dir;
+my $acc2db   = "$wormpipe_dump/acc2db.dbm";
+my $desc     = "$wormpipe_dump/desc.dbm";
+my $peptide  = "$wormpipe_dump/peptide.dbm";
 my $database = "$wormpipe_dump/databases.dbm";
 
 my @blastp_databases = qw( worm_pep worm_brigpep );
@@ -40,14 +54,14 @@ system("cat $ipi_hits_files | sort -u > $list_all");
 
 
 unless (-s "$acc2db" and -s "$desc"  and -s "$peptide") {
-  die "problem with the dbm files - expecting :\n$acc2db\n$desc\n$peptide\n\n";
+  $log->log_and_die("problem with the dbm files - expecting :\n$acc2db\n$desc\n$peptide\n\n");
 }
 
 # These databases are written by parse_SWTREns_proteins.pl whenever a new data set is used
-dbmopen my %ACC2DB, "$acc2db", 0666 or die "cannot open $acc2db\n";
-dbmopen my %DESC, "$desc", 0666 or die "cannot open DBM file $desc\n";
-dbmopen my %PEPTIDE, "$peptide", 0666 or die "cant open DBM file $peptide\n";
-dbmopen my %DATABASE, "$database", 0666 or die "cant open DBM file $database\n";
+dbmopen my %ACC2DB, "$acc2db",     0666 or $log->log_and_die("cannot open $acc2db\n");
+dbmopen my %DESC, "$desc",         0666 or $log->log_and_die("cannot open DBM file $desc\n");
+dbmopen my %PEPTIDE, "$peptide",   0666 or $log->log_and_die("cant open DBM file $peptide\n");
+dbmopen my %DATABASE, "$database", 0666 or $log->log_and_die("cant open DBM file $database\n");
 
 # These are a couple of helper data sets to add in swissprot ids and SWALL / ENSEMBL gene names
 
@@ -144,6 +158,8 @@ dbmclose %ACC2DB;
 dbmclose %DESC;
 dbmclose %PEPTIDE;
 dbmclose %DATABASE;
+
+$log->mail();
 
 exit(0);
 

@@ -4,16 +4,15 @@
 
 # takes as input a swissprot or trembl .fasta file,
 # and deletes all worm, fly, human and yesast entries
-BEGIN {
-    unshift (@INC , "/nfs/acari/wormpipe/scripts/BLAST_scripts");
-}
-my $wormpipe = glob("~wormpipe");
+
+use lib $ENV{'CVS_DIR'};
 use strict;
 use Getopt::Long;
 use DB_File;
 use GSI;
 
 my ($swiss, $trembl, $debug, $database, $list, $old, $species);
+my ($test, $store);
 # $old is for switch back to protein model
 GetOptions (
 	    "swiss"      => \$swiss,
@@ -21,20 +20,36 @@ GetOptions (
 	    "database:s" => \$database,
 	    "list"       => \$list,
 	    "old"        => \$old,
-	    "debug"      => \$debug,
-	    "species=s"  => \$species
+	    "debug:s"    => \$debug,
+	    "species=s"  => \$species,
+	    "test"       => \$test,
+	    "store:s"    => \$store
 	  );
 
-my $wormpipe_dump = "/acari/work2a/wormpipe/dumps";
-$wormpipe_dump .= "_test" if $debug;
-my $output_swiss = "$wormpipe_dump/swissproteins.ace";
-my $output_trembl = "$wormpipe_dump/tremblproteins.ace";
-my $db_files = "/acari/work2a/wormpipe/swall_data";
-my $swiss_list_txt = "$wormpipe_dump/swisslist.txt";
-my $trembl_list_txt = "$wormpipe_dump/trembllist.txt";
-my $blastx_file = "$wormpipe_dump/blastx_ensembl.ace";
-my $blastp_file = "$wormpipe_dump/blastp_ensembl.ace";
+my $wormbase;
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+			     -farm    => '1'
+			     );
+}
+
+my $log = Log_files->make_build_log($wormbase);
+
+my $wormpipe = $wormbase->wormpipe;
+
+my $wormpipe_dump     = $wormbase->dump_dir;
+my $output_swiss      = "$wormpipe_dump/swissproteins.ace";
+my $output_trembl     = "$wormpipe_dump/tremblproteins.ace";
+my $blastx_file       = "$wormpipe_dump/blastx_ensembl.ace";
+my $blastp_file       = "$wormpipe_dump/blastp_ensembl.ace";
 my $ensembl_info_file = "$wormpipe_dump/ensembl_protein_info.ace";
+my $swiss_list_txt    = "$wormpipe_dump/swisslist.txt";
+my $trembl_list_txt   = "$wormpipe_dump/trembllist.txt";
+
+my $db_files        = "/acari/work2a/wormpipe/swall_data";
 
 my @blastp_databases = qw(worm_pep worm_brigpep);
 my $blast_files = "$wormpipe_dump/*blastp.ace $wormpipe_dump/*blastx.ace ";
@@ -113,6 +128,7 @@ if ($trembl) {
 
 system("cat $output_swiss $output_trembl > $ensembl_info_file");
 
+$log->mail;
 exit(0);
     
 
