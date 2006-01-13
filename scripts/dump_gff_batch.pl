@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
 
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{CVS_DIR};
+use lib $ENV{CVS_DIR};
 use Wormbase;
 use Getopt::Long;
 use strict;
@@ -48,8 +48,8 @@ my @chromosomes = split(/,/,join(',',$chrom_choice));
 
 
 
-$database = $wormbase->autoace unless $database;
-$dump_dir = "$database/CHROMOSOMES" unless $dump_dir;
+$database = $wormbase->autoace    unless $database;
+$dump_dir = $wormbase->gff_splits unless $dump_dir;
 
 @chromosomes = @chroms unless @chromosomes;
 
