@@ -7,8 +7,8 @@
 # Map WashU and Nembase EST contigs to genome and write out file to send to authors
 # of these two data sets for their web sites to point back at us
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2006-01-12 11:30:31 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2006-01-13 10:00:32 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -56,7 +56,7 @@ if ( $store ) {
 &usage("Help") if ($help);
 
 # in test mode?
-if ($test) {
+if ($wormbase->test) {
   print "In test mode\n" if ($verbose);
 
   # mail the results to this user
@@ -142,7 +142,7 @@ sub map_to_gene() {
     my @best_hits = ();
 
     print "Reading genes\n" if ($verbose);
-    open (GFF, "<$gffdir/CHROMOSOME_${chromosome}.WBgene.gff") || die "Failed to open WBgene gff file $gffdir/CHROMOSOME_${chromosome}.WBgene.gff\n";
+    open (GFF, "<$gffdir/CHROMOSOME_${chromosome}_gene.gff") || die "Failed to open gene gff file $gffdir/CHROMOSOME_${chromosome}_gene.gff\n";
     while (<GFF>) {
       chomp;
       s/^\#.*//;
@@ -160,7 +160,7 @@ sub map_to_gene() {
 
 
     print "Reading BLAT hits\n" if ($verbose);
-    open (GFF, "<$gffdir/CHROMOSOME_${chromosome}.BLAT_$type.gff") || die "Failed to open BLAT gff file $gffdir/CHROMOSOME_${chromosome}.BLAT_$type.gff\n";
+    open (GFF, "<$gffdir/CHROMOSOME_${chromosome}_BLAT_$type.gff") || die "Failed to open BLAT gff file $gffdir/CHROMOSOME_${chromosome}_BLAT_$type.gff\n";
     while (<GFF>) {
       chomp;
       s/^\#.*//;
