@@ -6,8 +6,8 @@
 #
 # wrapper script for running transcript_builder.pl
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2006-01-10 14:13:42 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2006-01-13 09:58:33 $
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -22,7 +22,7 @@ my $builder_script = $ENV{CVS_DIR}."/transcript_builder.pl";
 my $scratch_dir = "/tmp";
 my $chrom_choice;
 my $gff_dir;
-my ($store, $debug, $test);
+my ($store, $debug, $test, $no_run);
 
 GetOptions (
 	    "database:s"    => \$database,
@@ -32,11 +32,12 @@ GetOptions (
 	    "chromosome:s"  => \$chrom_choice,
 	    "store:s"       => \$store,
 	    "debug:s"       => \$debug,
-	    "test"          => \$test
+	    "test"          => \$test,
+	    "no_run"        => \$no_run
 
 	   );
 
-
+my $wormbase;
 if ( $store ) {
   $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
@@ -48,44 +49,58 @@ if ( $store ) {
 my $log = Log_files->make_build_log($wormbase);
 $wormbase->checkLSF($log);
 
-## make sure required files present.
-#system("scp wormsrv2:/wormsrv2/autoace/COMMON_DATA/est2feature.dat    $database/COMMON_DATA/") && die "cant copy est2feature\n";
-#system("scp wormsrv2:/wormsrv2/autoace/COMMON_DATA/Featurelist.dat    $database/COMMON_DATA/") && die "cant copy Featurelistn\n";
-#system("scp wormsrv2:/wormsrv2/autoace/COMMON_DATA/estorientation.dat $database/COMMON_DATA/") && die "cant copy estorientation\n";
-
-my @chromosomes = split(/,/,join(',',$chrom_choice));
-
 $database = $wormbase->autoace unless $database;
-$gff_dir  = $wormbase->gff unless $gff_dir;
-$dump_dir = $wormbase->transcripts unless $dump_dir;
-@chromosomes = qw(I II III IV V X MTCE) unless @chromosomes;
+unless ( $no_run ){
+  my @chromosomes = split(/,/,join(',',$chrom_choice));
 
-# make a Coords_converter to write the coords files. Otherwise all 6 processes try and do it.
-my $coords = Coords_converter->invoke($database,1,$wormbase);
+  $gff_dir  = $wormbase->gff unless $gff_dir;
+  $dump_dir = $wormbase->transcripts unless $dump_dir;
+  @chromosomes = qw(I II III IV V X MtDNA) unless @chromosomes;
 
-# this extract paired read info from the database and writes it to EST_pairs file
-my $cmd = "select cdna, pair from cdna in class cDNA_sequence where exists_tag cdna->paired_read, pair in cdna->paired_read";
-my $tace = $wormbase->tace;
-my $pairs = "$database/EST_pairs.txt";
+  # make a Coords_converter to write the coords files. Otherwise all 6 processes try and do it.
+  my $coords = Coords_converter->invoke($database,1, $wormbase);
 
-open (TACE, "echo '$cmd' | $tace $database |") or die "cant open tace to $database using $tace\n";
-open ( PAIRS, ">$pairs") or die "cant open $pairs :\t$!\n";
-while ( <TACE> ) {
-  chomp;
-  s/\"//g;
-  my @data = split;
-  print PAIRS "$data[0]\t$data[1]\n";
+  # this extract paired read info from the database and writes it to EST_pairs file
+  my $cmd = "select cdna, pair from cdna in class cDNA_sequence where exists_tag cdna->paired_read, pair in cdna->paired_read";
+  my $tace = $wormbase->tace;
+  my $pairs = "$database/EST_pairs.txt";
+
+  open (TACE, "echo '$cmd' | $tace $database |") or die "cant open tace to $database using $tace\n";
+  open ( PAIRS, ">$pairs") or die "cant open $pairs :\t$!\n";
+  while ( <TACE> ) {
+    chomp;
+    s/\"//g;
+    my @data = split;
+    print PAIRS "$data[0]\t$data[1]\n";
+  }
+  close PAIRS;
+
+  # create and submit LSF jobs.
+  foreach my $chrom ( @chromosomes ) {
+    my $err = "$scratch_dir/transcipt_builder.$chrom.err.$$";
+    my $out = "$dump_dir/CHROMOSOME_${chrom}_transcript.ace";
+    my $bsub = "bsub -e $err \"perl $builder_script -database $database -chromosome $chrom -store $store\"";
+    print "$bsub\n";
+    $wormbase->run_command("$bsub");
+  }
 }
-close PAIRS;
 
-# create and submit LSF jobs.
-foreach my $chrom ( @chromosomes ) {
-  my $err = "$scratch_dir/transcipt_builder.$chrom.err.$$";
-  my $out = "$dump_dir/CHROMOSOME_${chrom}_transcript.ace";
-  my $bsub = "bsub -e $err \"$builder_script -database $database -chromosome $chrom -gff_dir $gff_dir \"";
-  print "$bsub\n";
-  $wormbase->run_script("$bsub");
-}
+$log->write_to("waiting for LSF jobs to finish\n");
+$wormbase->wait_for_LSF;
+
+$log->write_to("all batch jobs done - cating outputs to ".$wormbase->transcripts."/transcripts.ace\n");
+$wormbase->run_command("cat ".$wormbase->transcripts."/*.ace > ".$wormbase->transcripts."/transcripts.ace");
+
+$log->write_to("loading file to ".$wormbase->autoace."\n");
+$wormbase->load_to_database($wormbase->autoace,$wormbase->transcripts."/transcripts.ace",'transcript_builder');
+
+$log->write_to("batch_dumping GFF files\n");
+$wormbase->run_script("dump_gff_batch.pl -method Coding_transcript");
+
+$log->mail;
+
+exit(0);
+
 
 =pod
 
