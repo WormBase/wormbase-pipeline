@@ -6,8 +6,8 @@
 #
 # Script to make ?Transcript objects
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2006-01-10 14:17:34 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2006-01-13 10:03:23 $
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Getopt::Long;
@@ -21,7 +21,9 @@ use Modules::Strand_transformer;
 use File::Path;
 use Storable;
 
-my ($debug, $store, $help, $verbose, $really_verbose, $est, $gff, $database, $build, $new_coords, $test, $UTR_range, @chromosomes, $gff_dir, $test_cds, $wormbase, $db);
+my ($debug, $store, $help, $verbose, $really_verbose, $est, $gff,
+    $database, $build, $new_coords, $test, $UTR_range, @chromosomes, 
+    $gff_dir, $test_cds, $wormbase, $db);
 
 my $gap = 15;			# $gap is the gap allowed in an EST alignment before it is considered a "real" intron
 
@@ -46,20 +48,18 @@ GetOptions ( "debug:s"          => \$debug,
 	     "store:s"          => \$store
 	   ) ;
 
-if( $store ) {
+if ( $store ) {
   $wormbase = retrieve( $store ) or croak("cant restore wormbase from $store\n");
-}
-else {
+} else {
   $wormbase = Wormbase->new( -debug   => $debug,
-                            -test    => $test,
+			     -test    => $test,
                            );
 }
 
 if ($database eq "autoace") { 
-my $db = $wormbase->autoace;
-}
-else {
-$db = $database;
+  my $db = $wormbase->autoace;
+} else {
+  $db = $database;
 }
 
 # call tace from Wormbase.pm
@@ -70,28 +70,26 @@ my $tace = $wormbase->tace;
 *STDERR = *STDOUT;
 
 # Log Info
-my $maintainers = "All";
-if ($debug) {
-  print "DEBUG = \"$debug\"\n\n";
-  ($maintainers = $debug . '\@sanger.ac.uk');
+
+if ($wormbase->debug) {
+  # this uses a class variable in SequenceObj - not sure of Storable impact at mo' - this will still work.
   my $set_debug = SequenceObj->new();
   $set_debug->debug($debug);
 }
 
 my $log = Log_files->make_build_log($wormbase);
-die "cant create log file\n\n" unless $log;
 
 &check_opts;
 die "no database\n" unless $database;
 
 #setup directory for transcript
-my $transcript_dir = "$db/TRANSCRIPTS";
-mkpath("$transcript_dir") unless -e "$transcript_dir";
+my $transcript_dir = $wormbase->transcripts;
+$gff_dir = $wormbase->gff_splits unless $gff_dir;
 
 my $coords;
 # write out the transcript objects
 # get coords obj to return clone and coords from chromosomal coords
-$coords = Coords_converter->invoke($database, 1, $wormbase);
+$coords = Coords_converter->invoke($database, undef, $wormbase);
 
 #Load in Feature_data : cDNA associations from COMMON_DATA
 my %feature_data;
@@ -99,7 +97,7 @@ my %feature_data;
 
 
 # process chromosome at a time
-@chromosomes = qw(I II III IV V X) unless @chromosomes;
+@chromosomes = qw(I II III IV V X MTCE) unless @chromosomes;
 
 foreach my $chrom ( @chromosomes ) {
 
@@ -118,12 +116,11 @@ foreach my $chrom ( @chromosomes ) {
   my $index = 0;
   my $gff_file;
 
-  $gff_file = $gff ? $gff : "$gff_dir/CHROMOSOME_$chrom.gff";
 
-  open (GFF,"<$gff_file") or $log->log_and_die("gff_file\n");
+  # parse GFF file to get CDS and exon info
+  $gff_file = $gff_dir."/CHROMOSOME_${chrom}_curated.gff";
+  open (GFF,"<$gff_file") or $log->log_and_die("cant open $gff_file : $!\n");
   $log->write_to("reading gff file $gff_file\n");
-
-  # parse GFF file to get CDS, exon and cDNA info
   while (<GFF>) {
     my @data = split;
     next if( $data[1] eq "history" );
@@ -134,15 +131,23 @@ foreach my $chrom ( @chromosomes ) {
       if ( $data[2] eq "CDS" ) {
 	# GENE SPAN
 	$genes_span{$data[9]} = [($data[3], $data[4], $data[6])];
-      } 
-      elsif ($data[2] eq "exon" ) {
+      } elsif ($data[2] eq "exon" ) {
 	# EXON 
 	$genes_exons{$data[9]}{$data[3]} = $data[4];
       }
     }
-    
-    # BLAT DATA
-    elsif ( ($data[1] eq "BLAT_EST_BEST") or ($data[1] eq "BLAT_OST_BEST") or ($data[1] eq "BLAT_mRNA_BEST") ) {
+  }
+  close GFF;
+
+  # read BLAT data
+  my @BLAT_methods = qw( BLAT_EST_BEST BLAT_mRNA_BEST BLAT_OST_BEST );
+  foreach my $method (@BLAT_methods) {
+    $gff_file = $gff_dir."/CHROMOSOME_${chrom}_${method}.gff";
+    open( GFF,"<$gff_file") or $log->log_and_die("cant open $gff_file : $!\n");
+    while ( <GFF> ) {
+      next if (/#/); 		 # miss header
+      next unless (/BEST/);
+      my @data = split;
       $data[9] =~ s/\"//g;
       $data[9] =~ s/Sequence:// ;
       $cDNA{$data[9]}{$data[3]} = $data[4];
@@ -155,35 +160,52 @@ foreach my $chrom ( @chromosomes ) {
 	$cDNA_span{$data[9]}[1] = $data[4];
       }
     }
+    close GFF;
+  }
 
-    #create Strand_transformer for '-' strand coord reversal
-    elsif ( $data[1] eq "Link" and $data[9] =~ "CHROMOSOME") {
+  #Chromomsome info
+  $gff_file = $gff_dir."/CHROMOSOME_${chrom}_Link.gff";
+  open (GFF,"<$gff_file") or $log->log_and_die("cant open gff_file :$!\n");  
+  #create Strand_transformer for '-' strand coord reversal
+  CHROM:while( <GFF> ){
+    my @data = split;
+    if ( $data[1] eq "Link" and $data[9] =~ "CHROMOSOME") {
       $transformer = Strand_transformer->new($data[3],$data[4]);
+      last CHROM;
     }
+  }
     
-    # add feature_data to cDNA
-    #CHROMOSOME_I  SL1  SL1_acceptor_site   182772  182773 .  -  .  Feature "WBsf016344"
-    elsif ( $data[9] and $data[9] =~ /(WBsf\d+)/) { #Feature "WBsf003597"
-      my $feat_id = $1;
-      my $dnas = $feature_data{$feat_id};
-      if( $dnas ) {
-	foreach my $dna ( @{$dnas} ) {
-	  #	print "$dna\t$data[9]  --- $data[6] ---  ",$cDNA_span{"$dna"}[2],"\n";
-	  next unless ( $cDNA_span{"$dna"}[2] and $data[6] eq $cDNA_span{"$dna"}[2] ); # ensure same strand
-	  $cDNA_span{"$dna"}[3]{"$data[1]"} = [ $data[3], $data[4], $1 ]; # 182772  182773 WBsf01634
+  # add feature_data to cDNA
+  #CHROMOSOME_I  SL1  SL1_acceptor_site   182772  182773 .  -  .  Feature "WBsf016344"
+  my @feature_types = qw(SL1 SL2 polyA_site polyA_signal);
+  foreach my $Type (@feature_types){
+    my $gff_file = "$gff_dir/CHROMOSOME_${chrom}_${Type}.gff";
+    open(GFF, "<$gff_file") or $log->log_and_die("cant open $gff_file : $!\n");
+    while( <GFF> ){
+      my @data = split;
+      if ( $data[9] and $data[9] =~ /(WBsf\d+)/) { #Feature "WBsf003597"
+	my $feat_id = $1;
+	my $dnas = $feature_data{$feat_id};
+	if ( $dnas ) {
+	  foreach my $dna ( @{$dnas} ) {
+	    #	print "$dna\t$data[9]  --- $data[6] ---  ",$cDNA_span{"$dna"}[2],"\n";
+	    next unless ( $cDNA_span{"$dna"}[2] and $data[6] eq $cDNA_span{"$dna"}[2] ); # ensure same strand
+	    $cDNA_span{"$dna"}[3]{"$data[1]"} = [ $data[3], $data[4], $1 ]; # 182772  182773 WBsf01634
+	  }
 	}
       }
     }
+    close GFF;
   }
+
 
   # need to sort the cds's into ordered arrays + and - strand genes are in distinct coord space so they need to be kept apart
   my %fwd_cds;
   my %rev_cds;
   foreach ( keys %genes_span ) {
-    if( $genes_span{$_}->[2] eq "+" ) {
+    if ( $genes_span{$_}->[2] eq "+" ) {
       $fwd_cds{$_} = $genes_span{$_}->[0];
-    }
-    else {
+    } else {
       $rev_cds{$_} = $genes_span{$_}->[0];
     }
   }
@@ -223,7 +245,7 @@ foreach my $chrom ( @chromosomes ) {
       }
     }
     # add paired read info
-    if( $cDNA_span{"$_"}[4] ) {
+    if ( $cDNA_span{"$_"}[4] ) {
       $cdna->paired_read( $cDNA_span{"$_"}[4] );
     }
 
@@ -233,14 +255,13 @@ foreach my $chrom ( @chromosomes ) {
     $cdna->transform_strand($transformer,"transform") if ( $cdna->strand eq "-" );
 
     #check for and remove ESTs with internal SL's 
-    if( $cdna->SL ) {
-      if( $cdna->start < $cdna->SL->[0] ) {
+    if ( $cdna->SL ) {
+      if ( $cdna->start < $cdna->SL->[0] ) {
 	my $gap = $cdna->SL->[0] - $cdna->start;
 	$log->write_to($cdna->name." has internal SL ".$cdna->SL->[2]."gap = $gap\n");
 	next;
       }
     }
-
     push(@cdna_objs,$cdna);
   }
 
@@ -275,7 +296,8 @@ foreach my $chrom ( @chromosomes ) {
   # tie up read pairs
   foreach my $cdna ( @cds_objs ) {
     my $name = $cdna->name;
-    if($cDNA_index{$name}) {}
+    if ($cDNA_index{$name}) {
+    }
   }
       
   print "Second round additions\n";
@@ -320,7 +342,7 @@ foreach my $chrom ( @chromosomes ) {
 	  my $name = $cds->name;
 	  $name =~ s/[a-z]//;
 	  $down_name =~ s/[a-z]//;
-	  if( $name eq $down_name ) {
+	  if ( $name eq $down_name ) {
 	    undef $downstream_CDS;
 	    next;
 	  }
@@ -330,14 +352,13 @@ foreach my $chrom ( @chromosomes ) {
 	  # check unmapped cdna ( $CDNA ) lies within 1kb of CDS that paired read maps to ( $cds ) and before $downstream_CDS
 	
 	  print "trying ",$cds->name, " downstream is ", $downstream_CDS->name," with ",$CDNA->name,"\n";
-	  if( ($CDNA->start > $cds->gene_end) and ($CDNA->start - $cds->gene_end < 1000) and ($CDNA->end < $downstream_CDS->gene_start) ) {
+	  if ( ($CDNA->start > $cds->gene_end) and ($CDNA->start - $cds->gene_end < 1000) and ($CDNA->end < $downstream_CDS->gene_start) ) {
 	    print " adding 3' cDNA ",$CDNA->name," to ",$cds->name,"\n";
 	    $cds->add_3_UTR($CDNA);
 	    $CDNA->mapped($cds);
 	    last;
 	  }
-	}
-	else {
+	} else {
 	  last DOWN;
 	}
       }
@@ -362,14 +383,14 @@ foreach my $chrom ( @chromosomes ) {
   print "writing output to $out_file\n";
   open (FH,">$out_file") or $log->log_and_die("cant open $out_file\n");
   foreach my $cds (@cds_objs ) {
-    print "reporting : ",$cds->name,"\n" if $debug;
+    print "reporting : ",$cds->name,"\n" if $wormbase->debug;
     $cds->report(*FH, $coords, $transformer);
   }
 
   last if $gff;			# if only doing a specified gff file exit after this is complete
 }
 
-$log->mail("$maintainers");
+$log->mail();
 exit(0);
 
 
@@ -497,8 +518,7 @@ sub load_EST_data
 	$$cDNA_span{$data[0]}->[4] = $data[1];
       }
       close PAIRS;
-    }
-    else {
+    } else {
       my $cmd = "select cdna, pair from cdna in class cDNA_sequence where exists_tag cdna->paired_read, pair in cdna->paired_read";
       
       open (TACE, "echo '$cmd' | $tace $db |") or die "cant open tace to $database using $tace\n";
@@ -531,11 +551,11 @@ sub sanity_check_features
   {
     my $cdna = shift;
     my $return = 1;
-    if( my $SL = $cdna->SL ) {
+    if ( my $SL = $cdna->SL ) {
       $return = 0 if( $SL->[0] != $cdna->start );
       print STDERR $SL->[2]," inside ",$cdna->name,"\n";
     }
-    if( my $polyA = $cdna->polyA_site ){
+    if ( my $polyA = $cdna->polyA_site ) {
       $return = 0 if( $polyA->[1] != $cdna->end );
       print STDERR $polyA->[2]," inside ",$cdna->name,"\n";
     }
