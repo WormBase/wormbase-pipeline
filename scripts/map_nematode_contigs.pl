@@ -7,8 +7,8 @@
 # Map WashU and Nembase EST contigs to genome and write out file to send to authors
 # of these two data sets for their web sites to point back at us
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-01-13 10:00:32 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2006-01-16 17:03:17 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -28,8 +28,12 @@ my ($all, $washu, $nembase);
 
 
 # the people to send the results to
-my $washu_email = "jmartin\@watson.wustl.edu";
-my $nembase_email = "mark.blaxter\@ed.ac.uk";
+my $washu_email; #= "jmartin\@watson.wustl.edu";
+my $nembase_email; #= "mark.blaxter\@ed.ac.uk";
+
+print "DEBUG addresses\n";
+$washu_email = "gw3\@sanger.ac.uk";
+$nembase_email = "gw3\@sanger.ac.uk";
 
 
 
@@ -80,6 +84,7 @@ my $gffdir = $wormbase->gff_splits;         # AUTOACE GFF_SPLIT
 if ($washu || $all) {
   $type = "WASHU";
   print "Mapping $type contigs\n" if ($verbose);
+  print "Using temporary file: /tmp/${type}_result.dat\n";
   $log->write_to("Mapping $type contigs\n");
   &map_to_gene($type);
   &mail_author($washu_email, "/tmp/${type}_result.dat");
@@ -88,6 +93,7 @@ if ($washu || $all) {
 if ($nembase || $all) {
   $type = "NEMBASE";
   print "Mapping $type contigs\n" if ($verbose);
+  print "Using temporary file: /tmp/${type}_result.dat\n";
   $log->write_to("Mapping $type contigs\n");
   &map_to_gene($type);
   &mail_author($nembase_email, "/tmp/${type}_result.dat");
@@ -142,7 +148,7 @@ sub map_to_gene() {
     my @best_hits = ();
 
     print "Reading genes\n" if ($verbose);
-    open (GFF, "<$gffdir/CHROMOSOME_${chromosome}_gene.gff") || die "Failed to open gene gff file $gffdir/CHROMOSOME_${chromosome}_gene.gff\n";
+    open (GFF, "<$gffdir/CHROMOSOME_${chromosome}.WBgene.gff") || die "Failed to open gene gff file $gffdir/CHROMOSOME_${chromosome}_WBgene.gff\n";
     while (<GFF>) {
       chomp;
       s/^\#.*//;
@@ -160,7 +166,7 @@ sub map_to_gene() {
 
 
     print "Reading BLAT hits\n" if ($verbose);
-    open (GFF, "<$gffdir/CHROMOSOME_${chromosome}_BLAT_$type.gff") || die "Failed to open BLAT gff file $gffdir/CHROMOSOME_${chromosome}_BLAT_$type.gff\n";
+    open (GFF, "<$gffdir/CHROMOSOME_${chromosome}.BLAT_$type.gff") || die "Failed to open BLAT gff file $gffdir/CHROMOSOME_${chromosome}_BLAT_$type.gff\n";
     while (<GFF>) {
       chomp;
       s/^\#.*//;
@@ -172,8 +178,8 @@ sub map_to_gene() {
     }
     close(GFF);
 
-    # sort the best hits by the end position
-    @best_hits = sort {$a->[1] <=> $b->[1]} @best_hits;
+    # sort the best hits by the start position
+    @best_hits = sort {$a->[0] <=> $b->[0]} @best_hits;
 
   ###############
   # map contigs #
@@ -183,14 +189,10 @@ sub map_to_gene() {
     my $result;
     
     my $previous_start=0;		# remember the first gene that matched the previous BLAT hit
-    my $set_flag;		        # true if we have set $previous_start to the first gene match for this BLAT 
+    my $set_flag = 0;		        # true if we have set $previous_start to the first gene match for this BLAT 
 
     # get the first gene
-    my $current_gene_count = 0;
-    my $current_gene = $chrom[$current_gene_count];
-    my ($gene_start, $gene_end, $gene_strand, $gene_name) = @{$current_gene};
-    print "First gene = $gene_start, $gene_end, $gene_strand, $gene_name\n" if ($verbose);
-    print "Have ",scalar(@best_hits), " best hits to look at\n" if ($verbose);
+    my $current_gene_count = -1;
 
     # loop through BLAT results
     # @best_hits is array-reference of [ ($chrom_start, $chrom_end, $gff_strand, $query) ];
@@ -199,50 +201,67 @@ sub map_to_gene() {
       my @this_hit = @{$hit_aref};
       # now have @this_hit with the BLAT results in and @chrom with genes for this chromosome
       my ($blat_start, $blat_end, $blat_strand, $blat_query) = @this_hit;
-
       print "Next BLAT hit = $blat_start, $blat_end, $blat_strand, $blat_query\n" if ($verbose);
-
-      # step down here
-LOOP:
-      if ($blat_end < $gene_start) {                      # BLAT is before current gene - get next BLAT
-	print "next BLAT (gene=$gene_name)\n" if ($verbose);
-	$set_flag = 0;		                          # not yet found the first match for the next BLAT
-	$current_gene_count = $previous_start;            # go back to the first gene to match the previous BLAT 
-	$current_gene = $chrom[$current_gene_count];
-	($gene_start, $gene_end, $gene_strand, $gene_name) = @{$current_gene};
-	next;			                          # get next BLAT
-      }
-      if ($blat_start > $gene_end) {                      # BLAT is after current gene - get next gene
-	print "next gene (BLAT=$blat_query)\n" if ($verbose);
-	$current_gene_count++;	                          # next gene
-	if ($current_gene_count >= scalar(@chrom)) {last;} # check if done all the genes
-	$current_gene = $chrom[$current_gene_count];
-	($gene_start, $gene_end, $gene_strand, $gene_name) = @{$current_gene};
-	goto LOOP;		                          # go to test this next gene
-      }
-
-      # we have a match
-      # save results as key of hash to get unique ones
-      print "Got a hit to a gene $blat_query = $gene_name\n" if ($verbose);
-      $unique_results{"${blat_query}:$gene_name"} = 1; 
-      if (!$set_flag) {
-	$set_flag = 1;
-	$previous_start = $current_gene_count;            # remember this first gene that matches
-      }
-      next;			                          # next BLAT
-
-    }
-  }
  
+# exhaustive all vs all mapping - takes seevral hours
+      foreach my $current_gene (@chrom) {
+	my ($gene_start, $gene_end, $gene_strand, $gene_name) = @{$current_gene};
+	if ($gene_start < $blat_start && $gene_end > $blat_end) {
+	  print "Got a hit to a gene $blat_query = $gene_name\n" if ($verbose);
+	  $unique_results{"${blat_query}:$gene_name"} = 1;
+	}
+      }
+
+      # step down through genes mapping algorithm - much faster
+#      while (++$current_gene_count <= scalar(@chrom)-1) { # point to next gene
+#	#print "Current gene = $current_gene_count, max = ".scalar(@chrom)."\n";
+#	my $current_gene = $chrom[$current_gene_count];
+#	my ($gene_start, $gene_end, $gene_strand, $gene_name) = @{$current_gene};
+#	print "Next gene = $gene_start, $gene_end, $gene_strand, $gene_name\n" if ($verbose);
+
+#	if ($gene_end < $blat_end) {
+#	  next;			# get next gene
+
+#	} elsif ($gene_start > $blat_end) {
+#	  $current_gene_count = $previous_start-1;
+#	  $set_flag = 0;	# reset flag for 'got a first match'
+#	  last;			# get next blat
+
+#	} else {
+#	  # we have a match
+#	  # save results as key of hash to get unique ones
+#	  print "Got a hit to a gene $blat_query = $gene_name\n" if ($verbose);
+#	  $unique_results{"${blat_query}:$gene_name"} = 1;
+#	  if (!$set_flag) {	# if not yet got a match to a gene for this blat
+#	    $set_flag = 1;
+#	    $previous_start = $current_gene_count;            # remember this first gene that matches
+#	  }
+#	}
+#      }
+    }				# blat hit loop
+  }				# chromosome loop
+
+  # prepare hash for getting cds IDs from WBgene IDs
+  my %wbgene_id2cds;
+  $wormbase->FetchData("wbgene_id2cds",\%wbgene_id2cds);
+
   # print out the unique contig-gene results
   # using a hash to get the unique results
   print "Writing results to $resultsfile\n" if ($verbose);
   open (OUT, ">$resultsfile") || die "Can't open $resultsfile\n";
   foreach my $key (keys %unique_results) {
-    my ($c, $t) = split (/:/,$key);
-    print OUT "$c\t$t\n";
+    my ($contig, $wbgene) = split (/:/,$key);
+    # want to also get the CDS name (this misses out pseudogenes and RNA genes etc, so there are some blanks output)
+    if (exists $wbgene_id2cds{$wbgene} ) {
+      my $cds = $wbgene_id2cds{$wbgene};
+      print OUT "$contig\t$wbgene\t@{$cds}\n";
+    } else {
+      print OUT "$contig\t$wbgene\t\n";
+    }
   }
+  
   close (OUT);
+
 }
 
 ##########################################
