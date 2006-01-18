@@ -7,7 +7,7 @@
 # This is a example of a good script template
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-01-05 16:24:29 $      
+# Last updated on: $Date: 2006-01-18 15:24:36 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -156,7 +156,7 @@ my $count;
 	($id) = ($f[8] =~ /Target \"Sequence:(\S+)\"/);
 
 	if (exists $species{'BLAT_WASHU'}->{$id}) {
-	  $line = $line . "; Species \"" . $species{'BLAT_WASHU'}->{$id} . "\"";
+	  $line = $line . " ; Species \"" . $species{'BLAT_WASHU'}->{$id} . "\"";
 	  $count++;
 	  #print "$line\n" if ($verbose);
 	}
@@ -165,7 +165,7 @@ my $count;
 	($id) = ($f[8] =~ /Target \"Sequence:(\S+)\"/);
 
 	if (exists $species{'BLAT_NEMBASE'}->{$id}) {
-	  $line = $line . "; Species \"" . $species{'BLAT_NEMBASE'}->{$id} . "\"";
+	  $line = $line . " ; Species \"" . $species{'BLAT_NEMBASE'}->{$id} . "\"";
 	  $count++;
 	  #print "$line\n" if ($verbose);
 	}
@@ -174,7 +174,7 @@ my $count;
 	($id) = ($f[8] =~ /Target \"Sequence:(\S+)\"/);
 
 	if (exists $species{'BLAT_NEMATODE'}->{$id}) {
-	  $line = $line . "; Species \"" . $species{'BLAT_NEMATODE'}->{$id} . "\"";
+	  $line = $line . " ; Species \"" . $species{'BLAT_NEMATODE'}->{$id} . "\"";
 	  $count++;
 	  #print "$line\n" if ($verbose);
 	} else {
