@@ -7,7 +7,7 @@
 # This is a example of a good script template
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-01-10 14:23:32 $      
+# Last updated on: $Date: 2006-01-19 11:04:09 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -99,7 +99,7 @@ $wormbase->run_script("other_script -options", $log);
 # Close log files and exit
 $log->write_to("\n\nStatistics\n");
 $log->write_to("----------\n\n");
-$log->write_to("Put some statistics here.");
+$log->write_to("Put some statistics here.\n");
 
 $log->mail();
 print "Finished.\n" if ($verbose);
