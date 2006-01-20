@@ -5,74 +5,81 @@
 # by Anthony Rogers
 #
 # copies release letter to ~ftp/pub/wormbase/WSxx
-#                          /wormsrv2/autoace/release/
+#                          ~wormpub/BUILD/autoace/release/
 #                          /nfs/WWW/SANGER_docs/htdocs/Projects/C_elegans/WORMBASE/current/release_notes.txt/
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2005-12-16 14:34:16 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2006-01-20 17:18:15 $
 
-use strict;
+
+use strict;                                      
+use lib $ENV{'CVS_DIR'};
+use Wormbase;
+use Getopt::Long;
+use Carp;
+use Log_files;
+use Storable;
 use warnings;
 use File::Copy;
-use Getopt::Long;
-use lib "/wormsrv2/scripts/";
-use Wormbase;
 
-#####################################
-# variables and command-line options #
+
+
 ######################################
+# variables and command-line options # 
+######################################
+
+my ($help, $debug, $test, $verbose, $store, $wormbase);
 my $maintainers = 'All';
 
-my $test;       # In test build mode
-my $help;       # Help/Usage page
-my $debug;      # Debug mode
-my $store;      # configuration file
 
-GetOptions(
-    'help'    => \$help,
-    'test'    => \$test,
-    'debug=s' => \$debug,
-    'store=s' => \$store
-);
 
-# Help pod if needed
-&usage(0) if ($help);
+GetOptions ("help"       => \$help,
+            "debug=s"    => \$debug,
+	    "test"       => \$test,
+	    "verbose"    => \$verbose,
+	    "store"      => \$store,
+	    );
 
-############################
-# recreate configuration   #
-############################
-my $wb;
-if ($store) { $wb = Storable::retrieve($store) or croak("cant restore wormbase from $store\n") }
-else { $wb = Wormbase->new( -debug => $debug, -test => $test, ) }
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+			     );
+}
 
-###########################################
-# Variables Part II (depending on $wb)    #
-###########################################
-$test  = $wb->test  if $wb->test;     # Test mode
-$debug = $wb->debug if $wb->debug;    # Debug mode, output only goes to one user
-my $repdir = $wb->reports;            # Reports path
-my $acedir = $wb->autoace;             # base directory of the build
+# Display help if required
+&usage("Help") if ($help);
+
+# in test mode?
+if ($test) {
+  print "In test mode\n" if ($verbose);
+  $maintainers = `whoami` . '\@sanger.ac.uk';
+}
+
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
 
 # Use debug mode?
 if ($debug) {
-    print "DEBUG = \"$debug\"\n\n";
-    ( $maintainers = $debug . '\@sanger.ac.uk' );
+  print "DEBUG = \"$debug\"\n\n";
+  $maintainers = $debug . '\@sanger.ac.uk';
 }
 
-# create log
-my $log = Log_files->make_build_log($wb);
+
+################
+# Variables    #
+################
+
+my $repdir = $wormbase->reports;            # Reports path
+my $acedir = $wormbase->autoace;             # base directory of the build
 
 ##############
 # variables  #
 ##############
 
-# Most checking scripts should produce a log file that is a) emailed to us all
-# and b) copied to /wormsrv2/logs
-
-my $rundate        = $wb->rundate;
-my $runtime        = $wb->runtime;
-my $release        = $wb->get_wormbase_version_name;
-my $release_number = $wb->get_wormbase_version;
+my $release        = $wormbase->get_wormbase_version_name;
+my $release_number = $wormbase->get_wormbase_version;
 my $www            = "/nfs/WWWdev/SANGER_docs/htdocs/Projects/C_elegans";
 my $errors         = 0;
 
@@ -103,7 +110,7 @@ my ($ftp_dir) = glob("~ftp/pub/wormbase");
 my $to             = $debug?$maintainers:"wormbase-dev\@wormbase.org";
 my $name           = "Wormbase ${release} release";
 my $release_letter = "$repdir/letter.${release}";
-$wb->mail_maintainer( $name, $to, $release_letter);
+$wormbase->mail_maintainer( $name, $to, $release_letter);
 
 ###################################
 # Make data on FTP site available
@@ -140,12 +147,9 @@ my $webpublish = "/usr/local/bin/webpublish";
 &run_command("$webpublish -f -q -r $release")            && $log->write_to("Couldn't run webpublish on release directory\n");
 &run_command("$webpublish -f -q -r development_release") && $log->write_to("Couldn't run webpublish on dev sym link\n");
 
-# say goodnight Brian
-$log->write_to("$0 finished at ", `date`, "\n\n");
 
-# warn about errors 
-$log->mail( "$maintainers", "BUILD REPORT: $0" );
-
+$log->mail();
+print "Finished.\n" if ($verbose);
 exit(0);
 
 ##################################################################################
@@ -167,9 +171,11 @@ sub _copy {
 	}
 }
 
+##########################################
+
 sub run_command {
     my $command = shift;
-    $log->write_to($wb->runtime.": started running $command\n");
+    $log->write_to($wormbase->runtime.": started running $command\n");
     my $status = 0;
     if ( $test||$debug ) { print $command,"\n\n" }
     else {
@@ -184,17 +190,22 @@ sub run_command {
     return ($status);
 }
 
-sub usage {
-    my $error = shift;
 
-    if ( $error eq "Help" ) {
-        # Normal help menu
-        system( 'perldoc', $0 );
-        exit(0);
-    }
+##########################################
+
+sub usage {
+  my $error = shift;
+
+  if ($error eq "Help") {
+    # Normal help menu
+    system ('perldoc',$0);
+    exit (0);
+  }
 }
 
-########################################################
+##########################################
+
+
 
 __END__
 
