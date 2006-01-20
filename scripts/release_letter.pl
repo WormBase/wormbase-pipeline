@@ -5,7 +5,7 @@
 # by Anthony Rogers                             
 #
 # Last updated by: $Author: gw3 $               
-# Last updated on: $Date: 2005-12-16 17:15:36 $
+# Last updated on: $Date: 2006-01-20 16:06:14 $
 
 # Generates a release letter at the end of build.
 #
@@ -18,56 +18,81 @@
 # This allows for overwriting during the build when errors are fixed and scripts rerun
 
 
-use strict;                    
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use strict;                                      
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
+use Getopt::Long;
+use Carp;
+use Log_files;
+use Storable;
 use Ace;
-use Getopt::Std;
 
-#######################################
-# command-line options                #
-#######################################
+######################################
+# variables and command-line options # 
+######################################
 
-use vars qw($opt_c $opt_d $opt_l);
+my ($help, $debug, $test, $verbose, $store, $wormbase);
+my ($opt_c, $opt_d, $opt_l);
 
-# $opt_d do release_databases
-# $opt_c do release_composition
-# $opt_l write the letter out
+GetOptions ("help"       => \$help,
+            "debug=s"    => \$debug,
+	    "test"       => \$test,
+	    "verbose"    => \$verbose,
+	    "store"      => \$store,
+	    "c"          => \$opt_c,
+	    "d"          => \$opt_d,
+	    "l"          => \$opt_l,
+	    );
 
-getopts ('dcl');
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+			     );
+}
+
+# Display help if required
+&usage("Help") if ($help);
+
+# in test mode?
+if ($test) {
+  print "In test mode\n" if ($verbose);
+
+}
+
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
+
+
 
 ##############
 # variables  #                                                                   
 ##############
 
-my $ver     = &get_wormbase_version;
+my $basedir         = $wormbase->basedir;     # BASE DIR
+my $ace_dir         = $wormbase->autoace;     # AUTOACE DATABASE DIR
+my $reports_dir     = $wormbase->reports;     # AUTOACE REPORTS
+my $wormpep_dir     = $wormbase->wormpep;     # CURRENT WORMPEP
+
+
+my $ver     = $wormbase->get_wormbase_version;
 my $old_ver = $ver -1;
 
-# Most checking scripts should produce a log file that is 
-#  a) emailed to us all 
-#  b) copied to /wormsrv2/logs
-
-my $maintainer  = "All";
-my $rundate     = `date +%y%m%d`; chomp $rundate;
 my $date        = `date`;
-my $runtime     = `date +%H:%M:%S`; chomp $runtime;
-our $log;
-
-&create_log_files;
-
 
 my $webdir = "/nfs/WWWdev/SANGER_docs/htdocs/Projects/C_elegans/WORMBASE";
 
-&release_databases   if defined($opt_d);
-&release_composition if defined($opt_c);
+$wormbase->release_databases   if defined($opt_d);
+$wormbase->release_composition if defined($opt_c);
 
 
 # make the release letter
 if( defined($opt_l)) {
-  my $release_letter = "/wormsrv2/autoace/REPORTS/letter.WS$ver";
+  my $release_letter = "$reports_dir/letter.WS$ver";
   open (RL,">$release_letter");
   print RL "New release of WormBase WS$ver, Wormpep$ver and Wormrna$ver $date\n\n";
-  print RL "WS$ver was built by \n";
+  print RL "WS$ver was built by [INSERT NAME HERE]\n";
   print RL "======================================================================\n\n";
   print RL "This directory includes:\n";
   print RL "i)   database.WS$ver.*.tar.gz    -   compressed data for new release\n";
@@ -93,8 +118,7 @@ if( defined($opt_l)) {
   print RL "Release notes on the web:\n-------------------------\n";
   print RL "http://www.sanger.ac.uk/Projects/C_elegans/WORMBASE\n\n\n\n";
   
-  my $release_dir   = ("/wormsrv2/autoace/REPORTS");
-  my @release_files = ("$release_dir/dbases","$release_dir/composition","$release_dir/genedata","$release_dir/wormpep");
+  my @release_files = ("$reports_dir/dbases","$reports_dir/composition","$reports_dir/genedata","$reports_dir/wormpep");
   
   #include all the pre-generated reports
   my $file = shift(@release_files);
@@ -110,23 +134,25 @@ if( defined($opt_l)) {
 
 
   # Find out Gene->CDS, Transcript, Pseudogene connections
-  my $tace = &tace;
-  my $db = Ace->connect(-path  => "/wormsrv2/autoace",
-                        -program =>$tace) || do { print LOG "Connection failure: ",Ace->error; die();};
+  my $tace = $wormbase->tace;
+  my $db = Ace->connect(-path  => $ace_dir,
+                        -program =>$tace) || $log->log_and_die("Connection failure: ",Ace->error);
   my $query = "Find Gene WHERE (Corresponding_CDS OR Corresponding_transcript OR Corresponding_pseudogene) AND CGC_name";
   my $gene_seq_count = $db->fetch(-query=> "$query");
   $db->close;
 
   # wormpep status overview
   my %wp_status;
-  $wp_status{Confirmed}  = `grep Confirmed    /wormsrv2/WORMPEP/wormpep$ver/wormpep_current | wc -l`;
-  $wp_status{Supported}  = `grep confirmed    /wormsrv2/WORMPEP/wormpep$ver/wormpep_current | wc -l`;
-  $wp_status{Predicted}  = `grep Predicted    /wormsrv2/WORMPEP/wormpep$ver/wormpep_current | wc -l`;
+  my $wormpep_datafile = "$basedir/WORMPEP/wormpep$ver/wormpep_current";
+  
+  $wp_status{Confirmed}  = `grep Confirmed    $wormpep_datafile | wc -l`;
+  $wp_status{Supported}  = `grep confirmed    $wormpep_datafile | wc -l`;
+  $wp_status{Predicted}  = `grep Predicted    $wormpep_datafile | wc -l`;
   $wp_status{Gene}      = $gene_seq_count;
-  $wp_status{Swissprot}  = `grep 'SW:'        /wormsrv2/WORMPEP/wormpep$ver/wormpep_current | wc -l`;
-  $wp_status{Trembl}     = `grep 'TR:'        /wormsrv2/WORMPEP/wormpep$ver/wormpep_current | wc -l`;
-  $wp_status{Tremblnew}  = `grep 'TN:'        /wormsrv2/WORMPEP/wormpep$ver/wormpep_current | wc -l`;
-  $wp_status{Protein_ID} = `grep 'protein_id' /wormsrv2/WORMPEP/wormpep$ver/wormpep_current | wc -l`;
+  $wp_status{Swissprot}  = `grep 'SW:'        $wormpep_datafile | wc -l`;
+  $wp_status{Trembl}     = `grep 'TR:'        $wormpep_datafile | wc -l`;
+  $wp_status{Tremblnew}  = `grep 'TN:'        $wormpep_datafile | wc -l`;
+  $wp_status{Protein_ID} = `grep 'protein_id' $wormpep_datafile | wc -l`;
   $wp_status{Total}      = $wp_status{Confirmed} + $wp_status{Supported} + $wp_status{Predicted}; 
   
   print  RL "\n\n";
@@ -192,7 +218,7 @@ if( defined($opt_l)) {
   print RL "\nSynchronisation with GenBank / EMBL:\n------------------------------------\n\n";
   my $check = 0;
   while ($csome) {
-    my $errors = `grep ERROR /wormsrv2/autoace/yellow_brick_road/CHROMOSOME_$csome.agp_seq.log`;
+    my $errors = `grep ERROR $ace_dir/yellow_brick_road/CHROMOSOME_$csome.agp_seq.log`;
     while( $errors =~ m/for\s(\p{IsUpper}\w+)/g ) {
       print RL "CHROMOSOME_$csome\tsequence $1\n";
       $check = 1;
@@ -233,17 +259,14 @@ if( defined($opt_l)) {
   
   print RL "____________  END _____________\n";
   
-  print "DONT FORGET TO FILL IN THE LAST FEW FIELDS IN THE LETTER\n found at /wormsrv2/autoace/REPORTS/letter.WS$ver\n";
+  print "DONT FORGET TO FILL IN THE LAST FEW FIELDS IN THE LETTER\n found at $release_letter\n";
   
-  my $name = "Release Letter for WS$ver";
-  #    &mail_maintainer($name,$maintainer,$release_letter);
 }
 
-$runtime = `date +%H:%M:%S`; chomp $runtime;
-print LOG "\nScript ended at $runtime\n\n";
-close(LOG);
 
 # say goodbye
+$log->mail();
+print "Finished.\n" if ($verbose);
 exit(0);
 
 
@@ -253,23 +276,16 @@ exit(0);
 #
 ##############################################################
 
-sub create_log_files{
+##########################################
 
-  # Create history logfile for script activity analysis
-  $0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
+sub usage {
+  my $error = shift;
 
-  # create main log file using script name for
-  my $script_name = $1;
-  $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
-  my $rundate     = `date +%y%m%d`; chomp $rundate;
-  $log        = "/wormsrv2/logs/$script_name.$rundate.$$";
-
-  open (LOG, ">$log") or die "cant open $log";
-  print LOG "$script_name\n";
-  print LOG "started at ",`date`,"\n";
-  print LOG "=============================================\n";
-  print LOG "\n";
-
+  if ($error eq "Help") {
+    # Normal help menu
+    system ('perldoc',$0);
+    exit (0);
+  }
 }
 
 ##########################################
@@ -290,7 +306,7 @@ __END__
 =back
 
 This script:
-q
+
 will kindly take away the pain of having to write a release letter at the end of the build
 If the script is being run at the end of a build in which the 3 sub parts have been generated then use the B<-l> option.
 Otherwise generate the sequence comparison and database comparison sections with the B<-c> and B<-d> options.
@@ -313,7 +329,7 @@ B<-l> actually write the letter out.
 
 =over 4
 
-=item This script must run on a machine which can see the /wormsrv2 disk.
+=item None.
 
 =back
 
