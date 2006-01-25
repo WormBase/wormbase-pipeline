@@ -13,7 +13,7 @@
 # the Caltech database (citace)
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-12-20 12:09:56 $
+# Last updated on: $Date: 2006-01-25 15:45:08 $
 
 
 #################################################################################
@@ -172,7 +172,7 @@ sub unpack_stuff{
   $msg = "ERROR : Copy '".$dbname."_$today.tar.gz' to $unpack_dir FAILED\n"     if ($match == 0);
   $log->write_to("$msg");
 
-  system ("/bin/gzip -d ${dbname}_${today}.tar.gz") && die "Couldn't run gzip command\n";
+  system ("/bin/gzip -fd ${dbname}_${today}.tar.gz") && die "Couldn't run gzip command\n";
   $log->write_to("uncompress file\n");
 
   system ("/bin/tar -xvf ${dbname}_${today}.tar");
