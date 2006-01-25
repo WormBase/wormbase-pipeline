@@ -2,8 +2,8 @@
 #
 # prepare_primary_databases.pl
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2006-01-05 09:50:38 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2006-01-25 15:54:27 $
 
 use strict;
 my $scriptdir = $ENV{'CVS_DIR'};
@@ -52,16 +52,14 @@ $databases{'stlace'}->{'search'} = 'stl/stlace*';
 $databases{'brigdb'}->{'search'} = 'stl/brigdb*';
 $databases{'brigdb'}->{'option'} = 'brigace'; # for this database the option passed to unpack is not db name <sigh>
 $databases{'citace'}->{'search'} = 'caltech/citace*';
-$databases{'cshace'}->{'search'} = 'csh/cshace*';
+$databases{'cshace'}->{'search'} = 'csh/csh*';
 
 &FTP_versions;
 &last_versions;
 my $options = "";
 
-# use test mode if autoace_minder -test was specified
-$options .= " -test" if ($test);
-
 foreach my $primary (keys %databases){
+  next if (defined $database and ($database ne $primary));
   if( $databases{$primary}->{'ftp_date'} ) {
     unless ( $databases{$primary}->{'last_date'} == $databases{$primary}->{'ftp_date'} ) {
       $options .= " -".($databases{"$primary"}->{'option'} or $primary )." ".$databases{$primary}->{'ftp_date'};
@@ -77,21 +75,18 @@ print "\n\nrunning unpack_db.pl $options\n";
 
 # confirm unpack_db details and execute
 unless ($options eq "") {
-  print "Do you want to unpack these databases ?\n";
-  my $answer=<STDIN>;
-  &usage(2) if ($answer ne "y\n");
-  
   $log->write_to(" running unpack_db.pl $options\n\n");
   $wormbase->run_script("unpack_db.pl $options", $log);
 }
 
-# make a unpack_db.pl log file in /logs
-
-
 # transfer camace and geneace to correct PRIMARIES dir
 $log->write_to("Transfering geneace and camace\n");
-$wormbase->run_script("TransferDB.pl -start ".$wormbase->database('camace'). " -end ".$wormbase->primary("camace") ." -database -wspec");
-$wormbase->run_script("TransferDB.pl -start ".$wormbase->database('geneace')." -end ".$wormbase->primary("geneace")." -database -wspec");
+
+foreach ( qw(camace geneace) ){
+  $wormbase->delete_files_from($wormbase->primary("$_"),'*','+');
+  $wormbase->run_script("TransferDB.pl -start ".$wormbase->database("$_"). " -end ".$wormbase->primary("$_") ." -database -wspec");
+  $wormbase->run_command("ln -sf ".$wormbase->autoace."/wspec/models.wrm ".$wormbase->primary("$_")."/wspec/models.wrm");
+}
 #system("cp -R misc_static $autoace/acefiles/primary  #check whats happened here - looks like partial edit
 
 #################################################
