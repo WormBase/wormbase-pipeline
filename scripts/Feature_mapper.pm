@@ -264,6 +264,100 @@ sub check_overlapping_CDS
 
 
 
+=head2 get_flanking_sequence
+
+  Title   :   get_flanking_sequence
+  Usage   :   my @flank_seq = $mapper->get_flanking_sequence("$seq", 1000, 2000);
+  Returns :   array of two uppercase sequence strings of 30 bases or more which uniquely define a region
+    	      this is the inverse of map_feature()
+  Args    :   any seq obj as string, coordinates of the region relative to that seq obj
+
+=cut
+
+sub get_flanking_sequence
+{
+
+  my ($self, $clone, $pos1, $pos2) = @_;
+
+
+  # get sequence of clone
+  my $seq = $self->Sub_sequence($clone);
+  my $len = length $seq;
+                                                                                                                                                      
+  # convert to computer coords
+  $pos1--;
+  $pos2--;
+
+  # are we in reverse sense? (i.e. reversed order of positions)
+  if ($pos1 > $pos2) {
+    $seq = $self->DNA_revcomp($seq);
+    # get reverse coords
+    $pos1 = $len-$pos1-1;
+    $pos2 = $len-$pos2-1;
+  }
+
+  # set the initial flanking lengths
+  my $flank1 = 30;
+  my $flank2 = 30;
+                                                                                                                                                      
+  # loop to extend the sequence
+  my $matches1 = 2;              # force at least one test of the flank by saying the last (imaginary) test found 2 matches
+  my $matches2 = 2;
+  my $flankseq1;
+  my $flankseq2;
+  while ($matches1 > 1 || $matches2 > 1) {
+    if ($pos1-$flank1+1 < 0) {die "Can't get unique first flank in sequence object $clone ending at $pos1\n";}
+    if ($pos2+$flank2 > $len) {die "Can't get unique second flank in sequence object $clone starting at $pos2\n";}
+    # get flanking sequences
+    $flankseq1 = substr($seq, $pos1-$flank1+1, $flank1);
+    $flankseq2 = substr($seq, $pos2, $flank2);
+                                                                                                                                                      
+    # find the number of matches
+    $matches1 = $self->_matches($seq, $flankseq1);
+    $matches2 = $self->_matches($seq, $flankseq2);
+                                                                                                                                                      
+    #print uc($flankseq1) . " ($matches1) " . uc($flankseq2) ." ($matches2)\n";
+                                                                                                                                                      
+    # if there are more than one match, extend the length of the flank
+    if ($matches1 > 1) {
+      $flank1++;
+    }
+    if ($matches2 > 1) {
+      $flank2++;
+    }
+  }
+                                                                                                                                                      
+  # report the unique flanking sequences
+  return (uc($flankseq1), uc($flankseq2));
+                                                                                                                                                      
+}
+
+##########################################
+                                                                                                                                                      
+=head2 _matches
+
+  Title   :   _matches
+  Usage   :   my $matches = _matches($sequence, $flanking_sequence)
+  Returns :   the number of unique matches of the flanking_sequence in the sequence
+  Args    :   any seq obj as string, coordinates relative to that seq obj
+
+=cut
+
+sub _matches () {
+  my ($self, $seq, $flank) = @_;
+                                                                                                                                                      
+  my $matches = 0;
+                                                                                                                                                      
+  my $pos = -1;
+  while (($pos = index($seq, $flank, $pos)) > -1) {
+    $matches++;
+    $pos++;
+  }
+                                                                                                                                                      
+  return $matches;
+}
+
+
 
 
 1;
