@@ -7,7 +7,7 @@
 # handles post processing of GFF files
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-01-06 14:45:15 $
+# Last edited on: $Date: 2006-01-27 09:46:01 $
 
 
 use lib $ENV{CVS_DIR};
@@ -15,6 +15,7 @@ use Wormbase;
 use Getopt::Long;
 use strict;
 use Storable;
+use Log_files;
 
 my ($help, $debug, $test, $quicktest, $database, $store );
 my ($utr, $clone_acc, $gene_acc);
@@ -26,7 +27,6 @@ GetOptions (
 	    "store:s"       => \$store,
 	    "quicktest"     => \$quicktest,
 	    "database:s"    => \$database,
-	    "store:s"       => \$store,
 
 	    "utr"           => \$utr,
 	    "clone_acc"     => \$clone_acc,
@@ -45,6 +45,9 @@ else {
 			     -test    => $test,
 			   );
 }
+
+my $log = Log_files->make_build_log($wormbase);
+
 $database = $wormbase->autoace unless $database;
 my @chroms = qw( I II III IV V X mtDNA);
 @chroms = qw(III) if $quicktest;
@@ -84,10 +87,15 @@ else {
   }
 }
 
+$log->mail;
+
+exit(0);
 
 sub GFF_with_UTR{
   my $utr = shift;
   my $utr_cds = shift;
+
+  $log->write_to("writing UTR GFF file $utr_cds\n");
   open( UTR, "<$utr" );
   open( UTR_CDS, ">$utr_cds");
   while (<UTR>) {
@@ -118,6 +126,8 @@ sub GFF_clones_with_accessions{
 
   open (GFF, "<$infile")  || die "Can't open GFF file: $infile\n\n";
   open (OUT, ">$outfile") || die "Can't write to $outfile\n";
+
+  $log->write_to("writing clone accession GFF file $outfile\n");
   while (<GFF>) {
 
     next if (/^\#/);
@@ -164,6 +174,7 @@ sub GFF_genes_with_accessions{
   my $infile  = shift;
   my $outfile = shift;
 
+  $log->write_to("writing Genes with acc GFF file $outfile\n");
   my $db = Ace->connect(-path=>$database) || do { print "Connection failure to $database: ",Ace->error; die();};
 
   open (GFF, "<$infile") || die "Can't open GFF file: $infile\n\n";
