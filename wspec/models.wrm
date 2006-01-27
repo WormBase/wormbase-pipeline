@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2006-01-10 14:37:11 $
+// Last edited on: $Date: 2006-01-27 10:11:05 $
  
 
 
@@ -1073,6 +1073,8 @@
 		   Isoform #Evidence
 		   Start_not_found Int
 		   End_not_found
+		   Merge Text  // ar2 270106 added by request for StLoius
+		   Split Text  // ar2 270106 added by request for StLoius
 	Gene_regulation Trans_regulator ?Gene_regulation XREF Trans_regulator_seq // new for Wen [030804 krb]
                         Trans_target    ?Gene_regulation XREF Trans_regulated_seq // new for Wen
                         Cis_target      ?Gene_regulation XREF Cis_regulated_seq  // new for Wen
@@ -1956,7 +1958,7 @@
                         Pseudogene ?Pseudogene XREF RNAi_result #Evidence // new [030801 krb]
         Supporting_data Movie ?Movie XREF RNAi    // added for Lincoln, krb [010807]
                         Picture ?Picture XREF RNAi
-	DB_info    Database ?Database ?Database_field UNIQUE ?Accession_number //to link out to Phenobank ar2 02-DEC-05
+	DB_info    Database ?Database ?Database_field ?Accession_number //to link out to Phenobank ar2 02-DEC-05 //removed UNIQUE as reqs multiple connections
 	Species UNIQUE ?Species
         Reference ?Paper XREF RNAi
         Phenotype ?Phenotype XREF RNAi #Phenotype_info
