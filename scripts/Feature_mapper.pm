@@ -268,9 +268,15 @@ sub check_overlapping_CDS
 
   Title   :   get_flanking_sequence
   Usage   :   my @flank_seq = $mapper->get_flanking_sequence("$seq", 1000, 2000);
-  Returns :   array of two uppercase sequence strings of 30 bases or more which uniquely define a region
-    	      this is the inverse of map_feature()
-  Args    :   any seq obj as string, coordinates of the region relative to that seq obj
+  Returns :   array of two uppercase sequence strings of 30 bases or 
+              more which uniquely define a region
+    	      if a unique flanking sequence cannot be produced within the 
+              bounds of this clone and the next larger sequence object 
+              (superlink or chromosome) needs to be used, then 'undef' 
+              is returned.
+    	      This routine is the inverse of map_feature().
+  Args    :   any seq obj as string, 
+              coordinates of the region relative to that seq obj
 
 =cut
 
@@ -306,8 +312,10 @@ sub get_flanking_sequence
   my $flankseq1;
   my $flankseq2;
   while ($matches1 > 1 || $matches2 > 1) {
-    if ($pos1-$flank1+1 < 0) {die "Can't get unique first flank in sequence object $clone ending at $pos1\n";}
-    if ($pos2+$flank2 > $len) {die "Can't get unique second flank in sequence object $clone starting at $pos2\n";}
+    # Can't get unique first flank in sequence object $clone ending at $pos1
+    if ($pos1-$flank1+1 < 0) {return undef;}
+    # Can't get unique second flank in sequence object $clone starting at $pos2
+    if ($pos2+$flank2 > $len) {return undef;}
     # get flanking sequences
     $flankseq1 = substr($seq, $pos1-$flank1+1, $flank1);
     $flankseq2 = substr($seq, $pos2, $flank2);
