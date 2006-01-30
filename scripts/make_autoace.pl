@@ -8,7 +8,7 @@
 # This makes the autoace database from its composite sources.
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-01-06 11:43:18 $
+# Last edited on: $Date: 2006-01-30 14:31:30 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -27,7 +27,7 @@ use Storable;
 
 our ($help, $debug, $test);
 my $store;
-my( $all, $parse, $init, $tmpgene, $pmap, $chromlink, $check, $allcmid, $reorder );
+my( $all, $parse, $init, $tmpgene, $pmap, $chromlink, $check, $allcmid, $reorder, $common );
 
 GetOptions ("help"         => \$help,
             "debug=s"      => \$debug,
@@ -40,10 +40,11 @@ GetOptions ("help"         => \$help,
 	    "chromlink"    => \$chromlink,
 	    "check"        => \$check,
 	    "allcmid"      => \$allcmid,
-	    "reorder"      => \$reorder
+	    "reorder"      => \$reorder,
+	    "common"       => \$common
 	   );
 
-$all = 1 unless( $parse or $tmpgene or $pmap or $chromlink or $check or $allcmid or $reorder);
+$all = 1 unless( $init or $parse or $tmpgene or $pmap or $chromlink or $check or $allcmid or $reorder or $common);
 
 # Display help if required
 &usage("Help") if ($help);
@@ -119,6 +120,10 @@ my $errors = 0; # for tracking system call related errors
 
 #reorder exons
 $wormbase->run_script("reorder_exons.pl", $log ) if( $all or $reorder );
+
+#write COMMON_DATA files that can be done at start of build.
+$wormbase->run_script("update_Common_data.pl -clone2acc -clone2size -clone2seq -genes2lab -worm_gene2cgc -worm_gene2geneID -worm_gene2class -est -est2feature -gene_id", $log ) if( $all or $common );
+
 
 #finish
 $log->mail;
@@ -261,13 +266,13 @@ sub reinitdb {
   }
 
   #if in debug then need to edit password file to allow non wormpub user.
-  if( $wormbase->test_) {
+  if( $wormbase->test) {
     my $user = `whoami`;
     open(PWD,"<$dbpath/wspec/passwd.wrm") or $log->log_and_die("cant edit $dbpath/wspec/passwd.wrm\n");
     undef $/;
     my $pass = <PWD>;
     close PWD;
-    $pass =~ s/wormpub/wormpub$user/;
+    $pass =~ s/wormpub/wormpub\n$user/;
     $\ = "\n";
     system("chmod u+w $dbpath/wspec/passwd.wrm");
     open(PWD,">$dbpath/wspec/passwd.wrm") or $log->log_and_die("cant write new $dbpath/wspec/passwd.wrm\n");
