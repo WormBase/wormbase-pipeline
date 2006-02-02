@@ -7,7 +7,7 @@
 # This script calculates interpolated genetic map positions for CDS, Transcripts 
 # and Pseudogenes lying between and outside genetic markers.
 #
-# Last updated on: $Date: 2006-01-10 15:13:08 $
+# Last updated on: $Date: 2006-02-02 12:48:18 $
 # Last updated by: $Author: mh6 $
 
 use strict;
@@ -868,6 +868,8 @@ sub dataset {
 #########################################################
 # write acefile for all CDSes with gmap/interpolated gmap
 # also write Map position to locus objects
+#
+# mh6: commented out some stuff for the new model
 #########################################################
 
 sub ace_output {
@@ -895,10 +897,10 @@ sub ace_output {
       my $cdsf = $_;
       $cdsf = sprintf ("%-15s", "$cdsf");
 
-      if ($type eq "CDS"){print ACE "\nCDS : \"$_\"\n";	print CDSes "$cdsf\t";}
-      if ($type eq "RNA"){print ACE "\nTranscript : \"$_\"\n"; print CDSes "$cdsf\t"}
-      if ($type eq "pseudo"){print ACE "\nPseudogene : \"$_\"\n"; print PSEUDO "$cdsf\t"}
-      print ACE "Interpolated_map_position\t\"$chrom\"\t$gmap\t\/\/$mean_coord (iso)\n";
+#      if ($type eq "CDS"){print ACE "\nCDS : \"$_\"\n";	print CDSes "$cdsf\t";}
+#      if ($type eq "RNA"){print ACE "\nTranscript : \"$_\"\n"; print CDSes "$cdsf\t"}
+#      if ($type eq "pseudo"){print ACE "\nPseudogene : \"$_\"\n"; print PSEUDO "$cdsf\t"}
+#      print ACE "Interpolated_map_position\t\"$chrom\"\t$gmap\t\/\/$mean_coord (iso)\n";
       print CDSes "\t$chrom\t$gmap\t" if $type ne "pseudo";
       print PSEUDO "\t$chrom\t$gmap\t" if $type eq "pseudo";
 
@@ -928,18 +930,21 @@ sub ace_output {
   }
   else {
     if ($feature eq "CDS"){
-      print ACE "\nCDS : \"$cds\"\n" if !$clone;
-      print ACE "\nSequence : \"$cds\"\n" if $clone;
+# print ACE "\nCDS : \"$cds\"\n" if !$clone;
+# print ACE "\nSequence : \"$cds\"\n" if $clone;
       print CDSes "$cdsf\t" if !$clone;
       print CLONEs "$clone\t" if $clone;
     }
     if ($feature eq "RNA"){
-      print ACE "\nTranscript : \"$cds\"\n";
+#      print ACE "\nTranscript : \"$cds\"\n";
       print CDSes "$cdsf\t";
     }
-    if ($feature eq "pseudogene"){print ACE "\nPseudogene : \"$cds\"\n"; print PSEUDO "$cdsf\t"}
+   if ($feature eq "pseudogene"){
+#	   print ACE "\nPseudogene : \"$cds\"\n"; 
+	   print PSEUDO "$cdsf\t";
+   }
 
-    print ACE "Interpolated_map_position\t\"$chrom\"\t$gmap\t\/\/$mean_coord\n";
+#    print ACE "Interpolated_map_position\t\"$chrom\"\t$gmap\t\/\/$mean_coord\n";
     print CDSes"\t$chrom\t$gmap\t" if !$clone && $feature ne "pseudogene";
     print CLONEs"\t$chrom\t$gmap\t" if $clone;
     print PSEUDO"\t$chrom\t$gmap\t" if $feature eq "pseudogene";
