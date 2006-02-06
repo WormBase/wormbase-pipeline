@@ -5,8 +5,8 @@
 #
 # This maps alleles to the genome based on their flanking sequences
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2005-12-20 13:49:05 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2006-02-06 14:23:54 $
 
 use strict;
 use warnings;
@@ -358,7 +358,11 @@ sub outputAllele {
                     $log->write_to("ERROR: $cds is not a CDS or Transcript\n");
                     $error_count++;
                 }
-
+		#write Database line for link to KO_consortium
+		if( $allele =~ /^[og]k\d/ ) {
+		  print "\nVariation : $allele\n";
+		  print "Database Gene_Knockout_Consortium GeneID \"<GeneID=$cds>\"\n";
+		}
             }
         }
     }
