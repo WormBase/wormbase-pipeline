@@ -4,13 +4,13 @@
 # 
 # A script to make multiple copies of camace for curation, and merge them back again
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2005-12-16 11:18:55 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2006-02-09 16:50:41 $
 
 
 use strict;
 #use lib "/wormsrv2/scripts/";
-use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
 
@@ -27,6 +27,7 @@ my $split;                 # Splitting databases
 my $update;                # Update current database
 my $debug;                 # Debug option
 my $help;                  # Help menu
+my $version;               # Removes final wormsrv2 dependancy.
 
 GetOptions (
             "all"        => \$all,
@@ -36,14 +37,15 @@ GetOptions (
 	    "split"      => \$split,
 	    "update"     => \$update,
 	    "help"       => \$help,
-	    "debug"      => \$debug
+	    "debug"      => \$debug,
+	    "version"    => \$version
 	   );
 
 # Help pod if needed
 &usage("Help") if ($help);
 
 our $tace       = &tace;
-our $WS_version = &get_wormbase_version;
+my $WS_version = $version;
 
 my $WS_next = $WS_version + 1;
 print "WS_version : $WS_version\tWS_next : $WS_next\n" if ($debug);
@@ -109,7 +111,7 @@ if ($split) {
   exit(0);
 }
 
-$0 =~ m/\/*([^\/]+)$/; system ("touch /wormsrv2/logs/history/$1.`date +%y%m%d`");
+#$0 =~ m/\/*([^\/]+)$/; system ("touch /nfs/logs/history/$1.`date +%y%m%d`");
 
 print "hasta luego\n";
 
