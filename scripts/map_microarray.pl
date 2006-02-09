@@ -6,8 +6,8 @@
 #
 # by Anon
 #
-# Last updated by: $Author: mh6 $                      
-# Last updated on: $Date: 2005-12-20 14:10:17 $        
+# Last updated by: $Author: ar2 $                      
+# Last updated on: $Date: 2006-02-09 15:32:38 $        
 
 use strict;
 use Wormbase;
@@ -54,7 +54,7 @@ $debug = $wb->debug if $wb->debug;    # Debug mode, output only goes to one user
 
 #further variables
 my $dbdir= $wb->autoace;                    # Database path
-$outfile = $outfile ? $outfile : "$dbdir/acefiles/microarray_mappings.ace";
+$outfile = $outfile ? $outfile : $wb->acefiles."/microarray_mappings.ace";
 my $tace        = $wb->tace;                                  # tace executable path
 
 # create log
@@ -193,12 +193,8 @@ $db->close;
 
 if($load){
   $log->write_to("Loading file to autoace\n");
-  my $command = "autoace_builder.pl -load $dbdir/acefiles/microarray_mappings.ace -tsuser microarray_mappings";
-                                                                                   
-  my $status = system($command);
-  if(($status >>8) != 0){
-    $log->write_to("ERROR: Loading microarray_mappings.ace file failed \$\? = $status\n");
-  }
+  my $command = "autoace_builder.pl -load $outfile -tsuser microarray_mappings";
+  $wb->load_to_database($wb->autoace, $outfile, 'microarray_mappings');
 }
 
 
