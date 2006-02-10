@@ -4,8 +4,8 @@
 #
 # map GO_terms to ?Sequence objects from ?Motif and ?Phenotype
 #
-# Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2005-12-20 17:13:51 $      
+# Last updated by: $Author: ar2 $     
+# Last updated on: $Date: 2006-02-10 11:04:44 $      
 
 use strict;
 use warnings;
@@ -47,11 +47,6 @@ else { $wb = Wormbase->new( -debug => $debug, -test => $debug, ) }
 # Variables Part II (depending on $wb) 
 $debug = $wb->debug if $wb->debug;    # Debug mode, output only goes to one user
 
-# Use debug mode?
-if ($debug) {
-    print "DEBUG = \"$debug\"\n\n";
-    ( $maintainers = $debug . '\@sanger.ac.uk' );
-}
 my $log=Log_files->make_build_log($wb);
 
 ##############################
@@ -61,7 +56,7 @@ my $log=Log_files->make_build_log($wb);
 my $tace      = $wb->tace;      # tace executable path
 my $dbpath    = $wb->autoace;                                      # Database path
 
-my $out="$dbpath/acefiles/inherited_GO_terms.ace";
+my $out=$wb->acefiles."/inherited_GO_terms.ace";
 open (OUT,">$out");
 OUT->autoflush();
 
@@ -84,7 +79,7 @@ my $db = Ace->connect(-path=>$dbpath,
 
 unless ($noload || $debug) {
 
-  my $command = "pparse /wormsrv2/autoace/acefiles/inherited_GO_terms.ace\nsave\nquit\n";
+  my $command = "pparse $out\nsave\nquit\n";
     
   open (TACE,"| $tace -tsuser inherit_GO_terms $dbpath") || die "Couldn't open tace connection to $dbpath\n";
   print TACE $command;
@@ -97,8 +92,7 @@ unless ($noload || $debug) {
 ##############################
 # mail $maintainer report    #
 ##############################
-$log->write_to($wb->runtime.": script finished\n");
-$log->mail($maintainers,"BUILD REPORT: $0");
+$log->mail();
 
 ##############################
 # hasta luego                #
