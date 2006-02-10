@@ -8,8 +8,8 @@
 #
 # Usage : map_feature2gene.pl [-options]
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2005-12-20 13:53:14 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2006-02-10 10:58:58 $
 #################################################
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -55,13 +55,7 @@ $test  = $wb->test  if $wb->test;     # Test mode
 $debug = $wb->debug if $wb->debug;    # Debug mode, output only goes to one user
 my $tace   = $wb->tace;                                        # tace executable path
 my $dbdir  = $wb->autoace;                                     # Database path
-my $output = "$dbdir/acefiles/TSL_feature_connections.ace";    # output file path
-
-# Use debug mode?
-if ($debug) {
-    print "DEBUG = \"$debug\"\n\n";
-    ( $maintainers = $debug . '\@sanger.ac.uk' );
-}
+my $output = $wb->acefiles."/TSL_feature_connections.ace";    # output file path
 
 # create log
 my $log = Log_files->make_build_log($wb);
@@ -148,7 +142,7 @@ if ($load) {
         $log->write_to("ERROR: Loading $output file failed \$\? = $status\n");
     }
 }
-$log->mail( "$maintainers", "BUILD REPORT: $0" );
+$log->mail();
 exit(0);
 
 sub usage {
