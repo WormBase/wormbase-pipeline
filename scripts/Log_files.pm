@@ -114,7 +114,7 @@ sub mail {
     my ( $self, $recipient, $subject ) = @_;
     my $fh = $self->{"FH"};
     print $fh "\n\n-----------------------------------\n";
-    print $fh "Finished at ", $self->{'wormbase'}->runtime, "\n";
+    print $fh "Finished at ",Wormbase::runtime(), "\n";
     close $fh;
 
     $recipient = "All" unless $recipient;
@@ -131,7 +131,7 @@ sub mail {
     }
     $script = "REPORT: $script";
     $script = "ERROR : $script" if ( $self->report_errors != 0 );
-    $self->{'wormbase'}->mail_maintainer( $script, $recipient, $file );
+    Wormbase::mail_maintainer(undef, $script, $recipient, $file ); #pass undef as not using in object based way.  method expects self.
     $self->{'MAILED'} = 1;
 }
 
@@ -146,11 +146,12 @@ sub end {
 sub DESTROY {
     my $self = shift;
     unless ( defined $self->{'MAILED'} ) {
-        my $fh = $self->{"FH"};
-        print $fh
-"\nTHIS MAIL WAS NOT SENT BY THE SCRIPT THAT WAS RUN\nThe log file object was not \"mailed\", which may mean the script did not finish properly\n";
-        $self->{'SCRIPT'} .= " FAILED";
-        $self->mail;
+      print STDERR "DESTROYing at ",Wormbase::runtime(),"\n====================\n";
+      $self->error;
+      my $fh = $self->{"FH"};
+      print $fh
+	"\nTHIS MAIL WAS NOT SENT BY THE SCRIPT THAT WAS RUN\nThe log file object was not \"mailed\", which may mean the script did not finish properly\n";
+      $self->mail;
     }
 }
 
@@ -158,7 +159,7 @@ sub DESTROY {
 sub log_and_die {
     my $self   = shift;
     my $report = shift;
-
+    $self->error;
     if ($report) {
         $self->write_to("$report\n");
         print STDERR "$report\n";
