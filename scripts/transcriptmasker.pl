@@ -8,7 +8,7 @@
 # 031023 dl1
 
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-01-10 14:00:43 $
+# Last edited on: $Date: 2006-02-13 11:53:08 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -167,7 +167,7 @@ sub MaskSequence {
 
   # assign output file
 
-  open (OUTPUT, ">$blat_dir/$data") || $log->log_and_die("ERROR: Can't open output file: $blat_dir/$data");
+  open (OUTPUT, ">$blat_dir/$data.masked") || $log->log_and_die("ERROR: Can't open output file: $blat_dir/$data.masked");
 
 
   # input file loop structure
