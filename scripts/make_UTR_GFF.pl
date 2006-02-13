@@ -1,11 +1,35 @@
 #!/usr/local/bin/perl5.8.0 -w
 
 use strict;
+use lib $ENV{'CVS_DIR'};
+use Wormbase;
+use Log_files;
+use Getopt::Long;
+use File::Path;
+use Storable;
+
+my ($help, $debug, $test, $verbose, $store, $wormbase, $chrom);
+
+GetOptions ("help"       => \$help,
+            "debug=s"    => \$debug,
+	    "test"       => \$test,
+	    "verbose"    => \$verbose,
+	    "store"      => \$store,
+	    "chromosome" => \$chrom
+	  );
+
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+			     );
+}
+
+my $log = Log_files->make_build_log($wormbase);
 
 
 # do a single chromosome if prompted else do the lot......
-
-my $chrom = shift;
 
 my @chromosome;
 
@@ -17,9 +41,8 @@ else {
 }
 
 # other vars
-
-my $verbose = 0;
-my $workdir = "/nfs/disk100/wormpub/analysis/UTR";
+my $workdir = $wormbase->wormpub."/analysis/UTR";
+my $gff_dir = $wormbase->gff_splits;
 
 my ($file1,$file2,$file3,$file4);
 
@@ -45,13 +68,14 @@ my $dotno;
 
 foreach my $chrom ( @chromosome ) {
 
-    open (OUTPUT, ">$workdir/CHROMOSOME_$chrom.UTR.gff");
+    open (OUTPUT, ">$workdir/CHROMOSOME_${chrom}_UTR.gff") or $log->log_and_die("cant open $workdir/CHROMOSOME_${chrom}_UTR.gff : $!\n");
 
     #################################
     # coding_transcript split files #
     #################################
 
-    system ("grep exon $workdir/CHROMOSOME_$chrom.Coding_transcript.gff > $workdir/CHROMOSOME_$chrom.coding_transcript_exon.gff");
+    $wormbase->run_command("grep exon $gff_dir/CHROMOSOME_${chrom}_Coding_transcript.gff > $workdir/CHROMOSOME_${chrom}_coding_transcript_exon.gff", $log);
+    $wormbase->run_command("grep coding_exon $gff_dir/CHROMOSOME_${chrom}_curated.gff    > $workdir/CHROMOSOME_${chrom}_coding_exon.gff",            $log);
 
     #######################
     # curated split files #
@@ -64,7 +88,7 @@ foreach my $chrom ( @chromosome ) {
     # Loop through each gene in this chromosome #
     #############################################
 
-    open (GENES, "<$workdir/CHROMOSOME_$chrom.CDS.gff");
+    open (GENES, "<$gff_dir/CHROMOSOME_${chrom}_curated.gff") or $log->log_and_die("cant open $gff_dir/CHROMOSOME_${chrom}_curated.gff : $!\n");
     while (<GENES>) {
 	next if (/^\#/);
 	($gene) = (/CDS \"(\S+)\"/);
@@ -77,15 +101,15 @@ foreach my $chrom ( @chromosome ) {
         # make the small files to work with #
 	#####################################
 
-	system ("grep -iw $gene $workdir/CHROMOSOME_$chrom.coding_exon.gff              > $file1");
-	system ("grep -iw $gene $workdir/CHROMOSOME_$chrom.coding_transcript_exon.gff   > $file2");
+	$wormbase->run_command ("grep -iw $gene $workdir/CHROMOSOME_${chrom}_coding_exon.gff              > $file1");
+	$wormbase->run_command ("grep -iw $gene $workdir/CHROMOSOME_${chrom}_coding_transcript_exon.gff   > $file2");
 	
 	###################
         # CDS coordinates #
 	###################
 
 	$line = 1;
-	open (CDS, "<$file1");
+	open (CDS, "<$file1") or $log->log_and_die("cant open $file1 $!\n");
 	while (<CDS>) {
 	    chomp;
 	    @f = split /\t/;
@@ -106,7 +130,7 @@ foreach my $chrom ( @chromosome ) {
         # New UTR exons #
 	#################	
 
-	open (NEW, "gff_overlap -unsorted -not $file1 $file2 | ");
+	open (NEW, "gff_overlap -unsorted -not $file1 $file2 | ")  or $log->log_and_die ("cant open gff_overlap $!\n");
 	while (<NEW>) {
 	    @f = split /\t/;
 
@@ -143,7 +167,7 @@ foreach my $chrom ( @chromosome ) {
 	# Partially coding exons #
 	##########################
 
-	open (NEW, "gff_overlap -unsorted -minfrac1 1 -quiet $file1 $file2 | ");
+	open (NEW, "gff_overlap -unsorted -minfrac1 1 -quiet $file1 $file2 | ") or $log->log_and_die ("cant open gff_overlap $!\n");
 	while (<NEW>) {
 	    @f = split /\t/;
 
@@ -209,7 +233,7 @@ foreach my $chrom ( @chromosome ) {
 	    
 	    next if ($isoform eq "");
 	    
-	    open (CODINGEXONS, "<$file1");
+	    open (CODINGEXONS, "<$file1") or $log->log_and_die("cant open $file1 $!\n");
 	    while (<CODINGEXONS>) {
 		chomp;
 		@f = split /\t/;
