@@ -6,8 +6,8 @@
 #
 # Script to identify genes which can have their Interpolated_map_position tag promoted to a Map position
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2006-01-10 14:14:14 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2006-02-13 11:47:43 $
 
 use strict;
 use warnings;
@@ -50,12 +50,6 @@ else { $wb = Wormbase->new( -debug => $debug, -test => $test, ) }
 $test  = $wb->test  if $wb->test;     # Test mode
 $debug = $wb->debug if $wb->debug;    # Debug mode, output only goes to one user
 
-# Use debug mode?
-if ($debug) {
-    print "DEBUG = \"$debug\"\n\n";
-    ( $maintainers = $debug . '\@sanger.ac.uk' );
-}
-
 # Set up top level base directory which is different if in test mode
 # Make all other directories relative to this
 my $basedir   = $wb->basedir;
@@ -66,7 +60,7 @@ my $log = Log_files->make_build_log($wb);
 
 my $tace = $wb->tace;                               # tace executable path
 $database = $wb->autoace if (!$database);           # specify autoace as the default database
-my $output = "pseudo_map_positions.ace";
+my $out = $wb->acefiles."/pseudo_map_positions.ace";
 
 
 ###############################################################################################
@@ -80,7 +74,7 @@ my $output = "pseudo_map_positions.ace";
 my $count = 0;
 
 # open main output file to be loaded into autoace (and subsequently geneace)
-open(OUT, ">$basedir/autoace/acefiles/$output") || die $!;
+open(OUT, ">$out") || die $!;
 print OUT "// this file contains details of Genes with interpolated map positions\n";
 print OUT "// that can be 'upgraded' to a (pseudo) Map position.  We do this only\n";
 print OUT "// for C. elegans genes that have a CGC-name, allele connection (but not a\n";
@@ -100,7 +94,7 @@ $log->write_to("(this file will be loaded to geneace by a later build script):\n
 
 # open a connection to database
 my $db = Ace->connect(-path  => $database,
-		      -program =>$tace) || do { $log->write_to("Connection failure: ",Ace->error); die();};
+		      -program =>$tace) ||  $log->log_and_die("Connection failure: ",Ace->error);
 
 
 # build query to find candidate genes
@@ -150,14 +144,7 @@ $log->write_to("Total: $count to become inferred genetic marker(s)\n\n");
 
 
 #load to database if -load specified
-if($load){
-  $log->write_to("Loading promoted map position data $database");
-  my $command = "autoace_minder.pl -load $basedir/autoace/acefiles/$output -tsuser Promoted_map_position";
-   
-  my $status = system($command);
-  if(($status >>8) != 0){
-    $log->write_to("ERROR: Loading $output file failed \$\? = $status\n");
-  }
+$wb->load_to_database($wb->autoace,$out, 'pseudo_map_postn'); if $load
 }
 
 
