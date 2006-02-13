@@ -9,7 +9,7 @@ use Storable;
 
 my ($debug, $test, $database);
 
-my @chroms = qw( I II III IV V X MTCE);
+my @chroms = qw( I II III IV V X MtDNA);
 my $dump_dir;
 my $dumpGFFscript = $ENV{'CVS_DIR'}."/GFF_method_dump.pl";
 my $scratch_dir = "/tmp";
