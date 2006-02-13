@@ -3,7 +3,7 @@
 # prepare_primary_databases.pl
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-01-25 15:54:27 $
+# Last edited on: $Date: 2006-02-13 15:37:11 $
 
 use strict;
 my $scriptdir = $ENV{'CVS_DIR'};
@@ -135,13 +135,15 @@ sub last_versions {
   $log->write_to("\tgetting last versions . . \n");
 
   my $file = $wormbase->basedir."/Primary_databases_used_in_build";
-  open (LAST_VER, "<$file") or $log->log_and_die("cant find $file\n");
-  while (<LAST_VER>) {
-    if (/^(\w+) \: (\d+)$/) {
-      $databases{"$1"}->{'last_date'} = $2;
+  if (-e $file ){
+    open (LAST_VER, "<$file") or $log->log_and_die("cant $file $!\n");
+    while (<LAST_VER>) {
+      if (/^(\w+) \: (\d+)$/) {
+	$databases{"$1"}->{'last_date'} = $2;
+      }
     }
+    close LAST_VER;
   }
-  close LAST_VER;
 
   foreach my $db ( keys %databases ) {
     unless (defined $databases{$db}->{'last_date'} ) {
