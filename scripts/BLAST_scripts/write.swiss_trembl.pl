@@ -39,10 +39,11 @@ if ( $store ) {
 my $log = Log_files->make_build_log($wormbase);
 
 my $wormpipe = $wormbase->wormpipe;
+my $acefiles  = $wormbase->acefiles;
 
 my $wormpipe_dump     = $wormbase->dump_dir;
-my $output_swiss      = "$wormpipe_dump/swissproteins.ace";
-my $output_trembl     = "$wormpipe_dump/tremblproteins.ace";
+my $output_swiss      = "$acefiles/swissproteins.ace";
+my $output_trembl     = "$acefiles/tremblproteins.ace";
 my $blastx_file       = "$wormpipe_dump/blastx_ensembl.ace";
 my $blastp_file       = "$wormpipe_dump/blastp_ensembl.ace";
 my $ensembl_info_file = "$wormpipe_dump/ensembl_protein_info.ace";
@@ -178,22 +179,15 @@ sub output_list
 	  print ACE "Protein : \"$prefix:$accession\"\n";
 	  print ACE "Peptide \"$prefix:$accession\"\n";
 	  print ACE "Species \"$ORG{$accession}\"\n";
-	  unless( $old ) {
-	    print ACE "Description \"$DES{$accession}\"\n";
-	    if ("$prefix" eq "SW" ) {
-	      #print ACE "Database SwissProt SwissProt_ID $id\n";
-	      print ACE "Database SwissProt SwissProt_AC $accession\n";
-	    }
-	    else {
-	      print ACE "Database TREMBL TrEMBL_AC $id\n";
-	    }
+	  print ACE "Description \"$DES{$accession}\"\n";
+	  if ("$prefix" eq "SW" ) {
+	    #print ACE "Database SwissProt SwissProt_ID $id\n";
+	    print ACE "Database SwissProt SwissProt_AC $accession\n";
 	  }
 	  else {
-	    # this is the old style - left for safety remove after WS104
-	    print ACE "Title \"$DES{$id}\"\n";
-	    print ACE  "Database \"$db\" \"$id\" \"$accession\"\n";
+	    print ACE "Database TREMBL TrEMBL_AC $id\n";
 	  }
-
+	
 	  print ACE  "\n";
 	  print ACE  "Peptide : \"$prefix:$accession\"\n";
 	  print ACE "$seq\n";
