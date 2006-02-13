@@ -654,7 +654,7 @@ The $number_total sequences contain $codingDNA base pairs in total.\n\n";
     close LETTER;
 
     my $name       = "Wormpep release stats";
-    my $maintainer = $self->debug or "All";
+    my $maintainer = $self->debug ? $self->debug : "All";
     $self->mail_maintainer( $name, $maintainer, $wormpepFile );
 
     return 1;
