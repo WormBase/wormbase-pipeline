@@ -7,8 +7,8 @@
 # Script to refresh the CDS->WBGene connections in a chosen database from a chosen reference database.
 # Script also refreshes Protein_IDs in the chosen database from the latest build.
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-12-16 11:18:54 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2006-02-13 17:43:22 $
 
 use strict;                                      
 use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
@@ -20,19 +20,20 @@ use Carp;
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $geneID, $targetDB, $sourceDB, $fileout, $update, $public, $sourceDB2, $proteinID);
+my ($help, $debug, $geneID, $targetDB, $sourceDB, $fileout, $update, $public, $sourceDB2, $proteinID, $version);
 
 GetOptions (
-	    'help'         => \$help,
-            'debug=s'      => \$debug,
-	    'geneID'       => \$geneID,
-	    'sourceDB=s'   => \$sourceDB,
-    	    'sourceDB2=s'  => \$sourceDB2,
-	    'targetDB=s'   => \$targetDB,
-	    'fileout=s'    => \$fileout,
-	    'proteinID'    => \$proteinID,
-	    'update'       => \$update,
-	    'public'       => \$public,
+	    'help'         => \$help,       #help documentation.
+            'debug=s'      => \$debug,      #debug option for email
+	    'geneID'       => \$geneID,     #update gene id's
+	    'sourceDB=s'   => \$sourceDB,   #source for gene id info
+    	    'sourceDB2=s'  => \$sourceDB2,  #source for protein id's
+	    'targetDB=s'   => \$targetDB,   #target db
+	    'fileout=s'    => \$fileout,    #specify an output file
+	    'proteinID'    => \$proteinID,  #update protein id's option
+	    'update'       => \$update,     #load ace files automatically into target db.
+	    'public'       => \$public,     #retrieve public name info ....future
+	    'version=s'    => \$version,    #version number for properly directing out files in future
 	    );
 
 my $maintainers = "All";
@@ -42,7 +43,7 @@ my $output_file2;
 my %models2geneID;
 
 # tace executable path
-our $tace = &tace; 
+our $tace = &tace;
 
 # Display help if required
 &usage("Help") if ($help);
@@ -87,7 +88,7 @@ if ($fileout) {
   $output_file = $fileout;
 }
 elsif (!$fileout) {
-  $output_file = "/nfs/disk100/wormpub/camace_orig/updated_geneIDs.ace";
+  $output_file = "/nfs/disk100/wormpub/camace_orig/acefiles/updated_geneIDs${version}.ace";
 }
 
 ########################################################################
@@ -97,7 +98,7 @@ elsif (!$fileout) {
 ########################################################################
 
 if ($geneID) {
-print LOG "-geneID option selected, therefore Gene connections will be updated in $targetDB\n";
+print LOG "-geneID option selected, therefore Gene connections will be updated in $targetDB\n--------------------------------------------------------------------------------\n";
 print "\n\nSOURCE Database for Gene IDs: $sourceDB.\n\n";
 print "TARGET Database: $targetDB\n\n";
 print "\nYou are creating the file $output_file.\n\n" if ($geneID);
@@ -201,11 +202,11 @@ close OUT;
 #  Refresh ProteinIDs  #
 ########################
 if ($proteinID) {
-  $output_file2 = "/nfs/disk100/wormpub/camace_orig/updated_proteinIDs.ace";
-  print LOG "\n\n//-proteinID option selected, therefore Protein_ID connections will be updated in $targetDB\n";
+  $output_file2 = "/nfs/disk100/wormpub/camace_orig/acefiles/updated_proteinIDs${version}.ace";
+  print LOG "\n\n-proteinID option selected, therefore Protein_ID connections will be updated in $targetDB\n-----------------------------------------------------------------------------------------\n";
   print "SOURCE Database for Protein IDs: $sourceDB2.\n\n";
-  print LOG "\n//You are creating $output_file2\n"; 
-  print LOG "// Gathering Protein_IDs from $sourceDB2\n";
+  print LOG "\nYou are creating $output_file2\n"; 
+  print LOG "Gathering Protein_IDs from $sourceDB2\n";
 
 # connect to AceDB using TableMaker
 my $command = "query find curated_CDS where From_laboratory = HX\nshow -t Protein_id -a -f $output_file2\nquit\n";
@@ -239,11 +240,15 @@ print OUT2 "protein_id	\"MTCE\"  \"CAA38162.1\"\n";
 }
 
 ##Logging##
-print LOG "// upload file(s) complete\n";
+print LOG "Upload file(s) completed.......\n";
 
 if (!defined ($update)) {
-  print LOG "// **You will have to manually load this data into $canonical.**\n";
-  print LOG "// **Also load /nfs/disk100/wormpub/camace_orig/geneID_patch.ace for the exceptions**\n\n";
+  print LOG "\n**You will have to manually load:\n";
+  print LOG "\t$output_file\n";
+  print LOG "\t/nfs/disk100/wormpub/camace_orig/acefiles/geneID_patch.ace\n";
+  print LOG "\t$output_file2\n\n"; 
+  print LOG "\tinto $canonical\n\n";
+  print LOG "\ttace $canonical -tsuser merge_split\n\tpparse $output_file\n\tpparse /nfs/disk100/wormpub/camace_orig/acefiles/geneID_patch.ace\n\tpparse $output_file2\n\tsave\n\tquit\n\n";
 }
 
 ###############################################################
@@ -251,6 +256,7 @@ if (!defined ($update)) {
 ###############################################################
 
 if ($update) {
+  print LOG "\nLoading files........\n";
   &load_geneIDs     if $geneID;
   &load_protein_IDs if $proteinID;
 }
@@ -290,26 +296,25 @@ sub load_geneIDs {
   $command   .= "query find elegans_pseudogenes\nedit -D Gene\nclear\n";
   $command   .= "query find elegans_RNA_genes\nedit -D Gene\nclear\n";
   $command   .= "pparse $output_file\n";
-  $command   .= "pparse /nfs/disk100/wormpub/camace_orig/geneID_patch.ace\n";
+  $command   .= "pparse /nfs/disk100/wormpub/camace_orig/acefiles/geneID_patch.ace\n";
   $command   .= "save\nquit\n";
   
   open (DB, "| $tace $targetDB -tsuser merge_split_update_geneID |") || die "Couldn't open $targetDB\n";
   print DB $command;
   close DB;
-  
-  print LOG "// updated Gene data in $targetDB\n";
+  print LOG "\nLoaded Files:\n$output_file\n/nfs/disk100/wormpub/camace_orig/acefiles/geneID_patch.ace\n";
+  print LOG "Updated Gene data in $targetDB\n";
 }
 
 sub load_protein_IDs {
     my $command = "query find curated_CDS\nedit -D Protein_ID\nclear\n";
-    $command   .= "pparse /nfs/disk100/wormpub/camace_orig/updated_proteinIDs.ace\n";
+    $command   .= "pparse $output_file2\n";
     $command   .= "save\nquit\n";
-    
     open (DB, "| $tace $targetDB -tsuser merge_split_update_proteinID |") || die "Couldn't open $targetDB\n";
     print DB $command;
     close DB;
-
-    print LOG "// updated protein_ID data in $targetDB\n";
+    print LOG "\nLoaded File:\n$output_file2\n";
+    print LOG "Updated protein_ID data in $targetDB\n";
   }
 
 sub usage 
