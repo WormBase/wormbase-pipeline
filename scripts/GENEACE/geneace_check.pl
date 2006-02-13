@@ -6,8 +6,8 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-12-13 10:17:25 $
+# Last updated by: $Author: wormpub $
+# Last updated on: $Date: 2006-02-13 15:13:03 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -57,7 +57,7 @@ my $log;                                                   # main log file for m
 my $caltech_log;                                           # Additional log file for problems that need to be sent to Caltech
 my $jah_log;                                               # Additional log file for problems to be sent to Jonathan Hodgkin at CGC
 my (%L_name_F_WBP, %L_name_F_M_WBP);                       # hashes for checking Person and Author merging?
-my $OPERON_FILE = "/wormsrv2/autoace/OPERONS/operon.dat";
+my $OPERON_FILE = "/nfs/disk100/wormpub/analysis/OPERONS/operon.dat";
 
 
 ##################################################
@@ -204,7 +204,12 @@ sub process_gene_class{
   if ( $weekly ) {
     my $query = "Find Live_genes WHERE !(Map | Interpolated_map_position) & Sequence_name & Species=\"*elegans\" & !Positive_clone=\"MTCE\" & !Made_into_transposon";
     foreach my $gene ($db->fetch(-query=>"$query")){
-      print LOG "ERROR: $gene ($Gene_info{$gene}{'Public_name'}) has neither Map nor Interpolated_map_position info but has Sequence_name\n";
+      if( $Gene_info{$gene} ) {
+	print LOG "ERROR: $gene ($Gene_info{$gene}{'Public_name'}) has neither Map nor Interpolated_map_position info but has Sequence_name\n";
+      }
+      else {
+	print LOG "$gene not in Gene_info hash\n";
+      }
     }
   }
 
@@ -1155,17 +1160,18 @@ sub check_genetics_coords_mapping {
 
   print "\nChecking discrepancies in genetics/coords mapping:\n";
   print LOG "\nChecking discrepancies in genetics/coords mapping:\n";
-  print LOG "--------------------------------------------------\n";
-  print JAHLOG "\nChecking discrepancies in genetics/coords mapping:\n";
-  print JAHLOG "--------------------------------------------------\n";
-  system ("$ENV{'CVS_DIR'}/GENEACE/get_interpolated_gmap.pl -database $database -diff");
+  print LOG "not doing this while moving off wormsrv2! \n\n\n";
+#  print LOG "--------------------------------------------------\n";
+#  print JAHLOG "\nChecking discrepancies in genetics/coords mapping:\n";
+#  print JAHLOG "--------------------------------------------------\n";
+#  system ("$ENV{'CVS_DIR'}/GENEACE/get_interpolated_gmap.pl -database $database -diff");
 
-  my $map_diff = "/nfs/disk100/wormpub/logs/mapping_diff.".$rundate;
-  open(IN, $map_diff) || die $!;
-  while(<IN>){
-    print LOG $_;
-    print JAHLOG $_;
-  }
+#  my $map_diff = "/nfs/disk100/wormpub/logs/mapping_diff.".$rundate;
+#  open(IN, $map_diff) || die $!;
+#  while(<IN>){
+#    print LOG $_;
+#    print JAHLOG $_;
+#  }
 }
 
 
