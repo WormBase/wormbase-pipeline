@@ -6,7 +6,7 @@
 # This maps alleles to the genome based on their flanking sequences
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-02-06 14:23:54 $
+# Last updated on: $Date: 2006-02-13 11:48:42 $
 
 use strict;
 use warnings;
@@ -123,15 +123,8 @@ my $log = Log_files->make_build_log($wb);
 # tidy up, email log, and exit
 #####################################
 
-if ( $error_count > 0 ) {
-    print "\nERROR: problems with $error_count alleles\n\n";
-    $log->write_to("\nProblems with $error_count alleles\n");
-    $log->mail( "$maintainers", "BUILD REPORT: map_Alleles.pl $error_count ERRORS!" );
-}
-else {
-    $log->mail( "$maintainers", "BUILD REPORT: map_Alleles.pl" );
-}
-exit(0);
+$log->mail( "$maintainers", "BUILD REPORT: map_Alleles.pl" );
+
 
 ##################################################
 #                                                #
@@ -161,7 +154,7 @@ sub map_alleles {
     my $go = 0;
     my @affects_CDSs;
 
-    my $mapper = Feature_mapper->new($database);
+    my $mapper = Feature_mapper->new($database, undef, $wb);
 
   ALLELE:
     foreach my $allele (@alleles) {
@@ -423,11 +416,7 @@ sub check_original_mappings {
 sub load_alleles_to_database {
 
     $log->write_to("\nStart parsing $ace_file in to $database\n\n");
-    my $command = "autoace_builder.pl -load $ace_file -tsuser map_Alleles.pl";
-    my $status  = system($command);
-    if ( ( $status >> 8 ) != 0 ) {
-        die "ERROR: Loading $ace_file file failed \$\? = $status\n";
-    }
+    $wb->load_to_database($wb->autoace,$ace_file, 'map_alleles');
     $log->write_to("\nFinished parsing $ace_file in to $database\n\n");
 }
 
