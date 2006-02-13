@@ -223,12 +223,8 @@ sub copy_check {
 sub mail_maintainer {
   my $self = shift;
   my ( $name, $maintainer, $logfile ) = @_;
-  $maintainer = "ar2\@sanger.ac.uk, pad\@sanger.ac.uk, mt3\@sanger.ac.uk, gw3\@sanger.ac.uk, mh6\@sanger.ac.uk"
-    if ( $maintainer =~ m/All/i );
-
-  croak
-    "trying email a log to a file - this will overwrite the existing file -STOPPING\nAre you passing a file name to Log object? \n"
-      if ( -e $maintainer );
+  $maintainer = "ar2\@sanger.ac.uk, pad\@sanger.ac.uk, mt3\@sanger.ac.uk, gw3\@sanger.ac.uk, mh6\@sanger.ac.uk"    if ( $maintainer =~ m/All/i );
+  croak "trying to email a log to a file - this will overwrite the existing file -STOPPING\nAre you passing a file name to Log object? \n"  if ( -e $maintainer );
   open( OUTLOG, "|mailx -s \"$name\" $maintainer " );
   if ($logfile) {
     open( READLOG, "<$logfile" );
@@ -652,13 +648,13 @@ The $number_total sequences contain $codingDNA base pairs in total.\n\n";
     }
     if ( $oldCDS + $net != $number_total ) {
       print LETTER
-	"The differnce between the total CDS's of this ($number_total) and the last build ($oldCDS) does not equal the net change $net\nPlease investigate! ! \n";
+	"\nThe differnce between the total CDS's of this ($number_total) and the last build ($oldCDS) does not equal the net change $net\nPlease investigate! ! \n";
     }
 
     close LETTER;
 
     my $name       = "Wormpep release stats";
-    my $maintainer = "All";
+    my $maintainer = $self->debug or "All";
     $self->mail_maintainer( $name, $maintainer, $wormpepFile );
 
     return 1;
@@ -880,65 +876,78 @@ sub set_debug {
 
 sub establish_paths {
   my $self = shift;
-  ( $self->{'wormpub'} ) = glob("~wormpub");
-  my $basedir = $self->wormpub . "/BUILD";
-  $basedir = $self->wormpub . "/TEST_BUILD" if $self->test;
 
-  $self->{'basedir'}    = $basedir;
-  $self->{'autoace'}    = "$basedir/autoace";
-  $self->{'ftp_upload'} = "/nfs/ftp_uploads/wormbase";
-  $self->{'wormpep'}    = $basedir . "/WORMPEP/wormpep" . $self->get_wormbase_version;
-  $self->{'wormrna'}    = $basedir . "/WORMRNA/wormrna" . $self->get_wormbase_version;
+  # Some farm code uses Wormbase.pm subs so to maintain this farm code needs to be OO Wormbase.pm compliant but we dont want 
+  # multiple paths of the build (main and farm) reading/writing the same wormbase.store file . Store the farm version in ~wormpipe
+  # and might as well use path retrieval routines as with main build.
 
-  $self->{'logs'}        = $self->autoace . "/logs";
-  $self->{'common_data'} = $self->autoace . "/COMMON_DATA";
-  $self->{'chromosomes'} = $self->autoace . "/CHROMOSOMES";
-  $self->{'transcripts'} = $self->autoace . "/TRANSCRIPTS";
-  $self->{'reports'}     = $self->autoace . "/REPORTS";
-  $self->{'acefiles'}    = $self->autoace . "/acefiles";
-  $self->{'gff'}         = $self->chromosomes; #to maintain backwards compatibility 
-  $self->{'gff_splits'}  = $self->autoace . "/GFF_SPLITS";
-  $self->{'primaries'}   = $self->basedir . "/PRIMARIES";
-  $self->{'blat'}        = $self->autoace . "/BLAT";
+  if( $self->{'farm'} ){
+    my $wormpipe= glob("~wormpipe");
+    $self->{'autoace'} = $wormpipe;
+    $self->{'acefiles'}    = $self->autoace . "/acefiles";
+    $self->{'dump_dir'}    = '/nfs/acari/work2a/wormpipe/dumps';
+  }
+  else {
+    my $basedir;
+    ( $self->{'wormpub'} ) = glob("~wormpub");
+    $basedir = $self->wormpub . "/BUILD";
+    $basedir = $self->wormpub . "/TEST_BUILD" if $self->test;
 
-  $self->{'tace'}   = glob("~wormpub/ACEDB/bin_ALPHA/tace");
-  $self->{'giface'} = glob("~wormpub/ACEDB/bin_ALPHA/giface");
+    $self->{'basedir'}    = $basedir;
+    $self->{'autoace'}    = "$basedir/autoace";
+    $self->{'ftp_upload'} = "/nfs/ftp_uploads/wormbase";
+    $self->{'wormpep'}    = $basedir . "/WORMPEP/wormpep" . $self->get_wormbase_version;
+    $self->{'wormrna'}    = $basedir . "/WORMRNA/wormrna" . $self->get_wormbase_version;
 
-  $self->{'databases'}->{'geneace'} = $self->wormpub . "/DATABASES/geneace";
-  $self->{'databases'}->{'camace'}  = $self->wormpub . "/DATABASES/camace";
-  $self->{'databases'}->{'current'} = $self->wormpub . "/DATABASES/current_DB";
-  $self->{'databases'}->{'autoace'} = $self->autoace;
+    $self->{'logs'}        = $self->autoace . "/logs";
+    $self->{'common_data'} = $self->autoace . "/COMMON_DATA";
+    $self->{'chromosomes'} = $self->autoace . "/CHROMOSOMES";
+    $self->{'transcripts'} = $self->autoace . "/TRANSCRIPTS";
+    $self->{'reports'}     = $self->autoace . "/REPORTS";
+    $self->{'acefiles'}    = $self->autoace . "/acefiles";
+    $self->{'gff'}         = $self->chromosomes; #to maintain backwards compatibility 
+    $self->{'gff_splits'}  = $self->autoace . "/GFF_SPLITS";
+    $self->{'primaries'}   = $self->basedir . "/PRIMARIES";
+    $self->{'blat'}        = $self->autoace . "/BLAT";
 
-  $self->{'primary'}->{'camace'}  = $self->primaries ."/camace";
-  $self->{'primary'}->{'geneace'} = $self->primaries ."/geneace";
-  $self->{'primary'}->{'stlace'}  = $self->primaries ."/stlace";
-  $self->{'primary'}->{'citace'}  = $self->primaries ."/citace";
-  $self->{'primary'}->{'caltech'} = $self->primaries ."/citace"; # to handle the various names used
-  $self->{'primary'}->{'csh'}     = $self->primaries ."/cshace";
-  $self->{'primary'}->{'cshace'}  = $self->primaries ."/cshace";
-  $self->{'primary'}->{'brigace'} = $self->primaries ."/brigace";
-  $self->{'primary'}->{'briggsae'}= $self->primaries ."/brigace"; # to handle the various names used
+    $self->{'tace'}   = glob("~wormpub/ACEDB/bin_ALPHA/tace");
+    $self->{'giface'} = glob("~wormpub/ACEDB/bin_ALPHA/giface");
 
-  $self->{'build_data'} = $self->{'basedir'} . "_DATA";	# BUILD_DATA or TEST_BUILD_DATA
-  $self->{'misc_static'} = $self->{'build_data'} . "/MISC_STATIC";
-  $self->{'misc_dynamic'} = $self->{'build_data'} . "/MISC_DYNAMIC";
+    $self->{'databases'}->{'geneace'} = $self->wormpub . "/DATABASES/geneace";
+    $self->{'databases'}->{'camace'}  = $self->wormpub . "/DATABASES/camace";
+    $self->{'databases'}->{'current'} = $self->wormpub . "/DATABASES/current_DB";
+    $self->{'databases'}->{'autoace'} = $self->autoace;
 
-  # create dirs if missing
-  mkpath( $self->logs )        unless ( -e $self->logs );
-  mkpath( $self->common_data ) unless ( -e $self->common_data );
-  mkpath( $self->wormpep )     unless ( -e $self->wormpep );  system("chmod -R g+w ".$self->wormpep);
-  mkpath( $self->wormrna )     unless ( -e $self->wormrna );  system("chmod -R g+w ".$self->wormrna);
-  mkpath( $self->chromosomes ) unless ( -e $self->chromosomes );
-  mkpath( $self->transcripts ) unless ( -e $self->transcripts );
-  mkpath( $self->reports )     unless ( -e $self->reports );
-  mkpath( $self->gff )         unless ( -e $self->gff );
-  mkpath( $self->gff_splits )  unless ( -e $self->gff_splits );
-  mkpath( $self->primaries )   unless ( -e $self->primaries ); system("chmod -R g+w ".$self->primaries);
-  mkpath( $self->acefiles )    unless ( -e $self->acefiles );
-  mkpath( $self->blat )        unless ( -e $self->blat );
+    $self->{'primary'}->{'camace'}  = $self->primaries ."/camace";
+    $self->{'primary'}->{'geneace'} = $self->primaries ."/geneace";
+    $self->{'primary'}->{'stlace'}  = $self->primaries ."/stlace";
+    $self->{'primary'}->{'citace'}  = $self->primaries ."/citace";
+    $self->{'primary'}->{'caltech'} = $self->primaries ."/citace"; # to handle the various names used
+    $self->{'primary'}->{'csh'}     = $self->primaries ."/cshace";
+    $self->{'primary'}->{'cshace'}  = $self->primaries ."/cshace";
+    $self->{'primary'}->{'brigace'} = $self->primaries ."/brigace";
+    $self->{'primary'}->{'briggsae'}= $self->primaries ."/brigace"; # to handle the various names used
 
-  system("chmod -R g+w ".$self->autoace);
+    $self->{'build_data'} = $self->{'basedir'} . "_DATA"; # BUILD_DATA or TEST_BUILD_DATA
+    $self->{'misc_static'} = $self->{'build_data'} . "/MISC_STATIC";
+    $self->{'misc_dynamic'} = $self->{'build_data'} . "/MISC_DYNAMIC";
 
+    # create dirs if missing
+    mkpath( $self->logs )        unless ( -e $self->logs );
+    mkpath( $self->common_data ) unless ( -e $self->common_data );
+    mkpath( $self->wormpep )     unless ( -e $self->wormpep );  system("chmod -R g+w ".$self->wormpep);
+    mkpath( $self->wormrna )     unless ( -e $self->wormrna );  system("chmod -R g+w ".$self->wormrna);
+    mkpath( $self->chromosomes ) unless ( -e $self->chromosomes );
+    mkpath( $self->transcripts ) unless ( -e $self->transcripts );
+    mkpath( $self->reports )     unless ( -e $self->reports );
+    mkpath( $self->gff )         unless ( -e $self->gff );
+    mkpath( $self->gff_splits )  unless ( -e $self->gff_splits );
+    mkpath( $self->primaries )   unless ( -e $self->primaries ); system("chmod -R g+w ".$self->primaries);
+    mkpath( $self->acefiles )    unless ( -e $self->acefiles );
+    mkpath( $self->blat )        unless ( -e $self->blat );
+
+    system("chmod -R g+w ".$self->autoace);
+  }
 }
 
 sub run_script {
@@ -977,8 +986,10 @@ sub run_command {
 sub wait_for_LSF {
   my $self = shift;
   sleep 10;
-  while ( &jobs_left != 0 ) {
-    sleep 10;
+  my $jobs = &jobs_left;
+  while ( $jobs != 0 ) {
+    sleep 100 * $jobs;
+    $jobs = &jobs_left;
   }
 
   print "all jobs finished\n";
