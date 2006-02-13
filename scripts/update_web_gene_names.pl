@@ -4,14 +4,14 @@
 #
 # completely rewritten by Keith Bradnam from list_loci_designations
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2005-12-19 12:04:29 $      
+# Last updated by: $Author: wormpub $     
+# Last updated on: $Date: 2006-02-13 14:57:25 $      
 #
 # This script should be run under a cron job and simply update the webpages that show
 # current gene names and sequence connections.  Gets info from geneace.  
 
 use strict;
-use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
+use lib  $ENV{'CVS_DIR'};
 use Wormbase;
 use Ace;
 use Carp;
@@ -315,20 +315,20 @@ sub make_gene_lists{
 
   # set up various output files (first two are reverse of each other)
 
-  open (GENE2MOL, ">$www/genes2molecular_names.txt") || print LOG "ERROR: Couldn't open genes2molecular_names.txt\n";
+  open (GENE2MOL, ">$www/genes2molecular_names.txt") || die "ERROR: Couldn't open genes2molecular_names.txt  $!\n";
   foreach my $key (sort keys %gene2molecular_name){
     print GENE2MOL "$key\t$gene2molecular_name{$key}\n";	      
   }
   close(GENE2MOL);
 
 
-  open (MOL2GENE, ">$www/molecular_names2genes.txt") || print LOG "ERROR: Couldn't open molecular_names2genes.txt\n";
+  open (MOL2GENE, ">$www/molecular_names2genes.txt") || die "ERROR: Couldn't open molecular_names2genes.txt $!\n";
   foreach my $key (sort keys %molecular_name2gene){
     print MOL2GENE "$key\t$molecular_name2gene{$key}\n";
   }
   close(MOL2GENE);
 
-  open (TRANSPOSONS, ">$www/transposon_genes.txt") || print LOG  "ERROR: Couldn't open transposon_genes.txt\n";
+  open (TRANSPOSONS, ">$www/transposon_genes.txt") || die "ERROR: Couldn't open transposon_genes.txt $!\n";
   foreach my $key (sort keys %transposon_genes){
     print TRANSPOSONS "$key\t$transposon_genes{$key}\n";
   }
