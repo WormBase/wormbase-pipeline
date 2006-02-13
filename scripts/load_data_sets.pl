@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
 # Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2006-01-12 16:47:21 $      
+# Last updated on: $Date: 2006-02-13 12:21:18 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -78,11 +78,7 @@ sub parse_homol_data {
 		    "worm_pep_motif_info.ace",
 		    "worm_brigpep_motif_info.ace",
 		    #protein info
-		    "ipi_hits.ace",
-		    "flybase.ace",
-		    "yeast.ace",
-		    "swissproteins.ace",
-		    "tremblproteins.ace",
+		    "ensembl_protein_info.ace",
 		    "brigpep.ace",
 		    "worm_pep_interpro_motif_info.ace",
 		    "worm_brigpep_interpro_motif_info.ace",
@@ -118,6 +114,8 @@ sub parse_briggsae_data {
     $log->write_to("\tload $file\n");
     $wormbase->load_to_database($wormbase->autoace,"$brig_dir/$file","BAC_ends");
   }
+  # and the brigpep file
+  $wormbase->load_to_database($wormbase->autoace, $wormbase->database('brigace')."/brigpep.ace","brigpep");
 }
 
 
@@ -131,11 +129,11 @@ __END__
 
 =over 4
 
-=item script_template.pl  [-options]
+=item load_data_sets.pl  [-options]
 
 =back
 
-This script does...blah blah blah
+Loads lots of fairly static files that need to go in to each release.
 
 script_template.pl MANDATORY arguments:
 
