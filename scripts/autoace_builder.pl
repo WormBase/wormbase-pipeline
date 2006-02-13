@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-01-13 09:56:50 $
+# Last edited on: $Date: 2006-02-13 11:29:11 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -26,7 +26,9 @@ my ( $make_wormpep, $finish_wormpep );
 my ( $run_blat,     $finish_blat );
 my ( $gff_dump,     $processGFF, $gff_split );
 my $gene_span;
-my ( $load, $tsuser, $map_features, $map, $transcripts, $intergenic, $data_sets);
+my ( $load, $tsuser, $map_features, $map, $transcripts, $intergenic, $data_sets, $nem_contigs);
+my ( $GO_term, $rna , $dbcomp, $confirm, $operon ,$repeats, $remarks, $names);
+
 
 GetOptions(
     'debug:s'        => \$debug,
@@ -52,7 +54,15 @@ GetOptions(
     'transcripts'    => \$transcripts,
     'intergenic'     => \$intergenic,
     'nem_contig'     => \$nem_contigs,
-    'data_sets'      => \$data_sets
+    'data_sets'      => \$data_sets,
+    'go_term'        => \$GO_term,
+    'rna'            => \$rna,
+    'dbcomp'         => \$dbcomp,
+    'confirm'        => \$confirm,
+    'operon'         => \$operon,
+    'repeats'        => \$repeats,
+    'remarks'        => \$remarks,
+    'names'          => \$names,
 );
 
 my $wormbase = Wormbase->new(
@@ -64,15 +74,16 @@ my $wormbase = Wormbase->new(
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
-$wormbase->run_script( "initiate_build.pl",                 $log ) if defined($initiate);
+$wormbase->run_script( "initiate_build.pl -version $initiate",$log ) if defined($initiate);
 $wormbase->run_script( 'prepare_primary_databases.pl',      $log ) if $prepare_databases;
 $wormbase->run_script( 'make_acefiles.pl',                  $log ) if $acefile;
 $wormbase->run_script( 'make_autoace.pl',                   $log ) if $build;
 
 #//--------------------------- batch job submission -------------------------//
-$wormbase->run_script( "build_dumpGFF.pl -stage $gff_dump", $log ) if $gff_dump;
+$wormbase->run_script( "build_dumpGFF.pl -stage $gff_dump", $log ) if $gff_dump;      #init
+
 $wormbase->run_script( "processGFF.pl -$processGFF",        $log ) if $processGFF;    #clone_acc
-&first_dumps                                                       if $first_dumps;
+&first_dumps                                                       if $first_dumps;   # dependant on clone_acc for agp
 $wormbase->run_script( 'make_wormpep.pl -initial',          $log ) if $make_wormpep;
 $wormbase->run_script( 'map_features.pl -all',              $log ) if $map_features;
 
@@ -81,24 +92,59 @@ $wormbase->run_script( 'map_features.pl -all',              $log ) if $map_featu
 $wormbase->run_script( 'BLAT_controller.pl -mask -dump -run', $log ) if $run_blat;
 #//--------------------------- batch job submission -------------------------//
 $wormbase->run_script( 'BLAT_controller.pl -virtual -process -postprocess -ace -load', $log ) if $finish_blat;
+# $build_dumpGFF.pl; (blat) is run chronologically here but previous call will operate
 
-# $processGFF; (blat) is run chronologically here but previous call will operate
 $wormbase->run_script( 'batch_transcript_build.pl', $log) if $transcripts;
 #requires GFF dump of transcripts (done within script if all goes well)
 
 $wormbase->run_script( 'WBGene_span.pl'                   , $log ) if $gene_span;
 $wormbase->run_script( 'map_nematode_contigs.pl -all'     , $log ) if $nem_contigs;
 $wormbase->run_script( 'find_intergenic.pl'               , $log ) if $intergenic;
+$wormbase->run_script( 'inherit_GO_terms.pl -phenotype'   , $log ) if $GO_term;
 
-$wormbase->run_script( 'load_data_sets.pl -homol -briggsae -misc', $log) if $data_sets;
+##  Horrid Geneace related stuff  ##########
+#make_pseudo_map_positions.pl -load
+#get_interpolated_gmap.pl
+#update_inferred_multi_pt.pl -load
 
 ####### mapping part ##########
 &map_features if $map;
 
+&get_repeats                                                             if $repeats; # loaded with homols
+#must have farm complete by this point.
+$wormbase->run_script( 'load_data_sets.pl -homol -briggsae -misc', $log) if $data_sets;
+# $build_dumpGFF.pl; (homol) is run chronologically here but previous call will operate
+$wormbase->run_script( 'make_wormrna.pl'                         , $log) if $rna;
+$wormbase->run_script( 'confirm_genes.pl -load'                  , $log) if $confirm;
+$wormbase->run_script( 'map_operons.pl'                          , $log) if $operon;
+$wormbase->run_script( 'make_wormpep.pl -final'                  , $log) if $finish_wormpep;
+$wormbase->run_script( 'write_DB_remark.pl'                      , $log) if $remarks;
+$wormbase->run_script( 'molecular_names_for_genes.pl'            , $log) if $names;
+# $build_dumpGFF.pl; (final) is run chronologically here but previous call will operate
+#$wormbase->run_script( "processGFF.pl -$processGFF",        $log ) if $processGFF;    #nematode - to add species to nematode BLATs
+
+#$wormbase->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 if ($load) {
-    $log->("loading $load to $database\n");
-    $log->("\ttsuser = $tsuser\n\n");
-    $wormbase->load_to_database( $database, $load, $tsuser ) if ( -e $load );
+    $log->write_to("loading $load to ".$wormbase->autoace."\n");
+    $log->write_to("\ttsuser = $tsuser\n\n");
+    $wormbase->load_to_database( $wormbase->autoace, $load, $tsuser ) if ( -e $load );
 }
 
 $log->mail;
@@ -129,7 +175,7 @@ sub first_dumps {
 
     my @chrom = qw( I II III IV V X);
     foreach my $chrom (@chrom) {
-        open( AGP, ">" . $wormbase->autoace . "/yellow_brick_road/CHROMOSOME_${chrom}.agp_seq.log" )
+        open( AGP, "<" . $wormbase->autoace . "/yellow_brick_road/CHROMOSOME_${chrom}.agp_seq.log" )
           or die "Couldn't open agp file : $!";
         while (<AGP>) {
             $agp_errors++ if (/ERROR/);
@@ -164,3 +210,23 @@ sub map_features {
 }
 
 #__ end map_features __#
+
+
+sub make_UTR {
+  foreach (qw( I II III IV V X ) ) {
+    $wormbase->rub_script("make_UTR_GFF.pl -chromosome $_");
+  }
+}
+
+
+sub get_repeats {
+  #repeatmasked chromosomes
+  my $wormpipe= glob("~wormpipe");
+  my $release = $wormbase->get_wormbase_version;
+  my $agp = $wormpipe."/Elegans/WS$release.agp";
+  $wormbase->run_script("get_repeatmasked_chroms.pl -agp $agp", $log);
+
+  #inverted
+  $wormbase->run_script("run_inverted.pl -all" , $log);
+}
+
