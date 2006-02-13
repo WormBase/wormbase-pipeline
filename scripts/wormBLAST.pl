@@ -5,17 +5,18 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2005-12-16 11:18:55 $
+# Last edited on: $Date: 2006-02-13 11:53:57 $
 
 
 use DBI;
 use strict;
 my $wormpipe_dir = glob("~wormpipe");
-use lib "/nfs/acari/wormpipe/scripts";
-use lib "/nfs/acari/wormpipe/scripts/BLAST_scripts";
+use lib $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'}."/BLAST_scripts";
 use Wormbase;
 use Getopt::Long;
 use File::Path;
+use Storable;
 
 #######################################
 # command-line options                #
@@ -40,9 +41,8 @@ my $cleanup;
 my $errors = 0; # for tracking global error - needs to be initialised to 0
 my $debug;
 my $test;
-my $log;
 my $WS_version;
-my $maintainers = "All"; # email recipients
+my $store;
 
 GetOptions("chromosomes" => \$chromosomes,
 	   "wormpep"     => \$wormpep,
@@ -62,29 +62,31 @@ GetOptions("chromosomes" => \$chromosomes,
 	   "cleanup"     => \$cleanup,
 	   "debug=s"     => \$debug,
 	   "test"        => \$test,
+	   "store:s"     => \$store
 	  );
 
-
-# Use debug mode?
-if($debug){
-  print "DEBUG = \"$debug\"\n\n";
-  ($maintainers = $debug . '\@sanger.ac.uk');
+my $wormbase;
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( 'debug'   => $debug,
+                             'test'    => $test,
+			     'farm'    => '1',
+			     );
 }
 
 
-&create_log_files;
-
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
 
 # you can do either or both blast anaylses
 if( $run_pipeline ) {
   $blastx = 1; $blastp =1;
 }
 
-&check_wormsrv2_conflicts;
-
 die "please give a build version number ie  wormBLAST -version 114\n" unless $WS_version;
 my $WS_old = $WS_version - 1;
-my $scripts_dir = "$wormpipe_dir/scripts/BLAST_scripts";
+my $scripts_dir = $ENV{'CVS_DIR'};
 #process Ids
 
 #|         18 | gadfly3.pep         |
@@ -96,7 +98,7 @@ my $scripts_dir = "$wormpipe_dir/scripts/BLAST_scripts";
 
 my %worm_dna_processIDs = ( 
 			wormpep       => 2,
-			brigpep       => 3, 
+			brigpep       => 3,
 			ipi_human     => 4,
 			yeast         => 5,
 			gadfly        => 6,
@@ -108,7 +110,7 @@ my %worm_dna_processIDs = (
 # ??? should remanei => 15 be added to this list ???
 my %wormprotprocessIds = ( 
 			  wormpep       => 2,
-			  brigpep       => 3, 
+			  brigpep       => 3,
 			  ipi_human     => 4,
 			  yeast         => 5,
 			  gadfly        => 6,
@@ -117,11 +119,11 @@ my %wormprotprocessIds = (
 			 );
 
 #get new chromosomes
-&run_command("perl5.6.1 $scripts_dir/copy_files_to_acari.pl -c") if ($chromosomes);
+$wormbase->run_script("BLAST_scripts/copy_files_to_acari.pl -c", $log) if ($chromosomes);
 
 
 #get new wormpep
-&run_command("perl5.6.1 $scripts_dir/copy_files_to_acari.pl -w") if ($wormpep);
+$wormbase->run_script("BLAST_scripts/copy_files_to_acari.pl -w", $log) if ($wormpep);
 
 
 my %currentDBs;   #ALSO used in setup_mySQL 
@@ -158,7 +160,7 @@ if ( $update_databases ){
       if( "$whole_file" ne "$currentDBs{$1}" ) {
 	#make blastable database
 	print "\tmaking blastable database for $1\n";
-	&run_command("xdformat -p $wormpipe_dir/BlastDB/$whole_file");
+	$wormbase->run_command("xdformat -p $wormpipe_dir/BlastDB/$whole_file");
 	push( @updated_DBs,$1 );
 	#change hash entry ready to rewrite external_dbs
 	$currentDBs{$1} = "$whole_file";
@@ -212,7 +214,7 @@ if( $mail )
     my $name = "Wormpipe database distribution request";
     my $maintainer = "isg-help\@sanger.ac.uk, sanger\@wormbase.org";     # mail to ssg and all Sanger WormBase
     print "mailing distibution request to $maintainer\n";
-    &mail_maintainer($name,$maintainer,$letter);
+    $wormbase->mail_maintainer($name,$maintainer,$letter);
   }
 
 
@@ -265,11 +267,12 @@ if( $update_mySQL )
     
     #Make a concatenation of all six agp files from the last release to ~/Elegans  e.g.
     print "\tconcatenating agp files\n";
-    &run_command("cat /wormsrv2/autoace/CHROMOSOMES/*.agp > $wormpipe_dir/Elegans/WS$WS_version.agp");
+    # this is a bit iffy as 
+    $wormbase->run_command("cat ". $wormbase->autoace."/CHROMOSOMES/*.agp > $wormpipe_dir/Elegans/WS$WS_version.agp");
     
     #load information about any new clones
     print "\tloading information about any new clones in to $dbname\n";
-    &run_command("perl5.6.1 $scripts_dir/agp2ensembl.pl -dbname worm_dna -dbhost ecs1f -dbuser wormadmin -dbpass worms -agp $wormpipe_dir/Elegans/WS$WS_version.agp -write -v -strict -fasta /wormsrv2/autoace/allcmid");
+    $wormbase->run_script("agp2ensembl.pl -dbname worm_dna -dbhost ecs1f -dbuser wormadmin -dbpass worms -agp $wormpipe_dir/Elegans/WS$WS_version.agp -write -v -strict -fasta ".$wormbase->autoace."/allcmid", $log);
     
     #check that the number of clones in the clone table equals the number of contigs and dna objects
     my ($clone_count, $contig_count, $dna_count);
@@ -304,7 +307,7 @@ clones = $clone_count\ncontigs = $contig_count\ndna = $dna_count\n";
 
     # shouldn't be needed anymore but Im leaving it for extra safety - ar2
     print "\tchecking for duplicate clones\n";
-    &run_command("perl5.6.1 $scripts_dir/find_duplicate_clones.pl");
+    $wormbase->run_script("BLAST_scripts/find_duplicate_clones.pl", $log);
 
     #add new peptides to MySQL database
     print "\n\nAdding new peptides to $dbname\n";
@@ -317,7 +320,7 @@ clones = $clone_count\ncontigs = $contig_count\ndna = $dna_count\n";
     @results = &single_line_query( $query, $worm_pep );
     my $old_topCE = $results[0];
     if (-e "/wormsrv2/WORMPEP/wormpep$WS_version/new_entries.WS$WS_version"){
-      &run_command("perl5.6.1 $scripts_dir/worm_pipeline.pl -fasta /wormsrv2/WORMPEP/wormpep$WS_version/new_entries.WS$WS_version");
+      $wormbase->run_script("BLAST_scripts/worm_pipeline.pl -fasta ".$wormbase->wormpep."/new_entries.WS$WS_version");
     }
     else {
       die "new_entries.WS$WS_version does not exist! \nThis should have been made in autoace_minder -buildpep\n";
@@ -538,18 +541,18 @@ if( $blastp ){
 
 if( $prep_dump ) {
   # prepare helper files
-  
+  my $autoace = $wormbase->autoace;
   if( -e "/wormsrv2/autoace/CHROMOSOMES/CHROMOSOME_X.gff") {
-    &run_command("cat /wormsrv2/autoace/CHROMOSOMES/*.gff | $scripts_dir/gff2cds.pl > /nfs/acari/wormpipe/Elegans/cds$WS_version.gff");
-    &run_command("cat /wormsrv2/autoace/CHROMOSOMES/*.gff | $scripts_dir/gff2cos.pl > /nfs/acari/wormpipe/Elegans/cos$WS_version.gff");
-    &run_command("cp /wormsrv2/WORMPEP/wormpep$WS_version/wormpep.diff$WS_version $wormpipe_dir/dumps/");
-    &run_command("cp /wormsrv2/WORMPEP/wormpep$WS_version/new_entries.WS$WS_version $wormpipe_dir/dumps/");
-    &run_command("cp /wormsrv2/autoace/COMMON_DATA/wormpep2cds.dat $wormpipe_dir/dumps/");
-    &run_command("cp /wormsrv2/autoace/COMMON_DATA/cds2wormpep.dat $wormpipe_dir/dumps/");
-    &run_command("cp /wormsrv2/autoace/COMMON_DATA/accession2clone.dat $wormpipe_dir/dumps/");
-    &run_command("cp /wormsrv2/autoace/COMMON_DATA/clonesize.dat $wormpipe_dir/dumps/");
-    &run_command("mkdir /nfs/disk100/wormpub/DATABASES/autoace/COMMON_DATA");
-    &run_command("cp /wormsrv2/autoace/COMMON_DATA/clonesize.dat /nfs/disk100/wormpub/DATABASES/autoace/COMMON_DATA/");
+    $wormbase->run_command("cat /wormsrv2/autoace/CHROMOSOMES/*.gff | $scripts_dir/gff2cds.pl > /nfs/acari/wormpipe/Elegans/cds$WS_version.gff");
+    $wormbase->run_command("cat /wormsrv2/autoace/CHROMOSOMES/*.gff | $scripts_dir/gff2cos.pl > /nfs/acari/wormpipe/Elegans/cos$WS_version.gff");
+    $wormbase->run_command("cp /wormsrv2/WORMPEP/wormpep$WS_version/wormpep.diff$WS_version $wormpipe_dir/dumps/");
+    $wormbase->run_command("cp /wormsrv2/WORMPEP/wormpep$WS_version/new_entries.WS$WS_version $wormpipe_dir/dumps/");
+    $wormbase->run_command("cp /wormsrv2/autoace/COMMON_DATA/wormpep2cds.dat $wormpipe_dir/dumps/");
+    $wormbase->run_command("cp /wormsrv2/autoace/COMMON_DATA/cds2wormpep.dat $wormpipe_dir/dumps/");
+    $wormbase->run_command("cp /wormsrv2/autoace/COMMON_DATA/accession2clone.dat $wormpipe_dir/dumps/");
+    $wormbase->run_command("cp /wormsrv2/autoace/COMMON_DATA/clonesize.dat $wormpipe_dir/dumps/");
+    $wormbase->run_command("mkdir /nfs/disk100/wormpub/DATABASES/autoace/COMMON_DATA");
+    $wormbase->run_command("cp /wormsrv2/autoace/COMMON_DATA/clonesize.dat /nfs/disk100/wormpub/DATABASES/autoace/COMMON_DATA/");
     
     system("touch $wormpipe_dir/DUMP_PREP_RUN");
   }
@@ -561,6 +564,7 @@ if( $prep_dump ) {
 
 if( $dump_data )
   {
+    $log->log_and_die("The -dump option is not in use\n\n");
     unless ( -e "$wormpipe_dir/DUMP_PREP_RUN" ) {
       print "Please run wormBLAST.pl -prep_dump version $WS_version    before dumping\n\nTo dump you CAN NOT have wormsrv2 mounted\n\n";
       exit(0);
@@ -572,34 +576,34 @@ if( $dump_data )
 
     # Dump data for new peptides - into separate file to append
     print "Dumping new peptides for worm_pep\n";
-    &run_command("perl5.6.1 $wormpipe_dir/scripts/Dump_blastp.pl -version $WS_version -matches -database worm_pep -new_peps $wormpipe_dir/dumps/new_entries.WS$WS_version");
+    $wormbase->run_script("Dump_blastp.pl -version $WS_version -matches -database worm_pep -new_peps $wormpipe_dir/dumps/new_entries.WS$WS_version", $log);
 
     # updated databases (eg gadfly) need to be redumped
     print "Dumping all peptides for updated databases for worm_pep\n";
-    &run_command("perl5.6.1 $wormpipe_dir/scripts/Dump_blastp.pl -version $WS_version -matches -database worm_pep -all -analysis $anal_list");
+    $wormbase->run_script("Dump_blastp.pl -version $WS_version -matches -database worm_pep -all -analysis $anal_list", $log);
 
     # . . and brigpep
     print "Dumping all peptides for updated databases for worm_brig\n";
-    &run_command("perl5.6.1 $wormpipe_dir/scripts/Dump_blastp.pl -version $WS_version -matches -database worm_brigpep -all -analysis $anal_list");
+    $wormbase->run_script("Dump_blastp.pl -version $WS_version -matches -database worm_brigpep -all -analysis $anal_list", $log);
 
 
     # dump blastx
     print "Dumping blastx for analysis $anal_list\n";
-    &run_command("perl5.6.1 $scripts_dir/dump_blastx_new.pl -version $WS_version -analysis $anal_list");
+    $wormbase->run_script("dump_blastx_new.pl -version $WS_version -analysis $anal_list", $log);
 
     # dump motifs for elegans and brig
     print "Dumping motifs\n";
-    &run_command("perl5.6.1 $scripts_dir/dump_motif.pl");
-    &run_command("perl5.6.1 $scripts_dir/dump_motif.pl -database worm_brigpep");
-    &run_command("perl5.6.1 $scripts_dir/dump_interpro_motif.pl");
-    &run_command("perl5.6.1 $scripts_dir/dump_interpro_motif.pl -database worm_brigpep");
+    $wormbase->run_script("BLAST_scripts/dump_motif.pl" ,$log );
+    $wormbase->run_script("BLAST_scripts/dump_motif.pl -database worm_brigpep" ,$log );
+    $wormbase->run_script("BLAST_scripts/dump_interpro_motif.pl" ,$log );
+    $wormbase->run_script("BLAST_scripts/dump_interpro_motif.pl -database worm_brigpep" ,$log );
 
     # Dump extra info for SWALL proteins that have matches. Info retrieved from the dbm databases on /acari/work2a/wormpipe/
     print "Creating acefile of SWALL proteins with homologies\n";
-    &run_command("perl5.6.1 $scripts_dir/write.swiss_trembl.pl -swiss -trembl");
+    $wormbase->run_script("BLAST_scripts/write.swiss_trembl.pl -swiss -trembl" ,$log );
 
     print "Creating acefile of matched IPI proteins\n";
-    &run_command("perl5.6.1 $scripts_dir/write_ipi_info.pl");
+    $wormbase->run_script("BLAST_scripts/write_ipi_info.pl" ,$log );
   }
 
 
@@ -655,26 +659,7 @@ if( $cleanup ) {
 
 
 &wait_for_pipeline_to_finish if $test_pipeline; # debug stuff
-
-
-##############################################
-# close log file and mail $maintainer report #
-##############################################
-
-my $rundate    = `date +%y%m%d`; chomp $rundate;
-print LOG "\n# wormBLAST.pl finished at: $rundate ",&runtime,"\n";
-close LOG;
-
-# warn about errors in subject line if there were any
-if($errors == 0){
-  &mail_maintainer("BUILD BLAST REPORT: ",$maintainers,$log);
-}
-elsif ($errors ==1){
-  &mail_maintainer("BUILD BLAST REPORT: $errors ERROR!",$maintainers,$log);
-}
-else{
-  &mail_maintainer("BUILD BLAST REPORT: $errors ERRORS!!!",$maintainers,$log);
-}
+$log->mail;
 
 
 exit(0);
@@ -794,20 +779,6 @@ sub get_updated_database_list
     }
   }
 
-############################################################################################
-sub create_log_files{
-
-  my $rundate    = `date +%y%m%d`; chomp $rundate;
-  # create main log ile using script name for
-  $log        = "/nfs/acari/wormpipe/logs/wormBLAST.${WS_version}.${rundate}.$$";
-
-  open (LOG, ">$log") or die "cant open $log";
-  print LOG "$0\n";
-  print LOG "started at ",&runtime,"\n";
-  print LOG "=============================================\n";
-  print LOG "\n";
-
-}
 
 
 sub run_RuleManager
@@ -818,26 +789,9 @@ sub run_RuleManager
     $script = "$bdir/RuleManager3Prot.pl" if $moltype eq "pep";
 
     die "invalid or no moltype passed to run_RuleManager : $moltype\n" unless $script;
-    &run_command("perl $script -dbhost $dbhost -dbname $dbname -dbpass $dbpass -dbuser $dbuser");
+    $wormbase->run_command("perl $script -dbhost $dbhost -dbname $dbname -dbpass $dbpass -dbuser $dbuser");
 
   }
-
-##########################################################
-sub run_command{
-  my $command = shift;
-  print LOG &runtime, ": started running $command\n";
-  my $status = system($command);
-  if($status != 0){
-    $errors++;
-    print LOG "ERROR: $command failed\n";
-  }
-  print LOG &runtime, ": finished running\n\n";
-
-  # for optional further testing by calling subroutine
-  return($status);
-}
-############################################################
-
 
 __END__
   
