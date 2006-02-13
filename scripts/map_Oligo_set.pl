@@ -14,6 +14,7 @@
 #
 #############################################################################################
 
+use lib $ENV{'CVS_DIR'};
 use strict;
 use Wormbase;
 use Getopt::Long;
@@ -81,7 +82,7 @@ my $gffdir  = $wb->gff_splits;                                              # GF
 my $acefile = $acename ? $acename : "$dbdir/acefiles/Oligo_mappings.ace";
 
 my @chromosomes = $test
-  ? qw( I )
+  ? qw( III )
   : qw( I II III IV V X );    # chromosomes to parse (TEST_BUILD should be III)
 my %genetype;                 # gene type hash
 
@@ -108,8 +109,8 @@ foreach my $chromosome (@chromosomes) {
     my %Oligo = ();
 
     # Get Oligo set info from split GFF file
-    open( GFF, "<$gffdir/CHROMOSOME_${chromosome}.Oligo_set.gff" )
-      || die "Failed to open $gffdir/CHROMOSOME_${chromosome}.Oligo_set.gff : $!\n\n";
+    open( GFF, "<$gffdir/CHROMOSOME_${chromosome}_Oligo_set.gff" )
+      || die "Failed to open $gffdir/CHROMOSOME_${chromosome}_Oligo_set.gff : $!\n\n";
     while (<GFF>) {
         chomp;
         s/\#.*//;
@@ -127,16 +128,16 @@ foreach my $chromosome (@chromosomes) {
     close(GFF);
 
     # Get exon info from split UTR GFF files
-    Map_Helper::get_from_gff( "$gffdir/CHROMOSOME_${chromosome}.UTR.gff", 'Transcript', 'UTR', \%genes );
+    Map_Helper::get_from_gff( "$gffdir/CHROMOSOME_${chromosome}_UTR.gff", 'Transcript', 'UTR', \%genes );
 
     # Get exon info from split exon GFF files
-    Map_Helper::get_from_gff( "$gffdir/CHROMOSOME_${chromosome}.exon.gff", 'CDS', qw{\S}, \%genes );
+    Map_Helper::get_from_gff( "$gffdir/CHROMOSOME_${chromosome}_curated.gff", 'CDS', qw{exon}, \%genes );
 
     # Get exon info from split pseudogene exon GFF files
-    Map_Helper::get_from_gff( "$gffdir/CHROMOSOME_${chromosome}.exon_pseudogene.gff", 'Pseudogene', qw{\S}, \%genes );
+    Map_Helper::get_from_gff( "$gffdir/CHROMOSOME_${chromosome}_Pseudogene.gff", 'Pseudogene', qw{exon}, \%genes );
 
     # Get exon info from split transcript exon GFF file
-    Map_Helper::get_from_gff( "$gffdir/CHROMOSOME_${chromosome}.exon_noncoding.gff", 'Transcript', qw{\S}, \%genes );
+    Map_Helper::get_from_gff( "$gffdir/CHROMOSOME_${chromosome}_Non_coding_transcript.gff", 'Transcript', qw{exon}, \%genes );
 
     print "Finished GFF loop\n" if ($verbose);
 

@@ -105,7 +105,7 @@ foreach my $chromosome (@chromosomes) {
     my %pcr;
 
     # Get PCR_product info from split GFF file
-    open( GFF_in, "<$gffdir/CHROMOSOME_${chromosome}.PCR_products.gff" )
+    open( GFF_in, "<$gffdir/CHROMOSOME_${chromosome}_GenePairs.gff" )
       || die "Failed to open PCR_product gff file\n\n";
     while (<GFF_in>) {
         chomp;
@@ -128,16 +128,16 @@ foreach my $chromosome (@chromosomes) {
     #################
 
     # Get exon info from split exon GFF files
-    Map_Helper::get_from_gff( "$gffdir/CHROMOSOME_${chromosome}.exon.gff", 'CDS', qw{\S}, \%genes );
+    Map_Helper::get_from_gff( "$gffdir/CHROMOSOME_${chromosome}_curated.gff", 'CDS', qw{exon}, \%genes );
 
     # Get exon info from split pseudogene exon GFF files
-    Map_Helper::get_from_gff( "$gffdir/CHROMOSOME_${chromosome}.exon_pseudogene.gff", 'Pseudogene', qw{\S}, \%genes );
+    Map_Helper::get_from_gff( "$gffdir/CHROMOSOME_${chromosome}_Pseudogene.gff", 'Pseudogene', qw{exon}, \%genes );
 
     # Get exon info from split transcript exon GFF file
-    Map_Helper::get_from_gff( "$gffdir/CHROMOSOME_${chromosome}.exon_noncoding.gff", 'Transcript', qw{\S}, \%genes );
+    Map_Helper::get_from_gff( "$gffdir/CHROMOSOME_${chromosome}_Non_coding_transcript.gff", 'Transcript', qw{exon}, \%genes );
 
     # Get exon info from split UTR GFF files
-    Map_Helper::get_from_gff( "$gffdir/CHROMOSOME_${chromosome}.UTR.gff", 'Transcript', 'UTR', \%genes );
+    Map_Helper::get_from_gff( "$gffdir/CHROMOSOME_${chromosome}_UTR.gff", 'Transcript', 'UTR', \%genes );
 
     print "Finished GFF loop\n" if ($verbose);
 
