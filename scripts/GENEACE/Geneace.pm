@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl5.8.0 -w
-# Last updated by $Author: mh6 $
-# Last updated on: $Date: 2005-12-20 15:52:50 $
+# Last updated by $Author: wormpub $
+# Last updated on: $Date: 2006-02-13 15:15:13 $
 
 package Geneace;
 
@@ -208,7 +208,7 @@ sub get_clone_chrom_coords {
 
   my %clone_info;
   my $gff_version = get_wormbase_version() - 1;  # current_DB version
-  my @clone_coords = `cut -f 1,4,5,9 /wormsrv2/autoace/GFF_SPLITS/WS$gff_version/CHROMOSOME_*.clone_acc.gff`;
+  my @clone_coords = `cut -f 1,4,5,9 /nfs/disk100/wormpub/DATABASES/WS$gff_version/GFF_SPLITS/CHROMOSOME_*.clone_acc.gff`;
   foreach (@clone_coords){
     chomp;
     my ($chrom, $start, $end, $nineth) = split(/\t+/, $_);
