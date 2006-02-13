@@ -4,11 +4,11 @@
 #
 # backup database and compare to last backed up database to look for lost data
 #
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2005-12-16 11:18:55 $      
+# Last updated by: $Author: wormpub $     
+# Last updated on: $Date: 2006-02-13 14:59:03 $      
 
 use strict;
-use lib -e '/wormsrv2/scripts' ? '/wormsrv2/scripts' : $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use IO::Handle;
 use Getopt::Long;
@@ -32,6 +32,7 @@ GetOptions (
 	   );
 
 my $base_dir = "/nfs/disk100/wormpub/DATABASES";
+my $scripts = $ENV{'CVS_DIR'};
 
 # Default logs mail to all.
 our $maintainers = "All";
@@ -126,11 +127,11 @@ sub find_and_make_backups{
     # keep TransferDB logs in backup directory
     chdir("$backup_dir") || print LOG "Couldn't cd to $backup_dir\n";
     print LOG "Making new backup - ${db}_backup\.${date}\n";
-    my $return = system("/nfs/disk100/wormpub/TEST_BUILD/scripts/TransferDB.pl -start $base_dir/$db -end ${backup_dir}/${db}_backup\.${date} -database -wspec -name ${db}\.${date}");
+    my $return = system("perl5.6.1 $scripts/TransferDB.pl -start $base_dir/$db -end ${backup_dir}/${db}_backup\.${date} -database -wspec -name ${db}\.${date}");
 print LOG "\nYou have made ${db}_backup\.${date} which is a copy of $base_dir/$db\n";
-print LOG "\nThe command:\n/nfs/disk100/wormpub/TEST_BUILD/scripts/TransferDB.pl\n-start $base_dir/$db \n-end ${backup_dir}/${db}_backup\.${date}\n-database \n-wspec \n-name ${db}\.${date}\nwas used in this run.\n\n";
+print LOG "\nThe command:\nperl $scripts/TransferDB.pl\n-start $base_dir/$db \n-end ${backup_dir}/${db}_backup\.${date}\n-database \n-wspec \n-name ${db}\.${date}\nwas used in this run.\n\n";
     if($return != 0){
-      print LOG "ERROR: Couldn't run TransferDB.pl correctly, \nusing the command:\n\n/nfs/disk100/wormpub/TEST_BUILD/scripts/TransferDB.pl -start $base_dir/$db -end ${backup_dir}/${db}_backup\.${date} -database -wspec -name ${db}\.${date} for TransferDB.\n";
+      print LOG "ERROR: Couldn't run TransferDB.pl correctly, \nusing the command:\nperl $scripts/TransferDB.pl -start $base_dir/$db -end ${backup_dir}/${db}_backup\.${date} -database -wspec -name ${db}\.${date} for TransferDB.\n";
       close(LOG);
       &mail_maintainer("$db backup and comparison",$maintainers,$log);    
       exit;
