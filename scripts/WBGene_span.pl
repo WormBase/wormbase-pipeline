@@ -7,7 +7,7 @@
 # Creates SMapped Gene spans for Gene objects
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-01-13 09:54:50 $
+# Last edited on: $Date: 2006-02-13 11:25:32 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -81,7 +81,6 @@ if ( $prepare ) {
 
   
   my @chromosomes = qw( I II III IV V X MtDNA);
-  @chromosomes = qw(III) if $wormbase->test;
   @chromosomes = ("$chromosome") if $chromosome;
   foreach my $chrom ( @chromosomes ) {
     my %gene_coords;
