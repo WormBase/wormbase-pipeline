@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl5.8.0 -w
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-01-10 14:47:33 $
+# Last edited on: $Date: 2006-02-13 11:23:14 $
 
 use lib $ENV{'CVS_DIR'};
 
@@ -68,7 +68,7 @@ foreach my $t(@types) {
 
 
 if( $mask ) {
-  my $opts = join(" -",@types);
+  my $opts = '-'.join(" -",@types);
   $log->write_to("running transcriptmasker.pl -$opts\n");
   $wormbase->run_script("transcriptmasker.pl -$opts", $log);
 
@@ -111,13 +111,13 @@ if ( $process or $virtual ) {
   }
 }
 
-if( $ace ) {
-  foreach my $type ( @types ) {
-    my $cmd = "blat2ace.pl -$type";
-    $cmd .= " -intron" if (( $type eq "mrna") or ($type eq "est") or ($type eq "ost") );
-    $wormbase->run_script("$cmd", $log);
-  }
-}
+#if( $ace ) {
+#  foreach my $type ( @types ) {
+#    my $cmd = "blat2ace.pl -$type";
+#    $cmd .= " -intron" if (( $type eq "mrna") or ($type eq "est") or ($type eq "ost") );
+#    $wormbase->run_script("$cmd", $log);
+#  }
+#}
 
 if( $load ) {
   foreach my $type (@types){
@@ -192,3 +192,74 @@ sub dump_dna {
   unlink ("${blat_dir}/autoace.first") if (-e "${blat_dir}/autoace.first");
 
 }
+
+__END__
+
+=pod
+
+=head1 NAME - BLAT_controller.pl
+
+=head2 USAGE
+
+BLAT_controller.pl is a wrapper for the several scripts involved in running the various BLAT jobs in the WormBase build
+
+BLAT_controller.pl  arguments:
+
+=over 4
+
+=item 
+
+-debug user  =  debug mode to specify who gets log mail
+
+=item 
+
+-test        =  use the test build
+
+=item 
+
+-store string  =  load a previously serialised Wormbase object ( from Wormbase.pm ) to maintain test and debug setting when called from autoace_builder.pl
+
+=item 
+
+-database string = run on database other than build
+
+
+ * script action options
+
+=item 
+
+-mask        runs transcriptmasker.pl  to mask ESTs polyA TSLs etc
+
+=item 
+
+-dump        dumps the target DNA sequences to
+
+=item 
+
+-process     runs blat_them_all.pl -process which runs blat2ace.pl to convert psl -> ace files
+
+=item 
+
+-virtual     runs blat_them_all.pl -virtual to create the virtual object the BLAT results hang off
+
+=item 
+
+-run         runs batch_BLAT.pl which shatters ESTs and nematode and submits bsub jobs to cbi1
+
+=item 
+
+-postprocess merges the psl files from the shattered EST and nematode files
+
+=item 
+
+-load       loads the BLAT acefiles in to the specified database
+
+=item 
+
+-types string  allows the specification of certain types to run BLAT. Valid types : est mrna ncrna ost nematode embl tc1 washu nembase
+
+=item 
+
+-all        runs all of the above tpyes.
+
+=cut
