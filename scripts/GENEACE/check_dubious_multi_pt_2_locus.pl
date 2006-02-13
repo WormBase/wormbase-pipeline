@@ -1,11 +1,11 @@
 #!/usr/local/bin/perl5.8.0 -w
 
 # Author: Chao-Kung Chen
-# Last updated by $Author: mt3 $
-# Last updated on: $Date: 2005-12-09 13:24:18 $ 
+# Last updated by $Author: wormpub $
+# Last updated on: $Date: 2006-02-13 15:14:23 $ 
 
 use strict;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Ace;
 use Getopt::Long;
@@ -17,7 +17,7 @@ my $geneace_dir = $ga->geneace();
 my $db          = Ace->connect(-path => $geneace_dir, -program =>$tace) || print Ace->error;
 my $rundate = rundate();
 
-open(LOG, ">/wormsrv2/logs/dubious_multiPt_2_locus.$rundate") || die $!;
+open(LOG, ">/nfs/disk100/wormpub/DATABASES/geneace/logs/dubious_multiPt_2_locus.$rundate") || die $!;
 open(ACE, ">/nfs/disk100/wormpub/DATABASES/geneace/CHECKS/multiPt_2_locus.ace");
 
 push( my @multi_pt, $db->find("Find Multi_pt_data *") );
