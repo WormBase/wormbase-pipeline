@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-02-13 11:37:01 $
+# Last edited on: $Date: 2006-02-13 11:38:40 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -34,8 +34,9 @@ else {
 my $log = Log_files->make_build_log($wormbase);
 $log->log_and_die("stage not specified\n") unless defined $stage;
 
+my $cmd;
 if ( $stage eq 'final' ){
-  my $cmd = "dump_gff_batch.pl -database ".$wormbase->autoace." -dump_dir ".$wormbase->chromosomes;
+  $cmd = "dump_gff_batch.pl -database ".$wormbase->autoace." -dump_dir ".$wormbase->chromosomes;
   $cmd .= " -chromosomes ". join(",",@chromosomes) if @chromosomes;
 }
 else {
@@ -50,7 +51,7 @@ else {
 
   $log->write_to("Dumping methods $methods from ".$wormbase->autoace."\n");
 
-  my $cmd = "dump_gff_batch.pl -database ".$wormbase->autoace." -methods $methods -dump_dir ".$wormbase->autoace."/GFF_SPLITS";
+  $cmd = "dump_gff_batch.pl -database ".$wormbase->autoace." -methods $methods -dump_dir ".$wormbase->autoace."/GFF_SPLITS";
   $cmd .= " -chromosomes ". join(",",@chromosomes) if @chromosomes;
 }
 
