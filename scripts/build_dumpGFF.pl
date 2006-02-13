@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-01-30 15:35:25 $
+# Last edited on: $Date: 2006-02-13 11:37:01 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -11,12 +11,14 @@ use Log_files;
 
 our ($help, $debug, $test, $stage);
 my $store;
+my @chromosomes;
 
 GetOptions ("help"         => \$help,
             "debug=s"      => \$debug,
 	    "test"         => \$test,
 	    "store:s"      => \$store,
-	    "stage:s"      => \$stage
+	    "stage:s"      => \$stage,
+	    "chromosomes:s"=> \@chromosomes,
 	   );
 
 my $wormbase;
@@ -32,18 +34,27 @@ else {
 my $log = Log_files->make_build_log($wormbase);
 $log->log_and_die("stage not specified\n") unless defined $stage;
 
-my $methods;
-my @methods;
-READARRAY: while (<DATA>) {
-  chomp;
-  my ($type,$method) = split;
-  push(@methods,"$method") if ( $type eq $stage) ;
+if ( $stage eq 'final' ){
+  my $cmd = "dump_gff_batch.pl -database ".$wormbase->autoace." -dump_dir ".$wormbase->chromosomes;
+  $cmd .= " -chromosomes ". join(",",@chromosomes) if @chromosomes;
 }
-$methods = join(',',@methods);
+else {
+  my $methods;
+  my @methods;
+ READARRAY: while (<DATA>) {
+    chomp;
+    my ($type,$method) = split;
+    push(@methods,"$method") if ( $type eq $stage) ;
+  }
+  $methods = join(',',@methods);
 
-$log->write_to("Dumping methods $methods from ".$wormbase->autoace."\n");
+  $log->write_to("Dumping methods $methods from ".$wormbase->autoace."\n");
 
-$wormbase->run_script("dump_gff_batch.pl -database ".$wormbase->autoace." -methods $methods -dump_dir ".$wormbase->autoace."/GFF_SPLITS",$log);
+  my $cmd = "dump_gff_batch.pl -database ".$wormbase->autoace." -methods $methods -dump_dir ".$wormbase->autoace."/GFF_SPLITS";
+  $cmd .= " -chromosomes ". join(",",@chromosomes) if @chromosomes;
+}
+
+$wormbase->run_script($cmd,$log);
 
 $log->mail();
 exit(0);
@@ -68,6 +79,11 @@ init snoRNA
 init tRNA
 init stRNA
 init snRNA
+init GenePairs
+init Oligo_set
+init SAGE_transcript
+init RNAi_primary
+init RNAi_secondary
 blat BLAT_EMBL_BEST
 blat BLAT_EMBL_OTHER
 blat BLAT_EST_BEST
