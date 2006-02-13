@@ -198,35 +198,39 @@ sub check_overlapping_CDS
 
     # read in data from GFF files but ONLY if not already there ie do 1st time.
     unless ( defined $self->{'CHROM2GENE_POS'} ) {
-      croak "no GFF files in $self->{DATABASE}/CHROMOSOMES\n" unless (-e "$self->{DATABASE}/CHROMOSOMES");
+      my $gff_dir = $self->{'DATABASE'}."/GFF_SPLITS";  # hard path not using Wormbase.pm
+      croak "no GFF files in $gff_dir\n" unless (-e "$gff_dir");
       my @chromosomes = qw( I II III IV V X );
+      my @methods = qw(curated miRNA snoRNA tRNAscan-SE-1.23 snRNA rRNA Non_coding_transcript scRNA);
 
-      foreach (@chromosomes) {
-	my $gff = "$self->{'DATABASE'}/CHROMOSOMES/CHROMOSOME_$_.gff";
-	open (GFF,"<$gff") or croak "cant open $gff\n";
-	my $chromosome = "CHROMOSOME_$_";
+      foreach my $chrom (@chromosomes) {
+	foreach my $method (@methods) {	  
+	  my $gff = "$gff_dir/CHROMOSOME_${chrom}_$method.gff";
+	  open (GFF,"<$gff") or croak "cant open $gff\n";
+	  my $chromosome = "CHROMOSOME_$chrom";
 
-	while (<GFF>) {
-	  # CHROMOSOME_I curated CDS 222722  223159  . + . CDS "Y48G1BM.3" wp_acc=CE26120
-	  # look for just protein or RNA genes by examining GFF_source and GFF_feature
-	  next unless (/CDS/ or /primary_transcript/);
-	  my @data = split;
-	  if(($data[1] eq "curated"               && $data[2] eq "CDS") ||
-	     ($data[1] eq "miRNA"                 && $data[2] eq "miRNA_primary_transcript") ||
-	     ($data[1] eq "snoRNA"                && $data[2] eq "snoRNA_primary_transcript") ||
-	     ($data[1] eq "tRNAscan-SE-1.23"      && $data[2] eq "tRNA_primary_transcript") ||
-	     ($data[1] eq "snRNA"                 && $data[2] eq "snRNA_primary_transcript") ||
-	     ($data[1] eq "rRNA"                  && $data[2] eq "rRNA_primary_transcript") ||
-	     ($data[1] eq "Non_coding_transcript" && $data[2] eq "nc_primary_transcript") ||
-	     ($data[1] eq "scRNA"                 && $data[2] eq "scRNA_primary_transcript")){
-	    $data[9] =~ s/\"//g;
-	    my $gene = $data[9];
-	    my $end5 = $data[3];
-	    my $end3 = $data[4];
-	    $self->{'CHROM2GENE_POS'}->{"$chromosome"}->{"$gene"} = [$end5, $end3];	     
-	   }
+	  while (<GFF>) {
+	    # CHROMOSOME_I curated CDS 222722  223159  . + . CDS "Y48G1BM.3" wp_acc=CE26120
+	    # look for just protein or RNA genes by examining GFF_source and GFF_feature
+	    next unless (/CDS/ or /primary_transcript/);
+	    my @data = split;
+	    if (($data[1] eq "curated"               && $data[2] eq "CDS") ||
+		($data[1] eq "miRNA"                 && $data[2] eq "miRNA_primary_transcript") ||
+		($data[1] eq "snoRNA"                && $data[2] eq "snoRNA_primary_transcript") ||
+		($data[1] eq "tRNAscan-SE-1.23"      && $data[2] eq "tRNA_primary_transcript") ||
+		($data[1] eq "snRNA"                 && $data[2] eq "snRNA_primary_transcript") ||
+		($data[1] eq "rRNA"                  && $data[2] eq "rRNA_primary_transcript") ||
+		($data[1] eq "Non_coding_transcript" && $data[2] eq "nc_primary_transcript") ||
+		($data[1] eq "scRNA"                 && $data[2] eq "scRNA_primary_transcript")) {
+	      $data[9] =~ s/\"//g;
+	      my $gene = $data[9];
+	      my $end5 = $data[3];
+	      my $end3 = $data[4];
+	      $self->{'CHROM2GENE_POS'}->{"$chromosome"}->{"$gene"} = [$end5, $end3];
+	    }
+	  }
+	  close GFF;
 	}
-	close GFF;
       }
     }
 
