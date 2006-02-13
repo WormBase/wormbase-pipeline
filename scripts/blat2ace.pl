@@ -7,7 +7,7 @@
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-01-10 14:47:33 $
+# Last edited on: $Date: 2006-02-13 11:35:44 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -348,217 +348,210 @@ close(ACE);
 ####################################
 # produce outfile for best matches #
 ####################################
+if ($nematode || $washu || $nembase) {
+  $wormbase->run_command("mv $blat_dir/autoace.$type.ace $blat_dir/autoace.blat.$type.ace", $log);
+} else {
+  open (AUTBEST, ">$blat_dir/autoace.best.$type.ace");
+  open (STLBEST, ">$blat_dir/stlace.best.$type.ace");
+  open (CAMBEST, ">$blat_dir/camace.best.$type.ace");
 
-&usage(20) if ($nematode || $washu || $nembase);
-
-open (AUTBEST, ">$blat_dir/autoace.best.$type.ace");
-open (STLBEST, ">$blat_dir/stlace.best.$type.ace");
-open (CAMBEST, ">$blat_dir/camace.best.$type.ace");
-
-foreach my $found (sort keys %best) {
+  foreach my $found (sort keys %best) {
     if (exists $best{$found}) {
-	foreach my $entry (@{$best{$found}->{'entry'}}) {
-	    if (@{$best{$found}->{'entry'}} < 2) {
-		my $virtual   = $entry->{'clone'};
-		my $superlink = $entry->{'link'};
-		foreach my $ex (@{$entry->{'exons'}}) {
-		    my $score        = $best{$found}->{'score'};
-		    my $virtualstart = $ex->[0];
-		    my $virtualend   = $ex->[1];
-		    my $query_start  = $ex->[2];
-		    my $query_end    = $ex->[3];
+      foreach my $entry (@{$best{$found}->{'entry'}}) {
+	if (@{$best{$found}->{'entry'}} < 2) {
+	  my $virtual   = $entry->{'clone'};
+	  my $superlink = $entry->{'link'};
+	  foreach my $ex (@{$entry->{'exons'}}) {
+	    my $score        = $best{$found}->{'score'};
+	    my $virtualstart = $ex->[0];
+	    my $virtualend   = $ex->[1];
+	    my $query_start  = $ex->[2];
+	    my $query_end    = $ex->[3];
 		    
-		    # print output for autoace, camace, and stlace
-		    print  AUTBEST "Homol_data : \"$virtual\"\n";
-		    printf AUTBEST "DNA_homol\t\"%s\"\t\"$word{$type}_BEST\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$found,$score,$virtualstart,$virtualend,$query_start,$query_end;
-		    if ($camace{$superlink}) {
-			print  CAMBEST "Homol_data : \"$virtual\"\n";
-			printf CAMBEST "DNA_homol\t\"%s\"\t\"$word{$type}_BEST\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$found,$score,$virtualstart,$virtualend,$query_start,$query_end;
-		    }
-		    elsif ($stlace{$superlink}) {
-			print  STLBEST "Homol_data : \"$virtual\"\n";
-			printf STLBEST "DNA_homol\t\"%s\"\t\"$word{$type}_BEST\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$found,$score,$virtualstart,$virtualend,$query_start,$query_end;
-		    }	  
-		}
+	    # print output for autoace, camace, and stlace
+	    print  AUTBEST "Homol_data : \"$virtual\"\n";
+	    printf AUTBEST "DNA_homol\t\"%s\"\t\"$word{$type}_BEST\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$found,$score,$virtualstart,$virtualend,$query_start,$query_end;
+	    if ($camace{$superlink}) {
+	      print  CAMBEST "Homol_data : \"$virtual\"\n";
+	      printf CAMBEST "DNA_homol\t\"%s\"\t\"$word{$type}_BEST\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$found,$score,$virtualstart,$virtualend,$query_start,$query_end;
+	    } elsif ($stlace{$superlink}) {
+	      print  STLBEST "Homol_data : \"$virtual\"\n";
+	      printf STLBEST "DNA_homol\t\"%s\"\t\"$word{$type}_BEST\"\t%.1f\t%d\t%d\t%d\t%d\n\n",$found,$score,$virtualstart,$virtualend,$query_start,$query_end;
+	    }	  
+	  }
 		
-	#############################
-	# produce confirmed introns #
-	#############################
-		if ($intron) {
-		  #$log->write_to("Producing confirmed introns\n");
-		    my ($n) = ($virtual =~ /\S+_(\d+)$/);
-		    for (my $y = 1; $y < @{$entry->{'exons'}}; $y++) {
-			my $last   = $y - 1;
-			my $first  =  (${$entry->{"exons"}}[$last][1] + 1) + (($n-1)*100000);
-			my $second =  (${$entry->{'exons'}}[$y][0]    - 1) + (($n-1)*100000);
-			$estorientation{$found} = 5 if ($mrna || $embl);
-			if (${$entry->{'exons'}}[0][2] < ${$entry->{'exons'}}[0][3]) {
-			    if ((${$entry->{'exons'}}[$y][2] == ${$entry->{'exons'}}[$last][3] + 1) && (($second - $first) > 2)) {
-				if (exists $estorientation{$found} && $estorientation{$found} eq '3') {
-				    push @{$ci{$superlink}}, [$second,$first,$found];
-				}
-				elsif (exists $estorientation{$found} && $estorientation{$found} eq '5') {
-				    push @{$ci{$superlink}}, [$first,$second,$found];
-				}
-				else {
-				  $log->write_to("WARNING: Direction not found for $found\n\n");
-				}
-			    }
-			}
-			elsif (${$entry->{'exons'}}[0][2] > ${$entry->{'exons'}}[0][3]) {
-			    if ((${$entry->{'exons'}}[$last][3] == ${$entry->{'exons'}}[$y][2] + 1) && (($second - $first) > 2)) {
-				if (exists $estorientation{$found} && $estorientation{$found} eq '3') {
-				    push @{$ci{$superlink}}, [$first,$second,$found];
-				}
-				elsif (exists $estorientation{$found} && $estorientation{$found} eq '5') {
-				    push @{$ci{$superlink}}, [$second,$first,$found]; 
-				}
-				else {
-				    $log->write_to("WARNING: Direction not found for $found\n\n");
-				}
-			    }
-			}
-		    }
+	  #############################
+	  # produce confirmed introns #
+	  #############################
+	  if ($intron) {
+	    #$log->write_to("Producing confirmed introns\n");
+	    my ($n) = ($virtual =~ /\S+_(\d+)$/);
+	    for (my $y = 1; $y < @{$entry->{'exons'}}; $y++) {
+	      my $last   = $y - 1;
+	      my $first  =  (${$entry->{"exons"}}[$last][1] + 1) + (($n-1)*100000);
+	      my $second =  (${$entry->{'exons'}}[$y][0]    - 1) + (($n-1)*100000);
+	      $estorientation{$found} = 5 if ($mrna || $embl);
+	      if (${$entry->{'exons'}}[0][2] < ${$entry->{'exons'}}[0][3]) {
+		if ((${$entry->{'exons'}}[$y][2] == ${$entry->{'exons'}}[$last][3] + 1) && (($second - $first) > 2)) {
+		  if (exists $estorientation{$found} && $estorientation{$found} eq '3') {
+		    push @{$ci{$superlink}}, [$second,$first,$found];
+		  } elsif (exists $estorientation{$found} && $estorientation{$found} eq '5') {
+		    push @{$ci{$superlink}}, [$first,$second,$found];
+		  } else {
+		    $log->write_to("WARNING: Direction not found for $found\n\n");
+		  }
 		}
+	      } elsif (${$entry->{'exons'}}[0][2] > ${$entry->{'exons'}}[0][3]) {
+		if ((${$entry->{'exons'}}[$last][3] == ${$entry->{'exons'}}[$y][2] + 1) && (($second - $first) > 2)) {
+		  if (exists $estorientation{$found} && $estorientation{$found} eq '3') {
+		    push @{$ci{$superlink}}, [$first,$second,$found];
+		  } elsif (exists $estorientation{$found} && $estorientation{$found} eq '5') {
+		    push @{$ci{$superlink}}, [$second,$first,$found]; 
+		  } else {
+		    $log->write_to("WARNING: Direction not found for $found\n\n");
+		  }
+		}
+	      }
 	    }
+	  }
 	}
+      }
     }
+  }
+  close(AUTBEST);
+  close(CAMBEST);
+  close(STLBEST);
 }
-close(AUTBEST);
-close(CAMBEST);
-close(STLBEST);
-
 ########################################################
 # produce final BLAT output (including BEST and OTHER) #
 ########################################################
 
-&usage(20) if ($nematode || $washu || $nembase);
+unless ($nematode || $washu || $nembase) {
+  # Open new (final) output files for autoace, camace, and stlace
+  open (OUT_autoace, ">$blat_dir/autoace.blat.$type.ace") or die "$!";
+  open (OUT_camace,  ">$blat_dir/camace.blat.$type.ace")  or die "$!";
+  open (OUT_stlace,  ">$blat_dir/stlace.blat.$type.ace")  or die "$!";
 
-# Open new (final) output files for autoace, camace, and stlace
-open (OUT_autoace, ">$blat_dir/autoace.blat.$type.ace") or die "$!";
-open (OUT_camace,  ">$blat_dir/camace.blat.$type.ace")  or die "$!";
-open (OUT_stlace,  ">$blat_dir/stlace.blat.$type.ace")  or die "$!";
+  # Change input separator to paragraph mode, but store what it old mode in $oldlinesep
+  my $oldlinesep = $/;
+  $/ = "";
 
-# Change input separator to paragraph mode, but store what it old mode in $oldlinesep
-my $oldlinesep = $/;
-$/ = "";
+  my (%line);
+  my $superlink = "";
 
-my (%line);
-my $superlink = "";
+  # assign 
+  open(ABEST,  "<$blat_dir/autoace.best.$type.ace");
+  while (<ABEST>) {
+    if ($_ =~ /^Homol_data/) {
+      # flag each blat hit which is best (all of them) - set $line{$_} to 1
+      # %line thus stores keys which are combos of virtual object name + blat hit details
+      $line{$_} = 1;
+      ($superlink) = (/\"$word{$type}\:(\S+)\_\d+\"/);
 
-# assign 
-open(ABEST,  "<$blat_dir/autoace.best.$type.ace");
-while (<ABEST>) {
-  if ($_ =~ /^Homol_data/) {
-    # flag each blat hit which is best (all of them) - set $line{$_} to 1
-    # %line thus stores keys which are combos of virtual object name + blat hit details
-    $line{$_} = 1;
-    ($superlink) = (/\"$word{$type}\:(\S+)\_\d+\"/);
-
-    # Print blat best hits to final output file
-    print OUT_autoace "// Source $superlink\n\n";
-    print OUT_autoace $_;
+      # Print blat best hits to final output file
+      print OUT_autoace "// Source $superlink\n\n";
+      print OUT_autoace $_;
     
-    # camace
-    if ($camace{$superlink}) {
-      print OUT_camace $_;
-    }
-    # and stlace
-    elsif ($stlace{$superlink}) {
-      print OUT_stlace $_;
-    }
-  }
-}
-close ABEST;
-
-
-# Now look through original output file (where everything is set to BLAT_OTHER) to
-# output those blat OTHER hits which are not flagged as BLAT_BEST in the .best.ace file
-# Does this by comparing entries in %line hash
-
-open(AOTHER, "<$blat_dir/autoace.$type.ace");
-while (<AOTHER>) {
-  if ($_ =~ /^Homol_data/) {
-    my $line = $_;
-    # for comparison to %line hash, need to change OTHER to BEST in $_
-    s/BLAT_EST_OTHER/BLAT_EST_BEST/g     if ($est);
-    s/BLAT_OST_OTHER/BLAT_OST_BEST/g     if ($ost); 
-    s/BLAT_mRNA_OTHER/BLAT_mRNA_BEST/g   if ($mrna);
-    s/BLAT_ncRNA_OTHER/BLAT_ncRNA_BEST/g if ($ncrna);
-    s/BLAT_EMBL_OTHER/BLAT_EMBL_BEST/g   if ($embl);
-    s/BLAT_TC1_OTHER/BLAT_TC1_BEST/g     if ($tc1);
-    
-    # Only output BLAT_OTHER hits in first output file which we now know NOT to
-    # really be BEST hits
-    unless (exists $line{$_}) {
-      print OUT_autoace $line;
-      
       # camace
       if ($camace{$superlink}) {
-	print OUT_camace $line;
+	print OUT_camace $_;
       }
       # and stlace
       elsif ($stlace{$superlink}) {
-	print OUT_stlace $line;
+	print OUT_stlace $_;
       }
-      
-    }	
+    }
   }
-}
-close AOTHER;
+  close ABEST;
 
-# reset input line separator
-$/= $oldlinesep;
 
-###################################
-# produce confirmed intron output #
-###################################
+  # Now look through original output file (where everything is set to BLAT_OTHER) to
+  # output those blat OTHER hits which are not flagged as BLAT_BEST in the .best.ace file
+  # Does this by comparing entries in %line hash
 
-if ($intron) {
+  open(AOTHER, "<$blat_dir/autoace.$type.ace");
+  while (<AOTHER>) {
+    if ($_ =~ /^Homol_data/) {
+      my $line = $_;
+      # for comparison to %line hash, need to change OTHER to BEST in $_
+      s/BLAT_EST_OTHER/BLAT_EST_BEST/g     if ($est);
+      s/BLAT_OST_OTHER/BLAT_OST_BEST/g     if ($ost); 
+      s/BLAT_mRNA_OTHER/BLAT_mRNA_BEST/g   if ($mrna);
+      s/BLAT_ncRNA_OTHER/BLAT_ncRNA_BEST/g if ($ncrna);
+      s/BLAT_EMBL_OTHER/BLAT_EMBL_BEST/g   if ($embl);
+      s/BLAT_TC1_OTHER/BLAT_TC1_BEST/g     if ($tc1);
+    
+      # Only output BLAT_OTHER hits in first output file which we now know NOT to
+      # really be BEST hits
+      unless (exists $line{$_}) {
+	print OUT_autoace $line;
+      
+	# camace
+	if ($camace{$superlink}) {
+	  print OUT_camace $line;
+	}
+	# and stlace
+	elsif ($stlace{$superlink}) {
+	  print OUT_stlace $line;
+	}
+      
+      }	
+    }
+  }
+  close AOTHER;
+
+  # reset input line separator
+  $/= $oldlinesep;
+
+  ###################################
+  # produce confirmed intron output #
+  ###################################
+
+  if ($intron) {
     
     open(CI_auto, ">$blat_dir/autoace.ci.${type}.ace");
     open(CI_cam,  ">$blat_dir/camace.ci.${type}.ace");
     open(CI_stl,  ">$blat_dir/stlace.ci.${type}.ace");
   
     foreach my $link (sort keys %ci) {
-	my %double;
+      my %double;
 	
-	print CI_auto "\nSequence : \"$link\"\n";
-	print CI_stl  "\nSequence : \"$link\"\n" if ($stlace{$link});
-	print CI_cam  "\nSequence : \"$link\"\n" if ($camace{$link});
+      print CI_auto "\nSequence : \"$link\"\n";
+      print CI_stl  "\nSequence : \"$link\"\n" if ($stlace{$link});
+      print CI_cam  "\nSequence : \"$link\"\n" if ($camace{$link});
 	
-	for (my $i = 0; $i < @{$ci{$link}}; $i++) {
-	    my $merge = $ci{$link}->[$i][0].":".$ci{$link}->[$i][1];
-	    if (!exists $double{$merge}) {
-		if ($mrna) {
-		    printf CI_auto "Confirmed_intron %d %d mRNA $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1];
-		    (printf CI_cam "Confirmed_intron %d %d mRNA $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1]) if ($camace{$link});
-		    (printf CI_stl "Confirmed_intron %d %d mRNA $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1]) if ($stlace{$link});
-		}
-		if ($embl) {
-		    printf CI_auto "Confirmed_intron %d %d Homol $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1];
-		    (printf CI_cam "Confirmed_intron %d %d Homol $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1]) if ($camace{$link});
-		    (printf CI_stl "Confirmed_intron %d %d Homol $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1]) if ($stlace{$link});
-		}
-		if ($est) {
-		    printf CI_auto "Confirmed_intron %d %d EST $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1];
-		    (printf CI_cam "Confirmed_intron %d %d EST $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1]) if ($camace{$link});
-		    (printf CI_stl "Confirmed_intron %d %d EST $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1]) if ($stlace{$link});
-		}
-		if ($ost) {
-		    printf CI_auto "Confirmed_intron %d %d EST $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1];
-		    (printf CI_cam "Confirmed_intron %d %d EST $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1]) if ($camace{$link});
-		    (printf CI_stl "Confirmed_intron %d %d EST $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1]) if ($stlace{$link});
-		}
-		$double{$merge} = 1;
-	    }
+      for (my $i = 0; $i < @{$ci{$link}}; $i++) {
+	my $merge = $ci{$link}->[$i][0].":".$ci{$link}->[$i][1];
+	if (!exists $double{$merge}) {
+	  if ($mrna) {
+	    printf CI_auto "Confirmed_intron %d %d mRNA $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1];
+	    (printf CI_cam "Confirmed_intron %d %d mRNA $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1]) if ($camace{$link});
+	    (printf CI_stl "Confirmed_intron %d %d mRNA $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1]) if ($stlace{$link});
+	  }
+	  if ($embl) {
+	    printf CI_auto "Confirmed_intron %d %d Homol $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1];
+	    (printf CI_cam "Confirmed_intron %d %d Homol $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1]) if ($camace{$link});
+	    (printf CI_stl "Confirmed_intron %d %d Homol $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1]) if ($stlace{$link});
+	  }
+	  if ($est) {
+	    printf CI_auto "Confirmed_intron %d %d EST $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1];
+	    (printf CI_cam "Confirmed_intron %d %d EST $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1]) if ($camace{$link});
+	    (printf CI_stl "Confirmed_intron %d %d EST $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1]) if ($stlace{$link});
+	  }
+	  if ($ost) {
+	    printf CI_auto "Confirmed_intron %d %d EST $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1];
+	    (printf CI_cam "Confirmed_intron %d %d EST $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1]) if ($camace{$link});
+	    (printf CI_stl "Confirmed_intron %d %d EST $ci{$link}->[$i][2]\n",  $ci{$link}->[$i][0], $ci{$link}->[$i][1]) if ($stlace{$link});
+	  }
+	  $double{$merge} = 1;
 	}
+      }
     }
     
     close CI_auto;
     close CI_cam;
     close CI_stl;
-    
+  }
 }
 
 ##############################
