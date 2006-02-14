@@ -8,7 +8,7 @@
 # see pod for more details
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-01-06 13:46:12 $
+# Last updated on: $Date: 2006-02-14 09:45:01 $
 
 
 use strict;
@@ -133,7 +133,7 @@ if($quicktest){
 
   $log->write_to("Removing blank first lines");
   undef $/;
-  foreach (qw(I II III IV V X MTCE)) {
+  foreach (qw(I II III IV V X MtDNA)) {
     open( CHROM,"<$dump_dir/CHROMOSOME_$_.dna") or $log->log_and_die("cant open $dump_dir/CHROMOSOME_$_.dna to read: $!\n");
     my $chrom = <CHROM>;
     close CHROM;
