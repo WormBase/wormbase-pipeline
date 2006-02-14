@@ -7,7 +7,7 @@
 # handles post processing of GFF files
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-02-13 11:52:28 $
+# Last edited on: $Date: 2006-02-14 09:50:41 $
 
 
 use lib $ENV{CVS_DIR};
@@ -50,7 +50,7 @@ else {
 my $log = Log_files->make_build_log($wormbase);
 
 $database = $wormbase->autoace unless $database;
-my @chroms = qw( I II III IV V X mtDNA);
+my @chroms = qw( I II III IV V X MtDNA);
 @chroms = qw(III) if $quicktest;
 
 if( $input and $output ){
@@ -60,8 +60,6 @@ if( $input and $output ){
   $wormbase->run_script('add_species_to_BLAT_GFF.pl', $log) if $nematode;
 }
 else {
-  my @chroms = qw( I II III IV V X);
-  @chroms = qw(III) if $quicktest;
   if( $utr ) {
     foreach my $chrom ( @chroms ) {
       my $in = $wormbase->gff_splits."/CHROMOSOME_${chrom}_UTR.gff";
