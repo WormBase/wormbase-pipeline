@@ -5,15 +5,14 @@
 # A script to make multiple copies of camace for curation, and merge them back again
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2006-02-09 16:50:41 $
+# Last edited on: $Date: 2006-02-14 15:01:46 $
 
 
 use strict;
-#use lib "/wormsrv2/scripts/";
 use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
-
+#use Storable;
 
 ##############################
 # command-line options       #
@@ -28,6 +27,9 @@ my $update;                # Update current database
 my $debug;                 # Debug option
 my $help;                  # Help menu
 my $version;               # Removes final wormsrv2 dependancy.
+#my $store;                # Storable not needed as this is not a build script!
+#my $test;
+#my $wormbase,
 
 GetOptions (
             "all"        => \$all,
@@ -38,13 +40,26 @@ GetOptions (
 	    "update"     => \$update,
 	    "help"       => \$help,
 	    "debug"      => \$debug,
-	    "version"    => \$version
+#	    "version:s"  => \$version,
+#	    "store"      => \$store,
+#	    "test"       => \$test,
 	   );
+
+
 
 # Help pod if needed
 &usage("Help") if ($help);
 
-our $tace       = &tace;
+#if ($store) {
+#  $wormbase = retrieve($store) or croak ("Can't restore wormbase from $store\n");
+#} 
+#else {
+#  $wormbase = Wormbase->new( -debug => $debug,
+#			     -test => $test,
+#			     );
+#}
+
+my $tace = $wormbase->tace;
 my $WS_version = $version;
 
 my $WS_next = $WS_version + 1;
