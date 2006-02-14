@@ -2,7 +2,7 @@
 #
 # EMBLDump.pl :  makes EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2005-12-20 14:19:51 $
+#  Last updated on: $Date: 2006-02-14 14:49:33 $
 #  Last updated by: $Author: pad $
 
 use strict;
@@ -140,7 +140,7 @@ while (<EMBL>) {
 
     if (!defined($clone2type{$clone})){
       print OUT "DE   Caenorhabditis elegans clone $clone\n";
-      print "WARNING: no clone type for $_"
+      print "WARNING: no clone type for $_";
 	$log->write_to("WARNING: no clone type for $_");
     }
     elsif ($clone2type{$clone} eq "other") {
