@@ -2,7 +2,7 @@
 #
 # EMBLDump.pl :  makes EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2006-02-14 14:49:33 $
+#  Last updated on: $Date: 2006-02-14 15:02:59 $
 #  Last updated by: $Author: pad $
 
 use strict;
@@ -16,14 +16,14 @@ use Storable;
 # command-line options       #
 ##############################
 
-my $test;
+my $test = "1";
 my $debug;
 my $store;
 my $wormbase;
 my $quicktest;
 
 GetOptions (
-	    "test"         => \$test,
+	    #"test"         => \$test,
 	    "debug=s"      => \$debug,
 	    "store:s"      => \$store,
 	    "quicktest"    => \$quicktest,
