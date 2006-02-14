@@ -6,8 +6,8 @@
 #
 # Builds a wormpep data set from the current autoace database
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2005-12-20 16:58:23 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2006-02-14 14:16:16 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -34,10 +34,9 @@ GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
-	    "store"      => \$store,
+	    "store:s"    => \$store,
             "initial"    => \$initial,
 	    "final"      => \$final,
-	    "store:s"    => \$store
            );
 
 
@@ -67,7 +66,7 @@ my $log = Log_files->make_build_log($wormbase);
 # sanity checks on command-line options #
 #########################################
 
-&error(1) if ($initial and $final);
+$log->log_and_die("=> You are running initial and full at same time\n\n") if ($initial and $final);
 
 
 #######################################
@@ -76,8 +75,6 @@ my $log = Log_files->make_build_log($wormbase);
 
 my $tace = $wormbase->tace; 
 my $release = $wormbase->get_wormbase_version;
-my $old_release = $release-1;
-
 
 my %peptide2number;   # peptide sequence is key, CE number (and just the number) is value
 my @number2peptide;   # stores peptide sequence at array positions corresponding to CE numbers
@@ -106,8 +103,8 @@ my $dbdir     = $wormbase->autoace;
 my $new_wpdir = $wormbase->wormpep;
 
 # need to get previous build WORMPEP
-my ($stem, $ver ) = $new_wpdir =~ /(.*wormpep)(\d+)/;
-my $wpdir     = "$stem".--$ver;
+my ($stem, $old_release ) = $new_wpdir =~ /(.*wormpep)(\d+)/;
+my $wpdir     = "$stem".--$old_release;
 
 
 
@@ -177,97 +174,6 @@ exit(0);
 # Subroutines                                                                   #
 #################################################################################
 
-
-
-##########################################
-
-sub usage {
-  my $error = shift;
-
-  if ($error eq "Help") {
-    # Normal help menu
-    system ('perldoc',$0);
-    exit (0);
-  }
-}
-
-##########################################
-
-
-##########################
-# run details            #
-##########################
-
-sub run_details {
-  print "# make_wormpep\n";
-  print "# run details    : ",$wormbase->rundate," ",$wormbase->runtime,"\n";
-  print "\n";
-  print "Wormpep version  : wormpep$release\n";
-  print "Primary database : $dbdir\n\n";
-  
-} # end of sub 'run details'
-
-##########################
-# errors from the script #
-##########################
-
-sub error {
-  my $error = shift;
-  # Error 0 - help page
-  if ($error == 0) {
-    exec ('perldoc',$0);
-    exit (0);
-  }
-  #   # Error  1 - initial and full at same time - WARN only
-  elsif ($error == 1) {
-    &run_details;
-    print "=> Running initial and full at same time\n\n";
-    print "are you sure you want to continue ( y / n )\n";
-    my $yn = <STDIN>;
-    if ("$yn" ne "y" ) {
-      return;
-    }
-    else {
-      print "Exiting\n";
-      exit(0);
-    }
-  }
-  # Error  2 - not chosen initial or full
-  elsif ($error == 2) {
-    &run_details;
-    $log->write_to("=> not chosen initial or full.\n\n");
-  }
-  # Error  3 - cannot create new wormpep directory 
-  elsif ($error == 3) {
-    &run_details;
-    $log->write_to("=> Failed to create a new directory for wormpep release wormpep$release\n\n");
-  }
-  # Error  4 - cannot open new wp.log file 
-  elsif ($error == 4) {
-    &run_details;
-    $log->write_to("=> Failed to create a new wp.log for wormpep release wormpep$release\n\n");
-  }
-  # Error  5 - cannot open old wp.fasta file 
-  elsif ($error == 5) {
-    &run_details;
-    $log->write_to("=> Failed to open the old wp.fasta for wormpep release wormpep$old_release\n\n");
-  }
-  # Error  6 - cannot connect to ACEDB database 
-  elsif ($error == 6) {
-    &run_details;
-    $log->write_to("=> Failed to connect to primary database 'dbdir'\n\n");
-  }
-  # Error  7 - cannot open new wp.log file 
-  elsif ($error == 7) {
-    &run_details;
-    $log->write_to("=> Failed to create a new wormpep.dna for wormpep release wormpep$release\n\n");
-  }
-  $log->log_and_die($wormbase->runtime." : Exiting script\n");
-}
- # end of sub 'error'
-
-
-
 #################################################################################################
 #
 # Process existing wp.fasta file to populate data structures with existing information
@@ -283,7 +189,7 @@ sub setup{
     $log->write_to("$new_wpdir already exists\n");
   }
   else {
-    mkdir ("$new_wpdir" , 0755) || &error(3);               # die "cannot create the $new_wpdir directory\n";
+    mkdir ("$new_wpdir" , 0755) || $log->log_and_die("=> Failed to create a new directory for wormpep release wormpep$release\n\n");
     $log->write_to($wormbase->runtime.": making wormpep$release\n\n");
   }
   
@@ -296,7 +202,7 @@ sub setup{
   my $peptide    = ""; # will store peptide sequence for each Wormpep protein
   my $duplicates = 0;  # for tracking duplicate protein sequences
 
-  open (WP , "$wpdir/wp.fasta$old_release") || &error(5); # die "couldn't open $wpdir/wp.fasta$old_release\n";
+  open (WP , "$wpdir/wp.fasta$old_release") || $log->log_and_die("=> Failed to open the old wp.fasta for wormpep release wormpep$old_release\n\n");
   while (<WP>) {
     chomp;
     # is it the FASTA header line?
@@ -390,7 +296,7 @@ sub write_wormpep_dna{
   print     $wormbase->runtime, ": connecting to $dbdir\n" if ($verbose);
 
   # grab list of valid CDS names, ignore any temp genes
-  my $db = Ace->connect (-path => $dbdir, -program => $tace) || &error(6); # die "cannot connect to autoace\n";
+  my $db = Ace->connect (-path => $dbdir, -program => $tace) || $log->log_and_die("=> Failed to connect to primary database $dbdir\n\n");
   @CDSs = $db->fetch (-query => 'FIND elegans_CDS NOT *temp*');
   @CDSs = sort @CDSs;
 
@@ -400,7 +306,7 @@ sub write_wormpep_dna{
 
   # write DNA for each CDS to separate file
   $log->write_to($wormbase->runtime.": creating wormpep.dna file\n\n");
-  open (DNA , ">$new_wpdir/wormpep.dna$release") || &error(7); # die "cannot create $new_wpdir/wormpep.dna$release\n";
+  open (DNA , ">$new_wpdir/wormpep.dna$release") || $log->log_and_die("=> Failed to create a new wormpep.dna for wormpep release wormpep$release\n\n");
 
 
   foreach my $cds (@CDSs) {
@@ -408,7 +314,7 @@ sub write_wormpep_dna{
     # get dna 
     my $dna = $cds->asDNA();
     $log->write_to("cannot extract dna for CDS $cds\n") if ((!defined ($dna)) || ($dna eq ""));
-    $dna =~ /^>(\S+)\s+(\w.*)/s ; my $dna_seq = $2 ; $dna_seq =~ tr/a-z/A-Z/ ; $dna_seq =~ s/\s//g;
+    $dna =~ /^\n>(\S+)\s+(\w.*)/s ; my $dna_seq = $2 ; $dna_seq =~ tr/a-z/A-Z/ ; $dna_seq =~ s/\s//g;
     if ($dna_seq =~ /[^ACGT]/) {
       if ($dna_seq =~ /\-/) {                                       # - seems to indicate that e.g the subsequence
 	$log->write_to("ERROR: $cds - DNA sequence contains a -\n"); # coordinates differ from the last exon coordinate
@@ -574,10 +480,10 @@ sub write_main_wormpep_and_table{
   if ($initial) {
     my $ace_dir         = $wormbase->autoace;     # AUTOACE DATABASE DIR
 
-    open (CONNECTIONS, ">$ace_dir/acefiles/CDS2wormpep.ace") ||  $log->log_and_die("cannot create CDS2wormpep\n");
+    open (CONNECTIONS, ">".$wormbase->acefiles."/CDS2wormpep.ace") ||  $log->log_and_die("cannot create CDS2wormpep\n");
     CONNECTIONS->autoflush();
   } elsif ($final) {
-    open (TABLE, ">$new_wpdir/wormpep.table$release")  || $log->log_and_die("cannot create wormpep.table$release\n");
+    open (TABLE, ">".$wormbase->wormpep."/wormpep.table$release")  || $log->log_and_die("cannot create wormpep.table$release\n");
     TABLE->autoflush();
   }
   
