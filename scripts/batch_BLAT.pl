@@ -5,7 +5,7 @@
 # Anthony Rogers
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-01-10 14:47:33 $
+# Last edited on: $Date: 2006-02-15 14:10:38 $
  
 
 use strict;
@@ -144,7 +144,8 @@ sub run_bsub
     $job_name = "BLAT_"."$job_name";
     my $blat       = "$wormpub/bin.ALPHA/blat";
     my $autoace_fa = $wormbase->blat."/autoace.fa";
-    my $EST_dir    = "$wormpub/analysis/ESTs";
+    #input and output in same place now
+    my $EST_dir    = $wormbase->blat;
     my $output_dir = $wormbase->blat;
 
     my $error_dir = "$wormpub/BSUB_ERRORS";
