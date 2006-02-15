@@ -60,9 +60,9 @@ sub read_fasta {
     open (OUT,">$output") or die "cant write to $output\n";
     while (<FILE>) {
         chomp;
-        if (/^>(\S+)\s+(\S+)/) {
-            my $new_id = $1;
-	    my $new_acc = $2;
+        if (/^>(\S+)\.\d+\s+(\S+)/) {
+            my $new_acc = $1;
+	    my $new_id = $2;
             if ($acc) {
                 $seq =~ tr/a-z/A-Z/;
                 my $org;
