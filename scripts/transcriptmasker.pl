@@ -8,7 +8,7 @@
 # 031023 dl1
 
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-02-13 11:53:08 $
+# Last edited on: $Date: 2006-02-15 11:55:41 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -242,13 +242,12 @@ sub MaskSequence {
 	# increment count of sequences masked
 	$masked++;
 
-      }	
-    # output masked sequence
-    print OUTPUT ">$acc $id\n$seqmasked\n";
-	
+      }		
     # close object
     $obj->DESTROY();
     }
+    # output masked sequence
+    print OUTPUT ">$acc $id\n$seqmasked\n";
   }
   close INPUT;
   $/ = "\n";
