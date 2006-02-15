@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-02-13 11:53:57 $
+# Last edited on: $Date: 2006-02-15 17:26:03 $
 
 
 use DBI;
@@ -71,7 +71,6 @@ if ( $store ) {
 } else {
   $wormbase = Wormbase->new( 'debug'   => $debug,
                              'test'    => $test,
-			     'farm'    => '1',
 			     );
 }
 
@@ -119,11 +118,11 @@ my %wormprotprocessIds = (
 			 );
 
 #get new chromosomes
-$wormbase->run_script("BLAST_scripts/copy_files_to_acari.pl -c", $log) if ($chromosomes);
+$wormbase->run_script("BLAST_scripts/copy_files_to_acari.pl -chrom", $log) if ($chromosomes);
 
 
 #get new wormpep
-$wormbase->run_script("BLAST_scripts/copy_files_to_acari.pl -w", $log) if ($wormpep);
+$wormbase->run_script("BLAST_scripts/copy_files_to_acari.pl -wormpep ".$wormbase->get_wormbase_version, $log) if ($wormpep);
 
 
 my %currentDBs;   #ALSO used in setup_mySQL 
@@ -152,9 +151,10 @@ if ( $update_databases ){
     if( /\/(gadfly|yeast|slimswissprot|slimtrembl|wormpep|ipi_human|brigpep)/ ) {
       my $whole_file = "$1"."$'";  #match + stuff after match.
       if( $1 eq "wormpep" ) {
-	print "updating wormpep to version $WS_version anyway - make sure the data is there !\nCopying over will take care of  formatting it\n";
+	print "updating wormpep to version $WS_version anyway - make sure the data is there !\n";
 	$whole_file = "wormpep".$WS_version.".pep";
 	$currentDBs{$1} = "$whole_file";
+	$wormbase->run_command("xdformat -p $wormpipe_dir/BlastDB/$whole_file");
 	next;
       }
       if( "$whole_file" ne "$currentDBs{$1}" ) {
