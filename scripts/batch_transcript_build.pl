@@ -7,7 +7,7 @@
 # wrapper script for running transcript_builder.pl
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-01-13 09:58:33 $
+# Last edited on: $Date: 2006-02-16 14:15:25 $
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -92,7 +92,7 @@ $log->write_to("all batch jobs done - cating outputs to ".$wormbase->transcripts
 $wormbase->run_command("cat ".$wormbase->transcripts."/*.ace > ".$wormbase->transcripts."/transcripts.ace");
 
 $log->write_to("loading file to ".$wormbase->autoace."\n");
-$wormbase->load_to_database($wormbase->autoace,$wormbase->transcripts."/transcripts.ace",'transcript_builder');
+$wormbase->load_to_database($wormbase->autoace,$wormbase->transcripts."/transcripts.ace",'transcript_builder', $log);
 
 $log->write_to("batch_dumping GFF files\n");
 $wormbase->run_script("dump_gff_batch.pl -method Coding_transcript");

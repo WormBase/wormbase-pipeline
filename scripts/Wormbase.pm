@@ -770,6 +770,14 @@ sub load_to_database {
   my $self     = shift;
   my $database = shift;
   my $file     = shift;
+  my $log      = shift;
+
+  #check whether write access is possible.
+  if( $self->check_write_access($database) eq 'no') {
+    print STDERR "cant get write access to $database\n";
+    $log->write_to("cant get write access to $database\n") if $log;
+    return 1;
+  }
 
   # tsuser is optional but if set, should replace any dots with underscores just in case
   # if not set im using the filename with dots replaced by '_'
