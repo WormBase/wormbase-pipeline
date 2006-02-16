@@ -7,8 +7,8 @@
 # Map WashU and Nembase EST contigs to genome and write out file to send to authors
 # of these two data sets for their web sites to point back at us
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2006-01-16 17:03:17 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2006-02-16 15:42:47 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -41,7 +41,7 @@ GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
-	    "store"      => \$store,
+	    "store:s"    => \$store,
 	    "all"      	 => \$all,
 	    "washu"      => \$washu,
 	    "nembase"    => \$nembase,
