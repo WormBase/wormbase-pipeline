@@ -7,7 +7,7 @@
 # Script to make ?Transcript objects
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-01-13 10:03:23 $
+# Last updated on: $Date: 2006-02-16 10:53:39 $
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Getopt::Long;
@@ -97,7 +97,7 @@ my %feature_data;
 
 
 # process chromosome at a time
-@chromosomes = qw(I II III IV V X MTCE) unless @chromosomes;
+@chromosomes = qw(I II III IV V X MtDNA) unless @chromosomes;
 
 foreach my $chrom ( @chromosomes ) {
 
@@ -177,7 +177,7 @@ foreach my $chrom ( @chromosomes ) {
     
   # add feature_data to cDNA
   #CHROMOSOME_I  SL1  SL1_acceptor_site   182772  182773 .  -  .  Feature "WBsf016344"
-  my @feature_types = qw(SL1 SL2 polyA_site polyA_signal);
+  my @feature_types = qw(SL1 SL2 polyA_site polyA_signal_sequence);
   foreach my $Type (@feature_types){
     my $gff_file = "$gff_dir/CHROMOSOME_${chrom}_${Type}.gff";
     open(GFF, "<$gff_file") or $log->log_and_die("cant open $gff_file : $!\n");
