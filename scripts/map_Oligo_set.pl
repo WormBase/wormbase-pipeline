@@ -2,8 +2,6 @@
 #
 # map_Oligo_set
 #
-# Cronjob integrity check controls for generic ACEDB database.
-#
 # Usage: map_Oligo_set.pl [-options]
 #
 # 010927 :  dl : modified output print line to include speech marks. this prevents any acefile
@@ -115,6 +113,7 @@ foreach my $chromosome (@chromosomes) {
         chomp;
         s/\#.*//;
         next unless /\S/;
+#for WS156	next unless /exon/
         my @f = split /\t/;
 
         my ($name) = ( $f[8] =~ /Oligo_set \"(.*)\"$/ );
