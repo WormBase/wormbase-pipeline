@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-02-13 11:29:11 $
+# Last edited on: $Date: 2006-02-17 10:13:53 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -28,6 +28,7 @@ my ( $gff_dump,     $processGFF, $gff_split );
 my $gene_span;
 my ( $load, $tsuser, $map_features, $map, $transcripts, $intergenic, $data_sets, $nem_contigs);
 my ( $GO_term, $rna , $dbcomp, $confirm, $operon ,$repeats, $remarks, $names);
+my ( $utr );
 
 
 GetOptions(
@@ -63,6 +64,7 @@ GetOptions(
     'repeats'        => \$repeats,
     'remarks'        => \$remarks,
     'names'          => \$names,
+    'utr'            => \$utr
 );
 
 my $wormbase = Wormbase->new(
@@ -98,6 +100,8 @@ $wormbase->run_script( 'batch_transcript_build.pl', $log) if $transcripts;
 #requires GFF dump of transcripts (done within script if all goes well)
 
 $wormbase->run_script( 'WBGene_span.pl'                   , $log ) if $gene_span;
+&make_UTR                                                          if $utr;
+
 $wormbase->run_script( 'map_nematode_contigs.pl -all'     , $log ) if $nem_contigs;
 $wormbase->run_script( 'find_intergenic.pl'               , $log ) if $intergenic;
 $wormbase->run_script( 'inherit_GO_terms.pl -phenotype'   , $log ) if $GO_term;
@@ -144,7 +148,7 @@ $wormbase->run_script( 'molecular_names_for_genes.pl'            , $log) if $nam
 if ($load) {
     $log->write_to("loading $load to ".$wormbase->autoace."\n");
     $log->write_to("\ttsuser = $tsuser\n\n");
-    $wormbase->load_to_database( $wormbase->autoace, $load, $tsuser ) if ( -e $load );
+    $wormbase->load_to_database( $wormbase->autoace, $load, $tsuser ,$log) if ( -e $load );
 }
 
 $log->mail;
@@ -187,7 +191,7 @@ sub first_dumps {
 
 sub map_features {
 
-    # PCR products
+    # PCR products  - requires UTR GFF files
     $wormbase->run_script( 'map_PCR_products.pl', $log );
 
     #Oligo_sets
