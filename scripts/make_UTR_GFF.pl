@@ -14,7 +14,7 @@ GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
-	    "store"      => \$store,
+	    "store:s"    => \$store,
 	    "chromosome" => \$chrom
 	  );
 
