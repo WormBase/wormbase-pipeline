@@ -15,7 +15,7 @@ GetOptions ("help"       => \$help,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
 	    "store:s"    => \$store,
-	    "chromosome" => \$chrom
+	    "chromosome:s"=> \$chrom
 	  );
 
 if ( $store ) {
