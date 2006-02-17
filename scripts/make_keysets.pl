@@ -6,8 +6,8 @@
 #
 # Usage : make_keysets.pl [-options]
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2005-12-19 15:19:36 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2006-02-17 11:32:47 $
 
 #################################################################################
 # variables                                                                     #
@@ -46,7 +46,7 @@ GetOptions (
 	    "help"      => \$help,
 	    "test"      => \$test,
 	    "verbose"   => \$verbose,
-	    "store"     => \$store,
+	    "store:s"     => \$store,
 	    );
 
 if ( $store ) {

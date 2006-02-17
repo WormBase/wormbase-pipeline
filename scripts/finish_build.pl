@@ -12,8 +12,8 @@
 # 3) Archives old GFF_SPLITS directory
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2005-12-16 13:41:11 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2006-02-17 11:32:47 $
 
 
 use strict;
@@ -39,7 +39,7 @@ GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
-	    "store"      => \$store,
+	    "store:s"      => \$store,
 	    );
 
 

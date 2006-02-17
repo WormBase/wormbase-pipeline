@@ -7,8 +7,8 @@
 # checks whether TSL acceptor sites overlap with exons.
 # Will discard matches to isoforms (Warning).
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2005-12-19 13:32:45 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2006-02-17 11:32:47 $
 
 
 use strict;                                      
@@ -36,7 +36,7 @@ GetOptions ("help"       => \$help,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
 	    "database=s" => \$database,
-	    "store"      => \$store,
+	    "store:s"      => \$store,
 	    );
 
 if ( $store ) {

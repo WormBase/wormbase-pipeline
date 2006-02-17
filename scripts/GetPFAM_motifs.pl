@@ -6,8 +6,8 @@
 #
 # Gets latest PFAM motifs from sanger/pub and puts info in to ace file
 #
-# Last updated by: $Author: gw3 $                      
-# Last updated on: $Date: 2005-12-20 17:15:16 $         
+# Last updated by: $Author: ar2 $                      
+# Last updated on: $Date: 2006-02-17 11:32:47 $         
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -30,7 +30,7 @@ GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
-	    "store"      => \$store,
+	    "store:s"      => \$store,
 	    "load"       => \$load,
             );
 

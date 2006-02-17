@@ -4,8 +4,8 @@
 # 
 # by Dan Lawson
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2005-12-19 17:15:51 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2006-02-17 11:32:47 $
 #
 
 #
@@ -36,7 +36,7 @@ GetOptions (
             "debug=s"    => \$debug,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
-	    "store"      => \$store,
+	    "store:s"      => \$store,
 	    "chrom:s"    => \$chrom,
 	    "release:s"  => \$release,
 	    "splits:s"   => \$splitdir,

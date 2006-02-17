@@ -7,7 +7,7 @@
 # This script interogates an ACEDB database and returns all pfam/Interpro/blastx 
 # data as appropriate and generates a suitable DB_remark
 #
-# Last updated on: $Date: 2006-02-10 16:30:39 $
+# Last updated on: $Date: 2006-02-17 11:32:47 $
 # Last updated by: $Author: ar2 $
 
 
@@ -95,7 +95,7 @@ GetOptions("help"       => \$help,
 	   "test"       => \$test,
 	   "verbose"    => \$verbose,
 	   "database=s" => \$database,
-	   "store"      => \$store,
+	   "store:s"      => \$store,
 	   "database=s" => \$database,
 	   "output=s"   => \$output,
 	   "gene=s"     => \$gene

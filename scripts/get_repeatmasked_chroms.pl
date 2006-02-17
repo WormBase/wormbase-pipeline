@@ -43,7 +43,7 @@ GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
-	    "store"      => \$store,
+	    "store:s"      => \$store,
 	    "agp:s"      => \$agp,
 	    "output:s"   => \$out_dir,
 	    );

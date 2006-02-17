@@ -6,8 +6,8 @@
 #
 # This is a example of a good script template
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-01-18 15:24:36 $      
+# Last updated by: $Author: ar2 $     
+# Last updated on: $Date: 2006-02-17 11:32:47 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -31,7 +31,7 @@ GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
-	    "store"      => \$store,
+	    "store:s"      => \$store,
 	    );
 
 if ( $store ) {

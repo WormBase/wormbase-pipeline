@@ -6,8 +6,8 @@
 #
 # quick script to populate Molecular_name tag in ?Gene model during build
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2005-12-20 14:55:42 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2006-02-17 11:32:47 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -30,7 +30,7 @@ GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
-	    "store"      => \$store,
+	    "store:s"      => \$store,
 	    );
 
 if ( $store ) {

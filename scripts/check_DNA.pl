@@ -6,8 +6,8 @@
 #
 # processes GFF files to make new files which can be used to make agp files 
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2005-12-20 13:45:32 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2006-02-17 11:32:47 $
 
 
 use strict;                                      
@@ -33,7 +33,7 @@ GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
-	    "store"      => \$store,
+	    "store:s"      => \$store,
 	    "quicktest"  => \$quicktest,
 	    );
 

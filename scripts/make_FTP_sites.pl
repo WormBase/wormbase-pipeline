@@ -7,8 +7,8 @@
 # 
 # Originally written by Dan Lawson
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2005-12-16 16:59:37 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2006-02-17 11:32:47 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -47,7 +47,7 @@ GetOptions ("help"     => \$help,
 	    "debug=s"  => \$debug,
 	    "test"     => \$test,
 	    "verbose"  => \$verbose,
-	    "store"    => \$store,
+	    "store:s"    => \$store,
 	    "release"  => \$release,
 	    "chroms"   => \$chroms,
 	    "misc"     => \$misc,

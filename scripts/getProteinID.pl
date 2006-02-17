@@ -7,8 +7,8 @@
 #
 # written by Dan Lawson
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2006-01-03 15:24:38 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2006-02-17 11:32:47 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -32,7 +32,7 @@ GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
-	    "store"      => \$store,
+	    "store:s"      => \$store,
             "file=s"     => \$file,
 	    "load"       => \$load,
 	    );
@@ -102,8 +102,7 @@ my %db_ids_acc = (
 # set default file if -file not specified on command line
 ($file = "/nfs/disk100/wormpub/protein_ID.mail") if (!defined($file));
 
-my $ace_file = "$ace_dir/acefiles/WormpepACandIDs.ace";
-$ace_file = "/tmp/WormpepACandIDs.ace" if ($debug);
+my $ace_file = $wormbase->acefiles."/WormpepACandIDs.ace";
 
 $log->write_to("Using $file as protein_id file - writing to $ace_file\n");
 

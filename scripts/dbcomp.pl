@@ -5,8 +5,8 @@
 # Counts the number of objects in an ACEDB database for each Class stated in the config file
 # Compares this number to those from a second database.
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2005-12-20 14:44:44 $      
+# Last updated by: $Author: ar2 $     
+# Last updated on: $Date: 2006-02-17 11:32:47 $      
 
 
 use strict;                                      
@@ -36,7 +36,7 @@ GetOptions (
             "debug=s"       => \$debug,
 	    "test"          => \$test,
 	    "verbose"       => \$verbose,
-	    "store"         => \$store,
+	    "store:s"         => \$store,
 	    "database=s"    => \$database,
 	    "database2=s"   => \$database2,
 	    "all"           => \$all,

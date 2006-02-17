@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers                             
 #
-# Last updated by: $Author: gw3 $               
-# Last updated on: $Date: 2006-01-20 16:06:14 $
+# Last updated by: $Author: ar2 $               
+# Last updated on: $Date: 2006-02-17 11:32:47 $
 
 # Generates a release letter at the end of build.
 #
@@ -38,7 +38,7 @@ GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
-	    "store"      => \$store,
+	    "store:s"      => \$store,
 	    "c"          => \$opt_c,
 	    "d"          => \$opt_d,
 	    "l"          => \$opt_l,

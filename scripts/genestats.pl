@@ -6,8 +6,8 @@
 #
 # Usage : genestatsr.pl [-options]
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2005-12-19 14:40:47 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2006-02-17 11:32:47 $
  
 
 use strict;                                      
@@ -30,7 +30,7 @@ GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
-	    "store"      => \$store,
+	    "store:s"      => \$store,
 	    );
 
 if ( $store ) {

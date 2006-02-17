@@ -4,7 +4,7 @@
 # 
 # by Dan Lawson
 #
-# Last updated on: $Date: 2005-12-16 17:17:00 $
+# Last updated on: $Date: 2006-02-17 11:32:47 $
 #
 # Usage GFFsplitter.pl [-options]
 
@@ -44,7 +44,7 @@ GetOptions (
 	    "splitdir:s"=> \$splitdir,
 	    "test"      => \$test,
 	    "verbose"   => \$verbose,
-	    "store"     => \$store,
+	    "store:s"     => \$store,
 	    );
 
 if ( $store ) {

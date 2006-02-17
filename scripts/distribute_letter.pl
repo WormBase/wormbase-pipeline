@@ -8,8 +8,8 @@
 #                          ~wormpub/BUILD/autoace/release/
 #                          /nfs/WWW/SANGER_docs/htdocs/Projects/C_elegans/WORMBASE/current/release_notes.txt/
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2006-01-20 17:18:15 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2006-02-17 11:32:47 $
 
 
 use strict;                                      
@@ -37,7 +37,7 @@ GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
-	    "store"      => \$store,
+	    "store:s"      => \$store,
 	    );
 
 if ( $store ) {

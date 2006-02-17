@@ -7,7 +7,7 @@
 # Author: Chao-Kung CHen
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-02-13 11:41:56 $
+# Last updated on: $Date: 2006-02-17 11:32:47 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -23,7 +23,7 @@ GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
-	    "store"      => \$store,
+	    "store:s"      => \$store,
 	  );
 
 if ( $store ) {

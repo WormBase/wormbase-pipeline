@@ -7,9 +7,9 @@
 # Script to run consistency checks on the current_DB database
 # to look for bogus sequence entries
 #
-# Last updated by: $Author: gw3 $
+# Last updated by: $Author: ar2 $
 
-# Last updated on: $Date: 2006-01-03 17:35:31 $
+# Last updated on: $Date: 2006-02-17 11:32:47 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -35,7 +35,7 @@ GetOptions ("database=s" => \$database,
             "test"       => \$test,
             "debug=s"    => \$debug,
             "help"       => \$help,
-	    "store"      => \$store,
+	    "store:s"      => \$store,
 );
 
 

@@ -8,8 +8,8 @@
 #
 # N.B. Previously called gffcheck
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2005-12-19 12:31:38 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2006-02-17 11:32:47 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -42,7 +42,7 @@ GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
-	    "store"      => \$store,
+	    "store:s"      => \$store,
 	    "a"          => \$opt_a,
 	    "e"          => \$opt_e,
 	    "i"          => \$opt_i,

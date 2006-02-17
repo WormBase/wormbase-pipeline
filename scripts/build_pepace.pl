@@ -9,8 +9,8 @@
 # solely in the wormpep.history file.
 # 
 #
-# Last updated by: $Author: gw3 $                     
-# Last updated on: $Date: 2006-01-03 15:57:33 $     
+# Last updated by: $Author: ar2 $                     
+# Last updated on: $Date: 2006-02-17 11:32:47 $     
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -32,7 +32,7 @@ GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
-	    "store"      => \$store,
+	    "store:s"      => \$store,
 	    );
 
 if ( $store ) {
