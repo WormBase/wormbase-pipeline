@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-02-17 10:13:53 $
+# Last edited on: $Date: 2006-02-17 10:14:45 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -218,7 +218,7 @@ sub map_features {
 
 sub make_UTR {
   foreach (qw( I II III IV V X ) ) {
-    $wormbase->rub_script("make_UTR_GFF.pl -chromosome $_");
+    $wormbase->run_script("make_UTR_GFF.pl -chromosome $_");
   }
 }
 
