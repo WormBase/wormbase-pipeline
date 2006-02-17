@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-02-13 11:38:40 $
+# Last edited on: $Date: 2006-02-17 11:20:55 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -85,6 +85,7 @@ init Oligo_set
 init SAGE_transcript
 init RNAi_primary
 init RNAi_secondary
+init Expr_profile
 blat BLAT_EMBL_BEST
 blat BLAT_EMBL_OTHER
 blat BLAT_EST_BEST
@@ -98,6 +99,8 @@ blat BLAT_mRNA_BEST
 blat BLAT_mRNA_OTHER
 blat BLAT_ncRNA_BEST
 blat BLAT_ncRNA_OTHER
+blat BLAT_WASHU
+blat BLAT_NEMBASE
 blat SL1
 blat SL2
 blat polyA_signal_sequence
