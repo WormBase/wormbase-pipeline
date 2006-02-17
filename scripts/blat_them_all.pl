@@ -8,7 +8,7 @@
 # and virtual objects to hang the data onto
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-01-10 14:47:33 $
+# Last edited on: $Date: 2006-02-17 11:20:00 $
 
 
 use strict;
@@ -171,9 +171,6 @@ if ($blat and $camace) {
   
   &usage(5) unless (-e "$seq");   # Check that autoace.fa exists
   
-  # Check that autoace.fa file was created prior to start of (re)build 
-  &usage(6) if ( (-M "/wormsrv2/autoace/logs/A1:Build_in_progress" < -M "${blat_dir}/autoace.fa") && (!$camace) );
-
   my $runtime = &runtime;
   $log->write_to("$runtime: Running blat and putting the results in "."$blat_dir/${data}_out.psl"."\n");
   
