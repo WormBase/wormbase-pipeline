@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2006-01-27 10:11:05 $
+// Last edited on: $Date: 2006-02-17 12:00:18 $
  
 
 
@@ -2583,6 +2583,11 @@
                            Western        Text
                            RT_PCR         Text
                            Other_method   ?Text
+		 Type	   Change_of_localization	//Added by wen 02132006 to distinguish regulation of expression level or localization.
+			   Change_of_expression_level	//Added by wen 02132006
+		 Regulation_level	Transcriptional		//Added by wen 02132006 to distinguish process that regulation occurs on
+					Post_transcriptional	//Added by wen 02132006
+					Post_translational	//Added by wen 02132006
                  Regulator Regulator_info Allele                  ?Variation 
                                           RNAi                    ?RNAi
                            Trans_regulator_gene    ?Gene      XREF    Trans_regulator #Boolean
@@ -2615,6 +2620,7 @@
 #GR_condition          Life_stage               ?Life_stage      
                        Cell                     ?Cell
                        Cell_group               ?Cell_group
+		       Anatomy_term		?Anatomy_term //Added by wen 02132006
                        Subcellular_localization ?Text 
 
 ?Variation Evidence #Evidence
@@ -2630,7 +2636,10 @@
 					     Insertion    UNIQUE Text      #Evidence
 					     Deletion     UNIQUE Text      #Evidence  
 					     Inversion
-			    PCR_product ?PCR_product XREF Variation 
+			    PCR_product ?PCR_product XREF Variation  
+			    SeqStatus UNIQUE Not_sequenced //[2006-02-17 ar2] to differentiate between mutations which have been sequenced and those which have not.
+					     Sequenced
+					     Pending_curation
            Variation_type Allele		
 			  SNP            // replaces the old 'Status Text' part of ?Locus model	
 			  Confirmed_SNP
@@ -2654,10 +2663,10 @@
                                 Suppressed #Evidence
                                 Dead #Evidence   
 	   Linked_to ?Variation XREF Linked_to  // for being able to specify paired substitutions which are part of the same allele
-	   Affects Gene	         ?Gene	     XREF Allele
-		   Predicted_CDS ?CDS	     XREF Variation
-		   Transcript    ?Transcript XREF Variation
-		   Pseudogene    ?Pseudogene XREF Variation
+	   Affects Gene	         ?Gene	     XREF Allele #Molecular_change      //#Molecular_change added for mh6 to define precise changes[2006-02-17 ar2]
+		   Predicted_CDS ?CDS	     XREF Variation #Molecular_change
+		   Transcript    ?Transcript XREF Variation #Molecular_change
+		   Pseudogene    ?Pseudogene XREF Variation #Molecular_change
 		   Feature       ?Feature    XREF Associated_with_variation
            Isolation Date    DateType
                      Mutagen UNIQUE Text #Evidence
@@ -2716,6 +2725,23 @@
                 Public_name_for    ?Variation XREF Public_name // the main name for a gene
                 WashU_ID_for	  UNIQUE ?Variation XREF WashU_ID 
 		Exelixis_ID_for   UNIQUE ?Variation XREF Exelixis_ID
+
+// hash to contain detailed changes caused by mutations [2006-02-17 ar2]
+#Molecular_change   Missense Int    Text #Evidence
+                    Silent   Text   #Evidence
+                    Nonsense UNIQUE Amber_UAG Text #Evidence
+                                    Ochre_UAA Text #Evidence
+                                    Opal_UGA  Text #Evidence
+                    Splice_site UNIQUE  Donor    Text #Evidence
+                                        Acceptor Text #Evidence
+                    Frameshift Text #Evidence
+                    Intron #Evidence
+                    Coding_exon #Evidence
+                    Noncoding_exon #Evidence 
+
+
+
+
 
 ?Gene_cluster Title UNIQUE ?Text                                        // Information on the Gene cluster
               Description ?Text
