@@ -101,8 +101,8 @@ foreach my $chrom ( @chromosome ) {
         # make the small files to work with #
 	#####################################
 
-	$wormbase->run_command ("grep -iw $gene $workdir/CHROMOSOME_${chrom}_coding_exon.gff              > $file1");
-	$wormbase->run_command ("grep -iw $gene $workdir/CHROMOSOME_${chrom}_coding_transcript_exon.gff   > $file2");
+	$wormbase->run_command ("grep -iw $gene $workdir/CHROMOSOME_${chrom}_coding_exon.gff              > $file1",$log);
+	$wormbase->run_command ("grep -iw $gene $workdir/CHROMOSOME_${chrom}_coding_transcript_exon.gff   > $file2",$log);
 	
 	###################
         # CDS coordinates #
