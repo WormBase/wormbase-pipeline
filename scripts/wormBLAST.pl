@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-02-15 17:26:03 $
+# Last edited on: $Date: 2006-02-17 14:04:46 $
 
 
 use DBI;
@@ -319,11 +319,11 @@ clones = $clone_count\ncontigs = $contig_count\ndna = $dna_count\n";
     $query = "select * from protein order by proteinId desc limit 1";
     @results = &single_line_query( $query, $worm_pep );
     my $old_topCE = $results[0];
-    if (-e "/wormsrv2/WORMPEP/wormpep$WS_version/new_entries.WS$WS_version"){
+    if (-e $wormbase->wormpep."/new_entries.WS$WS_version"){
       $wormbase->run_script("BLAST_scripts/worm_pipeline.pl -fasta ".$wormbase->wormpep."/new_entries.WS$WS_version");
     }
     else {
-      die "new_entries.WS$WS_version does not exist! \nThis should have been made in autoace_minder -buildpep\n";
+      $log->log_and_die("new_entries.WS$WS_version does not exist! \nThis should have been made in autoace_minder -buildpep\n");
     }
 
     #check for updated ids
