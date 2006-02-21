@@ -6,13 +6,16 @@
 #
 # simple script for creating new (sequence based) Gene objects 
 #
-# Last edited by: $Author: mt3 $
-# Last edited on: $Date: 2005-12-12 08:59:34 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2006-02-21 14:30:40 $
 
 use strict;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
+use lib "/nfs/WWWdev/SANGER_docs/cgi-bin/Projects/C_elegans/lib";
+
 use Wormbase;
 use Getopt::Long;
+use NameDB_handler;
 
 ###################################################
 # command line options                            # 
@@ -28,7 +31,8 @@ my $gene_id;     # stores highest gene ID
 my $email;       # email new Gene IDs back to users to person who requested it
 my $load;        # load results to geneace (default is to just write an ace file)
 my $verbose;     # toggle extra (helpful?) output to screen
-my $test;        
+my $test;
+my $update_nameDB;
 
 GetOptions ("input=s"   => \$input,
             "seq=s"     => \$seq,
@@ -38,11 +42,12 @@ GetOptions ("input=s"   => \$input,
 	    "email"     => \$email,
 	    "load"      => \$load,
 	    "verbose"   => \$verbose,
-	    "test"      => \$test
+	    "test"      => \$test,
+	    "namedb"    => \$update_nameDB
+
 	    );
 
-           
-
+my $wormbase = Wormbase->new();
 
 #####################################################
 # warn about incorrect usage of command line options
@@ -75,13 +80,27 @@ else{
   $person = "WBPerson2970";
 }
 
+my $namedb;
+if( $update_nameDB ) {
+######################################
+# setup NameDB connection
+######################################
 
+  my $DB   = 'wbgene_id;mcs2a';
+  my $USER = "$person";
+  my $PASS = 'wormpub';
+
+#verify if valid name
+
+  $namedb = NameDB_handler->new($DB,$USER,$PASS);
+  $namedb->setDomain('Gene');
+}
 ############################################################
 # set database path, open connection and open output file
 ############################################################
 
-my $tace = &tace;
-my $database = "/nfs/disk100/wormpub/DATABASES/geneace";
+my $tace = $wormbase->tace;
+my $database = $wormbase->database('geneace');
 $database = glob("~wormpub/DATABASES/geneace") if $test;
 
 my $db = Ace->connect(-path  => $database,
@@ -117,7 +136,6 @@ if ($input){
       next;
     }
      
-
     &process_gene($seq,$cgc);
   }
   close(IN);
@@ -292,9 +310,51 @@ sub process_gene{
 
     print "$address was emailed regarding gene ID for $seq\n";
   }
+
+  # NameDB query / update
+
+  if ( $update_nameDB ) {
+    undef $gene_id;
+    if ( $seq and $cgc ) {
+      #make CGC name based gene
+      my $name = $cgc;
+      my $type = 'CGC';
+      $namedb->validate_name($name, $type);
+      $namedb->check_pre_exists($name, $type);
+      $namedb->make_new_obj($name, $type);
+      $$gene_id = $namedb->idGetByTypedName('CGC',$cgc);
+
+      #add the sequence name
+      $name = $seq;
+      $type = 'CDS';
+      $namedb->validate_name($name, $type);
+      $namedb->check_pre_exists($name, $type);
+      $namedb->isoform_exists($name, $type);
+      $namedb->addName($id,"CDS",$seq);
+    } elsif ( $seq ) {
+      my $name = $seq;
+      my $type = 'CDS';
+      $namedb->validate_name($name, $type);
+      $namedb->check_pre_exists($name, $type);
+      $namedb->isoform_exists($name, $type);
+      $namedb->make_new_obj($name, $type);
+    } elsif ( $cgc ) {
+      #make CGC name based gene
+      my $name = $cgc;
+      my $type = 'CGC';
+      $namedb->validate_name($name, $type);
+      $namedb->check_pre_exists($name, $type);
+      $namedb->make_new_obj($name, $type);
+      $$gene_id = $namedb->idGetByTypedName('CGC',$cgc);
+    }
+
+    $gene_name = $cgc if $cgc;
+    $gene_name .= " $seq" if $seq;
+    open (MAIL,  "|/bin/mailx -r \"ar2\@sanger.ac.uk\" -s \"$gene_name $gene_id\" \"ar2\@sanger.ac.uk");
+    print MAIL "$email";
+    close (MAIL);
+  }
 }
-
-
 
 =pod
                                                                                            
