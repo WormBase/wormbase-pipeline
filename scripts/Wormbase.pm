@@ -28,7 +28,8 @@ sub new
       $self->{$key} = $params{$_};
     }
     $self->{'version'} = 666 if( $self->test);
-     return $self;
+    $self->establish_paths;
+    return $self;
   }
 
 #################################################################################
@@ -952,18 +953,21 @@ sub establish_paths {
     # create dirs if missing
     mkpath( $self->logs )        unless ( -e $self->logs );
     mkpath( $self->common_data ) unless ( -e $self->common_data );
-    mkpath( $self->wormpep )     unless ( -e $self->wormpep );  system("chmod -R g+w ".$self->wormpep);
-    mkpath( $self->wormrna )     unless ( -e $self->wormrna );  system("chmod -R g+w ".$self->wormrna);
+    mkpath( $self->wormpep )     unless ( -e $self->wormpep );  ;
+    mkpath( $self->wormrna )     unless ( -e $self->wormrna ); 
     mkpath( $self->chromosomes ) unless ( -e $self->chromosomes );
     mkpath( $self->transcripts ) unless ( -e $self->transcripts );
     mkpath( $self->reports )     unless ( -e $self->reports );
     mkpath( $self->gff )         unless ( -e $self->gff );
     mkpath( $self->gff_splits )  unless ( -e $self->gff_splits );
-    mkpath( $self->primaries )   unless ( -e $self->primaries ); system("chmod -R g+w ".$self->primaries);
+    mkpath( $self->primaries )   unless ( -e $self->primaries );
     mkpath( $self->acefiles )    unless ( -e $self->acefiles );
     mkpath( $self->blat )        unless ( -e $self->blat );
 
-    system("chmod -R g+w ".$self->autoace);
+#    system("chmod -R g+w ".$self->autoace);
+#    system("chmod -R g+w ".$self->wormpep);
+#    system("chmod -R g+w ".$self->wormrna);
+#    system("chmod -R g+w ".$self->primaries);
   }
 }
 
