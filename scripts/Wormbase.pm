@@ -28,8 +28,7 @@ sub new
       $self->{$key} = $params{$_};
     }
     $self->{'version'} = 666 if( $self->test);
-    $self->establish_paths;
-    return $self;
+     return $self;
   }
 
 #################################################################################
