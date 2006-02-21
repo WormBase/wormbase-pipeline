@@ -10,7 +10,10 @@ use Carp;
 use Ace;
 use Log_files;
 use File::Path;
+use File::stat;
 use Storable;
+
+
 sub new
   {
     my $class = shift;
@@ -770,7 +773,16 @@ sub load_to_database {
   my $self     = shift;
   my $database = shift;
   my $file     = shift;
+  my $tsuser   = shift;
   my $log      = shift;
+
+  my $st = stat($file);
+  if( $st->size > 50000000 ) {
+    $log->write_to("backing up block files before loading $file\n");
+    my $db_dir = $self->autoace."/database";
+    my $tar_cmd = "tar -cvf $db_dir/backup".$$.".tar $db_dir/block* $db_dir/database.map $db_dir/log.wrm; gzip $db_dir/backup".$$.".tar";
+    $self->run_command("$tar_cmd", $log);
+  }
 
   #check whether write access is possible.
   if( $self->check_write_access($database) eq 'no') {
@@ -781,9 +793,7 @@ sub load_to_database {
 
   # tsuser is optional but if set, should replace any dots with underscores just in case
   # if not set im using the filename with dots replaced by '_'
-  my $tsuser = shift;
-
-  unless ($tsuser) {
+    unless ($tsuser) {
 
     # remove trailing path of filename
     $tsuser = $file;
