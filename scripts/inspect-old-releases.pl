@@ -16,7 +16,7 @@
 # foreach? end
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-02-22 15:35:43 $      
+# Last updated on: $Date: 2006-02-22 16:07:44 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -403,7 +403,10 @@ sub read_chromosome() {
   my $file = "$db/CHROMOSOMES/CHROMOSOME_$chromosome.dna";
 
   my $old_rs = $/;              # save the current value of the record separator
-  open (SEQ, "<$file") || die "Can't open file $file\n";
+
+  if (! open (SEQ, "<$file")) {	# try to open the sequence file
+    open (SEQ, "/bin/gunzip -c $file.gz |") || die "Can't open file $file\n"; # ... or try to open the gzipped sequence file
+  }
   <SEQ>;                        # skip the title line
   undef $/;                     # don't use record separator when reading file
   $seq = <SEQ>;                 # slurp up the whole file
