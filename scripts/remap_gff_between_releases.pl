@@ -9,7 +9,7 @@
 #
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-02-22 15:36:43 $      
+# Last updated on: $Date: 2006-02-22 17:04:42 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -139,7 +139,7 @@ sub read_mapping_data {
   # access like: $fields_hashref = @{ $mapping_data[$release]{$chrom}[$next_difference] }
   my @mapping_data;
 
-  foreach my $release ($release1 .. $release2) {
+  foreach my $release (($release1+1) .. $release2) {
     my %chroms;
     my $infile = "/nfs/disk100/wormpub/CHROMOSOME_DIFFERENCES/sequence_differences.WS$release";
     open (IN, "< $infile") || die "Can't open $infile\n";
