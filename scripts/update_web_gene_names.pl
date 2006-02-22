@@ -4,14 +4,14 @@
 #
 # completely rewritten by Keith Bradnam from list_loci_designations
 #
-# Last updated by: $Author: wormpub $     
-# Last updated on: $Date: 2006-02-13 14:57:25 $      
+# Last updated by: $Author: ar2 $     
+# Last updated on: $Date: 2006-02-22 10:52:39 $      
 #
 # This script should be run under a cron job and simply update the webpages that show
 # current gene names and sequence connections.  Gets info from geneace.  
 
 use strict;
-use lib  $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Ace;
 use Carp;
@@ -23,44 +23,53 @@ use Getopt::Long;
 # Command line options       #
 ##############################
 
-my $weekly; # for weekly cronjob which will interrogate current_DB
-my $daily;  # daily updates which will interrogate /nfs/disk100/wormpub/DATABASES/geneace
- 
-GetOptions ("weekly" => \$weekly,
-            "daily"  => \$daily);
+my $weekly;			# for weekly cronjob which will interrogate current_DB
+my $daily;			# daily updates which will interrogate geneace
+my $store;
 
+#changed the cmd line opts to relect what goes on - left variables the same -ar2
+
+GetOptions ("current"      => \$weekly,
+            "geneace"      => \$daily,
+	    "store:s"      => \$store,
+	   );
+
+my $wormbase;
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( );
+}
+
+my $log = Log_files->make_log("/tmp/update_web_gene_names");
 
 ##############################
 # Script variables (run)     #
 ##############################
 
-my $tace  = &tace;
+my $tace  = $wormbase->tace;
 my $www = "/nfs/WWWdev/SANGER_docs/htdocs/Projects/C_elegans/LOCI"; # where output will be going
 
-my $rundate = &rundate;
-my $log = "/tmp/update_web_gene_names";
-my $database; 
+my $rundate = $wormbase->rundate;
+my $database;
 
 
 
 # Set up log file
 
-open(LOG,">$log") || carp "Couldn't open tmp log file\n";
-print LOG &runtime, " :Started running update_web_gene_names.pl\n\n";
-
 die "Can't run both -weekly and -daily at the same time!\n" if ($weekly && $daily);
 
 # make the a-z lists based on CGC_name using current_DB
-if($weekly){
-  print LOG "Creating loci pages based on current_DB\n";
-  $database = "/nfs/disk100/wormpub/DATABASES/current_DB";
+if ($weekly) {
+  $log->write_to("Creating loci pages based on current_DB\n");
+  $database = $wormbase->database('current');
   &create_currentDB_loci_pages;
 }
 
 # make lists of gene2molecular_name and molecular_name2gene
-if($daily){
-  print LOG "Making daily update lists\n";
-  $database = "/nfs/disk100/wormpub/DATABASES/geneace";
+if ($daily) {
+  $log->write_to("Making daily update lists\n");
+  $database = $wormbase->database('geneace');
   &make_gene_lists;
 }
 
@@ -73,16 +82,14 @@ if($daily){
 chdir($www) || print LOG "Couldn't run chdir\n";
 
 
-if($weekly){
+if ($weekly) {
   system("/usr/local/bin/webpublish -f -q *.shtml") && print LOG "Couldn't run webpublish on html files\n";
 }
 system("/usr/local/bin/webpublish -f -q *.txt") && print LOG "Couldn't run webpublish on text file\n";
 
-print LOG &runtime, " : Finished running script\n";
+$log->write_to("check http://www.sanger.ac.uk/Projects/C_elegans/LOCI/genes2molecular_names.txt is up to date\n");
 
-&mail_maintainer("update_web_gene_names.pl","mt3\@sanger.ac.uk","$log");
-
-close(LOG);
+$log->mail;
 exit(0);
 
 
@@ -99,14 +106,14 @@ sub create_currentDB_loci_pages{
 
   # query against current_DB
   my $db = Ace->connect(-path  => "$database",
-                        -program =>$tace) || do { print "Connection failure: ",Ace->error; croak();};
+                        -program =>$tace) or $log->log_and_die("Connection failure: ".Ace->error);
 
 
   # open text file which will contain all genes
   open (TEXT, ">$www/loci_all.txt") || croak "Couldn't open text file for writing to\n";
   print TEXT "Gene name, WormBase gene ID, Gene version, CDS name (Wormpep ID), RNA gene name, pseudogene name, other names, cgc approved?\n";
 
-  foreach my $letter ("a".."z"){
+  foreach my $letter ("a".."z") {
     # Get all Loci
     my @gene_names = $db->fetch(-query=>"Find Gene_name $letter\* WHERE Public_name_for");
     
@@ -116,7 +123,7 @@ sub create_currentDB_loci_pages{
     my $line = 0;
 
     # cycle through each locus in database
-    foreach my $gene_name (@gene_names){
+    foreach my $gene_name (@gene_names) {
 
 
       # skip gene names that are just sequence names
@@ -126,11 +133,10 @@ sub create_currentDB_loci_pages{
       my $gene;
       my $public_name;
 
-      if($gene_name->CGC_name_for){
+      if ($gene_name->CGC_name_for) {
 	$gene = $gene_name->CGC_name_for;
 	$public_name = $gene->CGC_name;
-      }
-      else{
+      } else {
 	$gene = $gene_name->Other_name_for;
 	$public_name = $gene->Other_name;
       }
@@ -145,8 +151,7 @@ sub create_currentDB_loci_pages{
       # Set alternating colours for each row of (HTML) output 
       if (($line % 2) == 0) { 
 	print HTML "<TR BGCOLOR=\"lightblue\">\n";
-      }
-      else {
+      } else {
 	print HTML "<TR BGCOLOR=\"white\">\n";
       }
       
@@ -165,10 +170,10 @@ sub create_currentDB_loci_pages{
       print TEXT "$version,";
       
       # Column 4 - ?CDS connections
-      if(defined($gene->at('Molecular_info.Corresponding_CDS'))){
+      if (defined($gene->at('Molecular_info.Corresponding_CDS'))) {
 	my @CDSs = $gene->Corresponding_CDS;
 	print HTML "<TD>";
-	foreach my $cds (@CDSs){
+	foreach my $cds (@CDSs) {
 	  # also get wormpep identifier for each protein
 	  my $protein = $cds->Corresponding_protein;
 	  print HTML "<A HREF=\"http://www.wormbase.org/db/gene/gene?name=${cds};class=CDS\">${cds}</a> ";
@@ -181,12 +186,12 @@ sub create_currentDB_loci_pages{
       
       
       # Column 5 - ?Transcript connections
-      elsif(defined($gene->at('Molecular_info.Corresponding_transcript'))){
+      elsif (defined($gene->at('Molecular_info.Corresponding_transcript'))) {
 	print HTML "<TD>&nbsp</TD>";
 	my @transcripts = $gene->Corresponding_transcript;
 	print HTML "<TD>";
 	print TEXT ",";
-	foreach my $i (@transcripts){
+	foreach my $i (@transcripts) {
 	  print HTML "<A HREF=\"http://www.wormbase.org/db/seq/sequence?name=${i}\">${i}</a> ";
 	  print TEXT "$i ";
 	}
@@ -195,11 +200,11 @@ sub create_currentDB_loci_pages{
       }
       
       # Column 6 - ?Pseudogene connections
-      elsif(defined($gene->at('Molecular_info.Corresponding_pseudogene'))){
+      elsif (defined($gene->at('Molecular_info.Corresponding_pseudogene'))) {
 	my @pseudogenes = $gene->Corresponding_pseudogene;
 	print HTML "<TD>&nbsp</TD><TD>&nbsp</TD><TD>";
 	print TEXT ",,";
-	foreach my $i (@pseudogenes){
+	foreach my $i (@pseudogenes) {
 	  print HTML "<A HREF=\"http://www.wormbase.org/db/seq/sequence?name=${i}\">${i}</a> ";
 	  print TEXT "$i ";
 	}
@@ -208,34 +213,32 @@ sub create_currentDB_loci_pages{
       }
       
       # Blank columns if no ?Sequence, ?Transcript, or ?Pseudogene
-      else{
+      else {
 	print HTML "<TD>&nbsp</TD><TD>&nbsp</TD><TD>&nbsp</TD>";
 	print TEXT ",,,";
       }
       
       
       # Column 7 - Other names for ?Gene
-      if(defined($gene->at('Identity.Name.Other_name'))){
+      if (defined($gene->at('Identity.Name.Other_name'))) {
 	my @other_names = $gene->Other_name;
 	print HTML "<TD>";
-	foreach my $i (@other_names){
+	foreach my $i (@other_names) {
 	  print HTML "${i} ";
 	  print TEXT "$i ";
 	}
 	print HTML "</TD>";
-      }
-      else{
+      } else {
 	print HTML "<TD>&nbsp</TD>";
       }
       print TEXT ",";
       
       
       # Column 8 CGC approved?
-      if(defined($gene->at('Identity.Name.CGC_name'))){
+      if (defined($gene->at('Identity.Name.CGC_name'))) {
 	print HTML "<TD align=center>approved</TD>\n";
 	print TEXT "approved"
-	  }
-      else{
+      } else {
 	print HTML"<TD>&nbsp<TD>\n";
       }
       
@@ -249,8 +252,6 @@ sub create_currentDB_loci_pages{
   close(TEXT);
 
   $db->close;
-
-
 }
 
 
@@ -263,8 +264,9 @@ sub make_gene_lists{
   my %transposon_genes;
   
   # connect to AceDB using TableMaker, 
-  my $command="Table-maker -p /nfs/disk100/wormpub/DATABASES/geneace/wquery/gene2molecular_name.def\nquit\n";
-  open (TACE, "echo '$command' | $tace /nfs/disk100/wormpub/DATABASES/geneace |") || print LOG "ERROR: Can't open tace connection to /nfs/disk100/wormpub/DATABASES/geneace\n";
+  my $geneace = $wormbase->database('geneace');
+  my $command="Table-maker -p $geneace/wquery/gene2molecular_name.def\nquit\n";
+  open (TACE, "echo '$command' | $tace $geneace |") || print LOG "ERROR: Can't open tace connection to $geneace\n";
   while (<TACE>) {
     chomp;
     # skip any acedb banner text (table maker output has all fields surrounded by "")
@@ -281,11 +283,10 @@ sub make_gene_lists{
     my ($gene,$sequence_name,$cgc_name) = split(/\t/, $_) ;
 
     # populate hashes, appending CGC name if present
-    if(defined($cgc_name)){
+    if (defined($cgc_name)) {
       $molecular_name2gene{$sequence_name} = "$gene $cgc_name";
       $gene2molecular_name{$gene} = "$sequence_name $cgc_name";
-    }
-    else{
+    } else {
       $molecular_name2gene{$sequence_name} = $gene;
       $gene2molecular_name{$gene} = $sequence_name;
     }
@@ -294,8 +295,8 @@ sub make_gene_lists{
 
   # now fire off second query to get dead genes which were made into Transposons
   # this is to help Darin
-  $command = "Table-maker -p /nfs/disk100/wormpub/DATABASES/geneace/wquery/genes_made_into_transposons.def\nquit\n";
-  open (TACE, "echo '$command' | $tace /nfs/disk100/wormpub/DATABASES/geneace |") || print LOG "ERROR: Can't open tace connection to /nfs/disk100/wormpub/DATABASES//geneace\n";
+  $command = "Table-maker -p $geneace/wquery/genes_made_into_transposons.def\nquit\n";
+  open (TACE, "echo '$command' | $tace $geneace |") || print LOG "ERROR: Can't open tace connection to $geneace\n";
   while (<TACE>) {
     chomp;
     # skip any acedb banner text (table maker output has all fields surrounded by "")
@@ -304,10 +305,10 @@ sub make_gene_lists{
     next if (/acedb/);
     # skip empty fields
     next if ($_ eq "");
-                                                                                           
+
     # get rid of quote marks
     s/\"//g;
-                                                                                           
+
     # split the line into various fields
     my ($gene,$public_name) = split(/\t/, $_) ;
     $transposon_genes{$gene} = $public_name;
@@ -315,8 +316,10 @@ sub make_gene_lists{
 
   # set up various output files (first two are reverse of each other)
 
+
   open (GENE2MOL, ">$www/genes2molecular_names.txt") || die "ERROR: Couldn't open genes2molecular_names.txt  $!\n";
   foreach my $key (sort keys %gene2molecular_name){
+
     print GENE2MOL "$key\t$gene2molecular_name{$key}\n";	      
   }
   close(GENE2MOL);
