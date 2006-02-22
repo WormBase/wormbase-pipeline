@@ -6,7 +6,7 @@
 # This maps alleles to the genome based on their flanking sequences
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-02-22 10:15:32 $
+# Last updated on: $Date: 2006-02-22 10:48:11 $
 
 use strict;
 use warnings;
@@ -123,8 +123,8 @@ my $log = Log_files->make_build_log($wb);
 # tidy up, email log, and exit
 #####################################
 
-$log->mail( "$maintainers", "BUILD REPORT: map_Alleles.pl" );
-
+$log->mail();
+exit(0);
 
 ##################################################
 #                                                #
@@ -184,6 +184,12 @@ sub map_alleles {
 
         # grab both flanking sequences from $database
         $left  = lc $allele->Flanking_sequences->name;
+
+	# some alleles only have one flank!
+	unless ($allele->Flanking_sequences->right) {
+	  $log->write_to("ERROR: ",$allele->name," is missing a flanking sequence!\n");
+	  next ALLELE;
+	}
         $right = lc $allele->Flanking_sequences->right->name;
 
         # warn if flanking sequence is missing
