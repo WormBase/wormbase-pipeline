@@ -838,6 +838,7 @@ sub primaries   { $self = shift; return $self->{'primaries'}; }
 sub acefiles    { $self = shift; return $self->{'acefiles'}; }
 sub transcripts { $self = shift; return $self->{'transcripts'}; }
 sub blat        { $self = shift; return $self->{'blat'}; }
+sub farm_dump   { $self = shift; return $self->{'farm_dump'}; }
 
 # this can be modified by calling script
 sub common_data {
@@ -949,6 +950,8 @@ sub establish_paths {
     $self->{'build_data'} = $self->{'basedir'} . "_DATA"; # BUILD_DATA or TEST_BUILD_DATA
     $self->{'misc_static'} = $self->{'build_data'} . "/MISC_STATIC";
     $self->{'misc_dynamic'} = $self->{'build_data'} . "/MISC_DYNAMIC";
+
+    $self->{'farm_dump'}    = '/nfs/acari/work2a/wormpipe/dumps';
 
     # create dirs if missing
     mkpath( $self->logs )        unless ( -e $self->logs );
