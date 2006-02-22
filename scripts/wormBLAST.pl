@@ -5,7 +5,7 @@
 # written by Anthony Rogers
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-02-17 14:04:46 $
+# Last edited on: $Date: 2006-02-22 14:46:25 $
 
 
 use DBI;
@@ -542,22 +542,22 @@ if( $blastp ){
 if( $prep_dump ) {
   # prepare helper files
   my $autoace = $wormbase->autoace;
-  if( -e "/wormsrv2/autoace/CHROMOSOMES/CHROMOSOME_X.gff") {
-    $wormbase->run_command("cat /wormsrv2/autoace/CHROMOSOMES/*.gff | $scripts_dir/gff2cds.pl > /nfs/acari/wormpipe/Elegans/cds$WS_version.gff");
-    $wormbase->run_command("cat /wormsrv2/autoace/CHROMOSOMES/*.gff | $scripts_dir/gff2cos.pl > /nfs/acari/wormpipe/Elegans/cos$WS_version.gff");
-    $wormbase->run_command("cp /wormsrv2/WORMPEP/wormpep$WS_version/wormpep.diff$WS_version $wormpipe_dir/dumps/");
-    $wormbase->run_command("cp /wormsrv2/WORMPEP/wormpep$WS_version/new_entries.WS$WS_version $wormpipe_dir/dumps/");
-    $wormbase->run_command("cp /wormsrv2/autoace/COMMON_DATA/wormpep2cds.dat $wormpipe_dir/dumps/");
-    $wormbase->run_command("cp /wormsrv2/autoace/COMMON_DATA/cds2wormpep.dat $wormpipe_dir/dumps/");
-    $wormbase->run_command("cp /wormsrv2/autoace/COMMON_DATA/accession2clone.dat $wormpipe_dir/dumps/");
-    $wormbase->run_command("cp /wormsrv2/autoace/COMMON_DATA/clonesize.dat $wormpipe_dir/dumps/");
-    $wormbase->run_command("mkdir /nfs/disk100/wormpub/DATABASES/autoace/COMMON_DATA");
-    $wormbase->run_command("cp /wormsrv2/autoace/COMMON_DATA/clonesize.dat /nfs/disk100/wormpub/DATABASES/autoace/COMMON_DATA/");
+  my $wormpep = $wormbase->wormpep;
+  if( -e $wormbase->gff_splits."/CHROMOSOME_X_curated.gff") {
+    $wormbase->run_command("cat ".$wormbase->gff_splits."/CHROMOSOME_*_curated.gff | $scripts_dir/BLAST_scripts/gff2cds.pl > /nfs/acari/wormpipe/Elegans/cds$WS_version.gff", $log);
+    $wormbase->run_command("cat ".$wormbase->gff_splits."/CHROMOSOME_*_Genomic_canonical.gff   | $scripts_dir/BLAST_scripts/gff2cos.pl > /nfs/acari/wormpipe/Elegans/cos$WS_version.gff",$log);
+#not reqd    $wormbase->run_command("cp /wormsrv2/WORMPEP/wormpep$WS_version/wormpep.diff$WS_version $wormpipe_dir/dumps/");
+#    $wormbase->run_command("cp /wormsrv2/WORMPEP/wormpep$WS_version/new_entries.WS$WS_version $wormpipe_dir/dumps/");
+#    $wormbase->run_command("cp $autoace/COMMON_DATA/wormpep2cds.dat $wormpipe_dir/dumps/");
+#    $wormbase->run_command("cp $autoace/COMMON_DATA/cds2wormpep.dat $wormpipe_dir/dumps/");
+#    $wormbase->run_command("cp $autoace/COMMON_DATA/accession2clone.dat $wormpipe_dir/dumps/");
+#    $wormbase->run_command("cp $autoace/COMMON_DATA/clonesize.dat $wormpipe_dir/dumps/");
+#not reqd    $wormbase->run_command("cp $autoace/COMMON_DATA/clonesize.dat /nfs/disk100/wormpub/DATABASES/autoace/COMMON_DATA/");
     
     system("touch $wormpipe_dir/DUMP_PREP_RUN");
   }
     else {
-      print " cant find GFF files at /wormsrv2/autoace/CHROMOSOMES/ \n ";
+      print " cant find GFF files at ".$wormbase->gff_splits."\n ";
       exit(1);
     }
   }
@@ -574,19 +574,7 @@ if( $dump_data )
     &get_updated_database_list;
     my $anal_list = join(',',@updated_DBs);
 
-    # Dump data for new peptides - into separate file to append
-    print "Dumping new peptides for worm_pep\n";
-    $wormbase->run_script("Dump_blastp.pl -version $WS_version -matches -database worm_pep -new_peps $wormpipe_dir/dumps/new_entries.WS$WS_version", $log);
-
-    # updated databases (eg gadfly) need to be redumped
-    print "Dumping all peptides for updated databases for worm_pep\n";
-    $wormbase->run_script("Dump_blastp.pl -version $WS_version -matches -database worm_pep -all -analysis $anal_list", $log);
-
-    # . . and brigpep
-    print "Dumping all peptides for updated databases for worm_brig\n";
-    $wormbase->run_script("Dump_blastp.pl -version $WS_version -matches -database worm_brigpep -all -analysis $anal_list", $log);
-
-
+   #blastp dumped external of this script;
     # dump blastx
     print "Dumping blastx for analysis $anal_list\n";
     $wormbase->run_script("dump_blastx_new.pl -version $WS_version -analysis $anal_list", $log);
