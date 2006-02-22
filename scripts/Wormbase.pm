@@ -951,7 +951,7 @@ sub establish_paths {
     $self->{'misc_static'} = $self->{'build_data'} . "/MISC_STATIC";
     $self->{'misc_dynamic'} = $self->{'build_data'} . "/MISC_DYNAMIC";
 
-    $self->{'farm_dump'}    = '/nfs/acari/work2a/wormpipe/dumps';
+    $self->{'farm_dump'}    = '/acari/work2a/wormpipe/dumps';
 
     # create dirs if missing
     mkpath( $self->logs )        unless ( -e $self->logs );
