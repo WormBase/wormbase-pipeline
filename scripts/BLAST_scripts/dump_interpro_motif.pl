@@ -5,7 +5,7 @@
 # Dumps InterPro protein motifs from ensembl mysql (protein) database to an ace file
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-01-13 14:16:46 $
+# Last updated on: $Date: 2006-02-22 16:14:42 $
 
 
 use strict;
@@ -47,7 +47,6 @@ if ( $store ) {
 } else {
   $wormbase = Wormbase->new( -debug   => $debug,
                              -test    => $test,
-			     -farm    => '1'
 			     );
 }
 
@@ -119,7 +118,7 @@ sub now {
 }
 
 # create output files
-my $dump_dir = $wormbase->dump_dir;
+my $dump_dir = $wormbase->farm_dump;
 if ($test) {
   $dump_dir = ".";
 }
