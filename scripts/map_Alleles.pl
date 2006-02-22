@@ -6,7 +6,7 @@
 # This maps alleles to the genome based on their flanking sequences
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-02-13 11:48:42 $
+# Last updated on: $Date: 2006-02-22 10:15:32 $
 
 use strict;
 use warnings;
@@ -77,7 +77,7 @@ if ($debug) {
     $maintainers = "$debug\@sanger.ac.uk";
 }
 $release = $wb->get_wormbase_version unless ( defined $release );
-my $mapping_dir = $wb->basedir . "/MAPPINGS";
+my $mapping_dir = $wb->autoace."/MAPPINGS";
 my $ace_file    = "$mapping_dir/allele_mapping.WS$release.ace";
 my $gff_file    = "$mapping_dir/allele_mapping.WS$release.gff";
 $database = $wb->autoace unless $database;
@@ -274,23 +274,23 @@ sub map_alleles {
       if ($count{$gene} == 1){
 	if($affects_genes{$gene}){
 	  # not so serious, but source database should be updated with connection
-	  next if ( $allele->SNP );
-	  print "WARNING: $name->$gene was mapped by script only\n" if ($verbose);
-	  $log->write_to("WARNING: $name->$gene was mapped by script only\n");
+	  next if ( $allele->SNP or $allele->Transposon_insertion );
+	  print "WARNING: $name->$gene was mapped by script. Add connection in Geneace?n" if ($verbose);
+	  $log->write_to("WARNING: $name->$gene was mapped by script. Add connection in Geneace?\n");
 	  
 	}
 	else{
 	  # more serious, source database has a bad allele->gene connection
 	  print "ERROR: $name->$gene was in original database only\n" if ($verbose);
-	  $log->write_to("ERROR: $name->$gene was in original database only\n");
+	  $log->write_to("ERROR: $name->$gene is in Geneace. Script indicates this could be wrong\n");
 	  $error_count++;       
 	}
       }
     }
     
-    $allele2gene{"$name"} = \@affects_CDSs if ($affects_CDSs[0]);
-
-          &outputAllele($name);
+	$allele2gene{"$name"} = \@affects_CDSs if ($affects_CDSs[0]);
+	
+	&outputAllele($name);
     }
 
     # close database and file handles
