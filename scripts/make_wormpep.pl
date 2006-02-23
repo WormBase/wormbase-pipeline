@@ -7,7 +7,7 @@
 # Builds a wormpep data set from the current autoace database
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-02-14 14:16:16 $
+# Last updated on: $Date: 2006-02-23 11:51:14 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -120,43 +120,46 @@ my $wpdir     = "$stem".--$old_release;
 # create directory structure and read wp.fasta file from previous release
 &setup;
 
-
 # now query autoace to get details of latest set of CDS names, writes wormpep.dnaXXX file
 # also fills in hashes used elsewhere
 &write_wormpep_dna;
-
-
-# write new wp.fastaXXX file
-&write_wormpep_fasta;
-
 
 # grab protein information for each CDS from autoace, using Table-Maker
 # in -initial mode, this is just getting CGC name and Brief_identification information
 # in -final mode, also gets protein ID, and protein Database accessions, and confirmation status
 &retrieve_cds_data;
 
-
 # write main wormpepXXX file and wormpep.tableXXX file 
 # just writes wormpepXXX file if in initial mode
 &write_main_wormpep_and_table;
 
+if ($initial) {
 
-# write the wormep.historyXXX and the wormpep.diffXXX files
-&write_wormpep_history_and_diff;
+  # write new wp.fastaXXX file
+  &write_wormpep_fasta;
+
+  #generate file to ad new peptides to mySQL database.
+  $wormbase->run_script("new_wormpep_entries.pl", $log) if $initial;
+
+  # write the wormep.historyXXX and the wormpep.diffXXX files
+  &write_wormpep_history_and_diff;
+}
+
+if ($final) {
+
+  # get all of the other info ( PFAM, InterPro, proteinId )
+  &get_additional_data;
+
+  # count the isoforms of each CDS (stats for release letter)
+  &count_isoforms;
+
+  # write wormpep accession file
+  &write_wormpep_accession;
 
 
-# count the isoforms of each CDS (stats for release letter)
-&count_isoforms if ($final);
-
-# write wormpep accession file
-&write_wormpep_accession if ($final);
-
-#generate file to ad new peptides to mySQL database.
-$wormbase->run_script("new_wormpep_entries.pl", $log);
-
-# update common data
-$wormbase->run_script("update_Common_data.pl --build --cds2wormpep", $log);
-
+  # update common data
+  $wormbase->run_script("update_Common_data.pl --build --cds2wormpep", $log);
+}
 
 ##############################
 # Tidy up and finish stuff   #
@@ -705,6 +708,20 @@ sub write_wormpep_accession{
   }   
   close (WPTABLE);
   
+}
+
+sub get_additional_data {
+  # get Pfam domains (this step loads resulting ace file)
+  $wormbase->run_script("GetPFAM_motifs.pl -load");#
+
+  # get interpro domains (this step loads resulting ace file )
+  $wormbase->run_script("GetInterPro_motifs.pl -load");
+
+  # make interpro2go connections (to be used by getProteinID)
+  $wormbase->run_script("make_Interpro2GO_mapping.pl");
+
+  # Get protein IDs (this step writes to ~wormpub/analysis/SWALL and loads wormpep info)
+  $wormbase->run_script("getProteinID.pl -load");
 }
 
 
