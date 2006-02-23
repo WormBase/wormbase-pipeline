@@ -3,283 +3,73 @@
 # map_operons.pl
 
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2005-12-16 11:18:55 $
+# Last edited on: $Date: 2006-02-23 16:02:01 $
 
 use strict;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use IO::Handle;
 use Data::Dumper;
 use Getopt::Long;
 use File::Copy;
 use Ace;
+use Log_files;
 
-##############################
-# Script variables (run)     #
-##############################
+my ($debug, $store, $test, $noload);
 
-# who will receive log file?
-my $maintainers = "All";
+GetOptions(
+	   'debug=s'  => \$debug,
+	   'store=s'  => \$store,
+	   'test'     => \$test,
+	   'noload'   => \$noload,
+);
 
-our $dir    = "/wormsrv2/autoace/OPERONS";
-our $gff    = "/wormsrv2/autoace/GFF_SPLITS/GFF_SPLITS";
-our $WS_version =  &get_wormbase_version_name;
+############################
+# recreate configuration   #
+############################
+my $wb;
+if ($store) { $wb = Storable::retrieve($store) or croak("cant restore wormbase from $store\n") }
+else { $wb = Wormbase->new( -debug => $debug, -test => $test, ) }
 
-our $output1 = "/wormsrv2/autoace/OPERONS/operons_${WS_version}.ace";
-our $output2 = "/wormsrv2/autoace/acefiles/operons.ace";
+my $log = Log_files->make_build_log($wb);
+my $acefile = $wb->acefiles."/operon_coords.ace";
 
-# do everything in /wormsrv2/autoace/OPERONS
-
-chdir("$dir");
-
-our %operon;
-our %cds;
-our %est;
-our $errors = 0;
-
-my $verbose;           # verbose mode
-my $help;              # Help/Usage page
-my $debug;             # debug mode
-
-
-GetOptions (
-            "verbose"        => \$verbose,
-            "help"           => \$help,
-            "debug:s"        => \$debug
-	    );
- 
-# Help pod if needed
-&usage("Help") if ($help);
-
-# Use debug mode?
-if ($debug) {
-    print "// DEBUG = \"$debug\"\n\n";
-    ($maintainers = $debug . '\@sanger.ac.uk');
+my @chromosomes = $test ? qw(III) : qw(I II III IV V X);
+my %gene_span;
+foreach (@chromosomes){
+  open (GS,"<".$wb->gff_splits."/CHROMOSOME_${_}_gene.gff") or $log->log_and_die("Cant open ".$wb->gff_splits."/CHROMOSOME_${_}_gene.gff :$!\n");
+  while (<GS>) {
+    # CHROMOSOME_III  gene    gene    16180   17279   .       +       .       Gene "WBGene00019182"
+    my @data = split;
+    next unless ($data[2] eq 'gene');
+    $data[9] =~ s/\"//g;
+    my $gene = $data[9];
+    $gene_span{$gene}->{'chrom'} = $data[0];
+    $gene_span{$gene}->{'start'} = $data[3];
+    $gene_span{$gene}->{'end'}   = $data[4];
+    $gene_span{$gene}->{'strand'}= $data[6];
+  }
 }
 
-# Set up logfile
-my $rundate    = &rundate;
-our $log = "/wormsrv2/logs/map_operons.pl.${WS_version}.${rundate}.$$";
-open (LOG,">$log");
-LOG->autoflush();
+open (OUT,">$acefile") or $log->log_and_die("cant open $acefile : $!\n");
+my $db = Ace->connect(-path => $wb->autoace) or $log->log_and_die("cant connect to ".$wb->autoace." :".Ace->error."\n");
+my @operons = $db->fetch('Operon' => '*');
+foreach my $operon(@operons) {
+  my @genes = map($_->name, $operon->Contains_gene);
+  my ($op_start, $op_end, $op_strand);
+  foreach my $gene (@genes) {
+    $op_start =  $gene_span{$gene}->{'start'} if (!(defined $op_start) or $op_start > $gene_span{$gene}->{'start'});
+    $op_end   =  $gene_span{$gene}->{'end'}   if (!(defined $op_end)   or $op_end   < $gene_span{$gene}->{'end'});
+    $op_strand = $gene_span{$gene}->{'strand'}if(!(defined $op_strand) or $op_strand eq $gene_span{$gene}->{'strand'});
+    $op_strand = $gene_span{$gene}->{'chrom'};
+  }
 
-# print logfile header
-print LOG "# map_operons.pl\n";
-
-&recreate_hashes;
-
-print "// create output file\n\n" if ($verbose);
-
-open (OUTPUT, ">$output1") || die "Can't open file for output\n";
-
-&acedump_operons;
-
-close OUTPUT;
-
-print "// end output file\n\n" if ($verbose);
-
-# copy this file to correct place
-
-my $status = copy($output1, $output2);
-
-if ($status == 0) {
-    print  "// Failed to copy file to $output2\n"; 
-    print LOG "Failed to copy file: $!\n";   
-    $errors++;
+  print OUT "\nSequence : $op_strand\nOperon $operon ";
+  ($op_start < $op_end) ? print OUT "$op_start $op_end" : print OUT "$op_end $op_start";
+  print OUT "\n";
 }
 
-# upload file to autoace if no errors where encountered
+$wb->load_to_database($wb->autoace,"$acefile",'operon_span') unless $noload;
 
-unless ($errors > 0) {
-
-    my $command = "autoace_minder.pl -load $output2 -tsuser operons";
-    my $status  = system($command);
-    if (($status >>8) != 0) {
-	print LOG "Failed to upload acefile: $!\n";
-	$errors++;
-    }
-}
-
-# email report
-
-my $subject_line = "map_operons.pl";
-
-# warn about errors in subject line if there were any
-if ($errors == 1) {
-  $subject_line .= " : $errors ERROR";
-}
-elsif ($errors > 1) {
-  $subject_line .= " : $errors ERRORS";
-}
-
-print "// mail log file\n\n" if ($verbose);
-
-&mail_maintainer("$subject_line",$maintainers,$log);
-
-# hasta luego
-
+$log->mail;
 exit(0);
-
-
-
-
-
-##################################################################################################################
-
-sub recreate_hashes {
-
-    open (FH, "<$dir/operon.dat") or die "operon.dat : $!";
-    undef $/;
-    my $data = <FH>;
-    eval $data;
-    die if $@;
-    $/ = "\n";
-    close FH;
-}
-
-sub acedump_operons {
-    
-    my $operon_start;
-    my $operon_stop;
-    my $reset = 0;
-    my $gene_count;
-    my @f;
-
-
-    for my $operon_lookup (sort keys %operon) {
-	
-	print OUTPUT "\n";
-	print OUTPUT "Operon : \"$operon_lookup\"\n";
-	print OUTPUT "Species \"Caenorhabditis elegans\"\n";
-
-	print "\n// Dump operon $operon_lookup [$operon{$operon_lookup}->{CHROMOSOME}|$operon{$operon_lookup}->{NO_GENES}]\n" if ($verbose);
-	
-	$gene_count = 1;
-	foreach my $gene_lookup (@{$operon{$operon_lookup}{CDS}}) {
-	    
-	    print "// Looking at $gene_lookup\t" if ($verbose);
-
-	    if ($gene_count == 1) {
-		$operon_start = 0;
-		open (GFF_1, "grep -w '$gene_lookup' $gff/CHROMOSOME_${operon{$operon_lookup}->{CHROMOSOME}}.WBgene.gff |");
-		while (<GFF_1>) {
-		    @f = split /\t/;
-		    if ($f[6] eq "+") {$operon_start = $f[3];}
-		    if ($f[6] eq "-") {$operon_start = $f[4];}
-		}
-		close GFF_1;
-		print "OP_start = $operon_start\n" if ($verbose);
-		
-	    }
-	    elsif ($gene_count == $operon{$operon_lookup}->{NO_GENES}) {
-		$operon_stop = 0;
-		open (GFF_2, "grep -w '$gene_lookup' $gff/CHROMOSOME_${operon{$operon_lookup}->{CHROMOSOME}}.WBgene.gff |");
-		while (<GFF_2>) {
-		    @f = split /\t/;
-		    ($operon_stop = $f[4]) if ($f[6] eq "+");
-		    ($operon_stop = $f[3]) if ($f[6] eq "-");
-		}
-		close GFF_2;
-		print "OP_stop = $operon_stop\n" if ($verbose);
-	    }
-	    else {
-		print "\n" if ($verbose);
-	    }
-	    
-#	    if (scalar (@{$cds{$gene_lookup}{SL1_EST}}) > 1) {
-#		print OUTPUT "Contains_CDS \"$gene_lookup\" SL1 \"EST clones @{$cds{$gene_lookup}{SL1_EST}}\"\n";
-#		$reset = 1;
-#	    }
-
-	    if ($cds{$gene_lookup}{SL2_FEATURE} ne "-") {
-		print OUTPUT "Contains_gene \"$gene_lookup\" SL2 Curator_confirmed WBPerson1846\n";
-		$reset = 1;
-	    }
-
-	    if ($cds{$gene_lookup}{SL2_MICROARRAY} eq "++") {
-		print OUTPUT "Contains_gene \"$gene_lookup\" Microarray Paper_evidence \"WBPaper00005303\"\n";
-		$reset = 1;
-	    }
-	    elsif ($cds{$gene_lookup}{SL2_MICROARRAY} eq "+") {
-		print OUTPUT "Contains_gene \"$gene_lookup\" Microarray Person_evidence \"WBPerson71\"\n";
-		$reset = 1;
-	    }
-	    
-	    unless ($reset == 1) {
-		print OUTPUT "Contains_gene \"$gene_lookup\"\n";
-	    }
-	    
-	    $reset = 0;
-	    $gene_count++;
-	}
-	print OUTPUT "Method operon\n";
-	print OUTPUT "\n";
-	print OUTPUT "Sequence : \"CHROMOSOME_$operon{$operon_lookup}->{CHROMOSOME}\"\n";
-	print OUTPUT "S_child Operon $operon{$operon_lookup}->{ACC} $operon_start $operon_stop\n";
-	print OUTPUT "\n";
-	
-	if (($operon_start == 0) || ($operon_stop == 0)) {
-	    print OUTPUT "\n//ERROR: MISSING COORDINATE for operon $operon{$operon_lookup}->{ACC}\n\n";
-	    print LOG "\n//ERROR: MISSING COORDINATE for operon $operon{$operon_lookup}->{ACC}\n\n";
-	    $errors++;
-	}
-	
-	$gene_count = 1;
-	undef ($operon_start);
-	undef ($operon_stop);
-    }
-    
-}
-
-sub usage {
-    my $error = shift;
-    if ($error eq "Help") {
-	exec ('perldoc',$0);
-    }
-    elsif ($error == 0) {
-        # Normal help menu
-        exec ('perldoc',$0);
-    }
-
-
-}
-
-
-
-
-__END__
-
-=pod
-
-=head2   NAME - map_operons.pl
-
-=head1 USAGE
-
-=over 4
-
-=item autoace_minder.pl 
-
-=back
-
-map_operons.pl will generate an .acefile for the operon data using the 
-operon.dat hash in /wormsrv2/autoace/OPERONS/.
-
-
-map_operons.pl mandatory arguments:
-
-=over 4
-
-=item none,
-
-=back
-
-map_operons.pl optional arguments:
-
-=over 4
-
-=item none,
-
-=back
-
-=cut
-
