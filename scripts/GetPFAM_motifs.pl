@@ -7,7 +7,7 @@
 # Gets latest PFAM motifs from sanger/pub and puts info in to ace file
 #
 # Last updated by: $Author: ar2 $                      
-# Last updated on: $Date: 2006-02-17 11:32:47 $         
+# Last updated on: $Date: 2006-02-23 14:30:45 $         
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -128,11 +128,7 @@ close PFAM;
 close PFAMOUT;
 
 # load file to autoace if -load specified
-if($load){
-  my $command = "autoace_minder.pl -load $ace_dir/acefiles/pfam_motifs.ace -tsuser pfam_motifs";
-  $wormbase->run_script($command, $log);
-}
-
+$wormbase->load_to_database($wormbase->autoace,"$ace_dir/acefiles/pfam_motifs.ace",'pfam_motifs') if($load);
 
 # tidy up and die
 $log->mail();
