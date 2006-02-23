@@ -5,7 +5,7 @@
 # map GO_terms to ?Sequence objects from ?Motif and ?Phenotype
 #
 # Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2006-02-10 11:04:44 $      
+# Last updated on: $Date: 2006-02-23 17:29:05 $      
 
 use strict;
 use warnings;
@@ -33,7 +33,7 @@ GetOptions ("help"      => \$help,
 	    "phenotype" => \$phenotype,
 	    "motif"     => \$motif,
 	    "noload"    => \$noload,
-    	    "store"     => \$store
+    	    "store:s"   => \$store
     	);
 
 # Display help if required
