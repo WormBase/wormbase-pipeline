@@ -10,7 +10,7 @@
 # 
 #
 # Last updated by: $Author: ar2 $                     
-# Last updated on: $Date: 2006-02-17 11:32:47 $     
+# Last updated on: $Date: 2006-02-23 14:22:02 $     
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -312,20 +312,7 @@ $log->write_to( "\n   . . about to start GetSwissIDandInterpro.pl\n");
 
 
 #load files in to autoace.
-my $tace =  &tace;
-my $command;
-if( -e "$ace_dir/acefiles/pepace.ace" ) {
-  $log->write_to( "Adding pepace.ace file to autoace\n");
-  $command = "pparse $ace_dir/acefiles/pepace.ace\nsave\nquit\n"; 
-  open (AUTOACE, "| $tace -tsuser pepace $ace_dir ") || die "Couldn't open pipe to autoace\n";
-  print AUTOACE $command;
-  $log->write_to( "Finished adding pepace.ace file to autoace\n"); 
-  close AUTOACE;
-}
-else {
-  $log->write_to( " pepace.ace NOT loaded into autoace . . \n$ace_dir/acefiles/pepace.ace does not exist\n");
-}
-
+$wormbase->load_to_database($wormbase->autoace, "$ace_dir/acefiles/pepace.ace", 'pepace');
 
 $log->mail();
 print "Finished.\n" if ($verbose);
@@ -453,7 +440,7 @@ sub reappearedAsIsoform {
 	
     push( @{ $CE_gene{$CE} }, "$gene");
     $gene_CE{$CE} = $CE;
-    if( $out ) {
+    if( defined $out ) {
 	if( &multiCoded == 0){
 	    $CE_live{$CE} = 0;
 	}
