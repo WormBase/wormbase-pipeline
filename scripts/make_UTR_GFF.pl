@@ -15,7 +15,7 @@
 #      COMPANY:
 #      VERSION:  2 
 #      CREATED:  21/02/06 14:11:30 GMT
-#     REVISION:  $Revision: 1.7 $ 
+#     REVISION:  $Revision: 1.8 $ 
 #===============================================================================
 
 use strict;
@@ -71,7 +71,7 @@ foreach my $chr (@chromosome) {
     $db->load_gff( "$gffdir/${long_name}_curated.gff", $long_name, 1 ) if !$load;
     $db->load_gff( "$gffdir/${long_name}_Coding_transcript.gff", $long_name ) if !$load;
 
-    my $outfile = IO::File->new( "$outdir/${long_name}_UTR_test.gff",          "w" ); # needs to be changed to
+    my $outfile = IO::File->new( "$outdir/${long_name}_UTR.gff",          "w" ); # needs to be changed to
     my $infile  = IO::File->new( "$gffdir/${long_name}_Coding_transcript.gff", "r" );
 
     my $n_exons=0;
