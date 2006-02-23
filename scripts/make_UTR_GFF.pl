@@ -1,267 +1,246 @@
-#!/usr/local/bin/perl5.8.0 -w
+#!/usr/bin/env perl -w
+#===============================================================================
+#
+#         FILE:  make_UTR_GFF.pl
+#
+#        USAGE:  ./make_UTR_GFF.pl
+#
+#  DESCRIPTION:
+#
+#      OPTIONS:  [-help, -verbose, -store FILE, -debug USER, -test, -noload, -chromosome CHROMOSOME_NUMBER]
+# REQUIREMENTS:  Wormbase.pm, Modules::GFF_sql.pm
+#         BUGS:  ---
+#        NOTES:  ---
+#       AUTHOR:  $Author: mh6 $
+#      COMPANY:
+#      VERSION:  2 
+#      CREATED:  21/02/06 14:11:30 GMT
+#     REVISION:  $Revision: 1.7 $ 
+#===============================================================================
 
 use strict;
 use lib $ENV{'CVS_DIR'};
+use Modules::GFF_sql;
 use Wormbase;
-use Log_files;
 use Getopt::Long;
-use File::Path;
-use Storable;
+use IO::File;
 
-my ($help, $debug, $test, $verbose, $store, $wormbase, $chrom);
+my ( $help, $debug, $test, $store, $wormbase, $chrom, $load , $verbose);
 
-GetOptions ("help"       => \$help,
-            "debug=s"    => \$debug,
-	    "test"       => \$test,
-	    "verbose"    => \$verbose,
-	    "store:s"    => \$store,
-	    "chromosome:s"=> \$chrom
-	  );
+GetOptions(
+    "help"         => \$help,
+    "debug=s"      => \$debug,
+    "test"         => \$test,
+    "store:s"      => \$store,
+    "chromosome:s" => \$chrom,
+    "noload"       => \$load,
+    'verbose'	   => \$verbose
+);
 
-if ( $store ) {
-  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
-} else {
-  $wormbase = Wormbase->new( -debug   => $debug,
-                             -test    => $test,
-			     );
-}
+die `perldoc $0` if $help;
+if ($store) { $wormbase = retrieve($store) or croak("Can't restore wormbase from $store\n") }
+else { $wormbase = Wormbase->new( -debug => $debug, -test => $test ) }
 
-my $log = Log_files->make_build_log($wormbase);
+my $maintainers = "$debug\@sanger.ac.uk" if $debug;
 
+my $log = Log_files->make_build_log($wormbase);    # prewarning will be misused in a global way
 
 # do a single chromosome if prompted else do the lot......
-
 my @chromosome;
-
 if ($chrom) {
-    push (@chromosome,$chrom);
+    push( @chromosome, $chrom );
 }
 else {
     @chromosome = qw( I II III IV V X );
 }
 
-# other vars
-my $workdir = $wormbase->wormpub."/analysis/UTR";
-my $gff_dir = $wormbase->gff_splits;
+# globale setup setup
+my $gffdir = $wormbase->{'gff_splits'};
+my $db     = GFF_sql->new( { -build => 1 } );
+my $outdir = $gffdir;                           #"/tmp/";
+my %cds_cache;  # crude hack to speed up the cds lookup
 
-my ($file1,$file2,$file3,$file4);
+# main
+foreach my $chr (@chromosome) {
+    %cds_cache=(); # clean out old data
+    my $long_name = "CHROMOSOME_$chr";
 
-my ($gene,$gene_start,$gene_stop,$line);
-my ($gene_strand,$exon5_stop,$exon3_start);
-my @f;
-my $CDS;
-my $Transcript;
-my %transcripts2process;
-my $isoform;
-my $dotno;
+    $log->write_to("Processing $long_name\n");
 
-#
-#
+    # load    
+    $db->load_gff( "$gffdir/${long_name}_curated.gff", $long_name, 1 ) if !$load;
+    $db->load_gff( "$gffdir/${long_name}_Coding_transcript.gff", $long_name ) if !$load;
 
+    my $outfile = IO::File->new( "$outdir/${long_name}_UTR_test.gff",          "w" ); # needs to be changed to
+    my $infile  = IO::File->new( "$gffdir/${long_name}_Coding_transcript.gff", "r" );
 
+    my $n_exons=0;
+    
+    # iterate over exons GFF
+    while (<$infile>) {
 
-
-#################################
-# Main Loop for each chromosome #
-#################################
-
-
-foreach my $chrom ( @chromosome ) {
-
-    open (OUTPUT, ">$workdir/CHROMOSOME_${chrom}_UTR.gff") or $log->log_and_die("cant open $workdir/CHROMOSOME_${chrom}_UTR.gff : $!\n");
-
-    #################################
-    # coding_transcript split files #
-    #################################
-
-    $wormbase->run_command("grep exon $gff_dir/CHROMOSOME_${chrom}_Coding_transcript.gff > $workdir/CHROMOSOME_${chrom}_coding_transcript_exon.gff", $log);
-    $wormbase->run_command("grep coding_exon $gff_dir/CHROMOSOME_${chrom}_curated.gff    > $workdir/CHROMOSOME_${chrom}_coding_exon.gff",            $log);
-
-    #######################
-    # curated split files #
-    #######################
-
-    $file1 = "$workdir/test_$chrom.coding_exon_exon.gff";
-    $file2 = "$workdir/test_$chrom.coding_transcript_exon.gff";
-
-    #############################################
-    # Loop through each gene in this chromosome #
-    #############################################
-
-    open (GENES, "<$gff_dir/CHROMOSOME_${chrom}_curated.gff") or $log->log_and_die("cant open $gff_dir/CHROMOSOME_${chrom}_curated.gff : $!\n");
-    while (<GENES>) {
-	next if (/^\#/);
-	($gene) = (/CDS \"(\S+)\"/);
-	
-	next unless ($gene);
-	
-	print "// Parsing gene $gene\n\n" if ($verbose);
-	
-	#####################################
-        # make the small files to work with #
-	#####################################
-
-	$wormbase->run_command ("grep -iw $gene $workdir/CHROMOSOME_${chrom}_coding_exon.gff              > $file1",$log);
-	$wormbase->run_command ("grep -iw $gene $workdir/CHROMOSOME_${chrom}_coding_transcript_exon.gff   > $file2",$log);
-	
-	###################
-        # CDS coordinates #
-	###################
-
-	$line = 1;
-	open (CDS, "<$file1") or $log->log_and_die("cant open $file1 $!\n");
-	while (<CDS>) {
-	    chomp;
-	    @f = split /\t/;
-	    if ($line == 1) {
-		$gene_start = $f[3];
-		$exon5_stop = $f[4];
-	    }
-	    $gene_stop   = $f[4];
-	    $exon3_start = $f[3];
-	    $gene_strand = $f[6];
-	    $line++;
-	}
-	close CDS;
-	
-	print "GENE $gene [$gene_start -> $gene_stop] [FIRST EXON stop $exon5_stop : LAST EXON start $exon3_start]\n" if ($verbose);
-	
-	#################
-        # New UTR exons #
-	#################	
-
-	open (NEW, "gff_overlap -unsorted -not $file1 $file2 | ")  or $log->log_and_die ("cant open gff_overlap $!\n");
-	while (<NEW>) {
-	    @f = split /\t/;
-
-	    # Assign $Transcript and $CDS
-	    ($Transcript) = $f[8] =~ (/\"(\S+)\"/);
-	    $CDS = $Transcript;
-	    $dotno = $CDS =~ tr /\./\./;
-	    if ($dotno > 1) {
-		chop $CDS;
-		chop $CDS;
-	    }
-	    $transcripts2process{$Transcript} = 1;   # Ensure that we write coding_exons for this one
-	    
-	    if ($f[4] < $gene_start) {
-		if ($f[6] eq "+") {
-		    print OUTPUT "$f[0]\tCoding_transcript\tfive_prime_UTR\t$f[3]\t$f[4]\t$f[5]\t$f[6]\t$f[7]\tTranscript \"$Transcript\"\n";
-		}
-		else {
-		    print OUTPUT "$f[0]\tCoding_transcript\tthree_prime_UTR\t$f[3]\t$f[4]\t$f[5]\t$f[6]\t$f[7]\tTranscript \"$Transcript\"\n";
-		}
-	    }
-	    elsif ($f[3] > $gene_stop) {
-		if ($f[6] eq "+") {
-		    print OUTPUT "$f[0]\tCoding_transcript\tthree_prime_UTR\t$f[3]\t$f[4]\t$f[5]\t$f[6]\t$f[7]\tTranscript \"$Transcript\"\n";
-		}
-		else {
-		    print OUTPUT "$f[0]\tCoding_transcript\tfive_prime_UTR\t$f[3]\t$f[4]\t$f[5]\t$f[6]\t$f[7]\tTranscript \"$Transcript\"\n";
-		}
-	    }
-	}
-	close NEW;
-	
-	##########################
-	# Partially coding exons #
-	##########################
-
-	open (NEW, "gff_overlap -unsorted -minfrac1 1 -quiet $file1 $file2 | ") or $log->log_and_die ("cant open gff_overlap $!\n");
-	while (<NEW>) {
-	    @f = split /\t/;
-
-	    # Assign $Transcript and $CDS
-	    ($Transcript) = $f[8] =~ (/\"(\S+)\"/);
-	    $CDS = $Transcript;
-	    $dotno = $CDS =~ tr /\./\./;
-	    if ($dotno > 1) {
-		chop $CDS;
-		chop $CDS;
-
-	    }
-	    $transcripts2process{$Transcript} = 1;   # Ensure that we write coding_exons for this one
-
-	    
-	    if ( ($f[4] == $exon5_stop) && ($f[3] != $gene_start)) {
-
-		$gene_start--;
-		$gene_stop++;
-
-		if ($f[6] eq "+") {
-		    print OUTPUT "$f[0]\tCoding_transcript\tfive_prime_UTR\t$f[3]\t$gene_start\t$f[5]\t$f[6]\t$f[7]\tTranscript \"$Transcript\"\n";
-		}
-		else {
-		    print OUTPUT "$f[0]\tCoding_transcript\tthree_prime_UTR\t$f[3]\t$gene_start\t$f[5]\t$f[6]\t$f[7]\tTranscript \"$Transcript\"\n";
-		}
-				
-		$gene_start++;
-		$gene_stop--;
-
-	    }
-	    elsif ( ($f[3] == $exon3_start) && ($f[4] != $gene_stop) ) {
-		
-		$gene_start--;
-		$gene_stop++;
-
-		if ($f[6] eq "+") {
-		    print OUTPUT "$f[0]\tCoding_transcript\tthree_prime_UTR\t$gene_stop\t$f[4]\t$f[5]\t$f[6]\t$f[7]\tTranscript \"$Transcript\"\n";
-		}
-		else {
-		    print OUTPUT "$f[0]\tCoding_transcript\tfive_prime_UTR\t$gene_stop\t$f[4]\t$f[5]\t$f[6]\t$f[7]\tTranscript \"$Transcript\"\n";
-		}
-		
-		$gene_start++;
-		$gene_stop--;
-
-	    }
-	}
-	close NEW;
-	
-
-	#########################################
-	# Coding_exon lines for the transcripts #
-	#########################################
-
-	# CHROMOSOME_I    curated           coding_exon     11641   11689   .       +       0       CDS "Y74C9A.2"
-	#
-	# becomes 
-	#
-	# CHROMOSOME_I    Coding_transcript coding_exon     11641   11689   .       +       0       Transcript "Y74C9A.2" ; CDS "Y74C9A.2"
-
-	foreach $isoform (keys %transcripts2process) {
-	    
-	    next if ($isoform eq "");
-	    
-	    open (CODINGEXONS, "<$file1") or $log->log_and_die("cant open $file1 $!\n");
-	    while (<CODINGEXONS>) {
-		chomp;
-		@f = split /\t/;
-
-		# Assign $CDS
-		($CDS) = $f[8] =~ (/\"(\S+)\"/);
-
-		print OUTPUT"$f[0]\tCoding_transcript\tcoding_exon\t$f[3]\t$f[4]\t$f[5]\t$f[6]\t$f[7]\tTranscript \"$isoform\" ; CDS \"$CDS\"\n";
-	    }
-	}
-	close CODINGEXONS;
-	
-
-
-	############
-	# clean up #
-	############
-	
-	undef $gene;
-	%transcripts2process = ();
-
-	unlink $file1;
-	unlink $file2;
-
-	
-    #_ end of gene line
+        next if /\#/;
+        s/\"//g;
+        my @f = split;
+        my ( $chrom, $start, $stop, $ori, $name ) = ( $f[0], $f[3], $f[4], $f[6], $f[9] );
+        next if ( $f[1] ne 'Coding_transcript' || $f[2] ne 'exon' );
+	print "processing transcript: $name \n" if $verbose;
+        #make the gff
+        print $outfile &make_gff( $db, $chrom, $start, $stop, $ori, $name );
+	$n_exons++;
     }
-#_ end of chromosome   
+
+    $log->write_to("processed $n_exons exons\n");
 }
 
-exit(0);
+$log->mail( "$maintainers", "BUILD REPORT: $0" );
+
+##########################
+
+# get CDS name (lifted from original version)
+sub short_name {
+    my ($name) = @_;
+    my $dotno = $name =~ tr/\./\./;
+    if ( $dotno > 1 ) {
+        chop $name;
+        chop $name;
+    }
+    return $name;
+}
+
+# UTR GFF line generator
+sub utr {
+    my ( $chrom, $name, $start, $stop, $type, $ori ) = @_;
+    return "$chrom\tCoding_transcript\t${type}_prime_UTR\t$start\t$stop\t.\t$ori\t.\tTranscript \"$name\"\n";
+}
+
+# CDS GFF line generator
+sub cds {
+    my ( $chrom, $start, $stop, $orientation, $frame, $name, $fluff ) = @_;
+    return "$chrom\tCoding_transcript\tcoding_exon\t$start\t$stop\t.\t$orientation\t$frame\tTranscript \"$name\" ; $fluff\n";
+}
+
+# get CDS start/stop coordinates
+sub get_cds {
+    my ( $db, $chrom, $id ) = @_;
+
+    if ( $cds_cache{ &short_name($id) } ) { return @{ $cds_cache{ &short_name($id) } } } # hmpf
+    else {
+        my @hits = $db->get_chr( $chrom, { feature => 'curated', source => 'coding_exon', fluff => '"' . &short_name($id) . '"' } );
+        my @sorted_hits = sort { $a->{start} <=> $b->{start} || $a->{stop} <=> $b->{stop} } @hits;
+	$cds_cache{ &short_name($id)}=[$sorted_hits[0]->{start}, $sorted_hits[-1]->{stop}];
+        return $sorted_hits[0]->{start}, $sorted_hits[-1]->{stop};
+    }
+}
+
+# creates the gff-lines and returns them
+sub make_gff {
+    my ( $db, $chrom, $start, $stop, $orientation, $name ) = @_;
+    
+    # get_hits , get cds
+    my @hits =
+      $db->get_chr( $chrom, { start => $start, stop => $stop, feature => 'curated', source => 'coding_exon', 'fluff' => '"' . &short_name($name) . '"' } );
+    my @cds = get_cds( $db, $chrom, &short_name($name) );
+
+    if (@hits) {
+        if ( $start < $cds[0] || $stop > $cds[1] ) {    # need to create both utrs and cds exons
+            my ( $type, $utr, $cds );
+	    if ( $start < $cds[0] && $stop > $cds[1]){
+		my @types = ( $orientation eq '+' ) ? ('five','three') : ('three','five');
+		#utr1
+		my $utr1=&utr( $chrom, $name, $start, $cds[0] - 1, $types[0], $orientation );
+		#cds
+		$cds = &cds( $chrom, $cds[0], $cds[1], $orientation, $hits[0]->{'frame'}, $name, $hits[0]->{'fluff'} );
+		#utr2
+		my $utr2 = &utr( $chrom, $name, $cds[1] + 1, $stop, $types[1], $orientation );
+		return $utr1,$cds,$utr2;
+	    }
+            elsif ( $start < $cds[0] ) {
+                $type = ( $orientation eq '+' ) ? 'five' : 'three';
+                $utr = &utr( $chrom, $name, $start, $cds[0] - 1, $type, $orientation );
+                $cds = &cds( $chrom, $cds[0], $stop, $orientation, $hits[0]->{'frame'}, $name, $hits[0]->{'fluff'} );
+            }
+            else { # has to be stop > cds[1]
+                $type = ( $orientation eq '+' ) ? 'three' : 'five';
+                $utr = &utr( $chrom, $name, $cds[1] + 1, $stop, $type, $orientation );
+                $cds = &cds( $chrom, $start, $cds[1], $orientation, $hits[0]->{'frame'}, $name, $hits[0]->{'fluff'} );
+            }
+            return $utr, $cds;
+        }
+        else {    # is cds only => only cds exon
+            return &cds( $chrom, $start, $stop, $orientation, $hits[0]->{'frame'}, $name, $hits[0]->{'fluff'} );
+        }
+    }
+    else {        # is utr only => only utr exon
+        my $type;
+        if    ( $start < $cds[0] ) { $type = ( $orientation eq '+' ) ? 'five'  : 'three' }
+        elsif ( $stop > $cds[1] )  { $type = ( $orientation eq '+' ) ? 'three' : 'five' }
+        else { $log->write_to("urghs: start/stop CDS coordinates seem to be messed up\n") }
+        return &utr( $chrom, $name, $start, $stop, $type, $orientation );
+    }
+}
+
+__END__
+
+
+=head1 NAME 
+
+make_UTR_GFF.pl
+
+=head1 USAGE
+
+make_UTR_GFF.pl [-test -debug NAME -noload -chromosome CHROMOSOME_NUMBER -store STOREFILE]
+
+=head1 DESCRIPTION
+
+creates a GFF file per chromosome containing UTRs and coding exons (connected to CDS and Transcripts) from   _curated.gff and _Coding_transcript.gff (in GFF_split).
+It does that by creating an SQL table for the GFF files in the build mySQL database (can theoretically overwrite each other as there are no locks on the tables, but only if they run on the same chromosome).
+Mixed exons (partially coding) will be split into 2 exons for the GFF (one coding/one noncoding).
+
+=head1 Arguments
+
+=over 
+
+=item -store : loads from a stored configuration file
+
+=item -chromosome C_NAME: limits the processing to one chromosome (like I)
+
+=item -test : will use the TEST_BUILD directories
+
+=item -debug NAME : mail logs to NAME as email
+
+=item -noload : does not reload the GFF-database (faster startup)
+
+=item -verbose : prints out which transcript it is processing
+
+=back
+
+=head1 Output
+
+GFF_SPLITS/CHROMOSOME_nn_UTR.gff
+
+=head1 Database
+
+=over
+
+=item mySQL 4.x
+
+=item host mcs2a
+
+=item name mh6_build
+
+=item port 3316
+
+=back
+
+=head1 Dependencies
+
+=over
+
+=item Wormbase.pm
+
+=item Modules/GFF_sql.pm
+
+=back
+
+=cut
