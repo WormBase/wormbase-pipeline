@@ -7,13 +7,15 @@
 # simple script for creating new (sequence based) Gene objects when splitting 
 # existing gene 
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2005-12-12 11:20:20 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2006-02-24 11:45:48 $
 
 use strict;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
+use Log_files;
+use Storable;
 
 ###################################################
 # command line options                            # 
@@ -65,14 +67,14 @@ else{
 ############################################################
 # set database path, open connection and open output file
 ############################################################
-
-my $tace = &tace;
-my $database = "/nfs/disk100/wormpub/DATABASES/geneace";
+my $wormbase = Wormbase->new();
+my $tace = $wormbase->tace;
+my $database = $wormbase->database('geneace');
 
 my $db = Ace->connect(-path  => $database,
 		      -program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
 
-open(OUT, ">/nfs/disk100/wormpub/DATABASES/geneace/splitgene.ace") || die "Can't write to output file\n";
+open(OUT, ">$database/splitgene.ace") || die "Can't write to output file\n";
 
 # find out highest gene number in case new genes need to be created
 my $gene_max = $db->fetch(-query=>"Find Gene");
@@ -90,13 +92,7 @@ $db->close;
 close(OUT);
 
 # load information to geneace if -load is specified
-if ($load){
-  my $command = "pparse /nfs/disk100/wormpub/DATABASES/geneace/splitgene.ace\nsave\nquit\n";
-  open (GENEACE,"| $tace -tsuser \"mt3\" /nfs/disk100/wormpub/DATABASES/geneace") || die "Failed to open pipe to /nfs/disk100/wormpub/DATABASES/geneace\n";
-  print GENEACE $command;
-  close GENEACE;
-}
-
+$wormbase->load_to_database($database, "$database/splitgene.ace", 'split_gene') if $load;
 
 exit(0);
 
