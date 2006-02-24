@@ -15,7 +15,7 @@
 #      COMPANY:
 #      VERSION:  2 
 #      CREATED:  21/02/06 14:11:30 GMT
-#     REVISION:  $Revision: 1.8 $ 
+#     REVISION:  $Revision: 1.9 $ 
 #===============================================================================
 
 use strict;
@@ -102,8 +102,7 @@ sub short_name {
     my ($name) = @_;
     my $dotno = $name =~ tr/\./\./;
     if ( $dotno > 1 ) {
-        chop $name;
-        chop $name;
+        $name=~s/\.\w+$//;
     }
     return $name;
 }
