@@ -5,7 +5,7 @@
 # by Anthony Rogers et al
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-12-21 15:26:58 $
+# Last updated on: $Date: 2006-02-24 15:31:12 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -341,7 +341,7 @@ sub write_cds2wormpep  {
   my $WPver = $wormbase->get_wormbase_version;
 
   # connect to AceDB using TableMaker,
-  my $command="Table-maker -p $wquery_dir/$Table_defs{'CDS2wormpep'}\nquit\n";
+  my $command="Table-maker -p $wquery_dir/$Table_defs{'cds2wormpep'}\nquit\n";
   
   open (TACE, "echo '$command' | $tace $ace_dir |");
   my %cds2wormpep;
