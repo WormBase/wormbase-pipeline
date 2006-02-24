@@ -5,8 +5,8 @@
 # by Kerstin Jekosch
 #
 # Version: $Version: $
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2005-12-20 13:50:52 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2006-02-24 15:30:05 $
 
 use strict;
 use warnings;
@@ -82,7 +82,7 @@ my $tace        = $wb->tace;                                           # tace ex
 my $dbdir       = $wb->autoace;                                        # Database path
 my $gffdir      = $wb->gff_splits;                                     # GFF_SPLITS directory
 my @chromosomes = $test ? qw ( I ) : qw( I II III IV V X );            # chromosomes
-my $acefile     = $ace ? $ace : "$dbdir/acefiles/RNAi_mappings.ace";
+my $acefile     = $ace ? $ace : $wb->acefiles."/RNAi_mappings.ace";
 
 ################
 # Structs      #
@@ -112,7 +112,7 @@ foreach my $chromosome (@chromosomes) {
 # New RNAi lines : CHROMOSOME_I    RNAi_primary    RNAi_reagent    1681680 1683527 .       .       .       Target "RNAi:WBRNAi00004820" 1 1848
 
     print "Loop through primary RNAi GFF file CHROMOSOME_${chromosome}\n" if ($verbose);
-    open( GFF, "<$gffdir/CHROMOSOME_${chromosome}.RNAi_primary.gff" ) || die "Failed to open RNAi gff file\n\n";
+    open( GFF, "<$gffdir/CHROMOSOME_${chromosome}_RNAi_primary.gff" ) || die "Failed to open RNAi gff file CHROMOSOME_${chromosome}_RNAi_primary.gff :$!\n\n";
     while (<GFF>) {
         chomp;
         s/^\#.*//;
@@ -130,7 +130,7 @@ foreach my $chromosome (@chromosomes) {
     # add the seondary RNAi hits to the same data structure
     # note which is secondary by adding "secondary" to the gene mapped to
     print "Loop through secondary RNAi GFF file CHROMOSOME_${chromosome}\n" if ($verbose);
-    open( GFF, "<$gffdir/CHROMOSOME_${chromosome}.RNAi_secondary.gff" ) || die "Failed to open RNAi gff file\n\n";
+    open( GFF, "<$gffdir/CHROMOSOME_${chromosome}_RNAi_secondary.gff" ) || die "Failed to open RNAi gff file CHROMOSOME_${chromosome}_RNAi_secondary.gff:$!\n\n";
     while (<GFF>) {
         chomp;
         s/^\#.*//;
@@ -153,23 +153,22 @@ foreach my $chromosome (@chromosomes) {
 ##
     # loop through the split GFF Expr_profile file (Expr_profile|experimental_result_region) -> Expr_profile
     print "Loop through Expr_profile GFF file CHROMOSOME_${chromosome}\n" if ($verbose);
-    Map_Helper::get_from_gff( "$gffdir/CHROMOSOME_${chromosome}.Expr_profile.gff",
+    Map_Helper::get_from_gff( "$gffdir/CHROMOSOME_${chromosome}_Expr_profile.gff",
         'Expr_profile', qw{\S}, \%expression );
     print 'Loaded ', scalar( keys %expression ), " expression profiles\n" if $verbose;
     if ( !$exp_arg ) {
 
         # loop through the split GFF exon file (curated|exon) -> CDS
         print "Loop through exon GFF file CHROMOSOME_${chromosome}\n" if ($verbose);
-        Map_Helper::get_from_gff( "$gffdir/CHROMOSOME_${chromosome}.exon.gff", 'CDS', qw{\S}, \%genes );
+        Map_Helper::get_from_gff( "$gffdir/CHROMOSOME_${chromosome}_curated.gff", 'CDS', qw{exon}, \%genes );
 
         # loop through the split GFF exon_pseudogene file (Pseudogene|exon) -> Pseudogene)
         print "Loop through exon_pseudogene GFF file CHROMOSOME_${chromosome}\n" if ($verbose);
-        Map_Helper::get_from_gff( "$gffdir/CHROMOSOME_${chromosome}.exon_pseudogene.gff",
-            'Pseudogene', qw{\S}, \%genes );
+        Map_Helper::get_from_gff( "$gffdir/CHROMOSOME_${chromosome}_Pseudogene.gff", 'Pseudogene', qw{exon}, \%genes );
 
         # loop through the split GFF exon_noncoding file  (Non_coding_transcript|exon) -> Transcript
         print "Loop through exon_noncoding GFF file CHROMOSOME_${chromosome}\n" if ($verbose);
-        Map_Helper::get_from_gff( "$gffdir/CHROMOSOME_${chromosome}.exon_noncoding.gff", 'Transcript', qw{\S},
+        Map_Helper::get_from_gff( "$gffdir/CHROMOSOME_${chromosome}_Non_coding_transcript.gff", 'Transcript', qw{exon},
             \%genes );
     }
     print "Finished GFF loop\n" if ($verbose);
@@ -348,15 +347,7 @@ close(OUTACE);
 #########################################################
 # read acefiles into autoace (unless running test mode) #
 #########################################################
-if ($load) {
-    $log->write_to("Loading file to autoace\n");
-    my $command = "autoace_builder.pl -load $dbdir/acefiles/RNAi_mappings.ace -tsuser RNAi_mappings";
-
-    my $status = system($command);
-    if ( ( $status >> 8 ) != 0 ) {
-        $log->write_to("ERROR: Loading RNAi_mappings.ace file failed \$\? = $status\n");
-    }
-}
+$wb->load_to_database($dbdir, $acefile,"RNAi_mappings") if ($load);
 
 ####################################
 # print some statistics to the log #

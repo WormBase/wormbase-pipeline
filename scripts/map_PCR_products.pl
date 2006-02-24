@@ -83,7 +83,7 @@ my $dbdir       = $wb->autoace;                                # Database path
 my $gffdir      = $wb->gff_splits;                             # GFF splits directory
 my @chromosomes = $test ? qw ( I ) : qw( I II III IV V X );    # chromosomes to parse
 my %genetype;                                                  # gene type hash
-my $outace = $acefile ? $acefile : "$dbdir/acefiles/PCR_mappings.ace";
+my $outace = $acefile ? $acefile : $wb->acefiles."/PCR_mappings.ace";
 
 ################
 # Structs      #
@@ -187,19 +187,8 @@ close(OUTACE);
 ##############################
 # read acefiles into autoace #
 ##############################
-unless ($test) {
-    my $command = "pparse $outace\nsave\nquit\n";
-
-    open( TACE, "| $tace -tsuser map_PCR_products $dbdir" ) || die "Couldn't open tace connection to $dbdir\n";
-    print TACE $command;
-    close(TACE);
-}
-
-###############
-# hasta luego #
-###############
-
-$log->mail( "$maintainers", "BUILD REPORT: $0" );
+$wb->load_to_database($wb->autoace, $outace, 'map_PCR_products', $log) unless ($test) ;
+$log->mail();
 
 exit(0);
 
