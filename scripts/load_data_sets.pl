@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
 # Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2006-02-24 10:30:43 $      
+# Last updated on: $Date: 2006-02-24 12:05:09 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -66,7 +66,7 @@ sub parse_misc_files {
   $log->write_to("Loading files to ".$wormbase->autoace."\n==================================\n");
   foreach my $file (keys %files_to_load) {
     $log->write_to("\tloading $file -tsuser $files_to_load{$file}\n");
-    $wormbase->load_to_database($wormbase->autoace,$file, $files_to_load{$file});
+    $wormbase->load_to_database($wormbase->autoace,$file, $files_to_load{$file},$log);
   }
 }
 
@@ -97,7 +97,7 @@ sub parse_homol_data {
   foreach my $file ( @files2Load ) {
     my $tsuser = substr($file,0,-4); #file name without ace
     $log->write_to("\tloading $file -tsuser -$tsuser\n");
-    $wormbase->load_to_database($wormbase->autoace,$wormbase->acefiles."/file",$tsuser);
+    $wormbase->load_to_database($wormbase->autoace,$wormbase->acefiles."/file",$tsuser, $log);
   }
 }
 
@@ -115,10 +115,10 @@ sub parse_briggsae_data {
   $log->write_to("\nLoading briggsae BAC ends from $brig_dir\n===========================\n");
   foreach my $file (@files){
     $log->write_to("\tload $file\n");
-    $wormbase->load_to_database($wormbase->autoace,"$brig_dir/$file","BAC_ends");
+    $wormbase->load_to_database($wormbase->autoace,"$brig_dir/$file","BAC_ends", $log);
   }
   # and the brigpep file
-  $wormbase->load_to_database($wormbase->autoace, $wormbase->database('brigace')."/brigpep.ace","brigpep");
+  $wormbase->load_to_database($wormbase->autoace, $wormbase->database('brigace')."/brigpep.ace","brigpep", $log);
 }
 
 sub parse_blat_data {
@@ -156,7 +156,7 @@ sub parse_blat_data {
  foreach my $file (@files){
     $log->write_to("\tload $file\n");
     my $db = $wormbase->autoace;
-    $wormbase->load_to_database($db,$wormbase->blat."/$file");
+    $wormbase->load_to_database($db,$wormbase->blat."/$file", $log);
   }
 }
 
