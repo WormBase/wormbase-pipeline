@@ -7,7 +7,7 @@
 # by Gary Williams
 #
 # Last updated by: $Author: ar2 $                      
-# Last updated on: $Date: 2006-01-12 12:33:03 $        
+# Last updated on: $Date: 2006-02-24 10:33:36 $        
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -37,7 +37,7 @@ GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
-	    "store"      => \$store,
+	    "store:s"      => \$store,
 	    "output=s"  => \$output,
 	    "proximity=i" => \$proximity,
 	    "side=s"      => \$side,
@@ -81,9 +81,7 @@ if ($operons ne "include" && $operons ne "only" && $operons ne "no") {
     die "Error: option -operons=$operons is invalid (requires 'include', 'only' or 'no')\n";
 }
 
-if ($output eq "") {
-  die "No output file specified\n";
-}
+$output = $wormbase->chromosomes."/intergenic_sequences.dna" unless $output;
 
 ##########################
 # MAIN BODY OF SCRIPT
@@ -118,7 +116,7 @@ foreach my $chromosome (@chromosomes) {
   # CHROMOSOME_X    gene    gene    1316    1935    .       +       .       Gene "WBGene00008351"
 
   print "Loop through Gene GFF file CHROMOSOME_${chromosome}\n" if ($verbose);
-  open (GFF, "< $gffdir/CHROMOSOME_${chromosome}_WBgene.gff") || die "Failed to open GFF file: $gffdir/CHROMOSOME_${chromosome}_WBgene.gff\n\n";
+  open (GFF, "< $gffdir/CHROMOSOME_${chromosome}_gene.gff") || die "Failed to open GFF file: $gffdir/CHROMOSOME_${chromosome}_WBgene.gff\n\n";
   while (<GFF>) {
     chomp;
     s/^\#.*//;
