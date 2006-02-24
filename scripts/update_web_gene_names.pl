@@ -4,8 +4,8 @@
 #
 # completely rewritten by Keith Bradnam from list_loci_designations
 #
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2006-02-22 10:52:39 $      
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2006-02-24 13:46:45 $
 #
 # This script should be run under a cron job and simply update the webpages that show
 # current gene names and sequence connections.  Gets info from geneace.  
@@ -261,7 +261,6 @@ sub make_gene_lists{
 
   my %molecular_name2gene;
   my %gene2molecular_name;
-  my %transposon_genes;
   
   # connect to AceDB using TableMaker, 
   my $geneace = $wormbase->database('geneace');
@@ -293,26 +292,6 @@ sub make_gene_lists{
   }
   close TACE;
 
-  # now fire off second query to get dead genes which were made into Transposons
-  # this is to help Darin
-  $command = "Table-maker -p $geneace/wquery/genes_made_into_transposons.def\nquit\n";
-  open (TACE, "echo '$command' | $tace $geneace |") || print LOG "ERROR: Can't open tace connection to $geneace\n";
-  while (<TACE>) {
-    chomp;
-    # skip any acedb banner text (table maker output has all fields surrounded by "")
-    next if ($_ !~ m/^\"/);
-    # skip acedb prompts
-    next if (/acedb/);
-    # skip empty fields
-    next if ($_ eq "");
-
-    # get rid of quote marks
-    s/\"//g;
-
-    # split the line into various fields
-    my ($gene,$public_name) = split(/\t/, $_) ;
-    $transposon_genes{$gene} = $public_name;
-  }
 
   # set up various output files (first two are reverse of each other)
 
@@ -331,11 +310,6 @@ sub make_gene_lists{
   }
   close(MOL2GENE);
 
-  open (TRANSPOSONS, ">$www/transposon_genes.txt") || die "ERROR: Couldn't open transposon_genes.txt $!\n";
-  foreach my $key (sort keys %transposon_genes){
-    print TRANSPOSONS "$key\t$transposon_genes{$key}\n";
-  }
-  close(TRANSPOSONS);
 
 }
 
