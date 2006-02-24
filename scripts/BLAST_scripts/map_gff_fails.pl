@@ -1,11 +1,11 @@
 #!/usr/local/perl
 
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
 use Coords_converter;
 use Wormbase;
 
-my $database = shift;
-$database = "/wormsrv2/autoace" unless $database;
+my $wormbase = Wormbase->new;
+my $database = $wormbase->autoace;;
 
 #CHROMOSOME_I   waba_coding     similarity      7504218 7504560 378.0000        -       .       Target "Sequence:cb25.fpc2695" 196866 197208 197208,7504218,0
 
