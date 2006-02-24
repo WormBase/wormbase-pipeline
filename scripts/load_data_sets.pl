@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
 # Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2006-02-17 11:32:47 $      
+# Last updated on: $Date: 2006-02-24 10:13:51 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -38,8 +38,9 @@ if ( $store ) {
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
 
-&parse_misc_files if $misc;
-&parse_homol_data if $homol;
+&parse_misc_files    if $misc;
+&parse_homol_data    if $homol;
+&parse_briggsae_data if $brig;
 
 $log->mail();
 exit(0);
@@ -147,7 +148,13 @@ script_template.pl  OPTIONAL arguments:
 
 =over 4
 
-=item -h, Help
+=item -homol 
+
+* load results of farm analyses
+
+=item -misc
+
+*loads static datasets like TEC-RED, gene_predictions, nematode ESTs etc.
 
 =back
 
