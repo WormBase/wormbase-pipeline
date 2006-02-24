@@ -108,7 +108,6 @@ if ( $store ) {
 } else {
   $wormbase = Wormbase->new( -debug   => $debug,
                              -test    => $test,
-			     -farm    => '1'
 			     );
 }
 

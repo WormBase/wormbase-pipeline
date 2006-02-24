@@ -2,20 +2,34 @@
 
 use DBI;
 use strict;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
 use Getopt::Long;
-use Wormbase; 
+use Wormbase;
 use POSIX qw(ceil floor);
+use Log_files;
 
 #######################################
 # command-line options                #
 #######################################
-my ($test, $debug, $help);
+my ($test, $debug, $help, $store);
 
-GetOptions ("debug"   => \$debug,
+GetOptions ("debug:s" => \$debug,
 	    "test"    => \$test,
 	    "help"    => \$help,
-           );
+	    "store:s" => \$store,
+	   );
+
+my $wormbase;
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( 'debug'   => $debug,
+			     'test'    => $test,
+			   );
+}
+
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
 
 
 my $dump_dir = "/acari/work2a/wormpipe/dumps";
@@ -26,17 +40,15 @@ die &help if $help;
 
 $output .= "_test" if $test;
 
-open (OUT,">$output") or die "cant open $output\n";
+open (OUT,">$output") or $log->log_and_die("cant open $output\n");
 
 
 # retrieve hash of acc2clone
 my %acc2clone;
-&FetchData("accession2clone",\%acc2clone);
-
-
+$wormbase->FetchData("accession2clone",\%acc2clone);
 
 my %clonesize;
-&FetchData("clonesize", \%clonesize, glob("~wormpub/DATABASES/autoace/COMMON_DATA"));
+$wormbase->FetchData("clonesize", \%clonesize);
 
 # mysql database parameters
 my $dbhost = "ecs1f";
@@ -45,9 +57,10 @@ my $dbname = "worm_dna";
 $dbname .= "_test" if $test;
 
 my $dbpass = "";
+$log->write_to("dumping TRF from $dbname to $output\n");
 
 my $wormrepeats_DB = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
-      || die "cannot connect to db, $DBI::errstr";
+  or $log->log_and_die("cannot connect to db, $DBI::errstr");
 
 
 #retrieves descriptive information about the repeats from the database
@@ -73,8 +86,7 @@ foreach my $pair (@$ref_results) {
 
   if ($clone) {
     $int_id2clone{$int_id} = $clone;
-  }
-  else {
+  } else {
     print "no clone found for acc $acc : internal_id $int_id\n";
   }
 }
@@ -98,24 +110,24 @@ my $clone;
 foreach my $repeat (@$ref_results) {
   ($contig, $seq_start, $seq_end, $score, $strand, $hstart, $hend, $hid) = @$repeat;
   
-  if($int_id2clone{$contig}) {
-     $clone = $int_id2clone{$contig};
-    if( "$clone" ne "$current_clone" ) {
+  if ($int_id2clone{$contig}) {
+    $clone = $int_id2clone{$contig};
+    if ( "$clone" ne "$current_clone" ) {
       $current_clone = $clone;
       print OUT "\nSequence : \"$clone\"\n";
       print OUT "Feature_data $clone:TRF 1 $clonesize{$clone}\n\n";
       print OUT "Feature_data : $clone:TRF\n";      
     }
-     my $copy_no = ceil(abs($seq_start - $seq_end) / length( $repeat_info{$hid}->{'seq'} ));
-     print OUT "Feature tandem $seq_start $seq_end $score \"$copy_no copies of ",length( $repeat_info{$hid}->{'seq'} ),"mer\"\n";
-   }
-  else {
+    my $copy_no = ceil(abs($seq_start - $seq_end) / length( $repeat_info{$hid}->{'seq'} ));
+    print OUT "Feature tandem $seq_start $seq_end $score \"$copy_no copies of ",length( $repeat_info{$hid}->{'seq'} ),"mer\"\n";
+  } else {
     undef $clone;
   }
 }
 
 close OUT;
 
+$log->mail;
 exit(0);  
 
 sub GetRepeatInfo

@@ -2,20 +2,33 @@
 
 use DBI;
 use strict;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
 use Getopt::Long;
 use Wormbase;
+use Log_files;
 
 #######################################
 # command-line options                #
 #######################################
-my ($test, $debug, $help);
+my ($test, $debug, $help, $store);
 
-GetOptions ("debug"   => \$debug,
+GetOptions ("debug:s" => \$debug,
 	    "test"    => \$test,
 	    "help"    => \$help,
+	    "store:s" => \$store,
            );
 
+my $wormbase;
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( 'debug'   => $debug,
+                             'test'    => $test,
+			     );
+}
+
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
 
 my $dump_dir = "/acari/work2a/wormpipe/dumps";
 $dump_dir = glob("~wormpub/TEST_BUILD/") if $test;
@@ -25,19 +38,17 @@ die &help if $help;
 
 $output .= "_test" if $test;
 
-open (OUT,">$output") or die "cant open $output\n";
+$log->write_to("Dumping to $output\n");
+
+open (OUT,">$output") or $log->log_and_die("cant open $output\n");
 
 
 # retrieve hash of acc2clone
-my $common_data = glob("~wormpipe/dumps");
-
 my %acc2clone;
-&FetchData("accession2clone",\%acc2clone,$common_data);
-
-
+$wormbase->FetchData("accession2clone",\%acc2clone);
 
 my %clonesize;
-&FetchData("clonesize", \%clonesize, $common_data);
+$wormbase->FetchData("clonesize", \%clonesize);
 
 # mysql database parameters
 my $dbhost = "ecs1f";
@@ -46,13 +57,12 @@ my $dbname = "worm_dna";
 my $dbpass = "";
 
 my $wormrepeats_DB = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
-      || die "cannot connect to db, $DBI::errstr";
+    or  $log->log_and_die("cannot connect to db, $DBI::errstr");
 
 
 #retrieves descriptive information about the repeats from the database
 my %repeat_info;
 &GetRepeatInfo;
-
 
 # build hash of internal_id to clone via EMBL accession
 my $sth_f = $wormrepeats_DB->prepare ( q{SELECT
@@ -74,7 +84,7 @@ foreach my $pair (@$ref_results) {
     $int_id2clone{$int_id} = $clone;
   }
   else {
-    print "no clone found for acc $acc : internal_id $int_id\n";
+    $log->write_to->("no clone found for acc $acc : internal_id $int_id\n");
   }
 }
 
@@ -121,7 +131,8 @@ foreach my $repeat (@$ref_results) {
 
 close OUT;
 
-exit(0);  
+$log->mail;
+exit(0);
 
 sub GetRepeatInfo
   {

@@ -4,24 +4,43 @@
 # with small amendment by Keith Bradnam (krb@sanger.ac.uk)
 # dumps wublastx from ensembl mysql (dna) database to an ace file
 
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
 use strict;
 use DBI;
 use Getopt::Long;
 use DB_File;
 use Wormbase;
+use Storable;
+use Log_files;
 
 my ($version, $map, $worm, $start_clone, $modifed);
+my ($debug, $store, $test);
 my @analysis;
 my @clones;
-GetOptions ("version=s"      => \$version,
+GetOptions (
 	    "map"            => \$map,
 	    "worm"           => \$worm,
 	    "restart=s"      => \$start_clone,
 	    "analysis=s"     => \@analysis,
 	    "clone=s"        => \@clones,
-	    "modified"       => \$modifed
-	   );
+	    "modified"       => \$modifed,
+	    "store:s"        => \$store,
+	    "debug:s"        => \$debug,
+	    "test"           => \$test
+	  );
+
+my $wormbase;
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( 'debug'   => $debug,
+                             'test'    => $test,
+			     );
+}
+
+
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
 
 @analysis = split(/,/,join(',',@analysis));
 @clones   = split(/,/,join(',',@clones));
@@ -31,8 +50,7 @@ print "dumping for @analysis\n" if @analysis;
 my $usage = "dump_blastx.pl\n";
 $usage .= "-map  map accessions to names, needed for elegans select if DONT want clone names. Default is to output clone names\n";
 $usage .= "-worm  dump only worm matches\n";
-
-die "Please enter version no \n" unless $version;
+$version = $wormbase->get_wormbase_version;
 
 ####################################################################
 # set some parameters
@@ -93,14 +111,11 @@ my $cos_file = "$helper_files_dir/cos$version.gff";
 my $wormpep_file = glob("~wormpipe/BlastDB/wormpep$version.pep");
 
 unless ( -e $agp_file and -e $wormpep_file and -e $cds_file and -e $cos_file ) {
-  print "missing helper file please check these exist : \n$agp_file\n$cds_file\n$cos_file\n$wormpep_file\n";
-  die;
+  $log->log_and_die("missing helper file please check these exist : \n$agp_file\n$cds_file\n$cos_file\n$wormpep_file\n");
 }
 
 # create output files
 my $dump_dir = "/acari/work2a/wormpipe/dumps/blastx";
-my $log = "$dump_dir/blastx_ensembl.log";
-open (LOG, ">$log") || die "cannot create log file $log\n";
 
 # create a hash of output file handles keyed off orgs
 # this will allow the outputting by org
@@ -112,17 +127,9 @@ $dump_dir .= "/updates" if @clones;
 #  open ($output_ACE{$org}, ">$ace") || die "cannot create ace file $ace\n";
 #}
 
-# make ACE and LOG un-buffered
-my $old_fh = select(LOG);
-$| = 1;
-select($old_fh);
 
-#$old_fh = select(ACE);
-#$| = 1;
-#select($old_fh);
-
-print LOG "DUMPing cosmid wublastx data from mysql to ace [".&now."]\n";
-print LOG "--------------------------------------------------------------------\n\n";
+$log->write_to("DUMPing cosmid wublastx data from mysql to ace\n");
+$log->write_to("--------------------------------------------------------------------\n\n");
 
 ####################################################################
 # read the agp file,
@@ -131,9 +138,9 @@ print LOG "--------------------------------------------------------------------\
 my %accession2version;
 
 
-print LOG "get the accession 2 version mapping from the agp file [".&now."]\n\n";
+$log->write_to("get the accession 2 version mapping from the agp file\n\n");
 
-open (AGP , "$agp_file") || die "cannot read $agp_file";
+open (AGP , "$agp_file") or $log->log_and_die("cannot read $agp_file");
 while (<AGP>) {
   chomp;
   my @ary = split /\t/;
@@ -149,9 +156,9 @@ close AGP;
 ####################################################################
 my %name2id;
 
-print LOG "get the name 2 id mapping for the wormpep proteins [".&now."]\n\n";
+$log->write_to("get the name 2 id mapping for the wormpep proteins\n\n");
 
-FetchData("cds2wormpep",\%name2id,"/nfs/acari/wormpipe/dumps");
+$wormbase->FetchData("cds2wormpep",\%name2id);
 
 
 ####################################################################
@@ -159,9 +166,9 @@ FetchData("cds2wormpep",\%name2id,"/nfs/acari/wormpipe/dumps");
 ####################################################################
 my %cds;
 
-print LOG "get chromosomal cds coordinates [".&now."]\n\n";
+$log->write_to("get chromosomal cds coordinates\n\n");
 
-open (CDS , "$cds_file") || die "cannot read $cds_file";
+open (CDS , "$cds_file") or $log->log_and_die("cannot read $cds_file");
 while (<CDS>) {
   chomp;
   my @ary = split /\t/;
@@ -173,7 +180,7 @@ while (<CDS>) {
     #$name =~ tr/a-z/A-Z/;  -  dont know why it was doing this ! !
     $cds{$name} = [$start, $end];
   } else {
-    die "cannot process $cds_file";
+    $log->log_and_die("cannot process $cds_file");
   }
 }
 close CDS;
@@ -183,9 +190,9 @@ close CDS;
 # read the file with cosmid coordinates
 ####################################################################
 my %cos;
-print LOG "get chromosomal cosmid coordinates [".&now."]\n\n";
+$log->write_to("get chromosomal cosmid coordinates\n\n");
 
-open (COS , "$cos_file") || die "cannot read $cos_file";
+open (COS , "$cos_file") or $log->log_and_die("cannot read $cos_file");
 while (<COS>) {
   chomp;
   my @ary = split /\t/;
@@ -196,7 +203,7 @@ while (<COS>) {
   if ($name) {
     $cos{$name} = [$start, $end];
   } else {
-    die "cannot process $cos_file";
+    $log->log_and_die("cannot process $cos_file");
   }
 }
 close COS;
@@ -209,20 +216,20 @@ close COS;
 
 # this could use Common_data.pm - will investigate -  the file acc2clone.data will need to be copied over 
 my %accession2name;
-FetchData("accession2clone",\%accession2name,"/nfs/acari/wormpipe/dumps");
+$wormbase->FetchData("accession2clone",\%accession2name);
 
 # Open DBM to find out database of HID
-dbmopen my %ACC2DB, "/acari/work2a/wormpipe/dumps/acc2db.dbm", 0666 or die "cannot open acc2db \n";
-open (IPI_LIST, ">/acari/work2a/wormpipe/dumps/ipi_hits_list_x") or die "cant open hitlist\n";
+dbmopen my %ACC2DB, "/acari/work2a/wormpipe/dumps/acc2db.dbm", 0666 or $log->log_and_die("cannot open acc2db \n");
+open (IPI_LIST, ">/acari/work2a/wormpipe/dumps/ipi_hits_list_x") or $log->log_and_die("cant open hitlist\n");
 
 
 
 ####################################################################
 # connect to the Mysql database
 ####################################################################
-print LOG "connect to the mysql database $dbname on $dbhost as $dbuser [".&now."]\n\n";
+$log->write_to("connect to the mysql database $dbname on $dbhost as $dbuser\n\n");
 my $dbh = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseError => 1})
-  || die "cannot connect to db, $DBI::errstr";
+  or $log->log_and_die("cannot connect to db, $DBI::errstr");
 
 
 ####################################################################
@@ -231,7 +238,7 @@ my $dbh = DBI -> connect("DBI:mysql:$dbname:$dbhost", $dbuser, $dbpass, {RaiseEr
 ####################################################################
 my %analysis2org;
 
-print LOG "get mapping of organism to analysisId for each database [".&now."]:\n";
+$log->write_to("get mapping of organism to analysisId for each database :\n");
 
 my $sth = $dbh->prepare ( q{ SELECT analysis_id, db
 			     FROM analysis
@@ -265,9 +272,8 @@ while (my @row = $sth->fetchrow_array) {
   }
 }
 foreach my $anal (sort {$a cmp $b} keys %analysis2org) {
-  print LOG "\t$anal\t=> $analysis2org{$anal}\n";
+  $log->write_to("\t$anal\t=> $analysis2org{$anal}\n");
 }
-print LOG "\n";
 
 ####################################################################
 # prepare sql queries
@@ -327,7 +333,7 @@ my $sth_f = $dbh->prepare ( q{ SELECT dna_align_feature_id,
 ####################################################################
 # loop over all the contigs
 
-print LOG "get all the features (per contig) [".&now."]:\n";
+$log->write_to("get all the features (per contig) \n");
 
 if ($start_clone) {
   $sth_c->execute($start_clone);
@@ -348,19 +354,19 @@ foreach my $aref (@$ref) {
   unless ($map) {
     if (exists $accession2name{$id}) {
       $name = $accession2name{$id};
-      print LOG "\n\tprocessing $name $id $version ($internal_id) of length $length , $fragment_number 50bp fragments [".&now."]\n";
+      $log->write_to("\n\tprocessing $name $id $version ($internal_id) of length $length , $fragment_number 50bp fragments \n");
     } else {
-      print LOG "\nno mapping of accession $id to clone name -> skip it\n\n";
+      $log->write_to("\nno mapping of accession $id to clone name -> skip it\n\n");
       next;
     }
   } else {
     $name = $id;
-    print LOG "\n\tprocessing $name $version ($internal_id) of length $length , $fragment_number 50bp fragments [".&now."]\n";
+    $log->write_to("\n\tprocessing $name $version ($internal_id) of length $length , $fragment_number 50bp fragments \n");
   }
   # check that we have the current version
   #   if ($opt_a) {
   if ($version < $accession2version{$id}) {
-    print LOG "\nold version ($version) of $id, current one is $accession2version{$id} -> skip it\n\n";
+    $log->write_to("\nold version ($version) of $id, current one is $accession2version{$id} -> skip it\n\n");
     next;
     #       }
   }
@@ -395,7 +401,7 @@ foreach my $aref (@$ref) {
       if (($match_start > $cds{$gene_name}->[0] && $match_start < $cds{$gene_name}->[1]) || ($match_end > $cds{$gene_name}->[0] && $match_end < $cds{$gene_name}->[1])) {
 	next;
       }
-
+      next unless $aref->[4];
       unless ($aref->[4] = $name2id{$aref->[4]}) {
 	die "no mapping of protein name ".$aref->[4]." to id";
       }
@@ -446,15 +452,15 @@ foreach my $aref (@$ref) {
 
 
   foreach (sort {$a <=> $b} keys %count) {
-    print LOG "\t\t\t$analysis2org{$_} analysis $_ ($count{$_} HSP's)\n";
+    $log->write_to("\t\t\t$analysis2org{$_} analysis $_ ($count{$_} HSP's)\n");
   }
   # make the feature table querie again, this time per 10kb fragments
   # (this speeds up the analysis of every 50 bp interval quite a lot)
   my @strands = qw(plus minus);
   foreach my $strand (@strands) {
-    print LOG "\t\t$strand strand\n\t\t\t";
+    $log->write_to("\t\t$strand strand\n\t\t\t");
     for (my $n = 0 ; $n < $fragment_number ; $n++) {
-      print LOG "." if $n % 100 == 0;
+      $log->write_to(".") if( $n % 100 == 0);
 
       next unless $strand{$strand}->[$n];
 
@@ -556,11 +562,11 @@ foreach my $aref (@$ref) {
 	}
       }
     }
-    print LOG "\n";
+    $log->write_to("\n");
   }
 
   # loop over all the matches, printing the accepted ones to an ACE file
-  print LOG "\t\toutput\n";
+  $log->write_to("\t\toutput\n");
 
   # if specific analysis selected just have them in the species @ to dump
   # put in hash then @ coz we dont want slimtrembl there twice.
@@ -663,7 +669,7 @@ foreach my $aref (@$ref) {
       } 
     }
   }
-  print LOG "\t\t\t$org -> $count_target targets, $count_accepted accepted ($count_hsp HSP's)\n";
+  $log->write_to("\t\t\t$org -> $count_target targets, $count_accepted accepted ($count_hsp HSP's)\n");
 }
 }
 
@@ -679,13 +685,12 @@ foreach ( keys %output_ACE ) {
   close $output_ACE{$_};
 }
 
-print LOG "cat'ing individual files in to ${dbname}_blastx.ace\n";
+$log->write_to("cat'ing individual files in to ${dbname}_blastx.ace\n");
 system( "cat $dump_dir/*_blastx.ace > /acari/work2a/wormpipe/dumps/${dbname}_blastx.ace");
 
-close LOG;
 print "\nEnd of dump \n";
 
-
+$log->mail();
 
 exit 0;
 sub getPrefix 

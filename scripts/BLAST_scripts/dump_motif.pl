@@ -5,12 +5,15 @@
 # Dumps protein motifs from ensembl mysql (protein) database to an ace file
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-01-13 14:16:46 $
+# Last updated on: $Date: 2006-02-24 15:27:58 $
 
 
 use strict;
 use DBI;
 use Getopt::Long;
+use Wormbase;
+use Storable;
+use Log_files;
 
 my ($WPver, $database, $mysql, $method);
 my ($store, $test, $debug);
@@ -30,11 +33,11 @@ if ( $store ) {
 } else {
   $wormbase = Wormbase->new( -debug   => $debug,
                              -test    => $test,
-			     -farm    => '1'
 			     );
 }
 
 my $log = Log_files->make_build_log($wormbase);
+my $dump_dir = '/acari/work2a/wormpipe/dumps';
 
 # define the names of the methods to be dumped
 my @methods;
@@ -60,7 +63,6 @@ sub now {
 }
 
 # create output files
-my $dump_dir = $wormbase->dump_dir;
 open(ACE,">$dump_dir/".$dbname."_motif_info.ace") || die "cannot create ace file:$!\n";
 open(LOG,">$dump_dir/".$dbname."_motif_info.log") || die "cannot create log file:$!\n";
 
@@ -120,7 +122,7 @@ foreach my $meth (@methods) {
       push (@{$motifs{$prot}} , $line);
     }
     else {
-      $line = "Feature \"$method\" $start $end $score";
+      $line = "Feature \"$meth\" $start $end $score";
       push (@{$motifs{$prot}} , $line);
     }
   }

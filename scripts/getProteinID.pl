@@ -8,9 +8,9 @@
 # written by Dan Lawson
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-02-17 11:32:47 $
+# Last edited on: $Date: 2006-02-24 15:28:39 $
 
-use strict;                                      
+use strict;
 use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
@@ -74,10 +74,10 @@ my $chromosomes_dir = $wormbase->chromosomes; # AUTOACE CHROMSOMES
 
 
 # fetch hashes made by other scripts
-my %acc2clone = &FetchData('accession2clone');
-my %gene2CE   = &FetchData('cds2wormpep');
-my %Ip2Go     = &FetchData('interpro2go');
-my %cds2gene  = &FetchData('cds2wbgene_id');
+my %acc2clone = $wormbase->FetchData('accession2clone');
+my %gene2CE   = $wormbase->FetchData('cds2wormpep');
+my %Ip2Go     = $wormbase->FetchData('interpro2go');
+my %cds2gene  = $wormbase->FetchData('cds2wbgene_id');
 our %swall;
 
 # get the InterPro => GOterm mapping ( space separated ie 'IPR004794' => 'GO:0008703 GO:0008835 GO:0009231 ')
@@ -211,17 +211,12 @@ while (<FILE>) {
 }
 
 
-# now load to autoace if -load specified
-if ($load) {
-    my $command = "autoace_minder.pl -load $ace_dir/acefiles/WormpepACandIDs.ace -tsuser wormpep_IDs";
-    my $status = system($command);
-    if (($status >>8) != 0) {
-	die "ERROR: Loading WormpepACandIDs.ace file failed \$\? = $status\n";
-    }
-}
 
 close FILE;
 close OUT;
+
+# now load to autoace if -load specified
+$wormbase->load_to_database($wormbase->autoace,"$ace_dir/acefiles/WormpepACandIDs.ace", 'wormpep_ID') if ($load);
 
 $log->mail;
 exit(0);

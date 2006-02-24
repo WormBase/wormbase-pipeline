@@ -83,7 +83,7 @@ if ($sequence) {
 
 # open output acefile
 
-my $outputfilename = $wormbase->acefiles."inverted_repeats.ace";
+my $outputfilename = $wormbase->acefiles."/inverted_repeats.ace";
 
 open (ACE, ">$outputfilename") || die "Failed to open output acefile: '$outputfilename'\n";
 

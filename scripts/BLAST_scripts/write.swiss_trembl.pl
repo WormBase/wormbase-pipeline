@@ -6,10 +6,12 @@
 # and deletes all worm, fly, human and yesast entries
 
 use lib $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'}."/BLAST_scripts";
 use strict;
 use Getopt::Long;
 use DB_File;
 use GSI;
+use Wormbase;
 
 my ($swiss, $trembl, $debug, $database, $list, $old, $species);
 my ($test, $store);
@@ -32,18 +34,15 @@ if ( $store ) {
 } else {
   $wormbase = Wormbase->new( -debug   => $debug,
                              -test    => $test,
-			     -farm    => '1'
 			     );
 }
 
 my $log = Log_files->make_build_log($wormbase);
 
-my $wormpipe = $wormbase->wormpipe;
 my $acefiles  = $wormbase->acefiles;
-
-my $wormpipe_dump     = $wormbase->dump_dir;
-my $output_swiss      = "$acefiles/swissproteins.ace";
-my $output_trembl     = "$acefiles/tremblproteins.ace";
+my $wormpipe_dump     = $wormbase->farm_dump;
+my $output_swiss      = "$wormpipe_dump/swissproteins.ace";
+my $output_trembl     = "$wormpipe_dump/tremblproteins.ace";
 my $blastx_file       = "$wormpipe_dump/blastx_ensembl.ace";
 my $blastp_file       = "$wormpipe_dump/blastp_ensembl.ace";
 my $ensembl_info_file = "$wormpipe_dump/ensembl_protein_info.ace";

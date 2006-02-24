@@ -6,8 +6,8 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: wormpub $
-# Last updated on: $Date: 2006-02-13 15:13:03 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2006-02-24 15:27:58 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -38,16 +38,16 @@ GetOptions ("help"        => \$help,
 ###################################################
 # Miscellaneous important variables               # 
 ###################################################
-
+my $wb = Wormbase->new();
 # choose database to query: default is /nfs/disk100/wormpub/DATABASES/geneace
 $database = "/nfs/disk100/wormpub/DATABASES/geneace" unless $database;
 print "Using database $database.\n\n";
 
-my $tace = &tace;          # tace executable path
+my $tace = $wb->tace;          # tace executable path
 my $curr_db = "/nfs/disk100/wormpub/DATABASES/current_DB"; # Used for some cross checking with geneace
 my $def_dir = "$database/wquery";                          # where lots of table-maker definitions are kept
 
-my $rundate = &rundate;                                    # Used by various parts of script for filename creation
+my $rundate = $wb->rundate;                                # Used by various parts of script for filename creation
 my $maintainers = "All";                                   # Default for emailing everyone logfile
 my $caltech_errors = 0;                                    # counter for tracking errors going into Caltech email
 my $jah_errors = 0;                                        # counter for tracking errors going into Caltech email
@@ -82,7 +82,7 @@ if ($ace){
   system("chmod 777 $acefile");
 }
 
-my $next_build_ver = get_wormbase_version() + 1 ; # next build number
+my $next_build_ver = $wb->get_wormbase_version() + 1 ; # next build number
 
 # Set up other log files
 &create_log_files;
@@ -134,15 +134,15 @@ close(JAHLOG);
 close(ACE) if ($ace);
 
 # email everyone specified by $maintainers
-&mail_maintainer("geneace_check: SANGER",$maintainers,$log);
+$wb->mail_maintainer("geneace_check: SANGER",$maintainers,$log);
 
 # Also mail to Erich unless in debug mode or unless there is no errors
-my $interested ="krb\@sanger.ac.uk, emsch\@its.caltech.edu, kimberly\@minerva.caltech.edu";
-&mail_maintainer("geneace_check: CALTECH","$interested",$caltech_log) unless ($debug || $caltech_errors == 0);
+my $interested ="mt3\@sanger.ac.uk, emsch\@its.caltech.edu, kimberly\@minerva.caltech.edu";
+$wb->mail_maintainer("geneace_check: CALTECH","$interested",$caltech_log) unless ($debug || $caltech_errors == 0);
 
 # Email Jonathan Hodgkin subset of errors that he might be able to help with unless
 # in debug mode or no errors
-&mail_maintainer("geneace_check: CGC","cgc\@wormbase.org",$jah_log) unless ($debug || $jah_errors == 0);
+$wb->mail_maintainer("geneace_check: CGC","cgc\@wormbase.org",$jah_log) unless ($debug || $jah_errors == 0);
 
 
 exit(0);
