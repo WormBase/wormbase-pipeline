@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
 # Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2006-02-24 10:13:51 $      
+# Last updated on: $Date: 2006-02-24 10:30:43 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -15,16 +15,17 @@ use Storable;
 ######################################
 
 my ($help, $debug, $test, $verbose, $store, $wormbase);
-my ($homol, $misc, $brig);
+my ($homol, $misc, $brig, $blat);
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
-	    "store:s"      => \$store,
+	    "store:s"    => \$store,
 	    "homol"      => \$homol,
 	    "misc"       => \$misc,
-	    "briggsae"   => \$brig
+	    "briggsae"   => \$brig,
+	    "blat"       => \$blat
 	    );
 
 if ( $store ) {
@@ -41,6 +42,7 @@ my $log = Log_files->make_build_log($wormbase);
 &parse_misc_files    if $misc;
 &parse_homol_data    if $homol;
 &parse_briggsae_data if $brig;
+&parse_blat_data     if $blat;
 
 $log->mail();
 exit(0);
@@ -119,6 +121,46 @@ sub parse_briggsae_data {
   $wormbase->load_to_database($wormbase->autoace, $wormbase->database('brigace')."/brigpep.ace","brigpep");
 }
 
+sub parse_blat_data {
+  $log->write_to("loading BLAT data\n");
+  my @files = (
+	       'autoace.best.embl.ace',	       'autoace.best.est.ace',
+	       'autoace.best.mrna.ace',	       'autoace.best.ncrna.ace',
+	       'autoace.best.ost.ace',	       'autoace.best.tc1.ace',
+	       'autoace.blat.embl.ace',	       'autoace.blat.est.ace',
+	       'autoace.blat.mrna.ace',	       'autoace.blat.ncrna.ace',
+	       'autoace.blat.nematode.ace',    'autoace.blat.nembase.ace',
+	       'autoace.blat.ost.ace',	       'autoace.blat.tc1.ace',
+	       'autoace.blat.washu.ace',       'autoace.ci.est.ace',
+	       'autoace.ci.mrna.ace',	       'autoace.ci.ost.ace',
+	       'autoace.embl.ace',	       'autoace.est.ace',
+	       'autoace.good_introns.est.ace',
+	       'autoace.good_introns.mrna.ace',
+	       'autoace.good_introns.ost.ace',
+	       'autoace.mrna.ace',	       'autoace.ncrna.ace',
+	       'autoace.ost.ace',	       'autoace.tc1.ace',
+	       'virtual_objects.autoace.blat.embl.ace',
+	       'virtual_objects.autoace.blat.est.ace',
+	       'virtual_objects.autoace.blat.mrna.ace',
+	       'virtual_objects.autoace.blat.ncrna.ace',
+	       'virtual_objects.autoace.blat.nematode.ace',
+	       'virtual_objects.autoace.blat.nembase.ace',
+	       'virtual_objects.autoace.blat.ost.ace',
+	       'virtual_objects.autoace.blat.tc1.ace',
+	       'virtual_objects.autoace.blat.washu.ace',
+	       'virtual_objects.autoace.ci.est.ace',
+	       'virtual_objects.autoace.ci.mrna.ace',
+	       'virtual_objects.autoace.ci.ost.ace'
+	      );
+
+ foreach my $file (@files){
+    $log->write_to("\tload $file\n");
+    my $db = $wormbase->autoace;
+    $wormbase->load_to_database($db,$wormbase->blat."/$file");
+  }
+}
+
+
 
 __END__
 
@@ -158,6 +200,18 @@ script_template.pl  OPTIONAL arguments:
 
 =back
 
+=item -brig
+
+*loads data from briggsae eg BAC end and proteins
+
+=back
+
+=item -blat
+
+*loads all of the BLAT data ( this should be done by BLAT but here just in case you need it eg after database corruption)
+
+=back
+
 =over 4
  
 =item -debug, Debug mode, set this to the username who should receive the emailed log messages. The default is that everyone in the group receives them.
@@ -175,7 +229,6 @@ script_template.pl  OPTIONAL arguments:
 =item -verbose, output lots of chatty test messages
 
 =back
-
 
 =head1 REQUIREMENTS
 
