@@ -778,10 +778,22 @@ sub load_to_database {
 
   my $st = stat($file);
   if( $st->size > 50000000 ) {
-    $log->write_to("backing up block files before loading $file\n");
+    $log->write_to("backing up block files before loading $file\n") if $log;
     my $db_dir = $self->autoace."/database";
     my $tar_cmd = "tar -cvf $db_dir/backup".$$.".tar $db_dir/block* $db_dir/database.map $db_dir/log.wrm; gzip $db_dir/backup".$$.".tar";
     $self->run_command("$tar_cmd", $log);
+
+    # remove old backups keeping the one just made and the previous one.
+    my @backups = glob($self->autoace."/database/backup*");
+    my %details;
+    my @sorted;
+    foreach (@backups) {      @tmp = stat($_);      $details{$_} = $tmp[9];    }
+    @sorted = sort{ $details{$b} <=> $details{$a} } keys %details;
+    shift @sorted; shift @sorted; # remove the newest two
+    # . . and delete the rest
+    foreach (@sorted) {
+      unlink;
+    }
   }
 
   #check whether write access is possible.
