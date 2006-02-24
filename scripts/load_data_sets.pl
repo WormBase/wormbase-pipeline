@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
 # Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2006-02-24 12:05:09 $      
+# Last updated on: $Date: 2006-02-24 13:11:37 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -156,7 +156,7 @@ sub parse_blat_data {
  foreach my $file (@files){
     $log->write_to("\tload $file\n");
     my $db = $wormbase->autoace;
-    $wormbase->load_to_database($db,$wormbase->blat."/$file", $log);
+    $wormbase->load_to_database($db,$wormbase->blat."/$file",undef, $log);
   }
 }
 
