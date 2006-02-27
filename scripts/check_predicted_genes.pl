@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2006-02-27 12:46:59 $
+# Last updated on: $Date: 2006-02-27 14:34:47 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
@@ -16,12 +16,20 @@ use Ace;
 use IO::Handle;
 use Getopt::Long;
 
-my ($verbose, $db_path, $log, $basic, $wormbase);
+my ($verbose, $db_path, $log, $basic, $test, $debug);
 
 GetOptions ("verbose"    => \$verbose,
-	    "database=s" => \$db_path, 
+	    "database=s" => \$db_path,
 	    "basic"      => \$basic,
-	    "log=s"      => \$log);
+	    "log=s"      => \$log,
+	    "debug:s"    => \$debug,
+	    "test"       => \$test,
+	   );
+
+my $wormbase = Wormbase->new(
+    -test    => $test,
+    -debug   => $debug,
+);
 
 # verbose model
 # toggle reporting of genes with improper stop/start codons and/or genes which have length's 
