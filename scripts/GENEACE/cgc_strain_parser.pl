@@ -7,47 +7,58 @@
 # Script to convert cgc strain file into ace file for geneace
 # Page download and update upload to geneace has been automated [ck1]
 
-# Last updated by: $Author: mt3 $
-# Last updated on: $Date: 2005-12-09 11:52:01 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2006-02-27 09:55:41 $
 
 use strict;
 use Getopt::Long;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use GENEACE::Geneace;
-
+use Log_files;
+use Storable;
+use Getopt::Long;
 
 #######################
 # check user is wormpub
 #######################
 
+
+my ($help, $debug, $test, $verbose, $store, $load, $wormbase);
+GetOptions ("help"       => \$help,
+            "debug=s"    => \$debug,
+	    "test"       => \$test,
+	    "verbose"    => \$verbose,
+	    "store:s"    => \$store,
+	    "load"       => \$load 
+	   );
+
+
+&usage if ($help);
 my $user = `whoami`; chomp $user;
 if ($user ne "wormpub"){
   print "\nYou have to be wormpub to run this script!\n\n";
   exit(0);
 }
 
-######################
-# command-line options
-######################
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new();
+}
 
-my $help;      # help
-my $load;      # whether to load files to geneace or not
-
-GetOptions ("help"   => \$help,
-            "load"   => \$load);
-
-&usage if ($help);
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
 
 
 #######################
 # misc variables
 #######################
 
-my $path        = "/nfs/disk100/wormpub/DATABASES/geneace/STRAIN_INFO";
-my $geneace_dir = "/nfs/disk100/wormpub/DATABASES/geneace/";
-my $tace = &tace;
-my $rundate = &rundate;
+my $geneace_dir = $wormbase->database('geneace');
+my $path        = $geneace_dir."/STRAIN_INFO";
+my $tace        = $wormbase->tace;
+my $rundate     = $wormbase->rundate;
 
 
 ##########################
@@ -341,6 +352,7 @@ if($load){
 
 print "\nThe script is now going to end.  Goodnight\n\n";
 
+$log->mail;
 exit(0);
 
 ################
