@@ -7,7 +7,7 @@
 # simple script for changing class of gene objects (e.g. CDS->Pseudogene)
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-02-27 14:35:35 $
+# Last edited on: $Date: 2006-02-27 17:06:11 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -81,7 +81,7 @@ $log->write_to("changing gene ");
 # get gene ID if -seq was specified
 # else create a valid Gene object name based on numerical id from -id option
 if ($seq){
-  $log->write_to("$seq" );
+  $log->write_to("$seq " );
   $id = &seq2gene($seq);
 }
 elsif($id){
