@@ -777,8 +777,10 @@ sub load_to_database {
   my $log      = shift;
 
   unless ( -e "$file" and -e $database) {
-    $self->error;
-    $log->write_to("Couldn't find file named: $file or database $database\n");
+    if( $log) {
+      $log->error;
+      $log->write_to("Couldn't find file named: $file or database $database\n");
+    }
     print STDERR "Couldn't find file named: $file or database $database\n";
     return 1;
   }
