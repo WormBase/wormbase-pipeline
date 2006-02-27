@@ -776,20 +776,27 @@ sub load_to_database {
   my $tsuser   = shift;
   my $log      = shift;
 
+  unless ( -e "$file" and -e $database) {
+    $self->error;
+    $log->write_to("Couldn't find file named: $file or database $database\n");
+    print STDERR "Couldn't find file named: $file or database $database\n";
+    return 1;
+  }
+
   my $st = stat($file);
   if( $st->size > 50000000 ) {
     $log->write_to("backing up block files before loading $file\n") if $log;
-    my $db_dir = $self->autoace."/database";
-    my $tar_cmd = "tar -cvf $db_dir/backup".$$.".tar $db_dir/block* $db_dir/database.map $db_dir/log.wrm; gzip $db_dir/backup".$$.".tar";
+    my $db_dir = $database."/database";
+    my $tar_file = "backup.".time.".tar";
+    my $tar_cmd = "tar -cvf $db_dir/$tar_file $db_dir/block* $db_dir/database.map $db_dir/log.wrm; gzip $db_dir/$tar_file";
     $self->run_command("$tar_cmd", $log);
 
     # remove old backups keeping the one just made and the previous one.
-    my @backups = glob($self->autoace."/database/backup*");
+    my @backups = glob("$db_dir/backup*");
     my %details;
     my @sorted;
-    foreach (@backups) {      @tmp = stat($_);      $details{$_} = $tmp[9];    }
-    @sorted = sort{ $details{$b} <=> $details{$a} } keys %details;
-    shift @sorted; shift @sorted; # remove the newest two
+    @sorted = sort @backups;
+    pop @sorted; pop @sorted; # remove the newest two
     # . . and delete the rest
     foreach (@sorted) {
       unlink;
@@ -814,9 +821,7 @@ sub load_to_database {
 
   $tsuser =~ s/\./_/g;
 
-  unless ( -e "$file" ) {
-    die " Couldn't find file named: $file\n";
-  }
+
   my $command = "pparse $file\nsave\nquit\n";
   my $tace = $self->tace;
 
