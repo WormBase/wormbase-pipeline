@@ -6,13 +6,16 @@
 #
 # simple script for changing class of gene objects (e.g. CDS->Pseudogene)
 #
-# Last edited by: $Author: mt3 $
-# Last edited on: $Date: 2005-12-12 08:59:34 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2006-02-27 14:35:35 $
 
 use strict;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
+use Log_files;
+use Storable;
+
 
 ###################################################
 # misc variables and command line options         # 
@@ -26,6 +29,7 @@ my $who;                     # Person ID for new genes being created (defaults t
 my $person = "WBPerson2970"; # default
 my $load;                    # load results to geneace (default is to just write an ace file)
 my $verbose;                 # toggle extra (helpful?) output to screen
+my $store;
 
 # hash for class lookups
 my %change = ("CP" => ["CDS", "Pseudogene"],
@@ -45,32 +49,46 @@ GetOptions ("input=s"   => \$input,
 	    "class=s"   => \$class,
 	    "who=i"     => \$who,
 	    "load"      => \$load,
-	    "verbose"   => \$verbose);
+	    "verbose"   => \$verbose,
+	    "store:s"   => \$store
+);
+
+my $wormbase;
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new();
+}
+
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
 
 &check_command_line_options;
-
 
 ############################################################
 # set database path, open connection and open output file
 ############################################################
 
-my $tace = &tace;
-my $database = "/nfs/disk100/wormpub/DATABASES/geneace";
+my $tace = $wormbase->tace;
+my $database = $wormbase->database('geneace');
 
 my $db = Ace->connect(-path  => $database,
 		      -program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
 
-open(OUT, ">/nfs/disk100/wormpub/DATABASES/geneace/changegene.ace") || die "Can't write to output file\n";
+open(OUT, ">$database/changegene.ace") || die "Can't write to output file $database/changegene.ace \n";
 
-
+$log->write_to("changing gene ");
 # get gene ID if -seq was specified
 # else create a valid Gene object name based on numerical id from -id option
 if ($seq){
+  $log->write_to("$seq" );
   $id = &seq2gene($seq);
 }
 elsif($id){
   $id = "WBGene" . sprintf("%08d",$id);
 }
+
+$log->write_to("$id\n") if $id;
 
 
 
@@ -119,14 +137,9 @@ $db->close;
 close(OUT);
 
 # load information to geneace if -load is specified
-if ($load){
-  my $command = "pparse /nfs/disk100/wormpub/DATABASES/geneace/changegene.ace\nsave\nquit\n";
-  open (GENEACE,"| $tace -tsuser \"mt3\" /nfs/disk100/wormpub/DATABASES/geneace") || die "Failed to open pipe to /nfs/disk100/wormpub/DATABASES/geneace\n";
-  print GENEACE $command;
-  close GENEACE;
-}
+$wormbase->load_to_database($database, "$database/changegene.ace", 'mt3') if $load;
 
-
+$log->mail;
 
 exit(0);
 
