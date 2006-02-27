@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
 # Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2006-02-27 13:57:17 $      
+# Last updated on: $Date: 2006-02-27 21:59:46 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -48,19 +48,22 @@ $log->mail();
 exit(0);
 
 sub parse_misc_files {
-
+  my @nem_files = ("other_nematode_ESTs.ace", "nembase_nematode_contigs.ace", "washu_nematode_contigs.ace");
+  foreach (@nem_files) {
+    $wormbase->run_command("cp ".$wormbase->wormpub."/analysis/ESTs/$_ ".$wormbase->acefiles."/") unless -e ($wormbase->acefiles."/$_");
+  }
   my %files_to_load = (
-		       $wormbase->misc_dynamic."/misc_genefinder.ace"           => "genefinder_predictions",
-		       $wormbase->misc_dynamic."/misc_twinscan.ace"             => "twinscan_predictions"  ,
-		       $wormbase->misc_dynamic."/misc_TEC_RED_homol_data.ace"   => "TEC_RED"               ,
-		       $wormbase->misc_dynamic."/misc_TEC_RED_homol.ace"        => "TEC_RED"               ,
-		       $wormbase->misc_dynamic."/WS145_refseq.ace"              =>  'refseq_IDs'           ,
-		       $wormbase->misc_dynamic."/WS145_aceview.ace"             =>  'aceview_IDs'          ,
-		       $wormbase->misc_static."/ortholog_WS131.ace"             => "briggsae_orthologs"    ,
+#		       $wormbase->misc_dynamic."/misc_genefinder.ace"           => "genefinder_predictions",
+#		       $wormbase->misc_dynamic."/misc_twinscan.ace"             => "twinscan_predictions"  ,
+#		       $wormbase->misc_dynamic."/misc_TEC_RED_homol_data.ace"   => "TEC_RED"               ,
+#		       $wormbase->misc_dynamic."/misc_TEC_RED_homol.ace"        => "TEC_RED"               ,
+#		       $wormbase->misc_dynamic."/WS145_refseq.ace"              =>  'refseq_IDs'           ,
+#		       $wormbase->misc_dynamic."/WS145_aceview.ace"             =>  'aceview_IDs'          ,
+#		       $wormbase->misc_static."/ortholog_WS131.ace"             => "briggsae_orthologs"    ,
 		       $wormbase->acefiles."/other_nematode_ESTs.ace"           => 'nematode_ESTs'         ,
 		       $wormbase->acefiles."/nembase_nematode_contigs.ace"      => 'nembase_ESTs'          ,
 		       $wormbase->acefiles."/washu_nematode_contigs.ace"        => 'washu_ESTs'            ,
-		       $wormbase->wormpub."/analysis/GI_numbers/GI_numbers.ace" => "gi_number"             ,
+#		       $wormbase->wormpub."/analysis/GI_numbers/GI_numbers.ace" => "gi_number"             ,
 		      );
 
   $log->write_to("Loading files to ".$wormbase->autoace."\n==================================\n");
@@ -96,7 +99,7 @@ sub parse_homol_data {
   foreach my $file ( @files2Load ) {
     my $tsuser = substr($file,0,-4); #file name without ace
     $log->write_to("\tloading $file -tsuser -$tsuser\n");
-    $wormbase->load_to_database($wormbase->autoace,$wormbase->acefiles."/file",$tsuser, $log);
+    $wormbase->load_to_database($wormbase->autoace,$wormbase->acefiles."/$file",$tsuser, $log);
   }
 }
 
@@ -110,7 +113,7 @@ sub parse_briggsae_data {
 	       "bac_ends_unique.ace"
 	      );
 
-  my $brig_dir = $wormbase->database('briggsae')."/BAC_ENDS";
+  my $brig_dir = $wormbase->database('brigace')."/BAC_ENDS";
   $log->write_to("\nLoading briggsae BAC ends from $brig_dir\n===========================\n");
   foreach my $file (@files){
     $log->write_to("\tload $file\n");
