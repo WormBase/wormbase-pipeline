@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2005-12-19 15:48:43 $
+# Last updated on: $Date: 2006-02-27 12:46:59 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
@@ -16,7 +16,7 @@ use Ace;
 use IO::Handle;
 use Getopt::Long;
 
-my ($verbose, $db_path, $log, $basic);
+my ($verbose, $db_path, $log, $basic, $wormbase);
 
 GetOptions ("verbose"    => \$verbose,
 	    "database=s" => \$db_path, 
@@ -38,7 +38,7 @@ die "Please use -database <path> specify a valid database directory.\n\n" if (!d
 
 # Specify which tace to use if you are using -program flag
 
-my $tace = &tace;
+my $tace = $wormbase->tace;
 my $db = Ace->connect(-path=>$db_path, -program=>$tace) || die "Couldn't connect to $db_path\n", Ace->error;
 
 
