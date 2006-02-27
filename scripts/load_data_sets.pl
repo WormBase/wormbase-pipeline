@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
 # Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2006-02-24 13:11:37 $      
+# Last updated on: $Date: 2006-02-27 13:57:17 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -82,7 +82,6 @@ sub parse_homol_data {
 		    "worm_brigpep_motif_info.ace",
 		    #protein info
 		    "ensembl_protein_info.ace",
-		    "brigpep.ace",
 		    "worm_pep_interpro_motif_info.ace",
 		    "worm_brigpep_interpro_motif_info.ace",
 		    #other data
@@ -124,21 +123,15 @@ sub parse_briggsae_data {
 sub parse_blat_data {
   $log->write_to("loading BLAT data\n");
   my @files = (
-	       'autoace.best.embl.ace',	       'autoace.best.est.ace',
-	       'autoace.best.mrna.ace',	       'autoace.best.ncrna.ace',
-	       'autoace.best.ost.ace',	       'autoace.best.tc1.ace',
 	       'autoace.blat.embl.ace',	       'autoace.blat.est.ace',
 	       'autoace.blat.mrna.ace',	       'autoace.blat.ncrna.ace',
 	       'autoace.blat.nematode.ace',    'autoace.blat.nembase.ace',
 	       'autoace.blat.ost.ace',	       'autoace.blat.tc1.ace',
 	       'autoace.blat.washu.ace',       'autoace.ci.est.ace',
 	       'autoace.ci.mrna.ace',	       'autoace.ci.ost.ace',
-	       'autoace.embl.ace',	       'autoace.est.ace',
 	       'autoace.good_introns.est.ace',
 	       'autoace.good_introns.mrna.ace',
 	       'autoace.good_introns.ost.ace',
-	       'autoace.mrna.ace',	       'autoace.ncrna.ace',
-	       'autoace.ost.ace',	       'autoace.tc1.ace',
 	       'virtual_objects.autoace.blat.embl.ace',
 	       'virtual_objects.autoace.blat.est.ace',
 	       'virtual_objects.autoace.blat.mrna.ace',
