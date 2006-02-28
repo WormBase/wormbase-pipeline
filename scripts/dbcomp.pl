@@ -6,7 +6,7 @@
 # Compares this number to those from a second database.
 #
 # Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2006-02-17 11:32:47 $      
+# Last updated on: $Date: 2006-02-28 17:45:23 $      
 
 
 use strict;                                      
@@ -82,10 +82,10 @@ my $exec        = $wormbase->tace;
 #################################################################
 
 $dbname_1    = "WS${WS_previous}";
-$db_1        = "$basedir/$dbname_1"; 
+$db_1        = $wormbase->database("WS${WS_previous}");
 
 $dbname_2    = "WS${WS_current}";
-$db_2        = "$basedir/autoace";
+$db_2        = $wormbase->autoace;
 
 # First alternative database specified?
 if ($database) {
