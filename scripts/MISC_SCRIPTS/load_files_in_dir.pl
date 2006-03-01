@@ -31,7 +31,7 @@ else {
 }
 
 my $log = Log_files->make_build_log($wormbase);
-
+$tace = $wormbase->tace;
 $database = $database ? $database : $wormbase->autoace;
 
 $log->log_and_die("bad options") unless (-d $dir and -e $database);
