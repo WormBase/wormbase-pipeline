@@ -4,8 +4,8 @@
 #
 # backup database and compare to last backed up database to look for lost data
 #
-# Last updated by: $Author: wormpub $     
-# Last updated on: $Date: 2006-02-13 14:59:03 $      
+# Last updated by: $Author: ar2 $     
+# Last updated on: $Date: 2006-03-01 09:55:49 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -18,33 +18,36 @@ use Carp;
 # variables and command-line options # 
 ######################################
 
-our ($help,$debug,$log,@backups, $just_compare);
+our ($help, $debug, @backups, $just_compare, $store);
 my $db;
-our $backup_dir = "/nfs/disk100/wormpub/DATABASES/BACKUPS";
-our $date = `date +%y%m%d`; chomp $date;
-my $exec        = &tace;
 
 GetOptions (
 	    "help"           => \$help,
 	    "db=s"           => \$db,
             "debug:s"        => \$debug,
 	    "just_compare=s" => \$just_compare,
+	    "store:s"        => \$store
 	   );
 
-my $base_dir = "/nfs/disk100/wormpub/DATABASES";
-my $scripts = $ENV{'CVS_DIR'};
+my $wormbase;
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug, 
+			     -test    => 1
+			   );
+}
 
-# Default logs mail to all.
-our $maintainers = "All";
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
 
+my $base_dir    = $wormbase->wormpub."/DATABASES";
+our $backup_dir = $base_dir."/BACKUPS";
+my $date        = $wormbase->rundate;
+my $exec        = $wormbase->tace;
 
 # Check for mandatory/correct command line options
 &check_options($db);
-
-
-# Create log files
-&create_log_files;
-
 
 # Look to see what backups are already there, make new backup if appropriate
 &find_and_make_backups($db) unless $just_compare;
@@ -55,8 +58,7 @@ our $maintainers = "All";
 
 
 # tidy up, email log
-close (LOG);
-&mail_maintainer("$db backup and comparison",$maintainers,$log);
+$log->mail;
 exit (0);
 
 # C'est la fin
@@ -82,19 +84,14 @@ sub check_options{
   &usage("Help") if ($help);
   &usage("db") if (!$db);
   if( $just_compare ) {
-    die "$db doesn't exist\n" unless ( -e $db );
-    die "$just_compare doesn't exist\n" unless ( -e $just_compare );
-    print "Just comparing $db and $just_compare\n\n";
+    $log->log_and_die("$db doesn't exist\n") unless ( -e $db );
+    $log->log_and_die("$just_compare doesn't exist\n") unless ( -e $just_compare );
+    $log->write_to("Just comparing $db and $just_compare\n\n");
   }
   else  {
     &usage("db") unless (($db eq "camace") || ($db eq "geneace"));
   }
 
-  # Use debug mode?
-  if($debug){
-    print "DEBUG = \"$debug\"\n\n";
-    ($maintainers = $debug . '\@sanger.ac.uk');
-  }
 }
 
 
@@ -117,28 +114,25 @@ sub find_and_make_backups{
 
   # quit if backup has already been made for today
   if($date eq $backups[0]){
-    print LOG "Last backup is dated today which means no backup is needed\n";
-    print LOG "This script is ending early.  Goodbye\n\n";
-    &mail_maintainer("$db backup and comparison",$maintainers,$log);    
+    $log->write_to("Last backup is dated today which means no backup is needed\n");
+    $log->log_and_die("This script is ending early.  Goodbye\n\n");
+    
     exit(0);
   }
   # otherwise make a new backup
   else{
     # keep TransferDB logs in backup directory
-    chdir("$backup_dir") || print LOG "Couldn't cd to $backup_dir\n";
-    print LOG "Making new backup - ${db}_backup\.${date}\n";
-    my $return = system("perl5.6.1 $scripts/TransferDB.pl -start $base_dir/$db -end ${backup_dir}/${db}_backup\.${date} -database -wspec -name ${db}\.${date}");
-print LOG "\nYou have made ${db}_backup\.${date} which is a copy of $base_dir/$db\n";
-print LOG "\nThe command:\nperl $scripts/TransferDB.pl\n-start $base_dir/$db \n-end ${backup_dir}/${db}_backup\.${date}\n-database \n-wspec \n-name ${db}\.${date}\nwas used in this run.\n\n";
+    chdir("$backup_dir") || $log->write_to("Couldn't cd to $backup_dir\n");
+    $log->write_to("Making new backup - ${db}_backup\.${date}\n");
+    my $return = $wormbase->run_script("TransferDB.pl -start $base_dir/$db -end ${backup_dir}/${db}_backup\.$date -database -wspec -name ${db}\.$date", $log);
+    $log->write_to("\nYou have made ${db}_backup\.${date} which is a copy of $base_dir/$db\n");
+    $log->write_to("\nThe command:\nperl TransferDB.pl\n-start $base_dir/$db \n-end ${backup_dir}/${db}_backup\.${date}\n-database \n-wspec \n-name ${db}\.${date}\nwas used in this run.\n\n");
     if($return != 0){
-      print LOG "ERROR: Couldn't run TransferDB.pl correctly, \nusing the command:\nperl $scripts/TransferDB.pl -start $base_dir/$db -end ${backup_dir}/${db}_backup\.${date} -database -wspec -name ${db}\.${date} for TransferDB.\n";
-      close(LOG);
-      &mail_maintainer("$db backup and comparison",$maintainers,$log);    
-      exit;
+      $log->log_and_die("ERROR: Couldn't run TransferDB.pl correctly, \nusing the command:\nperl TransferDB.pl -start $base_dir/$db -end ${backup_dir}/${db}_backup\.${date} -database -wspec -name ${db}\.${date} for TransferDB.\n");
     }
     # Now need to remove the oldest database (assuming that there are now five backups).
     if (scalar(@backups) > "3"){
-      print LOG "Removing oldest backup - ${db}_backup\.${backups[3]}\n\n";
+      $log->write_to("Removing oldest backup - ${db}_backup\.${backups[3]}\n\n");
       system("rm -rf ${backup_dir}/${db}_backup\.${backups[3]}");
     }
   }
@@ -165,10 +159,10 @@ sub compare_backups{
     $db_name2 = $just_compare;
   }
 
-  print LOG "First database:  $db_name1\n";
-  print LOG "Second database: $db_name2\n\n";
-  print LOG "Objects lost from the first database (in comparison to second database):\n";
-  print LOG "------------------------------------------------------------------------\n\n";
+  $log->write_to("First database:  $db_name1\n");
+  $log->write_to("Second database: $db_name2\n\n");
+  $log->write_to("Objects lost from the first database (in comparison to second database):\n");
+  $log->write_to("------------------------------------------------------------------------\n\n");
 
   my $counter = 1; # for indexing each class to be counted
 
@@ -184,28 +178,6 @@ sub compare_backups{
    $counter++;
  }
   
-}
-
-#############################################
-
-sub create_log_files{
-  # Create history logfile for script activity analysis
-  $0 =~ m/\/*([^\/]+)$/; system ("touch /nfs/disk100/wormpub/logs/history/$1.`date +%y%m%d`");
-
-  # create main log file using script name for
-  my $script_name = $1;
-  $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
-  my $rundate     = `date +%y%m%d`; chomp $rundate;
-  $log        = "/nfs/disk100/wormpub/logs/$script_name.$rundate.$$";
-
-  open (LOG, ">$log") or croak "cant open $log";
-  print LOG "=============================================\n";
-  print LOG "$script_name\n";
-  print LOG "started at ",`date`;
-  print LOG "=============================================\n\n";
-
-  # open two main output files to store results
-  LOG->autoflush();
 }
 
 ##########################################
@@ -268,7 +240,7 @@ EOF
   while (<COMM>) {
     next if (/\/\//);
     # Only write to log file where db1 has lost data in respect to db2 (older database)
-    print LOG "$1\n" if (/^\s+(\S+.+)/);
+    $log->write_to("$1\n") if (/^\s+(\S+.+)/);
 
   }
   
