@@ -5,7 +5,7 @@
 # A script to make multiple copies of camace for curation, and merge them back again
 #
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2006-02-14 15:01:46 $
+# Last edited on: $Date: 2006-03-02 11:54:08 $
 
 
 use strict;
@@ -27,9 +27,9 @@ my $update;                # Update current database
 my $debug;                 # Debug option
 my $help;                  # Help menu
 my $version;               # Removes final wormsrv2 dependancy.
-#my $store;                # Storable not needed as this is not a build script!
-#my $test;
-#my $wormbase,
+my $store;                # Storable not needed as this is not a build script!
+my $test;
+my $wormbase,
 
 GetOptions (
             "all"        => \$all,
@@ -40,9 +40,9 @@ GetOptions (
 	    "update"     => \$update,
 	    "help"       => \$help,
 	    "debug"      => \$debug,
-#	    "version:s"  => \$version,
-#	    "store"      => \$store,
-#	    "test"       => \$test,
+	    "version:s"  => \$version,
+	    #"store"      => \$store,
+	    #"test"       => \$test,
 	   );
 
 
@@ -50,14 +50,14 @@ GetOptions (
 # Help pod if needed
 &usage("Help") if ($help);
 
-#if ($store) {
-#  $wormbase = retrieve($store) or croak ("Can't restore wormbase from $store\n");
-#} 
-#else {
-#  $wormbase = Wormbase->new( -debug => $debug,
-#			     -test => $test,
-#			     );
-#}
+if ($store) {
+  $wormbase = retrieve($store) or croak ("Can't restore wormbase from $store\n");
+} 
+else {
+  $wormbase = Wormbase->new( -debug => $debug,
+			     -test => $test,
+			     );
+}
 
 my $tace = $wormbase->tace;
 my $WS_version = $version;
