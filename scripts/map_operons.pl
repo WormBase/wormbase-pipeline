@@ -3,7 +3,7 @@
 # map_operons.pl
 
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-02-23 16:02:01 $
+# Last edited on: $Date: 2006-03-02 17:48:21 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -61,11 +61,11 @@ foreach my $operon(@operons) {
     $op_start =  $gene_span{$gene}->{'start'} if (!(defined $op_start) or $op_start > $gene_span{$gene}->{'start'});
     $op_end   =  $gene_span{$gene}->{'end'}   if (!(defined $op_end)   or $op_end   < $gene_span{$gene}->{'end'});
     $op_strand = $gene_span{$gene}->{'strand'}if(!(defined $op_strand) or $op_strand eq $gene_span{$gene}->{'strand'});
-    $op_strand = $gene_span{$gene}->{'chrom'};
+    $op_strand = $gene_span{$gene}->{'chrom'} if $gene_span{$gene}->{'chrom'};
   }
 
   print OUT "\nSequence : $op_strand\nOperon $operon ";
-  ($op_start < $op_end) ? print OUT "$op_start $op_end" : print OUT "$op_end $op_start";
+  ($op_strand eq '+') ? print OUT "$op_start $op_end" : print OUT "$op_end $op_start";
   print OUT "\n";
 }
 
