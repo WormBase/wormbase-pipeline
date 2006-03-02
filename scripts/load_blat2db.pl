@@ -5,31 +5,34 @@
 # deletes existent BLAT data and /or reads in BLAT data for a given database
 # 19.02.02 Kerstin Jekosch
 #
-# 030507 : dl  : Update tace queries to restrict deleted/uploaded Homol_data and Feature data class objects
-# 030507 : dl  : Upload OST data as part of script
-
 # Last edited by: $Author: pad $
-# Last edited on: $Date: 2005-12-19 15:15:15 $
+# Last edited on: $Date: 2006-03-02 11:53:10 $
 use strict;
 use Getopt::Long;
-use lib "/wormsrv2/scripts/";
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 
-my $tace =  &tace;
-
-my ($load,$delete,$dbdir,$help,$all);
+my ($load,$delete,$dbdir,$help,$all,$wormbase,$test,$debug);
 GetOptions (
 	    "load"    => \$load,
 	    "delete"  => \$delete,
 	    "all"     => \$all,
 	    "dbdir=s" => \$dbdir,
-	    "h"	      => \$help);
+	    "h"	      => \$help,
+	    "debug=s" => \$debug);
+
+$wormbase = Wormbase->new( -debug => $debug,
+			     -test => $test,
+			     );
+
+my $tace =  $wormbase->tace;
+my $blat_dir = "/nfs/disk100/wormpub/BUILD/autoace/BLAT";
 
 print STDERR "Give the full path for the database you want to modify!\n" unless ($dbdir);
 print STDERR "usage load_blat2db.pl <-options: load/delete or all for both> -dbdir <path to your database>\n" if ($help);
 
 #Can you get write access?
-my $access = &check_write_access($dbdir);
+my $access = $wormbase->check_write_access($dbdir);
 die "You do not have write access for $dbdir\n" if ($access eq "no");
 
 
@@ -76,81 +79,81 @@ sub load {
 my $command;
 if ($dbname =~ /autoace/) {
 $command=<<END;
-pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.blat.est.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.blat.ost.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.blat.mrna.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.blat.embl.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.blat.nembase.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.blat.washu.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.blat.nematode.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.est.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.ost.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.mrna.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.autoace.ci.embl.ace 
+pparse $blat_dir/virtual_objects.autoace.blat.est.ace 
+pparse $blat_dir/virtual_objects.autoace.blat.ost.ace 
+pparse $blat_dir/virtual_objects.autoace.blat.mrna.ace 
+pparse $blat_dir/virtual_objects.autoace.blat.embl.ace 
+pparse $blat_dir/virtual_objects.autoace.blat.nembase.ace 
+pparse $blat_dir/virtual_objects.autoace.blat.washu.ace 
+pparse $blat_dir/virtual_objects.autoace.blat.nematode.ace 
+pparse $blat_dir/virtual_objects.autoace.ci.est.ace 
+pparse $blat_dir/virtual_objects.autoace.ci.ost.ace 
+pparse $blat_dir/virtual_objects.autoace.ci.mrna.ace 
+pparse $blat_dir/virtual_objects.autoace.ci.embl.ace 
 save
-pparse /wormsrv2/autoace/BLAT/autoace.blat.ost.ace            
-pparse /wormsrv2/autoace/BLAT/autoace.blat.mrna.ace 
-pparse /wormsrv2/autoace/BLAT/autoace.blat.embl.ace 
-pparse /wormsrv2/autoace/BLAT/autoace.blat.nembase.ace
-pparse /wormsrv2/autoace/BLAT/autoace.blat.washu.ace
-pparse /wormsrv2/autoace/BLAT/autoace.blat.nematode.ace
-pparse /wormsrv2/autoace/BLAT/autoace.good_introns.ost.ace 
-pparse /wormsrv2/autoace/BLAT/autoace.good_introns.est.ace 
-pparse /wormsrv2/autoace/BLAT/autoace.good_introns.mrna.ace 
-pparse /wormsrv2/autoace/BLAT/autoace.good_introns.embl.ace 
+pparse $blat_dir/autoace.blat.ost.ace            
+pparse $blat_dir/autoace.blat.mrna.ace 
+pparse $blat_dir/autoace.blat.embl.ace 
+pparse $blat_dir/autoace.blat.nembase.ace
+pparse $blat_dir/autoace.blat.washu.ace
+pparse $blat_dir/autoace.blat.nematode.ace
+pparse $blat_dir/autoace.good_introns.ost.ace 
+pparse $blat_dir/autoace.good_introns.est.ace 
+pparse $blat_dir/autoace.good_introns.mrna.ace 
+pparse $blat_dir/autoace.good_introns.embl.ace 
 save 
-pparse /wormsrv2/autoace/BLAT/autoace.blat.est.ace            
+pparse $blat_dir/autoace.blat.est.ace            
 save
 quit
 END
 }
 elsif ($dbname =~ /camace/) {
 $command=<<END;
-pparse /wormsrv2/autoace/BLAT/virtual_objects.camace.blat.est.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.camace.blat.ost.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.camace.blat.mrna.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.camace.blat.embl.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.camace.blat.nembase.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.camace.blat.washu.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.camace.blat.nematode.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.camace.ci.est.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.camace.ci.ost.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.camace.ci.mrna.ace 
+pparse $blat_dir/virtual_objects.camace.blat.est.ace 
+pparse $blat_dir/virtual_objects.camace.blat.ost.ace 
+pparse $blat_dir/virtual_objects.camace.blat.mrna.ace 
+pparse $blat_dir/virtual_objects.camace.blat.embl.ace 
+pparse $blat_dir/virtual_objects.camace.blat.nembase.ace 
+pparse $blat_dir/virtual_objects.camace.blat.washu.ace 
+pparse $blat_dir/virtual_objects.camace.blat.nematode.ace 
+pparse $blat_dir/virtual_objects.camace.ci.est.ace 
+pparse $blat_dir/virtual_objects.camace.ci.ost.ace 
+pparse $blat_dir/virtual_objects.camace.ci.mrna.ace 
 save
-pparse /wormsrv2/autoace/BLAT/camace.blat.ost.ace            
-pparse /wormsrv2/autoace/BLAT/camace.blat.mrna.ace 
-pparse /wormsrv2/autoace/BLAT/camace.blat.embl.ace 
-pparse /wormsrv2/autoace/BLAT/camace.good_introns.est.ace 
-pparse /wormsrv2/autoace/BLAT/camace.good_introns.ost.ace 
-pparse /wormsrv2/autoace/BLAT/camace.good_introns.mrna.ace 
+pparse $blat_dir/camace.blat.ost.ace            
+pparse $blat_dir/camace.blat.mrna.ace 
+pparse $blat_dir/camace.blat.embl.ace 
+pparse $blat_dir/camace.good_introns.est.ace 
+pparse $blat_dir/camace.good_introns.ost.ace 
+pparse $blat_dir/camace.good_introns.mrna.ace 
 save 
-pparse /wormsrv2/autoace/BLAT/camace.blat.est.ace            
+pparse $blat_dir/camace.blat.est.ace            
 save
 quit
 END
 }
 elsif ($dbname =~ /stlace/) {
 $command=<<END;
-pparse /wormsrv2/autoace/BLAT/virtual_objects.stlace.blat.est.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.stlace.blat.ost.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.stlace.blat.mrna.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.stlace.blat.embl.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.stlace.blat.nembase.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.stlace.blat.washu.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.stlace.blat.nematode.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.stlace.ci.est.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.stlace.ci.ost.ace 
-pparse /wormsrv2/autoace/BLAT/virtual_objects.stlace.ci.mrna.ace 
+pparse $blat_dir/virtual_objects.stlace.blat.est.ace 
+pparse $blat_dir/virtual_objects.stlace.blat.ost.ace 
+pparse $blat_dir/virtual_objects.stlace.blat.mrna.ace 
+pparse $blat_dir/virtual_objects.stlace.blat.embl.ace 
+pparse $blat_dir/virtual_objects.stlace.blat.nembase.ace 
+pparse $blat_dir/virtual_objects.stlace.blat.washu.ace 
+pparse $blat_dir/virtual_objects.stlace.blat.nematode.ace 
+pparse $blat_dir/virtual_objects.stlace.ci.est.ace 
+pparse $blat_dir/virtual_objects.stlace.ci.ost.ace 
+pparse $blat_dir/virtual_objects.stlace.ci.mrna.ace 
 save
-pparse /wormsrv2/autoace/BLAT/stlace.blat.ost.ace 
-pparse /wormsrv2/autoace/BLAT/stlace.blat.mrna.ace 
-pparse /wormsrv2/autoace/BLAT/stlace.blat.embl.ace 
-pparse /wormsrv2/autoace/BLAT/stlace.good_introns.est.ace 
-pparse /wormsrv2/autoace/BLAT/stlace.good_introns.ost.ace 
-pparse /wormsrv2/autoace/BLAT/stlace.good_introns.mrna.ace 
-pparse /wormsrv2/autoace/BLAT/stlace.good_introns.embl.ace 
+pparse $blat_dir/stlace.blat.ost.ace 
+pparse $blat_dir/stlace.blat.mrna.ace 
+pparse $blat_dir/stlace.blat.embl.ace 
+pparse $blat_dir/stlace.good_introns.est.ace 
+pparse $blat_dir/stlace.good_introns.ost.ace 
+pparse $blat_dir/stlace.good_introns.mrna.ace 
+pparse $blat_dir/stlace.good_introns.embl.ace 
 save 
-pparse /wormsrv2/autoace/BLAT/stlace.blat.est.ace            
+pparse $blat_dir/stlace.blat.est.ace            
 save
 quit
 END
