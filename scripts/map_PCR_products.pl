@@ -105,23 +105,7 @@ foreach my $chromosome (@chromosomes) {
     my %pcr;
 
     # Get PCR_product info from split GFF file
-    open( GFF_in, "<$gffdir/CHROMOSOME_${chromosome}_GenePairs.gff" )
-      || die "Failed to open PCR_product gff file\n\n";
-    while (<GFF_in>) {
-        chomp;
-        s/\#.*// if !(/\".+\#.+\"/);
-        next unless /\S/;
-        my @f = split /\t/;
-
-        my ($name) = ( $f[8] =~ /PCR_product \"(.*)\"$/ );
-        unless ($name) {
-            $log->write_to("ERROR: Cant get name from $f[8]\n");
-            next;
-        }
-        $pcr{$name} = [ $f[3], $f[4] ];
-        print "PCR_product : '$name'\n" if ($verbose);
-    }
-    close(GFF_in);
+    &get_PCRs_from_GFF($chromosome,'Orfeome',\%pcr);
 
     #################
     # read GFFs     #
@@ -206,6 +190,30 @@ sub usage {
         exit(0);
     }
 }
+
+sub get_PCRs_from_GFF
+  {
+    my $chromosome = shift;
+    my $method     = shift;
+    my $pcr        = shift;
+    open( GFF_in, "<$gffdir/CHROMOSOME_${chromosome}_$method.gff" )
+      or $log->log_and_die("Failed to open PCR_product gff file\n\n");
+    while (<GFF_in>) {
+        chomp;
+        s/\#.*// if !(/\".+\#.+\"/);
+        next unless /\S/;
+        my @f = split /\t/;
+
+        my ($name) = ( $f[8] =~ /PCR_product \"(.*)\"$/ );
+        unless ($name) {
+            $log->write_to("ERROR: Cant get name from $f[8]\n");
+            next;
+        }
+        $$pcr{$name} = [ $f[3], $f[4] ];
+        print "PCR_product : '$name'\n" if ($verbose);
+    }
+    close(GFF_in);
+  }
 
 __END__
 
