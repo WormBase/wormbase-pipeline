@@ -3,7 +3,7 @@
 # initiate_build.pl
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-02-13 11:43:58 $
+# Last edited on: $Date: 2006-03-02 17:51:43 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -32,6 +32,8 @@ else {
 			     -test    => $test,
 			   );
 }
+
+$wormbase->establish_paths;
 
 # set the new version number
 $wormbase->version($version);
