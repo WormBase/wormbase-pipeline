@@ -8,22 +8,24 @@
 # Script also refreshes Protein_IDs in the chosen database from the latest build.
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2006-02-13 17:43:22 $
+# Last updated on: $Date: 2006-03-02 15:37:02 $
 
-use strict;                                      
-use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
+use strict;
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
 use Carp;
+use Storable;
 
 ######################################
-# variables and command-line options # 
+# variables and command-line options #
 ######################################
 
-my ($help, $debug, $geneID, $targetDB, $sourceDB, $fileout, $update, $public, $sourceDB2, $proteinID, $version);
+my ($help, $debug, $geneID, $targetDB, $sourceDB, $fileout, $update, $public, $sourceDB2, $proteinID, $version, $test, $store, $wormbase);
 
 GetOptions (
 	    'help'         => \$help,       #help documentation.
+	    'test'         => \$test,       #test build
             'debug=s'      => \$debug,      #debug option for email
 	    'geneID'       => \$geneID,     #update gene id's
 	    'sourceDB=s'   => \$sourceDB,   #source for gene id info
@@ -34,26 +36,31 @@ GetOptions (
 	    'update'       => \$update,     #load ace files automatically into target db.
 	    'public'       => \$public,     #retrieve public name info ....future
 	    'version=s'    => \$version,    #version number for properly directing out files in future
+	    'store:s'      => \$store,      #storable object
 	    );
 
-my $maintainers = "All";
-my $log;
+
+if ($store) {
+  $wormbase = retrieve($store) or croak ("Can't restore wormbase from $store\n");
+} 
+else {
+  $wormbase = Wormbase->new( -debug => $debug,
+			     -test => $test,
+			     );
+}
+
 my $output_file;
 my $output_file2;
 my %models2geneID;
 
 # tace executable path
-our $tace = &tace;
+my $tace = $wormbase->tace;
 
 # Display help if required
 &usage("Help") if ($help);
 
-# Use debug mode?
-if($debug){
-    ($maintainers = $debug . '\@sanger.ac.uk');
-}
-
-&create_log_files;
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
 
 ##########################
 # MAIN BODY OF SCRIPT
@@ -88,7 +95,7 @@ if ($fileout) {
   $output_file = $fileout;
 }
 elsif (!$fileout) {
-  $output_file = "/nfs/disk100/wormpub/camace_orig/acefiles/updated_geneIDs${version}.ace";
+  $output_file = "/nfs/disk100/wormpub/camace_orig/acefiles/updated_geneIDs_WS${version}.ace";
 }
 
 ########################################################################
@@ -98,11 +105,13 @@ elsif (!$fileout) {
 ########################################################################
 
 if ($geneID) {
-print LOG "-geneID option selected, therefore Gene connections will be updated in $targetDB\n--------------------------------------------------------------------------------\n";
-print "\n\nSOURCE Database for Gene IDs: $sourceDB.\n\n";
-print "TARGET Database: $targetDB\n\n";
-print "\nYou are creating the file $output_file.\n\n" if ($geneID);
-print LOG "// Gathering data from $sourceDB; Object Class and GeneID\n";
+$log->write_to("\n==============================================================================================
+geneID option selected, updating WBGeneID connections in $targetDB
+----------------------------------------------------------------------------------------------\n");
+$log->write_to("\nSOURCE Database for Gene IDs: $sourceDB.\n");
+$log->write_to("TARGET Database: $targetDB\n");
+$log->write_to("OUTPUT FILE:$output_file.\n\n") if ($geneID);
+$log->write_to("Opening database connection.....\n/1/ Gathering data from $sourceDB; Object Class and GeneID\n");
     
 # connect to AceDB using TableMaker, but use /nfs/disk100/wormpub/DATABASES/current_DB/wquery for Table-maker definition
 my $command = "Table-maker -p $tablemaker_query\nquit\n";
@@ -136,7 +145,7 @@ close TACE;
 # TargetDB : /nfs/disk100/wormpub/DATABASES/camace                 # 
 ####################################################################
 
-print LOG "// Gathering data from $targetDB; Object Class and Name\n\n";
+$log->write_to("/2/ Gathering data from $targetDB; Object Class and Name\n\n");
 open (OUT, ">$output_file") or die "Can't write output .acefile: $output_file\n";
 
 # Retrieve model names and assign to a hash#
@@ -148,15 +157,17 @@ my $geneID;
 my $query;
 
 my $db = Ace->connect(-path => "$targetDB",
-		      -program => $tace) || do { print LOG "Connection failed to $targetDB: ",Ace->error; die();};
+		      -program => $tace) || do { 
+$log->write_to("Connection failed to $targetDB: ",Ace->error);
+die();
+};
 
+$log->write_to("==============================================================================================\nERROR TABLE\n==============================================================================================\n");
 foreach my $class (@classes) {
 
     $query = "find $class";
     my $i = $db->fetch_many(-query => $query);
-
     while (my $obj = $i->next) {
-	
 	$name = $obj->name;
 	my $history;
         # histories AH6.1:wp999
@@ -176,7 +187,7 @@ foreach my $class (@classes) {
 		
         # Print out ace file full model name and modified class name.
 	my $Tag = $obj->class;
-
+	
 #	print "// $name \t$lookupname\n";             # verbose debug line
 	if ($Tag ne "Transposon")	{
 	  print OUT "$Tag : \"$name\"\n";
@@ -188,11 +199,13 @@ foreach my $class (@classes) {
 	    print OUT "Gene_history\t\"$geneID\"\n\n" unless (!defined ($geneID));
 	  }
 	  print OUT "\n" if (!defined ($geneID));
-	  print LOG "$name does not have a geneID please investigate.\n" if (!defined ($geneID));
+	  if (!defined ($geneID)) {$log->write_to("ERROR:$name does not have a geneID please investigate.\n");}
 	  $obj->DESTROY();
 	}
+	#$log->write_to("Known errors\n<==========>C54G4.7:yk713c3.mRNA:wp126\nC54G4.7:yk728f5.mRNA:wp126\nF28A8.9:wp149\nY105E8A.30a:wp128\nY105E8A.30b:wp128\nZK228.9:wp144\n");
       }
   }
+$log->write_to("==============================================================================================\nEXCEPTIONS to be ignored from above table.....\n==============================================================================================\nC54G4.7:yk713c3.mRNA:wp126\nC54G4.7:yk728f5.mRNA:wp126\nF28A8.9:wp149\nY105E8A.30a:wp128\nY105E8A.30b:wp128\nZK228.9:wp144\n==============================================================================================");
 $db->close;
 
 close OUT;
@@ -202,11 +215,11 @@ close OUT;
 #  Refresh ProteinIDs  #
 ########################
 if ($proteinID) {
-  $output_file2 = "/nfs/disk100/wormpub/camace_orig/acefiles/updated_proteinIDs${version}.ace";
-  print LOG "\n\n-proteinID option selected, therefore Protein_ID connections will be updated in $targetDB\n-----------------------------------------------------------------------------------------\n";
-  print "SOURCE Database for Protein IDs: $sourceDB2.\n\n";
-  print LOG "\nYou are creating $output_file2\n"; 
-  print LOG "Gathering Protein_IDs from $sourceDB2\n";
+  $output_file2 = "/nfs/disk100/wormpub/camace_orig/acefiles/updated_proteinIDs_WS${version}.ace";
+  $log->write_to("\n\n==============================================================================================\nproteinID option selected, updating WP:Protein_ID connections in $targetDB\n----------------------------------------------------------------------------------------------\n\n");
+  $log->write_to("SOURCE Database for Protein IDs: $sourceDB2.\n");
+  $log->write_to("OUTPUT FILE: $output_file2\n\n"); 
+  $log->write_to("Opening database connection.....\n/3/ Gathering Protein_IDs from $sourceDB2\n\n");
 
 # connect to AceDB using TableMaker
 my $command = "query find curated_CDS where From_laboratory = HX\nshow -t Protein_id -a -f $output_file2\nquit\n";
@@ -240,15 +253,22 @@ print OUT2 "protein_id	\"MTCE\"  \"CAA38162.1\"\n";
 }
 
 ##Logging##
-print LOG "Upload file(s) completed.......\n";
+$log->write_to("Upload file(s) completed.......\n");
 
 if (!defined ($update)) {
-  print LOG "\n**You will have to manually load:\n";
-  print LOG "\t$output_file\n";
-  print LOG "\t/nfs/disk100/wormpub/camace_orig/acefiles/geneID_patch.ace\n";
-  print LOG "\t$output_file2\n\n"; 
-  print LOG "\tinto $canonical\n\n";
-  print LOG "\ttace $canonical -tsuser merge_split\n\tpparse $output_file\n\tpparse /nfs/disk100/wormpub/camace_orig/acefiles/geneID_patch.ace\n\tpparse $output_file2\n\tsave\n\tquit\n\n";
+  $log->write_to("\n\n==============================================================================================\n");
+  $log->write_to("ACTION\n");
+  $log->write_to("==============================================================================================\n");
+  $log->write_to("\n\t**You will have to manually load:\n");
+  $log->write_to("\t$output_file\n") if $geneID;
+  $log->write_to("\t/nfs/disk100/wormpub/camace_orig/acefiles/geneID_patch.ace\n") if $geneID;
+  $log->write_to("\t$output_file2") if $proteinID;
+  $log->write_to("\n\n\tinto $canonical\n\n");
+  $log->write_to("\tCOMMANDS:\n\ttace $canonical -tsuser merge_split\n");
+  $log->write_to("\tpparse $output_file\n") if $geneID;;
+  $log->write_to("\tpparse /nfs/disk100/wormpub/camace_orig/acefiles/geneID_patch.ace\n") if $geneID;;
+  $log->write_to("\tpparse $output_file2\n") if $proteinID;
+  $log->write_to("\tsave\n\tquit\n\n");
 }
 
 ###############################################################
@@ -256,40 +276,22 @@ if (!defined ($update)) {
 ###############################################################
 
 if ($update) {
-  print LOG "\nLoading files........\n";
+  $log->write_to("==============================================================================================");
+  $log->write_to("ACTION");
+  $log->write_to("==============================================================================================");
+  $log->write_to("\nLoading files........\n");
   &load_geneIDs     if $geneID;
   &load_protein_IDs if $proteinID;
 }
 
+$log->mail();
 print "Diaskeda same Poli\n"; #we had alot of fun#
-
-&mail_maintainer("GeneID_updater.pl",$maintainers,$log);
-close(LOG);
-
 exit(0);
 
 
 ##############################################################
 # Subroutines
 ##############################################################
-
-sub create_log_files {
-
-    # Create history logfile for script activity analysis
-    $0 =~ m/\/*([^\/]+)$/; system ("touch /nfs/disk100/wormpub/logs/history/$1.`date +%y%m%d`");
-
-    # create main log file using script name for
-    my $script_name = $1;
-    $script_name =~ s/\.pl//; # don't really need to keep perl extension in log name
-    my $rundate     = `date +%y%m%d`; chomp $rundate;
-    $log        = "/nfs/disk100/wormpub/logs/$script_name.$rundate.$$";
-
-    open (LOG, ">$log") or die "cant open $log";
-    print LOG "$script_name\n";
-    print LOG "started at ",`date`,"\n";
-    print LOG "=============================================\n";
-    print LOG "\n";
-}
 
 sub load_geneIDs {
   my $command = "query find curated_CDS\nedit -D Gene\nclear\n";
@@ -302,8 +304,8 @@ sub load_geneIDs {
   open (DB, "| $tace $targetDB -tsuser merge_split_update_geneID |") || die "Couldn't open $targetDB\n";
   print DB $command;
   close DB;
-  print LOG "\nLoaded Files:\n$output_file\n/nfs/disk100/wormpub/camace_orig/acefiles/geneID_patch.ace\n";
-  print LOG "Updated Gene data in $targetDB\n";
+  $log->write_to("\nLoaded Files:\n$output_file\n/nfs/disk100/wormpub/camace_orig/acefiles/geneID_patch.ace\n");
+  $log->write_to("Updated Gene data in $targetDB\n");
 }
 
 sub load_protein_IDs {
@@ -313,8 +315,8 @@ sub load_protein_IDs {
     open (DB, "| $tace $targetDB -tsuser merge_split_update_proteinID |") || die "Couldn't open $targetDB\n";
     print DB $command;
     close DB;
-    print LOG "\nLoaded File:\n$output_file2\n";
-    print LOG "Updated protein_ID data in $targetDB\n";
+    $log->write_to("\nLoaded File:\n$output_file2\n");
+    $log->write_to("Updated protein_ID data in $targetDB\n");
   }
 
 sub usage 
