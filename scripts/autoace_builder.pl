@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-02-17 10:14:45 $
+# Last edited on: $Date: 2006-03-02 17:46:35 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -28,44 +28,51 @@ my ( $gff_dump,     $processGFF, $gff_split );
 my $gene_span;
 my ( $load, $tsuser, $map_features, $map, $transcripts, $intergenic, $data_sets, $nem_contigs);
 my ( $GO_term, $rna , $dbcomp, $confirm, $operon ,$repeats, $remarks, $names);
-my ( $utr );
+my ( $utr, $agp, $gff_munge, $extras );
+my ( $buildrelease, $sites, $release);
 
 
 GetOptions(
-    'debug:s'        => \$debug,
-    'test'           => \$test,
-    'database:s'     => \$database,
-    'initiate:s'     => \$initiate,
-    'prepare'        => \$prepare_databases,
-    'acefiles'       => \$acefile,
-    'build'          => \$build,
-    'first_dumps'    => \$first_dumps,
-    'make_wormpep'   => \$make_wormpep,
-    'finish_wormpep' => \$finish_wormpep,
-    'gff_dump:s'     => \$gff_dump,
-    'processGFF:s'   => \$processGFF,
-    'gff_split'      => \$gff_split,
-    'gene_span'      => \$gene_span,
-    'load=s'         => \$load,
-    'run_blat'       => \$run_blat,
-    'finish_blat'    => \$finish_blat,
-    'tsuser=s'       => \$tsuser,
-    'map'            => \$map,
-    'map_features'   => \$map_features,
-    'transcripts'    => \$transcripts,
-    'intergenic'     => \$intergenic,
-    'nem_contig'     => \$nem_contigs,
-    'data_sets'      => \$data_sets,
-    'go_term'        => \$GO_term,
-    'rna'            => \$rna,
-    'dbcomp'         => \$dbcomp,
-    'confirm'        => \$confirm,
-    'operon'         => \$operon,
-    'repeats'        => \$repeats,
-    'remarks'        => \$remarks,
-    'names'          => \$names,
-    'utr'            => \$utr
-);
+	   'debug:s'        => \$debug,
+	   'test'           => \$test,
+	   'database:s'     => \$database,
+	   'initiate:s'     => \$initiate,
+	   'prepare'        => \$prepare_databases,
+	   'acefiles'       => \$acefile,
+	   'build'          => \$build,
+	   'first_dumps'    => \$first_dumps,
+	   'make_wormpep'   => \$make_wormpep,
+	   'finish_wormpep' => \$finish_wormpep,
+	   'gff_dump:s'     => \$gff_dump,
+	   'processGFF:s'   => \$processGFF,
+	   'gff_split'      => \$gff_split,
+	   'gene_span'      => \$gene_span,
+	   'load=s'         => \$load,
+	   'run_blat'       => \$run_blat,
+	   'finish_blat'    => \$finish_blat,
+	   'tsuser=s'       => \$tsuser,
+	   'map'            => \$map,
+	   'map_features'   => \$map_features,
+	   'transcripts'    => \$transcripts,
+	   'intergenic'     => \$intergenic,
+	   'nem_contig'     => \$nem_contigs,
+	   'data_sets'      => \$data_sets,
+	   'go_term'        => \$GO_term,
+	   'rna'            => \$rna,
+	   'dbcomp'         => \$dbcomp,
+	   'confirm'        => \$confirm,
+	   'operon'         => \$operon,
+	   'repeats'        => \$repeats,
+	   'remarks'        => \$remarks,
+	   'names'          => \$names,
+	   'utr'            => \$utr,
+	   'agp'            => \$agp,
+	   'gff_munge'      => \$gff_munge,
+	   'extras'         => \$extras,
+	   'buildrelease'   => \$buildrelease,
+	   'sites'          => \$sites,
+	   'release'        => \$release,
+	  );
 
 my $wormbase = Wormbase->new(
     -test    => $test,
@@ -124,10 +131,17 @@ $wormbase->run_script( 'map_operons.pl'                          , $log) if $ope
 $wormbase->run_script( 'make_wormpep.pl -final'                  , $log) if $finish_wormpep;
 $wormbase->run_script( 'write_DB_remark.pl'                      , $log) if $remarks;
 $wormbase->run_script( 'molecular_names_for_genes.pl'            , $log) if $names;
-# $build_dumpGFF.pl; (final) is run chronologically here but previous call will operate
-#$wormbase->run_script( "processGFF.pl -$processGFF",        $log ) if $processGFF;    #nematode - to add species to nematode BLATs
 
-#$wormbase->
+# $build_dumpGFF.pl; (final) is run chronologically here but previous call will operate
+# $wormbase->run_script( "processGFF.pl -$processGFF",        $log ) if $processGFF;    #nematode - to add species to nematode BLATs
+
+$wormbase->run_script( "make_agp_file.pl"                        , $log) if $agp;
+$wormbase->run_script( "landmark_genes2gff.pl"                   , $log) if $gff_munge;
+$wormbase->run_script( "GFFmunger.pl -all"                       , $log) if $gff_munge;
+&make_extras                                                              if $extras;
+$wormbase->run_script( "build_release_files.pl"                  , $log) if $buildrelease;
+&public_sites                                                             if $sites;
+$wormbase->run_script( "release_letter.pl -l"                    , $log) if $release;
 
 
 
@@ -211,6 +225,9 @@ sub map_features {
 
     # TSL features
     $wormbase->run_script( 'map_feature2gene.pl -load', $log );
+
+    # writes tables listing microarrays to genes
+    $wormbase->run_script( 'make_oligo_set_mapping_table.pl -all', $log );
 }
 
 #__ end map_features __#
@@ -234,3 +251,18 @@ sub get_repeats {
   $wormbase->run_script("run_inverted.pl -all" , $log);
 }
 
+
+sub make_extras {
+  my $version = $wormbase->get_wormbase_version;
+  $wormbase->run_script( "make_keysets.pl -all -history $version", $log);
+  $wormbase->run_script( "genestats.pl" , $log);
+  $wormbase->run_script( "inspect-old-releases.pl -version $version -database1 ".$wormbase->autoace." -database2 ".$wormbase->database('current'), $log );
+}
+
+
+sub public_sites {
+  # gets everything on the to FTP and websites and prepares release letter ready for final edit and sending.
+  $wormbase->run_script( "make_FTP_sites.pl -all", $log);
+  $wormbase->run_script( "update_website.pl -all", $log);
+  $wormbase->run_script( "release_letter.pl -l"  , $log);
+}
