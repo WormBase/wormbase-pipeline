@@ -5,7 +5,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-02-17 11:32:47 $
+# Last updated on: $Date: 2006-03-03 09:33:30 $
 #
 
 #
@@ -63,7 +63,7 @@ if ($test) {
 
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
-
+$release = $wormbase->get_wormbase_version;
 
 #################################
 # Set up some useful paths      #
@@ -91,7 +91,7 @@ my $line;
 my %locus;
 my %briefID;
 
-open (WORMPEP, "<$wormpep_dir/wormpep${release}/wormpep${release}");
+open (WORMPEP, "<$wormpep_dir/wormpep${release}");
 while (<WORMPEP>) {
     if (/^>(\S+) (\S+) (WBGene\d+) (\S+.+)\s+status\:(\S+)/) {
 	$CDS           = $1;
