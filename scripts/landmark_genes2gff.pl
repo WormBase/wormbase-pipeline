@@ -6,8 +6,8 @@
 #
 # script for creating extra GFF lines to indicate those genes that are landmark genes
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2005-12-20 12:19:25 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2006-03-03 09:52:51 $
 use strict;
 use lib $ENV{'CVS_DIR'};
 use Wormbase;
@@ -80,8 +80,8 @@ foreach (@chromosomes) {
     $log->write_to("Processing chromosome $_\n");
 
     # open input/output streams
-    open( OUT, ">$database/GFF_SPLITS/GFF_SPLITS/CHROMOSOME_$_.landmarks.gff" ) || die "Cannot open output file\n";
-    open( GFF, "<$database/CHROMOSOMES/CHROMOSOME_$_.gff" ) || die "Can't read CHROMOSOME_$_.gff file\n";
+    open( OUT, ">".$wormbase->gff_splits."/CHROMOSOME_${_}_landmarks.gff" ) || die "Cannot open output file\n";
+    open( GFF, "<".$wormbase->chromosomes."/CHROMOSOME_${_}.gff" ) || die "Can't read CHROMOSOME_${_}.gff file\n";
 
     while (<GFF>) {
 
@@ -144,12 +144,12 @@ sub get_landmark_genes {
 
     $log->write_to("Getting list of landmark genes from $database\n");
 
-    my $tace = &tace;
+    my $tace = $wormbase->tace;
     my $db   = Ace->connect(
         -path    => $database,
         -program => $tace
       )
-      || do { print "Connection failure: ", Ace->error; die(); };
+      or $log->log_and_die("Connection failure: ". Ace->error);
 
     # only want landmark genes which will be in GFF files, i.e. those with Sequence name
     # this is virtually all of them
