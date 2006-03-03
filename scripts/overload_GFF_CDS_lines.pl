@@ -5,7 +5,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-03-03 09:33:30 $
+# Last updated on: $Date: 2006-03-03 09:36:25 $
 #
 
 #
@@ -145,7 +145,8 @@ else {
               'CHROMOSOME_III',
               'CHROMOSOME_IV',
               'CHROMOSOME_V',
-              'CHROMOSOME_X'
+              'CHROMOSOME_X',
+              'CHROMOSOME_MtDNA'
               );
 }
 
