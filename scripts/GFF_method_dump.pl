@@ -6,8 +6,8 @@
 #
 # Selectively dump GFF for certain acedb methods
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-03-02 16:08:47 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2006-03-03 16:56:27 $
 
 
 use lib $ENV{CVS_DIR};
@@ -54,13 +54,13 @@ else {
 @chromosomes = split(/,/,join(',',@chromosomes));
 @sequences = split(/,/,join(',',@clones)) if @clones;
 
-&check_options;
+
 
 my $giface = $wormbase->giface;
 
 $database = $wormbase->autoace unless $database;
 $dump_dir = "/tmp/GFF_CLASS" unless $dump_dir;
-
+&check_options;
 mkdir $dump_dir unless -e $dump_dir;
 
 #make surdump_dir is writable
