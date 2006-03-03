@@ -5,7 +5,7 @@
 # by Dan Lawson
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-03-03 09:58:51 $
+# Last updated on: $Date: 2006-03-03 10:05:00 $
 #
 # Usage GFFmunger.pl [-options]
 
@@ -170,13 +170,13 @@ foreach my $file (@gff_files) {
   
   if ($landmark || $all) {
     $log->write_to("# Adding ${file}_landmarks.gff file\n");
-    $addfile = "$datadir/${file}.landmarks.gff";
+    $addfile = "$datadir/${file}_landmarks.gff";
     &addtoGFF($addfile,$gffpath);
   }
 
   if ($UTR || $all) {
     $log->write_to("# Adding ${file}_UTR.gff file\n");
-    $addfile = "$datadir/${file}.UTR.gff";
+    $addfile = "$datadir/${file}_UTR.gff";
     &addtoGFF($addfile,$gffpath);
   }
   
