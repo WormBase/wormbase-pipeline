@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-03-03 14:42:14 $
+# Last edited on: $Date: 2006-03-03 14:43:15 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -29,7 +29,7 @@ my $gene_span;
 my ( $load, $tsuser, $map_features, $map, $transcripts, $intergenic, $data_sets, $nem_contigs);
 my ( $GO_term, $rna , $dbcomp, $confirm, $operon ,$repeats, $remarks, $names);
 my ( $utr, $agp, $gff_munge, $extras );
-my ( $buildrelease, $sites, $release);
+my ( $buildrelease, $public);
 
 
 GetOptions(
