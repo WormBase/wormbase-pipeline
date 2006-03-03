@@ -7,52 +7,71 @@
 # clones. Entries which have failed to load or return are highlighted
 # and changes in sequence version are notified.
 
-# Last updated on: $Date: 2005-12-16 11:18:55 $
-# Last updated by: $Author: ar2 $
-
-# touch logfile for run details
-$0 =~ m/\/*([^\/]+)$/; system("touch /nfs/disk100/wormpub/logs/history/$1.`date +%y%m%d`");
+# Last updated on: $Date: 2006-03-03 11:49:27 $
+# Last updated by: $Author: pad $
 
 use strict;
-use Getopt::Std;
+use Getopt::Long;
 use IO::Handle;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
-use vars qw/ $opt_d $opt_h $opt_f/;
+use Log_files;
+use Storable;
+
+my ($embl_file,$maintainer,$wormbase,$store);
+
+##############################
+# command-line options       #
+##############################
+
+my $debug;                 # Debug option
+my $help;                  # Help menu
+my $file;                  # EMBL file
+
+GetOptions (
+            "debug:s"    => \$debug,
+            "help"       => \$help,
+	    "file:s"     => \$embl_file,
+	    "store:s"      => \$store,
+	   );
 
  ########################################
  # Script variables (run)               #
  ########################################
 
-my $maintainer = "All";
-my $rundate = &rundate;
-my $runtime = &runtime;
-my $log="/nfs/disk100/wormpub/logs/check_EMBL_submissions.$rundate.$$";
+if( $store ) {
+  $wormbase = retrieve( $store ) or croak("cant restore wormbase from $store\n");
+}
+else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                           );
+}
+
+if (!defined $debug) {
+    my $maintainer = "All";
+  }
+else {
+  $maintainer = $debug;
+}
+
+#"/nfs/disk100/wormpub/logs/check_EMBL_submissions.$rundate.$$";
 
  ########################################
  # Paths/variables etc                  #
  ########################################
 
 my $dbdir = glob "/nfs/disk100/wormpub/DATABASES/camace";
-my $tace = &tace;
+my $tace = $wormbase->tace;
 my $submitted_file = "/nfs/disk100/wormpub/analysis/TO_SUBMIT/submitted_to_EMBL";
 
 my (%clone2id,%id2sv,%embl_acc,%embl_status,%embl_sv);
 
- ########################################
- # command-line options                 #
- ########################################
-
-getopts ('dhf:');
-
-my $debug = $opt_d;
-my $embl_file = $opt_f;
 
  ########################################
  # simple consistency checks            #
  ########################################
 
-&usage(0) if ($opt_h);
+&usage(0) if ($help);
 &usage(1) unless (-e $embl_file);
 &usage(2) unless (-e $submitted_file);
 
@@ -60,13 +79,16 @@ my $embl_file = $opt_f;
  # Open logfile                         #
  ########################################
 
-system ("/bin/touch $log");
-open (LOG,">>$log");
-LOG->autoflush;
 
-print LOG "# check_EMBL_submissions\n\n";     
-print LOG "# run details    : $rundate $runtime\n";
-print LOG "\n";
+my $log= Log_files->make_build_log($wormbase);
+
+#system ("/bin/touch $log");
+#open (LOG,">>$log");
+#LOG->autoflush;
+
+$log->write_to("# check_EMBL_submissions\n\n");     
+$log->write_to("# run details    : ".$wormbase->rundate.".".$wormbase->runtime."\n");
+$log->write_to("\n");
 
  ########################################
  # query autoace for EMBL ID/AC lines   #
@@ -100,7 +122,7 @@ while (<TACE>) {
 }
 close TACE;
 
-print LOG "Populated hashes with data for " . scalar (keys %clone2id) . " clones\n\n";
+$log->write_to("Populated hashes with data for " . scalar (keys %clone2id) . " clones\n\n");
 
  ########################################
  # returned entries from EMBL           #
@@ -122,7 +144,7 @@ while (<EMBL>) {
 }
 close EMBL;
 
-print LOG "Populated hashes with data for " . scalar (keys %embl_status) . " entries\n\n\n";
+$log->write_to("Populated hashes with data for " . scalar (keys %embl_status) . " entries\n\n\n");
 
  #############################################################
  # submitted clones from ~wormpub/analysis/TO_SUBMIT         #
@@ -132,43 +154,43 @@ print LOG "Populated hashes with data for " . scalar (keys %embl_status) . " ent
 open (SUBMITTED, "<$submitted_file") || die "Cannot open submit_TO_SUBMIT log file\n";;
 while (<SUBMITTED>) {
     ($name) = (/^(\S+)/);
-    if (!defined $clone2id{$name}) {print LOG "eek .. no ID for clone $name\n";}
+    if (!defined $clone2id{$name}) {$log->write_to("eek .. no ID for clone $name\n");}
     $id = $clone2id{$name};
 
-    print LOG "# $name   \tSubmitted_to_EMBL\t";
+    $log->write_to("# $name   \tSubmitted_to_EMBL\t");
 
     if (!defined $embl_status{$id}) {
-	print LOG "not returned\n";
+	$log->write_to("not returned\n");
 	next;
     }
     elsif ($embl_status{$id} eq "Finished") {
-	print LOG "loaded  \t";
+	$log->write_to("loaded  \t");
     }
     elsif ($embl_status{$id} eq "NOT_LOADED") {
-	print LOG "failed to load\n";
+	$log->write_to("failed to load\n");
 	next;
     }
     
     if ($embl_sv{$id} ne $id2sv{$name}) {
-	print LOG "Update sequence version\n";
+	$log->write_to("Update sequence version\n");
     }
     else {
-	print LOG "Sequence version unchanged\n";
+	$log->write_to("Sequence version unchanged\n");
     }
 }
 close SUBMITTED;
-close LOG;
 
 ###############################
 # Mail log to curator         #
 ###############################
 
-&mail_maintainer("check_EMBL_submissions",$maintainer,$log);
+$log->mail($maintainer);
+#&mail_maintainer("check_EMBL_submissions",$maintainer,$log);
 
 ###################################################
 # hasta luego                                     #
 ###################################################
-
+print "\ncheck_EMBL_submissions.pl has Finished.\nPlease check the log email\n";
 exit(0);
 
 sub usage {
@@ -212,7 +234,7 @@ check_EMBL_submissions.pl mandatory arguments:
 
 =over 4
 
-=item -f <filename>, EMBL summary e-mail (exported from Pine)
+=item -file <filename>, EMBL summary e-mail (exported from Pine)
 
 =back
 
@@ -220,9 +242,9 @@ check_EMBL_submissions.pl optional arguments:
 
 =over 4
 
-=item -h, Help page
+=item -help, Help page
 
-=item -d, Verbose/Debug mode
+=item -debug, Verbose/Debug mode
 
 
 =back
@@ -251,7 +273,7 @@ C02B4         Submitted_to_EMBL       not returned
 
 =over 4
 
-check_EMBL_submissions.pl -f /nfs/griffin2/dl1/EMBL_020123
+check_EMBL_submissions.pl -file /nfs/griffin2/dl1/EMBL_020123
 
 =head1 AUTHOR: 
 

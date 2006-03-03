@@ -6,12 +6,12 @@
 #
 # checks EMBL for new EST or mRNA entries
 #
-# Last updated by: $Author: ar2 $                      
-# Last updated on: $Date: 2005-12-16 11:18:55 $        
+# Last updated by: $Author: pad $                      
+# Last updated on: $Date: 2006-03-03 11:49:27 $        
 
 use strict;
 use Getopt::Long;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Time::Local;
 use Modules::Features;
@@ -20,31 +20,37 @@ use Modules::Features;
 # Variables                  #
 ##############################
 
-my ($help, $debug, $days);
+my ($help, $debug, $days, $wormbase, $test);
 my $maintainers = "All";
 my $getz   = "/usr/local/pubseq/bin/getzc"; # getz binary
 
 GetOptions ("help"     => \$help,
             "debug=s"  => \$debug,
-            "days=s"   => \$days);
+            "days=s"   => \$days,
+	    "test"     => \$test);
 	   
 
 # help page	   
 &usage("Help") if ($help);
+
+$wormbase = Wormbase->new( -debug => $debug,
+                             -test => $test,
+                             );
 	   
+
 # no debug name
 if ($debug) {
     ($maintainers = $debug . '\@sanger.ac.uk');
 }
 
-my $log = Log_files->make_build_log($debug);
+my $log = Log_files->make_build_log($wormbase);
 
 #########################
 ## MAIN BODY OF SCRIPT ##
 #########################
 
 our $buildtime       = 21;                                                # length of build in days
-my $date             = &get_date; 
+my $date             = &get_date;
 
 my $new_elegans_mRNA = 0;                                                 # Counts for the various classes
 my $new_elegans_EST  = 0;
@@ -336,7 +342,7 @@ sub get_date {
   }
   # Otherwise find out date when last build was started
   else{
-    my $last_release_date = &get_wormbase_release_date("short");
+    my $last_release_date = $wormbase->get_wormbase_release_date("short");
     
     print "Last release date was $last_release_date\n" if $debug;
     $log->write_to("\nLast release date was $last_release_date\n");
