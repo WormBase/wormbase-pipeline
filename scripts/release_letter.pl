@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers                             
 #
-# Last updated by: $Author: ar2 $               
-# Last updated on: $Date: 2006-02-17 11:32:47 $
+# Last updated by: $Author: gw3 $               
+# Last updated on: $Date: 2006-03-03 17:07:41 $
 
 # Generates a release letter at the end of build.
 #
@@ -26,6 +26,8 @@ use Carp;
 use Log_files;
 use Storable;
 use Ace;
+use Modules::Remap_Sequence_Change;
+
 
 ######################################
 # variables and command-line options # 
@@ -118,7 +120,14 @@ if( defined($opt_l)) {
   print RL "Release notes on the web:\n-------------------------\n";
   print RL "http://www.sanger.ac.uk/Projects/C_elegans/WORMBASE\n\n\n\n";
   
-  my @release_files = ("$reports_dir/dbases","$reports_dir/composition","$reports_dir/genedata","$reports_dir/wormpep");
+  # make the chromosomal sequence changes file
+  open (CC, "> $reports_dir/chromosome_changes") || die "Can't open file $reports_dir/chromosome_changes\n";
+  my @mapping_data = Remap_Sequence_Change::read_mapping_data($ver-1, $ver);
+  my $text = Remap_Sequence_Change::write_changes($ver, @mapping_data);
+  print CC $text;
+  close(CC);
+
+  my @release_files = ("$reports_dir/dbases","$reports_dir/composition","$reports_dir/chromosome_changes","$reports_dir/genedata","$reports_dir/wormpep");
   
   #include all the pre-generated reports
   my $file = shift(@release_files);
