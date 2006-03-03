@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-03-02 17:46:35 $
+# Last edited on: $Date: 2006-03-03 14:42:14 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -70,8 +70,7 @@ GetOptions(
 	   'gff_munge'      => \$gff_munge,
 	   'extras'         => \$extras,
 	   'buildrelease'   => \$buildrelease,
-	   'sites'          => \$sites,
-	   'release'        => \$release,
+	   'public'         => \$public
 	  );
 
 my $wormbase = Wormbase->new(
@@ -138,26 +137,9 @@ $wormbase->run_script( 'molecular_names_for_genes.pl'            , $log) if $nam
 $wormbase->run_script( "make_agp_file.pl"                        , $log) if $agp;
 $wormbase->run_script( "landmark_genes2gff.pl"                   , $log) if $gff_munge;
 $wormbase->run_script( "GFFmunger.pl -all"                       , $log) if $gff_munge;
-&make_extras                                                              if $extras;
+&make_extras                                                             if $extras;
 $wormbase->run_script( "build_release_files.pl"                  , $log) if $buildrelease;
-&public_sites                                                             if $sites;
-$wormbase->run_script( "release_letter.pl -l"                    , $log) if $release;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+&public_sites                                                            if $public;
 
 if ($load) {
     $log->write_to("loading $load to ".$wormbase->autoace."\n");
@@ -166,18 +148,8 @@ if ($load) {
 }
 
 $log->mail;
+
 exit(0);
-
-
-
-
-
-
-
-
-
-
-
 
 
 ############################
