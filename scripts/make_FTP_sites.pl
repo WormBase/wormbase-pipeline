@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-02-17 11:32:47 $
+# Last updated on: $Date: 2006-03-03 11:12:19 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -129,19 +129,7 @@ my $runtime;
 
 # warn about errors in subject line if there were any
 my $errors = $log->report_errors;
-
-$log->write_to("\n$errors errors found\n");
-
-if($errors == 0){
-  $log->mail("$maintainers","BUILD REPORT: make_FTP_sites.pl");
-}
-elsif ($errors ==1){
-  $log->mail("$maintainers","BUILD REPORT: make_FTP_sites.pl : $errors ERROR!");
-}
-else{
-  $log->mail("$maintainers","BUILD REPORT: make_FTP_sites.pl : $errors ERRORS!!!");
-}
-
+$log->mail;
 print "Finished.\n" if ($verbose);
 exit (0);
 
@@ -492,7 +480,7 @@ sub copy_homol_data{
 
 
   my $blat_dir  = "$ace_dir/BLAT";
-  my $blast_dir = "$base_dir/wormbase/ensembl_dumps";
+  my $blast_dir = $wormbase->acefiles;
 
   # does this to tidy up???? Not sure why these lines are here, krb
   $wormbase->run_command("/bin/gzip -f $blast_dir/worm_pep_blastp.ace", $log);
