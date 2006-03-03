@@ -7,7 +7,7 @@
 # This is a example of a good script template
 #
 # Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2006-03-02 15:36:17 $      
+# Last updated on: $Date: 2006-03-03 11:46:13 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -114,13 +114,11 @@ sub buildrelease{
     
     # calculate md5sum for the gzip file
     $wormbase->run_command("/nfs/disk100/wormpub/bin.ALPHA/md5sum $dbpath/release/database.$WS_version.4-$i.tar.gz >> $dbpath/release/md5sum.$WS_version");
-
-    #check md5sums
-    $wormbase->run_command("cd ".$wormbase->autoace."/release; md5sum -c md5sum.WS$WS_version");
-
-    # zip up the dna and gff files
-    $wormbase->run_scripts("chromosome_dump.pl --zipdna --zipgff", $log);
   }
+  #check md5sums
+  $wormbase->run_command("cd ".$wormbase->autoace."/release; md5sum -c md5sum.WS$WS_version");
+  # zip up the dna and gff files
+  $wormbase->run_script("chromosome_dump.pl --zipdna --zipgff", $log);
 }
 
 
