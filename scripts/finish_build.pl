@@ -13,7 +13,7 @@
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-03-06 17:27:07 $
+# Last updated on: $Date: 2006-03-06 17:29:11 $
 
 
 use strict;
@@ -123,7 +123,7 @@ $wormbase->delete_files_from("$new_dir/database/new","*","+");
 $log->write_to("Removing files in $new_dir/database/touched/\n");
 $wormbase->delete_files_from("$new_dir/database/touched","*","+");
 
-remove large backups created by loading routine
+#remove large backups created by loading routine
 $log->write_to("Removing files in $new_dir/database/backup*\n");
 $wormbase->delete_files_from("$new_dir/database","backup","+");
 
