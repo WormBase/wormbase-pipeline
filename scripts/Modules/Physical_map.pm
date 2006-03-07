@@ -15,7 +15,7 @@
 #      COMPANY:
 #      VERSION:  1.0
 #      CREATED:  23/11/05 11:52:00 GMT
-#     REVISION:  $Revision: 1.2 $
+#     REVISION:  $Revision: 1.3 $
 #===============================================================================
 
 package Main;
@@ -52,9 +52,9 @@ use warnings;
 
 sub new {
     my ( $class, $acedb, @files ) = @_;
-
+    my $yfile="$acedb/logs/rev_physicals.yml";
     # hash->chromosomes->bp_coordinates->genetic_position
-    my %map = %{ Map_func::build( $acedb, @files ) };
+    my %map = %{ Map_func::build($yfile, $acedb, @files ) };
     my %sorted_map;
 
     foreach my $key ( keys %map ) {
@@ -75,14 +75,14 @@ sub map {
     return undef if $pos < @{ $self->{'smap'}->{$chr} }[0];
     for ( my $i = 0 ; $i < scalar @{ $self->{'smap'}->{$chr} } ; $i++ ) {
         my $current  = @{ $self->{'smap'}->{$chr} }[$i];
-        my $mlast    = $self->{'pmap'}->{$chr}->{$last};
-        my $mcurrent = $self->{'pmap'}->{$chr}->{$current};
+        my $mlast    = $self->{'pmap'}->{$chr}->{$last}->[0];
+        my $mcurrent = $self->{'pmap'}->{$chr}->{$current}->[0];
 
         $next = $current;
         if ( $pos <= $current && $pos >= $last ) {
             my $pdiff    = ( $pos - $last ) / ( $current - $last );    # might  be wrong prefix ->better now?
-            my $mlast    = $self->{'pmap'}->{$chr}->{$last};
-            my $mcurrent = $self->{'pmap'}->{$chr}->{$current};
+            my $mlast    = $self->{'pmap'}->{$chr}->{$last}->[0];
+            my $mcurrent = $self->{'pmap'}->{$chr}->{$current}->[0];
 
             my $mpos = ( $mcurrent - $mlast ) * $pdiff + $mlast;
             return ($mpos);
@@ -166,11 +166,10 @@ sub get_phys {
 # build connection map
 sub build {
     use YAML;
-    my ( $acedb, @infiles ) = @_;
+    my ( $yfile,$acedb, @infiles ) = @_;
     my %genes;    # gene -> phys_map
-    my $yfile = '/nfs/disk100/wormpub/analysis/ELEGANS_FOSMIDS/phys_map.yml';
-
-    # crude hack
+    
+    # crude hack if a physical map exist which is newer than 1 day ...
     if ( -e $yfile && ( -M $yfile < 1 ) ) { %genes = YAML::LoadFile($yfile) }
     else {
         my %gen_map = %{ get_phys($acedb) };
@@ -188,9 +187,9 @@ sub build {
                 my $map_pos = ( $a[3] + $a[4] ) / 2;
                 my $gen_pos = $gen_map{$gene_id};
                 $chrom =~ s/CHROMOSOME_//;
-
+		
                 #should be chromosome->map_pos->gen_pos
-                $genes{$chrom}->{$map_pos} = $gen_pos;
+                $genes{$chrom}->{$map_pos} = [$gen_pos,$gene_id];
             }
             close IN;
         }
