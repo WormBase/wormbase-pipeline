@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/nfs/team71/worm/mh6/bin/perl
 #===============================================================================
 #
 #         FILE:  fix_gff.pl
@@ -15,7 +15,7 @@
 #      COMPANY:
 #      VERSION:  1.0
 #      CREATED:  13/02/06 09:37:00 GMT
-#     REVISION:  $Revision: 1.1 $
+#     REVISION:  $Revision: 1.2 $
 #===============================================================================
 
 # BACS / SNPS / GENEs
@@ -44,10 +44,8 @@ GetOptions(
 
 die `perldoc $0` if $help;
 
-if ($store) { $wormbase = retrieve($store) or croak("Can't restore wormbase from $store\n") }
+if ($store) { $wormbase = Storable::retrieve($store) or croak("Can't restore wormbase from $store\n") }
 else { $wormbase = Wormbase->new( -debug => $debug, -test => $test ) }
-
-my $maintainers = "$debug\@sanger.ac.uk" if $debug;
 
 my $log         = Log_files->make_build_log($wormbase);    # prewarning will be misused in a global way
 
@@ -61,7 +59,7 @@ my $mapper = Physical_mapper->new( $acedb, glob("$chromdir/CHROMOSOME_*_gene.gff
 # check the mappings
 if ($prep) {
 	$mapper->check_mapping($log,$acedb);
-	$log->mail( "$maintainers", "BUILD REPORT: $0" );
+	$log->mail( );
 	exit;
 }
 
@@ -126,8 +124,10 @@ foreach my $chrom ( @chromosomes) {
     }
 }
 ###########################################################################################
-$log->mail( "$maintainers", "BUILD REPORT: $0" );
+$log->mail();
 
+exit 0; # doesn't exit cleanly :-(
+################### ###########
 sub dump_snps {
 	my ($wormbase,$chromosome)=@_;
 	my $cmd = "GFF_method_dump.pl -database ".$wormbase->autoace." -methods SNP -dump_dir ".$wormbase->autoace."/GFF_SPLITS -chromosome $chromosome";
