@@ -15,7 +15,7 @@
 #      COMPANY:
 #      VERSION:  1.0
 #      CREATED:  23/11/05 11:52:00 GMT
-#     REVISION:  $Revision: 1.3 $
+#     REVISION:  $Revision: 1.4 $
 #===============================================================================
 
 package Main;
@@ -159,7 +159,7 @@ sub get_phys {
         my $pos  = $gene->Map(3)->name;
         $map{$name} = $pos;
     }
-
+    $db->close;
     return \%map;
 }
 
