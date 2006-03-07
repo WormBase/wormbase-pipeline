@@ -5,8 +5,8 @@
 # by Kerstin Jekosch
 #
 # Version: $Version: $
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-02-24 15:30:05 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2006-03-07 10:26:00 $
 
 use strict;
 use warnings;
@@ -23,7 +23,7 @@ use Ace;
 my $maintainers = "All";
 my %rnai2genes;    # for RNAi
 my %rnai2exp;      # for Expression profiles
-my %RNAi;
+
 
 ################################
 # command-line options         #
@@ -104,9 +104,10 @@ foreach my $chromosome (@chromosomes) {
     print "Processing chromosome $chromosome\n" if $verbose;
     $log->write_to("Processing chromosome $chromosome\n");
 
-    my %genes      = ();
-    my %exon       = ();
-    my %expression = ();
+    my %RNAi;
+    my %genes;
+    my %exon;
+    my %expression;
 
 # loop through the split GFF RNAi file
 # New RNAi lines : CHROMOSOME_I    RNAi_primary    RNAi_reagent    1681680 1683527 .       .       .       Target "RNAi:WBRNAi00004820" 1 1848
@@ -129,7 +130,7 @@ foreach my $chromosome (@chromosomes) {
 
     # add the seondary RNAi hits to the same data structure
     # note which is secondary by adding "secondary" to the gene mapped to
-    print "Loop through secondary RNAi GFF file CHROMOSOME_${chromosome}\n" if ($verbose);
+    print "Loop through secondary RoNAi GFF file CHROMOSOME_${chromosome}\n" if ($verbose);
     open( GFF, "<$gffdir/CHROMOSOME_${chromosome}_RNAi_secondary.gff" ) || die "Failed to open RNAi gff file CHROMOSOME_${chromosome}_RNAi_secondary.gff:$!\n\n";
     while (<GFF>) {
         chomp;
