@@ -5,7 +5,7 @@
 # by Anthony Rogers et al
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-02-24 15:31:12 $
+# Last updated on: $Date: 2006-03-07 13:33:08 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -354,6 +354,7 @@ sub write_cds2wormpep  {
     my @data = split;
     my $gene = $data[0];
     my $pep = $data[1];
+    $pep =~ s/WP://;
     $cds2wormpep{$gene} = $pep;
     $wormpep2cds{$pep} .= "$gene ";
   }
