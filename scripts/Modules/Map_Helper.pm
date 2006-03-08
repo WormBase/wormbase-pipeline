@@ -12,7 +12,7 @@
 #      COMPANY:
 #     $Version:  $
 #      CREATED:  14/11/05 14:33:43 GMT
-#        $Date: 2005-12-06 17:37:42 $
+#        $Date: 2006-03-08 10:00:31 $
 #===============================================================================
 package Map_Helper;
 
@@ -30,6 +30,8 @@ sub get_from_gff {
     while (<GFF_in>) {
         chomp;
         s/\#.*//;
+	next if /^\#/;
+	next if /Link/;
         next unless /$unless/;
         my @f = split /\t/;
 
