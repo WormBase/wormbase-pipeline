@@ -3,7 +3,7 @@
 # prepare_primary_databases.pl
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-03-02 17:52:45 $
+# Last edited on: $Date: 2006-03-08 13:36:02 $
 
 use strict;
 my $scriptdir = $ENV{'CVS_DIR'};
@@ -65,7 +65,7 @@ foreach my $primary (keys %databases){
       $options .= " -".($databases{"$primary"}->{'option'} or $primary )." ".$databases{$primary}->{'ftp_date'};
       print " => Update $primary";
       # clean out anything left from previous build
-      $wormbase->delete_files_from($wormbase->primary("$primary"),'*','+');
+      $wormbase->delete_files_from($wormbase->primary("$primary")."/temp_unpack_dir",'*','+');
     }
   }else {
     $log->write_to("no version of $primary on FTP site");
