@@ -6,7 +6,7 @@
 #
 # Version: $Version: $
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2006-03-07 10:26:00 $
+# Last updated on: $Date: 2006-03-08 09:59:12 $
 
 use strict;
 use warnings;
@@ -117,7 +117,7 @@ foreach my $chromosome (@chromosomes) {
     while (<GFF>) {
         chomp;
         s/^\#.*//;
-        next unless /\S/;
+        next unless /RNAi_primary\s+RNAi_reagent/;
         my @line = split /\t/;
 
         my ($name) = ( $line[8] =~ /\"RNAi:(\S+.+)\"\s+\d+\s+\d+$/ );
@@ -130,12 +130,12 @@ foreach my $chromosome (@chromosomes) {
 
     # add the seondary RNAi hits to the same data structure
     # note which is secondary by adding "secondary" to the gene mapped to
-    print "Loop through secondary RoNAi GFF file CHROMOSOME_${chromosome}\n" if ($verbose);
+    print "Loop through secondary RNAi GFF file CHROMOSOME_${chromosome}\n" if ($verbose);
     open( GFF, "<$gffdir/CHROMOSOME_${chromosome}_RNAi_secondary.gff" ) || die "Failed to open RNAi gff file CHROMOSOME_${chromosome}_RNAi_secondary.gff:$!\n\n";
     while (<GFF>) {
         chomp;
         s/^\#.*//;
-        next unless /\S/;
+        next unless /RNAi_secondary\sRNAi_reagent/;
         my @line = split /\t/;
         my ($name) = ( $line[8] =~ /\"RNAi:(\S+.+)\"\s+\d+\s+\d+$/ );
 
