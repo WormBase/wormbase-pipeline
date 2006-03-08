@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-03-03 14:43:15 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2006-03-08 17:17:19 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -28,7 +28,7 @@ my ( $gff_dump,     $processGFF, $gff_split );
 my $gene_span;
 my ( $load, $tsuser, $map_features, $map, $transcripts, $intergenic, $data_sets, $nem_contigs);
 my ( $GO_term, $rna , $dbcomp, $confirm, $operon ,$repeats, $remarks, $names);
-my ( $utr, $agp, $gff_munge, $extras );
+my ( $utr, $agp, $gff_munge, $extras ,$interpolate_snps);
 my ( $buildrelease, $public);
 
 
@@ -66,6 +66,7 @@ GetOptions(
 	   'remarks'        => \$remarks,
 	   'names'          => \$names,
 	   'utr'            => \$utr,
+	   'snp_interpolation' => \$interpolate_snps,
 	   'agp'            => \$agp,
 	   'gff_munge'      => \$gff_munge,
 	   'extras'         => \$extras,
@@ -134,6 +135,7 @@ $wormbase->run_script( 'molecular_names_for_genes.pl'            , $log) if $nam
 # $build_dumpGFF.pl; (final) is run chronologically here but previous call will operate
 # $wormbase->run_script( "processGFF.pl -$processGFF",        $log ) if $processGFF;    #nematode - to add species to nematode BLATs
 
+$wormbase->run_script( "interpolate_snps.pl"                     , $log) if $interpolate_snps;
 $wormbase->run_script( "make_agp_file.pl"                        , $log) if $agp;
 $wormbase->run_script( "landmark_genes2gff.pl"                   , $log) if $gff_munge;
 $wormbase->run_script( "GFFmunger.pl -all"                       , $log) if $gff_munge;
