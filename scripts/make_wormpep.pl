@@ -7,7 +7,7 @@
 # Builds a wormpep data set from the current autoace database
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-02-23 11:51:14 $
+# Last updated on: $Date: 2006-03-09 11:37:18 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -138,17 +138,16 @@ if ($initial) {
   # write new wp.fastaXXX file
   &write_wormpep_fasta;
 
-  #generate file to ad new peptides to mySQL database.
-  $wormbase->run_script("new_wormpep_entries.pl", $log) if $initial;
-
   # write the wormep.historyXXX and the wormpep.diffXXX files
   &write_wormpep_history_and_diff;
+
+  #generate file to ad new peptides to mySQL database.
+  $wormbase->run_script("new_wormpep_entries.pl", $log);
+
 }
 
 if ($final) {
 
-  # get all of the other info ( PFAM, InterPro, proteinId )
-  &get_additional_data;
 
   # count the isoforms of each CDS (stats for release letter)
   &count_isoforms;
@@ -156,9 +155,13 @@ if ($final) {
   # write wormpep accession file
   &write_wormpep_accession;
 
+  $wormbase->run_command("build_pepace.pl");
 
   # update common data
   $wormbase->run_script("update_Common_data.pl --build --cds2wormpep", $log);
+
+  # get all of the other info ( PFAM, InterPro, proteinId )
+  &get_additional_data;
 }
 
 ##############################
