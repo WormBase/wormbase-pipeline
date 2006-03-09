@@ -41,11 +41,11 @@ if ( $chroms )
   {
     print "-------------------------------------------------------\nCopying new Chromosomal DNA\n\n";
     $log->write_to("Removing old DNA files . . . ");
-    $wormbase->run_command( "rm -f $dir/*dna") ;
+    $wormbase->run_command( "rm -f $dir/*dna",$log) ;
     
     foreach my $chrom (@CHROMOSOME) {
       print "about to get Chromosome $chrom\n";
-      $wormbase->run_command( "scp ".$wormbase->chromosomes."/CHROMOSOME_$chrom.dna $dir/" );
+      $wormbase->run_command( "scp ".$wormbase->chromosomes."/CHROMOSOME_$chrom.dna $dir/" ,$log);
       $log->write_to("chromosome $chrom complete\n");
     }
 
@@ -59,11 +59,11 @@ if( $wormpep )
     my $wp_file = "wormpep" . $WS_version . ".pep";
     my $wp_old  = "wormpep" . ($WS_version - 1) . ".pep";
     
-    $wormbase->run_command("rcp ".$wormbase->wormpep."/wormpep$WS_version $dir/wormpep${WS_version}.pep");
+    $wormbase->run_command("rcp ".$wormbase->wormpep."/wormpep$WS_version $dir/wormpep${WS_version}.pep",$log);
 
     
     $log->write_to("Removed old version of wormpep . . ");
-    $wormbase->run_command("rm -f $dir/${wp_old}*") ;
+    $wormbase->run_command("rm -f $dir/${wp_old}*",$log) ;
 
     $log->write_to("Wormpep copied and ready for action\n\n-------------------------------------------------------\n");
     print "finished\n";
