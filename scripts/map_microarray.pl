@@ -6,8 +6,8 @@
 #
 # by Anon
 #
-# Last updated by: $Author: ar2 $                      
-# Last updated on: $Date: 2006-02-09 15:32:38 $        
+# Last updated by: $Author: mh6 $                      
+# Last updated on: $Date: 2006-03-09 14:03:39 $        
 
 use strict;
 use Wormbase;
@@ -19,7 +19,7 @@ use Ace;
 # variables and command-line options #
 ######################################
 my $maintainers = "All";
-my $help;       # Help perdoc
+my $help;       # Help perldoc
 my $test;       # Test mode
 my $debug;      # Debug mode, verbose output to user running script
 my $load;       # load file to autoace
@@ -194,7 +194,7 @@ $db->close;
 if($load){
   $log->write_to("Loading file to autoace\n");
   my $command = "autoace_builder.pl -load $outfile -tsuser microarray_mappings";
-  $wb->load_to_database($wb->autoace, $outfile, 'microarray_mappings');
+  $wb->load_to_database($wb->autoace, $outfile, 'microarray_mappings',$log);
 }
 
 
