@@ -82,7 +82,6 @@ my $acefile = $acename ? $acename : "$dbdir/acefiles/Oligo_mappings.ace";
 my @chromosomes = $test
   ? qw( III )
   : qw( I II III IV V X );    # chromosomes to parse (TEST_BUILD should be III)
-my %genetype;                 # gene type hash
 
 ################
 # Structs      #
@@ -112,7 +111,7 @@ foreach my $chromosome (@chromosomes) {
     while (<GFF>) {
         chomp;
         s/\#.*//;
-        next unless /\S/;
+        next unless /Oligo_set/;
 #for WS156	next unless /exon/
         my @f = split /\t/;
 
@@ -219,40 +218,6 @@ sub usage {
     }
 }
 
-sub get_from_gff {
-    my ( $file, $type, $unless, $genes ) = @_;
-    open( GFF_in, "<$file" )
-      || die "Failed to open gff file\n\n";
-    while (<GFF_in>) {
-        chomp;
-        s/\#.*//;
-        next unless /$unless/;
-        my @f = split /\t/;
-
-        my ($name) = ( $f[8] =~ /\"(\S+)\"/ );
-        my $x = new Exon;
-        $x->id($name);
-        $x->start( $f[3] );
-        $x->stop( $f[4] );
-        $x->type($type);
-        if ( $$genes{ $x->id } ) {
-            push @{ $$genes{ $x->id }->exons }, $x;
-            $$genes{ $x->id }->start( $x->start )
-              if $x->start < $$genes{ $x->id }->start;
-            $$genes{ $x->id }->stop( $x->stop )
-              if $x->stop < $$genes{ $x->id }->stop;
-        }
-        else {
-            $$genes{ $x->id } = new Gene;
-            $$genes{ $x->id }->start( $x->start );
-            $$genes{ $x->id }->stop( $x->stop );
-        }
-        print "Gene : '$name' [$type]\n"
-          if $verbose;
-    }
-    close(GFF_in);
-
-}
 __END__
 
 =pod
