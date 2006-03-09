@@ -45,7 +45,7 @@ if ( $chroms )
     
     foreach my $chrom (@CHROMOSOME) {
       print "about to get Chromosome $chrom\n";
-      $wormbase->run_command( "scp ".$wormbase->chromosomes."/CHROMOSOME_$chrom.dna $dir/" ,$log);
+      $wormbase->run_command( "cp ".$wormbase->chromosomes."/CHROMOSOME_$chrom.dna $dir/" ,$log);
       $log->write_to("chromosome $chrom complete\n");
     }
 
@@ -59,7 +59,7 @@ if( $wormpep )
     my $wp_file = "wormpep" . $WS_version . ".pep";
     my $wp_old  = "wormpep" . ($WS_version - 1) . ".pep";
     
-    $wormbase->run_command("rcp ".$wormbase->wormpep."/wormpep$WS_version $dir/wormpep${WS_version}.pep",$log);
+    $wormbase->run_command("cp ".$wormbase->wormpep."/wormpep$WS_version $dir/wormpep${WS_version}.pep",$log);
 
     
     $log->write_to("Removed old version of wormpep . . ");
