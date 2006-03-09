@@ -26,7 +26,7 @@ GetOptions (
 
 my $wormbase;
 if ( $store ) {
-  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+  $wormbase = Storable::retrieve( $store ) or croak("Can't restore wormbase from $store\n");
 } else {
   $wormbase = Wormbase->new( 'debug'   => $debug,
                              'test'    => $test,
