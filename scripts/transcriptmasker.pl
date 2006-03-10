@@ -7,8 +7,8 @@
 
 # 031023 dl1
 
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-02-15 11:55:41 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2006-03-10 09:43:43 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -252,6 +252,7 @@ sub MaskSequence {
   close INPUT;
   $/ = "\n";
   close OUTPUT;
+  $db->close;
   return ($masked,$ignored);
 }
 #_ end MaskSequence _#
