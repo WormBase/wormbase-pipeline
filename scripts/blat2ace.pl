@@ -6,8 +6,8 @@
 #
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-02-13 11:35:44 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2006-03-10 10:55:26 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -167,6 +167,8 @@ $log->write_to($wormbase->runtime.": Start mapping\n\n");
 open(ACE,  ">$blat_dir/autoace.$type.ace")  or die "Cannot open $blat_dir/autoace.${type}.ace $!\n";
 open(BLAT, "<$blat_dir/${type}_out.psl")    or die "Cannot open $blat_dir/${type}_out.psl $!\n";
 
+my $number_of_replacements = 0;
+
 # loop through each blat hit
 while (<BLAT>) {
   next unless (/^\d/);
@@ -188,11 +190,12 @@ while (<BLAT>) {
 
   # replace EST name (usually accession number) by yk... name 
   if ( ($est || $ost) && (exists $NDBaccession2est{$query}) ) {
-      my $estname  = $NDBaccession2est{$query};
-      if ($query ne $estname) {
-	  $log->write_to("EST name $query was replaced by $estname\n\n");
-	  $query = $estname;
-      }
+    my $estname  = $NDBaccession2est{$query};
+    if ($query ne $estname) {
+#	  $log->write_to("EST name $query was replaced by $estname\n\n");
+      $number_of_replacements++;
+      $query = $estname;
+    }
   }
 
   ###############################
@@ -344,6 +347,11 @@ while (<BLAT>) {
 close(BLAT);
 close(ACE);
 #close (OUTBLAT);
+
+# concise report
+if ( ($est || $ost) {
+  $log->write_to("\nThere were $number_of_replacements replacements of EST names\n\n");
+}
 
 ####################################
 # produce outfile for best matches #
