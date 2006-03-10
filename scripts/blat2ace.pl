@@ -7,7 +7,7 @@
 # Exporter to map blat data to genome and to find the best match for each EST, mRNA, OST, etc.
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2006-03-10 10:55:26 $
+# Last edited on: $Date: 2006-03-10 11:04:12 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -168,6 +168,7 @@ open(ACE,  ">$blat_dir/autoace.$type.ace")  or die "Cannot open $blat_dir/autoac
 open(BLAT, "<$blat_dir/${type}_out.psl")    or die "Cannot open $blat_dir/${type}_out.psl $!\n";
 
 my $number_of_replacements = 0;
+my %reported_this_query_before;
 
 # loop through each blat hit
 while (<BLAT>) {
@@ -203,7 +204,7 @@ while (<BLAT>) {
   ###############################
 	
   my ($virtual,$startvirtual,$endvirtual);
-  
+
   if ((int($matchstart/100000) + 1) > $lastvirt) { 
       $startvirtual = $lastvirt;
   }
@@ -225,9 +226,12 @@ while (<BLAT>) {
       $virtual = "$word{$type}:${superlink}_${startvirtual}";
   }
   else {
+    if (! exists $reported_this_query_before{$query}) {
+      $reported_this_query_before{$query} = 1; # don't want to report this one again
       $log->write_to("$query wasn't assigned to a virtual object as match size was too big\n");
       $log->write_to("Start is $matchstart, end is $matchend on $superlink\n\n");
-      next;
+    }
+    next;
   }
 
   # calculate (acedb) score for each blat match
@@ -349,7 +353,7 @@ close(ACE);
 #close (OUTBLAT);
 
 # concise report
-if ( ($est || $ost) {
+if ($est || $ost) {
   $log->write_to("\nThere were $number_of_replacements replacements of EST names\n\n");
 }
 
