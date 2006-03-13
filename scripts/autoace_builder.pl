@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2006-03-13 14:37:42 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2006-03-13 17:09:36 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -110,7 +110,6 @@ $wormbase->run_script( 'batch_transcript_build.pl', $log) if $transcripts;
 $wormbase->run_script( 'WBGene_span.pl'                   , $log ) if $gene_span;
 &make_UTR                                                          if $utr;
 
-$wormbase->run_script( 'map_nematode_contigs.pl -all'     , $log ) if $nem_contigs;
 $wormbase->run_script( 'find_intergenic.pl'               , $log ) if $intergenic;
 $wormbase->run_script( 'inherit_GO_terms.pl -phenotype'   , $log ) if $GO_term;
 
