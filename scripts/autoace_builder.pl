@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2006-03-13 12:21:01 $
+# Last edited on: $Date: 2006-03-13 14:37:42 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -29,7 +29,7 @@ my $gene_span;
 my ( $load, $tsuser, $map_features, $map, $transcripts, $intergenic, $data_sets, $nem_contigs);
 my ( $GO_term, $rna , $dbcomp, $confirm, $operon ,$repeats, $remarks, $names);
 my ( $utr, $agp, $gff_munge, $extras ,$interpolate);
-my ( $buildrelease, $public);
+my ( $buildrelease, $public,$finish_build);
 
 
 GetOptions(
@@ -71,7 +71,8 @@ GetOptions(
 	   'gff_munge'      => \$gff_munge,
 	   'extras'         => \$extras,
 	   'buildrelease'   => \$buildrelease,
-	   'public'         => \$public
+	   'public'         => \$public,
+	   'finish_build'   => \$finish_build
 	  );
 
 my $wormbase = Wormbase->new(
@@ -142,6 +143,8 @@ $wormbase->run_script( "GFFmunger.pl -all"                       , $log) if $gff
 &make_extras                                                             if $extras;
 $wormbase->run_script( "build_release_files.pl"                  , $log) if $buildrelease;
 &public_sites                                                            if $public;
+$wormbase->run_script("finish_build.pl"                          , $log) if $finish_build;
+$wormbase->run_script("update_gffdb.csh"                         , $log) if $finish_build;
 
 if ($load) {
     $log->write_to("loading $load to ".$wormbase->autoace."\n");
