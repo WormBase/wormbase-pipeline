@@ -15,7 +15,7 @@
 #      COMPANY:
 #      VERSION:  1.0
 #      CREATED:  13/02/06 09:37:00 GMT
-#     REVISION:  $Revision: 1.2 $
+#     REVISION:  $Revision: 1.3 $
 #===============================================================================
 
 # BACS / SNPS / GENEs
@@ -27,13 +27,13 @@ use Wormbase;
 use Getopt::Long;
 use IO::File;
 
-my ( $store, $test, $prep, $debug, $snps, $genes, $clones, $all, $help, $wormbase,$chromosome );    #options
+my ( $store, $test, $prep, $debug, $alleles, $genes, $clones, $all, $help, $wormbase,$chromosome );    #options
 
 GetOptions(
     'help'    => \$help,
     'test'    => \$test,
     'debug:s' => \$debug,
-    'snps'    => \$snps,
+    'alleles'    => \$alleles,
     'genes'   => \$genes,
     'clones'  => \$clones,
     'all'     => \$all,
@@ -85,14 +85,16 @@ foreach my $chrom ( @chromosomes) {
 	
     # Input files
     my @data;
-    push( @data, "$chromdir/${chrom}_SNP.gff" )          if ( $snps   || $all ); # GFF_method_dump.pl -method SNP
+    push( @data, "$chromdir/${chrom}_allele.gff" )          if ( $alleles|| $all ); # GFF_method_dump.pl -method Allele
     push( @data, "$chromdir/${chrom}_gene.gff" )            if ( $genes  || $all );
     push( @data, "$chromdir/${chrom}_clone_accession.gff" ) if ( $clones || $all );
     foreach my $file (@data) {
         $chrom=~/_(.*)$/;
-	&dump_snps($wormbase,$1) if ($snps && (! -e $file));
+	
+	&dump_alleles($wormbase,$1) if ($alleles && (! -e $file));
+	
    	my $fh = IO::File->new( $file, "r" ) || ( $log->write_to("cannot find: $chromdir/$file\n") && next);
-	$file =~ /${chrom}_(SNP|gene|clone)/; # hmpf
+	$file =~ /${chrom}_(allele|gene|clone)/; # hmpf
         my $of = IO::File->new( ">> $outdir/interpolated_$1_$chrom.ace" );
 
 	$log->write_to("adding $chrom to: interpolated_$1_$chrom.ace\n");
@@ -103,18 +105,19 @@ foreach my $chrom ( @chromosomes) {
             my @fields = split;
 
             # dumb assumption that f[9] is always the id
-            my ( $chr, $source, $feature, $id ) = ( $fields[0], $fields[1], $fields[2], $fields[9] );
-            my $pos = ( $fields[3] + $fields[4] ) / 2; # average map position
+            my ( $chr, $source, $feature, $id , $ctag) = ( $fields[0], $fields[1], $fields[2], $fields[9],$fields[8]);
 
             my $class;
             if    ( $source eq 'Genomic_canonical' && $feature eq 'region' ) { $class = 'Sequence' }
-            elsif ( $source eq 'Allele'            && $feature eq 'SNP' )    { $class = 'Variation' }
-            elsif ( $source eq 'gene'              && $feature eq 'gene' )   {
-                $class = 'Gene';
+            elsif ( $source eq 'Allele'            && $ctag eq 'Variation' ) { $class = 'Variation' }
+            elsif ( $source eq 'gene'              && $feature eq 'gene' )   { $class = 'Gene';
                 next if $rev_genes->{$id} # need to check for existing reverse maps for genes
             }
             else { next }
+	    
+	    my $pos = ( $fields[3] + $fields[4] ) / 2; # average map position
             my $aceline = $mapper->x_to_ace( $id, $pos, $chr, $class );
+	    
             print $of $aceline if $aceline; # mapper returns undef if it cannot be mapped (like on the telomers)
             $log->write_to("cannot map $class : $id (might be on a telomer) - phys.pos $chr : $pos\n") if ( !$aceline ); #--
         }
@@ -126,11 +129,12 @@ foreach my $chrom ( @chromosomes) {
 ###########################################################################################
 $log->mail();
 
-exit 0; # doesn't exit cleanly :-(
-################### ###########
-sub dump_snps {
+exit 0;
+
+###############################
+sub dump_alleles {
 	my ($wormbase,$chromosome)=@_;
-	my $cmd = "GFF_method_dump.pl -database ".$wormbase->autoace." -methods SNP -dump_dir ".$wormbase->autoace."/GFF_SPLITS -chromosome $chromosome";
+	my $cmd = "GFF_method_dump.pl -database ".$wormbase->autoace." -methods Allele -dump_dir ".$wormbase->autoace."/GFF_SPLITS -chromosome $chromosome";
 	print `$cmd`
 }
 
@@ -179,7 +183,7 @@ __END__
 
 =head1 DESCRIPTION
 
-creates mapping files in AceDB format for SNPs, clones and genes by using 
+creates mapping files in AceDB format for alleles, clones and genes by using 
 the physical and genetic position of reference genes.
 
 =head1 USAGE 
@@ -194,7 +198,7 @@ the physical and genetic position of reference genes.
 
 =item * -debug NAME
 
-=item * -snps
+=item * -alleles
 
 =item * -genes
 
@@ -204,7 +208,7 @@ the physical and genetic position of reference genes.
 
 =item * -store FILENAME	specifies a stored Wormbase configuration
 
-=item * -chromosome [I II III IV V X] specify ONE chromosome to process (mainly for debugging as all write into the same acefile)
+=item * -chromosome [I II III IV V X] specify ONE chromosome to process
 
 =back 
 
