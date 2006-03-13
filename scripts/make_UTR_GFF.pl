@@ -15,7 +15,7 @@
 #      COMPANY:
 #      VERSION:  2 
 #      CREATED:  21/02/06 14:11:30 GMT
-#     REVISION:  $Revision: 1.9 $ 
+#     REVISION:  $Revision: 1.10 $ 
 #===============================================================================
 
 use strict;
@@ -38,7 +38,7 @@ GetOptions(
 );
 
 die `perldoc $0` if $help;
-if ($store) { $wormbase = retrieve($store) or croak("Can't restore wormbase from $store\n") }
+if ($store) { $wormbase = Storable::retrieve($store) or croak("Can't restore wormbase from $store\n") }
 else { $wormbase = Wormbase->new( -debug => $debug, -test => $test ) }
 
 my $maintainers = "$debug\@sanger.ac.uk" if $debug;
