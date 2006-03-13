@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2006-03-13 17:09:36 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2006-03-13 18:30:41 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -108,7 +108,7 @@ $wormbase->run_script( 'batch_transcript_build.pl', $log) if $transcripts;
 #requires GFF dump of transcripts (done within script if all goes well)
 
 $wormbase->run_script( 'WBGene_span.pl'                   , $log ) if $gene_span;
-&make_UTR                                                          if $utr;
+&make_UTR($log)                                                    if $utr;
 
 $wormbase->run_script( 'find_intergenic.pl'               , $log ) if $intergenic;
 $wormbase->run_script( 'inherit_GO_terms.pl -phenotype'   , $log ) if $GO_term;
@@ -210,8 +210,8 @@ sub map_features {
 
 
 sub make_UTR {
+  my ($log)=@_;
   foreach (qw( I II III IV V X ) ) {
-    $wormbase->run_script("make_UTR_GFF.pl -chromosome $_");
   }
 }
 
