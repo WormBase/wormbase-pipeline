@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-02-17 11:20:55 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2006-03-13 17:41:24 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -86,6 +86,7 @@ init SAGE_transcript
 init RNAi_primary
 init RNAi_secondary
 init Expr_profile
+init Orfeome
 blat BLAT_EMBL_BEST
 blat BLAT_EMBL_OTHER
 blat BLAT_EST_BEST
