@@ -4,7 +4,7 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2006-02-27 14:34:47 $
+# Last updated on: $Date: 2006-03-14 10:23:54 $
 # Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
@@ -15,6 +15,7 @@ use Wormbase;
 use Ace;
 use IO::Handle;
 use Getopt::Long;
+use Log_files;
 
 my ($verbose, $db_path, $log, $basic, $test, $debug);
 
@@ -52,6 +53,7 @@ my $db = Ace->connect(-path=>$db_path, -program=>$tace) || die "Couldn't connect
 
 # set up log file for output, use specified command line argument where present or write to screen
 # if log file specified and it exists, then append.  Else write to new file.
+
 
 if ($log) {
   if (-e $log) {

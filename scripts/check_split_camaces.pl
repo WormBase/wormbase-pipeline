@@ -4,15 +4,39 @@
 #
 # Cronjob integrity check controls for split camace databases.
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-12-16 11:18:55 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2006-03-14 10:23:54 $
 
 use strict;
-use lib -e "/wormsrv2/scripts"  ? "/wormsrv2/scripts"  : $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
+use Log_files;
+use Getopt::Long;
+use Storable;
 
-my $rundate = &rundate;
-my $log = "/nfs/disk100/wormpub/logs/check_split_camaces.$rundate.$$";
+my ($debug,$test,);
+
+GetOptions(
+	   'debug:s'        => \$debug,
+	   'test'           => \$test,
+	  );
+
+my $wormbase = Wormbase->new(
+    -test    => $test,
+    -debug   => $debug,
+);
+
+
+if ($debug) {
+my $maintainers = "$debug";
+}
+else {
+my $maintainers = "All";
+}
+
+
+my $rundate = $wormbase->rundate;
+my $runtime = $wormbase->runtime;
 my $path = "/nfs/disk100/wormpub";
 my $age = 1;
 my $maintainers = "All";
@@ -20,15 +44,13 @@ my $maintainers = "All";
 # is today monday?  If so set age to be 3 to ignore weekend
 $age = 3 if (`date +%u` == 1);
 
-open (LOG,">$log") or &mail_maintainer("LOG failed in check_split_camaces.pl","wormbase\@sanger.ac.uk");
-
-print LOG &runtime, ": script started\n\n";
-
+my $log = Log_files->make_build_log();
+$log->write_to("$runtime : script Started\n");
 my @users = ("gw3", "pad");
 
 foreach my $user (@users) {
 
-  print LOG "Processing camace_${user}:\n";
+  $log->write_to("Processing camace_${user}:\n");
 
   my $dbpath = $path."/camace_".$user."/database";
   
@@ -39,27 +61,24 @@ foreach my $user (@users) {
     my @line = split(/\s+/,$date[$#date]);
     
     my $file_age = sprintf("%.1f", -M $line[8]);
-    print LOG "last modified $file_age days ago: ";
+    $log->write_to("last modified $file_age days ago: ");
     # Was file modified in last day?
     if (-M $line[8] >$age){
-      print LOG "no need to re-run camcheck.pl\n\n";
+      $log->write_to("no need to re-run camcheck.pl\n\n");
     }
     else{
-      print LOG "running camcheck.pl\n\n";
-      system("$ENV{'CVS_DIR'}/camcheck.pl -s $path/camace_${user} -l -e $user");
+      $log->write_to("running camcheck.pl\n\n");
+      $wormbase->run_script("camcheck.pl -db $path/camace_${user} -l -e $user" , $log);
     }
   }
   else{
-    print LOG "ERROR: ${dbpath}/ACEDB.wrm file not present\n";
+    $log->write_to("ERROR: ${dbpath}/ACEDB.wrm file not present\n");
   }
 }
 
-print LOG &runtime, ": script finished\n";
+$log->write_to("$runtime : script finished\n");
 
-close(LOG);
-
-&mail_maintainer("check_split_camaces.pl Report:",$maintainers,$log);
-
+$log->mail;
 exit(0);
 
   
