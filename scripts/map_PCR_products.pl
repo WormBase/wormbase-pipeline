@@ -202,12 +202,12 @@ sub get_PCRs_from_GFF
     while (<GFF_in>) {
         chomp;
         s/\#.*// if !(/\".+\#.+\"/);
-        next unless /\S/;
+        next unless /PCR_product/;
         my @f = split /\t/;
 
         my ($name) = ( $f[8] =~ /PCR_product \"(.*)\"$/ );
         unless ($name) {
-            $log->write_to("ERROR: Cant get name from $f[8]\n");
+            $log->write_to("WARNING: Cant get name from $f[8] , line $. in CHROMOSOME_${chromosome}_$method.gff\n");
             next;
         }
         $$pcr{$name} = [ $f[3], $f[4] ];
