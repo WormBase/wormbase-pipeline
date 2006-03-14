@@ -1,4 +1,4 @@
-#!/bin/env perl 
+#!/nfs/disk100/wormpub/bin/perl 
 #===============================================================================
 #
 #         FILE:  make_UTR_GFF.pl
@@ -15,7 +15,7 @@
 #      COMPANY:
 #      VERSION:  2 
 #      CREATED:  21/02/06 14:11:30 GMT
-#     REVISION:  $Revision: 1.11 $ 
+#     REVISION:  $Revision: 1.12 $ 
 #===============================================================================
 
 use strict;
