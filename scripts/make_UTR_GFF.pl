@@ -1,4 +1,4 @@
-#!/usr/bin/env perl -w
+#!/bin/env perl 
 #===============================================================================
 #
 #         FILE:  make_UTR_GFF.pl
@@ -15,10 +15,11 @@
 #      COMPANY:
 #      VERSION:  2 
 #      CREATED:  21/02/06 14:11:30 GMT
-#     REVISION:  $Revision: 1.10 $ 
+#     REVISION:  $Revision: 1.11 $ 
 #===============================================================================
 
 use strict;
+use warnings;
 use lib $ENV{'CVS_DIR'};
 use Modules::GFF_sql;
 use Wormbase;
