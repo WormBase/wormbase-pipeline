@@ -6,8 +6,8 @@
 #
 # Usage: camcheck.pl
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-12-16 11:18:55 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2006-03-14 10:29:41 $
 #
 # see pod documentation (i.e. 'perldoc camcheck.pl') for more information.
 #
@@ -19,12 +19,13 @@
 #################################################################################
 
 use IO::Handle;
-use Getopt::Std;
+use Getopt::Long;
 use Ace;
 use strict;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Socket;
+use Log_files;
 
 ##############################
 # Script variables (run)     #
@@ -35,39 +36,44 @@ my $maintainers = "All";
 ##############################
 # command-line options       #
 ##############################
+my ($help,$verbose,$debug,$test,$Weekly,$Montly,$Database,$Low,$email,);
 
-use vars qw/ $opt_d $opt_h $opt_w $opt_m $opt_s $opt_l $opt_e $opt_v/;
-getopts ('hd:wms:le:v');
+GetOptions(
+	   'h'        => \$help,    #  -h, Help
+	   'v'        => \$verbose, #  -v, Verbose option.
+	   'debug:s'  => \$debug,   #  -debug, debug option
+	   'test'     => \$test,    #  -test, TEST_BUILD env used.
+	   'w'        => \$Weekly,  #  -w, Weekly checks are active
+	   'm'        => \$Montly,  #  -m, Montly checks are active
+	   'db:s'     => \$Database,#  -db select which database to run against
+	   'l'        => \$Low,     #  -l, low level checks - not all the small intron gubbins
+	   'e'        => \$email,   #  -e, Specifiy a mail recepient so that only the person responsible for a spilt database will be notified
+	  );
 
-&usage(0) if ($opt_h); # perldoc help message
 
-my $debug   = $opt_d;  # for debug options
-my $verbose = $opt_v;  # for specifying more output
+my $wormbase = Wormbase->new(
+    -test    => $test,
+    -debug   => $debug,
+);
 
-#  -h, Help
-#  -d, Debug, specify user name to receive email
-#  -w, Weekly checks are active
-#  -m, Montly checks are active
-#  -s, select which database to run against
-#  -l, low level checks - not all the small intron gubbins in check_predicted_genes.pl
-#  -e, Specifiy a mail recepient so that only the person responsible for a spilt database will be notified
+&usage(0) if ($help); # perldoc help message
 
 ##############################
 # Paths etc                  #
 ##############################
 
-my $tace    = &tace;                            # tace executable path
+my $tace    = $wormbase->tace;                            # tace executable path
 my $dbpath  = "/nfs/disk100/wormpub/DATABASES/camace";               # Database path
 
-if ($opt_s) {
-    $dbpath = $opt_s;
+if ($Database) {
+    $dbpath = $Database;
     &usage('bad database path') unless (-e "$dbpath/database/ACEDB.wrm");
 }
 
 # only email a specific person responsible for a database
-if($opt_e){
-  if(($opt_e eq "gw3") || ($opt_e eq "pad")){ 
-     $maintainers = $opt_e;
+if($email){
+  if(($email eq "gw3") || ($email eq "pad")){ 
+     $maintainers = $email;
   }
   else{
      $maintainers = "wormbase\@sanger.ac.uk";
@@ -89,17 +95,13 @@ print "// Verbose mode selected\n\n" if ($verbose);
 ########################################
 my $dbname = $dbpath;
 $dbname =~ s/.*camace(.*)/camace$1/;
-my $rundate = &rundate;
-my $runtime = &runtime;
-my $log="/nfs/disk100/wormpub/logs/camcheck.$dbname.$rundate.$$";
+my $rundate = $wormbase->rundate;
+my $runtime = $wormbase->runtime;
+my $log = Log_files->make_build_log($wormbase);
 
-
-open (LOG,">$log") || die "Couldn't write to log file\n";
-LOG->autoflush();
-
-print LOG "# camcheck.pl\n";     
-print LOG "# run details $dbname  : $rundate $runtime\n";
-print LOG "\n";
+$log->write_to("# camcheck.pl\n");     
+$log->write_to("# run details $dbname  : $rundate $runtime\n");
+$log->write_to("\n");
 
 
 #########################################
@@ -109,9 +111,9 @@ print LOG "\n";
 my $db = Ace->connect(-path=>$dbpath,
 		      -program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
 
-print LOG "CamCheck run STARTED at $runtime\n\n";
-print LOG "** Weekly edition **\n\n"  if ($opt_w);
-print LOG "** Monthly edition **\n\n" if ($opt_m);
+$log->write_to("CamCheck run STARTED at $runtime\n\n");
+$log->write_to("** Weekly edition **\n\n") if ($Weekly);
+$log->write_to("** Monthly edition **\n\n") if ($Montly);
 
 #########################################
 # Checks                                #
@@ -129,16 +131,15 @@ print LOG "** Monthly edition **\n\n" if ($opt_m);
 
 &LinkObjects;
 
-$runtime = &runtime;
-print LOG "\nCamCheck run ENDED at $runtime\n\n";
+$log->write_to("\nCamCheck run ENDED at $runtime\n\n");
 
-close LOG;
+#close LOG;
 
 ##############################
 # mail $maintainer report    #
 ##############################
 
-&mail_maintainer("camcheck.pl Report:",$maintainers,$log);
+#&mail_maintainer("camcheck.pl Report:",$maintainers,$log);
 
 ##############################
 # Write log to wormpub intweb
@@ -151,6 +152,7 @@ close LOG;
 ##############################
 
 $db->close;
+$log->mail;
 exit(0);
 
 #################################################################################
@@ -187,7 +189,7 @@ sub CloneTests {
 	
 	my $seqpath = "$clonepath"."/"."$line"."/"."$clone.seq";
 	
-	open SEQPATH,"<$seqpath" || do {print LOG "$clone  \t:NOT_IN_DIRECTORY $seqpath\n"; next; };
+	open SEQPATH,"<$seqpath" || do {$log->write_to("$clone  \t:NOT_IN_DIRECTORY $seqpath\n"); next; };
 	my $line1;
 	while (defined($line1=<SEQPATH>)) {  
 	    chomp($line1);
@@ -198,7 +200,7 @@ sub CloneTests {
 	$seq_file =~ s/\>\w+//;
 	$seq_file =~ s/\W+//mg;
 	if ($seq_file =~ /[^ACGTUMRWSYKVHDBXN]/img) {
-	    print LOG  "DIRSEQ for $clone contains bad characters\n";
+	    $log->write_to("DIRSEQ for $clone contains bad characters\n");
 	    $seq_file =~ s/[^ACGTUMRWSYKVHDBXN]//img;
 	}
 	
@@ -208,7 +210,7 @@ sub CloneTests {
 	
 	my $obj = $db->fetch(Sequence=>$clone);
 	if (!defined ($obj)) {
-	    print LOG "Could not fetch sequence $clone\n";
+	    $log->write_to("Could not fetch sequence $clone\n");
 	    next;
 	}
 	
@@ -218,7 +220,7 @@ sub CloneTests {
 	
 	my $canonical=$obj->Properties(1);
 	if ($canonical !~ /Genomic_canonical/) {
-	    print LOG "Not Genomic_canonical sequence $clone\n";
+	    $log->write_to("Not Genomic_canonical sequence $clone\n");
 	    next;
 	}
   
@@ -228,7 +230,7 @@ sub CloneTests {
 	
 	$seq_ace=$obj->asDNA();
 	if (!$seq_ace) {
-	    print LOG "$clone NOT_IN_ACEDB $clone\n" ;
+	    $log->write_to("$clone NOT_IN_ACEDB $clone\n");
 	    next;
 	}
 	$seq_ace =~ s/\>\w+//mg;
@@ -275,7 +277,7 @@ sub CloneTests {
 	# Check Sequence versions with EMBL                                  #
 	######################################################################
 	
-	if ($opt_w) {
+	if ($Weekly) {
 	    print " | Sequence versions" if ($verbose);
 	    &check_sequence_version($obj);
 	}
@@ -308,7 +310,7 @@ sub check_worm_genes{
   my @genes= $db->fetch(-query=>'find worm_genes NOT Gene');
     if(@genes){
       foreach (@genes){
-	print LOG "ERROR: $_ has no Gene tag, please add valid Gene ID from geneace\n";
+	$log->write_to("ERROR: $_ has no Gene tag, please add valid Gene ID from geneace\n");
       }
     }
 }
@@ -321,7 +323,7 @@ sub check_worm_transcripts{
   my @Transcripts= $db->fetch(-query=>'find elegans_RNA_genes NOT Transcript');
   if(@Transcripts){
     foreach (@Transcripts){
-      print LOG "ERROR: $_ has no Transcript tag, this will cause errors in the build\n";
+      $log->write_to("ERROR: $_ has no Transcript tag, this will cause errors in the build\n");
     }
   }
 }
@@ -330,20 +332,22 @@ sub check_worm_transcripts{
 #########################
 
 sub CheckPredictedGenes {
-    
-    # need to close and reopen existing log filehandle either side of system call
-
-    close(LOG);
-
-    my $cpg_call = "/nfs/disk100/wormpub/TEST_BUILD/scripts/check_predicted_genes.pl -database $dbpath -log $log";
-    $cpg_call .= " -basic" if $opt_l;
-    system("$cpg_call");
-    warn "check_predicted_genes.pl did not run correctly: $?" if ($?);
-    
-# now opened in append mode
-    open (LOG,">>$log");
-    LOG->autoflush();
-    
+  
+  # need to close and reopen existing log filehandle either side of system call
+  
+  #    close(LOG);
+  if ($Low) {
+	   #$wormbase->run_script("check_predicted_genes.pl -database $dbpath -basic", $log);
+	   $wormbase->run_script("check_predicted_genes.pl -database $dbpath -basic");
+	  }
+    else {
+      $wormbase->run_script("check_predicted_genes.pl -database $dbpath");
+      #$wormbase->run_script("check_predicted_genes.pl -database $dbpath" , $log);
+    }
+  # now opened in append mode
+  #    open (LOG,">>$log");
+  #    LOG->autoflush();
+  
 }
 
 
@@ -356,7 +360,7 @@ sub SingleSequenceMap {
     my @multimap_clones= $db->fetch(-query=>'find Clone COUNT Map > 1');
     if (@multimap_clones){
 	foreach (@multimap_clones){
-	    print LOG "Clone error - $_ contains two or more map objects\n";
+	    $log->write_to("Clone error - $_ contains two or more map objects\n");
 	}
     }
 }
@@ -389,7 +393,7 @@ sub dateseq {
   my $ace_date = $obj->Date_directory(1);
         
   if ($dir_date != $ace_date) {
-    print LOG "DATE mismatch in $obj; dir $dir_date acedb $ace_date\n";
+    $log->write_to("DATE mismatch in $obj; dir $dir_date acedb $ace_date\n");
   }
 } 
 
@@ -408,8 +412,8 @@ sub chksum {
     my $chk2 = &calculate_chksum($seq_ace);
 
     if ($chk1 != $chk2) {
-	print LOG "SEQUENCE mismatch in $clone; dir $chk1 acedb $chk2\t";
-	print LOG "=> dir: " . length ($seq_file) . " ace: " . length ($seq_ace) . "\n";
+	$log->write_to("SEQUENCE mismatch in $clone; dir $chk1 acedb $chk2\t");
+	$log->write_to("=> dir: " . length ($seq_file) . " ace: " . length ($seq_ace) . "\n");
 
     }
 }
@@ -447,10 +451,10 @@ sub CloneStatus {
     my $annotated = $obj->Annotated(1);
 
     if (!$finished) {
-	print LOG "NOT_FINISHED $obj\n";
+	$log->write_to("NOT_FINISHED $obj\n");
     }    
     if (($finished)&&(!$annotated)){
-	print LOG "FINISHED_BUT_NOT_ANNOTATED $obj\n";
+	$log->write_to("FINISHED_BUT_NOT_ANNOTATED $obj\n");
     }
 }
 
@@ -464,11 +468,11 @@ sub checkchars {
   my $finished  = $obj->Finished(1);
   
     if ($seq_ace =~ /[^ACGTUMRWSYKVHDBXN]/img) {
-	print LOG "ACEDBSEQ for $obj contains bad characters\n";
+	$log->write_to("ACEDBSEQ for $obj contains bad characters\n");
 	$seq_ace =~s/[^ACGTUMRWSYKVHDBXN]//img;
     }
     if (($seq_ace =~ /N/g) && ($finished)) { 
-	print LOG "ACEDBSEQ FINISHED SEQUENCE for $obj contains N \n";
+	$log->write_to("ACEDBSEQ FINISHED SEQUENCE for $obj contains N \n");
     }
 }
 
@@ -507,7 +511,7 @@ sub check_sequence_version {
     }
     
     if ($EM_seqver != $ver) {
-	print LOG "Sequence version discrepent $obj [camace = $ver | EMBL = $EM_seqver]\n";
+	$log->write_to("Sequence version discrepent $obj [camace = $ver | EMBL = $EM_seqver]\n");
     }
 
 }
@@ -552,14 +556,14 @@ sub check_CDSs {
     
     my $subseq = $db->fetch(CDS => "$cds");
     if (!defined ($subseq)) {
-      print LOG "Cannot fetch CDS $cds\n";
+      $log->write_to("Cannot fetch CDS $cds\n");
       next;
     }
     
     # All CDS objects must have a 'Sequence' tag to connect to parent object    
     $parent = $subseq->Sequence;
     if ((!defined ($parent))) {
-      print LOG "The CDS $cds has no Sequence tag\n";
+      $log->write_to("The CDS $cds has no Sequence tag\n");
     }
     
     # check to see if CDS coordinates exceed length of parent clone
@@ -567,7 +571,7 @@ sub check_CDSs {
     if($parent !~ m/SUPERLINK/){
       my ($parent_length) = $parent->DNA(2);
       if (($start > $parent_length) || ($end > $parent_length)){
-	print LOG "The CDS $cds has coordinates that exceed the length of its parent\n";
+	$log->write_to("The CDS $cds has coordinates that exceed the length of its parent\n");
       }
     }
     
@@ -577,13 +581,13 @@ sub check_CDSs {
     
     @num = $subseq->Source_exons(2);
     if (!@num) {
-      print LOG "The CDS $cds has no Source_exons\n";
+      $log->write_to("The CDS $cds has no Source_exons\n");
     }
     my @sort = sort numerically @num;
     my $index = $#sort;
     my $length = ($sort[$index])-1;
     if ($diff != $length) {
-      print LOG "The CDS $cds belonging to $obj has diff=$diff and length=$length\n";
+      $log->write_to("The CDS $cds belonging to $obj has diff=$diff and length=$length\n");
     }
     
     
@@ -593,7 +597,7 @@ sub check_CDSs {
     
     $method = $subseq->Method(1);
     if ((!defined ($method))) {
-      print LOG "The CDS $cds has no method\n";
+      $log->write_to("The CDS $cds has no method\n");
     }
     
     # NDB_CDS || HALFWISE || gaze - don't process
@@ -612,7 +616,7 @@ sub check_CDSs {
     
     my $species = $subseq->Species(1);
     if ((!defined ($species))) {
-      print LOG "The CDS $cds has no Species tag\n";
+      $log->write_to("The CDS $cds has no Species tag\n");
     }
  
 
@@ -623,19 +627,19 @@ sub check_CDSs {
     
 #    if ($cds =~ /\S+\.t\d+/) {
 #      if (!defined ($subseq->at('Properties.Transcript'))) {
-#	print LOG "The CDS $cds has no Transcript tag\n";
+#	$log->write_to("The CDS $cds has no Transcript tag\n");
 #      }
 #    }
 #    else {
 #      
 #      if ($method eq "Pseudogene") {
 #	if (!defined ($subseq->at('Properties.Pseudogene'))) {
-#	  print LOG "The CDS $cds [$method] has no Pseudogene tag\n";
+#	  $log->write_to("The CDS $cds [$method] has no Pseudogene tag\n");
 #	} 
 #      }
 #      if ( ($method eq "curated") || ($method eq "provisional") ) {
 #	if (!defined ($subseq->at('Properties.Coding.CDS'))) {
-#	  print LOG "The subsequence $cds [$method] has no CDS tag\n";
+#	  $log->write_to("The subsequence $cds [$method] has no CDS tag\n");
 #	}
 #      }
 #    }
@@ -807,7 +811,7 @@ sub usage {
         exec ('perldoc',$0);
     }
     elsif ($error eq "bad database path") {
-	print "The database path is invalid. No ACEDB.wrm file found at $opt_s\n\n";
+	print "The database path is invalid. No ACEDB.wrm file found at $Database\n\n";
         &run_details;
         exit(0);
     }
