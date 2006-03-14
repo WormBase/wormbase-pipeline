@@ -6,7 +6,7 @@
 # This maps alleles to the genome based on their flanking sequences
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-02-22 10:48:11 $
+# Last updated on: $Date: 2006-03-14 12:09:57 $
 
 use strict;
 use warnings;
@@ -330,6 +330,10 @@ sub outputAllele {
 
                 #allele - WBGene connection
                 my $WBGene = $worm_gene2geneID{$cds};
+		unless ($WBGene) {
+		  $log->write_to("ERROR:$allele : no gene_id for $cds\n");
+		  next;
+		}
                 print OUT "\nGene : $WBGene\n";
                 print OUT "Allele $allele\n\n";
 
@@ -357,11 +361,6 @@ sub outputAllele {
                     $log->write_to("ERROR: $cds is not a CDS or Transcript\n");
                     $error_count++;
                 }
-		#write Database line for link to KO_consortium
-		if( $allele =~ /^[og]k\d/ ) {
-		  print "\nVariation : $allele\n";
-		  print "Database Gene_Knockout_Consortium GeneID \"<GeneID=$cds>\"\n";
-		}
             }
         }
     }
