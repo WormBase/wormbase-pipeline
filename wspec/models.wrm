@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2006-02-17 12:00:18 $
+// Last edited on: $Date: 2006-03-14 13:34:33 $
  
 
 
@@ -2084,7 +2084,7 @@
 
 #Microarray_data        Result          A_vs_B_log_ratio        UNIQUE Float                 // relative abundance               
                                         A_vs_B_SD               UNIQUE Float                 // standard deviation over a set of experiments
-                                        Frequency               UNIQUE Int                   // absolute abundance in ppm
+                                        Frequency               UNIQUE Float                 // absolute abundance in ppm - [14-Mar-06 ar2] Igor wants a float (absolute?)
                                         Number_of_experiments   UNIQUE Int
                                         Range_within_paper      UNIQUE Float UNIQUE Float    // min and max observed ratio or frequency in all experiments from a paper
                         Confidence      Confidence_level        UNIQUE Float                 // added for Igor [031020
@@ -2640,6 +2640,7 @@
 			    SeqStatus UNIQUE Not_sequenced //[2006-02-17 ar2] to differentiate between mutations which have been sequenced and those which have not.
 					     Sequenced
 					     Pending_curation
+			    Deletion_verification Text #Evidence //[14-Mar-06 ar2] Mark Edgely of KO_alleles has developed test to confirm deletion (mt3)
            Variation_type Allele		
 			  SNP            // replaces the old 'Status Text' part of ?Locus model	
 			  Confirmed_SNP
