@@ -6,7 +6,7 @@
 # This maps alleles to the genome based on their flanking sequences
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-03-14 12:09:57 $
+# Last updated on: $Date: 2006-03-14 17:25:56 $
 
 use strict;
 use warnings;
@@ -77,9 +77,8 @@ if ($debug) {
     $maintainers = "$debug\@sanger.ac.uk";
 }
 $release = $wb->get_wormbase_version unless ( defined $release );
-my $mapping_dir = $wb->autoace."/MAPPINGS";
-my $ace_file    = "$mapping_dir/allele_mapping.WS$release.ace";
-my $gff_file    = "$mapping_dir/allele_mapping.WS$release.gff";
+my $ace_file    = $wb->acefiles."/allele_mapping.WS$release.ace";
+my $gff_file    = $wb->gff_splits."/allele_mapping.WS$release.gff";
 $database = $wb->autoace unless $database;
 
 ################################################
