@@ -199,7 +199,7 @@ my %type_remark = ('affy' => "Affymetrix",
       }
     }
   }
-
+  $db->close;
   close OUT;
   print "$count objects written\n";
   print "$cds_count overlap CDS\n";
