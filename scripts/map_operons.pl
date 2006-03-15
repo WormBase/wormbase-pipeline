@@ -2,8 +2,8 @@
 #
 # map_operons.pl
 
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-03-02 17:48:21 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2006-03-15 09:43:27 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -68,7 +68,7 @@ foreach my $operon(@operons) {
   ($op_strand eq '+') ? print OUT "$op_start $op_end" : print OUT "$op_end $op_start";
   print OUT "\n";
 }
-
+$db->close;
 $wb->load_to_database($wb->autoace,"$acefile",'operon_span') unless $noload;
 
 $log->mail;
