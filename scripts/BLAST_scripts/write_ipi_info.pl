@@ -1,8 +1,12 @@
 #!/usr/local/ensembl/bin/perl -w
 
+use lib $ENV{'CVS_DIR'};
+
 use strict;
 use Getopt::Long;
 use DB_File;
+use Wormbase;
+use Log_files;
 
 my $old;
 my $verbose;
@@ -18,7 +22,7 @@ GetOptions ( "old"       => \$old,
 	     "species=s" => \$species,
 	     "store:s"   => \$store,
 	     "test"      => \$test,
-	     "debug:s"   => \$debug
+	     "debug:s"   => \$debug,
 	   );
 
 my $wormbase;
@@ -27,13 +31,12 @@ if ( $store ) {
 } else {
   $wormbase = Wormbase->new( -debug   => $debug,
                              -test    => $test,
-			     -farm    => '1'
 			     );
 }
 
 my $log = Log_files->make_build_log($wormbase);
 
-my $wormpipe_dump = $wormbase->dump_dir;
+my $wormpipe_dump = $wormbase->farm_dump;
 my $acc2db   = "$wormpipe_dump/acc2db.dbm";
 my $desc     = "$wormpipe_dump/desc.dbm";
 my $peptide  = "$wormpipe_dump/peptide.dbm";
@@ -48,7 +51,7 @@ foreach ( @blastp_databases ){
 }
 
 $list_all = "$wormpipe_dump/ipi_hits_all" unless $list_all;
-$output = "$wormpipe_dump/ipi_hits.ace" unless $output;
+$output   = "$wormpipe_dump/ipi_hits.ace" unless $output;
 
 system("cat $ipi_hits_files | sort -u > $list_all");
 
@@ -176,7 +179,7 @@ sub getSwissGeneName
       if( /^ID\s+(\S+)/ ) {
 	# before we move on to next protein check if the previous one received a gene name
 	# if not use $backup_gene from the GN line rather than the Genew one
-	unless( $$s2g{$id} ) {
+	unless( $id and $$s2g{$id} ) {
 	  if( $backup_gene ) {
 	    $$s2g{$id} = $backup_gene;
 	  }
