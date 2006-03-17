@@ -5,8 +5,9 @@
 # Dumps protein motifs from ensembl mysql (protein) database to an ace file
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-02-24 15:27:58 $
+# Last updated on: $Date: 2006-03-17 11:43:18 $
 
+use lib $ENV{'CVS_DIR'};
 
 use strict;
 use DBI;
