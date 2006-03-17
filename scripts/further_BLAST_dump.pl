@@ -7,7 +7,7 @@
 # Author: Chao-Kung CHen
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-03-02 17:50:55 $
+# Last updated on: $Date: 2006-03-17 11:39:46 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -60,12 +60,13 @@ my @files        = (
 		   );
 
 foreach my $file (@files){
-  if ( -e $file ) {
+  if ( -e "$source_dir/$file" ) {
     $log->write_to("scping new version of $file\n");
     $wormbase->run_command("scp acari:${source_dir}/${file} ${target_dir}/${file}");
   }
   else {
     $log->write_to($file." does not exist\n");
+    $log->error;
   }
 }
 
