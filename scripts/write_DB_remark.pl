@@ -7,7 +7,7 @@
 # This script interogates an ACEDB database and returns all pfam/Interpro/blastx 
 # data as appropriate and generates a suitable DB_remark
 #
-# Last updated on: $Date: 2006-02-17 11:32:47 $
+# Last updated on: $Date: 2006-03-20 14:00:35 $
 # Last updated by: $Author: ar2 $
 
 
@@ -96,7 +96,6 @@ GetOptions("help"       => \$help,
 	   "verbose"    => \$verbose,
 	   "database=s" => \$database,
 	   "store:s"      => \$store,
-	   "database=s" => \$database,
 	   "output=s"   => \$output,
 	   "gene=s"     => \$gene
 	  );
@@ -133,6 +132,7 @@ my $log = Log_files->make_build_log($wormbase);
 
 my $tace            = $wormbase->tace;        # TACE PATH
 my $basedir         = $wormbase->basedir;
+$database = $wormbase->autoace unless $database;
 my $output_file;  # specify output file location
 my $runtime;
 
@@ -226,7 +226,7 @@ SUBSEQUENCE: while ( my $cds = $CDSs->next ) {
 	  $full_string .= "contains similarity to Pfam domain $_ ($pfamhits{$_})";
 	}
       }
-      if ($#pfamelements > 1) {
+      elsif ($#pfamelements > 1) {
 	my $count = 1;
 	$full_string .= "contains similarity to Pfam domains ";
 	foreach (keys %pfamhits) {
