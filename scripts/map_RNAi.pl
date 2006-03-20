@@ -6,7 +6,7 @@
 #
 # Version: $Version: $
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2006-03-08 09:59:12 $
+# Last updated on: $Date: 2006-03-20 11:59:36 $
 
 use strict;
 use warnings;
@@ -37,6 +37,7 @@ my $load;          # use to automatically load file to autoace
 my $ace;           # specify where to put the output ace file
 my $exp_arg;       # only do expression profile mapping (for debugging)
 my $store;         # specify a frozen configuration file
+my $chrom;    # specify a chromosome
 
 GetOptions(
     "debug=s"    => \$debug,
@@ -46,7 +47,8 @@ GetOptions(
     "load"       => \$load,
     "acefile=s"  => \$ace,
     'expression' => \$exp_arg,
-    'store=s'    => \$store
+    'store=s'    => \$store,
+    'chromosome=s'=> \$chrom
 );
 
 # Display help if required
@@ -81,7 +83,8 @@ my $log = Log_files->make_build_log($wb);
 my $tace        = $wb->tace;                                           # tace executable path
 my $dbdir       = $wb->autoace;                                        # Database path
 my $gffdir      = $wb->gff_splits;                                     # GFF_SPLITS directory
-my @chromosomes = $test ? qw ( I ) : qw( I II III IV V X );            # chromosomes
+my @chromosomes = $test ? qw ( IV ) : qw( I II III IV V X );            # chromosomes
+@chromosomes = ( $chrom ) if $chrom;
 my $acefile     = $ace ? $ace : $wb->acefiles."/RNAi_mappings.ace";
 
 ################
@@ -104,48 +107,10 @@ foreach my $chromosome (@chromosomes) {
     print "Processing chromosome $chromosome\n" if $verbose;
     $log->write_to("Processing chromosome $chromosome\n");
 
-    my %RNAi;
     my %genes;
     my %exon;
     my %expression;
 
-# loop through the split GFF RNAi file
-# New RNAi lines : CHROMOSOME_I    RNAi_primary    RNAi_reagent    1681680 1683527 .       .       .       Target "RNAi:WBRNAi00004820" 1 1848
-
-    print "Loop through primary RNAi GFF file CHROMOSOME_${chromosome}\n" if ($verbose);
-    open( GFF, "<$gffdir/CHROMOSOME_${chromosome}_RNAi_primary.gff" ) || die "Failed to open RNAi gff file CHROMOSOME_${chromosome}_RNAi_primary.gff :$!\n\n";
-    while (<GFF>) {
-        chomp;
-        s/^\#.*//;
-        next unless /RNAi_primary\s+RNAi_reagent/;
-        my @line = split /\t/;
-
-        my ($name) = ( $line[8] =~ /\"RNAi:(\S+.+)\"\s+\d+\s+\d+$/ );
-
-        # NB store type of RNAi (primary) with the start/end positions
-        $RNAi{"${name}_p"} = [ $line[3], $line[4], "primary" ];
-        print "RNAi (primary): '$name'\n" if ($verbose);
-    }
-    close(GFF);
-
-    # add the seondary RNAi hits to the same data structure
-    # note which is secondary by adding "secondary" to the gene mapped to
-    print "Loop through secondary RNAi GFF file CHROMOSOME_${chromosome}\n" if ($verbose);
-    open( GFF, "<$gffdir/CHROMOSOME_${chromosome}_RNAi_secondary.gff" ) || die "Failed to open RNAi gff file CHROMOSOME_${chromosome}_RNAi_secondary.gff:$!\n\n";
-    while (<GFF>) {
-        chomp;
-        s/^\#.*//;
-        next unless /RNAi_secondary\sRNAi_reagent/;
-        my @line = split /\t/;
-        my ($name) = ( $line[8] =~ /\"RNAi:(\S+.+)\"\s+\d+\s+\d+$/ );
-
-        # NB store type of RNAi (secondary) with the start/end positions
-        $RNAi{"${name}_s"} = [ $line[3], $line[4], "secondary" ];
-        print "RNAi (secondary) : '$name'\n" if ($verbose);
-
-    }
-    close(GFF);
-    print 'Loaded ', scalar( keys %RNAi ), " RNAis\n" if $verbose;
 
 ## here could go the new mapping part
 
@@ -187,14 +152,53 @@ foreach my $chromosome (@chromosomes) {
       sort { $expression{$a}->start <=> $expression{$b}->start || $expression{$a}->stop <=> $expression{$b}->stop }
       keys %expression;
 
-    # map RNAis to genes
-    print "Find overlaps for RNAi -> exons\n" if ($verbose);
-    Map_Helper::map_it( \%rnai2genes, \%RNAi, \@sorted_genes, \%genes );
+# loop through the split GFF RNAi file
+# New RNAi lines : CHROMOSOME_I    RNAi_primary    RNAi_reagent    1681680 1683527 .       .       .       Target "RNAi:WBRNAi00004820" 1 1848
 
-    # map RNAis to Expression profiles
-    print "Find overlaps for RNAi -> Expr_profile\n" if ($verbose);
-    Map_Helper::map_it( \%rnai2exp, \%RNAi, \@sorted_exp, \%expression );
-    print 'Found ', scalar( keys %rnai2exp ), " RNAi -> Expr mappings \n" if $verbose;
+    print "Loop through primary RNAi GFF file CHROMOSOME_${chromosome}\n" if ($verbose);
+    open( GFF, "<$gffdir/CHROMOSOME_${chromosome}_RNAi_primary.gff" ) || die "Failed to open RNAi gff file CHROMOSOME_${chromosome}_RNAi_primary.gff :$!\n\n";
+    while (<GFF>) {
+        chomp;
+        s/^\#.*//;
+        next unless /RNAi_primary\s+RNAi_reagent/;
+        my @line = split /\t/;
+	my %rnai_tmp;
+
+        my ($name) = ( $line[8] =~ /\"RNAi:(\S+.+)\"\s+\d+\s+\d+$/ );
+
+        # NB store type of RNAi (primary) with the start/end positions
+        $rnai_tmp{"${name}_p"} = [ $line[3], $line[4], "primary" ];
+
+    	# map RNAis to genes
+        Map_Helper::map_it( \%rnai2genes, \%rnai_tmp, \@sorted_genes, \%genes );
+        # map RNAis to Expression profiles
+        Map_Helper::map_it( \%rnai2exp, \%rnai_tmp, \@sorted_exp, \%expression );
+
+    }
+    close(GFF);
+
+    # add the seondary RNAi hits to the same data structure
+    # note which is secondary by adding "secondary" to the gene mapped to
+    print "Loop through secondary RNAi GFF file CHROMOSOME_${chromosome}\n" if ($verbose);
+    open( GFF, "<$gffdir/CHROMOSOME_${chromosome}_RNAi_secondary.gff" ) || die "Failed to open RNAi gff file CHROMOSOME_${chromosome}_RNAi_secondary.gff:$!\n\n";
+    while (<GFF>) {
+        chomp;
+        s/^\#.*//;
+        next unless /RNAi_secondary\sRNAi_reagent/;
+        my @line = split /\t/;
+	my %rnai_tmp;
+
+        my ($name) = ( $line[8] =~ /\"RNAi:(\S+.+)\"\s+\d+\s+\d+$/ );
+
+        # NB store type of RNAi (secondary) with the start/end positions
+        $rnai_tmp{"${name}_s"} = [ $line[3], $line[4], "secondary" ];
+    	# map RNAis to genes
+        Map_Helper::map_it( \%rnai2genes, \%rnai_tmp, \@sorted_genes, \%genes );
+        # map RNAis to Expression profiles
+        Map_Helper::map_it( \%rnai2exp, \%rnai_tmp, \@sorted_exp, \%expression );
+
+    }
+    close(GFF);
 }
 
 # store some statistics
@@ -213,9 +217,10 @@ print "Remove duplicates for RNAi->Gene\n" if ($verbose);
 foreach my $RNAiID ( keys %rnai2genes ) {
     if ( $RNAiID =~ /(.*)_p$/ ) {
         my %genes2rnaip;
-        map { $genes2rnaip{ $_->id . $_->type } = $RNAiID } @{ $rnai2genes{$RNAiID} };
-        next if defined ${ $rnai2genes{"$1_s"} }[0];
-        foreach my $index ( 0 .. scalar( @{ $rnai2genes{"$1_s"} } ) - 1 ) {
+#        map { $genes2rnaip{ $_->id . $_->type } = $RNAiID } @{ $rnai2genes{$RNAiID} };
+	@{$rnai2genes{$RNAiID}}= grep { ((! $genes2rnaip{ $_->id . $_->type }) && ($genes2rnaip{ $_->id.$_->type} = $RNAiID)) } @{ $rnai2genes{$RNAiID} };
+        next if (! defined ${$rnai2genes{"$1_s"}}[0]);
+        foreach my $index ( 0 .. scalar( @{$rnai2genes{"$1_s"}} ) - 1 ) {
             delete ${ $rnai2genes{"$1_s"} }[$index]
               if $genes2rnaip{ ${ $rnai2genes{"$1_s"} }[$index]->id . ${ $rnai2genes{"$1_s"} }[$index]->type };    #eek
         }
@@ -251,7 +256,8 @@ foreach my $mapped ( keys %rnai2genes ) {
     my $worm_gene;                           # CDS, Transcript, or Pseudogene name
 
     foreach my $exon ( @{ $rnai2genes{$mapped} } ) {
-
+	next if !(defined $exon);
+	    
         print "$type RNAi '$mapped' is $type mapped to ", $exon->id, " (", $exon->type, ")\n" if ($verbose);
 
         if ( $type eq "primary" ) {
