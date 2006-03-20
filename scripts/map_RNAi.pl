@@ -6,7 +6,7 @@
 #
 # Version: $Version: $
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2006-03-20 11:59:36 $
+# Last updated on: $Date: 2006-03-20 12:27:05 $
 
 use strict;
 use warnings;
@@ -39,6 +39,11 @@ my $exp_arg;       # only do expression profile mapping (for debugging)
 my $store;         # specify a frozen configuration file
 my $chrom;    # specify a chromosome
 
+##
+my $gffdir;
+my $dbdir;
+##
+
 GetOptions(
     "debug=s"    => \$debug,
     "verbose"    => \$verbose,
@@ -48,7 +53,9 @@ GetOptions(
     "acefile=s"  => \$ace,
     'expression' => \$exp_arg,
     'store=s'    => \$store,
-    'chromosome=s'=> \$chrom
+    'chromosome=s'=> \$chrom,
+    'gffdir=s'   => \$gffdir,
+    'dbdir=s'    => \$dbdir
 );
 
 # Display help if required
@@ -81,8 +88,8 @@ my $log = Log_files->make_build_log($wb);
 ##############
 
 my $tace        = $wb->tace;                                           # tace executable path
-my $dbdir       = $wb->autoace;                                        # Database path
-my $gffdir      = $wb->gff_splits;                                     # GFF_SPLITS directory
+$dbdir       = $wb->autoace if (! $dbdir);                                        # Database path
+$gffdir      = $wb->gff_splits if (! $gffdir);                                     # GFF_SPLITS directory
 my @chromosomes = $test ? qw ( IV ) : qw( I II III IV V X );            # chromosomes
 @chromosomes = ( $chrom ) if $chrom;
 my $acefile     = $ace ? $ace : $wb->acefiles."/RNAi_mappings.ace";
