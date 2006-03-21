@@ -8,7 +8,7 @@
 # Script also refreshes Protein_IDs in the chosen database from the latest build.
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2006-03-21 09:57:42 $
+# Last updated on: $Date: 2006-03-21 10:35:11 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -52,7 +52,7 @@ else {
 my $output_file;
 my $output_file2;
 my %models2geneID;
-my $version_no = "$version +1";
+my $version_no = ($version + 1);
 
 # tace executable path
 my $tace = $wormbase->tace;
