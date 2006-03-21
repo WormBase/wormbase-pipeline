@@ -8,7 +8,7 @@
 # Script also refreshes Protein_IDs in the chosen database from the latest build.
 #
 # Last updated by: $Author: pad $
-# Last updated on: $Date: 2006-03-02 15:37:02 $
+# Last updated on: $Date: 2006-03-21 09:57:42 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -52,6 +52,7 @@ else {
 my $output_file;
 my $output_file2;
 my %models2geneID;
+my $version_no = "$version +1";
 
 # tace executable path
 my $tace = $wormbase->tace;
@@ -95,7 +96,7 @@ if ($fileout) {
   $output_file = $fileout;
 }
 elsif (!$fileout) {
-  $output_file = "/nfs/disk100/wormpub/camace_orig/acefiles/updated_geneIDs_WS${version}.ace";
+  $output_file = "/nfs/disk100/wormpub/camace_orig/acefiles/updated_geneIDs_WS${version_no}.ace";
 }
 
 ########################################################################
@@ -215,7 +216,7 @@ close OUT;
 #  Refresh ProteinIDs  #
 ########################
 if ($proteinID) {
-  $output_file2 = "/nfs/disk100/wormpub/camace_orig/acefiles/updated_proteinIDs_WS${version}.ace";
+  $output_file2 = "/nfs/disk100/wormpub/camace_orig/acefiles/updated_proteinIDs_WS${version_no}.ace";
   $log->write_to("\n\n==============================================================================================\nproteinID option selected, updating WP:Protein_ID connections in $targetDB\n----------------------------------------------------------------------------------------------\n\n");
   $log->write_to("SOURCE Database for Protein IDs: $sourceDB2.\n");
   $log->write_to("OUTPUT FILE: $output_file2\n\n"); 
