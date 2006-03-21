@@ -6,8 +6,8 @@
 #
 # Usage: camcheck.pl
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2006-03-14 10:29:41 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2006-03-21 15:16:05 $
 #
 # see pod documentation (i.e. 'perldoc camcheck.pl') for more information.
 #
@@ -26,6 +26,7 @@ use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Socket;
 use Log_files;
+use Storable;
 
 ##############################
 # Script variables (run)     #
@@ -37,6 +38,7 @@ my $maintainers = "All";
 # command-line options       #
 ##############################
 my ($help,$verbose,$debug,$test,$Weekly,$Montly,$Database,$Low,$email,);
+my $store;
 
 GetOptions(
 	   'h'        => \$help,    #  -h, Help
@@ -48,13 +50,18 @@ GetOptions(
 	   'db:s'     => \$Database,#  -db select which database to run against
 	   'l'        => \$Low,     #  -l, low level checks - not all the small intron gubbins
 	   'e'        => \$email,   #  -e, Specifiy a mail recepient so that only the person responsible for a spilt database will be notified
+	   'store:s'  => \$store,
 	  );
 
 
-my $wormbase = Wormbase->new(
-    -test    => $test,
-    -debug   => $debug,
-);
+my $wormbase;
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+			     );
+}
 
 &usage(0) if ($help); # perldoc help message
 
@@ -108,8 +115,7 @@ $log->write_to("\n");
 # Connect with acedb server             #
 #########################################
 
-my $db = Ace->connect(-path=>$dbpath,
-		      -program =>$tace) || do { print "Connection failure: ",Ace->error; die();};
+my $db = Ace->connect(-path=>$dbpath) or $log->log_and_die("Connection failure: ".Ace->error());
 
 $log->write_to("CamCheck run STARTED at $runtime\n\n");
 $log->write_to("** Weekly edition **\n\n") if ($Weekly);
@@ -121,35 +127,13 @@ $log->write_to("** Monthly edition **\n\n") if ($Montly);
 
 &CloneTests;
 
-#&check_worm_genes;
-
 &check_worm_transcripts;
 
 &CheckPredictedGenes;
 
 &SingleSequenceMap;
 
-&LinkObjects;
-
 $log->write_to("\nCamCheck run ENDED at $runtime\n\n");
-
-#close LOG;
-
-##############################
-# mail $maintainer report    #
-##############################
-
-#&mail_maintainer("camcheck.pl Report:",$maintainers,$log);
-
-##############################
-# Write log to wormpub intweb
-##############################
-
-&writehtml;
-
-##############################
-# hasta luego                #
-##############################
 
 $db->close;
 $log->mail;
@@ -241,13 +225,7 @@ sub CloneTests {
 	######################################################################
 	# Iterative checks for each clone                                    #
 	######################################################################
-	
-	######################################################################
-	# ?Sequence is Finished but not annotated                            #
-	######################################################################
-	
-	print " [FINISHED/ANNOTATED" if ($verbose);
-	&CloneStatus($obj);
+
 	
 	######################################################################
 	# Check for N's in FINISHED sequences                                #
@@ -266,12 +244,6 @@ sub CloneTests {
 	print " | CHKSUM" if ($verbose);
 	&chksum($seq_file,$seq_ace,$clone);
 	
-	######################################################################
-	# Check correctness of gene structure                                #
-	######################################################################
-	
-	print " | CDS_coords" if ($verbose);
-	&check_CDSs($obj);
 	
 	######################################################################
 	# Check Sequence versions with EMBL                                  #
@@ -299,22 +271,6 @@ sub CloneTests {
 }
 
 
-
-####################################
-# Check worm_genes composite class #
-####################################
-
-sub check_worm_genes{
-
-  # look for objects with no Gene tag
-  my @genes= $db->fetch(-query=>'find worm_genes NOT Gene');
-    if(@genes){
-      foreach (@genes){
-	$log->write_to("ERROR: $_ has no Gene tag, please add valid Gene ID from geneace\n");
-      }
-    }
-}
-
 ####################################
 # Check elegans_RNA_gene class     #
 ####################################
@@ -326,28 +282,22 @@ sub check_worm_transcripts{
       $log->write_to("ERROR: $_ has no Transcript tag, this will cause errors in the build\n");
     }
   }
+  else {
+    $log->write_to("\nTranscripts OK\n");
+  }
 }
 #########################
 # Check predicted genes #
 #########################
 
 sub CheckPredictedGenes {
-  
-  # need to close and reopen existing log filehandle either side of system call
-  
-  #    close(LOG);
+  $log->write_to("runnning CheckPredictedGenes\n");
   if ($Low) {
-	   #$wormbase->run_script("check_predicted_genes.pl -database $dbpath -basic", $log);
-	   $wormbase->run_script("check_predicted_genes.pl -database $dbpath -basic");
-	  }
-    else {
-      $wormbase->run_script("check_predicted_genes.pl -database $dbpath");
-      #$wormbase->run_script("check_predicted_genes.pl -database $dbpath" , $log);
-    }
-  # now opened in append mode
-  #    open (LOG,">>$log");
-  #    LOG->autoflush();
-  
+    $wormbase->run_script("check_predicted_genes.pl -database $dbpath -basic", $log);
+  }
+  else {
+    $wormbase->run_script("check_predicted_genes.pl -database $dbpath" , $log);
+  }
 }
 
 
@@ -363,23 +313,12 @@ sub SingleSequenceMap {
 	    $log->write_to("Clone error - $_ contains two or more map objects\n");
 	}
     }
-}
-
-###################
-# LINK objects    #
-###################
-
-sub LinkObjects {
-
-    my $i = $db->fetch_many(-query=> 'find Sequence "SUPERLINK*"');  
-    while (my $obj = $i->next) {
-	my $link = $obj;
-	print "[$link]    \t" if ($verbose);
-	print " | CDS_coords" if ($verbose);
-	&check_CDSs($obj);
-	print "]\n" if ($verbose);
+    else {
+      $log->write_to("no clones found with more than one Map\n");
     }
-}
+  }
+
+
 
 
 
@@ -437,25 +376,6 @@ sub calculate_chksum {
     $checksum=(); 
 
     return ($chk);
-}
-
-
-####################################
-# Finished / Annotated
-####################################
-
-sub CloneStatus {
-    
-    my $obj =shift;
-    my $finished  = $obj->Finished(1);
-    my $annotated = $obj->Annotated(1);
-
-    if (!$finished) {
-	$log->write_to("NOT_FINISHED $obj\n");
-    }    
-    if (($finished)&&(!$annotated)){
-	$log->write_to("FINISHED_BUT_NOT_ANNOTATED $obj\n");
-    }
 }
 
 
@@ -534,257 +454,9 @@ sub open_TCP_connection  {
 
 
 #######################################################################
-# Gene length as declared is CDS and in exons list            #
-#######################################################################
-
-sub check_CDSs {
-  my $obj = shift;
-
-  foreach my $cds ($obj->CDS_child) {
-    undef my @num;
-    undef my ($method);
-    undef my ($parent);
-	
-    my ($seq, $start, $end) = $cds->row();
-    
-    unless ($seq =~ /\./) {next;}
-    
-    my $diff = $end - $start;
-    if ($diff < 0) {
-      $diff = $start - $end;
-    }
-    
-    my $subseq = $db->fetch(CDS => "$cds");
-    if (!defined ($subseq)) {
-      $log->write_to("Cannot fetch CDS $cds\n");
-      next;
-    }
-    
-    # All CDS objects must have a 'Sequence' tag to connect to parent object    
-    $parent = $subseq->Sequence;
-    if ((!defined ($parent))) {
-      $log->write_to("The CDS $cds has no Sequence tag\n");
-    }
-    
-    # check to see if CDS coordinates exceed length of parent clone
-    # won't work for parents that are links (they have zero length)
-    if($parent !~ m/SUPERLINK/){
-      my ($parent_length) = $parent->DNA(2);
-      if (($start > $parent_length) || ($end > $parent_length)){
-	$log->write_to("The CDS $cds has coordinates that exceed the length of its parent\n");
-      }
-    }
-    
-    # Source Exons
-    #
-    # All CDS objects must have Source_exons
-    
-    @num = $subseq->Source_exons(2);
-    if (!@num) {
-      $log->write_to("The CDS $cds has no Source_exons\n");
-    }
-    my @sort = sort numerically @num;
-    my $index = $#sort;
-    my $length = ($sort[$index])-1;
-    if ($diff != $length) {
-      $log->write_to("The CDS $cds belonging to $obj has diff=$diff and length=$length\n");
-    }
-    
-    
-    # Method tags
-    #
-    # All CDS objects must have a Method
-    
-    $method = $subseq->Method(1);
-    if ((!defined ($method))) {
-      $log->write_to("The CDS $cds has no method\n");
-    }
-    
-    # NDB_CDS || HALFWISE || gaze - don't process
-    
-    if ( ($method eq  "NDB_CDS") || ($method eq  "HALFWISE") || ($method eq  "gaze") ) {
-      $subseq->DESTROY();
-      $cds->DESTROY();
-      $diff="";
-      $length="";
-      next;
-    }
-    
-    # Species
-    # 
-    # CDS objects must have a Species
-    
-    my $species = $subseq->Species(1);
-    if ((!defined ($species))) {
-      $log->write_to("The CDS $cds has no Species tag\n");
-    }
- 
-
-# The following section of code won't work now and needs to be revamped to actually look at 
-# ?Transcript and ?Pseudogene objects.
-   
-    # Transcripts
-    
-#    if ($cds =~ /\S+\.t\d+/) {
-#      if (!defined ($subseq->at('Properties.Transcript'))) {
-#	$log->write_to("The CDS $cds has no Transcript tag\n");
-#      }
-#    }
-#    else {
-#      
-#      if ($method eq "Pseudogene") {
-#	if (!defined ($subseq->at('Properties.Pseudogene'))) {
-#	  $log->write_to("The CDS $cds [$method] has no Pseudogene tag\n");
-#	} 
-#      }
-#      if ( ($method eq "curated") || ($method eq "provisional") ) {
-#	if (!defined ($subseq->at('Properties.Coding.CDS'))) {
-#	  $log->write_to("The subsequence $cds [$method] has no CDS tag\n");
-#	}
-#      }
-#    }
-    
-    
-    #	print  "$cds [$parent|$diff|$length|$method]\n";
-    
-    $subseq->DESTROY();
-    $cds->DESTROY();
-    $diff="";
-    $length="";
-    
-  }
-}
-
-
-sub numerically {
-  $a <=> $b;
-}
-
-
-#######################################################################
 # Write HTML page with maintenance job results
 #######################################################################
 
-sub writehtml {
-
-    my (@finished);
-    my (@annotated);
-    my (@date);
-    my (@sequence);
-    my (@subsequence);
-    my (@link);
-    my (@clone);
-    my (@seqversion);
-
-    my $logdir="/nfs/disk100/wormpub/LocalWWW";
-
-my $HTML_START=<<START;
-<HTML>
-<HEAD>
-<TITLE>Camace Automated db Maintenance log</TITLE>
-</HEAD>
-<BODY BGCOLOR="WHITE">
-START
-
-my $HTML_END=<<END;
-</BODY>
-</HTML>
-END
-
-    open (OUTHTML,">$logdir/camchecklog.html") || die "Couldn't open $logdir/camchecklog.html for writing\n";
-    print OUTHTML $HTML_START;
-    print OUTHTML "Last ran  : <B>$rundate $runtime</B></P>\n";
-    print OUTHTML "<TABLE BORDER=1 WIDTH=100%>\n";
-
-    open (READLOG, "<$log") || die "Couldn't open $log for reading\n";
-    while (<READLOG>) {
-	push (@finished,$_)    if (/^NOT_FINISHED/);
-	push (@annotated,$_)   if (/^FINISHED_BUT_NOT_ANNOTATED/);
-	push (@date,$_)        if (/^DATE/);
-	push (@sequence,$_)    if (/^SEQUENCE/);
-	push (@seqversion,$_)  if (/^Sequence version/);
-	push (@subsequence,$_) if (/^The CDS/);
-	push (@subsequence,$_) if (/^Gene error - /);
-	push (@link,$_)        if (/^SUPERLINK/);
-	push (@clone,$_)       if (/^Clone error - /);
-    }
-    close READLOG;
-
-    # Not Finished
-    print OUTHTML "<TABLE BORDER=\"0\" WIDTH=\"100%\">\n";
-    print OUTHTML "<TH BGCOLOR=\"darkblue\"><TD><FONT COLOR=\"white\">Not Finished</FONT></TD></TH>\n";
-    foreach (@finished) {
-	print OUTHTML "<TR><TD><FONT SIZE=\"-1\">$_</FONT></TD></TR>\n";
-    }
-    print OUTHTML "</TABLE></P>\n";
-
-    # Not Annotated
-    print OUTHTML "<TABLE BORDER=\"0\" WIDTH=\"100%\">\n";
-    print OUTHTML "<TH BGCOLOR=\"darkblue\"><TD><FONT COLOR=\"white\">Not Annotated</FONT></TD></TH>\n";
-    foreach (@annotated) {
-	print OUTHTML "<TR><TD><FONT SIZE=\"-1\">$_</FONT></TD></TR>\n";
-    }
-    print OUTHTML "</TABLE></P>\n";
-
-    # Date Mismatch (not uploaded into camace)
-    print OUTHTML "<TABLE BORDER=\"0\" WIDTH=\"100%\">\n";
-    print OUTHTML "<TH BGCOLOR=\"darkblue\"><TD><FONT COLOR=\"white\">Date mismatches</FONT></TD></TH>\n";
-    foreach (@date) {
-	print OUTHTML "<TR><TD><FONT SIZE=\"-1\">$_</FONT></TD></TR>\n";
-    }
-    print OUTHTML "</TABLE></P>\n";
-
-    # Sequence Mismatch (problem)
-    print OUTHTML "<TABLE BORDER=\"0\" WIDTH=\"100%\">\n";
-    print OUTHTML "<TH BGCOLOR=\"darkblue\"><TD><FONT COLOR=\"white\">Genomic sequences</FONT></TD></TH>\n";
-    foreach (@sequence) {
-	print OUTHTML "<TR><TD><FONT SIZE=\"-1\">$_</FONT></TD></TR>\n";
-    }
-    print OUTHTML "<TR>&nbsp;</TR>\n";
-
-    # Sequence version Mismatch (problem)
-    foreach (@seqversion) {
-	print OUTHTML "<TR><TD><FONT SIZE=\"-1\">$_</FONT></TD></TR>\n";
-    }
-    print OUTHTML "</TABLE></P>\n";
-
-    # Subsequence problem
-    print OUTHTML "<TABLE BORDER=\"0\" WIDTH=\"100%\">\n";
-    print OUTHTML "<TH BGCOLOR=\"darkblue\"><TD><FONT COLOR=\"white\">Subsequences</FONT></TD></TH>\n";
-    foreach (@subsequence) {
-	print OUTHTML "<TR><TD><FONT SIZE=\"-1\">$_</FONT></TD></TR>\n";
-    }
-    print OUTHTML "</TABLE></P>\n";
-
-    # SUPERLINK problems
-    print OUTHTML "<TABLE BORDER=\"0\" WIDTH=\"100%\">\n";
-    print OUTHTML "<TH BGCOLOR=\"darkblue\"><TD><FONT COLOR=\"white\">LINK objects</FONT></TD></TH>\n";
-    foreach (@link) {
-	print OUTHTML "<TR><TD><FONT SIZE=\"-1\" COLOR=\"red\">$_</FONT></TD></TR>\n";
-    }
-    print OUTHTML "</TABLE></P>\n";
-
-     # clone problems
-    print OUTHTML "<TABLE BORDER=\"0\" WIDTH=\"100%\">\n";
-    print OUTHTML "<TH BGCOLOR=\"darkblue\"><TD><FONT COLOR=\"white\">Clone objects</FONT></TD></TH>\n";
-    foreach (@clone) {
-	print OUTHTML "<TR><TD><FONT SIZE=\"-1\" COLOR=\"red\">$_</FONT></TD></TR>\n";
-    }
-    print OUTHTML "</TABLE></P>\n";
-
-
-    print OUTHTML $HTML_END;
-    close OUTHTML;
-
-    undef (@finished);
-    undef (@annotated);
-    undef (@date);
-    undef (@sequence);
-    undef (@seqversion);
-    undef (@subsequence);
-    undef (@link);
-    undef (@clone);
-}
 
 #######################################################################
 # Help and error trap outputs                                         #
