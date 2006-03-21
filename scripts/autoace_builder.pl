@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2006-03-14 10:17:32 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2006-03-21 09:50:23 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -27,9 +27,9 @@ my ( $run_blat,     $finish_blat );
 my ( $gff_dump,     $processGFF, $gff_split );
 my $gene_span;
 my ( $load, $tsuser, $map_features, $map, $transcripts, $intergenic, $data_sets, $nem_contigs);
-my ( $GO_term, $rna , $dbcomp, $confirm, $operon ,$repeats, $remarks, $names);
+my ( $GO_term, $rna , $dbcomp, $confirm, $operon ,$repeats, $remarks, $names, $treefam, $cluster);
 my ( $utr, $agp, $gff_munge, $extras ,$interpolate);
-my ( $buildrelease, $public,$finish_build);
+my ( $buildrelease, $public,$finish_build, $release);
 
 
 GetOptions(
@@ -65,6 +65,8 @@ GetOptions(
 	   'repeats'        => \$repeats,
 	   'remarks'        => \$remarks,
 	   'names'          => \$names,
+	   'treefam'        => \$treefam,
+	   'cluster'        => \$cluster,
 	   'utr'            => \$utr,
 	   'snp_interpolation' => \$interpolate,
 	   'agp'            => \$agp,
@@ -72,7 +74,8 @@ GetOptions(
 	   'extras'         => \$extras,
 	   'buildrelease'   => \$buildrelease,
 	   'public'         => \$public,
-	   'finish_build'   => \$finish_build
+	   'finish_build'   => \$finish_build,
+	   'release'        => \$release
 	  );
 
 my $wormbase = Wormbase->new(
@@ -131,6 +134,9 @@ $wormbase->run_script( 'map_operons.pl'                          , $log) if $ope
 $wormbase->run_script( 'make_wormpep.pl -final'                  , $log) if $finish_wormpep;
 $wormbase->run_script( 'write_DB_remark.pl'                      , $log) if $remarks;
 $wormbase->run_script( 'molecular_names_for_genes.pl'            , $log) if $names;
+$wormbase->run_script( 'get_treefam.pl'                          , $log) if $treefam;
+$wormbase->run_script( 'cluster_gene_connection.pl'              , $log) if $cluster;
+
 
 # $build_dumpGFF.pl; (final) is run chronologically here but previous call will operate
 # $wormbase->run_script( "processGFF.pl -$processGFF",        $log ) if $processGFF;    #nematode - to add species to nematode BLATs
@@ -142,6 +148,8 @@ $wormbase->run_script( "GFFmunger.pl -all"                       , $log) if $gff
 &make_extras                                                             if $extras;
 $wormbase->run_script( "build_release_files.pl"                  , $log) if $buildrelease;
 &public_sites                                                            if $public;
+$wormbase->run_script( "distribute_letter.pl"                    , $log) if $release;
+
 $wormbase->run_script("finish_build.pl"                          , $log) if $finish_build;
 $wormbase->run_script("update_gffdb.csh"                         , $log) if $finish_build;
 
@@ -243,5 +251,4 @@ sub public_sites {
   # gets everything on the to FTP and websites and prepares release letter ready for final edit and sending.
   $wormbase->run_script( "make_FTP_sites.pl -all", $log);
   $wormbase->run_script( "update_website.pl -all", $log);
-  $wormbase->run_script( "release_letter.pl -l"  , $log);
 }
