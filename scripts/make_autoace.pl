@@ -7,8 +7,8 @@
 #
 # This makes the autoace database from its composite sources.
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-01-30 14:31:30 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2006-03-21 13:37:58 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -122,7 +122,7 @@ my $errors = 0; # for tracking system call related errors
 $wormbase->run_script("reorder_exons.pl", $log ) if( $all or $reorder );
 
 #write COMMON_DATA files that can be done at start of build.
-$wormbase->run_script("update_Common_data.pl -clone2acc -clone2size -clone2seq -genes2lab -worm_gene2cgc -worm_gene2geneID -worm_gene2class -est -est2feature -gene_id", $log ) if( $all or $common );
+$wormbase->run_script("update_Common_data.pl -clone2acc -clone2size -clone2seq -genes2lab -worm_gene2cgc -worm_gene2geneID -worm_gene2class -est -est2feature -gene_id -clone2type -cds2cgc", $log ) if( $all or $common );
 
 
 #finish
