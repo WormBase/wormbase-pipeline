@@ -4,33 +4,40 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2006-03-14 10:23:54 $
-# Last updated by: $Author: pad $
+# Last updated on: $Date: 2006-03-21 15:14:50 $
+# Last updated by: $Author: ar2 $
 #
 # see pod documentation at end of file for more information about this script
 
 use strict;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Ace;
 use IO::Handle;
 use Getopt::Long;
 use Log_files;
+use Storable;
 
-my ($verbose, $db_path, $log, $basic, $test, $debug);
+my ($verbose, $db_path, $basic, $test, $debug, $store);
 
 GetOptions ("verbose"    => \$verbose,
 	    "database=s" => \$db_path,
 	    "basic"      => \$basic,
-	    "log=s"      => \$log,
 	    "debug:s"    => \$debug,
 	    "test"       => \$test,
+	    "store:s"    => \$store
 	   );
 
-my $wormbase = Wormbase->new(
-    -test    => $test,
-    -debug   => $debug,
-);
+my $wormbase;
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+			   );
+}
+
+my $log = Log_files->make_build_log($wormbase);
 
 # verbose model
 # toggle reporting of genes with improper stop/start codons and/or genes which have length's 
@@ -43,33 +50,12 @@ my $wormbase = Wormbase->new(
 # Establish database connection
 ################################
 
-die "Please use -database <path> specify a valid database directory.\n\n" if (!defined($db_path));
+$log->log_and_die("Please use -database <path> specify a valid database directory.\n\n") if (!defined($db_path));
 
 # Specify which tace to use if you are using -program flag
 
 my $tace = $wormbase->tace;
-my $db = Ace->connect(-path=>$db_path, -program=>$tace) || die "Couldn't connect to $db_path\n", Ace->error;
-
-
-# set up log file for output, use specified command line argument where present or write to screen
-# if log file specified and it exists, then append.  Else write to new file.
-
-
-if ($log) {
-  if (-e $log) {
-    open(LOG,">>$log");  
-  } else {
-    open(LOG,">$log");
-  }
-} else {
-  my $rundate    = `date +%y%m%d`; chomp $rundate;
-  $log = "/nfs/disk100/wormpub/logs/check_predicted_genes.log.$rundate.$$";
-  open(LOG,">$log") || die "cant open $log\n";
-}
-print LOG "\ncheck_predicted_genes.pl started at ",`date`,"\n";
-
-
-LOG->autoflush();
+my $db = Ace->connect(-path=>$db_path) or  $log->log_and_die("Couldn't connect to $db_path\n". Ace->error);
 
 # create separate arrays for different classes of errors (1 = most severe, 4 = least severe)
 our @error1;
@@ -91,7 +77,7 @@ foreach $CDSfilter (@CDSfilter) {
 
 my @Predictions = $db->fetch (-query => 'FIND All_genes');
 my $gene_model_count=@Predictions;
-print LOG "Checking $gene_model_count Predictions in '$db_path'\n\n";
+$log->write_to("Checking $gene_model_count Predictions in $db_path\n\n");
 print "\nChecking $gene_model_count Predictions in '$db_path'\n\n" if $verbose;
 
 ################################
@@ -249,34 +235,18 @@ foreach my $gene_model ( @Predictions ) {
 # 20 with what is left
 	
 my $count_errors =0;
-foreach my $error (@error1) {
-  $count_errors++;
-  print LOG "$count_errors) $error";
+
+my @error_list = ( \@error1, \@error2, \@error3,  \@error4, \@error5);
+foreach my $list (@error_list) {
+  foreach my $error (@{$list}) {
+    $count_errors++;
+    $log->write_to("$count_errors $error");
+    last if $count_errors > 190;
+  }
 }
-foreach my $error (@error2) {
-  $count_errors++;
-  print LOG "$count_errors) $error";
-  last if $count_errors > 190;
-}
-foreach my $error (@error3) {
-  $count_errors++;
-  print LOG "$count_errors) $error";
-  last if $count_errors > 190;
-}
-foreach my $error (@error4) {
-  $count_errors++;
-  print LOG "$count_errors) $error";
-  last if $count_errors > 190;
-}
-foreach my $error (@error5) {
-  $count_errors++;
-  print LOG "$count_errors) $error";
-  last if $count_errors > 190;
-}
-	
-print LOG "\ncheck_predicted_genes.pl ended at ",`date`,"\n";;
-close(LOG);
+
 $db->close;
+$log->mail;
 exit(0);
 
 #################################################################
