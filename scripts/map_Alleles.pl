@@ -5,8 +5,8 @@
 #
 # This maps alleles to the genome based on their flanking sequences
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-03-14 17:25:56 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2006-03-22 16:06:14 $
 
 use strict;
 use warnings;
@@ -420,7 +420,7 @@ sub check_original_mappings {
 sub load_alleles_to_database {
 
     $log->write_to("\nStart parsing $ace_file in to $database\n\n");
-    $wb->load_to_database($wb->autoace,$ace_file, 'map_alleles');
+    $wb->load_to_database($wb->autoace,$ace_file, 'map_alleles',$log);
     $log->write_to("\nFinished parsing $ace_file in to $database\n\n");
 }
 
