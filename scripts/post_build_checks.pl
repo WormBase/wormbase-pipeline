@@ -8,8 +8,8 @@
 #
 # N.B. Previously called gffcheck
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-02-17 11:32:47 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2006-03-23 14:06:28 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -83,6 +83,10 @@ my $WS_version = $wormbase->get_wormbase_version;
 #########################
 # tiny little main loop #
 #########################
+
+if ($opt_a) {
+  $opt_i = $opt_e = $opt_o = $opt_t = 1;
+}
 
 &runintroncheck  if ($opt_i);
 
