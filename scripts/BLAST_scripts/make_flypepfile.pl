@@ -13,8 +13,8 @@ my $version;
 my $verbose;
 
 GetOptions (
-            "version:s"  => \$version,
-	    "verbose"    => \$verbose
+        	    "version:s"  => \$version,
+	   		 "verbose"    => \$verbose
             );
 
 
@@ -23,6 +23,10 @@ GetOptions (
 #gth:505 transcript_info:[CG3645-RA  seq_release:3] gene_info:[gene symbol:CG3645 FBgn0031238 gene_boundaries:(2L:252,589..271,732[-]) ]
 
 #>CG2671-PA type=protein; loc=2L:complement(11218..11344,11410..11518,11779..12221,12286..12928,13520..13625,13683..14874,14933..15711,17053..17136); ID=l(2)gl-PA; name=l(2)gl-PA; db_xref='CG2671,FlyBase:FBgn0002121'; /gene=l(2)gl; len=1161
+
+#>nop5-PA type=protein; loc=2L:complement(6916901..6918611); name=nop5-PA; 
+#dbxref=FlyBase:FBpp0078997,GB_protein:AAF52455.2,FlyBase_Annotation_IDs:CG10206-PA,FlyBase:FBgn0026196;
+# MD5=927705a12a71536536d1eea6c514361a; parent=FBtr0079369; release=r4.3; species=Dmel; length=511;
 
 
 my $blastdir    = "/nfs/acari/wormpipe/BlastDB";
@@ -54,11 +58,17 @@ while (<SOURCE>){
 
     my %fields = /(\w+)=(\S+)/g;
 
-    $gadID = $fields{'ID'} if $fields{'ID'} ;
-    $FBname = $fields{'name'};
-
-    ($FBgn) = /FlyBase:(FBgn\d+)/;
-
+    $FBname = $fields{'name'} if $fields{'name'} ;
+    foreach ( split(/,/,$fields{'dbxref'}) ) {
+    	my($key, $value) = split(/:/);
+    	if( $key eq "FlyBase" and $value =~ /FBgn\d+/) {
+    		$FBgn = $value;
+    	}
+    	elsif( $key eq 'FlyBase_Annotation_IDs') {
+    		$gadID = $value;
+    	}
+    }
+	        
     # some old style names still exist eg pp-CT*****.  In these cases
     # we need to use the 1st field of the "from_gene" fields.
 
@@ -100,10 +110,6 @@ close ACE;
 system("mv $pepfile $source_file") && die "Couldn't overwrite original peptide file\n";
 
 print "$record_count proteins\n" if ($verbose);
-
-# copy acefile across to /wormsrv2/wormbase/ensembl_dumps
-system("scp $acefile wormsrv2:/wormsrv2/wormbase/ensembl_dumps")  && die "Couldn't copy acefile\n";
-
 
 exit (0);
 
