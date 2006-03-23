@@ -8,7 +8,7 @@
 # Usage: estcheck [-options]
 #
 # Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2006-02-17 11:32:47 $      
+# Last updated on: $Date: 2006-03-23 16:59:46 $      
 
 #####################################################################################################
 
@@ -103,7 +103,7 @@ while (<TACE>) {
   next if ($_ eq "");
   next if (/acedb\>/);
   next if (/\/\//);
-  s/\"//g;
+  s/\"//g;#"
   (/^(\S+)\s/);
   
   my @f = split /\t/;
@@ -183,14 +183,14 @@ foreach my $EST (sort keys %EST_clone) {
     
     # No accession
     if (!defined($EST_acc{$read})) {
-      print LOG "=> $read has no accession number\n";
+      $log->write_to("=> $read has no accession number\n");
       print EST_no_accession_1 "$read has no accession number\n";
       print EST_no_accession_2 "Sequence : \"$read\"\n";
     }
     
     # No match in genome
     if (!defined($EST_match{$read})) {
-      print LOG "=> $read is not attached to a CDS\n";
+      $log->write_to("=> $read is not attached to a CDS\n");
       print EST_unassigned_1 "$read is not attached to a CDS\n";
       print EST_unassigned_2 "Sequence : \"$read\"\n";
     }
@@ -198,7 +198,7 @@ foreach my $EST (sort keys %EST_clone) {
     # Mismatch between .3 and .5 reads
     if(defined($first_match) && defined($first_read)){
       if ( ($first_match ne "") && ($EST_match{$read} ne $first_match)) {
-	print LOG "=> $read is attached to a different CDS than $first_read : [${read}:$EST_match{$read} | $first_read:$first_match]\n";
+	$log->write_to("=> $read is attached to a different CDS than $first_read : [${read}:$EST_match{$read} | $first_read:$first_match]\n");
 	print EST_mismatched_1 "$read is attached to a different CDS than $first_read : [${read}:$EST_match{$read} | $first_read:$first_match]\n";
 	print EST_mismatched_2 "Sequence : \"$read\"\n";
       } 
@@ -210,7 +210,6 @@ foreach my $EST (sort keys %EST_clone) {
   #    print "\n"; 
 }
 
-close LOG;
 close EST_total;
 close EST_unassigned_1;
 close EST_unassigned_2;
@@ -219,6 +218,7 @@ close EST_mismatched_2;
 close EST_no_accession_1;
 close EST_no_accession_2;
 
+$log->mail;
 exit(0);
 
 
