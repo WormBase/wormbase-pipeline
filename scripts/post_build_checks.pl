@@ -8,8 +8,8 @@
 #
 # N.B. Previously called gffcheck
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2006-03-23 14:06:28 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2006-03-23 16:56:37 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -62,14 +62,10 @@ if ( $store ) {
 &usage("Help") if ($help);
 
 # in test mode?
-if ($test) {
-  print "In test mode\n" if ($verbose);
-
-}
+print "In test mode\n" if ($verbose and wormbase->test);
 
 # establish log file.
 my $log = Log_files->make_build_log($wormbase);
-
 
 #################
 # set variables #
@@ -84,9 +80,7 @@ my $WS_version = $wormbase->get_wormbase_version;
 # tiny little main loop #
 #########################
 
-if ($opt_a) {
-  $opt_i = $opt_e = $opt_o = $opt_t = 1;
-}
+($opt_o =  $opt_e =  $opt_i =  $opt_t =  $opt_h = $opt_a) if $opt_a;
 
 &runintroncheck  if ($opt_i);
 
@@ -94,7 +88,7 @@ if ($opt_a) {
 
 &runoverlapcheck if ($opt_o);
 
-&runTSLcheck     if ($opt_t);
+#&runTSLcheck     if ($opt_t);
 
 ##############################
 # Tidy up                    #
@@ -119,25 +113,25 @@ exit(0);
 
 sub runestcheck {
   $log->write_to( $wormbase->runtime, ": Starting estcheck\n");
-  $wormbase->run_script("estcheck", $log) && die "Can't run estcheck\n";
+  $wormbase->run_script("estcheck", $log) or $log->log_and_die("Can't run estcheck\n");
   $log->write_to( $wormbase->runtime, ": Finished running\n\n");
 }
 
 sub runTSLcheck {
   $log->write_to( $wormbase->runtime, ": Starting TSLcheck.pl\n");
-  $wormbase->run_script("TSLcheck.pl", $log) && die "Can't run TSLcheck.pl\n";
+  $wormbase->run_script("TSLcheck.pl", $log) or $log->log_and_die("Can't run TSLcheck.pl\n");
   $log->write_to( $wormbase->runtime, ": Finished running\n\n");
 }
 
 sub runintroncheck {
   $log->write_to( $wormbase->runtime, ": Starting introncheck\n");
-  $wormbase->run_script("introncheck", $log) && die "cant run introncheck\n";
+  $wormbase->run_script("introncheck", $log) or $log->log_and_die("cant run introncheck\n");
   $log->write_to( $wormbase->runtime, ": Finished running\n\n");
 }
 
 sub runoverlapcheck {
   $log->write_to( $wormbase->runtime, ": Starting overlapcheck.pl\n");
-  $wormbase->run_script("overlapcheck.pl", $log) && die "Can't run overlapcheck.pl\n";
+  $wormbase->run_script("overlapcheck.pl", $log) or $log->log_and_die("Can't run overlapcheck.pl\n");
   $log->write_to( $wormbase->runtime, ": Finished running\n\n");
 }
    
