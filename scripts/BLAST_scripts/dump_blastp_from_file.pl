@@ -1,15 +1,22 @@
 #!/usr/local/bin/perl5.6.1 -w
 
+use lib $ENV{'CVS_DIR'};
 use DBI;
 use strict;
 use Getopt::Long;
 use DB_File;
+use Wormbase;
+use Storable;
+use Log_files;
+
+
 
 my $file = shift;
 #######################################
 # command-line options                #
 #######################################
-my ($test, $debug, $verbose, $help, $all, $WPver, $analysisTOdump, $just_matches, $matches, $list, $database);
+my ($test, $debug, , $store, $verbose, $help);
+my ($all, $WPver, $analysisTOdump, $just_matches, $matches, $list, $database);
 GetOptions ("debug=s"      => \$debug,
 	    "verbose"      => \$verbose,
 	    "test"         => \$test,
@@ -20,10 +27,22 @@ GetOptions ("debug=s"      => \$debug,
 	    "just_matches" => \$just_matches,
 	    "matches"      => \$matches,
 	    "dumplist=s"   => \$list,
-	    "database=s"     => \$database
+	    "database=s"   => \$database,
+	    "store:s"      => \$store
            );
 
-die "please give me a mysql protein database eg -database worm_pep\n" unless $database;
+my $wormbase;
+if( $store ) {
+  $wormbase = retrieve( $store ) or croak("cant restore wormbase from $store\n");
+}
+else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+			     -test    => $test,
+			   );
+}
+my $log = Log_files->make_build_log($wormbase);
+
+$log->log_and_die("please give me a mysql protein database eg -database worm_pep\n") unless $database;
 my @sample_peps = @_;
 my $dbname = $database;
 
@@ -39,10 +58,8 @@ my $recip_file = "$wormpipe_dir/dumps/${database}_wublastp_recip.ace";
 
 open (BEST, ">$best_hits") or die "cant open $best_hits for writing\n";
 
-my $log = "$wormpipe_dir/Dump_new_prot_only.pl.$dbname.$rundate";
-open ( LOG, ">$log") || die "cant open $log";
-print LOG "Dump_new_prot_only.pl log file $rundate\n";
-print LOG "-----------------------------------------------------\n\n";
+$log->write_to("Dump_new_prot_only.pl log file $rundate\n");
+$log->write_to("-----------------------------------------------------\n\n");
 
 # to be able to include only those proteins that have homologies we need to record those that do
 # this file is then used by write_ipi_info.pl
@@ -121,27 +138,12 @@ unless (-s "$db_files/trembl2des") {
   die "trembl2des not found or empty";
 }
 
-# gene CE info from COMMON_DATA files copied to ~wormpipe/dumps in prep_dump
-undef $/;
-our %CE2gene;
-open (C2G ,"<$wormpipe/dumps/wormpep2cds.dat" );
-my $in_data = <C2G>;
-my $VAR1;
-eval $in_data;
-die if $@;
-close C2G;
-%CE2gene = (%$VAR1);
-
-undef $VAR1;
+# gene CE info from COMMON_DATA files
+my %CE2gene;
+$wormbase->FetchData('wormpep2cds.dat',\%CE2gene);
 
 my %gene2CE;
-open (G2C ,"<$wormpipe/dumps/cds2wormpep.dat" );
-$in_data = <G2C>;
-eval $in_data;
-die if $@;
-close C2G;
-%gene2CE = (%$VAR1);
-$/ = "\n";
+$wormbase->FetchData('cds2wormpep.dat',\%gene2CE);
 
 my @results;
 
@@ -255,17 +257,14 @@ while (<BLAST>) {
   close IPI_HITS;
 
   print "sorting ipi_hits file . . ";
-  `mv $ipi_file $ipi_file._tmp`;
-  `sort -u $ipi_file._tmp > $ipi_file`;
-  `rm -f $ipi_file._tmp`;
-  print "DONE\n";
-
-
-  print LOG " : Data extraction complete\n\n";
-
+  $wormbase->run_command("mv $ipi_file $ipi_file._tmp",        $log);
+   $wormbase->run_command("sort -u $ipi_file._tmp > $ipi_file", $log);
+	$wormbase->run_command("rm -f $ipi_file._tmp",         		$log);
+	print "DONE\n";
+	$log->write_to(" : Data extraction complete\n\n");
 
   #process the recip file so that proteins are grouped
-  print LOG " : processing the reciprocal data file for efficient loading.\n";
+  $log->write_to(": processing the reciprocal data file for efficient loading.\n");
   open (SORT,"sort -t \" \" -k2 $recip_file | ");
   open (RS,">>$output") or die "rs"; #append this sorted data to the main homols file and load together.
 
@@ -293,26 +292,15 @@ while (<BLAST>) {
       print RS "\n$current_pep\n";
     }
   }
-
-my $wormpub = glob("~wormpub");
-
-print LOG " : finished\n\n______END_____";
-
-close LOG;
-#`rm -f $recip_file`;
-
-
-print "\nEnd of dump/\n";
-
-# Copy resulting file to wormsrv2 - leave in original place for subsequent script write.swiss_trembl
-# `/usr/bin/rcp $output /wormsrv2/wormbase/ensembl_dumps/`;
+$log->write_to(" : finished\n\n______END_____");
 
 dbmclose %ACC2DB;
 dbmclose %SWISSORG;
 dbmclose %TREMBLORG;
 
-
-  exit(0);
+print "\nEnd of dump/\n";
+$log->mail;
+exit(0);
 
   sub dumpData
     {
