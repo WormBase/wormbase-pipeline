@@ -28,6 +28,7 @@ sub new
       $self->{$key} = $params{$_};
     }
     $self->{'version'} = 666 if( $self->test);
+    print STDERR "Using ".$self->{'autoace'}."\n" if( $self->{'autoace'} );
     $self->establish_paths;
     return $self;
   }
@@ -858,6 +859,8 @@ sub acefiles    { $self = shift; return $self->{'acefiles'}; }
 sub transcripts { $self = shift; return $self->{'transcripts'}; }
 sub blat        { $self = shift; return $self->{'blat'}; }
 sub farm_dump   { $self = shift; return $self->{'farm_dump'}; }
+sub compare     { $self = shift; return $self->{'compare'}; }
+sub checks      { $self = shift; return $self->{'checks'}; }
 
 # this can be modified by calling script
 sub common_data {
@@ -928,11 +931,18 @@ sub establish_paths {
   else {
     my $basedir;
     ( $self->{'wormpub'} ) = glob("~wormpub");
-    $basedir = $self->wormpub . "/BUILD";
-    $basedir = $self->wormpub . "/TEST_BUILD" if $self->test;
+
+    # if a specified non-build database is being used
+    if( $self->autoace ){
+      ($basedir) = $self->autoace =~ /(.*)\/\w+$/;
+    }
+    else {
+      $basedir = $self->wormpub . "/BUILD";
+      $basedir = $self->wormpub . "/TEST_BUILD" if $self->test;
+      $self->{'autoace'}    = "$basedir/autoace";
+    }
 
     $self->{'basedir'}    = $basedir;
-    $self->{'autoace'}    = "$basedir/autoace";
     $self->{'ftp_upload'} = "/nfs/ftp_uploads/wormbase";
     $self->{'wormpep'}    = $basedir . "/WORMPEP/wormpep" . $self->get_wormbase_version;
     $self->{'wormrna'}    = $basedir . "/WORMRNA/wormrna" . $self->get_wormbase_version;
@@ -947,6 +957,7 @@ sub establish_paths {
     $self->{'gff_splits'}  = $self->autoace . "/GFF_SPLITS";
     $self->{'primaries'}   = $self->basedir . "/PRIMARIES";
     $self->{'blat'}        = $self->autoace . "/BLAT";
+    $self->{'checks'}      = $self->autoace . "/CHECKS";
 
     $self->{'tace'}   = glob("~wormpub/ACEDB/bin_ALPHA/tace");
     $self->{'giface'} = glob("~wormpub/ACEDB/bin_ALPHA/giface");
@@ -969,6 +980,7 @@ sub establish_paths {
     $self->{'build_data'} = $self->{'basedir'} . "_DATA"; # BUILD_DATA or TEST_BUILD_DATA
     $self->{'misc_static'} = $self->{'build_data'} . "/MISC_STATIC";
     $self->{'misc_dynamic'} = $self->{'build_data'} . "/MISC_DYNAMIC";
+    $self->{'compare'}      = $self->{'build_data'} . "/COMPARE";
 
     $self->{'farm_dump'}    = '/acari/work2a/wormpipe/dumps';
 
@@ -985,6 +997,7 @@ sub establish_paths {
     mkpath( $self->primaries )   unless ( -e $self->primaries );
     mkpath( $self->acefiles )    unless ( -e $self->acefiles );
     mkpath( $self->blat )        unless ( -e $self->blat );
+    mkpath( $self->checks )        unless ( -e $self->checks );
 
 #    system("chmod -R g+w ".$self->autoace);
 #    system("chmod -R g+w ".$self->wormpep);
