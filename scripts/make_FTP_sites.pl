@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-03-03 11:12:19 $
+# Last updated on: $Date: 2006-03-24 09:01:26 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -213,7 +213,7 @@ sub copy_misc_files{
 
   # copy some miscellaneous files across
   my $old_release = $WS -1;
-  $wormbase->run_command("scp $ace_dir/COMPARE/WS$old_release-$WS_name.dbcomp $targetdir/$WS_name/", $log);
+  $wormbase->run_command("scp ".	$wormbase->compare."/WS$old_release-$WS_name.dbcomp $targetdir/$WS_name/", $log);
   $wormbase->run_command("scp $base_dir/autoace_config/INSTALL $targetdir/$WS_name/", $log);
 
   # tar, zip, and copy WormRNA files across from BUILD/WORMRNA
@@ -245,13 +245,13 @@ sub copy_wormpep_files{
   $log->write_to("$runtime: copying wormpep files\n");
 
   my $wormpub_dir = "/nfs/disk100/wormpub/WORMPEP";
-  my $wp_source_dir = "$base_dir/WORMPEP/wormpep$WS";
+  my $wp_source_dir = $wormbase->wormpep;
   my $wormpep_ftp_root = glob("~ftp/pub/databases/wormpep");
   my $wp_ftp_dir = "$wormpep_ftp_root/wormpep$WS";
   mkdir $wp_ftp_dir unless -e $wp_ftp_dir;
 
  
-  my @wormpep_files = &wormpep_files;
+  my @wormpep_files = $wormbase->wormpep_files;
   
   foreach my $file ( @wormpep_files ){
   # copy the wormpep release files across
@@ -319,7 +319,7 @@ sub make_cDNA2ORF_list {
   # simple routine to just get cDNA est names and their correct ORFs and make an FTP site file
   # two columns, second column supports multiple ORF names
 
-  my $tace = &tace;
+  my $tace = $wormbase->tace;
   my $command=<<EOF;
 Table-maker -p "$ace_dir/wquery/cDNA2CDS.def" quit
 EOF
@@ -366,7 +366,7 @@ sub make_geneID_list {
   $log->write_to("$runtime: making Gene ID list\n");
   # For each 'live' Gene object, extract 'CGC_name' and 'Sequence_name' fields (if present)
 
-  my $tace    = &tace;
+  my $tace    = $wormbase->tace;
   my $command = "Table-maker -p $ace_dir/wquery/gene2cgc_name_and_sequence_name.def\nquit\n";
   my $dir     = "$ace_dir";
   my $out     = "$targetdir/$WS_name/geneIDs.$WS_name";
@@ -399,7 +399,7 @@ sub make_pcr_list {
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: making PCR product 2 gene list list\n");
 
-  my $tace    = &tace;
+  my $tace    = $wormbase->tace;
   my $command = "Table-maker -p $ace_dir/wquery/pcr_product2gene.def\nquit\n";
   my $dir     = "$ace_dir";
   my $out     = "$targetdir/$WS_name/pcr_product2gene.$WS_name";
