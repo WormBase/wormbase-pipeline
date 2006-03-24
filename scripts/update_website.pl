@@ -7,8 +7,8 @@
 # A script to finish the last part of the weekly build by updating all of the
 # relevant WormBase and Wormpep web pages.
 #
-# Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2005-12-19 16:01:01 $      
+# Last updated by: $Author: ar2 $     
+# Last updated on: $Date: 2006-03-24 16:04:40 $      
 
 
 #################################################################################
@@ -49,22 +49,22 @@ unless (defined $ARGV[0]) {
 }
 
 GetOptions ("all"            => \$all,
-	    "header"         => \$header,
-	    "dna"            => \$dna,
-	    "finished"       => \$finished,
+	  			"header"         => \$header,
+	    		"dna"            => \$dna,
+	    		"finished"       => \$finished,
             "dbcomp"         => \$dbcomp,
             "wormpepdiff"    => \$wormpep_diff,
-	    "copygff"        => \$copyGFF,
-            "debug"          => \$debug,
-	    "test=s"         => \$test,
+	    		"copygff"        => \$copyGFF,
+            "debug=s"        => \$debug,
+	    		"test"           => \$test,
             "help"           => \$help,
             "h"              => \$help,
-	    "dirs"           => \$directories,
-	    "overlap"        => \$overlap,
-	    "est"            => \$EST_files,
-	    "create_gff"     => \$create_GFF,
-	    "wormpep"        => \$update_wormpep,
-	    'store=s'	=> \$store
+	    		"dirs"           => \$directories,
+		      "overlap"        => \$overlap,
+	    		"est"            => \$EST_files,
+	    		"create_gff"     => \$create_GFF,
+	    		"wormpep"        => \$update_wormpep,
+	    		'store=s'	     => \$store
 	   );
 
 
@@ -113,27 +113,14 @@ my $chromdir	     = $wb->chromosomes;
 #make new log
 my $log = Log_files->make_build_log($wb);
 
-#############
-# TEST MODE
-############
-
-# Use debug mode?
-if ($debug) {
-    print "DEBUG = \"$debug\"\n\n";
-     $maintainers = $debug . '\@sanger.ac.uk';
-}
-
-
 ###########################################################################################################
 # Main subroutine calls    
 ###########################################################################################################
 
-&create_log_file;
 
 &create_web_directories        if ($all || $directories);
 &create_release_header         if ($all || $header);    # makes release_header.shtml
 &create_DNA_table              if ($all || $dna);       # makes DNA.shtml
-&create_finished_seq           if ($all || $finished);  # makes finished_seqs.shtml
 &create_dbcomp                 if ($all || $dbcomp);    # makes dbcomp.shtml
 &create_wormpep_page           if ($all || $wormpep_diff); # the wormpep page accessible from the main wormbase page
 &copy_overlapcheck_files       if ($all || $overlap); # copies check files/wormsrv2/autoace/CHECKS and converts to HTML etc.
@@ -165,15 +152,6 @@ exit(0);
 
 
 ###########################################################################################################
-# Create log file          
-###########################################################################################################
-sub create_log_file{
-  $log->write_to("# update_website.pl\n\n");     
-  $log->write_to("# run details    : $rundate $runtime\n");
-  $log->write_to("# WormBase version : $WS_name\n\n\n");
-}
-
-###########################################################################################################
 # Create new directories on website     
 ###########################################################################################################
 sub create_web_directories{
@@ -198,7 +176,7 @@ sub copy_overlapcheck_files{
   $log->write_to("-----------------------\n");
 
   # list of files to be copied
-  my @filenames = qw( overlapping_TSL_cam overlapping_TSL_stl overlapping_genes_cam overlapping_genes_stl EST_in_intron_cam EST_in_intron_stl repeat_in_exon_cam repeat_in_exon_stl );
+  my @filenames = qw( overlapping_genes_cam overlapping_genes_stl EST_in_intron_cam EST_in_intron_stl repeat_in_exon_cam repeat_in_exon_stl );
 
   $log->write_to("copying from $www/$WS_previous_name/Checks/index.shtml to $www/$WS_name/Checks\n"); 
   system("cp -f $www/$WS_previous_name/Checks/index.shtml $www/$WS_name/Checks/") && warn "Cannot copy index.shtml $!\n";
@@ -206,8 +184,8 @@ sub copy_overlapcheck_files{
   $log->write_to("copying three ace files from $www/$WS_previous_name/Checks/*.ace to $www/$WS_name/Checks\n"); 
   system("cp -f $www/$WS_previous_name/Checks/*.ace $www/$WS_name/Checks/") && warn "Cannot copy *.ace files $!\n";
 
-  $log->write_to("copying short genes file $dbpath/CHECKS/short_spurious_genes.$WS_name.csv.html to $www/$WS_name/Checks/short_genes.html\n"); 
-  system("cp -f $dbpath/CHECKS/short_spurious_genes.$WS_name.csv.html $www/$WS_name/Checks/short_genes.html") && warn "Cannot copy short_genes file $!\n";
+  #$log->write_to("copying short genes file $dbpath/CHECKS/short_spurious_genes.$WS_name.csv.html to $www/$WS_name/Checks/short_genes.html\n"); 
+  #system("cp -f $dbpath/CHECKS/short_spurious_genes.$WS_name.csv.html $www/$WS_name/Checks/short_genes.html") && warn "Cannot copy short_genes file $!\n";
 
   $log->write_to("Creating symbolic link for header.ini file\n");
   chdir("$www/$WS_name/Checks") || $log->write_to("Couldn't chdir to $www/$WS_name/Checks\n");
@@ -216,7 +194,6 @@ sub copy_overlapcheck_files{
   foreach my $file (@filenames) {
     my $line_total;
     my @line_stats;
-
 
     foreach my $chrom (@chrom) {
       $log->write_to("Copying file CHROMOSOME_$chrom.$file to $www/$WS_name/Checks\n");
@@ -240,7 +217,7 @@ sub copy_overlapcheck_files{
     my $newfh  = gensym();
     my $count = 0;
     
-    open ($fh, "$www/$WS_previous_name/Checks/$file.html") || croak "Cannot open old html file $!\n";
+    open ($fh, "$www/$WS_previous_name/Checks/$file.html") || carp "Cannot open old html file $!\n";
     open ($newfh, ">$www/$WS_name/Checks/$file.html") || croak "Cannot open new html file $!\n";
     
     $log->write_to("Generating $www/$WS_name/Checks/$file.html\n");
@@ -260,7 +237,7 @@ sub copy_overlapcheck_files{
 	print $newfh $_;
       }
     }    
-    close($fh)    || croak "Cannot close old html file $!\n";
+    close($fh)    || carp "Cannot close old html file $!\n";
     close($newfh) || croak "Cannot close new html file $!\n";
   }
 }
@@ -420,32 +397,15 @@ sub create_DNA_table {
   close (DNA_table);
 }
 
-
-sub create_finished_seq {
-
-  # create finished_seqs.shtml
-  $log->write_to("Creating $www/$WS_name/finished_seqs.shtml\n");
-  my $db = Ace->connect(-path=>$dbpath) || do { print "Connection failure: ",Ace->error; croak();};
-  my $count = $db->fetch(-query=> 'find genome_sequence where Finished');
-
-  open (FINISHED_SEQS, ">$www/$WS_name/finished_seqs.shtml") || croak "Couldn't create finished_seqs.shtml\n";
-  print FINISHED_SEQS  "<P>\n";
-  print FINISHED_SEQS "$count projects\n";
-  print FINISHED_SEQS  "</P>\n";
-  close (FINISHED_SEQS);
-  $db->close;
-
-}
-
 sub create_dbcomp {
 
   # create dbcomp.shtml
   $log->write_to("Creating $www/$WS_name/dbcomp.shtml\n");
-
-  system ("cp $dbpath/COMPARE/current.out $wwwdata/WS.dbcomp_output") && croak "Couldn't copy current.out\n";
+	my $compare_path = $wb->compare;
+  system ("cp $compare_path/current.out $wwwdata/WS.dbcomp_output") && croak "Couldn't copy current.out\n";
   my $dbcomplen;
   
-  open (DBCOMP, "wc -l $dbpath/COMPARE/current.dbcomp |");
+  open (DBCOMP, "wc -l $compare_path/current.dbcomp |");
   while (<DBCOMP>) {
       ($dbcomplen) = (/^\s+(\d+)/);
   }
@@ -484,7 +444,7 @@ sub create_dbcomp {
   
   my $dbcompcount = 0;
 
-  open (COMP, "<$dbpath/COMPARE/current.dbcomp") || croak "Failed to open current.dbcomp\n\n";
+  open (COMP, "<$compare_path/current.dbcomp") || croak "Failed to open current.dbcomp\n\n";
   while (<COMP>) {
       next if (/\+/);
       next if (/ACEDB/);
@@ -562,10 +522,10 @@ sub create_wormpep_page{
   print WORMPEP "  <td colspan=\"9\"><img src=\"/icons/blank.gif\" width=\"10\" height=\"10\"></td>\n";
   print WORMPEP "</tr>\n";
   
-  $log->write_to("Opening log file '$basedir/WORMPEP/wormpep$WS_current/wormpep_current.log'\n");
+  $log->write_to("Opening log file ".$wb->wormpep."/wormpep_current.log'\n");
 
   my ($wp_seq,$wp_let);
- open (WP_1, "</$basedir/WORMPEP/wormpep$WS_current/wormpep_current.log") || croak "Failed to open wormpep.log\n";
+ open (WP_1, "<".$wb->wormpep."/wormpep_current.log") || croak "Failed to open wormpep.log\n";
   while (<WP_1>) {
     # No. of sequences (letters) written:  22,221  (9,696,145)
     if (/No\. of sequences \(letters\) written:  (\d+,\d+)  \((\d+,\d+,\d+)\)/) {
@@ -575,13 +535,12 @@ sub create_wormpep_page{
   close (WP_1);
 
   
-  # get details from last wormpep log file <= argh
+  # get details from file prepared for reports.
   my $wp_alt;
-  my @possible_logs = `ls -t $dbpath/logs/make_wormpep.final.WS${WS_current}*`; # added new logfile name 
-  my $wormpeplog  = "$possible_logs[0]";
+  my $wormpeplog  = $wb->reports."/wormpep";
   open (WP_2, "<$wormpeplog") || croak "Failed to open wormpep.log\n";
   while (<WP_2>) {
-    if (/\((\d+)\) alternate splice_forms/) {
+    if (/(\d+) alternate splice forms/) {
       ($wp_alt) = ($1);
     }
   }
@@ -603,7 +562,7 @@ sub create_wormpep_page{
   
 
   my (@changed, @lost, @new, @reappeared);
-  open (WP_3, "<$basedir/WORMPEP/wormpep${WS_current}/wormpep.diff${WS_current}") || croak "Failed to open wormpep.history\n";
+  open (WP_3, "<".$wb->wormpep."/wormpep.diff${WS_current}") || croak "Failed to open wormpep.history\n";
 
   while (<WP_3>) {
     (push (@changed,$_)) if (/changed:/);
@@ -708,7 +667,7 @@ print EST_HTML qq(<!--#include virtual="/perl/header" -->\n);
 
   $log->write_to("updating EST_analysis.shtml from $www/$WS_previous/Checks to $www/$WS_name/Checks, adding new info\n"); 
 
-  open(EST_OLD, "<$www/$WS_previous_name/Checks/EST_analysis.html") || croak "Couldn't read old version of EST_analysis.html\n";
+  open(EST_OLD, "<$www/$WS_previous_name/Checks/EST_analysis.html") || carp "Couldn't read old version of EST_analysis.html\n";
   open(EST_NEW, ">$www/$WS_name/Checks/EST_analysis.html") || croak "Couldn't create new version of EST_analysis.html\n";
 
   my $count=0;
@@ -742,13 +701,13 @@ sub copy_GFF_files{
   my @gff_files = ("clone_ends", "clone_path", "exon", "clone_acc", "CDS", "repeats", "intron", "rna");
   foreach my $chrom (@chrom) {
     foreach my $file (@gff_files){
-      system("sort -u $gff/CHROMOSOME_$chrom.$file.gff | gff_sort > $www/$WS_name/GFF/CHROMOSOME_$chrom.$file.gff")
-	&& croak "Couldn't copy CHROMOSOME_$chrom.$file.gff\n";
+      $wb->run_command("sort -u $gff/CHROMOSOME_${chrom}_$file.gff | gff_sort > $www/$WS_name/GFF/CHROMOSOME_${chrom}_$file.gff") or 
+	$log->write_to("Couldn't copy CHROMOSOME_${chrom}_$file.gff\n", $log);
     }
   }
 
   $log->write_to("Copying across GFF files from $dbpath/CHECKS/\n");
-  system ("cp $dbpath/CHECKS/*.gff $www/$WS_name/GFF/") && croak "Could not copy GFF files from autoace/CHECKS $!\n";
+  $wb->run_command("cp $dbpath/CHECKS/*.gff $www/$WS_name/GFF/") or $log->write_to("Could not copy GFF files from autoace/CHECKS $!\n");
 }
 
 
@@ -777,13 +736,13 @@ sub create_GFF_intron_files{
    }
 
    # open old and new files
-   open(OLDFILE, "<$www/$WS_previous_name/Checks/GFF_introns_confirmed_CDS_$lab.html") || croak "Couldn't read old $lab GFF intron file\n";
+   open(OLDFILE, "<$www/$WS_previous_name/Checks/GFF_introns_confirmed_CDS_$lab.html") || carp "Couldn't read old $lab GFF intron file\n";
    open(NEWFILE, ">$www/$WS_name/Checks/GFF_introns_confirmed_CDS_$lab.html") || croak "Couldn't create new $lab GFF intron file\n";
 
    my $count = 0;
    # loop through old file replacing old info with new info from @line_counts 
    while(<OLDFILE>){
-     if ((/<TD ALIGN=\"center\" COLSPAN=\"2\"><B>\s*(\d+)\s+\[\s*\d+\]<\/B><\/TD>/) && ($count <6)) {
+	  if ((/<TD ALIGN=\"center\" COLSPAN=\"2\"><B>\s*(\d+)\s+\[\s*\d+\]<\/B><\/TD>/) && ($count <6)) {
 	print NEWFILE "<TD ALIGN=\"center\" COLSPAN=\"2\"><B> ".$line_counts[$count]." [$1]</B></TD>\n";
 	$count++;
 
@@ -859,7 +818,7 @@ sub update_wormpep_pages{
 
   # update the history of wormpep releases, i.e. wormpep_release.txt
   # need to use file from previous release 
-  open (TABLE, "<$www/$WS_previous_name/wormpep_release.txt") || croak "Can't read from the file: $www/$WS_name/wormpep_release.txt\n\n";
+  open (TABLE, "<$www/$WS_previous_name/wormpep_release.txt") || carp "Can't read from the file: $www/$WS_name/wormpep_release.txt\n\n";
   open (TABLE2, ">$www/$WS_name/tmp_table.txt") || croak "Can't create the file: $www/$WS_name/tmp_table.txt\n\n";
   print TABLE2 "${WS_current}\t$release_date2\t$count\n";
   while(<TABLE>){
