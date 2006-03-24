@@ -32,17 +32,6 @@ use Storable;
 #
 #------------------------------------------------------------------#
 
-# CHECK IF THERE ARE THE CORRECT NUMBER OF COMMAND-LINE ARGUMENTS:
-
-my $num_args                  = $#ARGV + 1;
-if ($num_args != 0)
-{
-   print "Usage of treefam_worm2.pl\n\n";
-   print "perl -w treefam_worm2.pl\n";
-   print "For example, >perl -w treefam_worm2.pl\n";
-   exit;
-}
-
 my ($debug, $test,$store, $no_load);
 GetOptions (
 	    "debug:s"       => \$debug,
@@ -160,17 +149,17 @@ $rc                        = "";
 # ar2 - convert to WORMPEP by going Gene_name->Gene->CDS->Protein
 # TreeFam doesnt deal in isoforms
 
-my $db = Ace->connect( -path => $wormbase->autoace ) or $log->log_and_die(Ace->error,"\n");
-$log->write_to("WORM_GENE NUMBER_OF_FAMILIES FAMILIES\n");
+my $db = Ace->connect( -path => $wormbase->database('WS155') ) or $log->log_and_die(Ace->error,"\n");
 open (OUT,">".$wormbase->acefiles."/treefam.ace") or $log->log_and_die("cant write to ".$wormbase->acefiles." dir\n");
 foreach my $ID (keys %FAMILY)
 {
   my $family                 = $FAMILY{$ID};
   my @family                 = split(/\,/,$family); # THIS IS A LIST OF THE FAMILIES THAT A WORM GENE APPEARS IN.
   my $no_families            = $#family + 1; # THIS IS THE NUMBER OF FAMILIES THAT A WORM GENE APPEARS IN.
-   #print "$ID $no_families $family\n"; 
-   my $gene = $ID;
-   my $gene_obj;
+  #print "$ID $no_families $family\n"; 
+  my $gene = $ID;
+  my $gene_obj;
+  $gene = $gene =~ /(\w+\.\w+)\.\d+/ ? $1 : $gene;
    if( $gene =~ /WBGene/ ) {
      $gene_obj = $db->fetch("query find Gene $gene");
    }
