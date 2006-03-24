@@ -6,19 +6,40 @@
 #
 # Updates the local webpages in synch with the main website
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2005-12-16 11:18:55 $
+# Last updated on: $Date: 2006-03-24 16:38:52 $
 
 
 use strict;
-use lib "/wormsrv2/scripts/";
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Carp;
 use Getopt::Long;
+use Storable;
+use Log_files;
 
+my($test, $debug, $store);
 my $release;
 my $errors = 0;
-GetOptions ("release=i" => \$release );
+
+GetOptions ("release=i" => \$release,
+	    "debug:s"   => \$debug,
+	    "store:s"   => \$store,
+	    "test"      => \$test
+	   );
+
 die "you must give a release version ( just numbers eg -release 125 )\n" unless $release;
+
+my $wormbase;
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+			     );
+}
+# establish log file.
+my $log = Log_files->make_build_log($wormbase);
+
 
 my $www = "/nfs/WWWdev/SANGER_docs/htdocs/Projects/C_elegans";
 
@@ -26,41 +47,35 @@ my $www = "/nfs/WWWdev/SANGER_docs/htdocs/Projects/C_elegans";
 # update wormpep files
 #############################################
 
-my $wormpub_dir      = "/nfs/disk100/wormpub/WORMPEP";
+my $wormpub_dir      = $wormbase->wormpub."/WORMPEP";
 my $wormpep_ftp_root = glob("~ftp/pub/databases/wormpep");
 my $wp_ftp_dir       = "$wormpep_ftp_root/wormpep${release}";
 my $wormbase_ftp_dir = glob("~ftp/pub/wormbase"); 
 
 # grab from Wormbase.pm subroutine
-my @wormpep_files = &wormpep_files;
-
-my $log  = "/wormsrv2/logs/update_live_release.${release}.$$";
-
-open (LOG, ">$log") || die "Couldn't open log file\n";;
-print LOG &runtime, " : starting script\n";
-
+my @wormpep_files = $wormbase->wormpep_files;
 
 # update new live wormpep release from ftp_site to /disk100/wormpub
 foreach my $file ( @wormpep_files ) {
-  unlink("$wormpub_dir/${file}_current") || print LOG "ERROR: Cannot delete file $wormpub_dir/${file}_current :\t$!\n";
-  &run_command("scp $wp_ftp_dir/${file}${release} $wormpub_dir/${file}_current");
+  unlink("$wormpub_dir/${file}_current") || $log->write_to("ERROR: Cannot delete file $wormpub_dir/${file}_current :\t$!\n");
+  $wormbase->run_command("scp $wp_ftp_dir/${file}${release} $wormpub_dir/${file}_current", $log);
 }
-&run_command("xdformat -p $wormpub_dir/wormpep_current");
+$wormbase->run_command("xdformat -p $wormpub_dir/wormpep_current", $log);
 
 # create a symbolic link from top level wormpep into the release on the wormpep ftp site
 foreach my $file ( @wormpep_files ) {
-  &run_command("cd $wormpep_ftp_root; ln -fs wormpep${release}/${file}${release} $file");
+  $wormbase->run_command("cd $wormpep_ftp_root; ln -fs wormpep${release}/${file}${release} $file", $log);
 }
 
 # delete the old symbolic link and make the new one to wormpep.prev
 my $prev_release = $release -1;
-&run_command("cd $wormpep_ftp_root; ln -fs wormpep${prev_release}/wormpep${prev_release} wormpep.prev");
+$wormbase->run_command("cd $wormpep_ftp_root; ln -fs wormpep${prev_release}/wormpep${prev_release} wormpep.prev",$log);
 
 
 ##################################################################
 # Update Sanger WORMBASE ftp site to change live_release symlink
 ##################################################################
-&run_command("cd $wormbase_ftp_dir; rm -f live_release; ln -fs WS${release} live_release");
+$wormbase->run_command("cd $wormbase_ftp_dir; rm -f live_release; ln -fs WS${release} live_release",$log);
 
 
 
@@ -73,51 +88,14 @@ my $prev_release = $release -1;
 my $webpublish = "/usr/local/bin/webpublish";
 
 # Now update WORMBASE current link
-&run_command("cd $www/WORMBASE; rm -f current; ln -fs WS${release} current") && print LOG "Couldn't update 'current' symlink\n";
-&run_command("cd $www/WORMBASE; webpublish -q -r current") && print LOG "Couldn't run webpublish on current symlink files\n";
+$wormbase->run_command("cd $www/WORMBASE; rm -f current; ln -fs WS${release} current", $log) && $log->write_to("Couldn't update 'current' symlink\n", $log);
+$wormbase->run_command("cd $www/WORMBASE; webpublish -q -r current", $log) && $log->write_to("Couldn't run webpublish on current symlink files\n", $log);
 
 # Now need to update big dbcomp output in data directory
-&run_command("cd /nfs/WWWdev/SANGER_docs/data/Projects/C_elegans; $webpublish -q WS.dbcomp_output") && print LOG "Couldn't webpublish data directory\n";
+$wormbase->run_command("cd /nfs/WWWdev/SANGER_docs/data/Projects/C_elegans; $webpublish -q WS.dbcomp_output", $log) && $log->write_to("Couldn't webpublish data directory\n");
 
 
 # The end
-
-print LOG &runtime, " : finished\n";
-close(LOG);
-
-
-my $maintainers = "All";
-# warn about errors in subject line if there were any
-if($errors == 0){
-  &mail_maintainer("BUILD REPORT: update_live_release.pl",$maintainers,$log);
-}
-elsif ($errors ==1){
-  &mail_maintainer("BUILD REPORT: update_live_release.pl : $errors ERROR!",$maintainers,$log);
-}
-else{
-  &mail_maintainer("BUILD REPORT: update_live_release.pl : $errors ERRORS!!!",$maintainers,$log);
-}
+$log->mail;
 exit(0);
-
-
-##################################################################################
-#
-# Simple routine which will run commands via system calls but also check the 
-# return status of a system call and complain if non-zero, increments error check 
-# count, and prints a log file error
-#
-##################################################################################
-
-sub run_command{
-  my $command = shift;
-  print LOG &runtime, ": started running $command\n";
-  my $status = system($command);
-  if($status != 0){
-    $errors++;
-    print LOG "ERROR: $command failed\n";
-  }
-
-  # for optional further testing by calling subroutine
-  return($status);
-}
 
