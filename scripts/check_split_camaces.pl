@@ -4,8 +4,8 @@
 #
 # Cronjob integrity check controls for split camace databases.
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2006-03-14 10:23:54 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2006-03-24 16:24:07 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -14,38 +14,34 @@ use Log_files;
 use Getopt::Long;
 use Storable;
 
-my ($debug,$test,);
+my ($debug,$test, $store);
 
 GetOptions(
-	   'debug:s'        => \$debug,
-	   'test'           => \$test,
+	   'debug:s'   => \$debug,
+	   'test'      => \$test,
+	   'store:s'   => \$store
 	  );
 
-my $wormbase = Wormbase->new(
-    -test    => $test,
-    -debug   => $debug,
-);
+my $wormbase;
 
-
-if ($debug) {
-my $maintainers = "$debug";
-}
-else {
-my $maintainers = "All";
+if ( $store ) {
+  $wormbase = retrieve( $store ) or croak("Can't restore wormbase from $store\n");
+} else {
+  $wormbase = Wormbase->new( -debug   => $debug,
+                             -test    => $test,
+			     );
 }
 
+my $log = Log_files->make_build_log($wormbase);
 
 my $rundate = $wormbase->rundate;
 my $runtime = $wormbase->runtime;
 my $path = "/nfs/disk100/wormpub";
 my $age = 1;
-my $maintainers = "All";
 
 # is today monday?  If so set age to be 3 to ignore weekend
 $age = 3 if (`date +%u` == 1);
 
-my $log = Log_files->make_build_log();
-$log->write_to("$runtime : script Started\n");
 my @users = ("gw3", "pad");
 
 foreach my $user (@users) {
