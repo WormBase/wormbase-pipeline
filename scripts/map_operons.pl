@@ -2,8 +2,8 @@
 #
 # map_operons.pl
 
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2006-03-15 09:43:27 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2006-03-24 16:34:52 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -56,15 +56,15 @@ my $db = Ace->connect(-path => $wb->autoace) or $log->log_and_die("cant connect 
 my @operons = $db->fetch('Operon' => '*');
 foreach my $operon(@operons) {
   my @genes = map($_->name, $operon->Contains_gene);
-  my ($op_start, $op_end, $op_strand);
+  my ($op_start, $op_end, $op_strand, $op_chrom);
   foreach my $gene (@genes) {
     $op_start =  $gene_span{$gene}->{'start'} if (!(defined $op_start) or $op_start > $gene_span{$gene}->{'start'});
     $op_end   =  $gene_span{$gene}->{'end'}   if (!(defined $op_end)   or $op_end   < $gene_span{$gene}->{'end'});
     $op_strand = $gene_span{$gene}->{'strand'}if(!(defined $op_strand) or $op_strand eq $gene_span{$gene}->{'strand'});
-    $op_strand = $gene_span{$gene}->{'chrom'} if $gene_span{$gene}->{'chrom'};
+    $op_chrom  = $gene_span{$gene}->{'chrom'} if $gene_span{$gene}->{'chrom'};
   }
 
-  print OUT "\nSequence : $op_strand\nOperon $operon ";
+  print OUT "\nSequence : $op_chrom\nOperon $operon ";
   ($op_strand eq '+') ? print OUT "$op_start $op_end" : print OUT "$op_end $op_start";
   print OUT "\n";
 }
