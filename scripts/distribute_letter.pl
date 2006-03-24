@@ -9,7 +9,7 @@
 #                          /nfs/WWW/SANGER_docs/htdocs/Projects/C_elegans/WORMBASE/current/release_notes.txt/
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-02-17 11:32:47 $
+# Last updated on: $Date: 2006-03-24 13:40:02 $
 
 
 use strict;                                      
@@ -94,7 +94,7 @@ my ($ftp_dir) = glob("~ftp/pub/wormbase");
 
       # local
       $log->write_to("copying to autoace/release . . . . ");
-      &_copy( "$repdir/REPORTS/letter.${release}", "$acedir/release/letter.${release}" )
+      &_copy( "$repdir/letter.${release}", "$acedir/release/letter.${release}" )
       || die "couldnt copy to autoace/release\n";
       $log->write_to("DONE.\n");
 
@@ -122,13 +122,13 @@ $log->write_to("Updating symlink on FTP site\n");
 my $targetdir = "/nfs/disk69/ftp/pub/wormbase";    # default directory, can be overidden
 
 # delete the old symbolic link and make the new one
-&run_command("rm -f $targetdir/development_release");
-&run_command("cd $targetdir; ln -s $release development_release");
+$wormbase->run_command("rm -f $targetdir/development_release");
+$wormbase->run_command("cd $targetdir; ln -s $release development_release");
 
 # update wormpep_dev symbolic link in wormpep ftp site
 my $wormpep_dir = glob("~ftp/pub/databases/wormpep"); 
-&run_command("rm -f $wormpep_dir/wormpep_dev");
-&run_command("ln -fs $wormpep_dir/wormpep${release_number}/wormpep${release_number} $wormpep_dir/wormpep_dev");
+$wormbase->run_command("rm -f $wormpep_dir/wormpep_dev");
+$wormbase->run_command("ln -fs $wormpep_dir/wormpep${release_number}/wormpep${release_number} $wormpep_dir/wormpep_dev");
 
 #######################################
 # Webpublish to live site
@@ -138,14 +138,14 @@ $log->write_to("Updating some WormBase webpages to live site\n");
 
 # update development_release symbolic link
 chdir("$www/WORMBASE");
-&run_command("rm -f development_release");
-&run_command("ln -fs $release development_release");
+$wormbase->run_command("rm -f development_release");
+$wormbase->run_command("ln -fs $release development_release");
 
 # Now update WORMBASE pages
 # these won't be seen until current symlink is also updated
 my $webpublish = "/usr/local/bin/webpublish";
-&run_command("$webpublish -f -q -r $release")            && $log->write_to("Couldn't run webpublish on release directory\n");
-&run_command("$webpublish -f -q -r development_release") && $log->write_to("Couldn't run webpublish on dev sym link\n");
+$wormbase->run_command("$webpublish  -q -r $release")            && $log->write_to("Couldn't run webpublish on release directory\n");
+$wormbase->run_command("$webpublish  -q -r development_release") && $log->write_to("Couldn't run webpublish on dev sym link\n");
 
 
 $log->mail();
@@ -173,25 +173,6 @@ sub _copy {
 
 ##########################################
 
-sub run_command {
-    my $command = shift;
-    $log->write_to($wormbase->runtime.": started running $command\n");
-    my $status = 0;
-    if ( $test||$debug ) { print $command,"\n\n" }
-    else {
-        $status = system($command)
-    }
-    if ( $status != 0 ) {
-        $log->write_to("ERROR: $command failed\n");
-        $errors++;
-    }
-
-    # for optional further testing by calling subroutine
-    return ($status);
-}
-
-
-##########################################
 
 sub usage {
   my $error = shift;
