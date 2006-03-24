@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers                             
 #
-# Last updated by: $Author: gw3 $               
-# Last updated on: $Date: 2006-03-03 17:07:41 $
+# Last updated by: $Author: ar2 $               
+# Last updated on: $Date: 2006-03-24 16:37:07 $
 
 # Generates a release letter at the end of build.
 #
@@ -118,7 +118,7 @@ if( defined($opt_l)) {
 
   print RL "\n\n";
   print RL "Release notes on the web:\n-------------------------\n";
-  print RL "http://www.sanger.ac.uk/Projects/C_elegans/WORMBASE\n\n\n\n";
+  print RL "http://wwwdev.sanger.ac.uk/Projects/C_elegans/WORMBASE\n\n\n\n";
   
   # make the chromosomal sequence changes file
   open (CC, "> $reports_dir/chromosome_changes") || die "Can't open file $reports_dir/chromosome_changes\n";
@@ -186,7 +186,7 @@ if( defined($opt_l)) {
   printf RL "Entries with CGC-approved Gene name %6d\n", $wp_status{Gene};
   print  RL "\n\n";
   
-  # Get the GeneModel corrections
+#  # Get the GeneModel corrections
   my %cam_introns;
   $cam_introns{$ver}     = `grep CHROMO $webdir/WS$ver/GFF/CHROMOSOME_*.check_intron_cam.gff | wc -l`;
   $cam_introns{$old_ver} = `grep CHROMO $webdir/WS$old_ver/GFF/CHROMOSOME_*.check_intron_cam.gff | wc -l`;
@@ -202,9 +202,9 @@ if( defined($opt_l)) {
   printf RL ("Cambridge\t|  %5d  |  %4d  |\n", $cam_introns{$ver},$cam_introns{change});
   printf RL ("St Louis \t|  %5d  |  %4d  |\n", $stl_introns{$ver},$stl_introns{change});
   print RL "\t\t+---------+--------+\n\n\n";
-  
+ 
     
-  # Members of known repeat families that overlap predicited exons
+#  # Members of known repeat families that overlap predicited exons
   my %cam_repeats;
   $cam_repeats{$ver}     = `grep match $webdir/WS$ver/Checks/CHROMOSOME_*.repeat_in_exon_cam | wc -l`;
   $cam_repeats{$old_ver} = `grep match $webdir/WS$old_ver/Checks/CHROMOSOME_*.repeat_in_exon_cam | wc -l`;
