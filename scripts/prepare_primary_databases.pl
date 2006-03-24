@@ -3,7 +3,7 @@
 # prepare_primary_databases.pl
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-03-08 14:23:32 $
+# Last edited on: $Date: 2006-03-24 11:52:31 $
 
 use strict;
 my $scriptdir = $ENV{'CVS_DIR'};
@@ -97,7 +97,7 @@ foreach ( qw(camace geneace) ){
 
 $log->write_to("writing Primary_databases_used_in_build\n");
 # rewrite Primary_databases_used_in_build
-my $new_primary = $wormbase->basedir."Primary_databases_used_in_build";
+my $new_primary = $wormbase->basedir."/Primary_databases_used_in_build";
 open (LAST_VER, ">$new_primary");
 foreach my $primary ( keys %databases){
   print LAST_VER "$primary : ".$databases{$primary}->{'ftp_date'}."\n";
