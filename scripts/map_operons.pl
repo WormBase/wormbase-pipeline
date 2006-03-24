@@ -3,7 +3,7 @@
 # map_operons.pl
 
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-03-24 16:34:52 $
+# Last edited on: $Date: 2006-03-24 16:59:57 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -40,6 +40,7 @@ foreach (@chromosomes){
   open (GS,"<".$wb->gff_splits."/CHROMOSOME_${_}_gene.gff") or $log->log_and_die("Cant open ".$wb->gff_splits."/CHROMOSOME_${_}_gene.gff :$!\n");
   while (<GS>) {
     # CHROMOSOME_III  gene    gene    16180   17279   .       +       .       Gene "WBGene00019182"
+    next if /^\#/;
     my @data = split;
     next unless ($data[2] eq 'gene');
     $data[9] =~ s/\"//g;
