@@ -5,11 +5,11 @@
 # Counts the number of objects in an ACEDB database for each Class stated in the config file
 # Compares this number to those from a second database.
 #
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2006-02-28 17:45:23 $      
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2006-03-24 16:24:54 $
 
 
-use strict;                                      
+use strict;
 use lib $ENV{'CVS_DIR'};
 use Wormbase;
 use Getopt::Long;
@@ -70,12 +70,9 @@ my $log = Log_files->make_build_log($wormbase);
 # Get paths and versions
 ############################################
 
-my $basedir     = $wormbase->basedir;
-my $ace_dir     = $wormbase->autoace;     # AUTOACE DATABASE DIR
 my $WS_current  = $wormbase->get_wormbase_version;
 my $WS_previous = $WS_current - 1;
 my $exec        = $wormbase->tace;
-
 
 #################################################################
 # Compare autoace to previous build unless -database specified
@@ -107,8 +104,8 @@ $log->write_to("Current db       : $dbname_2 '$db_2'\n");
 $log->write_to("\n\n");
 				
 # open two main output files to store results
-$errfile = "$ace_dir/COMPARE/WS${WS_previous}-WS${WS_current}.out";
-$outfile = "$ace_dir/COMPARE/WS${WS_previous}-WS${WS_current}.dbcomp";
+$errfile = $wormbase->compare."/WS${WS_previous}-WS${WS_current}.out";
+$outfile = $wormbase->compare."/WS${WS_previous}-WS${WS_current}.dbcomp";
 
 open (OUT, ">$outfile") || die "Couldn't write to out file\n";
 open (ERR, ">$errfile") || die "Couldn't write to err file\n";
@@ -194,21 +191,21 @@ print OUT  " +------------------------+---------+---------+---------+---------+-
 
 
 # create symbolic links to current.out and current.dbcomp
-$log->write_to("\nCreating 'current.out' and 'current.dbcomp'\n");
-system("rm -f $ace_dir/COMPARE/current.out") && die "Couldn't remove 'current.out' symlink\n";
-system("rm -f $ace_dir/COMPARE/current.dbcomp") && die "Couldn't remove 'current.dbcomp' symlink\n";
-system("ln -s $errfile $ace_dir/COMPARE/current.out") && die "Couldn't create new symlink\n";
-system("ln -s $outfile $ace_dir/COMPARE/current.dbcomp") && die "Couldn't create new symlink\n";
+$log->write_to("\nCreating 'current.out' and 'current.dbcomp'\n",$log);
+$wormbase->run_command("rm -f ".$wormbase->compare."/current.out",$log)       or $log->log_and_die("Couldn't remove 'current.out' symlink\n");
+$wormbase->run_command("rm -f ".$wormbase->compare."/current.dbcomp",$log)    or $log->log_and_die("Couldn't remove 'current.dbcomp' symlink\n");
+$wormbase->run_command("ln -s ".$wormbase->compare."/COMPARE/current.out",$log)    or $log->log_and_die("Couldn't create new symlink\n");
+$wormbase->run_command("ln -s ".$wormbase->compare."/COMPARE/current.dbcomp",$log) or $log->log_and_die("Couldn't create new symlink\n");
 
 
 close (OUT);
 close (ERR);
 
-# Email log file
-$log->mail();
-
 # write to the release letter - subroutine in Wormbase.pm
 $wormbase->release_databases;
+
+# Email log file
+$log->mail();
 
 print "Finished.\n" if ($verbose);
 exit (0);
@@ -332,7 +329,6 @@ sub full_run {
 
     my @classes = (
 		   "2_point_data",
-		   "3d_data",
 		   "Accession_number",
 		   "Anatomy_name",
 		   "Anatomy_term",
@@ -346,7 +342,6 @@ sub full_run {
 		   "Cell_group",
 		   "Class",
 		   "Clone",
-		   "Cluster",
 		   "Coding_transcripts",
 		   "Comment",
 		   "Condition",
@@ -357,6 +352,7 @@ sub full_run {
 		   "elegans_CDS",
 		   "elegans_pseudogenes",
 		   "elegans_RNA_genes",
+		   "Expression_cluster",
 		   "Expr_pattern",
 		   "Expr_profile",
 		   "Feature",
@@ -366,6 +362,7 @@ sub full_run {
 		   "Gene_name",
 		   "Gene_regulation",
 		   "Genome_Sequence",
+		   "GO_code",
 		   "GO_term",
 		   "Homology_group",
 		   "Homol_data",
@@ -411,10 +408,13 @@ sub full_run {
 		   "SO_term",
 		   "Species",
 		   "Strain",
+		   "Structure_data",
 		   "Table",
 		   "Transcript",
 		   "Transgene",
 		   "Transposon",
+		   "Transposon_CDS",
+		   "Transposon_family",
 		   "Variation",
 		   "Y2H"
 		   );
