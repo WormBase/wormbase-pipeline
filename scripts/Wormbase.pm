@@ -421,7 +421,7 @@ sub release_databases
     #GET THE DATABASES USED IN THIS BUILD
 
     #get the non_cambridge DB info from file
-    open( DBS, $self->autoace."/logs/Primary_databases_used_in_build" );
+    open( DBS, $self->basedir."/Primary_databases_used_in_build" );
     my ( $stlace, $citace, $brigdb, $cshace );
     my %dates;
     while (<DBS>) {
