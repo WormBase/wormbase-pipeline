@@ -7,7 +7,7 @@
 # This is a example of a good script template
 #
 # Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2006-03-03 14:48:01 $      
+# Last updated on: $Date: 2006-03-24 16:23:21 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -24,7 +24,7 @@ use Storable;
 # variables and command-line options # 
 ######################################
 
-my ($help, $debug, $test, $verbose, $store, $wormbase);
+my ($help, $debug, $test, $verbose, $store, $wormbase, $database);
 
 
 GetOptions ("help"       => \$help,
@@ -32,6 +32,7 @@ GetOptions ("help"       => \$help,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
 	    "store:s"    => \$store,
+	    "database:s" => \$database
 	    );
 
 if ( $store ) {
@@ -39,6 +40,7 @@ if ( $store ) {
 } else {
   $wormbase = Wormbase->new( -debug   => $debug,
                              -test    => $test,
+			     -autoace => $database
 			     );
 }
 
