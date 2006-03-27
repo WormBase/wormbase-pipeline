@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.8.0 -w
+#!/nfs/disk100/wormpub/bin/perl
 #
 # autoace_builder.pl
 #
@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2006-03-23 14:07:03 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2006-03-27 16:12:32 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
