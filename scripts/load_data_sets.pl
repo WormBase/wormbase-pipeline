@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-03-10 13:02:32 $      
+# Last updated by: $Author: mh6 $     
+# Last updated on: $Date: 2006-03-27 13:42:11 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -65,6 +65,7 @@ sub parse_misc_files {
 		       $wormbase->acefiles."/nembase_nematode_contigs.ace"      => 'nembase_ESTs'          ,
 		       $wormbase->acefiles."/washu_nematode_contigs.ace"        => 'washu_ESTs'            ,
 		       $wormbase->wormpub."/analysis/GI_numbers/GI_numbers.ace" => "gi_number"             ,
+		       $wormbase->misc_dynamic.'/fosmids.ace'                   => 'vancouver_fosmids'
 		      );
 
   $log->write_to("Loading files to ".$wormbase->autoace."\n==================================\n");
