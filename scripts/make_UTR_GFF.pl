@@ -15,7 +15,7 @@
 #      COMPANY:
 #      VERSION:  2 
 #      CREATED:  21/02/06 14:11:30 GMT
-#     REVISION:  $Revision: 1.12 $ 
+#     REVISION:  $Revision: 1.13 $ 
 #===============================================================================
 
 use strict;
@@ -42,7 +42,7 @@ die `perldoc $0` if $help;
 if ($store) { $wormbase = Storable::retrieve($store) or croak("Can't restore wormbase from $store\n") }
 else { $wormbase = Wormbase->new( -debug => $debug, -test => $test ) }
 
-my $maintainers = "$debug\@sanger.ac.uk" if $debug;
+my $maintainers = $debug?"$debug\@sanger.ac.uk":'All';
 
 my $log = Log_files->make_build_log($wormbase);    # prewarning will be misused in a global way
 
