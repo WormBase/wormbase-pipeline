@@ -899,7 +899,7 @@ sub primary {
   my $self = shift;
   my $database = shift;
   my $path  = $self->{'primary'}->{"$database"};
-  print STDERR "no such primary database\n" unless (-e $path);
+  print STDERR "no such primary database:$database\n" unless $path&&(-e $path);
   return $path;
 }
 
