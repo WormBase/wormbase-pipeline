@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers et al
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-03-07 13:33:08 $
+# Last updated by: $Author: mh6 $
+# Last updated on: $Date: 2006-03-28 14:23:18 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -89,7 +89,9 @@ GetOptions (
 	    "all"                => \$all,
 	    "test"               => \$test,
 	    "store:s"            => \$store,
-	    "debug:s"            => \$debug
+	    "debug:s"            => \$debug,
+	    "clone2type"         => \$clone2type,
+	    "cds2cgc"            => \$cds2cgc
 	   );
 
 my $wormbase;
