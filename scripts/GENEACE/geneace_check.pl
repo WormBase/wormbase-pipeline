@@ -6,8 +6,8 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-02-24 15:27:58 $
+# Last updated by: $Author: mt3 $
+# Last updated on: $Date: 2006-03-29 14:44:31 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -949,7 +949,7 @@ sub process_allele_class{
       }
     }
 
-    # Ceheck for CGC_name tag missing
+    # Check for CGC_name tag missing
     if (!defined($allele->CGC_name)) {
 	print LOG "ERROR: $allele has no CGC_name tag\n";
     }
@@ -957,6 +957,11 @@ sub process_allele_class{
     # Check for Status tag missing
     if (!defined($allele->Status)) {
       print LOG "ERROR: $allele has no Status tag\n";
+    }
+
+    # Check for SeqStatus tag missing
+    if (!defined($allele->SeqStatus)) {
+	print LOG "ERROR $allele has no SeqStatus tag\n";
     }
 
     # Check for method tag missing
