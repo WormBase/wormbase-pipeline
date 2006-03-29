@@ -7,8 +7,8 @@
 #
 # This makes the autoace database from its composite sources.
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2006-03-21 13:37:58 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2006-03-29 13:30:08 $
 
 use strict;
 use lib  $ENV{'CVS_DIR'};
@@ -216,22 +216,25 @@ sub parseconfig {
     # next if no filename parsed
     if (!defined $filename) {
       $log->write_to( "ERROR: Failed to parse filename ..\n");
+      $log->error;
       next;
     }
     
     # check that file exists before adding to array and is not zero bytes
     if (-e "$wormbasedir"."/$dbname/"."$filename") {
       if (-z "$wormbasedir"."/$dbname/"."$filename") {
-	$log->write_to( "ERROR: file $wormbasedir/$dbname/$filename is zero bytes !\n");
-	$errors++;
+			$log->write_to( "ERROR: file $wormbasedir/$dbname/$filename is zero bytes !\n");
+      	$log->error;
+			$errors++;
       }
       else{
-	push (@filenames,"$wormbasedir"."/$dbname/"."$filename");
-	$log->write_to( "* Parse config file : file $wormbasedir/$dbname/$filename noted ..\n");
+			push (@filenames,"$wormbasedir"."/$dbname/"."$filename");
+			$log->write_to( "* Parse config file : file $wormbasedir/$dbname/$filename noted ..\n");
       }
     } 
     else {
       $log->write_to( "ERROR: file $wormbasedir/$dbname/$filename is not existent !\n");
+      $log->error;
       $errors++;
       next;
     }
@@ -433,6 +436,7 @@ sub check_make_autoace {
   if(@genes){
     foreach (@genes){
       $log->write_to( "ERROR: $_ has no Gene tag, please add valid Gene ID from geneace\n");
+      $log->error;
       $builderrors++;
     }
   }
