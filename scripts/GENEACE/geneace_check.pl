@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: mt3 $
-# Last updated on: $Date: 2006-03-29 14:44:31 $
+# Last updated on: $Date: 2006-03-29 15:30:50 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -961,7 +961,7 @@ sub process_allele_class{
 
     # Check for SeqStatus tag missing
     if (!defined($allele->SeqStatus)) {
-	print LOG "ERROR $allele has no SeqStatus tag\n";
+	print LOG "ERROR: $allele has no SeqStatus tag\n";
     }
 
     # Check for method tag missing
