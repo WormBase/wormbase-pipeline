@@ -7,7 +7,7 @@
 # This is a example of a good script template
 #
 # Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2006-03-29 12:35:46 $      
+# Last updated on: $Date: 2006-03-29 12:42:45 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -297,17 +297,17 @@ __END__
 
 =pod
 
-=head2 NAME - script_template.pl
+=head2 NAME - data_checks.pl
 
 =head1 USAGE
 
 =over 4
 
-=item script_template.pl  [-options]
+=item data_checks.pl  -ace -gff
 
 =back
 
-This script does...blah blah blah
+This script runs checks to ensure that data is correct. 
 
 script_template.pl MANDATORY arguments:
 
@@ -321,7 +321,25 @@ script_template.pl  OPTIONAL arguments:
 
 =over 4
 
-=item -h, Help
+=item -ace
+
+runs defined queries against the specified database and compares results to expected values
+
+=back
+
+=over 4
+
+=item -gff
+
+compare the number of GFF lines meeting certain criteria with number expected from database query eg the number of operons should be the same in the GFF as acedb
+
+=back
+
+=over 4
+
+=item -database
+
+which database to run these checks against.  If -gff requires chromosome gff files in CHROMOSOMES dir
 
 =back
 
@@ -333,7 +351,7 @@ script_template.pl  OPTIONAL arguments:
 
 =over 4
 
-=item -test, Test mode, run the script, but don't change anything.
+=item -test, Test mode uses TEST_BUILD
 
 =back
 
@@ -356,7 +374,7 @@ script_template.pl  OPTIONAL arguments:
 
 =over 4
 
-=item Keith Bradnam (krb@sanger.ac.uk)
+=item Anthony Rogers (ar2@sanger.ac.uk)
 
 =back
 
