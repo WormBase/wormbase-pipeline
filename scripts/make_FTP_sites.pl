@@ -8,7 +8,7 @@
 # Originally written by Dan Lawson
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-03-24 09:01:26 $
+# Last updated on: $Date: 2006-03-29 13:41:11 $
 #
 # see pod documentation (i.e. 'perldoc make_FTP_sites.pl') for more information.
 #
@@ -228,6 +228,11 @@ sub copy_misc_files{
   $wormbase->run_command("/bin/gzip WS*interpolated_map.txt", $log); 
   $wormbase->run_command("scp ${WS_name}_CDSes_interpolated_map.txt.gz $targetdir/$WS_name/gene_interpolated_map_positions.${WS_name}.gz", $log);
   $wormbase->run_command("scp ${WS_name}_Clones_interpolated_map.txt.gz $targetdir/$WS_name/clone_interpolated_map_positions.${WS_name}.gz", $log);
+
+	# zip and copy the microarray oligo mapping files.
+	chdir "$ace_dir";
+	$wormbase->run_command("/bin/gzip *oligo_mapping", $log);
+	$wormbase->run_command("cp *oligo_mapping.gz $targetdir/$WS_name/", $log);
 
   $runtime = $wormbase->runtime;
   $log->write_to("$runtime: Finished copying\n\n");
