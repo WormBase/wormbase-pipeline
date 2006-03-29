@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2006-03-27 16:12:32 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2006-03-29 12:59:43 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -29,7 +29,7 @@ my $gene_span;
 my ( $load, $tsuser, $map_features, $map, $transcripts, $intergenic, $data_sets, $nem_contigs);
 my ( $GO_term, $rna , $dbcomp, $confirm, $operon ,$repeats, $remarks, $names, $treefam, $cluster);
 my ( $utr, $agp, $gff_munge, $extras ,$interpolate, $check);
-my ( $buildrelease, $public,$finish_build, $release);
+my ( $data_check, $buildrelease, $public,$finish_build, $release);
 
 
 GetOptions(
@@ -76,7 +76,8 @@ GetOptions(
 	   'public'         => \$public,
 	   'finish_build'   => \$finish_build,
 	   'release'        => \$release,
-	   'check'    		  => \$check	
+	   'check'    		  => \$check,
+	   'data_check'     => \$data_check
 	  );
 
 my $wormbase = Wormbase->new(
@@ -148,7 +149,8 @@ $wormbase->run_script( "landmark_genes2gff.pl"                   , $log) if $gff
 $wormbase->run_script( "GFFmunger.pl -all"                       , $log) if $gff_munge;
 &make_extras                                                             if $extras;
 
-$wormbase->run_script( "post_build_checks.pl -a"                  , $log) if $check;
+$wormbase->run_script( "post_build_checks.pl -a"                 , $log) if $check;
+$wormbase->run_script( "data_checks.pl -ace -gff"                , $log) if $data_check;
 $wormbase->run_script( "build_release_files.pl"                  , $log) if $buildrelease;
 &public_sites                                                            if $public;
 $wormbase->run_script( "distribute_letter.pl"                    , $log) if $release;
