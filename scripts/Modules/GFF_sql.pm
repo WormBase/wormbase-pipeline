@@ -5,7 +5,7 @@
 # by Michael Han
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2006-02-22 13:37:17 $
+# Last updated on: $Date: 2006-03-31 09:25:04 $
 ######
 
 package GFF_sql;
@@ -43,6 +43,18 @@ sub initialize {
     return 1;
 }
 
+########################
+# clean(chromosome_name)
+#
+sub clean {
+	my $self=shift;
+	my $chromosome=shift;
+	$self->{dbh}->do("DROP TABLE $chromosome");
+	$self->{dbh}->do("CREATE TABLE $chromosome (tag_id SMALLINT UNSIGNED NOT NULL, type_id SMALLINT UNSIGNED NOT NULL, start INT UNSIGNED NOT NULL, stop INT UNSIGNED NOT NULL, frame ENUM('.','0','1','2') NOT NULL default '.', orientation ENUM('+','-','.') NOT NULL default '.',fluff TEXT not null, INDEX (start) )");
+
+}
+
+
 ######################
 # load_gff(file_name,chromosome_name)
 # load GFF into db
@@ -58,7 +70,7 @@ sub load_gff {
     #prepare db
     if ($overwrite) {
     
-        $self->{dbh}->do("DROP TABLE $chromosome");
+        $self->{dbh}->do("DROP TABLE IF EXISTS $chromosome");
         $self->{dbh}->do(
 "CREATE TABLE $chromosome (tag_id SMALLINT UNSIGNED NOT NULL, type_id SMALLINT UNSIGNED NOT NULL, start INT UNSIGNED NOT NULL, stop INT UNSIGNED NOT NULL, frame ENUM('.','0','1','2') NOT NULL default '.', orientation ENUM('+','-','.') NOT NULL default '.',fluff TEXT not null, INDEX (start) )"
         );
@@ -113,8 +125,8 @@ sub generate_tags {
     #prepare db
 
     my $typeh =
-      $self->{dbh}->prepare("INSERT INTO gff_types (name) VALUES (?)");
-    my $tagh = $self->{dbh}->prepare("INSERT INTO gff_tag (name) VALUES (?)");
+      $self->{dbh}->prepare("INSERT IGNORE INTO gff_types (name) VALUES (?)");
+    my $tagh = $self->{dbh}->prepare("INSERT IGNORE INTO gff_tag (name) VALUES (?)");
     $self->{dbh}->commit;
 
     #loop over GFF and split it
@@ -234,8 +246,8 @@ sub get_chr {
 
     my $flat_where = join( 'AND', @where );
     print "$queryprefix $flat_where\n" if $self->{'debug'};
-    my $sth = $self->{dbh}->prepare("$queryprefix $flat_where")
-      || die "cannot prepare statement:  $DBI::errstr";
+    my $sth = $self->{dbh}->prepare("$queryprefix $flat_where") || die "cannot prepare statement:  $DBI::errstr";
+    #print STDERR "...... $queryprefix $flat_where\n";
     $sth->execute();
     my $tbl_ary_ref = $sth->fetchall_arrayref( {} );
     map { $_->{'chromosome'} = $chromosome } @$tbl_ary_ref;
@@ -467,6 +479,6 @@ $Author: mh6 $
 
 =head1 VERSION
 
-$Date: 2006-02-22 13:37:17 $
+$Date: 2006-03-31 09:25:04 $
 
 =cut
