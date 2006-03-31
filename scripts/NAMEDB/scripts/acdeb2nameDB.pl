@@ -3,10 +3,12 @@ use strict;
 use Getopt::Long;
 
 my ($init, $database, $target);
+my ($debug);
 GetOptions ( 
 	    "init" => \$init,
 	    'database:s' => \$database,
 	    'gene:s'     => \$target,
+	    'debug:s'    => \$debug
 	   );
 
 use constant USERNAME => 'wormpub';
@@ -81,7 +83,7 @@ while ( my $gene = $WBGenes->next ) {
       my @row = $his_event->row();
       my( $ver, $date, $who, $event, $event_detail, $comment) = map($_->name,@row);
 
-      #fix date format 2004-07-01_09:55:50  -> 200400701
+      #fix date format 2004-07-01_09:55:50  -> 20040701995500
       $date = &convert_date( $date );
 
       #primary_identifier needs object_id | object_public_id | domain_id | object_version | object_live
@@ -104,7 +106,7 @@ while ( my $gene = $WBGenes->next ) {
       else {
 	#update existing
 	$comment = "" unless $comment;
-	print "$id, $ver, $date, $who, $event, $event_detail, $comment\n";
+	print "$id, $ver, $date, $who, $event, $event_detail, $comment\n" if $debug;
       }
     }
   }
@@ -118,12 +120,15 @@ $db->disconnect if $db;
 sub convert_date
   {
     my $date = shift;
-    my @fields = &HTTP::Date::parse_date( $date );
-    $fields[1] =  sprintf("%1d$fields[1]");
-    $fields[-1] = "";
+    $date =~ s/[^\d]//g;
+    return $date;
+#    my @fields = &HTTP::Date::parse_date( $date );
+#    $fields[1] =  sprintf("%1d$fields[1]");
+#    $fields[-1] = "";
 
-    my $datestamp = join("",@fields);
-    return $datestamp;
+#    my $datestamp = join("",@fields);
+#    return $datestamp;
+    
 }
 
 
