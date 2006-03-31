@@ -1,6 +1,7 @@
 #author ar2
 package NameDB_handler;
 
+#use SangerPaths qw(core);
 use NameDB;
 our @ISA = qw( NameDB );
 
@@ -12,6 +13,25 @@ sub new
     my $self = NameDB->connect($dsn,$name,$password);
 
     bless ($self, $class);
+#    my $path = SangerWeb->document_root();
+    my $path = '/nfs/WWWdev/SANGER_docs/htdocs';
+   #read in clone list to validate CDS names with
+	my $clone_file = "$path/Projects/C_elegans/clonelist";
+	
+	#untaint file
+	unless( $clone_file =~ m/^(.+)$/ ) {
+		$self->dienice("tainted file\n");
+	}
+	$clone_file = $1;
+	
+	#read clones in
+	open(CLONE,"<$clone_file") or $self->dienice("cant open $clone_file\n");
+	my %clones;
+	while (<CLONE>) {
+		chomp;
+		$self->{clones}->{$_} = 1;
+	}
+    close CLONE;
     return $self;
   }
 
@@ -78,12 +98,16 @@ sub validate_name
     my @types = $self->getNameTypes;
     if( grep {$_ eq $type} @types) {
       #check name structure matches format eg CDS = clone.no
-      my %name_checks = ( "CDS" => '^\w+\.\d+\w?$',
-			  "CGC" => '^[a-z]{3,4}-\d+$'
+      my %name_checks = ( 
+      		"CDS" => '^([A-Z0-9_]+)\.\d+\w?$',
+			  	"CGC" => '^[a-z]{3,4}-[1-9]\d*$'
 			);
       unless( $name =~ /$name_checks{$type}/ ) {
-	$self->dienice("$name is incorrect format for $type<br>");
-      }
+			$self->dienice("$name is incorrect format for $type<br>");
+		}
+		if($type eq 'CDS' and !(defined $self->{'clones'}->{uc($1)}) ) {
+			$self->dienice("$name doesn't seem to be on a valid clone ($1)<br>");
+		}
     }
     else {
       $self->dienice("$type is a invalid typename:<br>@types");
@@ -106,8 +130,7 @@ sub check_pre_exists
   {
     my $self = shift;
     my $name = shift;
-    my $type = shift;
-    $id = $self->idGetByTypedName($type,$name);
+    $id = $self->idGetByAnyName($name);
     if(defined $id->[0] ){
       my $err = "$name already exists as ".$id->[0].":<br>";
       $self->dienice("$err");
