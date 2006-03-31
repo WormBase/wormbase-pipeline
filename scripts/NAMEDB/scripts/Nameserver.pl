@@ -12,7 +12,7 @@ use NameDB_handler;
 use Data::Dumper;
 use CGI qw(:standard);
 use CGI::Carp qw(fatalsToBrowser);
-use Mail::Mailer;
+use Website::Utilities::Mail;
 
 $| = 1;
 $DB 	= 'wbgene_id;mcs2a';
@@ -170,21 +170,17 @@ sub main {
 sub send_mail {
 	my ($from, $to, $subject, $message) = @_;
 
-	my $server = 'mail.sanger.ac.uk';
-	my $mailer = new Mail::Mailer 'smtp', Server => $server;
-    #$mailer = new Mail::Mailer;
-    #$mailer = new Mail::Mailer $type, @args;
-
-	my $headers = {
-		'To'		=>	$to,
-		'From'		=>	$from,
-		'Subject'	=>	"NameDB: " . $subject,
-	};
-
-    $mailer->open($headers);
-    print $mailer $message;
-    $mailer->close;
+	#send_mail("webserver",
+	#$MAIL_NOTIFY_LIST,
+	#"Merged gene $gene_id : $merge_id",
+	#"GENE MERGE\nUSER : $SSO_USER\nLIVE:retained geneID $gene_id\nDEAD: killed geneID $merge_id");
 	
+	Website::Utilities::Mail->new({
+    'to'      => $MAIL_NOTIFY_LIST,
+    'from'    => $from,
+    'subject' => "NAMEDB: $subject",
+    'message' => $message,
+	})->send(); 
 }
 #################################################################
 sub print_javascript {
@@ -268,14 +264,27 @@ sub merge_genes
       print "<BR><font color=red>Please enter genes in both fields</font>" if($merge_gene or $gene_gene);
  
     } else {
-      print  "-$merge_gene | $gene_gene-";
+      print  "attempting to merge -$merge_gene | $gene_gene-<br>";
       my $db = get_db_connection();
       my ($gene_id, $merge_id);
-      $gene_id  = ($db->idGetByAnyName($gene_gene)->[0]  or $gene_gene);  #allow use of any name
-      $merge_id = ($db->idGetByAnyName($merge_gene)->[0] or $merge_gene); #allow use of any name
+      $gene_id  = ($db->idGetByAnyName($gene_gene)->[0]  or $gene_gene);  #allow use of any name or gene_id
+      $merge_id = ($db->idGetByAnyName($merge_gene)->[0] or $merge_gene); #allow use of any name or gene_id
       $db->validate_id($gene_id);
       $db->validate_id($merge_id);
 		
+		if( $gene_id eq $merge_id) {
+			$db->dienice("FAILED : $gene_gene and $merge_gene are the same!");
+			return;
+		}
+
+		#enforce retention of CGC named gene
+		my $cgc1 = $db->idAllNames($gene_id);
+		my $cgc2 = $db->idAllNames($merge_id);
+		if( $$cgc2{'CGC'} and !($$cgc1{'CGC'}) ){
+			#gene being eaten has a CGC name and eater doesnt
+			$db->dienice("FAILED: $merge_gene has a CGC name ".$$cgc2{'CGC'}." and should be retained");
+		}
+				
       #remove all gene names for eaten gene
       $db->remove_all_names($merge_id);
 	
@@ -361,7 +370,8 @@ sub kill_gene {
 		}
 		
 		send_mail("webserver",$MAIL_NOTIFY_LIST,"Kill request $gene_id", "USER :$SSO_USER\nWBGeneID : $gene_id\nAction : KILL\nRemark : $remark");
-		
+		#send to caltech to
+		#send_mail("webserver",'ar2',"Kill request $gene_id", "CALTECH MAIL\nGene killed please update your annotation\n:\nUSER :$SSO_USER\nWBGeneID : $gene_id\nAction : KILL\nRemark : $remark");
 	}
  }
 #################################################################
@@ -403,7 +413,7 @@ sub remove_name
       if ( $db->delName($gene_id,$type,$name) ) {
 	print "Removed $name as name for $gene_id<br><br>Remaining names are <br>";
 	#need to update the public name
-	if ($type = 'CGC') {
+	if ($type == 'CGC') {
 	  my $seq_name = $db->idTypedNames($gene_id,'Sequence');
 	  $db->add_name($gene_id,$seq_name->[0],'Public_name');
 	} else {
@@ -657,7 +667,7 @@ sub fix_case
     elsif( $type eq 'CGC' ) {
       return lc $name;
     }
-    elsif( $type = 'Gene' ){
+    elsif( $type == 'Gene' ){
       /(\d+$)/;
       return "WBGene$1";
     }
