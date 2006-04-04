@@ -140,10 +140,10 @@ unless (-s "$db_files/trembl2des") {
 
 # gene CE info from COMMON_DATA files
 my %CE2gene;
-$wormbase->FetchData('wormpep2cds.dat',\%CE2gene);
+$wormbase->FetchData('wormpep2cds',\%CE2gene);
 
 my %gene2CE;
-$wormbase->FetchData('cds2wormpep.dat',\%gene2CE);
+$wormbase->FetchData('cds2wormpep',\%gene2CE);
 
 my @results;
 
