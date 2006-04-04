@@ -6,11 +6,11 @@
 #
 # Script to run consistency checks on the geneace database
 #
-# Last updated by: $Author: mt3 $
-# Last updated on: $Date: 2006-04-03 17:24:18 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2006-04-04 16:00:40 $
 
 use strict;
-use lib $ENV{'CVS_DIR'};
+use lib "/nfs/disk100/wormpub/wormbase/scripts";
 use Wormbase;
 use Ace;
 use Ace::Object;
@@ -1249,31 +1249,9 @@ sub create_log_files{
 
 
 sub check_operons {
-
-  
-  open (FH, "<$OPERON_FILE") or warn "can't open $OPERON_FILE\t:$!";
-  undef $/;
-  my %operon;
-  my %est;
-  my %cds;
-  my $data = <FH>;
-  eval $data;
-  warn if $@;
-  $/ = "\n";
-  close FH;
-
-  my %dead_genes;
-  my $query = $db->fetch_many(-query=>'Find Gene; dead');
-  while( my $g = $query->next ){
-    $dead_genes{$g->name} = 1;
-  }
-
-  foreach my $ops ( keys %operon ) {
-    foreach my $gene ( @{$operon{$ops}{CDS}} ) {
-      if( $dead_genes{$gene} ) {
-	print LOG "$gene - dead but in operon $ops\n";
-      }
-    }
+  my @dead_genes = $db->fetch(-query=>'Find Gene; dead; Contained_in_operon');
+  foreach my $gene (@dead_genes){
+	print LOG $gene->name." dead but in operon\n";
   }
 }
 
