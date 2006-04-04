@@ -7,8 +7,8 @@
 # Script to convert cgc strain file into ace file for geneace
 # Page download and update upload to geneace has been automated [ck1]
 
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-02-27 09:55:41 $
+# Last updated by: $Author: mt3 $
+# Last updated on: $Date: 2006-04-04 15:59:04 $
 
 use strict;
 use Getopt::Long;
@@ -174,7 +174,7 @@ while(<INPUT>){
   $genotype =~ s/\s{2,}/ /g; # condense whitespace to single gap between words
   $genotype =~ s/\s+$//g; # remove trailing whitespace
   print STRAIN "Genotype \"$genotype\"\n" unless ($genotype eq "");
-  print DELETE_STRAIN  "-D Genotype \"$genotype\"\n" unless ($genotype eq "");
+  print DELETE_STRAIN  "-D Genotype \n" unless ($genotype eq "");
 
   my $clone;
 
