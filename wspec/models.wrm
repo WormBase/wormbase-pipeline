@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2006-03-14 13:34:33 $
+// Last edited on: $Date: 2006-04-04 16:07:52 $
  
 
 
@@ -1960,6 +1960,7 @@
                         Picture ?Picture XREF RNAi
 	DB_info    Database ?Database ?Database_field ?Accession_number //to link out to Phenobank ar2 02-DEC-05 //removed UNIQUE as reqs multiple connections
 	Species UNIQUE ?Species
+	Gene_regulation ?Gene_regulation XREF RNAi  // this tag is used when an RNAi experiment describes gene regulation ar2 29-MAR-06 for igor
         Reference ?Paper XREF RNAi
         Phenotype ?Phenotype XREF RNAi #Phenotype_info
         Expr_profile ?Expr_profile XREF RNAi_result // connection added during build [030106 krb]
@@ -2589,7 +2590,7 @@
 					Post_transcriptional	//Added by wen 02132006
 					Post_translational	//Added by wen 02132006
                  Regulator Regulator_info Allele                  ?Variation 
-                                          RNAi                    ?RNAi
+                                          RNAi     ?RNAi      XREF    Gene_regulation
                            Trans_regulator_gene    ?Gene      XREF    Trans_regulator #Boolean
                            Trans_regulator_seq     ?CDS       XREF    Trans_regulator #Boolean
                            Cis_regulator_seq       ?Sequence  XREF    Cis_regulator   #Boolean
