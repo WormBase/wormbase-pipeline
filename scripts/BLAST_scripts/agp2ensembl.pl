@@ -63,8 +63,6 @@ use Bio::SeqIO;
 use Bio::EnsEMBL::Pipeline::DBSQL::DBAdaptor;
 use Bio::EnsEMBL::Clone;
 use Bio::EnsEMBL::RawContig;
-use Hum::NetFetch qw( wwwfetch );
-use Hum::EMBL;
 use Wormbase;
 
 my($id, $acc, $ver, $phase, $contigs);
