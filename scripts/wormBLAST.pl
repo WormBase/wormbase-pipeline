@@ -4,8 +4,8 @@
 # 
 # written by Anthony Rogers
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-02-22 14:46:25 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2006-04-04 11:08:36 $
 
 
 use DBI;
@@ -272,7 +272,7 @@ if( $update_mySQL )
     
     #load information about any new clones
     print "\tloading information about any new clones in to $dbname\n";
-    $wormbase->run_script("agp2ensembl.pl -dbname worm_dna -dbhost ecs1f -dbuser wormadmin -dbpass worms -agp $wormpipe_dir/Elegans/WS$WS_version.agp -write -v -strict -fasta ".$wormbase->autoace."/allcmid", $log);
+    $wormbase->run_script("BLAST_scripts/agp2ensembl.pl -dbname worm_dna -dbhost ecs1f -dbuser wormadmin -dbpass worms -agp $wormpipe_dir/Elegans/WS$WS_version.agp -write -v -strict -fasta ".$wormbase->autoace."/allcmid", $log);
     
     #check that the number of clones in the clone table equals the number of contigs and dna objects
     my ($clone_count, $contig_count, $dna_count);
