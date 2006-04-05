@@ -1,6 +1,5 @@
 #!/usr/local/bin/perl -wT
 #author ar2
-
 use lib "../lib";
 use strict;
 
@@ -10,10 +9,8 @@ use SangerPaths qw(core);
 use SangerWeb;
 use NameDB_handler;
 use Data::Dumper;
-use CGI qw(:standard);
-use CGI::Carp qw(fatalsToBrowser);
+use CGI::Carp qw(fatalsToBrowser warningsToBrowser);
 use Website::Utilities::Mail;
-
 $| = 1;
 $DB 	= 'wbgene_id;mcs2a';
 $PASS 	= "wormpub";
@@ -161,8 +158,6 @@ sub main {
 		&query();
 	}
 
-
-	
 	print $sw->footer();
 
 }
@@ -266,35 +261,13 @@ sub merge_genes
     } else {
       print  "attempting to merge -$merge_gene | $gene_gene-<br>";
       my $db = get_db_connection();
-      my ($gene_id, $merge_id);
-      $gene_id  = ($db->idGetByAnyName($gene_gene)->[0]  or $gene_gene);  #allow use of any name or gene_id
-      $merge_id = ($db->idGetByAnyName($merge_gene)->[0] or $merge_gene); #allow use of any name or gene_id
-      $db->validate_id($gene_id);
-      $db->validate_id($merge_id);
-		
-		if( $gene_id eq $merge_id) {
-			$db->dienice("FAILED : $gene_gene and $merge_gene are the same!");
-			return;
-		}
-
-		#enforce retention of CGC named gene
-		my $cgc1 = $db->idAllNames($gene_id);
-		my $cgc2 = $db->idAllNames($merge_id);
-		if( $$cgc2{'CGC'} and !($$cgc1{'CGC'}) ){
-			#gene being eaten has a CGC name and eater doesnt
-			$db->dienice("FAILED: $merge_gene has a CGC name ".$$cgc2{'CGC'}." and should be retained");
-		}
-				
-      #remove all gene names for eaten gene
-      $db->remove_all_names($merge_id);
-	
-      #do the merge
-      if ($db->idMerge($merge_id,$gene_id)) {
-	print "Merge complete, $merge_gene ($merge_id) is DEAD and has been merged into gene $gene_gene ($gene_id)<br>";
-	#notify
-	send_mail("webserver",$MAIL_NOTIFY_LIST,"Merged gene $gene_id : $merge_id", "GENE MERGE\nUSER : $SSO_USER\nLIVE:retained geneID $gene_id\nDEAD: killed geneID $merge_id");
-      } else {
-	print "Sorry, the gene merge failed<br>";
+		if( $db->merge_genes($gene_gene, $merge_gene) ) {
+			print "Merge complete, $merge_gene is DEAD and has been merged into gene $gene_gene <br>";
+			#notify
+			send_mail("webserver",$MAIL_NOTIFY_LIST,"Merged gene $gene_gene : $merge_gene", "GENE MERGE\nUSER : $SSO_USER\nLIVE:retained geneID for $gene_gene\nDEAD: killed geneID $merge_gene");
+      }
+     	else {
+			print "Sorry, the gene merge failed<br>";
       }
     }
   }
@@ -324,28 +297,25 @@ sub split_gene {
 	} else {
 	
 		my $db = get_db_connection();
-		$db->validate_id($gene_id);
-		$db->validate_name($name, $type);
-		$db->check_pre_exists($name, $type);
-		my $id = $db->idSplit($gene_id);		## hmm, does this work?
-		#$type = "CDS";
-		$db->add_name($id, $name, $type);
+		my $new_id =$db->split_gene($name, $type, $gene_id);
+		if( $new_id ){
+			send_mail("webserver",$MAIL_NOTIFY_LIST,"Split gene $gene_id", "USER : $SSO_USER\nACTION : Split $gene_id\nNEW geneId : $new_id\nNEW CDS : $type $name");
 
-		#mail
-		send_mail("webserver",$MAIL_NOTIFY_LIST,"Split gene $gene_id", "USER : $SSO_USER\nACTION : Split $gene_id\nNEW geneId : $id\nNEW CDS : $type $name");
-
-		#report to screen
-		$id = 'secret' unless ( $LIVE or defined $$VALID_CGCNAME_USERS{$SSO_USER});
-		print qq(Split $gene_id creating $id with CDS name "$name"<br>);
-		
-		
+			#report to screen
+			$new_id = 'secret' unless ( $LIVE or defined $$VALID_CGCNAME_USERS{$SSO_USER});
+			print qq(Split $gene_id creating $new_id with CDS name "$name"<br>);
+		}
+		else {
+			print qq(ERROR : Cant Split $gene_id);		
+		}
 	}
 }
+
 #################################################################
 sub kill_gene {
 	my ($gene_id,$remark) = @_;
 
-	unless ($gene_id){
+	unless ($gene_id and $remark){
 
 		print qq(
 		<h3>Delete an existing WBGene</h3>
@@ -353,7 +323,7 @@ sub kill_gene {
 		<BR><BR>
 		Remove the WBGene <INPUT TYPE="text" NAME="id" SIZE="20" MAXLENGTH="14">
 		from the database<BR>
-                Please give reason for removal<br> <INPUT TYPE="text" NAME="remark" SIZE="100" MAXLENGTH="200"><BR>
+                Please give reason for removal (<font color=red>required</font>)<br> <INPUT TYPE="text" NAME="remark" SIZE="100" MAXLENGTH="200"><BR>
 		<INPUT TYPE="hidden" NAME="action" VALUE="kill_gene">
 		<br><br>
 		<INPUT TYPE="submit" VALUE="Kill" onClick="return validate_delete()">
@@ -364,19 +334,20 @@ sub kill_gene {
 	} else {
 	
 		my $db = get_db_connection();
-		$db->validate_id($gene_id);
-		if ($db->idKill($gene_id)){
-			print qq(Gene "$gene_id" has been killed because \"$remark\"<br>)
+		if ($db->kill_gene($gene_id)){
+			print qq(Gene "$gene_id" has been killed because \"$remark\"<br>);
+			
+			send_mail("webserver",$MAIL_NOTIFY_LIST,"Kill request $gene_id", "USER :$SSO_USER\nWBGeneID : $gene_id\nAction : KILL\nRemark : $remark");
+			#send to caltech to
+			#send_mail("webserver",'ar2',"Kill request $gene_id", "CALTECH MAIL\nGene killed please update your annotation\n:\nUSER :$SSO_USER\nWBGeneID : $gene_id\nAction : KILL\nRemark : $remark");
 		}
-		
-		send_mail("webserver",$MAIL_NOTIFY_LIST,"Kill request $gene_id", "USER :$SSO_USER\nWBGeneID : $gene_id\nAction : KILL\nRemark : $remark");
-		#send to caltech to
-		#send_mail("webserver",'ar2',"Kill request $gene_id", "CALTECH MAIL\nGene killed please update your annotation\n:\nUSER :$SSO_USER\nWBGeneID : $gene_id\nAction : KILL\nRemark : $remark");
+		else {
+			print qq(FAILED to kill "$gene_id" <br>);
+		}
 	}
  }
 #################################################################
-sub remove_name
-  {
+sub remove_name {
   
     my ($name,$type,$gene_id,$ispublic) = @_;
     unless ($type && $name && $gene_id){
@@ -400,31 +371,21 @@ sub remove_name
 		<INPUT TYPE="submit" VALUE="Remove Name">
 		</form>
    		);
-
-    } else {
-	
-      my $db = get_db_connection();
-      $db->validate_id($gene_id);
-      $db->validate_name($name, $type);
-      my ($exist_id) = $db->idGetByTypedName($type,$name);
-      if ( "$exist_id" ne "$gene_id" ) {
-	$db->dienice("$name is not a name of $gene_id\n");
+    } 
+    else {
+	 	my $db = get_db_connection();
+	 	$gene_id = &convert_to_geneID($db,$gene_id);
+	 	print "$gene_id $name $type";
+      if($db->remove_name($gene_id, $type, $name)) {
+      	print "removed $name from $gene_id";
+      	#print remaining names
+      	$db->printAllNames($gene_id);
+		   send_mail("webserver",$MAIL_NOTIFY_LIST,"Remove gene name", "$SSO_USER removed a gene name (gene $gene_id of type $type had name $name removed)");
       }
-      if ( $db->delName($gene_id,$type,$name) ) {
-	print "Removed $name as name for $gene_id<br><br>Remaining names are <br>";
-	#need to update the public name
-	if ($type == 'CGC') {
-	  my $seq_name = $db->idTypedNames($gene_id,'Sequence');
-	  $db->add_name($gene_id,$seq_name->[0],'Public_name');
-	} else {
-	  print "name removal failed<br>Names for $gene_id";
-	}
-      }
-      #print remaining names
-      $db->printAllNames($gene_id);
-		
-      send_mail("webserver",$MAIL_NOTIFY_LIST,"Remove gene name", "$SSO_USER removed a gene name (gene $gene_id of type $type had name $name removed)");
-    }
+      else {
+	  		print "name removal failed<br>Names for $gene_id";
+		}
+	 }
   }
 
 
@@ -468,19 +429,14 @@ sub add_name {
 			);
 		} else {	
 			my $db = get_db_connection();
-			$db->validate_name($name, $type);
-			unless( $gene_id =~ /^WBGene/) {
-			  my $ids = $db->idGetByTypedName('Sequence',$name);
-			  $db->dienice("$gene_id is not a name of a valid gene\n") unless $ids->[0];
-			  $gene_id = $ids->[0];
-			}			  
-			$db->validate_id($gene_id);
-			$db->check_pre_exists($name, $type);
-			$db->add_name($gene_id,$name, $type);
-			$db->add_name($gene_id,$name, 'Public_name') if ($type eq 'CGC');
-			print qq(Added "$name" as $type name for gene $gene_id<br>);
-
-			send_mail("webserver",$MAIL_NOTIFY_LIST,"$type added to $gene_id", "USER : $SSO_USER\nWBGeneID : $gene_id\nName added : $name $type\n");
+		 	$gene_id = &convert_to_geneID($db,$gene_id);
+			if( $db->add_name($gene_id,$name, $type) ) {
+				print qq(Added "$name" as $type name for gene $gene_id<br>);
+				send_mail("webserver",$MAIL_NOTIFY_LIST,"$type added to $gene_id", "USER : $SSO_USER\nWBGeneID : $gene_id\nName added : $name $type\n");
+			}
+			else {
+				print "<p>FAILED: cant add name $name to $gene_id</p>";
+			}
 		}
 	}
 }
@@ -519,26 +475,20 @@ sub new_gene {
 	
 		my $db = get_db_connection();
 		
-		$db->validate_name($name, $type);
-		$db->check_pre_exists($name, $type);
-		if( my $id = $db->isoform_exists($name, $type) ) {
-		  $db->dienice("$name is an isoform of $id<BR>Please confirm and add $name as another name for $id<BR>")
-		};
-		my $id = $db->make_new_obj($name, $type);
-
-		send_mail("webserver",$MAIL_NOTIFY_LIST, " WBGeneID request $name $SSO_USER","User : $SSO_USER\nType : $type\nName : $name\nID : $id");
-
-		#report to screen
-		$id = 'secret' unless ( $LIVE or defined $$VALID_CGCNAME_USERS{$SSO_USER});
-		print "The new id for $type: $name is $id\n";
-		print qq(
-		<hr align="left">
-		<BR><BR><BR>
-		);
-		
-		
+		if(my $id = $db->new_gene($name, $type) ) {
+			send_mail("webserver",$MAIL_NOTIFY_LIST, " WBGeneID request $name $SSO_USER","User : $SSO_USER\nType : $type\nName : $name\nID : $id");
+			#report to screen
+			$id = 'secret' unless ( $LIVE or defined $$VALID_CGCNAME_USERS{$SSO_USER});
+			print "The new id for $type: $name is $id\n";
+			print qq(
+			<hr align="left">
+			<BR><BR><BR>
+			);
+		}
+		else {
+			print "<p>FAILED : cant create GeneID for $type $name<\P>";
+		}
 	}
-
 }
 
 #################################################################
@@ -566,8 +516,9 @@ sub query {
 		my $gene = $lookup;
 		#$db->validate_name($gene, $type);
 		($gene) = $db->idGetByAnyName($lookup);
-		unless ($gene =~ /\w+/) {
-		  $db->dienice($lookup." does not exist in database<br>");
+		unless ($gene and $gene =~ /\w+/) {
+		  print($lookup." does not exist in database<br>");
+		  return;
 		}
 		
 		print qq(
@@ -667,7 +618,7 @@ sub fix_case
     elsif( $type eq 'CGC' ) {
       return lc $name;
     }
-    elsif( $type == 'Gene' ){
+    elsif( $type eq 'Gene' ){
       /(\d+$)/;
       return "WBGene$1";
     }
@@ -697,7 +648,14 @@ sub set_web_output {
 }
 #################################################################
 
-
+#This is to allow the web page to accept any name for a gene but pass the geneID to NameDB_handler.
+sub convert_to_geneID {
+	my $db = shift;
+	my $id = shift;
+	my $id_search = $db->idGetByAnyName($id)->[0];
+	my $gene_id = $id_search ? $id_search : $id; #allow any name type to be added to
+	return $gene_id;
+}
 
 
 
