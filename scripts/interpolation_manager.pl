@@ -19,6 +19,7 @@ my ( $help, $debug, $test, $store );
 my $verbose;    # for toggling extra output
 my $maintainers = "All";    # who receives emails from script
 my $noload;                 # generate results but do not load to autoace
+my $nopseudo;               # prevent running of make_pseudo_map_positions.pl
 
 ##############################
 # command-line options       #
@@ -29,7 +30,8 @@ GetOptions(
     "debug=s" => \$debug,
     "test"    => \$test,
     "noload"  => \$noload,
-    "store:s" => \$store
+    "store:s" => \$store,
+    "no_pseudo"=>\$nopseudo
 );
 
 # recreate configuration ##########
@@ -83,6 +85,7 @@ if ( !$noload ) {
     foreach my $file ( glob("$acedir/interpolated_clone_*.ace") ) {
         $wb->load_to_database( $wb->autoace, $file, "interpolate_clones", $log );
     }
-
 }
+
+$wb->run_script("make_pseudo_map_positions.pl", $log) unless $nopseudo;
 $log->mail();
