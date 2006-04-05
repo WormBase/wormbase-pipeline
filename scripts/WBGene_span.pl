@@ -6,8 +6,8 @@
 #
 # Creates SMapped Gene spans for Gene objects
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-02-13 11:25:32 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2006-04-05 14:41:47 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -84,7 +84,7 @@ if ( $prepare ) {
   @chromosomes = ("$chromosome") if $chromosome;
   foreach my $chrom ( @chromosomes ) {
     my %gene_coords;
-    foreach my $method (qw(Coding_transcript Non_coding_transcrip tRNAscan-SE-1.23 miRNA) ) {
+    foreach my $method (qw(Coding_transcript Non_coding_transcript tRNAscan-SE-1.23 miRNA) ) {
       $gff_file = $wormbase->gff_splits."/CHROMOSOME_${chrom}_$method.gff" unless $gff_file;
       open (GFF,"<$gff_file") or die "cant open GFF $gff_file\n";
       while ( <GFF> ) {
