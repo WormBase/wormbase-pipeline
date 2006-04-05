@@ -1,6 +1,27 @@
+=head1 
+
+NameDB_handler
+
+This is an API layer above the NameDB.pm module specifically for handling GeneID maninpulation
+
+=item Synopsis
+
+my $DOMAIN = 'Gene';
+my $db = NameDB_handler->new($DB,$USER,$PASS);
+	
+$db || return(undef);
+$db->setDomain($DOMAIN);
+
+my $gene_id = $db->merge_genes($id_to_keep, $id_to_kill);
+my $split   = $db->split_genes($cds_name, $name_type,$gene_id);
+
+=cut
+
+
+
 #author ar2
 package NameDB_handler;
-
+use Carp;
 #use SangerPaths qw(core);
 use NameDB;
 our @ISA = qw( NameDB );
@@ -10,9 +31,9 @@ sub new
     my $class = shift;
     my $dsn = shift;
     my ($name,$password) = @_;
-    my $self = NameDB->connect($dsn,$name,$password);
+    my $db = NameDB->connect($dsn,$name,$password);
 
-    bless ($self, $class);
+    bless ($db, $class);
 #    my $path = SangerWeb->document_root();
     my $path = '/nfs/WWWdev/SANGER_docs/htdocs';
    #read in clone list to validate CDS names with
@@ -20,154 +41,241 @@ sub new
 	
 	#untaint file
 	unless( $clone_file =~ m/^(.+)$/ ) {
-		$self->dienice("tainted file\n");
+		$db->dienice("tainted file\n");
 	}
 	$clone_file = $1;
 	
 	#read clones in
-	open(CLONE,"<$clone_file") or $self->dienice("cant open $clone_file\n");
+	open(CLONE,"<$clone_file") or $db->dienice("cant open $clone_file\n");
 	my %clones;
 	while (<CLONE>) {
 		chomp;
-		$self->{clones}->{$_} = 1;
+		$db->{clones}->{$_} = 1;
 	}
     close CLONE;
-    return $self;
+    return $db;
   }
 
 sub web  # set flag to specify web or script for error (dienice)
   {
-    my $self = shift;
+    my $db = shift;
     my $set = shift;
-    $self{'web'} = $set if( $set );
-    return $self{'web'};
+    $db{'web'} = $set if( $set );
+    return $db{'web'};
   }
 
 sub printAllNames
   {
-    my $self = shift;
+    my $db = shift;
     my $obj = shift;
-    my %names = $self->idAllNames($obj);
+    my %names = $db->idAllNames($obj);
     print "<br>Current gene names for <b>$obj</b> <br>";
     foreach (keys %names ) {
       print "$_ : ",join(" ",@{$names{$_}}) || $names{$_} ,"<br>";
     }
   }
+  
+=item Methods
 
-sub add_name
-  {
-    my $self = shift;
-    my $id = shift;
-    my $name = shift;
-    my $type = shift;
-    eval {
+
+
+=head2 add_name
+
+Add a name to an existing gene
+
+ Parameters : GeneID name to add, type of name being added
+ Returns    : the added name or undef if fails
+ 
+=cut
+ 
+sub add_name {
+	my ($db, $gene_id, $name, $type) = @_;
+	unless ($db and $gene_id and $name and $type) {
+		$db->dienice("bad parameters");
+		return undef;
+	}
+	
+	#confirm GeneID and name are valid
+	$db->validate_name($name, $type)    or return undef;
+	$db->validate_id($gene_id)          or return undef;
+	$db->check_pre_exists($name, $type) or return undef;
+	my $add_seq_name = 0;
+	eval {
       #if this is a new isoform we want to check it matches existing CDS names ie dont add ABC.1a to CDE.2
       if( $type eq "CDS") {
-	my $seq_name = $self->idTypedNames($id,'Sequence');
-	#if there is a sequence name check the new name is same "sequence"
-	die "$name is not an isoform of $seq_name->[0]\n" if($seq_name->[0] and !($name =~ /$seq_name->[0]/) );
-	# all is well -> add the name
+			my $seq_name = $db->idTypedNames($gene_id,'Sequence');
+			#if there is a sequence name check the new name is same "sequence"
+			if( $seq_name->[0] ) {
+				my $regex = $seq_name->[0] . "[a-z]";
+				print "testing ".$seq_name->[0]." against $regex";
+				if($seq_name->[0] and !($name =~ /$regex/) ) {
+					$db->dienice("$name is not an isoform of ".$seq_name->[0]);
+					return undef;
+				}
+				# all is well -> add the name
+			}
+			$add_seq_name = 1; #have to do it like this as we dont want to add seq_name until CDS name has been accepted
       }
-      $self->addName($id,$type => $name);
+      $db->addName($gene_id,$type => $name);
+      if( $add_seq_name == 1) {
+      	my ($seq_name) = $name =~ /^(\w+\.\d+)/;
+      	$db->addName($gene_id,'Sequence' => $name);
+      }
     };
+    $db->_update_public_name($gene_id);
     if ($@) {
-      $self->dienice("$@");
+      $db->dienice("$@");
+      return undef;
+    }
+    else {
+    	return $name;
     }
   }
 
+=head2 isoform_exists
+
+Check if the passed name is an isoform of an existing gene
+
+ Parameters : name string and type string
+ Return     : name or undef
+ 
+=cut
+
 sub isoform_exists
   {
-    my $self = shift;
+    my $db = shift;
     my $name = shift;
     my $type = shift;
     if ( $name =~ /^(\w+\.\d+)[a-z]/) {
-      $id = $self->idGetByTypedName($type,$1);
+      $id = $db->idGetByTypedName($type,$1);
       if ( $id->[0] ) {
-	return $id->[0];
+			return $id->[0];
       }
     }
     return undef;
   }
 
+=head2 validate_name
+
+Confirm that a passed name has the correct format for specified type
+
+ Parameters : name string and type string
+ Return     : name or undef
+ 
+=cut
+
 sub validate_name
   {
-    my $self = shift;
+    my $db = shift;
     my $name = shift;
     my $type = shift;
     #is this a valid name tpye?
-    my @types = $self->getNameTypes;
+    my @types = $db->getNameTypes;
     if( grep {$_ eq $type} @types) {
       #check name structure matches format eg CDS = clone.no
       my %name_checks = ( 
       		"CDS" => '^([A-Z0-9_]+)\.\d+\w?$',
-			  	"CGC" => '^[a-z]{3,4}-[1-9]\d*$'
+			  	"CGC" => '^[a-z]{3,4}-[1-9]\d*(\.\d+)?$',	
+			  	"Sequence" => '^([A-Z0-9_]+)\.\d+$',
 			);
       unless( $name =~ /$name_checks{$type}/ ) {
-			$self->dienice("$name is incorrect format for $type<br>");
+			$db->dienice("$name is incorrect format for $type");
+			return undef;
 		}
-		if($type eq 'CDS' and !(defined $self->{'clones'}->{uc($1)}) ) {
-			$self->dienice("$name doesn't seem to be on a valid clone ($1)<br>");
+		if($type eq 'CDS' and !(defined $db->{'clones'}->{uc($1)}) ) {
+			$db->dienice("$name isnt on a valid clone $1");
+			return undef;
 		}
     }
     else {
-      $self->dienice("$type is a invalid typename:<br>@types");
+      $db->dienice("$type is a invalid typename: @types");
+      return undef;
     }
+    return $name;
   }
+
+=head2 validate_id
+
+Checks whether a gene_id exists and is Live
+
+ Parameters : WBGeneID
+ Returns    : The validated id or undef
+ 
+=cut
 
 sub validate_id
   {
-    my $self = shift;
+    my $db = shift;
     my $id = shift;
-    unless ( $self->idExists($id) ) {
-      $self->dienice("$id does not exist<br>");
+    unless ( $db->idExists($id) ) {
+      $db->dienice("$id does not exist");
+      return undef ;
     }
-    unless( $self->idLive($id) ) {
-      $self->dienice("$id is not live<br>");
+    unless( $db->idLive($id) == 1) {
+      $db->dienice("$id is not live");
+      return undef;
     }
+    return $id;
   }
+
+=head2 check_pre_exists
+
+Checks whether a name already exists in the database
+
+ Parameters : Name to check, name type
+ Returns    : The Gene_id or error string
+ 
+=cut
 
 sub check_pre_exists
   {
-    my $self = shift;
-    my $name = shift;
-    $id = $self->idGetByAnyName($name);
+    my( $db, $name, $type) = @_;
+    $id = $db->idGetByTypedName($type, $name);
     if(defined $id->[0] ){
-      my $err = "$name already exists as ".$id->[0].":<br>";
-      $self->dienice("$err");
+      $db->dienice("$name already exists as ".$id->[0]);
+      return undef;
     }
+    return $name;
   }
 
 
 sub make_new_obj
   {
-    my $self = shift;
+    my $db = shift;
     my $name = shift;
     my $type = shift;
-    $id = $self->create_named_object($type, $name);
+    $id = $db->create_named_object($type, $name);
     return $id;
   }
 
 sub dienice {
-    my $self = shift;
+    my $db = shift;
     my($errmsg) = @_;
-    if( $self->web ) {
-      print "<h2>Error</h2>\n";
+    if( $db->web ) {
+     print "<h2>Error</h2>\n";
       print "<p>$errmsg</p>\n";
-      print end_html;
     }
     else {
-      print "$errmsg\n";
-    }
-    exit;
+      croak "$errmsg\n";
+   }
   }
 
+=head2 print_history
+
+Displays the history of events that have occurred for gene 
+
+ Parameters : GeneID
+ Returns    : NULL but prints the history to screen / web
+
+=cut
+
 sub print_history {
-  my $self = shift;
+  my $db = shift;
   my $id = shift;
 
-  $self->validate_id($id);
+  $db->validate_id($id);
 
-  my $history = $self->idGetHistory($id);
+  my $history = $db->idGetHistory($id);
   print "$id<br>";
   foreach my $event (@{$history}) {
     print $event->{version}," ";
@@ -177,27 +285,237 @@ sub print_history {
     print $event->{name_value}," " if (defined $event->{name_value});
     print $event->{user},"<br>";
   }
+  return;
 }
 
+=head2 remove_all_names
+
+Removes all names associated with a GeneID
+
+ Parameters : GeneID
+ Return     : NULL
+
+=cut
 
 sub remove_all_names
   {
-    my $self = shift;
+    my $db = shift;
     my $id = shift;
-    my %names = $self->idAllNames($id);
+    my %names = $db->idAllNames($id);
     foreach my $name_type (keys %names) {
       if( ref $names{$name_type} eq 'ARRAY' ) {
-	foreach my $name ( @{$names{$name_type}} ){
-	  print "$name_type : $name\n";
-	  $self->delName($id,$name_type, $name);
-	}
+			foreach my $name ( @{$names{$name_type}} ){
+	  			print "$name_type : $name\n";
+	  			$db->delName($id,$name_type, $name);
+			}
       }
       else {
-	#print "$name_type : $names{$name_type}\n";
-	$self->delName($id,$name_type, $names{$name_type});
+			#print "$name_type : $names{$name_type}\n";
+			$db->delName($id,$name_type, $names{$name_type});
       }
     }
+    return;
   }
+  
+=head2 merge_genes
+
+Merge 2 GeneIDs
+
+ Parameters : gene_id to keep, gene_id to kill
+ Returns    : retained gene_id
+ Action     : merges the passed Gene_ids
+
+ my $gene_id = $db->merge_genes($id_to_keep, $id_to_kill);
+
+=cut
+  
+  
+sub merge_genes {
+	my ($db, $gene_gene, $merge_gene) = @_;
+ 	
+   my ($gene_id, $merge_id);
+   $gene_id  = ($db->idGetByAnyName($gene_gene)->[0]  or $gene_gene);  #allow use of any name or gene_id
+   $merge_id = ($db->idGetByAnyName($merge_gene)->[0] or $merge_gene); #allow use of any name or gene_id
+   $db->validate_id($gene_id) or return undef;
+   $db->validate_id($merge_id) or return undef;
+		
+	if( $gene_id eq $merge_id) {
+		$db->dienice("FAILED : $gene_gene and $merge_gene are the same!");
+		return undef;
+	}
+
+	#enforce retention of CGC named gene
+	my $cgc1 = $db->idAllNames($gene_id);
+	my $cgc2 = $db->idAllNames($merge_id);
+	if( $$cgc2{'CGC'} and !($$cgc1{'CGC'}) ){
+		#gene being eaten has a CGC name and eater doesnt
+		$db->dienice("FAILED: $merge_gene has a CGC name ".$$cgc2{'CGC'}." and should be retained");
+		return undef;
+	}
+			
+   #remove all gene names for eaten gene
+   $db->remove_all_names($merge_id);
+	#do the merge
+   if ($db->idMerge($merge_id,$gene_id)) {
+   	return $gene_id;
+   }
+   else {
+   	$db->dienice("FAILED : merge failed");
+   	return undef;
+   }
+ }
+ 
+=head2 split_gene
+
+Split a GeneID
+
+ Parameters : new gene name, new gene type (CDS, CGC), existing gene_id
+ Returns    : gene_id of created gene
+ Action     : Splits the passed Gene_id and creates one new named gene
+
+ my $new_gene_id = $db->split_gene('AH6.22', 'CDS', $gene_id_to_split);
+
+=cut
+
+
+
+sub split_gene {
+	my ($db,$name,$type,$gene_id) = @_;
+	unless ($type && $name && $gene_id){
+		$db->dienice("bad parameters");
+		return undef;
+	}
+	$db->validate_id($gene_id) or return undef;
+   $db->validate_name($name, $type) or return undef;
+	$db->check_pre_exists($name, $type) or return undef;
+	my $id = $db->idSplit($gene_id);		## hmm, does this work?
+	if( $id =~ /WBGene/ ) {
+		$db->add_name($id, $name, $type);
+		return "$id";
+	}
+	else {
+		$db->dienice("FAILED: spit gene $gene_id failed");  #error msg
+		return undef;
+	}
+}
+
+=head2 kill_gene
+
+Kill a GeneID
+
+ Parameters : Gene_ID and Text remark
+ Returns    : Killed ID
+ 
+=cut
+
+sub kill_gene {
+	my ($db, $gene_id) = @_;
+	$db->validate_id($gene_id) or return undef;
+	if ($db->idKill($gene_id)){
+		return $gene_id;
+	}
+	else {	
+		$db->dienice("cant kill GeneID $gene_id");
+		return undef;
+	}
+}
+
+=head2 remove_name
+
+Remove a name from a GeneID
+
+ Parameters : Remove a typed name from specified GeneID
+ Returns    :
+ 
+ $db->remove_name($gene_id,$type,$name)
+ 
+=cut
+
+sub remove_name {
+	my ($db, $gene_id, $type, $name) = @_;
+	unless ($db and $gene_id and $type and $name) {
+		$db->dienice("bad parameters");
+		return undef;
+	}
+		
+	$db->validate_id($gene_id) or return undef;
+   $db->validate_name($name, $type) or return undef;
+   my ($exist_id) = $db->idGetByTypedName($type,$name);
+   if ( !$exist_id or ("$exist_id" ne "$gene_id") ) {
+		$db->dienice("$name is not a name of $gene_id");
+		return undef;
+   }
+   if ( $db->delName($gene_id,$type,$name) ) {
+		#need to update the public name - change to sequence name if CGC name removed
+		if ($type eq 'CGC') {
+		  my $seq_name = $db->idTypedNames($gene_id,'Sequence');
+		  $db->add_name($gene_id,$seq_name->[0],'Public_name');
+		}
+		return $name;
+	}
+}
+ 
+=head2 new_gene
+
+Create a new GeneID
+
+ Parameters : name, name type
+ Returns    : GeneID 
+ 
+=cut
+
+sub new_gene {
+	my ($db, $name, $type) = @_;
+	
+	$db->validate_name($name, $type)    or return undef;
+	$db->check_pre_exists($name, $type) or return undef;
+	if( my $id = $db->isoform_exists($name, $type) ) {
+	  $db->dienice("$name is an isoform of $id  Please confirm and add $name as another name for $id");
+	};
+	my $id = $db->make_new_obj($name, $type);
+	if( $type eq 'CDS') {
+		#fill in the Sequence_name too
+		my ($seq_name) = $name =~ /(.*)[a-z]?$/;
+		$db->add_name($id, $seq_name, "Sequence");
+		print "added Seq_name $seq_name to $id<br>";
+	}
+	$db->_update_public_name($id);
+	return $id ? $id : undef;
+}
+ 
+=head2 _update_public_name 
+
+Updates a Genes public name, taking the CGC name or Sequence name
+
+ Parameters : GeneID
+ Returns    : GeneID 
+ 
+=cut
+
+sub _update_public_name {
+	my ($db, $id) = @_;
+	my $names = $db->idAllNames($id);
+	my $public = $names->{'Public_name'};
+	my $new_public;
+	if(!$public ) {
+		if( $names->{'CGC'} ) {
+			$new_public = $names->{'CGC'};
+		}elsif( $names->{'Sequence'} ) {
+			$new_public = $names->{'Sequence'};
+		}else {
+			$db->dienice("$id has no CGC or Sequence name");
+			return undef;
+		}
+	}
+	elsif ($names->{'CGC'} and ($public ne $names->{'CGC'}) ) {
+		$new_public = $names->{'CGC'};
+	}
+	elsif ($names->{'Sequence'} and ($public ne $names->{'Sequence'})) {
+		$new_public = $names->{'Sequence'};
+	}
+	$db->addName($id,'Public_name' => $new_public) if $new_public;
+	return $new_public;
+}
 
 
 1;
