@@ -7,7 +7,7 @@
 # Script to identify genes which can have their Interpolated_map_position tag promoted to a Map position
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-02-13 12:16:32 $
+# Last updated on: $Date: 2006-04-05 08:20:58 $
 
 use strict;
 use warnings;
@@ -24,13 +24,13 @@ use Getopt::Long;
 my $maintainers = "All";
 my ($help, $database, $verbose, $test, $load,$store,$debug);
 
-GetOptions ("help"        => \$help,
-	    "database=s"  => \$database,
-	    "test"        => \$test,
-	    "verbose"     => \$verbose,
-	    "load"        => \$load,
-    	    'store=s'     => \$store,
-	    'debug=s'	  => \$debug
+GetOptions (	"help"        => \$help,
+	  			   "database=s"  => \$database,
+	    			"test"        => \$test,
+	    			"verbose"     => \$verbose,
+	    			"load"        => \$load,
+    	   		'store=s'     => \$store,
+					'debug=s'	  => \$debug
     	);
 
 # Display help if required
@@ -93,13 +93,10 @@ $log->write_to("Genes with newly promoted Map positions ");
 $log->write_to("(this file will be loaded to geneace by a later build script):\n\n");
 
 # open a connection to database
-my $db = Ace->connect(-path  => $database,
-		      -program =>$tace) ||  $log->log_and_die("Connection failure: ",Ace->error);
-
+my $db = Ace->connect(-path  => $database ) ||  $log->log_and_die("Connection failure: ",Ace->error);
 
 # build query to find candidate genes
 my $query  = "find Gene * WHERE !Mapping_data & Allele & CGC_name & Sequence_name & Interpolated_map_position & Species =\"*elegans\"";
-
 
 # create a list of Genes which should gain a 'pseudo' map position
 push(my @candidate_genes, $db->find($query) );
@@ -133,10 +130,7 @@ foreach my $gene (@candidate_genes){
     print OUT "Gene : \"$gene\"\n";
     print OUT "Map \"$map\" Position $position\n";
     print OUT "Pseudo_map_position\n";
-      print OUT "Remark \"Map position created from combination of previous interpolated map position (based on known location of sequence) and allele information.  Therefore this is not a genetic map position based on recombination frequencies or genetic experiments.  This was done on advice of the CGC.\" CGC_data_submission\n\n\n";
-    last;
-  
-    
+    print OUT "Remark \"Map position created from combination of previous interpolated map position (based on known location of sequence) and allele information.  Therefore this is not a genetic map position based on recombination frequencies or genetic experiments.  This was done on advice of the CGC.\" CGC_data_submission\n\n\n";
   }
 }
 
@@ -153,8 +147,8 @@ $wb->load_to_database($wb->autoace,$out, 'pseudo_map_postn') if $load;
 $db->close;
 close(OUT);
 
-$log->mail("$maintainers", "BUILD REPORT: $0");
-$log->mail("cgc\@wormbase.org", "list of promoted map positions");
+$log->mail();
+$log->mail("cgc\@wormbase.org", "list of promoted map positions") unless $wb->test;
 
 exit(0);
 
