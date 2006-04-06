@@ -7,7 +7,7 @@
 # Creates SMapped Gene spans for Gene objects
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2006-04-06 12:33:14 $
+# Last edited on: $Date: 2006-04-06 13:37:22 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -83,7 +83,7 @@ else {
     @chromosomes = ("$chromosome") if $chromosome;
     foreach my $chrom (@chromosomes) {
         my %gene_coords;
-
+	
         foreach my $method (qw(Coding_transcript Non_coding_transcript tRNAscan-SE-1.23 miRNA)) {
             print "checking $method \n" if $test;
             $gff_file = $wormbase->gff_splits . "/CHROMOSOME_${chrom}_$method.gff" unless $gff_file;
@@ -135,7 +135,7 @@ else {
             }
         }
         if ($gff) {
-            open( OUTGFF, $wormbase->gff_splits . "/CHROMOSOME_${chrom}_WBgene.gff" ) or do { $log->write_to("cant open output\n"); die "cant open output\n"; }
+            open( OUTGFF, ">".$wormbase->gff_splits . "/CHROMOSOME_${chrom}_WBgene.gff" ) or do { $log->write_to("cant open output\n"); die "cant open output\n"; }
         }
         my $acefile = $wormbase->acefiles . "/WBgene_spans_${chrom}.ace";
         unless ($no_ace) {
