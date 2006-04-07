@@ -790,8 +790,8 @@ sub load_to_database {
   if( $st->size > 50000000 ) {
     $log->write_to("backing up block files before loading $file\n") if $log;
     my $db_dir = $database."/database";
-    my $tar_file = "backup.".time.".tar";
-    my $tar_cmd = "tar -cvf $db_dir/$tar_file $db_dir/block* $db_dir/database.map $db_dir/log.wrm; bsub \'gzip $db_dir/$tar_file\'";
+    my $tar_file = "backup.".time.".tgz";
+    my $tar_cmd = "gtar -cvfz $db_dir/$tar_file $db_dir/block* $db_dir/database.map $db_dir/log.wrm";
     $self->run_command("$tar_cmd", $log);
 
     # remove old backups keeping the one just made and the previous one.
