@@ -7,7 +7,7 @@
 # This is a example of a good script template
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2006-04-10 09:54:31 $
+# Last updated on: $Date: 2006-04-10 23:27:54 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -284,7 +284,7 @@ sub read_GFF_queries {
 
     $i++;
     $queries[$i]{'DESC'}  = "Non_coding_transcripts";
-    $queries[$i]{'GFF'}   = "Non_coding_transcript";
+    $queries[$i]{'GFF'}   = "nc_primary_transcript";
     $queries[$i]{'QUERY'} = 'find Transcript; method = non_coding_transcript';
 
     $i++;
@@ -324,7 +324,7 @@ sub read_GFF_queries {
 
     $i++;
     $queries[$i]{'DESC'}  = "ncRNAs";
-    $queries[$i]{'GFF'}   = "ncRNA_primary_transcript";
+    $queries[$i]{'GFF'}   = "nc_primary_transcript";
     $queries[$i]{'QUERY'} = 'find elegans_RNA_genes ncRNA';
 
     #	$i++;
