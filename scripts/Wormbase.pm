@@ -791,7 +791,7 @@ sub load_to_database {
     $log->write_to("backing up block files before loading $file\n") if $log;
     my $db_dir = $database."/database";
     my $tar_file = "backup.".time.".tgz";
-    my $tar_cmd = "gtar -cvfzp $db_dir/$tar_file $db_dir/block* $db_dir/database.map $db_dir/log.wrm";
+    my $tar_cmd = "gtar cvfzP $db_dir/$tar_file $db_dir/block* $db_dir/database.map $db_dir/log.wrm";
     $self->run_command("$tar_cmd", $log);
 
     # remove old backups keeping the one just made and the previous one.
