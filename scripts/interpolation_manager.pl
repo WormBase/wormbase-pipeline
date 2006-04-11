@@ -1,4 +1,4 @@
-#!/usr/bin/env perl
+#!/nfs/team71/worm/mh6/bin/perl
 #####################################################
 # put interpolate snps jobs on queue and waits for them to exit
 #
