@@ -15,7 +15,7 @@
 #      COMPANY:
 #      VERSION:  1.0
 #      CREATED:  13/02/06 09:37:00 GMT
-#     REVISION:  $Revision: 1.3 $
+#     REVISION:  $Revision: 1.4 $
 #===============================================================================
 
 # BACS / SNPS / GENEs
@@ -87,13 +87,13 @@ foreach my $chrom ( @chromosomes) {
     my @data;
     push( @data, "$chromdir/${chrom}_allele.gff" )          if ( $alleles|| $all ); # GFF_method_dump.pl -method Allele
     push( @data, "$chromdir/${chrom}_gene.gff" )            if ( $genes  || $all );
-    push( @data, "$chromdir/${chrom}_clone_accession.gff" ) if ( $clones || $all );
+    push( @data, "$chromdir/${chrom}_clone_acc.gff" ) if ( $clones || $all );
     foreach my $file (@data) {
         $chrom=~/_(.*)$/;
 	
 	&dump_alleles($wormbase,$1) if ($alleles && (! -e $file));
 	
-   	my $fh = IO::File->new( $file, "r" ) || ( $log->write_to("cannot find: $chromdir/$file\n") && next);
+   	my $fh = IO::File->new( $file, "r" ) || ( $log->write_to("cannot find: $file\n") && next);
 	$file =~ /${chrom}_(allele|gene|clone)/; # hmpf
         my $of = IO::File->new( ">> $outdir/interpolated_$1_$chrom.ace" );
 
