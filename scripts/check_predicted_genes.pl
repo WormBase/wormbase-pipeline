@@ -4,13 +4,14 @@
 #
 # by Keith Bradnam
 #
-# Last updated on: $Date: 2006-03-21 15:14:50 $
-# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2006-04-11 14:23:33 $
+# Last updated by: $Author: pad $
 #
 # see pod documentation at end of file for more information about this script
 
 use strict;
-use lib $ENV{'CVS_DIR'};
+#use lib $ENV{'CVS_DIR'};
+use lib "/nfs/disk100/wormpub/wormbase/scripts";
 use Wormbase;
 use Ace;
 use IO::Handle;
