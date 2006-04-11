@@ -15,7 +15,7 @@
 #      COMPANY:
 #      VERSION:  1.0
 #      CREATED:  13/02/06 09:37:00 GMT
-#     REVISION:  $Revision: 1.5 $
+#     REVISION:  $Revision: 1.6 $
 #===============================================================================
 
 # BACS / SNPS / GENEs
@@ -95,9 +95,9 @@ foreach my $chrom ( @chromosomes) {
 	
    	my $fh = IO::File->new( $file, "r" ) || ( $log->write_to("cannot find: $file\n") && next);
 	$file =~ /${chrom}_(allele|gene|clone)/; # hmpf
-        my $of = IO::File->new( ">> $outdir/interpolated_$1_$chrom.ace" );
+        my $of = IO::File->new( "> $outdir/interpolated_$1_$chrom.ace" );
 
-	$log->write_to("adding $chrom to: interpolated_$1_$chrom.ace\n");
+	$log->write_to("writing to: interpolated_$1_$chrom.ace\n");
 
         while (<$fh>) {
             next if /\#/;
