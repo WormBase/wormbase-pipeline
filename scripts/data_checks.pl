@@ -7,7 +7,7 @@
 # This is a example of a good script template
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2006-04-10 23:27:54 $
+# Last updated on: $Date: 2006-04-11 09:55:22 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -121,7 +121,7 @@ sub read_acedb_queries {
     my $i = 0;
     $queries[$i]{'DESC'}   = "The number of RNAi experiments with more than one associated Gene";
     $queries[$i]{'QUERY'}  = 'find rnai COUNT gene > 1 AND uniquely_mapped';
-    $queries[$i]{'RESULT'} = 1716;
+    $queries[$i]{'RESULT'} = 1528;
 
     $i++;
     $queries[$i]{'DESC'}   = "The number of RNAi results with connections to genes";
@@ -141,7 +141,7 @@ sub read_acedb_queries {
     $i++;
     $queries[$i]{'DESC'}   = "The number of wormpep without pep_homol";
     $queries[$i]{'QUERY'}  = 'find wormpep !pep_homol';
-    $queries[$i]{'RESULT'} = 45;
+    $queries[$i]{'RESULT'} = 40;
 
     $i++;
     $queries[$i]{'DESC'}   = "tRNAs not attached to parent properly";
@@ -240,7 +240,7 @@ sub read_GFF_queries {
     $i++;
     $queries[$i]{'DESC'}  = "Coding_transcripts";
     $queries[$i]{'GFF'}   = "protein_coding_primary_transcript";
-    $queries[$i]{'QUERY'} = 'find Coding_transcripts"';
+    $queries[$i]{'QUERY'} = 'find Transcript Method=Coding_transcript';
 
     $i++;
     $queries[$i]{'DESC'}  = "All PCR products";
