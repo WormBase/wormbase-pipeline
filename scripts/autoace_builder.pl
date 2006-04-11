@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2006-04-03 08:39:02 $
+# Last edited on: $Date: 2006-04-11 09:58:43 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -68,7 +68,7 @@ GetOptions(
 	   'treefam'        => \$treefam,
 	   'cluster'        => \$cluster,
 	   'utr'            => \$utr,
-	   'snp_interpolation' => \$interpolate,
+	   'interpolation' => \$interpolate,
 	   'agp'            => \$agp,
 	   'gff_munge'      => \$gff_munge,
 	   'extras'         => \$extras,
