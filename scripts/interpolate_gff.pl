@@ -15,7 +15,7 @@
 #      COMPANY:
 #      VERSION:  1.0
 #      CREATED:  13/02/06 09:37:00 GMT
-#     REVISION:  $Revision: 1.4 $
+#     REVISION:  $Revision: 1.5 $
 #===============================================================================
 
 # BACS / SNPS / GENEs
@@ -85,7 +85,7 @@ foreach my $chrom ( @chromosomes) {
 	
     # Input files
     my @data;
-    push( @data, "$chromdir/${chrom}_allele.gff" )          if ( $alleles|| $all ); # GFF_method_dump.pl -method Allele
+    push( @data, "$chromdir/${chrom}_Allele.gff" )          if ( $alleles|| $all ); # GFF_method_dump.pl -method Allele
     push( @data, "$chromdir/${chrom}_gene.gff" )            if ( $genes  || $all );
     push( @data, "$chromdir/${chrom}_clone_acc.gff" ) if ( $clones || $all );
     foreach my $file (@data) {
