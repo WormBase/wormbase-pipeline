@@ -6,8 +6,8 @@
 #
 # This is a example of a good script template
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2006-04-11 09:55:22 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2006-04-12 13:41:48 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -193,6 +193,11 @@ sub read_acedb_queries {
     $queries[$i]{'QUERY'}  = 'find Gene GO_term';
     $queries[$i]{'RESULT'} = 9897;
 
+    $i++;
+    $queries[$i]{'DESC'}   = "CDSs with no source_exons";
+    $queries[$i]{'QUERY'}  = 'find CDS !Source_exons; method';
+    $queries[$i]{'RESULT'} = 0;
+    
     #	$i++;
     #	$queries[$i]{'DESC'}   = "";
     #	$queries[$i]{'QUERY'}  = '';
