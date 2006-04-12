@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.8.0 -w
+#!/nfs/disk100/wormpub/bin/perl -w
 #
 # make_keysets.pl
 #
@@ -6,8 +6,8 @@
 #
 # Usage : make_keysets.pl [-options]
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-02-17 11:32:47 $
+# Last edited by: $Author: mh6 $
+# Last edited on: $Date: 2006-04-12 09:08:39 $
 
 #################################################################################
 # variables                                                                     #
@@ -44,7 +44,6 @@ GetOptions (
 	    "test"      => \$test,
 	    "debug"     => \$debug,
 	    "help"      => \$help,
-	    "test"      => \$test,
 	    "verbose"   => \$verbose,
 	    "store:s"     => \$store,
 	    );
@@ -156,7 +155,7 @@ if (($history) || ($all)) {
 } 
 
 my $misc_static_dir = $wormbase->misc_static;
-$wormbase->load_to_database($dbpath, "/wormsrv2/wormbase/misc_static/represent_clone.ace", "clone_check") if $all;
+$wormbase->load_to_database($dbpath, "$misc_static_dir/represent_clone.ace", "clone_check") if $all;
 
 
 $log->mail();
