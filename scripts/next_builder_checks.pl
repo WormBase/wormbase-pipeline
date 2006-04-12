@@ -6,8 +6,8 @@
 # A simple script to send a check list to the person who will be performing the next
 # build to check the current build
 #
-# Last updated by: $Author: mt3 $
-# Last updated on: $Date: 2006-03-02 16:41:04 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2006-04-12 13:51:42 $
 use strict;
 use warnings;
 use lib $ENV{'CVS_DIR'};
@@ -90,14 +90,14 @@ xii)  AH9
 those changes to see if there are any strange errors (e.g. duplicate sets of data
 which are slightly out of sync.)
 
-3) Check /wormpub/BUILD/autoace/CHROMOSOMES/composition.all - are there any non-ATCGN
+3) Check ~wormpub/BUILD/autoace/CHROMOSOMES/composition.all - are there any non-ATCGN
 characters
 
 4a) Check that the latest WormPep proteins have proper protein and motif homologies
 This has been a problem in some builds where all new WormPep proteins have not got any
 BLAST analyses.  Pick a few random Wormpep proteins and especially check that all of
 the various blastp homologies are there (human, fly, worm, yeast etc.) and try to
-check at least one protein from the /wormsrv2/WORMPEP/wormpepXXX/new_entries.WSXXX file
+check at least one protein from the ~wormpub/BUILD/WORMPEP/wormpepXXX/new_entries.WSXXX file
 
 4b) Now that we have a curated set of brigpep, should do this periodically for
 C. briggase protein objects too...these now have their own set of blastp hits
@@ -112,13 +112,13 @@ should notify the responsible group (HX or RW) to fix them for next build
 7) Run composition *.dna in the CHROMOSOMES directory.  Make sure this is the same as it was
 at the start of the build.  Bad Homol objects can lead to errors esp when chromosome length has been reduced
 
-8) Confirm that GFFmunger.pl has done its job ie 
+8) Confirm that GFFmunger.pl has done its job ie.
  grep landmark /wormpub/BUILD/autoace/CHROMOSOMES/CHROMOSOME_III.gff | head
- grep five_prime /wormpub/BUILD/autoace/CHROMOSOMES/CHROMOSOME_III.gff
- grep Partially /wormpub/BUILD/autoace/CHROMOSOMES/CHROMOSOME_III.gff  and check these are overloaded CDS lines.
- These should have about 10 columns if overloaded and only about 5 or 6 if there are problems.
+ grep five_prime /wormpub/BUILD/autoace/CHROMOSOMES/CHROMOSOME_III.gff | head
+ grep Partially /wormpub/BUILD/autoace/CHROMOSOMES/CHROMOSOME_III.gff  | head and check these are overloaded CDS lines.
+      These should have about 10 columns if overloaded and only about 5 or 6 if there are problems.
 
-That's all...for now!  If you are satisfied the build is ok, please inform the person
+Thats all...for now!  If you are satisfied the build is ok, please inform the person
 building the database. Please continue to add to this list as appropriate.
 
 ========================================================================================
