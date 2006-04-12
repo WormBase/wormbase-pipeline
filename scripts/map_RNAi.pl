@@ -6,7 +6,7 @@
 #
 # Version: $Version: $
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2006-03-31 12:56:33 $
+# Last updated on: $Date: 2006-04-12 13:42:17 $
 
 use strict;
 use warnings;
@@ -127,50 +127,11 @@ foreach my $chromosome (@chromosomes) {
     # New RNAi lines : CHROMOSOME_I    RNAi_primary    RNAi_reagent    1681680 1683527 .       .       .       Target "RNAi:WBRNAi00004820" 1 1848
 
     print "Loop through primary RNAi GFF file CHROMOSOME_${chromosome}\n" if ($verbose);
-    open( GFF, "<$gffdir/CHROMOSOME_${chromosome}_RNAi_primary.gff" ) || die "Failed to open RNAi gff file CHROMOSOME_${chromosome}_RNAi_primary.gff :$!\n\n";
-    while (<GFF>) {
-        chomp;
-        s/^\#.*//;
-        next unless /RNAi_primary\s+RNAi_reagent/;
-        my @line = split /\t/;
-        my %rnai_tmp;
-
-        my ($name) = ( $line[8] =~ /\"RNAi:(\S+.+)\"\s+\d+\s+\d+$/ );
-
-        # NB store type of RNAi (primary) with hits
-        $rnai_tmp{"${name}_p"} = [ $line[3], $line[4], "primary" ];
-        my @hits = $map->get_chr( "CHROMOSOME_$chromosome", { start => $line[3], stop => $line[4] } );
-        foreach my $hit (@hits) {
-            my $exon = ${ &to_exon($hit) };
-            if ( $exon->type eq 'Expr_profile' ) { push @{ $rnai2exp{"${name}_p"} }, $exon }
-            elsif ( $exon->type ) { push @{ $rnai2genes{"${name}_p"} }, $exon }
-        }
-
-    }
-    close(GFF);
+    &get_RNAi_from_gff( $chromosome, 'primary', $map, \%rnai2genes, \%rnai2exp );
 
     # note which is secondary by adding "_s" to the RNAi
     print "Loop through secondary RNAi GFF file CHROMOSOME_${chromosome}\n" if ($verbose);
-    open( GFF, "<$gffdir/CHROMOSOME_${chromosome}_RNAi_secondary.gff" )
-      || die "Failed to open RNAi gff file CHROMOSOME_${chromosome}_RNAi_secondary.gff:$!\n\n";
-    while (<GFF>) {
-        chomp;
-        s/^\#.*//;
-        next unless /RNAi_secondary\sRNAi_reagent/;
-        my @line = split /\t/;
-        my %rnai_tmp;
-
-        my ($name) = ( $line[8] =~ /\"RNAi:(\S+.+)\"\s+\d+\s+\d+$/ );
-
-        my @hits = $map->get_chr( "CHROMOSOME_$chromosome", { start => $line[3], stop => $line[4] } );
-        foreach my $hit (@hits) {
-            my $exon = ${ &to_exon($hit) };
-            if ( $exon->type eq 'Expr_profile' ) { push @{ $rnai2exp{"${name}_s"} }, $exon }
-            elsif ( $exon->type ) { push @{ $rnai2genes{"${name}_s"} }, $exon }
-        }
-
-    }
-    close(GFF);
+    &get_RNAi_from_gff( $chromosome, 'secondary', $map, \%rnai2genes, \%rnai2exp );
 }
 
 # store some statistics
@@ -393,6 +354,34 @@ sub to_exon {
     my $exon = Exon->new( id => get_id( $hit->{fluff} ), start => $hit->{start}, stop => $hit->{stop}, type => $type );
 
     return \$exon;
+}
+
+################################
+# iterate through the gffs as function
+# type is either primary or secondary
+sub get_RNAi_from_gff {
+    my ( $chromosome, $type, $map, $rnai2genes, $rnai2exp ) = @_;
+
+    my $stype = ( $type eq 'primary' ) ? 'p' : 's';
+
+    open GFF, "<$gffdir/CHROMOSOME_${chromosome}_RNAi_$type.gff" || die "Failed to open RNAi gff file CHROMOSOME_${chromosome}_RNAi_primary.gff :$!\n\n";
+    while (<GFF>) {
+        chomp;
+        s/^\#.*//;
+        next unless /RNAi_$type\s+RNAi_reagent/;
+        my @line = split /\t/;
+
+        my ($name) = ( $line[8] =~ /\"RNAi:(\S+.+)\"\s+\d+\s+\d+$/ );
+
+        my @hits = $map->get_chr( "CHROMOSOME_$chromosome", { start => $line[3], stop => $line[4] } );
+        foreach my $hit (@hits) {
+            my $exon = ${ &to_exon($hit) };
+            if ( $exon->type eq 'Expr_profile' ) { push @{ $$rnai2exp{"${name}_$stype"} }, $exon }
+            elsif ( $exon->type ) { push @{ $$rnai2genes{"${name}_$stype"} }, $exon }
+        }
+
+    }
+    close(GFF);
 }
 
 ############################################
