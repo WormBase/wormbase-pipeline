@@ -7,8 +7,8 @@
 # Script to refresh the CDS->WBGene connections in a chosen database from a chosen reference database.
 # Script also refreshes Protein_IDs in the chosen database from the latest build.
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2006-03-21 10:35:11 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2006-04-12 14:25:50 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -48,6 +48,10 @@ else {
 			     -test => $test,
 			     );
 }
+
+#load know anomolies to be ignored
+my %exceptions;
+&load_exceptions;
 
 my $output_file;
 my $output_file2;
@@ -127,7 +131,7 @@ while (<TACE>) {
     #last if (/\/\//);
     
     # get rid of quote marks
-    s/\"//g;
+    s/\"//g;#"
 
     next unless  (/^(\S+)\t(\S+)/);
     
@@ -184,6 +188,7 @@ foreach my $class (@classes) {
 	$lookupname =~ s/[a-z]$// unless ($lookupname =~ /\S+\.\D/);
 
         # lookup GeneID keyed on lookupname
+	next if( $exceptions{$lookupname} )  ;
 	$geneID = $models2geneID{$lookupname};
 		
         # Print out ace file full model name and modified class name.
@@ -203,10 +208,8 @@ foreach my $class (@classes) {
 	  if (!defined ($geneID)) {$log->write_to("ERROR:$name does not have a geneID please investigate.\n");}
 	  $obj->DESTROY();
 	}
-	#$log->write_to("Known errors\n<==========>C54G4.7:yk713c3.mRNA:wp126\nC54G4.7:yk728f5.mRNA:wp126\nF28A8.9:wp149\nY105E8A.30a:wp128\nY105E8A.30b:wp128\nZK228.9:wp144\n");
       }
   }
-$log->write_to("==============================================================================================\nEXCEPTIONS to be ignored from above table.....\n==============================================================================================\nC54G4.7:yk713c3.mRNA:wp126\nC54G4.7:yk728f5.mRNA:wp126\nF28A8.9:wp149\nY105E8A.30a:wp128\nY105E8A.30b:wp128\nZK228.9:wp144\n==============================================================================================");
 $db->close;
 
 close OUT;
@@ -328,6 +331,18 @@ sub usage
       exec ('perldoc',$0);
     }
   }
+
+sub load_exceptions {
+
+	%exceptions = ( 
+		'C54G4.7:yk713c3.mRNA:wp126' => 1,
+		'C54G4.7:yk728f5.mRNA:wp126' => 1,
+		'F28A8.9:wp149' => 1,
+		'Y105E8A.30a:wp128' => 1,
+		'Y105E8A.30b:wp128' => 1,
+		'ZK228.9:wp144' => 1
+	);
+}
 
 __END__
 
