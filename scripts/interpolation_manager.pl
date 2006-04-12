@@ -87,5 +87,5 @@ if ( !$noload ) {
     }
 }
 
-$wb->run_script("make_pseudo_map_positions.pl", $log) unless $nopseudo;
+$wb->run_script("make_pseudo_map_positions.pl -load", $log) unless $nopseudo;
 $log->mail();
