@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-04-04 16:00:40 $
+# Last updated on: $Date: 2006-04-13 11:18:16 $
 
 use strict;
 use lib "/nfs/disk100/wormpub/wormbase/scripts";
@@ -297,7 +297,7 @@ sub process_gene_class{
   }
 
   # checks for genes that have no Live tag but a split_from tag
-  foreach my $gene ($db->fetch(-query=>"Find Gene WHERE Split_from AND NOT Live")){
+  foreach my $gene ($db->fetch(-query=>"Find Gene WHERE Split_from AND NOT Live AND NOT Merged_into")){
     print LOG "ERROR: $gene has Split_from tag but no Live tag\n";
   }
 
