@@ -4,8 +4,8 @@
 #
 # by ag3 [991221]
 #
-# Last updated on: $Date: 2005-12-16 11:18:54 $
-# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2006-04-18 12:53:28 $
+# Last updated by: $Author: pad $
 
 # transferdb moves acedb database files across filesystems.
 # Creates a temporary database.BCK 
@@ -13,9 +13,9 @@
 # Updates display.wrm
 
 use strict;
-use lib $ENV{'CVS_DIR'};
+use lib "/nfs/disk100/wormpub/wormbase/scripts";
+#use lib $ENV{'CVS_DIR'};
 use Wormbase;
-
 use Carp;
 use IO::Handle;
 use File::Find;

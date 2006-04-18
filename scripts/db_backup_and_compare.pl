@@ -4,11 +4,12 @@
 #
 # backup database and compare to last backed up database to look for lost data
 #
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2006-03-01 09:55:49 $      
+# Last updated by: $Author: pad $     
+# Last updated on: $Date: 2006-04-18 12:53:28 $      
 
 use strict;
-use lib $ENV{'CVS_DIR'};
+#use lib $ENV{'CVS_DIR'};
+use lib "/nfs/disk100/wormpub/wormbase/scripts";
 use Wormbase;
 use IO::Handle;
 use Getopt::Long;
