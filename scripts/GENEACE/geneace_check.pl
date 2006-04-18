@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.8.0 -w
+#!/nfs/disk100/wormpub/bin/perl -w
 # 
 # geneace_check.pl
 #
@@ -7,7 +7,7 @@
 # Script to run consistency checks on the geneace database
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-04-13 11:18:16 $
+# Last updated on: $Date: 2006-04-18 14:14:42 $
 
 use strict;
 use lib "/nfs/disk100/wormpub/wormbase/scripts";
@@ -118,8 +118,8 @@ foreach $class (@classes){
   if ($class =~ m/allele/i)        {&process_allele_class}
   if ($class =~ m/strain/i)        {&process_strain_class}
   if ($class =~ m/rearrangement/i) {&process_rearrangement}
-  if ($class =~ m/mapping/i)       {&check_genetics_coords_mapping}
-  if ($class =~ m/multipoint/i)    {&check_dubious_multipt_gene_connections}
+#  if ($class =~ m/mapping/i)       {&check_genetics_coords_mapping}
+#  if ($class =~ m/multipoint/i)    {&check_dubious_multipt_gene_connections}
 }
 
 
