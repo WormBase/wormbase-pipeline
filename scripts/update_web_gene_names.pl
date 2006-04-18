@@ -5,13 +5,14 @@
 # completely rewritten by Keith Bradnam from list_loci_designations
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-03-22 15:41:38 $
+# Last updated on: $Date: 2006-04-18 13:03:12 $
 #
 # This script should be run under a cron job and simply update the webpages that show
 # current gene names and sequence connections.  Gets info from geneace.  
 
 use strict;
 use lib $ENV{'CVS_DIR'};
+use lib '/nfs/disk100/wormpub/wormbase/scripts';
 use Wormbase;
 use Ace;
 use Carp;
@@ -27,12 +28,14 @@ use Storable;
 my $weekly;			# for weekly cronjob which will interrogate current_DB
 my $daily;			# daily updates which will interrogate geneace
 my $store;
+my $file;
 
 #changed the cmd line opts to relect what goes on - left variables the same -ar2
 
 GetOptions ("current"      => \$weekly,
             "geneace"      => \$daily,
-	    "store:s"      => \$store,
+	    		"store:s"      => \$store,	
+	   		"file:s"       => \$file
 	   );
 
 my $wormbase;
@@ -263,10 +266,15 @@ sub make_gene_lists{
   my %molecular_name2gene;
   my %gene2molecular_name;
   
-  # connect to AceDB using TableMaker, 
-  my $geneace = $wormbase->database('geneace');
-  my $command="Table-maker -p $geneace/wquery/gene2molecular_name.def\nquit\n";
-  open (TACE, "echo '$command' | $tace $geneace |") || print LOG "ERROR: Can't open tace connection to $geneace\n";
+  if ($file) {	
+  	open (TACE,"<$file") or $log->log_and_die("cant open $file");
+  }	
+  else {
+  	# connect to AceDB using TableMaker, 
+  	my $geneace = $wormbase->database('geneace');
+ 	my $command="Table-maker -p $geneace/wquery/gene2molecular_name.def\nquit\n";
+  	open (TACE, "echo '$command' | $tace $geneace |") || print LOG "ERROR: Can't open tace connection to $geneace\n";
+  }
   while (<TACE>) {
     chomp;
     # skip any acedb banner text (table maker output has all fields surrounded by "")
