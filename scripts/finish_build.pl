@@ -13,7 +13,7 @@
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-03-06 17:29:11 $
+# Last updated on: $Date: 2006-04-18 14:05:24 $
 
 
 use strict;
@@ -109,19 +109,18 @@ $wormbase->delete_files_from("$new_dir/acefiles","*","+") unless ($test);
 
 $log->write_to("Unzipping any gzipped chromosome files\n");
 if (!$test) {
-  system("/bin/gunzip $new_dir/CHROMOSOMES/*.gz") 
-      && die "Couldn't gunzip CHROMOSOMES/*.gz\n";
+  $wormbase->run_command("/bin/gunzip $new_dir/CHROMOSOMES/*.gz") or $log->log_and_die("Couldn't gunzip CHROMOSOMES/*.gz\n");
 }
 
 # Remove redundant files and directories in $ace_dir
 $log->write_to("Removing old files in $ace_dir/release/\n");
-$wormbase->delete_files_from("$new_dir/release","*","-");
+$wormbase->delete_files_from("$new_dir/release","*","-") if (-e "$new_dir/release");
 
 $log->write_to("Removing files in $new_dir/database/new/\n");
-$wormbase->delete_files_from("$new_dir/database/new","*","+");
+$wormbase->delete_files_from("$new_dir/database/new","*","+") if (-e "$new_dir/database/new");
 
 $log->write_to("Removing files in $new_dir/database/touched/\n");
-$wormbase->delete_files_from("$new_dir/database/touched","*","+");
+$wormbase->delete_files_from("$new_dir/database/touched","*","+") if (-e "$new_dir/database/touched");
 
 #remove large backups created by loading routine
 $log->write_to("Removing files in $new_dir/database/backup*\n");
