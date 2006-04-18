@@ -5,7 +5,7 @@
 # completely rewritten by Keith Bradnam from list_loci_designations
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-04-18 13:03:12 $
+# Last updated on: $Date: 2006-04-18 13:50:35 $
 #
 # This script should be run under a cron job and simply update the webpages that show
 # current gene names and sequence connections.  Gets info from geneace.  
@@ -62,6 +62,10 @@ my $database;
 # Set up log file
 
 die "Can't run both -weekly and -daily at the same time!\n" if ($weekly && $daily);
+
+my ($sec,$min,$hour,$mday,$mon,$year, $wday,$yday,$isdst) = localtime time;
+$year += 1900;
+my $date = "$year-$mon-$mday";
 
 # make the a-z lists based on CGC_name using current_DB
 if ($weekly) {
@@ -251,8 +255,10 @@ sub create_currentDB_loci_pages{
       print TEXT "\n";
       $gene->DESTROY();
     }
+  	 print HTML "last updated $date (YYYY-MM-DD)<br>";
     close(HTML);    
   }
+  print TEXT "last updated $date (YYYY-MM-DD)\n";
   close(TEXT);
 
   $db->close;
@@ -310,6 +316,7 @@ sub make_gene_lists{
 
     print GENE2MOL "$key\t$gene2molecular_name{$key}\n";	      
   }
+  print TEXT "last updated $date (YYYY-MM-DD)\n";
   close(GENE2MOL);
 
 
@@ -317,6 +324,7 @@ sub make_gene_lists{
   foreach my $key (sort keys %molecular_name2gene){
     print MOL2GENE "$key\t$molecular_name2gene{$key}\n";
   }
+  print TEXT "last updated $date (YYYY-MM-DD)\n";
   close(MOL2GENE);
 
 
