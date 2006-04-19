@@ -70,7 +70,7 @@ sub version {
   my $self = shift;
   my $ver  = shift;
   $self->{'version'} = $ver if $ver;
-  return $self->get_wormbase_version;
+  return $self->$self->{'version'};
 }
 
 sub get_wormbase_release_date {
@@ -516,7 +516,7 @@ sub release_composition
     my %old_data;
     $old_data{"-"} = 0;		# initialise to avoid problems later if no gaps
     my $old_letter = $self->database("WS$old_ver")."/CHROMOSOMES/composition.all";
-    open (OLD, "<$old_letter") || die "cant open data file - $old_letter";
+    open (OLD, "<$old_letter") or $log->log_and_die("cant open data file - $old_letter");
     while (<OLD>) {
       chomp;
       if ( $_ =~ m/(\d+)\s+total$/ ) {
@@ -1078,6 +1078,12 @@ sub checkLSF
     }
   }
 
+sub table_maker_query {
+	my($self, $database, $def) = @_;
+	my $fh;
+	open( $fh, "echo \"Table-maker -p $def\" | ". $self->tace." $database |" ) || die "Couldn't access $database\n";
+	return $fh;
+}
 ################################################################################
 #Return a true value
 ################################################################################
