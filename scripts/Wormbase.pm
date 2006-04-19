@@ -70,7 +70,7 @@ sub version {
   my $self = shift;
   my $ver  = shift;
   $self->{'version'} = $ver if $ver;
-  return $self->$self->{'version'};
+  return $self->{'version'};
 }
 
 sub get_wormbase_release_date {
