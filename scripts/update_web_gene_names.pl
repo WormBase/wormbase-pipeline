@@ -1,11 +1,9 @@
-#!/usr/local/bin/perl5.8.0 -w
-#
 # update_web_gene_names.pl
 #
 # completely rewritten by Keith Bradnam from list_loci_designations
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-04-18 13:50:35 $
+# Last updated on: $Date: 2006-04-19 11:07:33 $
 #
 # This script should be run under a cron job and simply update the webpages that show
 # current gene names and sequence connections.  Gets info from geneace.  
