@@ -5,8 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2006-04-04 16:07:52 $
- 
+// Last edited on: $Date: 2006-04-20 14:54:13 $
 
 
 
@@ -1907,8 +1906,7 @@
 		Map ?Map  #Map_position 
 		Mapping_data 2_point ?2_point_data 
 			     Multi_point ?Multi_pt_data
-                Phenotype ?Phenotype #Phenotype_info
-		Phenotype_remark ?Text                                                           // Phenotype "Unc. With other ..."
+		Phenotype ?Phenotype XREF Transgene #Phenotype_info // [2006-04-20 ar2] changed for Carols Phenotype changes
 		Rescue ?Gene XREF Rescued_by_Transgene ?Variation XREF Rescued_by_Transgene
 		Expr_pattern ?Expr_pattern XREF Transgene                                        // Related Expr_pattern
 		Gene_regulation ?Gene_regulation XREF Transgene
@@ -1969,11 +1967,39 @@
 
 
 
+#Phenotype_info		Paper_evidence ?Paper
+			Person_evidence	?Person
+			Curator_confirmed	?Person
+		    	Remark  ?Text   #Evidence // specific remarks about the phenotype
+			Quantity_description ?Text #Evidence //Remark to describe what quantity describes, below
+			Quantity        UNIQUE  Int UNIQUE      Int     #Evidence
+			Not      	#Evidence
+                	Penetrance      	Incomplete      Text    #Evidence
+                                		Low             Text    #Evidence
+                                		High            Text    #Evidence
+                                		Complete        Text	#Evidence
+						Range UNIQUE Int UNIQUE Int #Evidence // Range of penetrance
+                	Recessive               #Evidence
+                	Semi_dominant           #Evidence
+                	Dominant                #Evidence
+                	Haplo_insufficient      #Evidence
+                	Loss_of_function  UNIQUE  	Hypomorph                               #Evidence
+                                 			Amorph                                  #Evidence
+                                                	Uncharacterised_loss_of_function        #Evidence
+                	Gain_of_function  UNIQUE  	Dominant_negative       #Evidence
+                                                	Hypermorph              #Evidence
+                                                	Neomorph                #Evidence
+                                                	Uncharacterised_gain_of_function        #Evidence
+                	Other_allele_type UNIQUE  Wild_type	#Evidence
+                                               	  Isoallele     #Evidence  
+						  Mixed      	#Evidence       
+                	Temperature_sensitive   Heat_sensitive  Text             #Evidence
+                                        	Cold_sensitive  Text             #Evidence
+                	Maternal        UNIQUE  Strictly_maternal       #Evidence
+                                        	With_maternal_effect    #Evidence
+                	Paternal        #Evidence
+                	Phenotype_assay ?Condition
 
-#Phenotype_info Remark ?Text #Evidence                           // specific remarks about this instance
-                Penetrance UNIQUE Int UNIQUE Int        // estimated percent penetrance range (0-100)
-                Temperature_sensitive Int UNIQUE Int    // temperature (degrees C), penetrance
-                Quantity UNIQUE Int UNIQUE Int          // for quantitative phenotypes low/high
 
 
 // New Class from Lincoln [010226]
@@ -2001,23 +2027,23 @@
 //                                    Phenotype class                                     //
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-?Phenotype Description UNIQUE ?Text
-           Assay UNIQUE ?Text
+?Phenotype Description UNIQUE ?Text	#Evidence
+	   Name        Primary_name	UNIQUE	?Phenotype_name	XREF Primary_name_for	#Evidence
+                       Synonym		?Phenotype_name	XREF Synonym_for	#Evidence
+                       Short_name 	?Phenotype_name XREF Short_name_for	#Evidence
+           Assay UNIQUE ?Text #Evidence
            Remark ?Text #Evidence
            Related_phenotypes Specialisation_of ?Phenotype XREF Generalisation_of
                               Generalisation_of ?Phenotype XREF Specialisation_of
-                              Equivalent_to ?Phenotype XREF Equivalent_to
-                              Similar_to ?Phenotype XREF Similar_to
-           Attribute_of       RNAi ?RNAi XREF Phenotype
-                              GO_term ?GO_term XREF Phenotype ?GO_code #Evidence  // added for Erich, [020128 dl]
+           Attribute_of       RNAi 	?RNAi XREF Phenotype
+			      Variation	?Variation XREF Phenotype
+                              Transgene	?Transgene XREF Phenotype	// Added by Carol
+	   Associated_with    GO_term   ?GO_term   XREF Phenotype   ?GO_code  #Evidence	// Tag Associated_with changed by Carol
 
 
-
-
-
-//?Phenotype_name		Primary_name_for	?Phenotype	XREF	Primary_name	#Evidence
-//			Synonym_for		?Phenotype	XREF	Synonym		#Evidence
-//			Short_name_for		?Phenotype	XREF	Short_name	#Evidence
+?Phenotype_name	Primary_name_for UNIQUE	?Phenotype	XREF	Primary_name	#Evidence
+		Synonym_for		?Phenotype	XREF	Synonym		#Evidence
+		Short_name_for		?Phenotype	XREF	Short_name	#Evidence
 
 
 ?Phenotype_Assay Description ?Text
@@ -2689,7 +2715,7 @@
                                  In_pos_neg_data ?Pos_neg_data
                                 // these are for when the locus is mapped
 		    Rescued_by_transgene ?Transgene	 
-	   Description Phenotype ?Phenotype #Phenotype_info
+	   Description Phenotype ?Phenotype XREF Variation #Phenotype_info
                        Phenotype_remark ?Text #Evidence
                        Recessive
                        Semi_dominant
