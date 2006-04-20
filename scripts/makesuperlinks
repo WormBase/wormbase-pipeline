@@ -10,7 +10,7 @@ $!=1;
 use Ace ;
 use strict;
 use Getopt::Long ;
-use lib -e "/wormsrv2/scripts" ? "/wormsrv2/scripts" : $ENV{'CVS_DIR'};
+use lib $ENV{'CVS_DIR'};
 use Wormbase;
 
 ##############################
@@ -26,6 +26,9 @@ GetOptions (
             "help"      => \$help,
             "db=s"      => \$db
             );
+
+my $wormbase = Wormbase->new( -debug => $debug,
+                             );
 
 # help page
 &usage("Help") if ($help);
@@ -51,12 +54,12 @@ our %clone2super = ("H06O01"  => "I",
 # get data from camace       #
 ##############################
 
-our $tace         =  &tace;
+my $tace = $wormbase->tace;
 
 
 my $campath = "/nfs/disk100/wormpub/DATABASES/camace";
 ($campath = $db) if ($db ne "");
-
+print "$campath";
 warn "Acessing database $campath\n" if ($debug);
 
 # connect to database
