@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2006-04-20 14:54:13 $
+// Last edited on: $Date: 2006-04-21 12:56:20 $
 
 
 
@@ -1684,6 +1684,8 @@
 	 Pick_me_to_call Text Text
 	 Expr_pattern ?Expr_pattern XREF Picture
 	 RNAi ?RNAi XREF Picture		// new, added for Lincoln.  krb [010807]
+         Variation ?Variation XREF Picture
+         Transgene ?Transgene XREF Picture      // added for Carol.  ar2 [2006-04-21]
 	 Remark ?Text #Evidence				// also new 
 
 
@@ -1913,6 +1915,9 @@
 		Reference ?Paper XREF Transgene                                                  // papers refered to the transgene.
 		Species UNIQUE ?Species                                                          // added by krb for consistency with other classes 021030
 		Remark ?Text #Evidence                                                           // More comments on the transgene
+		Supporting_data Movie ?Movie XREF Transgene #Evidence
+		                Picture ?Picture XREF Transgene #Evidence
+
 
 
 
@@ -2069,6 +2074,8 @@
 ?Movie Description ?Text
        Pick_me_to_call Text Text
        RNAi ?RNAi XREF Movie
+       Variation ?Variation XREF Movie  //[2006-04-21 ar2] Carol
+       Transgene ?Transgene XREF Movie
        Remark ?Text #Evidence
 
 
@@ -2177,6 +2184,9 @@
 	   Cell_type       ?Cell // added for Experiment (Microarray_results)
            Treatment       ?Text // added for Experiment (Microarray_results)
 	   SAGE_experiment ?SAGE_experiment XREF Sample
+	   RNAi      	   ?RNAi
+           Transgene       ?Transgene
+	   Variation	   ?Variation
            Remark          ?Text #Evidence
 
 
@@ -2746,6 +2756,8 @@
            Reference ?Paper XREF Allele
            Remark  ?Text #Evidence
 	   Method UNIQUE ?Method
+           Supporting_data Movie   ?Movie   XREF Variation #Evidence  //[2006-04-21 ar2] added for Carol
+                           Picture ?Picture XREF Variation #Evidence
 
 
 ?Variation_name CGC_name_for       ?Variation XREF CGC_name
