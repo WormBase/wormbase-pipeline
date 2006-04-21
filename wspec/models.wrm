@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2006-04-21 12:56:20 $
+// Last edited on: $Date: 2006-04-21 16:07:09 $
 
 
 
@@ -791,14 +791,18 @@
  	X_position UNIQUE Text
  	Y_position UNIQUE Text	
 
-?Neurodata      Send    Text    UNIQUE Int              // series count
-                Send_joint      Text    UNIQUE Int      // ditto for the rest
-                Receive Text    UNIQUE Int
-                Receive_joint   Text    UNIQUE Int
-                Gap_junction    Text    UNIQUE Int
-                Contact Text    UNIQUE Int
+?Neurodata      Send            Text    UNIQUE Int UNIQUE Float   // Text=series,Int=count,Float=synapse size in micron
+                Send_joint      Text    UNIQUE Int UNIQUE Float   // for polyadic synapse
+                Send_partner    ?Anatomy_term                     // [2006-04-21 ar2] Raymond
+                Receive         Text    UNIQUE Int UNIQUE Float
+                Receive_joint   Text    UNIQUE Int UNIQUE Float
+                Receive_partner ?Anatomy_term			  // [2006-04-21 ar2] Raymond
+                Gap_junction    Text    UNIQUE Int UNIQUE Float
+                Evidence        #Evidence
+
 
 ?Reconstruction Cell ?Cell
+                Anatomy_term ?Anatomy_term //[2006-04-21 ar2] Raymond
 		Author ?Author
 		Date UNIQUE DateType
 		Remark ?Text #Evidence
@@ -1781,8 +1785,30 @@
                 Term UNIQUE ?Anatomy_name XREF Name_for_anatomy_term #Evidence
                 Synonym ?Anatomy_name XREF Synonym_for_anatomy_term #Evidence
                 Legacy Cell ?Cell XREF Anatomy_term
+                       Embryo_division_time Text
+                       Fate    Cell_type  ?Text        // e.g. muscle, neuron,hypodermis, gland
+                               Program ?Text           //division, differentiation, death, and differs between sexes
+                               Syncitial_cell ?Anatomy_term XREF Nucleus //see Cell_group,
+                       Lineage Parent_term  UNIQUE  ?Anatomy_term XREF Daughter_term
+                               Daughter_term      ?Anatomy_term XREF Parent_term
+                               Lineage_name    Text
+                               Equivalence_fate ?Anatomy_term XREF Equivalence_origin
+                               Equivalence_origin ?Anatomy_term XREF Equivalence_fate
+                               Sex_dimorphism Herm_origin ?Anatomy_term XREF Herm_fate // Added according to Sylvia 5/06/2000
+                                              Herm_fate ?Anatomy_term XREF Herm_origin
+                                              Male_origin ?Anatomy_term XREF Male_fate
+                                              Male_fate ?Anatomy_term XREF Male_origin
+                       Life_stage ?Life_stage XREF Anatomy_term
+                       Tree_Node ?TreeNode XREF Anatomy_term
                        Cell_group ?Cell_group XREF Anatomy_term
-		URL     Text // for storing static URLs
+                       Contains Cell_term ?Anatomy_term XREF Sub_group
+                                Nucleus ?Anatomy_term XREF Syncitial_cell //new for syncitia like hyp7
+                                Sub_group ?Anatomy_term XREF Contained_in
+                       Contained_in ?Anatomy_term XREF Sub_group
+                Reconstruction ?Reconstruction XREF Anatomy_term #ReconCellInfo
+                Neurodata ?Anatomy_term #Neurodata
+                Link_diagram Text
+                URL     Text // for storing static URLs, such as WormAtlas, WormBook
                 Child   PART_OF_c       ?Anatomy_term   XREF    PART_OF_p
                         IS_A_c  ?Anatomy_term   XREF    IS_A_p
                         DESCENDENT_OF_c ?Anatomy_term   XREF    DESCENDENT_OF_p
@@ -1798,17 +1824,20 @@
                 Attribute_of    Expr_pattern    ?Expr_pattern   XREF    Anatomy_term
                                 GO_term ?GO_term XREF Anatomy_term ?AO_code #Evidence
                                 Reference       ?Paper  XREF Anatomy_term
+                Attribute_index Expr_ancestor ?Expr_pattern  //attribute assigned to broader terms
+                                Expr_descendent ?Expr_pattern
+                                GO_ancestor ?GO_term         //attribute assigned to narrower terms
+                                GO_descendent ?GO_term
                 Index   Ancestor ?Anatomy_term XREF Descendent  //store ancestors of relationship IS_A and PART_OF
                         Descendent ?Anatomy_term XREF Ancestor  //store descendents of relationship IS_A and PART_OF
                 Remark  ?Text #Evidence
 
 
 
-
-
 ?Life_stage	Contains Cell ?Cell XREF Life_stage
 			 Cell_group ?Cell_group XREF Life_stage
-                         Sub_stage ?Life_stage XREF Contained_in
+                         Anatomy_term ?Anatomy_term XREF Life_stage
+			 Sub_stage ?Life_stage XREF Contained_in
                 Contained_in ?Life_stage XREF Sub_stage            // changed for Wen 010516
                 Preceded_by ?Life_stage XREF Followed_by
 		Followed_by ?Life_stage XREF Preceded_by
@@ -1863,14 +1892,9 @@
                 Contains Taxon                //    UNIQUE ?Taxon    XREF Tree_Node
                          Cell     UNIQUE ?Cell     XREF Tree_Node
                          Cell_group UNIQUE ?Cell_group  XREF Tree_Node 
-                         Pick_me_to_call UNIQUE Text Text
+                         Anatomy_term UNIQUE ?Anatomy_term XREF Tree_Node // [2006-04-21 ar2] Raymond
+			 Pick_me_to_call UNIQUE Text Text
                          Embedded_Tree ?Tree
-//              Positive Has_Gene_Function           ?Gene_Function XREF PosTreeNode
-//                       Family_Member               ?Gene_Family XREF PosTreeNode
-//              Negative Does_NOT_Have_Gene_Function ?Gene_Function XREF NegTreeNode
-//                       NOT_Family_Member           ?Gene_Family XREF NegTreeNode
-//              Map ?Map XREF      Tree_Node #Map_Position  // Leaf node ordinate
-
 
 
 
