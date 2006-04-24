@@ -809,8 +809,11 @@ sub load_to_database {
   #check whether write access is possible.
   if( $self->check_write_access($database) eq 'no') {
     print STDERR "cant get write access to $database\n";
-    $log->write_to("cant get write access to $database\n") if $log;
-    return 1;
+    if ($log) {
+    	$log->log_and_die("cant get write access to $database\n");
+    }else {
+    	die;
+    }
   }
 
   # tsuser is optional but if set, should replace any dots with underscores just in case
