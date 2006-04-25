@@ -8,7 +8,7 @@
 # RUN this script anytime during the build or after the build when get_interpolated_map 
 # and update_inferred multi-pt data are done
 #
-# Last updated on: $Date: 2006-02-27 14:54:53 $
+# Last updated on: $Date: 2006-04-25 14:14:26 $
 # Last updated by: $Author: ar2 $
 
 
@@ -40,48 +40,24 @@ my $log = Log_files->make_build_log($wormbase);
 # ----- preparing data -----
 ##############################
 
+# (2) interpolated map data
+$log->write_to("Loading interpolated map data\n");
+#Generate the file from autoace first
+my $int_map_pos = $wormbase->acefiles."/interpolated_map_position.ace";
+my $command  = "query find Gene Interpolated_map_position\nshow -a -t Interpolated_map_position -f $int_map_pos\nquit";
+
+open (INT_A,"| $tace ".$wormbase->autoace) or $log->log_and_die("Failed to get data from autoace\n");
+print INT_A $command;
+close INT_A;
+
+#need to refresh all Interpolated map positions as they are all relative to each other.
+$wormbase->load_to_database($geneace,$int_map_pos,'interpolated_map_positions_from_autoace');
+
 # (1) Promoted map positions
 $log->write_to("Loading pseudo map positions\n");
 my $file = $wormbase->acefiles."/pseudo_map_positions.ace";
 
 $wormbase->load_to_database($geneace, $file, 'pseudo_map_positions_from_autoace');
-
-# (2) interpolated map data
-$log->write_to("Loading interpolated map data\n");
-my @map = glob("$autoace/MAPPINGS/INTERPOLATED_MAP/interpolated_map_to_geneace_$release.*ace");
-my $map = $map[-1];
-
-#  just load new data, the structure of the models means that you will overwrite
-# any existing data.  This also allows us to patch genes by hand which are not getting
-# picked up Chao-Kung's script for generating interpolated_map_positions
-
-$wormbase->load_to_database($geneace,$map,'interpolated_map_positions_from_autoace');
-
-
-
-# (3) corrected reverse physicals
-my $rev_phys = glob("$autoace/MAPPINGS/INTERPOLATED_MAP/rev_physical_update_$release");
-# load if file exists
-if(-e $rev_phys){
-  $wormbase->load_to_database($geneace,$rev_phys,'reverse_physicals_from_autoace');
-}
-else{
-  $log->write_to("$rev_phys file did not exist\n");
-}
-
-
-
-# (4) new multipt obj created for pseudo markers
-$log->write_to("Loading multipoint objects for new pseudo map markers \n");
-$file = "$autoace/acefiles/new_pseudo_multi_point_data.ace";
-$wormbase->load_to_database($geneace, $file, 'new_pseudo_multi_point_data_from_autoace');
-
-
-
-# (5) existing multipt obj with updated flanking marker loci
-$log->write_to("Loading corrections to existing multipoint data with corrected flanking marker loci\n");
-$file = "$autoace/acefiles/updated_pseudo_multi_point_data.ace";
-$wormbase->load_to_database($geneace, $file,"updated_pseudo_multi_point_data_from_autoace");
 
 
 # (6) updated geneace with person/person_name data from Caltech
@@ -92,7 +68,7 @@ $log->write_to("Updating person name information from caltech_Person.ace file\n"
 # Not that the value of "CGC_representative_for" is kept as geneace keeps this record
 # i.e. you can't delete *all* of the Person class from geneace
 $log->write_to("First removing old Person data\n");
-my $command=<<END;
+$command=<<END;
 find Person *
 edit -D PostgreSQL_id
 edit -D Name
@@ -118,6 +94,13 @@ $wormbase->load_to_database($geneace, $person,"caltech_Person");
 
 
 # new Person data will have been dumped from citace
+#need to remove previous data
+$command = "find Paper\nkill\nsave\nquit";
+open (GA,"| $tace -tsuser \"remove_papers\" $geneace") or $log->log_and_die("Failed to edit to Geneace - paper removal\n");
+print GA $command;
+close GA;
+
+#load the new stuff
 $log->write_to("Adding new paper data\n");
 my $paper = $wormbase->acefiles."/primaries/caltech/caltech_Paper.ace";
 $wormbase->load_to_database($geneace, $paper,"caltech_Paper");
