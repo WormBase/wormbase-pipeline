@@ -4,8 +4,8 @@
 # 
 # written by Anthony Rogers
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2006-04-04 11:08:36 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2006-04-25 08:44:44 $
 
 
 use DBI;
@@ -154,13 +154,13 @@ if ( $update_databases ){
 	print "updating wormpep to version $WS_version anyway - make sure the data is there !\n";
 	$whole_file = "wormpep".$WS_version.".pep";
 	$currentDBs{$1} = "$whole_file";
-	$wormbase->run_command("xdformat -p $wormpipe_dir/BlastDB/$whole_file");
+	$wormbase->run_command("xdformat -p $wormpipe_dir/BlastDB/$whole_file", $log);
 	next;
       }
       if( "$whole_file" ne "$currentDBs{$1}" ) {
 	#make blastable database
 	print "\tmaking blastable database for $1\n";
-	$wormbase->run_command("xdformat -p $wormpipe_dir/BlastDB/$whole_file");
+	$wormbase->run_command("xdformat -p $wormpipe_dir/BlastDB/$whole_file", $log);
 	push( @updated_DBs,$1 );
 	#change hash entry ready to rewrite external_dbs
 	$currentDBs{$1} = "$whole_file";
@@ -268,7 +268,7 @@ if( $update_mySQL )
     #Make a concatenation of all six agp files from the last release to ~/Elegans  e.g.
     print "\tconcatenating agp files\n";
     # this is a bit iffy as 
-    $wormbase->run_command("cat ". $wormbase->autoace."/CHROMOSOMES/*.agp > $wormpipe_dir/Elegans/WS$WS_version.agp");
+    $wormbase->run_command("cat ". $wormbase->autoace."/CHROMOSOMES/*.agp > $wormpipe_dir/Elegans/WS$WS_version.agp", $log);
     
     #load information about any new clones
     print "\tloading information about any new clones in to $dbname\n";
@@ -777,7 +777,7 @@ sub run_RuleManager
     $script = "$bdir/RuleManager3Prot.pl" if $moltype eq "pep";
 
     die "invalid or no moltype passed to run_RuleManager : $moltype\n" unless $script;
-    $wormbase->run_command("perl $script -dbhost $dbhost -dbname $dbname -dbpass $dbpass -dbuser $dbuser");
+    $wormbase->run_command("perl $script -dbhost $dbhost -dbname $dbname -dbpass $dbpass -dbuser $dbuser", $log);
 
   }
 
