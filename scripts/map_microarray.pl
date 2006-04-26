@@ -6,12 +6,12 @@
 #
 # by Anon
 #
-# Last updated by: $Author: mh6 $                      
-# Last updated on: $Date: 2006-03-09 14:03:39 $        
+# Last updated by: $Author: pad $                      
+# Last updated on: $Date: 2006-04-26 09:33:03 $        
 
 use strict;
-use Wormbase;
 use lib $ENV{'CVS_DIR'};
+use Wormbase;
 use Getopt::Long;
 use Ace;
 
