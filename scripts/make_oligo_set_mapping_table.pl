@@ -45,6 +45,8 @@ my $db = Ace->connect(-path => $database_path,  -program => $program) or $log->l
 &write_table('agil') if $agil;
 &write_table('gsc')  if $gsc;
 
+$db->close;
+
 $log->mail;
 
 exit(0);
@@ -199,7 +201,6 @@ my %type_remark = ('affy' => "Affymetrix",
       }
     }
   }
-  $db->close;
   close OUT;
   print "$count objects written\n";
   print "$cds_count overlap CDS\n";
