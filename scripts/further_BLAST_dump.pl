@@ -6,8 +6,8 @@
 #
 # Author: Chao-Kung CHen
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-03-17 11:39:46 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2006-04-27 12:08:26 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -60,7 +60,11 @@ my @files        = (
 		   );
 
 foreach my $file (@files){
-  if ( -e "$source_dir/$file" ) {
+  if (( $file eq "waba.ace") && (-e "/nfs/acari/wormpipe/ace_files/waba.ace")){
+    $log->write_to("scping new version of $file\n");
+    $wormbase->run_command("scp acari:/nfs/acari/wormpipe/ace_files/waba.ace ${target_dir}/waba.ace");
+  }
+  elsif ( -e "$source_dir/$file" ) {
     $log->write_to("scping new version of $file\n");
     $wormbase->run_command("scp acari:${source_dir}/${file} ${target_dir}/${file}");
   }
@@ -69,6 +73,7 @@ foreach my $file (@files){
     $log->error;
   }
 }
+
 
 $log->mail;
 exit(0);
