@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2006-04-21 16:07:09 $
+// Last edited on: $Date: 2006-04-27 15:32:17 $
 
 
 
@@ -1319,8 +1319,8 @@
 		  Homol_homol ?Homol_data XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
 		  RNAi_homol ?RNAi XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info //added for RNAi mapping
 		  Structure_homol ?Structure_data XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info               //ar2_struct
+		  Expr_homol ?Expr_pattern XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info //added for Expr_pattern mapping [ar2 27-APR-2006]
                                                                                               
-
 
 
 ?Feature_data SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF Feature_data
@@ -1587,8 +1587,8 @@
 				Pseudogene ?Pseudogene XREF Expr_pattern // new [030801 krb]
 				Clone ?Clone XREF Expr_pattern
 				Protein ?Protein XREF Expr_pattern
-                                Protein_description Text   // stores information for Expr_patterns
-							   // with unknown antigens [031105 krb]
+                                Protein_description Text   // stores information for Expr_patterns with unknown antigens [031105 krb]
+		Homol Homol_homol ?Homol_data XREF Expr_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info //added for Expr_pattern mapping [ar2 27-APR-2006]
 		Expressed_in	Cell         ?Cell         XREF Expr_pattern #Qualifier
 				Cell_group   ?Cell_group   XREF Expr_pattern #Qualifier
 				Life_stage   ?Life_stage   XREF Expr_pattern #Qualifier
