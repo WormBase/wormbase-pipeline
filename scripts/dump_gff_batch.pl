@@ -43,7 +43,7 @@ my $log = Log_files->make_build_log($wormbase);
 
 $wormbase->checkLSF;
 
-my @methods     = split(/,/,join(',',$methods));
+my @methods     = split(/,/,join(',',$methods)) if $methods;
 my @chromosomes = split(/,/,join(',',$chrom_choice));
 
 
