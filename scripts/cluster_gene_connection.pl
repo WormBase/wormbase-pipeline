@@ -92,5 +92,7 @@ $log->write_to("$i objects processed.\n");
 
 $wormbase->load_to_database($database, $acefile, 'cluster_genes');
 
+$db->close;
+
 $log->mail;
 exit(0);
