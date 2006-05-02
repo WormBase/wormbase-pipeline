@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl5.8.0 -w 
+#!/nfs/disk100/wormpub/bin/perl
 #
 # inspect-old_releases.pl                           
 # 
@@ -15,8 +15,8 @@
 # foreach? ./inspect-old-releases.pl -debug gw3 -version $r -database1 ~wormpub/gary/Archeology/WS{$q} -database2 ~wormpub/gary/Archeology/WS{$r}
 # foreach? end
 #
-# Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-02-22 16:07:44 $      
+# Last updated by: $Author: pad $     
+# Last updated on: $Date: 2006-05-02 14:29:01 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
