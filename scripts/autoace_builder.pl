@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2006-04-12 17:09:28 $
+# Last edited by: $Author: pad $
+# Last edited on: $Date: 2006-05-02 10:51:53 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -151,6 +151,7 @@ $wormbase->run_script( "GFFmunger.pl -all"                       , $log) if $gff
 
 $wormbase->run_script( "post_build_checks.pl -a"                 , $log) if $check;
 $wormbase->run_script( "data_checks.pl -ace -gff"                , $log) if $data_check;
+$wormbase->run_script( "dbcomp.pl"                               , $log) if $data_check;
 $wormbase->run_script( "build_release_files.pl"                  , $log) if $buildrelease;
 &public_sites                                                            if $public;
 $wormbase->run_script( "distribute_letter.pl"                    , $log) if $release;
