@@ -7,8 +7,8 @@
 # A script for dumping dna and/or gff files for chromosome objects in autoace
 # see pod for more details
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-02-14 09:45:01 $
+# Last updated by: $Author: pad $
+# Last updated on: $Date: 2006-05-04 11:53:17 $
 
 
 use strict;
@@ -220,27 +220,48 @@ sub composition{
 sub zip_files{
   my @chromosomes = ("I", "II", "III", "IV", "V", "X", "MtDNA");
   @chromosomes = ("III") if ($quicktest);
-
+  
   foreach my $chr (@chromosomes){
     my $dna_file = "$dump_dir"."/CHROMOSOME_".$chr.".dna";
     my $gff_file = "$dump_dir"."/CHROMOSOME_".$chr.".gff";
     my $msk_file = "$dump_dir"."/CHROMOSOME_".$chr."_masked.dna";
+
     if ($zipdna){
-      $log->write_to("Compressing $dna_file\n");
-      system ("/bin/gzip -f $dna_file");
-      if(-e $msk_file ) {
-	$log->write_to("Compressing $msk_file\n");
-	system ("/bin/gzip -f $msk_file");
+      if (-e $dna_file.".gz" ) {
+	$log->write_to("\n ${dna_file}.gz exists\n");
+      }
+      elsif (-e $dna_file) {
+	$log->write_to("\n Compressing $dna_file\n");
+	system ("/bin/gzip -f $dna_file");
       }
       else {
-	$log->write_to("Couldn't find any repeat-masked chromosomes in $dump_dir\n");
+	$log->write_to("\n ERROR: Couldn't find any dna chromosome files in $dump_dir\n");
       }
     }
+    
     if ($zipgff){
-      $log->write_to("Compressing $gff_file\n");
-      system ("/bin/gzip -f $gff_file");
+      if (-e $gff_file.".gz" ) {
+	$log->write_to(" ${gff_file}.gz exists\n");
+      }
+      elsif (-e $gff_file ) {
+	$log->write_to(" Compressing $gff_file\n");
+	system ("/bin/gzip -f $gff_file");
+      }
+      else {
+	$log->write_to(" ERROR: Couldn't find any gff chromosome files in $dump_dir\n");
+      }
+    }	
+    if (-e $msk_file.".gz" ) {
+      $log->write_to(" ${msk_file}.gz exists\n");
     }
-  }	
+    elsif (-e $msk_file ) {
+      $log->write_to(" Compressing $msk_file\n");
+      system ("/bin/gzip -f $msk_file");
+    }
+    else {
+      $log->write_to(" ERROR: Couldn't find any repeat-masked chromosomes in $dump_dir\n");
+    }
+  }
 }
 
 
@@ -270,12 +291,6 @@ sub usage {
     exit (0);
   }
 }
-
-
-
-
-
-
 
 __END__
 
