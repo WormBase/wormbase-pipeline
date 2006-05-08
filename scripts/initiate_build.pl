@@ -3,7 +3,7 @@
 # initiate_build.pl
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2006-05-08 10:08:26 $
+# Last edited on: $Date: 2006-05-08 12:49:39 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -33,6 +33,15 @@ else {
 			   );
 }
 
+# strip off the WS if given
+if ($version =~ /^WS(\d+)/) {
+  $version = $1;
+}
+# check it looks OK
+if ($version !~ /^\d\d\d$/) {
+  die "The version should be given as three digits\n";
+}
+
 $wormbase->establish_paths;
 
 # set the new version number
@@ -56,7 +65,7 @@ $wormbase->run_command("cd ".$wormbase->basedir.";cvs -d :ext:cvs.sanger.ac.uk:/
 
 ## update database.wrm using cvs
 my $cvs_file = $wormbase->autoace."/wspec/database.wrm";
-$wormbase->run_command("sed 's/WS94/${version}/' < $cvs_file > ${cvs_file}.new", $log);  #  the version in CVS is WS94
+$wormbase->run_command("sed 's/WS94/WS${version}/' < $cvs_file > ${cvs_file}.new", $log);  #  the version in CVS is WS94
 my $status = move(${cvs_file}.".new", "$cvs_file") or $log->write_to("ERROR: renaming file: $!\n");
 $log->write_to("ERROR: Couldn't move file: $!\n") if ($status == 0);
 
