@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: pad $
-# Last edited on: $Date: 2006-05-02 10:51:53 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2006-05-08 11:19:55 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -178,6 +178,7 @@ sub first_dumps {
     $wormbase->run_script( "chromosome_dump.pl --dna --composition", $log );
     $wormbase->run_script( "make_agp_file.pl",                       $log );
     $wormbase->run_script( "agp2dna.pl",                             $log ); #dependant on processGFF producing clone_acc files.
+    $wormbase->run_script( "inspect-old-releases.pl -version $version -database1 ".$wormbase->database('current')." -database2 ".$wormbase->autoace, $log );
 
     my $agp_errors = 0;
 
@@ -249,7 +250,6 @@ sub make_extras {
   my $version = $wormbase->get_wormbase_version;
   $wormbase->run_script( "make_keysets.pl -all -history $version", $log);
   $wormbase->run_script( "genestats.pl" , $log);
-  $wormbase->run_script( "inspect-old-releases.pl -version $version -database1 ".$wormbase->database('current')." -database2 ".$wormbase->autoace, $log );
 }
 
 
