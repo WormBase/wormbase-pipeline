@@ -10,8 +10,8 @@
 #
 # Usage : agp2dna.pl [-options]
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-01-10 13:53:49 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2006-05-09 12:43:08 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -151,7 +151,7 @@ foreach my $chromosome (@gff_files) {
       # wrong orientation handling
       if ($f[8] eq "-") {
 	$EMBL_slice = substr($EMBL_seq,-$span);
-	$EMBL_slice = &DNA_string_reverse($EMBL_slice);
+	$EMBL_slice = $wormbase->DNA_string_reverse($EMBL_slice);
       }
       
       # check against WormBase sequence
@@ -178,9 +178,9 @@ foreach my $chromosome (@gff_files) {
       # Sequence difference
       if ($EMBL_slice ne $wormbase_slice) {
 	print AGPLOG "ERROR: you are not adding the same sequence for $acc\n"; 
-	my ($count_a,$count_c,$count_g,$count_t,$count_n)=&DNA_string_composition($wormbase_slice);
+	my ($count_a,$count_c,$count_g,$count_t,$count_n) = $wormbase->DNA_string_composition($wormbase_slice);
 	print AGPLOG "ERROR: WormBase [$acc] : A=$count_a C=$count_c G=$count_g T=$count_t N=$count_n\n";
-	($count_a,$count_c,$count_g,$count_t,$count_n)=&DNA_string_composition($EMBL_slice);
+	($count_a,$count_c,$count_g,$count_t,$count_n) = $wormbase->DNA_string_composition($EMBL_slice);
 	print AGPLOG "ERROR: EMBL     [$acc] : A=$count_a C=$count_c G=$count_g T=$count_t N=$count_n\n";
       }
     }
