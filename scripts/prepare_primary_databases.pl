@@ -3,7 +3,7 @@
 # prepare_primary_databases.pl
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-03-24 11:52:31 $
+# Last edited on: $Date: 2006-05-09 09:17:10 $
 
 use strict;
 my $scriptdir = $ENV{'CVS_DIR'};
@@ -49,8 +49,8 @@ my $log = Log_files->make_build_log($wormbase);
 
 my %databases;
 $databases{'stlace'}->{'search'} = 'stl/stlace*';
-$databases{'brigdb'}->{'search'} = 'stl/brigdb*';
-$databases{'brigdb'}->{'option'} = 'brigace'; # for this database the option passed to unpack is not db name <sigh>
+#$databases{'brigdb'}->{'search'} = 'stl/brigdb*';
+#$databases{'brigdb'}->{'option'} = 'brigace'; # for this database the option passed to unpack is not db name <sigh>
 $databases{'citace'}->{'search'} = 'caltech/citace*';
 $databases{'cshace'}->{'search'} = 'csh/csh*';
 
@@ -81,12 +81,13 @@ unless ($options eq "") {
   $wormbase->run_script("unpack_db.pl $options", $log);
 }
 
-# transfer camace and geneace to correct PRIMARIES dir
-$log->write_to("Transfering geneace and camace\n");
+# transfer camace and geneace  and brigace to correct PRIMARIES dir
+$log->write_to("Transfering geneace and camace and brigace\n");
 
-foreach ( qw(camace geneace) ){
+foreach ( qw(camace geneace brigace) ){
+  next if (defined $database and ($database ne $_));
   $wormbase->delete_files_from($wormbase->primary("$_"),'*','+');
-  $wormbase->run_script("TransferDB.pl -start ".$wormbase->database("$_"). " -end ".$wormbase->primary("$_") ." -database -wspec");
+  $wormbase->run_script("TransferDB.pl -start ".$wormbase->database("$_"). " -end ".$wormbase->primary("$_") ." -database -wspec", $log);
   $wormbase->run_command("ln -sf ".$wormbase->autoace."/wspec/models.wrm ".$wormbase->primary("$_")."/wspec/models.wrm");
 }
 #system("cp -R misc_static $autoace/acefiles/primary  #check whats happened here - looks like partial edit
