@@ -4,8 +4,8 @@
 # 
 # by Anthony Rogers et al
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2006-03-28 14:23:18 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2006-05-12 15:35:33 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -675,13 +675,13 @@ sub write_worm_gene2geneID  {
       # add to hash. CDS, Pseudogene, or Transcript name is key, gene ID is value
       
       if ($cds) {
-	  $worm_gene2geneID{$cds} = "$gene";
+	  		$worm_gene2geneID{$cds} = "$gene";
       }
-      elsif ($transcript) {
-	  $worm_gene2geneID{$transcript} = "$gene";
+      if ($transcript) {
+	  		$worm_gene2geneID{$transcript} = "$gene";
       }
-      elsif ($pseudogene) {
-	  $worm_gene2geneID{$pseudogene} = "$gene";
+      if ($pseudogene) {
+	  		$worm_gene2geneID{$pseudogene} = "$gene";
       }
   }
   close TACE;
