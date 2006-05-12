@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2006-04-27 15:32:17 $
+// Last edited on: $Date: 2006-05-12 11:06:31 $
 
 
 
@@ -360,12 +360,14 @@
 
 ?Interaction Evidence #Evidence
 	     Interactor ?Gene XREF Interaction #Interaction_type
-             Paper ?Paper XREF Interaction                 
+             Paper ?Paper XREF Interaction        
+	     DB_info Database ?Database ?Database_field ?Accession_number //addition for WeiWei 
 	     Remark  ?Text   #Evidence
                                                                                                             
 #Interaction_type Genetic
                   Regulation
                   No_interaction
+		  Predicted  //addition for WeiWei
                                  
 
 ?Balancer From_left_end
