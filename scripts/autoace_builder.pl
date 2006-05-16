@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2006-05-09 15:14:29 $
+# Last edited on: $Date: 2006-05-16 15:49:32 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -26,7 +26,7 @@ my ( $make_wormpep, $finish_wormpep );
 my ( $run_blat,     $finish_blat );
 my ( $gff_dump,     $processGFF, $gff_split );
 my $gene_span;
-my ( $load, $tsuser, $map_features, $map, $transcripts, $intergenic, $data_sets, $nem_contigs);
+my ( $load, $tsuser, $map_features, $remap_misc_dynamic, $map, $transcripts, $intergenic, $data_sets, $nem_contigs);
 my ( $GO_term, $rna , $dbcomp, $confirm, $operon ,$repeats, $remarks, $names, $treefam, $cluster);
 my ( $utr, $agp, $gff_munge, $extras ,$interpolate, $check);
 my ( $data_check, $buildrelease, $public,$finish_build, $release);
@@ -52,6 +52,7 @@ GetOptions(
 	   'finish_blat'    => \$finish_blat,
 	   'tsuser=s'       => \$tsuser,
 	   'map'            => \$map,
+	   'remap_misc_dynamic' => \$remap_misc_dynamic,
 	   'map_features'   => \$map_features,
 	   'transcripts'    => \$transcripts,
 	   'intergenic'     => \$intergenic,
@@ -68,7 +69,7 @@ GetOptions(
 	   'treefam'        => \$treefam,
 	   'cluster'        => \$cluster,
 	   'utr'            => \$utr,
-	   'interpolation' => \$interpolate,
+	   'interpolation'  => \$interpolate,
 	   'agp'            => \$agp,
 	   'gff_munge'      => \$gff_munge,
 	   'extras'         => \$extras,
@@ -76,7 +77,7 @@ GetOptions(
 	   'public'         => \$public,
 	   'finish_build'   => \$finish_build,
 	   'release'        => \$release,
-	   'check'    		  => \$check,
+	   'check'    	    => \$check,
 	   'data_check'     => \$data_check
 	  );
 
@@ -124,7 +125,9 @@ $wormbase->run_script( 'inherit_GO_terms.pl -phenotype'   , $log ) if $GO_term;
 #update_inferred_multi_pt.pl -load
 
 ####### mapping part ##########
-&map_features if $map;
+&map_features                                                            if $map;
+
+&remap_misc_dynamic                                                      if $remap_misc_dynamic;
 
 &get_repeats                                                             if $repeats; # loaded with homols
 #must have farm complete by this point.
@@ -226,6 +229,47 @@ sub map_features {
 
 #__ end map_features __#
 
+sub remap_misc_dynamic {
+
+  my $release = $wormbase->get_wormbase_version;
+  my $previous_release = $release - 1;
+
+  # remap twinscan
+  my $twinscan = $wormbase->misc_dynamic."/misc_twinscan.ace";
+  my $backup_twinscan = "$twinscan.$previous_release";
+
+  if (-e $backup_twinscan) {$log->log_and_die("$backup_twinscan already exists - please move it to be $twinscan before running this again\n");}
+  $wormbase->run_command("cp $twinscan $backup_twinscan", $log);
+  $wormbase->run_script( 'remap_twinscan_between_releases.pl -release1 $previous_release -release2 $release -twinscan $backup_twinscan -out $twinscan', $log);
+
+  # remap genefinder
+  my $genefinder = $wormbase->misc_dynamic."/misc_genefinder.ace";
+  my $backup_genefinder = "$genefinder.$previous_release";
+
+  if (-e $backup_genefinder) {$log->log_and_die("$backup_genefinder already exists - please move it to be $genefinder before running this again\n");}
+  $wormbase->run_command("cp $genefinder $backup_genefinder", $log);
+  $wormbase->run_script( 'remap_genefinder_between_releases.pl -input $backup_genefinder -out $genefinder', $log);
+
+  # remap fosmids
+  my $fosmids = $wormbase->misc_dynamic."/fosmids.ace";
+  my $backup_fosmids = "$fosmids.$previous_release";
+
+  if (-e $backup_fosmids) {$log->log_and_die("$backup_fosmids already exists - please move it to be $fosmids before running this again\n");}
+  $wormbase->run_command("cp $fosmids $backup_fosmids", $log);
+  $wormbase->run_script( 'remap_fosmids_between_releases.pl -input $backup_fosmids -out $fosmids', $log);
+
+  # remap waba (takes a long time ~24 hours)
+#  my $waba = $wormbase->misc_dynamic."/waba.ace";
+#  my $backup_waba = "$waba.$previous_release";
+#
+#  if (-e $backup_waba) {$log->log_and_die("$backup_waba already exists - please move it to be $waba before running this again\n");}
+#  $wormbase->run_command("cp $waba $backup_waba", $log);
+#  $wormbase->run_script( 'remap_waba_between_releases.pl -input $backup_waba -out $waba', $log);
+
+
+}
+
+#__ end remap_misc_dynamic __#
 
 sub make_UTR {
   my ($log)=@_;
