@@ -7,7 +7,7 @@
 # Builds a wormpep data set from the current autoace database
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-03-09 11:37:18 $
+# Last updated on: $Date: 2006-05-16 08:22:31 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -32,11 +32,11 @@ my $final;               # for full run at end of build
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
-	    "test"       => \$test,
-	    "verbose"    => \$verbose,
-	    "store:s"    => \$store,
+	    		"test"       => \$test,
+	    		"verbose"    => \$verbose,
+	    		"store:s"    => \$store,
             "initial"    => \$initial,
-	    "final"      => \$final,
+	    		"final"      => \$final,
            );
 
 
@@ -401,7 +401,7 @@ sub retrieve_cds_data{
     s/acedb\> //g;      # only need this is using 4_9i code, bug fixed in 4_9k onward (should be redundant)
     next if ($_ eq "");
     next if (/\/\//);
-    s/\"//g;
+    s/\"//g;			#"sh
     (/^(\S+)\s/);
     my ($cds,$prot_id_parent,$prot_id,$prot_id_ver,$prot_db,$prot_ac,$gene,$cgc_name,$confirmed,$partial,$brief_id) = split /\t/;
 
@@ -413,7 +413,7 @@ sub retrieve_cds_data{
     # can only work with some of this data in full wormpep mode, not in initial
     if($final){
       $cds2protein_ac{$cds} = $prot_ac;
-      $cds2protein_id{$cds} = $prot_id . "." . $prot_id_ver;
+    	$cds2protein_id{$cds} = $prot_id . "." . $prot_id_ver;
       $cds2protein_id{$cds} = "" if $cds2protein_id{$cds} eq ".";
       $cds2protein_db{$cds} = $prot_db;
       
@@ -553,19 +553,15 @@ sub write_main_wormpep_and_table{
   close (CONNECTIONS) if ($initial);
   close (TABLE) if ($final);
   
-  my $status = system ("rewrap $new_wpdir/wormpep_unwrap$release > $new_wpdir/wormpep$release");
-  if(($status >>8) != 0){
-    $log->write_to("ERROR: rewrap command failed. \$\? = $status\n");
-  }
+  $wormbase->run_command("rewrap $new_wpdir/wormpep_unwrap$release > $new_wpdir/wormpep$release") or 
+    $log->write_to("ERROR: rewrap command failed\n");
 
   # create a blast'able database (indexing) using setdb for Wublast (not formatdb, which is  for blastall)
   if($final){
-    $status = copy("$new_wpdir/wormpep$release", "$new_wpdir/wormpep_current");
-    $log->write_to("ERROR: Couldn't copy file: $!\n") if ($status == 0);
-    $status = system ("/usr/local/pubseq/bin/setdb $new_wpdir/wormpep_current > $new_wpdir/wormpep_current.log");
-    if(($status >>8) != 0){
-      $log->write_to("ERROR: setdb command failed. \$\? = $status\n");
-    }
+    copy("$new_wpdir/wormpep$release", "$new_wpdir/wormpep_current") or 
+	    $log->write_to("ERROR: Couldn't copy file: $!\n");
+    $wormbase->run_command("/usr/local/pubseq/bin/setdb $new_wpdir/wormpep_current > $new_wpdir/wormpep_current.log", $log) or
+   	 $log->write_to("ERROR: setdb command failed\n");
   }
 
   unlink ("$new_wpdir/wormpep_unwrap$release")  || $log->write_to("cannot delete $new_wpdir/wormpep_unwrap$release\n");
