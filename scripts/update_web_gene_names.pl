@@ -3,7 +3,7 @@
 # completely rewritten by Keith Bradnam from list_loci_designations
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-04-19 11:07:33 $
+# Last updated on: $Date: 2006-05-16 13:59:36 $
 #
 # This script should be run under a cron job and simply update the webpages that show
 # current gene names and sequence connections.  Gets info from geneace.  
@@ -23,15 +23,12 @@ use Storable;
 # Command line options       #
 ##############################
 
-my $weekly;			# for weekly cronjob which will interrogate current_DB
-my $daily;			# daily updates which will interrogate geneace
 my $store;
 my $file;
 
 #changed the cmd line opts to relect what goes on - left variables the same -ar2
 
-GetOptions ("current"      => \$weekly,
-            "geneace"      => \$daily,
+GetOptions (
 	    		"store:s"      => \$store,	
 	   		"file:s"       => \$file
 	   );
@@ -59,26 +56,18 @@ my $database;
 
 # Set up log file
 
-die "Can't run both -weekly and -daily at the same time!\n" if ($weekly && $daily);
-
 my ($sec,$min,$hour,$mday,$mon,$year, $wday,$yday,$isdst) = localtime time;
 $year += 1900;
+$year += 1;
 my $date = "$year-$mon-$mday";
 
 # make the a-z lists based on CGC_name using current_DB
-if ($weekly) {
-  $log->write_to("Creating loci pages based on current_DB\n");
-  $database = $wormbase->database('current');
-  &create_currentDB_loci_pages;
-}
+$log->write_to("Creating loci pages based on current_DB\n");
+&create_currentDB_loci_pages;
 
 # make lists of gene2molecular_name and molecular_name2gene
-if ($daily) {
-  $log->write_to("Making daily update lists\n");
-  $database = $wormbase->database('geneace');
-  &make_gene_lists;
-}
-
+$log->write_to("Making daily update lists\n");
+&make_gene_lists;
 
 ###################################################
 # Tidy up - close things, mail log, run webpublish
@@ -88,10 +77,8 @@ if ($daily) {
 chdir($www) || print LOG "Couldn't run chdir\n";
 
 
-if ($weekly) {
-  system("/usr/local/bin/webpublish -q *.shtml") && print LOG "Couldn't run webpublish on html files\n";
-}
-system("/usr/local/bin/webpublish -q *.txt") && print LOG "Couldn't run webpublish on text file\n";
+$wormbase->run_command("/usr/local/bin/webpublish -q *.shtml", $log) or $log->write_to("Couldn't run webpublish on html files\n");
+$wormbase->run_command("/usr/local/bin/webpublish -q *.txt", $log)   or $log->write_to("Couldn't run webpublish on text file\n");
 
 $log->write_to("check http://www.sanger.ac.uk/Projects/C_elegans/LOCI/genes2molecular_names.txt is up to date\n");
 
@@ -111,12 +98,13 @@ exit(0);
 sub create_currentDB_loci_pages{
 
   # query against current_DB
+  $database = $wormbase->database('current');
   my $db = Ace->connect(-path  => "$database",
                         -program =>$tace) or $log->log_and_die("Connection failure: ".Ace->error);
 
 
   # open text file which will contain all genes
-  open (TEXT, ">$www/loci_all.txt") || croak "Couldn't open text file for writing to\n";
+  open (TEXT, ">$www/loci_all.txt") or $log->log_and_die("Couldn't open text file for writing to\n");
   print TEXT "Gene name, WormBase gene ID, Gene version, CDS name (Wormpep ID), RNA gene name, pseudogene name, other names, cgc approved?\n";
 
   foreach my $letter ("a".."z") {
@@ -282,7 +270,7 @@ sub make_gene_lists{
   while (<TACE>) {
     chomp;
     # skip any acedb banner text (table maker output has all fields surrounded by "")
-    next if ($_ !~ m/^\"/);
+    next if ($_ !~ m/^\"/);  #" for syntax highlight
     # skip acedb prompts
     next if (/acedb/);
     # skip empty fields
@@ -309,7 +297,7 @@ sub make_gene_lists{
   # set up various output files (first two are reverse of each other)
 
 
-  open (GENE2MOL, ">$www/genes2molecular_names.txt") || die "ERROR: Couldn't open genes2molecular_names.txt  $!\n";
+  open (GENE2MOL, ">$www/genes2molecular_names.txt") or $log->log_and_die("ERROR: Couldn't open genes2molecular_names.txt  $!\n");
   foreach my $key (sort keys %gene2molecular_name){
 
     print GENE2MOL "$key\t$gene2molecular_name{$key}\n";	      
@@ -324,8 +312,6 @@ sub make_gene_lists{
   }
   print TEXT "last updated $date (YYYY-MM-DD)\n";
   close(MOL2GENE);
-
-
 }
 
 
@@ -368,10 +354,6 @@ run every night on a cron job for the genes2molecular_names.txt file and weekly 
 =head2 camcheck.pl OPTIONAL arguments:
 
 =over 4
-
-=item -daily (queries geneace: makes gene2molecular_name and molecular_name2gene files)
-
-=item -weekly (queries current_DB, makes a-z lists)
 
 =back
 
