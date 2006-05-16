@@ -13,12 +13,15 @@
 #      COMPANY:
 #     $Version:  $
 #      CREATED: 2006-02-27
-#        $Date: 2006-03-03 17:06:20 $
+#        $Date: 2006-05-16 15:46:09 $
 #===============================================================================
 package Remap_Sequence_Change;
 
 use strict;
 use warnings;
+#use Modules::Coords_converter;
+use Coords_converter;
+use Wormbase;
 
 ##########################################################
 # 
@@ -81,11 +84,11 @@ sub read_mapping_data {
 ##########################################################
 # 
 # Name:      remap_ace
-# Usage:     ($new_start, $new_end) = remap_ace($chromosome, $start, $end, $release1, $release2, @mapping_data);
+# Usage:     ($new_start, $new_end, $indel, $change) = remap_ace($chromosome, $start, $end, $release1, $release2, @mapping_data);
 # Function:  does the remapping of a pair of location values for an ACE file
 # Args:      $chromosome, the chromosome number, e.g. 'III'
-#            $start, the start value of the location coordinate
-#            $end, the end value of the location coordinate ($end < $start for reverse sense)
+#            $start, the start value of the chromosomal location coordinate
+#            $end, the end value of the chromosomal location coordinate ($end < $start for reverse sense)
 #            $release1, $release2, the first and last wormbase release
 #                  numbers to use e.g. 140, 150 to convert data made using wormbase
 #                  release WS140 to the coordinates of release WS150
@@ -123,17 +126,17 @@ sub remap_ace {
 ##########################################################
 # 
 # Name:      remap_gff
-# Usage:     ($new_start, $new_end, $new_sense) = remap_gff($chromosome, $start, $end, $sense, $release1, $release2, @mapping_data);
+# Usage:     ($new_start, $new_end, $new_sense, $indel, $change) = remap_gff($chromosome, $start, $end, $sense, $release1, $release2, @mapping_data);
 # Function:  does the remapping of a pair of location values for a GFF file
 # Args:      $chromosome, the chromosome number, e.g. 'III'
-#            $start, the start value of the location coordinate
-#            $end, the end value of the location coordinate (always >= $start)
+#            $start, the start value of the chromosomal location coordinate
+#            $end, the end value of the chromosomal location coordinate (always >= $start)
 #            $sense, the sense "+" or "-" of the coordinate
 #            $release1, $release2, the first and last wormbase release
 #                  numbers to use e.g. 140, 150 to convert data made using wormbase
 #                  release WS140 to the coordinates of release WS150
 #            @mapping_data - data as returned by read_mapping_data
-# Returns:   $new_start, $new_end, $new_sense - the updated location coordinates
+# Returns:   $new_start, $new_end, $new_sense - the updated chromosomal location coordinates
 #            $indel - true if indels affect this location
 #            $change - true if any sort of changes affect this location
 #
@@ -220,6 +223,99 @@ sub remap_gff {
                                                                                                                                                             
   return ($start, $end, $sense, $indel, $change);
 }
+
+##########################################################
+# 
+# Name:      remap_clone
+# Usage:     ($clone_id, $start, $end, $indel, $change) = 
+#	Remap_Sequence_Change::remap_clone($wormbase, $clone_id, $start, $end, $version, $current_converter, $autoace_converter, @mapping_data);
+# Function:  does the remapping of a pair of ACE clone location values between the autoace version and the currentDB version
+# Args:      $clone_id, the name of the clone
+#            $start, the start value of the clone location coordinate
+#            $end, the end value of the clone location coordinate (always >= $start)
+#            $version, the lastest wormbase release (the autoace version number)
+#            $current_converter, $autoace_converter - Coords converter objects
+#              for currentDB and for autoace
+#
+#            @mapping_data - data as returned by read_mapping_data
+# Returns:   $new_start, $new_end - the updated clone location coordinates
+#            $indel - true if indels affect this location
+#            $change - true if any sort of changes affect this location
+#
+
+sub remap_clone {
+  my ($wormbase, $clone_id, $start, $end, $version, $current_converter, $autoace_converter, @mapping_data) = @_;
+
+  my $indel = 0;		# true if indels affect this location
+  my $change = 0;		# true if non-indel base changes affect this location
+
+  my $prev_version = $version - 1;
+  my ($new_chrom_start, $new_chrom_end);
+
+# convert the clone location to the chromosomal location for version1
+  my ($chromosome, $chrom_start, $chrom_end) = clone_to_chromosome($wormbase, $clone_id, $start, $end, $current_converter);
+  #print "clone to chromosome: $chromosome, $chrom_start, $chrom_end\n";
+
+# remap the chromosomal location
+  ($new_chrom_start, $new_chrom_end, $indel, $change) = remap_ace($chromosome, $chrom_start, $chrom_end, $prev_version, $version, @mapping_data);
+  #print "remapped chromosome: $chrom_start, $chrom_end to $new_chrom_start, $new_chrom_end, $indel, $change\n";# if ($new_chrom_start != $chrom_start);
+
+# convert the chromosomal location for version2 to the clone location
+  my ($new_clone, $new_start, $new_end) = chromosome_to_clone($wormbase, $chromosome, $new_chrom_start, $new_chrom_end, $autoace_converter);
+  #print "chromosome to clone: $new_clone, $new_start, $new_end\n";# if ($new_chrom_start != $chrom_start);
+
+  return ($new_clone, $new_start, $new_end, $indel, $change);
+                                                     
+}
+
+##########################################################
+# 
+# Name:      clone_to_chromosome
+# Usage:     ($chrom, $chrom_start, $chrom_end) = clone_to_chromosome($wormbase, $clone_id, $start, $end, $current_converter);
+# Function:  converts clone coords to chromosomal coords
+# Args:      $clone_id, the name of the clone
+#            $start, the start value of the clone location coordinate
+#            $end, the end value of the clone location coordinate (always >= $start)
+#            $current_converter - coords converter object for the current database
+# Returns:   $chrom, chromosome
+#            $new_start, $new_end, $new_sense - the updated clone location coordinates
+#            $indel - true if indels affect this location
+#            $change - true if any sort of changes affect this location
+#
+
+
+sub clone_to_chromosome {
+  my ($wormbase, $clone_id, $start, $end, $current_converter) = @_;
+  my ($chrom, $chrom_start, $chrom_end);
+
+
+  ($chrom, $chrom_start) = $current_converter->Coords_2chrom_coords($clone_id, $start);
+  ($chrom, $chrom_end) = $current_converter->Coords_2chrom_coords($clone_id, $end);
+
+  return ($chrom, $chrom_start, $chrom_end);
+}
+
+##########################################################
+# 
+# Name:      chromosome_to_clone
+# Usage:     ($clone, $start, $end, $sense) = chromosome_to_clone($wormbase, $chromosome, $chrom_start, $chrom_end, $autoace_converter);
+# Function:  converts  chromosomal coords to clone coords
+# Args:      $chromosome, the chromosome number
+#            $start, the start value of the chromosome location coordinate
+#            $end, the end value of the chromosome location coordinate (always >= $start)
+#            $autoace_converter - coords converter object for the autoace database
+# Returns:   $chrom, chromosome
+#            $new_start, $new_end
+#
+
+sub chromosome_to_clone {
+  my ($wormbase, $chromosome, $start, $end, $autoace_converter) = @_;
+  my ($clone_id, $clone_start, $clone_end);
+
+  return $autoace_converter->LocateSpan($chromosome, $start, $end);
+  
+}
+
 
 
 ##########################################################
