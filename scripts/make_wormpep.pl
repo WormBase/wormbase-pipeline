@@ -6,8 +6,8 @@
 #
 # Builds a wormpep data set from the current autoace database
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-05-16 08:22:31 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2006-05-17 08:52:21 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -155,7 +155,7 @@ if ($final) {
   # write wormpep accession file
   &write_wormpep_accession;
 
-  $wormbase->run_command("build_pepace.pl");
+  $wormbase->run_command("build_pepace.pl", $log);
 
   # update common data
   $wormbase->run_script("update_Common_data.pl --build --cds2wormpep", $log);
@@ -553,7 +553,7 @@ sub write_main_wormpep_and_table{
   close (CONNECTIONS) if ($initial);
   close (TABLE) if ($final);
   
-  $wormbase->run_command("rewrap $new_wpdir/wormpep_unwrap$release > $new_wpdir/wormpep$release") or 
+  $wormbase->run_command("rewrap $new_wpdir/wormpep_unwrap$release > $new_wpdir/wormpep$release", $log) or 
     $log->write_to("ERROR: rewrap command failed\n");
 
   # create a blast'able database (indexing) using setdb for Wublast (not formatdb, which is  for blastall)

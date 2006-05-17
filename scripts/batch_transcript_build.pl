@@ -7,7 +7,7 @@
 # wrapper script for running transcript_builder.pl
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2006-05-15 13:04:20 $
+# Last edited on: $Date: 2006-05-17 09:04:41 $
 
 use lib $ENV{CVS_DIR};
 use Wormbase;
@@ -82,7 +82,7 @@ unless ( $no_run ){
     my $out = "$dump_dir/CHROMOSOME_${chrom}_transcript.ace";
     my $bsub = "bsub -e $err \"perl $builder_script -database $database -chromosome $chrom -store $store\"";
     print "$bsub\n";
-    $wormbase->run_command("$bsub");
+    $wormbase->run_command("$bsub", $log);
   }
 }
 
@@ -90,8 +90,8 @@ $log->write_to("waiting for LSF jobs to finish\n");
 $wormbase->wait_for_LSF;
 
 $log->write_to("all batch jobs done - cating outputs to ".$wormbase->transcripts."/transcripts.ace\n");
-$wormbase->run_command("cp " .$wormbase->misc_dynamic."/MtDNA_Transcripts.ace ".$wormbase->transcripts."/chromosome_MtDNA.ace"); #hard coded cp of fixed MtDNA Transcripts.
-$wormbase->run_command("cat ".$wormbase->transcripts."/*.ace > ".$wormbase->transcripts."/transcripts.ace");
+$wormbase->run_command("cp " .$wormbase->misc_dynamic."/MtDNA_Transcripts.ace ".$wormbase->transcripts."/chromosome_MtDNA.ace", $log); #hard coded cp of fixed MtDNA Transcripts.
+$wormbase->run_command("cat ".$wormbase->transcripts."/*.ace > ".$wormbase->transcripts."/transcripts.ace", $log);
 
 $log->write_to("loading file to ".$wormbase->autoace."\n");
 $wormbase->load_to_database($wormbase->autoace,$wormbase->transcripts."/transcripts.ace",'transcript_builder', $log);

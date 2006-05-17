@@ -8,8 +8,8 @@
 #                          ~wormpub/BUILD/autoace/release/
 #                          /nfs/WWW/SANGER_docs/htdocs/Projects/C_elegans/WORMBASE/current/release_notes.txt/
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-03-24 13:40:02 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2006-05-17 08:57:14 $
 
 
 use strict;                                      
@@ -122,13 +122,13 @@ $log->write_to("Updating symlink on FTP site\n");
 my $targetdir = "/nfs/disk69/ftp/pub/wormbase";    # default directory, can be overidden
 
 # delete the old symbolic link and make the new one
-$wormbase->run_command("rm -f $targetdir/development_release");
-$wormbase->run_command("cd $targetdir; ln -s $release development_release");
+$wormbase->run_command("rm -f $targetdir/development_release", $log);
+$wormbase->run_command("cd $targetdir; ln -s $release development_release", $log);
 
 # update wormpep_dev symbolic link in wormpep ftp site
 my $wormpep_dir = glob("~ftp/pub/databases/wormpep"); 
-$wormbase->run_command("rm -f $wormpep_dir/wormpep_dev");
-$wormbase->run_command("ln -fs $wormpep_dir/wormpep${release_number}/wormpep${release_number} $wormpep_dir/wormpep_dev");
+$wormbase->run_command("rm -f $wormpep_dir/wormpep_dev", $log);
+$wormbase->run_command("ln -fs $wormpep_dir/wormpep${release_number}/wormpep${release_number} $wormpep_dir/wormpep_dev", $log);
 
 #######################################
 # Webpublish to live site
@@ -138,14 +138,14 @@ $log->write_to("Updating some WormBase webpages to live site\n");
 
 # update development_release symbolic link
 chdir("$www/WORMBASE");
-$wormbase->run_command("rm -f development_release");
-$wormbase->run_command("ln -fs $release development_release");
+$wormbase->run_command("rm -f development_release", $log);
+$wormbase->run_command("ln -fs $release development_release", $log);
 
 # Now update WORMBASE pages
 # these won't be seen until current symlink is also updated
 my $webpublish = "/usr/local/bin/webpublish";
-$wormbase->run_command("$webpublish  -q -r $release")            && $log->write_to("Couldn't run webpublish on release directory\n");
-$wormbase->run_command("$webpublish  -q -r development_release") && $log->write_to("Couldn't run webpublish on dev sym link\n");
+$wormbase->run_command("$webpublish  -q -r $release", $log)            && $log->write_to("Couldn't run webpublish on release directory\n");
+$wormbase->run_command("$webpublish  -q -r development_release", $log) && $log->write_to("Couldn't run webpublish on dev sym link\n");
 
 
 $log->mail();

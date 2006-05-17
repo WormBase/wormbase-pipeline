@@ -6,8 +6,8 @@
 #
 # Author: Chao-Kung CHen
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2006-04-27 12:08:26 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2006-05-17 08:55:10 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -41,7 +41,7 @@ my $target_dir = $wormbase->acefiles;
 
 my $farm_ace = glob("~wormpipe/ace_files") ;  # this is the only place where a path is specified outside of Wormbase.pm as cant access wormpipe and wormpub acefiles at same time
 unlink("$source_dir/ensembl_protein_info.ace");
-$wormbase->run_command("cat $farm_ace/flybase.ace $farm_ace/yeast.ace $source_dir/ipi_hits.ace $source_dir/swissproteins.ace $source_dir/tremblproteins.ace > $source_dir/ensembl_protein_info.ace");
+$wormbase->run_command("cat $farm_ace/flybase.ace $farm_ace/yeast.ace $source_dir/ipi_hits.ace $source_dir/swissproteins.ace $source_dir/tremblproteins.ace > $source_dir/ensembl_protein_info.ace", $log);
 
 my @files        = (
 		    "worm_pep_best_blastp_hits",
@@ -62,11 +62,11 @@ my @files        = (
 foreach my $file (@files){
   if (( $file eq "waba.ace") && (-e "/nfs/acari/wormpipe/ace_files/waba.ace")){
     $log->write_to("scping new version of $file\n");
-    $wormbase->run_command("scp acari:/nfs/acari/wormpipe/ace_files/waba.ace ${target_dir}/waba.ace");
+    $wormbase->run_command("scp acari:/nfs/acari/wormpipe/ace_files/waba.ace ${target_dir}/waba.ace", $log);
   }
   elsif ( -e "$source_dir/$file" ) {
     $log->write_to("scping new version of $file\n");
-    $wormbase->run_command("scp acari:${source_dir}/${file} ${target_dir}/${file}");
+    $wormbase->run_command("scp acari:${source_dir}/${file} ${target_dir}/${file}", $log);
   }
   else {
     $log->write_to($file." does not exist\n");

@@ -4,8 +4,8 @@
 # 
 # written by Anthony Rogers
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-04-25 08:44:44 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2006-05-17 08:46:25 $
 
 
 use DBI;
@@ -546,13 +546,13 @@ if( $prep_dump ) {
   if( -e $wormbase->gff_splits."/CHROMOSOME_X_curated.gff") {
     $wormbase->run_command("cat ".$wormbase->gff_splits."/CHROMOSOME_*_curated.gff | $scripts_dir/BLAST_scripts/gff2cds.pl > /nfs/acari/wormpipe/Elegans/cds$WS_version.gff", $log);
     $wormbase->run_command("cat ".$wormbase->gff_splits."/CHROMOSOME_*_Genomic_canonical.gff   | $scripts_dir/BLAST_scripts/gff2cos.pl > /nfs/acari/wormpipe/Elegans/cos$WS_version.gff",$log);
-#not reqd    $wormbase->run_command("cp /wormsrv2/WORMPEP/wormpep$WS_version/wormpep.diff$WS_version $wormpipe_dir/dumps/");
-#    $wormbase->run_command("cp /wormsrv2/WORMPEP/wormpep$WS_version/new_entries.WS$WS_version $wormpipe_dir/dumps/");
-#    $wormbase->run_command("cp $autoace/COMMON_DATA/wormpep2cds.dat $wormpipe_dir/dumps/");
-#    $wormbase->run_command("cp $autoace/COMMON_DATA/cds2wormpep.dat $wormpipe_dir/dumps/");
-#    $wormbase->run_command("cp $autoace/COMMON_DATA/accession2clone.dat $wormpipe_dir/dumps/");
-#    $wormbase->run_command("cp $autoace/COMMON_DATA/clonesize.dat $wormpipe_dir/dumps/");
-#not reqd    $wormbase->run_command("cp $autoace/COMMON_DATA/clonesize.dat /nfs/disk100/wormpub/DATABASES/autoace/COMMON_DATA/");
+#not reqd    $wormbase->run_command("cp /wormsrv2/WORMPEP/wormpep$WS_version/wormpep.diff$WS_version $wormpipe_dir/dumps/", $log);
+#    $wormbase->run_command("cp /wormsrv2/WORMPEP/wormpep$WS_version/new_entries.WS$WS_version $wormpipe_dir/dumps/", $log);
+#    $wormbase->run_command("cp $autoace/COMMON_DATA/wormpep2cds.dat $wormpipe_dir/dumps/", $log);
+#    $wormbase->run_command("cp $autoace/COMMON_DATA/cds2wormpep.dat $wormpipe_dir/dumps/", $log);
+#    $wormbase->run_command("cp $autoace/COMMON_DATA/accession2clone.dat $wormpipe_dir/dumps/", $log);
+#    $wormbase->run_command("cp $autoace/COMMON_DATA/clonesize.dat $wormpipe_dir/dumps/", $log);
+#not reqd    $wormbase->run_command("cp $autoace/COMMON_DATA/clonesize.dat /nfs/disk100/wormpub/DATABASES/autoace/COMMON_DATA/", $log);
     
     system("touch $wormpipe_dir/DUMP_PREP_RUN");
   }

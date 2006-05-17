@@ -6,8 +6,8 @@
 #
 # Creates SMapped Gene spans for Gene objects
 #
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2006-04-06 13:37:22 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2006-05-17 09:07:19 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -47,11 +47,11 @@ if ($prepare) {
     # gff dump Coding_transcript
     print "dumping CDSes\n" if $test;
 
-    $wormbase->run_command( "perl $ENV{'CVS_DIR'}/GFF_method_dump.pl -database $database -method Coding_transcript -dump_dir " . $wormbase->gff_splits );
+    $wormbase->run_command( "perl $ENV{'CVS_DIR'}/GFF_method_dump.pl -database $database -method Coding_transcript -dump_dir " . $wormbase->gff_splits, $log);
 
     # cat them to the main gff files
     # foreach my $chrom ( @chromosomes ) {
-    # &run_command("cat $database/CHROMOSOMES/CHROMOSOME_${chrom}.Coding_transcript.gff >> $database/CHROMOSOMES/CHROMOSOME_${chrom}.gff");
+    # &run_command("cat $database/CHROMOSOMES/CHROMOSOME_${chrom}.Coding_transcript.gff >> $database/CHROMOSOMES/CHROMOSOME_${chrom}.gff", $log);
 }
 else {
     my %CDS_data;

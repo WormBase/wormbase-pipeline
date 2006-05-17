@@ -7,8 +7,8 @@
 # Gets sequences ready for blatting, blats sequences, processes blat output, makes confirmed introns
 # and virtual objects to hang the data onto
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-02-17 11:20:00 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2006-05-17 09:03:11 $
 
 
 use strict;
@@ -311,7 +311,7 @@ sub dump_dna {
   $command .= "dna -f $blat_dir/autoace.first\nquit\n";
 
   # tace dump chromosomal DNA and superlinks file
-  $wormbase->run_command("echo '$command' | $giface $dbpath");
+  $wormbase->run_command("echo '$command' | $giface $dbpath", $log);
 
   # Check that superlinks file created ok
   &usage(11) unless (-e "${blat_dir}/superlinks.ace");
@@ -336,7 +336,7 @@ sub dump_dna {
 
   # make back-up copies of the psl files
   foreach my $type (sort keys %word) {
-      &run_command("cp -f $blat_dir/${type}_out.psl $blat_dir/${type}_old.psl");
+      &run_command("cp -f $blat_dir/${type}_out.psl $blat_dir/${type}_old.psl", $log);
   }
 
 }

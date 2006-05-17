@@ -2,8 +2,8 @@
 #
 # prepare_primary_databases.pl
 #
-# Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-05-09 09:17:10 $
+# Last edited by: $Author: gw3 $
+# Last edited on: $Date: 2006-05-17 08:50:35 $
 
 use strict;
 my $scriptdir = $ENV{'CVS_DIR'};
@@ -88,7 +88,7 @@ foreach ( qw(camace geneace brigace) ){
   next if (defined $database and ($database ne $_));
   $wormbase->delete_files_from($wormbase->primary("$_"),'*','+');
   $wormbase->run_script("TransferDB.pl -start ".$wormbase->database("$_"). " -end ".$wormbase->primary("$_") ." -database -wspec", $log);
-  $wormbase->run_command("ln -sf ".$wormbase->autoace."/wspec/models.wrm ".$wormbase->primary("$_")."/wspec/models.wrm");
+  $wormbase->run_command("ln -sf ".$wormbase->autoace."/wspec/models.wrm ".$wormbase->primary("$_")."/wspec/models.wrm", $log);
 }
 #system("cp -R misc_static $autoace/acefiles/primary  #check whats happened here - looks like partial edit
 

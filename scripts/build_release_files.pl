@@ -6,8 +6,8 @@
 #
 # This is a example of a good script template
 #
-# Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2006-04-12 17:04:25 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2006-05-17 09:01:47 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -103,22 +103,22 @@ sub buildrelease{
   $wormbase->delete_files_from("$dbpath/release","database\.$WS_version\..*\.tar","-");
 
   for (my $i = 0; $i < @tarfiles; ++$i) {
-    $wormbase->run_command("cd $dbpath; tar -hcf $dbpath/release/database.$WS_version.4-$i.tar $tarfiles[$i]\"");
+    $wormbase->run_command("cd $dbpath; tar -hcf $dbpath/release/database.$WS_version.4-$i.tar $tarfiles[$i]\"", $log);
     
     # list files in the tar archive
-    $wormbase->run_command("tar -tf $dbpath/release/database.$WS_version.4-$i.tar >> $dbpath/release/files_in_tar");
+    $wormbase->run_command("tar -tf $dbpath/release/database.$WS_version.4-$i.tar >> $dbpath/release/files_in_tar", $log);
     
     # gzip the tar archive
-    $wormbase->run_command("/bin/gzip $dbpath/release/database.$WS_version.4-$i.tar"); 
+    $wormbase->run_command("/bin/gzip $dbpath/release/database.$WS_version.4-$i.tar", $log); 
     
     # check consistency of gzip file
-    $wormbase->run_command("/bin/gzip -t $dbpath/release/database.$WS_version.4-$i.tar.gz >> $dbpath/release/files_in_tar");
+    $wormbase->run_command("/bin/gzip -t $dbpath/release/database.$WS_version.4-$i.tar.gz >> $dbpath/release/files_in_tar", $log);
     
     # calculate md5sum for the gzip file
-    $wormbase->run_command("/nfs/disk100/wormpub/bin.ALPHA/md5sum $dbpath/release/database.$WS_version.4-$i.tar.gz >> $dbpath/release/md5sum.WS$WS_version");
+    $wormbase->run_command("/nfs/disk100/wormpub/bin.ALPHA/md5sum $dbpath/release/database.$WS_version.4-$i.tar.gz >> $dbpath/release/md5sum.WS$WS_version", $log);
   }
   #check md5sums
-  $wormbase->run_command("cd ".$wormbase->autoace."/release; md5sum -c md5sum.WS$WS_version");
+  $wormbase->run_command("cd ".$wormbase->autoace."/release; md5sum -c md5sum.WS$WS_version", $log);
   # zip up the dna and gff files
   $wormbase->run_script("chromosome_dump.pl --zipdna --zipgff", $log);
   $wormbase->run_script( "release_letter.pl -c -d"               , $log);

@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
-# Last updated by: $Author: mh6 $     
-# Last updated on: $Date: 2006-03-27 13:42:11 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2006-05-17 08:53:40 $      
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -50,7 +50,7 @@ exit(0);
 sub parse_misc_files {
   my @nem_files = ("other_nematode_ESTs.ace", "nembase_nematode_contigs.ace", "washu_nematode_contigs.ace");
   foreach (@nem_files) {
-    $wormbase->run_command("cp ".$wormbase->wormpub."/analysis/ESTs/$_ ".$wormbase->acefiles."/") unless -e ($wormbase->acefiles."/$_");
+    $wormbase->run_command("cp ".$wormbase->wormpub."/analysis/ESTs/$_ ".$wormbase->acefiles."/", $log) unless -e ($wormbase->acefiles."/$_");
   }
   my %files_to_load = (
 		       $wormbase->misc_dynamic."/misc_genefinder.ace"           => "genefinder_predictions",

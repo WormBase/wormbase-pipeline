@@ -6,8 +6,8 @@
 #
 # Makes CDS status information by looking at transcript to exon mappings
 #
-# Last updated by: $Author: ar2 $     
-# Last updated on: $Date: 2006-02-13 11:39:36 $      
+# Last updated by: $Author: gw3 $     
+# Last updated on: $Date: 2006-05-17 08:58:19 $      
 
 
 use strict;
@@ -98,7 +98,7 @@ foreach my $chromosome (@chromosomes) {
     
   print $wormbase->runtime, " : Getting BLAT_TRANSCRIPT_BEST feature coordinates for chromosome $chromosome\n"  if ($verbose);
   #create BLAT_TRANSCRIPT_BEST for ease of transition!
-  $wormbase->run_command("cd $gffdir; cat CHROMOSOME_${chromosome}_BLAT_EST_BEST.gff CHROMOSOME_${chromosome}_BLAT_OST_BEST.gff CHROMOSOME_${chromosome}_BLAT_mRNA_BEST.gff >  CHROMOSOME_${chromosome}_BLAT_TRANSCRIPT_BEST.gff");
+  $wormbase->run_command("cd $gffdir; cat CHROMOSOME_${chromosome}_BLAT_EST_BEST.gff CHROMOSOME_${chromosome}_BLAT_OST_BEST.gff CHROMOSOME_${chromosome}_BLAT_mRNA_BEST.gff >  CHROMOSOME_${chromosome}_BLAT_TRANSCRIPT_BEST.gff", $log);
   my @EST_GFF  = &read_gff('BLAT_TRANSCRIPT_BEST',$chromosome);
   my %EST     = %{$EST_GFF[0]};
   my @ESTlist = @{$EST_GFF[1]};
