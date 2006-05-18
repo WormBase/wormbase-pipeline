@@ -7,7 +7,7 @@
 # Usage : autoace_builder.pl [-options]
 #
 # Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2006-05-16 15:49:32 $
+# Last edited on: $Date: 2006-05-18 16:08:54 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -240,7 +240,7 @@ sub remap_misc_dynamic {
 
   if (-e $backup_twinscan) {$log->log_and_die("$backup_twinscan already exists - please move it to be $twinscan before running this again\n");}
   $wormbase->run_command("cp $twinscan $backup_twinscan", $log);
-  $wormbase->run_script( 'remap_twinscan_between_releases.pl -release1 $previous_release -release2 $release -twinscan $backup_twinscan -out $twinscan', $log);
+  $wormbase->run_script( "remap_twinscan_between_releases.pl -release1 $previous_release -release2 $release -twinscan $backup_twinscan -out $twinscan", $log);
 
   # remap genefinder
   my $genefinder = $wormbase->misc_dynamic."/misc_genefinder.ace";
@@ -248,7 +248,7 @@ sub remap_misc_dynamic {
 
   if (-e $backup_genefinder) {$log->log_and_die("$backup_genefinder already exists - please move it to be $genefinder before running this again\n");}
   $wormbase->run_command("cp $genefinder $backup_genefinder", $log);
-  $wormbase->run_script( 'remap_genefinder_between_releases.pl -input $backup_genefinder -out $genefinder', $log);
+  $wormbase->run_script( "remap_genefinder_between_releases.pl -input $backup_genefinder -out $genefinder", $log);
 
   # remap fosmids
   my $fosmids = $wormbase->misc_dynamic."/fosmids.ace";
@@ -256,7 +256,7 @@ sub remap_misc_dynamic {
 
   if (-e $backup_fosmids) {$log->log_and_die("$backup_fosmids already exists - please move it to be $fosmids before running this again\n");}
   $wormbase->run_command("cp $fosmids $backup_fosmids", $log);
-  $wormbase->run_script( 'remap_fosmids_between_releases.pl -input $backup_fosmids -out $fosmids', $log);
+  $wormbase->run_script( "remap_fosmids_between_releases.pl -input $backup_fosmids -out $fosmids", $log);
 
   # remap waba (takes a long time ~24 hours)
 #  my $waba = $wormbase->misc_dynamic."/waba.ace";
@@ -264,7 +264,7 @@ sub remap_misc_dynamic {
 #
 #  if (-e $backup_waba) {$log->log_and_die("$backup_waba already exists - please move it to be $waba before running this again\n");}
 #  $wormbase->run_command("cp $waba $backup_waba", $log);
-#  $wormbase->run_script( 'remap_waba_between_releases.pl -input $backup_waba -out $waba', $log);
+#  $wormbase->run_script( "remap_waba_between_releases.pl -input $backup_waba -out $waba", $log);
 
 
 }
