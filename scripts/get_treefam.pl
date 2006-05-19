@@ -149,7 +149,10 @@ $rc                        = "";
 # ar2 - convert to WORMPEP by going Gene_name->Gene->CDS->Protein
 # TreeFam doesnt deal in isoforms
 
-my $db = Ace->connect( -path => $wormbase->database('WS155') ) or $log->log_and_die(Ace->error,"\n");
+# gw3 - the ACE database used has been changed from WS155 to current_DB
+# we can't use autoace because CDS->Protein is not yet in autoace at this stage of the Build
+
+my $db = Ace->connect( -path => $wormbase->database('current') ) or $log->log_and_die(Ace->error,"\n");
 open (OUT,">".$wormbase->acefiles."/treefam.ace") or $log->log_and_die("cant write to ".$wormbase->acefiles." dir\n");
 foreach my $ID (keys %FAMILY)
 {
