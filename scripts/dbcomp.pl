@@ -5,8 +5,8 @@
 # Counts the number of objects in an ACEDB database for each Class stated in the config file
 # Compares this number to those from a second database.
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-03-24 16:24:54 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2006-05-23 13:25:06 $
 
 
 use strict;
@@ -194,8 +194,8 @@ print OUT  " +------------------------+---------+---------+---------+---------+-
 $log->write_to("\nCreating 'current.out' and 'current.dbcomp'\n",$log);
 $wormbase->run_command("rm -f ".$wormbase->compare."/current.out",$log)       or $log->log_and_die("Couldn't remove 'current.out' symlink\n");
 $wormbase->run_command("rm -f ".$wormbase->compare."/current.dbcomp",$log)    or $log->log_and_die("Couldn't remove 'current.dbcomp' symlink\n");
-$wormbase->run_command("ln -s ".$wormbase->compare."/COMPARE/current.out",$log)    or $log->log_and_die("Couldn't create new symlink\n");
-$wormbase->run_command("ln -s ".$wormbase->compare."/COMPARE/current.dbcomp",$log) or $log->log_and_die("Couldn't create new symlink\n");
+$wormbase->run_command("ln -s ".$wormbase->compare."/$errfile ".$wormbase->compare."/current.out",$log)    or $log->log_and_die("Couldn't create new symlink\n");
+$wormbase->run_command("ln -s ".$wormbase->compare."/$outfile ".$wormbase->compare."/current.dbcomp",$log) or $log->log_and_die("Couldn't create new symlink\n");
 
 
 close (OUT);
