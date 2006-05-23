@@ -2,7 +2,7 @@
 #
 # EMBLDump.pl :  makes EMBL dumps from camace.
 # 
-#  Last updated on: $Date: 2006-03-03 11:49:27 $
+#  Last updated on: $Date: 2006-05-23 08:45:48 $
 #  Last updated by: $Author: pad $
 
 use strict;
@@ -17,6 +17,7 @@ use Storable;
 ##############################
 
 my $test;
+my $single;
 my $debug;
 my $store;
 my $wormbase;
@@ -27,6 +28,7 @@ GetOptions (
 	    "debug=s"      => \$debug,
 	    "store:s"      => \$store,
 	    "quicktest"    => \$quicktest,
+	    "single=s"     => \$single,
 	    );
 
 
@@ -72,22 +74,32 @@ my $mod_file       = "$basedir/tmp/EMBLdump.mod";
 #############################################
 
 my $command;
+if (!$single) {
 $command  = "nosave\n"; # Don't really want to do this
 $command .= "query find CDS where Method = \"Genefinder\"\nkill\n";# remove Genefinder predictions
 $command .= "query find CDS where Method = \"twinscan\"\nkill\n";# remove twinscan predictions
 $command .= "query find Genome_sequence From_laboratory = HX AND Finished AND DNA\ngif EMBL $outfilename\n";# find Genome_sequences and EMBL dump
 $command .= "quit\nn\n";# say you don't want to save and exit
+}
 
 # quicktest mode only works on B0250
 if ($quicktest) {
     $command    = "query find Genome_sequence B0250\ngif EMBL $outfilename\nquit\n";
 }
 
+if ($single) {
+  $command  = "nosave\n"; # Don't really want to do this
+  $command .= "query find CDS where Method = \"Genefinder\"\nkill\n";# remove Genefinder predictions
+  $command .= "query find CDS where Method = \"twinscan\"\nkill\n";# remove twinscan predictions
+  $command .= "query find Genome_sequence $single From_laboratory = HX AND Finished AND DNA\ngif EMBL $outfilename\n";# find Genome_sequences and EMBL dump
+  $command .= "quit\nn\n";# say you don't want to save and exit
+}
+
 open (READ, "echo '$command' | $giface $dbdir |") or die ("Could not open $giface $dbdir\n"); 
 while (<READ>) {
     next if ($_ =~ /\/\//);
     next if ($_ =~ /acedb/);
-}                   
+}
 close (READ);
 
 
