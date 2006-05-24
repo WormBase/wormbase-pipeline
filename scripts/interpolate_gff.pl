@@ -15,7 +15,7 @@
 #      COMPANY:
 #      VERSION:  1.0
 #      CREATED:  13/02/06 09:37:00 GMT
-#     REVISION:  $Revision: 1.11 $
+#     REVISION:  $Revision: 1.12 $
 #===============================================================================
 
 # BACS / SNPS / GENEs
@@ -26,7 +26,7 @@ use Modules::Physical_map;
 use Wormbase;
 use Getopt::Long;
 use IO::File;
-use File::Basname;
+use File::Basename;
 
 my $args="@ARGV"; #to store the argv
 my ( $store, $test, $prep, $debug, $alleles, $genes, $clones, $all, $help, $wormbase,$chromosome );    #options
