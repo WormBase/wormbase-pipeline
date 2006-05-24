@@ -15,7 +15,7 @@
 #      COMPANY:
 #      VERSION:  1.0
 #      CREATED:  13/02/06 09:37:00 GMT
-#     REVISION:  $Revision: 1.10 $
+#     REVISION:  $Revision: 1.11 $
 #===============================================================================
 
 # BACS / SNPS / GENEs
@@ -26,7 +26,9 @@ use Modules::Physical_map;
 use Wormbase;
 use Getopt::Long;
 use IO::File;
+use File::Basname;
 
+my $args="@ARGV"; #to store the argv
 my ( $store, $test, $prep, $debug, $alleles, $genes, $clones, $all, $help, $wormbase,$chromosome );    #options
 
 GetOptions(
@@ -48,7 +50,8 @@ if ($store) { $wormbase = Storable::retrieve($store) or croak("Can't restore wor
 else { $wormbase = Wormbase->new( -debug => $debug, -test => $test ) }
 
 my $log         = Log_files->make_build_log($wormbase);    # prewarning will be misused in a global way
-$log->{SCRIPT}="$0 : [@ARGV]";
+my ($scriptname)=fileparse($0);
+$log->{SCRIPT}="$scriptname : [$args]";
 
 my $acedb    = $wormbase->{'autoace'};
 my $chromdir = $wormbase->{'gff_splits'};
