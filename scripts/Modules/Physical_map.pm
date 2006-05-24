@@ -15,7 +15,7 @@
 #      COMPANY:
 #      VERSION:  1.0
 #      CREATED:  23/11/05 11:52:00 GMT
-#     REVISION:  $Revision: 1.4 $
+#     REVISION:  $Revision: 1.5 $
 #===============================================================================
 
 package Main;
@@ -170,8 +170,8 @@ sub build {
     my %genes;    # gene -> phys_map
     
     # crude hack if a physical map exist which is newer than 1 day ...
-    if ( -e $yfile && ( -M $yfile < 1 ) ) { %genes = YAML::LoadFile($yfile) }
-    else {
+#   if ( -e $yfile && ( -M $yfile < 1 ) ) { %genes = YAML::LoadFile($yfile) }
+#    else {
         my %gen_map = %{ get_phys($acedb) };
 
         foreach my $file (@infiles) {
@@ -195,7 +195,7 @@ sub build {
         }
         YAML::DumpFile( $yfile, %genes );
 
-    }
+#   }
     return \%genes;
 }
 
