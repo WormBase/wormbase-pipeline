@@ -15,7 +15,7 @@
 #      COMPANY:
 #      VERSION:  1.0
 #      CREATED:  13/02/06 09:37:00 GMT
-#     REVISION:  $Revision: 1.9 $
+#     REVISION:  $Revision: 1.10 $
 #===============================================================================
 
 # BACS / SNPS / GENEs
@@ -48,6 +48,7 @@ if ($store) { $wormbase = Storable::retrieve($store) or croak("Can't restore wor
 else { $wormbase = Wormbase->new( -debug => $debug, -test => $test ) }
 
 my $log         = Log_files->make_build_log($wormbase);    # prewarning will be misused in a global way
+$log->{SCRIPT}="$0 : [@ARGV]";
 
 my $acedb    = $wormbase->{'autoace'};
 my $chromdir = $wormbase->{'gff_splits'};
