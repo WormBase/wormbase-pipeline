@@ -1032,7 +1032,7 @@ sub run_command {
   my $return_status = system("$command");
   if ( ( $return_status >> 8 ) != 0 ) {
     if( $log ) {
-      $log->write_to(" WARNING: $script returned non-zero ($return_status)\n");
+      $log->write_to(" WARNING: $command returned non-zero ($return_status)\n");
       $log->error;
     }
     return 1;
