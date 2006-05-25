@@ -9,7 +9,7 @@
 # N.B. Previously called gffcheck
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2006-05-25 09:04:03 $
+# Last updated on: $Date: 2006-05-25 09:34:20 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -113,27 +113,25 @@ exit(0);
 
 sub runestcheck {
   $log->write_to( $wormbase->runtime, ": Starting estcheck\n");
-  $wormbase->run_script("estcheck", $log) or $log->log_and_die("Can't run estcheck\n");
+  $wormbase->run_script("estcheck", $log);
   $log->write_to( $wormbase->runtime, ": Finished running\n\n");
 }
 
 sub runTSLcheck {
   $log->write_to( $wormbase->runtime, ": Starting TSLcheck.pl\n");
-  $wormbase->run_script("TSLcheck.pl", $log) or $log->log_and_die("Can't run TSLcheck.pl\n");
+  $wormbase->run_script("TSLcheck.pl", $log);
   $log->write_to( $wormbase->runtime, ": Finished running\n\n");
 }
 
 sub runintroncheck {
   $log->write_to( $wormbase->runtime, ": Starting introncheck\n");
-  # CVS looses the executable bit on its file permissions sometimes
-  $wormbase->run_command("chmod +x $ENV{'CVS_DIR'}/introncheck" , $log);
-  $wormbase->run_script("introncheck", $log) or $log->log_and_die("Can't run introncheck\n");
+  $wormbase->run_script("introncheck", $log);
   $log->write_to( $wormbase->runtime, ": Finished running\n\n");
 }
 
 sub runoverlapcheck {
   $log->write_to( $wormbase->runtime, ": Starting overlapcheck.pl\n");
-  $wormbase->run_script("overlapcheck.pl", $log) or $log->log_and_die("Can't run overlapcheck.pl\n");
+  $wormbase->run_script("overlapcheck.pl", $log);
   $log->write_to( $wormbase->runtime, ": Finished running\n\n");
 }
    
