@@ -7,7 +7,7 @@
 # Builds a wormpep data set from the current autoace database
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2006-05-17 08:52:21 $
+# Last updated on: $Date: 2006-05-25 15:34:32 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -553,15 +553,13 @@ sub write_main_wormpep_and_table{
   close (CONNECTIONS) if ($initial);
   close (TABLE) if ($final);
   
-  $wormbase->run_command("rewrap $new_wpdir/wormpep_unwrap$release > $new_wpdir/wormpep$release", $log) or 
-    $log->write_to("ERROR: rewrap command failed\n");
+  $wormbase->run_command("rewrap $new_wpdir/wormpep_unwrap$release > $new_wpdir/wormpep$release", $log);
 
   # create a blast'able database (indexing) using setdb for Wublast (not formatdb, which is  for blastall)
   if($final){
     copy("$new_wpdir/wormpep$release", "$new_wpdir/wormpep_current") or 
 	    $log->write_to("ERROR: Couldn't copy file: $!\n");
-    $wormbase->run_command("/usr/local/pubseq/bin/setdb $new_wpdir/wormpep_current > $new_wpdir/wormpep_current.log", $log) or
-   	 $log->write_to("ERROR: setdb command failed\n");
+    $wormbase->run_command("/usr/local/pubseq/bin/setdb $new_wpdir/wormpep_current > $new_wpdir/wormpep_current.log", $log);
   }
 
   unlink ("$new_wpdir/wormpep_unwrap$release")  || $log->write_to("cannot delete $new_wpdir/wormpep_unwrap$release\n");
