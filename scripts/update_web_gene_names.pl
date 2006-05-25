@@ -1,23 +1,21 @@
+#!/nfs/disk100/wormpub/bin/perl -w
 # update_web_gene_names.pl
 #
 # completely rewritten by Keith Bradnam from list_loci_designations
 #
 # Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-05-16 13:59:36 $
+# Last updated on: $Date: 2006-05-25 15:35:01 $
 #
 # This script should be run under a cron job and simply update the webpages that show
 # current gene names and sequence connections.  Gets info from geneace.  
 
 use strict;
-use lib $ENV{'CVS_DIR'};
 use lib '/nfs/disk100/wormpub/wormbase/scripts';
 use Wormbase;
 use Ace;
 use Carp;
 use Getopt::Long;
 use Storable;
-
-
 
 ##############################
 # Command line options       #
@@ -241,8 +239,6 @@ sub create_currentDB_loci_pages{
       print TEXT "\n";
       $gene->DESTROY();
     }
-  	 print HTML "last updated $date (YYYY-MM-DD)<br>";
-    close(HTML);    
   }
   print TEXT "last updated $date (YYYY-MM-DD)\n";
   close(TEXT);
