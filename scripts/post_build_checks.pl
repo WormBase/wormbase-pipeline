@@ -9,7 +9,7 @@
 # N.B. Previously called gffcheck
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2006-05-25 09:00:28 $
+# Last updated on: $Date: 2006-05-25 09:04:03 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -126,7 +126,7 @@ sub runTSLcheck {
 sub runintroncheck {
   $log->write_to( $wormbase->runtime, ": Starting introncheck\n");
   # CVS looses the executable bit on its file permissions sometimes
-  run_command("chmod +x $ENV{'CVS_DIR'}/introncheck" , $log);
+  $wormbase->run_command("chmod +x $ENV{'CVS_DIR'}/introncheck" , $log);
   $wormbase->run_script("introncheck", $log) or $log->log_and_die("Can't run introncheck\n");
   $log->write_to( $wormbase->runtime, ": Finished running\n\n");
 }
