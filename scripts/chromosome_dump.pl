@@ -7,8 +7,8 @@
 # A script for dumping dna and/or gff files for chromosome objects in autoace
 # see pod for more details
 #
-# Last updated by: $Author: pad $
-# Last updated on: $Date: 2006-05-04 11:53:17 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2006-05-25 12:35:32 $
 
 
 use strict;
@@ -259,7 +259,9 @@ sub zip_files{
       system ("/bin/gzip -f $msk_file");
     }
     else {
-      $log->write_to(" ERROR: Couldn't find any repeat-masked chromosomes in $dump_dir\n");
+      if ($chr ne "MtDNA") {	# it is OK for there not to be a repeat-masked file for the mitochondrion
+	$log->write_to(" ERROR: Couldn't find any repeat-masked chromosomes in $dump_dir\n");
+      }
     }
   }
 }
