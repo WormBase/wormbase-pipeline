@@ -9,7 +9,7 @@
 #
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-05-15 12:41:36 $      
+# Last updated on: $Date: 2006-05-25 11:10:50 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -36,11 +36,11 @@ GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
-	    "store"      => \$store,
+	    "store:s"    => \$store,
 	    "twinscan=s" => \$twinscan,
 	    "output=s"   => \$output,
-	    "release1=i"  => \$release1,
-	    "release2=i"  => \$release2,
+	    "release1=i" => \$release1,
+	    "release2=i" => \$release2,
 	    );
 
 if ( $store ) {
