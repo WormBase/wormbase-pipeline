@@ -7,8 +7,8 @@
 
 # 031023 dl1
 
-# Last edited by: $Author: mh6 $
-# Last edited on: $Date: 2006-03-10 09:43:43 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2006-05-25 14:15:46 $
 
 #################################################################################
 # Initialise variables                                                          #
@@ -41,6 +41,7 @@ my $ncrna;              # ncRNA data
 my $est;                # EST data
 my $ost;                # OST data
 my $all;                # all of the above
+my $file;
 
 GetOptions (
 	    "all"            => \$all,
@@ -48,12 +49,13 @@ GetOptions (
 	    "ncrna"          => \$ncrna,
 	    "est"            => \$est,
 	    "ost"            => \$ost,
-            "debug:s"        => \$debug,
-            "help"           => \$help,
+       "debug:s"        => \$debug,
+       "help"           => \$help,
 	    "verbose"        => \$verbose,
 	    "database:s"     => \$database,
 	    "test"           => \$test,
-	    "store:s"        => \$store
+	    "store:s"        => \$store,
+	    "file:s"         => \$file
 	    );
 
 # Help pod if needed
@@ -83,16 +85,15 @@ our %datafiles = (
 		  );
 
 # valid Feature_data methods
-our @valid_methods = (
-		      "TSL",                                          # TSL data
-		      "polyA",                                        # polyA tail sequences
-		      "poly_nucleotide",                              # poly nucleotide sequences (e.g. 5' AAAAAAA)
-		      "BLAT_discrepancy",                             # General method for BLAT problems
-		      "vector"                                        # Vector sequences
+my %valid_methods = (
+		      "TSL" 				=> 1,  				
+		      "SL1" 				=> 1,             # TSL data
+		      "SL2" 				=> 1,                                          # TSL data
+		      "polyA"				=> 1,                                        # polyA tail sequences
+		      "poly_nucleotide" => 1,                              # poly nucleotide sequences (e.g. 5' AAAAAAA)
+		      "BLAT_discrepancy"=> 1,                             # General method for BLAT problems
+		      "vector"  			=> 1                                       # Vector sequences
 		      );
-
-our $valid_methods = join(' ', @valid_methods);
-
 # transcript accessions to names from a hash in common data
 
 print "// Reading EST_names.dat hash\n\n" if ($verbose);
@@ -108,15 +109,20 @@ my $acc;                                              # accession for the entry
 my $id;                                               # id for the entry
 my $seq;                                              # raw sequence for the entry
 my %sequence;                                         # 
-my @features;                                         # list of feature_data objects for the sequence
 my $feature;                                          #
-my ($type,$method,$start,$stop,$length,$remark);      #
-my ($cut_to,$cut_from,$cut_length,$newseq);           #
 my $seqmasked;                                        #
 my $seqlength;                                        #
 my $masked;                                           # No of entries masked
-my $ignored;                                          # No of entries ignored
 my $ignore;
+my %seq2feature;                                      #stores feature data info
+
+#get all of the Feature_data via table maker
+&fetch_features;	
+
+# connect to database
+print  "Opening database for masking ..\n" if ($wormbase->debug);
+my $db = Ace->connect(	-path=>$database,
+								-program =>$tace) || $log->log_and_die("Connection failure: ".Ace->error."\n");
 
 # which data file to parse
 $masked = &MaskSequence($datafiles{mrna}) if ($mrna || $all);
@@ -157,23 +163,20 @@ sub MaskSequence {
   my $ignored = 0;
   my $ignore ;
 
-  # connect to database
-  print  "Opening database for masking $data ..\n" if ($wormbase->debug);
-  my $db = Ace->connect(-path=>$database,
-			-program =>$tace) || $log->log_and_die("Connection failure: ".Ace->error."\n");
+
 
   # set input record seperator
   $/ = ">";
 
   # assign output file
-
-  open (OUTPUT, ">$blat_dir/$data.masked") || $log->log_and_die("ERROR: Can't open output file: $blat_dir/$data.masked");
-
+  my $output_file = $file ? $file."masked" : "$blat_dir/$data.masked";
+  open (OUTPUT, ">$output_file") || $log->log_and_die("ERROR: Can't open output file: $output_file");
 
   # input file loop structure
   my $skip = 1;
-    
-  open (INPUT, "<$EST_dir/$data")     || $log->log_and_die("ERROR: Can't open input file: $EST_dir/$data");
+
+  my $file2mask = $file ? $file : "$EST_dir/$data";  
+  open (INPUT, "<$file2mask")     || $log->log_and_die("ERROR: Can't open input file: $file2mask");
  SEQ: while (<INPUT>) {
     chomp;
     next if ($_ eq "");		# catch empty lines
@@ -181,22 +184,24 @@ sub MaskSequence {
       $skip--;
       next;
     }
-	
+	 next unless /\w/; #skip blank lines
     if (/^(\S+)\s+\S+.+\n/) {	# deal with accessions {$acc} and WormBase internal names {$id}
       $acc = $1;
       if (defined $EST_name{$acc}) {
-	$id  = $EST_name{$acc};
-      } else {
+			$id  = $EST_name{$acc};
+      } 
+      else {
 	#		print "// ERROR: No accession-id connection for this sequence [$acc]\n" if ($wormbase->debug);
-	$EST_name{$acc} = $acc;
-	$id = $acc;
+			$EST_name{$acc} = $acc;
+			$id = $acc;
       }
     }
-    $seq = "$'";		# assign the rest of the string to $seq
+    
+    my $seq = "$'";		# assign the rest of the string to $seq
     $seq =~ s/[^gatcn]//g;	# remove non-gatcn characters (i.e. newlines)
-    $seqmasked = $seq;		# copy sequence to masked file and
-    $seqlength = length ($seq);	# calculate the length of the sequence
-
+    my $seqmasked = $seq;		# copy sequence to masked file and
+    my $seqlength = length ($seq);	# calculate the length of the sequence
+	 
     # fetch the sequence object from the database. push the feature_data objects to memory
     my $obj = $db->fetch(Sequence=>$id);
     if (!defined ($obj)) {
@@ -210,42 +215,35 @@ sub MaskSequence {
       next SEQ;
     }	
 	
-    @features = $obj->Feature_data(1);
+    if( $seq2feature{$id} ) {
+      foreach my $feature (keys %{$seq2feature{$id}}) {
+      	my $coords = $seq2feature{$id}->{$feature};
+			if (defined($feature)) {
+				next unless ($valid_methods{$feature}); # only mask valid Feature_data methods
 
-    unless ( scalar (@features) == 0) {
-      for (my $i=0; $i < scalar(@features); $i++) { # loop through each attached ?Feature_data
-	($type) = $features[$i] =~ (/^$id\:(\S+)/);
+      		my ($method,$start,$stop,$length,$remark);
+				my ($cut_to,$cut_from,$cut_length);
 	
-	next unless ($valid_methods =~ /$type/); # only mask valid Feature_data methods
-	
-	$method = $features[$i]->Feature(1);
-	$start  = $features[$i]->Feature(2);
-	$stop   = $features[$i]->Feature(3);
-	
-	if (defined($type)) {
-	  $start = $obj->Feature_data->Feature(2); # start coord
-	  $stop  = $obj->Feature_data->Feature(3); # stop coord
+	  			$start = $coords->[0]; # start coord
+	  			$stop  = $coords->[1]; # stop coord
 
-	  $cut_to     = $start - 1; # manipulations for clipping 
-	  $cut_from   = $stop;
-	  $cut_length = $stop - $start + 1;
+			  	$cut_to     = $start - 1; # manipulations for clipping 
+			  	$cut_from   = $stop;
+			  	$cut_length = $stop - $start + 1;
 
-	  if ($cut_to < 0 ) {
-	    $cut_to = 0;
-	  }			# fudge to ensure non-negative clipping coords
+			  	if ($cut_to < 0 ) {
+			   	 $cut_to = 0;
+			  	}			# fudge to ensure non-negative clipping coords
 
-	  print "$acc [$id]: '$type' $start -> $stop [$cut_to : $cut_from ($cut_length)]\n" if ($wormbase->debug);
-	  print "// # $acc [$id] $type:" . (substr($seq,$cut_to,$cut_length)) . " [$start - $stop]\n\n" if ($verbose);
-	  $newseq = (substr($seqmasked,0,$cut_to)) . ('n' x $cut_length)  . (substr($seqmasked,$cut_from));
-	  $seqmasked = $newseq;
-	}
-	# increment count of sequences masked
-	$masked++;
-
-      }		
-    # close object
-    $obj->DESTROY();
-    }
+			  	print "$acc [$id]: '$feature' $start -> $stop [$cut_to : $cut_from ($cut_length)]\n" if ($wormbase->debug);
+			  	print "// # $acc [$id] $feature:" . (substr($seq,$cut_to,$cut_length)) . " [$start - $stop]\n\n" if ($verbose);
+			  	my $newseq = (substr($seqmasked,0,$cut_to)) . ('n' x $cut_length)  . (substr($seqmasked,$cut_from));
+			  	$seqmasked = $newseq;
+			}
+			# increment count of sequences masked
+			$masked++;
+     	}		
+  	}
     # output masked sequence
     print OUTPUT ">$acc $id\n$seqmasked\n";
   }
@@ -253,7 +251,7 @@ sub MaskSequence {
   $/ = "\n";
   close OUTPUT;
   $db->close;
-  return ($masked,$ignored);
+  return ($masked);
 }
 #_ end MaskSequence _#
 
@@ -274,6 +272,21 @@ sub usage {
     }
 }
 
+
+sub fetch_features {
+	my $tm_data = $wormbase->table_maker_query($database,"$database/wquery/SCRIPT:transcriptmasker.def");
+	while( <$tm_data> ) {
+		s/\"//g;#"
+		my ($seq, $type, $start, $end) = split;
+		if ($seq and $type and $start and $end) {
+			$seq2feature{$seq}->{$type} = [($start, $end)];
+		}
+		else {
+			$log->error("something wrong with $seq:$type\n");
+		}
+	}
+	$log->write_to(scalar(keys %seq2feature), " sequences to be masked\n");
+}
 
 __END__
 
