@@ -8,7 +8,7 @@
 # relevant WormBase and Wormpep web pages.
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-05-17 08:49:05 $      
+# Last updated on: $Date: 2006-05-25 15:29:36 $      
 
 
 #################################################################################
@@ -698,7 +698,8 @@ sub copy_GFF_files{
   $log->write_to("Copying across GFF files from $gff\n");
 
   #simple double foreach loop to loop through each chromosome and file name
-  my @gff_files = ("clone_ends", "clone_path", "exon", "clone_acc", "CDS", "repeats", "intron", "rna");
+#  my @gff_files = ("clone_ends", "clone_path", "exon", "clone_acc", "CDS", "repeats", "intron", "rna");
+  my @gff_files = ("clone_acc");
   foreach my $chrom (@chrom) {
     foreach my $file (@gff_files){
       $wb->run_command("sort -u $gff/CHROMOSOME_${chrom}_$file.gff | gff_sort > $www/$WS_name/GFF/CHROMOSOME_${chrom}_$file.gff", $log) or 
