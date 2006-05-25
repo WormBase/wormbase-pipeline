@@ -161,7 +161,7 @@ sub log_and_die {
     my $report = shift;
     $self->error;
     if ($report) {
-        $self->write_to("$report\n");
+        $self->write_to("ERROR: $report\n");
         print STDERR "$report\n";
     }
     die;
@@ -169,6 +169,8 @@ sub log_and_die {
 
 sub error {
     my $self = shift;
+    my $report = shift;
+    $self->write_to($report) if $report;
     $self->{'ERRORS'}++;
     return $self->{'ERRORS'};
 }
