@@ -7,7 +7,7 @@
 # This is a example of a good script template
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-05-17 09:01:47 $      
+# Last updated on: $Date: 2006-05-25 13:43:01 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -94,7 +94,7 @@ sub buildrelease{
   $wormbase->run_command("/bin/touch $dbpath/release/md5sum.${WS_version}", $log);
   
   my @tarfiles;
-  $tarfiles[0] = "wspec/cachesize.wrm  wspec/constraints.wrm wspec/copyright wspec/database.wrm wspec/displays.wrm wspec/help.wrm wspec/layout.wrm wspec/models.wrm wspec/options.wrm wspec/passwd.wrm wspec/psfonts.wrm wspec/subclasses.wrm wspec/xfonts.wrm wgf wquery wscripts  pictures database/log.wrm database/database.map database/ACEDB.wrm" ;
+  $tarfiles[0] = "wspec/cachesize.wrm  wspec/constraints.wrm wspec/copyright wspec/database.wrm wspec/displays.wrm wspec/help.wrm wspec/layout.wrm wspec/models.wrm wspec/options.wrm wspec/passwd.wrm wspec/psfonts.wrm wspec/subclasses.wrm wspec/xfonts.wrm wgf wquery database/log.wrm database/database.map database/ACEDB.wrm" ;
   
   for (my $i = 1 ; -e "$dbpath/database/block$i.wrm" ; ++$i) {
     $tarfiles[($i+4)/5] .= " database/block$i.wrm" ;
