@@ -6,7 +6,7 @@
 # Compares this number to those from a second database.
 #
 # Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2006-05-23 13:25:06 $
+# Last updated on: $Date: 2006-05-26 11:29:02 $
 
 
 use strict;
@@ -192,10 +192,10 @@ print OUT  " +------------------------+---------+---------+---------+---------+-
 
 # create symbolic links to current.out and current.dbcomp
 $log->write_to("\nCreating 'current.out' and 'current.dbcomp'\n",$log);
-$wormbase->run_command("rm -f ".$wormbase->compare."/current.out",$log)       or $log->log_and_die("Couldn't remove 'current.out' symlink\n");
-$wormbase->run_command("rm -f ".$wormbase->compare."/current.dbcomp",$log)    or $log->log_and_die("Couldn't remove 'current.dbcomp' symlink\n");
-$wormbase->run_command("ln -s ".$wormbase->compare."/$errfile ".$wormbase->compare."/current.out",$log)    or $log->log_and_die("Couldn't create new symlink\n");
-$wormbase->run_command("ln -s ".$wormbase->compare."/$outfile ".$wormbase->compare."/current.dbcomp",$log) or $log->log_and_die("Couldn't create new symlink\n");
+$wormbase->run_command("rm -f ".$wormbase->compare."/current.out",$log);
+$wormbase->run_command("rm -f ".$wormbase->compare."/current.dbcomp",$log);
+$wormbase->run_command("ln -s ".$wormbase->compare."/$errfile ".$wormbase->compare."/current.out",$log);
+$wormbase->run_command("ln -s ".$wormbase->compare."/$outfile ".$wormbase->compare."/current.dbcomp",$log);
 
 
 close (OUT);
