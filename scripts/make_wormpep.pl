@@ -6,8 +6,8 @@
 #
 # Builds a wormpep data set from the current autoace database
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2006-05-25 15:34:32 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2006-05-26 09:54:38 $
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -29,6 +29,7 @@ my ($help, $debug, $test, $verbose, $store, $wormbase);
 
 my $initial;             # run script in initial mode at start of build
 my $final;               # for full run at end of build
+my $table;
 
 GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
@@ -37,6 +38,7 @@ GetOptions ("help"       => \$help,
 	    		"store:s"    => \$store,
             "initial"    => \$initial,
 	    		"final"      => \$final,
+	    		"table"      => \$table
            );
 
 
@@ -122,7 +124,7 @@ my $wpdir     = "$stem".--$old_release;
 
 # now query autoace to get details of latest set of CDS names, writes wormpep.dnaXXX file
 # also fills in hashes used elsewhere
-&write_wormpep_dna;
+&write_wormpep_dna unless $table;
 
 # grab protein information for each CDS from autoace, using Table-Maker
 # in -initial mode, this is just getting CGC name and Brief_identification information
@@ -131,7 +133,9 @@ my $wpdir     = "$stem".--$old_release;
 
 # write main wormpepXXX file and wormpep.tableXXX file 
 # just writes wormpepXXX file if in initial mode
-&write_main_wormpep_and_table;
+&write_main_wormpep_and_table unless $table;
+
+&write_wormpep_table if $table;
 
 if ($initial) {
 
@@ -411,7 +415,7 @@ sub retrieve_cds_data{
     ($cds2gene{$cds} = $gene)         if (defined($gene));
 
     # can only work with some of this data in full wormpep mode, not in initial
-    if($final){
+    if($final or $table){
       $cds2protein_ac{$cds} = $prot_ac;
     	$cds2protein_id{$cds} = $prot_id . "." . $prot_id_ver;
       $cds2protein_id{$cds} = "" if $cds2protein_id{$cds} eq ".";
@@ -705,6 +709,32 @@ sub write_wormpep_accession{
   }   
   close (WPTABLE);
   
+}
+
+sub write_wormpep_table {
+	my %cds2wormpep;
+#	my %cds2cgc;
+	
+	$wormbase->FetchData('cds2wormpep', \%cds2wormpep);
+#	$wormbase->FetchData('cds2cgc',     \%cds2cgc);
+	open (TABLE, ">".$wormbase->wormpep."/wormpep.table$release")  || $log->log_and_die("cannot create wormpep.table$release\n");
+   foreach my $cds (sort keys %cds2wormpep) {
+   	next unless ($cds =~ /\w/);
+   	my $wpid = $cds2wormpep{$cds};
+		my $output = ">$cds\t$wpid\t";
+		($output  .= "$cds2cgc_name{$cds}")   if ($cds2cgc_name{$cds});
+		$output .= "\t";
+		($output  .= "$cds2id{$cds}")         if ($cds2id{$cds});
+		$output .= "\t";
+		($output  .= "$cds_status{$cds}")     if ($cds_status{$cds});
+		$output .= "\t";
+		($output .= "SW:$cds2protein_ac{$cds}") if (($cds2protein_db{$cds} eq "SwissProt") && ($cds2protein_ac{$cds}));
+		($output .= "TR:$cds2protein_ac{$cds}") if (($cds2protein_db{$cds} eq "TREMBL")    && ($cds2protein_ac{$cds}));
+		($output .= "TN:$cds2protein_ac{$cds}") if (($cds2protein_db{$cds} eq "TREMBLNEW") && ($cds2protein_ac{$cds}));
+		$output .= "\t";
+		($output .= "$cds2protein_id{$cds}")    if ($cds2protein_id{$cds});
+		print TABLE "$output\n";
+	}     
 }
 
 sub get_additional_data {
