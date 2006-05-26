@@ -12,8 +12,8 @@
 # 3) Archives old GFF_SPLITS directory
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
-# Last updated by: $Author: ar2 $
-# Last updated on: $Date: 2006-04-18 14:05:24 $
+# Last updated by: $Author: gw3 $
+# Last updated on: $Date: 2006-05-26 11:12:53 $
 
 
 use strict;
@@ -109,7 +109,7 @@ $wormbase->delete_files_from("$new_dir/acefiles","*","+") unless ($test);
 
 $log->write_to("Unzipping any gzipped chromosome files\n");
 if (!$test) {
-  $wormbase->run_command("/bin/gunzip $new_dir/CHROMOSOMES/*.gz") or $log->log_and_die("Couldn't gunzip CHROMOSOMES/*.gz\n");
+  $wormbase->run_command("/bin/gunzip $new_dir/CHROMOSOMES/*.gz", $log);
 }
 
 # Remove redundant files and directories in $ace_dir
