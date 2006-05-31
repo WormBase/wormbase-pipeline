@@ -23,10 +23,8 @@ GetOptions (
 	    "test"          => \$test,
 	    "database:s"    => \$database,
 	    "dump_dir:s"    => \$dump_dir,
-	    "method:s"      => \$methods,
 	    "methods:s"     => \$methods,
 	    "chromosomes:s" => \$chrom_choice,
-	    "chromosome:s"  => \$chrom_choice,
 	    "store:s"       => \$store
 	   );
 my $wormbase;
@@ -44,14 +42,12 @@ my $log = Log_files->make_build_log($wormbase);
 $wormbase->checkLSF;
 
 my @methods     = split(/,/,join(',',$methods)) if $methods;
-my @chromosomes = split(/,/,join(',',$chrom_choice));
+my @chromosomes = $chrom_choice ? split(/,/,join(',',$chrom_choice)):@chroms;
 
 
 
 $database = $wormbase->autoace    unless $database;
 $dump_dir = $wormbase->gff_splits unless $dump_dir;
-
-@chromosomes = @chroms unless @chromosomes;
 
 $log->write_to("Dumping from DATABASE : $database\n\tto $dump_dir\n\n");
 	      
