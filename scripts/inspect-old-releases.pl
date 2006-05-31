@@ -15,8 +15,8 @@
 # foreach? ./inspect-old-releases.pl -debug gw3 -version $r -database1 ~wormpub/gary/Archeology/WS{$q} -database2 ~wormpub/gary/Archeology/WS{$r}
 # foreach? end
 #
-# Last updated by: $Author: pad $     
-# Last updated on: $Date: 2006-05-02 14:29:01 $      
+# Last updated by: $Author: mh6 $     
+# Last updated on: $Date: 2006-05-31 16:26:39 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -40,7 +40,7 @@ GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
-	    "store"      => \$store,
+	    "store=s"      => \$store,
 	    "database1=s" => \$database1,
 	    "database2=s" => \$database2, 
 	    "version=i"  => \$version,
