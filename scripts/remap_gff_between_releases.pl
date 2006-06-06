@@ -9,7 +9,7 @@
 #
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-02-27 17:13:18 $      
+# Last updated on: $Date: 2006-06-06 09:29:56 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -24,7 +24,6 @@ use Storable;
 
 use Modules::Remap_Sequence_Change;
 
-
 ######################################
 # variables and command-line options # 
 ######################################
@@ -36,7 +35,7 @@ GetOptions ("help"       => \$help,
             "debug=s"    => \$debug,
 	    "test"       => \$test,
 	    "verbose"    => \$verbose,
-	    "store"      => \$store,
+	    "store:s"      => \$store,
 	    "gff=s"      => \$gff,
 	    "output=s"   => \$output,
 	    "release1=i"  => \$release1,
@@ -82,6 +81,7 @@ my @mapping_data = Remap_Sequence_Change::read_mapping_data($release1, $release2
 # MAIN BODY OF SCRIPT
 ##########################
 
+my ($indel, $change);
 
 open (OUT, "> $output") || die "Can't open $output";
 open (GFF, "< $gff") || die "Can't open GFF file $gff\n";
@@ -93,8 +93,14 @@ while (my $line = <GFF>) {
   my @f = split /\t/, $line;
 
       my ($chromosome, $start, $end, $sense) = ($f[0], $f[3], $f[4], $f[6]);
-
-      ($f[3], $f[4], $f[6]) = Remap_Sequence_Change::remap_gff($chromosome, $start, $end, $sense, $release1, $release2, @mapping_data);
+      print "chrom, start, end=$chromosome, $start, $end\n" if ($verbose);
+      ($f[3], $f[4], $indel, $change) = Remap_Sequence_Change::remap_ace($chromosome, $start, $end, $release1, $release2, @mapping_data);
+ 
+      if ($indel) {
+	$log->write_to("There is an indel in the sequence in CHROMOSOME $chromosome, $start, $end - no change made!\n");
+      } elsif ($change) {
+	$log->write_to("There is a change in the sequence in CHROMOSOME $chromosome, $start, $end - no change made!\n");
+      }
 
       $line = join "\t", @f;
       print OUT $line,"\n";
