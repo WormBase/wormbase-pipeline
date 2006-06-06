@@ -6,8 +6,8 @@
 #
 # Usage : autoace_builder.pl [-options]
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2006-05-18 16:08:54 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2006-06-06 08:16:20 $
 
 my $script_dir = $ENV{'CVS_DIR'};
 use lib $ENV{'CVS_DIR'};
@@ -142,7 +142,6 @@ $wormbase->run_script( 'molecular_names_for_genes.pl'            , $log) if $nam
 $wormbase->run_script( 'get_treefam.pl'                          , $log) if $treefam;
 $wormbase->run_script( 'cluster_gene_connection.pl'              , $log) if $cluster;
 
-
 # $build_dumpGFF.pl; (final) is run chronologically here but previous call will operate
 # $wormbase->run_script( "processGFF.pl -$processGFF",        $log ) if $processGFF;    #nematode - to add species to nematode BLATs
 
@@ -152,6 +151,7 @@ $wormbase->run_script( "landmark_genes2gff.pl"                   , $log) if $gff
 $wormbase->run_script( "GFFmunger.pl -all"                       , $log) if $gff_munge;
 &make_extras                                                             if $extras;
 
+#run some checks
 $wormbase->run_script( "post_build_checks.pl -a"                 , $log) if $check;
 $wormbase->run_script( "data_checks.pl -ace -gff"                , $log) if $data_check;
 $wormbase->run_script( "dbcomp.pl"                               , $log) if $data_check;
