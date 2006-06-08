@@ -15,7 +15,7 @@
 #      COMPANY:
 #      VERSION:  1.0
 #      CREATED:  23/11/05 11:52:00 GMT
-#     REVISION:  $Revision: 1.5 $
+#     REVISION:  $Revision: 1.6 $
 #===============================================================================
 
 package Main;
@@ -72,7 +72,27 @@ sub map {
     my ( $self, $pos, $chr ) = @_;
     my $last = 0;
     my $next = 0;
-    return undef if $pos < @{ $self->{'smap'}->{$chr} }[0];
+    # leaves alot for refactoring ...
+    if ($pos < @{ $self->{'smap'}->{$chr} }[0]) { # before first marker
+	    my $current  = @{ $self->{'smap'}->{$chr} }[1];
+	    my $fake_last = @{ $self->{'smap'}->{$chr} }[0];
+	    my $pdiff    = ( $pos - $fake_last ) / ( $current - $fake_last );    # might  be wrong prefix ->better now?
+            my $mlast    = $self->{'pmap'}->{$chr}->{$fake_last}->[0];
+            my $mcurrent = $self->{'pmap'}->{$chr}->{$current}->[0];
+            my $mpos = ( $mcurrent - $mlast ) * $pdiff + $mlast;
+            return $mpos;
+    } 
+    elsif ($pos>@{ $self->{'smap'}->{$chr} }[-1]){
+	    my $current  = @{ $self->{'smap'}->{$chr} }[-1];
+	    my $fake_last = @{ $self->{'smap'}->{$chr} }[-2];
+	    my $pdiff    = ( $pos - $fake_last ) / ( $current - $fake_last );    # might  be wrong prefix ->better now?
+            my $mlast    = $self->{'pmap'}->{$chr}->{$fake_last}->[0];
+            my $mcurrent = $self->{'pmap'}->{$chr}->{$current}->[0];
+            my $mpos = ( $mcurrent - $mlast ) * $pdiff + $mlast;
+	    return $mpos;
+    }
+    else {
+    #.................................
     for ( my $i = 0 ; $i < scalar @{ $self->{'smap'}->{$chr} } ; $i++ ) {
         my $current  = @{ $self->{'smap'}->{$chr} }[$i];
         my $mlast    = $self->{'pmap'}->{$chr}->{$last}->[0];
@@ -83,15 +103,14 @@ sub map {
             my $pdiff    = ( $pos - $last ) / ( $current - $last );    # might  be wrong prefix ->better now?
             my $mlast    = $self->{'pmap'}->{$chr}->{$last}->[0];
             my $mcurrent = $self->{'pmap'}->{$chr}->{$current}->[0];
-
             my $mpos = ( $mcurrent - $mlast ) * $pdiff + $mlast;
-            return ($mpos);
-        }
+            return $mpos;
+     	}
         else {
             $last = $current;
         }
     }
-
+    }
     # glorious correction routine for the ends
     # should be f(x)=dx/dy + x1
     # my $x1 = $last
@@ -159,7 +178,7 @@ sub get_phys {
         my $pos  = $gene->Map(3)->name;
         $map{$name} = $pos;
     }
-    $db->close;
+
     return \%map;
 }
 
@@ -170,8 +189,8 @@ sub build {
     my %genes;    # gene -> phys_map
     
     # crude hack if a physical map exist which is newer than 1 day ...
-#   if ( -e $yfile && ( -M $yfile < 1 ) ) { %genes = YAML::LoadFile($yfile) }
-#    else {
+    if ( -e $yfile && ( -M $yfile < 1 ) ) { %genes = YAML::LoadFile($yfile) }
+    else {
         my %gen_map = %{ get_phys($acedb) };
 
         foreach my $file (@infiles) {
@@ -195,7 +214,7 @@ sub build {
         }
         YAML::DumpFile( $yfile, %genes );
 
-#   }
+    }
     return \%genes;
 }
 
