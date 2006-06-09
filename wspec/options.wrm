@@ -97,7 +97,7 @@ _V2_point_data     -H -T Genotype
 _VMulti_pt_data    -H -T Genotype
 _VPos_neg_data     -H -T Results 
 _VVariation        -V
-
+_VPhenotype	   -T Primary_name
 
 // worm biology
 
