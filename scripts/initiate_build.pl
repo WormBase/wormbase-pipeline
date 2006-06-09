@@ -2,8 +2,8 @@
 #
 # initiate_build.pl
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2006-05-08 12:49:39 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2006-06-09 14:12:13 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -43,6 +43,8 @@ if ($version !~ /^\d\d\d$/) {
 }
 
 $wormbase->establish_paths;
+#copy the genefinder files 
+$wormbase->run_command("cp -r ".$wormbase->build_data."/wgf ".$wormbase->autoace."/wgf");
 
 # set the new version number
 $wormbase->version($version);
