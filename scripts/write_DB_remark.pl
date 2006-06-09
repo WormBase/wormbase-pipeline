@@ -7,7 +7,7 @@
 # This script interogates an ACEDB database and returns all pfam/Interpro/blastx 
 # data as appropriate and generates a suitable DB_remark
 #
-# Last updated on: $Date: 2006-03-20 14:00:35 $
+# Last updated on: $Date: 2006-06-09 13:43:44 $
 # Last updated by: $Author: ar2 $
 
 
@@ -222,9 +222,10 @@ SUBSEQUENCE: while ( my $cds = $CDSs->next ) {
       my @interproelements = %interprohits;
 
       if ($#pfamelements == 1) {
-	foreach (keys %pfamhits) {
-	  $full_string .= "contains similarity to Pfam domain $_ ($pfamhits{$_})";
-	}
+			foreach (keys %pfamhits) {
+	  			$full_string .= "contains similarity to Pfam domain $_ ";
+	  			$full_string .= "$pfamhits{$_}" if $pfamhits{$_};
+			}
       }
       elsif ($#pfamelements > 1) {
 	my $count = 1;
