@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2006-05-12 11:06:31 $
+// Last edited on: $Date: 2006-06-12 13:49:27 $
 
 
 
@@ -1322,7 +1322,7 @@
 		  RNAi_homol ?RNAi XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info //added for RNAi mapping
 		  Structure_homol ?Structure_data XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info               //ar2_struct
 		  Expr_homol ?Expr_pattern XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info //added for Expr_pattern mapping [ar2 27-APR-2006]
-                                                                                              
+                  MSPeptide_homol ?Mass_spec_peptide XREF Homol_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info //[ar2 07-JUN-2006]                                                                           
 
 
 ?Feature_data SMap S_parent UNIQUE Sequence UNIQUE ?Sequence XREF Feature_data
@@ -1425,7 +1425,7 @@
                 Motif_homol ?Motif XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int  #Homol_info
                 Homol_homol ?Homol_data XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
           Feature ?Method Int Int UNIQUE Float  // display according to method
-                                        // double-click shows the method
+	  Contains_peptide ?Mass_spec_peptide
 	  Remark ?Text #Evidence
 
 
@@ -2510,8 +2510,7 @@
                         Year UNIQUE Int
                         In_book #Paper
                         Contained_in ?Paper XREF Contains       // old form
-        Author ?Author XREF Paper #Affiliation        // replaced by:
-//        Author_to_person ?Author UNIQUE ?Person XREF Paper
+        Author ?Author XREF Paper #Affiliation
         Person ?Person XREF Paper
         Affiliation Text        // Authors' affiliation if available
         Brief_citation UNIQUE Text
@@ -2549,6 +2548,7 @@
 		  SAGE_experiment ?SAGE_experiment XREF Reference
 		  Y2H ?Y2H XREF Reference
 		  Interaction ?Interaction XREF Paper
+		  Mass_spec_experiment ?Mass_spec_experiment XREF Reference
         Keyword ?Keyword
 	Remark  ?Text   #Evidence
 
@@ -2851,6 +2851,63 @@
                 Status_updated      UNIQUE DateType // Date when status was updated as reported by the source data
                 Wormpep_release     UNIQUE Int// The Wormpep release that was used for mapping
                 Remark              ?Text #Evidence
+
+
+//////////////////////////////////////////////////
+//
+// Mass Spec model
+//
+//////////////////////////////////////////////////
+
+
+?Mass_spec_experiment Reference ?Paper XREF Mass_spec_experiment       // Describes the experiment
+                      Remark Text #Evidence
+                      Laboratory ?Laboratory    // use when a CGC-derived laboratory code is available, else ignore
+                      Contact   Person ?Person  // use Person where possible, else use Author
+                                Author ?Author
+                      Origin Species UNIQUE ?Species
+                             Strain UNIQUE ?Strain
+                             Genotype ?Text            // in many cases the proper strain name is not available, use this instead
+                             Life_stage ?Life_stage
+                             Anatomy_term ?Anatomy_term
+                             Cell_type ?Cell
+                             Sub_cellular_localization Text
+                      Digestion UNIQUE Trypsin
+                                       Red_ALK
+                      Ionisation_source     UNIQUE MALDI
+                                                   ESI
+                      Instrumentation UNIQUE IonTrap
+                                             FT
+                                             QTOF
+                      Database Text            // database used to search for matches
+                      Program Text             // program used to match MS data against databases
+                      Minimum_ion_proportion UNIQUE Float
+                      Multiple_ambiguous_IDs_allowed
+                      Minimum_peptide_length UNIQUE Int
+                      False_discovery_rate UNIQUE Float // percentage
+                      Mass_spec_peptide ?Mass_spec_peptide XREF Mass_spec_experiments     // the resulting peptide data
+
+//
+// The Mass Spec peptide
+//
+?Mass_spec_peptide  Peptide UNIQUE Text                 // the deduced peptide sequence
+                    Protein_seq UNIQUE ?Protein         // the protein object of this Mass_spec_peptide
+                    Petide_is_natural                   // the peptide is known to occur naturally, e.g. a neuro-peptide
+                    Homol Homol_homol ?Homol_data XREF MSPeptide_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
+                    Mass_spec_experiments ?Mass_spec_experiment XREF Mass_spec_peptide #Mass_spec_data
+
+//
+// The data from an experiment describing the peptide
+//
+#Mass_spec_data  XCorr   UNIQUE Float   // SEQUEST score
+                 DeltaCN UNIQUE Float   // SEQUEST score
+                 Charge_state UNIQUE Int // SEQUEST score
+                 Sp_rank UNIQUE Int  // SEQUEST score
+                 Sp_score UNIQUE Float  // SEQUEST score
+                 Protein_probability UNIQUE Float       // from Prophet or a corresponding program
+                 Peptide_probability UNIQUE Float       // from Prophet or a corresponding program
+                 Matches_database_uniquely
+                 Matches Protein ?Protein  XREF  Contains_peptide    // matched protein
 
 
 		   
