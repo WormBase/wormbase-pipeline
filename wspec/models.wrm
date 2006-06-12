@@ -5,7 +5,7 @@
 
 // ALL WormBase groups should be in sync with this set of models
 // Last edited by: $Author: ar2 $
-// Last edited on: $Date: 2006-06-12 13:49:27 $
+// Last edited on: $Date: 2006-06-12 13:55:27 $
 
 
 
@@ -1425,7 +1425,7 @@
                 Motif_homol ?Motif XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int  #Homol_info
                 Homol_homol ?Homol_data XREF Pep_homol ?Method Float Int UNIQUE Int Int UNIQUE Int #Homol_info
           Feature ?Method Int Int UNIQUE Float  // display according to method
-	  Contains_peptide ?Mass_spec_peptide
+	  Contains_peptide ?Mass_spec_peptonide
 	  Remark ?Text #Evidence
 
 
@@ -2087,6 +2087,11 @@
 	Contains_gene ?Gene XREF Contained_in_operon #Trans_splice_leader
 	Reference ?Paper XREF Operon
 	Method UNIQUE ?Method
+	History    Merged_into      UNIQUE ?Operon XREF Acquires_merge #Evidence
+		   Acquires_merge   UNIQUE ?Operon XREF Merged_into #Evidence
+		   Split_from       UNIQUE ?Operon XREF Split_into #Evidence
+		   Split_into       UNIQUE ?Operon XREF Split_from #Evidence
+	Remark Text 
 
 #Trans_splice_leader SL1 #Evidence
                      SL2 #Evidence
@@ -2719,6 +2724,7 @@
 		  DB_info    Database ?Database ?Database_field UNIQUE ?Accession_number //to link out to KO pages ar2 02-DEC-05
                   KO_consortium_allele   // North American knockout consortium
                   NBP_allele  // Japanese knockout consortium
+		  NemaGENETAG_consortium_allele //NemaGENETAG consortium allele - Nektarios et al
 		  Detection_method Text
 		  Positive_clone ?Clone XREF Positive_variation #Evidence
 		  Nature_of_variation UNIQUE Polymorphic
