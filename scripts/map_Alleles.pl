@@ -5,8 +5,8 @@
 #
 # This maps alleles to the genome based on their flanking sequences
 #
-# Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2006-03-22 16:06:14 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2006-06-12 12:01:57 $
 
 use strict;
 use warnings;
@@ -180,15 +180,13 @@ sub map_alleles {
         if ($list) {
             next unless defined $to_map{$name};
         }
-
+			# some alleles have missing flank seq!
+			unless ($allele->Flanking_sequences and $allele->Flanking_sequences->right) {
+	 			$log->write_to("ERROR: ",$allele->name," is missing a flanking sequence!\n");
+	 			next ALLELE;
+			}
         # grab both flanking sequences from $database
         $left  = lc $allele->Flanking_sequences->name;
-
-	# some alleles only have one flank!
-	unless ($allele->Flanking_sequences->right) {
-	  $log->write_to("ERROR: ",$allele->name," is missing a flanking sequence!\n");
-	  next ALLELE;
-	}
         $right = lc $allele->Flanking_sequences->right->name;
 
         # warn if flanking sequence is missing
