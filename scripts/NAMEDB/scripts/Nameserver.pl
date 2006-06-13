@@ -13,8 +13,8 @@ use CGI::Carp qw(fatalsToBrowser warningsToBrowser);
 use Website::Utilities::Mail;
 $| = 1;
 $DB 	= 'wbgene_id;mcs2a';
-$PASS 	= "wormpub";
-$USER 	= "wormpub";
+$PASS = "wormpub";
+$USER	= "wormpub";
 
 ## a list of valid  IDs to use this resources
 $VALID_USERS = {
@@ -43,10 +43,13 @@ $VALID_API_USERS = {
 
 		'merge_genes'	=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth dblasiar pozersky)],
 		'split_gene'	=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth dblasiar pozersky)],
-		'new_gene'	=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth dblasiar pozersky)],
-		'kill_gene'	=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth dblasiar pozersky)],
-		'add_name'	=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth dblasiar pozersky)],
+		'new_gene'		=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth dblasiar pozersky)],
+		'kill_gene'		=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth dblasiar pozersky)],
+		'add_name'		=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth dblasiar pozersky)],
 		'remove_name'	=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth dblasiar pozersky)],
+		'change_class'	=> [qw(avc ar2 pad gw3 mt3 tbieri jspieth dblasiar pozersky)],
+		'load_file'		=> [qw(ar2 tbieri dblasiar)],
+		'dump_all'     => [qw(ar2 tbieri dblasiar)],
 
 };
 
@@ -77,7 +80,7 @@ sub main {
 
 
 	$SSO_USER = $sw->username(); ## for SSO
-
+		
 	if(!$SSO_USER) {
 		my $url  = "http://$ENV{'HTTP_X_FORWARDED_HOST'}$ENV{'SCRIPT_NAME'}?$ENV{'QUERY_STRING'}";
 		$sw->cookie($sw->cgi->cookie(	
@@ -104,6 +107,7 @@ sub main {
 		return;
 	} else {
 		print qq(Authenticated database user: "$SSO_USER"<BR>
+
 		);
 	}
 
@@ -117,7 +121,8 @@ sub main {
 	my $user     = $sw->cgi->param('user') || "wormbase";
 	my $ispublic = $sw->cgi->param('ispublic');
 	my $remark   = $sw->cgi->param('remark');
-
+	my $upfile   = $sw->cgi->param('upfile');
+	my $class    = $sw->cgi->param('class');
 
 	print_javascript();
 	print_selector($action);
@@ -154,6 +159,19 @@ sub main {
 			&remove_name($name,$type,$gene_id,$ispublic);
 		}
 
+	} elsif($action =~ /load_file/) {
+		if( is_authorised($SSO_USER,$action) == 1) {
+			&load_file($upfile);
+		}
+
+	}  elsif($action =~ /change_class/) {
+		if( is_authorised($SSO_USER,$action) == 1) {
+			&change_class($name,$class);
+		}
+	}  elsif($action =~ /dump_all/) {
+		if( is_authorised($SSO_USER,$action) == 1) {
+			&dump_all('dump');
+		}
 	} else {
 		&query();
 	}
@@ -486,7 +504,7 @@ sub new_gene {
 			);
 		}
 		else {
-			print "<p>FAILED : cant create GeneID for $type $name<\P>";
+			print "<p>FAILED : cant create GeneID for $type $name</p>";
 		}
 	}
 }
@@ -534,6 +552,140 @@ sub query {
 	}
 
 }
+
+
+sub load_file {
+	my $file = shift;
+	unless ( $file ) {
+	## print the query form
+		print qq(
+    	<form action="$ENV{'SCRIPT_NAME'}" method="POST" enctype="multipart/form-data" >
+		<BR><BR>
+    	  <h3>Upload a file</h3>
+    	  File to upload: <INPUT TYPE=FILE NAME="upfile"><BR>
+			<INPUT TYPE=SUBMIT VALUE="Submit">
+			<INPUT TYPE="hidden" NAME="action" VALUE="load_file">
+    	</form>
+		);		
+	}
+	else {
+		my $db = get_db_connection();
+		#untaint file
+#		unless( $file =~ m/^(.+)$/ ) {
+#//			$db->dienice("tainted file\n");
+#//		}
+#//		my $tfile = $1;
+#		open(UL, "<$file") or $db->dienice("cant open file",$!);
+		print "<TABLE border=1><THEAD>
+			<TR>
+				<TH>Gene_id
+				<TH>CGC
+				<TH>Sequence
+				<TH>CDS(s)
+			</THEAD>
+			<TBODY>";
+		open FILE,"<$file" or die "cant open $file : $!\n";
+		while ( <FILE> ) {
+			chomp;
+			my $id = $_;
+			next unless /WBGene\d{8}/;
+			my( $cgc, $seq, @isoforms);
+			my %names = $db->idAllNames($_);
+			$cgc = ($names{'CGC'} or '-');
+			$seq = ($names{'Sequence'} or '-');
+			
+			#CDS may be single scalar or array of isoforms
+			if( ref($names{'CDS'}) eq 'ARRAY' ) {
+				@isoforms = @{$names{'CDS'}};
+			}
+			else {
+				push(@isoforms, $names{'CDS'});
+			}
+			print "<TR><TD>$id<TD>$cgc<TD>$seq<TD>",join(", ",@isoforms);
+		}
+		print "</TBODY></TABLE>";
+		close FILE;
+	}
+ }
+ 
+sub change_class {
+	my ($cds, $class) = @_;
+	unless( $cds and $class) {
+		## print the query form
+		print qq(
+    	<h3>Change CDS class</h3>
+    	<form action="$ENV{'SCRIPT_NAME'}" method="GET">
+		<BR><BR>
+		Enter the details of the CDS to change<br>Convert CDS 
+		<INPUT TYPE="text" NAME="new_name" SIZE="15" MAXLENGTH="10" VALUE="">
+		<p>Change to . . <p>
+		<input type="radio" name="class" value="CDS"> CDS<br>
+		<input type="radio" name="class" value="pseudogene" checked> Pseudogene<br>
+		<input type="radio" name="class" value="transcript"> non-coding transcript<br>
+		<input type="radio" name="class" value="transposon"> transposon<br>
+		
+		
+		<INPUT TYPE="hidden" NAME="action" VALUE="change_class">
+		<br><br>
+    	<INPUT TYPE="submit" VALUE="Change Class">
+    	</form>
+		);
+
+	}
+	else {
+		my $db = get_db_connection();
+		my $gene = $db->idGetByTypedName('CDS', $cds);
+		if ( $gene ) {
+			# just send a mail - no change to database
+			#$self->send_mail('Nameserver',
+			send_mail("webserver",$MAIL_NOTIFY_LIST,"$cds to $class", "$cds converted to $class - $SSO_USER\nThis does not affect Nameserver DB");
+		}
+		print "changing $cds to $class<br>";
+	}
+}
+
+
+sub dump_all {
+	my $dump = shift;
+	if ( $dump ) {
+		# iterate over all genes and print details
+		my $db = get_db_connection();
+#		my $all = $db->allLiveIds;
+#		my $tmpfile ="/tmp/nameDB.$$";
+#		open (TMP,">$tmpfile") or croak ("cant open file $tmpfile\t:$!");
+#		foreach my $gene (@$all) {
+#			print TMP "$gene\n";
+#		}
+#		close TMP;
+#		&load_file($tmpfile);
+		my $query =<<END;
+SELECT primary_identifier.object_public_id, name_type_name, secondary_identifier.object_name 
+FROM primary_identifier, secondary_identifier, name_type 
+WHERE secondary_identifier.object_id = primary_identifier.object_id 
+		AND secondary_identifier.name_type_id = name_type.name_type_id 
+		AND primary_identifier.object_live = 1
+ORDER BY object_public_id;
+END
+		my $sth = $db->dbh->prepare($query);
+		$sth->execute or die "Unable to execute query: $db->errstr\n";
+		my $row;
+		while($row = $sth->fetchrow_arrayref) {
+    		print "$row->[0]\t$row->[1]\t$row->[2]<br>";
+    	}
+
+		$sth->finish;
+	}
+	else {
+		print qq( 
+			<h3>Print page of all live genes</h3>
+			<form action="$ENV{'SCRIPT_NAME'}" method="GET">
+			<INPUT TYPE="hidden" NAME="action" VALUE="dump_all">
+			<br><br>
+			<INPUT TYPE="submit" VALUE="Dump"
+		</form>
+		);
+	}
+}
 #################################################################
 sub print_selector {
 	my ($action) = @_;
@@ -545,13 +697,17 @@ sub print_selector {
 	my $sg = "";
 	my $mg = "";
 	my $rn = "";
+	my $lf = ""; my $cc = ""; my $da = "";
 	if ($action eq "query") 		{ $qs = " selected" };
-	if ($action eq "new_gene") 		{ $ng = " selected" };
-	if ($action eq "add_name") 		{ $an = " selected" };
+	if ($action eq "new_gene") 	{ $ng = " selected" };
+	if ($action eq "add_name") 	{ $an = " selected" };
 	if ($action eq "kill_gene") 	{ $kg = " selected" };
 	if ($action eq "split_gene") 	{ $sg = " selected" };
-	if ($action eq "merge_genes") 	{ $mg = " selected" };
-	if ($action eq "remove_name") 	{ $rn = " selected" };
+	if ($action eq "merge_genes")	{ $mg = " selected" };
+	if ($action eq "remove_name")	{ $rn = " selected" };
+	if ($action eq "load_file") 	{ $lf = " selected" };
+	if ($action eq "change_class"){ $cc = " selected" };
+	if ($action eq "dump_all") 	{ $da = " selected" };
 
 
 	print qq(
@@ -597,7 +753,23 @@ sub print_selector {
     	</OPTGROUP>
 		);
 	}
+	
+	if (grep {/$SSO_USER/} @{$VALID_API_USERS->{$action}} ){
+		print qq(
+    	<OPTGROUP LABEL="Load file">
+    	  <OPTION $lf LABEL="load file" value="load_file">Load a file</OPTION>
+    	</OPTGROUP>
+		);
+	}
 		
+	if (grep {/$SSO_USER/} @{$VALID_API_USERS->{$action}} ){
+		print qq(
+   	<OPTGROUP LABEL="Miscellaneous">
+  		   <OPTION $cc LABEL="change class" value="change_class">Change class</OPTION>
+  		   <OPTION $da LABEL="dump all" value="dump_all">Dump all</OPTION>
+   	</OPTGROUP>
+		);
+	}		
 	print qq(
     </SELECT>
     <INPUT TYPE="submit" VALUE="Submit">
@@ -631,7 +803,7 @@ sub fix_case
 sub get_db_connection {
 	
 	my $DOMAIN = 'Gene';
-	my $db = NameDB_handler->new($DB,$USER,$PASS);
+	my $db = NameDB_handler->new($DB,$USER,$PASS,1); #1 is for web output
 	
 	$db || return(undef);
 	$db->setDomain($DOMAIN);
