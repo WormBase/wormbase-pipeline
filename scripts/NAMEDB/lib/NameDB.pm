@@ -1812,6 +1812,20 @@ END
     }
   }
 
+#return all live primary identifiers for iterating across whole domain set.
+
+sub allLiveIds {
+	my $self = shift;
+   my $dbh = $self->dbh;
+   my $domain = shift;
+   $domain    = $self->getDomain unless $domain;
+   my $domain_id = $self->getDomainId($domain);
+	my $query = 'SELECT object_public_id FROM primary_identifier WHERE object_live = 1 AND domain_id = ?';
+	my $all = $dbh->selectcol_arrayref($query,undef,$domain_id);
+	return $all;
+}
+
+
 
 1;
 
@@ -1896,4 +1910,4 @@ CREATE TABLE IF NOT EXISTS identifier_log (
        index(object_id)
 ) type=$DBTYPE;
 
-INSERT INTO primary_identifier values(1,'',0,0,0);
+#INSERT INTO primary_identifier values(1,'',0,0,0); # why do this (ar2)
