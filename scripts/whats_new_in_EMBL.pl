@@ -6,8 +6,8 @@
 #
 # checks EMBL for new EST or mRNA entries
 #
-# Last updated by: $Author: pad $                      
-# Last updated on: $Date: 2006-03-03 11:49:27 $        
+# Last updated by: $Author: ar2 $                      
+# Last updated on: $Date: 2006-06-15 08:54:41 $        
 
 use strict;
 use Getopt::Long;
@@ -222,7 +222,7 @@ if ($new_elegans_EST > 0) {
 		print OUT_ACE "Database EMBL NDB_SV $sv\n";
 		print OUT_ACE "Protein_id $acc $protid $protver\n";
 		print OUT_ACE "Species \"Caenorhabditis elegans\"\n";
-		print OUT_ACE "Title \"$def\"\nMethod NDB\n";
+		print OUT_ACE "Title \"$def\"\nMethod elegans_EST\n";
 		print OUT_ACE "\nDNA \"$acc\"\n";
 	    }
 	}
