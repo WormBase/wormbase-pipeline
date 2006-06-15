@@ -5,7 +5,7 @@
 # by Anthony Rogers                             
 #
 # Last updated by: $Author: ar2 $               
-# Last updated on: $Date: 2006-03-24 16:37:07 $
+# Last updated on: $Date: 2006-06-15 14:46:19 $
 
 # Generates a release letter at the end of build.
 #
@@ -85,9 +85,7 @@ my $date        = `date`;
 
 my $webdir = "/nfs/WWWdev/SANGER_docs/htdocs/Projects/C_elegans/WORMBASE";
 
-$wormbase->release_databases   if defined($opt_d);
 $wormbase->release_composition if defined($opt_c);
-
 
 # make the release letter
 if( defined($opt_l)) {
