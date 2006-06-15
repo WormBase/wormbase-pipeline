@@ -181,7 +181,7 @@ sub main {
 }
 #################################################################
 sub send_mail {
-	my ($from, $to, $subject, $message) = @_;
+	my ($from, $to, $subject, $message,) = @_;
 
 	#send_mail("webserver",
 	#$MAIL_NOTIFY_LIST,
@@ -474,6 +474,8 @@ sub new_gene {
 		Enter the details of the new gene<br>  
 		<SELECT NAME="type">
 		  <OPTION SELECTED>CDS
+		  <OPTION>PSEUDO
+		  <OPTION>NCRNA
                 );	
 		if (exists $VALID_CGCNAME_USERS->{$SSO_USER}){
 		  print qq(
@@ -493,6 +495,11 @@ sub new_gene {
 	
 		my $db = get_db_connection();
 		
+		my $passed_type = $type;
+		if(( $passed_type eq 'PSEUDO') or ( $passed_type eq 'NCRNA')){
+			$type = 'CDS';
+		}
+		
 		if(my $id = $db->new_gene($name, $type) ) {
 			send_mail("webserver",$MAIL_NOTIFY_LIST, " WBGeneID request $name $SSO_USER","User : $SSO_USER\nType : $type\nName : $name\nID : $id");
 			#report to screen
@@ -502,7 +509,13 @@ sub new_gene {
 			<hr align="left">
 			<BR><BR><BR>
 			);
+			#this is so that curators can create pseudogenes or ncRNA and notify geneace in a single step.
+			if(( $passed_type eq 'PSEUDO') or ( $passed_type eq 'NCRNA')){
+				&change_class($name,$passed_type);
+				&remove_name($name,'CDS',$id);
+			}
 		}
+		
 		else {
 			print "<p>FAILED : cant create GeneID for $type $name</p>";
 		}
@@ -561,7 +574,7 @@ sub load_file {
 		print qq(
     	<form action="$ENV{'SCRIPT_NAME'}" method="POST" enctype="multipart/form-data" >
 		<BR><BR>
-    	  <h3>Upload a file</h3>
+    	  <h3>Upload a query list</h3>
     	  File to upload: <INPUT TYPE=FILE NAME="upfile"><BR>
 			<INPUT TYPE=SUBMIT VALUE="Submit">
 			<INPUT TYPE="hidden" NAME="action" VALUE="load_file">
@@ -638,9 +651,9 @@ sub change_class {
 		if ( $gene ) {
 			# just send a mail - no change to database
 			#$self->send_mail('Nameserver',
-			send_mail("webserver",$MAIL_NOTIFY_LIST,"$cds to $class", "$cds converted to $class - $SSO_USER\nThis does not affect Nameserver DB");
+			send_mail("webserver",$MAIL_NOTIFY_LIST,"$cds to $class", "$cds converted to $class - $SSO_USER\nThis does not affect Nameserver DB\nPlease REPLY to confirm you have seen this message");
 		}
-		print "changing $cds to $class<br>";
+		print "changing $cds to $class<br>You should get an aknowledgement from the curator who handles this soon.";
 	}
 }
 
@@ -669,11 +682,28 @@ END
 		my $sth = $db->dbh->prepare($query);
 		$sth->execute or die "Unable to execute query: $db->errstr\n";
 		my $row;
-		while($row = $sth->fetchrow_arrayref) {
-    		print "$row->[0]\t$row->[1]\t$row->[2]<br>";
-    	}
 
+		my %gene_data;
+		while($row = $sth->fetchrow_arrayref) {
+    		#print "$row->[0]\t$row->[1]\t$row->[2]<br>";
+    		next if ( ($row->[1] eq 'CDS') or ($row->[1] eq 'Public_name') );
+    		$gene_data{$row->[0]}->{$row->[1]} = $row->[2];
+    	}
 		$sth->finish;
+
+		#write a new version of webpage for stl
+		my $path = SangerWeb->document_root();
+		my $gene2mol = "$path/Projects/C_elegans/LOCI/genes2molecularnamestest.txt";
+		open (M2G,">$gene2mol") or die "cant open $gene2mol : $!\n";
+		foreach my $gene (sort keys %gene_data) {
+			print M2G "\n$gene";
+			foreach my $type ( sort keys %{$gene_data{$gene}} ) {
+				print M2G "\t".$gene_data{$gene}->{$type};
+			}	
+		}
+		close M2G;	
+		print qq(<a href="http://wwwdev.sanger.ac.uk/Projects/C_elegans/LOCI/genes2molecularnamestest.txt">Updated here</a>);
+		print qq( <meta http-equiv="REFRESH" content="0; URL=http://wwwdev.sanger.ac.uk/Projects/C_elegans/LOCI/genes2molecularnamestest.txt">);
 	}
 	else {
 		print qq( 
@@ -757,7 +787,7 @@ sub print_selector {
 	if (grep {/$SSO_USER/} @{$VALID_API_USERS->{$action}} ){
 		print qq(
     	<OPTGROUP LABEL="Load file">
-    	  <OPTION $lf LABEL="load file" value="load_file">Load a file</OPTION>
+    	  <OPTION $lf LABEL="load file" value="load_file">List of queries from file</OPTION>
     	</OPTGROUP>
 		);
 	}
