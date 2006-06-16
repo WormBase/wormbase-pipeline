@@ -12,8 +12,8 @@
 # 3) Archives old GFF_SPLITS directory
 # 4) Makes current_DB (copy of latest release) in ~wormpub/DATABASES
 #
-# Last updated by: $Author: gw3 $
-# Last updated on: $Date: 2006-05-26 11:12:53 $
+# Last updated by: $Author: ar2 $
+# Last updated on: $Date: 2006-06-16 13:25:25 $
 
 
 use strict;
@@ -100,6 +100,7 @@ my $new_dir = $wormbase->wormpub."/DATABASES/".$wormbase->get_wormbase_version_n
 $wormbase->run_command("mv ".$wormbase->autoace ." ". $new_dir, $log);
 
 # update symlink current_DB to new build
+$wormbase->run_command("unlink ".$wormbase->database('current'),$log);
 $wormbase->run_command("ln -sf ".$new_dir." ".$wormbase->database('current'),$log);
 
 
@@ -124,7 +125,7 @@ $wormbase->delete_files_from("$new_dir/database/touched","*","+") if (-e "$new_d
 
 #remove large backups created by loading routine
 $log->write_to("Removing files in $new_dir/database/backup*\n");
-$wormbase->delete_files_from("$new_dir/database","backup","+");
+$wormbase->delete_files_from("$new_dir/database/","backup","-");
 
 ##################
 # End
