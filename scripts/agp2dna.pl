@@ -10,8 +10,8 @@
 #
 # Usage : agp2dna.pl [-options]
 #
-# Last edited by: $Author: gw3 $
-# Last edited on: $Date: 2006-05-09 12:43:08 $
+# Last edited by: $Author: ar2 $
+# Last edited on: $Date: 2006-06-21 10:20:58 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -248,7 +248,7 @@ sub sequence_pfetch {
     while (<SEQUENCE>) {
 	chomp;
 	# deal with header line
-	if (/>\S+\s+(\S+)\.(\d+)/) {
+	if (/>(\S+)\.(\d+)/) {
 	    ($EMBL_acc,$EMBL_sv) = ($1,$2);
 	    $EMBL_seq = "";
 	    next;

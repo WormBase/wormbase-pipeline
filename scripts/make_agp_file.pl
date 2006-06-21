@@ -5,7 +5,7 @@
 # by Dan Lawson (dl1@sanger.ac.uk)
 #
 # Last edited by: $Author: ar2 $
-# Last edited on: $Date: 2006-01-06 14:45:15 $
+# Last edited on: $Date: 2006-06-21 10:20:58 $
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -24,7 +24,6 @@ my $help;
 my $debug;
 my $test;      # uses test environment
 my $quicktest; # same as $test but only runs one chromosome
-my $database;
 my $verbose;
 my $store;
 
@@ -33,7 +32,6 @@ GetOptions ("help"         => \$help,
 	    "test"         => \$test,
 	    "verbose"      => \$verbose,
             "quicktest"    => \$quicktest,
-	    "database:s"   => \$database,
 	    "store:s"      => \$store
 	   );
 
@@ -80,14 +78,29 @@ my @gff_files = ('I','II','III','IV','V','X');
 our %seqver = ();
 our %seqlen = ();
 
-open (SEQUENCES, "getz -f \'id seqversion\' \"([emblnew-org:Caenorhabditis elegans] \& [emblnew-div:INV]) | ([embl-org:Caenorhabditis elegans] \& [embl-div:INV]) | ([emblrelease-org:Caenorhabditis elegans] \& [emblrelease-div:INV])\" |");
+#open (SEQUENCES, "getz -f \'id seqversion\' \"([emblnew-org:Caenorhabditis elegans] \& [emblnew-div:INV]) | ([embl-org:Caenorhabditis elegans] \& [embl-div:INV]) | ([emblrelease-org:Caenorhabditis elegans] \& [emblrelease-div:INV])\" |");
+#while (<SEQUENCES>) {
+#    if (/^ID\s+(\S+)\s+standard\; DNA\; INV\; (\d+)/) {
+#	$seqlen{$1} = $2;
+#    }
+#    if (/^SV\s+(\S+)\.(\d+)/) {
+#      $seqver{$1} = $2;
+#    }
+#}
+#close(SEQUENCES);
+
+open (SEQUENCES, "getz -f \'id\' \"([emblstandard-Molecule:genomic dna] \& [emblstandard-Division:std] \& [emblstandard-Organism:Caenorhabditis elegans*])\" | ");
+#ID   AC006607; SV 1; linear; genomic DNA; STD; INV; 40255 BP.
 while (<SEQUENCES>) {
-    if (/^ID\s+(\S+)\s+standard\; DNA\; INV\; (\d+)/) {
-	$seqlen{$1} = $2;
-    }
-    if (/^SV\s+(\S+)\.(\d+)/) {
-      $seqver{$1} = $2;
-    }
+    s/\;//g;
+    my @info = split;
+    my $id  = $info[1];
+    my $sv  = $info[3];
+    my $len = $info[9];
+    
+    $seqlen{$id} = $len;
+    $seqver{$id} = $sv;
+    
 }
 close(SEQUENCES);
 
