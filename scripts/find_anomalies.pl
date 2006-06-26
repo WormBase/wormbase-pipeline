@@ -9,7 +9,7 @@
 # 'worm_anomaly'
 #
 # Last updated by: $Author: gw3 $     
-# Last updated on: $Date: 2006-06-26 12:31:32 $      
+# Last updated on: $Date: 2006-06-26 12:53:35 $      
 
 use strict;                                      
 use lib $ENV{'CVS_DIR'};
@@ -158,7 +158,7 @@ foreach my $chromosome (@chromosomes) {
   print "reading SL1 TSL sites\n";
   my @TSL_SL1 = &get_TSL_SL1($database, $chromosome);
 
-  print "reading SL1 TSL sites\n";
+  print "reading SL2 TSL sites\n";
   my @TSL_SL2 = &get_TSL_SL2($database, $chromosome);
 
   print "reading SAGE transcripts\n";
@@ -392,7 +392,7 @@ sub get_rRNA {
   my %GFF_data = 
    (
      directory			=> "$database/GFF_SPLITS/",
-     file			=> "CHROMOSOME_${chromosome}_Non_coding_transcript.gff",
+     file			=> "CHROMOSOME_${chromosome}_rRNA.gff",
      gff_source			=> "rRNA",
      gff_type			=> "rRNA_primary_transcript",
      anomaly_type		=> "",
@@ -1864,17 +1864,24 @@ __END__
 
 =pod
 
-=head2 NAME - script_template.pl
+=head2 NAME - find_anomalies.pl
 
 =head1 USAGE
 
 =over 4
 
-=item script_template.pl  [-options]
+=item find_anomalies.pl  [-options]
 
 =back
 
-This script does...blah blah blah
+This script populates the worm_anomaly mysql database with data describing some types of anomalies.
+
+It can be run periodicaly e.g. every build especially useful if there
+have been corrections made to the genomic sequence
+
+These anomalies can be inspected using the script:
+
+history_maker.pl -anomalies -chromosome X
 
 script_template.pl MANDATORY arguments:
 
@@ -1885,6 +1892,14 @@ script_template.pl MANDATORY arguments:
 =back
 
 script_template.pl  OPTIONAL arguments:
+
+=over 4
+
+=item -database
+
+This specifies an ACeDB database to use to read GFF data etc.
+
+The default is to use autoace.
 
 =over 4
 
