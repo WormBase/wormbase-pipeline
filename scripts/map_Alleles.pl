@@ -6,12 +6,11 @@
 # This maps alleles to the genome based on their flanking sequences
 #
 # Last updated by: $Author: mh6 $
-# Last updated on: $Date: 2006-06-27 13:26:07 $
-# SubVersion :     $Revision: 1.40 $
+# Last updated on: $Date: 2006-06-27 17:21:32 $
+# SubVersion :     $Revision: 1.41 $
 
 use strict;
 use warnings;
-#use lib '../gff';
 use lib $ENV{'CVS_DIR'};
 use Feature_mapper;
 use Modules::GFF_sql;
@@ -193,7 +192,7 @@ sub map_alleles {
         my $go = 0;
         my @affects_CDSs;
         my @affects_Feature;
-        my %affects_Splice = { Donor =>[], Acceptor =>[] };
+        my %affects_Splice = ( 'Donor' => [], 'Acceptor' => [] );
         my $orientation    = '.';
 
         print "\nMapping $name\n" if $verbose;
@@ -388,8 +387,8 @@ sub map_alleles {
                 }
             }
             $allele2gene{"$name"} = \@affects_CDSs if ( $affects_CDSs[0] );
-            &outputAllele( $name, \%affects_Splice );
-#            &outputSplice( $name, \%affects_Splice, $chromosome );
+            &outputAllele( $name );
+            &outputSplice( $name, \%affects_Splice, $chromosome );
         }
         if ( @affects_Feature >= 1 ) {
             &outputFeature( $name, \@affects_Feature );
@@ -485,14 +484,16 @@ sub outputFeature {
         print OUT "Variation : $allele\nAffects Feature $featureid\n\n";
     }
 }
-
+################################
 # to print splice
+###############################
 sub outputSplice {
     my ( $allele, $affects_Splice, $chromosome ) = @_;
 
     # process splices
-    foreach my $key ( keys %$affects_Splice ) {
+    foreach my $key ( keys %{$affects_Splice} ) {
         if ( $affects_Splice->{$key}[0] ) {
+	    my %sites;
             print OUT "Variation : $allele\n";
             foreach my $i ( @{ $affects_Splice->{$key} } ) {
                 my ( $start, $stop );
@@ -518,7 +519,8 @@ sub outputSplice {
                 }
 
                 my $site = &get_seq( $extractor, $chromosome, $start, $stop ,$i->{orientation});
-                print OUT "Splice_site $key $site Inferred_automatically map_Alleles.pl\n";
+                print OUT "Splice_site $key $site Inferred_automatically map_Alleles.pl\n" if (! $sites{$site});
+		$sites{$site}=1;
             }
 	    print OUT "\n";
         }
@@ -594,7 +596,7 @@ sub check_original_mappings {
 sub load_alleles_to_database {
 
     $log->write_to("\nStart parsing $ace_file in to $database\n\n");
-    my $command = "autoace_minder.pl -load $ace_file -tsuser map_Alleles.pl";
+    my $command = "autoace_builder.pl -load $ace_file -tsuser map_Alleles.pl";
     my $status  = system($command);
     if ( ( $status >> 8 ) != 0 ) { die "ERROR: Loading $ace_file file failed \$\? = $status\n" }
     $log->write_to("\nFinished parsing $ace_file in to $database\n\n");
@@ -610,7 +612,7 @@ __END__
 
 =over 4
 
-=item map_alleles.pl  [-debug -limit -database=s -release=s -verbose -restart=s -list=s -no_parse]
+=item map_alleles.pl  [-debug -limit -database=s -release=s -verbose -restart=s -list=s -no_parse -noupdate -test]
 
 =back
 
@@ -647,7 +649,15 @@ this stuff
 
 =item -debug 
    
-output goes to ar2 and uses current_DB
+output goes to [user] and uses current_DB
+
+=back
+
+=over 4
+
+=item -noupdate
+
+don't update/touch the mysql database as it might screw up the build
 
 =back
 
@@ -655,7 +665,7 @@ output goes to ar2 and uses current_DB
 
 =item -limit 
 
-limt the number of alleles mapped (debug tool)
+limit the number of alleles mapped (debug tool)
 
 =back
 
