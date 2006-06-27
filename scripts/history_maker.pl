@@ -298,7 +298,8 @@ if ( $anomaly && $chromosome ) {
 
 
   my $go_to_window = $anomaly_find->Button ( -text    => "Go to anomaly region (or clone)",
-					      -command => [\&goto_anomaly_window, \$anomaly_list, \$anomaly_detail_list]
+					     -background => "aquamarine3",
+					     -command => [\&goto_anomaly_window, \$anomaly_list, \$anomaly_detail_list]
 					      )->pack ( -side => 'right',
 							-pady => '2',
 							-padx => '6',
@@ -346,7 +347,8 @@ if ( $anomaly && $chromosome ) {
 
 
   my $ignore_this_anomaly = $anomaly_details->Button ( -text    => "Ignore the selected anomalies",
-					   -command => [\&ignore_anomaly, \$anomaly_detail_list]
+						       -background => "orange",
+						       -command => [\&ignore_anomaly, \$anomaly_detail_list]
 					   )->pack ( -side => 'left',
 						     -pady => '2',
 						     -padx => '6',
@@ -354,7 +356,8 @@ if ( $anomaly && $chromosome ) {
 						     );
 
   my $ignore_all_window = $anomaly_details->Button ( -text    => "Ignore ALL these anomalies!",
-					      -command => [\&ignore_anomaly_window, \$anomaly_list, \$anomaly_detail_list]
+						     -background => "red",
+						     -command => [\&ignore_anomaly_window, \$anomaly_list, \$anomaly_detail_list]
 					      )->pack ( -side => 'left',
 							-pady => '2',
 							-padx => '6',
@@ -362,7 +365,8 @@ if ( $anomaly && $chromosome ) {
 							);
 
   my $go_to_anomaly = $anomaly_details->Button ( -text    => "Go to this anomaly",
-					      -command => [\&goto_anomaly, \$anomaly_detail_list]
+						 -background => "aquamarine3",
+						 -command => [\&goto_anomaly, \$anomaly_detail_list]
 					      )->pack ( -side => 'right',
 							-pady => '2',
 							-padx => '6',
@@ -962,7 +966,7 @@ sub ignore_anomaly {
   }
 
   foreach my $selection (@selection) {
-    print "Next selection = $selection\n";
+    #print "Next selection = $selection\n";
     my @selected = split(/\s+/, $$anomaly_list->get( $selection ));
     #print "split line: @selected\n";
     # set the status.active=0 for this anomaly
