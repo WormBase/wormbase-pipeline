@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl -w
+#!/usr/local/bin/perl5.8.0 -w
 
 use strict;
 use lib $ENV{'CVS_DIR'};
@@ -339,13 +339,13 @@ if ( $anomaly && $chromosome ) {
 						   );
 
   $anomaly_detail_list = $anomaly_details->Scrolled("Listbox", -scrollbars => "osoe",
-						    -selectmode => "single",
+						    -selectmode => "extended",
 						    -height     => "12",
 						    -width      => "100"
 						    )->pack();
 
 
-  my $ignore_this_anomaly = $anomaly_details->Button ( -text    => "Ignore this anomaly",
+  my $ignore_this_anomaly = $anomaly_details->Button ( -text    => "Ignore the selected anomalies",
 					   -command => [\&ignore_anomaly, \$anomaly_detail_list]
 					   )->pack ( -side => 'left',
 						     -pady => '2',
@@ -353,7 +353,7 @@ if ( $anomaly && $chromosome ) {
 						     -anchor => "w"
 						     );
 
-  my $ignore_all_window = $anomaly_details->Button ( -text    => "Ignore all these anomalies",
+  my $ignore_all_window = $anomaly_details->Button ( -text    => "Ignore ALL these anomalies!",
 					      -command => [\&ignore_anomaly_window, \$anomaly_list, \$anomaly_detail_list]
 					      )->pack ( -side => 'left',
 							-pady => '2',
@@ -764,7 +764,7 @@ sub goto_anomaly_window {
 
     # get and display the individual anomalies found in this clone
     # pull out all anomalies in this clone except those marked as active = 0
-    $query = qq{ SELECT type, clone, clone_start, clone_end, chromosome_start, chromosome_end, sense, thing_id, thing_score, explanation, anomaly_id FROM anomaly WHERE clone = "$clone" AND active = 1 ORDER BY thing_score DESC };
+    $query = qq{ SELECT type, clone, clone_start, clone_end, chromosome_start, chromosome_end, sense, thing_id, thing_score, explanation, anomaly_id FROM anomaly WHERE clone = "$clone" AND active = 1 ORDER BY chromosome_start };
 
   } elsif (defined $selection) {
 
@@ -789,7 +789,7 @@ sub goto_anomaly_window {
     # get and display the individual anomalies found in this anomalies window
     # extract the new details from the database
     # pull out all anomalies in this window except those marked as active = 0
-    $query = qq{ SELECT type, clone, clone_start, clone_end, chromosome_start, chromosome_end, sense, thing_id, thing_score, explanation, anomaly_id FROM anomaly WHERE chromosome = "$chromosome" AND window = $window AND sense = "$sense" and active = 1 ORDER BY thing_score DESC };
+    $query = qq{ SELECT type, clone, clone_start, clone_end, chromosome_start, chromosome_end, sense, thing_id, thing_score, explanation, anomaly_id FROM anomaly WHERE chromosome = "$chromosome" AND window = $window AND sense = "$sense" and active = 1 ORDER BY chromosome_start };
 
   } else {
 
@@ -942,7 +942,7 @@ sub box_merge {
   }
 
   # sort by the reverse total_score
-  @boxes = sort { $b->{'total_score'} <=> $a->{'total_score'} } @boxes;
+  @boxes = sort { $a->{'chromosome_start'} <=> $b->{'chromosome_start'} } @boxes;
                                                                                                                                                        
   return @boxes;
 }
@@ -954,41 +954,54 @@ sub ignore_anomaly {
 
   my $anomaly_list = shift;
 
-  my $selection = $$anomaly_list->curselection();
-  if (! defined $selection ) {
+  my @selection = $$anomaly_list->curselection();
+
+  if (! @selection ) {
     &confirm_message("NO SELECTION", "No current selection\n"); 
     return;
   }
-  my @selected = split(/\s+/, $$anomaly_list->get( $selection ));
 
-  # set the status.active=0 for this anomaly
-  my $command = "UPDATE anomaly SET active = 0 WHERE anomaly_id = ?;";
-  my $sth = $mysql->prepare($command)
-      or die "Couldn't prepare statement: " . $mysql->errstr;
+  foreach my $selection (@selection) {
+    print "Next selection = $selection\n";
+    my @selected = split(/\s+/, $$anomaly_list->get( $selection ));
+    #print "split line: @selected\n";
+    # set the status.active=0 for this anomaly
+    my $command = "UPDATE anomaly SET active = 0 WHERE anomaly_id = ?;";
+    my $sth = $mysql->prepare($command)
+	or die "Couldn't prepare statement: " . $mysql->errstr;
 
-  # find the result to mark inactive in the results list of anomaly details
-  # get the start and end coords for this box of anomaly details
-  my $box_type = $selected[0];
-  my $location = $selected[3];
-  my ($box_clone, $start, $end) = ($location =~ /(\S+)\:(\d+)\.\.(\d+)/);
+    # find the result to mark inactive in the results list of anomaly details
+    # get the start and end coords for this box of anomaly details
+    my $box_type = $selected[0];
+    my $location = $selected[3];
+    my ($box_clone, $start, $end) = ($location =~ /(\S+)\:(\d+)\.\.(\d+)/);
 
-  #print "Box: $box_type $box_clone $start, $end\n";
+    #print "Box: $box_type $box_clone $start, $end\n";
 
-  # go through the results list of anomaly details looking for ones in this box
-  foreach my $anomaly (@{$results}) {
-    my ($type, $clone, $clone_start, $clone_end, $chromosome_start, $chromosome_end, $sense, $thing_id, $thing_score, $explanation, $anomaly_id) = (@{$anomaly});
-    #print "Detail: $type $clone $clone_start, $clone_end\n";
-    if ($type eq $box_type && $box_clone eq $clone && $clone_start >= $start && $clone_end <= $end) {
-      # mark this one as inactive 
-      $sth->execute($anomaly_id);
-      #print "Ignoring $type $clone $location anomaly_id $anomaly_id\n";
+    # go through the results list of anomaly details looking for ones in this box
+    foreach my $anomaly (@{$results}) {
+      my ($type, $clone, $clone_start, $clone_end, $chromosome_start, $chromosome_end, $sense, $thing_id, $thing_score, $explanation, $anomaly_id) = (@{$anomaly});
+      #print "Detail: $type $clone $clone_start, $clone_end\n";
+      if ($type eq $box_type && $box_clone eq $clone && $clone_start >= $start && $clone_end <= $end) {
+	# mark this one as inactive 
+	$sth->execute($anomaly_id);
+	#print "Ignoring $type $clone $location anomaly_id $anomaly_id\n";
+      }
+    }
+    $sth->finish();
+
+    # remove this from the displayed list
+    $$anomaly_list->delete($selection);
+
+    # AND NOW BECAUSE WE HAVE REMOVED A SELECTION FROM THE LISTBOX
+    # WE HAVE TO ADJUST THE VALUES OF OUR LIST OF SELECTIONS TO WORK ON 
+    # IF THEY HAVE BEEN SHIFTED UP BY THE DELETION
+    for (my $i = 0; $i <= $#selection; $i++) {
+      if ($selection[$i] > $selection) {
+	$selection[$i]--;
+      }
     }
   }
-  $sth->finish();
-
-  # remove this from the displayed list
-  $$anomaly_list->delete($selection);
-
 }
 
 #############################################################################
