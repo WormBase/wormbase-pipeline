@@ -45,7 +45,8 @@ GetOptions(
     "help"      => \$help,
     "acefile=s" => \$acefile,
     'store=s'   => \$store,
-    'gffdir=s'  => \$gffdir
+    'gffdir=s'  => \$gffdir,
+    'no_parse'  => \$no_parse
 );
 
 # Display help if required
