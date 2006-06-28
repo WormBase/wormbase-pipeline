@@ -38,6 +38,7 @@ my $debug;      # Debug mode, output only goes to one user
 my $verbose;    # verbose mode, more command line outout
 my $acename;    # specify a custom acefile
 my $store;      # specify a frozen configuration file
+my $no_parse;   # don't parse the acefile
 
 GetOptions(
     'debug=s'   => \$debug,
@@ -45,7 +46,8 @@ GetOptions(
     'test'      => \$test,
     'help'      => \$help,
     'acefile=s' => \$acename,
-    'store=s'   => \$store
+    'store=s'   => \$store,
+    'no_parse'  => \$no_parse
 );
 
 # Display help if required
@@ -60,7 +62,7 @@ else { $wb = Wormbase->new( -debug => $debug, -test => $test, ) }
 
 ###########################################
 # Variables Part II (depending on $wb)    #
-# #########################################
+###########################################
 
 $test  = $wb->test  if $wb->test;     # Test mode
 $debug = $wb->debug if $wb->debug;    # Debug mode, output only goes to one user
@@ -124,7 +126,7 @@ foreach my $chromosome (@chromosomes) {
         print "Oligo_set : '$name'\n" if ($verbose);
     }
     close(GFF);
-
+#######################
     # Get exon info from split UTR GFF files
     Map_Helper::get_from_gff( "$gffdir/CHROMOSOME_${chromosome}_UTR.gff", 'Transcript', 'UTR', \%genes );
 
@@ -136,7 +138,7 @@ foreach my $chromosome (@chromosomes) {
 
     # Get exon info from split transcript exon GFF file
     Map_Helper::get_from_gff( "$gffdir/CHROMOSOME_${chromosome}_Non_coding_transcript.gff", 'Transcript', qw{exon}, \%genes );
-
+#######################
     print "Finished GFF loop\n" if ($verbose);
 
     ###################
@@ -185,7 +187,7 @@ close(OUTACE);
 # read acefiles into autoace #
 ##############################
 
-unless ($test) {
+unless ($test||$no_parse) {
 
     my $command = "pparse $acefile\nsave\nquit\n";
 
@@ -216,6 +218,24 @@ sub usage {
         system( 'perldoc', $0 );
         exit(0);
     }
+}
+
+################################
+# hit to exon converter
+# including: adding types based on source/features
+sub to_exon {
+    my $hit = shift;
+    my $type;
+
+    if    ( $hit->{feature} eq 'curated'               && $hit->{source} eq 'exon' ) { $type = 'CDS' }
+    elsif ( $hit->{feature} eq 'Pseudogene'            && $hit->{source} eq 'exon' ) { $type = 'Pseudogene' }
+    elsif ( $hit->{feature} eq 'Non_coding_transcript' && $hit->{source} eq 'exon' ) { $type = 'Transcript' }
+    elsif ( $hit->{feature} eq 'Coding_transcript'     && $hit->{source} eq 'exon' ) { $type = 'Transcript' }
+    
+    else { $type = "feature:" . $hit->{feature} . " source:" . $hit->{source} }
+    my $exon = Exon->new( id => get_id( $hit->{fluff} ), start => $hit->{start}, stop => $hit->{stop}, type => $type );
+
+    return \$exon;
 }
 
 __END__
