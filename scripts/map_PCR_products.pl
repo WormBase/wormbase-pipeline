@@ -36,6 +36,7 @@ my $verbose;    # verbose mode, more command line outout
 my $acefile;    # output ace file
 my $store;      # specify a frozen configuration file
 my $gffdir;     # specify some GFF_Split dir
+my $no_parse;   # don't parse the acefile
 
 GetOptions(
     "debug=s"   => \$debug,
@@ -97,7 +98,7 @@ foreach my $chromosome (@chromosomes) {
     # GFF database part
     $map->clean("CHROMOSOME_$chromosome");                                     # reset the chromosome table
 
-    foreach my $end ( 'UTR', 'curated', 'Non_coding_transcript', 'Pseudogene' ) {
+    foreach my $end ('curated', 'Non_coding_transcript', 'Pseudogene' ) {
         my $file = "$gffdir/CHROMOSOME_${chromosome}_${end}.gff";
         $map->generate_tags($file);
         $map->load_gff( $file, "CHROMOSOME_$chromosome" );
@@ -148,7 +149,7 @@ close(OUTACE);
 ##############################
 # read acefiles into autoace
 
-$wb->load_to_database( $wb->autoace, $outace, 'map_PCR_products', $log ) unless ($test);
+$wb->load_to_database( $wb->autoace, $outace, 'map_PCR_products', $log ) unless ($test||$no_parse);
 $log->mail();
 
 exit(0);
@@ -185,8 +186,8 @@ sub to_exon {
     if    ( $hit->{feature} eq 'curated'               && $hit->{source} eq 'exon' ) { $type = 'CDS' }
     elsif ( $hit->{feature} eq 'Pseudogene'            && $hit->{source} eq 'exon' ) { $type = 'Pseudogene' }
     elsif ( $hit->{feature} eq 'Non_coding_transcript' && $hit->{source} eq 'exon' ) { $type = 'Transcript' }
+    elsif ( $hit->{feature} eq 'Coding_transcript'     && $hit->{source} eq 'exon' ) { $type = 'Transcript' }
 
-    #UTR ->transcript
     else { $type = "feature:" . $hit->{feature} . " source:" . $hit->{source} }
     my $exon = Exon->new( id => get_id( $hit->{fluff} ), start => $hit->{start}, stop => $hit->{stop}, type => $type );
 
